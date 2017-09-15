@@ -195,14 +195,14 @@ class TestFirWinMore(object):
                 [1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0],
                 decimal=5)
 
-    def test_nyq(self):
-        """Test the nyq keyword."""
+    def test_fs_nyq(self):
+        """Test the fs and nyq keywords."""
         nyquist = 1000
         width = 40.0
         relative_width = width/nyquist
         ntaps, beta = kaiserord(120, relative_width)
         taps = firwin(ntaps, cutoff=[300, 700], window=('kaiser', beta),
-                        pass_zero=False, scale=False, nyq=nyquist)
+                        pass_zero=False, scale=False, fs=2*nyquist)
 
         # Check the symmetry of taps.
         assert_array_almost_equal(taps[:ntaps//2], taps[ntaps:ntaps-ntaps//2-1:-1])
@@ -213,6 +213,10 @@ class TestFirWinMore(object):
         freqs, response = freqz(taps, worN=np.pi*freq_samples/nyquist)
         assert_array_almost_equal(np.abs(response),
                 [0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0], decimal=5)
+
+        taps2 = firwin(ntaps, cutoff=[300, 700], window=('kaiser', beta),
+                        pass_zero=False, scale=False, nyq=nyquist)
+        assert_allclose(taps2, taps)
 
     def test_bad_cutoff(self):
         """Test that invalid cutoff argument raises ValueError."""
@@ -232,6 +236,8 @@ class TestFirWinMore(object):
         # cutoff values must be less than nyq.
         assert_raises(ValueError, firwin, 99, 50.0, nyq=40)
         assert_raises(ValueError, firwin, 99, [10, 20, 30], nyq=25)
+        assert_raises(ValueError, firwin, 99, 50.0, fs=80)
+        assert_raises(ValueError, firwin, 99, [10, 20, 30], fs=50)
 
     def test_even_highpass_raises_value_error(self):
         """Test that attempt to create a highpass filter with an even number
@@ -351,11 +357,12 @@ class TestFirwin2(object):
         response2 = np.interp(freqs / np.pi, freq, gain)
         assert_array_almost_equal(abs(response1), response2, decimal=3)
 
-    def test_nyq(self):
+    def test_fs_nyq(self):
         taps1 = firwin2(80, [0.0, 0.5, 1.0], [1.0, 1.0, 0.0])
+        taps2 = firwin2(80, [0.0, 30.0, 60.0], [1.0, 1.0, 0.0], fs=120.0)
+        assert_array_almost_equal(taps1, taps2)
         taps2 = firwin2(80, [0.0, 30.0, 60.0], [1.0, 1.0, 0.0], nyq=60.0)
         assert_array_almost_equal(taps1, taps2)
-
 
 class TestRemez(object):
 
@@ -399,6 +406,8 @@ class TestRemez(object):
              -0.075943803756711, -0.041314581814658, 0.024590270518440]
         h = remez(12, [0, 0.3, 0.5, 1], [1, 0], Hz=2.)
         assert_allclose(h, k)
+        h = remez(12, [0, 0.3, 0.5, 1], [1, 0], fs=2.)
+        assert_allclose(h, k)
 
         h = [-0.038976016082299, 0.018704846485491, -0.014644062687875,
              0.002879152556419, 0.016849978528150, -0.043276706138248,
@@ -408,6 +417,7 @@ class TestRemez(object):
              -0.043276706138248, 0.016849978528150, 0.002879152556419,
              -0.014644062687875, 0.018704846485491, -0.038976016082299]
         assert_allclose(remez(21, [0, 0.8, 0.9, 1], [0, 1], Hz=2.), h)
+        assert_allclose(remez(21, [0, 0.8, 0.9, 1], [0, 1], fs=2.), h)
 
 
 class TestFirls(object):
@@ -436,7 +446,7 @@ class TestFirls(object):
         a = 0.1  # width of the transition band
 
         # design a halfband symmetric low-pass filter
-        h = firls(11, [0, a, 0.5-a, 0.5], [1, 1, 0, 0], nyq=0.5)
+        h = firls(11, [0, a, 0.5-a, 0.5], [1, 1, 0, 0], fs=1.0)
 
         # make sure the filter has correct # of taps
         assert_equal(len(h), N)
@@ -488,12 +498,15 @@ class TestFirls(object):
         assert_allclose(taps, known_taps)
 
         # With linear changes:
-        taps = firls(7, (0, 1, 2, 3, 4, 5), [1, 0, 0, 1, 1, 0], nyq=10)
+        taps = firls(7, (0, 1, 2, 3, 4, 5), [1, 0, 0, 1, 1, 0], fs=20)
         # >> taps = firls(6, [0, 0.1, 0.2, 0.3, 0.4, 0.5], [1, 0, 0, 1, 1, 0])
         known_taps = [
             1.156090832768218, -4.1385894727395849, 7.5288619164321826,
             -8.5530572592947856, 7.5288619164321826, -4.1385894727395849,
             1.156090832768218]
+        assert_allclose(taps, known_taps)
+
+        taps = firls(7, (0, 1, 2, 3, 4, 5), [1, 0, 0, 1, 1, 0], nyq=10)
         assert_allclose(taps, known_taps)
 
 
@@ -532,7 +545,7 @@ class TestMinimumPhase(object):
         # f=[0 0.3 0.5 1];
         # a=[1 1 0 0];
         # h=remez(11,f,a);
-        h = remez(12, [0, 0.3, 0.5, 1], [1, 0], Hz=2.)
+        h = remez(12, [0, 0.3, 0.5, 1], [1, 0], fs=2.)
         k = [0.349585548646686, 0.373552164395447, 0.326082685363438,
              0.077152207480935, -0.129943946349364, -0.059355880509749]
         m = minimum_phase(h, 'hilbert')
@@ -541,7 +554,7 @@ class TestMinimumPhase(object):
         # f=[0 0.8 0.9 1];
         # a=[0 0 1 1];
         # h=remez(20,f,a);
-        h = remez(21, [0, 0.8, 0.9, 1], [0, 1], Hz=2.)
+        h = remez(21, [0, 0.8, 0.9, 1], [0, 1], fs=2.)
         k = [0.232486803906329, -0.133551833687071, 0.151871456867244,
              -0.157957283165866, 0.151739294892963, -0.129293146705090,
              0.100787844523204, -0.065832656741252, 0.035361328741024,
