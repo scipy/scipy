@@ -2307,7 +2307,7 @@ gompertz = gompertz_gen(a=0.0, name='gompertz')
 
 
 class gamma_gompertz_gen(rv_continuous):
-    """ A Gamma/Gompertz continuousrandom variable
+    """ A Gamma/Gompertz continuous random variable
     
     %(before_notes)s
     
@@ -2315,7 +2315,7 @@ class gamma_gompertz_gen(rv_continuous):
     -----
     The probability density function for `gamma_gompertz` is::
     
-        gamma_gompertz.pdf(x, c, beta) = c * exp(x) * (beta ** c) / ((beta - 1 + exp(x)) ** (c + 1))
+        gamma_gompertz.pdf(x, c, beta) = c * exp(x) * (beta**c) / ((beta - 1 + exp(x))**(c + 1))
     
     for ``x >= 0``, ``c > 0``, ``beta > 0``.
     
@@ -2325,13 +2325,18 @@ class gamma_gompertz_gen(rv_continuous):
     
     References
     ----------
-    https://en.wikipedia.org/wiki/Gamma/Gompertz_distribution    
+    [1] https://en.wikipedia.org/wiki/Gamma/Gompertz_distribution    
     
     %(example)s
     """
         
     def _logsf(self, x, c, beta):
-        return c * (np.log(beta) - np.where(np.isfinite(sc.expm1(x)), np.log(beta + sc.expm1(x)), x))
+        # np.where is used for dealing with the case that x is too large
+        # so that sc.expm1(x) becomes infinity.
+        # Since x is very large in that case, log(beta + expm1(x))
+        # approximately equals to x
+        return c * (np.log(beta) - np.where(np.isfinite(sc.expm1(x)),
+                                            np.log(beta + sc.expm1(x)), x)) 
     
     def _sf(self, x, c, beta):
         return np.exp(self._logsf(x, c, beta))
@@ -2343,7 +2348,8 @@ class gamma_gompertz_gen(rv_continuous):
         return np.exp(self._logpdf(x, c, beta))
     
     def _logpdf(self, x, c, beta):
-        return np.log(c) + x + c * np.log(beta) - (c + 1.) * np.where(np.isfinite(sc.expm1(x)), np.log(beta + sc.expm1(x)), x)
+        return np.log(c) + x + c * np.log(beta) - (c + 1.) * np.where(
+                 np.isfinite(sc.expm1(x)), np.log(beta + sc.expm1(x)), x)
 gamma_gompertz = gamma_gompertz_gen(a=0.0, name='gamma_gompertz')
 
 
