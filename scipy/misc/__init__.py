@@ -32,7 +32,6 @@ Deprecated functions:
    imrotate - Rotate an image counter-clockwise [requires Pillow]
    imsave - Save an array to an image file [requires Pillow]
    imshow - Simple showing of an image through an external viewer [requires Pillow]
-   lena - Get classic image processing example image Lena
    toimage - Takes a numpy array and returns a PIL image [requires Pillow]
 
 
