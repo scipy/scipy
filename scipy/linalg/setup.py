@@ -161,6 +161,10 @@ def configuration(parent_package='', top_path=None):
     config.add_extension('_decomp_update',
                          sources=['_decomp_update.c'])
 
+    # Add any license files
+    config.add_data_files('src/id_dist/doc/doc.tex')
+    config.add_data_files('src/lapack_deprecations/LICENSE')
+
     return config
 
 
