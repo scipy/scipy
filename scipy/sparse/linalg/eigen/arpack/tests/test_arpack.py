@@ -24,7 +24,6 @@ from scipy.sparse.linalg.eigen.arpack import eigs, eigsh, svds, \
 from scipy.linalg import svd, hilbert
 
 from scipy._lib._gcutils import assert_deallocated
-#from warnings import catch_warnings, simplefilter
 from scipy._lib._numpy_compat import suppress_warnings
 
 
@@ -113,15 +112,11 @@ def generate_matrix_symmetric(N, pos_definite=False, sparse=False):
     if pos_definite:
         Id = N * np.eye(N)
         if sparse:
-            i = np.random.randint(N, size=N * N // 2)
-            j = np.random.randint(N, size=N * N // 2)
-            M[i, j] = 0
-        M = M + Id
+            M = csr_matrix(M)
+        M += Id
     else:
         if sparse:
-            i = np.random.randint(N, size=N * N // 2)
-            j = np.random.randint(N, size=N * N // 2)
-            M[i, j] = 0
+            M = csr_matrix(M)
 
     return M
 
@@ -921,48 +916,50 @@ def test_regression_arpackng_1315():
 
 def test_eigs_for_k_greater():
     # Test eigs() for k beyond limits.
-    A_sp = diags([1, -2, 1], [-1, 0, 1], shape=(4, 4))  # sparse
+    A_sparse = diags([1, -2, 1], [-1, 0, 1], shape=(4, 4))  # sparse
     A = generate_matrix(4, sparse=False)
-    M1 = np.random.random((4, 4))
-    M2 = generate_matrix(4, sparse=True)
-    M3 = aslinearoperator(M1)
-    eig_tuple1 = eig(A, b=M1)
-    eig_tuple2 = eig(A, b=M2)
+    M_dense = np.random.random((4, 4))
+    M_sparse = generate_matrix(4, sparse=True)
+    M_linop = aslinearoperator(M_dense)
+    eig_tuple1 = eig(A, b=M_dense)
+    eig_tuple2 = eig(A, b=M_sparse)
 
     with suppress_warnings() as sup:
         sup.filter(UserWarning)
 
-        assert_equal(eigs(A, M=M1, k=3), eig_tuple1)
-        assert_equal(eigs(A, M=M1, k=4), eig_tuple1)
-        assert_equal(eigs(A, M=M1, k=5), eig_tuple1)
-        assert_equal(eigs(A, M=M2, k=5), eig_tuple2)
+        assert_equal(eigs(A, M=M_dense, k=3), eig_tuple1)
+        assert_equal(eigs(A, M=M_dense, k=4), eig_tuple1)
+        assert_equal(eigs(A, M=M_dense, k=5), eig_tuple1)
+        assert_equal(eigs(A, M=M_sparse, k=5), eig_tuple2)
 
-        assert_raises(TypeError, eigs, A, M=M3, k=3)  # M as LinearOperator
+        # M as LinearOperator
+        assert_raises(TypeError, eigs, A, M=M_linop, k=3)
 
         # Test 'A' for different types
         assert_raises(TypeError, eigs, aslinearoperator(A), k=3)
-        assert_raises(TypeError, eigs, A_sp, k=3)
+        assert_raises(TypeError, eigs, A_sparse, k=3)
 
 
 def test_eigsh_for_k_greater():
     # Test eigsh() for k beyond limits.
-    A_sp = diags([1, -2, 1], [-1, 0, 1], shape=(4, 4))  # sparse
+    A_sparse = diags([1, -2, 1], [-1, 0, 1], shape=(4, 4))  # sparse
     A = generate_matrix(4, sparse=False)
-    M1 = generate_matrix_symmetric(4, pos_definite=True)
-    M2 = generate_matrix_symmetric(4, pos_definite=True, sparse=True)
-    M3 = aslinearoperator(M1)
-    eig_tuple1 = eigh(A, b=M1)
-    eig_tuple2 = eigh(A, b=M2)
+    M_dense = generate_matrix_symmetric(4, pos_definite=True)
+    M_sparse = generate_matrix_symmetric(4, pos_definite=True, sparse=True)
+    M_linop = aslinearoperator(M_dense)
+    eig_tuple1 = eigh(A, b=M_dense)
+    eig_tuple2 = eigh(A, b=M_sparse)
 
     with suppress_warnings() as sup:
         sup.filter(UserWarning)
 
-        assert_equal(eigsh(A, M=M1, k=4), eig_tuple1)
-        assert_equal(eigsh(A, M=M1, k=5), eig_tuple1)
-        assert_equal(eigsh(A, M=M2, k=5), eig_tuple2)
+        assert_equal(eigsh(A, M=M_dense, k=4), eig_tuple1)
+        assert_equal(eigsh(A, M=M_dense, k=5), eig_tuple1)
+        assert_equal(eigsh(A, M=M_sparse, k=5), eig_tuple2)
 
-        assert_raises(TypeError, eigsh, A, M=M3, k=4)  # M as LinearOperator
+        # M as LinearOperator
+        assert_raises(TypeError, eigsh, A, M=M_linop, k=4)
 
         # Test 'A' for different types
         assert_raises(TypeError, eigsh, aslinearoperator(A), k=4)
-        assert_raises(TypeError, eigsh, A_sp, M=M1, k=4)
+        assert_raises(TypeError, eigsh, A_sparse, M=M_dense, k=4)

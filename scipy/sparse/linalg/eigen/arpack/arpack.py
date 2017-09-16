@@ -45,7 +45,7 @@ __all__ = ['eigs', 'eigsh', 'svds', 'ArpackError', 'ArpackNoConvergence']
 from . import _arpack
 import numpy as np
 from scipy.sparse.linalg.interface import aslinearoperator, LinearOperator
-from scipy.sparse import eye, isspmatrix, isspmatrix_csr
+from scipy.sparse import eye, issparse, isspmatrix, isspmatrix_csr
 from scipy.linalg import eig, eigh, lu_factor, lu_solve
 from scipy.sparse.sputils import isdense
 from scipy.sparse.linalg import gmres, splu
@@ -1238,22 +1238,21 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
         raise ValueError("k=%d must be greater than 0." % (k, n - 1))
 
     if k >= n - 1:
-        if not isdense(A):
-            raise TypeError("Using scipy.linalg.eig instead as k >= N - 1. "
-                            "Hence, 'A' cannot be sparse. "
-                            "Hint: Use A.toarray() before passing to the "
-                            "function.")
+        if issparse(A):
+            raise TypeError("Cannot use scipy.linalg.eig for sparse A with "
+                            "k >= N - 1. Use scipy.linalg.eig(A.toarray()) or"
+                            " reduce k.")
 
         import warnings
         warnings.warn("k >= N - 1 for N * N square matrix. "
                       "Using scipy.linalg.eig instead.", UserWarning)
 
         if isinstance(A, LinearOperator):
-            raise TypeError("Using scipy.linalg.eig instead as k >= N - 1. "
-                            "Hence, 'A' cannot be a LinearOperator")
+            raise TypeError("Cannot use scipy.linalg.eig for LinearOperator "
+                            "A with k >= N - 1.")
         if isinstance(M, LinearOperator):
-            raise TypeError("Using scipy.linalg.eig instead as k >= N - 1. "
-                            "Hence, 'M' cannot be a LinearOperator")
+            raise TypeError("Cannot use scipy.linalg.eig for LinearOperator "
+                            "M with k >= N - 1.")
 
         return eig(A, b=M, right=return_eigenvectors)
 
@@ -1543,22 +1542,21 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         raise ValueError("k must be greater than 0.")
 
     if k >= n:
-        if not isdense(A):
-            raise TypeError("Using scipy.linalg.eigh instead as k >= N. "
-                            "Hence, 'A' cannot be sparse. "
-                            "Hint: Use A.toarray() before passing to the "
-                            "function.")
+        if issparse(A):
+            raise TypeError("Cannot use scipy.linalg.eigh for sparse A with "
+                            "k >= N. Use scipy.linalg.eigh(A.toarray()) or"
+                            " reduce k.")
 
         import warnings
         warnings.warn("k >= N for N * N square matrix. "
                       "Using scipy.linalg.eigh instead.", UserWarning)
 
         if isinstance(A, LinearOperator):
-            raise TypeError("Using scipy.linalg.eigh instead as k >= N. "
-                            "Hence, 'A' cannot be a LinearOperator")
+            raise TypeError("Cannot use scipy.linalg.eigh for LinearOperator "
+                            "A with k >= N.")
         if isinstance(M, LinearOperator):
-            raise TypeError("Using scipy.linalg.eigh instead as k >= N. "
-                            "Hence, 'M' cannot be a LinearOperator")
+            raise TypeError("Cannot use scipy.linalg.eigh for LinearOperator "
+                            "M with k >= N.")
 
         return eigh(A, b=M, eigvals_only=not return_eigenvectors)
 
