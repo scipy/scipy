@@ -200,8 +200,8 @@ def isintlike(x):
         except (TypeError, ValueError):
             return False
         if loose_int:
-            warnings.warn("Inexact indices to sparse matrices are deprecated "
-                          "as of scipy 1.0")
+            warnings.warn("Inexact indices into sparse matrices are deprecated",
+                          DeprecationWarning)
         return loose_int
     return True
 
