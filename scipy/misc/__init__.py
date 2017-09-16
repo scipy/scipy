@@ -15,16 +15,22 @@ below are not available without it.
    :toctree: generated/
 
    ascent - Get example image for processing
-   bytescale - Byte scales an array (image) [requires Pillow]
    central_diff_weights - Weights for an n-point central m-th derivative
    derivative - Find the n-th derivative of a function at a point
    face - Get example image for processing
+
+Deprecated functions:
+
+.. autosummary::
+   :toctree: generated/
+
+   bytescale - Byte scales an array (image) [requires Pillow]
    fromimage - Return a copy of a PIL image as a numpy array [requires Pillow]
    imfilter - Simple filtering of an image [requires Pillow]
    imread - Read an image file from a filename [requires Pillow]
    imresize - Resize an image [requires Pillow]
    imrotate - Rotate an image counter-clockwise [requires Pillow]
-   imsave - Save an array to an image file [requires Pillow] 
+   imsave - Save an array to an image file [requires Pillow]
    imshow - Simple showing of an image through an external viewer [requires Pillow]
    lena - Get classic image processing example image Lena
    toimage - Takes a numpy array and returns a PIL image [requires Pillow]
@@ -46,7 +52,7 @@ Deprecated aliases:
           (imported from `scipy.interpolate`)
    info - Get help information for a function, class, or module. (imported from `numpy`)
    source - Print function source code. (imported from `numpy`)
-   who - Print the Numpy arrays in the given dictionary. (imported from `numpy`) 
+   who - Print the Numpy arrays in the given dictionary. (imported from `numpy`)
 
 """
 
