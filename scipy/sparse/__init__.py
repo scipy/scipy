@@ -237,11 +237,6 @@ from .construct import *
 from .extract import *
 from ._matrix_io import *
 
-# for backward compatibility with v0.10.  This function is marked as deprecated
-from .csgraph import cs_graph_components
-
-#from spfuncs import *
-
 __all__ = [s for s in dir() if not s.startswith('_')]
 
 from scipy._lib._testutils import PytestTester
