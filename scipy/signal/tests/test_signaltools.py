@@ -12,7 +12,7 @@ from pytest import raises as assert_raises
 from numpy.testing import (
     assert_equal,
     assert_almost_equal, assert_array_equal, assert_array_almost_equal,
-    assert_allclose, assert_, assert_warns)
+    assert_allclose, assert_, assert_warns, assert_array_less)
 from scipy._lib._numpy_compat import suppress_warnings
 from numpy import array, arange
 import numpy as np
@@ -291,7 +291,7 @@ class _TestConvolve2d(object):
                          fillvalue=[1, 2])
             warnings.filterwarnings(
                 "error", message="`fillvalue` must be scalar or an array ",
-                category=DeprecationWarning)   
+                category=DeprecationWarning)
             assert_raises(DeprecationWarning, convolve2d, [[1]], [[1, 2]],
                           fillvalue=[1, 2])
 
@@ -1758,6 +1758,18 @@ class TestDecimate(object):
             # Complex vectors should be aligned, only compare below nyquist
             assert_allclose(np.angle(h_resps.conj()*h_resamps)[subnyq], 0,
                             atol=1e-3, rtol=1e-3)
+
+    def test_auto_n(self):
+        # Test that our value of n is a reasonable choice (depends on
+        # the downsampling factor)
+        sfreq = 100.
+        n = 1000
+        t = np.arange(n) / sfreq
+        # will alias for decimations (>= 15)
+        x = np.sqrt(2. / n) * np.sin(2 * np.pi * (sfreq / 30.) * t)
+        assert_allclose(np.linalg.norm(x), 1., rtol=1e-3)
+        x_out = signal.decimate(x, 30, ftype='fir')
+        assert_array_less(np.linalg.norm(x_out), 0.01)
 
 
 class TestHilbert(object):

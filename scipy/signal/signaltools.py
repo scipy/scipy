@@ -3363,11 +3363,12 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
     x : array_like
         The signal to be downsampled, as an N-dimensional array.
     q : int
-        The downsampling factor. For downsampling factors higher than 13, it is
-        recommended to call `decimate` multiple times.
+        The downsampling factor. When using IIR downsampling, it is recommended
+        to call `decimate` multiple times for downsampling factors higher than
+        13.
     n : int, optional
         The order of the filter (1 less than the length for 'fir'). Defaults to
-        8 for 'iir' and 30 for 'fir'.
+        8 for 'iir' and 20 times the downsampling factor for 'fir'.
     ftype : str {'iir', 'fir'} or ``dlti`` instance, optional
         If 'iir' or 'fir', specifies the type of lowpass filter. If an instance
         of an `dlti` object, uses that object to filter before downsampling.
@@ -3406,35 +3407,39 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
 
     if ftype == 'fir':
         if n is None:
-            n = 30
-        system = dlti(firwin(n+1, 1. / q, window='hamming'), 1.)
+            half_len = 10 * q  # reasonable cutoff for our sinc-like function
+            n = 2 * half_len
+        b, a = firwin(n+1, 1. / q, window='hamming'), 1.
     elif ftype == 'iir':
         if n is None:
             n = 8
         system = dlti(*cheby1(n, 0.05, 0.8 / q))
+        b, a = system.num, system.den
     elif isinstance(ftype, dlti):
         system = ftype._as_tf()  # Avoids copying if already in TF form
-        n = np.max((system.num.size, system.den.size)) - 1
+        b, a = system.num, system.den
     else:
         raise ValueError('invalid ftype')
 
     sl = [slice(None)] * x.ndim
+    a = np.asarray(a)
 
-    if len(system.den) == 1:  # FIR case
+    if a.size == 1:  # FIR case
+        b = b / a
         if zero_phase:
-            y = resample_poly(x, 1, q, axis=axis, window=system.num)
+            y = resample_poly(x, 1, q, axis=axis, window=b)
         else:
             # upfirdn is generally faster than lfilter by a factor equal to the
             # downsampling factor, since it only calculates the needed outputs
             n_out = x.shape[axis] // q + bool(x.shape[axis] % q)
-            y = upfirdn(system.num, x, up=1, down=q, axis=axis)
+            y = upfirdn(b, x, up=1, down=q, axis=axis)
             sl[axis] = slice(None, n_out, None)
 
     else:  # IIR case
         if zero_phase:
-            y = filtfilt(system.num, system.den, x, axis=axis)
+            y = filtfilt(b, a, x, axis=axis)
         else:
-            y = lfilter(system.num, system.den, x, axis=axis)
+            y = lfilter(b, a, x, axis=axis)
         sl[axis] = slice(None, None, q)
 
     return y[sl]
