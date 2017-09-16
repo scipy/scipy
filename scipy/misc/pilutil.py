@@ -12,7 +12,7 @@ from __future__ import division, print_function, absolute_import
 import numpy
 import tempfile
 
-from numpy import (amin, amax, ravel, asarray, cast, arange, ones, newaxis,
+from numpy import (amin, amax, ravel, asarray, arange, ones, newaxis,
                    transpose, iscomplexobj, uint8, issubdtype, array)
 
 try:
@@ -167,6 +167,11 @@ def imsave(name, arr, format=None):
 
     This function is only available if Python Imaging Library (PIL) is installed.
 
+    **Warning**: this function uses `bytescale` under the hood to rescale
+    images to use the full (0, 255) range if ``mode`` is one of ``None, 'L',
+    'P', 'l'``.  It will also cast data for 2-D images to ``uint32`` for
+    ``mode=None`` (which is the default).
+
     Parameters
     ----------
     name : str or file object
@@ -278,6 +283,11 @@ def toimage(arr, high=255, low=0, cmin=None, cmax=None, pal=None,
     (from 0 to 255) then ``mode='P'``, otherwise ``mode='L'``, unless mode
     is given as 'F' or 'I' in which case a float and/or integer array is made.
 
+    **Warning**: this function uses `bytescale` under the hood to rescale
+    images to use the full (0, 255) range if ``mode`` is one of ``None, 'L',
+    'P', 'l'``.  It will also cast data for 2-D images to ``uint32`` for
+    ``mode=None`` (which is the default).
+
     Notes
     -----
     For 3-D arrays, the `channel_axis` argument tells which dimension of the
@@ -387,6 +397,11 @@ def imrotate(arr, angle, interp='bilinear'):
 
     This function is only available if Python Imaging Library (PIL) is installed.
 
+    **Warning**: this function uses `bytescale` under the hood to rescale
+    images to use the full (0, 255) range if ``mode`` is one of ``None, 'L',
+    'P', 'l'``.  It will also cast data for 2-D images to ``uint32`` for
+    ``mode=None`` (which is the default).
+
     Parameters
     ----------
     arr : ndarray
@@ -424,6 +439,11 @@ def imshow(arr):
     Uses the image viewer specified by the environment variable
     SCIPY_PIL_IMAGE_VIEWER, or if that is not defined then `see`,
     to view a temporary file generated from array data.
+
+    **Warning**: this function uses `bytescale` under the hood to rescale
+    images to use the full (0, 255) range if ``mode`` is one of ``None, 'L',
+    'P', 'l'``.  It will also cast data for 2-D images to ``uint32`` for
+    ``mode=None`` (which is the default).
 
     Parameters
     ----------
@@ -465,22 +485,28 @@ def imresize(arr, size, interp='bilinear', mode=None):
 
     This function is only available if Python Imaging Library (PIL) is installed.
 
+    **Warning**: this function uses `bytescale` under the hood to rescale
+    images to use the full (0, 255) range if ``mode`` is one of ``None, 'L',
+    'P', 'l'``.  It will also cast data for 2-D images to ``uint32`` for
+    ``mode=None`` (which is the default).
+
     Parameters
     ----------
     arr : ndarray
         The array of image to be resized.
-
     size : int, float or tuple
         * int   - Percentage of current size.
         * float - Fraction of current size.
         * tuple - Size of the output image (height, width).
 
     interp : str, optional
-        Interpolation to use for re-sizing ('nearest', 'lanczos', 'bilinear', 'bicubic'
-        or 'cubic').
-
+        Interpolation to use for re-sizing ('nearest', 'lanczos', 'bilinear',
+        'bicubic' or 'cubic').
     mode : str, optional
         The PIL image mode ('P', 'L', etc.) to convert `arr` before resizing.
+        If ``mode=None`` (the default), 2-D images will be treated like
+        ``mode='L'``, i.e. casting to long integer.  For 3-D and 4-D arrays,
+        `mode` will be set to ``'RGB'`` and ``'RGBA'`` respectively.
 
     Returns
     -------
@@ -512,6 +538,11 @@ def imfilter(arr, ftype):
     Simple filtering of an image.
 
     This function is only available if Python Imaging Library (PIL) is installed.
+
+    **Warning**: this function uses `bytescale` under the hood to rescale
+    images to use the full (0, 255) range if ``mode`` is one of ``None, 'L',
+    'P', 'l'``.  It will also cast data for 2-D images to ``uint32`` for
+    ``mode=None`` (which is the default).
 
     Parameters
     ----------
