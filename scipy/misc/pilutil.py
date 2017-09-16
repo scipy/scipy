@@ -29,7 +29,7 @@ __all__ = ['fromimage', 'toimage', 'imsave', 'imread', 'bytescale',
            'imrotate', 'imresize', 'imshow', 'imfilter']
 
 
-# Returns a byte-scaled image
+@numpy.deprecate(message="`bytescale` is deprecated in SciPy 1.0.0.")
 def bytescale(data, cmin=None, cmax=None, high=255, low=0):
     """
     Byte scales an array (image).
@@ -104,6 +104,8 @@ def bytescale(data, cmin=None, cmax=None, high=255, low=0):
     return (bytedata.clip(low, high) + 0.5).astype(uint8)
 
 
+@numpy.deprecate(message="`imread` is deprecated in SciPy 1.0.0.\n"
+                         "Use ``matplotlib.pyplot.imread`` instead.")
 def imread(name, flatten=False, mode=None):
     """
     Read an image from a file as an array.
@@ -161,6 +163,8 @@ def imread(name, flatten=False, mode=None):
     return fromimage(im, flatten=flatten, mode=mode)
 
 
+@numpy.deprecate(message="`imsave` is deprecated in SciPy 1.0.0. "
+                         "Use ``matplotlib.pyplot.imsave`` instead.")
 def imsave(name, arr, format=None):
     """
     Save an array as an image.
@@ -213,6 +217,8 @@ def imsave(name, arr, format=None):
     return
 
 
+@numpy.deprecate(message="`fromimage` is deprecated in SciPy 1.0.0.\n"
+                         "Use ``np.asarray(im)`` instead.")
 def fromimage(im, flatten=False, mode=None):
     """
     Return a copy of a PIL image as a numpy array.
@@ -270,6 +276,8 @@ def fromimage(im, flatten=False, mode=None):
 _errstr = "Mode is unknown or incompatible with input array shape."
 
 
+@numpy.deprecate(message="`toimage` is deprecated in SciPy 1.0.0.\n"
+            "Use Pillow's ``Image.fromarray`` directly instead.")
 def toimage(arr, high=255, low=0, cmin=None, cmax=None, pal=None,
             mode=None, channel_axis=None):
     """Takes a numpy array and returns a PIL image.
@@ -391,6 +399,8 @@ def toimage(arr, high=255, low=0, cmin=None, cmax=None, pal=None,
     return image
 
 
+@numpy.deprecate(message="`imrotate` is deprecated in SciPy 1.0.0.\n"
+                         "Use ``skimage.transform.rotate`` instead.")
 def imrotate(arr, angle, interp='bilinear'):
     """
     Rotate an image counter-clockwise by angle degrees.
@@ -430,6 +440,8 @@ def imrotate(arr, angle, interp='bilinear'):
     return fromimage(im)
 
 
+@numpy.deprecate(message="`imshow` is deprecated in SciPy 1.0.0.\n"
+                         "Use ``matplotlib.pyplot.imshow`` instead.")
 def imshow(arr):
     """
     Simple showing of an image through an external viewer.
@@ -479,6 +491,8 @@ def imshow(arr):
         raise RuntimeError('Could not execute image viewer.')
 
 
+@numpy.deprecate(message="`imresize` is deprecated in SciPy 1.0.0.\n"
+                         "Use ``skimage.transform.resize`` instead.")
 def imresize(arr, size, interp='bilinear', mode=None):
     """
     Resize an image.
@@ -533,6 +547,8 @@ def imresize(arr, size, interp='bilinear', mode=None):
     return fromimage(imnew)
 
 
+@numpy.deprecate(message="`imfilter` is deprecated in SciPy 1.0.0.\n"
+                         "Use Pillow filtering functionality directly.")
 def imfilter(arr, ftype):
     """
     Simple filtering of an image.

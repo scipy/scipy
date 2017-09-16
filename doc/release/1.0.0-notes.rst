@@ -124,6 +124,12 @@ specify where the resulting distance matrix is to be stored
 Deprecated features
 ===================
 
+The following functions in `scipy.misc` are deprecated: ``bytescale``,
+``fromimage``, ``imfilter``, ``imread``, ``imresize``, ``imrotate``,
+``imsave``, ``imshow`` and ``toimage``.  Most of those functions have unexpected
+behavior (like rescaling and type casting image data without the user asking
+for that).  Other functions simply have better alternatives.
+
 ``scipy.interpolate.interpolate_wrapper`` and all functions in that submodule
 are deprecated.  This was a never finished set of wrapper functions which is
 not relevant anymore.
