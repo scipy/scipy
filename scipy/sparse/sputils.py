@@ -3,6 +3,7 @@
 
 from __future__ import division, print_function, absolute_import
 
+import operator
 import warnings
 import numpy as np
 
@@ -192,9 +193,17 @@ def isintlike(x):
     if np.ndim(x) != 0:
         return False
     try:
-        return bool(int(x) == x)
+        operator.index(x)
     except (TypeError, ValueError):
-        return False
+        try:
+            loose_int = bool(int(x) == x)
+        except (TypeError, ValueError):
+            return False
+        if loose_int:
+            warnings.warn("Inexact indices to sparse matrices are deprecated "
+                          "as of scipy 1.0")
+        return loose_int
+    return True
 
 
 def isshape(x):
