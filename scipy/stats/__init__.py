@@ -193,8 +193,6 @@ which work for masked arrays.
    :toctree: generated/
 
    cumfreq
-   histogram2
-   histogram
    itemfreq
    percentileofscore
    scoreatpercentile
@@ -211,7 +209,6 @@ which work for masked arrays.
    :toctree: generated/
 
    obrientransform
-   signaltonoise
    bayes_mvs
    mvsdist
    sem
@@ -223,7 +220,6 @@ which work for masked arrays.
    :toctree: generated/
 
    sigmaclip
-   threshold
    trimboth
    trim1
 
@@ -238,7 +234,6 @@ which work for masked arrays.
    weightedtau
    linregress
    theilslopes
-   f_value
 
 .. autosummary::
    :toctree: generated/
@@ -259,8 +254,6 @@ which work for masked arrays.
    kruskal
    friedmanchisquare
    combine_pvalues
-   ss
-   square_of_sums
    jarque_bera
 
 .. autosummary::
@@ -285,12 +278,6 @@ which work for masked arrays.
    boxcox_llf
 
    entropy
-
-.. autosummary::
-   :toctree: generated/
-
-   chisqprob
-   betai
 
 .. autosummary::
    :toctree: generated/
