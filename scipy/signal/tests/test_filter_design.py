@@ -8,11 +8,9 @@ from numpy.testing import (assert_array_almost_equal,
                            assert_array_equal, assert_array_less,
                            assert_equal, assert_,
                            assert_allclose, assert_warns)
-from numpy import array, spacing, sin, pi, sort
 import pytest
 from pytest import raises as assert_raises
 from scipy._lib._numpy_compat import suppress_warnings
-from scipy._lib._util import _lazywhere
 
 from numpy import array, spacing, sin, pi, sort
 from scipy.signal import (BadCoefficients, bessel, besselap, bilinear, buttap,
@@ -32,7 +30,8 @@ except ImportError:
 
 
 def mpmath_check(min_ver):
-    return pytest.mark.skipif(mpmath is None or LooseVersion(mpmath.__version__) < LooseVersion(min_ver),
+    return pytest.mark.skipif(mpmath is None or
+                              LooseVersion(mpmath.__version__) < LooseVersion(min_ver),
                               reason="mpmath version >= %s required" % min_ver)
 
 
@@ -503,6 +502,30 @@ class TestFreqz(object):
         assert_array_almost_equal(w, np.pi * np.arange(9) / 9.)
         assert_array_almost_equal(h, np.ones(9))
 
+        t = np.linspace(0, 1, 4, endpoint=False)
+        for b, a, h_whole in zip(
+                ([1., 0, 0, 0], np.sin(2 * np.pi * t)),
+                ([1., 0, 0, 0], [0.5, 0, 0, 0]),
+                ([1., 1., 1., 1.], [0, -4j, 0, 4j])):
+            w, h = freqz(b, a, worN=4, whole=True)
+            expected_w = np.linspace(0, 2 * np.pi, 4, endpoint=False)
+            assert_array_almost_equal(w, expected_w)
+            assert_array_almost_equal(h, h_whole)
+            # simultaneously check int-like support
+            w, h = freqz(b, a, worN=np.int32(4), whole=True)
+            assert_array_almost_equal(w, expected_w)
+            assert_array_almost_equal(h, h_whole)
+            w, h = freqz(b, a, worN=w, whole=True)
+            assert_array_almost_equal(w, expected_w)
+            assert_array_almost_equal(h, h_whole)
+
+        # force 1D
+        b = np.array(b)
+        a = np.array(a)
+        assert_raises(ValueError, freqz, b[np.newaxis], a, w)
+        assert_raises(ValueError, freqz, b, a[np.newaxis], w)
+        assert_raises(ValueError, freqz, b, a, w[np.newaxis])
+
     def test_basic_whole(self):
         w, h = freqz([1.0], worN=8, whole=True)
         assert_array_almost_equal(w, 2 * np.pi * np.arange(8.0) / 8)
@@ -517,52 +540,6 @@ class TestFreqz(object):
         assert_raises(ZeroDivisionError, freqz, [1.0], worN=8,
                       plot=lambda w, h: 1 / 0)
         freqz([1.0], worN=8, plot=plot)
-
-    def test_array(self):
-        """Test array handling."""
-        # 4 taps
-        t = np.linspace(0, 1, 4, endpoint=False)
-        b = np.array([[1., 0, 0, 0], np.sin(2 * np.pi * t)])
-        a = np.array([[1., 0, 0, 0], [0.5, 0, 0, 0]])
-        h_whole = np.array([[1., 1., 1., 1.], [0, -4j, 0, 4j]]).T
-        w, h = freqz(b.T, a.T, worN=4, whole=True)
-        expected_w = np.linspace(0, 2 * np.pi, 4, endpoint=False)
-        assert_array_almost_equal(w, expected_w)
-        assert_array_almost_equal(h, h_whole)
-        # simultaneously check int-like support
-        w, h = freqz(b.T, a.T, worN=np.int32(4), whole=True)
-        assert_array_almost_equal(w, expected_w)
-        assert_array_almost_equal(h, h_whole)
-        w, h = freqz(b.T, a.T, worN=w, whole=True)
-        assert_array_almost_equal(w, expected_w)
-        assert_array_almost_equal(h, h_whole)
-        # broadcasting
-        b = np.random.rand(4, 1, 3)
-        a = np.random.rand(4, 2, 1)
-        w, h = freqz(b, a, worN=5)
-        assert_array_equal(w.shape, (5,))
-        assert_array_equal(h.shape, (5, 2, 3))
-        b = np.random.rand(2, 3)
-        a = np.random.rand(10,)
-        w, h = freqz(b, a, worN=4)
-        assert_array_equal(w.shape, (4,))
-        assert_array_equal(h.shape, (4, 3))
-        # length-1 cases, with broadcasting and axis arguments
-        for factor in (1., 1j):
-            b = np.ones((1,) * 4) * factor
-            a = np.ones((1,) * 2)
-            w, h = freqz(b, a, worN=5)
-            assert_array_equal(w.shape, (5,))
-            expected = np.repeat(b, 5, axis=0)
-            assert_allclose(h, expected, atol=1e-12)
-        assert_raises(ValueError, freqz, b, worN=0)
-        assert_raises(ValueError, freqz, b, worN=[])
-        b = np.ones((3, 5, 1))
-        a = np.ones((2, 1))
-        w, h = freqz(b, a, worN=512)
-        assert_array_equal(h.shape, (512, 5, 1))
-        w, h = freqz(b, a, worN=w)
-        assert_array_equal(h.shape, (512, 5, 1))
 
     def test_fft_wrapping(self):
         # Some simple real FIR filters
@@ -931,7 +908,7 @@ class TestPrototypeType(object):
 def dB(x):
     # Return magnitude in decibels, avoiding divide-by-zero warnings
     # (and deal with some "not less-ordered" errors when -inf shows up)
-    return 20 * np.log10(np.maximum(np.abs(x), 1e-100))
+    return 20 * np.log10(np.maximum(np.abs(x), np.finfo(np.float64).tiny))
 
 
 class TestButtord(object):

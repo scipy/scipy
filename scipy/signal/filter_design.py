@@ -269,18 +269,20 @@ def freqz(b, a=1, worN=None, whole=False, plot=None):
     Parameters
     ----------
     b : array_like
-        numerator of a linear filter
+        Numerator of a linear filter. Must be 1D.
     a : array_like
-        denominator of a linear filter
+        Denominator of a linear filter. Must be 1D.
     worN : {None, int, array_like}, optional
-        If single integer (default 512, same as None), then compute at `worN`
-        frequencies equally spaced around the unit circle. Using a number that
-        is fast for FFT computations can result in faster computations
-        (see Notes). If an array_like, compute the response at the frequencies
-        given (in radians/sample).
+        If None (default), then compute at 512 frequencies equally spaced
+        around the unit circle.
+        If a single integer, then compute at that many frequencies.
+        Using a number that is fast for FFT computations can result in
+        faster computations (see Notes).
+        If an array_like, compute the response at the frequencies given (in
+        radians/sample; must be 1D).
     whole : bool, optional
         Normally, frequencies are computed from 0 to the Nyquist frequency,
-        pi radians/sample (upper-half of unit-circle).  If True,
+        pi radians/sample (upper-half of unit-circle).  If `whole` is True,
         compute frequencies from 0 to 2*pi radians/sample.
     plot : callable
         A callable that takes two arguments. If given, the return parameters
@@ -290,12 +292,10 @@ def freqz(b, a=1, worN=None, whole=False, plot=None):
     Returns
     -------
     w : ndarray
-        1D array of normalized frequencies at which `h` was computed, in
+        The normalized frequencies at which `h` was computed, in
         radians/sample.
     h : ndarray
-        The frequency response, as complex numbers, with shape corresponding
-        to standard broadcasting rules for `a` and `b` along the non-first
-        dimension.
+        The frequency response, as complex numbers.
 
     See Also
     --------
@@ -304,9 +304,6 @@ def freqz(b, a=1, worN=None, whole=False, plot=None):
 
     Notes
     -----
-    This function operates along the first dimension  of the `a` and `b`
-    arrays, whose shapes must otherwise be compatible with broadcasting rules.
-
     Using Matplotlib's :func:`matplotlib.pyplot.plot` function as the callable
     for `plot` produces unexpected results, as this plots the real part of the
     complex transfer function, not the magnitude.
@@ -318,8 +315,8 @@ def freqz(b, a=1, worN=None, whole=False, plot=None):
     1. An integer value is given for `worN`.
     2. `worN` is fast to compute via FFT (i.e.,
        `next_fast_len(worN) <scipy.fftpack.next_fast_len>` equals `worN`).
-    3. The numerator coefficients are a single value (``a.shape[0] == 1``).
-    4. `worN` is at least as long as the denominator coefficients
+    3. The denominator coefficients are a single value (``a.shape[0] == 1``).
+    4. `worN` is at least as long as the numerator coefficients
        (``worN >= b.shape[0]``).
 
     For long FIR filters, the FFT approach can have lower error and be much
@@ -351,8 +348,10 @@ def freqz(b, a=1, worN=None, whole=False, plot=None):
     """
     b = atleast_1d(b)
     a = atleast_1d(a)
-    b_len = b.shape[0]
-    a_len = a.shape[0]
+    if b.ndim != 1:
+        raise ValueError('b must be 1D')
+    if a.ndim != 1:
+        raise ValueError('a must be 1D')
 
     if worN is None:
         worN = 512
@@ -367,51 +366,33 @@ def freqz(b, a=1, worN=None, whole=False, plot=None):
             raise ValueError('worN must be positive, got %s' % (worN,))
         lastpoint = 2 * pi if whole else pi
         w = np.linspace(0, lastpoint, worN, endpoint=False)
-        min_size = b_len  # would be max(a_len, b_len) in the general `a` case
-        if (a_len == 1 and worN >= min_size and
+        min_size = b.size
+        if (a.size == 1 and worN >= min_size and
                 fftpack.next_fast_len(worN) == worN):
-            # if worN is fast, 2 * worN will be fast, too,
-            # so no need to check that one
+            # if worN is fast, 2 * worN will be fast, too, so no need to check
             n_fft = worN if whole else worN * 2
             if np.isrealobj(b) and np.isrealobj(a):
                 fft_func = np.fft.rfft
             else:
                 fft_func = fftpack.fft
-
-            # set up the trimming to get back to worN from n_fft
-            b_trim = slice(worN) if b_len > 1 else slice(None)
-            # If we ever go back to allowing a_len > 1, we'll also need this:
-            # a_trim = slice(worN) if a_len > 1 else slice(None)
-
-            b_fft = fft_func(b, n=n_fft, axis=0)[b_trim] if b_len > 1 else b
-            # If we ever go back to using a_len != 1, we can use:
-            #     a_fft = fft_func(a, n=n_fft, axis=axis)[a_trim]
-            # and divide by a_fft. But because we know a_len == 1, we just do:
-            h = b_fft / a  # don't do inplace to allow broadcasting
+            h = fft_func(b, n=n_fft)[:worN]
+            h /= a
             if fft_func is np.fft.rfft and whole:
-                # If we allow a_len != 1 in this branch, this conditional
-                # would need to also check if a_len == 1
-                if b_len == 1:
-                    h = np.repeat(h, worN // 2 + 1, axis=0)
                 # exclude DC and maybe Nyquist (no need to use axis_reverse
                 # here because we can build reversal with the truncation)
                 stop = -1 if n_fft % 2 == 1 else -2
                 h_flip = slice(stop, 0, -1)
-                h = np.concatenate((h, h[h_flip].conj()), axis=0)
-            elif a_len == 1 and b_len == 1:
-                h = np.repeat(h, worN, axis=0)
+                h = np.concatenate((h, h[h_flip].conj()))
     del worN
 
+    if w.ndim != 1:
+        raise ValueError('w must be 1D')
     if h is None:  # still need to compute using freqs w
         if w.size == 0:
             raise ValueError('w must have at least one element, got 0')
         zm1 = exp(-1j * w)
-        # This operates on the zeroth dimension but outputs as new -1 dim
-        b = npp_polyval(zm1, b)
-        a = npp_polyval(zm1, a)
-        h = np.rollaxis(b / a, -1, 0)
-        if h.size == 0:
-            h = np.expand_dims(h, 0)
+        h = npp_polyval(zm1, b)
+        h /= npp_polyval(zm1, a)
     if plot is not None:
         plot(w, h)
 
@@ -642,11 +623,13 @@ def sosfreqz(sos, worN=None, whole=False):
         coefficients and the last three providing the denominator
         coefficients.
     worN : {None, int, array_like}, optional
-        If single integer (default 512, same as None), then compute at `worN`
-        frequencies equally spaced around the unit circle. Using a number that
-        is fast for FFT computations can result in faster computations
-        (see Notes of `freqz`). If an array_like, compute the response at the
-        frequencies given (in radians/sample).
+        If None (default), then compute at 512 frequencies equally spaced
+        around the unit circle.
+        If a single integer, then compute at that many frequencies.
+        Using a number that is fast for FFT computations can result in
+        faster computations (see Notes of `freqz`).
+        If an array_like, compute the response at the frequencies given (in
+        radians/sample; must be 1D).
     whole : bool, optional
         Normally, frequencies are computed from 0 to the Nyquist frequency,
         pi radians/sample (upper-half of unit-circle).  If `whole` is True,
