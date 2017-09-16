@@ -154,6 +154,7 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
             --arg_j;
             continue;
         case 'i':
+        case 'l':
             /* Integer scalars */
             arg = PyTuple_GetItem(args, arg_j);
             if (arg == NULL) {
@@ -262,7 +263,7 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
             --j;
             continue;
         }
-        else if (*p == 'i') {
+        else if (*p == 'i' || *p == 'l') {
             /* Integer scalars */
             PY_LONG_LONG value;
 
@@ -280,7 +281,7 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
                 goto fail;
             }
 
-            if (PyArray_EquivTypenums(I_typenum, NPY_INT64)
+            if ((*p == 'l' || PyArray_EquivTypenums(I_typenum, NPY_INT64))
                     && value == (npy_int64)value) {
                 arg_list[j] = std::malloc(sizeof(npy_int64));
                 *(npy_int64*)arg_list[j] = (npy_int64)value;
