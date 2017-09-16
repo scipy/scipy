@@ -26,7 +26,7 @@ class TestCobyla(object):
 
     def test_simple(self):
         x = fmin_cobyla(self.fun, self.x0, [self.con1, self.con2], rhobeg=1,
-                        rhoend=1e-5, iprint=0, maxfun=100)
+                        rhoend=1e-5, maxfun=100)
         assert_allclose(x, self.solution, atol=1e-4)
 
     def test_minimize_simple(self):
@@ -95,10 +95,10 @@ def test_vector_constraints():
     fsol = 0.8
 
     # testing fmin_cobyla
-    sol = fmin_cobyla(fun, x0, cons_list, rhoend=1e-5, iprint=0)
+    sol = fmin_cobyla(fun, x0, cons_list, rhoend=1e-5)
     assert_allclose(sol, xsol, atol=1e-4)
 
-    sol = fmin_cobyla(fun, x0, fmin, rhoend=1e-5, iprint=0)
+    sol = fmin_cobyla(fun, x0, fmin, rhoend=1e-5)
     assert_allclose(fun(sol), 1, atol=1e-4)
 
     # testing minimize
