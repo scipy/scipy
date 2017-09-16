@@ -4,20 +4,18 @@
 
 from __future__ import division, print_function, absolute_import
 
-__all__ = ['expm','expm2','expm3','cosm','sinm','tanm','coshm','sinhm',
+__all__ = ['expm','cosm','sinm','tanm','coshm','sinhm',
            'tanhm','logm','funm','signm','sqrtm',
            'expm_frechet', 'expm_cond', 'fractional_matrix_power']
 
-from numpy import (Inf, dot, diag, exp, product, logical_not, cast, ravel,
-        transpose, conjugate, absolute, amax, sign, isfinite, sqrt, single)
+from numpy import (Inf, dot, diag, product, logical_not, ravel,
+        transpose, conjugate, absolute, amax, sign, isfinite, single)
 import numpy as np
-import warnings
 
 # Local imports
 from .misc import norm
 from .basic import solve, inv
 from .special_matrices import triu
-from .decomp import eig
 from .decomp_svd import svd
 from .decomp_schur import schur, rsf2csf
 from ._expm_frechet import expm_frechet, expm_cond
@@ -210,7 +208,7 @@ def logm(A, disp=True):
         return F, errest
 
 
-def expm(A, q=None):
+def expm(A):
     """
     Compute the matrix exponential using Pade approximation.
 
@@ -253,77 +251,9 @@ def expm(A, q=None):
            [ 1.06860742+0.48905626j, -1.71075555+0.91406299j]])
 
     """
-    if q is not None:
-        msg = "argument q=... in scipy.linalg.expm is deprecated." 
-        warnings.warn(msg, DeprecationWarning)
     # Input checking and conversion is provided by sparse.linalg.expm().
     import scipy.sparse.linalg
     return scipy.sparse.linalg.expm(A)
-
-
-# deprecated, but probably should be left there in the long term
-@np.deprecate(new_name="expm")
-def expm2(A):
-    """
-    Compute the matrix exponential using eigenvalue decomposition.
-
-    Parameters
-    ----------
-    A : (N, N) array_like
-        Matrix to be exponentiated
-
-    Returns
-    -------
-    expm2 : (N, N) ndarray
-        Matrix exponential of `A`
-
-    """
-    A = _asarray_square(A)
-    t = A.dtype.char
-    if t not in ['f','F','d','D']:
-        A = A.astype('d')
-        t = 'd'
-    s, vr = eig(A)
-    vri = inv(vr)
-    r = dot(dot(vr, diag(exp(s))), vri)
-    if t in ['f', 'd']:
-        return r.real.astype(t)
-    else:
-        return r.astype(t)
-
-
-# deprecated, but probably should be left there in the long term
-@np.deprecate(new_name="expm")
-def expm3(A, q=20):
-    """
-    Compute the matrix exponential using Taylor series.
-
-    Parameters
-    ----------
-    A : (N, N) array_like
-        Matrix to be exponentiated
-    q : int
-        Order of the Taylor series used is `q-1`
-
-    Returns
-    -------
-    expm3 : (N, N) ndarray
-        Matrix exponential of `A`
-
-    """
-    A = _asarray_square(A)
-    n = A.shape[0]
-    t = A.dtype.char
-    if t not in ['f','F','d','D']:
-        A = A.astype('d')
-        t = 'd'
-    eA = np.identity(n, dtype=t)
-    trm = np.identity(n, dtype=t)
-    castfunc = cast[t]
-    for k in range(1, q):
-        trm[:] = trm.dot(A) / castfunc(k)
-        eA += trm
-    return eA
 
 
 def cosm(A):

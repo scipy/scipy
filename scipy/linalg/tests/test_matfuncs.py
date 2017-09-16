@@ -22,7 +22,6 @@ from scipy._lib._numpy_compat import _assert_warns, suppress_warnings
 import scipy.linalg
 from scipy.linalg import (funm, signm, logm, sqrtm, fractional_matrix_power,
         expm, expm_frechet, expm_cond, norm)
-from scipy.linalg.matfuncs import expm2, expm3
 from scipy.linalg import _matfuncs_inv_ssq
 import scipy.linalg._expm_frechet
 
@@ -584,28 +583,6 @@ class TestExpM(object):
     def test_zero(self):
         a = array([[0.,0],[0,0]])
         assert_array_almost_equal(expm(a),[[1,0],[0,1]])
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, "`expm.` is deprecated")
-            assert_array_almost_equal(expm2(a),[[1,0],[0,1]])
-            assert_array_almost_equal(expm3(a),[[1,0],[0,1]])
-
-    def test_consistency(self):
-        a = array([[0.,1],[-1,0]])
-        b = array([[1j,1],[-1,-2j]])
-
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, "`expm.` is deprecated")
-            assert_array_almost_equal(expm(a), expm2(a))
-            assert_array_almost_equal(expm(a), expm3(a))
-
-            assert_array_almost_equal(expm(b), expm2(b))
-            assert_array_almost_equal(expm(b), expm3(b))
-
-    def test_npmatrix(self):
-        a = matrix([[3.,0],[0,-3.]])
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, "`expm2` is deprecated")
-            assert_array_almost_equal(expm(a), expm2(a))
 
     def test_single_elt(self):
         # See gh-5853
