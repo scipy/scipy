@@ -92,8 +92,7 @@ References
 
 .. [2] "Hierarchical clustering." API Reference Documentation.
    The Wolfram Research, Inc.
-   http://reference.wolfram.com/mathematica/HierarchicalClustering/tutorial/
-   HierarchicalClustering.html.
+   https://reference.wolfram.com/language/HierarchicalClustering/tutorial/HierarchicalClustering.html.
    Accessed October 1, 2007.
 
 .. [3] Gower, JC and Ross, GJS. "Minimum Spanning Trees and Single Linkage

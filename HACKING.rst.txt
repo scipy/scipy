@@ -458,7 +458,7 @@ suite.
 
 .. _SciPy API: https://docs.scipy.org/doc/scipy/reference/api.html
 
-.. _SciPy Roadmap: http://docs.scipy.org/doc/scipy/reference/roadmap.html
+.. _SciPy Roadmap: https://scipy.github.io/devdocs/roadmap.html
 
 .. _git workflow: http://docs.scipy.org/doc/numpy/dev/gitwash/index.html
 
@@ -478,7 +478,7 @@ suite.
 
 .. _SciPy Central: http://scipy-central.org/
 
-.. _license compatibility: https://www.scipy.org/License_Compatibility
+.. _license compatibility: https://scipy.github.io/old-wiki/pages/License_Compatibility.html
 
 .. _doctest: http://www.doughellmann.com/PyMOTW/doctest/
 

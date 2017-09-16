@@ -281,7 +281,7 @@ def solve_discrete_lyapunov(a, q, method=None):
     ----------
     .. [1] Hamilton, James D. Time Series Analysis, Princeton: Princeton
        University Press, 1994.  265.  Print.
-       http://www.scribd.com/doc/20577138/Hamilton-1994-Time-Series-Analysis
+       http://doc1.lbfl.li/aca/FLMF037168.pdf
     .. [2] Gajic, Z., and M.T.J. Qureshi. 2008.
        Lyapunov Matrix Equation in System Stability and Control.
        Dover Books on Engineering Series. Dover Publications.

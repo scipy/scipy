@@ -3849,7 +3849,7 @@ class kappa4_gen(rv_continuous):
     to the Kolmogorov-Smirnov Test", A Dissertation Submitted to the Graduate
     Faculty of the Louisiana State University and Agricultural and Mechanical
     College, (August, 2004),
-    http://etd.lsu.edu/docs/available/etd-05182004-144851/unrestricted/Finney_dis.pdf
+    http://digitalcommons.lsu.edu/cgi/viewcontent.cgi?article=4671&context=gradschool_dissertations
 
     J.R.M. Hosking, "The four-parameter kappa distribution". IBM J. Res.
     Develop. 38 (3), 25 1-258 (1994).
