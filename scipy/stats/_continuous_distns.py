@@ -1621,7 +1621,7 @@ class weibull_min_gen(rv_continuous):
 
     Notes
     -----
-    The probability density function for `weibull_min` is::
+    The probability density function for `weibull_min` is:
 
     .. math::
 
@@ -1676,7 +1676,7 @@ class weibull_max_gen(rv_continuous):
 
     Notes
     -----
-    The probability density function for `weibull_max` is::
+    The probability density function for `weibull_max` is:
 
     .. math::
 
@@ -2847,7 +2847,7 @@ class halfnorm_gen(rv_continuous):
 
         f(x) = \sqrt{2/\pi} e^{-\frac{x^2}{2}}
 
-    for :math`x > 0`.
+    for :math:`x > 0`.
 
     `halfnorm` is a special case of :math`\chi` with ``df == 1``.
 
@@ -3366,10 +3366,6 @@ class levy_stable_gen(rv_continuous):
     -----
     Levy-stable distribution (only random variates available -- ignore other
     docs)
-
-    %(after_notes)s
-
-    %(example)s
 
     """
 
@@ -4192,18 +4188,22 @@ class ncf_gen(rv_continuous):
     -----
     The probability density function for `ncf` is:
 
-    .. math:
+    .. math::
 
-        f(x, df_1, df_2, nc) =
-                          \exp(\frac{nc}{2} + nc df_1 \frac{x}{2(df_1 x+df_2))}
-                          df_1^{df_1/2} df_2^{df_2/2} x^{df_1 /2-1}
-                          (df_2+df_1 x)^{-(df_1+df_2)/2}
-                          \gamma(df_1/2) \gamma(1+df_2/2)
-                         \frac{L^{\frac{v_1}{2}-1}^{v_2/2}
-                               (-nc v_1 \frac{x}{2(v_1 x+v_2)})}
+        f(x, n_1, n_2, \lambda) =
+                          \exp(\frac{\lambda}{2} + \lambda n_1 \frac{x}{2(n_1 x+n_2)})
+                          n_1^{n_1/2} n_2^{n_2/2} x^{n_1/2 - 1} \\
+                          (n_2+n_1 x)^{-(n_1+n_2)/2}
+                          \gamma(n_1/2) \gamma(1+n_2/2) \\
+                         \frac{L^{\frac{v_1}{2}-1}_{v_2/2}
+                               (-\lambda v_1 \frac{x}{2(v_1 x+v_2)})}
                               {(B(v_1/2, v_2/2)  \gamma(\frac{v_1+v_2}{2})}
 
-    for ``df1, df2, nc > 0``.
+    for :math:`n_1 > 1`, :math:`n_2, \lambda > 0`.  Here :math:`n_1` is the
+    degrees of freedom in the numerator, :math:`n_2` the degrees of freedom in
+    the denominator, :math:`\lambda` the non-centrality parameter,
+    :math:`\gamma` is the logarithm of the Gamma function, :math:`L_n^k` is a
+    generalized Laguerre polynomial and :math:`B` is the beta function.
 
     `ncf` takes ``df1``, ``df2`` and ``nc`` as shape parameters.
 
@@ -5112,29 +5112,25 @@ class skew_norm_gen(rv_continuous):
 
     Notes
     -----
-    The pdf is:
+    The pdf is::
 
-    .. math::
-
-        skewnorm.pdf(x, a) = 2*norm.pdf(x)*norm.cdf(ax)
+        skewnorm.pdf(x, a) = 2 * norm.pdf(x) * norm.cdf(a*x)
 
     `skewnorm` takes :math:`a` as a skewness parameter
-    When a=0 the distribution is identical to a normal distribution.
+    When ``a = 0`` the distribution is identical to a normal distribution.
     rvs implements the method of [1]_.
 
     %(after_notes)s
 
     %(example)s
 
-
     References
     ----------
-
     .. [1] A. Azzalini and A. Capitanio (1999). Statistical applications of the
         multivariate skew-normal distribution. J. Roy. Statist. Soc., B 61, 579-602.
         http://azzalini.stat.unipd.it/SN/faq-r.html
-    """
 
+    """
     def _argcheck(self, a):
         return np.isfinite(a)
 
@@ -5391,11 +5387,11 @@ class tukeylambda_gen(rv_continuous):
     A flexible distribution, able to represent and interpolate between the
     following distributions:
 
-        - Cauchy                (lam=-1)
-        - logistic              (lam=0.0)
-        - approx Normal         (lam=0.14)
-        - u-shape               (lam = 0.5)
-        - uniform from -1 to 1  (lam = 1)
+    - Cauchy                (lam=-1)
+    - logistic              (lam=0.0)
+    - approx Normal         (lam=0.14)
+    - u-shape               (lam = 0.5)
+    - uniform from -1 to 1  (lam = 1)
 
     `tukeylambda` takes ``lam`` as a shape parameter.
 
@@ -5751,10 +5747,8 @@ class crystalball_gen(rv_continuous):
                             N A (B - x)^{-m}  &\text{for } x \le -\beta
                           \end{cases}
 
-        where:
-                                   A = (m / |beta|)**n * exp(-beta**2 / 2)
-                                   B = m / |beta| - |beta|
-                                   and N is a normalisation constant.
+    where :math:`A = (m / |beta|)**n * exp(-beta**2 / 2)`,
+    :math:`B = m/|beta| - |beta|` and :math:`N` is a normalisation constant.
 
     `crystalball` takes :math:`\beta` and :math:`m` as shape parameters.
     :math:`\beta` defines the point where the pdf changes from a power-law to a
