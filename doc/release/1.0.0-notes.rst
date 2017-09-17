@@ -284,6 +284,130 @@ backwards-compatibility.
 Authors
 =======
 
+* @arcady +
+* @xoviat +
+* Anton Akhmerov
+* Dominic Antonacci +
+* Alessandro Pietro Bardelli
+* Ved Basu +
+* Michael James Bedford +
+* Ray Bell +
+* Juan M. Bello-Rivas +
+* Sebastian Berg
+* Felix Berkenkamp
+* Jyotirmoy Bhattacharya +
+* Matthew Brett
+* Jonathan Bright
+* Bruno Jiménez +
+* Evgeni Burovski
+* Patrick Callier
+* Mark Campanelli +
+* CJ Carey
+* Adam Cox +
+* Michael Danilov +
+* David Haberthür +
+* Andras Deak +
+* Philip DeBoer
+* Anne-Sylvie Deutsch
+* Cathy Douglass +
+* Dominic Else +
+* Guo Fei +
+* Roman Feldbauer +
+* Yu Feng
+* Jaime Fernandez del Rio
+* Orestis Floros +
+* David Freese +
+* Adam Geitgey +
+* James Gerity +
+* Dezmond Goff +
+* Christoph Gohlke
+* Ralf Gommers
+* Dirk Gorissen +
+* Matt Haberland +
+* David Hagen +
+* Charles Harris
+* Lam Yuen Hei +
+* Jean Helie +
+* Gaute Hope +
+* Guillaume Horel +
+* Franziska Horn +
+* Yevhenii Hyzyla +
+* Vladislav Iakovlev +
+* Marvin Kastner +
+* Mher Kazandjian
+* Thomas Keck
+* Adam Kurkiewicz +
+* Ronan Lamy +
+* J.L. Lanfranchi +
+* Eric Larson
+* Denis Laxalde
+* Gregory R. Lee
+* Felix Lenders +
+* Evan Limanto
+* Julian Lukwata +
+* François Magimel
+* Syrtis Major +
+* Charles Masson +
+* Nikolay Mayorov
+* Tobias Megies
+* Markus Meister +
+* Roman Mirochnik +
+* Jordi Montes +
+* Nathan Musoke +
+* Andrew Nelson
+* M.J. Nichol
+* Nico Schlömer +
+* Juan Nunez-Iglesias
+* Arno Onken +
+* Dima Pasechnik +
+* Ashwin Pathak +
+* Stefan Peterson
+* Ilhan Polat
+* Andrey Portnoy +
+* Ravi Kumar Prasad +
+* Aman Pratik
+* Eric Quintero
+* Vedant Rathore +
+* Tyler Reddy
+* Joscha Reimer
+* Philipp Rentzsch +
+* Antonio Horta Ribeiro
+* Ned Richards +
+* Kevin Rose +
+* Benoit Rostykus +
+* Matt Ruffalo +
+* Eli Sadoff +
+* Pim Schellart
+* Klaus Sembritzki +
+* Nikolay Shebanov +
+* Jonathan Tammo Siebert
+* Scott Sievert
+* Max Silbiger +
+* Mandeep Singh +
+* Michael Stewart +
+* Jonathan Sutton +
+* Deep Tavker +
+* Martin Thoma
+* James Tocknell +
+* Aleksandar Trifunovic +
+* Paul van Mulbregt +
+* Jacob Vanderplas
+* Aditya Vijaykumar
+* Pauli Virtanen
+* James Webber
+* Warren Weckesser
+* Eric Wieser +
+* Josh Wilson
+* Zhiqing Xiao +
+* Evgeny Zhurko
+* Nikolay Zinov +
+* Zé Vinícius +
+
+A total of 118 people contributed to this release.
+People with a "+" by their names contributed a patch for the first time.
+This list of names is automatically generated, and may not be fully complete.
+
+
 Issues closed
 -------------
 
