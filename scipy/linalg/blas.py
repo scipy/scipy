@@ -82,34 +82,67 @@ BLAS Level 2 functions
 .. autosummary::
    :toctree: generated/
 
+   sgbmv
+   sgemv
+   sger
+   ssbmv
+   sspr
+   sspr2
+   ssymv
+   ssyr
+   ssyr2
+   stbmv
+   stpsv
+   strmv
+   strsv
+   dgbmv
+   dgemv
+   dger
+   dsbmv
+   dspr
+   dspr2
+   dsymv
+   dsyr
+   dsyr2
+   dtbmv
+   dtpsv
+   dtrmv
+   dtrsv
+   cgbmv
    cgemv
    cgerc
    cgeru
+   chbmv
    chemv
-   ctrmv
-   csyr
    cher
    cher2
-   dgemv
-   dger
-   dsymv
-   dtrmv
-   dsyr
-   dsyr2
-   sgemv
-   sger
-   ssymv
-   strmv
-   ssyr
-   ssyr2
+   chpmv
+   chpr
+   chpr2
+   ctbmv
+   ctbsv
+   ctpmv
+   ctpsv
+   ctrmv
+   ctrsv
+   csyr
+   zgbmv
    zgemv
    zgerc
    zgeru
+   zhbmv
    zhemv
-   ztrmv
-   zsyr
    zher
    zher2
+   zhpmv
+   zhpr
+   zhpr2
+   ztbmv
+   ztbsv
+   ztpmv
+   ztrmv
+   ztrsv
+   zsyr
 
 BLAS Level 3 functions
 ----------------------
@@ -117,28 +150,36 @@ BLAS Level 3 functions
 .. autosummary::
    :toctree: generated/
 
-   cgemm
-   chemm
-   cherk
-   cher2k
-   csymm
-   csyrk
-   csyr2k
-   dgemm
-   dsymm
-   dsyrk
-   dsyr2k
    sgemm
    ssymm
-   ssyrk
    ssyr2k
+   ssyrk
+   strmm
+   strsm
+   dgemm
+   dsymm
+   dsyr2k
+   dsyrk
+   dtrmm
+   dtrsm
+   cgemm
+   chemm
+   cher2k
+   cherk
+   csymm
+   csyr2k
+   csyrk
+   ctrmm
+   ctrsm
    zgemm
    zhemm
-   zherk
    zher2k
+   zherk
    zsymm
-   zsyrk
    zsyr2k
+   zsyrk
+   ztrmm
+   ztrsm
 
 """
 #
