@@ -687,7 +687,7 @@ class BaseTestLinprogIP(LinprogCommonTests):
             sol = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
                           bounds=bounds, method=self.method,
                           options=self.options)
-        _assert_success(sol, desired_fun=-1.191)
+        _assert_success(sol, desired_fun=-1.191, rtol=1e-6)
 
     def test_bug_5400(self):
         # https://github.com/scipy/scipy/issues/5400
