@@ -142,6 +142,36 @@ an array with a single element.
 Backwards incompatible changes
 ==============================
 
+The following deprecated functions have been removed from `scipy.stats`:
+``betai``, ``chisqprob``, ``f_value``, ``histogram``, ``histogram2``,
+``pdf_fromgamma``, ``signaltonoise``, ``square_of_sums``, ``ss`` and
+``threshold``.
+
+The following deprecated functions have been removed from `scipy.stats.mstats`:
+``betai``, ``f_value_wilks_lambda``, ``signaltonoise`` and ``threshold``.
+
+The deprecated ``a`` and ``reta`` keywords have been removed from
+`scipy.stats.shapiro`.
+
+The deprecated functions ``sparse.csgraph.cs_graph_components`` and
+``sparse.linalg.symeig`` have been removed from `scipy.sparse`.
+
+The following deprecated keywords have been removed in `scipy.sparse.linalg`:
+``drop_tol`` from ``splu``, and ``xtype`` from ``bicg``, ``bicgstab``, ``cg``,
+``cgs``, ``gmres``, ``qmr`` and ``minres``.
+
+The deprecated functions ``expm2`` and ``expm3`` have been removed from
+`scipy.linalg`.  The deprecated keyword ``q`` was removed from
+`scipy.linalg.expm`.  And the deprecated submodule ``linalg.calc_lwork`` was
+removed.
+
+The deprecated functions ``C2K``, ``K2C``, ``F2C``, ``C2F``, ``F2K`` and
+``K2F`` have been removed from `scipy.constants`.
+
+The deprecated ``ppform`` class was removed from `scipy.interpolate`.
+
+The deprecated keyword ``iprint`` was removed from `scipy.optimize.fmin_cobyla`.
+
 The default value for the ``zero_phase`` keyword of `scipy.signal.decimate`
 has been changed to True.
 

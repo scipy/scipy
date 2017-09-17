@@ -795,7 +795,7 @@ class _BivariateSplineBase(object):
         """ Return spline coefficients."""
         return self.tck[2]
 
-    def __call__(self, x, y, mth=None, dx=0, dy=0, grid=True):
+    def __call__(self, x, y, dx=0, dy=0, grid=True):
         """
         Evaluate the spline or its derivatives at given positions.
 
@@ -825,16 +825,9 @@ class _BivariateSplineBase(object):
 
             .. versionadded:: 0.14.0
 
-        mth : str
-            Deprecated argument. Has no effect.
-
         """
         x = np.asarray(x)
         y = np.asarray(y)
-
-        if mth is not None:
-            warnings.warn("The `mth` argument is deprecated and will be removed",
-                          FutureWarning)
 
         tx, ty, c = self.tck[:3]
         kx, ky = self.degrees

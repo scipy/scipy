@@ -70,7 +70,6 @@ Frequency Stats
     itemfreq
     scoreatpercentile
     percentileofscore
-    histogram
     cumfreq
     relfreq
 
@@ -80,7 +79,6 @@ Variability
    :toctree: generated/
 
     obrientransform
-    signaltonoise
     sem
     zmap
     zscore
@@ -91,7 +89,6 @@ Trimming Functions
 .. autosummary::
    :toctree: generated/
 
-   threshold
    trimboth
    trim1
 
@@ -128,14 +125,6 @@ Inferential Stats
    friedmanchisquare
    combine_pvalues
 
-Probability Calculations
-------------------------
-.. autosummary::
-   :toctree: generated/
-
-   chisqprob
-   betai
-
 Statistical Distances
 ---------------------
 .. autosummary::
@@ -150,15 +139,12 @@ ANOVA Functions
    :toctree: generated/
 
    f_oneway
-   f_value
 
 Support Functions
 -----------------
 .. autosummary::
    :toctree: generated/
 
-   ss
-   square_of_sums
    rankdata
 
 References
@@ -193,9 +179,9 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'tmin', 'tmax', 'tstd', 'tsem', 'moment', 'variation',
            'skew', 'kurtosis', 'describe', 'skewtest', 'kurtosistest',
            'normaltest', 'jarque_bera', 'itemfreq',
-           'scoreatpercentile', 'percentileofscore', 'histogram',
-           'histogram2', 'cumfreq', 'relfreq', 'obrientransform',
-           'signaltonoise', 'sem', 'zmap', 'zscore', 'iqr', 'threshold',
+           'scoreatpercentile', 'percentileofscore',
+           'cumfreq', 'relfreq', 'obrientransform',
+           'sem', 'zmap', 'zscore', 'iqr',
            'sigmaclip', 'trimboth', 'trim1', 'trim_mean', 'f_oneway',
            'pearsonr', 'fisher_exact', 'spearmanr', 'pointbiserialr',
            'kendalltau', 'weightedtau',
@@ -203,9 +189,7 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'ttest_ind', 'ttest_ind_from_stats', 'ttest_rel', 'kstest',
            'chisquare', 'power_divergence', 'ks_2samp', 'mannwhitneyu',
            'tiecorrect', 'ranksums', 'kruskal', 'friedmanchisquare',
-           'chisqprob', 'betai',
-           'f_value_wilks_lambda', 'f_value', 'f_value_multivariate',
-           'ss', 'square_of_sums', 'fastsort', 'rankdata',
+           'rankdata',
            'combine_pvalues', 'wasserstein_distance', 'energy_distance']
 
 
@@ -1818,49 +1802,8 @@ def percentileofscore(a, score, kind='rank'):
         raise ValueError("kind can only be 'rank', 'strict', 'weak' or 'mean'")
 
 
-@np.deprecate(message=("scipy.stats.histogram2 is deprecated in scipy 0.16.0; "
-                       "use np.histogram2d instead"))
-def histogram2(a, bins):
-    """
-    Compute histogram using divisions in bins.
-
-    Count the number of times values from array `a` fall into
-    numerical ranges defined by `bins`.  Range x is given by
-    bins[x] <= range_x < bins[x+1] where x =0,N and N is the
-    length of the `bins` array.  The last range is given by
-    bins[N] <= range_N < infinity.  Values less than bins[0] are
-    not included in the histogram.
-
-    Parameters
-    ----------
-    a : array_like of rank 1
-        The array of values to be assigned into bins
-    bins : array_like of rank 1
-        Defines the ranges of values to use during histogramming.
-
-    Returns
-    -------
-    histogram2 : ndarray of rank 1
-        Each value represents the occurrences for a given bin (range) of
-        values.
-
-    """
-    # comment: probably obsoleted by numpy.histogram()
-    n = np.searchsorted(np.sort(a), bins)
-    n = np.concatenate([n, [len(a)]])
-    return n[1:] - n[:-1]
-
 HistogramResult = namedtuple('HistogramResult',
                              ('count', 'lowerlimit', 'binsize', 'extrapoints'))
-
-
-@np.deprecate(message=("scipy.stats.histogram is deprecated in scipy 0.17.0; "
-                       "use np.histogram instead"))
-def histogram(a, numbins=10, defaultlimits=None, weights=None, printextras=False):
-    # _histogram is used in relfreq/cumfreq, so need to keep it
-    res = _histogram(a, numbins=numbins, defaultlimits=defaultlimits,
-                     weights=weights, printextras=printextras)
-    return res
 
 
 def _histogram(a, numbins=10, defaultlimits=None, weights=None, printextras=False):
@@ -2181,37 +2124,6 @@ def obrientransform(*args):
         arrays.append(t)
 
     return np.array(arrays)
-
-
-@np.deprecate(message="scipy.stats.signaltonoise is deprecated in scipy 0.16.0")
-def signaltonoise(a, axis=0, ddof=0):
-    """
-    The signal-to-noise ratio of the input data.
-
-    Return the signal-to-noise ratio of `a`, here defined as the mean
-    divided by the standard deviation.
-
-    Parameters
-    ----------
-    a : array_like
-        An array_like object containing the sample data.
-    axis : int or None, optional
-        Axis along which to operate. Default is 0. If None, compute over
-        the whole array `a`.
-    ddof : int, optional
-        Degrees of freedom correction for standard deviation. Default is 0.
-
-    Returns
-    -------
-    s2n : ndarray
-        The mean to standard deviation ratio(s) along `axis`, or 0 where the
-        standard deviation is 0.
-
-    """
-    a = np.asanyarray(a)
-    m = a.mean(axis)
-    sd = a.std(axis=axis, ddof=ddof)
-    return np.where(sd == 0, 0, m/sd)
 
 
 def sem(a, axis=0, ddof=1, nan_policy='propagate'):
@@ -2656,50 +2568,6 @@ def _iqr_nanpercentile(x, q, axis=None, interpolation='linear', keepdims=False,
 #####################################
 #         TRIMMING FUNCTIONS        #
 #####################################
-
-@np.deprecate(message="stats.threshold is deprecated in scipy 0.17.0")
-def threshold(a, threshmin=None, threshmax=None, newval=0):
-    """
-    Clip array to a given value.
-
-    Similar to numpy.clip(), except that values less than `threshmin` or
-    greater than `threshmax` are replaced by `newval`, instead of by
-    `threshmin` and `threshmax` respectively.
-
-    Parameters
-    ----------
-    a : array_like
-        Data to threshold.
-    threshmin : float, int or None, optional
-        Minimum threshold, defaults to None.
-    threshmax : float, int or None, optional
-        Maximum threshold, defaults to None.
-    newval : float or int, optional
-        Value to put in place of values in `a` outside of bounds.
-        Defaults to 0.
-
-    Returns
-    -------
-    out : ndarray
-        The clipped input array, with values less than `threshmin` or
-        greater than `threshmax` replaced with `newval`.
-
-    Examples
-    --------
-    >>> a = np.array([9, 9, 6, 3, 1, 6, 1, 0, 0, 8])
-    >>> from scipy import stats
-    >>> stats.threshold(a, threshmin=2, threshmax=8, newval=-1)
-    array([-1, -1,  6,  3, -1,  6, -1, -1, -1,  8])
-
-    """
-    a = asarray(a).copy()
-    mask = zeros(a.shape, dtype=bool)
-    if threshmin is not None:
-        mask |= (a < threshmin)
-    if threshmax is not None:
-        mask |= (a > threshmax)
-    a[mask] = newval
-    return a
 
 SigmaclipResult = namedtuple('SigmaclipResult', ('clipped', 'lower', 'upper'))
 
@@ -5367,61 +5235,6 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
 #####################################
 
 
-@np.deprecate(message="stats.chisqprob is deprecated in scipy 0.17.0; "
-              "use stats.distributions.chi2.sf instead.")
-def chisqprob(chisq, df):
-    """
-    Probability value (1-tail) for the Chi^2 probability distribution.
-
-    Broadcasting rules apply.
-
-    Parameters
-    ----------
-    chisq : array_like or float > 0
-
-    df : array_like or float, probably int >= 1
-
-    Returns
-    -------
-    chisqprob : ndarray
-        The area from `chisq` to infinity under the Chi^2 probability
-        distribution with degrees of freedom `df`.
-
-    """
-    return distributions.chi2.sf(chisq, df)
-
-
-@np.deprecate(message="stats.betai is deprecated in scipy 0.17.0; "
-              "use special.betainc instead")
-def betai(a, b, x):
-    """
-    Return the incomplete beta function.
-
-    I_x(a,b) = 1/B(a,b)*(Integral(0,x) of t^(a-1)(1-t)^(b-1) dt)
-
-    where a,b>0 and B(a,b) = G(a)*G(b)/(G(a+b)) where G(a) is the gamma
-    function of a.
-
-    The standard broadcasting rules apply to a, b, and x.
-
-    Parameters
-    ----------
-    a : array_like or float > 0
-
-    b : array_like or float > 0
-
-    x : array_like or float
-        x will be clipped to be no greater than 1.0 .
-
-    Returns
-    -------
-    betai : ndarray
-        Incomplete beta function.
-
-    """
-    return _betai(a, b, x)
-
-
 def _betai(a, b, x):
     x = np.asarray(x)
     x = np.where(x < 1.0, x, 1.0)  # if x > 1 then return 1.0
@@ -5719,92 +5532,6 @@ def _validate_distribution(values, weights):
 
 
 #####################################
-#         ANOVA CALCULATIONS        #
-#####################################
-
-@np.deprecate(message="stats.f_value_wilks_lambda deprecated in scipy 0.17.0")
-def f_value_wilks_lambda(ER, EF, dfnum, dfden, a, b):
-    """Calculation of Wilks lambda F-statistic for multivarite data, per
-    Maxwell & Delaney p.657.
-    """
-    if isinstance(ER, (int, float)):
-        ER = array([[ER]])
-    if isinstance(EF, (int, float)):
-        EF = array([[EF]])
-    lmbda = linalg.det(EF) / linalg.det(ER)
-    if (a-1)**2 + (b-1)**2 == 5:
-        q = 1
-    else:
-        q = np.sqrt(((a-1)**2*(b-1)**2 - 2) / ((a-1)**2 + (b-1)**2 - 5))
-
-    n_um = (1 - lmbda**(1.0/q))*(a-1)*(b-1)
-    d_en = lmbda**(1.0/q) / (n_um*q - 0.5*(a-1)*(b-1) + 1)
-    return n_um / d_en
-
-
-@np.deprecate(message="stats.f_value deprecated in scipy 0.17.0")
-def f_value(ER, EF, dfR, dfF):
-    """
-    Return an F-statistic for a restricted vs. unrestricted model.
-
-    Parameters
-    ----------
-    ER : float
-         `ER` is the sum of squared residuals for the restricted model
-          or null hypothesis
-
-    EF : float
-         `EF` is the sum of squared residuals for the unrestricted model
-          or alternate hypothesis
-
-    dfR : int
-          `dfR` is the degrees of freedom in the restricted model
-
-    dfF : int
-          `dfF` is the degrees of freedom in the unrestricted model
-
-    Returns
-    -------
-    F-statistic : float
-
-    """
-    return (ER - EF) / float(dfR - dfF) / (EF / float(dfF))
-
-
-@np.deprecate(message="stats.f_value_multivariate deprecated in scipy 0.17.0")
-def f_value_multivariate(ER, EF, dfnum, dfden):
-    """
-    Return a multivariate F-statistic.
-
-    Parameters
-    ----------
-    ER : ndarray
-        Error associated with the null hypothesis (the Restricted model).
-        From a multivariate F calculation.
-    EF : ndarray
-        Error associated with the alternate hypothesis (the Full model)
-        From a multivariate F calculation.
-    dfnum : int
-        Degrees of freedom the Restricted model.
-    dfden : int
-        Degrees of freedom associated with the Restricted model.
-
-    Returns
-    -------
-    fstat : float
-        The computed F-statistic.
-
-    """
-    if isinstance(ER, (int, float)):
-        ER = array([[ER]])
-    if isinstance(EF, (int, float)):
-        EF = array([[EF]])
-    n_um = (linalg.det(ER) - linalg.det(EF)) / float(dfnum)
-    d_en = linalg.det(EF) / float(dfden)
-    return n_um / d_en
-
-
-#####################################
 #         SUPPORT FUNCTIONS         #
 #####################################
 
@@ -5847,11 +5574,6 @@ def find_repeats(arr):
     return RepeatedResults(*_find_repeats(np.array(arr, dtype=np.float64)))
 
 
-@np.deprecate(message="scipy.stats.ss is deprecated in scipy 0.17.0")
-def ss(a, axis=0):
-    return _sum_of_squares(a, axis)
-
-
 def _sum_of_squares(a, axis=0):
     """
     Square each element of the input array, and return the sum(s) of that.
@@ -5876,12 +5598,6 @@ def _sum_of_squares(a, axis=0):
     """
     a, axis = _chk_asarray(a, axis)
     return np.sum(a*a, axis)
-
-
-@np.deprecate(message="scipy.stats.square_of_sums is deprecated "
-              "in scipy 0.17.0")
-def square_of_sums(a, axis=0):
-    return _square_of_sums(a, axis)
 
 
 def _square_of_sums(a, axis=0):
@@ -5911,28 +5627,6 @@ def _square_of_sums(a, axis=0):
         return s.astype(float) * s
     else:
         return float(s) * s
-
-
-@np.deprecate(message="scipy.stats.fastsort is deprecated in scipy 0.16.0")
-def fastsort(a):
-    """
-    Sort an array and provide the argsort.
-
-    Parameters
-    ----------
-    a : array_like
-        Input array.
-
-    Returns
-    -------
-    fastsort : ndarray of type int
-        sorted indices into the original array
-
-    """
-    # TODO: the wording in the docstring is nonsense.
-    it = np.argsort(a)
-    as_ = a[it]
-    return as_, it
 
 
 def rankdata(a, method='average'):

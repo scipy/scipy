@@ -811,31 +811,7 @@ is rarely the best way to calculate a matrix function.
 Exponential and logarithm functions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The matrix exponential is one of the more common matrix functions. It
-can be defined for square matrices as
-
-.. math::
-
-    e^{\mathbf{A}}=\sum_{k=0}^{\infty}\frac{1}{k!}\mathbf{A}^{k}.
-
-The command :obj:`linalg.expm3` uses this Taylor series definition to compute the matrix exponential.
-Due to poor convergence properties it is not often used.
-
-Another method to compute the matrix exponential is to find an
-eigenvalue decomposition of :math:`\mathbf{A}` :
-
-.. math::
-
-    \mathbf{A}=\mathbf{V}\boldsymbol{\Lambda}\mathbf{V}^{-1}
-
-and note that
-
-.. math::
-
-    e^{\mathbf{A}}=\mathbf{V}e^{\boldsymbol{\Lambda}}\mathbf{V}^{-1}
-
-where the matrix exponential of the diagonal matrix :math:`\boldsymbol{\Lambda}` is just the exponential of its elements. This method is implemented in :obj:`linalg.expm2` .
-
+The matrix exponential is one of the more common matrix functions.
 The preferred method for implementing the matrix exponential is to use
 scaling and a Padé approximation for :math:`e^{x}` . This algorithm is
 implemented as :obj:`linalg.expm` .

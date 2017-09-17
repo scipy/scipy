@@ -23,11 +23,6 @@ from scipy.sparse.linalg import aslinearoperator, LinearOperator
 __all__ = ['lobpcg']
 
 
-@np.deprecate(new_name='eigh')
-def symeig(mtxA, mtxB=None, select=None):
-    return eigh(mtxA, b=mtxB, eigvals=select)
-
-
 def pause():
     # Used only when verbosity level > 10.
     input()
@@ -179,7 +174,7 @@ def lobpcg(A, X,
     array([[   1.,    0.,    0., ...,    0.,    0.,    0.],
            [   0.,    2.,    0., ...,    0.,    0.,    0.],
            [   0.,    0.,    3., ...,    0.,    0.,    0.],
-           ..., 
+           ...,
            [   0.,    0.,    0., ...,   98.,    0.,    0.],
            [   0.,    0.,    0., ...,    0.,   99.,    0.],
            [   0.,    0.,    0., ...,    0.,    0.,  100.]])

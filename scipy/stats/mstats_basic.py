@@ -12,10 +12,9 @@ from __future__ import division, print_function, absolute_import
 
 
 __all__ = ['argstoarray',
-           'betai',
            'count_tied_groups',
            'describe',
-           'f_oneway','f_value_wilks_lambda','find_repeats','friedmanchisquare',
+           'f_oneway', 'find_repeats','friedmanchisquare',
            'kendalltau','kendalltau_seasonal','kruskal','kruskalwallis',
            'ks_twosamp','ks_2samp','kurtosis','kurtosistest',
            'linregress',
@@ -25,8 +24,8 @@ __all__ = ['argstoarray',
            'pearsonr','plotting_positions','pointbiserialr',
            'rankdata',
            'scoreatpercentile','sem',
-           'sen_seasonal_slopes','signaltonoise','skew','skewtest','spearmanr',
-           'theilslopes','threshold','tmax','tmean','tmin','trim','trimboth',
+           'sen_seasonal_slopes','skew','skewtest','spearmanr',
+           'theilslopes','tmax','tmean','tmin','trim','trimboth',
            'trimtail','trima','trimr','trimmed_mean','trimmed_std',
            'trimmed_stde','trimmed_var','tsem','ttest_1samp','ttest_onesamp',
            'ttest_ind','ttest_rel','tvar',
@@ -321,17 +320,6 @@ def mode(a, axis=0):
         output = (modes, counts)
 
     return ModeResult(*output)
-
-
-@np.deprecate(message="mstats.betai is deprecated in scipy 0.17.0; "
-              "use special.betainc instead.")
-def betai(a, b, x):
-    """
-    betai() is deprecated in scipy 0.17.0.
-
-    For details about this function, see `stats.betai`.
-    """
-    return _betai(a, b, x)
 
 
 def _betai(a, b, x):
@@ -1120,45 +1108,6 @@ def ks_twosamp(data1, data2, alternative="two-sided"):
 
     return (d, prob)
 ks_2samp = ks_twosamp
-
-
-@np.deprecate(message="mstats.threshold is deprecated in scipy 0.17.0")
-def threshold(a, threshmin=None, threshmax=None, newval=0):
-    """
-    Clip array to a given value.
-
-    Similar to numpy.clip(), except that values less than `threshmin` or
-    greater than `threshmax` are replaced by `newval`, instead of by
-    `threshmin` and `threshmax` respectively.
-
-    Parameters
-    ----------
-    a : ndarray
-        Input data
-    threshmin : {None, float}, optional
-        Lower threshold. If None, set to the minimum value.
-    threshmax : {None, float}, optional
-        Upper threshold. If None, set to the maximum value.
-    newval : {0, float}, optional
-        Value outside the thresholds.
-
-    Returns
-    -------
-    threshold : ndarray
-        Returns `a`, with values less then `threshmin` and values greater
-        `threshmax` replaced with `newval`.
-
-    """
-    a = ma.array(a, copy=True)
-    mask = np.zeros(a.shape, dtype=bool)
-    if threshmin is not None:
-        mask |= (a < threshmin).filled(False)
-
-    if threshmax is not None:
-        mask |= (a > threshmax).filled(False)
-
-    a[mask] = newval
-    return a
 
 
 def trima(a, limits=None, inclusive=(True,True)):
@@ -2520,25 +2469,6 @@ def obrientransform(*args):
     return data
 
 
-@np.deprecate(message="mstats.signaltonoise is deprecated in scipy 0.16.0")
-def signaltonoise(data, axis=0):
-    """Calculates the signal-to-noise ratio, as the ratio of the mean over
-    standard deviation along the given axis.
-
-    Parameters
-    ----------
-    data : sequence
-        Input data
-    axis : {0, int}, optional
-        Axis along which to compute. If None, the computation is performed
-        on a flat version of the array.
-    """
-    data = ma.array(data, copy=False)
-    m = data.mean(axis)
-    sd = data.std(axis, ddof=0)
-    return m/sd
-
-
 def sem(a, axis=0, ddof=1):
     """
     Calculates the standard error of the mean of the input array.
@@ -2625,25 +2555,6 @@ def f_oneway(*args):
     prob = special.fdtrc(dfbg, dfwg, f)  # equivalent to stats.f.sf
 
     return F_onewayResult(f, prob)
-
-
-@np.deprecate(message="mstats.f_value_wilks_lambda deprecated in scipy 0.17.0")
-def f_value_wilks_lambda(ER, EF, dfnum, dfden, a, b):
-    """Calculation of Wilks lambda F-statistic for multivariate data, per
-    Maxwell & Delaney p.657.
-    """
-    ER = ma.array(ER, copy=False, ndmin=2)
-    EF = ma.array(EF, copy=False, ndmin=2)
-    if ma.getmask(ER).any() or ma.getmask(EF).any():
-        raise NotImplementedError("Not implemented when the inputs "
-                                  "have missing data")
-
-    lmbda = np.linalg.det(EF) / np.linalg.det(ER)
-    q = ma.sqrt(((a-1)**2*(b-1)**2 - 2) / ((a-1)**2 + (b-1)**2 - 5))
-    q = ma.filled(q, 1)
-    n_um = (1 - lmbda**(1.0/q))*(a-1)*(b-1)
-    d_en = lmbda**(1.0/q) / (n_um*q - 0.5*(a-1)*(b-1) + 1)
-    return n_um / d_en
 
 
 FriedmanchisquareResult = namedtuple('FriedmanchisquareResult',
