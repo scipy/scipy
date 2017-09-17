@@ -5,10 +5,9 @@ Functions which are common and require SciPy Base and Level 1 SciPy
 
 from __future__ import division, print_function, absolute_import
 
-import numpy as np
 from numpy import arange, newaxis, hstack, product, array, fromstring
 
-__all__ = ['central_diff_weights', 'derivative', 'lena', 'ascent', 'face']
+__all__ = ['central_diff_weights', 'derivative', 'ascent', 'face']
 
 
 def central_diff_weights(Np, ndiv=1):
@@ -118,38 +117,6 @@ def derivative(func, x0, dx=1.0, n=1, args=(), order=3):
     for k in range(order):
         val += weights[k]*func(x0+(k-ho)*dx,*args)
     return val / product((dx,)*n,axis=0)
-
-
-def lena():
-    """
-    Function that previously returned an example image
-
-    .. note:: Removed in 0.17
-
-    Parameters
-    ----------
-    None
-
-    Returns
-    -------
-    None
-
-    Raises
-    ------
-    RuntimeError
-        This functionality has been removed due to licensing reasons.
-
-    Notes
-    -----
-    The image previously returned by this function has an incompatible license
-    and has been removed from SciPy. Please use `face` or `ascent` instead.
-
-    See Also
-    --------
-    face, ascent
-    """
-    raise RuntimeError('lena() is no longer included in SciPy, please use '
-                       'ascent() or face() instead')
 
 
 def ascent():
