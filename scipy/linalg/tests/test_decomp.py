@@ -23,7 +23,7 @@ from scipy._lib.six import xrange
 from scipy.linalg import (eig, eigvals, lu, svd, svdvals, cholesky, qr,
      schur, rsf2csf, lu_solve, lu_factor, solve, diagsvd, hessenberg, rq,
      eig_banded, eigvals_banded, eigh, eigvalsh, qr_multiply, qz, orth, ordqz,
-     subspace_angles, hadamard)
+     subspace_angles, hadamard, eigvalsh_tridiagonal, eigh_tridiagonal)
 from scipy.linalg.lapack import dgbtrf, dgbtrs, zgbtrf, zgbtrs, \
      dsbev, dsbevd, dsbevx, zhbevd, zhbevx
 from scipy.linalg.misc import norm
@@ -628,6 +628,117 @@ class TestEigBanded(object):
 
         y_lin = linalg.solve(self.comp_mat, self.bc)
         assert_array_almost_equal(y, y_lin)
+
+
+class TestEigTridiagonal(object):
+    def setup_method(self):
+        self.create_trimat()
+
+    def create_trimat(self):
+        """Create the full matrix `self.fullmat`, `self.d`, and `self.e`."""
+        N = 10
+
+        # symmetric band matrix
+        self.d = 1.0*ones(N)
+        self.e = -1.0*ones(N-1)
+        self.full_mat = (diag(self.d) + diag(self.e, -1) + diag(self.e, 1))
+
+        ew, ev = linalg.eig(self.full_mat)
+        ew = ew.real
+        args = argsort(ew)
+        self.w = ew[args]
+        self.evec = ev[:, args]
+
+    def test_degenerate(self):
+        """Test error conditions."""
+        # Wrong sizes
+        assert_raises(ValueError, eigvalsh_tridiagonal, self.d, self.e[:-1])
+        # Must be real
+        assert_raises(TypeError, eigvalsh_tridiagonal, self.d, self.e * 1j)
+        # Bad driver
+        assert_raises(TypeError, eigvalsh_tridiagonal, self.d, self.e,
+                      lapack_driver=1.)
+        assert_raises(ValueError, eigvalsh_tridiagonal, self.d, self.e,
+                      lapack_driver='foo')
+        # Bad bounds
+        assert_raises(ValueError, eigvalsh_tridiagonal, self.d, self.e,
+                      select='i', select_range=(0, -1))
+
+    def test_eigvalsh_tridiagonal(self):
+        """Compare eigenvalues of eigvalsh_tridiagonal with those of eig."""
+        # can't use ?STERF with subselection
+        for driver in ('sterf', 'stev', 'stebz', 'stemr', 'auto'):
+            w = eigvalsh_tridiagonal(self.d, self.e, lapack_driver=driver)
+            assert_array_almost_equal(sort(w), self.w)
+
+        for driver in ('sterf', 'stev'):
+            assert_raises(ValueError, eigvalsh_tridiagonal, self.d, self.e,
+                          lapack_driver='stev', select='i',
+                          select_range=(0, 1))
+        for driver in ('stebz', 'stemr', 'auto'):
+            # extracting eigenvalues with respect to the full index range
+            w_ind = eigvalsh_tridiagonal(
+                self.d, self.e, select='i', select_range=(0, len(self.d)-1),
+                lapack_driver=driver)
+            assert_array_almost_equal(sort(w_ind), self.w)
+
+            # extracting eigenvalues with respect to an index range
+            ind1 = 2
+            ind2 = 6
+            w_ind = eigvalsh_tridiagonal(
+                self.d, self.e, select='i', select_range=(ind1, ind2),
+                lapack_driver=driver)
+            assert_array_almost_equal(sort(w_ind), self.w[ind1:ind2+1])
+
+            # extracting eigenvalues with respect to a value range
+            v_lower = self.w[ind1] - 1.0e-5
+            v_upper = self.w[ind2] + 1.0e-5
+            w_val = eigvalsh_tridiagonal(
+                self.d, self.e, select='v', select_range=(v_lower, v_upper),
+                lapack_driver=driver)
+            assert_array_almost_equal(sort(w_val), self.w[ind1:ind2+1])
+
+    def test_eigh_tridiagonal(self):
+        """Compare eigenvalues and eigenvectors of eigh_tridiagonal
+           with those of eig. """
+        # can't use ?STERF when eigenvectors are requested
+        assert_raises(ValueError, eigh_tridiagonal, self.d, self.e,
+                      lapack_driver='sterf')
+        for driver in ('stebz', 'stev', 'stemr', 'auto'):
+            w, evec = eigh_tridiagonal(self.d, self.e, lapack_driver=driver)
+            evec_ = evec[:, argsort(w)]
+            assert_array_almost_equal(sort(w), self.w)
+            assert_array_almost_equal(abs(evec_), abs(self.evec))
+
+        assert_raises(ValueError, eigh_tridiagonal, self.d, self.e,
+                      lapack_driver='stev', select='i', select_range=(0, 1))
+        for driver in ('stebz', 'stemr', 'auto'):
+            # extracting eigenvalues with respect to an index range
+            ind1 = 0
+            ind2 = len(self.d)-1
+            w, evec = eigh_tridiagonal(
+                self.d, self.e, select='i', select_range=(ind1, ind2),
+                lapack_driver=driver)
+            assert_array_almost_equal(sort(w), self.w)
+            assert_array_almost_equal(abs(evec), abs(self.evec))
+            ind1 = 2
+            ind2 = 6
+            w, evec = eigh_tridiagonal(
+                self.d, self.e, select='i', select_range=(ind1, ind2),
+                lapack_driver=driver)
+            assert_array_almost_equal(sort(w), self.w[ind1:ind2+1])
+            assert_array_almost_equal(abs(evec),
+                                      abs(self.evec[:, ind1:ind2+1]))
+
+            # extracting eigenvalues with respect to a value range
+            v_lower = self.w[ind1] - 1.0e-5
+            v_upper = self.w[ind2] + 1.0e-5
+            w, evec = eigh_tridiagonal(
+                self.d, self.e, select='v', select_range=(v_lower, v_upper),
+                lapack_driver=driver)
+            assert_array_almost_equal(sort(w), self.w[ind1:ind2+1])
+            assert_array_almost_equal(abs(evec),
+                                      abs(self.evec[:, ind1:ind2+1]))
 
 
 def test_eigh():
