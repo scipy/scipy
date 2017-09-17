@@ -2,8 +2,9 @@
 """
 from __future__ import division, print_function, absolute_import
 
-import warnings
 import math
+import operator
+import warnings
 
 import numpy
 import numpy as np
@@ -14,7 +15,7 @@ from numpy import (atleast_1d, poly, polyval, roots, real, asarray,
                    mintypecode)
 from numpy.polynomial.polynomial import polyval as npp_polyval
 
-from scipy import special, optimize
+from scipy import special, optimize, fftpack
 from scipy.special import comb, factorial
 from scipy._lib._numpy_compat import polyvalfromroots
 
@@ -268,15 +269,17 @@ def freqz(b, a=1, worN=None, whole=False, plot=None):
     Parameters
     ----------
     b : array_like
-        numerator of a linear filter
+        Numerator of a linear filter. Must be 1D.
     a : array_like
-        denominator of a linear filter
+        Denominator of a linear filter. Must be 1D.
     worN : {None, int, array_like}, optional
         If None (default), then compute at 512 frequencies equally spaced
         around the unit circle.
         If a single integer, then compute at that many frequencies.
+        Using a number that is fast for FFT computations can result in
+        faster computations (see Notes).
         If an array_like, compute the response at the frequencies given (in
-        radians/sample).
+        radians/sample; must be 1D).
     whole : bool, optional
         Normally, frequencies are computed from 0 to the Nyquist frequency,
         pi radians/sample (upper-half of unit-circle).  If `whole` is True,
@@ -296,13 +299,28 @@ def freqz(b, a=1, worN=None, whole=False, plot=None):
 
     See Also
     --------
+    freqz_zpk
     sosfreqz
 
     Notes
     -----
-    Using Matplotlib's "plot" function as the callable for `plot` produces
-    unexpected results,  this plots the real part of the complex transfer
-    function, not the magnitude.  Try ``lambda w, h: plot(w, abs(h))``.
+    Using Matplotlib's :func:`matplotlib.pyplot.plot` function as the callable
+    for `plot` produces unexpected results, as this plots the real part of the
+    complex transfer function, not the magnitude.
+    Try ``lambda w, h: plot(w, np.abs(h))``.
+
+    A direct computation via (R)FFT is used to compute the frequency response
+    when the following conditions are met:
+
+    1. An integer value is given for `worN`.
+    2. `worN` is fast to compute via FFT (i.e.,
+       `next_fast_len(worN) <scipy.fftpack.next_fast_len>` equals `worN`).
+    3. The denominator coefficients are a single value (``a.shape[0] == 1``).
+    4. `worN` is at least as long as the numerator coefficients
+       (``worN >= b.shape[0]``).
+
+    For long FIR filters, the FFT approach can have lower error and be much
+    faster than the equivalent direct polynomial calculation.
 
     Examples
     --------
@@ -328,22 +346,53 @@ def freqz(b, a=1, worN=None, whole=False, plot=None):
     >>> plt.show()
 
     """
-    b, a = map(atleast_1d, (b, a))
-    if whole:
-        lastpoint = 2 * pi
-    else:
-        lastpoint = pi
+    b = atleast_1d(b)
+    a = atleast_1d(a)
+    if b.ndim != 1:
+        raise ValueError('b must be 1D')
+    if a.ndim != 1:
+        raise ValueError('a must be 1D')
+
     if worN is None:
-        N = 512
-        w = numpy.linspace(0, lastpoint, N, endpoint=False)
-    elif isinstance(worN, int):
-        N = worN
-        w = numpy.linspace(0, lastpoint, N, endpoint=False)
+        worN = 512
+
+    h = None
+    try:
+        worN = operator.index(worN)
+    except TypeError:  # not int-like
+        w = atleast_1d(worN)
     else:
-        w = worN
-    w = atleast_1d(w)
-    zm1 = exp(-1j * w)
-    h = polyval(b[::-1], zm1) / polyval(a[::-1], zm1)
+        if worN <= 0:
+            raise ValueError('worN must be positive, got %s' % (worN,))
+        lastpoint = 2 * pi if whole else pi
+        w = np.linspace(0, lastpoint, worN, endpoint=False)
+        min_size = b.size
+        if (a.size == 1 and worN >= min_size and
+                fftpack.next_fast_len(worN) == worN):
+            # if worN is fast, 2 * worN will be fast, too, so no need to check
+            n_fft = worN if whole else worN * 2
+            if np.isrealobj(b) and np.isrealobj(a):
+                fft_func = np.fft.rfft
+            else:
+                fft_func = fftpack.fft
+            h = fft_func(b, n=n_fft)[:worN]
+            h /= a
+            if fft_func is np.fft.rfft and whole:
+                # exclude DC and maybe Nyquist (no need to use axis_reverse
+                # here because we can build reversal with the truncation)
+                stop = -1 if n_fft % 2 == 1 else -2
+                h_flip = slice(stop, 0, -1)
+                h = np.concatenate((h, h[h_flip].conj()))
+    del worN
+
+    if w.ndim != 1:
+        raise ValueError('w must be 1D')
+    if h is None:  # still need to compute using freqs w
+        if w.size == 0:
+            raise ValueError('w must have at least one element, got 0')
+        zm1 = exp(-1j * w)
+        h = npp_polyval(zm1, b)
+        h /= npp_polyval(zm1, a)
     if plot is not None:
         plot(w, h)
 
@@ -371,11 +420,9 @@ def freqz_zpk(z, p, k, worN=None, whole=False):
     k : scalar
         Gain of a linear filter
     worN : {None, int, array_like}, optional
-        If None (default), then compute at 512 frequencies equally spaced
-        around the unit circle.
-        If a single integer, then compute at that many frequencies.
-        If an array_like, compute the response at the frequencies given (in
-        radians/sample).
+        If single integer (default 512, same as None), then compute at `worN`
+        frequencies equally spaced around the unit circle. If an array_like,
+        compute the response at the frequencies given (in radians/sample).
     whole : bool, optional
         Normally, frequencies are computed from 0 to the Nyquist frequency,
         pi radians/sample (upper-half of unit-circle).  If `whole` is True,
@@ -429,8 +476,7 @@ def freqz_zpk(z, p, k, worN=None, whole=False):
     else:
         lastpoint = pi
     if worN is None:
-        N = 512
-        w = numpy.linspace(0, lastpoint, N, endpoint=False)
+        w = numpy.linspace(0, lastpoint, 512, endpoint=False)
     elif isinstance(worN, int):
         N = worN
         w = numpy.linspace(0, lastpoint, N, endpoint=False)
@@ -580,8 +626,10 @@ def sosfreqz(sos, worN=None, whole=False):
         If None (default), then compute at 512 frequencies equally spaced
         around the unit circle.
         If a single integer, then compute at that many frequencies.
+        Using a number that is fast for FFT computations can result in
+        faster computations (see Notes of `freqz`).
         If an array_like, compute the response at the frequencies given (in
-        radians/sample).
+        radians/sample; must be 1D).
     whole : bool, optional
         Normally, frequencies are computed from 0 to the Nyquist frequency,
         pi radians/sample (upper-half of unit-circle).  If `whole` is True,

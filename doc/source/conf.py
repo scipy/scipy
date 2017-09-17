@@ -217,8 +217,9 @@ latex_use_modindex = False
 # Intersphinx configuration
 # -----------------------------------------------------------------------------
 intersphinx_mapping = {
-        'http://docs.python.org/dev': None,
-        'https://docs.scipy.org/doc/numpy': None,
+        'python': ('http://docs.python.org/dev', None),
+        'numpy': ('https://docs.scipy.org/doc/numpy', None),
+        'matplotlib': ('http://matplotlib.org', None),
 }
 
 
