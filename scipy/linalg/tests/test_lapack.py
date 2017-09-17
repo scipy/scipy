@@ -735,10 +735,11 @@ class TestHetrd(object):
 def test_gglse():
     # Example data taken from NAG manual
     for ind, dtype in enumerate(DTYPES):
-
+        # DTYPES = <s,d,c,z> gglse
         func, func_lwork = get_lapack_funcs(('gglse', 'gglse_lwork'),
                                             dtype=dtype)
         lwork = _compute_lwork(func_lwork, m=6, n=4, p=2)
+        # For <s,d>gglse
         if ind < 2:
             a = np.array([[-0.57, -1.28, -0.39, 0.25],
                           [-1.93, 1.08, -0.31, -2.14],
@@ -748,6 +749,7 @@ def test_gglse():
                           [-0.02, 1.03, -1.43, 0.50]], dtype=dtype)
             c = np.array([-1.50, -2.14, 1.23, -0.54, -1.68, 0.82], dtype=dtype)
             d = np.array([0., 0.], dtype=dtype)
+        # For <s,d>gglse
         else:
             a = np.array([[0.96-0.81j, -0.03+0.96j, -0.91+2.06j, -0.05+0.41j],
                           [-0.98+1.98j, -1.20+0.19j, -0.66+0.42j, -0.81+0.56j],
@@ -782,16 +784,20 @@ def test_gglse():
 def test_sycon_hecon():
     seed(1234)
     for ind, dtype in enumerate(DTYPES+COMPLEX_DTYPES):
+        # DTYPES + COMPLEX DTYPES = <s,d,c,z> sycon + <c,z>hecon
         n = 10
+        # For <s,d,c,z>sycon
         if ind < 4:
             func_lwork = get_lapack_funcs('sytrf_lwork', dtype=dtype)
             funcon, functrf = get_lapack_funcs(('sycon', 'sytrf'), dtype=dtype)
             A = (rand(n, n)).astype(dtype)
+        # For <c,z>hecon
         else:
             func_lwork = get_lapack_funcs('hetrf_lwork', dtype=dtype)
             funcon, functrf = get_lapack_funcs(('hecon', 'hetrf'), dtype=dtype)
             A = (rand(n, n) + rand(n, n)*1j).astype(dtype)
 
+        # Since sycon only refers to upper/lower part, conj() is safe here.
         A = (A + A.conj().T)/2 + 2*np.eye(n, dtype=dtype)
 
         anorm = np.linalg.norm(A, 1)
