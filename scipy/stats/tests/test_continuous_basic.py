@@ -175,15 +175,19 @@ def cases_test_moments():
         cond1 = distname not in fail_normalization
         cond2 = distname not in fail_higher
 
-        yield distname, arg, cond1, cond2
+        yield distname, arg, cond1, cond2, False
 
         if not cond1 or not cond2:
-            yield pytest.param(distname, arg, True, True, marks=pytest.mark.xfail)
+            # Run the distributions that have issues twice, once skipping the
+            # not_ok parts, once with the not_ok parts but marked as knownfail
+            yield pytest.param(distname, arg, True, True, True,
+                               marks=pytest.mark.xfail)
 
 
 @pytest.mark.slow
-@pytest.mark.parametrize('distname,arg,normalization_ok,higher_ok', cases_test_moments())
-def test_moments(distname, arg, normalization_ok, higher_ok):
+@pytest.mark.parametrize('distname,arg,normalization_ok,higher_ok,is_xfailing',
+                         cases_test_moments())
+def test_moments(distname, arg, normalization_ok, higher_ok, is_xfailing):
     try:
         distfn = getattr(stats, distname)
     except TypeError:
@@ -194,6 +198,8 @@ def test_moments(distname, arg, normalization_ok, higher_ok):
         sup.filter(IntegrationWarning,
                    "The integral is probably divergent, or slowly convergent.")
         sup.filter(category=DeprecationWarning, message=".*frechet_")
+        if is_xfailing:
+            sup.filter(IntegrationWarning)
 
         m, v, s, k = distfn.stats(*arg, moments='mvsk')
 
