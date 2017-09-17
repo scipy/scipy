@@ -430,7 +430,8 @@ class TestTruncnorm(object):
     def test_gh_2477_large_values(self):
         # Check a case that fails because of extreme tailness.
         low, high = 100, 101
-        x = stats.truncnorm.rvs(low, high, 0, 1, size=10)
+        with np.errstate(divide='ignore'):
+            x = stats.truncnorm.rvs(low, high, 0, 1, size=10)
         assert_(low < x.min() < x.max() < high)
 
     def test_gh_1489_trac_962_rvs(self):
@@ -3163,7 +3164,7 @@ def test_crystalball_function_moments():
     expected_0th_moment = np.array([1.0, 1.0, 1.0, 1.0, 1.0])
     calculated_0th_moment = stats.crystalball._munp(0, beta, m)
     assert_allclose(expected_0th_moment, calculated_0th_moment, rtol=0.001)
-    
+
     # calculated using wolframalpha.com
     # e.g. for beta = 2 and m = 3 we calculate the norm like this:
     # integrate exp(-x^2/2) from -2 to infinity + integrate (3/2)^3*exp(-2^2/2)*(3/2-2-x)^(-3) from -infinity to -2
@@ -3172,19 +3173,19 @@ def test_crystalball_function_moments():
     expected_1th_moment = np.array([-0.21992, -3.03265, np.inf, -0.135335, -0.003174]) / norm
     calculated_1th_moment = stats.crystalball._munp(1, beta, m)
     assert_allclose(expected_1th_moment, calculated_1th_moment, rtol=0.001)
-    
+
     expected_2th_moment = np.array([np.inf, np.inf, np.inf, 3.2616, 2.519908]) / norm
     calculated_2th_moment = stats.crystalball._munp(2, beta, m)
     assert_allclose(expected_2th_moment, calculated_2th_moment, rtol=0.001)
-    
+
     expected_3th_moment = np.array([np.inf, np.inf, np.inf, np.inf, -0.0577668]) / norm
     calculated_3th_moment = stats.crystalball._munp(3, beta, m)
     assert_allclose(expected_3th_moment, calculated_3th_moment, rtol=0.001)
-    
+
     expected_4th_moment = np.array([np.inf, np.inf, np.inf, np.inf, 7.78468]) / norm
     calculated_4th_moment = stats.crystalball._munp(4, beta, m)
     assert_allclose(expected_4th_moment, calculated_4th_moment, rtol=0.001)
-    
+
     expected_5th_moment = np.array([np.inf, np.inf, np.inf, np.inf, -1.31086]) / norm
     calculated_5th_moment = stats.crystalball._munp(5, beta, m)
     assert_allclose(expected_5th_moment, calculated_5th_moment, rtol=0.001)
@@ -3218,7 +3219,7 @@ class TestHistogram(object):
         histogram = np.histogram([1, 2, 2, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 5,
                                   6, 6, 6, 6, 7, 7, 7, 8, 8, 9], bins=8)
         self.template = stats.rv_histogram(histogram)
-        
+
         data = stats.norm.rvs(loc=1.0, scale=2.5,size=10000, random_state=123)
         norm_histogram = np.histogram(data, bins=50)
         self.norm_template = stats.rv_histogram(norm_histogram)
@@ -3266,7 +3267,7 @@ class TestHistogram(object):
         assert_allclose(self.template.ppf(self.template.cdf(x)), x)
         x = np.linspace(0.0, 1.0, 100)
         assert_allclose(self.template.cdf(self.template.ppf(x)), x)
-        
+
         x = np.linspace(-2, 2, 10)
         assert_allclose(self.norm_template.cdf(x),
                         stats.norm.cdf(x, loc=1.0, scale=2.5), rtol=0.1)
@@ -3297,7 +3298,7 @@ class TestHistogram(object):
         for n in range(4):
             assert_allclose(self.norm_template._munp(n),
                             stats.norm._munp(n, 1.0, 2.5), rtol=0.05)
-    
+
     def test_entropy(self):
         assert_allclose(self.norm_template.entropy(),
                         stats.norm.entropy(loc=1.0, scale=2.5), rtol=0.05)
