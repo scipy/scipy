@@ -22,9 +22,27 @@ __all__ = ['solve', 'solve_triangular', 'solveh_banded', 'solve_banded',
 
 
 # Linear equations
+def _solve_check(n, info, lamch=None, rcond=None):
+    """ Check arguments during the different steps of the solution phase """
+    if info < 0:
+        raise ValueError('LAPACK reported an illegal value in {}-th argument'
+                         '.'.format(-info))
+    elif 0 < info:
+        raise LinAlgError('Matrix is singular.')
+
+    if lamch is None:
+        return
+    E = lamch('E')
+    if rcond < E:
+        warnings.warn('scipy.linalg.solve\nIll-conditioned matrix detected.'
+                      ' Result is not guaranteed to be accurate.\nReciprocal '
+                      'condition number/precision: {} / {}'.format(rcond, E),
+                      RuntimeWarning)
+
+
 def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
           overwrite_b=False, debug=None, check_finite=True, assume_a='gen',
-          transposed=False):
+          transposed=None, form='none', refine=False):
     """
     Solves the linear equation set ``a * x = b`` for the unknown ``x``
     for square ``a`` matrix.
@@ -72,9 +90,20 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
     assume_a : str, optional
         Valid entries are explained above.
-    transposed: bool, optional
-        If True, depending on the data type ``a^T x = b`` or ``a^H x = b`` is
-        solved (only taken into account for ``'gen'``).
+    form: {'none', 'trans', 'conj'}
+        Determines the solution form:
+
+          ``'none'``: ``a x = b``
+          ``'trans'``: ``a^T x = b``
+          ``'conj'``: ``a^H x = b``
+
+        Specifying a form other than ``'none'`` is only valid for
+        ``assume_a='gen', refine=True``, else a `ValueError` will be issued.
+    refine : bool, optional
+        If True the expert LAPACK routines are used which produces more precise
+        solutions at the expense of more computations. For ``NRHS << N`` this
+        has minimal influence of the performance, whereas for ``NRHS`` close to
+        ``N`` it can be substantially slower.
 
     Returns
     -------
@@ -92,7 +121,7 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
 
     Examples
     --------
-    Given `a` and `b`, solve for `x`:
+    Given `a` and `b`, solve for ``x``:
 
     >>> a = np.array([[3, 2, 0], [1, -1, 0], [0, 5, 1]])
     >>> b = np.array([2, 4, -1])
@@ -103,17 +132,32 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
     >>> np.dot(a, x) == b
     array([ True,  True,  True], dtype=bool)
 
+    To check whether the `refine` keyword improves the accuracy of the
+    solution:
+
+    >>> import numpy as np
+    >>> a = np.random.rand(10, 10)
+    >>> b = np.random.rand(10, 10)
+    >>> from scipy import linalg
+    >>> x_fast = linalg.solve(a, b)
+    >>> x_refined = linalg.solve(a, b, refine=True)
+    >>> np.linalg.norm(a.dot(x_fast) - a.dot(x_refined), 'fro') < 1e-12
+    True
+
+
     Notes
     -----
-    If the input b matrix is a 1D array with N elements, when supplied
-    together with an NxN input a, it is assumed as a valid column vector
+    If the input `b` matrix is a 1D array with N elements, when supplied
+    together with an NxN input `a`, it is assumed as a valid column vector
     despite the apparent size mismatch. This is compatible with the
     numpy.dot() behavior and the returned result is still 1D array.
 
     The generic, symmetric, hermitian and positive definite solutions are
-    obtained via calling ?GESVX, ?SYSVX, ?HESVX, and ?POSVX routines of
-    LAPACK respectively.
+    obtained via calling ?GESV, ?SYSV, ?HESV, and ?POSV routines of
+    LAPACK respectively for ``refine=False``, else ?GESVX, ?SYSVX, ?HESVX,
+    and ?POSVX are called.
     """
+
     # Flags for 1D or nD right hand side
     b_is_1D = False
     b_is_ND = False
@@ -148,80 +192,169 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
     elif b1.ndim > 2:
         b_is_ND = True
 
-    r_or_c = complex if np.iscomplexobj(a1) else float
-
-    if assume_a in ('gen', 'sym', 'her', 'pos'):
-        _structure = assume_a
-    else:
-        raise ValueError('{} is not a recognized matrix structure'
-                         ''.format(assume_a))
-
-    # Deprecate keyword "debug"
-    if debug is not None:
-        warnings.warn('Use of the "debug" keyword is deprecated '
-                      'and this keyword will be removed in the future '
-                      'versions of SciPy.', DeprecationWarning)
-
-    # Backwards compatibility - old keyword.
+    # Backwards compatibility - old keyword...
     if sym_pos:
         assume_a = 'pos'
 
-    if _structure == 'gen':
-        gesvx = get_lapack_funcs('gesvx', (a1, b1))
-        trans_conj = 'N'
-        if transposed:
-            trans_conj = 'T' if r_or_c is float else 'H'
-        (_, _, _, _, _, _, _,
-         x, rcond, _, _, info) = gesvx(a1, b1,
-                                       trans=trans_conj,
-                                       overwrite_a=overwrite_a,
-                                       overwrite_b=overwrite_b
-                                       )
-    elif _structure == 'sym':
-        sysvx, sysvx_lw = get_lapack_funcs(('sysvx', 'sysvx_lwork'), (a1, b1))
-        lwork = _compute_lwork(sysvx_lw, n, lower)
-        _, _, _, _, x, rcond, _, _, info = sysvx(a1, b1, lwork=lwork,
-                                                 lower=lower,
-                                                 overwrite_a=overwrite_a,
-                                                 overwrite_b=overwrite_b
-                                                 )
-    elif _structure == 'her':
-        hesvx, hesvx_lw = get_lapack_funcs(('hesvx', 'hesvx_lwork'), (a1, b1))
-        lwork = _compute_lwork(hesvx_lw, n, lower)
-        _, _, x, rcond, _, _, info = hesvx(a1, b1, lwork=lwork,
-                                           lower=lower,
-                                           overwrite_a=overwrite_a,
-                                           overwrite_b=overwrite_b
-                                           )
-    else:
-        posvx = get_lapack_funcs('posvx', (a1, b1))
-        _, _, _, _, _, x, rcond, _, _, info = posvx(a1, b1,
-                                                    lower=lower,
-                                                    overwrite_a=overwrite_a,
-                                                    overwrite_b=overwrite_b
-                                                    )
+    if assume_a not in ('gen', 'sym', 'her', 'pos'):
+        raise ValueError('{} is not a recognized matrix structure'
+                         ''.format(assume_a))
 
-    # Unlike ?xxSV, ?xxSVX writes the solution x to a separate array, and
-    # overwrites b with its scaled version which is thrown away. Thus, the
-    # solution does not admit the same shape with the original b. For
-    # backwards compatibility, we reshape it manually.
+    if form != 'none':
+        if assume_a != 'gen':
+            raise ValueError('scipy.linalg.solve\n form={} solution not available '
+                             'without "assume_a=''gen''" keyword.'.format(form))
+
+    # The routines require different keyword arguments (sadly)
+    if refine:
+        d_form = {
+            'none': 'N',
+            'trans': 'T',
+            'conj': 'C'
+        }
+    else:
+        d_form = {
+            'none': 0,
+            'trans': 1,
+            'conj': 2
+        }
+
+    trans = d_form.get(form, None)
+    if trans is None:
+        raise ValueError('scipy.linalg.solve\nonly "none", "trans" or "conj" are '
+                         'allowed as arguments to "form".\n  {} is not allowed.'
+                         ''.format(form))
+
+    # Deprecate keyword "debug" and "transposed"
+    if debug is not None:
+        warnings.warn('Use of the "debug" keyword is deprecated '
+                      'and this keyword will be removed in future '
+                      'versions of SciPy.', DeprecationWarning)
+    if transposed is not None:
+        warnings.warn('Use of the "transposed" keyword is deprecated '
+                      'and this keyword will be removed in future '
+                      'versions of SciPy.', DeprecationWarning)
+
+    if refine:
+        if assume_a == 'gen':
+            gesvx = get_lapack_funcs('gesvx', (a1, b1))
+            (_, _, _, _, _, _, _,
+             x, rcond, _, _, info) = gesvx(a1, b1,
+                                           trans=trans,
+                                           overwrite_a=overwrite_a,
+                                           overwrite_b=overwrite_b)
+
+        elif assume_a == 'sym':
+            sysvx, sysvx_lw = get_lapack_funcs(('sysvx', 'sysvx_lwork'), (a1, b1))
+            lwork = _compute_lwork(sysvx_lw, n, lower)
+            _, _, _, _, x, rcond, _, _, info = sysvx(a1, b1, lwork=lwork,
+                                                     lower=lower,
+                                                     overwrite_a=overwrite_a,
+                                                     overwrite_b=overwrite_b)
+
+        elif assume_a == 'her':
+            hesvx, hesvx_lw = get_lapack_funcs(('hesvx', 'hesvx_lwork'), (a1, b1))
+            lwork = _compute_lwork(hesvx_lw, n, lower)
+            _, _, x, rcond, _, _, info = hesvx(a1, b1, lwork=lwork,
+                                               lower=lower,
+                                               overwrite_a=overwrite_a,
+                                               overwrite_b=overwrite_b)
+
+        else:
+            posvx = get_lapack_funcs('posvx', (a1, b1))
+            _, _, _, _, _, x, rcond, _, _, info = posvx(a1, b1,
+                                                        lower=lower,
+                                                        overwrite_a=overwrite_a,
+                                                        overwrite_b=overwrite_b)
+
+        if info > n:
+            warnings.warn('scipy.linalg.solve\nIll-conditioned matrix detected.'
+                          ' Result is not guaranteed to be accurate.\nReciprocal'
+                          ' condition number: {}'.format(rcond), RuntimeWarning)
+
+        # Unlike ?xxSV, ?xxSVX writes the solution x to a separate array, and
+        # overwrites b with its scaled version which is thrown away. Thus, the
+        # solution does not admit the same shape with the original b. For
+        # backwards compatibility, we reshape it manually.
+        if b_is_ND:
+            x = x.reshape(*b1.shape, order='F')
+
+    else:
+        # Get the correct lamch function.
+        # The LAMCH functions only exists for S and D
+        # So for complex values we have to convert to real/double.
+        if a1.dtype.char in 'fF':  # single precision
+            lamch = get_lapack_funcs(('lamch',), (np.array(0, dtype='f'),))[0]
+        else:
+            lamch = get_lapack_funcs(('lamch',), (np.array(0, dtype='d'),))[0]
+
+        # Currently we do not have the other forms of the norm calculators
+        #   lansy, lanpo, lanhe.
+        # However, in any case they only reduce computations slightly...
+        lange = get_lapack_funcs(('lange',), (a1,))[0]
+        # Since the I-norm and 1-norm are the same for symmetric matrices
+        # we can collect them all in this one call
+        # Note however, that when issuing 'gen' and form!='none', then
+        # the I-norm should be used
+        if trans == 'none':
+            norm = '1'
+        else:
+            norm = 'I'
+        anorm = lange(norm, a1)
+
+        if assume_a == 'gen':
+            gecon, getrf, getrs = get_lapack_funcs(('gecon', 'getrf', 'getrs'),
+                                                   (a1, b1))
+            lu, ipvt, info = getrf(a1, overwrite_a=overwrite_a)
+            _solve_check(n, info)
+            x, info = getrs(lu, ipvt, b1,
+                            trans=trans, overwrite_b=overwrite_b)
+            _solve_check(n, info)
+            rcond, info = gecon(lu, anorm, norm=norm)
+
+        elif assume_a == 'her':
+            hecon, hesv, hesv_lw = get_lapack_funcs(('hecon', 'hesv', 'hesv_lwork'),
+                                                    (a1, b1))
+            lwork = _compute_lwork(hesv_lw, n, lower)
+            lu, ipvt, x, info = hesv(a1, b1, lwork=lwork,
+                                     lower=lower,
+                                     overwrite_a=overwrite_a,
+                                     overwrite_b=overwrite_b)
+            _solve_check(n, info)
+            rcond, info = hecon(lu, ipvt, anorm)
+
+        elif assume_a == 'sym':
+            sycon, sysv, sysv_lw = get_lapack_funcs(('sycon', 'sysv', 'sysv_lwork'),
+                                                    (a1, b1))
+            lwork = _compute_lwork(sysv_lw, n, lower)
+            lu, ipvt, x, info = sysv(a1, b1, lwork=lwork,
+                                     lower=lower,
+                                     overwrite_a=overwrite_a,
+                                     overwrite_b=overwrite_b)
+            _solve_check(n, info)
+            rcond, info = sycon(lu, ipvt, anorm)
+
+        else:
+            pocon, posv = get_lapack_funcs(('pocon', 'posv'),
+                                           (a1, b1))
+            lu, x, info = posv(a1, b1, lower=lower,
+                               overwrite_a=overwrite_a,
+                               overwrite_b=overwrite_b)
+            _solve_check(n, info)
+            rcond, info = pocon(lu, anorm)
+
+        _solve_check(n, info, lamch, rcond)
+
     if b_is_1D:
         x = x.ravel()
-    if b_is_ND:
-        x = x.reshape(*b1.shape, order='F')
 
-    if info < 0:
+    if info == 0:
+        return x
+    elif info < 0:
         raise ValueError('LAPACK reported an illegal value in {}-th argument'
                          '.'.format(-info))
-    elif info == 0:
-        return x
-    elif 0 < info <= n:
+    elif 0 < info:
         raise LinAlgError('Matrix is singular.')
-    elif info > n:
-        warnings.warn('scipy.linalg.solve\nIll-conditioned matrix detected.'
-                      ' Result is not guaranteed to be accurate.\nReciprocal'
-                      ' condition number: {}'.format(rcond), RuntimeWarning)
-        return x
 
 
 def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
