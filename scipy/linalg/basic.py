@@ -198,7 +198,7 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
     if transposed:
         trans = 1
         norm = 'I'
-        if not r_or_c is float:
+        if r_or_c is not float:
             raise ValueError('scipy.linalg.solve can not solve a^T x = b '
                              'for complex matrices. See version 1.1.X.')
     else:
