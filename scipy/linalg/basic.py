@@ -91,8 +91,8 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
     assume_a : str, optional
         Valid entries are explained above.
     transposed: bool, optional
-        If True, depending on the data type ``a^T x = b`` or ``a^H x = b`` is
-        solved (only taken into account for ``'gen'``).
+        If True, ``a^T x = b`` or ``a^H x = b`` is solved (only taken into
+        account for ``'gen'``). Currently not working for complex matrices.
 
     Returns
     -------
@@ -199,8 +199,8 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
         trans = 1
         norm = 'I'
         if r_or_c is not float:
-            raise ValueError('scipy.linalg.solve can not solve a^T x = b '
-                             'for complex matrices. See version 1.1.X.')
+            raise ValueError('scipy.linalg.solve can currently not solve '
+                             'a^T x = b or a^H x = b for complex matrices.')
     else:
         trans = 0
         norm = '1'
