@@ -1684,7 +1684,7 @@ def _get_tick_rotation(p):
             return _drotation[k]
 
 
-def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
+def _plot_dendrogram(icoord, dcoord, ivl, p, n, mh, orientation,
                      no_labels, color_list, leaf_font_size=None,
                      leaf_rotation=None, contraction_marks=None,
                      ax=None):
@@ -1714,8 +1714,8 @@ def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
     if orientation == 'top':
         ax.set_ylim([0, dvw])
         ax.set_xlim([0, ivw])
-        xlines = icoords
-        ylines = dcoords
+        xlines = icoord
+        ylines = dcoord
         if no_labels:
             ax.set_xticks([])
             ax.set_xticklabels([])
@@ -1742,8 +1742,8 @@ def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
     elif orientation == 'bottom':
         ax.set_ylim([dvw, 0])
         ax.set_xlim([0, ivw])
-        xlines = icoords
-        ylines = dcoords
+        xlines = icoord
+        ylines = dcoord
         if no_labels:
             ax.set_xticks([])
             ax.set_xticklabels([])
@@ -1771,8 +1771,8 @@ def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
     elif orientation == 'left':
         ax.set_xlim([0, dvw])
         ax.set_ylim([0, ivw])
-        xlines = dcoords
-        ylines = icoords
+        xlines = dcoord
+        ylines = icoord
         if no_labels:
             ax.set_yticks([])
             ax.set_yticklabels([])
@@ -1794,8 +1794,8 @@ def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
     elif orientation == 'right':
         ax.set_xlim([dvw, 0])
         ax.set_ylim([0, ivw])
-        xlines = dcoords
-        ylines = icoords
+        xlines = dcoord
+        ylines = icoord
         if no_labels:
             ax.set_yticks([])
             ax.set_yticklabels([])
@@ -2083,12 +2083,12 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
         A dictionary of data structures computed to render the
         dendrogram. Its has the following keys:
 
-        ``'icoords'``
+        ``'icoord'``
           A list of lists ``[I1, I2, ..., Ip]`` where ``Ik`` is a list of 4
           independent variable coordinates corresponding to the line that
           represents the k'th link painted.
 
-        ``'dcoords'``
+        ``'dcoord'``
           A list of lists ``[I2, I2, ..., Ip]`` where ``Ik`` is a list of 4
           independent variable coordinates corresponding to the line that
           represents the k'th link painted.
