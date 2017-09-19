@@ -31,6 +31,7 @@ Using any of these subpackages requires an explicit import.  For example,
  odr                          --- Orthogonal Distance Regression
  optimize                     --- Optimization Tools
  signal                       --- Signal Processing Tools
+ signal.windows               --- Window functions
  sparse                       --- Sparse Matrices
  sparse.linalg                --- Sparse Linear Algebra
  sparse.linalg.dsolve         --- Linear Solvers

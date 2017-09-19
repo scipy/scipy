@@ -8,20 +8,20 @@ objects.  Occasionally this may be convenient, but be aware that if you do so
 your code may break without warning in future releases.  Some widely understood
 rules for what is and isn't public in Python are:
 
-  - Methods / functions / classes and module attributes whose names begin 
+  - Methods / functions / classes and module attributes whose names begin
     with a leading underscore are private.
-  - If a class name begins with a leading underscore none of its members are 
+  - If a class name begins with a leading underscore none of its members are
     public, whether or not they begin with a leading underscore.
-  - If a module name in a package begins with a leading underscore none of 
+  - If a module name in a package begins with a leading underscore none of
     its members are public, whether or not they begin with a leading
     underscore.
   - If a module or package defines ``__all__`` that authoritatively defines the
     public interface.
-  - If a module or package doesn't define ``__all__`` then all names that don't 
+  - If a module or package doesn't define ``__all__`` then all names that don't
     start with a leading underscore are public.
 
 .. note:: Reading the above guidelines one could draw the conclusion that every
-          private module or object starts with an underscore.  This is not the 
+          private module or object starts with an underscore.  This is not the
           case; the presence of underscores do mark something as private, but
           the absence of underscores do not mark something as public.
 
@@ -119,6 +119,8 @@ change is made.
 * scipy.optimize
 
 * scipy.signal
+
+  - windows
 
 * scipy.sparse
 

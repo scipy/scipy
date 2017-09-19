@@ -86,6 +86,7 @@ PUBLIC_SUBMODULES = [
     'odr',
     'optimize',
     'signal',
+    'signal.windows',
     'sparse',
     'sparse.csgraph',
     'sparse.linalg',
@@ -126,10 +127,15 @@ REFGUIDE_ALL_SKIPLIST = [
 # these names are not required to be in an autosummary:: listing
 # despite being in ALL
 REFGUIDE_AUTOSUMMARY_SKIPLIST = [
-    r'scipy\.special\..*_roots', # old aliases for scipy.special.*_roots
-	r'scipy\.linalg\.solve_lyapunov' # deprecated name
+    r'scipy\.special\..*_roots',  # old aliases for scipy.special.*_roots
+    r'scipy\.linalg\.solve_lyapunov',  # deprecated name
 ]
-
+# deprecated windows in scipy.signal namespace
+for name in ('barthann', 'bartlett', 'blackmanharris', 'blackman', 'bohman',
+             'boxcar', 'chebwin', 'cosine', 'exponential', 'flattop',
+             'gaussian', 'general_gaussian', 'hamming', 'hann', 'hanning',
+             'kaiser', 'nuttall', 'parzen', 'slepian', 'triang', 'tukey'):
+    REFGUIDE_AUTOSUMMARY_SKIPLIST.append(r'scipy\.signal\.' + name)
 
 HAVE_MATPLOTLIB = False
 
