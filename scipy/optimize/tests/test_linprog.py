@@ -347,6 +347,7 @@ class LinprogCommonTests(object):
             with suppress_warnings() as sup:
                 sup.filter(RuntimeWarning, "scipy.linalg.solve\nIll...")
                 sup.filter(OptimizeWarning, "A_eq does not appear...")
+                sup.filter(OptimizeWarning, "Solving system with option...")
                 res = linprog(c=cost, A_eq=A_eq, b_eq=b_eq, bounds=bounds,
                               method=self.method, options=self.options)
         _assert_success(res, desired_fun=14)
@@ -865,6 +866,7 @@ class TestLinprogIPSpecific:
         A, b, c = lpgen_2d(20, 20)
         with suppress_warnings() as sup:
             sup.filter(RuntimeWarning, "scipy.linalg.solve\nIll...")
+            sup.filter(OptimizeWarning, "Solving system with option...")
             res = linprog(c, A_ub=A, b_ub=b, method=self.method,
                           options={"ip": True, "disp": True})
             # ip code is independent of sparse/dense
