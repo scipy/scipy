@@ -113,16 +113,18 @@ the ``scipy-wheels`` build scripts automatically build the last tag.
 
 To build wheels, push a commit to the master branch of
 https://github.com/MacPython/scipy-wheels .  This triggers builds for all needed
-Python versions on TravisCI.  Check in the ``.travis.yml`` config file what
-version of Python and Numpy are used for the builds (it needs to be the lowest
-supported Numpy version for each Python version).  See the README file in the
-scipy-wheels repo for more details.
+Python versions on TravisCI.  Update and check the ``.travis.yml`` and ``appveyor.yml``
+config files what tag to build, and what Python and Numpy are used for the builds
+(it needs to be the lowest supported Numpy version for each Python version).
+See the README file in the scipy-wheels repo for more details.
 
-The TravisCI builds run the tests from the built wheels and if they pass upload
-the wheels to http://wheels.scipy.org/.  From there you can download them for
-uploading to PyPI.  This can be done in an automated fashion with ``terryfy``
-(note the -n switch which makes it only download the wheels and skip the upload
-to PyPI step - we want to be able to check the wheels and put their checksums
+The TravisCI and Appveyor builds run the tests from the built wheels and if they pass,
+upload the wheels to a container pointed to at https://github.com/MacPython/scipy-wheels
+
+From there you can download them for uploading to PyPI.  This can be
+done in an automated fashion with ``terryfy`` (note the -n switch
+which makes it only download the wheels and skip the upload to PyPI
+step - we want to be able to check the wheels and put their checksums
 into README first)::
 
   $ python wheel-uploader -n -v -c -w ~/PATH_TO_STORE_WHEELS -t manylinux1 scipy 0.19.0
