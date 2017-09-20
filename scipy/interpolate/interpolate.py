@@ -28,7 +28,7 @@ from . import dfitpack
 from . import _fitpack
 from .polyint import _Interpolator1D
 from . import _ppoly
-from .fitpack2 import RectBivariateSpline
+from .fitpack2 import RectBivariateSpline, UnivariateSpline
 from .interpnd import _ndim_coords_from_arrays
 from ._bsplines import make_interp_spline, BSpline
 
@@ -94,8 +94,8 @@ def lagrange(x, w):
         for k in xrange(M):
             if k == j:
                 continue
-            fac = x[j]-x[k]
-            pt *= poly1d([1.0, -x[k]])/fac
+            fac = x[j] - x[k]
+            pt *= poly1d([1.0, -x[k]]) / fac
         p += pt
     return p
 
@@ -579,7 +579,7 @@ class interp1d(_Interpolator1D):
         # 3. Clip x_new_indices so that they are within the range of
         #    self.x indices and at least 1.  Removes mis-interpolation
         #    of x_new[n] = x[0]
-        x_new_indices = x_new_indices.clip(1, len(self.x)-1).astype(int)
+        x_new_indices = x_new_indices.clip(1, len(self.x) - 1).astype(int)
 
         # 4. Calculate the slope of regions that each x_new value falls in.
         lo = x_new_indices - 1
@@ -595,7 +595,7 @@ class interp1d(_Interpolator1D):
         slope = (y_hi - y_lo) / (x_hi - x_lo)[:, None]
 
         # 5. Calculate the actual value for each entry in x_new.
-        y_new = slope*(x_new - x_lo)[:, None] + y_lo
+        y_new = slope * (x_new - x_lo)[:, None] + y_lo
 
         return y_new
 
@@ -609,7 +609,7 @@ class interp1d(_Interpolator1D):
         x_new_indices = searchsorted(self.x_bds, x_new, side='left')
 
         # 3. Clip x_new_indices so that they are within the range of x indices.
-        x_new_indices = x_new_indices.clip(0, len(self.x)-1).astype(intp)
+        x_new_indices = x_new_indices.clip(0, len(self.x) - 1).astype(intp)
 
         # 4. Calculate the actual value for each entry in x_new.
         y_new = self._y[x_new_indices]
@@ -691,7 +691,7 @@ class _PPolyBase(object):
 
         if not (0 <= axis < self.c.ndim - 1):
             raise ValueError("axis=%s must be between 0 and %s" %
-                             (axis, self.c.ndim-1))
+                             (axis, self.c.ndim - 1))
 
         self.axis = axis
         if axis != 0:
@@ -701,8 +701,8 @@ class _PPolyBase(object):
             #                                               ^
             #                                              axis
             # So we roll two of them.
-            self.c = np.rollaxis(self.c, axis+1)
-            self.c = np.rollaxis(self.c, axis+1)
+            self.c = np.rollaxis(self.c, axis + 1)
+            self.c = np.rollaxis(self.c, axis + 1)
 
         if self.x.ndim != 1:
             raise ValueError("x must be 1-dimensional")
@@ -712,7 +712,7 @@ class _PPolyBase(object):
             raise ValueError("c must have at least 2 dimensions")
         if self.c.shape[0] == 0:
             raise ValueError("polynomial must be at least of order 0")
-        if self.c.shape[1] != self.x.size-1:
+        if self.c.shape[1] != self.x.size - 1:
             raise ValueError("number of coefficients != len(x)-1")
         dx = np.diff(self.x)
         if not (np.all(dx >= 0) or np.all(dx <= 0)):
@@ -723,7 +723,7 @@ class _PPolyBase(object):
 
     def _get_dtype(self, dtype):
         if np.issubdtype(dtype, np.complexfloating) \
-               or np.issubdtype(self.c.dtype, np.complexfloating):
+                or np.issubdtype(self.c.dtype, np.complexfloating):
             return np.complex_
         else:
             return np.float_
@@ -830,12 +830,12 @@ class _PPolyBase(object):
                       dtype=dtype)
 
         if action == 'append':
-            c2[k2-self.c.shape[0]:, :self.c.shape[1]] = self.c
-            c2[k2-c.shape[0]:, self.c.shape[1]:] = c
+            c2[k2 - self.c.shape[0]:, :self.c.shape[1]] = self.c
+            c2[k2 - c.shape[0]:, self.c.shape[1]:] = c
             self.x = np.r_[self.x, x]
         elif action == 'prepend':
-            c2[k2-self.c.shape[0]:, :c.shape[1]] = c
-            c2[k2-c.shape[0]:, c.shape[1]:] = self.c
+            c2[k2 - self.c.shape[0]:, :c.shape[1]] = c
+            c2[k2 - c.shape[0]:, c.shape[1]:] = self.c
             self.x = np.r_[x, self.x]
 
         self.c = c2
@@ -889,7 +889,8 @@ class _PPolyBase(object):
         if self.axis != 0:
             # transpose to move the calculated values to the interpolation axis
             l = list(range(out.ndim))
-            l = l[x_ndim:x_ndim+self.axis] + l[:x_ndim] + l[x_ndim+self.axis:]
+            l = l[x_ndim:x_ndim + self.axis] + \
+                l[:x_ndim] + l[x_ndim + self.axis:]
             out = out.transpose(l)
         return out
 
@@ -953,6 +954,7 @@ class PPoly(_PPolyBase):
     unstable.  Precision problems can start to appear for orders
     larger than 20-30.
     """
+
     def _evaluate(self, x, nu, extrapolate, out):
         _ppoly.evaluate(self.c.reshape(self.c.shape[0], self.c.shape[1], -1),
                         self.x, x, nu, bool(extrapolate), out)
@@ -996,7 +998,7 @@ class PPoly(_PPolyBase):
 
         # multiply by the correct rising factorials
         factor = spec.poch(np.arange(c2.shape[0], 0, -1), nu)
-        c2 *= factor[(slice(None),) + (None,)*(c2.ndim-1)]
+        c2 *= factor[(slice(None),) + (None,) * (c2.ndim - 1)]
 
         # construct a compatible polynomial
         return self.construct_fast(c2, self.x, self.extrapolate, self.axis)
@@ -1040,7 +1042,7 @@ class PPoly(_PPolyBase):
 
         # divide by the correct rising factorials
         factor = spec.poch(np.arange(self.c.shape[0], 0, -1), nu)
-        c[:-nu] /= factor[(slice(None),) + (None,)*(c.ndim-1)]
+        c[:-nu] /= factor[(slice(None),) + (None,) * (c.ndim - 1)]
 
         # fix continuity of added degrees of freedom
         self._ensure_c_contiguous()
@@ -1259,10 +1261,10 @@ class PPoly(_PPolyBase):
         else:
             t, c, k = tck
 
-        cvals = np.empty((k + 1, len(t)-1), dtype=c.dtype)
+        cvals = np.empty((k + 1, len(t) - 1), dtype=c.dtype)
         for m in xrange(k, -1, -1):
             y = fitpack.splev(t[:-1], tck, der=m)
-            cvals[k - m, :] = y/spec.gamma(m+1)
+            cvals[k - m, :] = y / spec.gamma(m + 1)
 
         return cls.construct_fast(cvals, t, extrapolate)
 
@@ -1284,14 +1286,14 @@ class PPoly(_PPolyBase):
         dx = np.diff(bp.x)
         k = bp.c.shape[0] - 1  # polynomial order
 
-        rest = (None,)*(bp.c.ndim-2)
+        rest = (None,) * (bp.c.ndim - 2)
 
         c = np.zeros_like(bp.c)
-        for a in range(k+1):
+        for a in range(k + 1):
             factor = (-1)**a * comb(k, a) * bp.c[a]
-            for s in range(a, k+1):
-                val = comb(k-a, s-a) * (-1)**s
-                c[k-s] += factor * val / dx[(slice(None),)+rest]**s
+            for s in range(a, k + 1):
+                val = comb(k - a, s - a) * (-1)**s
+                c[k - s] += factor * val / dx[(slice(None),) + rest]**s
 
         if extrapolate is None:
             extrapolate = bp.extrapolate
@@ -1428,10 +1430,10 @@ class BPoly(_PPolyBase):
             # finally, for an interval [y, y + dy] with dy != 1,
             # we need to correct for an extra power of dy
 
-            rest = (None,)*(self.c.ndim-2)
+            rest = (None,) * (self.c.ndim - 2)
 
             k = self.c.shape[0] - 1
-            dx = np.diff(self.x)[(None, slice(None))+rest]
+            dx = np.diff(self.x)[(None, slice(None)) + rest]
             c2 = k * np.diff(self.c, axis=0) / dx
 
         if c2.shape[0] == 0:
@@ -1476,19 +1478,20 @@ class BPoly(_PPolyBase):
         # Construct the indefinite integrals on individual intervals
         c, x = self.c, self.x
         k = c.shape[0]
-        c2 = np.zeros((k+1,) + c.shape[1:], dtype=c.dtype)
+        c2 = np.zeros((k + 1,) + c.shape[1:], dtype=c.dtype)
 
         c2[1:, ...] = np.cumsum(c, axis=0) / k
         delta = x[1:] - x[:-1]
-        c2 *= delta[(None, slice(None)) + (None,)*(c.ndim-2)]
+        c2 *= delta[(None, slice(None)) + (None,) * (c.ndim - 2)]
 
         # Now fix continuity: on the very first interval, take the integration
         # constant to be zero; on an interval [x_j, x_{j+1}) with j>0,
         # the integration constant is then equal to the jump of the `bp` at x_j.
         # The latter is given by the coefficient of B_{n+1, n+1}
         # *on the previous interval* (other B. polynomials are zero at the
-        # breakpoint). Finally, use the fact that BPs form a partition of unity.
-        c2[:,1:] += np.cumsum(c2[k, :], axis=0)[:-1]
+        # breakpoint). Finally, use the fact that BPs form a partition of
+        # unity.
+        c2[:, 1:] += np.cumsum(c2[k, :], axis=0)[:-1]
 
         if self.extrapolate == 'periodic':
             extrapolate = False
@@ -1586,13 +1589,14 @@ class BPoly(_PPolyBase):
         dx = np.diff(pp.x)
         k = pp.c.shape[0] - 1   # polynomial order
 
-        rest = (None,)*(pp.c.ndim-2)
+        rest = (None,) * (pp.c.ndim - 2)
 
         c = np.zeros_like(pp.c)
-        for a in range(k+1):
-            factor = pp.c[a] / comb(k, k-a) * dx[(slice(None),)+rest]**(k-a)
-            for j in range(k-a, k+1):
-                c[j] += factor * comb(j, k-a)
+        for a in range(k + 1):
+            factor = pp.c[a] / comb(k, k - a) * \
+                dx[(slice(None),) + rest]**(k - a)
+            for j in range(k - a, k + 1):
+                c[j] += factor * comb(j, k - a)
 
         if extrapolate is None:
             extrapolate = pp.extrapolate
@@ -1674,7 +1678,7 @@ class BPoly(_PPolyBase):
 
         # global poly order is k-1, local orders are <=k and can vary
         try:
-            k = max(len(yi[i]) + len(yi[i+1]) for i in range(m))
+            k = max(len(yi[i]) + len(yi[i + 1]) for i in range(m))
         except TypeError:
             raise ValueError("Using a 1D array for y? Please .reshape(-1, 1).")
 
@@ -1690,25 +1694,25 @@ class BPoly(_PPolyBase):
 
         c = []
         for i in range(m):
-            y1, y2 = yi[i], yi[i+1]
+            y1, y2 = yi[i], yi[i + 1]
             if orders[i] is None:
                 n1, n2 = len(y1), len(y2)
             else:
-                n = orders[i]+1
-                n1 = min(n//2, len(y1))
+                n = orders[i] + 1
+                n1 = min(n // 2, len(y1))
                 n2 = min(n - n1, len(y2))
                 n1 = min(n - n2, len(y2))
-                if n1+n2 != n:
+                if n1 + n2 != n:
                     mesg = ("Point %g has %d derivatives, point %g"
                             " has %d derivatives, but order %d requested" % (
-                               xi[i], len(y1), xi[i+1], len(y2), orders[i]))
+                                xi[i], len(y1), xi[i + 1], len(y2), orders[i]))
                     raise ValueError(mesg)
 
                 if not (n1 <= len(y1) and n2 <= len(y2)):
                     raise ValueError("`order` input incompatible with"
                                      " length y1 or y2.")
 
-            b = BPoly._construct_from_derivatives(xi[i], xi[i+1],
+            b = BPoly._construct_from_derivatives(xi[i], xi[i + 1],
                                                   y1[:n1], y2[:n2])
             if len(b) < k:
                 b = BPoly._raise_degree(b, k - len(b))
@@ -1778,7 +1782,7 @@ class BPoly(_PPolyBase):
 
         dta, dtb = ya.dtype, yb.dtype
         if (np.issubdtype(dta, np.complexfloating) or
-               np.issubdtype(dtb, np.complexfloating)):
+                np.issubdtype(dtb, np.complexfloating)):
             dt = np.complex_
         else:
             dt = np.float_
@@ -1786,20 +1790,20 @@ class BPoly(_PPolyBase):
         na, nb = len(ya), len(yb)
         n = na + nb
 
-        c = np.empty((na+nb,) + ya.shape[1:], dtype=dt)
+        c = np.empty((na + nb,) + ya.shape[1:], dtype=dt)
 
         # compute coefficients of a polynomial degree na+nb-1
         # walk left-to-right
         for q in range(0, na):
             c[q] = ya[q] / spec.poch(n - q, q) * (xb - xa)**q
             for j in range(0, q):
-                c[q] -= (-1)**(j+q) * comb(q, j) * c[j]
+                c[q] -= (-1)**(j + q) * comb(q, j) * c[j]
 
         # now walk right-to-left
         for q in range(0, nb):
-            c[-q-1] = yb[q] / spec.poch(n - q, q) * (-1)**q * (xb - xa)**q
+            c[-q - 1] = yb[q] / spec.poch(n - q, q) * (-1)**q * (xb - xa)**q
             for j in range(0, q):
-                c[-q-1] -= (-1)**(j+1) * comb(q, j+1) * c[-q+j]
+                c[-q - 1] -= (-1)**(j + 1) * comb(q, j + 1) * c[-q + j]
 
         return c
 
@@ -1839,8 +1843,8 @@ class BPoly(_PPolyBase):
 
         for a in range(c.shape[0]):
             f = c[a] * comb(k, a)
-            for j in range(d+1):
-                out[a+j] += f * comb(d, j) / comb(k+d, a+j)
+            for j in range(d + 1):
+                out[a + j] += f * comb(d, j) / comb(k + d, a + j)
         return out
 
 
@@ -1915,11 +1919,11 @@ class NdPPoly(object):
             raise ValueError("x arrays must all be 1-dimensional")
         if any(v.size < 2 for v in self.x):
             raise ValueError("x arrays must all contain at least 2 points")
-        if c.ndim < 2*ndim:
+        if c.ndim < 2 * ndim:
             raise ValueError("c must have at least 2*len(x) dimensions")
         if any(np.any(v[1:] - v[:-1] < 0) for v in self.x):
             raise ValueError("x-coordinates are not in increasing order")
-        if any(a != b.size - 1 for a, b in zip(c.shape[ndim:2*ndim], self.x)):
+        if any(a != b.size - 1 for a, b in zip(c.shape[ndim:2 * ndim], self.x)):
             raise ValueError("x and c do not agree on the number of intervals")
 
         dtype = self._get_dtype(self.c.dtype)
@@ -1946,7 +1950,7 @@ class NdPPoly(object):
 
     def _get_dtype(self, dtype):
         if np.issubdtype(dtype, np.complexfloating) \
-               or np.issubdtype(self.c.dtype, np.complexfloating):
+                or np.issubdtype(self.c.dtype, np.complexfloating):
             return np.complex_
         else:
             return np.float_
@@ -2005,8 +2009,8 @@ class NdPPoly(object):
                 raise ValueError("invalid number of derivative orders nu")
 
         dim1 = prod(self.c.shape[:ndim])
-        dim2 = prod(self.c.shape[ndim:2*ndim])
-        dim3 = prod(self.c.shape[2*ndim:])
+        dim2 = prod(self.c.shape[ndim:2 * ndim])
+        dim3 = prod(self.c.shape[2 * ndim:])
         ks = np.array(self.c.shape[:ndim], dtype=np.intc)
 
         out = np.empty((x.shape[0], dim3), dtype=self.c.dtype)
@@ -2020,7 +2024,7 @@ class NdPPoly(object):
                            bool(extrapolate),
                            out)
 
-        return out.reshape(x_shape[:-1] + self.c.shape[2*ndim:])
+        return out.reshape(x_shape[:-1] + self.c.shape[2 * ndim:])
 
     def _derivative_inplace(self, nu, axis):
         """
@@ -2038,7 +2042,7 @@ class NdPPoly(object):
             # noop
             return
         else:
-            sl = [slice(None)]*ndim
+            sl = [slice(None)] * ndim
             sl[axis] = slice(None, -nu, None)
             c2 = self.c[sl]
 
@@ -2050,7 +2054,7 @@ class NdPPoly(object):
 
         # multiply by the correct rising factorials
         factor = spec.poch(np.arange(c2.shape[axis], 0, -1), nu)
-        sl = [None]*c2.ndim
+        sl = [None] * c2.ndim
         sl[axis] = slice(None)
         c2 *= factor[sl]
 
@@ -2074,21 +2078,21 @@ class NdPPoly(object):
         c = self.c.transpose(perm)
 
         c2 = np.zeros((c.shape[0] + nu,) + c.shape[1:],
-                     dtype=c.dtype)
+                      dtype=c.dtype)
         c2[:-nu] = c
 
         # divide by the correct rising factorials
         factor = spec.poch(np.arange(c.shape[0], 0, -1), nu)
-        c2[:-nu] /= factor[(slice(None),) + (None,)*(c.ndim-1)]
+        c2[:-nu] /= factor[(slice(None),) + (None,) * (c.ndim - 1)]
 
         # fix continuity of added degrees of freedom
         perm2 = list(range(c2.ndim))
-        perm2[1], perm2[ndim+axis] = perm2[ndim+axis], perm2[1]
+        perm2[1], perm2[ndim + axis] = perm2[ndim + axis], perm2[1]
 
         c2 = c2.transpose(perm2)
         c2 = c2.copy()
         _ppoly.fix_continuity(c2.reshape(c2.shape[0], c2.shape[1], -1),
-                              self.x[axis], nu-1)
+                              self.x[axis], nu - 1)
 
         c2 = c2.transpose(perm2)
         c2 = c2.transpose(perm)
@@ -2221,7 +2225,7 @@ class NdPPoly(object):
             return out.reshape(c.shape[2:])
         else:
             c = out.reshape(c.shape[2:])
-            x = self.x[:axis] + self.x[axis+1:]
+            x = self.x[:axis] + self.x[axis + 1:]
             return self.construct_fast(c, x, extrapolate=extrapolate)
 
     def integrate(self, ranges, extrapolate=None):
@@ -2275,12 +2279,14 @@ class NdPPoly(object):
 
 class RegularGridInterpolator(object):
     """
-    Interpolation on a regular grid in arbitrary dimensions
+    Interpolation on a regular grid in arbitrary dimensions.
 
     The data must be defined on a regular grid; the grid spacing however may be
-    uneven.  Linear and nearest-neighbour interpolation are supported. After
-    setting up the interpolator object, the interpolation method (*linear* or
-    *nearest*) may be chosen at each evaluation.
+    uneven. Linear, nearest-neighbour, and third through fifth order spline
+    interpolation are supported. After setting up the interpolator object, the
+    interpolation method (*nearest*, *linear*, *slinear*, *quadratic*, *cubic*,
+    *quartic*, *quintic*) may be chosen at each evaluation. Additionally,
+    gradients are provided for the spline interpolation methods.
 
     Parameters
     ----------
@@ -2291,23 +2297,37 @@ class RegularGridInterpolator(object):
         The data on the regular grid in n dimensions.
 
     method : str, optional
-        The method of interpolation to perform. Supported are "linear" and
-        "nearest". This parameter will become the default for the object's
+        The method of interpolation to perform. Supported are 'nearest',
+        'linear', 'slinear', 'quadratic', 'cubic', 'quartic', and
+        'quintic'. This parameter will become the default for the object's
         ``__call__`` method. Default is "linear".
 
     bounds_error : bool, optional
         If True, when interpolated values are requested outside of the
         domain of the input data, a ValueError is raised.
         If False, then `fill_value` is used.
+        Default is True (raise an exception).
 
     fill_value : number, optional
         If provided, the value to use for points outside of the
         interpolation domain. If None, values outside
-        the domain are extrapolated.
+        the domain are extrapolated. Note that gradient values will always be
+        extrapolated rather than set to the fill_value if bounds_error=False
+        for any points outside of the interpolation domain.
+        Default is `np.nan`.
+
+    spline_dim_error : bool, optional
+        If spline_dim_error=True and an order `k` spline interpolation method
+        is used, then if any dimension has fewer points than `k` + 1, an error
+        will be raised. If spline_dim_error=False, then the spline interpolant
+        order will be reduced as needed on a per-dimension basis. Default
+        is True (raise an exception).
 
     Methods
     -------
     __call__
+    gradient
+    methods
 
     Notes
     -----
@@ -2319,12 +2339,25 @@ class RegularGridInterpolator(object):
     return an array of `nan` values. Nearest-neighbor interpolation will work
     as usual in this case.
 
+    The 'slinear', 'quadratic', 'cubic', 'quartic', 'quintic' methods
+    are all spline-based interpolators. These make use of `UnivariateSpline` in
+    each dimension. Use of the spline interpolations allows for getting
+    gradient values via the ``gradient`` method.
+
+    Interpolation with the spline methods is expectedly slower than 'linear' or
+    'nearest'. They use a different separable tensor product interpolation
+    strategy, and are best used when the fitted data (the points and values
+    arrays) are large relative to the number of points to be interpolated.
+    As such, they are not an efficient choice for some tasks, such as
+    re-sampling of image data.
+
     .. versionadded:: 0.14
 
     Examples
     --------
     Evaluate a simple example function on the points of a 3D grid:
 
+    >>> import numpy as np
     >>> from scipy.interpolate import RegularGridInterpolator
     >>> def f(x, y, z):
     ...     return 2 * x**3 + 3 * y**2 - z
@@ -2348,34 +2381,200 @@ class RegularGridInterpolator(object):
     which is indeed a close approximation to
     ``[f(2.1, 6.2, 8.3), f(3.3, 5.2, 7.1)]``.
 
-    See also
-    --------
-    NearestNDInterpolator : Nearest neighbour interpolation on unstructured
-                            data in N dimensions
+    With the spline interpolation methods it is possible to compute smooth
+    gradients for a variety of purposes, such as numerical optimization.
 
-    LinearNDInterpolator : Piecewise linear interpolant on unstructured data
-                           in N dimensions
+    To demonstrate this, let's define a function with known gradients for
+    demonstration, and create grid sample axes with a variety of sizes:
 
-    References
-    ----------
-    .. [1] Python package *regulargrid* by Johannes Buchner, see
-           https://pypi.python.org/pypi/regulargrid/
-    .. [2] Trilinear interpolation. (2013, January 17). In Wikipedia, The Free
-           Encyclopedia. Retrieved 27 Feb 2013 01:28.
-           http://en.wikipedia.org/w/index.php?title=Trilinear_interpolation&oldid=533448871
-    .. [3] Weiser, Alan, and Sergio E. Zarantonello. "A note on piecewise linear
-           and multilinear table interpolation in many dimensions." MATH.
-           COMPUT. 50.181 (1988): 189-196.
-           http://www.ams.org/journals/mcom/1988-50-181/S0025-5718-1988-0917826-0/S0025-5718-1988-0917826-0.pdf
+    >>> from scipy.optimize import fmin_bfgs
+    >>> def F(u, v, z, w):
+    ...     return (u - 5.234)**2 + (v - 2.128)**2 + (z - 5.531)**2 + (w - 0.574)**2
+    >>> def dF(u, v, z, w):
+    ...     return 2 * (u - 5.234), 2 * (v - 2.128), 2 * (z - 5.531), 2 * (w - 0.574)
+    >>> np.random.seed(0)
+    >>> U = np.linspace(0, 10, 10)
+    >>> V = np.random.uniform(0, 10, 10)
+    >>> Z = np.random.uniform(0, 10, 10)
+    >>> W = np.linspace(0, 10, 10)
+    >>> V.sort(), Z.sort()
+    (None, None)
+    >>> points = [U, V, Z, W]
+    >>> values = F(*np.meshgrid(*points, indexing='ij'))
+
+    Now, define a random sampling point
+
+    >>> x = np.random.uniform(1, 9, 4)
+
+    With the ``cubic`` interpolation method, gradient information will be
+    available:
+
+    >>> interp = RegularGridInterpolator(
+    ...     points, values, method="cubic", bounds_error=False, fill_value=None)
+
+    This provides smooth interpolation values for approximating the original
+    function and its gradient:
+
+    >>> F(*x), interp(x)
+    (85.842906385928046, array(85.84290638592806))
+    >>> dF(*x)
+    (7.1898934757242223, 10.530537027467577, -1.6783302039530898, 13.340466820583288)
+    >>> interp.gradient(x)
+    array([  7.18989348,  10.53053703,  -1.6783302 ,  13.34046682])
+
+    The ``gradient`` method can conveniently be passed as an argument to any
+    procedure that requires gradient information, such as
+    ``scipy.optimize.fmin_bfgs``:
+
+    >>> opt = fmin_bfgs(interp, x, fprime=interp.gradient)
+    Optimization terminated successfully.
+             Current function value: 0.000000
+             Iterations: 3
+             Function evaluations: 5
+             Gradient evaluations: 5
+
+    Despite the course data grid and non-homogeneous axis dimensions, the
+    computed minimum matches the known solution very well:
+
+    >>> print(opt)
+    [ 5.234  2.128  5.531  0.574]
+
+    Finally, all four interpolation methods can be compared based on the task
+    of fitting a course sampling to interpolate a finer representation:
+
+    >>> import numpy as np
+    >>> from scipy.interpolate import RegularGridInterpolator as RGI
+    >>> import matplotlib.pyplot as plt
+    >>> from matplotlib import rcParams
+    >>> rcParams['figure.figsize'] = (10, 6)
+    >>>
+    >>> def F(u, v):
+    ...     return u * np.cos(u * v) + v * np.sin(u * v)
+    >>> fit_points = [np.linspace(0, 3, 8), np.linspace(0, 3, 8)]
+    >>> values = F(*np.meshgrid(*fit_points, indexing='ij'))
+    >>> test_points = [np.linspace(fit_points[0][0], fit_points[0][-1], 80), np.linspace(
+    ...     fit_points[1][0], fit_points[1][-1], 80)]
+    >>> ut, vt = np.meshgrid(*test_points, indexing='ij')
+    >>> true_values = F(ut, vt)
+    >>> pts = np.array([ut.ravel(), vt.ravel()]).T
+    >>> plt.figure()
+    >>> for i, method in enumerate(RGI.methods()):
+    ...     plt.subplot(2, 4, i + 1)
+    ...     interp = RGI(fit_points, values, method=method)
+    ...     im = interp(pts).reshape(80, 80)
+    ...     plt.imshow(im, interpolation='nearest')
+    ...     plt.gca().axis('off')
+    ...     plt.title(method)
+    >>> plt.subplot(2, 4, 8)
+    >>> plt.title("True values")
+    >>> plt.gca().axis('off')
+    >>> plt.gcf().subplots_adjust(left=0, right=1, bottom=0, top=1)
+    >>> plt.tight_layout()
+    >>> plt.imshow(true_values, interpolation='nearest')
+    >>> plt.show()
+
+
+    As expected, the spline interpolations are closest to the
+    true values, though are more expensive to compute than with `linear` or
+    `nearest`.
+
+    The computed gradient fields can also be visualized:
+
+    >>> import numpy as np
+    >>> from scipy.interpolate import RegularGridInterpolator as RGI
+    >>> from matplotlib import pyplot as plt
+    >>> from matplotlib import rcParams
+    >>> rcParams['figure.figsize'] = (6, 3)
+    >>> n = 30
+    >>> fit_points = [np.linspace(0, 3, 8), np.linspace(0, 3, 8)]
+    >>> values = F(*np.meshgrid(*fit_points, indexing='ij'))
+    >>> test_points = [np.linspace(0, 3, n), np.linspace(0, 3, n)]
+    >>> ut, vt = np.meshgrid(*test_points, indexing='ij')
+    >>> true_values = F(ut, vt)
+    >>> pts = np.array([ut.ravel(), vt.ravel()]).T
+    >>> interp = RGI(fit_points, values, method='cubic')
+    >>> im = interp(pts).reshape(n, n)
+    >>> gradient = interp.gradient(pts).reshape(n, n, 2)
+    >>> plt.figure()
+    >>> plt.subplot(121)
+    >>> plt.title("cubic fit")
+    >>> plt.imshow(im[::-1], interpolation='nearest')
+    >>> plt.gca().axis('off')
+    >>> plt.gcf().subplots_adjust(left=0, right=1, bottom=0, top=1)
+    >>> plt.tight_layout()
+    >>> plt.subplot(122)
+    >>> plt.title('gradients')
+    >>> plt.gca().axis('off')
+    >>> plt.gcf().subplots_adjust(left=0, right=1, bottom=0, top=1)
+    >>> plt.tight_layout()
+    >>> plt.quiver(ut, vt, gradient[:, :, 0], gradient[:, :, 1], width=0.01)
+    >>> plt.show()
+
+
+    Higher-dimensional gradient field predictions and visualizations can be
+    done the same way:
+
+    >>> import numpy as np
+    >>> from scipy.interpolate import RegularGridInterpolator
+    >>> import matplotlib.pyplot as plt
+    >>> from mpl_toolkits.mplot3d import axes3d
+    >>> from matplotlib import rcParams
+    >>> rcParams['figure.figsize'] = (7, 6)
+    >>> # set up 4D test problem
+    >>> fig = plt.figure()
+    >>> ax = fig.gca(projection='3d')
+    >>> ax.set_xlabel('x'), ax.set_ylabel('y'), ax.set_zlabel('z')
+    >>> n = 10
+    >>> pts = [np.linspace(-1, 1, n), np.linspace(-1, 1, n), np.linspace(-1, 1, n)]
+    >>> x, y, z = np.meshgrid(*pts, indexing='ij')
+    >>> voxels = np.array([x.ravel(), y.ravel(), z.ravel()]).T
+    >>> values = np.sin(x) * y**2 - np.cos(z)
+    >>> # interpolate the created 4D data
+    >>> interp = RegularGridInterpolator(pts, values, method='cubic')
+    >>> gradient = interp.gradient(voxels).reshape(n, n, n, 3)
+    >>> u, v, w = gradient[:, :, :, 0], gradient[:, :, :, 1], gradient[:, :, :, 2]
+    >>> # Plot the predicted gradient field
+    >>> fig.tight_layout()
+    >>> ax.quiver(x, y, z, u, v, w, length=0.1, normalize=True)
+    >>> plt.show()
 
     """
-    # this class is based on code originally programmed by Johannes Buchner,
+
+    # the nearest and linear interpolators in this class are based on code
+    # originally programmed by Johannes Buchner,
     # see https://github.com/JohannesBuchner/regulargrid
 
+    @staticmethod
+    def _interp_methods():
+        """Method-specific settings for interpolation and for testing."""
+        interpolator_configs = {
+            "slinear": 1,
+            "quadratic": 2,
+            "cubic": 3,
+            "quartic": 4,
+            "quintic": 5,
+        }
+
+        fitpack_interps = interpolator_configs.keys()
+        all_methods = ['nearest', 'linear'] + list(fitpack_interps)
+
+        return fitpack_interps, all_methods, interpolator_configs
+
+    @staticmethod
+    def methods():
+        """Return a list of valid interpolation method names."""
+        return ['nearest', 'linear', 'slinear', 'quadratic', 'cubic',
+                'quartic', 'quintic']
+
     def __init__(self, points, values, method="linear", bounds_error=True,
-                 fill_value=np.nan):
-        if method not in ["linear", "nearest"]:
-            raise ValueError("Method '%s' is not defined" % method)
+                 fill_value=np.nan, spline_dim_error=True):
+
+        configs = RegularGridInterpolator._interp_methods()
+        self._fitpack_methods, self._all_methods, self._interp_config = configs
+        if method not in self._all_methods:
+            all_m = ', '.join(['"' + m + '"' for m in self._all_methods])
+            raise ValueError('Method "%s" is not defined. Valid methods are '
+                             '%s.' % (method, all_m))
         self.method = method
         self.bounds_error = bounds_error
 
@@ -2400,20 +2599,43 @@ class RegularGridInterpolator(object):
                 raise ValueError("fill_value must be either 'None' or "
                                  "of a type compatible with values")
 
+        self._ki = []
         for i, p in enumerate(points):
+            n_p = len(p)
             if not np.all(np.diff(p) > 0.):
                 raise ValueError("The points in dimension %d must be strictly "
                                  "ascending" % i)
             if not np.asarray(p).ndim == 1:
                 raise ValueError("The points in dimension %d must be "
                                  "1-dimensional" % i)
-            if not values.shape[i] == len(p):
+            if not values.shape[i] == n_p:
                 raise ValueError("There are %d points and %d values in "
                                  "dimension %d" % (len(p), values.shape[i], i))
+            if method in self._fitpack_methods:
+                k = self._interp_config[method]
+                self._ki.append(k)
+                if n_p <= k:
+                    if not spline_dim_error:
+                        self._ki[-1] = n_p - 1
+                    else:
+                        raise ValueError("There are %d points in dimension %d,"
+                                         " but method %s requires at least %d "
+                                         "points per "
+                                         "dimension."
+                                         "" % (n_p, i, method, k + 1))
+
+        if method in self._fitpack_methods:
+            if np.iscomplexobj(values[:]):
+                raise ValueError("method '%s' does not support complex values."
+                                 " Use 'linear' or 'nearest'." % method)
         self.grid = tuple([np.asarray(p) for p in points])
         self.values = values
+        self._xi = None
+        self._all_gradients = None
+        self._spline_dim_error = spline_dim_error
+        self._gmethod = None
 
-    def __call__(self, xi, method=None):
+    def __call__(self, xi, method=None, compute_gradients=True):
         """
         Interpolation at coordinates
 
@@ -2422,16 +2644,28 @@ class RegularGridInterpolator(object):
         xi : ndarray of shape (..., ndim)
             The coordinates to sample the gridded data at
 
-        method : str
-            The method of interpolation to perform. Supported are "linear" and
-            "nearest".
+        method : str, optional
+            The method of interpolation to perform. Supported are 'nearest',
+            'linear', 'slinear', 'quadratic', 'cubic', 'quartic', and
+            'quintic'. Default is None, which will use the method defined at
+            the construction of the interpolation object instance.
 
+        computer_gradients : bool, optional
+            If a spline interpolation method is chosen, this determines
+            whether gradient calculations should be made and cached.
+            Default is True.
         """
+        # cache latest evaluation point for gradient method's use later
+        self._xi = xi
+
         method = self.method if method is None else method
-        if method not in ["linear", "nearest"]:
-            raise ValueError("Method '%s' is not defined" % method)
+        if method not in self._all_methods:
+            all_m = ', '.join(['"' + m + '"' for m in self._all_methods])
+            raise ValueError('Method "%s" is not defined. Valid methods are '
+                             '%s.' % (method, all_m))
 
         ndim = len(self.grid)
+        self.ndim = ndim
         xi = _ndim_coords_from_arrays(xi, ndim=ndim)
         if xi.shape[-1] != len(self.grid):
             raise ValueError("The requested sample points xi have dimension "
@@ -2445,8 +2679,8 @@ class RegularGridInterpolator(object):
             for i, p in enumerate(xi.T):
                 if not np.logical_and(np.all(self.grid[i][0] <= p),
                                       np.all(p <= self.grid[i][-1])):
-                    raise ValueError("One of the requested xi is out of bounds "
-                                     "in dimension %d" % i)
+                    raise ValueError("One of the requested xi is out of bounds"
+                                     " in dimension %d" % i)
 
         indices, norm_distances, out_of_bounds = self._find_indices(xi.T)
         if method == "linear":
@@ -2457,14 +2691,48 @@ class RegularGridInterpolator(object):
             result = self._evaluate_nearest(indices,
                                             norm_distances,
                                             out_of_bounds)
+
+        elif method in self._fitpack_methods:
+            if np.iscomplexobj(self.values[:]):
+                raise ValueError("method '%s' does not support complex values."
+                                 " Use 'linear' or 'nearest'." % method)
+            ki = self._ki
+            if method != self.method:
+                # re-validate dimensions vs spline order
+
+                ki = []
+                for i, p in enumerate(self.grid):
+                    n_p = len(p)
+                    k = self._interp_config[method]
+                    ki.append(k)
+                    if n_p <= k:
+                        if not self._spline_dim_error:
+                            ki[-1] = n_p - 1
+                        else:
+                            raise ValueError("There are %d points in dimension"
+                                             " %d, but method %s requires at "
+                                             "least % d points per dimension."
+                                             "" % (n_p, i, method, k + 1))
+
+            interpolator = UnivariateSpline
+            result = self._evaluate_separable(self.grid,
+                                              self.values,
+                                              xi,
+                                              indices,
+                                              interpolator,
+                                              method,
+                                              ki,
+                                              compute_gradients=compute_gradients)
+
         if not self.bounds_error and self.fill_value is not None:
             result[out_of_bounds] = self.fill_value
 
-        return result.reshape(xi_shape[:-1] + self.values.shape[ndim:])
+        return result.reshape(xi_shape[:-1] +
+                              self.values.shape[ndim:]).squeeze()
 
     def _evaluate_linear(self, indices, norm_distances, out_of_bounds):
         # slice for broadcasting over trailing dimensions in self.values
-        vslice = (slice(None),) + (None,)*(self.values.ndim - len(indices))
+        vslice = (slice(None),) + (None,) * (self.values.ndim - len(indices))
 
         # find relevant values
         # each i and i+1 represents a edge
@@ -2482,6 +2750,110 @@ class RegularGridInterpolator(object):
         for i, yi in zip(indices, norm_distances):
             idx_res.append(np.where(yi <= .5, i, i + 1))
         return self.values[idx_res]
+
+    def _evaluate_separable(self, grid, data_values, xi, indices, interpolator,
+                            method, ki, compute_gradients=True):
+        """Convenience method for separable regular grid interpolation."""
+        # for UnivariateSpline based methods
+
+        # fitpack requires floating point input
+        xi = xi.astype(np.float)
+
+        # ensure xi is 2D list of points to evaluate
+        if xi.ndim == 1:
+            xi = xi.reshape((1, xi.size))
+        m, n = xi.shape
+
+        # create container arrays for output and gradients
+        result = np.empty(m)
+        if compute_gradients:
+            all_gradients = np.empty_like(xi)
+
+        # fitpack interpolators do not seem to like matrix objects
+        if isinstance(data_values, np.matrix):
+            data_values = data_values.A1.reshape(data_values.shape)
+
+        # Non-stationary procedure: difficult to vectorize this part entirely
+        # into numpy-level operations. Unfortunately this requires explicit
+        # looping over each point in xi.
+        for j, x in enumerate(xi):
+            gradient = np.empty_like(x)
+            points = list(self.grid)
+            values = data_values[:]
+
+            # Main process: Apply 1D interpolate in each dimension
+            # sequentially, starting with the last dimension. These are then
+            # "folded" into the next dimension in-place.
+            for i in reversed(range(1, n)):
+                # manage array sizes for the process for this axis
+                nv = values.size
+                nx = values.shape[-1]
+                n_rows = nv // nx
+                values_reduced = np.zeros(n_rows)
+                local_derivs = np.empty(n_rows)
+
+                # The nest time through, the values array will have one less
+                # dimension.
+                newshape = values.shape[: -1]
+
+                # Reshape values to expose the last dimension as a sequence of
+                # 1D arrays
+                values = values.reshape(n_rows, nx)
+
+                # Interpolate and collect gradients for each 1D in this last
+                # dimensions. This collapses each 1D sequence into a scalar.
+                interp_args = []
+                k = ki[i]
+                interp_kwargs = {'k': k, 's': 0, 'ext': 0}
+
+                for k in range(n_rows):
+                    local_interp = interpolator(points[i],
+                                                values[k],
+                                                *interp_args,
+                                                **interp_kwargs)
+                    values_reduced[k] = local_interp(x[i])
+                    if compute_gradients:
+                        local_derivs[k] = local_interp(x[i], 1)
+
+                # "Fold" the results into the next dimension, reducing the
+                # overall size
+                values = values_reduced.reshape(newshape)
+
+                # Chain rule: to compute gradients of the output w.r.t. xi
+                # across the dimensions, apply interpolation to the collected
+                # gradients. This is equivalent to multiplication by
+                # dResults/dValues at each level.
+                if compute_gradients:
+                    local_derivs = np.array(local_derivs).reshape(newshape)
+                    gradient[i] = self._evaluate_separable(points[: i],
+                                                           local_derivs,
+                                                           x[: i],
+                                                           indices,
+                                                           interpolator,
+                                                           method,
+                                                           ki,
+                                                           compute_gradients=False)
+
+            # All values have been folded down to a single dimensional array
+            # compute the final interpolated results, and gradient w.r.t. the
+            # first dimension
+            interp_args = []
+            interp_kwargs = {'k': ki[0], 's': 0, 'ext': 0}
+            final_interp = interpolator(points[0],
+                                        values, *interp_args, **interp_kwargs)
+            output_value = final_interp(x[0])
+            if compute_gradients:
+                gradient[0] = final_interp(x[0], 1)
+                all_gradients[j] = gradient
+            result[j] = output_value
+
+        # Cache the computed gradients for return by the gradient method
+        if compute_gradients:
+            # cache gradients
+            self._all_gradients = all_gradients
+            # indicate what method was used to compute these
+            self._gmethod = method
+        return result
 
     def _find_indices(self, xi):
         # find relevant edges between which xi are situated
@@ -2503,9 +2875,53 @@ class RegularGridInterpolator(object):
                 out_of_bounds += x > grid[-1]
         return indices, norm_distances, out_of_bounds
 
+    def gradient(self, xi, method=None):
+        """Return the computed gradients at the specified point.
+
+        The gradients are computed as the interpolation itself is performed,
+        but are cached and returned separately by this method.
+
+        If the point for evaluation differs from the point used to produce
+        the currently cached gradient, the interpolation is re-performed in
+        order to return the correct gradient.
+
+        Parameters
+        ----------
+        xi : ndarray of shape (..., ndim)
+            The coordinates to sample the gridded data at
+
+        method : str, optional
+            The method of interpolation to perform. Supported are slinear',
+            'quadratic', 'cubic', 'quartic', and
+            'quintic'. Default is None, which will use the method defined at
+            the construction of the interpolation object instance.
+
+        Returns
+        -------
+        gradient : ndarray of shape (..., ndim)
+            gradient vector of the gradients of the interpolated values with
+            respect to each value in xi
+        """
+        # Determine if the needed gradients have been cached already
+
+        if not method:
+            method = self.method
+        if method not in self._fitpack_methods:
+            raise ValueError("method '%s' does not support gradient"
+                             " calculations. " % method)
+
+        if (self._xi is None) or \
+                (not np.array_equal(xi, self._xi)) or \
+                (method != self._gmethod):
+            # if not, compute the interpolation to get the gradients
+            self.__call__(xi, method=method)
+        gradients = self._all_gradients
+        gradients = gradients.reshape(np.asarray(xi).shape)
+        return gradients.squeeze()
+
 
 def interpn(points, values, xi, method="linear", bounds_error=True,
-            fill_value=np.nan):
+            fill_value=np.nan, spline_dim_error=True):
     """
     Multidimensional interpolation on regular grids.
 
@@ -2521,8 +2937,9 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
         The coordinates to sample the gridded data at
 
     method : str, optional
-        The method of interpolation to perform. Supported are "linear" and
-        "nearest", and "splinef2d". "splinef2d" is only supported for
+        The method of interpolation to perform. Supported are "nearest",
+        "linear", "slinear", quadratic", "cubic", "quartic",
+        "quintic", and "splinef2d". "splinef2d" is only supported for
         2-dimensional data.
 
     bounds_error : bool, optional
@@ -2533,8 +2950,15 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
     fill_value : number, optional
         If provided, the value to use for points outside of the
         interpolation domain. If None, values outside
-        the domain are extrapolated.  Extrapolation is not supported by method
-        "splinef2d".
+        the domain are extrapolated.  Extrapolation is not supported by the
+        "splinef2d" method.
+
+    spline_dim_error : bool, optional
+        If spline_dim_error=True and an order `k` spline interpolation method
+        is used, then if any dimension has fewer points than `k` + 1, an error
+        will be raised. If spline_dim_error=False, then the spline interpolant
+        order will be reduced as needed on a per-dimension basis. Default
+        is True (raise an error).
 
     Returns
     -------
@@ -2560,11 +2984,14 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
     RectBivariateSpline : Bivariate spline approximation over a rectangular mesh
 
     """
+
+    configs = RegularGridInterpolator._interp_methods()
+    _fitpack_methods, _all_methods, _interp_config = configs
     # sanity check 'method' kwarg
-    if method not in ["linear", "nearest", "splinef2d"]:
-        raise ValueError("interpn only understands the methods 'linear', "
-                         "'nearest', and 'splinef2d'. You provided %s." %
-                         method)
+    if method not in _all_methods + ['splinef2d']:
+        all_m = ', '.join(['"' + m + '"' for m in _all_methods])
+        raise ValueError('interpn only understands the methods %s, and '
+                         '"splinef2d". You provided %s.' % (all_m, method))
 
     if not hasattr(values, 'ndim'):
         values = np.asarray(values)
@@ -2573,8 +3000,9 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
     if ndim > 2 and method == "splinef2d":
         raise ValueError("The method spline2fd can only be used for "
                          "2-dimensional input data")
-    if not bounds_error and fill_value is None and method == "splinef2d":
-        raise ValueError("The method spline2fd does not support extrapolation.")
+    if not bounds_error and fill_value is None and method == 'splinef2d':
+        raise ValueError(
+            "The method %s does not support extrapolation." % method)
 
     # sanity check consistency of input dimensions
     if len(points) > ndim:
@@ -2586,15 +3014,23 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
 
     # sanity check input grid
     for i, p in enumerate(points):
+        n_p = len(p)
         if not np.all(np.diff(p) > 0.):
             raise ValueError("The points in dimension %d must be strictly "
                              "ascending" % i)
         if not np.asarray(p).ndim == 1:
             raise ValueError("The points in dimension %d must be "
                              "1-dimensional" % i)
-        if not values.shape[i] == len(p):
+        if not values.shape[i] == n_p:
             raise ValueError("There are %d points and %d values in "
-                             "dimension %d" % (len(p), values.shape[i], i))
+                             "dimension %d" % (n_p, values.shape[i], i))
+        if method in _fitpack_methods:
+            k = _interp_config[method]
+            if n_p <= k:
+                raise ValueError("There are %d points in dimension %d, but"
+                                 " method '%s' requires at least %d points"
+                                 " per "
+                                 "dimension." % (n_p, i, method, k + 1))
     grid = tuple([np.asarray(p) for p in points])
 
     # sanity check requested xi
@@ -2611,16 +3047,13 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
                              "in dimension %d" % i)
 
     # perform interpolation
-    if method == "linear":
-        interp = RegularGridInterpolator(points, values, method="linear",
+    if method in _all_methods:
+        interp = RegularGridInterpolator(points, values, method=method,
                                          bounds_error=bounds_error,
-                                         fill_value=fill_value)
-        return interp(xi)
-    elif method == "nearest":
-        interp = RegularGridInterpolator(points, values, method="nearest",
-                                         bounds_error=bounds_error,
-                                         fill_value=fill_value)
-        return interp(xi)
+                                         fill_value=fill_value,
+                                         spline_dim_error=spline_dim_error)
+        return interp(xi, compute_gradients=False)
+
     elif method == "splinef2d":
         xi_shape = xi.shape
         xi = xi.reshape(-1, xi.shape[-1])
@@ -2677,13 +3110,13 @@ class _ppform(PPoly):
     @classmethod
     def fromspline(cls, xk, cvals, order, fill=0.0):
         # Note: this spline representation is incompatible with FITPACK
-        N = len(xk)-1
-        sivals = np.empty((order+1, N), dtype=float)
+        N = len(xk) - 1
+        sivals = np.empty((order + 1, N), dtype=float)
         for m in xrange(order, -1, -1):
-            fact = spec.gamma(m+1)
+            fact = spec.gamma(m + 1)
             res = _fitpack._bspleval(xk[:-1], xk, cvals, order, m)
             res /= fact
-            sivals[order-m, :] = res
+            sivals[order - m, :] = res
         return cls(sivals, xk, fill=fill)
 
 
@@ -2707,24 +3140,24 @@ def _find_smoothest(xk, yk, order, conds=None, B=None):
     # minimize norm(e,2) given B*c=yk
     # if desired B can be given
     # conds is ignored
-    N = len(xk)-1
+    N = len(xk) - 1
     K = order
     if B is None:
         B = _fitpack._bsplmat(order, xk)
     J = _fitpack._bspldismat(order, xk)
     u, s, vh = scipy.linalg.svd(B)
-    ind = K-1
-    V2 = vh[-ind:,:].T
-    V1 = vh[:-ind,:].T
-    A = dot(J.T,J)
-    tmp = dot(V2.T,A)
-    Q = dot(tmp,V2)
+    ind = K - 1
+    V2 = vh[-ind:, :].T
+    V1 = vh[:-ind, :].T
+    A = dot(J.T, J)
+    tmp = dot(V2.T, A)
+    Q = dot(tmp, V2)
     p = scipy.linalg.solve(Q, tmp)
-    tmp = dot(V2,p)
-    tmp = np.eye(N+K) - tmp
-    tmp = dot(tmp,V1)
-    tmp = dot(tmp,np.diag(1.0/s))
-    tmp = dot(tmp,u.T)
+    tmp = dot(V2, p)
+    tmp = np.eye(N + K) - tmp
+    tmp = dot(tmp, V1)
+    tmp = dot(tmp, np.diag(1.0 / s))
+    tmp = dot(tmp, u.T)
     return _dot0(tmp, yk)
 
 
@@ -2800,7 +3233,7 @@ def splmake(xk, yk, order=3, kind='smoothest', conds=None):
 
 
 @np.deprecate(message="spleval is deprecated in scipy 0.19.0, "
-        "use BSpline instead.")
+              "use BSpline instead.")
 def spleval(xck, xnew, deriv=0):
     """
     Evaluate a fixed spline represented by the given tuple at the new x-values
@@ -2845,8 +3278,8 @@ def spleval(xck, xnew, deriv=0):
     for index in np.ndindex(*sh):
         sl = (slice(None),) + index
         if issubclass(cvals.dtype.type, np.complexfloating):
-            res[sl].real = _fitpack._bspleval(xx,xj, cvals.real[sl], k, deriv)
-            res[sl].imag = _fitpack._bspleval(xx,xj, cvals.imag[sl], k, deriv)
+            res[sl].real = _fitpack._bspleval(xx, xj, cvals.real[sl], k, deriv)
+            res[sl].imag = _fitpack._bspleval(xx, xj, cvals.imag[sl], k, deriv)
         else:
             res[sl] = _fitpack._bspleval(xx, xj, cvals[sl], k, deriv)
     res.shape = oldshape + sh

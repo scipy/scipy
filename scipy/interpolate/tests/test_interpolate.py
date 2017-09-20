@@ -2268,17 +2268,15 @@ def _ppoly4d_eval(c, xs, xnew, ynew, znew, unew, nu=None):
     return out
 
 
+def rel_error(actual, computed):
+    return np.linalg.norm(actual - computed) / np.linalg.norm(actual)
+
+
 class TestRegularGridInterpolator(object):
-    def _get_sample_4d(self):
-        # create a 4d grid of 3 points in each dimension
-        points = [(0., .5, 1.)] * 4
-        values = np.asarray([0., .5, 1.])
-        values0 = values[:, np.newaxis, np.newaxis, np.newaxis]
-        values1 = values[np.newaxis, :, np.newaxis, np.newaxis]
-        values2 = values[np.newaxis, np.newaxis, :, np.newaxis]
-        values3 = values[np.newaxis, np.newaxis, np.newaxis, :]
-        values = (values0 + values1 * 10 + values2 * 100 + values3 * 1000)
-        return points, values
+
+    stencil_methods = ['linear', 'nearest']
+    config = RegularGridInterpolator._interp_methods()
+    fitpack_methods, valid_methods, interp_configs = config
 
     def _get_sample_4d_2(self):
         # create another 4d grid of 3 points in each dimension
@@ -2291,30 +2289,126 @@ class TestRegularGridInterpolator(object):
         values = (values0 + values1 * 10 + values2 * 100 + values3 * 1000)
         return points, values
 
+    def _get_sample_4d(self):
+        # create a 4d grid of 3 points in each dimension
+        points = [(0., .5, 1.)] * 4
+        values = np.asarray([0., .5, 1.])
+        values0 = values[:, np.newaxis, np.newaxis, np.newaxis]
+        values1 = values[np.newaxis, :, np.newaxis, np.newaxis]
+        values2 = values[np.newaxis, np.newaxis, :, np.newaxis]
+        values3 = values[np.newaxis, np.newaxis, np.newaxis, :]
+        values = (values0 + values1 * 10 + values2 * 100 + values3 * 1000)
+        return points, values
+
+    def _get_sample_4d_large(self):
+        def f(x, y, z, w):
+            return x**2 + y**2 + z**2 + w**2
+        X = np.linspace(-10, 10, 6)
+        Y = np.linspace(-10, 10, 7)
+        np.random.seed(0)
+        Z = np.random.uniform(-10, 10, 6)
+        Z.sort()
+        W = np.linspace(-10, 10, 8)
+        points = [X, Y, Z, W]
+        values = f(*np.meshgrid(*points, indexing='ij'))
+        return points, values
+
+    def _get_sample_2d(self):
+        # test problem with enough points for smooth spline fits
+        def f(u, v):
+            return u * np.cos(u * v) + v * np.sin(u * v)
+
+        def df(u, v):
+            return (-u * v * np.sin(u * v) + v**2 * np.cos(u * v) +
+                    np.cos(u * v),
+                    -u**2 * np.sin(u * v) + u * v * np.cos(u * v) +
+                    np.sin(u * v))
+
+        # uniformly spaced axis
+        u = np.linspace(0, 3, 50)
+        # randomly spaced axis
+        np.random.seed(7590)
+        v = np.random.uniform(0, 3, 50)
+        v.sort()
+
+        points = [u, v]
+        values = f(*np.meshgrid(*points, indexing='ij'))
+        return points, values, f, df
+
     def test_list_input(self):
-        points, values = self._get_sample_4d()
+        points, values = self._get_sample_4d_large()
 
         sample = np.asarray([[0.1, 0.1, 1., .9], [0.2, 0.1, .45, .8],
                              [0.5, 0.5, .5, .5]])
 
-        for method in ['linear', 'nearest']:
+        for method in self.valid_methods:
             interp = RegularGridInterpolator(points,
                                              values.tolist(),
                                              method=method)
-            v1 = interp(sample.tolist())
+            v1 = interp(sample.tolist(), compute_gradients=False)
             interp = RegularGridInterpolator(points,
                                              values,
                                              method=method)
-            v2 = interp(sample)
+            v2 = interp(sample, compute_gradients=False)
             assert_allclose(v1, v2)
 
-    def test_complex(self):
+    def test_auto_reduce_spline_order(self):
+        # if a spline method is used and spline_dim_error=False and a dimension
+        # does not have enough points, the spline order for that dimension
+        # should be automatically reduced
+        np.random.seed(314)
+
+        # x dimension is too small for cubic, should fall back to linear
+        x = [0, 1]
+        y = np.linspace(-10, 4, 10)
+        z = np.linspace(1000, 2000, 20)
+
+        points = [x, y, z]
+        values = np.random.randn(2, 10, 20)
+
+        # verify that this raises error with dimension checking
+        assert_raises(ValueError, RegularGridInterpolator,
+                      points, values, 'cubic')
+
+        interp = RegularGridInterpolator(
+            points, values, method='cubic', spline_dim_error=False)
+
+        # first dimension (x) should be reduced to k=1 (linear)
+        assert_equal(interp._ki[0], 1)
+
+        # should operate as normal
+        x = [0.5, 0, 1001]
+        result = interp(x)
+        assert_almost_equal(result, -0.046325695741704434, decimal=5)
+
+        interp = RegularGridInterpolator(
+            points, values, method='nearest', spline_dim_error=False)
+
+        value1 = interp(x)
+        # cycle through different methods that require order reduction
+        # in the first dimension
+        value2 = interp(x, method='quintic')
+        interp.gradient(x, method='quintic')
+        value3 = interp(x, method='quadratic')
+        interp.gradient(x, method='quadratic')
+        # use default method again
+        value4 = interp(x)
+
+        # values from different methods should be different
+        assert_raises(AssertionError, assert_equal, value1, value2)
+        assert_raises(AssertionError, assert_equal, value2, value3)
+
+        # first value should match last with no side effects from the
+        # order reduction or gradient caluclations
+        assert_equal(value1, value4)
+
+    def test_complex_stencil(self):
         points, values = self._get_sample_4d()
-        values = values - 2j*values
+        values = values - 2j * values
         sample = np.asarray([[0.1, 0.1, 1., .9], [0.2, 0.1, .45, .8],
                              [0.5, 0.5, .5, .5]])
 
-        for method in ['linear', 'nearest']:
+        for method in self.stencil_methods:
             interp = RegularGridInterpolator(points, values,
                                              method=method)
             rinterp = RegularGridInterpolator(points, values.real,
@@ -2323,19 +2417,222 @@ class TestRegularGridInterpolator(object):
                                               method=method)
 
             v1 = interp(sample)
-            v2 = rinterp(sample) + 1j*iinterp(sample)
+            v2 = rinterp(sample) + 1j * iinterp(sample)
             assert_allclose(v1, v2)
+
+    def test_complex_exception_fitpack2(self):
+        points, values = self._get_sample_4d()
+        values = values - 2j * values
+        sample = np.asarray([[0.1, 0.1, 1., .9]])
+
+        # fitpack methods dont support complex values
+        for method in self.fitpack_methods:
+            assert_raises(ValueError, RegularGridInterpolator, points, values,
+                          method)
+
+            interp = RegularGridInterpolator(points, values)
+            assert_raises(ValueError, interp, sample, method)
+
+    def test_minimum_required_gridsize(self):
+        for method in self.fitpack_methods:
+            k = self.interp_configs[method]
+            x = np.linspace(0, 1, k)
+            y = np.linspace(0, 1, k)
+            points = [x, y]
+            X, Y = np.meshgrid(*points, indexing='ij')
+            values = X + Y
+            assert_raises(ValueError, RegularGridInterpolator, points, values,
+                          method)
+
+    def test_no_gradients(self):
+        # linear and nearest interpolation don't support gradients
+        points, values = self._get_sample_4d()
+        sample = np.asarray([0.1, 0.1, 1., .9])
+        for method in ('linear', 'nearest'):
+            interp = RegularGridInterpolator(points, values)
+            assert_raises(ValueError, interp.gradient, sample, method)
+
+    def test_method_switching(self):
+        # should be able to switch interpolation methods on each __call__
+        # and gradient call, without overriding defaults permenantly.
+        # exceptions and gradient caching should work as expected.
+
+        np.random.seed(314)
+        x = np.linspace(-100, 2, 10)
+        y = np.linspace(-10, 4, 6)
+        z = np.linspace(1000, 2000, 50)
+
+        points = [x, y, z]
+        values = np.random.randn(10, 6, 50)
+
+        x = [0.5, 0, 1001]
+
+        # create as cubic
+        interp = RegularGridInterpolator(
+            points, values, method='cubic')
+
+        # value and gradient work as expected
+        result1 = interp(x)
+        gradient1 = interp.gradient(x)
+        result_actual_1 = 0.2630309995970872
+        result_gradient_1 = np.array([0.22505535, -0.46465198, 0.02523666])
+
+        assert_almost_equal(result1, result_actual_1)
+        assert_almost_equal(gradient1, result_gradient_1)
+
+        # changing the method should work as expected
+        result2 = interp(x, method='slinear')
+        gradient2 = interp.gradient(x, method='slinear')
+        result_actual_2 = 0.27801704674026684
+        result_gradient_2 = np.array([0.12167214, -0.44221416, -0.00323078])
+
+        assert_almost_equal(result2, result_actual_2)
+        assert_almost_equal(gradient2, result_gradient_2)
+
+        # should be able to switch back and get the original results without
+        # explicitly setting the method
+        result3 = interp(x)
+        gradient3 = interp.gradient(x)
+        assert_almost_equal(result3, result_actual_1)
+        assert_almost_equal(gradient3, result_gradient_1)
+
+        # can switch to non-spline method
+        result4 = interp(x, method='nearest')
+        result_actual_4 = -0.21443364377353738
+        assert_almost_equal(result4, result_actual_4)
+        # but can't get any gradients from this
+        assert_raises(ValueError, interp.gradient, x, 'linear')
+        # switching back without resetting still works
+        gradient5 = interp.gradient(x)
+        assert_almost_equal(gradient5, result_gradient_1)
+
+        # other way around now, start with non-spline no-gradient method
+        # and switch methods on a per-call basis
+
+        # new interpolator and evaluation point
+        interp = RegularGridInterpolator(
+            points, values, method='linear')
+        # values will be cast to float for splines/gradient methods
+        # otherwise, will get null vector gradient [0,0,0] at all pts
+        x = [-50, 0, 1501]
+        result6 = interp(x)
+        result_actual_6 = 0.3591176338294626
+        assert_almost_equal(result6, result_actual_6)
+        assert_raises(ValueError, interp.gradient, x)
+
+        # should be able to switch and get value and gradient
+        result7 = interp(x, method='quintic')
+        gradient7 = interp.gradient(x, method='quintic')
+        result_actual_7 = 0.6157594079479937
+        result_gradient_7 = np.array([-0.35731922, 0.23131539, -0.14088582])
+        assert_almost_equal(result7, result_actual_7)
+        assert_almost_equal(gradient7, result_gradient_7)
+
+        # switch again; gradient should be different
+        gradient8 = interp.gradient(x, method='slinear')
+        result_gradient_8 = np.array([-0.11299396, 0.24352342, -0.07446338])
+        assert_almost_equal(gradient8, result_gradient_8)
+
+        # should be able to switch back to original without setting it
+        result9 = interp(x)
+        assert_almost_equal(result9, result6)
+        assert_raises(ValueError, interp.gradient, x)
+
+    def test_fitpack_deriv_xi1d(self):
+        # tests gradient values
+        points, values, func, df = self. _get_sample_2d()
+        np.random.seed(1234)
+        test_pt = np.random.uniform(0, 3, 2)
+        actual = np.array(df(*test_pt))
+        tol = 1e-1
+        for method in self.fitpack_methods:
+            if method == 'slinear':
+                tol = 1.5
+            interp = RegularGridInterpolator(points, values, method)
+            computed = interp.gradient(test_pt)
+            r_err = rel_error(actual, computed)
+            assert r_err < tol
+
+            # test that gradients have been cached
+            assert_array_equal(interp._xi, test_pt)
+            assert_array_equal(
+                interp._all_gradients.flatten(), computed.flatten())
+
+    def test_gradients_returned_by_xi(self):
+        # verifies that gradients with respect to xi are returned if cached
+        points, values, func, df = self. _get_sample_2d()
+        np.random.seed(4321)
+        for method in self.fitpack_methods:
+            interp = RegularGridInterpolator(points, values, method)
+            x = np.array([0.9, 0.1])
+            interp._xi = x
+            interp._gmethod = method
+            dy = np.array([0.997901, 0.08915])
+            interp._all_gradients = dy
+            assert_almost_equal(interp.gradient(x), dy)
+
+    def test_fitpack_xi1d(self):
+        # test interpolated values
+        points, values, func, df = self. _get_sample_2d()
+        np.random.seed(1)
+        test_pt = np.random.uniform(0, 3, 2)
+        actual = func(*test_pt)
+        tol = 1e-2
+        for method in self.fitpack_methods:
+            if method == 'slinear':
+                tol = 0.5
+            interp = RegularGridInterpolator(points, values, method)
+            computed = interp(test_pt, compute_gradients=False)
+            r_err = rel_error(actual, computed)
+            assert r_err < tol
+
+    def test_fitpack_out_of_bounds_extrap(self):
+        points, values, func, df = self. _get_sample_2d()
+        np.random.seed(5)
+        test_pt = np.random.uniform(3, 3.1, 2)
+        actual = func(*test_pt)
+        gradient = np.array(df(*test_pt))
+        tol = 1e-1
+        for method in self.fitpack_methods:
+            k = self.interp_configs[method]
+            if method in ['slinear', 'quadratic']:
+                tol = 2
+            interp = RegularGridInterpolator(points, values, method,
+                                             bounds_error=False,
+                                             fill_value=None)
+            computed = interp(test_pt)
+            computed_grad = interp.gradient(test_pt)
+            r_err = rel_error(actual, computed)
+            assert r_err < tol
+
+            r_err = rel_error(gradient, computed_grad)
+            # extrapolated gradients are even trickier, but usable still
+            assert r_err < 2 * tol
+
+    def test_fitpack_xi3d(self):
+        points, values, func, df = self. _get_sample_2d()
+        np.random.seed(1)
+        test_pt = np.random.uniform(0, 3, 6).reshape(3, 2)
+        actual = func(*test_pt.T)
+        for method in self.fitpack_methods:
+            tol = 1e-1
+            if method == 'slinear':
+                tol = 0.5
+            interp = RegularGridInterpolator(points, values, method)
+            computed = interp(test_pt, compute_gradients=False)
+            r_err = rel_error(actual, computed)
+            assert r_err < tol
 
     def test_linear_xi1d(self):
         points, values = self._get_sample_4d_2()
-        interp = RegularGridInterpolator(points, values)
+        interp = RegularGridInterpolator(points, values, method='linear')
         sample = np.asarray([0.1, 0.1, 10., 9.])
         wanted = 1001.1
         assert_array_almost_equal(interp(sample), wanted)
 
     def test_linear_xi3d(self):
         points, values = self._get_sample_4d()
-        interp = RegularGridInterpolator(points, values)
+        interp = RegularGridInterpolator(points, values, method='linear')
         sample = np.asarray([[0.1, 0.1, 1., .9], [0.2, 0.1, .45, .8],
                              [0.5, 0.5, .5, .5]])
         wanted = np.asarray([1001.1, 846.2, 555.5])
@@ -2431,6 +2728,19 @@ class TestRegularGridInterpolator(object):
         wanted = np.asarray([1001.1, 846.2, 555.5])
         assert_array_almost_equal(interp(sample), wanted)
 
+    def test_out_of_bounds_fill2(self):
+        points, values, func, df = self. _get_sample_2d()
+        np.random.seed(1)
+        test_pt = np.random.uniform(3, 3.1, 2)
+        actual = np.asarray([np.nan, np.nan])
+        methods = self.valid_methods
+        for method in methods:
+            interp = RegularGridInterpolator(points, values, method,
+                                             bounds_error=False,
+                                             fill_value=np.nan)
+            computed = interp(test_pt, compute_gradients=False)
+            assert_array_almost_equal(computed, actual)
+
     def test_nearest_compare_qhull(self):
         points, values = self._get_sample_4d()
         interp = RegularGridInterpolator(points, values, method="nearest")
@@ -2456,12 +2766,12 @@ class TestRegularGridInterpolator(object):
         assert_array_almost_equal(interp(sample), interp_qhull(sample))
 
     def test_duck_typed_values(self):
-        x = np.linspace(0, 2, 5)
+        x = np.linspace(0, 2, 7)
         y = np.linspace(0, 1, 7)
 
-        values = MyValue((5, 7))
+        values = MyValue((7, 7))
 
-        for method in ('nearest', 'linear'):
+        for method in self.valid_methods:
             interp = RegularGridInterpolator((x, y), values,
                                              method=method)
             v1 = interp([0.4, 0.7])
@@ -2482,7 +2792,7 @@ class TestRegularGridInterpolator(object):
 
         # complex values cannot
         assert_raises(ValueError, RegularGridInterpolator,
-                      (x, y), values, fill_value=1+2j)
+                      (x, y), values, fill_value=1 + 2j)
 
     def test_fillvalue_type(self):
         # from #3703; test that interpolator object construction succeeds
@@ -2514,6 +2824,11 @@ class MyValue(object):
 
 
 class TestInterpN(object):
+    stencil_methods = ['linear', 'nearest']
+    config = RegularGridInterpolator._interp_methods()
+    fitpack_methods, all_methods, interp_configs = config
+    valid_methods = all_methods + ['splinef2d']
+
     def _sample_2d_data(self):
         x = np.arange(1, 6)
         x = np.array([.5, 2., 3., 4., 5.5])
@@ -2523,21 +2838,50 @@ class TestInterpN(object):
                       [1, 2, 2, 2, 1], [1, 2, 1, 2, 1]])
         return x, y, z
 
-    def test_spline_2d(self):
-        x, y, z = self._sample_2d_data()
-        lut = RectBivariateSpline(x, y, z)
+    def _get_sample_4d_large(self):
+        def f(x, y, z, w):
+            return x**2 + y**2 + z**2 + w**2
+        X = np.linspace(-10, 10, 6)
+        Y = np.linspace(-10, 10, 7)
+        Z = np.linspace(-10, 10, 6)
+        W = np.linspace(-10, 10, 8)
+        points = [X, Y, Z, W]
+        values = f(*np.meshgrid(*points, indexing='ij'))
+        return points, values
 
-        xi = np.array([[1, 2.3, 5.3, 0.5, 3.3, 1.2, 3],
-                       [1, 3.3, 1.2, 4.0, 5.0, 1.0, 3]]).T
-        assert_array_almost_equal(interpn((x, y), z, xi, method="splinef2d"),
+    def _sample_2d_data_smooth(self):
+        # test problem with enough points for smooth spline fits
+        def f(u, v):
+            return u * np.cos(u * v) + v * np.sin(u * v)
+
+        def df(u, v):
+            return (-u * v * np.sin(u * v) + v**2 * np.cos(u * v) +
+                    np.cos(u * v),
+                    -u**2 * np.sin(u * v) + u * v * np.cos(u * v) +
+                    np.sin(u * v))
+        u = np.linspace(0, 3, 40)
+        v = np.linspace(0, 3, 40)
+        points = [u, v]
+        values = f(*np.meshgrid(*points, indexing='ij'))
+        return points, values, f, df
+
+    def test_spline_2d(self):
+        points, values, f, df = self._sample_2d_data_smooth()
+        x, y = points
+        lut = RectBivariateSpline(x, y, values)
+        np.random.seed(2)
+        xi = np.random.uniform(0, 3, (5, 2))
+        assert_array_almost_equal(interpn((x, y), values, xi,
+                                          method="splinef2d"),
                                   lut.ev(xi[:, 0], xi[:, 1]))
 
     def test_list_input(self):
-        x, y, z = self._sample_2d_data()
-        xi = np.array([[1, 2.3, 5.3, 0.5, 3.3, 1.2, 3],
-                       [1, 3.3, 1.2, 4.0, 5.0, 1.0, 3]]).T
+        points, z, f, df = self._sample_2d_data_smooth()
+        x, y = points
+        np.random.seed(3)
+        xi = np.random.uniform(0, 3, (5, 2))
 
-        for method in ['nearest', 'linear', 'splinef2d']:
+        for method in self.valid_methods + ['splinef2d']:
             v1 = interpn((x, y), z, xi, method=method)
             v2 = interpn((x.tolist(), y.tolist()), z.tolist(),
                          xi.tolist(), method=method)
@@ -2611,43 +2955,43 @@ class TestInterpN(object):
         points, values = self._sample_4d_data()
         sample = np.asarray([0.1, 0.1, 10., 9.])
         v1 = interpn(points, values, sample, bounds_error=False)
-        v2 = interpn(points, values, sample[None,:], bounds_error=False)
+        v2 = interpn(points, values, sample[None, :], bounds_error=False)
         assert_allclose(v1, v2)
 
     def test_xi_nd(self):
         # verify that higher-d xi works as expected
-        points, values = self._sample_4d_data()
+        points, values = self._get_sample_4d_large()
 
         np.random.seed(1234)
         sample = np.random.rand(2, 3, 4)
 
-        v1 = interpn(points, values, sample, method='nearest',
-                     bounds_error=False)
-        assert_equal(v1.shape, (2, 3))
+        n_d_methods = self.valid_methods
+        n_d_methods.remove('splinef2d')
+        for method in n_d_methods:
+            v1 = interpn(points, values, sample, method=method)
+            assert_equal(v1.shape, (2, 3))
 
-        v2 = interpn(points, values, sample.reshape(-1, 4),
-                     method='nearest', bounds_error=False)
-        assert_allclose(v1, v2.reshape(v1.shape))
+            v2 = interpn(points, values, sample.reshape(-1, 4),
+                         method=method)
+            assert_allclose(v1, v2.reshape(v1.shape))
 
     def test_xi_broadcast(self):
         # verify that the interpolators broadcast xi
-        x, y, values = self._sample_2d_data()
-        points = (x, y)
+        points, values, f, df = self._sample_2d_data_smooth()
 
         xi = np.linspace(0, 1, 2)
         yi = np.linspace(0, 3, 3)
 
-        for method in ['nearest', 'linear', 'splinef2d']:
-            sample = (xi[:,None], yi[None,:])
-            v1 = interpn(points, values, sample, method=method,
-                         bounds_error=False)
+        for method in self.valid_methods:
+            sample = (xi[:, None], yi[None, :])
+            v1 = interpn(points, values, sample, method=method)
             assert_equal(v1.shape, (2, 3))
 
             xx, yy = np.meshgrid(xi, yi)
             sample = np.c_[xx.T.ravel(), yy.T.ravel()]
 
             v2 = interpn(points, values, sample,
-                         method=method, bounds_error=False)
+                         method=method)
             assert_allclose(v1, v2.reshape(v1.shape))
 
     def test_nonscalar_values(self):
@@ -2663,7 +3007,7 @@ class TestInterpN(object):
                         bounds_error=False)
             assert_equal(v.shape, (7, 11, 6), err_msg=method)
 
-            vs = [interpn(points, values[...,j], sample, method=method,
+            vs = [interpn(points, values[..., j], sample, method=method,
                           bounds_error=False)
                   for j in range(6)]
             v2 = np.array(vs).transpose(1, 2, 0)
@@ -2677,7 +3021,7 @@ class TestInterpN(object):
     def test_complex(self):
         x, y, values = self._sample_2d_data()
         points = (x, y)
-        values = values - 2j*values
+        values = values - 2j * values
 
         sample = np.array([[1, 2.3, 5.3, 0.5, 3.3, 1.2, 3],
                            [1, 3.3, 1.2, 4.0, 5.0, 1.0, 3]]).T
@@ -2686,34 +3030,39 @@ class TestInterpN(object):
             v1 = interpn(points, values, sample, method=method)
             v2r = interpn(points, values.real, sample, method=method)
             v2i = interpn(points, values.imag, sample, method=method)
-            v2 = v2r + 1j*v2i
+            v2 = v2r + 1j * v2i
             assert_allclose(v1, v2)
 
         # Complex-valued data not supported by spline2fd
         _assert_warns(np.ComplexWarning, interpn, points, values,
                       sample, method='splinef2d')
 
+        # fitpack methods don't support complex data either
+        # raised exception is a lot clearer on this than the default tracebacks
+        for method in self.fitpack_methods:
+            assert_raises(ValueError, interpn, points, values, sample, method)
+
     def test_duck_typed_values(self):
-        x = np.linspace(0, 2, 5)
+        x = np.linspace(0, 2, 7)
         y = np.linspace(0, 1, 7)
 
-        values = MyValue((5, 7))
+        values = MyValue((7, 7))
 
-        for method in ('nearest', 'linear'):
+        for method in self.valid_methods:
             v1 = interpn((x, y), values, [0.4, 0.7], method=method)
             v2 = interpn((x, y), values._v, [0.4, 0.7], method=method)
             assert_allclose(v1, v2)
 
     def test_matrix_input(self):
-        x = np.linspace(0, 2, 5)
+        x = np.linspace(0, 2, 7)
         y = np.linspace(0, 1, 7)
 
-        values = np.matrix(np.random.rand(5, 7))
+        np.random.seed(7)
+        values = np.matrix(np.random.rand(7, 7))
 
         sample = np.random.rand(3, 7, 2)
 
-        for method in ('nearest', 'linear', 'splinef2d'):
+        for method in self.valid_methods:
             v1 = interpn((x, y), values, sample, method=method)
             v2 = interpn((x, y), np.asarray(values), sample, method=method)
             assert_allclose(v1, np.asmatrix(v2))
-
