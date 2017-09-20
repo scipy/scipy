@@ -732,8 +732,13 @@ class TestSolve(object):
         A = np.arange(9).reshape(3, 3) + 1
         x = solve(np.tril(A)/9, np.ones(3), transposed=True)
         assert_array_almost_equal(x, [1.2, 0.2, 1])
-        x = solve(np.tril(A)/9, np.ones(3))
+        x = solve(np.tril(A)/9, np.ones(3), transposed=False)
         assert_array_almost_equal(x, [9, -5.4, -1.2])
+
+    def test_transposed_notimplemented(self):
+        a = np.eye(3).astype(complex)
+        with assert_raises(NotImplementedError):
+            solve(a, a, transposed=True)
 
     def test_nonsquare_a(self):
         assert_raises(ValueError, solve, [1, 2], 1)

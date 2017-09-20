@@ -91,8 +91,8 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
     assume_a : str, optional
         Valid entries are explained above.
     transposed: bool, optional
-        If True, ``a^T x = b`` or ``a^H x = b`` is solved (only taken into
-        account for ``'gen'``). Currently not working for complex matrices.
+        If True, ``a^T x = b`` for real matrices, raises `NotImplementedError`
+        for complex matrices (only for True).
 
     Returns
     -------
@@ -107,6 +107,8 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
         If the matrix is singular.
     RuntimeWarning
         If an ill-conditioned input a is detected.
+    NotImplementedError
+        If transposed is True and input a is a complex matrix.
 
     Examples
     --------
@@ -155,15 +157,13 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
     if b1.size == 0:
         return np.asfortranarray(b1.copy())
 
-    # regularize 1D b arrays to 2D and catch nD RHS arrays
+    # regularize 1D b arrays to 2D
     if b1.ndim == 1:
         if n == 1:
             b1 = b1[None, :]
         else:
             b1 = b1[:, None]
         b_is_1D = True
-
-    r_or_c = complex if np.iscomplexobj(a1) else float
 
     # Backwards compatibility - old keyword.
     if sym_pos:
@@ -183,14 +183,15 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
     # The LAMCH functions only exists for S and D
     # So for complex values we have to convert to real/double.
     if a1.dtype.char in 'fF':  # single precision
-        lamch = get_lapack_funcs(('lamch',), (np.array(0, dtype='f'),))[0]
+        lamch = get_lapack_funcs('lamch', dtype='f')
     else:
-        lamch = get_lapack_funcs(('lamch',), (np.array(0, dtype='d'),))[0]
+        lamch = get_lapack_funcs('lamch', dtype='d')
 
     # Currently we do not have the other forms of the norm calculators
     #   lansy, lanpo, lanhe.
     # However, in any case they only reduce computations slightly...
-    lange = get_lapack_funcs(('lange',), (a1,))[0]
+    lange = get_lapack_funcs('lange', (a1,))
+
     # Since the I-norm and 1-norm are the same for symmetric matrices
     # we can collect them all in this one call
     # Note however, that when issuing 'gen' and form!='none', then
@@ -198,14 +199,17 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
     if transposed:
         trans = 1
         norm = 'I'
-        if r_or_c is not float:
-            raise ValueError('scipy.linalg.solve can currently not solve '
-                             'a^T x = b or a^H x = b for complex matrices.')
+        if np.iscomplexobj(a1):
+            raise NotImplementedError('scipy.linalg.solve can currently '
+                                      'not solve a^T x = b or a^H x = b '
+                                      'for complex matrices.')
     else:
         trans = 0
         norm = '1'
+
     anorm = lange(norm, a1)
 
+    # Generalized case 'gesv'
     if assume_a == 'gen':
         gecon, getrf, getrs = get_lapack_funcs(('gecon', 'getrf', 'getrs'),
                                                (a1, b1))
@@ -215,7 +219,7 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
                         trans=trans, overwrite_b=overwrite_b)
         _solve_check(n, info)
         rcond, info = gecon(lu, anorm, norm=norm)
-
+    # Hermitian case 'hesv'
     elif assume_a == 'her':
         hecon, hesv, hesv_lw = get_lapack_funcs(('hecon', 'hesv', 'hesv_lwork'),
                                                 (a1, b1))
@@ -226,7 +230,7 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
                                  overwrite_b=overwrite_b)
         _solve_check(n, info)
         rcond, info = hecon(lu, ipvt, anorm)
-
+    # Symmetric case 'sysv'
     elif assume_a == 'sym':
         sycon, sysv, sysv_lw = get_lapack_funcs(('sycon', 'sysv', 'sysv_lwork'),
                                                 (a1, b1))
@@ -237,7 +241,7 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
                                  overwrite_b=overwrite_b)
         _solve_check(n, info)
         rcond, info = sycon(lu, ipvt, anorm)
-
+    # Positive definite case 'posv'
     else:
         pocon, posv = get_lapack_funcs(('pocon', 'posv'),
                                        (a1, b1))
