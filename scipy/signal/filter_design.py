@@ -260,26 +260,35 @@ def freqz(b, a=1, worN=None, whole=False, plot=None):
     Given the M-order numerator `b` and N-order denominator `a` of a digital
     filter, compute its frequency response::
 
-                 jw               -jw               -jwM
-        jw    B(e  )  b[0] + b[1]e    + .... + b[M]e
-     H(e  ) = ---- = -----------------------------------
-                 jw               -jw               -jwN
-              A(e  )  a[0] + a[1]e    + .... + a[N]e
+                 jw                 -jw              -jwM
+        jw    B(e  )    b[0] + b[1]e    + ... + b[M]e
+     H(e  ) = ------ = -----------------------------------
+                 jw                 -jw              -jwN
+              A(e  )    a[0] + a[1]e    + ... + a[N]e
 
     Parameters
     ----------
     b : array_like
-        Numerator of a linear filter. Must be 1D.
+        Numerator of a linear filter.  If `b` has dimension greater than 1,
+        it is assumed that the coefficients are stored in the first dimension,
+        and ``b.shape[1:]``, ``a.shape[1:]``, and the shape of the frequencies
+        array must be compatible for broadcasting.
     a : array_like
-        Denominator of a linear filter. Must be 1D.
+        Denominator of a linear filter.  If `b` has dimension greater than 1,
+        it is assumed that the coefficients are stored in the first dimension,
+        and ``b.shape[1:]``, ``a.shape[1:]``, and the shape of the frequencies
+        array must be compatible for broadcasting.
     worN : {None, int, array_like}, optional
-        If None (default), then compute at 512 frequencies equally spaced
-        around the unit circle.
-        If a single integer, then compute at that many frequencies.
+        If None (default), then compute at 512 equally spaced frequencies.
+        If a single integer, then compute at that many frequencies.  This is
+        a convenient alternative to::
+
+            np.linspace(0, 2*pi if whole else pi, N, endpoint=False)
+
         Using a number that is fast for FFT computations can result in
         faster computations (see Notes).
         If an array_like, compute the response at the frequencies given (in
-        radians/sample; must be 1D).
+        radians/sample).
     whole : bool, optional
         Normally, frequencies are computed from 0 to the Nyquist frequency,
         pi radians/sample (upper-half of unit-circle).  If `whole` is True,
@@ -318,6 +327,7 @@ def freqz(b, a=1, worN=None, whole=False, plot=None):
     3. The denominator coefficients are a single value (``a.shape[0] == 1``).
     4. `worN` is at least as long as the numerator coefficients
        (``worN >= b.shape[0]``).
+    5. If ``b.ndim > 1``, then ``b.shape[-1] == 1``.
 
     For long FIR filters, the FFT approach can have lower error and be much
     faster than the equivalent direct polynomial calculation.
@@ -345,13 +355,51 @@ def freqz(b, a=1, worN=None, whole=False, plot=None):
     >>> plt.axis('tight')
     >>> plt.show()
 
+    Broadcasting Examples
+
+    Suppose we have two FIR filters whose coefficients are stored in the
+    rows of an array with shape (2, 25).  For this demonstration we'll
+    use random data:
+
+    >>> np.random.seed(42)
+    >>> b = np.random.rand(2, 25)
+
+    To compute the frequency response for these two filters with one call
+    to `freqz`, we must pass in ``b.T``, because `freqz` expects the first
+    axis to hold the coefficients. We must then extend the shape with a
+    trivial dimension of length 1 to allow broadcasting with the array
+    of frequencies.  That is, we pass in ``b.T[..., np.newaxis]``, which has
+    shape (25, 2, 1):
+
+    >>> w, h = signal.freqz(b.T[..., np.newaxis], worN=1024)
+    >>> w.shape
+    (1024,)
+    >>> h.shape
+    (2, 1024)
+
+    Now suppose we have two transfer functions, with the same numerator
+    coefficients ``b = [0.5, 0.5]``. The coefficients for the two denominators
+    are stored in the first dimension of the two-dimensional array  `a`::
+
+        a = [   1      1  ]
+            [ -0.25, -0.5 ]
+
+    >>> b = np.array([0.5, 0.5])
+    >>> a = np.array([[1, 1], [-0.25, -0.5]])
+
+    Only `a` is more than one-dimensional.  To make it compatible for
+    broadcasting with the frequencies, we extend it with a trivial dimension
+    in the call to `freqz`:
+
+    >>> w, h = signal.freqz(b, a[..., np.newaxis], worN=1024)
+    >>> w.shape
+    (1024,)
+    >>> h.shape
+    (2, 1024)
+
     """
     b = atleast_1d(b)
     a = atleast_1d(a)
-    if b.ndim != 1:
-        raise ValueError('b must be 1D')
-    if a.ndim != 1:
-        raise ValueError('a must be 1D')
 
     if worN is None:
         worN = 512
@@ -362,20 +410,20 @@ def freqz(b, a=1, worN=None, whole=False, plot=None):
     except TypeError:  # not int-like
         w = atleast_1d(worN)
     else:
-        if worN <= 0:
-            raise ValueError('worN must be positive, got %s' % (worN,))
+        if worN < 0:
+            raise ValueError('worN must be nonnegative, got %s' % (worN,))
         lastpoint = 2 * pi if whole else pi
         w = np.linspace(0, lastpoint, worN, endpoint=False)
-        min_size = b.size
-        if (a.size == 1 and worN >= min_size and
-                fftpack.next_fast_len(worN) == worN):
+        if (a.size == 1 and worN >= b.shape[0] and
+                fftpack.next_fast_len(worN) == worN and
+                (b.ndim == 1 or (b.shape[-1] == 1))):
             # if worN is fast, 2 * worN will be fast, too, so no need to check
             n_fft = worN if whole else worN * 2
             if np.isrealobj(b) and np.isrealobj(a):
                 fft_func = np.fft.rfft
             else:
                 fft_func = fftpack.fft
-            h = fft_func(b, n=n_fft)[:worN]
+            h = fft_func(b, n=n_fft, axis=0)[:worN]
             h /= a
             if fft_func is np.fft.rfft and whole:
                 # exclude DC and maybe Nyquist (no need to use axis_reverse
@@ -383,16 +431,17 @@ def freqz(b, a=1, worN=None, whole=False, plot=None):
                 stop = -1 if n_fft % 2 == 1 else -2
                 h_flip = slice(stop, 0, -1)
                 h = np.concatenate((h, h[h_flip].conj()))
+            if b.ndim > 1:
+                # Last axis of h has length 1, so drop it.
+                h = h[..., 0]
+                # Rotate the first axis of h to the end.
+                h = np.rollaxis(h, 0, h.ndim)
     del worN
 
-    if w.ndim != 1:
-        raise ValueError('w must be 1D')
     if h is None:  # still need to compute using freqs w
-        if w.size == 0:
-            raise ValueError('w must have at least one element, got 0')
         zm1 = exp(-1j * w)
-        h = npp_polyval(zm1, b)
-        h /= npp_polyval(zm1, a)
+        h = (npp_polyval(zm1, b, tensor=False) /
+             npp_polyval(zm1, a, tensor=False))
     if plot is not None:
         plot(w, h)
 
