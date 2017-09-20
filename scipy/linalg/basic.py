@@ -230,12 +230,14 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
         warnings.warn('Use of the "debug" keyword is deprecated '
                       'and this keyword will be removed in future '
                       'versions of SciPy.', DeprecationWarning)
+
     if transposed is not None:
         warnings.warn('Use of the "transposed" keyword is deprecated '
                       'and this keyword will be removed in future '
                       'versions of SciPy.', DeprecationWarning)
 
     if refine:
+        # Generalized case 'gesv'
         if assume_a == 'gen':
             gesvx = get_lapack_funcs('gesvx', (a1, b1))
             (_, _, _, _, _, _, _,
@@ -243,7 +245,7 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
                                            trans=trans,
                                            overwrite_a=overwrite_a,
                                            overwrite_b=overwrite_b)
-
+        # Hermitian case 'hesv'
         elif assume_a == 'sym':
             sysvx, sysvx_lw = get_lapack_funcs(('sysvx', 'sysvx_lwork'), (a1, b1))
             lwork = _compute_lwork(sysvx_lw, n, lower)
@@ -251,7 +253,7 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
                                                      lower=lower,
                                                      overwrite_a=overwrite_a,
                                                      overwrite_b=overwrite_b)
-
+        # Symmetric case 'sysv'
         elif assume_a == 'her':
             hesvx, hesvx_lw = get_lapack_funcs(('hesvx', 'hesvx_lwork'), (a1, b1))
             lwork = _compute_lwork(hesvx_lw, n, lower)
@@ -259,7 +261,7 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
                                                lower=lower,
                                                overwrite_a=overwrite_a,
                                                overwrite_b=overwrite_b)
-
+        # Positive definite case 'posv'
         else:
             posvx = get_lapack_funcs('posvx', (a1, b1))
             _, _, _, _, _, x, rcond, _, _, info = posvx(a1, b1,
@@ -284,14 +286,15 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
         # The LAMCH functions only exists for S and D
         # So for complex values we have to convert to real/double.
         if a1.dtype.char in 'fF':  # single precision
-            lamch = get_lapack_funcs(('lamch',), (np.array(0, dtype='f'),))[0]
+            lamch = get_lapack_funcs('lamch', dtype='f')
         else:
-            lamch = get_lapack_funcs(('lamch',), (np.array(0, dtype='d'),))[0]
+            lamch = get_lapack_funcs('lamch', dtype='d')
 
         # Currently we do not have the other forms of the norm calculators
         #   lansy, lanpo, lanhe.
         # However, in any case they only reduce computations slightly...
-        lange = get_lapack_funcs(('lange',), (a1,))[0]
+        lange = get_lapack_funcs('lange', (a1,))
+
         # Since the I-norm and 1-norm are the same for symmetric matrices
         # we can collect them all in this one call
         # Note however, that when issuing 'gen' and form!='none', then
@@ -300,8 +303,10 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
             norm = '1'
         else:
             norm = 'I'
+
         anorm = lange(norm, a1)
 
+        # Generalized case 'gesv'
         if assume_a == 'gen':
             gecon, getrf, getrs = get_lapack_funcs(('gecon', 'getrf', 'getrs'),
                                                    (a1, b1))
@@ -311,7 +316,7 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
                             trans=trans, overwrite_b=overwrite_b)
             _solve_check(n, info)
             rcond, info = gecon(lu, anorm, norm=norm)
-
+        # Hermitian case 'hesv'
         elif assume_a == 'her':
             hecon, hesv, hesv_lw = get_lapack_funcs(('hecon', 'hesv', 'hesv_lwork'),
                                                     (a1, b1))
@@ -322,7 +327,7 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
                                      overwrite_b=overwrite_b)
             _solve_check(n, info)
             rcond, info = hecon(lu, ipvt, anorm)
-
+        # Symmetric case 'sysv'
         elif assume_a == 'sym':
             sycon, sysv, sysv_lw = get_lapack_funcs(('sycon', 'sysv', 'sysv_lwork'),
                                                     (a1, b1))
@@ -333,7 +338,7 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
                                      overwrite_b=overwrite_b)
             _solve_check(n, info)
             rcond, info = sycon(lu, ipvt, anorm)
-
+        # Positive definite case 'posv'
         else:
             pocon, posv = get_lapack_funcs(('pocon', 'posv'),
                                            (a1, b1))

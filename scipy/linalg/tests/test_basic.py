@@ -750,6 +750,9 @@ class TestSolve(object):
         with warnings.catch_warnings():
             warnings.simplefilter('error')
             assert_raises(DeprecationWarning, solve, a, b, transposed=1)
+        with warnings.catch_warnings():
+            warnings.simplefilter('error')
+            assert_raises(DeprecationWarning, solve, a, b, transposed=False)
 
     def test_nonsquare_a(self):
         assert_raises(ValueError, solve, [1, 2], 1)
