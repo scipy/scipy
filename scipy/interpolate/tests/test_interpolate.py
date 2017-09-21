@@ -2731,7 +2731,7 @@ class TestRegularGridInterpolator(object):
         points, values, func, df = self. _get_sample_2d()
         np.random.seed(1)
         test_pt = np.random.uniform(3, 3.1, 2)
-        actual = np.asarray([np.nan, np.nan])
+        actual = np.asarray([np.nan])
         methods = self.valid_methods
         for method in methods:
             interp = RegularGridInterpolator(points, values, method,

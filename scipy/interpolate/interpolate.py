@@ -2707,19 +2707,19 @@ class RegularGridInterpolator(object):
                                              "" % (n_p, i, method, k + 1))
 
             interpolator = make_interp_spline
-            result = self._evaluate_separable(self.values[:].T,
-                                              xi,
-                                              indices,
-                                              interpolator,
-                                              method,
-                                              ki,
-                                              compute_gradients=compute_gradients)
+            result = self._evaluate_splines(self.values[:].T,
+                                            xi,
+                                            indices,
+                                            interpolator,
+                                            method,
+                                            ki,
+                                            compute_gradients=compute_gradients)
 
         if not self.bounds_error and self.fill_value is not None:
             result[out_of_bounds] = self.fill_value
 
         return result.reshape(xi_shape[:-1] +
-                              self.values.shape[ndim:]).squeeze()
+                              self.values.shape[ndim:])
 
     def _evaluate_linear(self, indices, norm_distances, out_of_bounds):
         # slice for broadcasting over trailing dimensions in self.values
@@ -2742,8 +2742,8 @@ class RegularGridInterpolator(object):
             idx_res.append(np.where(yi <= .5, i, i + 1))
         return self.values[idx_res]
 
-    def _evaluate_separable(self, data_values, xi, indices, interpolator,
-                            method, ki, compute_gradients=True):
+    def _evaluate_splines(self, data_values, xi, indices, interpolator, method,
+                          ki, compute_gradients=True):
         """Convenience method for separable regular grid interpolation."""
         # for spline based methods
 
@@ -2763,6 +2763,18 @@ class RegularGridInterpolator(object):
         # Non-stationary procedure: difficult to vectorize this part entirely
         # into numpy-level operations. Unfortunately this requires explicit
         # looping over each point in xi.
+
+        # can at least vectorize the first pass across all points in the
+        # last variable of xi
+        i = n - 1
+        first_values, first_derivs = self._do_spline_fit(interpolator,
+                                                         self.grid[i],
+                                                         data_values,
+                                                         xi[:, i],
+                                                         ki[i],
+                                                         compute_gradients)
+
+        # the rest of the dimensions have to be on a per point-in-xi basis
         for j, x in enumerate(xi):
             gradient = np.empty_like(x)
             values = data_values[:]
@@ -2771,54 +2783,64 @@ class RegularGridInterpolator(object):
             # sequentially, starting with the last dimension. These are then
             # "folded" into the next dimension in-place.
             for i in reversed(range(1, n)):
-
-                # Interpolate and collect gradients for each 1D in this last
-                # dimensions. This collapses each 1D sequence into a scalar.
-                interp_args = []
-                k = ki[i]
-                interp_kwargs = {'k': k, 'axis': 0}
-                local_interp = interpolator(self.grid[i], values,
-                                            *interp_args,
-                                            **interp_kwargs)
-
-                values = local_interp(x[i])
-
-                if compute_gradients:
-                    local_derivs = local_interp(x[i], 1)
+                if i == n - 1:
+                    values = first_values[j]
+                    if compute_gradients:
+                        local_derivs = first_derivs[j]
+                else:
+                    # Interpolate and collect gradients for each 1D in this
+                    # last dimensions. This collapses each 1D sequence into a
+                    # scalar.
+                    values, local_derivs = self._do_spline_fit(interpolator,
+                                                               self.grid[i],
+                                                               values,
+                                                               x[i],
+                                                               ki[i],
+                                                               compute_gradients)
 
                 # Chain rule: to compute gradients of the output w.r.t. xi
                 # across the dimensions, apply interpolation to the collected
                 # gradients. This is equivalent to multiplication by
                 # dResults/dValues at each level.
                 if compute_gradients:
-                    gradient[i] = self._evaluate_separable(local_derivs,
-                                                           x[: i],
-                                                           indices,
-                                                           interpolator,
-                                                           method,
-                                                           ki,
-                                                           compute_gradients=False)
+                    gradient[i] = self._evaluate_splines(local_derivs,
+                                                         x[: i],
+                                                         indices,
+                                                         interpolator,
+                                                         method,
+                                                         ki,
+                                                         compute_gradients=False)
 
             # All values have been folded down to a single dimensional array
             # compute the final interpolated results, and gradient w.r.t. the
             # first dimension
-            interp_args = []
-            interp_kwargs = {'k': ki[0]}
-            final_interp = interpolator(self.grid[0],
-                                        values, *interp_args, **interp_kwargs)
-            output_value = final_interp(x[0])
+            output_value, gradient[0] = self._do_spline_fit(interpolator,
+                                                            self.grid[0],
+                                                            values,
+                                                            x[0],
+                                                            ki[0],
+                                                            compute_gradients)
+
             if compute_gradients:
-                gradient[0] = final_interp(x[0], 1)
                 all_gradients[j] = gradient
             result[j] = output_value
 
         # Cache the computed gradients for return by the gradient method
         if compute_gradients:
-            # cache gradients
             self._all_gradients = all_gradients
             # indicate what method was used to compute these
             self._gmethod = method
         return result
+
+    def _do_spline_fit(self, interpolator, x, y, pt, k, compute_gradients):
+        """Do a single interpolant call, and compute a gradient if needed."""
+        interp_kwargs = {'k': k, 'axis': 0}
+        local_interp = interpolator(x, y, **interp_kwargs)
+        values = local_interp(pt)
+        local_derivs = None
+        if compute_gradients:
+            local_derivs = local_interp(pt, 1)
+        return values, local_derivs
 
     def _find_indices(self, xi):
         # find relevant edges between which xi are situated
@@ -2881,7 +2903,7 @@ class RegularGridInterpolator(object):
             self.__call__(xi, method=method)
         gradients = self._all_gradients
         gradients = gradients.reshape(np.asarray(xi).shape)
-        return gradients.squeeze()
+        return gradients
 
 
 def interpn(points, values, xi, method="linear", bounds_error=True,
