@@ -2778,7 +2778,6 @@ class RegularGridInterpolator(object):
         # looping over each point in xi.
         for j, x in enumerate(xi):
             gradient = np.empty_like(x)
-            points = list(self.grid)
             values = data_values[:]
 
             # Main process: Apply 1D interpolate in each dimension
@@ -2807,7 +2806,7 @@ class RegularGridInterpolator(object):
                 interp_kwargs = {'k': k, 's': 0, 'ext': 0}
 
                 for k in range(n_rows):
-                    local_interp = interpolator(points[i],
+                    local_interp = interpolator(self.grid[i],
                                                 values[k],
                                                 *interp_args,
                                                 **interp_kwargs)
@@ -2825,7 +2824,7 @@ class RegularGridInterpolator(object):
                 # dResults/dValues at each level.
                 if compute_gradients:
                     local_derivs = np.array(local_derivs).reshape(newshape)
-                    gradient[i] = self._evaluate_separable(points[: i],
+                    gradient[i] = self._evaluate_separable(self.grid[: i],
                                                            local_derivs,
                                                            x[: i],
                                                            indices,
@@ -2839,7 +2838,7 @@ class RegularGridInterpolator(object):
             # first dimension
             interp_args = []
             interp_kwargs = {'k': ki[0], 's': 0, 'ext': 0}
-            final_interp = interpolator(points[0],
+            final_interp = interpolator(self.grid[0],
                                         values, *interp_args, **interp_kwargs)
             output_value = final_interp(x[0])
             if compute_gradients:
