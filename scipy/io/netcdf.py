@@ -276,7 +276,7 @@ class netcdf_file(object):
 
     def close(self):
         """Closes the NetCDF file."""
-        if not self.fp.closed:
+        if hasattr(self, 'fp') and not self.fp.closed:
             try:
                 self.flush()
             finally:
@@ -511,8 +511,8 @@ class netcdf_file(object):
             # Handle rec vars with shape[0] < nrecs.
             if self._recs > len(var.data):
                 shape = (self._recs,) + var.data.shape[1:]
-                # Resize in-place does not always work since 
-                # the array might not be single-segment                              
+                # Resize in-place does not always work since
+                # the array might not be single-segment
                 try:
                     var.data.resize(shape)
                 except ValueError:
@@ -987,8 +987,8 @@ class netcdf_variable(object):
                 recs = rec_index + 1
             if recs > len(self.data):
                 shape = (recs,) + self._shape[1:]
-                # Resize in-place does not always work since 
-                # the array might not be single-segment                              
+                # Resize in-place does not always work since
+                # the array might not be single-segment
                 try:
                     self.data.resize(shape)
                 except ValueError:
