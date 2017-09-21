@@ -28,7 +28,7 @@ from . import dfitpack
 from . import _fitpack
 from .polyint import _Interpolator1D
 from . import _ppoly
-from .fitpack2 import RectBivariateSpline, UnivariateSpline
+from .fitpack2 import RectBivariateSpline
 from .interpnd import _ndim_coords_from_arrays
 from ._bsplines import make_interp_spline, BSpline
 
@@ -94,8 +94,8 @@ def lagrange(x, w):
         for k in xrange(M):
             if k == j:
                 continue
-            fac = x[j] - x[k]
-            pt *= poly1d([1.0, -x[k]]) / fac
+            fac = x[j]-x[k]
+            pt *= poly1d([1.0, -x[k]])/fac
         p += pt
     return p
 
@@ -579,7 +579,7 @@ class interp1d(_Interpolator1D):
         # 3. Clip x_new_indices so that they are within the range of
         #    self.x indices and at least 1.  Removes mis-interpolation
         #    of x_new[n] = x[0]
-        x_new_indices = x_new_indices.clip(1, len(self.x) - 1).astype(int)
+        x_new_indices = x_new_indices.clip(1, len(self.x)-1).astype(int)
 
         # 4. Calculate the slope of regions that each x_new value falls in.
         lo = x_new_indices - 1
@@ -595,7 +595,7 @@ class interp1d(_Interpolator1D):
         slope = (y_hi - y_lo) / (x_hi - x_lo)[:, None]
 
         # 5. Calculate the actual value for each entry in x_new.
-        y_new = slope * (x_new - x_lo)[:, None] + y_lo
+        y_new = slope*(x_new - x_lo)[:, None] + y_lo
 
         return y_new
 
@@ -609,7 +609,7 @@ class interp1d(_Interpolator1D):
         x_new_indices = searchsorted(self.x_bds, x_new, side='left')
 
         # 3. Clip x_new_indices so that they are within the range of x indices.
-        x_new_indices = x_new_indices.clip(0, len(self.x) - 1).astype(intp)
+        x_new_indices = x_new_indices.clip(0, len(self.x)-1).astype(intp)
 
         # 4. Calculate the actual value for each entry in x_new.
         y_new = self._y[x_new_indices]
@@ -691,7 +691,7 @@ class _PPolyBase(object):
 
         if not (0 <= axis < self.c.ndim - 1):
             raise ValueError("axis=%s must be between 0 and %s" %
-                             (axis, self.c.ndim - 1))
+                             (axis, self.c.ndim-1))
 
         self.axis = axis
         if axis != 0:
@@ -701,8 +701,8 @@ class _PPolyBase(object):
             #                                               ^
             #                                              axis
             # So we roll two of them.
-            self.c = np.rollaxis(self.c, axis + 1)
-            self.c = np.rollaxis(self.c, axis + 1)
+            self.c = np.rollaxis(self.c, axis+1)
+            self.c = np.rollaxis(self.c, axis+1)
 
         if self.x.ndim != 1:
             raise ValueError("x must be 1-dimensional")
@@ -712,7 +712,7 @@ class _PPolyBase(object):
             raise ValueError("c must have at least 2 dimensions")
         if self.c.shape[0] == 0:
             raise ValueError("polynomial must be at least of order 0")
-        if self.c.shape[1] != self.x.size - 1:
+        if self.c.shape[1] != self.x.size-1:
             raise ValueError("number of coefficients != len(x)-1")
         dx = np.diff(self.x)
         if not (np.all(dx >= 0) or np.all(dx <= 0)):
@@ -723,7 +723,7 @@ class _PPolyBase(object):
 
     def _get_dtype(self, dtype):
         if np.issubdtype(dtype, np.complexfloating) \
-                or np.issubdtype(self.c.dtype, np.complexfloating):
+               or np.issubdtype(self.c.dtype, np.complexfloating):
             return np.complex_
         else:
             return np.float_
@@ -830,12 +830,12 @@ class _PPolyBase(object):
                       dtype=dtype)
 
         if action == 'append':
-            c2[k2 - self.c.shape[0]:, :self.c.shape[1]] = self.c
-            c2[k2 - c.shape[0]:, self.c.shape[1]:] = c
+            c2[k2-self.c.shape[0]:, :self.c.shape[1]] = self.c
+            c2[k2-c.shape[0]:, self.c.shape[1]:] = c
             self.x = np.r_[self.x, x]
         elif action == 'prepend':
-            c2[k2 - self.c.shape[0]:, :c.shape[1]] = c
-            c2[k2 - c.shape[0]:, c.shape[1]:] = self.c
+            c2[k2-self.c.shape[0]:, :c.shape[1]] = c
+            c2[k2-c.shape[0]:, c.shape[1]:] = self.c
             self.x = np.r_[x, self.x]
 
         self.c = c2
@@ -889,8 +889,7 @@ class _PPolyBase(object):
         if self.axis != 0:
             # transpose to move the calculated values to the interpolation axis
             l = list(range(out.ndim))
-            l = l[x_ndim:x_ndim + self.axis] + \
-                l[:x_ndim] + l[x_ndim + self.axis:]
+            l = l[x_ndim:x_ndim+self.axis] + l[:x_ndim] + l[x_ndim+self.axis:]
             out = out.transpose(l)
         return out
 
@@ -954,7 +953,6 @@ class PPoly(_PPolyBase):
     unstable.  Precision problems can start to appear for orders
     larger than 20-30.
     """
-
     def _evaluate(self, x, nu, extrapolate, out):
         _ppoly.evaluate(self.c.reshape(self.c.shape[0], self.c.shape[1], -1),
                         self.x, x, nu, bool(extrapolate), out)
@@ -998,7 +996,7 @@ class PPoly(_PPolyBase):
 
         # multiply by the correct rising factorials
         factor = spec.poch(np.arange(c2.shape[0], 0, -1), nu)
-        c2 *= factor[(slice(None),) + (None,) * (c2.ndim - 1)]
+        c2 *= factor[(slice(None),) + (None,)*(c2.ndim-1)]
 
         # construct a compatible polynomial
         return self.construct_fast(c2, self.x, self.extrapolate, self.axis)
@@ -1042,7 +1040,7 @@ class PPoly(_PPolyBase):
 
         # divide by the correct rising factorials
         factor = spec.poch(np.arange(self.c.shape[0], 0, -1), nu)
-        c[:-nu] /= factor[(slice(None),) + (None,) * (c.ndim - 1)]
+        c[:-nu] /= factor[(slice(None),) + (None,)*(c.ndim-1)]
 
         # fix continuity of added degrees of freedom
         self._ensure_c_contiguous()
@@ -1261,10 +1259,10 @@ class PPoly(_PPolyBase):
         else:
             t, c, k = tck
 
-        cvals = np.empty((k + 1, len(t) - 1), dtype=c.dtype)
+        cvals = np.empty((k + 1, len(t)-1), dtype=c.dtype)
         for m in xrange(k, -1, -1):
             y = fitpack.splev(t[:-1], tck, der=m)
-            cvals[k - m, :] = y / spec.gamma(m + 1)
+            cvals[k - m, :] = y/spec.gamma(m+1)
 
         return cls.construct_fast(cvals, t, extrapolate)
 
@@ -1286,14 +1284,14 @@ class PPoly(_PPolyBase):
         dx = np.diff(bp.x)
         k = bp.c.shape[0] - 1  # polynomial order
 
-        rest = (None,) * (bp.c.ndim - 2)
+        rest = (None,)*(bp.c.ndim-2)
 
         c = np.zeros_like(bp.c)
-        for a in range(k + 1):
+        for a in range(k+1):
             factor = (-1)**a * comb(k, a) * bp.c[a]
-            for s in range(a, k + 1):
-                val = comb(k - a, s - a) * (-1)**s
-                c[k - s] += factor * val / dx[(slice(None),) + rest]**s
+            for s in range(a, k+1):
+                val = comb(k-a, s-a) * (-1)**s
+                c[k-s] += factor * val / dx[(slice(None),)+rest]**s
 
         if extrapolate is None:
             extrapolate = bp.extrapolate
@@ -1430,10 +1428,10 @@ class BPoly(_PPolyBase):
             # finally, for an interval [y, y + dy] with dy != 1,
             # we need to correct for an extra power of dy
 
-            rest = (None,) * (self.c.ndim - 2)
+            rest = (None,)*(self.c.ndim-2)
 
             k = self.c.shape[0] - 1
-            dx = np.diff(self.x)[(None, slice(None)) + rest]
+            dx = np.diff(self.x)[(None, slice(None))+rest]
             c2 = k * np.diff(self.c, axis=0) / dx
 
         if c2.shape[0] == 0:
@@ -1478,20 +1476,19 @@ class BPoly(_PPolyBase):
         # Construct the indefinite integrals on individual intervals
         c, x = self.c, self.x
         k = c.shape[0]
-        c2 = np.zeros((k + 1,) + c.shape[1:], dtype=c.dtype)
+        c2 = np.zeros((k+1,) + c.shape[1:], dtype=c.dtype)
 
         c2[1:, ...] = np.cumsum(c, axis=0) / k
         delta = x[1:] - x[:-1]
-        c2 *= delta[(None, slice(None)) + (None,) * (c.ndim - 2)]
+        c2 *= delta[(None, slice(None)) + (None,)*(c.ndim-2)]
 
         # Now fix continuity: on the very first interval, take the integration
         # constant to be zero; on an interval [x_j, x_{j+1}) with j>0,
         # the integration constant is then equal to the jump of the `bp` at x_j.
         # The latter is given by the coefficient of B_{n+1, n+1}
         # *on the previous interval* (other B. polynomials are zero at the
-        # breakpoint). Finally, use the fact that BPs form a partition of
-        # unity.
-        c2[:, 1:] += np.cumsum(c2[k, :], axis=0)[:-1]
+        # breakpoint). Finally, use the fact that BPs form a partition of unity.
+        c2[:,1:] += np.cumsum(c2[k, :], axis=0)[:-1]
 
         if self.extrapolate == 'periodic':
             extrapolate = False
@@ -1589,14 +1586,13 @@ class BPoly(_PPolyBase):
         dx = np.diff(pp.x)
         k = pp.c.shape[0] - 1   # polynomial order
 
-        rest = (None,) * (pp.c.ndim - 2)
+        rest = (None,)*(pp.c.ndim-2)
 
         c = np.zeros_like(pp.c)
-        for a in range(k + 1):
-            factor = pp.c[a] / comb(k, k - a) * \
-                dx[(slice(None),) + rest]**(k - a)
-            for j in range(k - a, k + 1):
-                c[j] += factor * comb(j, k - a)
+        for a in range(k+1):
+            factor = pp.c[a] / comb(k, k-a) * dx[(slice(None),)+rest]**(k-a)
+            for j in range(k-a, k+1):
+                c[j] += factor * comb(j, k-a)
 
         if extrapolate is None:
             extrapolate = pp.extrapolate
@@ -1678,7 +1674,7 @@ class BPoly(_PPolyBase):
 
         # global poly order is k-1, local orders are <=k and can vary
         try:
-            k = max(len(yi[i]) + len(yi[i + 1]) for i in range(m))
+            k = max(len(yi[i]) + len(yi[i+1]) for i in range(m))
         except TypeError:
             raise ValueError("Using a 1D array for y? Please .reshape(-1, 1).")
 
@@ -1694,25 +1690,25 @@ class BPoly(_PPolyBase):
 
         c = []
         for i in range(m):
-            y1, y2 = yi[i], yi[i + 1]
+            y1, y2 = yi[i], yi[i+1]
             if orders[i] is None:
                 n1, n2 = len(y1), len(y2)
             else:
-                n = orders[i] + 1
-                n1 = min(n // 2, len(y1))
+                n = orders[i]+1
+                n1 = min(n//2, len(y1))
                 n2 = min(n - n1, len(y2))
                 n1 = min(n - n2, len(y2))
-                if n1 + n2 != n:
+                if n1+n2 != n:
                     mesg = ("Point %g has %d derivatives, point %g"
                             " has %d derivatives, but order %d requested" % (
-                                xi[i], len(y1), xi[i + 1], len(y2), orders[i]))
+                               xi[i], len(y1), xi[i+1], len(y2), orders[i]))
                     raise ValueError(mesg)
 
                 if not (n1 <= len(y1) and n2 <= len(y2)):
                     raise ValueError("`order` input incompatible with"
                                      " length y1 or y2.")
 
-            b = BPoly._construct_from_derivatives(xi[i], xi[i + 1],
+            b = BPoly._construct_from_derivatives(xi[i], xi[i+1],
                                                   y1[:n1], y2[:n2])
             if len(b) < k:
                 b = BPoly._raise_degree(b, k - len(b))
@@ -1782,7 +1778,7 @@ class BPoly(_PPolyBase):
 
         dta, dtb = ya.dtype, yb.dtype
         if (np.issubdtype(dta, np.complexfloating) or
-                np.issubdtype(dtb, np.complexfloating)):
+               np.issubdtype(dtb, np.complexfloating)):
             dt = np.complex_
         else:
             dt = np.float_
@@ -1790,20 +1786,20 @@ class BPoly(_PPolyBase):
         na, nb = len(ya), len(yb)
         n = na + nb
 
-        c = np.empty((na + nb,) + ya.shape[1:], dtype=dt)
+        c = np.empty((na+nb,) + ya.shape[1:], dtype=dt)
 
         # compute coefficients of a polynomial degree na+nb-1
         # walk left-to-right
         for q in range(0, na):
             c[q] = ya[q] / spec.poch(n - q, q) * (xb - xa)**q
             for j in range(0, q):
-                c[q] -= (-1)**(j + q) * comb(q, j) * c[j]
+                c[q] -= (-1)**(j+q) * comb(q, j) * c[j]
 
         # now walk right-to-left
         for q in range(0, nb):
-            c[-q - 1] = yb[q] / spec.poch(n - q, q) * (-1)**q * (xb - xa)**q
+            c[-q-1] = yb[q] / spec.poch(n - q, q) * (-1)**q * (xb - xa)**q
             for j in range(0, q):
-                c[-q - 1] -= (-1)**(j + 1) * comb(q, j + 1) * c[-q + j]
+                c[-q-1] -= (-1)**(j+1) * comb(q, j+1) * c[-q+j]
 
         return c
 
@@ -1843,8 +1839,8 @@ class BPoly(_PPolyBase):
 
         for a in range(c.shape[0]):
             f = c[a] * comb(k, a)
-            for j in range(d + 1):
-                out[a + j] += f * comb(d, j) / comb(k + d, a + j)
+            for j in range(d+1):
+                out[a+j] += f * comb(d, j) / comb(k+d, a+j)
         return out
 
 
@@ -1919,11 +1915,11 @@ class NdPPoly(object):
             raise ValueError("x arrays must all be 1-dimensional")
         if any(v.size < 2 for v in self.x):
             raise ValueError("x arrays must all contain at least 2 points")
-        if c.ndim < 2 * ndim:
+        if c.ndim < 2*ndim:
             raise ValueError("c must have at least 2*len(x) dimensions")
         if any(np.any(v[1:] - v[:-1] < 0) for v in self.x):
             raise ValueError("x-coordinates are not in increasing order")
-        if any(a != b.size - 1 for a, b in zip(c.shape[ndim:2 * ndim], self.x)):
+        if any(a != b.size - 1 for a, b in zip(c.shape[ndim:2*ndim], self.x)):
             raise ValueError("x and c do not agree on the number of intervals")
 
         dtype = self._get_dtype(self.c.dtype)
@@ -1950,7 +1946,7 @@ class NdPPoly(object):
 
     def _get_dtype(self, dtype):
         if np.issubdtype(dtype, np.complexfloating) \
-                or np.issubdtype(self.c.dtype, np.complexfloating):
+               or np.issubdtype(self.c.dtype, np.complexfloating):
             return np.complex_
         else:
             return np.float_
@@ -2009,8 +2005,8 @@ class NdPPoly(object):
                 raise ValueError("invalid number of derivative orders nu")
 
         dim1 = prod(self.c.shape[:ndim])
-        dim2 = prod(self.c.shape[ndim:2 * ndim])
-        dim3 = prod(self.c.shape[2 * ndim:])
+        dim2 = prod(self.c.shape[ndim:2*ndim])
+        dim3 = prod(self.c.shape[2*ndim:])
         ks = np.array(self.c.shape[:ndim], dtype=np.intc)
 
         out = np.empty((x.shape[0], dim3), dtype=self.c.dtype)
@@ -2024,7 +2020,7 @@ class NdPPoly(object):
                            bool(extrapolate),
                            out)
 
-        return out.reshape(x_shape[:-1] + self.c.shape[2 * ndim:])
+        return out.reshape(x_shape[:-1] + self.c.shape[2*ndim:])
 
     def _derivative_inplace(self, nu, axis):
         """
@@ -2042,7 +2038,7 @@ class NdPPoly(object):
             # noop
             return
         else:
-            sl = [slice(None)] * ndim
+            sl = [slice(None)]*ndim
             sl[axis] = slice(None, -nu, None)
             c2 = self.c[sl]
 
@@ -2054,7 +2050,7 @@ class NdPPoly(object):
 
         # multiply by the correct rising factorials
         factor = spec.poch(np.arange(c2.shape[axis], 0, -1), nu)
-        sl = [None] * c2.ndim
+        sl = [None]*c2.ndim
         sl[axis] = slice(None)
         c2 *= factor[sl]
 
@@ -2078,21 +2074,21 @@ class NdPPoly(object):
         c = self.c.transpose(perm)
 
         c2 = np.zeros((c.shape[0] + nu,) + c.shape[1:],
-                      dtype=c.dtype)
+                     dtype=c.dtype)
         c2[:-nu] = c
 
         # divide by the correct rising factorials
         factor = spec.poch(np.arange(c.shape[0], 0, -1), nu)
-        c2[:-nu] /= factor[(slice(None),) + (None,) * (c.ndim - 1)]
+        c2[:-nu] /= factor[(slice(None),) + (None,)*(c.ndim-1)]
 
         # fix continuity of added degrees of freedom
         perm2 = list(range(c2.ndim))
-        perm2[1], perm2[ndim + axis] = perm2[ndim + axis], perm2[1]
+        perm2[1], perm2[ndim+axis] = perm2[ndim+axis], perm2[1]
 
         c2 = c2.transpose(perm2)
         c2 = c2.copy()
         _ppoly.fix_continuity(c2.reshape(c2.shape[0], c2.shape[1], -1),
-                              self.x[axis], nu - 1)
+                              self.x[axis], nu-1)
 
         c2 = c2.transpose(perm2)
         c2 = c2.transpose(perm)
@@ -2225,7 +2221,7 @@ class NdPPoly(object):
             return out.reshape(c.shape[2:])
         else:
             c = out.reshape(c.shape[2:])
-            x = self.x[:axis] + self.x[axis + 1:]
+            x = self.x[:axis] + self.x[axis+1:]
             return self.construct_fast(c, x, extrapolate=extrapolate)
 
     def integrate(self, ranges, extrapolate=None):
@@ -2340,9 +2336,8 @@ class RegularGridInterpolator(object):
     as usual in this case.
 
     The 'slinear', 'quadratic', 'cubic', 'quartic', 'quintic' methods
-    are all spline-based interpolators. These make use of `UnivariateSpline` in
-    each dimension. Use of the spline interpolations allows for getting
-    gradient values via the ``gradient`` method.
+    are all spline-based interpolators. Use of the spline interpolations
+    allows for getting gradient values via the ``gradient`` method.
 
     Interpolation with the spline methods is expectedly slower than 'linear' or
     'nearest'. They use a different separable tensor product interpolation
@@ -2549,28 +2544,25 @@ class RegularGridInterpolator(object):
         """Method-specific settings for interpolation and for testing."""
         interpolator_configs = {
             "slinear": 1,
-            "quadratic": 2,
             "cubic": 3,
-            "quartic": 4,
             "quintic": 5,
         }
 
-        fitpack_interps = interpolator_configs.keys()
-        all_methods = ['nearest', 'linear'] + list(fitpack_interps)
+        spline_interps = interpolator_configs.keys()
+        all_methods = ['nearest', 'linear'] + list(spline_interps)
 
-        return fitpack_interps, all_methods, interpolator_configs
+        return spline_interps, all_methods, interpolator_configs
 
     @staticmethod
     def methods():
         """Return a list of valid interpolation method names."""
-        return ['nearest', 'linear', 'slinear', 'quadratic', 'cubic',
-                'quartic', 'quintic']
+        return ['nearest', 'linear', 'slinear', 'cubic', 'quintic']
 
     def __init__(self, points, values, method="linear", bounds_error=True,
                  fill_value=np.nan, spline_dim_error=True):
 
         configs = RegularGridInterpolator._interp_methods()
-        self._fitpack_methods, self._all_methods, self._interp_config = configs
+        self._spline_methods, self._all_methods, self._interp_config = configs
         if method not in self._all_methods:
             all_m = ', '.join(['"' + m + '"' for m in self._all_methods])
             raise ValueError('Method "%s" is not defined. Valid methods are '
@@ -2611,7 +2603,7 @@ class RegularGridInterpolator(object):
             if not values.shape[i] == n_p:
                 raise ValueError("There are %d points and %d values in "
                                  "dimension %d" % (len(p), values.shape[i], i))
-            if method in self._fitpack_methods:
+            if method in self._spline_methods:
                 k = self._interp_config[method]
                 self._ki.append(k)
                 if n_p <= k:
@@ -2624,7 +2616,7 @@ class RegularGridInterpolator(object):
                                          "dimension."
                                          "" % (n_p, i, method, k + 1))
 
-        if method in self._fitpack_methods:
+        if method in self._spline_methods:
             if np.iscomplexobj(values[:]):
                 raise ValueError("method '%s' does not support complex values."
                                  " Use 'linear' or 'nearest'." % method)
@@ -2692,7 +2684,7 @@ class RegularGridInterpolator(object):
                                             norm_distances,
                                             out_of_bounds)
 
-        elif method in self._fitpack_methods:
+        elif method in self._spline_methods:
             if np.iscomplexobj(self.values[:]):
                 raise ValueError("method '%s' does not support complex values."
                                  " Use 'linear' or 'nearest'." % method)
@@ -2714,7 +2706,7 @@ class RegularGridInterpolator(object):
                                              "least % d points per dimension."
                                              "" % (n_p, i, method, k + 1))
 
-            interpolator = UnivariateSpline
+            interpolator = make_interp_spline
             result = self._evaluate_separable(self.grid,
                                               self.values,
                                               xi,
@@ -2754,9 +2746,9 @@ class RegularGridInterpolator(object):
     def _evaluate_separable(self, grid, data_values, xi, indices, interpolator,
                             method, ki, compute_gradients=True):
         """Convenience method for separable regular grid interpolation."""
-        # for UnivariateSpline based methods
+        # for spline based methods
 
-        # fitpack requires floating point input
+        # requires floating point input
         xi = xi.astype(np.float)
 
         # ensure xi is 2D list of points to evaluate
@@ -2768,10 +2760,6 @@ class RegularGridInterpolator(object):
         result = np.empty(m)
         if compute_gradients:
             all_gradients = np.empty_like(xi)
-
-        # fitpack interpolators do not seem to like matrix objects
-        if isinstance(data_values, np.matrix):
-            data_values = data_values.A1.reshape(data_values.shape)
 
         # Non-stationary procedure: difficult to vectorize this part entirely
         # into numpy-level operations. Unfortunately this requires explicit
@@ -2803,16 +2791,15 @@ class RegularGridInterpolator(object):
                 # dimensions. This collapses each 1D sequence into a scalar.
                 interp_args = []
                 k = ki[i]
-                interp_kwargs = {'k': k, 's': 0, 'ext': 0}
+                interp_kwargs = {'k': k, 'axis': 0}
 
-                for k in range(n_rows):
-                    local_interp = interpolator(self.grid[i],
-                                                values[k],
-                                                *interp_args,
-                                                **interp_kwargs)
-                    values_reduced[k] = local_interp(x[i])
-                    if compute_gradients:
-                        local_derivs[k] = local_interp(x[i], 1)
+                local_interp = interpolator(self.grid[i], values.T,
+                                            *interp_args,
+                                            **interp_kwargs)
+
+                values_reduced = local_interp(x[i])
+                if compute_gradients:
+                    local_derivs = local_interp(x[i], 1)
 
                 # "Fold" the results into the next dimension, reducing the
                 # overall size
@@ -2837,7 +2824,7 @@ class RegularGridInterpolator(object):
             # compute the final interpolated results, and gradient w.r.t. the
             # first dimension
             interp_args = []
-            interp_kwargs = {'k': ki[0], 's': 0, 'ext': 0}
+            interp_kwargs = {'k': ki[0]}
             final_interp = interpolator(self.grid[0],
                                         values, *interp_args, **interp_kwargs)
             output_value = final_interp(x[0])
@@ -2905,7 +2892,7 @@ class RegularGridInterpolator(object):
 
         if not method:
             method = self.method
-        if method not in self._fitpack_methods:
+        if method not in self._spline_methods:
             raise ValueError("method '%s' does not support gradient"
                              " calculations. " % method)
 
@@ -2985,7 +2972,7 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
     """
 
     configs = RegularGridInterpolator._interp_methods()
-    _fitpack_methods, _all_methods, _interp_config = configs
+    _spline_methods, _all_methods, _interp_config = configs
     # sanity check 'method' kwarg
     if method not in _all_methods + ['splinef2d']:
         all_m = ', '.join(['"' + m + '"' for m in _all_methods])
@@ -3023,7 +3010,7 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
         if not values.shape[i] == n_p:
             raise ValueError("There are %d points and %d values in "
                              "dimension %d" % (n_p, values.shape[i], i))
-        if method in _fitpack_methods:
+        if method in _spline_methods:
             k = _interp_config[method]
             if n_p <= k:
                 raise ValueError("There are %d points in dimension %d, but"
@@ -3109,13 +3096,13 @@ class _ppform(PPoly):
     @classmethod
     def fromspline(cls, xk, cvals, order, fill=0.0):
         # Note: this spline representation is incompatible with FITPACK
-        N = len(xk) - 1
-        sivals = np.empty((order + 1, N), dtype=float)
+        N = len(xk)-1
+        sivals = np.empty((order+1, N), dtype=float)
         for m in xrange(order, -1, -1):
-            fact = spec.gamma(m + 1)
+            fact = spec.gamma(m+1)
             res = _fitpack._bspleval(xk[:-1], xk, cvals, order, m)
             res /= fact
-            sivals[order - m, :] = res
+            sivals[order-m, :] = res
         return cls(sivals, xk, fill=fill)
 
 
@@ -3139,24 +3126,24 @@ def _find_smoothest(xk, yk, order, conds=None, B=None):
     # minimize norm(e,2) given B*c=yk
     # if desired B can be given
     # conds is ignored
-    N = len(xk) - 1
+    N = len(xk)-1
     K = order
     if B is None:
         B = _fitpack._bsplmat(order, xk)
     J = _fitpack._bspldismat(order, xk)
     u, s, vh = scipy.linalg.svd(B)
-    ind = K - 1
-    V2 = vh[-ind:, :].T
-    V1 = vh[:-ind, :].T
-    A = dot(J.T, J)
-    tmp = dot(V2.T, A)
-    Q = dot(tmp, V2)
+    ind = K-1
+    V2 = vh[-ind:,:].T
+    V1 = vh[:-ind,:].T
+    A = dot(J.T,J)
+    tmp = dot(V2.T,A)
+    Q = dot(tmp,V2)
     p = scipy.linalg.solve(Q, tmp)
-    tmp = dot(V2, p)
-    tmp = np.eye(N + K) - tmp
-    tmp = dot(tmp, V1)
-    tmp = dot(tmp, np.diag(1.0 / s))
-    tmp = dot(tmp, u.T)
+    tmp = dot(V2,p)
+    tmp = np.eye(N+K) - tmp
+    tmp = dot(tmp,V1)
+    tmp = dot(tmp,np.diag(1.0/s))
+    tmp = dot(tmp,u.T)
     return _dot0(tmp, yk)
 
 
@@ -3232,7 +3219,7 @@ def splmake(xk, yk, order=3, kind='smoothest', conds=None):
 
 
 @np.deprecate(message="spleval is deprecated in scipy 0.19.0, "
-              "use BSpline instead.")
+        "use BSpline instead.")
 def spleval(xck, xnew, deriv=0):
     """
     Evaluate a fixed spline represented by the given tuple at the new x-values
@@ -3277,8 +3264,8 @@ def spleval(xck, xnew, deriv=0):
     for index in np.ndindex(*sh):
         sl = (slice(None),) + index
         if issubclass(cvals.dtype.type, np.complexfloating):
-            res[sl].real = _fitpack._bspleval(xx, xj, cvals.real[sl], k, deriv)
-            res[sl].imag = _fitpack._bspleval(xx, xj, cvals.imag[sl], k, deriv)
+            res[sl].real = _fitpack._bspleval(xx,xj, cvals.real[sl], k, deriv)
+            res[sl].imag = _fitpack._bspleval(xx,xj, cvals.imag[sl], k, deriv)
         else:
             res[sl] = _fitpack._bspleval(xx, xj, cvals[sl], k, deriv)
     res.shape = oldshape + sh

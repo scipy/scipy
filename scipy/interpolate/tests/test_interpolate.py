@@ -2267,7 +2267,6 @@ def _ppoly4d_eval(c, xs, xnew, ynew, znew, unew, nu=None):
 
     return out
 
-
 def rel_error(actual, computed):
     return np.linalg.norm(actual - computed) / np.linalg.norm(actual)
 
@@ -2276,7 +2275,7 @@ class TestRegularGridInterpolator(object):
 
     stencil_methods = ['linear', 'nearest']
     config = RegularGridInterpolator._interp_methods()
-    fitpack_methods, valid_methods, interp_configs = config
+    spline_methods, valid_methods, interp_configs = config
 
     def _get_sample_4d_2(self):
         # create another 4d grid of 3 points in each dimension
@@ -2389,8 +2388,8 @@ class TestRegularGridInterpolator(object):
         # in the first dimension
         value2 = interp(x, method='quintic')
         interp.gradient(x, method='quintic')
-        value3 = interp(x, method='quadratic')
-        interp.gradient(x, method='quadratic')
+        value3 = interp(x, method='cubic')
+        interp.gradient(x, method='cubic')
         # use default method again
         value4 = interp(x)
 
@@ -2420,13 +2419,13 @@ class TestRegularGridInterpolator(object):
             v2 = rinterp(sample) + 1j * iinterp(sample)
             assert_allclose(v1, v2)
 
-    def test_complex_exception_fitpack2(self):
+    def test_complex_exception_spline(self):
         points, values = self._get_sample_4d()
         values = values - 2j * values
         sample = np.asarray([[0.1, 0.1, 1., .9]])
 
-        # fitpack methods dont support complex values
-        for method in self.fitpack_methods:
+        # spline methods dont support complex values
+        for method in self.spline_methods:
             assert_raises(ValueError, RegularGridInterpolator, points, values,
                           method)
 
@@ -2434,7 +2433,7 @@ class TestRegularGridInterpolator(object):
             assert_raises(ValueError, interp, sample, method)
 
     def test_minimum_required_gridsize(self):
-        for method in self.fitpack_methods:
+        for method in self.spline_methods:
             k = self.interp_configs[method]
             x = np.linspace(0, 1, k)
             y = np.linspace(0, 1, k)
@@ -2538,14 +2537,14 @@ class TestRegularGridInterpolator(object):
         assert_almost_equal(result9, result6)
         assert_raises(ValueError, interp.gradient, x)
 
-    def test_fitpack_deriv_xi1d(self):
+    def test_spline_deriv_xi1d(self):
         # tests gradient values
         points, values, func, df = self. _get_sample_2d()
         np.random.seed(1234)
         test_pt = np.random.uniform(0, 3, 2)
         actual = np.array(df(*test_pt))
         tol = 1e-1
-        for method in self.fitpack_methods:
+        for method in self.spline_methods:
             if method == 'slinear':
                 tol = 1.5
             interp = RegularGridInterpolator(points, values, method)
@@ -2562,7 +2561,7 @@ class TestRegularGridInterpolator(object):
         # verifies that gradients with respect to xi are returned if cached
         points, values, func, df = self. _get_sample_2d()
         np.random.seed(4321)
-        for method in self.fitpack_methods:
+        for method in self.spline_methods:
             interp = RegularGridInterpolator(points, values, method)
             x = np.array([0.9, 0.1])
             interp._xi = x
@@ -2571,14 +2570,14 @@ class TestRegularGridInterpolator(object):
             interp._all_gradients = dy
             assert_almost_equal(interp.gradient(x), dy)
 
-    def test_fitpack_xi1d(self):
+    def test_spline_xi1d(self):
         # test interpolated values
         points, values, func, df = self. _get_sample_2d()
         np.random.seed(1)
         test_pt = np.random.uniform(0, 3, 2)
         actual = func(*test_pt)
         tol = 1e-2
-        for method in self.fitpack_methods:
+        for method in self.spline_methods:
             if method == 'slinear':
                 tol = 0.5
             interp = RegularGridInterpolator(points, values, method)
@@ -2586,16 +2585,16 @@ class TestRegularGridInterpolator(object):
             r_err = rel_error(actual, computed)
             assert r_err < tol
 
-    def test_fitpack_out_of_bounds_extrap(self):
+    def test_spline_out_of_bounds_extrap(self):
         points, values, func, df = self. _get_sample_2d()
         np.random.seed(5)
         test_pt = np.random.uniform(3, 3.1, 2)
         actual = func(*test_pt)
         gradient = np.array(df(*test_pt))
         tol = 1e-1
-        for method in self.fitpack_methods:
+        for method in self.spline_methods:
             k = self.interp_configs[method]
-            if method in ['slinear', 'quadratic']:
+            if method == 'slinear':
                 tol = 2
             interp = RegularGridInterpolator(points, values, method,
                                              bounds_error=False,
@@ -2609,12 +2608,12 @@ class TestRegularGridInterpolator(object):
             # extrapolated gradients are even trickier, but usable still
             assert r_err < 2 * tol
 
-    def test_fitpack_xi3d(self):
+    def test_spline_xi3d(self):
         points, values, func, df = self. _get_sample_2d()
         np.random.seed(1)
         test_pt = np.random.uniform(0, 3, 6).reshape(3, 2)
         actual = func(*test_pt.T)
-        for method in self.fitpack_methods:
+        for method in self.spline_methods:
             tol = 1e-1
             if method == 'slinear':
                 tol = 0.5
@@ -2826,7 +2825,7 @@ class MyValue(object):
 class TestInterpN(object):
     stencil_methods = ['linear', 'nearest']
     config = RegularGridInterpolator._interp_methods()
-    fitpack_methods, all_methods, interp_configs = config
+    spline_methods, all_methods, interp_configs = config
     valid_methods = all_methods + ['splinef2d']
 
     def _sample_2d_data(self):
@@ -3039,7 +3038,7 @@ class TestInterpN(object):
 
         # fitpack methods don't support complex data either
         # raised exception is a lot clearer on this than the default tracebacks
-        for method in self.fitpack_methods:
+        for method in self.spline_methods:
             assert_raises(ValueError, interpn, points, values, sample, method)
 
     def test_duck_typed_values(self):
