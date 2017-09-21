@@ -2278,11 +2278,11 @@ class RegularGridInterpolator(object):
     Interpolation on a regular grid in arbitrary dimensions.
 
     The data must be defined on a regular grid; the grid spacing however may be
-    uneven. Linear, nearest-neighbour, and third through fifth order spline
+    uneven. Linear, nearest-neighbour, and first, third and fifth order spline
     interpolation are supported. After setting up the interpolator object, the
-    interpolation method (*nearest*, *linear*, *slinear*, *quadratic*, *cubic*,
-    *quartic*, *quintic*) may be chosen at each evaluation. Additionally,
-    gradients are provided for the spline interpolation methods.
+    interpolation method (*nearest*, *linear*, *slinear*, *cubic*, and
+    *quintic*) may be chosen at each evaluation. Additionally, gradients are
+    provided for the spline interpolation methods.
 
     Parameters
     ----------
@@ -2294,8 +2294,8 @@ class RegularGridInterpolator(object):
 
     method : str, optional
         The method of interpolation to perform. Supported are 'nearest',
-        'linear', 'slinear', 'quadratic', 'cubic', 'quartic', and
-        'quintic'. This parameter will become the default for the object's
+        'linear', 'slinear', 'cubic', and 'quintic'. This parameter will become
+        the default for the object's
         ``__call__`` method. Default is "linear".
 
     bounds_error : bool, optional
@@ -2335,9 +2335,9 @@ class RegularGridInterpolator(object):
     return an array of `nan` values. Nearest-neighbor interpolation will work
     as usual in this case.
 
-    The 'slinear', 'quadratic', 'cubic', 'quartic', 'quintic' methods
-    are all spline-based interpolators. Use of the spline interpolations
-    allows for getting gradient values via the ``gradient`` method.
+    The 'slinear', 'cubic', 'quintic' methods are spline-based interpolators.
+    Use of the spline interpolations allows for getting gradient
+    values via the ``gradient`` method.
 
     Interpolation with the spline methods is expectedly slower than 'linear' or
     'nearest'. They use a different separable tensor product interpolation
@@ -2638,8 +2638,8 @@ class RegularGridInterpolator(object):
 
         method : str, optional
             The method of interpolation to perform. Supported are 'nearest',
-            'linear', 'slinear', 'quadratic', 'cubic', 'quartic', and
-            'quintic'. Default is None, which will use the method defined at
+            'linear', 'slinear', 'cubic', and 'quintic'. Default is None, 
+            which will use the method defined at
             the construction of the interpolation object instance.
 
         computer_gradients : bool, optional
@@ -2707,8 +2707,7 @@ class RegularGridInterpolator(object):
                                              "" % (n_p, i, method, k + 1))
 
             interpolator = make_interp_spline
-            result = self._evaluate_separable(self.grid,
-                                              self.values,
+            result = self._evaluate_separable(self.values[:].T,
                                               xi,
                                               indices,
                                               interpolator,
@@ -2743,7 +2742,7 @@ class RegularGridInterpolator(object):
             idx_res.append(np.where(yi <= .5, i, i + 1))
         return self.values[idx_res]
 
-    def _evaluate_separable(self, grid, data_values, xi, indices, interpolator,
+    def _evaluate_separable(self, data_values, xi, indices, interpolator,
                             method, ki, compute_gradients=True):
         """Convenience method for separable regular grid interpolation."""
         # for spline based methods
@@ -2772,47 +2771,27 @@ class RegularGridInterpolator(object):
             # sequentially, starting with the last dimension. These are then
             # "folded" into the next dimension in-place.
             for i in reversed(range(1, n)):
-                # manage array sizes for the process for this axis
-                nv = values.size
-                nx = values.shape[-1]
-                n_rows = nv // nx
-                values_reduced = np.zeros(n_rows)
-                local_derivs = np.empty(n_rows)
-
-                # The nest time through, the values array will have one less
-                # dimension.
-                newshape = values.shape[: -1]
-
-                # Reshape values to expose the last dimension as a sequence of
-                # 1D arrays
-                values = values.reshape(n_rows, nx)
 
                 # Interpolate and collect gradients for each 1D in this last
                 # dimensions. This collapses each 1D sequence into a scalar.
                 interp_args = []
                 k = ki[i]
                 interp_kwargs = {'k': k, 'axis': 0}
-
-                local_interp = interpolator(self.grid[i], values.T,
+                local_interp = interpolator(self.grid[i], values,
                                             *interp_args,
                                             **interp_kwargs)
 
-                values_reduced = local_interp(x[i])
+                values = local_interp(x[i])
+
                 if compute_gradients:
                     local_derivs = local_interp(x[i], 1)
-
-                # "Fold" the results into the next dimension, reducing the
-                # overall size
-                values = values_reduced.reshape(newshape)
 
                 # Chain rule: to compute gradients of the output w.r.t. xi
                 # across the dimensions, apply interpolation to the collected
                 # gradients. This is equivalent to multiplication by
                 # dResults/dValues at each level.
                 if compute_gradients:
-                    local_derivs = np.array(local_derivs).reshape(newshape)
-                    gradient[i] = self._evaluate_separable(self.grid[: i],
-                                                           local_derivs,
+                    gradient[i] = self._evaluate_separable(local_derivs,
                                                            x[: i],
                                                            indices,
                                                            interpolator,
@@ -2877,10 +2856,9 @@ class RegularGridInterpolator(object):
             The coordinates to sample the gridded data at
 
         method : str, optional
-            The method of interpolation to perform. Supported are slinear',
-            'quadratic', 'cubic', 'quartic', and
-            'quintic'. Default is None, which will use the method defined at
-            the construction of the interpolation object instance.
+            The method of interpolation to perform. Supported are 'slinear',
+            'cubic', and 'quintic'. Default is None, which will use the method
+            defined at the construction of the interpolation object instance.
 
         Returns
         -------
@@ -2924,9 +2902,8 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
 
     method : str, optional
         The method of interpolation to perform. Supported are "nearest",
-        "linear", "slinear", quadratic", "cubic", "quartic",
-        "quintic", and "splinef2d". "splinef2d" is only supported for
-        2-dimensional data.
+        "linear", "slinear", "cubic", "quintic", and "splinef2d". "splinef2d"
+        is only supported for 2-dimensional data.
 
     bounds_error : bool, optional
         If True, when interpolated values are requested outside of the
