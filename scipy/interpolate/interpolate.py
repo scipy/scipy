@@ -2743,7 +2743,8 @@ class RegularGridInterpolator(object):
         return self.values[idx_res]
 
     def _evaluate_splines(self, data_values, xi, indices, interpolator, method,
-                          ki, compute_gradients=True):
+                          ki, compute_gradients=True,
+                          first_dim_gradient=False):
         """Convenience method for separable regular grid interpolation."""
         # for spline based methods
 
@@ -2765,7 +2766,8 @@ class RegularGridInterpolator(object):
         # looping over each point in xi.
 
         # can at least vectorize the first pass across all points in the
-        # last variable of xi
+        # last variable of xi. This provides one dimension of the entire
+        # gradient output array.
         i = n - 1
         first_values, first_derivs = self._do_spline_fit(interpolator,
                                                          self.grid[i],
@@ -2773,6 +2775,17 @@ class RegularGridInterpolator(object):
                                                          xi[:, i],
                                                          ki[i],
                                                          compute_gradients)
+
+        if first_dim_gradient:
+            top_grad = self._evaluate_splines(first_derivs,
+                                              self.grid,
+                                              indices,
+                                              interpolator,
+                                              method,
+                                              ki,
+                                              compute_gradients=False,
+                                              first_dim_gradient=True)
+            all_gradients[:, -1] = top_grad[-1]
 
         # the rest of the dimensions have to be on a per point-in-xi basis
         for j, x in enumerate(xi):
