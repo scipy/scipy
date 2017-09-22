@@ -1616,9 +1616,6 @@ def pdist(X, metric='euclidean', *args, **kwargs):
 
     X = np.asarray(X, order='c')
 
-    # The C code doesn't do striding.
-    X = _copy_array_if_base_present(X)
-
     s = X.shape
     if len(s) != 2:
         raise ValueError('A 2-dimensional array must be passed.')
@@ -2336,10 +2333,6 @@ def cdist(XA, XB, metric='euclidean', *args, **kwargs):
 
     XA = np.asarray(XA, order='c')
     XB = np.asarray(XB, order='c')
-
-    # The C code doesn't do striding.
-    XA = _copy_array_if_base_present(XA)
-    XB = _copy_array_if_base_present(XB)
 
     s = XA.shape
     sB = XB.shape
