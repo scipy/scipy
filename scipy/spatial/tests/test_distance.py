@@ -58,7 +58,8 @@ from scipy.spatial.distance import (braycurtis, canberra, chebyshev, cityblock,
                                     hamming, jaccard, kulsinski, mahalanobis,
                                     matching, minkowski, rogerstanimoto,
                                     russellrao, seuclidean, sokalmichener,
-                                    sokalsneath, sqeuclidean, yule, wminkowski)
+                                    sokalsneath, sqeuclidean, yule)
+from scipy.spatial.distance import wminkowski as old_wminkowski
 
 _filenames = [
               "cdist-X1.txt",
@@ -221,7 +222,7 @@ def _assert_within_tol(a, b, atol=0, rtol=0, verbose_=False):
 
 def _rand_split(arrays, weights, axis, split_per, seed=None):
     # inverse operation for stats.collapse_weights
-    weights = np.array(weights)  # modified inplace; need a copy
+    weights = np.array(weights, dtype=np.float64)  # modified inplace; need a copy
     seeded_rand = np.random.RandomState(seed)
 
     def mytake(a, ix, axis):
@@ -236,7 +237,7 @@ def _rand_split(arrays, weights, axis, split_per, seed=None):
         prev_w = weights[split_ix]
         q = seeded_rand.rand()
         weights[split_ix] = q * prev_w
-        weights = np.append(weights, (1-q) * prev_w)
+        weights = np.append(weights, (1. - q) * prev_w)
         arrays = [np.append(a, mytake(a, split_ix, axis=axis),
                             axis=axis) for a in arrays]
     return arrays, weights
@@ -362,7 +363,7 @@ wyule = _weight_checked(yule)
 wdice = _weight_checked(dice)
 wcosine = _weight_checked(cosine)
 wcorrelation = _weight_checked(correlation)
-wminkowski = _weight_checked(wminkowski, const_test=False)
+wminkowski = _weight_checked(minkowski, const_test=False)
 wjaccard = _weight_checked(jaccard)
 weuclidean = _weight_checked(euclidean, const_test=False)
 wsqeuclidean = _weight_checked(sqeuclidean, const_test=False)
@@ -533,6 +534,8 @@ class TestCdist(object):
             for metric in _METRICS_NAMES:
                 if verbose > 2:
                     print("testing: ", metric, " with: ", eo_name)
+                if metric == 'wminkowski':
+                    continue
                 if metric in {'dice', 'yule', 'kulsinski', 'matching',
                               'rogerstanimoto', 'russellrao', 'sokalmichener',
                               'sokalsneath'} and 'bool' not in eo_name:
@@ -1294,6 +1297,8 @@ class TestPdist(object):
             # NOTE: num samples needs to be > than dimensions for mahalanobis
             X = eo[eo_name][::5, ::2]
             for metric in _METRICS_NAMES:
+                if metric == 'wminkowski':
+                    continue
                 if verbose > 2:
                     print("testing: ", metric, " with: ", eo_name)
                 if metric in {'dice', 'yule', 'kulsinski', 'matching',
@@ -1390,6 +1395,24 @@ class TestSomeDistanceFunctions(object):
                 dist1p5 = wminkowski(x, y, p=1.5)
                 assert_almost_equal(dist1p5, (1.0 + 2.0**1.5)**(2. / 3))
                 dist2 = wminkowski(x, y, p=2)
+
+    def test_old_wminkowski(self):
+        with suppress_warnings() as wrn:
+            wrn.filter(message="`wminkowski` is deprecated")
+            w = np.array([1.0, 2.0, 0.5])
+            for x, y in self.cases:
+                dist1 = old_wminkowski(x, y, p=1, w=w)
+                assert_almost_equal(dist1, 3.0)
+                dist1p5 = old_wminkowski(x, y, p=1.5, w=w)
+                assert_almost_equal(dist1p5, (2.0**1.5+1.0)**(2./3))
+                dist2 = old_wminkowski(x, y, p=2, w=w)
+                assert_almost_equal(dist2, np.sqrt(5))
+
+            # test weights Issue #7893
+            arr = np.arange(4)
+            w = np.full_like(arr, 4)
+            assert_almost_equal(old_wminkowski(arr, arr + 1, p=2, w=w), 8.0)
+            assert_almost_equal(wminkowski(arr, arr + 1, p=2, w=w), 4.0)
 
     def test_euclidean(self):
         for x, y in self.cases:

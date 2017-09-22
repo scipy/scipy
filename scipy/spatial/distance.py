@@ -443,7 +443,7 @@ def minkowski(u, v, p=2, w=None):
        {||u-v||}_p = (\\sum{|u_i - v_i|^p})^{1/p}.
 
 
-       \\left(\\sum{(|w_i (u_i - v_i)|^p)}\\right)^{1/p}.
+       \\left(\\sum{w_i(|(u_i - v_i)|^p)}\\right)^{1/p}.
 
     Parameters
     ----------
@@ -486,18 +486,41 @@ def minkowski(u, v, p=2, w=None):
 # deprecated `wminkowski`.  Not done at once because it would be annoying for
 # downstream libraries that used `wminkowski` and support multiple scipy
 # versions.
-def wminkowski(*args, **kwds):
-    return minkowski(*args, **kwds)
+def wminkowski(u, v, p, w):
+    """
+    Computes the weighted Minkowski distance between two 1-D arrays.
+    The weighted Minkowski distance between `u` and `v`, defined as
 
-if minkowski.__doc__ is not None:
-    doc = minkowski.__doc__.replace("Minkowski", "Weighted Minkowski")
-    doc += """Notes
+    .. math::
+
+       \\left(\\sum{(|w_i (u_i - v_i)|^p)}\\right)^{1/p}.
+
+    Parameters
+    ----------
+    u : (N,) array_like
+        Input array.
+    v : (N,) array_like
+        Input array.
+    p : int
+        The order of the norm of the difference :math:`{||u-v||}_p`.
+    w : (N,) array_like
+        The weight vector.
+
+    Returns
+    -------
+    wminkowski : double
+        The weighted Minkowski distance between vectors `u` and `v`.
+
+    Notes
     -----
-    `wminkowski` is DEPRECATED.  It is simply an alias of `minkowski` in
-    scipy >= 1.0.
+    `wminkowski` is DEPRECATED. It implements a definition where weights
+    are powered. It is recommended to use the weighted version of `minkowski`
+    instead. This function will be removed in a future version of scipy.
 
     """
-    wminkowski.__doc__ = doc
+    w = _validate_vector(w)
+    return minkowski(u, v, p=p, w=w**p)
+
 
 def euclidean(u, v, w=None):
     """
@@ -509,7 +532,7 @@ def euclidean(u, v, w=None):
 
        {||u-v||}_2
 
-       \\left(\\sum{(|w_i (u_i - v_i)|^2)}\\right)^{1/2}
+       \\left(\\sum{(w_i |(u_i - v_i)|^2)}\\right)^{1/2}
 
     Parameters
     ----------
@@ -1675,8 +1698,6 @@ def pdist(X, metric='euclidean', *args, **kwargs):
             if(mstr in _METRICS['seuclidean'].aka or
                mstr in _METRICS['mahalanobis'].aka):
                 raise ValueError("metric %s incompatible with weights" % mstr)
-            if mstr in _METRICS['wminkowski'].aka:
-                mstr = "minkowski"
             # need to use python version for weighting
             kwargs['out'] = out
             mstr = "test_%s" % mstr
@@ -2404,8 +2425,6 @@ def cdist(XA, XB, metric='euclidean', *args, **kwargs):
             if(mstr in _METRICS['seuclidean'].aka or
                mstr in _METRICS['mahalanobis'].aka):
                 raise ValueError("metric %s incompatible with weights" % mstr)
-            if mstr in _METRICS['wminkowski'].aka:
-                mstr = "minkowski"
             # need to use python version for weighting
             kwargs['out'] = out
             mstr = "test_%s" % mstr
