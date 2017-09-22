@@ -393,6 +393,30 @@ class TestSqrtM(object):
         assert_allclose(np.dot(R, R), M, atol=1e-14)
         assert_allclose(sqrtm(M), R, atol=1e-14)
 
+    def test_gh4866(self):
+        M = np.array([[1, 0, 0, 1],
+                      [0, 0, 0, 0],
+                      [0, 0, 0, 0],
+                      [1, 0, 0, 1]])
+        R = np.array([[sqrt(0.5), 0, 0, sqrt(0.5)],
+                      [0, 0, 0, 0],
+                      [0, 0, 0, 0],
+                      [sqrt(0.5), 0, 0, sqrt(0.5)]])
+        assert_allclose(np.dot(R, R), M, atol=1e-14)
+        assert_allclose(sqrtm(M), R, atol=1e-14)
+
+    def test_gh5336(self):
+        M = np.diag([2, 1, 0])
+        R = np.diag([sqrt(2), 1, 0])
+        assert_allclose(np.dot(R, R), M, atol=1e-14)
+        assert_allclose(sqrtm(M), R, atol=1e-14)
+
+    def test_gh7839(self):
+        M = np.zeros((2, 2))
+        R = np.zeros((2, 2))
+        assert_allclose(np.dot(R, R), M, atol=1e-14)
+        assert_allclose(sqrtm(M), R, atol=1e-14)
+
 
 class TestFractionalMatrixPower(object):
     def test_round_trip_random_complex(self):
@@ -810,4 +834,3 @@ class TestExpmConditionNumber(object):
             # eps times the condition number kappa.
             # In the limit as eps approaches zero it should never be greater.
             assert_array_less(p_best_relerr, (1 + 2*eps) * eps * kappa)
-
