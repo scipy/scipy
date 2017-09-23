@@ -2638,7 +2638,7 @@ class RegularGridInterpolator(object):
 
         method : str, optional
             The method of interpolation to perform. Supported are 'nearest',
-            'linear', 'slinear', 'cubic', and 'quintic'. Default is None, 
+            'linear', 'slinear', 'cubic', and 'quintic'. Default is None,
             which will use the method defined at
             the construction of the interpolation object instance.
 
@@ -2791,12 +2791,13 @@ class RegularGridInterpolator(object):
         for j, x in enumerate(xi):
             gradient = np.empty_like(x)
             values = data_values[:]
-
+            local_derivs = None
             # Main process: Apply 1D interpolate in each dimension
             # sequentially, starting with the last dimension. These are then
             # "folded" into the next dimension in-place.
-            for i in reversed(range(1, n)):
-                if i == n - 1:
+            last_dim = n - 1
+            for i in xrange(last_dim, -1, -1):
+                if i == last_dim:
                     values = first_values[j]
                     if compute_gradients:
                         local_derivs = first_derivs[j]
@@ -2815,7 +2816,7 @@ class RegularGridInterpolator(object):
                 # across the dimensions, apply interpolation to the collected
                 # gradients. This is equivalent to multiplication by
                 # dResults/dValues at each level.
-                if compute_gradients:
+                if compute_gradients and i != 0:
                     gradient[i] = self._evaluate_splines(local_derivs,
                                                          x[: i],
                                                          indices,
@@ -2823,20 +2824,12 @@ class RegularGridInterpolator(object):
                                                          method,
                                                          ki,
                                                          compute_gradients=False)
-
-            # All values have been folded down to a single dimensional array
-            # compute the final interpolated results, and gradient w.r.t. the
-            # first dimension
-            output_value, gradient[0] = self._do_spline_fit(interpolator,
-                                                            self.grid[0],
-                                                            values,
-                                                            x[0],
-                                                            ki[0],
-                                                            compute_gradients)
+                else:
+                    gradient[i] = local_derivs
 
             if compute_gradients:
                 all_gradients[j] = gradient
-            result[j] = output_value
+            result[j] = values
 
         # Cache the computed gradients for return by the gradient method
         if compute_gradients:
