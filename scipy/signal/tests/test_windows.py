@@ -543,5 +543,6 @@ def test_needs_params():
 
 
 def test_deprecation():
-    assert 'signal.hann is deprecated' in dep_hann.__doc__
-    assert 'deprecated' not in windows.hann.__doc__
+    if dep_hann.__doc__ is not None:  # can be None with `-OO` mode
+        assert_('signal.hann is deprecated' in dep_hann.__doc__)
+        assert_('deprecated' not in windows.hann.__doc__)
