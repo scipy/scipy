@@ -714,6 +714,9 @@ class TestSolve(object):
         with warnings.catch_warnings():
             warnings.simplefilter('error')
             assert_raises(RuntimeWarning, solve, a, b)
+        with warnings.catch_warnings():
+            warnings.simplefilter('error')
+            assert_raises(RuntimeWarning, solve, a, b, refine=True)
 
     def test_empty_rhs(self):
         a = np.eye(2)
@@ -728,12 +731,28 @@ class TestSolve(object):
         x = solve(a, b)
         assert_array_almost_equal(x, b)
 
-    def test_transposed_keyword(self):
+    def test_form_keyword(self):
         A = np.arange(9).reshape(3, 3) + 1
-        x = solve(np.tril(A)/9, np.ones(3), transposed=1)
+        x = solve(np.tril(A)/9, np.ones(3), form='trans')
         assert_array_almost_equal(x, [1.2, 0.2, 1])
-        x = solve(np.tril(A)/9, np.ones(3), transposed=0)
+        x = solve(np.tril(A)/9, np.ones(3), form='none')
         assert_array_almost_equal(x, [9, -5.4, -1.2])
+        x = solve(np.tril(A)/9, np.ones(3), form='trans', refine=True)
+        assert_array_almost_equal(x, [1.2, 0.2, 1])
+        x = solve(np.tril(A)/9, np.ones(3), form='none', refine=True)
+        assert_array_almost_equal(x, [9, -5.4, -1.2])
+        assert_raises(ValueError, solve, 1, 1, form='zxcv')
+        assert_raises(ValueError, solve, 1, 1, assume_a='her', form='anything')
+
+    def test_transposed_warning(self):
+        a = np.array([[1, 1], [1+1e-16, 1-1e-16]])
+        b = np.ones(2)
+        with warnings.catch_warnings():
+            warnings.simplefilter('error')
+            assert_raises(DeprecationWarning, solve, a, b, transposed=1)
+        with warnings.catch_warnings():
+            warnings.simplefilter('error')
+            assert_raises(DeprecationWarning, solve, a, b, transposed=False)
 
     def test_nonsquare_a(self):
         assert_raises(ValueError, solve, [1, 2], 1)
@@ -771,12 +790,48 @@ class TestSolve(object):
             elif assume_a == 'pos':
                 a = a.conj().T.dot(a) + 0.1*np.eye(size)
 
-            x = solve(a, b, assume_a=assume_a)
             tol = 1e-12 if dtype in (np.float64, np.complex128) else 1e-6
+
+            x = solve(a, b, assume_a=assume_a, refine=True)
             assert_allclose(a.dot(x), b,
                             atol=tol * size,
                             rtol=tol * size,
                             err_msg=err_msg)
+
+            if assume_a == 'sym':
+                x = solve(a, b, form='trans', refine=True)
+                assert_allclose(a.dot(x), b,
+                                atol=tol * size,
+                                rtol=tol * size,
+                                err_msg=err_msg)
+
+            elif assume_a == 'her':
+                x = solve(a, b, form='conj', refine=True)
+                assert_allclose(a.dot(x), b,
+                                atol=tol * size,
+                                rtol=tol * size,
+                                err_msg=err_msg)
+
+            if assume_a in ['gen', 'sym', 'her']:
+                # For the symmetric case, the tolerance cannot be
+                # as high as for the refined case.
+                # We thus revert the tolerance from before
+                #   4b4a6e7c34fa4060533db38f9a819b98fa81476c
+                if dtype in (np.float32, np.complex64):
+                    tol *= 10
+
+            x = solve(a, b, assume_a=assume_a)
+            assert_allclose(a.dot(x), b,
+                            atol=tol * size,
+                            rtol=tol * size,
+                            err_msg=err_msg)
+
+            if assume_a == 'her':
+                x = solve(a, b, form='conj')
+                assert_allclose(a.dot(x), b,
+                                atol=tol * size,
+                                rtol=tol * size,
+                                err_msg=err_msg)
 
 
 class TestSolveTriangular(object):

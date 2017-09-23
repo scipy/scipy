@@ -199,7 +199,10 @@ class TestExpM(object):
         tiny = 1e-17
         A_logm_perturbed = A_logm.copy()
         A_logm_perturbed[1, 0] = tiny
-        A_expm_logm_perturbed = expm(A_logm_perturbed)
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning,
+                       "scipy.linalg.solve\nIll-conditioned.*")
+            A_expm_logm_perturbed = expm(A_logm_perturbed)
         rtol = 1e-4
         atol = 100 * tiny
         assert_(not np.allclose(A_expm_logm_perturbed, A, rtol=rtol, atol=atol))
