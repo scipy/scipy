@@ -21,10 +21,11 @@ from scipy.ndimage.filters import correlate1d
 from scipy.optimize import fmin
 from scipy import signal
 from scipy.signal import (
-    correlate, convolve, convolve2d, fftconvolve, hann, choose_conv_method,
+    correlate, convolve, convolve2d, fftconvolve, choose_conv_method,
     hilbert, hilbert2, lfilter, lfilter_zi, filtfilt, butter, zpk2tf, zpk2sos,
     invres, invresz, vectorstrength, lfiltic, tf2sos, sosfilt, sosfiltfilt,
     sosfilt_zi, tf2zpk, BadCoefficients)
+from scipy.signal.windows import hann
 from scipy.signal.signaltools import _filtfilt_gust
 
 
@@ -1721,13 +1722,13 @@ class TestDecimate(object):
         # Sinusoids at 0.8*nyquist, windowed to avoid edge artifacts
         freqs = np.array(rates_to) * 0.8 / 2
         d = (np.exp(1j * 2 * np.pi * freqs[:, np.newaxis] * t)
-             * signal.tukey(t.size, 0.1))
+             * signal.windows.tukey(t.size, 0.1))
 
         for rate_to in rates_to:
             q = rate // rate_to
             t_to = np.arange(rate_to*t_tot+1) / float(rate_to)
             d_tos = (np.exp(1j * 2 * np.pi * freqs[:, np.newaxis] * t_to)
-                     * signal.tukey(t_to.size, 0.1))
+                     * signal.windows.tukey(t_to.size, 0.1))
 
             # Set up downsampling filters, match v0.17 defaults
             if method == 'fir':

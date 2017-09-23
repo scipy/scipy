@@ -222,31 +222,35 @@ Waveforms
 Window functions
 ================
 
+Most window functions are available in the `scipy.signal.windows` namespace,
+but we list them here for convenience:
+
 .. autosummary::
    :toctree: generated/
 
-   get_window        -- Return a window of a given length and type.
-   barthann          -- Bartlett-Hann window
-   bartlett          -- Bartlett window
-   blackman          -- Blackman window
-   blackmanharris    -- Minimum 4-term Blackman-Harris window
-   bohman            -- Bohman window
-   boxcar            -- Boxcar window
-   chebwin           -- Dolph-Chebyshev window
-   cosine            -- Cosine window
-   exponential       -- Exponential window
-   flattop           -- Flat top window
-   gaussian          -- Gaussian window
-   general_gaussian  -- Generalized Gaussian window
-   hamming           -- Hamming window
-   hann              -- Hann window
-   hanning           -- Hann window
-   kaiser            -- Kaiser window
-   nuttall           -- Nuttall's minimum 4-term Blackman-Harris window
-   parzen            -- Parzen window
-   slepian           -- Slepian window
-   triang            -- Triangular window
-   tukey             -- Tukey window
+   get_window                -- Return a window of a given length and type.
+
+   windows.barthann          -- Bartlett-Hann window
+   windows.bartlett          -- Bartlett window
+   windows.blackman          -- Blackman window
+   windows.blackmanharris    -- Minimum 4-term Blackman-Harris window
+   windows.bohman            -- Bohman window
+   windows.boxcar            -- Boxcar window
+   windows.chebwin           -- Dolph-Chebyshev window
+   windows.cosine            -- Cosine window
+   windows.exponential       -- Exponential window
+   windows.flattop           -- Flat top window
+   windows.gaussian          -- Gaussian window
+   windows.general_gaussian  -- Generalized Gaussian window
+   windows.hamming           -- Hamming window
+   windows.hann              -- Hann window
+   windows.hanning           -- Hann window
+   windows.kaiser            -- Kaiser window
+   windows.nuttall           -- Nuttall's minimum 4-term Blackman-Harris window
+   windows.parzen            -- Parzen window
+   windows.slepian           -- Slepian window
+   windows.triang            -- Triangular window
+   windows.tukey             -- Tukey window
 
 Wavelets
 ========
@@ -292,7 +296,7 @@ Spectral Analysis
 """
 from __future__ import division, print_function, absolute_import
 
-from . import sigtools
+from . import sigtools, windows
 from .waveforms import *
 from ._max_len_seq import max_len_seq
 from ._upfirdn import upfirdn
@@ -306,12 +310,52 @@ from .filter_design import *
 from .fir_filter_design import *
 from .ltisys import *
 from .lti_conversion import *
-from .windows import *
 from .signaltools import *
 from ._savitzky_golay import savgol_coeffs, savgol_filter
 from .spectral import *
 from .wavelets import *
 from ._peak_finding import *
+from .windows import get_window  # keep this one in signal namespace
+
+
+# deal with * -> windows.* deprecation
+deprecated_windows = ('boxcar', 'triang', 'parzen', 'bohman', 'blackman',
+                      'nuttall', 'blackmanharris', 'flattop', 'bartlett',
+                      'hanning', 'barthann', 'hamming', 'kaiser', 'gaussian',
+                      'general_gaussian', 'chebwin', 'slepian', 'cosine',
+                      'hann', 'exponential', 'tukey')
+
+
+def deco(name):
+    f = getattr(windows, name)
+    # Add deprecation to docstring
+
+    def wrapped(*args, **kwargs):
+        return f(*args, **kwargs)
+
+    wrapped.__name__ = name
+
+    if f.__doc__ is not None:
+        lines = f.__doc__.splitlines()
+        for li, line in enumerate(lines):
+            if line.strip() == 'Parameters':
+                break
+        else:
+            raise RuntimeError('dev error: badly formatted doc')
+        spacing = ' ' * line.find('P')
+        lines.insert(li, ('{0}.. warning:: scipy.signal.{1} is deprecated,\n'
+                          '{0}             use scipy.signal.windows.{1} '
+                          'instead.\n'.format(spacing, name)))
+        wrapped.__doc__ = '\n'.join(lines)
+
+    return wrapped
+
+
+for name in deprecated_windows:
+    locals()[name] = deco(name)
+
+del deprecated_windows, name, deco
+
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 
