@@ -196,6 +196,9 @@ have seen domain/stability improvements. This includes `spence`, `digamma`,
 `log1p` and several others.
 
 
+The Planck-taper window function has been implemented and is now available as
+`scipy.signal.planck`.
+
 Deprecated features
 ===================
 

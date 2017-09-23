@@ -10,7 +10,8 @@ from scipy._lib.six import string_types
 __all__ = ['boxcar', 'triang', 'parzen', 'bohman', 'blackman', 'nuttall',
            'blackmanharris', 'flattop', 'bartlett', 'hanning', 'barthann',
            'hamming', 'kaiser', 'gaussian', 'general_gaussian', 'chebwin',
-           'slepian', 'cosine', 'hann', 'exponential', 'tukey', 'get_window']
+           'slepian', 'cosine', 'hann', 'exponential', 'tukey', 'get_window',
+           'planck']
 
 
 def _len_guards(M):
@@ -899,6 +900,86 @@ def tukey(M, alpha=0.5, sym=True):
     return _truncate(w, needs_trunc)
 
 
+def planck(M, e, sym=True):
+    r"""Return a Planck-taper window.
+
+    The Planck-taper is a window which is smooth and differentiable everywhere.
+    It's designed to minimize leakage outside of a frequency of interest
+    without supressing signals which might contain the most power at the edges
+    of the waveform.
+
+    Parameters
+    ----------
+    M : int
+        Number of points in the output window. If zero or less, an empty
+        array is returned. The Planck-taper is defined for 3 points onward
+        (with M<3 returning a boxcar window instead).
+    e : float
+        Epsilon parameter (0<e<0.5). Values of e>=0.5 result in no flat region.
+    sym : bool, optional
+        When True (default), generates a symmetric window, for use in filter
+        design.
+        When False, generates a periodic window, for use in spectral analysis.
+
+    Returns
+    -------
+    w : ndarray
+        The window, with the maximum value normalized to 1 (though the value 1
+        does not appear for e>=0.5 if `M` is even and `sym` is True).
+
+    References
+    ----------
+    .. [1] DJA McKechan, C Robinson and BS Sathyaprakash, (2010) A tapering
+           window for time-domain templates and simulated signals in the
+           detection of gravitational waves from coalescing compact binaries;
+           Classical and Quantum Gravity 27 (8): 084020. arXiv:1003.2939.
+
+    Examples
+    --------
+    Plot the window and its frequency response:
+
+    >>> from scipy import signal
+    >>> from scipy.fftpack import fft, fftshift
+    >>> import matplotlib.pyplot as plt
+
+    >>> window = signal.planck(51, 0.1)
+    >>> plt.plot(window)
+    >>> plt.title("Planck-taper window ($\epsilon = 0.1$)")
+    >>> plt.ylabel("Amplitude")
+    >>> plt.xlabel("Sample")
+
+    >>> plt.figure()
+    >>> A = fft(window, 2048) / (len(window)/2.0)
+    >>> freq = np.linspace(-0.5, 0.5, len(A))
+    >>> response = 20 * np.log10(np.abs(fftshift(A / abs(A).max())))
+    >>> plt.plot(freq, response)
+    >>> plt.axis([-0.5, 0.5, -120, 0])
+    >>> plt.title("Frequency response of the Planck-taper window ($\epsilon = 0.1$)")
+    >>> plt.ylabel("Normalized magnitude [dB]")
+    >>> plt.xlabel("Normalized frequency [cycles per sample]")
+
+    """
+    if M < 1:
+        return np.array([])
+    if M < 3:
+        return np.ones(M, 'd')
+    odd = M % 2
+    if not sym and not odd:
+        M = M + 1
+
+    t2 = min(M//2, int(np.floor(e * (M-1))))
+    w1 = np.arange(1, t2)
+    w1 = t2/w1 + t2/(w1-t2)
+    w1 = 1/(np.exp(w1)+1)
+    w2 = np.ones(M-2 - len(w1)*2)
+    w3 = w1[::-1]
+    w = np.concatenate(([0.], w1, w2, w3, [0.]))
+
+    if not sym and not odd:
+        w = w[:-1]
+    return w
+
+
 def barthann(M, sym=True):
     """Return a modified Bartlett-Hann window.
 
@@ -1707,7 +1788,8 @@ def get_window(window, Nx, fftbins=True):
         `barthann`, `kaiser` (needs beta), `gaussian` (needs standard
         deviation), `general_gaussian` (needs power, width), `slepian`
         (needs width), `chebwin` (needs attenuation), `exponential`
-        (needs decay scale), `tukey` (needs taper fraction)
+        (needs decay scale), `tukey` (needs taper fraction), `planck`
+        (needs taper fraction).
 
     If the window requires no parameters, then `window` can be a string.
 

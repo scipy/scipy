@@ -244,6 +244,7 @@ Window functions
    kaiser            -- Kaiser window
    nuttall           -- Nuttall's minimum 4-term Blackman-Harris window
    parzen            -- Parzen window
+   planck            -- Planck-taper window
    slepian           -- Slepian window
    triang            -- Triangular window
    tukey             -- Tukey window
