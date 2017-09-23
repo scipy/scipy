@@ -1948,7 +1948,7 @@ def _get_tick_rotation(p):
             return _drotation[k]
 
 
-def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
+def _plot_dendrogram(icoord, dcoord, ivl, p, n, mh, orientation,
                      no_labels, color_list, leaf_font_size=None,
                      leaf_rotation=None, contraction_marks=None,
                      ax=None, above_threshold_color='b'):
@@ -1986,8 +1986,8 @@ def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
             ax.set_ylim([dvw, 0])
             ax.set_xlim([0, ivw])
 
-        xlines = icoords
-        ylines = dcoords
+        xlines = icoord
+        ylines = dcoord
         if no_labels:
             ax.set_xticks([])
             ax.set_xticklabels([])
@@ -2017,8 +2017,8 @@ def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
             ax.set_xlim([0, dvw])
             ax.set_ylim([0, ivw])
 
-        xlines = dcoords
-        ylines = icoords
+        xlines = dcoord
+        ylines = icoord
         if no_labels:
             ax.set_yticks([])
             ax.set_yticklabels([])
