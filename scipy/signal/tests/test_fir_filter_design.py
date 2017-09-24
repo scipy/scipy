@@ -261,7 +261,7 @@ class TestFirwin2(object):
         # `freq` does not start at 0.0.
         assert_raises(ValueError, firwin2, 50, [0.5, 1.0], [0.0, 1.0])
 
-        # Type II filter, but the gain at nyquist rate is not zero.
+        # Type II filter, but the gain at nyquist frequency is not zero.
         assert_raises(ValueError, firwin2, 16, [0.0, 0.5, 1.0], [0.0, 1.0, 1.0])
 
         # Type III filter, but the gains at nyquist and zero rate are not zero.
