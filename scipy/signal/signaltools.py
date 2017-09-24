@@ -3005,7 +3005,7 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
     >>> x = xlow + xhigh
 
     Now create a lowpass Butterworth filter with a cutoff of 0.125 times
-    the Nyquist rate, or 125 Hz, and apply it to ``x`` with `filtfilt`.
+    the Nyquist frequency, or 125 Hz, and apply it to ``x`` with `filtfilt`.
     The result should be approximately ``xlow``, with no phase shift.
 
     >>> b, a = signal.butter(8, 0.125)
