@@ -349,15 +349,25 @@ class TestCephes(object):
         assert_array_almost_equal_nulp(found.real, expected.real, 20)
 
     def test_fdtr(self):
-        assert_equal(cephes.fdtr(1,1,0),0.0)
+        assert_equal(cephes.fdtr(1, 1, 0), 0.0)
+        # Computed using Wolfram Alpha: CDF[FRatioDistribution[1e-6, 5], 10]
+        assert_allclose(cephes.fdtr(1e-6, 5, 10), 0.9999940790193488,
+                        rtol=1e-12)
 
     def test_fdtrc(self):
-        assert_equal(cephes.fdtrc(1,1,0),1.0)
+        assert_equal(cephes.fdtrc(1, 1, 0), 1.0)
+        # Computed using Wolfram Alpha:
+        #   1 - CDF[FRatioDistribution[2, 1/10], 1e10]
+        assert_allclose(cephes.fdtrc(2, 0.1, 1e10), 0.27223784621293512,
+                        rtol=1e-12)
 
     def test_fdtri(self):
-        # cephes.fdtri(1,1,0.5)  #BUG: gives NaN, should be 1
-        assert_allclose(cephes.fdtri(1, 1, [0.499, 0.501]),
-                        array([0.9937365, 1.00630298]), rtol=1e-6)
+        assert_allclose(cephes.fdtri(1, 1, [0.499, 0.5, 0.501]),
+                        array([0.9937365, 1.0, 1.00630298]), rtol=1e-6)
+        # From Wolfram Alpha:
+        #   CDF[FRatioDistribution[1/10, 1], 3] = 0.8756751669632105666874...
+        p = 0.8756751669632105666874
+        assert_allclose(cephes.fdtri(0.1, 1, p), 3, rtol=1e-12)
 
     def test_fdtridfd(self):
         assert_equal(cephes.fdtridfd(1,0,0),5.0)

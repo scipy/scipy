@@ -168,7 +168,7 @@ double fdtrc(double a, double b, double x)
 {
     double w;
 
-    if ((a < 1.0) || (b < 1.0) || (x < 0.0)) {
+    if ((a <= 0.0) || (b <= 0.0) || (x < 0.0)) {
         mtherr("fdtrc", DOMAIN);
         return NPY_NAN;
     }
@@ -181,7 +181,7 @@ double fdtr(double a, double b, double x)
 {
     double w;
 
-    if ((a < 1.0) || (b < 1.0) || (x < 0.0)) {
+    if ((a <= 0.0) || (b <= 0.0) || (x < 0.0)) {
         mtherr("fdtr", DOMAIN);
         return NPY_NAN;
     }
@@ -195,7 +195,7 @@ double fdtri(double a, double b, double y)
 {
     double w, x;
 
-    if ((a < 1.0) || (b < 1.0) || (y <= 0.0) || (y > 1.0)) {
+    if ((a <= 0.0) || (b <= 0.0) || (y <= 0.0) || (y > 1.0)) {
         mtherr("fdtri", DOMAIN);
         return NPY_NAN;
     }
