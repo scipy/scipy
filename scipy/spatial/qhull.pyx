@@ -354,7 +354,7 @@ cdef class _Qhull:
             raise QhullError(msg)
 
     @cython.final
-    def __del__(self):
+    def __dealloc__(self):
         self.close()
         self._messages.close()
 
