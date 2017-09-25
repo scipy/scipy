@@ -3,8 +3,22 @@ from __future__ import division, absolute_import, print_function
 import numpy as np
 
 try:
-    from scipy.spatial import (cKDTree, KDTree, SphericalVoronoi, distance,
-    ConvexHull, Voronoi)
+    from scipy.spatial import cKDTree, KDTree
+except ImportError:
+    pass
+
+try:
+    from scipy.spatial import distance
+except ImportError:
+    pass
+
+try:
+    from scipy.spatial import ConvexHull, Voronoi
+except ImportError:
+    pass
+
+try:
+    from scipy.spatial import SphericalVoronoi
 except ImportError:
     pass
 
