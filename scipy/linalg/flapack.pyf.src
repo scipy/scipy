@@ -58,7 +58,7 @@ interface
      <ftype2> intent(out) :: pr
      <ftype2> intent(out),dimension(2) :: dif
      <ftype2> intent(out),dimension(MAX(lwork,1)) :: work
-     integer optional,intent(in),depend(m,n),check(lwork == -1 || lwork >= MAX(4*n+16,2*m*(n-m))) :: lwork=MAX(4*n+16,2*m*(n-m))
+     integer optional,intent(in),depend(m,n),check(lwork == -1 || lwork >= MAX(4*n+16,2*m*(n-m))) :: lwork=max(MAX(4*n+16,2*m*(n-m)),1)
      integer intent(out),dimension(MAX(1,liwork)) :: iwork
      integer optional,intent(in),depend(n),check(liwork == -1 || liwork >= n+6) :: liwork=n+6
      integer intent(out) :: info
@@ -88,7 +88,7 @@ interface
      <ftype2> intent(out) :: pr
      <ftype2> intent(out),dimension(2) :: dif
      <ftype2c> intent(out),dimension(MAX(lwork,1)) :: work
-     integer optional,intent(in),depend(m,n),check(lwork == -1 || lwork >= 2*m*(n-m)) :: lwork=2*m*(n-m)
+     integer optional,intent(in),depend(m,n),check(lwork == -1 || lwork >= 2*m*(n-m)) :: lwork=max(2*m*(n-m),1)
      integer intent(out),dimension(MAX(1,liwork)):: iwork
      integer optional,intent(in),depend(n),check(liwork == -1 || liwork>=n+2) :: liwork=n+2
      integer intent(out) :: info
@@ -125,7 +125,7 @@ interface
      <ftype2> intent(out),depend(ldvsr,n),dimension(ldvsr,n) :: vsr
      integer optional,intent(in),depend(jobvsr,n) :: ldvsr=((jobvsr==1)?n:1)
      <ftype2> intent(out),depend(lwork),dimension(MAX(lwork,1)) :: work
-     integer optional,intent(in),depend(n),check(lwork>=MAX(1,MAX(8*n, 6*n+16))||lwork==-1):: lwork=8*n+16
+     integer optional,intent(in),depend(n),check(lwork>=MAX(1,MAX(8*n, 6*n+16))||lwork==-1):: lwork=max(8*n+16,1)
      logical optional,intent(hide),depend(n),dimension(n) :: bwork
      integer intent(out):: info
    end subroutine <prefix2>gges
@@ -160,7 +160,7 @@ interface
      <ftype2c> intent(out),depend(ldvsr,n),dimension(ldvsr,n) :: vsr
      integer optional,intent(in),depend(jobvsr,n) :: ldvsr=((jobvsr==1)?n:1)
      <ftype2c> intent(out),depend(lwork),dimension(MAX(lwork,1)) :: work
-     integer optional,intent(in),depend(n),check(lwork>=MAX(1,2*n)||lwork==-1):: lwork=2*n
+     integer optional,intent(in),depend(n),check(lwork>=MAX(1,2*n)||lwork==-1):: lwork=max(2*n,1)
      <ftype2> intent(hide),dimension(8*n) :: rwork
      logical optional,intent(hide),depend(n),dimension(n) :: bwork
      integer intent(out):: info
@@ -450,7 +450,7 @@ interface
      integer intent(in),optional,depend(n) :: hi = n-1
      <ftype2> dimension(n-1),intent(in),depend(n) :: tau
      <ftype2> dimension(lwork),intent(cache,hide),depend(lwork) :: work
-     integer intent(in),optional,depend(n),check(lwork>=hi-lo) :: lwork = hi-lo
+     integer intent(in),optional,depend(n),check(lwork>=hi-lo) :: lwork = max(hi-lo,1)
      integer intent(out) :: info
 
    end subroutine <prefix2>orghr
@@ -484,7 +484,7 @@ interface
      integer intent(in),optional,depend(n) :: hi = n-1
      <ftype2c> dimension(n-1),intent(in),depend(n) :: tau
      <ftype2c> dimension(lwork),intent(cache,hide),depend(lwork) :: work
-     integer intent(in),optional,depend(n),check(lwork>=hi-lo) :: lwork = hi-lo
+     integer intent(in),optional,depend(n),check(lwork>=hi-lo) :: lwork = max(hi-lo,1)
      integer intent(out) :: info
    end subroutine <prefix2c>unghr
 
@@ -657,7 +657,7 @@ interface
      callstatement (*f2py_func)((lower?"L":"U"),&n,a,&lda,ipiv,&info)
      callprotoargument char*,int*,<ctype>*,int*,int*,int*
 
-     integer optional,intent(in),check(lower==0||lower==1):: lower = 1
+     integer optional,intent(in),check(lower==0||lower==1):: lower = 0
      integer depend(a),intent(hide):: n = shape(a,0)
      <ftype> dimension(n,n),intent(in,out,copy,out=ldu):: a
      integer depend(a),intent(hide):: lda = max(shape(a,0),1)
@@ -677,12 +677,12 @@ interface
      callstatement (*f2py_func)((lower?"L":"U"),&n,a,&lda,ipiv,work,&lwork,&info)
      callprotoargument char*,int*,<ctype>*,int*,int*,<ctype>*,int*,int*
 
-     integer optional,intent(in),check(lower==0||lower==1):: lower = 1
+     integer optional,intent(in),check(lower==0||lower==1):: lower = 0
      integer depend(a),intent(hide):: n = shape(a,0)
      <ftype> dimension(n,n),intent(in,out,copy,out=ldu):: a
      integer depend(a),intent(hide):: lda = max(shape(a,0),1)
      integer dimension(n),depend(n),intent(out):: ipiv
-     integer optional,intent(in),depend(n),check(lwork>=n||lwork==-1):: lwork = n
+     integer optional,intent(in),depend(n),check(lwork>=n||lwork==-1):: lwork = max(n,1)
      <ftype> depend(lwork),dimension(MAX(lwork,1)),intent(hide,cache):: work
      integer intent(out):: info
 
@@ -726,7 +726,7 @@ interface
      integer dimension(n),depend(n),intent(out):: ipiv
      <ftype> dimension(n,nrhs),check(shape(b,0)==n),depend(n),intent(in,out,copy,out=x):: b
      integer depend(b),intent(hide):: ldb = shape(b,0)
-     integer optional,intent(in),depend(n),check(lwork>=1||lwork==-1):: lwork = n
+     integer optional,intent(in),depend(n),check(lwork>=1||lwork==-1):: lwork = max(n,1)
      <ftype> depend(lwork),dimension(MAX(lwork,1)),intent(hide,cache):: work
      integer intent(out):: info
 
@@ -781,7 +781,7 @@ interface
      <ftypereal> intent(out):: rcond
      <ftypereal> intent(out),dimension(nrhs),depend(nrhs):: ferr
      <ftypereal> intent(out),dimension(nrhs),depend(nrhs):: berr
-     integer optional,intent(in),check(lwork>=<3*n,3*n,2*n,2*n>||lwork==-1):: lwork = 3*n
+     integer optional,intent(in),check(lwork>=<3*n,3*n,2*n,2*n>||lwork==-1):: lwork = max(3*n,1)
      <ftype> dimension(MAX(lwork,1)),intent(hide,cache),depend(lwork) :: work
      <integer,integer,real,double precision> intent(hide,cache),dimension(n),depend(n) :: irwork
      integer intent(out):: info
@@ -881,12 +881,12 @@ interface
      callstatement (*f2py_func)((lower?"L":"U"),&n,a,&lda,ipiv,work,&lwork,&info)
      callprotoargument char*,int*,<ctype2c>*,int*,int*,<ctype2c>*,int*,int*
 
-     integer optional,intent(in),check(lower==0||lower==1):: lower = 1
+     integer optional,intent(in),check(lower==0||lower==1):: lower = 0
      integer depend(a),intent(hide):: n = shape(a,0)
      <ftype2c> dimension(n,n),intent(in,out,copy,out=ldu):: a
      integer depend(a),intent(hide):: lda = max(shape(a,0),1)
      integer dimension(n),depend(n),intent(out):: ipiv
-     integer optional,intent(in),depend(n),check(lwork>=n||lwork==-1):: lwork = n
+     integer optional,intent(in),depend(n),check(lwork>=n||lwork==-1):: lwork = max(n,1)
      <ftype2c> depend(lwork),dimension(MAX(lwork,1)),intent(hide,cache):: work
      integer intent(out):: info
 
@@ -933,7 +933,7 @@ interface
      integer dimension(n),depend(n),intent(out):: ipiv
      <ftype2c> dimension(n,nrhs),check(shape(b,0)==n),depend(n),intent(in,out,copy,out=x):: b
      integer depend(b),intent(hide):: ldb = shape(b,0)
-     integer optional,intent(in),depend(n),check(lwork>=1||lwork==-1):: lwork = n
+     integer optional,intent(in),depend(n),check(lwork>=1||lwork==-1):: lwork = max(n,1)
      <ftype2c> depend(lwork),dimension(MAX(lwork,1)),intent(hide,cache):: work
      integer intent(out):: info
 
@@ -991,7 +991,7 @@ interface
      <ftype2> intent(out),dimension(nrhs),depend(nrhs):: ferr
      <ftype2> intent(out),dimension(nrhs),depend(nrhs):: berr
      <ftype2c> dimension(MAX(1,lwork)),depend(lwork),intent(hide,cache):: work
-     integer optional,intent(in),depend(n),check(lwork>=1||lwork==-1):: lwork = 2*n
+     integer optional,intent(in),depend(n),check(lwork>=1||lwork==-1):: lwork = max(2*n,1)
      <ftype2> intent(hide,cache),dimension(n),depend(n) :: rwork
      integer intent(out):: info
 
@@ -1164,7 +1164,7 @@ interface
      check(shape(lu,0)==shape(lu,1)) :: lu
      integer dimension(n),intent(in),depend(n) :: piv
      integer intent(out):: info
-     integer optional,intent(in),depend(n),check(lwork>=n) :: lwork=3*n
+     integer optional,intent(in),depend(n),check(lwork>=n) :: lwork=max(3*n,1)
      <ftype> dimension(lwork),intent(hide,cache),depend(lwork) :: work
 
    end subroutine <prefix>getri
@@ -1212,7 +1212,7 @@ interface
    <ftype2> dimension(vt0,vt1),intent(out),depend(vt0, vt1) :: vt
    <ftype2> dimension(lwork),intent(hide,cache),depend(lwork) :: work
    integer optional,intent(in),depend(minmn,compute_uv) &
-        :: lwork = (compute_uv?4*minmn*minmn+MAX(m,n)+9*minmn:MAX(14*minmn+4,10*minmn+2+25*(25+8))+MAX(m,n))
+        :: lwork = max((compute_uv?4*minmn*minmn+MAX(m,n)+9*minmn:MAX(14*minmn+4,10*minmn+2+25*(25+8))+MAX(m,n)),1)
    integer intent(hide,cache),dimension(8*minmn),depend(minmn) :: iwork
    integer intent(out)::info
 
@@ -1273,7 +1273,7 @@ interface
    <ftype2c> dimension(lwork),intent(hide,cache),depend(lwork) :: work
    <ftype2> dimension((compute_uv?minmn*MAX(5*minmn+7, 2*MAX(m,n)+2*minmn+1):7*minmn)),intent(hide,cache),depend(minmn,compute_uv) :: rwork
    integer optional,intent(in),depend(minmn,compute_uv) &
-        :: lwork = (compute_uv?2*minmn*minmn+MAX(m,n)+2*minmn:2*minmn+MAX(m,n))
+        :: lwork = max((compute_uv?2*minmn*minmn+MAX(m,n)+2*minmn:2*minmn+MAX(m,n)),1)
    integer intent(hide,cache),dimension(8*minmn),depend(minmn) :: iwork
    integer intent(out)::info
 
@@ -1333,7 +1333,7 @@ interface
    <ftype2> dimension(u0,u1),intent(out),depend(u0, u1) :: u
    <ftype2> dimension(vt0,vt1),intent(out),depend(vt0, vt1) :: vt
    <ftype2> dimension(lwork),intent(hide,cache),depend(lwork) :: work
-   integer optional,intent(in),depend(minmn) :: lwork = MAX(1,MAX(3*minmn+MAX(m,n),5*minmn))
+   integer optional,intent(in),depend(minmn) :: lwork = max(MAX(3*minmn+MAX(m,n),5*minmn),1)
    integer intent(out) :: info
 
    end subroutine <prefix2>gesvd
@@ -1391,7 +1391,7 @@ interface
    <ftype2c> dimension(vt0,vt1),intent(out),depend(vt0,vt1) :: vt
    <ftype2c> dimension(lwork),intent(hide,cache),depend(lwork) :: work
    <ftype2> dimension((MAX(1,5*minmn))),intent(hide,cache),depend(minmn) :: rwork
-   integer optional,intent(in),depend(minmn) :: lwork = MAX(1,2*minmn+MAX(m,n))
+   integer optional,intent(in),depend(minmn) :: lwork = MAX(2*minmn+MAX(m,n),1)
    integer intent(out) :: info
 
    end subroutine <prefix2c>gesvd
@@ -1438,7 +1438,7 @@ interface
      integer depend(b),intent(hide):: ldb = shape(b,0)
      integer optional,intent(in),depend(nrhs,m,n),&
           check(lwork>=1||lwork==-1) &
-          :: lwork=MAX( 1, MIN(m,n) + MAX(MIN(m,n), nrhs ) )
+          :: lwork=MAX( MIN(m,n) + MAX(MIN(m,n), nrhs ), 1 )
      <ftype2> dimension(m,nrhs),intent(in,out,copy,out=x) :: b
      <ftype2> dimension(m,n),intent(in,out,copy,out=lqr) :: a
      <ftype2> depend(lwork),dimension(MAX(lwork,1)),intent(hide,cache):: work
@@ -1486,7 +1486,7 @@ interface
      integer depend(b),intent(hide):: ldb = shape(b,0)
      integer optional,intent(in),depend(nrhs,m,n),&
           check(lwork>=1||lwork==-1) &
-          :: lwork=MAX( 1, MIN(m,n) + MAX(MIN(m,n), nrhs ) )
+          :: lwork=MAX( MIN(m,n) + MAX(MIN(m,n), nrhs ), 1 )
 
      <ftype2c> dimension(m,n),intent(in,out,copy,out=lqr) :: a
      <ftype2c> dimension(m,nrhs),intent(in,out,copy,out=x) :: b
@@ -1542,7 +1542,7 @@ interface
 
      integer optional,intent(in),depend(nrhs,minmn,maxmn),&
           check(lwork>=1||lwork==-1) &
-          :: lwork=3*minmn+MAX(2*minmn,MAX(maxmn,nrhs))
+          :: lwork=max(3*minmn+MAX(2*minmn,MAX(maxmn,nrhs)),1)
           !check(lwork>=3*minmn+MAX(2*minmn,MAX(maxmn,nrhs)))
      <ftype2> dimension(MAX(lwork,1)),intent(out),depend(lwork) :: work
      integer intent(out)::info
@@ -1600,7 +1600,7 @@ interface
 
      integer optional,intent(in),depend(nrhs,minmn,maxmn),&
           check(lwork>=1||lwork==-1) &
-          :: lwork=2*minmn+MAX(maxmn,nrhs)
+          :: lwork=max(2*minmn+MAX(maxmn,nrhs),1)
           ! check(lwork>=2*minmn+MAX(maxmn,nrhs))
      <ftype2c> dimension(MAX(lwork,1)),intent(out),depend(lwork) :: work
      <ftype2> dimension(5*minmn),intent(hide),depend(lwork) :: rwork
@@ -1918,7 +1918,7 @@ interface
      integer dimension(n),intent(out) :: jpvt
      <ftype2> dimension(MIN(m,n)),intent(out) :: tau
 
-     integer optional,intent(in),depend(n),check(lwork>=n||lwork==-1) :: lwork=3*(n+1)
+     integer optional,intent(in),depend(n),check(lwork>=n||lwork==-1) :: lwork=max(3*(n+1),1)
      <ftype2> dimension(MAX(lwork,1)),intent(out),depend(lwork) :: work
      integer intent(out) :: info
    end subroutine <prefix2>geqp3
@@ -1939,7 +1939,7 @@ interface
      integer dimension(n),intent(out) :: jpvt
      <ftype2c> dimension(MIN(m,n)),intent(out) :: tau
 
-     integer optional,intent(in),depend(n),check(lwork>=n||lwork==-1) :: lwork=3*(n+1)
+     integer optional,intent(in),depend(n),check(lwork>=n||lwork==-1) :: lwork=max(3*(n+1),1)
      <ftype2c> dimension(MAX(lwork,1)),intent(out),depend(lwork) :: work
      <ftype2> dimension(2*n),intent(hide),depend(n) :: rwork
      integer intent(out) :: info
@@ -1960,7 +1960,7 @@ interface
      <ftype> dimension(m,n),intent(in,out,copy,out=qr,aligned8) :: a
      <ftype> dimension(MIN(m,n)),intent(out) :: tau
 
-     integer optional,intent(in),depend(n),check(lwork>=n||lwork==-1) :: lwork=3*n
+     integer optional,intent(in),depend(n),check(lwork>=n||lwork==-1) :: lwork=max(3*n,1)
      <ftype> dimension(MAX(lwork,1)),intent(out),depend(lwork) :: work
      integer intent(out) :: info
    end subroutine <prefix>geqrf
@@ -1980,7 +1980,7 @@ interface
      <ftype> dimension(m,n),intent(in,out,copy,out=qr,aligned8) :: a
      <ftype> dimension(MIN(m,n)),intent(out) :: tau
 
-     integer optional,intent(in),depend(m),check(lwork>=m||lwork==-1) :: lwork=3*m
+     integer optional,intent(in),depend(m),check(lwork>=m||lwork==-1) :: lwork=max(3*m,1)
      <ftype> dimension(MAX(lwork,1)),intent(out),depend(lwork) :: work
      integer intent(out) :: info
    end subroutine <prefix>gerqf
@@ -2002,7 +2002,7 @@ interface
      <ftype2> dimension(m,n),intent(in,out,copy,out=q) :: a
      <ftype2> dimension(k),intent(in) :: tau
 
-     integer optional,intent(in),depend(n),check(lwork>=n||lwork==-1) :: lwork=3*n
+     integer optional,intent(in),depend(n),check(lwork>=n||lwork==-1) :: lwork=max(3*n,1)
      <ftype2> dimension(MAX(lwork,1)),intent(out),depend(lwork) :: work
      integer intent(out) :: info
    end subroutine <prefix2>orgqr
@@ -2024,7 +2024,7 @@ interface
      <ftype2c> dimension(m,n),intent(in,out,copy,out=q) :: a
      <ftype2c> dimension(k),intent(in) :: tau
 
-     integer optional,intent(in),depend(n),check(lwork>=n||lwork==-1) :: lwork=3*n
+     integer optional,intent(in),depend(n),check(lwork>=n||lwork==-1) :: lwork=max(3*n,1)
      <ftype2c> dimension(MAX(lwork,1)),intent(out),depend(lwork) :: work
      integer intent(out) :: info
    end subroutine <prefix2c>ungqr
@@ -2099,7 +2099,7 @@ interface
      <ftype2> dimension(m,n),intent(in,out,copy,out=q) :: a
      <ftype2> dimension(k),intent(in) :: tau
 
-     integer optional,intent(in),depend(m),check(lwork>=m||lwork==-1) :: lwork=3*m
+     integer optional,intent(in),depend(m),check(lwork>=m||lwork==-1) :: lwork=max(3*m,1)
      <ftype2> dimension(MAX(lwork,1)),intent(out),depend(lwork) :: work
      integer intent(out) :: info
    end subroutine <prefix2>orgrq
@@ -2121,7 +2121,7 @@ interface
      <ftype2c> dimension(m,n),intent(in,out,copy,out=q) :: a
      <ftype2c> dimension(k),intent(in) :: tau
 
-     integer optional,intent(in),depend(m),check(lwork>=m||lwork==-1) :: lwork=3*m
+     integer optional,intent(in),depend(m),check(lwork>=m||lwork==-1) :: lwork=max(3*m,1)
      <ftype2c> dimension(MAX(lwork,1)),intent(out),depend(lwork) :: work
      integer intent(out) :: info
    end subroutine <prefix2c>ungrq
@@ -2152,7 +2152,7 @@ interface
      <ftype2> dimension(ldvr,n),intent(out) :: vr
      integer intent(hide),depend(n,compute_vr) :: ldvr=(compute_vr?n:1)
 
-     integer optional,intent(in),depend(n,compute_vl,compute_vr) :: lwork=4*n
+     integer optional,intent(in),depend(n,compute_vl,compute_vr) :: lwork=max(4*n,1)
      check(lwork>=((compute_vl||compute_vr)?4*n:3*n)) :: lwork
      <ftype2> dimension(lwork),intent(hide,cache),depend(lwork) :: work
 
@@ -2213,7 +2213,7 @@ interface
      <ftype2c>  dimension(ldvr,n),depend(ldvr),intent(out) :: vr
      integer intent(hide),depend(compute_vr,n) :: ldvr=(compute_vr?n:1)
 
-     integer optional,intent(in),depend(n) :: lwork=2*n
+     integer optional,intent(in),depend(n) :: lwork=max(2*n,1)
      check(lwork>=2*n) :: lwork
      <ftype2c> dimension(lwork),intent(hide),depend(lwork) :: work
      <ftype2> dimension(2*n),intent(hide,cache),depend(n) :: rwork
@@ -2284,7 +2284,7 @@ interface
      <ftype2>  dimension(ldvr,n),intent(out),depend(ldvr) :: vr
      integer intent(hide),depend(compute_vr,n) :: ldvr=(compute_vr?n:1)
 
-     integer optional,intent(in),depend(n) :: lwork=8*n
+     integer optional,intent(in),depend(n) :: lwork=max(8*n,1)
      check(lwork>=8*n) :: lwork
      <ftype2> dimension(lwork),intent(hide),depend(lwork) :: work
 
@@ -2324,7 +2324,7 @@ interface
      <ftype2c>  dimension(ldvr,n),intent(out),depend(ldvr) :: vr
      integer intent(hide),depend(compute_vr,n) :: ldvr=(compute_vr?n:1)
 
-     integer optional,intent(in),depend(n) :: lwork=2*n
+     integer optional,intent(in),depend(n) :: lwork=max(2*n,1)
      check(lwork>=2*n) :: lwork
      <ftype2c> dimension(lwork),intent(hide),depend(lwork) :: work
      <ftype2> dimension(8*n),intent(hide),depend(n) :: rwork
@@ -2356,7 +2356,7 @@ interface
 
      <ftype2> dimension(n),intent(out),depend(n) :: w
 
-     integer optional,intent(in),depend(n) :: lwork=3*n-1
+     integer optional,intent(in),depend(n) :: lwork=max(3*n-1,1)
      check(lwork>=3*n-1) :: lwork
      <ftype2> dimension(lwork),intent(hide),depend(lwork) :: work
 
@@ -2385,7 +2385,7 @@ interface
 
      <ftype2> dimension(n),intent(out),depend(n) :: w
 
-     integer optional,intent(in),depend(n) :: lwork=2*n-1
+     integer optional,intent(in),depend(n) :: lwork=max(2*n-1,1)
      check(lwork>=2*n-1) :: lwork
      <ftype2c> dimension(lwork),intent(hide),depend(lwork) :: work
 
@@ -2416,7 +2416,7 @@ interface
 
      <ftype2> dimension(n),intent(out),depend(n) :: w
 
-     integer optional,intent(in),depend(n,compute_v) :: lwork=(compute_v?1+6*n+2*n*n:2*n+1)
+     integer optional,intent(in),depend(n,compute_v) :: lwork=max((compute_v?1+6*n+2*n*n:2*n+1),1)
      check(lwork>=(compute_v?1+6*n+2*n*n:2*n+1)) :: lwork
      <ftype2> dimension(lwork),intent(hide,cache),depend(lwork) :: work
 
@@ -2447,7 +2447,7 @@ interface
 
      <ftype2> dimension(n),intent(out),depend(n) :: w
 
-     integer optional,intent(in),depend(n,compute_v) :: lwork=(compute_v?2*n+n*n:n+1)
+     integer optional,intent(in),depend(n,compute_v) :: lwork=max((compute_v?2*n+n*n:n+1),1)
      check(lwork>=(compute_v?2*n+n*n:n+1)) :: lwork
      <ftype2c> dimension(lwork),intent(hide,cache),depend(lwork) :: work
 
@@ -2770,7 +2770,7 @@ interface
      <ftype2c> intent(out),depend(ldvs,n),dimension(ldvs,n) :: vs
      integer intent(hide),depend(compute_v,n) :: ldvs=((compute_v==1)?n:1)
      <ftype2c> intent(out),depend(lwork),dimension(MAX(lwork,1)) :: work
-     integer optional,intent(in),check((lwork==-1)||(lwork >= MAX(1,2*n))),depend(n) :: lwork = 3*n
+     integer optional,intent(in),check((lwork==-1)||(lwork >= MAX(1,2*n))),depend(n) :: lwork = max(3*n,1)
      <ftype2> optional,intent(hide),depend(n),dimension(n) :: rwork
      logical optional,intent(hide),depend(n),dimension(n) :: bwork
      integer intent(out) :: info
@@ -2801,7 +2801,7 @@ interface
     <ftype2> intent(out),depend(ldvs,n),dimension(ldvs,n) :: vs
     integer intent(hide),depend(compute_v,n) :: ldvs=((compute_v==1)?n:1)
     <ftype2> intent(out),depend(lwork),dimension(MAX(lwork,1)) :: work
-    integer optional,intent(in),check((lwork==-1)||(lwork >= MAX(1,2*n))),depend(n) :: lwork = 3*n
+    integer optional,intent(in),check((lwork==-1)||(lwork >= MAX(1,2*n))),depend(n) :: lwork = max(3*n,1)
     <ftype2> optional,intent(hide),depend(n),dimension(n) :: rwork
     logical optional,intent(hide),depend(n),dimension(n) :: bwork
     integer intent(out) :: info
@@ -2835,7 +2835,7 @@ subroutine <prefix2>ggev(compute_vl,compute_vr,n,a,b,alphar,alphai,beta,vl,ldvl,
     <ftype2>  depend(ldvr,n), dimension(ldvr,n),intent(out) :: vr
     integer intent(hide),depend(n,compute_vr) :: ldvr=(compute_vr?n:1)
 
-    integer optional,intent(in),depend(n,compute_vl,compute_vr) :: lwork=8*n
+    integer optional,intent(in),depend(n,compute_vl,compute_vr) :: lwork=max(8*n,1)
     check((lwork==-1) || (lwork>=MAX(1,8*n))) :: lwork
     <ftype2> intent(out), dimension(MAX(lwork,1)), depend(lwork) :: work
 
@@ -2869,7 +2869,7 @@ subroutine <prefix2c>ggev(compute_vl,compute_vr,n,a,b,alpha,beta,vl,ldvl,vr,ldvr
     <ftype2c>  depend(ldvr,n), dimension(ldvr,n),intent(out) :: vr
     integer intent(hide),depend(n,compute_vr) :: ldvr=(compute_vr?n:1)
 
-    integer optional,intent(in),depend(n,compute_vl,compute_vr) :: lwork=2*n
+    integer optional,intent(in),depend(n,compute_vl,compute_vr) :: lwork=max(2*n,1)
     check((lwork==-1) || (lwork>=MAX(1,2*n))) :: lwork
     <ftype2c> intent(out), dimension(MAX(lwork,1)), depend(lwork) :: work
     <ftype2> intent(hide), dimension(8*n), depend(n) :: rwork
@@ -2935,7 +2935,7 @@ subroutine <prefix2>sbevd(ab,compute_v,lower,n,ldab,kd,w,z,ldz,work,lwork,iwork,
   integer intent(hide),depend(n) :: ldz=(compute_v?n:1)
   <ftype2> dimension(ldz,ldz),depend(ldz) :: z
 
-  integer intent(hide),depend(n) :: lwork=(compute_v?1+5*n+2*n*n:2*n)
+  integer intent(hide),depend(n) :: lwork=max((compute_v?1+5*n+2*n*n:2*n),1)
   <ftype2> dimension(lwork),intent(hide),depend(lwork) :: work
   integer intent(out)::info
 
@@ -3107,7 +3107,7 @@ subroutine <prefix2>stemr(d,e,range,vl,vu,il,iu,compute_v,n,m,w,z,ldz,nzc,isuppz
   integer depend(n),intent(hide) :: nzc = n  ! can also be passed as -1 to do a query
   integer dimension((compute_v?2*n:1)),depend(n),intent(hide) :: isuppz
   integer intent(hide) :: tryrac = 1
-  integer depend(n),optional,intent(in),check(lwork>=(compute_v?18*n:12*n)) :: lwork = (compute_v?18*n:12*n)
+  integer depend(n),optional,intent(in),check(lwork>=(compute_v?18*n:12*n)) :: lwork = max((compute_v?18*n:12*n),1)
   <ftype2> dimension(lwork),depend(lwork),intent(hide) :: work
   integer depend(n),optional,intent(in),check(liwork>=(compute_v?10*n:8*n)) :: liwork = (compute_v?10*n:8*n)
   integer dimension(liwork),depend(liwork),intent(hide) :: iwork
@@ -3191,7 +3191,7 @@ subroutine <prefix2c>hbevd(ab,compute_v,lower,n,ldab,kd,w,z,ldz,work,lwork,rwork
   integer intent(hide),depend(n) :: ldz=(compute_v?n:1)
   <ftype2c> dimension(ldz,ldz),intent(out),depend(ldz) :: z
 
-  integer intent(hide),depend(n) :: lwork=(compute_v?2*n*n:n)
+  integer intent(hide),depend(n) :: lwork=max((compute_v?2*n*n:n),1)
   <ftype2c> dimension(lwork),intent(hide),depend(lwork) :: work
   integer intent(out)::info
 
@@ -3402,7 +3402,7 @@ subroutine ssyevr(jobz,range,uplo,n,a,lda,vl,vu,il,iu,abstol,m,w,z,ldz,isuppz,wo
     real intent(out),dimension(n,m),depend(n,m) :: z
     integer intent(hide),check(shape(z,0)==ldz),depend(n,z) :: ldz=n
     integer intent(hide),dimension(2*m) :: isuppz
-    integer intent(in),depend(n) :: lwork=26*n
+    integer intent(in),depend(n) :: lwork=max(26*n,1)
     real  intent(hide),dimension(lwork) :: work
     integer intent(hide),depend(n):: liwork=10*n
     integer intent(hide),dimension(liwork) :: iwork
@@ -3430,7 +3430,7 @@ subroutine dsyevr(jobz,range,uplo,n,a,lda,vl,vu,il,iu,abstol,m,w,z,ldz,isuppz,wo
     double precision intent(out),dimension(n,m),depend(n,m) :: z
     integer intent(hide),check(shape(z,0)==ldz),depend(n,z) :: ldz=n
     integer intent(hide),dimension(2*m) :: isuppz
-    integer intent(in),depend(n) :: lwork=26*n
+    integer intent(in),depend(n) :: lwork=max(26*n,1)
     double precision intent(hide),dimension(lwork) :: work
     integer intent(hide),depend(n):: liwork=10*n
     integer intent(hide),dimension(liwork) :: iwork
@@ -3458,7 +3458,7 @@ subroutine cheevr(jobz,range,uplo,n,a,lda,vl,vu,il,iu,abstol,m,w,z,ldz,isuppz,wo
     complex intent(out),dimension(n,m),depend(n,m) :: z
     integer intent(hide),check(shape(z,0)==ldz),depend(n,z) :: ldz=n
     integer intent(hide),dimension(2*m) :: isuppz
-    integer intent(in),depend(n) :: lwork=18*n
+    integer intent(in),depend(n) :: lwork=max(18*n,1)
     complex  intent(hide),dimension(lwork) :: work
     integer intent(hide),depend(n) :: lrwork=24*n
     real  intent(hide),dimension(lrwork) :: rwork
@@ -3488,7 +3488,7 @@ subroutine zheevr(jobz,range,uplo,n,a,lda,vl,vu,il,iu,abstol,m,w,z,ldz,isuppz,wo
     complex*16 intent(out),dimension(n,m),depend(n,m) :: z
     integer intent(hide),check(shape(z,0)==ldz),depend(n,z) :: ldz=n
     integer intent(hide),dimension(2*m) :: isuppz
-    integer intent(in),depend(n) :: lwork=18*n
+    integer intent(in),depend(n) :: lwork=max(18*n,1)
     complex*16  intent(hide),dimension(lwork) :: work
     integer intent(hide),depend(n) :: lrwork=24*n
     double precision  intent(hide),dimension(lrwork) :: rwork
@@ -3511,7 +3511,7 @@ subroutine ssygv(itype,jobz,uplo,n,a,lda,b,ldb,w,work,lwork,info)
     real intent(in,copy,aligned8),dimension(n,n) :: b
     integer intent(hide),depend(n,b) :: ldb=n
     real intent(out),dimension(n),depend(n) :: w
-    integer intent(hide) :: lwork=3*n-1
+    integer intent(hide) :: lwork=max(3*n-1,1)
     real intent(hide),dimension(lwork) :: work
     integer intent(out) :: info
 end subroutine ssygv
@@ -3530,7 +3530,7 @@ subroutine dsygv(itype,jobz,uplo,n,a,lda,b,ldb,w,work,lwork,info)
     double precision intent(in,copy,aligned8),dimension(n,n) :: b
     integer intent(hide),depend(n,b) :: ldb=n
     double precision intent(out),dimension(n),depend(n) :: w
-    integer intent(hide) :: lwork=3*n-1
+    integer intent(hide) :: lwork=max(3*n-1,1)
     double precision intent(hide),dimension(lwork) :: work
     integer intent(out) :: info
 end subroutine dsygv
@@ -3549,7 +3549,7 @@ subroutine chegv(itype,jobz,uplo,n,a,lda,b,ldb,w,work,lwork,rwork,info)
     complex intent(in,copy,aligned8),dimension(n,n) :: b
     integer intent(hide),depend(n,b) :: ldb=n
     real intent(out),dimension(n),depend(n) :: w
-    integer intent(hide) :: lwork=18*n-1
+    integer intent(hide) :: lwork=max(18*n-1,1)
     complex intent(hide),dimension(lwork) :: work
     real intent(hide),dimension(3*n-2) :: rwork
     integer intent(out) :: info
@@ -3569,7 +3569,7 @@ subroutine zhegv(itype,jobz,uplo,n,a,lda,b,ldb,w,work,lwork,rwork,info)
     complex*16 intent(in,copy,aligned8),dimension(n,n) :: b
     integer intent(hide),depend(n,b) :: ldb=n
     double precision intent(out),dimension(n),depend(n) :: w
-    integer intent(hide) :: lwork=18*n-1
+    integer intent(hide) :: lwork=max(18*n-1,1)
     complex*16 intent(hide),dimension(lwork) :: work
     double precision intent(hide),dimension(3*n-2) :: rwork
     integer intent(out) :: info
@@ -3592,7 +3592,7 @@ subroutine ssygvd(itype,jobz,uplo,n,a,lda,b,ldb,w,work,lwork,iwork,liwork,info)
     real intent(in,copy,aligned8),dimension(n,n) :: b
     integer intent(hide),depend(n,b) :: ldb=n
     real intent(out),dimension(n),depend(n) :: w
-    integer intent(in),depend(n) :: lwork=1+6*n+2*n*n
+    integer intent(in),depend(n) :: lwork=max(1+6*n+2*n*n,1)
     real intent(hide),dimension(lwork) :: work
     integer intent(hide),depend(n) :: liwork=3+5*n
     integer intent(hide),dimension(liwork) :: iwork
@@ -3613,7 +3613,7 @@ subroutine dsygvd(itype,jobz,uplo,n,a,lda,b,ldb,w,work,lwork,iwork,liwork,info)
     double precision intent(in,copy,aligned8),dimension(n,n) :: b
     integer intent(hide),depend(n,b) :: ldb=n
     double precision intent(out),dimension(n),depend(n) :: w
-    integer intent(in),depend(n) :: lwork=1+6*n+2*n*n
+    integer intent(in),depend(n) :: lwork=max(1+6*n+2*n*n,1)
     double precision intent(hide),dimension(lwork) :: work
     integer intent(hide),depend(n) :: liwork=3+5*n
     integer intent(hide),dimension(liwork) :: iwork
@@ -3634,7 +3634,7 @@ subroutine chegvd(itype,jobz,uplo,n,a,lda,b,ldb,w,work,lwork,rwork,lrwork,iwork,
     complex intent(in,copy,aligned8),dimension(n,n) :: b
     integer intent(hide),depend(n,b) :: ldb=n
     real intent(out),dimension(n),depend(n) :: w
-    integer intent(in),depend(n) :: lwork=2*n+n*n
+    integer intent(in),depend(n) :: lwork=max(2*n+n*n,1)
     complex intent(hide),dimension(lwork) :: work
     integer intent(hide),depend(n) :: lrwork=1+5*n+2*n*n
     real intent(hide),dimension(lrwork) :: rwork
@@ -3657,7 +3657,7 @@ subroutine zhegvd(itype,jobz,uplo,n,a,lda,b,ldb,w,work,lwork,rwork,lrwork,iwork,
     complex*16 intent(in,copy,aligned8),dimension(n,n) :: b
     integer intent(hide),depend(n,b) :: ldb=n
     double precision intent(out),dimension(n),depend(n) :: w
-    integer intent(in),depend(n) :: lwork=2*n+n*n
+    integer intent(in),depend(n) :: lwork=max(2*n+n*n,1)
     complex*16 intent(hide),dimension(lwork) :: work
     integer intent(hide),depend(n) :: lrwork=1+5*n+2*n*n
     double precision intent(hide),dimension(lrwork) :: rwork
@@ -3691,7 +3691,7 @@ subroutine ssygvx(itype,jobz,range,uplo,n,a,lda,b,ldb,vl,vu,il,iu,abstol,m,w,z,l
     real intent(out),dimension(n),depend(n) :: w
     real intent(out),dimension(n,m),depend(n,m) :: z
     integer intent(hide),check(shape(z,0)==ldz),depend(n,z) :: ldz=n
-    integer intent(in),depend(n) :: lwork=8*n
+    integer intent(in),depend(n) :: lwork=max(8*n,1)
     real intent(hide),dimension(lwork),depend(n,lwork) :: work
     integer intent(hide),dimension(5*n) :: iwork
     integer intent(out),dimension(n),depend(n) :: ifail
@@ -3721,7 +3721,7 @@ subroutine dsygvx(itype,jobz,range,uplo,n,a,lda,b,ldb,vl,vu,il,iu,abstol,m,w,z,l
     double precision intent(out),dimension(n),depend(n) :: w
     double precision intent(out),dimension(n,m),depend(n,m) :: z
     integer intent(hide),check(shape(z,0)==ldz),depend(n,z) :: ldz=n
-    integer intent(in),depend(n) :: lwork=8*n
+    integer intent(in),depend(n) :: lwork=max(8*n,1)
     double precision intent(hide),dimension(lwork),depend(n,lwork) :: work
     integer intent(hide),dimension(5*n) :: iwork
     integer intent(out),dimension(n),depend(n) :: ifail
@@ -3751,7 +3751,7 @@ subroutine chegvx(itype,jobz,range,uplo,n,a,lda,b,ldb,vl,vu,il,iu,abstol,m,w,z,l
     real intent(out),dimension(n),depend(n) :: w
     complex intent(out),dimension(n,m),depend(n,m) :: z
     integer intent(hide),check(shape(z,0)==ldz),depend(n,z) :: ldz=n
-    integer intent(in),depend(n) :: lwork=18*n-1
+    integer intent(in),depend(n) :: lwork=max(18*n-1,1)
     complex intent(hide),dimension(lwork),depend(n,lwork) :: work
     real intent(hide),dimension(7*n) :: rwork
     integer intent(hide),dimension(5*n) :: iwork
@@ -3782,7 +3782,7 @@ subroutine zhegvx(itype,jobz,range,uplo,n,a,lda,b,ldb,vl,vu,il,iu,abstol,m,w,z,l
     double precision intent(out),dimension(n),depend(n) :: w
     complex*16 intent(out),dimension(n,m),depend(n,m) :: z
     integer intent(hide),check(shape(z,0)==ldz),depend(n,z) :: ldz=n
-    integer intent(in),depend(n) :: lwork=18*n-1
+    integer intent(in),depend(n) :: lwork=max(18*n-1,1)
     complex*16 intent(hide),dimension(lwork),depend(n,lwork) :: work
     double precision intent(hide),dimension(7*n) :: rwork
     integer intent(hide),dimension(5*n) :: iwork
@@ -3827,7 +3827,7 @@ subroutine <prefix>gglse(m,n,p,a,lda,b,ldb,c,d,x,work,lwork,info)
   <ftype> dimension(p),depend(p),intent(in,copy) :: d
   <ftype> dimension(n),depend(n),intent(out) :: x
 
-  integer optional,intent(in),depend(p,m,n),check((lwork==-1)||(lwork>=1)) :: lwork = max(1,m+n+p)
+  integer optional,intent(in),depend(p,m,n),check((lwork==-1)||(lwork>=1)) :: lwork = max(m+n+p,1)
   <ftype> intent(hide),dimension(lwork),depend(lwork) :: work
 
 end subroutine <prefix>gglse
