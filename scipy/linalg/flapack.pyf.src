@@ -657,7 +657,7 @@ interface
      callstatement (*f2py_func)((lower?"L":"U"),&n,a,&lda,ipiv,&info)
      callprotoargument char*,int*,<ctype>*,int*,int*,int*
 
-     integer optional,intent(in),check(lower==0||lower==1):: lower = 1
+     integer optional,intent(in),check(lower==0||lower==1):: lower = 0
      integer depend(a),intent(hide):: n = shape(a,0)
      <ftype> dimension(n,n),intent(in,out,copy,out=ldu):: a
      integer depend(a),intent(hide):: lda = max(shape(a,0),1)
@@ -677,7 +677,7 @@ interface
      callstatement (*f2py_func)((lower?"L":"U"),&n,a,&lda,ipiv,work,&lwork,&info)
      callprotoargument char*,int*,<ctype>*,int*,int*,<ctype>*,int*,int*
 
-     integer optional,intent(in),check(lower==0||lower==1):: lower = 1
+     integer optional,intent(in),check(lower==0||lower==1):: lower = 0
      integer depend(a),intent(hide):: n = shape(a,0)
      <ftype> dimension(n,n),intent(in,out,copy,out=ldu):: a
      integer depend(a),intent(hide):: lda = max(shape(a,0),1)
@@ -881,7 +881,7 @@ interface
      callstatement (*f2py_func)((lower?"L":"U"),&n,a,&lda,ipiv,work,&lwork,&info)
      callprotoargument char*,int*,<ctype2c>*,int*,int*,<ctype2c>*,int*,int*
 
-     integer optional,intent(in),check(lower==0||lower==1):: lower = 1
+     integer optional,intent(in),check(lower==0||lower==1):: lower = 0
      integer depend(a),intent(hide):: n = shape(a,0)
      <ftype2c> dimension(n,n),intent(in,out,copy,out=ldu):: a
      integer depend(a),intent(hide):: lda = max(shape(a,0),1)
