@@ -806,29 +806,16 @@ class TestSystematic(object):
                             [Arg(), ComplexArg()])
 
     def test_besselk(self):
-        def mpbesselk(v, x):
-            r = float(mpmath.besselk(v, x, **HYPERKW))
-            if abs(r) > 1e305:
-                # overflowing to inf a bit earlier is OK
-                r = np.inf * np.sign(r)
-            if abs(v) == abs(x) and abs(r) == np.inf and abs(x) > 1:
-                # wrong result (kv(x,x) -> 0 for x > 1),
-                # try with higher dps
-                old_dps = mpmath.mp.dps
-                mpmath.mp.dps = 200
-                try:
-                    r = float(mpmath.besselk(v, x, **HYPERKW))
-                finally:
-                    mpmath.mp.dps = old_dps
-            return r
         assert_mpmath_equal(sc.kv,
-                            exception_to_nan(mpbesselk),
-                            [Arg(-1e100, 1e100), Arg()])
+                            mpmath.besselk,
+                            [Arg(-200, 200), Arg(0, np.inf)],
+                            nan_ok=False, rtol=1e-12)
 
     def test_besselk_int(self):
         assert_mpmath_equal(sc.kn,
-                            exception_to_nan(lambda v, z: mpmath.besselk(v, z, **HYPERKW)),
-                            [IntArg(-1000, 1000), Arg()])
+                            mpmath.besselk,
+                            [IntArg(-200, 200), Arg(0, np.inf)],
+                            nan_ok=False, rtol=1e-12)
 
     def test_besselk_complex(self):
         assert_mpmath_equal(lambda v, z: sc.kv(v.real, z),
