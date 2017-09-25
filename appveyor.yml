@@ -7,6 +7,7 @@ max_jobs: 100
 
 cache:
   - '%LOCALAPPDATA%\pip\Cache'
+  - '%USERPROFILE%\clcache'
 
 environment:
   global:
@@ -158,6 +159,11 @@ build_script:
       }
       $env:Path += ";$MINGW"
       $env:NPY_NUM_BUILD_JOBS = "4"
+      If ($PYTHON_VERSION -ne 2.7) {
+          pip install https://github.com/frerich/clcache.git
+          $env:CC="clcache"
+          $env:CXX="clcache"
+      }
       mkdir dist
       pip wheel -v -v -v --wheel-dir=dist .
 
