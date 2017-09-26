@@ -234,7 +234,7 @@ def roots_jacobi(n, alpha, beta, mu=False):
     alpha : float
         alpha must be > -1
     beta : float
-        beta must be > 0
+        beta must be > -1
     mu : bool, optional
         If True, return the sum of the weights, optional.
 
