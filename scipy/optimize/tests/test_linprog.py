@@ -10,6 +10,8 @@ from scipy.optimize import linprog, OptimizeWarning
 from scipy._lib._numpy_compat import _assert_warns, suppress_warnings
 from scipy.sparse.linalg import MatrixRankWarning
 
+import pytest
+
 
 def magic_square(n):
     np.random.seed(0)
@@ -115,7 +117,11 @@ def _assert_success(res, desired_fun=None, desired_x=None,
     # res: linprog result object
     # desired_fun: desired objective function value or None
     # desired_x: desired solution or None
-    assert_(res.success)
+    if not res.success:
+        msg = "linprog status {0}, message: {1}".format(res.status,
+                                                        res.message)
+        raise AssertionError(msg)
+
     assert_equal(res.status, 0)
     if desired_fun is not None:
         assert_allclose(res.fun, desired_fun,
@@ -904,6 +910,11 @@ class TestLinprogIPSpecific:
 class TestLinprogIPSparse(BaseTestLinprogIP):
     options = {"sparse": True}
 
+    @pytest.mark.xfail(reason='Fails with ATLAS, see gh-7877')
+    def test_bug_6690(self):
+        # Test defined in base class, but can't mark as xfail there
+        super(TestLinprogIPSparse, self).test_bug_6690()
+
     def test_magic_square_sparse_no_presolve(self):
         # test linprog with a problem with a rank-deficient A_eq matrix
         A, b, c, N = magic_square(3)
@@ -937,3 +948,8 @@ class TestLinprogIPDense(BaseTestLinprogIP):
 
 class TestLinprogIPSparsePresolve(BaseTestLinprogIP):
     options = {"sparse": True, "_sparse_presolve": True}
+
+    @pytest.mark.xfail(reason='Fails with ATLAS, see gh-7877')
+    def test_bug_6690(self):
+        # Test defined in base class, but can't mark as xfail there
+        super(TestLinprogIPSparsePresolve, self).test_bug_6690()
