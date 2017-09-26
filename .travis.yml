@@ -58,6 +58,7 @@ addons:
     - gfortran
     - libgmp-dev
     - libmpfr-dev
+    - libsuitesparse-dev
     - ccache
 cache:
   directories:
@@ -121,6 +122,11 @@ before_install:
   - travis_retry pip install pytest pytest-xdist pytest-faulthandler mpmath argparse Pillow codecov
   - travis_retry pip install --upgrade pip setuptools
   - travis_retry pip install gmpy2  # speeds up mpmath (scipy.special tests)
+  - |
+    if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+      # optional sparse.linalg dependency (test linux only, no suitesparse installed on osx)
+      travis_retry pip install scikit-umfpack
+    fi
   - if [ "${TESTMODE}" == "full" ]; then pip install pytest-cov coverage; fi
   - if [ "${USE_WHEEL}" == "1" ]; then pip install wheel; fi
   - |
