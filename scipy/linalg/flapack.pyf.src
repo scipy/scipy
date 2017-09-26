@@ -701,7 +701,7 @@ interface
      integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
 
      <ftype> intent(hide):: a
-     integer depend(n),intent(hide):: lda = n
+     integer depend(n),intent(hide):: lda = max(n,1)
      integer intent(hide):: ipiv
      integer intent(hide):: lwork = -1
 
@@ -905,7 +905,7 @@ interface
      integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
 
      <ftype2c> intent(hide):: a
-     integer depend(n),intent(hide):: lda = n
+     integer depend(n),intent(hide):: lda = max(n,1)
      integer intent(hide):: ipiv
      integer intent(hide):: lwork = -1
 
