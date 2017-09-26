@@ -59,9 +59,26 @@ def use_solver(**kwargs):
 
 def _get_umf_family(A):
     """Get umfpack family string given the sparse matrix dtype."""
-    family = {'di': 'di', 'Di': 'zi', 'dl': 'dl', 'Dl': 'zl'}
-    dt = A.dtype.char + A.indices.dtype.char
-    return family[dt]
+    _families = {
+        (np.float64, np.int32): 'di',
+        (np.complex128, np.int32): 'zi',
+        (np.float64, np.int64): 'dl',
+        (np.complex128, np.int64): 'zl'
+    }
+
+    f_type = np.sctypeDict[A.dtype.name]
+    i_type = np.sctypeDict[A.indices.dtype.name]
+
+    try:
+        family = _families[(f_type, i_type)]
+
+    except KeyError:
+        msg = 'only float64 or complex128 matrices with int32 or int64' \
+            ' indices are supported! (got: matrix: %s, indices: %s)' \
+            % (f_type, i_type)
+        raise ValueError(msg)
+
+    return family
 
 def spsolve(A, b, permc_spec=None, use_umfpack=True):
     """Solve the sparse linear system Ax=b, where b may be a vector or a matrix.
