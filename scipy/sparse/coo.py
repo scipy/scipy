@@ -190,8 +190,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
 
         self._check()
 
-    def reshape(self, shape, copy=False):
-        """Returns a coo_matrix with shape `shape`."""
+    def reshape(self, shape, order='C', copy=False):
         if not isshape(shape):
             raise ValueError('`shape` must be a sequence of two integers')
 
@@ -202,11 +201,19 @@ class coo_matrix(_data_matrix, _minmax_mixin):
         if new_size != size:
             raise ValueError('total size of new array must be unchanged')
 
-        flat_indices = ncols * self.row + self.col
-        new_row, new_col = divmod(flat_indices, shape[1])
+        if order == 'C':
+            flat_indices = ncols * self.row + self.col
+            new_row, new_col = divmod(flat_indices, shape[1])
+        elif order == 'F':
+            flat_indices = self.row + nrows * self.col
+            new_col, new_row = divmod(flat_indices, shape[0])
+        else:
+            ValueError("`order` must be 'C' or 'F'")
 
         return coo_matrix((self.data, (new_row, new_col)),
                           shape=shape, copy=copy)
+
+    reshape.__doc__ = spmatrix.reshape.__doc__
 
     def getnnz(self, axis=None):
         if axis is None:

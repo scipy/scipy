@@ -109,18 +109,23 @@ class spmatrix(object):
 
     shape = property(fget=get_shape, fset=set_shape)
 
-    def reshape(self, shape, order='C'):
-        """
-        Gives a new shape to a sparse matrix without changing its data.
+    def reshape(self, shape, order='C', copy=False):
+        """Gives a new shape to a sparse matrix without changing its data.
 
         Parameters
         ----------
         shape : length-2 tuple of ints
             The new shape should be compatible with the original shape.
-        order : 'C', optional
-            This argument is in the signature *solely* for NumPy
-            compatibility reasons. Do not pass in anything except
-            for the default value, as this argument is not used.
+        order : {'C', 'F'}, optional
+            Read the elements using this index order. 'C' means to read and
+            write the elements using C-like index order; e.g. read entire first
+            row, then second row, etc. 'F' means to read and write the elements
+            using Fortran-like index order; e.g. read entire first column, then
+            second column, etc.
+        copy : bool, optional
+            Indicates whether or not attributes of self should be copied
+            whenever possible. The degree to which attributes are copied varies
+            depending on the type of sparse matrix being used.
 
         Returns
         -------
@@ -130,7 +135,8 @@ class spmatrix(object):
         --------
         np.matrix.reshape : NumPy's implementation of 'reshape' for matrices
         """
-        return self.tocoo().reshape(shape).asformat(self.format)
+        return (self.tocoo(copy=copy).reshape(shape, order=order, copy=True)
+                .asformat(self.format))
 
     def astype(self, dtype, casting='unsafe', copy=True):
         """Cast the matrix elements to a specified type.
