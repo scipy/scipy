@@ -91,6 +91,11 @@ class spmatrix(object):
             raise ValueError('invalid shape')
 
         if (self._shape != shape) and (self._shape is not None):
+            raise NotImplementedError(
+                    'Changing the shape of a sparse matrix by directly '
+                    'modifying its .shape property is not currently '
+                    'supported.  Please consider using the .reshape() '
+                    'member function instead!')
             try:
                 self = self.reshape(shape)
             except NotImplementedError:
@@ -125,8 +130,7 @@ class spmatrix(object):
         --------
         np.matrix.reshape : NumPy's implementation of 'reshape' for matrices
         """
-        raise NotImplementedError("Reshaping not implemented for %s." %
-                                  self.__class__.__name__)
+        return self.tocoo().reshape(shape).asformat(self.format)
 
     def astype(self, dtype, casting='unsafe', copy=True):
         """Cast the matrix elements to a specified type.
