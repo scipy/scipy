@@ -502,6 +502,12 @@ class TestFreqz(object):
         assert_array_almost_equal(w, np.pi * np.arange(9) / 9.)
         assert_array_almost_equal(h, np.ones(9))
 
+        for a in [1, np.ones(2)]:
+            w, h = freqz(np.ones(2), a, worN=0)
+            assert_equal(w.shape, (0,))
+            assert_equal(h.shape, (0,))
+            assert_equal(h.dtype, np.dtype('complex128'))
+
         t = np.linspace(0, 1, 4, endpoint=False)
         for b, a, h_whole in zip(
                 ([1., 0, 0, 0], np.sin(2 * np.pi * t)),
@@ -518,13 +524,6 @@ class TestFreqz(object):
             w, h = freqz(b, a, worN=w, whole=True)
             assert_array_almost_equal(w, expected_w)
             assert_array_almost_equal(h, h_whole)
-
-        # force 1D
-        b = np.array(b)
-        a = np.array(a)
-        assert_raises(ValueError, freqz, b[np.newaxis], a, w)
-        assert_raises(ValueError, freqz, b, a[np.newaxis], w)
-        assert_raises(ValueError, freqz, b, a, w[np.newaxis])
 
     def test_basic_whole(self):
         w, h = freqz([1.0], worN=8, whole=True)
@@ -604,6 +603,70 @@ class TestFreqz(object):
                     w, h = freqz(b, a, worN=ii, whole=False)
                     assert_array_almost_equal(w, expected_w)
                     assert_array_almost_equal(h, expected_h)
+
+    def test_broadcasting1(self):
+        # Test broadcasting with worN an integer or a 1-D array,
+        # b and a are n-dimensional arrays.
+        np.random.seed(123)
+        b = np.random.rand(3, 5, 1)
+        a = np.random.rand(2, 1)
+        for whole in [False, True]:
+            # Test with worN being integers (one fast for FFT and one not),
+            # a 1-D array, and an empty array.
+            for worN in [16, 17, np.linspace(0, 1, 10), np.array([])]:
+                w, h = freqz(b, a, worN=worN, whole=whole)
+                for k in range(b.shape[1]):
+                    bk = b[:, k, 0]
+                    ak = a[:, 0]
+                    ww, hh = freqz(bk, ak, worN=worN, whole=whole)
+                    assert_allclose(ww, w)
+                    assert_allclose(hh, h[k])
+
+    def test_broadcasting2(self):
+        # Test broadcasting with worN an integer or a 1-D array,
+        # b is an n-dimensional array, and a is left at the default value.
+        np.random.seed(123)
+        b = np.random.rand(3, 5, 1)
+        for whole in [False, True]:
+            for worN in [16, 17, np.linspace(0, 1, 10)]:
+                w, h = freqz(b, worN=worN, whole=whole)
+                for k in range(b.shape[1]):
+                    bk = b[:, k, 0]
+                    ww, hh = freqz(bk, worN=worN, whole=whole)
+                    assert_allclose(ww, w)
+                    assert_allclose(hh, h[k])
+
+    def test_broadcasting3(self):
+        # Test broadcasting where b.shape[-1] is the same length
+        # as worN, and a is left at the default value.
+        np.random.seed(123)
+        N = 16
+        b = np.random.rand(3, N)
+        for whole in [False, True]:
+            for worN in [N, np.linspace(0, 1, N)]:
+                w, h = freqz(b, worN=worN, whole=whole)
+                assert_equal(w.size, N)
+                for k in range(N):
+                    bk = b[:, k]
+                    ww, hh = freqz(bk, worN=w[k], whole=whole)
+                    assert_allclose(ww, w[k])
+                    assert_allclose(hh, h[k])
+
+    def test_broadcasting4(self):
+        # Test broadcasting with worN a 2-D array.
+        np.random.seed(123)
+        b = np.random.rand(4, 2, 1, 1)
+        a = np.random.rand(5, 2, 1, 1)
+        for whole in [False, True]:
+            for worN in [np.random.rand(6, 7), np.empty((6, 0))]:
+                w, h = freqz(b, a, worN=worN, whole=whole)
+                assert_array_equal(w, worN)
+                assert_equal(h.shape, (2,) + worN.shape)
+                for k in range(2):
+                    ww, hh = freqz(b[:, k, 0, 0], a[:, k, 0, 0], worN=worN.ravel(),
+                                   whole=whole)
+                    assert_equal(ww, worN.ravel())
+                    assert_allclose(hh, h[k, :, :].ravel())
 
 
 class TestSOSFreqz(object):

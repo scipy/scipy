@@ -14,6 +14,7 @@ from scipy._lib.six import xrange
 from numpy.testing import (
     assert_, assert_array_almost_equal,
     assert_allclose, assert_array_equal, assert_equal)
+import pytest
 from pytest import raises as assert_raises
 from scipy.integrate import odeint, ode, complex_ode
 
@@ -611,6 +612,7 @@ class ODECheckParameterUse(object):
             solver.set_jac_params(omega)
         self._check_solver(solver)
 
+    @pytest.mark.skip("Gives spurious warning messages, see gh-7888")
     def test_warns_on_failure(self):
         # Set nsteps small to ensure failure
         solver = self._get_solver(f, jac)

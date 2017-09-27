@@ -187,6 +187,18 @@ The ``fillvalue`` of `scipy.signal.convolve2d` will be cast directly to the
 dtypes of the input arrays in the future and checked that it is a scalar or
 an array with a single element.
 
+``scipy.spatial.distance.matching`` is deprecated.  It is an alias of
+`scipy.spatial.distance.hamming`, which should be used instead.
+
+Implementation of `scipy.spatial.distance.wminkowski` was based on a wrong
+interpretation of the metric definition. In scipy 1.0 it has been just
+deprecated in the documentation to keep retro-compatibility but is recommended
+to use the new version of `scipy.spatial.distance.minkowski` that implements
+the correct behaviour.
+
+Positional arguments of `scipy.spatial.distance.pdist` and
+`scipy.spatial.distance.cdist` should be replaced with their keyword version.
+
 
 Backwards incompatible changes
 ==============================
