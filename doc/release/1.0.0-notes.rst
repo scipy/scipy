@@ -315,6 +315,7 @@ Authors
 * Patrick Callier
 * Mark Campanelli +
 * CJ Carey
+* Robert Cimrman
 * Adam Cox +
 * Michael Danilov +
 * David Haberthür +
@@ -368,9 +369,9 @@ Authors
 * Nathan Musoke +
 * Andrew Nelson
 * M.J. Nichol
-* Nico Schlömer +
 * Juan Nunez-Iglesias
 * Arno Onken +
+* Nick Papior +
 * Dima Pasechnik +
 * Ashwin Pathak +
 * Stefan Peterson
@@ -390,6 +391,7 @@ Authors
 * Matt Ruffalo +
 * Eli Sadoff +
 * Pim Schellart
+* Nico Schlömer +
 * Klaus Sembritzki +
 * Nikolay Shebanov +
 * Jonathan Tammo Siebert
@@ -415,7 +417,7 @@ Authors
 * Nikolay Zinov +
 * Zé Vinícius +
 
-A total of 118 people contributed to this release.
+A total of 120 people contributed to this release.
 People with a "+" by their names contributed a patch for the first time.
 This list of names is automatically generated, and may not be fully complete.
 
@@ -784,4 +786,13 @@ Pull requests for 1.0.0
 - `#7872 <https://github.com/scipy/scipy/pull/7872>`__: TST: silence RuntimeWarning for stats.truncnorm test marked as...
 - `#7874 <https://github.com/scipy/scipy/pull/7874>`__: TST: fix an optimize.linprog test that fails intermittently.
 - `#7875 <https://github.com/scipy/scipy/pull/7875>`__: TST: filter two integration warnings in stats tests.
+- `#7876 <https://github.com/scipy/scipy/pull/7876>`__: GEN: Add comments to the tests for clarification
+- `#7891 <https://github.com/scipy/scipy/pull/7891>`__: ENH: backport #7879 to 1.0.x
+- `#7902 <https://github.com/scipy/scipy/pull/7902>`__: MAINT: signal: Make freqz handling of multidim. arrays match...
+- `#7905 <https://github.com/scipy/scipy/pull/7905>`__: REV: restore wminkowski
+- `#7908 <https://github.com/scipy/scipy/pull/7908>`__: FIX: Avoid bad ``__del__`` (close) behavior
+- `#7918 <https://github.com/scipy/scipy/pull/7918>`__: TST: mark two optimize.linprog tests as xfail. See gh-7877.
+- `#7929 <https://github.com/scipy/scipy/pull/7929>`__: MAINT: changed defaults to lower in sytf2, sytrf and hetrf
+- `#7938 <https://github.com/scipy/scipy/pull/7938>`__: MAINT: backports from 1.0.x
+- `#7939 <https://github.com/scipy/scipy/pull/7939>`__: Fix umfpack solver construction for win-amd64
 
