@@ -55,7 +55,7 @@ class TestExtract(object):
                     A, return_indices, return_inverse, return_counts)
                 np_result = np.unique(
                     B, return_indices, return_inverse, return_counts)
-                if not isinstance(sparse_result, tuple): # Just the uniques
+                if not isinstance(sparse_result, tuple):  # Just the uniques
                     assert_equal(sparse_result, np_result)
                     continue
 
@@ -66,7 +66,7 @@ class TestExtract(object):
                 np_uniques = np_result.pop()
                 assert_equal(sparse_uniques, np_uniques)
 
-                if return_indices: # Compare indices of first unique values
+                if return_indices:  # Compare indices of first unique values
                     assert_equal(sparse_result.pop(), np_result.pop())
 
                 if return_inverse:
@@ -76,12 +76,12 @@ class TestExtract(object):
                     sparse_inv = sparse_result.pop()
                     sparse_recon = np.zeros(np.prod(A.shape), dtype=B.dtype)
                     sparse_recon[sparse_inv[0]] = (
-                        sparse_uniques[sparse_inv[1]]) # don't bother to reshape
+                        sparse_uniques[sparse_inv[1]])  # don't bother w reshape
 
                     np_inv = np_result.pop()
                     np_recon = np_uniques[np_inv]
 
                     assert_equal(sparse_recon, np_recon)
 
-                if return_counts: # Compare counts
+                if return_counts:  # Compare counts
                     assert_equal(sparse_result.pop(), np_result.pop())

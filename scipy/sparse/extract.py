@@ -232,7 +232,7 @@ def unique(mat, return_indices=False, return_inverse=False, return_counts=False)
     # return_indices options.) Also, CSR is fairly memory-efficient and quick to
     # convert to from other formats.
     mat = mat.tocsr()
-    size = mat.shape[0] * mat.shape[1] # mat.size just gives nnz
+    size = mat.shape[0] * mat.shape[1]  # mat.size just gives nnz
 
     unique_data = np.unique(mat.data, return_indices, return_inverse,
                             return_counts)
@@ -294,7 +294,7 @@ def unique(mat, return_indices=False, return_inverse=False, return_counts=False)
             offset_i = i + offset
             flattened_index = row * mat.shape[1] + col
             difference = flattened_index - offset_i
-            if difference > 0: # We've found one or more zero entries!
+            if difference > 0:  # We've found one or more zero entries!
                 if return_indices:
                     indices[np.where(indices >= offset_i)] += difference
                     if first_zero is None:
@@ -307,12 +307,12 @@ def unique(mat, return_indices=False, return_inverse=False, return_counts=False)
                 offset += difference
 
         if return_indices:
-            if first_zero is None: # Didn't find a zero amidst nonzeros;
-                try:               # all zeros are trailing
+            if first_zero is None:  # Didn't find a zero amidst nonzeros;
+                try:                # all zeros are trailing
                     first_zero = (nonzero[0][-1] * mat.shape[0] +
                                   nonzero[1][-1] + 1)
-                except IndexError: # nonzero is empty; mat is all zeros!
-                    indices.dtype = int # Fix dtype from np.unique call on []
+                except IndexError:  # nonzero is empty; mat is all zeros!
+                    indices.dtype = int  # Fix dtype from np.unique call on []
                     first_zero = 0
                 indices = np.insert(indices, 0, first_zero)
             ret += (indices,)
