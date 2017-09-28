@@ -7,6 +7,8 @@ __docformat__ = "restructuredtext en"
 
 __all__ = ['find', 'tril', 'triu', 'unique']
 
+from itertools import izip
+
 import numpy as np
 
 from .coo import coo_matrix
