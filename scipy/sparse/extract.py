@@ -212,9 +212,9 @@ def unique(mat, return_indices=False, return_inverse=False, return_counts=False)
         Note that, because the matrix is sparse, the full array of indices is
         not returned. Instead, an array i is returned such that the following
         code will reproduce the original matrix:
-            m = np.zeros(np.prod(mat.shape))
+            m = np.zeros(np.prod(mat.shape), dtype=mat.dtype) # or sparse matrix
             m[i[0]] = unique[i[1]]
-            m.reshape(mat.shape)
+            np.reshape(m, mat.shape)
     unique_counts : ndarray, optional
         The number of times each of the unique values comes up in the
         original array. Only provided if `return_counts` is True.
@@ -258,6 +258,7 @@ def unique(mat, return_indices=False, return_inverse=False, return_counts=False)
 
     # If more values were requested, process other return values in the tuple
     # as necessary.
+
     unique_data = list(reversed(unique_data))
     unique_values = unique_data.pop()
     unique_values = np.insert(unique_values, 0, 0.0)
@@ -306,11 +307,22 @@ def unique(mat, return_indices=False, return_inverse=False, return_counts=False)
                 offset += difference
 
         if return_indices:
+            if first_zero is None: # Didn't find a zero amidst nonzeros;
+                try:               # all zeros are trailing
+                    first_zero = (nonzero[0][-1] * mat.shape[0] +
+                                  nonzero[1][-1] + 1)
+                except IndexError: # nonzero is empty; mat is all zeros!
+                    indices.dtype = int # Fix dtype from np.unique call on []
+                    first_zero = 0
+                indices = np.insert(indices, 0, first_zero)
             ret += (indices,)
 
         if return_inverse:
             inverse = np.vstack((inverse_orig_pos_indices,
                                  inverse_unique_indices))
+            # Fix dtype, just in case mat is all zeros and unique returned a
+            # weird dtype for inverse.
+            inverse.dtype = int
             ret += (inverse,)
 
     # Add counts for 0 value.
