@@ -7,7 +7,7 @@ __docformat__ = "restructuredtext en"
 
 __all__ = ['find', 'tril', 'triu', 'unique']
 
-from six.moves import zip
+from scipy._lib.six import zip
 
 import numpy as np
 
