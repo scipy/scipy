@@ -26,6 +26,7 @@ class TestExtract(object):
             csr_matrix([[0,0],[0,0]]),
             csr_matrix([[1,2,0,0,3],[4,5,0,6,7],[0,0,8,9,0]]),
             csr_matrix([[1,2,0,0,3],[4,5,0,6,7],[0,0,8,9,0]]).T,
+            csr_matrix([[0,2,2,0,3],[4,4,0,2,7],[0,0,4,2,0]]),
         ]
 
     def find(self):
@@ -50,10 +51,16 @@ class TestExtract(object):
             B = A.toarray()
             for return_indices, return_inverse, return_counts in (
                     product(*([[True, False]] * 3))):
-                sparse_result = list(reversed(extract.unique(
-                    A, return_indices, return_inverse, return_counts)))
-                np_result = list(reversed(np.unique(
-                    B, return_indices, return_inverse, return_counts)))
+                sparse_result = extract.unique(
+                    A, return_indices, return_inverse, return_counts)
+                np_result = np.unique(
+                    B, return_indices, return_inverse, return_counts)
+                if not isinstance(sparse_result, tuple): # Just the uniques
+                    assert_equal(sparse_result, np_result)
+                    continue
+
+                sparse_result = list(reversed(sparse_result))
+                np_result = list(reversed(np_result))
 
                 sparse_uniques = sparse_result.pop()
                 np_uniques = np_result.pop()
@@ -66,16 +73,15 @@ class TestExtract(object):
                     # Special check for inverse indices, since they have
                     # different structures. Instead of comparing return values,
                     # compare the reconstructed matrices.
-                    sparse_inverse = sparse_result.pop()
-                    sparse_reconstructed = np.zeros(np.prod(A.shape))
-                    sparse_reconstructed[sparse_inverse[0]] = (
-                        sparse_uniques[sparse_inverse[1]])
-                    sparse_reconstructed.reshape(A.shape)
+                    sparse_inv = sparse_result.pop()
+                    sparse_recon = np.zeros(np.prod(A.shape), dtype=B.dtype)
+                    sparse_recon[sparse_inv[0]] = (
+                        sparse_uniques[sparse_inv[1]]) # don't bother to reshape
 
-                    np_inverse = np_result.pop()
-                    np_reconstructed = np_uniques[np_inverse]
+                    np_inv = np_result.pop()
+                    np_recon = np_uniques[np_inv]
 
-                    assert_equal(sparse_reconstructed, np_reconstructed)
+                    assert_equal(sparse_recon, np_recon)
 
                 if return_counts: # Compare counts
                     assert_equal(sparse_result.pop(), np_result.pop())
