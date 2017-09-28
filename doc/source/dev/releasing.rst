@@ -87,10 +87,13 @@ Then edit ``setup.py`` to get the correct version number (set
 ``ISRELEASED = True``) and commit it with a message like ``REL: set version to
 <version-number>``.  Don't push this commit to the Scipy repo yet.
 
-Finally tag the release locally with ``git tag -s <v0.x.y>`` (the ``-s`` ensures
+Finally tag the release locally with ``git tag -s <v1.x.y>`` (the ``-s`` ensures
 the tag is signed).  Continue with building release artifacts (next section).
-Only push the release commit and tag to the scipy repo once you have built the
-docs and Windows installers successfully.  After that push, also push a second
+Only push the release commit to the scipy repo once you have built the
+sdists and docs successfully.  Then continue with building wheels.  Only push
+the release tag to the repo once all wheels have been built successfully on
+TravisCI and Appveyor (if it fails, you have to move the tag otherwise - which
+is bad practice).  Finally, after pushing the tag, also push a second
 commit which increment the version number and sets ``ISRELEASED`` to False
 again.
 
@@ -106,29 +109,30 @@ Here is a complete list of artifacts created for a release:
 - A ``README`` file
 - A ``Changelog`` file
 
-All of these except the wheels are built by running ``paver release`` in
-the repo root.  Do this after you've created the signed tag.  If this completes
-without issues, push the release tag to the scipy repo.  This is needed because
-the ``scipy-wheels`` build scripts automatically build the last tag.
+Source archives, Changelog and README are built by running ``paver release`` in
+the repo root.  Do this after you've created the signed tag locally.  If this
+completes without issues, push the release commit (not the tag, see section
+above) to the scipy repo.
 
 To build wheels, push a commit to the master branch of
 https://github.com/MacPython/scipy-wheels .  This triggers builds for all needed
 Python versions on TravisCI.  Update and check the ``.travis.yml`` and ``appveyor.yml``
-config files what tag to build, and what Python and Numpy are used for the builds
-(it needs to be the lowest supported Numpy version for each Python version).
-See the README file in the scipy-wheels repo for more details.
+config files what commit to build, and what Python and Numpy are used for the
+builds (it needs to be the lowest supported Numpy version for each Python
+version).  See the README file in the scipy-wheels repo for more details.
 
 The TravisCI and Appveyor builds run the tests from the built wheels and if they pass,
 upload the wheels to a container pointed to at https://github.com/MacPython/scipy-wheels
 
 From there you can download them for uploading to PyPI.  This can be
-done in an automated fashion with ``terryfy`` (note the -n switch
-which makes it only download the wheels and skip the upload to PyPI
-step - we want to be able to check the wheels and put their checksums
+done in an automated fashion with `terryfy <https://github.com/MacPython/terryfy>`_
+(note the -n switch which makes it only download the wheels and skip the upload
+to PyPI step - we want to be able to check the wheels and put their checksums
 into README first)::
 
-  $ python wheel-uploader -n -v -c -w ~/PATH_TO_STORE_WHEELS -t manylinux1 scipy 0.19.0
+  $ python wheel-uploader -n -v -c -w ~/PATH_TO_STORE_WHEELS -t win scipy 0.19.0
   $ python wheel-uploader -n -v -c -w ~/PATH_TO_STORE_WHEELS -t macosx scipy 0.19.0
+  $ python wheel-uploader -n -v -c -w ~/PATH_TO_STORE_WHEELS -t manylinux1 scipy 0.19.0
 
 
 Uploading release artifacts
@@ -142,7 +146,10 @@ For a release there are currently five places on the web to upload things to:
 
 **PyPI:**
 
-``twine upload -s <tarballs or wheels to upload>``
+Upload first the wheels and then the sdist::
+
+  twine upload -s PATH_TO_STORE_WHEELS/*.whl
+  twine upload -s release/installers/scipy-1.x.y.tar.gz
 
 **Github Releases:**
 
