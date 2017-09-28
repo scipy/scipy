@@ -48,23 +48,23 @@ class TestExtract(object):
     def test_unique(self):
         for A in self.cases:
             B = A.toarray()
-            for return_index, return_inverse, return_counts in (
+            for return_indices, return_inverse, return_counts in (
                     product(*([[True, False]] * 3))):
                 sparse_result = list(reversed(extract.unique(
-                    A, return_index, return_inverse, return_counts)))
+                    A, return_indices, return_inverse, return_counts)))
                 np_result = list(reversed(np.unique(
-                    B, return_index, return_inverse, return_counts)))
+                    B, return_indices, return_inverse, return_counts)))
 
                 sparse_uniques = sparse_result.pop()
                 np_uniques = np_result.pop()
                 assert_equal(sparse_uniques, np_uniques)
 
-                if return_index: # Compare indices of first unique values
+                if return_indices: # Compare indices of first unique values
                     assert_equal(sparse_result.pop(), np_result.pop())
 
                 if return_inverse:
                     # Special check for inverse indices, since they have
-                    # different structure. Instead of comparing return values,
+                    # different structures. Instead of comparing return values,
                     # compare the reconstructed matrices.
                     sparse_inverse = sparse_result.pop()
                     sparse_reconstructed = np.zeros(np.prod(A.shape))

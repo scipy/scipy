@@ -174,7 +174,7 @@ def _masked_coo(A, mask):
     return coo_matrix((data, (row, col)), shape=A.shape, dtype=A.dtype)
 
 
-def unique(mat, return_index=False, return_inverse=False, return_counts=False):
+def unique(mat, return_indices=False, return_inverse=False, return_counts=False):
     """
     Find the unique elements of a sparse matrix
 
@@ -188,7 +188,7 @@ def unique(mat, return_index=False, return_inverse=False, return_counts=False):
     mat : sparse matrix
         Input matrix. This will be converted to the CSR representation
         internally.
-    return_index : bool, optional
+    return_indices : bool, optional
         If True, also return the indices of `mat` that result in the unique
         array.
     return_inverse : bool, optional
@@ -204,7 +204,7 @@ def unique(mat, return_index=False, return_inverse=False, return_counts=False):
         The sorted unique values.
     unique_indices : ndarray, optional
         The indices of the first occurrences of the unique values in the
-        (flattened) original array. Only provided if `return_index` is True.
+        (flattened) original array. Only provided if `return_indices` is True.
     unique_inverse : ndarray, optional
         The indices to reconstruct the (flattened) original array from the
         unique array. Only provided if `return_inverse` is True.
@@ -229,12 +229,12 @@ def unique(mat, return_index=False, return_inverse=False, return_counts=False):
     # This means that np.unique returns the indices and inverse in terms of a
     # sensibly linearized matrix. (The nonzero indices are also returned in
     # row -> column order, which is useful for the return_inverse and
-    # return_index options.) Also, CSR is fairly memory-efficient and quick to
+    # return_indices options.) Also, CSR is fairly memory-efficient and quick to
     # convert to from other formats.
     mat = mat.tocsr()
     size = mat.shape[0] * mat.shape[1] # mat.size just gives nnz
 
-    unique_data = np.unique(mat.data, return_index, return_inverse,
+    unique_data = np.unique(mat.data, return_indices, return_inverse,
                             return_counts)
 
     # If there are no zeros, we can just pretend we're operating on a normal
@@ -242,7 +242,7 @@ def unique(mat, return_index=False, return_inverse=False, return_counts=False):
     # there is one, to our special sparse inverse format.
     if mat.nnz == size:
         if return_inverse:
-            inv_index = (2 if return_index else 1)
+            inv_index = (2 if return_indices else 1)
             inverse = np.vstack((range(size), unique_data[inv_index]))
             unique_data = list(unique_data)
             unique_data[inv_index] = inverse
@@ -264,8 +264,8 @@ def unique(mat, return_index=False, return_inverse=False, return_counts=False):
     ret = (unique_values,)
 
     # Offset returned indices to account for missing zero entries.
-    if return_index or return_inverse:
-        if return_index:
+    if return_indices or return_inverse:
+        if return_indices:
             indices = unique_data.pop()
         if return_inverse:
             inverse = unique_data.pop()
@@ -294,7 +294,7 @@ def unique(mat, return_index=False, return_inverse=False, return_counts=False):
             flattened_index = row * mat.shape[1] + col
             difference = flattened_index - offset_i
             if difference > 0: # We've found one or more zero entries!
-                if return_index:
+                if return_indices:
                     indices[np.where(indices >= offset_i)] += difference
                     if first_zero is None:
                         first_zero = i
@@ -305,7 +305,7 @@ def unique(mat, return_index=False, return_inverse=False, return_counts=False):
                         ] += difference
                 offset += difference
 
-        if return_index:
+        if return_indices:
             ret += (indices,)
 
         if return_inverse:
