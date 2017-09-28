@@ -210,10 +210,11 @@ def unique(mat, return_index=False, return_inverse=False, return_counts=False):
         unique array. Only provided if `return_inverse` is True.
 
         Note that, because the matrix is sparse, the full array of indices is
-        not returned. Instead, an array i is returned such that, given an empty
-        sparse matrix m with the same number of columns as there were elements
-        in mat, setting m[0, i[0]] = unique[i[1]] will reproduce the original
-        matrix.
+        not returned. Instead, an array i is returned such that the following
+        code will reproduce the original matrix:
+            m = np.zeros(np.prod(mat.shape))
+            m[i[0]] = unique[i[1]]
+            m.reshape(mat.shape)
     unique_counts : ndarray, optional
         The number of times each of the unique values comes up in the
         original array. Only provided if `return_counts` is True.
@@ -237,8 +238,8 @@ def unique(mat, return_index=False, return_inverse=False, return_counts=False):
                             return_counts)
 
     # If there are no zeros, we can just pretend we're operating on a normal
-    # dense array. All we have to do then is check whether we need to adapt the
-    # inverse return value to our special sparse inverse format.
+    # dense array. All we have to do then is adapt the inverse return value, if
+    # there is one, to our special sparse inverse format.
     if mat.nnz == size:
         if return_inverse:
             inv_index = (2 if return_index else 1)
@@ -276,7 +277,7 @@ def unique(mat, return_index=False, return_inverse=False, return_counts=False):
             # position.
 
             # The indices for the inverse matrix aren't accounting for the
-            # presence of a zero value at the start of the list.
+            # presence of a zero value at the start of the uniques list.
             inverse_unique_indices = inverse + 1
             # Initialize positions in original matrix to values' current
             # positions in the inverse array. As we detect 0 values in the
