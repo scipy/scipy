@@ -7,7 +7,7 @@ __docformat__ = "restructuredtext en"
 
 __all__ = ['find', 'tril', 'triu', 'unique']
 
-from itertools import izip
+from six.moves import zip
 
 import numpy as np
 
@@ -290,7 +290,7 @@ def unique(mat, return_indices=False, return_inverse=False, return_counts=False)
         mat.sort_indices()
         nonzero = mat.nonzero()
 
-        for i, (row, col) in enumerate(izip(nonzero[0], nonzero[1])):
+        for i, (row, col) in enumerate(zip(nonzero[0], nonzero[1])):
             offset_i = i + offset
             flattened_index = row * mat.shape[1] + col
             difference = flattened_index - offset_i
