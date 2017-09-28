@@ -11,9 +11,12 @@ many new features, numerous bug-fixes, improved test coverage and
 better documentation.  There have been a number of deprecations and
 API changes in this release, which are documented below.  All users
 are encouraged to upgrade to this release, as there are a large number
-of bug-fixes and optimizations.  Moreover, our development attention
-will now shift to bug-fix releases on the 1.0.x branch, and on adding
-new features on the master branch.
+of bug-fixes and optimizations.  Before upgrading, we recommend that users
+check that their own code does not use deprecated SciPy functionality
+(to do so, run your code with ``python -Wd`` and check for
+``DeprecationWarning`` s).  Our development attention will now shift to
+bug-fix releases on the 1.0.x branch, and on adding new features on the
+master branch.
 
 Some of the highlights of this release are:
 
