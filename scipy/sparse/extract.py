@@ -210,8 +210,8 @@ def unique(mat, return_indices=False, return_inverse=False, return_counts=False)
         unique array. Only provided if `return_inverse` is True.
 
         Note that, because the matrix is sparse, the full array of indices is
-        not returned. Instead, an array i is returned such that the following
-        code will reproduce the original matrix:
+        not returned. Instead, a 2 x n array i is returned such that the
+        following code will reproduce the original matrix:
             m = np.zeros(np.prod(mat.shape), dtype=mat.dtype) # or sparse matrix
             m[i[0]] = unique[i[1]]
             np.reshape(m, mat.shape)
