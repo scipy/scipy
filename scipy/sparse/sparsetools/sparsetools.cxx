@@ -40,6 +40,7 @@
 #if PY_VERSION_HEX >= 0x03000000
 #define PyInt_AsSsize_t PyLong_AsSsize_t
 #define PyInt_FromSsize_t PyLong_FromSsize_t
+#define PyInt_FromLong PyLong_FromLong
 #endif
 
 static const int supported_I_typenums[] = {NPY_INT32, NPY_INT64};
