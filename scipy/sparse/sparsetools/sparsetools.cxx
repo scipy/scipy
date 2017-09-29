@@ -286,7 +286,7 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
                 arg_list[j] = std::malloc(sizeof(npy_int64));
                 *(npy_int64*)arg_list[j] = (npy_int64)value;
             }
-            else if (PyArray_EquivTypenums(I_typenum, NPY_INT32)
+            else if (*p == 'i' && PyArray_EquivTypenums(I_typenum, NPY_INT32)
                      && value == (npy_int32)value) {
                 arg_list[j] = std::malloc(sizeof(npy_int32));
                 *(npy_int32*)arg_list[j] = (npy_int32)value;
@@ -377,6 +377,9 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
     case 'i':
         return_value = PyInt_FromSsize_t(ret);
         break;
+    case 'l':
+        return_value = PyInt_FromLong(ret);
+        break;
     case 'v':
         Py_INCREF(Py_None);
         return_value = Py_None;
@@ -446,7 +449,7 @@ fail:
             continue;
         }
         Py_XDECREF(arg_arrays[j]);
-        if (*p == 'i' && arg_list[j] != NULL) {
+        if ((*p == 'i' || *p == 'l') && arg_list[j] != NULL) {
             std::free(arg_list[j]);
         }
         else if (*p == 'V' && arg_list[j] != NULL) {
