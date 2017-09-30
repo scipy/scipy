@@ -223,11 +223,11 @@ class AdaptiveStepsize(object):
         old_stepsize = self.takestep.stepsize
         accept_rate = float(self.naccept) / self.nstep
         if accept_rate > self.target_accept_rate:
-            #We're accepting too many steps.  This generally means we're
-            #trapped in a basin.  Take bigger steps
+            # We're accepting too many steps.  This generally means we're
+            # trapped in a basin.  Take bigger steps
             self.takestep.stepsize /= self.factor
         else:
-            #We're not accepting enough steps.  Take smaller steps
+            # We're not accepting enough steps.  Take smaller steps
             self.takestep.stepsize *= self.factor
         if self.verbose:
             print("adaptive stepsize: acceptance rate %f target %f new "
@@ -266,7 +266,8 @@ class RandomDisplacement(object):
         self.random_state = check_random_state(random_state)
 
     def __call__(self, x):
-        x += self.random_state.uniform(-self.stepsize, self.stepsize, np.shape(x))
+        x += self.random_state.uniform(-self.stepsize, self.stepsize,
+                                       np.shape(x))
         return x
 
 
@@ -375,8 +376,8 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     callback : callable, ``callback(x, f, accept)``, optional
         A callback function which will be called for all minima found.  ``x``
         and ``f`` are the coordinates and function value of the trial minimum,
-        and ``accept`` is whether or not that minimum was accepted.  This can be
-        used, for example, to save the lowest N minima found.  Also,
+        and ``accept`` is whether or not that minimum was accepted.  This can
+        be used, for example, to save the lowest N minima found.  Also,
         ``callback`` can be used to specify a user defined stop criterion by
         optionally returning True to stop the ``basinhopping`` routine.
     interval : integer, optional
@@ -402,13 +403,13 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     Returns
     -------
     res : OptimizeResult
-        The optimization result represented as a ``OptimizeResult`` object.  Important
-        attributes are: ``x`` the solution array, ``fun`` the value of the
-        function at the solution, and ``message`` which describes the cause of
-        the termination. The ``OptimizeResult`` object returned by the selected
-        minimizer at the lowest minimum is also contained within this object
-        and can be accessed through the ``lowest_optimization_result`` attribute.
-        See `OptimizeResult` for a description of other attributes.
+        The optimization result represented as a ``OptimizeResult`` object.
+        Important attributes are: ``x`` the solution array, ``fun`` the value
+        of the function at the solution, and ``message`` which describes the
+        cause of the termination. The ``OptimizeResult`` object returned by the
+        selected minimizer at the lowest minimum is also contained within this
+        object and can be accessed through the ``lowest_optimization_result``
+        attribute.  See `OptimizeResult` for a description of other attributes.
 
     See Also
     --------
@@ -696,6 +697,7 @@ def _test_func2d(x):
     df[0] = -14.5 * sin(14.5 * x[0] - 0.3) + 2. * x[0] + 0.2 + x[1]
     df[1] = -14.5 * sin(14.5 * x[1] - 0.3) + 2. * x[1] + 0.2 + x[0]
     return f, df
+
 
 if __name__ == "__main__":
     print("\n\nminimize a 2d function without gradient")

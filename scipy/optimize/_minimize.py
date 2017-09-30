@@ -20,9 +20,9 @@ from scipy._lib.six import callable
 
 # unconstrained minimization
 from .optimize import (_minimize_neldermead, _minimize_powell, _minimize_cg,
-                      _minimize_bfgs, _minimize_newtoncg,
-                      _minimize_scalar_brent, _minimize_scalar_bounded,
-                      _minimize_scalar_golden, MemoizeJac)
+                       _minimize_bfgs, _minimize_newtoncg,
+                       _minimize_scalar_brent, _minimize_scalar_bounded,
+                       _minimize_scalar_golden, MemoizeJac)
 from ._trustregion_dogleg import _minimize_dogleg
 from ._trustregion_ncg import _minimize_trust_ncg
 from ._trustregion_krylov import _minimize_trust_krylov
@@ -422,7 +422,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     if meth not in ('newton-cg', 'dogleg', 'trust-ncg',
                     'trust-krylov', '_custom') and hessp is not None:
         warn('Method %s does not use Hessian-vector product '
-                'information (hessp).' % method, RuntimeWarning)
+             'information (hessp).' % method, RuntimeWarning)
     # - constraints or bounds
     if (meth in ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg', 'dogleg',
                  'trust-ncg'] and (bounds is not None or np.any(constraints))):
