@@ -12,7 +12,7 @@ import numpy as np
 from scipy._lib.six import xrange
 from .base import spmatrix, isspmatrix
 from .sputils import (getdtype, isshape, isscalarlike, IndexMixin,
-                      upcast_scalar, get_index_dtype, isintlike)
+                      upcast_scalar, get_index_dtype, isintlike, check_shape)
 from . import _csparsetools
 
 
@@ -95,7 +95,7 @@ class lil_matrix(spmatrix, IndexMixin):
             if dtype is not None:
                 A = A.astype(dtype)
 
-            self.shape = A.shape
+            self._shape = check_shape(A.shape)
             self.dtype = A.dtype
             self.rows = A.rows
             self.data = A.data
@@ -104,7 +104,7 @@ class lil_matrix(spmatrix, IndexMixin):
                 if shape is not None:
                     raise ValueError('invalid use of shape parameter')
                 M, N = arg1
-                self.shape = (M,N)
+                self._shape = check_shape((M, N))
                 self.rows = np.empty((M,), dtype=object)
                 self.data = np.empty((M,), dtype=object)
                 for i in range(M):
@@ -122,41 +122,10 @@ class lil_matrix(spmatrix, IndexMixin):
                 from .csr import csr_matrix
                 A = csr_matrix(A, dtype=dtype).tolil()
 
-                self.shape = A.shape
+                self._shape = check_shape(A.shape)
                 self.dtype = A.dtype
                 self.rows = A.rows
                 self.data = A.data
-
-    def set_shape(self,shape):
-        shape = tuple(shape)
-
-        if len(shape) != 2:
-            raise ValueError("Only two-dimensional sparse arrays "
-                                     "are supported.")
-        try:
-            shape = int(shape[0]),int(shape[1])  # floats, other weirdness
-        except:
-            raise TypeError('invalid shape')
-
-        if not (shape[0] >= 0 and shape[1] >= 0):
-            raise ValueError('invalid shape')
-
-        if (self._shape != shape) and (self._shape is not None):
-            raise NotImplementedError(
-                    'Changing the shape of a sparse matrix by directly '
-                    'modifying its .shape property is not currently '
-                    'supported.  Please consider using the .reshape() '
-                    'member function instead!')
-            try:
-                self = self.reshape(shape)
-            except NotImplementedError:
-                raise NotImplementedError("Reshaping not implemented for %s." %
-                                          self.__class__.__name__)
-        self._shape = shape
-
-    set_shape.__doc__ = spmatrix.set_shape.__doc__
-
-    shape = property(fget=spmatrix.get_shape, fset=set_shape)
 
     def __iadd__(self,other):
         self[:,:] = self + other

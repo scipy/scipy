@@ -77,31 +77,10 @@ class spmatrix(object):
 
     def set_shape(self, shape):
         """See `reshape`."""
-        shape = tuple(shape)
-
-        if len(shape) != 2:
-            raise ValueError("Only two-dimensional sparse "
-                             "arrays are supported.")
-        try:
-            shape = int(shape[0]), int(shape[1])  # floats, other weirdness
-        except:
-            raise TypeError('invalid shape')
-
-        if not (shape[0] >= 0 and shape[1] >= 0):
-            raise ValueError('invalid shape')
-
-        if (self._shape != shape) and (self._shape is not None):
-            raise NotImplementedError(
-                    'Changing the shape of a sparse matrix by directly '
-                    'modifying its .shape property is not currently '
-                    'supported.  Please consider using the .reshape() '
-                    'member function instead!')
-            try:
-                self = self.reshape(shape)
-            except NotImplementedError:
-                raise NotImplementedError("Reshaping not implemented for %s." %
-                                          self.__class__.__name__)
-        self._shape = shape
+        # Make sure copy is False since this is in place
+        # Make sure format is unchanged because we are doing a __dict__ swap
+        new_matrix = self.reshape(shape, copy=False).asformat(self.format)
+        self.__dict__ = new_matrix.__dict__
 
     def get_shape(self):
         """Get shape of a matrix."""
@@ -109,8 +88,10 @@ class spmatrix(object):
 
     shape = property(fget=get_shape, fset=set_shape)
 
-    def reshape(self, shape, order='C', copy=False):
-        """Gives a new shape to a sparse matrix without changing its data.
+    def reshape(self, *args, order='C', copy=False):
+        """reshape(self, shape, order='C', copy=False)
+
+        Gives a new shape to a sparse matrix without changing its data.
 
         Parameters
         ----------
@@ -135,7 +116,7 @@ class spmatrix(object):
         --------
         np.matrix.reshape : NumPy's implementation of 'reshape' for matrices
         """
-        return (self.tocoo(copy=copy).reshape(shape, order=order, copy=True)
+        return (self.tocoo(copy=copy).reshape(*args, order=order, copy=True)
                 .asformat(self.format))
 
     def astype(self, dtype, casting='unsafe', copy=True):

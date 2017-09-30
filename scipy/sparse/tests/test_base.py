@@ -720,8 +720,14 @@ class _TestCommon(object):
         x = self.spmatrix([[0, 10, 0, 0], [0, 0, 0, 0], [0, 20, 30, 40]])
         y = x.reshape((2, 6))  # Default order is 'C'
         desired = [[0, 10, 0, 0, 0, 0], [0, 0, 0, 20, 30, 40]]
-        assert_equal(y.format, x.format)
         assert_array_equal(y.A, desired)
+
+        # Ensure reshape did not original size
+        assert_array_equal(x.shape, (3, 4))
+
+        # Reshape in place
+        x.shape = (2, 6)
+        assert_array_equal(x.A, desired)
 
     @pytest.mark.slow
     def test_setdiag_comprehensive(self):

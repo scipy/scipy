@@ -15,7 +15,7 @@ from ._sparsetools import coo_tocsr, coo_todense, coo_matvec
 from .base import isspmatrix, SparseEfficiencyWarning, spmatrix
 from .data import _data_matrix, _minmax_mixin
 from .sputils import (upcast, upcast_char, to_native, isshape, getdtype,
-                      get_index_dtype, downcast_intp_index)
+                      get_index_dtype, downcast_intp_index, check_shape)
 
 
 class coo_matrix(_data_matrix, _minmax_mixin):
@@ -128,7 +128,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
         if isinstance(arg1, tuple):
             if isshape(arg1):
                 M, N = arg1
-                self.shape = (M,N)
+                self._shape = check_shape((M, N))
                 idx_dtype = get_index_dtype(maxval=max(M, N))
                 self.row = np.array([], dtype=idx_dtype)
                 self.col = np.array([], dtype=idx_dtype)
@@ -146,11 +146,11 @@ class coo_matrix(_data_matrix, _minmax_mixin):
                                          'sized index arrays')
                     M = np.max(row) + 1
                     N = np.max(col) + 1
-                    self.shape = (M, N)
+                    self._shape = check_shape((M, N))
                 else:
                     # Use 2 steps to ensure shape has length 2.
                     M, N = shape
-                    self.shape = (M, N)
+                    self._shape = check_shape((M, N))
 
                 idx_dtype = get_index_dtype(maxval=max(self.shape))
                 self.row = np.array(row, copy=copy, dtype=idx_dtype)
@@ -164,13 +164,13 @@ class coo_matrix(_data_matrix, _minmax_mixin):
                     self.row = arg1.row.copy()
                     self.col = arg1.col.copy()
                     self.data = arg1.data.copy()
-                    self.shape = arg1.shape
+                    self._shape = check_shape(arg1.shape)
                 else:
                     coo = arg1.tocoo()
                     self.row = coo.row
                     self.col = coo.col
                     self.data = coo.data
-                    self.shape = coo.shape
+                    self._shape = check_shape(coo.shape)
                 self.has_canonical_format = False
             else:
                 #dense argument
@@ -179,7 +179,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
                 if M.ndim != 2:
                     raise TypeError('expected dimension <= 2 array or matrix')
                 else:
-                    self.shape = M.shape
+                    self._shape = check_shape(M.shape)
 
                 self.row, self.col = M.nonzero()
                 self.data = M[self.row, self.col]
@@ -190,16 +190,10 @@ class coo_matrix(_data_matrix, _minmax_mixin):
 
         self._check()
 
-    def reshape(self, shape, order='C', copy=False):
-        if not isshape(shape):
-            raise ValueError('`shape` must be a sequence of two integers')
+    def reshape(self, *args, order='C', copy=False):
+        shape = check_shape(args, self.shape)
 
         nrows, ncols = self.shape
-        size = nrows * ncols
-
-        new_size = shape[0] * shape[1]
-        if new_size != size:
-            raise ValueError('total size of new array must be unchanged')
 
         if order == 'C':
             flat_indices = ncols * self.row + self.col
@@ -208,7 +202,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
             flat_indices = self.row + nrows * self.col
             new_col, new_row = divmod(flat_indices, shape[0])
         else:
-            ValueError("`order` must be 'C' or 'F'")
+            ValueError("'order' must be 'C' or 'F'")
 
         return coo_matrix((self.data, (new_row, new_col)),
                           shape=shape, copy=copy)
