@@ -410,7 +410,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         options = {}
     # check if optional parameters are supported by the selected method
     # - jac
-    if meth in ['nelder-mead', 'powell', 'cobyla'] and bool(jac):
+    if meth in ('nelder-mead', 'powell', 'cobyla') and bool(jac):
         warn('Method %s does not use gradient information (jac).' % method,
              RuntimeWarning)
     # - hess
@@ -424,21 +424,21 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         warn('Method %s does not use Hessian-vector product '
              'information (hessp).' % method, RuntimeWarning)
     # - constraints or bounds
-    if (meth in ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg', 'dogleg',
-                 'trust-ncg'] and (bounds is not None or np.any(constraints))):
+    if (meth in ('nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg', 'dogleg',
+                 'trust-ncg') and (bounds is not None or np.any(constraints))):
         warn('Method %s cannot handle constraints nor bounds.' % method,
              RuntimeWarning)
-    if meth in ['l-bfgs-b', 'tnc'] and np.any(constraints):
+    if meth in ('l-bfgs-b', 'tnc') and np.any(constraints):
         warn('Method %s cannot handle constraints.' % method,
              RuntimeWarning)
     if meth == 'cobyla' and bounds is not None:
         warn('Method %s cannot handle bounds.' % method,
              RuntimeWarning)
     # - callback
-    if (meth in ['cobyla'] and callback is not None):
+    if (meth in ('cobyla',) and callback is not None):
         warn('Method %s does not support callback.' % method, RuntimeWarning)
     # - return_all
-    if (meth in ['l-bfgs-b', 'tnc', 'cobyla', 'slsqp'] and
+    if (meth in ('l-bfgs-b', 'tnc', 'cobyla', 'slsqp') and
             options.get('return_all', False)):
         warn('Method %s does not support the return_all option.' % method,
              RuntimeWarning)
@@ -457,14 +457,14 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         if meth == 'nelder-mead':
             options.setdefault('xatol', tol)
             options.setdefault('fatol', tol)
-        if meth in ['newton-cg', 'powell', 'tnc']:
+        if meth in ('newton-cg', 'powell', 'tnc'):
             options.setdefault('xtol', tol)
-        if meth in ['powell', 'l-bfgs-b', 'tnc', 'slsqp']:
+        if meth in ('powell', 'l-bfgs-b', 'tnc', 'slsqp'):
             options.setdefault('ftol', tol)
-        if meth in ['bfgs', 'cg', 'l-bfgs-b', 'tnc', 'dogleg',
-                    'trust-ncg', 'trust-exact', 'trust-krylov']:
+        if meth in ('bfgs', 'cg', 'l-bfgs-b', 'tnc', 'dogleg',
+                    'trust-ncg', 'trust-exact', 'trust-krylov'):
             options.setdefault('gtol', tol)
-        if meth in ['cobyla', '_custom']:
+        if meth in ('cobyla', '_custom'):
             options.setdefault('tol', tol)
 
     if meth == '_custom':
