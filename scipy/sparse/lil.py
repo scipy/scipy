@@ -385,6 +385,29 @@ class lil_matrix(spmatrix, IndexMixin):
 
     copy.__doc__ = spmatrix.copy.__doc__
 
+    def reshape(self, *args, order='C', copy=False):
+        shape = check_shape(args, self.shape)
+        new = lil_matrix(shape, dtype=self.dtype)
+
+        if order == 'C':
+            ncols = self.shape[1]
+            for i, row in enumerate(self.rows):
+                for col, j in enumerate(row):
+                    new_r, new_c = np.unravel_index(i * ncols + j, shape)
+                    new[new_r, new_c] = self[i, j]
+        elif order == 'F':
+            nrows = self.shape[0]
+            for i, row in enumerate(self.rows):
+                for col, j in enumerate(row):
+                    new_r, new_c = np.unravel_index(i + j * nrows, shape, order)
+                    new[new_r, new_c] = self[i, j]
+        else:
+            raise ValueError("'order' must be 'C' or 'F'")
+
+        return new
+
+    reshape.__doc__ = spmatrix.reshape.__doc__
+
     def toarray(self, order=None, out=None):
         d = self._process_toarray_args(order, out)
         for i, row in enumerate(self.rows):
