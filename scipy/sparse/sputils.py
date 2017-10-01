@@ -190,6 +190,8 @@ def isintlike(x):
     """Is x appropriate as an index into a sparse matrix? Returns True
     if it can be cast safely to a machine int.
     """
+    # Fast-path check to eliminate non-scalar values. operator.index would
+    # catch this case too, but the exception catching is slow.
     if np.ndim(x) != 0:
         return False
     try:
