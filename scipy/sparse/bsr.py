@@ -13,8 +13,8 @@ import numpy as np
 from .data import _data_matrix, _minmax_mixin
 from .compressed import _cs_matrix
 from .base import isspmatrix, _formats, spmatrix
-from .sputils import isshape, getdtype, to_native, upcast, get_index_dtype, \
-    check_shape
+from .sputils import (isshape, getdtype, to_native, upcast, get_index_dtype,
+                      check_shape)
 from . import _sparsetools
 from ._sparsetools import (bsr_matvec, bsr_matvecs, csr_matmat_pass1,
                            bsr_matmat_pass2, bsr_transpose, bsr_sort_indices)

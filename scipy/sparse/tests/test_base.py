@@ -722,7 +722,14 @@ class _TestCommon(object):
         desired = [[0, 10, 0, 0, 0, 0], [0, 0, 0, 20, 30, 40]]
         assert_array_equal(y.A, desired)
 
-        # Ensure reshape did not original size
+        # Reshape with negative indexes
+        y = x.reshape((2, -1))
+        assert_array_equal(y.A, desired)
+        y = x.reshape((-1, 6))
+        assert_array_equal(y.A, desired)
+        assert_raises(ValueError, x.reshape, (-1, -1))
+
+        # Ensure reshape did not alter original size
         assert_array_equal(x.shape, (3, 4))
 
         # Reshape in place

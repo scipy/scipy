@@ -202,10 +202,17 @@ class coo_matrix(_data_matrix, _minmax_mixin):
             flat_indices = self.row + nrows * self.col
             new_col, new_row = divmod(flat_indices, shape[0])
         else:
-            ValueError("'order' must be 'C' or 'F'")
+            raise ValueError("'order' must be 'C' or 'F'")
 
-        return coo_matrix((self.data, (new_row, new_col)),
-                          shape=shape, copy=copy)
+        # Handle copy here rather than passing on to the constructor so that no
+        # copy will be made of new_row and new_col regardless
+        if copy:
+            new_data = self.data.copy()
+        else:
+            new_data = self.data
+
+        return coo_matrix((new_data, (new_row, new_col)),
+                          shape=shape, copy=False)
 
     reshape.__doc__ = spmatrix.reshape.__doc__
 

@@ -116,7 +116,7 @@ class spmatrix(object):
         --------
         np.matrix.reshape : NumPy's implementation of 'reshape' for matrices
         """
-        return (self.tocoo(copy=copy).reshape(*args, order=order, copy=True)
+        return (self.tocoo(copy=copy).reshape(*args, order=order, copy=False)
                 .asformat(self.format))
 
     def astype(self, dtype, casting='unsafe', copy=True):

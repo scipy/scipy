@@ -253,22 +253,18 @@ def validateaxis(axis):
 
 def check_shape(args, current_shape=None):
     """Imitate numpy.matrix handling of shape arguments"""
-    int_types = (int, np.int8, np.int16, np.int32, np.int64,
-                 np.uint8, np.uint16, np.uint32, np.uint64,
-                 np.intc, np.intp)
-
     def check_int(arg):
-        if isinstance(arg, int_types):
+        if np.issubdtype(type(arg), np.integer):
             return int(arg)
-        elif isinstance(arg, np.ndarray) and np.isscalar(arg) and \
-                arg.dtype in int_types:
+        elif (isinstance(arg, np.ndarray) and np.isscalar(arg) and
+                np.issubdtype(arg.dtype, np.integer)):
             return int(arg)
         else:
             raise TypeError("'{}' object cannot be interpreted as an "
                             "integer".format(args[0].__class__.__name__))
 
     if len(args) == 0:
-        raise TypeError("'reshape' missing 1 required positional argument: "
+        raise TypeError("function missing 1 required positional argument: "
                         "'shape'")
     elif len(args) == 1:
         try:
@@ -283,10 +279,28 @@ def check_shape(args, current_shape=None):
     # Check the current size only if needed
     if current_shape is not None:
         current_size = np.prod(current_shape, dtype=int)
-        new_size = np.prod(new_shape, dtype=int)
-        if new_size != current_size:
-            raise ValueError('cannot reshape array of size {} into shape {}'
-                             .format(new_size, new_shape))
+
+        # Check for negatives
+        negative_indexes = [i for i, x in enumerate(new_shape) if x < 0]
+        if len(negative_indexes) == 0:
+            new_size = np.prod(new_shape, dtype=int)
+            if new_size != current_size:
+                raise ValueError('cannot reshape array of size {} into shape {}'
+                                 .format(new_size, new_shape))
+        elif len(negative_indexes) == 1:
+            skip = negative_indexes[0]
+            specified = np.prod(new_shape[0:skip] + new_shape[skip+1:])
+            unspecified, remainder = divmod(current_size, specified)
+            if remainder != 0:
+                err_shape = tuple('newshape' if x < 0 else x for x in new_shape)
+                raise ValueError('cannot reshape array of size {} into shape {}'
+                                 ''.format(current_size, err_shape))
+            new_shape = new_shape[0:skip] + (unspecified,) + new_shape[skip+1:]
+        else:
+            raise ValueError('can only specify one unknown dimension')
+    else:
+        if new_shape[0] < 0 or new_shape[1] < 0:
+            raise ValueError("'shape' elements cannot be negative")
 
     # Add and remove ones like numpy.matrix.reshape
     if len(new_shape) != 2:
@@ -298,10 +312,6 @@ def check_shape(args, current_shape=None):
             new_shape = (1, new_shape[0])
         elif len(new_shape) > 2:
             raise ValueError('shape too large to be a matrix')
-
-    # Check for negatives
-    if new_shape[0] < 0 or new_shape[1] < 0:
-        raise ValueError("'shape' elements cannot be negative")
 
     return new_shape
 
