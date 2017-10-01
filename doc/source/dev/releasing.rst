@@ -110,9 +110,9 @@ Here is a complete list of artifacts created for a release:
 - A ``Changelog`` file
 
 Source archives, Changelog and README are built by running ``paver release`` in
-the repo root.  Do this after you've created the signed tag locally.  If this
-completes without issues, push the release commit (not the tag, see section
-above) to the scipy repo.
+the repo root, and end up in ``REPO_ROOT/release/``.  Do this after you've
+created the signed tag locally.  If this completes without issues, push the release
+commit (not the tag, see section above) to the scipy repo.
 
 To build wheels, push a commit to the master branch of
 https://github.com/MacPython/scipy-wheels .  This triggers builds for all needed
@@ -130,9 +130,14 @@ done in an automated fashion with `terryfy <https://github.com/MacPython/terryfy
 to PyPI step - we want to be able to check the wheels and put their checksums
 into README first)::
 
-  $ python wheel-uploader -n -v -c -w ~/PATH_TO_STORE_WHEELS -t win scipy 0.19.0
-  $ python wheel-uploader -n -v -c -w ~/PATH_TO_STORE_WHEELS -t macosx scipy 0.19.0
-  $ python wheel-uploader -n -v -c -w ~/PATH_TO_STORE_WHEELS -t manylinux1 scipy 0.19.0
+  $ python wheel-uploader -n -v -c -w REPO_ROOT/release/installers -t win scipy 0.19.0
+  $ python wheel-uploader -n -v -c -w REPO_ROOT/release/installers -t macosx scipy 0.19.0
+  $ python wheel-uploader -n -v -c -w REPO_ROOT/release/installers -t manylinux1 scipy 0.19.0
+
+After this, we want to regenerate the README file, in order to have the MD5 and SHA256
+checksums of the just downloaded wheels in it.  Run::
+
+  $ paver write_release_and_log
 
 
 Uploading release artifacts
@@ -148,8 +153,8 @@ For a release there are currently five places on the web to upload things to:
 
 Upload first the wheels and then the sdist::
 
-  twine upload -s PATH_TO_STORE_WHEELS/*.whl
-  twine upload -s release/installers/scipy-1.x.y.tar.gz
+  twine upload -s REPO_ROOT/release/installers/*.whl
+  twine upload -s REPO_ROOT/release/installers/scipy-1.x.y.tar.gz
 
 **Github Releases:**
 
