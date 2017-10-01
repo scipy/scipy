@@ -13,6 +13,7 @@ Type codes used:
     'W':  std::vector<data>*
     '*':  indicates that the next argument is an output argument
     'v':  void
+    'l':  64-bit integer scalar
 
 See sparsetools.cxx for more details.
 
@@ -110,8 +111,8 @@ csr_has_canonical_format  i iII
 # coo.h, dia.h, csgraph.h
 OTHER_ROUTINES = """
 coo_tocsr           v iiiIIT*I*I*T
-coo_todense         v iiiIIT*Ti
-coo_matvec          v iIITT*T
+coo_todense         v iilIIT*Ti
+coo_matvec          v lIITT*T
 dia_matvec          v iiiiITT*T
 cs_graph_components i iII*I
 """
@@ -160,7 +161,7 @@ T_TYPES = [
 #
 
 THUNK_TEMPLATE = """
-static Py_ssize_t %(name)s_thunk(int I_typenum, int T_typenum, void **a)
+static PY_LONG_LONG %(name)s_thunk(int I_typenum, int T_typenum, void **a)
 {
     %(thunk_content)s
 }
@@ -282,6 +283,8 @@ def parse_routine(name, args, types):
                 if const:
                     raise ValueError("'W' argument must be an output arg")
                 args.append("(std::vector<%s>*)a[%d]" % (T_type, j,))
+            elif t == 'l':
+                args.append("*(%snpy_int64*)a[%d]" % (const, j))
             else:
                 raise ValueError("Invalid spec character %r" % (t,))
             j += 1

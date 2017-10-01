@@ -37,11 +37,6 @@
 
 #define MAX_ARGS 16
 
-#if PY_VERSION_HEX >= 0x03000000
-#define PyInt_AsSsize_t PyLong_AsSsize_t
-#define PyInt_FromSsize_t PyLong_FromSsize_t
-#endif
-
 static const int supported_I_typenums[] = {NPY_INT32, NPY_INT64};
 static const int n_supported_I_typenums = sizeof(supported_I_typenums) / sizeof(int);
 
@@ -82,7 +77,7 @@ static PyObject *c_array_from_object(PyObject *obj, int typenum, int is_output);
  *     'W': std::vector<data>
  *     'B': npy_bool array
  *     '*': indicates that the next argument is an output argument
- * thunk : Py_ssize_t thunk(int I_typenum, int T_typenum, void **)
+ * thunk : PY_LONG_LONG thunk(int I_typenum, int T_typenum, void **)
  *     Thunk function to call. It is passed a void** array of pointers to
  *     arguments, constructed according to `spec`. The types of data pointed
  *     to by each element agree with I_typenum and T_typenum, or are bools.
@@ -110,7 +105,7 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
     int next_is_output = 0;
     int j, k, arg_j;
     const char *p;
-    Py_ssize_t ret;
+    PY_LONG_LONG ret;
     Py_ssize_t max_array_size = 0;
     NPY_BEGIN_THREADS_DEF;
 
@@ -154,6 +149,7 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
             --arg_j;
             continue;
         case 'i':
+        case 'l':
             /* Integer scalars */
             arg = PyTuple_GetItem(args, arg_j);
             if (arg == NULL) {
@@ -262,7 +258,7 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
             --j;
             continue;
         }
-        else if (*p == 'i') {
+        else if (*p == 'i' || *p == 'l') {
             /* Integer scalars */
             PY_LONG_LONG value;
 
@@ -280,12 +276,12 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
                 goto fail;
             }
 
-            if (PyArray_EquivTypenums(I_typenum, NPY_INT64)
+            if ((*p == 'l' || PyArray_EquivTypenums(I_typenum, NPY_INT64))
                     && value == (npy_int64)value) {
                 arg_list[j] = std::malloc(sizeof(npy_int64));
                 *(npy_int64*)arg_list[j] = (npy_int64)value;
             }
-            else if (PyArray_EquivTypenums(I_typenum, NPY_INT32)
+            else if (*p == 'i' && PyArray_EquivTypenums(I_typenum, NPY_INT32)
                      && value == (npy_int32)value) {
                 arg_list[j] = std::malloc(sizeof(npy_int32));
                 *(npy_int32*)arg_list[j] = (npy_int32)value;
@@ -374,7 +370,8 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
 
     switch (ret_spec) {
     case 'i':
-        return_value = PyInt_FromSsize_t(ret);
+    case 'l':
+        return_value = PyLong_FromLongLong(ret);
         break;
     case 'v':
         Py_INCREF(Py_None);
@@ -445,7 +442,7 @@ fail:
             continue;
         }
         Py_XDECREF(arg_arrays[j]);
-        if (*p == 'i' && arg_list[j] != NULL) {
+        if ((*p == 'i' || *p == 'l') && arg_list[j] != NULL) {
             std::free(arg_list[j]);
         }
         else if (*p == 'V' && arg_list[j] != NULL) {
