@@ -161,7 +161,7 @@ T_TYPES = [
 #
 
 THUNK_TEMPLATE = """
-static Py_ssize_t %(name)s_thunk(int I_typenum, int T_typenum, void **a)
+static PY_LONG_LONG %(name)s_thunk(int I_typenum, int T_typenum, void **a)
 {
     %(thunk_content)s
 }
