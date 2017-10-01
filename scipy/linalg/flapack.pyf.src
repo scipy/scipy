@@ -666,6 +666,27 @@ interface
 
    end subroutine<prefix>sytf2
 
+  subroutine <prefix2>sygst(n,a,lda,b,ldb,info,itype,lower)
+
+    ! c, info = sygst(a,b)
+    ! Transforms the generalized symmetric eigenvalue problem to standard.
+    ! A = inv(U^T) * A * inv(U), if itype == 1
+    ! A = U^T * A * U or L^T * A * L, if itype == 2 or 3, respectively
+    ! B must contain the factorized U and L from potrf
+
+     callstatement (*f2py_func)(&itype,(lower?"L":"U"),&n,a,&lda,b,&ldb,&info)
+     callprotoargument int*,char*,int*,<ctype2>*,int*,<ctype2>*,int*,int*
+
+     integer optional,intent(in),check(itype==1||itype==2||itype==3):: itype = 1
+     integer optional,intent(in),check(lower==0||lower==1):: lower = 0
+     integer depend(a),intent(hide):: n = shape(a,0)
+     <ftype2> dimension(n,n),intent(in,out,copy,out=c):: a
+     integer depend(a),intent(hide):: lda = max(shape(a,0),1)
+     <ftype2> dimension(n,n),intent(in):: b
+     integer depend(b),intent(hide):: ldb = max(shape(b,0),1)
+     integer intent(out):: info
+
+   end subroutine <prefix2>sygst
 
    subroutine <prefix>sytrf(lower,n,a,lda,ipiv,work,lwork,info)
 
@@ -869,6 +890,28 @@ interface
     integer intent(out) :: info
 
   end subroutine <c,z,c,z><sy,\0,he,\2>con
+
+  subroutine <prefix2c>hegst(n,a,lda,b,ldb,info,itype,lower)
+
+    ! c, info = hegst(a,b)
+    ! Transforms the generalized Hermitian eigenvalue problem to standard.
+    ! A = inv(U^H) * A * inv(U), if itype == 1
+    ! A = U^H * A * U or L^H * A * L, if itype == 2 or 3, respectively
+    ! B must contain the factorized U and L from potrf
+
+     callstatement (*f2py_func)(&itype,(lower?"L":"U"),&n,a,&lda,b,&ldb,&info)
+     callprotoargument int*,char*,int*,<ctype2c>*,int*,<ctype2c>*,int*,int*
+
+     integer optional,intent(in),check(itype==1||itype==2||itype==3):: itype = 1
+     integer optional,intent(in),check(lower==0||lower==1):: lower = 0
+     integer depend(a),intent(hide):: n = shape(a,0)
+     <ftype2c> dimension(n,n),intent(in,out,copy,out=c):: a
+     integer depend(a),intent(hide):: lda = max(shape(a,0),1)
+     <ftype2c> dimension(n,n),intent(in):: b
+     integer depend(b),intent(hide):: ldb = max(shape(b,0),1)
+     integer intent(out):: info
+
+   end subroutine <prefix2c>hegst
 
 
    subroutine <prefix2c>hetrf(lower,n,a,lda,ipiv,work,lwork,info)
