@@ -6,6 +6,7 @@ import numpy as np
 from numpy.testing import assert_equal, assert_raises
 from pytest import raises as assert_raises
 from scipy.sparse import sputils
+from scipy._lib._numpy_compat import suppress_warnings
 
 
 class TestSparseUtils(object):
@@ -36,10 +37,13 @@ class TestSparseUtils(object):
         assert_equal(sputils.isscalarlike((1, 2)), False)
 
     def test_isintlike(self):
-        assert_equal(sputils.isintlike(3.0), True)
         assert_equal(sputils.isintlike(-4), True)
         assert_equal(sputils.isintlike(np.array(3)), True)
         assert_equal(sputils.isintlike(np.array([3])), False)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning,
+                       "Inexact indices into sparse matrices are deprecated")
+            assert_equal(sputils.isintlike(3.0), True)
 
         assert_equal(sputils.isintlike(2.5), False)
         assert_equal(sputils.isintlike(1 + 3j), False)
