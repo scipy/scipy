@@ -110,14 +110,15 @@ class spmatrix(object):
 
         Returns
         -------
-        reshaped_matrix : `self` with the new dimensions of `shape`
+        reshaped_matrix : sparse matrix
+            A sparse matrix with the given `shape`, not necessarily of the same
+            format as the current object.
 
         See Also
         --------
         np.matrix.reshape : NumPy's implementation of 'reshape' for matrices
         """
-        return (self.tocoo(copy=copy).reshape(*args, order=order, copy=False)
-                .asformat(self.format))
+        return self.tocoo(copy=copy).reshape(*args, order=order, copy=False)
 
     def astype(self, dtype, casting='unsafe', copy=True):
         """Cast the matrix elements to a specified type.
