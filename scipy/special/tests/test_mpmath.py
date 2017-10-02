@@ -102,11 +102,12 @@ def test_hyp0f1_gh_1609():
 # hyp2f1
 # ------------------------------------------------------------------------------
 
-@check_version(mpmath, '0.14')
+@pytest.mark.xfail(reason="hyp2f1 produces wrong/nonstandard values (gh-7961)")
+@check_version(mpmath, '1.0.0')
 def test_hyp2f1_strange_points():
     pts = [
-        (2, -1, -1, 0.7),
-        (2, -2, -2, 0.7),
+        (2, -1, -1, 0.7),  # expected: 2.4
+        (2, -2, -2, 0.7),  # expected: 3.87
     ]
     kw = dict(eliminate=True)
     dataset = [p + (float(mpmath.hyp2f1(*p, **kw)),) for p in pts]
