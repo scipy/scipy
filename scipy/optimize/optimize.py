@@ -38,7 +38,6 @@ from .linesearch import (line_search_wolfe1, line_search_wolfe2,
                          line_search_wolfe2 as line_search,
                          LineSearchWarning)
 from scipy._lib._util import getargspec_no_self as _getargspec
-from scipy.linalg import get_blas_funcs
 
 
 # standard status messages of optimizers
@@ -947,11 +946,6 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
     I = numpy.eye(N, dtype=int)
     Hk = I
 
-    # get needed blas functions
-    syr = get_blas_funcs('syr', dtype='d')  # Symetric rank 1 update
-    syr2 = get_blas_funcs('syr2', dtype='d')  # Symetric rank 2 update
-    symv = get_blas_funcs('symv', dtype='d')  # Symetric matrix-vector product
-
     # Sets the initial step guess to dx ~ 1
     old_fval = f(x0)
     old_old_fval = old_fval + np.linalg.norm(gfk) / 2
@@ -963,7 +957,7 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
     warnflag = 0
     gnorm = vecnorm(gfk, ord=norm)
     while (gnorm > gtol) and (k < maxiter):
-        pk = symv(-1, Hk, gfk)
+        pk = -numpy.dot(Hk, gfk)
         try:
             alpha_k, fc, gc, old_fval, old_old_fval, gfkp1 = \
                      _line_search_wolfe12(f, myfprime, xk, pk, gfk,
@@ -985,6 +979,7 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
         gfk = gfkp1
         if callback is not None:
             callback(xk)
+        k += 1
         gnorm = vecnorm(gfk, ord=norm)
         if (gnorm <= gtol):
             break
@@ -995,9 +990,8 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
             warnflag = 2
             break
 
-        yk_sk = np.dot(yk, sk)
         try:  # this was handled in numeric, let it remaines for more safety
-            rhok = 1.0 / yk_sk
+            rhok = 1.0 / (numpy.dot(yk, sk))
         except ZeroDivisionError:
             rhok = 1000.0
             if disp:
@@ -1006,31 +1000,10 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
             rhok = 1000.0
             if disp:
                 print("Divide-by-zero encountered: rhok assumed large")
-
-        # Heristic to adjust Hk for k == 0
-        # described at Nocedal/Wright "Numerical Optimization"
-        # p.143 formula (6.20)
-        if k == 0:
-            Hk = yk_sk / np.dot(yk, yk)*I
-
-        # Implement BFGS update using the formula:
-        # Hk <- Hk + ((Hk yk).T yk+sk.T yk)*(rhok**2)*sk sk.T -rhok*[(Hk yk)sk.T +sk(Hk yk).T]
-        # This formula is equivalent to (6.17) from
-        # Nocedal/Wright "Numerical Optimization"
-        # written in a more efficient way for implementation.
-        Hk_yk = symv(1, Hk, yk)
-        c = rhok**2 * (yk_sk+Hk_yk.dot(yk))
-        Hk = syr2(-rhok, sk, Hk_yk, a=Hk)
-        Hk = syr(c, sk, a=Hk)
-
-        k += 1
-
-    # The matrix Hk is obtained from the
-    # symmetric representation that were being
-    # used to store it.
-    Hk_triu = numpy.triu(Hk)
-    Hk_diag = numpy.diag(Hk)
-    Hk = Hk_triu + Hk_triu.T - numpy.diag(Hk_diag)
+        A1 = I - sk[:, numpy.newaxis] * yk[numpy.newaxis, :] * rhok
+        A2 = I - yk[:, numpy.newaxis] * sk[numpy.newaxis, :] * rhok
+        Hk = numpy.dot(A1, numpy.dot(Hk, A2)) + (rhok * sk[:, numpy.newaxis] *
+                                                 sk[numpy.newaxis, :])
 
     fval = old_fval
     if np.isnan(fval):
