@@ -347,9 +347,9 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     ...                options={'gtol': 1e-6, 'disp': True})
     Optimization terminated successfully.
              Current function value: 0.000000
-             Iterations: 33
-             Function evaluations: 35
-             Gradient evaluations: 35
+             Iterations: 26
+             Function evaluations: 31
+             Gradient evaluations: 31
     >>> res.x
     array([ 1.,  1.,  1.,  1.,  1.])
     >>> print(res.message)
