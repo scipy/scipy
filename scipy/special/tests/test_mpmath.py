@@ -9,6 +9,8 @@ from numpy.testing import assert_, assert_allclose
 from numpy import pi
 import pytest
 
+from distutils.version import LooseVersion
+
 import scipy.special as sc
 from scipy._lib.six import with_metaclass
 from scipy.special._testutils import (
@@ -1751,14 +1753,18 @@ class TestSystematic(object):
 
     @pytest.mark.xfail(condition=_is_32bit_platform, reason="see gh-3551 for bad points")
     def test_rf(self):
-        def mppoch(a, m):
-            # deal with cases where the result in double precision
-            # hits exactly a non-positive integer, but the
-            # corresponding extended-precision mpf floats don't
-            if float(a + m) == int(a + m) and float(a + m) <= 0:
-                a = mpmath.mpf(a)
-                m = int(a + m) - a
-            return mpmath.rf(a, m)
+        if LooseVersion(mpmath.__version__) >= LooseVersion("1.0.0"):
+            # no workarounds needed
+            mppoch = mpmath.rf
+        else:
+            def mppoch(a, m):
+                # deal with cases where the result in double precision
+                # hits exactly a non-positive integer, but the
+                # corresponding extended-precision mpf floats don't
+                if float(a + m) == int(a + m) and float(a + m) <= 0:
+                    a = mpmath.mpf(a)
+                    m = int(a + m) - a
+                return mpmath.rf(a, m)
 
         assert_mpmath_equal(sc.poch,
                             mppoch,
