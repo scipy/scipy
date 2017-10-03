@@ -364,17 +364,17 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
             warnings.warn(msg, IntegrationWarning)
             return retval[:-1]
 
-    elif ier == 6: # Forensic decision tree when QUADPACK throws ier=6
-        if epsabs <= 0: #Small error tolerance - applies to all methods
+    elif ier == 6:  # Forensic decision tree when QUADPACK throws ier=6
+        if epsabs <= 0:  # Small error tolerance - applies to all methods
             if epsrel <= 50 * sys.float_info.epsilon or epsrel < 5e-29:
                 msg =- "If ``errabs<=0``, `epsrel` must be greater than both 5e-29 and 50*(machine epsilon)."
-            elif weight in ['sin','cos'] and (abs(a) + abs(b) == Inf):
+            elif weight in ['sin', 'cos'] and (abs(a) + abs(b) == Inf):
                 msg = "sin- or cos- weighted intergals with infinite bounds must have ``epsabs>0``."
 
         elif weight is None:
-            if points is None: #QAGSE/QAGIE
+            if points is None:  # QAGSE/QAGIE
                 msg = "Number of subintervals `limit` must be >=1."
-            else: #QAGPE
+            else:  # QAGPE
                 if max(points) > max(a,b) or min(points) < min(a,b):
                     msg = "All break points in `points` must lie within the integration bonds."
                 elif len(points) >= limit:
@@ -384,16 +384,16 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
             if maxp1 < 1:
                 msg = "Chebyshev moment limit `maxp1` must be >=1."
 
-            elif weight in ('cos','sin') and abs(a+b) == Inf: #QAWFE
+            elif weight in ('cos', 'sin') and abs(a+b) == Inf:  # QAWFE
                 msg = "`limlst` must be >=3."
-            
-            elif weight[:3] == 'alg':#QAWSE
+
+            elif weight[:3] == 'alg':  # QAWSE
                 if min(wvar) < -1:
                     msg = "`wvar` parameters ``(alpha,beta)`` must both be >= -1."
-                if b<a:
+                if b < a:
                     msg = "Integration limits `a`,`b` must satistfy ``a<b``."
-            
-            elif weight == 'cauchy' and wvar in (a,b):
+
+            elif weight == 'cauchy' and wvar in (a, b):
                 msg = "Parameter `wvar` must not equal integration limits `a` or `b`."
 
     raise ValueError(msg)
