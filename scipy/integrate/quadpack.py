@@ -366,35 +366,35 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
 
     elif ier == 6:  # Forensic decision tree when QUADPACK throws ier=6
         if epsabs <= 0:  # Small error tolerance - applies to all methods
-            if epsrel <= 50 * sys.float_info.epsilon or epsrel < 5e-29:
-                msg =- "If ``errabs<=0``, `epsrel` must be greater than both 5e-29 and 50*(machine epsilon)."
+            if epsrel < max(50 * sys.float_info.epsilon, 5e-29):
+                msg = "If errabs<=0, epsrel must be greater than both 5e-29 and 50*(machine epsilon)."
             elif weight in ['sin', 'cos'] and (abs(a) + abs(b) == Inf):
-                msg = "sin- or cos- weighted intergals with infinite bounds must have ``epsabs>0``."
+                msg = "sine or cosine weighted intergals with infinite domain must have epsabs>0."
 
         elif weight is None:
             if points is None:  # QAGSE/QAGIE
-                msg = "Number of subintervals `limit` must be >=1."
+                msg = "Number of subintervals limit must be >=1." #TODO: Rephrase
             else:  # QAGPE
-                if max(points) > max(a,b) or min(points) < min(a,b):
-                    msg = "All break points in `points` must lie within the integration bonds."
+                if not (min(a,b) <= min(points) <= max(points) <= max(a,b)):
+                    msg = "All break points in `points` must lie within the integration limits."
                 elif len(points) >= limit:
                     msg = "Number of break points ({:d}) must be less than subinterval limit ({:d})".format(len(points), limit)
 
         else:
             if maxp1 < 1:
-                msg = "Chebyshev moment limit `maxp1` must be >=1."
+                msg = "Chebyshev moment limit maxp1 must be >=1."
 
             elif weight in ('cos', 'sin') and abs(a+b) == Inf:  # QAWFE
-                msg = "`limlst` must be >=3."
+                msg = "Cycle limit limlst must be >=3."
 
-            elif weight[:3] == 'alg':  # QAWSE
+            elif weight.startswith('alg'):  # QAWSE
                 if min(wvar) < -1:
-                    msg = "`wvar` parameters ``(alpha,beta)`` must both be >= -1."
+                    msg = "wvar parameters (alpha, beta) must both be >= -1."
                 if b < a:
-                    msg = "Integration limits `a`,`b` must satistfy ``a<b``."
+                    msg = "Integration limits a, b must satistfy a<b."
 
             elif weight == 'cauchy' and wvar in (a, b):
-                msg = "Parameter `wvar` must not equal integration limits `a` or `b`."
+                msg = "Parameter wvar must not equal integration limits a or b."
 
     raise ValueError(msg)
 
