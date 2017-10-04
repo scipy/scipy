@@ -356,7 +356,7 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
 
     if ier in [1,2,3,4,5,7]:
         if full_output:
-            if weight in ['cos','sin'] and (b == Inf or a == Inf):
+            if weight in ['cos', 'sin'] and (b == Inf or a == Inf):
                 return retval[:-1] + (msg, explain)
             else:
                 return retval[:-1] + (msg,)
@@ -367,18 +367,24 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
     elif ier == 6:  # Forensic decision tree when QUADPACK throws ier=6
         if epsabs <= 0:  # Small error tolerance - applies to all methods
             if epsrel < max(50 * sys.float_info.epsilon, 5e-29):
-                msg = "If errabs<=0, epsrel must be greater than both 5e-29 and 50*(machine epsilon)."
+                msg = ("If 'errabs'<=0, 'epsrel' must be greater than both"
+                       " 5e-29 and 50*(machine epsilon).")
             elif weight in ['sin', 'cos'] and (abs(a) + abs(b) == Inf):
-                msg = "sine or cosine weighted intergals with infinite domain must have epsabs>0."
+                msg = ("Sine or cosine weighted intergals with infinite domain"
+                       " must have 'epsabs'>0.")
 
         elif weight is None:
             if points is None:  # QAGSE/QAGIE
-                msg = "Number of subintervals limit must be >=1." #TODO: Rephrase
+                msg = ("Invalid 'limit' argument. There must be"
+                       " at least one subinterval")
             else:  # QAGPE
-                if not (min(a,b) <= min(points) <= max(points) <= max(a,b)):
-                    msg = "All break points in `points` must lie within the integration limits."
+                if not (min(a, b) <= min(points) <= max(points) <= max(a, b)):
+                    msg = ("All break points in 'points' must lie within the"
+                           " integration limits.")
                 elif len(points) >= limit:
-                    msg = "Number of break points ({:d}) must be less than subinterval limit ({:d})".format(len(points), limit)
+                    msg = ("Number of break points ({:d})"
+                           " must be less than subinterval"
+                           " limit ({:d})").format(len(points), limit)
 
         else:
             if maxp1 < 1:
@@ -394,7 +400,8 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
                     msg = "Integration limits a, b must satistfy a<b."
 
             elif weight == 'cauchy' and wvar in (a, b):
-                msg = "Parameter wvar must not equal integration limits a or b."
+                msg = ("Parameter 'wvar' must not equal"
+                       " integration limits 'a' or 'b'.")
 
     raise ValueError(msg)
 
@@ -473,7 +480,7 @@ def _quad_weight(func,a,b,args,full_output,epsabs,epsrel,limlst,limit,maxp1,weig
         if a in [-Inf,Inf] or b in [-Inf,Inf]:
             raise ValueError("Cannot integrate with this weight over an infinite interval.")
 
-        if weight[:3] == 'alg':
+        if weight.startswith('alg'):
             integr = strdict[weight]
             return _quadpack._qawse(func, a, b, wvar, integr, args,
                                     full_output, epsabs, epsrel, limit)
