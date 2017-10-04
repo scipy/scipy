@@ -392,9 +392,8 @@ def _quad(func,a,b,args,full_output,epsabs,epsrel,limit,points):
         if infbounds != 0:
             raise ValueError("Infinity inputs cannot be used with break points.")
         else:
-            nl = len(points)
-            the_points = numpy.zeros((nl+2,), float)
-            the_points[:nl] = points
+            the_points = set(p for p in points if a < p < b)
+            the_points = numpy.array(list(the_points)+[0,0], float)
             return _quadpack._qagpe(func,a,b,the_points,args,full_output,epsabs,epsrel,limit)
 
 
