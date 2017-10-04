@@ -361,8 +361,11 @@ wrogerstanimoto = _weight_checked(rogerstanimoto)
 wmatching = whamming = _weight_checked(hamming, dud_test=False)
 wyule = _weight_checked(yule)
 wdice = _weight_checked(dice)
+wcityblock = _weight_checked(cityblock)
+wchebyshev = _weight_checked(chebyshev)
 wcosine = _weight_checked(cosine)
 wcorrelation = _weight_checked(correlation)
+wkulsinski = _weight_checked(kulsinski)
 wminkowski = _weight_checked(minkowski, const_test=False)
 wjaccard = _weight_checked(jaccard)
 weuclidean = _weight_checked(euclidean, const_test=False)
@@ -1905,6 +1908,19 @@ def test_Xdist_deprecated_args():
                 cdist(X1, X1, metric, **kwargs)
                 pdist(X1, metric, **kwargs)
                 assert_(len(log) == 2)
+
+
+def test_Xdist_non_negative_weights():
+    X = eo['random-float32-data'][::5, ::2]
+    w = np.ones(X.shape[1])
+    w[::5] = -w[::5]
+    for metric in _METRICS_NAMES:
+        if metric in ['seuclidean', 'mahalanobis']:
+            continue
+
+        for m in [metric, eval(metric), "test_" + metric]:
+            assert_raises(ValueError, pdist, X, m, w=w)
+            assert_raises(ValueError, cdist, X, X, m, w=w)
 
 
 def test__validate_vector():

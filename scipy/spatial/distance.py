@@ -327,6 +327,13 @@ def _validate_vector(u, dtype=None):
     return u
 
 
+def _validate_weights(w, dtype=None):
+    w = _validate_vector(w, dtype=dtype)
+    if np.any(w < 0):
+        raise ValueError("Input weights should be all non-negative")
+    return w
+
+
 def _validate_wminkowski_kwargs(X, m, n, **kwargs):
     w = kwargs.pop('w', None)
     if w is None:
@@ -483,7 +490,7 @@ def minkowski(u, v, p=2, w=None):
         raise ValueError("p must be at least 1")
     u_v = u - v
     if w is not None:
-        w = _validate_vector(w)
+        w = _validate_weights(w)
         if p == 1:
             root_w = w
         if p == 2:
@@ -549,7 +556,7 @@ def wminkowski(u, v, p, w):
     1.0
 
     """
-    w = _validate_vector(w)
+    w = _validate_weights(w)
     return minkowski(u, v, p=p, w=w**p)
 
 
@@ -641,7 +648,7 @@ def sqeuclidean(u, v, w=None):
     u_v = u - v
     u_v_w = u_v  # only want weights applied once
     if w is not None:
-        w = _validate_vector(w)
+        w = _validate_weights(w)
         u_v_w = w * u_v
     return np.dot(u_v, u_v_w)
 
@@ -680,7 +687,7 @@ def correlation(u, v, w=None, centered=True):
     u = _validate_vector(u)
     v = _validate_vector(v)
     if w is not None:
-        w = _validate_vector(w)
+        w = _validate_weights(w)
     if centered:
         umu = np.average(u, weights=w)
         vmu = np.average(v, weights=w)
@@ -788,7 +795,7 @@ def hamming(u, v, w=None):
         raise ValueError('The 1d arrays must have equal lengths.')
     u_ne_v = u != v
     if w is not None:
-        w = _validate_vector(w)
+        w = _validate_weights(w)
     return np.average(u_ne_v, weights=w)
 
 
@@ -841,7 +848,7 @@ def jaccard(u, v, w=None):
     nonzero = np.bitwise_or(u != 0, v != 0)
     unequal_nonzero = np.bitwise_and((u != v), nonzero)
     if w is not None:
-        w = _validate_vector(w)
+        w = _validate_weights(w)
         nonzero = w * nonzero
         unequal_nonzero = w * unequal_nonzero
     dist = np.double(unequal_nonzero.sum()) / np.double(nonzero.sum())
@@ -897,7 +904,7 @@ def kulsinski(u, v, w=None):
     if w is None:
         n = float(len(u))
     else:
-        w = _validate_vector(w)
+        w = _validate_weights(w)
         n = w.sum()
     (nff, nft, ntf, ntt) = _nbool_correspond_all(u, v, w=w)
 
@@ -986,7 +993,7 @@ def cityblock(u, v, w=None):
     v = _validate_vector(v)
     l1_diff = abs(u - v)
     if w is not None:
-        w = _validate_vector(w)
+        w = _validate_weights(w)
         l1_diff = w * l1_diff
     return l1_diff.sum()
 
@@ -1038,7 +1045,7 @@ def mahalanobis(u, v, VI):
     return np.sqrt(m)
 
 
-def chebyshev(u, v):
+def chebyshev(u, v, w=None):
     """
     Compute the Chebyshev distance.
 
@@ -1055,6 +1062,9 @@ def chebyshev(u, v):
         Input vector.
     v : (N,) array_like
         Input vector.
+    w : (N,) array_like, optional
+        The weights for each value in `u` and `v`. Default is None,
+        which gives each value a weight of 1.0
 
     Returns
     -------
@@ -1072,6 +1082,12 @@ def chebyshev(u, v):
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
+    if w is not None:
+        w = _validate_weights(w)
+        has_weight = w > 0
+        if has_weight.sum() < w.size:
+            u = u[has_weight]
+            v = v[has_weight]
     return max(abs(u - v))
 
 
@@ -1117,7 +1133,7 @@ def braycurtis(u, v, w=None):
     l1_diff = abs(u - v)
     l1_sum = abs(u + v)
     if w is not None:
-        w = _validate_vector(w)
+        w = _validate_weights(w)
         l1_diff = w * l1_diff
         l1_sum = w * l1_sum
     return l1_diff.sum() / l1_sum.sum()
@@ -1166,7 +1182,7 @@ def canberra(u, v, w=None):
     u = _validate_vector(u)
     v = _validate_vector(v, dtype=np.float64)
     if w is not None:
-        w = _validate_vector(w)
+        w = _validate_weights(w)
     olderr = np.seterr(invalid='ignore')
     try:
         abs_uv = abs(u - v)
@@ -1222,7 +1238,7 @@ def yule(u, v, w=None):
     u = _validate_vector(u)
     v = _validate_vector(v)
     if w is not None:
-        w = _validate_vector(w)
+        w = _validate_weights(w)
     (nff, nft, ntf, ntt) = _nbool_correspond_all(u, v, w=w)
     return float(2.0 * ntf * nft / np.array(ntt * nff + ntf * nft))
 
@@ -1281,7 +1297,7 @@ def dice(u, v, w=None):
     u = _validate_vector(u)
     v = _validate_vector(v)
     if w is not None:
-        w = _validate_vector(w)
+        w = _validate_weights(w)
     if u.dtype == v.dtype == bool and w is None:
         ntt = (u & v).sum()
     else:
@@ -1341,7 +1357,7 @@ def rogerstanimoto(u, v, w=None):
     u = _validate_vector(u)
     v = _validate_vector(v)
     if w is not None:
-        w = _validate_vector(w)
+        w = _validate_weights(w)
     (nff, nft, ntf, ntt) = _nbool_correspond_all(u, v, w=w)
     return float(2.0 * (ntf + nft)) / float(ntt + nff + (2.0 * (ntf + nft)))
 
@@ -1397,7 +1413,7 @@ def russellrao(u, v, w=None):
         ntt = (u * v).sum()
         n = float(len(u))
     else:
-        w = _validate_vector(w)
+        w = _validate_weights(w)
         ntt = (u * v * w).sum()
         n = w.sum()
     return float(n - ntt) / n
@@ -1455,7 +1471,7 @@ def sokalmichener(u, v, w=None):
         ntt = (u * v).sum()
         nff = ((1.0 - u) * (1.0 - v)).sum()
     else:
-        w = _validate_vector(w)
+        w = _validate_weights(w)
         ntt = (u * v * w).sum()
         nff = ((1.0 - u) * (1.0 - v) * w).sum()
     (nft, ntf) = _nbool_correspond_ft_tf(u, v)
@@ -1512,7 +1528,7 @@ def sokalsneath(u, v, w=None):
     elif w is None:
         ntt = (u * v).sum()
     else:
-        w = _validate_vector(w)
+        w = _validate_weights(w)
         ntt = (u * v * w).sum()
     (nft, ntf) = _nbool_correspond_ft_tf(u, v, w=w)
     denom = np.array(ntt + 2.0 * (ntf + nft))
