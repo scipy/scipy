@@ -316,6 +316,23 @@ def check_shape(args, current_shape=None):
     return new_shape
 
 
+def check_reshape_kwargs(kwargs):
+    """Unpack keyword arguments for reshape function.
+
+    This is useful because keyword arguments after star arguments are not
+    allowed in Python 2, but star keyword arguments are. This function unpacks
+    'order' and 'copy' from the star keyword arguments (with defaults) and
+    throws an error for any remaining.
+    """
+
+    order = kwargs.pop('order', 'C')
+    copy = kwargs.pop('copy', False)
+    if kwargs:  # Some unused kwargs remain
+        raise TypeError('reshape() got unexpected keywords arguments: {}'
+                        .format(', '.join(kwargs.keys())))
+    return order, copy
+
+
 class IndexMixin(object):
     """
     This class simply exists to hold the methods necessary for fancy indexing.

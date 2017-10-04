@@ -8,7 +8,7 @@ import numpy as np
 from scipy._lib.six import xrange
 from scipy._lib._numpy_compat import broadcast_to
 from .sputils import (isdense, isscalarlike, isintlike,
-                      get_sum_dtype, validateaxis)
+                      get_sum_dtype, validateaxis, check_reshape_kwargs)
 
 __all__ = ['spmatrix', 'isspmatrix', 'issparse',
            'SparseWarning', 'SparseEfficiencyWarning']
@@ -88,7 +88,7 @@ class spmatrix(object):
 
     shape = property(fget=get_shape, fset=set_shape)
 
-    def reshape(self, *args, order='C', copy=False):
+    def reshape(self, *args, **kwargs):
         """reshape(self, shape, order='C', copy=False)
 
         Gives a new shape to a sparse matrix without changing its data.
@@ -118,6 +118,8 @@ class spmatrix(object):
         --------
         np.matrix.reshape : NumPy's implementation of 'reshape' for matrices
         """
+        order, copy = check_reshape_kwargs(kwargs)
+
         return self.tocoo(copy=copy).reshape(*args, order=order, copy=False)
 
     def astype(self, dtype, casting='unsafe', copy=True):

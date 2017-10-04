@@ -12,7 +12,8 @@ import numpy as np
 from scipy._lib.six import xrange
 from .base import spmatrix, isspmatrix
 from .sputils import (getdtype, isshape, isscalarlike, IndexMixin,
-                      upcast_scalar, get_index_dtype, isintlike, check_shape)
+                      upcast_scalar, get_index_dtype, isintlike, check_shape,
+                      check_reshape_kwargs)
 from . import _csparsetools
 
 
@@ -385,8 +386,10 @@ class lil_matrix(spmatrix, IndexMixin):
 
     copy.__doc__ = spmatrix.copy.__doc__
 
-    def reshape(self, *args, order='C', copy=False):
+    def reshape(self, *args, **kwargs):
         shape = check_shape(args, self.shape)
+        order, copy = check_reshape_kwargs(kwargs)
+
         new = lil_matrix(shape, dtype=self.dtype)
 
         if order == 'C':

@@ -15,7 +15,8 @@ from ._sparsetools import coo_tocsr, coo_todense, coo_matvec
 from .base import isspmatrix, SparseEfficiencyWarning, spmatrix
 from .data import _data_matrix, _minmax_mixin
 from .sputils import (upcast, upcast_char, to_native, isshape, getdtype,
-                      get_index_dtype, downcast_intp_index, check_shape)
+                      get_index_dtype, downcast_intp_index, check_shape,
+                      check_reshape_kwargs)
 
 
 class coo_matrix(_data_matrix, _minmax_mixin):
@@ -190,8 +191,9 @@ class coo_matrix(_data_matrix, _minmax_mixin):
 
         self._check()
 
-    def reshape(self, *args, order='C', copy=False):
+    def reshape(self, *args, **kwargs):
         shape = check_shape(args, self.shape)
+        order, copy = check_reshape_kwargs(kwargs)
 
         nrows, ncols = self.shape
 
