@@ -8,7 +8,8 @@ import numpy as np
 from scipy._lib.six import xrange
 from scipy._lib._numpy_compat import broadcast_to
 from .sputils import (isdense, isscalarlike, isintlike,
-                      get_sum_dtype, validateaxis, check_reshape_kwargs)
+                      get_sum_dtype, validateaxis, check_reshape_kwargs,
+                      check_shape)
 
 __all__ = ['spmatrix', 'isspmatrix', 'issparse',
            'SparseWarning', 'SparseEfficiencyWarning']
@@ -118,9 +119,17 @@ class spmatrix(object):
         --------
         np.matrix.reshape : NumPy's implementation of 'reshape' for matrices
         """
+        # If the shape already matches, don't bother doing an actual reshape
+        # Otherwise, the default is ot convert to COO and use its reshape
+        shape = check_shape(args, self.shape)
         order, copy = check_reshape_kwargs(kwargs)
+        if shape == self.shape:
+            if copy:
+                return self.copy()
+            else:
+                return self
 
-        return self.tocoo(copy=copy).reshape(*args, order=order, copy=False)
+        return self.tocoo(copy=copy).reshape(shape, order=order, copy=False)
 
     def astype(self, dtype, casting='unsafe', copy=True):
         """Cast the matrix elements to a specified type.

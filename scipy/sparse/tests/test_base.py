@@ -729,6 +729,17 @@ class _TestCommon(object):
         assert_array_equal(y.A, desired)
         assert_raises(ValueError, x.reshape, (-1, -1))
 
+        # Reshape with star args
+        y = x.reshape(2, 6)
+        assert_array_equal(y.A, desired)
+        assert_raises(TypeError, x.reshape, 2, 6, not_an_arg=1)
+
+        # Reshape with same size is noop unless copy=True
+        y = x.reshape((3, 4))
+        assert_(y is x)
+        y = x.reshape((3, 4), copy=True)
+        assert_(y is not x)
+
         # Ensure reshape did not alter original size
         assert_array_equal(x.shape, (3, 4))
 

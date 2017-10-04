@@ -390,6 +390,13 @@ class lil_matrix(spmatrix, IndexMixin):
         shape = check_shape(args, self.shape)
         order, copy = check_reshape_kwargs(kwargs)
 
+        # Return early if reshape is not required
+        if shape == self.shape:
+            if copy:
+                return self.copy()
+            else:
+                return self
+
         new = lil_matrix(shape, dtype=self.dtype)
 
         if order == 'C':
