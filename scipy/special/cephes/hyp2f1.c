@@ -133,12 +133,7 @@ double a, b, c, x;
     if (ax < 1.0 || x == -1.0) {
 	/* 2F1(a,b;b;x) = (1-x)**(-a) */
 	if (fabs(b - c) < EPS) {	/* b = c */
-	    if (neg_int_b && b > -100) {
-		/*
-		    The "approximation" becomes good enough 
-		    again once we go below -100 (it's an
-		    approximation for this case).
-		*/
+	    if (neg_int_b) {
 		y = hyp2f1_neg_c_equal_bc(a, b, x);
 	    } else {
 	    	y = pow(s, -a);	/* s to the -a power */
@@ -610,14 +605,18 @@ static double hyp2f1ra(double a, double b, double c, double x,
 static double hyp2f1_neg_c_equal_bc(double a, double b, double x)
 {
     double k;
-    double sum = 0;
-    double collector = 1; // x^k / k!
+    double err;
+    double collector = 1;
+    double sum = 1;
 
-    for (k = 0; k <= -b; k++) {
-	if (k != 0) {
-	    collector *= x / k;
-	}
-	sum += poch(a, k) * collector;
+    for (k = 1; k <= -b; k++) {
+  	collector *= (a + k - 1)*x/k;
+    	sum += collector;
+    }
+
+    err = 1e-16 * (1 + fabs(collector)/fabs(sum));
+    if (err > 1e-7) {
+        return NPY_NAN;
     }
 
     return sum;
