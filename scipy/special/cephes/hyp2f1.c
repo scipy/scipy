@@ -168,10 +168,11 @@ double a, b, c, x;
     if (ax < 1.0 || x == -1.0) {
 	/* 2F1(a,b;b;x) = (1-x)**(-a) */
 	if (fabs(b - c) < EPS) {	/* b = c */
-	    if (b < 0 && b > -100 && (floor(b) - b) < EPS) {
+	    if (neg_int_b && b > -100) {
 		/*
-		    The approximation becomes good enough 
-		    again once we go below -100
+		    The "approximation" becomes good enough 
+		    again once we go below -100 (it's an
+		    approximation for this case).
 		*/
 		y = hyp2f1_indeterminate(a, b, x);
 	    } else {
