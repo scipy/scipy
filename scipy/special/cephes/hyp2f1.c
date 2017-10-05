@@ -80,21 +80,13 @@
 
 extern double MACHEP;
 
+extern double poch(double a, double m);
 static double hyt2f1(double a, double b, double c, double x, double *loss);
 static double hys2f1(double a, double b, double c, double x, double *loss);
 static double hyp2f1ra(double a, double b, double c, double x,
 		       double *loss);
-static double pochhammer(double x, double n);
 static double factorial(double k);
 static double hyp2f1_indeterminate(double a, double b, double x);
-
-/*
-    See http://mathworld.wolfram.com/PochhammerSymbol.html
-*/
-static double pochhammer(double x, double n)
-{
-    return gamma(x + n) / gamma(x);	
-}
 
 /*
     See http://mathworld.wolfram.com/GammaFunction.html
@@ -116,7 +108,7 @@ static double hyp2f1_indeterminate(double a, double b, double x)
     double sum = 0;
 
     for (k = 0; k <= -b; k++) {
-	sum += pochhammer(a, k) * pow(x, k) / factorial(k);
+	sum += poch(a, k) * pow(x, k) / factorial(k);
     }
 
     return sum;
