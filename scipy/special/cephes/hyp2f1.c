@@ -609,22 +609,15 @@ static double hyp2f1ra(double a, double b, double c, double x,
 */
 static double hyp2f1_neg_c_equal_bc(double a, double b, double x)
 {
-    /*
-    	"converting floating point to integers is shockingly expensive"
-	
-	Therefore, we stay with double the entire time.
-    */
     double k;
     double sum = 0;
-    double x_k = 1; // x^k
-    double k_f = 1; // k!    
+    double collector = 1; // x^k / k!
 
     for (k = 0; k <= -b; k++) {
 	if (k != 0) {
-	    k_f *= k;  // We have a single CPU pipeline loss (not bad!)
+	    collector *= x / k;
 	}
-	sum += poch(a, k) * x_k / k_f;
-	x_k *= x;
+	sum += poch(a, k) * collector;
     }
 
     return sum;
