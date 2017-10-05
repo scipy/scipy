@@ -86,33 +86,7 @@ static double hys2f1(double a, double b, double c, double x, double *loss);
 static double hyp2f1ra(double a, double b, double c, double x,
 		       double *loss);
 static double factorial(double k);
-static double hyp2f1_indeterminate(double a, double b, double x);
-
-/*
-    See http://mathworld.wolfram.com/GammaFunction.html
-*/
-static double factorial(double k)
-{
-    return gamma(k + 1);
-}
-
-/*
-    See https://math.stackexchange.com/questions/2457831/hypergeometric-expansion-approximation
-*/
-static double hyp2f1_indeterminate(double a, double b, double x)
-{
-    /*
-    	"converting floating point to integers is shockingly expensive"
-    */
-    double k;
-    double sum = 0;
-
-    for (k = 0; k <= -b; k++) {
-	sum += poch(a, k) * pow(x, k) / factorial(k);
-    }
-
-    return sum;
-}
+static double hyp2f1_neg_c_equal_bc(double a, double b, double x);
 
 double hyp2f1(a, b, c, x)
 double a, b, c, x;
@@ -166,7 +140,7 @@ double a, b, c, x;
 		    again once we go below -100 (it's an
 		    approximation for this case).
 		*/
-		y = hyp2f1_indeterminate(a, b, x);
+		y = hyp2f1_neg_c_equal_bc(a, b, x);
 	    } else {
 	    	y = pow(s, -a);	/* s to the -a power */
 	    }
@@ -628,4 +602,23 @@ static double hyp2f1ra(double a, double b, double c, double x,
     }
 
     return f0;
+}
+
+
+/*
+    See https://math.stackexchange.com/questions/2457831/hypergeometric-expansion-approximation
+*/
+static double hyp2f1_neg_c_equal_bc(double a, double b, double x)
+{
+    /*
+    	"converting floating point to integers is shockingly expensive"
+    */
+    double k;
+    double sum = 0;
+
+    for (k = 0; k <= -b; k++) {
+	sum += poch(a, k) * pow(x, k) / gamma(k + 1);
+    }
+
+    return sum;
 }
