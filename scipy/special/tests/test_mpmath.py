@@ -110,6 +110,13 @@ def test_hyp2f1_strange_points():
     pts = [
         (2, -1, -1, 0.7),  # expected: 2.4
         (2, -2, -2, 0.7),  # expected: 3.87
+        (1000, -2, -2, 0.7),
+        (2, -2, -2, 100),
+        (-5, -2, -2, 100),
+        (-100, -2, -2, 0.7),
+        (-100, -2, -2, -0.5),
+        (-100, -2, -2, -50),
+        (105, -2, -2, -50),
     ]
     kw = dict(eliminate=True)
     dataset = [p + (float(mpmath.hyp2f1(*p, **kw)),) for p in pts]
