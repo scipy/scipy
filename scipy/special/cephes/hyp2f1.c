@@ -85,7 +85,6 @@ static double hyt2f1(double a, double b, double c, double x, double *loss);
 static double hys2f1(double a, double b, double c, double x, double *loss);
 static double hyp2f1ra(double a, double b, double c, double x,
 		       double *loss);
-static double factorial(double k);
 static double hyp2f1_neg_c_equal_bc(double a, double b, double x);
 
 double hyp2f1(a, b, c, x)
