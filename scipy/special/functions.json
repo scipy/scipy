@@ -886,6 +886,7 @@
     },
     "loggamma": {
         "_loggamma.pxd": {
+	    "loggamma_real": "d->d",
             "loggamma": "D->D"
         }
     },
