@@ -84,6 +84,43 @@ static double hyt2f1(double a, double b, double c, double x, double *loss);
 static double hys2f1(double a, double b, double c, double x, double *loss);
 static double hyp2f1ra(double a, double b, double c, double x,
 		       double *loss);
+static double pochhammer(double x, double n);
+static double factorial(double k);
+static double hyp2f1_indeterminate(double a, double b, double x);
+
+/*
+    See http://mathworld.wolfram.com/PochhammerSymbol.html
+*/
+static double pochhammer(double x, double n)
+{
+    return gamma(x + n) / gamma(x);	
+}
+
+/*
+    See http://mathworld.wolfram.com/GammaFunction.html
+*/
+static double factorial(double k)
+{
+    return gamma(k + 1);
+}
+
+/*
+    See https://math.stackexchange.com/questions/2457831/hypergeometric-expansion-approximation
+*/
+static double hyp2f1_indeterminate(double a, double b, double x)
+{
+    /*
+    	"converting floating point to integers is shockingly expensive"
+    */
+    double k;
+    double sum = 0;
+
+    for (k = 0; k <= -b; k++) {
+	sum += pochhammer(a, k) * pow(x, k) / factorial(k);
+    }
+
+    return sum;
+}
 
 double hyp2f1(a, b, c, x)
 double a, b, c, x;
@@ -131,7 +168,15 @@ double a, b, c, x;
     if (ax < 1.0 || x == -1.0) {
 	/* 2F1(a,b;b;x) = (1-x)**(-a) */
 	if (fabs(b - c) < EPS) {	/* b = c */
-	    y = pow(s, -a);	/* s to the -a power */
+	    if (b < 0 && b > -100 && (floor(b) - b) < EPS) {
+		/*
+		    The approximation becomes good enough 
+		    again once we go below -100
+		*/
+		y = hyp2f1_indeterminate(a, b, x);
+	    } else {
+	    	y = pow(s, -a);	/* s to the -a power */
+	    }
 	    goto hypdon;
 	}
 	if (fabs(a - c) < EPS) {	/* a = c */
