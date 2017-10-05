@@ -605,12 +605,14 @@ static double hyp2f1ra(double a, double b, double c, double x,
 
 
 /*
-    See https://math.stackexchange.com/questions/2457831/hypergeometric-expansion-approximation
+    15.4.2 Abramowitz & Stegun.
 */
 static double hyp2f1_neg_c_equal_bc(double a, double b, double x)
 {
     /*
     	"converting floating point to integers is shockingly expensive"
+	
+	Therefore, we stay with double the entire time.
     */
     double k;
     double sum = 0;
