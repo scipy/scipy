@@ -135,10 +135,8 @@ def griddata(points, values, xi, method='linear', fill_value=np.nan,
         
     Returns
     -------
-    
-    ip: ndarray
-        Interpolation points of dimensions xi and based on the method
-        passed to the function.
+    ndarray
+        Array of interpolated values.
 
     Notes
     -----
