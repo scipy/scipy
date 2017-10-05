@@ -614,9 +614,15 @@ static double hyp2f1_neg_c_equal_bc(double a, double b, double x)
     */
     double k;
     double sum = 0;
+    double x_k = 1; // x^k
+    double k_f = 1; // k!    
 
     for (k = 0; k <= -b; k++) {
-	sum += poch(a, k) * pow(x, k) / gamma(k + 1);
+	if (k != 0) {
+	    k_f *= k;  // We have a single CPU pipeline loss (not bad!)
+	}
+	sum += poch(a, k) * x_k / k_f;
+	x_k *= x;
     }
 
     return sum;
