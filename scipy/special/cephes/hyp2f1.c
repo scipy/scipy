@@ -80,7 +80,6 @@
 
 extern double MACHEP;
 
-extern double poch(double a, double m);
 static double hyt2f1(double a, double b, double c, double x, double *loss);
 static double hys2f1(double a, double b, double c, double x, double *loss);
 static double hyp2f1ra(double a, double b, double c, double x,
