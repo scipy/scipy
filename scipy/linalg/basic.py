@@ -176,7 +176,7 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
     if debug is not None:
         warn('Use of the "debug" keyword is deprecated '
              'and this keyword will be removed in future '
-             'versions of SciPy.', DeprecationWarning, stacklevel=3)
+             'versions of SciPy.', DeprecationWarning, stacklevel=2)
 
     # Get the correct lamch function.
     # The LAMCH functions only exists for S and D
@@ -330,7 +330,7 @@ def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
     if debug is not None:
         warn('Use of the "debug" keyword is deprecated '
              'and this keyword will be removed in the future '
-             'versions of SciPy.', DeprecationWarning, stacklevel=3)
+             'versions of SciPy.', DeprecationWarning, stacklevel=2)
 
     a1 = _asarray_validated(a, check_finite=check_finite)
     b1 = _asarray_validated(b, check_finite=check_finite)
@@ -428,7 +428,7 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
     if debug is not None:
         warn('Use of the "debug" keyword is deprecated '
              'and this keyword will be removed in the future '
-             'versions of SciPy.', DeprecationWarning, stacklevel=3)
+             'versions of SciPy.', DeprecationWarning, stacklevel=2)
 
     a1 = _asarray_validated(ab, check_finite=check_finite, as_inexact=True)
     b1 = _asarray_validated(b, check_finite=check_finite, as_inexact=True)
@@ -1222,7 +1222,7 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
                         # restart with gelss
                         lstsq.default_lapack_driver = 'gelss'
                         mesg += "Falling back to 'gelss' driver."
-                        warn(mesg, RuntimeWarning, stacklevel=3)
+                        warn(mesg, RuntimeWarning, stacklevel=2)
                         return lstsq(a, b, cond, overwrite_a, overwrite_b,
                                      check_finite, lapack_driver='gelss')
 
