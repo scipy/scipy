@@ -7,6 +7,7 @@ from numpy.testing import (assert_equal, assert_raises,
                            assert_raises_regex)
 from hypothesis import given
 from hypothesis.strategies import floats
+import split_spherical_triangle
 
 class TestDegenerateInput(object):
     # tests for problematic input
@@ -230,3 +231,61 @@ class TestConvolutedAreas(object):
 class TestConvolutedAreasCython(TestConvolutedAreas):
     def setUp(self):
         self.cython = 1
+
+class TestSplittingTriangles(object):
+    # tests that leverage the splitting of
+    # spherical triangles into 3 equal
+    # area subtriangles
+
+    def setUp(self):
+        self.cython = None
+
+    def test_subtriangles_simple(self):
+        # start off with a spherical
+        # triangle that covers 1/4
+        # of a hemisphere and split into
+        # 3 equal area subtriangles
+
+        # verify that each subtriangle
+        # has exactly 1/3 original triangle
+        # expected area
+        radius = 1.0
+        vertices = np.array([[-1,0,0],
+                             [0,1,0],
+                             [0,0,1]])
+        # divide by six for expected subtriangle areas
+        # compare to expected area in test_quarter_hemisphere_area
+        expected_sub_area = (np.pi * (radius ** 2)) / 6.
+
+        # the original spherical triangle area
+        # (before splitting into 3 subtriangles)
+        original_tri_area = psa.poly_area(vertices=vertices,
+                                    radius=1.0,
+                                    cython=self.cython)
+
+        # find the central point D that splits the
+        # spherical triangle into 3 equal area
+        # subtriangles
+        D = split_spherical_triangle.find_ternary_split_point(vertices,
+                                                              1.0,
+                                                              original_tri_area)
+
+        vertices_subtriangle_1 = np.array([vertices[0],
+                                           vertices[1],
+                                           D])
+
+        vertices_subtriangle_2 = np.array([vertices[1],
+                                           vertices[2],
+                                           D])
+
+        vertices_subtriangle_3 = np.array([vertices[2],
+                                           vertices[0],
+                                           D])
+
+        for subtriangle_vertices in [vertices_subtriangle_1,
+                                     vertices_subtriangle_2,
+                                     vertices_subtriangle_3]:
+            actual_subtriangle_area = psa.poly_area(subtriangle_vertices,
+                                                      1.0,
+                                                      cython=self.cython)
+            assert_equal(actual_subtriangle_area, expected_sub_area)
