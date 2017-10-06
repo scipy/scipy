@@ -23,7 +23,8 @@ from numpy import float32, float64, complex64, complex128, arange, triu, \
                   nonzero
 
 from numpy.random import rand, seed
-from scipy.linalg import _fblas as fblas, get_blas_funcs, toeplitz, solve
+from scipy.linalg import _fblas as fblas, get_blas_funcs, toeplitz, solve, \
+                                          solve_triangular
 
 try:
     from scipy.linalg import _cblas as cblas
@@ -1068,10 +1069,11 @@ def test_trsm():
         assert_array_almost_equal(x1, x2)
 
         x1 = func(alpha=alpha, a=A, b=B2, diag=1, side=1)
-        x2 = solve(Au.conj().T, alpha*B2.conj().T)
-        assert_array_almost_equal(x1, x2.conj().T)
+        x2 = solve_triangular(Au.conj().T, alpha*B2.conj().T,
+                              unit_diagonal=1, lower=1)
+        assert_array_almost_equal(x1, x2.conj().T, decimal=5)
 
         x1 = func(alpha=alpha, a=A, b=B2, diag=1, side=1, lower=1)
         Al[arange(m), arange(m)] = dtype(1)
-        x2 = solve(Al.conj().T, alpha*B2.conj().T)
-        assert_array_almost_equal(x1, x2.conj().T)
+        x2 = solve_triangular(Al.conj().T, alpha*B2.conj().T, unit_diagonal=1)
+        assert_array_almost_equal(x1, x2.conj().T, decimal=5)
