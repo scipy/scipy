@@ -2663,6 +2663,10 @@ class TestBessel(object):
         assert_(isnan(special.airye(-1)[0:2]).all(), special.airye(-1))
         assert_(not isnan(special.airye(-1)[2:4]).any(), special.airye(-1))
 
+    def test_gh_7909(self):
+        assert_(special.kv(1.5, 0) == np.inf)
+        assert_(special.kve(1.5, 0) == np.inf)
+
     def test_ticket_503(self):
         """Real-valued Bessel I overflow"""
         assert_tol_equal(special.iv(1, 700), 1.528500390233901e302)
@@ -3418,4 +3422,3 @@ def test_pseudo_huber():
     z = np.array(np.random.randn(10, 2).tolist() + [[0, 0.5], [0.5, 0]])
     w = np.vectorize(xfunc, otypes=[np.float64])(z[:,0], z[:,1])
     assert_func_equal(special.pseudo_huber, w, z, rtol=1e-13, atol=1e-13)
-
