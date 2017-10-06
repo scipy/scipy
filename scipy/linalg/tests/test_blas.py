@@ -1031,6 +1031,7 @@ class TestTRMM(object):
 def test_trsm():
     seed(1234)
     for ind, dtype in enumerate(DTYPES):
+        tol = np.finfo(dtype).eps*1000
         func, = get_blas_funcs(('trsm',), dtype=dtype)
 
         # Test protection against size mismatches
@@ -1053,27 +1054,26 @@ def test_trsm():
         x1 = func(alpha=alpha, a=A, b=B1)
         assert_equal(B1.shape, x1.shape)
         x2 = solve(Au, alpha*B1)
-        assert_array_almost_equal(x1, x2)
+        assert_allclose(x1, x2, atol=tol)
 
         x1 = func(alpha=alpha, a=A, b=B1, trans_a=1)
         x2 = solve(Au.T, alpha*B1)
-        assert_array_almost_equal(x1, x2)
+        assert_allclose(x1, x2, atol=tol)
 
         x1 = func(alpha=alpha, a=A, b=B1, trans_a=2)
         x2 = solve(Au.conj().T, alpha*B1)
-        assert_array_almost_equal(x1, x2)
+        assert_allclose(x1, x2, atol=tol)
 
         x1 = func(alpha=alpha, a=A, b=B1, diag=1)
         Au[arange(m), arange(m)] = dtype(1)
         x2 = solve(Au, alpha*B1)
-        assert_array_almost_equal(x1, x2)
+        assert_allclose(x1, x2, atol=tol)
 
         x1 = func(alpha=alpha, a=A, b=B2, diag=1, side=1)
-        x2 = solve_triangular(Au.conj().T, alpha*B2.conj().T,
-                              unit_diagonal=1, lower=1)
-        assert_array_almost_equal(x1, x2.conj().T, decimal=5)
+        x2 = solve(Au.conj().T, alpha*B2.conj().T)
+        assert_allclose(x1, x2.conj().T, atol=tol)
 
         x1 = func(alpha=alpha, a=A, b=B2, diag=1, side=1, lower=1)
         Al[arange(m), arange(m)] = dtype(1)
-        x2 = solve_triangular(Al.conj().T, alpha*B2.conj().T, unit_diagonal=1)
-        assert_array_almost_equal(x1, x2.conj().T, decimal=5)
+        x2 = solve(Al.conj().T, alpha*B2.conj().T)
+        assert_allclose(x1, x2.conj().T, atol=tol)
