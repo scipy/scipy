@@ -5,7 +5,15 @@ from numpy.linalg import LinAlgError
 from .blas import get_blas_funcs
 from .lapack import get_lapack_funcs
 
-__all__ = ['LinAlgError', 'norm']
+__all__ = ['LinAlgError', 'LinAlgWarning', 'norm']
+
+
+class LinAlgWarning(RuntimeWarning):
+    """
+    The warning emitted when a linear algebra related operation is close
+    to fail conditions of the algorithm or loss of accuracy is expected.
+    """
+    pass
 
 
 def norm(a, ord=None, axis=None, keepdims=False):
