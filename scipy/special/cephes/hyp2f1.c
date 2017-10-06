@@ -607,15 +607,15 @@ static double hyp2f1_neg_c_equal_bc(double a, double b, double x)
     double err;
     double collector = 1;
     double sum = 1;
+    double const max_err = (1e-7/1e-16) - 1;
 
     for (k = 1; k <= -b; k++) {
   	collector *= (a + k - 1)*x/k;
     	sum += collector;
-    }
-
-    err = 1e-16 * (1 + fabs(collector)/fabs(sum));
-    if (err > 1e-7) {
-        return NPY_NAN;
+    
+        if (fabs(collector / sum) > max_err) {
+	    return NPY_NAN;
+        }
     }
 
     return sum;
