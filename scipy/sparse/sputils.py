@@ -3,6 +3,7 @@
 
 from __future__ import division, print_function, absolute_import
 
+import operator
 import warnings
 import numpy as np
 
@@ -253,16 +254,6 @@ def validateaxis(axis):
 
 def check_shape(args, current_shape=None):
     """Imitate numpy.matrix handling of shape arguments"""
-    def check_int(arg):
-        if np.issubdtype(type(arg), np.integer):
-            return int(arg)
-        elif (isinstance(arg, np.ndarray) and np.isscalar(arg) and
-                np.issubdtype(arg.dtype, np.integer)):
-            return int(arg)
-        else:
-            raise TypeError("'{}' object cannot be interpreted as an "
-                            "integer".format(args[0].__class__.__name__))
-
     if len(args) == 0:
         raise TypeError("function missing 1 required positional argument: "
                         "'shape'")
@@ -270,11 +261,11 @@ def check_shape(args, current_shape=None):
         try:
             shape_iter = iter(args[0])
         except TypeError:
-            new_shape = (check_int(args[0]), )
+            new_shape = (operator.index(args[0]), )
         else:
-            new_shape = tuple(check_int(arg) for arg in shape_iter)
+            new_shape = tuple(operator.index(arg) for arg in shape_iter)
     else:
-        new_shape = tuple(check_int(arg) for arg in args)
+        new_shape = tuple(operator.index(arg) for arg in args)
 
     # Check the current size only if needed
     if current_shape is not None:

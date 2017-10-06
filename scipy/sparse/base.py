@@ -120,7 +120,7 @@ class spmatrix(object):
         np.matrix.reshape : NumPy's implementation of 'reshape' for matrices
         """
         # If the shape already matches, don't bother doing an actual reshape
-        # Otherwise, the default is ot convert to COO and use its reshape
+        # Otherwise, the default is to convert to COO and use its reshape
         shape = check_shape(args, self.shape)
         order, copy = check_reshape_kwargs(kwargs)
         if shape == self.shape:
