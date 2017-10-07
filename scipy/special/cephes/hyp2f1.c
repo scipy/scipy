@@ -68,6 +68,7 @@
  */
 
 #include "mconf.h"
+#include "fmax.h"
 #include <stdlib.h>
 #include "_c99compat.h"
 
@@ -607,19 +608,20 @@ static double hyp2f1_neg_c_equal_bc(double a, double b, double x)
     double err;
     double collector = 1;
     double sum = 1;
-    double const max_err = (1e-7/1e-16) - 1;
+    double collector_max = 1;
 
     if (!(fabs(b) < 1e5)) {
-	return NPY_NAN;
+        return NPY_NAN;
     }
 
     for (k = 1; k <= -b; k++) {
-  	collector *= (a + k - 1)*x/k;
-    	sum += collector;
-    
-        if (fabs(collector / sum) > max_err) {
-	    return NPY_NAN;
-        }
+        collector *= (a + k - 1)*x/k;
+        collector_max = fmax(fabs(collector), collector_max);
+        sum += collector;
+    }
+
+    if ((1e-16 * (1 + collector_max/fabs(sum)) > 1e-7) {
+        return NPY_NAN;
     }
 
     return sum;
