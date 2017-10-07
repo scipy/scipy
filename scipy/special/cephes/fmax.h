@@ -10,26 +10,6 @@ static int signbit(double x)
     return x > 0;
 }
 
-static double copysign(double x, double y)
-{
-    if (x >= 0) {
-        if (y >= 0) {
-            return x;
-        }
-        else {
-            return -x;
-        }
-    }
-    else {
-        if (y >= 0) {
-            return -x;
-        }
-        else {
-            return x;
-        }
-    }
-}
-
 static double fmax(double x, double y)
 {
     /* z > nan for z != nan is required by C the standard */
