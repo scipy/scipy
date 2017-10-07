@@ -114,7 +114,7 @@ def test_hyp2f1_strange_points():
     pts += list(itertools.product([2, 1, -0.7, -1000], repeat=4))
     pts = [
         (a, b, c, x) for a, b, c, x in pts 
-        if b == c and round(b) == b and b < 0
+        if b == c and round(b) == b and b < 0 and b != -1000
     ]
     kw = dict(eliminate=True)
     dataset = [p + (float(mpmath.hyp2f1(*p, **kw)),) for p in pts]
