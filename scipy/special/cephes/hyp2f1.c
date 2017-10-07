@@ -620,7 +620,7 @@ static double hyp2f1_neg_c_equal_bc(double a, double b, double x)
         sum += collector;
     }
 
-    if ((1e-16 * (1 + collector_max/fabs(sum)) > 1e-7) {
+    if (1e-16 * (1 + collector_max/fabs(sum)) > 1e-7) {
         return NPY_NAN;
     }
 
