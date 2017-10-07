@@ -160,10 +160,12 @@ build_script:
       $env:Path += ";$MINGW"
       $env:NPY_NUM_BUILD_JOBS = "4"
       mkdir dist
-
-      pip install git+https://github.com/xoviat/clcache.git@scipy-staging-issue-289
-      $env:USE_CLCACHE = "1"
-      $env:CLCACHE_LOG = "1"
+      
+      If ($env:PYTHON_VERSION -ne 2.7) {
+          pip install git+https://github.com/xoviat/clcache.git@scipy-staging-issue-289
+          $env:USE_CLCACHE = "1"
+          $env:CLCACHE_LOG = "1"
+      }
 
       pip wheel -v -v -v --wheel-dir=dist .
 
