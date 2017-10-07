@@ -105,7 +105,6 @@ def test_hyp0f1_gh_1609():
 # hyp2f1
 # ------------------------------------------------------------------------------
 
-@pytest.mark.xfail(reason="hyp2f1 produces wrong/nonstandard values (gh-7961)")
 @check_version(mpmath, '1.0.0')
 def test_hyp2f1_strange_points():
     pts = [
