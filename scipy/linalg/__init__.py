@@ -41,6 +41,7 @@ Basics
    matrix_balance - Balance matrix entries with a similarity transformation
    subspace_angles - Compute the subspace angles between two matrices
    LinAlgError
+   LinAlgWarning
 
 Eigenvalue Problems
 ===================

@@ -6,12 +6,12 @@
 
 from __future__ import division, print_function, absolute_import
 
-import warnings
+from warnings import warn
 import numpy as np
 from numpy import atleast_1d, atleast_2d
 from .flinalg import get_flinalg_funcs
 from .lapack import get_lapack_funcs, _compute_lwork
-from .misc import LinAlgError, _datacopied
+from .misc import LinAlgError, _datacopied, LinAlgWarning
 from .decomp import _asarray_validated
 from . import decomp, decomp_svd
 from ._solve_toeplitz import levinson
@@ -34,10 +34,9 @@ def _solve_check(n, info, lamch=None, rcond=None):
         return
     E = lamch('E')
     if rcond < E:
-        warnings.warn('scipy.linalg.solve\nIll-conditioned matrix detected.'
-                      ' Result is not guaranteed to be accurate.\nReciprocal '
-                      'condition number/precision: {} / {}'.format(rcond, E),
-                      RuntimeWarning)
+        warn('scipy.linalg.solve\nIll-conditioned matrix detected. Result '
+             'is not guaranteed to be accurate.\nReciprocal condition '
+             'number{:.6e}'.format(rcond), LinAlgWarning, stacklevel=3)
 
 
 def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
@@ -105,7 +104,7 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
         If size mismatches detected or input a is not square.
     LinAlgError
         If the matrix is singular.
-    RuntimeWarning
+    LinAlgWarning
         If an ill-conditioned input a is detected.
     NotImplementedError
         If transposed is True and input a is a complex matrix.
@@ -175,9 +174,9 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
 
     # Deprecate keyword "debug"
     if debug is not None:
-        warnings.warn('Use of the "debug" keyword is deprecated '
-                      'and this keyword will be removed in future '
-                      'versions of SciPy.', DeprecationWarning)
+        warn('Use of the "debug" keyword is deprecated '
+             'and this keyword will be removed in future '
+             'versions of SciPy.', DeprecationWarning, stacklevel=2)
 
     # Get the correct lamch function.
     # The LAMCH functions only exists for S and D
@@ -221,8 +220,8 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
         rcond, info = gecon(lu, anorm, norm=norm)
     # Hermitian case 'hesv'
     elif assume_a == 'her':
-        hecon, hesv, hesv_lw = get_lapack_funcs(('hecon', 'hesv', 'hesv_lwork'),
-                                                (a1, b1))
+        hecon, hesv, hesv_lw = get_lapack_funcs(('hecon', 'hesv',
+                                                 'hesv_lwork'), (a1, b1))
         lwork = _compute_lwork(hesv_lw, n, lower)
         lu, ipvt, x, info = hesv(a1, b1, lwork=lwork,
                                  lower=lower,
@@ -232,8 +231,8 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
         rcond, info = hecon(lu, ipvt, anorm)
     # Symmetric case 'sysv'
     elif assume_a == 'sym':
-        sycon, sysv, sysv_lw = get_lapack_funcs(('sycon', 'sysv', 'sysv_lwork'),
-                                                (a1, b1))
+        sycon, sysv, sysv_lw = get_lapack_funcs(('sycon', 'sysv',
+                                                 'sysv_lwork'), (a1, b1))
         lwork = _compute_lwork(sysv_lw, n, lower)
         lu, ipvt, x, info = sysv(a1, b1, lwork=lwork,
                                  lower=lower,
@@ -329,9 +328,9 @@ def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
 
     # Deprecate keyword "debug"
     if debug is not None:
-        warnings.warn('Use of the "debug" keyword is deprecated '
-                      'and this keyword will be removed in the future '
-                      'versions of SciPy.', DeprecationWarning)
+        warn('Use of the "debug" keyword is deprecated '
+             'and this keyword will be removed in the future '
+             'versions of SciPy.', DeprecationWarning, stacklevel=2)
 
     a1 = _asarray_validated(a, check_finite=check_finite)
     b1 = _asarray_validated(b, check_finite=check_finite)
@@ -427,9 +426,9 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
 
     # Deprecate keyword "debug"
     if debug is not None:
-        warnings.warn('Use of the "debug" keyword is deprecated '
-                      'and this keyword will be removed in the future '
-                      'versions of SciPy.', DeprecationWarning)
+        warn('Use of the "debug" keyword is deprecated '
+             'and this keyword will be removed in the future '
+             'versions of SciPy.', DeprecationWarning, stacklevel=2)
 
     a1 = _asarray_validated(ab, check_finite=check_finite, as_inexact=True)
     b1 = _asarray_validated(b, check_finite=check_finite, as_inexact=True)
@@ -948,7 +947,7 @@ def inv(a, overwrite_a=False, check_finite=True):
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError('expected square matrix')
     overwrite_a = overwrite_a or _datacopied(a1, a)
-    #XXX: I found no advantage or disadvantage of using finv.
+    # XXX: I found no advantage or disadvantage of using finv.
 #     finv, = get_flinalg_funcs(('inv',),(a1,))
 #     if finv is not None:
 #         a_inv,info = finv(a1,overwrite_a=overwrite_a)
@@ -1223,7 +1222,7 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
                         # restart with gelss
                         lstsq.default_lapack_driver = 'gelss'
                         mesg += "Falling back to 'gelss' driver."
-                        warnings.warn(mesg, RuntimeWarning)
+                        warn(mesg, RuntimeWarning, stacklevel=2)
                         return lstsq(a, b, cond, overwrite_a, overwrite_b,
                                      check_finite, lapack_driver='gelss')
 
@@ -1264,6 +1263,8 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
             x1 = x[:n]
             x = x1
         return x, np.array([], x.dtype), rank, None
+
+
 lstsq.default_lapack_driver = 'gelsd'
 
 

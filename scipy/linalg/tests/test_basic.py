@@ -24,7 +24,7 @@ from scipy._lib._numpy_compat import suppress_warnings
 from scipy.linalg import (solve, inv, det, lstsq, pinv, pinv2, pinvh, norm,
                           solve_banded, solveh_banded, solve_triangular,
                           solve_circulant, circulant, LinAlgError, block_diag,
-                          matrix_balance)
+                          matrix_balance, LinAlgWarning)
 
 from scipy.linalg.basic import LstsqLapackError
 from scipy.linalg._testutils import assert_no_overwrite
@@ -713,7 +713,7 @@ class TestSolve(object):
         b = np.ones(2)
         with warnings.catch_warnings():
             warnings.simplefilter('error')
-            assert_raises(RuntimeWarning, solve, a, b)
+            assert_raises(LinAlgWarning, solve, a, b)
 
     def test_empty_rhs(self):
         a = np.eye(2)
