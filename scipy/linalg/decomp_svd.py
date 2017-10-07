@@ -10,7 +10,7 @@ from .lapack import get_lapack_funcs, _compute_lwork
 from .decomp import _asarray_validated
 from scipy._lib.six import string_types
 
-__all__ = ['svd', 'svdvals', 'diagsvd', 'orth', 'subspace_angles']
+__all__ = ['svd', 'svdvals', 'diagsvd', 'orth', 'subspace_angles', 'null_space']
 
 
 def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
@@ -264,7 +264,7 @@ def diagsvd(s, M, N):
 
 # Orthonormal decomposition
 
-def orth(A):
+def orth(A, rcond=None):
     """
     Construct an orthonormal basis for the range of A using SVD
 
@@ -272,24 +272,65 @@ def orth(A):
     ----------
     A : (M, N) array_like
         Input array
+    rcond : float, optional
+        Relative condition number. Singular values ``s`` smaller than
+        ``rcond * max(s)`` are considered zero.
+        Default: floating point eps * max(M,N).
 
     Returns
     -------
     Q : (M, K) ndarray
         Orthonormal basis for the range of A.
-        K = effective rank of A, as determined by automatic cutoff
+        K = effective rank of A, as determined by rcond
 
     See also
     --------
     svd : Singular value decomposition of a matrix
+    null_space : Matrix null space
 
     """
     u, s, vh = svd(A, full_matrices=False)
-    M, N = A.shape
-    eps = numpy.finfo(float).eps
-    tol = max(M, N) * numpy.amax(s) * eps
+    M, N = u.shape[0], vh.shape[1]
+    if rcond is None:
+        rcond = numpy.finfo(float).eps * max(M, N)
+    tol = numpy.amax(s) * rcond
     num = numpy.sum(s > tol, dtype=int)
     Q = u[:, :num]
+    return Q
+
+
+def null_space(A, rcond=None):
+    """
+    Construct an orthonormal basis for the null space of A using SVD
+
+    Parameters
+    ----------
+    A : (M, N) array_like
+        Input array
+    rcond : float, optional
+        Relative condition number. Singular values ``s`` smaller than
+        ``rcond * max(s)`` are considered zero.
+        Default: floating point eps * max(M,N).
+
+    Returns
+    -------
+    Q : (M, K) ndarray
+        Orthonormal basis for the null space of A.
+        K = effective rank of A, as determined by rcond
+
+    See also
+    --------
+    svd : Singular value decomposition of a matrix
+    orth : Matrix range
+
+    """
+    u, s, vh = svd(A, full_matrices=True)
+    M, N = u.shape[0], vh.shape[1]
+    if rcond is None:
+        rcond = numpy.finfo(float).eps * max(M, N)
+    tol = numpy.amax(s) * rcond
+    num = numpy.sum(s > tol, dtype=int)
+    Q = vh[num:,:].T.conj()
     return Q
 
 
