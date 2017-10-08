@@ -1616,7 +1616,15 @@ def main():
     if len(args) != 0:
         p.error('invalid number of arguments')
 
-    src_files = (os.path.abspath(__file__),)
+    src_files = set()
+    for line in FUNCS.split('\n'):
+        if line:
+            src = [s.strip() for s in line.split('--')[2].split(',')]
+            src = [s for s in src if '.pxd' in s]
+            src_files.update(src)
+    src_files.add(os.path.abspath(__file__))
+    src_files = list(src_files)
+
     dst_files = ('_ufuncs.pyx',
                  '_ufuncs_defs.h',
                  '_ufuncs_cxx.pyx',
