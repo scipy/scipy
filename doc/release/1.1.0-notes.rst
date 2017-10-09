@@ -21,6 +21,13 @@ This release requires Python 2.7 or 3.4+ and NumPy 1.8.1 or greater.
 New features
 ============
 
+`scipy.linalg` improvements
+----------------------------
+
+The function `scipy.linalg.ldl` has been added for factorization of
+indefinite symmetric/hermitian matrices into triangular and block
+diagonal matrices.
+
 
 Deprecated features
 ===================

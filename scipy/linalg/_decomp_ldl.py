@@ -1,4 +1,4 @@
-from __future__ import division, absolute_import
+from __future__ import division, print_function, absolute_import
 
 from warnings import warn
 
@@ -18,31 +18,33 @@ def ldl(A, lower=True, hermitian=True, overwrite_a=False, check_finite=True):
     This function returns a block diagonal matrix D consisting blocks of size
     at most 2x2 and also a possibly permuted unit lower triangular matrix
     ``L`` such that the factorization ``A = L D L^H`` or ``A = L D L^T``
-    holds.
+    holds. If ``lower`` is False then (again possibly permuted) upper
+    triangular matrices are returned as outer factors.
+
+    The permutation array can be used to triangularize the outer factors
+    simply by a row shuffle, i.e., ``lu[perm, :]`` is an upper/lower
+    triangular matrix. This is also equivalent to multiplication with a
+    permutation matrix ``P.dot(lu)`` where ``P`` is a column-permuted
+    identity matrix ``I[:, perm]``.
 
     Depending on the value of the boolean ``lower``, only upper or lower
     triangular part of the input array is referenced. Hence a triangular
     matrix on entry would give the same result as if the full matrix is
     supplied.
 
-    The permutation array can be used to triangulize the outer factors simply
-    by a row shuffle, i.e., ``lu[perm, :]`` is an upper/lower triangular
-    matrix. This is also equivalent to multiplication with a permutation
-    matrix ``P.dot(lu)`` where ``P`` is an identity matrix permuted by
-    ``perm``.
-
     Parameters
     ----------
-    A : array_like
+    a : array_like
         Square input array
     lower : bool, optional
         This switches between the lower and upper triangular outer factors of
         the factorization. Lower triangular (``lower=True``) is the default.
     hermitian : bool, optional
-        In case the input matrix is complex valued, by setting this keyword
-        to False, the matrix is assumed to be only symmetric and not hermitian.
+        For complex-valued arrays, this defines whether ``a = a.conj().T`` or
+        ``a = a.T`` is assumed. For real-valued arrays, this switch has no
+        effect.
     overwrite_a : bool, optional
-        Allow overwriting data in `a` (may enhance performance). The default
+        Allow overwriting data in ``a`` (may enhance performance). The default
         is False.
     check_finite : bool, optional
         Whether to check that the input matrices contain only finite numbers.
@@ -57,7 +59,7 @@ def ldl(A, lower=True, hermitian=True, overwrite_a=False, check_finite=True):
     d : ndarray
         The block diagonal multiplier of the factorization.
     perm : ndarray
-        The permutation index array that brings lu into triangular form.
+        The row-permutation index array that brings lu into triangular form.
 
     Raises
     ------
@@ -65,7 +67,7 @@ def ldl(A, lower=True, hermitian=True, overwrite_a=False, check_finite=True):
         If input array is not square.
     ComplexWarning
         If a complex-valued array with nonzero imaginary parts on the
-        diagonal is given and hermitian is still True.
+        diagonal is given and hermitian is set to True.
 
     Examples
     --------
@@ -97,10 +99,9 @@ def ldl(A, lower=True, hermitian=True, overwrite_a=False, check_finite=True):
 
     Notes
     -----
-    LAPACK's ?SYTRF and, if an Hermitian matrix is factorized, ?HETRF
-    routines are used. See [1]_ for the algorithm details. If ``hermitian``
-    is set, instead of hermitian solvers (C/Z)HETRF, symmetric solvers
-    (C/Z)SYTRF are selected.
+    This function uses ``?SYTRF`` routines for symmetric matrices and
+    ``?HETRF`` routines for Hermitian matrices from LAPACK. See [1]_ for
+    the algorithm details.
 
     Depending on the ``lower`` keyword value, only lower or upper triangular
     part of the input array is referenced. Moreover, this keyword also defines
@@ -121,7 +122,7 @@ def ldl(A, lower=True, hermitian=True, overwrite_a=False, check_finite=True):
     """
     a = atleast_2d(_asarray_validated(A, check_finite=check_finite))
     if a.shape[0] != a.shape[1]:
-        raise ValueError('The input matrix should be square.')
+        raise ValueError('The input array "a" should be square.')
     # Return empty arrays for empty square input
     if a.size == 0:
         return empty_like(a), empty_like(a), np.array([], dtype=int)
@@ -133,10 +134,9 @@ def ldl(A, lower=True, hermitian=True, overwrite_a=False, check_finite=True):
     if r_or_c is complex and hermitian:
         s, sl = 'hetrf', 'hetrf_lwork'
         if np.any(imag(diag(a))):
-            warn('The imaginary parts of the diagonal are ignored for the'
-                 ' hermitian decomposition. Use "hermitian=False" for'
-                 ' factorization of complex symmetric arrays.',
-                 ComplexWarning)
+            warn('scipy.linalg.ldl():\nThe imaginary parts of the diagonal'
+                 'are ignored. Use "hermitian=False" for factorization of'
+                 'complex symmetric arrays.', ComplexWarning, stacklevel=2)
     else:
         s, sl = 'sytrf', 'sytrf_lwork'
 
@@ -184,7 +184,8 @@ def _ldl_sanitize_ipiv(a, lower=True):
     In other words, we write 2 when the 2x2 block is first encountered and
     automatically write 0 to the next entry and skip the next spin of the
     loop. Thus, a separate counter or array appends to keep track of block
-    sizes are avoided. Zeros can be removed much easier instead.
+    sizes are avoided. If needed, zeros can be filtered out later without
+    loosing the block structure.
 
     Parameters
     ----------
@@ -199,6 +200,8 @@ def _ldl_sanitize_ipiv(a, lower=True):
     swap_ : ndarray
         The array that defines the row/column swap operations. For example,
         if row two is swapped with row four, the result is [0, 3, 2, 3].
+    pivots : ndarray
+        The array that defines the block diagonal structure as given above.
 
     """
     n = a.size
@@ -252,6 +255,8 @@ def _ldl_get_d_and_l(ldu, pivs, lower=True, hermitian=True):
         every 2 there is a succeeding 0.
     lower : bool, optional
         If set to False, upper triangular part is considered.
+    hermitian : bool, optional
+        If set to False a symmetric complex array is assumed.
 
     Returns
     -------
@@ -278,15 +283,15 @@ def _ldl_get_d_and_l(ldu, pivs, lower=True, hermitian=True):
         inc = blk_i + blk
 
         if blk == 2:
-            # If Hermitian matrix is factorized, the offdiagonal
+            d[blk_i+x, blk_i+y] = ldu[blk_i+x, blk_i+y]
+            # If Hermitian matrix is factorized, the cross-offdiagonal element
             # should be conjugated.
             if is_c and hermitian:
-                d[[blk_i+x, blk_i+y], [blk_i+y, blk_i+x]] = [
-                    ldu[blk_i+x, blk_i+y], ldu[blk_i+x, blk_i+y].conj()]
+                d[blk_i+y, blk_i+x] = ldu[blk_i+x, blk_i+y].conj()
             else:
-                d[[blk_i+x, blk_i+y], [blk_i+y, blk_i+x]] = \
-                                                        ldu[blk_i+x, blk_i+y]
-            lu[blk_i+x, blk_i+y] = 0
+                d[blk_i+y, blk_i+x] = ldu[blk_i+x, blk_i+y]
+
+            lu[blk_i+x, blk_i+y] = 0.
         blk_i = inc
 
     return d, lu
@@ -309,6 +314,9 @@ def _ldl_construct_tri_factor(lu, swap_vec, pivs, lower=True):
         The array that defines the row swapping indices. If k'th entry is m
         then rows k,m are swapped. Notice that m'th entry is not necessarily
         k to avoid undoing the swapping.
+    pivs : ndarray
+        The array that defines the block diagonal structure returned by
+        _ldl_sanitize_ipiv().
     lower : bool, optional
         The boolean to switch between lower and upper triangular structure.
 
