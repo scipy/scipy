@@ -22,6 +22,7 @@ def configuration(parent_package='', top_path=None):
     if inc_dirs[0] != get_python_inc(plat_specific=1):
         inc_dirs.append(get_python_inc(plat_specific=1))
     inc_dirs.append(get_numpy_include_dirs())
+    inc_dirs.append(join(dirname(dirname(__file__)), '_lib'))
 
     cfg = dict(get_sys_info('lapack_opt'))
     cfg.setdefault('include_dirs', []).extend(inc_dirs)
