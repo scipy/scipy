@@ -25,7 +25,7 @@
 #include "trlib.h"
 #include "trlib_private.h"
 
-#include "fmax.h"
+#include "_c99compat.h"
 
 trlib_int_t trlib_eigen_inverse(
         trlib_int_t n, trlib_flt_t *diag, trlib_flt_t *offdiag, 

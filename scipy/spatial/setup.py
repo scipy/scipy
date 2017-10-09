@@ -22,6 +22,7 @@ def configuration(parent_package='', top_path=None):
     if inc_dirs[0] != get_python_inc(plat_specific=1):
         inc_dirs.append(get_python_inc(plat_specific=1))
     inc_dirs.append(get_numpy_include_dirs())
+    inc_dirs.append(join(dirname(dirname(__file__)), '_lib'))
 
     cfg = dict(get_sys_info('lapack_opt'))
     cfg.setdefault('include_dirs', []).extend(inc_dirs)
@@ -38,8 +39,7 @@ def configuration(parent_package='', top_path=None):
                    'count_neighbors.cxx',
                    'query_ball_point.cxx',
                    'query_ball_tree.cxx',
-                   'sparse_distances.cxx',
-                   'fmax.cxx']
+                   'sparse_distances.cxx']
 
     ckdtree_src = [join('ckdtree', 'src', x) for x in ckdtree_src]
 
@@ -50,7 +50,6 @@ def configuration(parent_package='', top_path=None):
                        'cpp_utils.h',
                        'distance_base.h',
                        'distance.h',
-                       'fmax.h',
                        'ordered_pair.h',
                        'partial_sort.h',
                        'rectangle.h']
