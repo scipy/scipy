@@ -517,7 +517,8 @@ class Checker(doctest.OutputChecker):
     stopwords = {'plt.', '.hist', '.show', '.ylim', '.subplot(',
                  'set_title', 'imshow', 'plt.show', 'ax.axis', 'plt.plot(',
                  '.bar(', '.title', '.ylabel', '.xlabel', 'set_ylim', 'set_xlim',
-                 '# reformatted'}
+                 '# reformatted', '.set_xlabel(', '.set_ylabel(', '.set_zlabel(',
+                 '.set(xlim=', '.set(ylim=', '.set(xlabel=', '.set(ylabel='}
 
     def __init__(self, parse_namedtuples=True, ns=None, atol=1e-8, rtol=1e-2):
         self.parse_namedtuples = parse_namedtuples
