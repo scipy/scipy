@@ -392,8 +392,11 @@ def _quad(func,a,b,args,full_output,epsabs,epsrel,limit,points):
         if infbounds != 0:
             raise ValueError("Infinity inputs cannot be used with break points.")
         else:
-            the_points = set(p for p in points if a < p < b)
-            the_points = numpy.array(list(the_points)+[0,0], float)
+            #Duplicates force function evaluation at sinular points
+            the_points = numpy.unique(points)
+            the_points = the_points[a < the_points]
+            the_points = the_points[the_points < b]
+            the_points = numpy.concatenate( (the_points, (0., 0.)) )
             return _quadpack._qagpe(func,a,b,the_points,args,full_output,epsabs,epsrel,limit)
 
 
