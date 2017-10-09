@@ -67,8 +67,8 @@
  * Copyright 1984, 1987, 1992, 2000 by Stephen L. Moshier
  */
 
-#include "mconf.h"
 #include "_c99compat.h"
+#include "mconf.h"
 #include <stdlib.h>
 #include "_c99compat.h"
 
