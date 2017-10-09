@@ -68,7 +68,7 @@
  */
 
 #include "mconf.h"
-#include "fmax.h"
+#include "_c99compat.h"
 #include <stdlib.h>
 #include "_c99compat.h"
 
