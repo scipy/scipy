@@ -22,6 +22,10 @@ template<typename T>
 static void CGENERIC_filt(char *b, char *a, char *x, char *y, char *Z,
                         intp len_b, uintp len_x, intp stride_X,
                         intp stride_Y);
+template<>
+static void GENERIC_filt<PyObject>(char *b, char *a, char *x, char *y, char *Z,
+                        intp len_b, uintp len_x, intp stride_X,
+                        intp stride_Y);
 
 typedef void (BasicFilterFunction) (char *, char *,  char *, char *, char *, intp, uintp, intp, intp);
 
@@ -197,7 +201,7 @@ scipy_signal_sigtools_linear_filter(PyObject * NPY_UNUSED(dummy), PyObject * arg
     if (azero == NULL) {
         goto fail;
     }
-    ara_ptr = PyArray_DATA(ara);
+    ara_ptr = (char *)PyArray_DATA(ara);
     nal = PyArray_ITEMSIZE(ara);
     st = memcmp(ara_ptr, azero, nal);
     PyDataMem_FREE(azero);
@@ -270,7 +274,7 @@ scipy_signal_sigtools_linear_filter(PyObject * NPY_UNUSED(dummy), PyObject * arg
             }
             /* Give our reference to arVi to arVi_view */
 #if NPY_API_VERSION >= 0x00000007
-            if (PyArray_SetBaseObject(arVi_view, arVi) == -1) {
+            if (PyArray_SetBaseObject(arVi_view, (PyObject *)arVi) == -1) {
                 Py_DECREF(arVi_view);
                 goto fail;
             }
@@ -415,12 +419,12 @@ RawFilter(const PyArrayObject * b, const PyArrayObject * a,
 
     nfilt = na > nb ? na : nb;
 
-    azfilled = malloc(nal * nfilt);
+    azfilled = (char *)malloc(nal * nfilt);
     if (azfilled == NULL) {
         PyErr_SetString(PyExc_MemoryError, "Could not create azfilled");
         goto clean_itzf;
     }
-    bzfilled = malloc(nbl * nfilt);
+    bzfilled = (char *)malloc(nbl * nfilt);
     if (bzfilled == NULL) {
         PyErr_SetString(PyExc_MemoryError, "Could not create bzfilled");
         goto clean_azfilled;
@@ -536,8 +540,8 @@ static void GENERIC_filt(char *b, char *a, char *x, char *y, char *Z,
 {
     char *ptr_x = x, *ptr_y = y;
     T *ptr_Z;
-    T *ptr_b = (@type@*)b;
-    T *ptr_a = (@type@*)a;
+    T *ptr_b = (T*)b;
+    T *ptr_a = (T*)a;
     T *xn, *yn;
     const T a0 = *((T *) a);
     intp n;
@@ -587,8 +591,8 @@ static void CGENERIC_filt(char *b, char *a, char *x, char *y, char *Z,
     T *ptr_Z, *ptr_b;
     T *ptr_a;
     T *xn, *yn;
-    T a0r = ((@type@ *) a)[0];
-    T a0i = ((@type@ *) a)[1];
+    T a0r = ((T *) a)[0];
+    T a0i = ((T *) a)[1];
     T a0_mag, tmpr, tmpi;
     intp n;
     uintp k;
