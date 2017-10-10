@@ -1344,7 +1344,7 @@ def lfilter(b, a, x, axis=-1, zi=None):
     else:
         for input in [b, a, x]:
             if isinstance(input, np.ndarray) and \
-                    input.dtype.char not in 'fdgFDGO':
+                    np.result_type(input).char not in 'fdgFDGO':
                 raise NotImplementedError(
                     "input type '%s' not supported" % dtype)
 
