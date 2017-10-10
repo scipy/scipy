@@ -236,7 +236,7 @@ def unique(mat, return_indices=False, return_inverse=False, return_counts=False)
     mat = mat.tocsr()
     size = mat.shape[0] * mat.shape[1]  # mat.size just gives nnz
 
-    unique_data = np.unique(mat.data, return_indices, return_inverse,
+    unique_data = np.unique(mat._deduped_data(), return_indices, return_inverse,
                             return_counts)
 
     # If there are no zeros, we can just pretend we're operating on a normal
