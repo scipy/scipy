@@ -93,7 +93,7 @@ def configuration(parent_package='',top_path=None):
     config.add_extension('_ufuncs_cxx',
                          sources=ufuncs_cxx_src,
                          depends=ufuncs_cxx_dep,
-                         include_dirs=[curdir],
+                         include_dirs=[curdir] + inc_dirs,
                          define_macros=define_macros,
                          extra_info=get_info("npymath"))
 
