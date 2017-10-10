@@ -314,6 +314,19 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
        #(1.3333333333333333, 1.4802973661668752e-14)
        print((1.0**3/3.0 + 1.0) - (0.0**3/3.0 + 0.0)) #Analytic result
        # 1.3333333333333333
+    
+    Be aware that pulse shapes and other sharp features may not be integrated
+    correctly using this method. A simplified example of this limitation is
+    integrating a y-axis reflected step function with many zero values within
+    the integrals bounds.
+    
+    >>> y = lambda x: 1 if x<=0 else 0
+    >>> integrate.quad(y, -1, 1)
+    (1.0, 1.1102230246251565e-14)
+    >>> integrate.quad(y, -1, 100)
+    (1.0000000002199108, 1.0189464580163188e-08)
+    >>> integrate.quad(y, -1, 10000)
+    (0.0, 0.0) 
 
     """
     if not isinstance(args, tuple):
