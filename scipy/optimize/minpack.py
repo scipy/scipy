@@ -16,7 +16,7 @@ from ._lsq import least_squares
 from ._lsq.common import make_strictly_feasible
 from ._lsq.least_squares import prepare_bounds
 
-_MINPACK_LOCK = threading.Lock()
+_MINPACK_LOCK = threading.RLock()
 error = _minpack.error
 
 __all__ = ['fsolve', 'leastsq', 'fixed_point', 'curve_fit']
