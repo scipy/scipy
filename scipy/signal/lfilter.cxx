@@ -31,7 +31,7 @@ typedef void (BasicFilterFunction) (char *, char *,  char *, char *, char *, int
 
 static BasicFilterFunction *BasicFilterFunctions[256];
 
-void
+extern "C" void
 scipy_signal_sigtools_linear_filter_module_init(void)
 {
     int k;
@@ -117,7 +117,7 @@ convert_shape_to_errmsg(intp ndim, intp *Xshape, intp *Vishape, intp theaxis, in
 /*
  * XXX: Error checking not done yet
  */
-PyObject*
+extern "C" PyObject*
 scipy_signal_sigtools_linear_filter(PyObject * NPY_UNUSED(dummy), PyObject * args)
 {
     PyObject *b, *a, *X, *Vi;
