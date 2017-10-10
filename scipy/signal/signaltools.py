@@ -1342,6 +1342,11 @@ def lfilter(b, a, x, axis=-1, zi=None):
             zf = out_full[ind]
             return out, zf
     else:
+        if isinstance(x, np.ndarray) and \
+                np.result_type(x).char not in 'fdgFDGO':
+            raise NotImplementedError(
+                "input type '%s' not supported" % np.result_type(x))
+
         if zi is None:
             return sigtools._linear_filter(b, a, x, axis)
         else:
