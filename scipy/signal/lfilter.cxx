@@ -14,25 +14,12 @@
 
 #include "sigtools.h"
 
-static void FLOAT_filt(char *b, char *a, char *x, char *y, char *Z,
+template<typename T>
+static void GENERIC_filt(char *b, char *a, char *x, char *y, char *Z,
                        intp len_b, uintp len_x, intp stride_X,
                        intp stride_Y);
-static void DOUBLE_filt(char *b, char *a, char *x, char *y, char *Z,
-                        intp len_b, uintp len_x, intp stride_X,
-                        intp stride_Y);
-static void EXTENDED_filt(char *b, char *a, char *x, char *y, char *Z,
-                        intp len_b, uintp len_x, intp stride_X,
-                        intp stride_Y);
-static void CFLOAT_filt(char *b, char *a, char *x, char *y, char *Z,
-                        intp len_b, uintp len_x, intp stride_X,
-                        intp stride_Y);
-static void CDOUBLE_filt(char *b, char *a, char *x, char *y, char *Z,
-                         intp len_b, uintp len_x, intp stride_X,
-                         intp stride_Y);
-static void CEXTENDED_filt(char *b, char *a, char *x, char *y, char *Z,
-                         intp len_b, uintp len_x, intp stride_X,
-                         intp stride_Y);
-static void OBJECT_filt(char *b, char *a, char *x, char *y, char *Z,
+template<typename T>
+static void CGENERIC_filt(char *b, char *a, char *x, char *y, char *Z,
                         intp len_b, uintp len_x, intp stride_X,
                         intp stride_Y);
 
@@ -47,13 +34,13 @@ scipy_signal_sigtools_linear_filter_module_init(void)
     for (k = 0; k < 256; ++k) {
         BasicFilterFunctions[k] = NULL;
     }
-    BasicFilterFunctions[NPY_FLOAT] = FLOAT_filt;
-    BasicFilterFunctions[NPY_DOUBLE] = DOUBLE_filt;
-    BasicFilterFunctions[NPY_LONGDOUBLE] = EXTENDED_filt;
-    BasicFilterFunctions[NPY_CFLOAT] = CFLOAT_filt;
-    BasicFilterFunctions[NPY_CDOUBLE] = CDOUBLE_filt;
-    BasicFilterFunctions[NPY_CLONGDOUBLE] = CEXTENDED_filt;
-    BasicFilterFunctions[NPY_OBJECT] = OBJECT_filt;
+    BasicFilterFunctions[NPY_FLOAT] = GENERIC_filt<float>;
+    BasicFilterFunctions[NPY_DOUBLE] = GENERIC_filt<double>;
+    BasicFilterFunctions[NPY_LONGDOUBLE] = GENERIC_filt<npy_longdouble>;
+    BasicFilterFunctions[NPY_CFLOAT] = CGENERIC_filt<float>;
+    BasicFilterFunctions[NPY_CDOUBLE] = CGENERIC_filt<double>;
+    BasicFilterFunctions[NPY_CLONGDOUBLE] = CGENERIC_filt<npy_longdouble>;
+    BasicFilterFunctions[NPY_OBJECT] = GENERIC_filt<PyObject>;
 }
 
 /* There is the start of an OBJECT_filt, but it may need work */
@@ -542,20 +529,17 @@ fail:
  *   dimension of an N-D array.                                  *
  *****************************************************************/
 
-/**begin repeat
- * #type = float, double, npy_longdouble#
- * #NAME = FLOAT, DOUBLE, EXTENDED#
- */
-static void @NAME@_filt(char *b, char *a, char *x, char *y, char *Z,
+template<typename T>
+static void GENERIC_filt(char *b, char *a, char *x, char *y, char *Z,
                        intp len_b, uintp len_x, intp stride_X,
                        intp stride_Y)
 {
     char *ptr_x = x, *ptr_y = y;
-    @type@ *ptr_Z;
-    @type@ *ptr_b = (@type@*)b;
-    @type@ *ptr_a = (@type@*)a;
-    @type@ *xn, *yn;
-    const @type@ a0 = *((@type@ *) a);
+    T *ptr_Z;
+    T *ptr_b = (@type@*)b;
+    T *ptr_a = (@type@*)a;
+    T *xn, *yn;
+    const T a0 = *((T *) a);
     intp n;
     uintp k;
 
@@ -566,12 +550,12 @@ static void @NAME@_filt(char *b, char *a, char *x, char *y, char *Z,
     }
 
     for (k = 0; k < len_x; k++) {
-        ptr_b = (@type@ *) b;   /* Reset a and b pointers */
-        ptr_a = (@type@ *) a;
-        xn = (@type@ *) ptr_x;
-        yn = (@type@ *) ptr_y;
+        ptr_b = (T *) b;   /* Reset a and b pointers */
+        ptr_a = (T *) a;
+        xn = (T *) ptr_x;
+        yn = (T *) ptr_y;
         if (len_b > 1) {
-            ptr_Z = ((@type@ *) Z);
+            ptr_Z = ((T *) Z);
             *yn = *ptr_Z + *ptr_b  * *xn;   /* Calculate first delay (output) */
             ptr_b++;
             ptr_a++;
@@ -594,28 +578,29 @@ static void @NAME@_filt(char *b, char *a, char *x, char *y, char *Z,
     }
 }
 
-static void C@NAME@_filt(char *b, char *a, char *x, char *y, char *Z,
+template<typename T>
+static void CGENERIC_filt(char *b, char *a, char *x, char *y, char *Z,
                         intp len_b, uintp len_x, intp stride_X,
                         intp stride_Y)
 {
     char *ptr_x = x, *ptr_y = y;
-    @type@ *ptr_Z, *ptr_b;
-    @type@ *ptr_a;
-    @type@ *xn, *yn;
-    @type@ a0r = ((@type@ *) a)[0];
-    @type@ a0i = ((@type@ *) a)[1];
-    @type@ a0_mag, tmpr, tmpi;
+    T *ptr_Z, *ptr_b;
+    T *ptr_a;
+    T *xn, *yn;
+    T a0r = ((@type@ *) a)[0];
+    T a0i = ((@type@ *) a)[1];
+    T a0_mag, tmpr, tmpi;
     intp n;
     uintp k;
 
     a0_mag = a0r * a0r + a0i * a0i;
     for (k = 0; k < len_x; k++) {
-        ptr_b = (@type@ *) b;   /* Reset a and b pointers */
-        ptr_a = (@type@ *) a;
-        xn = (@type@ *) ptr_x;
-        yn = (@type@ *) ptr_y;
+        ptr_b = (T *) b;   /* Reset a and b pointers */
+        ptr_a = (T *) a;
+        xn = (T *) ptr_x;
+        yn = (T *) ptr_y;
         if (len_b > 1) {
-            ptr_Z = ((@type@ *) Z);
+            ptr_Z = ((T *) Z);
             tmpr = ptr_b[0] * a0r + ptr_b[1] * a0i;
             tmpi = ptr_b[1] * a0r - ptr_b[0] * a0i;
             /* Calculate first delay (output) */
@@ -661,9 +646,9 @@ static void C@NAME@_filt(char *b, char *a, char *x, char *y, char *Z,
 
     }
 }
-/**end repeat**/
 
-static void OBJECT_filt(char *b, char *a, char *x, char *y, char *Z,
+template<>
+static void GENERIC_filt<PyObject>(char *b, char *a, char *x, char *y, char *Z,
                         intp len_b, uintp len_x, intp stride_X,
                         intp stride_Y)
 {
