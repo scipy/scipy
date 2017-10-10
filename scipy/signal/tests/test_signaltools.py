@@ -1176,6 +1176,16 @@ class TestLinearFilterObject(_TestLinearFilter):
     type = float
 
 
+class TestLinearFilterObject(_TestLinearFilter):
+    dtype = np.dtype(np.int64)
+    type = int
+
+
+def test_lfilter_issue_7991():
+    # Test for a segmentation fault
+    lfilter([2,3], [4,5], [1,2,3,4,5])
+
+
 def test_lfilter_bad_object():
     # lfilter: object arrays with non-numeric objects raise TypeError.
     # Regression test for ticket #1452.
