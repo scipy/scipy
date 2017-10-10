@@ -67,11 +67,9 @@
  * Copyright 1984, 1987, 1992, 2000 by Stephen L. Moshier
  */
 
+#include "_c99compat.h"
 #include "mconf.h"
 #include <stdlib.h>
-#include "_c99compat.h"
-
-#undef fmax  // "fmax" appears to be defined above as an external symbol
 #include "_c99compat.h"
 
 #define EPS 1.0e-13
