@@ -431,7 +431,7 @@ RawFilter(const PyArrayObject * b, const PyArrayObject * a,
     }
 
     nxl = PyArray_ITEMSIZE(x);
-    zfzfilled = malloc(nxl * (nfilt - 1));
+    zfzfilled = (char *)malloc(nxl * (nfilt - 1));
     if (zfzfilled == NULL) {
         PyErr_SetString(PyExc_MemoryError, "Could not create zfzfilled");
         goto clean_bzfilled;
