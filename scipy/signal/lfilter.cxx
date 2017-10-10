@@ -18,15 +18,15 @@ extern "C"
 }
 
 template<typename T>
-static void GENERIC_filt(char *b, char *a, char *x, char *y, char *Z,
+void GENERIC_filt(char *b, char *a, char *x, char *y, char *Z,
                        intp len_b, uintp len_x, intp stride_X,
                        intp stride_Y);
 template<typename T>
-static void CGENERIC_filt(char *b, char *a, char *x, char *y, char *Z,
+void CGENERIC_filt(char *b, char *a, char *x, char *y, char *Z,
                         intp len_b, uintp len_x, intp stride_X,
                         intp stride_Y);
 template<>
-static void GENERIC_filt<PyObject>(char *b, char *a, char *x, char *y, char *Z,
+void GENERIC_filt<PyObject>(char *b, char *a, char *x, char *y, char *Z,
                         intp len_b, uintp len_x, intp stride_X,
                         intp stride_Y);
 
@@ -537,7 +537,7 @@ fail:
  *****************************************************************/
 
 template<typename T>
-static void GENERIC_filt(char *b, char *a, char *x, char *y, char *Z,
+void GENERIC_filt(char *b, char *a, char *x, char *y, char *Z,
                        intp len_b, uintp len_x, intp stride_X,
                        intp stride_Y)
 {
@@ -586,7 +586,7 @@ static void GENERIC_filt(char *b, char *a, char *x, char *y, char *Z,
 }
 
 template<typename T>
-static void CGENERIC_filt(char *b, char *a, char *x, char *y, char *Z,
+void CGENERIC_filt(char *b, char *a, char *x, char *y, char *Z,
                         intp len_b, uintp len_x, intp stride_X,
                         intp stride_Y)
 {
@@ -655,7 +655,7 @@ static void CGENERIC_filt(char *b, char *a, char *x, char *y, char *Z,
 }
 
 template<>
-static void GENERIC_filt<PyObject>(char *b, char *a, char *x, char *y, char *Z,
+void GENERIC_filt<PyObject>(char *b, char *a, char *x, char *y, char *Z,
                         intp len_b, uintp len_x, intp stride_X,
                         intp stride_Y)
 {
