@@ -52,21 +52,21 @@ def test_simple():
                [3.91-1.50j, -1.78-1.18j, 0.11-0.11j, -1.84+0.00j]])
     for x in (b, c, d):
         l, d, p = ldl(x)
-        assert_allclose(l.dot(d).dot(l.T), x, atol=spacing(10.))
+        assert_allclose(l.dot(d).dot(l.T), x, atol=spacing(1000.), rtol=0)
 
         u, d, p = ldl(x, lower=False)
-        assert_allclose(u.dot(d).dot(u.T), x, atol=spacing(10.))
+        assert_allclose(u.dot(d).dot(u.T), x, atol=spacing(1000.), rtol=0)
 
     l, d, p = ldl(a, hermitian=False)
-    assert_allclose(l.dot(d).dot(l.T), a, atol=spacing(10.))
+    assert_allclose(l.dot(d).dot(l.T), a, atol=spacing(1000.), rtol=0)
 
     u, d, p = ldl(a, lower=False, hermitian=False)
-    assert_allclose(u.dot(d).dot(u.T), a, atol=spacing(10.))
+    assert_allclose(u.dot(d).dot(u.T), a, atol=spacing(1000.), rtol=0)
 
     # Use upper part for the computation and use the lower part for comparison
     l, d, p = ldl(e.conj().T, lower=0)
     assert_allclose(tril(l.dot(d).dot(l.conj().T)-e), zeros((4, 4)),
-                    atol=spacing(10.))
+                    atol=spacing(1000.), rtol=0)
 
 
 def test_permutations():
