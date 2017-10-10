@@ -63,14 +63,16 @@ addons:
     - swig
     - libmpc-dev
 cache:
-  - ccache
   - pip
+  directories:
+    - $HOME/.ccache
 before_install:
   # Work in our own virtualenv to isolate from travis-ci packages.
   - echo $TRAVIS_OS_NAME
   - |
     if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
       free -m
+      export PATH=/usr/lib/ccache:$PATH
     elif [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
       brew install gcc ccache libmpc
       touch config.sh
