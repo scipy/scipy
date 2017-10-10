@@ -1176,11 +1176,13 @@ class TestLinearFilterObject(_TestLinearFilter):
     type = float
 
 
+@pytest.mark.xfail
 class TestLinearFilterInteger(_TestLinearFilter):
     dtype = np.dtype(np.int64)
     type = int
 
 
+@pytest.mark.xfail
 def test_lfilter_issue_7991():
     # Test for a segmentation fault
     lfilter([2,3], [4,5], [1,2,3,4,5])
