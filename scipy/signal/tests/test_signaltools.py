@@ -1176,7 +1176,7 @@ class TestLinearFilterObject(_TestLinearFilter):
     type = float
 
 
-class TestLinearFilterObject(_TestLinearFilter):
+class TestLinearFilterInteger(_TestLinearFilter):
     dtype = np.dtype(np.int64)
     type = int
 
