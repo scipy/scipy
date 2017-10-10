@@ -117,7 +117,6 @@ before_install:
       fi
     fi
   - if [ "${TESTMODE}" == "full" ]; then pip install pytest-cov coverage; fi
-  - if [ "${USE_WHEEL}" != "1" ]; then pip uninstall -y wheel; fi
   - |
     if [ "${REFGUIDE_CHECK}" == "1" ]; then
         travis_retry pip install matplotlib Sphinx==1.5.5
