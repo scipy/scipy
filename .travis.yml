@@ -63,9 +63,9 @@ addons:
     - swig
     - libmpc-dev
 cache:
-  - pip
   directories:
     - $HOME/.ccache
+    - $HOME/.cache/pip
 before_install:
   # Work in our own virtualenv to isolate from travis-ci packages.
   - echo $TRAVIS_OS_NAME
