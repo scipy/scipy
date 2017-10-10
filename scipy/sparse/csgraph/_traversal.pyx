@@ -71,6 +71,7 @@ def connected_components(csgraph, directed=True, connection='weak',
         directed = False
 
     csgraph = validate_graph(csgraph, directed,
+                             dtype=csgraph.dtype,
                              dense_output=False)
 
     labels = np.empty(csgraph.shape[0], dtype=ITYPE)
