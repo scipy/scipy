@@ -7,6 +7,7 @@
 #define NO_IMPORT_ARRAY
 #include <numpy/noprefix.h>
 #include <numpy/npy_3kcompat.h>
+#include <complex>
 
 #if PY_VERSION_HEX >= 0x03000000
 #define PyNumber_Divide PyNumber_TrueDivide
@@ -18,15 +19,15 @@ extern "C"
 }
 
 template<typename T>
-void GENERIC_filt(char *b, char *a, char *x, char *y, char *Z,
+void filt(char *b, char *a, char *x, char *y, char *Z,
                        intp len_b, uintp len_x, intp stride_X,
                        intp stride_Y);
 template<typename T>
-void CGENERIC_filt(char *b, char *a, char *x, char *y, char *Z,
+void filt<std::complex<T>>(char *b, char *a, char *x, char *y, char *Z,
                         intp len_b, uintp len_x, intp stride_X,
                         intp stride_Y);
 template<>
-void GENERIC_filt<PyObject>(char *b, char *a, char *x, char *y, char *Z,
+void filt<PyObject>(char *b, char *a, char *x, char *y, char *Z,
                         intp len_b, uintp len_x, intp stride_X,
                         intp stride_Y);
 
@@ -41,13 +42,13 @@ scipy_signal_sigtools_linear_filter_module_init(void)
     for (k = 0; k < 256; ++k) {
         BasicFilterFunctions[k] = NULL;
     }
-    BasicFilterFunctions[NPY_FLOAT] = GENERIC_filt<float>;
-    BasicFilterFunctions[NPY_DOUBLE] = GENERIC_filt<double>;
-    BasicFilterFunctions[NPY_LONGDOUBLE] = GENERIC_filt<npy_longdouble>;
-    BasicFilterFunctions[NPY_CFLOAT] = CGENERIC_filt<float>;
-    BasicFilterFunctions[NPY_CDOUBLE] = CGENERIC_filt<double>;
-    BasicFilterFunctions[NPY_CLONGDOUBLE] = CGENERIC_filt<npy_longdouble>;
-    BasicFilterFunctions[NPY_OBJECT] = GENERIC_filt<PyObject>;
+    BasicFilterFunctions[NPY_FLOAT] = filt<float>;
+    BasicFilterFunctions[NPY_DOUBLE] = filt<double>;
+    BasicFilterFunctions[NPY_LONGDOUBLE] = filt<npy_longdouble>;
+    BasicFilterFunctions[NPY_CFLOAT] = filt<std::complex<float>>;
+    BasicFilterFunctions[NPY_CDOUBLE] = filt<std::complex<double>>;
+    BasicFilterFunctions[NPY_CLONGDOUBLE] = filt<std::complex<npy_longdouble>>;
+    BasicFilterFunctions[NPY_OBJECT] = filt<PyObject>;
 }
 
 /* There is the start of an OBJECT_filt, but it may need work */
@@ -537,7 +538,7 @@ fail:
  *****************************************************************/
 
 template<typename T>
-void GENERIC_filt(char *b, char *a, char *x, char *y, char *Z,
+void filt(char *b, char *a, char *x, char *y, char *Z,
                        intp len_b, uintp len_x, intp stride_X,
                        intp stride_Y)
 {
@@ -586,7 +587,7 @@ void GENERIC_filt(char *b, char *a, char *x, char *y, char *Z,
 }
 
 template<typename T>
-void CGENERIC_filt(char *b, char *a, char *x, char *y, char *Z,
+void filt<std::complex<T>>(char *b, char *a, char *x, char *y, char *Z,
                         intp len_b, uintp len_x, intp stride_X,
                         intp stride_Y)
 {
@@ -655,7 +656,7 @@ void CGENERIC_filt(char *b, char *a, char *x, char *y, char *Z,
 }
 
 template<>
-void GENERIC_filt<PyObject>(char *b, char *a, char *x, char *y, char *Z,
+void filt<PyObject>(char *b, char *a, char *x, char *y, char *Z,
                         intp len_b, uintp len_x, intp stride_X,
                         intp stride_Y)
 {
