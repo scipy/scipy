@@ -12,7 +12,10 @@
 #define PyNumber_Divide PyNumber_TrueDivide
 #endif
 
-#include "sigtools.h"
+extern "C"
+{
+    #include "sigtools.h"
+}
 
 template<typename T>
 static void GENERIC_filt(char *b, char *a, char *x, char *y, char *Z,
