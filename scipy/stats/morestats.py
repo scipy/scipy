@@ -1374,9 +1374,9 @@ def anderson(x, dist='norm'):
     Gumbel
         25%, 10%, 5%, 2.5%, 1%
 
-    If A2 is larger than these critical values then for the corresponding
-    significance level, the null hypothesis that the data come from the
-    chosen distribution can be rejected.
+    If the returned statistic is larger than these critical values then
+    for the corresponding significance level, the null hypothesis that
+    the data come from the chosen distribution can be rejected.
 
     References
     ----------
