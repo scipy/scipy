@@ -315,10 +315,11 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
        print((1.0**3/3.0 + 1.0) - (0.0**3/3.0 + 0.0)) #Analytic result
        # 1.3333333333333333
     
-    Be aware that pulse shapes and other sharp features may not be integrated
-    correctly using this method. A simplified example of this limitation is
-    integrating a y-axis reflected step function with many zero values within
-    the integrals bounds.
+    Be aware that pulse shapes and other sharp features as compared to the
+    size of the integration interval may not be integrated correctly using
+    this method. A simplified example of this limitation is integrating a
+    y-axis reflected step function with many zero values within the integrals
+    bounds.
     
     >>> y = lambda x: 1 if x<=0 else 0
     >>> integrate.quad(y, -1, 1)
