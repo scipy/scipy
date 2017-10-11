@@ -116,26 +116,30 @@
             #endif
     #endif
 
-    /* For compilers which aren't MSVC and haven't defined isnan */
-    #ifndef isnan
-        #define isnan(x) ((x) != (x))
-    #endif
+    #if (__STDC_VERSION__ < 199901L)
+        /* Hopefully fail in less cases */
 
-    #ifndef isfinite
-        #ifdef _MSC_VER
-            /* MSVC 2015 and newer still don't have everything */
-            #define isfinite(x) _finite((x))
-        #else
-            #define isfinite(x) !isnan((x) + (-x))
+        /* For compilers which aren't MSVC and haven't defined isnan */
+        #ifndef isnan
+            #define isnan(x) ((x) != (x))
         #endif
-    #endif
 
-    #ifndef isinf
-        #define isinf(x) (!isfinite(x) && !isnan(x))
-    #endif
+        #ifndef isfinite
+            #ifdef _MSC_VER
+                /* MSVC 2015 and newer still don't have everything */
+                #define isfinite(x) _finite((x))
+            #else
+                #define isfinite(x) !isnan((x) + (-x))
+            #endif
+        #endif
 
-    #ifndef fma
-        #define fma(x, y, z) ((x)*(y) + (z))
+        #ifndef isinf
+            #define isinf(x) (!isfinite(x) && !isnan(x))
+        #endif
+
+        #ifndef fma
+            #define fma(x, y, z) ((x)*(y) + (z))
+        #endif
     #endif
 
     /*
