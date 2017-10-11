@@ -107,11 +107,11 @@ def ldl(A, lower=True, hermitian=True, overwrite_a=False, check_finite=True):
     part of the input array is referenced. Moreover, this keyword also defines
     the structure of the outer factors of the factorization.
 
+    .. versionadded:: 1.1.0
+
     See also
     --------
     cholesky, lu
-
-    .. versionadded:: 1.1.0
 
     References
     ----------
