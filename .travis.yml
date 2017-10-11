@@ -66,6 +66,7 @@ cache:
   directories:
     - $HOME/.ccache
     - $HOME/.cache/pip
+    - $HOME/Library/Caches/pip
 before_install:
   # Work in our own virtualenv to isolate from travis-ci packages.
   - echo $TRAVIS_OS_NAME
