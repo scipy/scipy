@@ -2,12 +2,6 @@
 #define _SCIPY_PRIVATE_SIGNAL_SIGTOOLS_H_
 
 #include "Python.h"
-
-#if PY_VERSION_HEX >= 0x03000000
-    #define PyString_AsString PyBytes_AsString
-    #define PyString_FromFormat PyBytes_FromFormat
-#endif
-
 #include "numpy/noprefix.h"
 
 #define BOUNDARY_MASK 12

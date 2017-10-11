@@ -1184,6 +1184,11 @@ def test_lfilter_bad_object():
     assert_raises(TypeError, lfilter, [None], [1.0], [1.0, 2.0, 3.0])
 
 
+def test_lfilter_notimplemented_input():
+    # Should not crash, gh-7991
+    assert_raises(NotImplementedError, lfilter, [2,3], [4,5], [1,2,3,4,5])
+
+
 @pytest.mark.parametrize('dt', [np.ubyte, np.byte, np.ushort, np.short, np.uint, int,
                  np.ulonglong, np.ulonglong, np.float32, np.float64,
                  np.longdouble, Decimal])
