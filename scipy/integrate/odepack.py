@@ -35,26 +35,26 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
     Solves the initial value problem for stiff or non-stiff systems
     of first order ode-s::
 
-        dy/dt = func(y, t0, ...)
+        dy/dt = func(y0, t, ...)
 
     where y can be a vector.
 
-    *Note*: The first two arguments of ``func(y, t0, ...)`` are in the
+    *Note*: The first two arguments of ``func(y0, t, ...)`` are in the
     opposite order of the arguments in the system definition function used
     by the `scipy.integrate.ode` class.
 
     Parameters
     ----------
-    func : callable(y, t0, ...)
-        Computes the derivative of y at t0.
+    func : callable(y0, t, ...)
+        Computes the derivative of y0 at t.
     y0 : array
         Initial condition on y (can be a vector).
     t : array
-        A sequence of time points for which to solve for y.  The initial
+        A sequence of time points for which to solve for y0.  The initial
         value point should be the first element of this sequence.
     args : tuple, optional
         Extra arguments to pass to function.
-    Dfun : callable(y, t0, ...)
+    Dfun : callable(y0, t, ...)
         Gradient (Jacobian) of `func`.
     col_deriv : bool, optional
         True if `Dfun` defines derivatives down columns (faster),
