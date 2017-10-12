@@ -2598,10 +2598,8 @@ def friedmanchisquare(*args):
         ranked = ranked._data
     (k,n) = ranked.shape
     # Ties correction
-    repeats = [find_repeats(_) for _ in ranked.T]
-    ties = [(x, y) for x, y in repeats if x.size > 0]
-    ties = np.array(ties, dtype=object).reshape(-1, 2)[:,-1].astype(int)
-
+    repeats = [find_repeats(row) for row in ranked.T]
+    ties = np.array([y for x, y in repeats if x.size > 0])
     tie_correction = 1 - (ties**3-ties).sum()/float(n*(k**3-k))
 
     ssbg = np.sum((ranked.sum(-1) - n*(k+1)/2.)**2)
