@@ -707,6 +707,46 @@ class _TestCommon(object):
         # Test all-zero matrix.
         assert_equal(self.spmatrix((40, 16130)).diagonal(), np.zeros(40))
 
+    def test_reshape(self):
+        # This first example is taken from the lil_matrix reshaping test.
+        x = self.spmatrix([[1, 0, 7], [0, 0, 0], [0, 3, 0], [0, 0, 5]])
+        for order in ['C', 'F']:
+            for s in [(12, 1), (1, 12)]:
+                assert_array_equal(x.reshape(s, order=order).todense(),
+                                   x.todense().reshape(s, order=order))
+
+        # This example is taken from the stackoverflow answer at
+        # http://stackoverflow.com/questions/16511879
+        x = self.spmatrix([[0, 10, 0, 0], [0, 0, 0, 0], [0, 20, 30, 40]])
+        y = x.reshape((2, 6))  # Default order is 'C'
+        desired = [[0, 10, 0, 0, 0, 0], [0, 0, 0, 20, 30, 40]]
+        assert_array_equal(y.A, desired)
+
+        # Reshape with negative indexes
+        y = x.reshape((2, -1))
+        assert_array_equal(y.A, desired)
+        y = x.reshape((-1, 6))
+        assert_array_equal(y.A, desired)
+        assert_raises(ValueError, x.reshape, (-1, -1))
+
+        # Reshape with star args
+        y = x.reshape(2, 6)
+        assert_array_equal(y.A, desired)
+        assert_raises(TypeError, x.reshape, 2, 6, not_an_arg=1)
+
+        # Reshape with same size is noop unless copy=True
+        y = x.reshape((3, 4))
+        assert_(y is x)
+        y = x.reshape((3, 4), copy=True)
+        assert_(y is not x)
+
+        # Ensure reshape did not alter original size
+        assert_array_equal(x.shape, (3, 4))
+
+        # Reshape in place
+        x.shape = (2, 6)
+        assert_array_equal(x.A, desired)
+
     @pytest.mark.slow
     def test_setdiag_comprehensive(self):
         def dense_setdiag(a, v, k):
@@ -3991,31 +4031,6 @@ class TestLIL(sparse_test_class(minmax=False)):
         x = x*0
         assert_equal(x[0,0],0)
 
-    def test_reshape(self):
-        x = lil_matrix((4, 3))
-        x[0, 0] = 1
-        x[2, 1] = 3
-        x[3, 2] = 5
-        x[0, 2] = 7
-
-        for s in [(12, 1), (1, 12)]:
-            assert_array_equal(x.reshape(s).todense(),
-                               x.todense().reshape(s))
-
-            # LIL matrices are read/written in row-major order
-            assert_array_equal(x.reshape(s, order='C').todense(),
-                               x.todense().reshape(s, order='C'))
-
-            # See gh-5987
-            assert_array_equal(np.reshape(x, s).todense(),
-                               np.reshape(x.todense(), s))
-
-        assert_raises(TypeError, x.reshape, 2)
-        assert_raises(ValueError, x.reshape, (1, 5, 3))
-        assert_raises(ValueError, x.reshape, (1, 5))
-        assert_raises(ValueError, x.reshape, (6, 2), order=2)
-        assert_raises(ValueError, x.reshape, (6, 2), order='A')
-
     def test_inplace_ops(self):
         A = lil_matrix([[0,2,3],[4,0,6]])
         B = lil_matrix([[0,1,0],[0,2,3]])
@@ -4180,6 +4195,20 @@ class TestCOO(sparse_test_class(getset=False,
         asp.eliminate_zeros()
         assert_((asp.data != 0).all())
         assert_array_equal(asp.A, bsp.A)
+
+    def test_reshape_copy(self):
+        arr = [[0, 10, 0, 0], [0, 0, 0, 0], [0, 20, 30, 40]]
+        new_shape = (2, 6)
+        x = coo_matrix(arr)
+
+        y = x.reshape(new_shape)
+        assert_(y.data is x.data)
+
+        y = x.reshape(new_shape, copy=False)
+        assert_(y.data is x.data)
+
+        y = x.reshape(new_shape, copy=True)
+        assert_(not np.may_share_memory(y.data, x.data))
 
 TestCOO.init_class()
 
