@@ -139,6 +139,7 @@ def get_index_dtype(arrays=(), maxval=None, check_contents=False):
 
     """
 
+    int32min = np.iinfo(np.int32).min
     int32max = np.iinfo(np.int32).max
 
     dtype = np.intc
@@ -151,7 +152,7 @@ def get_index_dtype(arrays=(), maxval=None, check_contents=False):
 
     for arr in arrays:
         arr = np.asarray(arr)
-        if arr.dtype > np.int32:
+        if not np.can_cast(arr.dtype, np.int32):
             if check_contents:
                 if arr.size == 0:
                     # a bigger type not needed
@@ -159,8 +160,7 @@ def get_index_dtype(arrays=(), maxval=None, check_contents=False):
                 elif np.issubdtype(arr.dtype, np.integer):
                     maxval = arr.max()
                     minval = arr.min()
-                    if (minval >= np.iinfo(np.int32).min and
-                            maxval <= np.iinfo(np.int32).max):
+                    if minval >= int32min and maxval <= int32max:
                         # a bigger type not needed
                         continue
 
