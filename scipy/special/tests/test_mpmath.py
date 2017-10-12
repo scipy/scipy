@@ -8,6 +8,7 @@ import numpy as np
 from numpy.testing import assert_, assert_allclose
 from numpy import pi
 import pytest
+import itertools
 
 from distutils.version import LooseVersion
 
@@ -104,12 +105,16 @@ def test_hyp0f1_gh_1609():
 # hyp2f1
 # ------------------------------------------------------------------------------
 
-@pytest.mark.xfail(reason="hyp2f1 produces wrong/nonstandard values (gh-7961)")
 @check_version(mpmath, '1.0.0')
 def test_hyp2f1_strange_points():
     pts = [
         (2, -1, -1, 0.7),  # expected: 2.4
         (2, -2, -2, 0.7),  # expected: 3.87
+    ]
+    pts += list(itertools.product([2, 1, -0.7, -1000], repeat=4))
+    pts = [
+        (a, b, c, x) for a, b, c, x in pts 
+        if b == c and round(b) == b and b < 0 and b != -1000
     ]
     kw = dict(eliminate=True)
     dataset = [p + (float(mpmath.hyp2f1(*p, **kw)),) for p in pts]
