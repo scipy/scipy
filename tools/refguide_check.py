@@ -128,6 +128,7 @@ REFGUIDE_ALL_SKIPLIST = [
 # despite being in ALL
 REFGUIDE_AUTOSUMMARY_SKIPLIST = [
     r'scipy\.special\..*_roots',  # old aliases for scipy.special.*_roots
+    r'scipy\.special\.jn',  # alias for jv
     r'scipy\.linalg\.solve_lyapunov',  # deprecated name
 ]
 # deprecated windows in scipy.signal namespace

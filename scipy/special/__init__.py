@@ -68,7 +68,6 @@ Bessel Functions
    :toctree: generated/
 
    jv       -- Bessel function of the first kind of real order and complex argument.
-   jn       -- Bessel function of the first kind of real order and complex argument
    jve      -- Exponentially scaled Bessel function of order `v`.
    yn       -- Bessel function of the second kind of integer order and real argument.
    yv       -- Bessel function of the second kind of real order and complex argument.
