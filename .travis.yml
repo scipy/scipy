@@ -140,7 +140,7 @@ script:
         python tools/suppress_output.py python setup.py build
         echo "pip wheel"
         python tools/suppress_output.py pip wheel .
-        pip install scipy*.whl
+        pip install --no-cache-dir scipy*.whl
         USE_WHEEL_BUILD="--no-build"
     elif [ "${USE_SDIST}" == "1" ]; then
         echo "setup.py sdist"
@@ -152,7 +152,7 @@ script:
         # (see https://github.com/pypa/pip/issues/4242)
         # and some shenanigans are needed to make it work.
         echo "pip install"
-        python ../tools/suppress_output.py pip install --build="$HOME/builds" --upgrade "file://`echo -n $PWD/scipy*`#egg=scipy" -v
+        python ../tools/suppress_output.py pip install --no-cache-dir --build="$HOME/builds" --upgrade "file://`echo -n $PWD/scipy*`#egg=scipy" -v
         popd
         USE_WHEEL_BUILD="--no-build"
     fi
