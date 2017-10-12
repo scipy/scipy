@@ -1731,7 +1731,7 @@ class Delaunay(_QhullUser):
     We can plot it:
 
     >>> import matplotlib.pyplot as plt
-    >>> plt.triplot(points[:,0], points[:,1], tri.simplices.copy())
+    >>> plt.triplot(points[:,0], points[:,1], tri.simplices)
     >>> plt.plot(points[:,0], points[:,1], 'o')
     >>> plt.show()
 

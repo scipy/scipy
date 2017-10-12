@@ -31,7 +31,7 @@ Delaunay triangulation can be computed using `scipy.spatial` as follows:
    We can visualize it:
    
    >>> import matplotlib.pyplot as plt
-   >>> plt.triplot(points[:,0], points[:,1], tri.simplices.copy())
+   >>> plt.triplot(points[:,0], points[:,1], tri.simplices)
    >>> plt.plot(points[:,0], points[:,1], 'o')
    
    And add some further decorations:
