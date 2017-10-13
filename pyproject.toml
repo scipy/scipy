@@ -2,7 +2,7 @@
 requires = [
     "wheel",
     "setuptools",
-    "Cython>=0.23.4",
+    "Cython>=0.25",
     "numpy==1.8.2; python_version<='3.4'",
     "numpy==1.9.3; python_version=='3.5'",
     "numpy==1.12.1; python_version=='3.6'",
