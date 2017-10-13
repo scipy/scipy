@@ -59,7 +59,7 @@ def process_pyx(fromfile, tofile, cwd):
 
         # Try to find pyproject.toml
         pyproject_toml = os.path.join(dirname(dirname(__file__)), "pyproject.toml")
-        if not os.path.exits(pyproject_toml):
+        if not os.path.exists(pyproject_toml):
             raise ImportError()
 
         # Try to find the minimum version from pyproject.toml
