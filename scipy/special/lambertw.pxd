@@ -29,7 +29,9 @@ cdef extern from "math.h":
 
 from ._complexstuff cimport *
 
+DEF twopi = 6.2831853071795864769252842  # 2*pi
 DEF EXPN1 = 0.36787944117144232159553  # exp(-1)
+DEF OMEGA = 0.56714329040978387299997  # W(1, 0)
 
 
 @cython.cdivision(True)
@@ -42,14 +44,17 @@ cdef inline double complex lambertw_scalar(double complex z, long k, double tol)
     if zisnan(z):
         return z
     elif z.real == inf:
-        return z + 2*k*pi*1j
+        return z + twopi*k*1j
     elif z.real == -inf:
-        return -z + (2*k+1)*pi*1j
+        return -z + (twopi*k+pi)*1j
     elif z == 0:
         if k == 0:
             return z
         sf_error.error("lambertw", sf_error.SINGULAR, NULL)
         return -inf
+    elif z == 1 and k == 0:
+        # Split out this case because the asymptotic series blows up
+        return OMEGA
 
     absz = zabs(z)
     # Get an initial guess for Halley's method
@@ -65,27 +70,50 @@ cdef inline double complex lambertw_scalar(double complex z, long k, double tol)
             else:
                 w = z
         else:
-            w = zlog(z) + 2*pi*k*1j
+            w = lambertw_asy(z, k)
     elif k == -1:
         if absz <= EXPN1 and z.imag == 0 and z.real < 0:
             w = log(-z.real)
         else:
-            w = zlog(z) + 2*pi*k*1j
+            w = lambertw_asy(z, k)
     else:
-        w = zlog(z) + 2*pi*k*1j
+        w = lambertw_asy(z, k)
 
-    # Halley's method
-    for i in range(100):
-        ew = zexp(w)
-        wew = w*ew
-        wewz = wew - z
-        wn = w - wewz / (wew + ew - (w + 2)*wewz/(2*w + 2))
-        if zabs(wn - w) < tol*zabs(wn):
-            return wn
-        else:
-            w = wn
+    # Halley's method; see 5.9 in [1]
+    if w.real >= 0:
+        # Rearrange the formula to avoid overflow in exp
+        for i in range(100):
+            ew = zexp(-w)
+            wewz = w - z*ew
+            wn = w - wewz/(w + 1 - (w + 2)*wewz/(2*w + 2))
+            if zabs(wn - w) < tol*zabs(wn):
+                return wn
+            else:
+                w = wn
+    else:
+        for i in range(100):
+            ew = zexp(w)
+            wew = w*ew
+            wewz = wew - z
+            wn = w - wewz/(wew + ew - (w + 2)*wewz/(2*w + 2))
+            if zabs(wn - w) < tol*zabs(wn):
+                return wn
+            else:
+                w = wn
 
     sf_error.error("lambertw", sf_error.SLOW,
                    "iteration failed to converge: %g + %gj",
                    <double>z.real, <double>z.imag)
     return nan
+
+
+@cython.cdivision(True)
+cdef inline double complex lambertw_asy(double complex z, long k) nogil:
+    """Compute the W function using the first two terms of the
+    asymptotic series. See 4.20 in [1].
+
+    """
+    cdef double complex w
+
+    w = zlog(z) + twopi*k*1j
+    return w - zlog(w)
