@@ -1504,10 +1504,11 @@ class TestSystematic(object):
                             [IntArg(), Arg()], n=20000)
 
     @pytest.mark.xfail(condition=_is_32bit_platform, reason="see gh-3551 for bad points")
-    def test_lambertw(self):
-        assert_mpmath_equal(lambda x, k: sc.lambertw(x, int(k)),
-                            lambda x, k: mpmath.lambertw(x, int(k)),
-                            [Arg(), IntArg(0, 10)])
+    def test_lambertw_real(self):
+        assert_mpmath_equal(lambda x, k: sc.lambertw(x, int(k.real)),
+                            lambda x, k: mpmath.lambertw(x, int(k.real)),
+                            [ComplexArg(-np.inf, np.inf), IntArg(0, 10)],
+                            rtol=1e-13, nan_ok=False)
 
     def test_lanczos_sum_expg_scaled(self):
         maxgamma = 171.624376956302725
