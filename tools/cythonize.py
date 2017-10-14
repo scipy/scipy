@@ -38,7 +38,7 @@ import sys
 import hashlib
 import subprocess
 from multiprocessing.dummy import Pool, Lock
-from os.path import dirname
+from os.path import dirname, join
 
 HASH_FILE = 'cythonize.dat'
 DEFAULT_ROOT = 'scipy'
@@ -58,7 +58,7 @@ def process_pyx(fromfile, tofile, cwd):
         from distutils.version import LooseVersion
 
         # Try to find pyproject.toml
-        pyproject_toml = os.path.join(dirname(dirname(__file__)), "pyproject.toml")
+        pyproject_toml = join(dirname(__file__), '..', 'pyproject.toml')
         if not os.path.exists(pyproject_toml):
             raise ImportError()
 
