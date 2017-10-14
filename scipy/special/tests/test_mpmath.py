@@ -113,7 +113,7 @@ def test_hyp2f1_strange_points():
     ]
     pts += list(itertools.product([2, 1, -0.7, -1000], repeat=4))
     pts = [
-        (a, b, c, x) for a, b, c, x in pts 
+        (a, b, c, x) for a, b, c, x in pts
         if b == c and round(b) == b and b < 0 and b != -1000
     ]
     kw = dict(eliminate=True)
@@ -668,6 +668,25 @@ def test_wrightomega_region2():
     dataset = np.asarray(dataset)
 
     FuncData(sc.wrightomega, dataset, 0, 1, rtol=1e-15).check()
+
+
+# ------------------------------------------------------------------------------
+# lambertw
+# ------------------------------------------------------------------------------
+
+@pytest.mark.slow
+@check_version(mpmath, '0.19')
+def test_lambertw_smallz():
+    x, y = np.linspace(-1, 1, 25), np.linspace(-1, 1, 25)
+    x, y = np.meshgrid(x, y)
+    z = (x + 1j*y).flatten()
+
+    dataset = []
+    for z0 in z:
+        dataset.append((z0, complex(mpmath.lambertw(z0))))
+    dataset = np.asarray(dataset)
+
+    FuncData(sc.lambertw, dataset, 0, 1, rtol=1e-13).check()
 
 
 # ------------------------------------------------------------------------------

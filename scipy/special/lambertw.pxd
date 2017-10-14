@@ -22,10 +22,14 @@
 import cython
 
 from . cimport sf_error
+from ._evalpoly cimport cevalpoly
 
 cdef extern from "math.h":
     double exp(double x) nogil
     double log(double x) nogil
+
+cdef extern from "numpy/npy_math.h":
+    double NPY_E
 
 from ._complexstuff cimport *
 
@@ -37,7 +41,7 @@ DEF OMEGA = 0.56714329040978387299997  # W(1, 0)
 @cython.cdivision(True)
 cdef inline double complex lambertw_scalar(double complex z, long k, double tol) nogil:
     cdef int i
-    cdef double absz
+    cdef double absz, p
     cdef double complex w
     cdef double complex ew, wew, wewz, wn
 
@@ -59,16 +63,13 @@ cdef inline double complex lambertw_scalar(double complex z, long k, double tol)
     absz = zabs(z)
     # Get an initial guess for Halley's method
     if k == 0:
-        if absz <= EXPN1:
-            w = z
-        elif z.imag and absz <= 0.7:
-            if zabs(z + 0.5) < 0.1:
-                if z.imag > 0:
-                    w = 0.7 + 0.7j
-                else:
-                    w = 0.7 - 0.7j
-            else:
-                w = z
+        if zabs(z + EXPN1) < 0.3:
+            w = lambertw_branchpt(z)
+        elif (-1.0 < z.real < 1.5 and zabs(z.imag) < 1.0
+              and -2.5*zabs(z.imag) - 0.2 < z.real):
+            # Empirically determined decision boundary where the Pade
+            # approximation is more accurate.
+            w = lambertw_pade0(z)
         else:
             w = lambertw_asy(z, k)
     elif k == -1:
@@ -104,7 +105,37 @@ cdef inline double complex lambertw_scalar(double complex z, long k, double tol)
     sf_error.error("lambertw", sf_error.SLOW,
                    "iteration failed to converge: %g + %gj",
                    <double>z.real, <double>z.imag)
-    return nan
+    return zpack(nan, nan)
+
+
+@cython.cdivision(True)
+cdef inline double complex lambertw_branchpt(double complex z) nogil:
+    """Series for W(z, 0) around the branch point; see 4.22 in [1]."""
+    cdef double *coeffs = [-1.0/3.0, 1.0, -1.0]
+    cdef double complex p = zsqrt(2*(NPY_E*z + 1))
+
+    return cevalpoly(coeffs, 2, p)
+
+
+@cython.cdivision(True)
+cdef inline double complex lambertw_pade0(double complex z) nogil:
+    """(3, 2) Pade approximation for W(z, 0) around 0."""
+    cdef:
+        double *num = [
+            12.85106382978723404255,
+            12.34042553191489361902,
+            1.0
+        ]
+        double *denom = [
+            32.53191489361702127660,
+            14.34042553191489361702,
+            1.0
+        ]
+
+    # This only gets evaluated close to 0, so we don't need a more
+    # careful algorithm that avoids overflow in the numerator for
+    # large z.
+    return z*cevalpoly(num, 2, z)/cevalpoly(denom, 2, z)
 
 
 @cython.cdivision(True)
