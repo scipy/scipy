@@ -38,6 +38,7 @@ import sys
 import hashlib
 import subprocess
 from multiprocessing.dummy import Pool, Lock
+from os.path import dirname, join
 
 HASH_FILE = 'cythonize.dat'
 DEFAULT_ROOT = 'scipy'
@@ -55,8 +56,25 @@ def process_pyx(fromfile, tofile, cwd):
     try:
         from Cython.Compiler.Version import version as cython_version
         from distutils.version import LooseVersion
-        if LooseVersion(cython_version) < LooseVersion('0.23.4'):
-            raise Exception('Building SciPy requires Cython >= 0.23.4')
+
+        # Try to find pyproject.toml
+        pyproject_toml = join(dirname(__file__), '..', 'pyproject.toml')
+        if not os.path.exists(pyproject_toml):
+            raise ImportError()
+
+        # Try to find the minimum version from pyproject.toml
+        with open(pyproject_toml) as pt:
+            for line in pt:
+                if "cython" not in line.lower():
+                    continue
+                _, line = line.split('=')
+                required_version, _ = line.split('"')
+                break
+            else:
+                raise ImportError()
+
+        if LooseVersion(cython_version) < LooseVersion(required_version):
+            raise Exception('Building SciPy requires Cython >= ' + required_version)
 
     except ImportError:
         pass
