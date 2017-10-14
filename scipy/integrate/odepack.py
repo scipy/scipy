@@ -50,7 +50,7 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
     y0 : array
         Initial condition on y (can be a vector).
     t : array
-        A sequence of time points for which to solve for y0.  The initial
+        A sequence of time points for which to solve for y.  The initial
         value point should be the first element of this sequence.
     args : tuple, optional
         Extra arguments to pass to function.
