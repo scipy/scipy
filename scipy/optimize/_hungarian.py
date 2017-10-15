@@ -8,6 +8,7 @@
 # License: 3-clause BSD
 
 import numpy as np
+import sys as sys
 
 
 def linear_sum_assignment(cost_matrix):
@@ -89,8 +90,12 @@ def linear_sum_assignment(cost_matrix):
         raise ValueError("expected a matrix containing numerical entries, got %s"
                          % (cost_matrix.dtype,))
 
-    if np.any(np.isinf(cost_matrix) | np.isnan(cost_matrix)):
+    if np.any(np.isnan(cost_matrix)):
         raise ValueError("matrix contains invalid numeric entries")
+
+    for x in np.nditer(a, op_flags=['readwrite']):
+        if x == np.inf :
+            x[...] = sys.maxint
 
     if cost_matrix.dtype == np.dtype(np.bool):
         cost_matrix = cost_matrix.astype(np.int)
