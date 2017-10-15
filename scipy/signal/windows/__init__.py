@@ -18,6 +18,7 @@ The suite of window functions for filtering and spectral estimation.
    boxcar            -- Boxcar window
    chebwin           -- Dolph-Chebyshev window
    cosine            -- Cosine window
+   dpss              -- Discrete prolate spheroidal sequences
    exponential       -- Exponential window
    flattop           -- Flat top window
    gaussian          -- Gaussian window
@@ -39,4 +40,5 @@ from .windows import *
 __all__ = ['boxcar', 'triang', 'parzen', 'bohman', 'blackman', 'nuttall',
            'blackmanharris', 'flattop', 'bartlett', 'hanning', 'barthann',
            'hamming', 'kaiser', 'gaussian', 'general_gaussian', 'chebwin',
-           'slepian', 'cosine', 'hann', 'exponential', 'tukey', 'get_window']
+           'slepian', 'cosine', 'hann', 'exponential', 'tukey', 'get_window',
+           'dpss']
