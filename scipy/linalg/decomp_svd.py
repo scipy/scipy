@@ -314,14 +314,39 @@ def null_space(A, rcond=None):
 
     Returns
     -------
-    Q : (M, K) ndarray
+    Z : (N, K) ndarray
         Orthonormal basis for the null space of A.
-        K = effective rank of A, as determined by rcond
+        K = dimension of effective null space, as determined by rcond
 
     See also
     --------
     svd : Singular value decomposition of a matrix
     orth : Matrix range
+
+    Examples
+    --------
+    One-dimensional null space:
+
+    >>> from scipy.linalg import null_space
+    >>> A = np.array([[1, 1], [1, 1]])
+    >>> null_space(A)
+    array([[-0.70710678],
+           [ 0.70710678]])
+
+    Two-dimensional null space:
+
+    >>> B = np.random.rand(3, 5)
+    >>> Z = null_space(B)
+    >>> Z.shape
+    (5, 2)
+    >>> np.allclose(B.dot(Z), 0)
+    True
+
+    The basis vectors are orthonormal (up to rounding error):
+
+    >>> Z.T.dot(Z)
+    array([[  1.00000000e+00,   6.92087741e-17],
+           [  6.92087741e-17,   1.00000000e+00]])
 
     """
     u, s, vh = svd(A, full_matrices=True)
