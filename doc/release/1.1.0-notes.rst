@@ -40,6 +40,11 @@ Deprecated features
 Backwards incompatible changes
 ==============================
 
+Previously, ``scipy.linalg.orth`` used a singular value cutoff value
+appropriate for double precision numbers also for single-precision
+input. The cutoff value is now tunable, and the default has been
+changed to depend on the input data precision.
+
 
 Other changes
 =============

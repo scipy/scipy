@@ -292,7 +292,7 @@ def orth(A, rcond=None):
     u, s, vh = svd(A, full_matrices=False)
     M, N = u.shape[0], vh.shape[1]
     if rcond is None:
-        rcond = numpy.finfo(float).eps * max(M, N)
+        rcond = numpy.finfo(s.dtype).eps * max(M, N)
     tol = numpy.amax(s) * rcond
     num = numpy.sum(s > tol, dtype=int)
     Q = u[:, :num]
@@ -352,7 +352,7 @@ def null_space(A, rcond=None):
     u, s, vh = svd(A, full_matrices=True)
     M, N = u.shape[0], vh.shape[1]
     if rcond is None:
-        rcond = numpy.finfo(float).eps * max(M, N)
+        rcond = numpy.finfo(s.dtype).eps * max(M, N)
     tol = numpy.amax(s) * rcond
     num = numpy.sum(s > tol, dtype=int)
     Q = vh[num:,:].T.conj()
