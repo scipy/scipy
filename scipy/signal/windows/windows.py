@@ -11,7 +11,8 @@ from scipy._lib.six import string_types
 __all__ = ['boxcar', 'triang', 'parzen', 'bohman', 'blackman', 'nuttall',
            'blackmanharris', 'flattop', 'bartlett', 'hanning', 'barthann',
            'hamming', 'kaiser', 'gaussian', 'general_gaussian', 'chebwin',
-           'slepian', 'cosine', 'hann', 'exponential', 'tukey', 'get_window']
+           'slepian', 'cosine', 'hann', 'exponential', 'tukey', 'get_window',
+           'taylor']
 
 
 def _len_guards(M):
@@ -1640,6 +1641,58 @@ def exponential(M, center=None, tau=1., sym=True):
     return _truncate(w, needs_trunc)
 
 
+def taylor(N, nbar=4, sll=-30):
+    """
+    Return the Taylor window.
+
+    The Taylor window allows for a selectable sidelobe suppression with a 
+    minimum broadening. This window is commonly used in synthetic aperture radar
+    processing.
+
+    Parameters
+    ----------
+    M : int
+        Number of points in the output window. If zero or less, an
+        empty array is returned.
+    nbar : int
+        Number of nearly constant level sidelobes adjacent to the mainlobe
+    sll : float
+        Desired peak sidelobe level in decibels (db) relative to the mainlobe
+
+    Returns
+    -------
+    out : array
+        The window, with the maximum value normalized to one (the value
+        one appears only if the number of samples is odd).
+
+    See Also
+    --------
+    kaiser, bartlett, blackman, hamming, hanning
+
+    Notes
+    -----
+    The Kaiser window is described by Carrara, Goodman, and Majewski 
+    in 'Spotlight Synthetic Aperture Radar: Signal Processing Algorithms'
+    Page 512-513
+    """
+    B = 10**(-sll/20)
+    A = log(B + sqrt(B**2 - 1))/pi
+    s2 = nbar**2 / (A**2 + (nbar - 0.5)**2)
+    ma = arange(1,nbar)
+    def calc_Fm(m):
+        numer = (-1)**(m+1) * prod(1-m**2/s2/(A**2 + (ma - 0.5)**2))
+        denom = 2* prod([ 1-m**2/j**2 for j in ma if j != m])
+        return numer/denom
+    Fm = array([calc_Fm(m) for m in ma])
+    def W(n):
+        return 2*np.sum(Fm * cos(2*pi*ma*(n-N/2 + 1/2)/N)) + 1
+    w = array([W(n) for n in range(N)])
+    # normalize (Note that this is not described in the original text)
+    scale = 1.0/W((N-1)/2)
+    w *= scale
+    return w
+
+
 _win_equiv_raw = {
     ('barthann', 'brthan', 'bth'): (barthann, False),
     ('bartlett', 'bart', 'brt'): (bartlett, False),
@@ -1766,3 +1819,5 @@ def get_window(window, Nx, fftbins=True):
         params = (Nx, beta, sym)
 
     return winfunc(*params)
+
+
