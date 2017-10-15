@@ -20,7 +20,6 @@ window_funcs = [
     ('blackman', ()),
     ('nuttall', ()),
     ('blackmanharris', ()),
-    ('taylor', ()),
     ('flattop', ()),
     ('bartlett', ()),
     ('hanning', ()),
@@ -34,6 +33,7 @@ window_funcs = [
     ('cosine', ()),
     ('hann', ()),
     ('exponential', ()),
+    ('taylor', ()),
     ('tukey', (0.5,)),
     ]
 

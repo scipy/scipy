@@ -30,6 +30,7 @@ The suite of window functions for filtering and spectral estimation.
    parzen            -- Parzen window
    slepian           -- Slepian window
    triang            -- Triangular window
+   taylor            -- Taylor window
    tukey             -- Tukey window
 
 """
@@ -39,4 +40,5 @@ from .windows import *
 __all__ = ['boxcar', 'triang', 'parzen', 'bohman', 'blackman', 'nuttall',
            'blackmanharris', 'flattop', 'bartlett', 'hanning', 'barthann',
            'hamming', 'kaiser', 'gaussian', 'general_gaussian', 'chebwin',
-           'slepian', 'cosine', 'hann', 'exponential', 'tukey', 'get_window']
+           'slepian', 'cosine', 'hann', 'exponential', 'tukey', 'taylor',
+           'get_window']

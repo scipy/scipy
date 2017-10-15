@@ -11,8 +11,8 @@ from scipy._lib.six import string_types
 __all__ = ['boxcar', 'triang', 'parzen', 'bohman', 'blackman', 'nuttall',
            'blackmanharris', 'flattop', 'bartlett', 'hanning', 'barthann',
            'hamming', 'kaiser', 'gaussian', 'general_gaussian', 'chebwin',
-           'slepian', 'cosine', 'hann', 'exponential', 'tukey', 'get_window',
-           'taylor']
+           'slepian', 'cosine', 'hann', 'exponential', 'tukey', 'taylor',
+           'get_window']
 
 
 def _len_guards(M):
@@ -1714,6 +1714,7 @@ _win_equiv_raw = {
     ('nuttall', 'nutl', 'nut'): (nuttall, False),
     ('parzen', 'parz', 'par'): (parzen, False),
     ('slepian', 'slep', 'optimal', 'dpss', 'dss'): (slepian, True),
+    ('taylor', 'taylorwin'): (taylor, False),
     ('triangle', 'triang', 'tri'): (triang, False),
     ('tukey', 'tuk'): (tukey, True),
 }
@@ -1761,7 +1762,8 @@ def get_window(window, Nx, fftbins=True):
         `barthann`, `kaiser` (needs beta), `gaussian` (needs standard
         deviation), `general_gaussian` (needs power, width), `slepian`
         (needs width), `chebwin` (needs attenuation), `exponential`
-        (needs decay scale), `tukey` (needs taper fraction)
+        (needs decay scale), `taylor` (needs sidelobe level, 
+         number of constant sidelobes), `tukey` (needs taper fraction)
 
     If the window requires no parameters, then `window` can be a string.
 

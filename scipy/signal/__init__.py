@@ -249,6 +249,7 @@ but we list them here for convenience:
    windows.nuttall           -- Nuttall's minimum 4-term Blackman-Harris window
    windows.parzen            -- Parzen window
    windows.slepian           -- Slepian window
+   windows.taylor            -- Taylor window
    windows.triang            -- Triangular window
    windows.tukey             -- Tukey window
 
@@ -323,7 +324,7 @@ deprecated_windows = ('boxcar', 'triang', 'parzen', 'bohman', 'blackman',
                       'nuttall', 'blackmanharris', 'flattop', 'bartlett',
                       'hanning', 'barthann', 'hamming', 'kaiser', 'gaussian',
                       'general_gaussian', 'chebwin', 'slepian', 'cosine',
-                      'hann', 'exponential', 'tukey')
+                      'hann', 'exponential', 'tukey', 'taylor')
 
 
 def deco(name):
