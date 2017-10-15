@@ -1676,17 +1676,19 @@ def taylor(N, nbar=4, sll=-30):
     Page 512-513
     """
     B = 10**(-sll/20)
-    A = log(B + sqrt(B**2 - 1))/pi
+    A = np.log(B + np.sqrt(B**2 - 1))/np.pi
     s2 = nbar**2 / (A**2 + (nbar - 0.5)**2)
-    ma = arange(1,nbar)
+    ma = np.arange(1,nbar)
     def calc_Fm(m):
-        numer = (-1)**(m+1) * prod(1-m**2/s2/(A**2 + (ma - 0.5)**2))
-        denom = 2* prod([ 1-m**2/j**2 for j in ma if j != m])
+        numer = (-1)**(m+1) * np.prod(1-m**2/s2/(A**2 + (ma - 0.5)**2))
+        denom = 2* np.prod([1-m**2/j**2 for j in ma if j != m])
         return numer/denom
-    Fm = array([calc_Fm(m) for m in ma])
+    
+    Fm = np.array([calc_Fm(m) for m in ma])
     def W(n):
-        return 2*np.sum(Fm * cos(2*pi*ma*(n-N/2 + 1/2)/N)) + 1
-    w = array([W(n) for n in range(N)])
+        return 2*np.sum(Fm * np.cos(2*np.pi*ma*(n-N/2 + 1/2)/N)) + 1
+    
+    w = np.array([W(n) for n in range(N)])
     # normalize (Note that this is not described in the original text)
     scale = 1.0/W((N-1)/2)
     w *= scale
