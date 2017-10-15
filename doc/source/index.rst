@@ -10,8 +10,9 @@ science, and engineering.
 .. toctree::
    :maxdepth: 1
 
-   release
+   install_upgrade
    api
+   release
 
 Tutorial
 --------
