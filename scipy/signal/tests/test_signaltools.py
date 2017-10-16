@@ -1200,6 +1200,17 @@ class TestCorrelateReal(object):
         y_r = np.array([0, 2, 5, 8, 3]).astype(dt)
         return a, b, y_r
 
+    def equal_tolerance(self, res_dt):
+        # default value of keyword
+        decimal = 6
+        try:
+            dt_info = np.finfo(res_dt)
+            if hasattr(dt_info, 'resolution'):
+                decimal = int(-0.5*np.log10(dt_info.resolution))
+        except Exception:
+            pass
+        return decimal
+
     def test_method(self, dt):
         if dt == Decimal:
             method = choose_conv_method([Decimal(4)], [Decimal(3)])
@@ -1209,8 +1220,8 @@ class TestCorrelateReal(object):
             y_fft = correlate(a, b, method='fft')
             y_direct = correlate(a, b, method='direct')
 
-            assert_array_almost_equal(y_r, y_fft)
-            assert_array_almost_equal(y_r, y_direct)
+            assert_array_almost_equal(y_r, y_fft, decimal=self.equal_tolerance(y_fft.dtype))
+            assert_array_almost_equal(y_r, y_direct, decimal=self.equal_tolerance(y_fft.dtype))
             assert_equal(y_fft.dtype, dt)
             assert_equal(y_direct.dtype, dt)
 
@@ -1834,7 +1845,7 @@ class TestHilbert(object):
         aa = hilbert(a, axis=-1)
         assert_equal(hilbert(a.T, axis=0), aa.T)
         # test 1d
-        assert_equal(hilbert(a[0]), aa[0])
+        assert_almost_equal(hilbert(a[0]), aa[0], 14)
 
         # test N
         aan = hilbert(a, N=20, axis=-1)
