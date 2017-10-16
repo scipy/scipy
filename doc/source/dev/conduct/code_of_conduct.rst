@@ -73,27 +73,6 @@ We strive to:
     - Repeated harassment of others. In general, if someone asks you to stop, then stop.
     - Advocating for, or encouraging, any of the above behaviour.
 
-5. Be concise. Keep in mind that what you write once will be read by hundreds
-   of persons. Writing a short email means people can understand the
-   conversation as efficiently as possible. Short emails should always strive
-   to be empathetic, welcoming, friendly and patient. When a long explanation
-   is necessary, consider adding a summary.
-
-6. Try to bring new ideas to a conversation so that each mail adds something
-   unique to the thread, keeping in mind that the rest of the thread still
-   contains the other messages with arguments that have already been made.
-
-7. Try to stay on topic, especially in discussions that are already fairly
-   large.
-
-8. Step down considerately. Members of every project come and go. When somebody
-   leaves or disengages from the project they should tell people they are
-   leaving and take the proper steps to ensure that others can pick up where
-   they left off. In doing so, they should remain respectful of those who
-   continue to participate in the project and should not misrepresent the
-   project's goals or achievements. Likewise, community members should respect
-   any individual's choice to leave the project.
-
 
 Diversity Statement
 -------------------
@@ -128,14 +107,12 @@ and point out this code of conduct. Such messages may be in public or in
 private, whatever is most appropriate. However, regardless of whether the
 message is public or not, it should still adhere to the relevant parts of this
 code of conduct; in particular, it should not be abusive or disrespectful.
+Assume good faith; it is more likely that participants are unaware of their bad
+behaviour than that they intentionally try to degrade the quality of the
+discussion.
 
-If you believe someone is violating this code of conduct, you may reply to them
-and point out this code of conduct. Such messages may be in public or in
-private, whatever is most appropriate. Assume good faith; it is more likely
-that participants are unaware of their bad behaviour than that they
-intentionally try to degrade the quality of the discussion. Should there be
-difficulties in dealing with the situation, you may report your compliance
-issues in confidence to either:
+Should there be difficulties in dealing with the situation, you may report your
+compliance issues in confidence to either:
 
 - The SciPy Code of Conduct Committee, at conduct@TODO (preferred)
   Members of this committee are TODO
@@ -148,6 +125,9 @@ Or alternatively to:
 
 Incident reporting resolution & Code of Conduct enforcement
 -----------------------------------------------------------
+
+*This section summarizes the most important points, more details can be found
+in* :ref:`CoC_reporting_manual`.
 
 All complaints will be reviewed and investigated and will result in a response
 that is deemed necessary and appropriate to the circumstances. The SciPy Code
@@ -164,8 +144,7 @@ high level (for all but the most severe cases) will be:
 4. enforcement via transparent decision by the Code of Conduct Committee (if mediation failed)
 
 The committee will respond to any report as soon as possible, and at most
-within 72 hours.  More details on how reports are handled can be found in
-:ref:`CoC_reporting_manual`.
+within 72 hours.
 
 
 Endnotes

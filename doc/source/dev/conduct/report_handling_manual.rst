@@ -1,4 +1,4 @@
-.. label: CoC_reporting_manual
+.. _CoC_reporting_manual:
 
 SciPy Code of Conduct - How to follow up on a report
 ----------------------------------------------------
@@ -119,9 +119,10 @@ the Steering Council for resolution.
 Possible responses may include:
 
 * Taking no further action
+
   - if we determine no violations have occurred.
-  - if the matter has been resolved publicly while the committee was
-    considering responses.
+  - if the matter has been resolved publicly while the committee was considering responses.
+
 * Coordinating voluntary mediation: if all involved parties agree, the
   Committee may facilitate a mediation process as detailed above.
 * Remind publicly, and point out that some behavior/actions/language have been
