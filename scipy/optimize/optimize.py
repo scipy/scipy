@@ -456,9 +456,9 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     ----------
     .. [1] Gao, F. and Han, L.
        Implementing the Nelder-Mead simplex algorithm with adaptive
-       parameters. 2012. Computational Optimization and Applications. 
+       parameters. 2012. Computational Optimization and Applications.
        51:1, pp. 259-277
-       
+
     """
     if 'ftol' in unknown_options:
         warnings.warn("ftol is deprecated for Nelder-Mead,"
@@ -486,7 +486,7 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     retall = return_all
 
     fcalls, func = wrap_function(func, args)
-           
+
     if adaptive:
         dim = float(len(x0))
         rho = 1
@@ -498,7 +498,7 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
         chi = 2
         psi = 0.5
         sigma = 0.5
-        
+
     nonzdelt = 0.05
     zdelt = 0.00025
 
@@ -2069,7 +2069,7 @@ def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500):
 
     Does not ensure that the minimum lies in the range specified by
     `brack`. See `fminbound`.
-    
+
     Examples
     --------
     We illustrate the behaviour of the function when `brack` is of
@@ -2079,7 +2079,7 @@ def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500):
 
     >>> def f(x):
     ...     return x**2
-    
+
     >>> from scipy import optimize
 
     >>> minimum = optimize.brent(f,brack=(1,2))
@@ -2178,7 +2178,7 @@ def golden(func, args=(), brack=None, tol=_epsilon,
 
     >>> def f(x):
     ...     return x**2
-    
+
     >>> from scipy import optimize
 
     >>> minimum = optimize.golden(f, brack=(1, 2))
