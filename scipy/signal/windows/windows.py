@@ -1640,7 +1640,6 @@ def exponential(M, center=None, tau=1., sym=True):
 
     return _truncate(w, needs_trunc)
 
-
 def taylor(N, nbar=4, level=-30):
     """
     Return the Taylor window.

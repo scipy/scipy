@@ -95,8 +95,8 @@ class TestBlackmanHarris(object):
 class TestTaylor(object):
     
     def test_simple(self):
-        assert_allclose(taylor(1, 2, -15), 1.0)
-        assert_allclose(taylor(5, 2, -15),
+        assert_allclose(windows.taylor(1, 2, -15), 1.0)
+        assert_allclose(windows.taylor(5, 2, -15),
                             np.array([0.75803341, 0.90757699, 1.0,
                                     0.90757699, 0.75803341]))
 
