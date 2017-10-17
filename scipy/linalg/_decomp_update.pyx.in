@@ -806,7 +806,7 @@ cdef void thin_qr_rank_1_update(int m, int n, blas_t* q, int* qs, bint qisF,
        and V is N.  s is a 2*n work array.
     """
     cdef int j
-    cdef blas_t c, sn, rlast, t, rcond = 0.0
+    cdef blas_t c = 0.0, sn, rlast, t, rcond = 0.0
 
     reorth(m, n, q, qs, qisF, u, us, s, &rcond)
 
