@@ -546,9 +546,10 @@ def _kpp(data, k):
     init : ndarray
         A 'k' by 'N' containing the initial centroids
    
-    Reference
-    ---------
-    D. Arthur and S. Vassilvitskii, "k-means++: the advantages of careful seeding"
+    References
+    ----------
+    D. Arthur and S. Vassilvitskii, "k-means++: the advantages of careful seeding",
+      Proceedings of the Eighteenth Annual ACM-SIAM Symposium on Discrete Algorithms, 2007.
     
     """
 
@@ -556,14 +557,14 @@ def _kpp(data, k):
     
     for i in range(k):
         if i == 0:
-            init[i] = data[randint(len(data))]
+            init[i, :] = data[randint(data.shape[1])]
                
         else:
             D2 = np.array([min([np.inner(init[j]-x, init[j]-x) for j in range(i)]) for x in data])
-            probs = D2/sum(D2)
+            probs = D2/D2.sum()
             cumprobs = probs.cumsum()
             r = np.random.rand()
-            init[i] = data[np.searchsorted(cumprobs, r)]
+            init[i, :] = data[np.searchsorted(cumprobs, r)]
 
     return init
     
@@ -621,7 +622,7 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
         'points': choose k observations (rows) at random from data for
         the initial centroids.
 
-         '++': choose k observations accordingly to the kmeans++ method
+        '++': choose k observations accordingly to the kmeans++ method
         (careful seeding)
 
         'matrix': interpret the k parameter as a k by M (or length k
@@ -647,6 +648,11 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
     label : ndarray
         label[i] is the code or index of the centroid the
         i'th observation is closest to.
+
+    References
+    ----------
+    D. Arthur and S. Vassilvitskii, "k-means++: the advantages of careful seeding",
+      Proceedings of the Eighteenth Annual ACM-SIAM Symposium on Discrete Algorithms, 2007.
 
     """
     if int(iter) < 1:
