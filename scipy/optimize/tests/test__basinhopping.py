@@ -301,6 +301,13 @@ class TestBasinHopping(object):
                      niter=10, callback=callback2, seed=10)
         assert_equal(np.array(f_1), np.array(f_2))
 
+    def test_monotonic_basin_hopping(self):
+        # test 1d minimizations with gradient and T=0
+        i = 0
+        res = basinhopping(func1d, self.x0[i], minimizer_kwargs=self.kwargs,
+                           niter=self.niter, disp=self.disp, T=0)
+        assert_almost_equal(res.x, self.sol[i], self.tol)
+
 
 class Test_Storage(object):
     def setup_method(self):
