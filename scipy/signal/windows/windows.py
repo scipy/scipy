@@ -1641,13 +1641,12 @@ def exponential(M, center=None, tau=1., sym=True):
     return _truncate(w, needs_trunc)
 
 
-def taylor(N, nbar=4, sll=-30):
+def taylor(N, nbar=4, level=-30):
     """
     Return the Taylor window.
 
     The Taylor window allows for a selectable sidelobe suppression with a 
-    minimum broadening. This window is commonly used in synthetic aperture radar
-    processing.
+    minimum broadening. This window is commonly used in radar processing [1].
 
     Parameters
     ----------
@@ -1656,41 +1655,46 @@ def taylor(N, nbar=4, sll=-30):
         empty array is returned.
     nbar : int
         Number of nearly constant level sidelobes adjacent to the mainlobe
-    sll : float
+    level : float
         Desired peak sidelobe level in decibels (db) relative to the mainlobe
 
     Returns
     -------
     out : array
-        The window, with the maximum value normalized to one (the value
+        The window, with the center value normalized to one (the value
         one appears only if the number of samples is odd).
 
     See Also
     --------
     kaiser, bartlett, blackman, hamming, hanning
 
-    Notes
+    References
     -----
-    The Kaiser window is described by Carrara, Goodman, and Majewski 
-    in 'Spotlight Synthetic Aperture Radar: Signal Processing Algorithms'
-    Page 512-513
+    .. [1] W. Carrara, R. Goodman, and R. Majewski "Spotlight Synthetic 
+               Aperture Radar: Signal Processing Algorithms" Pages 512-513,
+               July 1995.
     """
-    B = 10**(-sll/20)
-    A = np.log(B + np.sqrt(B**2 - 1))/np.pi
+    B = 10**(-level / 20)
+    A = np.log(B + np.sqrt(B**2 - 1)) / np.pi
     s2 = nbar**2 / (A**2 + (nbar - 0.5)**2)
     ma = np.arange(1,nbar)
+    
     def calc_Fm(m):
-        numer = (-1)**(m+1) * np.prod(1-m**2/s2/(A**2 + (ma - 0.5)**2))
-        denom = 2* np.prod([1-m**2/j**2 for j in ma if j != m])
+        numer = (-1)**(m+1) * np.prod(1 - m**2/s2/(A**2 + (ma - 0.5)**2))
+        denom = 2 * np.prod([1 - m**2/j**2 for j in ma if j != m])
         return numer/denom
+
+    calc_Fm_vec = np.vectorize(calc_Fm)
+    Fm = calc_Fm_vec(ma)
     
-    Fm = np.array([calc_Fm(m) for m in ma])
     def W(n):
-        return 2*np.sum(Fm * np.cos(2*np.pi*ma*(n-N/2 + 1/2)/N)) + 1
+        return 2*np.dot(Fm, np.cos(2*np.pi*ma*(n - N/2 + 1/2)/N)) + 1
+
+    W_vec = np.vectorize(W)
+    w = W_vec(range(N))
     
-    w = np.array([W(n) for n in range(N)])
-    # normalize (Note that this is not described in the original text)
-    scale = 1.0/W((N-1)/2)
+    # normalize (Note that this is not described in the original text [1])
+    scale = 1.0 / W((N - 1) / 2)
     w *= scale
     return w
 
@@ -1823,5 +1827,3 @@ def get_window(window, Nx, fftbins=True):
         params = (Nx, beta, sym)
 
     return winfunc(*params)
-
-

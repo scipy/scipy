@@ -135,7 +135,7 @@ REFGUIDE_AUTOSUMMARY_SKIPLIST = [
 for name in ('barthann', 'bartlett', 'blackmanharris', 'blackman', 'bohman',
              'boxcar', 'chebwin', 'cosine', 'exponential', 'flattop',
              'gaussian', 'general_gaussian', 'hamming', 'hann', 'hanning',
-             'kaiser', 'nuttall', 'parzen', 'slepian', 'taylor', 'triang', 'tukey'):
+             'kaiser', 'nuttall', 'parzen', 'slepian', 'triang', 'tukey'):
     REFGUIDE_AUTOSUMMARY_SKIPLIST.append(r'scipy\.signal\.' + name)
 
 HAVE_MATPLOTLIB = False

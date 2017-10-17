@@ -92,11 +92,11 @@ class TestBlackmanHarris(object):
                         [6.0e-05, 0.055645, 0.520575, 1.0, 0.520575, 0.055645,
                          6.0e-05])
 
-class TestTaylorwin(object):
+class TestTaylor(object):
     
     def test_simple(self):
-        assert_almost_equal(taylorwin(1, 2, -15), 1.0)
-        assert_almost_equal(taylorwin(5, 2, -15),
+        assert_allclose(taylor(1, 2, -15), 1.0)
+        assert_allclose(taylor(5, 2, -15),
                             np.array([0.75803341, 0.90757699, 1.0,
                                     0.90757699, 0.75803341]))
 

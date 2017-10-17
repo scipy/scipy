@@ -324,7 +324,7 @@ deprecated_windows = ('boxcar', 'triang', 'parzen', 'bohman', 'blackman',
                       'nuttall', 'blackmanharris', 'flattop', 'bartlett',
                       'hanning', 'barthann', 'hamming', 'kaiser', 'gaussian',
                       'general_gaussian', 'chebwin', 'slepian', 'cosine',
-                      'hann', 'exponential', 'tukey', 'taylor')
+                      'hann', 'exponential', 'tukey')
 
 
 def deco(name):
