@@ -921,12 +921,11 @@ class TestPpccPlot(object):
     def test_plot_kwarg(self):
         # Check with the matplotlib.pyplot module
         fig = plt.figure()
-        fig.add_subplot(111)
+        ax = fig.add_subplot(111)
         stats.ppcc_plot(self.x, -20, 20, plot=plt)
-        plt.close()
+        fig.delaxes(ax)
 
         # Check that a Matplotlib Axes object is accepted
-        fig.add_subplot(111)
         ax = fig.add_subplot(111)
         stats.ppcc_plot(self.x, -20, 20, plot=ax)
         plt.close()
@@ -1118,12 +1117,11 @@ class TestBoxcoxNormplot(object):
     def test_plot_kwarg(self):
         # Check with the matplotlib.pyplot module
         fig = plt.figure()
-        fig.add_subplot(111)
+        ax = fig.add_subplot(111)
         stats.boxcox_normplot(self.x, -20, 20, plot=plt)
-        plt.close()
+        fig.delaxes(ax)
 
         # Check that a Matplotlib Axes object is accepted
-        fig.add_subplot(111)
         ax = fig.add_subplot(111)
         stats.boxcox_normplot(self.x, -20, 20, plot=ax)
         plt.close()
@@ -1426,4 +1424,3 @@ class TestMedianTest(object):
         exp_stat, exp_p, dof, e = stats.chi2_contingency(tbl, correction=False)
         assert_allclose(stat, exp_stat)
         assert_allclose(p, exp_p)
-

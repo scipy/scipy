@@ -11,9 +11,12 @@ many new features, numerous bug-fixes, improved test coverage and
 better documentation.  There have been a number of deprecations and
 API changes in this release, which are documented below.  All users
 are encouraged to upgrade to this release, as there are a large number
-of bug-fixes and optimizations.  Moreover, our development attention
-will now shift to bug-fix releases on the 1.0.x branch, and on adding
-new features on the master branch.
+of bug-fixes and optimizations.  Before upgrading, we recommend that users
+check that their own code does not use deprecated SciPy functionality
+(to do so, run your code with ``python -Wd`` and check for
+``DeprecationWarning`` s).  Our development attention will now shift to
+bug-fix releases on the 1.0.x branch, and on adding new features on the
+master branch.
 
 Some of the highlights of this release are:
 
@@ -374,6 +377,7 @@ Authors
 * Nick Papior +
 * Dima Pasechnik +
 * Ashwin Pathak +
+* Oleksandr Pavlyk +
 * Stefan Peterson
 * Ilhan Polat
 * Andrey Portnoy +
@@ -417,7 +421,7 @@ Authors
 * Nikolay Zinov +
 * Zé Vinícius +
 
-A total of 120 people contributed to this release.
+A total of 121 people contributed to this release.
 People with a "+" by their names contributed a patch for the first time.
 This list of names is automatically generated, and may not be fully complete.
 
@@ -486,6 +490,10 @@ Issues closed for 1.0.0
 - `#7776 <https://github.com/scipy/scipy/issues/7776>`__: tests require `nose`
 - `#7798 <https://github.com/scipy/scipy/issues/7798>`__: contributor names for 1.0 release notes
 - `#7828 <https://github.com/scipy/scipy/issues/7828>`__: 32-bit Linux test errors on TestCephes
+- `#7893 <https://github.com/scipy/scipy/issues/7893>`__: scipy.spatial.distance.wminkowski behaviour change in 1.0.0b1
+- `#7898 <https://github.com/scipy/scipy/issues/7898>`__: DOC: Window functions
+- `#7959 <https://github.com/scipy/scipy/issues/7959>`__: BUG maybe: fmin_bfgs possibly broken in 1.0
+- `#7969 <https://github.com/scipy/scipy/issues/7969>`__: scipy 1.0.0rc1 windows wheels depend on missing msvcp140.dll
 
 
 Pull requests for 1.0.0
@@ -793,6 +801,13 @@ Pull requests for 1.0.0
 - `#7908 <https://github.com/scipy/scipy/pull/7908>`__: FIX: Avoid bad ``__del__`` (close) behavior
 - `#7918 <https://github.com/scipy/scipy/pull/7918>`__: TST: mark two optimize.linprog tests as xfail. See gh-7877.
 - `#7929 <https://github.com/scipy/scipy/pull/7929>`__: MAINT: changed defaults to lower in sytf2, sytrf and hetrf
-- `#7938 <https://github.com/scipy/scipy/pull/7938>`__: MAINT: backports from 1.0.x
 - `#7939 <https://github.com/scipy/scipy/pull/7939>`__: Fix umfpack solver construction for win-amd64
+- `#7948 <https://github.com/scipy/scipy/pull/7948>`__: DOC: add note on checking for deprecations before upgrade to...
+- `#7952 <https://github.com/scipy/scipy/pull/7952>`__: DOC: update SciPy Roadmap for 1.0 release and recent discussions.
+- `#7960 <https://github.com/scipy/scipy/pull/7960>`__: BUG: optimize: revert changes to bfgs in gh-7165
+- `#7962 <https://github.com/scipy/scipy/pull/7962>`__: TST: special: mark a failing hyp2f1 test as xfail
+- `#7973 <https://github.com/scipy/scipy/pull/7973>`__: BUG: fixed keyword in 'info' in ``_get_mem_available`` utility
+- `#8001 <https://github.com/scipy/scipy/pull/8001>`__: TST: fix test failures from Matplotlib 2.1 update
+- `#8010 <https://github.com/scipy/scipy/pull/8010>`__: BUG: signal: fix crash in lfilter
+- `#8019 <https://github.com/scipy/scipy/pull/8019>`__: MAINT: fix test failures with NumPy master
 

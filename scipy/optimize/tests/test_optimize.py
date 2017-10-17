@@ -158,14 +158,14 @@ class CheckOptimizeParameterized(CheckOptimize):
                         atol=1e-6)
 
         # Ensure that function call counts are 'known good'; these are from
-        # Scipy 1.0.0. Don't allow them to increase.
-        assert_(self.funccalls == 9, self.funccalls)
-        assert_(self.gradcalls == 7, self.gradcalls)
+        # Scipy 0.7.0. Don't allow them to increase.
+        assert_(self.funccalls == 10, self.funccalls)
+        assert_(self.gradcalls == 8, self.gradcalls)
 
-        # Ensure that the function behaves the same; this is from Scipy 1.0.0
+        # Ensure that the function behaves the same; this is from Scipy 0.7.0
         assert_allclose(self.trace[6:8],
-                        [[7.323472e-15, -5.248650e-01, 4.875251e-01],
-                         [7.323472e-15, -5.248650e-01, 4.875251e-01]],
+                        [[0, -5.25060743e-01, 4.87748473e-01],
+                         [0, -5.24885582e-01, 4.87530347e-01]],
                         atol=1e-14, rtol=1e-7)
 
     def test_bfgs_infinite(self):
