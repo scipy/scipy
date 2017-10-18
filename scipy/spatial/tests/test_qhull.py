@@ -167,8 +167,8 @@ class Test_Qhull(object):
         assert_raises(RuntimeError, y.get_voronoi_diagram)
 
     def test_issue_8051(self):
-          points = np.array([[0, 0], [0, 1], [0, 2], [1, 0], [1, 1], [1, 2],[2, 0], [2, 1], [2, 2]])
-          Voronoi(points)
+        points = np.array([[0, 0], [0, 1], [0, 2], [1, 0], [1, 1], [1, 2],[2, 0], [2, 1], [2, 2]])
+        Voronoi(points)
 
 
 class TestUtilities(object):
