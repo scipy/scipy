@@ -166,10 +166,9 @@ class Test_Qhull(object):
         y.close()
         assert_raises(RuntimeError, y.get_voronoi_diagram)
 
-  @pytest.mark.xfail
-  def test_issue_8051(self):
-        points = np.array([[0, 0], [0, 1], [0, 2], [1, 0], [1, 1], [1, 2],[2, 0], [2, 1], [2, 2]])
-        Voronoi(points)
+    def test_issue_8051(self):
+          points = np.array([[0, 0], [0, 1], [0, 2], [1, 0], [1, 1], [1, 2],[2, 0], [2, 1], [2, 2]])
+          Voronoi(points)
 
 
 class TestUtilities(object):
