@@ -238,6 +238,7 @@ but we list them here for convenience:
    windows.boxcar            -- Boxcar window
    windows.chebwin           -- Dolph-Chebyshev window
    windows.cosine            -- Cosine window
+   windows.dpss              -- Discrete prolate spheroidal sequences
    windows.exponential       -- Exponential window
    windows.flattop           -- Flat top window
    windows.gaussian          -- Gaussian window

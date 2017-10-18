@@ -659,7 +659,13 @@ def _expm(A, use_exact_onenorm):
     eta_4 = max(h.d8_loose, h.d10_loose)
     eta_5 = min(eta_3, eta_4)
     theta_13 = 4.25
-    s = max(int(np.ceil(np.log2(eta_5 / theta_13))), 0)
+
+    # Choose smallest s>=0 such that 2**(-s) eta_5 <= theta_13
+    if eta_5 == 0:
+        # Nilpotent special case
+        s = 0
+    else:
+        s = max(int(np.ceil(np.log2(eta_5 / theta_13))), 0)
     s = s + _ell(2**-s * h.A, 13)
     U, V = h.pade13_scaled(s)
     X = _solve_P_Q(U, V, structure=structure)

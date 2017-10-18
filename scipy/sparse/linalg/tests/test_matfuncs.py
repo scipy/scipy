@@ -22,7 +22,7 @@ from scipy.sparse.linalg.matfuncs import (expm, _expm,
         ProductOperator, MatrixPowerOperator,
         _onenorm_matrix_power_nnm)
 from scipy.linalg import logm
-from scipy.special import factorial
+from scipy.special import factorial, binom
 import scipy.sparse
 import scipy.sparse.linalg
 
@@ -493,6 +493,26 @@ class TestExpM(object):
             ], dtype=float)
         actual = expm(A)
         assert_allclose(actual, desired)
+
+    def test_pascal(self):
+        # Test pascal triangle.
+        # Nilpotent exponential, used to trigger a failure (gh-8029)
+
+        for scale in [1.0, 1e-3, 1e-6]:
+            for n in range(120):
+                A = np.diag(np.arange(1, n + 1), -1) * scale
+                B = expm(A)
+
+                sc = scale**np.arange(n, -1, -1)
+                if np.any(sc < 1e-300):
+                    continue
+
+                got = B
+                expected = binom(np.arange(n + 1)[:,None],
+                                 np.arange(n + 1)[None,:]) * sc[None,:] / sc[:,None]
+                err = abs(expected - got).max()
+                atol = 1e-13 * abs(expected).max()
+                assert_allclose(got, expected, atol=atol)
 
 
 class TestOperators(object):
