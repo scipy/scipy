@@ -311,7 +311,7 @@ class Metropolis(object):
         If new is higher than old, there is a chance it will be accepted,
         less likely for larger differences.
         """
-        w = math.exp(min(0, -(energy_new - energy_old) * self.beta))
+        w = math.exp(min(0, -float(energy_new - energy_old) * self.beta))
         rand = self.random_state.rand()
         return w >= rand
 
