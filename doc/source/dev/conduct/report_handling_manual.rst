@@ -153,8 +153,7 @@ Possible responses may include:
 Once a resolution is agreed upon, but before it is enacted, the committee will
 contact the original reporter and any other affected parties and explain the
 proposed resolution. The committee will ask if this resolution is acceptable,
-and must note feedback for the record. However, the committee is not required to
-act on this feedback.
+and must note feedback for the record.
 
 Finally, the committee will make a report to the SciPy Steering Council (as
 well as the SciPy core team in the event of an ongoing resolution, such as a

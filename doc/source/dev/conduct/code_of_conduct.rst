@@ -8,7 +8,7 @@ Introduction
 This code of conduct applies to all spaces managed by the SciPy project,
 including all public and private mailing lists, issue trackers, wikis, blogs,
 Twitter, and any other communication channel used by our community.  The SciPy
-project does not organise in-person events, however we expect events relevant
+project does not organise in-person events, however we expect events related
 to our community to have a code of conduct similar in spirit to this one.
 
 We expect this code of conduct to be honored by everyone who participates in
@@ -18,8 +18,8 @@ project, in any role.
 
 This code is not exhaustive or complete. It serves to distill our common
 understanding of a collaborative, shared environment and goals. We expect it to
-be followed in spirit as much as in the letter, so that it can enrich all of us
-and the technical community in which we participate.
+be followed in spirit as much as in letter, to create a friendly and productive
+environment that enriches the surrounding community.
 
 
 Specific Guidelines
@@ -31,17 +31,14 @@ We strive to:
    public methods of communication for project-related messages, unless
    discussing something sensitive. This applies to messages for help or
    project-related support, too; not only is a public support request much more
-   likely to result in an answer to a question, it also makes sure that any
-   inadvertent mistakes made by people answering will be more easily detected
-   and corrected.
+   likely to result in an answer to a question, it also ensures that any
+   inadvertent mistakes in answering are more easily detected and corrected.
 
 2. Be empathetic, welcoming, friendly, and patient. We work together to resolve
    conflict, assume good intentions, and do our best to act in an empathetic
    fashion. We may all experience some frustration from time to time, but we do
    not allow frustration to turn into a personal attack. A community where
-   people feel uncomfortable or threatened is not a productive one. We should
-   be respectful when dealing with other community members as well as with
-   people outside our community.
+   people feel uncomfortable or threatened is not a productive one.
 
 3. Be collaborative. Our work will be used by other people, and in turn we will
    depend on the work of others. When we make something for the benefit of the
@@ -69,7 +66,7 @@ We strive to:
     - Sharing private content, such as emails sent privately or non-publicly, or unlogged forums such as IRC channel history.
     - Personal insults, especially those using racist or sexist terms.
     - Unwelcome sexual attention.
-    - Excessive or unnecessary profanity.
+    - Excessive profanity.
     - Repeated harassment of others. In general, if someone asks you to stop, then stop.
     - Advocating for, or encouraging, any of the above behaviour.
 
@@ -78,9 +75,9 @@ Diversity Statement
 -------------------
 
 The SciPy project welcomes and encourages participation by everyone. We are
-committed to being a community that everyone feels good about joining. Although
-we may not be able to satisfy everyone, we will always work to treat everyone
-well.
+committed to being a community that everyone enjoys being part of. Although
+we may not always be able to accommodate each individual's preferences, we try
+our best to treat everyone kindly.
 
 No matter how you identify yourself or how others perceive you: we welcome you.
 Though no list can hope to be comprehensive, we explicitly honour diversity in:
@@ -94,7 +91,8 @@ conducted in English.
 
 Standards for behaviour in the SciPy community are detailed in the Code of
 Conduct above. We expect participants in our community to meet these standards
-in all their interactions and to help others to do so as well.
+in all their interactions and to help others to do so as well (see next
+section).
 
 
 Reporting Guidelines
@@ -102,14 +100,14 @@ Reporting Guidelines
 
 While this code of conduct should be adhered to by participants, we recognize
 that sometimes people may have a bad day, or be unaware of some of the
-guidelines in this code of conduct. When that happens, you may reply to them
-and point out this code of conduct. Such messages may be in public or in
-private, whatever is most appropriate. However, regardless of whether the
-message is public or not, it should still adhere to the relevant parts of this
-code of conduct; in particular, it should not be abusive or disrespectful.
-Assume good faith; it is more likely that participants are unaware of their bad
-behaviour than that they intentionally try to degrade the quality of the
-discussion.
+guidelines in this code of conduct. Thus, when someone behaves in an
+inappropriate way, you may reply to them and point out this code of conduct.
+Such messages may be in public or in private, whatever is most appropriate.
+However, regardless of whether the message is public or not, it should still
+adhere to the relevant parts of this code of conduct; in particular, it should
+not be abusive or disrespectful.  Assume good faith; it is more likely that
+participants are unaware of their bad behaviour, rather than trying to degrade
+the quality of the discussion.
 
 Should there be difficulties in dealing with the situation, you may report your
 compliance issues in confidence to either:
@@ -132,8 +130,8 @@ in* :ref:`CoC_reporting_manual`.
 All complaints will be reviewed and investigated and will result in a response
 that is deemed necessary and appropriate to the circumstances. The SciPy Code
 of Conduct Committee, and the SciPy Steering Committee (if involved), are
-obligated to maintain confidentiality with regard to the reporter of an
-incident. 
+obligated to protect the identity of the reporter, and to treat the content of
+complaints with confidentiality (unless discussed with the reporter).
 
 The process for acting on any received code of conduct violation report at a
 high level (for all but the most severe cases) will be:
@@ -154,8 +152,8 @@ This Code defines empathy as "a vicarious participation in the emotions, ideas,
 or opinions of others; the ability to imagine oneself in the condition or
 predicament of another." Empathetic is the adjectival form of empathy.
 
-This statement thanks the following, on which it draws for content and
-inspiration:
+We are thankful to the groups behind the following documents, from which we
+drew content and inspiration:
 
 - `The Apache Foundation Code of Conduct <https://www.apache.org/foundation/policies/conduct.html>`_
 - `The Contributor Covenant <https://www.contributor-covenant.org/version/1/4/code-of-conduct/>`_
