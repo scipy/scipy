@@ -6,6 +6,7 @@ from itertools import product
 
 from numpy.testing import assert_equal
 from scipy.sparse import csr_matrix
+from scipy._lib._version import NumpyVersion
 
 import numpy as np
 from scipy.sparse import extract, spmatrix
@@ -49,8 +50,14 @@ class TestExtract(object):
     def test_unique(self):
         for A in self.cases:
             B = A.toarray()
+            if NumpyVersion(np.__version__) <= '1.8.2':
+                # return_counts is not compatible with these versions of Numpy.
+                return_counts_options = [False]
+            else:
+                return_counts_options = [True, False]
+
             for return_indices, return_inverse, return_counts in (
-                    product(*([[True, False]] * 3))):
+                    product(*([[True, False]] * 2 + return_counts_options))):
                 sparse_result = extract.unique(
                     A, return_indices, return_inverse, return_counts)
                 np_result = np.unique(
