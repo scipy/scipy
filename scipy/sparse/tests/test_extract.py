@@ -52,9 +52,9 @@ class TestExtract(object):
             B = A.toarray()
             if NumpyVersion(np.__version__) <= '1.8.2':
                 # return_counts is not compatible with these versions of Numpy.
-                return_counts_options = [False]
+                return_counts_options = [[False]]
             else:
-                return_counts_options = [True, False]
+                return_counts_options = [[True, False]]
 
             for return_indices, return_inverse, return_counts in (
                     product(*([[True, False]] * 2 + return_counts_options))):
