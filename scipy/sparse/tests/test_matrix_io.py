@@ -7,7 +7,7 @@ import tempfile
 
 import pytest
 from pytest import raises as assert_raises
-from numpy.testing import assert_equal, assert_, assert_raises
+from numpy.testing import assert_equal, assert_
 from scipy._lib._version import NumpyVersion
 
 from scipy.sparse import (csc_matrix, csr_matrix, bsr_matrix, dia_matrix,
@@ -87,9 +87,7 @@ def test_implemented_error():
     # Attempts to save an unsupported type and checks that an
     # NotImplementedError is raised.
 
-    def save_dok():
-        x = dok_matrix((2,3))
-        x[0,1] = 1
-        save_npz('x.npz', x)
+    x = dok_matrix((2,3))
+    x[0,1] = 1
 
-    assert_raises(NotImplementedError, save_dok)
+    assert_raises(NotImplementedError, save_npz, 'x.npz', x)
