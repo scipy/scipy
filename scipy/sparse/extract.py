@@ -197,7 +197,7 @@ def unique(mat, return_indices=False, return_inverse=False, return_counts=False)
         to reconstruct `mat`.
     return_counts : bool, optional
         If True, also return the number of times each unique value comes up
-        in `mat`.
+        in `mat`. Must be False for Numpy versions <= 1.8.2.
 
     Returns
     -------
