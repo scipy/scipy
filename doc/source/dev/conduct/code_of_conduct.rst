@@ -137,8 +137,13 @@ of Conduct Committee, and the SciPy Steering Committee (if involved), are
 obligated to protect the identity of the reporter, and to treat the content of
 complaints with confidentiality (unless discussed with the reporter).
 
-The process for acting on any received code of conduct violation report at a
-high level (for all but the most severe cases) will be:
+There are two tracks of response; the first is for severe and obvious
+breaches, where the communication involves personal threat or violent, sexist
+or racist language.  We will immediately disconnect the originator from Scipy
+communication channels in this case; please see the manual for details.
+
+In cases that are less extreme, the process for acting on any received code of
+conduct violation report will be:
 
 1. acknowledge report is received
 2. reasonable discussion/feedback

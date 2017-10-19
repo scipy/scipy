@@ -26,6 +26,21 @@ guidelines in mind:
   Understanding the full context and finding a path that re-engages all is
   hard, but ultimately the most productive for our community.
 
+* We understand that email is a difficult medium and can be isolating.
+  Receiving criticism over email, without personal contact, can be
+  particularly painful.  This makes it especially important to keep an
+  atmosphere of open-minded respect of the views of others.  It also means
+  that we must be transparent in our actions, and that we will do everything
+  in our power to make sure that all our members are treated fairly and with
+  sympathy.
+
+* Discrimination can be subtle and it can be unconscious. It can show itself
+  as unfairness and hostility in otherwise ordinary interactions.  We know
+  that this does occur, and we will take care to look out for it.  We would
+  very much like to hear from you if you feel you have been treated unfairly,
+  and we will use these procedures to make sure that your complaint is heard
+  and addressed.
+
 * Help increase engagement in good discussion practice: try to identify where
   discussion may have broken down and provide actionable information, pointers
   and resources that can lead to positive change on these points.
@@ -39,7 +54,6 @@ guidelines in mind:
   and help them understand the issue and what they can change to avoid causing
   offence.  Complex discussion in a foreign language can be very intimidating,
   and we want to grow our diversity also across nationalities and cultures.
-
 
 *Mediation*: voluntary, informal mediation is a tool at our disposal.  In
 contexts such as when two or more parties have all escalated to the point of
@@ -68,6 +82,49 @@ action deemed necessary.
 
 How the committee will respond to reports
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+There are two tracks of response; one is specific to clear and severe breaches
+(as defined below).
+
+Clear and severe breach
++++++++++++++++++++++++
+
+We know that it is painfully common for internet communication to start at or
+devolve into obvious and flagrant abuse.  We define a clear and severe breach
+as being: personal threats, violent, sexist or racist language.
+
+In what follows, we define a Scipy contributor as someone who has done any of
+the following, at least a week prior to the incident in question:
+
+* sent more than one substantial email to the mailing list;
+* submitted a substantial pull request;
+* submitted a substantial issue report.
+
+If any member sees a communication that qualifies as a personal threat, or
+violent, sexist or racist language, we ask them to contact a member of the
+Code of Conduct Committee immediately, via the conduct@email, and / or via
+their personal email addresses.  When a member of the committee becomes aware
+of such a communication, they will do the following:
+
+* Immediately disconnect the originator from all Scipy communication channels.
+* If the originator appears to be a previous contributor, the moderator may
+  try to contact the contributor by some other means to check whether their
+  account has been hacked.
+* If the originator is in fact a previous contributor, and the contributor
+  wants to be reconnected to the Scipy channels, then the acting moderator may
+  consider some cooling off period, an agreement not to repeat the behavior,
+  and email moderation.  A previous contributor also has the right to an
+  appeal to the code of conduct committee.
+* In every case, the moderator should make a reasonable effort to contact the
+  originator, and tell them specifically how their language qualifies as
+  "personal threat, violent, racist or sexist language", and they should copy
+  this explanation to the Code of Conduct Committee.  The Code of Conduct
+  Committee will formally review and sign off on these cases every year to
+  make sure this mechanism is not being used to control ordinary heated
+  disagreement.
+
+Other breaches
+++++++++++++++
 
 When a report is sent to the committee they will immediately reply to the
 reporter to confirm receipt. This reply must be sent within 72 hours, and the
