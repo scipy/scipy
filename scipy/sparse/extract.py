@@ -210,12 +210,17 @@ def unique(mat, return_indices=False, return_inverse=False, return_counts=False)
         unique array. Only provided if `return_inverse` is True.
 
         Note that, because the matrix is sparse, the full array of indices is
-        not returned. Instead, a 2 x n array i is returned such that the
-        following code will reproduce the original matrix::
+        not returned. Instead, a 2 x n array is returned where the first row is
+        the linearized indices of nonzero values in the original matrix, and the
+        second row is the corresponding indices for the values in the vector of
+        uniques. Thus, code like the following reproduces the original matrix::
 
-            >>> m = np.zeros(np.prod(mat.shape), dtype=mat.dtype) # or sparse matrix
-            >>> m[i[0]] = unique[i[1]]
-            >>> np.reshape(m, mat.shape)
+            >>> from scipy.sparse import lil_matrix, extract
+            >>> mat = lil_matrix([[1, 0], [2, 0]])
+            >>> uniques, inverse = extract.unique(mat, return_inverse=True)
+            >>> recovered = lil_matrix((np.prod(mat.shape), 1), dtype=mat.dtype)
+            >>> recovered[inverse[0]] = uniques[inverse[1]] # How to use inverse
+            >>> recovered = recovered.reshape(mat.shape)
 
     unique_counts : ndarray, optional
         The number of times each of the unique values comes up in the
