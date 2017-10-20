@@ -95,22 +95,21 @@ in all their interactions and help others to do so as well (see next section).
 Reporting Guidelines
 --------------------
 
-While this code of conduct should be adhered to by participants, we recognize
-that sometimes people may have a bad day, or be unaware of some of the
-guidelines in this code of conduct. Thus, when someone behaves in an
-inappropriate way, you may reply to them and point out this code of conduct.
-Such messages may be in public or in private, whatever is most appropriate.
-However, regardless of whether the message is public or not, it should still
-adhere to the relevant parts of this code of conduct; in particular, it should
-not be abusive or disrespectful.  Assume good faith; it is more likely that
-participants are unaware of their bad behaviour, rather than trying to degrade
-the quality of the discussion.
+We know that it is painfully common for internet communication to start at or
+devolve into obvious and flagrant abuse.  We also recognize that sometimes
+people may have a bad day, or be unaware of some of the guidelines in this Code
+of Conduct. Please keep this in mind when deciding on how to respond to a
+breach of this Code.
 
-Should there be difficulties in dealing with the situation, you may report your
-compliance issues in confidence to either:
+For clearly intentional breaches, report those to the Code of Conduct committee
+(see below). For possibly unintentional breaches, you may reply to the person
+and point out this code of conduct (either in public or in private, whatever is
+most appropriate). If you would prefer not to do that, please feel free to
+report to the Code of Conduct Committee directly, or ask the Committee for
+advice, in confidence.
 
-You can report issues to the SciPy Code of Conduct committee, at conduct@TODO.
-Currently, the committee consists of:
+You can report issues to the SciPy Code of Conduct committee, at
+scipy-conduct@googlegroups.com. Currently, the committee consists of:
 
 - Stefan van der Walt
 - Nathaniel J. Smith
@@ -118,7 +117,7 @@ Currently, the committee consists of:
 
 If your report involves any members of the committee, or if they feel they have
 a conflict of interest in handling it, then they will recuse themselves from
-considering your report.  Alternatively, if for any reason you feel
+considering your report. Alternatively, if for any reason you feel
 uncomfortable making a report to the committee, then you can also contact:
 
 - Chair of the SciPy Steering Committee: Ralf Gommers, or
@@ -137,18 +136,17 @@ of Conduct Committee, and the SciPy Steering Committee (if involved), are
 obligated to protect the identity of the reporter, and to treat the content of
 complaints with confidentiality (unless discussed with the reporter).
 
-There are two tracks of response; the first is for severe and obvious
-breaches, where the communication involves personal threat or violent, sexist
-or racist language.  We will immediately disconnect the originator from Scipy
-communication channels in this case; please see the manual for details.
+In case of severe and obvious breaches, e.g. personal threat or violent, sexist
+or racist language, we will immediately disconnect the originator from Scipy
+communication channels; please see the manual for details.
 
-In cases that are less extreme, the process for acting on any received code of
-conduct violation report will be:
+In cases not involving clear intentional breaches of this code of conduct, the
+process for acting on any received code of conduct violation report will be:
 
 1. acknowledge report is received
 2. reasonable discussion/feedback
-3. mediation (if feedback didn't help)
-4. enforcement via transparent decision by the Code of Conduct Committee (if mediation failed)
+3. mediation (if feedback didn't help, and only if both reporter and reportee agree to this)
+4. enforcement via transparent decision by the Code of Conduct Committee
 
 The committee will respond to any report as soon as possible, and at most
 within 72 hours.

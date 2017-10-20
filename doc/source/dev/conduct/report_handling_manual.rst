@@ -83,48 +83,48 @@ action deemed necessary.
 How the committee will respond to reports
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-There are two tracks of response; one is specific to clear and severe breaches
-(as defined below).
+When the committee (or a committee member) receives a report, they will first
+determine whether the report is about a clear and severe breach (as defined
+below).  If so, immediate action needs to be taken in addition to the regular
+report handling process.
 
-Clear and severe breach
-+++++++++++++++++++++++
+Clear and severe breach actions
++++++++++++++++++++++++++++++++
 
 We know that it is painfully common for internet communication to start at or
-devolve into obvious and flagrant abuse.  We define a clear and severe breach
-as being: personal threats, violent, sexist or racist language.
+devolve into obvious and flagrant abuse.  We will deal quickly with clear and
+severe breaches like personal threats, violent, sexist or racist language.
 
-In what follows, we define a Scipy contributor as someone who has done any of
+In what follows, we define a SciPy contributor as someone who has done any of
 the following, at least a week prior to the incident in question:
 
-* sent more than one substantial email to the mailing list;
+* sent at least one substantial email to the mailing list;
 * submitted a substantial pull request;
 * submitted a substantial issue report.
 
-If any member sees a communication that qualifies as a personal threat, or
-violent, sexist or racist language, we ask them to contact a member of the
-Code of Conduct Committee immediately, via the conduct@email, and / or via
-their personal email addresses.  When a member of the committee becomes aware
-of such a communication, they will do the following:
+When a member of the Code of Conduct committee becomes aware of a clear and
+severe breach, they will do the following:
 
-* Immediately disconnect the originator from all Scipy communication channels.
+* Immediately disconnect the originator from all SciPy communication channels.
+* Reply to the reporter that their report has been received and that the
+  originator has been disconnected.
 * If the originator appears to be a previous contributor, the moderator may
   try to contact the contributor by some other means to check whether their
   account has been hacked.
 * If the originator is in fact a previous contributor, and the contributor
-  wants to be reconnected to the Scipy channels, then the acting moderator may
+  wants to be reconnected to the SciPy channels, then the acting moderator may
   consider some cooling off period, an agreement not to repeat the behavior,
   and email moderation.  A previous contributor also has the right to an
   appeal to the code of conduct committee.
 * In every case, the moderator should make a reasonable effort to contact the
-  originator, and tell them specifically how their language qualifies as
-  "personal threat, violent, racist or sexist language", and they should copy
-  this explanation to the Code of Conduct Committee.  The Code of Conduct
-  Committee will formally review and sign off on these cases every year to
-  make sure this mechanism is not being used to control ordinary heated
-  disagreement.
+  originator, and tell them specifically how their language or actions
+  qualifies as a "clear and severe breach", and they should copy this
+  explanation to the Code of Conduct Committee.  The Code of Conduct Committee
+  will formally review and sign off on these cases to make sure this mechanism
+  is not being used to control ordinary heated disagreement.
 
-Other breaches
-++++++++++++++
+Report handling
++++++++++++++++
 
 When a report is sent to the committee they will immediately reply to the
 reporter to confirm receipt. This reply must be sent within 72 hours, and the
