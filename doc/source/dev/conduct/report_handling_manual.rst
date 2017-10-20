@@ -95,33 +95,22 @@ We know that it is painfully common for internet communication to start at or
 devolve into obvious and flagrant abuse.  We will deal quickly with clear and
 severe breaches like personal threats, violent, sexist or racist language.
 
-In what follows, we define a SciPy contributor as someone who has done any of
-the following, at least a week prior to the incident in question:
-
-* sent at least one substantial email to the mailing list;
-* submitted a substantial pull request;
-* submitted a substantial issue report.
-
 When a member of the Code of Conduct committee becomes aware of a clear and
 severe breach, they will do the following:
 
 * Immediately disconnect the originator from all SciPy communication channels.
 * Reply to the reporter that their report has been received and that the
   originator has been disconnected.
-* If the originator appears to be a previous contributor, the moderator may
-  try to contact the contributor by some other means to check whether their
-  account has been hacked.
-* If the originator is in fact a previous contributor, and the contributor
-  wants to be reconnected to the SciPy channels, then the acting moderator may
-  consider some cooling off period, an agreement not to repeat the behavior,
-  and email moderation.  A previous contributor also has the right to an
-  appeal to the code of conduct committee.
 * In every case, the moderator should make a reasonable effort to contact the
   originator, and tell them specifically how their language or actions
-  qualifies as a "clear and severe breach", and they should copy this
-  explanation to the Code of Conduct Committee.  The Code of Conduct Committee
-  will formally review and sign off on these cases to make sure this mechanism
-  is not being used to control ordinary heated disagreement.
+  qualifies as a "clear and severe breach".  The moderator should also say
+  that, if the originator believes this is unfair or they want to be
+  reconnected to SciPy, they have the right to ask for a review, as below, by
+  the Code of Conduct Committee.
+  The moderator should copy this explanation to the Code of Conduct Committee.
+* The Code of Conduct Committee will formally review and sign off on all cases
+  where this mechanism has been applied to make sure it is not being used to
+  control ordinary heated disagreement.
 
 Report handling
 +++++++++++++++
@@ -163,6 +152,8 @@ two weeks. In the event that a resolution can't be determined in that time, the
 committee will respond to the reporter(s) with an update and projected timeline
 for resolution.
 
+
+.. _CoC_resolutions:
 
 Resolutions
 ~~~~~~~~~~~

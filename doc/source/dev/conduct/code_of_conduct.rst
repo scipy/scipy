@@ -54,8 +54,7 @@ We strive to:
 5. Be careful in the words that we choose.  We are careful and respectful in
    our communication and we take responsibility for our own speech. Be kind to
    others. Do not insult or put down other participants.  We will not accept
-   harassment or other exclusionary behaviour. This includes, but is not
-   limited to:
+   harassment or other exclusionary behaviour, such as:
 
     - Violent threats or language directed against another person.
     - Sexist, racist, or otherwise discriminatory jokes and language.
@@ -137,7 +136,7 @@ obligated to protect the identity of the reporter, and to treat the content of
 complaints with confidentiality (unless discussed with the reporter).
 
 In case of severe and obvious breaches, e.g. personal threat or violent, sexist
-or racist language, we will immediately disconnect the originator from Scipy
+or racist language, we will immediately disconnect the originator from SciPy
 communication channels; please see the manual for details.
 
 In cases not involving clear intentional breaches of this code of conduct, the
@@ -146,7 +145,8 @@ process for acting on any received code of conduct violation report will be:
 1. acknowledge report is received
 2. reasonable discussion/feedback
 3. mediation (if feedback didn't help, and only if both reporter and reportee agree to this)
-4. enforcement via transparent decision by the Code of Conduct Committee
+4. enforcement via transparent decision (see :ref:`CoC_resolutions`) by the
+   Code of Conduct Committee
 
 The committee will respond to any report as soon as possible, and at most
 within 72 hours.
