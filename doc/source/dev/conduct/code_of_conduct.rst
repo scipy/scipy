@@ -8,18 +8,18 @@ Introduction
 This code of conduct applies to all spaces managed by the SciPy project,
 including all public and private mailing lists, issue trackers, wikis, blogs,
 Twitter, and any other communication channel used by our community.  The SciPy
-project does not organise in-person events, however we expect events related
-to our community to have a code of conduct similar in spirit to this one.
+project does not organise in-person events, however events related to our
+community should have a code of conduct similar in spirit to this one.
 
-We expect this code of conduct to be honored by everyone who participates in
+This code of conduct should be honored by everyone who participates in
 the SciPy community formally or informally, or claims any affiliation with the
 project, in any project-related activities and especially when representing the
 project, in any role.
 
 This code is not exhaustive or complete. It serves to distill our common
-understanding of a collaborative, shared environment and goals. We expect it to
-be followed in spirit as much as in letter, to create a friendly and productive
-environment that enriches the surrounding community.
+understanding of a collaborative, shared environment and goals. Please try to
+follow this code in spirit as much as in letter, to create a friendly and
+productive environment that enriches the surrounding community.
 
 
 Specific Guidelines
@@ -27,7 +27,7 @@ Specific Guidelines
 
 We strive to:
 
-1. Be open. We invite anyone to participate in our community. We preferably use
+1. Be open. We invite anyone to participate in our community. We prefer to use
    public methods of communication for project-related messages, unless
    discussing something sensitive. This applies to messages for help or
    project-related support, too; not only is a public support request much more
@@ -35,10 +35,10 @@ We strive to:
    inadvertent mistakes in answering are more easily detected and corrected.
 
 2. Be empathetic, welcoming, friendly, and patient. We work together to resolve
-   conflict, assume good intentions, and do our best to act in an empathetic
-   fashion. We may all experience some frustration from time to time, but we do
-   not allow frustration to turn into a personal attack. A community where
-   people feel uncomfortable or threatened is not a productive one.
+   conflict, and assume good intentions. We may all experience some frustration
+   from time to time, but we do not allow frustration to turn into a personal
+   attack. A community where people feel uncomfortable or threatened is not a
+   productive one.
 
 3. Be collaborative. Our work will be used by other people, and in turn we will
    depend on the work of others. When we make something for the benefit of the
@@ -47,26 +47,24 @@ We strive to:
    users and colleagues, and we take those consequences seriously when making
    decisions.
 
-3. Be inquisitive. Nobody knows everything! Asking questions early avoids many
-   problems later, so questions are encouraged, though they may be directed to
-   the appropriate forum. Those who are asked should be responsive and helpful,
-   within the context of our shared goal of improving SciPy project code,
-   documentation and other content.
+4. Be inquisitive. Nobody knows everything! Asking questions early avoids many
+   problems later, so we encourage questions, although we may direct them to
+   the appropriate forum. We will try hard to be responsive and helpful.
 
-4. Be careful in the words that we choose. Whether we are participating as
-   professionals or volunteers, we value professionalism in all interactions,
-   and take responsibility for our own speech. Be kind to others. Do not insult
-   or put down other participants. Harassment and other exclusionary behaviour
-   are not acceptable. This includes, but is not limited to:
+5. Be careful in the words that we choose.  We are careful and respectful in
+   our communication and we take responsibility for our own speech. Be kind to
+   others. Do not insult or put down other participants.  We will not accept
+   harassment or other exclusionary behaviour. This includes, but is not
+   limited to:
 
     - Violent threats or language directed against another person.
     - Sexist, racist, or otherwise discriminatory jokes and language.
     - Posting sexually explicit or violent material.
     - Posting (or threatening to post) other people's personally identifying information ("doxing").
-    - Sharing private content, such as emails sent privately or non-publicly, or unlogged forums such as IRC channel history.
+    - Sharing private content, such as emails sent privately or non-publicly, or unlogged forums such as IRC channel history, without the sender's consent.
     - Personal insults, especially those using racist or sexist terms.
     - Unwelcome sexual attention.
-    - Excessive profanity.
+    - Excessive profanity. Please avoid swearwords; people differ greatly in their sensitivity to swearing.
     - Repeated harassment of others. In general, if someone asks you to stop, then stop.
     - Advocating for, or encouraging, any of the above behaviour.
 
@@ -90,9 +88,8 @@ Though we welcome people fluent in all languages, SciPy development is
 conducted in English.
 
 Standards for behaviour in the SciPy community are detailed in the Code of
-Conduct above. We expect participants in our community to meet these standards
-in all their interactions and to help others to do so as well (see next
-section).
+Conduct above. Participants in our community should uphold these standards
+in all their interactions and help others to do so as well (see next section).
 
 
 Reporting Guidelines
@@ -112,12 +109,19 @@ the quality of the discussion.
 Should there be difficulties in dealing with the situation, you may report your
 compliance issues in confidence to either:
 
-- The SciPy Code of Conduct Committee, at conduct@TODO (preferred)
-  Members of this committee are TODO
+You can report issues to the SciPy Code of Conduct committee, at conduct@TODO.
+Currently, the committee consists of:
 
-Or alternatively to:
+- Stefan van der Walt
+- Nathaniel J. Smith
+- Ralf Gommers
 
-- Chair of the SciPy Steering Committee: Ralf Gommers
+If your report involves any members of the committee, or if they feel they have
+a conflict of interest in handling it, then they will recuse themselves from
+considering your report.  Alternatively, if for any reason you feel
+uncomfortable making a report to the committee, then you can also contact:
+
+- Chair of the SciPy Steering Committee: Ralf Gommers, or
 - Executive Director of NumFOCUS: Leah Silen
 
 
@@ -147,10 +151,6 @@ within 72 hours.
 
 Endnotes
 --------
-
-This Code defines empathy as "a vicarious participation in the emotions, ideas,
-or opinions of others; the ability to imagine oneself in the condition or
-predicament of another." Empathetic is the adjectival form of empathy.
 
 We are thankful to the groups behind the following documents, from which we
 drew content and inspiration:

@@ -20,26 +20,25 @@ guidelines in mind:
 
 * Emphasize empathy for individuals rather than judging behavior, avoiding
   binary labels of "good" and "bad/evil". Overt, clear-cut aggression and
-  harassment exists and will be addressed unambiguously.  But many scenarios
+  harassment exists and we will be address that firmly.  But many scenarios
   that can prove challenging to resolve are those where normal disagreements
-  devolve into inappropriate behavior from multiple parties.  Understanding the
-  full context and finding a path that re-engages all is hard, but ultimately
-  the most productive for our community.
+  devolve into unhelpful or harmful behavior from multiple parties.
+  Understanding the full context and finding a path that re-engages all is
+  hard, but ultimately the most productive for our community.
 
 * Help increase engagement in good discussion practice: try to identify where
   discussion may have broken down and provide actionable information, pointers
-  and resources that can help enact positive change on these points.
+  and resources that can lead to positive change on these points.
 
 * Be mindful of the needs of new members: provide them with explicit support
   and consideration, with the aim of increasing participation from
   underrepresented groups in particular.
 
 * Individuals come from different cultural backgrounds and native languages.
-  While lack of intent to harm is not an excuse, try to identify any honest
-  misunderstandings caused by a non-native speaker and help them understand the
-  issue and how to change.  Complex discussion in a foreign language can be
-  very intimidating, and we want to grow our diversity also across
-  nationalities and cultures.
+  Try to identify any honest misunderstandings caused by a non-native speaker
+  and help them understand the issue and what they can change to avoid causing
+  offence.  Complex discussion in a foreign language can be very intimidating,
+  and we want to grow our diversity also across nationalities and cultures.
 
 
 *Mediation*: voluntary, informal mediation is a tool at our disposal.  In
