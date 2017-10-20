@@ -1229,3 +1229,8 @@ def test_bad_utf8():
     assert_equal(res['bad_string'],
                  b'\x80 am broken'.decode('utf8', 'replace'))
 
+
+def test_save_unicode_field(tmpdir):
+    filename = os.path.join(str(tmpdir), 'test.mat')
+    test_dict = {u'a':{u'b':1,u'c':'test_str'}}
+    savemat(filename, test_dict)
