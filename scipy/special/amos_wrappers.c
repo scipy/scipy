@@ -290,6 +290,9 @@ npy_cdouble cbesi_wrap( double v, npy_cdouble z) {
   cy_k.real = NPY_NAN;
   cy_k.imag = NPY_NAN;
 
+  if (npy_isnan(v) || npy_isnan(z.real) || npy_isnan(z.imag)) {
+    return cy;
+  }
   if (v < 0) {
     v = -v;
     sign = -1;
@@ -334,6 +337,9 @@ npy_cdouble cbesi_wrap_e( double v, npy_cdouble z) {
   cy_k.real = NPY_NAN;
   cy_k.imag = NPY_NAN;
 
+  if (npy_isnan(v) || npy_isnan(z.real) || npy_isnan(z.imag)) {
+    return cy;
+  }
   if (v < 0) {
     v = -v;
     sign = -1;
@@ -383,6 +389,9 @@ npy_cdouble cbesj_wrap( double v, npy_cdouble z) {
   cy_y.real = NPY_NAN;
   cy_y.imag = NPY_NAN;
 
+  if (npy_isnan(v) || npy_isnan(z.real) || npy_isnan(z.imag)) {
+    return cy_j;
+  }
   if (v < 0) {
     v = -v;
     sign = -1;
@@ -439,6 +448,9 @@ npy_cdouble cbesj_wrap_e( double v, npy_cdouble z) {
   cy_y.real = NPY_NAN;
   cy_y.imag = NPY_NAN;
 
+  if (npy_isnan(v) || npy_isnan(z.real) || npy_isnan(z.imag)) {
+    return cy_j;
+  }
   if (v < 0) {
     v = -v;
     sign = -1;
@@ -479,6 +491,9 @@ npy_cdouble cbesy_wrap( double v, npy_cdouble z) {
   cy_y.real = NPY_NAN;
   cy_y.imag = NPY_NAN;
 
+  if (npy_isnan(v) || npy_isnan(z.real) || npy_isnan(z.imag)) {
+    return cy_y;
+  }
   if (v < 0) {
     v = -v;
     sign = -1;
@@ -545,6 +560,9 @@ npy_cdouble cbesy_wrap_e( double v, npy_cdouble z) {
   cy_y.real = NPY_NAN;
   cy_y.imag = NPY_NAN;
 
+  if (npy_isnan(v) || npy_isnan(z.real) || npy_isnan(z.imag)) {
+    return cy_y;
+  }
   if (v < 0) {
     v = -v;
     sign = -1;
@@ -590,6 +608,9 @@ npy_cdouble cbesk_wrap( double v, npy_cdouble z) {
   cy.real = NPY_NAN;
   cy.imag = NPY_NAN;
 
+  if (npy_isnan(v) || npy_isnan(z.real) || npy_isnan(z.imag)) {
+    return cy;
+  }
   if (v < 0) {
     /* K_v == K_{-v} even for non-integer v */
     v = -v;
@@ -616,6 +637,9 @@ npy_cdouble cbesk_wrap_e( double v, npy_cdouble z) {
   cy.real = NPY_NAN;
   cy.imag = NPY_NAN;
 
+  if (npy_isnan(v) || npy_isnan(z.real) || npy_isnan(z.imag)) {
+    return cy;
+  }
   if (v < 0) {
     /* K_v == K_{-v} even for non-integer v */
     v = -v;
@@ -688,6 +712,9 @@ npy_cdouble cbesh_wrap1( double v, npy_cdouble z) {
   cy.real = NPY_NAN;
   cy.imag = NPY_NAN;
 
+  if (npy_isnan(v) || npy_isnan(z.real) || npy_isnan(z.imag)) {
+    return cy;
+  }
   if (v < 0) {
     v = -v;
     sign = -1;
@@ -711,6 +738,9 @@ npy_cdouble cbesh_wrap1_e( double v, npy_cdouble z) {
   cy.real = NPY_NAN;
   cy.imag = NPY_NAN;
 
+  if (npy_isnan(v) || npy_isnan(z.real) || npy_isnan(z.imag)) {
+    return cy;
+  }
   if (v < 0) {
     v = -v;
     sign = -1;
@@ -734,6 +764,9 @@ npy_cdouble cbesh_wrap2( double v, npy_cdouble z) {
   cy.real = NPY_NAN;
   cy.imag = NPY_NAN;
 
+  if (npy_isnan(v) || npy_isnan(z.real) || npy_isnan(z.imag)) {
+    return cy;
+  }
   if (v < 0) {
     v = -v;
     sign = -1;
@@ -757,6 +790,9 @@ npy_cdouble cbesh_wrap2_e( double v, npy_cdouble z) {
   cy.real = NPY_NAN;
   cy.imag = NPY_NAN;
 
+  if (npy_isnan(v) || npy_isnan(z.real) || npy_isnan(z.imag)) {
+    return cy;
+  }
   if (v < 0) {
     v = -v;
     sign = -1;

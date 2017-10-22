@@ -154,15 +154,20 @@ double p;
 {
     double dk, dn;
 
-    if ((p < 0.0) || (p > 1.0))
+    if (npy_isnan(k) || npy_isnan(n) || npy_isnan(p)) {
+	return NPY_NAN;
+    }
+    if ((p < 0.0) || (p > 1.0)) {
 	goto domerr;
-    if (k < 0)
-	return (1.0);
+    }
+    if (k < 0) {
+	return 1.0;
+    }
 
     if (n < k) {
       domerr:
 	mtherr("bdtrc", DOMAIN);
-	return (NPY_NAN);
+	return NPY_NAN;
     }
 
     if (k == n)

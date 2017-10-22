@@ -75,12 +75,12 @@ double expn(int n, double x)
     int i, k;
     static double big = BIG;
 
-    if (n < 0)
-	goto domerr;
-
-    if (x < 0) {
-      domerr: mtherr("expn", DOMAIN);
-	return (NPY_INFINITY);
+    if (npy_isnan(x)) {
+	return NPY_NAN;
+    }
+    else if (n < 0 || x < 0) {
+	mtherr("expn", DOMAIN);
+	return NPY_INFINITY;
     }
 
     if (x > MAXLOG) {
