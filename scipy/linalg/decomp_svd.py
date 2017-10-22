@@ -10,7 +10,7 @@ from .lapack import get_lapack_funcs, _compute_lwork
 from .decomp import _asarray_validated
 from scipy._lib.six import string_types
 
-__all__ = ['svd', 'svdvals', 'diagsvd', 'orth', 'subspace_angles']
+__all__ = ['svd', 'svdvals', 'diagsvd', 'orth', 'subspace_angles', 'null_space']
 
 
 def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
@@ -264,7 +264,7 @@ def diagsvd(s, M, N):
 
 # Orthonormal decomposition
 
-def orth(A):
+def orth(A, rcond=None):
     """
     Construct an orthonormal basis for the range of A using SVD
 
@@ -272,24 +272,90 @@ def orth(A):
     ----------
     A : (M, N) array_like
         Input array
+    rcond : float, optional
+        Relative condition number. Singular values ``s`` smaller than
+        ``rcond * max(s)`` are considered zero.
+        Default: floating point eps * max(M,N).
 
     Returns
     -------
     Q : (M, K) ndarray
         Orthonormal basis for the range of A.
-        K = effective rank of A, as determined by automatic cutoff
+        K = effective rank of A, as determined by rcond
 
     See also
     --------
     svd : Singular value decomposition of a matrix
+    null_space : Matrix null space
 
     """
     u, s, vh = svd(A, full_matrices=False)
-    M, N = A.shape
-    eps = numpy.finfo(float).eps
-    tol = max(M, N) * numpy.amax(s) * eps
+    M, N = u.shape[0], vh.shape[1]
+    if rcond is None:
+        rcond = numpy.finfo(s.dtype).eps * max(M, N)
+    tol = numpy.amax(s) * rcond
     num = numpy.sum(s > tol, dtype=int)
     Q = u[:, :num]
+    return Q
+
+
+def null_space(A, rcond=None):
+    """
+    Construct an orthonormal basis for the null space of A using SVD
+
+    Parameters
+    ----------
+    A : (M, N) array_like
+        Input array
+    rcond : float, optional
+        Relative condition number. Singular values ``s`` smaller than
+        ``rcond * max(s)`` are considered zero.
+        Default: floating point eps * max(M,N).
+
+    Returns
+    -------
+    Z : (N, K) ndarray
+        Orthonormal basis for the null space of A.
+        K = dimension of effective null space, as determined by rcond
+
+    See also
+    --------
+    svd : Singular value decomposition of a matrix
+    orth : Matrix range
+
+    Examples
+    --------
+    One-dimensional null space:
+
+    >>> from scipy.linalg import null_space
+    >>> A = np.array([[1, 1], [1, 1]])
+    >>> null_space(A)
+    array([[-0.70710678],
+           [ 0.70710678]])
+
+    Two-dimensional null space:
+
+    >>> B = np.random.rand(3, 5)
+    >>> Z = null_space(B)
+    >>> Z.shape
+    (5, 2)
+    >>> np.allclose(B.dot(Z), 0)
+    True
+
+    The basis vectors are orthonormal (up to rounding error):
+
+    >>> Z.T.dot(Z)
+    array([[  1.00000000e+00,   6.92087741e-17],
+           [  6.92087741e-17,   1.00000000e+00]])
+
+    """
+    u, s, vh = svd(A, full_matrices=True)
+    M, N = u.shape[0], vh.shape[1]
+    if rcond is None:
+        rcond = numpy.finfo(s.dtype).eps * max(M, N)
+    tol = numpy.amax(s) * rcond
+    num = numpy.sum(s > tol, dtype=int)
+    Q = vh[num:,:].T.conj()
     return Q
 
 

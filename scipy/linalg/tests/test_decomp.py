@@ -10,6 +10,7 @@ Run tests if scipy is installed:
   python -c 'import scipy;scipy.linalg.test()'
 """
 
+import itertools
 import numpy as np
 from numpy.testing import (assert_equal, assert_almost_equal,
                            assert_array_almost_equal, assert_array_equal,
@@ -23,7 +24,8 @@ from scipy._lib.six import xrange
 from scipy.linalg import (eig, eigvals, lu, svd, svdvals, cholesky, qr,
      schur, rsf2csf, lu_solve, lu_factor, solve, diagsvd, hessenberg, rq,
      eig_banded, eigvals_banded, eigh, eigvalsh, qr_multiply, qz, orth, ordqz,
-     subspace_angles, hadamard, eigvalsh_tridiagonal, eigh_tridiagonal)
+     subspace_angles, hadamard, eigvalsh_tridiagonal, eigh_tridiagonal,
+     null_space)
 from scipy.linalg.lapack import dgbtrf, dgbtrs, zgbtrf, zgbtrs, \
      dsbev, dsbevd, dsbevx, zhbevd, zhbevx
 from scipy.linalg.misc import norm
@@ -2599,14 +2601,31 @@ class TestOverwrite(object):
         assert_no_overwrite(svdvals, [(3,3)])
 
 
-def _check_orth(n):
-    X = np.ones((n, 2), dtype=float)
+def _check_orth(n, dtype, skip_big=False):
+    X = np.ones((n, 2), dtype=float).astype(dtype)
+
+    eps = np.finfo(dtype).eps
+    tol = 1000 * eps
+
     Y = orth(X)
     assert_equal(Y.shape, (n, 1))
-    assert_allclose(Y, Y.mean(), atol=1e-10)
+    assert_allclose(Y, Y.mean(), atol=tol)
+
     Y = orth(X.T)
     assert_equal(Y.shape, (2, 1))
-    assert_allclose(Y, Y.mean())
+    assert_allclose(Y, Y.mean(), atol=tol)
+
+    if n > 5 and not skip_big:
+        np.random.seed(1)
+        X = np.random.rand(n, 5).dot(np.random.rand(5, n))
+        X = X + 1e-4 * np.random.rand(n, 1).dot(np.random.rand(1, n))
+        X = X.astype(dtype)
+
+        Y = orth(X, rcond=1e-3)
+        assert_equal(Y.shape, (n, 5))
+
+        Y = orth(X, rcond=1e-6)
+        assert_equal(Y.shape, (n, 5 + 1))
 
 
 @pytest.mark.slow
@@ -2618,14 +2637,54 @@ def test_orth_memory_efficiency():
     # 32 bit overflow.
     n = 10*1000*1000
     try:
-        _check_orth(n)
+        _check_orth(n, np.float64, skip_big=True)
     except MemoryError:
         raise AssertionError('memory error perhaps caused by orth regression')
 
 
 def test_orth():
-    for n in 1, 2, 3, 10, 100:
-        _check_orth(n)
+    dtypes = [np.float32, np.float64, np.complex64, np.complex128]
+    sizes = [1, 2, 3, 10, 100]
+    for dt, n in itertools.product(dtypes, sizes):
+        _check_orth(n, dt)
+
+
+def test_null_space():
+    np.random.seed(1)
+
+    dtypes = [np.float32, np.float64, np.complex64, np.complex128]
+    sizes = [1, 2, 3, 10, 100]
+
+    for dt, n in itertools.product(dtypes, sizes):
+        X = np.ones((2, n), dtype=dt)
+
+        eps = np.finfo(dt).eps
+        tol = 1000 * eps
+
+        Y = null_space(X)
+        assert_equal(Y.shape, (n, n-1))
+        assert_allclose(X.dot(Y), 0, atol=tol)
+
+        Y = null_space(X.T)
+        assert_equal(Y.shape, (2, 1))
+        assert_allclose(X.T.dot(Y), 0, atol=tol)
+
+        X = np.random.randn(1 + n//2, n)
+        Y = null_space(X)
+        assert_equal(Y.shape, (n, n - 1 - n//2))
+        assert_allclose(X.dot(Y), 0, atol=tol)
+
+        if n > 5:
+            np.random.seed(1)
+            X = np.random.rand(n, 5).dot(np.random.rand(5, n))
+            X = X + 1e-4 * np.random.rand(n, 1).dot(np.random.rand(1, n))
+            X = X.astype(dt)
+
+            Y = null_space(X, rcond=1e-3)
+            assert_equal(Y.shape, (n, n - 5))
+
+            Y = null_space(X, rcond=1e-6)
+            assert_equal(Y.shape, (n, n - 6))
 
 
 def test_subspace_angles():
