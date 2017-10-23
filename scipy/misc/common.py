@@ -5,7 +5,7 @@ Functions which are common and require SciPy Base and Level 1 SciPy
 
 from __future__ import division, print_function, absolute_import
 
-from numpy import arange, newaxis, hstack, product, array, fromstring
+from numpy import arange, newaxis, hstack, product, array, frombuffer
 
 __all__ = ['central_diff_weights', 'derivative', 'ascent', 'face']
 
@@ -196,7 +196,7 @@ def face(gray=False):
     with open(os.path.join(os.path.dirname(__file__), 'face.dat'), 'rb') as f:
         rawdata = f.read()
     data = bz2.decompress(rawdata)
-    face = fromstring(data, dtype='uint8')
+    face = frombuffer(data, dtype='uint8')
     face.shape = (768, 1024, 3)
     if gray is True:
         face = (0.21 * face[:,:,0] + 0.71 * face[:,:,1] + 0.07 * face[:,:,2]).astype('uint8')
