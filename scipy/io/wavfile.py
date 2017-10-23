@@ -126,7 +126,7 @@ def _read_data_chunk(fid, format_tag, channels, bit_depth, is_big_endian,
         else:
             dtype += 'f%d' % bytes_per_sample
     if not mmap:
-        data = numpy.fromstring(fid.read(size), dtype=dtype)
+        data = numpy.frombuffer(fid.read(size), dtype=dtype)
     else:
         start = fid.tell()
         data = numpy.memmap(fid, dtype=dtype, mode='c', offset=start,
