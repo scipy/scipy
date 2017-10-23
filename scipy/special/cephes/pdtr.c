@@ -103,7 +103,7 @@
  * This is accomplished using the inverse Gamma integral
  * function and the relation
  *
- *    m = igami( k+1, y ).
+ *    m = igamci( k+1, y ).
  *
  *
  *
@@ -174,6 +174,6 @@ double y;
         return (NPY_NAN);
     }
     v = k + 1;
-    v = igami(v, y);
+    v = igamci(v, y);
     return (v);
 }
