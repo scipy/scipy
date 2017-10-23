@@ -269,6 +269,7 @@ class TestSplittingTriangles(object):
         D = split_spherical_triangle.find_ternary_split_point(vertices,
                                                               1.0,
                                                               original_tri_area)
+        print("Chosen central point inside test:", D)
 
         vertices_subtriangle_1 = np.array([vertices[0],
                                            vertices[1],

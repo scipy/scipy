@@ -297,7 +297,8 @@ def trilateration_D(chord_length_AD,
                     chord_length_CD,
                     coord_A,
                     coord_B,
-                    coord_C):
+                    coord_C,
+                    sphere_radius):
     '''Trilateration procedure to determine Cartesian coords of special
     point D.'''
     # based on:
@@ -322,7 +323,19 @@ def trilateration_D(chord_length_AD,
     # but be aware that can be 0, 1 or 2 values for z
     D_z = np.sqrt(r1 ** 2 - D_x ** 2 - D_y ** 2)
 
-    return np.array([D_x, D_y, D_z])
+    tri_Pt_1 = coord_A + D_x * ex + D_y * ey + D_z * ez
+    tri_Pt_2 = coord_A + D_x * ex + D_y * ey - D_z * ez
+    r_sq_1 = np.sqrt(np.sum(np.square(tri_Pt_1)))
+    r_sq_2 = np.sqrt(np.sum(np.square(tri_Pt_2)))
+
+    # pick the trilateration point that most closes matches
+    # the original sphere
+    if (sphere_radius - r_sq_1) < (sphere_radius - r_sq_2):
+        tri_Pt = tri_Pt_1
+    else:
+        tri_Pt = tri_Pt_2
+
+    return tri_Pt
 
 def find_ternary_split_point(triangle_vertices, sphere_radius, original_tri_area):
     '''Determine the Cartesian coordinates of the point D that
@@ -369,5 +382,6 @@ def find_ternary_split_point(triangle_vertices, sphere_radius, original_tri_area
                         chord_length_CD,
                         coord_A,
                         coord_B,
-                        coord_C)
+                        coord_C,
+                        sphere_radius)
     return D
