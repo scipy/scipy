@@ -103,7 +103,7 @@ severe breach, they will do the following:
   originator has been disconnected.
 * In every case, the moderator should make a reasonable effort to contact the
   originator, and tell them specifically how their language or actions
-  qualifies as a "clear and severe breach".  The moderator should also say
+  qualify as a "clear and severe breach".  The moderator should also say
   that, if the originator believes this is unfair or they want to be
   reconnected to SciPy, they have the right to ask for a review, as below, by
   the Code of Conduct Committee.

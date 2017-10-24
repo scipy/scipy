@@ -129,18 +129,18 @@ Incident reporting resolution & Code of Conduct enforcement
 *This section summarizes the most important points, more details can be found
 in* :ref:`CoC_reporting_manual`.
 
-All complaints will be reviewed and investigated and will result in a response
-that is deemed necessary and appropriate to the circumstances. The SciPy Code
-of Conduct Committee, and the SciPy Steering Committee (if involved), are
-obligated to protect the identity of the reporter, and to treat the content of
-complaints with confidentiality (unless discussed with the reporter).
+We will investigate and respond to all complaints. The SciPy Code of Conduct
+Committee and the SciPy Steering Committee (if involved) will protect the
+identity of the reporter, and treat the content of complaints as confidential
+(unless the reporter agrees otherwise).
 
 In case of severe and obvious breaches, e.g. personal threat or violent, sexist
 or racist language, we will immediately disconnect the originator from SciPy
 communication channels; please see the manual for details.
 
-In cases not involving clear intentional breaches of this code of conduct, the
-process for acting on any received code of conduct violation report will be:
+In cases not involving clear severe and obvious breaches of this code of
+conduct, the process for acting on any received code of conduct violation
+report will be:
 
 1. acknowledge report is received
 2. reasonable discussion/feedback
