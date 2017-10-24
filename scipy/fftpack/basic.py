@@ -660,6 +660,14 @@ def ifftn(x, shape=None, axes=None, overwrite_x=False):
     --------
     fftn : for detailed information.
 
+    Examples
+    --------
+    >>> from scipy.fftpack import fftn, ifftn
+    >>> import numpy as np
+    >>> y = (-np.arange(16), 8 - np.arange(16), np.arange(16))
+    >>> np.allclose(y, ifftn(fftn(y)))
+    True
+
     """
     return _raw_fftn_dispatch(x, shape, axes, overwrite_x, -1)
 
