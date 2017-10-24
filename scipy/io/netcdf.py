@@ -45,7 +45,7 @@ import mmap as mm
 
 import numpy as np
 from numpy.compat import asbytes, asstr
-from numpy import fromstring, dtype, empty, array, asarray
+from numpy import frombuffer, dtype, empty, array, asarray
 from numpy import little_endian as LITTLE_ENDIAN
 from functools import reduce
 
@@ -584,7 +584,7 @@ class netcdf_file(object):
         if not magic == b'CDF':
             raise TypeError("Error: %s is not a valid NetCDF 3 file" %
                             self.filename)
-        self.__dict__['version_byte'] = fromstring(self.fp.read(1), '>b')[0]
+        self.__dict__['version_byte'] = frombuffer(self.fp.read(1), '>b')[0]
 
         # Read file headers and set data.
         self._read_numrecs()
@@ -678,7 +678,7 @@ class netcdf_file(object):
                 else:
                     pos = self.fp.tell()
                     self.fp.seek(begin_)
-                    data = fromstring(self.fp.read(a_size), dtype=dtype_)
+                    data = frombuffer(self.fp.read(a_size), dtype=dtype_)
                     data.shape = shape
                     self.fp.seek(pos)
 
@@ -700,7 +700,7 @@ class netcdf_file(object):
             else:
                 pos = self.fp.tell()
                 self.fp.seek(begin)
-                rec_array = fromstring(self.fp.read(self._recs*self._recsize), dtype=dtypes)
+                rec_array = frombuffer(self.fp.read(self._recs*self._recsize), dtype=dtypes)
                 rec_array.shape = (self._recs,)
                 self.fp.seek(pos)
 
@@ -743,7 +743,7 @@ class netcdf_file(object):
         self.fp.read(-count % 4)  # read padding
 
         if typecode is not 'c':
-            values = fromstring(values, dtype='>%s' % typecode)
+            values = frombuffer(values, dtype='>%s' % typecode)
             if values.shape == (1,):
                 values = values[0]
         else:
@@ -761,14 +761,14 @@ class netcdf_file(object):
     _pack_int32 = _pack_int
 
     def _unpack_int(self):
-        return int(fromstring(self.fp.read(4), '>i')[0])
+        return int(frombuffer(self.fp.read(4), '>i')[0])
     _unpack_int32 = _unpack_int
 
     def _pack_int64(self, value):
         self.fp.write(array(value, '>q').tostring())
 
     def _unpack_int64(self):
-        return fromstring(self.fp.read(8), '>q')[0]
+        return frombuffer(self.fp.read(8), '>q')[0]
 
     def _pack_string(self, s):
         count = len(s)
