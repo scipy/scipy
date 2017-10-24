@@ -33,6 +33,7 @@ maintenance activities and policies.
 .. toctree::
    :maxdepth: 1
 
+   dev/conduct/code_of_conduct
    hacking
    dev/index
    dev/governance/governance
