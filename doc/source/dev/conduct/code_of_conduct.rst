@@ -60,7 +60,8 @@ We strive to:
     - Sexist, racist, or otherwise discriminatory jokes and language.
     - Posting sexually explicit or violent material.
     - Posting (or threatening to post) other people's personally identifying information ("doxing").
-    - Sharing private content, such as emails sent privately or non-publicly, or unlogged forums such as IRC channel history, without the sender's consent.
+    - Sharing private content, such as emails sent privately or non-publicly,
+      or unlogged forums such as IRC channel history, without the sender's consent.
     - Personal insults, especially those using racist or sexist terms.
     - Unwelcome sexual attention.
     - Excessive profanity. Please avoid swearwords; people differ greatly in their sensitivity to swearing.
