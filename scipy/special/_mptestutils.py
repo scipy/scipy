@@ -248,6 +248,31 @@ def nonfunctional_tooslow(func):
 # Tools for dealing with mpmath quirks
 # ------------------------------------------------------------------------------
 
+def longdouble2mpf(x):
+    """Mpmath doesn't know how to convert np.longdouble to mpf."""
+    digits = int(-np.log10(np.finfo(np.longdouble).resolution)) + 1
+    fmt = "{{:.{}e}}".format(digits)
+    return mpmath.mpf(fmt.format(x))
+
+
+def mpf2longdouble(x):
+    """NumPy won't correctly convert mpf to longdouble."""
+    digits = int(-np.log10(np.finfo(np.longdouble).resolution)) + 1
+    try:
+        return np.longdouble(mpmath.nstr(x, digits))
+    except ValueError:
+        # The result couldn't be represented, and NumPy raises instead
+        # of overflowing/underflowing
+        if x > 1:
+            return np.longdouble(np.inf)
+        elif x > 0:
+            return np.longdouble(0.0)
+        elif x < -1:
+            return -np.longdouble(np.inf)
+        else:
+            return np.longdouble(-0.0)
+
+
 def mpf2float(x):
     """
     Convert an mpf to the nearest floating point number. Just using
