@@ -245,34 +245,35 @@ def test_assn_bad_array():
 
 
 def test_tschuprows_return_type():
-    # 2x2 array
+    # 3x4 array
     obs = np.array([[1, 1, 4, 4], [2, 5, 5, 4], [6, 4, 4, 1]])
     chi2 = chi2_contingency(obs)[0]
     assntest = associationTests(observed=obs, chi2_stat=chi2)
-    assert_array_almost_equal(x=np.array([assntest.tschuprows_t(correct_bias=True),
-                                          assntest.tschuprows_t(correct_bias=False)]),
-                              y=np.array([0.270428, 0.52829]))
+    assert_allclose(np.array([assntest.tschuprows_t(correct_bias=True),
+                                assntest.tschuprows_t(correct_bias=False)]),
+                    np.array([0.270428, 0.52829]))
 
+    # 2x2 array
     obsx = np.array([[2, 10], [13, 3]])
     chi2 = chi2_contingency(obsx)[0]
     assntest = associationTests(observed=obsx, chi2_stat=chi2)
-    assert_array_almost_equal(x=np.array([assntest.tschuprows_t(correct_bias=True),
-                                          assntest.tschuprows_t(correct_bias=False)]),
-                              y=np.array([0.340625, 0.64084]))
+    assert_allclose(np.array([assntest.tschuprows_t(correct_bias=True),
+                              assntest.tschuprows_t(correct_bias=False)]),
+                    np.array([0.340625, 0.64084]))
 
 
 def test_cramers_return_type():
+    # 3x4 array
     obs = np.array([[1, 1, 4, 4], [2, 5, 5, 4], [6, 4, 4, 1]])
     chi2 = chi2_contingency(obs)[0]
     assntest = associationTests(observed=obs, chi2_stat=chi2)
-    assert_array_almost_equal(x=np.array([assntest.cramers_v(correct_bias=True),
+    assert_allclose(np.array([assntest.cramers_v(correct_bias=True),
                                           assntest.cramers_v(correct_bias=False)]),
-                              y=np.array([0.29059, 0.5846526]))
-
+                    np.array([0.29059, 0.5846526]))
+    # 2x2 array
     obsx = np.array([[2, 10], [13, 3]])
     chi2 = chi2_contingency(obsx)[0]
     assntest = associationTests(observed=obsx, chi2_stat=chi2)
-    assert_array_almost_equal(x=np.array([assntest.cramers_v(correct_bias=True),
+    assert_allclose(np.array([assntest.cramers_v(correct_bias=True),
                                           assntest.cramers_v(correct_bias=False)]),
-                              y=np.array([0.340625, 0.64084]))
-
+                    np.array([0.340625, 0.64084]))
