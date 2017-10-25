@@ -7,7 +7,12 @@ any help you give.
 
 When submitting a pull request, we ask you check the following:
 
-1. **Unit tests**, **documentation**, and **code style** are in order. 
+1. A **code of conduct**,
+   https://github.com/scipy/scipy/blob/master/doc/source/dev/conduct/code_of_conduct.rst,
+   applies to all spaces managed by the SciPy project, including
+   issues and pull requests.
+
+2. **Unit tests**, **documentation**, and **code style** are in order. 
    For details, please read
    https://github.com/scipy/scipy/blob/master/HACKING.rst.txt
 
@@ -15,7 +20,7 @@ When submitting a pull request, we ask you check the following:
    this exactly means, in which case you'll likely be asked to make
    some further changes.
 
-2. The contributed code will be **licensed under SciPy's license**,
+3. The contributed code will be **licensed under SciPy's license**,
    https://github.com/scipy/scipy/blob/master/LICENSE.txt
    If you did not write the code yourself, you ensure the existing
    license is compatible and include the license information in the
