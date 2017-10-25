@@ -304,6 +304,9 @@ Contingency table functions
    chi2_contingency
    contingency.expected_freq
    contingency.margins
+   contingency.associationTests.cramers_v
+   contingency.associationTests.tschuprows_t
+   
    fisher_exact
 
 Plot-tests
@@ -346,7 +349,7 @@ from .morestats import *
 from ._binned_statistic import *
 from .kde import gaussian_kde
 from . import mstats
-from .contingency import chi2_contingency
+from .contingency import chi2_contingency, associationTests
 from ._multivariate import *
 
 __all__ = [s for s in dir() if not s.startswith("_")]  # Remove dunders.

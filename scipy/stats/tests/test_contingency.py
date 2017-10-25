@@ -6,7 +6,7 @@ from numpy.testing import (assert_equal, assert_array_equal,
 from pytest import raises as assert_raises
 
 from scipy.special import xlogy
-from scipy.stats.contingency import margins, expected_freq, chi2_contingency
+from scipy.stats.contingency import margins, expected_freq, chi2_contingency, associationTests
 
 
 def test_margins():
@@ -198,3 +198,88 @@ def test_chi2_contingency_bad_args():
     obs = np.empty((0, 8))
     assert_raises(ValueError, chi2_contingency, obs)
 
+def test_chi2_contingency_bad_args():
+    # Test that "bad" inputs raise a ValueError.
+
+    # Negative value in the array of observed frequencies.
+    obs = np.array([[-1, 10], [1, 2]])
+    assert_raises(ValueError, chi2_contingency, obs)
+
+    # The zeros in this will result in zeros in the array
+    # of expected frequencies.
+    obs = np.array([[0, 1], [0, 1]])
+    assert_raises(ValueError, chi2_contingency, obs)
+
+    # A degenerate case: `observed` has size 0.
+    obs = np.empty((0, 8))
+    assert_raises(ValueError, chi2_contingency, obs)
+
+
+def test_assn_bad_kwargs():
+    obs = np.array([[1, 1, 2], [3, 2, 2]])
+
+    assntest = associationTests(observed=obs, chi2_stat=None, number_col=3)
+    assert_raises(KeyError, assntest)
+
+
+def test_assn_bad_array():
+    # Array with zeroes
+    obs = np.array([[0, 0, 1], [1, 2, 3]])
+    chi2 = chi2_contingency(observed=obs)
+    assntest = associationTests(observed=obs, chi2_stat=chi2)
+    assert_raises(ValueError, assntest)
+    # Array with negative values
+    obs = np.array([[-1, 1], [2, 1]])
+    chi2 = chi2_contingency(observed=obs)
+    assntest = associationTests(observed=obs, chi2_stat=chi2)
+    assert_raises(ValueError, assntest)
+    # Array with floats
+    obs = np.array([[.21, .12], [1.0, 2.2]])
+    chi2 = chi2_contingency(observed=obs)
+    assntest = associationTests(observed=obs, chi2_stat=chi2)
+    assert_raises(TypeError, assntest)
+    # Empty Array
+    obs = np.array([])
+
+    assntest = associationTests(observed=obs, chi2_stat=0.)
+    assert_raises(ValueError, assntest)
+    # nd array
+    obs = np.array([[[1, 1], [2, 2]],
+                    [[2, 2], [2, 2]]])
+
+    chi2 = chi2_contingency(observed=obs)
+    assntest = associationTests(observed=obs, chi2_stat=chi2)
+    assert_raises(ValueError, assntest)
+
+
+def test_tschuprows_return_type():
+    # 2x2 array
+    obs = np.array([[1, 1, 4, 4], [2, 5, 5, 4], [6, 4, 4, 1]])
+    chi2 = chi2_contingency(obs)[0]
+    assntest = associationTests(observed=obs, chi2_stat=chi2)
+    assert_array_almost_equal(np.array([assntest.tschuprows_t(correct_bias=True),
+                                        assntest.tschuprows_t(correct_bias=False)]),
+                              np.array([0.270428, 0.52829]))
+
+    obsx = np.array([[2, 10], [13, 3]])
+    chi2 = chi2_contingency(obsx)[0]
+    assntest = associationTests(observed=obsx, chi2_stat=chi2)
+    assert_array_almost_equal(np.array([assntest.tschuprows_t(correct_bias=True),
+                                        assntest.tschuprows_t(correct_bias=False)]),
+                              np.array([0.340625, 0.64084]))
+
+
+def test_cramers_return_type():
+    obs = np.array([[1, 1, 4, 4], [2, 5, 5, 4], [6, 4, 4, 1]])
+    chi2 = chi2_contingency(obs)[0]
+    assntest = associationTests(observed=obs, chi2_stat=chi2)
+    assert_array_almost_equal(np.array([assntest.cramers_v(correct_bias=True),
+                                        assntest.cramers_v(correct_bias=False)]),
+                              np.array([0.29059, 0.5846526]))
+
+    obsx = np.array([[2, 10], [13, 3]])
+    chi2 = chi2_contingency(obsx)[0]
+    assntest = associationTests(observed=obsx, chi2_stat=chi2)
+    assert_array_almost_equal(np.array([assntest.cramers_v(correct_bias=True),
+                                        assntest.cramers_v(correct_bias=False)]),
+                              np.array([0.340625, 0.64084]))
