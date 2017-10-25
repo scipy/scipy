@@ -73,9 +73,18 @@ class BasinHoppingRunner(object):
         if not minres.success:
             self.res.minimization_failures += 1
             if self.disp:
-                print("warning: basinhopping: local minimization failure")
-        self.x = np.copy(minres.x)
-        self.energy = minres.fun
+                print("warning: basinhopping: initial minimization failure")
+
+        if minres.success is scipy.optimize.InvalidResult:
+            # Result was invalid, so keep original x and don't put invalid
+            # value in storage.  Any minima found will be lower in
+            # function value and replace this
+            self.energy = float('inf')
+            minres.fun = float('inf')
+        else:
+            # Update starting point to the minimum that was found
+            self.x = np.copy(minres.x)
+            self.energy = minres.fun
         if self.disp:
             print("basinhopping step %d: f %g" % (self.nstep, self.energy))
 
