@@ -1235,24 +1235,23 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
     n = A.shape[0]
 
     if k <= 0:
-        raise ValueError("k=%d must be greater than 0." % (k, n - 1))
+        raise ValueError("k=%d must be greater than 0." % k)
 
     if k >= n - 1:
         if issparse(A):
             raise TypeError("Cannot use scipy.linalg.eig for sparse A with "
                             "k >= N - 1. Use scipy.linalg.eig(A.toarray()) or"
                             " reduce k.")
-
-        import warnings
-        warnings.warn("k >= N - 1 for N * N square matrix. "
-                      "Using scipy.linalg.eig instead.", UserWarning)
-
         if isinstance(A, LinearOperator):
             raise TypeError("Cannot use scipy.linalg.eig for LinearOperator "
                             "A with k >= N - 1.")
         if isinstance(M, LinearOperator):
             raise TypeError("Cannot use scipy.linalg.eig for LinearOperator "
                             "M with k >= N - 1.")
+
+        import warnings
+        warnings.warn("k >= N - 1 for N * N square matrix. "
+                      "Using scipy.linalg.eig instead.", UserWarning)
 
         return eig(A, b=M, right=return_eigenvectors)
 
@@ -1546,17 +1545,16 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
             raise TypeError("Cannot use scipy.linalg.eigh for sparse A with "
                             "k >= N. Use scipy.linalg.eigh(A.toarray()) or"
                             " reduce k.")
-
-        import warnings
-        warnings.warn("k >= N for N * N square matrix. "
-                      "Using scipy.linalg.eigh instead.", UserWarning)
-
         if isinstance(A, LinearOperator):
             raise TypeError("Cannot use scipy.linalg.eigh for LinearOperator "
                             "A with k >= N.")
         if isinstance(M, LinearOperator):
             raise TypeError("Cannot use scipy.linalg.eigh for LinearOperator "
                             "M with k >= N.")
+
+        import warnings
+        warnings.warn("k >= N for N * N square matrix. "
+                      "Using scipy.linalg.eigh instead.", UserWarning)
 
         return eigh(A, b=M, eigvals_only=not return_eigenvectors)
 
