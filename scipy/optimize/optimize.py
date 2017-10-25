@@ -21,7 +21,7 @@ __all__ = ['fmin', 'fmin_powell', 'fmin_bfgs', 'fmin_ncg', 'fmin_cg',
            'fminbound', 'brent', 'golden', 'bracket', 'rosen', 'rosen_der',
            'rosen_hess', 'rosen_hess_prod', 'brute', 'approx_fprime',
            'line_search', 'check_grad', 'OptimizeResult', 'show_options',
-           'OptimizeWarning']
+           'OptimizeWarning', 'InvalidResult']
 
 __docformat__ = "restructuredtext en"
 
@@ -86,8 +86,12 @@ class OptimizeResult(dict):
     ----------
     x : ndarray
         The solution of the optimization.
-    success : bool
-        Whether or not the optimizer exited successfully.
+    success : {True, False, InvalidResult}
+        Whether or not the optimizer exited successfully.  If False, then
+        minimization failed, but the result is still a valid function value.
+        If InvalidResult, then minimization failed, and result is invalid
+        because of a bounds or constraint violation, etc.
+        ``bool(InvalidResult) == False``
     status : int
         Termination status of the optimizer. Its value depends on the
         underlying solver. Refer to `message` for details.
@@ -140,6 +144,28 @@ class OptimizeResult(dict):
 
 class OptimizeWarning(UserWarning):
     pass
+
+
+class InvalidResultType(object):
+    """
+    Indicates that minimization has failed and result is invalid (such as a
+    boundary or constraint violation)
+    """
+    def __repr__(self):
+        return 'InvalidResult'
+
+    def __reduce__(self):
+        return 'InvalidResult'
+
+    def __bool__(self):  # Python 3
+        # Should be False for backwards compatibility, and to convey
+        # "minimization failed (and result is also invalid)"
+        return False
+
+    __nonzero__ = __bool__  # Python 2
+
+
+InvalidResult = InvalidResultType()
 
 
 def _check_unknown_options(unknown_options):

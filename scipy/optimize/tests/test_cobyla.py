@@ -3,7 +3,7 @@ import numpy as np
 
 from numpy.testing import assert_allclose, assert_
 
-from scipy.optimize import fmin_cobyla, minimize
+from scipy.optimize import fmin_cobyla, minimize, InvalidResult
 
 
 class TestCobyla(object):
@@ -68,6 +68,7 @@ class TestCobyla(object):
                        options={'catol': 1e-6})
         assert_(sol.maxcv > 1e-6)
         assert_(not sol.success)
+        assert_(sol.success is InvalidResult)
 
 
 def test_vector_constraints():

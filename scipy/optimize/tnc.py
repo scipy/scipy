@@ -34,7 +34,7 @@ value of the function, and whose second argument is the gradient of the function
 
 from scipy.optimize import moduleTNC
 from .optimize import (MemoizeJac, OptimizeResult, _check_unknown_options,
-                       _prepare_scalar_function)
+                       _prepare_scalar_function, InvalidResult)
 from ._constraints import old_bound_to_new
 
 from numpy import inf, array, zeros, asfarray
@@ -418,9 +418,16 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
 
     funv, jacv = func_and_grad(x)
 
+    if (-1 < rc < 3):
+        success = True
+    elif rc < 0 or rc == 5:  # TODO: is this correct?
+        success = InvalidResult
+    else:
+        success = False
+
     return OptimizeResult(x=x, fun=funv, jac=jacv, nfev=sf.nfev,
                           nit=nit, status=rc, message=RCSTRINGS[rc],
-                          success=(-1 < rc < 3))
+                          success=success)
 
 
 if __name__ == '__main__':

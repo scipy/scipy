@@ -20,7 +20,7 @@ from scipy.optimize._slsqp import slsqp
 from numpy import (zeros, array, linalg, append, asfarray, concatenate, finfo,
                    sqrt, vstack, exp, inf, isfinite, atleast_1d)
 from .optimize import (OptimizeResult, _check_unknown_options,
-                       _prepare_scalar_function)
+                       _prepare_scalar_function, InvalidResult)
 from ._numdiff import approx_derivative
 from ._constraints import old_bound_to_new, _arr_to_scalar
 
@@ -451,9 +451,16 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         print("            Function evaluations:", sf.nfev)
         print("            Gradient evaluations:", sf.ngev)
 
+    if mode == 0:
+        success = True
+    elif mode in (4, 8):  # Constraints incompatible or search is out of bounds
+        success = InvalidResult
+    else:
+        success = False
+
     return OptimizeResult(x=x, fun=fx, jac=g[:-1], nit=int(majiter),
                           nfev=sf.nfev, njev=sf.ngev, status=int(mode),
-                          message=exit_modes[int(mode)], success=(mode == 0))
+                          message=exit_modes[int(mode)], success=success)
 
 
 def _eval_constraint(x, cons):

@@ -15,7 +15,7 @@ from threading import RLock
 
 import numpy as np
 from scipy.optimize import _cobyla
-from .optimize import OptimizeResult, _check_unknown_options
+from .optimize import OptimizeResult, _check_unknown_options, InvalidResult
 try:
     from itertools import izip
 except ImportError:
@@ -265,9 +265,16 @@ def _minimize_cobyla(fun, x0, args=(), constraints=(),
         # Check constraint violation
         info[0] = 4
 
+    if info[0] == 1:
+        success = True
+    elif info[0] == 4:  # = constraint violation. TODO: Is 3 also Invalid?
+        success = InvalidResult
+    else:
+        success = False
+
     return OptimizeResult(x=xopt,
                           status=int(info[0]),
-                          success=info[0] == 1,
+                          success=success,
                           message={1: 'Optimization terminated successfully.',
                                    2: 'Maximum number of function evaluations '
                                       'has been exceeded.',

@@ -152,7 +152,7 @@ class BasinHoppingRunner(object):
 
         accept, minres = self._monte_carlo_step()
 
-        if accept:
+        if accept and minres.success is not scipy.optimize.InvalidResult:
             self.energy = minres.fun
             self.x = np.copy(minres.x)
             new_global_min = self.storage.update(minres)

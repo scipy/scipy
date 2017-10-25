@@ -19,7 +19,7 @@ Common functions and objects, shared across different solvers, are:
    show_options - Show specific options optimization solvers.
    OptimizeResult - The optimization result returned by some optimizers.
    OptimizeWarning - The optimization encountered problems.
-
+   InvalidResult - The optimization failed and result is invalid.
 
 Optimization
 ============

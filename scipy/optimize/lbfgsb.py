@@ -379,6 +379,8 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
         warnflag = 1
     else:
         warnflag = 2
+        # TODO: This contains several task_str, some of which may be
+        # InvalidResult?
 
     # These two portions of the workspace are described in the mainlb
     # subroutine in lbfgsb.f. See line 363.
