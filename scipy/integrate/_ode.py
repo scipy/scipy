@@ -69,7 +69,7 @@ from __future__ import division, print_function, absolute_import
 #         # arguments
 #         # to these functions.
 #         <calculate y1>
-#         if <calculation was unsuccesful>:
+#         if <calculation was unsuccessful>:
 #             self.success = 0
 #         return t1,y1
 #

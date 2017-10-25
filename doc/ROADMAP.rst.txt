@@ -241,7 +241,7 @@ stable conversions to and from other filter representations. SOS filters could
 be considered as the default filtering method for ltisys objects, for their
 numerical stability.
 
-*Wavelets*: what's there now doesn't make much sense.  Continous wavelets
+*Wavelets*: what's there now doesn't make much sense.  Continuous wavelets
 only at the moment - decide whether to completely rewrite or remove them.
 Discrete wavelet transforms are out of scope (PyWavelets does a good job
 for those).

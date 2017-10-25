@@ -44,8 +44,8 @@ C                         DOUBLE PRECISION FX
 C
 C     QLEFT <-- Defined only if QMFINV returns .FALSE.  In that
 C          case it is .TRUE. If the stepping search terminated
-C          unsucessfully at SMALL.  If it is .FALSE. the search
-C          terminated unsucessfully at BIG.
+C          unsuccessfully at SMALL.  If it is .FALSE. the search
+C          terminated unsuccessfully at BIG.
 C                    QLEFT is LOGICAL
 C
 C     QHI <-- Defined only if QMFINV returns .FALSE.  In that

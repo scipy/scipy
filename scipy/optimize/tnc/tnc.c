@@ -216,7 +216,7 @@ static void daxpy1(int n, double da, const double dx[], double dy[]);
 static void dcopy1(int n, const double dx[], double dy[]);
 static double dnrm21(int n, const double dx[]);
 
-/* additionnal blas-like functions */
+/* additional blas-like functions */
 static void dneg1(int n, double v[]);
 
 /*

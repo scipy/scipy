@@ -33,7 +33,7 @@
  *
  * Compile time options are supplied for 5, 11, or 17 decimal
  * relative accuracy (ACC5, ACC11, ACC17 respectively).
- * A subroutine flag argument "flg" chooses betwen this
+ * A subroutine flag argument "flg" chooses between this
  * accuracy and table lookup only (peak absolute error
  * = 0.0087).
  *
