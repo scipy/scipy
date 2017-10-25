@@ -160,29 +160,12 @@ int itairy_wrap(double x, double *apt, double *bpt, double *ant, double *bnt) {
   return 0;
 }
 
-
-double exp1_wrap(double x) {
-  double out;
-
-  F_FUNC(e1xb,E1XB)(&x, &out);
-  CONVINF("exp1", out);
-  return out;
-}
-
 npy_cdouble cexp1_wrap(npy_cdouble z) {
   npy_cdouble outz;
 
   F_FUNC(e1z,E1Z)(&z, &outz);
   ZCONVINF("cexp1", outz);
   return outz;
-}
-
-double expi_wrap(double x) {
-  double out;
-
-  F_FUNC(eix,EIX)(&x, &out);
-  CONVINF("expi", out);
-  return out;
 }
 
 npy_cdouble cexpi_wrap(npy_cdouble z) {
