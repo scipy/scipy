@@ -152,8 +152,8 @@ iv -- iv: dd->d, cbesi_wrap: dD->D                         -- cephes.h, amos_wra
 ive -- cbesi_wrap_e_real: dd->d, cbesi_wrap_e: dD->D       -- amos_wrappers.h
 ellipj -- ellpj: dd*dddd->*i                               -- cephes.h
 expn -- expn: id->d, expn_unsafe: dd->d                    -- cephes.h, _legacy.pxd
-exp1 -- exp1_wrap: d->d, cexp1_wrap: D->D                  -- specfun_wrappers.h
-expi -- expi_wrap: d->d, cexpi_wrap: D->D                  -- specfun_wrappers.h
+exp1 -- exp1[float]: f->f, exp1[double]: d->d, exp1[long_double]: g->g, cexp1_wrap: D->D -- _expi.pxd, _expi.pxd, _expi.pxd, specfun_wrappers.h
+expi -- expi[float]: f->f, expi[double]: d->d, expi[long_double]: g->g, cexpi_wrap: D->D -- _expi.pxd, _expi.pxd, _expi.pxd, specfun_wrappers.h
 kn -- cbesk_wrap_real_int: id->d, kn_unsafe: dd->d         -- cephes.h, _legacy.pxd
 pdtrc -- pdtrc: id->d, pdtrc_unsafe: dd->d                 -- cephes.h, _legacy.pxd
 pdtr -- pdtr: id->d, pdtr_unsafe: dd->d                    -- cephes.h, _legacy.pxd

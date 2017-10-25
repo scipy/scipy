@@ -1,6 +1,7 @@
 cimport scipy.special._ufuncs_cxx
 import numpy as np
 
+ctypedef long double long_double
 
 _sf_error_code_map = {
     # skip 'ok'
@@ -65,7 +66,7 @@ def geterr():
     singular: ignore
     slow: ignore
     underflow: ignore
-    
+
     """
     err = {}
     for key, code in _sf_error_code_map.items():
@@ -212,7 +213,7 @@ class errstate(object):
     """
     def __init__(self, **kwargs):
         self.kwargs = kwargs
-    
+
     def __enter__(self):
         self.oldstate = seterr(**self.kwargs)
 
