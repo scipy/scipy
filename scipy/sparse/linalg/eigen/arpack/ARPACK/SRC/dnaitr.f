@@ -379,7 +379,7 @@ c
 c 
 c        %---------------------------------------------------%
 c        | STEP 1: Check if the B norm of j-th residual      |
-c        | vector is zero. Equivalent to determing whether   |
+c        | vector is zero. Equivalent to determining whether |
 c        | an exact j-step Arnoldi factorization is present. |
 c        %---------------------------------------------------%
 c

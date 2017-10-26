@@ -30,7 +30,7 @@ c
 c  KEV     Integer.  (INPUT/OUTPUT)
 c          KEV+NP is the size of the input matrix H.
 c          KEV is the size of the updated matrix HNEW.  KEV is only 
-c          updated on ouput when fewer than NP shifts are applied in
+c          updated on output when fewer than NP shifts are applied in
 c          order to keep the conjugate pair together.
 c
 c  NP      Integer.  (INPUT)

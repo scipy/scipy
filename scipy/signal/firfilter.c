@@ -104,7 +104,7 @@ static OneMultAddFunction *OneMultAdd[]={NULL,
 int pylab_convolve_2d (char  *in,        /* Input data Ns[0] x Ns[1] */
 		       intp   *instr,     /* Input strides */
 		       char  *out,       /* Output data */
-		       intp   *outstr,    /* Ouput strides */
+		       intp   *outstr,    /* Output strides */
 		       char  *hvals,     /* coefficients in filter */
 		       intp   *hstr,      /* coefficients strides */ 
 		       intp   *Nwin,     /* Size of kernel Nwin[0] x Nwin[1] */

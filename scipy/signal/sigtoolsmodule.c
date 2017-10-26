@@ -1122,7 +1122,7 @@ static PyObject *sigtools_convolve2d(PyObject *NPY_UNUSED(dummy), PyObject *args
     ret = pylab_convolve_2d (PyArray_DATA(ain1),      /* Input data Ns[0] x Ns[1] */
 		             PyArray_STRIDES(ain1),   /* Input strides */
 		             PyArray_DATA(aout),      /* Output data */
-		             PyArray_STRIDES(aout),   /* Ouput strides */
+		             PyArray_STRIDES(aout),   /* Output strides */
 		             PyArray_DATA(ain2),      /* coefficients in filter */
 		             PyArray_STRIDES(ain2),   /* coefficients strides */ 
 		             PyArray_DIMS(ain2),      /* Size of kernel Nwin[2] */

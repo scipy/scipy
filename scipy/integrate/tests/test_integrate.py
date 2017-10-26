@@ -455,7 +455,7 @@ class CoupledDecay(ODE):
     lband = 1
     uband = 0
 
-    lmbd = [0.17, 0.23, 0.29]  # fictious decay constants
+    lmbd = [0.17, 0.23, 0.29]  # fictitious decay constants
 
     def f(self, z, t):
         lmbd = self.lmbd

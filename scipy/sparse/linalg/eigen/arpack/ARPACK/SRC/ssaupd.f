@@ -267,9 +267,9 @@ c          = -8: Error return from trid. eigenvalue calculation;
 c                Informatinal error from LAPACK routine ssteqr.
 c          = -9: Starting vector is zero.
 c          = -10: IPARAM(7) must be 1,2,3,4,5.
-c          = -11: IPARAM(7) = 1 and BMAT = 'G' are incompatable.
+c          = -11: IPARAM(7) = 1 and BMAT = 'G' are incompatible.
 c          = -12: IPARAM(1) must be equal to 0 or 1.
-c          = -13: NEV and WHICH = 'BE' are incompatable.
+c          = -13: NEV and WHICH = 'BE' are incompatible.
 c          = -9999: Could not build an Arnoldi factorization.
 c                   IPARAM(5) returns the size of the current Arnoldi
 c                   factorization. The user is advised to check that

@@ -83,7 +83,7 @@ cdef int _vq(vq_type *obs, vq_type *code_book,
         low_dist[i] is the Euclidean distance from obs[i] to the corresponding
         centroid.
     """
-    # Naive algorithm is prefered when nfeat is small
+    # Naive algorithm is preferred when nfeat is small
     if nfeat < NFEATURES_CUTOFF:
         _vq_small_nf(obs, code_book, ncodes, nfeat, nobs, codes, low_dist)
         return 0
@@ -142,7 +142,7 @@ cdef void _vq_small_nf(vq_type *obs, vq_type *code_book,
                        int32_t *codes, vq_type *low_dist):
     """
     Vector quantization using naive algorithm.
-    This is prefered when nfeat is small.
+    This is preferred when nfeat is small.
     The parameters are the same as those of _vq.
     """
     # Temporary variables

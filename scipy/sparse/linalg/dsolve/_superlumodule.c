@@ -7,7 +7,7 @@
 
 /* Copyright 1999 Travis Oliphant
  *
- * Permision to copy and modified this file is granted under
+ * Permission to copy and modified this file is granted under
  * the revised BSD license. No warranty is expressed or IMPLIED
  */
 

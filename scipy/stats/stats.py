@@ -236,7 +236,7 @@ def _contains_nan(a, nan_policy='propagate'):
         with np.errstate(invalid='ignore'):
             contains_nan = np.isnan(np.sum(a))
     except TypeError:
-        # If the check cannot be properly performed we fallback to omiting
+        # If the check cannot be properly performed we fallback to omitting
         # nan values and raising a warning. This can happen when attempting to
         # sum things that are not numbers (e.g. as in the function `mode`).
         contains_nan = False

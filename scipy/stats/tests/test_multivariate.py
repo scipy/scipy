@@ -1436,7 +1436,7 @@ class TestRandomCorrelation(object):
         assert_raises(ValueError, random_correlation.rvs, [1, 2, .1])
 
     def test_definition(self):
-        # Test the defintion of a correlation matrix in several dimensions:
+        # Test the definition of a correlation matrix in several dimensions:
         #
         # 1. Det is product of eigenvalues (and positive by construction
         #    in examples)
