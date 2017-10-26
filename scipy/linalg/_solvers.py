@@ -25,6 +25,7 @@ from .special_matrices import kron, block_diag
 
 __all__ = ['solve_sylvester',
            'solve_continuous_lyapunov', 'solve_discrete_lyapunov',
+           'solve_lyapunov',
            'solve_continuous_are', 'solve_discrete_are']
 
 
