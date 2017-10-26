@@ -154,7 +154,7 @@ double p;
 {
     double dk, dn;
 
-    if (npy_isnan(k) || npy_isnan(n) || npy_isnan(p)) {
+    if (npy_isnan(p)) {
 	return NPY_NAN;
     }
     if ((p < 0.0) || (p > 1.0)) {
