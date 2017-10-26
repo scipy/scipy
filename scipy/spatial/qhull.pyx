@@ -2270,6 +2270,7 @@ class ConvexHull(_QhullUser):
     -----
     The convex hull is computed using the 
     `Qhull library <http://www.qhull.org/>`__.
+    The attributes `area` and `volume` have been added in version 0.17.0.
 
     Examples
     --------
