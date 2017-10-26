@@ -198,22 +198,6 @@ def test_chi2_contingency_bad_args():
     obs = np.empty((0, 8))
     assert_raises(ValueError, chi2_contingency, obs)
 
-def test_chi2_contingency_bad_args():
-    # Test that "bad" inputs raise a ValueError.
-
-    # Negative value in the array of observed frequencies.
-    obs = np.array([[-1, 10], [1, 2]])
-    assert_raises(ValueError, chi2_contingency, obs)
-
-    # The zeros in this will result in zeros in the array
-    # of expected frequencies.
-    obs = np.array([[0, 1], [0, 1]])
-    assert_raises(ValueError, chi2_contingency, obs)
-
-    # A degenerate case: `observed` has size 0.
-    obs = np.empty((0, 8))
-    assert_raises(ValueError, chi2_contingency, obs)
-
 
 def test_assn_bad_kwargs():
     obs = np.array([[1, 1, 2], [3, 2, 2]])
@@ -268,12 +252,12 @@ def test_cramers_return_type():
     chi2 = chi2_contingency(obs)[0]
     assntest = associationTests(observed=obs, chi2_stat=chi2)
     assert_allclose(np.array([assntest.cramers_v(correct_bias=True),
-                                          assntest.cramers_v(correct_bias=False)]),
+                              assntest.cramers_v(correct_bias=False)]),
                     np.array([0.29059, 0.5846526]))
     # 2x2 array
     obsx = np.array([[2, 10], [13, 3]])
     chi2 = chi2_contingency(obsx)[0]
     assntest = associationTests(observed=obsx, chi2_stat=chi2)
     assert_allclose(np.array([assntest.cramers_v(correct_bias=True),
-                                          assntest.cramers_v(correct_bias=False)]),
+                              assntest.cramers_v(correct_bias=False)]),
                     np.array([0.340625, 0.64084]))

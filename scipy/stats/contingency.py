@@ -301,10 +301,13 @@ class associationTests(object):
                 Important if you have a complex array 
                 (i.e. more than [[*,*,...,*], [*,*,...*]] )
         """
-        if isinstance(self._check_array_structure(array=observed), np.array):
+
+        array_check = self._check_array_structure(array=observed)
+        if array_check == "Valid":
             self.observed = observed
         else:
-            self._check_array_structure(array=observed)
+            raise array_check
+
         invalid_kwargs = associationTests._check_kwargs(kwargs=dict(**kwargs))
         if len(invalid_kwargs) == 0:
             pass
@@ -362,8 +365,8 @@ class associationTests(object):
 
     def _check_array_structure(self, array):
         array = np.asarray(array, dtype=np.int64)
-        if np.any([_ for _ in array if type(_) != np.int]):
-            raise TypeError("Invalid datatype in array")
+        if np.any([_ for _ in array if type(_) != np.int64]):
+            return TypeError("Invalid datatype in array")
         if np.any([_ for _ in array if _ < 0]):
             return ValueError("All values in `observed` must be nonnegative.")
         if array.size == 0:
@@ -374,7 +377,7 @@ class associationTests(object):
                               "Please specify the n_rows, n_cols and n_obs explicitly in the"
                               "class init method")
         elif np.any([i for i in shape if i <= 1]):
-            raise ValueError("observed array must have at least 2 rows and cols")
+            return ValueError("observed array must have at least 2 rows and cols")
         else:
             self.n_rows = shape[0]
             self.n_cols = shape[1]
@@ -581,10 +584,10 @@ class associationTests(object):
 
 
         2x2 Contingency Table (with and without bias adjustment)
-        >>> from scipy.stats import chi2_contingency, association_tests
+        >>> from scipy.stats import chi2_contingency, associationTests
         >>> obs = np.array([[2, 10], [13, 3]])
         >>> chi2 = chi2_contingency(obs)[0]
-        >>> assnTest = association_tests(observed=obs, chi2_stat=chi2)
+        >>> assnTest = associationTests(observed=obs, chi2_stat=chi2)
 
             with bias correction
         >>> assnTest.tschuprows_t(correct_bias=True)
