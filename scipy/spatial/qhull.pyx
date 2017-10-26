@@ -2254,9 +2254,13 @@ class ConvexHull(_QhullUser):
 
         If option "Qc" is not specified, this list is not computed.
     area : float
-        Area of the convex hull
+        Area of the convex hull.
+        
+        .. versionadded:: 0.17.0
     volume : float
-        Volume of the convex hull
+        Volume of the convex hull.
+        
+        .. versionadded:: 0.17.0
 
     Raises
     ------
@@ -2270,7 +2274,6 @@ class ConvexHull(_QhullUser):
     -----
     The convex hull is computed using the 
     `Qhull library <http://www.qhull.org/>`__.
-    The attributes `area` and `volume` have been added in version 0.17.0.
 
     Examples
     --------
