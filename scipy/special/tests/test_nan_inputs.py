@@ -4,7 +4,7 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import assert_array_equal
+from numpy.testing import assert_array_equal, assert_
 import pytest
 
 import scipy.special as sc
@@ -55,3 +55,11 @@ def test_nan_inputs(func):
 
     msg = "got {} instead of nan".format(res)
     assert_array_equal(np.isnan(res), True, err_msg=msg)
+
+
+def test_legacy_cast():
+    with suppress_warnings() as sup:
+        sup.filter(RuntimeWarning,
+                   "floating point number truncated to an integer")
+        res = sc.bdtrc(np.nan, 1, 0.5)
+        assert_(np.isnan(res))
