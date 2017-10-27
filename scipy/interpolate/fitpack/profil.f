@@ -28,7 +28,7 @@ c           nu >= ny if iopt=0, nu >= nx if iopt=1.
 c
 c  output parameters:
 c   cu    : real array of dimension (nu).
-c           on succesful exit this array contains the b-spline
+c           on successful exit this array contains the b-spline
 c   ier   : integer error flag
 c    ier=0 : normal return
 c    ier=10: invalid input data (see restrictions)

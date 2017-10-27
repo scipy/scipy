@@ -82,7 +82,7 @@ C     Formula  26.6.20   of   Abramowitz   and   Stegun,  Handbook  of
 C     Mathematical  Functions (1966) is used to compute the cumulative
 C     distribution function.
 C
-C     Computation of other parameters involve a seach for a value that
+C     Computation of other parameters involve a search for a value that
 C     produces  the desired  value  of P.   The search relies  on  the
 C     monotinicity of P with the other parameter.
 C

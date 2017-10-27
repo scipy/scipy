@@ -46,7 +46,7 @@ cdef inline int find_interval(double[::1] t,
     k : int
         B-spline degree
     xval : double
-        value to find the inteval for
+        value to find the interval for
     prev_l : int
         interval where the previous value was located.
         if unknown, use any value < k to start the search.

@@ -689,7 +689,7 @@ class TestResample(object):
             if dtype in (np.complex64, np.complex128):
                 x += 1j * random_state.randn(size)
 
-            # resample_poly assumes zeros outside of signl, wheras filtfilt
+            # resample_poly assumes zeros outside of signl, whereas filtfilt
             # can only constant-pad. Make them equivalent:
             x[0] = 0
             x[-1] = 0

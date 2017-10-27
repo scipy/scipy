@@ -75,7 +75,7 @@ with a name ending in E, as QAGE.  These provide more
 information and control than the easier versions.
 
 
-   The preceeding routines are all automatic.  That is, the user
+   The preceding routines are all automatic.  That is, the user
 inputs his problem and an error tolerance.  The routine
 attempts to perform the integration to within the requested
 absolute or relative error.

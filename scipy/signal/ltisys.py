@@ -2940,7 +2940,7 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
         cur_rtol = np.nan
         nb_iter = np.nan
     else:
-        # step A (p1144 KNV) and begining of step F: decompose
+        # step A (p1144 KNV) and beginning of step F: decompose
         # dot(U1.T, A-P[i]*I).T and build our set of transfer_matrix vectors
         # in the same loop
         ker_pole = []

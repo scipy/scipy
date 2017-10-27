@@ -586,7 +586,7 @@ int NI_WatershedIFT(PyArrayObject* input, PyArrayObject* markers,
                                 if (next)
                                     next->prev = prev;
                             }
-                            /* Insert the neighbor in the appropiate queue: */
+                            /* Insert the neighbor in the appropriate queue: */
                             if (label < 0) {
                                 p->prev = last[max];
                                 p->next = NULL;

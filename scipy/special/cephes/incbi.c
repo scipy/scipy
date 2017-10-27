@@ -1,6 +1,6 @@
 /*                                                     incbi()
  *
- *      Inverse of imcomplete beta integral
+ *      Inverse of incomplete beta integral
  *
  *
  *

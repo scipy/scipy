@@ -9,7 +9,7 @@
  * $ cython ckdtree.pyx
  *
  * Unless you add fields to cKDTree there will be
- * no change in struct ckdtree. The fields are layed
+ * no change in struct ckdtree. The fields are laid
  * out in the same order they are defined in Cython.
  */
 

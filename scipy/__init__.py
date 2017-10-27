@@ -103,7 +103,7 @@ else:
     except ImportError:
         msg = """Error importing scipy: you cannot import scipy while
         being in scipy source directory; please exit the scipy source
-        tree first, and relaunch your python intepreter."""
+        tree first, and relaunch your python interpreter."""
         raise ImportError(msg)
 
     from scipy.version import version as __version__
