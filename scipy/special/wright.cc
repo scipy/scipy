@@ -69,7 +69,7 @@
 /*         Pointer to the condition number estimate. If NULL the      */
 /*         condition number is not calculated.                        */
 /*                                                                    */
-/* Output: returns 0 on sucessful exit.                               */
+/* Output: returns 0 on successful exit.                               */
 /**********************************************************************/
 
 #include <Python.h>

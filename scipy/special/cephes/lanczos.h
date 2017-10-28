@@ -24,7 +24,7 @@
 
 /*
  * Lanczos Coefficients for N=13 G=6.024680040776729583740234375
- * Max experimental error (with arbitary precision arithmetic) 1.196214e-17
+ * Max experimental error (with arbitrary precision arithmetic) 1.196214e-17
  * Generated with compiler: Microsoft Visual C++ version 8.0 on Win32 at Mar 23 2006
  *
  * Use for double precision.

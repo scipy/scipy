@@ -240,7 +240,7 @@ static int _correlate_nd_imp(PyArrayIterObject* itx, PyArrayIterObject *ity,
      * innerproduct of y with the neighborhood around curx */
     switch(mode) {
         case CORR_MODE_VALID:
-            /* Only walk through the input points such as the correponding
+            /* Only walk through the input points such as the corresponding
              * output will not depend on 0 padding */
             for(i = 0; i < PyArray_NDIM(itx->ao); ++i) {
                 bounds[2*i] = PyArray_DIMS(ity->ao)[i] - 1;

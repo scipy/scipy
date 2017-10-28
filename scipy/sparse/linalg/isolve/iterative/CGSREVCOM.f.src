@@ -64,7 +64,7 @@
 *  RESID   (input/output) DOUBLE PRECISION
 *          On input, the allowable convergence measure for
 *          norm( b - A*x ) / norm( b ).
-*          On ouput, the final value of this measure.
+*          On output, the final value of this measure.
 *
 *  INFO    (output) INTEGER
 *
@@ -72,7 +72,7 @@
 *          .gt.   0: Convergence not achieved. This will be set
 *                to the number of iterations performed.
 *
-*          .ls.   0: Illegal input parameter, or breakdown occured
+*          .ls.   0: Illegal input parameter, or breakdown occurred
 *                during iteration.
 *
 *                Illegal parameter: 

@@ -69,7 +69,7 @@
 *
 *  RESID   (input/output) DOUBLE PRECISION
 *          On input, the allowable error tolerance.
-*          On ouput, the norm of the residual vector if solution
+*          On output, the norm of the residual vector if solution
 *          approximated to tolerance, otherwise reset to input
 *          tolerance.
 *

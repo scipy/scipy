@@ -286,7 +286,7 @@ PyObject *gen_output(int n, int m, int np, int nq, int ldwe, int ld2we,
   npy_intp dim1[1], dim2[2];
 
   if (info == 50005) {
-      /* fatal error in fcn call; return NULL to propogate the exception */
+      /* fatal error in fcn call; return NULL to propagate the exception */
 
       return NULL;
   }

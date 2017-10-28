@@ -273,7 +273,7 @@ c  main loop for the different grid points.
           iz = iz+1
 c  evaluate s(u,v) at the current grid point by making the sum of the
 c  cross products of the non-zero b-splines at (u,v), multiplied with
-c  the appropiate b-spline coefficients.
+c  the appropriate b-spline coefficients.
           term = 0.
           k0 = numu*nv4+numv
           jz = iz
