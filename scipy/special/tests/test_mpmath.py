@@ -1319,7 +1319,7 @@ class TestSystematic(object):
             return r
         assert_mpmath_equal(sc_gegenbauer,
                             exception_to_nan(gegenbauer),
-                            [IntArg(0, 100), Arg(), Arg()],
+                            [IntArg(0, 100), Arg(-1e9, 1e9), Arg()],
                             n=40000, dps=100,
                             ignore_inf_sign=True)
 
@@ -1535,7 +1535,15 @@ class TestSystematic(object):
         g = 6.024680040776729583740234375
 
         def gamma(x):
-            return ((x + g - 0.5)/e)**(x - 0.5)*_lanczos_sum_expg_scaled(x)
+            with np.errstate(over='ignore'):
+                fac = ((x + g - 0.5)/e)**(x - 0.5)
+                if fac != np.inf:
+                    res = fac*_lanczos_sum_expg_scaled(x)
+                else:
+                    fac = ((x + g - 0.5)/e)**(0.5*(x - 0.5))
+                    res = fac*_lanczos_sum_expg_scaled(x)
+                    res *= fac
+            return res
 
         assert_mpmath_equal(gamma,
                             mpmath.gamma,
@@ -1588,7 +1596,7 @@ class TestSystematic(object):
                 else:
                     return 0
 
-            if abs(z) < 1e-15:
+            if abs(z) <= 1e-15:
                 # mpmath has bad performance here
                 return np.nan
 
@@ -1603,7 +1611,8 @@ class TestSystematic(object):
 
         assert_mpmath_equal(lpnm,
                             legenp,
-                            [IntArg(-100, 100), IntArg(-100, 100), Arg()])
+                            [IntArg(-100, 100), IntArg(-100, 100),
+                             Arg(-1e153, 1e153)])
 
         assert_mpmath_equal(lpnm_2,
                             legenp,
@@ -1860,7 +1869,7 @@ class TestSystematic(object):
                             mpmath.spherharm,
                             [IntArg(0, 100), IntArg(0, 100),
                              Arg(a=0, b=pi), Arg(a=0, b=2*pi)],
-                            atol=1e-8, n=6000,
+                            atol=5e-8, n=6000,
                             dps=150)
 
     def test_struveh(self):

@@ -22,66 +22,62 @@ except ImportError:
 # ------------------------------------------------------------------------------
 
 class Arg(object):
-    """
-    Generate a set of numbers on the real axis, concentrating on
-    'interesting' regions and covering all orders of magnitude.
-    """
+    """Generate a set of numbers on the real axis."""
 
     def __init__(self, a=-np.inf, b=np.inf, inclusive_a=True, inclusive_b=True):
+        if a > b:
+            a, b = b, a
+        if a == -np.inf:
+            a = -0.5*np.finfo(float).max
+        if b == np.inf:
+            b = 0.5*np.finfo(float).max
         self.a = a
         self.b = b
+
         self.inclusive_a = inclusive_a
         self.inclusive_b = inclusive_b
-        if self.a == -np.inf:
-            self.a = -np.finfo(float).max/2
-        if self.b == np.inf:
-            self.b = np.finfo(float).max/2
 
     def values(self, n):
-        """Return an array containing approximatively `n` numbers."""
-        n1 = max(2, int(0.3*n))
-        n2 = max(2, int(0.2*n))
-        n3 = max(8, n - n1 - n2)
+        """Return an array containing n numbers."""
+        a, b = self.a, self.b
+        lep, rep = self.inclusive_a, self.inclusive_b
+        if a == b:
+            return a*np.ones(n)
 
-        v1 = np.linspace(-1, 1, n1)
-        v2 = np.r_[np.linspace(-10, 10, max(0, n2-4)),
-                   -9, -5.5, 5.5, 9]
-        if self.a >= 0 and self.b > 0:
-            v3 = np.r_[
-                np.logspace(-30, -1, 2 + n3//4),
-                np.logspace(5, np.log10(self.b), 1 + n3//4),
-                ]
-            v4 = np.logspace(1, 5, 1 + n3//2)
-        elif self.a < 0 < self.b:
-            v3 = np.r_[
-                np.logspace(-30, -1, 2 + n3//8),
-                np.logspace(5, np.log10(self.b), 1 + n3//8),
-                -np.logspace(-30, -1, 2 + n3//8),
-                -np.logspace(5, np.log10(-self.a), 1 + n3//8)
-                ]
-            v4 = np.r_[
-                np.logspace(1, 5, 1 + n3//4),
-                -np.logspace(1, 5, 1 + n3//4)
-                ]
-        elif self.b < 0:
-            v3 = np.r_[
-                -np.logspace(-30, -1, 2 + n3//4),
-                -np.logspace(5, np.log10(-self.b), 1 + n3//4),
-                ]
-            v4 = -np.logspace(1, 5, 1 + n3//2)
+        if not lep:
+            n += 1
+        if not rep:
+            n += 1
+
+        if a == 0:
+            v = np.logspace(-30, np.log10(b), n - 1)
+            v = np.hstack(([0], v))
+        elif b == 0:
+            v = np.logspace(np.log10(-a), -30, n - 1)
+            v = np.hstack((-v, [0]))
+        elif a < 0 and b < 0:
+            v = -np.logspace(np.log10(-b), np.log10(-a), n)
+        elif a > 0 and b > 0:
+            v = np.logspace(np.log10(a), np.log10(b), n)
+        elif a < 0 and b > 0:
+            if n % 2 == 0:
+                nv1 = n//2
+                nv2 = nv1 - 1
+            else:
+                nv1 = n//2
+                nv2 = nv1
+            v1 = np.logspace(np.log10(-self.a), -30, nv1)
+            v2 = np.logspace(-30, np.log10(self.b), nv2)
+            v = np.hstack((-v1, [0], v2))
         else:
-            v3 = []
-            v4 = []
-        v = np.r_[v1, v2, v3, v4, 0]
-        if self.inclusive_a:
-            v = v[v >= self.a]
-        else:
-            v = v[v > self.a]
-        if self.inclusive_b:
-            v = v[v <= self.b]
-        else:
-            v = v[v < self.b]
-        return np.unique(v)
+            raise Exception("Invalid a and b")
+
+        if not lep:
+            v = v[1:]
+        if not rep:
+            v = v[:-1]
+
+        return v
 
 
 class FixedArg(object):
@@ -98,9 +94,9 @@ class ComplexArg(object):
         self.imag = Arg(a.imag, b.imag)
 
     def values(self, n):
-        m = max(2, int(np.sqrt(n)))
+        m = int(np.sqrt(n))
         x = self.real.values(m)
-        y = self.imag.values(m)
+        y = self.imag.values(m + 1)
         return (x[:,None] + 1j*y[None,:]).ravel()
 
 
