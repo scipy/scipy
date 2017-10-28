@@ -703,8 +703,7 @@ class DifferentialEvolutionSolver(object):
 
         fill_point = rng.randint(0, self.parameter_count)
 
-        if (self.strategy == 'currenttobest1exp' or
-                self.strategy == 'currenttobest1bin'):
+        if self.strategy == ['currenttobest1exp', 'currenttobest1bin']:
             bprime = self.mutation_func(candidate,
                                         self._select_samples(candidate, 5))
         else:
@@ -764,10 +763,9 @@ class DifferentialEvolutionSolver(object):
         currenttobest1bin, currenttobest1exp
         """
         r0, r1 = samples[:2]
-        bprime = np.copy(self.population[candidate])
-        bprime += self.scale * (self.population[0] - bprime)
-        bprime += self.scale * (self.population[r0] -
-                                self.population[r1])
+        bprime = (self.population[candidate] + self.scale * 
+                  (self.population[0] - self.population[candidate] +
+                   self.population[r0] - self.population[r1]))
         return bprime
 
     def _best2(self, samples):
