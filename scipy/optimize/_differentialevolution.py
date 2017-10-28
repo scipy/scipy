@@ -9,6 +9,7 @@ from scipy.optimize.optimize import _status_message
 from scipy._lib._util import check_random_state
 from scipy._lib.six import xrange
 import warnings
+from math import ceil
 
 
 __all__ = ['differential_evolution']
@@ -51,9 +52,11 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
             - 'best1exp'
             - 'rand1exp'
             - 'randtobest1exp'
+            - 'currenttobest1exp'
             - 'best2exp'
             - 'rand2exp'
             - 'randtobest1bin'
+            - 'currenttobest1bin'
             - 'best2bin'
             - 'rand2bin'
             - 'rand1bin'
@@ -63,9 +66,9 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         The maximum number of generations over which the entire population is
         evolved. The maximum number of function evaluations (with no polishing)
         is: ``(maxiter + 1) * popsize * len(x)``
-    popsize : int, optional
+    popsize : float, optional
         A multiplier for setting the total population size.  The population has
-        ``popsize * len(x)`` individuals.
+        ``ceil(popsize * len(x))`` individuals.
     tol : float, optional
         Relative tolerance for convergence, the solving stops when
         ``np.std(pop) <= atol + tol * np.abs(np.mean(population_energies))``,
@@ -239,9 +242,11 @@ class DifferentialEvolutionSolver(object):
             - 'best1exp'
             - 'rand1exp'
             - 'randtobest1exp'
+            - 'currenttobest1exp'
             - 'best2exp'
             - 'rand2exp'
             - 'randtobest1bin'
+            - 'currenttobest1bin'
             - 'best2bin'
             - 'rand2bin'
             - 'rand1bin'
@@ -252,9 +257,9 @@ class DifferentialEvolutionSolver(object):
         The maximum number of generations over which the entire population is
         evolved. The maximum number of function evaluations (with no polishing)
         is: ``(maxiter + 1) * popsize * len(x)``
-    popsize : int, optional
+    popsize : float, optional
         A multiplier for setting the total population size.  The population has
-        ``popsize * len(x)`` individuals.
+        ``ceil(popsize * len(x))`` individuals.
     tol : float, optional
         Relative tolerance for convergence, the solving stops when
         ``np.std(pop) <= atol + tol * np.abs(np.mean(population_energies))``,
@@ -315,12 +320,14 @@ class DifferentialEvolutionSolver(object):
     # Dispatch of mutation strategy method (binomial or exponential).
     _binomial = {'best1bin': '_best1',
                  'randtobest1bin': '_randtobest1',
+                 'currenttobest1bin': '_currenttobest1',
                  'best2bin': '_best2',
                  'rand2bin': '_rand2',
                  'rand1bin': '_rand1'}
     _exponential = {'best1exp': '_best1',
                     'rand1exp': '_rand1',
                     'randtobest1exp': '_randtobest1',
+                    'currenttobest1exp': '_currenttobest1',
                     'best2exp': '_best2',
                     'rand2exp': '_rand2'}
 
@@ -394,7 +401,7 @@ class DifferentialEvolutionSolver(object):
 
         # default population initialization is a latin hypercube design, but
         # there are other population initializations possible.
-        self.num_population_members = popsize * self.parameter_count
+        self.num_population_members = ceil(popsize * self.parameter_count)
 
         self.population_shape = (self.num_population_members,
                                  self.parameter_count)
@@ -697,8 +704,8 @@ class DifferentialEvolutionSolver(object):
 
         fill_point = rng.randint(0, self.parameter_count)
 
-        if (self.strategy == 'randtobest1exp' or
-                self.strategy == 'randtobest1bin'):
+        if (self.strategy == 'currenttobest1exp' or
+                self.strategy == 'currenttobest1bin'):
             bprime = self.mutation_func(candidate,
                                         self._select_samples(candidate, 5))
         else:
@@ -742,9 +749,20 @@ class DifferentialEvolutionSolver(object):
         return (self.population[r0] + self.scale *
                 (self.population[r1] - self.population[r2]))
 
-    def _randtobest1(self, candidate, samples):
+    def _randtobest1(self, samples):
         """
         randtobest1bin, randtobest1exp
+        """
+        r0, r1, r2 = samples[:3]
+        bprime = np.copy(self.population[r0])
+        bprime += self.scale * (self.population[0] - bprime)
+        bprime += self.scale * (self.population[r1] -
+                                self.population[r2])
+        return bprime
+
+    def _currenttobest1(self, candidate, samples):
+        """
+        currenttobest1bin, currenttobest1exp
         """
         r0, r1 = samples[:2]
         bprime = np.copy(self.population[candidate])
