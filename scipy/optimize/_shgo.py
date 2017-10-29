@@ -14,7 +14,6 @@ __all__ = ['shgo']
 
 def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
          minimizer_kwargs=None, options=None, sampling_method='simplicial'):
-    # sampling_method: str, options = 'sobol', 'simplicial'
     """
     Finds the global minimum of a function using simplicial homology global
     optimisation.
@@ -486,12 +485,14 @@ class SHGO(object):
         # Bounds
         abound = numpy.array(bounds, float)
         self.dim = numpy.shape(abound)[0]  # Dimensionality of problem
-        # Check if bounds are correctly specified
-        bnderr = abound[:, 0] > abound[:, 1]
+
         # Set none finite values to large floats
         infind = ~numpy.isfinite(abound)
         abound[infind[:, 0], 0] = -1e50  # e308
         abound[infind[:, 1], 1] = 1e50  # e308
+
+        # Check if bounds are correctly specified
+        bnderr = abound[:, 0] > abound[:, 1]
         if bnderr.any():
             raise ValueError('Error: lb > ub in bounds %s.' %
                              ', '.join(str(b) for b in bnderr))
