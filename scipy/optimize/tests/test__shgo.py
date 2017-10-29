@@ -3,6 +3,7 @@ from scipy.optimize._shgo._shgo import *
 import logging
 import numpy
 
+
 class TestFunction(object):
     def __init__(self, bounds, expected_x, expected_fun=None,
                  expected_xl=None, expected_funl=None):
@@ -11,6 +12,7 @@ class TestFunction(object):
         self.expected_fun = expected_fun
         self.expected_xl = expected_xl
         self.expected_funl = expected_funl
+
 
 def wrap_constraints(g):
     cons = []
@@ -27,14 +29,16 @@ def wrap_constraints(g):
         cons = None
     return cons
 
+
 class Test1(TestFunction):
     def f(self, x):
-        return x[0]**2 + x[1]**2
+        return x[0] ** 2 + x[1] ** 2
 
     def g(x):
-       return -(numpy.sum(x, axis=0) - 6.0)
+        return -(numpy.sum(x, axis=0) - 6.0)
 
     cons = wrap_constraints(g)
+
 
 test1_1 = Test1(bounds=[(-1, 6), (-1, 6)],
                 expected_x=[0, 0])
@@ -43,10 +47,12 @@ test1_2 = Test1(bounds=[(0, 1), (0, 1)],
 test1_3 = Test1(bounds=[(None, None), (None, None)],
                 expected_x=[0, 0])
 
+
 class Test2(TestFunction):
     """
     Scalar function with several minima to test all minimiser retrievals
     """
+
     def f(self, x):
         return (x - 30) * numpy.sin(x)
 
@@ -54,6 +60,7 @@ class Test2(TestFunction):
         return 58 - numpy.sum(x, axis=0)
 
     cons = wrap_constraints(g)
+
 
 test2_1 = Test2(bounds=[(0, 60)],
                 expected_x=[1.53567906],
@@ -73,8 +80,8 @@ test2_1 = Test2(bounds=[(0, 60)],
                 expected_funl=numpy.array([-28.44677132, -24.99785984,
                                            -22.16855376, -18.72136195,
                                            -15.89423937, -12.45154942,
-                                           -9.63133158,  -6.20801301,
-                                           -3.43727232,  -0.46353338])
+                                           -9.63133158, -6.20801301,
+                                           -3.43727232, -0.46353338])
                 )
 
 test2_2 = Test2(bounds=[(0, 4.5)],
@@ -83,6 +90,7 @@ test2_2 = Test2(bounds=[(0, 4.5)],
                 expected_xl=numpy.array([[1.53567906]]),
                 expected_funl=numpy.array([-28.44677132])
                 )
+
 
 class Test3(TestFunction):
     """
@@ -100,23 +108,26 @@ class Test3(TestFunction):
 
 
     """
+
     def f(self, x):
-        return 0.01 * (x[0])**2 + (x[1])**2
+        return 0.01 * (x[0]) ** 2 + (x[1]) ** 2
 
     def g1(x):
         return x[0] * x[1] - 25.0
 
     def g2(x):
-        return x[0]**2 + x[1]**2 - 25.0
+        return x[0] ** 2 + x[1] ** 2 - 25.0
 
     g = (g1, g2)
 
     cons = wrap_constraints(g)
 
+
 test3_1 = Test3(bounds=[(2, 50), (0, 50)],
-                expected_x=[250**0.5, 2.5**0.5],
+                expected_x=[250 ** 0.5, 2.5 ** 0.5],
                 expected_fun=[5.0]
                 )
+
 
 class Test4(TestFunction):
     """
@@ -127,33 +138,37 @@ class Test4(TestFunction):
     """
 
     def f(self, x):
-        return ((x[0] - 10)**2 + 5*(x[1] - 12)**2 + x[2]**4
-                 + 3*(x[3] - 11)**2 + 10*x[4]**6 + 7*x[5]**2 + x[6]**4
-                 - 4*x[5]*x[6] - 10*x[5] - 8*x[6]
+        return ((x[0] - 10) ** 2 + 5 * (x[1] - 12) ** 2 + x[2] ** 4
+                + 3 * (x[3] - 11) ** 2 + 10 * x[4] ** 6 + 7 * x[5] ** 2 + x[
+                    6] ** 4
+                - 4 * x[5] * x[6] - 10 * x[5] - 8 * x[6]
                 )
 
     def g1(x):
-        return -(2*x[0]**2 + 3*x[1]**4 + x[2] + 4*x[3]**2 + 5*x[4] - 127)
+        return -(2 * x[0] ** 2 + 3 * x[1] ** 4 + x[2] + 4 * x[3] ** 2
+                 + 5 * x[4] - 127)
 
     def g2(x):
-        return -(7*x[0] + 3*x[1] + 10*x[2]**2 + x[3] - x[4] - 282.0)
+        return -(7 * x[0] + 3 * x[1] + 10 * x[2] ** 2 + x[3] - x[4] - 282.0)
 
     def g3(x):
-        return -(23*x[0] + x[1]**2 + 6*x[5]**2 - 8*x[6] - 196)
+        return -(23 * x[0] + x[1] ** 2 + 6 * x[5] ** 2 - 8 * x[6] - 196)
 
     def g4(x):
-        return -(4*x[0]**2 + x[1]**2 - 3*x[0]*x[1] + 2*x[2]**2 + 5*x[5]
-                 - 11*x[6])
+        return -(4 * x[0] ** 2 + x[1] ** 2 - 3 * x[0] * x[1] + 2 * x[2] ** 2
+                 + 5 * x[5] - 11 * x[6])
 
     g = (g1, g2, g3, g4)
 
     cons = wrap_constraints(g)
 
-test4_1 = Test4(bounds=[(-10, 10),]*7,
-                  expected_x=[2.330499, 1.951372, -0.4775414,
-                              4.365726, -0.6244870, 1.038131, 1.594227],
-                   expected_fun=680.6300573
-                  )
+
+test4_1 = Test4(bounds=[(-10, 10), ] * 7,
+                expected_x=[2.330499, 1.951372, -0.4775414,
+                            4.365726, -0.6244870, 1.038131, 1.594227],
+                expected_fun=680.6300573
+                )
+
 
 class Test5(TestFunction):
     def f(self, x):
@@ -165,9 +180,11 @@ class Test5(TestFunction):
     g = None
     cons = wrap_constraints(g)
 
+
 test5_1 = Test5(bounds=[(-512, 512), (-512, 512)],
-                       expected_fun=[-959.64066272085051],
-                       expected_x=[ 512.,  404.23180542])
+                expected_fun=[-959.64066272085051],
+                expected_x=[512., 404.23180542])
+
 
 class TestLJ(TestFunction):
     """
@@ -196,18 +213,20 @@ class TestLJ(TestFunction):
     g = None
     cons = wrap_constraints(g)
 
+
 N = 6
 boundsLJ = list(zip([-4.0] * 6, [4.0] * 6))
 
 testLJ = TestLJ(bounds=boundsLJ,
-               expected_fun=[-1.0],
-               expected_x=[ -2.71247337e-08,
+                expected_fun=[-1.0],
+                expected_x=[-2.71247337e-08,
                             -2.71247337e-08,
                             -2.50000222e+00,
                             -2.71247337e-08,
                             -2.71247337e-08,
                             -1.50000222e+00]
-                  )
+                )
+
 
 class TestTable(TestFunction):
     def f(self, x):
@@ -219,14 +238,17 @@ class TestTable(TestFunction):
     g = None
     cons = wrap_constraints(g)
 
+
 test_table = TestTable(bounds=[(-10, 10), (-10, 10)],
                        expected_fun=[50],
                        expected_x=[3.0, 3.0])
+
 
 class TestInfeasible(TestFunction):
     """
     Test function with no feasible domain.
     """
+
     def f(self, x, *args):
         return x[0] ** 2 + x[1] ** 2
 
@@ -245,15 +267,16 @@ class TestInfeasible(TestFunction):
     g = (g1, g2, g3, g4)
     cons = wrap_constraints(g)
 
+
 test_infeasible = TestInfeasible(bounds=[(2, 50), (-1, 1)],
                                  expected_fun=None,
                                  expected_x=None
                                  )
 
+
 def run_test(test, args=(), test_atol=1e-5, n=100, iters=None,
              callback=None, minimizer_kwargs=None, options=None,
              sampling_method='sobol'):
-
     res = shgo(test.f, test.bounds, args=args, constraints=test.cons,
                n=n, iters=iters, callback=callback,
                minimizer_kwargs=minimizer_kwargs, options=options,
@@ -283,11 +306,13 @@ def run_test(test, args=(), test_atol=1e-5, n=100, iters=None,
                                       atol=test_atol)
     return
 
+
 # Base test functions:
 class TestShgoSobolTestFunctions(object):
     """
     Global optimisation tests with Sobol sampling:
     """
+
     # Sobol algorithm
     def test_f1_1_sobol(self):
         """Multivariate test function 1: x[0]**2 + x[1]**2 with bounds=[(-1, 6), (-1, 6)]"""
@@ -316,8 +341,8 @@ class TestShgoSobolTestFunctions(object):
     @numpy.testing.decorators.slow
     def test_f4_sobol(self):
         """NLP: (High dimensional) Hock and Schittkowski 11 problem (HS11)"""
-        #run_test(test4_1, n=500)
-        #run_test(test4_1, n=800)
+        # run_test(test4_1, n=500)
+        # run_test(test4_1, n=800)
         options = {'infty_constraints': False}
         run_test(test4_1, n=990, options=options)
 
@@ -327,24 +352,26 @@ class TestShgoSobolTestFunctions(object):
 
     def test_f5_2_sobol(self):
         """NLP: Eggholder, multimodal"""
-        #run_test(test5_1, n=60, iters=5)
+        # run_test(test5_1, n=60, iters=5)
         run_test(test5_1, n=60, iters=5)
 
-    #def test_t911(self):
-    #    """1D tabletop function"""
-    #    run_test(test11_1)
+        # def test_t911(self):
+        #    """1D tabletop function"""
+        #    run_test(test11_1)
+
 
 class TestShgoSimplicialTestFunctions(object):
     """
     Global optimisation tests with Simplicial sampling:
     """
+
     def test_f1_1_simplicial(self):
         """Multivariate test function 1: x[0]**2 + x[1]**2 with bounds=[(-1, 6), (-1, 6)]"""
         run_test(test1_1, n=1, sampling_method='simplicial')
 
     def test_f1_2_simplicial(self):
         """Multivariate test function 1: x[0]**2 + x[1]**2 with bounds=[(0, 1), (0, 1)]"""
-        run_test(test1_2, n=1,  sampling_method='simplicial')
+        run_test(test1_2, n=1, sampling_method='simplicial')
 
     def test_f1_3_simplicial(self):
         """Multivariate test function 1: x[0]**2 + x[1]**2
@@ -380,6 +407,7 @@ class TestShgoSimplicialTestFunctions(object):
                  options=options, iters=4,
                  sampling_method='simplicial')
 
+
 # Argument test functions
 class TestShgoArguments(object):
     def test_1_1_simpl_iter(self):
@@ -399,23 +427,28 @@ class TestShgoArguments(object):
     def test_2_2_sobol_iter(self):
         """Iterative Sobol sampling on TestFunction 2 (univariate)"""
         res = shgo(test2_1.f, test2_1.bounds, constraints=test2_1.cons,
-                   n=None, iters=1, sampling_method ='sobol')
+                   n=None, iters=1, sampling_method='sobol')
 
-        numpy.testing.assert_allclose(res.x, test2_1.expected_x, rtol=1e-5, atol=1e-5)
+        numpy.testing.assert_allclose(res.x, test2_1.expected_x, rtol=1e-5,
+                                      atol=1e-5)
         numpy.testing.assert_allclose(res.fun, test2_1.expected_fun, atol=1e-5)
 
     def test_3_1_disp_simplicial(self):
         """Iterative sampling on TestFunction 1 and 2  (multi and univariate)"""
+
         def callback_func(x):
             print("Local minimization callback test")
+
         for test in [test1_1, test2_1]:
-                res = shgo(test.f, test.bounds, iters=1, sampling_method='simplicial',
-                           callback=callback_func, options={'disp': True})
-                res = shgo(test.f, test.bounds, n=1, sampling_method='simplicial',
-                           callback=callback_func, options={'disp': True})
+            res = shgo(test.f, test.bounds, iters=1,
+                       sampling_method='simplicial',
+                       callback=callback_func, options={'disp': True})
+            res = shgo(test.f, test.bounds, n=1, sampling_method='simplicial',
+                       callback=callback_func, options={'disp': True})
 
     def test_3_2_disp_sobol(self):
         """Iterative sampling on TestFunction 1 and 2 (multi and univariate)"""
+
         def callback_func(x):
             print("Local minimization callback test")
 
@@ -433,18 +466,19 @@ class TestShgoArguments(object):
         options = {'f_min': test4_1.expected_fun,
                    'f_tol': 1e-6,
                    'minimize_every_iter': True}
-        #TODO: Make default n higher for faster tests
-        run_test(test4_1, n=None, test_atol=1e-5, options=options, sampling_method='simplicial')
+        # TODO: Make default n higher for faster tests
+        run_test(test4_1, n=None, test_atol=1e-5, options=options,
+                 sampling_method='simplicial')
 
     @numpy.testing.decorators.slow
     def test_4_2_known_f_min(self):
         """Test Global mode limiting local evalutions"""
-        options = { # Specify known function value
-                   'f_min': test4_1.expected_fun,
-                   'f_tol': 1e-6,
-                   # Specify number of local iterations to perform
-                   'minimize_every_iter': True,
-                   'local_iter': 1}
+        options = {  # Specify known function value
+            'f_min': test4_1.expected_fun,
+            'f_tol': 1e-6,
+            # Specify number of local iterations to perform
+            'minimize_every_iter': True,
+            'local_iter': 1}
 
         run_test(test4_1, n=None, test_atol=1e-5, options=options,
                  sampling_method='simplicial')
@@ -452,51 +486,55 @@ class TestShgoArguments(object):
     @numpy.testing.decorators.slow
     def test_4_3_known_f_min(self):
         """Test Global mode limiting local evalutions"""
-        options = { # Specify known function value
-                   'f_min': test4_1.expected_fun,
-                   'f_tol': 1e-6,
-                   # Specify number of local iterations to perform+
-                   'minimize_every_iter': True,
-                   'local_iter': 1,
-                   'infty_constraints': False}
+        options = {  # Specify known function value
+            'f_min': test4_1.expected_fun,
+            'f_tol': 1e-6,
+            # Specify number of local iterations to perform+
+            'minimize_every_iter': True,
+            'local_iter': 1,
+            'infty_constraints': False}
 
         run_test(test4_1, n=300, test_atol=1e-5, options=options,
                  sampling_method='sobol')
 
     def test_4_4_known_f_min(self):
         """Test Global mode limiting local evalutions for 1D funcs"""
-        options = {# Specify known function value
-                   'f_min': test4_1.expected_fun,
-                   'f_tol': 1e-6,
-                   # Specify number of local iterations to perform+
-                   'minimize_every_iter': True,
-                   'local_iter': 1,
-                   'infty_constraints': False}
-        #run_test(test2_1, n=None, iters=None, test_atol=1e-5, options=options,
+        options = {  # Specify known function value
+            'f_min': test4_1.expected_fun,
+            'f_tol': 1e-6,
+            # Specify number of local iterations to perform+
+            'minimize_every_iter': True,
+            'local_iter': 1,
+            'infty_constraints': False}
+        # run_test(test2_1, n=None, iters=None, test_atol=1e-5, options=options,
         #         sampling_method='sobol')
 
         res = shgo(test2_1.f, test2_1.bounds, constraints=test2_1.cons,
-                    n=None, iters=None, options=options,
-                    sampling_method='sobol')
+                   n=None, iters=None, options=options,
+                   sampling_method='sobol')
         numpy.testing.assert_allclose(res.x, test2_1.expected_x, rtol=1e-5,
                                       atol=1e-5)
 
     def test_5_1_simplicial_argless(self):
         """Test Default simplicial sampling settings on TestFunction 1"""
         res = shgo(test1_1.f, test1_1.bounds, constraints=test1_1.cons)
-        numpy.testing.assert_allclose(res.x, test1_1.expected_x, rtol=1e-5, atol=1e-5)
+        numpy.testing.assert_allclose(res.x, test1_1.expected_x, rtol=1e-5,
+                                      atol=1e-5)
 
     def test_5_2_sobol_argless(self):
         """Test Default sobol sampling settings on TestFunction 1"""
-        res = shgo(test1_1.f, test1_1.bounds, constraints=test1_1.cons, sampling_method='sobol')
-        numpy.testing.assert_allclose(res.x, test1_1.expected_x, rtol=1e-5, atol=1e-5)
+        res = shgo(test1_1.f, test1_1.bounds, constraints=test1_1.cons,
+                   sampling_method='sobol')
+        numpy.testing.assert_allclose(res.x, test1_1.expected_x, rtol=1e-5,
+                                      atol=1e-5)
 
     def test_6_1_simplicial_max_iter(self):
         """Test that maximum iteration option works on TestFunction 3"""
         options = {'max_iter': 2}
         res = shgo(test3_1.f, test3_1.bounds, constraints=test3_1.cons,
                    options=options, sampling_method='simplicial')
-        numpy.testing.assert_allclose(res.x, test3_1.expected_x, rtol=1e-5, atol=1e-5)
+        numpy.testing.assert_allclose(res.x, test3_1.expected_x, rtol=1e-5,
+                                      atol=1e-5)
         numpy.testing.assert_allclose(res.fun, test3_1.expected_fun, atol=1e-5)
 
     def test_6_2_simplicial_min_iter(self):
@@ -504,7 +542,8 @@ class TestShgoArguments(object):
         options = {'min_iter': 2}
         res = shgo(test3_1.f, test3_1.bounds, constraints=test3_1.cons,
                    options=options, sampling_method='simplicial')
-        numpy.testing.assert_allclose(res.x, test3_1.expected_x, rtol=1e-5, atol=1e-5)
+        numpy.testing.assert_allclose(res.x, test3_1.expected_x, rtol=1e-5,
+                                      atol=1e-5)
         numpy.testing.assert_allclose(res.fun, test3_1.expected_fun, atol=1e-5)
 
     def test_7_1_minkwargs(self):
@@ -516,14 +555,14 @@ class TestShgoArguments(object):
             minimizer_kwargs = {'method': solver,
                                 'constraints': test3_1.cons}
             print("Solver = {}".format(solver))
-            print("="*100)
+            print("=" * 100)
             run_test(test3_1, n=100, test_atol=1e-3,
                      minimizer_kwargs=minimizer_kwargs, sampling_method='sobol')
 
     def test_7_2_minkwargs(self):
         """Test the minimizer_kwargs default inits"""
         minimizer_kwargs = {'ftol': 1e-5}
-        options = {'disp' : True}  # For coverage purposes
+        options = {'disp': True}  # For coverage purposes
         SHGOc = SHGO(test3_1.f, test3_1.bounds, constraints=test3_1.cons[0],
                      minimizer_kwargs=minimizer_kwargs, options=options)
 
@@ -541,14 +580,14 @@ class TestShgoArguments(object):
                                 'jac': jac,
                                 'hess': hess}
             logging.info("Solver = {}".format(solver))
-            logging.info("="*100)
+            logging.info("=" * 100)
             run_test(test1_1, n=100, test_atol=1e-3,
                      minimizer_kwargs=minimizer_kwargs, sampling_method='sobol')
 
     def test_8_homology_group_diff(self):
         options = {'minhgrd': 1,
                    'minimize_every_iter': True}
-        #run_test(test1_1, n=None, iters=None, options=options,
+        # run_test(test1_1, n=None, iters=None, options=options,
         #         sampling_method='sobol')
 
         run_test(test1_1, n=None, iters=None, options=options,
@@ -583,9 +622,11 @@ class TestShgoArguments(object):
 
     def test_13_high_sobol(self):
         """Test init of high-dimensional sobol sequences"""
+
         def f(x):
             return 0
-        bounds = [(None, None),]*41
+
+        bounds = [(None, None), ] * 41
         SHGOc = SHGO(f, bounds)
         SHGOc.sobol_points(2, 50)
 
@@ -600,8 +641,9 @@ class TestShgoArguments(object):
         run_test(test1_1, n=1, iters=7, options=options,
                  sampling_method='sobol')
 
-    #def test_15_custom_sampling(self):
-    #    run_test(test1_1, sampling_method=SHGO.sampling_sobol)
+        # def test_15_custom_sampling(self):
+        #    run_test(test1_1, sampling_method=SHGO.sampling_sobol)
+
 
 # Failure test functions
 class TestShgoFailures(object):
@@ -628,7 +670,7 @@ class TestShgoFailures(object):
         res = shgo(test_table.f, test_table.bounds, n=3, options=options,
                    sampling_method='sobol')
         numpy.testing.assert_equal(False, res.success)
-        #numpy.testing.assert_equal(9, res.nfev)
+        # numpy.testing.assert_equal(9, res.nfev)
         numpy.testing.assert_equal(12, res.nfev)
 
     def test_3_2_no_min_pool_simplicial(self):
@@ -645,7 +687,6 @@ class TestShgoFailures(object):
         bounds = [(6, 3), (3, 5)]
         numpy.testing.assert_raises(ValueError,
                                     shgo, test1_1.f, bounds)
-
 
     def test_4_2_bound_err(self):
         """Specified bounds are of the form (lb, ub)"""
@@ -690,9 +731,9 @@ class TestShgoFailures(object):
 
         numpy.testing.assert_equal(False, res.success)
 
-    #def test_6_func_arguments(self):
-    #    args = 1
-     #   numpy.testing.assert_raises(TypeError,
-    #                                shgo, test1_1.f, test1_1.bounds, args=args)
-        #numpy.testing.assert_raises(TypeError,
+        # def test_6_func_arguments(self):
+        #    args = 1
+        #   numpy.testing.assert_raises(TypeError,
+        #                                shgo, test1_1.f, test1_1.bounds, args=args)
+        # numpy.testing.assert_raises(TypeError,
         #                            shgo, test1_1.f, test1_1.bounds, g_args=args)
