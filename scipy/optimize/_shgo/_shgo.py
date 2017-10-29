@@ -326,12 +326,12 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
     Now suppose we want to find a larger number of local minima, this can be
     accomplished for example by increasing the amount of sampling points or the
     number of iterations. We'll increase the number of sampling points to 60 and
-    the number of iterations to 3 increased from the default 100 for a total of
-    60 x 3 = 180 initial sampling points.
+    the number of iterations to 5 increased from the default 1 for a total of
+    60 x 5 = 300 initial sampling points.
 
-    >>> result_2 = shgo(eggholder, bounds, n=60, iters=3, sampling_method='sobol')
+    >>> result_2 = shgo(eggholder, bounds, n=60, iters=5, sampling_method='sobol')
     >>> len(result.xl), len(result_2.xl)
-    (13, 28)
+    (13, 39)
 
     Note that there is a difference between specifying arguments for
     ex. ``n=180, iters=1`` and ``n=60, iters=3``.
@@ -384,7 +384,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
         funl: array([ 29.89437816])
      message: 'Optimization terminated successfully.'
         nfev: 119
-         nit: 2
+         nit: 3
        nlfev: 40
        nlhev: 0
        nljev: 5
@@ -393,7 +393,6 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
              5.17765506e-02])
           xl: array([[  6.35521569e-01,   1.13700270e-13,   3.12701881e-01,
               5.17765506e-02]])
-
 
     >>> g1(res.x), g2(res.x), h1(res.x)
     (-5.0626169922907138e-14, -2.9594104944408173e-12, 0.0)
