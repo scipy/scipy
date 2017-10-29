@@ -264,7 +264,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
     >>> from scipy.optimize import rosen
     >>> from scipy.optimize import shgo
     >>> bounds = [(0,2), (0, 2), (0, 2), (0, 2), (0, 2)]
-    >>> result = shgo_m(rosen, bounds)
+    >>> result = shgo(rosen, bounds)
     >>> result.x, result.fun
     (array([ 1.,  1.,  1.,  1.,  1.]), 2.9203923741900809e-18)
 
@@ -274,7 +274,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
     converted to large float numbers.
 
     >>> bounds = [(None, None), ]*4
-    >>> result = shgo_m(rosen, bounds)
+    >>> result = shgo(rosen, bounds)
     >>> result.x
     array([ 0.99999851,  0.99999704,  0.99999411,  0.9999882 ])
 
@@ -296,7 +296,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
     shgo_m has two built-in low discrepancy sampling sequences. First we will
     input 30 initial sampling points of the Sobol sequence
 
-    >>> result = shgo_m(eggholder, bounds, n=30, sampling_method='sobol')
+    >>> result = shgo(eggholder, bounds, n=30, sampling_method='sobol')
     >>> result.x, result.fun
     (array([ 512.        ,  404.23180542]), -959.64066272085051)
 

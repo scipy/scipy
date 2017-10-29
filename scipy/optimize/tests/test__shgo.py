@@ -1,6 +1,7 @@
 import logging
 import numpy
 from scipy.optimize import shgo
+from scipy.optimize._shgo import SHGO
 
 class StructTestFunction(object):
     def __init__(self, bounds, expected_x, expected_fun=None,
