@@ -255,7 +255,7 @@ from ._hungarian import linear_sum_assignment
 from ._differentialevolution import differential_evolution
 from ._lsq import least_squares, lsq_linear
 from .shgo_m import *
-from ._shgo import shgo, SHGO
+from ._shgo import shgo
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 
