@@ -3,15 +3,99 @@ import logging
 import sys
 import copy
 try:
-    from functools import lru_cache
-except ImportError:
-    from functools32 import lru_cache
+    from functools import lru_cache  # For Python 3 only
+except ImportError:  # Python 2:
+    import time
+    import functools
+    import collections
 
-try:
-    pass
-    #from multiprocessing_on_dill import Pool
-except ImportError:
-    from multiprocessing import Pool
+    # Note to avoid using external packages such as functools32 we use this code
+    # only using the standard library
+    def lru_cache(maxsize=255, timeout=None):
+        """
+        Thanks to ilialuk @ https://stackoverflow.com/users/2121105/ilialuk for
+        this code snippet. Modifications by S. Endres
+        """
+        class _LRU_Cache_class(object):
+            def __init__(self, input_func, max_size, timeout):
+                self._input_func = input_func
+                self._max_size = max_size
+                self._timeout = timeout
+
+                # This will store the cache for this function,
+                # format - {caller1 : [OrderedDict1, last_refresh_time1],
+                #  caller2 : [OrderedDict2, last_refresh_time2]}.
+                #   In case of an instance method - the caller is the instance,
+                # in case called from a regular function - the caller is None.
+                self._caches_dict = {}
+
+            def cache_clear(self, caller=None):
+                # Remove the cache for the caller, only if exists:
+                if caller in self._caches_dict:
+                    del self._caches_dict[caller]
+                    self._caches_dict[caller] = [collections.OrderedDict(),
+                                                 time.time()]
+
+            def __get__(self, obj, objtype):
+                """ Called for instance methods """
+                return_func = functools.partial(self._cache_wrapper, obj)
+                return_func.cache_clear = functools.partial(self.cache_clear,
+                                                            obj)
+                # Return the wrapped function and wraps it to maintain the
+                # docstring and the name of the original function:
+                return functools.wraps(self._input_func)(return_func)
+
+            def __call__(self, *args, **kwargs):
+                """ Called for regular functions """
+                return self._cache_wrapper(None, *args, **kwargs)
+
+            # Set the cache_clear function in the __call__ operator:
+            __call__.cache_clear = cache_clear
+
+            def _cache_wrapper(self, caller, *args, **kwargs):
+                # Create a unique key including the types (in order to
+                # differentiate between 1 and '1'):
+                kwargs_key = "".join(map(
+                    lambda x: str(x) + str(type(kwargs[x])) + str(kwargs[x]),
+                    sorted(kwargs)))
+                key = "".join(
+                    map(lambda x: str(type(x)) + str(x), args)) + kwargs_key
+
+                # Check if caller exists, if not create one:
+                if caller not in self._caches_dict:
+                    self._caches_dict[caller] = [collections.OrderedDict(),
+                                                 time.time()]
+                else:
+                    # Validate in case the refresh time has passed:
+                    if self._timeout != None:
+                        if time.time() - self._caches_dict[caller][1
+                        ] > self._timeout:
+                            self.cache_clear(caller)
+
+                # Check if the key exists, if so - return it:
+                cur_caller_cache_dict = self._caches_dict[caller][0]
+                if key in cur_caller_cache_dict:
+                    return cur_caller_cache_dict[key]
+
+                # Validate we didn't exceed the max_size:
+                if len(cur_caller_cache_dict) >= self._max_size:
+                    # Delete the first item in the dict:
+                    try:
+                        cur_caller_cache_dict.popitem(False)
+                    except KeyError:
+                        pass
+                # Call the function and store the data in the cache (call it
+                # with the caller in case it's an instance function
+                # - Ternary condition):
+                cur_caller_cache_dict[key] = self._input_func(caller, *args,
+                    **kwargs) if caller != None else self._input_func(
+                        *args, **kwargs)
+                return cur_caller_cache_dict[key]
+
+        # Return the decorator wrapping the class (also wraps the instance to
+        # maintain the docstring and the name of the original function):
+        return (lambda input_func: functools.wraps(input_func)(
+            _LRU_Cache_class(input_func, maxsize, timeout)))
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
@@ -31,7 +115,8 @@ class Complex:
         # When a cell is subgenerated it is removed from this list
 
         self.H = []  # Storage structure of cells
-        self.V = VertexCache(func, func_args, bounds, g_cons, g_args)  # Cache of all vertices
+        # Cache of all vertices
+        self.V = VertexCache(func, func_args, bounds, g_cons, g_args)
 
         # Generate n-cube here:
         self.n_cube(dim, symmetry=symmetry)
@@ -870,74 +955,3 @@ class VertexCache:
 
             return self.cache[x]
 
-
-if __name__ == '__main__':
-    def test_func(x):
-        import numpy
-        return numpy.sum(x ** 2) + 2.0 * x[0]
-
-    def test_g_cons(x): #(Requires n > 2)
-        import numpy
-        #return x[0] - 0.5 * x[2] + 0.5
-        return x[0] #+ x[2] #+ 0.5
-    g_cons = [test_g_cons]
-    tr = []
-    nr = list(range(9))
-    HC = Complex(2, test_func, symmetry=0, g_cons=g_cons)
-    logging.info('Verex Cache size = {}'.format(len(HC.V.cache)))
-    #HC = Complex(13, test_func, symmetry=1)
-    if 0:
-        nr = []
-        times = []
-        for n in range(1, 200):
-            import time
-            ts = time.time()
-            HC = Complex(n, test_func, symmetry=1)
-            timet = time.time() - ts
-            times.append(timet)
-            nr.append(n)
-            logging.info('Total time at n = {}: {}'.format(n, timet))
-
-        from matplotlib import pyplot
-
-        pyplot.figure()
-        pyplot.plot(nr, times)
-        pyplot.show()
-
-
-    if 0:
-        HC.incidence()
-        print(HC.structure)
-
-    HC.graph_map()
-    logging.info('HC.graph = {}'.format(HC.graph))
-
-    import time
-    start = time.time()
-    print("HC.C0() ======")
-    HC.C0.print_out()
-    for i in range(0):
-        HC.split_generation()
-        logging.info('Done splitting gen = {}'.format(i+1))
-
-    print('TOTAL TIME = {}'.format(time.time() - start))
-
-    print(HC.generate_sub_cell.cache_info())
-    print(HC.generate_sub_cell_t1.cache_info())
-    print(HC.generate_sub_cell_t2.cache_info())
-
-    if 0:
-        HC.plot_complex()
-
-    if 0:
-        for i in range(2):
-            logging.info('Start complex refinement gen = {}'.format(i + 1))
-            HC.split_generation()
-            logging.info('Done with complex refinement gen = {}'.format(i+1))
-            #HC.plot_complex()
-            logging.info('Verex Cache size = {}'.format(len(HC.V.cache)))
-    if 0:
-        print(HC.H)
-        print(len(HC.H[1]))
-        print(HC.H[1][0])
-        HC.H[1][0].print_out()

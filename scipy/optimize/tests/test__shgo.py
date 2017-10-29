@@ -2,13 +2,6 @@ from scipy.optimize import shgo
 from scipy.optimize._shgo._shgo import *
 import logging
 import numpy
-import pytest
-import warnings
-from scipy.optimize import OptimizeWarning
-
-# We filter these warnings because different local solvers need to be tested
-# with options
-warnings.filterwarnings("ignore")
 
 class TestFunction(object):
     def __init__(self, bounds, expected_x, expected_fun=None,
