@@ -825,7 +825,7 @@ class SHGO(object):
             if not self.break_routine:
                 self.find_minima()
 
-        self.res.nit = self.iters_done
+        self.res.nit = self.iters_done + 1
         return
 
     def find_minima(self):
