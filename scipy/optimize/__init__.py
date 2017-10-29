@@ -100,6 +100,7 @@ Global Optimization
    basinhopping - Basinhopping stochastic optimizer
    brute - Brute force searching optimizer
    differential_evolution - stochastic minimization using differential evolution
+   shgo - simplicial homology global optimisation
 
 Rosenbrock function
 -------------------
@@ -206,10 +207,10 @@ The `linprog` function supports the following methods:
    optimize.linprog-interior-point
 
 The simplex method supports callback functions, such as:
-    
+
 .. autosummary::
    :toctree: generated/
-   
+
    linprog_verbose_callback -- Sample callback function for linprog (simplex)
 
 Assignment problems:
@@ -253,7 +254,8 @@ from ._linprog import linprog, linprog_verbose_callback
 from ._hungarian import linear_sum_assignment
 from ._differentialevolution import differential_evolution
 from ._lsq import least_squares, lsq_linear
-from ._shgo._shgo import shgo
+from .shgo_m import *
+from ._shgo import shgo, SHGO
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 

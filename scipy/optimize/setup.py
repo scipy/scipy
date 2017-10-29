@@ -71,11 +71,11 @@ def configuration(parent_package='',top_path=None):
     config.add_extension('_group_columns', sources=['_group_columns.c'],)
 
     config.add_subpackage('_lsq')
-    
+
     config.add_subpackage('_trlib')
 
-    config.add_subpackage('_shgo')
-    config.add_data_dir('_shgo')
+    config.add_subpackage('shgo_m')
+    config.add_data_dir('shgo_m')
 
     config.add_data_dir('tests')
 
