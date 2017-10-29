@@ -809,10 +809,6 @@ class Simplex:
             print('Order = {}'.format(v.order))
 
 
-<<<<<<< HEAD:scipy/optimize/_shgo/triangulation.py
-# TODO: Different classes to init when not using bounds etc.
-=======
->>>>>>> BUG: Move files to base module to fix reg errors:scipy/optimize/shgo_m/triangulation.py
 class Vertex:
     def __init__(self, x, bounds=None, func=None, func_args=(), g_cons=None,
                  g_cons_args=(), nn=None, Ind=None):
