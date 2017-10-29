@@ -261,7 +261,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
     function is implemented in `rosen` in `scipy.optimize`
 
     >>> from scipy.optimize import rosen
-    >>> from scipy.optimize import shgo_m
+    >>> from scipy.optimize import shgo
     >>> bounds = [(0,2), (0, 2), (0, 2), (0, 2), (0, 2)]
     >>> result = shgo_m(rosen, bounds)
     >>> result.x, result.fun
@@ -282,7 +282,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
     the capabilities of shgo_m.
     (https://en.wikipedia.org/wiki/Test_functions_for_optimization)
 
-    >>> from scipy.optimize import shgo_m
+    >>> from scipy.optimize import shgo
     >>> import numpy as np
     >>> def eggholder(x):
     ...     return (-(x[1] + 47.0)
@@ -334,7 +334,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
     the number of iterations to 5 increased from the default 1 for a total of
     60 x 5 = 300 initial sampling points.
 
-    >>> result_2 = shgo_m(eggholder, bounds, n=60, iters=5, sampling_method='sobol')
+    >>> result_2 = shgo(eggholder, bounds, n=60, iters=5, sampling_method='sobol')
     >>> len(result.xl), len(result_2.xl)
     (13, 39)
 
@@ -362,7 +362,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
     Approx. Answer [4]:
         f([0.6355216, -0.12e-11, 0.3127019, 0.05177655]) = 29.894378
 
-    >>> from scipy.optimize import shgo_m
+    >>> from scipy.optimize import shgo
     >>> import numpy as np
     >>> def f(x):  # (cattle-feed)
     ...     return 24.55*x[0] + 26.75*x[1] + 39*x[2] + 40.50*x[3]
@@ -383,7 +383,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
     ...         {'type': 'ineq', 'fun': g2},
     ...         {'type': 'eq', 'fun': h1})
     >>> bounds = [(0, 1.0),]*4
-    >>> res = shgo_m(f, bounds, iters=3, constraints=cons)
+    >>> res = shgo(f, bounds, iters=3, constraints=cons)
     >>> res
          fun: 29.894378159142136
         funl: array([ 29.89437816])

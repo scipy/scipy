@@ -2,6 +2,10 @@ import logging
 import numpy
 from scipy.optimize import shgo, SHGO
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> fab0fbb0dee4abb3c235d9b40b40af14ed25b355
 class StructTestFunction(object):
     def __init__(self, bounds, expected_x, expected_fun=None,
                  expected_xl=None, expected_funl=None):
@@ -732,6 +736,12 @@ class TestShgoFailures(object):
         # def test_6_func_arguments(self):
         #    args = 1
         #   numpy.testing.assert_raises(TypeError,
+<<<<<<< HEAD
         #                                shgo_m, test1_1.f, test1_1.bounds, args=args)
         # numpy.testing.assert_raises(TypeError,
         #                            shgo_m, test1_1.f, test1_1.bounds, g_args=args)
+=======
+        #                                shgo, test1_1.f, test1_1.bounds, args=args)
+        # numpy.testing.assert_raises(TypeError,
+        #                            shgo, test1_1.f, test1_1.bounds, g_args=args)
+>>>>>>> fab0fbb0dee4abb3c235d9b40b40af14ed25b355
