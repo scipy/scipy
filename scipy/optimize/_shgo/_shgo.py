@@ -1,9 +1,8 @@
 import numpy
-import logging
 import scipy.optimize
 import scipy.spatial
-from shgo.triangulation import *
-import shgo.sobol_seq as sobol_seq
+from scipy.optimize._shgo.triangulation import *
+from scipy.optimize._shgo import sobol_seq
 from time import time
 
 def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
