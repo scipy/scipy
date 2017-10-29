@@ -290,7 +290,7 @@ from ._constraints import (NonlinearConstraint,
 from ._hessian_update_strategy import HessianUpdateStrategy, BFGS, SR1
 from ._shgo._shgo import shgo
 from .shgo_m import *
-from ._shgo import shgo, SHGO
+from ._shgo import shgo
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 
