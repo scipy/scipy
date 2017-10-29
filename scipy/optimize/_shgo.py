@@ -1,13 +1,19 @@
+"""
+shgo: The simplicial homology global optimisation algorithm
+"""
+from __future__ import division, print_function, absolute_import
 import numpy
 import scipy.optimize
 import scipy.spatial
-from scipy.optimize._shgo.triangulation import *
-from scipy.optimize._shgo import sobol_seq
+from scipy.optimize.shgo_m.triangulation import *
+from scipy.optimize.shgo_m import sobol_seq
 from time import time
+
+__all__ = ['shgo']
+
 
 def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
          minimizer_kwargs=None, options=None, sampling_method='simplicial'):
-    # sampling_method: str, options = 'sobol', 'simplicial'
     """
     Finds the global minimum of a function using simplicial homology global
     optimisation.
@@ -34,8 +40,10 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
 
     constraints : dict or sequence of dict, optional
         Constraints definition.
-        Function(s) R^n in the form g(x) <= 0 applied as g : R^n -> R^m
-                                    h(x) == 0 applied as h : R^n -> R^p
+        Function(s) R^n in the form::
+
+            g(x) <= 0 applied as g : R^n -> R^m
+            h(x) == 0 applied as h : R^n -> R^p
 
         Each constraint is defined in a dictionary with fields:
 
@@ -211,7 +219,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
 
     Notes
     -----
-    Global optimization using simplicial homology global optimisation [1].
+    Global optimization using simplicial homology global optimisation [1]_.
     Appropriate for solving general purpose NLP and blackbox optimisation
     problems to global optimality (low dimensional problems).
 
@@ -225,16 +233,16 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
     where x is a vector of one or more variables.
     ``f(x)`` is the objective function ``R^n -> R``
     ``g_i(x)`` are the inequality constraints.
-    ``h_j(x)`` are the equality constrains.
+    ``h_j(x)`` are the equality constraints.
 
     Optionally, the lower and upper bounds for each element in x can also be
     specified using the `bounds` argument.
 
-    While most of the theoretical advantages of shgo are only proven for when
+    While most of the theoretical advantages of shgo_m are only proven for when
     ``f(x)`` is a Lipschitz smooth function. The algorithm is also proven to
-     converge to the global optimum for the more general case where ``f(x)`` is
-     non-continuous, non-convex and non-smooth `iff` the default sampling method
-     is used [1].
+    converge to the global optimum for the more general case where ``f(x)`` is
+    non-continuous, non-convex and non-smooth `iff` the default sampling method
+    is used [1]_.
 
     The local search method may be specified using the ``minimizer_kwargs``
     parameter which is inputted to ``scipy.optimize.minimize``. By default
@@ -242,9 +250,9 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
     ``SLSQP`` or ``COBYLA`` local minimization if inequality constraints
     are defined for the problem since the other methods do not use constraints.
 
-    The `sobol` method points are generated using the Sobol (1967) [2] sequence.
+    The `sobol` method points are generated using the Sobol (1967) [2]_ sequence.
     The primitive polynomials and various sets of initial direction numbers for
-    generating Sobol sequences is provided by [3] by Frances Kuo and
+    generating Sobol sequences is provided by [3]_ by Frances Kuo and
     Stephen Joe. The original program sobol.cc (MIT) is available and described
     at http://web.maths.unsw.edu.au/~fkuo/sobol/ translated to Python 3 by
     Carl Sandrock 2016-03-31.
@@ -255,7 +263,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
     function is implemented in `rosen` in `scipy.optimize`
 
     >>> from scipy.optimize import rosen
-    >>> from shgo import shgo
+    >>> from scipy.optimize import shgo
     >>> bounds = [(0,2), (0, 2), (0, 2), (0, 2), (0, 2)]
     >>> result = shgo(rosen, bounds)
     >>> result.x, result.fun
@@ -273,10 +281,10 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
 
     Next we consider the Eggholder function, a problem with several local
     minima and one global minimum. We will demonstrate the use of arguments and
-    the capabilities of shgo.
+    the capabilities of shgo_m.
     (https://en.wikipedia.org/wiki/Test_functions_for_optimization)
 
-    >>> from shgo import shgo
+    >>> from scipy.optimize import shgo
     >>> import numpy as np
     >>> def eggholder(x):
     ...     return (-(x[1] + 47.0)
@@ -286,49 +294,51 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
     ...
     >>> bounds = [(-512, 512), (-512, 512)]
 
-    shgo has two built-in low discrepancy sampling sequences. First we will
+    shgo_m has two built-in low discrepancy sampling sequences. First we will
     input 30 initial sampling points of the Sobol sequence
 
     >>> result = shgo(eggholder, bounds, n=30, sampling_method='sobol')
     >>> result.x, result.fun
-    (array([ 512.    ,  404.23180542]), -959.64066272085051)
+    (array([ 512.        ,  404.23180542]), -959.64066272085051)
 
-    ``shgo`` also has a return for any other local minima that was found, these
+    ``shgo_m`` also has a return for any other local minima that was found, these
      can be called using:
 
-    >>> result.xl, result.funl
-    (array([[ 512.   ,  404.23180542],
-       [ 283.07593402, -487.12566542],
-       [-294.66820039, -462.01964031],
-       [-105.87688985,  423.15324143],
-       [-242.97923629,  274.38032063],
-       [-506.25823477,    6.3131022 ],
-       [-408.71981195, -156.10117154],
-       [ 150.23210485,  301.31378508],
-       [  91.00922754, -391.28375925],
-       [ 202.8966344 , -269.38042147],
-       [ 361.66625957, -106.96490692],
-       [-219.40615102, -244.06022436],
-       [ 151.59603137, -100.61082677]]),
-       array([-959.64066272, -718.16745962, -704.80659592, -565.99778097,
-       -559.78685655, -557.36868733, -507.87385942, -493.9605115 ,
-       -426.48799655, -421.15571437, -419.31194957, -410.98477763,
-       -202.53912972]))
+    >>> result.xl
+    array([[ 512.        ,  404.23180542],
+           [ 283.07593402, -487.12566542],
+           [-294.66820039, -462.01964031],
+           [-105.87688985,  423.15324143],
+           [-242.97923629,  274.38032063],
+           [-506.25823477,    6.3131022 ],
+           [-408.71981195, -156.10117154],
+           [ 150.23210485,  301.31378508],
+           [  91.00922754, -391.28375925],
+           [ 202.8966344 , -269.38042147],
+           [ 361.66625957, -106.96490692],
+           [-219.40615102, -244.06022436],
+           [ 151.59603137, -100.61082677]])
+
+    >>> result.funl
+    array([-959.64066272, -718.16745962, -704.80659592, -565.99778097,
+           -559.78685655, -557.36868733, -507.87385942, -493.9605115 ,
+           -426.48799655, -421.15571437, -419.31194957, -410.98477763,
+           -202.53912972])
 
     These results are useful in applications where there are many global minima
     and the values of other global minima are desired or where the local minima
     can provide insight into the system such are for example morphologies
-    in physical chemistry [5]
+    in physical chemistry [5]_.
 
     Now suppose we want to find a larger number of local minima, this can be
     accomplished for example by increasing the amount of sampling points or the
     number of iterations. We'll increase the number of sampling points to 60 and
-    the number of iterations to 3 increased from the default 100 for a total of
-    60 x 3 = 180 initial sampling points.
+    the number of iterations to 5 increased from the default 1 for a total of
+    60 x 5 = 300 initial sampling points.
 
-    >>> result_2 = shgo(eggholder, bounds, n=60, iters=3, sampling_method='sobol')
+    >>> result_2 = shgo(eggholder, bounds, n=60, iters=5, sampling_method='sobol')
     >>> len(result.xl), len(result_2.xl)
-    (13, 33)
+    (13, 39)
 
     Note that there is a difference between specifying arguments for
     ex. ``n=180, iters=1`` and ``n=60, iters=3``.
@@ -337,24 +347,24 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
     points for a total of 3 times.
 
     To demonstrate solving problems with non-linear constraints consider the
-    following example from Hock and Schittkowski problem 73 (cattle-feed) [4]::
+    following example from Hock and Schittkowski problem 73 (cattle-feed) [4]_::
 
-    minimize: f = 24.55 * x_1 + 26.75 * x_2 + 39 * x_3 + 40.50 * x_4
+        minimize: f = 24.55 * x_1 + 26.75 * x_2 + 39 * x_3 + 40.50 * x_4
 
-    subject to: 2.3 * x_1 + 5.6 * x_2 + 11.1 * x_3 + 1.3 * x_4 - 5      >= 0,
+        subject to: 2.3 * x_1 + 5.6 * x_2 + 11.1 * x_3 + 1.3 * x_4 - 5     >= 0,
 
-                12 * x_1 + 11.9 * x_2 + 41.8 * x_3 + 52.1 * x_4 - 21
-                    -1.645 * sqrt(0.28 * x_1**2 + 0.19 * x_2**2 +
-                                  20.5 * x_3**2 + 0.62 * x_4**2)        >= 0,
+                    12 * x_1 + 11.9 * x_2 + 41.8 * x_3 + 52.1 * x_4 - 21
+                        -1.645 * sqrt(0.28 * x_1**2 + 0.19 * x_2**2 +
+                                      20.5 * x_3**2 + 0.62 * x_4**2)       >= 0,
 
-                x_1 + x_2 + x_3 + x_4 - 1                               == 0,
+                    x_1 + x_2 + x_3 + x_4 - 1                              == 0,
 
-                1 >= x_i >= 0 for all i
+                    1 >= x_i >= 0 for all i
 
-    Approx. Answer [4]:
+    Approx. Answer [4]_:
         f([0.6355216, -0.12e-11, 0.3127019, 0.05177655]) = 29.894378
 
-    >>> from shgo import shgo
+    >>> from scipy.optimize import shgo
     >>> import numpy as np
     >>> def f(x):  # (cattle-feed)
     ...     return 24.55*x[0] + 26.75*x[1] + 39*x[2] + 40.50*x[3]
@@ -375,22 +385,25 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
     ...         {'type': 'ineq', 'fun': g2},
     ...         {'type': 'eq', 'fun': h1})
     >>> bounds = [(0, 1.0),]*4
-    >>> res = shgo(f, bounds, iters=2, constraints=cons)
+    >>> res = shgo(f, bounds, iters=3, constraints=cons)
     >>> res
          fun: 29.894378159142136
         funl: array([ 29.89437816])
      message: 'Optimization terminated successfully.'
         nfev: 119
-         nit: 2
+         nit: 3
        nlfev: 40
-       nljev: 0
+       nlhev: 0
+       nljev: 5
      success: True
            x: array([  6.35521569e-01,   1.13700270e-13,   3.12701881e-01,
              5.17765506e-02])
           xl: array([[  6.35521569e-01,   1.13700270e-13,   3.12701881e-01,
               5.17765506e-02]])
+
     >>> g1(res.x), g2(res.x), h1(res.x)
     (-5.0626169922907138e-14, -2.9594104944408173e-12, 0.0)
+
 
 
     References
@@ -460,35 +473,38 @@ class SHGO(object):
             raise IOError("""Unknown sampling_method specified, use either 
                                  'sobol' or 'simplicial' """)
 
-        ## Initiate class
+        # Initiate class
         self.func = func
         self.bounds = bounds
         self.args = args
 
         self.callback = callback
 
-        ## Bounds
+        # Bounds
         abound = numpy.array(bounds, float)
         self.dim = numpy.shape(abound)[0]  # Dimensionality of problem
-        # Check if bounds are correctly specified
-        bnderr = abound[:, 0] > abound[:, 1]
+
         # Set none finite values to large floats
         infind = ~numpy.isfinite(abound)
         abound[infind[:, 0], 0] = -1e50  # e308
         abound[infind[:, 1], 1] = 1e50  # e308
+
+        # Check if bounds are correctly specified
+        bnderr = abound[:, 0] > abound[:, 1]
         if bnderr.any():
             raise ValueError('Error: lb > ub in bounds %s.' %
                              ', '.join(str(b) for b in bnderr))
 
         self.bounds = abound
 
-        ## Constraints
+        # Constraints
         # Process constraint dict sequence:
         if constraints is not None:
             self.min_cons = constraints
             self.g_cons = []
             self.g_args = []
-            if (type(constraints) is not tuple) and (type(constraints) is not list):
+            if (type(constraints) is not tuple) and (type(constraints)
+                                                     is not list):
                 constraints = (constraints,)
 
             for cons in constraints:
@@ -539,8 +555,8 @@ class SHGO(object):
                                      'callback': self.callback
                                      }
             if self.g_cons is not None:
-                if (self.minimizer_kwargs['method'] == 'SLSQP' or
-                            self.minimizer_kwargs['method'] == 'COBYLA'):
+                if self.minimizer_kwargs['method'] == 'SLSQP' or \
+                                self.minimizer_kwargs['method'] == 'COBYLA':
                     self.minimizer_kwargs['constraints'] = self.min_cons
 
             if options is not None:
@@ -572,7 +588,7 @@ class SHGO(object):
             # Feedback
             self.disp = False
 
-        ## Pop unknown arguments in self.minimizer_kwargs
+        # Pop unknown arguments in self.minimizer_kwargs
         method = self.minimizer_kwargs['method']
         meth = method.lower()
         if meth == '_custom':
@@ -634,7 +650,7 @@ class SHGO(object):
                 else:
                     self.minimizer_kwargs['options'].pop(key, None)
 
-        ## Algorithm controls
+        # Algorithm controls
         # Global controls
         self.stop_global = False  # Used in the stopping_criteria method
         self.break_routine = False  # Break the algorithm globally
@@ -659,7 +675,7 @@ class SHGO(object):
                 and (self.minhgrd is None) and (self.f_min_true is None)):
             self.iters = None
 
-        ## Set complex construction mode based on a provided stopping criteria:
+        # Set complex construction mode based on a provided stopping criteria:
         # Choose complex constructor
         if sampling_method == 'simplicial':
             self.iterate_complex = self.iterate_hypercube
@@ -700,7 +716,7 @@ class SHGO(object):
         self.res.nlhev = 0  # Local Hessian evals for all minimisers
         return
 
-    ## Initiation aids
+    # Initiation aids
     def init_options(self, options):
         """
         Initiates the options. Can also be useful to change parameters after class initiation
@@ -781,7 +797,7 @@ class SHGO(object):
             self.disp = False
         return
 
-    ## Iteration properties
+    # Iteration properties
     # Main construction loop:
     def construct_complex(self):
         """
@@ -808,7 +824,7 @@ class SHGO(object):
             if not self.break_routine:
                 self.find_minima()
 
-        self.res.nit = self.iters_done
+        self.res.nit = self.iters_done + 1
         return
 
     def find_minima(self):
@@ -851,7 +867,7 @@ class SHGO(object):
                 self.f_lowest = self.F[self.f_I[0]]
                 self.x_lowest = self.C[self.f_I[0]]
 
-    ## Stopping criteria functions:
+    # Stopping criteria functions:
     def finite_iterations(self):
         if self.iters is not None:
             if self.iters_done >= (self.iters - 1):
@@ -981,7 +997,7 @@ class SHGO(object):
         self.n_sampled = self.nc
         return
 
-    ## Hypercube minimizers
+    # Hypercube minimizers
     def simplex_minimizers(self):
         """
         Returns the indexes of all minimizers
@@ -1026,7 +1042,7 @@ class SHGO(object):
 
         return self.X_min
 
-    ## Local minimisation
+    # Local minimisation
     # Minimiser pool processing
     def minimise_pool(self, force_iter=False):
         """
@@ -1191,7 +1207,8 @@ class SHGO(object):
                     if (x_i > v_min[i]) and (x_i < cbounds[i][1]):
                         cbounds[i][1] = x_i
             if self.disp:
-                logging.info('cbounds found for v_min.x_a = {}'.format(v_min.x_a))
+                logging.info(
+                    'cbounds found for v_min.x_a = {}'.format(v_min.x_a))
                 logging.info('cbounds = {}'.format(cbounds))
         return cbounds
 
@@ -1332,9 +1349,9 @@ class SHGO(object):
 
     def delaunay_complex_minimisers(self):
         # Construct complex minimisers on the current sampling set.
-        #if self.fn >= (self.dim + 1):
+        # if self.fn >= (self.dim + 1):
         if self.fn >= (self.dim + 2):
-            #TODO: Check on strange Qhull error where the number of vertices
+            # TODO: Check on strange Qhull error where the number of vertices
             # required for an initial simplex is higher than n + 1?
             if self.dim < 2:  # Scalar objective functions
                 if self.disp:
@@ -1393,56 +1410,59 @@ class SHGO(object):
         """
         import gzip
         import os
-        path = os.path.join(os.path.dirname(__file__), 'sobol_vec.gz')
-        with gzip.open(path) as f:
-            unsigned = "uint64"
-            # swallow header
-            buffer = next(f)
+        path = os.path.join(os.path.dirname(__file__), 'shgo_m', 'sobol_vec.gz')
+        f = gzip.open(path, 'rb')
+        unsigned = "uint64"
+        # swallow header
+        buffer = next(f)
 
-            L = int(numpy.log(N) // numpy.log(2.0)) + 1
+        L = int(numpy.log(N) // numpy.log(2.0)) + 1
 
-            C = numpy.ones(N, dtype=unsigned)
-            for i in range(1, N):
-                value = i
-                while value & 1:
-                    value >>= 1
-                    C[i] += 1
+        C = numpy.ones(N, dtype=unsigned)
+        for i in range(1, N):
+            value = i
+            while value & 1:
+                value >>= 1
+                C[i] += 1
 
-            points = numpy.zeros((N, D), dtype='double')
+        points = numpy.zeros((N, D), dtype='double')
 
-            # XXX: This appears not to set the first element of V
-            V = numpy.empty(L + 1, dtype=unsigned)
-            for i in range(1, L + 1):
-                V[i] = 1 << (32 - i)
+        # XXX: This appears not to set the first element of V
+        V = numpy.empty(L + 1, dtype=unsigned)
+        for i in range(1, L + 1):
+            V[i] = 1 << (32 - i)
 
-            X = numpy.empty(N, dtype=unsigned)
+        X = numpy.empty(N, dtype=unsigned)
+        X[0] = 0
+        for i in range(1, N):
+            X[i] = X[i - 1] ^ V[C[i - 1]]
+            points[i, 0] = X[i] / 2 ** 32
+
+        for j in range(1, D):
+            F_int = [int(item) for item in next(f).strip().split()]
+            (d, s, a), m = F_int[:3], [0] + F_int[3:]
+
+            if L <= s:
+                for i in range(1, L + 1):
+                    V[i] = m[i] << (32 - i)
+            else:
+                for i in range(1, s + 1):
+                    V[i] = m[i] << (32 - i)
+                for i in range(s + 1, L + 1):
+                    V[i] = V[i - s] ^ (
+                        V[i - s] >> numpy.array(s, dtype=unsigned))
+                    for k in range(1, s):
+                        V[i] ^= numpy.array(
+                            (((a >> (s - 1 - k)) & 1) * V[i - k]),
+                            dtype=unsigned)
+
             X[0] = 0
             for i in range(1, N):
                 X[i] = X[i - 1] ^ V[C[i - 1]]
-                points[i, 0] = X[i] / 2 ** 32
+                points[i, j] = X[i] / 2 ** 32  # *** the actual points
 
-            for j in range(1, D):
-                F_int = [int(item) for item in next(f).strip().split()]
-                (d, s, a), m = F_int[:3], [0] + F_int[3:]
-
-                if L <= s:
-                    for i in range(1, L + 1): V[i] = m[i] << (32 - i)
-                else:
-                    for i in range(1, s + 1): V[i] = m[i] << (32 - i)
-                    for i in range(s + 1, L + 1):
-                        V[i] = V[i - s] ^ (
-                        V[i - s] >> numpy.array(s, dtype=unsigned))
-                        for k in range(1, s):
-                            V[i] ^= numpy.array(
-                                (((a >> (s - 1 - k)) & 1) * V[i - k]),
-                                dtype=unsigned)
-
-                X[0] = 0
-                for i in range(1, N):
-                    X[i] = X[i - 1] ^ V[C[i - 1]]
-                    points[i, j] = X[i] / 2 ** 32  # *** the actual points
-
-            return points
+        f.close()
+        return points
 
     def sampling_sobol(self, n, dim):
         """
@@ -1479,9 +1499,9 @@ class SHGO(object):
 
     def sorted_samples(self):  # Validated
         """Find indexes of the sorted sampling points"""
-        self.I = numpy.argsort(self.C, axis=0)
-        self.Xs = self.C[self.I]
-        return self.I, self.Xs
+        self.Ind_sorted = numpy.argsort(self.C, axis=0)
+        self.Xs = self.C[self.Ind_sorted]
+        return self.Ind_sorted, self.Xs
 
     def ax_subspace(self):  # Validated
         """
@@ -1492,7 +1512,7 @@ class SHGO(object):
         self.Ii = []
         for i in range(self.dim):
             self.Ci.append(self.C[:, i])
-            self.Ii.append(self.I[:, i])
+            self.Ii.append(self.Ind_sorted[:, i])
             self.Xs_i.append(self.Xs[:, i])
 
         return
@@ -1544,7 +1564,7 @@ class SHGO(object):
         # inf, -inf  --> floats
         self.F = numpy.nan_to_num(self.F)
 
-        self.Ft = self.F[self.I]
+        self.Ft = self.F[self.Ind_sorted]
         self.Ftp = numpy.diff(self.Ft, axis=0)  # FD
         self.Ftm = numpy.diff(self.Ft[::-1], axis=0)[::-1]  # BD
         return
@@ -1693,6 +1713,7 @@ class SHGO(object):
             self.X_min = []  # Empty pool breaks main routine
         return self.X_min
 
+
 class LMap:
     def __init__(self, v):
         self.v = v
@@ -1700,6 +1721,7 @@ class LMap:
         self.lres = None
         self.f_min = None
         self.lbounds = []
+
 
 class LMapCache:
     def __init__(self):
