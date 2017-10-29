@@ -4,7 +4,7 @@ import logging
 import numpy
 
 
-class TestFunction(object):
+class StructTestFunction(object):
     def __init__(self, bounds, expected_x, expected_fun=None,
                  expected_xl=None, expected_funl=None):
         self.bounds = bounds
@@ -30,7 +30,7 @@ def wrap_constraints(g):
     return cons
 
 
-class Test1(TestFunction):
+class StructTest1(StructTestFunction):
     def f(self, x):
         return x[0] ** 2 + x[1] ** 2
 
@@ -40,15 +40,15 @@ class Test1(TestFunction):
     cons = wrap_constraints(g)
 
 
-test1_1 = Test1(bounds=[(-1, 6), (-1, 6)],
-                expected_x=[0, 0])
-test1_2 = Test1(bounds=[(0, 1), (0, 1)],
-                expected_x=[0, 0])
-test1_3 = Test1(bounds=[(None, None), (None, None)],
-                expected_x=[0, 0])
+test1_1 = StructTest1(bounds=[(-1, 6), (-1, 6)],
+                      expected_x=[0, 0])
+test1_2 = StructTest1(bounds=[(0, 1), (0, 1)],
+                      expected_x=[0, 0])
+test1_3 = StructTest1(bounds=[(None, None), (None, None)],
+                      expected_x=[0, 0])
 
 
-class Test2(TestFunction):
+class StructTest2(StructTestFunction):
     """
     Scalar function with several minima to test all minimiser retrievals
     """
@@ -62,10 +62,10 @@ class Test2(TestFunction):
     cons = wrap_constraints(g)
 
 
-test2_1 = Test2(bounds=[(0, 60)],
-                expected_x=[1.53567906],
-                expected_fun=[-28.44677132],
-                # Important to test that funl return is in the correct order
+test2_1 = StructTest2(bounds=[(0, 60)],
+                      expected_x=[1.53567906],
+                      expected_fun=[-28.44677132],
+                      # Important to test that funl return is in the correct order
                 expected_xl=numpy.array([[1.53567906],
                                          [55.01782167],
                                          [7.80894889],
@@ -77,22 +77,22 @@ test2_1 = Test2(bounds=[(0, 60)],
                                          [26.43039605],
                                          [30.76371366]]),
 
-                expected_funl=numpy.array([-28.44677132, -24.99785984,
+                      expected_funl=numpy.array([-28.44677132, -24.99785984,
                                            -22.16855376, -18.72136195,
                                            -15.89423937, -12.45154942,
                                            -9.63133158, -6.20801301,
                                            -3.43727232, -0.46353338])
-                )
+                      )
 
-test2_2 = Test2(bounds=[(0, 4.5)],
-                expected_x=[1.53567906],
-                expected_fun=[-28.44677132],
-                expected_xl=numpy.array([[1.53567906]]),
-                expected_funl=numpy.array([-28.44677132])
-                )
+test2_2 = StructTest2(bounds=[(0, 4.5)],
+                      expected_x=[1.53567906],
+                      expected_fun=[-28.44677132],
+                      expected_xl=numpy.array([[1.53567906]]),
+                      expected_funl=numpy.array([-28.44677132])
+                      )
 
 
-class Test3(TestFunction):
+class StructTest3(StructTestFunction):
     """
     Hock and Schittkowski 18 problem (HS18). Hoch and Schittkowski (1981)
     http://www.ai7.uni-bayreuth.de/test_problem_coll.pdf
@@ -123,13 +123,13 @@ class Test3(TestFunction):
     cons = wrap_constraints(g)
 
 
-test3_1 = Test3(bounds=[(2, 50), (0, 50)],
-                expected_x=[250 ** 0.5, 2.5 ** 0.5],
-                expected_fun=[5.0]
-                )
+test3_1 = StructTest3(bounds=[(2, 50), (0, 50)],
+                      expected_x=[250 ** 0.5, 2.5 ** 0.5],
+                      expected_fun=[5.0]
+                      )
 
 
-class Test4(TestFunction):
+class StructTest4(StructTestFunction):
     """
     Hock and Schittkowski 11 problem (HS11). Hoch and Schittkowski (1981)
 
@@ -163,14 +163,14 @@ class Test4(TestFunction):
     cons = wrap_constraints(g)
 
 
-test4_1 = Test4(bounds=[(-10, 10), ] * 7,
-                expected_x=[2.330499, 1.951372, -0.4775414,
+test4_1 = StructTest4(bounds=[(-10, 10), ] * 7,
+                      expected_x=[2.330499, 1.951372, -0.4775414,
                             4.365726, -0.6244870, 1.038131, 1.594227],
-                expected_fun=680.6300573
-                )
+                      expected_fun=680.6300573
+                      )
 
 
-class Test5(TestFunction):
+class StructTest5(StructTestFunction):
     def f(self, x):
         return (-(x[1] + 47.0)
                 * numpy.sin(numpy.sqrt(abs(x[0] / 2.0 + (x[1] + 47.0))))
@@ -181,12 +181,12 @@ class Test5(TestFunction):
     cons = wrap_constraints(g)
 
 
-test5_1 = Test5(bounds=[(-512, 512), (-512, 512)],
-                expected_fun=[-959.64066272085051],
-                expected_x=[512., 404.23180542])
+test5_1 = StructTest5(bounds=[(-512, 512), (-512, 512)],
+                      expected_fun=[-959.64066272085051],
+                      expected_x=[512., 404.23180542])
 
 
-class TestLJ(TestFunction):
+class StructTestLJ(StructTestFunction):
     """
     LennardJones objective function. Used to test symmetry constraints settings.
     """
@@ -217,18 +217,18 @@ class TestLJ(TestFunction):
 N = 6
 boundsLJ = list(zip([-4.0] * 6, [4.0] * 6))
 
-testLJ = TestLJ(bounds=boundsLJ,
-                expected_fun=[-1.0],
-                expected_x=[-2.71247337e-08,
+testLJ = StructTestLJ(bounds=boundsLJ,
+                      expected_fun=[-1.0],
+                      expected_x=[-2.71247337e-08,
                             -2.71247337e-08,
                             -2.50000222e+00,
                             -2.71247337e-08,
                             -2.71247337e-08,
                             -1.50000222e+00]
-                )
+                      )
 
 
-class TestTable(TestFunction):
+class StructTestTable(StructTestFunction):
     def f(self, x):
         if x[0] == 3.0 and x[1] == 3.0:
             return 50
@@ -239,12 +239,12 @@ class TestTable(TestFunction):
     cons = wrap_constraints(g)
 
 
-test_table = TestTable(bounds=[(-10, 10), (-10, 10)],
-                       expected_fun=[50],
-                       expected_x=[3.0, 3.0])
+test_table = StructTestTable(bounds=[(-10, 10), (-10, 10)],
+                             expected_fun=[50],
+                             expected_x=[3.0, 3.0])
 
 
-class TestInfeasible(TestFunction):
+class StructTestInfeasible(StructTestFunction):
     """
     Test function with no feasible domain.
     """
@@ -268,10 +268,10 @@ class TestInfeasible(TestFunction):
     cons = wrap_constraints(g)
 
 
-test_infeasible = TestInfeasible(bounds=[(2, 50), (-1, 1)],
-                                 expected_fun=None,
-                                 expected_x=None
-                                 )
+test_infeasible = StructTestInfeasible(bounds=[(2, 50), (-1, 1)],
+                                       expected_fun=None,
+                                       expected_x=None
+                                       )
 
 
 def run_test(test, args=(), test_atol=1e-5, n=100, iters=None,
