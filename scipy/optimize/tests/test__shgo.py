@@ -1,7 +1,6 @@
-from scipy.optimize import shgo
-from scipy.optimize._shgo._shgo import *
 import logging
 import numpy
+from scipy.optimize import shgo, SHGO
 
 
 class StructTestFunction(object):
@@ -730,10 +729,3 @@ class TestShgoFailures(object):
                    sampling_method='simplicial')
 
         numpy.testing.assert_equal(False, res.success)
-
-        # def test_6_func_arguments(self):
-        #    args = 1
-        #   numpy.testing.assert_raises(TypeError,
-        #                                shgo, test1_1.f, test1_1.bounds, args=args)
-        # numpy.testing.assert_raises(TypeError,
-        #                            shgo, test1_1.f, test1_1.bounds, g_args=args)
