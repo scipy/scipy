@@ -1,5 +1,6 @@
 import logging
 import numpy
+from pytest import raises as assert_raises
 from scipy.optimize import shgo
 from scipy.optimize._shgo import SHGO
 
@@ -657,9 +658,8 @@ class TestShgoFailures(object):
 
     def test_2_sampling(self):
         """Rejection of unknown sampling method"""
-        numpy.testing.assert_raises(IOError,
-                                    shgo, test1_1.f, test1_1.bounds,
-                                    sampling_method='not_Sobol')
+        assert_raises(IOError, shgo, test1_1.f, test1_1.bounds,
+                      sampling_method='not_Sobol')
 
     def test_3_1_no_min_pool_sobol(self):
         """Check that the routine stops when no minimiser is found
@@ -684,14 +684,12 @@ class TestShgoFailures(object):
     def test_4_1_bound_err(self):
         """Specified bounds ub > lb"""
         bounds = [(6, 3), (3, 5)]
-        numpy.testing.assert_raises(ValueError,
-                                    shgo, test1_1.f, bounds)
+        assert_raises(ValueError, shgo, test1_1.f, bounds)
 
     def test_4_2_bound_err(self):
         """Specified bounds are of the form (lb, ub)"""
         bounds = [(3, 5, 5), (3, 5)]
-        numpy.testing.assert_raises(ValueError,
-                                    shgo, test1_1.f, bounds)
+        assert_raises(ValueError, shgo, test1_1.f, bounds)
 
     def test_5_1_1_infeasible_sobol(self):
         """Ensures the algorithm terminates on infeasible problems
