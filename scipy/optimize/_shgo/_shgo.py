@@ -378,7 +378,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
     ...         {'type': 'ineq', 'fun': g2},
     ...         {'type': 'eq', 'fun': h1})
     >>> bounds = [(0, 1.0),]*4
-    >>> res = shgo(f, bounds, iters=2, constraints=cons)
+    >>> res = shgo(f, bounds, iters=3, constraints=cons)
     >>> res
          fun: 29.894378159142136
         funl: array([ 29.89437816])
