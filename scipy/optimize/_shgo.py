@@ -25,20 +25,25 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
         ``f(x, *args)``, where ``x`` is the argument in the form of a 1-D array
         and ``args`` is a  tuple of any additional fixed parameters needed to
         completely specify the function.
+
     bounds : sequence
         Bounds for variables.  ``(min, max)`` pairs for each element in ``x``,
         defining the lower and upper bounds for the optimizing argument of
         `func`. It is required to have ``len(bounds) == len(x)``.
-        ``len(bounds)`` is used to determine the number of parameters in ``x``,
-        use ``None`` for one of min or max when there is no bound in that
+        ``len(bounds)`` is used to determine the number of parameters in ``x``.
+        Use ``None`` for one of min or max when there is no bound in that
         direction. By default bounds are ``(None, None)``.
+
     args : tuple, optional
         Any additional fixed parameters needed to completely specify the
         objective function.
+
     constraints : dict or sequence of dict, optional
         Constraints definition.
-        Function(s) R^n in the form g(x) <= 0 applied as g : R^n -> R^m
-                                    h(x) == 0 applied as h : R^n -> R^p
+        Function(s) R^n in the form::
+
+            g(x) <= 0 applied as g : R^n -> R^m
+            h(x) == 0 applied as h : R^n -> R^p
 
         Each constraint is defined in a dictionary with fields:
 
@@ -70,11 +75,14 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
         Number of sampling points used in the construction of the simplicial
         complex. Note that this argument is only used for ``sobol`` and other
         arbitrary sampling_methods.
+
     iters : int, optional
         Number of iterations used in the construction of the simplicial complex.
+
     callback : callable, optional
         Called after each iteration, as ``callback(xk)``, where ``xk`` is the
         current parameter vector.
+
     minimizer_kwargs : dict, optional
         Extra keyword arguments to be passed to the minimizer
         ``scipy.optimize.minimize`` Some important options could be:
@@ -211,7 +219,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
 
     Notes
     -----
-    Global optimization using simplicial homology global optimisation [1].
+    Global optimization using simplicial homology global optimisation [1]_.
     Appropriate for solving general purpose NLP and blackbox optimisation
     problems to global optimality (low dimensional problems).
 
@@ -232,9 +240,9 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
 
     While most of the theoretical advantages of shgo_m are only proven for when
     ``f(x)`` is a Lipschitz smooth function. The algorithm is also proven to
-     converge to the global optimum for the more general case where ``f(x)`` is
-     non-continuous, non-convex and non-smooth `iff` the default sampling method
-     is used [1].
+    converge to the global optimum for the more general case where ``f(x)`` is
+    non-continuous, non-convex and non-smooth `iff` the default sampling method
+    is used [1]_.
 
     The local search method may be specified using the ``minimizer_kwargs``
     parameter which is inputted to ``scipy.optimize.minimize``. By default
@@ -242,9 +250,9 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
     ``SLSQP`` or ``COBYLA`` local minimization if inequality constraints
     are defined for the problem since the other methods do not use constraints.
 
-    The `sobol` method points are generated using the Sobol (1967) [2] sequence.
+    The `sobol` method points are generated using the Sobol (1967) [2]_ sequence.
     The primitive polynomials and various sets of initial direction numbers for
-    generating Sobol sequences is provided by [3] by Frances Kuo and
+    generating Sobol sequences is provided by [3]_ by Frances Kuo and
     Stephen Joe. The original program sobol.cc (MIT) is available and described
     at http://web.maths.unsw.edu.au/~fkuo/sobol/ translated to Python 3 by
     Carl Sandrock 2016-03-31.
@@ -320,7 +328,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
     These results are useful in applications where there are many global minima
     and the values of other global minima are desired or where the local minima
     can provide insight into the system such are for example morphologies
-    in physical chemistry [5]
+    in physical chemistry [5]_.
 
     Now suppose we want to find a larger number of local minima, this can be
     accomplished for example by increasing the amount of sampling points or the
@@ -343,21 +351,21 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
     points for a total of 3 times.
 
     To demonstrate solving problems with non-linear constraints consider the
-    following example from Hock and Schittkowski problem 73 (cattle-feed) [4]::
+    following example from Hock and Schittkowski problem 73 (cattle-feed) [4]_::
 
-    minimize: f = 24.55 * x_1 + 26.75 * x_2 + 39 * x_3 + 40.50 * x_4
+        minimize: f = 24.55 * x_1 + 26.75 * x_2 + 39 * x_3 + 40.50 * x_4
 
-    subject to: 2.3 * x_1 + 5.6 * x_2 + 11.1 * x_3 + 1.3 * x_4 - 5      >= 0,
+        subject to: 2.3 * x_1 + 5.6 * x_2 + 11.1 * x_3 + 1.3 * x_4 - 5     >= 0,
 
-                12 * x_1 + 11.9 * x_2 + 41.8 * x_3 + 52.1 * x_4 - 21
-                    -1.645 * sqrt(0.28 * x_1**2 + 0.19 * x_2**2 +
-                                  20.5 * x_3**2 + 0.62 * x_4**2)        >= 0,
+                    12 * x_1 + 11.9 * x_2 + 41.8 * x_3 + 52.1 * x_4 - 21
+                        -1.645 * sqrt(0.28 * x_1**2 + 0.19 * x_2**2 +
+                                      20.5 * x_3**2 + 0.62 * x_4**2)       >= 0,
 
-                x_1 + x_2 + x_3 + x_4 - 1                               == 0,
+                    x_1 + x_2 + x_3 + x_4 - 1                              == 0,
 
-                1 >= x_i >= 0 for all i
+                    1 >= x_i >= 0 for all i
 
-    Approx. Answer [4]:
+    Approx. Answer [4]_:
         f([0.6355216, -0.12e-11, 0.3127019, 0.05177655]) = 29.894378
 
     >>> from scipy.optimize import shgo_m
