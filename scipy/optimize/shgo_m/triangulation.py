@@ -809,7 +809,6 @@ class Simplex:
             print('Order = {}'.format(v.order))
 
 
-# TODO: Different classes to init when not using bounds etc.
 class Vertex:
     def __init__(self, x, bounds=None, func=None, func_args=(), g_cons=None,
                  g_cons_args=(), nn=None, Ind=None):

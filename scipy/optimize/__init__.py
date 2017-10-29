@@ -129,6 +129,7 @@ Global Optimization
    basinhopping - Basinhopping stochastic optimizer
    brute - Brute force searching optimizer
    differential_evolution - stochastic minimization using differential evolution
+   shgo - simplicial homology global optimisation
 
 Rosenbrock function
 -------------------

@@ -1,10 +1,15 @@
+"""
+shgo: The simplicial homology global optimisation algorithm
+"""
+from __future__ import division, print_function, absolute_import
 import numpy
 import scipy.optimize
 import scipy.spatial
-from scipy.optimize._shgo.triangulation import *
-from scipy.optimize._shgo import sobol_seq
+from scipy.optimize.shgo_m.triangulation import *
+from scipy.optimize.shgo_m import sobol_seq
 from time import time
 
+__all__ = ['shgo']
 
 def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
          minimizer_kwargs=None, options=None, sampling_method='simplicial'):
@@ -231,7 +236,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
     Optionally, the lower and upper bounds for each element in x can also be
     specified using the `bounds` argument.
 
-    While most of the theoretical advantages of shgo are only proven for when
+    While most of the theoretical advantages of shgo_m are only proven for when
     ``f(x)`` is a Lipschitz smooth function. The algorithm is also proven to
      converge to the global optimum for the more general case where ``f(x)`` is
      non-continuous, non-convex and non-smooth `iff` the default sampling method
@@ -258,7 +263,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
     >>> from scipy.optimize import rosen
     >>> from scipy.optimize import shgo
     >>> bounds = [(0,2), (0, 2), (0, 2), (0, 2), (0, 2)]
-    >>> result = shgo(rosen, bounds)
+    >>> result = shgo_m(rosen, bounds)
     >>> result.x, result.fun
     (array([ 1.,  1.,  1.,  1.,  1.]), 2.9203923741900809e-18)
 
@@ -268,13 +273,13 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
     converted to large float numbers.
 
     >>> bounds = [(None, None), ]*4
-    >>> result = shgo(rosen, bounds)
+    >>> result = shgo_m(rosen, bounds)
     >>> result.x
     array([ 0.99999851,  0.99999704,  0.99999411,  0.9999882 ])
 
     Next we consider the Eggholder function, a problem with several local
     minima and one global minimum. We will demonstrate the use of arguments and
-    the capabilities of shgo.
+    the capabilities of shgo_m.
     (https://en.wikipedia.org/wiki/Test_functions_for_optimization)
 
     >>> from scipy.optimize import shgo
@@ -287,14 +292,14 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
     ...
     >>> bounds = [(-512, 512), (-512, 512)]
 
-    shgo has two built-in low discrepancy sampling sequences. First we will
+    shgo_m has two built-in low discrepancy sampling sequences. First we will
     input 30 initial sampling points of the Sobol sequence
 
-    >>> result = shgo(eggholder, bounds, n=30, sampling_method='sobol')
+    >>> result = shgo_m(eggholder, bounds, n=30, sampling_method='sobol')
     >>> result.x, result.fun
     (array([ 512.        ,  404.23180542]), -959.64066272085051)
 
-    ``shgo`` also has a return for any other local minima that was found, these
+    ``shgo_m`` also has a return for any other local minima that was found, these
      can be called using:
 
     >>> result.xl
@@ -1401,7 +1406,7 @@ class SHGO(object):
         """
         import gzip
         import os
-        path = os.path.join(os.path.dirname(__file__), 'sobol_vec.gz')
+        path = os.path.join(os.path.dirname(__file__), 'shgo_m', 'sobol_vec.gz')
         f = gzip.open(path, 'rb')
         unsigned = "uint64"
         # swallow header
