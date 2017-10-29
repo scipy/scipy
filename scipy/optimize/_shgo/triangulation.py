@@ -285,7 +285,7 @@ class Complex:
             self.structure = numpy.zeros([2 ** self.dim, 2 ** self.dim],
                                          dtype=int)
 
-        for v in HC.C0():
+        for v in self.HC.C0():
             for v2 in v.nn:
                 # self.structure[0, 15] = 1
                 self.structure[v.Ind, v2.Ind] = 1
