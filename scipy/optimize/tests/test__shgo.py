@@ -2,10 +2,7 @@ import logging
 import numpy
 from scipy.optimize import shgo, SHGO
 
-<<<<<<< HEAD
-=======
 
->>>>>>> fab0fbb0dee4abb3c235d9b40b40af14ed25b355
 class StructTestFunction(object):
     def __init__(self, bounds, expected_x, expected_fun=None,
                  expected_xl=None, expected_funl=None):
@@ -68,22 +65,22 @@ test2_1 = StructTest2(bounds=[(0, 60)],
                       expected_x=[1.53567906],
                       expected_fun=[-28.44677132],
                       # Important to test that funl return is in the correct order
-                expected_xl=numpy.array([[1.53567906],
-                                         [55.01782167],
-                                         [7.80894889],
-                                         [48.74797493],
-                                         [14.07445705],
-                                         [42.4913859],
-                                         [20.31743841],
-                                         [36.28607535],
-                                         [26.43039605],
-                                         [30.76371366]]),
+                      expected_xl=numpy.array([[1.53567906],
+                                               [55.01782167],
+                                               [7.80894889],
+                                               [48.74797493],
+                                               [14.07445705],
+                                               [42.4913859],
+                                               [20.31743841],
+                                               [36.28607535],
+                                               [26.43039605],
+                                               [30.76371366]]),
 
                       expected_funl=numpy.array([-28.44677132, -24.99785984,
-                                           -22.16855376, -18.72136195,
-                                           -15.89423937, -12.45154942,
-                                           -9.63133158, -6.20801301,
-                                           -3.43727232, -0.46353338])
+                                                 -22.16855376, -18.72136195,
+                                                 -15.89423937, -12.45154942,
+                                                 -9.63133158, -6.20801301,
+                                                 -3.43727232, -0.46353338])
                       )
 
 test2_2 = StructTest2(bounds=[(0, 4.5)],
@@ -167,7 +164,7 @@ class StructTest4(StructTestFunction):
 
 test4_1 = StructTest4(bounds=[(-10, 10), ] * 7,
                       expected_x=[2.330499, 1.951372, -0.4775414,
-                            4.365726, -0.6244870, 1.038131, 1.594227],
+                                  4.365726, -0.6244870, 1.038131, 1.594227],
                       expected_fun=680.6300573
                       )
 
@@ -222,11 +219,11 @@ boundsLJ = list(zip([-4.0] * 6, [4.0] * 6))
 testLJ = StructTestLJ(bounds=boundsLJ,
                       expected_fun=[-1.0],
                       expected_x=[-2.71247337e-08,
-                            -2.71247337e-08,
-                            -2.50000222e+00,
-                            -2.71247337e-08,
-                            -2.71247337e-08,
-                            -1.50000222e+00]
+                                  -2.71247337e-08,
+                                  -2.50000222e+00,
+                                  -2.71247337e-08,
+                                  -2.71247337e-08,
+                                  -1.50000222e+00]
                       )
 
 
@@ -732,16 +729,3 @@ class TestShgoFailures(object):
                    sampling_method='simplicial')
 
         numpy.testing.assert_equal(False, res.success)
-
-        # def test_6_func_arguments(self):
-        #    args = 1
-        #   numpy.testing.assert_raises(TypeError,
-<<<<<<< HEAD
-        #                                shgo_m, test1_1.f, test1_1.bounds, args=args)
-        # numpy.testing.assert_raises(TypeError,
-        #                            shgo_m, test1_1.f, test1_1.bounds, g_args=args)
-=======
-        #                                shgo, test1_1.f, test1_1.bounds, args=args)
-        # numpy.testing.assert_raises(TypeError,
-        #                            shgo, test1_1.f, test1_1.bounds, g_args=args)
->>>>>>> fab0fbb0dee4abb3c235d9b40b40af14ed25b355
