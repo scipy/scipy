@@ -25,19 +25,16 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
         ``f(x, *args)``, where ``x`` is the argument in the form of a 1-D array
         and ``args`` is a  tuple of any additional fixed parameters needed to
         completely specify the function.
-
     bounds : sequence
         Bounds for variables.  ``(min, max)`` pairs for each element in ``x``,
         defining the lower and upper bounds for the optimizing argument of
         `func`. It is required to have ``len(bounds) == len(x)``.
-        ``len(bounds)`` is used to determine the number of parameters in ``x``.
-        Use ``None`` for one of min or max when there is no bound in that
+        ``len(bounds)`` is used to determine the number of parameters in ``x``,
+        use ``None`` for one of min or max when there is no bound in that
         direction. By default bounds are ``(None, None)``.
-
     args : tuple, optional
         Any additional fixed parameters needed to completely specify the
         objective function.
-
     constraints : dict or sequence of dict, optional
         Constraints definition.
         Function(s) R^n in the form g(x) <= 0 applied as g : R^n -> R^m
@@ -73,14 +70,11 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
         Number of sampling points used in the construction of the simplicial
         complex. Note that this argument is only used for ``sobol`` and other
         arbitrary sampling_methods.
-
     iters : int, optional
         Number of iterations used in the construction of the simplicial complex.
-
     callback : callable, optional
         Called after each iteration, as ``callback(xk)``, where ``xk`` is the
         current parameter vector.
-
     minimizer_kwargs : dict, optional
         Extra keyword arguments to be passed to the minimizer
         ``scipy.optimize.minimize`` Some important options could be:
