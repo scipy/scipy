@@ -1616,7 +1616,9 @@ def main():
     if len(args) != 0:
         p.error('invalid number of arguments')
 
-    src_files = (os.path.abspath(__file__),)
+    pwd = os.path.dirname(__file__)
+    src_files = (os.path.abspath(__file__),
+                 os.path.abspath(os.path.join(pwd, 'add_newdocs.py')))
     dst_files = ('_ufuncs.pyx',
                  '_ufuncs_defs.h',
                  '_ufuncs_cxx.pyx',
