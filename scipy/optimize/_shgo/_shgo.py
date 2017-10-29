@@ -5,6 +5,7 @@ from scipy.optimize._shgo.triangulation import *
 from scipy.optimize._shgo import sobol_seq
 from time import time
 
+
 def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
          minimizer_kwargs=None, options=None, sampling_method='simplicial'):
     # sampling_method: str, options = 'sobol', 'simplicial'
@@ -460,14 +461,14 @@ class SHGO(object):
             raise IOError("""Unknown sampling_method specified, use either 
                                  'sobol' or 'simplicial' """)
 
-        ## Initiate class
+        # Initiate class
         self.func = func
         self.bounds = bounds
         self.args = args
 
         self.callback = callback
 
-        ## Bounds
+        # Bounds
         abound = numpy.array(bounds, float)
         self.dim = numpy.shape(abound)[0]  # Dimensionality of problem
         # Check if bounds are correctly specified
@@ -482,13 +483,14 @@ class SHGO(object):
 
         self.bounds = abound
 
-        ## Constraints
+        # Constraints
         # Process constraint dict sequence:
         if constraints is not None:
             self.min_cons = constraints
             self.g_cons = []
             self.g_args = []
-            if (type(constraints) is not tuple) and (type(constraints) is not list):
+            if (type(constraints) is not tuple) and (type(constraints)
+                                                     is not list):
                 constraints = (constraints,)
 
             for cons in constraints:
@@ -539,8 +541,8 @@ class SHGO(object):
                                      'callback': self.callback
                                      }
             if self.g_cons is not None:
-                if (self.minimizer_kwargs['method'] == 'SLSQP' or
-                            self.minimizer_kwargs['method'] == 'COBYLA'):
+                if self.minimizer_kwargs['method'] == 'SLSQP' or \
+                   self.minimizer_kwargs['method'] == 'COBYLA':
                     self.minimizer_kwargs['constraints'] = self.min_cons
 
             if options is not None:
@@ -572,7 +574,7 @@ class SHGO(object):
             # Feedback
             self.disp = False
 
-        ## Pop unknown arguments in self.minimizer_kwargs
+        # Pop unknown arguments in self.minimizer_kwargs
         method = self.minimizer_kwargs['method']
         meth = method.lower()
         if meth == '_custom':
@@ -634,7 +636,7 @@ class SHGO(object):
                 else:
                     self.minimizer_kwargs['options'].pop(key, None)
 
-        ## Algorithm controls
+        # Algorithm controls
         # Global controls
         self.stop_global = False  # Used in the stopping_criteria method
         self.break_routine = False  # Break the algorithm globally
@@ -659,7 +661,7 @@ class SHGO(object):
                 and (self.minhgrd is None) and (self.f_min_true is None)):
             self.iters = None
 
-        ## Set complex construction mode based on a provided stopping criteria:
+        # Set complex construction mode based on a provided stopping criteria:
         # Choose complex constructor
         if sampling_method == 'simplicial':
             self.iterate_complex = self.iterate_hypercube
@@ -700,7 +702,7 @@ class SHGO(object):
         self.res.nlhev = 0  # Local Hessian evals for all minimisers
         return
 
-    ## Initiation aids
+    # Initiation aids
     def init_options(self, options):
         """
         Initiates the options. Can also be useful to change parameters after class initiation
@@ -781,7 +783,7 @@ class SHGO(object):
             self.disp = False
         return
 
-    ## Iteration properties
+    # Iteration properties
     # Main construction loop:
     def construct_complex(self):
         """
@@ -851,7 +853,7 @@ class SHGO(object):
                 self.f_lowest = self.F[self.f_I[0]]
                 self.x_lowest = self.C[self.f_I[0]]
 
-    ## Stopping criteria functions:
+    # Stopping criteria functions:
     def finite_iterations(self):
         if self.iters is not None:
             if self.iters_done >= (self.iters - 1):
@@ -981,7 +983,7 @@ class SHGO(object):
         self.n_sampled = self.nc
         return
 
-    ## Hypercube minimizers
+    # Hypercube minimizers
     def simplex_minimizers(self):
         """
         Returns the indexes of all minimizers
@@ -1026,7 +1028,7 @@ class SHGO(object):
 
         return self.X_min
 
-    ## Local minimisation
+    # Local minimisation
     # Minimiser pool processing
     def minimise_pool(self, force_iter=False):
         """
@@ -1191,7 +1193,8 @@ class SHGO(object):
                     if (x_i > v_min[i]) and (x_i < cbounds[i][1]):
                         cbounds[i][1] = x_i
             if self.disp:
-                logging.info('cbounds found for v_min.x_a = {}'.format(v_min.x_a))
+                logging.info(
+                    'cbounds found for v_min.x_a = {}'.format(v_min.x_a))
                 logging.info('cbounds = {}'.format(cbounds))
         return cbounds
 
@@ -1332,9 +1335,9 @@ class SHGO(object):
 
     def delaunay_complex_minimisers(self):
         # Construct complex minimisers on the current sampling set.
-        #if self.fn >= (self.dim + 1):
+        # if self.fn >= (self.dim + 1):
         if self.fn >= (self.dim + 2):
-            #TODO: Check on strange Qhull error where the number of vertices
+            # TODO: Check on strange Qhull error where the number of vertices
             # required for an initial simplex is higher than n + 1?
             if self.dim < 2:  # Scalar objective functions
                 if self.disp:
@@ -1426,12 +1429,14 @@ class SHGO(object):
                 (d, s, a), m = F_int[:3], [0] + F_int[3:]
 
                 if L <= s:
-                    for i in range(1, L + 1): V[i] = m[i] << (32 - i)
+                    for i in range(1, L + 1):
+                        V[i] = m[i] << (32 - i)
                 else:
-                    for i in range(1, s + 1): V[i] = m[i] << (32 - i)
+                    for i in range(1, s + 1):
+                        V[i] = m[i] << (32 - i)
                     for i in range(s + 1, L + 1):
                         V[i] = V[i - s] ^ (
-                        V[i - s] >> numpy.array(s, dtype=unsigned))
+                            V[i - s] >> numpy.array(s, dtype=unsigned))
                         for k in range(1, s):
                             V[i] ^= numpy.array(
                                 (((a >> (s - 1 - k)) & 1) * V[i - k]),
@@ -1479,9 +1484,9 @@ class SHGO(object):
 
     def sorted_samples(self):  # Validated
         """Find indexes of the sorted sampling points"""
-        self.I = numpy.argsort(self.C, axis=0)
-        self.Xs = self.C[self.I]
-        return self.I, self.Xs
+        self.Ind_sorted = numpy.argsort(self.C, axis=0)
+        self.Xs = self.C[self.Ind_sorted]
+        return self.Ind_sorted, self.Xs
 
     def ax_subspace(self):  # Validated
         """
@@ -1492,7 +1497,7 @@ class SHGO(object):
         self.Ii = []
         for i in range(self.dim):
             self.Ci.append(self.C[:, i])
-            self.Ii.append(self.I[:, i])
+            self.Ii.append(self.Ind_sorted[:, i])
             self.Xs_i.append(self.Xs[:, i])
 
         return
@@ -1544,7 +1549,7 @@ class SHGO(object):
         # inf, -inf  --> floats
         self.F = numpy.nan_to_num(self.F)
 
-        self.Ft = self.F[self.I]
+        self.Ft = self.F[self.Ind_sorted]
         self.Ftp = numpy.diff(self.Ft, axis=0)  # FD
         self.Ftm = numpy.diff(self.Ft[::-1], axis=0)[::-1]  # BD
         return
@@ -1693,6 +1698,7 @@ class SHGO(object):
             self.X_min = []  # Empty pool breaks main routine
         return self.X_min
 
+
 class LMap:
     def __init__(self, v):
         self.v = v
@@ -1700,6 +1706,7 @@ class LMap:
         self.lres = None
         self.f_min = None
         self.lbounds = []
+
 
 class LMapCache:
     def __init__(self):
