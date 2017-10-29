@@ -11,6 +11,7 @@ from time import time
 
 __all__ = ['shgo']
 
+
 def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
          minimizer_kwargs=None, options=None, sampling_method='simplicial'):
     # sampling_method: str, options = 'sobol', 'simplicial'
@@ -552,7 +553,7 @@ class SHGO(object):
                                      }
             if self.g_cons is not None:
                 if self.minimizer_kwargs['method'] == 'SLSQP' or \
-                   self.minimizer_kwargs['method'] == 'COBYLA':
+                                self.minimizer_kwargs['method'] == 'COBYLA':
                     self.minimizer_kwargs['constraints'] = self.min_cons
 
             if options is not None:
