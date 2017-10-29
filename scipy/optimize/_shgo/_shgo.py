@@ -226,7 +226,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
     where x is a vector of one or more variables.
     ``f(x)`` is the objective function ``R^n -> R``
     ``g_i(x)`` are the inequality constraints.
-    ``h_j(x)`` are the equality constrains.
+    ``h_j(x)`` are the equality constraints.
 
     Optionally, the lower and upper bounds for each element in x can also be
     specified using the `bounds` argument.
@@ -256,7 +256,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
     function is implemented in `rosen` in `scipy.optimize`
 
     >>> from scipy.optimize import rosen
-    >>> from shgo import shgo
+    >>> from scipy.optimize import shgo
     >>> bounds = [(0,2), (0, 2), (0, 2), (0, 2), (0, 2)]
     >>> result = shgo(rosen, bounds)
     >>> result.x, result.fun
@@ -277,7 +277,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
     the capabilities of shgo.
     (https://en.wikipedia.org/wiki/Test_functions_for_optimization)
 
-    >>> from shgo import shgo
+    >>> from scipy.optimize import shgo
     >>> import numpy as np
     >>> def eggholder(x):
     ...     return (-(x[1] + 47.0)
@@ -292,29 +292,31 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
 
     >>> result = shgo(eggholder, bounds, n=30, sampling_method='sobol')
     >>> result.x, result.fun
-    (array([ 512.    ,  404.23180542]), -959.64066272085051)
+    (array([ 512.        ,  404.23180542]), -959.64066272085051)
 
     ``shgo`` also has a return for any other local minima that was found, these
      can be called using:
 
-    >>> result.xl, result.funl
-    (array([[ 512.   ,  404.23180542],
-       [ 283.07593402, -487.12566542],
-       [-294.66820039, -462.01964031],
-       [-105.87688985,  423.15324143],
-       [-242.97923629,  274.38032063],
-       [-506.25823477,    6.3131022 ],
-       [-408.71981195, -156.10117154],
-       [ 150.23210485,  301.31378508],
-       [  91.00922754, -391.28375925],
-       [ 202.8966344 , -269.38042147],
-       [ 361.66625957, -106.96490692],
-       [-219.40615102, -244.06022436],
-       [ 151.59603137, -100.61082677]]),
-       array([-959.64066272, -718.16745962, -704.80659592, -565.99778097,
-       -559.78685655, -557.36868733, -507.87385942, -493.9605115 ,
-       -426.48799655, -421.15571437, -419.31194957, -410.98477763,
-       -202.53912972]))
+    >>> result.xl
+    array([[ 512.        ,  404.23180542],
+           [ 283.07593402, -487.12566542],
+           [-294.66820039, -462.01964031],
+           [-105.87688985,  423.15324143],
+           [-242.97923629,  274.38032063],
+           [-506.25823477,    6.3131022 ],
+           [-408.71981195, -156.10117154],
+           [ 150.23210485,  301.31378508],
+           [  91.00922754, -391.28375925],
+           [ 202.8966344 , -269.38042147],
+           [ 361.66625957, -106.96490692],
+           [-219.40615102, -244.06022436],
+           [ 151.59603137, -100.61082677]])
+
+    >>> result.funl
+    array([-959.64066272, -718.16745962, -704.80659592, -565.99778097,
+           -559.78685655, -557.36868733, -507.87385942, -493.9605115 ,
+           -426.48799655, -421.15571437, -419.31194957, -410.98477763,
+           -202.53912972])
 
     These results are useful in applications where there are many global minima
     and the values of other global minima are desired or where the local minima
@@ -329,7 +331,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
 
     >>> result_2 = shgo(eggholder, bounds, n=60, iters=3, sampling_method='sobol')
     >>> len(result.xl), len(result_2.xl)
-    (13, 33)
+    (13, 28)
 
     Note that there is a difference between specifying arguments for
     ex. ``n=180, iters=1`` and ``n=60, iters=3``.
@@ -355,7 +357,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
     Approx. Answer [4]:
         f([0.6355216, -0.12e-11, 0.3127019, 0.05177655]) = 29.894378
 
-    >>> from shgo import shgo
+    >>> from scipy.optimize import shgo
     >>> import numpy as np
     >>> def f(x):  # (cattle-feed)
     ...     return 24.55*x[0] + 26.75*x[1] + 39*x[2] + 40.50*x[3]
@@ -384,14 +386,18 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
         nfev: 119
          nit: 2
        nlfev: 40
-       nljev: 0
+       nlhev: 0
+       nljev: 5
      success: True
            x: array([  6.35521569e-01,   1.13700270e-13,   3.12701881e-01,
              5.17765506e-02])
           xl: array([[  6.35521569e-01,   1.13700270e-13,   3.12701881e-01,
               5.17765506e-02]])
+
+
     >>> g1(res.x), g2(res.x), h1(res.x)
     (-5.0626169922907138e-14, -2.9594104944408173e-12, 0.0)
+
 
 
     References
@@ -1397,57 +1403,58 @@ class SHGO(object):
         import gzip
         import os
         path = os.path.join(os.path.dirname(__file__), 'sobol_vec.gz')
-        with gzip.open(path) as f:
-            unsigned = "uint64"
-            # swallow header
-            buffer = next(f)
+        f = gzip.open(path, 'rb')
+        unsigned = "uint64"
+        # swallow header
+        buffer = next(f)
 
-            L = int(numpy.log(N) // numpy.log(2.0)) + 1
+        L = int(numpy.log(N) // numpy.log(2.0)) + 1
 
-            C = numpy.ones(N, dtype=unsigned)
-            for i in range(1, N):
-                value = i
-                while value & 1:
-                    value >>= 1
-                    C[i] += 1
+        C = numpy.ones(N, dtype=unsigned)
+        for i in range(1, N):
+            value = i
+            while value & 1:
+                value >>= 1
+                C[i] += 1
 
-            points = numpy.zeros((N, D), dtype='double')
+        points = numpy.zeros((N, D), dtype='double')
 
-            # XXX: This appears not to set the first element of V
-            V = numpy.empty(L + 1, dtype=unsigned)
-            for i in range(1, L + 1):
-                V[i] = 1 << (32 - i)
+        # XXX: This appears not to set the first element of V
+        V = numpy.empty(L + 1, dtype=unsigned)
+        for i in range(1, L + 1):
+            V[i] = 1 << (32 - i)
 
-            X = numpy.empty(N, dtype=unsigned)
+        X = numpy.empty(N, dtype=unsigned)
+        X[0] = 0
+        for i in range(1, N):
+            X[i] = X[i - 1] ^ V[C[i - 1]]
+            points[i, 0] = X[i] / 2 ** 32
+
+        for j in range(1, D):
+            F_int = [int(item) for item in next(f).strip().split()]
+            (d, s, a), m = F_int[:3], [0] + F_int[3:]
+
+            if L <= s:
+                for i in range(1, L + 1):
+                    V[i] = m[i] << (32 - i)
+            else:
+                for i in range(1, s + 1):
+                    V[i] = m[i] << (32 - i)
+                for i in range(s + 1, L + 1):
+                    V[i] = V[i - s] ^ (
+                        V[i - s] >> numpy.array(s, dtype=unsigned))
+                    for k in range(1, s):
+                        V[i] ^= numpy.array(
+                            (((a >> (s - 1 - k)) & 1) * V[i - k]),
+                            dtype=unsigned)
+
             X[0] = 0
             for i in range(1, N):
                 X[i] = X[i - 1] ^ V[C[i - 1]]
-                points[i, 0] = X[i] / 2 ** 32
+                points[i, j] = X[i] / 2 ** 32  # *** the actual points
 
-            for j in range(1, D):
-                F_int = [int(item) for item in next(f).strip().split()]
-                (d, s, a), m = F_int[:3], [0] + F_int[3:]
-
-                if L <= s:
-                    for i in range(1, L + 1):
-                        V[i] = m[i] << (32 - i)
-                else:
-                    for i in range(1, s + 1):
-                        V[i] = m[i] << (32 - i)
-                    for i in range(s + 1, L + 1):
-                        V[i] = V[i - s] ^ (
-                            V[i - s] >> numpy.array(s, dtype=unsigned))
-                        for k in range(1, s):
-                            V[i] ^= numpy.array(
-                                (((a >> (s - 1 - k)) & 1) * V[i - k]),
-                                dtype=unsigned)
-
-                X[0] = 0
-                for i in range(1, N):
-                    X[i] = X[i - 1] ^ V[C[i - 1]]
-                    points[i, j] = X[i] / 2 ** 32  # *** the actual points
-
-            return points
+        f.close()
+        return points
 
     def sampling_sobol(self, n, dim):
         """
