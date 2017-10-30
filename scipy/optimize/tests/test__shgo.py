@@ -658,7 +658,7 @@ class TestShgoFailures(object):
 
     def test_2_sampling(self):
         """Rejection of unknown sampling method"""
-        assert_raises(IOError, shgo, test1_1.f, test1_1.bounds,
+        assert_raises(ValueError, shgo, test1_1.f, test1_1.bounds,
                       sampling_method='not_Sobol')
 
     def test_3_1_no_min_pool_sobol(self):
