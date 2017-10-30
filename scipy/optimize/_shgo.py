@@ -3,11 +3,11 @@ shgo: The simplicial homology global optimisation algorithm
 """
 from __future__ import division, print_function, absolute_import
 import numpy
+import time
 import scipy.optimize
 import scipy.spatial
 from scipy.optimize.shgo_m.triangulation import *
 from scipy.optimize.shgo_m import sobol_seq
-from time import time
 
 __all__ = ['shgo']
 
@@ -470,7 +470,7 @@ class SHGO(object):
         if (type(sampling_method) is str) and ((sampling_method is not 'sobol')
                                                and (
                         sampling_method is not 'simplicial')):
-            raise IOError("""Unknown sampling_method specified, use either 
+            raise ValueError("""Unknown sampling_method specified, use either 
                                  'sobol' or 'simplicial' """)
 
         # Initiate class
@@ -755,7 +755,7 @@ class SHGO(object):
         if 'maxtime' in options:
             # Maximum processing runtime allowed
             self.maxtime = options['maxtime']
-            self.init = time()
+            self.init = time.time()
         else:
             self.maxtime = None
         if 'f_min' in options:
@@ -891,7 +891,7 @@ class SHGO(object):
         pass
 
     def finite_time(self):
-        if (time() - self.init) >= self.maxtime:
+        if (time.time() - self.init) >= self.maxtime:
             self.stop_global = True
 
     def finite_precision(self):
