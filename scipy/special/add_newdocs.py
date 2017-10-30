@@ -3,14 +3,9 @@
 # The syntax is designed to look like the function add_newdoc is being
 # called from numpy.lib, but in this file add_newdoc puts the
 # docstrings in a dictionary. This dictionary is used in
-# generate_ufuncs.py to generate the docstrings for the ufuncs in
+# _generate_pyx.py to generate the docstrings for the ufuncs in
 # scipy.special at the C level when the ufuncs are created at compile
 # time.
-#
-# Note : After editing this file and committing changes, please run
-# generate_funcs.py and commit the changes as a separate commit with a comment
-# such as : GEN: special: run generate_ufuncs.py
-
 
 from __future__ import division, print_function, absolute_import
 
@@ -3404,7 +3399,7 @@ add_newdoc("scipy.special", "hyp2f1",
 
     References
     ----------
-    .. [1] J.M. Jin and Z. S. Jjie, "Computation of special functions", Wiley, 1996.
+    .. [1] S. Zhang and J.M. Jin, "Computation of Special Functions", Wiley 1996
     .. [2] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/index.html
     .. [3] NIST Digital Library of Mathematical Functions
