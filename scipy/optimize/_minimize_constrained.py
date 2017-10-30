@@ -11,6 +11,7 @@ from ._large_scale_constrained import (tr_interior_point,
 from warnings import warn
 from copy import deepcopy
 from scipy.sparse.linalg import LinearOperator
+from ._quasi_newton_approx import QuasiNewtonApprox, BFGS, SR1
 import scipy.sparse as sps
 import time
 from .optimize import OptimizeResult
@@ -25,19 +26,142 @@ TERMINATION_MESSAGES = {
 }
 
 
-class Memoize:
-    "Memoize decorator, used to avoid repeated calls to the same function."
-    def __init__(self, x0, f0):
-        self._x = x0
-        self._f = f0
+class ScalarFunction:
+    """Define methods for evaluating a scalar function and its derivatives.
 
-    def __call__(self, function):
-        def new_function(x):
-            if not np.array_equal(x, self._x):
-                self._x = x
-                self._f = function(x)
-            return self._f
-        return new_function
+    This class define a scalar function F: R^n->R and methods for
+    computing or approximating its first and second derivatives.
+    """
+
+    def __init__(self, fun, x0, grad='2-point', hess=BFGS(), finite_diff_options={}):
+        self.x = np.atleast_1d(x0).astype(float)
+        if grad in ('2-point', '3-point', 'cs'):
+            finite_diff_options["method"] = grad
+            self.x_diff = np.copy(self.x)
+        if hess in ('2-point', '3-point', 'cs'):
+            finite_diff_options["method"] = hess
+            self.x_diff = np.copy(self.x)
+        if grad in ('2-point', '3-point', 'cs') and \
+           hess in ('2-point', '3-point', 'cs'):
+            raise ValueError("Whenever the gradient is estimated via finite-differences, "
+                             "we require the Hessian to be estimated using one of the "
+                             "quasi-Newton strategies.")
+        if isinstance(hess, QuasiNewtonApprox):
+            self.x_prev = np.copy(x0)
+            self.first_iteration = True
+
+        # Define function
+        self.f = fun(x0)
+
+        if grad in ('2-point', '3-point', 'cs'):
+            def fun_wrapped(x):
+                self.x_diff = x
+                self.f = fun(x)
+                return self.f
+        else:
+            fun_wrapped = fun
+        self.fun = fun_wrapped
+
+        # Define gradient
+        if callable(grad):
+            self.g = np.atleast_1d(grad(x0))
+            if isinstance(hess, QuasiNewtonApprox):
+                self.g_prev = np.copy(self.g)
+
+            def grad_wrapped(x):
+                return np.atleast_1d(grad(x))
+
+            if hess in ('2-point', '3-point', 'cs'):
+                def grad_wrapped2(x):
+                    self.x_diff = x
+                    self.g = grad_wrapped(x)
+                    return self.g
+
+            elif isinstance(hess, QuasiNewtonApprox):
+                def grad_wrapped2(x):
+                    self.x_prev = self.x
+                    self.g_prev = self.g
+                    self.x = x
+                    self.g = grad_wrapped(x)
+                    return self.g
+            else:
+                grad_wrapped2 = grad_wrapped
+        elif grad in ('2-point', '3-point', 'cs'):
+            self.g = approx_derivative(fun, self.x, f0=self.f, **finite_diff_options)
+            if isinstance(hess, QuasiNewtonApprox):
+                self.g_prev = np.copy(self.g)
+
+            def grad_wrapped(x):
+                return approx_derivative(fun, x, f0=self.f, **finite_diff_options)
+
+            if isinstance(hess, QuasiNewtonApprox):
+                def grad_wrapped2(x):
+                    if not np.array_equal(self.x_diff, x):
+                        self.x_diff = x
+                        self.f = fun(x)
+                    self.x_prev = self.x
+                    self.g_prev = self.g
+                    self.x = x
+                    self.g = grad_wrapped(x)
+                    return self.g
+
+            else:
+                def grad_wrapped2(x):
+                    if not np.array_equal(self.x_diff, x):
+                        self.x_diff = x
+                        self.f = fun(x)
+                    return grad_wrapped(x)
+        self.grad = grad_wrapped2
+
+        # Define Hessian
+        if callable(hess):
+            self.H = hess(x0)
+
+            if sps.issparse(self.H):
+                def hess_wrapped(x):
+                    return sps.csr_matrix(hess(x))
+                self.H = sps.csr_matrix(self.H)
+
+            elif isinstance(self.H, LinearOperator):
+                def hess_wrapped(x):
+                    return hess(x)
+
+            else:
+                def hess_wrapped(x):
+                    return  np.atleast_2d(np.asarray(hess(x)))
+                self.H = np.atleast_2d(np.asarray(self.H))
+
+        elif hess in ('2-point', '3-point', 'cs'):
+            def hess_wrapped(x):
+                if not np.array_equal(self.x_diff, x):
+                    self.x_diff = x
+                    self.g = grad_wrapped(x)
+                return approx_derivative(grad_wrapped, x, f0=self.g, **finite_diff_options)
+            self.H = approx_derivative(grad_wrapped, self.x, f0=self.g, **finite_diff_options)
+
+        elif isinstance(hess, QuasiNewtonApprox):
+            def hess_wrapped(x):
+                if not np.array_equal(self.x, x):
+                    self.x_prev = self.x
+                    self.g_prev = self.g
+                    self.x = x
+                    self.g = grad_wrapped(x)
+                delta_x = self.x - self.x_prev
+                delta_grad = self.g - self.g_prev
+                if self.first_iteration:
+                    if np.linalg.norm(delta_x) != 0:
+                        hess.instanciate_matrix(delta_x, delta_grad)
+                        hess.scale_matrix(delta_x, delta_grad)
+                        hess.update(delta_x, delta_grad)
+                        self.first_iteration = False
+                    else:
+                        hess.instanciate_matrix(delta_x, delta_grad)
+                else:
+                    hess.update(delta_x, delta_grad)
+                return hess
+        else:
+            hess_wrapped = None  
+        self.hess = hess_wrapped
 
 
 class sqp_printer:
@@ -93,11 +217,11 @@ class ip_printer:
         print("")
 
 
-def minimize_constrained(fun, x0, grad, hess='2-point', constraints=(),
+def minimize_constrained(fun, x0, grad='2-point', hess=BFGS(), constraints=(),
                          method=None, xtol=1e-8, gtol=1e-8,
-                         sparse_jacobian=None, options={},
+                         sparse_jacobian=None, options=None,
                          callback=None, max_iter=1000,
-                         verbose=0):
+                         verbose=0, finite_diff_options=None):
     """Minimize scalar function subject to constraints.
 
     Parameters
@@ -111,27 +235,26 @@ def minimize_constrained(fun, x0, grad, hess='2-point', constraints=(),
     x0 : ndarray, shape (n,)
         Initial guess. Array of real elements of size (n,),
         where ``n`` is the number of independent variables.
-    grad : callable
-        Gradient of the objective function:
+    grad : {callable,  '2-point', '3-point', 'cs'}, optional
+        Method for computing the gradient vector. The keywords selects a
+        finite difference scheme for numerical estimation of the gradient.
+        Alternatively, if it is a callable, it should be a function that
+        returns the gradient vector:
 
             ``grad(x) -> array_like, shape (n,)``
 
         where x is an array with shape (n,).
-    hess : {callable, '2-point', '3-point', 'cs', None}, optional
-        Method for computing the Hessian matrix. The keywords
-        select a finite difference scheme for numerical
-        estimation. The scheme '3-point' is more accurate, but requires
-        twice as much operations compared to '2-point' (default). The
-        scheme 'cs' uses complex steps, and while potentially the most
-        accurate, it is applicable only when `fun` correctly handles
-        complex inputs and can be analytically continued to the complex
-        plane. If it is a callable, it should return the 
-        Hessian matrix of `dot(fun, v)`:
+    hess : {callable, '2-point', '3-point', 'cs', QuasiNewtonApprox, None}, optional
+        Method for computing the Hessian matrix. The keywords select a
+        finite difference scheme for numerical estimation. Alternativelly,
+        a `QuasiNewtonApprox` object may be passed on, defining a quasi-Newton
+        Hessian approximation method. Or, if it is a callable, it should return the 
+        Hessian matrix:
 
-            ``hess(x, v) -> {LinearOperator, sparse matrix, ndarray}, shape (n, n)``
+            ``hess(x) -> {LinearOperator, sparse matrix, ndarray}, shape (n, n)``
 
-        where x is a (n,) ndarray and v is a (m,) ndarray. When ``hess``
-        is None it considers the hessian is a matrix filled with zeros.
+        where x is a (n,) ndarray. When ``hess`` is None it considers the Hessian
+        is a matrix filled with zeros.
     constraints : Constraint or List of Constraint's, optional
         A single object or a list of objects specifying
         constraints to the optimization problem.
@@ -221,6 +344,9 @@ def minimize_constrained(fun, x0, grad, hess='2-point', constraints=(),
                 imply the conversion of sparse matrices
                 to a dense format when required). By default uses
                 'QRFactorization' for  dense matrices.
+    finite_diff_options: dict, optional
+        Dictionary with options to be passed on to `approx_derivative` method.
+        These options will define the finite_difference approximation parameters.
     callback : callable, optional
         Called after each iteration:
 
@@ -355,6 +481,27 @@ def minimize_constrained(fun, x0, grad, hess='2-point', constraints=(),
     the iterate gets closer to a solution. It is also an
     appropriate method for large-scale problems.
 
+    Different methods are available for approximating the Hessian.
+    The `QuasiNewtonApprox` object may define a quasi-Newton Hessian
+    approximation. Available approximations are:
+
+    - `BFGS`;
+    - `SR1`;
+    - `L-BFGS`.
+
+    Finite difference schemes may be used for approximating
+    either the gradient or the Hessian. We, however, do not allow
+    its use for approximating both simultaneously. Hence
+    whenever the gradient is estimated via finite-differences,
+    we require the Hessian to be estimated using one of the
+    quasi-Newton strategies.
+
+    The scheme 'cs' is, potentially, the most accurate but
+    it requires the function to correctly handles complex inputs
+    and to be continuous in the complex plane. The scheme
+    '3-point' is more accurate than '2-point' but requires twice
+    as much operations.
+
     References
     ----------
     .. [1] Byrd, Richard H., Mary E. Hribar, and Jorge Nocedal.
@@ -367,56 +514,16 @@ def minimize_constrained(fun, x0, grad, hess='2-point', constraints=(),
            constrained optimization." SIAM Journal on
            Optimization 8.3 (1998): 682-706.
     """
+    if options is None:
+        options = {}
+    if finite_diff_options is None:
+        finite_diff_options = {}
     # Initial value
+    if hess in ('2-point', '3-point', 'cs'):
+        finite_diff_options["as_linear_operator"] = True
+    objective = ScalarFunction(fun, x0, grad, hess, finite_diff_options)
     x0 = np.atleast_1d(x0).astype(float)
     n_vars = np.size(x0)
-
-    # Evaluate initial point
-    f0 = fun(x0)
-    g0 = np.atleast_1d(grad(x0))
-
-    # Define Gradient
-    if hess in ('2-point', '3-point', 'cs'):
-        # Need to memoize gradient wrapper in order
-        # to avoid repeated calls that occur
-        # when using finite differences.
-        @Memoize(x0, g0)
-        def grad_wrapped(x):
-            return np.atleast_1d(grad(x))
-
-    else:
-        def grad_wrapped(x):
-            return np.atleast_1d(grad(x))
-
-    # Check Hessian
-    if callable(hess):
-        H0 = hess(x0)
-
-        if sps.issparse(H0):
-            H0 = sps.csr_matrix(H0)
-
-            def hess_wrapped(x):
-                return sps.csr_matrix(hess(x))
-
-        elif isinstance(H0, LinearOperator):
-            def hess_wrapped(x):
-                return hess(x)
-
-        else:
-            H0 = np.atleast_2d(np.asarray(H0))
-
-            def hess_wrapped(x):
-                return np.atleast_2d(np.asarray(hess(x)))
-
-    elif hess in ('2-point', '3-point', 'cs'):
-        approx_method = hess
-
-        def hess_wrapped(x):
-            return approx_derivative(grad_wrapped, x, approx_method,
-                                     as_linear_operator=True)
-
-    else:
-        hess_wrapped = hess
 
     # Put constraints in list format when needed
     if isinstance(constraints, (NonlinearConstraint,
@@ -434,7 +541,7 @@ def minimize_constrained(fun, x0, grad, hess='2-point', constraints=(),
         constr = to_canonical(copied_constraints)
 
     # Generate Lagrangian hess function
-    lagr_hess = lagrangian_hessian(constr, hess_wrapped)
+    lagr_hess = lagrangian_hessian(constr, objective.hess)
 
     # Construct OptimizeResult
     state = OptimizeResult(niter=0, nfev=1, ngev=1,
@@ -512,18 +619,19 @@ def minimize_constrained(fun, x0, grad, hess='2-point', constraints=(),
                              "support inequality constraints.")
 
         def fun_and_constr(x):
-            f = fun(x)
+            f = objective.fun(x)
             _, c_eq = constr.constr(x)
             return f, c_eq
 
         def grad_and_jac(x):
-            g = grad_wrapped(x)
+            g = objective.grad(x)
             _, J_eq = constr.jac(x)
             return g, J_eq
 
         result = equality_constrained_sqp(
             fun_and_constr, grad_and_jac, lagr_hess,
-            x0, f0, g0, constr.c_eq0, constr.J_eq0,
+            x0, objective.f, objective.g,
+            constr.c_eq0, constr.J_eq0,
             stop_criteria, state, **options)
 
     elif method == 'tr_interior_point':
@@ -532,10 +640,10 @@ def minimize_constrained(fun, x0, grad, hess='2-point', constraints=(),
                  "The solver 'equality_constrained_sqp' is a "
                  "better choice for those situations.")
         result = tr_interior_point(
-            fun, grad_wrapped, lagr_hess,
+            objective.fun, objective.grad, lagr_hess,
             n_vars, constr.n_ineq, constr.n_eq,
             constr.constr, constr.jac,
-            x0, f0, g0, constr.c_ineq0, constr.J_ineq0,
+            x0, objective.f, objective.g, constr.c_ineq0, constr.J_ineq0,
             constr.c_eq0, constr.J_eq0, stop_criteria,
             constr.enforce_feasibility,
             xtol, state, **options)

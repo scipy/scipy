@@ -4,11 +4,218 @@ import scipy.sparse as sps
 from scipy.sparse.linalg import LinearOperator
 from ._numdiff import approx_derivative
 from warnings import warn
+from ._quasi_newton_approx import QuasiNewtonApprox, BFGS, SR1
 
 
 __all__ = ['NonlinearConstraint',
            'LinearConstraint',
            'BoxConstraint']
+
+
+class VectorialFunction:
+    """Define methods for evaluating a vectorial function and its derivatives.
+
+    This class define a scalar function F: R^n->R^m and methods for
+    computing or approximating its first and second derivatives.
+    """
+
+    def __init__(self, fun, x0, jac='2-point', hess=BFGS(),
+                 finite_diff_options=None, sparse_jacobian=None):
+        if finite_diff_options is None:
+            finite_diff_options = {}
+        self.x = np.atleast_1d(x0).astype(float)
+        if jac in ('2-point', '3-point', 'cs'):
+            finite_diff_options["method"] = jac
+            self.x_diff = np.copy(self.x)
+        if hess in ('2-point', '3-point', 'cs'):
+            finite_diff_options["method"] = hess
+            self.x_diff = np.copy(self.x)
+        if jac in ('2-point', '3-point', 'cs') and \
+           hess in ('2-point', '3-point', 'cs'):
+            raise ValueError("Whenever the jacient is estimated via "
+                             "finite-differences, we require the Hessian to "
+                             "be estimated using one of the quasi-Newton "
+                             "strategies.")
+        if isinstance(hess, QuasiNewtonApprox):
+            self.x_prev = np.copy(x0)
+            self.first_iteration = True
+
+        # Define function
+        self.f = np.atleast_1d(fun(x0))
+
+        def fun_wrapped(x):
+                return np.atleast_1d(fun(x))
+
+        if jac in ('2-point', '3-point', 'cs'):
+            def fun_wrapped2(x):
+                self.x_diff = x
+                self.f = fun_wrapped(x)
+                return self.f
+        else:
+            fun_wrapped2 = fun_wrapped
+        self.fun = fun_wrapped2
+
+        # Define jacobian
+        if callable(jac):
+            J0 = jac(x0)
+
+            if sparse_jacobian or \
+               (sparse_jacobian is None and sps.issparse(J0)):
+                def jac_wrapped(x):
+                    return sps.csr_matrix(jac(x))
+                self.J = sps.csr_matrix(J0)
+                if isinstance(hess, QuasiNewtonApprox):
+                    self.J_prev = self.J.copy()
+                self.sparse_jacobian = True
+
+            elif sps.issparse(J0):
+                def jac_wrapped(x):
+                    return jac(x).toarray()
+                self.J = J0.toarray()
+                if isinstance(hess, QuasiNewtonApprox):
+                    self.J_prev = np.copy(self.J)
+                self.sparse_jacobian = False
+
+            else:
+                def jac_wrapped(x):
+                    return np.atleast_2d(jac(x))
+                self.J = np.atleast_2d(J0)
+                if isinstance(hess, QuasiNewtonApprox):
+                    self.J_prev = np.copy(self.J)
+                self.sparse_jacobian = False
+
+            if hess in ('2-point', '3-point', 'cs'):
+                def jac_wrapped2(x):
+                    self.x_diff = x
+                    self.J = jac_wrapped(x)
+                    return self.J
+
+            elif isinstance(hess, QuasiNewtonApprox):
+                def jac_wrapped2(x):
+                    self.x_prev = self.x
+                    self.J_prev = self.J
+                    self.x = x
+                    self.J = jac_wrapped(x)
+                    return self.J
+
+            else:
+                jac_wrapped2 = jac_wrapped
+        elif jac in ('2-point', '3-point', 'cs'):
+            J0 = approx_derivative(fun, self.x, f0=self.f,
+                                   **finite_diff_options)
+
+            if sparse_jacobian or \
+               (sparse_jacobian is None and sps.issparse(J0)):
+                def jac_wrapped(x):
+                    J = approx_derivative(fun, self.x, f0=self.f,
+                                          **finite_diff_options)
+                    return sps.csr_matrix(J)
+                self.J = sps.csr_matrix(J0)
+                if isinstance(hess, QuasiNewtonApprox):
+                    self.J_prev = self.J.copy()
+                self.sparse_jacobian = True
+
+            elif sps.issparse(J0):
+                def jac_wrapped(x):
+                    J = approx_derivative(fun, self.x, f0=self.f,
+                                          **finite_diff_options)
+                    return J.toarray()
+                self.J = J0.toarray()
+                if isinstance(hess, QuasiNewtonApprox):
+                    self.J_prev = np.copy(self.J)
+                self.sparse_jacobian = False
+
+            else:
+                def jac_wrapped(x):
+                    J = approx_derivative(fun, self.x, f0=self.f,
+                                          **finite_diff_options)
+                    return np.atleast_2d(J)
+                self.J = np.atleast_2d(J0)
+                if isinstance(hess, QuasiNewtonApprox):
+                    self.J_prev = np.copy(self.J)
+                self.sparse_jacobian = False
+
+            if isinstance(hess, QuasiNewtonApprox):
+                def jac_wrapped2(x):
+                    if not np.array_equal(self.x_diff, x):
+                        self.x_diff = x
+                        self.f = fun_wrapped(x)
+                    self.x_prev = self.x
+                    self.J_prev = self.J
+                    self.x = x
+                    self.J = jac_wrapped(x)
+                    return self.J
+
+            else:
+                def jac_wrapped2(x):
+                    if not np.array_equal(self.x_diff, x):
+                        self.x_diff = x
+                        self.f = fun_wrapped(x)
+                    return jac_wrapped(x)
+        else:
+            jac_wrapped = None
+            jac_wrapped2 = None
+        self.jac = jac_wrapped2
+
+        # Define Hessian
+        v0 = np.zeros_like(self.f)
+        self.v_diff = v0
+        if callable(hess):
+            self.H = hess(x0, v0)
+
+            if sps.issparse(self.H):
+                def hess_wrapped(x, v):
+                    return sps.csr_matrix(hess(x))
+                self.H = sps.csr_matrix(self.H)
+
+            elif isinstance(self.H, LinearOperator):
+                def hess_wrapped(x, v):
+                    return hess(x, v)
+
+            else:
+                def hess_wrapped(x, v):
+                    return np.atleast_2d(np.asarray(hess(x, v)))
+                self.H = np.atleast_2d(np.asarray(self.H))
+
+        elif hess in ('2-point', '3-point', 'cs'):
+            def jac_dot_v(x, v):
+                J = jac_wrapped(x)
+                return J.T.dot(v)
+            self.H = approx_derivative(jac_dot_v, x0,
+                                       f0=self.J.T.dot(v0), args=(v0,),
+                                       **finite_diff_options)
+
+            def hess_wrapped(x, v):
+                if not np.array_equal(self.x_diff, x):
+                    self.x_diff = x
+                    self.J = jac_wrapped(x)
+                return approx_derivative(jac_dot_v, x,
+                                         f0=self.J.T.dot(v), args=(v,),
+                                         **finite_diff_options)
+
+        elif isinstance(hess, QuasiNewtonApprox):
+            def hess_wrapped(x, v):
+                if not np.array_equal(self.x, x):
+                    self.x_prev = self.x
+                    self.J_prev = self.J
+                    self.x = x
+                    self.J = jac_wrapped(x)
+                delta_x = self.x - self.x_prev
+                delta_grad = self.J.T.dot(v) - self.J_prev.T.dot(v)
+                if self.first_iteration:
+                    if np.linalg.norm(delta_x) != 0:
+                        hess.instanciate_matrix(delta_x, delta_grad)
+                        hess.scale_matrix(delta_x, delta_grad)
+                        hess.update(delta_x, delta_grad)
+                        self.first_iteration = False
+                    else:
+                        hess.instanciate_matrix(delta_x, delta_grad)
+                else:
+                    hess.update(delta_x, delta_grad)
+                return hess
+        else:
+            hess_wrapped = None
+        self.hess = hess_wrapped
 
 
 class NonlinearConstraint:
@@ -57,10 +264,13 @@ class NonlinearConstraint:
         specified boundaries. Use ``np.inf`` with an appropriate
         sign to disable inequalities constraints in one of the
         directions.
-    jac : callable
+    jac : {callable,  '2-point', '3-point', 'cs'}, optional
         Method of computing the Jacobian matrix (an m-by-n matrix,
         where element (i, j) is the partial derivative of f[i] with
-        respect to x[j]):
+        respect to x[j]).  The keywords selects a finite difference
+        scheme for numerical estimation of the jacobian matrix.
+        Alternatively, if it is a callable, it should be a function that
+        returns the matrix:
 
             ``jac(x) -> {ndarray, sparse matrix}, shape (m, n)``
 
@@ -68,20 +278,17 @@ class NonlinearConstraint:
     hess : {callable, '2-point', '3-point', 'cs', None}
         Method for computing the Hessian matrix. The keywords
         select a finite difference scheme for numerical
-        estimation. The scheme '3-point' is more accurate, but requires
-        twice as much operations compared to '2-point' (default). The
-        scheme 'cs' uses complex steps, and while potentially the most
-        accurate, it is applicable only when `fun` correctly handles
-        complex inputs and can be analytically continued to the complex
-        plane. If it is a callable, it should return the 
-        Hessian matrix of `dot(fun, v)`, that is:
+        estimation.  Alternativelly,  a `QuasiNewtonApprox` object
+        may be passed on, defining a quasi-Newton Hessian
+        approximation method. If it is a callable, it should
+        return the Hessian matrix of `dot(fun, v)`, that is:
 
             ``hess(x, v) -> {LinearOperator, sparse matrix, ndarray}, shape (n, n)``
 
         where x is a (n,) ndarray and v is a (m,) ndarray. During the solution
-        of an optimization problem ``x`` and ``v`` will stand for, respectively,
-        the vector of variables and the lagrange multipliers. When ``hess`` is
-        None it considers the hessian is a matrix filled with zeros.
+        of an optimization problem ``x`` and ``v`` will stand for,
+        respectively, the vector of variables and the lagrange multipliers.
+        When ``hess`` is None it considers the hessian is a matrix filled with zeros.
     enforce_feasibility : {list of bool, bool}, optional
         Specify wheather each of the constraint components needs to
         stay feasible. If ``True``  all the iterates generated by the
@@ -89,98 +296,69 @@ class NonlinearConstraint:
         constraint, otherwise this will not be reinforced.
         A single value or a list are acceptable: A single value
         specifies the same behaviour for all constraints while
-        a list would specify element-wise each constraints needs to 
+        a list would specify element-wise each constraints needs to
         stay feasible along the iterations and each does not.
         False by default.
+
+    Notes
+    -----
+    Different methods are available for approximating the Hessian.
+    The `QuasiNewtonApprox` object may define a quasi-Newton Hessian
+    approximation. Available approximations are:
+
+    - `BFGS`;
+    - `SR1`;
+    - `L-BFGS`.
+
+    Finite difference schemes may be used for approximating
+    either the gradient or the Hessian. We, however, do not allow
+    its use for approximating both simultaneously. Hence
+    whenever the gradient is estimated via finite-differences,
+    we require the Hessian to be estimated using one of the
+    quasi-Newton strategies.
+
+    The scheme 'cs' is, potentially, the most accurate but
+    it requires the function to correctly handles complex inputs
+    and to be continuous in the complex plane. The scheme
+    '3-point' is more accurate than '2-point' but requires twice
+    as much operations.
     """
-    def __init__(self, fun, kind, jac, hess='2-point', enforce_feasibility=False):
+    def __init__(self, fun, kind, jac='2-point', hess=BFGS(),
+                 enforce_feasibility=False,
+                 finite_diff_options={}):
         self._fun = fun
         self.kind = kind
+        self.finite_diff_options = finite_diff_options
         self._jac = jac
         self._hess = hess
         self.enforce_feasibility = enforce_feasibility
         self.isinitialized = False
 
     def _evaluate_and_initialize(self, x0, sparse_jacobian=None):
-        x0 = np.atleast_1d(x0).astype(float)
-        f0 = np.atleast_1d(self._fun(x0))
-        v0 = np.zeros_like(f0)
-        J0 = self._jac(x0)
+        if self._hess in ('2-point', '3-point', 'cs'):
+            self.finite_diff_options["as_linear_operator"] = True
+        constr = VectorialFunction(self._fun, x0, self._jac, self._hess,
+                                   self.finite_diff_options, sparse_jacobian)
 
-        def fun_wrapped(x):
-            return np.atleast_1d(self._fun(x))
-
-        if sparse_jacobian or (sparse_jacobian is None and sps.issparse(J0)):
-            def jac_wrapped(x):
-                return sps.csr_matrix(self._jac(x))
-            self.sparse_jacobian = True
-            self.J0 = sps.csr_matrix(J0)
-
-        elif sps.issparse(J0):
-            def jac_wrapped(x):
-                J = self._jac(x)
-                return J.toarray()
-            self.J0 = J0.toarray()
-            self.sparse_jacobian = False
-            
-        else:
-            def jac_wrapped(x):
-                J = self._jac(x)
-                return np.atleast_2d(J)
-            self.J0 = np.atleast_2d(J0)
-            self.sparse_jacobian = False
-
-        if callable(self._hess):
-            H0 = self._hess(x0, v0)
-
-            if sps.issparse(H0):
-                H0 = sps.csr_matrix(H0)
-
-                def hess_wrapped(x, v):
-                    return sps.csr_matrix(self._hess(x, v))
-
-            elif isinstance(H0, LinearOperator):
-                def hess_wrapped(x, v):
-                    return self._hess(x, v)
-
-            else:
-                H0 = np.atleast_2d(np.asarray(H0))
-
-                def hess_wrapped(x, v):
-                    return np.atleast_2d(np.asarray(self._hess(x, v)))
-
-        elif self._hess in ('2-point', '3-point', 'cs'):
-            approx_method = self._hess
-
-            def jac_dot_v(x, v):
-                J = jac_wrapped(x)
-                return J.T.dot(v)
-
-            def hess_wrapped(x, v):
-                return approx_derivative(jac_dot_v, x, approx_method,
-                                         as_linear_operator=True,
-                                         args=(v,))
-
-        else:
-            hess_wrapped = self._hess
-
-        self.fun = fun_wrapped
-        self.jac = jac_wrapped
-        self.hess = hess_wrapped
-        self.x0 = x0
-        self.f0 = f0
-        self.n = x0.size
-        self.m = f0.size
+        self.fun = constr.fun
+        self.jac = constr.jac
+        self.hess = constr.hess
+        self.sparse_jacobian = constr.sparse_jacobian
+        self.x0 = constr.x
+        self.f0 = constr.f
+        self.J0 = constr.J
+        self.n = constr.x.size
+        self.m = constr.f.size
         self.kind = _check_kind(self.kind, self.m)
         self.enforce_feasibility = _check_enforce_feasibility(
             self.enforce_feasibility, self.m)
-        if not _is_feasible(self.kind, self.enforce_feasibility, f0):
+        if not _is_feasible(self.kind, self.enforce_feasibility, constr.f):
             raise ValueError("Unfeasible initial point. "
                              "Either set ``enforce_feasibility=False`` or "
                              "choose a new feasible initial point ``x0``.")
 
         self.isinitialized = True
-        return x0
+        return constr.x
 
 
 class LinearConstraint:
