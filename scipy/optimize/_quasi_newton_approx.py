@@ -2,6 +2,7 @@
 
 from __future__ import division, print_function, absolute_import
 import numpy as np
+from numpy.linalg import norm
 from scipy.linalg import get_blas_funcs
 
 class QuasiNewtonApprox:
@@ -12,8 +13,8 @@ class QuasiNewtonApprox:
     approx_type : {'hess', 'inv_hess'}, optional
         Define what is being approximated. Set it
         to 'hess' to store and update the Hessian
-        matrix and to 'inv_hess' to use the
-        inverse Hessian.
+        matrix and to 'inv_hess' to store and update
+        the inverse Hessian matrix.
     """
     syr = get_blas_funcs('syr', dtype='d')  # Symetric rank 1 update
     syr2 = get_blas_funcs('syr2', dtype='d')  # Symetric rank 2 update
@@ -75,8 +76,8 @@ class BFGS(QuasiNewtonApprox):
     approx_type : {'hess', 'inv_hess'}, optional
         Define what is being approximated. Set it
         to 'hess' to store and update the Hessian
-        matrix and to 'inv_hess' to use the
-        inverse Hessian.
+        matrix and to 'inv_hess' to store and update
+        the inverse Hessian matrix.
     exception_strategy : {'skip_update', 'damped_bfgs'}, optional
         Define how to proceed when the curvature condition is violated.
         Set it to 'skip_update' to just skip the update. Or, alternatively,
@@ -152,10 +153,10 @@ class BFGS(QuasiNewtonApprox):
         ----------
         delta_x : ndarray
             The difference between two points the gradient
-            function have been evaluated: ``delta_x = x2 - x1``
+            function have been evaluated: ``delta_x = x2 - x1``.
         delta_grad : ndarray
             The difference between the gradient evaluated
-            in two points. ``delta_grad = grad(x2) - grad(x1)``
+            in two points: ``delta_grad = grad(x2) - grad(x1)``.
         """
         # Auxiliar variables w and z
         if self.approx_type == 'hess':
@@ -175,7 +176,7 @@ class BFGS(QuasiNewtonApprox):
             # is violated.
             if self.exception_strategy == 'skip_update':
                 return
-            # If the option 'damped_bfgs' we
+            # If the option 'damped_bfgs' is set we
             # interpolate between the actual BFGS
             # result and the unmodified matrix.
             elif self.exception_strategy == 'damped_bfgs':
@@ -184,8 +185,69 @@ class BFGS(QuasiNewtonApprox):
                 wz = np.dot(w, z)
                 Mw = self.dot(1, w)
                 wMw = Mw.dot(w)
+        # Update matrix
         if self.approx_type == 'hess':
             return self._update_hessian(wz, Mw, wMw, z)
         else:
-            return self._update_hessian(wz, Mw, wMw, z)
+            return self._update_inverse_hessian(wz, Mw, wMw, z)
 
+
+class SR1(QuasiNewtonApprox):
+    """Symmetric-rank-1 Hessian matrix approximation.
+
+    Parameters
+    ----------
+    approx_type : {'hess', 'inv_hess'}, optional
+        Define what is being approximated. Set it
+        to 'hess' to store and update the Hessian
+        matrix and to 'inv_hess' to store and update
+        the inverse Hessian matrix.
+    min_curvature : float
+        Define the minimum allowed value of the denominator
+        of the update. When the condition is violated we skip
+        the update. By default uses ``1e-8``.
+
+    References
+    ----------
+    .. [1] Nocedal, Jorge, and Stephen J. Wright. "Numerical optimization"
+           Second Edition (2006).
+    """
+
+    def __init__(self, approx_type='hess', min_curvature=1e-8):
+        self.min_curvature = min_curvature
+        super(BFGS, self).__init__(approx_type)
+
+    def update(self, delta_x, delta_grad):
+        """Update approximation matrix.
+
+        Parameters
+        ----------
+        delta_x : ndarray
+            The difference between two points the gradient
+            function have been evaluated: ``delta_x = x2 - x1``.
+        delta_grad : ndarray
+            The difference between the gradient evaluated
+            in two points: ``delta_grad = grad(x2) - grad(x1)``.
+        """
+        # Auxiliar variables w and z
+        if self.approx_type == 'hess':
+            w = delta_x
+            z = delta_grad
+        else:
+            w = delta_grad
+            z = delta_x
+        # Do some common operations
+        Mw = self.dot(1, w)
+        z_minus_Mw = z - Mw
+        denominator = np.dot(w, z_minus_Mw)
+        # If the denominator is too small
+        # we just skip the update.
+        if np.abs(denominator) < self.min_curvature*norm(w)*norm(z_minus_Mw):
+            return
+        # Update matrix
+        if self.approx_type == 'hess':
+            self.B = self.syr(1/denominator, z_minus_Mw, a=self.B)
+        else:
+            self.H = self.syr(1/denominator, z_minus_Mw, a=self.H)
+        return
+    
