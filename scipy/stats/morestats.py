@@ -937,7 +937,7 @@ def _boxcox_conf_interval(x, lmax, alpha):
     return lmminus, lmplus
 
 
-def boxcox(x, lmbda=None, alpha=None):
+def boxcox(x, lmbda=None, alpha=None, nan_policy='propagate'):
     r"""
     Return a positive dataset transformed by a Box-Cox power transformation.
 
@@ -954,6 +954,10 @@ def boxcox(x, lmbda=None, alpha=None):
         If ``alpha`` is not None, return the ``100 * (1-alpha)%`` confidence
         interval for `lmbda` as the third output argument.
         Must be between 0.0 and 1.0.
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan. 'propagate' returns nan,
+        'raise' throws an error, 'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.
 
     Returns
     -------
@@ -1027,14 +1031,22 @@ def boxcox(x, lmbda=None, alpha=None):
     if x.size == 0:
         return x
 
-    if any(x <= 0):
+    contains_nan, nan_policy = _contains_nan(x, nan_policy)
+    not_nan_mask = ~np.isnan(x)
+
+    if any(x[not_nan_mask] <= 0):
         raise ValueError("Data must be positive.")
 
     if lmbda is not None:  # single transformation
-        return special.boxcox(x, lmbda)
+        return special.boxcox(x, lmbda)  # propagates nan's
 
     # If lmbda=None, find the lmbda that maximizes the log-likelihood function.
     lmax = boxcox_normmax(x, method='mle')
+
+    # If configured - omit nans
+    if contains_nan and nan_policy == 'omit':
+        x = x[not_nan_mask]
+
     y = boxcox(x, lmax)
 
     if alpha is None:
