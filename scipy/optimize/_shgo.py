@@ -11,7 +11,6 @@ from scipy.optimize.shgo_m import sobol_seq
 
 __all__ = ['shgo']
 
-
 def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
          minimizer_kwargs=None, options=None, sampling_method='simplicial'):
     """
