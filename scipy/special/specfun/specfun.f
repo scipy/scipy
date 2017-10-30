@@ -6191,28 +6191,35 @@ C       ======================================================
 C
         IMPLICIT DOUBLE PRECISION (A-H,O-Y)
         IMPLICIT COMPLEX *16 (Z)
-        LOGICAL L0,L1,L2,L3,L4,L5,L6
+        LOGICAL L0,L1,L2,L3,L4,L5,L6,L7
         X=DBLE(Z)
         Y=DIMAG(Z)
         EPS=1.0D-15
         ISFER=0
-        L0=C.EQ.INT(C).AND.C.LT.0.0D0
+        L0=C.EQ.INT(C).AND.C.LE.0.0D0
         L1=DABS(1.0D0-X).LT.EPS.AND.Y.EQ.0.0D0.AND.C-A-B.LE.0.0D0
         L2=CDABS(Z+1.0D0).LT.EPS.AND.DABS(C-A+B-1.0D0).LT.EPS
-        L3=A.EQ.INT(A).AND.A.LT.0.0D0
-        L4=B.EQ.INT(B).AND.B.LT.0.0D0
+        L3=A.EQ.INT(A).AND.A.LE.0.0D0
+        L4=B.EQ.INT(B).AND.B.LE.0.0D0
         L5=C-A.EQ.INT(C-A).AND.C-A.LE.0.0D0
         L6=C-B.EQ.INT(C-B).AND.C-B.LE.0.0D0
+        IF (L0) THEN
+           L7=(L3.AND.(DABS(A).LT.DABS(C)))
+     &          .OR.(L4.AND.(DABS(B).LT.DABS(C)))
+           IF (.NOT.L7) THEN
+              ISFER=3
+              RETURN
+           ENDIF
+        ELSE IF (L1) THEN
+           ISFER=3
+           RETURN
+        ENDIF
         AA=A
         BB=B
         A0=CDABS(Z)
         IF (A0.GT.0.95D0) EPS=1.0D-8
         PI=3.141592653589793D0
         EL=.5772156649015329D0
-        IF (L0.OR.L1) THEN
-           ISFER=3
-           RETURN
-        ENDIF
         NM=0
         IF (A0.EQ.0.0D0.OR.A.EQ.0.0D0.OR.B.EQ.0.0D0) THEN
            ZHF=(1.0D0,0.0D0)

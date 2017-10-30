@@ -71,17 +71,8 @@ extern void F_FUNC(ffk,FFK)(int*,double*,double*,double*,double*,double*,double*
 
 npy_cdouble chyp2f1_wrap( double a, double b, double c, npy_cdouble z) {
   npy_cdouble outz;
-  int l1, l0, isfer = 0;
+  int isfer = 0;
 
-
-  l0 = ((c == floor(c)) && (c < 0));
-  l1 = ((fabs(1-REAL(z)) < 1e-15) && (IMAG(z) == 0) && (c-a-b <= 0));
-  if (l0 || l1) {
-    sf_error("chyp2f1", SF_ERROR_OVERFLOW, NULL);
-    REAL(outz) = NPY_INFINITY;
-    IMAG(outz) = 0.0;
-    return outz;
-  }
   F_FUNC(hygfz, HYGFZ)(&a, &b, &c, &z, &outz, &isfer);
   if (isfer == 3) {
     sf_error("chyp2f1", SF_ERROR_OVERFLOW, NULL);
