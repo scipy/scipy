@@ -62,9 +62,9 @@ class QuasiNewtonApprox:
         if self.approx_type == 'hess':
             M = self.B
         else:
-            m = self.H
-        M_triu = np.triu(Hk)
-        M_diag = np.diag(Hk)
+            M = self.H
+        M_triu = np.triu(M)
+        M_diag = np.diag(M)
         return M_triu + M_triu.T - np.diag(M_diag)
 
 
