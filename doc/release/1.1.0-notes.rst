@@ -32,6 +32,14 @@ The function `scipy.linalg.ldl` has been added for factorization of
 indefinite symmetric/hermitian matrices into triangular and block
 diagonal matrices.
 
+`scipy.optimize` improvements
+-----------------------------
+
+Random-to-Best/1/bin and Random-to-Best/1/exp mutation strategies were added to
+`scipy.optimize.differential_evolution` as 'randtobest1bin' and
+'randtobest1exp', respectively. Note: These names were already in use but
+implemented a different mutation strategy. See Backwards incompatible changes,
+below.
 
 Deprecated features
 ===================
@@ -45,6 +53,12 @@ appropriate for double precision numbers also for single-precision
 input. The cutoff value is now tunable, and the default has been
 changed to depend on the input data precision.
 
+In previous versions of Scipy, the 'randtobest1bin' and 'randtobest1exp'
+mutation strategies in `scipy.optimize.differential_evolution` were actually
+implemented using the Current-to-Best/1/bin and Current-to-Best/1/exp
+strategies, respectively. These strategies were renamed to 'currenttobest1bin'
+and 'currenttobest1exp' and the implementations of 'randtobest1bin' and
+'randtobest1exp' strategies were corrected.
 
 Other changes
 =============
