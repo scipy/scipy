@@ -689,6 +689,7 @@ class SHGO(object):
             if sampling_method == 'sobol':
                 self.sampling_method = sampling_method
                 self.sampling = self.sampling_sobol
+                self.Sobol = sobol_seq.Sobol()  # Init Sobol class
                 if self.dim < 40:
                     self.sobol_points = self.sobol_points_40
                 else:
@@ -1389,14 +1390,13 @@ class SHGO(object):
             except AttributeError:
                 self.X_min = []
 
-    @staticmethod
-    def sobol_points_40(n, d, skip=0):
+    def sobol_points_40(self, n, d, skip=0):
         """
         Wrapper for sobol_seq.i4_sobol_generate
 
         Generate N sampling points in D dimensions
         """
-        points = sobol_seq.i4_sobol_generate(d, n, skip=0)
+        points = self.Sobol.i4_sobol_generate(d, n, skip=0)
 
         return points
 
