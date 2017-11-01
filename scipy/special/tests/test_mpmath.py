@@ -71,7 +71,7 @@ def test_expi_large_arguments():
             dataset.append((x, res))
     dataset = np.array(dataset, dtype=np.longdouble)
 
-    rtol = np.ldexp(eps, 3)
+    rtol = np.ldexp(eps, 5)
     FuncData(sc.expi, dataset, 0, 1, rtol=rtol).check()
 
 
@@ -98,7 +98,7 @@ def test_exp1_large_arguments():
             dataset.append((x, res))
     dataset = np.array(dataset, dtype=np.longdouble)
 
-    rtol = np.ldexp(eps, 3)
+    rtol = np.ldexp(eps, 5)
     FuncData(sc.exp1, dataset, 0, 1, rtol=rtol).check()
 
 # ------------------------------------------------------------------------------
