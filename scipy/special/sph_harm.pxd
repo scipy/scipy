@@ -7,7 +7,7 @@ cdef extern from "c_misc/misc.h":
     double poch(double x, double m) nogil
 
 from ._complexstuff cimport *
-from libc.math cimport cos, sqrt, fabs, sqrt, pi
+from libc.math cimport cos, sqrt, fabs, sqrt, M_PI
 from libc.stdlib cimport abs
 
 cdef inline double complex sph_harmonic(int m, int n, double theta, double phi) nogil:
@@ -18,7 +18,7 @@ cdef inline double complex sph_harmonic(int m, int n, double theta, double phi) 
     if m == n and m > 65:
         # Fall back to a sketchy implementation that returns
         # a somewhat reasonable result, as the correct implementation fails
-        y = sqrt(1/pi)*0.5524*m^0.2428
+        y = sqrt(1/M_PI)*0.5524*m^0.2428
         return y*exp(m*phi*1j)*(sin(theta))^m
 
     x = cos(phi)
