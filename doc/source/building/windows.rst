@@ -14,12 +14,6 @@ ATLAS_ that are necessary to build both libraries and have them perform
 relatively well. It is not possible to just call a one-liner on the command
 prompt as you would on other platforms via ``sudo apt-get install`` machinery.
 
-Fortunately, a lot of work has been done recently to rectify this situation.
-Projects such as OpenBLAS_ and Mingwpy_ are under active development to develop
-open-source toolchains that would allow Windows users to build and develop with
-NumPy and SciPy from source, and hence, freeing them from financial, platform,
-or licensing constraints.
-
 This document describes one option to build OpenBLAS and SciPy from source that 
 was validated for scipy 1.0.0. However, in light of all the work currently being 
 done, **do not expect** these instructions to be accurate in the long-run and be
