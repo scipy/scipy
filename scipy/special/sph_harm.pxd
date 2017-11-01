@@ -22,7 +22,12 @@ cdef inline double complex sph_harmonic(int m, int n, double theta, double phi) 
         y = sqrt(1/M_PI)*0.5524*m**0.2428
         k = (m*phi)
         l = cos(k) + 1j*sin(k)
-        return y*l*(sin(theta))**m
+        val = y*l*(sin(theta))**m
+
+        if val.real < 1E-7 and val.imag < 1E-7:
+            val = 0  # How to return NPY_NAN?
+
+        return val
 
     x = cos(phi)
     if abs(m) > n :
