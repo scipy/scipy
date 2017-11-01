@@ -71,7 +71,8 @@ def test_expi_large_arguments():
             dataset.append((x, res))
     dataset = np.array(dataset, dtype=np.longdouble)
 
-    FuncData(sc.expi, dataset, 0, 1, rtol=2**13*eps).check()
+    rtol = np.ldexp(eps, 3)
+    FuncData(sc.expi, dataset, 0, 1, rtol=rtol).check()
 
 
 # ------------------------------------------------------------------------------
@@ -82,18 +83,23 @@ def test_expi_large_arguments():
 def test_exp1_large_arguments():
     # Function behaves roughly like exp(-x); test it at extreme long
     # double arguments.
-    eps = np.finfo(np.longdouble).eps
-    xmax = 0.1*np.finfo(np.longdouble).max
+    info = np.finfo(np.longdouble)
+    eps = info.eps
+    digits = int(-np.log10(info.resolution)) + 1
+
+    xmax = 0.5*np.finfo(np.longdouble).max
     xmin = 1e-100*xmax
     xmax, xmin = np.log(xmax), np.log(xmin)
 
     dataset = []
-    for x in np.logspace(np.log10(xmin), np.log10(xmax)):
-        res = mpf2longdouble(mpmath.e1(longdouble2mpf(x)))
-        dataset.append((x, res))
+    with mpmath.workdps(digits + 10):
+        for x in np.logspace(np.log10(xmin), np.log10(xmax)):
+            res = mpf2longdouble(mpmath.e1(longdouble2mpf(x)))
+            dataset.append((x, res))
     dataset = np.array(dataset, dtype=np.longdouble)
 
-    FuncData(sc.exp1, dataset, 0, 1, rtol=2**10*eps).check()
+    rtol = np.ldexp(eps, 3)
+    FuncData(sc.exp1, dataset, 0, 1, rtol=rtol).check()
 
 # ------------------------------------------------------------------------------
 # expn

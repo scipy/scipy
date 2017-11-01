@@ -250,14 +250,15 @@ def nonfunctional_tooslow(func):
 
 def longdouble2mpf(x):
     """Mpmath doesn't know how to convert np.longdouble to mpf."""
-    digits = int(-np.log10(np.finfo(np.longdouble).resolution)) + 1
-    fmt = "{{:.{}e}}".format(digits)
-    return mpmath.mpf(fmt.format(x))
+    digits = int(-np.log10(np.finfo(np.longdouble).resolution)) + 5
+    x = np.array([x], dtype=np.longdouble)
+    x = np.array_str(x, precision=digits).strip('[]')
+    return mpmath.mpf(x)
 
 
 def mpf2longdouble(x):
     """NumPy won't correctly convert mpf to longdouble."""
-    digits = int(-np.log10(np.finfo(np.longdouble).resolution)) + 1
+    digits = int(-np.log10(np.finfo(np.longdouble).resolution)) + 5
     try:
         return np.longdouble(mpmath.nstr(x, digits))
     except ValueError:
