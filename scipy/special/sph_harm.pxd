@@ -11,8 +11,8 @@ from libc.math cimport cos, sin, sqrt, fabs, sqrt, exp, M_PI
 from libc.stdlib cimport abs
 
 cdef inline double complex sph_harmonic(int m, int n, double theta, double phi) nogil:
-    cdef double x, prefactor
-    cdef double complex val, y, k
+    cdef double x, prefactor, k
+    cdef double complex val, y, l
     cdef int mp
 
     if m == n and m > 65:
@@ -20,8 +20,9 @@ cdef inline double complex sph_harmonic(int m, int n, double theta, double phi) 
         # Fall back to a sketchy implementation that returns
         # a somewhat reasonable result, as the correct implementation fails
         y = sqrt(1/M_PI)*0.5524*m**0.2428
-        k = (m*phi)*1j
-        return y*exp(k)*(sin(theta))**m
+        k = (m*phi)
+        l = cos(k) + 1j*sin(k)
+        return y*l*(sin(theta))**m
 
     x = cos(phi)
     if abs(m) > n :
