@@ -2,21 +2,127 @@
 SciPy 1.0.0 Release Notes
 ==========================
 
-.. note:: Scipy 1.0.0 is not released yet!
-
 .. contents::
 
-SciPy 1.0.0 is the culmination of 8 months of hard work. It contains
-many new features, numerous bug-fixes, improved test coverage and
-better documentation.  There have been a number of deprecations and
-API changes in this release, which are documented below.  All users
-are encouraged to upgrade to this release, as there are a large number
-of bug-fixes and optimizations.  Before upgrading, we recommend that users
-check that their own code does not use deprecated SciPy functionality
-(to do so, run your code with ``python -Wd`` and check for
-``DeprecationWarning`` s).  Our development attention will now shift to
-bug-fix releases on the 1.0.x branch, and on adding new features on the
-master branch.
+We are extremely pleased to announce the release of SciPy 1.0, 16 years after
+version 0.1 saw the light of day.  It has been a long, productive journey to
+get here, and we anticipate many more exciting new features and releases in the
+future.
+
+
+Why 1.0 now?
+------------
+
+A version number should reflect the maturity of a project - and SciPy was a
+mature and stable library that is heavily used in production settings for a
+long time already.  From that perspective, the 1.0 version number is long
+overdue.
+
+Some key project goals, both technical (e.g. Windows wheels and continuous
+integration) and organisational (a governance structure, code of conduct and a
+roadmap), have been achieved recently.
+
+Many of us are a bit perfectionist, and therefore are reluctant to call
+something "1.0" because it may imply that it's "finished" or "we are 100% happy
+with it".  This is normal for many open source projects, however that doesn't
+make it right.  We acknowledge to ourselves that it's not perfect, and there
+are some dusty corners left (that will probably always be the case).  Despite
+that, SciPy is extremely useful to its users, on average has high quality code
+and documentation, and gives the stability and backwards compatibility
+guarantees that a 1.0 label imply.
+
+
+Some history and perspectives
+-----------------------------
+
+- 2001: the first SciPy release
+- 2005: transition to NumPy
+- 2007: creation of scikits
+- 2008: scipy.spatial module and first Cython code added
+- 2010: moving to a 6-monthly release cycle
+- 2011: SciPy development moves to GitHub
+- 2011: Python 3 support
+- 2012: adding a sparse graph module and unified optimization interface
+- 2012: removal of scipy.maxentropy
+- 2013: continuous integration with TravisCI
+- 2015: adding Cython interface for BLAS/LAPACK and a benchmark suite
+- 2017: adding a unified C API with scipy.LowLevelCallable; removal of scipy.weave
+- 2017: SciPy 1.0 release
+
+
+**Pauli Virtanen** is SciPy's Benevolent Dictator For Life (BDFL).  He says:
+
+*Truthfully speaking, we could have released a SciPy 1.0 a long time ago, so I'm
+happy we do it now at long last. The project has a long history, and during the
+years it has matured also as a software project.  I believe it has well proved
+its merit to warrant a version number starting with unity.*
+
+*Since its conception 15+ years ago, SciPy has largely been written by and for
+scientists, to provide a box of basic tools that they need. Over time, the set
+of people active in its development has undergone some rotation, and we have
+evolved towards a somewhat more systematic approach to development. Regardless,
+this underlying drive has stayed the same, and I think it will also continue
+propelling the project forward in future. This is all good, since not long
+after 1.0 comes 1.1.*
+
+**Travis Oliphant** is one of SciPy's creators.  He says:
+
+*I'm honored to write a note of congratulations to the SciPy developers and the
+entire SciPy community for the release of SciPy 1.0.   This release represents
+a dream of many that has been patiently pursued by a stalwart group of pioneers
+for nearly 2 decades.   Efforts have been broad and consistent over that time
+from many hundreds of people.   From initial discussions to efforts coding and
+packaging to documentation efforts to extensive conference and community
+building, the SciPy effort has been a global phenomenon that it has been a
+privilege to participate in.*
+
+*The idea of SciPy was already in multiple people’s minds in 1997 when I first
+joined the Python community as a young graduate student who had just fallen in
+love with the expressibility and extensibility of Python.   The internet was
+just starting to bringing together like-minded mathematicians and scientists in
+nascent electronically-connected communities.   In 1998, there was a concerted
+discussion on the matrix-SIG, python mailing list with people like Paul
+Barrett, Joe Harrington, Perry Greenfield, Paul Dubois, Konrad Hinsen, David
+Ascher, and others.   This discussion encouraged me in 1998 and 1999 to
+procrastinate my PhD and spend a lot of time writing extension modules to
+Python that mostly wrapped battle-tested Fortran and C-code making it available
+to the Python user.   This work attracted the help of others like Robert Kern,
+Pearu Peterson and Eric Jones who joined their efforts with mine in 2000 so
+that by 2001, the first SciPy release was ready.   This was long before Github
+simplified collaboration and input from others and the "patch" command and
+email was how you helped a project improve.*
+
+*Since that time, hundreds of people have spent an enormous amount of time
+improving the SciPy library and the community surrounding this library has
+dramatically grown. I stopped being able to participate actively in developing
+the SciPy library around 2010.  Fortunately, at that time, Pauli Virtanen and
+Ralf Gommers picked up the pace of development supported by dozens of other key
+contributors such as David Cournapeau, Evgeni Burovski, Josef Perktold, and
+Warren Weckesser.   While I have only been able to admire the development of
+SciPy from a distance for the past 7 years, I have never lost my love of the
+project and the concept of community-driven development.    I remain driven
+even now by a desire to help sustain the development of not only the SciPy
+library but many other affiliated and related open-source projects.  I am
+extremely pleased that SciPy is in the hands of a world-wide community of
+talented developers who will ensure that SciPy remains an example of how
+grass-roots, community-driven development can succeed.*
+
+**Fernando Perez** offers a wider community perspective:
+
+*The existence of a nascent Scipy library, and the incredible --if tiny by
+today's standards-- community surrounding it is what drew me into the
+scientific Python world while still a physics graduate student in 2001.  Today,
+I am awed when I see these tools power everything from high school education to
+the research that led to the 2017 Nobel Prize in physics.*
+
+*Don't be fooled by the 1.0 number: this project is a mature cornerstone of the
+modern scientific computing ecosystem.  I am grateful for the many who have
+made it possible, and hope to be able to contribute again to it in the future.
+My sincere congratulations to the whole team!*
+
+
+Highlights of this release
+--------------------------
 
 Some of the highlights of this release are:
 
@@ -30,7 +136,16 @@ Some of the highlights of this release are:
 - Many new BLAS and LAPACK functions were wrapped.  The BLAS wrappers are now
   complete.
 
-This release requires Python 2.7 or 3.4+ and NumPy 1.8.2 or greater.
+
+Upgrading and compatibility
+---------------------------
+
+There have been a number of deprecations and API changes in this release, which
+are documented below.  Before upgrading, we recommend that users check that
+their own code does not use deprecated SciPy functionality (to do so, run your
+code with ``python -Wd`` and check for ``DeprecationWarning`` s).
+
+This release requires Python 2.7 or >=3.4 and NumPy 1.8.2 or greater.
 
 This is also the last release to support LAPACK 3.1.x - 3.3.x.  Moving the
 lowest supported LAPACK version to >3.2.x was long blocked by Apple Accelerate
@@ -318,6 +433,7 @@ Authors
 * Patrick Callier
 * Mark Campanelli +
 * CJ Carey
+* Robert Cimrman
 * Adam Cox +
 * Michael Danilov +
 * David Haberthür +
@@ -371,11 +487,12 @@ Authors
 * Nathan Musoke +
 * Andrew Nelson
 * M.J. Nichol
-* Nico Schlömer +
 * Juan Nunez-Iglesias
 * Arno Onken +
+* Nick Papior +
 * Dima Pasechnik +
 * Ashwin Pathak +
+* Oleksandr Pavlyk +
 * Stefan Peterson
 * Ilhan Polat
 * Andrey Portnoy +
@@ -393,6 +510,7 @@ Authors
 * Matt Ruffalo +
 * Eli Sadoff +
 * Pim Schellart
+* Nico Schlömer +
 * Klaus Sembritzki +
 * Nikolay Shebanov +
 * Jonathan Tammo Siebert
@@ -418,7 +536,7 @@ Authors
 * Nikolay Zinov +
 * Zé Vinícius +
 
-A total of 118 people contributed to this release.
+A total of 121 people contributed to this release.
 People with a "+" by their names contributed a patch for the first time.
 This list of names is automatically generated, and may not be fully complete.
 
@@ -487,6 +605,10 @@ Issues closed for 1.0.0
 - `#7776 <https://github.com/scipy/scipy/issues/7776>`__: tests require `nose`
 - `#7798 <https://github.com/scipy/scipy/issues/7798>`__: contributor names for 1.0 release notes
 - `#7828 <https://github.com/scipy/scipy/issues/7828>`__: 32-bit Linux test errors on TestCephes
+- `#7893 <https://github.com/scipy/scipy/issues/7893>`__: scipy.spatial.distance.wminkowski behaviour change in 1.0.0b1
+- `#7898 <https://github.com/scipy/scipy/issues/7898>`__: DOC: Window functions
+- `#7959 <https://github.com/scipy/scipy/issues/7959>`__: BUG maybe: fmin_bfgs possibly broken in 1.0
+- `#7969 <https://github.com/scipy/scipy/issues/7969>`__: scipy 1.0.0rc1 windows wheels depend on missing msvcp140.dll
 
 
 Pull requests for 1.0.0
@@ -787,4 +909,20 @@ Pull requests for 1.0.0
 - `#7872 <https://github.com/scipy/scipy/pull/7872>`__: TST: silence RuntimeWarning for stats.truncnorm test marked as...
 - `#7874 <https://github.com/scipy/scipy/pull/7874>`__: TST: fix an optimize.linprog test that fails intermittently.
 - `#7875 <https://github.com/scipy/scipy/pull/7875>`__: TST: filter two integration warnings in stats tests.
+- `#7876 <https://github.com/scipy/scipy/pull/7876>`__: GEN: Add comments to the tests for clarification
+- `#7891 <https://github.com/scipy/scipy/pull/7891>`__: ENH: backport #7879 to 1.0.x
+- `#7902 <https://github.com/scipy/scipy/pull/7902>`__: MAINT: signal: Make freqz handling of multidim. arrays match...
+- `#7905 <https://github.com/scipy/scipy/pull/7905>`__: REV: restore wminkowski
+- `#7908 <https://github.com/scipy/scipy/pull/7908>`__: FIX: Avoid bad ``__del__`` (close) behavior
+- `#7918 <https://github.com/scipy/scipy/pull/7918>`__: TST: mark two optimize.linprog tests as xfail. See gh-7877.
+- `#7929 <https://github.com/scipy/scipy/pull/7929>`__: MAINT: changed defaults to lower in sytf2, sytrf and hetrf
+- `#7939 <https://github.com/scipy/scipy/pull/7939>`__: Fix umfpack solver construction for win-amd64
+- `#7948 <https://github.com/scipy/scipy/pull/7948>`__: DOC: add note on checking for deprecations before upgrade to...
+- `#7952 <https://github.com/scipy/scipy/pull/7952>`__: DOC: update SciPy Roadmap for 1.0 release and recent discussions.
+- `#7960 <https://github.com/scipy/scipy/pull/7960>`__: BUG: optimize: revert changes to bfgs in gh-7165
+- `#7962 <https://github.com/scipy/scipy/pull/7962>`__: TST: special: mark a failing hyp2f1 test as xfail
+- `#7973 <https://github.com/scipy/scipy/pull/7973>`__: BUG: fixed keyword in 'info' in ``_get_mem_available`` utility
+- `#8001 <https://github.com/scipy/scipy/pull/8001>`__: TST: fix test failures from Matplotlib 2.1 update
+- `#8010 <https://github.com/scipy/scipy/pull/8010>`__: BUG: signal: fix crash in lfilter
+- `#8019 <https://github.com/scipy/scipy/pull/8019>`__: MAINT: fix test failures with NumPy master
 
