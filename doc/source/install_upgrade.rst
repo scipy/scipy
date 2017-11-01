@@ -7,7 +7,7 @@ https://scipy.org/install.html .
 
 It is recommended that users use a scientific Python distribution or binaries
 for their platform.  If building from source is required, documentation about
-that can be found at https://scipy.org/scipylib/building/index.html .
+that can be found at :doc:`building/index`.
 
 If you already have SciPy installed and want to upgrade to a newer version, use
 the same install mechanism as you have used to install SciPy before. Before

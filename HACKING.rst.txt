@@ -217,8 +217,8 @@ do one of::
 This builds Scipy first, so the first time it may take some time.  If
 you specify ``-n``, the tests are run against the version of Scipy (if
 any) found on current PYTHONPATH.  *Note: if you run into a build issue,
-more detailed build documentation can be found at
-http://scipy.org/scipylib/building/index.html.*
+more detailed build documentation can be found in :doc:`building/index` and at
+https://github.com/scipy/scipy/tree/master/doc/source/building*
 
 Using ``runtests.py`` is the recommended approach to running tests.
 There are also a number of alternatives to it, for example in-place

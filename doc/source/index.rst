@@ -36,6 +36,7 @@ maintenance activities and policies.
 
    dev/conduct/code_of_conduct
    hacking
+   building/index
    dev/index
    dev/governance/governance
 
