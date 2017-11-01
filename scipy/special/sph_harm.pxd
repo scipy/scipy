@@ -7,7 +7,7 @@ cdef extern from "c_misc/misc.h":
     double poch(double x, double m) nogil
 
 from ._complexstuff cimport *
-from libc.math cimport cos, sqrt, fabs, sqrt, exp, M_PI
+from libc.math cimport cos, sin, sqrt, fabs, sqrt, exp, M_PI
 from libc.stdlib cimport abs
 
 cdef inline double complex sph_harmonic(int m, int n, double theta, double phi) nogil:
