@@ -1037,15 +1037,14 @@ def boxcox(x, lmbda=None, alpha=None, nan_policy='propagate'):
     if any(x[not_nan_mask] <= 0):
         raise ValueError("Data must be positive.")
 
+    if contains_nan and nan_policy == 'omit':
+        x = x[not_nan_mask]
+
     if lmbda is not None:  # single transformation
-        return special.boxcox(x, lmbda)  # propagates nan's
+        return special.boxcox(x, lmbda)
 
     # If lmbda=None, find the lmbda that maximizes the log-likelihood function.
     lmax = boxcox_normmax(x, method='mle')
-
-    # If configured - omit nans
-    if contains_nan and nan_policy == 'omit':
-        x = x[not_nan_mask]
 
     y = boxcox(x, lmax)
 
