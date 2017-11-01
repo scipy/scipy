@@ -18,8 +18,8 @@ cdef inline double complex sph_harmonic(int m, int n, double theta, double phi) 
     if m == n and m > 65:
         # Fall back to a sketchy implementation that returns
         # a somewhat reasonable result, as the correct implementation fails
-        y = sqrt(1/M_PI)*0.5524*m^0.2428
-        return y*exp(m*phi*1j)*(sin(theta))^m
+        y = sqrt(1/M_PI)*0.5524*m**0.2428
+        return y*exp(m*phi*1j)*(sin(theta))**m
 
     x = cos(phi)
     if abs(m) > n :
