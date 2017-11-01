@@ -5584,45 +5584,6 @@ C
 
 C       **********************************
 
-        SUBROUTINE EIX(X,EI)
-C
-C       ============================================
-C       Purpose: Compute exponential integral Ei(x)
-C       Input :  x  --- Argument of Ei(x)
-C       Output:  EI --- Ei(x)
-C       ============================================
-C
-        IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-        IF (X.EQ.0.0) THEN
-           EI=-1.0D+300
-        ELSE IF (X .LT. 0) THEN
-           CALL E1XB(-X, EI)
-           EI = -EI
-        ELSE IF (DABS(X).LE.40.0) THEN
-C          Power series around x=0
-           EI=1.0D0
-           R=1.0D0
-           DO 15 K=1,100
-              R=R*K*X/(K+1.0D0)**2
-              EI=EI+R
-              IF (DABS(R/EI).LE.1.0D-15) GO TO 20
-15         CONTINUE
-20         GA=0.5772156649015328D0
-           EI=GA+DLOG(X)+X*EI
-        ELSE
-C          Asymptotic expansion (the series is not convergent)
-           EI=1.0D0
-           R=1.0D0
-           DO 25 K=1,20
-              R=R*K/X
-25            EI=EI+R
-           EI=DEXP(X)/X*EI
-        ENDIF
-        RETURN
-        END
-
-C       **********************************
-
         SUBROUTINE EIXZ(Z,CEI)
 C
 C       ============================================
@@ -5645,41 +5606,6 @@ C
            IF (DBLE(Z).GT.0) THEN
               CEI = CEI - (0d0,1d0)*PI
            ENDIF
-        ENDIF
-        RETURN
-        END
-
-C       **********************************
-
-        SUBROUTINE E1XB(X,E1)
-C
-C       ============================================
-C       Purpose: Compute exponential integral E1(x)
-C       Input :  x  --- Argument of E1(x)
-C       Output:  E1 --- E1(x)  ( x > 0 )
-C       ============================================
-C
-        IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-        IF (X.EQ.0.0) THEN
-           E1=1.0D+300
-        ELSE IF (X.LE.1.0) THEN
-           E1=1.0D0
-           R=1.0D0
-           DO 10 K=1,25
-              R=-R*K*X/(K+1.0D0)**2
-              E1=E1+R
-              IF (DABS(R).LE.DABS(E1)*1.0D-15) GO TO 15
-10         CONTINUE
-15         GA=0.5772156649015328D0
-           E1=-GA-DLOG(X)+X*E1
-        ELSE
-           M=20+INT(80.0/X)
-           T0=0.0D0
-           DO 20 K=M,1,-1
-              T0=K/(1.0D0+K/(X+T0))
-20         CONTINUE
-           T=1.0D0/(X+T0)
-           E1=DEXP(-X)*T
         ENDIF
         RETURN
         END
@@ -12043,32 +11969,6 @@ C
 25         DK(K)=-SK(K-1)-(K+1.0D0)/X*SK(K)
         RETURN
         END
-
-C       **********************************
-
-        SUBROUTINE ENXA(N,X,EN)
-C
-C       ============================================
-C       Purpose: Compute exponential integral En(x)
-C       Input :  x --- Argument of En(x) ( x ≤ 20 )
-C                n --- Order of En(x)
-C       Output:  EN(n) --- En(x)
-C       Routine called: E1XB for computing E1(x)
-C       ============================================
-C
-        IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-        DIMENSION EN(0:N)
-        EN(0)=DEXP(-X)/X
-        CALL E1XB(X,E1)
-        EN(1)=E1
-        DO 10 K=2,N
-           EK=(DEXP(-X)-X*E1)/(K-1.0D0)
-           EN(K)=EK
-10         E1=EK
-        RETURN
-        END
-
-
 
 C       **********************************
 
