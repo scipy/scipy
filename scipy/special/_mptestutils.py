@@ -256,24 +256,6 @@ def longdouble2mpf(x):
     return mpmath.mpf(x)
 
 
-def mpf2longdouble(x):
-    """NumPy won't correctly convert mpf to longdouble."""
-    digits = int(-np.log10(np.finfo(np.longdouble).resolution)) + 5
-    try:
-        return np.longdouble(mpmath.nstr(x, digits))
-    except ValueError:
-        # The result couldn't be represented, and NumPy raises instead
-        # of overflowing/underflowing
-        if x > 1:
-            return np.longdouble(np.inf)
-        elif x > 0:
-            return np.longdouble(0.0)
-        elif x < -1:
-            return -np.longdouble(np.inf)
-        else:
-            return np.longdouble(-0.0)
-
-
 def mpf2float(x):
     """
     Convert an mpf to the nearest floating point number. Just using
@@ -415,7 +397,7 @@ def mp_assert_allclose(res, std, atol=0, rtol=1e-17):
         except AssertionError:
             failures.append(k)
 
-    ndigits = int(abs(np.log10(rtol)))
+    ndigits = int(abs(mpmath.log10(rtol)))
     msg = [""]
     msg.append("Bad results ({} out of {}) for the following points:"
                .format(len(failures), n))

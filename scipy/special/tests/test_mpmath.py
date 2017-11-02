@@ -20,7 +20,7 @@ from scipy.special._testutils import (
 from scipy.special._mptestutils import (
     Arg, FixedArg, ComplexArg, IntArg, assert_mpmath_equal,
     nonfunctional_tooslow, trace_args, time_limited, exception_to_nan,
-    inf_to_nan, longdouble2mpf, mpf2longdouble)
+    inf_to_nan, longdouble2mpf, mp_assert_allclose)
 from scipy.special._ufuncs import (
     _sinpi, _cospi, _lgam1p, _lanczos_sum_expg_scaled, _log1pmx,
     _igam_fac)
@@ -55,24 +55,23 @@ def test_expi_large_arguments():
     # Function behaves roughly like exp(x); test it at extreme long
     # double arguments.
     info = np.finfo(np.longdouble)
-    eps = info.eps
     digits = int(-np.log10(info.resolution)) + 1
 
     xmax = 0.5*np.finfo(np.longdouble).max
     xmin = 1e-100*xmax
     xmax, xmin = np.log(xmax), np.log(xmin)
-    pospts = np.logspace(np.log10(xmin), np.log10(xmax),
-                         dtype=np.longdouble)
+    pospts = np.logspace(np.log10(xmin), np.log10(xmax))
+    pts = np.hstack((-pospts, pospts))
 
-    dataset = []
+    std = []
     with mpmath.workdps(digits + 10):
-        for x in np.hstack((-pospts, pospts)):
-            res = mpf2longdouble(mpmath.ei(longdouble2mpf(x)))
-            dataset.append((x, res))
-    dataset = np.array(dataset, dtype=np.longdouble)
+        for x in pts:
+            std.append(mpmath.ei(longdouble2mpf(x)))
+        res = [longdouble2mpf(x) for x in sc.expi(pts)]
 
-    rtol = np.ldexp(eps, 5)
-    FuncData(sc.expi, dataset, 0, 1, rtol=rtol).check()
+        atol = longdouble2mpf(5*info.tiny)
+        rtol = longdouble2mpf(np.ldexp(info.eps, 5))
+        mp_assert_allclose(res, std, atol=atol, rtol=rtol)
 
 
 # ------------------------------------------------------------------------------
@@ -84,22 +83,23 @@ def test_exp1_large_arguments():
     # Function behaves roughly like exp(-x); test it at extreme long
     # double arguments.
     info = np.finfo(np.longdouble)
-    eps = info.eps
     digits = int(-np.log10(info.resolution)) + 1
 
     xmax = 0.5*np.finfo(np.longdouble).max
     xmin = 1e-100*xmax
     xmax, xmin = np.log(xmax), np.log(xmin)
+    pts = np.logspace(np.log10(xmin), np.log10(xmax))
 
-    dataset = []
+    std = []
     with mpmath.workdps(digits + 10):
-        for x in np.logspace(np.log10(xmin), np.log10(xmax)):
-            res = mpf2longdouble(mpmath.e1(longdouble2mpf(x)))
-            dataset.append((x, res))
-    dataset = np.array(dataset, dtype=np.longdouble)
+        for x in pts:
+            std.append(mpmath.e1(longdouble2mpf(x)))
+        res = [longdouble2mpf(x) for x in sc.exp1(pts)]
 
-    rtol = np.ldexp(eps, 5)
-    FuncData(sc.exp1, dataset, 0, 1, rtol=rtol).check()
+        atol = longdouble2mpf(5*info.tiny)
+        rtol = longdouble2mpf(np.ldexp(info.eps, 5))
+        mp_assert_allclose(res, std, atol=atol, rtol=rtol)
+
 
 # ------------------------------------------------------------------------------
 # expn
