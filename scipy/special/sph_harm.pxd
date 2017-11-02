@@ -12,22 +12,18 @@ from libc.stdlib cimport abs
 
 cdef inline double complex sph_harmonic(int m, int n, double theta, double phi) nogil:
     cdef double x, prefactor, k
-    cdef double complex val, y, l
+    cdef double complex val, l
     cdef int mp
 
     if m == n and m > 65:
-        
         # Fall back to a sketchy implementation that returns
         # a somewhat reasonable result, as the correct implementation fails
-        y = sqrt(1/M_PI)*0.5524*m**0.2428
         k = (m*phi)
         l = cos(k) + 1j*sin(k)
-        val = y*l*(sin(theta))**m
+        val = sqrt(1/M_PI)*0.5524*m**0.2428*l*(sin(theta))**m
 
-        if val.real < 1E-7 and val.imag < 1E-7:
-            val = 0  # How to return NPY_NAN?
-
-        return val
+        if val.real > 1E-7 or val.imag > 1E-7:
+            return val
 
     x = cos(phi)
     if abs(m) > n :
