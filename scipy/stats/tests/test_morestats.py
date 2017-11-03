@@ -1077,6 +1077,20 @@ class TestBoxcox(object):
     def test_empty(self):
         assert_(stats.boxcox([]).shape == (0,))
 
+    def test_nan_policy(self):
+        x = np.array([1, 2, np.nan, 3, 4])
+
+        # Test 'propagate'
+        _, _, transformed = stats.boxcox(x, lmbda=0.5, nan_policy='propagate')
+        assert np.isnan(transformed[2])
+
+        # Test 'omit'
+        _, _, transformed = stats.boxcox(x, lmbda=0.5, nan_policy='omit')
+        assert any(~np.isnan(transformed))
+
+        # Test 'raise'
+        assert_raises(ValueError, stats.boxcox, x, lmbda=0.5, nan_policy='raise')
+
 
 class TestBoxcoxNormmax(object):
     def setup_method(self):
