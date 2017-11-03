@@ -6191,7 +6191,7 @@ C       ======================================================
 C
         IMPLICIT DOUBLE PRECISION (A-H,O-Y)
         IMPLICIT COMPLEX *16 (Z)
-        LOGICAL L0,L1,L2,L3,L4,L5,L6,L7
+        LOGICAL L0,L1,L2,L3,L4,L5,L6,L7,L8
         X=DBLE(Z)
         Y=DIMAG(Z)
         EPS=1.0D-15
@@ -6204,8 +6204,8 @@ C
         L5=C-A.EQ.INT(C-A).AND.C-A.LE.0.0D0
         L6=C-B.EQ.INT(C-B).AND.C-B.LE.0.0D0
         IF (L0) THEN
-           L7=(L3.AND.(DABS(A).LT.DABS(C)))
-     &          .OR.(L4.AND.(DABS(B).LT.DABS(C)))
+           L7=(L3.AND.(DABS(A).LE.DABS(C)))
+     &          .OR.(L4.AND.(DABS(B).LE.DABS(C)))
            IF (.NOT.L7) THEN
               ISFER=3
               RETURN
@@ -6235,6 +6235,14 @@ C
            CALL GAMMA2(1.0D0+A/2.0D0-B,G2)
            CALL GAMMA2(0.5D0+0.5D0*A,G3)
            ZHF=G0*G1/(G2*G3)
+        ELSE IF (L7.AND.((A.EQ.C).OR.(B.EQ.C))) THEN
+           IF (A.EQ.C) A=BB
+           NM=-INT(C+EPS*DSIGN(1.0D0,C))
+           ZHF=(1.0D0,0.0D0)
+           ZR=(1.0D0,0.0D0)
+           DO 5 K=1,NM
+              ZR=ZR*(A+K-1.0D0)/K*Z
+5             ZHF=ZHF+ZR
         ELSE IF (L3.OR.L4) THEN
            IF (L3) NM=INT(ABS(A))
            IF (L4) NM=INT(ABS(B))

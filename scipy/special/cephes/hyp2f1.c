@@ -140,7 +140,11 @@ double a, b, c, x;
 	    goto hypdon;
 	}
 	if (fabs(a - c) < EPS) {	/* a = c */
-	    y = pow(s, -b);	/* s to the -b power */
+	    if (neg_int_a) {
+	      y = hyp2f1_neg_c_equal_bc(b, a, x);
+	    } else {
+	      y = pow(s, -b);	/* s to the -b power */
+	    }
 	    goto hypdon;
 	}
     }
