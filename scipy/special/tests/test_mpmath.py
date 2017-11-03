@@ -122,6 +122,30 @@ def test_hyp2f1_strange_points():
 
     FuncData(sc.hyp2f1, dataset, (0,1,2,3), 4, rtol=1e-10).check()
 
+@check_version(mpmath,'1.0.0')
+def test_hyp2f1_integer_c():
+    # a,b,c
+    pts = [
+        (1.35, 2.39, -2),
+        (1.20, 3.82, 0),
+        (-1, 3.2, -1),
+        (1.23, -4, -4),
+        (2.12, 0, -3),
+        (-2, 0.89, -4)
+        ]
+
+    # Test both the complex and real versions of hyp2f1
+    for z in (0.5+0.5j,0.5):
+        curr_pts=[p+(z,) for p in pts]
+        curr_type=np.float if np.isreal(z) else np.complex
+        
+        mp_values=[curr_type(mpmath.hyp2f1(*p)) for p in curr_pts]
+        mp_values=np.array(mp_values, dtype=curr_type)
+
+        scipy_values=[sc.hyp2f1(*p) for p in curr_pts]
+        scipy_values=np.array(scipy_values, dtype=curr_type)
+
+        assert_allclose(scipy_values,mp_values,rtol=1.e-10)
 
 @check_version(mpmath, '0.13')
 def test_hyp2f1_real_some_points():
