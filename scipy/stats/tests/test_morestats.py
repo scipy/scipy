@@ -1081,11 +1081,11 @@ class TestBoxcox(object):
         x = np.array([1, 2, np.nan, 3, 4])
 
         # Test 'propagate'
-        _, _, transformed = stats.boxcox(x, lmbda=0.5, nan_policy='propagate')
+        transformed = stats.boxcox(x, lmbda=0.5, nan_policy='propagate')
         assert np.isnan(transformed[2])
 
         # Test 'omit'
-        _, _, transformed = stats.boxcox(x, lmbda=0.5, nan_policy='omit')
+        transformed = stats.boxcox(x, lmbda=0.5, nan_policy='omit')
         assert any(~np.isnan(transformed))
 
         # Test 'raise'
