@@ -268,6 +268,7 @@ from ._constraints import (NonlinearConstraint,
                            LinearConstraint,
                            BoxConstraint)
 from ._minimize_constrained import minimize_constrained
+from ._quasi_newton_approx import BFGS, SR1
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 

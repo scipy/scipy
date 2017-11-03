@@ -5,7 +5,7 @@ import numpy as np
 from numpy.linalg import norm
 from scipy.linalg import get_blas_funcs
 
-class QuasiNewtonApprox:
+class QuasiNewtonApprox(object):
     """Quasi-Newton approximation.
 
     Parameters
@@ -25,18 +25,36 @@ class QuasiNewtonApprox:
             ValueError("Unknown approx_type.")
         self.approx_type = approx_type
 
-    def initialize(self, s, y):
-        """Initialize matrix.
+    def instanciate_matrix(self, s, y):
+        """Instanciate unscaled matrix."""
+        n = len(y)
+        # Create matrix
+        if self.approx_type == 'hess':
+            self.B = np.eye(n, dtype=float)
+        else:
+            self.H = np.eye(n, dtype=float)
+
+    def scale_matrix(self, s, y):
+        """Scale matrix.
 
         Heuristic to scale matrix at first iteration described
         in Nocedal and Wright "Numerical Optimization"
         p.143 formula (6.20)
         """
-        n = len(y)
-        if self.approx_type == 'hess':
-            self.B = np.dot(y, y)/np.dot(y, s)*np.eye(n, dtype=float)
+        y_norm2 = np.dot(y, y)
+        ys = np.dot(y, s)
+        if ys == 0.0:
+            scale = 1.0
         else:
-            self.H = np.dot(y, s)/np.dot(y, y)*np.eye(n, dtype=float)
+            if self.approx_type == 'hess':
+                scale = y_norm2 / ys
+            else:
+                scale = ys / y_norm2
+
+        if self.approx_type == 'hess':
+            self.B *= scale
+        else:
+            self.H *= scale
 
     def dot(self, x):
         """Matrix-vector multiplication.
@@ -69,8 +87,7 @@ class QuasiNewtonApprox:
 
 
 class BFGS(QuasiNewtonApprox):
-    """Broyden–Fletcher–Goldfarb–Shanno Hessian matrix approximation.
-
+    """Broyden-Fletcher-Goldfarb-Shanno (BFGS) Hessian matrix approximation.
     Parameters
     ----------
     approx_type : {'hess', 'inv_hess'}, optional
@@ -132,7 +149,7 @@ class BFGS(QuasiNewtonApprox):
 
         BFGS update using the formula:
 
-            B <- B + (B*s)*(B*s).T/s.T*(B*s) - y*y^T/s.T*y
+            B <- B - (B*s)*(B*s).T/s.T*(B*s) + y*y^T/s.T*y
 
         where ``s`` is short for ``delta_x`` and ``y`` is short
         for ``delta_grad``. Formula (6.19) in [1]_.
@@ -142,8 +159,8 @@ class BFGS(QuasiNewtonApprox):
         .. [1] Nocedal, Jorge, and Stephen J. Wright. "Numerical optimization"
                Second Edition (2006).
         """
-        self.B = self.syr(-1.0 / ys, y, a=self.B)
-        self.B = self.syr(1/sBs, Bs, a=self.B)
+        self.B = self.syr(1.0 / ys, y, a=self.B)
+        self.B = self.syr(-1.0 / sBs, Bs, a=self.B)
         return
 
     def update(self, delta_x, delta_grad):
@@ -167,10 +184,12 @@ class BFGS(QuasiNewtonApprox):
             z = delta_x
         # Do some common operations
         wz = np.dot(w, z)
-        Mw = self.dot(1, w)
+        Mw = self.dot(w)
         wMw = Mw.dot(w)
+        if wMw == 0.0:
+            return
         # Check if curvature condition is violated
-        if wz < self.min_curvature * wMw:
+        if wz  < self.min_curvature * wMw:
             # If the option 'skip_update' is set
             # we just skip the update when the condion
             # is violated.
@@ -180,10 +199,10 @@ class BFGS(QuasiNewtonApprox):
             # interpolate between the actual BFGS
             # result and the unmodified matrix.
             elif self.exception_strategy == 'damped_bfgs':
-                update_factor = (1-self.min_curvature) / (wMw - wz)
+                update_factor = (1-self.min_curvature) / (1 - wz/wMw)
                 z = update_factor*z + (1-update_factor)*Mw
                 wz = np.dot(w, z)
-                Mw = self.dot(1, w)
+                Mw = self.dot(w)
                 wMw = Mw.dot(w)
         # Update matrix
         if self.approx_type == 'hess':
@@ -215,7 +234,7 @@ class SR1(QuasiNewtonApprox):
 
     def __init__(self, approx_type='hess', min_curvature=1e-8):
         self.min_curvature = min_curvature
-        super(BFGS, self).__init__(approx_type)
+        super(SR1, self).__init__(approx_type)
 
     def update(self, delta_x, delta_grad):
         """Update approximation matrix.
@@ -237,12 +256,12 @@ class SR1(QuasiNewtonApprox):
             w = delta_grad
             z = delta_x
         # Do some common operations
-        Mw = self.dot(1, w)
+        Mw = self.dot(w)
         z_minus_Mw = z - Mw
         denominator = np.dot(w, z_minus_Mw)
         # If the denominator is too small
         # we just skip the update.
-        if np.abs(denominator) < self.min_curvature*norm(w)*norm(z_minus_Mw):
+        if np.abs(denominator) < self.min_curvature*norm(w)*norm(z_minus_Mw) or denominator == 0.0:
             return
         # Update matrix
         if self.approx_type == 'hess':
