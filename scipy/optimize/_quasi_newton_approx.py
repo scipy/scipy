@@ -189,7 +189,7 @@ class BFGS(QuasiNewtonApprox):
         if wMw == 0.0:
             return
         # Check if curvature condition is violated
-        if wz  < self.min_curvature * wMw:
+        if wz < self.min_curvature * wMw:
             # If the option 'skip_update' is set
             # we just skip the update when the condion
             # is violated.

@@ -25,6 +25,7 @@ TERMINATION_MESSAGES = {
     3: "`callback` function requested termination"
 }
 
+
 class ScalarFunction:
     """Define methods for evaluating a scalar function and its derivatives.
 
@@ -36,110 +37,128 @@ class ScalarFunction:
         self.x = np.atleast_1d(x0).astype(float)
         if grad in ('2-point', '3-point', 'cs'):
             finite_diff_options["method"] = grad
+            self.x_diff = np.copy(self.x)
         if hess in ('2-point', '3-point', 'cs'):
             finite_diff_options["method"] = hess
+            self.x_diff = np.copy(self.x)
         if grad in ('2-point', '3-point', 'cs') and \
            hess in ('2-point', '3-point', 'cs'):
             raise ValueError("Whenever the gradient is estimated via finite-differences, "
                              "we require the Hessian to be estimated using one of the "
                              "quasi-Newton strategies.")
-        self.finite_diff_options=finite_diff_options
         if isinstance(hess, QuasiNewtonApprox):
-            self.delta_x = np.zeros_like(x0)
-            self.delta_grad = np.zeros_like(x0)
+            self.x_prev = np.copy(x0)
             self.first_iteration = True
 
         # Define function
         self.f = fun(x0)
-        if grad in ('2-point', '3-point', 'cs'):
+
+        if callable(grad):
+            fun_wrapped = fun
+        elif grad in ('2-point', '3-point', 'cs'):
             def fun_wrapped(x):
-                self.x = x
+                self.x_diff = x
                 self.f = fun(x)
                 return self.f
-            self.fun = fun_wrapped
-        else:
-            self.fun = fun
+
+        self.fun = fun_wrapped
 
         # Define gradient
         if callable(grad):
             self.g = np.atleast_1d(grad(x0))
+
+            def grad_wrapped(x):
+                return np.atleast_1d(grad(x))
+
             if hess in ('2-point', '3-point', 'cs'):
-                def grad_wrapped(x):
-                    self.x = x
-                    self.g = np.atleast_1d(grad(x))
+                def grad_wrapped2(x):
+                    self.x_diff = x
+                    self.g = grad_wrapped(x)
                     return self.g
+
             elif isinstance(hess, QuasiNewtonApprox):
-                def grad_wrapped(x):
-                    x_prev = self.x
-                    g_prev = self.g
+                self.g_prev = np.copy(self.g)
+
+                def grad_wrapped2(x):
+                    self.x_prev = self.x
+                    self.g_prev = self.g
                     self.x = x
-                    self.g = np.atleast_1d(grad(x))
-                    self.delta_x = self.x - x_prev
-                    self.delta_grad = self.g - g_prev
+                    self.g = grad_wrapped(x)
                     return self.g
             else:
-                def grad_wrapped(x):
-                    return np.atleast_1d(grad(x))
+                grad_wrapped2 = grad_wrapped
         elif grad in ('2-point', '3-point', 'cs'):
             self.g = approx_derivative(fun, self.x, f0=self.f, **finite_diff_options)
+
+            def grad_wrapped(x):
+                return approx_derivative(fun, x, f0=self.f, **finite_diff_options)
+
             if isinstance(hess, QuasiNewtonApprox):
-                def grad_wrapped(x):
-                    x_prev = self.x
-                    g_prev = self.g
-                    if not np.array_equal(self.x, x):
+                self.g_prev = np.copy(self.g)
+
+                def grad_wrapped2(x):
+                    if not np.array_equal(self.x_diff, x):
+                        self.x_diff = x
                         self.f = fun(x)
+                    self.x_prev = self.x
+                    self.g_prev = self.g
                     self.x = x
-                    self.g = approx_derivative(fun, x, f0=self.f, **finite_diff_options)
-                    self.delta_x = self.x - x_prev
-                    self.delta_grad = self.g - g_prev
+                    self.g = grad_wrapped(x)
                     return self.g
+
             else:
-                def grad_wrapped(x):
-                    if not np.array_equal(self.x, x):
+                def grad_wrapped2(x):
+                    if not np.array_equal(self.x_diff, x):
                         self.x = x
                         self.f = fun(x)
-                    return approx_derivative(fun, x, f0=self.f, **finite_diff_options)
-        else:
-            grad_wrapped = None
-        self.grad = grad_wrapped
+                    return grad_wrapped(x)
+        self.grad = grad_wrapped2
 
         # Define Hessian
         if callable(hess):
             self.H = hess(x0)
             if sps.issparse(self.H):
                 self.H = sps.csr_matrix(self.H)
+
                 def hess_wrapped(x):
                     return sps.csr_matrix(hess(x))
+
             elif isinstance(self.H, LinearOperator):
                 def hess_wrapped(x):
                     return hess(x)
+
             else:
-                self.H = np.atleast_2d(np.asarray(self.H))
                 def hess_wrapped(x):
                     return  np.atleast_2d(np.asarray(hess(x)))
+                self.H = np.atleast_2d(np.asarray(self.H))
+
         elif hess in ('2-point', '3-point', 'cs'):
-            def grad_wrapped_aux(x):
-                return np.atleast_1d(grad(x))
-            self.H = approx_derivative(grad_wrapped_aux, self.x, f0=self.g, **finite_diff_options)
             def hess_wrapped(x):
-                if not np.array_equal(self.x, x):
-                    self.x = x
-                    self.g = np.atleast_1d(grad(x))
-                return approx_derivative(grad_wrapped_aux, x, f0=self.g, **finite_diff_options)
+                if not np.array_equal(self.x_diff, x):
+                    self.x_diff = x
+                    self.g = grad_wrapped(x)
+                return approx_derivative(grad_wrapped, x, f0=self.g, **finite_diff_options)
+            self.H = approx_derivative(grad_wrapped, self.x, f0=self.g, **finite_diff_options)
+
         elif isinstance(hess, QuasiNewtonApprox):
             def hess_wrapped(x):
                 if not np.array_equal(self.x, x):
-                    self.g = self.grad(x)
+                    self.x_prev = self.x
+                    self.g_prev = self.g
+                    self.x = x
+                    self.g = grad_wrapped(x)
+                delta_x = self.x - self.x_prev
+                delta_grad = self.g - self.g_prev
                 if self.first_iteration:
-                    if np.linalg.norm(self.delta_x) != 0:
-                        hess.instanciate_matrix(self.delta_x, self.delta_grad)
-                        hess.scale_matrix(self.delta_x, self.delta_grad)
-                        hess.update(self.delta_x, self.delta_grad)
+                    if np.linalg.norm(delta_x) != 0:
+                        hess.instanciate_matrix(delta_x, delta_grad)
+                        hess.scale_matrix(delta_x, delta_grad)
+                        hess.update(delta_x, delta_grad)
                         self.first_iteration = False
                     else:
-                        hess.instanciate_matrix(self.delta_x, self.delta_grad)
+                        hess.instanciate_matrix(delta_x, delta_grad)
                 else:
-                    hess.update(self.delta_x, self.delta_grad)
+                    hess.update(delta_x, delta_grad)
                 return hess
         else:
             hess_wrapped = None  

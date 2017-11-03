@@ -313,10 +313,10 @@ class TestMinimizeConstrained(TestCase):
         list_of_problems = [Maratos(),
                             HyperbolicIneq(),
                             Rosenbrock(),
-                            Rosenbrock(n=5),
+                            Rosenbrock(n=3),
                             IneqRosenbrock(),
                             EqIneqRosenbrock(),
-                            Elec(n_electrons=5)]
+                            Elec(n_electrons=3)]
 
         for prob in list_of_problems:
             for hess in (prob.hess, '2-point', SR1(),
@@ -348,13 +348,15 @@ class TestMinimizeConstrained(TestCase):
         list_of_problems = [Maratos(),
                             HyperbolicIneq(),
                             Rosenbrock(),
-                            Rosenbrock(n=5),
+                            Rosenbrock(n=3),
                             IneqRosenbrock(),
                             EqIneqRosenbrock(),
-                            Elec(n_electrons=5)]
+                            Elec(n_electrons=3)]
 
         for prob in list_of_problems:
-            for hess in (prob.hess,):
+            for hess in (prob.hess, SR1(),
+                         BFGS(exception_strategy='damped_bfgs'),
+                         BFGS(exception_strategy='skip_update')):
                 result = minimize_constrained(prob.fun, prob.x0,
                                               '3-point', hess,
                                               prob.constr)
