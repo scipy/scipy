@@ -914,14 +914,14 @@ class spmatrix(object):
             integer is used while if `a` is unsigned then an unsigned integer
             of the same precision as the platform integer is used.
 
-            .. versionadded: 0.18.0
+            .. versionadded:: 0.18.0
 
         out : np.matrix, optional
             Alternative output matrix in which to place the result. It must
             have the same shape as the expected output, but the type of the
             output values will be cast if necessary.
 
-            .. versionadded: 0.18.0
+            .. versionadded:: 0.18.0
 
         Returns
         -------
@@ -987,14 +987,14 @@ class spmatrix(object):
             is `float64`; for floating point inputs, it is the same as the
             input dtype.
 
-            .. versionadded: 0.18.0
+            .. versionadded:: 0.18.0
 
         out : np.matrix, optional
             Alternative output matrix in which to place the result. It must
             have the same shape as the expected output, but the type of the
             output values will be cast if necessary.
 
-            .. versionadded: 0.18.0
+            .. versionadded:: 0.18.0
 
         Returns
         -------
@@ -1050,7 +1050,7 @@ class spmatrix(object):
             Which diagonal to set, corresponding to elements a[i, i+k].
             Default: 0 (the main diagonal).
 
-            .. versionadded: 1.0
+            .. versionadded:: 1.0
 
         See also
         --------
