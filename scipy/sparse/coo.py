@@ -290,17 +290,6 @@ class coo_matrix(_data_matrix, _minmax_mixin):
     transpose.__doc__ = spmatrix.transpose.__doc__
 
     def resize(self, shape):
-        """Resize the matrix in-place to dimensions given by ``shape``
-
-        Any elements that lie within the new shape will remain at the same
-        indices, while non-zero elements lying outside the new shape are
-        removed.
-
-        Parameters
-        ----------
-        shape : (int, int)
-            number of rows and columns in the new matrix
-        """
         if not isshape(shape, nonneg=True):
             raise TypeError("shape must be a 2-tuple of positive integers")
         new_M, new_N = shape
@@ -313,6 +302,8 @@ class coo_matrix(_data_matrix, _minmax_mixin):
             self.data = self.data[mask]
 
         self._shape = shape
+
+    resize.__doc__ = spmatrix.resize.__doc__
 
     def toarray(self, order=None, out=None):
         """See the docstring for `spmatrix.toarray`."""
