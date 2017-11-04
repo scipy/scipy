@@ -21,21 +21,45 @@
 #include "math.h"
 const double PI = 3.141592653589793238462643383279502884;
 EXPORT(double)
-_multivariate_typical(int n, double args[n])
+_multivariate_typical(int n, double *args)
 {
     return cos(args[1] * args[0] - args[2] * sin(args[0])) / PI;
 }
 
 EXPORT(double)
-_multivariate_indefinite(int n, double args[n])
+_multivariate_indefinite(int n, double *args)
 {
     return -exp(-args[0]) * log(args[0]);
 }
 
 EXPORT(double)
-_multivariate_sin(int n, double args[n])
+_multivariate_sin(int n, double *args)
 {
     return sin(args[0]);
+}
+
+EXPORT(double)
+_sin_0(double x, void *user_data)
+{
+    return sin(x);
+}
+
+EXPORT(double)
+_sin_1(int ndim, double *x, void *user_data)
+{
+    return sin(x[0]);
+}
+
+EXPORT(double)
+_sin_2(double x)
+{
+    return sin(x);
+}
+
+EXPORT(double)
+_sin_3(int ndim, double *x)
+{
+    return sin(x[0]);
 }
 
 /*
@@ -64,7 +88,7 @@ PyInit__test_multivariate(void)
 
 #else
 
-EXPORT(void)
+PyMODINIT_FUNC
 init_test_multivariate(void)
 {
     Py_InitModule("_test_multivariate", NULL);

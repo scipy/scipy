@@ -28,13 +28,7 @@
 
 @type@ expit@c@(@type@ x)
 {
-    if (x < 0) {
-        x = npy_exp@c@(x);
-        return x / (1 + x);
-    }
-    else {
-        return 1 / (1 + npy_exp@c@(-x));
-    }
+    return 1 / (1 + npy_exp@c@(-x));
 }
 
 /**end repeat**/

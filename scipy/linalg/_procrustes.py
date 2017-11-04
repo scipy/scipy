@@ -39,8 +39,7 @@ def orthogonal_procrustes(A, B, check_finite=True):
         Minimizes the Frobenius norm of dot(A, R) - B, subject to
         dot(R.T, R) == I.
     scale : float
-        The sum of singular values of an intermediate matrix.
-        This value is not returned unless specifically requested.
+        Sum of the singular values of ``dot(A.T, B)``.
 
     Raises
     ------
@@ -49,6 +48,10 @@ def orthogonal_procrustes(A, B, check_finite=True):
         This may also be raised if matrix A or B contains an inf or nan
         and check_finite is True, or if the matrix product AB contains
         an inf or nan.
+
+    Notes
+    -----
+    .. versionadded:: 0.15.0
 
     References
     ----------

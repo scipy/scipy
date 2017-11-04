@@ -1,3 +1,5 @@
+HookFile: bscript
+
 Library:
     Extension: _nd_image
         Sources: src/nd_image.c,
@@ -9,3 +11,9 @@ Library:
                  src/ni_support.c
     Extension: _ni_label
         Sources: src/_ni_label.c
+    Extension: _ctest
+        Sources: src/_ctest.c
+    Extension: _ctest_oldapi
+        Sources: src/_ctest.c
+    Extension: _cytest
+        Sources: src/_cytest.c

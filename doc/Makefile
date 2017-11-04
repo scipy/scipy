@@ -1,12 +1,12 @@
 # Makefile for Sphinx documentation
 #
 
-PYVER = 2.7
+PYVER ?= 2.7
 PYTHON = python$(PYVER)
 
 # You can set these variables from the command line.
 SPHINXOPTS    =
-SPHINXBUILD   = LANG=C sphinx-build
+SPHINXBUILD   = LANG=C $(PYTHON) $(shell which sphinx-build)
 PAPER         =
 
 FILES=
@@ -31,7 +31,7 @@ help:
 	@echo "  changes   to make an overview over all changed/added/deprecated items"
 	@echo "  linkcheck to check all external links for integrity"
 	@echo "  dist PYVER=... to make a distribution-ready tree"
-	@echo "  upload USER=...  to upload results to docs.scipy.org"
+	@echo "  upload USERNAME=... RELEASE=... to upload built docs to docs.scipy.org"
 
 clean:
 	-rm -rf build/* source/generated
@@ -43,7 +43,7 @@ clean:
 
 # Build the current scipy version, and extract docs from it.
 # We have to be careful of some issues:
-# 
+#
 # - Everything must be done using the same Python version
 # - We must use eggs (otherwise they might override PYTHONPATH on import).
 # - Different versions of easy_install install to different directories (!)
@@ -51,6 +51,7 @@ clean:
 
 INSTALL_DIR = $(CURDIR)/build/inst-dist/
 INSTALL_PPH = $(INSTALL_DIR)/lib/python$(PYVER)/site-packages:$(INSTALL_DIR)/local/lib/python$(PYVER)/site-packages:$(INSTALL_DIR)/lib/python$(PYVER)/dist-packages:$(INSTALL_DIR)/local/lib/python$(PYVER)/dist-packages
+UPLOAD_DIR=/srv/docs_scipy_org/doc/scipy-$(RELEASE)
 
 DIST_VARS=PYTHON="PYTHONPATH=$(INSTALL_PPH):$$PYTHONPATH python$(PYVER)" SPHINXBUILD="LANG=C PYTHONPATH=$(INSTALL_PPH):$$PYTHONPATH python$(PYVER) `which sphinx-build`"
 
@@ -66,18 +67,32 @@ real-dist: dist-build html html-scipyorg
 	cp -r build/html-scipyorg build/dist/reference
 	touch build/dist/index.html
 	(cd build/html && zip -9qr ../dist/scipy-html.zip .)
-	cp build/latex/scipy*.pdf build/dist
-	-zip build/dist/scipy-chm.zip build/htmlhelp/scipy.chm
+	cp build/latex/scipy-ref.pdf build/dist
 	chmod ug=rwX,o=rX -R build/dist
 	find build/dist -type d -print0 | xargs -0r chmod g+s
 	cd build/dist && tar czf ../dist.tar.gz *
 
 dist-build:
 	rm -f ../dist/*.egg
-	cd .. && $(PYTHON) setupegg.py bdist_egg
+	cd .. && $(PYTHON) setup.py bdist_egg
 	install -d $(subst :, ,$(INSTALL_PPH))
 	$(PYTHON) `which easy_install` --prefix=$(INSTALL_DIR) ../dist/*.egg
 
+upload:
+	# SSH must be correctly configured for this to work.
+	# Assumes that ``make dist`` was already run
+	# Example usage: ``make upload USERNAME=rgommers RELEASE=0.17.0``
+	ssh $(USERNAME)@new.scipy.org mkdir $(UPLOAD_DIR)
+	scp build/dist.tar.gz $(USERNAME)@new.scipy.org:$(UPLOAD_DIR)
+	ssh $(USERNAME)@new.scipy.org tar xvC $(UPLOAD_DIR) \
+	    -zf $(UPLOAD_DIR)/dist.tar.gz
+	ssh $(USERNAME)@new.scipy.org mv $(UPLOAD_DIR)/scipy-ref.pdf \
+	    $(UPLOAD_DIR)/scipy-ref-$(RELEASE).pdf
+	ssh $(USERNAME)@new.scipy.org mv $(UPLOAD_DIR)/scipy-html.zip \
+	    $(UPLOAD_DIR)/scipy-html-$(RELEASE).zip
+	ssh $(USERNAME)@new.scipy.org rm $(UPLOAD_DIR)/dist.tar.gz
+	ssh $(USERNAME)@new.scipy.org ln -snf scipy-$(RELEASE) /srv/docs_scipy_org/doc/scipy
+	ssh $(USERNAME)@new.scipy.org /srv/bin/fixperm-scipy_org.sh
 
 #------------------------------------------------------------------------------
 # Basic Sphinx generation rules for different formats

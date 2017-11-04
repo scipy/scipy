@@ -1,4 +1,4 @@
-cimport sf_error
+from . cimport sf_error
 
 cdef extern from "specfun_wrappers.h":
     double pmv_wrap(double, double, double) nogil
@@ -6,8 +6,8 @@ cdef extern from "specfun_wrappers.h":
 cdef extern from "c_misc/misc.h":
     double poch(double x, double m) nogil
 
-from _complexstuff cimport *
-from libc.math cimport cos, sqrt, exp, fabs, M_PI as pi
+from ._complexstuff cimport *
+from libc.math cimport cos, sqrt, fabs
 from libc.stdlib cimport abs
 
 cdef inline double complex sph_harmonic(int m, int n, double theta, double phi) nogil:

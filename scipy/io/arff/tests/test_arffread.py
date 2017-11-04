@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 from __future__ import division, print_function, absolute_import
 
 import datetime
@@ -13,19 +12,20 @@ else:
 
 import numpy as np
 
-from numpy.testing import (TestCase, assert_array_almost_equal, assert_array_equal, assert_equal,
-        assert_, assert_raises, dec, run_module_suite)
+from numpy.testing import (assert_array_almost_equal,
+                           assert_array_equal, assert_equal, assert_)
+import pytest
+from pytest import raises as assert_raises
 
 from scipy.io.arff.arffread import loadarff
 from scipy.io.arff.arffread import read_header, parse_type, ParseArffError
-from scipy.lib._version import NumpyVersion
 
 
 data_path = pjoin(os.path.dirname(__file__), 'data')
 
-test1 = os.path.join(data_path, 'test1.arff')
-test2 = os.path.join(data_path, 'test2.arff')
-test3 = os.path.join(data_path, 'test3.arff')
+test1 = pjoin(data_path, 'test1.arff')
+test2 = pjoin(data_path, 'test2.arff')
+test3 = pjoin(data_path, 'test3.arff')
 
 test4 = pjoin(data_path, 'test4.arff')
 test5 = pjoin(data_path, 'test5.arff')
@@ -33,18 +33,18 @@ test6 = pjoin(data_path, 'test6.arff')
 test7 = pjoin(data_path, 'test7.arff')
 test8 = pjoin(data_path, 'test8.arff')
 expect4_data = [(0.1, 0.2, 0.3, 0.4, 'class1'),
-        (-0.1, -0.2, -0.3, -0.4, 'class2'),
-        (1, 2, 3, 4, 'class3')]
+                (-0.1, -0.2, -0.3, -0.4, 'class2'),
+                (1, 2, 3, 4, 'class3')]
 expected_types = ['numeric', 'numeric', 'numeric', 'numeric', 'nominal']
 
 missing = pjoin(data_path, 'missing.arff')
 expect_missing_raw = np.array([[1, 5], [2, 4], [np.nan, np.nan]])
-expect_missing = np.empty(3, [('yop', np.float), ('yap', np.float)])
+expect_missing = np.empty(3, [('yop', float), ('yap', float)])
 expect_missing['yop'] = expect_missing_raw[:, 0]
 expect_missing['yap'] = expect_missing_raw[:, 1]
 
 
-class DataTest(TestCase):
+class TestData(object):
     def test1(self):
         # Parsing trivial file with nothing.
         self._test(test4)
@@ -75,15 +75,43 @@ class DataTest(TestCase):
         assert_(data1 == data2)
         assert_(repr(meta1) == repr(meta2))
 
+    @pytest.mark.skipif(sys.version_info < (3, 6),
+                        reason='Passing path-like objects to IO functions requires Python >= 3.6')
+    def test_path(self):
+        # Test reading from `pathlib.Path` object
+        from pathlib import Path
 
-class MissingDataTest(TestCase):
+        with open(test1) as f1:
+            data1, meta1 = loadarff(f1)
+
+        data2, meta2 = loadarff(Path(test1))
+
+        assert_(data1 == data2)
+        assert_(repr(meta1) == repr(meta2))
+
+class TestMissingData(object):
     def test_missing(self):
         data, meta = loadarff(missing)
         for i in ['yop', 'yap']:
             assert_array_almost_equal(data[i], expect_missing[i])
 
 
-class HeaderTest(TestCase):
+class TestNoData(object):
+    def test_nodata(self):
+        # The file nodata.arff has no data in the @DATA section.
+        # Reading it should result in an array with length 0.
+        nodata_filename = os.path.join(data_path, 'nodata.arff')
+        data, meta = loadarff(nodata_filename)
+        expected_dtype = np.dtype([('sepallength', '<f8'),
+                                   ('sepalwidth', '<f8'),
+                                   ('petallength', '<f8'),
+                                   ('petalwidth', '<f8'),
+                                   ('class', 'S15')])
+        assert_equal(data.dtype, expected_dtype)
+        assert_equal(data.size, 0)
+
+
+class TestHeader(object):
     def test_type_parsing(self):
         # Test parsing type of attribute from their value.
         ofile = open(test2)
@@ -163,12 +191,10 @@ class HeaderTest(TestCase):
         assert_(attrs[1][1] == 'DATE "yy-MM-dd HH:mm:ss z"')
 
 
-class DateAttributeTest(TestCase):
-    @dec.skipif(NumpyVersion(np.__version__) < '1.7.0', "No np.datetime64 in Numpy < 1.7.0")
-    def setUp(self):
+class TestDateAttribute(object):
+    def setup_method(self):
         self.data, self.meta = loadarff(test7)
 
-    @dec.skipif(NumpyVersion(np.__version__) < '1.7.0', "No np.datetime64 in Numpy < 1.7.0")
     def test_year_attribute(self):
         expected = np.array([
             '1999',
@@ -181,7 +207,6 @@ class DateAttributeTest(TestCase):
 
         assert_array_equal(self.data["attr_year"], expected)
 
-    @dec.skipif(NumpyVersion(np.__version__) < '1.7.0', "No np.datetime64 in Numpy < 1.7.0")
     def test_month_attribute(self):
         expected = np.array([
             '1999-01',
@@ -194,7 +219,6 @@ class DateAttributeTest(TestCase):
 
         assert_array_equal(self.data["attr_month"], expected)
 
-    @dec.skipif(NumpyVersion(np.__version__) < '1.7.0', "No np.datetime64 in Numpy < 1.7.0")
     def test_date_attribute(self):
         expected = np.array([
             '1999-01-31',
@@ -207,7 +231,6 @@ class DateAttributeTest(TestCase):
 
         assert_array_equal(self.data["attr_date"], expected)
 
-    @dec.skipif(NumpyVersion(np.__version__) < '1.7.0', "No np.datetime64 in Numpy < 1.7.0")
     def test_datetime_local_attribute(self):
         expected = np.array([
             datetime.datetime(year=1999, month=1, day=31, hour=0, minute=1),
@@ -220,21 +243,17 @@ class DateAttributeTest(TestCase):
 
         assert_array_equal(self.data["attr_datetime_local"], expected)
 
-    @dec.skipif(NumpyVersion(np.__version__) < '1.7.0', "No np.datetime64 in Numpy < 1.7.0")
     def test_datetime_missing(self):
         expected = np.array([
             'nat',
-            '2004-12-01T23:59Z',
+            '2004-12-01T23:59',
             'nat',
             'nat',
-            '2013-11-30T04:55Z',
-            '1631-10-15T20:04Z'
+            '2013-11-30T04:55',
+            '1631-10-15T20:04'
         ], dtype='datetime64[m]')
 
         assert_array_equal(self.data["attr_datetime_missing"], expected)
 
     def test_datetime_timezone(self):
         assert_raises(ValueError, loadarff, test8)
-
-if __name__ == "__main__":
-    run_module_suite()

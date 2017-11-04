@@ -54,12 +54,10 @@
  * Direct inquiries to 30 Frost Street, Cambridge, MA 02140
  */
 
-#include <stdio.h>
 #include "mconf.h"
+#include <stdio.h>
 
 #include "sf_error.h"
-
-int merror = 0;
 
 static sf_error_t conv_to_sf[8] = {
     SF_ERROR_OTHER,
@@ -72,26 +70,21 @@ static sf_error_t conv_to_sf[8] = {
     SF_ERROR_SLOW
 };
 
-int mtherr(char *name, int code)
+void mtherr(const char *name, int code)
 {
     /* Display string passed by calling program,
      * which is supposed to be the name of the
      * function in which the error occurred:
      */
 
-    /* Set global error message word */
-    merror = code;
-
     /* Display error message defined
      * by the code argument.
      */
-    if ((code <= 0) || (code >= 8))
-	code = 0;
+    if (code <= 0 || code >= sizeof(conv_to_sf) / sizeof(conv_to_sf[0])) {
+        code = 0;
+    }
 
     sf_error(name, conv_to_sf[code], NULL);
 
-    /* Return to calling
-     * program
-     */
-    return (0);
+    return;
 }

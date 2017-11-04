@@ -4,11 +4,11 @@ Real spectrum tranforms (DCT, DST, MDCT)
 from __future__ import division, print_function, absolute_import
 
 
-__all__ = ['dct', 'idct', 'dst', 'idst']
+__all__ = ['dct', 'idct', 'dst', 'idst', 'dctn', 'idctn', 'dstn', 'idstn']
 
 import numpy as np
 from scipy.fftpack import _fftpack
-from scipy.fftpack.basic import _datacopied
+from scipy.fftpack.basic import _datacopied, _fix_shape, _asfarray
 
 import atexit
 atexit.register(_fftpack.destroy_ddct1_cache)
@@ -22,6 +22,244 @@ atexit.register(_fftpack.destroy_dst1_cache)
 atexit.register(_fftpack.destroy_dst2_cache)
 
 
+def _init_nd_shape_and_axes(x, shape, axes):
+    """Handle shape and axes arguments for dctn, idctn, dstn, idstn."""
+    if shape is None:
+        if axes is None:
+            shape = x.shape
+        else:
+            shape = np.take(x.shape, axes)
+    shape = tuple(shape)
+    for dim in shape:
+        if dim < 1:
+            raise ValueError("Invalid number of DCT data points "
+                             "(%s) specified." % (shape,))
+
+    if axes is None:
+        axes = list(range(-x.ndim, 0))
+    elif np.isscalar(axes):
+        axes = [axes, ]
+    if len(axes) != len(shape):
+        raise ValueError("when given, axes and shape arguments "
+                         "have to be of the same length")
+    if len(np.unique(axes)) != len(axes):
+        raise ValueError("All axes must be unique.")
+
+    return shape, axes
+
+
+def dctn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
+    """
+    Return multidimensional Discrete Cosine Transform along the specified axes.
+
+    Parameters
+    ----------
+    x : array_like
+        The input array.
+    type : {1, 2, 3}, optional
+        Type of the DCT (see Notes). Default type is 2.
+    shape : tuple of ints, optional
+        The shape of the result.  If both `shape` and `axes` (see below) are
+        None, `shape` is ``x.shape``; if `shape` is None but `axes` is
+        not None, then `shape` is ``scipy.take(x.shape, axes, axis=0)``.
+        If ``shape[i] > x.shape[i]``, the i-th dimension is padded with zeros.
+        If ``shape[i] < x.shape[i]``, the i-th dimension is truncated to
+        length ``shape[i]``.
+    axes : tuple or None, optional
+        Axes along which the DCT is computed; the default is over all axes.
+    norm : {None, 'ortho'}, optional
+        Normalization mode (see Notes). Default is None.
+    overwrite_x : bool, optional
+        If True, the contents of `x` can be destroyed; the default is False.
+
+    Returns
+    -------
+    y : ndarray of real
+        The transformed input array.
+
+    See Also
+    --------
+    idctn : Inverse multidimensional DCT
+
+    Notes
+    -----
+    For full details of the DCT types and normalization modes, as well as
+    references, see `dct`.
+
+    Examples
+    --------
+    >>> from scipy.fftpack import dctn, idctn
+    >>> y = np.random.randn(16, 16)
+    >>> np.allclose(y, idctn(dctn(y, norm='ortho'), norm='ortho'))
+    True
+
+    """
+    x = np.asanyarray(x)
+    shape, axes = _init_nd_shape_and_axes(x, shape, axes)
+    for n, ax in zip(shape, axes):
+        x = dct(x, type=type, n=n, axis=ax, norm=norm, overwrite_x=overwrite_x)
+    return x
+
+
+def idctn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
+    """
+    Return multidimensional Discrete Cosine Transform along the specified axes.
+
+    Parameters
+    ----------
+    x : array_like
+        The input array.
+    type : {1, 2, 3}, optional
+        Type of the DCT (see Notes). Default type is 2.
+    shape : tuple of ints, optional
+        The shape of the result.  If both `shape` and `axes` (see below) are
+        None, `shape` is ``x.shape``; if `shape` is None but `axes` is
+        not None, then `shape` is ``scipy.take(x.shape, axes, axis=0)``.
+        If ``shape[i] > x.shape[i]``, the i-th dimension is padded with zeros.
+        If ``shape[i] < x.shape[i]``, the i-th dimension is truncated to
+        length ``shape[i]``.
+    axes : tuple or None, optional
+        Axes along which the IDCT is computed; the default is over all axes.
+    norm : {None, 'ortho'}, optional
+        Normalization mode (see Notes). Default is None.
+    overwrite_x : bool, optional
+        If True, the contents of `x` can be destroyed; the default is False.
+
+    Returns
+    -------
+    y : ndarray of real
+        The transformed input array.
+
+    See Also
+    --------
+    dctn : multidimensional DCT
+
+    Notes
+    -----
+    For full details of the IDCT types and normalization modes, as well as
+    references, see `idct`.
+
+    Examples
+    --------
+    >>> from scipy.fftpack import dctn, idctn
+    >>> y = np.random.randn(16, 16)
+    >>> np.allclose(y, idctn(dctn(y, norm='ortho'), norm='ortho'))
+    True
+    """
+    x = np.asanyarray(x)
+    shape, axes = _init_nd_shape_and_axes(x, shape, axes)
+    for n, ax in zip(shape, axes):
+        x = idct(x, type=type, n=n, axis=ax, norm=norm,
+                 overwrite_x=overwrite_x)
+    return x
+
+
+def dstn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
+    """
+    Return multidimensional Discrete Sine Transform along the specified axes.
+
+    Parameters
+    ----------
+    x : array_like
+        The input array.
+    type : {1, 2, 3}, optional
+        Type of the DCT (see Notes). Default type is 2.
+    shape : tuple of ints, optional
+        The shape of the result.  If both `shape` and `axes` (see below) are
+        None, `shape` is ``x.shape``; if `shape` is None but `axes` is
+        not None, then `shape` is ``scipy.take(x.shape, axes, axis=0)``.
+        If ``shape[i] > x.shape[i]``, the i-th dimension is padded with zeros.
+        If ``shape[i] < x.shape[i]``, the i-th dimension is truncated to
+        length ``shape[i]``.
+    axes : tuple or None, optional
+        Axes along which the DCT is computed; the default is over all axes.
+    norm : {None, 'ortho'}, optional
+        Normalization mode (see Notes). Default is None.
+    overwrite_x : bool, optional
+        If True, the contents of `x` can be destroyed; the default is False.
+
+    Returns
+    -------
+    y : ndarray of real
+        The transformed input array.
+
+    See Also
+    --------
+    idstn : Inverse multidimensional DST
+
+    Notes
+    -----
+    For full details of the DST types and normalization modes, as well as
+    references, see `dst`.
+
+    Examples
+    --------
+    >>> from scipy.fftpack import dstn, idstn
+    >>> y = np.random.randn(16, 16)
+    >>> np.allclose(y, idstn(dstn(y, norm='ortho'), norm='ortho'))
+    True
+
+    """
+    x = np.asanyarray(x)
+    shape, axes = _init_nd_shape_and_axes(x, shape, axes)
+    for n, ax in zip(shape, axes):
+        x = dst(x, type=type, n=n, axis=ax, norm=norm, overwrite_x=overwrite_x)
+    return x
+
+
+def idstn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
+    """
+    Return multidimensional Discrete Sine Transform along the specified axes.
+
+    Parameters
+    ----------
+    x : array_like
+        The input array.
+    type : {1, 2, 3}, optional
+        Type of the DCT (see Notes). Default type is 2.
+    shape : tuple of ints, optional
+        The shape of the result.  If both `shape` and `axes` (see below) are
+        None, `shape` is ``x.shape``; if `shape` is None but `axes` is
+        not None, then `shape` is ``scipy.take(x.shape, axes, axis=0)``.
+        If ``shape[i] > x.shape[i]``, the i-th dimension is padded with zeros.
+        If ``shape[i] < x.shape[i]``, the i-th dimension is truncated to
+        length ``shape[i]``.
+    axes : tuple or None, optional
+        Axes along which the IDCT is computed; the default is over all axes.
+    norm : {None, 'ortho'}, optional
+        Normalization mode (see Notes). Default is None.
+    overwrite_x : bool, optional
+        If True, the contents of `x` can be destroyed; the default is False.
+
+    Returns
+    -------
+    y : ndarray of real
+        The transformed input array.
+
+    See Also
+    --------
+    dctn : multidimensional DST
+
+    Notes
+    -----
+    For full details of the IDST types and normalization modes, as well as
+    references, see `idst`.
+
+    Examples
+    --------
+    >>> from scipy.fftpack import dstn, idstn
+    >>> y = np.random.randn(16, 16)
+    >>> np.allclose(y, idstn(dstn(y, norm='ortho'), norm='ortho'))
+    True
+    """
+    x = np.asanyarray(x)
+    shape, axes = _init_nd_shape_and_axes(x, shape, axes)
+    for n, ax in zip(shape, axes):
+        x = idst(x, type=type, n=n, axis=ax, norm=norm,
+                 overwrite_x=overwrite_x)
+    return x
+
+
 def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     """
     Return the Discrete Cosine Transform of arbitrary type sequence x.
@@ -33,13 +271,16 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     type : {1, 2, 3}, optional
         Type of the DCT (see Notes). Default type is 2.
     n : int, optional
-        Length of the transform.
+        Length of the transform.  If ``n < x.shape[axis]``, `x` is
+        truncated.  If ``n > x.shape[axis]``, `x` is zero-padded. The
+        default results in ``n = x.shape[axis]``.
     axis : int, optional
-        Axis over which to compute the transform.
+        Axis along which the dct is computed; the default is over the
+        last axis (i.e., ``axis=-1``).
     norm : {None, 'ortho'}, optional
         Normalization mode (see Notes). Default is None.
     overwrite_x : bool, optional
-        If True the contents of x can be destroyed. (default=False)
+        If True, the contents of `x` can be destroyed; the default is False.
 
     Returns
     -------
@@ -123,9 +364,10 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     even-symmetrical inputs.  The output is also real and even-symmetrical.
     Half of the FFT input is used to generate half of the FFT output:
 
-    >>> fft(array([4., 3., 5., 10., 5., 3.])).real
+    >>> from scipy.fftpack import fft, dct
+    >>> fft(np.array([4., 3., 5., 10., 5., 3.])).real
     array([ 30.,  -8.,   6.,  -2.,   6.,  -8.])
-    >>> dct(array([4., 3., 5., 10.]), 1)
+    >>> dct(np.array([4., 3., 5., 10.]), 1)
     array([ 30.,  -8.,   6.,  -2.])
 
     """
@@ -146,13 +388,16 @@ def idct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     type : {1, 2, 3}, optional
         Type of the DCT (see Notes). Default type is 2.
     n : int, optional
-        Length of the transform.
+        Length of the transform.  If ``n < x.shape[axis]``, `x` is
+        truncated.  If ``n > x.shape[axis]``, `x` is zero-padded. The
+        default results in ``n = x.shape[axis]``.
     axis : int, optional
-        Axis over which to compute the transform.
+        Axis along which the idct is computed; the default is over the
+        last axis (i.e., ``axis=-1``).
     norm : {None, 'ortho'}, optional
         Normalization mode (see Notes). Default is None.
     overwrite_x : bool, optional
-        If True the contents of x can be destroyed. (default=False)
+        If True, the contents of `x` can be destroyed; the default is False.
 
     Returns
     -------
@@ -180,9 +425,10 @@ def idct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     inputs.  The output is also real and even-symmetrical.  Half of the IFFT
     input is used to generate half of the IFFT output:
 
-    >>> ifft(array([ 30.,  -8.,   6.,  -2.,   6.,  -8.])).real
+    >>> from scipy.fftpack import ifft, idct
+    >>> ifft(np.array([ 30.,  -8.,   6.,  -2.,   6.,  -8.])).real
     array([  4.,   3.,   5.,  10.,   5.,   3.])
-    >>> idct(array([ 30.,  -8.,   6.,  -2.]), 1) / 6
+    >>> idct(np.array([ 30.,  -8.,   6.,  -2.]), 1) / 6
     array([  4.,   3.,   5.,  10.])
 
     """
@@ -194,80 +440,93 @@ def idct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     return _dct(x, _TP[type], n, axis, normalize=norm, overwrite_x=overwrite_x)
 
 
-def _dct(x, type, n=None, axis=-1, overwrite_x=False, normalize=None):
-    """
-    Return Discrete Cosine Transform of arbitrary type sequence x.
+def _get_dct_fun(type, dtype):
+    try:
+        name = {'float64':'ddct%d', 'float32':'dct%d'}[dtype.name]
+    except KeyError:
+        raise ValueError("dtype %s not supported" % dtype)
+    try:
+        f = getattr(_fftpack, name % type)
+    except AttributeError as e:
+        raise ValueError(str(e) + ". Type %d not understood" % type)
+    return f
 
-    Parameters
-    ----------
-    x : array-like
-        input array.
-    n : int, optional
-        Length of the transform.
-    axis : int, optional
-        Axis along which the dct is computed. (default=-1)
-    overwrite_x : bool, optional
-        If True the contents of x can be destroyed. (default=False)
 
-    Returns
-    -------
-    z : real ndarray
+def _get_norm_mode(normalize):
+    try:
+        nm = {None:0, 'ortho':1}[normalize]
+    except KeyError:
+        raise ValueError("Unknown normalize mode %s" % normalize)
+    return nm
 
-    """
-    tmp = np.asarray(x)
-    if not np.isrealobj(tmp):
-        raise TypeError("1st argument must be real sequence")
 
+def __fix_shape(x, n, axis, dct_or_dst):
+    tmp = _asfarray(x)
+    copy_made = _datacopied(tmp, x)
     if n is None:
         n = tmp.shape[axis]
-    else:
-        raise NotImplementedError("Padding/truncating not yet implemented")
+    elif n != tmp.shape[axis]:
+        tmp, copy_made2 = _fix_shape(tmp, n, axis)
+        copy_made = copy_made or copy_made2
+    if n < 1:
+        raise ValueError("Invalid number of %s data points "
+                         "(%d) specified." % (dct_or_dst, n))
+    return tmp, n, copy_made
 
-    if tmp.dtype == np.double:
-        if type == 1:
-            f = _fftpack.ddct1
-        elif type == 2:
-            f = _fftpack.ddct2
-        elif type == 3:
-            f = _fftpack.ddct3
-        else:
-            raise ValueError("Type %d not understood" % type)
-    elif tmp.dtype == np.float32:
-        if type == 1:
-            f = _fftpack.dct1
-        elif type == 2:
-            f = _fftpack.dct2
-        elif type == 3:
-            f = _fftpack.dct3
-        else:
-            raise ValueError("Type %d not understood" % type)
-    else:
-        raise ValueError("dtype %s not supported" % tmp.dtype)
 
-    if normalize:
-        if normalize == "ortho":
-            nm = 1
-        else:
-            raise ValueError("Unknown normalize mode %s" % normalize)
-    else:
-        nm = 0
+def _raw_dct(x0, type, n, axis, nm, overwrite_x):
+    f = _get_dct_fun(type, x0.dtype)
+    return _eval_fun(f, x0, n, axis, nm, overwrite_x)
 
-    if type == 1 and n < 2:
-        raise ValueError("DCT-I is not defined for size < 2")
 
-    overwrite_x = overwrite_x or _datacopied(tmp, x)
+def _raw_dst(x0, type, n, axis, nm, overwrite_x):
+    f = _get_dst_fun(type, x0.dtype)
+    return _eval_fun(f, x0, n, axis, nm, overwrite_x)
 
+
+def _eval_fun(f, tmp, n, axis, nm, overwrite_x):
     if axis == -1 or axis == len(tmp.shape) - 1:
         return f(tmp, n, nm, overwrite_x)
-    #else:
-    #    raise NotImplementedError("Axis arg not yet implemented")
 
     tmp = np.swapaxes(tmp, axis, -1)
     tmp = f(tmp, n, nm, overwrite_x)
     return np.swapaxes(tmp, axis, -1)
 
 
-###########
+def _dct(x, type, n=None, axis=-1, overwrite_x=False, normalize=None):
+    """
+    Return Discrete Cosine Transform of arbitrary type sequence x.
+
+    Parameters
+    ----------
+    x : array_like
+        input array.
+    n : int, optional
+        Length of the transform.  If ``n < x.shape[axis]``, `x` is
+        truncated.  If ``n > x.shape[axis]``, `x` is zero-padded. The
+        default results in ``n = x.shape[axis]``.
+    axis : int, optional
+        Axis along which the dct is computed; the default is over the
+        last axis (i.e., ``axis=-1``).
+    overwrite_x : bool, optional
+        If True, the contents of `x` can be destroyed; the default is False.
+
+    Returns
+    -------
+    z : ndarray
+
+    """
+    x0, n, copy_made = __fix_shape(x, n, axis, 'DCT')
+    if type == 1 and n < 2:
+        raise ValueError("DCT-I is not defined for size < 2")
+    overwrite_x = overwrite_x or copy_made
+    nm = _get_norm_mode(normalize)
+    if np.iscomplexobj(x0):
+        return (_raw_dct(x0.real, type, n, axis, nm, overwrite_x) + 1j *
+                _raw_dct(x0.imag, type, n, axis, nm, overwrite_x))
+    else:
+        return _raw_dct(x0, type, n, axis, nm, overwrite_x)
+
 
 def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     """
@@ -280,13 +539,16 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     type : {1, 2, 3}, optional
         Type of the DST (see Notes). Default type is 2.
     n : int, optional
-        Length of the transform.
+        Length of the transform.  If ``n < x.shape[axis]``, `x` is
+        truncated.  If ``n > x.shape[axis]``, `x` is zero-padded. The
+        default results in ``n = x.shape[axis]``.
     axis : int, optional
-        Axis over which to compute the transform.
+        Axis along which the dst is computed; the default is over the
+        last axis (i.e., ``axis=-1``).
     norm : {None, 'ortho'}, optional
         Normalization mode (see Notes). Default is None.
     overwrite_x : bool, optional
-        If True the contents of x can be destroyed. (default=False)
+        If True, the contents of `x` can be destroyed; the default is False.
 
     Returns
     -------
@@ -372,13 +634,16 @@ def idst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     type : {1, 2, 3}, optional
         Type of the DST (see Notes). Default type is 2.
     n : int, optional
-        Length of the transform.
+        Length of the transform.  If ``n < x.shape[axis]``, `x` is
+        truncated.  If ``n > x.shape[axis]``, `x` is zero-padded. The
+        default results in ``n = x.shape[axis]``.
     axis : int, optional
-        Axis over which to compute the transform.
+        Axis along which the idst is computed; the default is over the
+        last axis (i.e., ``axis=-1``).
     norm : {None, 'ortho'}, optional
         Normalization mode (see Notes). Default is None.
     overwrite_x : bool, optional
-        If True the contents of x can be destroyed. (default=False)
+        If True, the contents of `x` can be destroyed; the default is False.
 
     Returns
     -------
@@ -408,13 +673,25 @@ def idst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     return _dst(x, _TP[type], n, axis, normalize=norm, overwrite_x=overwrite_x)
 
 
+def _get_dst_fun(type, dtype):
+    try:
+        name = {'float64':'ddst%d', 'float32':'dst%d'}[dtype.name]
+    except KeyError:
+        raise ValueError("dtype %s not supported" % dtype)
+    try:
+        f = getattr(_fftpack, name % type)
+    except AttributeError as e:
+        raise ValueError(str(e) + ". Type %d not understood" % type)
+    return f
+
+
 def _dst(x, type, n=None, axis=-1, overwrite_x=False, normalize=None):
     """
     Return Discrete Sine Transform of arbitrary type sequence x.
 
     Parameters
     ----------
-    x : array-like
+    x : array_like
         input array.
     n : int, optional
         Length of the transform.
@@ -428,54 +705,13 @@ def _dst(x, type, n=None, axis=-1, overwrite_x=False, normalize=None):
     z : real ndarray
 
     """
-    tmp = np.asarray(x)
-    if not np.isrealobj(tmp):
-        raise TypeError("1st argument must be real sequence")
-
-    if n is None:
-        n = tmp.shape[axis]
-    else:
-        raise NotImplementedError("Padding/truncating not yet implemented")
-
-    if tmp.dtype == np.double:
-        if type == 1:
-            f = _fftpack.ddst1
-        elif type == 2:
-            f = _fftpack.ddst2
-        elif type == 3:
-            f = _fftpack.ddst3
-        else:
-            raise ValueError("Type %d not understood" % type)
-    elif tmp.dtype == np.float32:
-        if type == 1:
-            f = _fftpack.dst1
-        elif type == 2:
-            f = _fftpack.dst2
-        elif type == 3:
-            f = _fftpack.dst3
-        else:
-            raise ValueError("Type %d not understood" % type)
-    else:
-        raise ValueError("dtype %s not supported" % tmp.dtype)
-
-    if normalize:
-        if normalize == "ortho":
-            nm = 1
-        else:
-            raise ValueError("Unknown normalize mode %s" % normalize)
-    else:
-        nm = 0
-
+    x0, n, copy_made = __fix_shape(x, n, axis, 'DST')
     if type == 1 and n < 2:
         raise ValueError("DST-I is not defined for size < 2")
-
-    overwrite_x = overwrite_x or _datacopied(tmp, x)
-
-    if axis == -1 or axis == len(tmp.shape) - 1:
-        return f(tmp, n, nm, overwrite_x)
-    #else:
-    #    raise NotImplementedError("Axis arg not yet implemented")
-
-    tmp = np.swapaxes(tmp, axis, -1)
-    tmp = f(tmp, n, nm, overwrite_x)
-    return np.swapaxes(tmp, axis, -1)
+    overwrite_x = overwrite_x or copy_made
+    nm = _get_norm_mode(normalize)
+    if np.iscomplexobj(x0):
+        return (_raw_dst(x0.real, type, n, axis, nm, overwrite_x) + 1j *
+                _raw_dst(x0.imag, type, n, axis, nm, overwrite_x))
+    else:
+        return _raw_dst(x0, type, n, axis, nm, overwrite_x)

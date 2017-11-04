@@ -1,3 +1,4 @@
+from __future__ import print_function
 import os
 from os.path import join as pjoin, normpath, exists as pexists, dirname
 import subprocess
@@ -14,9 +15,9 @@ BUILD_ROOT = os.getcwd()
 PYVER = '2.5'
 ARCH = 'nosse'
 
-PYEXECS = {"2.5" : "C:\python25\python.exe",
-        "2.4" : "C:\python24\python24.exe",
-        "2.3" : "C:\python23\python23.exe"}
+PYEXECS = {"2.5": "C:\python25\python.exe",
+        "2.4": "C:\python24\python24.exe",
+        "2.3": "C:\python23\python23.exe"}
 
 _SSE3_CFG = r"""[atlas]
 library_dirs = C:\local\lib\yop\sse3"""
@@ -27,7 +28,7 @@ library_dirs = fakedirectorywhichhopefullydoesnotexist
 [DEFAULT]
 library_dirs = C:\local\lib\yop\nosse"""
 
-SITECFG = {"sse2" : _SSE2_CFG, "sse3" : _SSE3_CFG, "nosse" : _NOSSE_CFG}
+SITECFG = {"sse2": _SSE2_CFG, "sse3": _SSE3_CFG, "nosse": _NOSSE_CFG}
 
 options(
     clean=Bunch(
@@ -241,7 +242,7 @@ def raw_build_sdist(cwd):
         finally:
             f.close()
     except (subprocess.CalledProcessError, RuntimeError), e:
-        print e
+        print(e)
         msg = """
 There was an error while executing the following command:
 
@@ -260,8 +261,8 @@ def raw_build_arch(pyver, arch, src_root):
     scipy_verstr = get_scipy_version(src_root)
     bdir = bootstrap_dir(pyver)
 
-    print "Building scipy (version %s) binary for python %s, arch is %s" % \
-          (scipy_verstr, get_python_exec(pyver), arch)
+    print("Building scipy (version %s) binary for python %s, arch is %s" % \
+          (scipy_verstr, get_python_exec(pyver), arch))
 
     if BUILD_MSI:
         cmd = [get_python_exec(pyver), "setup.py", "build", "-c", "mingw32",
@@ -282,7 +283,7 @@ def raw_build_arch(pyver, arch, src_root):
         finally:
             f.close()
     except (subprocess.CalledProcessError, RuntimeError), e:
-        print e
+        print(e)
         msg = """
 There was an error while executing the following command:
 

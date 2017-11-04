@@ -144,9 +144,16 @@ now removed.
 Its private support modules ``scipy.io.dumbdbm_patched`` and
 ``scipy.io.dumb_shelve`` are also removed.
 
+`axis` argument added to `scipy.stats.scoreatpercentile`
+--------------------------------------------------------
 
-Other changes
-=============
+The function `scipy.stats.scoreatpercentile` has been given an `axis`
+argument.  The default argument is `axis=None`, which means the calculation
+is done on the flattened array.  Before this change, `scoreatpercentile`
+would act as if `axis=0` had been given.  Code using `scoreatpercentile`
+with a multidimensional array will need to add `axis=0` to the function call
+to preserve the old behavior.  (This API change was not noticed until
+long after the release of 0.12.0.)
 
 
 Authors

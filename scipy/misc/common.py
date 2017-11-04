@@ -5,140 +5,9 @@ Functions which are common and require SciPy Base and Level 1 SciPy
 
 from __future__ import division, print_function, absolute_import
 
-import numpy
-from numpy import (exp, log, asarray, arange, newaxis, hstack, product, array,
-                   zeros, eye, poly1d, r_, rollaxis, sum, fromstring, isfinite,
-                   squeeze, amax, reshape)
+from numpy import arange, newaxis, hstack, product, array, frombuffer
 
-from scipy.lib._version import NumpyVersion
-
-__all__ = ['logsumexp', 'central_diff_weights', 'derivative', 'pade', 'lena',
-           'ascent', 'face']
-
-
-_NUMPY_170 = (NumpyVersion(numpy.__version__) >= NumpyVersion('1.7.0'))
-
-
-def logsumexp(a, axis=None, b=None, keepdims=False):
-    """Compute the log of the sum of exponentials of input elements.
-
-    Parameters
-    ----------
-    a : array_like
-        Input array.
-    axis : None or int or tuple of ints, optional
-        Axis or axes over which the sum is taken. By default `axis` is None,
-        and all elements are summed. Tuple of ints is not accepted if NumPy 
-        version is lower than 1.7.0.
-
-        .. versionadded:: 0.11.0
-    keepdims: bool, optional
-        If this is set to True, the axes which are reduced are left in the
-        result as dimensions with size one. With this option, the result
-        will broadcast correctly against the original array.
-
-        .. versionadded:: 0.15.0
-    b : array-like, optional
-        Scaling factor for exp(`a`) must be of the same shape as `a` or
-        broadcastable to `a`.
-
-        .. versionadded:: 0.12.0
-
-    Returns
-    -------
-    res : ndarray
-        The result, ``np.log(np.sum(np.exp(a)))`` calculated in a numerically
-        more stable way. If `b` is given then ``np.log(np.sum(b*np.exp(a)))``
-        is returned.
-
-    See Also
-    --------
-    numpy.logaddexp, numpy.logaddexp2
-
-    Notes
-    -----
-    Numpy has a logaddexp function which is very similar to `logsumexp`, but
-    only handles two arguments. `logaddexp.reduce` is similar to this
-    function, but may be less stable.
-
-    Examples
-    --------
-    >>> from scipy.misc import logsumexp
-    >>> a = np.arange(10)
-    >>> np.log(np.sum(np.exp(a)))
-    9.4586297444267107
-    >>> logsumexp(a)
-    9.4586297444267107
-
-    With weights
-
-    >>> a = np.arange(10)
-    >>> b = np.arange(10, 0, -1)
-    >>> logsumexp(a, b=b)
-    9.9170178533034665
-    >>> np.log(np.sum(b*np.exp(a)))
-    9.9170178533034647
-    """
-    a = asarray(a)
-
-    # keepdims is available in numpy.sum and numpy.amax since NumPy 1.7.0
-    #
-    # Because SciPy supports versions earlier than 1.7.0, we have to handle
-    # those old versions differently
-
-    if not _NUMPY_170:
-        # When support for Numpy < 1.7.0 is dropped, this implementation can be
-        # removed. This implementation is a bit hacky. Similarly to old NumPy's
-        # sum and amax functions, 'axis' must be an integer or None, tuples and
-        # lists are not supported. Although 'keepdims' is not supported by these
-        # old NumPy's functions, this function supports it.
-
-        # Solve the shape of the reduced array
-        if axis is None:
-            sh_keepdims = (1,) * a.ndim
-        else:
-            sh_keepdims = list(a.shape)
-            sh_keepdims[axis] = 1
-
-        a_max = amax(a, axis=axis)
-
-        if a_max.ndim > 0:
-            a_max[~isfinite(a_max)] = 0
-        elif not isfinite(a_max):
-            a_max = 0
-
-        if b is not None:
-            b = asarray(b)
-            out = log(sum(b * exp(a - reshape(a_max, sh_keepdims)), axis=axis))
-        else:
-            out = log(sum(exp(a - reshape(a_max, sh_keepdims)), axis=axis))
-
-        out += a_max
-
-        if keepdims:
-            # Put back the reduced axes with size one
-            out = reshape(out, sh_keepdims)
-    else:
-        # This is a more elegant implementation, requiring NumPy >= 1.7.0
-        a_max = amax(a, axis=axis, keepdims=True)
-
-        if a_max.ndim > 0:
-            a_max[~isfinite(a_max)] = 0
-        elif not isfinite(a_max):
-            a_max = 0
-
-        if b is not None:
-            b = asarray(b)
-            out = log(sum(b * exp(a - a_max), axis=axis, keepdims=keepdims))
-        else:
-            out = log(sum(exp(a - a_max), axis=axis, keepdims=keepdims))
-
-        if not keepdims:
-            a_max = squeeze(a_max, axis=axis)
-
-        out += a_max
-
-    return out
+__all__ = ['central_diff_weights', 'derivative', 'ascent', 'face']
 
 
 def central_diff_weights(Np, ndiv=1):
@@ -190,7 +59,7 @@ def derivative(func, x0, dx=1.0, n=1, args=(), order=3):
         Input function.
     x0 : float
         The point at which `n`-th derivative is found.
-    dx : int, optional
+    dx : float, optional
         Spacing.
     n : int, optional
         Order of the derivative. Default is 1.
@@ -205,9 +74,9 @@ def derivative(func, x0, dx=1.0, n=1, args=(), order=3):
 
     Examples
     --------
+    >>> from scipy.misc import derivative
     >>> def f(x):
     ...     return x**3 + x**2
-    ...
     >>> derivative(f, 1.0, dx=1e-6)
     4.9999999999217337
 
@@ -248,100 +117,6 @@ def derivative(func, x0, dx=1.0, n=1, args=(), order=3):
     for k in range(order):
         val += weights[k]*func(x0+(k-ho)*dx,*args)
     return val / product((dx,)*n,axis=0)
-
-
-def pade(an, m):
-    """
-    Return Pade approximation to a polynomial as the ratio of two polynomials.
-
-    Parameters
-    ----------
-    an : (N,) array_like
-        Taylor series coefficients.
-    m : int
-        The order of the returned approximating polynomials.
-
-    Returns
-    -------
-    p, q : Polynomial class
-        The pade approximation of the polynomial defined by `an` is
-        `p(x)/q(x)`.
-
-    Examples
-    --------
-    >>> from scipy import misc
-    >>> e_exp = [1.0, 1.0, 1.0/2.0, 1.0/6.0, 1.0/24.0, 1.0/120.0]
-    >>> p, q = misc.pade(e_exp, 2)
-
-    >>> e_exp.reverse()
-    >>> e_poly = np.poly1d(e_exp)
-
-    Compare ``e_poly(x)`` and the pade approximation ``p(x)/q(x)``
-
-    >>> e_poly(1)
-    2.7166666666666668
-
-    >>> p(1)/q(1)
-    2.7179487179487181
-
-    """
-    from scipy import linalg
-    an = asarray(an)
-    N = len(an) - 1
-    n = N - m
-    if n < 0:
-        raise ValueError("Order of q <m> must be smaller than len(an)-1.")
-    Akj = eye(N+1, n+1)
-    Bkj = zeros((N+1, m), 'd')
-    for row in range(1, m+1):
-        Bkj[row,:row] = -(an[:row])[::-1]
-    for row in range(m+1, N+1):
-        Bkj[row,:] = -(an[row-m:row])[::-1]
-    C = hstack((Akj, Bkj))
-    pq = linalg.solve(C, an)
-    p = pq[:n+1]
-    q = r_[1.0, pq[n+1:]]
-    return poly1d(p[::-1]), poly1d(q[::-1])
-
-
-def lena():
-    """
-    Get classic image processing example image, Lena, at 8-bit grayscale
-    bit-depth, 512 x 512 size.
-
-    Parameters
-    ----------
-    None
-
-    Returns
-    -------
-    lena : ndarray
-        Lena image
-
-    Examples
-    --------
-    >>> import scipy.misc
-    >>> lena = scipy.misc.lena()
-    >>> lena.shape
-    (512, 512)
-    >>> lena.max()
-    245
-    >>> lena.dtype
-    dtype('int32')
-
-    >>> import matplotlib.pyplot as plt
-    >>> plt.gray()
-    >>> plt.imshow(lena)
-    >>> plt.show()
-
-    """
-    import pickle
-    import os
-    fname = os.path.join(os.path.dirname(__file__),'lena.dat')
-    f = open(fname,'rb')
-    lena = array(pickle.load(f))
-    f.close()
-    return lena
 
 
 def ascent():
@@ -392,7 +167,7 @@ def face(gray=False):
     Parameters
     ----------
     gray : bool, optional
-        If True then return color image, otherwise return an 8-bit gray-scale
+        If True return 8-bit grey-scale image, otherwise return a color image
 
     Returns
     -------
@@ -406,7 +181,7 @@ def face(gray=False):
     >>> face.shape
     (768, 1024, 3)
     >>> face.max()
-    230
+    255
     >>> face.dtype
     dtype('uint8')
 
@@ -421,7 +196,7 @@ def face(gray=False):
     with open(os.path.join(os.path.dirname(__file__), 'face.dat'), 'rb') as f:
         rawdata = f.read()
     data = bz2.decompress(rawdata)
-    face = fromstring(data, dtype='uint8')
+    face = frombuffer(data, dtype='uint8')
     face.shape = (768, 1024, 3)
     if gray is True:
         face = (0.21 * face[:,:,0] + 0.71 * face[:,:,1] + 0.07 * face[:,:,2]).astype('uint8')

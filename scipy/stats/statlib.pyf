@@ -13,16 +13,6 @@ python module statlib ! in
             integer intent(out) :: ifault
         end subroutine swilk
 
-        subroutine wprob(test,other,astart,a1,l1,a2,a3,ifault) ! in ansari.f
-          integer intent(in) :: test
-          integer intent(in) :: other
-          real intent(out) :: astart
-          real dimension(l1), intent(out), depend(l1) :: a1
-          integer intent(hide) :: l1=(1+(test*other)/2)
-          real dimension(l1), intent(hide), depend(l1) :: a2
-          real dimension(l1), intent(hide), depend(l1) :: a3
-          integer intent(out) :: ifault
-        end subroutine wprob
         subroutine gscale(test,other,astart,a1,l1,a2,a3,ifault) ! in ansari.f
           integer intent(in) :: test
           integer intent(in) :: other

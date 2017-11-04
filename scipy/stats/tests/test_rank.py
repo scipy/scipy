@@ -1,13 +1,12 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import TestCase, run_module_suite, assert_equal, \
-    assert_array_equal
+from numpy.testing import assert_equal, assert_array_equal
 
 from scipy.stats import rankdata, tiecorrect
 
 
-class TestTieCorrect(TestCase):
+class TestTieCorrect(object):
 
     def test_empty(self):
         """An empty array requires no correction, should return 1.0."""
@@ -65,12 +64,19 @@ class TestTieCorrect(TestCase):
         expected = 1.0 - ((T1**3 - T1) + (T2**3 - T2)) / (N**3 - N)
         assert_equal(c, expected)
 
+    def test_overflow(self):
+        ntie, k = 2000, 5
+        a = np.repeat(np.arange(k), ntie)
+        n = a.size  # ntie * k
+        out = tiecorrect(rankdata(a))
+        assert_equal(out, 1.0 - k * (ntie**3 - ntie) / float(n**3 - n))
 
-class TestRankData(TestCase):
+
+class TestRankData(object):
 
     def test_empty(self):
         """stats.rankdata([]) should return an empty array."""
-        a = np.array([], dtype=np.int)
+        a = np.array([], dtype=int)
         r = rankdata(a)
         assert_array_equal(r, np.array([], dtype=np.float64))
         r = rankdata([])
@@ -79,7 +85,7 @@ class TestRankData(TestCase):
     def test_one(self):
         """Check stats.rankdata with an array of length 1."""
         data = [100]
-        a = np.array(data, dtype=np.int)
+        a = np.array(data, dtype=int)
         r = rankdata(a)
         assert_array_equal(r, np.array([1.0], dtype=np.float64))
         r = rankdata(data)
@@ -89,7 +95,7 @@ class TestRankData(TestCase):
         """Basic tests of stats.rankdata."""
         data = [100, 10, 50]
         expected = np.array([3.0, 1.0, 2.0], dtype=np.float64)
-        a = np.array(data, dtype=np.int)
+        a = np.array(data, dtype=int)
         r = rankdata(a)
         assert_array_equal(r, expected)
         r = rankdata(data)
@@ -97,7 +103,7 @@ class TestRankData(TestCase):
 
         data = [40, 10, 30, 10, 50]
         expected = np.array([4.0, 1.5, 3.0, 1.5, 5.0], dtype=np.float64)
-        a = np.array(data, dtype=np.int)
+        a = np.array(data, dtype=int)
         r = rankdata(a)
         assert_array_equal(r, expected)
         r = rankdata(data)
@@ -105,7 +111,7 @@ class TestRankData(TestCase):
 
         data = [20, 20, 20, 10, 10, 10]
         expected = np.array([5.0, 5.0, 5.0, 2.0, 2.0, 2.0], dtype=np.float64)
-        a = np.array(data, dtype=np.int)
+        a = np.array(data, dtype=int)
         r = rankdata(a)
         assert_array_equal(r, expected)
         r = rankdata(data)
@@ -114,6 +120,33 @@ class TestRankData(TestCase):
         a2d = a.reshape(2, 3)
         r = rankdata(a2d)
         assert_array_equal(r, expected)
+
+    def test_rankdata_object_string(self):
+        min_rank = lambda a: [1 + sum(i < j for i in a) for j in a]
+        max_rank = lambda a: [sum(i <= j for i in a) for j in a]
+        ordinal_rank = lambda a: min_rank([(x, i) for i, x in enumerate(a)])
+
+        def average_rank(a):
+            return [(i + j) / 2.0 for i, j in zip(min_rank(a), max_rank(a))]
+
+        def dense_rank(a):
+            b = np.unique(a)
+            return [1 + sum(i < j for i in b) for j in a]
+
+        rankf = dict(min=min_rank, max=max_rank, ordinal=ordinal_rank,
+                     average=average_rank, dense=dense_rank)
+
+        def check_ranks(a):
+            for method in 'min', 'max', 'dense', 'ordinal', 'average':
+                out = rankdata(a, method=method)
+                assert_array_equal(out, rankf[method](a))
+
+        val = ['foo', 'bar', 'qux', 'xyz', 'abc', 'efg', 'ace', 'qwe', 'qaz']
+        check_ranks(np.random.choice(val, 200))
+        check_ranks(np.random.choice(val, 200).astype('object'))
+
+        val = np.array([0, 1, 2, 2.718, 3, 3.141], dtype='object')
+        check_ranks(np.random.choice(val, 200).astype('object'))
 
     def test_large_int(self):
         data = np.array([2**60, 2**60+1], dtype=np.uint64)
@@ -180,14 +213,6 @@ _cases = (
 
 
 def test_cases():
-
-    def check_case(values, method, expected):
+    for values, method, expected in _cases:
         r = rankdata(values, method=method)
         assert_array_equal(r, expected)
-
-    for values, method, expected in _cases:
-        yield check_case, values, method, expected
-
-
-if __name__ == "__main__":
-    run_module_suite()

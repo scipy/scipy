@@ -15,8 +15,16 @@ counterparts, it is called the discrete Fourier transform (DFT).  The DFT has
 become a mainstay of numerical computing in part because of a very fast
 algorithm for computing it, called the Fast Fourier Transform (FFT), which was
 known to Gauss (1805) and was brought to light in its current form by Cooley
-and Tukey [CT]_.  Press et al. [NR]_ provide an accessible introduction to
+and Tukey [CT65]_.  Press et al. [NR07]_ provide an accessible introduction to
 Fourier analysis and its applications.
+
+.. note::
+
+   PyFFTW_ provides a way to replace a number of functions in `scipy.fftpack`
+   with its own functions, which are usually significantly faster, via
+   pyfftw.interfaces_.  Because PyFFTW_ relies on the GPL-licensed FFTW_ it
+   cannot be included in Scipy.  Users for whom the speed of FFT routines is
+   critical should consider installing PyFFTW_.
 
 
 Fast Fourier transforms
@@ -36,7 +44,7 @@ and the inverse transform is defined as follows
 
 .. math::
 
-    x[n] = \frac{1}{N} \sum_{n=0}^{N-1} e^{2 \pi j \frac{k n}{N} } y[k] \, .
+    x[n] = \frac{1}{N} \sum_{k=0}^{N-1} e^{2 \pi j \frac{k n}{N} } y[k] \, .
 
 These transforms can be calculated by means of :func:`fft` and :func:`ifft`,
 respectively as shown in the following example.
@@ -45,11 +53,12 @@ respectively as shown in the following example.
 >>> x = np.array([1.0, 2.0, 1.0, -1.0, 1.5])
 >>> y = fft(x)
 >>> y
-[ 4.50000000+0.j          2.08155948-1.65109876j -1.83155948+1.60822041j
- -1.83155948-1.60822041j  2.08155948+1.65109876j]
+array([ 4.50000000+0.j        ,  2.08155948-1.65109876j,
+       -1.83155948+1.60822041j, -1.83155948-1.60822041j,
+        2.08155948+1.65109876j])
 >>> yinv = ifft(y)
 >>> yinv
-[ 1.0+0.j  2.0+0.j  1.0+0.j -1.0+0.j  1.5+0.j]
+array([ 1.0+0.j,  2.0+0.j,  1.0+0.j, -1.0+0.j,  1.5+0.j])
 
 
 From the definition of the FFT it can be seen that
@@ -81,34 +90,34 @@ The example plots the FFT of the sum of two sines.
 .. plot::
 
     >>> from scipy.fftpack import fft
-    >>> # Number of samplepoints
+    >>> # Number of sample points
     >>> N = 600
     >>> # sample spacing
     >>> T = 1.0 / 800.0
     >>> x = np.linspace(0.0, N*T, N)
     >>> y = np.sin(50.0 * 2.0*np.pi*x) + 0.5*np.sin(80.0 * 2.0*np.pi*x)
     >>> yf = fft(y)
-    >>> xf = np.linspace(0.0, 1.0/(2.0*T), N/2)
+    >>> xf = np.linspace(0.0, 1.0/(2.0*T), N//2)
     >>> import matplotlib.pyplot as plt
-    >>> plt.plot(xf, 2.0/N * np.abs(yf[0:N/2]))
+    >>> plt.plot(xf, 2.0/N * np.abs(yf[0:N//2]))
     >>> plt.grid()
     >>> plt.show()
 
 
 The FFT input signal is inherently truncated. This truncation can be modelled
-as multiplication of an inifinte signal with a rectangular window function. In
+as multiplication of an infinite signal with a rectangular window function. In
 the spectral domain this multiplication becomes convolution of the signal
-spectrum with the window function spectrum, being of form :math:`sin(x)/x`.
+spectrum with the window function spectrum, being of form :math:`\sin(x)/x`.
 This convolution is the cause of an effect called spectral leakage (see
 [WPW]_). Windowing the signal with a dedicated window function helps mitigate
 spectral leakage. The example below uses a Blackman window from scipy.signal
 and shows the effect of windowing (the zero component of the FFT has been
-truncated illustrative purposes).
+truncated for illustrative purposes).
 
 .. plot::
 
     >>> from scipy.fftpack import fft
-    >>> # Number of samplepoints
+    >>> # Number of sample points
     >>> N = 600
     >>> # sample spacing
     >>> T = 1.0 / 800.0
@@ -120,8 +129,8 @@ truncated illustrative purposes).
     >>> ywf = fft(y*w)
     >>> xf = np.linspace(0.0, 1.0/(2.0*T), N/2)
     >>> import matplotlib.pyplot as plt
-    >>> plt.semilogy(xf[1:N/2], 2.0/N * np.abs(yf[1:N/2]), '-b')
-    >>> plt.semilogy(xf[1:N/2], 2.0/N * np.abs(ywf[1:N/2]), '-r')
+    >>> plt.semilogy(xf[1:N//2], 2.0/N * np.abs(yf[1:N//2]), '-b')
+    >>> plt.semilogy(xf[1:N//2], 2.0/N * np.abs(ywf[1:N//2]), '-r')
     >>> plt.legend(['FFT', 'FFT w. window'])
     >>> plt.grid()
     >>> plt.show()
@@ -134,16 +143,17 @@ helper functions.
 The function :func:`fftfreq` returns the FFT sample frequency points.
 
 >>> from scipy.fftpack import fftfreq
->>> freq = fftfreq(np.arange(8), 0.125)
-[ 0.  1.  2.  3. -4. -3. -2. -1.]
+>>> freq = fftfreq(8, 0.125)
+>>> freq
+array([ 0., 1., 2., 3., -4., -3., -2., -1.])
 
 In a similar spirit, the function :func:`fftshift` allows swapping the lower
 and upper halves of a vector, so that it becomes suitable for display.
 
->>> from scipy.fftpack import fftfreq
+>>> from scipy.fftpack import fftshift
 >>> x = np.arange(8)
->>> sf.fftshift(x)
-[4 5 6 7 0 1 2 3]
+>>> fftshift(x)
+array([4, 5, 6, 7, 0, 1, 2, 3])
 
 The example below plots the FFT of two complex exponentials; note the
 asymmetric spectrum.
@@ -179,18 +189,22 @@ coefficients with this special ordering.
 >>> from scipy.fftpack import fft, rfft, irfft
 >>> x = np.array([1.0, 2.0, 1.0, -1.0, 1.5, 1.0])
 >>> fft(x)
-[ 5.50+0.j          2.25-0.4330127j  -2.75-1.29903811j  1.50+0.j
- -2.75+1.29903811j  2.25+0.4330127j ]
+array([ 5.50+0.j        ,  2.25-0.4330127j , -2.75-1.29903811j,
+        1.50+0.j        , -2.75+1.29903811j,  2.25+0.4330127j ])
 >>> yr = rfft(x)
-[ 5.5         2.25       -0.4330127  -2.75       -1.29903811  1.5       ]
+>>> yr
+array([ 5.5       ,  2.25      , -0.4330127 , -2.75      , -1.29903811,
+        1.5       ])
 >>> irfft(yr)
-[ 1.   2.   1.  -1.   1.5  1. ]
+array([ 1. ,  2. ,  1. , -1. ,  1.5,  1. ])
 >>> x = np.array([1.0, 2.0, 1.0, -1.0, 1.5])
 >>> fft(x)
-[ 4.50000000+0.j          2.08155948-1.65109876j -1.83155948+1.60822041j
- -1.83155948-1.60822041j  2.08155948+1.65109876j]
+array([ 4.50000000+0.j        ,  2.08155948-1.65109876j,
+       -1.83155948+1.60822041j, -1.83155948-1.60822041j,
+        2.08155948+1.65109876j])
 >>> yr = rfft(x)
-[ 4.5         2.08155948 -1.65109876 -1.83155948  1.60822041]
+>>> yr
+array([ 4.5       ,  2.08155948, -1.65109876, -1.83155948,  1.60822041])
 
 
 Two and n-dimensional discrete Fourier transforms
@@ -215,19 +229,19 @@ The example below demonstrates a 2-dimensional IFFT and plots the resulting
     >>> xf[0, N-5] = 1
     >>> Z = ifftn(xf)
     >>> ax1.imshow(xf, cmap=cm.Reds)
-    >>> ax4.imshow(np.real(Z), cmap=cm.binary)
+    >>> ax4.imshow(np.real(Z), cmap=cm.gray)
     >>> xf = np.zeros((N, N))
     >>> xf[5, 0] = 1
     >>> xf[N-5, 0] = 1
     >>> Z = ifftn(xf)
     >>> ax2.imshow(xf, cmap=cm.Reds)
-    >>> ax5.imshow(np.real(Z), cmap=cm.binary)
+    >>> ax5.imshow(np.real(Z), cmap=cm.gray)
     >>> xf = np.zeros((N, N))
     >>> xf[5, 10] = 1
     >>> xf[N-5, N-10] = 1
     >>> Z = ifftn(xf)
     >>> ax3.imshow(xf, cmap=cm.Reds)
-    >>> ax6.imshow(np.real(Z), cmap=cm.binary)
+    >>> ax6.imshow(np.real(Z), cmap=cm.gray)
     >>> plt.show()
 
 
@@ -331,20 +345,19 @@ and normalizations.
 [1.0, 2.0, 1.0, -1.0, 1.5]
 >>>  # scaling factor 2*N = 10
 >>> idct(dct(x, type=2), type=2)
-[ 10.  20.  10. -10.  15.]
+array([ 10.,  20.,  10., -10.,  15.])
 >>>  # no scaling factor
 >>> idct(dct(x, type=2, norm='ortho'), type=2, norm='ortho')
-[ 1.   2.   1.  -1.   1.5]
+array([ 1. ,  2. ,  1. , -1. ,  1.5])
 >>>  # scaling factor 2*N = 10
 >>> idct(dct(x, type=3), type=3)
-[ 10.  20.  10. -10.  15.]
+array([ 10.,  20.,  10., -10.,  15.])
 >>>  # no scaling factor
 >>> idct(dct(x, type=3, norm='ortho'), type=3, norm='ortho')
-[ 1.   2.   1.  -1.   1.5]
+array([ 1. ,  2. ,  1. , -1. ,  1.5])
 >>>  # scaling factor 2*(N-1) = 8
 >>> idct(dct(x, type=1), type=1)
-[  8.  16.   8.  -8.  12.]
-
+array([  8.,  16.,   8.,  -8.,  12.])
 
 Example
 _______
@@ -446,19 +459,19 @@ and normalizations.
 >>> x = np.array([1.0, 2.0, 1.0, -1.0, 1.5])
 >>>  # scaling factor 2*N = 10
 >>> idst(dst(x, type=2), type=2)
-[ 10.  20.  10. -10.  15.]
+array([ 10.,  20.,  10., -10.,  15.])
 >>>  # no scaling factor
 >>> idst(dst(x, type=2, norm='ortho'), type=2, norm='ortho')
-[ 1.   2.   1.  -1.   1.5]
+array([ 1. ,  2. ,  1. , -1. ,  1.5])
 >>>  # scaling factor 2*N = 10
 >>> idst(dst(x, type=3), type=3)
-[ 10.  20.  10. -10.  15.]
+array([ 10.,  20.,  10., -10.,  15.])
 >>>  # no scaling factor
 >>> idst(dst(x, type=3, norm='ortho'), type=3, norm='ortho')
-[ 1.   2.   1.  -1.   1.5]
+array([ 1. ,  2. ,  1. , -1. ,  1.5])
 >>>  # scaling factor 2*(N+1) = 8
 >>> idst(dst(x, type=1), type=1)
-[  8.  16.   8.  -8.  12.]
+array([ 12.,  24.,  12., -12.,  18.])
 
 
 Cache Destruction
@@ -475,11 +488,11 @@ dst(type=3), idst(type=3), and idst(type=3) (``*dst2_cache``).
 References
 ----------
 
-.. [CT] Cooley, James W., and John W. Tukey, 1965, "An algorithm for the
+.. [CT65] Cooley, James W., and John W. Tukey, 1965, "An algorithm for the
         machine calculation of complex Fourier series," *Math. Comput.*
         19: 297-301.
 
-.. [NR] Press, W., Teukolsky, S., Vetterline, W.T., and Flannery, B.P.,
+.. [NR07] Press, W., Teukolsky, S., Vetterline, W.T., and Flannery, B.P.,
         2007, *Numerical Recipes: The Art of Scientific Computing*, ch.
         12-13.  Cambridge Univ. Press, Cambridge, UK.
 
@@ -492,3 +505,8 @@ References
 .. [WPC] http://en.wikipedia.org/wiki/Discrete_cosine_transform
 
 .. [WPS] http://en.wikipedia.org/wiki/Discrete_sine_transform
+
+
+.. _FFTW: http://www.fftw.org/
+.. _PyFFTW: http://hgomersall.github.io/pyFFTW/index.html
+.. _pyfftw.interfaces: http://hgomersall.github.io/pyFFTW/pyfftw/interfaces/interfaces.html

@@ -25,6 +25,21 @@ Contents
    breadth_first_tree -- construct the breadth-first tree from a given node
    depth_first_tree -- construct a depth-first tree from a given node
    minimum_spanning_tree -- construct the minimum spanning tree of a graph
+   reverse_cuthill_mckee -- compute permutation for reverse Cuthill-McKee ordering
+   maximum_bipartite_matching -- compute permutation to make diagonal zero free
+   structural_rank -- compute the structural rank of a graph
+   NegativeCycleError
+
+.. autosummary::
+   :toctree: generated/
+
+   construct_dist_matrix
+   csgraph_from_dense
+   csgraph_from_masked
+   csgraph_masked_from_dense
+   csgraph_to_dense
+   csgraph_to_masked
+   reconstruct_path
 
 Graph Representations
 =====================
@@ -122,8 +137,7 @@ from __future__ import division, print_function, absolute_import
 
 __docformat__ = "restructuredtext en"
 
-__all__ = ['cs_graph_components',
-           'connected_components',
+__all__ = ['connected_components',
            'laplacian',
            'shortest_path',
            'floyd_warshall',
@@ -137,34 +151,28 @@ __all__ = ['cs_graph_components',
            'minimum_spanning_tree',
            'reverse_cuthill_mckee',
            'maximum_bipartite_matching',
+           'structural_rank',
            'construct_dist_matrix',
            'reconstruct_path',
-           'csgraph_from_dense',
            'csgraph_masked_from_dense',
+           'csgraph_from_dense',
+           'csgraph_from_masked',
            'csgraph_to_dense',
            'csgraph_to_masked',
            'NegativeCycleError']
 
-from ._components import cs_graph_components
 from ._laplacian import laplacian
 from ._shortest_path import shortest_path, floyd_warshall, dijkstra,\
     bellman_ford, johnson, NegativeCycleError
 from ._traversal import breadth_first_order, depth_first_order, \
     breadth_first_tree, depth_first_tree, connected_components
 from ._min_spanning_tree import minimum_spanning_tree
-from ._reordering import reverse_cuthill_mckee, maximum_bipartite_matching
+from ._reordering import reverse_cuthill_mckee, maximum_bipartite_matching, \
+    structural_rank
 from ._tools import construct_dist_matrix, reconstruct_path,\
     csgraph_from_dense, csgraph_to_dense, csgraph_masked_from_dense,\
-    csgraph_from_masked
+    csgraph_from_masked, csgraph_to_masked
 
-from numpy import deprecate as _deprecate
-cs_graph_components = _deprecate(cs_graph_components,
-                                 message=("In the future, use "
-                                          "csgraph.connected_components. Note "
-                                          "that this new function has a "
-                                          "slightly different interface: see "
-                                          "the docstring for more "
-                                          "information."))
-
-from numpy.testing import Tester
-test = Tester().test
+from scipy._lib._testutils import PytestTester
+test = PytestTester(__name__)
+del PytestTester

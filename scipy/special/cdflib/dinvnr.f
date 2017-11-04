@@ -97,7 +97,7 @@ C
       IF (.NOT.qporq) dinvnr = -dinvnr
       RETURN
 C
-C     IF WE GET HERE, NEWTON HAS SUCCEDED
+C     IF WE GET HERE, NEWTON HAS SUCCEEDED
 C
    40 dinvnr = xcur
       IF (.NOT.qporq) dinvnr = -dinvnr

@@ -4,9 +4,8 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import (assert_allclose, assert_equal, assert_,
-        decorators, TestCase, run_module_suite)
-from scipy.lib._numpy_compat import count_nonzero as _count_nonzero
+from numpy.testing import assert_allclose, assert_equal, assert_
+import pytest
 import scipy.linalg
 import scipy.sparse.linalg
 from scipy.sparse.linalg._onenormest import _onenormest_core, _algorithm_2_2
@@ -27,13 +26,13 @@ class MatrixProductOperator(scipy.sparse.linalg.LinearOperator):
         self.ndim = 2
         self.shape = (A.shape[0], B.shape[1])
 
-    def matvec(self, x):
+    def _matvec(self, x):
         return np.dot(self.A, np.dot(self.B, x))
 
-    def rmatvec(self, x):
+    def _rmatvec(self, x):
         return np.dot(np.dot(x, self.A), self.B)
 
-    def matmat(self, X):
+    def _matmat(self, X):
         return np.dot(self.A, np.dot(self.B, X))
 
     @property
@@ -41,10 +40,9 @@ class MatrixProductOperator(scipy.sparse.linalg.LinearOperator):
         return MatrixProductOperator(self.B.T, self.A.T)
 
 
-class TestOnenormest(TestCase):
+class TestOnenormest(object):
 
-    @decorators.slow
-    @decorators.skipif(True, 'this test is annoyingly slow')
+    @pytest.mark.xslow
     def test_onenormest_table_3_t_2(self):
         # This will take multiple seconds if your computer is slow like mine.
         # It is stochastic, so the tolerance could be too strict.
@@ -77,15 +75,14 @@ class TestOnenormest(TestCase):
         assert_(0.05 < np.mean(nresample_list) < 0.2)
 
         # check the proportion of norms computed exactly correctly
-        nexact = _count_nonzero(relative_errors < 1e-14)
+        nexact = np.count_nonzero(relative_errors < 1e-14)
         proportion_exact = nexact / float(nsamples)
         assert_(0.9 < proportion_exact < 0.95)
 
         # check the average number of matrix*vector multiplications
         assert_(3.5 < np.mean(nmult_list) < 4.5)
 
-    @decorators.slow
-    @decorators.skipif(True, 'this test is annoyingly slow')
+    @pytest.mark.xslow
     def test_onenormest_table_4_t_7(self):
         # This will take multiple seconds if your computer is slow like mine.
         # It is stochastic, so the tolerance could be too strict.
@@ -117,7 +114,7 @@ class TestOnenormest(TestCase):
         assert_equal(np.max(nresample_list), 0)
 
         # check the proportion of norms computed exactly correctly
-        nexact = _count_nonzero(relative_errors < 1e-14)
+        nexact = np.count_nonzero(relative_errors < 1e-14)
         proportion_exact = nexact / float(nsamples)
         assert_(0.15 < proportion_exact < 0.25)
 
@@ -145,8 +142,7 @@ class TestOnenormest(TestCase):
         est_plain = scipy.sparse.linalg.onenormest(B, t=t, itmax=itmax)
         assert_allclose(est, est_plain)
 
-    @decorators.slow
-    @decorators.skipif(True, 'this test is annoyingly slow')
+    @pytest.mark.xslow
     def test_onenormest_table_6_t_1(self):
         #TODO this test seems to give estimates that match the table,
         #TODO even though no attempt has been made to deal with
@@ -184,7 +180,7 @@ class TestOnenormest(TestCase):
         assert_equal(max_nresamples, 0)
 
         # check the proportion of norms computed exactly correctly
-        nexact = _count_nonzero(relative_errors < 1e-14)
+        nexact = np.count_nonzero(relative_errors < 1e-14)
         proportion_exact = nexact / float(nsamples)
         assert_(0.7 < proportion_exact < 0.8)
 
@@ -205,7 +201,7 @@ class TestOnenormest(TestCase):
         est, v, w, nmults, nresamples = _onenormest_core(D, D.T, t, itmax)
         return est
 
-    @decorators.slow
+    @pytest.mark.slow
     def test_onenormest_linear_operator(self):
         # Define a matrix through its product A B.
         # Depending on the shapes of A and B,
@@ -236,7 +232,7 @@ class TestOnenormest(TestCase):
         assert_allclose(A.dot(v), w, rtol=1e-9)
 
 
-class TestAlgorithm_2_2(TestCase):
+class TestAlgorithm_2_2(object):
 
     def test_randn_inv(self):
         np.random.seed(1234)
@@ -256,6 +252,3 @@ class TestAlgorithm_2_2(TestCase):
             # Compute the 1-norm bounds.
             g, ind = _algorithm_2_2(A, A.T, t)
 
-
-if __name__ == '__main__':
-    run_module_suite()

@@ -104,7 +104,7 @@ static OneMultAddFunction *OneMultAdd[]={NULL,
 int pylab_convolve_2d (char  *in,        /* Input data Ns[0] x Ns[1] */
 		       intp   *instr,     /* Input strides */
 		       char  *out,       /* Output data */
-		       intp   *outstr,    /* Ouput strides */
+		       intp   *outstr,    /* Output strides */
 		       char  *hvals,     /* coefficients in filter */
 		       intp   *hstr,      /* coefficients strides */ 
 		       intp   *Nwin,     /* Size of kernel Nwin[0] x Nwin[1] */
@@ -132,16 +132,16 @@ int pylab_convolve_2d (char  *in,        /* Input data Ns[0] x Ns[1] */
   if (type_num < 0 || type_num > MAXTYPES) return -4;  /* Invalid type */
   type_size = elsizes[type_num];
 
-  indices = malloc(Nwin[1] * sizeof(indices[0]));
-  if (indices == NULL) return -3; /* No memory */
-
   if (outsize == FULL) {Os[0] = Ns[0]+Nwin[0]-1; Os[1] = Ns[1]+Nwin[1]-1;}
   else if (outsize == SAME) {Os[0] = Ns[0]; Os[1] = Ns[1];}
   else if (outsize == VALID) {Os[0] = Ns[0]-Nwin[0]+1; Os[1] = Ns[1]-Nwin[1]+1;}
-  else return -1;  /* Invalid output flag */  
+  else return -1; /* Invalid output flag */
   
-  if ((boundary != PAD) && (boundary != REFLECT) && (boundary != CIRCULAR)) 
-    return -2;   /* Invalid boundary flag */
+  if ((boundary != PAD) && (boundary != REFLECT) && (boundary != CIRCULAR))
+    return -2; /* Invalid boundary flag */
+
+  indices = malloc(Nwin[1] * sizeof(indices[0]));
+  if (indices == NULL) return -3; /* No memory */
 
   /* Speed this up by not doing any if statements in the for loop.  Need 3*3*2=18 different
      loops executed for different conditions */
@@ -216,6 +216,3 @@ int pylab_convolve_2d (char  *in,        /* Input data Ns[0] x Ns[1] */
   free(indices);
   return 0;
 }
-
-
-

@@ -16,8 +16,10 @@ __all__ = ['quad', 'dblquad', 'tplquad', 'nquad', 'quad_explain',
 
 error = _quadpack.error
 
-
 class IntegrationWarning(UserWarning):
+    """
+    Warning on issues during integration.
+    """
     pass
 
 
@@ -27,7 +29,7 @@ def quad_explain(output=sys.stdout):
 
     Parameters
     ----------
-    output : instance with "write" method
+    output : instance with "write" method, optional
         Information about `quad` is passed to ``output.write()``.
         Default is ``sys.stdout``.
 
@@ -50,18 +52,26 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
 
     Parameters
     ----------
-    func : function
+    func : {function, scipy.LowLevelCallable}
         A Python function or method to integrate.  If `func` takes many
         arguments, it is integrated along the axis corresponding to the
         first argument.
-        If the user desires improved integration performance, then f may
-        instead be a ``ctypes`` function of the form:
 
-            f(int n, double args[n]),
+        If the user desires improved integration performance, then `f` may
+        be a `scipy.LowLevelCallable` with one of the signatures::
 
-        where ``args`` is an array of function arguments and ``n`` is the
-        length of ``args``. ``f.argtypes`` should be set to
-        ``(c_int, c_double)``, and ``f.restype`` should be ``(c_double,)``.
+            double func(double x)
+            double func(double x, void *user_data)
+            double func(int n, double *xx)
+            double func(int n, double *xx, void *user_data)
+
+        The ``user_data`` is the data contained in the `scipy.LowLevelCallable`.
+        In the call forms with ``xx``,  ``n`` is the length of the ``xx``
+        array which contains ``xx[0] == x`` and the rest of the items are
+        numbers contained in the ``args`` argument of quad.
+
+        In addition, certain ctypes call signatures are supported for
+        backward compatibility, but those should not be used in new code.
     a : float
         Lower limit of integration (use -numpy.inf for -infinity).
     b : float
@@ -82,9 +92,9 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
     infodict : dict
         A dictionary containing additional information.
         Run scipy.integrate.quad_explain() for more information.
-    message :
+    message
         A convergence message.
-    explain :
+    explain
         Appended only with 'cos' or 'sin' weighting and infinite
         integration limits, it contains an explanation of the codes in
         infodict['ierlst']
@@ -293,15 +303,31 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
                 return args[0]*args[0] + args[1]*args[1];}
         compile to library testlib.*
 
-    >>> from scipy import integrate
-    >>> import ctypes
-    >>> lib = ctypes.CDLL('/home/.../testlib.*') #use absolute path
-    >>> lib.func.restype = ctypes.c_double
-    >>> lib.func.argtypes = (ctypes.c_int,ctypes.c_double)
-    >>> integrate.quad(lib.func,0,1,(1))
-    (1.3333333333333333, 1.4802973661668752e-14)
-    >>> print((1.0**3/3.0 + 1.0) - (0.0**3/3.0 + 0.0)) #Analytic result
-    1.3333333333333333
+    ::
+
+       from scipy import integrate
+       import ctypes
+       lib = ctypes.CDLL('/home/.../testlib.*') #use absolute path
+       lib.func.restype = ctypes.c_double
+       lib.func.argtypes = (ctypes.c_int,ctypes.c_double)
+       integrate.quad(lib.func,0,1,(1))
+       #(1.3333333333333333, 1.4802973661668752e-14)
+       print((1.0**3/3.0 + 1.0) - (0.0**3/3.0 + 0.0)) #Analytic result
+       # 1.3333333333333333
+    
+    Be aware that pulse shapes and other sharp features as compared to the
+    size of the integration interval may not be integrated correctly using
+    this method. A simplified example of this limitation is integrating a
+    y-axis reflected step function with many zero values within the integrals
+    bounds.
+    
+    >>> y = lambda x: 1 if x<=0 else 0
+    >>> integrate.quad(y, -1, 1)
+    (1.0, 1.1102230246251565e-14)
+    >>> integrate.quad(y, -1, 100)
+    (1.0000000002199108, 1.0189464580163188e-08)
+    >>> integrate.quad(y, -1, 10000)
+    (0.0, 0.0) 
 
     """
     if not isinstance(args, tuple):
@@ -344,15 +370,54 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
 
     if ier in [1,2,3,4,5,7]:
         if full_output:
-            if weight in ['cos','sin'] and (b == Inf or a == Inf):
+            if weight in ['cos', 'sin'] and (b == Inf or a == Inf):
                 return retval[:-1] + (msg, explain)
             else:
                 return retval[:-1] + (msg,)
         else:
             warnings.warn(msg, IntegrationWarning)
             return retval[:-1]
-    else:
-        raise ValueError(msg)
+
+    elif ier == 6:  # Forensic decision tree when QUADPACK throws ier=6
+        if epsabs <= 0:  # Small error tolerance - applies to all methods
+            if epsrel < max(50 * sys.float_info.epsilon, 5e-29):
+                msg = ("If 'errabs'<=0, 'epsrel' must be greater than both"
+                       " 5e-29 and 50*(machine epsilon).")
+            elif weight in ['sin', 'cos'] and (abs(a) + abs(b) == Inf):
+                msg = ("Sine or cosine weighted intergals with infinite domain"
+                       " must have 'epsabs'>0.")
+
+        elif weight is None:
+            if points is None:  # QAGSE/QAGIE
+                msg = ("Invalid 'limit' argument. There must be"
+                       " at least one subinterval")
+            else:  # QAGPE
+                if not (min(a, b) <= min(points) <= max(points) <= max(a, b)):
+                    msg = ("All break points in 'points' must lie within the"
+                           " integration limits.")
+                elif len(points) >= limit:
+                    msg = ("Number of break points ({:d})"
+                           " must be less than subinterval"
+                           " limit ({:d})").format(len(points), limit)
+
+        else:
+            if maxp1 < 1:
+                msg = "Chebyshev moment limit maxp1 must be >=1."
+
+            elif weight in ('cos', 'sin') and abs(a+b) == Inf:  # QAWFE
+                msg = "Cycle limit limlst must be >=3."
+
+            elif weight.startswith('alg'):  # QAWSE
+                if min(wvar) < -1:
+                    msg = "wvar parameters (alpha, beta) must both be >= -1."
+                if b < a:
+                    msg = "Integration limits a, b must satistfy a<b."
+
+            elif weight == 'cauchy' and wvar in (a, b):
+                msg = ("Parameter 'wvar' must not equal"
+                       " integration limits 'a' or 'b'.")
+
+    raise ValueError(msg)
 
 
 def _quad(func,a,b,args,full_output,epsabs,epsrel,limit,points):
@@ -380,14 +445,15 @@ def _quad(func,a,b,args,full_output,epsabs,epsrel,limit,points):
         if infbounds != 0:
             raise ValueError("Infinity inputs cannot be used with break points.")
         else:
-            nl = len(points)
-            the_points = numpy.zeros((nl+2,), float)
-            the_points[:nl] = points
+            #Duplicates force function evaluation at sinular points
+            the_points = numpy.unique(points)
+            the_points = the_points[a < the_points]
+            the_points = the_points[the_points < b]
+            the_points = numpy.concatenate((the_points, (0., 0.)))
             return _quadpack._qagpe(func,a,b,the_points,args,full_output,epsabs,epsrel,limit)
 
 
 def _quad_weight(func,a,b,args,full_output,epsabs,epsrel,limlst,limit,maxp1,weight,wvar,wopts):
-
     if weight not in ['cos','sin','alg','alg-loga','alg-logb','alg-log','cauchy']:
         raise ValueError("%s not a recognized weighting function." % weight)
 
@@ -430,20 +496,13 @@ def _quad_weight(func,a,b,args,full_output,epsabs,epsrel,limlst,limit,maxp1,weig
         if a in [-Inf,Inf] or b in [-Inf,Inf]:
             raise ValueError("Cannot integrate with this weight over an infinite interval.")
 
-        if weight[:3] == 'alg':
+        if weight.startswith('alg'):
             integr = strdict[weight]
             return _quadpack._qawse(func, a, b, wvar, integr, args,
                                     full_output, epsabs, epsrel, limit)
         else:  # weight == 'cauchy'
             return _quadpack._qawce(func, a, b, wvar, args, full_output,
                                     epsabs, epsrel, limit)
-
-
-def _infunc(x,func,gfun,hfun,more_args):
-    a = gfun(x)
-    b = hfun(x)
-    myargs = (x,) + more_args
-    return quad(func,a,b,args=myargs)[0]
 
 
 def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
@@ -458,7 +517,7 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
     func : callable
         A Python function or method of at least two variables: y must be the
         first argument and x the second argument.
-    (a,b) : tuple
+    a, b : float
         The limits of integration in x: `a` < `b`
     gfun : callable
         The lower boundary curve in y which is a function taking a single
@@ -471,7 +530,7 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
     epsabs : float, optional
         Absolute tolerance passed directly to the inner 1-D quadrature
         integration. Default is 1.49e-8.
-    epsrel : float
+    epsrel : float, optional
         Relative tolerance of the inner 1-D integrals. Default is 1.49e-8.
 
     Returns
@@ -495,15 +554,10 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
     scipy.special : for coefficients and roots of orthogonal polynomials
 
     """
-    return quad(_infunc, a, b, (func, gfun, hfun, args),
-                epsabs=epsabs, epsrel=epsrel)
-
-
-def _infunc2(y,x,func,qfun,rfun,more_args):
-    a2 = qfun(x,y)
-    b2 = rfun(x,y)
-    myargs = (y,x) + more_args
-    return quad(func,a2,b2,args=myargs)[0]
+    def temp_ranges(*args):
+        return [gfun(args[0]), hfun(args[0])]
+    return nquad(func, [temp_ranges, [a, b]], args=args,
+            opts={"epsabs": epsabs, "epsrel": epsrel})
 
 
 def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
@@ -519,7 +573,7 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
     func : function
         A Python function or method of at least three variables in the
         order (z, y, x).
-    (a,b) : tuple
+    a, b : float
         The limits of integration in x: `a` < `b`
     gfun : function
         The lower boundary curve in y which is a function taking a single
@@ -532,7 +586,7 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
         two floats in the order (x, y) and returns a float.
     rfun : function
         The upper boundary surface in z. (Same requirements as `qfun`.)
-    args : Arguments
+    args : tuple, optional
         Extra arguments to pass to `func`.
     epsabs : float, optional
         Absolute tolerance passed directly to the innermost 1-D quadrature
@@ -561,11 +615,25 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
     scipy.special: For coefficients and roots of orthogonal polynomials
 
     """
-    return dblquad(_infunc2, a, b, gfun, hfun, (func, qfun, rfun, args),
-                   epsabs=epsabs, epsrel=epsrel)
+    # f(z, y, x)
+    # qfun/rfun (x, y)
+    # gfun/hfun(x)
+    # nquad will hand (y, x, t0, ...) to ranges0
+    # nquad will hand (x, t0, ...) to ranges1
+    # Stupid different API...
+
+    def ranges0(*args):
+        return [qfun(args[1], args[0]), rfun(args[1], args[0])]
+
+    def ranges1(*args):
+        return [gfun(args[0]), hfun(args[0])]
+
+    ranges = [ranges0, ranges1, [a, b]]
+    return nquad(func, ranges, args=args,
+            opts={"epsabs": epsabs, "epsrel": epsrel})
 
 
-def nquad(func, ranges, args=None, opts=None):
+def nquad(func, ranges, args=None, opts=None, full_output=False):
     """
     Integration over multiple variables.
 
@@ -576,43 +644,43 @@ def nquad(func, ranges, args=None, opts=None):
 
     Parameters
     ----------
-    func : callable
+    func : {callable, scipy.LowLevelCallable}
         The function to be integrated. Has arguments of ``x0, ... xn``,
         ``t0, tm``, where integration is carried out over ``x0, ... xn``, which
         must be floats.  Function signature should be
         ``func(x0, x1, ..., xn, t0, t1, ..., tm)``.  Integration is carried out
         in order.  That is, integration over ``x0`` is the innermost integral,
         and ``xn`` is the outermost.
-        If performance is a concern, this function may be a ctypes function of
-        the form::
 
-            f(int n, double args[n])
+        If the user desires improved integration performance, then `f` may
+        be a `scipy.LowLevelCallable` with one of the signatures::
+
+            double func(int n, double *xx)
+            double func(int n, double *xx, void *user_data)
 
         where ``n`` is the number of extra parameters and args is an array
-        of doubles of the additional parameters.  This function may then
-        be compiled to a dynamic/shared library then imported through
-        ``ctypes``, setting the function's argtypes to ``(c_int, c_double)``,
-        and the function's restype to ``(c_double)``.  Its pointer may then be
-        passed into `nquad` normally.
-        This allows the underlying Fortran library to evaluate the function in
-        the innermost integration calls without callbacks to Python, and also 
-        speeds up the evaluation of the function itself.
+        of doubles of the additional parameters, the ``xx`` array contains the
+        coordinates. The ``user_data`` is the data contained in the
+        `scipy.LowLevelCallable`.
     ranges : iterable object
         Each element of ranges may be either a sequence  of 2 numbers, or else
         a callable that returns such a sequence.  ``ranges[0]`` corresponds to
         integration over x0, and so on.  If an element of ranges is a callable,
-        then it will be called with all of the integration arguments available.
-        e.g. if ``func = f(x0, x1, x2)``, then ``ranges[0]`` may be defined as
-        either ``(a, b)`` or else as ``(a, b) = range0(x1, x2)``.
+        then it will be called with all of the integration arguments available,
+        as well as any parametric arguments. e.g. if
+        ``func = f(x0, x1, x2, t0, t1)``, then ``ranges[0]`` may be defined as
+        either ``(a, b)`` or else as ``(a, b) = range0(x1, x2, t0, t1)``.
     args : iterable object, optional
-        Additional arguments ``t0, ..., tn``, required by `func`.
+        Additional arguments ``t0, ..., tn``, required by `func`, `ranges`, and
+        ``opts``.
     opts : iterable object or dict, optional
         Options to be passed to `quad`.  May be empty, a dict, or
         a sequence of dicts or functions that return a dict.  If empty, the
-        default options from scipy.integrate.quadare used.  If a dict, the same
+        default options from scipy.integrate.quad are used.  If a dict, the same
         options are used for all levels of integraion.  If a sequence, then each
         element of the sequence corresponds to a particular integration. e.g.
-        opts[0] corresponds to integration over x0, and so on. The available
+        opts[0] corresponds to integration over x0, and so on. If a callable,
+        the signature must be the same as for ``ranges``. The available
         options together with their default values are:
 
           - epsabs = 1.49e-08
@@ -623,10 +691,12 @@ def nquad(func, ranges, args=None, opts=None):
           - wvar   = None
           - wopts  = None
 
-        The ``full_output`` option from `quad` is unavailable, due to the
-        complexity of handling the large amount of data such an option would
-        return for this kind of nested integration.  For more information on
-        these options, see `quad` and `quad_explain`.
+        For more information on these options, see `quad` and `quad_explain`.
+
+    full_output : bool, optional
+        Partial implementation of ``full_output`` from scipy.integrate.quad.
+        The number of integrand function evaluations ``neval`` can be obtained
+        by setting ``full_output=True`` when calling nquad.
 
     Returns
     -------
@@ -635,6 +705,8 @@ def nquad(func, ranges, args=None, opts=None):
     abserr : float
         The maximum of the estimates of the absolute error in the various
         integration results.
+    out_dict : dict, optional
+        A dict containing additional information on the integration.
 
     See Also
     --------
@@ -648,12 +720,12 @@ def nquad(func, ranges, args=None, opts=None):
     >>> from scipy import integrate
     >>> func = lambda x0,x1,x2,x3 : x0**2 + x1*x2 - x3**3 + np.sin(x0) + (
     ...                                 1 if (x0-.2*x3-.5-.25*x1>0) else 0)
-    >>> points = [[lambda (x1,x2,x3) : 0.2*x3 + 0.5 + 0.25*x1], [], [], []]
+    >>> points = [[lambda x1,x2,x3 : 0.2*x3 + 0.5 + 0.25*x1], [], [], []]
     >>> def opts0(*args, **kwargs):
     ...     return {'points':[0.2*args[2] + 0.5 + 0.25*args[0]]}
     >>> integrate.nquad(func, [[0,1], [-1,1], [.13,.8], [-.15,1]],
-    ...                 opts=[opts0,{},{},{}])
-    (1.5267454070738633, 2.9437360001402324e-14)
+    ...                 opts=[opts0,{},{},{}], full_output=True)
+    (1.5267454070738633, 2.9437360001402324e-14, {'neval': 388962})
 
     >>> scale = .1
     >>> def func2(x0, x1, x2, x3, t0, t1):
@@ -678,7 +750,7 @@ def nquad(func, ranges, args=None, opts=None):
     >>> def opts3(t0, t1):
     ...     return {}
     >>> integrate.nquad(func2, [lim0, lim1, lim2, lim3], args=(0,0),
-                        opts=[opts0, opts1, opts2, opts3])
+    ...                 opts=[opts0, opts1, opts2, opts3])
     (25.066666666666666, 2.7829590483937256e-13)
 
     """
@@ -690,11 +762,10 @@ def nquad(func, ranges, args=None, opts=None):
         opts = [dict([])] * depth
 
     if isinstance(opts, dict):
-        opts = [opts] * depth
+        opts = [_OptFunc(opts)] * depth
     else:
         opts = [opt if callable(opt) else _OptFunc(opt) for opt in opts]
-
-    return _NQuad(func, ranges, opts).integrate(*args)
+    return _NQuad(func, ranges, opts, full_output).integrate(*args)
 
 
 class _RangeFunc(object):
@@ -720,12 +791,15 @@ class _OptFunc(object):
 
 
 class _NQuad(object):
-    def __init__(self, func, ranges, opts):
+    def __init__(self, func, ranges, opts, full_output):
         self.abserr = 0
         self.func = func
         self.ranges = ranges
         self.opts = opts
         self.maxdepth = len(ranges)
+        self.full_output = full_output
+        if self.full_output:
+            self.out_dict = {'neval': 0}
 
     def integrate(self, *args, **kwargs):
         depth = kwargs.pop('depth', 0)
@@ -745,11 +819,23 @@ class _NQuad(object):
             f = self.func
         else:
             f = partial(self.integrate, depth=depth+1)
-
-        value, abserr = quad(f, low, high, args=args, **opt)
+        quad_r = quad(f, low, high, args=args, full_output=self.full_output,
+                      **opt)
+        value = quad_r[0]
+        abserr = quad_r[1]
+        if self.full_output:
+            infodict = quad_r[2]
+            # The 'neval' parameter in full_output returns the total
+            # number of times the integrand function was evaluated.
+            # Therefore, only the innermost integration loop counts.
+            if depth + 1 == self.maxdepth:
+                self.out_dict['neval'] += infodict['neval']
         self.abserr = max(self.abserr, abserr)
         if depth > 0:
             return value
         else:
             # Final result of n-D integration with error
-            return value, self.abserr
+            if self.full_output:
+                return value, self.abserr, self.out_dict
+            else:
+                return value, self.abserr

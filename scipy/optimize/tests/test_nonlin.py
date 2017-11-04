@@ -4,15 +4,16 @@ May 2007
 """
 from __future__ import division, print_function, absolute_import
 
-from numpy.testing import assert_, dec, TestCase, run_module_suite
+from numpy.testing import assert_
+import pytest
 
-from scipy.lib.six import xrange
+from scipy._lib.six import xrange
 from scipy.optimize import nonlin, root
 from numpy import matrix, diag, dot
 from numpy.linalg import inv
 import numpy as np
 
-from test_minpack import pressure_network
+from .test_minpack import pressure_network
 
 SOLVERS = {'anderson': nonlin.anderson, 'diagbroyden': nonlin.diagbroyden,
            'linearmixing': nonlin.linearmixing, 'excitingmixing': nonlin.excitingmixing,
@@ -110,32 +111,42 @@ class TestNonlin(object):
                    options={'ftol': f_tol, 'maxiter': 200, 'disp': 0})
         assert_(np.absolute(res.fun).max() < f_tol)
 
-    @dec.knownfailureif(True)
+    @pytest.mark.xfail
     def _check_func_fail(self, *a, **kw):
         pass
 
     def test_problem_nonlin(self):
-        """ Tests for nonlin functions """
         for f in [F, F2, F2_lucky, F3, F4_powell, F5, F6]:
             for func in SOLVERS.values():
                 if func in f.KNOWN_BAD.values():
                     if func in MUST_WORK.values():
-                        yield self._check_func_fail, f, func
+                        self._check_func_fail(f, func)
                     continue
-                yield self._check_nonlin_func, f, func
+                self._check_nonlin_func(f, func)
+
+    def test_tol_norm_called(self):
+        # Check that supplying tol_norm keyword to nonlin_solve works
+        self._tol_norm_used = False
+
+        def local_norm_func(x):
+            self._tol_norm_used = True
+            return np.absolute(x).max()
+
+        nonlin.newton_krylov(F, F.xin, f_tol=1e-2, maxiter=200, verbose=0,
+             tol_norm=local_norm_func)
+        assert_(self._tol_norm_used)
 
     def test_problem_root(self):
-        """ Tests for root """
         for f in [F, F2, F2_lucky, F3, F4_powell, F5, F6]:
             for meth in SOLVERS:
                 if meth in f.KNOWN_BAD:
                     if meth in MUST_WORK:
-                        yield self._check_func_fail, f, meth
+                        self._check_func_fail(f, meth)
                     continue
-                yield self._check_root, f, meth
+                self._check_root(f, meth)
 
 
-class TestSecant(TestCase):
+class TestSecant(object):
     """Check that some Jacobian approximations satisfy the secant condition"""
 
     xs = [np.array([1,2,3,4,5], float),
@@ -211,7 +222,7 @@ class TestSecant(TestCase):
         self._check_secant(nonlin.Anderson, M=3, w0=0, npoints=3)
 
 
-class TestLinear(TestCase):
+class TestLinear(object):
     """Solve a linear equation;
     some methods find the exact solution in a finite number of steps"""
 
@@ -344,11 +355,11 @@ class TestJacobianDotSolve(object):
         self._check_dot(nonlin.ExcitingMixing, complex=True)
 
     def test_krylov(self):
-        self._check_dot(nonlin.KrylovJacobian, complex=False, tol=1e-4)
-        self._check_dot(nonlin.KrylovJacobian, complex=True, tol=1e-4)
+        self._check_dot(nonlin.KrylovJacobian, complex=False, tol=1e-3)
+        self._check_dot(nonlin.KrylovJacobian, complex=True, tol=1e-3)
 
 
-class TestNonlinOldTests(TestCase):
+class TestNonlinOldTests(object):
     """ Test case for a simple constrained entropy maximization problem
     (the machine translation example of Berger et al in
     Computational Linguistics, vol 22, num 1, pp 39--72, 1996.)
@@ -421,6 +432,3 @@ class TestNonlinOldTests(TestCase):
                             'jac_options': {'alpha': 1}})
         assert_(nonlin.norm(res.x) < 1e-8)
         assert_(nonlin.norm(res.fun) < 1e-8)
-
-if __name__ == "__main__":
-    run_module_suite()

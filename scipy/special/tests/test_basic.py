@@ -16,33 +16,38 @@
 #    test_pbdv_seq
 ###  test_pbvv_seq
 ###  test_sph_harm
-#    test_sph_in
-#    test_sph_jn
-#    test_sph_kn
 
 from __future__ import division, print_function, absolute_import
 
+import sys
+import platform
 import itertools
-import warnings
 
 import numpy as np
-from numpy import array, isnan, r_, arange, finfo, pi, sin, cos, tan, exp, \
-        log, zeros, sqrt, asarray, inf, nan_to_num, real, arctan, float_
+from numpy import (array, isnan, r_, arange, finfo, pi, sin, cos, tan, exp,
+        log, zeros, sqrt, asarray, inf, nan_to_num, real, arctan, float_)
 
-from numpy.testing import assert_equal, assert_almost_equal, \
-        assert_array_equal, assert_array_almost_equal, assert_approx_equal, \
-        assert_, rand, dec, TestCase, run_module_suite, assert_allclose, \
-        assert_raises, assert_array_almost_equal_nulp
+import pytest
+from pytest import raises as assert_raises
+from numpy.testing import (assert_equal, assert_almost_equal,
+        assert_array_equal, assert_array_almost_equal, assert_approx_equal,
+        assert_, assert_allclose,
+        assert_array_almost_equal_nulp)
 
 from scipy import special
 import scipy.special._ufuncs as cephes
-from scipy.special import ellipk
+from scipy.special import ellipk, zeta
 
 from scipy.special._testutils import assert_tol_equal, with_special_errors, \
      assert_func_equal
 
+from scipy._lib._numpy_compat import suppress_warnings
+from scipy._lib._version import NumpyVersion
 
-class TestCephes(TestCase):
+import math
+
+
+class TestCephes(object):
     def test_airy(self):
         cephes.airy(0)
 
@@ -141,7 +146,8 @@ class TestCephes(TestCase):
     def test_beta(self):
         assert_equal(cephes.beta(1,1),1.0)
         assert_allclose(cephes.beta(-100.3, 1e-200), cephes.gamma(1e-200))
-        assert_allclose(cephes.beta(0.0342, 171), 24.070498359873497, rtol=1e-14, atol=0)
+        assert_allclose(cephes.beta(0.0342, 171), 24.070498359873497,
+                        rtol=1e-13, atol=0)
 
     def test_betainc(self):
         assert_equal(cephes.betainc(1,1,1),1.0)
@@ -150,11 +156,13 @@ class TestCephes(TestCase):
     def test_betaln(self):
         assert_equal(cephes.betaln(1,1),0.0)
         assert_allclose(cephes.betaln(-100.3, 1e-200), cephes.gammaln(1e-200))
-        assert_allclose(cephes.betaln(0.0342, 170), 3.1811881124242447, rtol=1e-14, atol=0)
+        assert_allclose(cephes.betaln(0.0342, 170), 3.1811881124242447,
+                        rtol=1e-14, atol=0)
 
     def test_betaincinv(self):
         assert_equal(cephes.betaincinv(1,1,1),1.0)
-        assert_allclose(cephes.betaincinv(0.0342, 171, 0.25), 8.4231316935498957e-21, rtol=1e-12, atol=0)
+        assert_allclose(cephes.betaincinv(0.0342, 171, 0.25),
+                        8.4231316935498957e-21, rtol=3e-12, atol=0)
 
     def test_beta_inf(self):
         assert_(np.isinf(special.beta(-1, 2)))
@@ -220,6 +228,36 @@ class TestCephes(TestCase):
         assert_equal(cephes.dawsn(0),0.0)
         assert_allclose(cephes.dawsn(1.23), 0.50053727749081767)
 
+    def test_diric(self):
+        # Test behavior near multiples of 2pi.  Regression test for issue
+        # described in gh-4001.
+        n_odd = [1, 5, 25]
+        x = np.array(2*np.pi + 5e-5).astype(np.float32)
+        assert_almost_equal(special.diric(x, n_odd), 1.0, decimal=7)
+        x = np.array(2*np.pi + 1e-9).astype(np.float64)
+        assert_almost_equal(special.diric(x, n_odd), 1.0, decimal=15)
+        x = np.array(2*np.pi + 1e-15).astype(np.float64)
+        assert_almost_equal(special.diric(x, n_odd), 1.0, decimal=15)
+        if hasattr(np, 'float128'):
+            # No float128 available in 32-bit numpy
+            x = np.array(2*np.pi + 1e-12).astype(np.float128)
+            assert_almost_equal(special.diric(x, n_odd), 1.0, decimal=19)
+
+        n_even = [2, 4, 24]
+        x = np.array(2*np.pi + 1e-9).astype(np.float64)
+        assert_almost_equal(special.diric(x, n_even), -1.0, decimal=15)
+
+        # Test at some values not near a multiple of pi
+        x = np.arange(0.2*np.pi, 1.0*np.pi, 0.2*np.pi)
+        octave_result = [0.872677996249965, 0.539344662916632,
+                         0.127322003750035, -0.206011329583298]
+        assert_almost_equal(special.diric(x, 3), octave_result, decimal=15)
+
+    def test_diric_broadcasting(self):
+        x = np.arange(5)
+        n = np.array([1, 3, 7])
+        assert_(special.diric(x[:, np.newaxis], n).shape == (x.size, n.size))
+
     def test_ellipe(self):
         assert_equal(cephes.ellipe(1),1.0)
 
@@ -264,17 +302,76 @@ class TestCephes(TestCase):
 
     def test_expm1(self):
         assert_equal(cephes.expm1(0),0.0)
+        assert_equal(cephes.expm1(np.inf), np.inf)
+        assert_equal(cephes.expm1(-np.inf), -1)
+        assert_equal(cephes.expm1(np.nan), np.nan)
+
+    # Earlier numpy version don't guarantee that npy_cexp conforms to C99.
+    @pytest.mark.skipif(NumpyVersion(np.__version__) < '1.9.0', reason='')
+    def test_expm1_complex(self):
+        expm1 = cephes.expm1
+        assert_equal(expm1(0 + 0j), 0 + 0j)
+        assert_equal(expm1(complex(np.inf, 0)), complex(np.inf, 0))
+        assert_equal(expm1(complex(np.inf, 1)), complex(np.inf, np.inf))
+        assert_equal(expm1(complex(np.inf, 2)), complex(-np.inf, np.inf))
+        assert_equal(expm1(complex(np.inf, 4)), complex(-np.inf, -np.inf))
+        assert_equal(expm1(complex(np.inf, 5)), complex(np.inf, -np.inf))
+        assert_equal(expm1(complex(1, np.inf)), complex(np.nan, np.nan))
+        assert_equal(expm1(complex(0, np.inf)), complex(np.nan, np.nan))
+        assert_equal(expm1(complex(np.inf, np.inf)), complex(np.inf, np.nan))
+        assert_equal(expm1(complex(-np.inf, np.inf)), complex(-1, 0))
+        assert_equal(expm1(complex(-np.inf, np.nan)), complex(-1, 0))
+        assert_equal(expm1(complex(np.inf, np.nan)), complex(np.inf, np.nan))
+        assert_equal(expm1(complex(0, np.nan)), complex(np.nan, np.nan))
+        assert_equal(expm1(complex(1, np.nan)), complex(np.nan, np.nan))
+        assert_equal(expm1(complex(np.nan, 1)), complex(np.nan, np.nan))
+        assert_equal(expm1(complex(np.nan, np.nan)), complex(np.nan, np.nan))
+
+    @pytest.mark.xfail(reason='The real part of expm1(z) bad at these points')
+    def test_expm1_complex_hard(self):
+        # The real part of this function is difficult to evaluate when
+        # z.real = -log(cos(z.imag)).
+        y = np.array([0.1, 0.2, 0.3, 5, 11, 20])
+        x = -np.log(np.cos(y))
+        z = x + 1j*y
+
+        # evaluate using mpmath.expm1 with dps=1000
+        expected = np.array([-5.5507901846769623e-17+0.10033467208545054j,
+                              2.4289354732893695e-18+0.20271003550867248j,
+                              4.5235500262585768e-17+0.30933624960962319j,
+                              7.8234305217489006e-17-3.3805150062465863j,
+                             -1.3685191953697676e-16-225.95084645419513j,
+                              8.7175620481291045e-17+2.2371609442247422j])
+        found = cephes.expm1(z)
+        # this passes.
+        assert_array_almost_equal_nulp(found.imag, expected.imag, 3)
+        # this fails.
+        assert_array_almost_equal_nulp(found.real, expected.real, 20)
 
     def test_fdtr(self):
-        assert_equal(cephes.fdtr(1,1,0),0.0)
+        assert_equal(cephes.fdtr(1, 1, 0), 0.0)
+        # Computed using Wolfram Alpha: CDF[FRatioDistribution[1e-6, 5], 10]
+        assert_allclose(cephes.fdtr(1e-6, 5, 10), 0.9999940790193488,
+                        rtol=1e-12)
 
     def test_fdtrc(self):
-        assert_equal(cephes.fdtrc(1,1,0),1.0)
+        assert_equal(cephes.fdtrc(1, 1, 0), 1.0)
+        # Computed using Wolfram Alpha:
+        #   1 - CDF[FRatioDistribution[2, 1/10], 1e10]
+        assert_allclose(cephes.fdtrc(2, 0.1, 1e10), 0.27223784621293512,
+                        rtol=1e-12)
 
     def test_fdtri(self):
-        # cephes.fdtri(1,1,0.5)  #BUG: gives NaN, should be 1
         assert_allclose(cephes.fdtri(1, 1, [0.499, 0.501]),
                         array([0.9937365, 1.00630298]), rtol=1e-6)
+        # From Wolfram Alpha:
+        #   CDF[FRatioDistribution[1/10, 1], 3] = 0.8756751669632105666874...
+        p = 0.8756751669632105666874
+        assert_allclose(cephes.fdtri(0.1, 1, p), 3, rtol=1e-12)
+
+    @pytest.mark.xfail(reason='Returns nan on i686.')
+    def test_fdtri_mysterious_failure(self):
+        assert_allclose(cephes.fdtri(1, 1, 0.5), 1)
 
     def test_fdtridfd(self):
         assert_equal(cephes.fdtridfd(1,0,0),5.0)
@@ -303,6 +400,9 @@ class TestCephes(TestCase):
 
     def test_gdtr(self):
         assert_equal(cephes.gdtr(1,1,0),0.0)
+
+    def test_gdtr_inf(self):
+        assert_equal(cephes.gdtr(1,1,np.inf),1.0)
 
     def test_gdtrc(self):
         assert_equal(cephes.gdtrc(1,1,0),1.0)
@@ -450,7 +550,30 @@ class TestCephes(TestCase):
         cephes.kve(1,1)
 
     def test_log1p(self):
-        assert_equal(cephes.log1p(0),0.0)
+        log1p = cephes.log1p
+        assert_equal(log1p(0), 0.0)
+        assert_equal(log1p(-1), -np.inf)
+        assert_equal(log1p(-2), np.nan)
+        assert_equal(log1p(np.inf), np.inf)
+
+    # earlier numpy version don't guarantee that npy_clog conforms to C99
+    @pytest.mark.skipif(NumpyVersion(np.__version__) < '1.9.0', reason='')
+    def test_log1p_complex(self):
+        log1p = cephes.log1p
+        c = complex
+        assert_equal(log1p(0 + 0j), 0 + 0j)
+        assert_equal(log1p(c(-1, 0)), c(-np.inf, 0))
+        assert_allclose(log1p(c(1, np.inf)), c(np.inf, np.pi/2))
+        assert_equal(log1p(c(1, np.nan)), c(np.nan, np.nan))
+        assert_allclose(log1p(c(-np.inf, 1)), c(np.inf, np.pi))
+        assert_equal(log1p(c(np.inf, 1)), c(np.inf, 0))
+        assert_allclose(log1p(c(-np.inf, np.inf)), c(np.inf, 3*np.pi/4))
+        assert_allclose(log1p(c(np.inf, np.inf)), c(np.inf, np.pi/4))
+        assert_equal(log1p(c(np.inf, np.nan)), c(np.inf, np.nan))
+        assert_equal(log1p(c(-np.inf, np.nan)), c(np.inf, np.nan))
+        assert_equal(log1p(c(np.nan, np.inf)), c(np.inf, np.nan))
+        assert_equal(log1p(c(np.nan, 1)), c(np.nan, np.nan))
+        assert_equal(log1p(c(np.nan, np.nan)), c(np.nan, np.nan))
 
     def test_lpmv(self):
         assert_equal(cephes.lpmv(0,0,1),1.0)
@@ -583,16 +706,25 @@ class TestCephes(TestCase):
         assert_equal(cephes.ncfdtr(1,1,1,0),0.0)
 
     def test_ncfdtri(self):
-        assert_equal(cephes.ncfdtri(1,1,1,0),0.0)
+        assert_equal(cephes.ncfdtri(1, 1, 1, 0), 0.0)
+        f = [0.5, 1, 1.5]
+        p = cephes.ncfdtr(2, 3, 1.5, f)
+        assert_allclose(cephes.ncfdtri(2, 3, 1.5, p), f)
 
     def test_ncfdtridfd(self):
-        cephes.ncfdtridfd(1,0.5,0,1)
+        dfd = [1, 2, 3]
+        p = cephes.ncfdtr(2, dfd, 0.25, 15)
+        assert_allclose(cephes.ncfdtridfd(2, p, 0.25, 15), dfd)
 
-    def __check_ncfdtridfn(self):
-        cephes.ncfdtridfn(1,0.5,0,1)
+    def test_ncfdtridfn(self):
+        dfn = [0.1, 1, 2, 3, 1e4]
+        p = cephes.ncfdtr(dfn, 2, 0.25, 15)
+        assert_allclose(cephes.ncfdtridfn(p, 2, 0.25, 15), dfn, rtol=1e-5)
 
-    def __check_ncfdtrinc(self):
-        cephes.ncfdtrinc(1,0.5,0,1)
+    def test_ncfdtrinc(self):
+        nc = [0.5, 1.5, 2.0]
+        p = cephes.ncfdtr(2, 3, nc, 15)
+        assert_allclose(cephes.ncfdtrinc(2, 3, p, 15), nc)
 
     def test_nctdtr(self):
         assert_equal(cephes.nctdtr(1,0,0),0.5)
@@ -676,8 +808,8 @@ class TestCephes(TestCase):
         assert_array_equal(val, [0, 0, 0])
 
     def test_pdtri(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", RuntimeWarning)
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, "floating point number truncated to an integer")
             cephes.pdtri(0.5,0.5)
 
     def test_pdtrik(self):
@@ -791,10 +923,14 @@ class TestCephes(TestCase):
         cephes.yve(1,1)
 
     def test_zeta(self):
-        cephes.zeta(2,2)
+        assert_allclose(zeta(2,2), pi**2/6 - 1, rtol=1e-12)
 
     def test_zetac(self):
         assert_equal(cephes.zetac(0),-1.5)
+
+    def test_zeta_1arg(self):
+        assert_allclose(zeta(2), pi**2/6, rtol=1e-12)
+        assert_allclose(zeta(4), pi**4/90, rtol=1e-12)
 
     def test_wofz(self):
         z = [complex(624.2,-0.26123), complex(-0.4,3.), complex(0.6,2.),
@@ -841,7 +977,7 @@ class TestCephes(TestCase):
         assert_func_equal(cephes.wofz, w, z, rtol=1e-13)
 
 
-class TestAiry(TestCase):
+class TestAiry(object):
     def test_airy(self):
         # This tests the airy function to ensure 8 place accuracy in computation
 
@@ -865,51 +1001,11 @@ class TestAiry(TestCase):
     def test_bi_zeros(self):
         bi = special.bi_zeros(2)
         bia = (array([-1.17371322, -3.2710930]),
-        array([-2.29443968, -4.07315509]),
-        array([-0.45494438, 0.39652284]),
-        array([0.60195789, -0.76031014]))
+               array([-2.29443968, -4.07315509]),
+               array([-0.45494438, 0.39652284]),
+               array([0.60195789, -0.76031014]))
         assert_array_almost_equal(bi,bia,4)
 
-    def test_ai_zeros(self):
-        ai = special.ai_zeros(1)
-        assert_array_almost_equal(ai,(array([-2.33810741]),
-                                     array([-1.01879297]),
-                                     array([0.5357]),
-                                     array([0.7012])),4)
-
-
-class TestAssocLaguerre(TestCase):
-    def test_assoc_laguerre(self):
-        a1 = special.genlaguerre(11,1)
-        a2 = special.assoc_laguerre(.2,11,1)
-        assert_array_almost_equal(a2,a1(.2),8)
-        a2 = special.assoc_laguerre(1,11,1)
-        assert_array_almost_equal(a2,a1(1),8)
-
-
-class TestBesselpoly(TestCase):
-    def test_besselpoly(self):
-        pass
-
-
-class TestKelvin(TestCase):
-    def test_bei(self):
-        mbei = special.bei(2)
-        assert_almost_equal(mbei, 0.9722916273066613,5)  # this may not be exact
-
-    def test_beip(self):
-        mbeip = special.beip(2)
-        assert_almost_equal(mbeip,0.91701361338403631,5)  # this may not be exact
-
-    def test_ber(self):
-        mber = special.ber(2)
-        assert_almost_equal(mber,0.75173418271380821,5)  # this may not be exact
-
-    def test_berp(self):
-        mberp = special.berp(2)
-        assert_almost_equal(mberp,-0.49306712470943909,5)  # this may not be exact
-
-    def test_bei_zeros(self):
         bi = special.bi_zeros(5)
         assert_array_almost_equal(bi[0],array([-1.173713222709127,
                                                -3.271093302836352,
@@ -933,7 +1029,103 @@ class TestKelvin(TestCase):
                                                -0.760310141492801,
                                                0.836991012619261,
                                                -0.88947990142654,
-                                               0.929983638568022]),11)
+                                               0.929983638568022]),10)
+
+    def test_ai_zeros(self):
+        ai = special.ai_zeros(1)
+        assert_array_almost_equal(ai,(array([-2.33810741]),
+                                     array([-1.01879297]),
+                                     array([0.5357]),
+                                     array([0.7012])),4)
+
+    def test_ai_zeros_big(self):
+        z, zp, ai_zpx, aip_zx = special.ai_zeros(50000)
+        ai_z, aip_z, _, _ = special.airy(z)
+        ai_zp, aip_zp, _, _ = special.airy(zp)
+
+        ai_envelope = 1/abs(z)**(1./4)
+        aip_envelope = abs(zp)**(1./4)
+
+        # Check values
+        assert_allclose(ai_zpx, ai_zp, rtol=1e-10)
+        assert_allclose(aip_zx, aip_z, rtol=1e-10)
+
+        # Check they are zeros
+        assert_allclose(ai_z/ai_envelope, 0, atol=1e-10, rtol=0)
+        assert_allclose(aip_zp/aip_envelope, 0, atol=1e-10, rtol=0)
+
+        # Check first zeros, DLMF 9.9.1
+        assert_allclose(z[:6],
+            [-2.3381074105, -4.0879494441, -5.5205598281,
+             -6.7867080901, -7.9441335871, -9.0226508533], rtol=1e-10)
+        assert_allclose(zp[:6],
+            [-1.0187929716, -3.2481975822, -4.8200992112,
+             -6.1633073556, -7.3721772550, -8.4884867340], rtol=1e-10)
+
+    def test_bi_zeros_big(self):
+        z, zp, bi_zpx, bip_zx = special.bi_zeros(50000)
+        _, _, bi_z, bip_z = special.airy(z)
+        _, _, bi_zp, bip_zp = special.airy(zp)
+
+        bi_envelope = 1/abs(z)**(1./4)
+        bip_envelope = abs(zp)**(1./4)
+
+        # Check values
+        assert_allclose(bi_zpx, bi_zp, rtol=1e-10)
+        assert_allclose(bip_zx, bip_z, rtol=1e-10)
+
+        # Check they are zeros
+        assert_allclose(bi_z/bi_envelope, 0, atol=1e-10, rtol=0)
+        assert_allclose(bip_zp/bip_envelope, 0, atol=1e-10, rtol=0)
+
+        # Check first zeros, DLMF 9.9.2
+        assert_allclose(z[:6],
+            [-1.1737132227, -3.2710933028, -4.8307378417,
+             -6.1698521283, -7.3767620794, -8.4919488465], rtol=1e-10)
+        assert_allclose(zp[:6],
+            [-2.2944396826, -4.0731550891, -5.5123957297,
+             -6.7812944460, -7.9401786892, -9.0195833588], rtol=1e-10)
+
+
+class TestAssocLaguerre(object):
+    def test_assoc_laguerre(self):
+        a1 = special.genlaguerre(11,1)
+        a2 = special.assoc_laguerre(.2,11,1)
+        assert_array_almost_equal(a2,a1(.2),8)
+        a2 = special.assoc_laguerre(1,11,1)
+        assert_array_almost_equal(a2,a1(1),8)
+
+
+class TestBesselpoly(object):
+    def test_besselpoly(self):
+        pass
+
+
+class TestKelvin(object):
+    def test_bei(self):
+        mbei = special.bei(2)
+        assert_almost_equal(mbei, 0.9722916273066613,5)  # this may not be exact
+
+    def test_beip(self):
+        mbeip = special.beip(2)
+        assert_almost_equal(mbeip,0.91701361338403631,5)  # this may not be exact
+
+    def test_ber(self):
+        mber = special.ber(2)
+        assert_almost_equal(mber,0.75173418271380821,5)  # this may not be exact
+
+    def test_berp(self):
+        mberp = special.berp(2)
+        assert_almost_equal(mberp,-0.49306712470943909,5)  # this may not be exact
+
+    def test_bei_zeros(self):
+        # Abramowitz & Stegun, Table 9.12
+        bi = special.bei_zeros(5)
+        assert_array_almost_equal(bi,array([5.02622,
+                                            9.45541,
+                                            13.89349,
+                                            18.33398,
+                                            22.77544]),4)
 
     def test_beip_zeros(self):
         bip = special.beip_zeros(5)
@@ -941,7 +1133,7 @@ class TestKelvin(TestCase):
                                                8.280987849760042,
                                                12.742147523633703,
                                                17.193431752512542,
-                                               21.641143941167325]),4)
+                                               21.641143941167325]),8)
 
     def test_ber_zeros(self):
         ber = special.ber_zeros(5)
@@ -1062,7 +1254,7 @@ class TestKelvin(TestCase):
                                                 20.53068]),4)
 
 
-class TestBernoulli(TestCase):
+class TestBernoulli(object):
     def test_bernoulli(self):
         brn = special.bernoulli(5)
         assert_array_almost_equal(brn,array([1.0000,
@@ -1073,7 +1265,7 @@ class TestBernoulli(TestCase):
                                              0.0000]),4)
 
 
-class TestBeta(TestCase):
+class TestBeta(object):
     def test_beta(self):
         bet = special.beta(2,4)
         betg = (special.gamma(2)*special.gamma(4))/special.gamma(6)
@@ -1094,12 +1286,21 @@ class TestBeta(TestCase):
         assert_almost_equal(comp,.5,5)
 
 
-class TestCombinatorics(TestCase):
+class TestCombinatorics(object):
     def test_comb(self):
         assert_array_almost_equal(special.comb([10, 10], [3, 4]), [120., 210.])
         assert_almost_equal(special.comb(10, 3), 120.)
         assert_equal(special.comb(10, 3, exact=True), 120)
         assert_equal(special.comb(10, 3, exact=True, repetition=True), 220)
+
+        assert_allclose([special.comb(20, k, exact=True) for k in range(21)],
+                        special.comb(20, list(range(21))), atol=1e-15)
+
+        ii = np.iinfo(int).max + 1
+        assert_equal(special.comb(ii, ii-1, exact=True), ii)
+
+        expected = 100891344545564193334812497256
+        assert_equal(special.comb(100, 50, exact=True), expected)
 
     def test_comb_with_np_int64(self):
         n = 70
@@ -1131,7 +1332,7 @@ class TestCombinatorics(TestCase):
                 [0., 0., 0., 720.])
 
 
-class TestTrigonometric(TestCase):
+class TestTrigonometric(object):
     def test_cbrt(self):
         cb = special.cbrt(27)
         cbrl = 27**(1.0/3.0)
@@ -1200,7 +1401,7 @@ class TestTrigonometric(TestCase):
         assert_almost_equal(snm1,snmrl1,8)
 
 
-class TestTandg(TestCase):
+class TestTandg(object):
 
     def test_tandg(self):
         tn = special.tandg(30)
@@ -1229,7 +1430,7 @@ class TestTandg(TestCase):
         assert_almost_equal(special.tandg(-315), 1.0, 14)
 
 
-class TestEllip(TestCase):
+class TestEllip(object):
     def test_ellipj_nan(self):
         """Regression test for #912."""
         special.ellipj(0.5, np.nan)
@@ -1243,6 +1444,13 @@ class TestEllip(TestCase):
         elk = special.ellipk(.2)
         assert_almost_equal(elk,1.659623598610528,11)
 
+        assert_equal(special.ellipkm1(0.0), np.inf)
+        assert_equal(special.ellipkm1(1.0), pi/2)
+        assert_equal(special.ellipkm1(np.inf), 0.0)
+        assert_equal(special.ellipkm1(np.nan), np.nan)
+        assert_equal(special.ellipkm1(-1), np.nan)
+        assert_allclose(special.ellipk(-10), 0.7908718902387385)
+
     def test_ellipkinc(self):
         elkinc = special.ellipkinc(pi/2,.2)
         elk = special.ellipk(0.2)
@@ -1253,6 +1461,24 @@ class TestEllip(TestCase):
         elkinc = special.ellipkinc(phi,m)
         assert_almost_equal(elkinc,0.79398143,8)
         # From pg. 614 of A & S
+
+        assert_equal(special.ellipkinc(pi/2, 0.0), pi/2)
+        assert_equal(special.ellipkinc(pi/2, 1.0), np.inf)
+        assert_equal(special.ellipkinc(pi/2, -np.inf), 0.0)
+        assert_equal(special.ellipkinc(pi/2, np.nan), np.nan)
+        assert_equal(special.ellipkinc(pi/2, 2), np.nan)
+        assert_equal(special.ellipkinc(0, 0.5), 0.0)
+        assert_equal(special.ellipkinc(np.inf, 0.5), np.inf)
+        assert_equal(special.ellipkinc(-np.inf, 0.5), -np.inf)
+        assert_equal(special.ellipkinc(np.inf, np.inf), np.nan)
+        assert_equal(special.ellipkinc(np.inf, -np.inf), np.nan)
+        assert_equal(special.ellipkinc(-np.inf, -np.inf), np.nan)
+        assert_equal(special.ellipkinc(-np.inf, np.inf), np.nan)
+        assert_equal(special.ellipkinc(np.nan, 0.5), np.nan)
+        assert_equal(special.ellipkinc(np.nan, np.nan), np.nan)
+
+        assert_allclose(special.ellipkinc(0.38974112035318718, 1), 0.4, rtol=1e-14)
+        assert_allclose(special.ellipkinc(1.5707, -10), 0.79084284661724946)
 
     def test_ellipkinc_2(self):
         # Regression test for gh-3550
@@ -1270,9 +1496,31 @@ class TestEllip(TestCase):
         f1 = special.ellipkinc(phi + pi, mvals)
         assert_array_almost_equal_nulp(f1, 5.1296650500976675 * np.ones_like(f1), 2)
 
+    def test_ellipkinc_singular(self):
+        # ellipkinc(phi, 1) has closed form and is finite only for phi in (-pi/2, pi/2)
+        xlog = np.logspace(-300, -17, 25)
+        xlin = np.linspace(1e-17, 0.1, 25)
+        xlin2 = np.linspace(0.1, pi/2, 25, endpoint=False)
+
+        assert_allclose(special.ellipkinc(xlog, 1), np.arcsinh(np.tan(xlog)), rtol=1e14)
+        assert_allclose(special.ellipkinc(xlin, 1), np.arcsinh(np.tan(xlin)), rtol=1e14)
+        assert_allclose(special.ellipkinc(xlin2, 1), np.arcsinh(np.tan(xlin2)), rtol=1e14)
+        assert_equal(special.ellipkinc(np.pi/2, 1), np.inf)
+        assert_allclose(special.ellipkinc(-xlog, 1), np.arcsinh(np.tan(-xlog)), rtol=1e14)
+        assert_allclose(special.ellipkinc(-xlin, 1), np.arcsinh(np.tan(-xlin)), rtol=1e14)
+        assert_allclose(special.ellipkinc(-xlin2, 1), np.arcsinh(np.tan(-xlin2)), rtol=1e14)
+        assert_equal(special.ellipkinc(-np.pi/2, 1), np.inf)
+
     def test_ellipe(self):
         ele = special.ellipe(.2)
         assert_almost_equal(ele,1.4890350580958529,8)
+
+        assert_equal(special.ellipe(0.0), pi/2)
+        assert_equal(special.ellipe(1.0), 1.0)
+        assert_equal(special.ellipe(-np.inf), np.inf)
+        assert_equal(special.ellipe(np.nan), np.nan)
+        assert_equal(special.ellipe(2), np.nan)
+        assert_allclose(special.ellipe(-10), 3.6391380384177689)
 
     def test_ellipeinc(self):
         eleinc = special.ellipeinc(pi/2,.2)
@@ -1283,6 +1531,22 @@ class TestEllip(TestCase):
         m = sin(alpha)**2
         eleinc = special.ellipeinc(phi,m)
         assert_almost_equal(eleinc, 0.58823065, 8)
+
+        assert_equal(special.ellipeinc(pi/2, 0.0), pi/2)
+        assert_equal(special.ellipeinc(pi/2, 1.0), 1.0)
+        assert_equal(special.ellipeinc(pi/2, -np.inf), np.inf)
+        assert_equal(special.ellipeinc(pi/2, np.nan), np.nan)
+        assert_equal(special.ellipeinc(pi/2, 2), np.nan)
+        assert_equal(special.ellipeinc(0, 0.5), 0.0)
+        assert_equal(special.ellipeinc(np.inf, 0.5), np.inf)
+        assert_equal(special.ellipeinc(-np.inf, 0.5), -np.inf)
+        assert_equal(special.ellipeinc(np.inf, -np.inf), np.inf)
+        assert_equal(special.ellipeinc(-np.inf, -np.inf), -np.inf)
+        assert_equal(special.ellipeinc(np.inf, np.inf), np.nan)
+        assert_equal(special.ellipeinc(-np.inf, np.inf), np.nan)
+        assert_equal(special.ellipeinc(np.nan, 0.5), np.nan)
+        assert_equal(special.ellipeinc(np.nan, np.nan), np.nan)
+        assert_allclose(special.ellipeinc(1.5707, -10), 3.6388185585822876)
 
     def test_ellipeinc_2(self):
         # Regression test for gh-3550
@@ -1301,7 +1565,7 @@ class TestEllip(TestCase):
         assert_array_almost_equal_nulp(f1, 3.3471442287390509 * np.ones_like(f1), 4)
 
 
-class TestErf(TestCase):
+class TestErf(object):
 
     def test_erf(self):
         er = special.erf(.25)
@@ -1382,22 +1646,54 @@ class TestErf(TestCase):
         assert_equal(i,0)
 
     def test_errprint(self):
-        a = special.errprint()
-        b = 1-a  # a is the state 1-a inverts state
-        c = special.errprint(b)  # returns last state 'a'
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, "`errprint` is deprecated!")
+            a = special.errprint()
+            b = 1-a  # a is the state 1-a inverts state
+            c = special.errprint(b)  # returns last state 'a'
+            d = special.errprint(a)  # returns to original state
         assert_equal(a,c)
-        d = special.errprint(a)  # returns to original state
         assert_equal(d,b)  # makes sure state was returned
-        # assert_equal(d,1-a)
+
+    def test_erf_nan_inf(self):
+        vals = [np.nan, -np.inf, np.inf]
+        expected = [np.nan, -1, 1]
+        assert_allclose(special.erf(vals), expected, rtol=1e-15)
+
+    def test_erfc_nan_inf(self):
+        vals = [np.nan, -np.inf, np.inf]
+        expected = [np.nan, 2, 0]
+        assert_allclose(special.erfc(vals), expected, rtol=1e-15)
+
+    def test_erfcx_nan_inf(self):
+        vals = [np.nan, -np.inf, np.inf]
+        expected = [np.nan, np.inf, 0]
+        assert_allclose(special.erfcx(vals), expected, rtol=1e-15)
+
+    def test_erfi_nan_inf(self):
+        vals = [np.nan, -np.inf, np.inf]
+        expected = [np.nan, -np.inf, np.inf]
+        assert_allclose(special.erfi(vals), expected, rtol=1e-15)
+
+    def test_dawsn_nan_inf(self):
+        vals = [np.nan, -np.inf, np.inf]
+        expected = [np.nan, -0.0, 0.0]
+        assert_allclose(special.dawsn(vals), expected, rtol=1e-15)
+
+    def test_wofz_nan_inf(self):
+        vals = [np.nan, -np.inf, np.inf]
+        expected = [np.nan + np.nan * 1.j, 0.-0.j, 0.+0.j]
+        assert_allclose(special.wofz(vals), expected, rtol=1e-15)
 
 
-class TestEuler(TestCase):
+class TestEuler(object):
     def test_euler(self):
         eu0 = special.euler(0)
         eu1 = special.euler(1)
         eu2 = special.euler(2)   # just checking segfaults
-        assert_almost_equal(eu0[0],1,8)
-        assert_almost_equal(eu2[2],-1,8)
+        assert_allclose(eu0, [1], rtol=1e-15)
+        assert_allclose(eu1, [1, 0], rtol=1e-15)
+        assert_allclose(eu2, [1, 0, -1], rtol=1e-15)
         eu24 = special.euler(24)
         mathworld = [1,1,5,61,1385,50521,2702765,199360981,
                      19391512145,2404879675441,
@@ -1418,7 +1714,7 @@ class TestEuler(TestCase):
         assert_almost_equal(errmax, 0.0, 14)
 
 
-class TestExp(TestCase):
+class TestExp(object):
     def test_exp2(self):
         ex = special.exp2(2)
         exrl = 2**2
@@ -1450,15 +1746,68 @@ class TestExp(TestCase):
         assert_array_almost_equal(ex1,exrl1,8)
 
 
-class TestFactorialFunctions(TestCase):
+class TestFactorialFunctions(object):
     def test_factorial(self):
+        # Some known values, float math
+        assert_array_almost_equal(special.factorial(0), 1)
+        assert_array_almost_equal(special.factorial(1), 1)
+        assert_array_almost_equal(special.factorial(2), 2)
         assert_array_almost_equal([6., 24., 120.],
-                special.factorial([3, 4, 5], exact=False))
+                                  special.factorial([3, 4, 5], exact=False))
+        assert_array_almost_equal(special.factorial([[5, 3], [4, 3]]),
+                                  [[120, 6], [24, 6]])
+
+        # Some known values, integer math
+        assert_equal(special.factorial(0, exact=True), 1)
+        assert_equal(special.factorial(1, exact=True), 1)
+        assert_equal(special.factorial(2, exact=True), 2)
         assert_equal(special.factorial(5, exact=True), 120)
+        assert_equal(special.factorial(15, exact=True), 1307674368000)
+
+        # ndarray shape is maintained
+        assert_equal(special.factorial([7, 4, 15, 10], exact=True),
+                     [5040, 24, 1307674368000, 3628800])
+
+        assert_equal(special.factorial([[5, 3], [4, 3]], True),
+                     [[120, 6], [24, 6]])
+
+        # object arrays
+        assert_equal(special.factorial(np.arange(-3, 22), True),
+                     special.factorial(np.arange(-3, 22), False))
+
+        # int64 array
+        assert_equal(special.factorial(np.arange(-3, 15), True),
+                     special.factorial(np.arange(-3, 15), False))
+
+        # int32 array
+        assert_equal(special.factorial(np.arange(-3, 5), True),
+                     special.factorial(np.arange(-3, 5), False))
+
+        # Consistent output for n < 0
+        for exact in (True, False):
+            assert_array_equal(0, special.factorial(-3, exact))
+            assert_array_equal([1, 2, 0, 0],
+                               special.factorial([1, 2, -5, -4], exact))
+
+        for n in range(0, 22):
+            # Compare all with math.factorial
+            correct = math.factorial(n)
+            assert_array_equal(correct, special.factorial(n, True))
+            assert_array_equal(correct, special.factorial([n], True)[0])
+
+            assert_allclose(float(correct), special.factorial(n, False))
+            assert_allclose(float(correct), special.factorial([n], False)[0])
+
+            # Compare exact=True vs False, scalar vs array
+            assert_array_equal(special.factorial(n, True),
+                               special.factorial(n, False))
+
+            assert_array_equal(special.factorial([n], True),
+                               special.factorial([n], False))
 
     def test_factorial2(self):
         assert_array_almost_equal([105., 384., 945.],
-                special.factorial2([7, 8, 9], exact=False))
+                                  special.factorial2([7, 8, 9], exact=False))
         assert_equal(special.factorial2(7, exact=True), 105)
 
     def test_factorialk(self):
@@ -1466,10 +1815,18 @@ class TestFactorialFunctions(TestCase):
         assert_equal(special.factorialk(5, 3, exact=True), 10)
 
 
-class TestFresnel(TestCase):
+class TestFresnel(object):
     def test_fresnel(self):
         frs = array(special.fresnel(.5))
         assert_array_almost_equal(frs,array([0.064732432859999287, 0.49234422587144644]),8)
+
+    def test_fresnel_inf1(self):
+        frs = special.fresnel(np.inf)
+        assert_equal(frs, (0.5, 0.5))
+
+    def test_fresnel_inf2(self):
+        frs = special.fresnel(-np.inf)
+        assert_equal(frs, (-0.5, -0.5))
 
     # values from pg 329  Table 7.11 of A & S
     #  slightly corrected in 4th decimal place
@@ -1503,7 +1860,7 @@ class TestFresnel(TestCase):
         assert_array_almost_equal(frs,szo,12)
 
 
-class TestGamma(TestCase):
+class TestGamma(object):
     def test_gamma(self):
         gam = special.gamma(5)
         assert_equal(gam,24.0)
@@ -1526,6 +1883,10 @@ class TestGamma(TestCase):
         gama = special.gammainc(-1,0)
         assert_equal(gama,0.0)
 
+    def test_gammaincinf(self):
+        gama = special.gammainc(0.5, np.inf)
+        assert_equal(gama,1.0)
+
     def test_gammaincc(self):
         gicc = special.gammaincc(.5,.5)
         greal = 1 - special.gammainc(.5,.5)
@@ -1534,6 +1895,10 @@ class TestGamma(TestCase):
     def test_gammainccnan(self):
         gama = special.gammaincc(-1,1)
         assert_(isnan(gama))
+
+    def test_gammainccinf(self):
+        gama = special.gammaincc(0.5,np.inf)
+        assert_equal(gama,0.0)
 
     def test_gammainccinv(self):
         gccinv = special.gammainccinv(.5,.5)
@@ -1575,7 +1940,7 @@ class TestGamma(TestCase):
         assert_equal(special.rgamma(-1), 0)
 
 
-class TestHankel(TestCase):
+class TestHankel(object):
 
     def test_negv1(self):
         assert_almost_equal(special.hankel1(-3,2), -special.hankel1(3,2), 14)
@@ -1610,7 +1975,7 @@ class TestHankel(TestCase):
         assert_almost_equal(hank2e,hankrl2e,8)
 
 
-class TestHyper(TestCase):
+class TestHyper(object):
     def test_h1vp(self):
         h1 = special.h1vp(1,.1)
         h1real = (special.jvp(1,.1) + special.yvp(1,.1)*1j)
@@ -1634,7 +1999,7 @@ class TestHyper(TestCase):
 
         # complex input
         x = special.hyp0f1(3.0, np.array([-1.5, -1, 0, 1, 1.5]) + 0.j)
-        assert_allclose(x, expected.astype(np.complex), rtol=1e-12)
+        assert_allclose(x, expected.astype(complex), rtol=1e-12)
 
         # test broadcasting
         x1 = [0.5, 1.5, 2.5]
@@ -1646,6 +2011,13 @@ class TestHyper(TestCase):
         assert_allclose(x, np.row_stack([expected] * 2), rtol=1e-12)
         assert_raises(ValueError, special.hyp0f1,
                       np.row_stack([x1] * 3), [0, 1])
+
+    def test_hyp0f1_gh5764(self):
+        # Just checks the point that failed; there's a more systematic
+        # test in test_mpmath
+        res = special.hyp0f1(0.8, 0.5 + 0.5*1J)
+        # The expected value was generated using mpmath
+        assert_almost_equal(res, 1.6139719776441115 + 1J*0.80893054061790665)
 
     def test_hyp1f1(self):
         hyp1 = special.hyp1f1(.1,.1,.3)
@@ -1766,6 +2138,10 @@ class TestHyper(TestCase):
         hyp2 = special.hyp1f1(0.5, 1.5, -709.7827128934)
         assert_almost_equal(hyp1, hyp2, 12)
 
+    def test_hyp1f1_gh2282(self):
+        hyp = special.hyp1f1(0.5, 1.5, -1000)
+        assert_almost_equal(hyp, 0.028024956081989643, 12)
+
     def test_hyp1f2(self):
         pass
 
@@ -1824,7 +2200,7 @@ class TestHyper(TestCase):
                             0.048360918656699191, 12)
 
 
-class TestBessel(TestCase):
+class TestBessel(object):
     def test_itj0y0(self):
         it0 = array(special.itj0y0(.2))
         assert_array_almost_equal(it0,array([0.19933433254006822, -0.34570883800412566]),8)
@@ -1995,8 +2371,8 @@ class TestBessel(TestCase):
         assert_almost_equal(o1ke,o1ker,8)
 
     def test_jacobi(self):
-        a = 5*rand() - 1
-        b = 5*rand() - 1
+        a = 5*np.random.random() - 1
+        b = 5*np.random.random() - 1
         P0 = special.jacobi(0,a,b)
         P1 = special.jacobi(1,a,b)
         P2 = special.jacobi(2,a,b)
@@ -2185,7 +2561,7 @@ class TestBessel(TestCase):
         finally:
             np.seterr(**olderr)
 
-    @dec.slow
+    @pytest.mark.slow
     def test_iv_cephes_vs_amos_mass_test(self):
         N = 1000000
         np.random.seed(1)
@@ -2287,6 +2663,10 @@ class TestBessel(TestCase):
         assert_(isnan(special.airye(-1)[0:2]).all(), special.airye(-1))
         assert_(not isnan(special.airye(-1)[2:4]).any(), special.airye(-1))
 
+    def test_gh_7909(self):
+        assert_(special.kv(1.5, 0) == np.inf)
+        assert_(special.kve(1.5, 0) == np.inf)
+
     def test_ticket_503(self):
         """Real-valued Bessel I overflow"""
         assert_tol_equal(special.iv(1, 700), 1.528500390233901e302)
@@ -2385,7 +2765,7 @@ class TestBessel(TestCase):
         assert_almost_equal(x,y,10)
 
 
-class TestLaguerre(TestCase):
+class TestLaguerre(object):
     def test_laguerre(self):
         lag0 = special.laguerre(0)
         lag1 = special.laguerre(1)
@@ -2401,7 +2781,7 @@ class TestLaguerre(TestCase):
         assert_array_almost_equal(lag5.c,array([-1,25,-200,600,-600,120])/120.0,13)
 
     def test_genlaguerre(self):
-        k = 5*rand()-0.9
+        k = 5*np.random.random() - 0.9
         lag0 = special.genlaguerre(0,k)
         lag1 = special.genlaguerre(1,k)
         lag2 = special.genlaguerre(2,k)
@@ -2413,7 +2793,7 @@ class TestLaguerre(TestCase):
 
 
 # Base polynomials come from Abrahmowitz and Stegan
-class TestLegendre(TestCase):
+class TestLegendre(object):
     def test_legendre(self):
         leg0 = special.legendre(0)
         leg1 = special.legendre(1)
@@ -2421,15 +2801,15 @@ class TestLegendre(TestCase):
         leg3 = special.legendre(3)
         leg4 = special.legendre(4)
         leg5 = special.legendre(5)
-        assert_equal(leg0.c,[1])
-        assert_equal(leg1.c,[1,0])
-        assert_equal(leg2.c,array([3,0,-1])/2.0)
-        assert_almost_equal(leg3.c,array([5,0,-3,0])/2.0)
-        assert_almost_equal(leg4.c,array([35,0,-30,0,3])/8.0)
-        assert_almost_equal(leg5.c,array([63,0,-70,0,15,0])/8.0)
+        assert_equal(leg0.c, [1])
+        assert_equal(leg1.c, [1,0])
+        assert_almost_equal(leg2.c, array([3,0,-1])/2.0, decimal=13)
+        assert_almost_equal(leg3.c, array([5,0,-3,0])/2.0)
+        assert_almost_equal(leg4.c, array([35,0,-30,0,3])/8.0)
+        assert_almost_equal(leg5.c, array([63,0,-70,0,15,0])/8.0)
 
 
-class TestLambda(TestCase):
+class TestLambda(object):
     def test_lmbda(self):
         lam = special.lmbda(1,.1)
         lamr = (array([special.jn(0,.1), 2*special.jn(1,.1)/.1]),
@@ -2437,7 +2817,7 @@ class TestLambda(TestCase):
         assert_array_almost_equal(lam,lamr,8)
 
 
-class TestLog1p(TestCase):
+class TestLog1p(object):
     def test_log1p(self):
         l1p = (special.log1p(10), special.log1p(11), special.log1p(12))
         l1prl = (log(11), log(12), log(13))
@@ -2449,7 +2829,7 @@ class TestLog1p(TestCase):
         assert_array_almost_equal(l1pm,l1pmrl,8)
 
 
-class TestLegendreFunctions(TestCase):
+class TestLegendreFunctions(object):
     def test_clpmn(self):
         z = 0.5+0.3j
         clp = special.clpmn(2, 2, z, 3)
@@ -2584,7 +2964,7 @@ class TestLegendreFunctions(TestCase):
                                        array([1.3333, 1.216, -0.8427])),4)
 
 
-class TestMathieu(TestCase):
+class TestMathieu(object):
 
     def test_mathieu_a(self):
         pass
@@ -2598,7 +2978,7 @@ class TestMathieu(TestCase):
         pass
 
 
-class TestFresnelIntegral(TestCase):
+class TestFresnelIntegral(object):
 
     def test_modfresnelp(self):
         pass
@@ -2607,7 +2987,7 @@ class TestFresnelIntegral(TestCase):
         pass
 
 
-class TestOblCvSeq(TestCase):
+class TestOblCvSeq(object):
     def test_obl_cv_seq(self):
         obl = special.obl_cv_seq(0,3,1)
         assert_array_almost_equal(obl,array([-0.348602,
@@ -2616,7 +2996,7 @@ class TestOblCvSeq(TestCase):
                                               11.492120]),5)
 
 
-class TestParabolicCylinder(TestCase):
+class TestParabolicCylinder(object):
     def test_pbdn_seq(self):
         pb = special.pbdn_seq(1,.1)
         assert_array_almost_equal(pb,(array([0.9975,
@@ -2662,7 +3042,7 @@ class TestParabolicCylinder(TestCase):
         assert_tol_equal(p[1], dp, rtol=1e-6, atol=1e-6)
 
 
-class TestPolygamma(TestCase):
+class TestPolygamma(object):
     # from Table 6.2 (pg. 271) of A&S
     def test_polygamma(self):
         poly2 = special.polygamma(2,1)
@@ -2687,7 +3067,7 @@ class TestPolygamma(TestCase):
                             expected)
 
 
-class TestProCvSeq(TestCase):
+class TestProCvSeq(object):
     def test_pro_cv_seq(self):
         prol = special.pro_cv_seq(0,3,1)
         assert_array_almost_equal(prol,array([0.319000,
@@ -2696,13 +3076,13 @@ class TestProCvSeq(TestCase):
                                                12.514462]),5)
 
 
-class TestPsi(TestCase):
+class TestPsi(object):
     def test_psi(self):
         ps = special.psi(1)
         assert_almost_equal(ps,-0.57721566490153287,8)
 
 
-class TestRadian(TestCase):
+class TestRadian(object):
     def test_radian(self):
         rad = special.radian(90,0,0)
         assert_almost_equal(rad,pi/2.0,5)
@@ -2712,19 +3092,29 @@ class TestRadian(TestCase):
         assert_almost_equal(rad1,pi/2+0.0005816135199345904,5)
 
 
-class TestRiccati(TestCase):
+class TestRiccati(object):
     def test_riccati_jn(self):
-        jnrl = (special.sph_jn(1,.2)[0]*.2,special.sph_jn(1,.2)[0]+special.sph_jn(1,.2)[1]*.2)
-        ricjn = special.riccati_jn(1,.2)
-        assert_array_almost_equal(ricjn,jnrl,8)
+        N, x = 2, 0.2
+        S = np.empty((N, N))
+        for n in range(N):
+            j = special.spherical_jn(n, x)
+            jp = special.spherical_jn(n, x, derivative=True)
+            S[0,n] = x*j
+            S[1,n] = x*jp + j
+        assert_array_almost_equal(S, special.riccati_jn(n, x), 8)
 
     def test_riccati_yn(self):
-        ynrl = (special.sph_yn(1,.2)[0]*.2,special.sph_yn(1,.2)[0]+special.sph_yn(1,.2)[1]*.2)
-        ricyn = special.riccati_yn(1,.2)
-        assert_array_almost_equal(ricyn,ynrl,8)
+        N, x = 2, 0.2
+        C = np.empty((N, N))
+        for n in range(N):
+            y = special.spherical_yn(n, x)
+            yp = special.spherical_yn(n, x, derivative=True)
+            C[0,n] = x*y
+            C[1,n] = x*yp + y
+        assert_array_almost_equal(C, special.riccati_yn(n, x), 8)
 
 
-class TestRound(TestCase):
+class TestRound(object):
     def test_round(self):
         rnd = list(map(int,(special.round(10.1),special.round(10.4),special.round(10.5),special.round(10.6))))
 
@@ -2746,92 +3136,35 @@ def test_sph_harm():
     sqrt = np.sqrt
     sin = np.sin
     cos = np.cos
-    yield (assert_array_almost_equal, sh(0,0,0,0),
+    assert_array_almost_equal(sh(0,0,0,0),
            0.5/sqrt(pi))
-    yield (assert_array_almost_equal, sh(-2,2,0.,pi/4),
+    assert_array_almost_equal(sh(-2,2,0.,pi/4),
            0.25*sqrt(15./(2.*pi)) *
            (sin(pi/4))**2.)
-    yield (assert_array_almost_equal, sh(-2,2,0.,pi/2),
+    assert_array_almost_equal(sh(-2,2,0.,pi/2),
            0.25*sqrt(15./(2.*pi)))
-    yield (assert_array_almost_equal, sh(2,2,pi,pi/2),
+    assert_array_almost_equal(sh(2,2,pi,pi/2),
            0.25*sqrt(15/(2.*pi)) *
            exp(0+2.*pi*1j)*sin(pi/2.)**2.)
-    yield (assert_array_almost_equal, sh(2,4,pi/4.,pi/3.),
+    assert_array_almost_equal(sh(2,4,pi/4.,pi/3.),
            (3./8.)*sqrt(5./(2.*pi)) *
            exp(0+2.*pi/4.*1j) *
            sin(pi/3.)**2. *
            (7.*cos(pi/3.)**2.-1))
-    yield (assert_array_almost_equal, sh(4,4,pi/8.,pi/6.),
+    assert_array_almost_equal(sh(4,4,pi/8.,pi/6.),
            (3./16.)*sqrt(35./(2.*pi)) *
            exp(0+4.*pi/8.*1j)*sin(pi/6.)**4.)
 
 
-class TestSpherical(TestCase):
-    def test_sph_harm(self):
-        # see test_sph_harm function
-        pass
-
-    def test_sph_in(self):
-        i1n = special.sph_in(1,.2)
-        inp0 = (i1n[0][1])
-        inp1 = (i1n[0][0] - 2.0/0.2 * i1n[0][1])
-        assert_array_almost_equal(i1n[0],array([1.0066800127054699381,
-                                                0.066933714568029540839]),12)
-        assert_array_almost_equal(i1n[1],[inp0,inp1],12)
-
-    def test_sph_inkn(self):
-        spikn = r_[special.sph_in(1,.2) + special.sph_kn(1,.2)]
-        inkn = r_[special.sph_inkn(1,.2)]
-        assert_array_almost_equal(inkn,spikn,10)
-
-    def test_sph_in_kn_order0(self):
-        x = 1.
-        sph_i0 = special.sph_in(0, x)
-        sph_i0_expected = np.array([np.sinh(x)/x,
-                                    np.cosh(x)/x-np.sinh(x)/x**2])
-        assert_array_almost_equal(r_[sph_i0], sph_i0_expected)
-        sph_k0 = special.sph_kn(0, x)
-        sph_k0_expected = np.array([0.5*pi*exp(-x)/x,
-                                    -0.5*pi*exp(-x)*(1/x+1/x**2)])
-        assert_array_almost_equal(r_[sph_k0], sph_k0_expected)
-        sph_i0k0 = special.sph_inkn(0, x)
-        assert_array_almost_equal(r_[sph_i0+sph_k0],
-                                  r_[sph_i0k0],
-                                  10)
-
-    def test_sph_jn(self):
-        s1 = special.sph_jn(2,.2)
-        s10 = -s1[0][1]
-        s11 = s1[0][0]-2.0/0.2*s1[0][1]
-        s12 = s1[0][1]-3.0/0.2*s1[0][2]
-        assert_array_almost_equal(s1[0],[0.99334665397530607731,
-                                      0.066400380670322230863,
-                                      0.0026590560795273856680],12)
-        assert_array_almost_equal(s1[1],[s10,s11,s12],12)
-
-    def test_sph_jnyn(self):
-        jnyn = r_[special.sph_jn(1,.2) + special.sph_yn(1,.2)]  # tuple addition
-        jnyn1 = r_[special.sph_jnyn(1,.2)]
-        assert_array_almost_equal(jnyn1,jnyn,9)
-
-    def test_sph_kn(self):
-        kn = special.sph_kn(2,.2)
-        kn0 = -kn[0][1]
-        kn1 = -kn[0][0]-2.0/0.2*kn[0][1]
-        kn2 = -kn[0][1]-3.0/0.2*kn[0][2]
-        assert_array_almost_equal(kn[0],[6.4302962978445670140,
-                                         38.581777787067402086,
-                                         585.15696310385559829],12)
-        assert_array_almost_equal(kn[1],[kn0,kn1,kn2],9)
-
-    def test_sph_yn(self):
-        sy1 = special.sph_yn(2,.2)[0][2]
-        sy2 = special.sph_yn(0,.2)[0][0]
-        sphpy = (special.sph_yn(1,.2)[0][0]-2*special.sph_yn(2,.2)[0][2])/3  # correct derivative value
-        assert_almost_equal(sy1,-377.52483,5)  # previous values in the system
-        assert_almost_equal(sy2,-4.9003329,5)
-        sy3 = special.sph_yn(1,.2)[1][1]
-        assert_almost_equal(sy3,sphpy,4)  # compare correct derivative val. (correct =-system val).
+def test_sph_harm_ufunc_loop_selection():
+    # see https://github.com/scipy/scipy/issues/4895
+    dt = np.dtype(np.complex128)
+    assert_equal(special.sph_harm(0, 0, 0, 0).dtype, dt)
+    assert_equal(special.sph_harm([0], 0, 0, 0).dtype, dt)
+    assert_equal(special.sph_harm(0, [0], 0, 0).dtype, dt)
+    assert_equal(special.sph_harm(0, 0, [0], 0).dtype, dt)
+    assert_equal(special.sph_harm(0, 0, 0, [0]).dtype, dt)
+    assert_equal(special.sph_harm([0], [0], [0], [0]).dtype, dt)
 
 
 class TestStruve(object):
@@ -2873,6 +3206,10 @@ def test_chi2_smalldf():
     assert_almost_equal(special.chdtr(0.6,3), 0.957890536704110)
 
 
+def test_ch2_inf():
+    assert_equal(special.chdtr(0.7,np.inf), 1.0)
+
+
 def test_chi2c_smalldf():
     assert_almost_equal(special.chdtrc(0.6,3), 1-0.957890536704110)
 
@@ -2882,15 +3219,70 @@ def test_chi2_inv_smalldf():
 
 
 def test_agm_simple():
-    assert_allclose(special.agm(24, 6), 13.4581714817)
-    assert_allclose(special.agm(1e30, 1), 2.2292230559453832047768593e28)
+    rtol = 1e-13
+
+    # Gauss's constant
+    assert_allclose(1/special.agm(1, np.sqrt(2)), 0.834626841674073186,
+                    rtol=rtol)
+
+    # These values were computed using Wolfram Alpha, with the
+    # function ArithmeticGeometricMean[a, b].
+    agm13 = 1.863616783244897
+    agm15 = 2.604008190530940
+    agm35 = 3.936235503649555
+    assert_allclose(special.agm([[1], [3]], [1, 3, 5]),
+                    [[1, agm13, agm15],
+                     [agm13, 3, agm35]], rtol=rtol)
+
+    # Computed by the iteration formula using mpmath,
+    # with mpmath.mp.prec = 1000:
+    agm12 = 1.4567910310469068
+    assert_allclose(special.agm(1, 2), agm12, rtol=rtol)
+    assert_allclose(special.agm(2, 1), agm12, rtol=rtol)
+    assert_allclose(special.agm(-1, -2), -agm12, rtol=rtol)
+    assert_allclose(special.agm(24, 6), 13.458171481725614, rtol=rtol)
+    assert_allclose(special.agm(13, 123456789.5), 11111458.498599306,
+                    rtol=rtol)
+    assert_allclose(special.agm(1e30, 1), 2.229223055945383e+28, rtol=rtol)
+    assert_allclose(special.agm(1e-22, 1), 0.030182566420169886, rtol=rtol)
+    assert_allclose(special.agm(1e150, 1e180), 2.229223055945383e+178,
+                    rtol=rtol)
+    assert_allclose(special.agm(1e180, 1e-150), 2.0634722510162677e+177,
+                    rtol=rtol)
+    assert_allclose(special.agm(1e-150, 1e-170), 3.3112619670463756e-152,
+                    rtol=rtol)
+    fi = np.finfo(1.0)
+    assert_allclose(special.agm(fi.tiny, fi.max), 1.9892072050015473e+305,
+                    rtol=rtol)
+    assert_allclose(special.agm(0.75*fi.max, fi.max), 1.564904312298045e+308,
+                    rtol=rtol)
+    assert_allclose(special.agm(fi.tiny, 3*fi.tiny), 4.1466849866735005e-308,
+                    rtol=rtol)
+
+    # zero, nan and inf cases.
+    assert_equal(special.agm(0, 0), 0)
+    assert_equal(special.agm(99, 0), 0)
+
+    assert_equal(special.agm(-1, 10), np.nan)
+    assert_equal(special.agm(0, np.inf), np.nan)
+    assert_equal(special.agm(np.inf, 0), np.nan)
+    assert_equal(special.agm(0, -np.inf), np.nan)
+    assert_equal(special.agm(-np.inf, 0), np.nan)
+    assert_equal(special.agm(np.inf, -np.inf), np.nan)
+    assert_equal(special.agm(-np.inf, np.inf), np.nan)
+    assert_equal(special.agm(1, np.nan), np.nan)
+    assert_equal(special.agm(np.nan, -1), np.nan)
+
+    assert_equal(special.agm(1, np.inf), np.inf)
+    assert_equal(special.agm(np.inf, 1), np.inf)
+    assert_equal(special.agm(-1, -np.inf), -np.inf)
+    assert_equal(special.agm(-np.inf, -1), -np.inf)
 
 
 def test_legacy():
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", RuntimeWarning)
-
-        # Legacy behavior: truncating arguments to integers
+    # Legacy behavior: truncating arguments to integers
+    with suppress_warnings() as sup:
+        sup.filter(RuntimeWarning, "floating point number truncated to an integer")
         assert_equal(special.bdtrc(1, 2, 0.3), special.bdtrc(1.8, 2.8, 0.3))
         assert_equal(special.bdtr(1, 2, 0.3), special.bdtr(1.8, 2.8, 0.3))
         assert_equal(special.bdtri(1, 2, 0.3), special.bdtri(1.8, 2.8, 0.3))
@@ -2910,15 +3302,16 @@ def test_legacy():
 
 @with_special_errors
 def test_error_raising():
-    assert_raises(special.SpecialFunctionWarning, special.iv, 1, 1e99j)
+    assert_raises(special.SpecialFunctionError, special.iv, 1, 1e99j)
 
 
 def test_xlogy():
     def xfunc(x, y):
-        if x == 0 and not np.isnan(y):
-            return x
-        else:
-            return x*np.log(y)
+        with np.errstate(invalid='ignore'):
+            if x == 0 and not np.isnan(y):
+                return x
+            else:
+                return x*np.log(y)
 
     z1 = np.asarray([(0,0), (0, np.nan), (0, np.inf), (1.0, 2.0)], dtype=float)
     z2 = np.r_[z1, [(0, 1j), (1, 1j)]]
@@ -2931,10 +3324,11 @@ def test_xlogy():
 
 def test_xlog1py():
     def xfunc(x, y):
-        if x == 0 and not np.isnan(y):
-            return x
-        else:
-            return x * np.log1p(y)
+        with np.errstate(invalid='ignore'):
+            if x == 0 and not np.isnan(y):
+                return x
+            else:
+                return x * np.log1p(y)
 
     z1 = np.asarray([(0,0), (0, np.nan), (0, np.inf), (1.0, 2.0),
                      (1, 1e-30)], dtype=float)
@@ -2949,7 +3343,7 @@ def test_entr():
         else:
             return -special.xlogy(x, x)
     values = (0, 0.5, 1.0, np.inf)
-    signs = [1]
+    signs = [-1, 1]
     arr = []
     for sgn, v in itertools.product(signs, values):
         arr.append(sgn * v)
@@ -2969,9 +3363,9 @@ def test_kl_div():
         elif x == 0:
             return y
         else:
-            return special.xlogy(x, x) - special.xlogy(x, y) - x + y
+            return special.xlogy(x, x/y) - x + y
     values = (0, 0.5, 1.0)
-    signs = [1]
+    signs = [-1, 1]
     arr = []
     for sgna, va, sgnb, vb in itertools.product(signs, values, signs, values):
         arr.append((sgna*va, sgnb*vb))
@@ -2982,9 +3376,14 @@ def test_kl_div():
 
 def test_rel_entr():
     def xfunc(x, y):
-        return special.xlogy(x, x) - special.xlogy(x, y)
+        if x > 0 and y > 0:
+            return special.xlogy(x, x/y)
+        elif x == 0 and y >= 0:
+            return 0
+        else:
+            return np.inf
     values = (0, 0.5, 1.0)
-    signs = [1]
+    signs = [-1, 1]
     arr = []
     for sgna, va, sgnb, vb in itertools.product(signs, values, signs, values):
         arr.append((sgna*va, sgnb*vb))
@@ -2993,5 +3392,33 @@ def test_rel_entr():
     assert_func_equal(special.rel_entr, w, z, rtol=1e-13, atol=1e-13)
 
 
-if __name__ == "__main__":
-    run_module_suite()
+def test_huber():
+    assert_equal(special.huber(-1, 1.5), np.inf)
+    assert_allclose(special.huber(2, 1.5), 0.5 * np.square(1.5))
+    assert_allclose(special.huber(2, 2.5), 2 * (2.5 - 0.5 * 2))
+
+    def xfunc(delta, r):
+        if delta < 0:
+            return np.inf
+        elif np.abs(r) < delta:
+            return 0.5 * np.square(r)
+        else:
+            return delta * (np.abs(r) - 0.5 * delta)
+
+    z = np.random.randn(10, 2)
+    w = np.vectorize(xfunc, otypes=[np.float64])(z[:,0], z[:,1])
+    assert_func_equal(special.huber, w, z, rtol=1e-13, atol=1e-13)
+
+
+def test_pseudo_huber():
+    def xfunc(delta, r):
+        if delta < 0:
+            return np.inf
+        elif (not delta) or (not r):
+            return 0
+        else:
+            return delta**2 * (np.sqrt(1 + (r/delta)**2) - 1)
+
+    z = np.array(np.random.randn(10, 2).tolist() + [[0, 0.5], [0.5, 0]])
+    w = np.vectorize(xfunc, otypes=[np.float64])(z[:,0], z[:,1])
+    assert_func_equal(special.pseudo_huber, w, z, rtol=1e-13, atol=1e-13)

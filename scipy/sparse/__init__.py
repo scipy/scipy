@@ -23,6 +23,7 @@ Sparse matrix classes
    dia_matrix - Sparse matrix with DIAgonal storage
    dok_matrix - Dictionary Of Keys based sparse matrix
    lil_matrix - Row-based linked list sparse matrix
+   spmatrix - Sparse matrix base class
 
 Functions
 ---------
@@ -45,6 +46,15 @@ Building sparse matrices:
    hstack - Stack sparse matrices horizontally (column wise)
    vstack - Stack sparse matrices vertically (row wise)
    rand - Random values in a given shape
+   random - Random values in a given shape
+
+Save and load sparse matrices:
+
+.. autosummary::
+   :toctree: generated/
+
+   save_npz - Save a sparse matrix to a file using ``.npz`` format.
+   load_npz - Load a sparse matrix from a file using ``.npz`` format.
 
 Sparse matrix tools:
 
@@ -101,9 +111,16 @@ There are seven available sparse matrix types:
     7. dia_matrix: DIAgonal format
 
 To construct a matrix efficiently, use either dok_matrix or lil_matrix.
-The lil_matrix class supports basic slicing and fancy
-indexing with a similar syntax to NumPy arrays.  As illustrated below,
-the COO format may also be used to efficiently construct matrices.
+The lil_matrix class supports basic slicing and fancy indexing with a
+similar syntax to NumPy arrays. As illustrated below, the COO format
+may also be used to efficiently construct matrices. Despite their
+similarity to NumPy arrays, it is **strongly discouraged** to use NumPy
+functions directly on these matrices because NumPy may not properly convert
+them for computations, leading to unexpected (and incorrect) results. If you
+do want to apply a NumPy function to these matrices, first check if SciPy has
+its own implementation for the given sparse matrix class, or **convert the
+sparse matrix to a NumPy array** (e.g. using the `toarray()` method of the
+class) first before applying the method.
 
 To perform manipulations such as multiplication or inversion, first
 convert the matrix to either CSC or CSR format. The lil_matrix format is
@@ -218,13 +235,10 @@ from .dia import *
 from .bsr import *
 from .construct import *
 from .extract import *
-
-# for backward compatibility with v0.10.  This function is marked as deprecated
-from .csgraph import cs_graph_components
-
-#from spfuncs import *
+from ._matrix_io import *
 
 __all__ = [s for s in dir() if not s.startswith('_')]
-from numpy.testing import Tester
-test = Tester().test
-bench = Tester().bench
+
+from scipy._lib._testutils import PytestTester
+test = PytestTester(__name__)
+del PytestTester

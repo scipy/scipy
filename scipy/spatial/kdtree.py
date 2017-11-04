@@ -31,6 +31,7 @@ def minkowski_distance_p(x, y, p=2):
 
     Examples
     --------
+    >>> from scipy.spatial import minkowski_distance_p
     >>> minkowski_distance_p([[0,0],[0,0]], [[1,1],[0,1]])
     array([2, 1])
 
@@ -60,6 +61,7 @@ def minkowski_distance(x, y, p=2):
 
     Examples
     --------
+    >>> from scipy.spatial import minkowski_distance
     >>> minkowski_distance([[0,0],[0,0]], [[1,1],[0,1]])
     array([ 1.41421356,  1.        ])
 
@@ -79,8 +81,8 @@ class Rectangle(object):
     """
     def __init__(self, maxes, mins):
         """Construct a hyperrectangle."""
-        self.maxes = np.maximum(maxes,mins).astype(np.float)
-        self.mins = np.minimum(maxes,mins).astype(np.float)
+        self.maxes = np.maximum(maxes,mins).astype(float)
+        self.mins = np.minimum(maxes,mins).astype(float)
         self.m, = self.maxes.shape
 
     def __repr__(self):
@@ -102,8 +104,8 @@ class Rectangle(object):
         ----------
         d : int
             Axis to split hyperrectangle along.
-        split :
-            Input.
+        split : float
+            Position along axis `d` to split at.
 
         """
         mid = np.copy(self.maxes)
@@ -196,6 +198,10 @@ class KDTree(object):
 
             >>> import sys
             >>> sys.setrecursionlimit(10000)
+
+    See Also
+    --------
+    cKDTree : Implementation of `KDTree` in Cython
 
     Notes
     -----
@@ -399,18 +405,18 @@ class KDTree(object):
         ----------
         x : array_like, last dimension self.m
             An array of points to query.
-        k : integer
+        k : int, optional
             The number of nearest neighbors to return.
-        eps : nonnegative float
+        eps : nonnegative float, optional
             Return approximate nearest neighbors; the kth returned value
             is guaranteed to be no further than (1+eps) times the
             distance to the real kth nearest neighbor.
-        p : float, 1<=p<=infinity
+        p : float, 1<=p<=infinity, optional
             Which Minkowski p-norm to use.
             1 is the sum-of-absolute-values "Manhattan" distance
             2 is the usual Euclidean distance
             infinity is the maximum-coordinate-difference distance
-        distance_upper_bound : nonnegative float
+        distance_upper_bound : nonnegative float, optional
             Return only neighbors within this distance. This is used to prune
             tree searches, so if you are doing a series of nearest-neighbor
             queries, it may help to supply the distance to the nearest neighbor
@@ -435,7 +441,7 @@ class KDTree(object):
         --------
         >>> from scipy import spatial
         >>> x, y = np.mgrid[0:5, 2:8]
-        >>> tree = spatial.KDTree(zip(x.ravel(), y.ravel()))
+        >>> tree = spatial.KDTree(list(zip(x.ravel(), y.ravel())))
         >>> tree.data
         array([[0, 2],
                [0, 3],
@@ -482,17 +488,17 @@ class KDTree(object):
         retshape = np.shape(x)[:-1]
         if retshape != ():
             if k is None:
-                dd = np.empty(retshape,dtype=np.object)
-                ii = np.empty(retshape,dtype=np.object)
+                dd = np.empty(retshape,dtype=object)
+                ii = np.empty(retshape,dtype=object)
             elif k > 1:
-                dd = np.empty(retshape+(k,),dtype=np.float)
+                dd = np.empty(retshape+(k,),dtype=float)
                 dd.fill(np.inf)
-                ii = np.empty(retshape+(k,),dtype=np.int)
+                ii = np.empty(retshape+(k,),dtype=int)
                 ii.fill(self.n)
             elif k == 1:
-                dd = np.empty(retshape,dtype=np.float)
+                dd = np.empty(retshape,dtype=float)
                 dd.fill(np.inf)
-                ii = np.empty(retshape,dtype=np.int)
+                ii = np.empty(retshape,dtype=int)
                 ii.fill(self.n)
             else:
                 raise ValueError("Requested %s nearest neighbors; acceptable numbers are integers greater than or equal to one, or None")
@@ -521,9 +527,9 @@ class KDTree(object):
                 else:
                     return np.inf, self.n
             elif k > 1:
-                dd = np.empty(k,dtype=np.float)
+                dd = np.empty(k,dtype=float)
                 dd.fill(np.inf)
-                ii = np.empty(k,dtype=np.int)
+                ii = np.empty(k,dtype=int)
                 ii.fill(self.n)
                 for j in range(len(hits)):
                     dd[j], ii[j] = hits[j]
@@ -589,11 +595,22 @@ class KDTree(object):
         Examples
         --------
         >>> from scipy import spatial
-        >>> x, y = np.mgrid[0:4, 0:4]
-        >>> points = zip(x.ravel(), y.ravel())
+        >>> x, y = np.mgrid[0:5, 0:5]
+        >>> points = np.c_[x.ravel(), y.ravel()]
         >>> tree = spatial.KDTree(points)
         >>> tree.query_ball_point([2, 0], 1)
-        [4, 8, 9, 12]
+        [5, 10, 11, 15]
+
+        Query multiple points and plot the results:
+
+        >>> import matplotlib.pyplot as plt
+        >>> points = np.asarray(points)
+        >>> plt.plot(points[:,0], points[:,1], '.')
+        >>> for results in tree.query_ball_point(([2, 0], [3, 3]), 1):
+        ...     nearby_points = points[results]
+        ...     plt.plot(nearby_points[:,0], nearby_points[:,1], 'o')
+        >>> plt.margins(0.1, 0.1)
+        >>> plt.show()
 
         """
         x = np.asarray(x)
@@ -604,7 +621,7 @@ class KDTree(object):
             return self.__query_ball_point(x, r, p, eps)
         else:
             retshape = x.shape[:-1]
-            result = np.empty(retshape, dtype=np.object)
+            result = np.empty(retshape, dtype=object)
             for c in np.ndindex(retshape):
                 result[c] = self.__query_ball_point(x[c], r, p=p, eps=eps)
             return result
@@ -803,7 +820,7 @@ class KDTree(object):
         r : float or one-dimensional array of floats
             The radius to produce a count for. Multiple radii are searched with
             a single tree traversal.
-        p : float, 1<=p<=infinity
+        p : float, 1<=p<=infinity, optional
             Which Minkowski p-norm to use
 
         Returns
@@ -916,7 +933,7 @@ class KDTree(object):
         return result
 
 
-def distance_matrix(x,y,p=2,threshold=1000000):
+def distance_matrix(x, y, p=2, threshold=1000000):
     """
     Compute the distance matrix.
 
@@ -925,9 +942,9 @@ def distance_matrix(x,y,p=2,threshold=1000000):
     Parameters
     ----------
     x : (M, K) array_like
-        TODO: description needed
+        Matrix of M vectors in K dimensions.
     y : (N, K) array_like
-        TODO: description needed
+        Matrix of N vectors in K dimensions.
     p : float, 1 <= p <= infinity
         Which Minkowski p-norm to use.
     threshold : positive int
@@ -937,10 +954,12 @@ def distance_matrix(x,y,p=2,threshold=1000000):
     Returns
     -------
     result : (M, N) ndarray
-        Distance matrix.
+        Matrix containing the distance from every vector in `x` to every vector
+        in `y`.
 
     Examples
     --------
+    >>> from scipy.spatial import distance_matrix
     >>> distance_matrix([[0,0],[0,1]], [[1,0],[1,1]])
     array([[ 1.        ,  1.41421356],
            [ 1.41421356,  1.        ]])
@@ -958,7 +977,7 @@ def distance_matrix(x,y,p=2,threshold=1000000):
     if m*n*k <= threshold:
         return minkowski_distance(x[:,np.newaxis,:],y[np.newaxis,:,:],p)
     else:
-        result = np.empty((m,n),dtype=np.float)  # FIXME: figure out the best dtype
+        result = np.empty((m,n),dtype=float)  # FIXME: figure out the best dtype
         if m < n:
             for i in range(m):
                 result[i,:] = minkowski_distance(x[i],y,p)

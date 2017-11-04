@@ -549,6 +549,7 @@ c
                nevd2 = nev0 / 2
                nevm2 = nev0 - nevd2 
                if ( nev .gt. 1 ) then
+                  np = kplusp - nev0
                   call dswap ( min(nevd2,np), ritz(nevm2+1), 1,
      &                 ritz( max(kplusp-nevd2+1,kplusp-np+1) ), 1)
                   call dswap ( min(nevd2,np), bounds(nevm2+1), 1,

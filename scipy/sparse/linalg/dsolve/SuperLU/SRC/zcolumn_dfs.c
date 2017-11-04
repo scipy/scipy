@@ -1,3 +1,13 @@
+/*! \file
+Copyright (c) 2003, The Regents of the University of California, through
+Lawrence Berkeley National Laboratory (subject to receipt of any required 
+approvals from U.S. Dept. of Energy) 
+
+All rights reserved. 
+
+The source code is distributed under BSD license, see the file License.txt
+at the top-level directory.
+*/
 
 /*! @file zcolumn_dfs.c
  * \brief Performs a symbolic factorization
@@ -91,7 +101,7 @@ zcolumn_dfs(
     int     mem_error;
     int     *xsup, *supno, *lsub, *xlsub;
     int     nzlmax;
-    static  int  first = 1, maxsuper;
+    int     maxsuper;
     
     xsup    = Glu->xsup;
     supno   = Glu->supno;
@@ -99,17 +109,13 @@ zcolumn_dfs(
     xlsub   = Glu->xlsub;
     nzlmax  = Glu->nzlmax;
 
-    if ( first ) {
-	maxsuper = sp_ienv(3);
-	first = 0;
-    }
+    maxsuper = sp_ienv(3);
     jcolp1  = jcol + 1;
     jcolm1  = jcol - 1;
     nsuper  = supno[jcol];
     jsuper  = nsuper;
     nextl   = xlsub[jcol];
     marker2 = &marker[2*m];
-
 
     /* For each nonzero in A[*,jcol] do dfs */
     for (k = 0; lsub_col[k] != EMPTY; k++) {

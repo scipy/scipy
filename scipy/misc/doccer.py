@@ -18,7 +18,7 @@ def docformat(docstring, docdict=None):
     ----------
     docstring : string
         docstring from function, possibly with dict formatting strings
-    docdict : dict
+    docdict : dict, optional
         dictionary with keys that match the dict formatting strings
         and values that are docstring fragments to be inserted.  The
         indentation of the inserted docstrings is set to match the

@@ -1,4 +1,5 @@
       subroutine splder(t,n,c,k,nu,x,y,m,e,wrk,ier)
+      implicit none  
 c  subroutine splder evaluates in a number of points x(i),i=1,2,...,m
 c  the derivative of order nu of a spline s(x) of degree k,given in
 c  its b-spline representation.
@@ -81,7 +82,7 @@ c..++
 c--  10  do 20 i=2,m
 c--        if(x(i).lt.x(i-1)) go to 200
 c--  20  continue
-  30  ier = 0
+      ier = 0
 c  fetch tb and te, the boundaries of the approximation interval.
       k1 = k+1
       k3 = k1+1
@@ -132,7 +133,7 @@ c  check if arg is in the support
             endif
         endif
 c  search for knot interval t(l) <= arg < t(l+1)
- 65     if(arg.ge.t(l) .or. l+1.eq.k2) go to 70
+ 65     if(arg.ge.t(l) .or. l+1.eq.k3) go to 70
         l1 = l
         l = l-1
         j = j-1

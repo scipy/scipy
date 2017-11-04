@@ -284,7 +284,7 @@ double v, x;
     t = NPY_PI * v;
     y = (cos(t) * jv(v, x) - jv(-v, x)) / sin(t);
 
-    if (npy_isinf(y)) {
+    if (cephes_isinf(y)) {
         if (v > 0) {
             mtherr("yv", OVERFLOW);
             return -NPY_INFINITY;

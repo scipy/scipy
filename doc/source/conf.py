@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+from __future__ import print_function
 import sys, os, re
 
 # Check Sphinx version
@@ -17,10 +17,11 @@ needs_sphinx = '1.1'
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 
 sys.path.insert(0, os.path.abspath('../sphinxext'))
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
 extensions = ['sphinx.ext.autodoc', 'sphinx.ext.mathjax', 'numpydoc',
               'sphinx.ext.intersphinx', 'sphinx.ext.coverage',
-              'sphinx.ext.autosummary']
+              'sphinx.ext.autosummary', 'scipyoptdoc', 'doi_role']
 
 # Determine if the matplotlib has a recent enough version of the
 # plot_directive.
@@ -50,7 +51,7 @@ master_doc = 'index'
 
 # General substitutions.
 project = 'SciPy'
-copyright = '2008-2014, The Scipy community'
+copyright = '2008-2016, The Scipy community'
 
 # The default replacements for |version| and |release|, also used in various
 # other places throughout the built documents.
@@ -58,7 +59,7 @@ import scipy
 version = re.sub(r'\.dev-.*$', r'.dev', scipy.__version__)
 release = scipy.__version__
 
-print "Scipy (VERSION %s)" % (version,)
+print("Scipy (VERSION %s)" % (version,))
 
 # There are two options for replacing |today|: either, you set today to some
 # non-false value, then it is used:
@@ -106,8 +107,8 @@ if os.path.isdir(themedir):
             "edit_link": True,
             "sidebar": "right",
             "scipy_org_logo": True,
-            "rootlinks": [("http://scipy.org/", "Scipy.org"),
-                          ("http://docs.scipy.org/", "Docs")]
+            "rootlinks": [("https://scipy.org/", "Scipy.org"),
+                          ("https://docs.scipy.org/", "Docs")]
         }
     else:
         # Default build
@@ -140,8 +141,7 @@ html_file_suffix = '.html'
 
 htmlhelp_basename = 'scipy'
 
-pngmath_use_preview = True
-pngmath_dvipng_args = ['-gamma', '1.5', '-D', '96', '-bg', 'Transparent']
+mathjax_path = "scipy-mathjax/MathJax.js?config=scipy-mathjax"
 
 
 # -----------------------------------------------------------------------------
@@ -217,8 +217,9 @@ latex_use_modindex = False
 # Intersphinx configuration
 # -----------------------------------------------------------------------------
 intersphinx_mapping = {
-        'http://docs.python.org/dev': None,
-        'http://docs.scipy.org/doc/numpy': None,
+        'python': ('http://docs.python.org/dev', None),
+        'numpy': ('https://docs.scipy.org/doc/numpy', None),
+        'matplotlib': ('http://matplotlib.org', None),
 }
 
 
@@ -267,6 +268,7 @@ np.random.seed(123)
 plot_include_source = True
 plot_formats = [('png', 96), 'pdf']
 plot_html_show_formats = False
+plot_html_show_source_link = False
 
 import math
 phi = (math.sqrt(5) + 1)/2
@@ -297,6 +299,7 @@ if not use_matplotlib_plot_directive:
 # Source code links
 # -----------------------------------------------------------------------------
 
+import re
 import inspect
 from os.path import relpath, dirname
 
@@ -308,7 +311,7 @@ for name in ['sphinx.ext.linkcode', 'linkcode', 'numpydoc.linkcode']:
     except ImportError:
         pass
 else:
-    print "NOTE: linkcode extension not found -- no links to source generated"
+    print("NOTE: linkcode extension not found -- no links to source generated")
 
 def linkcode_resolve(domain, info):
     """
@@ -344,20 +347,28 @@ def linkcode_resolve(domain, info):
         return None
 
     try:
-        source, lineno = inspect.findsource(obj)
+        source, lineno = inspect.getsourcelines(obj)
     except:
         lineno = None
 
     if lineno:
-        linespec = "#L%d" % (lineno + 1)
+        linespec = "#L%d-L%d" % (lineno, lineno + len(source) - 1)
     else:
         linespec = ""
 
-    fn = relpath(fn, start=dirname(scipy.__file__))
+    startdir = os.path.abspath(os.path.join(dirname(scipy.__file__), '..'))
+    fn = relpath(fn, start=startdir).replace(os.path.sep, '/')
 
-    if 'dev' in scipy.__version__:
-        return "http://github.com/scipy/scipy/blob/master/scipy/%s%s" % (
-           fn, linespec)
+    if fn.startswith('scipy/'):
+        m = re.match(r'^.*dev0\+([a-f0-9]+)$', scipy.__version__)
+        if m:
+            return "https://github.com/scipy/scipy/blob/%s/%s%s" % (
+                m.group(1), fn, linespec)
+        elif 'dev' in scipy.__version__:
+            return "https://github.com/scipy/scipy/blob/master/%s%s" % (
+                fn, linespec)
+        else:
+            return "https://github.com/scipy/scipy/blob/v%s/%s%s" % (
+                scipy.__version__, fn, linespec)
     else:
-        return "http://github.com/scipy/scipy/blob/v%s/scipy/%s%s" % (
-           scipy.__version__, fn, linespec)
+        return None

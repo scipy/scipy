@@ -1,9 +1,6 @@
 .. image:: https://travis-ci.org/scipy/scipy.png?branch=master
    :target: https://travis-ci.org/scipy/scipy/
 
-.. image:: https://coveralls.io/repos/scipy/scipy/badge.png?branch=master
-   :target: https://coveralls.io/r/scipy/scipy?branch=master 
-
 =====
 SciPy
 =====
@@ -33,7 +30,7 @@ SciPy a try!
 Installation
 ------------
 
-For installation instructions, see ``INSTALL.txt``.
+For installation instructions, see ``INSTALL.rst.txt``.
 
 
 Documentation
@@ -41,7 +38,7 @@ Documentation
 
 Scipy documentation is available on the web:
 
-    http://docs.scipy.org
+    https://docs.scipy.org
 
 How to generate the HTML documentation, see ``doc/README.txt``.
 
@@ -51,15 +48,16 @@ Web sites
 
 The user's site is:
 
-    http://www.scipy.org/
+    https://www.scipy.org/
 
 
 Mailing Lists
 -------------
 
-Please see the developer's list here:
+The addresses and archives for the developer and user mailing lists can be
+found here:
 
-    http://projects.scipy.org/mailman/listinfo/scipy-dev
+    http://scipy.org/scipylib/mailing-lists.html
 
 
 Latest source code
@@ -84,7 +82,7 @@ Developer information
 ---------------------
 
 If you would like to take part in SciPy development, take a look
-at ``HACKING.rst.txt``.
+at the file ``CONTRIBUTING``.
 
 
 License information
@@ -93,4 +91,3 @@ License information
 See the file ``LICENSE.txt`` for information on the history of this
 software, terms & conditions for usage, and a DISCLAIMER OF ALL
 WARRANTIES.
-

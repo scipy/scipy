@@ -163,7 +163,7 @@ def post_configure(context):
         conf.env.append_value('CXXFLAGS_PYEXT', "-Wfatal-errors")
 
     if sys.platform == "darwin":
-        conf.env["MACOSX_DEPLOYMENT_TARGET"] = "10.4"
+        conf.env["MACOSX_DEPLOYMENT_TARGET"] = "10.6"
 
         conf.check_cc_default_arch()
         archs = [conf.env.DEFAULT_CC_ARCH]

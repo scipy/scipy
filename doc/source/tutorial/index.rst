@@ -22,4 +22,3 @@ SciPy Tutorial
    stats
    ndimage
    io
-   weave

@@ -34,6 +34,7 @@ import math
 import numpy
 from . import _ni_support
 from . import _nd_image
+from functools import wraps
 
 import warnings
 
@@ -126,7 +127,7 @@ def geometric_transform(input, mapping, output_shape=None,
                         mode='constant', cval=0.0, prefilter=True,
                         extra_arguments=(), extra_keywords={}):
     """
-    Apply an arbritrary geometric transform.
+    Apply an arbitrary geometric transform.
 
     The given mapping function is used to find, for each point in the
     output, the corresponding coordinates in the input. The value of the
@@ -137,11 +138,11 @@ def geometric_transform(input, mapping, output_shape=None,
     ----------
     input : array_like
         The input array.
-    mapping : callable
+    mapping : {callable, scipy.LowLevelCallable}
         A callable object that accepts a tuple of length equal to the output
         array rank, and returns the corresponding input coordinates as a tuple
         of length equal to the input array rank.
-    output_shape : tuple of ints
+    output_shape : tuple of ints, optional
         Shape tuple.
     output : ndarray or dtype, optional
         The array in which to place the output, or the dtype of the returned
@@ -151,7 +152,7 @@ def geometric_transform(input, mapping, output_shape=None,
         The order has to be in the range 0-5.
     mode : str, optional
         Points outside the boundaries of the input are filled according
-        to the given mode ('constant', 'nearest', 'reflect' or 'wrap').
+        to the given mode ('constant', 'nearest', 'reflect', 'mirror' or 'wrap').
         Default is 'constant'.
     cval : scalar, optional
         Value used for points outside the boundaries of the input if
@@ -175,6 +176,38 @@ def geometric_transform(input, mapping, output_shape=None,
     See Also
     --------
     map_coordinates, affine_transform, spline_filter1d
+
+
+    Notes
+    -----
+    This function also accepts low-level callback functions with one
+    the following signatures and wrapped in `scipy.LowLevelCallable`:
+
+    .. code:: c
+
+       int mapping(npy_intp *output_coordinates, double *input_coordinates,
+                   int output_rank, int input_rank, void *user_data)
+       int mapping(intptr_t *output_coordinates, double *input_coordinates,
+                   int output_rank, int input_rank, void *user_data)
+
+    The calling function iterates over the elements of the output array,
+    calling the callback function at each element. The coordinates of the
+    current output element are passed through ``output_coordinates``. The
+    callback function must return the coordinates at which the input must
+    be interpolated in ``input_coordinates``. The rank of the input and
+    output arrays are given by ``input_rank`` and ``output_rank``
+    respectively.  ``user_data`` is the data pointer provided
+    to `scipy.LowLevelCallable` as-is.
+
+    The callback function must return an integer error status that is zero
+    if something went wrong and one otherwise. If an error occurs, you should
+    normally set the python error status with an informative message
+    before returning, otherwise a default error message is set by the
+    calling function.
+
+    In addition, some other low-level function pointer specifications
+    are accepted, but these are for backward compatibility only and should
+    not be used in new code.
 
     Examples
     --------
@@ -206,8 +239,9 @@ def geometric_transform(input, mapping, output_shape=None,
         filtered = input
     output, return_value = _ni_support._get_output(output, input,
                                                    shape=output_shape)
-    _nd_image.geometric_transform(filtered, mapping, None, None, None,
-               output, order, mode, cval, extra_arguments, extra_keywords)
+    _nd_image.geometric_transform(filtered, mapping, None, None, None, output,
+                                  order, mode, cval, extra_arguments,
+                                  extra_keywords)
     return return_value
 
 
@@ -240,7 +274,7 @@ def map_coordinates(input, coordinates, output=None, order=3,
         The order has to be in the range 0-5.
     mode : str, optional
         Points outside the boundaries of the input are filled according
-        to the given mode ('constant', 'nearest', 'reflect' or 'wrap').
+        to the given mode ('constant', 'nearest', 'reflect', 'mirror' or 'wrap').
         Default is 'constant'.
     cval : scalar, optional
         Value used for points outside the boundaries of the input if
@@ -271,7 +305,7 @@ def map_coordinates(input, coordinates, output=None, order=3,
            [  6.,   7.,   8.],
            [  9.,  10.,  11.]])
     >>> ndimage.map_coordinates(a, [[0.5, 2], [0.5, 1]], order=1)
-    [ 2.  7.]
+    array([ 2.,  7.])
 
     Above, the interpolated value of a[0.5, 0.5] gives output[0], while
     a[2, 1] is output[1].
@@ -282,7 +316,7 @@ def map_coordinates(input, coordinates, output=None, order=3,
     >>> ndimage.map_coordinates(a, inds, order=1, mode='nearest')
     array([ 2.,  8.])
     >>> ndimage.map_coordinates(a, inds, order=1, cval=0, output=bool)
-    array([ True, False], dtype=bool
+    array([ True, False], dtype=bool)
 
     """
     if order < 0 or order > 5:
@@ -306,7 +340,7 @@ def map_coordinates(input, coordinates, output=None, order=3,
     output, return_value = _ni_support._get_output(output, input,
                                                    shape=output_shape)
     _nd_image.geometric_transform(filtered, None, coordinates, None, None,
-               output, order, mode, cval, None, None)
+                                  output, order, mode, cval, None, None)
     return return_value
 
 
@@ -316,22 +350,33 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
     """
     Apply an affine transformation.
 
-    The given matrix and offset are used to find for each point in the
-    output the corresponding coordinates in the input by an affine
-    transformation. The value of the input at those coordinates is
-    determined by spline interpolation of the requested order. Points
-    outside the boundaries of the input are filled according to the given
-    mode.
+    Given an output image pixel index vector ``o``, the pixel value
+    is determined from the input image at position
+    ``np.dot(matrix, o) + offset``.
 
     Parameters
     ----------
     input : ndarray
         The input array.
     matrix : ndarray
-        The matrix must be two-dimensional or can also be given as a
-        one-dimensional sequence or array. In the latter case, it is assumed
-        that the matrix is diagonal. A more efficient algorithms is then
-        applied that exploits the separability of the problem.
+        The inverse coordinate transformation matrix, mapping output
+        coordinates to input coordinates. If ``ndim`` is the number of
+        dimensions of ``input``, the given matrix must have one of the
+        following shapes:
+
+            - ``(ndim, ndim)``: the linear transformation matrix for each
+              output coordinate.
+            - ``(ndim,)``: assume that the 2D transformation matrix is
+              diagonal, with the diagonal specified by the given value. A more
+              efficient algorithm is then used that exploits the separability
+              of the problem.
+            - ``(ndim + 1, ndim + 1)``: assume that the transformation is
+              specified using homogeneous coordinates [1]_. In this case, any
+              value passed to ``offset`` is ignored.
+            - ``(ndim, ndim + 1)``: as above, but the bottom row of a
+              homogeneous transformation matrix is always ``[0, 0, ..., 1]``,
+              and may be omitted.
+
     offset : float or sequence, optional
         The offset into the array where the transform is applied. If a float,
         `offset` is the same for each axis. If a sequence, `offset` should
@@ -346,7 +391,8 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
         The order has to be in the range 0-5.
     mode : str, optional
         Points outside the boundaries of the input are filled according
-        to the given mode ('constant', 'nearest', 'reflect' or 'wrap').
+        to the given mode ('constant', 'nearest', 'reflect', 'mirror' or
+        'wrap').
         Default is 'constant'.
     cval : scalar, optional
         Value used for points outside the boundaries of the input if
@@ -363,6 +409,26 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
         The transformed input. If `output` is given as a parameter, None is
         returned.
 
+    Notes
+    -----
+    The given matrix and offset are used to find for each point in the
+    output the corresponding coordinates in the input by an affine
+    transformation. The value of the input at those coordinates is
+    determined by spline interpolation of the requested order. Points
+    outside the boundaries of the input are filled according to the given
+    mode.
+
+    .. versionchanged:: 0.18.0
+        Previously, the exact interpretation of the affine transformation
+        depended on whether the matrix was supplied as a one-dimensional or
+        two-dimensional array. If a one-dimensional array was supplied
+        to the matrix parameter, the output pixel value at index ``o``
+        was determined from the input image at position
+        ``matrix * (o + offset)``.
+
+    References
+    ----------
+    .. [1] https://en.wikipedia.org/wiki/Homogeneous_coordinates
     """
     if order < 0 or order > 5:
         raise RuntimeError('spline order not supported')
@@ -383,6 +449,18 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
     matrix = numpy.asarray(matrix, dtype=numpy.float64)
     if matrix.ndim not in [1, 2] or matrix.shape[0] < 1:
         raise RuntimeError('no proper affine matrix provided')
+    if (matrix.ndim == 2 and matrix.shape[1] == input.ndim + 1 and
+            (matrix.shape[0] in [input.ndim, input.ndim + 1])):
+        if matrix.shape[0] == input.ndim + 1:
+            exptd = [0] * input.ndim + [1]
+            if not numpy.all(matrix[input.ndim] == exptd):
+                msg = ('Expected homogeneous transformation matrix with '
+                       'shape %s for image shape %s, but bottom row was '
+                       'not equal to %s' % (matrix.shape, input.shape, exptd))
+                raise ValueError(msg)
+        # assume input is homogeneous coordinate transformation matrix
+        offset = matrix[:input.ndim, input.ndim]
+        matrix = matrix[:input.ndim, :input.ndim]
     if matrix.shape[0] != input.ndim:
         raise RuntimeError('affine matrix has wrong number of rows')
     if matrix.ndim == 2 and matrix.shape[1] != output.ndim:
@@ -396,11 +474,16 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
     if not offset.flags.contiguous:
         offset = offset.copy()
     if matrix.ndim == 1:
-        _nd_image.zoom_shift(filtered, matrix, offset, output, order,
+        warnings.warn(
+            "The behaviour of affine_transform with a one-dimensional "
+            "array supplied for the matrix parameter has changed in "
+            "scipy 0.18.0."
+        )
+        _nd_image.zoom_shift(filtered, matrix, offset/matrix, output, order,
                              mode, cval)
     else:
         _nd_image.geometric_transform(filtered, None, None, matrix, offset,
-                            output, order, mode, cval, None, None)
+                                      output, order, mode, cval, None, None)
     return return_value
 
 
@@ -417,7 +500,7 @@ def shift(input, shift, output=None, order=3, mode='constant', cval=0.0,
     ----------
     input : ndarray
         The input array.
-    shift : float or sequence, optional
+    shift : float or sequence
         The shift along the axes. If a float, `shift` is the same for each
         axis. If a sequence, `shift` should contain one value for each axis.
     output : ndarray or dtype, optional
@@ -428,7 +511,7 @@ def shift(input, shift, output=None, order=3, mode='constant', cval=0.0,
         The order has to be in the range 0-5.
     mode : str, optional
         Points outside the boundaries of the input are filled according
-        to the given mode ('constant', 'nearest', 'reflect' or 'wrap').
+        to the given mode ('constant', 'nearest', 'reflect', 'mirror' or 'wrap').
         Default is 'constant'.
     cval : scalar, optional
         Value used for points outside the boundaries of the input if
@@ -479,7 +562,7 @@ def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
     ----------
     input : ndarray
         The input array.
-    zoom : float or sequence, optional
+    zoom : float or sequence
         The zoom factor along the axes. If a float, `zoom` is the same for each
         axis. If a sequence, `zoom` should contain one value for each axis.
     output : ndarray or dtype, optional
@@ -490,7 +573,7 @@ def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
         The order has to be in the range 0-5.
     mode : str, optional
         Points outside the boundaries of the input are filled according
-        to the given mode ('constant', 'nearest', 'reflect' or 'wrap').
+        to the given mode ('constant', 'nearest', 'reflect', 'mirror' or 'wrap').
         Default is 'constant'.
     cval : scalar, optional
         Value used for points outside the boundaries of the input if
@@ -533,15 +616,14 @@ def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
                 "the returned array has changed.", UserWarning)
 
     zoom_div = numpy.array(output_shape, float) - 1
-    zoom = (numpy.array(input.shape) - 1) / zoom_div
-
-    # Zooming to non-finite values is unpredictable, so just choose
+    # Zooming to infinite values is unpredictable, so just choose
     # zoom factor 1 instead
-    zoom[~numpy.isfinite(zoom)] = 1
+    zoom = numpy.divide(numpy.array(input.shape) - 1, zoom_div,
+                        out=numpy.ones_like(input.shape, dtype=numpy.float64),
+                        where=zoom_div != 0)
 
     output, return_value = _ni_support._get_output(output, input,
                                                    shape=output_shape)
-    zoom = numpy.asarray(zoom, dtype=numpy.float64)
     zoom = numpy.ascontiguousarray(zoom)
     _nd_image.zoom_shift(filtered, zoom, None, output, order, mode, cval)
     return return_value
@@ -588,7 +670,7 @@ def rotate(input, angle, axes=(1, 0), reshape=True,
         The order has to be in the range 0-5.
     mode : str, optional
         Points outside the boundaries of the input are filled according
-        to the given mode ('constant', 'nearest', 'reflect' or 'wrap').
+        to the given mode ('constant', 'nearest', 'reflect', 'mirror' or 'wrap').
         Default is 'constant'.
     cval : scalar, optional
         Value used for points outside the boundaries of the input if

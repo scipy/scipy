@@ -5,9 +5,8 @@ from __future__ import division, print_function, absolute_import
 import sys
 
 import numpy as np
-from numpy.testing import (assert_array_almost_equal, dec,
-                           assert_array_equal)
-from nose.tools import assert_true, assert_equal, assert_raises
+from numpy.testing import assert_array_almost_equal, assert_
+import pytest
 
 from scipy import ndimage
 
@@ -48,7 +47,7 @@ def test_map_coordinates_dts():
             assert_array_almost_equal(these_data, out)
 
 
-@dec.knownfailureif(not sys.platform == 'darwin')
+@pytest.mark.xfail(not sys.platform == 'darwin', reason="runs only on darwin")
 def test_uint64_max():
     # Test interpolation respects uint64 max.  Reported to fail at least on
     # win32 (due to the 32 bit visual C compiler using signed int64 when
@@ -58,7 +57,7 @@ def test_uint64_max():
     # Tests geometric transform (map_coordinates, affine_transform)
     inds = np.indices(arr.shape) - 0.1
     x = ndimage.map_coordinates(arr, inds)
-    assert_true(x[1] > (2**63))
+    assert_(x[1] > (2**63))
     # Tests zoom / shift
     x = ndimage.shift(arr, 0.1)
-    assert_true(x[1] > (2**63))
+    assert_(x[1] > (2**63))

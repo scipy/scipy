@@ -1,3 +1,13 @@
+/*! \file
+Copyright (c) 2003, The Regents of the University of California, through
+Lawrence Berkeley National Laboratory (subject to receipt of any required 
+approvals from U.S. Dept. of Energy) 
+
+All rights reserved. 
+
+The source code is distributed under BSD license, see the file License.txt
+at the top-level directory.
+*/
 /*! @file icmax1.c
  * \brief Finds the index of the element whose real part has maximum absolute value
  *
@@ -41,7 +51,7 @@
    ===================================================================== 
   </pre>
 */
-int icmax1_(int *n, complex *cx, int *incx)
+int icmax1_slu(int *n, complex *cx, int *incx)
 {
 /*
        NEXT LINE IS THE ONLY MODIFICATION.   
@@ -112,5 +122,5 @@ L40:
 
 /*     End of ICMAX1 */
 
-} /* icmax1_ */
+} /* icmax1_slu */
 

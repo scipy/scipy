@@ -8,12 +8,16 @@ community process works in practice.  Readers who are familiar with the SciPy
 community and are experienced Python coders may want to jump straight to the
 `git workflow`_ documentation.
 
-.. note::
+There are a lot of ways you can contribute:
 
-   You may want to check the latest version of this guide, which is
-   available at:
-   https://github.com/scipy/scipy/blob/master/HACKING.rst.txt
-
+- Contributing new code
+- Fixing bugs and other maintenance work
+- Improving the documentation
+- Reviewing open pull requests
+- Triaging issues
+- Working on the `scipy.org`_ website
+- Answering questions and participating on the scipy-dev and scipy-user
+  `mailing lists`_.
 
 Contributing new code
 =====================
@@ -42,7 +46,7 @@ start this discussion before your code is finished.
 Assuming the outcome of the discussion on the mailing list is positive and you
 have a function or piece of code that does what you need it to do, what next?
 Before code is added to SciPy, it at least has to have good documentation, unit
-tests and correct code style.  
+tests and correct code style.
 
 1. Unit tests
     In principle you should aim to create unit tests that exercise all the code
@@ -72,7 +76,7 @@ tests and correct code style.
     idea.
 
 At the end of this document a checklist is given that may help to check if your
-code fulfills all requirements for inclusion in SciPy. 
+code fulfills all requirements for inclusion in SciPy.
 
 Another question you may have is: *where exactly do I put my code*?  To answer
 this, it is useful to understand how the SciPy public API (application
@@ -107,7 +111,7 @@ basic answer is: decisions are made by consensus, by everyone who chooses to
 participate in the discussion on the mailing list.  This includes developers,
 other users and yourself.  Aiming for consensus in the discussion is important
 -- SciPy is a project by and for the scientific Python community.  In those
-rare cases that agreement cannot be reached, the `maintainers`_ of the module
+rare cases that agreement cannot be reached, the maintainers of the module
 in question can decide the issue.
 
 
@@ -135,31 +139,52 @@ deprecation message for the changed behavior.  This should be part of the
 review process.
 
 
+Reviewing pull requests
+=======================
+
+Reviewing open pull requests (PRs) is very welcome, and a valuable way to help
+increase the speed at which the project moves forward.  If you have specific
+knowledge/experience in a particular area (say "optimization algorithms" or
+"special functions") then reviewing PRs in that area is especially valuable -
+sometimes PRs with technical code have to wait for a long time to get merged
+due to a shortage of appropriate reviewers.
+
+We encourage everyone to get involved in the review process; it's also a
+great way to get familiar with the code base.  Reviewers should ask
+themselves some or all of the following questions:
+
+- Was this change adequately discussed (relevant for new features and changes
+  in existing behavior)?
+- Is the feature scientifically sound? Algorithms may be known to work based on
+  literature; otherwise, closer look at correctness is valuable.
+- Is the intended behavior clear under all conditions (e.g. unexpected inputs
+  like empty arrays or nan/inf values)?
+- Does the code meet the quality, test and documentation expectation outline
+  under `Contributing new code`_?
+
+If we do not know you yet, consider introducing yourself.
+
+
 Other ways to contribute
 ========================
 
-There are many ways to contribute other than contributing code.  Participating
-in discussions on the scipy-user and scipy-dev *mailing lists* is a contribution
-in itself.  The `scipy.org`_ *website* contains a lot of information on the
-SciPy community and can always use a new pair of hands.  A redesign of this
-website is ongoing, see `scipy.github.com`_.  The redesigned website is a
-static site based on Sphinx, the sources for it are
-also on Github at `scipy.org-new`_.
+There are many ways to contribute other than contributing code.
 
-The SciPy *documentation* is constantly being improved by many developers and
-users.  You can contribute by sending a PR on Github that improves the
-documentation, but there's also a `documentation wiki`_ that is very convenient
-for making edits to docstrings (and doesn't require git knowledge).  Anyone can
-register a username on that wiki, ask on the scipy-dev mailing list for edit
-rights and make edits.  The documentation there is updated every day with the
-latest changes in the SciPy master branch, and wiki edits are regularly
-reviewed and merged into master.  Another advantage of the documentation wiki
-is that you can immediately see how the reStructuredText (reST) of docstrings
-and other docs is rendered as html, so you can easily catch formatting errors.
+Triaging issues (investigating bug reports for validity and possible actions to
+take) is also a useful activity.  SciPy has many hundreds of open issues;
+closing invalid ones and correctly labeling valid ones (ideally with some first
+thoughts in a comment) allows prioritizing maintenance work and finding related
+issues easily when working on an existing function or submodule.
 
-Code that doesn't belong in SciPy itself or in another package but helps users
-accomplish a certain task is valuable.  `SciPy Central`_ is the place to share
-this type of code (snippets, examples, plotting code, etc.).
+Participating in discussions on the scipy-user and scipy-dev `mailing lists`_ is
+a contribution in itself.  Everyone who writes to those lists with a problem or
+an idea would like to get responses, and writing such responses makes the
+project and community function better and appear more welcoming.
+
+The `scipy.org`_ website contains a lot of information on both SciPy the
+project and SciPy the community, and it can always use a new pair of hands.
+The sources for the website live in their own separate repo:
+https://github.com/scipy/scipy.org
 
 
 Recommended development setup
@@ -184,14 +209,16 @@ do one of::
 
     $ python runtests.py -v
     $ python runtests.py -v -s optimize
-    $ python runtests.py -v -t scipy/special/tests/test_basic.py:test_xlogy
+    $ python runtests.py -v -t scipy.special.tests.test_basic::test_xlogy
     $ python runtests.py --ipython
     $ python runtests.py --python somescript.py
     $ python runtests.py --bench
 
 This builds Scipy first, so the first time it may take some time.  If
 you specify ``-n``, the tests are run against the version of Scipy (if
-any) found on current PYTHONPATH.
+any) found on current PYTHONPATH.  *Note: if you run into a build issue,
+more detailed build documentation can be found at
+http://scipy.org/scipylib/building/index.html.*
 
 Using ``runtests.py`` is the recommended approach to running tests.
 There are also a number of alternatives to it, for example in-place
@@ -220,9 +247,6 @@ following, a *SciPy module* is defined as a Python package, say
     for `numpy.distutils`.
 
   - A directory ``tests/`` that contains files ``test_<name>.py``
-    corresponding to modules ``yyy/<name>{.py,.so,/}``.
-
-  - A directory ``benchmarks/`` that contains files ``bench_<name>.py``
     corresponding to modules ``yyy/<name>{.py,.so,/}``.
 
 * Private modules should be prefixed with an underscore ``_``,
@@ -259,6 +283,7 @@ Checklist before submitting a PR
   - Are there unit tests with good code coverage?
   - Do all public function have docstrings including examples?
   - Is the code style correct (PEP8, pyflakes)
+  - Is the commit message `formatted correctly`_?
   - Is the new functionality tagged with ``.. versionadded:: X.Y.Z`` (with
     X.Y.Z the version number of the next release - can be found in setup.py)?
   - Is the new functionality mentioned in the release notes of the next
@@ -281,8 +306,9 @@ Useful SciPy documents
   - The `how to document`_ guidelines
   - NumPy/SciPy `testing guidelines`_
   - `SciPy API`_
-  - SciPy `maintainers`_
+  - The `SciPy Roadmap`_
   - NumPy/SciPy `git workflow`_
+  - How to submit a good `bug report`_
 
 
 FAQ
@@ -301,10 +327,10 @@ compatibility`_.
 
 *Why is SciPy under the BSD license and not, say, the GPL?*
 
-Like Python, SciPy uses a "permissive" open source license, which allows 
-proprietary re-use. While this allows companies to use and modify the software 
-without giving anything back, it is felt that the larger user base results in 
-more contributions overall, and companies often publish their modifications 
+Like Python, SciPy uses a "permissive" open source license, which allows
+proprietary re-use. While this allows companies to use and modify the software
+without giving anything back, it is felt that the larger user base results in
+more contributions overall, and companies often publish their modifications
 anyway, without being required to.  See John Hunter's `BSD pitch`_.
 
 
@@ -324,7 +350,7 @@ command ``source scipy-dev/bin/activate``, and ``deactivate`` to exit from the
 virtual environment and back to your previous shell.  With scipy-dev
 activated, install first Scipy's dependencies::
 
-    $ pip install Numpy Nose Cython
+    $ pip install Numpy pytest Cython
 
 After that, you can install a development version of Scipy, for example via::
 
@@ -418,7 +444,11 @@ suite.
 
 .. _testing guidelines: https://github.com/numpy/numpy/blob/master/doc/TESTS.rst.txt
 
+.. _formatted correctly: http://docs.scipy.org/doc/numpy/dev/gitwash/development_workflow.html#writing-the-commit-message
+
 .. _how to document: https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt
+
+.. _bug report: http://scipy.org/bug-report.html
 
 .. _PEP8: http://www.python.org/dev/peps/pep-0008/
 
@@ -426,29 +456,29 @@ suite.
 
 .. _pyflakes: http://pypi.python.org/pypi/pyflakes
 
-.. _SciPy API: http://docs.scipy.org/doc/scipy/reference/api.html
+.. _SciPy API: https://docs.scipy.org/doc/scipy/reference/api.html
+
+.. _SciPy Roadmap: https://scipy.github.io/devdocs/roadmap.html
 
 .. _git workflow: http://docs.scipy.org/doc/numpy/dev/gitwash/index.html
 
 .. _Github help pages: https://help.github.com/articles/set-up-git/
 
-.. _maintainers: https://github.com/scipy/scipy/blob/master/doc/MAINTAINERS.rst.txt
-
 .. _issue list: https://github.com/scipy/scipy/issues
 
 .. _Github: https://github.com/scipy/scipy
 
-.. _scipy.org: http://scipy.org/
+.. _scipy.org: https://scipy.org/
 
 .. _scipy.github.com: http://scipy.github.com/
 
 .. _scipy.org-new: https://github.com/scipy/scipy.org-new
 
-.. _documentation wiki: http://docs.scipy.org/scipy/Front%20Page/
+.. _documentation wiki: https://docs.scipy.org/scipy/Front%20Page/
 
 .. _SciPy Central: http://scipy-central.org/
 
-.. _license compatibility: http://www.scipy.org/License_Compatibility
+.. _license compatibility: https://scipy.github.io/old-wiki/pages/License_Compatibility.html
 
 .. _doctest: http://www.doughellmann.com/PyMOTW/doctest/
 
@@ -457,3 +487,8 @@ suite.
 .. _virtualenvwrapper: http://www.doughellmann.com/projects/virtualenvwrapper/
 
 .. _bsd pitch: http://nipy.sourceforge.net/nipy/stable/faq/johns_bsd_pitch.html
+
+.. _Pytest: https://pytest.org/
+
+.. _mailing lists: https://www.scipy.org/scipylib/mailing-lists.html
+

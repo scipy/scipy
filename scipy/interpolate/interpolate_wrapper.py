@@ -11,6 +11,7 @@ def atleast_1d_and_contiguous(ary, dtype=np.float64):
     return np.atleast_1d(np.ascontiguousarray(ary, dtype))
 
 
+@np.deprecate(message="'nearest' is deprecated in SciPy 1.0.0")
 def nearest(x, y, new_x):
     """
     Rounds each new x to nearest input x and returns corresponding input y.
@@ -37,12 +38,13 @@ def nearest(x, y, new_x):
 
     TINY = 1e-10
     indices = np.searchsorted(midpoints_of_x, new_x+TINY)-1
-    indices = np.atleast_1d(np.clip(indices, 0, np.Inf).astype(np.int))
+    indices = np.atleast_1d(np.clip(indices, 0, np.Inf).astype(int))
     new_y = np.take(y, indices, axis=-1)
 
     return new_y
 
 
+@np.deprecate(message="'linear' is deprecated in SciPy 1.0.0")
 def linear(x, y, new_x):
     """
     Linearly interpolates values in new_x based on the values in x and y
@@ -74,6 +76,7 @@ def linear(x, y, new_x):
     return new_y
 
 
+@np.deprecate(message="'logarithmic' is deprecated in SciPy 1.0.0")
 def logarithmic(x, y, new_x):
     """
     Linearly interpolates values in new_x based in the log space of y.
@@ -105,6 +108,7 @@ def logarithmic(x, y, new_x):
     return new_y
 
 
+@np.deprecate(message="'block_average_above' is deprecated in SciPy 1.0.0")
 def block_average_above(x, y, new_x):
     """
     Linearly interpolates values in new_x based on the values in x and y.
@@ -146,6 +150,7 @@ def block_average_above(x, y, new_x):
     return new_y
 
 
+@np.deprecate(message="'block' is deprecated in SciPy 1.0.0")
 def block(x, y, new_x):
     """
     Essentially a step function.
@@ -159,7 +164,7 @@ def block(x, y, new_x):
         Independent values.
     y : array_like
         Dependent values.
-    x_new : array_like
+    new_x : array_like
         The x values used to calculate the interpolated y.
 
     Returns
@@ -177,6 +182,6 @@ def block(x, y, new_x):
     # If the value is at the front of the list, it'll have -1.
     # In this case, we will use the first (0), element in the array.
     # take requires the index array to be an Int
-    indices = np.atleast_1d(np.clip(indices, 0, np.Inf).astype(np.int))
+    indices = np.atleast_1d(np.clip(indices, 0, np.Inf).astype(int))
     new_y = np.take(y, indices, axis=-1)
     return new_y

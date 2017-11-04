@@ -34,6 +34,13 @@ static char const rcsid[] =
 
 #include "tnc.h"
 
+/* NPY_ARRAY_IN_ARRAY was introduced in numpy 1.7.0 */
+#if NPY_API_VERSION < 0x00000007
+    #define NPY_ARRAY_C_CONTIGUOUS    0x0001
+    #define NPY_ARRAY_ALIGNED         0x0100
+    #define NPY_ARRAY_IN_ARRAY (NPY_ARRAY_C_CONTIGUOUS | NPY_ARRAY_ALIGNED)
+#endif
+
 typedef struct _pytnc_state
 {
   PyObject *py_function;
@@ -57,7 +64,7 @@ static int function(double x[], double *f, double g[], void *state)
     PyErr_SetString(PyExc_MemoryError, "tnc: memory allocation failed.");
     goto failure;
   }
-  memcpy(py_x->data, x, (py_state->n)*sizeof(double));
+  memcpy(PyArray_DATA(py_x), x, (py_state->n)*sizeof(double));
 
   arglist = Py_BuildValue("(N)", py_x);
   result = PyEval_CallObject(py_state->py_function, arglist);
@@ -79,7 +86,7 @@ static int function(double x[], double *f, double g[], void *state)
     goto failure;
   }
   arr_grad = (PyArrayObject *)PyArray_FROM_OTF((PyObject *)py_grad,
-                                               NPY_DOUBLE, NPY_IN_ARRAY);
+                                               NPY_DOUBLE, NPY_ARRAY_IN_ARRAY);
   if (arr_grad == NULL)
   {
     PyErr_SetString(PyExc_ValueError, "tnc: invalid gradient vector.");
@@ -92,7 +99,7 @@ static int function(double x[], double *f, double g[], void *state)
       "tnc: invalid gradient vector from minimized function.");
     goto failure;
   }
-  memcpy(g, arr_grad->data, (py_state->n)*sizeof(double));
+  memcpy(g, PyArray_DATA(arr_grad), (py_state->n)*sizeof(double));
 
   Py_DECREF(arr_grad);
   Py_DECREF(result);
@@ -118,7 +125,7 @@ static void callback(double x[], void *state)
     PyErr_SetString(PyExc_MemoryError, "tnc: memory allocation failed.");
     return;
   }
-  memcpy(py_x->data, x, (py_state->n)*sizeof(double));
+  memcpy(PyArray_DATA(py_x), x, (py_state->n)*sizeof(double));
 
   arglist = Py_BuildValue("(N)", py_x);
   result = PyEval_CallObject(py_state->py_callback, arglist);
@@ -153,7 +160,7 @@ PyObject *moduleTNC_minimize(PyObject *self, PyObject *args)
   }
 
   arr_scale = (PyArrayObject *)PyArray_FROM_OTF((PyObject *)py_scale,
-                                                NPY_DOUBLE, NPY_IN_ARRAY);
+                                                NPY_DOUBLE, NPY_ARRAY_IN_ARRAY);
   if (arr_scale == NULL)
   {
     PyErr_SetString(PyExc_ValueError, "tnc: invalid scaling parameters.");
@@ -170,7 +177,7 @@ PyObject *moduleTNC_minimize(PyObject *self, PyObject *args)
   }
 
   arr_offset = (PyArrayObject *)PyArray_FROM_OTF((PyObject *)py_offset,
-                                                 NPY_DOUBLE, NPY_IN_ARRAY);
+                                                 NPY_DOUBLE, NPY_ARRAY_IN_ARRAY);
   if (arr_offset == NULL)
   {
     PyErr_SetString(PyExc_ValueError, "tnc: invalid offset parameters.");
@@ -187,7 +194,7 @@ PyObject *moduleTNC_minimize(PyObject *self, PyObject *args)
   }
 
   arr_x = (PyArrayObject *)PyArray_FROM_OTF((PyObject *)py_x0,
-                                            NPY_DOUBLE, NPY_IN_ARRAY);
+                                            NPY_DOUBLE, NPY_ARRAY_IN_ARRAY);
   if (arr_x == NULL)
   {
     PyErr_SetString(PyExc_ValueError, "tnc: invalid initial vector.");
@@ -204,7 +211,7 @@ PyObject *moduleTNC_minimize(PyObject *self, PyObject *args)
   }
 
   arr_low = (PyArrayObject *)PyArray_FROM_OTF((PyObject *)py_low,
-                                              NPY_DOUBLE, NPY_IN_ARRAY);
+                                              NPY_DOUBLE, NPY_ARRAY_IN_ARRAY);
   if (arr_low == NULL)
   {
     PyErr_SetString(PyExc_ValueError, "tnc: invalid lower bound.");
@@ -220,7 +227,7 @@ PyObject *moduleTNC_minimize(PyObject *self, PyObject *args)
     }
   }
   arr_up = (PyArrayObject *)PyArray_FROM_OTF((PyObject *)py_up,
-                                             NPY_DOUBLE, NPY_IN_ARRAY);
+                                             NPY_DOUBLE, NPY_ARRAY_IN_ARRAY);
   if (arr_up == NULL)
   {
     PyErr_SetString(PyExc_ValueError, "tnc: invalid upper bound.");

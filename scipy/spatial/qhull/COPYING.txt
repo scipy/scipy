@@ -1,4 +1,4 @@
-                    Qhull, Copyright (c) 1993-2012
+                    Qhull, Copyright (c) 1993-2015
                     
                             C.B. Barber
                            Arlington, MA 

@@ -15,6 +15,6 @@ from . import byteordercodes
 
 __all__ = ['loadmat', 'savemat', 'whosmat', 'byteordercodes']
 
-from numpy.testing import Tester
-test = Tester().test
-bench = Tester().bench
+from scipy._lib._testutils import PytestTester
+test = PytestTester(__name__)
+del PytestTester

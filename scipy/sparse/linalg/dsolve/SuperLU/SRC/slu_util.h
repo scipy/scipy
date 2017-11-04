@@ -1,3 +1,13 @@
+/*! \file
+Copyright (c) 2003, The Regents of the University of California, through
+Lawrence Berkeley National Laboratory (subject to receipt of any required 
+approvals from U.S. Dept. of Energy) 
+
+All rights reserved. 
+
+The source code is distributed under BSD license, see the file License.txt
+at the top-level directory.
+*/
 /** @file slu_util.h
  * \brief Utility header file 
  *
@@ -22,11 +32,27 @@
 #include <assert.h>
 #include "superlu_enum_consts.h"
 
+
 #include "scipy_slu_config.h"
 
 /***********************************************************************
  * Macros
  ***********************************************************************/
+/*                                                                                           
+ * You can support older version of SuperLU.                                              
+ * At compile-time, you can catch the new release as:                                          
+ *   #ifdef SUPERLU_MAIN_VERSION == 5                                                     
+ *       use the new interface                                                                 
+ *   #else                                                                                     
+ *       use the old interface                                                                 
+ *   #endif                                                                                    
+ * Versions 4.x and earlier do not include a #define'd version numbers.                        
+ */
+#define SUPERLU_MAJOR_VERSION     5
+#define SUPERLU_MINOR_VERSION     2
+#define SUPERLU_PATCH_VERSION     1
+
+
 #define FIRSTCOL_OF_SNODE(i)	(xsup[i])
 /* No of marker arrays used in the symbolic factorization,
    each of size n */
@@ -143,7 +169,7 @@ typedef unsigned char Logical;
  *             prior to this one. Therefore, this factorization will reuse
  *             both row and column scaling factors R and C, both row and
  *             column permutation vectors perm_r and perm_c, and the
- *             data structure set up from the previous symbolic factorization.
+ *             L & U data structures set up from the previous factorization.
  *        = FACTORED: On entry, L, U, perm_r and perm_c contain the 
  *              factored form of A. If DiagScale is not NOEQUIL, the matrix
  *              A has been equilibrated with scaling factors R and C.
@@ -310,12 +336,36 @@ typedef struct {
 } mem_usage_t;
 
 
+typedef struct {
+    int     *xsup;    /* supernode and column mapping */
+    int     *supno;   
+    int     *lsub;    /* compressed L subscripts */
+    int	    *xlsub;
+    void    *lusup;   /* L supernodes */
+    int     *xlusup;
+    void    *ucol;    /* U columns */
+    int     *usub;
+    int	    *xusub;
+    int     nzlmax;   /* current max size of lsub */
+    int     nzumax;   /*    "    "    "      ucol */
+    int     nzlumax;  /*    "    "    "     lusup */
+    int     n;        /* number of columns in the matrix */
+    LU_space_t MemModel; /* 0 - system malloc'd; 1 - user provided */
+    int     num_expansions;
+    ExpHeader *expanders; /* Array of pointers to 4 types of memory */
+    LU_stack_t stack;     /* use user supplied memory */
+} GlobalLU_t;
+
+
+
 /***********************************************************************
  * Prototypes
  ***********************************************************************/
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+extern int     input_error(char *, int *);
 
 extern void    Destroy_SuperMatrix_Store(SuperMatrix *);
 extern void    Destroy_CompCol_Matrix(SuperMatrix *);
@@ -348,7 +398,6 @@ extern int     spcoletree (int *, int *, int *, int, int, int *);
 extern int     *TreePostorder (int, int *);
 extern double  SuperLU_timer_ ();
 extern int     sp_ienv (int);
-extern int     lsame_ (char *, char *);
 extern int     xerbla_ (char *, int *);
 extern void    ifill (int *, int, int);
 extern void    snode_profile (int, int *);

@@ -1,3 +1,13 @@
+/*! \file
+Copyright (c) 2003, The Regents of the University of California, through
+Lawrence Berkeley National Laboratory (subject to receipt of any required 
+approvals from U.S. Dept. of Energy) 
+
+All rights reserved. 
+
+The source code is distributed under BSD license, see the file License.txt
+at the top-level directory.
+*/
 /*! @file util.c
  * \brief Utility functions
  * 
@@ -29,7 +39,7 @@
 
 void superlu_abort_and_exit(char* msg)
 {
-    fprintf(stderr, "%s\n", msg);
+    fprintf(stderr, "%s", msg);
     exit (-1);
 }
 
@@ -387,15 +397,13 @@ void ifill(int *a, int alen, int ival)
 /*! \brief Get the statistics of the supernodes 
  */
 #define NBUCKS 10
-static 	int	max_sup_size;
 
 void super_stats(int nsuper, int *xsup)
 {
     register int nsup1 = 0;
-    int          i, isize, whichb, bl, bh;
-    int          bucket[NBUCKS];
-
-    max_sup_size = 0;
+    int    i, isize, whichb, bl, bh;
+    int    bucket[NBUCKS];
+    int    max_sup_size = 0;
 
     for (i = 0; i <= nsuper; i++) {
 	isize = xsup[i+1] - xsup[i];

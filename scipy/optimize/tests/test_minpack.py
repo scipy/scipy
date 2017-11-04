@@ -4,14 +4,16 @@ Unit tests for optimization routines from minpack.py.
 from __future__ import division, print_function, absolute_import
 
 from numpy.testing import (assert_, assert_almost_equal, assert_array_equal,
-        assert_array_almost_equal, TestCase, run_module_suite, assert_raises,
-        assert_allclose)
+        assert_array_almost_equal, assert_allclose)
+from pytest import raises as assert_raises
 import numpy as np
 from numpy import array, float64, matrix
 
 from scipy import optimize
 from scipy.special import lambertw
 from scipy.optimize.minpack import leastsq, curve_fit, fixed_point
+from scipy._lib._numpy_compat import _assert_warns, suppress_warnings
+from scipy.optimize import OptimizeWarning
 
 
 class ReturnShape(object):
@@ -92,13 +94,13 @@ def pressure_network_jacobian(flow_rates, Qtot, k):
 
 
 def pressure_network_fun_and_grad(flow_rates, Qtot, k):
-    return pressure_network(flow_rates, Qtot, k), \
-        pressure_network_jacobian(flow_rates, Qtot, k)
+    return (pressure_network(flow_rates, Qtot, k),
+            pressure_network_jacobian(flow_rates, Qtot, k))
 
 
-class TestFSolve(TestCase):
+class TestFSolve(object):
     def test_pressure_network_no_gradient(self):
-        """fsolve without gradient, equal pipes -> equal flows"""
+        # fsolve without gradient, equal pipes -> equal flows.
         k = np.ones(4) * 0.5
         Qtot = 4
         initial_guess = array([2., 0., 2., 0.])
@@ -109,7 +111,7 @@ class TestFSolve(TestCase):
         assert_(ier == 1, mesg)
 
     def test_pressure_network_with_gradient(self):
-        """fsolve with gradient, equal pipes -> equal flows"""
+        # fsolve with gradient, equal pipes -> equal flows
         k = np.ones(4) * 0.5
         Qtot = 4
         initial_guess = array([2., 0., 2., 0.])
@@ -119,7 +121,6 @@ class TestFSolve(TestCase):
         assert_array_almost_equal(final_flows, np.ones(4))
 
     def test_wrong_shape_func_callable(self):
-        """The callable 'func' has no '__name__' attribute."""
         func = ReturnShape(1)
         # x0 is a list of two elements, but func will return an array with
         # length 1, so this should result in a TypeError.
@@ -133,7 +134,6 @@ class TestFSolve(TestCase):
         assert_raises(TypeError, optimize.fsolve, dummy_func, x0, args=((1,),))
 
     def test_wrong_shape_fprime_callable(self):
-        """The callables 'func' and 'deriv_func' have no '__name__' attribute."""
         func = ReturnShape(1)
         deriv_func = ReturnShape((2,2))
         assert_raises(TypeError, optimize.fsolve, func, x0=[0,1], fprime=deriv_func)
@@ -149,9 +149,9 @@ class TestFSolve(TestCase):
         assert_allclose(func(p), [0, 0], atol=1e-3)
 
 
-class TestRootHybr(TestCase):
+class TestRootHybr(object):
     def test_pressure_network_no_gradient(self):
-        """root/hybr without gradient, equal pipes -> equal flows"""
+        # root/hybr without gradient, equal pipes -> equal flows
         k = np.ones(4) * 0.5
         Qtot = 4
         initial_guess = array([2., 0., 2., 0.])
@@ -160,7 +160,7 @@ class TestRootHybr(TestCase):
         assert_array_almost_equal(final_flows, np.ones(4))
 
     def test_pressure_network_with_gradient(self):
-        """root/hybr with gradient, equal pipes -> equal flows"""
+        # root/hybr with gradient, equal pipes -> equal flows
         k = np.ones(4) * 0.5
         Qtot = 4
         initial_guess = matrix([2., 0., 2., 0.])
@@ -170,7 +170,8 @@ class TestRootHybr(TestCase):
         assert_array_almost_equal(final_flows, np.ones(4))
 
     def test_pressure_network_with_gradient_combined(self):
-        """root/hybr with gradient and function combined, equal pipes -> equal flows"""
+        # root/hybr with gradient and function combined, equal pipes -> equal
+        # flows
         k = np.ones(4) * 0.5
         Qtot = 4
         initial_guess = array([2., 0., 2., 0.])
@@ -180,9 +181,9 @@ class TestRootHybr(TestCase):
         assert_array_almost_equal(final_flows, np.ones(4))
 
 
-class TestRootLM(TestCase):
+class TestRootLM(object):
     def test_pressure_network_no_gradient(self):
-        """root/lm without gradient, equal pipes -> equal flows"""
+        # root/lm without gradient, equal pipes -> equal flows
         k = np.ones(4) * 0.5
         Qtot = 4
         initial_guess = array([2., 0., 2., 0.])
@@ -191,8 +192,8 @@ class TestRootLM(TestCase):
         assert_array_almost_equal(final_flows, np.ones(4))
 
 
-class TestLeastSq(TestCase):
-    def setUp(self):
+class TestLeastSq(object):
+    def setup_method(self):
         x = np.linspace(0, 10, 40)
         a,b,c = 3.1, 42, -304.2
         self.x = x
@@ -233,7 +234,6 @@ class TestLeastSq(TestCase):
         assert_array_equal(p0, p0_copy)
 
     def test_wrong_shape_func_callable(self):
-        """The callable 'func' has no '__name__' attribute."""
         func = ReturnShape(1)
         # x0 is a list of two elements, but func will return an array with
         # length 1, so this should result in a TypeError.
@@ -247,7 +247,6 @@ class TestLeastSq(TestCase):
         assert_raises(TypeError, optimize.leastsq, dummy_func, x0, args=((1,),))
 
     def test_wrong_shape_Dfun_callable(self):
-        """The callables 'func' and 'deriv_func' have no '__name__' attribute."""
         func = ReturnShape(1)
         deriv_func = ReturnShape((2,2))
         assert_raises(TypeError, optimize.leastsq, func, x0=[0,1], Dfun=deriv_func)
@@ -258,7 +257,7 @@ class TestLeastSq(TestCase):
         assert_raises(TypeError, optimize.leastsq, func, x0=[0,1], Dfun=deriv_func)
 
     def test_float32(self):
-        # From Track ticket #920
+        # Regression test for gh-1447
         def func(p,x,y):
             q = p[0]*np.exp(-(x-p[1])**2/(2.0*p[2]**2))+p[3]
             return q - y
@@ -274,8 +273,8 @@ class TestLeastSq(TestCase):
         assert_((func(p1,x,y)**2).sum() < 1e-4 * (func(p0,x,y)**2).sum())
 
 
-class TestCurveFit(TestCase):
-    def setUp(self):
+class TestCurveFit(object):
+    def setup_method(self):
         self.y = array([1.0, 3.2, 9.5, 13.7])
         self.x = array([1.0, 2.0, 3.0, 4.0])
 
@@ -300,7 +299,7 @@ class TestCurveFit(TestCase):
         assert_(len(popt) == 2)
         assert_(pcov.shape == (2,2))
         assert_array_almost_equal(popt, [1.7989, 1.1642], decimal=4)
-        assert_array_almost_equal(pcov, [[0.0852, -0.1260],[-0.1260, 0.1912]],
+        assert_array_almost_equal(pcov, [[0.0852, -0.1260], [-0.1260, 0.1912]],
                                   decimal=4)
 
     def test_func_is_classmethod(self):
@@ -345,37 +344,45 @@ class TestCurveFit(TestCase):
         def f(x, a, b):
             return a*x + b
 
-        popt, pcov = curve_fit(f, xdata, ydata, p0=[2, 0], sigma=sigma)
-        perr_scaled = np.sqrt(np.diag(pcov))
-        assert_allclose(perr_scaled, [0.20659803, 0.57204404], rtol=1e-3)
+        for method in ['lm', 'trf', 'dogbox']:
+            popt, pcov = curve_fit(f, xdata, ydata, p0=[2, 0], sigma=sigma,
+                                   method=method)
+            perr_scaled = np.sqrt(np.diag(pcov))
+            assert_allclose(perr_scaled, [0.20659803, 0.57204404], rtol=1e-3)
 
-        popt, pcov = curve_fit(f, xdata, ydata, p0=[2, 0], sigma=3*sigma)
-        perr_scaled = np.sqrt(np.diag(pcov))
-        assert_allclose(perr_scaled, [0.20659803, 0.57204404], rtol=1e-3)
+            popt, pcov = curve_fit(f, xdata, ydata, p0=[2, 0], sigma=3*sigma,
+                                   method=method)
+            perr_scaled = np.sqrt(np.diag(pcov))
+            assert_allclose(perr_scaled, [0.20659803, 0.57204404], rtol=1e-3)
 
-        popt, pcov = curve_fit(f, xdata, ydata, p0=[2, 0], sigma=sigma,
-                               absolute_sigma=True)
-        perr = np.sqrt(np.diag(pcov))
-        assert_allclose(perr, [0.30714756, 0.85045308], rtol=1e-3)
+            popt, pcov = curve_fit(f, xdata, ydata, p0=[2, 0], sigma=sigma,
+                                   absolute_sigma=True, method=method)
+            perr = np.sqrt(np.diag(pcov))
+            assert_allclose(perr, [0.30714756, 0.85045308], rtol=1e-3)
 
-        popt, pcov = curve_fit(f, xdata, ydata, p0=[2, 0], sigma=3*sigma,
-                               absolute_sigma=True)
-        perr = np.sqrt(np.diag(pcov))
-        assert_allclose(perr, [3*0.30714756, 3*0.85045308], rtol=1e-3)
+            popt, pcov = curve_fit(f, xdata, ydata, p0=[2, 0], sigma=3*sigma,
+                                   absolute_sigma=True, method=method)
+            perr = np.sqrt(np.diag(pcov))
+            assert_allclose(perr, [3*0.30714756, 3*0.85045308], rtol=1e-3)
 
         # infinite variances
 
         def f_flat(x, a, b):
             return a*x
 
-        popt, pcov = curve_fit(f_flat, xdata, ydata, p0=[2, 0], sigma=sigma)
-        assert_(pcov.shape == (2, 2))
         pcov_expected = np.array([np.inf]*4).reshape(2, 2)
+
+        with suppress_warnings() as sup:
+            sup.filter(OptimizeWarning,
+                       "Covariance of the parameters could not be estimated")
+            popt, pcov = curve_fit(f_flat, xdata, ydata, p0=[2, 0], sigma=sigma)
+            popt1, pcov1 = curve_fit(f, xdata[:2], ydata[:2], p0=[2, 0])
+
+        assert_(pcov.shape == (2, 2))
         assert_array_equal(pcov, pcov_expected)
 
-        popt, pcov = curve_fit(f, xdata[:2], ydata[:2], p0=[2, 0])
-        assert_(pcov.shape == (2, 2))
-        assert_array_equal(pcov, pcov_expected)
+        assert_(pcov1.shape == (2, 2))
+        assert_array_equal(pcov1, pcov_expected)
 
     def test_array_like(self):
         # Test sequence input.  Regression test for gh-3037.
@@ -383,11 +390,205 @@ class TestCurveFit(TestCase):
             return a*x + b
 
         x = [1, 2, 3, 4]
-        y = [2, 4, 6, 8]
-        assert_allclose(curve_fit(f_linear, x, y)[0], [2, 0], atol=1e-10)
+        y = [3, 5, 7, 9]
+        assert_allclose(curve_fit(f_linear, x, y)[0], [2, 1], atol=1e-10)
+
+    def test_indeterminate_covariance(self):
+        # Test that a warning is returned when pcov is indeterminate
+        xdata = np.array([1, 2, 3, 4, 5, 6])
+        ydata = np.array([1, 2, 3, 4, 5.5, 6])
+        _assert_warns(OptimizeWarning, curve_fit,
+                      lambda x, a, b: a*x, xdata, ydata)
+
+    def test_NaN_handling(self):
+        # Test for correct handling of NaNs in input data: gh-3422
+
+        # create input with NaNs
+        xdata = np.array([1, np.nan, 3])
+        ydata = np.array([1, 2, 3])
+
+        assert_raises(ValueError, curve_fit,
+                      lambda x, a, b: a*x + b, xdata, ydata)
+        assert_raises(ValueError, curve_fit,
+                      lambda x, a, b: a*x + b, ydata, xdata)
+
+        assert_raises(ValueError, curve_fit, lambda x, a, b: a*x + b,
+                      xdata, ydata, **{"check_finite": True})
+
+    def test_method_argument(self):
+        def f(x, a, b):
+            return a * np.exp(-b*x)
+
+        xdata = np.linspace(0, 1, 11)
+        ydata = f(xdata, 2., 2.)
+
+        for method in ['trf', 'dogbox', 'lm', None]:
+            popt, pcov = curve_fit(f, xdata, ydata, method=method)
+            assert_allclose(popt, [2., 2.])
+
+        assert_raises(ValueError, curve_fit, f, xdata, ydata, method='unknown')
+
+    def test_bounds(self):
+        def f(x, a, b):
+            return a * np.exp(-b*x)
+
+        xdata = np.linspace(0, 1, 11)
+        ydata = f(xdata, 2., 2.)
+
+        # The minimum w/out bounds is at [2., 2.],
+        # and with bounds it's at [1.5, smth].
+        bounds = ([1., 0], [1.5, 3.])
+        for method in [None, 'trf', 'dogbox']:
+            popt, pcov = curve_fit(f, xdata, ydata, bounds=bounds,
+                                   method=method)
+            assert_allclose(popt[0], 1.5)
+
+        # With bounds, the starting estimate is feasible.
+        popt, pcov = curve_fit(f, xdata, ydata, method='trf',
+                               bounds=([0., 0], [0.6, np.inf]))
+        assert_allclose(popt[0], 0.6)
+
+        # method='lm' doesn't support bounds.
+        assert_raises(ValueError, curve_fit, f, xdata, ydata, bounds=bounds,
+                      method='lm')
+
+    def test_bounds_p0(self):
+        # This test is for issue #5719. The problem was that an initial guess
+        # was ignored when 'trf' or 'dogbox' methods were invoked.
+        def f(x, a):
+            return np.sin(x + a)
+
+        xdata = np.linspace(-2*np.pi, 2*np.pi, 40)
+        ydata = np.sin(xdata)
+        bounds = (-3 * np.pi, 3 * np.pi)
+        for method in ['trf', 'dogbox']:
+            popt_1, _ = curve_fit(f, xdata, ydata, p0=2.1*np.pi)
+            popt_2, _ = curve_fit(f, xdata, ydata, p0=2.1*np.pi,
+                                  bounds=bounds, method=method)
+
+            # If the initial guess is ignored, then popt_2 would be close 0.
+            assert_allclose(popt_1, popt_2)
+
+    def test_jac(self):
+        # Test that Jacobian callable is handled correctly and
+        # weighted if sigma is provided.
+        def f(x, a, b):
+            return a * np.exp(-b*x)
+
+        def jac(x, a, b):
+            e = np.exp(-b*x)
+            return np.vstack((e, -a * x * e)).T
+
+        xdata = np.linspace(0, 1, 11)
+        ydata = f(xdata, 2., 2.)
+
+        # Test numerical options for least_squares backend.
+        for method in ['trf', 'dogbox']:
+            for scheme in ['2-point', '3-point', 'cs']:
+                popt, pcov = curve_fit(f, xdata, ydata, jac=scheme,
+                                       method=method)
+                assert_allclose(popt, [2, 2])
+
+        # Test the analytic option.
+        for method in ['lm', 'trf', 'dogbox']:
+            popt, pcov = curve_fit(f, xdata, ydata, method=method, jac=jac)
+            assert_allclose(popt, [2, 2])
+
+        # Now add an outlier and provide sigma.
+        ydata[5] = 100
+        sigma = np.ones(xdata.shape[0])
+        sigma[5] = 200
+        for method in ['lm', 'trf', 'dogbox']:
+            popt, pcov = curve_fit(f, xdata, ydata, sigma=sigma, method=method,
+                                   jac=jac)
+            # Still the optimization process is influenced somehow,
+            # have to set rtol=1e-3.
+            assert_allclose(popt, [2, 2], rtol=1e-3)
+
+    def test_maxfev_and_bounds(self):
+        # gh-6340: with no bounds, curve_fit accepts parameter maxfev (via leastsq)
+        # but with bounds, the parameter is `max_nfev` (via least_squares)
+        x = np.arange(0, 10)
+        y = 2*x
+        popt1, _ = curve_fit(lambda x,p: p*x, x, y, bounds=(0, 3), maxfev=100)
+        popt2, _ = curve_fit(lambda x,p: p*x, x, y, bounds=(0, 3), max_nfev=100)
+
+        assert_allclose(popt1, 2, atol=1e-14)
+        assert_allclose(popt2, 2, atol=1e-14)
+
+    def test_curvefit_simplecovariance(self):
+
+        def func(x, a, b):
+            return a * np.exp(-b*x)
+
+        def jac(x, a, b):
+            e = np.exp(-b*x)
+            return np.vstack((e, -a * x * e)).T
+
+        np.random.seed(0)
+        xdata = np.linspace(0, 4, 50)
+        y = func(xdata, 2.5, 1.3)
+        ydata = y + 0.2 * np.random.normal(size=len(xdata))
+
+        sigma = np.zeros(len(xdata)) + 0.2
+        covar = np.diag(sigma**2)
+
+        for jac1, jac2 in [(jac, jac), (None, None)]:
+            for absolute_sigma in [False, True]:
+                popt1, pcov1 = curve_fit(func, xdata, ydata, sigma=sigma,
+                        jac=jac1, absolute_sigma=absolute_sigma)
+                popt2, pcov2 = curve_fit(func, xdata, ydata, sigma=covar,
+                        jac=jac2, absolute_sigma=absolute_sigma)
+
+                assert_allclose(popt1, popt2, atol=1e-14)
+                assert_allclose(pcov1, pcov2, atol=1e-14)
+
+    def test_curvefit_covariance(self):
+
+        def funcp(x, a, b):
+            rotn = np.array([[1./np.sqrt(2), -1./np.sqrt(2), 0], [1./np.sqrt(2), 1./np.sqrt(2), 0], [0, 0, 1.0]])
+            return rotn.dot(a * np.exp(-b*x))
+
+        def jacp(x, a, b):
+            rotn = np.array([[1./np.sqrt(2), -1./np.sqrt(2), 0], [1./np.sqrt(2), 1./np.sqrt(2), 0], [0, 0, 1.0]])
+            e = np.exp(-b*x)
+            return rotn.dot(np.vstack((e, -a * x * e)).T)
+
+        def func(x, a, b):
+            return a * np.exp(-b*x)
+
+        def jac(x, a, b):
+            e = np.exp(-b*x)
+            return np.vstack((e, -a * x * e)).T
+
+        np.random.seed(0)
+        xdata = np.arange(1, 4)
+        y = func(xdata, 2.5, 1.0)
+        ydata = y + 0.2 * np.random.normal(size=len(xdata))
+        sigma = np.zeros(len(xdata)) + 0.2
+        covar = np.diag(sigma**2)
+        # Get a rotation matrix, and obtain ydatap = R ydata
+        # Chisq = ydata^T C^{-1} ydata
+        #       = ydata^T R^T R C^{-1} R^T R ydata
+        #       = ydatap^T Cp^{-1} ydatap
+        # Cp^{-1} = R C^{-1} R^T
+        # Cp      = R C R^T, since R^-1 = R^T
+        rotn = np.array([[1./np.sqrt(2), -1./np.sqrt(2), 0], [1./np.sqrt(2), 1./np.sqrt(2), 0], [0, 0, 1.0]])
+        ydatap = rotn.dot(ydata)
+        covarp = rotn.dot(covar).dot(rotn.T)
+
+        for jac1, jac2 in [(jac, jacp), (None, None)]:
+            for absolute_sigma in [False, True]:
+                popt1, pcov1 = curve_fit(func, xdata, ydata, sigma=sigma,
+                        jac=jac1, absolute_sigma=absolute_sigma)
+                popt2, pcov2 = curve_fit(funcp, xdata, ydatap, sigma=covarp,
+                        jac=jac2, absolute_sigma=absolute_sigma)
+
+                assert_allclose(popt1, popt2, atol=1e-14)
+                assert_allclose(pcov1, pcov2, atol=1e-14)
 
 
-class TestFixedPoint(TestCase):
+class TestFixedPoint(object):
 
     def test_scalar_trivial(self):
         # f(x) = 2x; fixed point should be x=0
@@ -453,6 +654,17 @@ class TestFixedPoint(TestCase):
         assert_allclose(xxroot, np.exp(-2.0*xxroot)/2.0)
         assert_allclose(xxroot, lambertw(1)/2)
 
+    def test_no_acceleration(self):
+        # github issue 5460
+        ks = 2
+        kl = 6
+        m = 1.3
+        n0 = 1.001
+        i0 = ((m-1)/m)*(kl/ks/m)**(1/(m-1))
 
-if __name__ == "__main__":
-    run_module_suite()
+        def func(n):
+            return np.log(kl/ks/n) / np.log((i0*n/(n - 1))) + 1
+
+        n = fixed_point(func, n0, method='iteration')
+        assert_allclose(n, m)
+

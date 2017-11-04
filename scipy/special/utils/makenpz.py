@@ -1,6 +1,5 @@
-#!/bin/bash
 """
-makenpz.py DIRECTORY
+python makenpz.py DIRECTORY
 
 Build a npz containing all data files in the directory.
 

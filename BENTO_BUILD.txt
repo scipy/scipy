@@ -11,6 +11,7 @@ No-frill version:
   * Clone Waf::
 
         $ git clone https://code.google.com/p/waf/ 
+        $ git checkout waf-1.7.13  # waf breaks API regularly, this version works
 
   * Set the WAFDIR environment variable to the base dir of the waf repo you
     just created (in your bash_login for example if you're going to build with
@@ -27,4 +28,3 @@ No-frill version:
         $ BENTO_ROOT/bentomaker build -p
         # or with verbose output
         $ BENTO_ROOT/bentomaker build -v
-

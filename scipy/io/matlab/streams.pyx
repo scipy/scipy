@@ -1,17 +1,17 @@
 # -*- python -*- or near enough
 
+from __future__ import absolute_import
+
 import sys
 import zlib
 
 from cpython cimport PyBytes_FromStringAndSize, \
     PyBytes_AS_STRING, PyBytes_Size
 
-from pyalloc cimport pyalloc_v
+from .pyalloc cimport pyalloc_v
 
-cdef extern from "stdlib.h" nogil:
-    void *malloc(size_t size)
-    void *memcpy(void *str1, void *str2, size_t n)
-    void free(void *ptr)
+from libc.stdio cimport fread, fseek, ftell
+from libc.string cimport memcpy
 
 cdef extern from "Python.h":
     void *PyCObject_Import(char *, char *) except NULL
@@ -20,9 +20,6 @@ cdef extern from "Python.h":
     ctypedef struct PyObject:
         pass
     ctypedef struct FILE
-    size_t fread (void *ptr, size_t size, size_t n, FILE* fptr)
-    int fseek (FILE * fptr, long int offset, int whence)
-    long int ftell (FILE *stream)
 
 cdef extern from "py3k.h":
     # From:
@@ -76,7 +73,7 @@ cdef class GenericStream:
             read_size = len(data)
             if read_size == 0:
                 break
-            memcpy(p, <char*>data, read_size)
+            memcpy(p, <const char*>data, read_size)
             p += read_size
             count += read_size
 
@@ -137,7 +134,7 @@ cdef class ZlibInputStream(GenericStream):
         self._total_position = 0
         self._read_bytes = 0
 
-    cdef _fill_buffer(self):
+    cdef inline void _fill_buffer(self) except *:
         cdef size_t read_size
         cdef bytes block
 
@@ -201,12 +198,15 @@ cdef class ZlibInputStream(GenericStream):
         return (self._max_length == self._read_bytes) and \
                (self._buffer_size == self._buffer_position)
 
-    cpdef long int tell(self):
+    cpdef long int tell(self) except -1:
+        if self._total_position == -1:
+            raise IOError("Invalid file position.")
         return self._total_position
 
     cpdef int seek(self, long int offset, int whence=0) except -1:
+        cdef ssize_t new_pos, size
         if whence == 1:
-            new_pos = self._total_position + offset
+            new_pos = <ssize_t>self._total_position + offset
         elif whence == 0:
             new_pos = offset
         elif whence == 2:
@@ -304,8 +304,11 @@ cdef class FileStream(GenericStream):
             raise IOError('Failed seek')
         return ret
 
-    cpdef long int tell(self):
-        return ftell(self.file)
+    cpdef long int tell(self) except -1:
+        cdef long int position = ftell(self.file)
+        if position == -1:
+            raise IOError("Invalid file position.")
+        return position
 
     cdef int read_into(self, void *buf, size_t n) except -1:
         """ Read n bytes from stream into pre-allocated buffer `buf`
@@ -337,8 +340,8 @@ def _read_into(GenericStream st, size_t n):
 
 def _read_string(GenericStream st, size_t n):
     # for testing only.  Use st.read instead
-    cdef char *d_ptr
-    cdef object obj = st.read_string(n, <void **>&d_ptr, True)
+    cdef void *d_ptr
+    cdef object obj = st.read_string(n, &d_ptr, True)
     my_str = b'A' * n
     cdef char *mys_ptr = my_str
     memcpy(mys_ptr, d_ptr, n)
@@ -349,7 +352,7 @@ cpdef GenericStream make_stream(object fobj):
     """ Make stream of correct type for file-like `fobj`
     """
     if npy_PyFile_Check(fobj):
-        if sys.version_info[0] >= 3:
+        if <int>sys.version_info[0] >= 3:
             return GenericStream(fobj)
         else:
             return FileStream(fobj)
@@ -358,5 +361,3 @@ cpdef GenericStream make_stream(object fobj):
     elif isinstance(fobj, GenericStream):
         return fobj
     return GenericStream(fobj)
-
-

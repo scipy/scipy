@@ -115,11 +115,11 @@ for Python users. Note that this module does not add any functionality
 beyond that of organizing a simpler and more consistent interface.
 
 We advise the user to consult also the `documentation for the ID package
-<https://cims.nyu.edu/~tygert/id_doc.pdf>`_.
+<http://tygert.com/id_doc.4.pdf>`_.
 
 .. [1] P.G. Martinsson, V. Rokhlin, Y. Shkolnisky, M. Tygert. "ID: a
     software package for low-rank approximation of matrices via interpolative
-    decompositions, version 0.2." http://cims.nyu.edu/~tygert/id_doc.pdf.
+    decompositions, version 0.2." http://tygert.com/id_doc.4.pdf.
 
 .. [2] H. Cheng, Z. Gimbutas, P.G. Martinsson, V. Rokhlin. "On the
     compression of low rank matrices." *SIAM J. Sci. Comput.* 26 (4): 1389--1404,
@@ -758,7 +758,7 @@ def estimate_spectral_norm(A, its=20):
     A : :class:`scipy.sparse.linalg.LinearOperator`
         Matrix given as a :class:`scipy.sparse.linalg.LinearOperator` with the
         `matvec` and `rmatvec` methods (to apply the matrix and its adjoint).
-    its : int
+    its : int, optional
         Number of power method iterations.
 
     Returns
@@ -794,7 +794,7 @@ def estimate_spectral_norm_diff(A, B, its=20):
     B : :class:`scipy.sparse.linalg.LinearOperator`
         Second matrix given as a :class:`scipy.sparse.linalg.LinearOperator` with
         the `matvec` and `rmatvec` methods (to apply the matrix and its adjoint).
-    its : int
+    its : int, optional
         Number of power method iterations.
 
     Returns
@@ -884,6 +884,9 @@ def svd(A, eps_or_k, rand=True):
                     U, V, S = backend.idzp_svd(eps, A)
         else:
             k = int(eps_or_k)
+            if k > min(A.shape):
+                raise ValueError("Approximation rank %s exceeds min(A.shape) = "
+                                 " %s " % (k, min(A.shape)))
             if rand:
                 if real:
                     U, V, S = backend.iddr_asvd(A, k)

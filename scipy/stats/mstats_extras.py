@@ -39,12 +39,12 @@ def hdquantiles(data, prob=list([.25,.5,.75]), axis=None, var=False,):
     ----------
     data : array_like
         Data array.
-    prob : sequence
+    prob : sequence, optional
         Sequence of quantiles to compute.
-    axis : int
+    axis : int or None, optional
         Axis along which to compute the quantiles. If None, use a flattened
         array.
-    var : boolean
+    var : bool, optional
         Whether to return the variance of the estimate.
 
     Returns
@@ -53,6 +53,10 @@ def hdquantiles(data, prob=list([.25,.5,.75]), axis=None, var=False,):
         A (p,) array of quantiles (if `var` is False), or a (2,p) array of
         quantiles and variances (if `var` is True), where ``p`` is the
         number of quantiles.
+
+    See Also
+    --------
+    hdquantiles_sd
 
     """
     def _hd_1D(data,prob,var):
@@ -107,11 +111,18 @@ def hdmedian(data, axis=-1, var=False):
     ----------
     data : ndarray
         Data array.
-    axis : int
+    axis : int, optional
         Axis along which to compute the quantiles. If None, use a flattened
         array.
-    var : boolean
+    var : bool, optional
         Whether to return the variance of the estimate.
+
+    Returns
+    -------
+    hdmedian : MaskedArray
+        The median values.  If ``var=True``, the variance is returned inside
+        the masked array.  E.g. for a 1-D array the shape change from (1,) to
+        (2,).
 
     """
     result = hdquantiles(data,[0.5], axis=axis, var=var)
@@ -126,9 +137,9 @@ def hdquantiles_sd(data, prob=list([.25,.5,.75]), axis=None):
     ----------
     data : array_like
         Data array.
-    prob : sequence
+    prob : sequence, optional
         Sequence of quantiles to compute.
-    axis : int
+    axis : int, optional
         Axis along which to compute the quantiles. If None, use a flattened
         array.
 
@@ -137,12 +148,16 @@ def hdquantiles_sd(data, prob=list([.25,.5,.75]), axis=None):
     hdquantiles_sd : MaskedArray
         Standard error of the Harrell-Davis quantile estimates.
 
+    See Also
+    --------
+    hdquantiles
+
     """
-    def _hdsd_1D(data,prob):
+    def _hdsd_1D(data, prob):
         "Computes the std error for 1D arrays."
         xsorted = np.sort(data.compressed())
         n = len(xsorted)
-        #.........
+
         hdsd = np.empty(len(prob), float_)
         if n < 2:
             hdsd.flat = np.nan
@@ -159,6 +174,7 @@ def hdquantiles_sd(data, prob=list([.25,.5,.75]), axis=None):
             mx_var = np.array(mx_.var(), copy=False, ndmin=1) * n / float(n-1)
             hdsd[i] = float(n-1) * np.sqrt(np.diag(mx_var).diagonal() / float(n))
         return hdsd
+
     # Initialization & checks
     data = ma.array(data, copy=False, dtype=float_)
     p = np.array(prob, copy=False, ndmin=1)
@@ -232,11 +248,11 @@ def mjci(data, prob=[0.25,0.5,0.75], axis=None):
 
     Parameters
     ----------
-    data: ndarray
+    data : ndarray
         Data array.
-    prob: sequence
+    prob : sequence, optional
         Sequence of quantiles to compute.
-    axis : int
+    axis : int or None, optional
         Axis along which to compute the quantiles. If None, use a flattened
         array.
 
@@ -251,7 +267,6 @@ def mjci(data, prob=[0.25,0.5,0.75], axis=None):
         x = np.arange(1,n+1, dtype=float_) / n
         y = x - 1./n
         for (i,m) in enumerate(prob):
-            (m1,m2) = (m-1, n-m)
             W = betacdf(x,m-1,n-m) - betacdf(y,m-1,n-m)
             C1 = np.dot(W,data)
             C2 = np.dot(W,data**2)
@@ -280,17 +295,26 @@ def mquantiles_cimj(data, prob=[0.25,0.50,0.75], alpha=0.05, axis=None):
     ----------
     data : ndarray
         Data array.
-    prob : sequence
+    prob : sequence, optional
         Sequence of quantiles to compute.
-    alpha : float
+    alpha : float, optional
         Confidence level of the intervals.
-    axis : integer
+    axis : int or None, optional
         Axis along which to compute the quantiles.
         If None, use a flattened array.
 
+    Returns
+    -------
+    ci_lower : ndarray
+        The lower boundaries of the confidence interval.  Of the same length as
+        `prob`.
+    ci_upper : ndarray
+        The upper boundaries of the confidence interval.  Of the same length as
+        `prob`.
+
     """
-    alpha = min(alpha, 1-alpha)
-    z = norm.ppf(1-alpha/2.)
+    alpha = min(alpha, 1 - alpha)
+    z = norm.ppf(1 - alpha/2.)
     xq = mstats.mquantiles(data, prob, alphap=0, betap=0, axis=axis)
     smj = mjci(data, prob, axis=axis)
     return (xq - z * smj, xq + z * smj)
@@ -307,15 +331,15 @@ def median_cihs(data, alpha=0.05, axis=None):
     data : array_like
         Input data. Masked values are discarded. The input should be 1D only,
         or `axis` should be set to None.
-    alpha : float
+    alpha : float, optional
         Confidence level of the intervals.
-    axis : integer
+    axis : int or None, optional
         Axis along which to compute the quantiles. If None, use a flattened
         array.
 
     Returns
     -------
-    median_cihs :
+    median_cihs
         Alpha level confidence interval.
 
     """
@@ -334,10 +358,10 @@ def median_cihs(data, alpha=0.05, axis=None):
         lims = (lambd*data[k] + (1-lambd)*data[k-1],
                 lambd*data[n-k-1] + (1-lambd)*data[n-k])
         return lims
-    data = ma.rray(data, copy=False)
+    data = ma.array(data, copy=False)
     # Computes quantiles along axis (or globally)
     if (axis is None):
-        result = _cihs_1D(data.compressed(), alpha)
+        result = _cihs_1D(data, alpha)
     else:
         if data.ndim > 2:
             raise ValueError("Array 'data' must be at most two dimensional, "
@@ -357,9 +381,9 @@ def compare_medians_ms(group_1, group_2, axis=None):
     Parameters
     ----------
     group_1 : array_like
-        First dataset.
+        First dataset.  Has to be of size >=7.
     group_2 : array_like
-        Second dataset.
+        Second dataset.  Has to be of size >=7.
     axis : int, optional
         Axis along which the medians are estimated. If None, the arrays are
         flattened.  If `axis` is not None, then `group_1` and `group_2`
@@ -422,14 +446,16 @@ def idealfourths(data, axis=None):
 
 def rsh(data, points=None):
     """
-    Evaluates Rosenblatt's shifted histogram estimators for each point
-    on the dataset 'data'.
+    Evaluates Rosenblatt's shifted histogram estimators for each data point.
+
+    Rosenblatt's estimator is a centered finite-difference approximation to the
+    derivative of the empirical cumulative distribution function.
 
     Parameters
     ----------
     data : sequence
-        Input data. Masked values are ignored.
-    points : sequence
+        Input data, should be 1-D. Masked values are ignored.
+    points : sequence or None, optional
         Sequence of points where to evaluate Rosenblatt shifted histogram.
         If None, use the data.
 

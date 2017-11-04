@@ -79,7 +79,7 @@ Unified interface to root finding algorithms
 ````````````````````````````````````````````
 
 The new function ``scipy.optimize.root`` provides a common interface to
-root finding algorithms for multivariate functions, embeding `fsolve`,
+root finding algorithms for multivariate functions, embedding `fsolve`,
 `leastsq` and `nonlin` solvers.
 
 
@@ -104,7 +104,7 @@ using ``scipy.linalg.qz``. This function wraps the LAPACK routines sgges,
 dgges, cgges, and zgges.
 
 The function ``scipy.linalg.qr_multiply``, which allows efficient computation
-of the matrix product of Q (from a QR decompostion) and a vector, has been
+of the matrix product of Q (from a QR decomposition) and a vector, has been
 added.
 
 Pascal matrices

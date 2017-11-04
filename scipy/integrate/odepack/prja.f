@@ -34,7 +34,7 @@ c matrix norm consistent with the weighted max-norm on vectors given
 c by vmnorm) is computed, and j is overwritten by p.  p is then
 c subjected to lu decomposition in preparation for later solution
 c of linear systems with p as coefficient matrix. this is done
-c by dgefa if miter = 1 or 2, and by dgbfa if miter = 4 or 5.
+c by dgetrf if miter = 1 or 2, and by dgbtrf if miter = 4 or 5.
 c
 c in addition to variables described previously, communication
 c with prja uses the following..
@@ -69,6 +69,8 @@ c if miter = 1, call jac and multiply by scalar. -----------------------
  110    wm(i+2) = 0.0d0
       call srcma (rsav, isav, 1)
       call jac (neq, tn, y, 0, 0, wm(3), n)
+c     SCIPY error check:
+      if (neq(1) .eq. -1) return
       call srcma (rsav, isav, 2)
       con = -hl0
       do 120 i = 1,lenp
@@ -87,6 +89,8 @@ c if miter = 2, make n calls to f to approximate j. --------------------
         fac = -hl0/r
         call srcma (rsav, isav, 1)
         call f (neq, tn, y, ftem)
+c       SCIPY error check:
+        if (neq(1) .eq. -1) return
         call srcma (rsav, isav, 2)
         do 220 i = 1,n
  220      wm(i+j1) = (ftem(i) - savf(i))*fac
@@ -104,7 +108,9 @@ c add identity matrix. -------------------------------------------------
         wm(j) = wm(j) + 1.0d0
  250    j = j + np1
 c do lu decomposition on p. --------------------------------------------
-      call dgefa (wm(3), n, n, iwm(21), ier)
+c     Replaced LINPACK dgefa with LAPACK dgetrf
+c      call dgefa (wm(3), n, n, iwm(21), ier)
+      call dgetrf (n, n, wm(3), n, iwm(21), ier)
       if (ier .ne. 0) ierpj = 1
       return
 c dummy block only, since miter is never 3 in this routine. ------------
@@ -120,6 +126,8 @@ c if miter = 4, call jac and multiply by scalar. -----------------------
  410    wm(i+2) = 0.0d0
       call srcma (rsav, isav, 1)
       call jac (neq, tn, y, ml, mu, wm(ml3), meband)
+c     SCIPY error check:
+      if (neq(1) .eq. -1) return
       call srcma (rsav, isav, 2)
       con = -hl0
       do 420 i = 1,lenp
@@ -143,6 +151,8 @@ c if miter = 5, make mband calls to f to approximate j. ----------------
  530      y(i) = y(i) + r
         call srcma (rsav, isav, 1)
         call f (neq, tn, y, ftem)
+c       SCIPY error check:
+        if (neq(1) .eq. -1) return
         call srcma (rsav, isav, 2)
         do 550 jj = j,n,mband
           y(jj) = yh(jj,1)
@@ -166,7 +176,9 @@ c add identity matrix. -------------------------------------------------
         wm(ii) = wm(ii) + 1.0d0
  580    ii = ii + meband
 c do lu decomposition of p. --------------------------------------------
-      call dgbfa (wm(3), meband, n, ml, mu, iwm(21), ier)
+c     Replaced LINPACK dgefa with LAPACK dgetrf
+c      call dgbfa (wm(3), meband, n, ml, mu, iwm(21), ier)
+      call dgbtrf (n, n, ml, mu, wm(3), meband, iwm(21), ier)
       if (ier .ne. 0) ierpj = 1
       return
 c----------------------- end of subroutine prja ------------------------

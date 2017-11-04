@@ -17,6 +17,33 @@ Local Optimization
    minimize - Unified interface for minimizers of multivariate functions
    minimize_scalar - Unified interface for minimizers of univariate functions
    OptimizeResult - The optimization result returned by some optimizers
+   OptimizeWarning - The optimization encountered problems
+
+The `minimize` function supports the following methods:
+
+.. toctree::
+
+   optimize.minimize-neldermead
+   optimize.minimize-powell
+   optimize.minimize-cg
+   optimize.minimize-bfgs
+   optimize.minimize-newtoncg
+   optimize.minimize-lbfgsb
+   optimize.minimize-tnc
+   optimize.minimize-cobyla
+   optimize.minimize-slsqp
+   optimize.minimize-dogleg
+   optimize.minimize-trustncg
+   optimize.minimize-trustkrylov
+   optimize.minimize-trustexact
+
+The `minimize_scalar` function supports the following methods:
+
+.. toctree::
+
+   optimize.minimize_scalar-brent
+   optimize.minimize_scalar-bounded
+   optimize.minimize_scalar-golden
 
 The specific optimization method interfaces below in this subsection are
 not recommended for use in new scripts; all of these methods are accessible
@@ -60,7 +87,9 @@ Equation (Local) Minimizers
    :toctree: generated/
 
    leastsq - Minimize the sum of squares of M equations in N unknowns
+   least_squares - Feature-rich least-squares minimization.
    nnls - Linear least-squares problem with non-negativity constraint
+   lsq_linear - Linear least-squares problem with bound constraints
 
 Global Optimization
 -------------------
@@ -68,7 +97,6 @@ Global Optimization
 .. autosummary::
    :toctree: generated/
 
-   anneal - Simulated annealing
    basinhopping - Basinhopping stochastic optimizer
    brute - Brute force searching optimizer
    differential_evolution - stochastic minimization using differential evolution
@@ -126,6 +154,21 @@ General nonlinear solvers:
    broyden1 - Broyden's first method
    broyden2 - Broyden's second method
 
+The `root` function supports the following methods:
+
+.. toctree::
+
+   optimize.root-hybr
+   optimize.root-lm
+   optimize.root-broyden1
+   optimize.root-broyden2
+   optimize.root-anderson
+   optimize.root-linearmixing
+   optimize.root-diagbroyden
+   optimize.root-excitingmixing
+   optimize.root-krylov
+   optimize.root-dfsane
+
 Large-scale nonlinear solvers:
 
 .. autosummary::
@@ -148,15 +191,36 @@ Simple iterations:
 Linear Programming
 ==================
 
-Simplex Algorithm:
+General linear programming solver:
 
 .. autosummary::
    :toctree: generated/
 
-   linprog -- Linear programming using the simplex algorithm
+   linprog -- Unified interface for minimizers of linear programming problems
 
-Utility Functions
-=================
+The `linprog` function supports the following methods:
+
+.. toctree::
+
+   optimize.linprog-simplex
+   optimize.linprog-interior-point
+
+The simplex method supports callback functions, such as:
+    
+.. autosummary::
+   :toctree: generated/
+   
+   linprog_verbose_callback -- Sample callback function for linprog (simplex)
+
+Assignment problems:
+
+.. autosummary::
+   :toctree: generated/
+
+   linear_sum_assignment -- Solves the linear-sum assignment problem
+
+Utilities
+=========
 
 .. autosummary::
    :toctree: generated/
@@ -167,6 +231,7 @@ Utility Functions
    line_search - Return a step that satisfies the strong Wolfe conditions
 
    show_options - Show specific options optimization solvers
+   LbfgsInvHessProduct - Linear operator for L-BFGS approximate inverse Hessian
 
 """
 
@@ -177,8 +242,7 @@ from ._minimize import *
 from ._root import *
 from .minpack import *
 from .zeros import *
-from .anneal import *
-from .lbfgsb import fmin_l_bfgs_b
+from .lbfgsb import fmin_l_bfgs_b, LbfgsInvHessProduct
 from .tnc import fmin_tnc
 from .cobyla import fmin_cobyla
 from .nonlin import *
@@ -186,9 +250,12 @@ from .slsqp import fmin_slsqp
 from .nnls import nnls
 from ._basinhopping import basinhopping
 from ._linprog import linprog, linprog_verbose_callback
+from ._hungarian import linear_sum_assignment
 from ._differentialevolution import differential_evolution
+from ._lsq import least_squares, lsq_linear
 
 __all__ = [s for s in dir() if not s.startswith('_')]
-from numpy.testing import Tester
-test = Tester().test
-bench = Tester().bench
+
+from scipy._lib._testutils import PytestTester
+test = PytestTester(__name__)
+del PytestTester

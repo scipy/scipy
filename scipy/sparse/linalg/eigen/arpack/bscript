@@ -2,29 +2,43 @@ import sys
 import os
 
 from bento.commands import hooks
-from scipy._build_utils import get_g77_abi_wrappers
+from scipy._build_utils import get_g77_abi_wrappers, get_sgemv_fix
+
+
+def make_relpath(f):
+    return os.path.relpath(f, os.path.abspath(os.path.dirname(__file__)))
+
 
 @hooks.pre_build
 def pre_build(context):
+    bld = context.waf_context
     default_builder = context.default_builder
 
     def builder(extension):
         sources = extension.sources[:]
+        info = {}
+        #FIXME: (Accelerate not detected now, should be:
+        #if "Accelerate" in env.FRAMEWORK_CBLAS:
+        if sys.platform == 'darwin':
+            info = {'extra_link_args': ['Accelerate']}
 
-        # XXX: detect this properly
-        if sys.platform == "darwin":
-            info = {'extra_link_args': 'Accelerate'}
-        else:
-            info = {}
-	sources += [os.path.relpath(f, os.path.abspath(os.path.dirname(__file__)))
-                    for f in get_g77_abi_wrappers(info)]
-
+        sources += [make_relpath(f) for f in get_g77_abi_wrappers(info)]
         return default_builder(extension,
                                features="c fc cstlib pyext bento",
                                source=sources,
-                               # Hack to make use of claoadable flags for static archive
+                               # Hack to make use of cloadable flags for static archive
                                use="cshlib")
-    context.register_compiled_library_builder("arpack", builder)
+    context.register_compiled_library_builder("arpack_scipy", builder)
 
-    context.tweak_extension("_arpack", features="c fc pyext cshlib f2py bento",
-                          use="arpack LAPACK CLIB")
+    def arpack_builder(extension):
+        sources = extension.sources[:]
+        #FIXME: (Accelerate not detected now, should be:
+        #if "Accelerate" in env.FRAMEWORK_CBLAS:
+        if sys.platform == 'darwin':
+            info = {'extra_link_args': ['Accelerate']}
+            sources += [make_relpath(f) for f in get_sgemv_fix(info)]
+        return default_builder(extension,
+                               source=sources,
+                               features="c fc pyext cshlib f2py bento",
+                               use="arpack_scipy LAPACK CLIB")
+    context.register_builder("_arpack", arpack_builder)

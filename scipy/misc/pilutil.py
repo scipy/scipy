@@ -12,9 +12,8 @@ from __future__ import division, print_function, absolute_import
 import numpy
 import tempfile
 
-from numpy import amin, amax, ravel, asarray, cast, arange, \
-     ones, newaxis, transpose, mgrid, iscomplexobj, sum, zeros, uint8, \
-     issubdtype, array
+from numpy import (amin, amax, ravel, asarray, arange, ones, newaxis,
+                   transpose, iscomplexobj, uint8, issubdtype, array)
 
 try:
     from PIL import Image, ImageFilter
@@ -26,11 +25,12 @@ except ImportError:
 if not hasattr(Image, 'frombytes'):
     Image.frombytes = Image.fromstring
 
-__all__ = ['fromimage','toimage','imsave','imread','bytescale',
-           'imrotate','imresize','imshow','imfilter']
+__all__ = ['fromimage', 'toimage', 'imsave', 'imread', 'bytescale',
+           'imrotate', 'imresize', 'imshow', 'imfilter']
 
 
-# Returns a byte-scaled image
+@numpy.deprecate(message="`bytescale` is deprecated in SciPy 1.0.0, "
+                         "and will be removed in 1.2.0.")
 def bytescale(data, cmin=None, cmax=None, high=255, low=0):
     """
     Byte scales an array (image).
@@ -38,6 +38,8 @@ def bytescale(data, cmin=None, cmax=None, high=255, low=0):
     Byte scaling means converting the input image to uint8 dtype and scaling
     the range to ``(low, high)`` (default 0-255).
     If the input image already has dtype uint8, no scaling is done.
+
+    This function is only available if Python Imaging Library (PIL) is installed.
 
     Parameters
     ----------
@@ -59,9 +61,10 @@ def bytescale(data, cmin=None, cmax=None, high=255, low=0):
 
     Examples
     --------
-    >>> img = array([[ 91.06794177,   3.39058326,  84.4221549 ],
-                     [ 73.88003259,  80.91433048,   4.88878881],
-                     [ 51.53875334,  34.45808177,  27.5873488 ]])
+    >>> from scipy.misc import bytescale
+    >>> img = np.array([[ 91.06794177,   3.39058326,  84.4221549 ],
+    ...                 [ 73.88003259,  80.91433048,   4.88878881],
+    ...                 [ 51.53875334,  34.45808177,  27.5873488 ]])
     >>> bytescale(img)
     array([[255,   0, 236],
            [205, 225,   4],
@@ -79,8 +82,12 @@ def bytescale(data, cmin=None, cmax=None, high=255, low=0):
     if data.dtype == uint8:
         return data
 
+    if high > 255:
+        raise ValueError("`high` should be less than or equal to 255.")
+    if low < 0:
+        raise ValueError("`low` should be greater than or equal to 0.")
     if high < low:
-        raise ValueError("`high` should be larger than `low`.")
+        raise ValueError("`high` should be greater than or equal to `low`.")
 
     if cmin is None:
         cmin = data.min()
@@ -94,15 +101,18 @@ def bytescale(data, cmin=None, cmax=None, high=255, low=0):
         cscale = 1
 
     scale = float(high - low) / cscale
-    bytedata = (data * 1.0 - cmin) * scale + 0.4999
-    bytedata[bytedata > high] = high
-    bytedata[bytedata < 0] = 0
-    return cast[uint8](bytedata) + cast[uint8](low)
+    bytedata = (data - cmin) * scale + low
+    return (bytedata.clip(low, high) + 0.5).astype(uint8)
 
 
-def imread(name, flatten=0):
+@numpy.deprecate(message="`imread` is deprecated in SciPy 1.0.0, "
+                         "and will be removed in 1.2.0.\n"
+                         "Use ``imageio.imread`` instead.")
+def imread(name, flatten=False, mode=None):
     """
     Read an image from a file as an array.
+
+    This function is only available if Python Imaging Library (PIL) is installed.
 
     Parameters
     ----------
@@ -110,26 +120,66 @@ def imread(name, flatten=0):
         The file name or file object to be read.
     flatten : bool, optional
         If True, flattens the color layers into a single gray-scale layer.
+    mode : str, optional
+        Mode to convert image to, e.g. ``'RGB'``.  See the Notes for more
+        details.
 
     Returns
     -------
     imread : ndarray
-        The array obtained by reading image from file `imfile`.
+        The array obtained by reading the image.
 
     Notes
     -----
-    The image is flattened by calling convert('F') on
-    the resulting image object.
+    `imread` uses the Python Imaging Library (PIL) to read an image.
+    The following notes are from the PIL documentation.
+
+    `mode` can be one of the following strings:
+
+    * 'L' (8-bit pixels, black and white)
+    * 'P' (8-bit pixels, mapped to any other mode using a color palette)
+    * 'RGB' (3x8-bit pixels, true color)
+    * 'RGBA' (4x8-bit pixels, true color with transparency mask)
+    * 'CMYK' (4x8-bit pixels, color separation)
+    * 'YCbCr' (3x8-bit pixels, color video format)
+    * 'I' (32-bit signed integer pixels)
+    * 'F' (32-bit floating point pixels)
+
+    PIL also provides limited support for a few special modes, including
+    'LA' ('L' with alpha), 'RGBX' (true color with padding) and 'RGBa'
+    (true color with premultiplied alpha).
+
+    When translating a color image to black and white (mode 'L', 'I' or
+    'F'), the library uses the ITU-R 601-2 luma transform::
+
+        L = R * 299/1000 + G * 587/1000 + B * 114/1000
+
+    When `flatten` is True, the image is converted using mode 'F'.
+    When `mode` is not None and `flatten` is True, the image is first
+    converted according to `mode`, and the result is then flattened using
+    mode 'F'.
 
     """
 
     im = Image.open(name)
-    return fromimage(im,flatten=flatten)
+    return fromimage(im, flatten=flatten, mode=mode)
 
 
+@numpy.deprecate(message="`imsave` is deprecated in SciPy 1.0.0, "
+                         "and will be removed in 1.2.0.\n"
+                         "Use ``imageio.imwrite`` instead.")
 def imsave(name, arr, format=None):
     """
     Save an array as an image.
+
+    This function is only available if Python Imaging Library (PIL) is installed.
+
+    .. warning::
+
+        This function uses `bytescale` under the hood to rescale images to use
+        the full (0, 255) range if ``mode`` is one of ``None, 'L', 'P', 'l'``.
+        It will also cast data for 2-D images to ``uint32`` for ``mode=None``
+        (which is the default).
 
     Parameters
     ----------
@@ -141,7 +191,7 @@ def imsave(name, arr, format=None):
         and blue bands along the last dimension.  An alpha layer may be
         included, specified as the last colour band of an ``MxNx4`` array.
     format : str
-        Image format. If omitted, the format to use is determined from the 
+        Image format. If omitted, the format to use is determined from the
         file name extension. If a file object was used instead of a file name,
         this parameter should always be used.
 
@@ -149,10 +199,11 @@ def imsave(name, arr, format=None):
     --------
     Construct an array of gradient intensity values and save to file:
 
+    >>> from scipy.misc import imsave
     >>> x = np.zeros((255, 255))
     >>> x = np.zeros((255, 255), dtype=np.uint8)
     >>> x[:] = np.arange(255)
-    >>> imsave('/tmp/gradient.png', x)
+    >>> imsave('gradient.png', x)
 
     Construct an array with three colour bands (R, G, B) and store to file:
 
@@ -160,10 +211,10 @@ def imsave(name, arr, format=None):
     >>> rgb[..., 0] = np.arange(255)
     >>> rgb[..., 1] = 55
     >>> rgb[..., 2] = 1 - np.arange(255)
-    >>> imsave('/tmp/rgb_gradient.png', rgb)
+    >>> imsave('rgb_gradient.png', rgb)
 
     """
-    im = toimage(arr)
+    im = toimage(arr, channel_axis=2)
     if format is None:
         im.save(name)
     else:
@@ -171,9 +222,14 @@ def imsave(name, arr, format=None):
     return
 
 
-def fromimage(im, flatten=0):
+@numpy.deprecate(message="`fromimage` is deprecated in SciPy 1.0.0. "
+                         "and will be removed in 1.2.0.\n"
+                         "Use ``np.asarray(im)`` instead.")
+def fromimage(im, flatten=False, mode=None):
     """
     Return a copy of a PIL image as a numpy array.
+
+    This function is only available if Python Imaging Library (PIL) is installed.
 
     Parameters
     ----------
@@ -181,6 +237,9 @@ def fromimage(im, flatten=0):
         Input image.
     flatten : bool
         If true, convert the output to grey-scale.
+    mode : str, optional
+        Mode to convert image to, e.g. ``'RGB'``.  See the Notes of the
+        `imread` docstring for more details.
 
     Returns
     -------
@@ -192,20 +251,45 @@ def fromimage(im, flatten=0):
     """
     if not Image.isImageType(im):
         raise TypeError("Input is not a PIL image.")
+
+    if mode is not None:
+        if mode != im.mode:
+            im = im.convert(mode)
+    elif im.mode == 'P':
+        # Mode 'P' means there is an indexed "palette".  If we leave the mode
+        # as 'P', then when we do `a = array(im)` below, `a` will be a 2-D
+        # containing the indices into the palette, and not a 3-D array
+        # containing the RGB or RGBA values.
+        if 'transparency' in im.info:
+            im = im.convert('RGBA')
+        else:
+            im = im.convert('RGB')
+
     if flatten:
         im = im.convert('F')
     elif im.mode == '1':
-        # workaround for crash in PIL, see #1613.
-        im.convert('L')
+        # Workaround for crash in PIL. When im is 1-bit, the call array(im)
+        # can cause a seg. fault, or generate garbage. See
+        # https://github.com/scipy/scipy/issues/2138 and
+        # https://github.com/python-pillow/Pillow/issues/350.
+        #
+        # This converts im from a 1-bit image to an 8-bit image.
+        im = im.convert('L')
 
-    return array(im)
+    a = array(im)
+    return a
 
 _errstr = "Mode is unknown or incompatible with input array shape."
 
 
+@numpy.deprecate(message="`toimage` is deprecated in SciPy 1.0.0, "
+                         "and will be removed in 1.2.0.\n"
+            "Use Pillow's ``Image.fromarray`` directly instead.")
 def toimage(arr, high=255, low=0, cmin=None, cmax=None, pal=None,
             mode=None, channel_axis=None):
     """Takes a numpy array and returns a PIL image.
+
+    This function is only available if Python Imaging Library (PIL) is installed.
 
     The mode of the PIL image depends on the array shape and the `pal` and
     `mode` keywords.
@@ -213,6 +297,13 @@ def toimage(arr, high=255, low=0, cmin=None, cmax=None, pal=None,
     For 2-D arrays, if `pal` is a valid (N,3) byte-array giving the RGB values
     (from 0 to 255) then ``mode='P'``, otherwise ``mode='L'``, unless mode
     is given as 'F' or 'I' in which case a float and/or integer array is made.
+
+    .. warning::
+
+        This function uses `bytescale` under the hood to rescale images to use
+        the full (0, 255) range if ``mode`` is one of ``None, 'L', 'P', 'l'``.
+        It will also cast data for 2-D images to ``uint32`` for ``mode=None``
+        (which is the default).
 
     Notes
     -----
@@ -230,38 +321,40 @@ def toimage(arr, high=255, low=0, cmin=None, cmax=None, pal=None,
         raise ValueError("Cannot convert a complex-valued array.")
     shape = list(data.shape)
     valid = len(shape) == 2 or ((len(shape) == 3) and
-                              ((3 in shape) or (4 in shape)))
+                                ((3 in shape) or (4 in shape)))
     if not valid:
-        raise ValueError("'arr' does not have a suitable array shape for any mode.")
+        raise ValueError("'arr' does not have a suitable array shape for "
+                         "any mode.")
     if len(shape) == 2:
-        shape = (shape[1],shape[0])  # columns show up first
+        shape = (shape[1], shape[0])  # columns show up first
         if mode == 'F':
             data32 = data.astype(numpy.float32)
-            image = Image.frombytes(mode,shape,data32.tostring())
+            image = Image.frombytes(mode, shape, data32.tostring())
             return image
         if mode in [None, 'L', 'P']:
-            bytedata = bytescale(data,high=high,low=low,cmin=cmin,cmax=cmax)
-            image = Image.frombytes('L',shape,bytedata.tostring())
+            bytedata = bytescale(data, high=high, low=low,
+                                 cmin=cmin, cmax=cmax)
+            image = Image.frombytes('L', shape, bytedata.tostring())
             if pal is not None:
-                image.putpalette(asarray(pal,dtype=uint8).tostring())
+                image.putpalette(asarray(pal, dtype=uint8).tostring())
                 # Becomes a mode='P' automagically.
             elif mode == 'P':  # default gray-scale
-                pal = arange(0,256,1,dtype=uint8)[:,newaxis] * \
-                      ones((3,),dtype=uint8)[newaxis,:]
-                image.putpalette(asarray(pal,dtype=uint8).tostring())
+                pal = (arange(0, 256, 1, dtype=uint8)[:, newaxis] *
+                       ones((3,), dtype=uint8)[newaxis, :])
+                image.putpalette(asarray(pal, dtype=uint8).tostring())
             return image
         if mode == '1':  # high input gives threshold for 1
             bytedata = (data > high)
-            image = Image.frombytes('1',shape,bytedata.tostring())
+            image = Image.frombytes('1', shape, bytedata.tostring())
             return image
         if cmin is None:
             cmin = amin(ravel(data))
         if cmax is None:
             cmax = amax(ravel(data))
-        data = (data*1.0 - cmin)*(high-low)/(cmax-cmin) + low
+        data = (data*1.0 - cmin)*(high - low)/(cmax - cmin) + low
         if mode == 'I':
             data32 = data.astype(numpy.uint32)
-            image = Image.frombytes(mode,shape,data32.tostring())
+            image = Image.frombytes(mode, shape, data32.tostring())
         else:
             raise ValueError(_errstr)
         return image
@@ -281,26 +374,26 @@ def toimage(arr, high=255, low=0, cmin=None, cmax=None, pal=None,
         ca = channel_axis
 
     numch = shape[ca]
-    if numch not in [3,4]:
+    if numch not in [3, 4]:
         raise ValueError("Channel axis dimension is not valid.")
 
-    bytedata = bytescale(data,high=high,low=low,cmin=cmin,cmax=cmax)
+    bytedata = bytescale(data, high=high, low=low, cmin=cmin, cmax=cmax)
     if ca == 2:
         strdata = bytedata.tostring()
-        shape = (shape[1],shape[0])
+        shape = (shape[1], shape[0])
     elif ca == 1:
-        strdata = transpose(bytedata,(0,2,1)).tostring()
-        shape = (shape[2],shape[0])
+        strdata = transpose(bytedata, (0, 2, 1)).tostring()
+        shape = (shape[2], shape[0])
     elif ca == 0:
-        strdata = transpose(bytedata,(1,2,0)).tostring()
-        shape = (shape[2],shape[1])
+        strdata = transpose(bytedata, (1, 2, 0)).tostring()
+        shape = (shape[2], shape[1])
     if mode is None:
         if numch == 3:
             mode = 'RGB'
         else:
             mode = 'RGBA'
 
-    if mode not in ['RGB','RGBA','YCbCr','CMYK']:
+    if mode not in ['RGB', 'RGBA', 'YCbCr', 'CMYK']:
         raise ValueError(_errstr)
 
     if mode in ['RGB', 'YCbCr']:
@@ -315,9 +408,21 @@ def toimage(arr, high=255, low=0, cmin=None, cmax=None, pal=None,
     return image
 
 
-def imrotate(arr,angle,interp='bilinear'):
+@numpy.deprecate(message="`imrotate` is deprecated in SciPy 1.0.0, "
+                         "and will be removed in 1.2.0.\n"
+                         "Use ``skimage.transform.rotate`` instead.")
+def imrotate(arr, angle, interp='bilinear'):
     """
     Rotate an image counter-clockwise by angle degrees.
+
+    This function is only available if Python Imaging Library (PIL) is installed.
+
+    .. warning::
+
+        This function uses `bytescale` under the hood to rescale images to use
+        the full (0, 255) range if ``mode`` is one of ``None, 'L', 'P', 'l'``.
+        It will also cast data for 2-D images to ``uint32`` for ``mode=None``
+        (which is the default).
 
     Parameters
     ----------
@@ -330,7 +435,8 @@ def imrotate(arr,angle,interp='bilinear'):
 
         - 'nearest' :  for nearest neighbor
         - 'bilinear' : for bilinear
-        - 'cubic' : cubic
+        - 'lanczos' : for lanczos
+        - 'cubic' : for bicubic
         - 'bicubic' : for bicubic
 
     Returns
@@ -340,19 +446,31 @@ def imrotate(arr,angle,interp='bilinear'):
 
     """
     arr = asarray(arr)
-    func = {'nearest':0,'bilinear':2,'bicubic':3,'cubic':3}
+    func = {'nearest': 0, 'lanczos': 1, 'bilinear': 2, 'bicubic': 3, 'cubic': 3}
     im = toimage(arr)
-    im = im.rotate(angle,resample=func[interp])
+    im = im.rotate(angle, resample=func[interp])
     return fromimage(im)
 
 
+@numpy.deprecate(message="`imshow` is deprecated in SciPy 1.0.0, "
+                         "and will be removed in 1.2.0.\n"
+                         "Use ``matplotlib.pyplot.imshow`` instead.")
 def imshow(arr):
     """
     Simple showing of an image through an external viewer.
 
+    This function is only available if Python Imaging Library (PIL) is installed.
+
     Uses the image viewer specified by the environment variable
     SCIPY_PIL_IMAGE_VIEWER, or if that is not defined then `see`,
     to view a temporary file generated from array data.
+
+    .. warning::
+
+        This function uses `bytescale` under the hood to rescale images to use
+        the full (0, 255) range if ``mode`` is one of ``None, 'L', 'P', 'l'``.
+        It will also cast data for 2-D images to ``uint32`` for ``mode=None``
+        (which is the default).
 
     Parameters
     ----------
@@ -367,11 +485,11 @@ def imshow(arr):
     --------
     >>> a = np.tile(np.arange(255), (255,1))
     >>> from scipy import misc
-    >>> misc.pilutil.imshow(a)
+    >>> misc.imshow(a)
 
     """
     im = toimage(arr)
-    fnum,fname = tempfile.mkstemp('.png')
+    fnum, fname = tempfile.mkstemp('.png')
     try:
         im.save(fname)
     except:
@@ -380,58 +498,88 @@ def imshow(arr):
     import os
     os.close(fnum)
 
-    cmd = os.environ.get('SCIPY_PIL_IMAGE_VIEWER','see')
-    status = os.system("%s %s" % (cmd,fname))
+    cmd = os.environ.get('SCIPY_PIL_IMAGE_VIEWER', 'see')
+    status = os.system("%s %s" % (cmd, fname))
 
     os.unlink(fname)
     if status != 0:
         raise RuntimeError('Could not execute image viewer.')
 
 
+@numpy.deprecate(message="`imresize` is deprecated in SciPy 1.0.0, "
+                         "and will be removed in 1.2.0.\n"
+                         "Use ``skimage.transform.resize`` instead.")
 def imresize(arr, size, interp='bilinear', mode=None):
     """
     Resize an image.
+
+    This function is only available if Python Imaging Library (PIL) is installed.
+
+    .. warning::
+
+        This function uses `bytescale` under the hood to rescale images to use
+        the full (0, 255) range if ``mode`` is one of ``None, 'L', 'P', 'l'``.
+        It will also cast data for 2-D images to ``uint32`` for ``mode=None``
+        (which is the default).
 
     Parameters
     ----------
     arr : ndarray
         The array of image to be resized.
-
     size : int, float or tuple
         * int   - Percentage of current size.
         * float - Fraction of current size.
-        * tuple - Size of the output image.
+        * tuple - Size of the output image (height, width).
 
-    interp : str
-        Interpolation to use for re-sizing ('nearest', 'bilinear', 'bicubic'
-        or 'cubic').
-
-    mode : str
-        The PIL image mode ('P', 'L', etc.).
+    interp : str, optional
+        Interpolation to use for re-sizing ('nearest', 'lanczos', 'bilinear',
+        'bicubic' or 'cubic').
+    mode : str, optional
+        The PIL image mode ('P', 'L', etc.) to convert `arr` before resizing.
+        If ``mode=None`` (the default), 2-D images will be treated like
+        ``mode='L'``, i.e. casting to long integer.  For 3-D and 4-D arrays,
+        `mode` will be set to ``'RGB'`` and ``'RGBA'`` respectively.
 
     Returns
     -------
     imresize : ndarray
         The resized array of image.
 
+    See Also
+    --------
+    toimage : Implicitly used to convert `arr` according to `mode`.
+    scipy.ndimage.zoom : More generic implementation that does not use PIL.
+
     """
     im = toimage(arr, mode=mode)
     ts = type(size)
-    if issubdtype(ts,int):
+    if issubdtype(ts, numpy.signedinteger):
         percent = size / 100.0
-        size = (array(im.size)*percent).astype(int)
-    elif issubdtype(type(size),float):
-        size = (array(im.size)*size).astype(int)
+        size = tuple((array(im.size)*percent).astype(int))
+    elif issubdtype(type(size), numpy.floating):
+        size = tuple((array(im.size)*size).astype(int))
     else:
-        size = (size[1],size[0])
-    func = {'nearest':0,'bilinear':2,'bicubic':3,'cubic':3}
+        size = (size[1], size[0])
+    func = {'nearest': 0, 'lanczos': 1, 'bilinear': 2, 'bicubic': 3, 'cubic': 3}
     imnew = im.resize(size, resample=func[interp])
     return fromimage(imnew)
 
 
-def imfilter(arr,ftype):
+@numpy.deprecate(message="`imfilter` is deprecated in SciPy 1.0.0, "
+                         "and will be removed in 1.2.0.\n"
+                         "Use Pillow filtering functionality directly.")
+def imfilter(arr, ftype):
     """
     Simple filtering of an image.
+
+    This function is only available if Python Imaging Library (PIL) is installed.
+
+    .. warning::
+
+        This function uses `bytescale` under the hood to rescale images to use
+        the full (0, 255) range if ``mode`` is one of ``None, 'L', 'P', 'l'``.
+        It will also cast data for 2-D images to ``uint32`` for ``mode=None``
+        (which is the default).
 
     Parameters
     ----------
@@ -454,16 +602,16 @@ def imfilter(arr,ftype):
         to apply is unsupported.
 
     """
-    _tdict = {'blur':ImageFilter.BLUR,
-              'contour':ImageFilter.CONTOUR,
-              'detail':ImageFilter.DETAIL,
-              'edge_enhance':ImageFilter.EDGE_ENHANCE,
-              'edge_enhance_more':ImageFilter.EDGE_ENHANCE_MORE,
-              'emboss':ImageFilter.EMBOSS,
-              'find_edges':ImageFilter.FIND_EDGES,
-              'smooth':ImageFilter.SMOOTH,
-              'smooth_more':ImageFilter.SMOOTH_MORE,
-              'sharpen':ImageFilter.SHARPEN
+    _tdict = {'blur': ImageFilter.BLUR,
+              'contour': ImageFilter.CONTOUR,
+              'detail': ImageFilter.DETAIL,
+              'edge_enhance': ImageFilter.EDGE_ENHANCE,
+              'edge_enhance_more': ImageFilter.EDGE_ENHANCE_MORE,
+              'emboss': ImageFilter.EMBOSS,
+              'find_edges': ImageFilter.FIND_EDGES,
+              'smooth': ImageFilter.SMOOTH,
+              'smooth_more': ImageFilter.SMOOTH_MORE,
+              'sharpen': ImageFilter.SHARPEN
               }
 
     im = toimage(arr)

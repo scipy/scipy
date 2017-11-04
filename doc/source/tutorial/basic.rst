@@ -41,11 +41,11 @@ part will discuss the operation of :obj:`np.mgrid` , :obj:`np.ogrid` ,
 
 For example, rather than writing something like the following
 
-    >>> concatenate(([3],[0]*5,arange(-1,1.002,2/9.0)))
+    >>> a = np.concatenate(([3], [0]*5, np.arange(-1, 1.002, 2/9.0)))
 
 with the :obj:`r_` command one can enter this as
 
-    >>> r_[3,[0]*5,-1:1:10j]
+    >>> a = np.r_[3,[0]*5,-1:1:10j]
 
 which can ease typing and make for more readable code. Notice how
 objects are concatenated, and the slicing syntax is (ab)used to
@@ -76,7 +76,7 @@ N-d arrays which provide coordinate arrays for an N-dimensional
 volume. The easiest way to understand this is with an example of its
 usage:
 
-    >>> mgrid[0:5,0:5]
+    >>> np.mgrid[0:5,0:5]
     array([[[0, 0, 0, 0, 0],
             [1, 1, 1, 1, 1],
             [2, 2, 2, 2, 2],
@@ -87,7 +87,7 @@ usage:
             [0, 1, 2, 3, 4],
             [0, 1, 2, 3, 4],
             [0, 1, 2, 3, 4]]])
-    >>> mgrid[0:5:4j,0:5:4j]
+    >>> np.mgrid[0:5:4j,0:5:4j]
     array([[[ 0.    ,  0.    ,  0.    ,  0.    ],
             [ 1.6667,  1.6667,  1.6667,  1.6667],
             [ 3.3333,  3.3333,  3.3333,  3.3333],
@@ -129,19 +129,20 @@ polynomial. The polynomial object can then be manipulated in algebraic
 expressions, integrated, differentiated, and evaluated. It even prints
 like a polynomial:
 
+    >>> from numpy import poly1d
     >>> p = poly1d([3,4,5])
-    >>> print p
+    >>> print(p)
        2
     3 x + 4 x + 5
-    >>> print p*p
+    >>> print(p*p)
        4      3      2
     9 x + 24 x + 46 x + 40 x + 25
-    >>> print p.integ(k=6)
-     3     2
-    x + 2 x + 5 x + 6
-    >>> print p.deriv()
+    >>> print(p.integ(k=6))
+       3     2
+    1 x + 2 x + 5 x + 6
+    >>> print(p.deriv())
     6 x + 4
-    >>> p([4,5])
+    >>> p([4, 5])
     array([ 69, 100])
 
 The other way to handle polynomials is as an array of coefficients
@@ -170,7 +171,7 @@ ufuncs). For example, suppose you have a Python function named
 which defines a function of two scalar variables and returns a scalar
 result. The class vectorize can be used to "vectorize "this function so that ::
 
-    >>> vec_addsubtract = vectorize(addsubtract)
+    >>> vec_addsubtract = np.vectorize(addsubtract)
 
 returns a function which takes array arguments and returns an array
 result:
@@ -179,10 +180,8 @@ result:
     array([1, 6, 1, 2])
 
 This particular function could have been written in vector form
-without the use of :obj:`vectorize` . But, what if the function you
-have written is the result of some optimization or integration
-routine. Such functions can likely only be vectorized using
-``vectorize.``
+without the use of :obj:`vectorize`. However, functions that employ optimization 
+or integration routines can likely only be vectorized using ``vectorize.``
 
 Type handling
 ^^^^^^^^^^^^^
@@ -238,10 +237,10 @@ a list of conditions. Each element of the return array is taken from
 the array in a ``choicelist`` corresponding to the first condition in
 ``condlist`` that is true. For example
 
-    >>> x = r_[-2:3]
+    >>> x = np.r_[-2:3]
     >>> x
     array([-2, -1,  0,  1,  2])
-    >>> np.select([x > 3, x >= 0],[0,x+2])
+    >>> np.select([x > 3, x >= 0], [0, x+2])
     array([0, 0, 2, 3, 4])
 
 Some additional useful functions can also be found in the module
@@ -258,7 +257,7 @@ equally-spaced :math:`N`-point approximation to the derivative of
 order *o*. These weights must be multiplied by the function
 corresponding to these points and the results added to obtain the
 derivative approximation. This function is intended for use when only
-samples of the function are avaiable. When the function is an object
+samples of the function are available. When the function is an object
 that can be handed to a routine and evaluated, the function
 :obj:`derivative` can be used to automatically evaluate the object at
 the correct points to obtain an N-point approximation to the *o*-th

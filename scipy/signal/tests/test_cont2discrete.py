@@ -1,18 +1,19 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import TestCase, run_module_suite, \
+from numpy.testing import \
                           assert_array_almost_equal, assert_almost_equal, \
-                          assert_allclose
+                          assert_allclose, assert_equal
 
+import warnings
 from scipy.signal import cont2discrete as c2d
-from scipy.signal import dlsim, ss2tf, ss2zpk, lsim2
+from scipy.signal import dlsim, ss2tf, ss2zpk, lsim2, lti
 
 # Author: Jeffrey Armstrong <jeff@approximatrix.com>
 # March 29, 2011
 
 
-class TestC2D(TestCase):
+class TestC2D(object):
     def test_zoh(self):
         ac = np.eye(2)
         bc = 0.5 * np.ones((2, 1))
@@ -269,6 +270,101 @@ class TestC2D(TestCase):
 
         assert_allclose(yd2.ravel(), ymid, rtol=1e-4)
 
+    def test_simo_tf(self):
+        # See gh-5753
+        tf = ([[1, 0], [1, 1]], [1, 1])
+        num, den, dt = c2d(tf, 0.01)
 
-if __name__ == "__main__":
-    run_module_suite()
+        assert_equal(dt, 0.01)  # sanity check
+        assert_allclose(den, [1, -0.990404983], rtol=1e-3)
+        assert_allclose(num, [[1, -1], [1, -0.99004983]], rtol=1e-3)
+
+    def test_multioutput(self):
+        ts = 0.01  # time step
+
+        tf = ([[1, -3], [1, 5]], [1, 1])
+        num, den, dt = c2d(tf, ts)
+
+        tf1 = (tf[0][0], tf[1])
+        num1, den1, dt1 = c2d(tf1, ts)
+
+        tf2 = (tf[0][1], tf[1])
+        num2, den2, dt2 = c2d(tf2, ts)
+
+        # Sanity checks
+        assert_equal(dt, dt1)
+        assert_equal(dt, dt2)
+
+        # Check that we get the same results
+        assert_allclose(num, np.vstack((num1, num2)), rtol=1e-13)
+
+        # Single input, so the denominator should
+        # not be multidimensional like the numerator
+        assert_allclose(den, den1, rtol=1e-13)
+        assert_allclose(den, den2, rtol=1e-13)
+
+class TestC2dLti(object):
+    def test_c2d_ss(self):
+        # StateSpace
+        A = np.array([[-0.3, 0.1], [0.2, -0.7]])
+        B = np.array([[0], [1]])
+        C = np.array([[1, 0]])
+        D = 0
+
+        A_res = np.array([[0.985136404135682, 0.004876671474795],
+                          [0.009753342949590, 0.965629718236502]])
+        B_res = np.array([[0.000122937599964], [0.049135527547844]])
+
+        sys_ssc = lti(A, B, C, D)
+        sys_ssd = sys_ssc.to_discrete(0.05)
+
+        assert_allclose(sys_ssd.A, A_res)
+        assert_allclose(sys_ssd.B, B_res)
+        assert_allclose(sys_ssd.C, C)
+        assert_allclose(sys_ssd.D, D)
+
+    def test_c2d_tf(self):
+
+        sys = lti([0.5, 0.3], [1.0, 0.4])
+        sys = sys.to_discrete(0.005)
+
+        # Matlab results
+        num_res = np.array([0.5, -0.485149004980066])
+        den_res = np.array([1.0, -0.980198673306755])
+
+        # Somehow a lot of numerical errors
+        assert_allclose(sys.den, den_res, atol=0.02)
+        assert_allclose(sys.num, num_res, atol=0.02)
+
+class TestC2dLti(object):
+    def test_c2d_ss(self):
+        # StateSpace
+        A = np.array([[-0.3, 0.1], [0.2, -0.7]])
+        B = np.array([[0], [1]])
+        C = np.array([[1, 0]])
+        D = 0
+
+        A_res = np.array([[0.985136404135682, 0.004876671474795],
+                          [0.009753342949590, 0.965629718236502]])
+        B_res = np.array([[0.000122937599964], [0.049135527547844]])
+
+        sys_ssc = lti(A, B, C, D)
+        sys_ssd = sys_ssc.to_discrete(0.05)
+
+        assert_allclose(sys_ssd.A, A_res)
+        assert_allclose(sys_ssd.B, B_res)
+        assert_allclose(sys_ssd.C, C)
+        assert_allclose(sys_ssd.D, D)
+
+    def test_c2d_tf(self):
+
+        sys = lti([0.5, 0.3], [1.0, 0.4])
+        sys = sys.to_discrete(0.005)
+
+        # Matlab results
+        num_res = np.array([0.5, -0.485149004980066])
+        den_res = np.array([1.0, -0.980198673306755])
+
+        # Somehow a lot of numerical errors
+        assert_allclose(sys.den, den_res, atol=0.02)
+        assert_allclose(sys.num, num_res, atol=0.02)

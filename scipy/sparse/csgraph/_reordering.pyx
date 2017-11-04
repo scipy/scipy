@@ -1,16 +1,22 @@
-# Author: Paul Nation  -- <pnation@korea.ac.kr>
+# Author: Paul Nation  -- <nonhermitian@gmail.com>
 # Original Source: QuTiP: Quantum Toolbox in Python (qutip.org)
 # License: New BSD, (C) 2014
 
+from __future__ import absolute_import
+
 import numpy as np
 cimport numpy as np
-
-from scipy.sparse import isspmatrix_csr, isspmatrix_csc, isspmatrix_coo
+from warnings import warn
+from scipy.sparse import (csc_matrix, isspmatrix, isspmatrix_coo, 
+                        isspmatrix_csc, isspmatrix_csr,
+                        SparseEfficiencyWarning)
 
 include 'parameters.pxi'
 
 def reverse_cuthill_mckee(graph, symmetric_mode=False):
     """
+    reverse_cuthill_mckee(graph, symmetric_mode=False)
+    
     Returns the permutation array that orders a sparse CSR or CSC matrix
     in Reverse-Cuthill McKee ordering.  
     
@@ -31,6 +37,10 @@ def reverse_cuthill_mckee(graph, symmetric_mode=False):
     perm : ndarray
         Array of permuted row and column indices.
  
+    Notes
+    -----
+    .. versionadded:: 0.15.0
+
     References
     ----------
     E. Cuthill and J. McKee, "Reducing the Bandwidth of Sparse Symmetric Matrices",
@@ -47,6 +57,8 @@ def reverse_cuthill_mckee(graph, symmetric_mode=False):
 
 def maximum_bipartite_matching(graph, perm_type='row'):
     """
+    maximum_bipartite_matching(graph, perm_type='row')
+    
     Returns an array of row or column permutations that makes
     the diagonal of a nonsingular square CSC sparse matrix zero free.  
     
@@ -73,6 +85,8 @@ def maximum_bipartite_matching(graph, perm_type='row'):
     algorithm based on a breadth-first search (BFS) of the underlying 
     graph.
 
+    .. versionadded:: 0.15.0
+
     References
     ----------
     I. S. Duff, K. Kaya, and B. Ucar, "Design, Implementation, and 
@@ -80,8 +94,8 @@ def maximum_bipartite_matching(graph, perm_type='row'):
     38, no. 2, (2011).
 
     """
-    nrows = graph.shape[0]
-    if graph.shape[0] != graph.shape[1]:
+    cdef np.npy_intp nrows = graph.shape[0]
+    if nrows != graph.shape[1]:
         raise ValueError('Maximum bipartite matching requires a square matrix.')
     if isspmatrix_csr(graph) or isspmatrix_coo(graph):
         graph = graph.tocsc()
@@ -95,16 +109,15 @@ def maximum_bipartite_matching(graph, perm_type='row'):
     return perm
 
 
-
-def _node_degrees(
+cdef _node_degrees(
         np.ndarray[int32_or_int64, ndim=1, mode="c"] ind,
         np.ndarray[int32_or_int64, ndim=1, mode="c"] ptr,
-        int num_rows):
+        np.npy_intp num_rows):
     """
     Find the degree of each node (matrix row) in a graph represented
     by a sparse CSR or CSC matrix.
     """
-    cdef unsigned int ii, jj
+    cdef np.npy_intp ii, jj
     cdef np.ndarray[int32_or_int64] degree = np.zeros(num_rows, dtype=ind.dtype)
     
     for ii in range(num_rows):
@@ -119,18 +132,18 @@ def _node_degrees(
 
 def _reverse_cuthill_mckee(np.ndarray[int32_or_int64, ndim=1, mode="c"] ind,
         np.ndarray[int32_or_int64, ndim=1, mode="c"] ptr,
-        int num_rows):
+        np.npy_intp num_rows):
     """
     Reverse Cuthill-McKee ordering of a sparse symmetric CSR or CSC matrix.  
     We follow the original Cuthill-McKee paper and always start the routine
     at a node of lowest degree for each connected component.
     """
-    cdef unsigned int N = 0, N_old, level_start, level_end, temp
-    cdef unsigned int zz, ii, jj, kk, ll, level_len
+    cdef np.npy_intp N = 0, N_old, level_start, level_end, temp
+    cdef np.npy_intp zz, ii, jj, kk, ll, level_len
     cdef np.ndarray[int32_or_int64] order = np.zeros(num_rows, dtype=ind.dtype)
-    cdef np.ndarray[ITYPE_t] degree = _node_degrees(ind, ptr, num_rows).astype(ITYPE)
-    cdef np.ndarray[ITYPE_t] inds = np.argsort(degree).astype(ITYPE)
-    cdef np.ndarray[ITYPE_t] rev_inds = np.argsort(inds).astype(ITYPE)
+    cdef np.ndarray[int32_or_int64] degree = _node_degrees(ind, ptr, num_rows)
+    cdef np.ndarray[np.npy_intp] inds = np.argsort(degree)
+    cdef np.ndarray[np.npy_intp] rev_inds = np.argsort(inds)
     cdef np.ndarray[ITYPE_t] temp_degrees = np.zeros(np.max(degree), dtype=ITYPE)
     cdef int32_or_int64 i, j, seed, temp2
     
@@ -190,19 +203,23 @@ def _reverse_cuthill_mckee(np.ndarray[int32_or_int64, ndim=1, mode="c"] ind,
 def _maximum_bipartite_matching(
         np.ndarray[int32_or_int64, ndim=1, mode="c"] inds,
         np.ndarray[int32_or_int64, ndim=1, mode="c"] ptrs,
-        int n):
+        np.npy_intp n):
     """
     Maximum bipartite matching of a graph in CSC format.
     """
     cdef np.ndarray[int32_or_int64] visited = np.zeros(n, dtype=inds.dtype)
     cdef np.ndarray[ITYPE_t] queue = np.zeros(n, dtype=ITYPE)
     cdef np.ndarray[ITYPE_t] previous = np.zeros(n, dtype=ITYPE)
-    cdef np.ndarray[int32_or_int64] match = (-1 * np.ones(n)).astype(inds.dtype)
-    cdef np.ndarray[ITYPE_t] row_match = (-1 * np.ones(n)).astype(ITYPE)
-    cdef int queue_ptr, queue_col, ptr, i, j, queue_size
-    cdef int col, next_num = 1
+    cdef np.ndarray[int32_or_int64] match = np.empty(n, dtype=inds.dtype)
+    cdef np.ndarray[ITYPE_t] row_match = np.empty(n, dtype=ITYPE)
+    cdef np.npy_intp queue_ptr, queue_col, ptr, i, j, queue_size
+    cdef np.npy_intp col, next_num = 1
     cdef int32_or_int64 row, temp, eptr
-    
+
+    for i in range(n):
+        match[i] = -1
+        row_match[i] = -1
+
     for i in range(n):
         if match[i] == -1 and (ptrs[i] != ptrs[i + 1]):
             queue[0] = i
@@ -238,3 +255,51 @@ def _maximum_bipartite_matching(
                     visited[match[queue[j]]] = -1
 
     return match
+
+
+def structural_rank(graph):
+    """
+    structural_rank(graph)
+    
+    Compute the structural rank of a graph (matrix) with a given 
+    sparsity pattern.
+
+    The structural rank of a matrix is the number of entries in the maximum 
+    transversal of the corresponding bipartite graph, and is an upper bound 
+    on the numerical rank of the matrix. A graph has full structural rank 
+    if it is possible to permute the elements to make the diagonal zero-free.
+
+    Parameters
+    ----------
+    graph : sparse matrix
+        Input sparse matrix.
+
+    Returns
+    -------
+    rank : int
+        The structural rank of the sparse graph.
+
+    .. versionadded:: 0.19.0
+    
+    References
+    ----------
+    .. [1] I. S. Duff, "Computing the Structural Index", SIAM J. Alg. Disc. 
+            Meth., Vol. 7, 594 (1986).
+    
+    .. [2] http://www.cise.ufl.edu/research/sparse/matrices/legend.html
+    """
+    if not isspmatrix:
+        raise TypeError('Input must be a sparse matrix')
+    if not isspmatrix_csc(graph):
+        if not (isspmatrix_csr(graph) or isspmatrix_coo(graph)):
+            warn('Input matrix should be in CSC, CSR, or COO matrix format',
+                    SparseEfficiencyWarning)
+        graph = csc_matrix(graph)
+    # If A is a tall matrix, then transpose.
+    if graph.shape[0] > graph.shape[1]:
+        graph = graph.T.tocsc()
+    rank = np.sum(_maximum_bipartite_matching(graph.indices, 
+                    graph.indptr, graph.shape[1]) >= 0)
+    return rank
+
+

@@ -31,8 +31,8 @@ def generate_test_vecs(infile, strelfile, resultfile):
               bitimage(["110", "111", "011"])]
     strels = strels + [np.flipud(s) for s in strels]
     strels = strels + [np.rot90(s) for s in strels]
-    strels = [np.fromstring(s, dtype=np.int).reshape((3, 3))
-              for s in set(t.astype(np.int).tostring() for t in strels)]
+    strels = [np.fromstring(s, dtype=int).reshape((3, 3))
+              for s in set(t.astype(int).tostring() for t in strels)]
     inputs = np.vstack(data)
     results = np.vstack([label(d, s)[0] for d in data for s in strels])
     strels = np.vstack(strels)

@@ -1,6 +1,6 @@
 """
-Low-level BLAS functions
-========================
+Low-level BLAS functions (:mod:`scipy.linalg.blas`)
+===================================================
 
 This module contains low-level functions from the BLAS library.
 
@@ -13,7 +13,7 @@ This module contains low-level functions from the BLAS library.
    so prefer using the higher-level routines in `scipy.linalg`.
 
 Finding functions
-=================
+-----------------
 
 .. autosummary::
    :toctree: generated/
@@ -22,113 +22,164 @@ Finding functions
    find_best_blas_type
 
 BLAS Level 1 functions
-======================
+----------------------
 
 .. autosummary::
    :toctree: generated/
 
-    caxpy
-    ccopy
-    cdotc
-    cdotu
-    crotg
-    cscal
-    csrot
-    csscal
-    cswap
-    dasum
-    daxpy
-    dcopy
-    ddot
-    dnrm2
-    drot
-    drotg
-    drotm
-    drotmg
-    dscal
-    dswap
-    dzasum
-    dznrm2
-    icamax
-    idamax
-    isamax
-    izamax
-    sasum
-    saxpy
-    scasum
-    scnrm2
-    scopy
-    sdot
-    snrm2
-    srot
-    srotg
-    srotm
-    srotmg
-    sscal
-    sswap
-    zaxpy
-    zcopy
-    zdotc
-    zdotu
-    zdrot
-    zdscal
-    zrotg
-    zscal
-    zswap
+   caxpy
+   ccopy
+   cdotc
+   cdotu
+   crotg
+   cscal
+   csrot
+   csscal
+   cswap
+   dasum
+   daxpy
+   dcopy
+   ddot
+   dnrm2
+   drot
+   drotg
+   drotm
+   drotmg
+   dscal
+   dswap
+   dzasum
+   dznrm2
+   icamax
+   idamax
+   isamax
+   izamax
+   sasum
+   saxpy
+   scasum
+   scnrm2
+   scopy
+   sdot
+   snrm2
+   srot
+   srotg
+   srotm
+   srotmg
+   sscal
+   sswap
+   zaxpy
+   zcopy
+   zdotc
+   zdotu
+   zdrot
+   zdscal
+   zrotg
+   zscal
+   zswap
 
 BLAS Level 2 functions
-======================
+----------------------
 
 .. autosummary::
    :toctree: generated/
 
-    cgemv
-    cgerc
-    cgeru
-    chemv
-    ctrmv
-    dgemv
-    dger
-    dsymv
-    dtrmv
-    sgemv
-    sger
-    ssymv
-    strmv
-    zgemv
-    zgerc
-    zgeru
-    zhemv
-    ztrmv
+   sgbmv
+   sgemv
+   sger
+   ssbmv
+   sspr
+   sspr2
+   ssymv
+   ssyr
+   ssyr2
+   stbmv
+   stpsv
+   strmv
+   strsv
+   dgbmv
+   dgemv
+   dger
+   dsbmv
+   dspr
+   dspr2
+   dsymv
+   dsyr
+   dsyr2
+   dtbmv
+   dtpsv
+   dtrmv
+   dtrsv
+   cgbmv
+   cgemv
+   cgerc
+   cgeru
+   chbmv
+   chemv
+   cher
+   cher2
+   chpmv
+   chpr
+   chpr2
+   ctbmv
+   ctbsv
+   ctpmv
+   ctpsv
+   ctrmv
+   ctrsv
+   csyr
+   zgbmv
+   zgemv
+   zgerc
+   zgeru
+   zhbmv
+   zhemv
+   zher
+   zher2
+   zhpmv
+   zhpr
+   zhpr2
+   ztbmv
+   ztbsv
+   ztpmv
+   ztrmv
+   ztrsv
+   zsyr
 
 BLAS Level 3 functions
-======================
+----------------------
 
 .. autosummary::
    :toctree: generated/
 
-    cgemm
-    chemm
-    cherk
-    cher2k
-    csymm
-    csyrk
-    csyr2k
-    dgemm
-    dsymm
-    dsyrk
-    dsyr2k
-    sgemm
-    ssymm
-    ssyrk
-    ssyr2k
-    zgemm
-    zhemm
-    zherk
-    zher2k
-    zsymm
-    zsyrk
-    zsyr2k
+   sgemm
+   ssymm
+   ssyr2k
+   ssyrk
+   strmm
+   strsm
+   dgemm
+   dsymm
+   dsyr2k
+   dsyrk
+   dtrmm
+   dtrsm
+   cgemm
+   chemm
+   cher2k
+   cherk
+   csymm
+   csyr2k
+   csyrk
+   ctrmm
+   ctrsm
+   zgemm
+   zhemm
+   zher2k
+   zherk
+   zsymm
+   zsyr2k
+   zsyrk
+   ztrmm
+   ztrsm
 
 """
 #
@@ -153,13 +204,8 @@ empty_module = None
 from scipy.linalg._fblas import *
 del empty_module
 
-# Backward compatibility
-from scipy.lib._util import DeprecatedImport as _DeprecatedImport
-cblas = _DeprecatedImport("scipy.linalg.blas.cblas", "scipy.linalg.blas")
-fblas = _DeprecatedImport("scipy.linalg.blas.fblas", "scipy.linalg.blas")
-
 # 'd' will be default for 'i',..
-_type_conv = {'f':'s', 'd':'d', 'F':'c', 'D':'z', 'G':'z'}
+_type_conv = {'f': 's', 'd': 'd', 'F': 'c', 'D': 'z', 'G': 'z'}
 
 # some convenience alias for complex functions
 _blas_alias = {'cnrm2': 'scnrm2', 'znrm2': 'dznrm2',
@@ -192,6 +238,18 @@ def find_best_blas_type(arrays=(), dtype=None):
     prefer_fortran : bool
         Whether to prefer Fortran order routines over C order.
 
+    Examples
+    --------
+    >>> import scipy.linalg.blas as bla
+    >>> a = np.random.rand(10,15)
+    >>> b = np.asfortranarray(a)  # Change the memory layout order
+    >>> bla.find_best_blas_type((a,))
+    ('d', dtype('float64'), False)
+    >>> bla.find_best_blas_type((a*1j,))
+    ('z', dtype('complex128'), False)
+    >>> bla.find_best_blas_type((b,))
+    ('d', dtype('float64'), True)
+
     """
     dtype = _np.dtype(dtype)
     prefer_fortran = False
@@ -209,6 +267,11 @@ def find_best_blas_type(arrays=(), dtype=None):
             prefer_fortran = True
 
     prefix = _type_conv.get(dtype.char, 'd')
+    if dtype.char == 'G':
+        # complex256 -> complex128 (i.e., C long double -> C double)
+        dtype = _np.dtype('D')
+    elif dtype.char not in 'fdFD':
+        dtype = _np.dtype('d')
 
     return prefix, dtype, prefer_fortran
 
@@ -296,6 +359,18 @@ def get_blas_funcs(names, arrays=(), dtype=None):
     types {float32, float64, complex64, complex128} respectively.
     The code and the dtype are stored in attributes `typecode` and `dtype`
     of the returned functions.
+
+    Examples
+    --------
+    >>> import scipy.linalg as LA
+    >>> a = np.random.rand(3,2)
+    >>> x_gemv = LA.get_blas_funcs('gemv', (a,))
+    >>> x_gemv.typecode
+    'd'
+    >>> x_gemv = LA.get_blas_funcs('gemv',(a*1j,))
+    >>> x_gemv.typecode
+    'z'
+
     """
     return _get_funcs(names, arrays, dtype,
                       "BLAS", _fblas, _cblas, "fblas", "cblas",

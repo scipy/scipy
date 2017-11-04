@@ -8,11 +8,15 @@ import warnings
 
 import numpy as np
 from numpy.random import RandomState
-from numpy.testing import (TestCase, run_module_suite, assert_array_equal,
+from numpy.testing import (assert_array_equal,
     assert_almost_equal, assert_array_less, assert_array_almost_equal,
-    assert_raises, assert_, assert_allclose, assert_equal, dec, assert_warns)
+    assert_, assert_allclose, assert_equal, assert_warns)
+import pytest
+from pytest import raises as assert_raises
+from scipy._lib._numpy_compat import suppress_warnings
 
 from scipy import stats
+from .common_tests import check_named_results
 
 # Matplotlib is not a scipy dependency but is optionally used in probplot, so
 # check if it's available
@@ -35,55 +39,225 @@ g9 = [1.002, 0.998, 0.996, 0.995, 0.996, 1.004, 1.004, 0.998, 0.999, 0.991]
 g10 = [0.991, 0.995, 0.984, 0.994, 0.997, 0.997, 0.991, 0.998, 1.004, 0.997]
 
 
-class TestShapiro(TestCase):
+class TestBayes_mvs(object):
     def test_basic(self):
-        x1 = [0.11,7.87,4.61,10.14,7.95,3.14,0.46,
-              4.43,0.21,4.75,0.71,1.52,3.24,
-              0.93,0.42,4.97,9.53,4.55,0.47,6.66]
-        w,pw = stats.shapiro(x1)
-        assert_almost_equal(w,0.90047299861907959,6)
-        assert_almost_equal(pw,0.042089745402336121,6)
-        x2 = [1.36,1.14,2.92,2.55,1.46,1.06,5.27,-1.11,
-              3.48,1.10,0.88,-0.51,1.46,0.52,6.20,1.69,
-              0.08,3.67,2.81,3.49]
-        w,pw = stats.shapiro(x2)
-        assert_almost_equal(w,0.9590270,6)
-        assert_almost_equal(pw,0.52460,3)
+        # Expected values in this test simply taken from the function.  For
+        # some checks regarding correctness of implementation, see review in
+        # gh-674
+        data = [6, 9, 12, 7, 8, 8, 13]
+        mean, var, std = stats.bayes_mvs(data)
+        assert_almost_equal(mean.statistic, 9.0)
+        assert_allclose(mean.minmax, (7.1036502226125329, 10.896349777387467),
+                        rtol=1e-14)
+
+        assert_almost_equal(var.statistic, 10.0)
+        assert_allclose(var.minmax, (3.1767242068607087, 24.45910381334018),
+                        rtol=1e-09)
+
+        assert_almost_equal(std.statistic, 2.9724954732045084, decimal=14)
+        assert_allclose(std.minmax, (1.7823367265645145, 4.9456146050146312),
+                        rtol=1e-14)
+
+    def test_empty_input(self):
+        assert_raises(ValueError, stats.bayes_mvs, [])
+
+    def test_result_attributes(self):
+        x = np.arange(15)
+        attributes = ('statistic', 'minmax')
+        res = stats.bayes_mvs(x)
+
+        for i in res:
+            check_named_results(i, attributes)
+
+
+class TestMvsdist(object):
+    def test_basic(self):
+        data = [6, 9, 12, 7, 8, 8, 13]
+        mean, var, std = stats.mvsdist(data)
+        assert_almost_equal(mean.mean(), 9.0)
+        assert_allclose(mean.interval(0.9), (7.1036502226125329,
+                                             10.896349777387467), rtol=1e-14)
+
+        assert_almost_equal(var.mean(), 10.0)
+        assert_allclose(var.interval(0.9), (3.1767242068607087,
+                                            24.45910381334018), rtol=1e-09)
+
+        assert_almost_equal(std.mean(), 2.9724954732045084, decimal=14)
+        assert_allclose(std.interval(0.9), (1.7823367265645145,
+                                            4.9456146050146312), rtol=1e-14)
+
+    def test_empty_input(self):
+        assert_raises(ValueError, stats.mvsdist, [])
+
+    def test_bad_arg(self):
+        # Raise ValueError if fewer than two data points are given.
+        data = [1]
+        assert_raises(ValueError, stats.mvsdist, data)
+
+    def test_warns(self):
+        # regression test for gh-5270
+        # make sure there are no spurious divide-by-zero warnings
+        with warnings.catch_warnings():
+            warnings.simplefilter('error', RuntimeWarning)
+            [x.mean() for x in stats.mvsdist([1, 2, 3])]
+            [x.mean() for x in stats.mvsdist([1, 2, 3, 4, 5])]
+
+
+class TestShapiro(object):
+    def test_basic(self):
+        x1 = [0.11, 7.87, 4.61, 10.14, 7.95, 3.14, 0.46,
+              4.43, 0.21, 4.75, 0.71, 1.52, 3.24,
+              0.93, 0.42, 4.97, 9.53, 4.55, 0.47, 6.66]
+        w, pw = stats.shapiro(x1)
+        assert_almost_equal(w, 0.90047299861907959, 6)
+        assert_almost_equal(pw, 0.042089745402336121, 6)
+        x2 = [1.36, 1.14, 2.92, 2.55, 1.46, 1.06, 5.27, -1.11,
+              3.48, 1.10, 0.88, -0.51, 1.46, 0.52, 6.20, 1.69,
+              0.08, 3.67, 2.81, 3.49]
+        w, pw = stats.shapiro(x2)
+        assert_almost_equal(w, 0.9590270, 6)
+        assert_almost_equal(pw, 0.52460, 3)
+
+        # Verified against R
+        np.random.seed(12345678)
+        x3 = stats.norm.rvs(loc=5, scale=3, size=100)
+        w, pw = stats.shapiro(x3)
+        assert_almost_equal(w, 0.9772805571556091, decimal=6)
+        assert_almost_equal(pw, 0.08144091814756393, decimal=3)
+
+        # Extracted from original paper
+        x4 = [0.139, 0.157, 0.175, 0.256, 0.344, 0.413, 0.503, 0.577, 0.614,
+              0.655, 0.954, 1.392, 1.557, 1.648, 1.690, 1.994, 2.174, 2.206,
+              3.245, 3.510, 3.571, 4.354, 4.980, 6.084, 8.351]
+        W_expected = 0.83467
+        p_expected = 0.000914
+        w, pw = stats.shapiro(x4)
+        assert_almost_equal(w, W_expected, decimal=4)
+        assert_almost_equal(pw, p_expected, decimal=5)
+
+    def test_2d(self):
+        x1 = [[0.11, 7.87, 4.61, 10.14, 7.95, 3.14, 0.46,
+              4.43, 0.21, 4.75], [0.71, 1.52, 3.24,
+              0.93, 0.42, 4.97, 9.53, 4.55, 0.47, 6.66]]
+        w, pw = stats.shapiro(x1)
+        assert_almost_equal(w, 0.90047299861907959, 6)
+        assert_almost_equal(pw, 0.042089745402336121, 6)
+        x2 = [[1.36, 1.14, 2.92, 2.55, 1.46, 1.06, 5.27, -1.11,
+              3.48, 1.10], [0.88, -0.51, 1.46, 0.52, 6.20, 1.69,
+              0.08, 3.67, 2.81, 3.49]]
+        w, pw = stats.shapiro(x2)
+        assert_almost_equal(w, 0.9590270, 6)
+        assert_almost_equal(pw, 0.52460, 3)
+
+    def test_empty_input(self):
+        assert_raises(ValueError, stats.shapiro, [])
+        assert_raises(ValueError, stats.shapiro, [[], [], []])
+
+    def test_not_enough_values(self):
+        assert_raises(ValueError, stats.shapiro, [1, 2])
+        assert_raises(ValueError, stats.shapiro, [[], [2]])
 
     def test_bad_arg(self):
         # Length of x is less than 3.
         x = [1]
         assert_raises(ValueError, stats.shapiro, x)
 
+    def test_nan_input(self):
+        x = np.arange(10.)
+        x[9] = np.nan
 
-class TestAnderson(TestCase):
+        w, pw = stats.shapiro(x)
+        assert_equal(w, np.nan)
+        assert_almost_equal(pw, 1.0)
+
+
+class TestAnderson(object):
     def test_normal(self):
         rs = RandomState(1234567890)
         x1 = rs.standard_exponential(size=50)
         x2 = rs.standard_normal(size=50)
-        A,crit,sig = stats.anderson(x1)
+        A, crit, sig = stats.anderson(x1)
         assert_array_less(crit[:-1], A)
-        A,crit,sig = stats.anderson(x2)
+        A, crit, sig = stats.anderson(x2)
         assert_array_less(A, crit[-2:])
+
+        v = np.ones(10)
+        v[0] = 0
+        A, crit, sig = stats.anderson(v)
+        # The expected statistic 3.208057 was computed independently of scipy.
+        # For example, in R:
+        #   > library(nortest)
+        #   > v <- rep(1, 10)
+        #   > v[1] <- 0
+        #   > result <- ad.test(v)
+        #   > result$statistic
+        #          A
+        #   3.208057
+        assert_allclose(A, 3.208057)
 
     def test_expon(self):
         rs = RandomState(1234567890)
         x1 = rs.standard_exponential(size=50)
         x2 = rs.standard_normal(size=50)
-        A,crit,sig = stats.anderson(x1,'expon')
+        A, crit, sig = stats.anderson(x1, 'expon')
         assert_array_less(A, crit[-2:])
         olderr = np.seterr(all='ignore')
         try:
-            A,crit,sig = stats.anderson(x2,'expon')
+            A, crit, sig = stats.anderson(x2, 'expon')
         finally:
             np.seterr(**olderr)
         assert_(A > crit[-1])
 
+    def test_gumbel(self):
+        # Regression test for gh-6306.  Before that issue was fixed,
+        # this case would return a2=inf.
+        v = np.ones(100)
+        v[0] = 0.0
+        a2, crit, sig = stats.anderson(v, 'gumbel')
+        # A brief reimplementation of the calculation of the statistic.
+        n = len(v)
+        xbar, s = stats.gumbel_l.fit(v)
+        logcdf = stats.gumbel_l.logcdf(v, xbar, s)
+        logsf = stats.gumbel_l.logsf(v, xbar, s)
+        i = np.arange(1, n+1)
+        expected_a2 = -n - np.mean((2*i - 1) * (logcdf + logsf[::-1]))
+
+        assert_allclose(a2, expected_a2)
+
     def test_bad_arg(self):
         assert_raises(ValueError, stats.anderson, [1], dist='plate_of_shrimp')
 
+    def test_result_attributes(self):
+        rs = RandomState(1234567890)
+        x = rs.standard_exponential(size=50)
+        res = stats.anderson(x)
+        attributes = ('statistic', 'critical_values', 'significance_level')
+        check_named_results(res, attributes)
 
-class TestAndersonKSamp(TestCase):
+    def test_gumbel_l(self):
+        # gh-2592, gh-6337
+        # Adds support to 'gumbel_r' and 'gumbel_l' as valid inputs for dist.
+        rs = RandomState(1234567890)
+        x = rs.gumbel(size=100)
+        A1, crit1, sig1 = stats.anderson(x, 'gumbel')
+        A2, crit2, sig2 = stats.anderson(x, 'gumbel_l')
+
+        assert_allclose(A2, A1)
+
+    def test_gumbel_r(self):
+        # gh-2592, gh-6337
+        # Adds support to 'gumbel_r' and 'gumbel_l' as valid inputs for dist.
+        rs = RandomState(1234567890)
+        x1 = rs.gumbel(size=100)
+        x2 = np.ones(100)
+        A1, crit1, sig1 = stats.anderson(x1, 'gumbel_r')
+        A2, crit2, sig2 = stats.anderson(x2, 'gumbel_r')
+
+        assert_array_less(A1, crit1[-2:])
+        assert_(A2 > crit2[-1])
+
+
+class TestAndersonKSamp(object):
     def test_example1a(self):
         # Example data from Scholz & Stephens (1987), originally
         # published in Lehmann (1995, Nonparametrics, Statistical
@@ -95,8 +269,8 @@ class TestAndersonKSamp(TestCase):
         t4 = np.array([34.0, 34.8, 34.8, 35.4, 37.2, 37.8, 41.2, 42.8])
         assert_warns(UserWarning, stats.anderson_ksamp, (t1, t2, t3, t4),
                      midrank=False)
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', message='approximate p-value')
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, message='approximate p-value')
             Tk, tm, p = stats.anderson_ksamp((t1, t2, t3, t4), midrank=False)
 
         assert_almost_equal(Tk, 4.449, 3)
@@ -113,8 +287,8 @@ class TestAndersonKSamp(TestCase):
         t2 = np.array([39.2, 39.3, 39.7, 41.4, 41.8, 42.9, 43.3, 45.8])
         t3 = np.array([34.0, 35.0, 39.0, 40.0, 43.0, 43.0, 44.0, 45.0])
         t4 = np.array([34.0, 34.8, 34.8, 35.4, 37.2, 37.8, 41.2, 42.8])
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', message='approximate p-value')
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, message='approximate p-value')
             Tk, tm, p = stats.anderson_ksamp((t1, t2, t3, t4), midrank=True)
 
         assert_almost_equal(Tk, 4.480, 3)
@@ -145,8 +319,8 @@ class TestAndersonKSamp(TestCase):
         t13 = [487, 18, 100, 7, 98, 5, 85, 91, 43, 230, 3, 130]
         t14 = [102, 209, 14, 57, 54, 32, 67, 59, 134, 152, 27, 14, 230, 66,
                61, 34]
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', message='approximate p-value')
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, message='approximate p-value')
             Tk, tm, p = stats.anderson_ksamp((t1, t2, t3, t4, t5, t6, t7, t8,
                                               t9, t10, t11, t12, t13, t14),
                                              midrank=False)
@@ -178,8 +352,8 @@ class TestAndersonKSamp(TestCase):
         t13 = [487, 18, 100, 7, 98, 5, 85, 91, 43, 230, 3, 130]
         t14 = [102, 209, 14, 57, 54, 32, 67, 59, 134, 152, 27, 14, 230, 66,
                61, 34]
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', message='approximate p-value')
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, message='approximate p-value')
             Tk, tm, p = stats.anderson_ksamp((t1, t2, t3, t4, t5, t6, t7, t8,
                                               t9, t10, t11, t12, t13, t14),
                                              midrank=True)
@@ -199,66 +373,112 @@ class TestAndersonKSamp(TestCase):
     def test_empty_sample(self):
         assert_raises(ValueError, stats.anderson_ksamp, (np.ones(5), []))
 
+    def test_result_attributes(self):
+        # Example data from Scholz & Stephens (1987), originally
+        # published in Lehmann (1995, Nonparametrics, Statistical
+        # Methods Based on Ranks, p. 309)
+        # Pass a mixture of lists and arrays
+        t1 = [38.7, 41.5, 43.8, 44.5, 45.5, 46.0, 47.7, 58.0]
+        t2 = np.array([39.2, 39.3, 39.7, 41.4, 41.8, 42.9, 43.3, 45.8])
+        t3 = np.array([34.0, 35.0, 39.0, 40.0, 43.0, 43.0, 44.0, 45.0])
+        t4 = np.array([34.0, 34.8, 34.8, 35.4, 37.2, 37.8, 41.2, 42.8])
 
-class TestAnsari(TestCase):
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, message='approximate p-value')
+            res = stats.anderson_ksamp((t1, t2, t3, t4), midrank=False)
+
+        attributes = ('statistic', 'critical_values', 'significance_level')
+        check_named_results(res, attributes)
+
+    def test_overflow(self):
+        # when significance_level approximation overflows, should still return
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, message='approximate p-value')
+            res = stats.anderson_ksamp([[-20, -10] * 100, [-10, 40, 12] * 100])
+            assert_almost_equal(res[0], 272.796, 3)
+
+
+class TestAnsari(object):
 
     def test_small(self):
-        x = [1,2,3,3,4]
-        y = [3,2,6,1,6,1,4,1]
-        W, pval = stats.ansari(x,y)
-        assert_almost_equal(W,23.5,11)
-        assert_almost_equal(pval,0.13499256881897437,11)
+        x = [1, 2, 3, 3, 4]
+        y = [3, 2, 6, 1, 6, 1, 4, 1]
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, "Ties preclude use of exact statistic.")
+            W, pval = stats.ansari(x, y)
+        assert_almost_equal(W, 23.5, 11)
+        assert_almost_equal(pval, 0.13499256881897437, 11)
 
     def test_approx(self):
         ramsay = np.array((111, 107, 100, 99, 102, 106, 109, 108, 104, 99,
                            101, 96, 97, 102, 107, 113, 116, 113, 110, 98))
         parekh = np.array((107, 108, 106, 98, 105, 103, 110, 105, 104,
-                           100, 96, 108, 103, 104, 114, 114, 113, 108, 106, 99))
+                           100, 96, 108, 103, 104, 114, 114, 113, 108,
+                           106, 99))
 
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore',
-                        message="Ties preclude use of exact statistic.")
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, "Ties preclude use of exact statistic.")
             W, pval = stats.ansari(ramsay, parekh)
 
-        assert_almost_equal(W,185.5,11)
-        assert_almost_equal(pval,0.18145819972867083,11)
+        assert_almost_equal(W, 185.5, 11)
+        assert_almost_equal(pval, 0.18145819972867083, 11)
 
     def test_exact(self):
-        W,pval = stats.ansari([1,2,3,4],[15,5,20,8,10,12])
-        assert_almost_equal(W,10.0,11)
-        assert_almost_equal(pval,0.533333333333333333,7)
+        W, pval = stats.ansari([1, 2, 3, 4], [15, 5, 20, 8, 10, 12])
+        assert_almost_equal(W, 10.0, 11)
+        assert_almost_equal(pval, 0.533333333333333333, 7)
 
     def test_bad_arg(self):
         assert_raises(ValueError, stats.ansari, [], [1])
         assert_raises(ValueError, stats.ansari, [1], [])
 
+    def test_result_attributes(self):
+        x = [1, 2, 3, 3, 4]
+        y = [3, 2, 6, 1, 6, 1, 4, 1]
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, "Ties preclude use of exact statistic.")
+            res = stats.ansari(x, y)
+        attributes = ('statistic', 'pvalue')
+        check_named_results(res, attributes)
 
-class TestBartlett(TestCase):
+
+class TestBartlett(object):
 
     def test_data(self):
         args = [g1, g2, g3, g4, g5, g6, g7, g8, g9, g10]
         T, pval = stats.bartlett(*args)
-        assert_almost_equal(T,20.78587342806484,7)
-        assert_almost_equal(pval,0.0136358632781,7)
+        assert_almost_equal(T, 20.78587342806484, 7)
+        assert_almost_equal(pval, 0.0136358632781, 7)
 
     def test_bad_arg(self):
         # Too few args raises ValueError.
         assert_raises(ValueError, stats.bartlett, [1])
 
+    def test_result_attributes(self):
+        args = [g1, g2, g3, g4, g5, g6, g7, g8, g9, g10]
+        res = stats.bartlett(*args)
+        attributes = ('statistic', 'pvalue')
+        check_named_results(res, attributes)
 
-class TestLevene(TestCase):
+    def test_empty_arg(self):
+        args = (g1, g2, g3, g4, g5, g6, g7, g8, g9, g10, [])
+        assert_equal((np.nan, np.nan), stats.bartlett(*args))
+
+
+class TestLevene(object):
 
     def test_data(self):
         args = [g1, g2, g3, g4, g5, g6, g7, g8, g9, g10]
         W, pval = stats.levene(*args)
-        assert_almost_equal(W,1.7059176930008939,7)
-        assert_almost_equal(pval,0.0990829755522,7)
+        assert_almost_equal(W, 1.7059176930008939, 7)
+        assert_almost_equal(pval, 0.0990829755522, 7)
 
     def test_trimmed1(self):
         # Test that center='trimmed' gives the same result as center='mean'
         # when proportiontocut=0.
         W1, pval1 = stats.levene(g1, g2, g3, center='mean')
-        W2, pval2 = stats.levene(g1, g2, g3, center='trimmed', proportiontocut=0.0)
+        W2, pval2 = stats.levene(g1, g2, g3, center='trimmed',
+                                 proportiontocut=0.0)
         assert_almost_equal(W1, W2)
         assert_almost_equal(pval1, pval2)
 
@@ -269,8 +489,10 @@ class TestLevene(TestCase):
         x2 = np.random.permutation(x)
 
         # Use center='trimmed'
-        W0, pval0 = stats.levene(x, y, center='trimmed', proportiontocut=0.125)
-        W1, pval1 = stats.levene(x2, y, center='trimmed', proportiontocut=0.125)
+        W0, pval0 = stats.levene(x, y, center='trimmed',
+                                 proportiontocut=0.125)
+        W1, pval1 = stats.levene(x2, y, center='trimmed',
+                                 proportiontocut=0.125)
         # Trim the data here, and use center='mean'
         W2, pval2 = stats.levene(x[1:-1], y[1:-1], center='mean')
         # Result should be the same.
@@ -279,7 +501,7 @@ class TestLevene(TestCase):
         assert_almost_equal(pval1, pval2)
 
     def test_equal_mean_median(self):
-        x = np.linspace(-1,1,21)
+        x = np.linspace(-1, 1, 21)
         np.random.seed(1234)
         x2 = np.random.permutation(x)
         y = x**3
@@ -289,30 +511,36 @@ class TestLevene(TestCase):
         assert_almost_equal(pval1, pval2)
 
     def test_bad_keyword(self):
-        x = np.linspace(-1,1,21)
+        x = np.linspace(-1, 1, 21)
         assert_raises(TypeError, stats.levene, x, x, portiontocut=0.1)
 
     def test_bad_center_value(self):
-        x = np.linspace(-1,1,21)
+        x = np.linspace(-1, 1, 21)
         assert_raises(ValueError, stats.levene, x, x, center='trim')
 
     def test_too_few_args(self):
         assert_raises(ValueError, stats.levene, [1])
 
+    def test_result_attributes(self):
+        args = [g1, g2, g3, g4, g5, g6, g7, g8, g9, g10]
+        res = stats.levene(*args)
+        attributes = ('statistic', 'pvalue')
+        check_named_results(res, attributes)
 
-class TestBinomP(TestCase):
+
+class TestBinomP(object):
 
     def test_data(self):
-        pval = stats.binom_test(100,250)
-        assert_almost_equal(pval,0.0018833009350757682,11)
-        pval = stats.binom_test(201,405)
-        assert_almost_equal(pval,0.92085205962670713,11)
-        pval = stats.binom_test([682,243],p=3.0/4)
-        assert_almost_equal(pval,0.38249155957481695,11)
+        pval = stats.binom_test(100, 250)
+        assert_almost_equal(pval, 0.0018833009350757682, 11)
+        pval = stats.binom_test(201, 405)
+        assert_almost_equal(pval, 0.92085205962670713, 11)
+        pval = stats.binom_test([682, 243], p=3.0/4)
+        assert_almost_equal(pval, 0.38249155957481695, 11)
 
     def test_bad_len_x(self):
         # Length of x must be 1 or 2.
-        assert_raises(ValueError, stats.binom_test, [1,2,3])
+        assert_raises(ValueError, stats.binom_test, [1, 2, 3])
 
     def test_bad_n(self):
         # len(x) is 1, but n is invalid.
@@ -324,36 +552,32 @@ class TestBinomP(TestCase):
     def test_bad_p(self):
         assert_raises(ValueError, stats.binom_test, [50, 50], p=2.0)
 
+    def test_alternatives(self):
+        res = stats.binom_test(51, 235, p=1./6, alternative='less')
+        assert_almost_equal(res, 0.982022657605858)
 
-class TestFindRepeats(TestCase):
+        res = stats.binom_test(51, 235, p=1./6, alternative='greater')
+        assert_almost_equal(res, 0.02654424571169085)
 
-    def test_basic(self):
-        a = [1,2,3,4,1,2,3,4,1,2,5]
-        res,nums = stats.find_repeats(a)
-        assert_array_equal(res,[1,2,3,4])
-        assert_array_equal(nums,[3,3,2,2])
-
-    def test_empty_result(self):
-        # Check that empty arrays are returned when there are no repeats.
-        a = [10, 20, 50, 30, 40]
-        repeated, counts = stats.find_repeats(a)
-        assert_array_equal(repeated, [])
-        assert_array_equal(counts, [])
+        res = stats.binom_test(51, 235, p=1./6, alternative='two-sided')
+        assert_almost_equal(res, 0.0437479701823997)
 
 
-class TestFligner(TestCase):
+class TestFligner(object):
 
     def test_data(self):
         # numbers from R: fligner.test in package stats
         x1 = np.arange(5)
-        assert_array_almost_equal(stats.fligner(x1,x1**2),
-                           (3.2282229927203536, 0.072379187848207877), 11)
+        assert_array_almost_equal(stats.fligner(x1, x1**2),
+                                  (3.2282229927203536, 0.072379187848207877),
+                                  11)
 
     def test_trimmed1(self):
         # Test that center='trimmed' gives the same result as center='mean'
         # when proportiontocut=0.
         Xsq1, pval1 = stats.fligner(g1, g2, g3, center='mean')
-        Xsq2, pval2 = stats.fligner(g1, g2, g3, center='trimmed', proportiontocut=0.0)
+        Xsq2, pval2 = stats.fligner(g1, g2, g3, center='trimmed',
+                                    proportiontocut=0.0)
         assert_almost_equal(Xsq1, Xsq2)
         assert_almost_equal(pval1, pval2)
 
@@ -361,7 +585,8 @@ class TestFligner(TestCase):
         x = [1.2, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 100.0]
         y = [0.0, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 200.0]
         # Use center='trimmed'
-        Xsq1, pval1 = stats.fligner(x, y, center='trimmed', proportiontocut=0.125)
+        Xsq1, pval1 = stats.fligner(x, y, center='trimmed',
+                                    proportiontocut=0.125)
         # Trim the data here, and use center='mean'
         Xsq2, pval2 = stats.fligner(x[1:-1], y[1:-1], center='mean')
         # Result should be the same.
@@ -383,24 +608,29 @@ class TestFligner(TestCase):
     #    assert_almost_equal(pval1, pval2)
 
     def test_bad_keyword(self):
-        x = np.linspace(-1,1,21)
+        x = np.linspace(-1, 1, 21)
         assert_raises(TypeError, stats.fligner, x, x, portiontocut=0.1)
 
     def test_bad_center_value(self):
-        x = np.linspace(-1,1,21)
+        x = np.linspace(-1, 1, 21)
         assert_raises(ValueError, stats.fligner, x, x, center='trim')
 
     def test_bad_num_args(self):
         # Too few args raises ValueError.
         assert_raises(ValueError, stats.fligner, [1])
 
+    def test_empty_arg(self):
+        x = np.arange(5)
+        assert_equal((np.nan, np.nan), stats.fligner(x, x**2, []))
 
-class TestMood(TestCase):
+
+class TestMood(object):
     def test_mood(self):
         # numbers from R: mood.test in package stats
         x1 = np.arange(5)
         assert_array_almost_equal(stats.mood(x1, x1**2),
-                                  (-1.3830857299399906, 0.16663858066771478), 11)
+                                  (-1.3830857299399906, 0.16663858066771478),
+                                  11)
 
     def test_mood_order_of_args(self):
         # z should change sign when the order of arguments changes, pvalue
@@ -413,7 +643,7 @@ class TestMood(TestCase):
         assert_array_almost_equal([z1, p1], [-z2, p2])
 
     def test_mood_with_axis_none(self):
-        #Test with axis = None, compare with results from R
+        # Test with axis = None, compare with results from R
         x1 = [-0.626453810742332, 0.183643324222082, -0.835628612410047,
                1.59528080213779, 0.329507771815361, -0.820468384118015,
                0.487429052428485, 0.738324705129217, 0.575781351653492,
@@ -492,11 +722,12 @@ class TestMood(TestCase):
                                               stats.mood(slice1, slice2))
 
     def test_mood_bad_arg(self):
-        # Raise ValueError when the sum of the lengths of the args is less than 3
+        # Raise ValueError when the sum of the lengths of the args is
+        # less than 3
         assert_raises(ValueError, stats.mood, [1], [])
 
 
-class TestProbplot(TestCase):
+class TestProbplot(object):
 
     def test_basic(self):
         np.random.seed(12345)
@@ -550,7 +781,7 @@ class TestProbplot(TestCase):
         assert_allclose(osm1, osm2)
         assert_allclose(osr1, osr2)
 
-    @dec.skipif(not have_matplotlib)
+    @pytest.mark.skipif(not have_matplotlib, reason="no matplotlib")
     def test_plot_kwarg(self):
         np.random.seed(7654321)
         fig = plt.figure()
@@ -580,41 +811,186 @@ class TestProbplot(TestCase):
         # Raise ValueError when given an invalid distribution.
         assert_raises(ValueError, stats.probplot, [1], dist="plate_of_shrimp")
 
+    def test_empty(self):
+        assert_equal(stats.probplot([], fit=False),
+                     (np.array([]), np.array([])))
+        assert_equal(stats.probplot([], fit=True),
+                     ((np.array([]), np.array([])),
+                      (np.nan, np.nan, 0.0)))
+
+    def test_array_of_size_one(self):
+        with np.errstate(invalid='ignore'):
+            assert_equal(stats.probplot([1], fit=True),
+                         ((np.array([0.]), np.array([1])),
+                          (np.nan, np.nan, 0.0)))
+
 
 def test_wilcoxon_bad_arg():
     # Raise ValueError when two args of different lengths are given or
     # zero_method is unknown.
-    assert_raises(ValueError, stats.wilcoxon, [1], [1,2])
-    assert_raises(ValueError, stats.wilcoxon, [1,2], [1,2], "dummy")
+    assert_raises(ValueError, stats.wilcoxon, [1], [1, 2])
+    assert_raises(ValueError, stats.wilcoxon, [1, 2], [1, 2], "dummy")
 
 
-def test_mvsdist_bad_arg():
-    # Raise ValueError if fewer than two data points are given.
-    data = [1]
-    assert_raises(ValueError, stats.mvsdist, data)
+def test_wilcoxon_arg_type():
+    # Should be able to accept list as arguments.
+    # Address issue 6070.
+    arr = [1, 2, 3, 0, -1, 3, 1, 2, 1, 1, 2]
+
+    _ = stats.wilcoxon(arr, zero_method="pratt")
+    _ = stats.wilcoxon(arr, zero_method="zsplit")
+    _ = stats.wilcoxon(arr, zero_method="wilcox")
 
 
-def test_kstat_bad_arg():
-    # Raise ValueError if n > 4 or n > 1.
-    data = [1]
-    n = 10
-    assert_raises(ValueError, stats.kstat, data, n=n)
+class TestKstat(object):
+    def test_moments_normal_distribution(self):
+        np.random.seed(32149)
+        data = np.random.randn(12345)
+        moments = []
+        for n in [1, 2, 3, 4]:
+            moments.append(stats.kstat(data, n))
+
+        expected = [0.011315, 1.017931, 0.05811052, 0.0754134]
+        assert_allclose(moments, expected, rtol=1e-4)
+
+        # test equivalence with `stats.moment`
+        m1 = stats.moment(data, moment=1)
+        m2 = stats.moment(data, moment=2)
+        m3 = stats.moment(data, moment=3)
+        assert_allclose((m1, m2, m3), expected[:-1], atol=0.02, rtol=1e-2)
+
+    def test_empty_input(self):
+        assert_raises(ValueError, stats.kstat, [])
+
+    def test_nan_input(self):
+        data = np.arange(10.)
+        data[6] = np.nan
+
+        assert_equal(stats.kstat(data), np.nan)
+
+    def test_kstat_bad_arg(self):
+        # Raise ValueError if n > 4 or n < 1.
+        data = np.arange(10)
+        for n in [0, 4.001]:
+            assert_raises(ValueError, stats.kstat, data, n=n)
 
 
-def test_kstatvar_bad_arg():
-    # Raise ValueError is n is not 1 or 2.
-    data = [1]
-    n = 10
-    assert_raises(ValueError, stats.kstatvar, data, n=n)
+class TestKstatVar(object):
+    def test_empty_input(self):
+        assert_raises(ValueError, stats.kstatvar, [])
+
+    def test_nan_input(self):
+        data = np.arange(10.)
+        data[6] = np.nan
+
+        assert_equal(stats.kstat(data), np.nan)
+
+    def test_bad_arg(self):
+        # Raise ValueError is n is not 1 or 2.
+        data = [1]
+        n = 10
+        assert_raises(ValueError, stats.kstatvar, data, n=n)
 
 
-def test_ppcc_max_bad_arg():
-    # Raise ValueError when given an invalid distribution.
-    data = [1]
-    assert_raises(ValueError, stats.ppcc_max, data, dist="plate_of_shrimp")
+class TestPpccPlot(object):
+    def setup_method(self):
+        np.random.seed(7654321)
+        self.x = stats.loggamma.rvs(5, size=500) + 5
+
+    def test_basic(self):
+        N = 5
+        svals, ppcc = stats.ppcc_plot(self.x, -10, 10, N=N)
+        ppcc_expected = [0.21139644, 0.21384059, 0.98766719, 0.97980182,
+                         0.93519298]
+        assert_allclose(svals, np.linspace(-10, 10, num=N))
+        assert_allclose(ppcc, ppcc_expected)
+
+    def test_dist(self):
+        # Test that we can specify distributions both by name and as objects.
+        svals1, ppcc1 = stats.ppcc_plot(self.x, -10, 10, dist='tukeylambda')
+        svals2, ppcc2 = stats.ppcc_plot(self.x, -10, 10,
+                                        dist=stats.tukeylambda)
+        assert_allclose(svals1, svals2, rtol=1e-20)
+        assert_allclose(ppcc1, ppcc2, rtol=1e-20)
+        # Test that 'tukeylambda' is the default dist
+        svals3, ppcc3 = stats.ppcc_plot(self.x, -10, 10)
+        assert_allclose(svals1, svals3, rtol=1e-20)
+        assert_allclose(ppcc1, ppcc3, rtol=1e-20)
+
+    @pytest.mark.skipif(not have_matplotlib, reason="no matplotlib")
+    def test_plot_kwarg(self):
+        # Check with the matplotlib.pyplot module
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        stats.ppcc_plot(self.x, -20, 20, plot=plt)
+        fig.delaxes(ax)
+
+        # Check that a Matplotlib Axes object is accepted
+        ax = fig.add_subplot(111)
+        stats.ppcc_plot(self.x, -20, 20, plot=ax)
+        plt.close()
+
+    def test_invalid_inputs(self):
+        # `b` has to be larger than `a`
+        assert_raises(ValueError, stats.ppcc_plot, self.x, 1, 0)
+
+        # Raise ValueError when given an invalid distribution.
+        assert_raises(ValueError, stats.ppcc_plot, [1, 2, 3], 0, 1,
+                      dist="plate_of_shrimp")
+
+    def test_empty(self):
+        # For consistency with probplot return for one empty array,
+        # ppcc contains all zeros and svals is the same as for normal array
+        # input.
+        svals, ppcc = stats.ppcc_plot([], 0, 1)
+        assert_allclose(svals, np.linspace(0, 1, num=80))
+        assert_allclose(ppcc, np.zeros(80, dtype=float))
 
 
-class TestBoxcox_llf(TestCase):
+class TestPpccMax(object):
+    def test_ppcc_max_bad_arg(self):
+        # Raise ValueError when given an invalid distribution.
+        data = [1]
+        assert_raises(ValueError, stats.ppcc_max, data, dist="plate_of_shrimp")
+
+    def test_ppcc_max_basic(self):
+        np.random.seed(1234567)
+        x = stats.tukeylambda.rvs(-0.7, loc=2, scale=0.5, size=10000) + 1e4
+        # On Python 2.6 the result is accurate to 5 decimals. On Python >= 2.7
+        # it is accurate up to 16 decimals
+        assert_almost_equal(stats.ppcc_max(x), -0.71215366521264145, decimal=5)
+
+    def test_dist(self):
+        np.random.seed(1234567)
+        x = stats.tukeylambda.rvs(-0.7, loc=2, scale=0.5, size=10000) + 1e4
+
+        # Test that we can specify distributions both by name and as objects.
+        max1 = stats.ppcc_max(x, dist='tukeylambda')
+        max2 = stats.ppcc_max(x, dist=stats.tukeylambda)
+        assert_almost_equal(max1, -0.71215366521264145, decimal=5)
+        assert_almost_equal(max2, -0.71215366521264145, decimal=5)
+
+        # Test that 'tukeylambda' is the default dist
+        max3 = stats.ppcc_max(x)
+        assert_almost_equal(max3, -0.71215366521264145, decimal=5)
+
+    def test_brack(self):
+        np.random.seed(1234567)
+        x = stats.tukeylambda.rvs(-0.7, loc=2, scale=0.5, size=10000) + 1e4
+        assert_raises(ValueError, stats.ppcc_max, x, brack=(0.0, 1.0, 0.5))
+
+        # On Python 2.6 the result is accurate to 5 decimals. On Python >= 2.7
+        # it is accurate up to 16 decimals
+        assert_almost_equal(stats.ppcc_max(x, brack=(0, 1)),
+                            -0.71215366521264145, decimal=5)
+
+        # On Python 2.6 the result is accurate to 5 decimals. On Python >= 2.7
+        # it is accurate up to 16 decimals
+        assert_almost_equal(stats.ppcc_max(x, brack=(-2, 2)),
+                            -0.71215366521264145, decimal=5)
+
+
+class TestBoxcox_llf(object):
 
     def test_basic(self):
         np.random.seed(54321)
@@ -647,7 +1023,7 @@ class TestBoxcox_llf(TestCase):
         assert_(np.isnan(stats.boxcox_llf(1, [])))
 
 
-class TestBoxcox(TestCase):
+class TestBoxcox(object):
 
     def test_fixed_lmbda(self):
         np.random.seed(12345)
@@ -702,8 +1078,8 @@ class TestBoxcox(TestCase):
         assert_(stats.boxcox([]).shape == (0,))
 
 
-class TestBoxcoxNormmax(TestCase):
-    def setUp(self):
+class TestBoxcoxNormmax(object):
+    def setup_method(self):
         np.random.seed(12345)
         self.x = stats.loggamma.rvs(5, size=50) + 5
 
@@ -724,8 +1100,8 @@ class TestBoxcoxNormmax(TestCase):
         assert_allclose(maxlog_all, [1.804465, 1.758101], rtol=1e-6)
 
 
-class TestBoxcoxNormplot(TestCase):
-    def setUp(self):
+class TestBoxcoxNormplot(object):
+    def setup_method(self):
         np.random.seed(7654321)
         self.x = stats.loggamma.rvs(5, size=500) + 5
 
@@ -737,16 +1113,15 @@ class TestBoxcoxNormplot(TestCase):
         assert_allclose(lmbdas, np.linspace(-10, 10, num=N))
         assert_allclose(ppcc, ppcc_expected)
 
-    @dec.skipif(not have_matplotlib)
+    @pytest.mark.skipif(not have_matplotlib, reason="no matplotlib")
     def test_plot_kwarg(self):
         # Check with the matplotlib.pyplot module
         fig = plt.figure()
-        fig.add_subplot(111)
+        ax = fig.add_subplot(111)
         stats.boxcox_normplot(self.x, -20, 20, plot=plt)
-        plt.close()
+        fig.delaxes(ax)
 
         # Check that a Matplotlib Axes object is accepted
-        fig.add_subplot(111)
         ax = fig.add_subplot(111)
         stats.boxcox_normplot(self.x, -20, 20, plot=ax)
         plt.close()
@@ -761,9 +1136,9 @@ class TestBoxcoxNormplot(TestCase):
         assert_(stats.boxcox_normplot([], 0, 1).size == 0)
 
 
-class TestCircFuncs(TestCase):
+class TestCircFuncs(object):
     def test_circfuncs(self):
-        x = np.array([355,5,2,359,10,350])
+        x = np.array([355, 5, 2, 359, 10, 350])
         M = stats.circmean(x, high=360)
         Mval = 0.167690146
         assert_allclose(M, Mval, rtol=1e-7)
@@ -777,7 +1152,7 @@ class TestCircFuncs(TestCase):
         assert_allclose(S, Sval, rtol=1e-7)
 
     def test_circfuncs_small(self):
-        x = np.array([20,21,22,18,19,20.5,19.2])
+        x = np.array([20, 21, 22, 18, 19, 20.5, 19.2])
         M1 = x.mean()
         M2 = stats.circmean(x, high=360)
         assert_allclose(M2, M1, rtol=1e-5)
@@ -791,9 +1166,9 @@ class TestCircFuncs(TestCase):
         assert_allclose(S2, S1, rtol=1e-4)
 
     def test_circmean_axis(self):
-        x = np.array([[355,5,2,359,10,350],
-                      [351,7,4,352,9,349],
-                      [357,9,8,358,4,356]])
+        x = np.array([[355, 5, 2, 359, 10, 350],
+                      [351, 7, 4, 352, 9, 349],
+                      [357, 9, 8, 358, 4, 356]])
         M1 = stats.circmean(x, high=360)
         M2 = stats.circmean(x.ravel(), high=360)
         assert_allclose(M1, M2, rtol=1e-14)
@@ -803,13 +1178,13 @@ class TestCircFuncs(TestCase):
         assert_allclose(M1, M2, rtol=1e-14)
 
         M1 = stats.circmean(x, high=360, axis=0)
-        M2 = [stats.circmean(x[:,i], high=360) for i in range(x.shape[1])]
+        M2 = [stats.circmean(x[:, i], high=360) for i in range(x.shape[1])]
         assert_allclose(M1, M2, rtol=1e-14)
 
     def test_circvar_axis(self):
-        x = np.array([[355,5,2,359,10,350],
-                      [351,7,4,352,9,349],
-                  [357,9,8,358,4,356]])
+        x = np.array([[355, 5, 2, 359, 10, 350],
+                      [351, 7, 4, 352, 9, 349],
+                      [357, 9, 8, 358, 4, 356]])
 
         V1 = stats.circvar(x, high=360)
         V2 = stats.circvar(x.ravel(), high=360)
@@ -820,13 +1195,13 @@ class TestCircFuncs(TestCase):
         assert_allclose(V1, V2, rtol=1e-11)
 
         V1 = stats.circvar(x, high=360, axis=0)
-        V2 = [stats.circvar(x[:,i], high=360) for i in range(x.shape[1])]
+        V2 = [stats.circvar(x[:, i], high=360) for i in range(x.shape[1])]
         assert_allclose(V1, V2, rtol=1e-11)
 
     def test_circstd_axis(self):
-        x = np.array([[355,5,2,359,10,350],
-                      [351,7,4,352,9,349],
-                      [357,9,8,358,4,356]])
+        x = np.array([[355, 5, 2, 359, 10, 350],
+                      [351, 7, 4, 352, 9, 349],
+                      [357, 9, 8, 358, 4, 356]])
 
         S1 = stats.circstd(x, high=360)
         S2 = stats.circstd(x.ravel(), high=360)
@@ -837,11 +1212,11 @@ class TestCircFuncs(TestCase):
         assert_allclose(S1, S2, rtol=1e-11)
 
         S1 = stats.circstd(x, high=360, axis=0)
-        S2 = [stats.circstd(x[:,i], high=360) for i in range(x.shape[1])]
+        S2 = [stats.circstd(x[:, i], high=360) for i in range(x.shape[1])]
         assert_allclose(S1, S2, rtol=1e-11)
 
     def test_circfuncs_array_like(self):
-        x = [355,5,2,359,10,350]
+        x = [355, 5, 2, 359, 10, 350]
         assert_allclose(stats.circmean(x, high=360), 0.167690146, rtol=1e-7)
         assert_allclose(stats.circvar(x, high=360), 42.51955609, rtol=1e-7)
         assert_allclose(stats.circstd(x, high=360), 6.520702116, rtol=1e-7)
@@ -851,6 +1226,26 @@ class TestCircFuncs(TestCase):
         assert_(np.isnan(stats.circstd([])))
         assert_(np.isnan(stats.circvar([])))
 
+    def test_circmean_scalar(self):
+        x = 1.
+        M1 = x
+        M2 = stats.circmean(x)
+        assert_allclose(M2, M1, rtol=1e-5)
+
+    def test_circmean_range(self):
+        # regression test for gh-6420: circmean(..., high, low) must be
+        # between `high` and `low`
+        m = stats.circmean(np.arange(0, 2, 0.1), np.pi, -np.pi)
+        assert_(m < np.pi)
+        assert_(m > -np.pi)
+
+    def test_circfuncs_unit8(self):
+        # regression test for gh-7255: overflow when working with
+        # numpy uint8 data type
+        x = np.array([150, 10], dtype='uint8')
+        assert_equal(stats.circmean(x, high=180), 170.0)
+        assert_allclose(stats.circvar(x, high=180), 437.45871686, rtol=1e-7)
+        assert_allclose(stats.circstd(x, high=180), 20.91551378, rtol=1e-7)
 
 def test_accuracy_wilcoxon():
     freq = [1, 4, 16, 15, 8, 4, 5, 1, 2]
@@ -882,6 +1277,14 @@ def test_accuracy_wilcoxon():
     assert_allclose(p, 0.7240817, rtol=1e-6)
 
 
+def test_wilcoxon_result_attributes():
+    x = np.array([120, 114, 181, 188, 180, 146, 121, 191, 132, 113, 127, 112])
+    y = np.array([133, 143, 119, 189, 112, 199, 198, 113, 115, 121, 142, 187])
+    res = stats.wilcoxon(x, y, correction=False)
+    attributes = ('statistic', 'pvalue')
+    check_named_results(res, attributes)
+
+
 def test_wilcoxon_tie():
     # Regression test for gh-2391.
     # Corresponding R code is:
@@ -902,7 +1305,7 @@ def test_wilcoxon_tie():
     assert_allclose(p, expected_p, rtol=1e-6)
 
 
-class TestMedianTest(TestCase):
+class TestMedianTest(object):
 
     def test_bad_n_samples(self):
         # median_test requires at least two samples.
@@ -933,10 +1336,15 @@ class TestMedianTest(TestCase):
                       ties="above")
 
     def test_bad_ties(self):
-        assert_raises(ValueError, stats.median_test, [1, 2, 3], [4, 5], ties="foo")
+        assert_raises(ValueError, stats.median_test, [1, 2, 3], [4, 5],
+                      ties="foo")
+
+    def test_bad_nan_policy(self):
+        assert_raises(ValueError, stats.median_test, [1, 2, 3], [4, 5], nan_policy='foobar')
 
     def test_bad_keyword(self):
-        assert_raises(TypeError, stats.median_test, [1, 2, 3], [4, 5], foo="foo")
+        assert_raises(TypeError, stats.median_test, [1, 2, 3], [4, 5],
+                      foo="foo")
 
     def test_simple(self):
         x = [1, 2, 3]
@@ -948,8 +1356,8 @@ class TestMedianTest(TestCase):
 
         assert_array_equal(tbl, [[1, 1], [2, 2]])
 
-        # The expected values of the contingency table equal the contingency table,
-        # so the statistic should be 0 and the p-value should be 1.
+        # The expected values of the contingency table equal the contingency
+        # table, so the statistic should be 0 and the p-value should be 1.
         assert_equal(stat, 0)
         assert_equal(p, 1)
 
@@ -972,6 +1380,19 @@ class TestMedianTest(TestCase):
         stat, p, m, tbl = stats.median_test(x, y, z, ties="above")
         assert_equal(m, 5)
         assert_equal(tbl, [[0, 2, 3], [4, 0, 0]])
+
+    def test_nan_policy_options(self):
+        x = [1, 2, np.nan]
+        y = [4, 5, 6]
+        mt1 = stats.median_test(x, y, nan_policy='propagate')
+        s, p, m, t = stats.median_test(x, y, nan_policy='omit')
+
+        assert_equal(mt1, (np.nan, np.nan, np.nan, None))
+        assert_allclose(s, 0.31250000000000006)
+        assert_allclose(p, 0.57615012203057869)
+        assert_equal(m, 4.0)
+        assert_equal(t, np.array([[0, 2],[2, 1]]))
+        assert_raises(ValueError, stats.median_test, x, y, nan_policy='raise')
 
     def test_basic(self):
         # median_test calls chi2_contingency to compute the test statistic
@@ -1003,7 +1424,3 @@ class TestMedianTest(TestCase):
         exp_stat, exp_p, dof, e = stats.chi2_contingency(tbl, correction=False)
         assert_allclose(stat, exp_stat)
         assert_allclose(p, exp_p)
-
-
-if __name__ == "__main__":
-    run_module_suite()

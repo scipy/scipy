@@ -10,7 +10,7 @@
 0       The purpose of HYBRD1 is to find a zero of a system of N non-
         linear functions in N variables by a modification of the Powell
         hybrid method.  This is done by using the more general nonlinea
-        equation solver HYBRD.  The user must provide a subroutine whic
+        equation solver HYBRD.  The user must provide a subroutine which
         calculates the functions.  The Jacobian is then calculated by a
         forward-difference approximation.
 0
@@ -603,7 +603,7 @@
 0       The purpose of HYBRJ1 is to find a zero of a system of N non-
         linear functions in N variables by a modification of the Powell
         hybrid method.  This is done by using the more general nonlinea
-        equation solver HYBRJ.  The user must provide a subroutine whic
+        equation solver HYBRJ.  The user must provide a subroutine which
         calculates the functions and the Jacobian.
 0
   2. Subroutine and type statements.

@@ -8,11 +8,7 @@ Library:
             statlib/swilk.f
     Extension: statlib
         Sources: statlib.pyf
-    Extension: futil
-        Sources: futil.f
     Extension: mvn
         Sources: mvn.pyf, mvndst.f
-    Extension: vonmises_cython
-        Sources: vonmises_cython.c
-    Extension: _rank
-        Sources: _rank.c
+    Extension: _stats
+        Sources: _stats.c

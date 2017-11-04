@@ -175,7 +175,11 @@ D_IIR_forback1 (c0, z1, x, y, N, stridex, stridey, precision)
 	xptr += stridex;
 	k++;
     } while((err > precision) && (k < N));
-    if (k >= N) return -3;     /* sum did not converge */ 
+    if (k >= N){
+        /* sum did not converge */
+        free(yp);
+        return -3;
+    }
     yp[0] = yp0;
 
     D_IIR_order1(1.0, z1, x, yp, N, stridex, 1); 
@@ -608,10 +612,11 @@ D_quadratic_spline2D(image, coeffs, M, N, lambda, strides, cstrides, precision)
     double *tptr;
     int m,n, retval=0;
 
+    if (lambda > 0) return -2;
+
     tmpmem = malloc(N*M*sizeof(double));
     if (tmpmem == NULL) return -1;
 
-    if (lambda > 0) return -2;
     /* normal quadratic spline */	
     r = -3 + 2*sqrt(2.0);
     

@@ -10,13 +10,17 @@ This module implements the Scientific.IO.NetCDF API to read and create
 NetCDF files. The same API is also used in the PyNIO and pynetcdf
 modules, allowing these modules to be used interchangeably when working
 with NetCDF files.
+
+Only NetCDF3 is supported here; for NetCDF4 see
+`netCDF4-python <http://unidata.github.io/netcdf4-python/>`__,
+which has a similar API.
+
 """
 
 from __future__ import division, print_function, absolute_import
 
 # TODO:
 # * properly implement ``_FillValue``.
-# * implement Jeff Whitaker's patch for masked variables.
 # * fix character variables.
 # * implement PAGESIZE for Python 2.6?
 
@@ -32,16 +36,20 @@ from __future__ import division, print_function, absolute_import
 __all__ = ['netcdf_file']
 
 
+import warnings
+import weakref
 from operator import mul
+from collections import OrderedDict
+
 import mmap as mm
 
 import numpy as np
 from numpy.compat import asbytes, asstr
-from numpy import fromstring, ndarray, dtype, empty, array, asarray
+from numpy import frombuffer, dtype, empty, array, asarray
 from numpy import little_endian as LITTLE_ENDIAN
 from functools import reduce
 
-from scipy.lib.six import integer_types, text_type, binary_type
+from scipy._lib.six import integer_types, text_type, binary_type
 
 ABSENT = b'\x00\x00\x00\x00\x00\x00\x00\x00'
 ZERO = b'\x00\x00\x00\x00'
@@ -100,12 +108,17 @@ class netcdf_file(object):
     mmap : None or bool, optional
         Whether to mmap `filename` when reading.  Default is True
         when `filename` is a file name, False when `filename` is a
-        file-like object
+        file-like object. Note that when mmap is in use, data arrays
+        returned refer directly to the mmapped data on disk, and the
+        file cannot be closed as long as references to it exist.
     version : {1, 2}, optional
         version of netcdf to read / write, where 1 means *Classic
         format* and 2 means *64-bit offset format*.  Default is 1.  See
-        `here <http://www.unidata.ucar.edu/software/netcdf/docs/netcdf/Which-Format.html>`_
+        `here <https://www.unidata.ucar.edu/software/netcdf/docs/netcdf_introduction.html#select_format>`__
         for more info.
+    maskandscale : bool, optional
+        Whether to automatically scale and/or mask data based on attributes.
+        Default is False.
 
     Notes
     -----
@@ -116,7 +129,7 @@ class netcdf_file(object):
     NetCDF files are a self-describing binary data format. The file contains
     metadata that describes the dimensions and variables in the file. More
     details about NetCDF files can be found `here
-    <http://www.unidata.ucar.edu/software/netcdf/docs/netcdf.html>`_. There
+    <https://www.unidata.ucar.edu/software/netcdf/docs/user_guide.html>`__. There
     are three main sections to a NetCDF data structure:
 
     1. Dimensions
@@ -144,18 +157,25 @@ class netcdf_file(object):
     unnecessary data into memory. It uses the ``mmap`` module to create
     Numpy arrays mapped to the data on disk, for the same purpose.
 
+    Note that when `netcdf_file` is used to open a file with mmap=True
+    (default for read-only), arrays returned by it refer to data
+    directly on the disk. The file should not be closed, and cannot be cleanly
+    closed when asked, if such arrays are alive. You may want to copy data arrays
+    obtained from mmapped Netcdf file if they are to be processed after the file
+    is closed, see the example below.
+
     Examples
     --------
     To create a NetCDF file:
 
-        >>> from scipy.io import netcdf
-        >>> f = netcdf.netcdf_file('simple.nc', 'w')
-        >>> f.history = 'Created for a test'
-        >>> f.createDimension('time', 10)
-        >>> time = f.createVariable('time', 'i', ('time',))
-        >>> time[:] = np.arange(10)
-        >>> time.units = 'days since 2008-01-01'
-        >>> f.close()
+    >>> from scipy.io import netcdf
+    >>> f = netcdf.netcdf_file('simple.nc', 'w')
+    >>> f.history = 'Created for a test'
+    >>> f.createDimension('time', 10)
+    >>> time = f.createVariable('time', 'i', ('time',))
+    >>> time[:] = np.arange(10)
+    >>> time.units = 'days since 2008-01-01'
+    >>> f.close()
 
     Note the assignment of ``range(10)`` to ``time[:]``.  Exposing the slice
     of the time variable allows for the data to be set in the object, rather
@@ -163,27 +183,43 @@ class netcdf_file(object):
 
     To read the NetCDF file we just created:
 
-        >>> from scipy.io import netcdf
-        >>> f = netcdf.netcdf_file('simple.nc', 'r')
-        >>> print(f.history)
-        Created for a test
-        >>> time = f.variables['time']
-        >>> print(time.units)
-        days since 2008-01-01
-        >>> print(time.shape)
-        (10,)
-        >>> print(time[-1])
-        9
-        >>> f.close()
+    >>> from scipy.io import netcdf
+    >>> f = netcdf.netcdf_file('simple.nc', 'r')
+    >>> print(f.history)
+    b'Created for a test'
+    >>> time = f.variables['time']
+    >>> print(time.units)
+    b'days since 2008-01-01'
+    >>> print(time.shape)
+    (10,)
+    >>> print(time[-1])
+    9
+
+    NetCDF files, when opened read-only, return arrays that refer
+    directly to memory-mapped data on disk:
+
+    >>> data = time[:]
+    >>> data.base.base
+    <mmap.mmap object at 0x7fe753763180>
+
+    If the data is to be processed after the file is closed, it needs
+    to be copied to main memory:
+
+    >>> data = time[:].copy()
+    >>> f.close()
+    >>> data.mean()
+    4.5
 
     A NetCDF file can also be used as context manager:
 
-        >>> from scipy.io import netcdf
-        >>> with netcdf.netcdf_file('simple.nc', 'r') as f:
-        >>>     print(f.history)
-        Created for a test
+    >>> from scipy.io import netcdf
+    >>> with netcdf.netcdf_file('simple.nc', 'r') as f:
+    ...     print(f.history)
+    b'Created for a test'
+
     """
-    def __init__(self, filename, mode='r', mmap=None, version=1):
+    def __init__(self, filename, mode='r', mmap=None, version=1,
+                 maskandscale=False):
         """Initialize netcdf_file from fileobj (str or file-like)."""
         if mode not in 'rwa':
             raise ValueError("Mode must be either 'r', 'w' or 'a'.")
@@ -209,9 +245,10 @@ class netcdf_file(object):
         self.use_mmap = mmap
         self.mode = mode
         self.version_byte = version
+        self.maskandscale = maskandscale
 
-        self.dimensions = {}
-        self.variables = {}
+        self.dimensions = OrderedDict()
+        self.variables = OrderedDict()
 
         self._dims = []
         self._recs = 0
@@ -223,7 +260,7 @@ class netcdf_file(object):
             self._mm = mm.mmap(self.fp.fileno(), 0, access=mm.ACCESS_READ)
             self._mm_buf = np.frombuffer(self._mm, dtype=np.int8)
 
-        self._attributes = {}
+        self._attributes = OrderedDict()
 
         if mode in 'ra':
             self._read()
@@ -239,13 +276,27 @@ class netcdf_file(object):
 
     def close(self):
         """Closes the NetCDF file."""
-        if not self.fp.closed:
+        if hasattr(self, 'fp') and not self.fp.closed:
             try:
                 self.flush()
             finally:
-                self._mm_buf = None
-                if self._mm is not None:
-                    self._mm.close()
+                self.variables = OrderedDict()
+                if self._mm_buf is not None:
+                    ref = weakref.ref(self._mm_buf)
+                    self._mm_buf = None
+                    if ref() is None:
+                        # self._mm_buf is gc'd, and we can close the mmap
+                        self._mm.close()
+                    else:
+                        # we cannot close self._mm, since self._mm_buf is
+                        # alive and there may still be arrays referring to it
+                        warnings.warn((
+                            "Cannot close a netcdf_file opened with mmap=True, when "
+                            "netcdf_variables or arrays referring to its data still exist. "
+                            "All data arrays obtained from such files refer directly to "
+                            "data on disk, and must be copied before the file can be cleanly "
+                            "closed. (See netcdf_file docstring for more information on mmap.)"
+                        ), category=RuntimeWarning)
                 self._mm = None
                 self.fp.close()
     __del__ = close
@@ -276,6 +327,9 @@ class netcdf_file(object):
         createVariable
 
         """
+        if length is None and self._dims:
+            raise ValueError("Only first dimension may be unlimited!")
+
         self.dimensions[name] = length
         self._dims.append(name)
 
@@ -319,7 +373,9 @@ class netcdf_file(object):
             raise ValueError("NetCDF 3 does not support type %s" % type)
 
         data = empty(shape_, dtype=type.newbyteorder("B"))  # convert to big endian always for NetCDF 3
-        self.variables[name] = netcdf_variable(data, typecode, size, shape, dimensions)
+        self.variables[name] = netcdf_variable(
+                data, typecode, size, shape, dimensions,
+                maskandscale=self.maskandscale)
         return self.variables[name]
 
     def flush(self):
@@ -455,7 +511,12 @@ class netcdf_file(object):
             # Handle rec vars with shape[0] < nrecs.
             if self._recs > len(var.data):
                 shape = (self._recs,) + var.data.shape[1:]
-                var.data.resize(shape)
+                # Resize in-place does not always work since
+                # the array might not be single-segment
+                try:
+                    var.data.resize(shape)
+                except ValueError:
+                    var.__dict__['data'] = np.resize(var.data, shape).astype(var.data.dtype)
 
             pos0 = pos = self.fp.tell()
             for rec in var.data:
@@ -523,7 +584,7 @@ class netcdf_file(object):
         if not magic == b'CDF':
             raise TypeError("Error: %s is not a valid NetCDF 3 file" %
                             self.filename)
-        self.__dict__['version_byte'] = fromstring(self.fp.read(1), '>b')[0]
+        self.__dict__['version_byte'] = frombuffer(self.fp.read(1), '>b')[0]
 
         # Read file headers and set data.
         self._read_numrecs()
@@ -556,7 +617,7 @@ class netcdf_file(object):
             raise ValueError("Unexpected header.")
         count = self._unpack_int()
 
-        attributes = {}
+        attributes = OrderedDict()
         for attr in range(count):
             name = asstr(self._unpack_string())
             attributes[name] = self._read_values()
@@ -574,7 +635,7 @@ class netcdf_file(object):
         for var in range(count):
             (name, dimensions, shape, attributes,
              typecode, size, dtype_, begin_, vsize) = self._read_var()
-            # http://www.unidata.ucar.edu/software/netcdf/docs/netcdf.html
+            # https://www.unidata.ucar.edu/software/netcdf/docs/user_guide.html
             # Note that vsize is the product of the dimension lengths
             # (omitting the record dimension) and the number of bytes
             # per value (determined from the type), increased to the
@@ -617,13 +678,14 @@ class netcdf_file(object):
                 else:
                     pos = self.fp.tell()
                     self.fp.seek(begin_)
-                    data = fromstring(self.fp.read(a_size), dtype=dtype_)
+                    data = frombuffer(self.fp.read(a_size), dtype=dtype_)
                     data.shape = shape
                     self.fp.seek(pos)
 
             # Add variable.
             self.variables[name] = netcdf_variable(
-                    data, typecode, size, shape, dimensions, attributes)
+                    data, typecode, size, shape, dimensions, attributes,
+                    maskandscale=self.maskandscale)
 
         if rec_vars:
             # Remove padding when only one record variable.
@@ -638,7 +700,7 @@ class netcdf_file(object):
             else:
                 pos = self.fp.tell()
                 self.fp.seek(begin)
-                rec_array = fromstring(self.fp.read(self._recs*self._recsize), dtype=dtypes)
+                rec_array = frombuffer(self.fp.read(self._recs*self._recsize), dtype=dtypes)
                 rec_array.shape = (self._recs,)
                 self.fp.seek(pos)
 
@@ -681,7 +743,7 @@ class netcdf_file(object):
         self.fp.read(-count % 4)  # read padding
 
         if typecode is not 'c':
-            values = fromstring(values, dtype='>%s' % typecode)
+            values = frombuffer(values, dtype='>%s' % typecode)
             if values.shape == (1,):
                 values = values[0]
         else:
@@ -699,14 +761,14 @@ class netcdf_file(object):
     _pack_int32 = _pack_int
 
     def _unpack_int(self):
-        return int(fromstring(self.fp.read(4), '>i')[0])
+        return int(frombuffer(self.fp.read(4), '>i')[0])
     _unpack_int32 = _unpack_int
 
     def _pack_int64(self, value):
         self.fp.write(array(value, '>q').tostring())
 
     def _unpack_int64(self):
-        return fromstring(self.fp.read(8), '>q')[0]
+        return frombuffer(self.fp.read(8), '>q')[0]
 
     def _pack_string(self, s):
         count = len(s)
@@ -757,6 +819,9 @@ class netcdf_variable(object):
     attributes : dict, optional
         Attribute values (any type) keyed by string names.  These attributes
         become attributes for the netcdf_variable object.
+    maskandscale : bool, optional
+        Whether to automatically scale and/or mask data based on attributes.
+        Default is False.
 
 
     Attributes
@@ -771,14 +836,17 @@ class netcdf_variable(object):
     isrec, shape
 
     """
-    def __init__(self, data, typecode, size, shape, dimensions, attributes=None):
+    def __init__(self, data, typecode, size, shape, dimensions,
+                 attributes=None,
+                 maskandscale=False):
         self.data = data
         self._typecode = typecode
         self._size = size
         self._shape = shape
         self.dimensions = dimensions
+        self.maskandscale = maskandscale
 
-        self._attributes = attributes or {}
+        self._attributes = attributes or OrderedDict()
         for k, v in self._attributes.items():
             self.__dict__[k] = v
 
@@ -877,9 +945,36 @@ class netcdf_variable(object):
         return self._size
 
     def __getitem__(self, index):
-        return self.data[index]
+        if not self.maskandscale:
+            return self.data[index]
+
+        data = self.data[index].copy()
+        missing_value = self._get_missing_value()
+        data = self._apply_missing_value(data, missing_value)
+        scale_factor = self._attributes.get('scale_factor')
+        add_offset = self._attributes.get('add_offset')
+        if add_offset is not None or scale_factor is not None:
+            data = data.astype(np.float64)
+        if scale_factor is not None:
+            data = data * scale_factor
+        if add_offset is not None:
+            data += add_offset
+
+        return data
 
     def __setitem__(self, index, data):
+        if self.maskandscale:
+            missing_value = (
+                    self._get_missing_value() or
+                    getattr(data, 'fill_value', 999999))
+            self._attributes.setdefault('missing_value', missing_value)
+            self._attributes.setdefault('_FillValue', missing_value)
+            data = ((data - self._attributes.get('add_offset', 0.0)) /
+                    self._attributes.get('scale_factor', 1.0))
+            data = np.ma.asarray(data).filled(missing_value)
+            if self._typecode not in 'fd' and data.dtype.kind == 'f':
+                data = np.round(data)
+
         # Expand data for record vars?
         if self.isrec:
             if isinstance(index, tuple):
@@ -892,9 +987,63 @@ class netcdf_variable(object):
                 recs = rec_index + 1
             if recs > len(self.data):
                 shape = (recs,) + self._shape[1:]
-                self.data.resize(shape)
+                # Resize in-place does not always work since
+                # the array might not be single-segment
+                try:
+                    self.data.resize(shape)
+                except ValueError:
+                    self.__dict__['data'] = np.resize(self.data, shape).astype(self.data.dtype)
         self.data[index] = data
+
+    def _get_missing_value(self):
+        """
+        Returns the value denoting "no data" for this variable.
+
+        If this variable does not have a missing/fill value, returns None.
+
+        If both _FillValue and missing_value are given, give precedence to
+        _FillValue. The netCDF standard gives special meaning to _FillValue;
+        missing_value is  just used for compatibility with old datasets.
+        """
+
+        if '_FillValue' in self._attributes:
+            missing_value = self._attributes['_FillValue']
+        elif 'missing_value' in self._attributes:
+            missing_value = self._attributes['missing_value']
+        else:
+            missing_value = None
+
+        return missing_value
+
+    @staticmethod
+    def _apply_missing_value(data, missing_value):
+        """
+        Applies the given missing value to the data array.
+
+        Returns a numpy.ma array, with any value equal to missing_value masked
+        out (unless missing_value is None, in which case the original array is
+        returned).
+        """
+
+        if missing_value is None:
+            newdata = data
+        else:
+            try:
+                missing_value_isnan = np.isnan(missing_value)
+            except (TypeError, NotImplementedError):
+                # some data types (e.g., characters) cannot be tested for NaN
+                missing_value_isnan = False
+
+            if missing_value_isnan:
+                mymask = np.isnan(data)
+            else:
+                mymask = (data == missing_value)
+
+            newdata = np.ma.masked_where(mymask, data)
+
+        return newdata
 
 
 NetCDFFile = netcdf_file
 NetCDFVariable = netcdf_variable
+

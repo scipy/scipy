@@ -1,3 +1,13 @@
+/*! \file
+Copyright (c) 2003, The Regents of the University of California, through
+Lawrence Berkeley National Laboratory (subject to receipt of any required 
+approvals from U.S. Dept. of Energy) 
+
+All rights reserved. 
+
+The source code is distributed under BSD license, see the file License.txt
+at the top-level directory.
+*/
 
 /*! @file sutil.c
  * \brief Matrix utility functions
@@ -297,9 +307,9 @@ sprint_lu_col(char *msg, int jcol, int pivrow, int *xprune, GlobalLU_t *Glu)
     supno   = Glu->supno;
     lsub    = Glu->lsub;
     xlsub   = Glu->xlsub;
-    lusup   = Glu->lusup;
+    lusup   = (float *) Glu->lusup;
     xlusup  = Glu->xlusup;
-    ucol    = Glu->ucol;
+    ucol    = (float *) Glu->ucol;
     usub    = Glu->usub;
     xusub   = Glu->xusub;
     

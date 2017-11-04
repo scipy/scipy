@@ -16,8 +16,19 @@ def _minimize_trust_ncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
     Minimization of scalar function of one or more variables using
     the Newton conjugate gradient trust-region algorithm.
 
-    This function is called by the `minimize` function.
-    It is not supposed to be called directly.
+    Options
+    -------
+    initial_trust_radius : float
+        Initial trust-region radius.
+    max_trust_radius : float
+        Maximum value of the trust-region radius. No steps that are longer
+        than this value will be proposed.
+    eta : float
+        Trust region related acceptance stringency for proposed steps.
+    gtol : float
+        Gradient norm must be less than `gtol` before successful
+        termination.
+
     """
     if jac is None:
         raise ValueError('Jacobian is required for Newton-CG trust-region '

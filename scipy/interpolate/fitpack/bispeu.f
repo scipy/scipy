@@ -26,7 +26,7 @@ c           lwrk >= kx+ky+2
 c
 c  output parameters:
 c   z     : real array of dimension m.
-c           on succesful exit z(i) contains the value of s(x,y)
+c           on successful exit z(i) contains the value of s(x,y)
 c           at the point (x(i),y(i)), i=1,...,m.
 c   ier   : integer error flag
 c    ier=0 : normal return
@@ -41,13 +41,13 @@ c  other subroutines required:
 c    fpbisp,fpbspl
 c
 c  ..scalar arguments..
-      integer nx,ny,kx,ky,m,lwrk,kwrk,ier
+      integer nx,ny,kx,ky,m,lwrk,ier
 c  ..array arguments..
       real*8 tx(nx),ty(ny),c((nx-kx-1)*(ny-ky-1)),x(m),y(m),z(m),
      *     wrk(lwrk)
 c  ..local scalars..
       integer iwrk(2)
-      integer i,iw,lwest
+      integer i, lwest
 c  ..
 c  before starting computations a data check is made. if the input data
 c  are invalid control is immediately repassed to the calling program.

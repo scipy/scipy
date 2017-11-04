@@ -1,10 +1,10 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import assert_equal, assert_array_equal, assert_allclose, \
-        run_module_suite, assert_raises
+from numpy.testing import assert_equal, assert_array_equal, assert_allclose
+from pytest import raises as assert_raises
 
-from scipy.interpolate import griddata
+from scipy.interpolate import griddata, NearestNDInterpolator
 
 
 class TestGriddata(object):
@@ -88,6 +88,28 @@ class TestGriddata(object):
             assert_allclose(griddata((x,), y, (x,), method=method), y,
                             err_msg=method, atol=1e-14)
 
+    def test_1d_borders(self):
+        # Test for nearest neighbor case with xi outside
+        # the range of the values.
+        x = np.array([1, 2.5, 3, 4.5, 5, 6])
+        y = np.array([1, 2, 0, 3.9, 2, 1])
+        xi = np.array([0.9, 6.5])
+        yi_should = np.array([1.0, 1.0])
+
+        method = 'nearest'
+        assert_allclose(griddata(x, y, xi,
+                                 method=method), yi_should,
+                        err_msg=method,
+                        atol=1e-14)
+        assert_allclose(griddata(x.reshape(6, 1), y, xi,
+                                 method=method), yi_should,
+                        err_msg=method,
+                        atol=1e-14)
+        assert_allclose(griddata((x, ), y, (xi, ),
+                                 method=method), yi_should,
+                        err_msg=method,
+                        atol=1e-14)
+
     def test_1d_unsorted(self):
         x = np.array([2.5, 1, 4.5, 5, 6, 3])
         y = np.array([1, 2, 0, 3.9, 2, 1])
@@ -142,5 +164,14 @@ class TestGriddata(object):
                           method=method)
         
 
-if __name__ == "__main__":
-    run_module_suite()
+def test_nearest_options():
+    # smoke test that NearestNDInterpolator accept cKDTree options
+    npts, nd = 4, 3
+    x = np.arange(npts*nd).reshape((npts, nd))
+    y = np.arange(npts)
+    nndi = NearestNDInterpolator(x, y)
+
+    opts = {'balanced_tree': False, 'compact_nodes': False}
+    nndi_o = NearestNDInterpolator(x, y, tree_options=opts)
+    assert_allclose(nndi(x), nndi_o(x), atol=1e-14)
+

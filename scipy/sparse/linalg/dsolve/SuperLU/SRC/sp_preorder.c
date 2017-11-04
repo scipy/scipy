@@ -1,3 +1,13 @@
+/*! \file
+Copyright (c) 2003, The Regents of the University of California, through
+Lawrence Berkeley National Laboratory (subject to receipt of any required 
+approvals from U.S. Dept. of Energy) 
+
+All rights reserved. 
+
+The source code is distributed under BSD license, see the file License.txt
+at the top-level directory.
+*/
 /*! @file sp_preorder.c
  * \brief Permute and performs functions on columns of orginal matrix
  */
@@ -192,7 +202,9 @@ int check_perm(char *what, int n, int *perm)
 {
     register int i;
     int          *marker;
-    marker = (int *) calloc(n, sizeof(int));
+    /*marker = (int *) calloc(n, sizeof(int));*/
+    marker = (int *) malloc(n * sizeof(int));
+    for (i = 0; i < n; ++i) marker[i] = 0;
 
     for (i = 0; i < n; ++i) {
 	if ( marker[perm[i]] == 1 || perm[i] >= n ) {

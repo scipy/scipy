@@ -1,44 +1,57 @@
 from __future__ import division, print_function, absolute_import
 
 import os
-import warnings
+
+from distutils.version import LooseVersion
+
+import functools
 
 import numpy as np
 from numpy.testing import assert_
-from numpy.testing.noseclasses import KnownFailureTest
+import pytest
 
 import scipy.special as sc
 
 __all__ = ['with_special_errors', 'assert_tol_equal', 'assert_func_equal',
            'FuncData']
 
+
+#------------------------------------------------------------------------------
+# Check if a module is present to be used in tests
+#------------------------------------------------------------------------------
+
+class MissingModule(object):
+    def __init__(self, name):
+        self.name = name
+
+
+def check_version(module, min_ver):
+    if type(module) == MissingModule:
+        return pytest.mark.skip(reason="{} is not installed".format(module.name))
+    return pytest.mark.skipif(LooseVersion(module.__version__) < LooseVersion(min_ver),
+                              reason="{} version >= {} required".format(module.__name__, min_ver))
+
+
 #------------------------------------------------------------------------------
 # Enable convergence and loss of precision warnings -- turn off one by one
 #------------------------------------------------------------------------------
-
 
 def with_special_errors(func):
     """
     Enable special function errors (such as underflow, overflow,
     loss of precision, etc.)
     """
+    @functools.wraps(func)
     def wrapper(*a, **kw):
-        old_filters = list(getattr(warnings, 'filters', []))
-        old_errprint = sc.errprint(1)
-        warnings.filterwarnings("error", category=sc.SpecialFunctionWarning)
-        try:
-            return func(*a, **kw)
-        finally:
-            sc.errprint(old_errprint)
-            setattr(warnings, 'filters', old_filters)
-    wrapper.__name__ = func.__name__
-    wrapper.__doc__ = func.__doc__
+        with sc.errstate(all='raise'):
+            res = func(*a, **kw)
+        return res
     return wrapper
+
 
 #------------------------------------------------------------------------------
 # Comparing function values at many data points at once, with helpful
 #------------------------------------------------------------------------------
-
 
 def assert_tol_equal(a, b, rtol=1e-7, atol=0, err_msg='', verbose=True):
     """Assert that `a` and `b` are equal to tolerance ``atol + rtol*abs(b)``"""
@@ -49,16 +62,16 @@ def assert_tol_equal(a, b, rtol=1e-7, atol=0, err_msg='', verbose=True):
     np.testing.utils.assert_array_compare(compare, a, b, err_msg=str(err_msg),
                                           verbose=verbose, header=header)
 
+
 #------------------------------------------------------------------------------
 # Comparing function values at many data points at once, with helpful
 # error reports
 #------------------------------------------------------------------------------
 
-
 def assert_func_equal(func, results, points, rtol=None, atol=None,
                       param_filter=None, knownfailure=None,
                       vectorized=True, dtype=None, nan_ok=False,
-                      ignore_inf_sign=False):
+                      ignore_inf_sign=False, distinguish_nan_and_inf=True):
     if hasattr(points, 'next'):
         # it's a generator
         points = list(points)
@@ -83,7 +96,8 @@ def assert_func_equal(func, results, points, rtol=None, atol=None,
                      result_columns=result_columns, result_func=result_func,
                      rtol=rtol, atol=atol, param_filter=param_filter,
                      knownfailure=knownfailure, nan_ok=nan_ok, vectorized=vectorized,
-                     ignore_inf_sign=ignore_inf_sign)
+                     ignore_inf_sign=ignore_inf_sign,
+                     distinguish_nan_and_inf=distinguish_nan_and_inf)
     fdata.check()
 
 
@@ -122,13 +136,16 @@ class FuncData(object):
     ignore_inf_sign : bool, optional
         Whether to ignore signs of infinities.
         (Doesn't matter for complex-valued functions.)
+    distinguish_nan_and_inf : bool, optional
+        If True, treat numbers which contain nans or infs as as
+        equal. Sets ignore_inf_sign to be True.
 
     """
 
     def __init__(self, func, data, param_columns, result_columns=None,
                  result_func=None, rtol=None, atol=None, param_filter=None,
                  knownfailure=None, dataname=None, nan_ok=False, vectorized=True,
-                 ignore_inf_sign=False):
+                 ignore_inf_sign=False, distinguish_nan_and_inf=True):
         self.func = func
         self.data = data
         self.dataname = dataname
@@ -155,6 +172,9 @@ class FuncData(object):
         self.nan_ok = nan_ok
         self.vectorized = vectorized
         self.ignore_inf_sign = ignore_inf_sign
+        self.distinguish_nan_and_inf = distinguish_nan_and_inf
+        if not self.distinguish_nan_and_inf:
+            self.ignore_inf_sign = True
 
     def get_tolerances(self, dtype):
         if not np.issubdtype(dtype, np.inexact):
@@ -171,7 +191,7 @@ class FuncData(object):
         """Check the special function against the data."""
 
         if self.knownfailure:
-            raise KnownFailureTest(self.knownfailure)
+            pytest.xfail(reason=self.knownfailure)
 
         if data is None:
             data = self.data
@@ -196,7 +216,7 @@ class FuncData(object):
         for j in self.param_columns:
             if np.iscomplexobj(j):
                 j = int(j.imag)
-                params.append(data[:,j].astype(np.complex))
+                params.append(data[:,j].astype(complex))
             else:
                 params.append(data[:,j])
 
@@ -273,6 +293,14 @@ class FuncData(object):
                 bad_j &= ~nan_x
                 bad_j &= ~nan_y
                 point_count -= (nan_x | nan_y).sum()
+
+            if not self.distinguish_nan_and_inf and not self.nan_ok:
+                # If nan's are okay we've already covered all these cases
+                inf_x = np.isinf(x)
+                inf_y = np.isinf(y)
+                both_nonfinite = (inf_x & nan_y) | (nan_x & inf_y)
+                bad_j &= ~both_nonfinite
+                point_count -= both_nonfinite.sum()
 
             if np.any(bad_j):
                 # Some bad results: inform what, where, and how bad

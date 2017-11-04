@@ -1,10 +1,10 @@
 Recurse:
+    _lib,
     cluster,
     fftpack,
     integrate,
     interpolate,
     io,
-    lib,
     linalg,
     ndimage,
     odr,
@@ -23,7 +23,7 @@ Library:
         integrate,
         interpolate,
         io,
-        lib,
+        _lib,
         linalg,
         misc,
         ndimage,
@@ -34,5 +34,4 @@ Library:
         spatial,
         special,
         stats,
-        ndimage,
-        weave
+        ndimage
