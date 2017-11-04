@@ -214,7 +214,7 @@ def freqs_zpk(z, p, k, worN=None):
 
     Notes
     -----
-    .. versionadded: 0.19.0
+    .. versionadded:: 0.19.0
 
     Examples
     --------
@@ -493,7 +493,7 @@ def freqz_zpk(z, p, k, worN=None, whole=False):
 
     Notes
     -----
-    .. versionadded: 0.19.0
+    .. versionadded:: 0.19.0
 
     Examples
     --------
@@ -583,7 +583,7 @@ def group_delay(system, w=None, whole=False):
 
     For the details of numerical computation of the group delay refer to [1]_.
 
-    .. versionadded: 0.16.0
+    .. versionadded:: 0.16.0
 
     See Also
     --------
@@ -3963,7 +3963,7 @@ def iirnotch(w0, Q):
 
     Notes
     -----
-    .. versionadded: 0.19.0
+    .. versionadded:: 0.19.0
 
     References
     ----------
@@ -4042,7 +4042,7 @@ def iirpeak(w0, Q):
 
     Notes
     -----
-    .. versionadded: 0.19.0
+    .. versionadded:: 0.19.0
 
     References
     ----------
