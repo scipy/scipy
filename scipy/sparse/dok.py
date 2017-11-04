@@ -506,7 +506,6 @@ class dok_matrix(spmatrix, IndexMixin, dict):
     resize.__doc__ = spmatrix.resize.__doc__
 
 
-
 def isspmatrix_dok(x):
     """Is x of dok_matrix type?
 
