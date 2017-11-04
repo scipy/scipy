@@ -5761,7 +5761,7 @@ class crystalball_gen(rv_continuous):
 
     %(after_notes)s
 
-    .. versionadded: 0.19.0
+    .. versionadded:: 0.19.0
 
     %(example)s
     """
