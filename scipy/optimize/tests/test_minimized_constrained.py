@@ -25,10 +25,12 @@ class Maratos:
         Subject to: x[0]**2 + x[1]**2 - 1 = 0
     """
 
-    def __init__(self, degrees=60):
+    def __init__(self, degrees=60, constr_jac=None, constr_hess=None):
         rads = degrees/180*np.pi
         self.x0 = [np.cos(rads), np.sin(rads)]
         self.x_opt = np.array([1.0, 0.0])
+        self.constr_jac = constr_jac
+        self.constr_hess = constr_hess
 
     def fun(self, x):
         return 2*(x[0]**2 + x[1]**2 - 1) - x[0]
@@ -44,11 +46,17 @@ class Maratos:
         def fun(x):
             return x[0]**2 + x[1]**2
 
-        def jac(x):
-            return [[4*x[0], 4*x[1]]]
+        if self.constr_jac is None:
+            def jac(x):
+                return [[4*x[0], 4*x[1]]]
+        else:
+            jac = self.constr_jac
 
-        def hess(x, v):
-            return 2*v[0]*np.eye(2)
+        if self.constr_hess is None:
+            def hess(x, v):
+                return 2*v[0]*np.eye(2)
+        else:
+            hess = self.constr_hess
 
         return NonlinearConstraint(fun, ("equals", 1), jac, hess)
 
@@ -68,9 +76,11 @@ class HyperbolicIneq:
                                    x[0] >= 0
                                    x[1] >= 0
     """
-    def __init__(self):
+    def __init__(self, constr_jac=None, constr_hess=None):
         self.x0 = [0, 0]
         self.x_opt = [1.952823, 0.088659]
+        self.constr_jac = constr_jac
+        self.constr_hess = constr_hess
 
     def fun(self, x):
         return 1/2*(x[0] - 2)**2 + 1/2*(x[1] - 1/2)**2
@@ -86,12 +96,18 @@ class HyperbolicIneq:
         def fun(x):
             return 1/(x[0] + 1) - x[1]
 
-        def jac(x):
-            return [[-1/(x[0] + 1)**2, -1]]
+        if self.constr_jac is None:
+            def jac(x):
+                return [[-1/(x[0] + 1)**2, -1]]
+        else:
+            jac = self.constr_jac
 
-        def hess(x, v):
-            return 2*v[0]*np.array([[1/(x[0] + 1)**3, 0],
+        if self.constr_hess is None:
+            def hess(x, v):
+                return 2*v[0]*np.array([[1/(x[0] + 1)**3, 0],
                                     [0, 0]])
+        else:
+            hess = self.constr_hess
 
         nonlinear = NonlinearConstraint(fun, ("greater", 1/4), jac, hess)
         box = BoxConstraint(("greater",))
@@ -203,7 +219,8 @@ class Elec:
            "Benchmarking optimization software with COPS 3.0.",
             Argonne National Lab., Argonne, IL (US), 2004.
     """
-    def __init__(self, n_electrons=200, random_state=0):
+    def __init__(self, n_electrons=200, random_state=0,
+                 constr_jac=None, constr_hess=None):
         self.n_electrons = n_electrons
         self.rng = np.random.RandomState(random_state)
         # Initial Guess
@@ -214,6 +231,8 @@ class Elec:
         z = np.sin(theta)
         self.x0 = np.hstack((x, y, z))
         self.x_opt = None
+        self.constr_jac = constr_jac
+        self.constr_hess = constr_hess
 
     def _get_cordinates(self, x):
         x_coord = x[:self.n_electrons]
@@ -292,17 +311,22 @@ class Elec:
             x_coord, y_coord, z_coord = self._get_cordinates(x)
             return x_coord**2 + y_coord**2 + z_coord**2 - 1
 
-        def jac(x):
-            x_coord, y_coord, z_coord = self._get_cordinates(x)
-            Jx = 2 * np.diag(x_coord)
-            Jy = 2 * np.diag(y_coord)
-            Jz = 2 * np.diag(z_coord)
+        if self.constr_jac is None:
+            def jac(x):
+                x_coord, y_coord, z_coord = self._get_cordinates(x)
+                Jx = 2 * np.diag(x_coord)
+                Jy = 2 * np.diag(y_coord)
+                Jz = 2 * np.diag(z_coord)
+                return csc_matrix(np.hstack((Jx, Jy, Jz)))
+        else:
+            jac = self.constr_jac
 
-            return csc_matrix(np.hstack((Jx, Jy, Jz)))
-
-        def hess(x, v):
-            D = 2 * np.diag(v)
-            return block_diag(D, D, D)
+        if self.constr_hess is None:
+            def hess(x, v):
+                D = 2 * np.diag(v)
+                return block_diag(D, D, D)
+        else:
+            hess = self.constr_hess
 
         return NonlinearConstraint(fun, ("less",), jac, hess)
 
@@ -311,73 +335,54 @@ class TestMinimizeConstrained(TestCase):
 
     def test_list_of_problems(self):
         list_of_problems = [Maratos(),
+                            Maratos(constr_hess='2-point'),
+                            Maratos(constr_hess=SR1()),
+                            Maratos(constr_jac='2-point', constr_hess=SR1()),
                             HyperbolicIneq(),
+                            HyperbolicIneq(constr_hess='3-point'),
+                            HyperbolicIneq(constr_hess=BFGS()),
+                            HyperbolicIneq(constr_jac='3-point', constr_hess=BFGS()),
                             Rosenbrock(),
-                            Rosenbrock(n=3),
                             IneqRosenbrock(),
                             EqIneqRosenbrock(),
-                            Elec(n_electrons=3)]
+                            Elec(n_electrons=2),
+                            Elec(n_electrons=2, constr_hess='2-point'),
+                            Elec(n_electrons=2, constr_hess=SR1()),
+                            Elec(n_electrons=2, constr_jac='2-point', constr_hess=SR1())]
 
         for prob in list_of_problems:
-            for hess in (prob.hess, '2-point', SR1(),
-                         BFGS(exception_strategy='damped_bfgs'),
-                         BFGS(exception_strategy='skip_update')):
-                result = minimize_constrained(prob.fun, prob.x0,
-                                              prob.grad, hess,
-                                              prob.constr)
+            for grad in (prob.grad, '2-point'):
+                for hess in (prob.hess,
+                             '3-point',
+                             SR1(),
+                             BFGS(exception_strategy='damped_bfgs'),
+                             BFGS(exception_strategy='skip_update')):
 
-                if prob.x_opt is not None:
-                    assert_array_almost_equal(result.x, prob.x_opt, decimal=2)
+                    if grad in ('2-point', '3-point', 'cs') and \
+                       hess in ('2-point', '3-point', 'cs'):
+                        continue
 
-                # gtol
-                if result.status == 1:
-                    assert_array_less(result.optimality, 1e-8)
+                    result = minimize_constrained(prob.fun, prob.x0,
+                                                  grad, hess,
+                                                  prob.constr, finite_diff_options=dict())
 
-                # xtol
-                if result.status == 2:
-                    assert_array_less(result.trust_radius, 1e-8)
+                    if prob.x_opt is not None:
+                        assert_array_almost_equal(result.x, prob.x_opt, decimal=2)
 
-                    if result.method == "tr_interior_point":
-                        assert_array_less(result.barrier_parameter, 1e-8)
+                        # gtol
+                        if result.status == 1:
+                            assert_array_less(result.optimality, 1e-8)
 
-                # max iter
-                if result.status in (0, 3):
-                    raise RuntimeError("Invalid termination condition.")
+                    # xtol
+                    if result.status == 2:
+                        assert_array_less(result.trust_radius, 1e-8)
 
-    def test_finite_differences_grad(self):
-        list_of_problems = [Maratos(),
-                            HyperbolicIneq(),
-                            Rosenbrock(),
-                            Rosenbrock(n=3),
-                            IneqRosenbrock(),
-                            EqIneqRosenbrock(),
-                            Elec(n_electrons=3)]
+                        if result.method == "tr_interior_point":
+                            assert_array_less(result.barrier_parameter, 1e-8)
 
-        for prob in list_of_problems:
-            for hess in (prob.hess, SR1(),
-                         BFGS(exception_strategy='damped_bfgs'),
-                         BFGS(exception_strategy='skip_update')):
-                result = minimize_constrained(prob.fun, prob.x0,
-                                              '3-point', hess,
-                                              prob.constr)
-
-                if prob.x_opt is not None:
-                    assert_array_almost_equal(result.x, prob.x_opt, decimal=2)
-
-                # gtol
-                if result.status == 1:
-                    assert_array_less(result.optimality, 1e-8)
-
-                # xtol
-                if result.status == 2:
-                    assert_array_less(result.trust_radius, 1e-8)
-
-                    if result.method == "tr_interior_point":
-                        assert_array_less(result.barrier_parameter, 1e-8)
-
-                # max iter
-                if result.status in (0, 3):
-                    raise RuntimeError("Invalid termination condition.")
+                    # max iter
+                    if result.status in (0, 3):
+                        raise RuntimeError("Invalid termination condition.")
 
     def test_raise_exception(self):
         prob = Maratos()

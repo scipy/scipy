@@ -53,19 +53,20 @@ class ScalarFunction:
         # Define function
         self.f = fun(x0)
 
-        if callable(grad):
-            fun_wrapped = fun
-        elif grad in ('2-point', '3-point', 'cs'):
+        if grad in ('2-point', '3-point', 'cs'):
             def fun_wrapped(x):
                 self.x_diff = x
                 self.f = fun(x)
                 return self.f
-
+        else:
+            fun_wrapped = fun
         self.fun = fun_wrapped
 
         # Define gradient
         if callable(grad):
             self.g = np.atleast_1d(grad(x0))
+            if isinstance(hess, QuasiNewtonApprox):
+                self.g_prev = np.copy(self.g)
 
             def grad_wrapped(x):
                 return np.atleast_1d(grad(x))
@@ -77,8 +78,6 @@ class ScalarFunction:
                     return self.g
 
             elif isinstance(hess, QuasiNewtonApprox):
-                self.g_prev = np.copy(self.g)
-
                 def grad_wrapped2(x):
                     self.x_prev = self.x
                     self.g_prev = self.g
@@ -89,13 +88,13 @@ class ScalarFunction:
                 grad_wrapped2 = grad_wrapped
         elif grad in ('2-point', '3-point', 'cs'):
             self.g = approx_derivative(fun, self.x, f0=self.f, **finite_diff_options)
+            if isinstance(hess, QuasiNewtonApprox):
+                self.g_prev = np.copy(self.g)
 
             def grad_wrapped(x):
                 return approx_derivative(fun, x, f0=self.f, **finite_diff_options)
 
             if isinstance(hess, QuasiNewtonApprox):
-                self.g_prev = np.copy(self.g)
-
                 def grad_wrapped2(x):
                     if not np.array_equal(self.x_diff, x):
                         self.x_diff = x
@@ -109,7 +108,7 @@ class ScalarFunction:
             else:
                 def grad_wrapped2(x):
                     if not np.array_equal(self.x_diff, x):
-                        self.x = x
+                        self.x_diff = x
                         self.f = fun(x)
                     return grad_wrapped(x)
         self.grad = grad_wrapped2
@@ -117,11 +116,11 @@ class ScalarFunction:
         # Define Hessian
         if callable(hess):
             self.H = hess(x0)
-            if sps.issparse(self.H):
-                self.H = sps.csr_matrix(self.H)
 
+            if sps.issparse(self.H):
                 def hess_wrapped(x):
                     return sps.csr_matrix(hess(x))
+                self.H = sps.csr_matrix(self.H)
 
             elif isinstance(self.H, LinearOperator):
                 def hess_wrapped(x):
@@ -220,9 +219,9 @@ class ip_printer:
 
 def minimize_constrained(fun, x0, grad='2-point', hess=BFGS(), constraints=(),
                          method=None, xtol=1e-8, gtol=1e-8,
-                         sparse_jacobian=None, options={},
+                         sparse_jacobian=None, options=None,
                          callback=None, max_iter=1000,
-                         verbose=0, finite_diff_options={}):
+                         verbose=0, finite_diff_options=None):
     """Minimize scalar function subject to constraints.
 
     Parameters
@@ -515,8 +514,12 @@ def minimize_constrained(fun, x0, grad='2-point', hess=BFGS(), constraints=(),
            constrained optimization." SIAM Journal on
            Optimization 8.3 (1998): 682-706.
     """
+    if options is None:
+        options = {}
+    if finite_diff_options is None:
+        finite_diff_options = {}
     # Initial value
-    if hess in ('2-point', '3-point', 'cs'): 
+    if hess in ('2-point', '3-point', 'cs'):
         finite_diff_options["as_linear_operator"] = True
     objective = ScalarFunction(fun, x0, grad, hess, finite_diff_options)
     x0 = np.atleast_1d(x0).astype(float)
