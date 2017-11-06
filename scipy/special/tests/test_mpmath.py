@@ -134,18 +134,27 @@ def test_hyp2f1_integer_c():
         (-2, 0.89, -4)
     ]
 
+    # Define wrapper function that can handle complex z
+    def hyp2f1_wrapper(a,b,c,z):
+        a = np.real(a)
+        b = np.real(b)
+        c = np.real(c)
+        return sc.hyp2f1(a, b, c, z)
+
     # Test both the complex and real versions of hyp2f1
     for z in (0.5 + 0.5j, 0.5):
         curr_pts = [p + (z,) for p in pts]
-        curr_type = np.float if np.isreal(z) else np.complex
-        
-        mp_values = [curr_type(mpmath.hyp2f1(*p)) for p in curr_pts]
-        mp_values = np.array(mp_values, dtype=curr_type)
+        if np.isreal(z):
+            curr_type = np.float
+            z_col = 3
+        else:
+            curr_type = np.complex
+            z_col = 3j
 
-        scipy_values = [sc.hyp2f1(*p) for p in curr_pts]
-        scipy_values = np.array(scipy_values, dtype=curr_type)
-
-        assert_allclose(scipy_values, mp_values, rtol=1.e-10)
+        dataset = [p + (curr_type(mpmath.hyp2f1(*p)),) for p in curr_pts]
+        dataset = np.array(dataset, dtype=curr_type)
+                
+        FuncData(hyp2f1_wrapper, dataset, (0,1,2,z_col), 4, rtol=1.e-10).check()
 
 @check_version(mpmath, '0.13')
 def test_hyp2f1_real_some_points():
