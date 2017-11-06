@@ -152,7 +152,11 @@ def geometric_transform(input, mapping, output_shape=None,
         The order has to be in the range 0-5.
     mode : str, optional
         Points outside the boundaries of the input are filled according
-        to the given mode ('constant', 'nearest', 'reflect', 'mirror' or 'wrap').
+        to the given mode ('constant', 'nearest', 'reflect', 'mirror' or 'wrap'):
+           'constant': kkkkkkkk|abcd|kkkkkkkk
+           'nearest':  aaaaaaaa|abcd|dddddddd
+           'reflect':  abcddcba|abcd|dcbaabcd
+           'wrap':     abcdabcd|abcd|abcdabcd
         Default is 'constant'.
     cval : scalar, optional
         Value used for points outside the boundaries of the input if
