@@ -25,13 +25,12 @@ cdef extern from "hausdorff_util.h":
         int index_1
         int index_2
 
-    double hausdorff_loop(int data_dims,
+    void hausdorff_loop(int data_dims,
                     double ar1[],
                     double ar2[],
                     int N1,
-                    int N2)
-
-cdef return_values ret_vals
+                    int N2,
+                    return_values *ret_vals)
 
 @cython.boundscheck(False)
 def directed_hausdorff(double[:,::1] ar1, double[:,::1] ar2, seed=0):
@@ -41,6 +40,7 @@ def directed_hausdorff(double[:,::1] ar1, double[:,::1] ar2, seed=0):
     cdef int N2 = ar2.shape[0]
     cdef int data_dims = ar1.shape[1]
     cdef long[:] resort1, resort2
+    cdef return_values ret_vals
 
     # shuffling the points in each array generally increases the likelihood of
     # an advantageous break in the inner search loop and never decreases the
@@ -53,10 +53,10 @@ def directed_hausdorff(double[:,::1] ar1, double[:,::1] ar2, seed=0):
     ar1 = np.asarray(ar1)[resort1]
     ar2 = np.asarray(ar2)[resort2]
 
-    cmax = hausdorff_loop(data_dims, &ar1[0,0], &ar2[0,0],
-                          N1, N2)
+    hausdorff_loop(data_dims, &ar1[0,0], &ar2[0,0],
+                          N1, N2, &ret_vals)
 
-    #return (sqrt(ret_vals.cmax),
-            #resort1[ret_vals.index_1],
-            #resort2[ret_vals.index_2])
-    return (sqrt(cmax), 1, 5)
+    return (sqrt(ret_vals.cmax),
+            resort1[ret_vals.index_1],
+            resort2[ret_vals.index_2])
+
