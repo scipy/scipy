@@ -9,4 +9,4 @@ def pre_build(context):
     context.tweak_extension("_trlib",
                             features="c fc pyext bento cshlib",
                             use = "LAPACK CLIB",
-                            includes=["trlib", "."])
+                            includes=["trlib", ".", "../../_lib"])
