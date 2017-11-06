@@ -40,11 +40,9 @@ FORTRAN compiler.
 We recommend gfortran; this is a free, open source, F95 compiler. We suggest you
 use the following binaries:
 
-* For Snow Leopard : https://cran.r-project.org/bin/macosx/tools/gfortran-4.2.3.pkg
-* For Lion : http://r.research.att.com/gfortran-lion-5666-3.pkg (for
-  Xcode 4.1)
-* Later versions : http://r.research.att.com/tools/gcc-42-5666.3-darwin11.pkg (for Xcode
-  4.2 or higher) (also available through Homebrew)
+* gfortran installed via `Homebrew <https://brew.sh/>`__, or,
+* http://r.research.att.com/tools/gcc-42-5666.3-darwin11.pkg (for Xcode
+  4.2 or higher)
 
 See `this site <http://r.research.att.com/tools/>`__ for the most recent links.
 
@@ -57,60 +55,6 @@ Version-specific notes
 This section notes only things specific to one version of OS X or Python. 
 The build instructions in :ref:`Obtaining and Building NumPy and SciPy
 <osx-obtaining-and-building>` apply to all versions.
-
-OS X 10.7 (Lion) and 10.8 (Mountain Lion)
-:::::::::::::::::::::::::::::::::::::::::
-
-The default C compiler on (Mountain) Lion is llvm-gcc-4.2, which has so far
-proven to be problematic (up to scipy 0.12.0). 
-We recommend to use gcc-4.2, or alternatively clang. 
-The Fortran flag "-ff2c" has been reported to be necessary.
-
-If you have the older version of XCode installed (4.1), then before
-building with gcc, do:
-
-::
-
-     $ export CC=gcc-4.2
-     $ export CXX=g++-4.2
-     $ export FFLAGS=-ff2c
-
-gcc-4.2 is not included with the current version of XCode (4.2). So,
-if you have that version of XCode then before building with
-gcc, the easiest thing is to do:
-
-::
-
-     $ export CC=clang
-     $ export CXX=clang++
-     $ export FFLAGS=-ff2c
-
-Alternatively, you may try installing gcc-4.2 manually, and then using
-the environment variables in the prior block.
-
-Python 2.6
-::::::::::
-
-On OS X 10.6 and higher the default gcc version is 4.2.  From Python 2.7
-the python.org installers are all built with that compiler.  Python 2.6
-however was built with gcc 4.0. 
-For gcc the correct version should be picked up automatically by distutils;
-for C++ code (only in SciPy) you should ensure that g++ and c++ default to 4.0:
-
-::
-
-     $ export CC=/usr/bin/gcc-4.0
-     $ export CXX=/usr/bin/g++-4.0
-
-A more permanent way to achieve this is to create symlinks 
-
-::
-
-       $ ln -s /usr/bin/g++-4.0 g++
-       $ ln -s /usr/bin/g++-4.0 c++
-
-in a directory and add that to the front of your PATH.
-
 
 .. _osx-obtaining-and-building:
 
@@ -178,11 +122,3 @@ assistance. Please have the following information ready:
 * The versions of numpy and scipy that you are trying to install
 
 * The full output of ``$ python setup.py build``
-
-Older notes
------------
-
-If you are missing readline support for your installation of Python, I
-recommend `following these instructions
-<http://www.friday.com/bbum/2006/03/06/python-mac-os-x-and-readline/>`__
-for getting it installed with relative ease.
