@@ -152,11 +152,7 @@ def geometric_transform(input, mapping, output_shape=None,
         The order has to be in the range 0-5.
     mode : str, optional
         Points outside the boundaries of the input are filled according
-        to the given mode ('constant', 'nearest', 'reflect', 'mirror' or 'wrap'):
-           'constant': kkkkkkkk|abcd|kkkkkkkk
-           'nearest':  aaaaaaaa|abcd|dddddddd
-           'reflect':  abcddcba|abcd|dcbaabcd
-           'wrap':     abcdabcd|abcd|abcdabcd
+        to the given mode ('constant', 'nearest', 'reflect', 'mirror' or 'wrap').
         Default is 'constant'.
     cval : scalar, optional
         Value used for points outside the boundaries of the input if
@@ -215,17 +211,30 @@ def geometric_transform(input, mapping, output_shape=None,
 
     Examples
     --------
-    >>> from scipy import ndimage
+    >>> import numpy as np
+    >>> from scipy.ndimage import geometric_transform
     >>> a = np.arange(12.).reshape((4, 3))
     >>> def shift_func(output_coords):
     ...     return (output_coords[0] - 0.5, output_coords[1] - 0.5)
     ...
-    >>> ndimage.geometric_transform(a, shift_func)
+    >>> geometric_transform(a, shift_func)
     array([[ 0.   ,  0.   ,  0.   ],
            [ 0.   ,  1.362,  2.738],
            [ 0.   ,  4.812,  6.187],
            [ 0.   ,  8.263,  9.637]])
-
+    >>> b = [1, 2, 3, 4, 5]
+    >>> def shift(output_coords):
+    ...     return (output_coords[0] - 3,)
+    ...
+    >>> geometric_transform(b, shift, mode='constant')
+    array([0, 0, 0, 1, 2])
+    >>> geometric_transform(b, shift, mode='nearest')
+    array([1, 1, 1, 1, 2])
+    >>> geometric_transform(b, shift, mode='reflect')
+    array([3, 2, 1, 1, 2])
+    >>> geometric_transform(b, shift, mode='wrap')
+    array([2, 3, 4, 1, 2])
+    
     """
     if order < 0 or order > 5:
         raise RuntimeError('spline order not supported')
