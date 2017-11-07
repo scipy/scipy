@@ -36,6 +36,7 @@ void hausdorff_loop(const int data_dims,
     while (ar1 <= ar1_end_Ptr) {
         no_break_happened = 1;
         cmin = INFINITY;
+        ar2 = ar2_start_Ptr;
         while (ar2 <= ar2_end_Ptr) {
             d = 0;
             for ( int k = 0; k < data_dims; ++k, ++ar1, ++ar2) {
@@ -44,7 +45,6 @@ void hausdorff_loop(const int data_dims,
             if (d < (ret_vals->cmax)) {
                 --no_break_happened;
                 ar1 -= data_dims;
-                ar2 = ar2_start_Ptr;
                 break;
             }
 
@@ -57,7 +57,6 @@ void hausdorff_loop(const int data_dims,
             ret_vals->index_1 = (ar1 + data_dims - ar1_start_Ptr + 1) / data_dims - 1;
             ret_vals->index_2 = (ar2 - ar2_start_Ptr + 1) / data_dims - 1;
         }
-        ar2 = ar2_start_Ptr;
     ar1 += data_dims;
     }
 }
