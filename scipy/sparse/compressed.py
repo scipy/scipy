@@ -1102,8 +1102,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             if not np.all(mask):
                 self.indices = self.indices[mask]
                 self.data = self.data[mask]
-                int_mask = mask
-                major_index, val = self._minor_reduce(np.add, int_mask)
+                major_index, val = self._minor_reduce(np.add, mask)
                 self.indptr.fill(0)
                 self.indptr[1:][major_index] = val
                 np.cumsum(self.indptr, out=self.indptr)
