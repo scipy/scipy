@@ -924,44 +924,6 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         return self.__class__((data, indices, indptr), shape=shape)
 
-    def resize(self, shape):
-        if not isshape(shape, nonneg=True):
-            raise ValueError("shape must be a 2-tuple of positive integers")
-        if hasattr(self, 'blocksize'):
-            bm, bn = self.blocksize
-            new_M, rm = divmod(shape[0], bm)
-            new_N, rn = divmod(shape[1], bn)
-            if rm or rn:
-                raise ValueError("shape must be divisible into %s blocks. "
-                                 "Got %s" % (self.blocksize, shape))
-            M, N = self.shape[0] // bm, self.shape[1] // bn
-        else:
-            new_M, new_N = self._swap(shape)
-            M, N = self._swap(self.shape)
-
-        if new_M < M:
-            self.indices = self.indices[:self.indptr[new_M]]
-            self.data = self.data[:self.indptr[new_M]]
-            self.indptr = self.indptr[:new_M + 1]
-        elif new_M > M:
-            self.indptr = np.resize(self.indptr, new_M + 1)
-            self.indptr[M + 1:].fill(self.indptr[M])
-
-        if new_N < N:
-            mask = self.indices < new_N
-            if not np.all(mask):
-                self.indices = self.indices[mask]
-                self.data = self.data[mask]
-                int_mask = mask
-                major_index, val = self._minor_reduce(np.add, int_mask)
-                self.indptr.fill(0)
-                self.indptr[1:][major_index] = val
-                np.cumsum(self.indptr, out=self.indptr)
-
-        self._shape = shape
-
-    resize.__doc__ = spmatrix.resize.__doc__
-
     ######################
     # Conversion methods #
     ######################
@@ -1111,6 +1073,44 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         self.indices = _prune_array(self.indices[:self.nnz])
         self.data = _prune_array(self.data[:self.nnz])
+
+    def resize(self, shape):
+        if not isshape(shape, nonneg=True):
+            raise ValueError("shape must be a 2-tuple of positive integers")
+        if hasattr(self, 'blocksize'):
+            bm, bn = self.blocksize
+            new_M, rm = divmod(shape[0], bm)
+            new_N, rn = divmod(shape[1], bn)
+            if rm or rn:
+                raise ValueError("shape must be divisible into %s blocks. "
+                                 "Got %s" % (self.blocksize, shape))
+            M, N = self.shape[0] // bm, self.shape[1] // bn
+        else:
+            new_M, new_N = self._swap(shape)
+            M, N = self._swap(self.shape)
+
+        if new_M < M:
+            self.indices = self.indices[:self.indptr[new_M]]
+            self.data = self.data[:self.indptr[new_M]]
+            self.indptr = self.indptr[:new_M + 1]
+        elif new_M > M:
+            self.indptr = np.resize(self.indptr, new_M + 1)
+            self.indptr[M + 1:].fill(self.indptr[M])
+
+        if new_N < N:
+            mask = self.indices < new_N
+            if not np.all(mask):
+                self.indices = self.indices[mask]
+                self.data = self.data[mask]
+                int_mask = mask
+                major_index, val = self._minor_reduce(np.add, int_mask)
+                self.indptr.fill(0)
+                self.indptr[1:][major_index] = val
+                np.cumsum(self.indptr, out=self.indptr)
+
+        self._shape = shape
+
+    resize.__doc__ = spmatrix.resize.__doc__
 
     ###################
     # utility methods #
