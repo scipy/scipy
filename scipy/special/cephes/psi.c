@@ -127,78 +127,64 @@ double digamma_imp_1_2(double x)
 }
 
 
-double psi(x)
-double x;
+double psi_asy(double x)
 {
-    double p, q, nz, s, w, y, z;
-    int i, n, negative;
+    double y, z;
 
-    negative = 0;
-    nz = 0.0;
+    if (x < 1.0e17) {
+	z = 1.0 / (x * x);
+	y = z * polevl(z, A, 6);
+    }
+    else {
+	y = 0.0;
+    }
 
-    if (x <= 0.0) {
-	negative = 1;
-	q = x;
-	p = floor(q);
-	if (p == q) {
+    return log(x) - (0.5 / x) - y;
+}
+
+
+double psi(double x)
+{
+    double y = 0.0;
+    double q, r, w;
+    int i, n;
+
+    if (x == 0) {
+	mtherr("psi", SING);
+	return npy_copysign(NPY_INFINITY, -x);
+    }
+    else if (x < 0.0) {
+	/* argument reduction before evaluating tan(pi * x) */
+	r = modf(x, &q);
+	if (r == 0.0) {
 	    mtherr("psi", SING);
-	    return (NPY_INFINITY);
+	    return NPY_NAN;
 	}
-	/* Remove the zeros of tan(NPY_PI x)
-	 * by subtracting the nearest integer from x
-	 */
-	nz = q - p;
-	if (nz != 0.5) {
-	    if (nz > 0.5) {
-		p += 1.0;
-		nz = q - p;
-	    }
-	    nz = NPY_PI / tan(NPY_PI * nz);
-	}
-	else {
-	    nz = 0.0;
-	}
+	y = -NPY_PI / tan(NPY_PI * r);
 	x = 1.0 - x;
     }
 
     /* check for positive integer up to 10 */
     if ((x <= 10.0) && (x == floor(x))) {
-	y = 0.0;
 	n = x;
 	for (i = 1; i < n; i++) {
 	    w = i;
 	    y += 1.0 / w;
 	}
 	y -= NPY_EULER;
-	goto done;
+	return y;
     }
 
     if ((1.0 <= x) && (x <= 2.0)) {
-	y = digamma_imp_1_2(x);
-	goto done;
+	y += digamma_imp_1_2(x);
+	return y;
     }
 
-    s = x;
-    w = 0.0;
-    while (s < 10.0) {
-	w += 1.0 / s;
-	s += 1.0;
+    while (x < 10.0) {
+	y -= 1.0 / x;
+	x += 1.0;
     }
+    y += psi_asy(x);
 
-    if (s < 1.0e17) {
-	z = 1.0 / (s * s);
-	y = z * polevl(z, A, 6);
-    }
-    else
-	y = 0.0;
-
-    y = log(s) - (0.5 / s) - y - w;
-
-  done:
-
-    if (negative) {
-	y -= nz;
-    }
-
-    return (y);
+    return y;
 }
