@@ -2173,9 +2173,15 @@ class _TestCommon(object):
         assert_array_equal(S.A, [[1, 0, 0],
                                  [2, 0, 0],
                                  [0, 0, 0]])
+
+        # test *args
+        S.resize(3, 2)
+        assert_array_equal(S.A, [[1, 0],
+                                 [2, 0],
+                                 [0, 0]])
+
         for bad_shape in [1, (-1, 2), (2, -1), (1, 2, 3)]:
             assert_raises(ValueError, S.resize, bad_shape)
-            assert_raises(ValueError, setattr, S, 'shape', bad_shape)
 
 
 class _TestInplaceArithmetic(object):

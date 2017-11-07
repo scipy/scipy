@@ -302,6 +302,8 @@ def check_shape(args, current_shape=None):
             new_shape = new_shape[0:skip] + (unspecified,) + new_shape[skip+1:]
         else:
             raise ValueError('can only specify one unknown dimension')
+    elif len(new_shape) != 2:
+        raise ValueError('shape must be a 2-tuple of positive integers')
     else:
         if new_shape[0] < 0 or new_shape[1] < 0:
             raise ValueError("'shape' elements cannot be negative")

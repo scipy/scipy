@@ -1074,9 +1074,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         self.indices = _prune_array(self.indices[:self.nnz])
         self.data = _prune_array(self.data[:self.nnz])
 
-    def resize(self, shape):
-        if not isshape(shape, nonneg=True):
-            raise ValueError("shape must be a 2-tuple of positive integers")
+    def resize(self, *shape):
+        shape = check_shape(shape)
         if hasattr(self, 'blocksize'):
             bm, bn = self.blocksize
             new_M, rm = divmod(shape[0], bm)

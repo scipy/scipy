@@ -491,9 +491,8 @@ class dok_matrix(spmatrix, IndexMixin, dict):
 
     tocsc.__doc__ = spmatrix.tocsc.__doc__
 
-    def resize(self, shape):
-        if not isshape(shape, nonneg=2):
-            raise ValueError("Dimensions must be a 2-tuple of positive integers")
+    def resize(self, *shape):
+        shape = check_shape(shape)
         newM, newN = shape
         M, N = self.shape
         if newM < M or newN < N:

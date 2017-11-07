@@ -289,9 +289,8 @@ class coo_matrix(_data_matrix, _minmax_mixin):
 
     transpose.__doc__ = spmatrix.transpose.__doc__
 
-    def resize(self, shape):
-        if not isshape(shape, nonneg=True):
-            raise ValueError("shape must be a 2-tuple of positive integers")
+    def resize(self, *shape):
+        shape = check_shape(shape)
         new_M, new_N = shape
         M, N = self.shape
 
