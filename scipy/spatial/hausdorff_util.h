@@ -1,10 +1,7 @@
 // Utility C code for directed_hausdorff
 // Try to improve on the performance of the original Cython directed_hausdorff
 
-#include <stdlib.h>
 #include <math.h>
-#include <stddef.h>
-#include <stdio.h>
 
 struct return_values 
 {
@@ -28,39 +25,35 @@ void hausdorff_loop(const int data_dims,
     const int size_ar2 = data_dims * N2;
     const double * const ar1_end_Ptr = &ar1[size_ar1 - 1];
     const double * const ar2_end_Ptr = &ar2[size_ar2 - 1];
+    int k;
 
     ret_vals->cmax = 0;
     
-    while (ar1 <= ar1_end_Ptr) {
+    for ( ; ar1 <= ar1_end_Ptr; ar1 += data_dims ) {
         cmin = INFINITY;
-        ar2 = ar2_start_Ptr;
-        while (ar2 <= ar2_end_Ptr) {
+        for ( ar2 = ar2_start_Ptr; ar2 <= ar2_end_Ptr; ar2 += data_dims) {
             d = 0;
-            for ( int k = 0; k < data_dims; ++k, ++ar1, ++ar2) {
-                diff = *ar1 - *ar2;
+            for ( k = 0; k < data_dims; ++k ) {
+                diff = *(ar1 + k) - *(ar2 + k);
                 d += (diff * diff);
             }
             if (d < ret_vals->cmax)
                 goto main_loop_continue;
-
-            if (d < cmin)
+            else if (d < cmin)
                 cmin = d;
-
-            ar1 -= data_dims;
         }
 
         if ( cmin >= ret_vals->cmax) {
             ret_vals->cmax = cmin;
-            ret_vals->index_1 = (ar1 + data_dims - ar1_start_Ptr + 1);
-            ret_vals->index_2 = (ar2 - ar2_start_Ptr + 1);
+            ret_vals->index_1 = ar1 - ar1_start_Ptr;
+            ret_vals->index_2 = ar2 - ar2_start_Ptr;
         }
 
-    ar1 += data_dims;
     main_loop_continue: ;
     }
     // minimize processing of hausdorff pair
     // indices by placing operations outside
     // looping logic
-    ret_vals->index_1 = (ret_vals->index_1 / data_dims) - 1;
-    ret_vals->index_2 = (ret_vals->index_2 / data_dims) - 1;
+    ret_vals->index_1 = (++ret_vals->index_1) / data_dims;
+    ret_vals->index_2 = ret_vals->index_2 / data_dims - 1;
 }
