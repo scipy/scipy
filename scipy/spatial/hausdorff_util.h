@@ -40,23 +40,27 @@ void hausdorff_loop(const int data_dims,
                 diff = *ar1 - *ar2;
                 d += (diff * diff);
             }
-            if (d < (ret_vals->cmax)) {
-                ar1 -= data_dims;
+            if (d < ret_vals->cmax)
                 goto main_loop_continue;
-            }
 
             if (d < cmin)
                 cmin = d;
-        ar1 -= data_dims;
+
+            ar1 -= data_dims;
         }
 
         if ( cmin >= ret_vals->cmax) {
             ret_vals->cmax = cmin;
-            ret_vals->index_1 = (ar1 + data_dims - ar1_start_Ptr + 1) / data_dims - 1;
-            ret_vals->index_2 = (ar2 - ar2_start_Ptr + 1) / data_dims - 1;
+            ret_vals->index_1 = (ar1 + data_dims - ar1_start_Ptr + 1);
+            ret_vals->index_2 = (ar2 - ar2_start_Ptr + 1);
         }
 
-    main_loop_continue:
     ar1 += data_dims;
+    main_loop_continue: ;
     }
+    // minimize processing of hausdorff pair
+    // indices by placing operations outside
+    // looping logic
+    ret_vals->index_1 = (ret_vals->index_1 / data_dims) - 1;
+    ret_vals->index_2 = (ret_vals->index_2 / data_dims) - 1;
 }
