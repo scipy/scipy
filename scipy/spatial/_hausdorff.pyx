@@ -35,7 +35,6 @@ cdef extern from "hausdorff_util.h":
 @cython.boundscheck(False)
 def directed_hausdorff(double[:,::1] ar1, double[:,::1] ar2, seed=0):
 
-    cdef double cmax = 0
     cdef int N1 = ar1.shape[0]
     cdef int N2 = ar2.shape[0]
     cdef int data_dims = ar1.shape[1]
