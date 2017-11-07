@@ -1399,7 +1399,7 @@ def chebwin(M, at, sym=True):
     # from scipy.special. Using the expansion in scipy.special leads to errors.
     p = np.zeros(x.shape)
     p[x > 1] = np.cosh(order * np.arccosh(x[x > 1]))
-    p[x < -1] = (1 - 2 * (order % 2)) * np.cosh(order * np.arccosh(-x[x < -1]))
+    p[x < -1] = (2 * (M % 2) - 1) * np.cosh(order * np.arccosh(-x[x < -1]))
     p[np.abs(x) <= 1] = np.cos(order * np.arccos(x[np.abs(x) <= 1]))
 
     # Appropriate IDFT and filling up
