@@ -145,6 +145,12 @@ class spmatrix(object):
 
         Notes
         -----
+        The semantics are not identical to `numpy.ndarray.resize` or
+        `numpy.resize`.  Here, the same data will be maintained at each index
+        before and after reshape, if that index is within the new bounds.  In
+        numpy, resizing maintains contiguity of the array, moving elements
+        around in the logical matrix but not within a flattened representation.
+
         We give no guarantees about whether the underlying data attributes
         (arrays, etc.) will be modified in place or replaced with new objects.
         """
