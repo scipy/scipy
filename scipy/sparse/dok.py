@@ -493,7 +493,7 @@ class dok_matrix(spmatrix, IndexMixin, dict):
 
     def resize(self, shape):
         if not isshape(shape, nonneg=2):
-            raise TypeError("Dimensions must be a 2-tuple of positive integers")
+            raise ValueError("Dimensions must be a 2-tuple of positive integers")
         newM, newN = shape
         M, N = self.shape
         if newM < M or newN < N:

@@ -2174,8 +2174,8 @@ class _TestCommon(object):
                                  [2, 0, 0],
                                  [0, 0, 0]])
         for bad_shape in [1, (-1, 2), (2, -1), (1, 2, 3)]:
-            assert_raises(Exception, S.resize, bad_shape)
-            assert_raises(Exception, setattr, S, 'shape', bad_shape)
+            assert_raises(ValueError, S.resize, bad_shape)
+            assert_raises(ValueError, setattr, S, 'shape', bad_shape)
 
 
 class _TestInplaceArithmetic(object):

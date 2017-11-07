@@ -291,7 +291,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
 
     def resize(self, shape):
         if not isshape(shape, nonneg=True):
-            raise TypeError("shape must be a 2-tuple of positive integers")
+            raise ValueError("shape must be a 2-tuple of positive integers")
         new_M, new_N = shape
         M, N = self.shape
 
