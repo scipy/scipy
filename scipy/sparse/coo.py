@@ -297,9 +297,10 @@ class coo_matrix(_data_matrix, _minmax_mixin):
 
         if new_M < M or new_N < N:
             mask = np.logical_and(self.row < new_M, self.col < new_N)
-            self.row = self.row[mask]
-            self.col = self.col[mask]
-            self.data = self.data[mask]
+            if not mask.all():
+                self.row = self.row[mask]
+                self.col = self.col[mask]
+                self.data = self.data[mask]
 
         self._shape = shape
 
