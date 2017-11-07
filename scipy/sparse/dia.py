@@ -382,7 +382,8 @@ class dia_matrix(_data_matrix):
         # we do not need to handle the case of expanding N
         self.data = self.data[:, :N]
 
-        if np.any(self.offsets + self.shape[0] < self.data.shape[1]):
+        if (M > self.shape[0] and
+                np.any(self.offsets + self.shape[0] < self.data.shape[1])):
             # explicitly clear values that were previously hidden
             mask = (self.offsets[:, None] + self.shape[0] <=
                     np.arange(self.data.shape[1]))
