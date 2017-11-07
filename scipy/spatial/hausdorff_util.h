@@ -2,7 +2,6 @@
 // Try to improve on the performance of the original Cython directed_hausdorff
 
 #include <stdlib.h>
-#include <stdbool.h>
 #include <math.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -23,7 +22,6 @@ void hausdorff_loop(const int data_dims,
                     struct return_values * ret_vals)
 {
     double               d, cmin, diff;
-    bool                 no_break_happened;
     double * const ar1_start_Ptr = ar1;
     double * const ar2_start_Ptr = ar2;
     int size_ar1 = data_dims * N1;
@@ -34,7 +32,6 @@ void hausdorff_loop(const int data_dims,
     ret_vals->cmax = 0;
     
     while (ar1 <= ar1_end_Ptr) {
-        no_break_happened = 1;
         cmin = INFINITY;
         ar2 = ar2_start_Ptr;
         while (ar2 <= ar2_end_Ptr) {
@@ -44,9 +41,8 @@ void hausdorff_loop(const int data_dims,
                 d += (diff * diff);
             }
             if (d < (ret_vals->cmax)) {
-                --no_break_happened;
                 ar1 -= data_dims;
-                break;
+                goto main_loop_continue;
             }
 
             if (d < cmin)
@@ -54,15 +50,13 @@ void hausdorff_loop(const int data_dims,
         ar1 -= data_dims;
         }
 
-        if (!no_break_happened) {
-            ar1 += data_dims;
-            continue;
-        }
-        else if ( cmin >= ret_vals->cmax) {
+        if ( cmin >= ret_vals->cmax) {
             ret_vals->cmax = cmin;
             ret_vals->index_1 = (ar1 + data_dims - ar1_start_Ptr + 1) / data_dims - 1;
             ret_vals->index_2 = (ar2 - ar2_start_Ptr + 1) / data_dims - 1;
         }
+
+    main_loop_continue:
     ar1 += data_dims;
     }
 }
