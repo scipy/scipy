@@ -175,16 +175,23 @@ double psi(double x)
 	return y;
     }
 
+    /* use the recurrence relation to move x into [1, 2] */
+    if (x < 1.0) {
+	y -= 1.0 / x;
+	x += 1.0;
+    }
+    else if (x < 10.0) {
+	while (x > 2.0) {
+	    x -= 1.0;
+	    y += 1.0 / x;
+	}
+    }
     if ((1.0 <= x) && (x <= 2.0)) {
 	y += digamma_imp_1_2(x);
 	return y;
     }
 
-    while (x < 10.0) {
-	y -= 1.0 / x;
-	x += 1.0;
-    }
+    /* x is large, use the asymptotic series */
     y += psi_asy(x);
-
     return y;
 }
