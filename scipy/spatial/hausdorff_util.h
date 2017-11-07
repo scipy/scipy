@@ -22,7 +22,7 @@ void hausdorff_loop(const int data_dims,
                     int N2,
                     struct return_values * ret_vals)
 {
-    double               d, cmin;
+    double               d, cmin, diff;
     bool                 no_break_happened;
     double * const ar1_start_Ptr = ar1;
     double * const ar2_start_Ptr = ar2;
@@ -40,7 +40,8 @@ void hausdorff_loop(const int data_dims,
         while (ar2 <= ar2_end_Ptr) {
             d = 0;
             for ( int k = 0; k < data_dims; ++k, ++ar1, ++ar2) {
-                d += ((*ar1 - *ar2) * (*ar1 - *ar2));
+                diff = *ar1 - *ar2;
+                d += (diff * diff);
             }
             if (d < (ret_vals->cmax)) {
                 --no_break_happened;
