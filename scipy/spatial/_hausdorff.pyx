@@ -25,11 +25,11 @@ cdef extern from "hausdorff_util.h":
         int index_1
         int index_2
 
-    void hausdorff_loop(int data_dims,
-                    double ar1[],
-                    double ar2[],
-                    int N1,
-                    int N2,
+    void hausdorff_loop(const int data_dims,
+                    const double ar1[],
+                    const double ar2[],
+                    const int N1,
+                    const int N2,
                     return_values *ret_vals)
 
 @cython.boundscheck(False)

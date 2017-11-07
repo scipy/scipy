@@ -15,17 +15,17 @@ struct return_values
 
 // function for inner loop of directed_hausdorff algorithm
 void hausdorff_loop(const int data_dims,
-                    double ar1[],
-                    double ar2[],
-                    int N1,
-                    int N2,
+                    const double ar1[],
+                    const double ar2[],
+                    const int N1,
+                    const int N2,
                     struct return_values * ret_vals)
 {
     double               d, cmin, diff;
-    double * const ar1_start_Ptr = ar1;
-    double * const ar2_start_Ptr = ar2;
-    int size_ar1 = data_dims * N1;
-    int size_ar2 = data_dims * N2;
+    const double * const ar1_start_Ptr = ar1;
+    const double * const ar2_start_Ptr = ar2;
+    const int size_ar1 = data_dims * N1;
+    const int size_ar2 = data_dims * N2;
     const double * const ar1_end_Ptr = &ar1[size_ar1 - 1];
     const double * const ar2_end_Ptr = &ar2[size_ar2 - 1];
 
