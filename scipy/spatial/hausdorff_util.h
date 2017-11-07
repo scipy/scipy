@@ -53,7 +53,7 @@ void hausdorff_loop(const int data_dims,
                 cmin = d;
         ar1 -= data_dims;
         }
-        if ( (cmin != INFINITY) && (cmin >= (ret_vals->cmax)) && (no_break_happened)) {
+        if ( (cmin >= (ret_vals->cmax)) && (no_break_happened)) {
             ret_vals->cmax = cmin;
             ret_vals->index_1 = (ar1 + data_dims - ar1_start_Ptr + 1) / data_dims - 1;
             ret_vals->index_2 = (ar2 - ar2_start_Ptr + 1) / data_dims - 1;
