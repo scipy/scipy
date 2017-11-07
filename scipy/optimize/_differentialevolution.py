@@ -51,9 +51,11 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
             - 'best1exp'
             - 'rand1exp'
             - 'randtobest1exp'
+            - 'currenttobest1exp'
             - 'best2exp'
             - 'rand2exp'
             - 'randtobest1bin'
+            - 'currenttobest1bin'
             - 'best2bin'
             - 'rand2bin'
             - 'rand1bin'
@@ -239,9 +241,11 @@ class DifferentialEvolutionSolver(object):
             - 'best1exp'
             - 'rand1exp'
             - 'randtobest1exp'
+            - 'currenttobest1exp'
             - 'best2exp'
             - 'rand2exp'
             - 'randtobest1bin'
+            - 'currenttobest1bin'
             - 'best2bin'
             - 'rand2bin'
             - 'rand1bin'
@@ -315,12 +319,14 @@ class DifferentialEvolutionSolver(object):
     # Dispatch of mutation strategy method (binomial or exponential).
     _binomial = {'best1bin': '_best1',
                  'randtobest1bin': '_randtobest1',
+                 'currenttobest1bin': '_currenttobest1',
                  'best2bin': '_best2',
                  'rand2bin': '_rand2',
                  'rand1bin': '_rand1'}
     _exponential = {'best1exp': '_best1',
                     'rand1exp': '_rand1',
                     'randtobest1exp': '_randtobest1',
+                    'currenttobest1exp': '_currenttobest1',
                     'best2exp': '_best2',
                     'rand2exp': '_rand2'}
 
@@ -697,8 +703,7 @@ class DifferentialEvolutionSolver(object):
 
         fill_point = rng.randint(0, self.parameter_count)
 
-        if (self.strategy == 'randtobest1exp' or
-                self.strategy == 'randtobest1bin'):
+        if self.strategy in ['currenttobest1exp', 'currenttobest1bin']:
             bprime = self.mutation_func(candidate,
                                         self._select_samples(candidate, 5))
         else:
@@ -742,15 +747,25 @@ class DifferentialEvolutionSolver(object):
         return (self.population[r0] + self.scale *
                 (self.population[r1] - self.population[r2]))
 
-    def _randtobest1(self, candidate, samples):
+    def _randtobest1(self, samples):
         """
         randtobest1bin, randtobest1exp
         """
-        r0, r1 = samples[:2]
-        bprime = np.copy(self.population[candidate])
+        r0, r1, r2 = samples[:3]
+        bprime = np.copy(self.population[r0])
         bprime += self.scale * (self.population[0] - bprime)
-        bprime += self.scale * (self.population[r0] -
-                                self.population[r1])
+        bprime += self.scale * (self.population[r1] -
+                                self.population[r2])
+        return bprime
+
+    def _currenttobest1(self, candidate, samples):
+        """
+        currenttobest1bin, currenttobest1exp
+        """
+        r0, r1 = samples[:2]
+        bprime = (self.population[candidate] + self.scale * 
+                  (self.population[0] - self.population[candidate] +
+                   self.population[r0] - self.population[r1]))
         return bprime
 
     def _best2(self, samples):
