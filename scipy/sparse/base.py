@@ -142,6 +142,11 @@ class spmatrix(object):
         ----------
         shape : (int, int)
             number of rows and columns in the new matrix
+
+        Notes
+        -----
+        We give no guarantees about whether the underlying data attributes
+        (arrays, etc.) will be modified in place or replaced with new objects.
         """
         # As an inplace operation, this requires implementation in each format.
         raise NotImplementedError(
