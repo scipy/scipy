@@ -68,7 +68,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     popsize : int, optional
         A multiplier for setting the total population size.  The population has
         ``popsize * len(x)`` individuals (unless the initial population is
-         supplied via the `init` keyword).
+        supplied via the `init` keyword).
     tol : float, optional
         Relative tolerance for convergence, the solving stops when
         ``np.std(pop) <= atol + tol * np.abs(np.mean(population_energies))``,
@@ -267,7 +267,7 @@ class DifferentialEvolutionSolver(object):
     popsize : int, optional
         A multiplier for setting the total population size.  The population has
         ``popsize * len(x)`` individuals (unless the initial population is
-         supplied via the `init` keyword).
+        supplied via the `init` keyword).
     tol : float, optional
         Relative tolerance for convergence, the solving stops when
         ``np.std(pop) <= atol + tol * np.abs(np.mean(population_energies))``,
