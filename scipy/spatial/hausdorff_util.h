@@ -24,7 +24,6 @@ void hausdorff_loop(const int data_dims,
 {
     double               d, cmin;
     bool                 no_break_happened;
-    unsigned int         i_store = 0, j_store = 0;
     double * const ar1_start_Ptr = ar1;
     double * const ar2_start_Ptr = ar2;
     int size_ar1 = data_dims * N1;
@@ -49,19 +48,16 @@ void hausdorff_loop(const int data_dims,
                 break;
             }
 
-            if (d < cmin) {
+            if (d < cmin)
                 cmin = d;
-                i_store = (ar1 - ar1_start_Ptr + 1) / data_dims - 1;
-                j_store = (ar2 - ar2_start_Ptr + 1) / data_dims - 1;
-            }
         ar1 -= data_dims;
         }
-        ar2 = ar2_start_Ptr;
         if ( (cmin != INFINITY) && (cmin >= (ret_vals->cmax)) && (no_break_happened)) {
             ret_vals->cmax = cmin;
-            ret_vals->index_1 = i_store;
-            ret_vals->index_2 = j_store;
+            ret_vals->index_1 = (ar1 + data_dims - ar1_start_Ptr + 1) / data_dims - 1;
+            ret_vals->index_2 = (ar2 - ar2_start_Ptr + 1) / data_dims - 1;
         }
+        ar2 = ar2_start_Ptr;
     ar1 += data_dims;
     }
 }
