@@ -68,7 +68,15 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     popsize : int, optional
         A multiplier for setting the total population size.  The population has
         ``popsize * len(x)`` individuals (unless the initial population is
+<<<<<<< HEAD
+<<<<<<< HEAD
         supplied via the `init` keyword).
+=======
+         supplied via the `init` keyword).
+>>>>>>> ENH: differential_evolution init with population array
+=======
+        supplied via the `init` keyword).
+>>>>>>> PEP8 for refguide check
     tol : float, optional
         Relative tolerance for convergence, the solving stops when
         ``np.std(pop) <= atol + tol * np.abs(np.mean(population_energies))``,
@@ -267,7 +275,15 @@ class DifferentialEvolutionSolver(object):
     popsize : int, optional
         A multiplier for setting the total population size.  The population has
         ``popsize * len(x)`` individuals (unless the initial population is
+<<<<<<< HEAD
+<<<<<<< HEAD
         supplied via the `init` keyword).
+=======
+         supplied via the `init` keyword).
+>>>>>>> ENH: differential_evolution init with population array
+=======
+        supplied via the `init` keyword).
+>>>>>>> PEP8 for refguide check
     tol : float, optional
         Relative tolerance for convergence, the solving stops when
         ``np.std(pop) <= atol + tol * np.abs(np.mean(population_energies))``,
@@ -353,7 +369,7 @@ class DifferentialEvolutionSolver(object):
 
     __init_error_msg = ("The population initialization method must be one of "
                         "'latinhypercube' or 'random', or an array of shape "
-                        "(M, N) where N is the number of parameters")
+                        "(M, N) where N is the number of parameters and M>5")
 
     def __init__(self, func, bounds, args=(),
                  strategy='best1bin', maxiter=1000, popsize=15,
@@ -512,7 +528,9 @@ class DifferentialEvolutionSolver(object):
         # make sure you're using a float array
         popn = np.asfarray(init)
 
-        if popn.shape[1] != self.parameter_count or len(popn.shape) != 2:
+        if (np.size(popn, 0) < 5 or
+                    popn.shape[1] != self.parameter_count or
+                    len(popn.shape) != 2):
             raise ValueError(self.__init_error_msg)
 
         # scale values and clip to bounds, assigning to population
