@@ -30,7 +30,7 @@ C     J=1,2,...,NACT, the number ZDOTA(J) is the scalar product of the J-th
 C     column of Z with the gradient of the J-th active constraint. DX is the
 C     current vector of variables and here the residuals of the active
 C     constraints should be zero. Further, the active constraints have
-C     nonnegative Lagrange multipliers that are held at the beginning of
+C     non-negative Lagrange multipliers that are held at the beginning of
 C     VMULTC. The remainder of this vector holds the residuals of the inactive
 C     constraints at DX, the ordering of the components of VMULTC being in
 C     agreement with the permutation of the indices of the constraints that is
