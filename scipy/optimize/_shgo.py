@@ -4,12 +4,15 @@ shgo: The simplicial homology global optimisation algorithm
 from __future__ import division, print_function, absolute_import
 import numpy
 import time
+import logging
+import warnings
 import scipy.optimize
 import scipy.spatial
-from scipy.optimize.shgo_m.triangulation import *
 from scipy.optimize.shgo_m import sobol_seq
+from scipy.optimize.shgo_m.triangulation import Complex
 
 __all__ = ['shgo']
+
 
 def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
          minimizer_kwargs=None, options=None, sampling_method='simplicial'):
@@ -459,7 +462,6 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
     return shc.res
 
 
-# %% Define the base SHGO class inherited by the different methods
 class SHGO(object):
     def __init__(self, func, bounds, args=(), constraints=None, n=None,
                  iters=None, callback=None, minimizer_kwargs=None,
@@ -719,7 +721,8 @@ class SHGO(object):
     # Initiation aids
     def init_options(self, options):
         """
-        Initiates the options. Can also be useful to change parameters after class initiation
+        Initiates the options. Can also be useful to change parameters after
+        class initiation
         Parameters
         ----------
         options : dict
@@ -910,13 +913,17 @@ class SHGO(object):
                     self.stop_global = True
         else:
             pe = (self.f_lowest - self.f_min_true) / abs(self.f_min_true)
+            if self.f_lowest <= self.f_min_true:
+                self.stop_global = True
+                # 2if (pe - self.f_tol) <= abs(1.0 / abs(self.f_min_true)):
+                if abs(pe) >= 2 * self.f_tol:
+                    warnings.warn("A much lower value than expected f* =" +
+                                  " {} than".format(self.f_min_true) +
+                                  " the was found f_lowest =" +
+                                  "{} ".format(self.f_lowest))
             if pe <= self.f_tol:
                 self.stop_global = True
-                if (pe - self.f_tol) <= 1.0 / abs(self.f_min_true):
-                    logging.warning("A much lower value than expected f* =" +
-                                    " {} than".format(self.f_min_true) +
-                                    " the was found f_lowest =" +
-                                    "{} ".format(self.f_lowest))
+
         return self.stop_global
 
     def finite_homology_growth(self):
@@ -1078,8 +1085,8 @@ class SHGO(object):
                         self.f_min_true) <= self.f_tol:
                     self.stop_l_iter = True
                     break
-
-            if self.local_iter is not None:  # Note first iteration is outside loop
+            # Note first iteration is outside loop:
+            if self.local_iter is not None:
                 if self.disp:
                     logging.info(
                         'SHGO.iters in function minimise_pool = {}'.format(
@@ -1320,12 +1327,13 @@ class SHGO(object):
         is True then the sampled points that are generated outside the feasible
         domain will be assigned an `inf` value in accordance with SHGO rules.
         This guarantees convergence and usually requires less objective function
-        evaluations at the computational costs of more Delauney triangulation points.
+        evaluations at the computational costs of more Delauney triangulation
+        points.
 
-        If infty_cons_sampl is False then the infeasible points are discarded and
-        only a subspace of the sampled points are used. This comes at the cost of
-        the loss of guaranteed convergence and usually requires more objective function
-        evaluations.
+        If infty_cons_sampl is False then the infeasible points are discarded
+        and only a subspace of the sampled points are used. This comes at the
+        cost of the loss of guaranteed convergence and usually requires more
+        objective function evaluations.
         """
         # Generate sampling points
         if self.disp:

@@ -1,6 +1,4 @@
 import numpy
-import logging
-import sys
 import copy
 
 try:
@@ -98,8 +96,6 @@ except ImportError:  # Python 2:
         # maintain the docstring and the name of the original function):
         return (lambda input_func: functools.wraps(input_func)(
             LruCacheClass(input_func, maxsize, timeout)))
-
-logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 
 class Complex:
@@ -498,18 +494,6 @@ class Complex:
         return
 
     @lru_cache(maxsize=None)
-    def generate_sub_cell(self, origin, suprenum):  # No hits
-        V_new = []
-        for i, v in enumerate(self.C0()[:-1]):
-            t1 = self.generate_sub_cell_t1(origin, v.x)
-            t2 = self.generate_sub_cell_t2(suprenum, v.x)
-            vec = t1 + t2
-            vec = tuple(vec)
-            V_new.append(vec)
-
-        return V_new
-
-    @lru_cache(maxsize=None)
     def generate_sub_cell_2(self, origin, suprenum, v_x_t):  # No hits
         """
         Use the origin and suprenum vectors to find a new cell in that
@@ -541,31 +525,6 @@ class Complex:
     def generate_sub_cell_t2(self, suprenum, v_x):
         v_s = numpy.array(suprenum)
         return v_s * numpy.array(v_x)
-
-    def complex_homology_group_rank(self):
-        # self.hgr = self.C0.homology_group_rank()
-        p_hgr = self.hgr
-        self.hgr = 0
-        cells = 0
-
-        for x in self.V.cache:
-            # print(self.V[x].minimiser())
-            # print('self.V[{}].f = {}'.format(x, self.V[x].f))
-            if self.V[x].minimiser():
-                # print(f'self.V[{x}].minimiser() is a minimiser')
-                # print('self.V[x].f = {}'.format(self.V[x].f))
-                self.hgr += 1
-        if 0:
-            for Cell_gen in self.H:
-                # for Cell in self.H[self.gen]:
-                for Cell in Cell_gen:
-                    self.hgr += Cell.homology_group_rank()
-                    cells += 1
-
-        # self.hgr = self.hgr/cells * 100
-        # logging.info('self.hgr = {}'.format(self.hgr))
-        self.hgrd = self.hgr - p_hgr  # Complex group rank differential
-        return self.hgr
 
     # Plots
     def plot_complex(self):
