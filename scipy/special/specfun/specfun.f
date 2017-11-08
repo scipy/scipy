@@ -6205,7 +6205,7 @@ C
         L6=C-B.EQ.INT(C-B).AND.C-B.LE.0.0D0
         L7=(L3.AND.(DABS(A).LE.DABS(C)))
      &       .OR.(L4.AND.(DABS(B).LE.DABS(C)))
-        IF ((L0.AND.(.NOT.L7)).OR.L1) THEN
+        IF ((L0.OR.L1).AND.(.NOT.L7)) THEN
            ISFER=3
            RETURN
         ENDIF
