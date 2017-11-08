@@ -75,20 +75,14 @@ before_install:
       free -m
       export PATH=/usr/lib/ccache:$PATH
     elif [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
-      brew install gcc ccache libmpc
-      touch config.sh
-      git clone --depth=1 https://github.com/matthew-brett/multibuild.git
-      source multibuild/common_utils.sh
-      source multibuild/travis_steps.sh
-      before_install
-      which ccache
+      brew install gcc ccache libmpc python3
+      python3 -m venv venv
+      source venv/bin/activate
+
       export PATH=/usr/local/opt/ccache/libexec:$PATH
       export USE_CCACHE=1
       export CCACHE_MAXSIZE=200M
       export CCACHE_CPP2=1
-      export CFLAGS="-arch x86_64"
-      export CXXFLAGS="-arch x86_64"
-      printenv
     fi
   - export CCACHE_COMPRESS=1
   - python --version # just to check
