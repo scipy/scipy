@@ -72,7 +72,7 @@ def inv(A):
     """
     #check input
     if not scipy.sparse.isspmatrix(A):
-        raise TypeError('expected A to be a sparse matrix')
+        raise TypeError('Input must be a sparse matrix')
 
     I = speye(A.shape[0], A.shape[1], dtype=A.dtype, format=A.format)
     Ainv = spsolve(A, I)
