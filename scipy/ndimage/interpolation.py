@@ -222,7 +222,7 @@ def geometric_transform(input, mapping, output_shape=None,
            [ 0.   ,  1.362,  2.738],
            [ 0.   ,  4.812,  6.187],
            [ 0.   ,  8.263,  9.637]])
-    >>>
+
     >>> b = [1, 2, 3, 4, 5]
     >>> def shift_func(output_coords):
     ...     return (output_coords[0] - 3,)
