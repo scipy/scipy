@@ -6191,7 +6191,7 @@ C       ======================================================
 C
         IMPLICIT DOUBLE PRECISION (A-H,O-Y)
         IMPLICIT COMPLEX *16 (Z)
-        LOGICAL L0,L1,L2,L3,L4,L5,L6,L7,L8
+        LOGICAL L0,L1,L2,L3,L4,L5,L6,L7
         X=DBLE(Z)
         Y=DIMAG(Z)
         EPS=1.0D-15
@@ -6203,14 +6203,9 @@ C
         L4=B.EQ.INT(B).AND.B.LE.0.0D0
         L5=C-A.EQ.INT(C-A).AND.C-A.LE.0.0D0
         L6=C-B.EQ.INT(C-B).AND.C-B.LE.0.0D0
-        IF (L0) THEN
-           L7=(L3.AND.(DABS(A).LE.DABS(C)))
-     &          .OR.(L4.AND.(DABS(B).LE.DABS(C)))
-           IF (.NOT.L7) THEN
-              ISFER=3
-              RETURN
-           ENDIF
-        ELSE IF (L1) THEN
+        L7=(L3.AND.(DABS(A).LE.DABS(C)))
+     &       .OR.(L4.AND.(DABS(B).LE.DABS(C)))
+        IF ((L0.AND.(.NOT.L7)).OR.L1) THEN
            ISFER=3
            RETURN
         ENDIF
