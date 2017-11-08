@@ -1,6 +1,6 @@
 import logging
 import numpy
-from pytest import raises as assert_raises
+from pytest import raises as assert_raises, warns
 from scipy.optimize import shgo
 from scipy.optimize._shgo import SHGO
 
@@ -65,7 +65,7 @@ class StructTest2(StructTestFunction):
 
 test2_1 = StructTest2(bounds=[(0, 60)],
                       expected_x=[1.53567906],
-                      expected_fun=[-28.44677132],
+                      expected_fun=-28.44677132,
                       # Important to test that funl return is in the correct order
                       expected_xl=numpy.array([[1.53567906],
                                                [55.01782167],
@@ -126,7 +126,7 @@ class StructTest3(StructTestFunction):
 
 test3_1 = StructTest3(bounds=[(2, 50), (0, 50)],
                       expected_x=[250 ** 0.5, 2.5 ** 0.5],
-                      expected_fun=[5.0]
+                      expected_fun=5.0
                       )
 
 
@@ -501,14 +501,12 @@ class TestShgoArguments(object):
     def test_4_4_known_f_min(self):
         """Test Global mode limiting local evalutions for 1D funcs"""
         options = {  # Specify known function value
-            'f_min': test4_1.expected_fun,
+            'f_min': test2_1.expected_fun,
             'f_tol': 1e-6,
             # Specify number of local iterations to perform+
             'minimize_every_iter': True,
             'local_iter': 1,
             'infty_constraints': False}
-        # run_test(test2_1, n=None, iters=None, test_atol=1e-5, options=options,
-        #         sampling_method='sobol')
 
         res = shgo(test2_1.f, test2_1.bounds, constraints=test2_1.cons,
                    n=None, iters=None, options=options,
@@ -570,7 +568,8 @@ class TestShgoArguments(object):
     def test_7_3_minkwargs(self):
         """Test the minimizer_kwargs arguments for solvers without constraints"""
         for solver in ['Nelder-Mead', 'Powell', 'CG', 'BFGS', 'Newton-CG',
-                       'L-BFGS-B', 'TNC', 'dogleg', 'trust-ncg']:
+                       'L-BFGS-B', 'TNC', 'dogleg', 'trust-ncg', 'trust-exact',
+                       'trust-krylov']:
             def jac(x):
                 return numpy.array([2 * x[0], 2 * x[1]]).T
 
@@ -588,8 +587,6 @@ class TestShgoArguments(object):
     def test_8_homology_group_diff(self):
         options = {'minhgrd': 1,
                    'minimize_every_iter': True}
-        # run_test(test1_1, n=None, iters=None, options=options,
-        #         sampling_method='sobol')
 
         run_test(test1_1, n=None, iters=None, options=options,
                  sampling_method='simplicial')
@@ -603,7 +600,6 @@ class TestShgoArguments(object):
         options = {'maxtime': 1e-15}
         res = shgo(test1_1.f, test1_1.bounds, n=1, iters=None,
                    options=options, sampling_method='sobol')
-        print(res)
 
     def test_11_f_min_time(self):
         """Test to cover the case where f_lowest == 0"""
@@ -611,7 +607,6 @@ class TestShgoArguments(object):
                    'f_min': 0.0}
         res = shgo(test1_2.f, test1_2.bounds, n=1, iters=None,
                    options=options, sampling_method='sobol')
-        print(res)
 
     def test_12_sobol_inf_cons(self):
         """Test to cover the case where f_lowest == 0"""
@@ -619,7 +614,6 @@ class TestShgoArguments(object):
                    'f_min': 0.0}
         res = shgo(test1_2.f, test1_2.bounds, n=1, iters=None,
                    options=options, sampling_method='sobol')
-        print(res)
 
     def test_13_high_sobol(self):
         """Test init of high-dimensional sobol sequences"""
@@ -641,9 +635,6 @@ class TestShgoArguments(object):
         options = {'minimize_every_iter': True}
         run_test(test1_1, n=1, iters=7, options=options,
                  sampling_method='sobol')
-
-        # def test_15_custom_sampling(self):
-        #    run_test(test1_1, sampling_method=SHGO.sampling_sobol)
 
 
 # Failure test functions
@@ -728,3 +719,21 @@ class TestShgoFailures(object):
                    sampling_method='simplicial')
 
         numpy.testing.assert_equal(False, res.success)
+
+    def test_6_1_lower_known_f_min(self):
+        """Test Global mode limiting local evalutions with f* too high"""
+        options = {  # Specify known function value
+            'f_min': test2_1.expected_fun + 2.0,
+            'f_tol': 1e-6,
+            # Specify number of local iterations to perform+
+            'minimize_every_iter': True,
+            'local_iter': 1,
+            'infty_constraints': False}
+        args = (test2_1.f, test2_1.bounds)
+        kwargs = {'constraints': test2_1.cons,
+                  'n': None,
+                  'iters': None,
+                  'options': options,
+                  'sampling_method': 'sobol'
+                  }
+        warns(UserWarning, shgo, *args, **kwargs)
