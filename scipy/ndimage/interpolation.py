@@ -222,17 +222,18 @@ def geometric_transform(input, mapping, output_shape=None,
            [ 0.   ,  1.362,  2.738],
            [ 0.   ,  4.812,  6.187],
            [ 0.   ,  8.263,  9.637]])
+    >>>
     >>> b = [1, 2, 3, 4, 5]
-    >>> def shift(output_coords):
+    >>> def shift_func(output_coords):
     ...     return (output_coords[0] - 3,)
     ...
-    >>> geometric_transform(b, shift, mode='constant')
+    >>> geometric_transform(b, shift_func, mode='constant')
     array([0, 0, 0, 1, 2])
-    >>> geometric_transform(b, shift, mode='nearest')
+    >>> geometric_transform(b, shift_func, mode='nearest')
     array([1, 1, 1, 1, 2])
-    >>> geometric_transform(b, shift, mode='reflect')
+    >>> geometric_transform(b, shift_func, mode='reflect')
     array([3, 2, 1, 1, 2])
-    >>> geometric_transform(b, shift, mode='wrap')
+    >>> geometric_transform(b, shift_func, mode='wrap')
     array([2, 3, 4, 1, 2])
     
     """
