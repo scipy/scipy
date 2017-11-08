@@ -211,17 +211,31 @@ def geometric_transform(input, mapping, output_shape=None,
 
     Examples
     --------
-    >>> from scipy import ndimage
+    >>> import numpy as np
+    >>> from scipy.ndimage import geometric_transform
     >>> a = np.arange(12.).reshape((4, 3))
     >>> def shift_func(output_coords):
     ...     return (output_coords[0] - 0.5, output_coords[1] - 0.5)
     ...
-    >>> ndimage.geometric_transform(a, shift_func)
+    >>> geometric_transform(a, shift_func)
     array([[ 0.   ,  0.   ,  0.   ],
            [ 0.   ,  1.362,  2.738],
            [ 0.   ,  4.812,  6.187],
            [ 0.   ,  8.263,  9.637]])
 
+    >>> b = [1, 2, 3, 4, 5]
+    >>> def shift_func(output_coords):
+    ...     return (output_coords[0] - 3,)
+    ...
+    >>> geometric_transform(b, shift_func, mode='constant')
+    array([0, 0, 0, 1, 2])
+    >>> geometric_transform(b, shift_func, mode='nearest')
+    array([1, 1, 1, 1, 2])
+    >>> geometric_transform(b, shift_func, mode='reflect')
+    array([3, 2, 1, 1, 2])
+    >>> geometric_transform(b, shift_func, mode='wrap')
+    array([2, 3, 4, 1, 2])
+    
     """
     if order < 0 or order > 5:
         raise RuntimeError('spline order not supported')
