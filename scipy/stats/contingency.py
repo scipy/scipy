@@ -351,7 +351,7 @@ def _association_bias_correction(phi_squared, n_rows, n_cols, n_obs):
     ----------
     .. [1] Bergsma, Wicher, "A bias-correction for Cramer's V and Tschuprow's T", 
            London School of Econ. and Pol. Sci., pp. 2-4. http://stats.lse.ac.uk/bergsma/pdf/cramerV3.pdf
-    .. [2] https://en.wikipedia.org/wiki/Cram%C3%A9r%27s_V#Bias_correction
+    .. [2] https://en.wikipedia.org/wiki/Cram%C3%A9r%27s_V
     
 
     Notes
@@ -512,7 +512,7 @@ def association_test(stat, observed, chi2_stat=None, correct_bias=True):
         nrows = n_rows
         ncols = n_cols
     else:
-        raise TypeError("invalid argument type! 'correct_bias' must be boolean")
+        raise TypeError("invalid argument type: 'correct_bias' must be boolean")
 
     if stat.lower() == "v":
         value = math.sqrt(phi_sq / min(ncols - 1, nrows - 1))
@@ -521,6 +521,6 @@ def association_test(stat, observed, chi2_stat=None, correct_bias=True):
     elif stat.lower() == "phi":
         value = math.sqrt(phi_sq)
     else:
-        raise ValueError("Invalid argument value! 'stat' must be [t or v] corresponding to Tschuprow's T or Cramer's V")
+        raise ValueError("Invalid argument value: 'stat' must be [t or v] corresponding to Tschuprow's T or Cramer's V")
 
     return value
