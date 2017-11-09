@@ -1297,7 +1297,7 @@ def inconsistent(Z, d=2):
     Returns
     -------
     R : ndarray
-        A :math:`(n-1)` by 5 matrix where the ``i``'th row contains the link
+        A :math:`(n-1)` by 4 matrix where the ``i``'th row contains the link
         statistics for the non-singleton cluster ``i``. The link statistics are
         computed over the link heights for links :math:`d` levels below the
         cluster ``i``. ``R[i,0]`` and ``R[i,1]`` are the mean and standard
