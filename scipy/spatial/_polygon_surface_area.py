@@ -40,24 +40,45 @@ def _planar_polygon_area(vertices):
     area = -0.5 * area_sum
     return area
 
-def _spherical_polygon_area(vertices, radius):
+def _slerp(start_coord,
+           end_coord,
+           n_pts):
+    # spherical linear interpolation between points
+    # on great circle arc
+    # see: https://en.wikipedia.org/wiki/Slerp#Geometric_Slerp
+    # NOTE: could we use scipy.interpolate.RectSphereBivariateSpline instead?
+    omega = np.arccos(np.dot(start_coord, end_coord))
+    t_values = np.linspace(0, 1, n_pts)
+    new_pts = []
+    for t in t_values:
+        new_pt = (((np.sin((1 - t) * omega) / np.sin(omega)) * start_coord) +
+                  ((np.sin(t * omega) / np.sin(omega)) * end_coord))
+        new_pts.append(new_pt)
+    return np.array(new_pts)
+
+def _spherical_polygon_area(vertices, radius, discretizations):
     num_vertices = vertices.shape[0]
     area_sum = 0
-    lambda_vals = np.arctan2(vertices[...,1], vertices[...,0]) # longitudes
-    phi_vals = np.arcsin(vertices[...,2] / radius) # latitudes
 
     for i in xrange(num_vertices):
-        forward_index, backward_index = _vertex_index_strider(i, num_vertices)
-        delta_lambda = (lambda_vals[forward_index] -
-                        lambda_vals[backward_index])
-        area_sum += delta_lambda * np.sin(phi_vals[i])
+        new_pts = _slerp(vertices[i], vertices[i-1], discretizations)
+
+        lambda_range = np.arctan2(new_pts[...,1], new_pts[...,0])
+        phi_range = np.arcsin((new_pts[...,2] / radius))
+        area_element = 0
+        for j in xrange(discretizations - 1):
+            delta_lambda = (lambda_range[j+1] -
+                            lambda_range[j])
+            second_term = 2 + np.sin(phi_range[j]) + np.sin(phi_range[j+1])
+            area_element += (delta_lambda * second_term * (radius ** 2) * 0.5)
+        area_sum += area_element
     # the paper divides by 2 here, but my testing
     # suggests we should not do that!
-    area = (radius ** 2) * area_sum
+    area = area_sum
     return area
 
 def poly_area(vertices, radius=None, threshold=1e-21,
-              cython=None):
+              cython=None, discretizations=500):
     # calculate the surface area of a planar or spherical polygon
     # crude pure Python implementation for handling a single
     # polygon at a time
@@ -77,7 +98,7 @@ def poly_area(vertices, radius=None, threshold=1e-21,
             err_str = 'radius must be > {threshold}'.format(threshold=threshold)
             raise ValueError(err_str)
         if cython is None:
-            area = _spherical_polygon_area(vertices, radius)
+            area = _spherical_polygon_area(vertices, radius, discretizations)
         else: # cython code for spherical polygon SA
             area = _surface_area.spherical_polygon_area(vertices, radius)
     else: # planar polygon

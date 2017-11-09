@@ -5,9 +5,15 @@ from scipy.spatial.distance import pdist
 from numpy.testing import (assert_equal, assert_raises,
                            assert_allclose,
                            assert_raises_regex)
+import hypothesis
 from hypothesis import given
 from hypothesis.strategies import floats
 import split_spherical_triangle
+
+# for development work disable / extend
+# hypothesis timeout warnings
+hypothesis.settings.deadline=None
+hypothesis.settings.timeout=200
 
 class TestDegenerateInput(object):
     # tests for problematic input
@@ -79,7 +85,8 @@ class TestSimpleAreas(object):
         expected_area = np.pi * (radius ** 2)
         actual_area = psa.poly_area(vertices=vertices,
                                     radius=radius,
-                                    cython=self.cython)
+                                    cython=self.cython,
+                                    discretizations=9000)
         assert_allclose(actual_area, expected_area)
 
     @given(floats(min_value=1e-20,
@@ -93,7 +100,8 @@ class TestSimpleAreas(object):
         expected_area = (np.pi * (radius ** 2)) / 2.
         actual_area = psa.poly_area(vertices=vertices,
                                     radius=radius,
-                                    cython=self.cython)
+                                    cython=self.cython,
+                                    discretizations=9000)
         assert_allclose(actual_area, expected_area)
 
     @given(floats(min_value=-1e20,
@@ -188,10 +196,12 @@ class TestRadianAreas(object):
         # check cw and ccw vertex sorting
         actual_area = psa.poly_area(vertices=sample_vertices,
                                     radius=radius,
-                                    cython=self.cython)
+                                    cython=self.cython,
+                                    discretizations=7000)
         actual_area_reverse = psa.poly_area(vertices=sample_vertices[::-1],
                                     radius=radius,
-                                    cython=self.cython)
+                                    cython=self.cython,
+                                    discretizations=7000)
         assert_allclose(actual_area, expected_area)
         assert_allclose(actual_area_reverse, expected_area)
 
@@ -221,10 +231,12 @@ class TestConvolutedAreas(object):
         # check cw and ccw vertex sorting
         actual_area = psa.poly_area(vertices=sample_vertices,
                                     radius=radius,
-                                    cython=self.cython)
+                                    cython=self.cython,
+                                    discretizations=9000)
         actual_area_reverse = psa.poly_area(vertices=sample_vertices[::-1],
                                     radius=radius,
-                                    cython=self.cython)
+                                    cython=self.cython,
+                                    discretizations=9000)
         assert_allclose(actual_area, expected_area)
         assert_allclose(actual_area_reverse, expected_area)
 
@@ -261,7 +273,8 @@ class TestSplittingTriangles(object):
         # (before splitting into 3 subtriangles)
         original_tri_area = psa.poly_area(vertices=vertices,
                                     radius=1.0,
-                                    cython=self.cython)
+                                    cython=self.cython,
+                                    discretizations=9000)
 
         # find the central point D that splits the
         # spherical triangle into 3 equal area
@@ -269,7 +282,6 @@ class TestSplittingTriangles(object):
         D = split_spherical_triangle.find_ternary_split_point(vertices,
                                                               1.0,
                                                               original_tri_area)
-        print("Chosen central point inside test:", D)
 
         vertices_subtriangle_1 = np.array([vertices[0],
                                            vertices[1],
@@ -288,5 +300,6 @@ class TestSplittingTriangles(object):
                                      vertices_subtriangle_3]:
             actual_subtriangle_area = psa.poly_area(subtriangle_vertices,
                                                       1.0,
-                                                      cython=self.cython)
-            assert_equal(actual_subtriangle_area, expected_sub_area)
+                                                      cython=self.cython,
+                                                      discretizations=7000)
+            assert_allclose(actual_subtriangle_area, expected_sub_area)
