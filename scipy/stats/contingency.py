@@ -5,7 +5,6 @@
 from __future__ import division, print_function, absolute_import
 
 from functools import reduce
-from operator import mul
 import numpy as np
 from .stats import power_divergence, chisquare
 import math
@@ -351,7 +350,7 @@ def _association_bias_correction(phi_squared, n_rows, n_cols, n_obs):
     ----------
     .. [1] Bergsma, Wicher, "A bias-correction for Cramer's V and Tschuprow's T", 
            London School of Econ. and Pol. Sci., pp. 2-4. http://stats.lse.ac.uk/bergsma/pdf/cramerV3.pdf
-    .. [2] https://en.wikipedia.org/wiki/Cram%C3%A9r%27s_V
+    .. [2] https://en.wikipedia.org/wiki/Cramer's_V
     
 
     Notes
@@ -402,7 +401,7 @@ def association_test(stat, observed, chi2_stat=None, correct_bias=True):
            http://stats.lse.ac.uk/bergsma/pdf/cramerV3.pdf
     .. [3] Tschuprow, A. A. (1939) Principles of the Mathematical Theory of Correlation; 
            translated by M. Kantorowitsch. W. Hodge & Co.
-    .. [4] "Cramér's V", https://en.wikipedia.org/wiki/Cram%C3%A9r%27s_V
+    .. [4] "Cramer's V", https://en.wikipedia.org/wiki/Cramer's_V
     .. [5] "Nominal Association: Phi and Cramer's V",
            http://www.people.vcu.edu/~pdattalo/702SuppRead/MeasAssoc/NominalAssoc.html
 
@@ -521,6 +520,6 @@ def association_test(stat, observed, chi2_stat=None, correct_bias=True):
     elif stat.lower() == "phi":
         value = math.sqrt(phi_sq)
     else:
-        raise ValueError("Invalid argument value: 'stat' must be [t or v] corresponding to Tschuprow's T or Cramer's V")
+        raise ValueError("Invalid argument value: 'stat' must be t, v or phi")
 
     return value

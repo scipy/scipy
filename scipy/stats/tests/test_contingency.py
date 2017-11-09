@@ -202,7 +202,7 @@ def test_chi2_contingency_bad_args():
 def test_bad_association_args():
     # Asymmetric Array
     obs = np.array([[1], [1, 2]])
-    assert_raises(TypeError, association_test,"T", obs, None, True)
+    assert_raises(IndexError, association_test,"T", obs, None, True)
 
     # Invalid Chi Squared Stat Value Type
     obs = np.array([[1, 2], [3, 4]])
@@ -229,7 +229,7 @@ def test_cramersV():
     a = association_test(stat="v", observed=obs)
     ax = association_test(stat="v", observed=obs, correct_bias=False)
     assert_approx_equal(a, 0.0, significant=2)
-    assert_approx_equal(ax, 0.06558, significant=5)
+    assert_approx_equal(ax, 0.06558, significant=3)
 
     # 3d Array
     obs = [[[13, 23, 10],
@@ -240,8 +240,8 @@ def test_cramersV():
             [12, 18, 13]]]
     b = association_test(stat="v", observed=obs)
     bx = association_test(stat="v", observed=obs, correct_bias=False)
-    assert_approx_equal(b, 0.01870, significant=5)
-    assert_approx_equal(bx, 0.08875, significant=5)
+    assert_approx_equal(b, 0.01870, significant=3)
+    assert_approx_equal(bx, 0.08875, significant=3)
 
     # 4d Array
     obs = [[[[56, 23],
@@ -252,8 +252,8 @@ def test_cramersV():
              [41, 44]]]]
     c = association_test(stat="v", observed=obs)
     cx = association_test(stat="v", observed=obs, correct_bias=False)
-    assert_approx_equal(c, 0.15756, significant=5)
-    assert_approx_equal(cx, 0.17275, significant=5)
+    assert_approx_equal(c, 0.15756, significant=3)
+    assert_approx_equal(cx, 0.17275, significant=3)
 
 
 def test_tschuprowsT():
@@ -264,8 +264,8 @@ def test_tschuprowsT():
            [9, 15, 14, 12, 11]]
     a = association_test(stat="t", observed=obs)
     ax = association_test(stat="t", observed=obs, correct_bias=False)
-    assert_approx_equal(a, 0.0, significant=2)
-    assert_approx_equal(ax, 0.06558, significant=5)
+    assert_approx_equal(a, 0.0, significant=3)
+    assert_approx_equal(ax, 0.06558, significant=3)
 
     # 3d Array
     obs = [[[13, 23, 10],
@@ -276,8 +276,8 @@ def test_tschuprowsT():
             [12, 18, 13]]]
     b = association_test(stat="t", observed=obs)
     bx = association_test(stat="t", observed=obs, correct_bias=False)
-    assert_approx_equal(b, 0.01870, significant=5)
-    assert_approx_equal(bx, 0.08875, significant=5)
+    assert_approx_equal(b, 0.01870, significant=3)
+    assert_approx_equal(bx, 0.08875, significant=3)
 
     # 4d Array
     obs = [[[[56, 23],
@@ -288,8 +288,8 @@ def test_tschuprowsT():
              [41, 44]]]]
     c = association_test(stat="t", observed=obs)
     cx = association_test(stat="t", observed=obs, correct_bias=False)
-    assert_approx_equal(c, 0.15756, significant=5)
-    assert_approx_equal(cx, 0.17275, significant=5)
+    assert_approx_equal(c, 0.15756, significant=3)
+    assert_approx_equal(cx, 0.17275, significant=3)
 
 def test_phi():
 
@@ -300,7 +300,7 @@ def test_phi():
     a = association_test(stat="phi", observed=obs)
     ax = association_test(stat="phi", observed=obs, correct_bias=False)
     assert_approx_equal(a, 0.0, significant=2)
-    assert_approx_equal(ax, 0.11029, significant=5)
+    assert_approx_equal(ax, 0.11029, significant=3)
 
     # 3d Array
     obs = [[[13, 23, 10],
@@ -311,8 +311,8 @@ def test_phi():
             [12, 18, 13]]]
     b = association_test(stat="phi", observed=obs)
     bx = association_test(stat="phi", observed=obs, correct_bias=False)
-    assert_approx_equal(b, 0.03312, significant=5)
-    assert_approx_equal(bx, 0.15782, significant=5)
+    assert_approx_equal(b, 0.03312, significant=3)
+    assert_approx_equal(bx, 0.15782, significant=3)
 
     # 4d Array
     obs = [[[[56, 23],
@@ -323,5 +323,5 @@ def test_phi():
              [41, 44]]]]
     c = association_test(stat="phi", observed=obs)
     cx = association_test(stat="phi", observed=obs, correct_bias=False)
-    assert_approx_equal(c, 0.24595, significant=5)
-    assert_approx_equal(cx, 0.27036, significant=5)
+    assert_approx_equal(c, 0.24595, significant=3)
+    assert_approx_equal(cx, 0.27036, significant=3)
