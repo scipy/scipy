@@ -208,8 +208,10 @@ def isintlike(x):
     return True
 
 
-def isshape(x):
+def isshape(x, nonneg=False):
     """Is x a valid 2-tuple of dimensions?
+
+    If nonneg, also checks that the dimensions are non-negative.
     """
     try:
         # Assume it's a tuple of matrix dimensions (M, N)
@@ -219,7 +221,8 @@ def isshape(x):
     else:
         if isintlike(M) and isintlike(N):
             if np.ndim(M) == 0 and np.ndim(N) == 0:
-                return True
+                if not nonneg or (M >= 0 and N >= 0):
+                    return True
         return False
 
 
@@ -277,8 +280,14 @@ def check_shape(args, current_shape=None):
     else:
         new_shape = tuple(operator.index(arg) for arg in args)
 
-    # Check the current size only if needed
-    if current_shape is not None:
+    if current_shape is None:
+        if len(new_shape) != 2:
+            raise ValueError('shape must be a 2-tuple of positive integers')
+        elif new_shape[0] < 0 or new_shape[1] < 0:
+            raise ValueError("'shape' elements cannot be negative")
+
+    else:
+        # Check the current size only if needed
         current_size = np.prod(current_shape, dtype=int)
 
         # Check for negatives
@@ -299,20 +308,18 @@ def check_shape(args, current_shape=None):
             new_shape = new_shape[0:skip] + (unspecified,) + new_shape[skip+1:]
         else:
             raise ValueError('can only specify one unknown dimension')
-    else:
-        if new_shape[0] < 0 or new_shape[1] < 0:
-            raise ValueError("'shape' elements cannot be negative")
 
-    # Add and remove ones like numpy.matrix.reshape
-    if len(new_shape) != 2:
-        new_shape = tuple(arg for arg in new_shape if arg != 1)
+        # Add and remove ones like numpy.matrix.reshape
+        if len(new_shape) != 2:
+            new_shape = tuple(arg for arg in new_shape if arg != 1)
 
-        if len(new_shape) == 0:
-            new_shape = (1, 1)
-        elif len(new_shape) == 1:
-            new_shape = (1, new_shape[0])
-        elif len(new_shape) > 2:
-            raise ValueError('shape too large to be a matrix')
+            if len(new_shape) == 0:
+                new_shape = (1, 1)
+            elif len(new_shape) == 1:
+                new_shape = (1, new_shape[0])
+
+    if len(new_shape) > 2:
+        raise ValueError('shape too large to be a matrix')
 
     return new_shape
 
