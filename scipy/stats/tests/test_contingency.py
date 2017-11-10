@@ -201,11 +201,15 @@ def test_chi2_contingency_bad_args():
 
 def test_bad_association_args():
     # Asymmetric Array
-    obs = np.array([[1], [1, 2]])
+    obs = np.array([[21], [11, 21]])
     assert_raises(IndexError, association_test,"T", obs, None, True)
 
+    # Invalid Chi-Squared Warning
+    obs = np.array([[1, 23], [11, 12]])
+    assert_raises(UserWarning, association_test, "T", obs, None, True)
+
     # Invalid Chi Squared Stat Value Type
-    obs = np.array([[1, 2], [3, 4]])
+    obs = np.array([[10, 22], [23, 24]])
     assert_raises(TypeError, association_test, "T", obs, str(1), True)
 
     # Invalid Array Values
@@ -213,11 +217,11 @@ def test_bad_association_args():
     assert_raises(TypeError, association_test, "T", freqs, None, True)
 
     # Invalid Correct Bias Value
-    obs = np.array([[1, 2], [3, 4]])
+    obs = np.array([[15, 25], [35, 45]])
     assert_raises(TypeError, association_test, "T", obs, None, "True")
 
     # Invalid Test Statistic
-    obs = np.array([[1, 2], [3, 4]])
+    obs = np.array([[15, 25], [35, 45]])
     assert_raises(ValueError, association_test, "C", obs, None, True)
 
 
@@ -229,7 +233,7 @@ def test_cramersV():
     a = association_test(stat="v", observed=obs)
     ax = association_test(stat="v", observed=obs, correct_bias=False)
     assert_approx_equal(a, 0.0, significant=2)
-    assert_approx_equal(ax, 0.06558, significant=3)
+    assert_approx_equal(ax, 0.077989, significant=3)
 
     # 3d Array
     obs = [[[13, 23, 10],

@@ -488,10 +488,10 @@ def association_test(stat, observed, chi2_stat=None, correct_bias=True):
     arr, n_rows, n_cols = _reshape_array(arr=observed)
     flat_array = arr.flatten()
 
-    if len([i for i in flat_array if i < 5]) > 0:
-        warn("The Chi-Squared Statistic is invalid if any counts are < 5")
-    elif len([i for i in flat_array if type(i) == np.float64]) > 0:
+    if len([i for i in flat_array if type(i) == np.float64]) > 0:
         raise TypeError("Array must be counts not frequencies.")
+    elif len([i for i in flat_array if i < 5]) > 0:
+        warn("The Chi-Squared Statistic is invalid if any counts are < 5")
     else:
         pass
 
