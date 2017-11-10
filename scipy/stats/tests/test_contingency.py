@@ -244,8 +244,8 @@ def test_cramersV():
             [12, 18, 13]]]
     b = association_test(stat="v", observed=obs)
     bx = association_test(stat="v", observed=obs, correct_bias=False)
-    assert_approx_equal(b, 0.02347, significant=3)
-    assert_approx_equal(bx, 0.11159, significant=3)
+    assert_approx_equal(b, 0.023477, significant=3)
+    assert_approx_equal(bx, 0.111594, significant=3)
 
     # 4d Array
     obs = [[[[56, 23],
@@ -257,7 +257,7 @@ def test_cramersV():
     c = association_test(stat="v", observed=obs)
     cx = association_test(stat="v", observed=obs, correct_bias=False)
     assert_approx_equal(c, 0.174278, significant=3)
-    assert_approx_equal(cx, 0.19117, significant=3)
+    assert_approx_equal(cx, 0.191174, significant=3)
 
 
 def test_tschuprowsT():
@@ -269,7 +269,7 @@ def test_tschuprowsT():
     a = association_test(stat="t", observed=obs)
     ax = association_test(stat="t", observed=obs, correct_bias=False)
     assert_approx_equal(a, 0.0, significant=3)
-    assert_approx_equal(ax, 0.06558, significant=3)
+    assert_approx_equal(ax, 0.065581, significant=3)
 
     # 3d Array
     obs = [[[13, 23, 10],
@@ -315,8 +315,8 @@ def test_phi():
             [12, 18, 13]]]
     b = association_test(stat="phi", observed=obs)
     bx = association_test(stat="phi", observed=obs, correct_bias=False)
-    assert_approx_equal(b, 0.03312, significant=3)
-    assert_approx_equal(bx, 0.15782, significant=3)
+    assert_approx_equal(b, 0.033123, significant=3)
+    assert_approx_equal(bx, 0.157818, significant=3)
 
     # 4d Array
     obs = [[[[56, 23],
@@ -327,5 +327,5 @@ def test_phi():
              [41, 44]]]]
     c = association_test(stat="phi", observed=obs)
     cx = association_test(stat="phi", observed=obs, correct_bias=False)
-    assert_approx_equal(c, 0.24595, significant=3)
-    assert_approx_equal(cx, 0.27036, significant=3)
+    assert_approx_equal(c, 0.245948, significant=3)
+    assert_approx_equal(cx, 0.270362, significant=3)
