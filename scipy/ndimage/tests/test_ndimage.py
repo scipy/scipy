@@ -1736,8 +1736,10 @@ class TestNdimage:
         for out in [data.dtype, data.dtype.newbyteorder(), numpy.empty_like(expected),
                     numpy.empty_like(expected).astype(expected.dtype.newbyteorder())]:
             returned = ndimage.map_coordinates(data, idx, output=out)
-            result = out if returned is None else returned
-            assert_array_almost_equal(result, expected)
+            if returned is None:
+                assert_array_almost_equal(out, expected)
+            else:
+                assert_array_almost_equal(returned, expected)
 
     @pytest.mark.skipif('win32' in sys.platform or numpy.intp(0).itemsize < 8,
                         reason="do not run on 32 bit or windows (no sparse memory)")
