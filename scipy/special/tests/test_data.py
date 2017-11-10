@@ -269,11 +269,11 @@ BOOST_TESTS = [
 
         data(digamma, 'digamma_data_ipp-digamma_data', 0, 1),
         data(digamma, 'digamma_data_ipp-digamma_data', 0j, 1),
-        data(digamma, 'digamma_neg_data_ipp-digamma_neg_data', 0, 1, rtol=1e-13),
+        data(digamma, 'digamma_neg_data_ipp-digamma_neg_data', 0, 1, rtol=2e-13),
         data(digamma, 'digamma_neg_data_ipp-digamma_neg_data', 0j, 1, rtol=1e-13),
-        data(digamma, 'digamma_root_data_ipp-digamma_root_data', 0, 1, rtol=1e-11),
-        data(digamma, 'digamma_root_data_ipp-digamma_root_data', 0j, 1, rtol=1e-11),
-        data(digamma, 'digamma_small_data_ipp-digamma_small_data', 0, 1),
+        data(digamma, 'digamma_root_data_ipp-digamma_root_data', 0, 1, rtol=1e-15),
+        data(digamma, 'digamma_root_data_ipp-digamma_root_data', 0j, 1, rtol=1e-15),
+        data(digamma, 'digamma_small_data_ipp-digamma_small_data', 0, 1, rtol=1e-15),
         data(digamma, 'digamma_small_data_ipp-digamma_small_data', 0j, 1, rtol=1e-14),
 
         data(ellipk_, 'ellint_k_data_ipp-ellint_k_data', 0, 1),
@@ -494,4 +494,3 @@ def _test_factory(test, dtype=np.double):
             test.check(dtype=dtype)
         finally:
             np.seterr(**olderr)
-

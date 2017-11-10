@@ -40,14 +40,11 @@ DEF negrootval = 7.2897639029768949e-17
 
 
 cdef inline double digamma(double z) nogil:
-    """
-    Wrap Cephes' psi to take advantage of the series expansions
-    around the two smallest zeros.
+    """Wrap Cephes' psi to take advantage of the series expansion around
+    the smallest negative zero.
 
     """
-    if zabs(z - posroot) < 0.5:
-        return zeta_series(z, posroot, posrootval)
-    elif zabs(z - negroot) < 0.3:
+    if zabs(z - negroot) < 0.3:
         return zeta_series(z, negroot, negrootval)
     else:
         return psi(z)
