@@ -25,8 +25,9 @@ class TestCobyla(object):
         return -self.con1(x)
 
     def test_simple(self):
+        # use disp=True as smoke test for gh-8118
         x = fmin_cobyla(self.fun, self.x0, [self.con1, self.con2], rhobeg=1,
-                        rhoend=1e-5, maxfun=100)
+                        rhoend=1e-5, maxfun=100, disp=True)
         assert_allclose(x, self.solution, atol=1e-4)
 
     def test_minimize_simple(self):
