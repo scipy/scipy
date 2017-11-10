@@ -31,6 +31,7 @@ def margins(a):
 
     Examples
     --------
+    >>> from scipy.stats import margins
     >>> a = np.arange(12).reshape(2, 6)
     >>> a
     array([[ 0,  1,  2,  3,  4,  5],
