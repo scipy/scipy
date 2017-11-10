@@ -106,7 +106,7 @@ NI_ObjectToOptionalInputArray(PyObject *object, PyArrayObject **array)
 static int
 NI_ObjectToOutputArray(PyObject *object, PyArrayObject **array)
 {
-    int flags = NPY_ARRAY_BEHAVED_NS | NPY_UPDATEIFCOPY;
+    int flags = NPY_ARRAY_BEHAVED_NS | NPY_ARRAY_UPDATEIFCOPY;
     /*
      * This would also be caught by the PyArray_CheckFromAny call, but
      * we check it explicitly here to provide a saner error message.
