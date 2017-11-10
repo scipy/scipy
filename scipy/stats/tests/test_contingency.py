@@ -244,8 +244,8 @@ def test_cramersV():
             [12, 18, 13]]]
     b = association_test(stat="v", observed=obs)
     bx = association_test(stat="v", observed=obs, correct_bias=False)
-    assert_approx_equal(b, 0.01870, significant=3)
-    assert_approx_equal(bx, 0.08875, significant=3)
+    assert_approx_equal(b, 0.02347, significant=3)
+    assert_approx_equal(bx, 0.11159, significant=3)
 
     # 4d Array
     obs = [[[[56, 23],
@@ -256,8 +256,8 @@ def test_cramersV():
              [41, 44]]]]
     c = association_test(stat="v", observed=obs)
     cx = association_test(stat="v", observed=obs, correct_bias=False)
-    assert_approx_equal(c, 0.15756, significant=3)
-    assert_approx_equal(cx, 0.17275, significant=3)
+    assert_approx_equal(c, 0.174278, significant=3)
+    assert_approx_equal(cx, 0.19117, significant=3)
 
 
 def test_tschuprowsT():
