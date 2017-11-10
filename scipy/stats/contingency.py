@@ -357,7 +357,7 @@ def _association_bias_correction(phi_squared, n_rows, n_cols, n_obs):
     ------
     Improves accuracy of estimators with tables > 2x2 and smaller sample sizes [1]
     
-    Cramér's V can be a heavily biased estimator of its population counterpart 
+    Cramer's V can be a heavily biased estimator of its population counterpart 
     and will tend to overestimate the strength of association. The adjusted statistic
     estimates the same population quantity as the original statistic but with typically 
     much smaller mean squared error. [2]
@@ -395,7 +395,7 @@ def association_test(stat, observed, chi2_stat=None, correct_bias=True):
     References
     ----------
     .. [1] "Tschuprow's T",
-           https://en.wikipedia.org/wiki/Tschuprow%27s_T
+           https://en.wikipedia.org/wiki/Tschuprow's_T
     .. [2] Bergsma, Wicher, "A bias-correction for Cramer's V and Tschuprow's T", 
            London School of Econ. and Pol. Sci., pp. 5-7. 
            http://stats.lse.ac.uk/bergsma/pdf/cramerV3.pdf
@@ -409,35 +409,35 @@ def association_test(stat, observed, chi2_stat=None, correct_bias=True):
     Examples
     --------
     
-    2-way (2 x 4) Example
+    2-way Example
     
     >>> obs = [[100, 150], [203, 322], [42, 7], [32, 21]]
     
-    # Cramer's V with bias correction
+    Cramer's V with bias correction
     >>> association_test(stat="V", observed=obs)
     0.46927187061981274
     
-    # Cramer's V without bias correction
+    Cramer's V without bias correction
     >>> association_test(stat="V", observed=obs, correct_bias=False)
     0.4726408338900912
     
-    # Tschuprow's T with bias correction
+    Tschuprow's T with bias correction
     >>> association_test(stat="T", observed=obs)
     0.35677355915423664
     
-    # Tschuprow's T without bias correction
+    Tschuprow's T without bias correction
     >>> association_test(stat="T", observed=obs, correct_bias=False)
     0.3591293720858179
     
-    # Phi with bias correction
+    Phi with bias correction
     >>> association_test(stat="phi", observed=obs)
     0.46900394489393604
     
-    # Phi without bias correction
+    Phi without bias correction
     >>> association_test(stat="phi", observed=obs, correct_bias=False)
     0.4726408338900912
     
-    4-way (2 x 2 x 2 x 3) Array
+    4-way Example
     
     >>> obs = [[[[56, 23],
     ...          [21, 45]],
@@ -446,27 +446,27 @@ def association_test(stat, observed, chi2_stat=None, correct_bias=True):
     ...         [[21, 22],
     ...          [41, 44]]]]
     
-    # Cramer's V with bias correction
+    Cramer's V with bias correction
     >>> association_test(stat="V", observed=obs)
     0.17427841264890478
     
-    # Cramer's V without bias correction
+    Cramer's V without bias correction
     >>> association_test(stat="V", observed=obs, correct_bias=False)
     0.1911749686107999
     
-    # Tschuprow's T with bias correction
+    Tschuprow's T with bias correction
     >>> association_test(stat="T", observed=obs)
     0.15756149073389059
     
-    # Tschuprow's T without bias correction
+    Tschuprow's T without bias correction
     >>> association_test(stat="T", observed=obs, correct_bias=False)
     0.172746084676768
     
-    # Phi with bias correction
+    Phi with bias correction
     >>> association_test(stat="phi", observed=obs)
     0.24594856216264802
     
-    # Phi without bias correction
+    Phi without bias correction
     >>> association_test(stat="phi", observed=obs, correct_bias=False)
     0.27036223339564397
 
@@ -474,7 +474,7 @@ def association_test(stat, observed, chi2_stat=None, correct_bias=True):
     ------
     Cramer's V and Tschuprow's T measure degree to which two variables are related, or the level of 
     their association. This differs from correlation, although many often mistakenly consider them equivalent.
-    Correlation measures in what way two variables are related, whereas Association measures
+    Correlation measures in what way two variables are related, whereas, association measures
     how related the variables are. As such, association does not subsume independent variables, and is 
     rather a test of independence. Where a value of 1.0 = perfect association or dependent variables, and 
     0.0 = no association or entirely independent variables.
