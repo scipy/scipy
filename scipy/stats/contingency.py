@@ -410,7 +410,7 @@ def association_test(stat, observed, chi2_stat=None, correct_bias=True):
     --------
     
     2-way Example
-    
+    >>> from scipy.stats import association_test
     >>> obs = [[100, 150], [203, 322], [42, 7], [32, 21]]
     
     Cramer's V with bias correction
