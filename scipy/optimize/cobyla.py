@@ -26,7 +26,7 @@ __all__ = ['fmin_cobyla']
 
 
 def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0,
-                rhoend=1e-4, iprint=1, maxfun=1000, disp=None, catol=2e-4):
+                rhoend=1e-4, maxfun=1000, disp=None, catol=2e-4):
     """
     Minimize a function using the Constrained Optimization BY Linear
     Approximation (COBYLA) method. This method wraps a FORTRAN
@@ -54,10 +54,8 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0,
     rhoend : float, optional
         Final accuracy in the optimization (not precisely guaranteed). This
         is a lower bound on the size of the trust region.
-    iprint : {0, 1, 2, 3}, optional
-        Controls the frequency of output; 0 implies no output.  Deprecated.
     disp : {0, 1, 2, 3}, optional
-        Over-rides the iprint interface.  Preferred.
+        Controls the frequency of output; 0 implies no output.
     maxfun : int, optional
         Maximum number of function evaluations.
     catol : float, optional
@@ -159,24 +157,21 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0,
     con = tuple({'type': 'ineq', 'fun': c, 'args': consargs} for c in cons)
 
     # options
-    if disp is not None:
-        iprint = disp
     opts = {'rhobeg': rhobeg,
             'tol': rhoend,
-            'iprint': iprint,
-            'disp': iprint != 0,
+            'disp': disp,
             'maxiter': maxfun,
             'catol': catol}
 
     sol = _minimize_cobyla(func, x0, args, constraints=con,
                            **opts)
-    if iprint > 0 and not sol['success']:
+    if disp and not sol['success']:
         print("COBYLA failed to find a solution: %s" % (sol.message,))
     return sol['x']
 
 
 def _minimize_cobyla(fun, x0, args=(), constraints=(),
-                     rhobeg=1.0, tol=1e-4, iprint=1, maxiter=1000,
+                     rhobeg=1.0, tol=1e-4, maxiter=1000,
                      disp=False, catol=2e-4, **unknown_options):
     """
     Minimize a scalar function of one or more variables using the
@@ -277,17 +272,3 @@ def _minimize_cobyla(fun, x0, args=(), constraints=(),
                           fun=info[2],
                           maxcv=info[3])
 
-
-if __name__ == '__main__':
-
-    from math import sqrt
-
-    def fun(x):
-        return x[0] * x[1]
-
-    def cons(x):
-        return 1 - x[0]**2 - x[1]**2
-
-    x = fmin_cobyla(fun, [1., 1.], cons, iprint=3, disp=1)
-
-    print('\nTheoretical solution: %e, %e' % (1. / sqrt(2.), -1. / sqrt(2.)))

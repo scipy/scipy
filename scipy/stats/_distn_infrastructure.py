@@ -1050,8 +1050,9 @@ class rv_generic(object):
                     if mu2 is None:
                         mu2p = self._munp(2, *goodargs)
                         mu2 = mu2p - mu * mu
-                    mu3 = mu3p - 3 * mu * mu2 - mu**3
-                    g1 = mu3 / np.power(mu2, 1.5)
+                    with np.errstate(invalid='ignore'):
+                        mu3 = mu3p - 3 * mu * mu2 - mu**3
+                        g1 = mu3 / np.power(mu2, 1.5)
                 out0 = default.copy()
                 place(out0, cond, g1)
                 output.append(out0)
@@ -1066,9 +1067,11 @@ class rv_generic(object):
                         mu2 = mu2p - mu * mu
                     if mu3 is None:
                         mu3p = self._munp(3, *goodargs)
-                        mu3 = mu3p - 3 * mu * mu2 - mu**3
-                    mu4 = mu4p - 4 * mu * mu3 - 6 * mu * mu * mu2 - mu**4
-                    g2 = mu4 / mu2**2.0 - 3.0
+                        with np.errstate(invalid='ignore'):
+                            mu3 = mu3p - 3 * mu * mu2 - mu**3
+                    with np.errstate(invalid='ignore'):
+                        mu4 = mu4p - 4 * mu * mu3 - 6 * mu * mu * mu2 - mu**4
+                        g2 = mu4 / mu2**2.0 - 3.0
                 out0 = default.copy()
                 place(out0, cond, g2)
                 output.append(out0)
@@ -2742,12 +2745,6 @@ class rv_discrete(rv_generic):
                 '\n    scale : array_like, '
                 'optional\n        scale parameter (default=1)', '')
 
-    @property
-    @np.deprecate(message="`return_integers` attribute is not used anywhere any "
-                          " longer and is deprecated in scipy 0.18.")
-    def return_integers(self):
-        return 1
-
     def _updated_ctor_param(self):
         """ Return the current version of _ctor_param, possibly updated by user.
 
@@ -3346,12 +3343,6 @@ class rv_sample(rv_discrete):
 
         self._construct_docstrings(name, longname, extradoc)
 
-    @property
-    @np.deprecate(message="`return_integers` attribute is not used anywhere any"
-                          " longer and is deprecated in scipy 0.18.")
-    def return_integers(self):
-        return 0
-
     def _pmf(self, x):
         return np.select([x == k for k in self.xk],
                          [np.broadcast_arrays(p, x)[0] for p in self.pk], 0)
@@ -3383,25 +3374,6 @@ class rv_sample(rv_discrete):
     def generic_moment(self, n):
         n = asarray(n)
         return np.sum(self.xk**n[np.newaxis, ...] * self.pk, axis=0)
-
-    @np.deprecate(message="moment_gen method is not used anywhere any more "
-                          "and is deprecated in scipy 0.18.")
-    def moment_gen(self, t):
-        t = asarray(t)
-        return np.sum(exp(self.xk * t[np.newaxis, ...]) * self.pk, axis=0)
-
-    @property
-    @np.deprecate(message="F attribute is not used anywhere any longer and "
-                          "is deprecated in scipy 0.18.")
-    def F(self):
-        return dict(zip(self.xk, self.qvals))
-
-    @property
-    @np.deprecate(message="Finv attribute is not used anywhere any longer and "
-                          "is deprecated in scipy 0.18.")
-    def Finv(self):
-        decreasing_keys = sorted(self.F.keys(), reverse=True)
-        return dict((self.F[k], k) for k in decreasing_keys)
 
 
 def get_distribution_names(namespace_pairs, rv_base_class):

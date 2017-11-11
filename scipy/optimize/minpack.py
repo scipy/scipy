@@ -1,5 +1,6 @@
 from __future__ import division, print_function, absolute_import
 
+import threading
 import warnings
 from . import _minpack
 
@@ -15,7 +16,7 @@ from ._lsq import least_squares
 from ._lsq.common import make_strictly_feasible
 from ._lsq.least_squares import prepare_bounds
 
-
+_MINPACK_LOCK = threading.RLock()
 error = _minpack.error
 
 __all__ = ['fsolve', 'leastsq', 'fixed_point', 'curve_fit']
@@ -220,14 +221,16 @@ def _root_hybr(func, x0, args=(), jac=None,
             ml, mu = band[:2]
         if maxfev == 0:
             maxfev = 200 * (n + 1)
-        retval = _minpack._hybrd(func, x0, args, 1, xtol, maxfev,
-                                 ml, mu, epsfcn, factor, diag)
+        with _MINPACK_LOCK:
+            retval = _minpack._hybrd(func, x0, args, 1, xtol, maxfev,
+                                     ml, mu, epsfcn, factor, diag)
     else:
         _check_func('fsolve', 'fprime', Dfun, x0, args, n, (n, n))
         if (maxfev == 0):
             maxfev = 100 * (n + 1)
-        retval = _minpack._hybrj(func, Dfun, x0, args, 1,
-                                 col_deriv, xtol, maxfev, factor, diag)
+        with _MINPACK_LOCK:
+            retval = _minpack._hybrj(func, Dfun, x0, args, 1,
+                                     col_deriv, xtol, maxfev, factor, diag)
 
     x, status = retval[0], retval[-1]
 
@@ -383,8 +386,9 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
     if Dfun is None:
         if maxfev == 0:
             maxfev = 200*(n + 1)
-        retval = _minpack._lmdif(func, x0, args, full_output, ftol, xtol,
-                                 gtol, maxfev, epsfcn, factor, diag)
+        with _MINPACK_LOCK:
+            retval = _minpack._lmdif(func, x0, args, full_output, ftol, xtol,
+                                     gtol, maxfev, epsfcn, factor, diag)
     else:
         if col_deriv:
             _check_func('leastsq', 'Dfun', Dfun, x0, args, n, (n, m))
@@ -392,8 +396,10 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
             _check_func('leastsq', 'Dfun', Dfun, x0, args, n, (m, n))
         if maxfev == 0:
             maxfev = 100 * (n + 1)
-        retval = _minpack._lmder(func, Dfun, x0, args, full_output, col_deriv,
-                                 ftol, xtol, gtol, maxfev, factor, diag)
+        with _MINPACK_LOCK:
+            retval = _minpack._lmder(func, Dfun, x0, args, full_output,
+                                     col_deriv, ftol, xtol, gtol, maxfev,
+                                     factor, diag)
 
     errors = {0: ["Improper input parameters.", TypeError],
               1: ["Both actual and predicted relative reductions "
@@ -638,30 +644,36 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
     >>> def func(x, a, b, c):
     ...     return a * np.exp(-b * x) + c
 
-    define the data to be fit with some noise
+    Define the data to be fit with some noise:
 
     >>> xdata = np.linspace(0, 4, 50)
     >>> y = func(xdata, 2.5, 1.3, 0.5)
+    >>> np.random.seed(1729)
     >>> y_noise = 0.2 * np.random.normal(size=xdata.size)
     >>> ydata = y + y_noise
     >>> plt.plot(xdata, ydata, 'b-', label='data')
 
-    Fit for the parameters a, b, c of the function `func`
+    Fit for the parameters a, b, c of the function `func`:
 
     >>> popt, pcov = curve_fit(func, xdata, ydata)
-    >>> plt.plot(xdata, func(xdata, *popt), 'r-', label='fit')
+    >>> popt
+    array([ 2.55423706,  1.35190947,  0.47450618])
+    >>> plt.plot(xdata, func(xdata, *popt), 'r-',
+    ...          label='fit: a=%5.3f, b=%5.3f, c=%5.3f' % tuple(popt))
 
-    Constrain the optimization to the region of ``0 < a < 3``, ``0 < b < 2``
-    and ``0 < c < 1``:
+    Constrain the optimization to the region of ``0 <= a <= 3``,
+    ``0 <= b <= 1`` and ``0 <= c <= 0.5``:
 
-    >>> popt, pcov = curve_fit(func, xdata, ydata, bounds=(0, [3., 2., 1.]))
-    >>> plt.plot(xdata, func(xdata, *popt), 'g--', label='fit-with-bounds')
+    >>> popt, pcov = curve_fit(func, xdata, ydata, bounds=(0, [3., 1., 0.5]))
+    >>> popt
+    array([ 2.43708906,  1.        ,  0.35015434])
+    >>> plt.plot(xdata, func(xdata, *popt), 'g--',
+    ...          label='fit: a=%5.3f, b=%5.3f, c=%5.3f' % tuple(popt))
 
     >>> plt.xlabel('x')
     >>> plt.ylabel('y')
     >>> plt.legend()
     >>> plt.show()
-
 
     """
     if p0 is None:
@@ -804,11 +816,13 @@ def check_gradient(fcn, Dfcn, x0, args=(), col_deriv=0):
     xp = zeros((n,), float)
     err = zeros((m,), float)
     fvecp = None
-    _minpack._chkder(m, n, x, fvec, fjac, ldfjac, xp, fvecp, 1, err)
+    with _MINPACK_LOCK:
+        _minpack._chkder(m, n, x, fvec, fjac, ldfjac, xp, fvecp, 1, err)
 
     fvecp = atleast_1d(fcn(xp, *args))
     fvecp = fvecp.reshape((m,))
-    _minpack._chkder(m, n, x, fvec, fjac, ldfjac, xp, fvecp, 2, err)
+    with _MINPACK_LOCK:
+        _minpack._chkder(m, n, x, fvec, fjac, ldfjac, xp, fvecp, 2, err)
 
     good = (product(greater(err, 0.5), axis=0))
 

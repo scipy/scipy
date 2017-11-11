@@ -199,7 +199,7 @@ static ccallback_t *ccallback_obtain(void)
  *     The mismatcing signature from user-provided PyCapsule.
  */
 static void ccallback__err_invalid_signature(ccallback_signature_t *signatures,
-                                             char *capsule_signature)
+                                             const char *capsule_signature)
 {
     PyObject *sig_list = NULL;
     ccallback_signature_t *sig;

@@ -1,4 +1,7 @@
-from numpy.testing import assert_, run_module_suite, assert_raises
+from __future__ import division, absolute_import, print_function
+
+from numpy.testing import assert_
+from pytest import raises as assert_raises
 from scipy._lib._version import NumpyVersion
 
 
@@ -60,6 +63,3 @@ def test_raises():
     for ver in ['1.9', '1,9.0', '1.7.x']:
         assert_raises(ValueError, NumpyVersion, ver)
 
-
-if __name__ == "__main__":
-    run_module_suite()

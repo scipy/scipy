@@ -3,7 +3,7 @@
 
 from __future__ import division, print_function, absolute_import
 
-import warnings
+import operator
 import threading
 import sys
 import timeit
@@ -372,8 +372,8 @@ def fftconvolve(in1, in2, mode="full"):
 
     s1 = array(in1.shape)
     s2 = array(in2.shape)
-    complex_result = (np.issubdtype(in1.dtype, complex) or
-                      np.issubdtype(in2.dtype, complex))
+    complex_result = (np.issubdtype(in1.dtype, np.complexfloating) or
+                      np.issubdtype(in2.dtype, np.complexfloating))
     shape = s1 + s2 - 1
 
     # Check that input sizes are compatible with 'valid' mode
@@ -500,28 +500,6 @@ def _np_conv_ok(volume, kernel, mode):
     """
     np_conv_ok = volume.ndim == kernel.ndim == 1
     return np_conv_ok and (volume.size >= kernel.size or mode != 'same')
-
-
-def _fftconvolve_valid(volume, kernel):
-    # fftconvolve doesn't support complex256
-    for not_fft_conv_supp in ["complex256", "complex192"]:
-        if hasattr(np, not_fft_conv_supp):
-            if volume.dtype == not_fft_conv_supp or kernel.dtype == not_fft_conv_supp:
-                return False
-
-    # for integer input,
-    # catch when more precision required than float provides (representing a
-    # integer as float can lose precision in fftconvolve if larger than 2**52)
-    if any([_numeric_arrays([x], kinds='ui') for x in [volume, kernel]]):
-        max_value = int(np.abs(volume).max()) * int(np.abs(kernel).max())
-        max_value *= int(min(volume.size, kernel.size))
-        if max_value > 2**np.finfo('float').nmant - 1:
-            return False
-
-    if _numeric_arrays([volume, kernel]):
-        return False
-
-    return True
 
 
 def _timeit_fast(stmt="pass", setup="pass", repeat=3):
@@ -675,6 +653,9 @@ def choose_conv_method(in1, in2, mode='full', measure=False):
         if max_value > 2**np.finfo('float').nmant - 1:
             return 'direct'
 
+    if _numeric_arrays([volume, kernel], kinds='b'):
+        return 'direct'
+
     if _numeric_arrays([volume, kernel]):
         if _fftconv_faster(volume, kernel, mode):
             return 'fft'
@@ -784,9 +765,10 @@ def convolve(in1, in2, mode='full', method='auto'):
 
     if method == 'fft':
         out = fftconvolve(volume, kernel, mode=mode)
-        if volume.dtype.kind in 'ui':
+        result_type = np.result_type(volume, kernel)
+        if result_type.kind in {'u', 'i'}:
             out = np.around(out)
-        return out.astype(volume.dtype)
+        return out.astype(result_type)
 
     # fastpath to faster numpy.convolve for 1d inputs when possible
     if _np_conv_ok(volume, kernel, mode):
@@ -1037,12 +1019,7 @@ def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
 
     val = _valfrommode(mode)
     bval = _bvalfromboundary(boundary)
-
-    with warnings.catch_warnings():
-        warnings.simplefilter('ignore', np.ComplexWarning)
-        # FIXME: some cast generates a warning here
-        out = sigtools._convolve2d(in1, in2, 1, val, bval, fillvalue)
-
+    out = sigtools._convolve2d(in1, in2, 1, val, bval, fillvalue)
     return out
 
 
@@ -1135,11 +1112,7 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
 
     val = _valfrommode(mode)
     bval = _bvalfromboundary(boundary)
-
-    with warnings.catch_warnings():
-        warnings.simplefilter('ignore', np.ComplexWarning)
-        # FIXME: some cast generates a warning here
-        out = sigtools._convolve2d(in1, in2, 0, val, bval, fillvalue)
+    out = sigtools._convolve2d(in1, in2, 0, val, bval, fillvalue)
 
     if swapped_inputs:
         out = out[::-1, ::-1]
@@ -1377,7 +1350,7 @@ def lfilter(b, a, x, axis=-1, zi=None):
 
 def lfiltic(b, a, y, x=None):
     """
-    Construct initial conditions for lfilter.
+    Construct initial conditions for lfilter given input and output vectors.
 
     Given a linear filter (b, a) and initial conditions on the output `y`
     and the input `x`, return the initial conditions on the state vector zi
@@ -2232,6 +2205,18 @@ def resample(x, num, t=None, axis=0, window=None):
     Y[sl] = X[sl]
     sl[axis] = slice(-(N - 1) // 2, None)
     Y[sl] = X[sl]
+
+    if N % 2 == 0:  # special treatment if low number of points is even. So far we have set Y[-N/2]=X[-N/2]
+        if N < Nx:  # if downsampling
+            sl[axis] = slice(N//2,N//2+1,None)  # select the component at frequency N/2
+            Y[sl] += X[sl]  # add the component of X at N/2
+        elif N < num:  # if upsampling
+            sl[axis] = slice(num-N//2,num-N//2+1,None)  # select the component at frequency -N/2
+            Y[sl] /= 2  # halve the component at -N/2
+            temp = Y[sl]
+            sl[axis] = slice(N//2,N//2+1,None)  # select the component at +N/2
+            Y[sl] = temp  # set that equal to the component at -N/2
+
     y = fftpack.ifft(Y, axis=axis) * (float(num) / float(Nx))
 
     if x.dtype.char not in ['F', 'D']:
@@ -2328,6 +2313,10 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0)):
     >>> plt.show()
     """
     x = asarray(x)
+    if up != int(up):
+        raise ValueError("up must be an integer")
+    if down != int(down):
+        raise ValueError("down must be an integer")
     up = int(up)
     down = int(down)
     if up < 1 or down < 1:
@@ -2345,7 +2334,7 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0)):
     n_out = n_out // down + bool(n_out % down)
 
     if isinstance(window, (list, np.ndarray)):
-        window = asarray(window)
+        window = array(window)  # use array to force a copy (we modify it)
         if window.ndim > 1:
             raise ValueError('window must be 1-D')
         half_len = (window.size - 1) // 2
@@ -2538,7 +2527,9 @@ def detrend(data, axis=-1, type='linear', bp=0):
 
 def lfilter_zi(b, a):
     """
-    Compute an initial state `zi` for the lfilter function that corresponds
+    Construct initial conditions for lfilter for step response steady-state.
+
+    Compute an initial state `zi` for the `lfilter` function that corresponds
     to the steady state of the step response.
 
     A typical use of this function is to set the initial state so that the
@@ -2672,7 +2663,9 @@ def lfilter_zi(b, a):
 
 def sosfilt_zi(sos):
     """
-    Compute an initial state `zi` for the sosfilt function that corresponds
+    Construct initial conditions for sosfilt for step response steady-state.
+
+    Compute an initial state `zi` for the `sosfilt` function that corresponds
     to the steady state of the step response.
 
     A typical use of this function is to set the initial state so that the
@@ -2922,25 +2915,13 @@ def _filtfilt_gust(b, a, x, axis=-1, irlen=None):
 def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
              irlen=None):
     """
-    A forward-backward filter.
+    Apply a digital filter forward and backward to a signal.
 
-    This function applies a linear filter twice, once forward and once
-    backwards.  The combined filter has linear phase.
+    This function applies a linear digital filter twice, once forward and
+    once backwards.  The combined filter has zero phase and a filter order
+    twice that of the original.
 
     The function provides options for handling the edges of the signal.
-
-    When `method` is "pad", the function pads the data along the given axis
-    in one of three ways: odd, even or constant.  The odd and even extensions
-    have the corresponding symmetry about the end point of the data.  The
-    constant extension extends the data with the values at the end points. On
-    both the forward and backward passes, the initial condition of the
-    filter is found by using `lfilter_zi` and scaling it by the end point of
-    the extended data.
-
-    When `method` is "gust", Gustafsson's method [1]_ is used.  Initial
-    conditions are chosen for the forward and backward passes so that the
-    forward-backward filter gives the same result as the backward-forward
-    filter.
 
     Parameters
     ----------
@@ -2987,6 +2968,19 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
 
     Notes
     -----
+    When `method` is "pad", the function pads the data along the given axis
+    in one of three ways: odd, even or constant.  The odd and even extensions
+    have the corresponding symmetry about the end point of the data.  The
+    constant extension extends the data with the values at the end points. On
+    both the forward and backward passes, the initial condition of the
+    filter is found by using `lfilter_zi` and scaling it by the end point of
+    the extended data.
+
+    When `method` is "gust", Gustafsson's method [1]_ is used.  Initial
+    conditions are chosen for the forward and backward passes so that the
+    forward-backward filter gives the same result as the backward-forward
+    filter.
+
     The option to use Gustaffson's method was added in scipy version 0.16.0.
 
     References
@@ -3011,7 +3005,7 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
     >>> x = xlow + xhigh
 
     Now create a lowpass Butterworth filter with a cutoff of 0.125 times
-    the Nyquist rate, or 125 Hz, and apply it to ``x`` with `filtfilt`.
+    the Nyquist frequency, or 125 Hz, and apply it to ``x`` with `filtfilt`.
     The result should be approximately ``xlow``, with no phase shift.
 
     >>> b, a = signal.butter(8, 0.125)
@@ -3152,7 +3146,7 @@ def _validate_pad(padtype, padlen, x, axis, ntaps):
 
 def sosfilt(sos, x, axis=-1, zi=None):
     """
-    Filter data along one dimension using cascaded second-order sections
+    Filter data along one dimension using cascaded second-order sections.
 
     Filter a data sequence, `x`, using a digital IIR filter defined by
     `sos`. This is implemented by performing `lfilter` for each
@@ -3248,7 +3242,7 @@ def sosfilt(sos, x, axis=-1, zi=None):
 
 def sosfiltfilt(sos, x, axis=-1, padtype='odd', padlen=None):
     """
-    A forward-backward filter using cascaded second-order sections.
+    A forward-backward digital filter using cascaded second-order sections.
 
     See `filtfilt` for more complete information about this method.
 
@@ -3296,6 +3290,43 @@ def sosfiltfilt(sos, x, axis=-1, padtype='odd', padlen=None):
     Notes
     -----
     .. versionadded:: 0.18.0
+
+    Examples
+    --------
+    >>> from scipy.signal import sosfiltfilt, butter
+    >>> import matplotlib.pyplot as plt
+
+    Create an interesting signal to filter.
+
+    >>> n = 201
+    >>> t = np.linspace(0, 1, n)
+    >>> np.random.seed(123)
+    >>> x = 1 + (t < 0.5) - 0.25*t**2 + 0.05*np.random.randn(n)
+
+    Create a lowpass Butterworth filter, and use it to filter `x`.
+
+    >>> sos = butter(4, 0.125, output='sos')
+    >>> y = sosfiltfilt(sos, x)
+
+    For comparison, apply an 8th order filter using `sosfilt`.  The filter
+    is initialized using the mean of the first four values of `x`.
+
+    >>> from scipy.signal import sosfilt, sosfilt_zi
+    >>> sos8 = butter(8, 0.125, output='sos')
+    >>> zi = x[:4].mean() * sosfilt_zi(sos8)
+    >>> y2, zo = sosfilt(sos8, x, zi=zi)
+
+    Plot the results.  Note that the phase of `y` matches the input, while
+    `y2` has a significant phase delay.
+
+    >>> plt.plot(t, x, alpha=0.5, label='x(t)')
+    >>> plt.plot(t, y, label='y(t)')
+    >>> plt.plot(t, y2, label='y2(t)')
+    >>> plt.legend(framealpha=1, shadow=True)
+    >>> plt.grid(alpha=0.25)
+    >>> plt.xlabel('t')
+    >>> plt.show()
+
     """
     sos, n_sections = _validate_sos(sos)
 
@@ -3329,14 +3360,15 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
 
     Parameters
     ----------
-    x : ndarray
+    x : array_like
         The signal to be downsampled, as an N-dimensional array.
     q : int
-        The downsampling factor. For downsampling factors higher than 13, it is
-        recommended to call `decimate` multiple times.
+        The downsampling factor. When using IIR downsampling, it is recommended
+        to call `decimate` multiple times for downsampling factors higher than
+        13.
     n : int, optional
         The order of the filter (1 less than the length for 'fir'). Defaults to
-        8 for 'iir' and 30 for 'fir'.
+        8 for 'iir' and 20 times the downsampling factor for 'fir'.
     ftype : str {'iir', 'fir'} or ``dlti`` instance, optional
         If 'iir' or 'fir', specifies the type of lowpass filter. If an instance
         of an `dlti` object, uses that object to filter before downsampling.
@@ -3367,43 +3399,47 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
     0.18.0.
     """
 
-    if not isinstance(q, int):
-        raise TypeError("q must be an integer")
+    x = asarray(x)
+    q = operator.index(q)
 
-    if n is not None and not isinstance(n, int):
-        raise TypeError("n must be an integer")
+    if n is not None:
+        n = operator.index(n)
 
     if ftype == 'fir':
         if n is None:
-            n = 30
-        system = dlti(firwin(n+1, 1. / q, window='hamming'), 1.)
+            half_len = 10 * q  # reasonable cutoff for our sinc-like function
+            n = 2 * half_len
+        b, a = firwin(n+1, 1. / q, window='hamming'), 1.
     elif ftype == 'iir':
         if n is None:
             n = 8
         system = dlti(*cheby1(n, 0.05, 0.8 / q))
+        b, a = system.num, system.den
     elif isinstance(ftype, dlti):
         system = ftype._as_tf()  # Avoids copying if already in TF form
-        n = np.max((system.num.size, system.den.size)) - 1
+        b, a = system.num, system.den
     else:
         raise ValueError('invalid ftype')
 
     sl = [slice(None)] * x.ndim
+    a = np.asarray(a)
 
-    if len(system.den) == 1:  # FIR case
+    if a.size == 1:  # FIR case
+        b = b / a
         if zero_phase:
-            y = resample_poly(x, 1, q, axis=axis, window=system.num)
+            y = resample_poly(x, 1, q, axis=axis, window=b)
         else:
             # upfirdn is generally faster than lfilter by a factor equal to the
             # downsampling factor, since it only calculates the needed outputs
             n_out = x.shape[axis] // q + bool(x.shape[axis] % q)
-            y = upfirdn(system.num, x, up=1, down=q, axis=axis)
+            y = upfirdn(b, x, up=1, down=q, axis=axis)
             sl[axis] = slice(None, n_out, None)
 
     else:  # IIR case
         if zero_phase:
-            y = filtfilt(system.num, system.den, x, axis=axis)
+            y = filtfilt(b, a, x, axis=axis)
         else:
-            y = lfilter(system.num, system.den, x, axis=axis)
+            y = lfilter(b, a, x, axis=axis)
         sl[axis] = slice(None, None, q)
 
     return y[sl]

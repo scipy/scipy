@@ -3,7 +3,7 @@
 
 from __future__ import division, print_function, absolute_import
 
-from numpy.testing import TestCase, assert_, assert_allclose, assert_equal, run_module_suite
+from numpy.testing import assert_, assert_allclose, assert_equal
 
 import numpy as np
 from numpy import zeros, array, allclose
@@ -39,7 +39,7 @@ def do_solve(**kw):
     return x0, count_0
 
 
-class TestLGMRES(TestCase):
+class TestLGMRES(object):
     def test_preconditioner(self):
         # Check that preconditioning works
         pc = splu(Am.tocsc())
@@ -60,7 +60,7 @@ class TestLGMRES(TestCase):
         assert_(len(outer_v) > 0)
         assert_(len(outer_v) <= 6)
 
-        x1, count_1 = do_solve(outer_k=6, outer_v=outer_v)
+        x1, count_1 = do_solve(outer_k=6, outer_v=outer_v, prepend_outer_v=True)
         assert_(count_1 == 2, count_1)
         assert_(count_1 < count_0/2)
         assert_(allclose(x1, x0, rtol=1e-14))
@@ -73,7 +73,7 @@ class TestLGMRES(TestCase):
         assert_(len(outer_v) > 0)
         assert_(len(outer_v) <= 6)
 
-        x1, count_1 = do_solve(outer_k=6, outer_v=outer_v)
+        x1, count_1 = do_solve(outer_k=6, outer_v=outer_v, prepend_outer_v=True)
         assert_(count_1 == 3, count_1)
         assert_(count_1 < count_0/2)
         assert_(allclose(x1, x0, rtol=1e-14))
@@ -163,7 +163,7 @@ class TestLGMRES(TestCase):
             resp = np.linalg.norm(A.dot(xp) - b)
 
             K = np.c_[b, A.dot(b), A.dot(A.dot(b)), A.dot(A.dot(A.dot(b)))]
-            y, _, _, _ = np.linalg.lstsq(A.dot(K), b)
+            y, _, _, _ = np.linalg.lstsq(A.dot(K), b, rcond=-1)
             x = K.dot(y)
             res = np.linalg.norm(A.dot(x) - b)
 
@@ -183,6 +183,3 @@ class TestLGMRES(TestCase):
         if info == 0:
             assert_allclose(A.dot(xp), b)
 
-
-if __name__ == "__main__":
-    run_module_suite()

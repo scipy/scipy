@@ -392,7 +392,7 @@ def cont2discrete(system, dt, method="zoh", alpha=None):
     .. [3] G. Zhang, X. Chen, and T. Chen, Digital redesign via the generalized
         bilinear transformation, Int. J. Control, vol. 82, no. 4, pp. 741-754,
         2009.
-        (http://www.ece.ualberta.ca/~gfzhang/research/ZCC07_preprint.pdf)
+        (http://www.mypolyuweb.hk/~magzhang/Research/ZCC09_IJC.pdf)
 
     """
     if len(system) == 1:

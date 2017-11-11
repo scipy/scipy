@@ -1,9 +1,9 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import (TestCase, assert_almost_equal, assert_equal,
-                           assert_, assert_raises, run_module_suite,
-                           assert_allclose, assert_array_equal)
+from numpy.testing import (assert_almost_equal, assert_equal,
+                           assert_, assert_allclose, assert_array_equal)
+from pytest import raises as assert_raises
 
 import scipy.signal.waveforms as waveforms
 
@@ -46,7 +46,7 @@ def compute_frequency(t, theta):
     return tf, f
 
 
-class TestChirp(TestCase):
+class TestChirp(object):
 
     def test_linear_at_zero(self):
         w = waveforms.chirp(t=0, f0=1.0, f1=2.0, t1=1.0, method='linear')
@@ -221,7 +221,7 @@ class TestChirp(TestCase):
         assert_equal(int_result, float_result, err_msg=err_msg)
 
 
-class TestSweepPoly(TestCase):
+class TestSweepPoly(object):
 
     def test_sweep_poly_quad1(self):
         p = np.poly1d([1.0, 0.0, 1.0])
@@ -289,7 +289,7 @@ class TestSweepPoly(TestCase):
         assert_(abserr < 1e-6)
 
 
-class TestGaussPulse(TestCase):
+class TestGaussPulse(object):
 
     def test_integer_fc(self):
         float_result = waveforms.gausspulse('cutoff', fc=1000.0)
@@ -316,7 +316,7 @@ class TestGaussPulse(TestCase):
         assert_equal(int_result, float_result, err_msg=err_msg)
 
 
-class TestUnitImpulse(TestCase):
+class TestUnitImpulse(object):
 
     def test_no_index(self):
         assert_array_equal(waveforms.unit_impulse(7), [1, 0, 0, 0, 0, 0, 0])
@@ -344,13 +344,10 @@ class TestUnitImpulse(TestCase):
 
     def test_dtype(self):
         imp = waveforms.unit_impulse(7)
-        assert_(np.issubdtype(imp.dtype, np.float))
+        assert_(np.issubdtype(imp.dtype, np.floating))
 
         imp = waveforms.unit_impulse(5, 3, dtype=int)
         assert_(np.issubdtype(imp.dtype, np.integer))
 
         imp = waveforms.unit_impulse((5, 2), (3, 1), dtype=complex)
-        assert_(np.issubdtype(imp.dtype, np.complex))
-
-if __name__ == "__main__":
-    run_module_suite()
+        assert_(np.issubdtype(imp.dtype, np.complexfloating))

@@ -3,14 +3,13 @@ from __future__ import division, print_function, absolute_import
 import math
 import numpy as np
 
-from numpy.testing import assert_allclose, TestCase, run_module_suite, \
-     assert_
+from numpy.testing import assert_allclose, assert_
 
 from scipy.optimize import fmin_cobyla, minimize
 
 
-class TestCobyla(TestCase):
-    def setUp(self):
+class TestCobyla(object):
+    def setup_method(self):
         self.x0 = [4.95, 0.66]
         self.solution = [math.sqrt(25 - (2.0/3)**2), 2.0/3]
         self.opts = {'disp': False, 'rhobeg': 1, 'tol': 1e-5,
@@ -27,7 +26,7 @@ class TestCobyla(TestCase):
 
     def test_simple(self):
         x = fmin_cobyla(self.fun, self.x0, [self.con1, self.con2], rhobeg=1,
-                        rhoend=1e-5, iprint=0, maxfun=100)
+                        rhoend=1e-5, maxfun=100)
         assert_allclose(x, self.solution, atol=1e-4)
 
     def test_minimize_simple(self):
@@ -96,10 +95,10 @@ def test_vector_constraints():
     fsol = 0.8
 
     # testing fmin_cobyla
-    sol = fmin_cobyla(fun, x0, cons_list, rhoend=1e-5, iprint=0)
+    sol = fmin_cobyla(fun, x0, cons_list, rhoend=1e-5)
     assert_allclose(sol, xsol, atol=1e-4)
 
-    sol = fmin_cobyla(fun, x0, fmin, rhoend=1e-5, iprint=0)
+    sol = fmin_cobyla(fun, x0, fmin, rhoend=1e-5)
     assert_allclose(fun(sol), 1, atol=1e-4)
 
     # testing minimize
@@ -113,6 +112,3 @@ def test_vector_constraints():
     sol = minimize(fun, x0, constraints=constraints, tol=1e-5)
     assert_allclose(sol.fun, 1, atol=1e-4)
 
-
-if __name__ == "__main__":
-    run_module_suite()

@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 from __future__ import division, print_function, absolute_import
 
 from scipy._build_utils import numpy_nodepr_api
@@ -10,6 +9,8 @@ def configuration(parent_package='', top_path=None):
     config = Configuration('signal', parent_package, top_path)
 
     config.add_data_dir('tests')
+
+    config.add_subpackage('windows')
 
     config.add_extension('sigtools',
                          sources=['sigtoolsmodule.c', 'firfilter.c',

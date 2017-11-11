@@ -44,7 +44,7 @@ extern int F_FUNC(zbesh,ZBESH)
 
 int ierr_to_sferr(int nz, int ierr) {
   /* Return sf_error equivalents for ierr values */
-  
+
   if (nz != 0) return SF_ERROR_UNDERFLOW;
 
   switch (ierr) {
@@ -123,7 +123,7 @@ reflect_jy(npy_cdouble *jy, double v)
     int i;
     if (v != floor(v))
         return 0;
-    
+
     i = v - 16384.0 * floor(v / 16384.0);
     if (i & 1) {
         jy->real = -jy->real;
@@ -194,7 +194,7 @@ int cairy_wrap(npy_cdouble z, npy_cdouble *ai, npy_cdouble *aip, npy_cdouble *bi
   nz = 0;
   F_FUNC(zbiry,ZBIRY)(CADDR(z), &id, &kode, F2C_CST(bi), &ierr);
   DO_SFERR("airy:", bi);
-  
+
   id = 1;
   F_FUNC(zairy,ZAIRY)(CADDR(z), &id, &kode, F2C_CST(aip), &nz, &ierr);
   DO_SFERR("airy:", aip);
@@ -223,7 +223,7 @@ int cairy_wrap_e(npy_cdouble z, npy_cdouble *ai, npy_cdouble *aip, npy_cdouble *
   nz = 0;
   F_FUNC(zbiry,ZBIRY)(CADDR(z), &id, &kode, F2C_CST(bi), &ierr);
   DO_SFERR("airye:", bi);
-  
+
   id = 1;
   F_FUNC(zairy,ZAIRY)(CADDR(z), &id, &kode, F2C_CST(aip), &nz, &ierr);
   DO_SFERR("airye:", aip);
@@ -247,7 +247,7 @@ int cairy_wrap_e_real(double z, double *ai, double *aip, double *bi, double *bip
   caip.imag = NPY_NAN;
   cbip.real = NPY_NAN;
   cbip.imag = NPY_NAN;
-  
+
   cz.real = z;
   cz.imag = 0;
 
@@ -262,7 +262,7 @@ int cairy_wrap_e_real(double z, double *ai, double *aip, double *bi, double *bip
   F_FUNC(zbiry,ZBIRY)(CADDR(cz), &id, &kode, CADDR(cbi), &ierr);
   DO_SFERR("airye:", &cbi);
   *bi = cbi.real;
-  
+
   id = 1;
   if (z < 0) {
       *aip = NPY_NAN;
@@ -290,6 +290,9 @@ npy_cdouble cbesi_wrap( double v, npy_cdouble z) {
   cy_k.real = NPY_NAN;
   cy_k.imag = NPY_NAN;
 
+  if (npy_isnan(v) || npy_isnan(z.real) || npy_isnan(z.imag)) {
+    return cy;
+  }
   if (v < 0) {
     v = -v;
     sign = -1;
@@ -334,6 +337,9 @@ npy_cdouble cbesi_wrap_e( double v, npy_cdouble z) {
   cy_k.real = NPY_NAN;
   cy_k.imag = NPY_NAN;
 
+  if (npy_isnan(v) || npy_isnan(z.real) || npy_isnan(z.imag)) {
+    return cy;
+  }
   if (v < 0) {
     v = -v;
     sign = -1;
@@ -383,6 +389,9 @@ npy_cdouble cbesj_wrap( double v, npy_cdouble z) {
   cy_y.real = NPY_NAN;
   cy_y.imag = NPY_NAN;
 
+  if (npy_isnan(v) || npy_isnan(z.real) || npy_isnan(z.imag)) {
+    return cy_j;
+  }
   if (v < 0) {
     v = -v;
     sign = -1;
@@ -439,6 +448,9 @@ npy_cdouble cbesj_wrap_e( double v, npy_cdouble z) {
   cy_y.real = NPY_NAN;
   cy_y.imag = NPY_NAN;
 
+  if (npy_isnan(v) || npy_isnan(z.real) || npy_isnan(z.imag)) {
+    return cy_j;
+  }
   if (v < 0) {
     v = -v;
     sign = -1;
@@ -466,7 +478,7 @@ double cbesj_wrap_e_real(double v, double z) {
     return cy.real;
   }
 }
-  
+
 npy_cdouble cbesy_wrap( double v, npy_cdouble z) {
   int n = 1;
   int kode = 1;
@@ -479,6 +491,9 @@ npy_cdouble cbesy_wrap( double v, npy_cdouble z) {
   cy_y.real = NPY_NAN;
   cy_y.imag = NPY_NAN;
 
+  if (npy_isnan(v) || npy_isnan(z.real) || npy_isnan(z.imag)) {
+    return cy_y;
+  }
   if (v < 0) {
     v = -v;
     sign = -1;
@@ -545,6 +560,9 @@ npy_cdouble cbesy_wrap_e( double v, npy_cdouble z) {
   cy_y.real = NPY_NAN;
   cy_y.imag = NPY_NAN;
 
+  if (npy_isnan(v) || npy_isnan(z.real) || npy_isnan(z.imag)) {
+    return cy_y;
+  }
   if (v < 0) {
     v = -v;
     sign = -1;
@@ -580,7 +598,7 @@ double cbesy_wrap_e_real(double v, double z) {
     return cy.real;
   }
 }
-  
+
 npy_cdouble cbesk_wrap( double v, npy_cdouble z) {
   int n = 1;
   int kode = 1;
@@ -590,6 +608,9 @@ npy_cdouble cbesk_wrap( double v, npy_cdouble z) {
   cy.real = NPY_NAN;
   cy.imag = NPY_NAN;
 
+  if (npy_isnan(v) || npy_isnan(z.real) || npy_isnan(z.imag)) {
+    return cy;
+  }
   if (v < 0) {
     /* K_v == K_{-v} even for non-integer v */
     v = -v;
@@ -616,6 +637,9 @@ npy_cdouble cbesk_wrap_e( double v, npy_cdouble z) {
   cy.real = NPY_NAN;
   cy.imag = NPY_NAN;
 
+  if (npy_isnan(v) || npy_isnan(z.real) || npy_isnan(z.imag)) {
+    return cy;
+  }
   if (v < 0) {
     /* K_v == K_{-v} even for non-integer v */
     v = -v;
@@ -632,11 +656,14 @@ npy_cdouble cbesk_wrap_e( double v, npy_cdouble z) {
 
   return cy;
 }
-  
+
 double cbesk_wrap_real( double v, double z) {
   npy_cdouble cy, w;
   if (z < 0) {
     return NPY_NAN;
+  }
+  else if (z == 0) {
+    return NPY_INFINITY;
   }
   else if (z > 710 * (1 + fabs(v))) {
       /* Underflow. See uniform expansion http://dlmf.nist.gov/10.41
@@ -662,14 +689,18 @@ double cbesk_wrap_e_real( double v, double z) {
   npy_cdouble cy, w;
   if (z < 0) {
     return NPY_NAN;
-  } else {
+  }
+  else if (z == 0) {
+    return NPY_INFINITY;
+  }
+  else {
     w.real = z;
     w.imag = 0;
     cy = cbesk_wrap_e(v, w);
     return cy.real;
   }
 }
-  
+
 npy_cdouble cbesh_wrap1( double v, npy_cdouble z) {
   int n = 1;
   int kode = 1;
@@ -681,6 +712,9 @@ npy_cdouble cbesh_wrap1( double v, npy_cdouble z) {
   cy.real = NPY_NAN;
   cy.imag = NPY_NAN;
 
+  if (npy_isnan(v) || npy_isnan(z.real) || npy_isnan(z.imag)) {
+    return cy;
+  }
   if (v < 0) {
     v = -v;
     sign = -1;
@@ -704,6 +738,9 @@ npy_cdouble cbesh_wrap1_e( double v, npy_cdouble z) {
   cy.real = NPY_NAN;
   cy.imag = NPY_NAN;
 
+  if (npy_isnan(v) || npy_isnan(z.real) || npy_isnan(z.imag)) {
+    return cy;
+  }
   if (v < 0) {
     v = -v;
     sign = -1;
@@ -715,7 +752,7 @@ npy_cdouble cbesh_wrap1_e( double v, npy_cdouble z) {
   }
   return cy;
 }
-  
+
 npy_cdouble cbesh_wrap2( double v, npy_cdouble z) {
   int n = 1;
   int kode = 1;
@@ -727,6 +764,9 @@ npy_cdouble cbesh_wrap2( double v, npy_cdouble z) {
   cy.real = NPY_NAN;
   cy.imag = NPY_NAN;
 
+  if (npy_isnan(v) || npy_isnan(z.real) || npy_isnan(z.imag)) {
+    return cy;
+  }
   if (v < 0) {
     v = -v;
     sign = -1;
@@ -750,6 +790,9 @@ npy_cdouble cbesh_wrap2_e( double v, npy_cdouble z) {
   cy.real = NPY_NAN;
   cy.imag = NPY_NAN;
 
+  if (npy_isnan(v) || npy_isnan(z.real) || npy_isnan(z.imag)) {
+    return cy;
+  }
   if (v < 0) {
     v = -v;
     sign = -1;

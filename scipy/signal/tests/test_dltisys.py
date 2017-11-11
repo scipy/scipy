@@ -3,18 +3,18 @@
 
 from __future__ import division, print_function, absolute_import
 
-import warnings
 import numpy as np
-from numpy.testing import (TestCase, run_module_suite, assert_equal,
+from numpy.testing import (assert_equal,
                            assert_array_almost_equal, assert_array_equal,
-                           assert_allclose, assert_, assert_raises,
-                           assert_almost_equal)
+                           assert_allclose, assert_, assert_almost_equal)
+from pytest import raises as assert_raises
+from scipy._lib._numpy_compat import suppress_warnings
 from scipy.signal import (dlsim, dstep, dimpulse, tf2zpk, lti, dlti,
                           StateSpace, TransferFunction, ZerosPolesGain,
-                          dfreqresp, dbode)
+                          dfreqresp, dbode, BadCoefficients)
 
 
-class TestDLTI(TestCase):
+class TestDLTI(object):
 
     def test_dlsim(self):
 
@@ -324,13 +324,6 @@ class TestStateSpaceDisc(object):
                        np.array([[1, 0]]), np.array([[0]]), dt=dt)
         s = StateSpace(1, 1, 1, 1, dt=True)
 
-    def _compare_systems(self, sys1, sys2):
-        # Compare the contents of two systems
-        assert_equal(sys1.A, sys2.A)
-        assert_equal(sys1.B, sys2.B)
-        assert_equal(sys1.C, sys2.C)
-        assert_equal(sys1.D, sys2.D)
-
     def test_conversion(self):
         # Check the conversion functions
         s = StateSpace(1, 2, 3, 4, dt=0.05)
@@ -350,28 +343,6 @@ class TestStateSpaceDisc(object):
         s = StateSpace(1, 1, 1, 1, dt=0.05)
         assert_equal(s.poles, [1])
         assert_equal(s.zeros, [0])
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            assert_equal(s.gain, 1)
-            assert_equal(s.num, [1, 0])
-            assert_equal(s.den, [1, -1])
-
-        # transfer function setters
-        s2 = StateSpace(2, 2, 2, 2, dt=0.05)
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            s2.num = [1, 0]
-            s2.den = [1, -1]
-            self._compare_systems(s, s2)
-
-        # zpk setters
-        s2 = StateSpace(2, 2, 2, 2, dt=0.05)
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            s2.poles = 1
-            s2.zeros = 0
-            s2.gain = 1
-            self._compare_systems(s, s2)
 
 
 class TestTransferFunction(object):
@@ -382,11 +353,6 @@ class TestTransferFunction(object):
         s = TransferFunction([1], [2], dt=dt)
         s = TransferFunction(np.array([1]), np.array([2]), dt=dt)
         s = TransferFunction(1, 1, dt=True)
-
-    def _compare_systems(self, sys1, sys2):
-        # Compare the contents of two systems
-        assert_equal(sys1.num, sys2.num)
-        assert_equal(sys1.den, sys2.den)
 
     def test_conversion(self):
         # Check the conversion functions
@@ -407,32 +373,6 @@ class TestTransferFunction(object):
         s = TransferFunction([1, 0], [1, -1], dt=0.05)
         assert_equal(s.poles, [1])
         assert_equal(s.zeros, [0])
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            assert_equal(s.gain, 1)
-            assert_equal(s.A, 1)
-            assert_equal(s.B, 1)
-            assert_equal(s.C, 1)
-            assert_equal(s.D, 1)
-
-        # state space setters
-        s2 = TransferFunction([2, 3], [4, 5], dt=0.05)
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            s2.A = 1
-            s2.B = 1
-            s2.C = 1
-            s2.D = 1
-            self._compare_systems(s, s2)
-
-        # zpk setters
-        s2 = TransferFunction([2, 3], [4, 5], dt=0.05)
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            s2.poles = 1
-            s2.zeros = 0
-            s2.gain = 1
-            self._compare_systems(s, s2)
 
 
 class TestZerosPolesGain(object):
@@ -443,12 +383,6 @@ class TestZerosPolesGain(object):
         s = ZerosPolesGain([1], [2], 1, dt=dt)
         s = ZerosPolesGain(np.array([1]), np.array([2]), 1, dt=dt)
         s = ZerosPolesGain(1, 1, 1, dt=True)
-
-    def _compare_systems(self, sys1, sys2):
-        # Compare the contents of two systems
-        assert_equal(sys1.poles, sys2.poles)
-        assert_equal(sys1.zeros, sys2.zeros)
-        assert_equal(sys1.gain, sys2.gain)
 
     def test_conversion(self):
         # Check the conversion functions
@@ -461,41 +395,8 @@ class TestZerosPolesGain(object):
         assert_(ZerosPolesGain(s) is not s)
         assert_(s.to_zpk() is not s)
 
-    def test_properties(self):
-        # Test setters/getters for cross class properties.
-        # This implicitly tests to_ss() and to_tf()
 
-        # Getters
-        s = ZerosPolesGain(0, 1, 1, dt=0.05)
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            assert_equal(s.num, [1, 0])
-            assert_equal(s.den, [1, -1])
-            assert_equal(s.A, 1)
-            assert_equal(s.B, 1)
-            assert_equal(s.C, 1)
-            assert_equal(s.D, 1)
-
-        # state space setters
-        s2 = ZerosPolesGain([2], [6], 3, dt=0.05)
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            s2.A = 1
-            s2.B = 1
-            s2.C = 1
-            s2.D = 1
-            self._compare_systems(s, s2)
-
-        # tf setters
-        s2 = ZerosPolesGain([2], [5], 3, dt=0.05)
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            s2.num = [1, 0]
-            s2.den = [1, -1]
-            self._compare_systems(s, s2)
-
-
-class Test_dfreqresp(TestCase):
+class Test_dfreqresp(object):
 
     def test_manual(self):
         # Test dfreqresp() real part calculation (manual sanity check).
@@ -544,8 +445,9 @@ class Test_dfreqresp(TestCase):
         # integrator, pole at zero: H(s) = 1 / s
         system = TransferFunction([1], [1, -1], dt=0.1)
 
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", RuntimeWarning)
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, message="divide by zero")
+            sup.filter(RuntimeWarning, message="invalid value encountered")
             w, H = dfreqresp(system, n=2)
         assert_equal(w[0], 0.)  # a fail would give not-a-number
 
@@ -553,6 +455,27 @@ class Test_dfreqresp(TestCase):
         # Raise an error for continuous-time systems
         system = lti([1], [1, 1])
         assert_raises(AttributeError, dfreqresp, system)
+
+    def test_from_state_space(self):
+        # H(z) = 2 / z^3 - 0.5 * z^2
+
+        system_TF = dlti([2], [1, -0.5, 0, 0])
+
+        A = np.array([[0.5, 0, 0],
+                      [1, 0, 0],
+                      [0, 1, 0]])
+        B = np.array([[1, 0, 0]]).T
+        C = np.array([[0, 0, 2]])
+        D = 0
+
+        system_SS = dlti(A, B, C, D)
+        w = 10.0**np.arange(-3,0,.5)
+        with suppress_warnings() as sup:
+            sup.filter(BadCoefficients)
+            w1, H1 = dfreqresp(system_TF, w=w)
+            w2, H2 = dfreqresp(system_SS, w=w)
+
+        assert_almost_equal(H1, H2)
 
     def test_from_zpk(self):
         # 1st order low-pass filter: H(s) = 0.3 / (z - 0.2),
@@ -618,8 +541,9 @@ class Test_bode(object):
         # integrator, pole at zero: H(s) = 1 / s
         system = TransferFunction([1], [1, -1], dt=0.1)
 
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", RuntimeWarning)
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, message="divide by zero")
+            sup.filter(RuntimeWarning, message="invalid value encountered")
             w, mag, phase = dbode(system, n=2)
         assert_equal(w[0], 0.)  # a fail would give not-a-number
 
@@ -674,6 +598,3 @@ class TestTransferFunctionZConversion(object):
         assert_equal(num, num2)
         assert_equal([5, 6, 0], den2)
 
-
-if __name__ == "__main__":
-    run_module_suite()

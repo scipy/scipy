@@ -1,8 +1,9 @@
 from __future__ import division, print_function, absolute_import
 from itertools import product
-import warnings
-from numpy.testing import (assert_, assert_allclose, run_module_suite,
-                           assert_equal, assert_raises, assert_no_warnings)
+from numpy.testing import (assert_, assert_allclose,
+                           assert_equal, assert_no_warnings)
+from pytest import raises as assert_raises
+from scipy._lib._numpy_compat import suppress_warnings
 import numpy as np
 from scipy.optimize._numdiff import group_columns
 from scipy.integrate import solve_ivp, RK23, RK45, Radau, BDF, LSODA
@@ -53,18 +54,6 @@ def jac_rational_sparse(t, y):
 
 def sol_rational(t):
     return np.asarray((t / (t + 10), 10 * t / (t + 10) ** 2))
-
-
-def event_rational_1(t, y):
-    return y[0] - y[1] ** 0.7
-
-
-def event_rational_2(t, y):
-    return y[1] ** 0.6 - y[0]
-
-
-def event_rational_3(t, y):
-    return t - 7.4
 
 
 def fun_medazko(t, y):
@@ -153,59 +142,60 @@ def test_integration():
     atol = 1e-6
     y0 = [1/3, 2/9]
 
-    with warnings.catch_warnings():
-        warnings.simplefilter('ignore')
-        for vectorized, method, t_span, jac in product(
-                [False, True],
-                ['RK23', 'RK45', 'Radau', 'BDF', 'LSODA'],
-                [[5, 9], [5, 1]],
-                [None, jac_rational, jac_rational_sparse]):
+    for vectorized, method, t_span, jac in product(
+            [False, True],
+            ['RK23', 'RK45', 'Radau', 'BDF', 'LSODA'],
+            [[5, 9], [5, 1]],
+            [None, jac_rational, jac_rational_sparse]):
 
-            if vectorized:
-                fun = fun_rational_vectorized
-            else:
-                fun = fun_rational
+        if vectorized:
+            fun = fun_rational_vectorized
+        else:
+            fun = fun_rational
 
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning,
+                       "The following arguments have no effect for a chosen solver: `jac`")
             res = solve_ivp(fun, t_span, y0, rtol=rtol,
                             atol=atol, method=method, dense_output=True,
                             jac=jac, vectorized=vectorized)
-            assert_equal(res.t[0], t_span[0])
-            assert_(res.t_events is None)
-            assert_(res.success)
-            assert_equal(res.status, 0)
+        assert_equal(res.t[0], t_span[0])
+        assert_(res.t_events is None)
+        assert_(res.success)
+        assert_equal(res.status, 0)
 
-            assert_(res.nfev < 40)
+        assert_(res.nfev < 40)
 
-            if method in ['RK23', 'RK45', 'LSODA']:
-                assert_equal(res.njev, 0)
-                assert_equal(res.nlu, 0)
-            else:
-                assert_(0 < res.njev < 3)
-                assert_(0 < res.nlu < 10)
+        if method in ['RK23', 'RK45', 'LSODA']:
+            assert_equal(res.njev, 0)
+            assert_equal(res.nlu, 0)
+        else:
+            assert_(0 < res.njev < 3)
+            assert_(0 < res.nlu < 10)
 
-            y_true = sol_rational(res.t)
-            e = compute_error(res.y, y_true, rtol, atol)
-            assert_(np.all(e < 5))
+        y_true = sol_rational(res.t)
+        e = compute_error(res.y, y_true, rtol, atol)
+        assert_(np.all(e < 5))
 
-            tc = np.linspace(*t_span)
-            yc_true = sol_rational(tc)
-            yc = res.sol(tc)
+        tc = np.linspace(*t_span)
+        yc_true = sol_rational(tc)
+        yc = res.sol(tc)
 
-            e = compute_error(yc, yc_true, rtol, atol)
-            assert_(np.all(e < 5))
+        e = compute_error(yc, yc_true, rtol, atol)
+        assert_(np.all(e < 5))
 
-            tc = (t_span[0] + t_span[-1]) / 2
-            yc_true = sol_rational(tc)
-            yc = res.sol(tc)
+        tc = (t_span[0] + t_span[-1]) / 2
+        yc_true = sol_rational(tc)
+        yc = res.sol(tc)
 
-            e = compute_error(yc, yc_true, rtol, atol)
-            assert_(np.all(e < 5))
+        e = compute_error(yc, yc_true, rtol, atol)
+        assert_(np.all(e < 5))
 
-            # LSODA for some reasons doesn't pass the polynomial through the
-            # previous points exactly after the order change. It might be some
-            # bug in LSOSA implementation or maybe we missing something.
-            if method != 'LSODA':
-                assert_allclose(res.sol(res.t), res.y, rtol=1e-15, atol=1e-15)
+        # LSODA for some reasons doesn't pass the polynomial through the
+        # previous points exactly after the order change. It might be some
+        # bug in LSOSA implementation or maybe we missing something.
+        if method != 'LSODA':
+            assert_allclose(res.sol(res.t), res.y, rtol=1e-15, atol=1e-15)
 
 
 def test_integration_complex():
@@ -214,35 +204,36 @@ def test_integration_complex():
     y0 = [0.5 + 1j]
     t_span = [0, 1]
     tc = np.linspace(t_span[0], t_span[1])
-    with warnings.catch_warnings():
-        warnings.simplefilter('ignore')
-        for method, jac in product(['RK23', 'RK45', 'BDF'],
-                                   [None, jac_complex, jac_complex_sparse]):
+    for method, jac in product(['RK23', 'RK45', 'BDF'],
+                               [None, jac_complex, jac_complex_sparse]):
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning,
+                       "The following arguments have no effect for a chosen solver: `jac`")
             res = solve_ivp(fun_complex, t_span, y0, method=method,
                             dense_output=True, rtol=rtol, atol=atol, jac=jac)
 
-            assert_equal(res.t[0], t_span[0])
-            assert_(res.t_events is None)
-            assert_(res.success)
-            assert_equal(res.status, 0)
+        assert_equal(res.t[0], t_span[0])
+        assert_(res.t_events is None)
+        assert_(res.success)
+        assert_equal(res.status, 0)
 
-            assert_(res.nfev < 25)
-            if method == 'BDF':
-                assert_equal(res.njev, 1)
-                assert_(res.nlu < 6)
-            else:
-                assert_equal(res.njev, 0)
-                assert_equal(res.nlu, 0)
+        assert_(res.nfev < 25)
+        if method == 'BDF':
+            assert_equal(res.njev, 1)
+            assert_(res.nlu < 6)
+        else:
+            assert_equal(res.njev, 0)
+            assert_equal(res.nlu, 0)
 
-            y_true = sol_complex(res.t)
-            e = compute_error(res.y, y_true, rtol, atol)
-            assert_(np.all(e < 5))
+        y_true = sol_complex(res.t)
+        e = compute_error(res.y, y_true, rtol, atol)
+        assert_(np.all(e < 5))
 
-            yc_true = sol_complex(tc)
-            yc = res.sol(tc)
-            e = compute_error(yc, yc_true, rtol, atol)
+        yc_true = sol_complex(tc)
+        yc = res.sol(tc)
+        e = compute_error(yc, yc_true, rtol, atol)
 
-            assert_(np.all(e < 5))
+        assert_(np.all(e < 5))
 
 
 def test_integration_sparse_difference():
@@ -306,6 +297,15 @@ def test_integration_const_jac():
 
 
 def test_events():
+    def event_rational_1(t, y):
+        return y[0] - y[1] ** 0.7
+
+    def event_rational_2(t, y):
+        return y[1] ** 0.6 - y[0]
+
+    def event_rational_3(t, y):
+        return t - 7.4
+
     event_rational_3.terminal = True
 
     for method in ['RK23', 'RK45', 'Radau', 'BDF', 'LSODA']:
@@ -607,7 +607,7 @@ def test_classes():
         assert_(solver.njev >= 0)
         assert_(solver.nlu >= 0)
         sol = solver.dense_output()
-        assert_equal(sol(5), y0)
+        assert_allclose(sol(5), y0, rtol=1e-15, atol=0)
 
 
 def test_OdeSolution():
@@ -725,6 +725,3 @@ def test_num_jac_sparse():
                     rtol=1e-12, atol=1e-14)
     assert_allclose(factor_dense, factor_sparse, rtol=1e-12, atol=1e-14)
 
-
-if __name__ == '__main__':
-    run_module_suite()

@@ -6,11 +6,12 @@ import sys
 
 import numpy as np
 from numpy.testing import (assert_array_equal, assert_array_almost_equal,
-    TestCase, run_module_suite, assert_raises, assert_allclose, assert_equal,
-    assert_)
-from numpy.testing.decorators import skipif
+    assert_allclose, assert_equal, assert_)
+from scipy._lib._numpy_compat import suppress_warnings
+import pytest
+from pytest import raises as assert_raises
 
-from scipy.cluster.vq import (kmeans, kmeans2, py_vq, py_vq2, vq, whiten,
+from scipy.cluster.vq import (kmeans, kmeans2, py_vq, vq, whiten,
     ClusterError, _krandinit)
 from scipy.cluster import _vq
 
@@ -71,7 +72,7 @@ CODET2 = np.array([[11.0/3, 8.0/3],
 LABEL1 = np.array([0, 1, 2, 2, 2, 2, 1, 2, 1, 1, 1])
 
 
-class TestWhiten(TestCase):
+class TestWhiten(object):
     def test_whiten(self):
         desired = np.array([[5.08738849, 2.97091878],
                             [3.19909255, 0.69660580],
@@ -111,17 +112,11 @@ class TestWhiten(TestCase):
                 assert_raises(ValueError, whiten, obs)
 
 
-class TestVq(TestCase):
+class TestVq(object):
     def test_py_vq(self):
         initc = np.concatenate(([[X[0]], [X[1]], [X[2]]]))
         for tp in np.array, np.matrix:
             label1 = py_vq(tp(X), tp(initc))[0]
-            assert_array_equal(label1, LABEL1)
-
-    def test_py_vq2(self):
-        initc = np.concatenate(([[X[0]], [X[1]], [X[2]]]))
-        for tp in np.array, np.matrix:
-            label1 = py_vq2(tp(X), tp(initc))[0]
             assert_array_equal(label1, LABEL1)
 
     def test_vq(self):
@@ -130,15 +125,6 @@ class TestVq(TestCase):
             label1, dist = _vq.vq(tp(X), tp(initc))
             assert_array_equal(label1, LABEL1)
             tlabel1, tdist = vq(tp(X), tp(initc))
-
-    # def test_py_vq_1d(self):
-    #     """Test special rank 1 vq algo, python implementation."""
-    #     data = X[:, 0]
-    #     initc = data[:3]
-    #     a, b = _py_vq_1d(data, initc)
-    #     ta, tb = py_vq(data[:, np.newaxis], initc[:, np.newaxis])
-    #     assert_array_equal(a, ta)
-    #     assert_array_equal(b, tb)
 
     def test_vq_1d(self):
         # Test special rank 1 vq algo, python implementation.
@@ -185,7 +171,7 @@ class TestVq(TestCase):
         assert_array_equal(codes0, codes1)
 
 
-class TestKMean(TestCase):
+class TestKMean(object):
     def test_large_features(self):
         # Generate a data set with large values, and run kmeans on it to
         # (regression for 1077).
@@ -218,8 +204,10 @@ class TestKMean(TestCase):
                          [-2.31149087,-0.05160469]])
 
         kmeans(data, initk)
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', UserWarning)
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning,
+                       "One of the clusters is empty. Re-run kmeans with a "
+                       "different initialization")
             kmeans2(data, initk, missing='warn')
 
         assert_raises(ClusterError, kmeans2, data, initk, missing='raise')
@@ -256,19 +244,16 @@ class TestKMean(TestCase):
         kmeans2(data, 2)
 
     def test_kmeans2_init(self):
+        np.random.seed(12345)
         data = TESTDATA_2D
 
         kmeans2(data, 3, minit='points')
         kmeans2(data[:, :1], 3, minit='points')  # special case (1-D)
 
-        # minit='random' can give warnings, filter those
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore',
-                        message="One of the clusters is empty. Re-run")
-            kmeans2(data, 3, minit='random')
-            kmeans2(data[:, :1], 3, minit='random')  # special case (1-D)
+        kmeans2(data, 3, minit='random')
+        kmeans2(data[:, :1], 3, minit='random')  # special case (1-D)
 
-    @skipif(sys.platform == 'win32', 'Fails with MemoryError in Wine.')
+    @pytest.mark.skipif(sys.platform == 'win32', reason='Fails with MemoryError in Wine.')
     def test_krandinit(self):
         data = TESTDATA_2D
         datas = [data.reshape((200, 2)), data.reshape((20, 20))[:10]]
@@ -297,18 +282,3 @@ class TestKMean(TestCase):
         assert_allclose(res[0], np.array([4.]))
         assert_allclose(res[1], 2.3999999999999999)
 
-    def test_kmeans_no_duplicates(self):
-        # Regression test for gh-4044
-        np.random.seed(23495)
-        features = np.linspace(1, 2, num=20).reshape(10, 2)
-        # randint(0, 10, 3) will give a duplicate with this seed ([7, 7, 5])
-        codebook, distortion = kmeans(features, k_or_guess=3)
-        expected = np.array([[1.15789474, 1.21052632],
-                             [1.52631579, 1.57894737],
-                             [1.84210526, 1.89473684]])
-        assert_allclose(codebook, expected)
-        assert_allclose(distortion, 0.11909166841036592)
-
-
-if __name__ == "__main__":
-    run_module_suite()

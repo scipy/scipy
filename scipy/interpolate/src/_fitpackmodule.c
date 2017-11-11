@@ -446,6 +446,7 @@ fitpack_parcur(PyObject *dummy, PyObject *args)
                 &s, &nest, &n, t, &nc, c, &fp, wrk, &lwrk, iwrk, &ier);
     }
     if (ier == 10) {
+        PyErr_SetString(PyExc_ValueError, "Invalid inputs.");
         goto fail;
     }
     if (ier > 0 && n == 0) {

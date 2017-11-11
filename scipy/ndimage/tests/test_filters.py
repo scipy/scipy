@@ -4,11 +4,12 @@ from __future__ import division, print_function, absolute_import
 import sys
 import numpy as np
 
-from numpy.testing import (assert_equal, assert_raises, assert_allclose,
-                           assert_array_equal, assert_almost_equal,
-                           TestCase, run_module_suite)
+from numpy.testing import (assert_equal, assert_allclose,
+                           assert_array_equal, assert_almost_equal)
+from pytest import raises as assert_raises
 
 import scipy.ndimage as sndi
+from scipy.ndimage.filters import _gaussian_kernel1d
 
 
 def test_ticket_701():
@@ -50,17 +51,30 @@ def test_gh_5430():
     sndi._ni_support._normalize_sequence(x, 0)
 
 
+def test_gaussian_kernel1d():
+    radius = 10
+    sigma = 2
+    sigma2 = sigma * sigma
+    x = np.arange(-radius, radius + 1, dtype=np.double)
+    phi_x = np.exp(-0.5 * x * x / sigma2)
+    phi_x /= phi_x.sum()
+    assert_allclose(phi_x, _gaussian_kernel1d(sigma, 0, radius))
+    assert_allclose(-phi_x * x / sigma2, _gaussian_kernel1d(sigma, 1, radius))
+    assert_allclose(phi_x * (x * x / sigma2 - 1) / sigma2,
+                    _gaussian_kernel1d(sigma, 2, radius))
+    assert_allclose(phi_x * (3 - x * x / sigma2) * x / (sigma2 * sigma2),
+                    _gaussian_kernel1d(sigma, 3, radius))
+
+
 def test_orders_gauss():
     # Check order inputs to Gaussians
     arr = np.zeros((1,))
-    yield assert_equal, 0, sndi.gaussian_filter(arr, 1, order=0)
-    yield assert_equal, 0, sndi.gaussian_filter(arr, 1, order=3)
-    yield assert_raises, ValueError, sndi.gaussian_filter, arr, 1, -1
-    yield assert_raises, ValueError, sndi.gaussian_filter, arr, 1, 4
-    yield assert_equal, 0, sndi.gaussian_filter1d(arr, 1, axis=-1, order=0)
-    yield assert_equal, 0, sndi.gaussian_filter1d(arr, 1, axis=-1, order=3)
-    yield assert_raises, ValueError, sndi.gaussian_filter1d, arr, 1, -1, -1
-    yield assert_raises, ValueError, sndi.gaussian_filter1d, arr, 1, -1, 4
+    assert_equal(0, sndi.gaussian_filter(arr, 1, order=0))
+    assert_equal(0, sndi.gaussian_filter(arr, 1, order=3))
+    assert_raises(ValueError, sndi.gaussian_filter, arr, 1, -1)
+    assert_equal(0, sndi.gaussian_filter1d(arr, 1, axis=-1, order=0))
+    assert_equal(0, sndi.gaussian_filter1d(arr, 1, axis=-1, order=3))
+    assert_raises(ValueError, sndi.gaussian_filter1d, arr, 1, -1, -1)
 
 
 def test_valid_origins():
@@ -287,7 +301,7 @@ def test_gaussian_truncate():
     assert_equal(n, 15)
 
 
-class TestThreading(TestCase):
+class TestThreading(object):
     def check_func_thread(self, n, fun, args, out):
         from threading import Thread
         thrds = [Thread(target=fun, args=args, kwargs={'output': out[x]}) for x in range(n)]
@@ -372,13 +386,17 @@ def test_minmaximum_filter1d():
     assert_equal([9, 9, 4, 5, 6, 7, 8, 9, 9, 9], out)
 
 
+def test_uniform_filter1d_roundoff_errors():
+    # gh-6930
+    in_ = np.repeat([0, 1, 0], [9, 9, 9])
+    for filter_size in range(3, 10):
+        out = sndi.uniform_filter1d(in_, filter_size)
+        assert_equal(out.sum(), 10 - filter_size)
+
+
 def test_footprint_all_zeros():
     # regression test for gh-6876: footprint of all zeros segfaults
     arr = np.random.randint(0, 100, (100, 100))
     kernel = np.zeros((3, 3), bool)
     with assert_raises(ValueError):
         sndi.maximum_filter(arr, footprint=kernel)
-
-
-if __name__ == "__main__":
-    run_module_suite(argv=sys.argv)

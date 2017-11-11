@@ -8,21 +8,24 @@ Build linalg:
   python setup_linalg.py build
 Run tests if scipy is installed:
   python -c 'import scipy;scipy.linalg.test()'
-Run tests if linalg is not installed:
-  python tests/test_decomp.py
 """
 
+import itertools
 import numpy as np
-from numpy.testing import (TestCase, assert_equal, assert_almost_equal,
+from numpy.testing import (assert_equal, assert_almost_equal,
                            assert_array_almost_equal, assert_array_equal,
-                           assert_raises, assert_, assert_allclose,
-                           run_module_suite, dec)
+                           assert_, assert_allclose)
+
+import pytest
+from pytest import raises as assert_raises
 
 from scipy._lib.six import xrange
 
 from scipy.linalg import (eig, eigvals, lu, svd, svdvals, cholesky, qr,
      schur, rsf2csf, lu_solve, lu_factor, solve, diagsvd, hessenberg, rq,
-     eig_banded, eigvals_banded, eigh, eigvalsh, qr_multiply, qz, orth, ordqz)
+     eig_banded, eigvals_banded, eigh, eigvalsh, qr_multiply, qz, orth, ordqz,
+     subspace_angles, hadamard, eigvalsh_tridiagonal, eigh_tridiagonal,
+     null_space)
 from scipy.linalg.lapack import dgbtrf, dgbtrs, zgbtrf, zgbtrs, \
      dsbev, dsbevd, dsbevx, zhbevd, zhbevx
 from scipy.linalg.misc import norm
@@ -40,6 +43,22 @@ from scipy.linalg._testutils import assert_no_overwrite
 
 # digit precision to use in asserts for different types
 DIGITS = {'d':11, 'D':11, 'f':4, 'F':4}
+
+def clear_fuss(ar, fuss_binary_bits=7):
+    """Clears trailing `fuss_binary_bits` of mantissa of a floating number"""
+    x = np.asanyarray(ar)
+    if np.iscomplexobj(x):
+        return clear_fuss(x.real) + 1j * clear_fuss(x.imag)
+
+    significant_binary_bits = np.finfo(x.dtype).nmant
+    x_mant, x_exp = np.frexp(x)
+    f = 2.0**(significant_binary_bits - fuss_binary_bits)
+    x_mant *= f
+    np.rint(x_mant, out=x_mant)
+    x_mant /= f
+
+    return np.ldexp(x_mant, x_exp)
+
 
 # XXX: This function should be available through numpy.testing
 
@@ -117,7 +136,7 @@ def random_rot(dim):
     return H
 
 
-class TestEigVals(TestCase):
+class TestEigVals(object):
 
     def test_simple(self):
         a = [[1,2,3],[1,2,3],[2,5,6]]
@@ -248,7 +267,11 @@ class TestEig(object):
             if all(isfinite(res[:,i])):
                 assert_allclose(res[:,i], 0, rtol=1e-13, atol=1e-13, err_msg=msg)
 
-        assert_allclose(sort(w[isfinite(w)]), sort(wt[isfinite(wt)]),
+        w_fin = w[isfinite(w)]
+        wt_fin = wt[isfinite(wt)]
+        perm = argsort(clear_fuss(w_fin))
+        permt = argsort(clear_fuss(wt_fin))
+        assert_allclose(w[perm], wt[permt],
                         atol=1e-7, rtol=1e-7, err_msg=msg)
 
         length = np.empty(len(vr))
@@ -259,7 +282,7 @@ class TestEig(object):
         # Compare homogeneous and nonhomogeneous versions
         assert_allclose(sort(wh), sort(w[np.isfinite(w)]))
 
-    @dec.knownfailureif(True, "See gh-2254.")
+    @pytest.mark.xfail(reason="See gh-2254.")
     def test_singular(self):
         # Example taken from
         # http://www.cs.umu.se/research/nla/singular_pairs/guptri/matlab.html
@@ -360,11 +383,8 @@ class TestEig(object):
         assert_raises(ValueError, eig, B, A)
 
 
-class TestEigBanded(TestCase):
-
-    def __init__(self, *args):
-        TestCase.__init__(self, *args)
-
+class TestEigBanded(object):
+    def setup_method(self):
         self.create_bandmat()
 
     def create_bandmat(self):
@@ -632,6 +652,117 @@ class TestEigBanded(TestCase):
         assert_array_almost_equal(y, y_lin)
 
 
+class TestEigTridiagonal(object):
+    def setup_method(self):
+        self.create_trimat()
+
+    def create_trimat(self):
+        """Create the full matrix `self.fullmat`, `self.d`, and `self.e`."""
+        N = 10
+
+        # symmetric band matrix
+        self.d = 1.0*ones(N)
+        self.e = -1.0*ones(N-1)
+        self.full_mat = (diag(self.d) + diag(self.e, -1) + diag(self.e, 1))
+
+        ew, ev = linalg.eig(self.full_mat)
+        ew = ew.real
+        args = argsort(ew)
+        self.w = ew[args]
+        self.evec = ev[:, args]
+
+    def test_degenerate(self):
+        """Test error conditions."""
+        # Wrong sizes
+        assert_raises(ValueError, eigvalsh_tridiagonal, self.d, self.e[:-1])
+        # Must be real
+        assert_raises(TypeError, eigvalsh_tridiagonal, self.d, self.e * 1j)
+        # Bad driver
+        assert_raises(TypeError, eigvalsh_tridiagonal, self.d, self.e,
+                      lapack_driver=1.)
+        assert_raises(ValueError, eigvalsh_tridiagonal, self.d, self.e,
+                      lapack_driver='foo')
+        # Bad bounds
+        assert_raises(ValueError, eigvalsh_tridiagonal, self.d, self.e,
+                      select='i', select_range=(0, -1))
+
+    def test_eigvalsh_tridiagonal(self):
+        """Compare eigenvalues of eigvalsh_tridiagonal with those of eig."""
+        # can't use ?STERF with subselection
+        for driver in ('sterf', 'stev', 'stebz', 'stemr', 'auto'):
+            w = eigvalsh_tridiagonal(self.d, self.e, lapack_driver=driver)
+            assert_array_almost_equal(sort(w), self.w)
+
+        for driver in ('sterf', 'stev'):
+            assert_raises(ValueError, eigvalsh_tridiagonal, self.d, self.e,
+                          lapack_driver='stev', select='i',
+                          select_range=(0, 1))
+        for driver in ('stebz', 'stemr', 'auto'):
+            # extracting eigenvalues with respect to the full index range
+            w_ind = eigvalsh_tridiagonal(
+                self.d, self.e, select='i', select_range=(0, len(self.d)-1),
+                lapack_driver=driver)
+            assert_array_almost_equal(sort(w_ind), self.w)
+
+            # extracting eigenvalues with respect to an index range
+            ind1 = 2
+            ind2 = 6
+            w_ind = eigvalsh_tridiagonal(
+                self.d, self.e, select='i', select_range=(ind1, ind2),
+                lapack_driver=driver)
+            assert_array_almost_equal(sort(w_ind), self.w[ind1:ind2+1])
+
+            # extracting eigenvalues with respect to a value range
+            v_lower = self.w[ind1] - 1.0e-5
+            v_upper = self.w[ind2] + 1.0e-5
+            w_val = eigvalsh_tridiagonal(
+                self.d, self.e, select='v', select_range=(v_lower, v_upper),
+                lapack_driver=driver)
+            assert_array_almost_equal(sort(w_val), self.w[ind1:ind2+1])
+
+    def test_eigh_tridiagonal(self):
+        """Compare eigenvalues and eigenvectors of eigh_tridiagonal
+           with those of eig. """
+        # can't use ?STERF when eigenvectors are requested
+        assert_raises(ValueError, eigh_tridiagonal, self.d, self.e,
+                      lapack_driver='sterf')
+        for driver in ('stebz', 'stev', 'stemr', 'auto'):
+            w, evec = eigh_tridiagonal(self.d, self.e, lapack_driver=driver)
+            evec_ = evec[:, argsort(w)]
+            assert_array_almost_equal(sort(w), self.w)
+            assert_array_almost_equal(abs(evec_), abs(self.evec))
+
+        assert_raises(ValueError, eigh_tridiagonal, self.d, self.e,
+                      lapack_driver='stev', select='i', select_range=(0, 1))
+        for driver in ('stebz', 'stemr', 'auto'):
+            # extracting eigenvalues with respect to an index range
+            ind1 = 0
+            ind2 = len(self.d)-1
+            w, evec = eigh_tridiagonal(
+                self.d, self.e, select='i', select_range=(ind1, ind2),
+                lapack_driver=driver)
+            assert_array_almost_equal(sort(w), self.w)
+            assert_array_almost_equal(abs(evec), abs(self.evec))
+            ind1 = 2
+            ind2 = 6
+            w, evec = eigh_tridiagonal(
+                self.d, self.e, select='i', select_range=(ind1, ind2),
+                lapack_driver=driver)
+            assert_array_almost_equal(sort(w), self.w[ind1:ind2+1])
+            assert_array_almost_equal(abs(evec),
+                                      abs(self.evec[:, ind1:ind2+1]))
+
+            # extracting eigenvalues with respect to a value range
+            v_lower = self.w[ind1] - 1.0e-5
+            v_upper = self.w[ind2] + 1.0e-5
+            w, evec = eigh_tridiagonal(
+                self.d, self.e, select='v', select_range=(v_lower, v_upper),
+                lapack_driver=driver)
+            assert_array_almost_equal(sort(w), self.w[ind1:ind2+1])
+            assert_array_almost_equal(abs(evec),
+                                      abs(self.evec[:, ind1:ind2+1]))
+
+
 def test_eigh():
     DIM = 6
     v = {'dim': (DIM,),
@@ -647,11 +778,11 @@ def test_eigh():
                 for turbo in v['turbo']:
                     for eigenvalues in v['eigvals']:
                         for lower in v['lower']:
-                            yield (eigenhproblem_standard,
+                            eigenhproblem_standard(
                                    'ordinary',
                                    dim, typ, overwrite, lower,
                                    turbo, eigenvalues)
-                            yield (eigenhproblem_general,
+                            eigenhproblem_general(
                                    'general ',
                                    dim, typ, overwrite, lower,
                                    turbo, eigenvalues)
@@ -726,11 +857,8 @@ def test_eigh_integer():
     w,z = eigh(a,b)
 
 
-class TestLU(TestCase):
-
-    def __init__(self, *args, **kw):
-        TestCase.__init__(self, *args, **kw)
-
+class TestLU(object):
+    def setup_method(self):
         self.a = array([[1,2,3],[1,2,3],[2,5,6]])
         self.ca = array([[1,2,3],[1,2,3],[2,5j,6]])
         # Those matrices are more robust to detect problems in permutation
@@ -805,8 +933,8 @@ class TestLU(TestCase):
 
 class TestLUSingle(TestLU):
     """LU testers for single precision, real and double"""
-    def __init__(self, *args, **kw):
-        TestLU.__init__(self, *args, **kw)
+    def setup_method(self):
+        TestLU.setup_method(self)
 
         self.a = self.a.astype(float32)
         self.ca = self.ca.astype(complex64)
@@ -823,8 +951,8 @@ class TestLUSingle(TestLU):
         self.cmed = self.vrect.astype(complex64)
 
 
-class TestLUSolve(TestCase):
-    def setUp(self):
+class TestLUSolve(object):
+    def setup_method(self):
         seed(1234)
 
     def test_lu(self):
@@ -852,8 +980,8 @@ class TestLUSolve(TestCase):
         assert_array_almost_equal(x1,x2)
 
 
-class TestSVD_GESDD(TestCase):
-    def setUp(self):
+class TestSVD_GESDD(object):
+    def setup_method(self):
         self.lapack_driver = 'gesdd'
         seed(1234)
 
@@ -990,12 +1118,12 @@ class TestSVD_GESDD(TestCase):
 
 
 class TestSVD_GESVD(TestSVD_GESDD):
-    def setUp(self):
+    def setup_method(self):
         self.lapack_driver = 'gesvd'
         seed(1234)
 
 
-class TestSVDVals(TestCase):
+class TestSVDVals(object):
 
     def test_empty(self):
         for a in [[]], np.empty((2, 0)), np.ones((0, 3)):
@@ -1044,7 +1172,7 @@ class TestSVDVals(TestCase):
         assert_(len(s) == 3)
         assert_(s[0] >= s[1] >= s[2])
 
-    @dec.slow
+    @pytest.mark.slow
     def test_crash_2609(self):
         np.random.seed(1234)
         a = np.random.rand(1500, 2800)
@@ -1052,15 +1180,15 @@ class TestSVDVals(TestCase):
         svdvals(a)
 
 
-class TestDiagSVD(TestCase):
+class TestDiagSVD(object):
 
     def test_simple(self):
         assert_array_almost_equal(diagsvd([1,0,0],3,3),[[1,0,0],[0,0,0],[0,0,0]])
 
 
-class TestQR(TestCase):
+class TestQR(object):
 
-    def setUp(self):
+    def setup_method(self):
         seed(1234)
 
     def test_simple(self):
@@ -1599,9 +1727,9 @@ class TestQR(TestCase):
         assert_raises(Exception, qr, (a,), {'lwork':0})
         assert_raises(Exception, qr, (a,), {'lwork':2})
 
-class TestRQ(TestCase):
+class TestRQ(object):
 
-    def setUp(self):
+    def setup_method(self):
         seed(1234)
 
     def test_simple(self):
@@ -1707,7 +1835,7 @@ transp = transpose
 any = sometrue
 
 
-class TestSchur(TestCase):
+class TestSchur(object):
 
     def test_simple(self):
         a = [[8,12,3],[2,9,3],[10,3,6]]
@@ -1798,7 +1926,7 @@ class TestSchur(TestCase):
         assert_array_almost_equal(dot(dot(z,t),transp(conj(z))),a)
 
 
-class TestHessenberg(TestCase):
+class TestHessenberg(object):
 
     def test_simple(self):
         a = [[-149, -50,-154],
@@ -1875,8 +2003,8 @@ class TestHessenberg(TestCase):
         assert_array_almost_equal(h2, b)
 
 
-class TestQZ(TestCase):
-    def setUp(self):
+class TestQZ(object):
+    def setup_method(self):
         seed(12345)
 
     def test_qz_single(self):
@@ -2058,9 +2186,9 @@ def _make_pos(X):
     return np.sign(X)*X
 
 
-class TestOrdQZ(TestCase):
+class TestOrdQZ(object):
     @classmethod
-    def setupClass(cls):
+    def setup_class(cls):
         # http://www.nag.com/lapack-ex/node119.html
         A1 = np.array([[-21.10 - 22.50j, 53.5 - 50.5j, -34.5 + 127.5j,
                         7.5 + 0.5j],
@@ -2265,9 +2393,9 @@ class TestOrdQZ(TestCase):
                 assert_allclose(expected_eigvals, x)
 
 
-class TestOrdQZWorkspaceSize(TestCase):
+class TestOrdQZWorkspaceSize(object):
 
-    def setUp(self):
+    def setup_method(self):
         seed(12345)
 
     def test_decompose(self):
@@ -2288,7 +2416,7 @@ class TestOrdQZWorkspaceSize(TestCase):
             sort = lambda alpha, beta: alpha < beta
             [S,T,alpha,beta,U,V] = ordqz(A,B,sort=sort, output='complex')
 
-    @dec.slow
+    @pytest.mark.slow
     def test_decompose_ouc(self):
 
         N = 202
@@ -2300,7 +2428,7 @@ class TestOrdQZWorkspaceSize(TestCase):
             [S,T,alpha,beta,U,V] = ordqz(A,B,sort='ouc')
 
 
-class TestDatacopied(TestCase):
+class TestDatacopied(object):
 
     def test_datacopied(self):
         from scipy.linalg.decomp import _datacopied
@@ -2384,7 +2512,7 @@ def check_lapack_misaligned(func, args, kwargs):
                 func(*a,**kwargs)
 
 
-@dec.knownfailureif(True, "Ticket #1152, triggers a segfault in rare cases.")
+@pytest.mark.xfail(run=False, reason="Ticket #1152, triggers a segfault in rare cases.")
 def test_lapack_misaligned():
     M = np.eye(10,dtype=float)
     R = np.arange(100)
@@ -2412,7 +2540,7 @@ def test_lapack_misaligned():
             (hessenberg,(S,),dict(overwrite_a=True)),  # crash
             (schur,(S,),dict(overwrite_a=True)),  # crash
             ]:
-        yield check_lapack_misaligned, func, args, kwargs
+        check_lapack_misaligned(func, args, kwargs)
 # not properly tested
 # cholesky, rsf2csf, lu_solve, solve, eig_banded, eigvals_banded, eigh, diagsvd
 
@@ -2473,34 +2601,123 @@ class TestOverwrite(object):
         assert_no_overwrite(svdvals, [(3,3)])
 
 
-def _check_orth(n):
-    X = np.ones((n, 2), dtype=float)
+def _check_orth(n, dtype, skip_big=False):
+    X = np.ones((n, 2), dtype=float).astype(dtype)
+
+    eps = np.finfo(dtype).eps
+    tol = 1000 * eps
+
     Y = orth(X)
     assert_equal(Y.shape, (n, 1))
-    assert_allclose(Y, Y.mean(), atol=1e-10)
+    assert_allclose(Y, Y.mean(), atol=tol)
+
     Y = orth(X.T)
     assert_equal(Y.shape, (2, 1))
-    assert_allclose(Y, Y.mean())
+    assert_allclose(Y, Y.mean(), atol=tol)
+
+    if n > 5 and not skip_big:
+        np.random.seed(1)
+        X = np.random.rand(n, 5).dot(np.random.rand(5, n))
+        X = X + 1e-4 * np.random.rand(n, 1).dot(np.random.rand(1, n))
+        X = X.astype(dtype)
+
+        Y = orth(X, rcond=1e-3)
+        assert_equal(Y.shape, (n, 5))
+
+        Y = orth(X, rcond=1e-6)
+        assert_equal(Y.shape, (n, 5 + 1))
 
 
-@dec.slow
-@dec.skipif(np.dtype(np.intp).itemsize < 8, "test only on 64-bit, else too slow")
+@pytest.mark.slow
+@pytest.mark.skipif(np.dtype(np.intp).itemsize < 8, reason="test only on 64-bit, else too slow")
 def test_orth_memory_efficiency():
     # Pick n so that 16*n bytes is reasonable but 8*n*n bytes is unreasonable.
-    # Keep in mind that @dec.slow tests are likely to be running
+    # Keep in mind that @pytest.mark.slow tests are likely to be running
     # under configurations that support 4Gb+ memory for tests related to
     # 32 bit overflow.
     n = 10*1000*1000
     try:
-        _check_orth(n)
+        _check_orth(n, np.float64, skip_big=True)
     except MemoryError:
         raise AssertionError('memory error perhaps caused by orth regression')
 
 
 def test_orth():
-    for n in 1, 2, 3, 10, 100:
-        _check_orth(n)
+    dtypes = [np.float32, np.float64, np.complex64, np.complex128]
+    sizes = [1, 2, 3, 10, 100]
+    for dt, n in itertools.product(dtypes, sizes):
+        _check_orth(n, dt)
 
 
-if __name__ == "__main__":
-    run_module_suite()
+def test_null_space():
+    np.random.seed(1)
+
+    dtypes = [np.float32, np.float64, np.complex64, np.complex128]
+    sizes = [1, 2, 3, 10, 100]
+
+    for dt, n in itertools.product(dtypes, sizes):
+        X = np.ones((2, n), dtype=dt)
+
+        eps = np.finfo(dt).eps
+        tol = 1000 * eps
+
+        Y = null_space(X)
+        assert_equal(Y.shape, (n, n-1))
+        assert_allclose(X.dot(Y), 0, atol=tol)
+
+        Y = null_space(X.T)
+        assert_equal(Y.shape, (2, 1))
+        assert_allclose(X.T.dot(Y), 0, atol=tol)
+
+        X = np.random.randn(1 + n//2, n)
+        Y = null_space(X)
+        assert_equal(Y.shape, (n, n - 1 - n//2))
+        assert_allclose(X.dot(Y), 0, atol=tol)
+
+        if n > 5:
+            np.random.seed(1)
+            X = np.random.rand(n, 5).dot(np.random.rand(5, n))
+            X = X + 1e-4 * np.random.rand(n, 1).dot(np.random.rand(1, n))
+            X = X.astype(dt)
+
+            Y = null_space(X, rcond=1e-3)
+            assert_equal(Y.shape, (n, n - 5))
+
+            Y = null_space(X, rcond=1e-6)
+            assert_equal(Y.shape, (n, n - 6))
+
+
+def test_subspace_angles():
+    H = hadamard(8, float)
+    A = H[:, :3]
+    B = H[:, 3:]
+    assert_allclose(subspace_angles(A, B), [np.pi / 2.] * 3, atol=1e-14)
+    assert_allclose(subspace_angles(B, A), [np.pi / 2.] * 3, atol=1e-14)
+    for x in (A, B):
+        assert_allclose(subspace_angles(x, x), np.zeros(x.shape[1]),
+                        atol=1e-14)
+    # From MATLAB function "subspace", which effectively only returns the
+    # last value that we calculate
+    x = np.array(
+        [[0.537667139546100, 0.318765239858981, 3.578396939725760, 0.725404224946106],  # noqa: E501
+         [1.833885014595086, -1.307688296305273, 2.769437029884877, -0.063054873189656],  # noqa: E501
+         [-2.258846861003648, -0.433592022305684, -1.349886940156521, 0.714742903826096],  # noqa: E501
+         [0.862173320368121, 0.342624466538650, 3.034923466331855, -0.204966058299775]])  # noqa: E501
+    expected = 1.481454682101605
+    assert_allclose(subspace_angles(x[:, :2], x[:, 2:])[0], expected,
+                    rtol=1e-12)
+    assert_allclose(subspace_angles(x[:, 2:], x[:, :2])[0], expected,
+                    rtol=1e-12)
+    expected = 0.746361174247302
+    assert_allclose(subspace_angles(x[:, :2], x[:, [2]]), expected, rtol=1e-12)
+    assert_allclose(subspace_angles(x[:, [2]], x[:, :2]), expected, rtol=1e-12)
+    expected = 0.487163718534313
+    assert_allclose(subspace_angles(x[:, :3], x[:, [3]]), expected, rtol=1e-12)
+    assert_allclose(subspace_angles(x[:, [3]], x[:, :3]), expected, rtol=1e-12)
+    expected = 0.328950515907756
+    assert_allclose(subspace_angles(x[:, :2], x[:, 1:]), [expected, 0],
+                    atol=1e-12)
+    # Degenerate conditions
+    assert_raises(ValueError, subspace_angles, x[0], x)
+    assert_raises(ValueError, subspace_angles, x, x[0])
+    assert_raises(ValueError, subspace_angles, x[:-1], x)

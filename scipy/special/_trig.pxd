@@ -4,7 +4,7 @@
 # than sin(z), cos(z).
 #
 from libc.math cimport sin, cos, sinh, cosh, exp, fabs, ceil, M_PI
-from _complexstuff cimport number_t, double_complex, zpack
+from ._complexstuff cimport number_t, double_complex, zpack
 
 cdef extern from "numpy/npy_math.h":
     double npy_copysign(double x, double y) nogil

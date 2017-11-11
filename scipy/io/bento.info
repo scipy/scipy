@@ -1,4 +1,13 @@
+HookFile: bscript
+
 Recurse: matlab
 
 Library:
-    Packages: arff, matlab, harwell_boeing
+    Packages:
+        arff,
+        matlab,
+        harwell_boeing
+    Extension: _test_fortran
+        Sources:
+            _test_fortran.pyf,
+            _test_fortran.f

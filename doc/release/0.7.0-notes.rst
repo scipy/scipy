@@ -90,7 +90,7 @@ suite::
     >>> scipy.test('full')
 
 For more information, please see `The NumPy/SciPy Testing Guide
-<http://projects.scipy.org/scipy/numpy/wiki/TestingGuidelines>`__.
+<https://github.com/numpy/numpy/blob/master/doc/TESTS.rst.txt>`__.
 
 We have also greatly improved our test coverage.  There were just over
 2,000 unit tests in the 0.6.0 release; this release nearly doubles

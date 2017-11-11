@@ -13,7 +13,8 @@ import numpy as np
 from .data import _data_matrix, _minmax_mixin
 from .compressed import _cs_matrix
 from .base import isspmatrix, _formats, spmatrix
-from .sputils import isshape, getdtype, to_native, upcast, get_index_dtype
+from .sputils import (isshape, getdtype, to_native, upcast, get_index_dtype,
+                      check_shape)
 from . import _sparsetools
 from ._sparsetools import (bsr_matvec, bsr_matvecs, csr_matmat_pass1,
                            bsr_matmat_pass2, bsr_transpose, bsr_sort_indices)
@@ -130,7 +131,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
         elif isinstance(arg1,tuple):
             if isshape(arg1):
                 # it's a tuple of matrix dimensions (M,N)
-                self.shape = arg1
+                self._shape = check_shape(arg1)
                 M,N = self.shape
                 # process blocksize
                 if blocksize is None:
@@ -186,7 +187,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
             self._set_self(arg1)
 
         if shape is not None:
-            self.shape = shape   # spmatrix will check for errors
+            self._shape = check_shape(shape)
         else:
             if self.shape is None:
                 # shape not already set, try to infer dimensions
@@ -197,14 +198,14 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
                     raise ValueError('unable to infer matrix dimensions')
                 else:
                     R,C = self.blocksize
-                    self.shape = (M*R,N*C)
+                    self._shape = check_shape((M*R,N*C))
 
         if self.shape is None:
             if shape is None:
                 # TODO infer shape here
                 raise ValueError('need to infer shape')
             else:
-                self.shape = shape
+                self._shape = check_shape(shape)
 
         if dtype is not None:
             self.data = self.data.astype(dtype)
@@ -293,16 +294,19 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
                 (self.shape + (self.dtype.type, self.nnz) + self.blocksize +
                  (format,)))
 
-    def diagonal(self):
-        """Returns the main diagonal of the matrix
-        """
-        M,N = self.shape
-        R,C = self.blocksize
-        y = np.empty(min(M,N), dtype=upcast(self.dtype))
-        _sparsetools.bsr_diagonal(M//R, N//C, R, C,
+    def diagonal(self, k=0):
+        rows, cols = self.shape
+        if k <= -rows or k >= cols:
+            raise ValueError("k exceeds matrix dimensions")
+        R, C = self.blocksize
+        y = np.zeros(min(rows + min(k, 0), cols - max(k, 0)),
+                     dtype=upcast(self.dtype))
+        _sparsetools.bsr_diagonal(k, rows // R, cols // C, R, C,
                                   self.indptr, self.indices,
                                   np.ravel(self.data), y)
         return y
+
+    diagonal.__doc__ = spmatrix.diagonal.__doc__
 
     ##########################
     # NotImplemented methods #

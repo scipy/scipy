@@ -48,9 +48,10 @@
  * fdtr domain     a<0, b<0, x<0         0.0
  *
  */
-/*							fdtrc()
+
+/*                         fdtrc()
  *
- *	Complemented F distribution
+ *  Complemented F distribution
  *
  *
  *
@@ -80,7 +81,7 @@
  * The incomplete beta integral is used, according to the
  * formula
  *
- *	P(x) = incbet( df2/2, df1/2, (df2/(df2 + df1*x) ).
+ *  P(x) = incbet( df2/2, df1/2, (df2/(df2 + df1*x) ).
  *
  *
  * ACCURACY:
@@ -100,9 +101,10 @@
  * fdtrc domain    a<0, b<0, x<0         0.0
  *
  */
-/*							fdtri()
+
+/*                         fdtri()
  *
- *	Inverse of F distribution
+ *  Inverse of F distribution
  *
  *
  *
@@ -152,7 +154,6 @@
  *                     v < 1
  *
  */
-
 
 /*
  * Cephes Math Library Release 2.3:  March, 1995
@@ -162,45 +163,41 @@
 
 #include "mconf.h"
 
-double fdtrc(a, b, x)
-double a, b;
-double x;
+
+double fdtrc(double a, double b, double x)
 {
     double w;
 
-    if ((a < 1.0) || (b < 1.0) || (x < 0.0)) {
-	mtherr("fdtrc", DOMAIN);
-	return (NPY_NAN);
+    if ((a <= 0.0) || (b <= 0.0) || (x < 0.0)) {
+        mtherr("fdtrc", DOMAIN);
+        return NPY_NAN;
     }
     w = b / (b + a * x);
-    return (incbet(0.5 * b, 0.5 * a, w));
+    return incbet(0.5 * b, 0.5 * a, w);
 }
 
-double fdtr(a, b, x)
-double a, b;
-double x;
+
+double fdtr(double a, double b, double x)
 {
     double w;
 
-    if ((a < 1.0) || (b < 1.0) || (x < 0.0)) {
-	mtherr("fdtr", DOMAIN);
-	return (NPY_NAN);
+    if ((a <= 0.0) || (b <= 0.0) || (x < 0.0)) {
+        mtherr("fdtr", DOMAIN);
+        return NPY_NAN;
     }
     w = a * x;
     w = w / (b + w);
-    return (incbet(0.5 * a, 0.5 * b, w));
+    return incbet(0.5 * a, 0.5 * b, w);
 }
 
 
-double fdtri(a, b, y)
-double a, b;
-double y;
+double fdtri(double a, double b, double y)
 {
     double w, x;
 
-    if ((a < 1.0) || (b < 1.0) || (y <= 0.0) || (y > 1.0)) {
-	mtherr("fdtri", DOMAIN);
-	return (NPY_NAN);
+    if ((a <= 0.0) || (b <= 0.0) || (y <= 0.0) || (y > 1.0)) {
+        mtherr("fdtri", DOMAIN);
+        return NPY_NAN;
     }
     y = 1.0 - y;
     /* Compute probability for x = 0.5.  */
@@ -208,12 +205,12 @@ double y;
     /* If that is greater than y, then the solution w < .5.
      * Otherwise, solve at 1-y to remove cancellation in (b - b*w).  */
     if (w > y || y < 0.001) {
-	w = incbi(0.5 * b, 0.5 * a, y);
-	x = (b - b * w) / (a * w);
+        w = incbi(0.5 * b, 0.5 * a, y);
+        x = (b - b * w) / (a * w);
     }
     else {
-	w = incbi(0.5 * a, 0.5 * b, 1.0 - y);
-	x = b * w / (a * (1.0 - w));
+        w = incbi(0.5 * a, 0.5 * b, 1.0 - y);
+        x = b * w / (a * (1.0 - w));
     }
-    return (x);
+    return x;
 }

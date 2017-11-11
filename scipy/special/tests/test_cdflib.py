@@ -21,14 +21,16 @@ The following functions still need tests:
 """
 from __future__ import division, print_function, absolute_import
 
+import itertools
+
 import numpy as np
-from numpy.testing import dec
+from numpy.testing import assert_equal
+import pytest
 
 import scipy.special as sp
 from scipy._lib.six import with_metaclass
-from scipy._lib._testutils import knownfailure_overridable
 from scipy.special._testutils import (
-    MissingModule, check_version, DecoratorMeta, FuncData)
+    MissingModule, check_version, FuncData)
 from scipy.special._mptestutils import (
     Arg, IntArg, get_args, mpf2float, assert_mpmath_equal)
 
@@ -203,12 +205,12 @@ def _tukey_lmbda_quantile(p, lmbda):
     # For lmbda != 0
     return (p**lmbda - (1 - p)**lmbda)/lmbda
 
-    
-class TestCDFlib(with_metaclass(DecoratorMeta, object)):
-    decorators = [(dec.slow, None),
-                  (check_version, (mpmath, '0.19'))]
 
-    @knownfailure_overridable()
+@pytest.mark.slow
+@check_version(mpmath, '0.19')
+class TestCDFlib(object):
+
+    @pytest.mark.xfail(run=False)
     def test_bdtrik(self):
         _assert_inverts(
             sp.bdtrik,
@@ -240,7 +242,7 @@ class TestCDFlib(with_metaclass(DecoratorMeta, object)):
              Arg(0, 1, inclusive_a=False, inclusive_b=False)],
             rtol=1e-7, endpt_atol=[None, 1e-20, 1e-20])
 
-    @knownfailure_overridable()
+    @pytest.mark.xfail(run=False)
     def test_fdtridfd(self):
         _assert_inverts(
             sp.fdtridfd,
@@ -279,7 +281,7 @@ class TestCDFlib(with_metaclass(DecoratorMeta, object)):
             _student_t_cdf,
             [IntArg(1, 100), Arg(1e-10, np.inf)], rtol=1e-7)
 
-    @knownfailure_overridable()
+    @pytest.mark.xfail(run=False)
     def test_stdtridf(self):
         _assert_inverts(
             sp.stdtridf,
@@ -299,7 +301,7 @@ class TestCDFlib(with_metaclass(DecoratorMeta, object)):
             lambda v, x: mpmath.gammainc(v/2, b=x/2, regularized=True),
             0, [ProbArg(), IntArg(1, 100)], rtol=1e-4)
 
-    @knownfailure_overridable()
+    @pytest.mark.xfail(run=False)
     def test_chndtridf(self):
         # Use a larger atol since mpmath is doing numerical integration
         _assert_inverts(
@@ -309,7 +311,7 @@ class TestCDFlib(with_metaclass(DecoratorMeta, object)):
                 Arg(0, 100, inclusive_a=False)],
             n=1000, rtol=1e-4, atol=1e-15)
 
-    @knownfailure_overridable()
+    @pytest.mark.xfail(run=False)
     def test_chndtrinc(self):
         # Use a larger atol since mpmath is doing numerical integration
         _assert_inverts(
@@ -343,10 +345,65 @@ class TestCDFlib(with_metaclass(DecoratorMeta, object)):
             spfunc_first=False, rtol=1e-5,
             endpt_atol=[1e-9, None])
 
-    @knownfailure_overridable()
+    @pytest.mark.xfail(run=False)
     def test_tklmbda_pos_shape(self):
         _assert_inverts(
             sp.tklmbda,
             _tukey_lmbda_quantile,
             0, [ProbArg(), Arg(0, 100, inclusive_a=False)],
             spfunc_first=False, rtol=1e-5)
+
+
+def test_nonfinite():
+    funcs = [
+        ("btdtria", 3),
+        ("btdtrib", 3),
+        ("bdtrik", 3),
+        ("bdtrin", 3),
+        ("chdtriv", 2),
+        ("chndtr", 3),
+        ("chndtrix", 3),
+        ("chndtridf", 3),
+        ("chndtrinc", 3),
+        ("fdtridfd", 3),
+        ("ncfdtr", 4),
+        ("ncfdtri", 4),
+        ("ncfdtridfn", 4),
+        ("ncfdtridfd", 4),
+        ("ncfdtrinc", 4),
+        ("gdtrix", 3),
+        ("gdtrib", 3),
+        ("gdtria", 3),
+        ("nbdtrik", 3),
+        ("nbdtrin", 3),
+        ("nrdtrimn", 3),
+        ("nrdtrisd", 3),
+        ("pdtrik", 2),
+        ("stdtr", 2),
+        ("stdtrit", 2),
+        ("stdtridf", 2),
+        ("nctdtr", 3),
+        ("nctdtrit", 3),
+        ("nctdtridf", 3),
+        ("nctdtrinc", 3),
+        ("tklmbda", 2),
+    ]
+
+    np.random.seed(1)
+
+    for func, numargs in funcs:
+        func = getattr(sp, func)
+
+        args_choices = [(float(x), np.nan, np.inf, -np.inf) for x in
+                        np.random.rand(numargs)]
+
+        for args in itertools.product(*args_choices):
+            res = func(*args)
+
+            if any(np.isnan(x) for x in args):
+                # Nan inputs should result to nan output
+                assert_equal(res, np.nan)
+            else:
+                # All other inputs should return something (but not
+                # raise exceptions or cause hangs)
+                pass

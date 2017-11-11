@@ -16,7 +16,7 @@ from .dia import dia_matrix
 from . import _sparsetools
 from .sputils import (upcast, upcast_char, to_native, isdense, isshape,
                       getdtype, isscalarlike, IndexMixin, get_index_dtype,
-                      downcast_intp_index, get_sum_dtype)
+                      downcast_intp_index, get_sum_dtype, check_shape)
 
 
 class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
@@ -36,7 +36,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             if isshape(arg1):
                 # It's a tuple of matrix dimensions (M, N)
                 # create empty matrix
-                self.shape = arg1   # spmatrix checks for errors here
+                self._shape = check_shape(arg1)
                 M, N = self.shape
                 # Select index dtype large enough to pass array and
                 # scalar parameters to sparsetools
@@ -80,7 +80,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         # Read matrix dimensions given, if any
         if shape is not None:
-            self.shape = shape   # spmatrix will check for errors
+            self._shape = check_shape(shape)
         else:
             if self.shape is None:
                 # shape not already set, try to infer dimensions
@@ -90,7 +90,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 except:
                     raise ValueError('unable to infer matrix dimensions')
                 else:
-                    self.shape = self._swap((major_dim,minor_dim))
+                    self._shape = check_shape(self._swap((major_dim,minor_dim)))
 
         if dtype is not None:
             self.data = np.asarray(self.data, dtype=dtype)
@@ -123,7 +123,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         self.data = other.data
         self.indices = other.indices
         self.indptr = other.indptr
-        self.shape = other.shape
+        self._shape = check_shape(other.shape)
 
     def check_format(self, full_check=True):
         """check whether the matrix format is valid
@@ -513,14 +513,18 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         return self.__class__((data,indices,indptr),shape=(M,N))
 
-    def diagonal(self):
-        """Returns the main diagonal of the matrix
-        """
-        # TODO support k-th diagonal
+    def diagonal(self, k=0):
+        rows, cols = self.shape
+        if k <= -rows or k >= cols:
+            raise ValueError("k exceeds matrix dimensions")
         fn = getattr(_sparsetools, self.format + "_diagonal")
-        y = np.empty(min(self.shape), dtype=upcast(self.dtype))
-        fn(self.shape[0], self.shape[1], self.indptr, self.indices, self.data, y)
+        y = np.empty(min(rows + min(k, 0), cols - max(k, 0)),
+                     dtype=upcast(self.dtype))
+        fn(k, self.shape[0], self.shape[1], self.indptr, self.indices,
+           self.data, y)
         return y
+
+    diagonal.__doc__ = spmatrix.diagonal.__doc__
 
     #####################
     # Other binary ops  #
@@ -592,8 +596,10 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
     sum.__doc__ = spmatrix.sum.__doc__
 
-    def _minor_reduce(self, ufunc):
+    def _minor_reduce(self, ufunc, data=None):
         """Reduce nonzeros with a ufunc over the minor axis when non-empty
+
+        Can be applied to a function of self.data by supplying data parameter.
 
         Warning: this does not call sum_duplicates()
 
@@ -605,8 +611,10 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         value : array of self.dtype
             Reduce result for nonzeros in each major_index
         """
+        if data is None:
+            data = self.data
         major_index = np.flatnonzero(np.diff(self.indptr))
-        value = ufunc.reduceat(self.data,
+        value = ufunc.reduceat(data,
                                downcast_intp_index(self.indptr[major_index]))
         return major_index, value
 
@@ -630,7 +638,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             ci, cj = self._swap((i.ravel(), j.ravel()))
             self._zero_many(ci, cj)
 
-            x = x.tocoo()
+            x = x.tocoo(copy=True)
+            x.sum_duplicates()
             r, c = x.row, x.col
             x = np.asarray(x.data, dtype=self.dtype)
             if broadcast_row:
@@ -710,7 +719,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
     def _set_many(self, i, j, x):
         """Sets value at each (i, j) to x
 
-        Here (i,j) index major and minor respectively.
+        Here (i,j) index major and minor respectively, and must not contain
+        duplicate entries.
         """
         i, j, M, N = self._prepare_indices(i, j)
 
@@ -835,24 +845,34 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         self.check_format(full_check=False)
 
-    def _get_single_element(self,row,col):
+    def _get_single_element(self, row, col):
         M, N = self.shape
         if (row < 0):
             row += M
         if (col < 0):
             col += N
         if not (0 <= row < M) or not (0 <= col < N):
-            raise IndexError("index out of bounds")
+            raise IndexError("index out of bounds: 0<=%d<%d, 0<=%d<%d" %
+                             (row, M, col, N))
 
-        major_index, minor_index = self._swap((row,col))
-
-        # TODO make use of sorted indices (if present)
+        major_index, minor_index = self._swap((row, col))
 
         start = self.indptr[major_index]
-        end = self.indptr[major_index+1]
-        # can use np.add(..., where) from numpy 1.7
-        return np.compress(minor_index == self.indices[start:end],
-                           self.data[start:end]).sum(dtype=self.dtype)
+        end = self.indptr[major_index + 1]
+
+        if self.has_sorted_indices:
+            # Copies may be made, if dtypes of indices are not identical
+            minor_index = self.indices.dtype.type(minor_index)
+            minor_indices = self.indices[start:end]
+            insert_pos_left = np.searchsorted(
+                minor_indices, minor_index, side='left')
+            insert_pos_right = insert_pos_left + np.searchsorted(
+                minor_indices[insert_pos_left:], minor_index, side='right')
+            return self.data[start + insert_pos_left:
+                             start + insert_pos_right].sum(dtype=self.dtype)
+        else:
+            return np.compress(minor_index == self.indices[start:end],
+                               self.data[start:end]).sum(dtype=self.dtype)
 
     def _get_submatrix(self, slice0, slice1):
         """Return a submatrix of this matrix (new matrix is created)."""
@@ -1053,6 +1073,42 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         self.indices = _prune_array(self.indices[:self.nnz])
         self.data = _prune_array(self.data[:self.nnz])
+
+    def resize(self, *shape):
+        shape = check_shape(shape)
+        if hasattr(self, 'blocksize'):
+            bm, bn = self.blocksize
+            new_M, rm = divmod(shape[0], bm)
+            new_N, rn = divmod(shape[1], bn)
+            if rm or rn:
+                raise ValueError("shape must be divisible into %s blocks. "
+                                 "Got %s" % (self.blocksize, shape))
+            M, N = self.shape[0] // bm, self.shape[1] // bn
+        else:
+            new_M, new_N = self._swap(shape)
+            M, N = self._swap(self.shape)
+
+        if new_M < M:
+            self.indices = self.indices[:self.indptr[new_M]]
+            self.data = self.data[:self.indptr[new_M]]
+            self.indptr = self.indptr[:new_M + 1]
+        elif new_M > M:
+            self.indptr = np.resize(self.indptr, new_M + 1)
+            self.indptr[M + 1:].fill(self.indptr[M])
+
+        if new_N < N:
+            mask = self.indices < new_N
+            if not np.all(mask):
+                self.indices = self.indices[mask]
+                self.data = self.data[mask]
+                major_index, val = self._minor_reduce(np.add, mask)
+                self.indptr.fill(0)
+                self.indptr[1:][major_index] = val
+                np.cumsum(self.indptr, out=self.indptr)
+
+        self._shape = shape
+
+    resize.__doc__ = spmatrix.resize.__doc__
 
     ###################
     # utility methods #

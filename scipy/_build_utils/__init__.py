@@ -16,5 +16,6 @@ else:
     numpy_nodepr_api = dict()
 
 
-from numpy.testing import Tester
-test = Tester().test
+from scipy._lib._testutils import PytestTester
+test = PytestTester(__name__)
+del PytestTester

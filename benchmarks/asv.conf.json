@@ -30,7 +30,8 @@
         "numpy": ["1.8.2"],
         "Tempita": ["0.5.2"],
         "Cython": ["0.23.4"],
-	"six": [],
+        "pytest": [],
+        "six": [],
     },
 
     // The directory (relative to the current directory) that benchmarks are

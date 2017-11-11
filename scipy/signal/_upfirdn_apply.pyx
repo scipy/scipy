@@ -33,6 +33,8 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+from __future__ import absolute_import
+
 cimport cython
 cimport numpy as np
 import numpy as np
@@ -240,7 +242,7 @@ cdef void _apply_impl(DTYPE_t *x, np.intp_t len_x, DTYPE_t *h_trans_flip,
         h_idx = t * h_per_phase
         x_conv_idx = x_idx - h_per_phase + 1
         for x_conv_idx in range(x_conv_idx, x_idx + 1):
-            if x_conv_idx < len_x and x_conv_idx > 0:
+            if x_conv_idx < len_x and x_conv_idx >= 0:
                 out[y_idx] = out[y_idx] + x[x_conv_idx] * h_trans_flip[h_idx]
             h_idx += 1
         y_idx += 1

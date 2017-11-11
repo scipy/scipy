@@ -238,8 +238,8 @@ def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',
     If we average the last half of the spectral density, to exclude the
     peak, we can recover the noise power on the signal.
 
-    >>> np.mean(Pxx_den[256:])
-    0.0018156616014838548
+    >>> np.mean(Pxx_den[25000:])
+    0.00099728892368242854
 
     Now compute and plot the power spectrum.
 
@@ -1201,13 +1201,13 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
         raise ValueError('Window, STFT shape and noverlap do not satisfy the '
                          'COLA constraint.')
 
-    # Rearrange axes if neccessary
+    # Rearrange axes if necessary
     if time_axis != Zxx.ndim-1 or freq_axis != Zxx.ndim-2:
         # Turn negative indices to positive for the call to transpose
         if freq_axis < 0:
             freq_axis = Zxx.ndim + freq_axis
         if time_axis < 0:
-            time = Zxx.ndim + time_axis
+            time_axis = Zxx.ndim + time_axis
         zouter = list(range(Zxx.ndim))
         for ax in sorted([time_axis, freq_axis], reverse=True):
             zouter.pop(ax)
@@ -1467,7 +1467,7 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
     t : ndarray
         Array of times corresponding to each data segment
     result : ndarray
-        Array of output data, contents dependant on *mode* kwarg.
+        Array of output data, contents dependent on *mode* kwarg.
 
     References
     ----------
@@ -1538,7 +1538,7 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
             if not same_data and y.ndim > 1:
                 y = np.rollaxis(y, axis, len(y.shape))
 
-    # Check if x and y are the same length, zero-pad if neccesary
+    # Check if x and y are the same length, zero-pad if necessary
     if not same_data:
         if x.shape[-1] != y.shape[-1]:
             if x.shape[-1] < y.shape[-1]:
@@ -1675,17 +1675,13 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
     if same_data and mode != 'stft':
         result = result.real
 
-    # Output is going to have new last axis for window index
-    if axis != -1:
-        # Specify as positive axis index
-        if axis < 0:
-            axis = len(result.shape)-1-axis
+    # Output is going to have new last axis for time/window index, so a
+    # negative axis index shifts down one
+    if axis < 0:
+        axis -= 1
 
-        # Roll frequency axis back to axis where the data came from
-        result = np.rollaxis(result, -1, axis)
-    else:
-        # Make sure window/time index is last axis
-        result = np.rollaxis(result, -1, -2)
+    # Roll frequency axis back to axis where the data came from
+    result = np.rollaxis(result, -1, axis)
 
     return freqs, time, result
 

@@ -2,7 +2,7 @@ from __future__ import division, print_function, absolute_import
 
 from scipy.stats import hypergeom, bernoulli
 import numpy as np
-from numpy.testing import assert_almost_equal, run_module_suite
+from numpy.testing import assert_almost_equal
 
 def test_hypergeom_logpmf():
     # symmetries test
@@ -29,6 +29,3 @@ def test_hypergeom_logpmf():
     bernoulli_logpmf = bernoulli.logpmf(k,K/N)
     assert_almost_equal(hypergeom_logpmf, bernoulli_logpmf, decimal=12)
 
-
-if __name__ == "__main__":
-    run_module_suite()

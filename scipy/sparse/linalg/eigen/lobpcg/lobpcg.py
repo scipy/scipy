@@ -1,7 +1,7 @@
 """
 Pure SciPy implementation of Locally Optimal Block Preconditioned Conjugate
 Gradient Method (LOBPCG), see
-http://www-math.cudenver.edu/~aknyazev/software/BLOPEX/
+https://bitbucket.org/joseroman/blopex
 
 License: BSD
 
@@ -21,11 +21,6 @@ from scipy.linalg import inv, eigh, cho_factor, cho_solve, cholesky
 from scipy.sparse.linalg import aslinearoperator, LinearOperator
 
 __all__ = ['lobpcg']
-
-
-@np.deprecate(new_name='eigh')
-def symeig(mtxA, mtxB=None, select=None):
-    return eigh(mtxA, b=mtxB, eigvals=select)
 
 
 def pause():
@@ -179,7 +174,7 @@ def lobpcg(A, X,
     array([[   1.,    0.,    0., ...,    0.,    0.,    0.],
            [   0.,    2.,    0., ...,    0.,    0.,    0.],
            [   0.,    0.,    3., ...,    0.,    0.,    0.],
-           ..., 
+           ...,
            [   0.,    0.,    0., ...,   98.,    0.,    0.],
            [   0.,    0.,    0., ...,    0.,   99.,    0.],
            [   0.,    0.,    0., ...,    0.,    0.,  100.]])
@@ -266,7 +261,7 @@ def lobpcg(A, X,
            in hypre and PETSc.  http://arxiv.org/abs/0705.2626
 
     .. [3] A. V. Knyazev's C and MATLAB implementations:
-           http://www-math.cudenver.edu/~aknyazev/software/BLOPEX/
+           https://bitbucket.org/joseroman/blopex
 
     """
     blockVectorX = X

@@ -5,7 +5,7 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from numpy.testing import (assert_, assert_array_almost_equal,
-                           assert_almost_equal, run_module_suite)
+                           assert_almost_equal)
 from numpy import linspace, sin, random, exp, allclose
 from scipy.interpolate.rbf import Rbf
 
@@ -48,9 +48,9 @@ def check_rbf3d_interpolation(function):
 
 def test_rbf_interpolation():
     for function in FUNCTIONS:
-        yield check_rbf1d_interpolation, function
-        yield check_rbf2d_interpolation, function
-        yield check_rbf3d_interpolation, function
+        check_rbf1d_interpolation(function)
+        check_rbf2d_interpolation(function)
+        check_rbf3d_interpolation(function)
 
 
 def check_rbf1d_regularity(function, atol):
@@ -82,7 +82,7 @@ def test_rbf_regularity():
         'linear': 0.2
     }
     for function in FUNCTIONS:
-        yield check_rbf1d_regularity, function, tolerances.get(function, 1e-2)
+        check_rbf1d_regularity(function, tolerances.get(function, 1e-2))
 
 
 def check_rbf1d_stability(function):
@@ -103,7 +103,7 @@ def check_rbf1d_stability(function):
 
 def test_rbf_stability():
     for function in FUNCTIONS:
-        yield check_rbf1d_stability, function
+        check_rbf1d_stability(function)
 
 
 def test_default_construction():
@@ -153,6 +153,3 @@ def test_rbf_epsilon_none_collinear():
     z = [5, 6, 7]
     rbf = Rbf(x, y, z, epsilon=None)
     assert_(rbf.epsilon > 0)
-
-if __name__ == "__main__":
-    run_module_suite()

@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 fitpack (dierckx in netlib) --- A Python-C wrapper to FITPACK (by P. Dierckx).
         FITPACK is a collection of FORTRAN programs for curve and surface

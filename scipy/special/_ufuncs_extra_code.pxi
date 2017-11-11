@@ -126,11 +126,11 @@ def seterr(**kwargs):
     Examples
     --------
     >>> import scipy.special as sc
-    >>> from numpy.testing import assert_raises
+    >>> from pytest import raises
     >>> sc.gammaln(0)
     inf
     >>> olderr = sc.seterr(singular='raise')
-    >>> with assert_raises(sc.SpecialFunctionError):
+    >>> with raises(sc.SpecialFunctionError):
     ...     sc.gammaln(0)
     ...
     >>> _ = sc.seterr(**olderr)
@@ -140,7 +140,7 @@ def seterr(**kwargs):
     >>> olderr = sc.seterr(all='raise', singular='ignore')
     >>> sc.gammaln(0)
     inf
-    >>> with assert_raises(sc.SpecialFunctionError):
+    >>> with raises(sc.SpecialFunctionError):
     ...     sc.spence(-1)
     ...
     >>> _ = sc.seterr(**olderr)
@@ -190,11 +190,11 @@ class errstate(object):
     Examples
     --------
     >>> import scipy.special as sc
-    >>> from numpy.testing import assert_raises
+    >>> from pytest import raises
     >>> sc.gammaln(0)
     inf
     >>> with sc.errstate(singular='raise'):
-    ...     with assert_raises(sc.SpecialFunctionError):
+    ...     with raises(sc.SpecialFunctionError):
     ...         sc.gammaln(0)
     ...
     >>> sc.gammaln(0)
@@ -204,7 +204,7 @@ class errstate(object):
 
     >>> with sc.errstate(all='raise', singular='ignore'):
     ...     sc.gammaln(0)
-    ...     with assert_raises(sc.SpecialFunctionError):
+    ...     with raises(sc.SpecialFunctionError):
     ...         sc.spence(-1)
     ...
     inf

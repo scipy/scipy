@@ -27,6 +27,7 @@ tags
 *.exe
 *.l[ao]
 *.o
+*.o.d
 *.py[ocd]
 *.so
 _configtest.c
@@ -84,6 +85,10 @@ setup.cfg
 *.sql
 *.sqlite
 
+# pytest cache #
+################
+.cache/*
+
 # Patches #
 ###########
 *.patch
@@ -115,8 +120,11 @@ benchmarks/html
 benchmarks/scipy-benchmarks
 scipy/__config__.py
 scipy/_lib/_ccallback_c.c
+scipy/_lib/messagestream.c
+scipy/_lib/src/messagestream_config.h
 scipy/cluster/_vq.c
 scipy/cluster/_hierarchy.c
+scipy/cluster/_optimal_leaf_ordering.c
 scipy/fftpack/_fftpackmodule.c
 scipy/fftpack/convolvemodule.c
 scipy/fftpack/src/dct.c
@@ -129,6 +137,7 @@ scipy/interpolate/_bspl.c
 scipy/interpolate/interpnd.c
 scipy/interpolate/src/dfitpack-f2pywrappers.f
 scipy/interpolate/src/dfitpackmodule.c
+scipy/io/_test_fortranmodule.c
 scipy/io/matlab/mio5_utils.c
 scipy/io/matlab/mio_utils.c
 scipy/io/matlab/streams.c
@@ -152,12 +161,20 @@ scipy/linalg/_interpolativemodule.c
 scipy/linalg/_solve_toeplitz.c
 scipy/linalg/_decomp_update.c
 scipy/linalg/_decomp_update.pyx
+scipy/linalg/_blas_subroutine_wrappers.f
+scipy/linalg/_blas_subroutines.h
+scipy/linalg/_lapack_subroutine_wrappers.f
+scipy/linalg/_lapack_subroutines.h
 scipy/linalg/cblas.pyf
 scipy/linalg/clapack.pyf
 scipy/linalg/cython_blas.c
 scipy/linalg/cython_lapack.c
 scipy/linalg/fblas.pyf
 scipy/linalg/flapack.pyf
+scipy/linalg/cython_blas.pxd
+scipy/linalg/cython_blas.pyx
+scipy/linalg/cython_lapack.pxd
+scipy/linalg/cython_lapack.pyx
 scipy/linalg/src/id_dist/src/*_subr_*.f
 scipy/ndimage/src/_ni_label.c
 scipy/ndimage/src/_cytest.c
@@ -167,6 +184,7 @@ scipy/optimize/minpack2/minpack2module.c
 scipy/optimize/nnls/_nnlsmodule.c
 scipy/optimize/slsqp/_slsqpmodule.c
 scipy/optimize/_lsq/givens_elimination.c
+scipy/optimize/_trlib/_trlib.c
 scipy/signal/_spectral.c
 scipy/signal/_max_len_seq_inner.c
 scipy/signal/_upfirdn_apply.c
@@ -205,18 +223,25 @@ scipy/spatial/_hausdorff.c
 scipy/spatial/qhull.c
 scipy/spatial/_voronoi.c
 scipy/special/_comb.c
-scipy/spatial/qhull_misc_config.h
 scipy/special/_ellip_harm_2.c
 scipy/special/_ellip_harm_2.h
 scipy/special/_logit.c
+scipy/special/_test_round.c
 scipy/special/_ufuncs.c
 scipy/special/_ufuncs.h
+scipy/special/_ufuncs.pyx
 scipy/special/_ufuncs_cxx.cxx
 scipy/special/_ufuncs_cxx.h
-scipy/special/specfunmodule.c
+scipy/special/_ufuncs_cxx.pxd
+scipy/special/_ufuncs_cxx.pyx
+scipy/special/_ufuncs_cxx_defs.h
+scipy/special/_ufuncs_defs.h
 scipy/special/cython_special.c
 scipy/special/cython_special.h
-scipy/special/_test_round.c
+scipy/special/cython_special.pxd
+scipy/special/cython_special.pyx
+scipy/special/specfunmodule.c
+scipy/special/tests/data/*.npz
 scipy/stats/_rank.c
 scipy/stats/mvn-f2pywrappers.f
 scipy/stats/mvnmodule.c
@@ -226,4 +251,3 @@ scipy/stats/_stats.c
 scipy/version.py
 scipy/special/_exprel.c
 scipy/optimize/_group_columns.c
-

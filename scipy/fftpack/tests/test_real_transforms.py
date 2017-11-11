@@ -3,9 +3,11 @@ from __future__ import division, print_function, absolute_import
 from os.path import join, dirname
 
 import numpy as np
-from numpy.testing import assert_array_almost_equal, assert_equal, TestCase
+from numpy.testing import assert_array_almost_equal, assert_equal
+from pytest import raises as assert_raises
 
-from scipy.fftpack.realtransforms import dct, idct, dst, idst
+from scipy.fftpack.realtransforms import (
+    dct, idct, dst, idst, dctn, idctn, dstn, idstn)
 
 # Matlab reference data
 MDATA = np.load(join(dirname(__file__), 'test.npz'))
@@ -48,7 +50,47 @@ def fftw_dst_ref(type, size, dt):
     return x, y, dt
 
 
-class TestComplex(TestCase):
+def dct_2d_ref(x, **kwargs):
+    """ used as a reference in testing dct2. """
+    x = np.array(x, copy=True)
+    for row in range(x.shape[0]):
+        x[row, :] = dct(x[row, :], **kwargs)
+    for col in range(x.shape[1]):
+        x[:, col] = dct(x[:, col], **kwargs)
+    return x
+
+
+def idct_2d_ref(x, **kwargs):
+    """ used as a reference in testing idct2. """
+    x = np.array(x, copy=True)
+    for row in range(x.shape[0]):
+        x[row, :] = idct(x[row, :], **kwargs)
+    for col in range(x.shape[1]):
+        x[:, col] = idct(x[:, col], **kwargs)
+    return x
+
+
+def dst_2d_ref(x, **kwargs):
+    """ used as a reference in testing dst2. """
+    x = np.array(x, copy=True)
+    for row in range(x.shape[0]):
+        x[row, :] = dst(x[row, :], **kwargs)
+    for col in range(x.shape[1]):
+        x[:, col] = dst(x[:, col], **kwargs)
+    return x
+
+
+def idst_2d_ref(x, **kwargs):
+    """ used as a reference in testing idst2. """
+    x = np.array(x, copy=True)
+    for row in range(x.shape[0]):
+        x[row, :] = idst(x[row, :], **kwargs)
+    for col in range(x.shape[1]):
+        x[:, col] = idst(x[:, col], **kwargs)
+    return x
+
+
+class TestComplex(object):
     def test_dct_complex64(self):
         y = dct(1j*np.arange(5, dtype=np.complex64))
         x = 1j*dct(np.arange(5))
@@ -80,8 +122,8 @@ class TestComplex(TestCase):
         assert_array_almost_equal(x, y)
 
 
-class _TestDCTBase(TestCase):
-    def setUp(self):
+class _TestDCTBase(object):
+    def setup_method(self):
         self.rdt = None
         self.dec = 14
         self.type = None
@@ -140,70 +182,70 @@ class _TestDCTIIIBase(_TestDCTBase):
 
 
 class TestDCTIDouble(_TestDCTBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = np.double
         self.dec = 10
         self.type = 1
 
 
 class TestDCTIFloat(_TestDCTBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = np.float32
         self.dec = 5
         self.type = 1
 
 
 class TestDCTIInt(_TestDCTBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = int
         self.dec = 5
         self.type = 1
 
 
 class TestDCTIIDouble(_TestDCTIIBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = np.double
         self.dec = 10
         self.type = 2
 
 
 class TestDCTIIFloat(_TestDCTIIBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = np.float32
         self.dec = 5
         self.type = 2
 
 
 class TestDCTIIInt(_TestDCTIIBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = int
         self.dec = 5
         self.type = 2
 
 
 class TestDCTIIIDouble(_TestDCTIIIBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = np.double
         self.dec = 14
         self.type = 3
 
 
 class TestDCTIIIFloat(_TestDCTIIIBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = np.float32
         self.dec = 5
         self.type = 3
 
 
 class TestDCTIIIInt(_TestDCTIIIBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = int
         self.dec = 5
         self.type = 3
 
 
-class _TestIDCTBase(TestCase):
-    def setUp(self):
+class _TestIDCTBase(object):
+    def setup_method(self):
         self.rdt = None
         self.dec = 14
         self.type = None
@@ -226,70 +268,70 @@ class _TestIDCTBase(TestCase):
 
 
 class TestIDCTIDouble(_TestIDCTBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = np.double
         self.dec = 10
         self.type = 1
 
 
 class TestIDCTIFloat(_TestIDCTBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = np.float32
         self.dec = 4
         self.type = 1
 
 
 class TestIDCTIInt(_TestIDCTBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = int
         self.dec = 4
         self.type = 1
 
 
 class TestIDCTIIDouble(_TestIDCTBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = np.double
         self.dec = 10
         self.type = 2
 
 
 class TestIDCTIIFloat(_TestIDCTBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = np.float32
         self.dec = 5
         self.type = 2
 
 
 class TestIDCTIIInt(_TestIDCTBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = int
         self.dec = 5
         self.type = 2
 
 
 class TestIDCTIIIDouble(_TestIDCTBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = np.double
         self.dec = 14
         self.type = 3
 
 
 class TestIDCTIIIFloat(_TestIDCTBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = np.float32
         self.dec = 5
         self.type = 3
 
 
 class TestIDCTIIIInt(_TestIDCTBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = int
         self.dec = 5
         self.type = 3
 
 
-class _TestDSTBase(TestCase):
-    def setUp(self):
+class _TestDSTBase(object):
+    def setup_method(self):
         self.rdt = None  # dtype
         self.dec = None  # number of decimals to match
         self.type = None  # dst type
@@ -308,70 +350,70 @@ class _TestDSTBase(TestCase):
 
 
 class TestDSTIDouble(_TestDSTBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = np.double
         self.dec = 14
         self.type = 1
 
 
 class TestDSTIFloat(_TestDSTBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = np.float32
         self.dec = 5
         self.type = 1
 
 
 class TestDSTIInt(_TestDSTBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = int
         self.dec = 5
         self.type = 1
 
 
 class TestDSTIIDouble(_TestDSTBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = np.double
         self.dec = 14
         self.type = 2
 
 
 class TestDSTIIFloat(_TestDSTBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = np.float32
         self.dec = 6
         self.type = 2
 
 
 class TestDSTIIInt(_TestDSTBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = int
         self.dec = 6
         self.type = 2
 
 
 class TestDSTIIIDouble(_TestDSTBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = np.double
         self.dec = 14
         self.type = 3
 
 
 class TestDSTIIIFloat(_TestDSTBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = np.float32
         self.dec = 7
         self.type = 3
 
 
 class TestDSTIIIInt(_TestDSTBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = int
         self.dec = 7
         self.type = 3
 
 
-class _TestIDSTBase(TestCase):
-    def setUp(self):
+class _TestIDSTBase(object):
+    def setup_method(self):
         self.rdt = None
         self.dec = None
         self.type = None
@@ -394,63 +436,63 @@ class _TestIDSTBase(TestCase):
 
 
 class TestIDSTIDouble(_TestIDSTBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = np.double
         self.dec = 12
         self.type = 1
 
 
 class TestIDSTIFloat(_TestIDSTBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = np.float32
         self.dec = 4
         self.type = 1
 
 
 class TestIDSTIInt(_TestIDSTBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = int
         self.dec = 4
         self.type = 1
 
 
 class TestIDSTIIDouble(_TestIDSTBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = np.double
         self.dec = 14
         self.type = 2
 
 
 class TestIDSTIIFloat(_TestIDSTBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = np.float32
         self.dec = 6
         self.type = 2
 
 
 class TestIDSTIIInt(_TestIDSTBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = int
         self.dec = 6
         self.type = 2
 
 
 class TestIDSTIIIDouble(_TestIDSTBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = np.double
         self.dec = 14
         self.type = 3
 
 
 class TestIDSTIIIFloat(_TestIDSTBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = np.float32
         self.dec = 6
         self.type = 3
 
 
 class TestIDSTIIIInt(_TestIDSTBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = int
         self.dec = 6
         self.type = 3
@@ -522,5 +564,90 @@ class TestOverwrite(object):
             self._check_1d(idst, dtype, (2, 16), 1, overwritable)
 
 
-if __name__ == "__main__":
-    np.testing.run_module_suite()
+class Test_DCTN_IDCTN(object):
+    dec = 14
+    types = [1, 2, 3]
+    norms = [None, 'ortho']
+    rstate = np.random.RandomState(1234)
+    shape = (32, 16)
+    data = rstate.randn(*shape)
+    # Sets of functions to test
+    function_sets = [dict(forward=dctn,
+                          inverse=idctn,
+                          forward_ref=dct_2d_ref,
+                          inverse_ref=idct_2d_ref),
+                     dict(forward=dstn,
+                          inverse=idstn,
+                          forward_ref=dst_2d_ref,
+                          inverse_ref=idst_2d_ref), ]
+
+    def test_axes_round_trip(self):
+        norm = 'ortho'
+        for function_set in self.function_sets:
+            fforward = function_set['forward']
+            finverse = function_set['inverse']
+            for axes in [None, (1, ), (0, ), (0, 1), (-2, -1)]:
+                for dct_type in self.types:
+                    if norm == 'ortho' and dct_type == 1:
+                        continue  # 'ortho' not supported by DCT-I
+                    tmp = fforward(self.data, type=dct_type, axes=axes,
+                                   norm=norm)
+                    tmp = finverse(tmp, type=dct_type, axes=axes, norm=norm)
+                    assert_array_almost_equal(self.data, tmp, decimal=self.dec)
+
+    def test_dctn_vs_2d_reference(self):
+        for function_set in self.function_sets:
+            fforward = function_set['forward']
+            fforward_ref = function_set['forward_ref']
+            for dct_type in self.types:
+                for norm in self.norms:
+                    if norm == 'ortho' and dct_type == 1:
+                        continue  # 'ortho' not supported by DCT-I
+                    y1 = fforward(self.data, type=dct_type, axes=None,
+                                  norm=norm)
+                    y2 = fforward_ref(self.data, type=dct_type, norm=norm)
+                    assert_array_almost_equal(y1, y2, decimal=11)
+
+    def test_idctn_vs_2d_reference(self):
+        for function_set in self.function_sets:
+            finverse = function_set['inverse']
+            finverse_ref = function_set['inverse_ref']
+            for dct_type in self.types:
+                for norm in self.norms:
+                    print(function_set, dct_type, norm)
+                    if norm == 'ortho' and dct_type == 1:
+                        continue  # 'ortho' not supported by DCT-I
+                    fdata = dctn(self.data, type=dct_type, norm=norm)
+                    y1 = finverse(fdata, type=dct_type, norm=norm)
+                    y2 = finverse_ref(fdata, type=dct_type, norm=norm)
+                    assert_array_almost_equal(y1, y2, decimal=11)
+
+    def test_axes_and_shape(self):
+        for function_set in self.function_sets:
+            fforward = function_set['forward']
+            finverse = function_set['inverse']
+
+            # shape must match the number of axes
+            assert_raises(ValueError, fforward, self.data,
+                          shape=(self.data.shape[0], ),
+                          axes=(0, 1))
+            assert_raises(ValueError, fforward, self.data,
+                          shape=(self.data.shape[0], ),
+                          axes=None)
+            assert_raises(ValueError, fforward, self.data,
+                          shape=self.data.shape,
+                          axes=(0, ))
+            # shape must be a tuple
+            assert_raises(TypeError, fforward, self.data,
+                          shape=self.data.shape[0],
+                          axes=(0, 1))
+
+            # shape=None works with a subset of axes
+            for axes in [(0, ), (1, )]:
+                tmp = fforward(self.data, shape=None, axes=axes, norm='ortho')
+                tmp = finverse(tmp, shape=None, axes=axes, norm='ortho')
+                assert_array_almost_equal(self.data, tmp, decimal=self.dec)
+
+            # non-default shape
+            tmp = fforward(self.data, shape=(128, 128), axes=None)
+            assert_equal(tmp.shape, (128, 128))

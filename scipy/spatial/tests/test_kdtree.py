@@ -4,9 +4,8 @@
 from __future__ import division, print_function, absolute_import
 
 from numpy.testing import (assert_equal, assert_array_equal,
-    assert_almost_equal, assert_array_almost_equal, assert_,
-    assert_raises,
-    run_module_suite)
+    assert_almost_equal, assert_array_almost_equal, assert_)
+from pytest import raises as assert_raises
 
 import numpy as np
 from scipy.spatial import KDTree, Rectangle, distance_matrix, cKDTree
@@ -94,8 +93,8 @@ class ConsistencyTests:
         assert_(np.all(d <= d_real*(1+eps)))
 
 
-class test_random(ConsistencyTests):
-    def setUp(self):
+class Test_random(ConsistencyTests):
+    def setup_method(self):
         self.n = 100
         self.m = 4
         np.random.seed(1234)
@@ -105,14 +104,14 @@ class test_random(ConsistencyTests):
         self.d = 0.2
         self.k = 10
 
-class test_random_far(test_random):
-    def setUp(self):
-        test_random.setUp(self)
+class Test_random_far(Test_random):
+    def setup_method(self):
+        Test_random.setup_method(self)
         self.x = np.random.randn(self.m)+10
 
 
-class test_small(ConsistencyTests):
-    def setUp(self):
+class Test_small(ConsistencyTests):
+    def setup_method(self):
         self.data = np.array([[0,0,0],
                               [0,0,1],
                               [0,1,0],
@@ -140,38 +139,38 @@ class test_small(ConsistencyTests):
                 ([0.1,0.9],[0,1]))
 
 
-class test_small_nonleaf(test_small):
-    def setUp(self):
-        test_small.setUp(self)
+class Test_small_nonleaf(Test_small):
+    def setup_method(self):
+        Test_small.setup_method(self)
         self.kdtree = KDTree(self.data,leafsize=1)
 
 
-class test_small_compiled(test_small):
-    def setUp(self):
-        test_small.setUp(self)
+class Test_small_compiled(Test_small):
+    def setup_method(self):
+        Test_small.setup_method(self)
         self.kdtree = cKDTree(self.data)
 
 
-class test_small_nonleaf_compiled(test_small):
-    def setUp(self):
-        test_small.setUp(self)
+class Test_small_nonleaf_compiled(Test_small):
+    def setup_method(self):
+        Test_small.setup_method(self)
         self.kdtree = cKDTree(self.data,leafsize=1)
 
 
-class test_random_compiled(test_random):
-    def setUp(self):
-        test_random.setUp(self)
+class Test_random_compiled(Test_random):
+    def setup_method(self):
+        Test_random.setup_method(self)
         self.kdtree = cKDTree(self.data)
 
 
-class test_random_far_compiled(test_random_far):
-    def setUp(self):
-        test_random_far.setUp(self)
+class Test_random_far_compiled(Test_random_far):
+    def setup_method(self):
+        Test_random_far.setup_method(self)
         self.kdtree = cKDTree(self.data)
 
 
-class test_vectorization:
-    def setUp(self):
+class Test_vectorization:
+    def setup_method(self):
         self.data = np.array([[0,0,0],
                               [0,0,1],
                               [0,1,0],
@@ -185,7 +184,7 @@ class test_vectorization:
     def test_single_query(self):
         d, i = self.kdtree.query(np.array([0,0,0]))
         assert_(isinstance(d,float))
-        assert_(np.issubdtype(i, int))
+        assert_(np.issubdtype(i, np.signedinteger))
 
     def test_vectorized_query(self):
         d, i = self.kdtree.query(np.zeros((2,4,3)))
@@ -224,8 +223,8 @@ class test_vectorization:
         assert_(isinstance(i[0,0],list))
 
 
-class test_vectorization_compiled:
-    def setUp(self):
+class Test_vectorization_compiled:
+    def setup_method(self):
         self.data = np.array([[0,0,0],
                               [0,0,1],
                               [0,1,0],
@@ -288,9 +287,9 @@ class ball_consistency:
         assert_(np.all(self.distance(self.data[c],self.x,self.p) >= self.d/(1.+self.eps)))
 
 
-class test_random_ball(ball_consistency):
+class Test_random_ball(ball_consistency):
 
-    def setUp(self):
+    def setup_method(self):
         n = 100
         m = 4
         np.random.seed(1234)
@@ -302,9 +301,9 @@ class test_random_ball(ball_consistency):
         self.d = 0.2
 
 
-class test_random_ball_compiled(ball_consistency):
+class Test_random_ball_compiled(ball_consistency):
 
-    def setUp(self):
+    def setup_method(self):
         n = 100
         m = 4
         np.random.seed(1234)
@@ -315,11 +314,11 @@ class test_random_ball_compiled(ball_consistency):
         self.eps = 0
         self.d = 0.2
 
-class test_random_ball_compiled_periodic(ball_consistency):
+class Test_random_ball_compiled_periodic(ball_consistency):
     def distance(self, a, b, p):
         return distance_box(a, b, p, 1.0)
 
-    def setUp(self):
+    def setup_method(self):
         n = 10000
         m = 4
         np.random.seed(1234)
@@ -348,76 +347,76 @@ class test_random_ball_compiled_periodic(ball_consistency):
         c[l] = False
         assert_(np.all(self.distance(self.data[c],self.x,self.p) >= self.d/(1.+self.eps)))
 
-class test_random_ball_approx(test_random_ball):
+class Test_random_ball_approx(Test_random_ball):
 
-    def setUp(self):
-        test_random_ball.setUp(self)
+    def setup_method(self):
+        Test_random_ball.setup_method(self)
         self.eps = 0.1
 
 
-class test_random_ball_approx_compiled(test_random_ball_compiled):
+class Test_random_ball_approx_compiled(Test_random_ball_compiled):
 
-    def setUp(self):
-        test_random_ball_compiled.setUp(self)
+    def setup_method(self):
+        Test_random_ball_compiled.setup_method(self)
         self.eps = 0.1
 
-class test_random_ball_approx_compiled_periodic(test_random_ball_compiled_periodic):
+class Test_random_ball_approx_compiled_periodic(Test_random_ball_compiled_periodic):
 
-    def setUp(self):
-        test_random_ball_compiled_periodic.setUp(self)
+    def setup_method(self):
+        Test_random_ball_compiled_periodic.setup_method(self)
         self.eps = 0.1
 
 
-class test_random_ball_far(test_random_ball):
+class Test_random_ball_far(Test_random_ball):
 
-    def setUp(self):
-        test_random_ball.setUp(self)
+    def setup_method(self):
+        Test_random_ball.setup_method(self)
         self.d = 2.
 
 
-class test_random_ball_far_compiled(test_random_ball_compiled):
+class Test_random_ball_far_compiled(Test_random_ball_compiled):
 
-    def setUp(self):
-        test_random_ball_compiled.setUp(self)
+    def setup_method(self):
+        Test_random_ball_compiled.setup_method(self)
         self.d = 2.
 
-class test_random_ball_far_compiled_periodic(test_random_ball_compiled_periodic):
+class Test_random_ball_far_compiled_periodic(Test_random_ball_compiled_periodic):
 
-    def setUp(self):
-        test_random_ball_compiled_periodic.setUp(self)
+    def setup_method(self):
+        Test_random_ball_compiled_periodic.setup_method(self)
         self.d = 2.
 
 
-class test_random_ball_l1(test_random_ball):
+class Test_random_ball_l1(Test_random_ball):
 
-    def setUp(self):
-        test_random_ball.setUp(self)
+    def setup_method(self):
+        Test_random_ball.setup_method(self)
         self.p = 1
 
 
-class test_random_ball_l1_compiled(test_random_ball_compiled):
+class Test_random_ball_l1_compiled(Test_random_ball_compiled):
 
-    def setUp(self):
-        test_random_ball_compiled.setUp(self)
+    def setup_method(self):
+        Test_random_ball_compiled.setup_method(self)
         self.p = 1
 
-class test_random_ball_l1_compiled_periodic(test_random_ball_compiled_periodic):
+class Test_random_ball_l1_compiled_periodic(Test_random_ball_compiled_periodic):
 
-    def setUp(self):
-        test_random_ball_compiled_periodic.setUp(self)
+    def setup_method(self):
+        Test_random_ball_compiled_periodic.setup_method(self)
         self.p = 1
 
 
-class test_random_ball_linf(test_random_ball):
+class Test_random_ball_linf(Test_random_ball):
 
-    def setUp(self):
-        test_random_ball.setUp(self)
+    def setup_method(self):
+        Test_random_ball.setup_method(self)
         self.p = np.inf
 
-class test_random_ball_linf_compiled_periodic(test_random_ball_compiled_periodic):
+class Test_random_ball_linf_compiled_periodic(Test_random_ball_compiled_periodic):
 
-    def setUp(self):
-        test_random_ball_compiled_periodic.setUp(self)
+    def setup_method(self):
+        Test_random_ball_compiled_periodic.setup_method(self)
         self.p = np.inf
 
 
@@ -482,9 +481,9 @@ class two_trees_consistency:
             assert_(np.all(self.distance(self.data2[c],self.data1[i],self.p) >= self.d/(1.+self.eps)))
 
 
-class test_two_random_trees(two_trees_consistency):
+class Test_two_random_trees(two_trees_consistency):
 
-    def setUp(self):
+    def setup_method(self):
         n = 50
         m = 4
         np.random.seed(1234)
@@ -497,9 +496,9 @@ class test_two_random_trees(two_trees_consistency):
         self.d = 0.2
 
 
-class test_two_random_trees_compiled(two_trees_consistency):
+class Test_two_random_trees_compiled(two_trees_consistency):
 
-    def setUp(self):
+    def setup_method(self):
         n = 50
         m = 4
         np.random.seed(1234)
@@ -511,11 +510,11 @@ class test_two_random_trees_compiled(two_trees_consistency):
         self.eps = 0
         self.d = 0.2
 
-class test_two_random_trees_compiled_periodic(two_trees_consistency):
+class Test_two_random_trees_compiled_periodic(two_trees_consistency):
     def distance(self, a, b, p):
         return distance_box(a, b, p, 1.0)
 
-    def setUp(self):
+    def setup_method(self):
         n = 50
         m = 4
         np.random.seed(1234)
@@ -527,49 +526,49 @@ class test_two_random_trees_compiled_periodic(two_trees_consistency):
         self.eps = 0
         self.d = 0.2
 
-class test_two_random_trees_far(test_two_random_trees):
+class Test_two_random_trees_far(Test_two_random_trees):
 
-    def setUp(self):
-        test_two_random_trees.setUp(self)
+    def setup_method(self):
+        Test_two_random_trees.setup_method(self)
         self.d = 2
 
 
-class test_two_random_trees_far_compiled(test_two_random_trees_compiled):
+class Test_two_random_trees_far_compiled(Test_two_random_trees_compiled):
 
-    def setUp(self):
-        test_two_random_trees_compiled.setUp(self)
+    def setup_method(self):
+        Test_two_random_trees_compiled.setup_method(self)
         self.d = 2
 
-class test_two_random_trees_far_compiled_periodic(test_two_random_trees_compiled_periodic):
+class Test_two_random_trees_far_compiled_periodic(Test_two_random_trees_compiled_periodic):
 
-    def setUp(self):
-        test_two_random_trees_compiled_periodic.setUp(self)
+    def setup_method(self):
+        Test_two_random_trees_compiled_periodic.setup_method(self)
         self.d = 2
 
 
-class test_two_random_trees_linf(test_two_random_trees):
+class Test_two_random_trees_linf(Test_two_random_trees):
 
-    def setUp(self):
-        test_two_random_trees.setUp(self)
+    def setup_method(self):
+        Test_two_random_trees.setup_method(self)
         self.p = np.inf
 
 
-class test_two_random_trees_linf_compiled(test_two_random_trees_compiled):
+class Test_two_random_trees_linf_compiled(Test_two_random_trees_compiled):
 
-    def setUp(self):
-        test_two_random_trees_compiled.setUp(self)
+    def setup_method(self):
+        Test_two_random_trees_compiled.setup_method(self)
         self.p = np.inf
 
-class test_two_random_trees_linf_compiled_periodic(test_two_random_trees_compiled_periodic):
+class Test_two_random_trees_linf_compiled_periodic(Test_two_random_trees_compiled_periodic):
 
-    def setUp(self):
-        test_two_random_trees_compiled_periodic.setUp(self)
+    def setup_method(self):
+        Test_two_random_trees_compiled_periodic.setup_method(self)
         self.p = np.inf
 
 
-class test_rectangle:
+class Test_rectangle:
 
-    def setUp(self):
+    def setup_method(self):
         self.rect = Rectangle([0,0],[1,1])
 
     def test_min_inside(self):
@@ -635,9 +634,9 @@ class count_neighbors_consistency:
         for r,result in zip(rs, results):
             assert_equal(self.T1.count_neighbors(self.T2, r), result)
 
-class test_count_neighbors(count_neighbors_consistency):
+class Test_count_neighbors(count_neighbors_consistency):
 
-    def setUp(self):
+    def setup_method(self):
         n = 50
         m = 2
         np.random.seed(1234)
@@ -645,9 +644,9 @@ class test_count_neighbors(count_neighbors_consistency):
         self.T2 = KDTree(np.random.randn(n,m),leafsize=2)
 
 
-class test_count_neighbors_compiled(count_neighbors_consistency):
+class Test_count_neighbors_compiled(count_neighbors_consistency):
 
-    def setUp(self):
+    def setup_method(self):
         n = 50
         m = 2
         np.random.seed(1234)
@@ -675,9 +674,9 @@ class sparse_distance_matrix_consistency:
         # raises an exception for bug 870 (FIXME: Does it?)
         self.T1.sparse_distance_matrix(self.T1, self.r)
 
-class test_sparse_distance_matrix(sparse_distance_matrix_consistency):
+class Test_sparse_distance_matrix(sparse_distance_matrix_consistency):
 
-    def setUp(self):
+    def setup_method(self):
         n = 50
         m = 4
         np.random.seed(1234)
@@ -692,9 +691,9 @@ class test_sparse_distance_matrix(sparse_distance_matrix_consistency):
         self.n = n
         self.m = m
 
-class test_sparse_distance_matrix_compiled(sparse_distance_matrix_consistency):
+class Test_sparse_distance_matrix_compiled(sparse_distance_matrix_consistency):
 
-    def setUp(self):
+    def setup_method(self):
         n = 50
         m = 4
         np.random.seed(0)
@@ -801,16 +800,16 @@ def test_onetree_query():
     k = 4
     points = np.random.randn(n,k)
     T = KDTree(points)
-    yield check_onetree_query, T, 0.1
+    check_onetree_query(T, 0.1)
 
     points = np.random.randn(3*n,k)
     points[:n] *= 0.001
     points[n:2*n] += 2
     T = KDTree(points)
-    yield check_onetree_query, T, 0.1
-    yield check_onetree_query, T, 0.001
-    yield check_onetree_query, T, 0.00001
-    yield check_onetree_query, T, 1e-6
+    check_onetree_query(T, 0.1)
+    check_onetree_query(T, 0.001)
+    check_onetree_query(T, 0.00001)
+    check_onetree_query(T, 1e-6)
 
 
 def test_onetree_query_compiled():
@@ -819,16 +818,16 @@ def test_onetree_query_compiled():
     k = 4
     points = np.random.randn(n,k)
     T = cKDTree(points)
-    yield check_onetree_query, T, 0.1
+    check_onetree_query(T, 0.1)
 
     points = np.random.randn(3*n,k)
     points[:n] *= 0.001
     points[n:2*n] += 2
     T = cKDTree(points)
-    yield check_onetree_query, T, 0.1
-    yield check_onetree_query, T, 0.001
-    yield check_onetree_query, T, 0.00001
-    yield check_onetree_query, T, 1e-6
+    check_onetree_query(T, 0.1)
+    check_onetree_query(T, 0.001)
+    check_onetree_query(T, 0.00001)
+    check_onetree_query(T, 1e-6)
 
 
 def test_query_pairs_single_node():
@@ -1331,6 +1330,3 @@ def test_short_knn():
             [0., 0.01, np.inf, np.inf],
             [0., 0.01, np.inf, np.inf],
             [0., np.inf, np.inf, np.inf]])
-
-if __name__ == "__main__":
-    run_module_suite()

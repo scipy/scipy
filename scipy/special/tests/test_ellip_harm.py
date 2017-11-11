@@ -5,11 +5,10 @@
 
 from __future__ import division, print_function, absolute_import
 
-import warnings
-
 import numpy as np
 from numpy.testing import (assert_equal, assert_almost_equal, assert_allclose,
-                           assert_, run_module_suite)
+                           assert_)
+from scipy._lib._numpy_compat import suppress_warnings
 from scipy.special._testutils import assert_func_equal
 from scipy.special import ellip_harm, ellip_harm_2, ellip_normal
 from scipy.integrate import IntegrationWarning
@@ -56,8 +55,9 @@ def test_ellip_potential():
         (120, sqrt(16), 3.2, 21, sqrt(11), 2.9, 11, 20),
        ]
 
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", category=IntegrationWarning)
+    with suppress_warnings() as sup:
+        sup.filter(IntegrationWarning, "The occurrence of roundoff error")
+        sup.filter(IntegrationWarning, "The maximum number of subdivisions")
 
         for p in pts:
             err_msg = repr(p)
@@ -162,7 +162,8 @@ def test_ellip_norm():
         for p in range(1, 2*n+2):
             points.append((h2, k2, n*np.ones(h2.size), p*np.ones(h2.size)))
     points = np.array(points)
-    with warnings.catch_warnings(record=True):  # occurrence of roundoff ...
+    with suppress_warnings() as sup:
+        sup.filter(IntegrationWarning, "The occurrence of roundoff error")
         assert_func_equal(ellip_normal, ellip_normal_known, points, rtol=1e-12)
 
 
@@ -174,7 +175,8 @@ def test_ellip_harm_2():
         ellip_harm_2(h2, k2, 1, 3, s)/(3 * ellip_harm(h2, k2, 1, 3, s)))
         return res
 
-    with warnings.catch_warnings(record=True):  # occurrence of roundoff ...
+    with suppress_warnings() as sup:
+        sup.filter(IntegrationWarning, "The occurrence of roundoff error")
         assert_almost_equal(I1(5, 8, 10), 1/(10*sqrt((100-5)*(100-8))))
 
         # Values produced by code from arXiv:1204.0267
@@ -269,6 +271,3 @@ def test_ellip_harm():
     points = np.array(points)
     assert_func_equal(ellip_harm, ellip_harm_known, points, rtol=1e-12)
 
-
-if __name__ == "__main__":
-    run_module_suite()

@@ -12,7 +12,6 @@ parameter: :math:`L.` The relationship between the general distribution
 :math:`p` and the standard distribution :math:`p_{0}` is
 
 .. math::
-   :nowrap:
 
     p\left(x\right) = p_{0}\left(x-L\right)
 
@@ -21,7 +20,6 @@ is initialized, the discrete distribution can either specify the
 beginning and ending (integer) values :math:`a` and :math:`b` which must be such that
 
 .. math::
-   :nowrap:
 
     p_{0}\left(x\right) = 0\quad x < a \textrm{ or } x > b
 
@@ -37,7 +35,6 @@ The probability mass function of a random variable X is defined as the
 probability that the random variable takes on a particular value.
 
 .. math::
-   :nowrap:
 
     p\left(x_{k}\right)=P\left[X=x_{k}\right]
 
@@ -45,7 +42,6 @@ This is also sometimes called the probability density function,
 although technically
 
 .. math::
-   :nowrap:
 
     f\left(x\right)=\sum_{k}p\left(x_{k}\right)\delta\left(x-x_{k}\right)
 
@@ -62,14 +58,12 @@ Cumulative Distribution Function (CDF)
 The cumulative distribution function is
 
 .. math::
-   :nowrap:
 
     F\left(x\right)=P\left[X\leq x\right]=\sum_{x_{k}\leq x}p\left(x_{k}\right)
 
 and is also useful to be able to compute. Note that
 
 .. math::
-   :nowrap:
 
     F\left(x_{k}\right)-F\left(x_{k-1}\right)=p\left(x_{k}\right)
 
@@ -80,7 +74,6 @@ Survival Function
 The survival function is just
 
 .. math::
-   :nowrap:
 
     S\left(x\right)=1-F\left(x\right)=P\left[X>k\right]
 
@@ -95,7 +88,6 @@ The percent point function is the inverse of the cumulative
 distribution function and is
 
 .. math::
-   :nowrap:
 
     G\left(q\right)=F^{-1}\left(q\right)
 
@@ -111,7 +103,6 @@ Inverse survival function
 The inverse survival function is the inverse of the survival function
 
 .. math::
-   :nowrap:
 
     Z\left(\alpha\right)=S^{-1}\left(\alpha\right)=G\left(1-\alpha\right)
 
@@ -125,14 +116,12 @@ If desired, the hazard function and the cumulative hazard function
 could be defined as
 
 .. math::
-   :nowrap:
 
     h\left(x_{k}\right)=\frac{p\left(x_{k}\right)}{1-F\left(x_{k}\right)}
 
 and
 
 .. math::
-   :nowrap:
 
     H\left(x\right)=\sum_{x_{k}\leq x}h\left(x_{k}\right)=\sum_{x_{k}\leq x}\frac{F\left(x_{k}\right)-F\left(x_{k-1}\right)}{1-F\left(x_{k}\right)}.
 
@@ -143,7 +132,6 @@ Moments
 Non-central moments are defined using the PDF
 
 .. math::
-   :nowrap:
 
     \mu_{m}^{\prime}=E\left[X^{m}\right]=\sum_{k}x_{k}^{m}p\left(x_{k}\right).
 
@@ -157,28 +145,24 @@ Central moments are computed similarly :math:`\mu=\mu_{1}^{\prime}`
 The mean is the first moment
 
 .. math::
-   :nowrap:
 
     \mu=\mu_{1}^{\prime}=E\left[X\right]=\sum_{k}x_{k}p\left(x_{k}\right)
 
 the variance is the second central moment
 
 .. math::
-   :nowrap:
 
     \mu_{2}=E\left[\left(X-\mu\right)^{2}\right]=\sum_{x_{k}}x_{k}^{2}p\left(x_{k}\right)-\mu^{2}.
 
 Skewness is defined as
 
 .. math::
-   :nowrap:
 
     \gamma_{1}=\frac{\mu_{3}}{\mu_{2}^{3/2}}
 
 while (Fisher) kurtosis is
 
 .. math::
-   :nowrap:
 
     \gamma_{2}=\frac{\mu_{4}}{\mu_{2}^{2}}-3,
 
@@ -191,7 +175,6 @@ Moment generating function
 The moment generating function is defined as
 
 .. math::
-   :nowrap:
 
     M_{X}\left(t\right)=E\left[e^{Xt}\right]=\sum_{x_{k}}e^{x_{k}t}p\left(x_{k}\right)
 
@@ -211,7 +194,6 @@ If :math:`f_{i}\left(k;\boldsymbol{\theta}\right)` is the PDF of a random-variab
 random vector :math:`\mathbf{k}` is
 
 .. math::
-   :nowrap:
 
     f\left(\mathbf{k};\boldsymbol{\theta}\right)=\prod_{i=1}^{N}f_{i}\left(k_{i};\boldsymbol{\theta}\right).
 
@@ -236,7 +218,6 @@ Standard notation for mean
 We will use
 
 .. math::
-   :nowrap:
 
     \overline{y\left(\mathbf{x}\right)}=\frac{1}{N}\sum_{i=1}^{N}y\left(x_{i}\right)
 
@@ -249,7 +230,6 @@ Combinations
 Note that
 
 .. math::
-   :nowrap:
 
     k!=k\cdot\left(k-1\right)\cdot\left(k-2\right)\cdot\cdots\cdot1=\Gamma\left(k+1\right)
 
@@ -263,7 +243,6 @@ and has special cases of
 and
 
 .. math::
-   :nowrap:
 
     \left(\begin{array}{c} n\\ k\end{array}\right)=\frac{n!}{\left(n-k\right)!k!}.
 

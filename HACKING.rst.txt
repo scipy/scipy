@@ -8,6 +8,17 @@ community process works in practice.  Readers who are familiar with the SciPy
 community and are experienced Python coders may want to jump straight to the
 `git workflow`_ documentation.
 
+There are a lot of ways you can contribute:
+
+- Contributing new code
+- Fixing bugs and other maintenance work
+- Improving the documentation
+- Reviewing open pull requests
+- Triaging issues
+- Working on the `scipy.org`_ website
+- Answering questions and participating on the scipy-dev and scipy-user
+  `mailing lists`_.
+
 Contributing new code
 =====================
 
@@ -100,7 +111,7 @@ basic answer is: decisions are made by consensus, by everyone who chooses to
 participate in the discussion on the mailing list.  This includes developers,
 other users and yourself.  Aiming for consensus in the discussion is important
 -- SciPy is a project by and for the scientific Python community.  In those
-rare cases that agreement cannot be reached, the `maintainers`_ of the module
+rare cases that agreement cannot be reached, the maintainers of the module
 in question can decide the issue.
 
 
@@ -128,13 +139,52 @@ deprecation message for the changed behavior.  This should be part of the
 review process.
 
 
+Reviewing pull requests
+=======================
+
+Reviewing open pull requests (PRs) is very welcome, and a valuable way to help
+increase the speed at which the project moves forward.  If you have specific
+knowledge/experience in a particular area (say "optimization algorithms" or
+"special functions") then reviewing PRs in that area is especially valuable -
+sometimes PRs with technical code have to wait for a long time to get merged
+due to a shortage of appropriate reviewers.
+
+We encourage everyone to get involved in the review process; it's also a
+great way to get familiar with the code base.  Reviewers should ask
+themselves some or all of the following questions:
+
+- Was this change adequately discussed (relevant for new features and changes
+  in existing behavior)?
+- Is the feature scientifically sound? Algorithms may be known to work based on
+  literature; otherwise, closer look at correctness is valuable.
+- Is the intended behavior clear under all conditions (e.g. unexpected inputs
+  like empty arrays or nan/inf values)?
+- Does the code meet the quality, test and documentation expectation outline
+  under `Contributing new code`_?
+
+If we do not know you yet, consider introducing yourself.
+
+
 Other ways to contribute
 ========================
 
-There are many ways to contribute other than contributing code.  Participating
-in discussions on the scipy-user and scipy-dev *mailing lists* is a contribution
-in itself.  The `scipy.org`_ *website* contains a lot of information on the
-SciPy community and can always use a new pair of hands.
+There are many ways to contribute other than contributing code.
+
+Triaging issues (investigating bug reports for validity and possible actions to
+take) is also a useful activity.  SciPy has many hundreds of open issues;
+closing invalid ones and correctly labeling valid ones (ideally with some first
+thoughts in a comment) allows prioritizing maintenance work and finding related
+issues easily when working on an existing function or submodule.
+
+Participating in discussions on the scipy-user and scipy-dev `mailing lists`_ is
+a contribution in itself.  Everyone who writes to those lists with a problem or
+an idea would like to get responses, and writing such responses makes the
+project and community function better and appear more welcoming.
+
+The `scipy.org`_ website contains a lot of information on both SciPy the
+project and SciPy the community, and it can always use a new pair of hands.
+The sources for the website live in their own separate repo:
+https://github.com/scipy/scipy.org
 
 
 Recommended development setup
@@ -159,14 +209,16 @@ do one of::
 
     $ python runtests.py -v
     $ python runtests.py -v -s optimize
-    $ python runtests.py -v -t scipy/special/tests/test_basic.py:test_xlogy
+    $ python runtests.py -v -t scipy.special.tests.test_basic::test_xlogy
     $ python runtests.py --ipython
     $ python runtests.py --python somescript.py
     $ python runtests.py --bench
 
 This builds Scipy first, so the first time it may take some time.  If
 you specify ``-n``, the tests are run against the version of Scipy (if
-any) found on current PYTHONPATH.
+any) found on current PYTHONPATH.  *Note: if you run into a build issue,
+more detailed build documentation can be found in :doc:`building/index` and at
+https://github.com/scipy/scipy/tree/master/doc/source/building*
 
 Using ``runtests.py`` is the recommended approach to running tests.
 There are also a number of alternatives to it, for example in-place
@@ -255,7 +307,6 @@ Useful SciPy documents
   - NumPy/SciPy `testing guidelines`_
   - `SciPy API`_
   - The `SciPy Roadmap`_
-  - SciPy `maintainers`_
   - NumPy/SciPy `git workflow`_
   - How to submit a good `bug report`_
 
@@ -299,7 +350,7 @@ command ``source scipy-dev/bin/activate``, and ``deactivate`` to exit from the
 virtual environment and back to your previous shell.  With scipy-dev
 activated, install first Scipy's dependencies::
 
-    $ pip install Numpy Nose Cython
+    $ pip install Numpy pytest Cython
 
 After that, you can install a development version of Scipy, for example via::
 
@@ -385,47 +436,6 @@ the environment variable ``SCIPY_XSLOW=1`` before running the test
 suite.
 
 
-*How do I write tests with test generators?*
-
-The Nose_ test framework supports so-called test generators, which can come
-useful if you need to have multiple tests where just a parameter changes.
-Using test generators so that they are more useful than harmful is tricky, and
-we recommend the following pattern::
-
-    def test_something():
-	some_array = (...)
-
-	def check(some_param):
-	    c = compute_result(some_array, some_param)
-	    known_result = (...)
-	    assert_allclose(c, known_result)
-
-	for some_param in ['a', 'b', 'c']:
-	    yield check, some_param
-
-We require the following:
-
-- All asserts and all computation that is tested must only be reached after a
-  yield. (Rationale: the generator body is part of no test, and a failure in it
-  will show neither the test name nor for what parameters the test failed.)
-
-- Arrays must not be passed as yield parameters. Either use variables from
-  outer scope (eg. with some index passed to yield), or capsulate test data to
-  a class with a sensible ``__repr__``. (Rationale: Nose truncates the printed
-  form of arrays in test output, and this makes it impossible to know for what
-  parameters a test failed. Arrays are big, and clutter test output
-  unnecessarily.)
-
-- Test generators cannot be used in test classes inheriting from
-  unittest.TestCase; either use object as base class, or use standalone test
-  functions.  (Rationale: Nose does not run test generators in
-  TestCase-inheriting classes.)
-
-If in doubt, do not use test generators. You can track for what parameter
-things failed also by passing ``err_msg=repr((param1, param2, ...))`` to the
-various assert functions.
-
-
 .. _scikit-learn: http://scikit-learn.org
 
 .. _scikit-image: http://scikit-image.org/
@@ -448,13 +458,11 @@ various assert functions.
 
 .. _SciPy API: https://docs.scipy.org/doc/scipy/reference/api.html
 
-.. _SciPy Roadmap: http://docs.scipy.org/doc/scipy/reference/roadmap.html
+.. _SciPy Roadmap: https://scipy.github.io/devdocs/roadmap.html
 
 .. _git workflow: http://docs.scipy.org/doc/numpy/dev/gitwash/index.html
 
 .. _Github help pages: https://help.github.com/articles/set-up-git/
-
-.. _maintainers: https://github.com/scipy/scipy/blob/master/doc/MAINTAINERS.rst.txt
 
 .. _issue list: https://github.com/scipy/scipy/issues
 
@@ -470,7 +478,7 @@ various assert functions.
 
 .. _SciPy Central: http://scipy-central.org/
 
-.. _license compatibility: https://www.scipy.org/License_Compatibility
+.. _license compatibility: https://scipy.github.io/old-wiki/pages/License_Compatibility.html
 
 .. _doctest: http://www.doughellmann.com/PyMOTW/doctest/
 
@@ -480,4 +488,7 @@ various assert functions.
 
 .. _bsd pitch: http://nipy.sourceforge.net/nipy/stable/faq/johns_bsd_pitch.html
 
-.. _Nose: http://nose.readthedocs.org/en/latest/
+.. _Pytest: https://pytest.org/
+
+.. _mailing lists: https://www.scipy.org/scipylib/mailing-lists.html
+

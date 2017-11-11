@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 from __future__ import division, print_function, absolute_import
 
 from os.path import join
@@ -72,8 +71,14 @@ def configuration(parent_package='',top_path=None):
     config.add_extension('_group_columns', sources=['_group_columns.c'],)
 
     config.add_subpackage('_lsq')
+    
+    config.add_subpackage('_trlib')
 
     config.add_data_dir('tests')
+
+    # Add license files
+    config.add_data_files('lbfgsb/README')
+
     return config
 
 
