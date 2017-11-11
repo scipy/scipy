@@ -3366,7 +3366,7 @@ class levy_stable_gen(rv_continuous):
     -----
     Levy-stable distribution (only random variates available -- ignore other
     docs)
-
+    
     The distribution has characteristic function::
     
         cf = exp(i*t*mu-(abs(c*t)**alpha)*(1-i*beta*sign(t)*Phi(alpha, t)))
@@ -3467,9 +3467,7 @@ class levy_stable_gen(rv_continuous):
     def _pdf(self, x, alpha, beta):
 
         def pdf_single_value_with_quad(cf, x):
-            with warnings.catch_warnings():
-                warnings.filterwarnings("ignore",category=np.ComplexWarning)
-                return integrate.quad(lambda t: np.exp(-1j*t*x)*cf(t), -np.inf, np.inf, limit=1000)[0]/np.pi/2
+            return integrate.quad(lambda t: np.exp(-1j*t*x)*cf(t), -np.inf, np.inf, limit=1000)[0]/np.pi/2
         
         x = np.asarray(x).reshape(1, -1)[0,:]
         

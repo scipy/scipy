@@ -1391,8 +1391,10 @@ class TestLevyStable(object):
         
         # test single data points (uses quad)
         for (x, density, alpha, beta) in data:
-            pdf = stats.levy_stable.pdf(x, alpha, beta, scale=1, loc=0)
-            assert_almost_equal(pdf, density)
+            with suppress_warnings() as sup:
+                sup.filter(numpy.ComplexWarning, "Casting complex values to real discards the imaginary part")
+                pdf = stats.levy_stable.pdf(x, alpha, beta, scale=1, loc=0)
+                assert_almost_equal(pdf, density)
             
     def test_pdf_fft(self):
         # test values against Nolan's stable.exe output
