@@ -2,8 +2,9 @@
 """
 from __future__ import division, print_function, absolute_import
 
-import warnings
 import math
+import operator
+import warnings
 
 import numpy
 import numpy as np
@@ -14,7 +15,7 @@ from numpy import (atleast_1d, poly, polyval, roots, real, asarray,
                    mintypecode)
 from numpy.polynomial.polynomial import polyval as npp_polyval
 
-from scipy import special, optimize
+from scipy import special, optimize, fftpack
 from scipy.special import comb, factorial
 from scipy._lib._numpy_compat import polyvalfromroots
 
@@ -213,7 +214,7 @@ def freqs_zpk(z, p, k, worN=None):
 
     Notes
     -----
-    .. versionadded: 0.19.0
+    .. versionadded:: 0.19.0
 
     Examples
     --------
@@ -259,22 +260,33 @@ def freqz(b, a=1, worN=None, whole=False, plot=None):
     Given the M-order numerator `b` and N-order denominator `a` of a digital
     filter, compute its frequency response::
 
-                 jw               -jw               -jwM
-        jw    B(e  )  b[0] + b[1]e    + .... + b[M]e
-     H(e  ) = ---- = -----------------------------------
-                 jw               -jw               -jwN
-              A(e  )  a[0] + a[1]e    + .... + a[N]e
+                 jw                 -jw              -jwM
+        jw    B(e  )    b[0] + b[1]e    + ... + b[M]e
+     H(e  ) = ------ = -----------------------------------
+                 jw                 -jw              -jwN
+              A(e  )    a[0] + a[1]e    + ... + a[N]e
 
     Parameters
     ----------
     b : array_like
-        numerator of a linear filter
+        Numerator of a linear filter.  If `b` has dimension greater than 1,
+        it is assumed that the coefficients are stored in the first dimension,
+        and ``b.shape[1:]``, ``a.shape[1:]``, and the shape of the frequencies
+        array must be compatible for broadcasting.
     a : array_like
-        denominator of a linear filter
+        Denominator of a linear filter.  If `b` has dimension greater than 1,
+        it is assumed that the coefficients are stored in the first dimension,
+        and ``b.shape[1:]``, ``a.shape[1:]``, and the shape of the frequencies
+        array must be compatible for broadcasting.
     worN : {None, int, array_like}, optional
-        If None (default), then compute at 512 frequencies equally spaced
-        around the unit circle.
-        If a single integer, then compute at that many frequencies.
+        If None (default), then compute at 512 equally spaced frequencies.
+        If a single integer, then compute at that many frequencies.  This is
+        a convenient alternative to::
+
+            np.linspace(0, 2*pi if whole else pi, N, endpoint=False)
+
+        Using a number that is fast for FFT computations can result in
+        faster computations (see Notes).
         If an array_like, compute the response at the frequencies given (in
         radians/sample).
     whole : bool, optional
@@ -296,13 +308,29 @@ def freqz(b, a=1, worN=None, whole=False, plot=None):
 
     See Also
     --------
+    freqz_zpk
     sosfreqz
 
     Notes
     -----
-    Using Matplotlib's "plot" function as the callable for `plot` produces
-    unexpected results,  this plots the real part of the complex transfer
-    function, not the magnitude.  Try ``lambda w, h: plot(w, abs(h))``.
+    Using Matplotlib's :func:`matplotlib.pyplot.plot` function as the callable
+    for `plot` produces unexpected results, as this plots the real part of the
+    complex transfer function, not the magnitude.
+    Try ``lambda w, h: plot(w, np.abs(h))``.
+
+    A direct computation via (R)FFT is used to compute the frequency response
+    when the following conditions are met:
+
+    1. An integer value is given for `worN`.
+    2. `worN` is fast to compute via FFT (i.e.,
+       `next_fast_len(worN) <scipy.fftpack.next_fast_len>` equals `worN`).
+    3. The denominator coefficients are a single value (``a.shape[0] == 1``).
+    4. `worN` is at least as long as the numerator coefficients
+       (``worN >= b.shape[0]``).
+    5. If ``b.ndim > 1``, then ``b.shape[-1] == 1``.
+
+    For long FIR filters, the FFT approach can have lower error and be much
+    faster than the equivalent direct polynomial calculation.
 
     Examples
     --------
@@ -327,23 +355,93 @@ def freqz(b, a=1, worN=None, whole=False, plot=None):
     >>> plt.axis('tight')
     >>> plt.show()
 
+    Broadcasting Examples
+
+    Suppose we have two FIR filters whose coefficients are stored in the
+    rows of an array with shape (2, 25).  For this demonstration we'll
+    use random data:
+
+    >>> np.random.seed(42)
+    >>> b = np.random.rand(2, 25)
+
+    To compute the frequency response for these two filters with one call
+    to `freqz`, we must pass in ``b.T``, because `freqz` expects the first
+    axis to hold the coefficients. We must then extend the shape with a
+    trivial dimension of length 1 to allow broadcasting with the array
+    of frequencies.  That is, we pass in ``b.T[..., np.newaxis]``, which has
+    shape (25, 2, 1):
+
+    >>> w, h = signal.freqz(b.T[..., np.newaxis], worN=1024)
+    >>> w.shape
+    (1024,)
+    >>> h.shape
+    (2, 1024)
+
+    Now suppose we have two transfer functions, with the same numerator
+    coefficients ``b = [0.5, 0.5]``. The coefficients for the two denominators
+    are stored in the first dimension of the two-dimensional array  `a`::
+
+        a = [   1      1  ]
+            [ -0.25, -0.5 ]
+
+    >>> b = np.array([0.5, 0.5])
+    >>> a = np.array([[1, 1], [-0.25, -0.5]])
+
+    Only `a` is more than one-dimensional.  To make it compatible for
+    broadcasting with the frequencies, we extend it with a trivial dimension
+    in the call to `freqz`:
+
+    >>> w, h = signal.freqz(b, a[..., np.newaxis], worN=1024)
+    >>> w.shape
+    (1024,)
+    >>> h.shape
+    (2, 1024)
+
     """
-    b, a = map(atleast_1d, (b, a))
-    if whole:
-        lastpoint = 2 * pi
-    else:
-        lastpoint = pi
+    b = atleast_1d(b)
+    a = atleast_1d(a)
+
     if worN is None:
-        N = 512
-        w = numpy.linspace(0, lastpoint, N, endpoint=False)
-    elif isinstance(worN, int):
-        N = worN
-        w = numpy.linspace(0, lastpoint, N, endpoint=False)
+        worN = 512
+
+    h = None
+    try:
+        worN = operator.index(worN)
+    except TypeError:  # not int-like
+        w = atleast_1d(worN)
     else:
-        w = worN
-    w = atleast_1d(w)
-    zm1 = exp(-1j * w)
-    h = polyval(b[::-1], zm1) / polyval(a[::-1], zm1)
+        if worN < 0:
+            raise ValueError('worN must be nonnegative, got %s' % (worN,))
+        lastpoint = 2 * pi if whole else pi
+        w = np.linspace(0, lastpoint, worN, endpoint=False)
+        if (a.size == 1 and worN >= b.shape[0] and
+                fftpack.next_fast_len(worN) == worN and
+                (b.ndim == 1 or (b.shape[-1] == 1))):
+            # if worN is fast, 2 * worN will be fast, too, so no need to check
+            n_fft = worN if whole else worN * 2
+            if np.isrealobj(b) and np.isrealobj(a):
+                fft_func = np.fft.rfft
+            else:
+                fft_func = fftpack.fft
+            h = fft_func(b, n=n_fft, axis=0)[:worN]
+            h /= a
+            if fft_func is np.fft.rfft and whole:
+                # exclude DC and maybe Nyquist (no need to use axis_reverse
+                # here because we can build reversal with the truncation)
+                stop = -1 if n_fft % 2 == 1 else -2
+                h_flip = slice(stop, 0, -1)
+                h = np.concatenate((h, h[h_flip].conj()))
+            if b.ndim > 1:
+                # Last axis of h has length 1, so drop it.
+                h = h[..., 0]
+                # Rotate the first axis of h to the end.
+                h = np.rollaxis(h, 0, h.ndim)
+    del worN
+
+    if h is None:  # still need to compute using freqs w
+        zm1 = exp(-1j * w)
+        h = (npp_polyval(zm1, b, tensor=False) /
+             npp_polyval(zm1, a, tensor=False))
     if plot is not None:
         plot(w, h)
 
@@ -351,7 +449,7 @@ def freqz(b, a=1, worN=None, whole=False, plot=None):
 
 
 def freqz_zpk(z, p, k, worN=None, whole=False):
-    """
+    r"""
     Compute the frequency response of a digital filter in ZPK form.
 
     Given the Zeros, Poles and Gain of a digital filter, compute its frequency
@@ -371,11 +469,9 @@ def freqz_zpk(z, p, k, worN=None, whole=False):
     k : scalar
         Gain of a linear filter
     worN : {None, int, array_like}, optional
-        If None (default), then compute at 512 frequencies equally spaced
-        around the unit circle.
-        If a single integer, then compute at that many frequencies.
-        If an array_like, compute the response at the frequencies given (in
-        radians/sample).
+        If single integer (default 512, same as None), then compute at `worN`
+        frequencies equally spaced around the unit circle. If an array_like,
+        compute the response at the frequencies given (in radians/sample).
     whole : bool, optional
         Normally, frequencies are computed from 0 to the Nyquist frequency,
         pi radians/sample (upper-half of unit-circle).  If `whole` is True,
@@ -397,7 +493,7 @@ def freqz_zpk(z, p, k, worN=None, whole=False):
 
     Notes
     -----
-    .. versionadded: 0.19.0
+    .. versionadded:: 0.19.0
 
     Examples
     --------
@@ -429,8 +525,7 @@ def freqz_zpk(z, p, k, worN=None, whole=False):
     else:
         lastpoint = pi
     if worN is None:
-        N = 512
-        w = numpy.linspace(0, lastpoint, N, endpoint=False)
+        w = numpy.linspace(0, lastpoint, 512, endpoint=False)
     elif isinstance(worN, int):
         N = worN
         w = numpy.linspace(0, lastpoint, N, endpoint=False)
@@ -488,7 +583,7 @@ def group_delay(system, w=None, whole=False):
 
     For the details of numerical computation of the group delay refer to [1]_.
 
-    .. versionadded: 0.16.0
+    .. versionadded:: 0.16.0
 
     See Also
     --------
@@ -580,8 +675,10 @@ def sosfreqz(sos, worN=None, whole=False):
         If None (default), then compute at 512 frequencies equally spaced
         around the unit circle.
         If a single integer, then compute at that many frequencies.
+        Using a number that is fast for FFT computations can result in
+        faster computations (see Notes of `freqz`).
         If an array_like, compute the response at the frequencies given (in
-        radians/sample).
+        radians/sample; must be 1D).
     whole : bool, optional
         Normally, frequencies are computed from 0 to the Nyquist frequency,
         pi radians/sample (upper-half of unit-circle).  If `whole` is True,
@@ -705,9 +802,9 @@ def _cplxreal(z, tol=None):
     --------
     >>> a = [4, 3, 1, 2-2j, 2+2j, 2-1j, 2+1j, 2-1j, 2+1j, 1+1j, 1-1j]
     >>> zc, zr = _cplxreal(a)
-    >>> print zc
+    >>> print(zc)
     [ 1.+1.j  2.+1.j  2.+1.j  2.+2.j]
-    >>> print zr
+    >>> print(zr)
     [ 1.  3.  4.]
     """
 
@@ -1858,9 +1955,9 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
 
     # Pre-warp frequencies for digital filter design
     if not analog:
-        if numpy.any(Wn < 0) or numpy.any(Wn > 1):
+        if numpy.any(Wn <= 0) or numpy.any(Wn >= 1):
             raise ValueError("Digital filter critical frequencies "
-                             "must be 0 <= Wn <= 1")
+                             "must be 0 < Wn < 1")
         fs = 2.0
         warped = 2 * fs * tan(pi * Wn / fs)
     else:
@@ -1951,7 +2048,7 @@ def _zpkbilinear(z, p, k, fs):
 
     degree = _relative_degree(z, p)
 
-    fs2 = 2*fs
+    fs2 = 2.0*fs
 
     # Bilinear transform the poles and zeros
     z_z = (fs2 + z) / (fs2 - z)
@@ -3494,7 +3591,7 @@ def ellipap(N, rp, rs):
                       disp=0)
     if m < 0 or m > 1:
         m = optimize.fminbound(_kratio, 0, 1, args=(krat,), maxfun=250,
-                               maxiter=250, disp=0)
+                               disp=0)
 
     capk = special.ellipk(m)
 
@@ -3866,7 +3963,7 @@ def iirnotch(w0, Q):
 
     Notes
     -----
-    .. versionadded: 0.19.0
+    .. versionadded:: 0.19.0
 
     References
     ----------
@@ -3945,7 +4042,7 @@ def iirpeak(w0, Q):
 
     Notes
     -----
-    .. versionadded: 0.19.0
+    .. versionadded:: 0.19.0
 
     References
     ----------

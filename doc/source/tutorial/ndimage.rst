@@ -613,9 +613,9 @@ the current coordinates:
    ...
    ...     def filter(self, buffer):
    ...         result = (buffer * np.array([1, 3])).sum()
-   ...         print self.coordinates
+   ...         print(self.coordinates)
    ...         # calculate the next coordinates:
-   ...         axes = range(len(self.shape))
+   ...         axes = list(range(len(self.shape)))
    ...         axes.reverse()
    ...         for jj in axes:
    ...             if self.coordinates[jj] < self.shape[jj] - 1:
@@ -662,9 +662,9 @@ filtered. The example for :func:`generic_filter1d` then becomes this:
    ...
    ...     def filter(self, iline, oline):
    ...         oline[...] = iline[:-2] + 2 * iline[1:-1] + 3 * iline[2:]
-   ...         print self.coordinates
+   ...         print(self.coordinates)
    ...         # calculate the next coordinates:
-   ...         axes = range(len(self.shape))
+   ...         axes = list(range(len(self.shape)))
    ...         # skip the filter axis:
    ...         del axes[self.axis]
    ...         axes.reverse()

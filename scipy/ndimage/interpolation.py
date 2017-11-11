@@ -34,6 +34,7 @@ import math
 import numpy
 from . import _ni_support
 from . import _nd_image
+from functools import wraps
 
 import warnings
 
@@ -121,22 +122,6 @@ def spline_filter(input, order=3, output=numpy.float64):
     return return_value
 
 
-def _geometric_transform(input, mapping, coordinates, matrix, offset, output,
-                         order, mode, cval, extra_arguments, extra_keywords):
-    """
-    Wrapper around _nd_image.geometric_transform to work around
-    endianness issues
-    """
-    _nd_image.geometric_transform(
-        input, mapping, coordinates, matrix, offset, output,
-        order, mode, cval, extra_arguments, extra_keywords)
-
-    if output is not None and not output.dtype.isnative:
-        output.byteswap(True)
-
-    return output
-
-
 def geometric_transform(input, mapping, output_shape=None,
                         output=None, order=3,
                         mode='constant', cval=0.0, prefilter=True,
@@ -200,9 +185,9 @@ def geometric_transform(input, mapping, output_shape=None,
 
     .. code:: c
 
-       int mapping(npy_intp *output_coordinates, double *input_coordinates, 
+       int mapping(npy_intp *output_coordinates, double *input_coordinates,
                    int output_rank, int input_rank, void *user_data)
-       int mapping(intptr_t *output_coordinates, double *input_coordinates, 
+       int mapping(intptr_t *output_coordinates, double *input_coordinates,
                    int output_rank, int input_rank, void *user_data)
 
     The calling function iterates over the elements of the output array,
@@ -211,32 +196,46 @@ def geometric_transform(input, mapping, output_shape=None,
     callback function must return the coordinates at which the input must
     be interpolated in ``input_coordinates``. The rank of the input and
     output arrays are given by ``input_rank`` and ``output_rank``
-    respectively.  ``user_data`` is the data pointer provided 
-    to `scipy.LowLevelCallable` as-is. 
+    respectively.  ``user_data`` is the data pointer provided
+    to `scipy.LowLevelCallable` as-is.
 
-    The callback function must return an integer error status that is zero 
+    The callback function must return an integer error status that is zero
     if something went wrong and one otherwise. If an error occurs, you should
     normally set the python error status with an informative message
     before returning, otherwise a default error message is set by the
     calling function.
 
-    In addition, some other low-level function pointer specifications 
+    In addition, some other low-level function pointer specifications
     are accepted, but these are for backward compatibility only and should
     not be used in new code.
 
     Examples
     --------
-    >>> from scipy import ndimage
+    >>> import numpy as np
+    >>> from scipy.ndimage import geometric_transform
     >>> a = np.arange(12.).reshape((4, 3))
     >>> def shift_func(output_coords):
     ...     return (output_coords[0] - 0.5, output_coords[1] - 0.5)
     ...
-    >>> ndimage.geometric_transform(a, shift_func)
+    >>> geometric_transform(a, shift_func)
     array([[ 0.   ,  0.   ,  0.   ],
            [ 0.   ,  1.362,  2.738],
            [ 0.   ,  4.812,  6.187],
            [ 0.   ,  8.263,  9.637]])
 
+    >>> b = [1, 2, 3, 4, 5]
+    >>> def shift_func(output_coords):
+    ...     return (output_coords[0] - 3,)
+    ...
+    >>> geometric_transform(b, shift_func, mode='constant')
+    array([0, 0, 0, 1, 2])
+    >>> geometric_transform(b, shift_func, mode='nearest')
+    array([1, 1, 1, 1, 2])
+    >>> geometric_transform(b, shift_func, mode='reflect')
+    array([3, 2, 1, 1, 2])
+    >>> geometric_transform(b, shift_func, mode='wrap')
+    array([2, 3, 4, 1, 2])
+    
     """
     if order < 0 or order > 5:
         raise RuntimeError('spline order not supported')
@@ -254,8 +253,9 @@ def geometric_transform(input, mapping, output_shape=None,
         filtered = input
     output, return_value = _ni_support._get_output(output, input,
                                                    shape=output_shape)
-    _geometric_transform(filtered, mapping, None, None, None, output,
-                         order, mode, cval, extra_arguments, extra_keywords)
+    _nd_image.geometric_transform(filtered, mapping, None, None, None, output,
+                                  order, mode, cval, extra_arguments,
+                                  extra_keywords)
     return return_value
 
 
@@ -353,8 +353,8 @@ def map_coordinates(input, coordinates, output=None, order=3,
         filtered = input
     output, return_value = _ni_support._get_output(output, input,
                                                    shape=output_shape)
-    _geometric_transform(filtered, None, coordinates, None, None,
-                         output, order, mode, cval, None, None)
+    _nd_image.geometric_transform(filtered, None, coordinates, None, None,
+                                  output, order, mode, cval, None, None)
     return return_value
 
 
@@ -496,8 +496,8 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
         _nd_image.zoom_shift(filtered, matrix, offset/matrix, output, order,
                              mode, cval)
     else:
-        _geometric_transform(filtered, None, None, matrix, offset,
-                             output, order, mode, cval, None, None)
+        _nd_image.geometric_transform(filtered, None, None, matrix, offset,
+                                      output, order, mode, cval, None, None)
     return return_value
 
 
@@ -514,7 +514,7 @@ def shift(input, shift, output=None, order=3, mode='constant', cval=0.0,
     ----------
     input : ndarray
         The input array.
-    shift : float or sequence, optional
+    shift : float or sequence
         The shift along the axes. If a float, `shift` is the same for each
         axis. If a sequence, `shift` should contain one value for each axis.
     output : ndarray or dtype, optional
@@ -576,7 +576,7 @@ def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
     ----------
     input : ndarray
         The input array.
-    zoom : float or sequence, optional
+    zoom : float or sequence
         The zoom factor along the axes. If a float, `zoom` is the same for each
         axis. If a sequence, `zoom` should contain one value for each axis.
     output : ndarray or dtype, optional

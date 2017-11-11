@@ -15,9 +15,9 @@ from scipy.optimize._trustregion_exact import (
 from scipy.linalg import (svd, get_lapack_funcs, det,
                           cho_factor, cho_solve, qr,
                           eigvalsh, eig, norm)
-from numpy.testing import (TestCase, assert_, assert_array_equal,
+from numpy.testing import (assert_, assert_array_equal,
                            assert_equal, assert_array_almost_equal,
-                           assert_array_less, run_module_suite)
+                           assert_array_less)
 
 
 def random_entry(n, min_eig, max_eig, case):
@@ -50,7 +50,7 @@ def random_entry(n, min_eig, max_eig, case):
     return A, g
 
 
-class TestEstimateSmallestSingularValue(TestCase):
+class TestEstimateSmallestSingularValue(object):
 
     def test_for_ill_condiotioned_matrix(self):
 
@@ -75,7 +75,7 @@ class TestEstimateSmallestSingularValue(TestCase):
         assert_array_almost_equal(abs(zmin), abs(zmin_svd), decimal=8)
 
 
-class TestSingularLeadingSubmatrix(TestCase):
+class TestSingularLeadingSubmatrix(object):
 
     def test_for_already_singular_leading_submatrix(self):
 
@@ -155,7 +155,7 @@ class TestSingularLeadingSubmatrix(TestCase):
         assert_array_almost_equal(quadratic_term, 0)
 
 
-class TestIterativeSubproblem(TestCase):
+class TestIterativeSubproblem(object):
 
     def test_for_the_easy_case(self):
 
@@ -355,6 +355,3 @@ class TestIterativeSubproblem(TestCase):
                         # Check if it respect k_opt
                         assert_equal(J <= k_opt*J_ac, True)
 
-
-if __name__ == '__main__':
-    run_module_suite()

@@ -130,6 +130,8 @@ void sf_error(const char *func_name, sf_error_t code, const char *fmt, ...)
     skip_warn:
 #ifdef WITH_THREAD
         PyGILState_Release(save);
+#else
+	;
 #endif
 }
 

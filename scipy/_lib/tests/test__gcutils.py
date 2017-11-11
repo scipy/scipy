@@ -1,11 +1,14 @@
 """ Test for assert_deallocated context manager and gc utilities
 """
+from __future__ import division, print_function, absolute_import
+
 import gc
 
 from scipy._lib._gcutils import set_gc_state, gc_state, assert_deallocated, ReferenceError
 
-from nose.tools import assert_equal, raises
+from numpy.testing import assert_equal
 
+import pytest
 
 def test_set_gc_state():
     gc_status = gc.isenabled()
@@ -61,30 +64,30 @@ def test_assert_deallocated():
             assert_equal(gc.isenabled(), gc_current)
 
 
-@raises(ReferenceError)
 def test_assert_deallocated_nodel():
     class C(object):
         pass
-    # Need to delete after using if in with-block context
-    with assert_deallocated(C) as c:
-        pass
+    with pytest.raises(ReferenceError):
+        # Need to delete after using if in with-block context
+        with assert_deallocated(C) as c:
+            pass
 
 
-@raises(ReferenceError)
 def test_assert_deallocated_circular():
     class C(object):
         def __init__(self):
             self._circular = self
-    # Circular reference, no automatic garbage collection
-    with assert_deallocated(C) as c:
-        del c
+    with pytest.raises(ReferenceError):
+        # Circular reference, no automatic garbage collection
+        with assert_deallocated(C) as c:
+            del c
 
 
-@raises(ReferenceError)
 def test_assert_deallocated_circular2():
     class C(object):
         def __init__(self):
             self._circular = self
-    # Still circular reference, no automatic garbage collection
-    with assert_deallocated(C):
-        pass
+    with pytest.raises(ReferenceError):
+        # Still circular reference, no automatic garbage collection
+        with assert_deallocated(C):
+            pass

@@ -1,15 +1,16 @@
 from __future__ import division, print_function, absolute_import
 
 import os
-import warnings
 
 import numpy as np
 from numpy import arccosh, arcsinh, arctanh
-from numpy.testing import run_module_suite
+from scipy._lib._numpy_compat import suppress_warnings
+import pytest
+
 from scipy.special import (
     lpn, lpmn, lpmv, lqn, lqmn, sph_harm, eval_legendre, eval_hermite,
     eval_laguerre, eval_genlaguerre, binom, cbrt, expm1, log1p, zeta,
-    jn, jv, yn, yv, iv, kv, kn, sph_jn, sph_yn,
+    jn, jv, yn, yv, iv, kv, kn,
     gamma, gammaln, gammainc, gammaincc, gammaincinv, gammainccinv, digamma,
     beta, betainc, betaincinv, poch,
     ellipe, ellipeinc, ellipk, ellipkm1, ellipkinc, ellipj,
@@ -180,17 +181,11 @@ def poch_(z, m):
 def poch_minus(z, m):
     return 1.0 / poch(z, -m)
 
-def sph_jn_(n, x):
-    return sph_jn(n.astype('l'), x)[0][-1]
-
 def spherical_jn_(n, x):
     return spherical_jn(n.astype('l'), x)
 
 def spherical_yn_(n, x):
     return spherical_yn(n.astype('l'), x)
-
-def sph_yn_(n, x):
-    return sph_yn(n.astype('l'), x)[0][-1]
 
 def sph_harm_(m, n, theta, phi):
     y = sph_harm(m, n, theta, phi)
@@ -204,8 +199,7 @@ def clog1p(x, y):
     z = log1p(x + 1j*y)
     return z.real, z.imag
 
-def test_boost():
-    TESTS = [
+BOOST_TESTS = [
         data(arccosh, 'acosh_data_ipp-acosh_data', 0, 1, rtol=5e-13),
         data(arccosh, 'acosh_data_ipp-acosh_data', 0j, 1, rtol=5e-13),
 
@@ -275,11 +269,11 @@ def test_boost():
 
         data(digamma, 'digamma_data_ipp-digamma_data', 0, 1),
         data(digamma, 'digamma_data_ipp-digamma_data', 0j, 1),
-        data(digamma, 'digamma_neg_data_ipp-digamma_neg_data', 0, 1, rtol=1e-13),
+        data(digamma, 'digamma_neg_data_ipp-digamma_neg_data', 0, 1, rtol=2e-13),
         data(digamma, 'digamma_neg_data_ipp-digamma_neg_data', 0j, 1, rtol=1e-13),
-        data(digamma, 'digamma_root_data_ipp-digamma_root_data', 0, 1, rtol=1e-11),
-        data(digamma, 'digamma_root_data_ipp-digamma_root_data', 0j, 1, rtol=1e-11),
-        data(digamma, 'digamma_small_data_ipp-digamma_small_data', 0, 1),
+        data(digamma, 'digamma_root_data_ipp-digamma_root_data', 0, 1, rtol=1e-15),
+        data(digamma, 'digamma_root_data_ipp-digamma_root_data', 0j, 1, rtol=1e-15),
+        data(digamma, 'digamma_small_data_ipp-digamma_small_data', 0, 1, rtol=1e-15),
         data(digamma, 'digamma_small_data_ipp-digamma_small_data', 0j, 1, rtol=1e-14),
 
         data(ellipk_, 'ellint_k_data_ipp-ellint_k_data', 0, 1),
@@ -444,14 +438,15 @@ def test_boost():
         # 'powm1_sqrtp1m1_test_cpp-sqrtp1m1_data',
         # 'test_gamma_data_ipp-gammap1m1_data',
         # 'tgamma_ratio_data_ipp-tgamma_ratio_data',
-    ]
-
-    for test in TESTS:
-        yield _test_factory, test
+]
 
 
-def test_gsl():
-    TESTS = [
+@pytest.mark.parametrize('test', BOOST_TESTS, ids=repr)
+def test_boost(test):
+    _test_factory(test)
+
+
+GSL_TESTS = [
         data_gsl(mathieu_a, 'mathieu_ab', (0, 1), 2, rtol=1e-13, atol=1e-13),
         data_gsl(mathieu_b, 'mathieu_ab', (0, 1), 3, rtol=1e-13, atol=1e-13),
 
@@ -464,59 +459,38 @@ def test_gsl():
 
         data_gsl(mathieu_mc2_scaled, 'mathieu_mc_ms', (0, 1, 2), 5, rtol=1e-7, atol=1e-13),
         data_gsl(mathieu_ms2_scaled, 'mathieu_mc_ms', (0, 1, 2), 6, rtol=1e-7, atol=1e-13),
-    ]
-
-    for test in TESTS:
-        yield _test_factory, test
+]
 
 
-def test_local():
-    TESTS = [
-        data_local(ellipkinc, 'ellipkinc_neg_m', (0, 1), 2),
-        data_local(ellipkm1, 'ellipkm1', 0, 1),
-        data_local(ellipeinc, 'ellipeinc_neg_m', (0, 1), 2),
-        data_local(clog1p, 'log1p_expm1_complex', (0,1), (2,3), rtol=1e-14),
-        data_local(cexpm1, 'log1p_expm1_complex', (0,1), (4,5), rtol=1e-14),
-        data_local(gammainc, 'gammainc', (0, 1), 2, rtol=1e-12),
-        data_local(gammaincc, 'gammaincc', (0, 1), 2, rtol=1e-11)
-    ]
+@pytest.mark.parametrize('test', GSL_TESTS, ids=repr)
+def test_gsl(test):
+    _test_factory(test)
 
-    for test in TESTS:
-        yield _test_factory, test
 
-    TESTS = [
-        data_local(ellip_harm_2, 'ellip',(0, 1, 2, 3, 4), 6, rtol=1e-10, atol=1e-13),
-        data_local(ellip_harm, 'ellip',(0, 1, 2, 3, 4), 5, rtol=1e-10, atol=1e-13),
-    ]
+LOCAL_TESTS = [
+    data_local(ellipkinc, 'ellipkinc_neg_m', (0, 1), 2),
+    data_local(ellipkm1, 'ellipkm1', 0, 1),
+    data_local(ellipeinc, 'ellipeinc_neg_m', (0, 1), 2),
+    data_local(clog1p, 'log1p_expm1_complex', (0,1), (2,3), rtol=1e-14),
+    data_local(cexpm1, 'log1p_expm1_complex', (0,1), (4,5), rtol=1e-14),
+    data_local(gammainc, 'gammainc', (0, 1), 2, rtol=1e-12),
+    data_local(gammaincc, 'gammaincc', (0, 1), 2, rtol=1e-11),
+    data_local(ellip_harm_2, 'ellip',(0, 1, 2, 3, 4), 6, rtol=1e-10, atol=1e-13),
+    data_local(ellip_harm, 'ellip',(0, 1, 2, 3, 4), 5, rtol=1e-10, atol=1e-13),
+]
 
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", category=IntegrationWarning)
 
-        for test in TESTS:
-            yield _test_factory, test
-
-    # sph_jn, sph_yn are deprecated; silence the DeprecationWarning noise 
-    TESTS_DEP = [
-        data(sph_jn_, 'sph_bessel_data_ipp-sph_bessel_data', (0,1), 2,
-            vectorized=False,
-            knownfailure='sph_jn inaccurate at large n, small x'),
-        data(sph_yn_, 'sph_neumann_data_ipp-sph_neumann_data', (0,1), 2,
-            rtol=4e-15, vectorized=False),
-    ]
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", category=DeprecationWarning)
-        for test in TESTS_DEP:
-            yield _test_factory, test
+@pytest.mark.parametrize('test', LOCAL_TESTS, ids=repr)
+def test_local(test):
+    _test_factory(test)
 
 
 def _test_factory(test, dtype=np.double):
     """Boost test"""
-    olderr = np.seterr(all='ignore')
-    try:
-        test.check(dtype=dtype)
-    finally:
-        np.seterr(**olderr)
-
-
-if __name__ == "__main__":
-    run_module_suite()
+    with suppress_warnings() as sup:
+        sup.filter(IntegrationWarning, "The occurrence of roundoff error is detected")
+        olderr = np.seterr(all='ignore')
+        try:
+            test.check(dtype=dtype)
+        finally:
+            np.seterr(**olderr)

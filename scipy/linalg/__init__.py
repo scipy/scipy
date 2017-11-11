@@ -39,7 +39,9 @@ Basics
    triu - Construct an upper-triangular matrix from a given matrix
    orthogonal_procrustes - Solve an orthogonal Procrustes problem
    matrix_balance - Balance matrix entries with a similarity transformation
+   subspace_angles - Compute the subspace angles between two matrices
    LinAlgError
+   LinAlgWarning
 
 Eigenvalue Problems
 ===================
@@ -53,6 +55,8 @@ Eigenvalue Problems
    eigvalsh - Find just the eigenvalues of a Hermitian or symmetric matrix
    eig_banded - Find the eigenvalues and eigenvectors of a banded matrix
    eigvals_banded - Find just the eigenvalues of a banded matrix
+   eigh_tridiagonal - Find the eigenvalues and eigenvectors of a tridiagonal matrix
+   eigvalsh_tridiagonal - Find just the eigenvalues of a tridiagonal matrix
 
 Decompositions
 ==============
@@ -67,6 +71,8 @@ Decompositions
    svdvals - Singular values of a matrix
    diagsvd - Construct matrix of singular values from output of svd
    orth - Construct orthonormal basis for the range of A using svd
+   null_space - Construct orthonormal basis for the null space of A using svd
+   ldl - LDL.T decomposition of a Hermitian or a symmetric matrix.
    cholesky - Cholesky decomposition of a matrix
    cholesky_banded - Cholesky decomp. of a sym. or Hermitian banded matrix
    cho_factor - Cholesky decomposition for use in solving a linear system
@@ -125,6 +131,14 @@ Matrix Equation Solvers
    solve_discrete_lyapunov - Solve the discrete-time Lyapunov equation
 
 
+Sketches and Random Projections
+===============================
+
+.. autosummary::
+   :toctree: generated/
+
+   clarkson_woodruff_transform - Applies the Clarkson Woodruff Sketch (a.k.a CountMin Sketch)
+
 Special Matrices
 ================
 
@@ -166,7 +180,7 @@ Low-level routines
 
    `scipy.linalg.cython_lapack` -- Low-level LAPACK functions for Cython
 
-"""
+"""  # noqa: E501
 
 from __future__ import division, print_function, absolute_import
 
@@ -176,6 +190,7 @@ from .misc import *
 from .basic import *
 from .decomp import *
 from .decomp_lu import *
+from ._decomp_ldl import *
 from .decomp_cholesky import *
 from .decomp_qr import *
 from ._decomp_qz import *
@@ -189,6 +204,7 @@ from .special_matrices import *
 from ._solvers import *
 from ._procrustes import *
 from ._decomp_update import *
+from ._sketches import *
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 
@@ -207,5 +223,6 @@ except ValueError:
 
 del k, register_func
 
-from numpy.testing import Tester
-test = Tester().test
+from scipy._lib._testutils import PytestTester
+test = PytestTester(__name__)
+del PytestTester

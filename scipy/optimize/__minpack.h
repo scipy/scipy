@@ -436,7 +436,7 @@ static PyObject *minpack_lmdif(PyObject *dummy, PyObject *args) {
   int      full_output = 0, maxfev = -10;
   double   xtol = 1.49012e-8, ftol = 1.49012e-8;
   double   gtol = 0.0, epsfcn = 0.0, factor = 1.0e2;
-  int      m, mode = 2, nprint = 0, info, nfev, ldfjac, *ipvt;
+  int      m, mode = 2, nprint = 0, info = 0, nfev, ldfjac, *ipvt;
   npy_intp n;
   int      n_int;  /* for casted storage to pass int into LMDIF */
   double   *x, *fvec, *diag, *fjac, *qtf;

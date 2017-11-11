@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+from __future__ import print_function
 import sys, os, re
 
 # Check Sphinx version
@@ -59,7 +59,7 @@ import scipy
 version = re.sub(r'\.dev-.*$', r'.dev', scipy.__version__)
 release = scipy.__version__
 
-print "Scipy (VERSION %s)" % (version,)
+print("Scipy (VERSION %s)" % (version,))
 
 # There are two options for replacing |today|: either, you set today to some
 # non-false value, then it is used:
@@ -141,7 +141,7 @@ html_file_suffix = '.html'
 
 htmlhelp_basename = 'scipy'
 
-mathjax_path = "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
+mathjax_path = "scipy-mathjax/MathJax.js?config=scipy-mathjax"
 
 
 # -----------------------------------------------------------------------------
@@ -217,8 +217,9 @@ latex_use_modindex = False
 # Intersphinx configuration
 # -----------------------------------------------------------------------------
 intersphinx_mapping = {
-        'http://docs.python.org/dev': None,
-        'https://docs.scipy.org/doc/numpy': None,
+        'python': ('http://docs.python.org/dev', None),
+        'numpy': ('https://docs.scipy.org/doc/numpy', None),
+        'matplotlib': ('http://matplotlib.org', None),
 }
 
 
@@ -267,6 +268,7 @@ np.random.seed(123)
 plot_include_source = True
 plot_formats = [('png', 96), 'pdf']
 plot_html_show_formats = False
+plot_html_show_source_link = False
 
 import math
 phi = (math.sqrt(5) + 1)/2
@@ -297,6 +299,7 @@ if not use_matplotlib_plot_directive:
 # Source code links
 # -----------------------------------------------------------------------------
 
+import re
 import inspect
 from os.path import relpath, dirname
 
@@ -308,7 +311,7 @@ for name in ['sphinx.ext.linkcode', 'linkcode', 'numpydoc.linkcode']:
     except ImportError:
         pass
 else:
-    print "NOTE: linkcode extension not found -- no links to source generated"
+    print("NOTE: linkcode extension not found -- no links to source generated")
 
 def linkcode_resolve(domain, info):
     """
@@ -353,11 +356,19 @@ def linkcode_resolve(domain, info):
     else:
         linespec = ""
 
-    fn = relpath(fn, start=dirname(scipy.__file__))
+    startdir = os.path.abspath(os.path.join(dirname(scipy.__file__), '..'))
+    fn = relpath(fn, start=startdir).replace(os.path.sep, '/')
 
-    if 'dev' in scipy.__version__:
-        return "http://github.com/scipy/scipy/blob/master/scipy/%s%s" % (
-           fn, linespec)
+    if fn.startswith('scipy/'):
+        m = re.match(r'^.*dev0\+([a-f0-9]+)$', scipy.__version__)
+        if m:
+            return "https://github.com/scipy/scipy/blob/%s/%s%s" % (
+                m.group(1), fn, linespec)
+        elif 'dev' in scipy.__version__:
+            return "https://github.com/scipy/scipy/blob/master/%s%s" % (
+                fn, linespec)
+        else:
+            return "https://github.com/scipy/scipy/blob/v%s/%s%s" % (
+                scipy.__version__, fn, linespec)
     else:
-        return "http://github.com/scipy/scipy/blob/v%s/scipy/%s%s" % (
-           scipy.__version__, fn, linespec)
+        return None

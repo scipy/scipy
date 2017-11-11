@@ -6,10 +6,9 @@ from __future__ import division, print_function, absolute_import
 from functools import partial
 from itertools import product
 import operator
-import nose
-
-from numpy.testing import TestCase, assert_, assert_equal, \
-        assert_raises
+import pytest
+from pytest import raises as assert_raises
+from numpy.testing import assert_, assert_equal
 
 import numpy as np
 import scipy.sparse as sparse
@@ -21,8 +20,8 @@ from scipy.sparse.linalg import interface
 TEST_MATMUL = hasattr(operator, 'matmul')
 
 
-class TestLinearOperator(TestCase):
-    def setUp(self):
+class TestLinearOperator(object):
+    def setup_method(self):
         self.A = np.array([[1,2,3],
                            [4,5,6]])
         self.B = np.array([[1,2],
@@ -144,7 +143,7 @@ class TestLinearOperator(TestCase):
 
     def test_matmul(self):
         if not TEST_MATMUL:
-            raise nose.SkipTest("matmul is only tested in Python 3.5+")
+            pytest.skip("matmul is only tested in Python 3.5+")
 
         D = {'shape': self.A.shape,
              'matvec': lambda x: np.dot(self.A, x).reshape(self.A.shape[0]),
@@ -163,8 +162,8 @@ class TestLinearOperator(TestCase):
         assert_raises(ValueError, operator.matmul, 2, A)
 
 
-class TestAsLinearOperator(TestCase):
-    def setUp(self):
+class TestAsLinearOperator(object):
+    def setup_method(self):
         self.cases = []
 
         def make_cases(dtype):
@@ -341,3 +340,15 @@ def test_dtypes_of_operator_sum():
 
     assert_equal(sum_real.dtype, np.float64)
     assert_equal(sum_complex.dtype, np.complex128)
+
+def test_no_double_init():
+    call_count = [0]
+
+    def matvec(v):
+        call_count[0] += 1
+        return v
+
+    # It should call matvec exactly once (in order to determine the
+    # operator dtype)
+    A = interface.LinearOperator((2, 2), matvec=matvec)
+    assert_equal(call_count[0], 1)

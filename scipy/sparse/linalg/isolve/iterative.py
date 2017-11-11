@@ -54,15 +54,6 @@ M : {sparse matrix, dense matrix, LinearOperator}
 callback : function
     User-supplied function to call after each iteration.  It is called
     as callback(xk), where xk is the current solution vector.
-xtype : {'f','d','F','D'}
-    This parameter is deprecated -- avoid using it.
-
-    The type of the result.  If None, then it will be determined from
-    A.dtype.char and b.  If A does not have a typecode method then it
-    will compute A.matvec(x0) to get a typecode.   To save the extra
-    computation when A does not have a typecode attribute use xtype=0
-    for the same type as b or use xtype='f','d','F',or 'D'.
-    This parameter has been superseded by LinearOperator.
 
 """
 
@@ -81,8 +72,8 @@ def set_docstring(header, Ainfo, footer=''):
                'It is required that the linear operator can produce\n'
                '``Ax`` and ``A^T x``.')
 @non_reentrant()
-def bicg(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=None):
-    A,M,x,b,postprocess = make_system(A,M,x0,b,xtype)
+def bicg(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None):
+    A,M,x,b,postprocess = make_system(A, M, x0, b)
 
     n = len(b)
     if maxiter is None:
@@ -147,8 +138,8 @@ def bicg(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=Non
                '``Ax = b``.',
                'The real or complex N-by-N matrix of the linear system.')
 @non_reentrant()
-def bicgstab(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=None):
-    A,M,x,b,postprocess = make_system(A,M,x0,b,xtype)
+def bicgstab(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None):
+    A, M, x, b, postprocess = make_system(A, M, x0, b)
 
     n = len(b)
     if maxiter is None:
@@ -208,8 +199,8 @@ def bicgstab(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback
                'The real or complex N-by-N matrix of the linear system.\n'
                '``A`` must represent a hermitian, positive definite matrix.')
 @non_reentrant()
-def cg(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=None):
-    A,M,x,b,postprocess = make_system(A,M,x0,b,xtype)
+def cg(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None):
+    A, M, x, b, postprocess = make_system(A, M, x0, b)
 
     n = len(b)
     if maxiter is None:
@@ -268,8 +259,8 @@ def cg(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=None)
 @set_docstring('Use Conjugate Gradient Squared iteration to solve ``Ax = b``.',
                'The real-valued N-by-N matrix of the linear system.')
 @non_reentrant()
-def cgs(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=None):
-    A,M,x,b,postprocess = make_system(A,M,x0,b,xtype)
+def cgs(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None):
+    A, M, x, b, postprocess = make_system(A, M, x0, b)
 
     n = len(b)
     if maxiter is None:
@@ -326,7 +317,7 @@ def cgs(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=None
 
 
 @non_reentrant()
-def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, xtype=None, M=None, callback=None, restrt=None):
+def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, M=None, callback=None, restrt=None):
     """
     Use Generalized Minimal RESidual iteration to solve ``Ax = b``.
 
@@ -362,15 +353,6 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, xtype=None, M=Non
         Maximum number of iterations (restart cycles).  Iteration will stop
         after maxiter steps even if the specified tolerance has not been
         achieved.
-    xtype : {'f','d','F','D'}
-        This parameter is DEPRECATED --- avoid using it.
-
-        The type of the result.  If None, then it will be determined from
-        A.dtype.char and b.  If A does not have a typecode method then it
-        will compute A.matvec(x0) to get a typecode.   To save the extra
-        computation when A does not have a typecode attribute use xtype=0
-        for the same type as b or use xtype='f','d','F',or 'D'.
-        This parameter has been superseded by LinearOperator.
     M : {sparse matrix, dense matrix, LinearOperator}
         Inverse of the preconditioner of A.  M should approximate the
         inverse of A and be easy to solve for (see Notes).  Effective
@@ -419,7 +401,7 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, xtype=None, M=Non
         raise ValueError("Cannot specify both restart and restrt keywords. "
                          "Preferably use 'restart' only.")
 
-    A,M,x,b,postprocess = make_system(A,M,x0,b,xtype)
+    A, M, x, b,postprocess = make_system(A, M, x0, b)
 
     n = len(b)
     if maxiter is None:
@@ -501,7 +483,7 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, xtype=None, M=Non
 
 
 @non_reentrant()
-def qmr(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M1=None, M2=None, callback=None):
+def qmr(A, b, x0=None, tol=1e-5, maxiter=None, M1=None, M2=None, callback=None):
     """Use Quasi-Minimal Residual iteration to solve ``Ax = b``.
 
     Parameters
@@ -542,15 +524,6 @@ def qmr(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M1=None, M2=None, cal
     callback : function
         User-supplied function to call after each iteration.  It is called
         as callback(xk), where xk is the current solution vector.
-    xtype : {'f','d','F','D'}
-        This parameter is DEPRECATED -- avoid using it.
-
-        The type of the result.  If None, then it will be determined from
-        A.dtype.char and b.  If A does not have a typecode method then it
-        will compute A.matvec(x0) to get a typecode.   To save the extra
-        computation when A does not have a typecode attribute use xtype=0
-        for the same type as b or use xtype='f','d','F',or 'D'.
-        This parameter has been superseded by LinearOperator.
 
     See Also
     --------
@@ -569,7 +542,7 @@ def qmr(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M1=None, M2=None, cal
     True
     """
     A_ = A
-    A,M,x,b,postprocess = make_system(A,None,x0,b,xtype)
+    A, M, x, b, postprocess = make_system(A, None, x0, b)
 
     if M1 is None and M2 is None:
         if hasattr(A_,'psolve'):

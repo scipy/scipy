@@ -162,7 +162,7 @@ Bill Sacks for fixes to netcdf i/o.
 Kolja Glogowski for a bug fix in scipy.special.
 Surhud More for enhancing scipy.optimize.curve_fit to accept covariant errors
 on data.
-Antonio Ribeiro for implementing irrnotch, iirpeak and trust-region-exact methods
+Antonio H. Ribeiro for implementing irrnotch, iirpeak and trust-exact methods
     and for improvements on BFGS implemetation.
 Ilhan Polat for bug fixes on Riccati solvers.
 Sebastiano Vigna for code in the stats package related to Kendall's tau.
@@ -172,8 +172,17 @@ Alessandro Pietro Bardelli for improvements to pdist/cdist and to related tests.
 Jonathan T. Siebert for bug fixes.
 Thomas Keck for adding new scipy.stats distributions used in HEP
 David Nicholson for bug fixes in spectral functions.
+Roman Feldbauer for improvements in scipy.sparse
 Dominic Antonacci for statistics documentation.
 David Hagen for the object-oriented ODE solver interface.
+Arno Onken for contributions to scipy.stats.
+Cathy Douglass for bug fixes in ndimage.
+Adam Cox for contributions to scipy.constants.
+Charles Masson for the Wasserstein and the Cramér-von Mises statistical
+    distances.
+Felix Lenders for implementing trust-trlib method.
+Dezmond Goff for adding optional out parameter to pdist/cdist
+Nick R. Papior for allowing a wider choice of solvers
 
 Institutions
 ------------
@@ -185,3 +194,4 @@ UC Berkeley for providing travel money and hosting numerous sprints.
 The University of Stellenbosch for funding the development of
     the SciKits portal.
 Google Inc. for updating documentation of hypergeometric distribution.
+Datadog Inc. for contributions to scipy.stats.

@@ -5,6 +5,8 @@ Routines for traversing graphs in compressed sparse format
 # Author: Jake Vanderplas  -- <vanderplas@astro.washington.edu>
 # License: BSD, (C) 2012
 
+from __future__ import absolute_import
+
 import numpy as np
 cimport numpy as np
 
@@ -69,6 +71,7 @@ def connected_components(csgraph, directed=True, connection='weak',
         directed = False
 
     csgraph = validate_graph(csgraph, directed,
+                             dtype=csgraph.dtype,
                              dense_output=False)
 
     labels = np.empty(csgraph.shape[0], dtype=ITYPE)
@@ -427,12 +430,12 @@ cpdef depth_first_order(csgraph, i_start,
     Returns
     -------
     node_array : ndarray, one dimension
-        The breadth-first list of nodes, starting with specified node.  The
+        The depth-first list of nodes, starting with specified node.  The
         length of node_array is the number of nodes reachable from the
         specified node.
     predecessors : ndarray, one dimension
         Returned only if return_predecessors is True.
-        The length-N list of predecessors of each node in a breadth-first
+        The length-N list of predecessors of each node in a depth-first
         tree.  If node i is in the tree, then its parent is given by
         predecessors[i]. If node i is not in the tree (and for the parent
         node) then predecessors[i] = -9999.

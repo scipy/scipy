@@ -8,12 +8,15 @@ import warnings
 
 import numpy as np
 from numpy.random import RandomState
-from numpy.testing import (TestCase, run_module_suite, assert_array_equal,
+from numpy.testing import (assert_array_equal,
     assert_almost_equal, assert_array_less, assert_array_almost_equal,
-    assert_raises, assert_, assert_allclose, assert_equal, dec, assert_warns)
+    assert_, assert_allclose, assert_equal, assert_warns)
+import pytest
+from pytest import raises as assert_raises
+from scipy._lib._numpy_compat import suppress_warnings
 
 from scipy import stats
-from common_tests import check_named_results
+from .common_tests import check_named_results
 
 # Matplotlib is not a scipy dependency but is optionally used in probplot, so
 # check if it's available
@@ -36,7 +39,7 @@ g9 = [1.002, 0.998, 0.996, 0.995, 0.996, 1.004, 1.004, 0.998, 0.999, 0.991]
 g10 = [0.991, 0.995, 0.984, 0.994, 0.997, 0.997, 0.991, 0.998, 1.004, 0.997]
 
 
-class TestBayes_mvs(TestCase):
+class TestBayes_mvs(object):
     def test_basic(self):
         # Expected values in this test simply taken from the function.  For
         # some checks regarding correctness of implementation, see review in
@@ -67,7 +70,7 @@ class TestBayes_mvs(TestCase):
             check_named_results(i, attributes)
 
 
-class TestMvsdist(TestCase):
+class TestMvsdist(object):
     def test_basic(self):
         data = [6, 9, 12, 7, 8, 8, 13]
         mean, var, std = stats.mvsdist(data)
@@ -100,7 +103,7 @@ class TestMvsdist(TestCase):
             [x.mean() for x in stats.mvsdist([1, 2, 3, 4, 5])]
 
 
-class TestShapiro(TestCase):
+class TestShapiro(object):
     def test_basic(self):
         x1 = [0.11, 7.87, 4.61, 10.14, 7.95, 3.14, 0.46,
               4.43, 0.21, 4.75, 0.71, 1.52, 3.24,
@@ -168,7 +171,7 @@ class TestShapiro(TestCase):
         assert_almost_equal(pw, 1.0)
 
 
-class TestAnderson(TestCase):
+class TestAnderson(object):
     def test_normal(self):
         rs = RandomState(1234567890)
         x1 = rs.standard_exponential(size=50)
@@ -254,7 +257,7 @@ class TestAnderson(TestCase):
         assert_(A2 > crit2[-1])
 
 
-class TestAndersonKSamp(TestCase):
+class TestAndersonKSamp(object):
     def test_example1a(self):
         # Example data from Scholz & Stephens (1987), originally
         # published in Lehmann (1995, Nonparametrics, Statistical
@@ -266,8 +269,8 @@ class TestAndersonKSamp(TestCase):
         t4 = np.array([34.0, 34.8, 34.8, 35.4, 37.2, 37.8, 41.2, 42.8])
         assert_warns(UserWarning, stats.anderson_ksamp, (t1, t2, t3, t4),
                      midrank=False)
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', message='approximate p-value')
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, message='approximate p-value')
             Tk, tm, p = stats.anderson_ksamp((t1, t2, t3, t4), midrank=False)
 
         assert_almost_equal(Tk, 4.449, 3)
@@ -284,8 +287,8 @@ class TestAndersonKSamp(TestCase):
         t2 = np.array([39.2, 39.3, 39.7, 41.4, 41.8, 42.9, 43.3, 45.8])
         t3 = np.array([34.0, 35.0, 39.0, 40.0, 43.0, 43.0, 44.0, 45.0])
         t4 = np.array([34.0, 34.8, 34.8, 35.4, 37.2, 37.8, 41.2, 42.8])
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', message='approximate p-value')
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, message='approximate p-value')
             Tk, tm, p = stats.anderson_ksamp((t1, t2, t3, t4), midrank=True)
 
         assert_almost_equal(Tk, 4.480, 3)
@@ -316,8 +319,8 @@ class TestAndersonKSamp(TestCase):
         t13 = [487, 18, 100, 7, 98, 5, 85, 91, 43, 230, 3, 130]
         t14 = [102, 209, 14, 57, 54, 32, 67, 59, 134, 152, 27, 14, 230, 66,
                61, 34]
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', message='approximate p-value')
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, message='approximate p-value')
             Tk, tm, p = stats.anderson_ksamp((t1, t2, t3, t4, t5, t6, t7, t8,
                                               t9, t10, t11, t12, t13, t14),
                                              midrank=False)
@@ -349,8 +352,8 @@ class TestAndersonKSamp(TestCase):
         t13 = [487, 18, 100, 7, 98, 5, 85, 91, 43, 230, 3, 130]
         t14 = [102, 209, 14, 57, 54, 32, 67, 59, 134, 152, 27, 14, 230, 66,
                61, 34]
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', message='approximate p-value')
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, message='approximate p-value')
             Tk, tm, p = stats.anderson_ksamp((t1, t2, t3, t4, t5, t6, t7, t8,
                                               t9, t10, t11, t12, t13, t14),
                                              midrank=True)
@@ -380,20 +383,28 @@ class TestAndersonKSamp(TestCase):
         t3 = np.array([34.0, 35.0, 39.0, 40.0, 43.0, 43.0, 44.0, 45.0])
         t4 = np.array([34.0, 34.8, 34.8, 35.4, 37.2, 37.8, 41.2, 42.8])
 
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', message='approximate p-value')
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, message='approximate p-value')
             res = stats.anderson_ksamp((t1, t2, t3, t4), midrank=False)
 
         attributes = ('statistic', 'critical_values', 'significance_level')
         check_named_results(res, attributes)
 
+    def test_overflow(self):
+        # when significance_level approximation overflows, should still return
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, message='approximate p-value')
+            res = stats.anderson_ksamp([[-20, -10] * 100, [-10, 40, 12] * 100])
+            assert_almost_equal(res[0], 272.796, 3)
 
-class TestAnsari(TestCase):
+
+class TestAnsari(object):
 
     def test_small(self):
         x = [1, 2, 3, 3, 4]
         y = [3, 2, 6, 1, 6, 1, 4, 1]
-        with warnings.catch_warnings(record=True):  # Ties preclude use ...
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, "Ties preclude use of exact statistic.")
             W, pval = stats.ansari(x, y)
         assert_almost_equal(W, 23.5, 11)
         assert_almost_equal(pval, 0.13499256881897437, 11)
@@ -405,9 +416,8 @@ class TestAnsari(TestCase):
                            100, 96, 108, 103, 104, 114, 114, 113, 108,
                            106, 99))
 
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore',
-                        message="Ties preclude use of exact statistic.")
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, "Ties preclude use of exact statistic.")
             W, pval = stats.ansari(ramsay, parekh)
 
         assert_almost_equal(W, 185.5, 11)
@@ -425,13 +435,14 @@ class TestAnsari(TestCase):
     def test_result_attributes(self):
         x = [1, 2, 3, 3, 4]
         y = [3, 2, 6, 1, 6, 1, 4, 1]
-        with warnings.catch_warnings(record=True):  # Ties preclude use ...
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, "Ties preclude use of exact statistic.")
             res = stats.ansari(x, y)
         attributes = ('statistic', 'pvalue')
         check_named_results(res, attributes)
 
 
-class TestBartlett(TestCase):
+class TestBartlett(object):
 
     def test_data(self):
         args = [g1, g2, g3, g4, g5, g6, g7, g8, g9, g10]
@@ -454,7 +465,7 @@ class TestBartlett(TestCase):
         assert_equal((np.nan, np.nan), stats.bartlett(*args))
 
 
-class TestLevene(TestCase):
+class TestLevene(object):
 
     def test_data(self):
         args = [g1, g2, g3, g4, g5, g6, g7, g8, g9, g10]
@@ -517,7 +528,7 @@ class TestLevene(TestCase):
         check_named_results(res, attributes)
 
 
-class TestBinomP(TestCase):
+class TestBinomP(object):
 
     def test_data(self):
         pval = stats.binom_test(100, 250)
@@ -552,7 +563,7 @@ class TestBinomP(TestCase):
         assert_almost_equal(res, 0.0437479701823997)
 
 
-class TestFligner(TestCase):
+class TestFligner(object):
 
     def test_data(self):
         # numbers from R: fligner.test in package stats
@@ -562,10 +573,17 @@ class TestFligner(TestCase):
                                   11)
 
     def test_trimmed1(self):
+        # Perturb input to break ties in the transformed data 
+        # See https://github.com/scipy/scipy/pull/8042 for more details
+        rs = np.random.RandomState(123)
+        _perturb = lambda g: (np.asarray(g) + 1e-10*rs.randn(len(g))).tolist()
+        g1_ = _perturb(g1)
+        g2_ = _perturb(g2)
+        g3_ = _perturb(g3)
         # Test that center='trimmed' gives the same result as center='mean'
         # when proportiontocut=0.
-        Xsq1, pval1 = stats.fligner(g1, g2, g3, center='mean')
-        Xsq2, pval2 = stats.fligner(g1, g2, g3, center='trimmed',
+        Xsq1, pval1 = stats.fligner(g1_, g2_, g3_, center='mean')
+        Xsq2, pval2 = stats.fligner(g1_, g2_, g3_, center='trimmed',
                                     proportiontocut=0.0)
         assert_almost_equal(Xsq1, Xsq2)
         assert_almost_equal(pval1, pval2)
@@ -613,7 +631,7 @@ class TestFligner(TestCase):
         assert_equal((np.nan, np.nan), stats.fligner(x, x**2, []))
 
 
-class TestMood(TestCase):
+class TestMood(object):
     def test_mood(self):
         # numbers from R: mood.test in package stats
         x1 = np.arange(5)
@@ -716,7 +734,7 @@ class TestMood(TestCase):
         assert_raises(ValueError, stats.mood, [1], [])
 
 
-class TestProbplot(TestCase):
+class TestProbplot(object):
 
     def test_basic(self):
         np.random.seed(12345)
@@ -770,7 +788,7 @@ class TestProbplot(TestCase):
         assert_allclose(osm1, osm2)
         assert_allclose(osr1, osr2)
 
-    @dec.skipif(not have_matplotlib)
+    @pytest.mark.skipif(not have_matplotlib, reason="no matplotlib")
     def test_plot_kwarg(self):
         np.random.seed(7654321)
         fig = plt.figure()
@@ -831,7 +849,7 @@ def test_wilcoxon_arg_type():
     _ = stats.wilcoxon(arr, zero_method="wilcox")
 
 
-class TestKstat(TestCase):
+class TestKstat(object):
     def test_moments_normal_distribution(self):
         np.random.seed(32149)
         data = np.random.randn(12345)
@@ -864,7 +882,7 @@ class TestKstat(TestCase):
             assert_raises(ValueError, stats.kstat, data, n=n)
 
 
-class TestKstatVar(TestCase):
+class TestKstatVar(object):
     def test_empty_input(self):
         assert_raises(ValueError, stats.kstatvar, [])
 
@@ -881,8 +899,8 @@ class TestKstatVar(TestCase):
         assert_raises(ValueError, stats.kstatvar, data, n=n)
 
 
-class TestPpccPlot(TestCase):
-    def setUp(self):
+class TestPpccPlot(object):
+    def setup_method(self):
         np.random.seed(7654321)
         self.x = stats.loggamma.rvs(5, size=500) + 5
 
@@ -906,16 +924,15 @@ class TestPpccPlot(TestCase):
         assert_allclose(svals1, svals3, rtol=1e-20)
         assert_allclose(ppcc1, ppcc3, rtol=1e-20)
 
-    @dec.skipif(not have_matplotlib)
+    @pytest.mark.skipif(not have_matplotlib, reason="no matplotlib")
     def test_plot_kwarg(self):
         # Check with the matplotlib.pyplot module
         fig = plt.figure()
-        fig.add_subplot(111)
+        ax = fig.add_subplot(111)
         stats.ppcc_plot(self.x, -20, 20, plot=plt)
-        plt.close()
+        fig.delaxes(ax)
 
         # Check that a Matplotlib Axes object is accepted
-        fig.add_subplot(111)
         ax = fig.add_subplot(111)
         stats.ppcc_plot(self.x, -20, 20, plot=ax)
         plt.close()
@@ -937,7 +954,7 @@ class TestPpccPlot(TestCase):
         assert_allclose(ppcc, np.zeros(80, dtype=float))
 
 
-class TestPpccMax(TestCase):
+class TestPpccMax(object):
     def test_ppcc_max_bad_arg(self):
         # Raise ValueError when given an invalid distribution.
         data = [1]
@@ -980,7 +997,7 @@ class TestPpccMax(TestCase):
                             -0.71215366521264145, decimal=5)
 
 
-class TestBoxcox_llf(TestCase):
+class TestBoxcox_llf(object):
 
     def test_basic(self):
         np.random.seed(54321)
@@ -1013,7 +1030,7 @@ class TestBoxcox_llf(TestCase):
         assert_(np.isnan(stats.boxcox_llf(1, [])))
 
 
-class TestBoxcox(TestCase):
+class TestBoxcox(object):
 
     def test_fixed_lmbda(self):
         np.random.seed(12345)
@@ -1068,8 +1085,8 @@ class TestBoxcox(TestCase):
         assert_(stats.boxcox([]).shape == (0,))
 
 
-class TestBoxcoxNormmax(TestCase):
-    def setUp(self):
+class TestBoxcoxNormmax(object):
+    def setup_method(self):
         np.random.seed(12345)
         self.x = stats.loggamma.rvs(5, size=50) + 5
 
@@ -1090,8 +1107,8 @@ class TestBoxcoxNormmax(TestCase):
         assert_allclose(maxlog_all, [1.804465, 1.758101], rtol=1e-6)
 
 
-class TestBoxcoxNormplot(TestCase):
-    def setUp(self):
+class TestBoxcoxNormplot(object):
+    def setup_method(self):
         np.random.seed(7654321)
         self.x = stats.loggamma.rvs(5, size=500) + 5
 
@@ -1103,16 +1120,15 @@ class TestBoxcoxNormplot(TestCase):
         assert_allclose(lmbdas, np.linspace(-10, 10, num=N))
         assert_allclose(ppcc, ppcc_expected)
 
-    @dec.skipif(not have_matplotlib)
+    @pytest.mark.skipif(not have_matplotlib, reason="no matplotlib")
     def test_plot_kwarg(self):
         # Check with the matplotlib.pyplot module
         fig = plt.figure()
-        fig.add_subplot(111)
+        ax = fig.add_subplot(111)
         stats.boxcox_normplot(self.x, -20, 20, plot=plt)
-        plt.close()
+        fig.delaxes(ax)
 
         # Check that a Matplotlib Axes object is accepted
-        fig.add_subplot(111)
         ax = fig.add_subplot(111)
         stats.boxcox_normplot(self.x, -20, 20, plot=ax)
         plt.close()
@@ -1127,7 +1143,7 @@ class TestBoxcoxNormplot(TestCase):
         assert_(stats.boxcox_normplot([], 0, 1).size == 0)
 
 
-class TestCircFuncs(TestCase):
+class TestCircFuncs(object):
     def test_circfuncs(self):
         x = np.array([355, 5, 2, 359, 10, 350])
         M = stats.circmean(x, high=360)
@@ -1296,7 +1312,7 @@ def test_wilcoxon_tie():
     assert_allclose(p, expected_p, rtol=1e-6)
 
 
-class TestMedianTest(TestCase):
+class TestMedianTest(object):
 
     def test_bad_n_samples(self):
         # median_test requires at least two samples.
@@ -1415,7 +1431,3 @@ class TestMedianTest(TestCase):
         exp_stat, exp_p, dof, e = stats.chi2_contingency(tbl, correction=False)
         assert_allclose(stat, exp_stat)
         assert_allclose(p, exp_p)
-
-
-if __name__ == "__main__":
-    run_module_suite()

@@ -1,6 +1,8 @@
 # Author: Eric Larson
 # 2014
 
+from __future__ import absolute_import
+
 import numpy as np
 cimport numpy as np
 cimport cython

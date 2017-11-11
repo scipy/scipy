@@ -6,14 +6,14 @@ from scipy.optimize._differentialevolution import DifferentialEvolutionSolver
 from scipy.optimize import differential_evolution
 import numpy as np
 from scipy.optimize import rosen
-from numpy.testing import (assert_equal, TestCase, assert_allclose,
-                           run_module_suite, assert_almost_equal,
-                           assert_string_equal, assert_raises, assert_)
+from numpy.testing import (assert_equal, assert_allclose,
+                           assert_almost_equal,
+                           assert_string_equal, assert_)
+from pytest import raises as assert_raises
 
+class TestDifferentialEvolutionSolver(object):
 
-class TestDifferentialEvolutionSolver(TestCase):
-
-    def setUp(self):
+    def setup_method(self):
         self.old_seterr = np.seterr(invalid='raise')
         self.limits = np.array([[0., 0.],
                                 [2., 2.]])
@@ -32,7 +32,7 @@ class TestDifferentialEvolutionSolver(TestCase):
         population = np.atleast_2d(np.arange(0.1, 0.8, 0.1)).T
         self.dummy_solver2.population = population
 
-    def tearDown(self):
+    def teardown_method(self):
         np.seterr(**self.old_seterr)
 
     def quadratic(self, x):
@@ -101,6 +101,18 @@ class TestDifferentialEvolutionSolver(TestCase):
         assert_equal(solver.strategy, 'randtobest1exp')
         assert_equal(solver.mutation_func.__name__, '_randtobest1')
 
+        solver = DifferentialEvolutionSolver(rosen,
+                                             self.bounds,
+                                             strategy='currenttobest1bin')
+        assert_equal(solver.strategy, 'currenttobest1bin')
+        assert_equal(solver.mutation_func.__name__, '_currenttobest1')
+
+        solver = DifferentialEvolutionSolver(rosen,
+                                             self.bounds,
+                                             strategy='currenttobest1exp')
+        assert_equal(solver.strategy, 'currenttobest1exp')
+        assert_equal(solver.mutation_func.__name__, '_currenttobest1')
+
     def test__mutate1(self):
         # strategies */1/*, i.e. rand/1/bin, best/1/exp, etc.
         result = np.array([0.05])
@@ -125,8 +137,14 @@ class TestDifferentialEvolutionSolver(TestCase):
 
     def test__randtobest1(self):
         # strategies randtobest/1/*
+        result = np.array([0.15])
+        trial = self.dummy_solver2._randtobest1((2, 3, 4, 5, 6))
+        assert_allclose(trial, result)
+
+    def test__currenttobest1(self):
+        # strategies currenttobest/1/*
         result = np.array([0.1])
-        trial = self.dummy_solver2._randtobest1(1, (2, 3, 4, 5, 6))
+        trial = self.dummy_solver2._currenttobest1(1, (2, 3, 4, 5, 6))
         assert_allclose(trial, result)
 
     def test_can_init_with_dithering(self):
@@ -135,26 +153,26 @@ class TestDifferentialEvolutionSolver(TestCase):
                                              self.bounds,
                                              mutation=mutation)
 
-        self.assertEqual(solver.dither, list(mutation))
+        assert_equal(solver.dither, list(mutation))
 
     def test_invalid_mutation_values_arent_accepted(self):
         func = rosen
         mutation = (0.5, 3)
-        self.assertRaises(ValueError,
+        assert_raises(ValueError,
                           DifferentialEvolutionSolver,
                           func,
                           self.bounds,
                           mutation=mutation)
 
         mutation = (-1, 1)
-        self.assertRaises(ValueError,
+        assert_raises(ValueError,
                           DifferentialEvolutionSolver,
                           func,
                           self.bounds,
                           mutation=mutation)
 
         mutation = (0.1, np.nan)
-        self.assertRaises(ValueError,
+        assert_raises(ValueError,
                           DifferentialEvolutionSolver,
                           func,
                           self.bounds,
@@ -234,7 +252,7 @@ class TestDifferentialEvolutionSolver(TestCase):
         # test that passing an invalid strategy raises ValueError
         func = rosen
         bounds = [(-3, 3)]
-        self.assertRaises(ValueError,
+        assert_raises(ValueError,
                           differential_evolution,
                           func,
                           bounds,
@@ -244,17 +262,17 @@ class TestDifferentialEvolutionSolver(TestCase):
         # test that the bounds checking works
         func = rosen
         bounds = [(-3, None)]
-        self.assertRaises(ValueError,
+        assert_raises(ValueError,
                           differential_evolution,
                           func,
                           bounds)
         bounds = [(-3)]
-        self.assertRaises(ValueError,
+        assert_raises(ValueError,
                           differential_evolution,
                           func,
                           bounds)
         bounds = [(-3, 3), (3, 4, 5)]
-        self.assertRaises(ValueError,
+        assert_raises(ValueError,
                           differential_evolution,
                           func,
                           bounds)
@@ -426,6 +444,3 @@ class TestDifferentialEvolutionSolver(TestCase):
         assert_equal(solver._nfev, 0)
         assert_(np.all(np.isinf(solver.population_energies)))
 
-
-if __name__ == '__main__':
-    run_module_suite()

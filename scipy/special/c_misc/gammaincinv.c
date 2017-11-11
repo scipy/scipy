@@ -41,6 +41,9 @@ gammaincinv(double a, double y)
     double best_x, best_f, errest;
     fsolve_result_t r;
 
+    if (npy_isnan(a) || npy_isnan(y)) {
+      return NPY_NAN;
+    }
     if (a <= 0.0 || y <= 0.0 || y >= 0.25) {
         return cephes_igami(a, 1-y);
     }
@@ -55,7 +58,7 @@ gammaincinv(double a, double y)
     /* I found Newton to be unreliable. Also, after we generate a small
        interval by bisection above, false position will do a large step
        from an interval of width ~1e-4 to ~1e-14 in one step (a=10, x=0.05,
-       but similiar for other values).
+       but similar for other values).
      */
 
     r = false_position(&lo, &flo, &hi, &fhi,

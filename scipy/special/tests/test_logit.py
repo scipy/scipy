@@ -1,12 +1,12 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import (TestCase, assert_equal, assert_almost_equal,
+from numpy.testing import (assert_equal, assert_almost_equal,
         assert_allclose)
 from scipy.special import logit, expit
 
 
-class TestLogit(TestCase):
+class TestLogit(object):
     def check_logit_out(self, dtype, expected):
         a = np.linspace(0,1,10)
         a = np.array(a, dtype=dtype)
@@ -47,7 +47,7 @@ class TestLogit(TestCase):
         assert_equal(expected, actual)
 
 
-class TestExpit(TestCase):
+class TestExpit(object):
     def check_expit_out(self, dtype, expected):
         a = np.linspace(-4,4,10)
         a = np.array(a, dtype=dtype)

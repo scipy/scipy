@@ -81,185 +81,14 @@ class LinearTimeInvariant(object):
             return {'dt': self.dt}
 
     @property
-    def num(self):
-        """Numerator of the `TransferFunction` system."""
-        warnings.warn('Cross-class properties have been deprecated in scipy '
-                      '0.18.0 and will be removed in a future version of '
-                      'scipy. Please use `sys.to_tf().num`instead.',
-                      DeprecationWarning)
-        return self.to_tf().num
-
-    @num.setter
-    def num(self, num):
-        warnings.warn('Cross-class setters have been deprecated in scipy '
-                      '0.18.0 and will be removed in a future version of '
-                      'scipy. Please convert your system with `sys.to_tf()` '
-                      'before setting `num`.',
-                      DeprecationWarning)
-        obj = self.to_tf()
-        obj.num = num
-        source_class = type(self)
-        self._copy(source_class(obj))
-
-    @property
-    def den(self):
-        """Denominator of the `TransferFunction` system."""
-        warnings.warn('Cross-class properties have been deprecated in scipy '
-                      '0.18.0 and will be removed in a future version of '
-                      'scipy. Please use `sys.to_tf().den`instead.',
-                      DeprecationWarning)
-        return self.to_tf().den
-
-    @den.setter
-    def den(self, den):
-        warnings.warn('Cross-class setters have been deprecated in scipy '
-                      '0.18.0 and will be removed in a future version of '
-                      'scipy. Please convert your system with `sys.to_tf()` '
-                      'before setting `den`.',
-                      DeprecationWarning)
-        obj = self.to_tf()
-        obj.den = den
-        source_class = type(self)
-        self._copy(source_class(obj))
-
-    @property
     def zeros(self):
         """Zeros of the system."""
         return self.to_zpk().zeros
-
-    @zeros.setter
-    def zeros(self, zeros):
-        warnings.warn('Cross-class setters have been deprecated in scipy '
-                      '0.18.0 and will be removed in a future version of '
-                      'scipy. Please convert your system with `sys.to_zpk()` '
-                      'before setting `zeros`.',
-                      DeprecationWarning)
-        obj = self.to_zpk()
-        obj.zeros = zeros
-        source_class = type(self)
-        self._copy(source_class(obj))
 
     @property
     def poles(self):
         """Poles of the system."""
         return self.to_zpk().poles
-
-    @poles.setter
-    def poles(self, poles):
-        warnings.warn('Cross-class setters have been deprecated in scipy '
-                      '0.18.0 and will be removed in a future version of '
-                      'scipy. Please convert your system with `sys.to_zpk()` '
-                      'before setting `poles`.',
-                      DeprecationWarning)
-        obj = self.to_zpk()
-        obj.poles = poles
-        source_class = type(self)
-        self._copy(source_class(obj))
-
-    @property
-    def gain(self):
-        """Gain of the `ZerosPolesGain` system."""
-        warnings.warn('Cross-class properties have been deprecated in scipy '
-                      '0.18.0 and will be removed in a future version of '
-                      'scipy. Please use `sys.to_zpk().gain`instead.',
-                      DeprecationWarning)
-        return self.to_zpk().gain
-
-    @gain.setter
-    def gain(self, gain):
-        warnings.warn('Cross-class setters have been deprecated in scipy '
-                      '0.18.0 and will be removed in a future version of '
-                      'scipy. Please convert your system with `sys.to_zpk()` '
-                      'before setting `gain`.',
-                      DeprecationWarning)
-        obj = self.to_zpk()
-        obj.gain = gain
-        source_class = type(self)
-        self._copy(source_class(obj))
-
-    @property
-    def A(self):
-        """State matrix of the `StateSpace` system."""
-        warnings.warn('Cross-class properties have been deprecated in scipy '
-                      '0.18.0 and will be removed in a future version of '
-                      'scipy. Please use `sys.to_ss().A`instead.',
-                      DeprecationWarning)
-        return self.to_ss().A
-
-    @A.setter
-    def A(self, A):
-        warnings.warn('Cross-class setters have been deprecated in scipy '
-                      '0.18.0 and will be removed in a future version of '
-                      'scipy. Please convert your system with `sys.to_ss()` '
-                      'before setting `A`.',
-                      DeprecationWarning)
-        obj = self.to_ss()
-        obj.A = A
-        source_class = type(self)
-        self._copy(source_class(obj))
-
-    @property
-    def B(self):
-        """Input matrix of the `StateSpace` system."""
-        warnings.warn('Cross-class properties have been deprecated in scipy '
-                      '0.18.0 and will be removed in a future version of '
-                      'scipy. Please use `sys.to_ss().B`instead.',
-                      DeprecationWarning)
-        return self.to_ss().B
-
-    @B.setter
-    def B(self, B):
-        warnings.warn('Cross-class setters have been deprecated in scipy '
-                      '0.18.0 and will be removed in a future version of '
-                      'scipy. Please convert your system with `sys.to_ss()` '
-                      'before setting `B`.',
-                      DeprecationWarning)
-        obj = self.to_ss()
-        obj.B = B
-        source_class = type(self)
-        self._copy(source_class(obj))
-
-    @property
-    def C(self):
-        """Output matrix of the `StateSpace` system."""
-        warnings.warn('Cross-class properties have been deprecated in scipy '
-                      '0.18.0 and will be removed in a future version of '
-                      'scipy. Please use `sys.to_ss().C`instead.',
-                      DeprecationWarning)
-        return self.to_ss().C
-
-    @C.setter
-    def C(self, C):
-        warnings.warn('Cross-class setters have been deprecated in scipy '
-                      '0.18.0 and will be removed in a future version of '
-                      'scipy. Please convert your system with `sys.to_ss()` '
-                      'before setting `C`.',
-                      DeprecationWarning)
-        obj = self.to_ss()
-        obj.C = C
-        source_class = type(self)
-        self._copy(source_class(obj))
-
-    @property
-    def D(self):
-        """Feedthrough matrix of the `StateSpace` system."""
-        warnings.warn('Cross-class properties have been deprecated in scipy '
-                      '0.18.0 and will be removed in a future version of '
-                      'scipy. Please use `sys.to_ss().D`instead.',
-                      DeprecationWarning)
-        return self.to_ss().D
-
-    @D.setter
-    def D(self, D):
-        warnings.warn('Cross-class setters have been deprecated in scipy '
-                      '0.18.0 and will be removed in a future version of '
-                      'scipy. Please convert your system with `sys.to_ss()` '
-                      'before setting `D`.',
-                      DeprecationWarning)
-        obj = self.to_ss()
-        obj.D = D
-        source_class = type(self)
-        self._copy(source_class(obj))
 
     def _as_ss(self):
         """Convert to `StateSpace` system, without copying.
@@ -3106,12 +2935,12 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
                 diag_poles[idx+1, idx] = np.imag(p)
                 idx += 1  # skip next one
             idx += 1
-        gain_matrix = np.linalg.lstsq(B, diag_poles-A)[0]
+        gain_matrix = np.linalg.lstsq(B, diag_poles-A, rcond=-1)[0]
         transfer_matrix = np.eye(A.shape[0])
         cur_rtol = np.nan
         nb_iter = np.nan
     else:
-        # step A (p1144 KNV) and begining of step F: decompose
+        # step A (p1144 KNV) and beginning of step F: decompose
         # dot(U1.T, A-P[i]*I).T and build our set of transfer_matrix vectors
         # in the same loop
         ker_pole = []
@@ -3555,18 +3384,21 @@ def dfreqresp(system, w=None, n=10000, whole=False):
     >>> plt.show()
 
     """
-    if isinstance(system, dlti):
-        if isinstance(system, (TransferFunction, ZerosPolesGain)):
-            sys = system
-        else:
-            sys = system._as_zpk()
-    elif isinstance(system, lti):
-        raise AttributeError('dfreqresp can only be used with discrete-time '
-                             'systems.')
-    else:
-        sys = dlti(*system[:-1], dt=system[-1])._as_zpk()
+    if not isinstance(system, dlti):
+        if isinstance(system, lti):
+            raise AttributeError('dfreqresp can only be used with '
+                                 'discrete-time systems.')
 
-    if sys.inputs != 1 or sys.outputs != 1:
+        system = dlti(*system[:-1], dt=system[-1])
+
+    if isinstance(system, StateSpace):
+        # No SS->ZPK code exists right now, just SS->TF->ZPK
+        system = system._as_tf()
+
+    if not isinstance(system, (TransferFunction, ZerosPolesGain)):
+        raise ValueError('Unknown system type')
+
+    if system.inputs != 1 or system.outputs != 1:
         raise ValueError("dfreqresp requires a SISO (single input, single "
                          "output) system.")
 
@@ -3575,14 +3407,14 @@ def dfreqresp(system, w=None, n=10000, whole=False):
     else:
         worN = n
 
-    if isinstance(sys, TransferFunction):
+    if isinstance(system, TransferFunction):
         # Convert numerator and denominator from polynomials in the variable
         # 'z' to polynomials in the variable 'z^-1', as freqz expects.
-        num, den = TransferFunction._z_to_zinv(sys.num.ravel(), sys.den)
+        num, den = TransferFunction._z_to_zinv(system.num.ravel(), system.den)
         w, h = freqz(num, den, worN=worN, whole=whole)
 
     elif isinstance(system, ZerosPolesGain):
-        w, h = freqz_zpk(sys.zeros, sys.poles, sys.gain, worN=worN,
+        w, h = freqz_zpk(system.zeros, system.poles, system.gain, worN=worN,
                          whole=whole)
 
     return w, h

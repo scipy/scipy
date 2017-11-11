@@ -81,7 +81,7 @@ struct heap {
         /*
          * No point in freeing up space as the heap empties.
          * The whole heap gets deallocated at the end of any
-         * query below. Just keep the space to avoid unneccesary
+         * query below. Just keep the space to avoid unnecessary
          * reallocs.
          */
         nn = n;

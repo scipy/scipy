@@ -1,11 +1,13 @@
 from __future__ import division, print_function, absolute_import
 
-import warnings
 import pickle
 
 import numpy as np
 import numpy.testing as npt
 from numpy.testing import assert_allclose, assert_equal
+from scipy._lib._numpy_compat import suppress_warnings
+from pytest import raises as assert_raises
+
 import numpy.ma.testutils as ma_npt
 
 from scipy._lib._util import getargspec_no_self as _getargspec
@@ -152,14 +154,12 @@ def check_named_args(distfn, x, shape_args, defaults, meths):
         npt.assert_array_equal(vals, v)
         if 'n' not in k.keys():
             # `n` is first parameter of moment(), so can't be used as named arg
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", UserWarning)
-                npt.assert_equal(distfn.moment(1, *a, **k),
-                                 distfn.moment(1, *shape_args))
+            npt.assert_equal(distfn.moment(1, *a, **k),
+                             distfn.moment(1, *shape_args))
 
     # unknown arguments should not go through:
     k.update({'kaboom': 42})
-    npt.assert_raises(TypeError, distfn.cdf, x, **k)
+    assert_raises(TypeError, distfn.cdf, x, **k)
 
 
 def check_random_state_property(distfn, args):
@@ -277,10 +277,14 @@ def check_pickling(distfn, args):
 
 def check_rvs_broadcast(distfunc, distname, allargs, shape, shape_only, otype):
     np.random.seed(123)
-    sample = distfunc.rvs(*allargs)
-    assert_equal(sample.shape, shape, "%s: rvs failed to broadcast" % distname)
-    if not shape_only:
-        rvs = np.vectorize(lambda *allargs: distfunc.rvs(*allargs), otypes=otype)
-        np.random.seed(123)
-        expected = rvs(*allargs)
-        assert_allclose(sample, expected, rtol=1e-15)
+    with suppress_warnings() as sup:
+        # frechet_l and frechet_r are deprecated, so all their
+        # methods generate DeprecationWarnings.
+        sup.filter(category=DeprecationWarning, message=".*frechet_")
+        sample = distfunc.rvs(*allargs)
+        assert_equal(sample.shape, shape, "%s: rvs failed to broadcast" % distname)
+        if not shape_only:
+            rvs = np.vectorize(lambda *allargs: distfunc.rvs(*allargs), otypes=otype)
+            np.random.seed(123)
+            expected = rvs(*allargs)
+            assert_allclose(sample, expected, rtol=1e-15)

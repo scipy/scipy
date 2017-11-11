@@ -6,12 +6,12 @@
 
 from __future__ import division, print_function, absolute_import
 
-import warnings
+from warnings import warn
 import numpy as np
 from numpy import atleast_1d, atleast_2d
 from .flinalg import get_flinalg_funcs
 from .lapack import get_lapack_funcs, _compute_lwork
-from .misc import LinAlgError, _datacopied
+from .misc import LinAlgError, _datacopied, LinAlgWarning
 from .decomp import _asarray_validated
 from . import decomp, decomp_svd
 from ._solve_toeplitz import levinson
@@ -22,6 +22,23 @@ __all__ = ['solve', 'solve_triangular', 'solveh_banded', 'solve_banded',
 
 
 # Linear equations
+def _solve_check(n, info, lamch=None, rcond=None):
+    """ Check arguments during the different steps of the solution phase """
+    if info < 0:
+        raise ValueError('LAPACK reported an illegal value in {}-th argument'
+                         '.'.format(-info))
+    elif 0 < info:
+        raise LinAlgError('Matrix is singular.')
+
+    if lamch is None:
+        return
+    E = lamch('E')
+    if rcond < E:
+        warn('scipy.linalg.solve\nIll-conditioned matrix detected. Result '
+             'is not guaranteed to be accurate.\nReciprocal condition '
+             'number{:.6e}'.format(rcond), LinAlgWarning, stacklevel=3)
+
+
 def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
           overwrite_b=False, debug=None, check_finite=True, assume_a='gen',
           transposed=False):
@@ -73,8 +90,8 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
     assume_a : str, optional
         Valid entries are explained above.
     transposed: bool, optional
-        If True, depending on the data type ``a^T x = b`` or ``a^H x = b`` is
-        solved (only taken into account for ``'gen'``).
+        If True, ``a^T x = b`` for real matrices, raises `NotImplementedError`
+        for complex matrices (only for True).
 
     Returns
     -------
@@ -87,8 +104,10 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
         If size mismatches detected or input a is not square.
     LinAlgError
         If the matrix is singular.
-    RuntimeWarning
+    LinAlgWarning
         If an ill-conditioned input a is detected.
+    NotImplementedError
+        If transposed is True and input a is a complex matrix.
 
     Examples
     --------
@@ -111,12 +130,11 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
     numpy.dot() behavior and the returned result is still 1D array.
 
     The generic, symmetric, hermitian and positive definite solutions are
-    obtained via calling ?GESVX, ?SYSVX, ?HESVX, and ?POSVX routines of
+    obtained via calling ?GESV, ?SYSV, ?HESV, and ?POSV routines of
     LAPACK respectively.
     """
     # Flags for 1D or nD right hand side
     b_is_1D = False
-    b_is_ND = False
 
     a1 = atleast_2d(_asarray_validated(a, check_finite=check_finite))
     b1 = atleast_1d(_asarray_validated(b, check_finite=check_finite))
@@ -134,94 +152,110 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
             raise ValueError('Input b has to have same number of rows as '
                              'input a')
 
-    # accomodate empty arrays
+    # accommodate empty arrays
     if b1.size == 0:
         return np.asfortranarray(b1.copy())
 
-    # regularize 1D b arrays to 2D and catch nD RHS arrays
+    # regularize 1D b arrays to 2D
     if b1.ndim == 1:
         if n == 1:
             b1 = b1[None, :]
         else:
             b1 = b1[:, None]
         b_is_1D = True
-    elif b1.ndim > 2:
-        b_is_ND = True
-
-    r_or_c = complex if np.iscomplexobj(a1) else float
-
-    if assume_a in ('gen', 'sym', 'her', 'pos'):
-        _structure = assume_a
-    else:
-        raise ValueError('{} is not a recognized matrix structure'
-                         ''.format(assume_a))
-
-    # Deprecate keyword "debug"
-    if debug is not None:
-        warnings.warn('Use of the "debug" keyword is deprecated '
-                      'and this keyword will be removed in the future '
-                      'versions of SciPy.', DeprecationWarning)
 
     # Backwards compatibility - old keyword.
     if sym_pos:
         assume_a = 'pos'
 
-    if _structure == 'gen':
-        gesvx = get_lapack_funcs('gesvx', (a1, b1))
-        trans_conj = 'N'
-        if transposed:
-            trans_conj = 'T' if r_or_c is float else 'H'
-        (_, _, _, _, _, _, _,
-         x, rcond, _, _, info) = gesvx(a1, b1,
-                                       trans=trans_conj,
-                                       overwrite_a=overwrite_a,
-                                       overwrite_b=overwrite_b
-                                       )
-    elif _structure == 'sym':
-        sysvx, sysvx_lw = get_lapack_funcs(('sysvx', 'sysvx_lwork'), (a1, b1))
-        lwork = _compute_lwork(sysvx_lw, n, lower)
-        _, _, _, _, x, rcond, _, _, info = sysvx(a1, b1, lwork=lwork,
-                                                 lower=lower,
-                                                 overwrite_a=overwrite_a,
-                                                 overwrite_b=overwrite_b
-                                                 )
-    elif _structure == 'her':
-        hesvx, hesvx_lw = get_lapack_funcs(('hesvx', 'hesvx_lwork'), (a1, b1))
-        lwork = _compute_lwork(hesvx_lw, n, lower)
-        _, _, x, rcond, _, _, info = hesvx(a1, b1, lwork=lwork,
-                                           lower=lower,
-                                           overwrite_a=overwrite_a,
-                                           overwrite_b=overwrite_b
-                                           )
-    else:
-        posvx = get_lapack_funcs('posvx', (a1, b1))
-        _, _, _, _, _, x, rcond, _, _, info = posvx(a1, b1,
-                                                    lower=lower,
-                                                    overwrite_a=overwrite_a,
-                                                    overwrite_b=overwrite_b
-                                                    )
+    if assume_a not in ('gen', 'sym', 'her', 'pos'):
+        raise ValueError('{} is not a recognized matrix structure'
+                         ''.format(assume_a))
 
-    # Unlike ?xxSV, ?xxSVX writes the solution x to a separate array, and
-    # overwrites b with its scaled version which is thrown away. Thus, the
-    # solution does not admit the same shape with the original b. For
-    # backwards compatibility, we reshape it manually.
+    # Deprecate keyword "debug"
+    if debug is not None:
+        warn('Use of the "debug" keyword is deprecated '
+             'and this keyword will be removed in future '
+             'versions of SciPy.', DeprecationWarning, stacklevel=2)
+
+    # Get the correct lamch function.
+    # The LAMCH functions only exists for S and D
+    # So for complex values we have to convert to real/double.
+    if a1.dtype.char in 'fF':  # single precision
+        lamch = get_lapack_funcs('lamch', dtype='f')
+    else:
+        lamch = get_lapack_funcs('lamch', dtype='d')
+
+    # Currently we do not have the other forms of the norm calculators
+    #   lansy, lanpo, lanhe.
+    # However, in any case they only reduce computations slightly...
+    lange = get_lapack_funcs('lange', (a1,))
+
+    # Since the I-norm and 1-norm are the same for symmetric matrices
+    # we can collect them all in this one call
+    # Note however, that when issuing 'gen' and form!='none', then
+    # the I-norm should be used
+    if transposed:
+        trans = 1
+        norm = 'I'
+        if np.iscomplexobj(a1):
+            raise NotImplementedError('scipy.linalg.solve can currently '
+                                      'not solve a^T x = b or a^H x = b '
+                                      'for complex matrices.')
+    else:
+        trans = 0
+        norm = '1'
+
+    anorm = lange(norm, a1)
+
+    # Generalized case 'gesv'
+    if assume_a == 'gen':
+        gecon, getrf, getrs = get_lapack_funcs(('gecon', 'getrf', 'getrs'),
+                                               (a1, b1))
+        lu, ipvt, info = getrf(a1, overwrite_a=overwrite_a)
+        _solve_check(n, info)
+        x, info = getrs(lu, ipvt, b1,
+                        trans=trans, overwrite_b=overwrite_b)
+        _solve_check(n, info)
+        rcond, info = gecon(lu, anorm, norm=norm)
+    # Hermitian case 'hesv'
+    elif assume_a == 'her':
+        hecon, hesv, hesv_lw = get_lapack_funcs(('hecon', 'hesv',
+                                                 'hesv_lwork'), (a1, b1))
+        lwork = _compute_lwork(hesv_lw, n, lower)
+        lu, ipvt, x, info = hesv(a1, b1, lwork=lwork,
+                                 lower=lower,
+                                 overwrite_a=overwrite_a,
+                                 overwrite_b=overwrite_b)
+        _solve_check(n, info)
+        rcond, info = hecon(lu, ipvt, anorm)
+    # Symmetric case 'sysv'
+    elif assume_a == 'sym':
+        sycon, sysv, sysv_lw = get_lapack_funcs(('sycon', 'sysv',
+                                                 'sysv_lwork'), (a1, b1))
+        lwork = _compute_lwork(sysv_lw, n, lower)
+        lu, ipvt, x, info = sysv(a1, b1, lwork=lwork,
+                                 lower=lower,
+                                 overwrite_a=overwrite_a,
+                                 overwrite_b=overwrite_b)
+        _solve_check(n, info)
+        rcond, info = sycon(lu, ipvt, anorm)
+    # Positive definite case 'posv'
+    else:
+        pocon, posv = get_lapack_funcs(('pocon', 'posv'),
+                                       (a1, b1))
+        lu, x, info = posv(a1, b1, lower=lower,
+                           overwrite_a=overwrite_a,
+                           overwrite_b=overwrite_b)
+        _solve_check(n, info)
+        rcond, info = pocon(lu, anorm)
+
+    _solve_check(n, info, lamch, rcond)
+
     if b_is_1D:
         x = x.ravel()
-    if b_is_ND:
-        x = x.reshape(*b1.shape, order='F')
 
-    if info < 0:
-        raise ValueError('LAPACK reported an illegal value in {}-th argument'
-                         '.'.format(-info))
-    elif info == 0:
-        return x
-    elif 0 < info <= n:
-        raise LinAlgError('Matrix is singular.')
-    elif info > n:
-        warnings.warn('scipy.linalg.solve\nIll-conditioned matrix detected.'
-                      ' Result is not guaranteed to be accurate.\nReciprocal'
-                      ' condition number: {}'.format(rcond), RuntimeWarning)
-        return x
+    return x
 
 
 def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
@@ -294,9 +328,9 @@ def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
 
     # Deprecate keyword "debug"
     if debug is not None:
-        warnings.warn('Use of the "debug" keyword is deprecated '
-                      'and this keyword will be removed in the future '
-                      'versions of SciPy.', DeprecationWarning)
+        warn('Use of the "debug" keyword is deprecated '
+             'and this keyword will be removed in the future '
+             'versions of SciPy.', DeprecationWarning, stacklevel=2)
 
     a1 = _asarray_validated(a, check_finite=check_finite)
     b1 = _asarray_validated(b, check_finite=check_finite)
@@ -392,9 +426,9 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
 
     # Deprecate keyword "debug"
     if debug is not None:
-        warnings.warn('Use of the "debug" keyword is deprecated '
-                      'and this keyword will be removed in the future '
-                      'versions of SciPy.', DeprecationWarning)
+        warn('Use of the "debug" keyword is deprecated '
+             'and this keyword will be removed in the future '
+             'versions of SciPy.', DeprecationWarning, stacklevel=2)
 
     a1 = _asarray_validated(ab, check_finite=check_finite, as_inexact=True)
     b1 = _asarray_validated(b, check_finite=check_finite, as_inexact=True)
@@ -586,6 +620,10 @@ def solve_toeplitz(c_or_cr, b, check_finite=True):
         The solution to the system ``T x = b``.  Shape of return matches shape
         of `b`.
 
+    See Also
+    --------
+    toeplitz : Toeplitz matrix
+
     Notes
     -----
     The solution is computed using Levinson-Durbin recursion, which is faster
@@ -729,7 +767,7 @@ def solve_circulant(c, b, singular='raise', tol=None,
 
     See Also
     --------
-    circulant
+    circulant : circulant matrix
 
     Notes
     -----
@@ -909,7 +947,7 @@ def inv(a, overwrite_a=False, check_finite=True):
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError('expected square matrix')
     overwrite_a = overwrite_a or _datacopied(a1, a)
-    #XXX: I found no advantage or disadvantage of using finv.
+    # XXX: I found no advantage or disadvantage of using finv.
 #     finv, = get_flinalg_funcs(('inv',),(a1,))
 #     if finv is not None:
 #         a_inv,info = finv(a1,overwrite_a=overwrite_a)
@@ -1045,11 +1083,11 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
     -------
     x : (N,) or (N, K) ndarray
         Least-squares solution.  Return shape matches shape of `b`.
-    residues : () or (1,) or (K,) ndarray
+    residues : (0,) or () or (K,) ndarray
         Sums of residues, squared 2-norm for each column in ``b - a x``.
         If rank of matrix a is ``< N`` or ``N > M``, or ``'gelsy'`` is used,
-        this is an empty array. If b was 1-D, this is an (1,) shape array,
-        otherwise the shape is (K,).
+        this is a length zero array. If b was 1-D, this is a () shape array
+        (numpy scalar), otherwise the shape is (K,).
     rank : int
         Effective rank of matrix `a`.
     s : (min(M,N),) ndarray or None
@@ -1068,6 +1106,50 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
     --------
     optimize.nnls : linear least squares with non-negativity constraint
 
+    Examples
+    --------
+    >>> from scipy.linalg import lstsq
+    >>> import matplotlib.pyplot as plt
+
+    Suppose we have the following data:
+
+    >>> x = np.array([1, 2.5, 3.5, 4, 5, 7, 8.5])
+    >>> y = np.array([0.3, 1.1, 1.5, 2.0, 3.2, 6.6, 8.6])
+
+    We want to fit a quadratic polynomial of the form ``y = a + b*x**2``
+    to this data.  We first form the "design matrix" M, with a constant
+    column of 1s and a column containing ``x**2``:
+
+    >>> M = x[:, np.newaxis]**[0, 2]
+    >>> M
+    array([[  1.  ,   1.  ],
+           [  1.  ,   6.25],
+           [  1.  ,  12.25],
+           [  1.  ,  16.  ],
+           [  1.  ,  25.  ],
+           [  1.  ,  49.  ],
+           [  1.  ,  72.25]])
+
+    We want to find the least-squares solution to ``M.dot(p) = y``,
+    where ``p`` is a vector with length 2 that holds the parameters
+    ``a`` and ``b``.
+
+    >>> p, res, rnk, s = lstsq(M, y)
+    >>> p
+    array([ 0.20925829,  0.12013861])
+
+    Plot the data and the fitted curve.
+
+    >>> plt.plot(x, y, 'o', label='data')
+    >>> xx = np.linspace(0, 9, 101)
+    >>> yy = p[0] + p[1]*xx**2
+    >>> plt.plot(xx, yy, label='least squares fit, $y = a + bx^2$')
+    >>> plt.xlabel('x')
+    >>> plt.ylabel('y')
+    >>> plt.legend(framealpha=1, shadow=True)
+    >>> plt.grid(alpha=0.25)
+    >>> plt.show()
+
     """
     a1 = _asarray_validated(a, check_finite=check_finite)
     b1 = _asarray_validated(b, check_finite=check_finite)
@@ -1080,6 +1162,13 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
         nrhs = 1
     if m != b1.shape[0]:
         raise ValueError('incompatible dimensions')
+    if m == 0 or n == 0:  # Zero-sized problem, confuses LAPACK
+        x = np.zeros((n,) + b1.shape[1:], dtype=np.common_type(a1, b1))
+        if n == 0:
+            residues = np.linalg.norm(b1, axis=0)**2
+        else:
+            residues = np.empty((0,))
+        return x, residues, 0, np.empty((0,))
 
     driver = lapack_driver
     if driver is None:
@@ -1133,7 +1222,7 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
                         # restart with gelss
                         lstsq.default_lapack_driver = 'gelss'
                         mesg += "Falling back to 'gelss' driver."
-                        warnings.warn(mesg, RuntimeWarning)
+                        warn(mesg, RuntimeWarning, stacklevel=2)
                         return lstsq(a, b, cond, overwrite_a, overwrite_b,
                                      check_finite, lapack_driver='gelss')
 
@@ -1174,6 +1263,8 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
             x1 = x[:n]
             x = x1
         return x, np.array([], x.dtype), rank, None
+
+
 lstsq.default_lapack_driver = 'gelsd'
 
 
@@ -1459,13 +1550,13 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
     >>> np.abs(x).sum(axis=0) / np.abs(x).sum(axis=1)
     array([ 3.66666667,  0.4995005 ,  0.91312162])
 
-    >>> np.abs(y).sum(axis=0) / np.abs(y).sum(axis=1) # 1-norms approx. equal
-    array([ 1.10625   ,  0.90547703,  1.00011878])
+    >>> np.abs(y).sum(axis=0) / np.abs(y).sum(axis=1)
+    array([ 1.2       ,  1.27041742,  0.92658316])  # may vary
 
     >>> permscale  # only powers of 2 (0.5 == 2^(-1))
-    array([[  0.5,   0. ,   0. ],
-           [  0. ,   1. ,   0. ],
-           [  0. ,   0. ,  16. ]])
+    array([[  0.5,   0. ,  0. ],  # may vary
+           [  0. ,   1. ,  0. ],
+           [  0. ,   0. ,  1. ]])
 
     References
     ----------

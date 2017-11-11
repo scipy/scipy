@@ -3,12 +3,12 @@ from __future__ import division, print_function, absolute_import
 import os
 import sys
 import tempfile
-import warnings
 from io import BytesIO
 
 import numpy as np
-from numpy.testing import (assert_equal, assert_, assert_raises,
-    assert_array_equal, run_module_suite)
+from numpy.testing import assert_equal, assert_, assert_array_equal
+from pytest import raises as assert_raises
+from scipy._lib._numpy_compat import suppress_warnings
 
 from scipy.io import wavfile
 
@@ -19,10 +19,8 @@ def datafile(fn):
 
 def test_read_1():
     for mmap in [False, True]:
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', wavfile.WavFileWarning)
-            rate, data = wavfile.read(datafile('test-44100Hz-le-1ch-4bytes.wav'),
-                                      mmap=mmap)
+        rate, data = wavfile.read(datafile('test-44100Hz-le-1ch-4bytes.wav'),
+                                  mmap=mmap)
 
         assert_equal(rate, 44100)
         assert_(np.issubdtype(data.dtype, np.int32))
@@ -53,8 +51,9 @@ def test_read_3():
 
 def test_read_4():
     for mmap in [False, True]:
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', wavfile.WavFileWarning)
+        with suppress_warnings() as sup:
+            sup.filter(wavfile.WavFileWarning,
+                       "Chunk .non-data. not understood, skipping it")
             rate, data = wavfile.read(datafile('test-48000Hz-2ch-64bit-float-le-wavex.wav'),
                                       mmap=mmap)
 
@@ -156,8 +155,5 @@ def test_write_roundtrip():
                     for rate in (8000, 32000):
                         for channels in (1, 2, 5):
                             dt = np.dtype('%s%s%s' % (endianness, dtypechar, size))
-                            yield _check_roundtrip, realfile, rate, dt, channels
+                            _check_roundtrip(realfile, rate, dt, channels)
 
-
-if __name__ == "__main__":
-    run_module_suite()

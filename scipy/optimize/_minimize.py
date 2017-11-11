@@ -20,11 +20,12 @@ from scipy._lib.six import callable
 
 # unconstrained minimization
 from .optimize import (_minimize_neldermead, _minimize_powell, _minimize_cg,
-                      _minimize_bfgs, _minimize_newtoncg,
-                      _minimize_scalar_brent, _minimize_scalar_bounded,
-                      _minimize_scalar_golden, MemoizeJac)
+                       _minimize_bfgs, _minimize_newtoncg,
+                       _minimize_scalar_brent, _minimize_scalar_bounded,
+                       _minimize_scalar_golden, MemoizeJac)
 from ._trustregion_dogleg import _minimize_dogleg
 from ._trustregion_ncg import _minimize_trust_ncg
+from ._trustregion_krylov import _minimize_trust_krylov
 from ._trustregion_exact import _minimize_trustregion_exact
 
 # constrained minimization
@@ -56,9 +57,13 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     Parameters
     ----------
     fun : callable
-        Objective function.
+        The objective function to be minimized. Must be in the form
+        ``f(x, *args)``. The optimizing argument, ``x``, is a 1-D array
+        of points, and ``args`` is a tuple of any additional fixed parameters
+        needed to completely specify the function.
     x0 : ndarray
-        Initial guess.
+        Initial guess. ``len(x0)`` is the dimensionality of the minimization
+        problem.
     args : tuple, optional
         Extra arguments passed to the objective function and its
         derivatives (Jacobian, Hessian).
@@ -76,7 +81,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
             - 'SLSQP'       :ref:`(see here) <optimize.minimize-slsqp>`
             - 'dogleg'      :ref:`(see here) <optimize.minimize-dogleg>`
             - 'trust-ncg'   :ref:`(see here) <optimize.minimize-trustncg>`
-            - 'trust-region-exact'   :ref:`(see here) <optimize.minimize-trustexact>`
+            - 'trust-exact' :ref:`(see here) <optimize.minimize-trustexact>`
+            - 'trust-krylov' :ref:`(see here) <optimize.minimize-trustkrylov>`
             - custom - a callable object (added in version 0.14.0),
               see below for description.
 
@@ -84,7 +90,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         depending if the problem has constraints or bounds.
     jac : bool or callable, optional
         Jacobian (gradient) of objective function. Only for CG, BFGS,
-        Newton-CG, L-BFGS-B, TNC, SLSQP, dogleg, trust-ncg.
+        Newton-CG, L-BFGS-B, TNC, SLSQP, dogleg, trust-ncg, trust-krylov,
+        trust-region-exact.
         If `jac` is a Boolean and is True, `fun` is assumed to return the
         gradient along with the objective function. If False, the
         gradient will be estimated numerically.
@@ -93,7 +100,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     hess, hessp : callable, optional
         Hessian (matrix of second-order derivatives) of objective function or
         Hessian of objective function times an arbitrary vector p.  Only for
-        Newton-CG, dogleg, trust-ncg.
+        Newton-CG, dogleg, trust-ncg, trust-krylov, trust-region-exact.
         Only one of `hessp` or `hess` needs to be given.  If `hess` is
         provided, then `hessp` will be ignored.  If neither `hess` nor
         `hessp` is provided, then the Hessian product will be approximated
@@ -205,7 +212,15 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     and either the Hessian or a function that computes the product of
     the Hessian with a given vector. Suitable for large-scale problems.
 
-    Method :ref:`trust-region-exact <optimize.minimize-trustexact>`
+    Method :ref:`trust-krylov <optimize.minimize-trustkrylov>` uses
+    the Newton GLTR trust-region algorithm [14]_, [15]_ for unconstrained
+    minimization. This algorithm requires the gradient
+    and either the Hessian or a function that computes the product of
+    the Hessian with a given vector. Suitable for large-scale problems.
+    On indefinite problems it requires usually less iterations than the
+    `trust-ncg` method and is recommended for medium and large-scale problems.
+
+    Method :ref:`trust-exact <optimize.minimize-trustexact>`
     is a trust-region method for unconstrained minimization in which
     quadratic subproblems are solved almost exactly [13]_. This
     algorithm requires the gradient and the Hessian (which is
@@ -303,6 +318,12 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
        Center -- Institute for Flight Mechanics, Koln, Germany.
     .. [13] Conn, A. R., Gould, N. I., and Toint, P. L.
        Trust region methods. 2000. Siam. pp. 169-200.
+    .. [14] F. Lenders, C. Kirches, A. Potschka: "trlib: A vector-free
+       implementation of the GLTR method for iterative solution of
+       the trust region problem", https://arxiv.org/abs/1611.04718
+    .. [15] N. Gould, S. Lucidi, M. Roma, P. Toint: "Solving the
+       Trust-Region Subproblem using the Lanczos Method",
+       SIAM J. Optim., 9(2), 504--525, (1999).
 
     Examples
     --------
@@ -326,9 +347,9 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     ...                options={'gtol': 1e-6, 'disp': True})
     Optimization terminated successfully.
              Current function value: 0.000000
-             Iterations: 33
-             Function evaluations: 35
-             Gradient evaluations: 35
+             Iterations: 26
+             Function evaluations: 31
+             Gradient evaluations: 31
     >>> res.x
     array([ 1.,  1.,  1.,  1.,  1.])
     >>> print(res.message)
@@ -389,34 +410,35 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         options = {}
     # check if optional parameters are supported by the selected method
     # - jac
-    if meth in ['nelder-mead', 'powell', 'cobyla'] and bool(jac):
+    if meth in ('nelder-mead', 'powell', 'cobyla') and bool(jac):
         warn('Method %s does not use gradient information (jac).' % method,
              RuntimeWarning)
     # - hess
-    if meth not in ('newton-cg', 'dogleg', 'trust-ncg',
-                    'trust-region-exact', '_custom') and hess is not None:
+    if meth not in ('newton-cg', 'dogleg', 'trust-ncg', 'trust-krylov',
+                    'trust-exact', '_custom') and hess is not None:
         warn('Method %s does not use Hessian information (hess).' % method,
              RuntimeWarning)
     # - hessp
-    if meth not in ('newton-cg', 'dogleg', 'trust-ncg', '_custom') and hessp is not None:
+    if meth not in ('newton-cg', 'dogleg', 'trust-ncg',
+                    'trust-krylov', '_custom') and hessp is not None:
         warn('Method %s does not use Hessian-vector product '
-                'information (hessp).' % method, RuntimeWarning)
+             'information (hessp).' % method, RuntimeWarning)
     # - constraints or bounds
-    if (meth in ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg', 'dogleg',
-                 'trust-ncg'] and (bounds is not None or np.any(constraints))):
+    if (meth in ('nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg', 'dogleg',
+                 'trust-ncg') and (bounds is not None or np.any(constraints))):
         warn('Method %s cannot handle constraints nor bounds.' % method,
              RuntimeWarning)
-    if meth in ['l-bfgs-b', 'tnc'] and np.any(constraints):
+    if meth in ('l-bfgs-b', 'tnc') and np.any(constraints):
         warn('Method %s cannot handle constraints.' % method,
              RuntimeWarning)
     if meth == 'cobyla' and bounds is not None:
         warn('Method %s cannot handle bounds.' % method,
              RuntimeWarning)
     # - callback
-    if (meth in ['cobyla'] and callback is not None):
+    if (meth in ('cobyla',) and callback is not None):
         warn('Method %s does not support callback.' % method, RuntimeWarning)
     # - return_all
-    if (meth in ['l-bfgs-b', 'tnc', 'cobyla', 'slsqp'] and
+    if (meth in ('l-bfgs-b', 'tnc', 'cobyla', 'slsqp') and
             options.get('return_all', False)):
         warn('Method %s does not support the return_all option.' % method,
              RuntimeWarning)
@@ -435,14 +457,14 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         if meth == 'nelder-mead':
             options.setdefault('xatol', tol)
             options.setdefault('fatol', tol)
-        if meth in ['newton-cg', 'powell', 'tnc']:
+        if meth in ('newton-cg', 'powell', 'tnc'):
             options.setdefault('xtol', tol)
-        if meth in ['powell', 'l-bfgs-b', 'tnc', 'slsqp']:
+        if meth in ('powell', 'l-bfgs-b', 'tnc', 'slsqp'):
             options.setdefault('ftol', tol)
-        if meth in ['bfgs', 'cg', 'l-bfgs-b', 'tnc', 'dogleg',
-                    'trust-ncg', 'trust-region-exact']:
+        if meth in ('bfgs', 'cg', 'l-bfgs-b', 'tnc', 'dogleg',
+                    'trust-ncg', 'trust-exact', 'trust-krylov'):
             options.setdefault('gtol', tol)
-        if meth in ['cobyla', '_custom']:
+        if meth in ('cobyla', '_custom'):
             options.setdefault('tol', tol)
 
     if meth == '_custom':
@@ -477,7 +499,10 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     elif meth == 'trust-ncg':
         return _minimize_trust_ncg(fun, x0, args, jac, hess, hessp,
                                    callback=callback, **options)
-    elif meth == 'trust-region-exact':
+    elif meth == 'trust-krylov':
+        return _minimize_trust_krylov(fun, x0, args, jac, hess, hessp,
+                                      callback=callback, **options)
+    elif meth == 'trust-exact':
         return _minimize_trustregion_exact(fun, x0, args, jac, hess,
                                            callback=callback, **options)
     else:

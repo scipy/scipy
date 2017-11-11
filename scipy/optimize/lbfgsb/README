@@ -9,7 +9,7 @@ form l<= x <= u.
 
 This is a Python wrapper (using F2PY) written by David M. Cooke
 <cookedm@physics.mcmaster.ca> and released as version 0.9 on April 9, 2004.
-The wrapper was slighly modified by Joonas Paalasmaa for the 3.0 version
+The wrapper was slightly modified by Joonas Paalasmaa for the 3.0 version
 in March 2012.
 
 License of L-BFGS-B (Fortran code)

@@ -12,9 +12,10 @@ else:
 
 import numpy as np
 
-from numpy.testing import (TestCase, assert_array_almost_equal,
-                           assert_array_equal, assert_equal, assert_,
-                           assert_raises, dec, run_module_suite)
+from numpy.testing import (assert_array_almost_equal,
+                           assert_array_equal, assert_equal, assert_)
+import pytest
+from pytest import raises as assert_raises
 
 from scipy.io.arff.arffread import loadarff
 from scipy.io.arff.arffread import read_header, parse_type, ParseArffError
@@ -22,9 +23,9 @@ from scipy.io.arff.arffread import read_header, parse_type, ParseArffError
 
 data_path = pjoin(os.path.dirname(__file__), 'data')
 
-test1 = os.path.join(data_path, 'test1.arff')
-test2 = os.path.join(data_path, 'test2.arff')
-test3 = os.path.join(data_path, 'test3.arff')
+test1 = pjoin(data_path, 'test1.arff')
+test2 = pjoin(data_path, 'test2.arff')
+test3 = pjoin(data_path, 'test3.arff')
 
 test4 = pjoin(data_path, 'test4.arff')
 test5 = pjoin(data_path, 'test5.arff')
@@ -43,7 +44,7 @@ expect_missing['yop'] = expect_missing_raw[:, 0]
 expect_missing['yap'] = expect_missing_raw[:, 1]
 
 
-class DataTest(TestCase):
+class TestData(object):
     def test1(self):
         # Parsing trivial file with nothing.
         self._test(test4)
@@ -74,15 +75,28 @@ class DataTest(TestCase):
         assert_(data1 == data2)
         assert_(repr(meta1) == repr(meta2))
 
+    @pytest.mark.skipif(sys.version_info < (3, 6),
+                        reason='Passing path-like objects to IO functions requires Python >= 3.6')
+    def test_path(self):
+        # Test reading from `pathlib.Path` object
+        from pathlib import Path
 
-class MissingDataTest(TestCase):
+        with open(test1) as f1:
+            data1, meta1 = loadarff(f1)
+
+        data2, meta2 = loadarff(Path(test1))
+
+        assert_(data1 == data2)
+        assert_(repr(meta1) == repr(meta2))
+
+class TestMissingData(object):
     def test_missing(self):
         data, meta = loadarff(missing)
         for i in ['yop', 'yap']:
             assert_array_almost_equal(data[i], expect_missing[i])
 
 
-class NoDataTest(TestCase):
+class TestNoData(object):
     def test_nodata(self):
         # The file nodata.arff has no data in the @DATA section.
         # Reading it should result in an array with length 0.
@@ -97,7 +111,7 @@ class NoDataTest(TestCase):
         assert_equal(data.size, 0)
 
 
-class HeaderTest(TestCase):
+class TestHeader(object):
     def test_type_parsing(self):
         # Test parsing type of attribute from their value.
         ofile = open(test2)
@@ -177,8 +191,8 @@ class HeaderTest(TestCase):
         assert_(attrs[1][1] == 'DATE "yy-MM-dd HH:mm:ss z"')
 
 
-class DateAttributeTest(TestCase):
-    def setUp(self):
+class TestDateAttribute(object):
+    def setup_method(self):
         self.data, self.meta = loadarff(test7)
 
     def test_year_attribute(self):
@@ -243,6 +257,3 @@ class DateAttributeTest(TestCase):
 
     def test_datetime_timezone(self):
         assert_raises(ValueError, loadarff, test8)
-
-if __name__ == "__main__":
-    run_module_suite()

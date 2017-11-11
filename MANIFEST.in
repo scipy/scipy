@@ -7,7 +7,7 @@ recursive-include scipy *
 # All documentation
 recursive-include doc *
 # Add build and testing tools
-include tox.ini
+include tox.ini pytest.ini
 recursive-include tools *
 # Cached Cython signatures
 include cythonize.dat

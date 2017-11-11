@@ -11,11 +11,12 @@ from glob import glob
 from contextlib import contextmanager
 
 import numpy as np
-from numpy.testing import (assert_, assert_allclose, assert_raises,
-    assert_equal, run_module_suite)
+from numpy.testing import assert_, assert_allclose, assert_equal
+from pytest import raises as assert_raises
 
 from scipy.io.netcdf import netcdf_file
 
+from scipy._lib._numpy_compat import suppress_warnings
 from scipy._lib._tmpdirs import in_tempdir
 
 TEST_DATA_PATH = pjoin(dirname(__file__), 'data')
@@ -102,7 +103,7 @@ def test_read_write_files():
         # mmap.  When n * n_bytes(var_type) is not divisible by 4, this
         # raised an error in pupynere 1.0.12 and scipy rev 5893, because
         # calculated vsize was rounding up in units of 4 - see
-        # http://www.unidata.ucar.edu/software/netcdf/docs/netcdf.html
+        # https://www.unidata.ucar.edu/software/netcdf/docs/user_guide.html
         with open('simple.nc', 'rb') as fobj:
             with netcdf_file(fobj) as f:
                 # by default, don't use mmap for file-like
@@ -178,15 +179,15 @@ def test_itemset_no_segfault_on_readonly():
     # Regression test for ticket #1202.
     # Open the test file in read-only mode.
 
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-
-        filename = pjoin(TEST_DATA_PATH, 'example_1.nc')
+    filename = pjoin(TEST_DATA_PATH, 'example_1.nc')
+    with suppress_warnings() as sup:
+        sup.filter(RuntimeWarning,
+                   "Cannot close a netcdf_file opened with mmap=True, when netcdf_variables or arrays referring to its data still exist")
         with netcdf_file(filename, 'r') as f:
             time_var = f.variables['time']
 
-        # time_var.assignValue(42) should raise a RuntimeError--not seg. fault!
-        assert_raises(RuntimeError, time_var.assignValue, 42)
+    # time_var.assignValue(42) should raise a RuntimeError--not seg. fault!
+    assert_raises(RuntimeError, time_var.assignValue, 42)
 
 
 def test_write_invalid_dtype():
@@ -265,10 +266,11 @@ def test_mmaps_segfault():
             return f.variables['lat'][:]
 
     # should not crash
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
+    with suppress_warnings() as sup:
+        sup.filter(RuntimeWarning,
+                   "Cannot close a netcdf_file opened with mmap=True, when netcdf_variables or arrays referring to its data still exist")
         x = doit()
-        x.sum()
+    x.sum()
 
 
 def test_zero_dimensional_var():
@@ -354,7 +356,7 @@ def test_append_recordDimension():
         with netcdf_file('withRecordDimension.nc') as f:
             with assert_raises(KeyError) as ar:            
                 f.variables['testData']._attributes['data']
-            ex = ar.exception
+            ex = ar.value
             assert_equal(ex.args[0], 'data')
 
 def test_maskandscale():
@@ -460,6 +462,3 @@ def test_read_withMaskAndScaleFalse():
         vardata = f.variables['var3_fillvalAndMissingValue'][:]
         assert_mask_matches(vardata, [False, False, False])
         assert_equal(vardata, [1, 2, 3])
-
-if __name__ == "__main__":
-    run_module_suite()

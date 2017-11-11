@@ -9,6 +9,8 @@ the Bellman-Ford algorithm, or Johnson's Algorithm.
 
 # Author: Jake Vanderplas  -- <vanderplas@astro.washington.edu>
 # License: BSD, (C) 2011
+from __future__ import absolute_import
+
 import warnings
 
 import numpy as np

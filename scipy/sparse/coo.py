@@ -15,7 +15,8 @@ from ._sparsetools import coo_tocsr, coo_todense, coo_matvec
 from .base import isspmatrix, SparseEfficiencyWarning, spmatrix
 from .data import _data_matrix, _minmax_mixin
 from .sputils import (upcast, upcast_char, to_native, isshape, getdtype,
-                      get_index_dtype, downcast_intp_index)
+                      get_index_dtype, downcast_intp_index, check_shape,
+                      check_reshape_kwargs)
 
 
 class coo_matrix(_data_matrix, _minmax_mixin):
@@ -87,12 +88,15 @@ class coo_matrix(_data_matrix, _minmax_mixin):
 
     Examples
     --------
+    
+    >>> # Constructing an empty matrix
     >>> from scipy.sparse import coo_matrix
     >>> coo_matrix((3, 4), dtype=np.int8).toarray()
     array([[0, 0, 0, 0],
            [0, 0, 0, 0],
            [0, 0, 0, 0]], dtype=int8)
 
+    >>> # Constructing a matrix using ijv format
     >>> row  = np.array([0, 3, 1, 0])
     >>> col  = np.array([0, 3, 1, 2])
     >>> data = np.array([4, 5, 7, 9])
@@ -102,11 +106,15 @@ class coo_matrix(_data_matrix, _minmax_mixin):
            [0, 0, 0, 0],
            [0, 0, 0, 5]])
 
-    >>> # example with duplicates
+    >>> # Constructing a matrix with duplicate indices
     >>> row  = np.array([0, 0, 1, 3, 1, 0, 0])
     >>> col  = np.array([0, 2, 1, 3, 1, 0, 0])
     >>> data = np.array([1, 1, 1, 1, 1, 1, 1])
-    >>> coo_matrix((data, (row, col)), shape=(4, 4)).toarray()
+    >>> coo = coo_matrix((data, (row, col)), shape=(4, 4))
+    >>> # Duplicate indices are maintained until implicitly or explicitly summed
+    >>> np.max(coo.data)
+    1
+    >>> coo.toarray()
     array([[3, 0, 1, 0],
            [0, 2, 0, 0],
            [0, 0, 0, 0],
@@ -121,7 +129,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
         if isinstance(arg1, tuple):
             if isshape(arg1):
                 M, N = arg1
-                self.shape = (M,N)
+                self._shape = check_shape((M, N))
                 idx_dtype = get_index_dtype(maxval=max(M, N))
                 self.row = np.array([], dtype=idx_dtype)
                 self.col = np.array([], dtype=idx_dtype)
@@ -139,11 +147,11 @@ class coo_matrix(_data_matrix, _minmax_mixin):
                                          'sized index arrays')
                     M = np.max(row) + 1
                     N = np.max(col) + 1
-                    self.shape = (M, N)
+                    self._shape = check_shape((M, N))
                 else:
                     # Use 2 steps to ensure shape has length 2.
                     M, N = shape
-                    self.shape = (M, N)
+                    self._shape = check_shape((M, N))
 
                 idx_dtype = get_index_dtype(maxval=max(self.shape))
                 self.row = np.array(row, copy=copy, dtype=idx_dtype)
@@ -157,13 +165,13 @@ class coo_matrix(_data_matrix, _minmax_mixin):
                     self.row = arg1.row.copy()
                     self.col = arg1.col.copy()
                     self.data = arg1.data.copy()
-                    self.shape = arg1.shape
+                    self._shape = check_shape(arg1.shape)
                 else:
                     coo = arg1.tocoo()
                     self.row = coo.row
                     self.col = coo.col
                     self.data = coo.data
-                    self.shape = coo.shape
+                    self._shape = check_shape(coo.shape)
                 self.has_canonical_format = False
             else:
                 #dense argument
@@ -172,7 +180,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
                 if M.ndim != 2:
                     raise TypeError('expected dimension <= 2 array or matrix')
                 else:
-                    self.shape = M.shape
+                    self._shape = check_shape(M.shape)
 
                 self.row, self.col = M.nonzero()
                 self.data = M[self.row, self.col]
@@ -182,6 +190,40 @@ class coo_matrix(_data_matrix, _minmax_mixin):
             self.data = self.data.astype(dtype, copy=False)
 
         self._check()
+
+    def reshape(self, *args, **kwargs):
+        shape = check_shape(args, self.shape)
+        order, copy = check_reshape_kwargs(kwargs)
+
+        # Return early if reshape is not required
+        if shape == self.shape:
+            if copy:
+                return self.copy()
+            else:
+                return self
+
+        nrows, ncols = self.shape
+
+        if order == 'C':
+            flat_indices = ncols * self.row + self.col
+            new_row, new_col = divmod(flat_indices, shape[1])
+        elif order == 'F':
+            flat_indices = self.row + nrows * self.col
+            new_col, new_row = divmod(flat_indices, shape[0])
+        else:
+            raise ValueError("'order' must be 'C' or 'F'")
+
+        # Handle copy here rather than passing on to the constructor so that no
+        # copy will be made of new_row and new_col regardless
+        if copy:
+            new_data = self.data.copy()
+        else:
+            new_data = self.data
+
+        return coo_matrix((new_data, (new_row, new_col)),
+                          shape=shape, copy=False)
+
+    reshape.__doc__ = spmatrix.reshape.__doc__
 
     def getnnz(self, axis=None):
         if axis is None:
@@ -246,6 +288,22 @@ class coo_matrix(_data_matrix, _minmax_mixin):
                           shape=(N, M), copy=copy)
 
     transpose.__doc__ = spmatrix.transpose.__doc__
+
+    def resize(self, *shape):
+        shape = check_shape(shape)
+        new_M, new_N = shape
+        M, N = self.shape
+
+        if new_M < M or new_N < N:
+            mask = np.logical_and(self.row < new_M, self.col < new_N)
+            if not mask.all():
+                self.row = self.row[mask]
+                self.col = self.col[mask]
+                self.data = self.data[mask]
+
+        self._shape = shape
+
+    resize.__doc__ = spmatrix.resize.__doc__
 
     def toarray(self, order=None, out=None):
         """See the docstring for `spmatrix.toarray`."""
@@ -378,15 +436,19 @@ class coo_matrix(_data_matrix, _minmax_mixin):
 
         self.sum_duplicates()
         dok = dok_matrix((self.shape), dtype=self.dtype)
-        dok.update(izip(izip(self.row,self.col),self.data))
+        dok._update(izip(izip(self.row,self.col),self.data))
 
         return dok
 
     todok.__doc__ = spmatrix.todok.__doc__
 
-    def diagonal(self):
-        diag = np.zeros(min(self.shape), dtype=self.dtype)
-        diag_mask = self.row == self.col
+    def diagonal(self, k=0):
+        rows, cols = self.shape
+        if k <= -rows or k >= cols:
+            raise ValueError("k exceeds matrix dimensions")
+        diag = np.zeros(min(rows + min(k, 0), cols - max(k, 0)),
+                        dtype=self.dtype)
+        diag_mask = (self.row + k) == self.col
 
         if self.has_canonical_format:
             row = self.row[diag_mask]
@@ -395,7 +457,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
             row, _, data = self._sum_duplicates(self.row[diag_mask],
                                                 self.col[diag_mask],
                                                 self.data[diag_mask])
-        diag[row] = data
+        diag[row + min(k, 0)] = data
 
         return diag
 

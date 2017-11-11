@@ -9,7 +9,9 @@ except ImportError:
 
 import numpy as np
 from numpy.testing import (assert_, assert_array_equal, assert_allclose,
-                           run_module_suite, assert_raises, assert_equal)
+                           assert_equal)
+from pytest import raises as assert_raises
+
 from scipy.sparse import coo_matrix
 from scipy.special import erf
 from scipy.integrate._bvp import (modify_mesh, estimate_fun_jac,
@@ -549,6 +551,3 @@ def test_verbose():
         if verbose >= 2:
             assert_("Max residual" in text, text)
 
-
-if __name__ == '__main__':
-    run_module_suite()

@@ -25,6 +25,7 @@ from .special_matrices import kron, block_diag
 
 __all__ = ['solve_sylvester',
            'solve_continuous_lyapunov', 'solve_discrete_lyapunov',
+           'solve_lyapunov',
            'solve_continuous_are', 'solve_discrete_are']
 
 
@@ -62,6 +63,22 @@ def solve_sylvester(a, b, q):
     ``*TRSYL`` from LAPACK directly.
 
     .. versionadded:: 0.11.0
+
+    Examples
+    --------
+    Given `a`, `b`, and `q` solve for `x`:
+
+    >>> from scipy import linalg
+    >>> a = np.array([[-3, -2, 0], [-1, -1, 3], [3, -5, -1]])
+    >>> b = np.array([[1]])
+    >>> q = np.array([[1],[2],[3]])
+    >>> x = linalg.solve_sylvester(a, b, q)
+    >>> x
+    array([[ 0.0625],
+           [-0.5625],
+           [ 0.6875]])
+    >>> np.allclose(a.dot(x) + x.dot(b), q)
+    True
 
     """
 
@@ -117,12 +134,26 @@ def solve_continuous_lyapunov(a, q):
 
     Notes
     -----
-    Because the continuous Lyapunov equation is just a special form of the
-    Sylvester equation, this solver relies entirely on solve_sylvester for a
-    solution.
+    The continuous Lyapunov equation is a special form of the Sylvester
+    equation, hence this solver relies on LAPACK routine ?TRSYL.
 
     .. versionadded:: 0.11.0
 
+    Examples
+    --------
+    Given `a` and `q` solve for `x`:
+
+    >>> from scipy import linalg
+    >>> a = np.array([[-3, -2, 0], [-1, -1, 0], [0, -5, -1]])
+    >>> b = np.array([2, 4, -1])
+    >>> q = np.eye(3)
+    >>> x = linalg.solve_continuous_lyapunov(a, q)
+    >>> x
+    array([[ -0.75  ,   0.875 ,  -3.75  ],
+           [  0.875 ,  -1.375 ,   5.3125],
+           [ -3.75  ,   5.3125, -27.0625]])
+    >>> np.allclose(a.dot(x) + x.dot(a.T), q)
+    True
     """
 
     a = np.atleast_2d(_asarray_validated(a, check_finite=True))
@@ -251,10 +282,24 @@ def solve_discrete_lyapunov(a, q, method=None):
     ----------
     .. [1] Hamilton, James D. Time Series Analysis, Princeton: Princeton
        University Press, 1994.  265.  Print.
-       http://www.scribd.com/doc/20577138/Hamilton-1994-Time-Series-Analysis
+       http://doc1.lbfl.li/aca/FLMF037168.pdf
     .. [2] Gajic, Z., and M.T.J. Qureshi. 2008.
        Lyapunov Matrix Equation in System Stability and Control.
        Dover Books on Engineering Series. Dover Publications.
+
+    Examples
+    --------
+    Given `a` and `q` solve for `x`:
+
+    >>> from scipy import linalg
+    >>> a = np.array([[0.2, 0.5],[0.7, -0.9]])
+    >>> q = np.eye(2)
+    >>> x = linalg.solve_discrete_lyapunov(a, q)
+    >>> x
+    array([[ 0.70872893,  1.43518822],
+           [ 1.43518822, -2.4266315 ]])
+    >>> np.allclose(a.dot(x).dot(a.T)-x, -q)
+    True
 
     """
     a = np.asarray(a)
@@ -377,6 +422,22 @@ def solve_continuous_are(a, b, q, r, e=None, s=None, balanced=True):
 
     .. [3] P. Benner, "Symplectic Balancing of Hamiltonian Matrices", 2001,
        SIAM J. Sci. Comput., 2001, Vol.22(5), DOI: 10.1137/S1064827500367993
+
+    Examples
+    --------
+    Given `a`, `b`, `q`, and `r` solve for `x`:
+
+    >>> from scipy import linalg
+    >>> a = np.array([[4, 3], [-4.5, -3.5]])
+    >>> b = np.array([[1], [-1]])
+    >>> q = np.array([[9, 6], [6, 4.]])
+    >>> r = 1
+    >>> x = linalg.solve_continuous_are(a, b, q, r)
+    >>> x
+    array([[ 21.72792206,  14.48528137],
+           [ 14.48528137,   9.65685425]])
+    >>> np.allclose(a.T.dot(x) + x.dot(a)-x.dot(b).dot(b.T).dot(x), -q)
+    True
 
     """
 
@@ -565,6 +626,23 @@ def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
 
     .. [3] P. Benner, "Symplectic Balancing of Hamiltonian Matrices", 2001,
        SIAM J. Sci. Comput., 2001, Vol.22(5), DOI: 10.1137/S1064827500367993
+
+    Examples
+    --------
+    Given `a`, `b`, `q`, and `r` solve for `x`:
+
+    >>> from scipy import linalg as la
+    >>> a = np.array([[0, 1], [0, -1]])
+    >>> b = np.array([[1, 0], [2, 1]])
+    >>> q = np.array([[-4, -4], [-4, 7]])
+    >>> r = np.array([[9, 3], [3, 1]])
+    >>> x = la.solve_discrete_are(a, b, q, r)
+    >>> x
+    array([[-4., -4.],
+           [-4.,  7.]])
+    >>> R = la.solve(r + b.T.dot(x).dot(b), b.T.dot(x).dot(a))
+    >>> np.allclose(a.T.dot(x).dot(a) - x - a.T.dot(x).dot(b).dot(R), -q)
+    True
 
     """
 

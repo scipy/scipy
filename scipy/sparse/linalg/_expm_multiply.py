@@ -602,13 +602,13 @@ def _expm_multiply_interval(A, B, start=None, stop=None,
         else:
             return _expm_multiply_interval_core_0(A, X,
                     h, mu, q, norm_info, tol, ell,n0)
-    elif q > s and not (q % s):
+    elif not (q % s):
         if status_only:
             return 1
         else:
             return _expm_multiply_interval_core_1(A, X,
                     h, mu, m_star, s, q, tol)
-    elif q > s and (q % s):
+    elif (q % s):
         if status_only:
             return 2
         else:

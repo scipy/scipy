@@ -7,10 +7,12 @@ Original C version by Damian Eads.
 Translated to Cython by David Warde-Farley, October 2009.
 """
 
+from __future__ import absolute_import
+
 cimport cython
 import numpy as np
 cimport numpy as np
-from cluster_blas cimport f_dgemm, f_sgemm
+from .cluster_blas cimport f_dgemm, f_sgemm
 
 from libc.math cimport sqrt
 
@@ -81,7 +83,7 @@ cdef int _vq(vq_type *obs, vq_type *code_book,
         low_dist[i] is the Euclidean distance from obs[i] to the corresponding
         centroid.
     """
-    # Naive algorithm is prefered when nfeat is small
+    # Naive algorithm is preferred when nfeat is small
     if nfeat < NFEATURES_CUTOFF:
         _vq_small_nf(obs, code_book, ncodes, nfeat, nobs, codes, low_dist)
         return 0
@@ -140,7 +142,7 @@ cdef void _vq_small_nf(vq_type *obs, vq_type *code_book,
                        int32_t *codes, vq_type *low_dist):
     """
     Vector quantization using naive algorithm.
-    This is prefered when nfeat is small.
+    This is preferred when nfeat is small.
     The parameters are the same as those of _vq.
     """
     # Temporary variables

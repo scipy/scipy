@@ -198,7 +198,7 @@ c  fetch a new row of matrix (by).
         do 310 j=1,ky2
           h(j) = by(n1,j)*pinv
  310    continue
-c  find the appropiate row of g.
+c  find the appropriate row of g.
         do 320 j=1,nk1x
           right(j) = 0.
  320    continue
@@ -209,7 +209,7 @@ c  fetch a new row of matrix (spy)
         do 340 j=1,ky1
           h(j) = spy(it,j)
  340    continue
-c  find the appropiate row of g.
+c  find the appropriate row of g.
         l = it
         do 350 j=1,nk1x
           right(j) = q(l)
@@ -223,7 +223,7 @@ c  rotate the new row of matrix (ay) into triangle.
           if(piv.eq.0.) go to 390
 c  calculate the parameters of the givens transformation.
           call fpgivs(piv,ay(irot,1),cos,sin)
-c  apply that transformation to the colums of matrix g.
+c  apply that transformation to the columns of matrix g.
           ic = irot
           do 370 j=1,nk1x
             call fprota(cos,sin,right(j),c(ic))
@@ -294,7 +294,7 @@ c  main loop for the different grid points.
           iz = iz+1
 c  evaluate s(x,y) at the current grid point by making the sum of the
 c  cross products of the non-zero b-splines at (x,y), multiplied with
-c  the appropiate b-spline coefficients.
+c  the appropriate b-spline coefficients.
           term = 0.
           k1 = numx*nk1y+numy
           do 520 l1=1,kx1

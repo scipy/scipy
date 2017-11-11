@@ -5,7 +5,8 @@ from __future__ import division, print_function, absolute_import
 import sys
 
 import numpy as np
-from numpy.testing import assert_array_almost_equal, dec, assert_
+from numpy.testing import assert_array_almost_equal, assert_
+import pytest
 
 from scipy import ndimage
 
@@ -46,7 +47,7 @@ def test_map_coordinates_dts():
             assert_array_almost_equal(these_data, out)
 
 
-@dec.knownfailureif(not sys.platform == 'darwin')
+@pytest.mark.xfail(not sys.platform == 'darwin', reason="runs only on darwin")
 def test_uint64_max():
     # Test interpolation respects uint64 max.  Reported to fail at least on
     # win32 (due to the 32 bit visual C compiler using signed int64 when

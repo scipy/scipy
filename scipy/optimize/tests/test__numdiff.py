@@ -4,8 +4,9 @@ import math
 from itertools import product
 
 import numpy as np
-from numpy.testing import (assert_raises, assert_allclose, assert_equal,
-                           assert_, run_module_suite)
+from numpy.testing import assert_allclose, assert_equal, assert_
+from pytest import raises as assert_raises
+
 from scipy.sparse import csr_matrix, csc_matrix, lil_matrix
 
 from scipy.optimize._numdiff import (
@@ -382,7 +383,7 @@ class TestApproxDerivativesDense(object):
 
 class TestApproxDerivativeSparse(object):
     # Example from Numerical Optimization 2nd edition, p. 198.
-    def __init__(self):
+    def setup_method(self):
         np.random.seed(0)
         self.n = 50
         self.lb = -0.1 * (1 + np.arange(self.n))
@@ -469,6 +470,3 @@ class TestApproxDerivativeSparse(object):
                                     bounds=(self.lb, self.ub))
         assert_(accuracy < 1e-9)
 
-
-if __name__ == '__main__':
-    run_module_suite()

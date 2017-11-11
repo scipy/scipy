@@ -8,9 +8,9 @@ from scipy.integrate import quad
 try:
     import ctypes
     import scipy.integrate._test_multivariate as clib_test
-    from scipy._lib import _test_ccallback_cython
+    from scipy._lib import _ccallback_c
 except ImportError:
-    _test_ccallback_cython = None
+    _ccallback_c = None
 
 try:
     from scipy import LowLevelCallable
@@ -89,7 +89,7 @@ class Quad(Benchmark):
         from math import sin
 
         self.f_python = lambda x: sin(x)
-        self.f_cython = from_cython(_test_ccallback_cython, "sine")
+        self.f_cython = from_cython(_ccallback_c, "sine")
 
         lib = ctypes.CDLL(clib_test.__file__)
 

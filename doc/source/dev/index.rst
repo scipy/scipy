@@ -17,3 +17,5 @@ SciPy Developer Guide
 .. include:: distributing.rst
 
 .. include:: releasing.rst
+
+.. include:: modules.rst

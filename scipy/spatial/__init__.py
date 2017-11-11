@@ -101,5 +101,7 @@ __all__ = [s for s in dir() if not s.startswith('_')]
 __all__ += ['distance']
 
 from . import distance
-from numpy.testing import Tester
-test = Tester().test
+
+from scipy._lib._testutils import PytestTester
+test = PytestTester(__name__)
+del PytestTester

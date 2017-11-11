@@ -45,7 +45,7 @@ import mmap as mm
 
 import numpy as np
 from numpy.compat import asbytes, asstr
-from numpy import fromstring, dtype, empty, array, asarray
+from numpy import frombuffer, dtype, empty, array, asarray
 from numpy import little_endian as LITTLE_ENDIAN
 from functools import reduce
 
@@ -114,7 +114,7 @@ class netcdf_file(object):
     version : {1, 2}, optional
         version of netcdf to read / write, where 1 means *Classic
         format* and 2 means *64-bit offset format*.  Default is 1.  See
-        `here <http://www.unidata.ucar.edu/software/netcdf/docs/netcdf/Which-Format.html>`__
+        `here <https://www.unidata.ucar.edu/software/netcdf/docs/netcdf_introduction.html#select_format>`__
         for more info.
     maskandscale : bool, optional
         Whether to automatically scale and/or mask data based on attributes.
@@ -129,7 +129,7 @@ class netcdf_file(object):
     NetCDF files are a self-describing binary data format. The file contains
     metadata that describes the dimensions and variables in the file. More
     details about NetCDF files can be found `here
-    <http://www.unidata.ucar.edu/software/netcdf/docs/netcdf.html>`__. There
+    <https://www.unidata.ucar.edu/software/netcdf/docs/user_guide.html>`__. There
     are three main sections to a NetCDF data structure:
 
     1. Dimensions
@@ -186,10 +186,10 @@ class netcdf_file(object):
     >>> from scipy.io import netcdf
     >>> f = netcdf.netcdf_file('simple.nc', 'r')
     >>> print(f.history)
-    Created for a test
+    b'Created for a test'
     >>> time = f.variables['time']
     >>> print(time.units)
-    days since 2008-01-01
+    b'days since 2008-01-01'
     >>> print(time.shape)
     (10,)
     >>> print(time[-1])
@@ -215,7 +215,7 @@ class netcdf_file(object):
     >>> from scipy.io import netcdf
     >>> with netcdf.netcdf_file('simple.nc', 'r') as f:
     ...     print(f.history)
-    Created for a test
+    b'Created for a test'
 
     """
     def __init__(self, filename, mode='r', mmap=None, version=1,
@@ -276,7 +276,7 @@ class netcdf_file(object):
 
     def close(self):
         """Closes the NetCDF file."""
-        if not self.fp.closed:
+        if hasattr(self, 'fp') and not self.fp.closed:
             try:
                 self.flush()
             finally:
@@ -511,8 +511,8 @@ class netcdf_file(object):
             # Handle rec vars with shape[0] < nrecs.
             if self._recs > len(var.data):
                 shape = (self._recs,) + var.data.shape[1:]
-                # Resize in-place does not always work since 
-                # the array might not be single-segment                              
+                # Resize in-place does not always work since
+                # the array might not be single-segment
                 try:
                     var.data.resize(shape)
                 except ValueError:
@@ -584,7 +584,7 @@ class netcdf_file(object):
         if not magic == b'CDF':
             raise TypeError("Error: %s is not a valid NetCDF 3 file" %
                             self.filename)
-        self.__dict__['version_byte'] = fromstring(self.fp.read(1), '>b')[0]
+        self.__dict__['version_byte'] = frombuffer(self.fp.read(1), '>b')[0]
 
         # Read file headers and set data.
         self._read_numrecs()
@@ -635,7 +635,7 @@ class netcdf_file(object):
         for var in range(count):
             (name, dimensions, shape, attributes,
              typecode, size, dtype_, begin_, vsize) = self._read_var()
-            # http://www.unidata.ucar.edu/software/netcdf/docs/netcdf.html
+            # https://www.unidata.ucar.edu/software/netcdf/docs/user_guide.html
             # Note that vsize is the product of the dimension lengths
             # (omitting the record dimension) and the number of bytes
             # per value (determined from the type), increased to the
@@ -678,7 +678,7 @@ class netcdf_file(object):
                 else:
                     pos = self.fp.tell()
                     self.fp.seek(begin_)
-                    data = fromstring(self.fp.read(a_size), dtype=dtype_)
+                    data = frombuffer(self.fp.read(a_size), dtype=dtype_)
                     data.shape = shape
                     self.fp.seek(pos)
 
@@ -700,7 +700,7 @@ class netcdf_file(object):
             else:
                 pos = self.fp.tell()
                 self.fp.seek(begin)
-                rec_array = fromstring(self.fp.read(self._recs*self._recsize), dtype=dtypes)
+                rec_array = frombuffer(self.fp.read(self._recs*self._recsize), dtype=dtypes)
                 rec_array.shape = (self._recs,)
                 self.fp.seek(pos)
 
@@ -743,7 +743,7 @@ class netcdf_file(object):
         self.fp.read(-count % 4)  # read padding
 
         if typecode is not 'c':
-            values = fromstring(values, dtype='>%s' % typecode)
+            values = frombuffer(values, dtype='>%s' % typecode)
             if values.shape == (1,):
                 values = values[0]
         else:
@@ -761,14 +761,14 @@ class netcdf_file(object):
     _pack_int32 = _pack_int
 
     def _unpack_int(self):
-        return int(fromstring(self.fp.read(4), '>i')[0])
+        return int(frombuffer(self.fp.read(4), '>i')[0])
     _unpack_int32 = _unpack_int
 
     def _pack_int64(self, value):
         self.fp.write(array(value, '>q').tostring())
 
     def _unpack_int64(self):
-        return fromstring(self.fp.read(8), '>q')[0]
+        return frombuffer(self.fp.read(8), '>q')[0]
 
     def _pack_string(self, s):
         count = len(s)
@@ -987,8 +987,8 @@ class netcdf_variable(object):
                 recs = rec_index + 1
             if recs > len(self.data):
                 shape = (recs,) + self._shape[1:]
-                # Resize in-place does not always work since 
-                # the array might not be single-segment                              
+                # Resize in-place does not always work since
+                # the array might not be single-segment
                 try:
                     self.data.resize(shape)
                 except ValueError:

@@ -210,7 +210,7 @@ def identity(n, dtype='d', format=None):
            [ 0.,  1.,  0.],
            [ 0.,  0.,  1.]])
     >>> identity(3, dtype='int8', format='dia')
-    <3x3 sparse matrix of type '<type 'numpy.int8'>'
+    <3x3 sparse matrix of type '<class 'numpy.int8'>'
             with 3 stored elements (1 diagonals) in DIAgonal format>
 
     """
@@ -244,7 +244,7 @@ def eye(m, n=None, k=0, dtype=float, format=None):
            [ 0.,  1.,  0.],
            [ 0.,  0.,  1.]])
     >>> sparse.eye(3, dtype=np.int8)
-    <3x3 sparse matrix of type '<type 'numpy.int8'>'
+    <3x3 sparse matrix of type '<class 'numpy.int8'>'
         with 3 stored elements (1 diagonals) in DIAgonal format>
 
     """
@@ -404,19 +404,25 @@ def _compressed_sparse_stack(blocks, axis):
     """
     other_axis = 1 if axis == 0 else 0
     data = np.concatenate([b.data for b in blocks])
-    indices = np.concatenate([b.indices for b in blocks])
-    indptr = []
-    last_indptr = 0
     constant_dim = blocks[0].shape[other_axis]
+    idx_dtype = get_index_dtype(arrays=[b.indptr for b in blocks],
+                                maxval=max(data.size, constant_dim))
+    indices = np.empty(data.size, dtype=idx_dtype)
+    indptr = np.empty(sum(b.shape[axis] for b in blocks) + 1, dtype=idx_dtype)
+    last_indptr = idx_dtype(0)
     sum_dim = 0
+    sum_indices = 0
     for b in blocks:
         if b.shape[other_axis] != constant_dim:
             raise ValueError('incompatible dimensions for axis %d' % other_axis)
+        indices[sum_indices:sum_indices+b.indices.size] = b.indices
+        sum_indices += b.indices.size
+        idxs = slice(sum_dim, sum_dim + b.shape[axis])
+        indptr[idxs] = b.indptr[:-1]
+        indptr[idxs] += last_indptr
         sum_dim += b.shape[axis]
-        indptr.append(b.indptr[:-1] + last_indptr)
         last_indptr += b.indptr[-1]
-    indptr.append([last_indptr])
-    indptr = np.concatenate(indptr)
+    indptr[-1] = last_indptr
     if axis == 0:
         return csr_matrix((data, indices, indptr),
                           shape=(sum_dim, constant_dim))
@@ -809,7 +815,7 @@ def rand(m, n, density=0.01, format="coo", dtype=None, random_state=None):
     >>> from scipy.sparse import rand
     >>> matrix = rand(3, 4, density=0.25, format="csr", random_state=42)
     >>> matrix
-    <3x4 sparse matrix of type '<type 'numpy.float64'>'
+    <3x4 sparse matrix of type '<class 'numpy.float64'>'
        with 3 stored elements in Compressed Sparse Row format>
     >>> matrix.todense()
     matrix([[ 0.        ,  0.59685016,  0.779691  ,  0.        ],

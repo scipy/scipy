@@ -2,6 +2,8 @@
 
 '''
 
+from __future__ import absolute_import
+
 '''
 Programmer's notes
 ------------------
@@ -59,7 +61,7 @@ DEF _N_MIS = 20
 # max number of integer indices of matlab class types (mxINT8_CLASS etc)
 DEF _N_MXS = 20
 
-cimport streams
+from . cimport streams
 import scipy.io.matlab.miobase as miob
 from scipy.io.matlab.mio_utils import squeeze_element, chars_to_strings
 import scipy.io.matlab.mio5_params as mio5p

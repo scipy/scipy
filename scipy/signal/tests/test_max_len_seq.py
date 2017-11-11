@@ -1,14 +1,15 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import (TestCase, assert_raises, run_module_suite,
-                           assert_allclose, assert_array_equal)
+from numpy.testing import assert_allclose, assert_array_equal
+from pytest import raises as assert_raises
+
 from numpy.fft import fft, ifft
 
 from scipy.signal import max_len_seq
 
 
-class TestMLS(TestCase):
+class TestMLS(object):
 
     def test_mls_inputs(self):
         # can't all be zero state
@@ -64,6 +65,3 @@ class TestMLS(TestCase):
                         new_m = np.concatenate((m1, m2, m3))
                         assert_array_equal(orig_m, new_m)
 
-
-if __name__ == "__main__":
-    run_module_suite()
