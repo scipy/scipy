@@ -106,7 +106,7 @@ NI_ObjectToOptionalInputArray(PyObject *object, PyArrayObject **array)
 static int
 NI_ObjectToOutputArray(PyObject *object, PyArrayObject **array)
 {
-    #if NPY_API_VERSION >= 0x0000000b
+    #if NPY_API_VERSION >= 0x0000000c
         int flags = NPY_ARRAY_BEHAVED_NS | NPY_ARRAY_WRITEBACKIFCOPY;
     #else
         int flags = NPY_ARRAY_BEHAVED_NS | NPY_ARRAY_UPDATEIFCOPY;
@@ -225,7 +225,7 @@ static PyObject *Py_Correlate(PyObject *obj, PyObject *args)
 
     NI_Correlate(input, weights, output, (NI_ExtendMode)mode, cval,
                  origin.ptr);
-    #if NPY_API_VERSION >= 0x0000000b
+    #if NPY_API_VERSION >= 0x0000000c
         PyArray_ResolveWritebackIfCopy(output);
     #endif
 
@@ -253,7 +253,7 @@ static PyObject *Py_UniformFilter1D(PyObject *obj, PyObject *args)
 
     NI_UniformFilter1D(input, filter_size, axis, output, (NI_ExtendMode)mode,
                        cval, origin);
-    #if NPY_API_VERSION >= 0x0000000b
+    #if NPY_API_VERSION >= 0x0000000c
         PyArray_ResolveWritebackIfCopy(output);
     #endif
 
@@ -279,7 +279,7 @@ static PyObject *Py_MinOrMaxFilter1D(PyObject *obj, PyObject *args)
 
     NI_MinOrMaxFilter1D(input, filter_size, axis, output, (NI_ExtendMode)mode,
                         cval, origin, minimum);
-    #if NPY_API_VERSION >= 0x0000000b
+    #if NPY_API_VERSION >= 0x0000000c
         PyArray_ResolveWritebackIfCopy(output);
     #endif
 
@@ -313,7 +313,7 @@ static PyObject *Py_MinOrMaxFilter(PyObject *obj, PyObject *args)
 
     NI_MinOrMaxFilter(input, footprint, structure, output, (NI_ExtendMode)mode,
                       cval, origin.ptr, minimum);
-    #if NPY_API_VERSION >= 0x0000000b
+    #if NPY_API_VERSION >= 0x0000000c
         PyArray_ResolveWritebackIfCopy(output);
     #endif
 
@@ -347,7 +347,7 @@ static PyObject *Py_RankFilter(PyObject *obj, PyObject *args)
 
     NI_RankFilter(input, rank, footprint, output, (NI_ExtendMode)mode, cval,
                   origin.ptr);
-    #if NPY_API_VERSION >= 0x0000000b
+    #if NPY_API_VERSION >= 0x0000000c
         PyArray_ResolveWritebackIfCopy(output);
     #endif
 
@@ -475,7 +475,7 @@ static PyObject *Py_GenericFilter1D(PyObject *obj, PyObject *args)
 
     NI_GenericFilter1D(input, func, data, filter_size, axis, output,
                        (NI_ExtendMode)mode, cval, origin);
-    #if NPY_API_VERSION >= 0x0000000b
+    #if NPY_API_VERSION >= 0x0000000c
         PyArray_ResolveWritebackIfCopy(output);
     #endif
 
@@ -602,7 +602,7 @@ static PyObject *Py_GenericFilter(PyObject *obj, PyObject *args)
 
     NI_GenericFilter(input, func, data, footprint, output, (NI_ExtendMode)mode,
                      cval, origin.ptr);
-    #if NPY_API_VERSION >= 0x0000000b
+    #if NPY_API_VERSION >= 0x0000000c
         PyArray_ResolveWritebackIfCopy(output);
     #endif
 
@@ -632,7 +632,7 @@ static PyObject *Py_FourierFilter(PyObject *obj, PyObject *args)
         goto exit;
 
     NI_FourierFilter(input, parameters, n, axis, output, filter_type);
-    #if NPY_API_VERSION >= 0x0000000b
+    #if NPY_API_VERSION >= 0x0000000c
         PyArray_ResolveWritebackIfCopy(output);
     #endif
 
@@ -657,7 +657,7 @@ static PyObject *Py_FourierShift(PyObject *obj, PyObject *args)
         goto exit;
 
     NI_FourierShift(input, shifts, n, axis, output);
-    #if NPY_API_VERSION >= 0x0000000b
+    #if NPY_API_VERSION >= 0x0000000c
         PyArray_ResolveWritebackIfCopy(output);
     #endif
 
@@ -680,7 +680,7 @@ static PyObject *Py_SplineFilter1D(PyObject *obj, PyObject *args)
         goto exit;
 
     NI_SplineFilter1D(input, order, axis, output);
-    #if NPY_API_VERSION >= 0x0000000b
+    #if NPY_API_VERSION >= 0x0000000c
         PyArray_ResolveWritebackIfCopy(output);
     #endif
 
@@ -815,7 +815,7 @@ static PyObject *Py_GeometricTransform(PyObject *obj, PyObject *args)
 
     NI_GeometricTransform(input, func, data, matrix, shift, coordinates,
                           output, order, (NI_ExtendMode)mode, cval);
-    #if NPY_API_VERSION >= 0x0000000b
+    #if NPY_API_VERSION >= 0x0000000c
         PyArray_ResolveWritebackIfCopy(output);
     #endif
 
@@ -847,7 +847,7 @@ static PyObject *Py_ZoomShift(PyObject *obj, PyObject *args)
         goto exit;
 
     NI_ZoomShift(input, zoom, shift, output, order, (NI_ExtendMode)mode, cval);
-    #if NPY_API_VERSION >= 0x0000000b
+    #if NPY_API_VERSION >= 0x0000000c
         PyArray_ResolveWritebackIfCopy(output);
     #endif
 
@@ -961,7 +961,7 @@ static PyObject *Py_WatershedIFT(PyObject *obj, PyObject *args)
         goto exit;
 
     NI_WatershedIFT(input, markers, strct, output);
-    #if NPY_API_VERSION >= 0x0000000b
+    #if NPY_API_VERSION >= 0x0000000c
         PyArray_ResolveWritebackIfCopy(output);
     #endif
 
@@ -989,7 +989,7 @@ static PyObject *Py_DistanceTransformBruteForce(PyObject *obj,
         goto exit;
 
     NI_DistanceTransformBruteForce(input, metric, sampling, output, features);
-    #if NPY_API_VERSION >= 0x0000000b
+    #if NPY_API_VERSION >= 0x0000000c
         PyArray_ResolveWritebackIfCopy(output);
     #endif
 
@@ -1083,7 +1083,7 @@ static PyObject *Py_BinaryErosion(PyObject *obj, PyObject *args)
     if (return_coordinates) {
         cobj = NpyCapsule_FromVoidPtr(coordinate_list, _FreeCoordinateList);
     }
-    #if NPY_API_VERSION >= 0x0000000b
+    #if NPY_API_VERSION >= 0x0000000c
         PyArray_ResolveWritebackIfCopy(output);
     #endif
 
