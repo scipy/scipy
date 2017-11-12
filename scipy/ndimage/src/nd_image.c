@@ -121,7 +121,7 @@ NI_ObjectToOutputArray(PyObject *object, PyArrayObject **array)
      * will create a new aligned, native byte order array, and copy the
      * contents of object into it. For an output array, the copy is
      * unnecessary, so this could be optimized. It is very easy to not
-     * do NPY_ARRAY_UPDATEIFCOPY right, so we let NumPy do it for us
+     * do NPY_WRITEBACKIFCOPY right, so we let NumPy do it for us
      * and pay the performance price.
      */
     *array = (PyArrayObject *)PyArray_CheckFromAny(object, NULL, 0, 0, flags,

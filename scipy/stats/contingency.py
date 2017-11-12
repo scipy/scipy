@@ -6,10 +6,11 @@ from __future__ import division, print_function, absolute_import
 
 from functools import reduce
 import numpy as np
-from .stats import power_divergence
+from .stats import power_divergence, chisquare
+import math
+from warnings import warn
 
-
-__all__ = ['margins', 'expected_freq', 'chi2_contingency']
+__all__ = ['margins', 'expected_freq', 'chi2_contingency', 'association_test']
 
 
 def margins(a):
@@ -30,6 +31,7 @@ def margins(a):
 
     Examples
     --------
+    >>> from scipy.stats import margins
     >>> a = np.arange(12).reshape(2, 6)
     >>> a
     array([[ 0,  1,  2,  3,  4,  5],
@@ -271,3 +273,254 @@ def chi2_contingency(observed, correction=True, lambda_=None):
                                    lambda_=lambda_)
 
     return chi2, p, dof, expected
+
+
+def _reshape_array(arr):
+    """Converts Nd array to 2d array.
+
+    Parameters
+    ----------
+
+    arr : array_like
+        Observed values in n-way array
+
+    Returns
+    -------
+    arrx : array_like 
+        Observed values in reshaped to n by n array.
+    nrows : int
+        Number of rows in reshaped array.
+    ncols : int
+        Number of columns in reshaped array.
+
+    Notes
+    -----
+    Required if the array has more that 2 dimensions in order to 
+    calculate the number of rows and columns
+    """
+    arr = np.array(arr)
+    shape = arr.shape
+    if len(shape) > 2:
+        if shape[0] == 1:
+            nrows = shape[1]
+            ncols = np.prod([i for i in shape[2:]])
+        elif shape[0] == 0:
+            raise IndexError("Invalid Array Shape: Empty Array Found")
+        else:
+            nrows = shape[0]
+            ncols = np.prod([i for i in shape[1:]])
+        arrx = arr.reshape(nrows, ncols)
+        return arrx, nrows, ncols
+
+    elif len(shape) == 2:
+        nrows = shape[0]
+        ncols = shape[1]
+        arrx = arr
+        return arrx, nrows, ncols
+
+    else:
+        raise IndexError("Invalid Array Shape: Vectors or 1D arrays are not supported")
+
+
+def _association_bias_correction(phi_squared, n_rows, n_cols, n_obs):
+    """Corrects bias in estimated value of phi squared derived from nxn contingency 
+    tables.
+
+    Parameters
+    ----------
+    phi_squared : float
+        Empirical Phi Squared Value
+    n_rows : int
+        Unadjusted number of rows
+    n_cols : int
+        Unadjusted number of columns
+    n_obs : int
+        Total number of observations
+    
+    Returns
+    -------
+    adj_phisq : float
+        Unbiased Phi Squared value
+    nrows_hat : float
+        Unbiased number of rows
+    ncols_hat : float
+        Unbiased number of columns
+
+
+    References
+    ----------
+    .. [1] Bergsma, Wicher, "A bias-correction for Cramer's V and Tschuprow's T", 
+           London School of Econ. and Pol. Sci., pp. 2-4. http://stats.lse.ac.uk/bergsma/pdf/cramerV3.pdf
+    .. [2] https://en.wikipedia.org/wiki/Cramer's_V
+    
+
+    Notes
+    ------
+    Improves accuracy of estimators with tables > 2x2 and smaller sample sizes [1]
+    
+    Cramer's V can be a heavily biased estimator of its population counterpart 
+    and will tend to overestimate the strength of association. The adjusted statistic
+    estimates the same population quantity as the original statistic but with typically 
+    much smaller mean squared error. [2]
+    """
+    phi_squared = phi_squared - (((n_rows - 1) * (n_cols - 1)) / (n_obs - 1))
+    adj_phisq = max(0., phi_squared)
+    nrows_hat = float(n_rows - (((n_rows - 1) ** 2) / (n_obs - 1)))
+    ncols_hat = float(n_cols - (((n_cols - 1) ** 2) / (n_obs - 1)))
+    return adj_phisq, nrows_hat, ncols_hat
+
+
+def association_test(stat, observed, chi2_stat=None, correct_bias=True):
+    """Calculates degree of association between variables that are nominal or greater. Allows for 
+    specification of one of three related methods, Tschuprow's T, Cramer's V, and phi.
+
+    Parameters
+    ----------
+    stat : {"V", "T", "phi"}
+        The association test statistic. 
+    observed : iterable object
+        The contingency table. 
+    chi2_stat : float or None, optional (default = None)
+        The chi squared statistic. If equal to None, chi squared value will be automatically calculated using
+        scipy.contingency.chi2_contingency() method.
+    correct_bias : boolean, optional (default = True)
+        If True, bias correction will be applied to phi as per Bergsma (2013). 
+    
+    Returns
+    -------
+    value : float
+        Value of the test statistic
+        
+
+
+    References
+    ----------
+    .. [1] "Tschuprow's T",
+           https://en.wikipedia.org/wiki/Tschuprow's_T
+    .. [2] Bergsma, Wicher, "A bias-correction for Cramer's V and Tschuprow's T", 
+           London School of Econ. and Pol. Sci., pp. 5-7. 
+           http://stats.lse.ac.uk/bergsma/pdf/cramerV3.pdf
+    .. [3] Tschuprow, A. A. (1939) Principles of the Mathematical Theory of Correlation; 
+           translated by M. Kantorowitsch. W. Hodge & Co.
+    .. [4] "Cramer's V", https://en.wikipedia.org/wiki/Cramer's_V
+    .. [5] "Nominal Association: Phi and Cramer's V",
+           http://www.people.vcu.edu/~pdattalo/702SuppRead/MeasAssoc/NominalAssoc.html
+
+
+    Examples
+    --------
+    
+    2-way Example
+    >>> from scipy.stats import association_test
+    >>> obs = [[100, 150], [203, 322], [42, 7], [32, 21]]
+    
+    Cramer's V with bias correction
+    >>> association_test(stat="V", observed=obs)
+    0.46927187061981274
+    
+    Cramer's V without bias correction
+    >>> association_test(stat="V", observed=obs, correct_bias=False)
+    0.4726408338900912
+    
+    Tschuprow's T with bias correction
+    >>> association_test(stat="T", observed=obs)
+    0.35677355915423664
+    
+    Tschuprow's T without bias correction
+    >>> association_test(stat="T", observed=obs, correct_bias=False)
+    0.3591293720858179
+    
+    Phi with bias correction
+    >>> association_test(stat="phi", observed=obs)
+    0.46900394489393604
+    
+    Phi without bias correction
+    >>> association_test(stat="phi", observed=obs, correct_bias=False)
+    0.4726408338900912
+    
+    4-way Example
+    
+    >>> obs = [[[[56, 23],
+    ...          [21, 45]],
+    ...         [[13, 16],
+    ...          [76, 99]],
+    ...         [[21, 22],
+    ...          [41, 44]]]]
+    
+    Cramer's V with bias correction
+    >>> association_test(stat="V", observed=obs)
+    0.17427841264890478
+    
+    Cramer's V without bias correction
+    >>> association_test(stat="V", observed=obs, correct_bias=False)
+    0.1911749686107999
+    
+    Tschuprow's T with bias correction
+    >>> association_test(stat="T", observed=obs)
+    0.15756149073389059
+    
+    Tschuprow's T without bias correction
+    >>> association_test(stat="T", observed=obs, correct_bias=False)
+    0.172746084676768
+    
+    Phi with bias correction
+    >>> association_test(stat="phi", observed=obs)
+    0.24594856216264802
+    
+    Phi without bias correction
+    >>> association_test(stat="phi", observed=obs, correct_bias=False)
+    0.27036223339564397
+
+    Notes
+    ------
+    Cramer's V and Tschuprow's T measure degree to which two variables are related, or the level of 
+    their association. This differs from correlation, although many often mistakenly consider them equivalent.
+    Correlation measures in what way two variables are related, whereas, association measures
+    how related the variables are. As such, association does not subsume independent variables, and is 
+    rather a test of independence. Where a value of 1.0 = perfect association or dependent variables, and 
+    0.0 = no association or entirely independent variables.
+    
+    Both the Cramer's V and Tschuprow's T are extensions of the phi coefficient. Moreover, due 
+    to the close relationship between the Cramer's V and Tschuprow's T the returned values can often
+    be similar or even equivalent. They are likely to diverge more as the array shape diverges from a 2x2.
+    As is seen in the examples above. 
+    
+    """
+    arr, n_rows, n_cols = _reshape_array(arr=observed)
+    flat_array = arr.flatten()
+
+    if len([i for i in flat_array if type(i) == np.float64]) > 0:
+        raise TypeError("Array must be counts not frequencies.")
+    elif len([i for i in flat_array if i < 5]) > 0:
+        warn("The Chi-Squared Statistic is invalid if any counts are < 5")
+    else:
+        pass
+
+    n_obs = flat_array.sum(0, dtype=np.int64)
+
+    if chi2_stat is None:
+        phi2 = float(tuple(chisquare(f_obs=arr))[0][0]) / n_obs
+    elif type(chi2_stat) is float or type(chi2_stat) is int:
+        phi2 = float(chi2_stat) / n_obs
+    else:
+        raise TypeError("Invalid chi2_stat value")
+
+    if correct_bias is True:
+        phi_sq, nrows, ncols = _association_bias_correction(phi_squared=phi2, n_rows=n_rows, n_cols=n_cols, n_obs=n_obs)
+    elif correct_bias is False:
+        phi_sq = phi2
+        nrows = n_rows
+        ncols = n_cols
+    else:
+        raise TypeError("invalid argument type: 'correct_bias' must be boolean")
+
+    if stat.lower() == "v":
+        value = math.sqrt(phi_sq / min(ncols - 1, nrows - 1))
+    elif stat.lower() == "t":
+        value = math.sqrt(phi_sq / math.sqrt((nrows - 1) * (ncols - 1)))
+    elif stat.lower() == "phi":
+        value = math.sqrt(phi_sq)
+    else:
+        raise ValueError("Invalid argument value: 'stat' must be t, v or phi")
+
+    return value
