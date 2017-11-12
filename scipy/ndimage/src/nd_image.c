@@ -107,9 +107,9 @@ static int
 NI_ObjectToOutputArray(PyObject *object, PyArrayObject **array)
 {
     #if NPY_API_VERSION >= 0x0000000b
-        int flags = NPY_ARRAY_BEHAVED_NS | NPY_ARRAY_UPDATEIFCOPY;
-    #else
         int flags = NPY_ARRAY_BEHAVED_NS | NPY_ARRAY_WRITEBACKIFCOPY;
+    #else
+        int flags = NPY_ARRAY_BEHAVED_NS | NPY_ARRAY_UPDATEIFCOPY;
     #endif
     /*
      * This would also be caught by the PyArray_CheckFromAny call, but
