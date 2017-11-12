@@ -3395,16 +3395,24 @@ add_newdoc("scipy.special", "hyp2f1",
     Here :math:`(\cdot)_n` is the Pochhammer symbol; see `poch`. When
     :math:`n` is an integer the result is a polynomial of degree :math:`n`.
 
-    The implementation for complex values of ``z`` is described in [1]_.
+    For most complex values of ``z``, the implementation follows the method described in [1]_. 
+    However, in the region given by
+    
+    .. math::
+
+      \Re(z)>0, \ 0.9<|z|<1.1, \ |z-1|>0.75,
+    
+    where the transformation methods used in [1]_ are not effective, the analytic continuation series given in [2]_ is used to evaluate the hypergeometric function.
 
     References
     ----------
     .. [1] S. Zhang and J.M. Jin, "Computation of Special Functions", Wiley 1996
-    .. [2] Cephes Mathematical Functions Library,
+    .. [2] W. Buhring, "An Analytic Continuation of the Hypergeometric Series",
+            SIAM J. Math. Anal., Vol. 18, No. 3, May 1987
+    .. [3] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/index.html
-    .. [3] NIST Digital Library of Mathematical Functions
+    .. [4] NIST Digital Library of Mathematical Functions
            http://dlmf.nist.gov/
-
     """)
 
 add_newdoc("scipy.special", "hyp3f0",
