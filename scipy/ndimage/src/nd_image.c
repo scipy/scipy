@@ -1089,6 +1089,10 @@ static PyObject *Py_BinaryErosion(PyObject *obj, PyObject *args)
     if (return_coordinates) {
         cobj = NpyCapsule_FromVoidPtr(coordinate_list, _FreeCoordinateList);
     }
+    #if NPY_API_VERSION >= 0x0000000b
+        PyArray_ResolveWritebackIfCopy(output);
+    #endif
+
 exit:
     Py_XDECREF(input);
     Py_XDECREF(strct);
