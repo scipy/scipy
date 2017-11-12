@@ -6191,7 +6191,10 @@ C       ======================================================
 C
         IMPLICIT DOUBLE PRECISION (A-H,O-Y)
         IMPLICIT COMPLEX *16 (Z)
-        LOGICAL L0,L1,L2,L3,L4,L5,L6
+        DIMENSION ZEA(3), ZEB(3), ZFA(3), ZFB(3)
+        LOGICAL L0,L1,L2,L3,L4,L5,L6,L8
+        PARAMETER (PI=3.141592653589793D0)
+        PARAMETER (EL=.5772156649015329D0)
         X=DBLE(Z)
         Y=DIMAG(Z)
         EPS=1.0D-15
@@ -6207,8 +6210,6 @@ C
         BB=B
         A0=CDABS(Z)
         IF (A0.GT.0.95D0) EPS=1.0D-8
-        PI=3.141592653589793D0
-        EL=.5772156649015329D0
         IF (L0.OR.L1) THEN
            ISFER=3
            RETURN
@@ -6245,7 +6246,7 @@ C
               ZR=ZR*(C-A+K-1.0D0)*(C-B+K-1.0D0)/(K*(C+K-1.0D0))*Z
 15            ZHF=ZHF+ZR
            ZHF=(1.0D0-Z)**(C-A-B)*ZHF
-        ELSE IF (A0.LE.1.0D0) THEN
+        ELSE IF (A0.LE.1.1D0) THEN
            IF (X.LT.0.0D0) THEN
               Z1=Z/(Z-1.0D0)
               IF (C.GT.A.AND.B.LT.A.AND.B.GT.0.0) THEN
@@ -6261,11 +6262,26 @@ C
                  IF (CDABS(ZHF-ZW).LT.CDABS(ZHF)*EPS) GO TO 25
 20               ZW=ZHF
 25            ZHF=ZC0*ZHF
-           ELSE IF (A0.GE.0.90D0) THEN
+           ELSE IF (A0.LT.0.9D0) THEN
+             Z00=(1.0D0,0.0D0)
+             IF (C-A.LT.A.AND.C-B.LT.B) THEN
+                Z00=(1.0D0-Z)**(C-A-B)
+                A=C-A
+                B=C-B
+             ENDIF
+             ZHF=(1.0D0,0.D0)
+             ZR=(1.0D0,0.0D0)
+             DO 100 K=1,1500
+                ZR=ZR*(A+K-1.0D0)*(B+K-1.0D0)/(K*(C+K-1.0D0))*Z
+                ZHF=ZHF+ZR
+                IF (CDABS(ZHF-ZW).LE.CDABS(ZHF)*EPS) GO TO 105
+100             ZW=ZHF
+105        ZHF=Z00*ZHF
+           ELSE IF (CDABS(Z-1.0D0).LT.0.75D0) THEN
               GM=0.0D0
-              MCAB=INT(C-A-B+EPS*DSIGN(1.0D0,C-A-B))
-              IF (DABS(C-A-B-MCAB).LT.EPS) THEN
-                 M=INT(C-A-B)
+              M=INT(C-A-B+EPS*DSIGN(1.0D0,C-A-B))
+              L8=(X.GT.1.0D0).AND.(Y.EQ.0.0D0)
+              IF (DABS(C-A-B-M).LT.EPS) THEN
                  CALL GAMMA2(A,GA)
                  CALL GAMMA2(B,GB)
                  CALL GAMMA2(C,GC)
@@ -6282,8 +6298,10 @@ C
                  ZF0=(1.0D0,0.0D0)
                  ZR0=(1.0D0,0.0D0)
                  ZR1=(1.0D0,0.0D0)
-                 SP0=0.D0
+                 SP0=0.0D0
                  SP=0.0D0
+                 ZLG=CDLOG(1.0D0-Z)
+                 IF (L8) ZLG=ZLG-2.0D0*PI*(0.0D0,1.0D0)
                  IF (M.GE.0) THEN
                     ZC0=GM*GC/(GAM*GBM)
                     ZC1=-GC*(Z-1.0D0)**M/(GA*GB*RM)
@@ -6292,7 +6310,7 @@ C
 40                     ZF0=ZF0+ZR0
                     DO 45 K=1,M
 45                     SP0=SP0+1.0D0/(A+K-1.0D0)+1.0/(B+K-1.0D0)-1.D0/K
-                    ZF1=PA+PB+SP0+2.0D0*EL+CDLOG(1.0D0-Z)
+                    ZF1=PA+PB+SP0+2.0D0*EL+ZLG
                     DO 55 K=1,500
                        SP=SP+(1.0D0-A)/(K*(A+K-1.0D0))+(1.0D0-B)/
      &                    (K*(B+K-1.0D0))
@@ -6301,7 +6319,7 @@ C
                           SM=SM+(1.0D0-A)/((J+K)*(A+J+K-1.0D0))
      &                       +1.0D0/(B+J+K-1.0D0)
 50                     CONTINUE
-                       ZP=PA+PB+2.0D0*EL+SP+SM+CDLOG(1.0D0-Z)
+                       ZP=PA+PB+2.0D0*EL+SP+SM+ZLG
                        ZR1=ZR1*(A+M+K-1.0D0)*(B+M+K-1.0D0)/(K*(M+K))
      &                     *(1.0D0-Z)
                        ZF1=ZF1+ZR1*ZP
@@ -6318,14 +6336,14 @@ C
 65                     ZF0=ZF0+ZR0
                     DO 70 K=1,M
 70                     SP0=SP0+1.0D0/K
-                    ZF1=PA+PB-SP0+2.0D0*EL+CDLOG(1.0D0-Z)
+                    ZF1=PA+PB-SP0+2.0D0*EL+ZLG
                     DO 80 K=1,500
                        SP=SP+(1.0D0-A)/(K*(A+K-1.0D0))+(1.0D0-B)/(K*
      &                    (B+K-1.0D0))
                        SM=0.0D0
                        DO 75 J=1,M
 75                        SM=SM+1.0D0/(J+K)
-                       ZP=PA+PB+2.0D0*EL+SP-SM+CDLOG(1.0D0-Z)
+                       ZP=PA+PB+2.0D0*EL+SP-SM+ZLG
                        ZR1=ZR1*(A+K-1.D0)*(B+K-1.D0)/(K*(M+K))*(1.D0-Z)
                        ZF1=ZF1+ZR1*ZP
                        IF (CDABS(ZF1-ZW).LT.CDABS(ZF1)*EPS) GO TO 85
@@ -6342,6 +6360,7 @@ C
                  CALL GAMMA2(A+B-C,GABC)
                  ZC0=GC*GCAB/(GCA*GCB)
                  ZC1=GC*GABC/(GA*GB)*(1.0D0-Z)**(C-A-B)
+                 IF (L8) ZC1=ZC1*CDEXP(-2.0D0*PI*(C-A-B)*(0.0D0,1.0D0))
                  ZHF=(0.0D0,0.0D0)
                  ZR0=ZC0
                  ZR1=ZC1
@@ -6355,24 +6374,121 @@ C
 95               ZHF=ZHF+ZC0+ZC1
               ENDIF
            ELSE
-              Z00=(1.0D0,0.0D0)
-              IF (C-A.LT.A.AND.C-B.LT.B) THEN
-                  Z00=(1.0D0-Z)**(C-A-B)
-                  A=C-A
-                  B=C-B
+              ZR=0.5D0*(A+B+1.0D0)-C
+              MAB=INT(A-B+EPS*DSIGN(1.0D0,A-B))
+              IF (DABS(A-B-MAB)>EPS) THEN
+                 CALL GAMMA2(A,GA)
+                 CALL GAMMA2(B,GB)
+                 CALL GAMMA2(C,GC)
+                 CALL GAMMA2(B-A,GBA)
+                 CALL GAMMA2(A-B,GAB)
+                 CALL GAMMA2(C-B,GCB)
+                 CALL GAMMA2(C-A,GCA)
+                 ZCA=GC*GBA/(GB*GCA*(0.5D0-Z)**A)
+                 ZCB=GC*GAB/(GA*GCB*(0.5D0-Z)**B)
+                 ZEA(1)=(1.0D0,0.0D0)
+                 ZEA(2)=A*ZR/(1.0D0+A-B)
+                 ZEB(1)=(1.0D0,0.0D0)
+                 ZEB(2)=B*ZR/(1.0D0+B-A)
+                 ZINV=1.0D0/(Z-0.5D0)
+                 ZHF=ZCA+ZCB+(ZCA*ZEA(2)+ZCB*ZEB(2))*ZINV
+                 DO 900  K=2,1500
+                    ZEA(3)=(A+K-1.0D0)/(K*(K+A-B))*
+     &                   (ZR*ZEA(2)+0.25D0*(K+A-2.0D0)*ZEA(1))
+                    ZEB(3)=(B+K-1.0D0)/(K*(K+B-A))*
+     &                   (ZR*ZEB(2)+0.25D0*(K+B-2.0D0)*ZEB(1))
+                    ZINV=ZINV/(Z-0.5D0)
+                    ZTMP=(ZCA*ZEA(3)+ZCB*ZEB(3))*ZINV
+                    ZHF=ZHF+ZTMP
+                    IF (CDABS(ZTMP).LE.CDABS(ZHF)*EPS) GO TO 905
+                    ZEA(1)=ZEA(2)
+                    ZEA(2)=ZEA(3)
+                    ZEB(1)=ZEB(2)
+900                 ZEB(2)=ZEB(3)
+905                 IF (K.GT.150) ISFER=5
+              ELSE
+                 IF (A.LT.B) THEN
+                    A=BB
+                    B=AA
+                    MAB=-MAB
+                 ENDIF
+                 CALL GAMMA2(A,GA)
+                 CALL GAMMA2(B,GB)
+                 CALL GAMMA2(C,GC)
+                 CALL GAMMA2(C-B,GCB)
+                 CALL GAMMA2(C-A,GCA)
+                 ZLG=LOG(0.5D0-Z)
+                 FMAB=1.0D0
+                 DO 910 K=1,MAB
+910                 FMAB=FMAB*DBLE(K)
+                 CALL PSI_SPEC(A,PA)
+                 CALL PSI_SPEC(C-A,PCA)
+                 PMAB=-EL
+                 DO 915 K=1,MAB
+915                 PMAB=PMAB+1.0D0/DBLE(K)
+                 ZEA(2)=(1.0D0,0.0D0)
+                 ZEA(1)=(0.0D0,0.0D0)
+                 ZEB(2)=(1.0D0,0.0D0)
+                 ZEB(1)=(0.0D0,0.0D0)
+                 ZFA(2)=(0.0D0,0.0D0)
+                 ZFA(1)=(0.0D0,0.0D0)
+                 ZFB(2)=(0.0D0,0.0D0)
+                 ZFB(1)=(0.0D0,0.0D0)
+                 ZV1=(0.0D0,0.0D0)
+                 IF (MAB.GT.0) THEN
+                    ZV1=ZV1+1.0D0
+                    ZTMP=(1.0D0,0.0D0)
+                    DO 920 K=1,MAB
+                       ZEB(3)=(ZR*ZEB(2)+0.25D0*(K-MAB-1.0D0)*ZEB(1))/K
+                       ZFB(3)=(0.5D0*ZEB(2)-0.25D0*ZEB(1)+
+     &                      ZR*ZFB(2)+0.25D0*(K-1.0D0-MAB)*ZFB(1))/K
+                       ZEB(1)=ZEB(2)
+                       ZEB(2)=ZEB(3)
+                       ZFB(1)=ZFB(2)
+                       ZFB(2)=ZFB(3)
+                       IF (K.EQ.MAB) GO TO 925
+                       ZTMP=ZTMP*(B+K-1.0D0)/((K-MAB)*(Z-0.5D0))
+920                    ZV1=ZV1+ZTMP*ZEB(3)
+925              ZV1=GC*FMAB/(MAB*GA*GCB*(0.5D0-Z)**B)*ZV1
+                 ENDIF
+                 ZINV=(1.0D0,0.0D0)
+                 UA=PCA-PMAB
+                 UB=-EL-PA
+                 WA=(-1)**(MAB+1)*GC/(GB*GCA*FMAB)
+                 WB=GC/(GB*GCB)
+                 ZHF=WA*((UA-ZLG)*ZEA(2)+ZFA(2))
+     &                +WB*(UB*ZEB(2)+ZFB(2))
+                 DO 930 K=1,15000
+                    WA=(A+K-1.0D0)*WA/(MAB+K)
+                    WB=(A+K-1.0D0)*WB/K
+                    UA=UA+1.0D0/(A+K-1.0D0)-1.0D0/(K+MAB)
+                    UB=UB+1.0D0/K
+                    ZEA(3)=(ZR*ZEA(2)+0.25D0*(K+MAB-1.0D0)*ZEA(1))/K
+                    ZEB(3)=(ZR*ZEB(2)+0.25D0*(K-1.0D0)*ZEB(1))/(K+MAB)
+                    ZFA(3)=(0.5D0*ZEA(2)+0.25D0*ZEA(1) +
+     &                   ZR*ZFA(2)+0.25D0*(K+MAB-1.0D0)*ZFA(1))/K
+                    ZFB(3)=(0.5D0*ZEB(2)-0.25D0*ZEB(1)+
+     &                   ZR*ZFB(2)+0.25D0*(K-1.0D0)*ZFB(1))/(K+MAB)
+                    ZTMP=WA*((UA-ZLG)*ZEA(3)+ZFA(3))+
+     &                   WB*(UB*ZEB(3)+ZFB(3))
+                    ZINV=ZINV/(Z-0.5D0)
+                    ZTMP=ZTMP*ZINV
+                    ZHF=ZHF+ZTMP
+                    IF (CDABS(ZTMP).LE.CDABS(ZHF)*EPS) GO TO 935
+                    ZEA(1)=ZEA(2)
+                    ZEA(2)=ZEA(3)
+                    ZEB(1)=ZEB(2)
+                    ZEB(2)=ZEB(3)
+                    ZFA(1)=ZFA(2)
+                    ZFA(2)=ZFA(3)
+                    ZFB(1)=ZFB(2)
+930                 ZFB(2)=ZFB(3)
+935           ZHF=ZV1+ZHF/((0.5D0-Z)**A)
+                 IF(K.GT.150) ISFER=5
               ENDIF
-              ZHF=(1.0D0,0.D0)
-              ZR=(1.0D0,0.0D0)
-              DO 100 K=1,1500
-                 ZR=ZR*(A+K-1.0D0)*(B+K-1.0D0)/(K*(C+K-1.0D0))*Z
-                 ZHF=ZHF+ZR
-                 IF (CDABS(ZHF-ZW).LE.CDABS(ZHF)*EPS) GO TO 105
-100              ZW=ZHF
-105           ZHF=Z00*ZHF
            ENDIF
-        ELSE IF (A0.GT.1.0D0) THEN
+        ELSE IF (A0.GT.1.1D0) THEN
            MAB=INT(A-B+EPS*DSIGN(1.0D0,A-B))
-           IF (DABS(A-B-MAB).LT.EPS.AND.A0.LE.1.1D0) B=B+EPS
            IF (DABS(A-B-MAB).GT.EPS) THEN
               CALL GAMMA2(A,GA)
               CALL GAMMA2(B,GB)
