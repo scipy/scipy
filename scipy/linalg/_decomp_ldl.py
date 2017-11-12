@@ -185,7 +185,7 @@ def _ldl_sanitize_ipiv(a, lower=True):
     automatically write 0 to the next entry and skip the next spin of the
     loop. Thus, a separate counter or array appends to keep track of block
     sizes are avoided. If needed, zeros can be filtered out later without
-    loosing the block structure.
+    losing the block structure.
 
     Parameters
     ----------

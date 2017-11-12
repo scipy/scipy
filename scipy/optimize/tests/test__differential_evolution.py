@@ -101,6 +101,18 @@ class TestDifferentialEvolutionSolver(object):
         assert_equal(solver.strategy, 'randtobest1exp')
         assert_equal(solver.mutation_func.__name__, '_randtobest1')
 
+        solver = DifferentialEvolutionSolver(rosen,
+                                             self.bounds,
+                                             strategy='currenttobest1bin')
+        assert_equal(solver.strategy, 'currenttobest1bin')
+        assert_equal(solver.mutation_func.__name__, '_currenttobest1')
+
+        solver = DifferentialEvolutionSolver(rosen,
+                                             self.bounds,
+                                             strategy='currenttobest1exp')
+        assert_equal(solver.strategy, 'currenttobest1exp')
+        assert_equal(solver.mutation_func.__name__, '_currenttobest1')
+
     def test__mutate1(self):
         # strategies */1/*, i.e. rand/1/bin, best/1/exp, etc.
         result = np.array([0.05])
@@ -125,8 +137,14 @@ class TestDifferentialEvolutionSolver(object):
 
     def test__randtobest1(self):
         # strategies randtobest/1/*
+        result = np.array([0.15])
+        trial = self.dummy_solver2._randtobest1((2, 3, 4, 5, 6))
+        assert_allclose(trial, result)
+
+    def test__currenttobest1(self):
+        # strategies currenttobest/1/*
         result = np.array([0.1])
-        trial = self.dummy_solver2._randtobest1(1, (2, 3, 4, 5, 6))
+        trial = self.dummy_solver2._currenttobest1(1, (2, 3, 4, 5, 6))
         assert_allclose(trial, result)
 
     def test_can_init_with_dithering(self):

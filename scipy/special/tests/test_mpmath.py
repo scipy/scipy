@@ -113,7 +113,7 @@ def test_hyp2f1_strange_points():
     ]
     pts += list(itertools.product([2, 1, -0.7, -1000], repeat=4))
     pts = [
-        (a, b, c, x) for a, b, c, x in pts 
+        (a, b, c, x) for a, b, c, x in pts
         if b == c and round(b) == b and b < 0 and b != -1000
     ]
     kw = dict(eliminate=True)
@@ -668,6 +668,25 @@ def test_wrightomega_region2():
     dataset = np.asarray(dataset)
 
     FuncData(sc.wrightomega, dataset, 0, 1, rtol=1e-15).check()
+
+
+# ------------------------------------------------------------------------------
+# lambertw
+# ------------------------------------------------------------------------------
+
+@pytest.mark.slow
+@check_version(mpmath, '0.19')
+def test_lambertw_smallz():
+    x, y = np.linspace(-1, 1, 25), np.linspace(-1, 1, 25)
+    x, y = np.meshgrid(x, y)
+    z = (x + 1j*y).flatten()
+
+    dataset = []
+    for z0 in z:
+        dataset.append((z0, complex(mpmath.lambertw(z0))))
+    dataset = np.asarray(dataset)
+
+    FuncData(sc.lambertw, dataset, 0, 1, rtol=1e-13).check()
 
 
 # ------------------------------------------------------------------------------
@@ -1504,10 +1523,11 @@ class TestSystematic(object):
                             [IntArg(), Arg()], n=20000)
 
     @pytest.mark.xfail(condition=_is_32bit_platform, reason="see gh-3551 for bad points")
-    def test_lambertw(self):
-        assert_mpmath_equal(lambda x, k: sc.lambertw(x, int(k)),
-                            lambda x, k: mpmath.lambertw(x, int(k)),
-                            [Arg(), IntArg(0, 10)])
+    def test_lambertw_real(self):
+        assert_mpmath_equal(lambda x, k: sc.lambertw(x, int(k.real)),
+                            lambda x, k: mpmath.lambertw(x, int(k.real)),
+                            [ComplexArg(-np.inf, np.inf), IntArg(0, 10)],
+                            rtol=1e-13, nan_ok=False)
 
     def test_lanczos_sum_expg_scaled(self):
         maxgamma = 171.624376956302725

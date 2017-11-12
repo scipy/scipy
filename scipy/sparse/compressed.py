@@ -596,8 +596,10 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
     sum.__doc__ = spmatrix.sum.__doc__
 
-    def _minor_reduce(self, ufunc):
+    def _minor_reduce(self, ufunc, data=None):
         """Reduce nonzeros with a ufunc over the minor axis when non-empty
+
+        Can be applied to a function of self.data by supplying data parameter.
 
         Warning: this does not call sum_duplicates()
 
@@ -609,8 +611,10 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         value : array of self.dtype
             Reduce result for nonzeros in each major_index
         """
+        if data is None:
+            data = self.data
         major_index = np.flatnonzero(np.diff(self.indptr))
-        value = ufunc.reduceat(self.data,
+        value = ufunc.reduceat(data,
                                downcast_intp_index(self.indptr[major_index]))
         return major_index, value
 
@@ -1069,6 +1073,42 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         self.indices = _prune_array(self.indices[:self.nnz])
         self.data = _prune_array(self.data[:self.nnz])
+
+    def resize(self, *shape):
+        shape = check_shape(shape)
+        if hasattr(self, 'blocksize'):
+            bm, bn = self.blocksize
+            new_M, rm = divmod(shape[0], bm)
+            new_N, rn = divmod(shape[1], bn)
+            if rm or rn:
+                raise ValueError("shape must be divisible into %s blocks. "
+                                 "Got %s" % (self.blocksize, shape))
+            M, N = self.shape[0] // bm, self.shape[1] // bn
+        else:
+            new_M, new_N = self._swap(shape)
+            M, N = self._swap(self.shape)
+
+        if new_M < M:
+            self.indices = self.indices[:self.indptr[new_M]]
+            self.data = self.data[:self.indptr[new_M]]
+            self.indptr = self.indptr[:new_M + 1]
+        elif new_M > M:
+            self.indptr = np.resize(self.indptr, new_M + 1)
+            self.indptr[M + 1:].fill(self.indptr[M])
+
+        if new_N < N:
+            mask = self.indices < new_N
+            if not np.all(mask):
+                self.indices = self.indices[mask]
+                self.data = self.data[mask]
+                major_index, val = self._minor_reduce(np.add, mask)
+                self.indptr.fill(0)
+                self.indptr[1:][major_index] = val
+                np.cumsum(self.indptr, out=self.indptr)
+
+        self._shape = shape
+
+    resize.__doc__ = spmatrix.resize.__doc__
 
     ###################
     # utility methods #

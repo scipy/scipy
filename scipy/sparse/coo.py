@@ -289,6 +289,22 @@ class coo_matrix(_data_matrix, _minmax_mixin):
 
     transpose.__doc__ = spmatrix.transpose.__doc__
 
+    def resize(self, *shape):
+        shape = check_shape(shape)
+        new_M, new_N = shape
+        M, N = self.shape
+
+        if new_M < M or new_N < N:
+            mask = np.logical_and(self.row < new_M, self.col < new_N)
+            if not mask.all():
+                self.row = self.row[mask]
+                self.col = self.col[mask]
+                self.data = self.data[mask]
+
+        self._shape = shape
+
+    resize.__doc__ = spmatrix.resize.__doc__
+
     def toarray(self, order=None, out=None):
         """See the docstring for `spmatrix.toarray`."""
         B = self._process_toarray_args(order, out)

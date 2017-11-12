@@ -4,6 +4,7 @@ import os
 import sys
 from os.path import join, dirname
 from distutils.sysconfig import get_python_inc
+import subprocess
 import numpy
 from numpy.distutils.misc_util import get_numpy_include_dirs
 
@@ -136,6 +137,17 @@ def configuration(parent_package='',top_path=None):
 
     config.add_data_files('tests/*.py')
     config.add_data_files('tests/data/README')
+
+    # regenerate npz data files
+    makenpz = os.path.join(os.path.dirname(__file__),
+                           'utils', 'makenpz.py')
+    data_dir = os.path.join(os.path.dirname(__file__),
+                            'tests', 'data')
+    for name in ['boost', 'gsl', 'local']:
+        subprocess.check_call([sys.executable, makenpz,
+                               '--use-timestamp',
+                               os.path.join(data_dir, name)])
+
     config.add_data_files('tests/data/*.npz')
 
     config.add_subpackage('_precompute')

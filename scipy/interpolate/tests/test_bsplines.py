@@ -39,7 +39,7 @@ class TestBSpline(object):
         assert_raises(ValueError, BSpline,
                 **dict(t=[0., 0., 1., 2., 3., 4.], c=[1., 1., 1.], k=2.5))
 
-        # basic inteval cannot have measure zero (here: [1..1])
+        # basic interval cannot have measure zero (here: [1..1])
         assert_raises(ValueError, BSpline,
                 **dict(t=[0., 0, 1, 1, 2, 3], c=[1., 1, 1], k=2))
 

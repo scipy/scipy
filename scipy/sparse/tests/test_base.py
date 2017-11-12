@@ -2147,6 +2147,42 @@ class _TestCommon(object):
         assert_(isinstance(d, sparse.spmatrix))
         assert_allclose(d.A, (b - c).A)
 
+    def test_resize(self):
+        # resize(shape) resizes the matrix in-place
+        D = np.array([[1, 0, 3, 4],
+                      [2, 0, 0, 0],
+                      [3, 0, 0, 0]])
+        S = self.spmatrix(D)
+        assert_(S.resize((3, 2)) is None)
+        assert_array_equal(S.A, [[1, 0],
+                                 [2, 0],
+                                 [3, 0]])
+        S.resize((2, 2))
+        assert_array_equal(S.A, [[1, 0],
+                                 [2, 0]])
+        S.resize((3, 2))
+        assert_array_equal(S.A, [[1, 0],
+                                 [2, 0],
+                                 [0, 0]])
+        S.resize((3, 3))
+        assert_array_equal(S.A, [[1, 0, 0],
+                                 [2, 0, 0],
+                                 [0, 0, 0]])
+        # test no-op
+        S.resize((3, 3))
+        assert_array_equal(S.A, [[1, 0, 0],
+                                 [2, 0, 0],
+                                 [0, 0, 0]])
+
+        # test *args
+        S.resize(3, 2)
+        assert_array_equal(S.A, [[1, 0],
+                                 [2, 0],
+                                 [0, 0]])
+
+        for bad_shape in [1, (-1, 2), (2, -1), (1, 2, 3)]:
+            assert_raises(ValueError, S.resize, bad_shape)
+
 
 class _TestInplaceArithmetic(object):
     def test_inplace_dense(self):
@@ -3977,19 +4013,6 @@ class TestDOK(sparse_test_class(minmax=False, nnz_axis=False)):
         assert_equal(da.dtype, np.float32)
         assert_array_equal(da, data)
 
-    def test_resize(self):
-        # A couple basic tests of the resize() method.
-        #
-        # resize(shape) resizes the array in-place.
-        a = dok_matrix((5,5))
-        a[:,0] = 1
-        a.resize((2,2))
-        expected1 = array([[1,0],[1,0]])
-        assert_array_equal(a.todense(), expected1)
-        a.resize((3,2))
-        expected2 = array([[1,0],[1,0],[0,0]])
-        assert_array_equal(a.todense(), expected2)
-
     def test_ticket1160(self):
         # Regression test for ticket #1160.
         a = dok_matrix((3,3))
@@ -4348,6 +4371,29 @@ class TestBSR(sparse_test_class(getset=False,
     @pytest.mark.xfail(run=False, reason='BSR does not have a __setitem__')
     def test_setdiag(self):
         pass
+
+    def test_resize_blocked(self):
+        # test resize() with non-(1,1) blocksize
+        D = np.array([[1, 0, 3, 4],
+                      [2, 0, 0, 0],
+                      [3, 0, 0, 0]])
+        S = self.spmatrix(D, blocksize=(1, 2))
+        assert_(S.resize((3, 2)) is None)
+        assert_array_equal(S.A, [[1, 0],
+                                 [2, 0],
+                                 [3, 0]])
+        S.resize((2, 2))
+        assert_array_equal(S.A, [[1, 0],
+                                 [2, 0]])
+        S.resize((3, 2))
+        assert_array_equal(S.A, [[1, 0],
+                                 [2, 0],
+                                 [0, 0]])
+        S.resize((3, 4))
+        assert_array_equal(S.A, [[1, 0, 0, 0],
+                                 [2, 0, 0, 0],
+                                 [0, 0, 0, 0]])
+        assert_raises(ValueError, S.resize, (2, 3))
 
     @pytest.mark.xfail(run=False, reason='BSR does not have a __setitem__')
     def test_setdiag_comprehensive(self):

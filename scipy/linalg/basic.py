@@ -152,7 +152,7 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
             raise ValueError('Input b has to have same number of rows as '
                              'input a')
 
-    # accomodate empty arrays
+    # accommodate empty arrays
     if b1.size == 0:
         return np.asfortranarray(b1.copy())
 
@@ -1086,7 +1086,7 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
     residues : (0,) or () or (K,) ndarray
         Sums of residues, squared 2-norm for each column in ``b - a x``.
         If rank of matrix a is ``< N`` or ``N > M``, or ``'gelsy'`` is used,
-        this is a lenght zero array. If b was 1-D, this is a () shape array
+        this is a length zero array. If b was 1-D, this is a () shape array
         (numpy scalar), otherwise the shape is (K,).
     rank : int
         Effective rank of matrix `a`.

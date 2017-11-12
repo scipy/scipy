@@ -599,7 +599,7 @@ class Checker(doctest.OutputChecker):
 
     def _do_check(self, want, got):
         # This should be done exactly as written to correctly handle all of
-        # numpy-comparable objects, strings, and heterogenous tuples
+        # numpy-comparable objects, strings, and heterogeneous tuples
         try:
             if want == got:
                 return True

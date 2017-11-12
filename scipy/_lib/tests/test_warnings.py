@@ -88,7 +88,7 @@ def warning_calls():
 def test_warning_calls_filters(warning_calls):
     bad_filters, bad_stacklevels = warning_calls
 
-    # There is still one missing occurance in optimize.py,
+    # There is still one missing occurrence in optimize.py,
     # this is one that should be fixed and this removed then.
     bad_filters = [item for item in bad_filters
                    if 'optimize.py' not in item]

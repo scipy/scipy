@@ -47,9 +47,9 @@ C     XHI <-- When ZROR returns with STATUS = 0, XHI bounds the
 C             inverval in X containing the solution above.
 C                         DOUBLE PRECISION XHI
 C
-C     QLEFT <-- .TRUE. if the stepping search terminated unsucessfully
+C     QLEFT <-- .TRUE. if the stepping search terminated unsuccessfully
 C                at XLO.  If it is .FALSE. the search terminated
-C                unsucessfully at XHI.
+C                unsuccessfully at XHI.
 C                    QLEFT is LOGICAL
 C
 C     QHI <-- .TRUE. if F(X) .GT. Y at the termination of the

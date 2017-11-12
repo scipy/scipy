@@ -1021,7 +1021,7 @@ void csr_minimum_csr(const I n_row, const I n_col,
  *   T    Ax[nnz(A)]  - nonzeros
  *
  * Note:
- *   The column indicies within each row must be in sorted order.
+ *   The column indices within each row must be in sorted order.
  *   Explicit zeros are retained.
  *   Ap, Aj, and Ax will be modified *inplace*
  *

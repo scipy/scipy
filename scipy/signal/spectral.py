@@ -1201,7 +1201,7 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
         raise ValueError('Window, STFT shape and noverlap do not satisfy the '
                          'COLA constraint.')
 
-    # Rearrange axes if neccessary
+    # Rearrange axes if necessary
     if time_axis != Zxx.ndim-1 or freq_axis != Zxx.ndim-2:
         # Turn negative indices to positive for the call to transpose
         if freq_axis < 0:
@@ -1467,7 +1467,7 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
     t : ndarray
         Array of times corresponding to each data segment
     result : ndarray
-        Array of output data, contents dependant on *mode* kwarg.
+        Array of output data, contents dependent on *mode* kwarg.
 
     References
     ----------
@@ -1538,7 +1538,7 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
             if not same_data and y.ndim > 1:
                 y = np.rollaxis(y, axis, len(y.shape))
 
-    # Check if x and y are the same length, zero-pad if neccesary
+    # Check if x and y are the same length, zero-pad if necessary
     if not same_data:
         if x.shape[-1] != y.shape[-1]:
             if x.shape[-1] < y.shape[-1]:

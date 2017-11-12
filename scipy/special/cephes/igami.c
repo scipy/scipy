@@ -1,6 +1,6 @@
 /*                                                     igami()
  *
- *      Inverse of complemented imcomplete Gamma integral
+ *      Inverse of complemented incomplete Gamma integral
  *
  *
  *

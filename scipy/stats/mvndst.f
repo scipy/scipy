@@ -211,7 +211,7 @@
       END DO
       RETURN
 *
-*     Entry point for intialization.
+*     Entry point for initialization.
 *
       ENTRY MVNDNT( N, CORREL, LOWER, UPPER, INFIN, INFIS, D, E )
       MVNDNT = 0
