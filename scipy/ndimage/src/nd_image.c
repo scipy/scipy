@@ -1012,9 +1012,6 @@ static PyObject *Py_DistanceTransformOnePass(PyObject *obj, PyObject *args)
         goto exit;
 
     NI_DistanceTransformOnePass(strct, distances, features);
-    #if NPY_API_VERSION >= 0x0000000b
-        PyArray_ResolveWritebackIfCopy(output);
-    #endif
 
 exit:
     Py_XDECREF(strct);
@@ -1035,9 +1032,6 @@ static PyObject *Py_EuclideanFeatureTransform(PyObject *obj,
         goto exit;
 
     NI_EuclideanFeatureTransform(input, sampling, features);
-    #if NPY_API_VERSION >= 0x0000000b
-        PyArray_ResolveWritebackIfCopy(output);
-    #endif
 
 exit:
     Py_XDECREF(input);
