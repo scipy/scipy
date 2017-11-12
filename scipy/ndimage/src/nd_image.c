@@ -106,7 +106,11 @@ NI_ObjectToOptionalInputArray(PyObject *object, PyArrayObject **array)
 static int
 NI_ObjectToOutputArray(PyObject *object, PyArrayObject **array)
 {
-    int flags = NPY_ARRAY_BEHAVED_NS | NPY_ARRAY_UPDATEIFCOPY;
+    #if NPY_API_VERSION >= 0x0000000b
+        int flags = NPY_ARRAY_BEHAVED_NS | NPY_ARRAY_UPDATEIFCOPY;
+    #else
+        int flags = NPY_ARRAY_BEHAVED_NS | NPY_ARRAY_WRITEBACKIFCOPY;
+    #endif
     /*
      * This would also be caught by the PyArray_CheckFromAny call, but
      * we check it explicitly here to provide a saner error message.
@@ -190,6 +194,9 @@ static PyObject *Py_Correlate1D(PyObject *obj, PyObject *args)
 
     NI_Correlate1D(input, weights, axis, output, (NI_ExtendMode)mode, cval,
                    origin);
+    #if NPY_API_VERSION >= 0x0000000b
+        PyArray_ResolveWritebackIfCopy(output);
+    #endif
 
 exit:
     Py_XDECREF(input);
@@ -218,6 +225,9 @@ static PyObject *Py_Correlate(PyObject *obj, PyObject *args)
 
     NI_Correlate(input, weights, output, (NI_ExtendMode)mode, cval,
                  origin.ptr);
+    #if NPY_API_VERSION >= 0x0000000b
+        PyArray_ResolveWritebackIfCopy(output);
+    #endif
 
 exit:
     Py_XDECREF(input);
@@ -243,6 +253,9 @@ static PyObject *Py_UniformFilter1D(PyObject *obj, PyObject *args)
 
     NI_UniformFilter1D(input, filter_size, axis, output, (NI_ExtendMode)mode,
                        cval, origin);
+    #if NPY_API_VERSION >= 0x0000000b
+        PyArray_ResolveWritebackIfCopy(output);
+    #endif
 
 exit:
     Py_XDECREF(input);
@@ -266,6 +279,9 @@ static PyObject *Py_MinOrMaxFilter1D(PyObject *obj, PyObject *args)
 
     NI_MinOrMaxFilter1D(input, filter_size, axis, output, (NI_ExtendMode)mode,
                         cval, origin, minimum);
+    #if NPY_API_VERSION >= 0x0000000b
+        PyArray_ResolveWritebackIfCopy(output);
+    #endif
 
 exit:
     Py_XDECREF(input);
@@ -297,6 +313,9 @@ static PyObject *Py_MinOrMaxFilter(PyObject *obj, PyObject *args)
 
     NI_MinOrMaxFilter(input, footprint, structure, output, (NI_ExtendMode)mode,
                       cval, origin.ptr, minimum);
+    #if NPY_API_VERSION >= 0x0000000b
+        PyArray_ResolveWritebackIfCopy(output);
+    #endif
 
 exit:
     Py_XDECREF(input);
@@ -328,6 +347,9 @@ static PyObject *Py_RankFilter(PyObject *obj, PyObject *args)
 
     NI_RankFilter(input, rank, footprint, output, (NI_ExtendMode)mode, cval,
                   origin.ptr);
+    #if NPY_API_VERSION >= 0x0000000b
+        PyArray_ResolveWritebackIfCopy(output);
+    #endif
 
 exit:
     Py_XDECREF(input);
@@ -453,6 +475,9 @@ static PyObject *Py_GenericFilter1D(PyObject *obj, PyObject *args)
 
     NI_GenericFilter1D(input, func, data, filter_size, axis, output,
                        (NI_ExtendMode)mode, cval, origin);
+    #if NPY_API_VERSION >= 0x0000000b
+        PyArray_ResolveWritebackIfCopy(output);
+    #endif
 
 exit:
     if (callback.py_function != NULL || callback.c_function != NULL) {
@@ -577,6 +602,9 @@ static PyObject *Py_GenericFilter(PyObject *obj, PyObject *args)
 
     NI_GenericFilter(input, func, data, footprint, output, (NI_ExtendMode)mode,
                      cval, origin.ptr);
+    #if NPY_API_VERSION >= 0x0000000b
+        PyArray_ResolveWritebackIfCopy(output);
+    #endif
 
 exit:
     if (callback.py_function != NULL || callback.c_function != NULL) {
@@ -604,6 +632,9 @@ static PyObject *Py_FourierFilter(PyObject *obj, PyObject *args)
         goto exit;
 
     NI_FourierFilter(input, parameters, n, axis, output, filter_type);
+    #if NPY_API_VERSION >= 0x0000000b
+        PyArray_ResolveWritebackIfCopy(output);
+    #endif
 
 exit:
     Py_XDECREF(input);
@@ -626,6 +657,9 @@ static PyObject *Py_FourierShift(PyObject *obj, PyObject *args)
         goto exit;
 
     NI_FourierShift(input, shifts, n, axis, output);
+    #if NPY_API_VERSION >= 0x0000000b
+        PyArray_ResolveWritebackIfCopy(output);
+    #endif
 
 exit:
     Py_XDECREF(input);
@@ -646,6 +680,9 @@ static PyObject *Py_SplineFilter1D(PyObject *obj, PyObject *args)
         goto exit;
 
     NI_SplineFilter1D(input, order, axis, output);
+    #if NPY_API_VERSION >= 0x0000000b
+        PyArray_ResolveWritebackIfCopy(output);
+    #endif
 
 exit:
     Py_XDECREF(input);
@@ -778,6 +815,9 @@ static PyObject *Py_GeometricTransform(PyObject *obj, PyObject *args)
 
     NI_GeometricTransform(input, func, data, matrix, shift, coordinates,
                           output, order, (NI_ExtendMode)mode, cval);
+    #if NPY_API_VERSION >= 0x0000000b
+        PyArray_ResolveWritebackIfCopy(output);
+    #endif
 
 exit:
     if (callback.py_function != NULL || callback.c_function != NULL) {
@@ -807,6 +847,9 @@ static PyObject *Py_ZoomShift(PyObject *obj, PyObject *args)
         goto exit;
 
     NI_ZoomShift(input, zoom, shift, output, order, (NI_ExtendMode)mode, cval);
+    #if NPY_API_VERSION >= 0x0000000b
+        PyArray_ResolveWritebackIfCopy(output);
+    #endif
 
 exit:
     Py_XDECREF(input);
@@ -918,6 +961,9 @@ static PyObject *Py_WatershedIFT(PyObject *obj, PyObject *args)
         goto exit;
 
     NI_WatershedIFT(input, markers, strct, output);
+    #if NPY_API_VERSION >= 0x0000000b
+        PyArray_ResolveWritebackIfCopy(output);
+    #endif
 
 exit:
     Py_XDECREF(input);
@@ -943,6 +989,9 @@ static PyObject *Py_DistanceTransformBruteForce(PyObject *obj,
         goto exit;
 
     NI_DistanceTransformBruteForce(input, metric, sampling, output, features);
+    #if NPY_API_VERSION >= 0x0000000b
+        PyArray_ResolveWritebackIfCopy(output);
+    #endif
 
 exit:
     Py_XDECREF(input);
@@ -963,6 +1012,9 @@ static PyObject *Py_DistanceTransformOnePass(PyObject *obj, PyObject *args)
         goto exit;
 
     NI_DistanceTransformOnePass(strct, distances, features);
+    #if NPY_API_VERSION >= 0x0000000b
+        PyArray_ResolveWritebackIfCopy(output);
+    #endif
 
 exit:
     Py_XDECREF(strct);
@@ -983,6 +1035,9 @@ static PyObject *Py_EuclideanFeatureTransform(PyObject *obj,
         goto exit;
 
     NI_EuclideanFeatureTransform(input, sampling, features);
+    #if NPY_API_VERSION >= 0x0000000b
+        PyArray_ResolveWritebackIfCopy(output);
+    #endif
 
 exit:
     Py_XDECREF(input);
