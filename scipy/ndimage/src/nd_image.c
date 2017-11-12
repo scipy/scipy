@@ -194,7 +194,7 @@ static PyObject *Py_Correlate1D(PyObject *obj, PyObject *args)
 
     NI_Correlate1D(input, weights, axis, output, (NI_ExtendMode)mode, cval,
                    origin);
-    #if NPY_API_VERSION >= 0x0000000b
+    #if NPY_API_VERSION >= 0x0000000c
         PyArray_ResolveWritebackIfCopy(output);
     #endif
 
