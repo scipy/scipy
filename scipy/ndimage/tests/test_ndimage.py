@@ -44,13 +44,11 @@ import scipy.ndimage as ndimage
 
 
 eps = 1e-12
-
+sup = suppress_warnings()
+sup.filter(numpy)
 
 def sumsq(a, b):
     return math.sqrt(((a - b)**2).sum())
-
-sup = suppress_warnings()
-sup.filter(numpy)
 
 
 class TestNdimage:
@@ -2054,6 +2052,7 @@ class TestNdimage:
                 returned = ndimage.affine_transform(data, [1, 1], output=out)
             result = out if returned is None else returned
             assert_array_almost_equal(result, [[1, 1], [1, 1]])
+
     @sup
     def test_affine_transform_multi_d_endianness_with_output_parameter(self):
         # affine transform given output ndarray or dtype with either endianness
