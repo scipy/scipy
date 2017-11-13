@@ -6,7 +6,7 @@ from numpy.testing import (assert_equal, assert_array_equal,
 from pytest import raises as assert_raises
 
 from scipy.special import xlogy
-from scipy.stats.contingency import margins, expected_freq, chi2_contingency
+from scipy.stats.contingency import margins, expected_freq, chi2_contingency, association_test
 
 
 def test_margins():
@@ -198,3 +198,134 @@ def test_chi2_contingency_bad_args():
     obs = np.empty((0, 8))
     assert_raises(ValueError, chi2_contingency, obs)
 
+
+def test_bad_association_args():
+    # Asymmetric Array
+    obs = np.array([[21], [11, 21]])
+    assert_raises(IndexError, association_test,"T", obs, None, True)
+
+    # Invalid Chi-Squared Warning
+    obs = np.array([[1, 23], [11, 12]])
+    assert_raises(UserWarning, association_test, "T", obs, None, True)
+
+    # Invalid Chi Squared Stat Value Type
+    obs = np.array([[10, 22], [23, 24]])
+    assert_raises(TypeError, association_test, "T", obs, str(1), True)
+
+    # Invalid Array Values
+    freqs = np.array([[0.1, 0.2], [0.4, 0.3]])
+    assert_raises(TypeError, association_test, "T", freqs, None, True)
+
+    # Invalid Correct Bias Value
+    obs = np.array([[15, 25], [35, 45]])
+    assert_raises(TypeError, association_test, "T", obs, None, "True")
+
+    # Invalid Test Statistic
+    obs = np.array([[15, 25], [35, 45]])
+    assert_raises(ValueError, association_test, "C", obs, None, True)
+
+
+def test_cramersV():
+    # 2d Array
+    obs = [[12, 13, 14, 15, 16],
+           [17, 16, 18, 19, 11],
+           [9, 15, 14, 12, 11]]
+    a = association_test(stat="v", observed=obs)
+    ax = association_test(stat="v", observed=obs, correct_bias=False)
+    assert_approx_equal(a, 0.0, significant=2)
+    assert_approx_equal(ax, 0.077989, significant=3)
+
+    # 3d Array
+    obs = [[[13, 23, 10],
+            [33, 43, 21]],
+           [[35, 36, 15],
+            [37, 38, 18]],
+           [[22, 21, 13],
+            [12, 18, 13]]]
+    b = association_test(stat="v", observed=obs)
+    bx = association_test(stat="v", observed=obs, correct_bias=False)
+    assert_approx_equal(b, 0.023477, significant=3)
+    assert_approx_equal(bx, 0.111594, significant=3)
+
+    # 4d Array
+    obs = [[[[56, 23],
+             [21, 45]],
+            [[13, 16],
+             [76, 99]],
+            [[21, 22],
+             [41, 44]]]]
+    c = association_test(stat="v", observed=obs)
+    cx = association_test(stat="v", observed=obs, correct_bias=False)
+    assert_approx_equal(c, 0.174278, significant=3)
+    assert_approx_equal(cx, 0.191174, significant=3)
+
+
+def test_tschuprowsT():
+
+    # 2d Array
+    obs = [[12, 13, 14, 15, 16],
+           [17, 16, 18, 19, 11],
+           [9, 15, 14, 12, 11]]
+    a = association_test(stat="t", observed=obs)
+    ax = association_test(stat="t", observed=obs, correct_bias=False)
+    assert_approx_equal(a, 0.0, significant=3)
+    assert_approx_equal(ax, 0.065581, significant=3)
+
+    # 3d Array
+    obs = [[[13, 23, 10],
+            [33, 43, 21]],
+           [[35, 36, 15],
+            [37, 38, 18]],
+           [[22, 21, 13],
+            [12, 18, 13]]]
+    b = association_test(stat="t", observed=obs)
+    bx = association_test(stat="t", observed=obs, correct_bias=False)
+    assert_approx_equal(b, 0.01870, significant=3)
+    assert_approx_equal(bx, 0.08875, significant=3)
+
+    # 4d Array
+    obs = [[[[56, 23],
+             [21, 45]],
+            [[13, 16],
+             [76, 99]],
+            [[21, 22],
+             [41, 44]]]]
+    c = association_test(stat="t", observed=obs)
+    cx = association_test(stat="t", observed=obs, correct_bias=False)
+    assert_approx_equal(c, 0.15756, significant=3)
+    assert_approx_equal(cx, 0.17275, significant=3)
+
+def test_phi():
+
+    # 2d Array
+    obs = [[12, 13, 14, 15, 16],
+           [17, 16, 18, 19, 11],
+           [9, 15, 14, 12, 11]]
+    a = association_test(stat="phi", observed=obs)
+    ax = association_test(stat="phi", observed=obs, correct_bias=False)
+    assert_approx_equal(a, 0.0, significant=2)
+    assert_approx_equal(ax, 0.11029, significant=3)
+
+    # 3d Array
+    obs = [[[13, 23, 10],
+            [33, 43, 21]],
+           [[35, 36, 15],
+            [37, 38, 18]],
+           [[22, 21, 13],
+            [12, 18, 13]]]
+    b = association_test(stat="phi", observed=obs)
+    bx = association_test(stat="phi", observed=obs, correct_bias=False)
+    assert_approx_equal(b, 0.033123, significant=3)
+    assert_approx_equal(bx, 0.157818, significant=3)
+
+    # 4d Array
+    obs = [[[[56, 23],
+             [21, 45]],
+            [[13, 16],
+             [76, 99]],
+            [[21, 22],
+             [41, 44]]]]
+    c = association_test(stat="phi", observed=obs)
+    cx = association_test(stat="phi", observed=obs, correct_bias=False)
+    assert_approx_equal(c, 0.245948, significant=3)
+    assert_approx_equal(cx, 0.270362, significant=3)

@@ -302,8 +302,10 @@ Contingency table functions
    :toctree: generated/
 
    chi2_contingency
-   contingency.expected_freq
-   contingency.margins
+   expected_freq
+   margins
+   association_test
+   
    fisher_exact
 
 Plot-tests
@@ -338,6 +340,7 @@ For many more stat related functions install the software R and the
 interface package rpy.
 
 """
+
 from __future__ import division, print_function, absolute_import
 
 from .stats import *
@@ -346,7 +349,7 @@ from .morestats import *
 from ._binned_statistic import *
 from .kde import gaussian_kde
 from . import mstats
-from .contingency import chi2_contingency
+from .contingency import *
 from ._multivariate import *
 
 __all__ = [s for s in dir() if not s.startswith("_")]  # Remove dunders.
