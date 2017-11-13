@@ -45,7 +45,7 @@ import scipy.ndimage as ndimage
 
 eps = 1e-12
 sup = suppress_warnings()
-sup.filter(numpy)
+sup.filter(module=numpy)
 
 def sumsq(a, b):
     return math.sqrt(((a - b)**2).sum())
