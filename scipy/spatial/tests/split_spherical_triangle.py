@@ -177,6 +177,20 @@ def convert_cartesian_array_to_spherical_array(coord_array,angle_measure='radian
         spherical_coord_array[...,2] = np.degrees(spherical_coord_array[...,2])
     return spherical_coord_array
 
+def convert_spherical_array_to_cartesian_array(spherical_coord_array,angle_measure='radians'):
+    '''Take shape (N,3) spherical_coord_array (r,theta,phi) and return an array of the same shape in cartesian coordinate form (x,y,z). Based on the equations provided at: http://en.wikipedia.org/wiki/List_of_common_coordinate_transformations#From_spherical_coordinates
+    use radians for the angles by default, degrees if angle_measure == 'degrees' '''
+    cartesian_coord_array = np.zeros(spherical_coord_array.shape)
+    #convert to radians if degrees are used in input (prior to Cartesian conversion process)
+    if angle_measure == 'degrees':
+        spherical_coord_array[...,1] = np.deg2rad(spherical_coord_array[...,1])
+        spherical_coord_array[...,2] = np.deg2rad(spherical_coord_array[...,2])
+    #now the conversion to Cartesian coords
+    cartesian_coord_array[...,0] = spherical_coord_array[...,0] * np.cos(spherical_coord_array[...,1]) * np.sin(spherical_coord_array[...,2])
+    cartesian_coord_array[...,1] = spherical_coord_array[...,0] * np.sin(spherical_coord_array[...,1]) * np.sin(spherical_coord_array[...,2])
+    cartesian_coord_array[...,2] = spherical_coord_array[...,0] * np.cos(spherical_coord_array[...,2])
+    return cartesian_coord_array
+
 def determine_angles(input_coords, sphere_radius, original_tri_area):
     '''Returns the values of the angles
     x, y, z (for specification of the point
@@ -196,6 +210,7 @@ def determine_angles(input_coords, sphere_radius, original_tri_area):
     s = 0.5 * (arc_length_A + arc_length_B + arc_length_C)
 
     subtriangle_area = original_tri_area / 3.
+    print("**subtriangle_area:", subtriangle_area)
 
     # use the semiperimeter (s) and arc lengths to solve for the requisite
     # spherical triangle angles based on equations made available at
@@ -308,6 +323,7 @@ def trilateration_D(chord_length_AD,
     r1 = chord_length_AD
     r2 = chord_length_BD
     r3 = chord_length_CD
+    print("r1, r2, r3:", r1, r2, r3)
 
     ex = (coord_B - coord_A) / np.linalg.norm(coord_B - coord_A)
     i = np.dot(ex, coord_C - coord_A)
@@ -342,6 +358,15 @@ def find_ternary_split_point(triangle_vertices, sphere_radius, original_tri_area
     splits the provided spherical triangle into three equal
     area subtriangles.'''
     
+    # scale to unit sphere until the end of the workflow
+    print("original_tri_area:", original_tri_area)
+    original_sphere_radius = sphere_radius
+    sphere_radius = 1.
+
+    triangle_vertices = convert_cartesian_array_to_spherical_array(triangle_vertices)
+    triangle_vertices[...,0] = 1.
+    triangle_vertices = convert_spherical_array_to_cartesian_array(triangle_vertices)
+
     coord_A = triangle_vertices[0]
     coord_B = triangle_vertices[1]
     coord_C = triangle_vertices[2]
@@ -354,14 +379,22 @@ def find_ternary_split_point(triangle_vertices, sphere_radius, original_tri_area
      arc_length_B,
      arc_length_C) = determine_angles(triangle_vertices,
                                  sphere_radius,
-                                 original_tri_area)
+                                 original_tri_area / (original_sphere_radius ** 2))
+    print("x,y,z:", x,y,z)
+    print("arc lengths A,B,C:", arc_length_A,
+                                arc_length_B,
+                                arc_length_C)
+    print("angles a,b,c:", angle_a,
+                           angle_b,
+                           angle_c)
 
     u, v, w = determine_center_point_angles(x, y, z,
-                                             original_tri_area,
+                                             original_tri_area / (original_sphere_radius ** 2),
                                              angle_a,
                                              angle_b,
                                              angle_c,
                                              sphere_radius)
+    print("u,v,w:", u,v,w)
 
     (arc_length_AD,
      arc_length_BD,
@@ -384,4 +417,9 @@ def find_ternary_split_point(triangle_vertices, sphere_radius, original_tri_area
                         coord_B,
                         coord_C,
                         sphere_radius)
+
+    D = convert_cartesian_array_to_spherical_array(D)
+    D[...,0] = original_sphere_radius
+    D = convert_spherical_array_to_cartesian_array(D)
+
     return D
