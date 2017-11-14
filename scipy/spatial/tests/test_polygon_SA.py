@@ -299,3 +299,55 @@ class TestSplittingTriangles(object):
                                                       cython=cython,
                                                       discretizations=7000)
             assert_allclose(actual_subtriangle_area, expected_sub_area)
+
+    @pytest.mark.parametrize("radius, iterations", [
+    (1.0, 1),
+    (200.2, 1),
+    # TODO: multiple iterations not working yet
+    #(1.0, 55),
+    #(200.2, 55),
+    #(3.0, 200),
+    #(390.9872, 200),
+    ])
+    def test_subtriangles_iterative(self,
+                                    radius,
+                                    iterations,
+                                    cython):
+        # iteratively subdivide a simple
+        # initial spherical triangle into 3 equal
+        # area parts & verify expected
+        # area of the final subtriangle
+        vertices = np.array([[-radius,0,0],
+                             [0,radius,0],
+                             [0,0,radius]])
+
+        original_tri_area = psa.poly_area(vertices=vertices,
+                                    radius=radius,
+                                    cython=cython,
+                                    discretizations=9000)
+        # original_tri_area calculation looks fine for
+        # radius of 200.2
+        new_tri_area = original_tri_area
+
+        for _ in range(iterations):
+            print("** input vertices before D calc:", vertices)
+            D = split_spherical_triangle.find_ternary_split_point(vertices,
+                                                                  radius,
+                                                                  new_tri_area)
+            print("** D point inside iteration:", D, "with cython set to:", cython)
+            new_vertices = np.array([vertices[0],
+                                     vertices[1],
+                                     D])
+            vertices = new_vertices
+            new_tri_area = psa.poly_area(vertices=vertices,
+                                        radius=radius,
+                                        cython=cython,
+                                        discretizations=9000)
+
+        expected_sub_area = original_tri_area / (3 * iterations)
+        actual_subtriangle_area = psa.poly_area(vertices=new_vertices,
+                                                radius=radius,
+                                                cython=cython,
+                                                discretizations=9000)
+        assert_allclose(actual_subtriangle_area,
+                        expected_sub_area)
