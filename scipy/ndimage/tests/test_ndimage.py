@@ -44,8 +44,6 @@ import scipy.ndimage as ndimage
 
 
 eps = 1e-12
-sup = suppress_warnings()
-sup.filter(module=numpy)
 
 def sumsq(a, b):
     return math.sqrt(((a - b)**2).sum())
@@ -1666,7 +1664,6 @@ class TestNdimage:
                                 extra_keywords={'b': 2})
             assert_array_almost_equal(out, [5, 7])
 
-    @sup
     def test_geometric_transform_endianness_with_output_parameter(self):
         # geometric transform given output ndarray or dtype with non-native endianness
         # see issue #4127
@@ -1728,7 +1725,6 @@ class TestNdimage:
         assert_array_almost_equal(out, [[0, 0], [0, 4], [0, 7]])
         assert_array_almost_equal(out, ndimage.shift(data[:,::2], (1, 1)))
 
-    @sup
     def test_map_coordinates_endianness_with_output_parameter(self):
         # output parameter given as array or dtype with either endianness
         # see issue #4127
@@ -2038,7 +2034,6 @@ class TestNdimage:
         tform_h2 = numpy.vstack((tform_h1, [[5, 2, 1]]))
         assert_raises(ValueError, ndimage.affine_transform, data, tform_h2)
 
-    @sup
     def test_affine_transform_1d_endianness_with_output_parameter(self):
         # 1d affine transform given output ndarray or dtype with either endianness
         # see issue #7388
@@ -2053,7 +2048,6 @@ class TestNdimage:
             result = out if returned is None else returned
             assert_array_almost_equal(result, [[1, 1], [1, 1]])
 
-    @sup
     def test_affine_transform_multi_d_endianness_with_output_parameter(self):
         # affine transform given output ndarray or dtype with either endianness
         # see issue #4127
