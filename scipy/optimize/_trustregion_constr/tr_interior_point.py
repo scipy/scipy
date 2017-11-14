@@ -256,12 +256,12 @@ def tr_interior_point(fun, grad, lagr_hess, n_vars, n_ineq, n_eq,
                       constr_ineq0, jac_ineq0, constr_eq0,
                       jac_eq0, stop_criteria,
                       enforce_feasibility, xtol, state,
-                      initial_barrier_parameter=0.1,
-                      initial_tolerance=0.1,
-                      initial_penalty=1.0,
-                      initial_trust_radius=1.0,
-                      return_all=False,
-                      factorization_method=None):
+                      initial_barrier_parameter,
+                      initial_tolerance,
+                      initial_penalty,
+                      initial_trust_radius,
+                      return_all,
+                      factorization_method):
     """Trust-region interior points method.
 
     Solve problem:
@@ -329,9 +329,8 @@ def tr_interior_point(fun, grad, lagr_hess, n_vars, n_ineq, n_eq,
             subprob.lagrangian_hessian,
             z, fun0_subprob, grad0_subprob,
             constr0_subprob, jac0_subprob, subprob.stop_criteria,
-            state, trust_lb, trust_ub, initial_penalty,
-            state.trust_radius, subprob.scaling, return_all,
-            factorization_method)
+            state, initial_penalty, state.trust_radius, return_all,
+            factorization_method, trust_lb, trust_ub, subprob.scaling,)
         z = state.x
         if stop_criteria(state):
             break

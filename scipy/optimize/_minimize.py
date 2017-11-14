@@ -18,6 +18,8 @@ import numpy as np
 
 from scipy._lib.six import callable
 
+from scipy.sparse.linalg import LinearOperator
+
 # unconstrained minimization
 from .optimize import (_minimize_neldermead, _minimize_powell, _minimize_cg,
                        _minimize_bfgs, _minimize_newtoncg,
@@ -27,6 +29,12 @@ from ._trustregion_dogleg import _minimize_dogleg
 from ._trustregion_ncg import _minimize_trust_ncg
 from ._trustregion_krylov import _minimize_trust_krylov
 from ._trustregion_exact import _minimize_trustregion_exact
+from ._trustregion_constr import _minimize_trustregion_constr
+from ._constraints import (NonlinearConstraint,
+                           LinearConstraint,
+                           BoxConstraint)
+from ._quasi_newton_approx import QuasiNewtonApprox, BFGS, SR1
+
 
 # constrained minimization
 from .lbfgsb import _minimize_lbfgsb
@@ -40,33 +48,22 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
              callback=None, options=None):
     """Minimization of scalar function of one or more variables.
 
-    In general, the optimization problems are of the form::
-
-        minimize f(x) subject to
-
-        g_i(x) >= 0,  i = 1,...,m
-        h_j(x)  = 0,  j = 1,...,p
-
-    where x is a vector of one or more variables.
-    ``g_i(x)`` are the inequality constraints.
-    ``h_j(x)`` are the equality constrains.
-
-    Optionally, the lower and upper bounds for each element in x can also be
-    specified using the `bounds` argument.
-
     Parameters
     ----------
     fun : callable
-        The objective function to be minimized. Must be in the form
-        ``f(x, *args)``. The optimizing argument, ``x``, is a 1-D array
-        of points, and ``args`` is a tuple of any additional fixed parameters
-        needed to completely specify the function.
-    x0 : ndarray
-        Initial guess. ``len(x0)`` is the dimensionality of the minimization
-        problem.
+        The objective function to be minimized.
+
+            ``fun(x, *args) -> float``
+
+        where x is an 1-D array with shape (n,) and `args`
+        is a tuple of the fixed parameters needed to completely
+        specify the function.
+    x0 : ndarray, shape (n,)
+        Initial guess. Array of real elements of size (n,),
+        where 'n' is the number of independent variables.
     args : tuple, optional
         Extra arguments passed to the objective function and its
-        derivatives (Jacobian, Hessian).
+        derivatives (`fun`, `jac` and `hess` functions).
     method : str or callable, optional
         Type of solver.  Should be one of
 
@@ -79,6 +76,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
             - 'TNC'         :ref:`(see here) <optimize.minimize-tnc>`
             - 'COBYLA'      :ref:`(see here) <optimize.minimize-cobyla>`
             - 'SLSQP'       :ref:`(see here) <optimize.minimize-slsqp>`
+            - 'trust-constr':ref:`(see here) <optimize.minimize-trustconstr>`
             - 'dogleg'      :ref:`(see here) <optimize.minimize-dogleg>`
             - 'trust-ncg'   :ref:`(see here) <optimize.minimize-trustncg>`
             - 'trust-exact' :ref:`(see here) <optimize.minimize-trustexact>`
@@ -88,32 +86,75 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
         If not given, chosen to be one of ``BFGS``, ``L-BFGS-B``, ``SLSQP``,
         depending if the problem has constraints or bounds.
-    jac : bool or callable, optional
-        Jacobian (gradient) of objective function. Only for CG, BFGS,
+    jac : {callable,  '2-point', '3-point', 'cs', bool}, optional
+        Method for computing the gradient vector. Only for CG, BFGS,
         Newton-CG, L-BFGS-B, TNC, SLSQP, dogleg, trust-ncg, trust-krylov,
-        trust-region-exact.
+        trust-exact and trust-constr. If it is a callable, it should be a
+        function that returns the gradient vector:
+
+            ``jac(x, *args) -> array_like, shape (n,)``
+
+        where x is an array with shape (n,) and `args` is a tuple with
+        the fixed parameters. Alternatively, the keywords
+        {'2-point', '3-point', 'cs'} select a finite
+        difference scheme for numerical estimation of the gradient. Options
+        '3-point' and 'cs' are available only to 'trust-constr'.
         If `jac` is a Boolean and is True, `fun` is assumed to return the
-        gradient along with the objective function. If False, the
-        gradient will be estimated numerically.
-        `jac` can also be a callable returning the gradient of the
-        objective. In this case, it must accept the same arguments as `fun`.
-    hess, hessp : callable, optional
-        Hessian (matrix of second-order derivatives) of objective function or
-        Hessian of objective function times an arbitrary vector p.  Only for
-        Newton-CG, dogleg, trust-ncg, trust-krylov, trust-region-exact.
+        gradient along with the objective function. If False, the gradient
+        will be estimated using '2-point' finite difference estimation.
+    hess : {callable, '2-point', '3-point', 'cs', QuasiNewtonApprox},  optional
+        Method for computing the Hessian matrix. Only for Newton-CG, dogleg,
+        trust-ncg,  trust-krylov, trust-exact and trust-constr. If it is callable,
+        it should return the  Hessian matrix:
+
+            ``hess(x, *args) -> {LinearOperator, spmatrix, array}, (n, n)``
+
+        where x is a (n,) ndarray and `args` is a tuple with the fixed
+        parameters. LinearOperator and sparse matrix returns are
+        allowed only for 'trust-constr' method. Alternatively, the keywords
+        {'2-point', '3-point', 'cs'} select a finite difference scheme
+        for numerical estimation or a `QuasiNewtonApprox` object may be
+        passed on, defining a quasi-Newton Hessian approximation method.
+        Available quasi-Newton approximations are:
+
+            - `BFGS`;
+            - `SR1`.
+
+        Whenever the gradient is estimated
+        via finite-differences, the Hessian cannot be estimated with
+        options {'2-point', '3-point', 'cs'} and needs to be
+        estimated using one of the quasi-Newton strategies.
+        Finite-difference options {'2-point', '3-point', 'cs'} and
+        `QuasiNewtonApprox` are available only for 'trust-constr' method.
+    hessp : callable, optional
+        Hessian of objective function times an arbitrary vector p. Only for
+        Newton-CG, trust-ncg, trust-krylov, trust-constr.
         Only one of `hessp` or `hess` needs to be given.  If `hess` is
-        provided, then `hessp` will be ignored.  If neither `hess` nor
-        `hessp` is provided, then the Hessian product will be approximated
-        using finite differences on `jac`. `hessp` must compute the Hessian
-        times an arbitrary vector.
+        provided, then `hessp` will be ignored.  `hessp` must compute the
+        Hessian times an arbitrary vector:
+
+            ``hessp(x, p, *args) ->  ndarray shape (n,)``
+
+        where x is a (n,) ndarray, p is an arbitrary vector with
+        dimension (n,) and `args` is a tuple with the fixed
+        parameters.
     bounds : sequence, optional
         Bounds for variables (only for L-BFGS-B, TNC and SLSQP).
         ``(min, max)`` pairs for each element in ``x``, defining
         the bounds on that parameter. Use None for one of ``min`` or
         ``max`` when there is no bound in that direction.
-    constraints : dict or sequence of dict, optional
-        Constraints definition (only for COBYLA and SLSQP).
-        Each constraint is defined in a dictionary with fields:
+    constraints : {Constraint, dict} or List of {Constraint, dict}, optional
+        Constraints definition (only for COBYLA, SLSQP and trust-constr).
+        Constraints for 'trust-constr' are defined as a single object or a
+        list of objects specifying constraints to the optimization problem.
+        Available constraints are:
+
+            - `BoxConstraint`
+            - `LinearConstraint`
+            - `NonlinearConstraint`
+
+        Constraints for COBYLA, SLSQP are defined as a list of dictionaries.
+        Each dictionary with fields:
 
             type : str
                 Constraint type: 'eq' for equality, 'ineq' for inequality.
@@ -141,8 +182,20 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
         For method-specific options, see :func:`show_options()`.
     callback : callable, optional
-        Called after each iteration, as ``callback(xk)``, where ``xk`` is the
-        current parameter vector.
+        Called after each iteration. For 'trust-constr' it is a callable with
+        the signature:
+
+            ``callback(xk, OptimizeResult state) -> bool``
+
+        where ``xk`` is the current parameter vector. and ``state``
+        is an `OptimizeResult` object, with the same fields
+        as the ones from the return.  If callback returns True
+        the algorithm execution is terminated.
+        For all the other methods, the signature is:
+
+            ``callback(xk)``
+
+        where ``xk`` is the current parameter vector.
 
     Returns
     -------
@@ -228,7 +281,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     situations, the Newton method to converge in fewer iteraction
     and the most recommended for small and medium-size problems.
 
-    **Constrained minimization**
+    **Bound-Constrained minimization**
 
     Method :ref:`L-BFGS-B <optimize.minimize-lbfgsb>` uses the L-BFGS-B
     algorithm [6]_, [7]_ for bound constrained minimization.
@@ -239,6 +292,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     called Newton Conjugate-Gradient. It differs from the *Newton-CG*
     method described above as it wraps a C implementation and allows
     each variable to be given upper and lower bounds.
+
+    **Constrained Minimization**
 
     Method :ref:`COBYLA <optimize.minimize-cobyla>` uses the
     Constrained Optimization BY Linear Approximation (COBYLA) method
@@ -255,6 +310,32 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     originally implemented by Dieter Kraft [12]_. Note that the
     wrapper handles infinite values in bounds by converting them into
     large floating values.
+
+    Method :ref:`trust-constr <optimize.minimize-trustconstr>` is a
+    trust-region algorithm for constrained optimization. It swiches
+    between two implementations depending on the problem definition.
+    It is the most versatile constrained minimization algorithm
+    implemented in SciPy and the most appropriate for large-scale problems.
+    For equality constrained problems it is an implementation of Byrd-Omojokun
+    Trust-Region SQP method described in [17]_ and in [5]_, p. 549. When
+    inequality constraints  are imposed as well, it swiches to the trust-region
+    interior point  method described in [16]_. This interior point algorithm,
+    in turn, solves inequality constraints by introducing slack variables
+    and solving a sequence of equality-constrained barrier problems
+    for progressively smaller values of the barrier parameter.
+    The previously described equality constrained SQP method is
+    used to solve the subproblems with increasing levels of accuracy
+    as the iterate gets closer to a solution.
+
+    **Finite-Difference Options**
+
+    For Method :ref:`trust-constr <optimize.minimize-trustconstr>`
+    the gradient and the Hessian may be approximated using
+    three finite-difference schemes: {'2-point', '3-point', 'cs'}.
+    The scheme 'cs' is, potentially, the most accurate but it
+    requires the function to correctly handles complex inputs and to
+    be differentiable in the complex plane. The scheme '3-point' is more
+    accurate than '2-point' but requires twice as much operations.
 
     **Custom minimizers**
 
@@ -324,6 +405,12 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     .. [15] N. Gould, S. Lucidi, M. Roma, P. Toint: "Solving the
        Trust-Region Subproblem using the Lanczos Method",
        SIAM J. Optim., 9(2), 504--525, (1999).
+    .. [16] Byrd, Richard H., Mary E. Hribar, and Jorge Nocedal. 1999.
+        An interior point algorithm for large-scale nonlinear  programming.
+        SIAM Journal on Optimization 9.4: 877-900.
+    .. [17] Lalee, Marucha, Jorge Nocedal, and Todd Plantega. 1998. On the
+        implementation of an algorithm for large-scale equality constrained
+        optimization. SIAM Journal on Optimization 8.3: 682-706.
 
     Examples
     --------
@@ -388,6 +475,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     x0 = np.asarray(x0)
     if x0.dtype.kind in np.typecodes["AllInteger"]:
         x0 = np.asarray(x0, dtype=float)
+    n = len(x0)
 
     if not isinstance(args, tuple):
         args = (args,)
@@ -414,13 +502,14 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         warn('Method %s does not use gradient information (jac).' % method,
              RuntimeWarning)
     # - hess
-    if meth not in ('newton-cg', 'dogleg', 'trust-ncg', 'trust-krylov',
-                    'trust-exact', '_custom') and hess is not None:
+    if meth not in ('newton-cg', 'dogleg', 'trust-ncg', 'trust-constr',
+                    'trust-krylov', 'trust-exact', '_custom') and hess is not None:
         warn('Method %s does not use Hessian information (hess).' % method,
              RuntimeWarning)
     # - hessp
-    if meth not in ('newton-cg', 'dogleg', 'trust-ncg',
-                    'trust-krylov', '_custom') and hessp is not None:
+    if meth not in ('newton-cg', 'dogleg', 'trust-ncg', 'trust-constr',
+                    'trust-krylov', '_custom') \
+       and hessp is not None:
         warn('Method %s does not use Hessian-vector product '
              'information (hessp).' % method, RuntimeWarning)
     # - constraints or bounds
@@ -443,13 +532,28 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         warn('Method %s does not support the return_all option.' % method,
              RuntimeWarning)
 
-    # fun also returns the jacobian
-    if not callable(jac):
-        if bool(jac):
-            fun = MemoizeJac(fun)
-            jac = fun.derivative
-        else:
+    # check gradient vector
+    if meth == 'trust-constr':
+        if type(jac) is bool:
+            if jac:
+                fun = MemoizeJac(fun)
+                jac = fun.derivative
+            else:
+                jac = '2-point'
+        elif not callable(jac) and jac not in ('2-point', '3-point', 'cs'):
+            raise ValueError("Unsupported jac definition.")
+    else:
+        if jac in ('2-point', '3-point', 'cs'):
+            if jac in ('3-point', 'cs'):
+                warn("Only 'trust-constr' method accept %s "
+                     "options for 'jac'. Using '2-point' instead." % jac)
             jac = None
+        elif not callable(jac):
+            if bool(jac):
+                fun = MemoizeJac(fun)
+                jac = fun.derivative
+            else:
+                jac = None
 
     # set default tolerances
     if tol is not None:
@@ -466,6 +570,10 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
             options.setdefault('gtol', tol)
         if meth in ('cobyla', '_custom'):
             options.setdefault('tol', tol)
+        if meth == 'trust-constr':
+            options.setdefault('xtol', tol)
+            options.setdefault('gtol', tol)
+            options.setdefault('barrier_tol', tol)
 
     if meth == '_custom':
         return method(fun, x0, args=args, jac=jac, hess=hess, hessp=hessp,
@@ -493,6 +601,10 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     elif meth == 'slsqp':
         return _minimize_slsqp(fun, x0, args, jac, bounds,
                                constraints, callback=callback, **options)
+    elif meth == 'trust-constr':
+        return _minimize_trustregion_constr(fun, x0, args, jac, hess, hessp,
+                                            constraints, callback=callback,
+                                            **options)
     elif meth == 'dogleg':
         return _minimize_dogleg(fun, x0, args, jac, hess,
                                 callback=callback, **options)

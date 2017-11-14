@@ -1,5 +1,6 @@
 from __future__ import division, print_function, absolute_import
 import numpy as np
+import pytest
 from scipy.linalg import block_diag
 from scipy.sparse import csc_matrix
 from scipy.sparse.linalg import LinearOperator
@@ -11,10 +12,10 @@ from numpy.testing import (TestCase, assert_array_almost_equal,
 from scipy.optimize import (NonlinearConstraint,
                             LinearConstraint,
                             BoxConstraint,
-                            minimize_constrained,
+                            minimize,
                             BFGS,
                             SR1)
-from scipy.optimize._minimize_constrained import ScalarFunction
+from scipy.optimize._trustregion_constr.minimize_trustregion_constr import ScalarFunction
 
 
 class Maratos:
@@ -61,10 +62,103 @@ class Maratos:
         return NonlinearConstraint(fun, ("equals", 1), jac, hess)
 
 
-class MaratosApproxHess(Maratos):
+class MaratosTestArgs:
+    """Problem 15.4 from Nocedal and Wright
+
+    The following optimization problem:
+        minimize 2*(x[0]**2 + x[1]**2 - 1) - x[0]
+        Subject to: x[0]**2 + x[1]**2 - 1 = 0
+    """
+
+    def __init__(self, a, b, degrees=60, constr_jac=None, constr_hess=None):
+        rads = degrees/180*np.pi
+        self.x0 = [np.cos(rads), np.sin(rads)]
+        self.x_opt = np.array([1.0, 0.0])
+        self.constr_jac = constr_jac
+        self.constr_hess = constr_hess
+        self.a = a
+        self.b = b
+
+    def _test_args(self, a, b):
+        if self.a != a or self.b != b:
+            raise ValueError()
+
+    def fun(self, x, a, b):
+        self._test_args(a, b)
+        return 2*(x[0]**2 + x[1]**2 - 1) - x[0]
+
+    def grad(self, x, a, b):
+        self._test_args(a, b)
+        return np.array([4*x[0]-1, 4*x[1]])
+
+    def hess(self, x, a, b):
+        self._test_args(a, b)
+        return 4*np.eye(2)
+
     @property
-    def hess(self):
-        return '3-point'
+    def constr(self):
+        def fun(x):
+            return x[0]**2 + x[1]**2
+
+        if self.constr_jac is None:
+            def jac(x):
+                return [[4*x[0], 4*x[1]]]
+        else:
+            jac = self.constr_jac
+
+        if self.constr_hess is None:
+            def hess(x, v):
+                return 2*v[0]*np.eye(2)
+        else:
+            hess = self.constr_hess
+
+        return NonlinearConstraint(fun, ("equals", 1), jac, hess)
+
+
+class MaratosGradInFunc:
+    """Problem 15.4 from Nocedal and Wright
+
+    The following optimization problem:
+        minimize 2*(x[0]**2 + x[1]**2 - 1) - x[0]
+        Subject to: x[0]**2 + x[1]**2 - 1 = 0
+    """
+
+    def __init__(self, degrees=60, constr_jac=None, constr_hess=None):
+        rads = degrees/180*np.pi
+        self.x0 = [np.cos(rads), np.sin(rads)]
+        self.x_opt = np.array([1.0, 0.0])
+        self.constr_jac = constr_jac
+        self.constr_hess = constr_hess
+
+    def fun(self, x):
+        return (2*(x[0]**2 + x[1]**2 - 1) - x[0],
+                np.array([4*x[0]-1, 4*x[1]]))
+
+    @property
+    def grad(self):
+        return True
+
+    def hess(self, x):
+        return 4*np.eye(2)
+
+    @property
+    def constr(self):
+        def fun(x):
+            return x[0]**2 + x[1]**2
+
+        if self.constr_jac is None:
+            def jac(x):
+                return [[4*x[0], 4*x[1]]]
+        else:
+            jac = self.constr_jac
+
+        if self.constr_hess is None:
+            def hess(x, v):
+                return 2*v[0]*np.eye(2)
+        else:
+            hess = self.constr_hess
+
+        return NonlinearConstraint(fun, ("equals", 1), jac, hess)
 
 
 class HyperbolicIneq:
@@ -331,296 +425,135 @@ class Elec:
         return NonlinearConstraint(fun, ("less",), jac, hess)
 
 
-class TestMinimizeConstrained(TestCase):
+class TestTrustRegionConstr(TestCase):
 
     def test_list_of_problems(self):
         list_of_problems = [Maratos(),
                             Maratos(constr_hess='2-point'),
                             Maratos(constr_hess=SR1()),
                             Maratos(constr_jac='2-point', constr_hess=SR1()),
+                            MaratosGradInFunc(),
                             HyperbolicIneq(),
                             HyperbolicIneq(constr_hess='3-point'),
                             HyperbolicIneq(constr_hess=BFGS()),
-                            HyperbolicIneq(constr_jac='3-point', constr_hess=BFGS()),
+                            HyperbolicIneq(constr_jac='3-point',
+                                           constr_hess=BFGS()),
                             Rosenbrock(),
                             IneqRosenbrock(),
                             EqIneqRosenbrock(),
                             Elec(n_electrons=2),
                             Elec(n_electrons=2, constr_hess='2-point'),
                             Elec(n_electrons=2, constr_hess=SR1()),
-                            Elec(n_electrons=2, constr_jac='2-point', constr_hess=SR1())]
+                            Elec(n_electrons=2, constr_jac='2-point',
+                                 constr_hess=SR1())]
 
         for prob in list_of_problems:
-            for grad in (prob.grad, '2-point'):
+            for grad in (prob.grad, '3-point', False):
                 for hess in (prob.hess,
                              '3-point',
                              SR1(),
                              BFGS(exception_strategy='damped_bfgs'),
                              BFGS(exception_strategy='skip_update')):
 
-                    if grad in ('2-point', '3-point', 'cs') and \
+                    # Remove exceptions
+                    if grad in ('2-point', '3-point', 'cs', False) and \
                        hess in ('2-point', '3-point', 'cs'):
                         continue
+                    if prob.grad is True and grad in ('3-point', False):
+                        continue
 
-                    result = minimize_constrained(prob.fun, prob.x0,
-                                                  grad, hess,
-                                                  prob.constr, finite_diff_options=dict())
+                    result = minimize(prob.fun, prob.x0,
+                                      method='trust-constr',
+                                      jac=grad, hess=hess,
+                                      constraints=prob.constr)
 
                     if prob.x_opt is not None:
-                        assert_array_almost_equal(result.x, prob.x_opt, decimal=2)
-
+                        assert_array_almost_equal(result.x, prob.x_opt, decimal=5)
                         # gtol
                         if result.status == 1:
                             assert_array_less(result.optimality, 1e-8)
-
                     # xtol
                     if result.status == 2:
                         assert_array_less(result.trust_radius, 1e-8)
 
                         if result.method == "tr_interior_point":
                             assert_array_less(result.barrier_parameter, 1e-8)
-
                     # max iter
                     if result.status in (0, 3):
                         raise RuntimeError("Invalid termination condition.")
 
+    def test_no_constraints(self):
+        prob = Rosenbrock()
+        result = minimize(prob.fun, prob.x0,
+                          method='trust-constr',
+                          jac=prob.grad, hess=prob.hess)
+        result1 = minimize(prob.fun, prob.x0,
+                           method='BFGS',
+                           jac='2-point')
+        with pytest.warns(UserWarning):
+             result2 = minimize(prob.fun, prob.x0,
+                                method='BFGS',
+                                jac='3-point')
+        assert_array_almost_equal(result.x, prob.x_opt, decimal=5)
+        assert_array_almost_equal(result1.x, prob.x_opt, decimal=5)
+        assert_array_almost_equal(result2.x, prob.x_opt, decimal=5)
+
+
+    def test_hessp(self):
+        prob = Maratos()
+
+        def hessp(x, p):
+            H = prob.hess(x)
+            return H.dot(p)
+
+        result = minimize(prob.fun, prob.x0,
+                          method='trust-constr',
+                          jac=prob.grad, hessp=hessp,
+                          constraints=prob.constr)
+
+        if prob.x_opt is not None:
+            assert_array_almost_equal(result.x, prob.x_opt, decimal=2)
+
+        # gtol
+        if result.status == 1:
+            assert_array_less(result.optimality, 1e-8)
+        # xtol
+        if result.status == 2:
+            assert_array_less(result.trust_radius, 1e-8)
+
+            if result.method == "tr_interior_point":
+                assert_array_less(result.barrier_parameter, 1e-8)
+        # max iter
+        if result.status in (0, 3):
+            raise RuntimeError("Invalid termination condition.")
+
+    def test_args(self):
+        prob = MaratosTestArgs("a", 234)
+
+        result = minimize(prob.fun, prob.x0, ("a", 234),
+                          method='trust-constr',
+                          jac=prob.grad, hess=prob.hess,
+                          constraints=prob.constr)
+
+        if prob.x_opt is not None:
+            assert_array_almost_equal(result.x, prob.x_opt, decimal=2)
+
+        # gtol
+        if result.status == 1:
+            assert_array_less(result.optimality, 1e-8)
+        # xtol
+        if result.status == 2:
+            assert_array_less(result.trust_radius, 1e-8)
+
+            if result.method == "tr_interior_point":
+                assert_array_less(result.barrier_parameter, 1e-8)
+        # max iter
+        if result.status in (0, 3):
+            raise RuntimeError("Invalid termination condition.")
+
     def test_raise_exception(self):
         prob = Maratos()
 
-        assert_raises(ValueError, minimize_constrained, prob.fun, prob.x0,
-                     '2-point', '2-point', prob.constr)
+        assert_raises(ValueError, minimize, prob.fun, prob.x0, method='trust-constr',
+                      jac='2-point', hess='2-point', constraints=prob.constr)
 
-
-class ExScalarFunction:
-
-    def __init__(self):
-        self.nfev = 0
-        self.ngev = 0
-        self.nhev = 0
-
-    def fun(self, x):
-        self.nfev += 1
-        return 2*(x[0]**2 + x[1]**2 - 1) - x[0]
-
-    def grad(self, x):
-        self.ngev += 1
-        return np.array([4*x[0]-1, 4*x[1]])
-
-    def hess(self, x):
-        self.nhev += 1
-        return 4*np.eye(2)
-
-
-class TestScalarFunction(TestCase):
-
-    def test_finite_difference_grad(self):
-        ex = ExScalarFunction()
-        nfev = 0
-        ngev = 0
-
-        x0 = [1.0, 0.0]
-        analit = ScalarFunction(ex.fun, x0, ex.grad, None)
-        nfev += 1
-        ngev += 1
-        assert_array_equal(ex.nfev, nfev)
-        assert_array_equal(ex.ngev, ngev)
-        approx = ScalarFunction(ex.fun, x0, '2-point', None)
-        nfev += 3
-        assert_array_equal(ex.nfev, nfev)
-        assert_array_equal(ex.ngev, ngev)
-        assert_array_equal(analit.f, approx.f)
-        assert_array_almost_equal(analit.g, approx.g)
-
-        x = [2.0, 1.0]
-        g_analit = analit.grad(x)
-        ngev += 1
-        assert_array_equal(ex.nfev, nfev)
-        assert_array_equal(ex.ngev, ngev)
-        g_approx = approx.grad(x)
-        nfev += 3
-        assert_array_equal(ex.nfev, nfev)
-        assert_array_equal(ex.ngev, ngev)
-        assert_array_almost_equal(g_analit, g_approx)
-
-        x = [2.5, 0.3]
-        f_analit = analit.fun(x)
-        g_analit = analit.grad(x)
-        nfev += 1
-        ngev += 1
-        assert_array_equal(ex.nfev, nfev)
-        assert_array_equal(ex.ngev, ngev)
-        f_approx = approx.fun(x)
-        g_approx = approx.grad(x)
-        nfev += 3
-        assert_array_equal(ex.nfev, nfev)
-        assert_array_equal(ex.ngev, ngev)
-        assert_array_almost_equal(f_analit, f_approx)
-        assert_array_almost_equal(g_analit, g_approx)
-
-    def test_finite_difference_hess(self):
-        ex = ExScalarFunction()
-        nfev = 0
-        ngev = 0
-        nhev = 0
-
-        x0 = [1.0, 0.0]
-        analit = ScalarFunction(ex.fun, x0, ex.grad, ex.hess)
-        nfev += 1
-        ngev += 1
-        nhev += 1
-        assert_array_equal(ex.nfev, nfev)
-        assert_array_equal(ex.ngev, ngev)
-        assert_array_equal(ex.nhev, nhev)
-        approx = ScalarFunction(ex.fun, x0, ex.grad, '2-point')
-        nfev += 1
-        ngev += 3
-        assert_array_equal(ex.nfev, nfev)
-        assert_array_equal(ex.ngev, ngev)
-        assert_array_equal(ex.nhev, nhev)
-        assert_array_equal(analit.f, approx.f)
-        assert_array_almost_equal(analit.g, approx.g)
-        assert_array_almost_equal(analit.H, approx.H)
-
-        x = [2.0, 1.0]
-        H_analit = analit.hess(x)
-        nhev += 1
-        assert_array_equal(ex.nfev, nfev)
-        assert_array_equal(ex.ngev, ngev)
-        assert_array_equal(ex.nhev, nhev)
-        H_approx = approx.hess(x)
-        ngev += 3
-        assert_array_equal(ex.nfev, nfev)
-        assert_array_equal(ex.ngev, ngev)
-        assert_array_equal(ex.nhev, nhev)
-        assert_array_almost_equal(H_analit, H_approx)
-
-        x = [2.5, 0.3]
-        g_analit = analit.grad(x)
-        H_analit = analit.hess(x)
-        ngev += 1
-        nhev += 1
-        assert_array_equal(ex.nfev, nfev)
-        assert_array_equal(ex.ngev, ngev)
-        assert_array_equal(ex.nhev, nhev)
-        g_approx = approx.grad(x)
-        H_approx = approx.hess(x)
-        ngev += 3
-        assert_array_equal(ex.nfev, nfev)
-        assert_array_equal(ex.ngev, ngev)
-        assert_array_equal(ex.nhev, nhev)
-        assert_array_almost_equal(g_analit, g_approx)
-        assert_array_almost_equal(H_analit, H_approx)
-
-    def test_finite_difference_hess(self):
-        ex = ExScalarFunction()
-        nfev = 0
-        ngev = 0
-        nhev = 0
-
-        x0 = [1.0, 0.0]
-        analit = ScalarFunction(ex.fun, x0, ex.grad, ex.hess)
-        nfev += 1
-        ngev += 1
-        nhev += 1
-        assert_array_equal(ex.nfev, nfev)
-        assert_array_equal(ex.ngev, ngev)
-        assert_array_equal(ex.nhev, nhev)
-        approx = ScalarFunction(ex.fun, x0, ex.grad, '2-point')
-        nfev += 1
-        ngev += 3
-        assert_array_equal(ex.nfev, nfev)
-        assert_array_equal(ex.ngev, ngev)
-        assert_array_equal(ex.nhev, nhev)
-        assert_array_equal(analit.f, approx.f)
-        assert_array_almost_equal(analit.g, approx.g)
-        assert_array_almost_equal(analit.H, approx.H)
-
-        x = [2.0, 1.0]
-        H_analit = analit.hess(x)
-        nhev += 1
-        assert_array_equal(ex.nfev, nfev)
-        assert_array_equal(ex.ngev, ngev)
-        assert_array_equal(ex.nhev, nhev)
-        H_approx = approx.hess(x)
-        ngev += 3
-        assert_array_equal(ex.nfev, nfev)
-        assert_array_equal(ex.ngev, ngev)
-        assert_array_equal(ex.nhev, nhev)
-        assert_array_almost_equal(H_analit, H_approx)
-
-        x = [2.5, 0.3]
-        g_analit = analit.grad(x)
-        H_analit = analit.hess(x)
-        ngev += 1
-        nhev += 1
-        assert_array_equal(ex.nfev, nfev)
-        assert_array_equal(ex.ngev, ngev)
-        assert_array_equal(ex.nhev, nhev)
-        g_approx = approx.grad(x)
-        H_approx = approx.hess(x)
-        ngev += 3
-        assert_array_equal(ex.nfev, nfev)
-        assert_array_equal(ex.ngev, ngev)
-        assert_array_equal(ex.nhev, nhev)
-        assert_array_almost_equal(g_analit, g_approx)
-        assert_array_almost_equal(H_analit, H_approx)
-
-    def test_finite_difference_hess_linear_operator(self):
-        ex = ExScalarFunction()
-        nfev = 0
-        ngev = 0
-        nhev = 0
-        finite_diff_options = {"as_linear_operator": True}
-
-        x0 = [1.0, 0.0]
-        analit = ScalarFunction(ex.fun, x0, ex.grad, ex.hess)
-        nfev += 1
-        ngev += 1
-        nhev += 1
-        assert_array_equal(ex.nfev, nfev)
-        assert_array_equal(ex.ngev, ngev)
-        assert_array_equal(ex.nhev, nhev)
-        approx = ScalarFunction(ex.fun, x0, ex.grad, '2-point', finite_diff_options)
-        assert_(isinstance(approx.H, LinearOperator))
-        for v in ([1.0, 2.0], [3.0, 4.0], [5.0, 2.0]):
-            assert_array_equal(analit.f, approx.f)
-            assert_array_almost_equal(analit.g, approx.g)
-            assert_array_almost_equal(analit.H.dot(v), approx.H.dot(v))
-        nfev += 1
-        ngev += 4
-        assert_array_equal(ex.nfev, nfev)
-        assert_array_equal(ex.ngev, ngev)
-        assert_array_equal(ex.nhev, nhev)
-
-        x = [2.0, 1.0]
-        H_analit = analit.hess(x)
-        nhev += 1
-        assert_array_equal(ex.nfev, nfev)
-        assert_array_equal(ex.ngev, ngev)
-        assert_array_equal(ex.nhev, nhev)
-        H_approx = approx.hess(x)
-        assert_(isinstance(H_approx, LinearOperator))
-        for v in ([1.0, 2.0], [3.0, 4.0], [5.0, 2.0]):
-            assert_array_almost_equal(H_analit.dot(v), H_approx.dot(v))
-        ngev += 4
-        assert_array_equal(ex.nfev, nfev)
-        assert_array_equal(ex.ngev, ngev)
-        assert_array_equal(ex.nhev, nhev)
-
-        x = [2.5, 0.3]
-        g_analit = analit.grad(x)
-        H_analit = analit.hess(x)
-        ngev += 1
-        nhev += 1
-        assert_array_equal(ex.nfev, nfev)
-        assert_array_equal(ex.ngev, ngev)
-        assert_array_equal(ex.nhev, nhev)
-        g_approx = approx.grad(x)
-        H_approx = approx.hess(x)
-        assert_(isinstance(H_approx, LinearOperator))
-        for v in ([1.0, 2.0], [3.0, 4.0], [5.0, 2.0]):
-            assert_array_almost_equal(H_analit.dot(v), H_approx.dot(v))
-        ngev += 4
-        assert_array_equal(ex.nfev, nfev)
-        assert_array_equal(ex.ngev, ngev)
-        assert_array_equal(ex.nhev, nhev)

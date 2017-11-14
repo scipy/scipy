@@ -18,13 +18,13 @@ def default_scaling(x):
 def equality_constrained_sqp(fun_and_constr, grad_and_jac, lagr_hess,
                              x0, fun0, grad0, constr0,
                              jac0, stop_criteria, state,
+                             initial_penalty,
+                             initial_trust_radius,
+                             return_all,
+                             factorization_method,
                              trust_lb=None,
                              trust_ub=None,
-                             initial_penalty=1.0,
-                             initial_trust_radius=1.0,
-                             scaling=default_scaling,
-                             return_all=False,
-                             factorization_method=None):
+                             scaling=default_scaling):
     """Solve nonlinear equality-constrained problem using trust-region SQP.
 
     Solve optimization problem:
