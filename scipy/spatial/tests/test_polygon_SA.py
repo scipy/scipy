@@ -301,13 +301,14 @@ class TestSplittingTriangles(object):
             assert_allclose(actual_subtriangle_area, expected_sub_area)
 
     @pytest.mark.parametrize("radius, iterations", [
+    # NOTE: ~10 subdivisions seems to be
+    # current tolerance limit for area calc
     (1.0, 1),
     (200.2, 1),
-    # TODO: multiple iterations not working yet
-    #(1.0, 55),
-    #(200.2, 55),
-    #(3.0, 200),
-    #(390.9872, 200),
+    (1.0, 10),
+    (200.2, 10),
+    (3.0, 7),
+    (390.9872, 5),
     ])
     def test_subtriangles_iterative(self,
                                     radius,
@@ -324,7 +325,7 @@ class TestSplittingTriangles(object):
         original_tri_area = psa.poly_area(vertices=vertices,
                                     radius=radius,
                                     cython=cython,
-                                    discretizations=9000)
+                                    discretizations=12000)
         # original_tri_area calculation looks fine for
         # radius of 200.2
         new_tri_area = original_tri_area
@@ -344,7 +345,7 @@ class TestSplittingTriangles(object):
                                         cython=cython,
                                         discretizations=9000)
 
-        expected_sub_area = original_tri_area / (3 * iterations)
+        expected_sub_area = original_tri_area / (3 ** iterations)
         actual_subtriangle_area = psa.poly_area(vertices=new_vertices,
                                                 radius=radius,
                                                 cython=cython,
