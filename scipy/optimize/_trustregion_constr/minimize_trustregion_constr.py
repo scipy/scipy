@@ -1,21 +1,21 @@
 from __future__ import division, print_function, absolute_import
 import numpy as np
-from ._constraints import (NonlinearConstraint,
-                           LinearConstraint,
-                           BoxConstraint)
-from ._canonical_constraint import (lagrangian_hessian,
+from .._constraints import (NonlinearConstraint,
+                            LinearConstraint,
+                            BoxConstraint)
+from .._canonical_constraint import (lagrangian_hessian,
                                     to_canonical,
                                     empty_canonical_constraint)
-from ._large_scale_constrained import (tr_interior_point,
-                                       equality_constrained_sqp)
+from .equality_constrained_sqp import equality_constrained_sqp
+from .tr_interior_point import tr_interior_point
 from warnings import warn
 from copy import deepcopy
 from scipy.sparse.linalg import LinearOperator
-from ._quasi_newton_approx import QuasiNewtonApprox, BFGS, SR1
+from .._quasi_newton_approx import QuasiNewtonApprox, BFGS, SR1
 import scipy.sparse as sps
 import time
-from .optimize import OptimizeResult
-from ._numdiff import approx_derivative
+from ..optimize import OptimizeResult
+from .._numdiff import approx_derivative
 
 
 TERMINATION_MESSAGES = {
@@ -33,7 +33,7 @@ class ScalarFunction:
     computing or approximating its first and second derivatives.
     """
 
-    def __init__(self, fun, x0, grad='2-point', hess=BFGS(), finite_diff_options={}):
+    def __init__(self, fun, x0, args, grad='2-point', hess=BFGS(), finite_diff_options={}):
         self.x = np.atleast_1d(x0).astype(float)
         if grad in ('2-point', '3-point', 'cs'):
             finite_diff_options["method"] = grad
@@ -51,25 +51,26 @@ class ScalarFunction:
             self.first_iteration = True
 
         # Define function
-        self.f = fun(x0)
+        self.f = fun(x0, *args)
 
         if grad in ('2-point', '3-point', 'cs'):
             def fun_wrapped(x):
                 self.x_diff = x
-                self.f = fun(x)
+                self.f = fun(x, *args)
                 return self.f
         else:
-            fun_wrapped = fun
+            def fun_wrapped(x):
+                return fun(x, *args)
         self.fun = fun_wrapped
 
         # Define gradient
         if callable(grad):
-            self.g = np.atleast_1d(grad(x0))
+            self.g = np.atleast_1d(grad(x0, *args))
             if isinstance(hess, QuasiNewtonApprox):
                 self.g_prev = np.copy(self.g)
 
             def grad_wrapped(x):
-                return np.atleast_1d(grad(x))
+                return np.atleast_1d(grad(x, *args))
 
             if hess in ('2-point', '3-point', 'cs'):
                 def grad_wrapped2(x):
@@ -98,7 +99,7 @@ class ScalarFunction:
                 def grad_wrapped2(x):
                     if not np.array_equal(self.x_diff, x):
                         self.x_diff = x
-                        self.f = fun(x)
+                        self.f = fun(x, *args)
                     self.x_prev = self.x
                     self.g_prev = self.g
                     self.x = x
@@ -109,26 +110,26 @@ class ScalarFunction:
                 def grad_wrapped2(x):
                     if not np.array_equal(self.x_diff, x):
                         self.x_diff = x
-                        self.f = fun(x)
+                        self.f = fun(x, *args)
                     return grad_wrapped(x)
         self.grad = grad_wrapped2
 
         # Define Hessian
         if callable(hess):
-            self.H = hess(x0)
+            self.H = hess(x0, *args)
 
             if sps.issparse(self.H):
                 def hess_wrapped(x):
-                    return sps.csr_matrix(hess(x))
+                    return sps.csr_matrix(hess(x, *args))
                 self.H = sps.csr_matrix(self.H)
 
             elif isinstance(self.H, LinearOperator):
                 def hess_wrapped(x):
-                    return hess(x)
+                    return hess(x, *args)
 
             else:
                 def hess_wrapped(x):
-                    return  np.atleast_2d(np.asarray(hess(x)))
+                    return  np.atleast_2d(np.asarray(hess(x, *args)))
                 self.H = np.atleast_2d(np.asarray(self.H))
 
         elif hess in ('2-point', '3-point', 'cs'):
@@ -217,63 +218,22 @@ class ip_printer:
         print("")
 
 
-def minimize_constrained(fun, x0, grad='2-point', hess=BFGS(), constraints=(),
-                         method=None, xtol=1e-8, gtol=1e-8,
-                         sparse_jacobian=None, options=None,
-                         callback=None, max_iter=1000,
-                         verbose=0, finite_diff_options=None):
+def _minimize_trustregion_constr(fun, x0, args, grad,
+                                 hess, constraints,
+                                 xtol=1e-8, gtol=1e-8,
+                                 barrier_tol=1e-8,
+                                 sparse_jacobian=None,
+                                 callback=None, maxiter=1000,
+                                 verbose=0, finite_diff_options=None,
+                                 initial_penalty=1.0, initial_trust_radius=1.0,
+                                 initial_barrier_parameter=0.1,
+                                 initial_tolerance=0.1,
+                                 return_all=False, factorization_method=None,
+                                 disp=False):
     """Minimize scalar function subject to constraints.
 
-    Parameters
-    ----------
-    fun : callable
-        The objective function to be minimized.
-
-            ``fun(x) -> float``
-
-        where x is an array with shape (n,).
-    x0 : ndarray, shape (n,)
-        Initial guess. Array of real elements of size (n,),
-        where ``n`` is the number of independent variables.
-    grad : {callable,  '2-point', '3-point', 'cs'}, optional
-        Method for computing the gradient vector. The keywords selects a
-        finite difference scheme for numerical estimation of the gradient.
-        Alternatively, if it is a callable, it should be a function that
-        returns the gradient vector:
-
-            ``grad(x) -> array_like, shape (n,)``
-
-        where x is an array with shape (n,).
-    hess : {callable, '2-point', '3-point', 'cs', QuasiNewtonApprox, None}, optional
-        Method for computing the Hessian matrix. The keywords select a
-        finite difference scheme for numerical estimation. Alternativelly,
-        a `QuasiNewtonApprox` object may be passed on, defining a quasi-Newton
-        Hessian approximation method. Or, if it is a callable, it should return the 
-        Hessian matrix:
-
-            ``hess(x) -> {LinearOperator, sparse matrix, ndarray}, shape (n, n)``
-
-        where x is a (n,) ndarray. When ``hess`` is None it considers the Hessian
-        is a matrix filled with zeros.
-    constraints : Constraint or List of Constraint's, optional
-        A single object or a list of objects specifying
-        constraints to the optimization problem.
-        Available constraints are:
-
-            - `BoxConstraint`
-            - `LinearConstraint`
-            - `NonlinearConstraint`
-
-    method : {str, None}, optional
-        Type of solver. Should be one of:
-
-            - 'equality-constrained-sqp'
-            - 'tr-interior-point'
-
-        When None the more appropriate method is choosen.
-        'equality-constrained-sqp' is chosen for problems that
-        only have equality constraints and 'tr-interior-point'
-        for general optimization problems.
+    Options
+    -------
     xtol : float, optional
         Tolerance for termination by the change of the independent variable.
         The algorithm will terminate when ``delta < xtol``, where ``delta``
@@ -289,80 +249,70 @@ def minimize_constrained(fun, x0, grad='2-point', hess=BFGS(), constraints=(),
         the algorithm uses the more convenient option, using a sparse
         representation if at least one of the constraint Jacobians are sparse
         and a dense representation when they are all dense arrays.
-    options : dict, optional
-        A dictionary of solver options. Available options include:
+    initial_trust_radius: float
+        Initial trust-region radius. By defaut uses 1.0, as
+        suggested in [1]_, p.19.
+    initial_penalty : float
+        Initial penalty for merit function. By defaut uses 1.0, as
+        suggested in [1]_, p.19.
+    initial_barrier_parameter: float
+        Initial barrier parameter. Exclusive for 'tr_interior_point'
+        method. By default uses 0.1, as suggested in [1]_, p. 19.
+    initial_tolerance: float
+        Initial subproblem tolerance. Exclusive for
+        'tr_interior_point' method. By defaut uses 0.1,
+        as suggested in [1]_, p. 19.
+    return_all : bool, optional
+        When True return the list of all vectors
+        through the iterations.
+    factorization_method : string, optional
+        Method used for factorizing the jacobian matrix.
+        Should be one of:
 
-            initial_trust_radius: float
-                Initial trust-region radius. By defaut uses 1.0, as
-                suggested in [1]_, p.19, immediatly after algorithm III.
-            initial_penalty : float
-                Initial penalty for merit function. By defaut uses 1.0, as
-                suggested in [1]_, p.19, immediatly after algorithm III.
-            initial_barrier_parameter: float
-                Initial barrier parameter. Exclusive for 'tr_interior_point'
-                method. By default uses 0.1, as suggested in [1]_ immediatly
-                after algorithm III, p. 19.
-            initial_tolerance: float
-                Initial subproblem tolerance. Exclusive for
-                'tr_interior_point' method. By defaut uses 0.1,
-                as suggested in [1]_ immediatly after algorithm III, p. 19.
-            return_all : bool, optional
-                When True return the list of all vectors
-                through the iterations.
-            factorization_method : string, optional
-                Method used for factorizing the jacobian matrix.
-                Should be one of:
+            - 'NormalEquation'.
+            - 'AugmentedSystem'.
+            - 'QRFactorization'.
+            - 'SVDFactorization'.
 
-                - 'NormalEquation'.
-                - 'AugmentedSystem'.
-                - 'QRFactorization'.
-                - 'SVDFactorization'.
-
-                The factorization methods 'NormalEquation' and
-                'AugmentedSystem' should be used only when
-                ``sparse_jacobian=True``. The  projections
-                required by the algorithm will be computed using,
-                respectively, the the normal equation 
-                and the augmented system approach explained in [1]_.
-                'NormalEquation' computes the Cholesky
-                factorization of ``(A A.T)`` and 'AugmentedSystem' 
-                performes the LU factorization of an augmented system.
-                They usually provide similar results.
-                'NormalEquation' requires scikit-sparse
-                installed. 'AugmentedSystem' is used by
-                default for sparse matrices. 
-
-                The methods 'QRFactorization'
-                and 'SVDFactorization' should be used when
-                ``sparse_jacobian=False``. They compute
-                the required projections using, respectivelly,
-                QR and SVD factorizations.
-                The 'SVDFactorization' method can cope
-                with Jacobian matrices with deficient row
-                rank and will be used whenever other
-                factorization methods fails (which may
-                imply the conversion of sparse matrices
-                to a dense format when required). By default uses
-                'QRFactorization' for  dense matrices.
+        The factorization methods 'NormalEquation' and
+        'AugmentedSystem' should be used only when
+        ``sparse_jacobian=True``. The  projections
+        required by the algorithm will be computed using,
+        respectively, the the normal equation 
+        and the augmented system approach explained in [1]_.
+        'NormalEquation' computes the Cholesky
+        factorization of ``(A A.T)`` and 'AugmentedSystem' 
+        performes the LU factorization of an augmented system.
+        They usually provide similar results.
+        'NormalEquation' requires scikit-sparse
+        installed. 'AugmentedSystem' is used by
+        default for sparse matrices. 
+        The methods 'QRFactorization'
+        and 'SVDFactorization' should be used when
+        ``sparse_jacobian=False``. They compute
+        the required projections using, respectivelly,
+        QR and SVD factorizations.
+        The 'SVDFactorization' method can cope
+        with Jacobian matrices with deficient row
+        rank and will be used whenever other
+        factorization methods fails (which may
+        imply the conversion of sparse matrices
+        to a dense format when required). By default uses
+        'QRFactorization' for  dense matrices.
     finite_diff_options: dict, optional
         Dictionary with options to be passed on to `approx_derivative` method.
         These options will define the finite_difference approximation parameters.
-    callback : callable, optional
-        Called after each iteration:
-
-            ``callback(OptimizeResult state) -> bool``
-
-        If callback returns True the algorithm execution is terminated.
-        ``state`` is an `OptimizeResult` object, with the same fields
-        as the ones from the return.
-    max_iter : int, optional
-        Maximum number of algorithm iterations. By default ``max_iter=1000``
+    maxiter : int, optional
+        Maximum number of algorithm iterations. By default ``maxiter=1000``
     verbose : {0, 1, 2}, optional
         Level of algorithm's verbosity:
 
             * 0 (default) : work silently.
             * 1 : display a termination report.
             * 2 : display progress during iterations.
+    disp : bool
+        Set to True to force ``verbose`` to be greater or equal to 1,
+        printing convergence mensages.
 
     Returns
     -------
@@ -460,68 +410,15 @@ def minimize_constrained(fun, x0, grad='2-point', hess=BFGS(), constraints=(),
         for the tr_interior_point' method his is scaled augmented Jacobian
         matrix, defined as ``hat(A)`` in equation (19.36), reference [2]_,
         p. 581.
-
-    Notes
-    -----
-    Method 'equality_constrained_sqp' is an implementation of
-    Byrd-Omojokun Trust-Region SQP method described [3]_ and
-    in [2]_, p. 549. It solves equality constrained equality
-    constrained optimization problems by solving, at each substep,
-    a trust-region QP subproblem. The inexact solution of these
-    QP problems using projected CG method makes this method
-    appropriate for large-scale problems.
-
-    Method 'tr_interior_point' is an implementation of the
-    trust-region interior point method described in [1]_.
-    It solves general nonlinear by introducing slack variables
-    and solving a sequence of equality-constrained barrier problems
-    for progressively smaller values of the barrier parameter.
-    The previously described equality constrained SQP method is used
-    to solve the subproblems with increasing levels of accuracy as
-    the iterate gets closer to a solution. It is also an
-    appropriate method for large-scale problems.
-
-    Different methods are available for approximating the Hessian.
-    The `QuasiNewtonApprox` object may define a quasi-Newton Hessian
-    approximation. Available approximations are:
-
-    - `BFGS`;
-    - `SR1`;
-    - `L-BFGS`.
-
-    Finite difference schemes may be used for approximating
-    either the gradient or the Hessian. We, however, do not allow
-    its use for approximating both simultaneously. Hence
-    whenever the gradient is estimated via finite-differences,
-    we require the Hessian to be estimated using one of the
-    quasi-Newton strategies.
-
-    The scheme 'cs' is, potentially, the most accurate but
-    it requires the function to correctly handles complex inputs
-    and to be continuous in the complex plane. The scheme
-    '3-point' is more accurate than '2-point' but requires twice
-    as much operations.
-
-    References
-    ----------
-    .. [1] Byrd, Richard H., Mary E. Hribar, and Jorge Nocedal.
-           "An interior point algorithm for large-scale nonlinear
-           programming." SIAM Journal on Optimization 9.4 (1999): 877-900.
-    .. [2] Nocedal, Jorge, and Stephen J. Wright. "Numerical optimization"
-           Second Edition (2006).
-    .. [3] Lalee, Marucha, Jorge Nocedal, and Todd Plantega. "On the
-           implementation of an algorithm for large-scale equality
-           constrained optimization." SIAM Journal on
-           Optimization 8.3 (1998): 682-706.
     """
-    if options is None:
-        options = {}
+    if disp and verbose == 0:
+        verbose = 1
     if finite_diff_options is None:
         finite_diff_options = {}
     # Initial value
     if hess in ('2-point', '3-point', 'cs'):
         finite_diff_options["as_linear_operator"] = True
-    objective = ScalarFunction(fun, x0, grad, hess, finite_diff_options)
+    objective = ScalarFunction(fun, x0, args, grad, hess, finite_diff_options)
     x0 = np.atleast_1d(x0).astype(float)
     n_vars = np.size(x0)
 
@@ -548,17 +445,15 @@ def minimize_constrained(fun, x0, grad='2-point', hess=BFGS(), constraints=(),
                            ncev=1, njev=1, nhev=0,
                            cg_niter=0, cg_info={})
     # Store values
-    return_all = options.get("return_all", False)
     if return_all:
         state.allvecs = []
         state.allmult = []
 
     # Choose appropriate method
-    if method is None:
-        if constr.n_ineq == 0:
-            method = 'equality_constrained_sqp'
-        else:
-            method = 'tr_interior_point'
+    if constr.n_ineq == 0:
+        method = 'equality_constrained_sqp'
+    else:
+        method = 'tr_interior_point'
 
     # Define stop criteria
     if method == 'equality_constrained_sqp':
@@ -572,18 +467,17 @@ def minimize_constrained(fun, x0, grad='2-point', hess=BFGS(), constraints=(),
                                                state.optimality,
                                                state.constr_violation)
             state.status = None
-            if (callback is not None) and callback(state):
+            if (callback is not None) and callback(state.x, state):
                 state.status = 3
             elif state.optimality < gtol and state.constr_violation < gtol:
                 state.status = 1
             elif state.trust_radius < xtol:
                 state.status = 2
-            elif state.niter > max_iter:
+            elif state.niter > maxiter:
                 state.status = 0
             return state.status in (0, 1, 2, 3)
     elif method == 'tr_interior_point':
         def stop_criteria(state):
-            barrier_tol = options.get("barrier_tol", 1e-8)
             if verbose >= 2:
                 ip_printer.print_problem_iter(state.niter,
                                               state.nfev,
@@ -594,14 +488,14 @@ def minimize_constrained(fun, x0, grad='2-point', hess=BFGS(), constraints=(),
                                               state.optimality,
                                               state.constr_violation)
             state.status = None
-            if (callback is not None) and callback(state):
+            if (callback is not None) and callback(state.x, state):
                 state.status = 3
             elif state.optimality < gtol and state.constr_violation < gtol:
                 state.status = 1
             elif (state.trust_radius < xtol
                   and state.barrier_parameter < barrier_tol):
                 state.status = 2
-            elif state.niter > max_iter:
+            elif state.niter > maxiter:
                 state.status = 0
             return state.status in (0, 1, 2, 3)
 
@@ -632,7 +526,9 @@ def minimize_constrained(fun, x0, grad='2-point', hess=BFGS(), constraints=(),
             fun_and_constr, grad_and_jac, lagr_hess,
             x0, objective.f, objective.g,
             constr.c_eq0, constr.J_eq0,
-            stop_criteria, state, **options)
+            stop_criteria, state,
+            initial_penalty, initial_trust_radius,
+            return_all, factorization_method)
 
     elif method == 'tr_interior_point':
         if constr.n_ineq == 0:
@@ -646,7 +542,8 @@ def minimize_constrained(fun, x0, grad='2-point', hess=BFGS(), constraints=(),
             x0, objective.f, objective.g, constr.c_ineq0, constr.J_ineq0,
             constr.c_eq0, constr.J_eq0, stop_criteria,
             constr.enforce_feasibility,
-            xtol, state, **options)
+            xtol, state, initial_barrier_parameter, initial_tolerance,
+            initial_penalty, initial_trust_radius, return_all, factorization_method)
     else:
         raise ValueError("Unknown optimization ``method``.")
 

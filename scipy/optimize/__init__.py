@@ -16,7 +16,6 @@ Local Optimization
 
    minimize - Interface for minimizers of multivariate functions
    minimize_scalar - Interface for minimizers of univariate functions
-   minimize_constrained - Interface for minimizers of multivariate functions subject to constraints.
    OptimizeResult - The optimization result returned by some optimizers
    OptimizeWarning - The optimization encountered problems
 
@@ -33,13 +32,14 @@ The `minimize` function supports the following methods:
    optimize.minimize-tnc
    optimize.minimize-cobyla
    optimize.minimize-slsqp
+   optimize.minimize-trustconstr
    optimize.minimize-dogleg
    optimize.minimize-trustncg
    optimize.minimize-trustkrylov
    optimize.minimize-trustexact
 
-Constraints are passed to `minimize_constrained` function as
-a single object or as a list of objects from the following classes:
+Constraints are passed to `minimize` function as a single object or 
+as a list of objects from the following classes:
 
 .. autosummary::
    :toctree: generated/
@@ -47,6 +47,15 @@ a single object or as a list of objects from the following classes:
    NonlinearConstraint - Class defining general nonlinear constraints.
    LinearConstraint - Class defining general linear constraints.
    BoxConstraint - Class defining box constraints.
+
+The following quasi-Newton options are passed to `minimize` function to approximate
+the Hessian (available only for the 'trust-constr' method):
+
+.. autosummary::
+   :toctree: generated/
+
+   BFGS - Broyden-Fletcher-Goldfarb-Shanno (BFGS) Hessian matrix approximation.
+   SR1 - Symmetric-rank-1 Hessian matrix approximation.
 
 The `minimize_scalar` function supports the following methods:
 
@@ -267,7 +276,6 @@ from ._lsq import least_squares, lsq_linear
 from ._constraints import (NonlinearConstraint,
                            LinearConstraint,
                            BoxConstraint)
-from ._minimize_constrained import minimize_constrained
 from ._quasi_newton_approx import BFGS, SR1
 
 __all__ = [s for s in dir() if not s.startswith('_')]

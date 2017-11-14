@@ -32,7 +32,7 @@ class VectorialFunction:
             self.x_diff = np.copy(self.x)
         if jac in ('2-point', '3-point', 'cs') and \
            hess in ('2-point', '3-point', 'cs'):
-            raise ValueError("Whenever the jacient is estimated via "
+            raise ValueError("Whenever the jacobian is estimated via "
                              "finite-differences, we require the Hessian to "
                              "be estimated using one of the quasi-Newton "
                              "strategies.")

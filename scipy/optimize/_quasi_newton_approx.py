@@ -88,6 +88,7 @@ class QuasiNewtonApprox(object):
 
 class BFGS(QuasiNewtonApprox):
     """Broyden-Fletcher-Goldfarb-Shanno (BFGS) Hessian matrix approximation.
+
     Parameters
     ----------
     approx_type : {'hess', 'inv_hess'}, optional
