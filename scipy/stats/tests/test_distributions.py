@@ -297,6 +297,44 @@ class TestNBinom(object):
         assert_equal(val, 0)
 
 
+class TestNormInvGauss(object):
+    def setup_method(self):
+        np.random.seed(1234)
+
+    def test_cdf_R(self):
+        # test pdf and cdf vals against R
+        # require("GeneralizedHyperbolic")
+        # x_test <- c(-7, -5, 0, 8, 15)
+        # r_cdf <- GeneralizedHyperbolic::pnig(x_test, mu = 0, a = 1, b = 0.5)
+        # r_pdf <- GeneralizedHyperbolic::dnig(x_test, mu = 0, a = 1, b = 0.5)
+        r_cdf = np.array([8.034920282e-07, 2.512671945e-05, 3.186661051e-01,
+                          9.988650664e-01, 9.999848769e-01])
+        x_test = np.array([-7, -5, 0, 8, 15])
+        vals_cdf = stats.norminvgauss.cdf(x_test, a=1, b=0.5)
+        assert_allclose(vals_cdf, r_cdf, atol=1e-9)
+
+    def test_pdf_R(self):
+        # values from R as defined in test_cdf_R
+        r_pdf = np.array([1.359600783e-06, 4.413878805e-05, 4.555014266e-01,
+                          7.450485342e-04, 8.917889931e-06])
+        x_test = np.array([-7, -5, 0, 8, 15])
+        vals_pdf = stats.norminvgauss.pdf(x_test, a=1, b=0.5)
+        assert_allclose(vals_pdf, r_pdf, atol=1e-9)
+
+    def test_stats(self):
+        a, b = 1, 0.5
+        gamma = np.sqrt(a**2 - b**2)
+        v_stats = (b / gamma, a**2 / gamma**3, 3.0 * b / (a * np.sqrt(gamma)),
+                   3.0 * (1 + 4 * b**2 / a**2) / gamma)
+        assert_equal(v_stats, stats.norminvgauss.stats(a, b, moments='mvsk'))
+
+    def test_ppf(self):
+        a, b = 1, 0.5
+        x_test = np.array([0.001, 0.5, 0.999])
+        vals = stats.norminvgauss.ppf(x_test, a, b)
+        assert_allclose(x_test, stats.norminvgauss.cdf(vals, a, b))
+
+
 class TestGeom(object):
     def setup_method(self):
         np.random.seed(1234)
