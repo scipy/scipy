@@ -43,19 +43,6 @@ from .cobyla import _minimize_cobyla
 from .slsqp import _minimize_slsqp
 
 
-class HessianLinearOperator(object):
-    """Build LinearOperator from hessp"""
-    def __init__(self, hessp, n):
-        self.hessp = hessp
-        self.n = n
-
-    def __call__(self, x, *args):
-        def matvec(p):
-            return self.hessp(x, p, *args)
-        
-        return LinearOperator((self.n, self.n), matvec=matvec)
-
-
 def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
              hessp=None, bounds=None, constraints=(), tol=None,
              callback=None, options=None):
@@ -572,11 +559,6 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
             else:
                 jac = None
 
-    # check hessian
-    if meth == 'trust-constr':
-        if callable(hessp) and hess is None:
-            hess = HessianLinearOperator(hessp, n)
-
     # set default tolerances
     if tol is not None:
         options = dict(options)
@@ -624,7 +606,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         return _minimize_slsqp(fun, x0, args, jac, bounds,
                                constraints, callback=callback, **options)
     elif meth == 'trust-constr':
-        return _minimize_trustregion_constr(fun, x0, args, jac, hess,
+        return _minimize_trustregion_constr(fun, x0, args, jac, hess, hessp,
                                             constraints, callback=callback,
                                             **options)
     elif meth == 'dogleg':

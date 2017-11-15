@@ -331,7 +331,7 @@ class Elec:
         return NonlinearConstraint(fun, ("less",), jac, hess)
 
 
-class TestMinimizeConstrained(TestCase):
+class TestTrustRegionConstr(TestCase):
 
     def test_list_of_problems(self):
         list_of_problems = [Maratos(),
@@ -388,62 +388,38 @@ class TestMinimizeConstrained(TestCase):
                         raise RuntimeError("Invalid termination condition.")
 
     def test_hessp(self):
-        list_of_problems = [Maratos(),
-                            Maratos(constr_hess='2-point'),
-                            Maratos(constr_hess=SR1()),
-                            Maratos(constr_jac='2-point', constr_hess=SR1()),
-                            HyperbolicIneq(),
-                            HyperbolicIneq(constr_hess='3-point'),
-                            HyperbolicIneq(constr_hess=BFGS()),
-                            HyperbolicIneq(constr_jac='3-point',
-                                           constr_hess=BFGS()),
-                            Rosenbrock(),
-                            IneqRosenbrock(),
-                            EqIneqRosenbrock(),
-                            Elec(n_electrons=2),
-                            Elec(n_electrons=2, constr_hess='2-point'),
-                            Elec(n_electrons=2, constr_hess=SR1()),
-                            Elec(n_electrons=2, constr_jac='2-point',
-                                 constr_hess=SR1())]
+        prob = Maratos()
 
-        for prob in list_of_problems:
-            for grad in (prob.grad, '2-point'):
-                for hess in (prob.hess,
-                             '3-point',
-                             SR1(),
-                             BFGS(exception_strategy='damped_bfgs'),
-                             BFGS(exception_strategy='skip_update')):
+        def hessp(x, p):
+            H = prob.hess(x)
+            return H.dot(p)
 
-                    if grad in ('2-point', '3-point', 'cs') and \
-                       hess in ('2-point', '3-point', 'cs'):
-                        continue
+        result = minimize(prob.fun, prob.x0,
+                          method='trust-constr',
+                          jac=prob.grad, hessp=hessp,
+                          constraints=prob.constr)
 
-                    result = minimize(prob.fun, prob.x0,
-                                      method='trust-constr',
-                                      jac=grad, hess=hess,
-                                      constraints=prob.constr)
+        if prob.x_opt is not None:
+            assert_array_almost_equal(result.x, prob.x_opt, decimal=2)
 
-                    if prob.x_opt is not None:
-                        assert_array_almost_equal(result.x, prob.x_opt, decimal=2)
+        # gtol
+        if result.status == 1:
+            assert_array_less(result.optimality, 1e-8)
 
-                        # gtol
-                        if result.status == 1:
-                            assert_array_less(result.optimality, 1e-8)
+        # xtol
+        if result.status == 2:
+            assert_array_less(result.trust_radius, 1e-8)
 
-                    # xtol
-                    if result.status == 2:
-                        assert_array_less(result.trust_radius, 1e-8)
+            if result.method == "tr_interior_point":
+                assert_array_less(result.barrier_parameter, 1e-8)
 
-                        if result.method == "tr_interior_point":
-                            assert_array_less(result.barrier_parameter, 1e-8)
-
-                    # max iter
-                    if result.status in (0, 3):
-                        raise RuntimeError("Invalid termination condition.")
+        # max iter
+        if result.status in (0, 3):
+            raise RuntimeError("Invalid termination condition.")
 
     def test_raise_exception(self):
         prob = Maratos()
 
         assert_raises(ValueError, _minimize_trustregion_constr, prob.fun, prob.x0, (),
-                      '2-point', '2-point', prob.constr)
+                      '2-point', '2-point', None, prob.constr)
 

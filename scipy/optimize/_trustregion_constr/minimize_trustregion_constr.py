@@ -18,6 +18,19 @@ from ..optimize import OptimizeResult
 from .._numdiff import approx_derivative
 
 
+
+class HessianLinearOperator(object):
+    """Build LinearOperator from hessp"""
+    def __init__(self, hessp, n):
+        self.hessp = hessp
+        self.n = n
+
+    def __call__(self, x, *args):
+        def matvec(p):
+            return self.hessp(x, p, *args)
+
+        return LinearOperator((self.n, self.n), matvec=matvec)
+
 TERMINATION_MESSAGES = {
     0: "The maximum number of function evaluations is exceeded.",
     1: "`gtol` termination condition is satisfied.",
@@ -219,7 +232,7 @@ class ip_printer:
 
 
 def _minimize_trustregion_constr(fun, x0, args, grad,
-                                 hess, constraints,
+                                 hess, hessp, constraints,
                                  xtol=1e-8, gtol=1e-8,
                                  barrier_tol=1e-8,
                                  sparse_jacobian=None,
@@ -411,6 +424,10 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
         matrix, defined as ``hat(A)`` in equation (19.36), reference [2]_,
         p. 581.
     """
+    x0 = np.atleast_1d(x0).astype(float)
+    n_vars = np.size(x0)
+    if callable(hessp) and hess is None:
+        hess = HessianLinearOperator(hessp, n_vars)
     if disp and verbose == 0:
         verbose = 1
     if finite_diff_options is None:
@@ -419,8 +436,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
     if hess in ('2-point', '3-point', 'cs'):
         finite_diff_options["as_linear_operator"] = True
     objective = ScalarFunction(fun, x0, args, grad, hess, finite_diff_options)
-    x0 = np.atleast_1d(x0).astype(float)
-    n_vars = np.size(x0)
+
 
     # Put constraints in list format when needed
     if isinstance(constraints, (NonlinearConstraint,
