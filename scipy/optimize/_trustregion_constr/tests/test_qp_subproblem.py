@@ -1,13 +1,13 @@
 import numpy as np
 from scipy.sparse import csc_matrix
-from scipy.optimize._large_scale_constrained.qp_subproblem \
+from scipy.optimize._trustregion_constr.qp_subproblem \
     import (eqp_kktfact,
             projected_cg,
             box_intersections,
             sphere_intersections,
             box_sphere_intersections,
             modified_dogleg)
-from scipy.optimize._large_scale_constrained.projections \
+from scipy.optimize._trustregion_constr.projections \
     import projections
 from numpy.testing import (TestCase, assert_array_almost_equal,
                            assert_array_equal, assert_array_less,

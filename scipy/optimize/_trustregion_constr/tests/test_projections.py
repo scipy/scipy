@@ -2,7 +2,7 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 import scipy.linalg
 from scipy.sparse import csc_matrix
-from scipy.optimize._large_scale_constrained.projections \
+from scipy.optimize._trustregion_constr.projections \
     import projections, orthogonality
 from numpy.testing import (TestCase, assert_array_almost_equal,
                            assert_array_equal, assert_array_less,

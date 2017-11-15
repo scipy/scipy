@@ -3,7 +3,6 @@ import numpy as np
 import pytest
 from scipy.linalg import block_diag
 from scipy.sparse import csc_matrix
-from scipy.sparse.linalg import LinearOperator
 from numpy.testing import (TestCase, assert_array_almost_equal,
                            assert_array_equal, assert_array_less,
                            assert_raises, assert_equal, assert_,
@@ -15,7 +14,6 @@ from scipy.optimize import (NonlinearConstraint,
                             minimize,
                             BFGS,
                             SR1)
-from scipy.optimize._trustregion_constr.minimize_trustregion_constr import ScalarFunction
 
 
 class Maratos:
@@ -444,7 +442,7 @@ class TestTrustRegionConstr(TestCase):
                             Elec(n_electrons=2),
                             Elec(n_electrons=2, constr_hess='2-point'),
                             Elec(n_electrons=2, constr_hess=SR1()),
-                            Elec(n_electrons=2, constr_jac='2-point',
+                            Elec(n_electrons=2, constr_jac='3-point',
                                  constr_hess=SR1())]
 
         for prob in list_of_problems:
@@ -488,16 +486,15 @@ class TestTrustRegionConstr(TestCase):
                           method='trust-constr',
                           jac=prob.grad, hess=prob.hess)
         result1 = minimize(prob.fun, prob.x0,
-                           method='BFGS',
+                           method='L-BFGS-B',
                            jac='2-point')
         with pytest.warns(UserWarning):
-             result2 = minimize(prob.fun, prob.x0,
-                                method='BFGS',
+            result2 = minimize(prob.fun, prob.x0,
+                                method='L-BFGS-B',
                                 jac='3-point')
         assert_array_almost_equal(result.x, prob.x_opt, decimal=5)
         assert_array_almost_equal(result1.x, prob.x_opt, decimal=5)
         assert_array_almost_equal(result2.x, prob.x_opt, decimal=5)
-
 
     def test_hessp(self):
         prob = Maratos()

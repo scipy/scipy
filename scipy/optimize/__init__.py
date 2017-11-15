@@ -38,7 +38,7 @@ The `minimize` function supports the following methods:
    optimize.minimize-trustkrylov
    optimize.minimize-trustexact
 
-Constraints are passed to `minimize` function as a single object or 
+Constraints are passed to `minimize` function as a single object or
 as a list of objects from the following classes:
 
 .. autosummary::
@@ -48,14 +48,16 @@ as a list of objects from the following classes:
    LinearConstraint - Class defining general linear constraints.
    BoxConstraint - Class defining box constraints.
 
-The following quasi-Newton options are passed to `minimize` function to approximate
-the Hessian (available only for the 'trust-constr' method):
+Quasi-Newton strategies implementing `HessianUpdateStrategy`
+interface can be used to approximate the Hessian in `minimize`
+function (available only for the 'trust-constr' method). Available
+quasi-Newton methods implementing this interface are:
 
 .. autosummary::
    :toctree: generated/
 
-   BFGS - Broyden-Fletcher-Goldfarb-Shanno (BFGS) Hessian matrix approximation.
-   SR1 - Symmetric-rank-1 Hessian matrix approximation.
+   BFGS - Broyden-Fletcher-Goldfarb-Shanno (BFGS) Hessian update strategy.
+   SR1 - Symmetric-rank-1 Hessian update strategy.
 
 The `minimize_scalar` function supports the following methods:
 
@@ -252,6 +254,7 @@ Utilities
 
    show_options - Show specific options optimization solvers
    LbfgsInvHessProduct - Linear operator for L-BFGS approximate inverse Hessian
+   HessianUpdateStrategy - Interface for implementing Hessian update strategies
 
 """
 
@@ -276,7 +279,7 @@ from ._lsq import least_squares, lsq_linear
 from ._constraints import (NonlinearConstraint,
                            LinearConstraint,
                            BoxConstraint)
-from ._quasi_newton_approx import BFGS, SR1
+from ._hessian_update_strategy import HessianUpdateStrategy, BFGS, SR1
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 
