@@ -3079,6 +3079,87 @@ class invgauss_gen(rv_continuous):
 invgauss = invgauss_gen(a=0.0, name='invgauss')
 
 
+class norminvgauss_gen(rv_continuous):
+    r"""A Normal Inverse Gaussian continuous random variable.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The usual probability density parametrisation for a Normal Inverse
+    Gaussian distribution is:
+
+    .. math::
+
+        g(x; \mu, a, b, d) =
+        \frac{a  d \exp\left(d \sqrt{a^2 - b^2} + b (x - \mu)\right)}
+        {\pi \sqrt{d^2 + (x - \mu)^2}} \,
+        K_1\left(a sqrt{d^2 + (x - \mu)^2}\right)
+
+    where x is a real number and the parameters are as follows:
+        - :math:`mu` : location
+        - a : tail heaviness, a > 0
+        - b : asymmetry parameter, |b|<= a
+        - d : scale parameter, d > 0
+        - :math:`K_1` : modified Bessel function of second kind.
+
+    The pdf of `norminvgauss` is the centered pdf with scale equal to one:
+
+        .. math::
+
+        f(x; a, b) = g(x; 0, a, b, 1)
+        \frac{a  \exp\left(\sqrt{a^2 - b^2} + b x\right)}
+        {\pi \sqrt{1 + x^2}} \, K_1\left(a * sqrt{1 + x^2}\right)
+
+    Due to the scaling properties of the distributions, the density `g`
+    above can be obtained via
+
+        .. math::
+
+        g(x; \mu, a, b, d) = norminvgauss.pdf(x, a/d, b/d, loc=mu, scale=d)
+
+    %(after_notes)s
+
+    A Normal Inverse Gaussian random variable with parameters a and b can
+    be expressed  as ``X = b * V + sqrt(V) * X`` where ``X`` is ``norm(0,1)``
+    and ``V`` is ``invgauss(mu=1/sqrt(a**2 - b**2))``.
+
+    When the parameter :math:`\mu` of ìnvgauss` is too small
+    (:math:`\mu \le 0.0028`.), NaNs are returned. When sampling from
+    the normal inverse Gaussian, this is the case if
+    :math:`a^2 - b^2 \ge 1/0.0028^2`.
+
+    %(example)s
+
+    """
+    _support_mask = rv_continuous._open_support_mask
+
+    def _argcheck(self, a, b):
+        return (a > 0) & (np.absolute(b) < a)
+
+    def _pdf(self, x, a, b):
+        gamma = np.sqrt(a**2 - b**2)
+        fac1 = a / np.pi * np.exp(gamma)
+        sq = np.sqrt(1 + x**2)
+        return (fac1 * sc.k1e(a * sq) * np.exp(b*x - a*sq) / sq)
+
+    def _rvs(self, a, b):
+        # note: X = b * V + sqrt(V) * X is norminvgaus(a,b) if X is standard
+        # normal and V is invgauss(mu=1/sqrt(a**2 - b**2))
+        r_invgauss = invgauss.rvs(mu=1/np.sqrt(a**2 - b**2), size=self._size)
+        return b * r_invgauss + np.sqrt(r_invgauss) * norm.rvs(size=self._size)
+
+    def _stats(self, a, b):
+        gamma = np.sqrt(a**2 - b**2)
+        mean = b / gamma
+        variance = a**2 / gamma**3
+        skewness = 3.0 * b / (a * np.sqrt(gamma))
+        kurtosis = 3.0 * (1 + 4 * b**2 / a**2) / gamma
+        return mean, variance, skewness, kurtosis
+
+norminvgauss = norminvgauss_gen(name="norminvgauss")
+
+
 class invweibull_gen(rv_continuous):
     r"""An inverted Weibull continuous random variable.
 
