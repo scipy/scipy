@@ -247,15 +247,20 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
 
     Options
     -------
-    xtol : float, optional
-        Tolerance for termination by the change of the independent variable.
-        The algorithm will terminate when ``delta < xtol``, where ``delta``
-        is the algorithm trust-radius. Default is 1e-8.
     gtol : float, optional
         Tolerance for termination by the norm of the Lagrangian gradient.
         The algorithm will terminate when both the infinity norm (i.e. max
         abs value) of the Lagrangian gradient and the constraint violation
         are smaller than ``gtol``. Default is 1e-8.
+    xtol : float, optional
+        Tolerance for termination by the change of the independent variable.
+        The algorithm will terminate when ``delta < xtol``, where ``delta``
+        is the algorithm trust-radius. Default is 1e-8.
+    barrier_tol : float, optional
+        Barrier parameter required for termination. For the case the interior
+        point method is being employed, the algorithm can only be terminated
+        by the two above criterias (specified by `gtol` and `xtol`), if
+        the barrier barameter is smaller than ``barrier_tol``. Default is 1e-8.
     sparse_jacobian : {bool, None}
         The algorithm uses a sparse representation of the Jacobian if True
         and a dense representation if False. When sparse_jacobian is None
@@ -269,12 +274,13 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
         Initial penalty for merit function. By defaut uses 1.0, as
         suggested in [1]_, p.19.
     initial_barrier_parameter: float
-        Initial barrier parameter. Exclusive for 'tr_interior_point'
-        method. By default uses 0.1, as suggested in [1]_, p. 19.
+        Initial barrier parameter. Exclusive for the case the interior
+        method is being employed. By default uses 0.1, as suggested
+        in [1]_, p. 19.
     initial_tolerance: float
-        Initial subproblem tolerance. Exclusive for
-        'tr_interior_point' method. By defaut uses 0.1,
-        as suggested in [1]_, p. 19.
+        Initial subproblem tolerance. Exclusive for the case the interior
+        point method is being employed. By defaut uses 0.1, as suggested
+        in [1]_, p. 19.
     return_all : bool, optional
         When True return the list of all vectors
         through the iterations.
@@ -287,31 +293,22 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
             - 'QRFactorization'.
             - 'SVDFactorization'.
 
-        The factorization methods 'NormalEquation' and
-        'AugmentedSystem' should be used only when
-        ``sparse_jacobian=True``. The  projections
-        required by the algorithm will be computed using,
-        respectively, the the normal equation 
-        and the augmented system approach explained in [1]_.
-        'NormalEquation' computes the Cholesky
-        factorization of ``(A A.T)`` and 'AugmentedSystem' 
-        performes the LU factorization of an augmented system.
-        They usually provide similar results.
-        'NormalEquation' requires scikit-sparse
-        installed. 'AugmentedSystem' is used by
-        default for sparse matrices. 
-        The methods 'QRFactorization'
-        and 'SVDFactorization' should be used when
-        ``sparse_jacobian=False``. They compute
-        the required projections using, respectivelly,
-        QR and SVD factorizations.
-        The 'SVDFactorization' method can cope
-        with Jacobian matrices with deficient row
-        rank and will be used whenever other
-        factorization methods fails (which may
-        imply the conversion of sparse matrices
-        to a dense format when required). By default uses
-        'QRFactorization' for  dense matrices.
+        The factorization methods 'NormalEquation' and 'AugmentedSystem'
+        should be used only when ``sparse_jacobian=True``. The projections
+        required by the algorithm will be computed using, respectively,
+        the the normal equation and the augmented system approach explained
+        in [1]_. 'NormalEquation' computes the Cholesky factorization of
+        ``(A A.T)`` and 'AugmentedSystem' performes the LU factorization
+        of an augmented system. They usually provide similar results.
+        'NormalEquation' requires scikit-sparse installed. 'AugmentedSystem'
+        is used by default for sparse matrices. The methods 'QRFactorization'
+        and 'SVDFactorization' should be used when ``sparse_jacobian=False``.
+        They compute the required projections using, respectivelly,
+        QR and SVD factorizations. The 'SVDFactorization' method can cope
+        with Jacobian matrices with deficient row rank and will be used
+        whenever other factorization methods fails (which may imply the
+        conversion of sparse matrices to a dense format when required).
+        By default uses 'QRFactorization' for  dense matrices.
     finite_diff_options: dict, optional
         Dictionary with options to be passed on to `approx_derivative` method.
         These options will define the finite_difference approximation parameters.
@@ -323,106 +320,10 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
             * 0 (default) : work silently.
             * 1 : display a termination report.
             * 2 : display progress during iterations.
+
     disp : bool
         Set to True to force ``verbose`` to be greater or equal to 1,
         printing convergence mensages.
-
-    Returns
-    -------
-    `OptimizeResult` with the following fields defined:
-    x : ndarray, shape (n,)
-        Solution found.
-    s : ndarray, shape (n_ineq,)
-        Slack variables at the solution. ``n_ineq`` is the total number
-        of inequality constraints.
-    v : ndarray, shape (n_ineq + n_eq,)
-        Estimated Lagrange multipliers at the solution. ``n_ineq + n_eq``
-        is the total number of equality and inequality constraints.
-    niter : int
-        Total number of iterations.
-    nfev : int
-        Total number of objective function evaluations.
-    ngev : int
-        Total number of objective function gradient evaluations.
-    nhev : int
-        Total number of Lagragian Hessian evaluations. Each time the
-        Lagrangian Hessian is evaluated the objective function
-        Hessian and the constraints Hessians are evaluated
-        one time each.
-    ncev : int
-        Total number of constraint evaluations. The same couter
-        is used for equality and inequality constraints, because
-        they always are evaluated the same number of times.
-    njev : int
-        Total number of constraint Jacobian matrix evaluations.
-        The same couter is used for equality and inequality
-        constraint Jacobian matrices, because they always are
-        evaluated the same number of times.
-    cg_niter : int
-        Total number of CG iterations.
-    cg_info : Dict
-        Dictionary containing information about the latest CG iteration:
-
-            - 'niter' : Number of iterations.
-            - 'stop_cond' : Reason for CG subproblem termination:
-
-                1. Iteration limit was reached;
-                2. Reached the trust-region boundary;
-                3. Negative curvature detected;
-                4. Tolerance was satisfied.
-
-            - 'hits_boundary' : True if the proposed step is on the boundary
-              of the trust region.
-
-    execution_time : float
-        Total execution time.
-    trust_radius : float
-        Trust radius at the last iteration.
-    penalty : float
-        Penalty function at last iteration.
-    tolerance : float
-        Tolerance for barrier subproblem at the last iteration.
-        Exclusive for 'tr_interior_point'.
-    barrier_parameter : float
-        Barrier parameter at the last iteration. Exclusive for
-        'tr_interior_point'.
-    status : {0, 1, 2, 3}
-        Termination status:
-
-            * 0 : The maximum number of function evaluations is exceeded.
-            * 1 : `gtol` termination condition is satisfied.
-            * 2 : `xtol` termination condition is satisfied.
-            * 3 : `callback` function requested termination.
-
-    message : str
-        Termination message.
-    method : {'equality_constrained_sqp', 'tr_interior_point'}
-        Optimization method used.
-    constr_violation : float
-        Constraint violation at last iteration.
-    optimality : float
-        Norm of the Lagrangian gradient at last iteration.
-    fun : float
-        For the 'equality_constrained_sqp' method this is the objective
-        function evaluated at the solution and for the 'tr_interior_point'
-        method this is the barrier function evaluated at the solution.
-    grad : ndarray, shape (n,)
-        For the 'equality_constrained_sqp' method this is the gradient of the
-        objective function evaluated at the solution and for the
-        'tr_interior_point' method  this is the gradient of the barrier
-        function evaluated at the solution.
-    constr : ndarray, shape (n_ineq + n_eq,)
-        For the 'equality_constrained_sqp' method this is the equality
-        constraint evaluated at the solution and for the 'tr_interior_point'
-        method this are the equality and inequality constraints evaluated at
-        a given point (with the inequality constraints incremented by the
-        value of the slack variables).
-    jac : {ndarray, sparse matrix}, shape (n_ineq + n_eq, n)
-        For the 'equality_constrained_sqp' method this is the Jacobian
-        matrix of the equality constraint evaluated at the solution and
-        for the tr_interior_point' method his is scaled augmented Jacobian
-        matrix, defined as ``hat(A)`` in equation (19.36), reference [2]_,
-        p. 581.
     """
     x0 = np.atleast_1d(x0).astype(float)
     n_vars = np.size(x0)
@@ -506,7 +407,8 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
             state.status = None
             if (callback is not None) and callback(state.x, state):
                 state.status = 3
-            elif state.optimality < gtol and state.constr_violation < gtol:
+            elif (state.optimality < gtol and state.constr_violation < gtol
+                  and state.barrier_parameter < barrier_tol):
                 state.status = 1
             elif (state.trust_radius < xtol
                   and state.barrier_parameter < barrier_tol):

@@ -55,15 +55,15 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
             ``fun(x, *args) -> float``
 
-        where x is an 1-D array with shape (n,) and ``args``
+        where x is an 1-D array with shape (n,) and `args`
         is a tuple of the fixed parameters needed to completely
         specify the function.
     x0 : ndarray, shape (n,)
         Initial guess. Array of real elements of size (n,),
-        where ``n`` is the number of independent variables.
+        where 'n' is the number of independent variables.
     args : tuple, optional
         Extra arguments passed to the objective function and its
-        derivatives (``jac`` and ``hess`` functions).
+        derivatives (`fun`, `jac` and `hess` functions).
     method : str or callable, optional
         Type of solver.  Should be one of
 
@@ -89,34 +89,43 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     jac : {callable,  '2-point', '3-point', 'cs', bool}, optional
         Method for computing the gradient vector. Only for CG, BFGS,
         Newton-CG, L-BFGS-B, TNC, SLSQP, dogleg, trust-ncg, trust-krylov,
-        trust-exact, trust-constr. If it is a callable, it should be a
+        trust-exact and trust-constr. If it is a callable, it should be a
         function that returns the gradient vector:
 
             ``jac(x, *args) -> array_like, shape (n,)``
 
-        where x is an array with shape (n,) and `args`` is a tuple with
-        the fixed parameters. Alternatively, the keywords selects a finite
+        where x is an array with shape (n,) and `args` is a tuple with
+        the fixed parameters. Alternatively, the keywords
+        {'2-point', '3-point', 'cs'} select a finite
         difference scheme for numerical estimation of the gradient. Options
         '3-point' and 'cs' are available only to 'trust-constr'.
         If `jac` is a Boolean and is True, `fun` is assumed to return the
         gradient along with the objective function. If False, the gradient
-        will be using '2-point' finite difference estimation.
+        will be estimated using '2-point' finite difference estimation.
     hess : {callable, '2-point', '3-point', 'cs', QuasiNewtonApprox},  optional
         Method for computing the Hessian matrix. Only for Newton-CG, dogleg,
-        trust-ncg,  trust-krylov, trust-exact, trust-constr. If it is callable,
+        trust-ncg,  trust-krylov, trust-exact and trust-constr. If it is callable,
         it should return the  Hessian matrix:
 
             ``hess(x, *args) -> {LinearOperator, spmatrix, array}, (n, n)``
 
-        where x is a (n,) ndarray and `args`` is a tuple with the fixed
+        where x is a (n,) ndarray and `args` is a tuple with the fixed
         parameters. LinearOperator and sparse matrix returns are
         allowed only for 'trust-constr' method. Alternatively, the keywords
-        {'2-point', '3-point', 'cs',} select a finite difference scheme
+        {'2-point', '3-point', 'cs'} select a finite difference scheme
         for numerical estimation or a `QuasiNewtonApprox` object may be
         passed on, defining a quasi-Newton Hessian approximation method.
-        Both the finite-difference options {'2-point', '3-point', 'cs'} and
-        `QuasiNewtonApprox` are available only for 'trust-constr' method as
-        well.
+        Available quasi-Newton approximations are:
+
+            - `BFGS`;
+            - `SR1`.
+
+        Whenever the gradient is estimated
+        via finite-differences, the Hessian cannot be estimated with
+        options {'2-point', '3-point', 'cs'} and needs to be
+        estimated using one of the quasi-Newton strategies.
+        Finite-difference options {'2-point', '3-point', 'cs'} and
+        `QuasiNewtonApprox` are available only for 'trust-constr' method.
     hessp : callable, optional
         Hessian of objective function times an arbitrary vector p. Only for
         Newton-CG, trust-ncg, trust-krylov, trust-constr.
@@ -127,7 +136,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
             ``hessp(x, p, *args) ->  ndarray shape (n,)``
 
         where x is a (n,) ndarray, p is an arbitrary vector with
-        dimension (n,) and ``args`` is a tuple with the fixed
+        dimension (n,) and `args` is a tuple with the fixed
         parameters.
     bounds : sequence, optional
         Bounds for variables (only for L-BFGS-B, TNC and SLSQP).
@@ -318,28 +327,15 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     used to solve the subproblems with increasing levels of accuracy
     as the iterate gets closer to a solution.
 
-    **Hessian and Jacobian Approximation Options**
+    **Finite-Difference Options**
 
-    Different methods are available for approximating the Hessian.
-    The `QuasiNewtonApprox` object may define as a quasi-Newton
-    Hessian approximation. Available approximations are:
-
-    - `BFGS`;
-    - `SR1`.
-
-    Alternatively, finite difference schemes may be used
-    for approximating either the gradient or the Hessian.
-
-    The scheme 'cs' is, potentially, the most accurate but
-    it requires the function to correctly handles complex inputs
-    and to be continuous in the complex plane. The scheme
-    '3-point' is more accurate than '2-point' but requires twice
-    as much operations.
-
-    We, however, do not allow its use for approximating both
-    simultaneously. Hence  whenever the gradient is estimated
-    via finite-differences, we require the Hessian to be
-    estimated using one of the quasi-Newton strategies.
+    For Method :ref:`trust-constr <optimize.minimize-trustconstr>`
+    the gradient and the Hessian may be approximated using
+    three finite-difference schemes: {'2-point', '3-point', 'cs'}.
+    The scheme 'cs' is, potentially, the most accurate but it
+    requires the function to correctly handles complex inputs and to
+    be differentiable in the complex plane. The scheme '3-point' is more
+    accurate than '2-point' but requires twice as much operations.
 
     **Custom minimizers**
 
