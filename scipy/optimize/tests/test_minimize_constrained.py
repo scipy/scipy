@@ -420,6 +420,6 @@ class TestTrustRegionConstr(TestCase):
     def test_raise_exception(self):
         prob = Maratos()
 
-        assert_raises(ValueError, _minimize_trustregion_constr, prob.fun, prob.x0, (),
-                      '2-point', '2-point', None, prob.constr)
+        assert_raises(ValueError, minimize, prob.fun, prob.x0, method='trust-constr',
+                      jac='2-point', hess='2-point', constraints=prob.constr)
 
