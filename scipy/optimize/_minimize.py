@@ -548,10 +548,10 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
             raise ValueError("Unsupported jac definition.")
     else:
         if jac in ('2-point', '3-point', 'cs'):
-            jac = None
             if jac in ('3-point', 'cs'):
                 warn("Only 'trust-constr' method accept %s "
                      "options for 'jac'. Using '2-point' instead." % jac)
+            jac = None
         elif not callable(jac):
             if bool(jac):
                 fun = MemoizeJac(fun)

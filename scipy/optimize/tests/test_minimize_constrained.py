@@ -1,5 +1,6 @@
 from __future__ import division, print_function, absolute_import
 import numpy as np
+import pytest
 from scipy.linalg import block_diag
 from scipy.sparse import csc_matrix
 from scipy.sparse.linalg import LinearOperator
@@ -92,6 +93,52 @@ class MaratosTestArgs:
 
     def hess(self, x, a, b):
         self._test_args(a, b)
+        return 4*np.eye(2)
+
+    @property
+    def constr(self):
+        def fun(x):
+            return x[0]**2 + x[1]**2
+
+        if self.constr_jac is None:
+            def jac(x):
+                return [[4*x[0], 4*x[1]]]
+        else:
+            jac = self.constr_jac
+
+        if self.constr_hess is None:
+            def hess(x, v):
+                return 2*v[0]*np.eye(2)
+        else:
+            hess = self.constr_hess
+
+        return NonlinearConstraint(fun, ("equals", 1), jac, hess)
+
+
+class MaratosGradInFunc:
+    """Problem 15.4 from Nocedal and Wright
+
+    The following optimization problem:
+        minimize 2*(x[0]**2 + x[1]**2 - 1) - x[0]
+        Subject to: x[0]**2 + x[1]**2 - 1 = 0
+    """
+
+    def __init__(self, degrees=60, constr_jac=None, constr_hess=None):
+        rads = degrees/180*np.pi
+        self.x0 = [np.cos(rads), np.sin(rads)]
+        self.x_opt = np.array([1.0, 0.0])
+        self.constr_jac = constr_jac
+        self.constr_hess = constr_hess
+
+    def fun(self, x):
+        return (2*(x[0]**2 + x[1]**2 - 1) - x[0],
+                np.array([4*x[0]-1, 4*x[1]]))
+
+    @property
+    def grad(self):
+        return True
+
+    def hess(self, x):
         return 4*np.eye(2)
 
     @property
@@ -385,6 +432,7 @@ class TestTrustRegionConstr(TestCase):
                             Maratos(constr_hess='2-point'),
                             Maratos(constr_hess=SR1()),
                             Maratos(constr_jac='2-point', constr_hess=SR1()),
+                            MaratosGradInFunc(),
                             HyperbolicIneq(),
                             HyperbolicIneq(constr_hess='3-point'),
                             HyperbolicIneq(constr_hess=BFGS()),
@@ -400,15 +448,18 @@ class TestTrustRegionConstr(TestCase):
                                  constr_hess=SR1())]
 
         for prob in list_of_problems:
-            for grad in (prob.grad, '2-point'):
+            for grad in (prob.grad, '3-point', False):
                 for hess in (prob.hess,
                              '3-point',
                              SR1(),
                              BFGS(exception_strategy='damped_bfgs'),
                              BFGS(exception_strategy='skip_update')):
 
-                    if grad in ('2-point', '3-point', 'cs') and \
+                    # Remove exceptions
+                    if grad in ('2-point', '3-point', 'cs', False) and \
                        hess in ('2-point', '3-point', 'cs'):
+                        continue
+                    if prob.grad is True and grad in ('3-point', False):
                         continue
 
                     result = minimize(prob.fun, prob.x0,
@@ -417,22 +468,36 @@ class TestTrustRegionConstr(TestCase):
                                       constraints=prob.constr)
 
                     if prob.x_opt is not None:
-                        assert_array_almost_equal(result.x, prob.x_opt, decimal=2)
-
+                        assert_array_almost_equal(result.x, prob.x_opt, decimal=5)
                         # gtol
                         if result.status == 1:
                             assert_array_less(result.optimality, 1e-8)
-
                     # xtol
                     if result.status == 2:
                         assert_array_less(result.trust_radius, 1e-8)
 
                         if result.method == "tr_interior_point":
                             assert_array_less(result.barrier_parameter, 1e-8)
-
                     # max iter
                     if result.status in (0, 3):
                         raise RuntimeError("Invalid termination condition.")
+
+    def test_no_constraints(self):
+        prob = Rosenbrock()
+        result = minimize(prob.fun, prob.x0,
+                          method='trust-constr',
+                          jac=prob.grad, hess=prob.hess)
+        result1 = minimize(prob.fun, prob.x0,
+                           method='BFGS',
+                           jac='2-point')
+        with pytest.warns(UserWarning):
+             result2 = minimize(prob.fun, prob.x0,
+                                method='BFGS',
+                                jac='3-point')
+        assert_array_almost_equal(result.x, prob.x_opt, decimal=5)
+        assert_array_almost_equal(result1.x, prob.x_opt, decimal=5)
+        assert_array_almost_equal(result2.x, prob.x_opt, decimal=5)
+
 
     def test_hessp(self):
         prob = Maratos()
@@ -452,14 +517,12 @@ class TestTrustRegionConstr(TestCase):
         # gtol
         if result.status == 1:
             assert_array_less(result.optimality, 1e-8)
-
         # xtol
         if result.status == 2:
             assert_array_less(result.trust_radius, 1e-8)
 
             if result.method == "tr_interior_point":
                 assert_array_less(result.barrier_parameter, 1e-8)
-
         # max iter
         if result.status in (0, 3):
             raise RuntimeError("Invalid termination condition.")
@@ -478,14 +541,12 @@ class TestTrustRegionConstr(TestCase):
         # gtol
         if result.status == 1:
             assert_array_less(result.optimality, 1e-8)
-
         # xtol
         if result.status == 2:
             assert_array_less(result.trust_radius, 1e-8)
 
             if result.method == "tr_interior_point":
                 assert_array_less(result.barrier_parameter, 1e-8)
-
         # max iter
         if result.status in (0, 3):
             raise RuntimeError("Invalid termination condition.")
