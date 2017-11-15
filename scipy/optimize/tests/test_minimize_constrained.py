@@ -14,7 +14,7 @@ from scipy.optimize import (NonlinearConstraint,
                             minimize,
                             BFGS,
                             SR1)
-from scipy.optimize._trustregion_constr.minimize_trustregion_constr import ScalarFunction, _minimize_trustregion_constr
+from scipy.optimize._trustregion_constr.minimize_trustregion_constr import ScalarFunction
 
 
 class Maratos:
@@ -61,10 +61,57 @@ class Maratos:
         return NonlinearConstraint(fun, ("equals", 1), jac, hess)
 
 
-class MaratosApproxHess(Maratos):
+class MaratosTestArgs:
+    """Problem 15.4 from Nocedal and Wright
+
+    The following optimization problem:
+        minimize 2*(x[0]**2 + x[1]**2 - 1) - x[0]
+        Subject to: x[0]**2 + x[1]**2 - 1 = 0
+    """
+
+    def __init__(self, a, b, degrees=60, constr_jac=None, constr_hess=None):
+        rads = degrees/180*np.pi
+        self.x0 = [np.cos(rads), np.sin(rads)]
+        self.x_opt = np.array([1.0, 0.0])
+        self.constr_jac = constr_jac
+        self.constr_hess = constr_hess
+        self.a = a
+        self.b = b
+
+    def _test_args(self, a, b):
+        if self.a != a or self.b != b:
+            raise ValueError()
+
+    def fun(self, x, a, b):
+        self._test_args(a, b)
+        return 2*(x[0]**2 + x[1]**2 - 1) - x[0]
+
+    def grad(self, x, a, b):
+        self._test_args(a, b)
+        return np.array([4*x[0]-1, 4*x[1]])
+
+    def hess(self, x, a, b):
+        self._test_args(a, b)
+        return 4*np.eye(2)
+
     @property
-    def hess(self):
-        return '3-point'
+    def constr(self):
+        def fun(x):
+            return x[0]**2 + x[1]**2
+
+        if self.constr_jac is None:
+            def jac(x):
+                return [[4*x[0], 4*x[1]]]
+        else:
+            jac = self.constr_jac
+
+        if self.constr_hess is None:
+            def hess(x, v):
+                return 2*v[0]*np.eye(2)
+        else:
+            hess = self.constr_hess
+
+        return NonlinearConstraint(fun, ("equals", 1), jac, hess)
 
 
 class HyperbolicIneq:
@@ -397,6 +444,32 @@ class TestTrustRegionConstr(TestCase):
         result = minimize(prob.fun, prob.x0,
                           method='trust-constr',
                           jac=prob.grad, hessp=hessp,
+                          constraints=prob.constr)
+
+        if prob.x_opt is not None:
+            assert_array_almost_equal(result.x, prob.x_opt, decimal=2)
+
+        # gtol
+        if result.status == 1:
+            assert_array_less(result.optimality, 1e-8)
+
+        # xtol
+        if result.status == 2:
+            assert_array_less(result.trust_radius, 1e-8)
+
+            if result.method == "tr_interior_point":
+                assert_array_less(result.barrier_parameter, 1e-8)
+
+        # max iter
+        if result.status in (0, 3):
+            raise RuntimeError("Invalid termination condition.")
+
+    def test_args(self):
+        prob = MaratosTestArgs("a", 234)
+
+        result = minimize(prob.fun, prob.x0, ("a", 234),
+                          method='trust-constr',
+                          jac=prob.grad, hess=prob.hess,
                           constraints=prob.constr)
 
         if prob.x_opt is not None:
