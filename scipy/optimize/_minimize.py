@@ -49,11 +49,11 @@ class HessianLinearOperator(object):
         self.hessp = hessp
         self.n = n
 
-    def __call__(x, *args):
+    def __call__(self, x, *args):
         def matvec(p):
             return self.hessp(x, p, *args)
         
-        return LinearOperator((n, n), matvec=matvec)
+        return LinearOperator((self.n, self.n), matvec=matvec)
 
 
 def minimize(fun, x0, args=(), method=None, jac=None, hess=None,

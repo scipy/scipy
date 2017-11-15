@@ -129,7 +129,7 @@ class ScalarFunction:
 
             else:
                 def hess_wrapped(x):
-                    return  np.atleast_2d(np.asarray(hess(x, *args)))
+                    return np.atleast_2d(np.asarray(hess(x, *args)))
                 self.H = np.atleast_2d(np.asarray(self.H))
 
         elif hess in ('2-point', '3-point', 'cs'):
