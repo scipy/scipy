@@ -74,7 +74,7 @@ def configuration(parent_package='',top_path=None):
     
     config.add_subpackage('_trlib')
 
-    config.add_subpackage('_large_scale_constrained')
+    config.add_subpackage('_trustregion_constr')
 
     config.add_data_dir('tests')
 
