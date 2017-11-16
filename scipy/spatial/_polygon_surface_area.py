@@ -92,6 +92,9 @@ def _spherical_polygon_area(vertices, radius, discretizations):
 
         lambda_range = np.arctan2(new_pts[...,1], new_pts[...,0])
         phi_range = np.arcsin((new_pts[...,2]))
+        # NOTE: early stage handling of antipodes
+        if phi_range[0] == phi_range[-1]:
+            phi_range[:] = phi_range[0]
         area_element = 0
         for j in xrange(discretizations - 1):
             delta_lambda = (lambda_range[j+1] -
