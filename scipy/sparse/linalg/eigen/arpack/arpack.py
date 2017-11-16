@@ -1763,12 +1763,12 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     eigvals, eigvec = eigsh(XH_X, k=k, tol=tol ** 2, maxiter=maxiter,
                                   ncv=ncv, which=which, v0=v0)
 
+    # Gramian matrices have real non-negative eigenvalues.
+    eigvals = np.maximum(eigvals.real, 0)
+
     # In 'LM' mode try to be clever about small eigenvalues.
     # Otherwise in 'SM' mode do not try to be clever.
     if which == 'LM':
-
-        # Gramian matrices have real non-negative eigenvalues.
-        eigvals = np.maximum(eigvals.real, 0)
 
         # Use the sophisticated detection of small eigenvalues from pinvh.
         t = eigvec.dtype.char.lower()
