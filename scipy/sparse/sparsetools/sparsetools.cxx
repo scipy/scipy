@@ -447,7 +447,7 @@ fail:
         }
         #ifdef HAVE_WRITEBACKIFCOPY
             if (is_output[j] && arg_arrays[j] != NULL) {
-                PyArray_WriteBackIfCopy(arg_arrays[j]); 
+                PyArray_ResolveWritebackIfCopy(arg_arrays[j]); 
             }
         #endif
         Py_XDECREF(arg_arrays[j]);
@@ -585,7 +585,7 @@ static PyObject *c_array_from_object(PyObject *obj, int typenum, int is_output)
     }
     else {
         #ifdef HAVE_WRITEBACKIFCOPY
-            int flags = NPY_C_CONTIGUOUS|NPY_WRITEABLE|NPY_WRITEBACKIFCOPY|NPY_NOTSWAPPED;
+            int flags = NPY_C_CONTIGUOUS|NPY_WRITEABLE|NPY_ARRAY_WRITEBACKIFCOPY|NPY_NOTSWAPPED;
         #else
             int flags = NPY_C_CONTIGUOUS|NPY_WRITEABLE|NPY_UPDATEIFCOPY|NPY_NOTSWAPPED;
         #endif
