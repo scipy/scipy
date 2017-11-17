@@ -350,3 +350,73 @@ class TestSplittingTriangles(object):
                                                 discretizations=9000)
         assert_allclose(actual_subtriangle_area,
                         expected_sub_area)
+
+    @pytest.mark.parametrize("radius, iterations", [
+    (1.0, 3),
+    (200.2, 2),
+    (1.0, 10),
+    (200.2, 8),
+    (3.0, 7),
+    (390.9872, 5),
+    ])
+    def test_convoluted_polygons(self,
+                                 radius,
+                                 iterations,
+                                 cython):
+        # use spherical triangle 3-way splitting
+        # to generate convoluted multi-vertex
+        # spherical polygons
+        vertices = np.array([[-radius,0,0],
+                             [0,radius,0],
+                             [0,0,radius]])
+
+        original_area = psa.poly_area(vertices=vertices,
+                                      radius=radius,
+                                      cython=cython,
+                                      discretizations=12000)
+
+        # build up convoluted spherical polygons by
+        # finding the 3-way triangle split point and
+        # add this as a vertex to a newly-formed polygon
+
+        expected_area = original_area
+        new_tri_area = original_area
+        new_subtri = vertices
+        for iteration in range(iterations):
+            # always split the 'most recent' subtriangle
+            D = split_spherical_triangle.find_ternary_split_point(new_subtri,
+                                                                  radius,
+                                                                  new_tri_area)
+            # the new polygon has an extra vertex between the
+            # final and initial vertices on the first iteration,
+            # and then always after the third vertex
+            if iteration == 0:
+                vertices = np.concatenate((vertices, D.reshape((1,3))))
+            else:
+                vertices = np.concatenate((vertices[:3,...],
+                                           D.reshape((1,3)),
+                                           vertices[3:,...]))
+
+            new_subtri = np.array([vertices[1],
+                                   vertices[2],
+                                   D])
+
+            # because we add the 3-way split point of the latest
+            # spherical subtriangle, we adjust the expected area
+            # of the growing convoluted spherical polygon to drop
+            # by 1/3 of the surface area of the most recently-divided
+            # subtriangle
+            expected_area -= (new_tri_area * (1. / 3))
+
+            new_tri_area = psa.poly_area(vertices=new_subtri,
+                                        radius=radius,
+                                        cython=cython,
+                                        discretizations=92000)
+
+        actual_polygon_area = psa.poly_area(vertices=vertices,
+                                            radius=radius,
+                                            cython=cython,
+                                            discretizations=92000)
+
+        assert_allclose(actual_polygon_area,
+                        expected_area)
