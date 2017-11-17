@@ -446,8 +446,8 @@ fail:
             continue;
         }
         #ifdef HAVE_WRITEBACKIFCOPY
-            if (is_output[j] && arg_arrays[j] != NULL) {
-                PyArray_ResolveWritebackIfCopy(arg_arrays[j]); 
+            if (is_output[j] && arg_arrays[j] != NULL && PyArray_Check(arg_arrays[j])) {
+                PyArray_ResolveWritebackIfCopy((PyArrayObject *)arg_arrays[j]); 
             }
         #endif
         Py_XDECREF(arg_arrays[j]);
