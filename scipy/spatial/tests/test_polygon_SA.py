@@ -1,4 +1,3 @@
-from __future__ import print_function
 import numpy as np
 from scipy.spatial import _polygon_surface_area as psa
 from scipy.spatial.distance import pdist
@@ -329,16 +328,12 @@ class TestSplittingTriangles(object):
                                     radius=radius,
                                     cython=cython,
                                     discretizations=12000)
-        # original_tri_area calculation looks fine for
-        # radius of 200.2
         new_tri_area = original_tri_area
 
         for _ in range(iterations):
-            print("** input vertices before D calc:", vertices)
             D = split_spherical_triangle.find_ternary_split_point(vertices,
                                                                   radius,
                                                                   new_tri_area)
-            print("** D point inside iteration:", D, "with cython set to:", cython)
             new_vertices = np.array([vertices[0],
                                      vertices[1],
                                      D])
