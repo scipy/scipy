@@ -37,6 +37,10 @@
 
 #define MAX_ARGS 16
 
+#if NPY_API_VERSION >= 0x0000000c
+    #define HAVE_WRITEBACKIFCOPY
+#endif
+
 static const int supported_I_typenums[] = {NPY_INT32, NPY_INT64};
 static const int n_supported_I_typenums = sizeof(supported_I_typenums) / sizeof(int);
 
@@ -441,6 +445,11 @@ fail:
             --j;
             continue;
         }
+        #ifdef HAVE_WRITEBACKIFCOPY
+            if (is_output[j] && arg_arrays[j] != NULL && PyArray_Check(arg_arrays[j])) {
+                PyArray_ResolveWritebackIfCopy((PyArrayObject *)arg_arrays[j]); 
+            }
+        #endif
         Py_XDECREF(arg_arrays[j]);
         if ((*p == 'i' || *p == 'l') && arg_list[j] != NULL) {
             std::free(arg_list[j]);
@@ -575,11 +584,16 @@ static PyObject *c_array_from_object(PyObject *obj, int typenum, int is_output)
         }
     }
     else {
+        #ifdef HAVE_WRITEBACKIFCOPY
+            int flags = NPY_C_CONTIGUOUS|NPY_WRITEABLE|NPY_ARRAY_WRITEBACKIFCOPY|NPY_NOTSWAPPED;
+        #else
+            int flags = NPY_C_CONTIGUOUS|NPY_WRITEABLE|NPY_UPDATEIFCOPY|NPY_NOTSWAPPED;
+        #endif
         if (typenum == -1) {
-            return PyArray_FROM_OF(obj, NPY_C_CONTIGUOUS|NPY_WRITEABLE|NPY_UPDATEIFCOPY|NPY_NOTSWAPPED);
+            return PyArray_FROM_OF(obj, flags);
         }
         else {
-            return PyArray_FROM_OTF(obj, typenum, NPY_C_CONTIGUOUS|NPY_WRITEABLE|NPY_UPDATEIFCOPY|NPY_NOTSWAPPED);
+            return PyArray_FROM_OTF(obj, typenum, flags);
         }
     }
 }
