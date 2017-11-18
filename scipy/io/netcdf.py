@@ -429,7 +429,7 @@ class netcdf_file(object):
             self._pack_int(len(attributes))
             for name, values in attributes.items():
                 self._pack_string(name)
-                self._write_values(values)
+                self._write_att_values(values)
         else:
             self.fp.write(ABSENT)
 
@@ -496,6 +496,10 @@ class netcdf_file(object):
     def _write_var_data(self, name):
         var = self.variables[name]
 
+        # TODO: for full compliance with the netCDF spec, use _FillValue for
+        # padding instead of instead of always using using the null byte.
+        encoded_fill_value = b'\x00'
+
         # Set begin in file header.
         the_beguine = self.fp.tell()
         self.fp.seek(var._begin)
@@ -506,7 +510,7 @@ class netcdf_file(object):
         if not var.isrec:
             self.fp.write(var.data.tostring())
             count = var.data.size * var.data.itemsize
-            self.fp.write(b'0' * (var._vsize - count))
+            self.fp.write(encoded_fill_value * (var._vsize - count))
         else:  # record variable
             # Handle rec vars with shape[0] < nrecs.
             if self._recs > len(var.data):
@@ -529,12 +533,12 @@ class netcdf_file(object):
                 self.fp.write(rec.tostring())
                 # Padding
                 count = rec.size * rec.itemsize
-                self.fp.write(b'0' * (var._vsize - count))
+                self.fp.write(encoded_fill_value * (var._vsize - count))
                 pos += self._recsize
                 self.fp.seek(pos)
             self.fp.seek(pos0 + var._vsize)
 
-    def _write_values(self, values):
+    def _write_att_values(self, values):
         if hasattr(values, 'dtype'):
             nc_type = REVERSE[values.dtype.char, values.dtype.itemsize]
         else:
@@ -576,7 +580,7 @@ class netcdf_file(object):
             values = values.byteswap()
         self.fp.write(values.tostring())
         count = values.size * values.itemsize
-        self.fp.write(b'0' * (-count % 4))  # pad
+        self.fp.write(b'\x00' * (-count % 4))  # pad
 
     def _read(self):
         # Check magic bytes and version
@@ -620,7 +624,7 @@ class netcdf_file(object):
         attributes = OrderedDict()
         for attr in range(count):
             name = asstr(self._unpack_string())
-            attributes[name] = self._read_values()
+            attributes[name] = self._read_att_values()
         return attributes
 
     def _read_var_array(self):
@@ -732,7 +736,7 @@ class netcdf_file(object):
 
         return name, dimensions, shape, attributes, typecode, size, dtype_, begin, vsize
 
-    def _read_values(self):
+    def _read_att_values(self):
         nc_type = self.fp.read(4)
         n = self._unpack_int()
 
@@ -774,7 +778,7 @@ class netcdf_file(object):
         count = len(s)
         self._pack_int(count)
         self.fp.write(asbytes(s))
-        self.fp.write(b'0' * (-count % 4))  # pad
+        self.fp.write(b'\x00' * (-count % 4))  # pad
 
     def _unpack_string(self):
         count = self._unpack_int()
