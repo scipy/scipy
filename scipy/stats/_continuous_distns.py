@@ -3146,9 +3146,10 @@ class norminvgauss_gen(rv_continuous):
     def _rvs(self, a, b):
         # note: X = b * V + sqrt(V) * X is norminvgaus(a,b) if X is standard
         # normal and V is invgauss(mu=1/sqrt(a**2 - b**2))
+        gamma = np.sqrt(a**2 - b**2)
         sz, rndm = self._size, self._random_state
-        ig = invgauss.rvs(mu=1/sqrt(a**2 - b**2), size=sz, random_state=rndm)
-        return b * ig + sqrt(ig) * norm.rvs(size=sz, random_state=rndm)
+        ig = invgauss.rvs(mu=1/gamma, size=sz, random_state=rndm)
+        return b * ig + np.sqrt(ig) * norm.rvs(size=sz, random_state=rndm)
 
     def _stats(self, a, b):
         gamma = np.sqrt(a**2 - b**2)
