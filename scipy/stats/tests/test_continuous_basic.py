@@ -62,7 +62,7 @@ fails_cmplx = set(['beta', 'betaprime', 'chi', 'chi2', 'dgamma', 'dweibull',
                    'erlang', 'f', 'gamma', 'gausshyper', 'gengamma',
                    'gennorm', 'genpareto', 'halfgennorm', 'invgamma',
                    'ksone', 'kstwobign', 'levy_l', 'loggamma', 'logistic',
-                   'maxwell', 'nakagami', 'ncf', 'nct', 'ncx2',
+                   'maxwell', 'nakagami', 'ncf', 'nct', 'ncx2', 'norminvgauss',
                    'pearson3', 'rice', 't', 'skewnorm', 'tukeylambda',
                    'vonmises', 'vonmises_line', 'rv_histogram_instance'])
 
