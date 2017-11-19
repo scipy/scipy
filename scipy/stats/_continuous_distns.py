@@ -3086,48 +3086,49 @@ class norminvgauss_gen(rv_continuous):
 
     Notes
     -----
-    The usual probability density parametrisation for a Normal Inverse
-    Gaussian distribution is:
+    The probability density function for `norminvgauss` is:
 
     .. math::
-
-        g(x; \mu, a, b, d) =
-        \frac{a  d \exp\left(d \sqrt{a^2 - b^2} + b (x - \mu)\right)}
-        {\pi \sqrt{d^2 + (x - \mu)^2}} \,
-        K_1\left(a sqrt{d^2 + (x - \mu)^2}\right)
-
-    where x is a real number and the parameters are as follows:
-        - :math:`mu` : location
-        - a : tail heaviness, a > 0
-        - b : asymmetry parameter, |b|<= a
-        - d : scale parameter, d > 0
-        - :math:`K_1` : modified Bessel function of second kind.
-
-    The pdf of `norminvgauss` is the centered pdf with scale equal to one:
-
-        .. math::
 
         f(x; a, b) = g(x; 0, a, b, 1)
         \frac{a  \exp\left(\sqrt{a^2 - b^2} + b x\right)}
         {\pi \sqrt{1 + x^2}} \, K_1\left(a * sqrt{1 + x^2}\right)
 
-    Due to the scaling properties of the distributions, the density `g`
-    above can be obtained via
+    where `x` is a real number, the parameter `a` is the tail heaviness
+    and `b` is the asymmetry parameter satisfying `a > 0` and `abs(b) <= a`.
+    `K_1` is the modified Bessel function of second kind (`scipy.special.k1`).
 
-        .. math::
+    Due to the scaling properties of the distributions, note that
 
-        g(x; \mu, a, b, d) = norminvgauss.pdf(x, a/d, b/d, loc=mu, scale=d)
+    .. math::
+
+        norminvgauss.pdf(x, a d, b d, loc=\mu, scale=d) =
+        \frac{a  d \exp\left(d \sqrt{a^2 - b^2} + b (x - \mu)\right)}
+        {\pi \sqrt{d^2 + (x - \mu)^2}} \,
+        K_1\left(a sqrt{d^2 + (x - \mu)^2}\right),
+
+    which is another frequently used parametrisation of the distribution using
+    an additional scale and location parameter.
 
     %(after_notes)s
 
-    A Normal Inverse Gaussian random variable with parameters a and b can
-    be expressed  as ``X = b * V + sqrt(V) * X`` where ``X`` is ``norm(0,1)``
-    and ``V`` is ``invgauss(mu=1/sqrt(a**2 - b**2))``.
+    A normal inverse Gaussian random variable with parameters `a` and `b` can
+    be expressed  as `X = b * V + sqrt(V) * X` where `X` is `norm(0,1)`
+    and `V` is `invgauss(mu=1/sqrt(a**2 - b**2))`.
 
-    When the parameter :math:`\mu` of ìnvgauss` is too small
-    (:math:`\mu \le 0.0028`.), NaNs are returned. When sampling from
-    the normal inverse Gaussian, this is the case if
-    :math:`a^2 - b^2 \ge 1/0.0028^2`.
+    When the parameter `mu` of `invgauss` is too small (`mu <= 0.0028`),
+    NaNs are returned. When sampling from the normal inverse Gaussian, this
+    is the case if `a**2 - b**2 >= 1/0.0028**2`.
+
+    References
+    ----------
+    O. Barndorff-Nielsen, "Hyperbolic Distributions and Distributions on
+    Hyperbolae", Scandinavian Journal of Statistics, Vol. 5(3),
+    pp. 151-157, 1978.
+
+    O. Barndorff-Nielsen, "Normal Inverse Gaussian Distributions and Stochastic
+    Volatility Modelling", Scandinavian Journal of Statistics, Vol. 24,
+    pp. 1–13, 1997.
 
     %(example)s
 
