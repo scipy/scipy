@@ -11,9 +11,6 @@ try:
 except ImportError:
     mpmath = MissingModule('mpmath')
 
-# Fix the seed number
-np.random.seed(1108257)
-
 def _get_rand(minv, maxv, only_int=False, exclude_int=False):
     '''Gets a random value in the range (minv, maxv).
     
@@ -222,6 +219,10 @@ def _hyp2f1_wrap(a,b,c,z):
 ##########################################
 @check_version(mpmath, '1.0.0')
 def test_hyp2f1():
+
+    # Fix the seed number
+    np.random.seed(1108257)
+
     dataset = _build_test_cases()
 
     FuncData(_hyp2f1_wrap, dataset, (0,1,2,3j), 4, rtol=1.e-5).check()
