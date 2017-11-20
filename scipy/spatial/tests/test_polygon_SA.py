@@ -95,6 +95,22 @@ class TestSimpleAreas(object):
                                     discretizations=9000)
         assert_allclose(actual_area, expected_area)
 
+    def test_quarter_hemisphere_area_south(self, cython,
+                                           radius):
+        # include the South Pole as a vertex
+        # because this is a potential weakness of
+        # the general approach for spherical
+        # polygons
+        vertices = np.array([[-1,0,0],
+                             [0,1,0],
+                             [0,0,-1]]) * radius
+        expected_area = (np.pi * (radius ** 2)) / 2.
+        actual_area = psa.poly_area(vertices=vertices,
+                                    radius=radius,
+                                    cython=cython,
+                                    discretizations=9000)
+        assert_allclose(actual_area, expected_area)
+
 @pytest.mark.parametrize("cython, radius", [
     (None, 0),
     (1, 0),
