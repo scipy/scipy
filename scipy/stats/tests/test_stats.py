@@ -4271,7 +4271,7 @@ class TestBrunnerMunzel(object):
     # Data from (Lumley, 1996)
     X = [1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 4, 1, 1]
     Y = [3, 3, 4, 3, 1, 2, 3, 1, 1, 5, 4]
-    significant = 14
+    significant = 13
 
     def test_brunnermunzel_one_sided(self):
         # Results are compared with R's lawstat package.
