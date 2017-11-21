@@ -3308,14 +3308,14 @@ class special_ortho_group_gen(multi_rv_generic):
             Random size N-dimensional matrices, dimension (size, dim, dim)
 
         """
+        random_state = self._get_random_state(random_state)
+
         size = int(size)
         if size > 1:
             return np.array([self.rvs(dim, size=1, random_state=random_state)
                              for i in range(size)])
 
         dim = self._process_parameters(dim)
-
-        random_state = self._get_random_state(random_state)
 
         H = np.eye(dim)
         D = np.ones((dim,))
@@ -3448,14 +3448,14 @@ class ortho_group_gen(multi_rv_generic):
             Random size N-dimensional matrices, dimension (size, dim, dim)
 
         """
+        random_state = self._get_random_state(random_state)
+
         size = int(size)
         if size > 1:
             return np.array([self.rvs(dim, size=1, random_state=random_state)
                              for i in range(size)])
 
         dim = self._process_parameters(dim)
-
-        random_state = self._get_random_state(random_state)
 
         H = np.eye(dim)
         for n in range(1, dim):
@@ -3735,14 +3735,14 @@ class unitary_group_gen(multi_rv_generic):
             Random size N-dimensional matrices, dimension (size, dim, dim)
 
         """
+        random_state = self._get_random_state(random_state)
+
         size = int(size)
         if size > 1:
             return np.array([self.rvs(dim, size=1, random_state=random_state)
                              for i in range(size)])
 
         dim = self._process_parameters(dim)
-
-        random_state = self._get_random_state(random_state)
 
         z = 1/math.sqrt(2)*(random_state.normal(size=(dim,dim)) +
                             1j*random_state.normal(size=(dim,dim)))
