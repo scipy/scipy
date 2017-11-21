@@ -10,7 +10,7 @@ Directed Hausdorff Code
 # Distributed under the same BSD license as Scipy.
 #
 
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 
 import numpy as np
 cimport numpy as np
@@ -19,17 +19,27 @@ from libc.math cimport sqrt
 
 __all__ = ['directed_hausdorff']
 
+cdef extern from "hausdorff_util.h":
+    struct return_values:
+        double cmax
+        int index_1
+        int index_2
+
+    void hausdorff_loop(const int data_dims,
+                    const double ar1[],
+                    const double ar2[],
+                    const int N1,
+                    const int N2,
+                    return_values *ret_vals)
+
 @cython.boundscheck(False)
 def directed_hausdorff(double[:,::1] ar1, double[:,::1] ar2, seed=0):
 
-    cdef double cmax, cmin, d
-    cdef bint no_break_occurred
     cdef int N1 = ar1.shape[0]
     cdef int N2 = ar2.shape[0]
     cdef int data_dims = ar1.shape[1]
-    cdef unsigned int i, j, k
-    cdef unsigned int i_store = 0, j_store = 0, i_ret = 0, j_ret = 0
     cdef long[:] resort1, resort2
+    cdef return_values ret_vals
 
     # shuffling the points in each array generally increases the likelihood of
     # an advantageous break in the inner search loop and never decreases the
@@ -42,30 +52,10 @@ def directed_hausdorff(double[:,::1] ar1, double[:,::1] ar2, seed=0):
     ar1 = np.asarray(ar1)[resort1]
     ar2 = np.asarray(ar2)[resort2]
 
-    cmax = 0
-    for i in range(N1):
-        no_break_occurred = True
-        cmin = np.inf
-        for j in range(N2):
-            d = 0
-	    # faster performance with square of distance
-	    # avoid sqrt until very end
-            for k in range(data_dims):
-                d += (ar1[i, k] - ar2[j, k])**2
-            if d < cmax: # break out of `for j` loop
-                no_break_occurred = False
-                break
+    hausdorff_loop(data_dims, &ar1[0,0], &ar2[0,0],
+                          N1, N2, &ret_vals)
 
-            if d < cmin: # always true on first iteration of for-j loop
-                cmin = d
-                i_store = i
-                j_store = j
+    return (sqrt(ret_vals.cmax),
+            resort1[ret_vals.index_1],
+            resort2[ret_vals.index_2])
 
-        # always true on first iteration of for-j loop, after that only
-        # if d >= cmax
-        if cmin != np.inf and cmin > cmax and no_break_occurred == True:
-            cmax = cmin
-            i_ret = i_store
-            j_ret = j_store
-
-    return (sqrt(cmax), resort1[i_ret], resort2[j_ret])
