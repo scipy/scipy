@@ -240,23 +240,21 @@ class Xdist(Benchmark):
         # use an equal weight vector to satisfy those metrics
         # that require weights
         if metric == 'wminkowski':
-            self.wcdist = np.ones(3)
-            self.wpdist = np.ones(3)
+            self.w = np.ones(3)
         else:
-            self.wcdist = None
-            self.wpdist = None
+            self.w = None
 
     def time_cdist(self, num_points, metric):
         """Time scipy.spatial.distance.cdist over a range of input data
         sizes and metrics.
         """
-        distance.cdist(self.points, self.points, metric, w=self.wcdist)
+        distance.cdist(self.points, self.points, metric, w=self.w)
 
     def time_pdist(self, num_points, metric):
         """Time scipy.spatial.distance.pdist over a range of input data
         sizes and metrics.
         """
-        distance.pdist(self.points, metric, w=self.wpdist)
+        distance.pdist(self.points, metric, w=self.w)
 
 
 class ConvexHullBench(Benchmark):
