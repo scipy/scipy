@@ -78,7 +78,7 @@ def _qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
         raise ValueError("The 'sort' input of qz() has to be None and will be "
                          "removed in a future release. Use ordqz instead.")
 
-    if output.lower() not in ['real', 'complex', 'r', 'c']:
+    if output not in ['real', 'complex', 'r', 'c']:
         raise ValueError("argument must be 'real', or 'complex'")
 
     if check_finite:
