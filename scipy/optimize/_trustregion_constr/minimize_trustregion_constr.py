@@ -57,12 +57,13 @@ class ScalarFunction:
             self.x_diff = np.copy(self.x)
         if grad in ('2-point', '3-point', 'cs') and \
            hess in ('2-point', '3-point', 'cs'):
-            raise ValueError("Whenever the gradient is estimated via finite-differences, "
-                             "we require the Hessian to be estimated using one of the "
+            raise ValueError("Whenever the gradient is estimated via"
+                             " finite-differences, we require the Hessian"
+                             " to be estimated using one of the "
                              "quasi-Newton strategies.")
         if isinstance(hess, HessianUpdateStrategy):
             self.x_prev = np.copy(x0)
-            self.first_iteration = True
+            hess.initialize(len(x0), 'hess')
 
         # Define function
         self.f = fun(x0, *args)
@@ -167,16 +168,7 @@ class ScalarFunction:
                     self.g = grad_wrapped(x)
                 delta_x = self.x - self.x_prev
                 delta_grad = self.g - self.g_prev
-                if self.first_iteration:
-                    if np.linalg.norm(delta_x) != 0:
-                        hess.instanciate_matrix(delta_x, delta_grad)
-                        hess.scale_matrix(delta_x, delta_grad)
-                        hess.update(delta_x, delta_grad)
-                        self.first_iteration = False
-                    else:
-                        hess.instanciate_matrix(delta_x, delta_grad)
-                else:
-                    hess.update(delta_x, delta_grad)
+                hess.update(delta_x, delta_grad)
                 return hess
         else:
             hess_wrapped = None

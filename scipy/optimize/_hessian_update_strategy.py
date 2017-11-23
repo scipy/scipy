@@ -13,9 +13,11 @@ class HessianUpdateStrategy(object):
     _syr2 = get_blas_funcs('syr2', dtype='d')  # Symetric rank 2 update
     _symv = get_blas_funcs('symv', dtype='d')  # Symetric matrix-vector product
 
-    def instanciate_matrix(self, delta_x, delta_grad, approx_type='hess'):
-        """Instanciate unscaled matrix."""
-        n = len(delta_x)
+    def __init__(self, init_scale='auto'):
+        self.init_scale = init_scale
+        self.first_iteration = True
+
+    def initialize(self, n, approx_type):
         self.approx_type = approx_type
         if approx_type not in ('hess', 'inv_hess'):
             raise ValueError("Unknown approx_type.")
@@ -25,24 +27,34 @@ class HessianUpdateStrategy(object):
         else:
             self.H = np.eye(n, dtype=float)
 
-    def scale_matrix(self, delta_x, delta_grad):
+    def update(self, delta_x, delta_grad):
+        raise NotImplementedError("The method ``update(self, delta_x, delta_grad)``"
+                                  " is not implemented.")
+
+    def _scale_matrix(self, delta_x, delta_grad):
         """Scale matrix.
 
         Heuristic to scale matrix at first iteration described
         in Nocedal and Wright "Numerical Optimization"
         p.143 formula (6.20)
         """
-        y = delta_grad
-        s = delta_x
-        y_norm2 = np.dot(y, y)
-        ys = np.dot(y, s)
-        if ys == 0.0 or y_norm2 == 0:
-            return
-
-        if self.approx_type == 'hess':
-            self.B *= y_norm2 / ys
-        else:
-            self.H *= ys / y_norm2
+        # Scale specified by the user
+        try:
+            if self.approx_type == 'hess':
+                self.B *= float(self.init_scale)
+            else:
+                self.H *= float(self.init_scale)
+        # Auto scale matrix
+        except ValueError:
+            s_norm2 = np.dot(delta_x, delta_x)
+            y_norm2 = np.dot(delta_grad, delta_grad)
+            ys = np.dot(delta_grad, delta_x)
+            if ys == 0.0 or y_norm2 == 0 or s_norm2:
+                return
+            if self.approx_type == 'hess':
+                scale = y_norm2 / ys
+            else:
+                scale = ys / y_norm2
 
     def dot(self, p):
         """Matrix-vector multiplication.
@@ -90,6 +102,13 @@ class BFGS(HessianUpdateStrategy):
         allowed to go unnafected by the exception strategy. By default
         is equal to 1e-2 when ``exception_strategy = 'skip_update'``
         and equal to 0.2 when ``exception_strategy = 'damped_bfgs'``.
+    init_scale : {float, 'auto'}
+        Matrix scale at first iteration. At the first
+        iteration the Hessian matrix or its inverse will be initialized
+        with ``init_scale*np.eye(n)``, where ``n`` is the problem dimension.
+        Set it to 'auto' in order to use an automatic heuristic for choosing
+        the initial scale. The heuristic is described in [1]_, p.143. By default
+        uses 'auto'.
 
     Notes
     -----
@@ -101,7 +120,8 @@ class BFGS(HessianUpdateStrategy):
            Second Edition (2006).
     """
 
-    def __init__(self, exception_strategy='skip_update', min_curvature=None):
+    def __init__(self, exception_strategy='skip_update', min_curvature=None,
+                 init_scale='auto'):
         if exception_strategy == 'skip_update':
             if min_curvature is not None:
                 self.min_curvature = min_curvature
@@ -114,7 +134,7 @@ class BFGS(HessianUpdateStrategy):
                 self.min_curvature = 0.2
         else:
             ValueError("Unknown approx_type.")
-        super(BFGS, self).__init__()
+        super(BFGS, self).__init__(init_scale)
         self.exception_strategy = exception_strategy
 
     def _update_inverse_hessian(self, ys, Hy, yHy, s):
@@ -166,6 +186,11 @@ class BFGS(HessianUpdateStrategy):
             The difference between the gradients:
             ``delta_grad = grad(x2) - grad(x1)``.
         """
+        if np.linalg.norm(delta_x) == 0.0:
+            return
+        if self.first_iteration:
+            self._scale(delta_x, delta_grad)
+            self.first_iteration = False
         # Auxiliar variables w and z
         if self.approx_type == 'hess':
             w = delta_x
@@ -211,6 +236,13 @@ class SR1(HessianUpdateStrategy):
         Define the minimum allowed value of the denominator
         in the update. When the condition is violated we skip
         the update. By default uses ``1e-8``.
+    init_scale : {float, 'auto'}
+        Matrix scale at first iteration. At the first
+        iteration the Hessian matrix or its inverse will be initialized
+        with ``init_scale*np.eye(n)``, where ``n`` is the problem dimension.
+        Set it to 'auto' in order to use an automatic heuristic for choosing
+        the initial scale. The heuristic is described in [1]_, p.143. By default
+        uses 'auto'.
 
     Notes
     -----
@@ -222,9 +254,9 @@ class SR1(HessianUpdateStrategy):
            Second Edition (2006).
     """
 
-    def __init__(self, min_denominator=1e-8):
+    def __init__(self, min_denominator=1e-8, init_scale='auto'):
         self.min_denominator = min_denominator
-        super(SR1, self).__init__()
+        super(SR1, self).__init__(init_scale)
 
     def update(self, delta_x, delta_grad):
         """Update approximation matrix.
@@ -238,6 +270,11 @@ class SR1(HessianUpdateStrategy):
             The difference between the gradients:
             ``delta_grad = grad(x2) - grad(x1)``.
         """
+        if np.linalg.norm(delta_x) == 0.0:
+            return
+        if self.first_iteration:
+            self._scale(delta_x, delta_grad)
+            self.first_iteration = False
         # Auxiliar variables w and z
         if self.approx_type == 'hess':
             w = delta_x

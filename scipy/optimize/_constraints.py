@@ -38,7 +38,7 @@ class VectorialFunction:
                              "strategies.")
         if isinstance(hess, HessianUpdateStrategy):
             self.x_prev = np.copy(x0)
-            self.first_iteration = True
+            hess.initialize(len(x0), 'hess')
 
         # Define function
         self.f = np.atleast_1d(fun(x0))
@@ -202,16 +202,7 @@ class VectorialFunction:
                     self.J = jac_wrapped(x)
                 delta_x = self.x - self.x_prev
                 delta_grad = self.J.T.dot(v) - self.J_prev.T.dot(v)
-                if self.first_iteration:
-                    if np.linalg.norm(delta_x) != 0:
-                        hess.instanciate_matrix(delta_x, delta_grad)
-                        hess.scale_matrix(delta_x, delta_grad)
-                        hess.update(delta_x, delta_grad)
-                        self.first_iteration = False
-                    else:
-                        hess.instanciate_matrix(delta_x, delta_grad)
-                else:
-                    hess.update(delta_x, delta_grad)
+                hess.update(delta_x, delta_grad)
                 return hess
         else:
             hess_wrapped = None
