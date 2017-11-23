@@ -10,7 +10,7 @@ from pytest import raises as assert_raises
 from scipy.linalg import solve_sylvester
 from scipy.linalg import solve_continuous_lyapunov, solve_discrete_lyapunov
 from scipy.linalg import solve_continuous_are, solve_discrete_are
-from scipy.linalg import block_diag, solve
+from scipy.linalg import block_diag, solve, LinAlgError
 
 
 def _load_data(name):
@@ -528,6 +528,14 @@ def test_solve_discrete_are():
     for ind, case in enumerate(cases):
         _test_factory(case, min_decimal[ind])
 
+    # An infeasible example taken from https://arxiv.org/abs/1505.04861v1
+    A = np.triu(np.ones((3, 3)))
+    A[0, 1] = -1
+    B = np.array([[1, 1, 0], [0, 0, 1]]).T
+    Q = -2*np.ones_like(A) + np.diag([8, -1, -1.9])
+    R = np.diag([-10, 0.1])
+    assert_raises(LinAlgError, solve_continuous_are, A, B, Q, R)
+
 
 def test_solve_generalized_continuous_are():
     cases = [
@@ -757,4 +765,3 @@ class TestSolveSylvester(object):
         c = np.array([2.0, 2.0]).reshape(-1, 1)
         x = solve_sylvester(a, b, c)
         assert_array_almost_equal(x, np.array([1.0, 1.0]).reshape(-1, 1))
-
