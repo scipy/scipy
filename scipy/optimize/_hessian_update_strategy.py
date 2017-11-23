@@ -7,7 +7,7 @@ from scipy.linalg import get_blas_funcs
 
 
 class HessianUpdateStrategy(object):
-    """Quasi-Newton update strategies."""
+    """Quasi-Newton Hessian update strategy."""
 
     _syr = get_blas_funcs('syr', dtype='d')  # Symetric rank 1 update
     _syr2 = get_blas_funcs('syr2', dtype='d')  # Symetric rank 2 update
@@ -36,18 +36,13 @@ class HessianUpdateStrategy(object):
         s = delta_x
         y_norm2 = np.dot(y, y)
         ys = np.dot(y, s)
-        if ys == 0.0:
-            scale = 1.0
-        else:
-            if self.approx_type == 'hess':
-                scale = y_norm2 / ys
-            else:
-                scale = ys / y_norm2
+        if ys == 0.0 or y_norm2 == 0:
+            return
 
         if self.approx_type == 'hess':
-            self.B *= scale
+            self.B *= y_norm2 / ys
         else:
-            self.H *= scale
+            self.H *= ys / y_norm2
 
     def dot(self, p):
         """Matrix-vector multiplication.
@@ -80,7 +75,7 @@ class HessianUpdateStrategy(object):
 
 
 class BFGS(HessianUpdateStrategy):
-    """Broyden-Fletcher-Goldfarb-Shanno (BFGS) Hessian matrix approximation.
+    """Broyden-Fletcher-Goldfarb-Shanno (BFGS) Hessian update strategy.
 
     Parameters
     ----------
@@ -88,13 +83,17 @@ class BFGS(HessianUpdateStrategy):
         Define how to proceed when the curvature condition is violated.
         Set it to 'skip_update' to just skip the update. Or, alternatively,
         set it to 'damped_bfgs' to interpolate between the actual BFGS
-        result and the unmodified matrix. Both methods are explained
-        in [1]_, p.536-537.
+        result and the unmodified matrix. Both exceptions strategies
+        are explained  in [1]_, p.536-537.
     min_curvature : float
         Define the minimum curvature ``dot(delta_grad, delta_x)``
         allowed to go unnafected by the exception strategy. By default
         is equal to 1e-2 when ``exception_strategy = 'skip_update'``
         and equal to 0.2 when ``exception_strategy = 'damped_bfgs'``.
+
+    Notes
+    -----
+    The update is based on the description in [1]_, p.140.
 
     References
     ----------
@@ -136,7 +135,6 @@ class BFGS(HessianUpdateStrategy):
         """
         self.H = self._syr2(-1.0 / ys, s, Hy, a=self.H)
         self.H = self._syr((ys+yHy)/ys**2, s, a=self.H)
-        return
 
     def _update_hessian(self, ys, Bs, sBs, y):
         """Update Hessian matrix.
@@ -155,7 +153,6 @@ class BFGS(HessianUpdateStrategy):
         """
         self.B = self._syr(1.0 / ys, y, a=self.B)
         self.B = self._syr(-1.0 / sBs, Bs, a=self.B)
-        return
 
     def update(self, delta_x, delta_grad):
         """Update approximation matrix.
@@ -164,10 +161,10 @@ class BFGS(HessianUpdateStrategy):
         ----------
         delta_x : ndarray
             The difference between two points the gradient
-            function have been evaluated: ``delta_x = x2 - x1``.
+            function have been evaluated at: ``delta_x = x2 - x1``.
         delta_grad : ndarray
-            The difference between the gradient evaluated
-            in two points: ``delta_grad = grad(x2) - grad(x1)``.
+            The difference between the gradients:
+            ``delta_grad = grad(x2) - grad(x1)``.
         """
         # Auxiliar variables w and z
         if self.approx_type == 'hess':
@@ -183,7 +180,7 @@ class BFGS(HessianUpdateStrategy):
         if wMw == 0.0:
             return
         # Check if curvature condition is violated
-        if wz < self.min_curvature * wMw:
+        if wz <= self.min_curvature * wMw:
             # If the option 'skip_update' is set
             # we just skip the update when the condion
             # is violated.
@@ -200,13 +197,13 @@ class BFGS(HessianUpdateStrategy):
                 wMw = Mw.dot(w)
         # Update matrix
         if self.approx_type == 'hess':
-            return self._update_hessian(wz, Mw, wMw, z)
+            self._update_hessian(wz, Mw, wMw, z)
         else:
-            return self._update_inverse_hessian(wz, Mw, wMw, z)
+            self._update_inverse_hessian(wz, Mw, wMw, z)
 
 
 class SR1(HessianUpdateStrategy):
-    """Symmetric-rank-1 Hessian matrix approximation.
+    """Symmetric-rank-1 Hessian update strategy.
 
     Parameters
     ----------
@@ -214,6 +211,10 @@ class SR1(HessianUpdateStrategy):
         Define the minimum allowed value of the denominator
         in the update. When the condition is violated we skip
         the update. By default uses ``1e-8``.
+
+    Notes
+    -----
+    The update is based on the description in [1]_, p.144-146.
 
     References
     ----------
@@ -232,10 +233,10 @@ class SR1(HessianUpdateStrategy):
         ----------
         delta_x : ndarray
             The difference between two points the gradient
-            function have been evaluated: ``delta_x = x2 - x1``.
+            function have been evaluated at: ``delta_x = x2 - x1``.
         delta_grad : ndarray
-            The difference between the gradient evaluated
-            in two points: ``delta_grad = grad(x2) - grad(x1)``.
+            The difference between the gradients:
+            ``delta_grad = grad(x2) - grad(x1)``.
         """
         # Auxiliar variables w and z
         if self.approx_type == 'hess':
@@ -250,12 +251,10 @@ class SR1(HessianUpdateStrategy):
         denominator = np.dot(w, z_minus_Mw)
         # If the denominator is too small
         # we just skip the update.
-        if np.abs(denominator) < self.min_denominator*norm(w)*norm(z_minus_Mw) \
-           or denominator == 0.0:
+        if np.abs(denominator) <= self.min_denominator*norm(w)*norm(z_minus_Mw):
             return
         # Update matrix
         if self.approx_type == 'hess':
             self.B = self._syr(1/denominator, z_minus_Mw, a=self.B)
         else:
             self.H = self._syr(1/denominator, z_minus_Mw, a=self.H)
-        return
