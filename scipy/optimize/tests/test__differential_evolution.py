@@ -11,6 +11,7 @@ from numpy.testing import (assert_equal, assert_allclose,
                            assert_string_equal, assert_)
 from pytest import raises as assert_raises
 
+
 class TestDifferentialEvolutionSolver(object):
 
     def setup_method(self):
@@ -202,9 +203,11 @@ class TestDifferentialEvolutionSolver(object):
         assert_equal(0.3, self.dummy_solver._unscale_parameters(trial))
 
     def test__ensure_constraint(self):
-        trial = np.array([1.1, -100, 2., 300., -0.00001])
+        trial = np.array([1.1, -100, 0.9, 2., 300., -0.00001])
         self.dummy_solver._ensure_constraint(trial)
-        assert_equal(np.all(trial <= 1), True)
+
+        assert_equal(trial[2], 0.9)
+        assert_(np.logical_and(trial >= 0, trial <= 1).all())
 
     def test_differential_evolution(self):
         # test that the Jmin of DifferentialEvolutionSolver
