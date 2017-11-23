@@ -276,7 +276,7 @@ from ._lsq import least_squares, lsq_linear
 from ._constraints import (NonlinearConstraint,
                            LinearConstraint,
                            BoxConstraint)
-from ._quasi_newton_approx import BFGS, SR1
+from ._hessian_update_strategy import BFGS, SR1
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 

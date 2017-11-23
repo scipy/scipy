@@ -4,19 +4,18 @@ from .._constraints import (NonlinearConstraint,
                             LinearConstraint,
                             BoxConstraint)
 from .._canonical_constraint import (lagrangian_hessian,
-                                    to_canonical,
-                                    empty_canonical_constraint)
+                                     to_canonical,
+                                     empty_canonical_constraint)
 from .equality_constrained_sqp import equality_constrained_sqp
 from .tr_interior_point import tr_interior_point
 from warnings import warn
 from copy import deepcopy
 from scipy.sparse.linalg import LinearOperator
-from .._quasi_newton_approx import QuasiNewtonApprox, BFGS, SR1
+from .._hessian_update_strategy import HessianUpdateStrategy, BFGS
 import scipy.sparse as sps
 import time
 from ..optimize import OptimizeResult
 from .._numdiff import approx_derivative
-
 
 
 class HessianLinearOperator(object):
@@ -30,6 +29,7 @@ class HessianLinearOperator(object):
             return self.hessp(x, p, *args)
 
         return LinearOperator((self.n, self.n), matvec=matvec)
+
 
 TERMINATION_MESSAGES = {
     0: "The maximum number of function evaluations is exceeded.",
@@ -46,7 +46,8 @@ class ScalarFunction:
     computing or approximating its first and second derivatives.
     """
 
-    def __init__(self, fun, x0, args, grad='2-point', hess=BFGS(), finite_diff_options={}):
+    def __init__(self, fun, x0, args, grad='2-point',
+                 hess=BFGS(), finite_diff_options={}):
         self.x = np.atleast_1d(x0).astype(float)
         if grad in ('2-point', '3-point', 'cs'):
             finite_diff_options["method"] = grad
@@ -59,7 +60,7 @@ class ScalarFunction:
             raise ValueError("Whenever the gradient is estimated via finite-differences, "
                              "we require the Hessian to be estimated using one of the "
                              "quasi-Newton strategies.")
-        if isinstance(hess, QuasiNewtonApprox):
+        if isinstance(hess, HessianUpdateStrategy):
             self.x_prev = np.copy(x0)
             self.first_iteration = True
 
@@ -79,7 +80,7 @@ class ScalarFunction:
         # Define gradient
         if callable(grad):
             self.g = np.atleast_1d(grad(x0, *args))
-            if isinstance(hess, QuasiNewtonApprox):
+            if isinstance(hess, HessianUpdateStrategy):
                 self.g_prev = np.copy(self.g)
 
             def grad_wrapped(x):
@@ -91,7 +92,7 @@ class ScalarFunction:
                     self.g = grad_wrapped(x)
                     return self.g
 
-            elif isinstance(hess, QuasiNewtonApprox):
+            elif isinstance(hess, HessianUpdateStrategy):
                 def grad_wrapped2(x):
                     self.x_prev = self.x
                     self.g_prev = self.g
@@ -101,14 +102,16 @@ class ScalarFunction:
             else:
                 grad_wrapped2 = grad_wrapped
         elif grad in ('2-point', '3-point', 'cs'):
-            self.g = approx_derivative(fun, self.x, f0=self.f, **finite_diff_options)
-            if isinstance(hess, QuasiNewtonApprox):
+            self.g = approx_derivative(fun, self.x,
+                                       f0=self.f, **finite_diff_options)
+            if isinstance(hess, HessianUpdateStrategy):
                 self.g_prev = np.copy(self.g)
 
             def grad_wrapped(x):
-                return approx_derivative(fun, x, f0=self.f, **finite_diff_options)
+                return approx_derivative(fun, x,
+                                         f0=self.f, **finite_diff_options)
 
-            if isinstance(hess, QuasiNewtonApprox):
+            if isinstance(hess, HessianUpdateStrategy):
                 def grad_wrapped2(x):
                     if not np.array_equal(self.x_diff, x):
                         self.x_diff = x
@@ -150,10 +153,12 @@ class ScalarFunction:
                 if not np.array_equal(self.x_diff, x):
                     self.x_diff = x
                     self.g = grad_wrapped(x)
-                return approx_derivative(grad_wrapped, x, f0=self.g, **finite_diff_options)
-            self.H = approx_derivative(grad_wrapped, self.x, f0=self.g, **finite_diff_options)
+                return approx_derivative(grad_wrapped, x,
+                                         f0=self.g, **finite_diff_options)
+            self.H = approx_derivative(grad_wrapped, self.x,
+                                       f0=self.g, **finite_diff_options)
 
-        elif isinstance(hess, QuasiNewtonApprox):
+        elif isinstance(hess, HessianUpdateStrategy):
             def hess_wrapped(x):
                 if not np.array_equal(self.x, x):
                     self.x_prev = self.x
@@ -174,7 +179,7 @@ class ScalarFunction:
                     hess.update(delta_x, delta_grad)
                 return hess
         else:
-            hess_wrapped = None  
+            hess_wrapped = None
         self.hess = hess_wrapped
 
 
@@ -338,7 +343,6 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
         finite_diff_options["as_linear_operator"] = True
     objective = ScalarFunction(fun, x0, args, grad, hess, finite_diff_options)
 
-
     # Put constraints in list format when needed
     if isinstance(constraints, (NonlinearConstraint,
                                 LinearConstraint,
@@ -461,7 +465,8 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
             constr.c_eq0, constr.J_eq0, stop_criteria,
             constr.enforce_feasibility,
             xtol, state, initial_barrier_parameter, initial_tolerance,
-            initial_penalty, initial_trust_radius, return_all, factorization_method)
+            initial_penalty, initial_trust_radius, return_all,
+            factorization_method)
     else:
         raise ValueError("Unknown optimization ``method``.")
 

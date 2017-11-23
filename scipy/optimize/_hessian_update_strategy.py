@@ -1,4 +1,4 @@
-"""quasi-Newton Hessian approximations"""
+"""Implementation of Quasi-Newton update strategies for the Hessian and its inverse."""
 
 from __future__ import division, print_function, absolute_import
 import numpy as np
@@ -6,8 +6,8 @@ from numpy.linalg import norm
 from scipy.linalg import get_blas_funcs
 
 
-class QuasiNewtonApprox(object):
-    """Quasi-Newton approximation."""
+class HessianUpdateStrategy(object):
+    """Quasi-Newton update strategies."""
 
     _syr = get_blas_funcs('syr', dtype='d')  # Symetric rank 1 update
     _syr2 = get_blas_funcs('syr2', dtype='d')  # Symetric rank 2 update
@@ -79,7 +79,7 @@ class QuasiNewtonApprox(object):
         return M_triu + M_triu.T - np.diag(M_diag)
 
 
-class BFGS(QuasiNewtonApprox):
+class BFGS(HessianUpdateStrategy):
     """Broyden-Fletcher-Goldfarb-Shanno (BFGS) Hessian matrix approximation.
 
     Parameters
@@ -205,7 +205,7 @@ class BFGS(QuasiNewtonApprox):
             return self._update_inverse_hessian(wz, Mw, wMw, z)
 
 
-class SR1(QuasiNewtonApprox):
+class SR1(HessianUpdateStrategy):
     """Symmetric-rank-1 Hessian matrix approximation.
 
     Parameters

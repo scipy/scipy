@@ -33,7 +33,7 @@ from ._trustregion_constr import _minimize_trustregion_constr
 from ._constraints import (NonlinearConstraint,
                            LinearConstraint,
                            BoxConstraint)
-from ._quasi_newton_approx import QuasiNewtonApprox, BFGS, SR1
+from ._hessian_update_strategy import HessianUpdateStrategy, BFGS, SR1
 
 
 # constrained minimization
@@ -102,7 +102,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         If `jac` is a Boolean and is True, `fun` is assumed to return the
         gradient along with the objective function. If False, the gradient
         will be estimated using '2-point' finite difference estimation.
-    hess : {callable, '2-point', '3-point', 'cs', QuasiNewtonApprox},  optional
+    hess : {callable, '2-point', '3-point', 'cs', HessianUpdateStrategy},  optional
         Method for computing the Hessian matrix. Only for Newton-CG, dogleg,
         trust-ncg,  trust-krylov, trust-exact and trust-constr. If it is callable,
         it should return the  Hessian matrix:
@@ -113,7 +113,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         parameters. LinearOperator and sparse matrix returns are
         allowed only for 'trust-constr' method. Alternatively, the keywords
         {'2-point', '3-point', 'cs'} select a finite difference scheme
-        for numerical estimation or a `QuasiNewtonApprox` object may be
+        for numerical estimation or a `HessianUpdateStrategy` object may be
         passed on, defining a quasi-Newton Hessian approximation method.
         Available quasi-Newton approximations are:
 
@@ -125,7 +125,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         options {'2-point', '3-point', 'cs'} and needs to be
         estimated using one of the quasi-Newton strategies.
         Finite-difference options {'2-point', '3-point', 'cs'} and
-        `QuasiNewtonApprox` are available only for 'trust-constr' method.
+        `HessianUpdateStrategy` are available only for 'trust-constr' method.
     hessp : callable, optional
         Hessian of objective function times an arbitrary vector p. Only for
         Newton-CG, trust-ncg, trust-krylov, trust-constr.

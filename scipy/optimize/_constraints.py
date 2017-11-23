@@ -4,7 +4,7 @@ import scipy.sparse as sps
 from scipy.sparse.linalg import LinearOperator
 from ._numdiff import approx_derivative
 from warnings import warn
-from ._quasi_newton_approx import QuasiNewtonApprox, BFGS, SR1
+from ._hessian_update_strategy import HessianUpdateStrategy, SR1, BFGS
 
 
 __all__ = ['NonlinearConstraint',
@@ -36,7 +36,7 @@ class VectorialFunction:
                              "finite-differences, we require the Hessian to "
                              "be estimated using one of the quasi-Newton "
                              "strategies.")
-        if isinstance(hess, QuasiNewtonApprox):
+        if isinstance(hess, HessianUpdateStrategy):
             self.x_prev = np.copy(x0)
             self.first_iteration = True
 
@@ -64,7 +64,7 @@ class VectorialFunction:
                 def jac_wrapped(x):
                     return sps.csr_matrix(jac(x))
                 self.J = sps.csr_matrix(J0)
-                if isinstance(hess, QuasiNewtonApprox):
+                if isinstance(hess, HessianUpdateStrategy):
                     self.J_prev = self.J.copy()
                 self.sparse_jacobian = True
 
@@ -72,7 +72,7 @@ class VectorialFunction:
                 def jac_wrapped(x):
                     return jac(x).toarray()
                 self.J = J0.toarray()
-                if isinstance(hess, QuasiNewtonApprox):
+                if isinstance(hess, HessianUpdateStrategy):
                     self.J_prev = np.copy(self.J)
                 self.sparse_jacobian = False
 
@@ -80,7 +80,7 @@ class VectorialFunction:
                 def jac_wrapped(x):
                     return np.atleast_2d(jac(x))
                 self.J = np.atleast_2d(J0)
-                if isinstance(hess, QuasiNewtonApprox):
+                if isinstance(hess, HessianUpdateStrategy):
                     self.J_prev = np.copy(self.J)
                 self.sparse_jacobian = False
 
@@ -90,7 +90,7 @@ class VectorialFunction:
                     self.J = jac_wrapped(x)
                     return self.J
 
-            elif isinstance(hess, QuasiNewtonApprox):
+            elif isinstance(hess, HessianUpdateStrategy):
                 def jac_wrapped2(x):
                     self.x_prev = self.x
                     self.J_prev = self.J
@@ -111,7 +111,7 @@ class VectorialFunction:
                                           **finite_diff_options)
                     return sps.csr_matrix(J)
                 self.J = sps.csr_matrix(J0)
-                if isinstance(hess, QuasiNewtonApprox):
+                if isinstance(hess, HessianUpdateStrategy):
                     self.J_prev = self.J.copy()
                 self.sparse_jacobian = True
 
@@ -121,7 +121,7 @@ class VectorialFunction:
                                           **finite_diff_options)
                     return J.toarray()
                 self.J = J0.toarray()
-                if isinstance(hess, QuasiNewtonApprox):
+                if isinstance(hess, HessianUpdateStrategy):
                     self.J_prev = np.copy(self.J)
                 self.sparse_jacobian = False
 
@@ -131,11 +131,11 @@ class VectorialFunction:
                                           **finite_diff_options)
                     return np.atleast_2d(J)
                 self.J = np.atleast_2d(J0)
-                if isinstance(hess, QuasiNewtonApprox):
+                if isinstance(hess, HessianUpdateStrategy):
                     self.J_prev = np.copy(self.J)
                 self.sparse_jacobian = False
 
-            if isinstance(hess, QuasiNewtonApprox):
+            if isinstance(hess, HessianUpdateStrategy):
                 def jac_wrapped2(x):
                     if not np.array_equal(self.x_diff, x):
                         self.x_diff = x
@@ -193,7 +193,7 @@ class VectorialFunction:
                                          f0=self.J.T.dot(v), args=(v,),
                                          **finite_diff_options)
 
-        elif isinstance(hess, QuasiNewtonApprox):
+        elif isinstance(hess, HessianUpdateStrategy):
             def hess_wrapped(x, v):
                 if not np.array_equal(self.x, x):
                     self.x_prev = self.x
@@ -279,7 +279,7 @@ class NonlinearConstraint:
         Method for computing the Hessian matrix. The keywords
         {'2-point', '3-point', 'cs'} select a finite difference
         scheme for numerical  estimation.  Alternativelly, a
-        `QuasiNewtonApprox` object may be passed on, defining a
+        `HessianUpdateStrategy` object may be passed on, defining a
         quasi-Newton Hessian approximation method. Available
         quasi-Newton approximations are:
 
