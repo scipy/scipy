@@ -18,6 +18,20 @@ class HessianUpdateStrategy(object):
         self.first_iteration = True
 
     def initialize(self, n, approx_type):
+        """Initialize internal matrix.
+
+        Alocate internal memory for storing and updating
+        the Hessian or its inverse.
+
+        Parameters
+        ----------
+        n : int
+            Problem dimension.
+        approx_type : {'hess', 'inv_hess'}
+            Selects either the Hessian or the inverse Hessian.
+            When set to 'hess' the Hessian will be stored and updated.
+            When set to 'inv_hess' its inverse will be used instead.
+        """
         self.approx_type = approx_type
         if approx_type not in ('hess', 'inv_hess'):
             raise ValueError("Unknown approx_type.")
@@ -28,24 +42,34 @@ class HessianUpdateStrategy(object):
             self.H = np.eye(n, dtype=float)
 
     def update(self, delta_x, delta_grad):
-        raise NotImplementedError("The method "
-                                  "``update(self, delta_x, delta_grad)``"
+        """Update matrix.
+
+        Update Hessian matrix or its inverse (depending on how 'approx_type'
+        is defined) using information about the last evaluated points.
+
+        Parameters
+        ----------
+        delta_x : ndarray
+            The difference between two points the gradient
+            function have been evaluated at: ``delta_x = x2 - x1``.
+        delta_grad : ndarray
+            The difference between the gradients:
+            ``delta_grad = grad(x2) - grad(x1)``.
+        """
+        raise NotImplementedError("The method ``update(delta_x, delta_grad)``"
                                   " is not implemented.")
 
     def _scale_matrix(self, delta_x, delta_grad):
-        """Scale matrix.
-
-        Heuristic to scale matrix at first iteration described
-        in Nocedal and Wright "Numerical Optimization"
-        p.143 formula (6.20)
-        """
-        # Scale specified by the user
+        # Scale matrix with user specified constant
         try:
             if self.approx_type == 'hess':
                 self.B *= float(self.init_scale)
             else:
                 self.H *= float(self.init_scale)
-        # Auto scale matrix
+        # Autoscale matrix
+        # Heuristic to scale matrix at first iteration described
+        # in Nocedal and Wright "Numerical Optimization"
+        # p.143 formula (6.20).
         except ValueError:
             s_norm2 = np.dot(delta_x, delta_x)
             y_norm2 = np.dot(delta_grad, delta_grad)
@@ -77,7 +101,14 @@ class HessianUpdateStrategy(object):
             return self._symv(1, self.H, p)
 
     def get_matrix(self):
-        """Return current approximation matrix."""
+        """Return current approximation matrix.
+
+        Returns
+        -------
+        H : ndarray, shape (n, n)
+            Dense matrix containing either the Hessian
+            or its inverse (depending on how 'approx_type'
+            is defined)."""
         if self.approx_type == 'hess':
             M = self.B
         else:
@@ -108,8 +139,8 @@ class BFGS(HessianUpdateStrategy):
         iteration the Hessian matrix or its inverse will be initialized
         with ``init_scale*np.eye(n)``, where ``n`` is the problem dimension.
         Set it to 'auto' in order to use an automatic heuristic for choosing
-        the initial scale. The heuristic is described in [1]_, p.143. By default
-        uses 'auto'.
+        the initial scale. The heuristic is described in [1]_, p.143.
+        By default uses 'auto'.
 
     Notes
     -----
@@ -176,17 +207,6 @@ class BFGS(HessianUpdateStrategy):
         self.B = self._syr(-1.0 / sBs, Bs, a=self.B)
 
     def update(self, delta_x, delta_grad):
-        """Update approximation matrix.
-
-        Parameters
-        ----------
-        delta_x : ndarray
-            The difference between two points the gradient
-            function have been evaluated at: ``delta_x = x2 - x1``.
-        delta_grad : ndarray
-            The difference between the gradients:
-            ``delta_grad = grad(x2) - grad(x1)``.
-        """
         if np.linalg.norm(delta_x) == 0.0:
             return
         if self.first_iteration:
@@ -260,17 +280,6 @@ class SR1(HessianUpdateStrategy):
         super(SR1, self).__init__(init_scale)
 
     def update(self, delta_x, delta_grad):
-        """Update approximation matrix.
-
-        Parameters
-        ----------
-        delta_x : ndarray
-            The difference between two points the gradient
-            function have been evaluated at: ``delta_x = x2 - x1``.
-        delta_grad : ndarray
-            The difference between the gradients:
-            ``delta_grad = grad(x2) - grad(x1)``.
-        """
         if np.linalg.norm(delta_x) == 0.0:
             return
         if self.first_iteration:
