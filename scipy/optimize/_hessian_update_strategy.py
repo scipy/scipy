@@ -1,4 +1,4 @@
-"""Implementation of Quasi-Newton update strategies for the Hessian and its inverse."""
+"""Implementation of Quasi-Newton update strategies."""
 
 from __future__ import division, print_function, absolute_import
 import numpy as np
@@ -28,7 +28,8 @@ class HessianUpdateStrategy(object):
             self.H = np.eye(n, dtype=float)
 
     def update(self, delta_x, delta_grad):
-        raise NotImplementedError("The method ``update(self, delta_x, delta_grad)``"
+        raise NotImplementedError("The method "
+                                  "``update(self, delta_x, delta_grad)``"
                                   " is not implemented.")
 
     def _scale_matrix(self, delta_x, delta_grad):
@@ -52,9 +53,9 @@ class HessianUpdateStrategy(object):
             if ys == 0.0 or y_norm2 == 0 or s_norm2:
                 return
             if self.approx_type == 'hess':
-                scale = y_norm2 / ys
+                self.B *= y_norm2 / ys
             else:
-                scale = ys / y_norm2
+                self.H *= ys / y_norm2
 
     def dot(self, p):
         """Matrix-vector multiplication.
@@ -189,7 +190,7 @@ class BFGS(HessianUpdateStrategy):
         if np.linalg.norm(delta_x) == 0.0:
             return
         if self.first_iteration:
-            self._scale(delta_x, delta_grad)
+            self._scale_matrix(delta_x, delta_grad)
             self.first_iteration = False
         # Auxiliar variables w and z
         if self.approx_type == 'hess':
@@ -236,13 +237,13 @@ class SR1(HessianUpdateStrategy):
         Define the minimum allowed value of the denominator
         in the update. When the condition is violated we skip
         the update. By default uses ``1e-8``.
-    init_scale : {float, 'auto'}
+    init_scale : {float, 'auto'}, optional
         Matrix scale at first iteration. At the first
         iteration the Hessian matrix or its inverse will be initialized
         with ``init_scale*np.eye(n)``, where ``n`` is the problem dimension.
         Set it to 'auto' in order to use an automatic heuristic for choosing
-        the initial scale. The heuristic is described in [1]_, p.143. By default
-        uses 'auto'.
+        the initial scale. The heuristic is described in [1]_, p.143.
+        By default uses 'auto'.
 
     Notes
     -----
@@ -273,7 +274,7 @@ class SR1(HessianUpdateStrategy):
         if np.linalg.norm(delta_x) == 0.0:
             return
         if self.first_iteration:
-            self._scale(delta_x, delta_grad)
+            self._scale_matrix(delta_x, delta_grad)
             self.first_iteration = False
         # Auxiliar variables w and z
         if self.approx_type == 'hess':

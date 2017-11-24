@@ -491,13 +491,12 @@ class TestTrustRegionConstr(TestCase):
                            method='BFGS',
                            jac='2-point')
         with pytest.warns(UserWarning):
-             result2 = minimize(prob.fun, prob.x0,
+            result2 = minimize(prob.fun, prob.x0,
                                 method='BFGS',
                                 jac='3-point')
         assert_array_almost_equal(result.x, prob.x_opt, decimal=5)
         assert_array_almost_equal(result1.x, prob.x_opt, decimal=5)
         assert_array_almost_equal(result2.x, prob.x_opt, decimal=5)
-
 
     def test_hessp(self):
         prob = Maratos()

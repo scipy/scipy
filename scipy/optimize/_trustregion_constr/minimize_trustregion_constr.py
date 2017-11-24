@@ -251,7 +251,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
         are smaller than ``gtol``. Default is 1e-8.
     xtol : float, optional
         Tolerance for termination by the change of the independent variable.
-        The algorithm will terminate when ``delta < xtol``, where ``delta``
+        The algorithm will terminate when ``tr_radius < xtol``, where ``delta``
         is the algorithm trust-radius. Default is 1e-8.
     barrier_tol : float, optional
         Barrier parameter required for termination. For the case the interior
@@ -308,7 +308,8 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
         By default uses 'QRFactorization' for  dense matrices.
     finite_diff_options: dict, optional
         Dictionary with options to be passed on to `approx_derivative` method.
-        These options will define the finite_difference approximation parameters.
+        These options will define the finite_difference approximation
+        parameters.
     maxiter : int, optional
         Maximum number of algorithm iterations. By default ``maxiter=1000``
     verbose : {0, 1, 2}, optional
