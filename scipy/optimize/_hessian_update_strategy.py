@@ -132,7 +132,7 @@ class BFGS(HessianUpdateStrategy):
     min_curvature : float
         Define the minimum curvature ``dot(delta_grad, delta_x)``
         allowed to go unnafected by the exception strategy. By default
-        is equal to 1e-2 when ``exception_strategy = 'skip_update'``
+        is equal to 1e-4 when ``exception_strategy = 'skip_update'``
         and equal to 0.2 when ``exception_strategy = 'damped_bfgs'``.
     init_scale : {float, 'auto'}
         Matrix scale at first iteration. At the first
@@ -158,7 +158,7 @@ class BFGS(HessianUpdateStrategy):
             if min_curvature is not None:
                 self.min_curvature = min_curvature
             else:
-                self.min_curvature = 1e-2
+                self.min_curvature = 1e-4
         elif exception_strategy == 'damped_bfgs':
             if min_curvature is not None:
                 self.min_curvature = min_curvature
@@ -298,7 +298,7 @@ class SR1(HessianUpdateStrategy):
         denominator = np.dot(w, z_minus_Mw)
         # If the denominator is too small
         # we just skip the update.
-        if np.abs(denominator) <= self.min_denominator*norm(w)*norm(z_minus_Mw):
+        if norm(denominator) <= self.min_denominator*norm(w)*norm(z_minus_Mw):
             return
         # Update matrix
         if self.approx_type == 'hess':
