@@ -116,7 +116,7 @@ class FullHessianUpdateStrategy(object):
         if self.approx_type == 'hess':
             return y_norm2 / ys
         else:
-           return ys / y_norm2
+            return ys / y_norm2
 
     def _update_implementation(self, delta_x, delta_grad):
         raise NotImplementedError("The method ``_update_implementation``"
