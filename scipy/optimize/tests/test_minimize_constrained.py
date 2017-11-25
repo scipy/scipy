@@ -3,7 +3,6 @@ import numpy as np
 import pytest
 from scipy.linalg import block_diag
 from scipy.sparse import csc_matrix
-from scipy.sparse.linalg import LinearOperator
 from numpy.testing import (TestCase, assert_array_almost_equal,
                            assert_array_equal, assert_array_less,
                            assert_raises, assert_equal, assert_,
@@ -15,7 +14,6 @@ from scipy.optimize import (NonlinearConstraint,
                             minimize,
                             BFGS,
                             SR1)
-from scipy.optimize._trustregion_constr.minimize_trustregion_constr import ScalarFunction
 
 
 class Maratos:

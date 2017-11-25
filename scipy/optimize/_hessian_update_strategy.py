@@ -83,7 +83,7 @@ class HessianUpdateStrategy(object):
                                   " is not implemented.")
 
 
-class FullHessianUpdateStrategy(object):
+class FullHessianUpdateStrategy(HessianUpdateStrategy):
     """Quasi-Newton Hessian update strategy."""
 
     _syr = get_blas_funcs('syr', dtype='d')  # Symetric rank 1 update
@@ -105,8 +105,8 @@ class FullHessianUpdateStrategy(object):
             self.H = np.eye(n, dtype=float)
 
     def _auto_scale(self, delta_x, delta_grad):
-        # Heuristic to scale matrix at first iteration described
-        # in Nocedal and Wright "Numerical Optimization"
+        # Heuristic to scale matrix at first iteration.
+        # Described in Nocedal and Wright "Numerical Optimization"
         # p.143 formula (6.20).
         s_norm2 = np.dot(delta_x, delta_x)
         y_norm2 = np.dot(delta_grad, delta_grad)

@@ -475,7 +475,6 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     x0 = np.asarray(x0)
     if x0.dtype.kind in np.typecodes["AllInteger"]:
         x0 = np.asarray(x0, dtype=float)
-    n = len(x0)
 
     if not isinstance(args, tuple):
         args = (args,)
