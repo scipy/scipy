@@ -202,27 +202,27 @@ def test_chi2_contingency_bad_args():
 def test_bad_association_args():
     # Asymmetric Array
     obs = np.array([[21], [11, 21]])
-    assert_raises(IndexError, association,"T", obs, None, True)
+    assert_raises(IndexError, association, obs, "T", None, True)
 
     # Invalid Chi-Squared Warning
     obs = np.array([[1, 23], [11, 12]])
-    assert_raises(UserWarning, association, "T", obs, None, True)
+    assert_raises(UserWarning, association, obs, "T", None, True)
 
     # Invalid Chi Squared Stat Value Type
     obs = np.array([[10, 22], [23, 24]])
-    assert_raises(TypeError, association, "T", obs, str(1), True)
+    assert_raises(TypeError, association, obs, "T", str(1), True)
 
     # Invalid Array Values
     freqs = np.array([[0.1, 0.2], [0.4, 0.3]])
-    assert_raises(TypeError, association, "T", freqs, None, True)
+    assert_raises(TypeError, association, freqs, "T", None, True)
 
     # Invalid Correct Bias Value
     obs = np.array([[15, 25], [35, 45]])
-    assert_raises(TypeError, association, "T", obs, None, "True")
+    assert_raises(TypeError, association, obs, "T", None, "True")
 
     # Invalid Test Statistic
     obs = np.array([[15, 25], [35, 45]])
-    assert_raises(ValueError, association, "C", obs, None, True)
+    assert_raises(ValueError, association, obs, "C", None, True)
 
 
 def test_cramersV():
