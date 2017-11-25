@@ -10,7 +10,7 @@ from .stats import power_divergence, chisquare
 import math
 from warnings import warn
 
-__all__ = ['margins', 'expected_freq', 'chi2_contingency', 'association_test']
+__all__ = ['margins', 'expected_freq', 'chi2_contingency', 'association']
 
 
 def margins(a):
@@ -280,7 +280,6 @@ def _reshape_array(arr):
 
     Parameters
     ----------
-
     arr : array_like
         Observed values in n-way array
 
@@ -370,13 +369,14 @@ def _association_bias_correction(phi_squared, n_rows, n_cols, n_obs):
     return adj_phisq, nrows_hat, ncols_hat
 
 
-def association_test(stat, observed, chi2_stat=None, correct_bias=True):
-    """Calculates degree of association between variables that are nominal or greater. Allows for 
-    specification of one of three related methods, Tschuprow's T, Cramer's V, and phi.
+def association(observed, stat="V", chi2_stat=None, correct_bias=True):
+    """Calculates degree of association between variables that are nominal or greater. 
+    
+    Allows for specification of one of three related methods, Tschuprow's T, Cramer's V, and phi.
 
     Parameters
     ----------
-    stat : {"V", "T", "phi"}
+    stat : {"V", "T", "phi"} (default = "V")
         The association test statistic. 
     observed : iterable object
         The contingency table. 
@@ -411,31 +411,31 @@ def association_test(stat, observed, chi2_stat=None, correct_bias=True):
     --------
     
     2-way Example
-    >>> from scipy.stats import association_test
+    >>> from scipy.stats import association
     >>> obs = [[100, 150], [203, 322], [42, 7], [32, 21]]
     
     Cramer's V with bias correction
-    >>> association_test(stat="V", observed=obs)
+    >>> association(observed=obs)
     0.46927187061981274
     
     Cramer's V without bias correction
-    >>> association_test(stat="V", observed=obs, correct_bias=False)
+    >>> association(observed=obs, correct_bias=False)
     0.4726408338900912
     
     Tschuprow's T with bias correction
-    >>> association_test(stat="T", observed=obs)
+    >>> association(observed=obs, stat="T")
     0.35677355915423664
     
     Tschuprow's T without bias correction
-    >>> association_test(stat="T", observed=obs, correct_bias=False)
+    >>> association(observed=obs, stat="T", correct_bias=False)
     0.3591293720858179
     
     Phi with bias correction
-    >>> association_test(stat="phi", observed=obs)
+    >>> association(observed=obs, stat="phi")
     0.46900394489393604
     
     Phi without bias correction
-    >>> association_test(stat="phi", observed=obs, correct_bias=False)
+    >>> association(observed=obs, stat="phi", correct_bias=False)
     0.4726408338900912
     
     4-way Example
@@ -448,27 +448,27 @@ def association_test(stat, observed, chi2_stat=None, correct_bias=True):
     ...          [41, 44]]]]
     
     Cramer's V with bias correction
-    >>> association_test(stat="V", observed=obs)
+    >>> association(observed=obs)
     0.17427841264890478
     
     Cramer's V without bias correction
-    >>> association_test(stat="V", observed=obs, correct_bias=False)
+    >>> association(observed=obs, correct_bias=False)
     0.1911749686107999
     
     Tschuprow's T with bias correction
-    >>> association_test(stat="T", observed=obs)
+    >>> association(observed=obs, stat="T")
     0.15756149073389059
     
     Tschuprow's T without bias correction
-    >>> association_test(stat="T", observed=obs, correct_bias=False)
+    >>> association(observed=obs, stat="T", correct_bias=False)
     0.172746084676768
     
     Phi with bias correction
-    >>> association_test(stat="phi", observed=obs)
+    >>> association(observed=obs, stat="phi")
     0.24594856216264802
     
     Phi without bias correction
-    >>> association_test(stat="phi", observed=obs, correct_bias=False)
+    >>> association(observed=obs, stat="phi", correct_bias=False)
     0.27036223339564397
 
     Notes

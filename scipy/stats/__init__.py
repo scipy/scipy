@@ -304,7 +304,7 @@ Contingency table functions
    chi2_contingency
    expected_freq
    margins
-   association_test
+   association
    
    fisher_exact
 
