@@ -104,8 +104,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         will be estimated using '2-point' finite difference estimation.
     hess : {callable, '2-point', '3-point', 'cs', HessianUpdateStrategy},  optional
         Method for computing the Hessian matrix. Only for Newton-CG, dogleg,
-        trust-ncg,  trust-krylov, trust-exact and trust-constr. If it is callable,
-        it should return the  Hessian matrix:
+        trust-ncg,  trust-krylov, trust-exact and trust-constr. If it is
+        callable, it should return the  Hessian matrix:
 
             ``hess(x, *args) -> {LinearOperator, spmatrix, array}, (n, n)``
 
@@ -113,16 +113,17 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         parameters. LinearOperator and sparse matrix returns are
         allowed only for 'trust-constr' method. Alternatively, the keywords
         {'2-point', '3-point', 'cs'} select a finite difference scheme
-        for numerical estimation or a `HessianUpdateStrategy` object may be
-        passed on, defining a quasi-Newton Hessian approximation method.
-        Available quasi-Newton approximations are:
+        for numerical estimation. Or, objects implementing
+        `HessianUpdateStrategy` interface can be used to approximate
+        the Hessian. Available quasi-Newton approximations implementing
+        this interface are:
 
             - `BFGS`;
             - `SR1`.
 
-        Whenever the gradient is estimated
-        via finite-differences, the Hessian cannot be estimated with
-        options {'2-point', '3-point', 'cs'} and needs to be
+        Whenever the gradient is estimated via finite-differences,
+        the Hessian cannot be estimated with  options
+        {'2-point', '3-point', 'cs'} and needs to be
         estimated using one of the quasi-Newton strategies.
         Finite-difference options {'2-point', '3-point', 'cs'} and
         `HessianUpdateStrategy` are available only for 'trust-constr' method.

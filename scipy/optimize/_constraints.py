@@ -266,13 +266,13 @@ class NonlinearConstraint:
             ``jac(x) -> {ndarray, sparse matrix}, shape (m, n)``
 
         where x is a (n,) ndarray.
-    hess : {callable, '2-point', '3-point', 'cs', None}
+    hess : {callable, '2-point', '3-point', 'cs', HessianUpdateStrategy, None}, optional
         Method for computing the Hessian matrix. The keywords
         {'2-point', '3-point', 'cs'} select a finite difference
-        scheme for numerical  estimation.  Alternativelly, a
-        `HessianUpdateStrategy` object may be passed on, defining a
-        quasi-Newton Hessian approximation method. Available
-        quasi-Newton approximations are:
+        scheme for numerical  estimation.  Alternativelly, objects
+        implementing `HessianUpdateStrategy` interface can be used to
+        approximate the Hessian. Available quasi-Newton approximations
+        implementing this interface are:
 
             - `BFGS`;
             - `SR1`.

@@ -38,7 +38,7 @@ The `minimize` function supports the following methods:
    optimize.minimize-trustkrylov
    optimize.minimize-trustexact
 
-Constraints are passed to `minimize` function as a single object or 
+Constraints are passed to `minimize` function as a single object or
 as a list of objects from the following classes:
 
 .. autosummary::
@@ -48,8 +48,10 @@ as a list of objects from the following classes:
    LinearConstraint - Class defining general linear constraints.
    BoxConstraint - Class defining box constraints.
 
-The following quasi-Newton options are passed to `minimize` function to approximate
-the Hessian (available only for the 'trust-constr' method):
+Quasi-Newton strategies implementing `HessianUpdateStrategy`
+interface can be used to approximate the Hessian in `minimize`
+function (available only for the 'trust-constr' method). Available
+quasi-Newton approximations implementing this interface are:
 
 .. autosummary::
    :toctree: generated/
@@ -276,7 +278,7 @@ from ._lsq import least_squares, lsq_linear
 from ._constraints import (NonlinearConstraint,
                            LinearConstraint,
                            BoxConstraint)
-from ._hessian_update_strategy import BFGS, SR1
+from ._hessian_update_strategy import HessianUpdateStrategy, BFGS, SR1
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 

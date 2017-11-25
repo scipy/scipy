@@ -9,11 +9,14 @@ class HessianUpdateStrategy(object):
     """Virtual interface for implementing Hessian update strategies.
 
     Should implement four methods: ``initialize``, ``update``,
-    ``dot`` and ``get_matrix``. Any instance of a class that
-    implements this interface, can be accepted by the method
-    ``minimize`` and used by the compatible solvers to
-    approximate the Hessian (or inverse Hessian) used by the
-    optimization algorithms.
+    ``dot`` and ``get_matrix``.
+
+    Notes
+    -----
+    Any instance of a class that implements this interface,
+    can be accepted by the method ``minimize`` and used by
+    the compatible solvers to approximate the Hessian (or
+    inverse Hessian) used by the optimization algorithms.
     """
 
     def initialize(self, n, approx_type):
