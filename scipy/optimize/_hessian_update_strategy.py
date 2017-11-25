@@ -1,21 +1,20 @@
-"""Implementation of Quasi-Newton update strategies."""
+"""quasi-Newton update strategies."""
 
 from __future__ import division, print_function, absolute_import
 import numpy as np
 from numpy.linalg import norm
 from scipy.linalg import get_blas_funcs
 
-
 class HessianUpdateStrategy(object):
-    """Quasi-Newton Hessian update strategy."""
+    """Virtual interface for implementing Hessian update strategies.
 
-    _syr = get_blas_funcs('syr', dtype='d')  # Symetric rank 1 update
-    _syr2 = get_blas_funcs('syr2', dtype='d')  # Symetric rank 2 update
-    _symv = get_blas_funcs('symv', dtype='d')  # Symetric matrix-vector product
-
-    def __init__(self, init_scale='auto'):
-        self.init_scale = init_scale
-        self.first_iteration = True
+    Should implement four methods: ``initialize``, ``update``,
+    ``dot`` and ``get_matrix``. Any instance of a class that
+    implements this interface, can be accepted by the method
+    ``minimize`` and used by the compatible solvers to
+    approximate the Hessian (or inverse Hessian) used by the
+    optimization algorithms.
+    """
 
     def initialize(self, n, approx_type):
         """Initialize internal matrix.
@@ -32,14 +31,8 @@ class HessianUpdateStrategy(object):
             When set to 'hess' the Hessian will be stored and updated.
             When set to 'inv_hess' its inverse will be used instead.
         """
-        self.approx_type = approx_type
-        if approx_type not in ('hess', 'inv_hess'):
-            raise ValueError("Unknown approx_type.")
-        # Create matrix
-        if self.approx_type == 'hess':
-            self.B = np.eye(n, dtype=float)
-        else:
-            self.H = np.eye(n, dtype=float)
+        raise NotImplementedError("The method ``initialize(n, approx_type)``"
+                                  " is not implemented.")
 
     def update(self, delta_x, delta_grad):
         """Update matrix.
@@ -59,28 +52,6 @@ class HessianUpdateStrategy(object):
         raise NotImplementedError("The method ``update(delta_x, delta_grad)``"
                                   " is not implemented.")
 
-    def _scale_matrix(self, delta_x, delta_grad):
-        # Scale matrix with user specified constant
-        try:
-            if self.approx_type == 'hess':
-                self.B *= float(self.init_scale)
-            else:
-                self.H *= float(self.init_scale)
-        # Autoscale matrix
-        # Heuristic to scale matrix at first iteration described
-        # in Nocedal and Wright "Numerical Optimization"
-        # p.143 formula (6.20).
-        except ValueError:
-            s_norm2 = np.dot(delta_x, delta_x)
-            y_norm2 = np.dot(delta_grad, delta_grad)
-            ys = np.dot(delta_grad, delta_x)
-            if ys == 0.0 or y_norm2 == 0 or s_norm2:
-                return
-            if self.approx_type == 'hess':
-                self.B *= y_norm2 / ys
-            else:
-                self.H *= ys / y_norm2
-
     def dot(self, p):
         """Matrix-vector multiplication.
 
@@ -95,10 +66,8 @@ class HessianUpdateStrategy(object):
             1-d  represents the result of multiplying the approximation matrix
             by vector p.
         """
-        if self.approx_type == 'hess':
-            return self._symv(1, self.B, p)
-        else:
-            return self._symv(1, self.H, p)
+        raise NotImplementedError("The method ``dot(p)``"
+                                  " is not implemented.")
 
     def get_matrix(self):
         """Return current approximation matrix.
@@ -108,7 +77,76 @@ class HessianUpdateStrategy(object):
         H : ndarray, shape (n, n)
             Dense matrix containing either the Hessian
             or its inverse (depending on how 'approx_type'
-            is defined)."""
+            is defined).
+        """
+        raise NotImplementedError("The method ``get_matrix(p)``"
+                                  " is not implemented.")
+
+
+class FullHessianUpdateStrategy(object):
+    """Quasi-Newton Hessian update strategy."""
+
+    _syr = get_blas_funcs('syr', dtype='d')  # Symetric rank 1 update
+    _syr2 = get_blas_funcs('syr2', dtype='d')  # Symetric rank 2 update
+    _symv = get_blas_funcs('symv', dtype='d')  # Symetric matrix-vector product
+
+    def __init__(self, init_scale='auto'):
+        self.init_scale = init_scale
+        self.first_iteration = True
+
+    def initialize(self, n, approx_type):
+        self.approx_type = approx_type
+        if approx_type not in ('hess', 'inv_hess'):
+            raise ValueError("Unknown approx_type.")
+        # Create matrix
+        if self.approx_type == 'hess':
+            self.B = np.eye(n, dtype=float)
+        else:
+            self.H = np.eye(n, dtype=float)
+
+    def _auto_scale(self, delta_x, delta_grad):
+        # Heuristic to scale matrix at first iteration described
+        # in Nocedal and Wright "Numerical Optimization"
+        # p.143 formula (6.20).
+        s_norm2 = np.dot(delta_x, delta_x)
+        y_norm2 = np.dot(delta_grad, delta_grad)
+        ys = np.dot(delta_grad, delta_x)
+        if ys == 0.0 or y_norm2 == 0 or s_norm2 == 0:
+            return 1
+        if self.approx_type == 'hess':
+            return y_norm2 / ys
+        else:
+           return ys / y_norm2
+
+    def _update_implementation(self, delta_x, delta_grad):
+        raise NotImplementedError("The method ``_update_implementation``"
+                                  " is not implemented.")
+
+    def update(self, delta_x, delta_grad):
+        if np.all(delta_x == 0.0):
+            return
+        if self.first_iteration:
+            # Get user specific scale
+            try:
+                scale = float(self.init_scale)
+            # Auto scale
+            except ValueError:
+                scale = self._auto_scale(delta_x, delta_grad)
+            # Scale initial matrix with ``scale * np.eye(n)``
+            if self.approx_type == 'hess':
+                self.B *= scale
+            else:
+                self.H *= scale
+            self.first_iteration = False
+        self._update_implementation(delta_x, delta_grad)
+
+    def dot(self, p):
+        if self.approx_type == 'hess':
+            return self._symv(1, self.B, p)
+        else:
+            return self._symv(1, self.H, p)
+
+    def get_matrix(self):
         if self.approx_type == 'hess':
             M = self.B
         else:
@@ -118,7 +156,7 @@ class HessianUpdateStrategy(object):
         return M_triu + M_triu.T - np.diag(M_diag)
 
 
-class BFGS(HessianUpdateStrategy):
+class BFGS(FullHessianUpdateStrategy):
     """Broyden-Fletcher-Goldfarb-Shanno (BFGS) Hessian update strategy.
 
     Parameters
@@ -132,7 +170,7 @@ class BFGS(HessianUpdateStrategy):
     min_curvature : float
         Define the minimum curvature ``dot(delta_grad, delta_x)``
         allowed to go unnafected by the exception strategy. By default
-        is equal to 1e-4 when ``exception_strategy = 'skip_update'``
+        is equal to 1e-2 when ``exception_strategy = 'skip_update'``
         and equal to 0.2 when ``exception_strategy = 'damped_bfgs'``.
     init_scale : {float, 'auto'}
         Matrix scale at first iteration. At the first
@@ -158,7 +196,7 @@ class BFGS(HessianUpdateStrategy):
             if min_curvature is not None:
                 self.min_curvature = min_curvature
             else:
-                self.min_curvature = 1e-4
+                self.min_curvature = 1e-2
         elif exception_strategy == 'damped_bfgs':
             if min_curvature is not None:
                 self.min_curvature = min_curvature
@@ -206,12 +244,7 @@ class BFGS(HessianUpdateStrategy):
         self.B = self._syr(1.0 / ys, y, a=self.B)
         self.B = self._syr(-1.0 / sBs, Bs, a=self.B)
 
-    def update(self, delta_x, delta_grad):
-        if np.linalg.norm(delta_x) == 0.0:
-            return
-        if self.first_iteration:
-            self._scale_matrix(delta_x, delta_grad)
-            self.first_iteration = False
+    def _update_implementation(self, delta_x, delta_grad):
         # Auxiliar variables w and z
         if self.approx_type == 'hess':
             w = delta_x
@@ -248,7 +281,7 @@ class BFGS(HessianUpdateStrategy):
             self._update_inverse_hessian(wz, Mw, wMw, z)
 
 
-class SR1(HessianUpdateStrategy):
+class SR1(FullHessianUpdateStrategy):
     """Symmetric-rank-1 Hessian update strategy.
 
     Parameters
@@ -279,12 +312,7 @@ class SR1(HessianUpdateStrategy):
         self.min_denominator = min_denominator
         super(SR1, self).__init__(init_scale)
 
-    def update(self, delta_x, delta_grad):
-        if np.linalg.norm(delta_x) == 0.0:
-            return
-        if self.first_iteration:
-            self._scale_matrix(delta_x, delta_grad)
-            self.first_iteration = False
+    def _update_implementation(self, delta_x, delta_grad):
         # Auxiliar variables w and z
         if self.approx_type == 'hess':
             w = delta_x
@@ -298,7 +326,7 @@ class SR1(HessianUpdateStrategy):
         denominator = np.dot(w, z_minus_Mw)
         # If the denominator is too small
         # we just skip the update.
-        if norm(denominator) <= self.min_denominator*norm(w)*norm(z_minus_Mw):
+        if np.abs(denominator) <= self.min_denominator*norm(w)*norm(z_minus_Mw):
             return
         # Update matrix
         if self.approx_type == 'hess':

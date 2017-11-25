@@ -1,5 +1,6 @@
 from __future__ import division, print_function, absolute_import
 import numpy as np
+from copy import deepcopy
 from numpy.linalg import norm
 from numpy.testing import (TestCase, assert_array_almost_equal,
                            assert_array_equal, assert_array_less,
@@ -122,9 +123,10 @@ class TestHessianUpdateStrategy(TestCase):
             if np.dot(s, y) <= 0:
                 raise ArithmeticError()
         # Define QuasiNewton update
-        for QuasiNewton in (BFGS, SR1):
-            hess = QuasiNewton(init_scale=1)
-            inv_hess = QuasiNewton(init_scale=1)
+        for quasi_newton in (BFGS(init_scale=1, min_curvature=1e-4),
+                             SR1(init_scale=1)):
+            hess = deepcopy(quasi_newton)
+            inv_hess = deepcopy(quasi_newton)
             hess.initialize(len(x_list[0]), 'hess')
             inv_hess.initialize(len(x_list[0]), 'inv_hess')
             # Compare the hessian and its inverse
