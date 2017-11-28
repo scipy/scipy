@@ -31,7 +31,7 @@ def margins(a):
 
     Examples
     --------
-    >>> from scipy.stats import margins
+    >>> from scipy.stats.contingency import margins
     >>> a = np.arange(12).reshape(2, 6)
     >>> a
     array([[ 0,  1,  2,  3,  4,  5],
@@ -88,7 +88,7 @@ def expected_freq(observed):
     Examples
     --------
     >>> observed = np.array([[10, 10, 20],[20, 20, 20]])
-    >>> from scipy.stats import expected_freq
+    >>> from scipy.stats.contingency import expected_freq
     >>> expected_freq(observed)
     array([[ 12.,  12.,  16.],
            [ 18.,  18.,  24.]])
@@ -275,55 +275,59 @@ def chi2_contingency(observed, correction=True, lambda_=None):
     return chi2, p, dof, expected
 
 
-def _reshape_array(arr):
-    """Converts Nd array to 2d array.
-
+def _find_subarrays(subarray_list, obs, target_shape):
+    """Deconstruct an nd-array into a list of equal subarrays matching target shape
+    
     Parameters
     ----------
-    arr : array_like
-        Observed values in n-way array
-
+    subarray_list : empty list or list of arrays
+        list of 2d arrays matching target_shape parameter
+    obs : nd-array
+        Contingency table
+    target_shape : tuple 
+        number of rows and columns in each subarray
+    
     Returns
     -------
-    arrx : array_like 
-        Observed values in reshaped to n by n array.
-    nrows : int
-        Number of rows in reshaped array.
-    ncols : int
-        Number of columns in reshaped array.
-
-    Notes
-    -----
-    Required if the array has more that 2 dimensions in order to 
-    calculate the number of rows and columns
+    subarray_list : list of arrays
+    
     """
-    arr = np.array(arr)
-    shape = arr.shape
-    if len(shape) > 2:
-        if shape[0] == 1:
-            nrows = shape[1]
-            ncols = np.prod([i for i in shape[2:]])
-        elif shape[0] == 0:
-            raise IndexError("Invalid Array Shape: Empty Array Found")
-        else:
-            nrows = shape[0]
-            ncols = np.prod([i for i in shape[1:]])
-        arrx = arr.reshape(nrows, ncols)
-        return arrx, nrows, ncols
-
-    elif len(shape) == 2:
-        nrows = shape[0]
-        ncols = shape[1]
-        arrx = arr
-        return arrx, nrows, ncols
-
+    subarr = np.asarray(obs)
+    if subarr.shape == target_shape:
+        subarray_list.append(subarr)
     else:
-        raise IndexError("Invalid Array Shape: Vectors or 1D arrays are not supported")
+        for a in subarr:
+            _find_subarrays(subarray_list=subarray_list, obs=a, target_shape=target_shape)
+    return subarray_list
+
+
+def _check_array_values(observed):
+    """Check the values of the contingency table.
+    
+    Parameters
+    ----------
+    observed : nd-array
+        Deconstructed contingency tables
+    
+    Returns
+    -------
+    observed : nd-array
+        Deconstructed contingency tables
+    
+    """
+    for subarray in observed:
+        for row in subarray:
+            if len([i for i in row if type(i) == np.float64]) > 0:
+                raise TypeError("Array must be counts not frequencies.")
+            elif len([i for i in row if i < 5]) > 0:
+                warn("The Chi-Squared Statistic is invalid if any counts are < 5")
+            else:
+                pass
+    return observed
 
 
 def _association_bias_correction(phi_squared, n_rows, n_cols, n_obs):
-    """Corrects bias in estimated value of phi squared derived from nxn contingency 
-    tables.
+    """Corrects bias in estimated value of phi squared derived from nxn contingency tables.
 
     Parameters
     ----------
@@ -388,11 +392,9 @@ def association(observed, stat="V", chi2_stat=None, correct_bias=True):
     
     Returns
     -------
-    value : float
-        Value of the test statistic
+    value_array : float array 
+        Values of the test statistic
         
-
-
     References
     ----------
     .. [1] "Tschuprow's T",
@@ -411,65 +413,69 @@ def association(observed, stat="V", chi2_stat=None, correct_bias=True):
     --------
     
     2-way Example
-    >>> from scipy.stats import association
+    >>> from scipy.stats.contingency import association
     >>> obs = [[100, 150], [203, 322], [42, 7], [32, 21]]
     
     Cramer's V with bias correction
     >>> association(observed=obs)
-    0.46927187061981274
+    [ 0.46927187]
     
     Cramer's V without bias correction
     >>> association(observed=obs, correct_bias=False)
-    0.4726408338900912
+    [ 0.47264083]
     
     Tschuprow's T with bias correction
     >>> association(observed=obs, stat="T")
-    0.35677355915423664
+    [ 0.35677355]
     
     Tschuprow's T without bias correction
     >>> association(observed=obs, stat="T", correct_bias=False)
-    0.3591293720858179
+    [ 0.35912937]
     
     Phi with bias correction
     >>> association(observed=obs, stat="phi")
-    0.46900394489393604
+    [ 0.46900394]
     
     Phi without bias correction
     >>> association(observed=obs, stat="phi", correct_bias=False)
-    0.4726408338900912
+    [ 0.47264083]
     
     4-way Example
     
-    >>> obs = [[[[56, 23],
-    ...          [21, 45]],
-    ...         [[13, 16],
-    ...          [76, 99]],
-    ...         [[21, 22],
-    ...          [41, 44]]]]
+    >>> obs = [[[[56, 23], [21, 45]],
+    ...         [[13, 42], [76, 99]]],
+    ...        [[[21, 22], [41, 44]],
+    ...         [[12, 34], [43, 77]]]]
     
     Cramer's V with bias correction
     >>> association(observed=obs)
-    0.17427841264890478
+    [[ 0.32170191  0.4363003 ]
+     [ 0.20704285  0.31591398]]
     
     Cramer's V without bias correction
     >>> association(observed=obs, correct_bias=False)
-    0.1911749686107999
+    [[ 0.33123688  0.4403334 ]
+     [ 0.22450663  0.32443396]]
     
     Tschuprow's T with bias correction
     >>> association(observed=obs, stat="T")
-    0.15756149073389059
+    [[ 0.32170191  0.4363003 ]
+     [ 0.20704285  0.31591398]]
     
     Tschuprow's T without bias correction
     >>> association(observed=obs, stat="T", correct_bias=False)
-    0.172746084676768
+    [[ 0.33123688  0.4403334 ]
+     [ 0.22450663  0.32443396]]
     
     Phi with bias correction
     >>> association(observed=obs, stat="phi")
-    0.24594856216264802
+    [[ 0.32058294  0.43534663]
+     [ 0.20622611  0.31495521]]
     
     Phi without bias correction
     >>> association(observed=obs, stat="phi", correct_bias=False)
-    0.27036223339564397
+    [[ 0.33123688  0.4403334 ]
+     [ 0.22450663  0.32443396]]
 
     Notes
     ------
@@ -486,41 +492,52 @@ def association(observed, stat="V", chi2_stat=None, correct_bias=True):
     As is seen in the examples above. 
     
     """
-    arr, n_rows, n_cols = _reshape_array(arr=observed)
-    flat_array = arr.flatten()
-
-    if len([i for i in flat_array if type(i) == np.float64]) > 0:
-        raise TypeError("Array must be counts not frequencies.")
-    elif len([i for i in flat_array if i < 5]) > 0:
-        warn("The Chi-Squared Statistic is invalid if any counts are < 5")
+    arrs, values_lst = [], []
+    obs_arr = np.array(observed)
+    arr_shape = obs_arr.shape
+    try:
+        n_rows = arr_shape[len(arr_shape) - 2]
+        n_cols = arr_shape[len(arr_shape) - 1]
+    except IndexError:
+        raise IndexError("Invalid array size must at least be 2d")
     else:
-        pass
+        if len(arr_shape) == 2:
+            arrs.append(obs_arr)
+        elif len(arr_shape) > 2:
+            _find_subarrays(subarray_list=arrs, obs=obs_arr, target_shape=(n_rows, n_cols))
 
-    n_obs = flat_array.sum(0, dtype=np.int64)
+    arrs = _check_array_values(observed=arrs)
+    for a in arrs:
 
-    if chi2_stat is None:
-        phi2 = float(tuple(chisquare(f_obs=arr))[0][0]) / n_obs
-    elif type(chi2_stat) is float or type(chi2_stat) is int:
-        phi2 = float(chi2_stat) / n_obs
-    else:
-        raise TypeError("Invalid chi2_stat value")
+        n_obs = a.flatten.sum(0, dtype=np.int64)
 
-    if correct_bias is True:
-        phi_sq, nrows, ncols = _association_bias_correction(phi_squared=phi2, n_rows=n_rows, n_cols=n_cols, n_obs=n_obs)
-    elif correct_bias is False:
-        phi_sq = phi2
-        nrows = n_rows
-        ncols = n_cols
-    else:
-        raise TypeError("invalid argument type: 'correct_bias' must be boolean")
+        if chi2_stat is None:
+            phi2 = float(tuple(chisquare(f_obs=a))[0][0]) / n_obs
+        elif type(chi2_stat) is float or type(chi2_stat) is int:
+            phi2 = float(chi2_stat) / n_obs
+        else:
+            raise TypeError("Invalid chi2_stat value")
 
-    if stat.lower() == "v":
-        value = math.sqrt(phi_sq / min(ncols - 1, nrows - 1))
-    elif stat.lower() == "t":
-        value = math.sqrt(phi_sq / math.sqrt((nrows - 1) * (ncols - 1)))
-    elif stat.lower() == "phi":
-        value = math.sqrt(phi_sq)
-    else:
-        raise ValueError("Invalid argument value: 'stat' must be t, v or phi")
+        if correct_bias is True:
+            phi_sq, nrows, ncols = _association_bias_correction(phi_squared=phi2, n_rows=n_rows, n_cols=n_cols, n_obs=n_obs)
+        elif correct_bias is False:
+            phi_sq = phi2
+            nrows = n_rows
+            ncols = n_cols
+        else:
+            raise TypeError("invalid argument type: 'correct_bias' must be boolean")
 
-    return value
+        if stat.lower() == "v":
+            value = math.sqrt(phi_sq / min(ncols - 1, nrows - 1))
+        elif stat.lower() == "t":
+            value = math.sqrt(phi_sq / math.sqrt((nrows - 1) * (ncols - 1)))
+        elif stat.lower() == "phi":
+            value = math.sqrt(phi_sq)
+        else:
+            raise ValueError("Invalid argument value: 'stat' must be t, v or phi")
+
+        values_lst.append(value)
+    value_array = np.array(values_lst)
+    if len(arr_shape) > 2:
+        value_array = value_array.reshape(arr_shape[:len(arr_shape)-2])
+    return value_array

@@ -232,8 +232,10 @@ def test_cramersV():
            [9, 15, 14, 12, 11]]
     a = association(observed=obs)
     ax = association(observed=obs, correct_bias=False)
-    assert_approx_equal(a, 0.0, significant=2)
-    assert_approx_equal(ax, 0.077989, significant=3)
+    correcta = np.array([0.0])
+    correctax = np.array([0.07798989])
+    assert_array_almost_equal(a, correcta)
+    assert_array_almost_equal(ax, correctax)
 
     # 3d Array
     obs = [[[13, 23, 10],
@@ -244,20 +246,26 @@ def test_cramersV():
             [12, 18, 13]]]
     b = association(observed=obs)
     bx = association(observed=obs, correct_bias=False)
-    assert_approx_equal(b, 0.023477, significant=3)
-    assert_approx_equal(bx, 0.111594, significant=3)
+    correctb = np.array([0.21692309, 0.0, 0.09693592])
+    correctbx = np.array([0.24659432, 0.01761721, 0.17236256])
+    assert_array_almost_equal(b, correctb)
+    assert_array_almost_equal(bx, correctbx)
 
     # 4d Array
     obs = [[[[56, 23],
              [21, 45]],
             [[13, 16],
-             [76, 99]],
-            [[21, 22],
-             [41, 44]]]]
+             [76, 99]]],
+           [[[21, 22],
+             [41, 44]],
+            [[22, 32],
+             [33, 53]]]]
     c = association(observed=obs)
     cx = association(observed=obs, correct_bias=False)
-    assert_approx_equal(c, 0.174278, significant=3)
-    assert_approx_equal(cx, 0.191174, significant=3)
+    correctc = np.array([[0.32170191, 0.46339738], [0.20704285, 0.0926379 ]])
+    correctcx = np.array([[0.33123688, 0.46755258], [0.22450663, 0.12535663]])
+    assert_array_almost_equal(c, correctc)
+    assert_array_almost_equal(cx, correctcx)
 
 
 def test_tschuprowsT():
@@ -268,8 +276,10 @@ def test_tschuprowsT():
            [9, 15, 14, 12, 11]]
     a = association(observed=obs, stat="t")
     ax = association(observed=obs, stat="t", correct_bias=False)
-    assert_approx_equal(a, 0.0, significant=3)
-    assert_approx_equal(ax, 0.065581, significant=3)
+    correcta = np.array([0.0])
+    correctax = np.array([0.06558142])
+    assert_array_almost_equal(a, correcta)
+    assert_array_almost_equal(ax, correctax)
 
     # 3d Array
     obs = [[[13, 23, 10],
@@ -280,20 +290,28 @@ def test_tschuprowsT():
             [12, 18, 13]]]
     b = association(observed=obs, stat="t")
     bx = association(observed=obs, stat="t", correct_bias=False)
-    assert_approx_equal(b, 0.01870, significant=3)
-    assert_approx_equal(bx, 0.08875, significant=3)
+    correctb = np.array([0.18273471, 0.0, 0.08172452])
+    correctbx = np.array([0.20736028 , 0.01481425, 0.14493906])
+    assert_array_almost_equal(b, correctb)
+    assert_array_almost_equal(bx, correctbx)
+
 
     # 4d Array
     obs = [[[[56, 23],
              [21, 45]],
             [[13, 16],
-             [76, 99]],
-            [[21, 22],
-             [41, 44]]]]
+             [76, 99]]],
+           [[[21, 22],
+             [41, 44]],
+            [[22, 32],
+             [33, 53]]]]
     c = association(observed=obs, stat="t")
     cx = association(observed=obs, stat="t", correct_bias=False)
-    assert_approx_equal(c, 0.15756, significant=3)
-    assert_approx_equal(cx, 0.17275, significant=3)
+    correctc = np.array([[0.32170191, 0.46339738], [0.20704285, 0.0926379]])
+    correctcx = np.array([[0.33123688, 0.46755258], [0.22450663, 0.12535663]])
+    assert_array_almost_equal(c, correctc)
+    assert_array_almost_equal(cx, correctcx)
+
 
 def test_phi():
 
@@ -303,8 +321,10 @@ def test_phi():
            [9, 15, 14, 12, 11]]
     a = association(observed=obs, stat="phi")
     ax = association(observed=obs, stat="phi", correct_bias=False)
-    assert_approx_equal(a, 0.0, significant=2)
-    assert_approx_equal(ax, 0.11029, significant=3)
+    correcta = np.array([0.0])
+    correctax = np.array([0.11029436])
+    assert_array_almost_equal(a, correcta)
+    assert_array_almost_equal(ax, correctax)
 
     # 3d Array
     obs = [[[13, 23, 10],
@@ -315,17 +335,22 @@ def test_phi():
             [12, 18, 13]]]
     b = association(observed=obs, stat="phi")
     bx = association(observed=obs, stat="phi", correct_bias=False)
-    assert_approx_equal(b, 0.033123, significant=3)
-    assert_approx_equal(bx, 0.157818, significant=3)
-
+    correctb = np.array([0.21615793, 0.0, 0.09644008])
+    correctbx = np.array([0.24659432, 0.01761721, 0.17236256])
+    assert_array_almost_equal(b, correctb)
+    assert_array_almost_equal(bx, correctbx)
     # 4d Array
     obs = [[[[56, 23],
              [21, 45]],
             [[13, 16],
-             [76, 99]],
-            [[21, 22],
-             [41, 44]]]]
+             [76, 99]]],
+           [[[21, 22],
+             [41, 44]],
+            [[22, 32],
+             [33, 53]]]]
     c = association(observed=obs, stat="phi")
     cx = association(observed=obs, stat="phi", correct_bias=False)
-    assert_approx_equal(c, 0.245948, significant=3)
-    assert_approx_equal(cx, 0.270362, significant=3)
+    correctc = np.array([[0.32058294, 0.4622546], [0.20622611, 0.09230407]])
+    correctcx = np.array([[0.33123688, 0.46755258], [0.22450663, 0.12535663]])
+    assert_array_almost_equal(c, correctc)
+    assert_array_almost_equal(cx, correctcx)
