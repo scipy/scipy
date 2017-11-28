@@ -225,7 +225,7 @@ def test_bad_association_args():
     assert_raises(ValueError, association, obs, "C", None, True)
 
 
-def test_cramersV():
+def test_cramersv():
     # 2d Array
     obs = [[12, 13, 14, 15, 16],
            [17, 16, 18, 19, 11],
@@ -262,13 +262,13 @@ def test_cramersV():
              [33, 53]]]]
     c = association(observed=obs)
     cx = association(observed=obs, correct_bias=False)
-    correctc = np.array([[0.32170191, 0.46339738], [0.20704285, 0.0926379 ]])
+    correctc = np.array([[0.32170191, 0.46339738], [0.20704285, 0.0926379]])
     correctcx = np.array([[0.33123688, 0.46755258], [0.22450663, 0.12535663]])
     assert_array_almost_equal(c, correctc)
     assert_array_almost_equal(cx, correctcx)
 
 
-def test_tschuprowsT():
+def test_tschuprowst():
 
     # 2d Array
     obs = [[12, 13, 14, 15, 16],
@@ -291,10 +291,9 @@ def test_tschuprowsT():
     b = association(observed=obs, stat="t")
     bx = association(observed=obs, stat="t", correct_bias=False)
     correctb = np.array([0.18273471, 0.0, 0.08172452])
-    correctbx = np.array([0.20736028 , 0.01481425, 0.14493906])
+    correctbx = np.array([0.20736028, 0.01481425, 0.14493906])
     assert_array_almost_equal(b, correctb)
     assert_array_almost_equal(bx, correctbx)
-
 
     # 4d Array
     obs = [[[[56, 23],
