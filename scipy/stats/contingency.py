@@ -509,7 +509,7 @@ def association(observed, stat="V", chi2_stat=None, correct_bias=True):
     arrs = _check_array_values(observed=arrs)
     for a in arrs:
 
-        n_obs = a.flatten.sum(0, dtype=np.int64)
+        n_obs = a.flatten().sum(0, dtype=np.int64)
 
         if chi2_stat is None:
             phi2 = float(tuple(chisquare(f_obs=a))[0][0]) / n_obs
