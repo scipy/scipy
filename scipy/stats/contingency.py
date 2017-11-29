@@ -505,6 +505,8 @@ def association(observed, stat="V", chi2_stat=None, correct_bias=True):
             arrs.append(obs_arr)
         elif len(arr_shape) > 2:
             _find_subarrays(subarray_list=arrs, obs=obs_arr, target_shape=(n_rows, n_cols))
+        else:
+            raise IndexError("Invalid array size. Array must be at least 2d")
 
     arrs = _check_array_values(observed=arrs)
     for a in arrs:

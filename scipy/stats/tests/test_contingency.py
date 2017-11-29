@@ -338,6 +338,7 @@ def test_phi():
     correctbx = np.array([0.24659432, 0.01761721, 0.17236256])
     assert_array_almost_equal(b, correctb)
     assert_array_almost_equal(bx, correctbx)
+
     # 4d Array
     obs = [[[[56, 23],
              [21, 45]],
