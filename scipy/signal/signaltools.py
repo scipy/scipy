@@ -503,9 +503,16 @@ def _np_conv_ok(volume, kernel, mode):
     See if numpy supports convolution of `volume` and `kernel` (i.e. both are
     1D ndarrays and of the appropriate shape).  Numpy's 'same' mode uses the
     size of the larger input, while Scipy's uses the size of the first input.
+
+    Invalid mode strings will return False and be caught by the calling func.
     """
-    np_conv_ok = volume.ndim == kernel.ndim == 1
-    return np_conv_ok and (volume.size >= kernel.size or mode != 'same')
+    if volume.ndim == kernel.ndim == 1:
+        if mode in ('full', 'valid'):
+            return True
+        elif mode == 'same':
+            return volume.size >= kernel.size
+    else:
+        return False
 
 
 def _timeit_fast(stmt="pass", setup="pass", repeat=3):
