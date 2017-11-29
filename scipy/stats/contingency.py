@@ -280,7 +280,7 @@ def _find_subarrays(subarray_list, obs, target_shape):
     
     Parameters
     ----------
-    subarray_list : empty list or list of arrays
+    subarray_list : empty list or list of 2d-arrays
         list of 2d arrays matching target_shape parameter
     obs : nd-array
         Contingency table
@@ -289,7 +289,7 @@ def _find_subarrays(subarray_list, obs, target_shape):
     
     Returns
     -------
-    subarray_list : list of arrays
+    subarray_list : list of 2d-arrays
     
     """
     subarr = np.asarray(obs)
@@ -306,13 +306,13 @@ def _check_array_values(observed):
     
     Parameters
     ----------
-    observed : nd-array
-        Deconstructed contingency tables
+    observed : list of 2d-arrays
+        Deconstructed list of contingency tables
     
     Returns
     -------
-    observed : nd-array
-        Deconstructed contingency tables
+    observed : list of 2d-arrays
+        Deconstructed list contingency tables
     
     """
     for subarray in observed:
@@ -417,11 +417,11 @@ def association(observed, stat="V", chi2_stat=None, correct_bias=True):
     >>> obs = [[100, 150], [203, 322], [42, 7], [32, 21]]
     
     Cramer's V with bias correction
-    >>> association(observed=obs)
+    >>> association(observed=obs, stat="V")
     [ 0.46927187]
     
     Cramer's V without bias correction
-    >>> association(observed=obs, correct_bias=False)
+    >>> association(observed=obs, stat="V", correct_bias=False)
     [ 0.47264083]
     
     Tschuprow's T with bias correction
@@ -448,12 +448,12 @@ def association(observed, stat="V", chi2_stat=None, correct_bias=True):
     ...         [[12, 34], [43, 77]]]]
     
     Cramer's V with bias correction
-    >>> association(observed=obs)
+    >>> association(observed=obs, stat="V")
     [[ 0.32170191  0.4363003 ]
      [ 0.20704285  0.31591398]]
     
     Cramer's V without bias correction
-    >>> association(observed=obs, correct_bias=False)
+    >>> association(observed=obs, stat="V", correct_bias=False)
     [[ 0.33123688  0.4403334 ]
      [ 0.22450663  0.32443396]]
     
@@ -542,4 +542,5 @@ def association(observed, stat="V", chi2_stat=None, correct_bias=True):
     value_array = np.array(values_lst)
     if len(arr_shape) > 2:
         value_array = value_array.reshape(arr_shape[:len(arr_shape)-2])
+
     return value_array
