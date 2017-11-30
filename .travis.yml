@@ -76,6 +76,7 @@ before_install:
       export PATH=/usr/lib/ccache:$PATH
     elif [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
       brew install gcc ccache libmpc
+      brew link --overwrite gcc
       touch config.sh
       git clone --depth=1 https://github.com/matthew-brett/multibuild.git
       source multibuild/common_utils.sh
