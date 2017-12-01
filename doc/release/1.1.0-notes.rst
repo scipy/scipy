@@ -38,8 +38,14 @@ diagonal matrices.
 Random-to-Best/1/bin and Random-to-Best/1/exp mutation strategies were added to
 `scipy.optimize.differential_evolution` as 'randtobest1bin' and
 'randtobest1exp', respectively. Note: These names were already in use but
-implemented a different mutation strategy. See Backwards incompatible changes,
+implemented a different mutation strategy. See `Backwards incompatible changes`_,
 below.
+
+`scipy.sparse` improvements
+----------------------------
+
+An in-place ``resize`` method has been added to all sparse matrix formats,
+which was only available for ``scipy.sparse.dok_matrix`` in previous releases.
 
 Deprecated features
 ===================

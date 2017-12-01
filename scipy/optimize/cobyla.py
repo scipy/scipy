@@ -259,15 +259,14 @@ def _minimize_cobyla(fun, x0, args=(), constraints=(),
                           status=int(info[0]),
                           success=info[0] == 1,
                           message={1: 'Optimization terminated successfully.',
-                                   2: 'Maximum number of function evaluations has '
-                                      'been exceeded.',
-                                   3: 'Rounding errors are becoming damaging in '
-                                      'COBYLA subroutine.',
-                                   4: 'Did not converge to a solution satisfying '
-                                      'the constraints. See `maxcv` for magnitude '
-                                      'of violation.'
+                                   2: 'Maximum number of function evaluations '
+                                      'has been exceeded.',
+                                   3: 'Rounding errors are becoming damaging '
+                                      'in COBYLA subroutine.',
+                                   4: 'Did not converge to a solution '
+                                      'satisfying the constraints. See '
+                                      '`maxcv` for magnitude of violation.'
                                    }.get(info[0], 'Unknown exit status.'),
                           nfev=int(info[1]),
                           fun=info[2],
                           maxcv=info[3])
-

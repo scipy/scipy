@@ -1,6 +1,7 @@
 #
 # Tests of spherical Bessel functions.
 #
+from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from numpy.testing import (assert_almost_equal, assert_allclose,
@@ -258,9 +259,9 @@ class TestSphericalJnDerivatives(SphericalDerivativesTestCase):
         return spherical_jn(n, z, derivative=True)
 
     def test_spherical_jn_d_zero(self):
-        n = np.array([1, 2, 3, 7, 15])
+        n = np.array([0, 1, 2, 3, 7, 15])
         assert_allclose(spherical_jn(n, 0, derivative=True),
-                        np.zeros(5))
+                        np.array([0, 1/3, 0, 0, 0, 0]))
 
 
 class TestSphericalYnDerivatives(SphericalDerivativesTestCase):

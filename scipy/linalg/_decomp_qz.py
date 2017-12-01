@@ -5,7 +5,7 @@ import warnings
 import numpy as np
 from numpy import asarray_chkfinite
 
-from .misc import LinAlgError, _datacopied
+from .misc import LinAlgError, _datacopied, LinAlgWarning
 from .lapack import get_lapack_funcs
 
 from scipy._lib.six import callable
@@ -126,11 +126,12 @@ def _qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
 
     info = result[-1]
     if info < 0:
-        raise ValueError("Illegal value in argument %d of gges" % -info)
+        raise ValueError("Illegal value in argument {} of gges".format(-info))
     elif info > 0 and info <= a_n:
         warnings.warn("The QZ iteration failed. (a,b) are not in Schur "
                       "form, but ALPHAR(j), ALPHAI(j), and BETA(j) should be "
-                      "correct for J=%d,...,N" % info-1, UserWarning)
+                      "correct for J={},...,N".format(info-1), LinAlgWarning,
+                      stacklevel=3)
     elif info == a_n+1:
         raise LinAlgError("Something other than QZ iteration failed")
     elif info == a_n+2:
@@ -334,15 +335,15 @@ def ordqz(A, B, sort='lhp', output='real', overwrite_a=False,
     that would result if the 2-by-2 diagonal blocks of the real generalized
     Schur form of (A,B) were further reduced to triangular form using complex
     unitary transformations. If ALPHAI(j) is zero, then the j-th eigenvalue is
-    real; if positive, then the ``j``-th and ``(j+1)``-st eigenvalues are a complex
-    conjugate pair, with ``ALPHAI(j+1)`` negative.
+    real; if positive, then the ``j``-th and ``(j+1)``-st eigenvalues are a
+    complex conjugate pair, with ``ALPHAI(j+1)`` negative.
 
     See also
     --------
     qz
 
     """
-    #NOTE: should users be able to set these?
+    # NOTE: should users be able to set these?
     lwork = None
     result, typ = _qz(A, B, output=output, lwork=lwork, sort=None,
                       overwrite_a=overwrite_a, overwrite_b=overwrite_b,
