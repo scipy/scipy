@@ -3399,13 +3399,12 @@ class levy_stable_gen(rv_continuous):
     
     References
     ----------    
-    [MC] McCulloch, J., 1986. Simple consistent estimators of stable distribution parameters.
-         Communications in Statistics - Simulation and Computation 15, 11091136.
-    [MS] Mittnik, S.T. Rachev, T. Doganoglu, D. Chenyao, 1999. Maximum likelihood estimation 
-         of stable Paretian models, Mathematical and Computer Modelling, Volume 29, Issue 10, 
-         1999, Pages 275-293.
-    [BS] Borak, S., Hardle, W., Rafal, W. 2005. Stable distributions, Economic Risk. 
-    
+    .. [MC] McCulloch, J., 1986. Simple consistent estimators of stable distribution parameters.
+       Communications in Statistics - Simulation and Computation 15, 11091136.
+    .. [MS] Mittnik, S.T. Rachev, T. Doganoglu, D. Chenyao, 1999. Maximum likelihood estimation 
+       of stable Paretian models, Mathematical and Computer Modelling, Volume 29, Issue 10, 
+       1999, Pages 275-293.
+    .. [BS] Borak, S., Hardle, W., Rafal, W. 2005. Stable distributions, Economic Risk. 
 
     %(example)s
 
