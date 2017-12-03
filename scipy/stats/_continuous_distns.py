@@ -3382,12 +3382,16 @@ class levy_stable_gen(rv_continuous):
         
     where ``-Inf < t < Inf``. This integral does not have a known closed form.
     
-    For evaluation of pdf we use either direct integration if number of points less than
-    self.pdf_fft_min_points_threshold (defaults to 5) otherwise we use FFT of characteristic 
-    function. To increase accuracy of FFT calculation one can specify 
-    self.pdf_fft_grid_spacing (defaults to 0.01) and pdf_fft_n_points_two_power (defaults to
-    a value that covers the input range * 4). Setting pdf_fft_n_points_two_power to 16 should 
-    be sufficiently accurate in most cases at the expense of CPU time.
+    For evaluation of pdf we use either Zolotarev S_0 parameterization with integration, 
+    direct integration of standard parameterization of characteristic function or FFT of 
+    characteristic function. FFT is used if number of points is greater than 
+    levy_stable.pdf_fft_min_points_threshold (defaults to 5) otherwise we use one of the 
+    other methods.  The default method os Zolotarev's but can be changed by setting 
+    levy_stable.pdf_default_method to any string other than 'zolotarev'. To increase accuracy 
+    of FFT calculation one can specify levy_stable.pdf_fft_grid_spacing (defaults to 0.01) 
+    and pdf_fft_n_points_two_power (defaults to a value that covers the input range * 4). 
+    Setting pdf_fft_n_points_two_power to 16 should be sufficiently accurate in most cases 
+    at the expense of CPU time.
     
     Fitting uses quantile estimation method in [MC].
 
@@ -3400,6 +3404,7 @@ class levy_stable_gen(rv_continuous):
     [MS] Mittnik, S.T. Rachev, T. Doganoglu, D. Chenyao, 1999. Maximum likelihood estimation 
          of stable Paretian models, Mathematical and Computer Modelling, Volume 29, Issue 10, 
          1999, Pages 275-293.
+    [BS] Borak, S., Hardle, W., Rafal, W. 2005. Stable distributions, Economic Risk. 
 
     %(example)s
 
@@ -3463,21 +3468,71 @@ class levy_stable_gen(rv_continuous):
         density = ((-1)**(n-1-N/2))*np.fft.fft(((-1)**(n-1))*cf(2*np.pi*(n-1-N/2)/h/N))/h/N
         x = (n-1-N/2)*h
         return (x, density)
+    
+    @staticmethod
+    def _pdf_single_value_cf_integrate(x, alpha, beta):
+        cf = lambda t: levy_stable_gen._cf(t, alpha, beta)
+        return integrate.quad(lambda t: np.exp(-1j*t*x)*cf(t), -np.inf, np.inf, limit=1000)[0]/np.pi/2
+    
+    @staticmethod
+    def _pdf_single_value_zolotarev(x, alpha, beta):
+        """Calculate pdf using Zolotarev's methods as detailed in [BS].
+        """
+        zeta = -beta*np.tan(np.pi*alpha/2.)
+        if alpha != 1:
+            x0 = x + zeta # convert to S_0 parameterization
+            xi = np.arctan(-zeta)/alpha
+            def V(theta):
+                return np.cos(alpha*xi)**(1/(alpha-1)) * \
+                                (np.cos(theta)/np.sin(alpha*(xi+theta)))**(alpha/(alpha-1)) * \
+                                (np.cos(alpha*xi+(alpha-1)*theta)/np.cos(theta))
+            if x0 > zeta:
+                def f(theta):
+                    return V(theta)*(x0-zeta)**(alpha/(alpha-1))*np.exp(-V(theta)*(x0-zeta)**(alpha/(alpha-1)))
+
+                with np.errstate(all="ignore"):
+                    intg_max = optimize.minimize_scalar(lambda theta: -f(theta), bounds=[-xi, np.pi/2])
+                    intg = integrate.quad(f, -xi, np.pi/2, points=[intg_max.x])[0]
+                    return alpha * intg / np.pi / np.abs(alpha-1) / (x0-zeta)
+            elif x0 == zeta:
+                return sc.gamma(1+1/alpha)*np.cos(xi)/np.pi/((1+zeta**2)**(1/alpha/2))
+            else:
+                return levy_stable_gen._pdf_single_value_zolotarev(-x, alpha, -beta)
+        else:
+            # since scale zero, no need to reposition x for S_0 parameterization
+            xi = np.pi/2
+            if beta != 0:
+                np.seterr(all="ignore")
+                def V(theta):
+                    expr_1 = np.pi/2+beta*theta
+                    return 2. * expr_1 * np.exp(expr_1*np.tan(theta)/beta) / np.cos(theta) / np.pi 
+            
+                expr_1 = np.exp(-np.pi*x/beta/2.)
+                int_1 = integrate.fixed_quad(lambda theta: V(theta)*np.exp(-expr_1 * V(theta)), -np.pi/2, np.pi/2)[0]
+                return expr_1 * int_1 / np.abs(beta) / 2.
+            else:
+                return 1/(1+x**2)/np.pi
+        
 
     def _pdf(self, x, alpha, beta):
 
-        def pdf_single_value_with_quad(cf, x):
-            return integrate.quad(lambda t: np.exp(-1j*t*x)*cf(t), -np.inf, np.inf, limit=1000)[0]/np.pi/2
-        
         x = np.asarray(x).reshape(1, -1)[0,:]
         
         x, alpha, beta = np.broadcast_arrays(x, alpha, beta)
 
         data_in = np.dstack((x, alpha, beta))[0]
         data_out = np.empty(shape=(len(data_in),1))
-        fft_min_points_threshold = 5 if not hasattr(self, 'pdf_fft_min_points_threshold') else self.pdf_fft_min_points_threshold
-        fft_grid_spacing = 0.01 if not hasattr(self, 'pdf_fft_grid_spacing') else self.pdf_fft_grid_spacing
-        fft_n_points_two_power = None if not hasattr(self, 'pdf_fft_n_points_two_power') else int(self.pdf_fft_n_points_two_power)
+        
+        pdf_default_method_name =  getattr(self, 'pdf_default_method', 'zolotarev')
+        if pdf_default_method_name == 'zolotarev':
+            pdf_single_value_method = levy_stable_gen._pdf_single_value_zolotarev
+        else:
+            pdf_single_value_method = levy_stable_gen._pdf_single_value_cf_integrate
+        
+        fft_min_points_threshold = getattr(self, 'pdf_fft_min_points_threshold', 5)
+        fft_grid_spacing = getattr(self, 'pdf_fft_grid_spacing', 0.01)
+        fft_n_points_two_power = getattr(self, 'pdf_fft_n_points_two_power', None)
+        
         
         # group data in unique arrays of alpha, beta pairs
         uniq_param_pairs = np.vstack({tuple(row) for row in data_in[:,1:]})
@@ -3485,7 +3540,7 @@ class levy_stable_gen(rv_continuous):
             data_mask = np.all(data_in[:,1:] == pair, axis=-1)
             data_subset = data_in[data_mask]
             if len(data_subset) < fft_min_points_threshold:
-                data_out[data_mask] = [pdf_single_value_with_quad(lambda t: levy_stable_gen._cf(t, _alpha, _beta), _x) 
+                data_out[data_mask] = [pdf_single_value_method(_x, _alpha, _beta) 
                             for _x, _alpha, _beta in data_subset]
             else:
                 _alpha, _beta = pair
@@ -3493,7 +3548,7 @@ class levy_stable_gen(rv_continuous):
                 
                 # need enough points to "cover" _x for interpolation
                 h = fft_grid_spacing
-                q = np.ceil(np.log(2*np.max(np.abs(_x))/h)/np.log(2)) + 2 if fft_n_points_two_power is None else fft_n_points_two_power
+                q = np.ceil(np.log(2*np.max(np.abs(_x))/h)/np.log(2)) + 2 if fft_n_points_two_power is None else int(fft_n_points_two_power)
                 
                 density_x, density = levy_stable_gen._pdf_from_cf_with_fft(lambda t: levy_stable_gen._cf(t, _alpha, _beta), h=h, q=q)
                 f = interpolate.interp1d(density_x, np.real(density))
@@ -3510,8 +3565,8 @@ class levy_stable_gen(rv_continuous):
         data_in = np.dstack((x, alpha, beta))[0]
         data_out = np.empty(shape=(len(data_in),1))
         
-        fft_grid_spacing = 0.01 if not hasattr(self, 'pdf_fft_grid_spacing') else self.pdf_fft_grid_spacing
-        fft_n_points_two_power = None if not hasattr(self, 'pdf_fft_n_points_two_power') else int(self.pdf_fft_n_points_two_power)
+        fft_grid_spacing = getattr(self, 'pdf_fft_grid_spacing', 0.01)
+        fft_n_points_two_power = getattr(self, 'pdf_fft_n_points_two_power', None)
         
         # group data in unique arrays of alpha, beta pairs
         uniq_param_pairs = np.vstack({tuple(row) for row in data_in[:,1:]})
@@ -3524,7 +3579,7 @@ class levy_stable_gen(rv_continuous):
             
             # need enough points to "cover" _x for interpolation
             h = fft_grid_spacing
-            q = 16 if fft_n_points_two_power is None else fft_n_points_two_power
+            q = 16 if fft_n_points_two_power is None else int(fft_n_points_two_power)
             
             density_x, density = levy_stable_gen._pdf_from_cf_with_fft(lambda t: levy_stable_gen._cf(t, _alpha, _beta), h=h, q=q)
             f = interpolate.InterpolatedUnivariateSpline(density_x, np.real(density))

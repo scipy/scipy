@@ -1389,13 +1389,25 @@ class TestLevyStable(object):
         data = np.load(os.path.abspath(os.path.join(os.path.dirname(__file__),
                                                  'data/stable-pdf-sample-data.npy')))
         
-        # test single data points (uses quad)
+        # test single data points (uses cf def integral)
+        stats.levy_stable.pdf_default_method = 'quadrature'
         for (x, density, alpha, beta) in data:
             with suppress_warnings() as sup:
                 sup.filter(numpy.ComplexWarning, "Casting complex values to real discards the imaginary part")
                 pdf = stats.levy_stable.pdf(x, alpha, beta, scale=1, loc=0)
                 assert_almost_equal(pdf, density)
-            
+
+    def test_pdf_zolatarev(self):
+        # test values against Nolan's stable.exe output
+        data = np.load(os.path.abspath(os.path.join(os.path.dirname(__file__),
+                                                 'data/stable-pdf-sample-data.npy')))
+        
+        # test single data points (uses zolotarev parameterization) 
+        stats.levy_stable.pdf_default_method = 'zolotarev'
+        for (x, density, alpha, beta) in data:
+            pdf = stats.levy_stable.pdf(x, alpha, beta, scale=1, loc=0)
+            assert_almost_equal(pdf, density)
+
     def test_pdf_fft(self):
         # test values against Nolan's stable.exe output
         data = np.load(os.path.abspath(os.path.join(os.path.dirname(__file__),
