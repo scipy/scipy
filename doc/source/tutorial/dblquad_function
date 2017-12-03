@@ -1,0 +1,105 @@
+```python
+# Computing a DOUBLE INTEGRAL
+
+Structure : 
+
+scipy.integrate.dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-08, epsrel=1.49e-08)
+
+Parameters :
+
+func : callable 
+    function to be integrated
+a, b : float
+    Limits of integration x: a < b
+
+gfun : callable
+    The lower boundary curve in y which is a function taking a single 
+    floating point argument (x) and returning a floating point 
+    result: a lambda function can be useful here.
+
+hfun : callable
+    The upper boundary curve in y (same requirements as gfun).
+
+args : sequence, optional
+    Extra arguments to pass to func.
+
+epsabs : float, optional
+    Absolute tolerance passed directly to the 
+    inner 1-D quadrature integration. Default is 1.49e-8.
+
+epsrel : float, optional
+    Relative tolerance of the inner 1-D integrals. 
+    Default is 1.49e-8.
+        
+Returns :
+
+res : float
+    resultant integral
+abserr : float
+    estimate of the error
+    
+>>> from scipy import integrate
+
+"""
+The 'lambda' keyword pre-defines two variables,
+namely 'x' and 'y' which constitute the 
+integrable function 'int_function' 
+"""
+>>> int_function = lambda x, y: x*y
+
+# ---STRUCTURE OF INTEGRATION---
+# (x*y) is first integrated w.r.t 'x'
+# The initial resultant is in 'y' due to the inner limits
+# The initial resultant is integrated w.r.t 'y'
+# This integral is done over outer limits
+# INTEGRAL(INTEGRAL((x*y) dx, inner_low, inner_up) dy, outer_low, outer_up)
+
+# ---METHOD 1---
+
+# ---DEFINING THE LIMITS---
+# The OUTER upper and lower limits
+>>> outer_lower_limit = 0
+>>> outer_upper_limit = 0.5
+
+# The INNER upper and lower limits 
+# The inner limits are supposed to be in terms of 'y'
+>>> inner_lower_limit = lambda x : 0
+>>> inner_upper_limit = lambda x : 1-2*x
+
+# The variable 'result' stores what is returned by the 'dblquad' function
+>>> result_1 = integrate.dblquad(
+...         int_function,
+...         outer_lower_limit,
+...         outer_upper_limit,
+...         inner_lower_limit,
+...         inner_upper_limit
+...         )
+
+>>> print('(Resultant Integral, Estimate of Error) :', result_1)
+
+# ---METHOD 2---
+"""
+For n-fold integration, scipy provides the function nquad. 
+The integration bounds are an iterable object: either a list of constant bounds, 
+or a list of functions for the non-constant integration bounds.
+The order of integration (and therefore the bounds) is from the innermost 
+integral to the outermost one.
+"""
+>>> def function(x,y):
+...  return x*y
+
+# Storing the outer bounds in form of an array 
+>>> def outer_bounds():
+...  return [0,0.5]
+
+# Storing the inner bounds in form of an array
+>>> def inner_bounds(y):
+...  return [0,1-2*y]
+
+>>> result_2 = integrate.nquad(
+...        function,
+...         [inner_bounds, outer_bounds]
+...         )
+
+>>> print('(Resultant Integral, Estimate of Error) :', result_2)
+```
