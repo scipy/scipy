@@ -3405,6 +3405,7 @@ class levy_stable_gen(rv_continuous):
          of stable Paretian models, Mathematical and Computer Modelling, Volume 29, Issue 10, 
          1999, Pages 275-293.
     [BS] Borak, S., Hardle, W., Rafal, W. 2005. Stable distributions, Economic Risk. 
+    
 
     %(example)s
 
@@ -3480,8 +3481,9 @@ class levy_stable_gen(rv_continuous):
         """
         zeta = -beta*np.tan(np.pi*alpha/2.)
         if alpha != 1:
-            x0 = x + zeta # convert to S_0 parameterization
+            x0 = x + zeta  # convert to S_0 parameterization
             xi = np.arctan(-zeta)/alpha
+            
             def V(theta):
                 return np.cos(alpha*xi)**(1/(alpha-1)) * \
                                 (np.cos(theta)/np.sin(alpha*(xi+theta)))**(alpha/(alpha-1)) * \
@@ -3503,6 +3505,7 @@ class levy_stable_gen(rv_continuous):
             xi = np.pi/2
             if beta != 0:
                 np.seterr(all="ignore")
+                
                 def V(theta):
                     expr_1 = np.pi/2+beta*theta
                     return 2. * expr_1 * np.exp(expr_1*np.tan(theta)/beta) / np.cos(theta) / np.pi 
@@ -3513,7 +3516,6 @@ class levy_stable_gen(rv_continuous):
             else:
                 return 1/(1+x**2)/np.pi
         
-
     def _pdf(self, x, alpha, beta):
 
         x = np.asarray(x).reshape(1, -1)[0,:]
@@ -3523,7 +3525,7 @@ class levy_stable_gen(rv_continuous):
         data_in = np.dstack((x, alpha, beta))[0]
         data_out = np.empty(shape=(len(data_in),1))
         
-        pdf_default_method_name =  getattr(self, 'pdf_default_method', 'zolotarev')
+        pdf_default_method_name = getattr(self, 'pdf_default_method', 'zolotarev')
         if pdf_default_method_name == 'zolotarev':
             pdf_single_value_method = levy_stable_gen._pdf_single_value_zolotarev
         else:
@@ -3532,7 +3534,6 @@ class levy_stable_gen(rv_continuous):
         fft_min_points_threshold = getattr(self, 'pdf_fft_min_points_threshold', 5)
         fft_grid_spacing = getattr(self, 'pdf_fft_grid_spacing', 0.01)
         fft_n_points_two_power = getattr(self, 'pdf_fft_n_points_two_power', None)
-        
         
         # group data in unique arrays of alpha, beta pairs
         uniq_param_pairs = np.vstack({tuple(row) for row in data_in[:,1:]})
