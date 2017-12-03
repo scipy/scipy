@@ -5240,13 +5240,31 @@ class triang_gen(rv_continuous):
         return (c >= 0) & (c <= 1)
 
     def _pdf(self, x, c):
-        return np.where(x < c, 2*x/c, 2*(1-x)/(1-c))
+        r = _lazyselect([c == 0,
+                         c == 1,
+                         x < c,
+                         x >= c],
+                        [lambda x, c: 2 - 2*x,
+                         lambda x, c: 2 * x,
+                         lambda x, c: 2 * x / c,
+                         lambda x, c: 2 * (1-x) / (1-c)],
+                        (x, c))
+        return r
 
     def _cdf(self, x, c):
-        return np.where(x < c, x*x/c, (x*x-2*x+c)/(c-1))
+        r = _lazyselect([c == 0,
+                         c == 1,
+                         x < c,
+                         x >= c],
+                        [lambda x, c: 2*x - x*x,
+                         lambda x, c: x * x,
+                         lambda x, c: x * x / c,
+                         lambda x, c: (x*x - 2*x + c) / (c-1)],
+                        (x, c))
+        return r
 
     def _ppf(self, q, c):
-        return np.where(q < c, np.sqrt(c*q), 1-np.sqrt((1-c)*(1-q)))
+        return np.where(q < c, np.sqrt(c * q), 1-np.sqrt((1-c) * (1-q)))
 
     def _stats(self, c):
         return ((c+1.0)/3.0,

@@ -2347,6 +2347,15 @@ class TestTrapz(object):
         assert_allclose(v, res.reshape(v.shape), atol=1e-15)
 
 
+class TestTriang(object):
+    def test_edge_cases(self):
+        assert_equal(stats.triang.pdf(0.5, 0), 1.)
+        assert_equal(stats.triang.pdf(0.5, 1), 1.)
+
+        assert_equal(stats.triang.cdf(0.5, 0.), 0.75)
+        assert_equal(stats.triang.cdf(0.5, 1.), 0.25)
+
+
 def test_540_567():
     # test for nan returned in tickets 540, 567
     assert_almost_equal(stats.norm.cdf(-1.7624320982), 0.03899815971089126,
