@@ -75,6 +75,7 @@ before_install:
       free -m
       export PATH=/usr/lib/ccache:$PATH
     elif [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+      brew cask uninstall oclint
       brew install gcc ccache libmpc
       touch config.sh
       git clone --depth=1 https://github.com/matthew-brett/multibuild.git
