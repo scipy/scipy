@@ -447,3 +447,11 @@ class TestDifferentialEvolutionSolver(object):
         assert_equal(solver._nfev, 0)
         assert_(np.all(np.isinf(solver.population_energies)))
 
+    def test_non_integral_popsize(self):
+        # non-integral popsize
+        solver = DifferentialEvolutionSolver(rosen, self.bounds, popsize=5.1)
+        assert_equal(solver.num_population_members, 11)
+
+        # non-integral popsize < 1.0
+        solver = DifferentialEvolutionSolver(rosen, self.bounds, popsize=0.1)
+        assert_equal(solver.num_population_members, 1)

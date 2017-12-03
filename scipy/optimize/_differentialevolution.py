@@ -9,6 +9,7 @@ from scipy.optimize.optimize import _status_message
 from scipy._lib._util import check_random_state
 from scipy._lib.six import xrange
 import warnings
+from math import ceil
 
 
 __all__ = ['differential_evolution']
@@ -65,9 +66,9 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         The maximum number of generations over which the entire population is
         evolved. The maximum number of function evaluations (with no polishing)
         is: ``(maxiter + 1) * popsize * len(x)``
-    popsize : int, optional
+    popsize : float, optional
         A multiplier for setting the total population size.  The population has
-        ``popsize * len(x)`` individuals.
+        ``ceil(popsize * len(x))`` individuals.
     tol : float, optional
         Relative tolerance for convergence, the solving stops when
         ``np.std(pop) <= atol + tol * np.abs(np.mean(population_energies))``,
@@ -256,9 +257,9 @@ class DifferentialEvolutionSolver(object):
         The maximum number of generations over which the entire population is
         evolved. The maximum number of function evaluations (with no polishing)
         is: ``(maxiter + 1) * popsize * len(x)``
-    popsize : int, optional
+    popsize : float, optional
         A multiplier for setting the total population size.  The population has
-        ``popsize * len(x)`` individuals.
+        ``ceil(popsize * len(x))`` individuals.
     tol : float, optional
         Relative tolerance for convergence, the solving stops when
         ``np.std(pop) <= atol + tol * np.abs(np.mean(population_energies))``,
@@ -400,7 +401,7 @@ class DifferentialEvolutionSolver(object):
 
         # default population initialization is a latin hypercube design, but
         # there are other population initializations possible.
-        self.num_population_members = popsize * self.parameter_count
+        self.num_population_members = int(ceil(popsize * self.parameter_count))
 
         self.population_shape = (self.num_population_members,
                                  self.parameter_count)
