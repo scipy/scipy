@@ -15,13 +15,11 @@ from numpy.testing import assert_allclose, \
         assert_raises, assert_equal, assert_array_equal
 
 from numpy import dot, conj, random
-from scipy.linalg import eig, eigh
+from scipy.linalg import eig, eigh, hilbert, svd
 from scipy.sparse import csc_matrix, csr_matrix, isspmatrix, diags
 from scipy.sparse.linalg import LinearOperator, aslinearoperator
 from scipy.sparse.linalg.eigen.arpack import eigs, eigsh, svds, \
      ArpackNoConvergence, arpack
-
-from scipy.linalg import svd, hilbert
 
 from scipy._lib._gcutils import assert_deallocated
 from scipy._lib._numpy_compat import suppress_warnings
@@ -925,7 +923,7 @@ def test_eigs_for_k_greater():
     eig_tuple2 = eig(A, b=M_sparse)
 
     with suppress_warnings() as sup:
-        sup.filter(UserWarning)
+        sup.filter(RuntimeWarning)
 
         assert_equal(eigs(A, M=M_dense, k=3), eig_tuple1)
         assert_equal(eigs(A, M=M_dense, k=4), eig_tuple1)
@@ -951,7 +949,7 @@ def test_eigsh_for_k_greater():
     eig_tuple2 = eigh(A, b=M_sparse)
 
     with suppress_warnings() as sup:
-        sup.filter(UserWarning)
+        sup.filter(RuntimeWarning)
 
         assert_equal(eigsh(A, M=M_dense, k=4), eig_tuple1)
         assert_equal(eigsh(A, M=M_dense, k=5), eig_tuple1)
