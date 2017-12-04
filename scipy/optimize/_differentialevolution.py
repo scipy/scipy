@@ -68,15 +68,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     popsize : int, optional
         A multiplier for setting the total population size.  The population has
         ``popsize * len(x)`` individuals (unless the initial population is
-<<<<<<< HEAD
-<<<<<<< HEAD
         supplied via the `init` keyword).
-=======
-         supplied via the `init` keyword).
->>>>>>> ENH: differential_evolution init with population array
-=======
-        supplied via the `init` keyword).
->>>>>>> PEP8 for refguide check
     tol : float, optional
         Relative tolerance for convergence, the solving stops when
         ``np.std(pop) <= atol + tol * np.abs(np.mean(population_energies))``,
@@ -275,15 +267,7 @@ class DifferentialEvolutionSolver(object):
     popsize : int, optional
         A multiplier for setting the total population size.  The population has
         ``popsize * len(x)`` individuals (unless the initial population is
-<<<<<<< HEAD
-<<<<<<< HEAD
         supplied via the `init` keyword).
-=======
-         supplied via the `init` keyword).
->>>>>>> ENH: differential_evolution init with population array
-=======
-        supplied via the `init` keyword).
->>>>>>> PEP8 for refguide check
     tol : float, optional
         Relative tolerance for convergence, the solving stops when
         ``np.std(pop) <= atol + tol * np.abs(np.mean(population_energies))``,
@@ -529,9 +513,10 @@ class DifferentialEvolutionSolver(object):
         popn = np.asfarray(init)
 
         if (np.size(popn, 0) < 5 or
-                    popn.shape[1] != self.parameter_count or
-                    len(popn.shape) != 2):
-            raise ValueError(self.__init_error_msg)
+                popn.shape[1] != self.parameter_count or
+                len(popn.shape) != 2):
+            raise ValueError("The population supplied needs to have shape"
+                             " (M, len(x)), where M > 4.")
 
         # scale values and clip to bounds, assigning to population
         self.population = np.clip(self._unscale_parameters(popn), 0, 1)
