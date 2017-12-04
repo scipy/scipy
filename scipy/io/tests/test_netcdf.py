@@ -166,6 +166,58 @@ def test_read_write_sio():
         assert_equal(f_64.version_byte, 2)
 
 
+def test_bytes():
+    raw_file = BytesIO()
+    f = netcdf_file(raw_file, mode='w')
+    # Dataset only has a single variable, dimension and attribute to avoid
+    # any ambiguity related to order.
+    f.a = 'b'
+    f.createDimension('dim', 1)
+    # int32 is intentionally chosen to avoid any need for null-padding with
+    # the fill value to the nearest 4-byte boundary, because we don't
+    # implement fill values properly yet.
+    var = f.createVariable('var', np.int32, ('dim',))
+    var[0] = -9999
+    var.c = 'd'
+    f.sync()
+
+    actual = raw_file.getvalue()
+
+    expected = (b'CDF\x01'
+                b'\x00\x00\x00\x00'
+                b'\x00\x00\x00\x0a'
+                b'\x00\x00\x00\x01'
+                b'\x00\x00\x00\x03'
+                b'dim\x00'
+                b'\x00\x00\x00\x01'
+                b'\x00\x00\x00\x0c'
+                b'\x00\x00\x00\x01'
+                b'\x00\x00\x00\x01'
+                b'a\x00\x00\x00'
+                b'\x00\x00\x00\x02'
+                b'\x00\x00\x00\x01'
+                b'b\x00\x00\x00'
+                b'\x00\x00\x00\x0b'
+                b'\x00\x00\x00\x01'
+                b'\x00\x00\x00\x03'
+                b'var\x00'
+                b'\x00\x00\x00\x01'
+                b'\x00\x00\x00\x00'
+                b'\x00\x00\x00\x0c'
+                b'\x00\x00\x00\x01'
+                b'\x00\x00\x00\x01'
+                b'c\x00\x00\x00'
+                b'\x00\x00\x00\x02'
+                b'\x00\x00\x00\x01'
+                b'd\x00\x00\x00'
+                b'\x00\x00\x00\x04'
+                b'\x00\x00\x00\x04'
+                b'\x00\x00\x00\x78'
+                b'\xff\xff\xd8\xf1')
+
+    assert_equal(actual, expected)
+
+
 def test_read_example_data():
     # read any example data files
     for fname in glob(pjoin(TEST_DATA_PATH, '*.nc')):
@@ -319,9 +371,9 @@ def test_open_append():
         f.close()
 
 
-def test_append_recordDimension(): 
-    dataSize = 100   
-    
+def test_append_recordDimension():
+    dataSize = 100
+
     with in_tempdir():
         # Create file with record time dimension
         with netcdf_file('withRecordDimension.nc', 'w') as f:
@@ -333,28 +385,28 @@ def test_append_recordDimension():
             f.createDimension('y', dataSize)
             y = f.createVariable('y', 'd', ('y',))
             y[:] = np.array(range(dataSize))
-            f.createVariable('testData', 'i', ('time', 'x', 'y'))  
+            f.createVariable('testData', 'i', ('time', 'x', 'y'))
             f.flush()
-            f.close()        
-        
-        for i in range(2): 
-            # Open the file in append mode and add data 
+            f.close()
+
+        for i in range(2):
+            # Open the file in append mode and add data
             with netcdf_file('withRecordDimension.nc', 'a') as f:
                 f.variables['time'].data = np.append(f.variables["time"].data, i)
                 f.variables['testData'][i, :, :] = np.ones((dataSize, dataSize))*i
                 f.flush()
-                
+
             # Read the file and check that append worked
-            with netcdf_file('withRecordDimension.nc') as f:            
+            with netcdf_file('withRecordDimension.nc') as f:
                 assert_equal(f.variables['time'][-1], i)
                 assert_equal(f.variables['testData'][-1, :, :].copy(), np.ones((dataSize, dataSize))*i)
                 assert_equal(f.variables['time'].data.shape[0], i+1)
                 assert_equal(f.variables['testData'].data.shape[0], i+1)
-                
+
         # Read the file and check that 'data' was not saved as user defined
         # attribute of testData variable during append operation
         with netcdf_file('withRecordDimension.nc') as f:
-            with assert_raises(KeyError) as ar:            
+            with assert_raises(KeyError) as ar:
                 f.variables['testData']._attributes['data']
             ex = ar.value
             assert_equal(ex.args[0], 'data')
