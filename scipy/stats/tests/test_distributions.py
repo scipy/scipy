@@ -1391,11 +1391,14 @@ class TestLevyStable(object):
         
         # test single data points (uses cf def integral)
         stats.levy_stable.pdf_default_method = 'quadrature'
-        for (x, density, alpha, beta) in data:
-            with suppress_warnings() as sup:
-                sup.filter(numpy.ComplexWarning, "Casting complex values to real discards the imaginary part")
-                pdf = stats.levy_stable.pdf(x, alpha, beta, scale=1, loc=0)
-                assert_almost_equal(pdf, density)
+        stats.levy_stable.pdf_fft_min_points_threshold = None
+        xs = data[:,(0,)]
+        density = data[:,(1,)]
+        alphas = data[:,(2,)]
+        betas = data[:,(3,)]
+        pdf = stats.levy_stable.pdf(xs, alphas, betas, scale=1, loc=0)
+        assert_almost_equal(pdf, density, 4)    
+
 
     def test_pdf_zolatarev(self):
         # test values against Nolan's stable.exe output
@@ -1403,10 +1406,14 @@ class TestLevyStable(object):
                                                  'data/stable-pdf-sample-data.npy')))
         
         # test single data points (uses zolotarev parameterization) 
+        stats.levy_stable.pdf_fft_min_points_threshold = None
         stats.levy_stable.pdf_default_method = 'zolotarev'
-        for (x, density, alpha, beta) in data:
-            pdf = stats.levy_stable.pdf(x, alpha, beta, scale=1, loc=0)
-            assert_almost_equal(pdf, density)
+        xs = data[:,(0,)]
+        density = data[:,(1,)]
+        alphas = data[:,(2,)]
+        betas = data[:,(3,)]
+        pdf = stats.levy_stable.pdf(xs, alphas, betas, scale=1, loc=0)
+        assert_almost_equal(pdf, density, 4)    
 
     def test_pdf_fft(self):
         # test values against Nolan's stable.exe output
@@ -1414,6 +1421,7 @@ class TestLevyStable(object):
                                                  'data/stable-pdf-sample-data.npy')))
             
         # test bulk data (uses fft)
+        stats.levy_stable.pdf_fft_min_points_threshold = 0
         xs = data[:,(0,)]
         density = data[:,(1,)]
         alphas = data[:,(2,)]
@@ -1421,18 +1429,33 @@ class TestLevyStable(object):
         pdf = stats.levy_stable.pdf(xs, alphas, betas, scale=1, loc=0)
         assert_almost_equal(pdf, density, 4)
 
-    def test_cdf(self):
+    def test_cdf_fft(self):
         # test values against Nolan's stable.exe output
         data = np.load(os.path.abspath(os.path.join(os.path.dirname(__file__),
                                                  'data/stable-cdf-sample-data.npy')))
             
         # test bulk data (uses fft)
+        stats.levy_stable.pdf_fft_min_points_threshold = 0
         xs = data[:,(0,)]
         cdf_test = data[:,(1,)]
         alphas = data[:,(2,)]
         betas = data[:,(3,)]
         cdf = stats.levy_stable.cdf(xs, alphas, betas, scale=1, loc=0)
         assert_almost_equal(cdf, cdf_test, 2)
+        
+    def test_cdf_zolotarev(self):
+        # test values against Nolan's stable.exe output
+        data = np.load(os.path.abspath(os.path.join(os.path.dirname(__file__),
+                                                 'data/stable-cdf-sample-data.npy')))
+            
+        # test bulk data (uses zolotarev)
+        stats.levy_stable.pdf_fft_min_points_threshold = None
+        xs = data[:,(0,)]
+        cdf_test = data[:,(1,)]
+        alphas = data[:,(2,)]
+        betas = data[:,(3,)]
+        cdf = stats.levy_stable.cdf(xs, alphas, betas, scale=1, loc=0)
+        assert_almost_equal(cdf, cdf_test)
     
     def test_fit(self):
         # contruct data to have percentiles that match
