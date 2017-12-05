@@ -1,4 +1,4 @@
-#
+﻿#
 # Author:  Travis Oliphant  2002-2011 with contributions from
 #          SciPy Developers 2004-2011
 #
@@ -3090,7 +3090,7 @@ class norminvgauss_gen(rv_continuous):
 
     .. math::
 
-        f(x; a, b) = g(x; 0, a, b, 1)
+        f(x; a, b) = 
         \frac{a  \exp\left(\sqrt{a^2 - b^2} + b x\right)}
         {\pi \sqrt{1 + x^2}} \, K_1\left(a * sqrt{1 + x^2}\right)
 
