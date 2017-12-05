@@ -1,15 +1,26 @@
-"""quasi-Newton update strategies."""
+"""Quasi-Newton update strategies."""
 
 from __future__ import division, print_function, absolute_import
 import numpy as np
 from numpy.linalg import norm
 from scipy.linalg import get_blas_funcs
 
-class HessianUpdateStrategy(object):
-    """Virtual interface for implementing Hessian update strategies.
 
-    Should implement four methods: ``initialize``, ``update``,
-    ``dot`` and ``get_matrix``.
+class HessianUpdateStrategy(object):
+    """Interface for implementing Hessian update strategies.
+
+    Many optimization methods make use of Hessian (or inverse Hessian)
+    quasi-Newton approximations, such as BFGS, SR1, L-BFGS. Some of these
+    approximations, however, do not actually need to store the entire matrix
+    or can compute the internal matrix product with a given vector in a very
+    efficiently manner. This class serves as an abstract interface between
+    the optimization algorithm and the quasi-Newton update strategies, giving
+    freedom of implementation to store and update the internal matrix as
+    efficiently as possible. Different choices of initialization and update
+    procedure will result in different quasi-Newton strategies.
+
+    Four methods should be implemented in derived classes: ``initialize``,
+    ``update``, ``dot`` and ``get_matrix``.
 
     Notes
     -----
@@ -38,7 +49,7 @@ class HessianUpdateStrategy(object):
                                   " is not implemented.")
 
     def update(self, delta_x, delta_grad):
-        """Update matrix.
+        """Update internal matrix.
 
         Update Hessian matrix or its inverse (depending on how 'approx_type'
         is defined) using information about the last evaluated points.
@@ -56,7 +67,7 @@ class HessianUpdateStrategy(object):
                                   " is not implemented.")
 
     def dot(self, p):
-        """Matrix-vector multiplication.
+        """Compute internal matrix product with the given vector.
 
         Parameters
         ----------
@@ -73,7 +84,7 @@ class HessianUpdateStrategy(object):
                                   " is not implemented.")
 
     def get_matrix(self):
-        """Return current approximation matrix.
+        """Return current internal matrix.
 
         Returns
         -------
@@ -87,7 +98,7 @@ class HessianUpdateStrategy(object):
 
 
 class FullHessianUpdateStrategy(HessianUpdateStrategy):
-    """Quasi-Newton Hessian update strategy."""
+    """Quasi-Newton update strategies using full internal representations."""
 
     _syr = get_blas_funcs('syr', dtype='d')  # Symetric rank 1 update
     _syr2 = get_blas_funcs('syr2', dtype='d')  # Symetric rank 2 update
@@ -98,6 +109,20 @@ class FullHessianUpdateStrategy(HessianUpdateStrategy):
         self.first_iteration = True
 
     def initialize(self, n, approx_type):
+        """Initialize internal matrix.
+
+        Alocate internal memory for storing and updating
+        the Hessian or its inverse.
+
+        Parameters
+        ----------
+        n : int
+            Problem dimension.
+        approx_type : {'hess', 'inv_hess'}
+            Selects either the Hessian or the inverse Hessian.
+            When set to 'hess' the Hessian will be stored and updated.
+            When set to 'inv_hess' its inverse will be used instead.
+        """
         self.approx_type = approx_type
         if approx_type not in ('hess', 'inv_hess'):
             raise ValueError("Unknown approx_type.")
@@ -126,15 +151,28 @@ class FullHessianUpdateStrategy(HessianUpdateStrategy):
                                   " is not implemented.")
 
     def update(self, delta_x, delta_grad):
+        """Update internal matrix.
+
+        Update Hessian matrix or its inverse (depending on how 'approx_type'
+        is defined) using information about the last evaluated points.
+
+        Parameters
+        ----------
+        delta_x : ndarray
+            The difference between two points the gradient
+            function have been evaluated at: ``delta_x = x2 - x1``.
+        delta_grad : ndarray
+            The difference between the gradients:
+            ``delta_grad = grad(x2) - grad(x1)``.
+        """
         if np.all(delta_x == 0.0):
             return
         if self.first_iteration:
             # Get user specific scale
-            try:
-                scale = float(self.init_scale)
-            # Auto scale
-            except ValueError:
+            if self.init_scale == "auto":
                 scale = self._auto_scale(delta_x, delta_grad)
+            else:
+                scale = float(self.init_scale)
             # Scale initial matrix with ``scale * np.eye(n)``
             if self.approx_type == 'hess':
                 self.B *= scale
@@ -144,12 +182,34 @@ class FullHessianUpdateStrategy(HessianUpdateStrategy):
         self._update_implementation(delta_x, delta_grad)
 
     def dot(self, p):
+        """Compute internal matrix product with the given vector.
+
+        Parameters
+        ----------
+        p : array_like
+            1-d array representing a vector.
+
+        Returns
+        -------
+        Hp : array
+            1-d  represents the result of multiplying the approximation matrix
+            by vector p.
+        """
         if self.approx_type == 'hess':
             return self._symv(1, self.B, p)
         else:
             return self._symv(1, self.H, p)
 
     def get_matrix(self):
+        """Return current internal matrix.
+
+        Returns
+        -------
+        H : ndarray, shape (n, n)
+            Dense matrix containing either the Hessian
+            or its inverse (depending on how 'approx_type'
+            is defined).
+        """
         if self.approx_type == 'hess':
             M = self.B
         else:
@@ -171,10 +231,11 @@ class BFGS(FullHessianUpdateStrategy):
         result and the unmodified matrix. Both exceptions strategies
         are explained  in [1]_, p.536-537.
     min_curvature : float
-        Define the minimum curvature ``dot(delta_grad, delta_x)``
-        allowed to go unnafected by the exception strategy. By default
-        is equal to 1e-2 when ``exception_strategy = 'skip_update'``
-        and equal to 0.2 when ``exception_strategy = 'damped_bfgs'``.
+        This number, scaled by a normalization factor, defines the
+        minimum curvature ``dot(delta_grad, delta_x)`` allowed to go
+        unnafected by the exception strategy. By default is equal to
+        1e-2 when ``exception_strategy = 'skip_update'`` and equal
+        to 0.2 when ``exception_strategy = 'damped_bfgs'``.
     init_scale : {float, 'auto'}
         Matrix scale at first iteration. At the first
         iteration the Hessian matrix or its inverse will be initialized
@@ -290,7 +351,8 @@ class SR1(FullHessianUpdateStrategy):
     Parameters
     ----------
     min_denominator : float
-        Define the minimum allowed value of the denominator
+        This number, scaled by a normalization factor,
+        defines the minimum denominator magnitude allowed
         in the update. When the condition is violated we skip
         the update. By default uses ``1e-8``.
     init_scale : {float, 'auto'}, optional
