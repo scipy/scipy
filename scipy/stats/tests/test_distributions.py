@@ -1399,7 +1399,6 @@ class TestLevyStable(object):
         pdf = stats.levy_stable.pdf(xs, alphas, betas, scale=1, loc=0)
         assert_almost_equal(pdf, density, 4)    
 
-
     def test_pdf_zolatarev(self):
         # test values against Nolan's stable.exe output
         data = np.load(os.path.abspath(os.path.join(os.path.dirname(__file__),
