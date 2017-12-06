@@ -51,13 +51,13 @@ as a list of objects from the following classes:
 Quasi-Newton strategies implementing `HessianUpdateStrategy`
 interface can be used to approximate the Hessian in `minimize`
 function (available only for the 'trust-constr' method). Available
-quasi-Newton approximations implementing this interface are:
+quasi-Newton methods implementing this interface are:
 
 .. autosummary::
    :toctree: generated/
 
-   BFGS - Broyden-Fletcher-Goldfarb-Shanno (BFGS) Hessian matrix approximation.
-   SR1 - Symmetric-rank-1 Hessian matrix approximation.
+   BFGS - Broyden-Fletcher-Goldfarb-Shanno (BFGS) Hessian update strategy.
+   SR1 - Symmetric-rank-1 Hessian update strategy.
 
 The `minimize_scalar` function supports the following methods:
 

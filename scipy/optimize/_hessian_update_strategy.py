@@ -6,18 +6,23 @@ from numpy.linalg import norm
 from scipy.linalg import get_blas_funcs
 
 
+__all__ = ['HessianUpdateStrategy',
+           'BFGS',
+           'SR1']
+
 class HessianUpdateStrategy(object):
     """Interface for implementing Hessian update strategies.
 
     Many optimization methods make use of Hessian (or inverse Hessian)
-    quasi-Newton approximations, such as BFGS, SR1, L-BFGS. Some of these
-    approximations, however, do not actually need to store the entire matrix
-    or can compute the internal matrix product with a given vector in a very
-    efficiently manner. This class serves as an abstract interface between
-    the optimization algorithm and the quasi-Newton update strategies, giving
-    freedom of implementation to store and update the internal matrix as
-    efficiently as possible. Different choices of initialization and update
-    procedure will result in different quasi-Newton strategies.
+    approximations, such as the quasi-Newton methods BFGS, SR1, L-BFGS.
+    Some of these  approximations, however, do not actually need to store
+    the entire matrix or can compute the internal matrix product with a
+    given vector in a very efficiently manner. This class serves as an
+    abstract interface between the optimization algorithm and the
+    quasi-Newton update strategies, giving freedom of implementation
+    to store and update the internal matrix as efficiently as possible.
+    Different choices of initialization and update procedure will result
+    in different quasi-Newton strategies.
 
     Four methods should be implemented in derived classes: ``initialize``,
     ``update``, ``dot`` and ``get_matrix``.
@@ -67,7 +72,7 @@ class HessianUpdateStrategy(object):
                                   " is not implemented.")
 
     def dot(self, p):
-        """Compute internal matrix product with the given vector.
+        """Compute the product of the internal matrix with the given vector.
 
         Parameters
         ----------
@@ -98,7 +103,7 @@ class HessianUpdateStrategy(object):
 
 
 class FullHessianUpdateStrategy(HessianUpdateStrategy):
-    """Quasi-Newton update strategies using full internal representations."""
+    """Hessian update strategy using full dimensional internal representation."""
 
     _syr = get_blas_funcs('syr', dtype='d')  # Symetric rank 1 update
     _syr2 = get_blas_funcs('syr2', dtype='d')  # Symetric rank 2 update
@@ -182,7 +187,7 @@ class FullHessianUpdateStrategy(HessianUpdateStrategy):
         self._update_implementation(delta_x, delta_grad)
 
     def dot(self, p):
-        """Compute internal matrix product with the given vector.
+        """Compute the product of the internal matrix with the given vector.
 
         Parameters
         ----------

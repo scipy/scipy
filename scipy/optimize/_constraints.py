@@ -271,7 +271,7 @@ class NonlinearConstraint:
         {'2-point', '3-point', 'cs'} select a finite difference
         scheme for numerical  estimation.  Alternativelly, objects
         implementing `HessianUpdateStrategy` interface can be used to
-        approximate the Hessian. Available quasi-Newton approximations
+        approximate the Hessian. Available quasi-Newton methods
         implementing this interface are:
 
             - `BFGS`;

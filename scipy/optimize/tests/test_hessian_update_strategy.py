@@ -9,6 +9,7 @@ from numpy.testing import (TestCase, assert_array_almost_equal,
                            dec)
 from scipy.optimize import (BFGS,
                             SR1,
+                            HessianUpdateStrategy,
                             minimize)
 
 
