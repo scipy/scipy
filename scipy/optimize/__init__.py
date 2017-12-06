@@ -228,10 +228,10 @@ The `linprog` function supports the following methods:
    optimize.linprog-interior-point
 
 The simplex method supports callback functions, such as:
-    
+
 .. autosummary::
    :toctree: generated/
-   
+
    linprog_verbose_callback -- Sample callback function for linprog (simplex)
 
 Assignment problems:
@@ -254,6 +254,7 @@ Utilities
 
    show_options - Show specific options optimization solvers
    LbfgsInvHessProduct - Linear operator for L-BFGS approximate inverse Hessian
+   HessianUpdateStrategy - Interface for implementing Hessian update strategies
 
 """
 

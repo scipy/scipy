@@ -140,7 +140,7 @@ class TestHessianUpdateStrategy(TestCase):
                 H = inv_hess.get_matrix()
                 assert_array_almost_equal(np.linalg.inv(B), H, decimal=10)
             B_true = prob.hess(x_list[i+1])
-            assert_array_less(norm(B - B_true)/norm(B_true),  0.1)
+            assert_array_less(norm(B - B_true)/norm(B_true), 0.1)
 
     def test_SR1_skip_update(self):
         # Define auxiliar problem
