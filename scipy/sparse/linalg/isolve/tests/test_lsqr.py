@@ -30,11 +30,13 @@ maxit = None
 
 
 def test_basic():
-    svx = np.linalg.solve(G, b)
+    b_copy = b.copy()
     X = lsqr(G, b, show=show, atol=tol, btol=tol, iter_lim=maxit)
+    assert_(np.all(b_copy == b))
+
+    svx = np.linalg.solve(G, b)
     xo = X[0]
     assert_(norm(svx - xo) < 1e-5)
-
 
 def test_gh_2466():
     row = np.array([0, 0])
@@ -87,6 +89,22 @@ def test_b_shapes():
     b = np.ones((10, 1))
     x = lsqr(A, b)[0]
     assert_almost_equal(norm(A.dot(x) - b.ravel()), 0)
+
+
+def test_initialization():
+    # Test the default setting is the same as zeros
+    b_copy = b.copy()
+    x_ref = lsqr(G, b, show=show, atol=tol, btol=tol, iter_lim=maxit)
+    x0 = np.zeros(x_ref[0].shape)
+    x = lsqr(G, b, show=show, atol=tol, btol=tol, iter_lim=maxit, x0=x0)
+    assert_(np.all(b_copy == b))
+    assert_array_almost_equal(x_ref[0], x[0])
+
+    # Test warm-start with single iteration
+    x0 = lsqr(G, b, show=show, atol=tol, btol=tol, iter_lim=1)[0]
+    x = lsqr(G, b, show=show, atol=tol, btol=tol, iter_lim=maxit, x0=x0)
+    assert_array_almost_equal(x_ref[0], x[0])
+    assert_(np.all(b_copy == b))
 
 
 if __name__ == "__main__":

@@ -12,7 +12,7 @@ from __future__ import division, print_function, absolute_import
 import numpy
 import tempfile
 
-from numpy import (amin, amax, ravel, asarray, cast, arange, ones, newaxis,
+from numpy import (amin, amax, ravel, asarray, arange, ones, newaxis,
                    transpose, iscomplexobj, uint8, issubdtype, array)
 
 try:
@@ -29,7 +29,8 @@ __all__ = ['fromimage', 'toimage', 'imsave', 'imread', 'bytescale',
            'imrotate', 'imresize', 'imshow', 'imfilter']
 
 
-# Returns a byte-scaled image
+@numpy.deprecate(message="`bytescale` is deprecated in SciPy 1.0.0, "
+                         "and will be removed in 1.2.0.")
 def bytescale(data, cmin=None, cmax=None, high=255, low=0):
     """
     Byte scales an array (image).
@@ -37,6 +38,8 @@ def bytescale(data, cmin=None, cmax=None, high=255, low=0):
     Byte scaling means converting the input image to uint8 dtype and scaling
     the range to ``(low, high)`` (default 0-255).
     If the input image already has dtype uint8, no scaling is done.
+
+    This function is only available if Python Imaging Library (PIL) is installed.
 
     Parameters
     ----------
@@ -102,9 +105,14 @@ def bytescale(data, cmin=None, cmax=None, high=255, low=0):
     return (bytedata.clip(low, high) + 0.5).astype(uint8)
 
 
+@numpy.deprecate(message="`imread` is deprecated in SciPy 1.0.0, "
+                         "and will be removed in 1.2.0.\n"
+                         "Use ``imageio.imread`` instead.")
 def imread(name, flatten=False, mode=None):
     """
     Read an image from a file as an array.
+
+    This function is only available if Python Imaging Library (PIL) is installed.
 
     Parameters
     ----------
@@ -157,9 +165,21 @@ def imread(name, flatten=False, mode=None):
     return fromimage(im, flatten=flatten, mode=mode)
 
 
+@numpy.deprecate(message="`imsave` is deprecated in SciPy 1.0.0, "
+                         "and will be removed in 1.2.0.\n"
+                         "Use ``imageio.imwrite`` instead.")
 def imsave(name, arr, format=None):
     """
     Save an array as an image.
+
+    This function is only available if Python Imaging Library (PIL) is installed.
+
+    .. warning::
+
+        This function uses `bytescale` under the hood to rescale images to use
+        the full (0, 255) range if ``mode`` is one of ``None, 'L', 'P', 'l'``.
+        It will also cast data for 2-D images to ``uint32`` for ``mode=None``
+        (which is the default).
 
     Parameters
     ----------
@@ -202,9 +222,14 @@ def imsave(name, arr, format=None):
     return
 
 
+@numpy.deprecate(message="`fromimage` is deprecated in SciPy 1.0.0. "
+                         "and will be removed in 1.2.0.\n"
+                         "Use ``np.asarray(im)`` instead.")
 def fromimage(im, flatten=False, mode=None):
     """
     Return a copy of a PIL image as a numpy array.
+
+    This function is only available if Python Imaging Library (PIL) is installed.
 
     Parameters
     ----------
@@ -257,9 +282,14 @@ def fromimage(im, flatten=False, mode=None):
 _errstr = "Mode is unknown or incompatible with input array shape."
 
 
+@numpy.deprecate(message="`toimage` is deprecated in SciPy 1.0.0, "
+                         "and will be removed in 1.2.0.\n"
+            "Use Pillow's ``Image.fromarray`` directly instead.")
 def toimage(arr, high=255, low=0, cmin=None, cmax=None, pal=None,
             mode=None, channel_axis=None):
     """Takes a numpy array and returns a PIL image.
+
+    This function is only available if Python Imaging Library (PIL) is installed.
 
     The mode of the PIL image depends on the array shape and the `pal` and
     `mode` keywords.
@@ -267,6 +297,13 @@ def toimage(arr, high=255, low=0, cmin=None, cmax=None, pal=None,
     For 2-D arrays, if `pal` is a valid (N,3) byte-array giving the RGB values
     (from 0 to 255) then ``mode='P'``, otherwise ``mode='L'``, unless mode
     is given as 'F' or 'I' in which case a float and/or integer array is made.
+
+    .. warning::
+
+        This function uses `bytescale` under the hood to rescale images to use
+        the full (0, 255) range if ``mode`` is one of ``None, 'L', 'P', 'l'``.
+        It will also cast data for 2-D images to ``uint32`` for ``mode=None``
+        (which is the default).
 
     Notes
     -----
@@ -371,9 +408,21 @@ def toimage(arr, high=255, low=0, cmin=None, cmax=None, pal=None,
     return image
 
 
+@numpy.deprecate(message="`imrotate` is deprecated in SciPy 1.0.0, "
+                         "and will be removed in 1.2.0.\n"
+                         "Use ``skimage.transform.rotate`` instead.")
 def imrotate(arr, angle, interp='bilinear'):
     """
     Rotate an image counter-clockwise by angle degrees.
+
+    This function is only available if Python Imaging Library (PIL) is installed.
+
+    .. warning::
+
+        This function uses `bytescale` under the hood to rescale images to use
+        the full (0, 255) range if ``mode`` is one of ``None, 'L', 'P', 'l'``.
+        It will also cast data for 2-D images to ``uint32`` for ``mode=None``
+        (which is the default).
 
     Parameters
     ----------
@@ -403,13 +452,25 @@ def imrotate(arr, angle, interp='bilinear'):
     return fromimage(im)
 
 
+@numpy.deprecate(message="`imshow` is deprecated in SciPy 1.0.0, "
+                         "and will be removed in 1.2.0.\n"
+                         "Use ``matplotlib.pyplot.imshow`` instead.")
 def imshow(arr):
     """
     Simple showing of an image through an external viewer.
 
+    This function is only available if Python Imaging Library (PIL) is installed.
+
     Uses the image viewer specified by the environment variable
     SCIPY_PIL_IMAGE_VIEWER, or if that is not defined then `see`,
     to view a temporary file generated from array data.
+
+    .. warning::
+
+        This function uses `bytescale` under the hood to rescale images to use
+        the full (0, 255) range if ``mode`` is one of ``None, 'L', 'P', 'l'``.
+        It will also cast data for 2-D images to ``uint32`` for ``mode=None``
+        (which is the default).
 
     Parameters
     ----------
@@ -445,26 +506,39 @@ def imshow(arr):
         raise RuntimeError('Could not execute image viewer.')
 
 
+@numpy.deprecate(message="`imresize` is deprecated in SciPy 1.0.0, "
+                         "and will be removed in 1.2.0.\n"
+                         "Use ``skimage.transform.resize`` instead.")
 def imresize(arr, size, interp='bilinear', mode=None):
     """
     Resize an image.
+
+    This function is only available if Python Imaging Library (PIL) is installed.
+
+    .. warning::
+
+        This function uses `bytescale` under the hood to rescale images to use
+        the full (0, 255) range if ``mode`` is one of ``None, 'L', 'P', 'l'``.
+        It will also cast data for 2-D images to ``uint32`` for ``mode=None``
+        (which is the default).
 
     Parameters
     ----------
     arr : ndarray
         The array of image to be resized.
-
     size : int, float or tuple
         * int   - Percentage of current size.
         * float - Fraction of current size.
-        * tuple - Size of the output image.
+        * tuple - Size of the output image (height, width).
 
     interp : str, optional
-        Interpolation to use for re-sizing ('nearest', 'lanczos', 'bilinear', 'bicubic'
-        or 'cubic').
-
+        Interpolation to use for re-sizing ('nearest', 'lanczos', 'bilinear',
+        'bicubic' or 'cubic').
     mode : str, optional
         The PIL image mode ('P', 'L', etc.) to convert `arr` before resizing.
+        If ``mode=None`` (the default), 2-D images will be treated like
+        ``mode='L'``, i.e. casting to long integer.  For 3-D and 4-D arrays,
+        `mode` will be set to ``'RGB'`` and ``'RGBA'`` respectively.
 
     Returns
     -------
@@ -479,10 +553,10 @@ def imresize(arr, size, interp='bilinear', mode=None):
     """
     im = toimage(arr, mode=mode)
     ts = type(size)
-    if issubdtype(ts, int):
+    if issubdtype(ts, numpy.signedinteger):
         percent = size / 100.0
         size = tuple((array(im.size)*percent).astype(int))
-    elif issubdtype(type(size), float):
+    elif issubdtype(type(size), numpy.floating):
         size = tuple((array(im.size)*size).astype(int))
     else:
         size = (size[1], size[0])
@@ -491,9 +565,21 @@ def imresize(arr, size, interp='bilinear', mode=None):
     return fromimage(imnew)
 
 
+@numpy.deprecate(message="`imfilter` is deprecated in SciPy 1.0.0, "
+                         "and will be removed in 1.2.0.\n"
+                         "Use Pillow filtering functionality directly.")
 def imfilter(arr, ftype):
     """
     Simple filtering of an image.
+
+    This function is only available if Python Imaging Library (PIL) is installed.
+
+    .. warning::
+
+        This function uses `bytescale` under the hood to rescale images to use
+        the full (0, 255) range if ``mode`` is one of ``None, 'L', 'P', 'l'``.
+        It will also cast data for 2-D images to ``uint32`` for ``mode=None``
+        (which is the default).
 
     Parameters
     ----------

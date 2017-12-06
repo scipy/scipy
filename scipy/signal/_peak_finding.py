@@ -448,7 +448,7 @@ def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None,
         If a relative maximum is not found within `max_distances`,
         there will be a gap. A ridge line is discontinued if there are more
         than `gap_thresh` points without connecting a new relative maximum.
-        Default is 2.
+        Default is the first value of the widths array i.e. widths[0].
     min_length : int, optional
         Minimum length a ridge line needs to be acceptable.
         Default is ``cwt.shape[0] / 4``, ie 1/4-th the number of widths.

@@ -9,8 +9,8 @@
  * Code originally written by Jake Vanderplas for scikit-learn
  *
  */
- 
-inline void 
+
+inline void
 index_swap(npy_intp *arr, npy_intp i1, npy_intp i2)
 {
     /* swap the values at index i1 and i2 of arr */
@@ -19,7 +19,7 @@ index_swap(npy_intp *arr, npy_intp i1, npy_intp i2)
     arr[i2] = tmp;
 }
 
-static void 
+static void
 partition_node_indices(const npy_float64 *data,
                        npy_intp *node_indices,
                        npy_intp split_dim,
@@ -27,14 +27,14 @@ partition_node_indices(const npy_float64 *data,
                        npy_intp n_features,
                        npy_intp n_points)
 {
-    /* Partition points in the node into two equal-sized groups    
+    /* Partition points in the node into two equal-sized groups
      * Upon return, the values in node_indices will be rearranged such that
      * (assuming numpy-style indexing):
      *
      *   data[node_indices[0:split_index], split_dim]
      *     <= data[node_indices[split_index], split_dim]
      *
-     * and 
+     * and
      *
      *   data[node_indices[split_index], split_dim]
      *     <= data[node_indices[split_index:n_points], split_dim]
@@ -63,7 +63,7 @@ partition_node_indices(const npy_float64 *data,
      *    integer exit status.  On return, the contents of node_indices are
      *    modified as noted above.
      */
-    
+
     npy_intp left, right, midindex, i;
     npy_float64 d1, d2;
     left = 0;

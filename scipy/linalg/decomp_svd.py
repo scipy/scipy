@@ -2,7 +2,7 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy
-from numpy import zeros, r_, diag
+from numpy import zeros, r_, diag, dot, arccos, arcsin, where, clip
 
 # Local imports.
 from .misc import LinAlgError, _datacopied
@@ -10,7 +10,7 @@ from .lapack import get_lapack_funcs, _compute_lwork
 from .decomp import _asarray_validated
 from scipy._lib.six import string_types
 
-__all__ = ['svd', 'svdvals', 'diagsvd', 'orth']
+__all__ = ['svd', 'svdvals', 'diagsvd', 'orth', 'subspace_angles', 'null_space']
 
 
 def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
@@ -18,21 +18,21 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
     """
     Singular Value Decomposition.
 
-    Factorizes the matrix a into two unitary matrices U and Vh, and
-    a 1-D array s of singular values (real, non-negative) such that
-    ``a == U*S*Vh``, where S is a suitably shaped matrix of zeros with
-    main diagonal s.
+    Factorizes the matrix `a` into two unitary matrices ``U`` and ``Vh``, and
+    a 1-D array ``s`` of singular values (real, non-negative) such that
+    ``a == U @ S @ Vh``, where ``S`` is a suitably shaped matrix of zeros with
+    main diagonal ``s``.
 
     Parameters
     ----------
     a : (M, N) array_like
         Matrix to decompose.
     full_matrices : bool, optional
-        If True, `U` and `Vh` are of shape ``(M,M)``, ``(N,N)``.
-        If False, the shapes are ``(M,K)`` and ``(K,N)``, where
-        ``K = min(M,N)``.
+        If True (default), `U` and `Vh` are of shape ``(M, M)``, ``(N, N)``.
+        If False, the shapes are ``(M, K)`` and ``(K, N)``, where
+        ``K = min(M, N)``.
     compute_uv : bool, optional
-        Whether to compute also `U` and `Vh` in addition to `s`.
+        Whether to compute also ``U`` and ``Vh`` in addition to ``s``.
         Default is True.
     overwrite_a : bool, optional
         Whether to overwrite `a`; may improve performance.
@@ -53,15 +53,15 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
     -------
     U : ndarray
         Unitary matrix having left singular vectors as columns.
-        Of shape ``(M,M)`` or ``(M,K)``, depending on `full_matrices`.
+        Of shape ``(M, M)`` or ``(M, K)``, depending on `full_matrices`.
     s : ndarray
         The singular values, sorted in non-increasing order.
         Of shape (K,), with ``K = min(M, N)``.
     Vh : ndarray
         Unitary matrix having right singular vectors as rows.
-        Of shape ``(N,N)`` or ``(K,N)`` depending on `full_matrices`.
+        Of shape ``(N, N)`` or ``(K, N)`` depending on `full_matrices`.
 
-    For ``compute_uv=False``, only `s` is returned.
+    For ``compute_uv=False``, only ``s`` is returned.
 
     Raises
     ------
@@ -76,15 +76,28 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
     Examples
     --------
     >>> from scipy import linalg
-    >>> a = np.random.randn(9, 6) + 1.j*np.random.randn(9, 6)
+    >>> m, n = 9, 6
+    >>> a = np.random.randn(m, n) + 1.j*np.random.randn(m, n)
     >>> U, s, Vh = linalg.svd(a)
-    >>> U.shape, Vh.shape, s.shape
-    ((9, 9), (6, 6), (6,))
+    >>> U.shape,  s.shape, Vh.shape
+    ((9, 9), (6,), (6, 6))
+
+    Reconstruct the original matrix from the decomposition:
+
+    >>> sigma = np.zeros((m, n))
+    >>> for i in range(min(m, n)):
+    ...     sigma[i, i] = s[i]
+    >>> a1 = np.dot(U, np.dot(sigma, Vh))
+    >>> np.allclose(a, a1)
+    True
+
+    Alternatively, use ``full_matrices=False`` (notice that the shape of
+    ``U`` is then ``(m, n)`` instead of ``(m, m)``):
 
     >>> U, s, Vh = linalg.svd(a, full_matrices=False)
-    >>> U.shape, Vh.shape, s.shape
-    ((9, 6), (6, 6), (6,))
-    >>> S = linalg.diagsvd(s, 6, 6)
+    >>> U.shape, s.shape, Vh.shape
+    ((9, 6), (6,), (6, 6))
+    >>> S = np.diag(s)
     >>> np.allclose(a, np.dot(U, np.dot(S, Vh)))
     True
 
@@ -163,10 +176,50 @@ def svdvals(a, overwrite_a=False, check_finite=True):
     >>> svdvals(a)
     array([], dtype=float64)
 
-    See also
+    See Also
     --------
     svd : Compute the full singular value decomposition of a matrix.
     diagsvd : Construct the Sigma matrix, given the vector s.
+
+    Examples
+    --------
+    >>> from scipy.linalg import svdvals
+    >>> m = np.array([[1.0, 0.0],
+    ...               [2.0, 3.0],
+    ...               [1.0, 1.0],
+    ...               [0.0, 2.0],
+    ...               [1.0, 0.0]])
+    >>> svdvals(m)
+    array([ 4.28091555,  1.63516424])
+
+    We can verify the maximum singular value of `m` by computing the maximum
+    length of `m.dot(u)` over all the unit vectors `u` in the (x,y) plane.
+    We approximate "all" the unit vectors with a large sample.  Because
+    of linearity, we only need the unit vectors with angles in [0, pi].
+
+    >>> t = np.linspace(0, np.pi, 2000)
+    >>> u = np.array([np.cos(t), np.sin(t)])
+    >>> np.linalg.norm(m.dot(u), axis=0).max()
+    4.2809152422538475
+
+    `p` is a projection matrix with rank 1.  With exact arithmetic,
+    its singular values would be [1, 0, 0, 0].
+
+    >>> v = np.array([0.1, 0.3, 0.9, 0.3])
+    >>> p = np.outer(v, v)
+    >>> svdvals(p)
+    array([  1.00000000e+00,   2.02021698e-17,   1.56692500e-17,
+             8.15115104e-34])
+
+    The singular values of an orthogonal matrix are all 1.  Here we
+    create a random orthogonal matrix by using the `rvs()` method of
+    `scipy.stats.ortho_group`.
+
+    >>> from scipy.stats import ortho_group
+    >>> np.random.seed(123)
+    >>> orth = ortho_group.rvs(4)
+    >>> svdvals(orth)
+    array([ 1.,  1.,  1.,  1.])
 
     """
     a = _asarray_validated(a, check_finite=check_finite)
@@ -211,7 +264,7 @@ def diagsvd(s, M, N):
 
 # Orthonormal decomposition
 
-def orth(A):
+def orth(A, rcond=None):
     """
     Construct an orthonormal basis for the range of A using SVD
 
@@ -219,22 +272,190 @@ def orth(A):
     ----------
     A : (M, N) array_like
         Input array
+    rcond : float, optional
+        Relative condition number. Singular values ``s`` smaller than
+        ``rcond * max(s)`` are considered zero.
+        Default: floating point eps * max(M,N).
 
     Returns
     -------
     Q : (M, K) ndarray
         Orthonormal basis for the range of A.
-        K = effective rank of A, as determined by automatic cutoff
+        K = effective rank of A, as determined by rcond
 
     See also
     --------
     svd : Singular value decomposition of a matrix
+    null_space : Matrix null space
 
     """
     u, s, vh = svd(A, full_matrices=False)
-    M, N = A.shape
-    eps = numpy.finfo(float).eps
-    tol = max(M, N) * numpy.amax(s) * eps
+    M, N = u.shape[0], vh.shape[1]
+    if rcond is None:
+        rcond = numpy.finfo(s.dtype).eps * max(M, N)
+    tol = numpy.amax(s) * rcond
     num = numpy.sum(s > tol, dtype=int)
     Q = u[:, :num]
     return Q
+
+
+def null_space(A, rcond=None):
+    """
+    Construct an orthonormal basis for the null space of A using SVD
+
+    Parameters
+    ----------
+    A : (M, N) array_like
+        Input array
+    rcond : float, optional
+        Relative condition number. Singular values ``s`` smaller than
+        ``rcond * max(s)`` are considered zero.
+        Default: floating point eps * max(M,N).
+
+    Returns
+    -------
+    Z : (N, K) ndarray
+        Orthonormal basis for the null space of A.
+        K = dimension of effective null space, as determined by rcond
+
+    See also
+    --------
+    svd : Singular value decomposition of a matrix
+    orth : Matrix range
+
+    Examples
+    --------
+    One-dimensional null space:
+
+    >>> from scipy.linalg import null_space
+    >>> A = np.array([[1, 1], [1, 1]])
+    >>> null_space(A)
+    array([[-0.70710678],
+           [ 0.70710678]])
+
+    Two-dimensional null space:
+
+    >>> B = np.random.rand(3, 5)
+    >>> Z = null_space(B)
+    >>> Z.shape
+    (5, 2)
+    >>> np.allclose(B.dot(Z), 0)
+    True
+
+    The basis vectors are orthonormal (up to rounding error):
+
+    >>> Z.T.dot(Z)
+    array([[  1.00000000e+00,   6.92087741e-17],
+           [  6.92087741e-17,   1.00000000e+00]])
+
+    """
+    u, s, vh = svd(A, full_matrices=True)
+    M, N = u.shape[0], vh.shape[1]
+    if rcond is None:
+        rcond = numpy.finfo(s.dtype).eps * max(M, N)
+    tol = numpy.amax(s) * rcond
+    num = numpy.sum(s > tol, dtype=int)
+    Q = vh[num:,:].T.conj()
+    return Q
+
+
+def subspace_angles(A, B):
+    r"""
+    Compute the subspace angles between two matrices.
+
+    Parameters
+    ----------
+    A : (M, N) array_like
+        The first input array.
+    B : (M, K) array_like
+        The second input array.
+
+    Returns
+    -------
+    angles : ndarray, shape (min(N, K),)
+        The subspace angles between the column spaces of `A` and `B`.
+
+    See Also
+    --------
+    orth
+    svd
+
+    Notes
+    -----
+    This computes the subspace angles according to the formula
+    provided in [1]_. For equivalence with MATLAB and Octave behavior,
+    use ``angles[0]``.
+
+    .. versionadded:: 1.0
+
+    References
+    ----------
+    .. [1] Knyazev A, Argentati M (2002) Principal Angles between Subspaces
+           in an A-Based Scalar Product: Algorithms and Perturbation
+           Estimates. SIAM J. Sci. Comput. 23:2008-2040.
+
+    Examples
+    --------
+    A Hadamard matrix, which has orthogonal columns, so we expect that
+    the suspace angle to be :math:`\frac{\pi}{2}`:
+
+    >>> from scipy.linalg import hadamard, subspace_angles
+    >>> H = hadamard(4)
+    >>> print(H)
+    [[ 1  1  1  1]
+     [ 1 -1  1 -1]
+     [ 1  1 -1 -1]
+     [ 1 -1 -1  1]]
+    >>> np.rad2deg(subspace_angles(H[:, :2], H[:, 2:]))
+    array([ 90.,  90.])
+
+    And the subspace angle of a matrix to itself should be zero:
+
+    >>> subspace_angles(H[:, :2], H[:, :2]) <= 2 * np.finfo(float).eps
+    array([ True,  True], dtype=bool)
+
+    The angles between non-orthogonal subspaces are in between these extremes:
+
+    >>> x = np.random.RandomState(0).randn(4, 3)
+    >>> np.rad2deg(subspace_angles(x[:, :2], x[:, [2]]))
+    array([ 55.832])
+    """
+    # Steps here omit the U and V calculation steps from the paper
+
+    # 1. Compute orthonormal bases of column-spaces
+    A = _asarray_validated(A, check_finite=True)
+    if len(A.shape) != 2:
+        raise ValueError('expected 2D array, got shape %s' % (A.shape,))
+    QA = orth(A)
+    del A
+
+    B = _asarray_validated(B, check_finite=True)
+    if len(B.shape) != 2:
+        raise ValueError('expected 2D array, got shape %s' % (B.shape,))
+    if len(B) != len(QA):
+        raise ValueError('A and B must have the same number of rows, got '
+                         '%s and %s' % (QA.shape[0], B.shape[0]))
+    QB = orth(B)
+    del B
+
+    # 2. Compute SVD for cosine
+    QA_T_QB = dot(QA.T, QB)
+    sigma = svdvals(QA_T_QB)
+
+    # 3. Compute matrix B
+    if QA.shape[1] >= QB.shape[1]:
+        B = QB - dot(QA, QA_T_QB)
+    else:
+        B = QA - dot(QB, QA_T_QB.T)
+    del QA, QB, QA_T_QB
+
+    # 4. Compute SVD for sine
+    mask = sigma ** 2 >= 0.5
+    if mask.any():
+        mu_arcsin = arcsin(clip(svdvals(B, overwrite_a=True), -1., 1.))
+    else:
+        mu_arcsin = 0.
+
+    # 5. Compute the principal angles
+    theta = where(mask, mu_arcsin, arccos(clip(sigma, -1., 1.)))
+    return theta

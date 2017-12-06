@@ -3,6 +3,27 @@ from __future__ import division, absolute_import, print_function
 import numpy as np
 from .common import Benchmark
 
+from scipy.integrate import quad
+
+try:
+    import ctypes
+    import scipy.integrate._test_multivariate as clib_test
+    from scipy._lib import _ccallback_c
+except ImportError:
+    _ccallback_c = None
+
+try:
+    from scipy import LowLevelCallable
+    from_cython = LowLevelCallable.from_cython
+except ImportError:
+    LowLevelCallable = lambda func, data: (func, data)
+    from_cython = lambda *a: a
+
+try:
+    import cffi
+except ImportError:
+    cffi = None
+
 try:
     from scipy.integrate import solve_bvp
 except ImportError:
@@ -61,3 +82,35 @@ class SolveBVP(Benchmark):
         y[0] = 0.5
         y[1] = -0.5
         solve_bvp(self.fun_gas, self.bc_gas, x, y, tol=self.TOL)
+
+
+class Quad(Benchmark):
+    def setup(self):
+        from math import sin
+
+        self.f_python = lambda x: sin(x)
+        self.f_cython = from_cython(_ccallback_c, "sine")
+
+        lib = ctypes.CDLL(clib_test.__file__)
+
+        self.f_ctypes = lib._multivariate_sin
+        self.f_ctypes.restype = ctypes.c_double
+        self.f_ctypes.argtypes = (ctypes.c_int, ctypes.c_double)  # sic -- for backward compat
+
+        if cffi is not None:
+            voidp = ctypes.cast(self.f_ctypes, ctypes.c_void_p)
+            address = voidp.value
+            ffi = cffi.FFI()
+            self.f_cffi = LowLevelCallable(ffi.cast("double (*)(int, double *)", address))
+
+    def time_quad_python(self):
+        quad(self.f_python, 0, np.pi)
+
+    def time_quad_cython(self):
+        quad(self.f_cython, 0, np.pi)
+
+    def time_quad_ctypes(self):
+        quad(self.f_ctypes, 0, np.pi)
+
+    def time_quad_cffi(self):
+        quad(self.f_cffi, 0, np.pi)

@@ -159,7 +159,17 @@ fitpack_bispev(PyObject *dummy, PyObject *args)
     mx = ap_x->dimensions[0];
     my = ap_y->dimensions[0];
     mxy = mx*my;
+    if (my != 0 && mxy/my != mx) {
+        /* Integer overflow */
+        PyErr_Format(PyExc_RuntimeError,
+                     "Cannot produce output of size %dx%d (size too large)",
+                     mx, my);
+        goto fail;
+    }
     ap_z = (PyArrayObject *)PyArray_SimpleNew(1,&mxy,NPY_DOUBLE);
+    if (ap_z == NULL) {
+        goto fail;
+    }
     z = (double *) ap_z->data;
     if (nux || nuy) {
         lwrk = mx*(kx + 1 - nux) + my*(ky + 1 - nuy) + (nx - kx - 1)*(ny - ky - 1);
@@ -436,6 +446,7 @@ fitpack_parcur(PyObject *dummy, PyObject *args)
                 &s, &nest, &n, t, &nc, c, &fp, wrk, &lwrk, iwrk, &ier);
     }
     if (ier == 10) {
+        PyErr_SetString(PyExc_ValueError, "Invalid inputs.");
         goto fail;
     }
     if (ier > 0 && n == 0) {

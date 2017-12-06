@@ -22,7 +22,7 @@ Pull requests for 0.17.1
 - `#5902 <https://github.com/scipy/scipy/pull/5902>`__: BUG: interpolate: make interp1d handle np.float128 again
 - `#5957 <https://github.com/scipy/scipy/pull/5957>`__: BUG: slow down with p=np.inf in 0.17 cKDTree.query
 - `#5970 <https://github.com/scipy/scipy/pull/5970>`__: Actually propagate nans through stats functions with nan_policy="propagate"
-- `#5971 <https://github.com/scipy/scipy/pull/5971>`__: BUG: linalg: fix lwork check in *gelsy
+- `#5971 <https://github.com/scipy/scipy/pull/5971>`__: BUG: linalg: fix lwork check in ``*gelsy``
 - `#6074 <https://github.com/scipy/scipy/pull/6074>`__: BUG: special: fixed violation of strict aliasing rules.
 - `#6083 <https://github.com/scipy/scipy/pull/6083>`__: BUG: Fix dtype for sum of linear operators
 - `#6100 <https://github.com/scipy/scipy/pull/6100>`__: BUG: Fix mannwhitneyu to be backward compatible

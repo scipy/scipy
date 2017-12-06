@@ -1,7 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import (run_module_suite, assert_almost_equal, assert_equal,
+from numpy.testing import (assert_almost_equal, assert_equal,
                            assert_array_almost_equal, assert_)
 
 from scipy.special import logsumexp
@@ -141,6 +141,3 @@ def test_logsumexp_b_shape():
 
     logsumexp(a, b=b)
 
-
-if __name__ == "__main__":
-    run_module_suite()

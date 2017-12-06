@@ -613,9 +613,9 @@ the current coordinates:
    ...
    ...     def filter(self, buffer):
    ...         result = (buffer * np.array([1, 3])).sum()
-   ...         print self.coordinates
+   ...         print(self.coordinates)
    ...         # calculate the next coordinates:
-   ...         axes = range(len(self.shape))
+   ...         axes = list(range(len(self.shape)))
    ...         axes.reverse()
    ...         for jj in axes:
    ...             if self.coordinates[jj] < self.shape[jj] - 1:
@@ -662,9 +662,9 @@ filtered. The example for :func:`generic_filter1d` then becomes this:
    ...
    ...     def filter(self, iline, oline):
    ...         oline[...] = iline[:-2] + 2 * iline[1:-1] + 3 * iline[2:]
-   ...         print self.coordinates
+   ...         print(self.coordinates)
    ...         # calculate the next coordinates:
-   ...         axes = range(len(self.shape))
+   ...         axes = list(range(len(self.shape)))
    ...         # skip the filter axis:
    ...         del axes[self.axis]
    ...         axes.reverse()
@@ -834,7 +834,7 @@ is used.
   .. note::
      
      The mapping function can also be written in C and passed using a
-     :c:type:`PyCapsule`. See :ref:`ndimage-ccallbacks` for more
+     `scipy.LowLevelCallable`. See :ref:`ndimage-ccallbacks` for more
      information.
 
 - The function :func:`map_coordinates` applies an arbitrary coordinate
@@ -1605,12 +1605,12 @@ Extending :mod:`scipy.ndimage` in C
 -----------------------------------
 
 A few functions in :mod:`scipy.ndimage` take a callback argument. This
-can be either a python function or a :c:type:`PyCapsule` containing a
+can be either a python function or a `scipy.LowLevelCallable` containing a
 pointer to a C function. Using a C function will generally be more
 efficient since it avoids the overhead of calling a python function on
 many elements of an array. To use a C function you must write a C
 extension that contains the callback function and a Python function
-that returns a :c:type:`PyCapsule` containing a pointer to the
+that returns a `scipy.LowLevelCallable` containing a pointer to the
 callback.
 
 An example of a function that supports callbacks is
@@ -1635,23 +1635,17 @@ We can also implement the callback function with the following C code.
 
 .. code:: c
 
+   /* example.c */
+
    #include <Python.h>
    #include <numpy/npy_common.h>
 
-
-   static void _destructor(PyObject *obj)
-   {
-       void *callback_data = PyCapsule_GetContext(obj);
-       PyMem_Free(callback_data);
-   }
-
-
    static int
    _transform(npy_intp *output_coordinates, double *input_coordinates,
-              npy_intp output_rank, npy_intp input_rank, void *callback_data)
+              int output_rank, int input_rank, void *user_data)
    {
        npy_intp i;
-       double shift = *(double *)callback_data;
+       double shift = *(double *)user_data;
 
        for (i = 0; i < input_rank; i++) {
            input_coordinates[i] = output_coordinates[i] - shift;
@@ -1659,65 +1653,46 @@ We can also implement the callback function with the following C code.
        return 1;
    }
 
+   static char *transform_signature = "int (npy_intp *, double *, int, int, void *)";
 
    static PyObject *
-   py_transform(PyObject *obj, PyObject *args)
+   py_get_transform(PyObject *obj, PyObject *args)
    {
-       double *callback_data = PyMem_Malloc(sizeof(double));
-       PyObject *capsule = NULL;
+       if (!PyArg_ParseTuple(args, "")) return NULL;
+       return PyCapsule_New(_transform, transform_signature, NULL);
+   }
 
-       if (!callback_data) {
-           PyErr_NoMemory();
-	   goto error;
-       }
-       if (!PyArg_ParseTuple(args, "d", callback_data)) goto error;
+   static PyMethodDef ExampleMethods[] = {
+       {"get_transform", (PyCFunction)py_get_transform, METH_VARARGS, ""},
+       {NULL, NULL, 0, NULL}
+   };
 
-       capsule = PyCapsule_New(_transform, NULL, _destructor);
-       if (!capsule) goto error;
-       if (PyCapsule_SetContext(capsule, callback_data) != 0) goto error;
-       return capsule;
-     error:
-       PyMem_Free(callback_data);
-       Py_XDECREF(capsule);
-       return NULL;
-    }
+   /* Initialize the module */
+   #if PY_VERSION_HEX >= 0x03000000
+   static struct PyModuleDef example = {
+       PyModuleDef_HEAD_INIT,
+       "example",
+       NULL,
+       -1,
+       ExampleMethods,
+       NULL,
+       NULL,
+       NULL,
+       NULL
+   };
 
-
-    static PyMethodDef ExampleMethods[] = {
-        {"transform", (PyCFunction)py_transform, METH_VARARGS, ""},
-        {NULL, NULL, 0, NULL}
-    };
-				      
-				      
-    /* Initialize the module */
-    #if PY_VERSION_HEX >= 0x03000000
-    static struct PyModuleDef example = {
-        PyModuleDef_HEAD_INIT,
-        "example",
-        NULL,
-        -1,
-        ExampleMethods,
-        NULL,
-        NULL,
-        NULL,
-        NULL
-    };
-
-
-    PyMODINIT_FUNC
-    PyInit_example(void)
-    {
-        return PyModule_Create(&example);
-    }
-
-
-    #else
-    PyMODINIT_FUNC
-    initexample(void)
-    {
-        Py_InitModule("example", ExampleMethods);
-    }
-    #endif
+   PyMODINIT_FUNC
+   PyInit_example(void)
+   {
+       return PyModule_Create(&example);
+   }
+   #else
+   PyMODINIT_FUNC
+   initexample(void)
+   {
+       Py_InitModule("example", ExampleMethods);
+   }
+   #endif
 
 More information on writing Python extension modules can be found
 `here`__. If the C code is in the file ``example.c``, then it can be
@@ -1743,14 +1718,19 @@ and now running the script
 
 .. code:: python
 
+   import ctypes
    import numpy as np
-   from scipy import ndimage
+   from scipy import ndimage, LowLevelCallable
 
-   from example import transform
+   from example import get_transform
 
-   im = np.arange(12).reshape(4, 3).astype(np.float64)
    shift = 0.5
-   print(ndimage.geometric_transform(im, transform(shift)))
+
+   user_data = ctypes.c_double(shift)
+   ptr = ctypes.cast(ctypes.pointer(user_data), ctypes.c_void_p)
+   callback = LowLevelCallable(transform(), ptr)
+   im = np.arange(12).reshape(4, 3).astype(np.float64)
+   print(ndimage.geometric_transform(im, callback))
 
 produces the same result as the original python script.
 
@@ -1759,134 +1739,218 @@ parameters ``output_coordinates`` and ``input_coordinates`` play the
 same role as they do in the python version while ``output_rank`` and
 ``input_rank`` provide the equivalents of ``len(output_coordinates)``
 and ``len(input_coordinates)``. The variable ``shift`` is passed
-through ``callback_data`` instead of ``extra_arguments``. Finally, the
-C callback function returns an integer status which is one upon
-success and zero otherwise.
+through ``user_data`` instead of
+``extra_arguments``. Finally, the C callback function returns an integer
+status which is one upon success and zero otherwise.
 
 The function ``py_transform`` wraps the callback function in a
 :c:type:`PyCapsule`. The main steps are:
 
 - Initialize a :c:type:`PyCapsule`. The first argument is a pointer to
-  the callback function and the third argument is a destructor
-  function which knows how to clean up memory associated with the
-  capsule's context pointer (see next step). The second argument is
-  the name of the capsule, but as :mod:`ndimage` has no way of knowing
-  that it is set to ``NULL``.
+  the callback function.
 
-- Use :c:func:`PyCapsule_SetContext` to add any necessary data to the
-  capsule. This data is passed to the callback function through
-  ``callback_data``, and in our example is used to set ``shift``.
+- The second argument is the function signature which must match exactly
+  the one expected by :mod:`ndimage`.
+
+- Above, we used  `scipy.LowLevelCallable` to specify ``user_data``
+  that we generated with `ctypes`.
+
+  A different approach would be to supply the data in the capsule context,
+  that can be set by :cfunc:`PyCapsule_SetContext` and omit specifying
+  ``user_data`` in `scipy.LowLevelCallable`. However, in this approach we would
+  need to deal with allocation/freeing of the data --- freeing the data
+  after the capsule is destroyed can be done by specifying a non-NULL
+  callback function in the third argument of :cfunc:`PyCapsule_New`.
 
 C callback functions for :mod:`ndimage` all follow this scheme. The
 next section lists the :mod:`ndimage` functions that accept a C
 callback function and gives the prototype of the function.
 
-Finally, the same code can be written in Cython with less
-overhead as follows.
+.. seealso::
+
+   The functions that support low-level callback arguments are:
+
+   `generic_filter`, `generic_filter1d`, `geometric_transform`
+
+Below, we show alternative ways to write the code, using Cython_,
+ctypes_, or cffi_ instead of writing wrapper code in C.
+
+.. _Cython: http://cython.org/
+.. _ctypes: https://docs.python.org/3/library/ctypes.html
+.. _cffi: https://cffi.readthedocs.io/
+
+.. rubric:: Numba
+
+Numba_ provides a way to write low-level functions easily in Python.
+We can write the above using Numba as:
+
+.. code:: python
+
+   # example.py
+   import numpy as np
+   import ctypes
+   from scipy import ndimage, LowLevelCallable
+   from numba import cfunc, types, carray
+
+   @cfunc(types.intc(types.CPointer(types.intp),
+                     types.CPointer(types.double),
+                     types.intc,
+                     types.intc,
+                     types.voidptr))
+   def transform(output_coordinates_ptr, input_coordinates_ptr,
+                 output_rank, input_rank, user_data):
+       input_coordinates = carray(input_coordinates_ptr, (input_rank,))
+       output_coordinates = carray(output_coordinates_ptr, (output_rank,))
+       shift = carray(user_data, (1,), types.double)[0]
+
+       for i in range(input_rank):
+           input_coordinates[i] = output_coordinates[i] - shift
+
+       return 1
+
+   shift = 0.5
+
+   # Then call the function
+   user_data = ctypes.c_double(shift)
+   ptr = ctypes.cast(ctypes.pointer(user_data), ctypes.c_void_p)
+   callback = LowLevelCallable(transform.ctypes, ptr)
+
+   im = np.arange(12).reshape(4, 3).astype(np.float64)
+   print(ndimage.geometric_transform(im, callback))
+
+.. _Numba: http://numba.pydata.org/
+
+
+.. rubric:: Cython
+
+Functionally the same code as above can be written in Cython with
+somewhat less boilerplate as follows.
 
 .. code:: cython
 
-   from cpython.mem cimport PyMem_Malloc, PyMem_Free
-   from cpython.pycapsule cimport (
-       PyCapsule_New, PyCapsule_SetContext, PyCapsule_GetContext
-   )
+   # example.pyx
 
-   cimport numpy as np
    from numpy cimport npy_intp as intp
 
-
-   cdef void _destructor(obj):
-       cdef void *callback_data = PyCapsule_GetContext(obj)
-       PyMem_Free(callback_data)
-
-
-   cdef int _transform(intp *output_coordinates, double *input_coordinates,
-   	            intp output_rank, intp input_rank, void *callback_data):
+   cdef api int transform(intp *output_coordinates, double *input_coordinates,
+                          int output_rank, int input_rank, void *user_data):
        cdef intp i
-       cdef double shift = (<double *>callback_data)[0]
-   
+       cdef double shift = (<double *>user_data)[0]
+
        for i in range(input_rank):
            input_coordinates[i] = output_coordinates[i] - shift
        return 1
 
+.. code:: python
 
-   def transform(double shift):
-       cdef double *callback_data = <double *>PyMem_Malloc(sizeof(double))
-       if not callback_data:
-           raise MemoryError()
-       callback_data[0] = shift
+   # script.py
 
-       try:
-           capsule = PyCapsule_New(<void *>_transform, NULL, _destructor)
-           PyCapsule_SetContext(capsule, callback_data)
-       except:
-           PyMem_Free(callback_data)
-	   raise
-       return capsule
+   import ctypes
+   import numpy as np
+   from scipy import ndimage, LowLevelCallable
+
+   import example
+
+   shift = 0.5
+
+   user_data = ctypes.c_double(shift)
+   ptr = ctypes.cast(ctypes.pointer(user_data), ctypes.c_void_p)
+   callback = LowLevelCallable.from_cython(example, "transform", ptr)
+   im = np.arange(12).reshape(4, 3).astype(np.float64)
+   print(ndimage.geometric_transform(im, callback))
 
 
-Functions that support C callback functions
--------------------------------------------
+.. rubric:: cffi
 
-The :mod:`ndimage` functions that support C callback functions are
-described here along with prototypes of the callback functions they
-expect. All callback functions must be wrapped in a :c:type:`PyCapsule`
-and accept a ``callback_data`` parameter which is set using
-:c:func:`PyCapsule_SetContext`. The capsule's destructor must know how
-to free memory associated with its context pointer. The callback
-functions must return an integer error status that is zero if
-something went wrong and one otherwise. If an error occurs, you should
-normally set the python error status with an informative message
-before returning, otherwise a default error message is set by the
-calling function.
-
-The function :func:`generic_filter` accepts a callback function with
-the following prototype:
+With cffi_, you can interface with a C function residing in a shared
+library (DLL). First, we need to write the shared library, which we do
+in C --- this example is for Linux/OSX:
 
 .. code:: c
 
-   int callback(double *buffer, npy_intp filter_size, double *res, void *callback_data)
+   /*
+     example.c
+     Needs to be compiled with "gcc -std=c99 -shared -fPIC -o example.so example.c"
+     or similar
+    */
 
-The calling function iterates over the elements of the input and
-output arrays, calling the callback function at each element. The
-elements within the footprint of the filter at the current element are
-passed through the ``buffer`` parameter, and the number of elements
-within the footprint through ``filter_size``. The calculated value is
-returned in ``return_value``.
+   #include <stdint.h>
 
-The function :func:`generic_filter1d` accepts a callback function with
-the following prototype:
+   int
+   _transform(intptr_t *output_coordinates, double *input_coordinates,
+              int output_rank, int input_rank, void *user_data)
+   {
+       int i;
+       double shift = *(double *)user_data;
 
-.. code:: c
+       for (i = 0; i < input_rank; i++) {
+           input_coordinates[i] = output_coordinates[i] - shift;
+       }
+       return 1;
+   }
 
-   int callback(double *input_line, npy_intp input_length, double *output_line, npy_intp output_length, void *callback_data)
+The Python code calling the library is:
 
-The calling function iterates over the lines of the input and output
-arrays, calling the callback function at each line. The current line
-is extended according to the border conditions set by the calling
-function, and the result is copied into the array that is passed
-through ``input_line``. The length of the input line (after extension)
-is passed through ``input_length``. The callback function should apply
-the filter and store the result in the array passed through
-``output_line``. The length of the output line is passed through
-``output_length``.
+.. code:: python
 
-The function :func:`geometric_transform` expects a function with the
-following prototype:
+   import os
+   import numpy as np
+   from scipy import ndimage, LowLevelCallable
+   import cffi
 
-.. code:: c
+   # Construct the FFI object, and copypaste the function declaration
+   ffi = cffi.FFI()
+   ffi.cdef("""
+   int _transform(intptr_t *output_coordinates, double *input_coordinates,
+                  int output_rank, int input_rank, void *user_data);
+   """)
 
-   int callback(npy_intp *output_coordinates, double *input_coordinates, npy_intp output_rank, npy_intp input_rank, void *callback_data)
+   # Open library
+   lib = ffi.dlopen(os.path.abspath("example.so"))
 
-The calling function iterates over the elements of the output array,
-calling the callback function at each element. The coordinates of the
-current output element are passed through ``output_coordinates``. The
-callback function must return the coordinates at which the input must
-be interpolated in ``input_coordinates``. The rank of the input and
-output arrays are given by ``input_rank`` and ``output_rank``
-respectively.
+   # Do the function call
+   user_data = ffi.new('double *', 0.5)
+   callback = LowLevelCallable(lib._transform, user_data)
+   im = np.arange(12).reshape(4, 3).astype(np.float64)
+   print(ndimage.geometric_transform(im, callback))
 
-.. rubric:: References
+You can find more information in the cffi_ documentation.
+
+.. rubric:: ctypes
+
+With *ctypes*, the C code and the compilation of the so/DLL is as for
+cffi above.  The Python code is different:
+
+.. code:: python
+
+   # script.py
+
+   import os
+   import ctypes
+   import numpy as np
+   from scipy import ndimage, LowLevelCallable
+
+   lib = ctypes.CDLL(os.path.abspath('example.so'))
+
+   shift = 0.5
+
+   user_data = ctypes.c_double(shift)
+   ptr = ctypes.cast(ctypes.pointer(user_data), ctypes.c_void_p)
+
+   # Ctypes has no built-in intptr type, so override the signature
+   # instead of trying to get it via ctypes
+   callback = LowLevelCallable(lib._transform, ptr,
+       "int _transform(intptr_t *, double *, int, int, void *)")
+
+   # Perform the call
+   im = np.arange(12).reshape(4, 3).astype(np.float64)
+   print(ndimage.geometric_transform(im, callback))
+
+You can find more information in the ctypes_ documentation.
+
+
+References
+----------
 
 .. [1] M. Unser, "Splines: A Perfect Fit for Signal and Image
        Processing," IEEE Signal Processing Magazine, vol. 16, no. 6, pp.

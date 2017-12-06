@@ -10,6 +10,8 @@ Spherical Voronoi Cython Code
 # Distributed under the same BSD license as Scipy.
 #
 
+from __future__ import absolute_import
+
 import numpy as np
 cimport numpy as np
 cimport cython
@@ -36,7 +38,7 @@ def sort_vertices_of_regions(int[:,::1] simplices, regions):
     cdef np.npy_intp[:] remaining
     cdef np.npy_intp[:] sorted_vertices = np.zeros(max([len(region) for region
                                                    in regions]),
-                                                   dtype=np.int64)
+                                                   dtype=np.intp)
 
     for n in range(num_regions):
         remaining_count = 0

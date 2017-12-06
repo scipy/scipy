@@ -1,3 +1,5 @@
+from __future__ import division, print_function, absolute_import
+
 import numpy as np
 from numpy.testing import assert_, assert_equal
 
@@ -21,17 +23,18 @@ def test_wrightomega_inf_branch():
            complex(-np.inf, -np.pi/4),
            complex(-np.inf, 3*np.pi/4),
            complex(-np.inf, -3*np.pi/4)]
-    for p in pts:
+    expected_results = [complex(0.0, 0.0),
+                        complex(0.0, -0.0),
+                        complex(-0.0, 0.0),
+                        complex(-0.0, -0.0)]
+    for p, expected in zip(pts, expected_results):
         res = sc.wrightomega(p)
-        assert_equal(res, 0)
-        if abs(p.imag) <= np.pi/2:
-            assert_(np.signbit(res.real) == False)
-        else:
-            assert_(np.signbit(res.real) == True)
-        if p.imag >= 0:
-            assert_(np.signbit(res.imag) == False)
-        else:
-            assert_(np.signbit(res.imag) == True)
+        # We can't use assert_equal(res, expected) because in older versions of
+        # numpy, assert_equal doesn't check the sign of the real and imaginary
+        # parts when comparing complex zeros. It does check the sign when the
+        # arguments are *real* scalars.
+        assert_equal(res.real, expected.real)
+        assert_equal(res.imag, expected.imag)
 
 
 def test_wrightomega_inf():

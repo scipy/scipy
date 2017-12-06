@@ -43,6 +43,8 @@ def fixed_quad(func, a, b, args=(), n=5):
     ----------
     func : callable
         A Python function or method to integrate (must accept vector inputs).
+        If integrating a vector-valued function, the returned array must have
+        shape ``(..., len(x))``.
     a : float
         Lower limit of integration.
     b : float
@@ -80,7 +82,7 @@ def fixed_quad(func, a, b, args=(), n=5):
         raise ValueError("Gaussian quadrature is only available for "
                          "finite limits.")
     y = (b-a)*(x+1)/2.0 + a
-    return (b-a)/2.0 * np.sum(w*func(y, *args), axis=0), None
+    return (b-a)/2.0 * np.sum(w*func(y, *args), axis=-1), None
 
 
 def vectorize1(func, args=(), vec_func=False):
@@ -220,7 +222,7 @@ def cumtrapz(y, x=None, dx=1.0, axis=-1, initial=None):
     axis : int, optional
         Specifies the axis to cumulate.  Default is -1 (last axis).
     initial : scalar, optional
-        If given, uses this value as the first value in the returned result.
+        If given, insert this value at the beginning of the returned result.
         Typically this value should be 0.  Default is None, which means no
         value at ``x[0]`` is returned and `res` has one element less than `y`
         along the axis of integration.

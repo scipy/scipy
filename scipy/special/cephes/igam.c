@@ -131,6 +131,8 @@ double asymptotic_series(double, double, int);
 double igam(a, x)
 double a, x;
 {
+    double absxma_a;
+
     /* Check zero integration limit first */
     if (x == 0)
 	return (0.0);
@@ -141,7 +143,7 @@ double a, x;
     }
 
     /* Asymptotic regime where a ~ x; see [2]. */
-    double absxma_a = fabs(x - a) / a;
+    absxma_a = fabs(x - a) / a;
     if ((a > SMALL) && (a < LARGE) && (absxma_a < SMALLRATIO)) {
 	return asymptotic_series(a, x, IGAM);
     } else if ((a > LARGE) && (absxma_a < LARGERATIO / sqrt(a))) {
@@ -158,6 +160,8 @@ double a, x;
 
 double igamc(double a, double x)
 {
+    double absxma_a;
+
     if ((x < 0) || (a <= 0)) {
 	mtherr("gammaincc", DOMAIN);
 	return (NPY_NAN);
@@ -168,7 +172,7 @@ double igamc(double a, double x)
     }
 
     /* Asymptotic regime where a ~ x; see [2]. */
-    double absxma_a = fabs(x - a) / a;
+    absxma_a = fabs(x - a) / a;
     if ((a > SMALL) && (a < LARGE) && (absxma_a < SMALLRATIO)) {
 	return asymptotic_series(a, x, IGAMC);
     } else if ((a > LARGE) && (absxma_a < LARGERATIO / sqrt(a))) {
@@ -207,8 +211,10 @@ double igamc(double a, double x)
  */
 double igam_fac(double a, double x)
 {
+    double ax, fac, res, num;
+
     if (fabs(a - x) > 0.4 * fabs(a)) {
-	double ax = a * log(x) - x - lgam(a);
+	ax = a * log(x) - x - lgam(a);
 	if (ax < -MAXLOG) {
 	    mtherr("igam", UNDERFLOW);
 	    return 0.0;
@@ -216,13 +222,13 @@ double igam_fac(double a, double x)
 	return exp(ax);
     }
     
-    double fac = a + lanczos_g - 0.5;
-    double res = sqrt(fac / exp(1)) / lanczos_sum_expg_scaled(a);
+    fac = a + lanczos_g - 0.5;
+    res = sqrt(fac / exp(1)) / lanczos_sum_expg_scaled(a);
 
     if ((a < 200) && (x < 200)) {
 	res *= exp(a - x) * pow(x / fac, a);
     } else {
-	double num = x - a - lanczos_g + 0.5;
+	num = x - a - lanczos_g + 0.5;
 	res *= exp(a * log1pmx(num / fac) + x * (0.5 - lanczos_g) / fac);
     }
     

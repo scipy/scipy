@@ -3,8 +3,8 @@ from __future__ import division, print_function, absolute_import
 import itertools
 
 import numpy as np
-from numpy.testing import (assert_, assert_allclose, assert_raises,
-         assert_equal, run_module_suite)
+from numpy.testing import assert_, assert_allclose, assert_equal
+from pytest import raises as assert_raises
 from scipy import linalg
 import scipy.linalg._decomp_update as _decomp_update
 from scipy.linalg._decomp_update import *
@@ -88,7 +88,7 @@ def make_nonnative(arrs):
     return out
 
 class BaseQRdeltas(object):
-    def __init__(self):
+    def setup_method(self):
         self.rtol = 10.0 ** -(np.finfo(self.dtype).precision-2)
         self.atol = 10 * np.finfo(self.dtype).eps
 
@@ -1650,10 +1650,10 @@ def test_form_qTu():
     for qo, qs, uo, us, d in \
             itertools.product(q_order, q_shape, u_order, u_shape, dtype):
         if us == 1:
-            yield check_form_qTu, qo, qs, uo, us, 1, d
-            yield check_form_qTu, qo, qs, uo, us, 2, d
+            check_form_qTu(qo, qs, uo, us, 1, d)
+            check_form_qTu(qo, qs, uo, us, 2, d)
         else:
-            yield check_form_qTu, qo, qs, uo, us, 2, d
+            check_form_qTu(qo, qs, uo, us, 2, d)
     
 def check_form_qTu(q_order, q_shape, u_order, u_shape, u_ndim, dtype):
     np.random.seed(47)
@@ -1685,7 +1685,4 @@ def check_form_qTu(q_order, q_shape, u_order, u_shape, u_ndim, dtype):
     res = _decomp_update._form_qTu(q, u)
     assert_allclose(res, expected, rtol=rtol, atol=atol)
 
-
-if __name__ == "__main__":
-    run_module_suite()
  

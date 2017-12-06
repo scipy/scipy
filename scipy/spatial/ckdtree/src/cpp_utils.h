@@ -95,7 +95,7 @@ unpickle_tree_buffer(std::vector<ckdtreenode> *buf, PyObject *src)
     s = ckdtree_PyBytes_Size(src);
     if (PyErr_Occurred()) return NULL;
     n = s / sizeof(ckdtreenode);
-    cur = (ckdtreenode *)ckdtree_PyBytes_AsString(src);   
+    cur = (ckdtreenode *)ckdtree_PyBytes_AsString(src);
     if (PyErr_Occurred()) return NULL;
     try {
         buf->resize(n);

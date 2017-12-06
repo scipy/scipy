@@ -124,22 +124,27 @@ class orthopoly1d(np.poly1d):
 
     def __init__(self, roots, weights=None, hn=1.0, kn=1.0, wfunc=None,
                  limits=None, monic=False, eval_func=None):
-        np.poly1d.__init__(self, roots, r=1)
         equiv_weights = [weights[k] / wfunc(roots[k]) for
                          k in range(len(roots))]
-        self.__dict__['weights'] = np.array(list(zip(roots,
-                                                     weights, equiv_weights)))
-        self.__dict__['weight_func'] = wfunc
-        self.__dict__['limits'] = limits
         mu = sqrt(hn)
         if monic:
             evf = eval_func
             if evf:
-                eval_func = lambda x: evf(x) / kn
+                knn = kn
+                eval_func = lambda x: evf(x) / knn
             mu = mu / abs(kn)
             kn = 1.0
+            
+        # compute coefficients from roots, then scale
+        poly = np.poly1d(roots, r=True)
+        np.poly1d.__init__(self, poly.coeffs * float(kn))
+        
+        # TODO: In numpy 1.13, there is no need to use __dict__ to access attributes
+        self.__dict__['weights'] = np.array(list(zip(roots,
+                                                     weights, equiv_weights)))
+        self.__dict__['weight_func'] = wfunc
+        self.__dict__['limits'] = limits
         self.__dict__['normcoef'] = mu
-        self.__dict__['coeffs'] *= float(kn)
 
         # Note: eval_func will be discarded on arithmetic
         self.__dict__['_eval_func'] = eval_func
@@ -153,8 +158,15 @@ class orthopoly1d(np.poly1d):
     def _scale(self, p):
         if p == 1.0:
             return
-        self.__dict__['coeffs'] *= p
-        evf = self.__dict__['_eval_func']
+        try:
+            self._coeffs
+        except AttributeError:
+            self.__dict__['coeffs'] *= p
+        else:
+            # the coeffs attr is be made private in future versions of numpy
+            self._coeffs *= p
+
+        evf = self._eval_func
         if evf:
             self.__dict__['_eval_func'] = lambda x: evf(x) * p
         self.__dict__['normcoef'] *= p
@@ -222,7 +234,7 @@ def roots_jacobi(n, alpha, beta, mu=False):
     alpha : float
         alpha must be > -1
     beta : float
-        beta must be > 0
+        beta must be > -1
     mu : bool, optional
         If True, return the sum of the weights, optional.
 

@@ -153,13 +153,15 @@ int qh_new_qhull(qhT *qh, int dim, int numpoints, coordT *points, boolT ismalloc
       hulldim= dim-1;
       if(feaspoint)
       {
+        coordT* coords;
+        coordT* value;
+        int i;
         if (!(qh->feasible_point= (pointT*)qh_malloc(hulldim * sizeof(coordT)))) {
           qh_fprintf(qh, qh->ferr, 6079, "qhull error: insufficient memory for 'Hn,n,n'\n");
           qh_errexit(qh, qh_ERRmem, NULL, NULL);
         }
-        coordT* coords = qh->feasible_point;
-        coordT* value = feaspoint;
-        int i;
+        coords = qh->feasible_point;
+        value = feaspoint;
         for(i = 0; i < hulldim; ++i)
         {
           *(coords++) = *(value++);

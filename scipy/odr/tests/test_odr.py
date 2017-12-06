@@ -3,18 +3,19 @@ from __future__ import division, print_function, absolute_import
 # Scipy imports.
 import numpy as np
 from numpy import pi
-from numpy.testing import (assert_array_almost_equal, TestCase,
-                           run_module_suite, assert_equal, assert_warns)
+from numpy.testing import (assert_array_almost_equal,
+                           assert_equal, assert_warns)
+from pytest import raises as assert_raises
 from scipy.odr import Data, Model, ODR, RealData, OdrStop, OdrWarning
 
 
-class TestODR(TestCase):
+class TestODR(object):
 
     # Bad Data for 'x'
 
     def test_bad_data(self):
-        self.assertRaises(ValueError, Data, 2, 1)
-        self.assertRaises(ValueError, RealData, 2, 1)
+        assert_raises(ValueError, Data, 2, 1)
+        assert_raises(ValueError, RealData, 2, 1)
 
     # Empty Data for 'x'
     def empty_data_func(self, B, x):
@@ -343,6 +344,3 @@ class TestODR(TestCase):
         result = job.run()
         assert_equal(result.info, 2)
 
-
-if __name__ == "__main__":
-    run_module_suite()

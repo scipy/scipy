@@ -43,7 +43,6 @@ in `scipy.optimize`. To demonstrate the minimization function consider the
 problem of minimizing the Rosenbrock function of :math:`N` variables:
 
 .. math::
-   :nowrap:
 
     f\left(\mathbf{x}\right)=\sum_{i=1}^{N-1}100\left(x_{i}-x_{i-1}^{2}\right)^{2}+\left(1-x_{i-1}\right)^{2}.
 
@@ -147,15 +146,12 @@ through the ``jac`` parameter as illustrated below.
 Newton-Conjugate-Gradient algorithm (``method='Newton-CG'``)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The method which requires the fewest function calls and is therefore often
-the fastest method to minimize functions of many variables uses the
-Newton-Conjugate Gradient algorithm. This method is a modified Newton's
+Newton-Conjugate Gradient algorithm is a modified Newton's
 method and uses a conjugate gradient algorithm to (approximately) invert
-the local Hessian.  Newton's method is based on fitting the function
+the local Hessian [NW]_.  Newton's method is based on fitting the function
 locally to a quadratic form:
 
 .. math::
-   :nowrap:
 
     f\left(\mathbf{x}\right)\approx f\left(\mathbf{x}_{0}\right)+\nabla f\left(\mathbf{x}_{0}\right)\cdot\left(\mathbf{x}-\mathbf{x}_{0}\right)+\frac{1}{2}\left(\mathbf{x}-\mathbf{x}_{0}\right)^{T}\mathbf{H}\left(\mathbf{x}_{0}\right)\left(\mathbf{x}-\mathbf{x}_{0}\right).
 
@@ -164,7 +160,6 @@ positive definite then the local minimum of this function can be found
 by setting the gradient of the quadratic form to zero, resulting in
 
 .. math::
-   :nowrap:
 
     \mathbf{x}_{\textrm{opt}}=\mathbf{x}_{0}-\mathbf{H}^{-1}\nabla f.
 
@@ -200,7 +195,6 @@ if :math:`i,j\in\left[1,N-2\right]` with :math:`i,j\in\left[0,N-1\right]` defini
 For example, the Hessian when :math:`N=5` is
 
 .. math::
-   :nowrap:
 
     \mathbf{H}=\left[\begin{array}{ccccc} 1200x_{0}^{2}-400x_{1}+2 & -400x_{0} & 0 & 0 & 0\\ -400x_{0} & 202+1200x_{1}^{2}-400x_{2} & -400x_{1} & 0 & 0\\ 0 & -400x_{1} & 202+1200x_{2}^{2}-400x_{3} & -400x_{2} & 0\\ 0 &  & -400x_{2} & 202+1200x_{3}^{2}-400x_{4} & -400x_{3}\\ 0 & 0 & 0 & -400x_{3} & 200\end{array}\right].
 
@@ -249,7 +243,6 @@ vector, then :math:`\mathbf{H}\left(\mathbf{x}\right)\mathbf{p}` has
 elements:
 
 .. math::
-   :nowrap:
 
     \mathbf{H}\left(\mathbf{x}\right)\mathbf{p}=\left[\begin{array}{c} \left(1200x_{0}^{2}-400x_{1}+2\right)p_{0}-400x_{0}p_{1}\\ \vdots\\ -400x_{i-1}p_{i-1}+\left(202+1200x_{i}^{2}-400x_{i+1}\right)p_{i}-400x_{i}p_{i+1}\\ \vdots\\ -400x_{N-2}p_{N-2}+200p_{N-1}\end{array}\right].
 
@@ -278,6 +271,170 @@ Rosenbrock function using :func:`minimize` follows:
     array([1., 1., 1., 1., 1.])
 
 
+According to [NW]_ p. 170 the ``Newton-CG`` algorithm can be inefficient
+when the Hessian is ill-condiotioned because of the poor quality search directions
+provided by the method in those situations. The method ``trust-ncg``,
+according to the authors, deals more effectively with this problematic situation
+and will be described next.
+
+Trust-Region Newton-Conjugate-Gradient Algorithm (``method='trust-ncg'``)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The ``Newton-CG`` method is a line search method: it finds a direction
+of search minimizing a quadratic approximation of the function and then uses
+a line search algorithm to find the (nearly) optimal step size in that direction.
+An alternative approach is to, first, fix the step size limit :math:`\Delta` and then find the
+optimal step :math:`\mathbf{p}` inside the given trust-radius by solving
+the following quadratic subproblem:
+
+.. math::
+   :nowrap:
+
+   \begin{eqnarray*}
+      \min_{\mathbf{p}} f\left(\mathbf{x}_{k}\right)+\nabla f\left(\mathbf{x}_{k}\right)\cdot\mathbf{p}+\frac{1}{2}\mathbf{p}^{T}\mathbf{H}\left(\mathbf{x}_{k}\right)\mathbf{p};&\\
+      \text{subject to: } \|\mathbf{p}\|\le \Delta.&
+    \end{eqnarray*}
+
+The solution is then updated :math:`\mathbf{x}_{k+1} = \mathbf{x}_{k} + \mathbf{p}` and
+the trust-radius :math:`\Delta` is adjusted according to the degree of agreement of the quadratic
+model with the real function. This family of methods is known as trust-region methods.
+The ``trust-ncg`` algorithm is a trust-region method that uses a conjugate gradient algorithm
+to solve the trust-region subproblem [NW]_.
+
+
+Full Hessian example:
+"""""""""""""""""""""
+
+    >>> res = minimize(rosen, x0, method='trust-ncg',
+    ...                jac=rosen_der, hess=rosen_hess,
+    ...                options={'gtol': 1e-8, 'disp': True})
+    Optimization terminated successfully.
+             Current function value: 0.000000
+             Iterations: 20                    # may vary
+             Function evaluations: 21
+             Gradient evaluations: 20
+             Hessian evaluations: 19
+    >>> res.x
+    array([1., 1., 1., 1., 1.])
+
+Hessian product example:
+""""""""""""""""""""""""
+
+    >>> res = minimize(rosen, x0, method='trust-ncg',
+    ...                jac=rosen_der, hessp=rosen_hess_p,
+    ...                options={'gtol': 1e-8, 'disp': True})
+    Optimization terminated successfully.
+             Current function value: 0.000000
+             Iterations: 20                    # may vary
+             Function evaluations: 21
+             Gradient evaluations: 20
+             Hessian evaluations: 0
+    >>> res.x
+    array([1., 1., 1., 1., 1.])
+
+Trust-Region Truncated Generalized Lanczos / Conjugate Gradient Algorithm (``method='trust-krylov'``)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Similar to the ``trust-ncg`` method, the ``trust-krylov`` method is a method
+suitable for large-scale problems as it uses the hessian only as linear
+operator by means of matrix-vector products.
+It solves the quadratic subproblem more accurately than the ``trust-ncg``
+method.
+
+.. math::
+   :nowrap:
+
+   \begin{eqnarray*}
+      \min_{\mathbf{p}} f\left(\mathbf{x}_{k}\right)+\nabla f\left(\mathbf{x}_{k}\right)\cdot\mathbf{p}+\frac{1}{2}\mathbf{p}^{T}\mathbf{H}\left(\mathbf{x}_{k}\right)\mathbf{p};&\\
+      \text{subject to: } \|\mathbf{p}\|\le \Delta.&
+    \end{eqnarray*}
+
+This method wraps the [TRLIB]_ implementation of the [GLTR]_ method solving
+exactly a trust-region subproblem restricted to a truncated Krylov subspace.
+For indefinite problems it is usually better to use this method as it reduces
+the number of nonlinear iterations at the expense of few more matrix-vector
+products per subproblem solve in comparison to the ``trust-ncg`` method.
+
+Full Hessian example:
+"""""""""""""""""""""
+
+    >>> res = minimize(rosen, x0, method='trust-krylov',
+    ...                jac=rosen_der, hess=rosen_hess,
+    ...                options={'gtol': 1e-8, 'disp': True})
+    Optimization terminated successfully.
+             Current function value: 0.000000
+             Iterations: 19                    # may vary
+             Function evaluations: 20
+             Gradient evaluations: 20
+             Hessian evaluations: 18
+    >>> res.x
+    array([1., 1., 1., 1., 1.])
+
+Hessian product example:
+""""""""""""""""""""""""
+
+    >>> res = minimize(rosen, x0, method='trust-krylov',
+    ...                jac=rosen_der, hessp=rosen_hess_p,
+    ...                options={'gtol': 1e-8, 'disp': True})
+    Optimization terminated successfully.
+             Current function value: 0.000000
+             Iterations: 19                    # may vary
+             Function evaluations: 20
+             Gradient evaluations: 20
+             Hessian evaluations: 0
+    >>> res.x
+    array([1., 1., 1., 1., 1.])
+
+.. [TRLIB] F. Lenders, C. Kirches, A. Potschka: "trlib: A vector-free
+           implementation of the GLTR method for iterative solution of
+           the trust region problem", https://arxiv.org/abs/1611.04718
+
+.. [GLTR]  N. Gould, S. Lucidi, M. Roma, P. Toint: "Solving the
+           Trust-Region Subproblem using the Lanczos Method",
+           SIAM J. Optim., 9(2), 504--525, (1999).
+           http://epubs.siam.org/doi/abs/10.1137/S1052623497322735
+
+
+Trust-Region Nearly Exact Algorithm (``method='trust-exact'``)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+All methods ``Newton-CG``, ``trust-ncg`` and ``trust-krylov`` are suitable for dealing with
+large-scale problems (problems with thousands of variables). That is because the conjugate
+gradient algorithm approximatelly solve the trust-region subproblem (or invert the Hessian)
+by iterations without the explicit Hessian factorization. Since only the product of the Hessian
+with an arbitrary vector is needed, the algorithm is specially suited for dealing
+with sparse Hessians, allowing low storage requirements and significant time savings for
+those sparse problems.
+
+For medium-size problems, for which the storage and factorization cost of the Hessian are not critical,
+it is possible to obtain a solution within fewer iteration by solving the trust-region subproblems
+almost exactly. To achieve that, a certain nonlinear equations is solved iteratively for each quadratic
+subproblem [CGT]_. This solution requires usually 3 or 4 Cholesky factorizations of the
+Hessian matrix. As the result, the method converges in fewer number of iterations
+and takes fewer evaluations of the objective function than the other implemented
+trust-region methods. The Hessian product option is not supported by this algorithm. An
+example using the Rosenbrock function follows:
+
+
+    >>> res = minimize(rosen, x0, method='trust-exact',
+    ...                jac=rosen_der, hess=rosen_hess,
+    ...                options={'gtol': 1e-8, 'disp': True})
+    Optimization terminated successfully.
+             Current function value: 0.000000
+             Iterations: 13                    # may vary
+             Function evaluations: 14
+             Gradient evaluations: 13
+             Hessian evaluations: 14
+    >>> res.x
+    array([1., 1., 1., 1., 1.])
+
+    
+.. [NW] J. Nocedal, S.J. Wright "Numerical optimization."
+	2nd edition. Springer Science (2006).
+.. [CGT] Conn, A. R., Gould, N. I., & Toint, P. L. 
+        "Trust region methods". Siam. (2000). pp. 169-200.
+
+
 .. _tutorial-sqlsp:
 
 Constrained minimization of multivariate scalar functions (:func:`minimize`)
@@ -300,7 +457,6 @@ form:
 As an example, let us consider the problem of maximizing the function:
 
 .. math::
-    :nowrap:
 
     f(x, y) = 2 x y + 2 x - x^2 - 2 y^2
 
@@ -375,10 +531,12 @@ SciPy is capable of solving robustified bound constrained nonlinear
 least-squares problems:
 
 .. math::
-  \begin{align}
-  &\min_\mathbf{x} \frac{1}{2} \sum_{i = 1}^m \rho\left(f_i(\mathbf{x})^2\right) \\
-  &\text{subject to }\mathbf{lb} \leq \mathbf{x} \leq \mathbf{ub}
-  \end{align}
+   :nowrap:
+   
+   \begin{align}
+   &\min_\mathbf{x} \frac{1}{2} \sum_{i = 1}^m \rho\left(f_i(\mathbf{x})^2\right) \\
+   &\text{subject to }\mathbf{lb} \leq \mathbf{x} \leq \mathbf{ub}
+   \end{align}
 
 Here :math:`f_i(\mathbf{x})` are smooth functions from
 :math:`\mathbb{R}^n` to :math:`\mathbb{R}`, we refer to them as residuals.
@@ -416,6 +574,8 @@ the independent variable. The unknown vector of parameters is
 recommended to compute Jacobian matrix in a closed form:
 
 .. math::
+   :nowrap:
+
     \begin{align}
     &J_{i0} = \frac{\partial f_i}{\partial x_0} = \frac{u_i^2 + u_i x_1}{u_i^2 + u_i x_2 + x_3} \\
     &J_{i1} = \frac{\partial f_i}{\partial x_1} = \frac{u_i x_0}{u_i^2 + u_i x_2 + x_3} \\
@@ -678,7 +838,6 @@ The following example considers the single-variable transcendental
 equation
 
 .. math::
-   :nowrap:
 
     x+2\cos\left(x\right)=0,
 

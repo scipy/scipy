@@ -5,16 +5,16 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from numpy.linalg import norm as npnorm
-from numpy.testing import (assert_raises, assert_equal, assert_allclose,
-        TestCase, dec)
+from numpy.testing import assert_equal, assert_allclose
+from pytest import raises as assert_raises
 
 from scipy._lib._version import NumpyVersion
 import scipy.sparse
 from scipy.sparse.linalg import norm as spnorm
 
 
-class TestNorm(TestCase):
-    def setUp(self):
+class TestNorm(object):
+    def setup_method(self):
         a = np.arange(9) - 4
         b = a.reshape((3, 3))
         self.b = scipy.sparse.csr_matrix(b)
@@ -68,7 +68,7 @@ class TestNorm(TestCase):
         assert_raises(ValueError, spnorm, m, 'plate_of_shrimp', (0, 1))
 
 
-class TestVsNumpyNorm(TestCase):
+class TestVsNumpyNorm(object):
     _sparse_types = (
             scipy.sparse.bsr_matrix,
             scipy.sparse.coo_matrix,

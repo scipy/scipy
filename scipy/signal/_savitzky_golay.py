@@ -235,7 +235,8 @@ def savgol_filter(x, window_length, polyorder, deriv=0, delta=1.0,
         before filtering.
     window_length : int
         The length of the filter window (i.e. the number of coefficients).
-        `window_length` must be a positive odd integer.
+        `window_length` must be a positive odd integer. If `mode` is 'interp',
+        `window_length` must be less than or equal to the size of `x`.
     polyorder : int
         The order of the polynomial used to fit the samples.
         `polyorder` must be less than `window_length`.
@@ -332,6 +333,10 @@ def savgol_filter(x, window_length, polyorder, deriv=0, delta=1.0,
     coeffs = savgol_coeffs(window_length, polyorder, deriv=deriv, delta=delta)
 
     if mode == "interp":
+        if window_length > x.size:
+            raise ValueError("If mode is 'interp', window_length must be less "
+                             "than or equal to the size of x.")
+
         # Do not pad.  Instead, for the elements within `window_length // 2`
         # of the ends of the sequence, use the polynomial that is fitted to
         # the last `window_length` elements.

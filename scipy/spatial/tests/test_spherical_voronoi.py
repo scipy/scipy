@@ -1,15 +1,16 @@
 from __future__ import print_function
 import numpy as np
 import itertools
-from numpy.testing import (TestCase,
+from numpy.testing import (assert_equal,
                            assert_almost_equal,
                            assert_array_equal,
                            assert_array_almost_equal)
+from pytest import raises as assert_raises
 from scipy.spatial import SphericalVoronoi, distance
 from scipy.spatial import _spherical_voronoi as spherical_voronoi
 
 
-class TestCircumcenters(TestCase):
+class TestCircumcenters(object):
 
     def test_circumcenters(self):
         tetrahedrons = np.array([
@@ -33,7 +34,7 @@ class TestCircumcenters(TestCase):
         assert_array_almost_equal(result, expected)
 
 
-class TestProjectToSphere(TestCase):
+class TestProjectToSphere(object):
 
     def test_unit_sphere(self):
         points = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
@@ -60,9 +61,9 @@ class TestProjectToSphere(TestCase):
         assert_array_almost_equal(translated, projected)
 
 
-class TestSphericalVoronoi(TestCase):
+class TestSphericalVoronoi(object):
 
-    def setUp(self):
+    def setup_method(self):
         self.points = np.array([
             [-0.78928481, -0.16341094, 0.59188373],
             [-0.66839141, 0.73309634, 0.12578818],
@@ -78,17 +79,20 @@ class TestSphericalVoronoi(TestCase):
         center = np.array([1, 2, 3])
         radius = 2
         s1 = SphericalVoronoi(self.points)
-        s2 = SphericalVoronoi(self.points, radius)
-        s3 = SphericalVoronoi(self.points, None, center)
-        s4 = SphericalVoronoi(self.points, radius, center)
+        # user input checks in SphericalVoronoi now require
+        # the radius / center to match the generators so adjust
+        # accordingly here
+        s2 = SphericalVoronoi(self.points * radius, radius)
+        s3 = SphericalVoronoi(self.points + center, None, center)
+        s4 = SphericalVoronoi(self.points * radius + center, radius, center)
         assert_array_equal(s1.center, np.array([0, 0, 0]))
-        self.assertEqual(s1.radius, 1)
+        assert_equal(s1.radius, 1)
         assert_array_equal(s2.center, np.array([0, 0, 0]))
-        self.assertEqual(s2.radius, 2)
+        assert_equal(s2.radius, 2)
         assert_array_equal(s3.center, center)
-        self.assertEqual(s3.radius, 1)
+        assert_equal(s3.radius, 1)
         assert_array_equal(s4.center, center)
-        self.assertEqual(s4.radius, radius)
+        assert_equal(s4.radius, radius)
 
     def test_vertices_regions_translation_invariance(self):
         sv_origin = SphericalVoronoi(self.points)
@@ -121,6 +125,17 @@ class TestSphericalVoronoi(TestCase):
         actual = list(itertools.chain(*sorted(sv.regions)))
         assert_array_equal(actual, expected)
 
+    def test_num_vertices(self):
+        # for any n >= 3, a spherical Voronoi diagram has 2n - 4
+        # vertices; this is a direct consequence of Euler's formula
+        # as explained by Dinis and Mamede (2010) Proceedings of the
+        # 2010 International Symposium on Voronoi Diagrams in Science
+        # and Engineering
+        sv = SphericalVoronoi(self.points)
+        expected = self.points.shape[0] * 2 - 4
+        actual = sv.vertices.shape[0]
+        assert_equal(actual, expected)
+
     def test_voronoi_circles(self):
         sv = spherical_voronoi.SphericalVoronoi(self.points)
         for vertex in sv.vertices:
@@ -128,3 +143,24 @@ class TestSphericalVoronoi(TestCase):
             closest = np.array(sorted(distances)[0:3])
             assert_almost_equal(closest[0], closest[1], 7, str(vertex))
             assert_almost_equal(closest[0], closest[2], 7, str(vertex))
+
+    def test_duplicate_point_handling(self):
+        # an exception should be raised for degenerate generators
+        # related to Issue# 7046
+        self.degenerate = np.concatenate((self.points, self.points))
+        with assert_raises(ValueError):
+            sv = spherical_voronoi.SphericalVoronoi(self.degenerate)
+
+    def test_incorrect_radius_handling(self):
+        # an exception should be raised if the radius provided
+        # cannot possibly match the input generators
+        with assert_raises(ValueError):
+            sv = spherical_voronoi.SphericalVoronoi(self.points,
+                                                    radius=0.98)
+
+    def test_incorrect_center_handling(self):
+        # an exception should be raised if the center provided
+        # cannot possibly match the input generators
+        with assert_raises(ValueError):
+            sv = spherical_voronoi.SphericalVoronoi(self.points,
+                                                    center=[0.1,0,0])

@@ -64,8 +64,16 @@ class _data_matrix(spmatrix):
         else:
             return NotImplemented
 
-    def astype(self, t):
-        return self._with_data(self._deduped_data().astype(t))
+    def astype(self, dtype, casting='unsafe', copy=True):
+        dtype = np.dtype(dtype)
+        if self.dtype != dtype:
+            return self._with_data(
+                self._deduped_data().astype(dtype, casting=casting, copy=copy),
+                copy=copy)
+        elif copy:
+            return self.copy()
+        else:
+            return self
 
     astype.__doc__ = spmatrix.astype.__doc__
 
@@ -129,6 +137,18 @@ for npfunc in _ufuncs_with_fixed_point_at_zero:
     setattr(_data_matrix, name, _create_method(npfunc))
 
 
+def _find_missing_index(ind, n):
+    for k, a in enumerate(ind):
+        if k != a:
+            return k
+
+    k += 1
+    if k < n:
+        return k
+    else:
+        return -1
+
+
 class _minmax_mixin(object):
     """Mixin for min and max methods.
 
@@ -186,6 +206,80 @@ class _minmax_mixin(object):
             return self._min_or_max_axis(axis, min_or_max)
         else:
             raise ValueError("axis out of range")
+
+    def _arg_min_or_max_axis(self, axis, op, compare):
+        if self.shape[axis] == 0:
+            raise ValueError("Can't apply the operation along a zero-sized "
+                             "dimension.")
+
+        if axis < 0:
+            axis += 2
+
+        zero = self.dtype.type(0)
+
+        mat = self.tocsc() if axis == 0 else self.tocsr()
+        mat.sum_duplicates()
+
+        ret_size, line_size = mat._swap(mat.shape)
+        ret = np.zeros(ret_size, dtype=int)
+
+        nz_lines, = np.nonzero(np.diff(mat.indptr))
+        for i in nz_lines:
+            p, q = mat.indptr[i:i + 2]
+            data = mat.data[p:q]
+            indices = mat.indices[p:q]
+            am = op(data)
+            m = data[am]
+            if compare(m, zero) or q - p == line_size:
+                ret[i] = indices[am]
+            else:
+                zero_ind = _find_missing_index(indices, line_size)
+                if m == zero:
+                    ret[i] = min(am, zero_ind)
+                else:
+                    ret[i] = zero_ind
+
+        if axis == 1:
+            ret = ret.reshape(-1, 1)
+
+        return np.asmatrix(ret)
+
+    def _arg_min_or_max(self, axis, out, op, compare):
+        if out is not None:
+            raise ValueError("Sparse matrices do not support "
+                             "an 'out' parameter.")
+
+        validateaxis(axis)
+
+        if axis is None:
+            if 0 in self.shape:
+                raise ValueError("Can't apply the operation to "
+                                 "an empty matrix.")
+
+            if self.nnz == 0:
+                return 0
+            else:
+                zero = self.dtype.type(0)
+                mat = self.tocoo()
+                mat.sum_duplicates()
+                am = op(mat.data)
+                m = mat.data[am]
+
+                if compare(m, zero):
+                    return mat.row[am] * mat.shape[1] + mat.col[am]
+                else:
+                    size = np.product(mat.shape)
+                    if size == mat.nnz:
+                        return am
+                    else:
+                        ind = mat.row * mat.shape[1] + mat.col
+                        zero_ind = _find_missing_index(ind, size)
+                        if m == zero:
+                            return min(zero_ind, am)
+                        else:
+                            return zero_ind
+
+        return self._arg_min_or_max_axis(axis, op, compare)
 
     def max(self, axis=None, out=None):
         """
@@ -250,3 +344,49 @@ class _minmax_mixin(object):
 
         """
         return self._min_or_max(axis, out, np.minimum)
+
+    def argmax(self, axis=None, out=None):
+        """Return indices of maximum elements along an axis.
+
+        Implicit zero elements are also taken into account. If there are
+        several maximum values, the index of the first occurrence is returned.
+
+        Parameters
+        ----------
+        axis : {-2, -1, 0, 1, None}, optional
+            Axis along which the argmax is computed. If None (default), index
+            of the maximum element in the flatten data is returned.
+        out : None, optional
+            This argument is in the signature *solely* for NumPy
+            compatibility reasons. Do not pass in anything except for
+            the default value, as this argument is not used.
+
+        Returns
+        -------
+        ind : np.matrix or int
+            Indices of maximum elements. If matrix, its size along `axis` is 1.
+        """
+        return self._arg_min_or_max(axis, out, np.argmax, np.greater)
+
+    def argmin(self, axis=None, out=None):
+        """Return indices of minimum elements along an axis.
+
+        Implicit zero elements are also taken into account. If there are
+        several minimum values, the index of the first occurrence is returned.
+
+        Parameters
+        ----------
+        axis : {-2, -1, 0, 1, None}, optional
+            Axis along which the argmin is computed. If None (default), index
+            of the minimum element in the flatten data is returned.
+        out : None, optional
+            This argument is in the signature *solely* for NumPy
+            compatibility reasons. Do not pass in anything except for
+            the default value, as this argument is not used.
+
+        Returns
+        -------
+         ind : np.matrix or int
+            Indices of minimum elements. If matrix, its size along `axis` is 1.
+        """
+        return self._arg_min_or_max(axis, out, np.argmin, np.less)

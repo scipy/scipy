@@ -1,5 +1,7 @@
-from numpy.testing import (run_module_suite, assert_, assert_allclose,
-                           assert_raises, assert_equal)
+from __future__ import division, absolute_import, print_function
+
+from numpy.testing import assert_, assert_allclose, assert_equal
+from pytest import raises as assert_raises
 import numpy as np
 
 from scipy.optimize._lsq.common import (
@@ -113,7 +115,7 @@ class TestBounds(object):
 
 
 class TestQuadraticFunction(object):
-    def __init__(self):
+    def setup_method(self):
         self.J = np.array([
             [0.1, 0.2],
             [-1.0, 1.0],
@@ -246,6 +248,3 @@ def test_reflective_transformation():
     assert_equal(x, [0, 10])
     assert_equal(g, [-1, 1])
 
-
-if __name__ == '__main__':
-    run_module_suite()

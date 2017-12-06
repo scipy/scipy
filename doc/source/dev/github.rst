@@ -4,6 +4,8 @@ SciPy development largely takes place on GitHub; this section describes the
 expected way of working for issues, pull requests and managing the main
 ``scipy`` repository.
 
+.. _labels-and-milestones:
+
 Labels and Milestones
 ---------------------
 Each issue and pull request normally gets at least two labels: one for the
@@ -53,6 +55,7 @@ Dealing with pull requests
   committer comment or close.
 
 
+.. _backporting:
 
 Backporting
 -----------
@@ -65,6 +68,23 @@ Typically, the developer who merges an important bugfix adds the
 ``backport-candidate`` label and pings the release manager, who decides on
 whether and when the backport is done.  After the backport is completed, the
 ``backport-candidate`` label has to be removed again.
+
+
+Release notes
+-------------
+When a PR gets merged, consider if the changes need to be mentioned in the
+release notes.  What needs mentioning: new features, backwards incompatible
+changes, deprecations, and "other changes" (anything else noteworthy enough,
+see older release notes for the kinds of things worth mentioning).
+
+Release note entries are maintained on the wiki, (e.g.
+https://github.com/scipy/scipy/wiki/Release-note-entries-for-SciPy-1.1.0).  The
+release manager will gather content from there and integrate it into the html
+docs.  We use this mechanism to avoid merge conflicts that would happen if
+every PR touched the same file under ``doc/release/`` directly.
+
+Changes can be monitored (`Atom feed <https://github.com/scipy/scipy/wiki.atom>`_)
+and pulled (the wiki is a git repo: ``https://github.com/scipy/scipy.wiki.git``).
 
 
 Other

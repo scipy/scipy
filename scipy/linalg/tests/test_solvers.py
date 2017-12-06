@@ -3,18 +3,28 @@ from __future__ import division, print_function, absolute_import
 import os
 import numpy as np
 
-from numpy.testing import TestCase, run_module_suite
-from numpy.testing import assert_raises, assert_array_almost_equal
-
-from numpy.testing.noseclasses import KnownFailureTest
+from numpy.testing import assert_array_almost_equal
+import pytest
+from pytest import raises as assert_raises
 
 from scipy.linalg import solve_sylvester
-from scipy.linalg import solve_lyapunov, solve_discrete_lyapunov
+from scipy.linalg import solve_continuous_lyapunov, solve_discrete_lyapunov
 from scipy.linalg import solve_continuous_are, solve_discrete_are
-from scipy.linalg import block_diag, solve
+from scipy.linalg import block_diag, solve, LinAlgError
 
 
-class TestSolveLyapunov(TestCase):
+def _load_data(name):
+    """
+    Load npz data file under data/
+    Returns a copy of the data, rather than keeping the npz file open.
+    """
+    filename = os.path.join(os.path.abspath(os.path.dirname(__file__)),
+                            'data', name)
+    with np.load(filename) as f:
+        return dict(f.items())
+
+
+class TestSolveLyapunov(object):
 
     cases = [
         (np.array([[1, 2], [3, 4]]),
@@ -76,8 +86,15 @@ class TestSolveLyapunov(TestCase):
          (np.array(np.matrix([0, 3]).T * np.matrix([0, 3]).T.T))),
         ]
 
+    def test_continuous_squareness_and_shape(self):
+        nsq = np.ones((3, 2))
+        sq = np.eye(3)
+        assert_raises(ValueError, solve_continuous_lyapunov, nsq, sq)
+        assert_raises(ValueError, solve_continuous_lyapunov, sq, nsq)
+        assert_raises(ValueError, solve_continuous_lyapunov, sq, np.eye(2))
+
     def check_continuous_case(self, a, q):
-        x = solve_lyapunov(a, q)
+        x = solve_continuous_lyapunov(a, q)
         assert_array_almost_equal(
                           np.dot(a, x) + np.dot(x, a.conj().transpose()), q)
 
@@ -95,16 +112,11 @@ class TestSolveLyapunov(TestCase):
 
 
 def test_solve_continuous_are():
-    mat6 = np.load(os.path.join(os.path.abspath(os.path.dirname(__file__)),
-                                'data', 'carex_6_data.npz'))
-    mat15 = np.load(os.path.join(os.path.abspath(os.path.dirname(__file__)),
-                                 'data', 'carex_15_data.npz'))
-    mat18 = np.load(os.path.join(os.path.abspath(os.path.dirname(__file__)),
-                                 'data', 'carex_18_data.npz'))
-    mat19 = np.load(os.path.join(os.path.abspath(os.path.dirname(__file__)),
-                                 'data', 'carex_19_data.npz'))
-    mat20 = np.load(os.path.join(os.path.abspath(os.path.dirname(__file__)),
-                                 'data', 'carex_20_data.npz'))
+    mat6 = _load_data('carex_6_data.npz')
+    mat15 = _load_data('carex_15_data.npz')
+    mat18 = _load_data('carex_18_data.npz')
+    mat19 = _load_data('carex_19_data.npz')
+    mat20 = _load_data('carex_20_data.npz')
     cases = [
         # Carex examples taken from (with default parameters):
         # [1] P.BENNER, A.J. LAUB, V. MEHRMANN: 'A Collection of Benchmark
@@ -277,14 +289,14 @@ def test_solve_continuous_are():
     #
     # If the test is failing use "None" for that entry.
     #
-    min_decimal = (14, 12, 14, 14, 11, 7, None, 5, 7, 14, 14,
-                   None, 10, 14, 13, 14, None, 12, None, None)
+    min_decimal = (14, 12, 13, 14, 11, 6, None, 5, 7, 14, 14,
+                   None, 9, 14, 13, 14, None, 12, None, None)
 
     def _test_factory(case, dec):
         """Checks if 0 = XA + A'X - XB(R)^{-1} B'X + Q is true"""
         a, b, q, r, knownfailure = case
         if knownfailure:
-            raise KnownFailureTest(knownfailure)
+            pytest.xfail(reason=knownfailure)
 
         x = solve_continuous_are(a, b, q, r)
         res = x.dot(a) + a.conj().T.dot(x) + q
@@ -293,7 +305,7 @@ def test_solve_continuous_are():
         assert_array_almost_equal(res, np.zeros_like(res), decimal=dec)
 
     for ind, case in enumerate(cases):
-        yield _test_factory, case, min_decimal[ind]
+        _test_factory(case, min_decimal[ind])
 
 
 def test_solve_discrete_are():
@@ -497,14 +509,14 @@ def test_solve_discrete_are():
     #
     # If the test is failing use "None" for that entry.
     #
-    min_decimal = (12, 14, 14, 14, 13, 16, 18, 15, 15, 13,
+    min_decimal = (12, 14, 13, 14, 13, 16, 18, 14, 15, 13,
                    14, 13, 13, 14, 12, 2, 5, 6, 10)
 
     def _test_factory(case, dec):
         """Checks if X = A'XA-(A'XB)(R+B'XB)^-1(B'XA)+Q) is true"""
         a, b, q, r, knownfailure = case
         if knownfailure:
-            raise KnownFailureTest(knownfailure)
+            pytest.xfail(reason=knownfailure)
 
         x = solve_discrete_are(a, b, q, r)
         res = a.conj().T.dot(x.dot(a)) - x + q
@@ -514,7 +526,15 @@ def test_solve_discrete_are():
         assert_array_almost_equal(res, np.zeros_like(res), decimal=dec)
 
     for ind, case in enumerate(cases):
-        yield _test_factory, case, min_decimal[ind]
+        _test_factory(case, min_decimal[ind])
+
+    # An infeasible example taken from https://arxiv.org/abs/1505.04861v1
+    A = np.triu(np.ones((3, 3)))
+    A[0, 1] = -1
+    B = np.array([[1, 1, 0], [0, 0, 1]]).T
+    Q = -2*np.ones_like(A) + np.diag([8, -1, -1.9])
+    R = np.diag([-10, 0.1])
+    assert_raises(LinAlgError, solve_continuous_are, A, B, Q, R)
 
 
 def test_solve_generalized_continuous_are():
@@ -555,7 +575,7 @@ def test_solve_generalized_continuous_are():
         """Checks if X = A'XA-(A'XB)(R+B'XB)^-1(B'XA)+Q) is true"""
         a, b, q, r, e, s, knownfailure = case
         if knownfailure:
-            raise KnownFailureTest(knownfailure)
+            pytest.xfail(reason=knownfailure)
 
         x = solve_continuous_are(a, b, q, r, e, s)
         res = a.conj().T.dot(x.dot(e)) + e.conj().T.dot(x.dot(a)) + q
@@ -564,10 +584,12 @@ def test_solve_generalized_continuous_are():
         assert_array_almost_equal(res, np.zeros_like(res), decimal=dec)
 
     for ind, case in enumerate(cases):
-        yield _test_factory, case, min_decimal[ind]
+        _test_factory(case, min_decimal[ind])
 
 
 def test_solve_generalized_discrete_are():
+    mat20170120 = _load_data('gendare_20170120_data.npz')
+
     cases = [
         # Two random examples differ by s term
         # in the absence of any literature for demanding examples.
@@ -596,18 +618,31 @@ def test_solve_generalized_discrete_are():
                    [7.093648e-01, 6.797027e-01, 1.189977e-01],
                    [7.546867e-01, 6.550980e-01, 4.983641e-01]]),
          np.ones((3, 2)),
-         None)
+         None),
+        # user-reported (under PR-6616) 20-Jan-2017
+        # tests against the case where E is None but S is provided
+        (mat20170120['A'],
+         mat20170120['B'],
+         mat20170120['Q'],
+         mat20170120['R'],
+         None,
+         mat20170120['S'],
+         None),
         ]
 
-    min_decimal = (11, 11)
+    min_decimal = (11, 11, 16)
 
     def _test_factory(case, dec):
         """Checks if X = A'XA-(A'XB)(R+B'XB)^-1(B'XA)+Q) is true"""
         a, b, q, r, e, s, knownfailure = case
         if knownfailure:
-            raise KnownFailureTest(knownfailure)
+            pytest.xfail(reason=knownfailure)
 
         x = solve_discrete_are(a, b, q, r, e, s)
+        if e is None:
+            e = np.eye(a.shape[0])
+        if s is None:
+            s = np.zeros_like(b)
         res = a.conj().T.dot(x.dot(a)) - e.conj().T.dot(x.dot(e)) + q
         res -= (a.conj().T.dot(x.dot(b)) + s).dot(
                     solve(r+b.conj().T.dot(x.dot(b)),
@@ -617,7 +652,7 @@ def test_solve_generalized_discrete_are():
         assert_array_almost_equal(res, np.zeros_like(res), decimal=dec)
 
     for ind, case in enumerate(cases):
-        yield _test_factory, case, min_decimal[ind]
+        _test_factory(case, min_decimal[ind])
 
 
 def test_are_validate_args():
@@ -669,7 +704,7 @@ def test_are_validate_args():
             assert_raises(ValueError, x, sq, sq, sq, sq, sq, nm)
 
 
-class TestSolveSylvester(TestCase):
+class TestSolveSylvester(object):
 
     cases = [
         # a, b, c all real.
@@ -730,7 +765,3 @@ class TestSolveSylvester(TestCase):
         c = np.array([2.0, 2.0]).reshape(-1, 1)
         x = solve_sylvester(a, b, c)
         assert_array_almost_equal(x, np.array([1.0, 1.0]).reshape(-1, 1))
-
-
-if __name__ == "__main__":
-    run_module_suite()

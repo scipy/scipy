@@ -51,6 +51,22 @@ def inv(A):
     to be non-sparse, it will likely be faster to convert `A` to dense and use
     scipy.linalg.inv.
 
+    Examples
+    --------
+    >>> from scipy.sparse import csc_matrix
+    >>> from scipy.sparse.linalg import inv
+    >>> A = csc_matrix([[1., 0.], [1., 2.]])
+    >>> Ainv = inv(A)
+    >>> Ainv
+    <2x2 sparse matrix of type '<class 'numpy.float64'>'
+        with 3 stored elements in Compressed Sparse Column format>
+    >>> A.dot(Ainv)
+    <2x2 sparse matrix of type '<class 'numpy.float64'>'
+        with 2 stored elements in Compressed Sparse Column format>
+    >>> A.dot(Ainv).todense()
+    matrix([[ 1.,  0.],
+            [ 0.,  1.]])
+
     .. versionadded:: 0.12.0
 
     """
@@ -111,28 +127,15 @@ def _ident_like(A):
         return np.eye(A.shape[0], A.shape[1], dtype=A.dtype)
 
 
-def _count_nonzero(A):
-    # A compatibility function which should eventually disappear.
-    #XXX There should be a better way to do this when A is sparse
-    #    in the traditional sense.
-    if isspmatrix(A):
-        return np.sum(A.toarray() != 0)
-    else:
-        return np.count_nonzero(A)
-
-
 def _is_upper_triangular(A):
     # This function could possibly be of wider interest.
     if isspmatrix(A):
         lower_part = scipy.sparse.tril(A, -1)
-        if lower_part.nnz == 0:
-            # structural upper triangularity
-            return True
-        else:
-            # coincidental upper triangularity
-            return _count_nonzero(lower_part) == 0
+        # Check structural upper triangularity,
+        # then coincidental upper triangularity if needed.
+        return lower_part.nnz == 0 or lower_part.count_nonzero() == 0
     else:
-        return _count_nonzero(np.tril(A, -1)) == 0
+        return not np.tril(A, -1).any()
 
 
 def _smart_matrix_product(A, B, alpha=None, structure=None):
@@ -578,6 +581,23 @@ def expm(A):
            SIAM Journal on Matrix Analysis and Applications.
            31 (3). pp. 970-989. ISSN 1095-7162
 
+    Examples
+    --------
+    >>> from scipy.sparse import csc_matrix
+    >>> from scipy.sparse.linalg import expm
+    >>> A = csc_matrix([[1, 0, 0], [0, 2, 0], [0, 0, 3]])
+    >>> A.todense()
+    matrix([[1, 0, 0],
+            [0, 2, 0],
+            [0, 0, 3]], dtype=int64)
+    >>> Aexp = expm(A)
+    >>> Aexp
+    <3x3 sparse matrix of type '<class 'numpy.float64'>'
+        with 3 stored elements in Compressed Sparse Column format>
+    >>> Aexp.todense()
+    matrix([[  2.71828183,   0.        ,   0.        ],
+            [  0.        ,   7.3890561 ,   0.        ],
+            [  0.        ,   0.        ,  20.08553692]])
     """
     return _expm(A, use_exact_onenorm='auto')
 
@@ -639,7 +659,13 @@ def _expm(A, use_exact_onenorm):
     eta_4 = max(h.d8_loose, h.d10_loose)
     eta_5 = min(eta_3, eta_4)
     theta_13 = 4.25
-    s = max(int(np.ceil(np.log2(eta_5 / theta_13))), 0)
+
+    # Choose smallest s>=0 such that 2**(-s) eta_5 <= theta_13
+    if eta_5 == 0:
+        # Nilpotent special case
+        s = 0
+    else:
+        s = max(int(np.ceil(np.log2(eta_5 / theta_13))), 0)
     s = s + _ell(2**-s * h.A, 13)
     U, V = h.pade13_scaled(s)
     X = _solve_P_Q(U, V, structure=structure)

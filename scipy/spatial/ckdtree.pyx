@@ -6,6 +6,8 @@
 
 # distutils: language = c++
 
+from __future__ import absolute_import
+
 import numpy as np
 import scipy.sparse
 
@@ -473,6 +475,24 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
 
     Attributes
     ----------
+    data : ndarray, shape (n,m)
+        The n data points of dimension m to be indexed. This array is
+        not copied unless this is necessary to produce a contiguous
+        array of doubles. The data are also copied if the kd-tree is built
+        with `copy_data=True`.
+    leafsize : positive int
+        The number of points at which the algorithm switches over to
+        brute-force.
+    m : int
+        The dimension of a single data-point.
+    n : int
+        The number of data points.
+    maxes : ndarray, shape (m,)
+        The maximum value in each dimension of the n data points.
+    mins : ndarray, shape (m,)
+        The minimum value in each dimension of the n data points.
+    tree : object, class cKDTreeNode
+        This class exposes a Python view of the root node in the cKDTree object.
     size : int
         The number of nodes in the tree.
 
@@ -525,14 +545,15 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
             self.boxsize_data = None
         else:
             boxsize_arr = np.empty(2 * self.m, dtype=np.float64)
-            boxsize_arr[:] = boxsize
+            boxsize_arr[:self.m] = boxsize
             boxsize_arr[self.m:] = 0.5 * boxsize_arr[:self.m]
             # FIXME: how to use a matching del if new is used?
             self.boxsize_data = boxsize_arr
             self.boxsize = boxsize_arr[:self.m].copy()
-            if (self.data >= self.boxsize[None, :]).any():
+            periodic_mask = self.boxsize > 0
+            if ((self.data >= self.boxsize[None, :])[:, periodic_mask]).any():
                 raise ValueError("Some input data are greater than the size of the periodic box.")
-            if (self.data < 0).any():
+            if ((self.data < 0)[:, periodic_mask]).any():
                 raise ValueError("Negative input data are outside of the periodic box.")
 
         self.maxes = np.ascontiguousarray(np.amax(self.data,axis=0), dtype=np.float64)
@@ -678,29 +699,49 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
 
         Examples
         --------
-        
-        >>> tree = cKDTree(data)
+
+        >>> import numpy as np
+        >>> from scipy.spatial import cKDTree
+        >>> x, y = np.mgrid[0:5, 2:8]
+        >>> tree = cKDTree(np.c_[x.ravel(), y.ravel()])
 
         To query the nearest neighbours and return squeezed result, use
 
-        >>> dd, ii = tree.query(x, k=1)
+        >>> dd, ii = tree.query([[0, 0], [2.1, 2.9]], k=1)
+        >>> print(dd, ii)
+        [ 2.          0.14142136] [ 0 13]
 
         To query the nearest neighbours and return unsqueezed result, use
 
-        >>> dd, ii = tree.query(x, k=[1])
+        >>> dd, ii = tree.query([[0, 0], [2.1, 2.9]], k=[1])
+        >>> print(dd, ii)
+        [[ 2.        ]
+         [ 0.14142136]] [[ 0]
+         [13]]
 
         To query the second nearest neighbours and return unsqueezed result, use
 
-        >>> dd, ii = tree.query(x, k=[2])
+        >>> dd, ii = tree.query([[0, 0], [2.1, 2.9]], k=[2])
+        >>> print(dd, ii)
+        [[ 2.23606798]
+         [ 0.90553851]] [[ 6]
+         [12]]
 
         To query the first and second nearest neighbours, use
 
-        >>> dd, ii = tree.query(x, k=2)
+        >>> dd, ii = tree.query([[0, 0], [2.1, 2.9]], k=2)
+        >>> print(dd, ii)
+        [[ 2.          2.23606798]
+         [ 0.14142136  0.90553851]] [[ 0  6]
+         [13 12]]
 
         or, be more specific
 
-        >>> dd, ii = tree.query(x, k=[1, 2])
-
+        >>> dd, ii = tree.query([[0, 0], [2.1, 2.9]], k=[1, 2])
+        >>> print(dd, ii)
+        [[ 2.          2.23606798]
+         [ 0.14142136  0.90553851]] [[ 0  6]
+         [13 12]]
 
         """
         
@@ -729,10 +770,12 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         retshape = np.shape(x)[:-1]
         n = <np.intp_t> np.prod(retshape)
         xx = np.ascontiguousarray(x_arr).reshape(n, self.m)
+
+        # The C++ function touches all dd and ii entries,
+        # setting the missing values.
+
         dd = np.empty((n,len(k)),dtype=np.float64)
-        dd.fill(INFINITY)
         ii = np.empty((n,len(k)),dtype=np.intp)
-        ii.fill(self.n)
 
         # Do the query in an external C++ function. 
         # The GIL will be released in the external query function.
@@ -853,7 +896,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         --------
         >>> from scipy import spatial
         >>> x, y = np.mgrid[0:4, 0:4]
-        >>> points = zip(x.ravel(), y.ravel())
+        >>> points = np.c_[x.ravel(), y.ravel()]
         >>> tree = spatial.cKDTree(points)
         >>> tree.query_ball_point([2, 0], 1)
         [4, 8, 9, 12]

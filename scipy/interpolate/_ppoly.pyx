@@ -4,7 +4,9 @@ local power basis.
 
 """
 
-from .polyint import _Interpolator1D
+from __future__ import absolute_import
+
+from scipy.interpolate.polyint import _Interpolator1D
 import numpy as np
 
 cimport cython

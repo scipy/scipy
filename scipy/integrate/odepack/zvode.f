@@ -1096,7 +1096,7 @@ C
 C The variables stored in the internal COMMON blocks are as follows:
 C
 C ACNRM  = Weighted r.m.s. norm of accumulated correction vectors.
-C CCMXJ  = Threshhold on DRC for updating the Jacobian. (See DRC.)
+C CCMXJ  = Threshold on DRC for updating the Jacobian. (See DRC.)
 C CONP   = The saved value of TQ(5).
 C CRATE  = Estimated corrector convergence rate constant.
 C DRC    = Relative change in H*RL1 since last ZVJAC call.
@@ -1141,7 +1141,7 @@ C                  HMIN, HMXI, N, METH, MITER, and/or matrix parameters.
 C          On return, ZVSTEP sets JSTART = 1.
 C JSV    = Integer flag for Jacobian saving, = sign(MF).
 C KFLAG  = A completion code from ZVSTEP with the following meanings:
-C               0      the step was succesful.
+C               0      the step was successful.
 C              -1      the requested error could not be achieved.
 C              -2      corrector convergence could not be achieved.
 C              -3, -4  fatal error in VNLS (can not occur here).

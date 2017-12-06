@@ -7,7 +7,7 @@ integral to wrapping the many Fortran libraries used in SciPy.
 
 Since then many people have contributed to SciPy, both in code development,
 suggestions, and financial support.  Below is a partial list.  If you've
-been left off, please email the "SciPy Developers List" <scipy-dev@scipy.org>.
+been left off, please email the "SciPy Developers List" <scipy-dev@python.org>.
 
 Please add names as needed so that we can keep up with all the contributors.
 
@@ -130,7 +130,7 @@ Jörg Dietrich for the k-sample Anderson Darling test.
 Blake Griffith for improvements to scipy.sparse.
 Andrew Nelson for scipy.optimize.differential_evolution.
 Brian Newsom for work on ctypes multivariate integration.
-Nathan Woods for work on multivariate integration. 
+Nathan Woods for work on multivariate integration.
 Brianna Laugher for bug fixes.
 Johannes Kulick for the Dirichlet distribution.
 Bastian Venthur for bug fixes.
@@ -162,11 +162,27 @@ Bill Sacks for fixes to netcdf i/o.
 Kolja Glogowski for a bug fix in scipy.special.
 Surhud More for enhancing scipy.optimize.curve_fit to accept covariant errors
 on data.
-Antonio Ribeiro for implementing irrnotch and iirpeak functions.
+Antonio H. Ribeiro for implementing irrnotch, iirpeak and trust-exact methods
+    and for improvements on BFGS implemetation.
 Ilhan Polat for bug fixes on Riccati solvers.
 Sebastiano Vigna for code in the stats package related to Kendall's tau.
 John Draper for bug fixes.
 Alvaro Sanchez-Gonzalez for axis-dependent modes in multidimensional filters.
+Alessandro Pietro Bardelli for improvements to pdist/cdist and to related tests.
+Jonathan T. Siebert for bug fixes.
+Thomas Keck for adding new scipy.stats distributions used in HEP
+David Nicholson for bug fixes in spectral functions.
+Roman Feldbauer for improvements in scipy.sparse
+Dominic Antonacci for statistics documentation.
+David Hagen for the object-oriented ODE solver interface.
+Arno Onken for contributions to scipy.stats.
+Cathy Douglass for bug fixes in ndimage.
+Adam Cox for contributions to scipy.constants.
+Charles Masson for the Wasserstein and the Cramér-von Mises statistical
+    distances.
+Felix Lenders for implementing trust-trlib method.
+Dezmond Goff for adding optional out parameter to pdist/cdist
+Nick R. Papior for allowing a wider choice of solvers
 
 Institutions
 ------------
@@ -177,3 +193,5 @@ Agilent which gave a genereous donation for support of SciPy.
 UC Berkeley for providing travel money and hosting numerous sprints.
 The University of Stellenbosch for funding the development of
     the SciKits portal.
+Google Inc. for updating documentation of hypergeometric distribution.
+Datadog Inc. for contributions to scipy.stats.

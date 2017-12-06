@@ -69,6 +69,7 @@
 
 #include "mconf.h"
 #include <stdlib.h>
+#include "_c99compat.h"
 
 #define EPS 1.0e-13
 #define EPS2 1.0e-10
@@ -83,6 +84,7 @@ static double hyt2f1(double a, double b, double c, double x, double *loss);
 static double hys2f1(double a, double b, double c, double x, double *loss);
 static double hyp2f1ra(double a, double b, double c, double x,
 		       double *loss);
+static double hyp2f1_neg_c_equal_bc(double a, double b, double x);
 
 double hyp2f1(a, b, c, x)
 double a, b, c, x;
@@ -130,7 +132,11 @@ double a, b, c, x;
     if (ax < 1.0 || x == -1.0) {
 	/* 2F1(a,b;b;x) = (1-x)**(-a) */
 	if (fabs(b - c) < EPS) {	/* b = c */
-	    y = pow(s, -a);	/* s to the -a power */
+	    if (neg_int_b) {
+		y = hyp2f1_neg_c_equal_bc(a, b, x);
+	    } else {
+	    	y = pow(s, -a);	/* s to the -a power */
+	    }
 	    goto hypdon;
 	}
 	if (fabs(a - c) < EPS) {	/* a = c */
@@ -589,4 +595,33 @@ static double hyp2f1ra(double a, double b, double c, double x,
     }
 
     return f0;
+}
+
+
+/*
+    15.4.2 Abramowitz & Stegun.
+*/
+static double hyp2f1_neg_c_equal_bc(double a, double b, double x)
+{
+    double k;
+    double err;
+    double collector = 1;
+    double sum = 1;
+    double collector_max = 1;
+
+    if (!(fabs(b) < 1e5)) {
+        return NPY_NAN;
+    }
+
+    for (k = 1; k <= -b; k++) {
+        collector *= (a + k - 1)*x/k;
+        collector_max = fmax(fabs(collector), collector_max);
+        sum += collector;
+    }
+
+    if (1e-16 * (1 + collector_max/fabs(sum)) > 1e-7) {
+        return NPY_NAN;
+    }
+
+    return sum;
 }

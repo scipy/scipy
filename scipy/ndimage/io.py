@@ -1,5 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
+import numpy as np
+
 
 _have_pil = True
 try:
@@ -19,6 +21,8 @@ __all__ = ['imread']
 # Unfortunately, because the argument names are different, that
 # introduces a backwards incompatibility.
 
+@np.deprecate(message="`imread` is deprecated in SciPy 1.0.0.\n"
+                      "Use ``matplotlib.pyplot.imread`` instead.")
 def imread(fname, flatten=False, mode=None):
     if _have_pil:
         return _imread(fname, flatten, mode)

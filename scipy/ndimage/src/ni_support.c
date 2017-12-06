@@ -36,29 +36,29 @@ int NI_InitPointIterator(PyArrayObject *array, NI_Iterator *iterator)
 {
     int ii;
 
-    iterator->rank_m1 = array->nd - 1;
-    for(ii = 0; ii < array->nd; ii++) {
+    iterator->rank_m1 = PyArray_NDIM(array) - 1;
+    for(ii = 0; ii < PyArray_NDIM(array); ii++) {
         /* adapt dimensions for use in the macros: */
-        iterator->dimensions[ii] = array->dimensions[ii] - 1;
+        iterator->dimensions[ii] = PyArray_DIM(array, ii) - 1;
         /* initialize coordinates: */
         iterator->coordinates[ii] = 0;
         /* initialize strides: */
-        iterator->strides[ii] = array->strides[ii];
+        iterator->strides[ii] = PyArray_STRIDE(array, ii);
         /* calculate the strides to move back at the end of an axis: */
         iterator->backstrides[ii] =
-                array->strides[ii] * iterator->dimensions[ii];
+                PyArray_STRIDE(array, ii) * iterator->dimensions[ii];
     }
     return 1;
 }
 
 
 /* initialize iteration over a lower sub-space: */
-int NI_SubspaceIterator(NI_Iterator *iterator, UInt32 axes)
+int NI_SubspaceIterator(NI_Iterator *iterator, npy_uint32 axes)
 {
     int ii, last = 0;
 
     for(ii = 0; ii <= iterator->rank_m1; ii++) {
-        if (axes & (((UInt32)1) << ii)) {
+        if (axes & (((npy_uint32)1) << ii)) {
             if (last != ii) {
                 iterator->dimensions[last] = iterator->dimensions[ii];
                 iterator->strides[last] = iterator->strides[ii];
@@ -74,7 +74,7 @@ int NI_SubspaceIterator(NI_Iterator *iterator, UInt32 axes)
 /* initialize iteration over array lines: */
 int NI_LineIterator(NI_Iterator *iterator, int axis)
 {
-    UInt32 axes = ((UInt32)1) << axis;
+    npy_int32 axes = ((npy_uint32)1) << axis;
     return NI_SubspaceIterator(iterator, ~axes);
 }
 
@@ -88,18 +88,16 @@ int NI_AllocateLineBuffer(PyArrayObject* array, int axis, npy_intp size1,
         npy_intp size2, npy_intp *lines, npy_intp max_size, double **buffer)
 {
     npy_intp line_size, max_lines;
-    int ii;
 
     /* the number of lines of the array is an upper limit for the
          number of lines in the buffer: */
-    max_lines = 1;
-    for(ii = 0; ii < array->nd; ii++)
-        max_lines *= array->dimensions[ii];
-    if (array->nd > 0 && array->dimensions[axis] > 0)
-        max_lines /= array->dimensions[axis];
+    max_lines = PyArray_SIZE(array);
+    if (PyArray_NDIM(array) > 0 && PyArray_DIM(array, axis) > 0) {
+        max_lines /= PyArray_DIM(array, axis);
+    }
     /* calculate the space needed for one line, including space to
          support the boundary conditions: */
-    line_size = sizeof(double) * (array->dimensions[axis] + size1 + size2);
+    line_size = sizeof(double) * (PyArray_DIM(array, axis) + size1 + size2);
     /* if *lines < 1, no number of lines is proposed, so we calculate it
          from the maximum size allowed: */
     if (*lines < 1) {
@@ -160,11 +158,8 @@ int NI_InitLineBuffer(PyArrayObject *array, int axis, npy_intp size1,
         NI_ExtendMode extend_mode, double extend_value, NI_LineBuffer *buffer)
 {
     npy_intp line_length = 0, array_lines = 0, size;
-    int ii;
 
-    size = 1;
-    for(ii = 0; ii < array->nd; ii++)
-        size *= array->dimensions[ii];
+    size = PyArray_SIZE(array);
     /* check if the buffer is big enough: */
     if (size > 0 && buffer_lines < 1) {
         PyErr_SetString(PyExc_RuntimeError, "buffer too small");
@@ -175,166 +170,147 @@ int NI_InitLineBuffer(PyArrayObject *array, int axis, npy_intp size1,
         return 0;
     if (!NI_LineIterator(&(buffer->iterator), axis))
         return 0;
-    line_length = array->nd > 0 ? array->dimensions[axis] : 1;
-    if (line_length > 0)
+    line_length = PyArray_NDIM(array) > 0 ? PyArray_DIM(array, axis) : 1;
+    if (line_length > 0) {
         array_lines = line_length > 0 ? size / line_length : 1;
+    }
     /* initialize the buffer structure: */
     buffer->array_data = (void *)PyArray_DATA(array);
     buffer->buffer_data = buffer_data;
     buffer->buffer_lines = buffer_lines;
-    buffer->array_type = NI_CanonicalType(PyArray_DESCR(array)->type_num);
+    buffer->array_type = NI_CanonicalType(PyArray_TYPE(array));
     buffer->array_lines = array_lines;
     buffer->next_line = 0;
     buffer->size1 = size1;
     buffer->size2 = size2;
     buffer->line_length = line_length;
-    buffer->line_stride = array->nd > 0 ? array->strides[axis] : 0;
+    buffer->line_stride =
+                    PyArray_NDIM(array) > 0 ? PyArray_STRIDE(array, axis) : 0;
     buffer->extend_mode = extend_mode;
     buffer->extend_value = extend_value;
     return 1;
 }
 
 /* Extend a line in memory to implement boundary conditions: */
-int NI_ExtendLine(double *line, npy_intp length, npy_intp size1,
-                  npy_intp size2, NI_ExtendMode mode, double constant_value, char * errmsg)
+int NI_ExtendLine(double *buffer, npy_intp line_length,
+                  npy_intp size_before, npy_intp size_after,
+                  NI_ExtendMode extend_mode, double extend_value)
 {
-    npy_intp ii, jj, length1, nextend, rextend;
-    double *l1, *l2, *l3, val;
+    double *first = buffer + size_before;
+    double *last = first + line_length;
+    double *src, *dst, val;
 
-    switch (mode) {
-    case NI_EXTEND_WRAP:
-        /* deal with situation where data is shorter than needed
-           for filling the line */
-        nextend = size1 / length;
-        rextend = size1 - nextend * length;
-        l1 = line + size1 + length - rextend;
-        l2 = line;
-        for(ii = 0; ii < rextend; ii++)
-            *l2++ = *l1++;
-        for(ii = 0; ii < nextend; ii++) {
-            l1 = line + size1;
-            for(jj = 0; jj < length; jj++)
-                *l2++ = *l1++;
-        }
-        nextend = size2 / length;
-        rextend = size2 - nextend * length;
-        l1 = line + size1;
-        l2 = line + size1 + length;
-        for(ii = 0; ii < nextend; ii++) {
-            l3 = l1;
-            for(jj = 0; jj < length; jj++)
-                *l2++ = *l3++;
-        }
-        for(ii = 0; ii < rextend; ii++)
-            *l2++ = *l1++;
-        break;
-    case NI_EXTEND_MIRROR:
-        if (length == 1) {
-            l1 = line;
-            val = line[size1];
-            for(ii = 0; ii < size1; ii++)
-                *l1++ = val;
-            l1 = line + size1 + length;
-            val = line[size1 + length - 1];
-            for(ii = 0; ii < size2; ii++)
-                *l1++ = val;
-        } else {
-            length1 = length - 1;
-            nextend = size1 / length1;
-            rextend = size1 - nextend * length1;
-            l1 = line + size1 + 1;
-            l2 = l1 - 2;
-            for(ii = 0; ii < nextend; ii++) {
-                l3 = l1;
-                for(jj = 0; jj < length1; jj++)
-                    *l2-- = *l3++;
-                l1 -= length1;
+    switch (extend_mode) {
+        /* aaaaaaaa|abcd|dddddddd */
+        case NI_EXTEND_NEAREST:
+            src = first;
+            dst = buffer;
+            val = *src;
+            while (size_before--) {
+                *dst++ = val;
             }
-            for(ii = 0; ii < rextend; ii++)
-                *l2-- = *l1++;
-            nextend = size2 / length1;
-            rextend = size2 - nextend * length1;
-            l1 = line + size1 + length1 - 1;
-            l2 = l1 + 2;
-            for(ii = 0; ii < nextend; ii++) {
-                l3 = l1;
-                for(jj = 0; jj < length1; jj++)
-                    *l2++ = *l3--;
-                l1 += length1;
+            src = last - 1;
+            dst = last;
+            val = *src;
+            while (size_after--) {
+                *dst++ = val;
             }
-            for(ii = 0; ii < rextend; ii++)
-                *l2++ = *l1--;
-        }
-        break;
-    case NI_EXTEND_REFLECT:
-        nextend = size1 / length;
-        rextend = size1 - nextend * length;
-        l1 = line + size1;
-        l2 = l1 - 1;
-        for(ii = 0; ii < nextend; ii++) {
-            l3 = l1;
-            for(jj = 0; jj < length; jj++)
-                *l2-- = *l3++;
-            l1 -= length;
-        }
-        l3 = l1;
-        for(ii = 0; ii < rextend; ii++)
-            *l2-- = *l3++;
-        nextend = size2 / length;
-        rextend = size2 - nextend * length;
-        l1 = line + size1 + length - 1;
-        l2 = l1 + 1;
-        for(ii = 0; ii < nextend; ii++) {
-            l3 = l1;
-            for(jj = 0; jj < length; jj++)
-                *l2++ = *l3--;
-            l1 += length;
-        }
-        for(ii = 0; ii < rextend; ii++)
-            *l2++ = *l1--;
-        break;
-    case NI_EXTEND_NEAREST:
-        l1 = line;
-        val = line[size1];
-        for(ii = 0; ii < size1; ii++)
-            *l1++ = val;
-        l1 = line + size1 + length;
-        val = line[size1 + length - 1];
-        for(ii = 0; ii < size2; ii++)
-            *l1++ = val;
-        break;
-    case NI_EXTEND_CONSTANT:
-        l1 = line;
-        for(ii = 0; ii < size1; ii++)
-            *l1++ = constant_value;
-        l1 = line + size1 + length;
-        for(ii = 0; ii < size2; ii++)
-            *l1++ = constant_value;
-        break;
-    default:
-        PyOS_snprintf(errmsg, NI_MAX_ERR_MSG, "mode not supported");
-        return 0;
+            break;
+        /* abcdabcd|abcd|abcdabcd */
+        case NI_EXTEND_WRAP:
+            src = last - 1;
+            dst = first - 1;
+            while (size_before--) {
+                *dst-- = *src--;
+            }
+            src = first;
+            dst = last;
+            while (size_after--) {
+                *dst++ = *src++;
+            }
+            break;
+        /* abcddcba|abcd|dcbaabcd */
+        case NI_EXTEND_REFLECT:
+            src = first;
+            dst = first - 1;
+            while (size_before && src < last) {
+                *dst-- = *src++;
+                --size_before;
+            }
+            src = last - 1;
+            while (size_before--) {
+                *dst-- = *src--;
+            }
+            src = last - 1;
+            dst = last;
+            while (size_after && src >= first) {
+                *dst++ = *src--;
+                --size_after;
+            }
+            src = first;
+            while (size_after--) {
+                *dst++ = *src++;
+            }
+            break;
+        /* cbabcdcb|abcd|cbabcdcb */
+        case NI_EXTEND_MIRROR:
+            src = first + 1;
+            dst = first - 1;
+            while (size_before && src < last) {
+                *dst-- = *src++;
+                --size_before;
+            }
+            src = last - 2;
+            while (size_before--) {
+                *dst-- = *src--;
+            }
+            src = last - 2;
+            dst = last;
+            while (size_after && src >= first) {
+                *dst++ = *src--;
+                --size_after;
+            }
+            src = first + 1;
+            while (size_after--) {
+                *dst++ = *src++;
+            }
+            break;
+        /* kkkkkkkk|abcd]kkkkkkkk */
+        case NI_EXTEND_CONSTANT:
+            val = extend_value;
+            dst = buffer;
+            while (size_before--) {
+                *dst++ = val;
+            }
+            dst = last;
+            while (size_after--) {
+                *dst++ = val;
+            }
+            break;
+        default:
+            PyErr_Format(PyExc_RuntimeError,
+                         "mode %d not supported", extend_mode);
+            return 0;
     }
     return 1;
 }
 
 
-#define CASE_COPY_DATA_TO_LINE(_pi, _po, _length, _stride, _type) \
-case t ## _type:                                                  \
-{                                                                 \
-    npy_intp _ii;                                                  \
-    for(_ii = 0; _ii < _length; _ii++) {                            \
-        _po[_ii] = (double)*(_type*)_pi;                              \
-        _pi += _stride;                                               \
-    }                                                               \
-}                                                                 \
+#define CASE_COPY_DATA_TO_LINE(_TYPE, _type, _pi, _po, _length, _stride) \
+case _TYPE:                                                              \
+{                                                                        \
+    npy_intp _ii;                                                        \
+    for (_ii = 0; _ii < _length; ++_ii) {                                \
+        _po[_ii] = (double)*(_type *)_pi;                                \
+        _pi += _stride;                                                  \
+    }                                                                    \
+}                                                                        \
 break
 
 
 /* Copy a line from an array to a buffer: */
 int NI_ArrayToLineBuffer(NI_LineBuffer *buffer,
-                         npy_intp *number_of_lines, int *more,
-                         char * errmsg)
+                         npy_intp *number_of_lines, int *more)
 {
     double *pb = buffer->buffer_data;
     char *pa;
@@ -349,33 +325,47 @@ int NI_ArrayToLineBuffer(NI_LineBuffer *buffer,
         pa = buffer->array_data;
         /* copy the data from the array to the buffer: */
         switch (buffer->array_type) {
-            CASE_COPY_DATA_TO_LINE(pa, pb, length, buffer->line_stride, Bool);
-            CASE_COPY_DATA_TO_LINE(pa, pb, length, buffer->line_stride, UInt8);
-            CASE_COPY_DATA_TO_LINE(pa, pb, length, buffer->line_stride, UInt16);
-            CASE_COPY_DATA_TO_LINE(pa, pb, length, buffer->line_stride, UInt32);
-#if HAS_UINT64
-            CASE_COPY_DATA_TO_LINE(pa, pb, length, buffer->line_stride, UInt64);
-#endif
-            CASE_COPY_DATA_TO_LINE(pa, pb, length, buffer->line_stride, Int8);
-            CASE_COPY_DATA_TO_LINE(pa, pb, length, buffer->line_stride, Int16);
-            CASE_COPY_DATA_TO_LINE(pa, pb, length, buffer->line_stride, Int32);
-            CASE_COPY_DATA_TO_LINE(pa, pb, length, buffer->line_stride, Int64);
-            CASE_COPY_DATA_TO_LINE(pa, pb, length, buffer->line_stride, Float32);
-            CASE_COPY_DATA_TO_LINE(pa, pb, length, buffer->line_stride, Float64);
+            CASE_COPY_DATA_TO_LINE(NPY_BOOL, npy_bool,
+                                   pa, pb, length, buffer->line_stride);
+            CASE_COPY_DATA_TO_LINE(NPY_UBYTE, npy_ubyte,
+                                   pa, pb, length, buffer->line_stride);
+            CASE_COPY_DATA_TO_LINE(NPY_USHORT, npy_ushort,
+                                   pa, pb, length, buffer->line_stride);
+            CASE_COPY_DATA_TO_LINE(NPY_UINT, npy_uint,
+                                   pa, pb, length, buffer->line_stride);
+            CASE_COPY_DATA_TO_LINE(NPY_ULONG, npy_ulong,
+                                   pa, pb, length, buffer->line_stride);
+            CASE_COPY_DATA_TO_LINE(NPY_ULONGLONG, npy_ulonglong,
+                                   pa, pb, length, buffer->line_stride);
+            CASE_COPY_DATA_TO_LINE(NPY_BYTE, npy_byte,
+                                   pa, pb, length, buffer->line_stride);
+            CASE_COPY_DATA_TO_LINE(NPY_SHORT, npy_short,
+                                   pa, pb, length, buffer->line_stride);
+            CASE_COPY_DATA_TO_LINE(NPY_INT, npy_int,
+                                   pa, pb, length, buffer->line_stride);
+            CASE_COPY_DATA_TO_LINE(NPY_LONG, npy_long,
+                                   pa, pb, length, buffer->line_stride);
+            CASE_COPY_DATA_TO_LINE(NPY_LONGLONG, npy_longlong,
+                                   pa, pb, length, buffer->line_stride);
+            CASE_COPY_DATA_TO_LINE(NPY_FLOAT, npy_float,
+                                   pa, pb, length, buffer->line_stride);
+            CASE_COPY_DATA_TO_LINE(NPY_DOUBLE, npy_double,
+                                   pa, pb, length, buffer->line_stride);
         default:
-            PyOS_snprintf(errmsg, NI_MAX_ERR_MSG, "array type %d not supported",
-                          buffer->array_type);
+            PyErr_Format(PyExc_RuntimeError, "array type %d not supported",
+                         buffer->array_type);
             return 0;
         }
         /* goto next line in the array: */
         NI_ITERATOR_NEXT(buffer->iterator, buffer->array_data);
         /* implement boundary conditions to the line: */
-        if (buffer->size1 + buffer->size2 > 0)
+        if (buffer->size1 + buffer->size2 > 0) {
             if (!NI_ExtendLine(pb - buffer->size1, length, buffer->size1,
-                                                 buffer->size2, buffer->extend_mode,
-                                                 buffer->extend_value,
-                                                 errmsg))
+                               buffer->size2, buffer->extend_mode,
+                               buffer->extend_value)) {
                 return 0;
+            }
+        }
         /* The number of the array lines copied: */
         ++(buffer->next_line);
         /* keep track of (and return) the number of lines in the buffer: */
@@ -387,19 +377,19 @@ int NI_ArrayToLineBuffer(NI_LineBuffer *buffer,
     return 1;
 }
 
-#define CASE_COPY_LINE_TO_DATA(_pi, _po, _length, _stride, _type) \
-case t ## _type:                                                  \
-{                                                                 \
-    npy_intp _ii;                                                  \
-    for(_ii = 0; _ii < _length; _ii++) {                            \
-        *(_type*)_po = (_type)_pi[_ii];                               \
-        _po += _stride;                                               \
-    }                                                               \
-}                                                                 \
+#define CASE_COPY_LINE_TO_DATA(_TYPE, _type, _pi, _po, _length, _stride) \
+case _TYPE:                                                              \
+{                                                                        \
+    npy_intp _ii;                                                        \
+    for (_ii = 0; _ii < _length; ++_ii) {                                \
+        *(_type *)_po = (_type)_pi[_ii];                                 \
+        _po += _stride;                                                  \
+    }                                                                    \
+}                                                                        \
 break
 
 /* Copy a line from a buffer to an array: */
-int NI_LineBufferToArray(NI_LineBuffer *buffer, char * errmsg)
+int NI_LineBufferToArray(NI_LineBuffer *buffer)
 {
     double *pb = buffer->buffer_data;
     char *pa;
@@ -413,21 +403,35 @@ int NI_LineBufferToArray(NI_LineBuffer *buffer, char * errmsg)
         pa = buffer->array_data;
         /* copy data from the buffer to the array: */
         switch (buffer->array_type) {
-            CASE_COPY_LINE_TO_DATA(pb, pa, length, buffer->line_stride, Bool);
-            CASE_COPY_LINE_TO_DATA(pb, pa, length, buffer->line_stride, UInt8);
-            CASE_COPY_LINE_TO_DATA(pb, pa, length, buffer->line_stride, UInt16);
-            CASE_COPY_LINE_TO_DATA(pb, pa, length, buffer->line_stride, UInt32);
-#if HAS_UINT64
-            CASE_COPY_LINE_TO_DATA(pb, pa, length, buffer->line_stride, UInt64);
-#endif
-            CASE_COPY_LINE_TO_DATA(pb, pa, length, buffer->line_stride, Int8);
-            CASE_COPY_LINE_TO_DATA(pb, pa, length, buffer->line_stride, Int16);
-            CASE_COPY_LINE_TO_DATA(pb, pa, length, buffer->line_stride, Int32);
-            CASE_COPY_LINE_TO_DATA(pb, pa, length, buffer->line_stride, Int64);
-            CASE_COPY_LINE_TO_DATA(pb, pa, length, buffer->line_stride, Float32);
-            CASE_COPY_LINE_TO_DATA(pb, pa, length, buffer->line_stride, Float64);
+            CASE_COPY_LINE_TO_DATA(NPY_BOOL, npy_bool,
+                                   pb, pa, length, buffer->line_stride);
+            CASE_COPY_LINE_TO_DATA(NPY_UBYTE, npy_ubyte,
+                                   pb, pa, length, buffer->line_stride);
+            CASE_COPY_LINE_TO_DATA(NPY_USHORT, npy_ushort,
+                                   pb, pa, length, buffer->line_stride);
+            CASE_COPY_LINE_TO_DATA(NPY_UINT, npy_uint,
+                                   pb, pa, length, buffer->line_stride);
+            CASE_COPY_LINE_TO_DATA(NPY_ULONG, npy_ulong,
+                                   pb, pa, length, buffer->line_stride);
+            CASE_COPY_LINE_TO_DATA(NPY_ULONGLONG, npy_ulonglong,
+                                   pb, pa, length, buffer->line_stride);
+            CASE_COPY_LINE_TO_DATA(NPY_BYTE, npy_byte,
+                                   pb, pa, length, buffer->line_stride);
+            CASE_COPY_LINE_TO_DATA(NPY_SHORT, npy_short,
+                                   pb, pa, length, buffer->line_stride);
+            CASE_COPY_LINE_TO_DATA(NPY_INT, npy_int,
+                                   pb, pa, length, buffer->line_stride);
+            CASE_COPY_LINE_TO_DATA(NPY_LONG, npy_long,
+                                   pb, pa, length, buffer->line_stride);
+            CASE_COPY_LINE_TO_DATA(NPY_LONGLONG, npy_longlong,
+                                   pb, pa, length, buffer->line_stride);
+            CASE_COPY_LINE_TO_DATA(NPY_FLOAT, npy_float,
+                                   pb, pa, length, buffer->line_stride);
+            CASE_COPY_LINE_TO_DATA(NPY_DOUBLE, npy_double,
+                                   pb, pa, length, buffer->line_stride);
         default:
-            PyOS_snprintf(errmsg, NI_MAX_ERR_MSG, "array type not supported");
+            PyErr_Format(PyExc_RuntimeError, "array type %d not supported",
+                         buffer->array_type);
             return 0;
         }
         /* move to the next line in the array: */
@@ -451,7 +455,7 @@ NI_InitFilterIterator(int rank, npy_intp *filter_shape,
                     npy_intp *origins, NI_FilterIterator *iterator)
 {
     int ii;
-    npy_intp fshape[MAXDIM], forigins[MAXDIM];
+    npy_intp fshape[NPY_MAXDIMS], forigins[NPY_MAXDIMS];
 
     for(ii = 0; ii < rank; ii++) {
         fshape[ii] = *filter_shape++;
@@ -482,7 +486,7 @@ NI_InitFilterIterator(int rank, npy_intp *filter_shape,
 
 /* Calculate the offsets to the filter points, for all border regions and
      the interior of the array: */
-int NI_InitFilterOffsets(PyArrayObject *array, Bool *footprint,
+int NI_InitFilterOffsets(PyArrayObject *array, npy_bool *footprint,
          npy_intp *filter_shape, npy_intp* origins,
          NI_ExtendMode mode, npy_intp **offsets, npy_intp *border_flag_value,
          npy_intp **coordinate_offsets)
@@ -490,12 +494,12 @@ int NI_InitFilterOffsets(PyArrayObject *array, Bool *footprint,
     int rank, ii;
     npy_intp kk, ll, filter_size = 1, offsets_size = 1, max_size = 0;
     npy_intp max_stride = 0, *ashape = NULL, *astrides = NULL;
-    npy_intp footprint_size = 0, coordinates[MAXDIM], position[MAXDIM];
-    npy_intp fshape[MAXDIM], forigins[MAXDIM], *po, *pc = NULL;
+    npy_intp footprint_size = 0, coordinates[NPY_MAXDIMS], position[NPY_MAXDIMS];
+    npy_intp fshape[NPY_MAXDIMS], forigins[NPY_MAXDIMS], *po, *pc = NULL;
 
-    rank = array->nd;
-    ashape = array->dimensions;
-    astrides = array->strides;
+    rank = PyArray_NDIM(array);
+    ashape = PyArray_DIMS(array);
+    astrides = PyArray_STRIDES(array);
     for(ii = 0; ii < rank; ii++) {
         fshape[ii] = *filter_shape++;
         forigins[ii] = origins ? *origins++ : 0;

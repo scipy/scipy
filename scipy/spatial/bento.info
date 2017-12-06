@@ -35,3 +35,9 @@ Library:
             qhull/src/usermem_r.c,
             qhull/src/userprintf_r.c,
             qhull/src/userprintf_rbox_r.c
+    Extension: _voronoi
+        Sources:
+            _voronoi.c
+    Extension: _hausdorff
+        Sources:
+            _hausdorff.c

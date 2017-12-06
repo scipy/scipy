@@ -253,7 +253,8 @@ class VarReader4(object):
         '''
         res = self.read_sub_array(hdr)
         tmp = res[:-1,:]
-        dims = res[-1,0:2]
+        # All numbers are float64 in Matlab, but Scipy sparse expects int shape
+        dims = (int(res[-1,0]), int(res[-1,1]))
         I = np.ascontiguousarray(tmp[:,0],dtype='intc')  # fixes byte order also
         J = np.ascontiguousarray(tmp[:,1],dtype='intc')
         I -= 1  # for 1-based indexing

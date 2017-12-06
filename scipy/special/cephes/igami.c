@@ -1,6 +1,6 @@
 /*                                                     igami()
  *
- *      Inverse of complemented imcomplete Gamma integral
+ *      Inverse of complemented incomplete Gamma integral
  *
  *
  *
@@ -24,7 +24,7 @@
  *  where
  *
  *  t = 1 - d - ndtri(p) sqrt(d)
- * 
+ *
  * and
  *
  *  d = 1/9a,
@@ -66,15 +66,16 @@ double a, y0;
     yh = 1.0;
     dithresh = 5.0 * MACHEP;
 
+    if (npy_isnan(a) || npy_isnan(y0)) {
+        return NPY_NAN;
+    }
     if ((y0 < 0.0) || (y0 > 1.0) || (a <= 0)) {
 	mtherr("igami", DOMAIN);
-	return (NPY_NAN);
+	return NPY_NAN;
     }
-
     if (y0 == 0.0) {
-	return (NPY_INFINITY);
+	return NPY_INFINITY;
     }
-
     if (y0 == 1.0) {
 	return 0.0;
     }

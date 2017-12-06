@@ -6,14 +6,13 @@ To run tests locally:
 
 """
 
-import warnings
 import threading
 
 import numpy as np
 
-from numpy.testing import assert_allclose, \
-        assert_array_almost_equal_nulp, run_module_suite, \
-        assert_raises, assert_equal, assert_array_equal
+from numpy.testing import (assert_allclose, assert_array_almost_equal_nulp,
+                           assert_equal, assert_array_equal)
+from pytest import raises as assert_raises
 
 from numpy import dot, conj, random
 from scipy.linalg import eig, eigh
@@ -25,19 +24,6 @@ from scipy.sparse.linalg.eigen.arpack import eigs, eigsh, svds, \
 from scipy.linalg import svd, hilbert
 
 from scipy._lib._gcutils import assert_deallocated
-
-
-# eigs() and eigsh() are called many times, so apply a filter for the warnings
-# they generate here.
-_eigs_warn_msg = "Single-precision types in `eigs` and `eighs`"
-
-
-def setup_module():
-    warnings.filterwarnings("ignore", message=_eigs_warn_msg)
-
-
-def teardown_module():
-    warnings.filterwarnings("default", message=_eigs_warn_msg)
 
 
 # precision for tests
@@ -390,8 +376,8 @@ def test_symmetric_modes():
                 for mattype in params.mattypes:
                     for (sigma, modes) in params.sigmas_modes.items():
                         for mode in modes:
-                            yield (eval_evec, symmetric, D, typ, k, which,
-                                    None, sigma, mattype, None, mode)
+                            eval_evec(symmetric, D, typ, k, which,
+                                      None, sigma, mattype, None, mode)
 
 
 def test_hermitian_modes():
@@ -405,8 +391,8 @@ def test_hermitian_modes():
                     continue  # BE invalid for complex
                 for mattype in params.mattypes:
                     for sigma in params.sigmas_modes:
-                        yield (eval_evec, symmetric, D, typ, k, which,
-                                None, sigma, mattype)
+                        eval_evec(symmetric, D, typ, k, which,
+                                  None, sigma, mattype)
 
 
 def test_symmetric_starting_vector():
@@ -416,7 +402,7 @@ def test_symmetric_starting_vector():
         for D in params.real_test_cases:
             for typ in 'fd':
                 v0 = random.rand(len(D['v0'])).astype(typ)
-                yield (eval_evec, symmetric, D, typ, k, 'LM', v0)
+                eval_evec(symmetric, D, typ, k, 'LM', v0)
 
 
 def test_symmetric_no_convergence():
@@ -444,8 +430,8 @@ def test_real_nonsymmetric_modes():
                 for mattype in params.mattypes:
                     for sigma, OPparts in params.sigmas_OPparts.items():
                         for OPpart in OPparts:
-                            yield (eval_evec, symmetric, D, typ, k, which,
-                                   None, sigma, mattype, OPpart)
+                            eval_evec(symmetric, D, typ, k, which,
+                                      None, sigma, mattype, OPpart)
 
 
 def test_complex_nonsymmetric_modes():
@@ -457,8 +443,8 @@ def test_complex_nonsymmetric_modes():
             for which in params.which:
                 for mattype in params.mattypes:
                     for sigma in params.sigmas_OPparts:
-                        yield (eval_evec, symmetric, D, typ, k, which,
-                               None, sigma, mattype)
+                        eval_evec(symmetric, D, typ, k, which,
+                                  None, sigma, mattype)
 
 
 def test_standard_nonsymmetric_starting_vector():
@@ -471,7 +457,7 @@ def test_standard_nonsymmetric_starting_vector():
                 A = d['mat']
                 n = A.shape[0]
                 v0 = random.rand(n).astype(typ)
-                yield (eval_evec, symmetric, d, typ, k, "LM", v0, sigma)
+                eval_evec(symmetric, d, typ, k, "LM", v0, sigma)
 
 
 def test_general_nonsymmetric_starting_vector():
@@ -484,7 +470,7 @@ def test_general_nonsymmetric_starting_vector():
                 A = d['mat']
                 n = A.shape[0]
                 v0 = random.rand(n).astype(typ)
-                yield (eval_evec, symmetric, d, typ, k, "LM", v0, sigma)
+                eval_evec(symmetric, d, typ, k, "LM", v0, sigma)
 
 
 def test_standard_nonsymmetric_no_convergence():
@@ -909,6 +895,3 @@ def test_regression_arpackng_1315():
         assert_allclose(np.sort(w), np.sort(w0[-9:]),
                         rtol=1e-4)
 
-
-if __name__ == "__main__":
-    run_module_suite()

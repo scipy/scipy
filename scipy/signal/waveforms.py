@@ -10,6 +10,9 @@ import numpy as np
 from numpy import asarray, zeros, place, nan, mod, pi, extract, log, sqrt, \
     exp, cos, sin, polyval, polyint
 
+from scipy._lib.six import string_types
+
+
 __all__ = ['sawtooth', 'square', 'gausspulse', 'chirp', 'sweep_poly',
            'unit_impulse']
 
@@ -234,13 +237,16 @@ def gausspulse(t, fc=1000, bw=0.5, bwr=-6, tpr=-60, retquad=False,
     # pi^2/a * fc^2 * bw^2 /4=-log(ref)
     a = -(pi * fc * bw) ** 2 / (4.0 * log(ref))
 
-    if t == 'cutoff':  # compute cut_off point
-        #  Solve exp(-a tc**2) = tref  for tc
-        #   tc = sqrt(-log(tref) / a) where tref = 10^(tpr/20)
-        if tpr >= 0:
-            raise ValueError("Reference level for time cutoff must be < 0 dB")
-        tref = pow(10.0, tpr / 20.0)
-        return sqrt(-log(tref) / a)
+    if isinstance(t, string_types):
+        if t == 'cutoff':  # compute cut_off point
+            #  Solve exp(-a tc**2) = tref  for tc
+            #   tc = sqrt(-log(tref) / a) where tref = 10^(tpr/20)
+            if tpr >= 0:
+                raise ValueError("Reference level for time cutoff must be < 0 dB")
+            tref = pow(10.0, tpr / 20.0)
+            return sqrt(-log(tref) / a)
+        else:
+            raise ValueError("If `t` is a string, it must be 'cutoff'")
 
     yenv = exp(-a * t * t)
     yI = yenv * cos(2 * pi * fc * t)
@@ -338,6 +344,83 @@ def chirp(t, f0, t1, f1, method='linear', phi=0, vertex_zero=True):
 
         f0 and f1 must be nonzero.
 
+    Examples
+    --------
+    The following will be used in the examples:
+
+    >>> from scipy.signal import chirp, spectrogram
+    >>> import matplotlib.pyplot as plt
+
+    For the first example, we'll plot the waveform for a linear chirp
+    from 6 Hz to 1 Hz over 10 seconds:
+
+    >>> t = np.linspace(0, 10, 5001)
+    >>> w = chirp(t, f0=6, f1=1, t1=10, method='linear')
+    >>> plt.plot(t, w)
+    >>> plt.title("Linear Chirp, f(0)=6, f(10)=1")
+    >>> plt.xlabel('t (sec)')
+    >>> plt.show()
+
+    For the remaining examples, we'll use higher frequency ranges,
+    and demonstrate the result using `scipy.signal.spectrogram`.
+    We'll use a 10 second interval sampled at 8000 Hz.
+
+    >>> fs = 8000
+    >>> T = 10
+    >>> t = np.linspace(0, T, T*fs, endpoint=False)
+
+    Quadratic chirp from 1500 Hz to 250 Hz over 10 seconds
+    (vertex of the parabolic curve of the frequency is at t=0):
+
+    >>> w = chirp(t, f0=1500, f1=250, t1=10, method='quadratic')
+    >>> ff, tt, Sxx = spectrogram(w, fs=fs, noverlap=256, nperseg=512,
+    ...                           nfft=2048)
+    >>> plt.pcolormesh(tt, ff[:513], Sxx[:513], cmap='gray_r')
+    >>> plt.title('Quadratic Chirp, f(0)=1500, f(10)=250')
+    >>> plt.xlabel('t (sec)')
+    >>> plt.ylabel('Frequency (Hz)')
+    >>> plt.grid()
+    >>> plt.show()
+
+    Quadratic chirp from 1500 Hz to 250 Hz over 10 seconds
+    (vertex of the parabolic curve of the frequency is at t=10):
+
+    >>> w = chirp(t, f0=1500, f1=250, t1=10, method='quadratic',
+    ...           vertex_zero=False)
+    >>> ff, tt, Sxx = spectrogram(w, fs=fs, noverlap=256, nperseg=512,
+    ...                           nfft=2048)
+    >>> plt.pcolormesh(tt, ff[:513], Sxx[:513], cmap='gray_r')
+    >>> plt.title('Quadratic Chirp, f(0)=2500, f(10)=250\\n' +
+    ...           '(vertex_zero=False)')
+    >>> plt.xlabel('t (sec)')
+    >>> plt.ylabel('Frequency (Hz)')
+    >>> plt.grid()
+    >>> plt.show()
+
+    Logarithmic chirp from 1500 Hz to 250 Hz over 10 seconds:
+
+    >>> w = chirp(t, f0=1500, f1=250, t1=10, method='logarithmic')
+    >>> ff, tt, Sxx = spectrogram(w, fs=fs, noverlap=256, nperseg=512,
+    ...                           nfft=2048)
+    >>> plt.pcolormesh(tt, ff[:513], Sxx[:513], cmap='gray_r')
+    >>> plt.title('Logarithmic Chirp, f(0)=1500, f(10)=250')
+    >>> plt.xlabel('t (sec)')
+    >>> plt.ylabel('Frequency (Hz)')
+    >>> plt.grid()
+    >>> plt.show()
+
+    Hyperbolic chirp from 1500 Hz to 250 Hz over 10 seconds:
+
+    >>> w = chirp(t, f0=1500, f1=250, t1=10, method='hyperbolic')
+    >>> ff, tt, Sxx = spectrogram(w, fs=fs, noverlap=256, nperseg=512,
+    ...                           nfft=2048)
+    >>> plt.pcolormesh(tt, ff[:513], Sxx[:513], cmap='gray_r')
+    >>> plt.title('Hyperbolic Chirp, f(0)=1500, f(10)=250')
+    >>> plt.xlabel('t (sec)')
+    >>> plt.ylabel('Frequency (Hz)')
+    >>> plt.grid()
+    >>> plt.show()
+
     """
     # 'phase' is computed in _chirp_phase, to make testing easier.
     phase = _chirp_phase(t, f0, t1, f1, method, vertex_zero)
@@ -350,7 +433,7 @@ def _chirp_phase(t, f0, t1, f1, method='linear', vertex_zero=True):
     """
     Calculate the phase used by chirp_phase to generate its output.
 
-    See `chirp_phase` for a description of the arguments.
+    See `chirp` for a description of the arguments.
 
     """
     t = asarray(t)
@@ -460,6 +543,33 @@ def sweep_poly(t, poly, phi=0):
 
     where `phase` is the integral from 0 to `t` of ``2 * pi * f(t)``,
     ``f(t)`` as defined above.
+
+    Examples
+    --------
+    Compute the waveform with instantaneous frequency::
+
+        f(t) = 0.025*t**3 - 0.36*t**2 + 1.25*t + 2
+
+    over the interval 0 <= t <= 10.
+
+    >>> from scipy.signal import sweep_poly
+    >>> p = np.poly1d([0.025, -0.36, 1.25, 2.0])
+    >>> t = np.linspace(0, 10, 5001)
+    >>> w = sweep_poly(t, p)
+
+    Plot it:
+
+    >>> import matplotlib.pyplot as plt
+    >>> plt.subplot(2, 1, 1)
+    >>> plt.plot(t, w)
+    >>> plt.title("Sweep Poly\\nwith frequency " +
+    ...           "$f(t) = 0.025t^3 - 0.36t^2 + 1.25t + 2$")
+    >>> plt.subplot(2, 1, 2)
+    >>> plt.plot(t, p(t), 'r', label='f(t)')
+    >>> plt.legend()
+    >>> plt.xlabel('t')
+    >>> plt.tight_layout()
+    >>> plt.show()
 
     """
     # 'phase' is computed in _sweep_poly_phase, to make testing easier.

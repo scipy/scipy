@@ -16,93 +16,83 @@ else:
     from cStringIO import StringIO as cStringIO
 
 from tempfile import mkstemp
+from contextlib import contextmanager
 
 import numpy as np
 
-from numpy.testing import (assert_, assert_equal, assert_raises,
-                           run_module_suite)
+from numpy.testing import assert_, assert_equal
+from pytest import raises as assert_raises
 
-from scipy.io.matlab.streams import make_stream, \
-    GenericStream, cStringStream, FileStream, ZlibInputStream, \
-    _read_into, _read_string
-
-
-fs = None
-gs = None
-cs = None
-fname = None
+from scipy.io.matlab.streams import (make_stream,
+    GenericStream, cStringStream, FileStream, ZlibInputStream,
+    _read_into, _read_string)
 
 
-def setup():
+@contextmanager
+def setup_test_file():
     val = b'a\x00string'
-    global fs, gs, cs, fname
     fd, fname = mkstemp()
-    fs = os.fdopen(fd, 'wb')
-    fs.write(val)
-    fs.close()
-    fs = open(fname, 'rb')
-    gs = BytesIO(val)
-    cs = cStringIO(val)
 
-
-def teardown():
-    global fname, fs
-    fs.close()
-    del fs
+    with os.fdopen(fd, 'wb') as fs:
+        fs.write(val)
+    with open(fname, 'rb') as fs:
+        gs = BytesIO(val)
+        cs = cStringIO(val)
+        yield fs, gs, cs
     os.unlink(fname)
 
 
 def test_make_stream():
-    global fs, gs, cs
-    # test stream initialization
-    assert_(isinstance(make_stream(gs), GenericStream))
-    if sys.version_info[0] < 3:
-        assert_(isinstance(make_stream(cs), cStringStream))
-        assert_(isinstance(make_stream(fs), FileStream))
+    with setup_test_file() as (fs, gs, cs):
+        # test stream initialization
+        assert_(isinstance(make_stream(gs), GenericStream))
+        if sys.version_info[0] < 3:
+            assert_(isinstance(make_stream(cs), cStringStream))
+            assert_(isinstance(make_stream(fs), FileStream))
 
 
 def test_tell_seek():
-    global fs, gs, cs
-    for s in (fs, gs, cs):
-        st = make_stream(s)
-        res = st.seek(0)
-        yield assert_equal, res, 0
-        yield assert_equal, st.tell(), 0
-        res = st.seek(5)
-        yield assert_equal, res, 0
-        yield assert_equal, st.tell(), 5
-        res = st.seek(2, 1)
-        yield assert_equal, res, 0
-        yield assert_equal, st.tell(), 7
-        res = st.seek(-2, 2)
-        yield assert_equal, res, 0
-        yield assert_equal, st.tell(), 6
+    with setup_test_file() as (fs, gs, cs):
+        for s in (fs, gs, cs):
+            st = make_stream(s)
+            res = st.seek(0)
+            assert_equal(res, 0)
+            assert_equal(st.tell(), 0)
+            res = st.seek(5)
+            assert_equal(res, 0)
+            assert_equal(st.tell(), 5)
+            res = st.seek(2, 1)
+            assert_equal(res, 0)
+            assert_equal(st.tell(), 7)
+            res = st.seek(-2, 2)
+            assert_equal(res, 0)
+            assert_equal(st.tell(), 6)
 
 
 def test_read():
-    global fs, gs, cs
-    for s in (fs, gs, cs):
-        st = make_stream(s)
-        st.seek(0)
-        res = st.read(-1)
-        yield assert_equal, res, b'a\x00string'
-        st.seek(0)
-        res = st.read(4)
-        yield assert_equal, res, b'a\x00st'
-        # read into
-        st.seek(0)
-        res = _read_into(st, 4)
-        yield assert_equal, res, b'a\x00st'
-        res = _read_into(st, 4)
-        yield assert_equal, res, b'ring'
-        yield assert_raises, IOError, _read_into, st, 2
-        # read alloc
-        st.seek(0)
-        res = _read_string(st, 4)
-        yield assert_equal, res, b'a\x00st'
-        res = _read_string(st, 4)
-        yield assert_equal, res, b'ring'
-        yield assert_raises, IOError, _read_string, st, 2
+    with setup_test_file() as (fs, gs, cs):
+        for s in (fs, gs, cs):
+            st = make_stream(s)
+            st.seek(0)
+            res = st.read(-1)
+            assert_equal(res, b'a\x00string')
+            st.seek(0)
+            res = st.read(4)
+            assert_equal(res, b'a\x00st')
+            # read into
+            st.seek(0)
+            res = _read_into(st, 4)
+            assert_equal(res, b'a\x00st')
+            res = _read_into(st, 4)
+            assert_equal(res, b'ring')
+            assert_raises(IOError, _read_into, st, 2)
+            # read alloc
+            st.seek(0)
+            res = _read_string(st, 4)
+            assert_equal(res, b'a\x00st')
+            res = _read_string(st, 4)
+            assert_equal(res, b'ring')
+            assert_raises(IOError, _read_string, st, 2)
 
 
 class TestZlibInputStream(object):
@@ -137,7 +127,7 @@ class TestZlibInputStream(object):
 
         for size in SIZES:
             for read_size in READ_SIZES:
-                yield check, size, read_size
+                check(size, read_size)
 
     def test_read_max_length(self):
         size = 1234
@@ -190,6 +180,3 @@ class TestZlibInputStream(object):
         stream.seek(1024)
         assert_(stream.all_data_read())
 
-
-if __name__ == "__main__":
-    run_module_suite()

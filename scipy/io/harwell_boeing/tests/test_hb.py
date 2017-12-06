@@ -10,7 +10,7 @@ import tempfile
 
 import numpy as np
 
-from numpy.testing import TestCase, assert_equal, \
+from numpy.testing import assert_equal, \
     assert_array_almost_equal_nulp
 
 from scipy.sparse import coo_matrix, csc_matrix, rand
@@ -52,13 +52,13 @@ def assert_csc_almost_equal(r, l):
     assert_array_almost_equal_nulp(r.data, l.data, 10000)
 
 
-class TestHBReader(TestCase):
+class TestHBReader(object):
     def test_simple(self):
         m = hb_read(StringIO(SIMPLE))
         assert_csc_almost_equal(m, SIMPLE_MATRIX)
 
 
-class TestRBRoundtrip(TestCase):
+class TestRBRoundtrip(object):
     def test_simple(self):
         rm = rand(100, 1000, 0.05).tocsc()
         fd, filename = tempfile.mkstemp(suffix="rb")

@@ -286,7 +286,7 @@ PyObject *gen_output(int n, int m, int np, int nq, int ldwe, int ld2we,
   npy_intp dim1[1], dim2[2];
 
   if (info == 50005) {
-      /* fatal error in fcn call; return NULL to propogate the exception */
+      /* fatal error in fcn call; return NULL to propagate the exception */
 
       return NULL;
   }
@@ -1291,7 +1291,7 @@ static struct PyModuleDef moduledef = {
 
 PyObject *PyInit___odrpack(void)
 {
-    PyObject *m, *s, *d;
+    PyObject *m;
     import_array();
     m = PyModule_Create(&moduledef);
     return m;
@@ -1299,7 +1299,7 @@ PyObject *PyInit___odrpack(void)
 #else
 PyMODINIT_FUNC init__odrpack(void)
 {
-    PyObject *m, *d;
+    PyObject *m;
     import_array();
     m = Py_InitModule("__odrpack", methods);
 }

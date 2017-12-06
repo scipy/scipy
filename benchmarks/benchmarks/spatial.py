@@ -3,8 +3,22 @@ from __future__ import division, absolute_import, print_function
 import numpy as np
 
 try:
-    from scipy.spatial import (cKDTree, KDTree, SphericalVoronoi, distance,
-    ConvexHull)
+    from scipy.spatial import cKDTree, KDTree
+except ImportError:
+    pass
+
+try:
+    from scipy.spatial import distance
+except ImportError:
+    pass
+
+try:
+    from scipy.spatial import ConvexHull, Voronoi
+except ImportError:
+    pass
+
+try:
+    from scipy.spatial import SphericalVoronoi
 except ImportError:
     pass
 
@@ -42,7 +56,7 @@ class Build(Benchmark):
             self.cls(self.data)
 
 LEAF_SIZES = [8, 128]
-BOX_SIZES = [None, 1.0]
+BOX_SIZES = [None, 0.0, 1.0]
 
 class Query(Benchmark):
     params = [
@@ -135,7 +149,7 @@ class Neighbors(Benchmark):
         if cls != 'cKDTree_weighted':
             self.T1.count_neighbors(self.T2, probe_radius, p=p)
         else:
-            self.T1.count_neighbors(self.T2, probe_radius, self_weights=self.w1, other_weights=self.w2, p=p)
+            self.T1.count_neighbors(self.T2, probe_radius, weights=(self.w1, self.w2), p=p)
 
 class CNeighbors(Benchmark):
     params = [
@@ -212,7 +226,7 @@ class SphericalVorSort(Benchmark):
         """
         self.sv.sort_vertices_of_regions()
 
-class Cdist(Benchmark):
+class Xdist(Benchmark):
     params = ([10, 100, 1000], ['euclidean', 'minkowski', 'cityblock',
     'seuclidean', 'sqeuclidean', 'cosine', 'correlation', 'hamming', 'jaccard',
     'chebyshev', 'canberra', 'braycurtis', 'mahalanobis', 'yule', 'dice',
@@ -223,12 +237,25 @@ class Cdist(Benchmark):
     def setup(self, num_points, metric):
         np.random.seed(123)
         self.points = np.random.random_sample((num_points, 3))
+        # use an equal weight vector to satisfy those metrics
+        # that require weights
+        if metric == 'wminkowski':
+            self.w = np.ones(3)
+        else:
+            self.w = None
 
     def time_cdist(self, num_points, metric):
         """Time scipy.spatial.distance.cdist over a range of input data
         sizes and metrics.
         """
-        distance.cdist(self.points, self.points, metric)
+        distance.cdist(self.points, self.points, metric, w=self.w)
+
+    def time_pdist(self, num_points, metric):
+        """Time scipy.spatial.distance.pdist over a range of input data
+        sizes and metrics.
+        """
+        distance.pdist(self.points, metric, w=self.w)
+
 
 class ConvexHullBench(Benchmark):
     params = ([10, 100, 1000, 5000], [True, False])
@@ -243,3 +270,31 @@ class ConvexHullBench(Benchmark):
         and settings.
         """
         ConvexHull(self.points, incremental)
+
+
+class VoronoiBench(Benchmark):
+    params = ([10, 100, 1000, 5000, 10000], [False, True])
+    param_names = ['num_points', 'furthest_site']
+
+    def setup(self, num_points, furthest_site):
+        np.random.seed(123)
+        self.points = np.random.random_sample((num_points, 3))
+
+    def time_voronoi_calculation(self, num_points, furthest_site):
+        """Time conventional Voronoi diagram calculation."""
+        Voronoi(self.points, furthest_site=furthest_site)
+
+class Hausdorff(Benchmark):
+    params = [10, 100, 1000]
+    param_names = ['num_points']
+
+    def setup(self, num_points):
+        np.random.seed(123)
+        self.points1 = np.random.random_sample((num_points, 3))
+        np.random.seed(71890)
+        self.points2 = np.random.random_sample((num_points, 3))
+
+    def time_directed_hausdorff(self, num_points):
+        # time directed_hausdorff code in 3 D
+        distance.directed_hausdorff(self.points1, self.points2)
+

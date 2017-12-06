@@ -39,8 +39,34 @@ Integrating functions, given fixed samples
    :mod:`scipy.special` for orthogonal polynomials (special) for Gaussian
    quadrature roots and weights for other weighting factors and regions.
 
-Integrators of ODE systems
-==========================
+Solving initial value problems for ODE systems
+==============================================
+
+The solvers are implemented as individual classes which can be used directly
+(low-level usage) or through a convenience function.
+
+.. autosummary::
+   :toctree: generated/
+
+   solve_ivp     -- Convenient function for ODE integration.
+   RK23          -- Explicit Runge-Kutta solver of order 3(2).
+   RK45          -- Explicit Runge-Kutta solver of order 5(4).
+   Radau         -- Implicit Runge-Kutta solver of order 5.
+   BDF           -- Implicit multi-step variable order (1 to 5) solver.
+   LSODA         -- LSODA solver from ODEPACK Fortran package.
+   OdeSolver     -- Base class for ODE solvers.
+   DenseOutput   -- Local interpolant for computing a dense output.
+   OdeSolution   -- Class which represents a continuous ODE solution.
+
+
+Old API
+-------
+
+These are the routines developed earlier for scipy. They wrap older solvers
+implemented in Fortran (mostly ODEPACK). While the interface to them is not
+particularly convenient and certain features are missing compared to the new
+API, the solvers themselves are of good quality and work fast as compiled
+Fortran code. In some cases it might be worth using this old API.
 
 .. autosummary::
    :toctree: generated/
@@ -48,6 +74,14 @@ Integrators of ODE systems
    odeint        -- General integration of ordinary differential equations.
    ode           -- Integrate ODE using VODE and ZVODE routines.
    complex_ode   -- Convert a complex-valued ODE to real-valued and integrate.
+
+
+Solving boundary value problems for ODE systems
+===============================================
+
+.. autosummary::
+   :toctree: generated/
+
    solve_bvp     -- Solve a boundary value problem for a system of ODEs.
 """
 from __future__ import division, print_function, absolute_import
@@ -57,7 +91,11 @@ from .odepack import *
 from .quadpack import *
 from ._ode import *
 from ._bvp import solve_bvp
+from ._ivp import (solve_ivp, OdeSolution, DenseOutput,
+                   OdeSolver, RK23, RK45, Radau, BDF, LSODA)
 
 __all__ = [s for s in dir() if not s.startswith('_')]
-from numpy.testing import Tester
-test = Tester().test
+
+from scipy._lib._testutils import PytestTester
+test = PytestTester(__name__)
+del PytestTester

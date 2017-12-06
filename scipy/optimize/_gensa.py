@@ -517,6 +517,7 @@ class GenSARunner(object):
         res.nit = self._step_record
         return res
 
+
 def gensa(func, x0, bounds, maxiter=500, initial_temp=5230., visit=2.62,
         accept=-5.0, maxfun=1e7, args=(), seed=None, pure_sa=False):
     """

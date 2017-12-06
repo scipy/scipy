@@ -16,8 +16,20 @@ import numpy.matlib
 import scipy
 import itertools
 from . import _voronoi
+from scipy.spatial.distance import pdist
 
 __all__ = ['SphericalVoronoi']
+
+def sphere_check(points, radius, center):
+    """ Determines distance of generators from theoretical sphere
+    surface.
+
+    """
+    actual_squared_radii = (((points[...,0] - center[0]) ** 2) +
+                            ((points[...,1] - center[1]) ** 2) +
+                            ((points[...,2] - center[2]) ** 2))
+    max_discrepancy = (np.sqrt(actual_squared_radii) - radius).max()
+    return abs(max_discrepancy)
 
 def calc_circumcenters(tetrahedrons):
     """ Calculates the cirumcenters of the circumspheres of tetrahedrons.
@@ -93,6 +105,10 @@ class SphericalVoronoi:
         Radius of the sphere (Default: 1)
     center : ndarray of floats, shape (3,)
         Center of sphere (Default: origin)
+    threshold : float
+        Threshold for detecting duplicate points and
+        mismatches between points and sphere parameters.
+        (Default: 1e-06)
 
     Attributes
     ----------
@@ -109,6 +125,12 @@ class SphericalVoronoi:
     regions : list of list of integers of shape (npoints, _ )
             the n-th entry is a list consisting of the indices
             of the vertices belonging to the n-th point in points
+
+    Raises
+    ------
+    ValueError
+        If there are duplicates in `points`.
+        If the provided `radius` is not consistent with `points`.
 
     Notes
     ----------
@@ -192,7 +214,7 @@ class SphericalVoronoi:
 
     """
 
-    def __init__(self, points, radius=None, center=None):
+    def __init__(self, points, radius=None, center=None, threshold=1e-06):
         """
         Initializes the object and starts the computation of the Voronoi
         diagram.
@@ -214,6 +236,15 @@ class SphericalVoronoi:
             self.radius = radius
         else:
             self.radius = 1
+
+        if pdist(self.points).min() <= threshold * self.radius:
+            raise ValueError("Duplicate generators present.")
+
+        max_discrepancy = sphere_check(self.points,
+                                       self.radius,
+                                       self.center)
+        if max_discrepancy >= threshold * self.radius:
+            raise ValueError("Radius inconsistent with generators.")
         self.vertices = None
         self.regions = None
         self._tri = None
@@ -235,6 +266,7 @@ class SphericalVoronoi:
 
         # add the center to each of the simplices in tri to get the same
         # tetrahedrons we'd have gotten from Delaunay tetrahedralization
+        # tetrahedrons will have shape: (2N-4, 4, 3)
         tetrahedrons = self._tri.points[self._tri.simplices]
         tetrahedrons = np.insert(
             tetrahedrons,
@@ -244,9 +276,11 @@ class SphericalVoronoi:
         )
 
         # produce circumcenters of tetrahedrons from 3D Delaunay
+        # circumcenters will have shape: (2N-4, 3)
         circumcenters = calc_circumcenters(tetrahedrons)
 
         # project tetrahedron circumcenters to the surface of the sphere
+        # self.vertices will have shape: (2N-4, 3)
         self.vertices = project_to_sphere(
             circumcenters,
             self.center,
@@ -254,22 +288,27 @@ class SphericalVoronoi:
         )
 
         # calculate regions from triangulation
-        generator_indices = np.arange(self.points.shape[0])
-        filter_tuple = np.where((np.expand_dims(self._tri.simplices,
-                                -1) == generator_indices).any(axis=1))
+        # simplex_indices will have shape: (2N-4,)
+        simplex_indices = np.arange(self._tri.simplices.shape[0])
+        # tri_indices will have shape: (6N-12,)
+        tri_indices = np.column_stack([simplex_indices, simplex_indices,
+            simplex_indices]).ravel()
+        # point_indices will have shape: (6N-12,)
+        point_indices = self._tri.simplices.ravel()
 
-        list_tuples_associations = zip(filter_tuple[1],
-                                       filter_tuple[0])
-
-        list_tuples_associations = sorted(list_tuples_associations,
-                                          key=lambda t: t[0])
+        # array_associations will have shape: (6N-12, 2)
+        array_associations = np.dstack((point_indices, tri_indices))[0]
+        array_associations = array_associations[np.lexsort((
+                                                array_associations[...,1],
+                                                array_associations[...,0]))]
+        array_associations = array_associations.astype(np.intp)
 
         # group by generator indices to produce
         # unsorted regions in nested list
         groups = []
-        for k, g in itertools.groupby(list_tuples_associations,
+        for k, g in itertools.groupby(array_associations,
                                       lambda t: t[0]):
-            groups.append([element[1] for element in list(g)])
+            groups.append(list(list(zip(*list(g)))[1]))
 
         self.regions = groups
 

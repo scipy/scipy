@@ -4,7 +4,7 @@ Real spectrum tranforms (DCT, DST, MDCT)
 from __future__ import division, print_function, absolute_import
 
 
-__all__ = ['dct', 'idct', 'dst', 'idst']
+__all__ = ['dct', 'idct', 'dst', 'idst', 'dctn', 'idctn', 'dstn', 'idstn']
 
 import numpy as np
 from scipy.fftpack import _fftpack
@@ -20,6 +20,244 @@ atexit.register(_fftpack.destroy_ddst1_cache)
 atexit.register(_fftpack.destroy_ddst2_cache)
 atexit.register(_fftpack.destroy_dst1_cache)
 atexit.register(_fftpack.destroy_dst2_cache)
+
+
+def _init_nd_shape_and_axes(x, shape, axes):
+    """Handle shape and axes arguments for dctn, idctn, dstn, idstn."""
+    if shape is None:
+        if axes is None:
+            shape = x.shape
+        else:
+            shape = np.take(x.shape, axes)
+    shape = tuple(shape)
+    for dim in shape:
+        if dim < 1:
+            raise ValueError("Invalid number of DCT data points "
+                             "(%s) specified." % (shape,))
+
+    if axes is None:
+        axes = list(range(-x.ndim, 0))
+    elif np.isscalar(axes):
+        axes = [axes, ]
+    if len(axes) != len(shape):
+        raise ValueError("when given, axes and shape arguments "
+                         "have to be of the same length")
+    if len(np.unique(axes)) != len(axes):
+        raise ValueError("All axes must be unique.")
+
+    return shape, axes
+
+
+def dctn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
+    """
+    Return multidimensional Discrete Cosine Transform along the specified axes.
+
+    Parameters
+    ----------
+    x : array_like
+        The input array.
+    type : {1, 2, 3}, optional
+        Type of the DCT (see Notes). Default type is 2.
+    shape : tuple of ints, optional
+        The shape of the result.  If both `shape` and `axes` (see below) are
+        None, `shape` is ``x.shape``; if `shape` is None but `axes` is
+        not None, then `shape` is ``scipy.take(x.shape, axes, axis=0)``.
+        If ``shape[i] > x.shape[i]``, the i-th dimension is padded with zeros.
+        If ``shape[i] < x.shape[i]``, the i-th dimension is truncated to
+        length ``shape[i]``.
+    axes : tuple or None, optional
+        Axes along which the DCT is computed; the default is over all axes.
+    norm : {None, 'ortho'}, optional
+        Normalization mode (see Notes). Default is None.
+    overwrite_x : bool, optional
+        If True, the contents of `x` can be destroyed; the default is False.
+
+    Returns
+    -------
+    y : ndarray of real
+        The transformed input array.
+
+    See Also
+    --------
+    idctn : Inverse multidimensional DCT
+
+    Notes
+    -----
+    For full details of the DCT types and normalization modes, as well as
+    references, see `dct`.
+
+    Examples
+    --------
+    >>> from scipy.fftpack import dctn, idctn
+    >>> y = np.random.randn(16, 16)
+    >>> np.allclose(y, idctn(dctn(y, norm='ortho'), norm='ortho'))
+    True
+
+    """
+    x = np.asanyarray(x)
+    shape, axes = _init_nd_shape_and_axes(x, shape, axes)
+    for n, ax in zip(shape, axes):
+        x = dct(x, type=type, n=n, axis=ax, norm=norm, overwrite_x=overwrite_x)
+    return x
+
+
+def idctn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
+    """
+    Return multidimensional Discrete Cosine Transform along the specified axes.
+
+    Parameters
+    ----------
+    x : array_like
+        The input array.
+    type : {1, 2, 3}, optional
+        Type of the DCT (see Notes). Default type is 2.
+    shape : tuple of ints, optional
+        The shape of the result.  If both `shape` and `axes` (see below) are
+        None, `shape` is ``x.shape``; if `shape` is None but `axes` is
+        not None, then `shape` is ``scipy.take(x.shape, axes, axis=0)``.
+        If ``shape[i] > x.shape[i]``, the i-th dimension is padded with zeros.
+        If ``shape[i] < x.shape[i]``, the i-th dimension is truncated to
+        length ``shape[i]``.
+    axes : tuple or None, optional
+        Axes along which the IDCT is computed; the default is over all axes.
+    norm : {None, 'ortho'}, optional
+        Normalization mode (see Notes). Default is None.
+    overwrite_x : bool, optional
+        If True, the contents of `x` can be destroyed; the default is False.
+
+    Returns
+    -------
+    y : ndarray of real
+        The transformed input array.
+
+    See Also
+    --------
+    dctn : multidimensional DCT
+
+    Notes
+    -----
+    For full details of the IDCT types and normalization modes, as well as
+    references, see `idct`.
+
+    Examples
+    --------
+    >>> from scipy.fftpack import dctn, idctn
+    >>> y = np.random.randn(16, 16)
+    >>> np.allclose(y, idctn(dctn(y, norm='ortho'), norm='ortho'))
+    True
+    """
+    x = np.asanyarray(x)
+    shape, axes = _init_nd_shape_and_axes(x, shape, axes)
+    for n, ax in zip(shape, axes):
+        x = idct(x, type=type, n=n, axis=ax, norm=norm,
+                 overwrite_x=overwrite_x)
+    return x
+
+
+def dstn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
+    """
+    Return multidimensional Discrete Sine Transform along the specified axes.
+
+    Parameters
+    ----------
+    x : array_like
+        The input array.
+    type : {1, 2, 3}, optional
+        Type of the DCT (see Notes). Default type is 2.
+    shape : tuple of ints, optional
+        The shape of the result.  If both `shape` and `axes` (see below) are
+        None, `shape` is ``x.shape``; if `shape` is None but `axes` is
+        not None, then `shape` is ``scipy.take(x.shape, axes, axis=0)``.
+        If ``shape[i] > x.shape[i]``, the i-th dimension is padded with zeros.
+        If ``shape[i] < x.shape[i]``, the i-th dimension is truncated to
+        length ``shape[i]``.
+    axes : tuple or None, optional
+        Axes along which the DCT is computed; the default is over all axes.
+    norm : {None, 'ortho'}, optional
+        Normalization mode (see Notes). Default is None.
+    overwrite_x : bool, optional
+        If True, the contents of `x` can be destroyed; the default is False.
+
+    Returns
+    -------
+    y : ndarray of real
+        The transformed input array.
+
+    See Also
+    --------
+    idstn : Inverse multidimensional DST
+
+    Notes
+    -----
+    For full details of the DST types and normalization modes, as well as
+    references, see `dst`.
+
+    Examples
+    --------
+    >>> from scipy.fftpack import dstn, idstn
+    >>> y = np.random.randn(16, 16)
+    >>> np.allclose(y, idstn(dstn(y, norm='ortho'), norm='ortho'))
+    True
+
+    """
+    x = np.asanyarray(x)
+    shape, axes = _init_nd_shape_and_axes(x, shape, axes)
+    for n, ax in zip(shape, axes):
+        x = dst(x, type=type, n=n, axis=ax, norm=norm, overwrite_x=overwrite_x)
+    return x
+
+
+def idstn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
+    """
+    Return multidimensional Discrete Sine Transform along the specified axes.
+
+    Parameters
+    ----------
+    x : array_like
+        The input array.
+    type : {1, 2, 3}, optional
+        Type of the DCT (see Notes). Default type is 2.
+    shape : tuple of ints, optional
+        The shape of the result.  If both `shape` and `axes` (see below) are
+        None, `shape` is ``x.shape``; if `shape` is None but `axes` is
+        not None, then `shape` is ``scipy.take(x.shape, axes, axis=0)``.
+        If ``shape[i] > x.shape[i]``, the i-th dimension is padded with zeros.
+        If ``shape[i] < x.shape[i]``, the i-th dimension is truncated to
+        length ``shape[i]``.
+    axes : tuple or None, optional
+        Axes along which the IDCT is computed; the default is over all axes.
+    norm : {None, 'ortho'}, optional
+        Normalization mode (see Notes). Default is None.
+    overwrite_x : bool, optional
+        If True, the contents of `x` can be destroyed; the default is False.
+
+    Returns
+    -------
+    y : ndarray of real
+        The transformed input array.
+
+    See Also
+    --------
+    dctn : multidimensional DST
+
+    Notes
+    -----
+    For full details of the IDST types and normalization modes, as well as
+    references, see `idst`.
+
+    Examples
+    --------
+    >>> from scipy.fftpack import dstn, idstn
+    >>> y = np.random.randn(16, 16)
+    >>> np.allclose(y, idstn(dstn(y, norm='ortho'), norm='ortho'))
+    True
+    """
+    x = np.asanyarray(x)
+    shape, axes = _init_nd_shape_and_axes(x, shape, axes)
+    for n, ax in zip(shape, axes):
+        x = idst(x, type=type, n=n, axis=ax, norm=norm,
+                 overwrite_x=overwrite_x)
+    return x
 
 
 def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):

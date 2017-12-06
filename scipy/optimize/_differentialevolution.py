@@ -7,7 +7,7 @@ import numpy as np
 from scipy.optimize import OptimizeResult, minimize
 from scipy.optimize.optimize import _status_message
 from scipy._lib._util import check_random_state
-from scipy._lib.six import xrange
+from scipy._lib.six import xrange, string_types
 import warnings
 
 
@@ -51,9 +51,11 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
             - 'best1exp'
             - 'rand1exp'
             - 'randtobest1exp'
+            - 'currenttobest1exp'
             - 'best2exp'
             - 'rand2exp'
             - 'randtobest1bin'
+            - 'currenttobest1bin'
             - 'best2bin'
             - 'rand2bin'
             - 'rand1bin'
@@ -65,7 +67,8 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         is: ``(maxiter + 1) * popsize * len(x)``
     popsize : int, optional
         A multiplier for setting the total population size.  The population has
-        ``popsize * len(x)`` individuals.
+        ``popsize * len(x)`` individuals (unless the initial population is
+        supplied via the `init` keyword).
     tol : float, optional
         Relative tolerance for convergence, the solving stops when
         ``np.std(pop) <= atol + tol * np.abs(np.mean(population_energies))``,
@@ -106,17 +109,24 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         If True (default), then `scipy.optimize.minimize` with the `L-BFGS-B`
         method is used to polish the best population member at the end, which
         can improve the minimization slightly.
-    init : string, optional
-        Specify how the population initialization is performed. Should be
+    init : str or array-like, optional
+        Specify which type of population initialization is performed. Should be
         one of:
 
             - 'latinhypercube'
             - 'random'
+            - array specifying the initial population. The array should have
+              shape ``(M, len(x))``, where len(x) is the number of parameters.
+              `init` is clipped to `bounds` before use.
 
         The default is 'latinhypercube'. Latin Hypercube sampling tries to
-        maximize coverage of the available parameter space. 'random' initializes
-        the population randomly - this has the drawback that clustering can
-        occur, preventing the whole of parameter space being covered.
+        maximize coverage of the available parameter space. 'random'
+        initializes the population randomly - this has the drawback that
+        clustering can occur, preventing the whole of parameter space being
+        covered. Use of an array to specify a population subset could be used,
+        for example, to create a tight bunch of initial guesses in an location
+        where the solution is known to exist, thereby reducing time for
+        convergence.
     atol : float, optional
         Absolute tolerance for convergence, the solving stops when
         ``np.std(pop) <= atol + tol * np.abs(np.mean(population_energies))``,
@@ -239,9 +249,11 @@ class DifferentialEvolutionSolver(object):
             - 'best1exp'
             - 'rand1exp'
             - 'randtobest1exp'
+            - 'currenttobest1exp'
             - 'best2exp'
             - 'rand2exp'
             - 'randtobest1bin'
+            - 'currenttobest1bin'
             - 'best2bin'
             - 'rand2bin'
             - 'rand1bin'
@@ -254,7 +266,8 @@ class DifferentialEvolutionSolver(object):
         is: ``(maxiter + 1) * popsize * len(x)``
     popsize : int, optional
         A multiplier for setting the total population size.  The population has
-        ``popsize * len(x)`` individuals.
+        ``popsize * len(x)`` individuals (unless the initial population is
+        supplied via the `init` keyword).
     tol : float, optional
         Relative tolerance for convergence, the solving stops when
         ``np.std(pop) <= atol + tol * np.abs(np.mean(population_energies))``,
@@ -299,12 +312,24 @@ class DifferentialEvolutionSolver(object):
     maxfun : int, optional
         Set the maximum number of function evaluations. However, it probably
         makes more sense to set `maxiter` instead.
-    init : string, optional
+    init : str or array-like, optional
         Specify which type of population initialization is performed. Should be
         one of:
 
             - 'latinhypercube'
             - 'random'
+            - array specifying the initial population. The array should have
+              shape ``(M, len(x))``, where len(x) is the number of parameters.
+              `init` is clipped to `bounds` before use.
+
+        The default is 'latinhypercube'. Latin Hypercube sampling tries to
+        maximize coverage of the available parameter space. 'random'
+        initializes the population randomly - this has the drawback that
+        clustering can occur, preventing the whole of parameter space being
+        covered. Use of an array to specify a population could be used, for
+        example, to create a tight bunch of initial guesses in an location
+        where the solution is known to exist, thereby reducing time for
+        convergence.
     atol : float, optional
         Absolute tolerance for convergence, the solving stops when
         ``np.std(pop) <= atol + tol * np.abs(np.mean(population_energies))``,
@@ -315,14 +340,20 @@ class DifferentialEvolutionSolver(object):
     # Dispatch of mutation strategy method (binomial or exponential).
     _binomial = {'best1bin': '_best1',
                  'randtobest1bin': '_randtobest1',
+                 'currenttobest1bin': '_currenttobest1',
                  'best2bin': '_best2',
                  'rand2bin': '_rand2',
                  'rand1bin': '_rand1'}
     _exponential = {'best1exp': '_best1',
                     'rand1exp': '_rand1',
                     'randtobest1exp': '_randtobest1',
+                    'currenttobest1exp': '_currenttobest1',
                     'best2exp': '_best2',
                     'rand2exp': '_rand2'}
+
+    __init_error_msg = ("The population initialization method must be one of "
+                        "'latinhypercube' or 'random', or an array of shape "
+                        "(M, N) where N is the number of parameters and M>5")
 
     def __init__(self, func, bounds, args=(),
                  strategy='best1bin', maxiter=1000, popsize=15,
@@ -394,19 +425,23 @@ class DifferentialEvolutionSolver(object):
 
         # default population initialization is a latin hypercube design, but
         # there are other population initializations possible.
-        self.num_population_members = popsize * self.parameter_count
+        # the minimum is 5 because 'best2bin' requires a population that's at
+        # least 5 long
+        self.num_population_members = max(5, popsize * self.parameter_count)
 
         self.population_shape = (self.num_population_members,
                                  self.parameter_count)
 
         self._nfev = 0
-        if init == 'latinhypercube':
-            self.init_population_lhs()
-        elif init == 'random':
-            self.init_population_random()
+        if isinstance(init, string_types):
+            if init == 'latinhypercube':
+                self.init_population_lhs()
+            elif init == 'random':
+                self.init_population_random()
+            else:
+                raise ValueError(self.__init_error_msg)
         else:
-            raise ValueError("The population initialization method must be one"
-                             "of 'latinhypercube' or 'random'")
+            self.init_population_array(init)
 
         self.disp = disp
 
@@ -455,6 +490,41 @@ class DifferentialEvolutionSolver(object):
         """
         rng = self.random_number_generator
         self.population = rng.random_sample(self.population_shape)
+
+        # reset population energies
+        self.population_energies = (np.ones(self.num_population_members) *
+                                    np.inf)
+
+        # reset number of function evaluations counter
+        self._nfev = 0
+
+    def init_population_array(self, init):
+        """
+        Initialises the population with a user specified population.
+
+        Parameters
+        ----------
+        init : np.ndarray
+            Array specifying subset of the initial population. The array should
+            have shape (M, len(x)), where len(x) is the number of parameters.
+            The population is clipped to the lower and upper `bounds`.
+        """
+        # make sure you're using a float array
+        popn = np.asfarray(init)
+
+        if (np.size(popn, 0) < 5 or
+                popn.shape[1] != self.parameter_count or
+                len(popn.shape) != 2):
+            raise ValueError("The population supplied needs to have shape"
+                             " (M, len(x)), where M > 4.")
+
+        # scale values and clip to bounds, assigning to population
+        self.population = np.clip(self._unscale_parameters(popn), 0, 1)
+
+        self.num_population_members = np.size(self.population, 0)
+
+        self.population_shape = (self.num_population_members,
+                                 self.parameter_count)
 
         # reset population energies
         self.population_energies = (np.ones(self.num_population_members) *
@@ -683,9 +753,8 @@ class DifferentialEvolutionSolver(object):
         """
         make sure the parameters lie between the limits
         """
-        for index, param in enumerate(trial):
-            if param > 1 or param < 0:
-                trial[index] = self.random_number_generator.rand()
+        for index in np.where((trial < 0) | (trial > 1))[0]:
+            trial[index] = self.random_number_generator.rand()
 
     def _mutate(self, candidate):
         """
@@ -697,8 +766,7 @@ class DifferentialEvolutionSolver(object):
 
         fill_point = rng.randint(0, self.parameter_count)
 
-        if (self.strategy == 'randtobest1exp' or
-                self.strategy == 'randtobest1bin'):
+        if self.strategy in ['currenttobest1exp', 'currenttobest1bin']:
             bprime = self.mutation_func(candidate,
                                         self._select_samples(candidate, 5))
         else:
@@ -742,15 +810,25 @@ class DifferentialEvolutionSolver(object):
         return (self.population[r0] + self.scale *
                 (self.population[r1] - self.population[r2]))
 
-    def _randtobest1(self, candidate, samples):
+    def _randtobest1(self, samples):
         """
         randtobest1bin, randtobest1exp
         """
-        r0, r1 = samples[:2]
-        bprime = np.copy(self.population[candidate])
+        r0, r1, r2 = samples[:3]
+        bprime = np.copy(self.population[r0])
         bprime += self.scale * (self.population[0] - bprime)
-        bprime += self.scale * (self.population[r0] -
-                                self.population[r1])
+        bprime += self.scale * (self.population[r1] -
+                                self.population[r2])
+        return bprime
+
+    def _currenttobest1(self, candidate, samples):
+        """
+        currenttobest1bin, currenttobest1exp
+        """
+        r0, r1 = samples[:2]
+        bprime = (self.population[candidate] + self.scale * 
+                  (self.population[0] - self.population[candidate] +
+                   self.population[r0] - self.population[r1]))
         return bprime
 
     def _best2(self, samples):

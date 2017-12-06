@@ -80,6 +80,8 @@ support ``easy_install`` at all anymore; issues specific to it will be closed
 as "wontfix").
 
 
+.. _supported-py-numpy-versions:
+
 Supported Python and Numpy versions
 -----------------------------------
 The Python_ versions that Scipy supports are listed in the list of PyPI
@@ -114,10 +116,10 @@ Building binary installers
 
    This section is only about building Scipy binary installers to *distribute*.
    For info on building Scipy on the same machine as where it will be used, see
-   `here <http://scipy.org/scipylib/building/index.html>`_.
+   `this scipy.org page <http://scipy.org/scipylib/building/index.html>`_.
 
 There are a number of things to take into consideration when building binaries
-and distributing them on `PyPI`_ or elsewhere.
+and distributing them on PyPI or elsewhere.
 
 **General**
 
@@ -129,6 +131,13 @@ and distributing them on `PyPI`_ or elsewhere.
 
 **Windows**
 
+- The currently most easily available toolchain for building
+  Python.org compatible binaries for Scipy is installing MSVC (see
+  https://wiki.python.org/moin/WindowsCompilers) and mingw64-gfortran.
+  Support for this configuration requires numpy.distutils from
+  Numpy >= 1.14.dev and a gcc/gfortran-compiled static ``openblas.a``.
+  This configuration is currently used in the Appveyor configuration for
+  https://github.com/MacPython/scipy-wheels
 - For 64-bit Windows installers built with a free toolchain, use the method
   documented at https://github.com/numpy/numpy/wiki/Mingw-static-toolchain.
   That method will likely be used for Scipy itself once it's clear that the
@@ -139,9 +148,9 @@ and distributing them on `PyPI`_ or elsewhere.
 - The other way to produce 64-bit Windows installers is with ``icc``, ``ifort``
   plus ``MKL`` (or ``MSVC`` instead of ``icc``).  For Intel toolchain
   instructions see
-  `here <https://software.intel.com/en-us/articles/numpyscipy-with-intel-mkl>`_
+  `this article <https://software.intel.com/en-us/articles/numpyscipy-with-intel-mkl>`_
   and for (partial) MSVC instructions see
-  `here <https://github.com/numpy/numpy/wiki/Building-with-MSVC>`_.
+  `this wiki page <https://github.com/numpy/numpy/wiki/Building-with-MSVC>`_.
 - Older Scipy releases contained a .exe "superpack" installer.  Those contain
   3 complete builds (no SSE, SSE2, SSE3), and were built with
   https://github.com/numpy/numpy-vendor.  That build setup is known to not work
@@ -162,12 +171,13 @@ and distributing them on `PyPI`_ or elsewhere.
 
 **Linux**
 
-Besides PyPi not allowing Linux wheels (which is about to change with `PEP 513
-<https://www.python.org/dev/peps/pep-0513>`_), there are no specific issues with
-building binaries.  To build a set of wheels for a Linux distribution and
-providing them in a Wheelhouse_, look at the wheel_ and Wheelhouse_ docs.  A
-Wheelhouse for wheels compatible with TravisCI is http://wheels.scipy.org.
+- PyPi-compatible Linux wheels can be produced via the manylinux_ project.
+  The corresponding build setup for TravisCI for Scipy is set up in
+  https://github.com/MacPython/scipy-wheels.
 
+Other Linux build-setups result to PyPi incompatible wheels, which
+would need to be distributed via custom channels, e.g. in a
+Wheelhouse_, see at the wheel_ and Wheelhouse_ docs.
 
 
 .. _Numpy: http://numpy.org
@@ -182,7 +192,10 @@ Wheelhouse for wheels compatible with TravisCI is http://wheels.scipy.org.
 .. _setuptools: https://bitbucket.org/pypa/setuptools
 .. _wheel: wheel.readthedocs.org
 .. _pip: http://pip-installer.org
-.. _PyPI: http://pypi.python.org/pypi/scipy
 .. _Python Packaging User Guide: https://packaging.python.org
 .. _Wheelhouse: https://pypi.python.org/pypi/Wheelhouse
 .. _MingwPy: https://mingwpy.github.io
+.. _Sphinx: http://sphinx-doc.org/
+.. _six: https://pypi.python.org/pypi/six
+.. _decorator: https://github.com/micheles/decorator
+.. _manylinux: https://github.com/pypa/manylinux/

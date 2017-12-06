@@ -108,11 +108,11 @@ better option.  First let's compute the largest eigenvalues (``which = 'LM'``)
 of ``X`` and compare them to the known results:
 
     >>> evals_large, evecs_large = eigsh(X, 3, which='LM')
-    >>> print evals_all[-3:]
+    >>> print(evals_all[-3:])
     [ 29.1446102   30.05821805  31.19467646]
-    >>> print evals_large
+    >>> print(evals_large)
     [ 29.1446102   30.05821805  31.19467646]
-    >>> print np.dot(evecs_large.T, evecs_all[:,-3:])
+    >>> print(np.dot(evecs_large.T, evecs_all[:,-3:]))
     array([[-1.  0.  0.],       # may vary (signs)
            [ 0.  1.  0.],
            [-0.  0. -1.]])
@@ -191,7 +191,7 @@ the rest:
     array([1.16577199, 0.85081388, 1.06642272])
     >>> evals_mid
     array([0.85081388, 1.06642272, 1.16577199])
-    >>> print np.dot(evecs_mid.T, evecs_all[:,i_sort])
+    >>> print(np.dot(evecs_mid.T, evecs_all[:,i_sort]))
     array([[-0.  1.  0.],     # may vary (signs)
            [-0. -0.  1.],
            [ 1.  0.  0.]]

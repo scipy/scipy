@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 from __future__ import division, print_function, absolute_import
 
 from tempfile import mkdtemp, mktemp
@@ -6,20 +5,21 @@ import os
 import shutil
 
 import numpy as np
-from numpy import array,transpose, pi
-from numpy.testing import (TestCase, run_module_suite, assert_equal,
+from numpy import array, transpose, pi
+from numpy.testing import (assert_equal,
                            assert_array_equal, assert_array_almost_equal)
+from pytest import raises as assert_raises
 
 import scipy.sparse
 from scipy.io.mmio import mminfo, mmread, mmwrite
 
 
-class TestMMIOArray(TestCase):
-    def setUp(self):
+class TestMMIOArray(object):
+    def setup_method(self):
         self.tmpdir = mkdtemp()
         self.fn = os.path.join(self.tmpdir, 'testfile.mtx')
 
-    def tearDown(self):
+    def teardown_method(self):
         shutil.rmtree(self.tmpdir)
 
     def check(self, a, info):
@@ -28,21 +28,38 @@ class TestMMIOArray(TestCase):
         b = mmread(self.fn)
         assert_array_almost_equal(a, b)
 
+    def check_exact(self, a, info):
+        mmwrite(self.fn, a)
+        assert_equal(mminfo(self.fn), info)
+        b = mmread(self.fn)
+        assert_equal(a, b)
+
     def test_simple_integer(self):
-        self.check([[1, 2], [3, 4]],
-                   (2, 2, 4, 'array', 'integer', 'general'))
+        self.check_exact([[1, 2], [3, 4]],
+                         (2, 2, 4, 'array', 'integer', 'general'))
+
+    def test_32bit_integer(self):
+        a = array([[2**31-1, 2**31-2], [2**31-3, 2**31-4]], dtype=np.int32)
+        self.check_exact(a, (2, 2, 4, 'array', 'integer', 'general'))
+
+    def test_64bit_integer(self):
+        a = array([[2**31, 2**32], [2**63-2, 2**63-1]], dtype=np.int64)
+        if (np.intp(0).itemsize < 8):
+            assert_raises(OverflowError, mmwrite, self.fn, a)
+        else:
+            self.check_exact(a, (2, 2, 4, 'array', 'integer', 'general'))
 
     def test_simple_upper_triangle_integer(self):
-        self.check([[0, 1], [0, 0]],
-                   (2, 2, 4, 'array', 'integer', 'general'))
+        self.check_exact([[0, 1], [0, 0]],
+                         (2, 2, 4, 'array', 'integer', 'general'))
 
     def test_simple_lower_triangle_integer(self):
-        self.check([[0, 0], [1, 0]],
-                   (2, 2, 4, 'array', 'integer', 'general'))
+        self.check_exact([[0, 0], [1, 0]],
+                         (2, 2, 4, 'array', 'integer', 'general'))
 
     def test_simple_rectangular_integer(self):
-        self.check([[1, 2, 3], [4, 5, 6]],
-                   (2, 3, 6, 'array', 'integer', 'general'))
+        self.check_exact([[1, 2, 3], [4, 5, 6]],
+                         (2, 3, 6, 'array', 'integer', 'general'))
 
     def test_simple_rectangular_float(self):
         self.check([[1, 2], [3.5, 4], [5, 6]],
@@ -57,12 +74,12 @@ class TestMMIOArray(TestCase):
                    (2, 2, 4, 'array', 'complex', 'general'))
 
     def test_simple_symmetric_integer(self):
-        self.check([[1, 2], [2, 4]],
-                   (2, 2, 4, 'array', 'integer', 'symmetric'))
+        self.check_exact([[1, 2], [2, 4]],
+                         (2, 2, 4, 'array', 'integer', 'symmetric'))
 
     def test_simple_skew_symmetric_integer(self):
-        self.check([[1, 2], [-2, 4]],
-                   (2, 2, 4, 'array', 'integer', 'skew-symmetric'))
+        self.check_exact([[1, 2], [-2, 4]],
+                         (2, 2, 4, 'array', 'integer', 'skew-symmetric'))
 
     def test_simple_skew_symmetric_float(self):
         self.check(array([[1, 2], [-2.0, 4]], 'f'),
@@ -85,12 +102,11 @@ class TestMMIOArray(TestCase):
 
 
 class TestMMIOSparseCSR(TestMMIOArray):
-
-    def setUp(self):
+    def setup_method(self):
         self.tmpdir = mkdtemp()
         self.fn = os.path.join(self.tmpdir, 'testfile.mtx')
 
-    def tearDown(self):
+    def teardown_method(self):
         shutil.rmtree(self.tmpdir)
 
     def check(self, a, info):
@@ -99,21 +115,42 @@ class TestMMIOSparseCSR(TestMMIOArray):
         b = mmread(self.fn)
         assert_array_almost_equal(a.todense(), b.todense())
 
+    def check_exact(self, a, info):
+        mmwrite(self.fn, a)
+        assert_equal(mminfo(self.fn), info)
+        b = mmread(self.fn)
+        assert_equal(a.todense(), b.todense())
+
     def test_simple_integer(self):
-        self.check(scipy.sparse.csr_matrix([[1, 2], [3, 4]]),
-                   (2, 2, 4, 'coordinate', 'integer', 'general'))
+        self.check_exact(scipy.sparse.csr_matrix([[1, 2], [3, 4]]),
+                         (2, 2, 4, 'coordinate', 'integer', 'general'))
+
+    def test_32bit_integer(self):
+        a = scipy.sparse.csr_matrix(array([[2**31-1, -2**31+2],
+                                           [2**31-3, 2**31-4]],
+                                          dtype=np.int32))
+        self.check_exact(a, (2, 2, 4, 'coordinate', 'integer', 'general'))
+
+    def test_64bit_integer(self):
+        a = scipy.sparse.csr_matrix(array([[2**32+1, 2**32+1],
+                                           [-2**63+2, 2**63-2]],
+                                          dtype=np.int64))
+        if (np.intp(0).itemsize < 8):
+            assert_raises(OverflowError, mmwrite, self.fn, a)
+        else:
+            self.check_exact(a, (2, 2, 4, 'coordinate', 'integer', 'general'))
 
     def test_simple_upper_triangle_integer(self):
-        self.check(scipy.sparse.csr_matrix([[0, 1], [0, 0]]),
-                   (2, 2, 1, 'coordinate', 'integer', 'general'))
+        self.check_exact(scipy.sparse.csr_matrix([[0, 1], [0, 0]]),
+                         (2, 2, 1, 'coordinate', 'integer', 'general'))
 
     def test_simple_lower_triangle_integer(self):
-        self.check(scipy.sparse.csr_matrix([[0, 0], [1, 0]]),
-                   (2, 2, 1, 'coordinate', 'integer', 'general'))
+        self.check_exact(scipy.sparse.csr_matrix([[0, 0], [1, 0]]),
+                         (2, 2, 1, 'coordinate', 'integer', 'general'))
 
     def test_simple_rectangular_integer(self):
-        self.check(scipy.sparse.csr_matrix([[1, 2, 3], [4, 5, 6]]),
-                   (2, 3, 6, 'coordinate', 'integer', 'general'))
+        self.check_exact(scipy.sparse.csr_matrix([[1, 2, 3], [4, 5, 6]]),
+                         (2, 3, 6, 'coordinate', 'integer', 'general'))
 
     def test_simple_rectangular_float(self):
         self.check(scipy.sparse.csr_matrix([[1, 2], [3.5, 4], [5, 6]]),
@@ -128,12 +165,12 @@ class TestMMIOSparseCSR(TestMMIOArray):
                    (2, 2, 4, 'coordinate', 'complex', 'general'))
 
     def test_simple_symmetric_integer(self):
-        self.check(scipy.sparse.csr_matrix([[1, 2], [2, 4]]),
-                   (2, 2, 3, 'coordinate', 'integer', 'symmetric'))
+        self.check_exact(scipy.sparse.csr_matrix([[1, 2], [2, 4]]),
+                         (2, 2, 3, 'coordinate', 'integer', 'symmetric'))
 
     def test_simple_skew_symmetric_integer(self):
-        self.check(scipy.sparse.csr_matrix([[1, 2], [-2, 4]]),
-                   (2, 2, 3, 'coordinate', 'integer', 'skew-symmetric'))
+        self.check_exact(scipy.sparse.csr_matrix([[1, 2], [-2, 4]]),
+                         (2, 2, 3, 'coordinate', 'integer', 'skew-symmetric'))
 
     def test_simple_skew_symmetric_float(self):
         self.check(scipy.sparse.csr_matrix(array([[1, 2], [-2.0, 4]], 'f')),
@@ -155,6 +192,178 @@ class TestMMIOSparseCSR(TestMMIOArray):
         a = np.random.random(sz)
         a = scipy.sparse.csr_matrix(a)
         self.check(a, (20, 15, 300, 'coordinate', 'real', 'general'))
+
+    def test_simple_pattern(self):
+        a = scipy.sparse.csr_matrix([[0, 1.5], [3.0, 2.5]])
+        p = np.zeros_like(a.todense())
+        p[a.todense() > 0] = 1
+        info = (2, 2, 3, 'coordinate', 'pattern', 'general')
+        mmwrite(self.fn, a, field='pattern')
+        assert_equal(mminfo(self.fn), info)
+        b = mmread(self.fn)
+        assert_array_almost_equal(p, b.todense())
+
+
+_32bit_integer_dense_example = '''\
+%%MatrixMarket matrix array integer general
+2  2
+2147483647
+2147483646
+2147483647
+2147483646
+'''
+
+_32bit_integer_sparse_example = '''\
+%%MatrixMarket matrix coordinate integer symmetric
+2  2  2
+1  1  2147483647
+2  2  2147483646
+'''
+
+_64bit_integer_dense_example = '''\
+%%MatrixMarket matrix array integer general
+2  2
+          2147483648
+-9223372036854775806
+         -2147483648
+ 9223372036854775807
+'''
+
+_64bit_integer_sparse_general_example = '''\
+%%MatrixMarket matrix coordinate integer general
+2  2  3
+1  1           2147483648
+1  2  9223372036854775807
+2  2  9223372036854775807
+'''
+
+_64bit_integer_sparse_symmetric_example = '''\
+%%MatrixMarket matrix coordinate integer symmetric
+2  2  3
+1  1            2147483648
+1  2  -9223372036854775807
+2  2   9223372036854775807
+'''
+
+_64bit_integer_sparse_skew_example = '''\
+%%MatrixMarket matrix coordinate integer skew-symmetric
+2  2  3
+1  1            2147483648
+1  2  -9223372036854775807
+2  2   9223372036854775807
+'''
+
+_over64bit_integer_dense_example = '''\
+%%MatrixMarket matrix array integer general
+2  2
+         2147483648
+9223372036854775807
+         2147483648
+9223372036854775808
+'''
+
+_over64bit_integer_sparse_example = '''\
+%%MatrixMarket matrix coordinate integer symmetric
+2  2  2
+1  1            2147483648
+2  2  19223372036854775808
+'''
+
+class TestMMIOReadLargeIntegers(object):
+    def setup_method(self):
+        self.tmpdir = mkdtemp()
+        self.fn = os.path.join(self.tmpdir, 'testfile.mtx')
+
+    def teardown_method(self):
+        shutil.rmtree(self.tmpdir)
+
+    def check_read(self, example, a, info, dense, over32, over64):
+        with open(self.fn, 'w') as f:
+            f.write(example)
+        assert_equal(mminfo(self.fn), info)
+        if (over32 and (np.intp(0).itemsize < 8)) or over64:
+            assert_raises(OverflowError, mmread, self.fn)
+        else:
+            b = mmread(self.fn)
+            if not dense:
+                b = b.todense()
+            assert_equal(a, b)
+
+    def test_read_32bit_integer_dense(self):
+        a = array([[2**31-1, 2**31-1],
+                   [2**31-2, 2**31-2]], dtype=np.int64)
+        self.check_read(_32bit_integer_dense_example,
+                        a,
+                        (2, 2, 4, 'array', 'integer', 'general'),
+                        dense=True,
+                        over32=False,
+                        over64=False)
+
+    def test_read_32bit_integer_sparse(self):
+        a = array([[2**31-1, 0],
+                   [0, 2**31-2]], dtype=np.int64)
+        self.check_read(_32bit_integer_sparse_example,
+                        a,
+                        (2, 2, 2, 'coordinate', 'integer', 'symmetric'),
+                        dense=False,
+                        over32=False,
+                        over64=False)
+
+    def test_read_64bit_integer_dense(self):
+        a = array([[2**31, -2**31],
+                   [-2**63+2, 2**63-1]], dtype=np.int64)
+        self.check_read(_64bit_integer_dense_example,
+                        a,
+                        (2, 2, 4, 'array', 'integer', 'general'),
+                        dense=True,
+                        over32=True,
+                        over64=False)
+
+    def test_read_64bit_integer_sparse_general(self):
+        a = array([[2**31, 2**63-1],
+                   [0, 2**63-1]], dtype=np.int64)
+        self.check_read(_64bit_integer_sparse_general_example,
+                        a,
+                        (2, 2, 3, 'coordinate', 'integer', 'general'),
+                        dense=False,
+                        over32=True,
+                        over64=False)
+
+    def test_read_64bit_integer_sparse_symmetric(self):
+        a = array([[2**31, -2**63+1],
+                   [-2**63+1, 2**63-1]], dtype=np.int64)
+        self.check_read(_64bit_integer_sparse_symmetric_example,
+                        a,
+                        (2, 2, 3, 'coordinate', 'integer', 'symmetric'),
+                        dense=False,
+                        over32=True,
+                        over64=False)
+
+    def test_read_64bit_integer_sparse_skew(self):
+        a = array([[2**31, -2**63+1],
+                   [2**63-1, 2**63-1]], dtype=np.int64)
+        self.check_read(_64bit_integer_sparse_skew_example,
+                        a,
+                        (2, 2, 3, 'coordinate', 'integer', 'skew-symmetric'),
+                        dense=False,
+                        over32=True,
+                        over64=False)
+
+    def test_read_over64bit_integer_dense(self):
+        self.check_read(_over64bit_integer_dense_example,
+                        None,
+                        (2, 2, 4, 'array', 'integer', 'general'),
+                        dense=True,
+                        over32=True,
+                        over64=True)
+
+    def test_read_over64bit_integer_sparse(self):
+        self.check_read(_over64bit_integer_sparse_example,
+                        None,
+                        (2, 2, 2, 'coordinate', 'integer', 'symmetric'),
+                        dense=False,
+                        over32=True,
+                        over64=True)
 
 
 _general_example = '''\
@@ -240,12 +449,12 @@ _symmetric_pattern_example = '''\
 '''
 
 
-class TestMMIOCoordinate(TestCase):
-    def setUp(self):
+class TestMMIOCoordinate(object):
+    def setup_method(self):
         self.tmpdir = mkdtemp()
         self.fn = os.path.join(self.tmpdir, 'testfile.mtx')
 
-    def tearDown(self):
+    def teardown_method(self):
         shutil.rmtree(self.tmpdir)
 
     def check_read(self, example, a, info):
@@ -432,6 +641,3 @@ class TestMMIOCoordinate(TestCase):
                 assert_array_almost_equal(A.data,
                     [float('%%.%dg' % precision % value)])
 
-
-if __name__ == "__main__":
-    run_module_suite()

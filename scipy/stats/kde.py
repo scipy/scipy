@@ -25,6 +25,7 @@ import warnings
 # Scipy imports.
 from scipy._lib.six import callable, string_types
 from scipy import linalg, special
+from scipy.special import logsumexp
 
 from numpy import atleast_2d, reshape, zeros, newaxis, dot, exp, pi, sqrt, \
      ravel, power, atleast_1d, squeeze, sum, transpose
@@ -527,11 +528,37 @@ class gaussian_kde(object):
     def logpdf(self, x):
         """
         Evaluate the log of the estimated pdf on a provided set of points.
-
-        Notes
-        -----
-        See `gaussian_kde.evaluate` for more details; this method simply
-        returns ``np.log(gaussian_kde.evaluate(x))``.
-
         """
-        return np.log(self.evaluate(x))
+
+        points = atleast_2d(x)
+
+        d, m = points.shape
+        if d != self.d:
+            if d == 1 and m == self.d:
+                # points was passed in as a row vector
+                points = reshape(points, (self.d, 1))
+                m = 1
+            else:
+                msg = "points have dimension %s, dataset has dimension %s" % (d,
+                    self.d)
+                raise ValueError(msg)
+
+        result = zeros((m,), dtype=float)
+
+        if m >= self.n:
+            # there are more points than data, so loop over data
+            energy = zeros((self.n, m), dtype=float)
+            for i in range(self.n):
+                diff = self.dataset[:, i, newaxis] - points
+                tdiff = dot(self.inv_cov, diff)
+                energy[i] = sum(diff*tdiff,axis=0) / 2.0
+            result = logsumexp(-energy, b=1/self._norm_factor, axis=0)
+        else:
+            # loop over points
+            for i in range(m):
+                diff = self.dataset - points[:, i, newaxis]
+                tdiff = dot(self.inv_cov, diff)
+                energy = sum(diff * tdiff, axis=0) / 2.0
+                result[i] = logsumexp(-energy, b=1/self._norm_factor)
+
+        return result

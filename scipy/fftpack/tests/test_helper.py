@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # Created by Pearu Peterson, September 2002
 
 from __future__ import division, print_function, absolute_import
@@ -12,15 +11,15 @@ Run tests if fftpack is not installed:
   python tests/test_helper.py [<level>]
 """
 
-from numpy.testing import (TestCase, assert_array_almost_equal,
-                           run_module_suite, assert_equal, assert_)
+from numpy.testing import (assert_array_almost_equal,
+                           assert_equal, assert_)
 from scipy.fftpack import fftshift,ifftshift,fftfreq,rfftfreq
 from scipy.fftpack.helper import next_fast_len
 
 from numpy import pi, random
 
 
-class TestFFTShift(TestCase):
+class TestFFTShift(object):
 
     def test_definition(self):
         x = [0,1,2,3,4,-4,-3,-2,-1]
@@ -38,7 +37,7 @@ class TestFFTShift(TestCase):
             assert_array_almost_equal(ifftshift(fftshift(x)),x)
 
 
-class TestFFTFreq(TestCase):
+class TestFFTFreq(object):
 
     def test_definition(self):
         x = [0,1,2,3,4,-4,-3,-2,-1]
@@ -49,7 +48,7 @@ class TestFFTFreq(TestCase):
         assert_array_almost_equal(10*pi*fftfreq(10,pi),x)
 
 
-class TestRFFTFreq(TestCase):
+class TestRFFTFreq(object):
 
     def test_definition(self):
         x = [0,1,1,2,2,3,3,4,4]
@@ -60,7 +59,7 @@ class TestRFFTFreq(TestCase):
         assert_array_almost_equal(10*pi*rfftfreq(10,pi),x)
 
 
-class TestNextOptLen(TestCase):
+class TestNextOptLen(object):
 
     def test_next_opt_len(self):
         random.seed(1234)
@@ -160,6 +159,3 @@ class TestNextOptLen(TestCase):
         for x, y in hams.items():
             assert_equal(next_fast_len(x), y)
 
-
-if __name__ == "__main__":
-    run_module_suite()

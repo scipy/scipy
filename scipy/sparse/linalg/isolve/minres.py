@@ -31,19 +31,19 @@ References
 Solution of sparse indefinite systems of linear equations,
     C. C. Paige and M. A. Saunders (1975),
     SIAM J. Numer. Anal. 12(4), pp. 617-629.
-    http://www.stanford.edu/group/SOL/software/minres.html
+    https://web.stanford.edu/group/SOL/software/minres/
 
 This file is a translation of the following MATLAB implementation:
-    http://www.stanford.edu/group/SOL/software/minres/matlab/
+    https://web.stanford.edu/group/SOL/software/minres/minres-matlab.zip
 """
 
 
 @set_docstring(header,
                Ainfo,
                footer)
-def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
+def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
            M=None, callback=None, show=False, check=False):
-    A,M,x,b,postprocess = make_system(A,M,x0,b,xtype)
+    A, M, x, b, postprocess = make_system(A, M, x0, b)
 
     matvec = A.matvec
     psolve = M.matvec

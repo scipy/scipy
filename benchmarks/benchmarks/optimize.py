@@ -13,7 +13,7 @@ try:
     import scipy.optimize
     from scipy.optimize.optimize import rosen, rosen_der, rosen_hess
     from scipy.optimize import (leastsq, basinhopping, differential_evolution,
-                                gensa, OptimizeResult)
+                                OptimizeResult)
 except ImportError:
     pass
 
@@ -228,7 +228,8 @@ class _BenchOptimizers(Benchmark):
         if methods is None:
             methods = ["COBYLA", 'Powell',
                        'L-BFGS-B', 'BFGS', 'CG', 'TNC', 'SLSQP',
-                       "Newton-CG", 'dogleg', 'trust-ncg']
+                       "Newton-CG", 'dogleg', 'trust-ncg', 'trust-exact',
+                       'trust-krylov']
 
         fonly_methods = ["COBYLA", 'Powell']
         for method in fonly_methods:
@@ -251,7 +252,8 @@ class _BenchOptimizers(Benchmark):
                 t1 = time.time()
                 self.add_result(res, t1-t0, method)
 
-        hessian_methods = ["Newton-CG", 'dogleg', 'trust-ncg']
+        hessian_methods = ["Newton-CG", 'dogleg', 'trust-ncg',
+                           'trust-exact', 'trust-krylov']
         if self.hess is not None:
             for method in hessian_methods:
                 if method not in methods:
@@ -272,7 +274,8 @@ class BenchSmoothUnbounded(Benchmark):
          'sin_1d', 'booth', 'beale', 'LJ'],
         ["COBYLA", 'Powell',
          'L-BFGS-B', 'BFGS', 'CG', 'TNC', 'SLSQP',
-         "Newton-CG", 'dogleg', 'trust-ncg'],
+         "Newton-CG", 'dogleg', 'trust-ncg', 'trust-exact',
+         'trust-krylov'],
         ["mean_nfev", "mean_time"]
     ]
     param_names = ["test function", "solver", "result type"]
@@ -505,10 +508,14 @@ class BenchGlobal(Benchmark):
 
     def setup_cache(self):
         if not self.enabled:
+<<<<<<< HEAD
             return {}
         numtrials = slow
         results = {}
         solvers = ['DE', 'basinh.', 'gensa']
+=======
+            return
+>>>>>>> upstream/master
 
         for name, klass in sorted(self._functions.items()):
             try:

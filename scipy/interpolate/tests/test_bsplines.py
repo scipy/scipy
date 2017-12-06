@@ -1,11 +1,10 @@
 from __future__ import division, absolute_import, print_function
 
-import warnings
-
 import numpy as np
-from numpy.testing import (run_module_suite, TestCase, assert_equal,
-        assert_allclose, assert_raises, assert_)
-from numpy.testing.decorators import knownfailureif
+from numpy.testing import assert_equal, assert_allclose, assert_
+from scipy._lib._numpy_compat import suppress_warnings
+from pytest import raises as assert_raises
+import pytest
 
 from scipy.interpolate import (BSpline, BPoly, PPoly, make_interp_spline,
         make_lsq_spline, _bspl, splev, splrep, splprep, splder, splantider,
@@ -14,15 +13,17 @@ import scipy.linalg as sl
 
 from scipy.interpolate._bsplines import _not_a_knot, _augknt
 import scipy.interpolate._fitpack_impl as _impl
+from scipy.interpolate._fitpack import _splint
 
 
-class TestBSpline(TestCase):
+class TestBSpline(object):
 
     def test_ctor(self):
         # knots should be an ordered 1D array of finite real numbers
         assert_raises((TypeError, ValueError), BSpline,
                 **dict(t=[1, 1.j], c=[1.], k=0))
-        assert_raises(ValueError, BSpline, **dict(t=[1, np.nan], c=[1.], k=0))
+        with np.errstate(invalid='ignore'):
+            assert_raises(ValueError, BSpline, **dict(t=[1, np.nan], c=[1.], k=0))
         assert_raises(ValueError, BSpline, **dict(t=[1, np.inf], c=[1.], k=0))
         assert_raises(ValueError, BSpline, **dict(t=[1, -1], c=[1.], k=0))
         assert_raises(ValueError, BSpline, **dict(t=[[1], [1]], c=[1.], k=0))
@@ -38,7 +39,7 @@ class TestBSpline(TestCase):
         assert_raises(ValueError, BSpline,
                 **dict(t=[0., 0., 1., 2., 3., 4.], c=[1., 1., 1.], k=2.5))
 
-        # basic inteval cannot have measure zero (here: [1..1])
+        # basic interval cannot have measure zero (here: [1..1])
         assert_raises(ValueError, BSpline,
                 **dict(t=[0., 0, 1, 1, 2, 3], c=[1., 1, 1], k=2))
 
@@ -206,6 +207,24 @@ class TestBSpline(TestCase):
         yy = b(xx)
         assert_(not np.all(np.isnan(yy)))
 
+    def test_periodic_extrap(self):
+        np.random.seed(1234)
+        t = np.sort(np.random.random(8))
+        c = np.random.random(4)
+        k = 3
+        b = BSpline(t, c, k, extrapolate='periodic')
+        n = t.size - (k + 1)
+
+        dt = t[-1] - t[0]
+        xx = np.linspace(t[k] - dt, t[n] + dt, 50)
+        xy = t[k] + (xx - t[k]) % (t[n] - t[k])
+        assert_allclose(b(xx), splev(xy, (t, c, k)))
+
+        # Direct check
+        xx = [-1, 0, 0.5, 1]
+        xy = t[k] + (xx - t[k]) % (t[n] - t[k])
+        assert_equal(b(xx, extrapolate='periodic'), b(xy, extrapolate=True))
+
     def test_ppoly(self):
         b = _make_random_spline()
         t, c, k = b.tck
@@ -318,12 +337,51 @@ class TestBSpline(TestCase):
     def test_integral(self):
         b = BSpline.basis_element([0, 1, 2])  # x for x < 1 else 2 - x
         assert_allclose(b.integrate(0, 1), 0.5)
+        assert_allclose(b.integrate(1, 0), -1 * 0.5)
         assert_allclose(b.integrate(1, 0), -0.5)
 
         # extrapolate or zeros outside of [0, 2]; default is yes
         assert_allclose(b.integrate(-1, 1), 0)
         assert_allclose(b.integrate(-1, 1, extrapolate=True), 0)
         assert_allclose(b.integrate(-1, 1, extrapolate=False), 0.5)
+        assert_allclose(b.integrate(1, -1, extrapolate=False), -1 * 0.5)
+
+        # Test ``_fitpack._splint()``
+        t, c, k = b.tck
+        assert_allclose(b.integrate(1, -1, extrapolate=False),
+                        _splint(t, c, k, 1, -1)[0])
+
+        # Test ``extrapolate='periodic'``.
+        b.extrapolate = 'periodic'
+        i = b.antiderivative()
+        period_int = i(2) - i(0)
+
+        assert_allclose(b.integrate(0, 2), period_int)
+        assert_allclose(b.integrate(2, 0), -1 * period_int)
+        assert_allclose(b.integrate(-9, -7), period_int)
+        assert_allclose(b.integrate(-8, -4), 2 * period_int)
+
+        assert_allclose(b.integrate(0.5, 1.5), i(1.5) - i(0.5))
+        assert_allclose(b.integrate(1.5, 3), i(1) - i(0) + i(2) - i(1.5))
+        assert_allclose(b.integrate(1.5 + 12, 3 + 12),
+                        i(1) - i(0) + i(2) - i(1.5))
+        assert_allclose(b.integrate(1.5, 3 + 12),
+                        i(1) - i(0) + i(2) - i(1.5) + 6 * period_int)
+
+        assert_allclose(b.integrate(0, -1), i(0) - i(1))
+        assert_allclose(b.integrate(-9, -10), i(0) - i(1))
+        assert_allclose(b.integrate(0, -9), i(1) - i(2) - 4 * period_int)
+
+    def test_integrate_ppoly(self):
+        # test .integrate method to be consistent with PPoly.integrate
+        x = [0, 1, 2, 3, 4]
+        b = make_interp_spline(x, x)
+        b.extrapolate = 'periodic'
+        p = PPoly.from_spline(b)
+
+        for x0, x1 in [(-5, 0.5), (0.5, 5), (-4, 13)]:
+            assert_allclose(b.integrate(x0, x1),
+                            p.integrate(x0, x1))
 
     def test_subclassing(self):
         # classmethods should not decay to the base class
@@ -380,9 +438,9 @@ def test_knots_multiplicity():
     for k in [1, 2, 3, 4, 5]:
         b = _make_random_spline(k=k)
         for j, b1 in enumerate(_make_multiples(b)):
-            yield check_splev, b1, j
+            check_splev(b1, j)
             for der in range(1, k+1):
-                yield check_splev, b1, j, der, 1e-12, 1e-12
+                check_splev(b1, j, der, 1e-12, 1e-12)
 
 
 ### stolen from @pv, verbatim
@@ -494,7 +552,7 @@ class TestInterop(object):
     #
     # Test that FITPACK-based spl* functions can deal with BSpline objects
     #
-    def __init__(self):
+    def setup_method(self):
         xx = np.linspace(0, 4.*np.pi, 41)
         yy = np.cos(xx)
         b = make_interp_spline(xx, yy)
@@ -521,10 +579,10 @@ class TestInterop(object):
 
         # With n-D coefficients, there's a quirck:
         # splev(x, BSpline) is equivalent to BSpline(x)
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', DeprecationWarning)
-            assert_allclose(splev(xnew, b2),
-                            b2(xnew), atol=1e-15, rtol=1e-15)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning,
+                       "Calling splev.. with BSpline objects with c.ndim > 1 is not recommended.")
+            assert_allclose(splev(xnew, b2), b2(xnew), atol=1e-15, rtol=1e-15)
 
         # However, splev(x, BSpline.tck) needs some transposes. This is because
         # BSpline interpolates along the first axis, while the legacy FITPACK
@@ -560,11 +618,22 @@ class TestInterop(object):
         b = BSpline(*tck)
         assert_allclose(y, b(x), atol=1e-15)
 
+    def test_splrep_errors(self):
         # test that both "old" and "new" splrep raise for an n-D ``y`` array
         # with n > 1
+        x, y = self.xx, self.yy
         y2 = np.c_[y, y]
-        assert_raises(Exception, splrep, x, y2)
-        assert_raises(Exception, _impl.splrep, x, y2)
+        msg = "failed in converting 3rd argument `y' of dfitpack.curfit to C/Fortran array"
+        with assert_raises(Exception, message=msg):
+            splrep(x, y2)
+        with assert_raises(Exception, message=msg):
+            _impl.splrep(x, y2)
+
+        # input below minimum size
+        with assert_raises(TypeError, message="m > k must hold"):
+            splrep(x[:3], y[:3])
+        with assert_raises(TypeError, message="m > k must hold"):
+            _impl.splrep(x[:3], y[:3])
 
     def test_splprep(self):
         x = np.arange(15).reshape((3, 5))
@@ -581,10 +650,34 @@ class TestInterop(object):
         assert_allclose(u, u_f, atol=1e-15)
         assert_allclose(splev(u_f, b_f), x, atol=1e-15)
 
+    def test_splprep_errors(self):
         # test that both "old" and "new" code paths raise for x.ndim > 2
-        x1 = np.arange(3*4*5).reshape((3, 4, 5))
-        assert_raises(ValueError, splprep, x1)
-        assert_raises(ValueError, _impl.splprep, x1)
+        x = np.arange(3*4*5).reshape((3, 4, 5))
+        with assert_raises(ValueError, message="too many values to unpack"):
+            splprep(x)
+        with assert_raises(ValueError, message="too many values to unpack"):
+            _impl.splprep(x)
+
+        # input below minimum size
+        x = np.linspace(0, 40, num=3)
+        with assert_raises(TypeError, message="m > k must hold"):
+            splprep([x])
+        with assert_raises(TypeError, message="m > k must hold"):
+            _impl.splprep([x])
+
+        # automatically calculated parameters are non-increasing
+        # see gh-7589
+        x = [-50.49072266, -50.49072266, -54.49072266, -54.49072266]
+        with assert_raises(ValueError, message="Invalid inputs"):
+            splprep([x])
+        with assert_raises(ValueError, message="Invalid inputs"):
+            _impl.splprep([x])
+
+        # given non-increasing parameter values u
+        x = [1, 3, 2, 4]
+        u = [0, 0.3, 0.2, 1]
+        with assert_raises(ValueError, message="Invalid inputs"):
+            splprep(*[[x], None, u])
 
     def test_sproot(self):
         b, b2 = self.b, self.b2
@@ -594,10 +687,11 @@ class TestInterop(object):
         assert_allclose(sproot((b.t, b.c, b.k)), roots, atol=1e-7, rtol=1e-7)
 
         # ... and deals with trailing dimensions if coef array is n-D
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', DeprecationWarning)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning,
+                       "Calling sproot.. with BSpline objects with c.ndim > 1 is not recommended.")
             r = sproot(b2, mest=50)
-            r = np.asarray(r)
+        r = np.asarray(r)
 
         assert_equal(r.shape, (3, 2, 4))
         assert_allclose(r - roots, 0, atol=1e-12)
@@ -617,10 +711,10 @@ class TestInterop(object):
                         b.integrate(0, 1), atol=1e-14)
 
         # ... and deals with n-D arrays of coefficients
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', DeprecationWarning)
-            assert_allclose(splint(0, 1, b2),
-                            b2.integrate(0, 1), atol=1e-14)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning,
+                       "Calling splint.. with BSpline objects with c.ndim > 1 is not recommended.")
+            assert_allclose(splint(0, 1, b2), b2.integrate(0, 1), atol=1e-14)
 
         # and the legacy behavior is preserved for a tck tuple w/ n-D coef
         c2r = b2.c.transpose(1, 2, 0)
@@ -687,7 +781,7 @@ class TestInterop(object):
         assert_(isinstance(bn2, BSpline))
         assert_(isinstance(tck_n2, tuple))   # back-compat: tck in, tck out
 
-class TestInterp(TestCase):
+class TestInterp(object):
     #
     # Test basic ways of constructing interpolating splines.
     #
@@ -748,7 +842,7 @@ class TestInterp(TestCase):
         assert_allclose([b(x[-1], 1), b(x[-1], 2)],
                         [val for (nu, val) in der_r])
 
-    @knownfailureif(True, 'unstable')
+    @pytest.mark.xfail(reason='unstable')
     def test_cubic_deriv_unstable(self):
         # 1st and 2nd derivative at x[0], no derivative information at x[-1]
         # The problem is not that it fails [who would use this anyway],
@@ -987,7 +1081,7 @@ def make_lsq_full_matrix(x, y, t, k=3):
     return c, (A, Y)
 
 
-class TestLSQ(TestCase):
+class TestLSQ(object):
     #
     # Test make_lsq_spline
     #
@@ -1009,7 +1103,7 @@ class TestLSQ(TestCase):
 
         # also check against numpy.lstsq
         aa, yy = AY
-        c1, _, _, _ = np.linalg.lstsq(aa, y)
+        c1, _, _, _ = np.linalg.lstsq(aa, y, rcond=-1)
         assert_allclose(b.c, c1)
 
     def test_weights(self):
@@ -1068,6 +1162,3 @@ class TestLSQ(TestCase):
             y[-1] = z
             assert_raises(ValueError, make_lsq_spline, x, y, t)
 
-
-if __name__ == "__main__":
-    run_module_suite()

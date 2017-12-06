@@ -1,5 +1,5 @@
 Name: scipy
-Version: 0.18.0.dev0
+Version: 1.1.0.dev0
 Summary: SciPy: Scientific Library for Python
 Url: https://www.scipy.org
 DownloadUrl: https://github.com/scipy/scipy/releases
@@ -15,14 +15,14 @@ Description:
     scientists and engineers. If you need to manipulate numbers on a computer
     and display or publish the results, give SciPy a try!
 Maintainer: SciPy Developers
-MaintainerEmail: scipy-dev@scipy.org
+MaintainerEmail: scipy-dev@python.org
 License: BSD
 Platforms: Windows,Linux,Solaris,Mac OS-X,Unix
 Classifiers:
-    Development Status :: 4 - Beta,
+    Development Status :: 5 - Production/Stable,
     Intended Audience :: Science/Research,
     Intended Audience :: Developers,
-    License :: OSI Approved,
+    License :: OSI Approved :: BSD License,
     Programming Language :: C,
     Programming Language :: Python,
     Programming Language :: Python :: 3,
@@ -49,7 +49,8 @@ DataFiles: tests
         spatial/tests/data/*.txt,
         special/tests/data/*.npz,
         linalg/cython_blas.pxd,
-        linalg/cython_lapack.pxd
+        linalg/cython_lapack.pxd,
+        special/*.pxd
 
 Recurse: scipy
 

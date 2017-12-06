@@ -14,15 +14,17 @@
 
 from __future__ import division, print_function, absolute_import
 
-__all__ = ['eig', 'eigh', 'eig_banded', 'eigvals', 'eigvalsh',
-           'eigvals_banded', 'hessenberg']
+__all__ = ['eig', 'eigvals', 'eigh', 'eigvalsh',
+           'eig_banded', 'eigvals_banded',
+           'eigh_tridiagonal', 'eigvalsh_tridiagonal', 'hessenberg']
 
 import numpy
 from numpy import (array, isfinite, inexact, nonzero, iscomplexobj, cast,
-                   flatnonzero, conj)
+                   flatnonzero, conj, asarray, argsort, empty)
 # Local imports
 from scipy._lib.six import xrange
 from scipy._lib._util import _asarray_validated
+from scipy._lib.six import string_types
 from .misc import LinAlgError, _datacopied, norm
 from .lapack import get_lapack_funcs, _compute_lwork
 
@@ -62,7 +64,7 @@ def _make_eigvals(alpha, beta, homogeneous_eigvals):
             # Use numpy.inf for complex values too since
             # 1/numpy.inf = 0, i.e. it correctly behaves as projective
             # infinity.
-            w[~alpha_zero & beta_zero] = numpy.inf 
+            w[~alpha_zero & beta_zero] = numpy.inf
             if numpy.all(alpha.imag == 0):
                 w[alpha_zero & beta_zero] = numpy.nan
             else:
@@ -70,7 +72,8 @@ def _make_eigvals(alpha, beta, homogeneous_eigvals):
             return w
 
 
-def _geneig(a1, b1, left, right, overwrite_a, overwrite_b, homogeneous_eigvals):
+def _geneig(a1, b1, left, right, overwrite_a, overwrite_b,
+            homogeneous_eigvals):
     ggev, = get_lapack_funcs(('ggev',), (a1, b1))
     cvl, cvr = left, right
     res = ggev(a1, b1, lwork=-1)
@@ -85,12 +88,7 @@ def _geneig(a1, b1, left, right, overwrite_a, overwrite_b, homogeneous_eigvals):
                                                         overwrite_b)
         alpha = alphar + _I * alphai
         w = _make_eigvals(alpha, beta, homogeneous_eigvals)
-    if info < 0:
-        raise ValueError('illegal value in %d-th argument of internal ggev' %
-                         -info)
-    if info > 0:
-        raise LinAlgError("generalized eig algorithm did not converge "
-                          "(info=%d)" % info)
+    _check_info(info, 'generalized eig algorithm (ggev)')
 
     only_real = numpy.all(w.imag == 0.0)
     if not (ggev.typecode in 'cz' or only_real):
@@ -176,8 +174,12 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
 
     See Also
     --------
+    eigvals : eigenvalues of general arrays
     eigh : Eigenvalues and right eigenvectors for symmetric/Hermitian arrays.
-
+    eig_banded : eigenvalues and right eigenvectors for symmetric/Hermitian
+        band matrices
+    eigh_tridiagonal : eigenvalues and right eiegenvectors for
+        symmetric/Hermitian tridiagonal matrices
     """
     a1 = _asarray_validated(a, check_finite=check_finite)
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
@@ -215,12 +217,9 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
         w = wr + _I * wi
         w = _make_eigvals(w, None, homogeneous_eigvals)
 
-    if info < 0:
-        raise ValueError('illegal value in %d-th argument of internal geev' %
-                         -info)
-    if info > 0:
-        raise LinAlgError("eig algorithm did not converge (only eigenvalues "
-                          "with order >= %d have converged)" % info)
+    _check_info(info, 'eig algorithm (geev)',
+                positive='did not converge (only eigenvalues '
+                         'with order >= %d have converged)')
 
     only_real = numpy.all(w.imag == 0.0)
     if not (geev.typecode in 'cz' or only_real):
@@ -321,8 +320,11 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
 
     See Also
     --------
+    eigvalsh : eigenvalues of symmetric or Hermitian arrays
     eig : eigenvalues and right eigenvectors for non-symmetric arrays
-
+    eigh : eigenvalues and right eigenvectors for symmetric/Hermitian arrays
+    eigh_tridiagonal : eigenvalues and right eiegenvectors for
+        symmetric/Hermitian tridiagonal matrices
     """
     a1 = _asarray_validated(a, check_finite=check_finite)
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
@@ -378,7 +380,8 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
     # FIXME: implement calculation of optimal lwork
     #        for all lapack routines
     if b1 is None:
-        (evr,) = get_lapack_funcs((pfx+'evr',), (a1,))
+        driver = pfx+'evr'
+        (evr,) = get_lapack_funcs((driver,), (a1,))
         if eigvals is None:
             w, v, info = evr(a1, uplo=uplo, jobz=_job, range="A", il=1,
                              iu=a1.shape[0], overwrite_a=overwrite_a)
@@ -392,7 +395,8 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
     else:
         # Use '*gvx' routines if range is specified
         if eigvals is not None:
-            (gvx,) = get_lapack_funcs((pfx+'gvx',), (a1, b1))
+            driver = pfx+'gvx'
+            (gvx,) = get_lapack_funcs((driver,), (a1, b1))
             (lo, hi) = eigvals
             w_tot, v, ifail, info = gvx(a1, b1, uplo=uplo, iu=hi,
                                         itype=type, jobz=_job, il=lo,
@@ -401,13 +405,15 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
             w = w_tot[0:hi-lo+1]
         # Use '*gvd' routine if turbo is on and no eigvals are specified
         elif turbo:
-            (gvd,) = get_lapack_funcs((pfx+'gvd',), (a1, b1))
+            driver = pfx+'gvd'
+            (gvd,) = get_lapack_funcs((driver,), (a1, b1))
             v, w, info = gvd(a1, b1, uplo=uplo, itype=type, jobz=_job,
                              overwrite_a=overwrite_a,
                              overwrite_b=overwrite_b)
         # Use '*gv' routine if turbo is off and no eigvals are specified
         else:
-            (gv,) = get_lapack_funcs((pfx+'gv',), (a1, b1))
+            driver = pfx+'gv'
+            (gv,) = get_lapack_funcs((driver,), (a1, b1))
             v, w, info = gv(a1, b1, uplo=uplo, itype=type, jobz=_job,
                             overwrite_a=overwrite_a,
                             overwrite_b=overwrite_b)
@@ -418,11 +424,8 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
             return w
         else:
             return w, v
-
-    elif info < 0:
-        raise LinAlgError("illegal value in %i-th argument of internal"
-                          " fortran routine." % (-info))
-    elif info > 0 and b1 is None:
+    _check_info(info, driver, positive=False)  # triage more specifically
+    if info > 0 and b1 is None:
         raise LinAlgError("unrecoverable internal error.")
 
     # The algorithm failed to converge.
@@ -443,6 +446,42 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
                           " factorization of 'b' could not be completed"
                           " and no eigenvalues or eigenvectors were"
                           " computed." % (info-b1.shape[0]))
+
+
+_conv_dict = {0: 0, 1: 1, 2: 2,
+              'all': 0, 'value': 1, 'index': 2,
+              'a': 0, 'v': 1, 'i': 2}
+
+
+def _check_select(select, select_range, max_ev, max_len):
+    """Check that select is valid, convert to Fortran style."""
+    if isinstance(select, string_types):
+        select = select.lower()
+    try:
+        select = _conv_dict[select]
+    except KeyError:
+        raise ValueError('invalid argument for select')
+    vl, vu = 0., 1.
+    il = iu = 1
+    if select != 0:  # (non-all)
+        sr = asarray(select_range)
+        if sr.ndim != 1 or sr.size != 2 or sr[1] < sr[0]:
+            raise ValueError('select_range must be a 2-element array-like '
+                             'in nondecreasing order')
+        if select == 1:  # (value)
+            vl, vu = sr
+            if max_ev == 0:
+                max_ev = max_len
+        else:  # 2 (index)
+            if sr.dtype.char.lower() not in 'lih':
+                raise ValueError('when using select="i", select_range must '
+                                 'contain integers, got dtype %s' % sr.dtype)
+            # translate Python (0 ... N-1) into Fortran (1 ... N) with + 1
+            il, iu = sr + 1
+            if min(il, iu) < 1 or max(il, iu) > max_len:
+                raise ValueError('select_range out of bounds')
+            max_ev = iu - il + 1
+    return select, vl, vu, il, iu, max_ev
 
 
 def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
@@ -520,8 +559,18 @@ def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
         The normalized eigenvector corresponding to the eigenvalue w[i] is
         the column v[:,i].
 
-    Raises LinAlgError if eigenvalue computation does not converge
+    Raises
+    ------
+    LinAlgError
+        If eigenvalue computation does not converge.
 
+    See Also
+    --------
+    eigvals_banded : eigenvalues for symmetric/Hermitian band matrices
+    eig : eigenvalues and right eigenvectors of general arrays.
+    eigh : eigenvalues and right eigenvectors for symmetric/Hermitian arrays
+    eigh_tridiagonal : eigenvalues and right eiegenvectors for
+        symmetric/Hermitian tridiagonal matrices
     """
     if eigvals_only or overwrite_a_band:
         a1 = _asarray_validated(a_band, check_finite=check_finite)
@@ -534,37 +583,25 @@ def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
 
     if len(a1.shape) != 2:
         raise ValueError('expected two-dimensional array')
-    if select.lower() not in [0, 1, 2, 'a', 'v', 'i', 'all', 'value', 'index']:
-        raise ValueError('invalid argument for select')
-    if select.lower() in [0, 'a', 'all']:
+    select, vl, vu, il, iu, max_ev = _check_select(
+        select, select_range, max_ev, a1.shape[1])
+    del select_range
+    if select == 0:
         if a1.dtype.char in 'GFD':
-            bevd, = get_lapack_funcs(('hbevd',), (a1,))
             # FIXME: implement this somewhen, for now go with builtin values
             # FIXME: calc optimal lwork by calling ?hbevd(lwork=-1)
             #        or by using calc_lwork.f ???
             # lwork = calc_lwork.hbevd(bevd.typecode, a1.shape[0], lower)
             internal_name = 'hbevd'
         else:  # a1.dtype.char in 'fd':
-            bevd, = get_lapack_funcs(('sbevd',), (a1,))
             # FIXME: implement this somewhen, for now go with builtin values
             #         see above
             # lwork = calc_lwork.sbevd(bevd.typecode, a1.shape[0], lower)
             internal_name = 'sbevd'
+        bevd, = get_lapack_funcs((internal_name,), (a1,))
         w, v, info = bevd(a1, compute_v=not eigvals_only,
                           lower=lower, overwrite_ab=overwrite_a_band)
-    if select.lower() in [1, 2, 'i', 'v', 'index', 'value']:
-        # calculate certain range only
-        if select.lower() in [2, 'i', 'index']:
-            select = 2
-            vl, vu, il, iu = 0.0, 0.0, min(select_range), max(select_range)
-            if min(il, iu) < 0 or max(il, iu) >= a1.shape[1]:
-                raise ValueError('select_range out of bounds')
-            max_ev = iu - il + 1
-        else:  # 1, 'v', 'value'
-            select = 1
-            vl, vu, il, iu = min(select_range), max(select_range), 0, 0
-            if max_ev == 0:
-                max_ev = a_band.shape[1]
+    else:  # select in [1, 2]
         if eigvals_only:
             max_ev = 1
         # calculate optimal abstol for dsbevx (see manpage)
@@ -574,28 +611,19 @@ def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
             lamch, = get_lapack_funcs(('lamch',), (array(0, dtype='d'),))
         abstol = 2 * lamch('s')
         if a1.dtype.char in 'GFD':
-            bevx, = get_lapack_funcs(('hbevx',), (a1,))
             internal_name = 'hbevx'
         else:  # a1.dtype.char in 'gfd'
-            bevx, = get_lapack_funcs(('sbevx',), (a1,))
             internal_name = 'sbevx'
-        # il+1, iu+1: translate python indexing (0 ... N-1) into Fortran
-        # indexing (1 ... N)
-        w, v, m, ifail, info = bevx(a1, vl, vu, il+1, iu+1,
-                                    compute_v=not eigvals_only,
-                                    mmax=max_ev,
-                                    range=select, lower=lower,
-                                    overwrite_ab=overwrite_a_band,
-                                    abstol=abstol)
+        bevx, = get_lapack_funcs((internal_name,), (a1,))
+        w, v, m, ifail, info = bevx(
+            a1, vl, vu, il, iu, compute_v=not eigvals_only, mmax=max_ev,
+            range=select, lower=lower, overwrite_ab=overwrite_a_band,
+            abstol=abstol)
         # crop off w and v
         w = w[:m]
         if not eigvals_only:
             v = v[:, :m]
-    if info < 0:
-        raise ValueError('illegal value in %d-th argument of internal %s' %
-                         (-info, internal_name))
-    if info > 0:
-        raise LinAlgError("eig algorithm did not converge")
+    _check_info(info, internal_name)
 
     if eigvals_only:
         return w
@@ -648,10 +676,11 @@ def eigvals(a, b=None, overwrite_a=False, check_finite=True,
 
     See Also
     --------
-    eigvalsh : eigenvalues of symmetric or Hermitian arrays,
     eig : eigenvalues and right eigenvectors of general arrays.
-    eigh : eigenvalues and eigenvectors of symmetric/Hermitian arrays.
-
+    eigvalsh : eigenvalues of symmetric or Hermitian arrays
+    eigvals_banded : eigenvalues for symmetric/Hermitian band matrices
+    eigvalsh_tridiagonal : eigenvalues of symmetric/Hermitian tridiagonal
+        matrices
     """
     return eig(a, b=b, left=0, right=0, overwrite_a=overwrite_a,
                check_finite=check_finite,
@@ -723,10 +752,11 @@ def eigvalsh(a, b=None, lower=True, overwrite_a=False,
 
     See Also
     --------
-    eigvals : eigenvalues of general arrays
     eigh : eigenvalues and right eigenvectors for symmetric/Hermitian arrays
-    eig : eigenvalues and right eigenvectors for non-symmetric arrays
-
+    eigvals : eigenvalues of general arrays
+    eigvals_banded : eigenvalues for symmetric/Hermitian band matrices
+    eigvalsh_tridiagonal : eigenvalues of symmetric/Hermitian tridiagonal
+        matrices
     """
     return eigh(a, b=b, lower=lower, eigvals_only=True,
                 overwrite_a=overwrite_a, overwrite_b=overwrite_b,
@@ -797,22 +827,253 @@ def eigvals_banded(a_band, lower=False, overwrite_a_band=False,
         The eigenvalues, in ascending order, each repeated according to its
         multiplicity.
 
-    Raises LinAlgError if eigenvalue computation does not converge
+    Raises
+    ------
+    LinAlgError
+        If eigenvalue computation does not converge.
 
     See Also
     --------
     eig_banded : eigenvalues and right eigenvectors for symmetric/Hermitian
         band matrices
+    eigvalsh_tridiagonal : eigenvalues of symmetric/Hermitian tridiagonal
+        matrices
     eigvals : eigenvalues of general arrays
     eigh : eigenvalues and right eigenvectors for symmetric/Hermitian arrays
     eig : eigenvalues and right eigenvectors for non-symmetric arrays
-
     """
     return eig_banded(a_band, lower=lower, eigvals_only=1,
                       overwrite_a_band=overwrite_a_band, select=select,
                       select_range=select_range, check_finite=check_finite)
 
-_double_precision = ['i', 'l', 'd']
+
+def eigvalsh_tridiagonal(d, e, select='a', select_range=None,
+                         check_finite=True, tol=0., lapack_driver='auto'):
+    """
+    Solve eigenvalue problem for a real symmetric tridiagonal matrix.
+
+    Find eigenvalues `w` of ``a``::
+
+        a v[:,i] = w[i] v[:,i]
+        v.H v    = identity
+
+    For a real symmetric matrix ``a`` with diagonal elements `d` and
+    off-diagonal elements `e`.
+
+    Parameters
+    ----------
+    d : ndarray, shape (ndim,)
+        The diagonal elements of the array.
+    e : ndarray, shape (ndim-1,)
+        The off-diagonal elements of the array.
+    select : {'a', 'v', 'i'}, optional
+        Which eigenvalues to calculate
+
+        ======  ========================================
+        select  calculated
+        ======  ========================================
+        'a'     All eigenvalues
+        'v'     Eigenvalues in the interval (min, max]
+        'i'     Eigenvalues with indices min <= i <= max
+        ======  ========================================
+    select_range : (min, max), optional
+        Range of selected eigenvalues
+    check_finite : bool, optional
+        Whether to check that the input matrix contains only finite numbers.
+        Disabling may give a performance gain, but may result in problems
+        (crashes, non-termination) if the inputs do contain infinities or NaNs.
+    tol : float
+        The absolute tolerance to which each eigenvalue is required
+        (only used when ``lapack_driver='stebz'``).
+        An eigenvalue (or cluster) is considered to have converged if it
+        lies in an interval of this width. If <= 0. (default),
+        the value ``eps*|a|`` is used where eps is the machine precision,
+        and ``|a|`` is the 1-norm of the matrix ``a``.
+    lapack_driver : str
+        LAPACK function to use, can be 'auto', 'stemr', 'stebz',  'sterf',
+        or 'stev'. When 'auto' (default), it will use 'stemr' if ``select='a'``
+        and 'stebz' otherwise. 'sterf' and 'stev' can only be used when
+        ``select='a'``.
+
+    Returns
+    -------
+    w : (M,) ndarray
+        The eigenvalues, in ascending order, each repeated according to its
+        multiplicity.
+
+    Raises
+    ------
+    LinAlgError
+        If eigenvalue computation does not converge.
+
+    See Also
+    --------
+    eigh_tridiagonal : eigenvalues and right eiegenvectors for
+        symmetric/Hermitian tridiagonal matrices
+    """
+    return eigh_tridiagonal(
+        d, e, eigvals_only=True, select=select, select_range=select_range,
+        check_finite=check_finite, tol=tol, lapack_driver=lapack_driver)
+
+
+def eigh_tridiagonal(d, e, eigvals_only=False, select='a', select_range=None,
+                     check_finite=True, tol=0., lapack_driver='auto'):
+    """
+    Solve eigenvalue problem for a real symmetric tridiagonal matrix.
+
+    Find eigenvalues `w` and optionally right eigenvectors `v` of ``a``::
+
+        a v[:,i] = w[i] v[:,i]
+        v.H v    = identity
+
+    For a real symmetric matrix ``a`` with diagonal elements `d` and
+    off-diagonal elements `e`.
+
+    Parameters
+    ----------
+    d : ndarray, shape (ndim,)
+        The diagonal elements of the array.
+    e : ndarray, shape (ndim-1,)
+        The off-diagonal elements of the array.
+    select : {'a', 'v', 'i'}, optional
+        Which eigenvalues to calculate
+
+        ======  ========================================
+        select  calculated
+        ======  ========================================
+        'a'     All eigenvalues
+        'v'     Eigenvalues in the interval (min, max]
+        'i'     Eigenvalues with indices min <= i <= max
+        ======  ========================================
+    select_range : (min, max), optional
+        Range of selected eigenvalues
+    check_finite : bool, optional
+        Whether to check that the input matrix contains only finite numbers.
+        Disabling may give a performance gain, but may result in problems
+        (crashes, non-termination) if the inputs do contain infinities or NaNs.
+    tol : float
+        The absolute tolerance to which each eigenvalue is required
+        (only used when 'stebz' is the `lapack_driver`).
+        An eigenvalue (or cluster) is considered to have converged if it
+        lies in an interval of this width. If <= 0. (default),
+        the value ``eps*|a|`` is used where eps is the machine precision,
+        and ``|a|`` is the 1-norm of the matrix ``a``.
+    lapack_driver : str
+        LAPACK function to use, can be 'auto', 'stemr', 'stebz', 'sterf',
+        or 'stev'. When 'auto' (default), it will use 'stemr' if ``select='a'``
+        and 'stebz' otherwise. When 'stebz' is used to find the eigenvalues and
+        ``eigvals_only=False``, then a second LAPACK call (to ``?STEIN``) is
+        used to find the corresponding eigenvectors. 'sterf' can only be
+        used when ``eigvals_only=True`` and ``select='a'``. 'stev' can only
+        be used when ``select='a'``.
+
+    Returns
+    -------
+    w : (M,) ndarray
+        The eigenvalues, in ascending order, each repeated according to its
+        multiplicity.
+    v : (M, M) ndarray
+        The normalized eigenvector corresponding to the eigenvalue ``w[i]`` is
+        the column ``v[:,i]``.
+
+    Raises
+    ------
+    LinAlgError
+        If eigenvalue computation does not converge.
+
+    See Also
+    --------
+    eigvalsh_tridiagonal : eigenvalues of symmetric/Hermitian tridiagonal
+        matrices
+    eig : eigenvalues and right eigenvectors for non-symmetric arrays
+    eigh : eigenvalues and right eigenvectors for symmetric/Hermitian arrays
+    eig_banded : eigenvalues and right eigenvectors for symmetric/Hermitian
+        band matrices
+
+    Notes
+    -----
+    This function makes use of LAPACK ``S/DSTEMR`` routines.
+    """
+    d = _asarray_validated(d, check_finite=check_finite)
+    e = _asarray_validated(e, check_finite=check_finite)
+    for check in (d, e):
+        if check.ndim != 1:
+            raise ValueError('expected one-dimensional array')
+        if check.dtype.char in 'GFD':  # complex
+            raise TypeError('Only real arrays currently supported')
+    if d.size != e.size + 1:
+        raise ValueError('d (%s) must have one more element than e (%s)'
+                         % (d.size, e.size))
+    select, vl, vu, il, iu, _ = _check_select(
+        select, select_range, 0, d.size)
+    if not isinstance(lapack_driver, string_types):
+        raise TypeError('lapack_driver must be str')
+    drivers = ('auto', 'stemr', 'sterf', 'stebz', 'stev')
+    if lapack_driver not in drivers:
+        raise ValueError('lapack_driver must be one of %s, got %s'
+                         % (drivers, lapack_driver))
+    if lapack_driver == 'auto':
+        lapack_driver = 'stemr' if select == 0 else 'stebz'
+    func, = get_lapack_funcs((lapack_driver,), (d, e))
+    compute_v = not eigvals_only
+    if lapack_driver == 'sterf':
+        if select != 0:
+            raise ValueError('sterf can only be used when select == "a"')
+        if not eigvals_only:
+            raise ValueError('sterf can only be used when eigvals_only is '
+                             'True')
+        w, info = func(d, e)
+        m = len(w)
+    elif lapack_driver == 'stev':
+        if select != 0:
+            raise ValueError('stev can only be used when select == "a"')
+        w, v, info = func(d, e, compute_v=compute_v)
+        m = len(w)
+    elif lapack_driver == 'stebz':
+        tol = float(tol)
+        internal_name = 'stebz'
+        stebz, = get_lapack_funcs((internal_name,), (d, e))
+        # If getting eigenvectors, needs to be block-ordered (B) instead of
+        # matirx-ordered (E), and we will reorder later
+        order = 'E' if eigvals_only else 'B'
+        m, w, iblock, isplit, info = stebz(d, e, select, vl, vu, il, iu, tol,
+                                           order)
+    else:   # 'stemr'
+        # ?STEMR annoyingly requires size N instead of N-1
+        e_ = empty(e.size+1, e.dtype)
+        e_[:-1] = e
+        stemr_lwork, = get_lapack_funcs(('stemr_lwork',), (d, e))
+        lwork, liwork, info = stemr_lwork(d, e_, select, vl, vu, il, iu,
+                                          compute_v=compute_v)
+        _check_info(info, 'stemr_lwork')
+        m, w, v, info = func(d, e_, select, vl, vu, il, iu,
+                             compute_v=compute_v, lwork=lwork, liwork=liwork)
+    _check_info(info, lapack_driver + ' (eigh_tridiagonal)')
+    w = w[:m]
+    if eigvals_only:
+        return w
+    else:
+        # Do we still need to compute the eigenvalues?
+        if lapack_driver == 'stebz':
+            func, = get_lapack_funcs(('stein',), (d, e))
+            v, info = func(d, e, w, iblock, isplit)
+            _check_info(info, 'stein (eigh_tridiagonal)',
+                        positive='%d eigenvectors failed to converge')
+            # Convert block-order to matrix-order
+            order = argsort(w)
+            w, v = w[order], v[:, order]
+        else:
+            v = v[:, :m]
+        return w, v
+
+
+def _check_info(info, driver, positive='did not converge (LAPACK info=%d)'):
+    """Check info return value."""
+    if info < 0:
+        raise ValueError('illegal value in argument %d of internal %s'
+                         % (-info, driver))
+    if info > 0 and positive:
+        raise LinAlgError(("%s " + positive) % (driver, info,))
 
 
 def hessenberg(a, calc_q=False, overwrite_a=False, check_finite=True):
@@ -863,17 +1124,13 @@ def hessenberg(a, calc_q=False, overwrite_a=False, check_finite=True):
     gehrd, gebal, gehrd_lwork = get_lapack_funcs(('gehrd', 'gebal',
                                                   'gehrd_lwork'), (a1,))
     ba, lo, hi, pivscale, info = gebal(a1, permute=0, overwrite_a=overwrite_a)
-    if info < 0:
-        raise ValueError('illegal value in %d-th argument of internal gebal '
-                         '(hessenberg)' % -info)
+    _check_info(info, 'gebal (hessenberg)', positive=False)
     n = len(a1)
 
     lwork = _compute_lwork(gehrd_lwork, ba.shape[0], lo=lo, hi=hi)
 
     hq, tau, info = gehrd(ba, lo=lo, hi=hi, lwork=lwork, overwrite_a=1)
-    if info < 0:
-        raise ValueError('illegal value in %d-th argument of internal gehrd '
-                         '(hessenberg)' % -info)
+    _check_info(info, 'gehrd (hessenberg)', positive=False)
     h = numpy.triu(hq, -1)
     if not calc_q:
         return h
@@ -883,7 +1140,5 @@ def hessenberg(a, calc_q=False, overwrite_a=False, check_finite=True):
     lwork = _compute_lwork(orghr_lwork, n, lo=lo, hi=hi)
 
     q, info = orghr(a=hq, tau=tau, lo=lo, hi=hi, lwork=lwork, overwrite_a=1)
-    if info < 0:
-        raise ValueError('illegal value in %d-th argument of internal orghr '
-                         '(hessenberg)' % -info)
+    _check_info(info, 'orghr (hessenberg)', positive=False)
     return h, q

@@ -7,11 +7,6 @@ from ._ufuncs import _ellip_harm
 from ._ellip_harm_2 import _ellipsoid, _ellipsoid_norm
 
 
-# the functions _ellipsoid, _ellipsoid_norm use global variables, the lock
-# protects them if the function is called from multiple threads simultaneously
-_ellip_lock = threading.Lock()
-
-
 def ellip_harm(h2, k2, n, p, s, signm=1, signn=1):
     r"""
     Ellipsoidal harmonic functions E^p_n(l)
@@ -52,7 +47,7 @@ def ellip_harm(h2, k2, n, p, s, signm=1, signn=1):
 
     Notes
     -----
-    The geometric intepretation of the ellipsoidal functions is
+    The geometric interpretation of the ellipsoidal functions is
     explained in [2]_, [3]_, [4]_.  The `signm` and `signn` arguments control the
     sign of prefactors for functions according to their type::
 
@@ -65,7 +60,7 @@ def ellip_harm(h2, k2, n, p, s, signm=1, signn=1):
 
     References
     ----------
-    .. [1] Digital Libary of Mathematical Functions 29.12
+    .. [1] Digital Library of Mathematical Functions 29.12
        http://dlmf.nist.gov/29.12
     .. [2] Bardhan and Knepley, "Computational science and
        re-discovery: open-source implementations of
@@ -158,9 +153,8 @@ def ellip_harm_2(h2, k2, n, p, s):
     0.00108056853382
 
     """
-    with _ellip_lock:
-        with np.errstate(all='ignore'):
-            return _ellip_harm_2_vec(h2, k2, n, p, s)
+    with np.errstate(all='ignore'):
+        return _ellip_harm_2_vec(h2, k2, n, p, s)
 
 
 def _ellip_normal_vec(h2, k2, n, p):
@@ -211,6 +205,5 @@ def ellip_normal(h2, k2, n, p):
     1723.38796997
 
     """
-    with _ellip_lock:
-        with np.errstate(all='ignore'):
-            return _ellip_normal_vec(h2, k2, n, p)
+    with np.errstate(all='ignore'):
+        return _ellip_normal_vec(h2, k2, n, p)

@@ -55,3 +55,6 @@ scipy/sparse/sparsetools/dia.py binary
 scipy/sparse/sparsetools/dia_wrap.cxx binary
 scipy/sparse/sparsetools/csgraph.py binary
 scipy/sparse/sparsetools/csgraph_wrap.cxx binary
+
+# Release notes, reduce number of conflicts.
+doc/release/*.rst merge=union

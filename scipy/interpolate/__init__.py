@@ -163,7 +163,6 @@ new code):
 .. autosummary::
    :toctree: generated/
 
-   ppform
    spleval
    spline
    splmake
@@ -192,5 +191,7 @@ from ._bsplines import *
 from ._pade import *
 
 __all__ = [s for s in dir() if not s.startswith('_')]
-from numpy.testing import Tester
-test = Tester().test
+
+from scipy._lib._testutils import PytestTester
+test = PytestTester(__name__)
+del PytestTester

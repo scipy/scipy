@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 from __future__ import division, print_function, absolute_import
 
 import sys
@@ -27,15 +26,13 @@ def configuration(parent_package='', top_path=None):
         sources=[('_hierarchy.c')],
         include_dirs=[get_numpy_include_dirs()])
 
+    config.add_extension('_optimal_leaf_ordering',
+        sources=[('_optimal_leaf_ordering.c')],
+        include_dirs=[get_numpy_include_dirs()])
+
     return config
+
 
 if __name__ == '__main__':
     from numpy.distutils.core import setup
-    setup(maintainer="SciPy Developers",
-          author="Eric Jones",
-          maintainer_email="scipy-dev@scipy.org",
-          description="Clustering Algorithms (Information Theory)",
-          url="https://www.scipy.org",
-          license="SciPy License (BSD Style)",
-          **configuration(top_path='').todict()
-          )
+    setup(**configuration(top_path='').todict())

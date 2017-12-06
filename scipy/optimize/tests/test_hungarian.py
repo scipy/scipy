@@ -1,7 +1,8 @@
 # Author: Brian M. Clapper, G. Varoquaux, Lars Buitinck
 # License: BSD
 
-from numpy.testing import assert_array_equal, assert_raises
+from numpy.testing import assert_array_equal
+from pytest import raises as assert_raises
 
 import numpy as np
 
@@ -59,3 +60,15 @@ def test_linear_sum_assignment_input_validation():
                        linear_sum_assignment(np.asarray(C)))
     assert_array_equal(linear_sum_assignment(C),
                        linear_sum_assignment(np.matrix(C)))
+
+    I = np.identity(3)
+    assert_array_equal(linear_sum_assignment(I.astype(np.bool)),
+                       linear_sum_assignment(I))
+    assert_raises(ValueError, linear_sum_assignment, I.astype(str))
+
+    I[0][0] = np.nan
+    assert_raises(ValueError, linear_sum_assignment, I)
+
+    I = np.identity(3)
+    I[1][1] = np.inf
+    assert_raises(ValueError, linear_sum_assignment, I)

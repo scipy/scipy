@@ -22,13 +22,13 @@
 
 struct WeightedTree {
     const ckdtree *tree;
-    npy_float64 *weights; 
-    npy_float64 *node_weights; 
+    npy_float64 *weights;
+    npy_float64 *node_weights;
 };
 
 struct CNBParams
 {
-    npy_float64 *r; 
+    npy_float64 *r;
     void * results; /* will be casted inside */
     WeightedTree self, other;
     int cumulative;
@@ -37,14 +37,14 @@ struct CNBParams
 template <typename MinMaxDist, typename WeightType, typename ResultType> static void
 traverse(
     RectRectDistanceTracker<MinMaxDist> *tracker,
-    const CNBParams *params, 
-    npy_float64 *start, npy_float64 *end, 
+    const CNBParams *params,
+    npy_float64 *start, npy_float64 *end,
     const ckdtreenode *node1,
     const ckdtreenode *node2)
 {
     static void (* const next)(RectRectDistanceTracker<MinMaxDist> *tracker,
-            const CNBParams *params, 
-            npy_float64 *start, npy_float64 *end, 
+            const CNBParams *params,
+            npy_float64 *start, npy_float64 *end,
             const ckdtreenode *node1,
             const ckdtreenode *node2) = traverse<MinMaxDist, WeightType, ResultType>;
 
@@ -95,7 +95,7 @@ traverse(
         if (node2->split_dim == -1) {  /* 1 & 2 are leaves */
             npy_intp i, j;
             const npy_float64 p = tracker->p;
-            const npy_float64 tmd = tracker->max_distance;                
+            const npy_float64 tmd = tracker->max_distance;
             const npy_float64 *sdata = params->self.tree->raw_data;
             const npy_intp *sindices = params->self.tree->raw_indices;
             const npy_float64 *odata = params->other.tree->raw_data;
@@ -127,14 +127,14 @@ traverse(
                     if (j < end2 - 2)
                         prefetch_datapoint(odata + oindices[j+2] * m, m);
 
-                    npy_float64 d = MinMaxDist::distance_p(params->self.tree,
+                    npy_float64 d = MinMaxDist::point_point_p(params->self.tree,
                             sdata + sindices[i] * m,
                             odata + oindices[j] * m,
                             p, m, tmd);
 
                     if (params->cumulative) {
                         /*
-                         * I think it's usually cheaper to test d against all 
+                         * I think it's usually cheaper to test d against all
                          * r's than to generate a distance array, sort it, then
                          * search for all r's via binary search
                          */
@@ -169,7 +169,7 @@ traverse(
             tracker->push_less_of(1, node1);
             next(tracker, params, start, end, node1->less, node2);
             tracker->pop();
-            
+
             tracker->push_greater_of(1, node1);
             next(tracker, params, start, end, node1->greater, node2);
             tracker->pop();
@@ -179,17 +179,17 @@ traverse(
             tracker->push_less_of(2, node2);
             next(tracker, params, start, end, node1->less, node2->less);
             tracker->pop();
-                
+
             tracker->push_greater_of(2, node2);
             next(tracker, params, start, end, node1->less, node2->greater);
             tracker->pop();
             tracker->pop();
-                
+
             tracker->push_greater_of(1, node1);
             tracker->push_less_of(2, node2);
             next(tracker, params, start, end, node1->greater, node2->less);
             tracker->pop();
-                
+
             tracker->push_greater_of(2, node2);
             next(tracker, params, start, end, node1->greater, node2->greater);
             tracker->pop();
@@ -215,18 +215,18 @@ count_neighbors(struct CNBParams *params,
 
     Rectangle r1(self->m, self->raw_mins, self->raw_maxes);
     Rectangle r2(other->m, other->raw_mins, other->raw_maxes);
-    
+
     if (NPY_LIKELY(self->raw_boxsize_data == NULL)) {
         HANDLE(NPY_LIKELY(p == 2), MinkowskiDistP2)
         HANDLE(p == 1, MinkowskiDistP1)
         HANDLE(ckdtree_isinf(p), MinkowskiDistPinf)
-        HANDLE(1, MinkowskiDistPp) 
+        HANDLE(1, MinkowskiDistPp)
         {}
     } else {
         HANDLE(NPY_LIKELY(p == 2), BoxMinkowskiDistP2)
         HANDLE(p == 1, BoxMinkowskiDistP1)
         HANDLE(ckdtree_isinf(p), BoxMinkowskiDistPinf)
-        HANDLE(1, BoxMinkowskiDistPp) 
+        HANDLE(1, BoxMinkowskiDistPp)
         {}
     }
 }
@@ -259,19 +259,19 @@ count_neighbors_unweighted(const ckdtree *self, const ckdtree *other,
     params.cumulative = cumulative;
 
     /* release the GIL */
-    NPY_BEGIN_ALLOW_THREADS   
+    NPY_BEGIN_ALLOW_THREADS
     {
         try {
             count_neighbors<Unweighted, npy_intp>(&params, n_queries, p);
-        } 
+        }
         catch(...) {
             translate_cpp_exception_with_gil();
         }
-    }  
+    }
     /* reacquire the GIL */
     NPY_END_ALLOW_THREADS
 
-    if (PyErr_Occurred()) 
+    if (PyErr_Occurred())
         /* true if a C++ exception was translated */
         return NULL;
     else {
@@ -299,8 +299,8 @@ struct Weighted {
 
 extern "C" PyObject*
 count_neighbors_weighted(const ckdtree *self, const ckdtree *other,
-                npy_float64 *self_weights, npy_float64 *other_weights, 
-                npy_float64 *self_node_weights, npy_float64 *other_node_weights, 
+                npy_float64 *self_weights, npy_float64 *other_weights,
+                npy_float64 *self_node_weights, npy_float64 *other_node_weights,
                 npy_intp n_queries, npy_float64 *real_r, npy_float64 *results,
                 const npy_float64 p, int cumulative)
 {
@@ -322,19 +322,19 @@ count_neighbors_weighted(const ckdtree *self, const ckdtree *other,
         params.other.node_weights = other_node_weights;
     }
     /* release the GIL */
-    NPY_BEGIN_ALLOW_THREADS   
+    NPY_BEGIN_ALLOW_THREADS
     {
         try {
             count_neighbors<Weighted, npy_float64>(&params, n_queries, p);
-        } 
+        }
         catch(...) {
             translate_cpp_exception_with_gil();
         }
-    }  
+    }
     /* reacquire the GIL */
     NPY_END_ALLOW_THREADS
 
-    if (PyErr_Occurred()) 
+    if (PyErr_Occurred())
         /* true if a C++ exception was translated */
         return NULL;
     else {
