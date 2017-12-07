@@ -187,16 +187,35 @@ class _BenchOptimizers(Benchmark):
         res.nfev = self.function.nfev
         self.add_result(res, t1 - t0, 'DE')
 
+    def run_gensa(self):
+        """
+        Do an optimization run for gensa
+        """
+        self.function.nfev = 0
+
+        t0 = time.time()
+
+        res = gensa(
+                self.fun,
+                self.bounds,
+                )
+        t1 = time.time()
+        res.success = self.function.success(res.x)
+        res.nfev = self.function.nfev
+        self.add_result(res, t1 - t0, 'gensa')
+
     def bench_run_global(self, numtrials=50, methods=None):
         """
         Run the optimization tests for the required minimizers.
         """
 
         if methods is None:
-            methods = ['DE', 'basinh.']
+            methods = ['DE', 'basinh.', 'gensa']
 
-        method_fun = {'DE': self.run_differentialevolution,
-                      'basinh.': self.run_basinhopping}
+        method_fun = {
+                'DE': self.run_differentialevolution,
+                'basinh.': self.run_basinhopping,
+                'gensa': self.run_gensa}
 
         for i in range(numtrials):
             for m in methods:
@@ -424,7 +443,7 @@ class BenchGlobal(Benchmark):
     params = [
         list(_functions.keys()),
         ["success%", "<nfev>"],
-        ['DE', 'basinh.'],
+        ['DE', 'basinh.', 'gensa'],
     ]
     param_names = ["test function", "result type", "solver"]
 
@@ -489,8 +508,29 @@ class BenchGlobal(Benchmark):
 
     def setup_cache(self):
         if not self.enabled:
+<<<<<<< HEAD
+            return {}
+        numtrials = slow
+        results = {}
+        solvers = ['DE', 'basinh.', 'gensa']
+=======
             return
+>>>>>>> upstream/master
 
-        # create the logfile to start with
-        with open(self.dump_fn, 'w') as f:
-            json.dump({}, f, indent=2)
+        for name, klass in sorted(self._functions.items()):
+            try:
+                f = klass()
+                b = _BenchOptimizers.from_funcobj(name, f)
+                with np.errstate(all='ignore'):
+                    b.bench_run_global(methods=solvers, numtrials=numtrials)
+
+                results[name] = b.average_results()
+            except:
+                results[name] = "\n".join(traceback.format_exc())
+                continue
+
+            dump_fn = os.path.join(os.path.dirname(__file__), '..', 'global-bench-results.json')
+            with open(dump_fn, 'w') as f:
+                json.dump(results, f, indent=2, sort_keys=True)
+
+        return results
