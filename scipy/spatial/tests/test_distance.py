@@ -628,12 +628,12 @@ class TestCdist(object):
             kwargs = dict()
             if metric in ['minkowski', 'wminkowski']:
                 kwargs['p'] = 1.23
-            if metric == 'wminkowski':
-                kwargs['w'] = 1.0 / X1.std(axis=0)
+                if metric == 'wminkowski':
+                    kwargs['w'] = 1.0 / X1.std(axis=0)
             Y1 = cdist(X1, X2, metric, **kwargs)
             Y2 = cdist(X1_copy, X2_copy, metric, **kwargs)
             # test that output is numerically equivalent
-            _assert_within_tol(Y1, Y2, eps, verbose > 2)
+            _assert_equal(Y1, Y2, eps, verbose > 2)
 
 class TestPdist(object):
 

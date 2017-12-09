@@ -270,7 +270,7 @@ def _validate_mahalanobis_kwargs(X, m, n, **kwargs):
                              "are required." % (m, n, n + 1))
         CV = np.atleast_2d(np.cov(X.astype(np.double).T))
         VI = np.linalg.inv(CV).T.copy()
-    kwargs["VI"] = _copy_array_if_base_present(_convert_to_double(VI))
+    kwargs["VI"] = _convert_to_double(VI)
     return kwargs
 
 
