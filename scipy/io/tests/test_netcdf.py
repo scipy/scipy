@@ -173,10 +173,7 @@ def test_bytes():
     # any ambiguity related to order.
     f.a = 'b'
     f.createDimension('dim', 1)
-    # int32 is intentionally chosen to avoid any need for null-padding with
-    # the fill value to the nearest 4-byte boundary, because we don't
-    # implement fill values properly yet.
-    var = f.createVariable('var', np.int32, ('dim',))
+    var = f.createVariable('var', np.int16, ('dim',))
     var[0] = -9999
     var.c = 'd'
     f.sync()
@@ -210,12 +207,23 @@ def test_bytes():
                 b'\x00\x00\x00\x02'
                 b'\x00\x00\x00\x01'
                 b'd\x00\x00\x00'
-                b'\x00\x00\x00\x04'
+                b'\x00\x00\x00\x03'
                 b'\x00\x00\x00\x04'
                 b'\x00\x00\x00\x78'
-                b'\xff\xff\xd8\xf1')
+                b'\xd8\xf1\x80\x01')
 
     assert_equal(actual, expected)
+
+
+def test_encoded_fill_value():
+    with netcdf_file(BytesIO(), mode='w') as f:
+        f.createDimension('x', 1)
+        var = f.createVariable('var', 'S1', ('x',))
+        assert_equal(var._get_encoded_fill_value(), b'\x00')
+        var._FillValue = b'\x01'
+        assert_equal(var._get_encoded_fill_value(), b'\x01')
+        var._FillValue = b'\x00\x00'  # invalid, wrong size
+        assert_equal(var._get_encoded_fill_value(), b'\x00')
 
 
 def test_read_example_data():
