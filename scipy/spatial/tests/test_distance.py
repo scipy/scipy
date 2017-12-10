@@ -618,6 +618,9 @@ class TestCdist(object):
         X1_copy = X1.copy()
         X2_copy = X2.copy()
 
+        # confirm equivalence
+        assert_equal(X1, X1_copy)
+        assert_equal(X2, X2_copy)
         # confirm contiguity
         assert_(not X1.flags.c_contiguous)
         assert_(not X2.flags.c_contiguous)
@@ -633,7 +636,7 @@ class TestCdist(object):
             Y1 = cdist(X1, X2, metric, **kwargs)
             Y2 = cdist(X1_copy, X2_copy, metric, **kwargs)
             # test that output is numerically equivalent
-            _assert_equal(Y1, Y2, eps, verbose > 2)
+            _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
 class TestPdist(object):
 
