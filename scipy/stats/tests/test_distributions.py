@@ -2349,12 +2349,22 @@ class TestTrapz(object):
 
 class TestTriang(object):
     def test_edge_cases(self):
-        assert_equal(stats.triang.pdf(0.5, 0), 1.)
-        assert_equal(stats.triang.pdf(0.5, 1), 1.)
+        with np.errstate(all='raise'):
+            assert_equal(stats.triang.pdf(0, 0), 2.)
+            assert_equal(stats.triang.pdf(0.5, 0), 1.)
+            assert_equal(stats.triang.pdf(1, 0), 0.)
 
-        assert_equal(stats.triang.cdf(0.5, 0.), 0.75)
-        assert_equal(stats.triang.cdf(0.5, 1.), 0.25)
+            assert_equal(stats.triang.pdf(0, 1), 0)
+            assert_equal(stats.triang.pdf(0.5, 1), 1.)
+            assert_equal(stats.triang.pdf(1, 1), 2)
 
+            assert_equal(stats.triang.cdf(0., 0.), 0.)
+            assert_equal(stats.triang.cdf(0.5, 0.), 0.75)
+            assert_equal(stats.triang.cdf(1.0, 0.), 1.0)
+
+            assert_equal(stats.triang.cdf(0., 1.), 0.)
+            assert_equal(stats.triang.cdf(0.5, 1.), 0.25)
+            assert_equal(stats.triang.cdf(1., 1.), 1)
 
 def test_540_567():
     # test for nan returned in tickets 540, 567

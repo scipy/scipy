@@ -5240,26 +5240,31 @@ class triang_gen(rv_continuous):
         return (c >= 0) & (c <= 1)
 
     def _pdf(self, x, c):
+        # 0: edge case where c=0
+        # 1: generalised case for x < c, don't use x <= c, as it doesn't cope
+        #    with c = 0.
+        # 2: generalised case for x >= c, but doesn't cope with c = 1
+        # 3: edge case where c=1
         r = _lazyselect([c == 0,
-                         c == 1,
                          x < c,
-                         x >= c],
-                        [lambda x, c: 2 - 2*x,
-                         lambda x, c: 2 * x,
+                         (x >= c) & (c != 1),
+                         c == 1],
+                        [lambda x, c: 2 - 2 * x,
                          lambda x, c: 2 * x / c,
-                         lambda x, c: 2 * (1-x) / (1-c)],
+                         lambda x, c: 2 * (1 - x) / (1 - c),
+                         lambda x, c: 2 * x],
                         (x, c))
         return r
 
     def _cdf(self, x, c):
         r = _lazyselect([c == 0,
-                         c == 1,
                          x < c,
-                         x >= c],
+                         (x >= c) & (c != 1),
+                         c == 1],
                         [lambda x, c: 2*x - x*x,
-                         lambda x, c: x * x,
                          lambda x, c: x * x / c,
-                         lambda x, c: (x*x - 2*x + c) / (c-1)],
+                         lambda x, c: (x*x - 2*x + c) / (c-1),
+                         lambda x, c: x * x],
                         (x, c))
         return r
 
