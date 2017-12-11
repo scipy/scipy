@@ -10,6 +10,7 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 from scipy.optimize import OptimizeResult
 from scipy.optimize import minimize
+from scipy.optimize._numdiff import approx_derivative
 from scipy.special import gammaln
 from scipy._lib._util import check_random_state
 
@@ -311,10 +312,6 @@ class ObjectiveFunWrapper(object):
                 self.kwargs['jac'] = self.gradient
             if 'bounds' not in self.kwargs:
                 self.kwargs['bounds'] = bounds
-        if 'eps' in self.kwargs:
-            self.reps = self.kwargs.get('eps')
-        else:
-            self.reps = 1.e-6
         if 'args' in self.kwargs:
             self.fun_args = self.kwargs.get('args')
 
@@ -323,25 +320,7 @@ class ObjectiveFunWrapper(object):
         return self.func(x, *self.fun_args)
 
     def gradient(self, x):
-        g = np.zeros(x.size, np.float64)
-        for i in range(x.size):
-            x1 = np.array(x)
-            x2 = np.array(x)
-            respl = self.reps
-            respr = self.reps
-            x1[i] = x[i] + respr
-            if x1[i] > self.upper[i]:
-                x1[i] = self.upper[i]
-                respr = x1[i] - x[i]
-            x2[i] = x[i] - respl
-            if x2[i] < self.lower[i]:
-                x2[i] = self.lower[i]
-                respl = x[i] - x2[i]
-            f1 = self.func_wrapper(x1)
-            f2 = self.func_wrapper(x2)
-            g[i] = ((f1 - f2)) / (respl + respr)
-        idx = np.logical_or(np.isnan(g), np.isinf(g))
-        g[idx] = 101.0
+        g = approx_derivative(self.func_wrapper, x)
         return g
 
     def local_search(self, x, maxlsiter=None):
@@ -572,8 +551,8 @@ def sda(func, x0, bounds, maxiter=1000, minimizer_kwargs=None,
     The following example is a 10-dimensional problem, with many local minima.
     The function involved is called Rastrigin
     (https://en.wikipedia.org/wiki/Rastrigin_function)
-    >>> import numpy as np
-    >>> from sdaopt import sda
+
+    >>> from scipy.optimize import sda
     >>> func = lambda x: np.sum(x * x - 10 * np.cos(
     ...    2 * np.pi * x)) + 10 * np.size(x)
     >>> lw = [-5.12] * 10

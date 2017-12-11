@@ -2,19 +2,13 @@
 # Copyright (c) 2017 Sylvain Gubian <sylvain.gubian@pmi.com>,
 # Yang Xiang <yang.xiang@pmi.com>
 # Author: Sylvain Gubian, PMP S.A.
-##############################################################################
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-##############################################################################
 """
 Unit tests for the simulted dual annealing global optimizer
 """
-from .._sda import sda
-from .._sda import VisitingDistribution
-from .._sda import ObjectiveFunWrapper
-from .._sda import EnergyState
+from scipy.optimize import sda
+from scipy.optimize._sda import VisitingDistribution
+from scipy.optimize._sda import ObjectiveFunWrapper
+from scipy.optimize._sda import EnergyState
 import numpy as np
 from numpy.testing import (assert_equal, TestCase, assert_allclose,
                            assert_almost_equal, assert_raises,
@@ -56,11 +50,11 @@ class TestSDA(TestCase):
         values = np.zeros(dim)
         x_step_low = vd.visiting(values, 0, self.high_temperature)
         # Make sure that only the first component is changed
-        assert np.all(x_step_low != 0)
+        assert_equal(np.not_equal(x_step_low, 0), True)
         values = np.zeros(dim)
         x_step_high = vd.visiting(values, dim, self.high_temperature)
-        # Make sure that all components are changed
-        assert x_step_high[0] != 0
+        # Make sure that component other than at dim has changed
+        assert_equal(np.not_equal(x_step_high[0], 0), True)
 
     def test__visiting_dist_high_temperature(self):
         lu = list(zip(*self.ld_bounds))
