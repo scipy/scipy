@@ -5188,18 +5188,25 @@ class trapz_gen(rv_continuous):
         return (c >= 0) & (c <= 1) & (d >= 0) & (d <= 1) & (d >= c)
 
     def _pdf(self, x, c, d):
-        u = 2 / (d - c + 1)
+        u = 2 / (d-c+1)
 
-        condlist = [x < c, x <= d, x > d]
-        choicelist = [u * x / c, u, u * (1 - x) / (1 - d)]
-        return np.select(condlist, choicelist)
+        return _lazyselect([x < c,
+                            (c <= x) & (x <= d),
+                            x > d],
+                           [lambda x, c, d, u: u * x / c,
+                            lambda x, c, d, u: u,
+                            lambda x, c, d, u: u * (1-x) / (1-d)],
+                            (x, c, d, u))
 
     def _cdf(self, x, c, d):
-        condlist = [x < c, x <= d, x > d]
-        choicelist = [x**2 / c / (d - c + 1),
-                      (c + 2 * (x - c)) / (d - c + 1),
-                      1 - ((1 - x)**2 / (d - c + 1) / (1 - d))]
-        return np.select(condlist, choicelist)
+        return _lazyselect([x < c,
+                            (c <= x) & (x <= d),
+                            x > d],
+                           [lambda x, c, d: x**2 / c / (d-c+1),
+                            lambda x, c, d: (c + 2 * (x-c)) / (d-c+1),
+                            lambda x, c, d: 1-((1-x) ** 2
+                                               / (d-c+1) / (1-d))],
+                            (x, c, d))
 
     def _ppf(self, q, c, d):
         qc, qd = self._cdf(c, c, d), self._cdf(d, c, d)

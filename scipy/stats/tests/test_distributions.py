@@ -2292,7 +2292,7 @@ class TestRdist(object):
 
 class TestTrapz(object):
     def test_reduces_to_triang(self):
-        modes = [0.3, 0.5]
+        modes = [0, 0.3, 0.5, 1]
         for mode in modes:
             x = [0, mode, 1]
             assert_almost_equal(stats.trapz.pdf(x, mode, mode),
@@ -2302,33 +2302,26 @@ class TestTrapz(object):
 
     def test_reduces_to_uniform(self):
         x = np.linspace(0, 1, 10)
-        with suppress_warnings() as sup, np.errstate(divide='ignore'):
-            sup.filter(RuntimeWarning,
-                       "invalid value encountered in true_divide")
-            assert_almost_equal(stats.trapz.pdf(x, 0, 1), stats.uniform.pdf(x))
-            assert_almost_equal(stats.trapz.cdf(x, 0, 1), stats.uniform.cdf(x))
+        assert_almost_equal(stats.trapz.pdf(x, 0, 1), stats.uniform.pdf(x))
+        assert_almost_equal(stats.trapz.cdf(x, 0, 1), stats.uniform.cdf(x))
 
     def test_cases(self):
-        with suppress_warnings() as sup, np.errstate(divide='ignore'):
-            sup.filter(RuntimeWarning,
-                       "invalid value encountered in true_divide")
+        # edge cases
+        assert_almost_equal(stats.trapz.pdf(0, 0, 0), 2)
+        assert_almost_equal(stats.trapz.pdf(1, 1, 1), 2)
+        assert_almost_equal(stats.trapz.pdf(0.5, 0, 0.8), 1.11111111111111111)
+        assert_almost_equal(stats.trapz.pdf(0.5, 0.2, 1.0), 1.11111111111111111)
 
-            # edge cases
-            assert_almost_equal(stats.trapz.pdf(0, 0, 0), 2)
-            assert_almost_equal(stats.trapz.pdf(1, 1, 1), 2)
-            assert_almost_equal(stats.trapz.pdf(0.5, 0, 0.8), 1.11111111111111111)
-            assert_almost_equal(stats.trapz.pdf(0.5, 0.2, 1.0), 1.11111111111111111)
+        # straightforward case
+        assert_almost_equal(stats.trapz.pdf(0.1, 0.2, 0.8), 0.625)
+        assert_almost_equal(stats.trapz.pdf(0.5, 0.2, 0.8), 1.25)
+        assert_almost_equal(stats.trapz.pdf(0.9, 0.2, 0.8), 0.625)
 
-            # straightforward case
-            assert_almost_equal(stats.trapz.pdf(0.1, 0.2, 0.8), 0.625)
-            assert_almost_equal(stats.trapz.pdf(0.5, 0.2, 0.8), 1.25)
-            assert_almost_equal(stats.trapz.pdf(0.9, 0.2, 0.8), 0.625)
-
-            assert_almost_equal(stats.trapz.cdf(0.1, 0.2, 0.8), 0.03125)
-            assert_almost_equal(stats.trapz.cdf(0.2, 0.2, 0.8), 0.125)
-            assert_almost_equal(stats.trapz.cdf(0.5, 0.2, 0.8), 0.5)
-            assert_almost_equal(stats.trapz.cdf(0.9, 0.2, 0.8), 0.96875)
-            assert_almost_equal(stats.trapz.cdf(1.0, 0.2, 0.8), 1.0)
+        assert_almost_equal(stats.trapz.cdf(0.1, 0.2, 0.8), 0.03125)
+        assert_almost_equal(stats.trapz.cdf(0.2, 0.2, 0.8), 0.125)
+        assert_almost_equal(stats.trapz.cdf(0.5, 0.2, 0.8), 0.5)
+        assert_almost_equal(stats.trapz.cdf(0.9, 0.2, 0.8), 0.96875)
+        assert_almost_equal(stats.trapz.cdf(1.0, 0.2, 0.8), 1.0)
 
     def test_trapz_vect(self):
         # test that array-valued shapes and arguments are handled
