@@ -1965,7 +1965,7 @@ cdef qr_insert_col(Q, R, u, int k, rcond, bint overwrite_qru, bint check_finite)
         rptr = extract(rnew, rs)
         uptr = extract(u1, us)
 {{py:
-RCONDS = ['&frc', '&drc', '<float_complex*>&cfrc', '<double_complex*>&cdrc']
+RCONDS = ['&frc', '&drc', '&cfrc', '&cdrc']
 }}
         with nogil:
             {{for COND, TYPECODE, CNAME, RC in zip(CONDS, TCODES, CNAMES, RCONDS)}}
