@@ -79,6 +79,8 @@ Filter design
 
    bilinear      -- Digital filter from an analog filter using
                     -- the bilinear transform.
+   bilinear_zpk  -- Digital filter from an analog filter using
+                    -- the bilinear transform.
    findfreqs     -- Find array of frequencies for computing filter response.
    firls         -- FIR filter design using least-squares error minimization.
    firwin        -- Windowed FIR filter design, with frequency response
@@ -126,9 +128,13 @@ Lower-level filter design functions:
    cmplx_sort     -- Sort roots based on magnitude.
    ellipap        -- Return (z,p,k) for analog prototype of elliptic filter.
    lp2bp          -- Transform a lowpass filter prototype to a bandpass filter.
+   lp2bp_zpk      -- Transform a lowpass filter prototype to a bandpass filter.
    lp2bs          -- Transform a lowpass filter prototype to a bandstop filter.
+   lp2bs_zpk      -- Transform a lowpass filter prototype to a bandstop filter.
    lp2hp          -- Transform a lowpass filter prototype to a highpass filter.
+   lp2hp_zpk      -- Transform a lowpass filter prototype to a highpass filter.
    lp2lp          -- Transform a lowpass filter prototype to a lowpass filter.
+   lp2lp_zpk      -- Transform a lowpass filter prototype to a lowpass filter.
    normalize      -- Normalize polynomial representation of a transfer function.
 
 

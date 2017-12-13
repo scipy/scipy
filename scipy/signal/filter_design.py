@@ -27,12 +27,14 @@ __all__ = ['findfreqs', 'freqs', 'freqz', 'tf2zpk', 'zpk2tf', 'normalize',
            'buttap', 'cheb1ap', 'cheb2ap', 'ellipap', 'besselap',
            'BadCoefficients', 'freqs_zpk', 'freqz_zpk',
            'tf2sos', 'sos2tf', 'zpk2sos', 'sos2zpk', 'group_delay',
-           'sosfreqz', 'iirnotch', 'iirpeak']
+           'sosfreqz', 'iirnotch', 'iirpeak', 'bilinear_zpk',
+           'lp2lp_zpk', 'lp2hp_zpk', 'lp2bp_zpk', 'lp2bs_zpk']
 
 
 class BadCoefficients(UserWarning):
     """Warning about badly conditioned filter coefficients"""
     pass
+
 
 abs = absolute
 
@@ -1969,9 +1971,9 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
             raise ValueError('Must specify a single critical frequency Wn')
 
         if btype == 'lowpass':
-            z, p, k = _zpklp2lp(z, p, k, wo=warped)
+            z, p, k = lp2lp_zpk(z, p, k, wo=warped)
         elif btype == 'highpass':
-            z, p, k = _zpklp2hp(z, p, k, wo=warped)
+            z, p, k = lp2hp_zpk(z, p, k, wo=warped)
     elif btype in ('bandpass', 'bandstop'):
         try:
             bw = warped[1] - warped[0]
@@ -1980,15 +1982,15 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
             raise ValueError('Wn must specify start and stop frequencies')
 
         if btype == 'bandpass':
-            z, p, k = _zpklp2bp(z, p, k, wo=wo, bw=bw)
+            z, p, k = lp2bp_zpk(z, p, k, wo=wo, bw=bw)
         elif btype == 'bandstop':
-            z, p, k = _zpklp2bs(z, p, k, wo=wo, bw=bw)
+            z, p, k = lp2bs_zpk(z, p, k, wo=wo, bw=bw)
     else:
         raise NotImplementedError("'%s' not implemented in iirfilter." % btype)
 
     # Find discrete equivalent if necessary
     if not analog:
-        z, p, k = _zpkbilinear(z, p, k, fs=fs)
+        z, p, k = bilinear_zpk(z, p, k, fs=fs)
 
     # Transform to proper out type (pole-zero, state-space, numer-denom)
     if output == 'zpk':
@@ -2011,11 +2013,9 @@ def _relative_degree(z, p):
         return degree
 
 
-# TODO: merge these into existing functions or make public versions
-
-def _zpkbilinear(z, p, k, fs):
+def bilinear_zpk(z, p, k, fs):
     """
-    Return a digital filter from an analog one using a bilinear transform.
+    Return a digital IIR filter from an analog one using a bilinear transform.
 
     Transform a set of poles and zeros from the analog s-plane to the digital
     z-plane using Tustin's method, which substitutes ``(z-1) / (z+1)`` for
@@ -2024,11 +2024,11 @@ def _zpkbilinear(z, p, k, fs):
     Parameters
     ----------
     z : array_like
-        Zeros of the analog IIR filter transfer function.
+        Zeros of the analog filter transfer function.
     p : array_like
-        Poles of the analog IIR filter transfer function.
+        Poles of the analog filter transfer function.
     k : float
-        System gain of the analog IIR filter transfer function.
+        System gain of the analog filter transfer function.
     fs : float
         Sample rate, as ordinary frequency (e.g. hertz). No prewarping is
         done in this function.
@@ -2041,6 +2041,10 @@ def _zpkbilinear(z, p, k, fs):
         Poles of the transformed digital filter transfer function.
     k : float
         System gain of the transformed digital filter.
+
+    Notes
+    -----
+    .. versionadded:: 1.1.0
 
     """
     z = atleast_1d(z)
@@ -2063,7 +2067,7 @@ def _zpkbilinear(z, p, k, fs):
     return z_z, p_z, k_z
 
 
-def _zpklp2lp(z, p, k, wo=1.0):
+def lp2lp_zpk(z, p, k, wo=1.0):
     r"""
     Transform a lowpass filter prototype to a different frequency.
 
@@ -2074,11 +2078,11 @@ def _zpklp2lp(z, p, k, wo=1.0):
     Parameters
     ----------
     z : array_like
-        Zeros of the analog IIR filter transfer function.
+        Zeros of the analog filter transfer function.
     p : array_like
-        Poles of the analog IIR filter transfer function.
+        Poles of the analog filter transfer function.
     k : float
-        System gain of the analog IIR filter transfer function.
+        System gain of the analog filter transfer function.
     wo : float
         Desired cutoff, as angular frequency (e.g. rad/s).
         Defaults to no change.
@@ -2098,6 +2102,8 @@ def _zpklp2lp(z, p, k, wo=1.0):
 
     .. math:: s \rightarrow \frac{s}{\omega_0}
 
+    .. versionadded:: 1.1.0
+
     """
     z = atleast_1d(z)
     p = atleast_1d(p)
@@ -2116,7 +2122,7 @@ def _zpklp2lp(z, p, k, wo=1.0):
     return z_lp, p_lp, k_lp
 
 
-def _zpklp2hp(z, p, k, wo=1.0):
+def lp2hp_zpk(z, p, k, wo=1.0):
     r"""
     Transform a lowpass filter prototype to a highpass filter.
 
@@ -2127,11 +2133,11 @@ def _zpklp2hp(z, p, k, wo=1.0):
     Parameters
     ----------
     z : array_like
-        Zeros of the analog IIR filter transfer function.
+        Zeros of the analog filter transfer function.
     p : array_like
-        Poles of the analog IIR filter transfer function.
+        Poles of the analog filter transfer function.
     k : float
-        System gain of the analog IIR filter transfer function.
+        System gain of the analog filter transfer function.
     wo : float
         Desired cutoff, as angular frequency (e.g. rad/s).
         Defaults to no change.
@@ -2154,6 +2160,8 @@ def _zpklp2hp(z, p, k, wo=1.0):
     This maintains symmetry of the lowpass and highpass responses on a
     logarithmic scale.
 
+    .. versionadded:: 1.1.0
+
     """
     z = atleast_1d(z)
     p = atleast_1d(p)
@@ -2175,7 +2183,7 @@ def _zpklp2hp(z, p, k, wo=1.0):
     return z_hp, p_hp, k_hp
 
 
-def _zpklp2bp(z, p, k, wo=1.0, bw=1.0):
+def lp2bp_zpk(z, p, k, wo=1.0, bw=1.0):
     r"""
     Transform a lowpass filter prototype to a bandpass filter.
 
@@ -2186,11 +2194,11 @@ def _zpklp2bp(z, p, k, wo=1.0, bw=1.0):
     Parameters
     ----------
     z : array_like
-        Zeros of the analog IIR filter transfer function.
+        Zeros of the analog filter transfer function.
     p : array_like
-        Poles of the analog IIR filter transfer function.
+        Poles of the analog filter transfer function.
     k : float
-        System gain of the analog IIR filter transfer function.
+        System gain of the analog filter transfer function.
     wo : float
         Desired passband center, as angular frequency (e.g. rad/s).
         Defaults to no change.
@@ -2215,6 +2223,8 @@ def _zpklp2bp(z, p, k, wo=1.0, bw=1.0):
 
     This is the "wideband" transformation, producing a passband with
     geometric (log frequency) symmetry about `wo`.
+
+    .. versionadded:: 1.1.0
 
     """
     z = atleast_1d(z)
@@ -2247,7 +2257,7 @@ def _zpklp2bp(z, p, k, wo=1.0, bw=1.0):
     return z_bp, p_bp, k_bp
 
 
-def _zpklp2bs(z, p, k, wo=1.0, bw=1.0):
+def lp2bs_zpk(z, p, k, wo=1.0, bw=1.0):
     r"""
     Transform a lowpass filter prototype to a bandstop filter.
 
@@ -2258,11 +2268,11 @@ def _zpklp2bs(z, p, k, wo=1.0, bw=1.0):
     Parameters
     ----------
     z : array_like
-        Zeros of the analog IIR filter transfer function.
+        Zeros of the analog filter transfer function.
     p : array_like
-        Poles of the analog IIR filter transfer function.
+        Poles of the analog filter transfer function.
     k : float
-        System gain of the analog IIR filter transfer function.
+        System gain of the analog filter transfer function.
     wo : float
         Desired stopband center, as angular frequency (e.g. rad/s).
         Defaults to no change.
@@ -2287,6 +2297,8 @@ def _zpklp2bs(z, p, k, wo=1.0, bw=1.0):
 
     This is the "wideband" transformation, producing a stopband with
     geometric (log frequency) symmetry about `wo`.
+
+    .. versionadded:: 1.1.0
 
     """
     z = atleast_1d(z)
@@ -4205,4 +4217,3 @@ bessel_norms = {'bessel': 'phase',
                 'bessel_phase': 'phase',
                 'bessel_delay': 'delay',
                 'bessel_mag': 'mag'}
-
