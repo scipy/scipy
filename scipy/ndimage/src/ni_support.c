@@ -179,6 +179,12 @@ int NI_InitLineBuffer(PyArrayObject *array, int axis, npy_intp size1,
     buffer->buffer_data = buffer_data;
     buffer->buffer_lines = buffer_lines;
     buffer->array_type = NI_CanonicalType(PyArray_TYPE(array));
+    if (buffer->array_type > 12)
+    {
+        PyErr_Format(PyExc_RuntimeError, "array type %d not supported",
+                    buffer->array_type);
+        return 0;
+    }
     buffer->array_lines = array_lines;
     buffer->next_line = 0;
     buffer->size1 = size1;
