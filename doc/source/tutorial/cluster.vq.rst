@@ -124,3 +124,19 @@ We get the output as *(centroids, label, data-type)*
 *Data-Type:*
 
 * int 32
+
+**Plotting the data-points along with their centroids**::
+
+   >>>import matplotlib.pyplot as plt
+   >>>plt.plot([1.90,1.65,1.50,0.80,0.90,1.00],[2.30,1.90,2.50,0.60,1.10,0.80],'ro')
+   >>>plt.plot([0.90,1.68333333],[0.83333333,2.23333333],'ro',c='b')
+   >>>plt.show()
+
+* The data-points/features are plotted in red
+* The centroids after clustering are plotted in blue
+
+References
+==========
+
+1. `Numpy Array <https://docs.scipy.org/doc/numpy-1.13.0/reference/generated/numpy.ndarray.html>`_
+2. `Pyplot <https://matplotlib.org/api/pyplot_api.html>`_
