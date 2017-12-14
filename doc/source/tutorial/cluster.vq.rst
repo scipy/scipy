@@ -19,7 +19,7 @@ The `K-Means Algorithm <https://en.wikipedia.org/wiki/K-means_clustering>`_ divi
 
 Let us consider a sample set of features/data-points as follows
 
-[1.9, 2.3], [1.5, 2.5], [0.8, 0.6], [1.0, 0.8], [1.65, 1.9], [0.9, 1.1]
+[1.90, 2.30], [1.50, 2.50], [0.80, 0.60], [1.00, 0.80], [1.65, 1.90], [0.90, 1.10]
 
 Plotting the features::
 
