@@ -24,7 +24,7 @@ Let us consider a sample set of features/data-points as follows
 Plotting the features::
 
    import matplotlib.pyplot as plt
-   plt.plot([1.9,1.65,1.5,0.8,0.9,1.0],[2.3,1.9,2.5,0.6,1.1,0.8],'ro')
+   plt.plot([1.90,1.65,1.50,0.80,0.90,1.00],[2.30,1.90,2.50,0.60,1.10,0.80],'ro')
    plt.show()
 
 **Syntax for scipy.cluster.vq.kmeans2**::
