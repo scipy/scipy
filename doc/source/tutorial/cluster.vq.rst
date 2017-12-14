@@ -129,10 +129,9 @@ We get the output as *(centroids, label, data-type)*
 
    >>>kmeans(features,3)
 
-   >>>(array([[ 0.95,  0.95 ],
-              [ 0.8 ,  0.6  ],
-              [ 1.68333333,  2.23333333]]), 
-              array([2, 2, 1, 0, 2, 0], dtype=int32))
+   >>>(array([[ 0.95      ,  0.95      ],
+        [ 0.8       ,  0.6       ],
+        [ 1.68333333,  2.23333333]]), array([2, 2, 1, 0, 2, 0], dtype=int32))
 
 *Centroids:*
 
