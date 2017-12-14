@@ -21,7 +21,7 @@ Let us consider a sample set of features/data-points as follows
 
 [1.90, 2.30], [1.50, 2.50], [0.80, 0.60], [1.00, 0.80], [1.65, 1.90], [0.90, 1.10]
 
-Plotting the features::
+**Plotting the features**::
 
    import matplotlib.pyplot as plt
    plt.plot([1.90,1.65,1.50,0.80,0.90,1.00],[2.30,1.90,2.50,0.60,1.10,0.80],'ro')
