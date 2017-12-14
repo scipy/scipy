@@ -21,7 +21,7 @@ Let us consider a sample set of features/data-points as follows
 
 [1.90, 2.30], [1.50, 2.50], [0.80, 0.60], [1.00, 0.80], [1.65, 1.90], [0.90, 1.10]
 
-**Plotting the features**::
+Plotting the features::
 
    import matplotlib.pyplot as plt
    plt.plot([1.90,1.65,1.50,0.80,0.90,1.00],[2.30,1.90,2.50,0.60,1.10,0.80],'ro')
@@ -125,11 +125,41 @@ We get the output as *(centroids, label, data-type)*
 
 * int 32
 
-**Plotting the data-points along with their centroids**::
+*If we wanted to find 3 clusters instead of 2 we do the following*::
+
+   >>>kmeans(features,3)
+
+   >>>(array([[ 0.95,  0.95 ],
+              [ 0.8 ,  0.6  ],
+              [ 1.68333333,  2.23333333]]), 
+              array([2, 2, 1, 0, 2, 0], dtype=int32))
+
+*Centroids:*
+
+* [0.95, 0.95]
+* [0.8 , 0.60]
+* [1.68333333, 2.23333333]
+
+*Label Array:*
+
+* [2, 2, 1, 0, 2, 0]
+
+*Data-Type:*
+
+* int 32
+
+**Plotting the data-points along with their centroids (for k=2)**::
 
    >>>import matplotlib.pyplot as plt
    >>>plt.plot([1.90,1.65,1.50,0.80,0.90,1.00],[2.30,1.90,2.50,0.60,1.10,0.80],'ro')
    >>>plt.plot([0.90,1.68333333],[0.83333333,2.23333333],'ro',c='b')
+   >>>plt.show()
+
+**Plotting the data-points along with their centroids (for k=3)**::
+
+   >>>import matplotlib.pyplot as plt
+   >>>plt.plot([1.90,1.65,1.50,0.80,0.90,1.00],[2.30,1.90,2.50,0.60,1.10,0.80],'ro')
+   >>>plt.plot([0.95, 0.8, 1.68333333],[0.95, 0.60, 2.23333333],'ro',c='b')
    >>>plt.show()
 
 * The data-points/features are plotted in red
