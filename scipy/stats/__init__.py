@@ -90,6 +90,7 @@ Continuous distributions
    lomax             -- Lomax (Pareto of the second kind)
    maxwell           -- Maxwell
    mielke            -- Mielke's Beta-Kappa
+   moyal             -- Moyal
    nakagami          -- Nakagami
    ncx2              -- Non-central chi-squared
    ncf               -- Non-central F

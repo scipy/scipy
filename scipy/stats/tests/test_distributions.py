@@ -36,7 +36,7 @@ DOCSTRINGS_STRIPPED = sys.flags.optimize > 1
 dists = ['uniform', 'norm', 'lognorm', 'expon', 'beta',
          'powerlaw', 'bradford', 'burr', 'fisk', 'cauchy', 'halfcauchy',
          'foldcauchy', 'gamma', 'gengamma', 'loggamma',
-         'alpha', 'anglit', 'arcsine', 'betaprime', 'dgamma',
+         'alpha', 'anglit', 'arcsine', 'betaprime', 'dgamma', 'moyal',
          'exponnorm', 'exponweib', 'exponpow', 'frechet_l', 'frechet_r',
          'gilbrat', 'f', 'ncf', 'chi2', 'chi', 'nakagami', 'genpareto',
          'genextreme', 'genhalflogistic', 'pareto', 'lomax', 'halfnorm',

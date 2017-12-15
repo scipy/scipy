@@ -4086,6 +4086,69 @@ class kappa3_gen(rv_continuous):
         return outputs[:]
 kappa3 = kappa3_gen(a=0.0, name='kappa3')
 
+class moyal_gen(rv_continuous):
+    r"""A Moyal continous random variable.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability density function for `moyal` is::
+
+    .. math::
+
+        f(x, b) = \frac{1}{\sqrt{2\pi}b}\exp{-\frac{1}{2}[\frac{x}{b}
+                     +\exp{-\frac{x}{b}}]}
+
+    `moyal` takes ``loc`` as a location parameter and :math:`b`
+    as a shape parameter where :math:`b>0`.
+
+    This distribution has utility in high-energy physics and radiation
+    detection. It describes the energy loss of a charged relativistic
+    particle due to ionization of the medium [1]_. It also provides an
+    approximation for the Landau distribution. For an in depth description
+    see [2]_.
+
+    References
+    ----------
+    .. [1] J.E. Moyal, "XXX. Theory of ionization fluctuations",
+           The London, Edinburgh, and Dublin Philosophical Magazine
+           and Journal of Science, vol 46, 263-280, (1955)
+           https://doi.org/10.1080/14786440308521076 (gated)
+    .. [2] G. Cordeiro et al., "The beta Moyal: a useful skew distribution",
+           International Journal of Research and Reviews in Applied Sciences,
+           vol 10, 171-192, (2012)
+           http://www.arpapress.com/Volumes/Vol10Issue2/IJRRAS_10_2_02.pdf
+
+    %(after_notes)s
+
+    .. versionadded:: 1.1.0
+
+    %(example)s
+
+    """
+    def _pdf(self, x, b):
+        #moyal.pdf(x, b) = 1 / (sqrt(2 * pi) * b) * exp(-0.5 * (x / b
+        #+ exp(-x / b)))
+        earg = x / b
+        coef = 1. / (np.sqrt(2 * np.pi) * b)
+        return coef * np.exp(-0.5 * (earg + np.exp(-earg)))
+
+    def _cdf(self, x, b):
+        #moyal.cdf(x, b) = 1 - gammainc(0.5, 0.5 * exp(-x / b))
+        return 1 - sc.gammainc(0.5, 0.5 * np.exp(-x / b))
+
+    def _sf(self, x, b):
+        return sc.erf(np.exp(-x / (2 * b)) / np.sqrt(2))
+
+    def _stats(self, b):
+        mu = b * (np.log(2) + np.euler_gamma)
+        mu2 = np.pi**2 * b**2 / 2
+        g1 = 28 * np.sqrt(2) * sc.zeta(3) / np.pi**3
+        g2 = 7.
+        return mu, mu2, g1, g2
+moyal = moyal_gen(name="moyal")
+
 
 class nakagami_gen(rv_continuous):
     r"""A Nakagami continuous random variable.
