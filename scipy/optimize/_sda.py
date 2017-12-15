@@ -489,7 +489,6 @@ def sda(func, x0, bounds, maxiter=1000, local_search_options=None,
     implementation was done in C++ for the R language [5]_ and has been
     benchmarked [6]_. SDA introduces an advanced dual annealing method to
     refine the solution found by the generalized annealing process.
-
     This algorithm uses a distorted Cauchy-Lorentz visiting distribution, with
     its shape controlled by the parameter :math:`q_{v}`
 

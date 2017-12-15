@@ -13,7 +13,7 @@ try:
     import scipy.optimize
     from scipy.optimize.optimize import rosen, rosen_der, rosen_hess
     from scipy.optimize import (leastsq, basinhopping, differential_evolution,
-                                OptimizeResult)
+                                sda, OptimizeResult)
 except ImportError:
     pass
 
@@ -187,22 +187,23 @@ class _BenchOptimizers(Benchmark):
         res.nfev = self.function.nfev
         self.add_result(res, t1 - t0, 'DE')
 
-    def run_gensa(self):
+    def run_sda(self):
         """
-        Do an optimization run for gensa
+        Do an optimization run for sda
         """
         self.function.nfev = 0
 
         t0 = time.time()
 
-        res = gensa(
+        res = sda(
                 self.fun,
+                None,
                 self.bounds,
                 )
         t1 = time.time()
         res.success = self.function.success(res.x)
         res.nfev = self.function.nfev
-        self.add_result(res, t1 - t0, 'gensa')
+        self.add_result(res, t1 - t0, 'sda')
 
     def bench_run_global(self, numtrials=50, methods=None):
         """
@@ -210,12 +211,12 @@ class _BenchOptimizers(Benchmark):
         """
 
         if methods is None:
-            methods = ['DE', 'basinh.', 'gensa']
+            methods = ['DE', 'basinh.', 'sda']
 
         method_fun = {
                 'DE': self.run_differentialevolution,
                 'basinh.': self.run_basinhopping,
-                'gensa': self.run_gensa}
+                'sda': self.run_sda}
 
         for i in range(numtrials):
             for m in methods:
@@ -443,7 +444,7 @@ class BenchGlobal(Benchmark):
     params = [
         list(_functions.keys()),
         ["success%", "<nfev>"],
-        ['DE', 'basinh.', 'gensa'],
+        ['DE', 'basinh.', 'sda'],
     ]
     param_names = ["test function", "result type", "solver"]
 
@@ -508,14 +509,11 @@ class BenchGlobal(Benchmark):
 
     def setup_cache(self):
         if not self.enabled:
-<<<<<<< HEAD
             return {}
         numtrials = slow
         results = {}
-        solvers = ['DE', 'basinh.', 'gensa']
-=======
+        solvers = ['DE', 'basinh.', 'sda']
             return
->>>>>>> upstream/master
 
         for name, klass in sorted(self._functions.items()):
             try:
