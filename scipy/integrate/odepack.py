@@ -28,6 +28,9 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
            mxords=5, printmessg=0):
     """
     Integrate a system of ordinary differential equations.
+    
+    .. note:: Use of this function is not recommended. Instead, use
+              `scipy.integrate.solve_ivp` to solve a differential equation.
 
     Solve a system of ordinary differential equations using lsoda from the
     FORTRAN library odepack.
@@ -39,9 +42,9 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
 
     where y can be a vector.
 
-    *Note*: The first two arguments of ``func(y, t, ...)`` are in the
-    opposite order of the arguments in the system definition function used
-    by the `scipy.integrate.ode` class.
+    .. note:: The first two arguments of ``func(y, t, ...)`` are in the
+              opposite order of the arguments in the system definition
+              function used by the `scipy.integrate.ode` class.
 
     Parameters
     ----------
