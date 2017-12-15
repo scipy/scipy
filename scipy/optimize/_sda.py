@@ -333,9 +333,9 @@ class ObjectiveFunWrapper(object):
 class SDARunner(object):
     MAX_REINIT_COUNT = 1000
 
-    def __init__(self, fun, x0, bounds, seed=None, minimizer_kwargs=None,
+    def __init__(self, fun, x0, bounds, seed=None, local_search_options=None,
                  temperature_start=5230, qv=2.62, qa=-5.0,
-                 maxfun=1e7, max_steps=500, pure_sa=False):
+                 maxfun=1e7, max_steps=500, no_local_search=False):
         if x0 is not None and not len(x0) == len(bounds):
             raise ValueError('Bounds size does not match x0')
         lu = list(zip(*bounds))
@@ -345,9 +345,9 @@ class SDARunner(object):
         if not np.all(lower < upper):
             raise ValueError('Bounds are note consistent min < max')
         # Wrapper for the objective function and minimizer
-        if minimizer_kwargs is None:
-            minimizer_kwargs = dict()
-        self.owf = ObjectiveFunWrapper(bounds, fun, **minimizer_kwargs)
+        if local_search_options is None:
+            local_search_options = dict()
+        self.owf = ObjectiveFunWrapper(bounds, fun, **local_search_options)
         # Initialization of RandomState for reproducible runs if seed provided
         self.rs = check_random_state(seed)
         # Initialization of the energy state
@@ -367,7 +367,7 @@ class SDARunner(object):
         # Markov chain instance
         self.mc = MarkovChain(qa, vd, self.owf, self.rs, self.es)
         self.qv = qv
-        self.pure_sa = pure_sa
+        self.no_local_search = no_local_search
 
     def search(self):
         max_steps_reached = False
@@ -391,7 +391,7 @@ class SDARunner(object):
                 self.mc.run(i, temperature)
                 if self.owf.nb_fun_call >= self.maxfun:
                     break
-                if not self.pure_sa:
+                if not self.no_local_search:
                     self.mc.local_search()
                     if self.owf.nb_fun_call >= self.maxfun:
                         break
@@ -407,9 +407,9 @@ class SDARunner(object):
         return res
 
 
-def sda(func, x0, bounds, maxiter=1000, minimizer_kwargs=None,
+def sda(func, x0, bounds, maxiter=1000, local_search_options=None,
         initial_temp=5230., visit=2.62, accept=-5.0, maxfun=1e7, seed=None,
-        pure_sa=False):
+        no_local_search=False):
     """
     Find the global minimum of a function using the Simulated Dual Annealing
     algorithm
@@ -432,7 +432,7 @@ def sda(func, x0, bounds, maxiter=1000, minimizer_kwargs=None,
     maxiter : int, optional
         The maximum number of sda iterations. Increase this value if the
         objective function is very complicated with high dimensions.
-    minimizer_kwargs : dict, optional
+    local_search_options : dict, optional
         Extra keyword arguments to be passed to the local minimizer
             ``scipy.optimize.minimize()`` Some important options could be:
             method : str
@@ -466,9 +466,10 @@ def sda(func, x0, bounds, maxiter=1000, minimizer_kwargs=None,
         Specify `seed` for repeatable minimizations. The random numbers
         generated with this seed only affect the visiting distribution
         function and new coordinates generation.
-    pure_sa: boolean, optional
-        If `pure_sa` is set to `True`, a traditional Generalized Simulated
-        Annealing will be performed with no local search strategy applied.
+    no_local_search : boolean, optional
+        If `no_local_search` is set to `True`, a traditional Generalized
+        Simulated Annealing will be performed with no local search
+        strategy applied.
 
     Returns
     -------
@@ -482,9 +483,12 @@ def sda(func, x0, bounds, maxiter=1000, minimizer_kwargs=None,
     Notes
     -----
     SDA is an implementation of the Simulated Dual Annealing. This stochastic
-    approach generalizes CSA [2]_ (Classical Simulated Annealing) and FSA (Fast
-    Simulated Annealing) to find the neighborhood of minima and introduces an
-    additional annealing process for the best solution found.
+    approach [3]_ implements the generalization of CSA (Classical Simulated
+    Annealing) and FSA (Fast Simulated Annealing) [1]_ [2]_ coupled to a
+    strategy for applying a local search on accepted locations [4]_. A first
+    implementation was done in C++ for the R language [5]_ and has been
+    benchmarked [6]_. SDA introduces an advanced dual annealing method to
+    refine the solution found by the generalized annealing process.
 
     This algorithm uses a distorted Cauchy-Lorentz visiting distribution, with
     its shape controlled by the parameter :math:`q_{v}`
@@ -525,7 +529,7 @@ def sda(func, x0, bounds, maxiter=1000, minimizer_kwargs=None,
 
     Where :math:`q_{v}` is the visiting parameter.
 
-    .. versionadded:: 0.19.0
+    .. versionadded:: 1.1.0
 
     References
     ----------
@@ -561,8 +565,9 @@ def sda(func, x0, bounds, maxiter=1000, minimizer_kwargs=None,
     >>> print("global minimum: xmin = {0}, f(xmin) = {1}".format(
     ...    ret.x, ret.fun))
     """
-    gr = SDARunner(func, x0, bounds, seed, minimizer_kwargs,
+    gr = SDARunner(func, x0, bounds, seed, local_search_options,
                    temperature_start=initial_temp, qv=visit, qa=accept,
-                   maxfun=maxfun, max_steps=maxiter, pure_sa=pure_sa)
+                   maxfun=maxfun, max_steps=maxiter,
+                   no_local_search=no_local_search)
     gr.search()
     return gr.result
