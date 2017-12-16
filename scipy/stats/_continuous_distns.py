@@ -4087,7 +4087,7 @@ class kappa3_gen(rv_continuous):
 kappa3 = kappa3_gen(a=0.0, name='kappa3')
 
 class moyal_gen(rv_continuous):
-    r"""A Moyal continous random variable.
+    r"""A Moyal continuous random variable.
 
     %(before_notes)s
 
@@ -4097,11 +4097,10 @@ class moyal_gen(rv_continuous):
 
     .. math::
 
-        f(x, b) = \frac{1}{\sqrt{2\pi}b}\exp{-\frac{1}{2}[\frac{x}{b}
-                     +\exp{-\frac{x}{b}}]}
+        f(x) = \exp{-\frac{1}{2}(x+\exp{-x})}
 
-    `moyal` takes ``loc`` as a location parameter and :math:`b`
-    as a shape parameter where :math:`b>0`.
+    `moyal` takes ``loc`` as a location parameter and ``scale``
+    as a scale parameter. Here :math:`x` is the usual standardized form.
 
     This distribution has utility in high-energy physics and radiation
     detection. It describes the energy loss of a charged relativistic
@@ -4127,25 +4126,28 @@ class moyal_gen(rv_continuous):
     %(example)s
 
     """
-    def _pdf(self, x, b):
-        #moyal.pdf(x, b) = 1 / (sqrt(2 * pi) * b) * exp(-0.5 * (x / b
-        #+ exp(-x / b)))
-        earg = x / b
-        coef = 1. / (np.sqrt(2 * np.pi) * b)
-        return coef * np.exp(-0.5 * (earg + np.exp(-earg)))
+    def _rvs(self):
+        sz, rndm = self._size, self._random_state
+        u1 = gamma.rvs(a = 0.5, scale = 2, size=sz, random_state=rndm)
+        return -np.log(u1)
 
-    def _cdf(self, x, b):
-        #moyal.cdf(x, b) = 1 - gammainc(0.5, 0.5 * exp(-x / b))
-        return 1 - sc.gammainc(0.5, 0.5 * np.exp(-x / b))
+    def _pdf(self, x):
+        return np.exp(-0.5 * (x + np.exp(-x))) / np.sqrt(2*np.pi)
 
-    def _sf(self, x, b):
-        return sc.erf(np.exp(-x / (2 * b)) / np.sqrt(2))
+    def _cdf(self, x):
+        return sc.erfc(np.exp(-0.5 * x) / np.sqrt(2))
 
-    def _stats(self, b):
-        mu = b * (np.log(2) + np.euler_gamma)
-        mu2 = np.pi**2 * b**2 / 2
-        g1 = 28 * np.sqrt(2) * sc.zeta(3) / np.pi**3
-        g2 = 7.
+    def _sf(self, x):
+        return sc.erf(np.exp(-0.5 * x) / np.sqrt(2))
+
+    def _ppf(self, x):
+        return -np.log(2 * sc.erfcinv(x)**2)
+
+    def _stats(self):
+        mu = np.log(2) + np.euler_gamma
+        mu2 = np.pi**2 / 2
+        g1 = 14 * sc.zeta(3)
+        g2 = 7 * np.pi**4 / 4
         return mu, mu2, g1, g2
 moyal = moyal_gen(name="moyal")
 
