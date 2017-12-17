@@ -4097,7 +4097,7 @@ class moyal_gen(rv_continuous):
 
     .. math::
 
-        f(x) = \exp{-\frac{1}{2}(x+\exp{-x})}
+        f(x) = \exp{-\frac{1}{2}(x+\exp{-x})} / \sqrt(2\pi)
 
     `moyal` takes ``loc`` as a location parameter and ``scale``
     as a scale parameter. Here :math:`x` is the usual standardized form.
@@ -4106,18 +4106,22 @@ class moyal_gen(rv_continuous):
     detection. It describes the energy loss of a charged relativistic
     particle due to ionization of the medium [1]_. It also provides an
     approximation for the Landau distribution. For an in depth description
-    see [2]_.
+    see [2]_. For additional description, see [3]_.
 
     References
     ----------
     .. [1] J.E. Moyal, "XXX. Theory of ionization fluctuations",
            The London, Edinburgh, and Dublin Philosophical Magazine
-           and Journal of Science, vol 46, 263-280, (1955)
+           and Journal of Science, vol 46, 263-280, (1955).
            https://doi.org/10.1080/14786440308521076 (gated)
     .. [2] G. Cordeiro et al., "The beta Moyal: a useful skew distribution",
            International Journal of Research and Reviews in Applied Sciences,
-           vol 10, 171-192, (2012)
+           vol 10, 171-192, (2012).
            http://www.arpapress.com/Volumes/Vol10Issue2/IJRRAS_10_2_02.pdf
+    .. [3] C. Walck, "Handbook on Statistical Distributions for
+           Experimentalists; International Report SUF-PFY/96-01", Chapter 26,
+           University of Stockholm: Stockholm, Sweden, (2007).
+           www.stat.rice.edu/~dobelman/textfiles/DistributionsHandbook.pdf
 
     %(after_notes)s
 
@@ -4146,9 +4150,23 @@ class moyal_gen(rv_continuous):
     def _stats(self):
         mu = np.log(2) + np.euler_gamma
         mu2 = np.pi**2 / 2
-        g1 = 14 * sc.zeta(3)
-        g2 = 7 * np.pi**4 / 4
+        g1 = 28 * np.sqrt(2) * sc.zeta(3) / np.pi**3
+        g2 = 7
         return mu, mu2, g1, g2
+
+    def _munp(self, n):
+        if n == 1.0:
+            return np.log(2) + np.euler_gamma
+        elif n == 2.0:
+            return np.pi**2 / 2
+        elif n == 3.0:
+            return 14 * sc.zeta(3)
+        elif n == 4.0:
+            return 7 * np.pi**4 / 4
+        else:
+            # return generic for higher moments
+            # return rv_continuous._mom1_sc(self, n, b)
+            return self._mom1_sc(n)
 moyal = moyal_gen(name="moyal")
 
 
