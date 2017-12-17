@@ -4151,7 +4151,7 @@ class moyal_gen(rv_continuous):
         mu = np.log(2) + np.euler_gamma
         mu2 = np.pi**2 / 2
         g1 = 28 * np.sqrt(2) * sc.zeta(3) / np.pi**3
-        g2 = 7
+        g2 = 4.
         return mu, mu2, g1, g2
 
     def _munp(self, n):
