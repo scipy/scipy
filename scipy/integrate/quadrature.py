@@ -382,25 +382,21 @@ def simps(y, x=None, dx=1, axis=-1, even='avg'):
 
     Examples
     --------
-    >>> import numpy as np
     >>> from scipy import integrate
-    >>> x = np.arange(0,10)
-    >>> y = np.arange(0,10)
+    >>> x = np.arange(0, 10)
+    >>> y = np.arange(0, 10)
 
-    >>> integrate.simps(y,x)
+    >>> integrate.simps(y, x)
     40.5
 
     >>> y = np.power(x, 3)
-    >>> integrate.simps(y,x)
+    >>> integrate.simps(y, x)
     1642.5
+    >>> integrate.quad(lambda x: x**3, 0, 9)[0]
+    1640.25
 
     >>> integrate.simps(y, x, even='first')
     1644.5
-
-
-
-
-
 
     """
     y = np.asarray(y)
