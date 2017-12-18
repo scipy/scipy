@@ -1692,7 +1692,7 @@ def _fft_helper(x, win, detrend_func, nperseg, noverlap, nfft, sides):
     scipy.signal._spectral_helper
 
     This is a helper function that does the main FFT calculation for
-    `_spectral helper`. All input valdiation is performed there, and the
+    `_spectral helper`. All input validation is performed there, and the
     data axis is assumed to be the last axis of x. It is not designed to
     be called externally. The windows are not averaged over; the result
     from each window is returned.
