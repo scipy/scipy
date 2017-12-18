@@ -7,13 +7,24 @@ cdef extern from "c_misc/misc.h":
     double poch(double x, double m) nogil
 
 from ._complexstuff cimport *
-from libc.math cimport cos, sqrt, fabs
+from libc.math cimport cos, sin, sqrt, fabs, sqrt, exp, M_PI
 from libc.stdlib cimport abs
 
 cdef inline double complex sph_harmonic(int m, int n, double theta, double phi) nogil:
-    cdef double x, prefactor
-    cdef double complex val
+    cdef double x, prefactor, k
+    cdef double complex val, l
     cdef int mp
+
+    if m == n and m > 65:
+        # Fall back to a sketchy implementation that returns
+        # a somewhat reasonable result, as the correct implementation fails
+        k = (m*phi)
+        l = cos(k) + 1j*sin(k)
+        val = sqrt(1/M_PI)*0.5524*m**0.2428*l*(sin(theta))**m
+
+        if val.real > 1E-7 or val.imag > 1E-7:
+            return val
+
     x = cos(phi)
     if abs(m) > n :
         sf_error.error("sph_harm", sf_error.ARG, "m should not be greater than n")

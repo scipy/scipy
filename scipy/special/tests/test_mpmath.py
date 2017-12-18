@@ -1858,7 +1858,7 @@ class TestSystematic(object):
             return sc.sph_harm(m, l, phi, theta)
         assert_mpmath_equal(spherharm,
                             mpmath.spherharm,
-                            [IntArg(0, 100), IntArg(0, 100),
+                            [IntArg(0, 1000), IntArg(0, 1000),
                              Arg(a=0, b=pi), Arg(a=0, b=2*pi)],
                             atol=1e-8, n=6000,
                             dps=150)
