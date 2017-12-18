@@ -108,7 +108,7 @@ c-----------------------------------------------------------------------
       if (nr .eq. 2) write (lun, 50) r1,r2
  50   format(6x,'in above,  r1 =',d21.13,3x,'r2 =',d21.13)
 c abort the run if level = 2. ------------------------------------------
- 100  if (level .ne. 2) return
+ 100  return
       stop
 c----------------------- end of subroutine xerrwv ----------------------
       end
