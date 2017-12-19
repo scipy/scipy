@@ -1469,13 +1469,6 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
     result : ndarray
         Array of output data, contents dependent on *mode* kwarg.
 
-    References
-    ----------
-    .. [1] Stack Overflow, "Rolling window for 1D arrays in Numpy?",
-           http://stackoverflow.com/a/6811241
-    .. [2] Stack Overflow, "Using strides for an efficient moving
-           average filter", http://stackoverflow.com/a/4947453
-
     Notes
     -----
     Adapted from matplotlib.mlab
@@ -1701,11 +1694,6 @@ def _fft_helper(x, win, detrend_func, nperseg, noverlap, nfft, sides):
     -------
     result : ndarray
         Array of FFT data
-
-    References
-    ----------
-    .. [1] Stack Overflow, "Repeat NumPy array without replicating
-           data?", http://stackoverflow.com/a/5568169
 
     Notes
     -----
