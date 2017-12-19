@@ -562,7 +562,7 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, rr):
         # test_empty_constraint_1
         if c.size == 0:
             status = 0
-            message = ("The solution was determined in presolve as there are"
+            message = ("The solution was determined in presolve as there are "
                        "no non-trivial constraints.")
         elif (np.any(np.logical_and(c < 0, ub == np.inf)) or
                 np.any(np.logical_and(c > 0, lb == -np.inf))):
@@ -570,8 +570,8 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, rr):
             status = 3
             message = ("If feasible, the problem is (trivially) unbounded "
                        "because there are no constraints and at least one "
-                       " element of c is negative. If you wish to check "
-                       " whether the problem is infeasible, turn presolve "
+                       "element of c is negative. If you wish to check "
+                       "whether the problem is infeasible, turn presolve "
                        "off.")
         else:  # test_empty_constraint_2
             status = 0
