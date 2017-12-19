@@ -1413,6 +1413,30 @@ class TestOrthoGroup(object):
         ks_tests = [ks_2samp(proj[p0], proj[p1])[1] for (p0, p1) in pairs]
         assert_array_less([ks_prob]*len(pairs), ks_tests)
 
+    def test_pairwise_distances(self):
+        # Test that the distribution of pairwise distances is close to correct.
+        np.random.seed(514)
+        def random_ortho(dim):
+            u, _s, v = np.linalg.svd(np.random.normal(size=(dim, dim)))
+            return np.dot(u, v)
+
+        for dim in range(2, 6):
+            def generate_test_statistics(rvs, N=1000, eps=1e-10):
+                stats = np.array([
+                    np.sum((rvs(dim=dim) - rvs(dim=dim))**2)
+                    for _ in range(N)
+                ])
+                # Add a bit of noise to account for numeric accuracy.
+                stats += np.random.uniform(-eps, eps, size=stats.shape)
+                return stats
+
+            expected = generate_test_statistics(random_ortho)
+            actual = generate_test_statistics(scipy.stats.ortho_group.rvs)
+
+            _D, p = scipy.stats.ks_2samp(expected, actual)
+
+            assert_array_less(.05, p)
+
 class TestRandomCorrelation(object):
     def test_reproducibility(self):
         np.random.seed(514)
