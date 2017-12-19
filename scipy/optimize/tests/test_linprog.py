@@ -847,6 +847,16 @@ class TestLinprogIPSpecific:
     # the following tests don't need to be performed separately for
     # sparse presolve, sparse after presolve, and dense
 
+    def test_bounds_equal_but_infeasible(self):
+        c = [-4, 1];
+        A_ub = [[7, -2], [0, 1], [2, -2]]
+        b_ub = [14, 3, 3]
+        bounds= [(2, 2), (0,0)]
+        res = linprog(c=c, A_ub=A_ub, b_ub=b_ub, bounds=bounds,
+                      method=self.method,
+                      options={"presolve": True})
+        _assert_infeasible(res, desired_fun=-1)
+        
     def test_unbounded_below_no_presolve_original(self):
         # formerly caused segfault in TravisCI w/ "cholesky":True
         c = [-1]
