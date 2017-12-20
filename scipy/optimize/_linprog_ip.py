@@ -543,6 +543,21 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, rr):
     # identical bounds indicate that variable can be removed
     i_f = np.abs(lb - ub) < tol   # indices of "fixed" variables
     i_nf = np.logical_not(i_f)  # indices of "not fixed" variables
+
+    # test_bounds_equal_but_infeasible
+    if np.all(i_f):  # if bounds define solution, check for consistency
+        residual = b_eq - A_eq.dot(lb)
+        slack = b_ub - A_ub.dot(lb)
+        if ((A_ub.size > 0 and np.any(slack < 0)) or
+                (A_eq.size > 0 and not np.allclose(residual, 0))):
+            status = 2
+            message = ("The problem is (trivially) infeasible because the "
+                       "bounds fix all variables to values inconsistent with "
+                       "the constraints")
+            complete = True
+            return (c, c0, A_ub, b_ub, A_eq, b_eq, bounds,
+                    x, undo, complete, status, message)
+
     if np.any(i_f):
         c0 += c[i_f].dot(lb[i_f])
         b_eq = b_eq - A_eq[:, i_f].dot(lb[i_f])
