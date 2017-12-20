@@ -1086,7 +1086,6 @@ class TestMultinomial(object):
         vals5 = multinomial.pmf([3, 3, 0], 6, [2/3.0, 1/3.0, 0])
         assert_allclose(vals5, 0.219478737997, rtol=1e-8)
 
-
     def test_pmf_broadcasting(self):
         vals0 = multinomial.pmf([1, 2], 3, [[.1, .9], [.2, .8]])
         assert_allclose(vals0, [.243, .384], rtol=1e-8)
