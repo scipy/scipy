@@ -1712,23 +1712,27 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
         The criterion to use in forming flat clusters. This can
         be any of the following values:
 
-          ``inconsistent`` : If a cluster node and all its
+          ``inconsistent`` : 
+              If a cluster node and all its
               descendants have an inconsistent value less than or equal
               to `t` then all its leaf descendants belong to the
               same flat cluster. When no non-singleton cluster meets
               this criterion, every node is assigned to its own
               cluster. (Default)
 
-          ``distance`` : Forms flat clusters so that the original
+          ``distance`` : 
+              Forms flat clusters so that the original
               observations in each flat cluster have no greater a
               cophenetic distance than `t`.
 
-          ``maxclust`` : Finds a minimum threshold ``r`` so that
+          ``maxclust`` : 
+              Finds a minimum threshold ``r`` so that
               the cophenetic distance between any two original
               observations in the same flat cluster is no more than
               ``r`` and no more than `t` flat clusters are formed.
 
-          ``monocrit`` : Forms a flat cluster from a cluster node c
+          ``monocrit`` : 
+              Forms a flat cluster from a cluster node c
               with index i when ``monocrit[j] <= t``.
 
               For example, to threshold on the maximum mean distance
@@ -1738,7 +1742,8 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
                   MR = maxRstat(Z, R, 3)
                   cluster(Z, t=0.8, criterion='monocrit', monocrit=MR)
 
-          ``maxclust_monocrit`` : Forms a flat cluster from a
+          ``maxclust_monocrit`` : 
+              Forms a flat cluster from a
               non-singleton cluster node ``c`` when ``monocrit[i] <=
               r`` for all cluster indices ``i`` below and including
               ``c``. ``r`` is minimized such that no more than ``t``
