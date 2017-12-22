@@ -1557,6 +1557,7 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
     if retall:
         allvecs = [xk]
     k = 0
+    gfk = None
     old_fval = f(x0)
     old_old_fval = None
     float64eps = numpy.finfo(numpy.float64).eps
