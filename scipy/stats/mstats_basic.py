@@ -1747,7 +1747,7 @@ def winsorize(a, limits=None, inclusive=(True, True), inplace=False,
         indicate an open interval.
     inclusive : {(True, True) tuple}, optional
         Tuple indicating whether the number of data being masked on each side
-        should be rounded (True) or truncated (False).
+        should be truncated (True) or rounded (False).
     inplace : {False, True}, optional
         Whether to winsorize in place (True) or to use a copy (False)
     axis : {None, int}, optional
@@ -1765,15 +1765,15 @@ def winsorize(a, limits=None, inclusive=(True, True), inplace=False,
         idx = a.argsort()
         if low_limit:
             if low_include:
-                lowidx = np.round(low_limit * n).astype(int)
-            else:
                 lowidx = int(low_limit * n)
+            else:
+                lowidx = np.round(low_limit * n).astype(int)
             a[idx[:lowidx]] = a[idx[lowidx]]
         if up_limit is not None:
             if up_include:
-                upidx = n - np.round(n * up_limit).astype(int)
-            else:
                 upidx = n - int(n * up_limit)
+            else:
+                upidx = n - np.round(n * up_limit).astype(int)
             a[idx[upidx:]] = a[idx[upidx - 1]]
         return a
 
