@@ -321,6 +321,14 @@ class CheckOptimizeParameterized(CheckOptimize):
                               full_output=True, disp=False, retall=False,
                               initial_simplex=simplex)
 
+    def test_ncg_negative_maxiter(self):
+        # Regression test for gh-8241
+        opts = {'maxiter': -1}
+        result = optimize.minimize(self.func, self.startparams,
+                                   method='Newton-CG', jac=self.grad,
+                                   args=(), options=opts)
+        assert_(result.status == 1)
+
     def test_ncg(self):
         # line-search Newton conjugate gradient optimization routine
         if self.use_wrapper:
