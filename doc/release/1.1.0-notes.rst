@@ -40,6 +40,10 @@ Random-to-Best/1/bin and Random-to-Best/1/exp mutation strategies were added to
 'randtobest1exp', respectively. Note: These names were already in use but
 implemented a different mutation strategy. See `Backwards incompatible changes`_,
 below.
+The ``init`` keyword for the `scipy.optimize.differential_evolution` function
+can now accept an array. This array allows the user to specify the entire
+population.
+
 
 `scipy.sparse` improvements
 ----------------------------

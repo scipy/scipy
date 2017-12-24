@@ -1890,6 +1890,8 @@ cdef qr_insert_col(Q, R, u, int k, rcond, bint overwrite_qru, bint check_finite)
     cdef bint economic
     cdef float frc = libc.float.FLT_EPSILON
     cdef double drc = libc.float.DBL_EPSILON
+    cdef float_complex cfrc = frc
+    cdef double_complex cdrc = drc
 
     # 1 eco q alloc, r alloc, u any
     # p eco q alloc, r alloc, u any unless eco->fat then F
@@ -1963,7 +1965,7 @@ cdef qr_insert_col(Q, R, u, int k, rcond, bint overwrite_qru, bint check_finite)
         rptr = extract(rnew, rs)
         uptr = extract(u1, us)
 {{py:
-RCONDS = ['&frc', '&drc', '<float_complex*>&frc', '<double_complex*>&drc']
+RCONDS = ['&frc', '&drc', '&cfrc', '&cdrc']
 }}
         with nogil:
             {{for COND, TYPECODE, CNAME, RC in zip(CONDS, TCODES, CNAMES, RCONDS)}}
