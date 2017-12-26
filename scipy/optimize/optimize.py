@@ -1924,7 +1924,7 @@ class Brent:
             a = xc
             b = xa
         deltax = 0.0
-        funcalls = 1
+        funcalls += 1
         iter = 0
         while (iter < self.maxiter):
             tol1 = self.tol * numpy.abs(x) + _mintol
