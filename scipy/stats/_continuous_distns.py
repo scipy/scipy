@@ -4158,11 +4158,18 @@ class moyal_gen(rv_continuous):
         if n == 1.0:
             return np.log(2) + np.euler_gamma
         elif n == 2.0:
-            return np.pi**2 / 2
+            return np.pi**2 / 2 + (np.log(2) + np.euler_gamma)**2
         elif n == 3.0:
-            return 14 * sc.zeta(3)
+            tmp1 = 1.5 * np.pi**2 * (np.log(2)+np.euler_gamma)
+            tmp2 = (np.log(2)+np.euler_gamma)**3
+            tmp3 = 14 * sc.zeta(3)
+            return tmp1 + tmp2 + tmp3
         elif n == 4.0:
-            return 7 * np.pi**4 / 4
+            tmp1 = 4 * 14 * sc.zeta(3) * (np.log(2) + np.euler_gamma)
+            tmp2 = 3 * np.pi**2 * (np.log(2) + np.euler_gamma)**2
+            tmp3 = (np.log(2) + np.euler_gamma)**4
+            tmp4 = 7 * np.pi**4 / 4
+            return tmp1 + tmp2 + tmp3 + tmp4
         else:
             # return generic for higher moments
             # return rv_continuous._mom1_sc(self, n, b)
