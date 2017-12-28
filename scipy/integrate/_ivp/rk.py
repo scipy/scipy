@@ -140,7 +140,10 @@ class RungeKutta(OdeSolver):
             scale = atol + np.maximum(np.abs(y), np.abs(y_new)) * rtol
             error_norm = norm(error / scale)
 
-            if error_norm < 1:
+            if error_norm == 0.0:
+                h_abs *= MAX_FACTOR
+                step_accepted = True
+            elif error_norm < 1:
                 h_abs *= min(MAX_FACTOR,
                              max(1, SAFETY * error_norm ** (-1 / (order + 1))))
                 step_accepted = True
