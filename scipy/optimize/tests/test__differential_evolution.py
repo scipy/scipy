@@ -330,6 +330,21 @@ class TestDifferentialEvolutionSolver(object):
                          'Maximum number of function evaluations has '
                               'been exceeded.')
 
+        # now repeat for updating='deferred version
+        solver = DifferentialEvolutionSolver(rosen,
+                                             self.bounds,
+                                             popsize=5,
+                                             polish=False,
+                                             maxfun=40,
+                                             updating='deferred')
+        result = solver.solve()
+
+        assert_equal(result.nfev, 40)
+        assert_equal(result.success, False)
+        assert_equal(result.message,
+                         'Maximum number of function evaluations has '
+                              'been reached.')
+
     def test_quadratic(self):
         # test the quadratic function from object
         solver = DifferentialEvolutionSolver(self.quadratic,
@@ -356,6 +371,7 @@ class TestDifferentialEvolutionSolver(object):
                                         seed=1,
                                         tol=0.5)
         assert_equal(result.x, result2.x)
+        assert_equal(result.nfev, result2.nfev)
 
     def test_exp_runs(self):
         # test whether exponential mutation loop runs
@@ -377,8 +393,8 @@ class TestDifferentialEvolutionSolver(object):
     def test_calculate_population_energies(self):
         # if popsize is 3 then the overall generation has size (6,)
         solver = DifferentialEvolutionSolver(rosen, self.bounds, popsize=3)
-        solver._calculate_population_energies()
-
+        solver._calculate_population_energies(solver.population)
+        solver._promote_lowest_energy()
         assert_equal(np.argmin(solver.population_energies), 0)
 
         # initial calculation of the energies should require 6 nfev.
@@ -487,3 +503,38 @@ class TestDifferentialEvolutionSolver(object):
         x_fit = differential_evolution(sometimes_inf,
                                        bounds=[(0, 1), (0, 1)],
                                        disp=False)
+
+    def test_deferred_updating(self):
+        # check setting of deferred updating, with default workers
+        bounds = [(0., 2.), (0., 2.), (0, 2), (0, 2)]
+        solver = DifferentialEvolutionSolver(rosen, bounds, updating='deferred')
+        assert_(solver._updating == 'deferred')
+        assert_(solver._poolwrapper._mapfunc is map)
+        solver.solve()
+
+    def test_immediate_updating(self):
+        # check setting of immediate updating, with default workers
+        bounds = [(0., 2.), (0., 2.)]
+        solver = DifferentialEvolutionSolver(rosen, bounds)
+        assert_(solver._updating == 'immediate')
+
+        # should raise a UserWarning because the updating='immediate'
+        # is being overriden by the workers keyword
+        with np.testing.assert_warns(UserWarning):
+            solver = DifferentialEvolutionSolver(rosen, bounds, workers=2)
+            assert_(solver._updating == 'deferred')
+
+    def test_parallel(self):
+        # smoke test for parallelisation with deferred updating
+        bounds = [(0., 2.), (0., 2.)]
+        with DifferentialEvolutionSolver(rosen, bounds,
+                                         updating='deferred',
+                                         workers=2) as solver:
+            assert_(solver._poolwrapper.pool is not None)
+            assert_(solver._updating == 'deferred')
+            solver.solve()
+
+    def test_converged(self):
+        solver = DifferentialEvolutionSolver(rosen, [(0, 2), (0, 2)])
+        solver.solve()
+        assert_(solver.converged())

@@ -6,6 +6,7 @@ import sys
 import warnings
 import numbers
 from collections import namedtuple
+from multiprocessing import Pool
 import inspect
 
 import numpy as np
@@ -337,3 +338,76 @@ except AttributeError:
         if argspec.args[0] == 'self':
             argspec.args.pop(0)
         return argspec
+
+
+class PoolWrapper(object):
+    """
+    Wrapper for working with objects that have map-like methods, such as
+    `multiprocessing.Pool`. Used for parallelisation.
+
+    Parameters
+    ----------
+    pool : int or map-like object
+        If `pool` is an `int` then it specifies the number of threads to
+        use for parallelization. If `int(pool) == 1`, then no parallel
+        processing is used and the map builtin is used. If `pool == -1` then
+        the pool will utilise all available CPU.
+        If pool is an object with a map method that follows the same
+        calling sequence as the built-in map function, then this pool is
+        used for parallelisation.
+    """
+    def __init__(self, pool=1):
+        self.pool = None
+        self._mapfunc = map
+        self._own_pool = False
+
+        if hasattr(pool, 'map'):
+            self.pool = pool
+            self._mapfunc = self.pool.map
+        else:
+            # user supplies a number
+            if int(pool) == -1:
+                # use as many processors as possible
+                self.pool = Pool()
+                self._mapfunc = self.pool.map
+                self._own_pool = True
+            elif int(pool) == 1:
+                pass
+            elif int(pool) > 1:
+                # use the number of processors requested
+                self.pool = Pool(processes=int(pool))
+                self._mapfunc = self.pool.map
+                self._own_pool = True
+            else:
+                raise RuntimeError("Number of workers specified must be -1,"
+                                   " an int >= 1, or an object with a 'map' method")
+
+    def __enter__(self):
+        return self
+
+    def __del__(self):
+        self.close()
+
+    def terminate(self):
+        if self._own_pool:
+            self.pool.terminate()
+
+    def join(self):
+        if self._own_pool:
+            self.pool.join()
+
+    def close(self):
+        if self._own_pool:
+            self.pool.close()
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        if self._own_pool:
+            if exc_type is None:
+                self.pool.close()
+                self.pool.join()
+            else:
+                self.pool.terminate()
+
+    def map(self, func, iterable):
+        # only accept one iterable because that's all Pool.map accepts
+        return self._mapfunc(func, iterable)
