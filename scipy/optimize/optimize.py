@@ -2680,6 +2680,12 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
     ``full_output=True`` are affected in addition by the ``finish`` argument
     (see Notes).
 
+    The brute force approach is inefficient because the number of grid points
+    increases exponentially - the number of grid points to evaluate is
+    ``Ns ** len(x)``. Consequently, even with coarse grid spacing, even
+    moderately sized problems can take a long time to run, and/or run into
+    memory limitations.
+
     Parameters
     ----------
     func : callable
