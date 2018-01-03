@@ -1194,7 +1194,6 @@ class TestBrute:
         # test that for a 1D problem the test function is passed an array,
         # not a scalar.
         def f(x):
-            # we would like the parame
             assert_(len(x.shape) == 1)
             assert_(x.shape[0] == 1)
             return x ** 2
