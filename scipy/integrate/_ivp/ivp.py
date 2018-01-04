@@ -199,12 +199,12 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
 
             * 'RK45' (default): Explicit Runge-Kutta method of order 5(4) [1]_.
               The error is controlled assuming 4th order accuracy, but steps
-              are taken using a 5th oder accurate formula (local extrapolation
+              are taken using a 5th order accurate formula (local extrapolation
               is done). A quartic interpolation polynomial is used for the
               dense output [2]_. Can be applied in a complex domain.
             * 'RK23': Explicit Runge-Kutta method of order 3(2) [3]_. The error
               is controlled assuming 2nd order accuracy, but steps are taken
-              using a 3rd oder accurate formula (local extrapolation is done).
+              using a 3rd order accurate formula (local extrapolation is done).
               A cubic Hermit polynomial is used for the dense output.
               Can be applied in a complex domain.
             * 'Radau': Implicit Runge-Kutta method of Radau IIA family of
