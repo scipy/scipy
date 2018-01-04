@@ -1,5 +1,5 @@
 # Simulated dual annealing unit tests implementation.
-# Copyright (c) 2017 Sylvain Gubian <sylvain.gubian@pmi.com>,
+# Copyright (c) 2018 Sylvain Gubian <sylvain.gubian@pmi.com>,
 # Yang Xiang <yang.xiang@pmi.com>
 # Author: Sylvain Gubian, PMP S.A.
 """
@@ -30,7 +30,6 @@ class TestSDA(TestCase):
         self.high_temperature = 5230
         self.low_temperature = 0.1
         self.qv = 2.62
-        self.defautgr = (self.func, None, self.ld_bounds)
         self.seed = 1234
         self.rs = check_random_state(self.seed)
 
