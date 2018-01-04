@@ -78,7 +78,7 @@ before_install:
       brew cask uninstall oclint
       brew install gcc ccache libmpc
       touch config.sh
-      git clone --depth=1 https://github.com/matthew-brett/multibuild.git
+      git clone --depth=1 --branch=drop-2.6 https://github.com/matthew-brett/multibuild.git
       source multibuild/common_utils.sh
       source multibuild/travis_steps.sh
       before_install
