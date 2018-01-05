@@ -436,3 +436,24 @@ class TestSplittingTriangles(object):
 
         assert_allclose(actual_polygon_area,
                         expected_area)
+
+@pytest.mark.parametrize("cython", [None, 1])
+def test_hemisphere_handling(cython):
+    # a spherical polygon that encompasses
+    # exactly one hemisphere can present
+    # unique challenges (i.e., ambiguity
+    # about which hemisphere is targeted)
+
+    equatorial_vertices = np.array([[-1,0,0],
+                                    [0,1,0],
+                                    [1,0,0],
+                                    [0,-1,0]])
+
+    # expected surface area for hemisphere
+    # of unit sphere
+    expected_SA = 2 * np.pi
+    actual_SA = psa.poly_area(vertices=equatorial_vertices,
+                              radius=1,
+                              cython=cython,
+                              discretizations=7000)
+    assert actual_SA == expected_SA
