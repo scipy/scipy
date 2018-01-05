@@ -459,3 +459,21 @@ def test_hemisphere_handling(cython):
                               cython=cython,
                               discretizations=7000)
     assert actual_SA == expected_SA
+
+def test_antipode_ambiguity():
+    # verify that antipode ambiguity
+    # is correctly handled -- no way
+    # to guess the area of a spherical polygon
+    # with consecutive vertices that are
+    # antipodes; they have infinite possible
+    # geodesics
+
+    vertices = np.array([[-1,0,0],
+                         [1,0,0],
+                         [0,0,1]])
+
+    expected_str = "Consecutive antipodal vertices are ambiguous."
+    with pytest.raises(ValueError) as excinfo:
+        psa.poly_area(vertices,
+                      radius=1)
+        assert str(excinfo.value) == expected_str
