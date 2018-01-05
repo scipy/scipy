@@ -140,6 +140,48 @@ def poly_area(vertices, radius=None, threshold=1e-21,
         if np.any(np.abs(matches[0] - matches[1]) == 1):
             raise ValueError("Consecutive antipodal vertices are ambiguous.")
 
+        # a great circle can only occur if the origin lies in a plane
+        # with all vertices of the input spherical polygon
+        # the input spherical polygon must have at least three vertices
+        # to begin with (i.e., spherical triangle as smallest possible
+        # spherical polygon) so we can safely assume (and check above)
+        # three input vertices plus the origin for our test here
+
+        # points lie in a common plane if the determinant below
+        # is zero (informally, see:
+        # https://math.stackexchange.com/a/684580/480070 
+        # and http://mathworld.wolfram.com/Plane.html eq. 18)
+
+        # have to iterate through the vertices in chunks
+        # to preserve the three-point form of the plane-check
+        # determinant
+        num_vertices = vertices.shape[0]
+        current_vert = 0
+        plane_counts = 0
+        plane_failures = 0
+        while current_vert <= (num_vertices - 3):
+            candidate_plane = np.concatenate((np.zeros((1,3)),
+                                              vertices[current_vert:current_vert + 3]))
+            one_pads = np.ones((1, candidate_plane.shape[0]))
+
+            candidate_plane = np.concatenate((candidate_plane.T,
+                                              one_pads))
+
+            if np.linalg.det(candidate_plane) == 0:
+                plane_counts += 1
+            else:
+                # if any of the vertices aren't on the plane with
+                # the origin we can safely break out
+                plane_failures += 1
+                break
+
+            current_vert += 1
+
+        if plane_failures == 0:
+            # we have a great circle so
+            # return hemisphere area
+            return 2. * np.pi * (radius ** 2) 
+
         # normalize vertices to unit sphere
         vertices = convert_cartesian_array_to_spherical_array(vertices)
         vertices[...,0] = 1.
