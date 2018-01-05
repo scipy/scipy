@@ -285,9 +285,10 @@ class ObjectiveFunWrapper(object):
     search.
     Default local minimizer is SciPy minimizer L-BFGS-B
     """
-
-    lower_local_search_iter = 100
-    upper_local_search_iter = 1000
+    
+    MAXITER_RATIO = 6
+    MAXITER_MIN = 100
+    MAXITER_MAX = 1000
 
     def __init__(self, bounds, func, **kwargs):
         self.func = func
@@ -301,11 +302,9 @@ class ObjectiveFunWrapper(object):
         
     def set_default_minimizer(self):
         # By default, use SciPy minimize with 'L-BFGS-B' method
-        ls_max_iter = len(self.bounds) * 6
-        if ls_max_iter < self.lower_local_search_iter:
-            ls_max_iter = self.lower_local_search_iter
-        if ls_max_iter > self.upper_local_search_iter:
-            ls_max_iter = self.upper_local_search_iter
+        n = len(self.bounds)
+        ls_max_iter = min(max(n * self.MAXITER_RATIO, self.MAXITER_MIN),
+                          self.MAXITER_MAX)
         self.kwargs['method'] = 'L-BFGS-B'
         self.kwargs['options'] = {
             'maxiter': ls_max_iter,
