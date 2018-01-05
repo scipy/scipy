@@ -59,6 +59,7 @@ class TestSimpleAreas(object):
         # the area of half a hemisphere should
         # be 1/4 the area of the entire sphere
         vertices = np.array([[-1,0,0],
+                             [0,1,0],
                              [1,0,0],
                              [0,0,1]]) * radius
         expected_area = np.pi * (radius ** 2)
@@ -74,6 +75,7 @@ class TestSimpleAreas(object):
         # reverse order of vertex sorting
         vertices = np.array([[0,0,1],
                              [1,0,0],
+                             [0,1,0],
                              [-1,0,0]]) * radius
         expected_area = np.pi * (radius ** 2)
         actual_area = psa.poly_area(vertices=vertices,
