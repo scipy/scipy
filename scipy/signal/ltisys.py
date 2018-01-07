@@ -543,7 +543,7 @@ class TransferFunction(LinearTimeInvariant):
     dt: None
     )
 
-    Contruct the transfer function with a sampling time of 0.1 seconds:
+    Construct the transfer function with a sampling time of 0.1 seconds:
 
     .. math:: H(z) = \frac{z^2 + 3z + 3}{z^2 + 2z + 1}
 

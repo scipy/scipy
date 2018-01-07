@@ -384,9 +384,9 @@ c
 c 
             do 80 i = istart, iend-1
 c
-c              %-----------------------------------------------------%
-c              | Contruct the plane rotation G to zero out the bulge |
-c              %-----------------------------------------------------%
+c              %------------------------------------------------------%
+c              | Construct the plane rotation G to zero out the bulge |
+c              %------------------------------------------------------%
 c
                call dlartg (f, g, c, s, r)
                if (i .gt. istart) then

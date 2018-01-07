@@ -571,7 +571,7 @@ class interp1d(_Interpolator1D):
         return np.interp(x_new, self.x, self.y)
 
     def _call_linear(self, x_new):
-        # 2. Find where in the orignal data, the values to interpolate
+        # 2. Find where in the original data, the values to interpolate
         #    would be inserted.
         #    Note: If x_new[n] == x[m], then m is returned by searchsorted.
         x_new_indices = searchsorted(self.x, x_new)

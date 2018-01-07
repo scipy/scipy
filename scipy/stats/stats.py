@@ -5458,7 +5458,7 @@ def _cdf_distance(p, u_values, v_values, u_weights=None, v_weights=None):
     # Compute the differences between pairs of successive values of u and v.
     deltas = np.diff(all_values)
 
-    # Get the repective positions of the values of u and v among the values of
+    # Get the respective positions of the values of u and v among the values of
     # both distributions.
     u_cdf_indices = u_values[u_sorter].searchsorted(all_values[:-1], 'right')
     v_cdf_indices = v_values[v_sorter].searchsorted(all_values[:-1], 'right')
