@@ -1720,9 +1720,8 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
         return res['x']
 
 
-def _minimize_scalar_bounded(func, bounds, args=(),
-                             xatol=1e-5, maxiter=500, disp=0,
-                             **unknown_options):
+def _minimize_scalar_bounded(func, bounds, args=(), xatol=1e-5, maxiter=500,
+                             disp=False, **unknown_options):
     """
     Options
     -------
@@ -1767,7 +1766,7 @@ def _minimize_scalar_bounded(func, bounds, args=(),
     tol1 = sqrt_eps * numpy.abs(xf) + xatol / 3.0
     tol2 = 2.0 * tol1
 
-    if disp > 2:
+    if disp:
         print(" ")
         print(header)
         print("%5.0f   %12.6g %12.6g %s" % (fmin_data + (step,)))
@@ -1813,7 +1812,7 @@ def _minimize_scalar_bounded(func, bounds, args=(),
         fu = func(x, *args)
         num += 1
         fmin_data = (num, x, fu)
-        if disp > 2:
+        if disp:
             print("%5.0f   %12.6g %12.6g %s" % (fmin_data + (step,)))
 
         if fu <= fx:
@@ -1844,7 +1843,7 @@ def _minimize_scalar_bounded(func, bounds, args=(),
             break
 
     fval = fx
-    if disp > 0:
+    if disp:
         _endprint(x, flag, fval, maxfun, xatol, disp)
 
     result = OptimizeResult(fun=fval, status=flag, success=(flag == 0),
@@ -2655,7 +2654,7 @@ def _minimize_powell(func, x0, args=(), callback=None,
 
 def _endprint(x, flag, fval, maxfun, xtol, disp):
     if flag == 0:
-        if disp > 1:
+        if disp:
             print("\nOptimization terminated successfully;\n"
                   "The returned value satisfies the termination criteria\n"
                   "(using xtol = ", xtol, ")")
