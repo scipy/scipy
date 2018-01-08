@@ -1190,6 +1190,17 @@ class TestBrute:
         assert_allclose(resbrute[1], self.func(self.solution, *self.params),
                         atol=1e-3)
 
+    def test_1D(self):
+        # test that for a 1D problem the test function is passed an array,
+        # not a scalar.
+        def f(x):
+            assert_(len(x.shape) == 1)
+            assert_(x.shape[0] == 1)
+            return x ** 2
+
+        optimize.brute(f, [(-1, 1)], Ns=3, finish=None)
+
+
 class TestIterationLimits(object):
     # Tests that optimisation does not give up before trying requested
     # number of iterations or evaluations. And that it does not succeed

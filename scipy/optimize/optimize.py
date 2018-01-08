@@ -2841,7 +2841,7 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
         lrange = lrange[0]
 
     def _scalarfunc(*params):
-        params = squeeze(asarray(params))
+        params = asarray(params).flatten()
         return func(params, *args)
 
     vecfunc = vectorize(_scalarfunc)
