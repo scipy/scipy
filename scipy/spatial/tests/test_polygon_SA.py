@@ -4,7 +4,7 @@ from scipy.spatial.distance import pdist
 from numpy.testing import (assert_equal, assert_raises,
                            assert_allclose,
                            assert_raises_regex)
-import split_spherical_triangle
+from scipy.spatial import split_spherical_triangle
 import pytest
 
 @pytest.mark.parametrize("cython, radius, threshold", [
