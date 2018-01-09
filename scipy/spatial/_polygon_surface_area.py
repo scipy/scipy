@@ -113,6 +113,13 @@ def poly_area(vertices, radius=None, threshold=1e-21,
     # based on JPL Publication 07-3 by Chamberlain and Duquette (2007)
     # for planar polygons we currently still require x,y,z coords
     # can just set i.e., z = 0 for all vertices
+    num_vertices = vertices.shape[0]
+    # require that a planar or spherical triangle is
+    # the smallest possible input polygon
+    if num_vertices < 3:
+        err_str = "An input polygon must have at least 3 vertices."
+        raise ValueError(err_str)
+
     min_vertex_dist = pdist(vertices).min()
     if min_vertex_dist < threshold:
         err_str = '''Duplicate vertices detected based on minimum
@@ -155,7 +162,6 @@ def poly_area(vertices, radius=None, threshold=1e-21,
         # have to iterate through the vertices in chunks
         # to preserve the three-point form of the plane-check
         # determinant
-        num_vertices = vertices.shape[0]
         current_vert = 0
         plane_counts = 0
         plane_failures = 0

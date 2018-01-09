@@ -477,3 +477,23 @@ def test_antipode_ambiguity():
         psa.poly_area(vertices,
                       radius=1)
         assert str(excinfo.value) == expected_str
+
+@pytest.mark.parametrize("cython, radius", [
+    (None, None),
+    (1, None),
+    (None, 1.1,),
+    (1, 1.1),
+    ])
+def test_vertex_min(cython, radius):
+    # verify that poly_area requires at least
+    # three vertices, in both planar and
+    # spherical contexts
+    vertices = np.array([[-1,0,0],
+                         [1,0,0]])
+
+    expected_str = "An input polygon must have at least 3 vertices."
+    with pytest.raises(ValueError) as excinfo:
+        psa.poly_area(vertices=vertices,
+                      radius=radius,
+                      cython=cython)
+        assert str(excinfo.value) == expected_str
