@@ -10,11 +10,10 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 from scipy.optimize import OptimizeResult
 from scipy.optimize import minimize
-from scipy.optimize._numdiff import approx_derivative
 from scipy.special import gammaln
 from scipy._lib._util import check_random_state
 
-__all__ = ['sda']
+__all__ = ['simulated_annealing']
 BIG_VALUE = 1e16
 
 
@@ -296,20 +295,22 @@ class ObjectiveFunWrapper(object):
         self.kwargs = kwargs
         self.minimizer = minimize
         self.fun_args = ()
-        self.bounds = bounds
+        bounds_list = list(zip(*bounds))
+        self.lower = np.array(bounds_list[0])
+        self.upper = np.array(bounds_list[1])
         if 'args' in self.kwargs:
             self.fun_args = self.kwargs.get('args')
         
     def set_default_minimizer(self):
         # By default, use SciPy minimize with 'L-BFGS-B' method
-        n = len(self.bounds)
+        n = len(self.lower)
         ls_max_iter = min(max(n * self.MAXITER_RATIO, self.MAXITER_MIN),
                           self.MAXITER_MAX)
         self.kwargs['method'] = 'L-BFGS-B'
         self.kwargs['options'] = {
             'maxiter': ls_max_iter,
         }
-        self.kwargs['bounds'] = self.bounds
+        self.kwargs['bounds'] = list(zip(self.lower, self.upper))
 
     def func_wrapper(self, x):
         self.nb_fun_call += 1
@@ -317,13 +318,22 @@ class ObjectiveFunWrapper(object):
 
     def local_search(self, x):
         x_tmp = np.copy(x)
+        fun_temp = self.func_wrapper(x)
         mres = self.minimizer(self.func_wrapper, x, **self.kwargs)
-        if not mres.success:
-            return (self.func_wrapper(x_tmp), x_tmp) 
-        return (mres.fun, mres.x)
+        # Check if is valid value
+        is_finite = np.all(np.isfinite(mres.x)) and np.isfinite(mres.fun)
+        in_bounds = np.all(mres.x >= self.lower) and np.all(
+            mres.x <= self.upper)
+        is_valid = is_finite and in_bounds
+
+        # Use the new point only if it is valid and return a better results
+        if is_valid and mres.fun < fun_temp:
+            return mres.fun, mres.x
+        else:
+            return fun_temp, x_tmp 
 
 
-def sda(func, x0, bounds, maxiter=1000, local_search_options={},
+def simulated_annealing(func, x0, bounds, maxiter=1000, local_search_options={},
         initial_temp=5230., visit=2.62, accept=-5.0, maxfun=1e7, seed=None,
         no_local_search=False):
     """
@@ -346,8 +356,9 @@ def sda(func, x0, bounds, maxiter=1000, local_search_options={},
         `func`. It is required to have ``len(bounds) == len(x)``.
         ``len(bounds)`` is used to determine the number of parameters in ``x``.
     maxiter : int, optional
-        The maximum number of sda iterations. Increase this value if the
-        objective function is very complicated with high dimensions.
+        The maximum number of simulated_annealing  iterations. Increase this
+        value if the objective function is very complicated with high
+        dimensions.
     local_search_options : dict, optional
         Extra keyword arguments to be passed to the local minimizer
             ``scipy.optimize.minimize()`` Some important options could be:
@@ -358,8 +369,8 @@ def sda(func, x0, bounds, maxiter=1000, local_search_options={},
                 its derivatives (Jacobian, Hessian).
     initial_temp : float, optional
         The initial temperature, use higher values to facilitates a wider
-        search of the energy landscape, allowing sda to escape local minima
-        that it is trapped in.
+        search of the energy landscape, allowing simulated_annealing  to escape
+        local minima that it is trapped in.
     visit : float, optional
         Parameter for visiting distribution. Higher values give the visiting
         distribution a heavier tail, this makes the algorithm jump to a more
@@ -403,10 +414,12 @@ def sda(func, x0, bounds, maxiter=1000, local_search_options={},
     Annealing) and FSA (Fast Simulated Annealing) [1]_ [2]_ coupled to a
     strategy for applying a local search on accepted locations [4]_. A first
     implementation was done in C++ for the R language [5]_ and has been
-    benchmarked [6]_. SDA introduces an advanced dual annealing method to
-    refine the solution found by the generalized annealing process.
-    This algorithm uses a distorted Cauchy-Lorentz visiting distribution, with
-    its shape controlled by the parameter :math:`q_{v}`
+    benchmarked [6]_. Extensive benchmarks for the Python version have also
+    been performed against several global optimization methods [7]_. SDA
+    introduces an advanced dual annealing method to refine the solution found
+    by the generalized annealing process. This algorithm uses a distorted
+    Cauchy-Lorentz visiting distribution, with its shape controlled by the
+    parameter :math:`q_{v}`
 
     .. math::
 
@@ -457,13 +470,17 @@ def sda(func, x0, bounds, maxiter=1000, local_search_options={},
         Physics Letters A, 233, 216-220.
     .. [4] Xiang Y, Gong XG (2000a). "Efficiency of Generalized Simulated
         Annealing." PHYSICAL REVIEW E, 62, 4473.
-    .. [5] Xiang Y, Gubian S, Suomela B, Hoeng (2013). "Generalized Simulated
-        Annealing for Efficient Global Optimization: the GenSA Package for
-        R". The R Journal, Volume 5/1, June 2013.
+    .. [5] Xiang Y, Gubian S, Suomela B, Hoeng J. (2013). "Generalized
+        Simulated Annealing for Efficient Global Optimization: the GenSA
+        Package for R". The R Journal, Volume 5/1, June 2013.
         http://journal.r-project.org/.
     .. [6] Mullen, K. (2014). Continuous Global Optimization in R. Journal of
         Statistical Software, 60(6), 1 - 45.
         http://dx.doi.org/10.18637/jss.v060.i06
+    .. [7] Xiang Y, Gubian S, Martin F. Simulated dual annealing method for
+        efficient global optimization. Forthcoming.
+    .. [8] Gubian S, Xiang Y. Benchmarks results of the SDA global optimization
+        method. 
 
     Examples
     --------
@@ -471,12 +488,12 @@ def sda(func, x0, bounds, maxiter=1000, local_search_options={},
     The function involved is called Rastrigin
     (https://en.wikipedia.org/wiki/Rastrigin_function)
 
-    >>> from scipy.optimize import sda
+    >>> from scipy.optimize import simulated_annealing
     >>> func = lambda x: np.sum(x * x - 10 * np.cos(
     ...    2 * np.pi * x)) + 10 * np.size(x)
     >>> lw = [-5.12] * 10
     >>> up = [5.12] * 10
-    >>> ret = sda(func, None, bounds=list(zip(lw, up)))
+    >>> ret = simulated_annealing(func, None, bounds=list(zip(lw, up)))
     >>> print("global minimum: xmin = {0}, f(xmin) = {1}".format(
     ...    ret.x, ret.fun))
     """

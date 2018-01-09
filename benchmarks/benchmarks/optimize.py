@@ -13,7 +13,7 @@ try:
     import scipy.optimize
     from scipy.optimize.optimize import rosen, rosen_der, rosen_hess
     from scipy.optimize import (leastsq, basinhopping, differential_evolution,
-                                sda, OptimizeResult)
+                                simulated_annealing, OptimizeResult)
 except ImportError:
     pass
 
@@ -187,15 +187,15 @@ class _BenchOptimizers(Benchmark):
         res.nfev = self.function.nfev
         self.add_result(res, t1 - t0, 'DE')
 
-    def run_sda(self):
+    def run_simulated_annealing(self):
         """
-        Do an optimization run for sda
+        Do an optimization run for simulated_annealing
         """
         self.function.nfev = 0
 
         t0 = time.time()
 
-        res = sda(
+        res = simulated_annealing(
                 self.fun,
                 None,
                 self.bounds,
@@ -203,7 +203,7 @@ class _BenchOptimizers(Benchmark):
         t1 = time.time()
         res.success = self.function.success(res.x)
         res.nfev = self.function.nfev
-        self.add_result(res, t1 - t0, 'sda')
+        self.add_result(res, t1 - t0, 'simulated_annealing')
 
     def bench_run_global(self, numtrials=50, methods=None):
         """
@@ -211,12 +211,12 @@ class _BenchOptimizers(Benchmark):
         """
 
         if methods is None:
-            methods = ['DE', 'basinh.', 'sda']
+            methods = ['DE', 'basinh.', 'SA']
 
         method_fun = {
                 'DE': self.run_differentialevolution,
                 'basinh.': self.run_basinhopping,
-                'sda': self.run_sda}
+                'SA': self.run_simulated_annealing}
 
         for i in range(numtrials):
             for m in methods:
@@ -444,7 +444,7 @@ class BenchGlobal(Benchmark):
     params = [
         list(_functions.keys()),
         ["success%", "<nfev>"],
-        ['DE', 'basinh.', 'sda'],
+        ['DE', 'basinh.', 'SA'],
     ]
     param_names = ["test function", "result type", "solver"]
 
@@ -512,7 +512,7 @@ class BenchGlobal(Benchmark):
             return {}
         numtrials = slow
         results = {}
-        solvers = ['DE', 'basinh.', 'sda']
+        solvers = ['DE', 'basinh.', 'SA']
             return
 
         for name, klass in sorted(self._functions.items()):

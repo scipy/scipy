@@ -5,10 +5,10 @@
 """
 Unit tests for the simulted dual annealing global optimizer
 """
-from scipy.optimize import sda
-from scipy.optimize._sda import VisitingDistribution
-from scipy.optimize._sda import ObjectiveFunWrapper
-from scipy.optimize._sda import EnergyState
+from scipy.optimize import simulated_annealing
+from scipy.optimize._simulated_annealing import VisitingDistribution
+from scipy.optimize._simulated_annealing import ObjectiveFunWrapper
+from scipy.optimize._simulated_annealing import EnergyState
 import numpy as np
 from numpy.testing import (assert_equal, TestCase, assert_allclose,
                            assert_almost_equal, assert_raises,
@@ -16,7 +16,7 @@ from numpy.testing import (assert_equal, TestCase, assert_allclose,
 from scipy._lib._util import check_random_state
 
 
-class TestSDA(TestCase):
+class TestSimulatedAnnealing(TestCase):
 
     def setUp(self):
         # Using Rastrigin function for performing tests
@@ -37,7 +37,8 @@ class TestSDA(TestCase):
         pass
 
     def test_low_dim(self):
-        ret = sda(self.func, None, self.ld_bounds, seed=self.seed)
+        ret = simulated_annealing(
+            self.func, None, self.ld_bounds, seed=self.seed)
         assert_allclose(ret.fun, 0., atol=1e-12)
 
     def test__visiting_stepping(self):
@@ -79,7 +80,7 @@ class TestSDA(TestCase):
         assert_raises(ValueError, es.reset, *(owf, check_random_state(None)))
 
     def test_high_dim(self):
-        ret = sda(self.func, None, self.hd_bounds)
+        ret = simulated_annealing(self.func, None, self.hd_bounds)
         assert_allclose(ret.fun, 0., atol=1e-12)
 
     def test__gaussian(self):
@@ -95,14 +96,14 @@ class TestSDA(TestCase):
         assert_almost_equal(np.std(values), 1., 1)
 
     def test_max_reinit(self):
-        assert_raises(ValueError, sda, *(self.weirdfunc, None,
+        assert_raises(ValueError, simulated_annealing, *(self.weirdfunc, None,
                                            self.ld_bounds))
 
     def test_reproduce(self):
         seed = 1234
-        res1 = sda(self.func, None, self.ld_bounds, seed=seed)
-        res2 = sda(self.func, None, self.ld_bounds, seed=seed)
-        res3 = sda(self.func, None, self.ld_bounds, seed=seed)
+        res1 = simulated_annealing(self.func, None, self.ld_bounds, seed=seed)
+        res2 = simulated_annealing(self.func, None, self.ld_bounds, seed=seed)
+        res3 = simulated_annealing(self.func, None, self.ld_bounds, seed=seed)
         # If we have reproducible results, x components found has to
         # be exactly the same, which is not the case with no seeding
         assert_equal(res1.x, res2.x)
@@ -110,4 +111,5 @@ class TestSDA(TestCase):
 
     def test_bounds_integrity(self):
         wrong_bounds = [(-5.12, 5.12), (1, 0), (5.12, 5.12)]
-        assert_raises(ValueError, sda, *(self.func, None, wrong_bounds))
+        assert_raises(ValueError, simulated_annealing, *(
+            self.func, None, wrong_bounds))

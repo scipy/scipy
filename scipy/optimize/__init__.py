@@ -100,7 +100,7 @@ Global Optimization
    basinhopping - Basinhopping stochastic optimizer
    brute - Brute force searching optimizer
    differential_evolution - stochastic minimization using differential evolution
-   sda - Simulated dual annealing 
+   simulated_annealing - Simulated dual annealing optimizer 
 
 Rosenbrock function
 -------------------
@@ -250,7 +250,7 @@ from .nonlin import *
 from .slsqp import fmin_slsqp
 from .nnls import nnls
 from ._basinhopping import basinhopping
-from ._sda import sda
+from ._simulated_annealing import simulated_annealing
 from ._linprog import linprog, linprog_verbose_callback
 from ._hungarian import linear_sum_assignment
 from ._differentialevolution import differential_evolution
