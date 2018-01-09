@@ -479,8 +479,6 @@ def simulated_annealing(func, x0, bounds, maxiter=1000, local_search_options={},
         http://dx.doi.org/10.18637/jss.v060.i06
     .. [7] Xiang Y, Gubian S, Martin F. Simulated dual annealing method for
         efficient global optimization. Forthcoming.
-    .. [8] Gubian S, Xiang Y. Benchmarks results of the SDA global optimization
-        method. 
 
     Examples
     --------
