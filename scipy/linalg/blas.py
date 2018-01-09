@@ -6,6 +6,15 @@ This module contains low-level functions from the BLAS library.
 
 .. versionadded:: 0.12.0
 
+.. note::
+
+   With overwrite option input arrays may be overwritten.
+   This is usually true if memory order and data type allows it.
+   But it is not guaranteed and is typical f2py behaviour.
+   This is clearly explained in
+   :std:doc:`f2py/python-usage` (Array arguments section)
+
+
 .. warning::
 
    These functions do little to no error checking.
