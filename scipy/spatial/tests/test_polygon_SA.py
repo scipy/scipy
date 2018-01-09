@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.spatial import _polygon_surface_area as psa
+from scipy.spatial import SphericalVoronoi
 from scipy.spatial.distance import pdist
 from numpy.testing import (assert_equal, assert_raises,
                            assert_allclose,
@@ -497,3 +498,43 @@ def test_vertex_min(cython, radius):
                       radius=radius,
                       cython=cython)
         assert str(excinfo.value) == expected_str
+
+@pytest.mark.parametrize("cython", [None, 1])
+def test_functional_sph_Vor(cython):
+    # a functional test that verifies
+    # that the sum of all spherical
+    # polygon surface areas from
+    # SphericalVoronoi output
+    # is equivalent to the expected
+    # surface area of the input sphere
+
+    # useful because this should be
+    # a common use case and because
+    # it will, be definition, include
+    # spherical polygons that contain
+    # the N/S poles (a known challenge
+    # for the NASA JPL algorithm)
+
+    # random generators on surface
+    # of sphere based on approach
+    # described here:
+    # https://stackoverflow.com/a/33977530/2942522
+
+    np.random.seed(15079)
+    vec = np.random.randn(3, 40)
+    vec /= np.linalg.norm(vec, axis=0)
+    sv = SphericalVoronoi(points=vec.T,
+                          radius=1)
+    sv.sort_vertices_of_regions()
+
+    expected_area = 4. * np.pi
+    area_sum = 0
+    for region in sv.regions:
+        polygon = sv.vertices[region]
+        polygon_area = psa.poly_area(vertices=polygon,
+                                     radius=1,
+                                     cython=cython,
+                                     discretizations=9000)
+        area_sum += polygon_area
+
+    assert area_sum == expected_area
