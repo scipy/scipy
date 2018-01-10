@@ -77,7 +77,7 @@ parameter):
              Function evaluations: 571
 
     >>> print(res.x)
-    [ 1.  1.  1.  1.  1.]
+    [1. 1. 1. 1. 1.]
 
 The simplex algorithm is probably the simplest way to minimize a fairly
 well-behaved function. It requires only function evaluations and is a good
@@ -509,7 +509,7 @@ Now an unconstrained optimization can be performed as:
                 Function evaluations: 5
                 Gradient evaluations: 4
     >>> print(res.x)
-    [ 2.  1.]
+    [2. 1.]
 
 and a constrained optimization as:
 
@@ -521,7 +521,7 @@ and a constrained optimization as:
                 Function evaluations: 14
                 Gradient evaluations: 9
     >>> print(res.x)
-    [ 1.00000009  1.        ]
+    [1.00000009 1.        ]
 
 
 Least-squares minimization (:func:`least_squares`)

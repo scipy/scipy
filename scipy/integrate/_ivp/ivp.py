@@ -400,9 +400,9 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     >>> print(sol.t)
     [ 0  1  2  4 10]
     >>> print(sol.y)
-    [[ 2.          1.21305369  0.73534021  0.27066736  0.01350938]
-     [ 4.          2.42610739  1.47068043  0.54133472  0.02701876]
-     [ 8.          4.85221478  2.94136085  1.08266944  0.05403753]]
+    [[2.         1.21305369 0.73534021 0.27066736 0.01350938]
+     [4.         2.42610739 1.47068043 0.54133472 0.02701876]
+     [8.         4.85221478 2.94136085 1.08266944 0.05403753]]
 
     Cannon fired upward with terminal event upon impact. The ``terminal`` and
     ``direction`` fields of an event are applied by monkey patching a function.
@@ -418,8 +418,8 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     >>> print(sol.t_events)
     [array([ 20.])]
     >>> print(sol.t)
-    [  0.00000000e+00   9.99900010e-05   1.09989001e-03   1.10988901e-02
-       1.11088891e-01   1.11098890e+00   1.11099890e+01   2.00000000e+01]
+    [0.00000000e+00 9.99900010e-05 1.09989001e-03 1.10988901e-02
+     1.11088891e-01 1.11098890e+00 1.11099890e+01 2.00000000e+01]
     """
     if method not in METHODS and not (
             inspect.isclass(method) and issubclass(method, OdeSolver)):

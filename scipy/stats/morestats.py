@@ -92,7 +92,7 @@ def bayes_mvs(data, alpha=0.90):
     >>> data = [6, 9, 12, 7, 8, 8, 13]
     >>> mean, var, std = stats.bayes_mvs(data)
     >>> mean
-    Mean(statistic=9.0, minmax=(7.1036502226125329, 10.896349777387467))
+    Mean(statistic=9.0, minmax=(7.103650222612533, 10.896349777387467))
     >>> var
     Variance(statistic=10.0, minmax=(3.176724206..., 24.45910382...))
     >>> std
