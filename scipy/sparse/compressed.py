@@ -324,7 +324,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                                 "try using < instead.")
 
     #################################
-    # Arithmatic operator overrides #
+    # Arithmetic operator overrides #
     #################################
 
     def _add_dense(self, other):

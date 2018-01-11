@@ -66,7 +66,7 @@ trlib_int_t trlib_tri_factor_min(
     trlib_flt_t dlam     = 0.0;                           // increment in newton iteration
     trlib_int_t inc = 1;                                     // increment in vector storage
     trlib_flt_t *w = fwork;                               // auxiliary vector to be used in newton iteration
-    trlib_flt_t *diag_lam = fwork+(irblk[nirblk]);        // vector that holds diag + lam, could be saved if we would implement iterative refinement ourselve
+    trlib_flt_t *diag_lam = fwork+(irblk[nirblk]);        // vector that holds diag + lam, could be saved if we would implement iterative refinement ourselves
     trlib_flt_t *work = fwork+2*(irblk[nirblk]);          // workspace for iterative refinement
     trlib_flt_t ferr = 0.0;                               // forward  error bound from iterative refinement
     trlib_flt_t berr = 0.0;                               // backward error bound from iterative refinement
@@ -100,7 +100,7 @@ trlib_int_t trlib_tri_factor_min(
         // seek for lam0, h_0 with (T0+lam0*I) pos def and ||h_0(lam_0)|| = radius
 
         /* as a first step to initialize the newton iteration,
-         *  find such a pair with the losened requierement ||h_0(lam_0)|| >= radius */
+         *  find such a pair with the loosened requirement ||h_0(lam_0)|| >= radius */
         if(*warm0) {
             if(!*warm_fac0) {
                 // factorize T + lam0 I
@@ -310,7 +310,7 @@ trlib_int_t trlib_tri_factor_min(
             *sub_fail = trlib_eigen_inverse(n0, diag, offdiag, 
                     *leftmost, 10, TRLIB_EPS_POW_5, ones,
                     diag_fac, offdiag_fac, sol, 
-                    verbose-2, unicode, " EI", fout, eigen_timing, &ferr, &berr, &jj); // can savely overwrite ferr, berr, jj with results. only interesting: eigenvector
+                    verbose-2, unicode, " EI", fout, eigen_timing, &ferr, &berr, &jj); // can safely overwrite ferr, berr, jj with results. only interesting: eigenvector
             if (*sub_fail != 0 && *sub_fail != -1) { TRLIB_PRINTLN_2("Failure in eigenvector computation: %ld", *sub_fail) TRLIB_RETURN(TRLIB_TTR_FAIL_EIG) }
             if (*sub_fail == -1) { TRLIB_PRINTLN_2("In eigenvector computation itmax reached, continue with approximate eigenvector") }
             // compute solution as linear combination of h0 and eigenvector
@@ -396,7 +396,7 @@ trlib_int_t trlib_tri_factor_min(
                 leftmost[*ileftmost], 10, TRLIB_EPS_POW_5, ones,
                 diag_fac+irblk[*ileftmost], offdiag_fac+irblk[*ileftmost],
                 sol+irblk[*ileftmost], 
-                verbose-2, unicode, " EI", fout, eigen_timing, &ferr, &berr, &jj); // can savely overwrite ferr, berr, jj with results. only interesting: eigenvector
+                verbose-2, unicode, " EI", fout, eigen_timing, &ferr, &berr, &jj); // can safely overwrite ferr, berr, jj with results. only interesting: eigenvector
         if (*sub_fail != 0) { TRLIB_RETURN(TRLIB_TTR_FAIL_EIG) }
 
         // solution is of form [h,0,...,0,alpha*u,0,...,0]
@@ -433,7 +433,7 @@ trlib_int_t trlib_tri_factor_regularized_umin(
         TRLIB_TIC(verystart)
     #endif
 
-    trlib_flt_t *diag_lam = fwork;        // vector that holds diag + lam, could be saved if we would implement iterative refinement ourselve
+    trlib_flt_t *diag_lam = fwork;        // vector that holds diag + lam, could be saved if we would implement iterative refinement ourselves
     trlib_flt_t *diag_fac = fwork+n;      // vector that holds diagonal of factor of diag + lam
     trlib_flt_t *offdiag_fac = fwork+2*n; // vector that holds offdiagonal of factor of diag + lam
     trlib_flt_t *work = fwork+3*n;        // workspace for iterative refinement
@@ -477,7 +477,7 @@ trlib_int_t trlib_tri_factor_get_regularization(
         TRLIB_TIC(verystart)
     #endif
 
-    trlib_flt_t *diag_lam = fwork;        // vector that holds diag + lam, could be saved if we would implement iterative refinement ourselve
+    trlib_flt_t *diag_lam = fwork;        // vector that holds diag + lam, could be saved if we would implement iterative refinement ourselves
     trlib_flt_t *diag_fac = fwork+n;      // vector that holds diagonal of factor of diag + lam
     trlib_flt_t *offdiag_fac = fwork+2*n; // vector that holds offdiagonal of factor of diag + lam
     trlib_flt_t *work = fwork+3*n;        // workspace for iterative refinement

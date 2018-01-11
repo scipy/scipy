@@ -836,7 +836,7 @@ C-----------------------------------------------------------------------
 C Interrupting and Restarting
 C
 C If the integration of a given problem by DVODE is to be
-C interrrupted and then later continued, such as when restarting
+C interrupted and then later continued, such as when restarting
 C an interrupted run or alternating between two or more ODE problems,
 C the user should save, following the return from the last DVODE call
 C prior to the interruption, the contents of the call sequence

@@ -476,7 +476,7 @@ static void scaleg(int n, double g[], const double xscale[], double fscale)
     }
 }
 
-/* Caculate the pivot vector */
+/* Calculate the pivot vector */
 static void setConstraints(int n, double x[], int pivot[], double xscale[],
                            double xoffset[], double low[], double up[])
 {
@@ -584,7 +584,7 @@ static tnc_rc tnc_minimize(int n, double x[],
     icycle = n - 1;
     newcon = TNC_TRUE;
 
-    /* Uneeded initialisations */
+    /* Unneeded initialisations */
     lreset = TNC_FALSE;
     yrsr = 0.0;
     yksk = 0.0;
@@ -1110,7 +1110,7 @@ static int tnc_direction(double *zsol, double *diagb,
     rhsnrm = gnorm;
     tol = 1e-12;
     qold = 0.0;
-    rzold = 0.0;                /* Uneeded */
+    rzold = 0.0;                /* Unneeded */
 
     frc = -1;                   /* ENOMEM here */
     r = malloc(sizeof(*r) * n); /* Residual */

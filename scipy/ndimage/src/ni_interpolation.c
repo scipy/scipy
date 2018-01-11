@@ -381,7 +381,7 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
 
     /* if the mapping is from array coordinates: */
     if (coordinates) {
-        /* initialze a line iterator along the first axis: */
+        /* initialize a line iterator along the first axis: */
         if (!NI_InitPointIterator(coordinates, &ic))
             goto exit;
         cstride = ic.strides[0];
