@@ -99,6 +99,16 @@ def _spherical_polygon_area(vertices, radius, discretizations):
         for j in xrange(discretizations - 1):
             delta_lambda = (lambda_range[j+1] -
                             lambda_range[j])
+
+            # at the + / - pi transition point
+            # of the unit circle
+            # add or subtract 2 * pi to the delta
+            # based on original sign
+            if delta_lambda > np.pi:
+                delta_lambda -= 2 * np.pi
+            elif delta_lambda < (-np.pi):
+                delta_lambda += 2 * np.pi
+
             second_term = 2 + np.sin(phi_range[j]) + np.sin(phi_range[j+1])
             area_element += (delta_lambda * second_term * (radius ** 2) * 0.5)
         area_sum += area_element
@@ -142,7 +152,6 @@ def poly_area(vertices, radius=None, threshold=1e-21,
         # TODO: use a threshold for the floating
         # point dist comparison here
         matches = np.where(dist_matrix == (2. * radius))
-        print("matches:", matches)
         # can't handle consecutive matches that are antipodes
         if np.any(np.abs(matches[0] - matches[1]) == 1):
             raise ValueError("Consecutive antipodal vertices are ambiguous.")
