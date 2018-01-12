@@ -75,6 +75,7 @@ Decompositions
    cho_factor - Cholesky decomposition for use in solving a linear system
    cho_solve - Solve previously factored linear system
    cho_solve_banded - Solve previously factored banded linear system
+   cholesky_update - Perform Rank-1 Cholesky update and downdate
    polar - Compute the polar decomposition.
    qr - QR decomposition of a matrix
    qr_multiply - QR decomposition and multiplication by Q
@@ -201,6 +202,7 @@ from ._solvers import *
 from ._procrustes import *
 from ._decomp_update import *
 from ._sketches import *
+from ._decomp_cholesky_update import *
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 
