@@ -3648,6 +3648,20 @@ class levy_stable_gen(rv_continuous):
         For cdf calculations FFT calculation is considered experimental. Use Zolatarev's method 
         instead (default).
 
+    **Special cases**
+
+    `levy_stable` generalizes several distributions.  Where possible, they
+    should be used instead.  Specifically, replace ``levy_stable(a, b)`` by
+
+    =====  =====  ======
+      a      b     Equivalent
+    =====  =====  ======
+     1/2    -1    ``levy_l()``
+     1/2     1    ``levy()``
+     1       0    ``cauchy()``
+     2      any   ``normal(scale=sqrt(2))``
+    =====  =====  ======
+
     %(after_notes)s
     
     References
