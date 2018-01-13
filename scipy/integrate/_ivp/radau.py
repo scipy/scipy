@@ -201,7 +201,7 @@ class Radau(OdeSolver):
     y0 : array_like, shape (n,)
         Initial state.
     t_bound : float
-        Boundary time – the integration won't continue beyond it. It also
+        Boundary time - the integration won't continue beyond it. It also
         determines the direction of the integration.
     max_step : float, optional
         Maximum allowed step size. Default is np.inf, i.e. the step size is not

@@ -28,7 +28,7 @@ class LSODA(OdeSolver):
     y0 : array_like, shape (n,)
         Initial state.
     t_bound : float
-        Boundary time – the integration won't continue beyond it. It also
+        Boundary time - the integration won't continue beyond it. It also
         determines the direction of the integration.
     first_step : float or None, optional
         Initial step size. Default is ``None`` which means that the algorithm
