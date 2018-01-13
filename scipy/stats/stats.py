@@ -147,6 +147,7 @@ Support Functions
    :toctree: generated/
 
    rankdata
+   ratio_unif
 
 References
 ----------
@@ -170,6 +171,7 @@ from scipy._lib._version import NumpyVersion
 from scipy._lib._util import _lazywhere
 import scipy.special as special
 import scipy.linalg as linalg
+import scipy.optimize as optimize
 from . import distributions
 from . import mstats_basic
 from ._stats_mstats_common import _find_repeats, linregress, theilslopes
@@ -5939,3 +5941,170 @@ def rankdata(a, method='average'):
 
     # average method
     return .5 * (count[dense] + count[dense - 1] + 1)
+
+
+def ratio_unif(f, size=1, x1=None, x2=None, y2=None, shift=0, max_iter=None,
+               bounds=None):
+    """
+    Generate random variables using ratio-of-uniforms method.
+
+    Given a continuous univariate density f and a constant c, define the set
+    A(c) := {(x, y) : 0 < y <= sqrt(f(x/y + c)) }. If (U, V) is a random
+    vector uniformly distributed over A(c), then U/V + c follows a distribution
+    with density f.
+
+    The above result (see [1]_, [2]_) can be used to sample random variables
+    using only the density. Typical choices of c are zero or the mode of f.
+    The set A(c) is a subset of the rectangle R = [-x1, x2] x [0, y2] where
+    - x1 = inf (x - c) sqrt(f(x))
+    - x2 = sup (x - c) sqrt(f(x))
+    - y2 = sup sqrt(f(x))
+
+    In particular, these values are finite if f is bounded and x**2 f(x) is
+    bounded (i.e. subquadratic tails). One can generate (U, V) uniformly on
+    R and return U/V + c if (U, V) are also in A(c) which can be directly
+    verified. Intuitively, this works well if A(c) fills up most of the
+    enclosing rectangle such that the probability is high that (U, V) lies in
+    A(c) whenever it lies in R(c) as the number of required iterations
+    becomes too large otherwise.
+
+    Parameters
+    ----------
+    f : callable
+        Scalar function defining the density.
+    size : int, optional
+        The number of random variables to generate.
+    x1 : float, optional
+        The lower bound of the bounding rectangle in the x-direction.
+        Default is None. In that case, attempt to find bound numerically.
+    x2 : float, optional
+        The upper bound of the bounding rectangle in the x-direction.
+        Default is None. In that case, attempt to find bound numerically.
+    y2 : float, optional
+        The upper bound of the bounding rectangle in the y-direction.
+        Default is None. In that case, attempt to find bound numerically.
+    max_iter : int, optional
+        Maximum number of iterations to generate the random variables.
+        Default is None. In that case, max_iter is set to a value that
+        ensures successful simulation with a high probability.
+    bounds : tuple of floats (a, b)
+        In case any of the boundaries of the bounding rectangle is not
+        specified, attempt to find missing boundary numerically over the range
+        specified by bounds.
+
+    Returns
+    -------
+    rvs : array
+        array with the random variables distributed according to density f
+
+    Notes
+    -----
+    If the bounding rectangle is not correctly specified (i.e. if it does not
+    contain A(c)), the algorithm samples from a distribution different from
+    the one given by the density f. It is therefore recommended to perform a
+    test such as `stats.kstest` as a check.
+
+    References
+    ----------
+    .. [1] L. Devroye, "Non-Uniform Random Variate Generation",
+    Springer-Verlag, 1986.
+    .. [2] W. Hörman and J. Leydold, "Generating generalized inverse Gaussian
+    random variates", Statistics and Computing, Vol 24(4), p. 547--557, 2014.
+
+    Examples
+    --------
+    >>> from scipy import stats
+
+    Simulate normally distributed random variables. It is easy to compute the
+    bounding rectangle explicitly in that case.
+    >>> f = stats.norm.pdf
+    >>> x_bound = np.sqrt(f(np.sqrt(2))) * np.sqrt(2)
+    >>> x1, x2, y2 = -x_bound, x_bound, np.sqrt(f(0))
+    >>> np.random.seed(12345)
+    >>> rvs = ratio_unif(f, x1=x1, x2=x2, y2=y2, size=2500)
+
+    The K-S test confirms that the random variates are indeed normally
+    distributed (p-value clearly does not reject normality):
+    >>> stats.kstest(rvs, 'norm')[1]
+    0.373298699196806752
+
+    If the bounding rectangle is not specified, it can be determined
+    numerically over the region specified by `bounds`.
+
+    >>> np.random.seed(12345)
+    >>> rvs = ratio_unif(f, size=2500, bounds=(-100, 100))
+    >>> stats.kstest(rvs, 'norm')[1]
+    0.3732986992033126
+
+    The exponential distribution provides another example where the bounding
+    rectangle can be determined explicitly.
+    >>> np.random.seed(12345)
+    >>> rvs = ratio_unif(lambda x: np.exp(-x), x1=0, x2=2*np.exp(-1), y2=1, size=1000)
+    >>> stats.kstest(rvs, 'expon')[1]
+    0.52369231518316373
+
+    Sometimes it can be helpful to use a non-zero shift parameter, see e.g.
+    [2]_ above in the case of the generalized inverse Gaussian distribution.
+
+    """
+
+    if not callable(f):
+        raise TypeError("density f must be callable.")
+
+    def find_rect_bounds(g, bounds):
+        if bounds is None:
+            raise Exception("bounds cannot be None if bounding rectangle is" +
+                            " not fully specified...")
+        opt_res = optimize.minimize_scalar(g, bounds=bounds, method='Bounded')
+        if not opt_res.success:
+            raise Exception("solver failed: " + opt_res.message)
+        if np.isnan(opt_res.fun):
+            raise Exception("solver returned nan at x=".format(opt_res.x))
+        return opt_res.fun
+
+    # in case bounding rectangle is not given, attempt to find it numerically
+    def f_opt(x): return (x - shift) * np.sqrt(f(x))
+
+    if x1 is None:
+        x1 = find_rect_bounds(f_opt, bounds=bounds)
+    if x2 is None:
+        x2 = -find_rect_bounds(lambda x: -f_opt(x), bounds=bounds)
+
+    if x1 >= x2:
+        raise ValueError("x1 must be smaller than x2.")
+
+    if y2 is None:
+        y2 = np.sqrt(-find_rect_bounds(lambda x: -f(x), bounds=bounds))
+    if y2 < 0:
+        raise ValueError("y2 must be positive.")
+
+    if max_iter is None:
+        # set no of iterations to ensure that method fails with proba. p_fail
+        # in case point in [x1, x2] x [0, y2] is accepted with prob. p_accept
+        p_fail, p_accept = 0.001, 0.25
+        max_iter = 10 + size * np.log(1 / p_fail) / np.log(1 / (1 - p_accept))
+
+    # start sampling using ratio of uniforms method
+    x = np.zeros(size)
+    j, simulated = 1, 0
+    while (j <= max_iter):
+        k = size - simulated
+        # simulate uniform rvs on [x1, x2] and [0,y2]
+        u1 = distributions.uniform.rvs(loc=x1, scale=(x2 - x1), size=k)
+        v1 = distributions.uniform.rvs(scale=y2, size=k)
+        # apply rejection method
+        rvs = u1 / v1 + shift
+        accept = (v1**2 <= f(rvs))
+        num_accept = sum(accept)
+        if num_accept > 0:
+            take = min(num_accept, size - simulated)
+            x[simulated:(simulated + take)] = rvs[accept][0:take]
+            simulated += take
+        if simulated < size:
+            j = j + 1
+        else:
+            return x
+
+    raise Exception("Only {} of {} random variables".format(simulated, size) +
+                    " could generated after {}".format(round(max_iter, 0)) +
+                    " iterations. Consider increasing max_iter.")
