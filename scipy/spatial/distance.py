@@ -1203,19 +1203,19 @@ def canberra(u, v, w=None):
 def jensenshannon(p, q, base=None):
     """
     Compute the Jensen-Shannon divergence between two
-    1-D probability arrays. Note that this is a pseudo metric
-    since it does not satisfy triangle inequality. However,
-    it's squareroot is a metric.
+    1-D probability arrays. This is a pseudo metric
+    since it does not satisfy triangle inequality.
+    However, it's squareroot is a metric.
 
     The Jensen-Shannon divergence between probability
     vectors `p` and `q` is defined as,
 
     .. math::
 
-       \\frac{D_{KL}(p \parallel m) + D_{KL}(q \parallel m)}{2}
+       \\frac{D(p \parallel m) + D(q \parallel m)}{2}
 
     where :math:`M` is the average of :math:`p` and :math:`q`
-    and :math:`D_{KL}` is the Kullback-Leibler Divergence.
+    and :math:`D` is the Kullback-Leibler Divergence.
 
     This routine will normalize `p` and `q` if they don't sum to 1.0.
 
