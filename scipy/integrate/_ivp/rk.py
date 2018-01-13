@@ -169,7 +169,7 @@ class RungeKutta(OdeSolver):
 class RK23(RungeKutta):
     """Explicit Runge-Kutta method of order 3(2).
 
-    This uses the Bogacki–Shampine pair of formulas [1]_. The error is controlled
+    This uses the Bogacki-Shampine pair of formulas [1]_. The error is controlled
     assuming accuracy of the second-order method, but steps are taken using the
     third-order accurate formula (local extrapolation is done). A cubic Hermite
     polynomial is used for the dense output.
@@ -191,7 +191,7 @@ class RK23(RungeKutta):
     y0 : array_like, shape (n,)
         Initial state.
     t_bound : float
-        Boundary time – the integration won't continue beyond it. It also
+        Boundary time - the integration won't continue beyond it. It also
         determines the direction of the integration.
     max_step : float, optional
         Maximum allowed step size. Default is np.inf, i.e. the step size is not
@@ -277,7 +277,7 @@ class RK45(RungeKutta):
     y0 : array_like, shape (n,)
         Initial state.
     t_bound : float
-        Boundary time – the integration won't continue beyond it. It also
+        Boundary time - the integration won't continue beyond it. It also
         determines the direction of the integration.
     max_step : float, optional
         Maximum allowed step size. Default is np.inf, i.e. the step size is not
