@@ -134,7 +134,7 @@ class BDF(OdeSolver):
         finite-difference approximation. Its shape must be (n, n). This argument
         is ignored if `jac` is not `None`. If the Jacobian has only few non-zero
         elements in *each* row, providing the sparsity structure will greatly
-        speed up the computations [10]_. A zero entry means that a corresponding
+        speed up the computations [4]_. A zero entry means that a corresponding
         element in the Jacobian is always zero. If None (default), the Jacobian
         is assumed to be dense.
     vectorized : bool, optional
