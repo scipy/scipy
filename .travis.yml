@@ -122,6 +122,10 @@ before_install:
   - |
     if [ "${REFGUIDE_CHECK}" == "1" ]; then
         travis_retry pip install matplotlib Sphinx==1.5.5
+        # XXX: Install older numpy as a workaround for float printing changes.
+        # XXX: We'll remove this once numpy 1.14.1 is released to fix its printing
+        # XXX: bugs
+        travis_retry pip install 'numpy!=1.14.0'
     fi
   - python -V
   - ccache -s
