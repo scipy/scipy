@@ -5943,7 +5943,7 @@ def rankdata(a, method='average'):
     return .5 * (count[dense] + count[dense - 1] + 1)
 
 
-def ratio_unif(f, size=1, x1=None, x2=None, y2=None, shift=0, max_iter=None,
+def ratio_unif(f, size=1, x1=None, x2=None, y2=None, shift=0, maxiter=None,
                bounds=None):
     """
     Generate random variables using ratio-of-uniforms method.
@@ -5983,9 +5983,9 @@ def ratio_unif(f, size=1, x1=None, x2=None, y2=None, shift=0, max_iter=None,
     y2 : float, optional
         The upper bound of the bounding rectangle in the y-direction.
         Default is None. In that case, attempt to find bound numerically.
-    max_iter : int, optional
+    maxiter : int, optional
         Maximum number of iterations to generate the random variables.
-        Default is None. In that case, max_iter is set to a value that
+        Default is None. In that case, maxiter is set to a value that
         ensures successful simulation with a high probability.
     bounds : tuple of floats (a, b), optional
         Default is none. In case any of the boundaries of the bounding
@@ -6078,16 +6078,16 @@ def ratio_unif(f, size=1, x1=None, x2=None, y2=None, shift=0, max_iter=None,
     if y2 < 0:
         raise ValueError("y2 must be positive.")
 
-    if max_iter is None:
+    if maxiter is None:
         # set no of iterations to ensure that method fails with proba. p_fail
         # in case point in [x1, x2] x [0, y2] is accepted with prob. p_accept
         p_fail, p_accept = 0.001, 0.25
-        max_iter = 10 + size * np.log(1 / p_fail) / np.log(1 / (1 - p_accept))
+        maxiter = 10 + size * np.log(1 / p_fail) / np.log(1 / (1 - p_accept))
 
     # start sampling using ratio of uniforms method
     x = np.zeros(size)
     j, simulated = 1, 0
-    while (j <= max_iter):
+    while (j <= maxiter):
         k = size - simulated
         # simulate uniform rvs on [x1, x2] and [0,y2]
         u1 = distributions.uniform.rvs(loc=x1, scale=(x2 - x1), size=k)
@@ -6106,5 +6106,5 @@ def ratio_unif(f, size=1, x1=None, x2=None, y2=None, shift=0, max_iter=None,
             return x
 
     raise Exception("Only {} of {} random variables".format(simulated, size) +
-                    " could generated after {}".format(round(max_iter, 0)) +
-                    " iterations. Consider increasing max_iter.")
+                    " could generated after {}".format(round(maxiter, 0)) +
+                    " iterations. Consider increasing maxiter.")
