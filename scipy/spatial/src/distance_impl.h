@@ -309,6 +309,42 @@ jaccard_distance_char(const char *u, const char *v, const npy_intp n)
     return (double)num / denom;
 }
 
+
+static NPY_INLINE double
+jensenshannon_distance_double(const double *p, const double *q, const npy_intp n)
+{
+    // causes floating point overflow
+    // and returns infinity
+    double inf = 1e9999;
+
+    double s = 0.0;
+    npy_intp i;
+    double p_sum = 0.0;
+    double q_sum = 0.0;
+
+    for (i = 0; i < n; ++i) {
+        p_sum += p[i];
+        q_sum += q[i];
+    }
+
+    for (i = 0; i < n; ++i) {
+        if (p[i] < 0 || q[i] < 0)
+            return inf;
+        const double p_i = p[i] / p_sum;
+        const double q_i = q[i] / q_sum;
+        const double m_i = (p_i + q_i) / 2.0;
+        if (p_i > 0.0)
+            s += p_i * log(p_i / m_i);
+        if (q_i > 0.0)
+            s += q_i * log(q_i / m_i);
+        // printf("%lf\n", p_i + q_i, p_i, q_i);
+        // printf("enough\n");
+    }
+
+    return s / 2.0;
+}
+
+
 static NPY_INLINE double
 seuclidean_distance(const double *var, const double *u, const double *v,
                     const npy_intp n)
@@ -673,6 +709,7 @@ DEFINE_CDIST(city_block, double)
 DEFINE_CDIST(euclidean, double)
 DEFINE_CDIST(hamming, double)
 DEFINE_CDIST(jaccard, double)
+DEFINE_CDIST(jensenshannon, double)
 DEFINE_CDIST(sqeuclidean, double)
 
 DEFINE_CDIST(dice, char)
@@ -710,6 +747,7 @@ DEFINE_PDIST(city_block, double)
 DEFINE_PDIST(euclidean, double)
 DEFINE_PDIST(hamming, double)
 DEFINE_PDIST(jaccard, double)
+DEFINE_PDIST(jensenshannon, double)
 DEFINE_PDIST(sqeuclidean, double)
 
 DEFINE_PDIST(dice, char)

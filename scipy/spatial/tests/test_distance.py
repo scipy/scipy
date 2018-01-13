@@ -56,10 +56,11 @@ from scipy.spatial.distance import (squareform, pdist, cdist, num_obs_y,
 # these were missing: chebyshev cityblock kulsinski
 from scipy.spatial.distance import (braycurtis, canberra, chebyshev, cityblock,
                                     correlation, cosine, dice, euclidean,
-                                    hamming, jaccard, kulsinski, mahalanobis,
-                                    matching, minkowski, rogerstanimoto,
-                                    russellrao, seuclidean, sokalmichener,
-                                    sokalsneath, sqeuclidean, yule)
+                                    hamming, jaccard, jensenshannon,
+                                    kulsinski, mahalanobis, matching,
+                                    minkowski, rogerstanimoto, russellrao,
+                                    seuclidean, sokalmichener, sokalsneath,
+                                    sqeuclidean, yule)
 from scipy.spatial.distance import wminkowski as old_wminkowski
 
 _filenames = [
@@ -2001,7 +2002,7 @@ def test_Xdist_non_negative_weights():
     w = np.ones(X.shape[1])
     w[::5] = -w[::5]
     for metric in _METRICS_NAMES:
-        if metric in ['seuclidean', 'mahalanobis']:
+        if metric in ['seuclidean', 'mahalanobis', 'jensenshannon']:
             continue
 
         for m in [metric, eval(metric), "test_" + metric]:
