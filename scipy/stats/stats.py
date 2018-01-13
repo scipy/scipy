@@ -5987,10 +5987,10 @@ def ratio_unif(f, size=1, x1=None, x2=None, y2=None, shift=0, max_iter=None,
         Maximum number of iterations to generate the random variables.
         Default is None. In that case, max_iter is set to a value that
         ensures successful simulation with a high probability.
-    bounds : tuple of floats (a, b)
-        In case any of the boundaries of the bounding rectangle is not
-        specified, attempt to find missing boundary numerically over the range
-        specified by bounds.
+    bounds : tuple of floats (a, b), optional
+        Default is none. In case any of the boundaries of the bounding
+        rectangle is not specified, attempt to find missing boundary
+        numerically over the range specified by bounds.
 
     Returns
     -------
