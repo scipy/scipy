@@ -1359,7 +1359,6 @@ class TestMode(object):
         assert_equal(vals[0][0], 'showers')
         assert_equal(vals[1][0], 2)
 
-    @pytest.mark.xfail(sys.version_info > (3,), reason='numpy github issue 641')
     def test_mixed_objects(self):
         objects = [10, True, np.nan, 'hello', 10]
         arr = np.empty((5,), dtype=object)
@@ -1421,6 +1420,16 @@ class TestMode(object):
         assert_equal(actual, (6, 3))
         assert_raises(ValueError, stats.mode, data1, nan_policy='raise')
         assert_raises(ValueError, stats.mode, data1, nan_policy='foobar')
+
+    @pytest.mark.parametrize("data", [
+        [3, 5, 1, 1, 3],
+        [3, np.nan, 5, 1, 1, 3],
+        [3, 5, 1],
+        [3, np.nan, 5, 1],
+    ])
+    def test_smallest_equal(self, data):
+        result = stats.mode(data, nan_policy='omit')
+        assert_equal(result[0][0], 1)
 
 
 class TestVariability(object):

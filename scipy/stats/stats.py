@@ -438,19 +438,42 @@ def mode(a, axis=0, nan_policy='propagate'):
         a = ma.masked_invalid(a)
         return mstats_basic.mode(a, axis)
 
-    scores = np.unique(np.ravel(a))       # get ALL unique values
-    testshape = list(a.shape)
-    testshape[axis] = 1
-    oldmostfreq = np.zeros(testshape, dtype=a.dtype)
-    oldcounts = np.zeros(testshape, dtype=int)
-    for score in scores:
-        template = (a == score)
-        counts = np.expand_dims(np.sum(template, axis), axis)
-        mostfrequent = np.where(counts > oldcounts, score, oldmostfreq)
-        oldcounts = np.maximum(counts, oldcounts)
-        oldmostfreq = mostfrequent
+    if (NumpyVersion(np.__version__) < '1.9.0') or (a.dtype == object and np.nan in set(a)):
+        # Fall back to a slower method since np.unique does not work with NaN
+        # or for older numpy which does not support return_counts
+        scores = set(np.ravel(a))  # get ALL unique values
+        testshape = list(a.shape)
+        testshape[axis] = 1
+        oldmostfreq = np.zeros(testshape, dtype=a.dtype)
+        oldcounts = np.zeros(testshape, dtype=int)
 
-    return ModeResult(mostfrequent, oldcounts)
+        for score in scores:
+            template = (a == score)
+            counts = np.expand_dims(np.sum(template, axis), axis)
+            mostfrequent = np.where(counts > oldcounts, score, oldmostfreq)
+            oldcounts = np.maximum(counts, oldcounts)
+            oldmostfreq = mostfrequent
+
+        return ModeResult(mostfrequent, oldcounts)
+
+    def _mode1D(a):
+        vals, cnts = np.unique(a, return_counts=True)
+        return vals[cnts.argmax()], cnts.max()
+
+    # np.apply_along_axis will convert the _mode1D tuples to a numpy array, casting types in the process
+    # This recreates the results without that issue
+    # View of a, rotated so the requested axis is last
+    in_dims = list(range(a.ndim))
+    a_view = np.transpose(a, in_dims[:axis] + in_dims[axis+1:] + [axis])
+
+    inds = np.ndindex(a_view.shape[:-1])
+    modes = np.empty(a_view.shape[:-1], dtype=a.dtype)
+    counts = np.zeros(a_view.shape[:-1], dtype=np.int)
+    for ind in inds:
+        modes[ind], counts[ind] = _mode1D(a_view[ind])
+    newshape = list(a.shape)
+    newshape[axis] = 1
+    return ModeResult(modes.reshape(newshape), counts.reshape(newshape))
 
 
 def _mask_to_limits(a, limits, inclusive):
