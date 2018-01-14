@@ -1212,10 +1212,10 @@ def jensenshannon(p, q, base=None):
 
     .. math::
 
-       \\frac{D(p \parallel m) + D(q \parallel m)}{2}
+       \\frac{D(p \\parallel m) + D(q \\parallel m)}{2}
 
-    where :math:`M` is the average of :math:`p` and :math:`q`
-    and :math:`D` is the Kullback-Leibler Divergence.
+    where :math:`m` is the average of :math:`p` and :math:`q`
+    and :math:`D` is the Kullback-Leibler divergence.
 
     This routine will normalize `p` and `q` if they don't sum to 1.0.
 
