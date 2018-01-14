@@ -313,9 +313,6 @@ jaccard_distance_char(const char *u, const char *v, const npy_intp n)
 static NPY_INLINE double
 jensenshannon_distance_double(const double *p, const double *q, const npy_intp n)
 {
-    // causes floating point overflow
-    // and returns infinity
-
     double s = 0.0;
     npy_intp i;
     double p_sum = 0.0;
