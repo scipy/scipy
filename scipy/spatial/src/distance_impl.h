@@ -315,7 +315,6 @@ jensenshannon_distance_double(const double *p, const double *q, const npy_intp n
 {
     // causes floating point overflow
     // and returns infinity
-    double inf = 1e9999;
 
     double s = 0.0;
     npy_intp i;
@@ -329,7 +328,7 @@ jensenshannon_distance_double(const double *p, const double *q, const npy_intp n
 
     for (i = 0; i < n; ++i) {
         if (p[i] < 0 || q[i] < 0)
-            return inf;
+            return INFINITY;
         const double p_i = p[i] / p_sum;
         const double q_i = q[i] / q_sum;
         const double m_i = (p_i + q_i) / 2.0;
