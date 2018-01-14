@@ -88,10 +88,6 @@ def equality_constrained_sqp(fun_and_constr, grad_and_jac, lagr_hess,
     state.niter += 1
     state.x = x
     state.v = v
-    state.fun = f
-    state.grad = c
-    state.constr = b
-    state.jac = A
     state.trust_radius = trust_radius
     state.penalty = penalty
     if return_all:
@@ -230,10 +226,6 @@ def equality_constrained_sqp(fun_and_constr, grad_and_jac, lagr_hess,
             # Store state
             state.x = x
             state.v = v
-            state.fun = f
-            state.grad = c
-            state.constr = b
-            state.jac = A
             # Otimality values
             state.optimality = norm(c + A.T.dot(v), np.inf)
             state.constr_violation = norm(b, np.inf) if len(b) > 0 else 0
