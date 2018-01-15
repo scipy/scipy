@@ -1238,5 +1238,5 @@ def test_save_unicode_field(tmpdir):
 
 def test_filenotfound():
     # Check the correct error is thrown
-    assert_raises(FileNotFoundError, loadmat, "NotExistentFile00.mat")
-    assert_raises(FileNotFoundError, loadmat, "NotExistentFile00")
+    assert_raises(IOError, loadmat, "NotExistentFile00.mat")
+    assert_raises(IOError, loadmat, "NotExistentFile00")
