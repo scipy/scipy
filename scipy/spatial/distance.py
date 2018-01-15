@@ -1202,19 +1202,18 @@ def canberra(u, v, w=None):
 
 def jensenshannon(p, q, base=None):
     """
-    Compute the Jensen-Shannon divergence between two
-    1-D probability arrays. This is a pseudo metric
-    since it does not satisfy triangle inequality.
-    However, it's squareroot is a metric.
+    Compute the Jensen-Shannon distance (metric) between
+    two 1-D probability arrays. This is a the square root
+    of the Jensen-Shannon divergence.
 
-    The Jensen-Shannon divergence between probability
+    The Jensen-Shannon distance between two probability
     vectors `p` and `q` is defined as,
 
     .. math::
 
-       \\frac{D(p \\parallel m) + D(q \\parallel m)}{2}
+       \\sqrt{\\frac{D(p \\parallel m) + D(q \\parallel m)}{2}}
 
-    where :math:`m` is the average of :math:`p` and :math:`q`
+    where :math:`m` is the pointwise mean of :math:`p` and :math:`q`
     and :math:`D` is the Kullback-Leibler divergence.
 
     This routine will normalize `p` and `q` if they don't sum to 1.0.
@@ -1227,7 +1226,7 @@ def jensenshannon(p, q, base=None):
         right probability vector
     base : double, optional
         the base of the logarithm used to compute the output
-        if given, then the routine uses the default base of
+        if not given, then the routine uses the default base of
         scipy.stats.entropy.
 
     Returns
@@ -1240,6 +1239,8 @@ def jensenshannon(p, q, base=None):
     >>> from scipy.spatial import distance
     >>> distance.jensenshannon([1.0, 0.0, 0.0], [0.0, 1.0, 0.0], 2.0)
     1.0
+    >>> distance.jensenshannon([1.0, 0.0], [0.5, 0.5])
+    0.46450140402245893
     >>> distance.jensenshannon([1.0, 0.0, 0.0], [1.0, 0.0, 0.0])
     0.0
 
@@ -1254,7 +1255,7 @@ def jensenshannon(p, q, base=None):
     js = np.sum(left, axis=0) + np.sum(right, axis=0)
     if base is not None:
         js /= np.log(base)
-    return js / 2.0
+    return np.sqrt(js / 2.0)
 
 
 def yule(u, v, w=None):

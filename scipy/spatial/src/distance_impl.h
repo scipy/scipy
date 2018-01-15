@@ -32,7 +32,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-static NPY_INLINE void 
+
+static NPY_INLINE void
 _row_norms(const double *X, npy_intp num_rows, const npy_intp num_cols, double *norms_buff){
     /* Compute the row norms. */
     npy_intp i, j;
@@ -42,7 +43,7 @@ _row_norms(const double *X, npy_intp num_rows, const npy_intp num_cols, double *
             norms_buff[i] += curr_val * curr_val;
         }
         norms_buff[i] = sqrt(norms_buff[i]);
-    }    
+    }
 }
 
 static NPY_INLINE double
@@ -313,19 +314,22 @@ jaccard_distance_char(const char *u, const char *v, const npy_intp n)
 static NPY_INLINE double
 jensenshannon_distance_double(const double *p, const double *q, const npy_intp n)
 {
-    double s = 0.0;
     npy_intp i;
+    double s = 0.0;
     double p_sum = 0.0;
     double q_sum = 0.0;
 
     for (i = 0; i < n; ++i) {
+        if (p[i] < 0.0 || q[i] < 0.0)
+            return HUGE_VAL;
         p_sum += p[i];
         q_sum += q[i];
     }
 
+    if (p_sum == 0.0 || q_sum == 0.0)
+        return HUGE_VAL;
+
     for (i = 0; i < n; ++i) {
-        if (p[i] < 0 || q[i] < 0)
-            return INFINITY;
         const double p_i = p[i] / p_sum;
         const double q_i = q[i] / q_sum;
         const double m_i = (p_i + q_i) / 2.0;
@@ -333,11 +337,9 @@ jensenshannon_distance_double(const double *p, const double *q, const npy_intp n
             s += p_i * log(p_i / m_i);
         if (q_i > 0.0)
             s += q_i * log(q_i / m_i);
-        // printf("%lf\n", p_i + q_i, p_i, q_i);
-        // printf("enough\n");
     }
 
-    return s / 2.0;
+    return sqrt(s / 2.0);
 }
 
 

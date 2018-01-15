@@ -81,6 +81,8 @@ _filenames = [
               "pdist-euclidean-ml.txt",
               "pdist-hamming-ml.txt",
               "pdist-jaccard-ml.txt",
+              "pdist-jensenshannon-ml-iris.txt",
+              "pdist-jensenshannon-ml.txt",
               "pdist-minkowski-3.2-ml-iris.txt",
               "pdist-minkowski-3.2-ml.txt",
               "pdist-minkowski-5.8-ml-iris.txt",
@@ -1112,6 +1114,50 @@ class TestPdist(object):
         X = np.float64(eo['pdist-boolean-inp'])
         Y_right = eo['pdist-jaccard']
         Y_test2 = wpdist(X, 'test_jaccard')
+        _assert_within_tol(Y_test2, Y_right, eps)
+
+    def test_pdist_jensenshannon_random(self):
+        eps = 1e-08
+        print(eo.keys())
+        X = eo['pdist-double-inp']
+        Y_right = eo['pdist-jensenshannon']
+        Y_wrong = eo['pdist-jensenshannon-iris']
+        Y_test1 = pdist(X, 'jensenshannon')
+        _assert_within_tol(Y_test1, Y_right, eps)
+
+    def test_pdist_jensenshannon_random_float32(self):
+        eps = 1e-07
+        X = np.float32(eo['pdist-double-inp'])
+        Y_right = eo['pdist-jensenshannon']
+        Y_test1 = pdist(X, 'jensenshannon')
+        _assert_within_tol(Y_test1, Y_right, eps, verbose > 2)
+
+    def test_pdist_jensenshannon_random_nonC(self):
+        eps = 1e-08
+        X = eo['pdist-double-inp']
+        Y_right = eo['pdist-jensenshannon']
+        Y_test2 = pdist(X, 'test_jensenshannon')
+        _assert_within_tol(Y_test2, Y_right, eps)
+
+    def test_pdist_jensenshannon_iris(self):
+        eps = 1e-12
+        X = eo['iris']
+        Y_right = eo['pdist-jensenshannon-iris']
+        Y_test1 = pdist(X, 'jensenshannon')
+        _assert_within_tol(Y_test1, Y_right, eps)
+
+    def test_pdist_jensenshannon_iris_float32(self):
+        eps = 1e-06
+        X = np.float32(eo['iris'])
+        Y_right = eo['pdist-jensenshannon-iris']
+        Y_test1 = pdist(X, 'jensenshannon')
+        _assert_within_tol(Y_test1, Y_right, eps, verbose > 2)
+
+    def test_pdist_jensenshannon_iris_nonC(self):
+        eps = 5e-13
+        X = eo['iris']
+        Y_right = eo['pdist-jensenshannon-iris']
+        Y_test2 = pdist(X, 'test_jensenshannon')
         _assert_within_tol(Y_test2, Y_right, eps)
 
     def test_pdist_chebyshev_random(self):
