@@ -2758,7 +2758,7 @@ interface
 
    end subroutine <prefix>trsyl
 
-   subroutine <prefix>laswp(n,a,nrows,k1,k2,piv,off,inc,m)
+subroutine <prefix>laswp(n,a,nrows,k1,k2,piv,off,inc,m,npiv)
 
    ! a = laswp(a,piv,k1=0,k2=len(piv)-1,off=0,inc=1,overwrite_a=0)
    ! Perform row interchanges on the matrix A for each of row k1 through k2
@@ -2771,25 +2771,20 @@ interface
      integer depend(a),intent(hide):: nrows = shape(a,0)
      integer depend(a),intent(hide):: n = shape(a,1)
      <ftype> dimension(nrows,n),intent(in,out,copy) :: a
-     integer dimension(*),intent(in),depend(nrows) :: piv
-     check(len(piv)<=nrows) :: piv
+     integer dimension(npiv),intent(in) :: piv
+     integer intent(hide),depend(piv,nrows),check(npiv<=nrows) :: npiv = len(piv)
 !XXX: how to check that all elements in piv are < n?
 
-     integer optional,intent(in) :: k1 = 0
-     check(0<=k1) :: k1
-     integer optional,intent(in),depend(k1,piv,off) :: k2 = len(piv)-1
-     check(k1<=k2 && k2<len(piv)-off) :: k2
+     integer optional,intent(in),check(0<=k1) :: k1 = 0
+     integer optional,intent(in),depend(k1,npiv,off),check(k1<=k2 && k2<npiv-off) :: k2 = npiv-1
 
      integer optional, intent(in),check(inc>0||inc<0) :: inc = 1
-     integer optional,intent(in),depend(piv) :: off=0
-     check(off>=0 && off<len(piv)) :: off
+     integer optional,intent(in),depend(npiv),check(off>=0 && off<len(piv)) :: off=0
+     integer intent(hide),depend(npiv,inc,off),check(npiv-off>(m-1)*abs(inc)) :: m = (len(piv)-off)/abs(inc)
 
-     integer intent(hide),depend(piv,inc,off) :: m = (len(piv)-off)/abs(inc)
-     check(len(piv)-off>(m-1)*abs(inc)) :: m
+end subroutine <prefix>laswp
 
-   end subroutine <prefix>laswp
-
-   subroutine <prefix2c>gees(compute_v,sort_t,<prefix2c>select,n,a,nrows,sdim,w,vs,ldvs,work,lwork,rwork,bwork,info)
+subroutine <prefix2c>gees(compute_v,sort_t,<prefix2c>select,n,a,nrows,sdim,w,vs,ldvs,work,lwork,rwork,bwork,info)
 
      ! t,sdim,w,vs,work,info=gees(compute_v=1,sort_t=0,select,a,lwork=3*n)
      ! For an NxN matrix compute the eigenvalues, the schur form T, and optionally
@@ -2817,9 +2812,10 @@ interface
      <ftype2> optional,intent(hide),depend(n),dimension(n) :: rwork
      logical optional,intent(hide),depend(n),dimension(n) :: bwork
      integer intent(out) :: info
-   end subroutine <prefix2c>gees
 
-   subroutine <prefix2>gees(compute_v,sort_t,<prefix2>select,n,a,nrows,sdim,wr,wi,vs,ldvs,work,lwork,bwork,info)
+end subroutine <prefix2c>gees
+
+subroutine <prefix2>gees(compute_v,sort_t,<prefix2>select,n,a,nrows,sdim,wr,wi,vs,ldvs,work,lwork,bwork,info)
 
      ! t,sdim,w,vs,work,info=gees(compute_v=1,sort_t=0,select,a,lwork=3*n)
      ! For an NxN matrix compute the eigenvalues, the schur form T, and optionally
@@ -3069,7 +3065,7 @@ subroutine <prefix2>stebz(d,e,range,vl,vu,il,iu,tol,order,n,work,iwork,m,nsplit,
   ! matrix.
 
   callstatement (*f2py_func)((range>0?(range==1?"V":"I"):"A"),order,&n,&vl,&vu,&il,&iu,&tol,d,e,&m,&nsplit,w,iblock,isplit,work,iwork,&info)
-  callprotoargument char*,char*,int*,<ctype2>*,<ctype2>*,int*,int*,<ctype2>*,<ctype2>*,<ctype2>*,int*,int*,<ctype2>*,int*,int*,int*,int*,int*
+  callprotoargument char*,char*,int*,<ctype2>*,<ctype2>*,int*,int*,<ctype2>*,<ctype2>*,<ctype2>*,int*,int*,<ctype2>*,int*,int*,<ctype2>*,int*,int*
 
   <ftype2> dimension(n),intent(in) :: d
   <ftype2> dimension(n-1),depend(n),intent(in) :: e
@@ -3367,13 +3363,14 @@ function slamch(cmach)
 end function slamch
 
 
-! lu,ipiv,info = dgbtrf(ab,kl,ku,[m,n,ldab,overwrite_ab])
-! Compute  an  LU factorization of a real m-by-n band matrix
-subroutine <prefix>gbtrf(m,n,ab,kl,ku,ldab,ipiv,info) ! in :Band:dgbtrf.f
+subroutine <prefix>gbtrf(m,n,ab,kl,ku,ldab,ipiv,info)
+    ! in :Band:dgbtrf.f
+    ! lu,ipiv,info = dgbtrf(ab,kl,ku,[m,n,ldab,overwrite_ab])
+    ! Compute  an  LU factorization of a real m-by-n band matrix
+
   ! threadsafe  ! FIXME: should this be added ?
 
   callstatement {int i;(*f2py_func)(&m,&n,&kl,&ku,ab,&ldab,ipiv,&info); for(i=0,n=MIN(m,n);i\<n;--ipiv[i++]);}
-
   callprotoargument int*,int*,int*,int*,<ctype>*,int*,int*,int*
 
     ! let the default be a square matrix:
@@ -3382,8 +3379,8 @@ subroutine <prefix>gbtrf(m,n,ab,kl,ku,ldab,ipiv,info) ! in :Band:dgbtrf.f
     integer :: kl
     integer :: ku
 
-    <ftype> dimension(ldab,*),intent(in,out,copy,out=lu) :: ab
-    integer optional,check(shape(ab,0)==ldab),depend(ab) :: ldab=shape(ab,0)
+    <ftype> dimension(ldab,n),intent(in,out,copy,out=lu) :: ab
+    integer optional,check(shape(ab,0)==ldab),depend(ab) :: ldab=max(shape(ab,0),1)
     integer dimension(MIN(m,n)),depend(m,n),intent(out) :: ipiv
     integer intent(out):: info
 end subroutine <prefix>gbtrf
@@ -3908,12 +3905,12 @@ function <prefix2>lange(norm,m,n,a,lda,work) result(n2)
     ! element of largest absolute value of a real matrix A.
     <ftype2> <prefix2>lange, n2
     fortranname <wrap2>lange
-    callstatement (*f2py_func)(&<prefix2>lange,norm,&m,&n,a,&m,work)
+    callstatement (*f2py_func)(&<prefix2>lange,norm,&m,&n,a,&lda,work)
     callprotoargument <ctype2>*,char*,int*,int*,<ctype2>*,int*,<ctype2>*
 
     character intent(in),check(*norm=='M'||*norm=='m'||*norm=='1'||*norm=='O'||*norm=='o'||*norm=='I'||*norm=='i'||*norm=='F'||*norm=='f'||*norm=='E'||*norm=='e'):: norm
     integer intent(hide),depend(a,n) :: m = shape(a,0)
-    integer intent(hide),depend(a) :: lda = shape(a,0)
+    integer intent(hide),depend(m) :: lda = max(1,m)
     integer intent(hide),depend(a) :: n = shape(a,1)
     <ftype2> dimension(m,n),intent(in) :: a
     <ftype2> dimension(m+1),intent(cache,hide) :: work
@@ -3924,35 +3921,38 @@ function <prefix2c>lange(norm,m,n,a,lda,work) result(n2)
     ! element of largest absolute value of a complex matrix A.
     <ftype2> <prefix2c>lange, n2
     fortranname <wrap2c>lange
-    callstatement (*f2py_func)(&<prefix2c>lange,norm,&m,&n,a,&m,work)
+    callstatement (*f2py_func)(&<prefix2c>lange,norm,&m,&n,a,&lda,work)
     callprotoargument <ctype2>*,char*,int*,int*,<ctype2c>*,int*,<ctype2>*
 
     character intent(in),check(*norm=='M'||*norm=='m'||*norm=='1'||*norm=='O'||*norm=='o'||*norm=='I'||*norm=='i'||*norm=='F'||*norm=='f'||*norm=='E'||*norm=='e'):: norm
     integer intent(hide),depend(a,n) :: m = shape(a,0)
-    integer intent(hide),depend(a) :: lda = shape(a,0)
+    integer intent(hide),depend(m) :: lda = max(1,m)
     integer intent(hide),depend(a) :: n = shape(a,1)
     <ftype2c> dimension(m,n),intent(in) :: a
     <ftype2> dimension(m+1),intent(cache,hide) :: work
 end function <prefix2c>lange
 
-subroutine <prefix>larfg(n, alpha, x, incx, tau)
+subroutine <prefix>larfg(n, alpha, x, incx, tau, lx)
     integer intent(in), check(n>=1) :: n
     <ftype> intent(in,out) :: alpha
-    <ftype> intent(in,copy,out), dimension(*), depend(n,incx), check(len(x) >= (n-2)*incx) :: x
+    <ftype> intent(in,copy,out), dimension(lx) :: x
     integer intent(in), check(incx>0||incx<0) :: incx = 1
     <ftype> intent(out) :: tau
+    integer intent(hide),depend(x,n,incx),check(lx > (n-2)*incx) :: lx = len(x)
 end subroutine <prefix>larfg
 
-subroutine <prefix>larf(side,m,n,v,incv,tau,c,ldc,work)
+subroutine <prefix>larf(side,m,n,v,incv,tau,c,ldc,work,lwork)
     character intent(in), check(side[0]=='L'||side[0]=='R') :: side = 'L'
     integer intent(in,hide), depend(c) :: m = shape(c,0)
     integer intent(in,hide), depend(c) :: n = shape(c,1)
-    <ftype> dimension(*), intent(in), depend(n,m,side,incv), check(side[0]=='L'?len(v)>=(m-1)*incv+1:len(v)>=(n-1)*incv+1) :: v
+    <ftype> intent(in),dimension((side[0]=='L'?(1 + (m-1)*abs(incv)):(1 + (n-1)*abs(incv)))),depend(n,m,side,incv) :: v
     integer intent(in), check(incv>0||incv<0) :: incv = 1
     <ftype> intent(in) :: tau
     <ftype> dimension(m,n), intent(in,copy,out) :: c
-    integer intent(in,hide) :: ldc = shape(c,0)
-    <ftype> dimension(*), intent(in), depend(side,m,n), check(side[0]=='L'?len(work)>=n:len(work)>=m) :: work
+    integer intent(in,hide) :: ldc = max(1,shape(c,0))
+    ! FIXME: work should not have been an input argument but kept here for backwards compatibility!
+    <ftype> intent(in),dimension(lwork),depend(side,m,n) :: work
+    integer intent(hide),depend(work),check(lwork >= (side[0]=='L'?n:m)) :: lwork = len(work)
 end subroutine <prefix>larf
 
 subroutine <prefix>lartg(f,g,cs,sn,r)
@@ -3963,22 +3963,22 @@ subroutine <prefix>lartg(f,g,cs,sn,r)
     <ftype> intent(out) :: r
 end subroutine <prefix>lartg
 
-subroutine <prefix2c>rot(n,x,offx,incx,y,offy,incy,c,s)
+subroutine <prefix2c>rot(n,x,offx,incx,y,offy,incy,c,s,lx,ly)
     callstatement (*f2py_func)(&n,x+offx,&incx,y+offy,&incy,&c,&s)
     callprotoargument int*,<ctype2c>*,int*,<ctype2c>*,int*,<float,double>*,<ctype2c>*
-    <ftype2c> dimension(*),intent(in,out,copy) :: x,y
+    <ftype2c> dimension(lx),intent(in,out,copy) :: x
+    <ftype2c> dimension(ly),intent(in,out,copy) :: y
+    integer intent(hide),depend(x) :: lx = len(x)
+    integer intent(hide),depend(y) :: ly = len(y)
     <real,double precision> intent(in) :: c
     <ftype2c> intent(in) :: s
     integer optional, intent(in), check(incx>0||incx<0) :: incx = 1
     integer optional, intent(in), check(incy>0||incy<0) :: incy = 1
-    integer optional, intent(in), depend(x) :: offx=0
-    integer optional, intent(in), depend(y) :: offy=0
-    check(offx>=0 && offx<len(x)) :: offx
-    check(offy>=0 && offy<len(y)) :: offy
-    integer optional, intent(in), depend(x,incx,offx,y,incy,offy) :: &
-        n = (len(x)-1-offx)/abs(incx)+1
-    check(len(x)-offx>(n-1)*abs(incx)) :: n
-    check(len(y)-offy>(n-1)*abs(incy)) :: n
+    integer optional, intent(in), depend(lx), check(offx>=0 && offx<lx) :: offx=0
+    integer optional, intent(in), depend(ly), check(offy>=0 && offy<ly) :: offy=0
+    integer optional, intent(in), depend(lx,incx,offx,ly,incy,offy) :: n = (lx-1-offx)/abs(incx)+1
+    check(lx-offx>(n-1)*abs(incx)) :: n
+    check(ly-offy>(n-1)*abs(incy)) :: n
 end subroutine <prefix2c>rot
 
 subroutine ilaver(major, minor, patch)
