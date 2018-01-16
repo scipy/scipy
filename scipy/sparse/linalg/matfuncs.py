@@ -105,7 +105,7 @@ def _onenorm_matrix_power_nnm(A, p):
     M = A.T
     for i in range(p):
         v = M.dot(v)
-    return max(v)
+    return np.max(v)
 
 
 def _onenorm(A):
