@@ -80,61 +80,61 @@ unlikely to be renamed or changed in an incompatible way, and if that is
 necessary a deprecation warning will be raised for one Scipy release before the
 change is made.
 
-* scipy.cluster
+* `scipy.cluster`
 
-  - vq
-  - hierarchy
+  - `scipy.cluster.vq`
+  - `scipy.cluster.hierarchy`
 
-* scipy.constants
+* `scipy.constants`
 
-* scipy.fftpack
+* `scipy.fftpack`
 
-* scipy.integrate
+* `scipy.integrate`
 
-* scipy.interpolate
+* `scipy.interpolate`
 
-* scipy.io
+* `scipy.io`
 
-  - arff
-  - harwell_boeing
-  - idl
-  - matlab
-  - netcdf
-  - wavfile
+  - `scipy.io.arff`
+  - `scipy.io.harwell_boeing`
+  - `scipy.io.idl`
+  - `scipy.io.matlab`
+  - `scipy.io.netcdf`
+  - `scipy.io.wavfile`
 
-* scipy.linalg
+* `scipy.linalg`
 
-  - scipy.linalg.blas
-  - scipy.linalg.cython_blas
-  - scipy.linalg.lapack
-  - scipy.linalg.cython_lapack
-  - scipy.linalg.interpolative
+  - `scipy.linalg.blas`
+  - `scipy.linalg.cython_blas`
+  - `scipy.linalg.lapack`
+  - `scipy.linalg.cython_lapack`
+  - `scipy.linalg.interpolative`
 
-* scipy.misc
+* `scipy.misc`
 
-* scipy.ndimage
+* `scipy.ndimage`
 
-* scipy.odr
+* `scipy.odr`
 
-* scipy.optimize
+* `scipy.optimize`
 
-* scipy.signal
+* `scipy.signal`
 
-  - windows
+  - `scipy.signal.windows`
 
-* scipy.sparse
+* `scipy.sparse`
 
-  - linalg
-  - csgraph
+  - `scipy.sparse.linalg`
+  - `scipy.sparse.csgraph`
 
-* scipy.spatial
+* `scipy.spatial`
 
-  - distance
+  - `scipy.spatial.distance`
 
-* scipy.special
+* `scipy.special`
 
-* scipy.stats
+* `scipy.stats`
 
-  - distributions
-  - mstats
+  - `scipy.stats.distributions`
+  - `scipy.stats.mstats`
 
