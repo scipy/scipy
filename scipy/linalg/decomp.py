@@ -183,17 +183,20 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
 
     Examples
     --------
-    >>> from scipy.linalg import eig
-    >>> A = np.array([[0, 4, 0, 4], [0, 5, 4, 1], [7, 4, 4, 1], [0, 5, 8, 4]])
-    >>> D, VL, VR = eig(A, left=True, right=True)
-    >>> Dm = np.diag(D)
+    >>> from scipy import linalg
+    >>> a = np.array([[0., -1.], [1., 0.]])
+    >>> linalg.eigvals(a)
+    array([0.+1.j, 0.-1.j])
 
-    Test left and right eigenvectors
+    >>> b = np.array([[0., 1.], [1., 1.]])
+    >>> linalg.eigvals(a, b)
+    array([ 1.+0.j, -1.+0.j])
 
-    >>> np.allclose(A @ VR - VR @ Dm), np.zeros((4, 4)))
-    True
-    >>> np.allclose(VL.conj().T @ A - Dm @ VL.conj().T), np.zeros((4, 4)))
-    True
+    >>> a = np.array([[3., 0., 0.], [0., 8., 0.], [0., 0., 7.]])
+    >>> linalg.eigvals(a, homogeneous_eigvals=True)
+    array([[3.+0.j, 8.+0.j, 7.+0.j],
+           [1.+0.j, 1.+0.j, 1.+0.j]])
+
     """
     a1 = _asarray_validated(a, check_finite=check_finite)
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
@@ -608,7 +611,7 @@ def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
     array([-4.26200532, -2.22987175,  3.95222349, 12.53965359])
 
     Request only the eigenvalues between ``[-3, 4]``
-    
+
     >>> w, v = eig_banded(Ab, lower=True, select='v', select_range=[-3, 4])
     >>> w
     array([-2.22987175,  3.95222349])
@@ -715,23 +718,6 @@ def eigvals(a, b=None, overwrite_a=False, check_finite=True,
     ------
     LinAlgError
         If eigenvalue computation does not converge
-        
-    Examples
-    --------
-    >>> from scipy import linalg
-    >>> a = np.array([[0., -1.], [1., 0.]])
-    >>> linalg.eigvals(a)
-    array([0.+1.j, 0.-1.j])
-
-    >>> b = np.array([[0., 1.], [1., 1.]])
-    >>> linalg.eigvals(a, b)
-    array([ 1.+0.j, -1.+0.j])
-    
-    >>> a = np.array([[3., 0., 0.], [0., 8., 0.], [0., 0., 7.]])
-    >>> linalg.eigvals(a, homogeneous_eigvals=True)
-    array([[3.+0.j, 8.+0.j, 7.+0.j],
-           [1.+0.j, 1.+0.j, 1.+0.j]])
-
 
     See Also
     --------
@@ -743,11 +729,19 @@ def eigvals(a, b=None, overwrite_a=False, check_finite=True,
 
     Examples
     --------
-    >>> from scipy.linalg import eigvals
-    >>> A = np.array([[6, 4, 2, 4], [7, 8, 0, 0], [1, 2, 5, 0], [6, 6, 3, 1]])
-    >>> w = eigvals(A)
-    >>> w
-    array([14.69037140+0.j, -0.62521777+0.j,  3.27636505+0.j,  2.65848132+0.j])
+    >>> from scipy import linalg
+    >>> a = np.array([[0., -1.], [1., 0.]])
+    >>> linalg.eigvals(a)
+    array([0.+1.j, 0.-1.j])
+
+    >>> b = np.array([[0., 1.], [1., 1.]])
+    >>> linalg.eigvals(a, b)
+    array([ 1.+0.j, -1.+0.j])
+
+    >>> a = np.array([[3., 0., 0.], [0., 8., 0.], [0., 0., 7.]])
+    >>> linalg.eigvals(a, homogeneous_eigvals=True)
+    array([[3.+0.j, 8.+0.j, 7.+0.j],
+           [1.+0.j, 1.+0.j, 1.+0.j]])
 
     """
     return eig(a, b=b, left=0, right=0, overwrite_a=overwrite_a,
