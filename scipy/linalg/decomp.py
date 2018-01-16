@@ -348,7 +348,7 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
     >>> from scipy.linalg import eigh
     >>> A = np.array([[6, 3, 1, 5], [3, 0, 5, 1], [1, 5, 6, 2], [5, 1, 2, 2]])
     >>> w, v = eigh(A)
-    >>> np.allclose(A @ v - v @ np.diag(w)), np.zeros((4, 4)))
+    >>> np.allclose(A @ v - v @ np.diag(w), np.zeros((4, 4)))
     True
 
     """
@@ -604,7 +604,7 @@ def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
     >>> A = np.array([[1, 5, 2, 0], [5, 2, 5, 2], [2, 5, 3, 5], [0, 2, 5, 4]])
     >>> Ab = np.array([[1, 2, 3, 4], [5, 5, 5, 0], [2, 2, 0, 0]])
     >>> w, v = eig_banded(Ab, lower=True)
-    >>> np.allclose(A @ v - v @ np.diag(w)), np.zeros((4, 4)))
+    >>> np.allclose(A @ v - v @ np.diag(w), np.zeros((4, 4)))
     True
     >>> w = eig_banded(Ab, lower=True, eigvals_only=True)
     >>> w
@@ -1088,7 +1088,8 @@ def eigh_tridiagonal(d, e, eigvals_only=False, select='a', select_range=None,
     Examples
     --------
     >>> from scipy.linalg import eigh_tridiagonal
-    >>> d, e = 3*ones(4), -1*ones(3)
+    >>> d = 3*ones(4)
+    >>> e = -1*ones(3)
     >>> w, v = eigh_tridiagonal(d, e)
     >>> A = np.diag(d) + np.diag(e, k=1) + np.diag(e, k=-1)
     >>> allclose(A @ v - v @ np.diag(w)), np.zeros((4, 4)))
