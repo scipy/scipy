@@ -1088,11 +1088,11 @@ def eigh_tridiagonal(d, e, eigvals_only=False, select='a', select_range=None,
     Examples
     --------
     >>> from scipy.linalg import eigh_tridiagonal
-    >>> d = 3*ones(4)
-    >>> e = -1*ones(3)
+    >>> d = 3*np.ones(4)
+    >>> e = -1*np.ones(3)
     >>> w, v = eigh_tridiagonal(d, e)
     >>> A = np.diag(d) + np.diag(e, k=1) + np.diag(e, k=-1)
-    >>> allclose(A @ v - v @ np.diag(w)), np.zeros((4, 4)))
+    >>> np.allclose(A @ v - v @ np.diag(w), np.zeros((4, 4)))
     True
     """
     d = _asarray_validated(d, check_finite=check_finite)
