@@ -36,7 +36,7 @@ def _open_file(file_like, appendmat):
         if isinstance(file_like, string_types):
             if appendmat and not file_like.endswith('.mat'):
                 file_like += '.mat'
-                return open(file_like, 'rb'), True
+            return open(file_like, 'rb'), True
         else:
             raise IOError('Reader needs file name or open file-like object')
 
