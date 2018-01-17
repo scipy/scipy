@@ -537,7 +537,7 @@ def romb(y, dx=1.0, axis=-1, show=False):
             formstr = "%%%d.%df" % (width, precis)
 
             title = "Richardson Extrapolation Table for Romberg Integration"
-            print("", title.center(68), "=" * 68, sep="\n", end="")
+            print("", title.center(68), "=" * 68, sep="\n", end="\n")
             for i in xrange(k+1):
                 for j in xrange(i+1):
                     print(formstr % R[(i, j)], end=" ")

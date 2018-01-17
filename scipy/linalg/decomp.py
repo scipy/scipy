@@ -673,6 +673,23 @@ def eigvals(a, b=None, overwrite_a=False, check_finite=True,
     ------
     LinAlgError
         If eigenvalue computation does not converge
+        
+    Examples
+    --------
+    >>> from scipy import linalg
+    >>> a = np.array([[0., -1.], [1., 0.]])
+    >>> linalg.eigvals(a)
+    array([0.+1.j, 0.-1.j])
+
+    >>> b = np.array([[0., 1.], [1., 1.]])
+    >>> linalg.eigvals(a, b)
+    array([ 1.+0.j, -1.+0.j])
+    
+    >>> a = np.array([[3., 0., 0.], [0., 8., 0.], [0., 0., 7.]])
+    >>> linalg.eigvals(a, homogeneous_eigvals=True)
+    array([[3.+0.j, 8.+0.j, 7.+0.j],
+           [1.+0.j, 1.+0.j, 1.+0.j]])
+
 
     See Also
     --------
