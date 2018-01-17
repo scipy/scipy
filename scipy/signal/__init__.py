@@ -10,6 +10,7 @@ Convolution
    :toctree: generated/
 
    convolve           -- N-dimensional convolution.
+   circular_convolve  -- Circular convolution.
    correlate          -- N-dimensional correlation.
    fftconvolve        -- N-dimensional convolution using the FFT.
    convolve2d         -- 2-dimensional convolution (more options).
