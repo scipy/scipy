@@ -156,6 +156,20 @@ class TestQuadrature(object):
         assert_equal(simps(y, x=x, even='first'), 13.75)
         assert_equal(simps(y, x=x, even='last'), 14)
 
+    def test_simps_non_sorted(self):
+        # gh8230
+        # check that simps works on un-sorted arrays.
+        # v1 = simps([1, 2, 3], [1, 2, 3])
+        # v2 = simps([1, 3, 2], [1, 3, 2])
+        # assert_equal(v2, v1)
+
+        a = np.arange(27.).reshape(3, 3, 3)
+        b = np.copy(a)
+        b[:, 0, :] = a[:, 1, :]
+        b[:, 1, :] = a[:, 2, :]
+        b[:, 2, :] = a[:, 0, :]
+        assert_equal(simps(b, b, axis=1), simps(a, a, axis=1))
+
 
 class TestCumtrapz(object):
     def test_1d(self):
