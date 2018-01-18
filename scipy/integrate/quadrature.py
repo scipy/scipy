@@ -10,6 +10,7 @@ from numpy import trapz
 from scipy.special import roots_legendre
 from scipy.special import gammaln
 from scipy._lib.six import xrange
+from scipy._lib._util import _argsort_indices
 
 __all__ = ['fixed_quad', 'quadrature', 'romberg', 'trapz', 'simps', 'romb',
            'cumtrapz', 'newton_cotes']
@@ -314,6 +315,16 @@ def _basic_simps(y, start, stop, x, dx, axis):
     else:
         # Account for possibly different spacings.
         #    Simpson's rule changes a bit.
+
+        # x, y might not be sorted, so sort them.
+        # first we need to broadcast because _argsort_indices won't work if
+        # x and y don't have the same shape
+        x, y = np.broadcast_arrays(x, y)
+
+        indices = _argsort_indices(x, axis=axis)
+        x = x[indices]
+        y = y[indices]
+
         h = np.diff(x, axis=axis)
         sl0 = tupleset(slice_all, axis, slice(start, stop, step))
         sl1 = tupleset(slice_all, axis, slice(start+1, stop+1, step))

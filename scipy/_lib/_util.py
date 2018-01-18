@@ -337,3 +337,44 @@ except AttributeError:
         if argspec.args[0] == 'self':
             argspec.args.pop(0)
         return argspec
+
+
+def _argsort_indices(a, axis=-1):
+    """
+    Like argsort, but returns an index suitable for sorting the
+    the original array even if that array is multidimensional
+
+    Parameters
+    ----------
+    arr : array-like
+
+    Returns
+    -------
+    ind : tuple
+        Indices for sorting original array along an axis
+
+    Examples
+    --------
+    Sort an array along a given axis
+
+    >>> arr = np.arange(25)
+    >>> np.random.shuffle(arr)
+    >>> arr = arr.reshape(5, 5)
+    >>> print(arr)
+    [[ 3 14 11 19 13]
+     [ 9  8 21 17 24]
+     [12  0 23  4 10]
+     [ 1  5 15 16 20]
+     [ 7  2  6 22 18]]
+    >>> print(arr[_argsort_indices(arr, 1)])
+    [[ 3 11 13 14 19]
+     [ 8  9 17 21 24]
+     [ 0  4 10 12 23]
+     [ 1  5 15 16 20]
+     [ 2  6  7 18 22]]
+    """
+    # lifted from numpy#6078
+    a = np.asarray(a)
+    ind = list(np.ix_(*[np.arange(d) for d in a.shape]))
+    ind[axis] = a.argsort(axis)
+    return tuple(ind)

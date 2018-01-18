@@ -44,12 +44,16 @@ The ``init`` keyword for the `scipy.optimize.differential_evolution` function
 can now accept an array. This array allows the user to specify the entire
 population.
 
-
 `scipy.sparse` improvements
 ----------------------------
 
 An in-place ``resize`` method has been added to all sparse matrix formats,
 which was only available for ``scipy.sparse.dok_matrix`` in previous releases.
+
+`scipy.integrate` improvements
+------------------------------
+``scipy.integrate.simps`` can now handle non-monotonically arranged `x` arrays.
+
 
 Deprecated features
 ===================
