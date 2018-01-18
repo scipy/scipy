@@ -159,9 +159,9 @@ class TestQuadrature(object):
     def test_simps_non_sorted(self):
         # gh8230
         # check that simps works on un-sorted arrays.
-        # v1 = simps([1, 2, 3], [1, 2, 3])
-        # v2 = simps([1, 3, 2], [1, 3, 2])
-        # assert_equal(v2, v1)
+        v1 = simps([1, 2, 3], [1, 2, 3])
+        v2 = simps([1, 3, 2], [1, 3, 2])
+        assert_equal(v2, v1)
 
         a = np.arange(27.).reshape(3, 3, 3)
         b = np.copy(a)
