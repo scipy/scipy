@@ -5960,13 +5960,17 @@ def ratio_unif(f, size=1, x1=None, x2=None, y2=None, shift=0, maxiter=None,
     - x2 = sup (x - c) sqrt(f(x))
     - y2 = sup sqrt(f(x))
 
-    In particular, these values are finite if f is bounded and x**2 f(x) is
+    In particular, these values are finite if f is bounded and x**2 * f(x) is
     bounded (i.e. subquadratic tails). One can generate (U, V) uniformly on
     R and return U/V + c if (U, V) are also in A(c) which can be directly
     verified. Intuitively, this works well if A(c) fills up most of the
     enclosing rectangle such that the probability is high that (U, V) lies in
     A(c) whenever it lies in R(c) as the number of required iterations
-    becomes too large otherwise.
+    becomes too large otherwise. To be more precise, note that the expected
+    number of iterations to draw (U, V) uniformly distributed on R(c) such that
+    (U, V) is also in A(c) is given by the ratio
+    area(R(c)) / area(A(c)) = 2 * y2 * (x2 - x1), using the fact that
+    the area of A(c) is equal to 1/2 (Theorem 7.1 in [1]_).
 
     Parameters
     ----------
@@ -5988,8 +5992,8 @@ def ratio_unif(f, size=1, x1=None, x2=None, y2=None, shift=0, maxiter=None,
         Default is None. In that case, maxiter is set to a value that
         ensures successful simulation with a high probability.
     bounds : tuple of floats (a, b), optional
-        Default is none. In case any of the boundaries of the bounding
-        rectangle is not specified, attempt to find missing boundary
+        Default is None. In case any of the boundaries of the bounding
+        rectangle are not specified, attempt to find missing boundary
         numerically over the range specified by bounds.
 
     Returns
@@ -6063,7 +6067,8 @@ def ratio_unif(f, size=1, x1=None, x2=None, y2=None, shift=0, maxiter=None,
         return opt_res.fun
 
     # in case bounding rectangle is not given, attempt to find it numerically
-    def f_opt(x): return (x - shift) * np.sqrt(f(x))
+    def f_opt(x):
+        return (x - shift) * np.sqrt(f(x))
 
     if x1 is None:
         x1 = find_rect_bounds(f_opt, bounds=bounds)
@@ -6101,7 +6106,7 @@ def ratio_unif(f, size=1, x1=None, x2=None, y2=None, shift=0, maxiter=None,
             x[simulated:(simulated + take)] = rvs[accept][0:take]
             simulated += take
         if simulated < size:
-            j = j + 1
+            j += 1
         else:
             return x
 
