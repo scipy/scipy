@@ -1,4 +1,4 @@
-# Copyright 2002 Gary Strangman.  All rights reserved
+﻿# Copyright 2002 Gary Strangman.  All rights reserved
 # Copyright 2002-2016 The SciPy Developers
 #
 # The original code from Gary Strangman was heavily adapted for
@@ -6012,7 +6012,7 @@ def ratio_unif(f, size=1, x1=None, x2=None, y2=None, shift=0, maxiter=None,
     ----------
     .. [1] L. Devroye, "Non-Uniform Random Variate Generation",
     Springer-Verlag, 1986.
-    .. [2] W. Hörman and J. Leydold, "Generating generalized inverse Gaussian
+    .. [2] W. Hoermann and J. Leydold, "Generating generalized inverse Gaussian
     random variates", Statistics and Computing, Vol 24(4), p. 547--557, 2014.
 
     Examples
