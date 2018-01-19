@@ -61,16 +61,17 @@ def mat_reader_factory(file_name, appendmat=True, **kwargs):
        Whether the file was opened by this routine.
 
     """
-    byte_stream, file_opened = _open_file(file_name, appendmat)
-    mjv, mnv = get_matfile_version(byte_stream)
-    if mjv == 0:
-        return MatFile4Reader(byte_stream, **kwargs), file_opened
-    elif mjv == 1:
-        return MatFile5Reader(byte_stream, **kwargs), file_opened
-    elif mjv == 2:
-        raise NotImplementedError('Please use HDF reader for matlab v7.3 files')
-    else:
-        raise TypeError('Did not recognize version %s' % mjv)
+    if  _open_file(file_name, appendmat) is not None:
+        byte_stream, file_opened = _open_file(file_name, appendmat)
+        mjv, mnv = get_matfile_version(byte_stream)
+        if mjv == 0:
+            return MatFile4Reader(byte_stream, **kwargs), file_opened
+        elif mjv == 1:
+            return MatFile5Reader(byte_stream, **kwargs), file_opened
+        elif mjv == 2:
+            raise NotImplementedError('Please use HDF reader for matlab v7.3 files')
+        else:
+            raise TypeError('Did not recognize version %s' % mjv)
 
 
 @docfiller
@@ -138,15 +139,16 @@ def loadmat(file_name, mdict=None, appendmat=True, **kwargs):
 
     """
     variable_names = kwargs.pop('variable_names', None)
-    MR, file_opened = mat_reader_factory(file_name, appendmat, **kwargs)
-    matfile_dict = MR.get_variables(variable_names)
-    if mdict is not None:
-        mdict.update(matfile_dict)
-    else:
-        mdict = matfile_dict
-    if file_opened:
-        MR.mat_stream.close()
-    return mdict
+    if mat_reader_factory(file_name, appendmat, **kwargs) is not None:
+        MR, file_opened = mat_reader_factory(file_name, appendmat, **kwargs)
+        matfile_dict = MR.get_variables(variable_names)
+        if mdict is not None:
+            mdict.update(matfile_dict)
+        else:
+            mdict = matfile_dict
+        if file_opened:
+            MR.mat_stream.close()
+        return mdict
 
 
 @docfiller
