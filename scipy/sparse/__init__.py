@@ -62,6 +62,7 @@ Sparse matrix tools:
    :toctree: generated/
 
    find
+   unique
 
 Identifying sparse matrices:
 
