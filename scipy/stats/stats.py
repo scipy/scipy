@@ -1,4 +1,4 @@
-﻿# Copyright 2002 Gary Strangman.  All rights reserved
+﻿dens# Copyright 2002 Gary Strangman.  All rights reserved
 # Copyright 2002-2016 The SciPy Developers
 #
 # The original code from Gary Strangman was heavily adapted for
@@ -147,7 +147,7 @@ Support Functions
    :toctree: generated/
 
    rankdata
-   ratio_unif
+   rvs_ratio_unif
 
 References
 ----------
@@ -192,7 +192,7 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'ttest_ind', 'ttest_ind_from_stats', 'ttest_rel', 'kstest',
            'chisquare', 'power_divergence', 'ks_2samp', 'mannwhitneyu',
            'tiecorrect', 'ranksums', 'kruskal', 'friedmanchisquare',
-           'rankdata',
+           'rankdata', 'rvs_ratio_unif',
            'combine_pvalues', 'wasserstein_distance', 'energy_distance',
            'brunnermunzel']
 
@@ -5943,19 +5943,21 @@ def rankdata(a, method='average'):
     return .5 * (count[dense] + count[dense - 1] + 1)
 
 
-def ratio_unif(f, size=1, x1=None, x2=None, y2=None, shift=0, maxiter=None,
-               bounds=None):
+def rvs_ratio_unif(f, size=1, x1=None, x2=None, y2=None, shift=0, maxiter=None,
+                   bounds=None):
     """
-    Generate random variables using ratio-of-uniforms method.
+    Generate random samples from a probability density function using the
+    ratio-of-uniforms method.
 
-    Given a continuous univariate density f and a constant c, define the set
-    A(c) := {(x, y) : 0 < y <= sqrt(f(x/y + c)) }. If (U, V) is a random
-    vector uniformly distributed over A(c), then U/V + c follows a distribution
-    with density f.
+    Given a univariate probability density function (pdf) f and a constant c,
+    define the set A(c) = {(x, y) : 0 < y <= sqrt(f(x/y + c)) }.
+    If (U, V) is a random vector uniformly distributed over A(c), then U/V + c
+    follows a distribution with pdf f.
 
     The above result (see [1]_, [2]_) can be used to sample random variables
-    using only the density. Typical choices of c are zero or the mode of f.
-    The set A(c) is a subset of the rectangle R = [-x1, x2] x [0, y2] where
+    using only the pdf, i.e. no inversion of the cdf is required. Typical
+    choices of c are zero or the mode of f. The set A(c) is a subset of the
+    rectangle R = [-x1, x2] x [0, y2] where
     - x1 = inf (x - c) sqrt(f(x))
     - x2 = sup (x - c) sqrt(f(x))
     - y2 = sup sqrt(f(x))
@@ -5963,19 +5965,12 @@ def ratio_unif(f, size=1, x1=None, x2=None, y2=None, shift=0, maxiter=None,
     In particular, these values are finite if f is bounded and x**2 * f(x) is
     bounded (i.e. subquadratic tails). One can generate (U, V) uniformly on
     R and return U/V + c if (U, V) are also in A(c) which can be directly
-    verified. Intuitively, this works well if A(c) fills up most of the
-    enclosing rectangle such that the probability is high that (U, V) lies in
-    A(c) whenever it lies in R(c) as the number of required iterations
-    becomes too large otherwise. To be more precise, note that the expected
-    number of iterations to draw (U, V) uniformly distributed on R(c) such that
-    (U, V) is also in A(c) is given by the ratio
-    area(R(c)) / area(A(c)) = 2 * y2 * (x2 - x1), using the fact that
-    the area of A(c) is equal to 1/2 (Theorem 7.1 in [1]_).
+    verified.
 
     Parameters
     ----------
     f : callable
-        Scalar function defining the density.
+        The pdf of the distribution.
     size : int, optional
         The number of random variables to generate.
     x1 : float, optional
@@ -5992,20 +5987,29 @@ def ratio_unif(f, size=1, x1=None, x2=None, y2=None, shift=0, maxiter=None,
         Default is None. In that case, maxiter is set to a value that
         ensures successful simulation with a high probability.
     bounds : tuple of floats (a, b), optional
-        Default is None. In case any of the boundaries of the bounding
-        rectangle are not specified, attempt to find missing boundary
-        numerically over the range specified by bounds.
+        Default is None. In case any of the values x1, x2, y2 are not
+        specified (i.e. equal to None), attempt to find the value numerically
+        over the interval from a to b.
 
     Returns
     -------
     rvs : array
-        array with the random variables distributed according to density f
+        array with the random variables distributed according to pdf f
 
     Notes
     -----
+    Intuitively, the method works well if A(c) fills up most of the
+    enclosing rectangle such that the probability is high that (U, V) lies in
+    A(c) whenever it lies in R(c) as the number of required iterations
+    becomes too large otherwise. To be more precise, note that the expected
+    number of iterations to draw (U, V) uniformly distributed on R(c) such that
+    (U, V) is also in A(c) is given by the ratio
+    area(R(c)) / area(A(c)) = 2 * y2 * (x2 - x1), using the fact that
+    the area of A(c) is equal to 1/2 (Theorem 7.1 in [1]_).
+
     If the bounding rectangle is not correctly specified (i.e. if it does not
     contain A(c)), the algorithm samples from a distribution different from
-    the one given by the density f. It is therefore recommended to perform a
+    the one given by the pdf. It is therefore recommended to perform a
     test such as `stats.kstest` as a check.
 
     References
@@ -6025,10 +6029,10 @@ def ratio_unif(f, size=1, x1=None, x2=None, y2=None, shift=0, maxiter=None,
     >>> x_bound = np.sqrt(f(np.sqrt(2))) * np.sqrt(2)
     >>> x1, x2, y2 = -x_bound, x_bound, np.sqrt(f(0))
     >>> np.random.seed(12345)
-    >>> rvs = ratio_unif(f, x1=x1, x2=x2, y2=y2, size=2500)
+    >>> rvs = rvs_ratio_unif(f, x1=x1, x2=x2, y2=y2, size=2500)
 
     The K-S test confirms that the random variates are indeed normally
-    distributed (p-value clearly does not reject normality):
+    distributed (p-value does not reject normality):
     >>> stats.kstest(rvs, 'norm')[1]
     0.373298699196806752
 
@@ -6036,14 +6040,14 @@ def ratio_unif(f, size=1, x1=None, x2=None, y2=None, shift=0, maxiter=None,
     numerically over the region specified by `bounds`.
 
     >>> np.random.seed(12345)
-    >>> rvs = ratio_unif(f, size=2500, bounds=(-100, 100))
+    >>> rvs = rvs_ratio_unif(f, size=2500, bounds=(-100, 100))
     >>> stats.kstest(rvs, 'norm')[1]
     0.3732986992033126
 
     The exponential distribution provides another example where the bounding
     rectangle can be determined explicitly.
     >>> np.random.seed(12345)
-    >>> rvs = ratio_unif(lambda x: np.exp(-x), x1=0, x2=2*np.exp(-1), y2=1, size=1000)
+    >>> rvs = rvs_ratio_unif(lambda x: np.exp(-x), x1=0, x2=2*np.exp(-1), y2=1, size=1000)
     >>> stats.kstest(rvs, 'expon')[1]
     0.52369231518316373
 
@@ -6053,7 +6057,7 @@ def ratio_unif(f, size=1, x1=None, x2=None, y2=None, shift=0, maxiter=None,
     """
 
     if not callable(f):
-        raise TypeError("density f must be callable.")
+        raise TypeError("pdf f must be callable.")
 
     def find_rect_bounds(g, bounds):
         if bounds is None:
