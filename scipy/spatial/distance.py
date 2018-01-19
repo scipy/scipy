@@ -1238,7 +1238,7 @@ def jensenshannon(p, q, base=None):
     --------
     >>> from scipy.spatial import distance
     >>> distance.jensenshannon([1.0, 0.0, 0.0], [0.0, 1.0, 0.0], 2.0)
-    1.0
+    0.8325546111576977
     >>> distance.jensenshannon([1.0, 0.0], [0.5, 0.5])
     0.46450140402245893
     >>> distance.jensenshannon([1.0, 0.0, 0.0], [1.0, 0.0, 0.0])
