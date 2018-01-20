@@ -4475,10 +4475,6 @@ class _NonCanonicalMixin(object):
     def test_empty(self):
         pass
 
-    @pytest.mark.xfail(run=False, reason='unary ufunc overrides broken with non-canonical matrix')
-    def test_unary_ufunc_overrides(self):
-        pass
-
 
 class _NonCanonicalCompressedMixin(_NonCanonicalMixin):
     def _arg1_for_noncanonical(self, M, sorted_indices=False):
