@@ -622,7 +622,7 @@ def left_multiplied_operator(J, d):
         return d * J.matvec(x)
 
     def matmat(X):
-        return d * J.matmat(X)
+        return d[:, np.newaxis] * J.matmat(X)
 
     def rmatvec(x):
         return J.rmatvec(x.ravel() * d)
