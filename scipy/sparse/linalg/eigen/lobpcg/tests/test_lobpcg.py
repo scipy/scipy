@@ -190,3 +190,11 @@ def test_fiedler_large_12():
     # This does not trigger the dense path, because 2*5 <= 12.
     _check_fiedler(12, 2)
 
+def test_hermitian():
+    H = np.random.rand(10, 10) + 1.j * np.random.rand(10, 10)
+    H = H + H.T.conj()
+    X = np.random.rand(10, 10)
+    # Tests for the eigenvalues
+    assert_almost_equal(lobpcg(H, X)[0], np.linalg.eigh(H)[0])
+    # Tests for the eigenvectors
+    assert_almost_equal(lobpcg(H, X)[1], np.linalg.eigh(H)[1])
