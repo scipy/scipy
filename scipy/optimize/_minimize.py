@@ -122,7 +122,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
             - `SR1`.
 
         Whenever the gradient is estimated via finite-differences,
-        the Hessian cannot be estimated with  options
+        the Hessian cannot be estimated with options
         {'2-point', '3-point', 'cs'} and needs to be
         estimated using one of the quasi-Newton strategies.
         Finite-difference options {'2-point', '3-point', 'cs'} and

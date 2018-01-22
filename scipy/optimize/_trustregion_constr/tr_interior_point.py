@@ -330,7 +330,7 @@ def tr_interior_point(fun, grad, lagr_hess, n_vars, n_ineq, n_eq,
             z, fun0_subprob, grad0_subprob,
             constr0_subprob, jac0_subprob, subprob.stop_criteria,
             state, initial_penalty, state.trust_radius, return_all,
-            factorization_method, trust_lb, trust_ub, subprob.scaling,)
+            factorization_method, trust_lb, trust_ub, subprob.scaling)
         z = state.x
         if stop_criteria(state):
             break

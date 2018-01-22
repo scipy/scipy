@@ -11,11 +11,10 @@ from .tr_interior_point import tr_interior_point
 from warnings import warn
 from copy import deepcopy
 from scipy.sparse.linalg import LinearOperator
-from .._hessian_update_strategy import HessianUpdateStrategy, BFGS
 import scipy.sparse as sps
 import time
 from ..optimize import OptimizeResult
-from .._numdiff import approx_derivative
+from .._differentiable_functions import ScalarFunction
 
 
 class HessianLinearOperator(object):
@@ -37,142 +36,6 @@ TERMINATION_MESSAGES = {
     2: "`xtol` termination condition is satisfied.",
     3: "`callback` function requested termination"
 }
-
-
-class ScalarFunction:
-    """Define methods for evaluating a scalar function and its derivatives.
-
-    This class define a scalar function F: R^n->R and methods for
-    computing or approximating its first and second derivatives.
-    """
-
-    def __init__(self, fun, x0, args, grad='2-point',
-                 hess=BFGS(), finite_diff_options={}):
-        self.x = np.atleast_1d(x0).astype(float)
-        if grad in ('2-point', '3-point', 'cs'):
-            finite_diff_options["method"] = grad
-            self.x_diff = np.copy(self.x)
-        if hess in ('2-point', '3-point', 'cs'):
-            finite_diff_options["method"] = hess
-            self.x_diff = np.copy(self.x)
-        if grad in ('2-point', '3-point', 'cs') and \
-           hess in ('2-point', '3-point', 'cs'):
-            raise ValueError("Whenever the gradient is estimated via"
-                             " finite-differences, we require the Hessian"
-                             " to be estimated using one of the "
-                             "quasi-Newton strategies.")
-        if isinstance(hess, HessianUpdateStrategy):
-            self.x_prev = np.copy(x0)
-            hess.initialize(len(x0), 'hess')
-
-        # Define function
-        self.f = fun(x0, *args)
-
-        if grad in ('2-point', '3-point', 'cs'):
-            def fun_wrapped(x):
-                self.x_diff = x
-                self.f = fun(x, *args)
-                return self.f
-        else:
-            def fun_wrapped(x):
-                return fun(x, *args)
-        self.fun = fun_wrapped
-
-        # Define gradient
-        if callable(grad):
-            self.g = np.atleast_1d(grad(x0, *args))
-            if isinstance(hess, HessianUpdateStrategy):
-                self.g_prev = np.copy(self.g)
-
-            def grad_wrapped(x):
-                return np.atleast_1d(grad(x, *args))
-
-            if hess in ('2-point', '3-point', 'cs'):
-                def grad_wrapped2(x):
-                    self.x_diff = x
-                    self.g = grad_wrapped(x)
-                    return self.g
-
-            elif isinstance(hess, HessianUpdateStrategy):
-                def grad_wrapped2(x):
-                    self.x_prev = self.x
-                    self.g_prev = self.g
-                    self.x = x
-                    self.g = grad_wrapped(x)
-                    return self.g
-            else:
-                grad_wrapped2 = grad_wrapped
-        elif grad in ('2-point', '3-point', 'cs'):
-            self.g = approx_derivative(fun, self.x,
-                                       f0=self.f, **finite_diff_options)
-            if isinstance(hess, HessianUpdateStrategy):
-                self.g_prev = np.copy(self.g)
-
-            def grad_wrapped(x):
-                return approx_derivative(fun, x,
-                                         f0=self.f, **finite_diff_options)
-
-            if isinstance(hess, HessianUpdateStrategy):
-                def grad_wrapped2(x):
-                    if not np.array_equal(self.x_diff, x):
-                        self.x_diff = x
-                        self.f = fun(x, *args)
-                    self.x_prev = self.x
-                    self.g_prev = self.g
-                    self.x = x
-                    self.g = grad_wrapped(x)
-                    return self.g
-
-            else:
-                def grad_wrapped2(x):
-                    if not np.array_equal(self.x_diff, x):
-                        self.x_diff = x
-                        self.f = fun(x, *args)
-                    return grad_wrapped(x)
-        self.grad = grad_wrapped2
-
-        # Define Hessian
-        if callable(hess):
-            self.H = hess(x0, *args)
-
-            if sps.issparse(self.H):
-                def hess_wrapped(x):
-                    return sps.csr_matrix(hess(x, *args))
-                self.H = sps.csr_matrix(self.H)
-
-            elif isinstance(self.H, LinearOperator):
-                def hess_wrapped(x):
-                    return hess(x, *args)
-
-            else:
-                def hess_wrapped(x):
-                    return np.atleast_2d(np.asarray(hess(x, *args)))
-                self.H = np.atleast_2d(np.asarray(self.H))
-
-        elif hess in ('2-point', '3-point', 'cs'):
-            def hess_wrapped(x):
-                if not np.array_equal(self.x_diff, x):
-                    self.x_diff = x
-                    self.g = grad_wrapped(x)
-                return approx_derivative(grad_wrapped, x,
-                                         f0=self.g, **finite_diff_options)
-            self.H = approx_derivative(grad_wrapped, self.x,
-                                       f0=self.g, **finite_diff_options)
-
-        elif isinstance(hess, HessianUpdateStrategy):
-            def hess_wrapped(x):
-                if not np.array_equal(self.x, x):
-                    self.x_prev = self.x
-                    self.g_prev = self.g
-                    self.x = x
-                    self.g = grad_wrapped(x)
-                delta_x = self.x - self.x_prev
-                delta_grad = self.g - self.g_prev
-                hess.update(delta_x, delta_grad)
-                return hess
-        else:
-            hess_wrapped = None
-        self.hess = hess_wrapped
 
 
 class sqp_printer:
@@ -234,7 +97,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
                                  barrier_tol=1e-8,
                                  sparse_jacobian=None,
                                  callback=None, maxiter=1000,
-                                 verbose=0, finite_diff_options=None,
+                                 verbose=0, finite_diff_rel_step=None,
                                  initial_penalty=1.0, initial_trust_radius=1.0,
                                  initial_barrier_parameter=0.1,
                                  initial_tolerance=0.1,
@@ -306,10 +169,8 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
         whenever other factorization methods fails (which may imply the
         conversion of sparse matrices to a dense format when required).
         By default uses 'QRFactorization' for  dense matrices.
-    finite_diff_options: dict, optional
-        Dictionary with options to be passed on to `approx_derivative` method.
-        These options will define the finite_difference approximation
-        parameters.
+    finite_diff_rel_step: None or array_like, optional
+        Relative step size to used in numerical differenciation, when applicable.
     maxiter : int, optional
         Maximum number of algorithm iterations. By default ``maxiter=1000``
     verbose : {0, 1, 2}, optional
@@ -329,12 +190,8 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
         hess = HessianLinearOperator(hessp, n_vars)
     if disp and verbose == 0:
         verbose = 1
-    if finite_diff_options is None:
-        finite_diff_options = {}
     # Initial value
-    if hess in ('2-point', '3-point', 'cs'):
-        finite_diff_options["as_linear_operator"] = True
-    objective = ScalarFunction(fun, x0, args, grad, hess, finite_diff_options)
+    objective = ScalarFunction(fun, x0, args, grad, hess, finite_diff_rel_step)
 
     # Put constraints in list format when needed
     if isinstance(constraints, (NonlinearConstraint,
