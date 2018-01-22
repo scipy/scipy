@@ -627,6 +627,20 @@ class TestCorrSpearmanrTies(object):
         pr = stats.pearsonr(xr, yr)
         assert_almost_equal(sr, pr)
 
+    def test_tie2(self):
+        # Test tie-handling if inputs contain nan's
+        # Data without nan's
+        x1 = [1, 2, 2.5, 2]
+        y1 = [1, 3, 2.5, 4]
+        # Same data with nan's
+        x2 = [1, 2, 2.5, 2, np.nan]
+        y2 = [1, 3, 2.5, 4, np.nan]
+
+        # Results for two data sets should be the same if nan's are ignored
+        sr1 = stats.spearmanr(x1, y1)
+        sr2 = stats.spearmanr(x2, y2, nan_policy='omit')
+        assert_almost_equal(sr1, sr2)
+
 
 #    W.II.E.  Tabulate X against X, using BIG as a case weight.  The values
 #    should appear on the diagonal and the total should be 899999955.
