@@ -1118,7 +1118,6 @@ class TestPdist(object):
 
     def test_pdist_jensenshannon_random(self):
         eps = 1e-08
-        print(eo.keys())
         X = eo['pdist-double-inp']
         Y_right = eo['pdist-jensenshannon']
         Y_wrong = eo['pdist-jensenshannon-iris']
