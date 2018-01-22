@@ -759,7 +759,7 @@ cdef int qr_block_col_insert(int m, int n, blas_t* q, int* qs,
         libc.stdlib.free(work)
 
         # zero the reflectors since we're done with them
-        # memset can be used here, since r is always fortan order
+        # memset can be used here, since r is always fortran order
         for j in range(p):
             memset(index2(r, rs, n-p+1+j, k+j), 0, (m-(n-p+1+j))*sizeof(blas_t))
 
@@ -969,7 +969,7 @@ cdef int qr_rank_p_update(int m, int n, int p, blas_t* q, int* qs, blas_t* r,
     blas_t_2d_conj(p, n, v, vs)
     trmm(sideL, uplo, trans, diag, p, n, 1, u, m, v, p)
 
-    # (should this be n, p length adds instead since these are fortan contig?)
+    # (should this be n, p length adds instead since these are fortran contig?)
     for j in range(p):
         axpy(n, 1, row(v, vs, j), vs[1], row(r, rs, j), rs[1])
 
@@ -1828,7 +1828,7 @@ cdef qr_insert_row(Q, R, u, int k, bint overwrite_qru, bint check_finite):
                         <{{CNAME}}*>rptr, rs, <{{CNAME}}*>uptr, us, k)
                 {{endfor}}
         else:
-            # only copies if if necessary.
+            # only copies if necessary.
             r1 = PyArray_FromArray(r1, NULL, cnp.NPY_F_CONTIGUOUS)
             u1 = PyArray_FromArray(u1, NULL, cnp.NPY_F_CONTIGUOUS)
             qptr = extract(qnew, qs)

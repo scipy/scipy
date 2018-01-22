@@ -155,7 +155,7 @@ completed this step correctly. Proceeding on that assumption, let's build SciPy.
 
 **Before continuing, make sure that you don't have other copies of either**
 :code:`openblas.lib` **or** :code:`libopenblas.lib` **on your computer elsewhere.
-Mulitple copies could result in later build errors that will be difficult to debug.
+Multiple copies could result in later build errors that will be difficult to debug.
 You may verifiy that the openblas library was correctly picked up by looking for
 the following in your build log:**
 

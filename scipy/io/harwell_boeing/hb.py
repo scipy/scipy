@@ -125,7 +125,7 @@ class HBInfo(object):
 
     @classmethod
     def from_file(cls, fid):
-        """Create a HBInfo instance from a file object containg a matrix in the
+        """Create a HBInfo instance from a file object containing a matrix in the
         HB format.
 
         Parameters

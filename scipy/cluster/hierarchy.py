@@ -486,10 +486,10 @@ def linkage(y, method='single', metric='euclidean', optimal_ordering=False):
     """
     Perform hierarchical/agglomerative clustering.
 
-    The input y may be either a 1d compressed distance matrix
+    The input y may be either a 1d condensed distance matrix
     or a 2d array of observation vectors.
 
-    If y is a 1d compressed distance matrix,
+    If y is a 1d condensed distance matrix,
     then y must be a :math:`{n \\choose 2}` sized
     vector where n is the number of original observations paired
     in the distance matrix. The behavior of this function is very

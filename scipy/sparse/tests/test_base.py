@@ -1867,7 +1867,7 @@ class _TestCommon(object):
             assert_equal(x.todense(), y)
 
     def test_size_zero_matrix_arithmetic(self):
-        # Test basic matrix arithmatic with shapes like (0,0), (10,0),
+        # Test basic matrix arithmetic with shapes like (0,0), (10,0),
         # (0, 3), etc.
         mat = np.matrix([])
         a = mat.reshape((0, 0))

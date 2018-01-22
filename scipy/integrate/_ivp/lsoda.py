@@ -15,35 +15,35 @@ class LSODA(OdeSolver):
     ----------
     fun : callable
         Right-hand side of the system. The calling signature is ``fun(t, y)``.
-        Here ``t`` is a scalar and there are two options for ndarray ``y``.
-        It can either have shape (n,), then ``fun`` must return array_like with
-        shape (n,). Or alternatively it can have shape (n, k), then ``fun``
-        must return array_like with shape (n, k), i.e. each column
+        Here ``t`` is a scalar, and there are two options for the ndarray ``y``:
+        It can either have shape (n,); then ``fun`` must return array_like with
+        shape (n,). Alternatively it can have shape (n, k); then ``fun``
+        must return an array_like with shape (n, k), i.e. each column
         corresponds to a single column in ``y``. The choice between the two
         options is determined by `vectorized` argument (see below). The
-        vectorized implementation allows faster approximation of the Jacobian
-        by finite differences.
+        vectorized implementation allows a faster approximation of the Jacobian
+        by finite differences (required for this solver).
     t0 : float
         Initial time.
     y0 : array_like, shape (n,)
         Initial state.
     t_bound : float
-        Boundary time --- the integration won't continue beyond it. It also
+        Boundary time - the integration won't continue beyond it. It also
         determines the direction of the integration.
     first_step : float or None, optional
         Initial step size. Default is ``None`` which means that the algorithm
         should choose.
     min_step : float, optional
-        Minimum allowed step size. Default is 0.0, i.e. the step is not
+        Minimum allowed step size. Default is 0.0, i.e. the step size is not
         bounded and determined solely by the solver.
     max_step : float, optional
-        Maximum allowed step size. Default is ``np.inf``, i.e. the step is not
+        Maximum allowed step size. Default is np.inf, i.e. the step size is not
         bounded and determined solely by the solver.
     rtol, atol : float and array_like, optional
         Relative and absolute tolerances. The solver keeps the local error
         estimates less than ``atol + rtol * abs(y)``. Here `rtol` controls a
         relative accuracy (number of correct digits). But if a component of `y`
-        is approximately below `atol` then the error only needs to fall within
+        is approximately below `atol`, the error only needs to fall within
         the same `atol` threshold, and the number of correct digits is not
         guaranteed. If components of y have different scales, it might be
         beneficial to set different `atol` values for different components by
@@ -53,14 +53,14 @@ class LSODA(OdeSolver):
         Jacobian matrix of the right-hand side of the system with respect to
         ``y``. The Jacobian matrix has shape (n, n) and its element (i, j) is
         equal to ``d f_i / d y_j``. The function will be called as
-        ``jac(t, y)``. If None (default), then the Jacobian will be
+        ``jac(t, y)``. If None (default), the Jacobian will be
         approximated by finite differences. It is generally recommended to
-        provide the Jacobian rather than relying on a finite difference
+        provide the Jacobian rather than relying on a finite-difference
         approximation.
-    lband, uband : int or None, optional
-        Jacobian band width:
-        ``jac[i, j] != 0 only for i - lband <= j <= i + uband``. Setting these
-        requires your jac routine to return the Jacobian in the packed format:
+    lband, uband : int or None
+        Parameters defining the bandwidth of the Jacobian,
+        i.e., ``jac[i, j] != 0 only for i - lband <= j <= i + uband``. Setting
+        these requires your jac routine to return the Jacobian in the packed format:
         the returned array must have ``n`` columns and ``uband + lband + 1``
         rows in which Jacobian diagonals are written. Specifically
         ``jac_packed[uband + i - j , j] = jac[i, j]``. The same format is used
@@ -88,9 +88,9 @@ class LSODA(OdeSolver):
     t_old : float
         Previous time. None if no steps were made yet.
     nfev : int
-        Number of the system's rhs evaluations.
+        Number of evaluations of the right-hand side.
     njev : int
-        Number of the Jacobian evaluations.
+        Number of evaluations of the Jacobian.
 
     References
     ----------

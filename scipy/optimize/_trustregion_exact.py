@@ -229,7 +229,7 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
         self.niter = 0
 
         # ``k_easy`` and ``k_hard`` are parameters used
-        # to detemine the stop criteria to the iterative
+        # to determine the stop criteria to the iterative
         # subproblem solver. Take a look at pp. 194-197
         # from reference _[1] for a more detailed description.
         self.k_easy = k_easy

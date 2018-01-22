@@ -144,7 +144,7 @@ Section "Core" SecCore
                 ${Break}
         ${EndSwitch}
 
-        ; Install files conditionaly on detected cpu
+        ; Install files conditionally on detected cpu
         ${Switch} $CPUSSE
                 ${Case} "3"
                 DetailPrint '"Install SSE 3"'

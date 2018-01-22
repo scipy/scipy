@@ -163,7 +163,7 @@ Kolja Glogowski for a bug fix in scipy.special.
 Surhud More for enhancing scipy.optimize.curve_fit to accept covariant errors
 on data.
 Antonio H. Ribeiro for implementing irrnotch, iirpeak and trust-exact methods
-    and for improvements on BFGS implemetation.
+    and for improvements on BFGS implementation.
 Ilhan Polat for bug fixes on Riccati solvers.
 Sebastiano Vigna for code in the stats package related to Kendall's tau.
 John Draper for bug fixes.

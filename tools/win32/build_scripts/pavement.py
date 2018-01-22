@@ -120,7 +120,7 @@ def set_bootstrap_sources(arch, pyver):
 
 def get_sdist_tarball(src_root):
     """Return the name of the installer built by sdist command."""
-    # Yeah, the name logic is harcoded in distutils. We have to reproduce it
+    # Yeah, the name logic is hardcoded in distutils. We have to reproduce it
     # here
     name = "scipy-%s.zip" % get_scipy_version(src_root)
     return name
@@ -195,7 +195,7 @@ def get_binary_name(arch, scipy_verstr):
 
 def get_windist_exec(pyver, scipy_verstr):
     """Return the name of the installer built by wininst command."""
-    # Yeah, the name logic is harcoded in distutils. We have to reproduce it
+    # Yeah, the name logic is hardcoded in distutils. We have to reproduce it
     # here
     if BUILD_MSI:
         ext = '.msi'
