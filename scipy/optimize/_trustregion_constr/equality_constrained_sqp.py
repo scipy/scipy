@@ -218,7 +218,7 @@ def equality_constrained_sqp(fun_and_constr, grad_and_jac, lagr_hess,
             state.ngev += 1
             state.njev += 1
             # Get projections
-            Z, LS, Y = projections(A)
+            Z, LS, Y = projections(A, factorization_method)
             # Compute least-square lagrange multipliers
             v = -LS.dot(c)
             # Set Flag
