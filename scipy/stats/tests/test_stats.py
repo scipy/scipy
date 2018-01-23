@@ -4500,3 +4500,37 @@ class TestBrunnerMunzel(object):
         assert_approx_equal(p1, 0.0057862086661515377,
                             significant=self.significant)
 
+
+class TestRatioUnif(object):
+    """ Tests for rvs_ratio_unif.
+    """
+    def test_rv_generation(self):
+        # normal distribution
+        f = stats.norm.pdf
+        x_bound = np.sqrt(f(np.sqrt(2))) * np.sqrt(2)
+        x1, x2, y2 = -x_bound, x_bound, np.sqrt(f(0))
+        rvs = stats.rvs_ratio_unif(f, x1=x1, x2=x2, y2=y2, size=2500,
+                                   random_state=12345)
+        assert_equal(stats.kstest(rvs, 'norm')[1] > 0.25, True)
+        # same but find x1, x2, y2 numerically
+        rvs = stats.rvs_ratio_unif(f, size=2500, bounds=(-100, 100),
+                                   random_state=12345)
+        assert_equal(stats.kstest(rvs, 'norm')[1] > 0.25, True)
+        # exponential distribution
+        rvs = stats.rvs_ratio_unif(lambda x: np.exp(-x), x1=0, x2=2*np.exp(-1),
+                                   y2=1, size=1000, random_state=12345)
+        assert_equal(stats.kstest(rvs, 'expon')[1] > 0.25, True)
+
+    def test_shape(self):
+        # test shape of return value
+        f = stats.norm.pdf
+        b = (-3, 3)
+        r1 = stats.rvs_ratio_unif(f, size=3, bounds=b, random_state=1234)
+        r2 = stats.rvs_ratio_unif(f, size=(3,), bounds=b, random_state=1234)
+        r3 = stats.rvs_ratio_unif(f, size=(3, 1), bounds=b, random_state=1234)
+        assert_equal(r1, r2)
+        assert_equal(r2, r3.flatten())
+
+        r4 = stats.rvs_ratio_unif(f, size=(3, 3, 3), bounds=b, random_state=12)
+        r5 = stats.rvs_ratio_unif(f, size=27, bounds=b, random_state=12)
+        assert_equal(r4.flatten(), r5)
