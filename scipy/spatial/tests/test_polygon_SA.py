@@ -538,3 +538,22 @@ def test_functional_sph_Vor(cython):
         area_sum += polygon_area
 
     assert area_sum == expected_area
+
+@pytest.mark.parametrize("polygon, pole_present", [
+        # test polygon that contains North Pole
+        (np.array([[-0.2964833 ,-0.39325278 ,0.87031598],
+                  [ 0.15134646,-0.24964128 ,0.95643791],
+                  [ 0.18774216, 0.48120849 ,0.85626589],
+                  [ 0.11144972, 0.5320895  ,0.83932099],
+                  [-0.46697717, 0.40065984 ,0.78829183],
+                  [-0.65194264, 0.0126658  ,0.7581625 ]]),
+        1)])
+def test_pole_in_polygon(polygon, pole_present):
+    # test that we can determine if a spherical
+    # polygon contains the North or the South Pole
+    # TODO: expand to include South pole scenario
+    # and polygon with neither pole contained
+
+    result = psa.pole_in_polygon(polygon)
+    expected = pole_present
+    assert result == expected

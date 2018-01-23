@@ -11,6 +11,7 @@ import numpy as np
 from scipy.spatial.distance import pdist, cdist
 from . import _surface_area
 from six.moves import xrange
+import math
 
 #
 # Copyright (C)  James Nichols and Tyler Reddy
@@ -114,6 +115,49 @@ def _spherical_polygon_area(vertices, radius, discretizations):
         area_sum += area_element
     area = area_sum
     return area
+
+def pole_in_polygon(vertices):
+    # determine if the North or South Pole is contained
+    # within the spherical polygon defined by vertices
+    # the implementation is based on discussion
+    # here: https://blog.element84.com/determining-if-a-spherical-polygon-contains-a-pole.html
+    # and the course calculation component of the aviation
+    # formulary here: http://www.edwilliams.org/avform.htm#Crs
+
+    #TODO: handle case where initial point is within
+    # i.e., expected machine precision of a pole
+
+    #TODO: handle case where both the N & S poles
+    # are contained within a given polygon
+
+    course_angle_sum = 0
+    lambda_range = np.arctan2(vertices[...,1], vertices[...,0])
+    phi_range = np.arcsin((vertices[...,2]))
+    for i in range(vertices.shape[0] - 1):
+        if i == (vertices.shape[0] - 1):
+            next_index = 0
+        else:
+            next_index = i + 1
+
+        lambda_1 = lambda_range[i]
+        lambda_2 = lambda_range[next_index]
+        phi_1 = phi_range[i]
+        phi_2 = phi_range[next_index]
+        delta_lambda = lambda_1 - lambda_2
+
+        term_1 = math.sin(delta_lambda) * math.cos(phi_2)
+        term_2 = math.cos(phi_1) * math.cos(phi_2)
+        term_3 = math.sin(phi_1) * math.cos(phi_2) * math.cos(delta_lambda)
+        result = math.atan2(term_1, term_2 - term_3)
+        course_angle = result % (2 * math.pi)
+        course_angle_sum += course_angle
+
+    if abs(course_angle_sum) == 360:
+        # there's a pole in the polygon
+        return 1
+    else:
+        # no single pole in the polygon
+        return 0
 
 def poly_area(vertices, radius=None, threshold=1e-21,
               cython=None, discretizations=500):
