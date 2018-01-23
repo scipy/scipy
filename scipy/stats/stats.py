@@ -167,6 +167,7 @@ import numpy as np
 from numpy import array, asarray, ma, zeros
 
 from scipy._lib.six import callable, string_types
+from scipy._lib._util import check_random_state
 from scipy._lib._version import NumpyVersion
 from scipy._lib._util import _lazywhere
 import scipy.special as special
@@ -5943,12 +5944,49 @@ def rankdata(a, method='average'):
     return .5 * (count[dense] + count[dense - 1] + 1)
 
 
-def rvs_ratio_unif(f, size=1, x1=None, x2=None, y2=None, shift=0, maxiter=None,
-                   bounds=None):
+def rvs_ratio_unif(pdf, size=1, x1=None, x2=None, y2=None, shift=0,
+                   maxiter=None, bounds=None, random_state=None):
     """
     Generate random samples from a probability density function using the
     ratio-of-uniforms method.
 
+    Parameters
+    ----------
+    pdf : callable
+        The probability density function of the distribution.
+    size : int or tuple of ints, optional
+        Defining number of random variates (default is 1).
+    x1 : float, optional
+        The lower bound of the bounding rectangle in the x-direction.
+        Default is None. In that case, attempt to find bound numerically.
+    x2 : float, optional
+        The upper bound of the bounding rectangle in the x-direction.
+        Default is None. In that case, attempt to find bound numerically.
+    y2 : float, optional
+        The upper bound of the bounding rectangle in the y-direction.
+        Default is None. In that case, attempt to find bound numerically.
+    shift : float, optional.
+        Shift parameter of ratio-of-uniforms method, see Notes. Default is 0.
+    maxiter : int, optional
+        Maximum number of iterations to generate the random variables.
+        Default is None. In that case, maxiter is set to a value that
+        ensures successful simulation with a high probability.
+    bounds : tuple of floats (a, b), optional
+        Default is None. In case any of the values x1, x2, y2 are not
+        specified (i.e. equal to None), attempt to find the value numerically
+        over the interval from a to b.
+    random_state : None or int or np.random.RandomState instance, optional
+        If int or RandomState, use it for drawing the random variates.
+        If None, use np.random.RandomState. Default is None.
+
+    Returns
+    -------
+    rvs : array
+        the random variates distributed according to the probability
+        distrubtion, pdf
+
+    Notes
+    -----
     Given a univariate probability density function (pdf) f and a constant c,
     define the set A(c) = {(x, y) : 0 < y <= sqrt(f(x/y + c)) }.
     If (U, V) is a random vector uniformly distributed over A(c), then U/V + c
@@ -5967,37 +6005,6 @@ def rvs_ratio_unif(f, size=1, x1=None, x2=None, y2=None, shift=0, maxiter=None,
     R and return U/V + c if (U, V) are also in A(c) which can be directly
     verified.
 
-    Parameters
-    ----------
-    f : callable
-        The pdf of the distribution.
-    size : int, optional
-        The number of random variables to generate.
-    x1 : float, optional
-        The lower bound of the bounding rectangle in the x-direction.
-        Default is None. In that case, attempt to find bound numerically.
-    x2 : float, optional
-        The upper bound of the bounding rectangle in the x-direction.
-        Default is None. In that case, attempt to find bound numerically.
-    y2 : float, optional
-        The upper bound of the bounding rectangle in the y-direction.
-        Default is None. In that case, attempt to find bound numerically.
-    maxiter : int, optional
-        Maximum number of iterations to generate the random variables.
-        Default is None. In that case, maxiter is set to a value that
-        ensures successful simulation with a high probability.
-    bounds : tuple of floats (a, b), optional
-        Default is None. In case any of the values x1, x2, y2 are not
-        specified (i.e. equal to None), attempt to find the value numerically
-        over the interval from a to b.
-
-    Returns
-    -------
-    rvs : array
-        array with the random variables distributed according to pdf f
-
-    Notes
-    -----
     Intuitively, the method works well if A(c) fills up most of the
     enclosing rectangle such that the probability is high that (U, V) lies in
     A(c) whenever it lies in R(c) as the number of required iterations
@@ -6047,7 +6054,8 @@ def rvs_ratio_unif(f, size=1, x1=None, x2=None, y2=None, shift=0, maxiter=None,
     The exponential distribution provides another example where the bounding
     rectangle can be determined explicitly.
     >>> np.random.seed(12345)
-    >>> rvs = rvs_ratio_unif(lambda x: np.exp(-x), x1=0, x2=2*np.exp(-1), y2=1, size=1000)
+    >>> rvs = rvs_ratio_unif(lambda x: np.exp(-x), x1=0, x2=2*np.exp(-1), y2=1,
+    >>> ...                  size=1000)
     >>> stats.kstest(rvs, 'expon')[1]
     0.52369231518316373
 
@@ -6056,64 +6064,65 @@ def rvs_ratio_unif(f, size=1, x1=None, x2=None, y2=None, shift=0, maxiter=None,
 
     """
 
-    if not callable(f):
-        raise TypeError("pdf f must be callable.")
-
-    def find_rect_bounds(g, bounds):
+    def find_rect_bounds(g, bounds, var):
         if bounds is None:
-            raise Exception("bounds cannot be None if bounding rectangle is" +
-                            " not fully specified...")
+            raise Exception("The parameter bounds needs to be specified if " +
+                            var + " is None.")
         opt_res = optimize.minimize_scalar(g, bounds=bounds, method='Bounded')
         if not opt_res.success:
-            raise Exception("solver failed: " + opt_res.message)
+            raise Exception("Optimization failed when attempting to find " +
+                            var + ": " + opt_res.message)
         if np.isnan(opt_res.fun):
-            raise Exception("solver returned nan at x=".format(opt_res.x))
+            raise Exception("Optimization returned " + var + "= nan " +
+                            "at x=".format(opt_res.x))
         return opt_res.fun
 
     # in case bounding rectangle is not given, attempt to find it numerically
     def f_opt(x):
-        return (x - shift) * np.sqrt(f(x))
+        return (x - shift) * np.sqrt(pdf(x))
 
     if x1 is None:
-        x1 = find_rect_bounds(f_opt, bounds=bounds)
+        x1 = find_rect_bounds(f_opt, bounds, "x1")
     if x2 is None:
-        x2 = -find_rect_bounds(lambda x: -f_opt(x), bounds=bounds)
+        x2 = -find_rect_bounds(lambda x: -f_opt(x), bounds, "x2")
 
     if x1 >= x2:
         raise ValueError("x1 must be smaller than x2.")
 
     if y2 is None:
-        y2 = np.sqrt(-find_rect_bounds(lambda x: -f(x), bounds=bounds))
+        y2 = np.sqrt(-find_rect_bounds(lambda x: -pdf(x), bounds, "y2"))
     if y2 < 0:
         raise ValueError("y2 must be positive.")
+
+    size1d = tuple(np.atleast_1d(size))
+    N = np.prod(size1d)  # number of rvs needed, reshape upon return
 
     if maxiter is None:
         # set no of iterations to ensure that method fails with proba. p_fail
         # in case point in [x1, x2] x [0, y2] is accepted with prob. p_accept
         p_fail, p_accept = 0.001, 0.25
-        maxiter = 10 + size * np.log(1 / p_fail) / np.log(1 / (1 - p_accept))
+        maxiter = 10 + N * np.log(1 / p_fail) / np.log(1 / (1 - p_accept))
 
     # start sampling using ratio of uniforms method
-    x = np.zeros(size)
+    rng = check_random_state(random_state)
+    x = np.zeros(N)
     j, simulated = 1, 0
-    while (j <= maxiter):
-        k = size - simulated
-        # simulate uniform rvs on [x1, x2] and [0,y2]
-        u1 = distributions.uniform.rvs(loc=x1, scale=(x2 - x1), size=k)
-        v1 = distributions.uniform.rvs(scale=y2, size=k)
+    for j in range(int(maxiter)):
+        k = N - simulated
+        # simulate uniform rvs on [x1, x2] and [0, y2]
+        u1 = x1 + (x2 - x1) * rng.random_sample(size=k)
+        v1 = y2 * rng.random_sample(size=k)
         # apply rejection method
         rvs = u1 / v1 + shift
-        accept = (v1**2 <= f(rvs))
+        accept = (v1**2 <= pdf(rvs))
         num_accept = sum(accept)
         if num_accept > 0:
-            take = min(num_accept, size - simulated)
+            take = min(num_accept, N - simulated)
             x[simulated:(simulated + take)] = rvs[accept][0:take]
             simulated += take
-        if simulated < size:
-            j += 1
-        else:
-            return x
+        if simulated >= N:
+            return np.reshape(x, size1d)
 
-    raise Exception("Only {} of {} random variables".format(simulated, size) +
+    raise Exception("Only {} of {} random variables".format(simulated, N) +
                     " could generated after {}".format(round(maxiter, 0)) +
                     " iterations. Consider increasing maxiter.")
