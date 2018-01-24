@@ -11,9 +11,9 @@ FD_METHODS = ('2-point', '3-point', 'cs')
 
 
 class ScalarFunction:
-    """Define methods for evaluating a scalar function and its derivatives.
+    """Scalar function and its derivatives.
 
-    This class define a scalar function F: R^n->R and methods for
+    This class defines a scalar function F: R^n->R and methods for
     computing or approximating its first and second derivatives.
     """
 
@@ -31,9 +31,9 @@ class ScalarFunction:
             finite_diff_options["as_linear_operator"] = True
             self.x_diff = np.copy(self.x)
         if grad in FD_METHODS and hess in FD_METHODS:
-            raise ValueError("Whenever the gradient is estimated via"
-                             " finite-differences, we require the Hessian"
-                             " to be estimated using one of the "
+            raise ValueError("Whenever the gradient is estimated via "
+                             "finite-differences, we require the Hessian "
+                             "to be estimated using one of the "
                              "quasi-Newton strategies.")
         if isinstance(hess, HessianUpdateStrategy):
             self.x_prev = np.copy(self.x)
@@ -174,9 +174,9 @@ class ScalarFunction:
 
 
 class VectorFunction:
-    """Define methods for evaluating a vector function and its derivatives.
+    """Vector function and its derivatives.
 
-    This class define a scalar function F: R^n->R^m and methods for
+    This class defines a vector function F: R^n->R^m and methods for
     computing or approximating its first and second derivatives.
     """
 
@@ -199,7 +199,7 @@ class VectorFunction:
             finite_diff_options["bounds"] = finite_diff_bounds
             self.x_diff = np.copy(self.x)
         if jac in FD_METHODS and hess in FD_METHODS:
-            raise ValueError("Whenever the jacobian is estimated via "
+            raise ValueError("Whenever the Jacobian is estimated via "
                              "finite-differences, we require the Hessian to "
                              "be estimated using one of the quasi-Newton "
                              "strategies.")
