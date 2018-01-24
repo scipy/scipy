@@ -44,7 +44,7 @@ C             MEANINGS.
 C             1     THE SOLUTION HAS BEEN COMPUTED SUCCESSFULLY.
 C             2     THE DIMENSIONS OF THE PROBLEM ARE BAD.  
 C                   EITHER M .LE. 0 OR N .LE. 0.
-C             3    ITERATION COUNT EXCEEDED.  MORE THAN 3*N ITERATIONS. 
+C             3    ITERATION COUNT EXCEEDED.  MORE THAN 30*N ITERATIONS. 
 C   
 C     ------------------------------------------------------------------
       SUBROUTINE NNLS (A,MDA,M,N,B,X,RNORM,W,ZZ,INDEX,MODE) 
@@ -67,7 +67,7 @@ C     ------------------------------------------------------------------
          RETURN
       endif
       ITER=0
-      ITMAX=3*N 
+      ITMAX=30*N 
 C   
 C                    INITIALIZE THE ARRAYS INDEX() AND X(). 
 C   
