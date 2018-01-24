@@ -442,7 +442,7 @@ class TestTrustRegionConstr(TestCase):
                             Elec(n_electrons=2),
                             Elec(n_electrons=2, constr_hess='2-point'),
                             Elec(n_electrons=2, constr_hess=SR1()),
-                            Elec(n_electrons=2, constr_jac='2-point',
+                            Elec(n_electrons=2, constr_jac='3-point',
                                  constr_hess=SR1())]
 
         for prob in list_of_problems:
