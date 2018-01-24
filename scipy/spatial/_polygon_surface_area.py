@@ -116,6 +116,21 @@ def _spherical_polygon_area(vertices, radius, discretizations):
     area = area_sum
     return area
 
+def calc_heading(lambda_range, phi_range,
+                 i, next_index):
+    lambda_1 = lambda_range[i]
+    lambda_2 = lambda_range[next_index]
+    phi_1 = phi_range[i]
+    phi_2 = phi_range[next_index]
+    delta_lambda = lambda_1 - lambda_2
+
+    term_1 = math.sin(delta_lambda) * math.cos(phi_2)
+    term_2 = math.cos(phi_1) * math.cos(phi_2)
+    term_3 = math.sin(phi_1) * math.cos(phi_2) * math.cos(delta_lambda)
+    result = math.atan2(term_1, term_2 - term_3)
+    course_angle = np.rad2deg(result % (2 * math.pi))
+    return course_angle
+
 def pole_in_polygon(vertices):
     # determine if the North or South Pole is contained
     # within the spherical polygon defined by vertices
@@ -130,29 +145,47 @@ def pole_in_polygon(vertices):
     #TODO: handle case where both the N & S poles
     # are contained within a given polygon
 
-    course_angle_sum = 0
     lambda_range = np.arctan2(vertices[...,1], vertices[...,0])
     phi_range = np.arcsin((vertices[...,2]))
+    list_course_angles = []
     for i in range(vertices.shape[0] - 1):
         if i == (vertices.shape[0] - 1):
             next_index = 0
         else:
             next_index = i + 1
 
-        lambda_1 = lambda_range[i]
-        lambda_2 = lambda_range[next_index]
-        phi_1 = phi_range[i]
-        phi_2 = phi_range[next_index]
-        delta_lambda = lambda_1 - lambda_2
+        # calculate heading when leaving point 1
+        # the "departure" heading
+        course_angle = calc_heading(lambda_range,
+                                    phi_range,
+                                    i,
+                                    next_index)
 
-        term_1 = math.sin(delta_lambda) * math.cos(phi_2)
-        term_2 = math.cos(phi_1) * math.cos(phi_2)
-        term_3 = math.sin(phi_1) * math.cos(phi_2) * math.cos(delta_lambda)
-        result = math.atan2(term_1, term_2 - term_3)
-        course_angle = result % (2 * math.pi)
-        course_angle_sum += course_angle
+        list_course_angles.append(course_angle)
 
-    if abs(course_angle_sum) == 360:
+        # calcualte heading when arriving at point 2
+        # strategy: discretize arc path between
+        # points 1 and 2 and take the penultimate
+        # point for bearing calculation
+        new_pts = _slerp(vertices[i], vertices[next_index],
+                         n_pts=900)
+        new_lambda_range = np.arctan2(new_pts[...,1], new_pts[...,0])
+        new_phi_range = np.arcsin((new_pts[...,2]))
+
+        # the "arrival" heading is estimated between
+        # penultimate (-2) and final (-1) index
+        # points
+        course_angle = calc_heading(new_lambda_range,
+                                    new_phi_range,
+                                    -2,
+                                    -1)
+        list_course_angles.append(course_angle)
+
+    list_course_angles.append(list_course_angles[0])
+    angles = np.array(list_course_angles)
+    net_angle = np.sum(angles[1:] - angles[:-1])
+
+    if abs(net_angle) == 0:
         # there's a pole in the polygon
         return 1
     else:
