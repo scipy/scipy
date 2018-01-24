@@ -403,3 +403,60 @@ class VectorFunction:
         if not self.H_updated:
             self.evaluate_hess()
         return self.H
+
+
+class LinearVectorFunction:
+    """Linear vector function and its derivatives.
+
+    Defines a linear function F = A x, where x is n-dimensional vector and
+    A is m-by-n matrix. The Jacobian is constant and equals to A. The Hessian
+    is identically zero and it is returned as a csr matrix.
+    """
+    def __init__(self, A, sparse_jacobian):
+        if sparse_jacobian or sparse_jacobian is None and sps.issparse(A):
+            self.A = sps.csr_matrix(A)
+            self.sparse_jacobian = True
+        elif sps.issparse(A):
+            self.A = A.toarray()
+            self.sparse_jacobian = False
+        else:
+            self.A = np.atleast_2d(A)
+            self.sparse_jacobian = False
+
+        n = self.A.shape[1]
+        self.H = sps.csr_matrix((n, n))
+
+    def fun(self, x):
+        return self.A.dot(x)
+
+    def jac(self, x):
+        return self.A
+
+    def hess(self, x, v):
+        return self.H
+
+
+class IdentityVectorFunction:
+    """Identity vector function and its derivatives.
+
+    The Jacobian is the identity matrix, returned as a dense array when
+    `sparse_jacobian=False` and as a csr matrix otherwise. The Hessian is
+    identically zero and it is returned as a csr matrix.
+    """
+    def __init__(self, n, sparse_jacobian):
+        if sparse_jacobian or sparse_jacobian is None:
+            self.A = sps.eye(n, format='csr')
+            self.sparse_jacobian = True
+        else:
+            self.A = np.eye(n)
+            self.sparse_jacobian = False
+        self.H = sps.csr_matrix((n, n))
+
+    def fun(self, x):
+        return x
+
+    def jac(self, x):
+        return self.A
+
+    def hess(self, x, v):
+        return self.H

@@ -1,13 +1,13 @@
 from __future__ import division, print_function, absolute_import
 import numpy as np
-from scipy.sparse.linalg import LinearOperator
 from numpy.testing import (TestCase, assert_array_almost_equal,
-                           assert_array_equal, assert_array_less,
-                           assert_raises, assert_equal, assert_,
-                           run_module_suite, assert_allclose, assert_warns,
-                           dec)
+                           assert_array_equal, assert_)
+from scipy.sparse import csr_matrix
+from scipy.sparse.linalg import LinearOperator
 from scipy.optimize._differentiable_functions import (ScalarFunction,
-                                                      VectorFunction)
+                                                      VectorFunction,
+                                                      LinearVectorFunction,
+                                                      IdentityVectorFunction)
 
 
 class ExScalarFunction:
@@ -414,3 +414,59 @@ class TestVectorialFunction(TestCase):
         assert_array_equal(ex.nfev, nfev)
         assert_array_equal(ex.njev, njev)
         assert_array_equal(ex.nhev, nhev)
+
+
+def test_LinearVectorFunction():
+    A_dense = np.array([
+        [-1, 2, 0],
+        [0, 4, 2]
+    ])
+    A_sparse = csr_matrix(A_dense)
+    x = np.array([1, -1, 0])
+    v = np.array([-1, 1])
+    Ax = np.array([-3, -4])
+
+    f1 = LinearVectorFunction(A_dense, None)
+    assert_(not f1.sparse_jacobian)
+
+    f2 = LinearVectorFunction(A_dense, True)
+    assert_(f2.sparse_jacobian)
+
+    f3 = LinearVectorFunction(A_dense, False)
+    assert_(not f3.sparse_jacobian)
+
+    f4 = LinearVectorFunction(A_sparse, None)
+    assert_(f4.sparse_jacobian)
+
+    f5 = LinearVectorFunction(A_sparse, True)
+    assert_(f5.sparse_jacobian)
+
+    f6 = LinearVectorFunction(A_sparse, False)
+    assert_(not f6.sparse_jacobian)
+
+    assert_array_equal(f1.fun(x), Ax)
+    assert_array_equal(f2.fun(x), Ax)
+    assert_array_equal(f1.jac(x), A_dense)
+    assert_array_equal(f2.jac(x).toarray(), A_sparse.toarray())
+    assert_array_equal(f1.hess(x, v).toarray(), np.zeros((3, 3)))
+
+
+def test_IdentityVectorFunction():
+    f1 = IdentityVectorFunction(3, None)
+    f2 = IdentityVectorFunction(3, False)
+    f3 = IdentityVectorFunction(3, True)
+
+    assert_(f1.sparse_jacobian)
+    assert_(not f2.sparse_jacobian)
+    assert_(f3.sparse_jacobian)
+
+    x = np.array([-1, 2, 1])
+    v = np.array([-2, 3, 0])
+
+    assert_array_equal(f1.fun(x), x)
+    assert_array_equal(f2.fun(x), x)
+
+    assert_array_equal(f1.jac(x).toarray(), np.eye(3))
+    assert_array_equal(f2.jac(x), np.eye(3))
+
+    assert_array_equal(f1.hess(x, v).toarray(), np.zeros((3, 3)))
