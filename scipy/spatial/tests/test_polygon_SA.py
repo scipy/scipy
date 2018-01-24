@@ -547,12 +547,30 @@ def test_functional_sph_Vor(cython):
                   [ 0.11144972, 0.5320895  ,0.83932099],
                   [-0.46697717, 0.40065984 ,0.78829183],
                   [-0.65194264, 0.0126658  ,0.7581625 ]]),
-        1)])
+        1),
+        # test polygon that contains neither pole
+        (np.array([[-0.79278828,-0.48489777,-0.36927076],
+                  [-0.95264505,-0.01427026, 0.3037495 ],
+                  [-0.92458779, 0.35065228, 0.14893085],
+                  [-0.91491027, 0.40075481,-0.0483196 ],
+                  [-0.79277493,-0.48322543,-0.37148498]]),
+       0),
+        # test polygon that contains South Pole
+        (np.array([[-0.22878116, 0.27317059,-0.9343645 ],
+                   [-0.38694583,-0.18585062,-0.90317909],
+                   [-0.33245409,-0.27873783,-0.90098807],
+                   [ 0.13551066,-0.19830717,-0.97072711],
+                   [ 0.31296667,-0.00864412,-0.94972477],
+                   [ 0.05186796, 0.19835707,-0.97875645]]),
+       1),
+        ])
 def test_pole_in_polygon(polygon, pole_present):
     # test that we can determine if a spherical
     # polygon contains the North or the South Pole
-    # TODO: expand to include South pole scenario
-    # and polygon with neither pole contained
+
+    # NOTE: we do not cover the case where
+    # BOTH N & S Poles are contained within a
+    # single polygon
 
     result = psa.pole_in_polygon(polygon)
     expected = pole_present
