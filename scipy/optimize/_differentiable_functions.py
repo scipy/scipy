@@ -7,6 +7,9 @@ from scipy.sparse.linalg import LinearOperator
 from copy import deepcopy
 
 
+FD_METHODS = ('2-point', '3-point', 'cs')
+
+
 class ScalarFunction:
     """Define methods for evaluating a scalar function and its derivatives.
 
@@ -18,17 +21,16 @@ class ScalarFunction:
         self.x = np.atleast_1d(x0).astype(float)
         self.n = self.x.size
         finite_diff_options = {}
-        if grad in ('2-point', '3-point', 'cs'):
+        if grad in FD_METHODS:
             finite_diff_options["method"] = grad
             finite_diff_options["rel_step"] = finite_diff_rel_step
             self.x_diff = np.copy(self.x)
-        if hess in ('2-point', '3-point', 'cs'):
+        if hess in FD_METHODS:
             finite_diff_options["method"] = hess
             finite_diff_options["rel_step"] = finite_diff_rel_step
             finite_diff_options["as_linear_operator"] = True
             self.x_diff = np.copy(self.x)
-        if grad in ('2-point', '3-point', 'cs') and \
-           hess in ('2-point', '3-point', 'cs'):
+        if grad in FD_METHODS and hess in FD_METHODS:
             raise ValueError("Whenever the gradient is estimated via"
                              " finite-differences, we require the Hessian"
                              " to be estimated using one of the "
@@ -59,7 +61,7 @@ class ScalarFunction:
                 self.g = grad_wrapped(self.x)
                 self.g_updated = True
                 return self.g
-        elif grad in ('2-point', '3-point', 'cs'):
+        elif grad in FD_METHODS:
             self.g = approx_derivative(fun_wrapped, self.x, f0=self.f,
                                        **finite_diff_options)
             self.g_updated = True
@@ -97,7 +99,7 @@ class ScalarFunction:
                 self.H_updated = True
                 return self.H
 
-        elif hess in ('2-point', '3-point', 'cs'):
+        elif hess in FD_METHODS:
             self.H = approx_derivative(grad_wrapped, self.x,
                                        f0=self.g, **finite_diff_options)
             self.H_updated = True
@@ -184,20 +186,19 @@ class VectorialFunction:
         self.x = np.atleast_1d(x0).astype(float)
         self.n = self.x.size
         finite_diff_options = {}
-        if jac in ('2-point', '3-point', 'cs'):
+        if jac in FD_METHODS:
             finite_diff_options["method"] = jac
             finite_diff_options["rel_step"] = finite_diff_rel_step
             finite_diff_options["sparsity"] = finite_diff_jac_sparsity
             finite_diff_options["bounds"] = finite_diff_bounds
             self.x_diff = np.copy(self.x)
-        if hess in ('2-point', '3-point', 'cs'):
+        if hess in FD_METHODS:
             finite_diff_options["method"] = hess
             finite_diff_options["rel_step"] = finite_diff_rel_step
             finite_diff_options["as_linear_operator"] = True
             finite_diff_options["bounds"] = finite_diff_bounds
             self.x_diff = np.copy(self.x)
-        if jac in ('2-point', '3-point', 'cs') and \
-           hess in ('2-point', '3-point', 'cs'):
+        if jac in FD_METHODS and hess in FD_METHODS:
             raise ValueError("Whenever the jacobian is estimated via "
                              "finite-differences, we require the Hessian to "
                              "be estimated using one of the quasi-Newton "
@@ -249,7 +250,7 @@ class VectorialFunction:
                 self.J = jac_wrapped(self.x)
                 self.J_updated = True
                 return self.J
-        elif jac in ('2-point', '3-point', 'cs'):
+        elif jac in FD_METHODS:
             self.J = approx_derivative(fun_wrapped, self.x, f0=self.f,
                                        **finite_diff_options)
             self.J_updated = True
@@ -315,7 +316,7 @@ class VectorialFunction:
                 self.H_updated = True
                 return self.H
 
-        elif hess in ('2-point', '3-point', 'cs'):
+        elif hess in FD_METHODS:
             def jac_dot_v(x, v):
                 return jac_wrapped(x).T.dot(v)
             self.H = approx_derivative(jac_dot_v, self.x,
