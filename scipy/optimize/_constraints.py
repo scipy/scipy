@@ -3,7 +3,7 @@ import numpy as np
 import scipy.sparse as sps
 from warnings import warn
 from ._hessian_update_strategy import BFGS
-from ._differentiable_functions import VectorialFunction
+from ._differentiable_functions import VectorFunction
 
 
 __all__ = ['NonlinearConstraint',
@@ -134,11 +134,11 @@ class NonlinearConstraint:
 
     def _evaluate_and_initialize(self, x0, sparse_jacobian=None,
                                  bounds=(-np.inf, np.inf)):
-        constr = VectorialFunction(self._fun, x0, self._jac, self._hess,
-                                   self.finite_diff_rel_step,
-                                   self.finite_diff_jac_sparsity,
-                                   bounds,
-                                   sparse_jacobian)
+        constr = VectorFunction(self._fun, x0, self._jac, self._hess,
+                                self.finite_diff_rel_step,
+                                self.finite_diff_jac_sparsity,
+                                bounds,
+                                sparse_jacobian)
 
         self.fun = constr.fun
         self.jac = constr.jac

@@ -173,8 +173,8 @@ class ScalarFunction:
         return self.H
 
 
-class VectorialFunction:
-    """Define methods for evaluating a vectorial function and its derivatives.
+class VectorFunction:
+    """Define methods for evaluating a vector function and its derivatives.
 
     This class define a scalar function F: R^n->R^m and methods for
     computing or approximating its first and second derivatives.

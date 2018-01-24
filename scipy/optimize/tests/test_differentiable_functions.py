@@ -7,7 +7,7 @@ from numpy.testing import (TestCase, assert_array_almost_equal,
                            run_module_suite, assert_allclose, assert_warns,
                            dec)
 from scipy.optimize._differentiable_functions import (ScalarFunction,
-                                                      VectorialFunction)
+                                                      VectorFunction)
 
 
 class ExScalarFunction:
@@ -239,14 +239,14 @@ class TestVectorialFunction(TestCase):
 
         x0 = [1.0, 0.0]
         v0 = [0.0, 1.0]
-        analit = VectorialFunction(ex.fun, x0, ex.jac, None, None, None,
-                                   (-np.inf, np.inf), None)
+        analit = VectorFunction(ex.fun, x0, ex.jac, None, None, None,
+                                (-np.inf, np.inf), None)
         nfev += 1
         njev += 1
         assert_array_equal(ex.nfev, nfev)
         assert_array_equal(ex.njev, njev)
-        approx = VectorialFunction(ex.fun, x0, '2-point', None, None, None,
-                                   (-np.inf, np.inf), None)
+        approx = VectorFunction(ex.fun, x0, '2-point', None, None, None,
+                                (-np.inf, np.inf), None)
         nfev += 3
         assert_array_equal(ex.nfev, nfev)
         assert_array_equal(ex.njev, njev)
@@ -321,16 +321,16 @@ class TestVectorialFunction(TestCase):
 
         x0 = [1.0, 0.0]
         v0 = [1.0, 2.0]
-        analit = VectorialFunction(ex.fun, x0, ex.jac, ex.hess, None, None,
-                                   (-np.inf, np.inf), None)
+        analit = VectorFunction(ex.fun, x0, ex.jac, ex.hess, None, None,
+                                (-np.inf, np.inf), None)
         nfev += 1
         njev += 1
         nhev += 1
         assert_array_equal(ex.nfev, nfev)
         assert_array_equal(ex.njev, njev)
         assert_array_equal(ex.nhev, nhev)
-        approx = VectorialFunction(ex.fun, x0, ex.jac, '2-point', None, None,
-                                   (-np.inf, np.inf), None)
+        approx = VectorFunction(ex.fun, x0, ex.jac, '2-point', None, None,
+                                (-np.inf, np.inf), None)
         assert_(isinstance(approx.H, LinearOperator))
         for p in ([1.0, 2.0], [3.0, 4.0], [5.0, 2.0]):
             assert_array_equal(analit.f, approx.f)
