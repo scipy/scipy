@@ -1,14 +1,12 @@
-"""Quasi-Newton update strategies."""
-
+"""Hessian update strategies for quasi-Newton optimization methods."""
 from __future__ import division, print_function, absolute_import
 import numpy as np
 from numpy.linalg import norm
 from scipy.linalg import get_blas_funcs
 
 
-__all__ = ['HessianUpdateStrategy',
-           'BFGS',
-           'SR1']
+__all__ = ['HessianUpdateStrategy', 'BFGS', 'SR1']
+
 
 class HessianUpdateStrategy(object):
     """Interface for implementing Hessian update strategies.
@@ -38,7 +36,7 @@ class HessianUpdateStrategy(object):
     def initialize(self, n, approx_type):
         """Initialize internal matrix.
 
-        Alocate internal memory for storing and updating
+        Allocate internal memory for storing and updating
         the Hessian or its inverse.
 
         Parameters
@@ -103,20 +101,26 @@ class HessianUpdateStrategy(object):
 
 
 class FullHessianUpdateStrategy(HessianUpdateStrategy):
-    """Hessian update strategy using full dimensional internal representation."""
-
-    _syr = get_blas_funcs('syr', dtype='d')  # Symetric rank 1 update
-    _syr2 = get_blas_funcs('syr2', dtype='d')  # Symetric rank 2 update
-    _symv = get_blas_funcs('symv', dtype='d')  # Symetric matrix-vector product
+    """Hessian update strategy with full dimensional internal representation.
+    """
+    _syr = get_blas_funcs('syr', dtype='d')  # Symmetric rank 1 update
+    _syr2 = get_blas_funcs('syr2', dtype='d')  # Symmetric rank 2 update
+    # Symmetric matrix-vector product
+    _symv = get_blas_funcs('symv', dtype='d')
 
     def __init__(self, init_scale='auto'):
         self.init_scale = init_scale
-        self.first_iteration = True
+        # Until initialize is called we can't really use the class,
+        # so it makes sense to set everything to None.
+        self.first_iteration = None
+        self.approx_type = None
+        self.B = None
+        self.H = None
 
     def initialize(self, n, approx_type):
         """Initialize internal matrix.
 
-        Alocate internal memory for storing and updating
+        Allocate internal memory for storing and updating
         the Hessian or its inverse.
 
         Parameters
@@ -128,9 +132,10 @@ class FullHessianUpdateStrategy(HessianUpdateStrategy):
             When set to 'hess' the Hessian will be stored and updated.
             When set to 'inv_hess' its inverse will be used instead.
         """
+        self.first_iteration = True
         self.approx_type = approx_type
         if approx_type not in ('hess', 'inv_hess'):
-            raise ValueError("Unknown approx_type.")
+            raise ValueError("`approx_type` must be 'hess' or 'inv_hess'.")
         # Create matrix
         if self.approx_type == 'hess':
             self.B = np.eye(n, dtype=float)
@@ -206,22 +211,21 @@ class FullHessianUpdateStrategy(HessianUpdateStrategy):
             return self._symv(1, self.H, p)
 
     def get_matrix(self):
-        """Return current internal matrix.
+        """Return the current internal matrix.
 
         Returns
         -------
-        H : ndarray, shape (n, n)
-            Dense matrix containing either the Hessian
-            or its inverse (depending on how 'approx_type'
-            is defined).
+        M : ndarray, shape (n, n)
+            Dense matrix containing either the Hessian or its inverse
+            (depending on how `approx_type` was defined).
         """
         if self.approx_type == 'hess':
-            M = self.B
+            M = np.copy(self.B)
         else:
-            M = self.H
-        M_triu = np.triu(M)
-        M_diag = np.diag(M)
-        return M_triu + M_triu.T - np.diag(M_diag)
+            M = np.copy(self.H)
+        li = np.tril_indices_from(M, k=-1)
+        M[li] = M.T[li]
+        return M
 
 
 class BFGS(FullHessianUpdateStrategy):
@@ -238,7 +242,7 @@ class BFGS(FullHessianUpdateStrategy):
     min_curvature : float
         This number, scaled by a normalization factor, defines the
         minimum curvature ``dot(delta_grad, delta_x)`` allowed to go
-        unnafected by the exception strategy. By default is equal to
+        unaffected by the exception strategy. By default is equal to
         1e-2 when ``exception_strategy = 'skip_update'`` and equal
         to 0.2 when ``exception_strategy = 'damped_bfgs'``.
     init_scale : {float, 'auto'}
@@ -272,16 +276,19 @@ class BFGS(FullHessianUpdateStrategy):
             else:
                 self.min_curvature = 0.2
         else:
-            ValueError("Unknown approx_type.")
+            raise ValueError("`exception_strategy` must be 'skip_updated' "
+                             "or 'damped_bfgs'.")
+
         super(BFGS, self).__init__(init_scale)
         self.exception_strategy = exception_strategy
 
     def _update_inverse_hessian(self, ys, Hy, yHy, s):
-        """Update inverse Hessian matrix.
+        """Update the inverse Hessian matrix.
 
         BFGS update using the formula:
 
-            ``H <- H + ((H*y).T*y + s.T*y)/(s.T*y)^2 * (s*s.T) - 1/(s.T*y) * ((H*y)*s.T + s*(H*y).T)``
+            ``H <- H + ((H*y).T*y + s.T*y)/(s.T*y)^2 * (s*s.T)
+                     - 1/(s.T*y) * ((H*y)*s.T + s*(H*y).T)``
 
         where ``s = delta_x`` and ``y = delta_grad``. This formula is
         equivalent to (6.17) in [1]_ written in a more efficient way
@@ -296,7 +303,7 @@ class BFGS(FullHessianUpdateStrategy):
         self.H = self._syr((ys+yHy)/ys**2, s, a=self.H)
 
     def _update_hessian(self, ys, Bs, sBs, y):
-        """Update Hessian matrix.
+        """Update the Hessian matrix.
 
         BFGS update using the formula:
 
@@ -314,7 +321,7 @@ class BFGS(FullHessianUpdateStrategy):
         self.B = self._syr(-1.0 / sBs, Bs, a=self.B)
 
     def _update_implementation(self, delta_x, delta_grad):
-        # Auxiliar variables w and z
+        # Auxiliary variables w and z
         if self.approx_type == 'hess':
             w = delta_x
             z = delta_grad
@@ -383,7 +390,7 @@ class SR1(FullHessianUpdateStrategy):
         super(SR1, self).__init__(init_scale)
 
     def _update_implementation(self, delta_x, delta_grad):
-        # Auxiliar variables w and z
+        # Auxiliary variables w and z
         if self.approx_type == 'hess':
             w = delta_x
             z = delta_grad

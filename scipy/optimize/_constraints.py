@@ -1,486 +1,285 @@
+"""Constraints definition for minimize."""
 from __future__ import division, print_function, absolute_import
 import numpy as np
-import scipy.sparse as sps
-from warnings import warn
 from ._hessian_update_strategy import BFGS
-from ._differentiable_functions import VectorFunction
+from ._differentiable_functions import (
+    VectorFunction, LinearVectorFunction, IdentityVectorFunction)
 
 
-__all__ = ['NonlinearConstraint',
-           'LinearConstraint',
-           'BoxConstraint']
+class NonlinearConstraint(object):
+    """Nonlinear constraint on the variables.
 
+    The constraint has the general inequality form::
 
-class NonlinearConstraint:
-    """Constraint imposing nonlinear relation on variables.
+        lb <= fun(x) <= ub
+
+    Here the vector of independent variables x is passed as ndarray of shape
+    (n,) and ``fun`` returns a vector with m components.
+
+    It is possible to use equal bounds to represent an equality constraint or
+    infinite bounds to represent a one-sided constraint.
 
     Parameters
     ----------
     fun : callable
         The function defining the constraint.
-
-            fun(x) -> array_like, shape (m,)
-
-        where x is a (n,) ndarray and m
-        is the number of constraints.
-    kind : {str, tuple}
-        Specifies the type of contraint. To specify
-        inequalities constraints use:
-
-            - ``('greater',)`` for a constraint of the type:
-                fun(x) >= 0
-            - ``('less',)`` for a constraint of the type:
-                fun(x) <= 0
-            - ``('greater', lb)`` for a constraint of the type:
-                fun(x) >= lb
-            - ``('less', ub)`` for a constraint of the type:
-                fun(x) <= ub
-
-        To specify equalities constraints use:
-
-            - ``('equals', c)`` for a constraint of the type:
-                fun(x) == c
-            - ``('equals',)`` for a constraint of the type:
-                fun(x) == 0
-
-        where ``lb``,  ``ub`` and ``c`` are (m,) ndarrays or
-        scalar values. In the latter case, the same value
-        will be repeated for all the constraints.
-        Finally, bounds constraints can be specified using:
-
-            - ``('interval', lb, ub)`` for a constraint of the type:
-                lb <= fun(x) <= ub
-
-        If ``lb[i] == ub[i]`` it define an equality constraint
-        of the type ``fun(x)[i] == lb[i]``. Otherwise, the
-        constraint requires the function to stay inside the
-        specified boundaries. Use ``np.inf`` with an appropriate
-        sign to disable inequalities constraints in one of the
-        directions.
+        The signature is ``fun(x) -> array_like, shape (m,)``.
+    lb, ub : array_like
+        Lower and upper bounds on the constraint. Each array must have the
+        shape (m,) or be a scalar, in the latter case a bound will be the same
+        for all components of the constraint. Use ``np.inf`` with an
+        appropriate sign to specify a one-sided constraint.
+        Set components of `lb` and `ub` equal to represent an equality
+        constraint. Note that you can mix constraints of different types:
+        interval, one-sided or equality, by setting different components of
+        `lb` and `ub` as  necessary.
     jac : {callable,  '2-point', '3-point', 'cs'}, optional
         Method of computing the Jacobian matrix (an m-by-n matrix,
         where element (i, j) is the partial derivative of f[i] with
-        respect to x[j]).  The keywords {'2-point', '3-point', 'cs'}
-        select a finite difference scheme for numerical estimation
-        of the Jacobian matrix. Alternatively, if it is a callable,
-        it should be a function that returns the matrix:
-
-            ``jac(x) -> {ndarray, sparse matrix}, shape (m, n)``
-
-        where x is a (n,) ndarray.
+        respect to x[j]).  The keywords {'2-point', '3-point',
+        'cs'} select a finite difference scheme for the numerical estimation.
+        A callable must have the following signature:
+        ``jac(x) -> {ndarray, sparse matrix}, shape (m, n)``.
+        Default is '2-point'.
     hess : {callable, '2-point', '3-point', 'cs', HessianUpdateStrategy, None}, optional
         Method for computing the Hessian matrix. The keywords
-        {'2-point', '3-point', 'cs'} select a finite difference
-        scheme for numerical  estimation.  Alternativelly, objects
-        implementing `HessianUpdateStrategy` interface can be used to
-        approximate the Hessian. Available quasi-Newton methods
-        implementing this interface are:
+        {'2-point', '3-point', 'cs'} select a finite difference scheme for
+        numerical  estimation.  Alternativelly, objects implementing
+        `HessianUpdateStrategy` interface can be used to approximate the
+        Hessian. Currently available implementations are:
 
-            - `BFGS`;
-            - `SR1`.
+            - `BFGS` (default option)
+            - `SR1`
 
-        If it is a callable, it should return the Hessian
-        matrix of `dot(fun, v)`, that is:
-
-            ``hess(x, v) -> {LinearOperator, spmatrix, ndarray}, shape (n, n)``
-
-        where x is a (n,) ndarray and v is a (m,) ndarray. During the solution
-        of an optimization problem x and v will stand for,
-        respectively, the vector of variables and the lagrange multipliers.
-        When `hess` is None it considers the hessian is a matrix filled
-        with zeros.
-    enforce_feasibility : {list of bool, bool}, optional
-        Specify wheather each of the constraint components needs to
-        stay feasible. If True all the iterates generated by the
-        optimization algorithm needs to be feasible in respect to the
-        constraint, otherwise this will not be reinforced.
-        A single value or a list are acceptable: A single value
-        specifies the same behaviour for all constraints while
-        a list would specify element-wise each constraints needs to
-        stay feasible along the iterations and each does not.
-        False by default.
+        A callable must return the Hessian matrix of ``dot(fun, v)`` and
+        must have the following signature:
+        ``hess(x, v) -> {LinearOperator, sparse matrix, array_like}, shape (n, n)``.
+        Here ``v`` is ndarray with shape (m,) containing Lagrange multipliers.
+    keep_feasible : array_like of bool, optional
+        Whether to keep the constraint components feasible throughout
+        iterations. A single value set this property for all components.
+        Default is False. Has no effect for equality constraints.
     finite_diff_rel_step: None or array_like, optional
-        Relative step size to used in numerical differenciation, when applicable.
-    finite_diff_jac_sparsity:  {None, array_like, sparse matrix, 2-tuple}, optional
-        Defines a sparsity structure of the Jacobian matrix for be used
-        in numerical differentiation, when applicable.
+        Relative step size for the finite difference approximation. Default is
+        None, which will select a reasonable value automatically depending
+        on a finite difference scheme.
+    finite_diff_jac_sparsity: {None, array_like, sparse matrix}, optional
+        Defines the sparsity structure of the Jacobian matrix for finite
+        difference estimation, its shape must be (m, n). If the Jacobian has
+        only few non-zero elements in *each* row, providing the sparsity
+        structure will greatly speed up the computations. A zero entry means
+        that a corresponding element in the Jacobian is identically zero.
+        If provided, forces the use of 'lsmr' trust-region solver.
+        If None (default) then dense differencing will be used.
+
     Notes
     -----
-    Finite difference schemes {'2-point', '3-point', 'cs'}
-    may be used for approximating either the gradient or the Hessian.
-    We, however, do not allow its use for approximating both
-    simultaneously. Hence whenever the jacobian is estimated via
-    finite-differences, we require the Hessian to be estimated using
-    one of the quasi-Newton strategies.
+    Finite difference schemes {'2-point', '3-point', 'cs'} may be used for
+    approximating either the Jacobian or the Hessian. We, however, do not allow
+    its use for approximating both simultaneously. Hence whenever the Jacobian
+    is estimated via finite-differences, we require the Hessian to be estimated
+    using one of the quasi-Newton strategies.
 
-    The scheme 'cs' is, potentially, the most accurate but
-    it requires the function to correctly handles complex inputs
-    and to be continuous in the complex plane. The scheme
-    '3-point' is more accurate than '2-point' but requires twice
-    as much operations.
+    The scheme 'cs' is potentially the most accurate, but requires the function
+    to correctly handles complex inputs and be analytically continuable to the
+    complex plane. The scheme '3-point' is more accurate than '2-point' but
+    requires twice as much operations.
     """
-    def __init__(self, fun, kind, jac='2-point', hess=BFGS(),
-                 enforce_feasibility=False,
-                 finite_diff_rel_step=None,
+    def __init__(self, fun, lb, ub, jac='2-point', hess=BFGS(),
+                 keep_feasible=False, finite_diff_rel_step=None,
                  finite_diff_jac_sparsity=None):
-        self._fun = fun
-        self.kind = kind
+        self.fun = fun
+        self.lb = lb
+        self.ub = ub
         self.finite_diff_rel_step = finite_diff_rel_step
         self.finite_diff_jac_sparsity = finite_diff_jac_sparsity
-        self._jac = jac
-        self._hess = hess
-        self.enforce_feasibility = enforce_feasibility
-        self.isinitialized = False
-
-    def _evaluate_and_initialize(self, x0, sparse_jacobian=None,
-                                 bounds=(-np.inf, np.inf)):
-        constr = VectorFunction(self._fun, x0, self._jac, self._hess,
-                                self.finite_diff_rel_step,
-                                self.finite_diff_jac_sparsity,
-                                bounds,
-                                sparse_jacobian)
-
-        self.fun = constr.fun
-        self.jac = constr.jac
-        self.hess = constr.hess
-        self.sparse_jacobian = constr.sparse_jacobian
-        self.x0 = constr.x
-        self.f0 = constr.f
-        self.J0 = constr.J
-        self.n = constr.x.size
-        self.m = constr.f.size
-        self.kind = _check_kind(self.kind, self.m)
-        self.enforce_feasibility = _check_enforce_feasibility(
-            self.enforce_feasibility, self.m)
-        if not _is_feasible(self.kind, self.enforce_feasibility, constr.f):
-            raise ValueError("Unfeasible initial point. "
-                             "Either set ``enforce_feasibility=False`` or "
-                             "choose a new feasible initial point ``x0``.")
-
-        self.isinitialized = True
-        return constr.x
+        self.jac = jac
+        self.hess = hess
+        self.keep_feasible = keep_feasible
 
 
-class LinearConstraint:
-    """Linear constraint requiring ``A x`` to comply with a given relation.
+class LinearConstraint(object):
+    """Linear constraint on the variables.
+
+    The constraint has the general inequality form::
+
+        lb <= A.dot(x) <= ub
+
+    Here the vector of independent variables x is passed as ndarray of shape
+    (n,) and the matrix A has shape (m, n).
+
+    It is possible to use equal bounds to represent an equality constraint or
+    infinite bounds to represent a one-sided constraint.
 
     Parameters
     ----------
-    A : {ndarray, sparse matrix}, shape (m, n)
-        Matrix for the linear constraint.
-    kind : {str, tuple}
-        Specifies the type of contraint. To specify
-        inequalities constraints use:
-
-            - ``('greater',)`` for a constraint of the type:
-                A x >= 0
-            - ``('less',)`` for a constraint of the type:
-                A x <= 0
-            - ``('greater', lb)`` for a constraint of the type:
-                A x >= lb
-            - ``('less', ub)`` for a constraint of the type:
-                A x <= ub
-
-        To specify equalities constraints use:
-
-            - ``('equals',)`` for a constraint of the type:
-                A x == 0
-            - ``('equals', c)`` for a constraint of the type:
-                A x == c
-
-        where ``lb``,  ``ub`` and ``c`` are (m,) ndarrays or
-        scalar values. In the latter case, the same value
-        will be repeated for all the constraints.
-        Finally, bounds constraints can be specified using:
-
-            - ``('interval', lb, ub)`` for a constraint of the type:
-                lb <= A x <= ub
-
-        If ``lb[i] == ub[i]`` it define an equality constraint
-        of the type ``A x[i] == lb[i]``. Otherwise, the
-        constraint requires the function to stay inside the
-        specified boundaries. Use ``np.inf`` with an appropriate
-        sign to disable inequalities constraints in one of the
-        directions.
-    enforce_feasibility : {list of bool, bool}, optional
-        Specify wheather each of the constraint components needs to
-        stay feasible. If True  all the iterates generated by the
-        optimization algorithm needs to be feasible in respect to the
-        constraint, otherwise this will not be reinforced.
-        A single value or a list are acceptable: A single value
-        specifies the same behaviour for all constraints while
-        a list would specify element-wise each constraints needs to 
-        stay feasible along the iterations and each does not.
-        False by default.
+    A : {array_like, sparse matrix}, shape (m, n)
+        Matrix defining the constraint.
+    lb, ub : array_like
+        Lower and upper bounds on the constraint. Each array must have the
+        shape (m,) or be a scalar, in the latter case a bound will be the same
+        for all components of the constraint. Use ``np.inf`` with an
+        appropriate sign to specify a one-sided constraint.
+        Set components of `lb` and `ub` equal to represent an equality
+        constraint. Note that you can mix constraints of different types:
+        interval, one-sided or equality, by setting different components of
+        `lb` and `ub` as  necessary.
+    keep_feasible : array_like of bool, optional
+        Whether to keep the constraint components feasible throughout
+        iterations. A single value set this property for all components.
+        Default is False. Has no effect for equality constraints.
     """
-    def __init__(self, A, kind, enforce_feasibility=False):
+    def __init__(self, A, lb, ub, keep_feasible=False):
         self.A = A
-        self.kind = kind
-        self.enforce_feasibility = enforce_feasibility
-        self.isinitialized = False
-
-    def _evaluate_and_initialize(self, x0, sparse_jacobian=None):
-        if sparse_jacobian or (sparse_jacobian is None
-                               and sps.issparse(self.A)):
-            self.A = sps.csr_matrix(self.A)
-            self.sparse_jacobian = True
-        elif sps.issparse(self.A):
-            self.A = self.A.toarray()
-            self.sparse_jacobian = False
-        else:
-            self.A = np.atleast_2d(self.A)
-            self.sparse_jacobian = False
-
-        x0 = np.atleast_1d(x0).astype(float)
-        f0 = self.A.dot(x0)
-        J0 = self.A
-
-        self.x0 = x0
-        self.f0 = f0
-        self.J0 = J0
-        self.n = x0.size
-        self.m = f0.size
-        self.kind = _check_kind(self.kind, self.m)
-        self.enforce_feasibility = _check_enforce_feasibility(
-            self.enforce_feasibility, self.m)
-        if not _is_feasible(self.kind, self.enforce_feasibility, f0):
-            raise ValueError("Unfeasible initial point. "
-                             "Either set ``enforce_feasibility=False`` or "
-                             "choose a new feasible initial point ``x0``.")
-
-        self.isinitialized = True
-        return x0
-
-    def _to_nonlinear(self):
-        if not self.isinitialized:
-            raise RuntimeError("Trying to convert uninitialized constraint.")
-
-        def fun(x):
-            return self.A.dot(x)
-
-        def jac(x):
-            return self.A
-
-        # Build Constraints
-        nonlinear = NonlinearConstraint(fun, self.kind, jac, None,
-                                        self.enforce_feasibility)
-        nonlinear.isinitialized = True
-        nonlinear.m = self.m
-        nonlinear.n = self.n
-        nonlinear.sparse_jacobian = self.sparse_jacobian
-        nonlinear.fun = fun
-        nonlinear.jac = jac
-        nonlinear.hess = None
-        nonlinear.x0 = self.x0
-        nonlinear.f0 = self.f0
-        nonlinear.J0 = self.J0
-        return nonlinear
+        self.lb = lb
+        self.ub = ub
+        self.keep_feasible = keep_feasible
 
 
-class BoxConstraint:
-    """Box constraints confining varibles within a given interval.
+class Bounds(object):
+    """Bounds constraint on the variables.
+
+    The constraint has the general inequality form::
+
+        lb <= x <= ub
+
+    It is possible to use equal bounds to represent an equality constraint or
+    infinite bounds to represent a one-sided constraint.
 
     Parameters
     ----------
-    kind : tuple
-        Specifies the type of contraint. To specify
-        inequalities constraints use:
-
-            - ``('greater',)`` for a constraint of the type:
-                x >= 0
-            - ``('less',)`` for a constraint of the type:
-                x <= 0
-            - ``('greater', lb)`` for a constraint of the type:
-                x >= lb
-            - ``('less', ub)`` for a constraint of the type:
-                x <= ub
-
-        Bounds constraints can be specified using:
-
-            - ``('interval', lb, ub)`` for a constraint of the type:
-                lb <= x <= ub
-
-        where ``lb`` and  ``ub`` are (m,) ndarrays or
-        scalar values. In the latter case, the same value
-        will be repeated for all the constraints. Use ``np.inf``
-        with an appropriate sign to disable inequalities
-        constraints in one of the  directions.
-    enforce_feasibility : {list of bool, bool}, optional
-        Specify wheather each of the constraint components needs to
-        stay feasible. If True  all the iterates generated by the
-        optimization algorithm needs to be feasible in respect to the
-        constraint, otherwise this will not be reinforced.
-        A single value or a list are acceptable: A single value
-        specifies the same behaviour for all constraints while
-        a list would specify element-wise each constraints needs to 
-        stay feasible along the iterations and each does not.
-        False by default.
+    lb, ub : array_like, optional
+        Lower and upper bounds on independent variables. Each array must
+        have the same size as x or be a scalar, in which case a bound will be
+        the same for all the variables. Set components of `lb` and `ub` equal
+        to fix a variable. Use ``np.inf`` with an appropriate sign to disable
+        bounds on all or some variables. Note that you can mix constraints of
+        different types: interval, one-sided or equality, by setting different
+        components of `lb` and `ub` as necessary.
+    keep_feasible : array_like of bool, optional
+        Whether to keep the constraint components feasible throughout
+        iterations. A single value set this property for all components.
+        Default is False. Has no effect for equality constraints.
     """
-    def __init__(self, kind, enforce_feasibility=False):
-        self.kind = kind
-        self.enforce_feasibility = enforce_feasibility
-        self.isinitialized = False
+    def __init__(self, lb, ub, keep_feasible=False):
+        self.lb = lb
+        self.ub = ub
+        self.keep_feasible = keep_feasible
 
-    def _evaluate_and_initialize(self, x0, sparse_jacobian=None):
-        x0 = np.atleast_1d(x0).astype(float)
-        f0 = x0
-        self.n = x0.size
-        self.m = f0.size
-        if sparse_jacobian or sparse_jacobian is None:
-            J0 = sps.eye(self.n).tocsr()
-            self.sparse_jacobian = True
+
+class PreparedConstraint(object):
+    """Constraint prepared from a user defined constrained.
+
+    On creation it will check whether a constraint definition is valid and
+    the initial point is feasible. If created successfully, it will contain
+    the attributes listed below.
+
+    Parameters
+    ----------
+    constraint : {NonlinearConstraint, LinearConstraint`, Bounds}
+        Constraint to check and prepare.
+    x0 : array_like
+        Initial vector of independent variables.
+    sparse_jacobian : bool or None, optional
+        If bool, then the Jacobian of the constraint will be converted
+        to the corresponded format if necessary. If None (default), such
+        conversion is not made.
+    finite_diff_bounds : 2-tuple, optional
+        Lower and upper bounds on the independent variables for the finite
+        difference approximation, if applicable. Defaults to no bounds.
+
+    Attributes
+    ----------
+    fun : {VectorFunction, LinearVectorFunction, IdentityVectorFunction}
+        Function defining the constraint wrapped by one of the convenience
+        classes.
+    bounds : 2-tuple
+        Contains lower and upper bounds for the constraints --- lb and ub.
+        These are converted to ndarray and have a size equal to the number of
+        the constraints.
+    keep_feasible : ndarray
+         Array indicating which components must be kept feasible with a size
+         equal to the number of the constraints.
+    """
+    def __init__(self, constraint, x0, sparse_jacobian=None,
+                 finite_diff_bounds=(-np.inf, np.inf)):
+        if isinstance(constraint, NonlinearConstraint):
+            fun = VectorFunction(constraint.fun, x0,
+                                 constraint.jac, constraint.hess,
+                                 constraint.finite_diff_rel_step,
+                                 constraint.finite_diff_jac_sparsity,
+                                 finite_diff_bounds, sparse_jacobian)
+        elif isinstance(constraint, LinearConstraint):
+            fun = LinearVectorFunction(constraint.A, x0, sparse_jacobian)
+        elif isinstance(constraint, Bounds):
+            fun = IdentityVectorFunction(x0, sparse_jacobian)
         else:
-            J0 = np.eye(self.n)
-            self.sparse_jacobian = False
+            raise ValueError("`constraint` of an unknown type is passed.")
 
-        self.J0 = J0
-        self.kind = _check_kind(self.kind, self.m)
-        self.enforce_feasibility = _check_enforce_feasibility(
-            self.enforce_feasibility, self.m)
-        self.isinitialized = True
-        if not _is_feasible(self.kind, self.enforce_feasibility, f0):
-            warn("The initial point was changed in order "
-                 "to stay inside box constraints.")
-            x0_new = _reinforce_box_constraint(self.kind,
-                                               self.enforce_feasibility,
-                                               x0)
-            self.x0 = x0_new
-            self.f0 = x0_new
-            return x0_new
-        else:
-            self.x0 = x0
-            self.f0 = f0
-            return x0
+        m = fun.m
+        lb = np.asarray(constraint.lb, dtype=float)
+        ub = np.asarray(constraint.ub, dtype=float)
+        if lb.ndim == 0:
+            lb = np.resize(lb, m)
+        if ub.ndim == 0:
+            ub = np.resize(ub, m)
 
-    def _to_linear(self):
-        if not self.isinitialized:
-            raise RuntimeError("Trying to convert uninitialized constraint.")
-        # Build Constraints
-        linear = LinearConstraint(self.J0, self.kind,
-                                  self.enforce_feasibility)
-        linear.isinitialized = True
-        linear.m = self.m
-        linear.n = self.n
-        linear.sparse_jacobian = self.sparse_jacobian
-        linear.x0 = self.x0
-        linear.f0 = self.f0
-        linear.J0 = self.J0
-        return linear
+        keep_feasible = np.asarray(constraint.keep_feasible, dtype=bool)
+        if keep_feasible.ndim == 0:
+            keep_feasible = np.resize(keep_feasible, m)
+        if keep_feasible.shape != (m,):
+            raise ValueError("`keep_feasible` has a wrong shape.")
 
-    def _to_nonlinear(self):
-        if not self.isinitialized:
-            raise RuntimeError("Trying to convert uninitialized constraint.")
-        return self._to_linear()._to_nonlinear()
+        mask = keep_feasible & (lb != ub)
+        f0 = fun.f
+        if np.any(f0[mask] < lb[mask]) or np.any(f0[mask] > ub[mask]):
+            raise ValueError("`x0` is infeasible with respect to some "
+                             "inequality constraint with `keep_feasible` "
+                             "set to True.")
+
+        self.fun = fun
+        self.bounds = (lb, ub)
+        self.keep_feasible = keep_feasible
 
 
-# ************************************************************ #
-# **********           Auxiliary Functions           ********** #
-# ************************************************************ #
-def _check_kind(kind, m):
-    if not isinstance(kind, (tuple, list, str)):
-        raise ValueError("The parameter `kind` should be a tuple, "
-                         " a list, or a string.")
-    if isinstance(kind, str):
-        kind = (kind,)
-    if len(kind) == 0:
-        raise ValueError("The parameter `kind` should not be empty.")
+def new_bounds_to_old(lb, ub, n):
+    """Convert the new bounds representation to the old one.
 
-    n_args = len(kind)
-    keyword = kind[0]
-    if keyword not in ("greater", "less", "equals", "interval"):
-        raise ValueError("Keyword `%s` not available." % keyword)
-    if n_args in (1, 2) and keyword not in ("greater", "less", "equals") \
-       or n_args == 3 and keyword not in ("interval"):
-        raise ValueError("Invalid `kind` format.")
-    if n_args == 1:
-        kind = (keyword, 0)
+    The new representation is a tuple (lb, ub) and the old one is a list
+    containing n tuples, i-th containing lower and upper bound on a i-th
+    variable.
+    """
+    lb = np.asarray(lb)
+    ub = np.asarray(ub)
+    if lb.ndim == 0:
+        lb = np.resize(lb, n)
+    if ub.ndim == 0:
+        ub = np.resize(ub, n)
 
-    if keyword in ("greater", "less", "equals"):
-        c = np.asarray(kind[1], dtype=float)
-        if np.size(c) not in (1, m):
-            if keyword == "greater":
-                raise ValueError("`lb` has the wrong dimension.")
-            if keyword == "less":
-                raise ValueError("`ub` has the wrong dimension.")
-            if keyword == "equals":
-                raise ValueError("`c` has the wrong dimension.")
-        c = np.resize(c, m)
-        return (keyword, c)
-    elif keyword == "interval":
-        lb = np.asarray(kind[1], dtype=float)
-        if np.size(lb) not in (1, m):
-            raise ValueError("`lb` has the wrong dimension.")
-        lb = np.resize(lb, m)
-        ub = np.asarray(kind[2], dtype=float)
-        if np.size(ub) not in (1, m):
-            raise ValueError("`ub` has the wrong dimension.")
-        ub = np.resize(ub, m)
-        if (lb > ub).any():
-            raise ValueError("lb[i] > ub[i].")
-        return (keyword, lb, ub)
+    lb = [x if x > -np.inf else None for x in lb]
+    ub = [x if x < np.inf else None for x in ub]
+
+    return list(zip(lb, ub))
 
 
-def _check_enforce_feasibility(enforce_feasibility, m):
-    if isinstance(enforce_feasibility, bool):
-        enforce_feasibility = np.full(m,
-                                      enforce_feasibility,
-                                      dtype=bool)
-    else:
-        enforce_feasibility = np.array(enforce_feasibility,
-                                       dtype=bool)
+def old_bound_to_new(bounds):
+    """Convert the old bounds representation to the new one.
 
-        if enforce_feasibility.size != m:
-            raise ValueError("The parameter 'enforce_feasibility' "
-                             "has the wrong number of elements.")
-    return enforce_feasibility
+    The new representation is a tuple (lb, ub) and the old one is a list
+    containing n tuples, i-th containing lower and upper bound on a i-th
+    variable.
+    """
+    lb, ub = zip(*bounds)
+    lb = np.array([x if x is not None else -np.inf for x in lb])
+    ub = np.array([x if x is not None else np.inf for x in ub])
+    return lb, ub
 
 
-def _is_feasible(kind, enforce_feasibility, f0):
-    keyword = kind[0]
-    if keyword == "equals":
-        lb = np.asarray(kind[1], dtype=float)
-        ub = np.asarray(kind[1], dtype=float)
-    elif keyword == "greater":
-        lb = np.asarray(kind[1], dtype=float)
-        ub = np.full_like(lb, np.inf, dtype=float)
-    elif keyword == "less":
-        ub = np.asarray(kind[1], dtype=float)
-        lb = np.full_like(ub, -np.inf, dtype=float)
-    elif keyword == "interval":
-        lb = np.asarray(kind[1], dtype=float)
-        ub = np.asarray(kind[2], dtype=float)
-    else:
-        raise RuntimeError("Never be here.")
-
-    return ((lb[enforce_feasibility] <= f0[enforce_feasibility]).all()
-            and (f0[enforce_feasibility] <= ub[enforce_feasibility]).all())
-
-
-def _reinforce_box_constraint(kind, enforce_feasibility, x0,
-                              relative_tolerance=0.01,
-                              absolute_tolerance=0.01):
-        """Move initial point ``x0`` to inside the box constraints."""
-        x0 = np.copy(np.asarray(x0, dtype=float))
-        keyword = kind[0]
-        if keyword == "greater":
-            lb = np.asarray(kind[1], dtype=float)
-            ub = np.full_like(lb, np.inf, dtype=float)
-        elif keyword == "less":
-            ub = np.asarray(kind[1], dtype=float)
-            lb = np.full_like(ub, -np.inf, dtype=float)
-        elif keyword == "interval":
-            lb = np.asarray(kind[1], dtype=float)
-            ub = np.asarray(kind[2], dtype=float)
-
-        x0_new = np.copy(x0)
-        for i in range(np.size(x0)):
-            if enforce_feasibility[i]:
-                if not np.isinf(lb[i]):
-                    lower_bound = min(lb[i]+absolute_tolerance,
-                                      lb[i]+relative_tolerance*(ub[i]-lb[i]))
-                    x0_new[i] = max(x0_new[i], lower_bound)
-                if not np.isinf(ub[i]):
-                    upper_bound = max(ub[i]-absolute_tolerance,
-                                      ub[i]-relative_tolerance*(ub[i]-lb[i]))
-                    x0_new[i] = min(x0_new[i], upper_bound)
-        return x0_new
+def strict_bounds(lb, ub, keep_feasible, n_vars):
+    """Remove bounds which are not asked to be kept feasible."""
+    strict_lb = np.resize(lb, n_vars).astype(float)
+    strict_ub = np.resize(ub, n_vars).astype(float)
+    keep_feasible = np.resize(keep_feasible, n_vars)
+    strict_lb[~keep_feasible] = -np.inf
+    strict_ub[~keep_feasible] = np.inf
+    return strict_lb, strict_ub

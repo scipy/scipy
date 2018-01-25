@@ -1,7 +1,7 @@
 from __future__ import division, print_function, absolute_import
 import numpy as np
 import scipy.sparse as sps
-from ._numdiff import approx_derivative
+from ._numdiff import approx_derivative, group_columns
 from ._hessian_update_strategy import HessianUpdateStrategy
 from scipy.sparse.linalg import LinearOperator
 from copy import deepcopy
@@ -10,20 +10,22 @@ from copy import deepcopy
 FD_METHODS = ('2-point', '3-point', 'cs')
 
 
-class ScalarFunction:
+class ScalarFunction(object):
     """Scalar function and its derivatives.
 
     This class defines a scalar function F: R^n->R and methods for
     computing or approximating its first and second derivatives.
     """
 
-    def __init__(self, fun, x0, args, grad, hess, finite_diff_rel_step):
+    def __init__(self, fun, x0, args, grad, hess, finite_diff_rel_step,
+                 finite_diff_bounds):
         self.x = np.atleast_1d(x0).astype(float)
         self.n = self.x.size
         finite_diff_options = {}
         if grad in FD_METHODS:
             finite_diff_options["method"] = grad
             finite_diff_options["rel_step"] = finite_diff_rel_step
+            finite_diff_options["bounds"] = finite_diff_bounds
             self.x_diff = np.copy(self.x)
         if hess in FD_METHODS:
             finite_diff_options["method"] = hess
@@ -125,10 +127,6 @@ class ScalarFunction:
                 self.H.update(delta_x, delta_grad)
                 self.H_updated = True
                 return self.H
-        else:
-            self.H = None
-            self.H_updated = True
-            evaluate_hess = None
         self.evaluate_hess = evaluate_hess
 
         # Update current point
@@ -173,7 +171,7 @@ class ScalarFunction:
         return self.H
 
 
-class VectorFunction:
+class VectorFunction(object):
     """Vector function and its derivatives.
 
     This class defines a vector function F: R^n->R^m and methods for
@@ -189,14 +187,16 @@ class VectorFunction:
         if jac in FD_METHODS:
             finite_diff_options["method"] = jac
             finite_diff_options["rel_step"] = finite_diff_rel_step
-            finite_diff_options["sparsity"] = finite_diff_jac_sparsity
+            if finite_diff_jac_sparsity is not None:
+                sparsity_groups = group_columns(finite_diff_jac_sparsity)
+                finite_diff_options["sparsity"] = (finite_diff_jac_sparsity,
+                                                   sparsity_groups)
             finite_diff_options["bounds"] = finite_diff_bounds
             self.x_diff = np.copy(self.x)
         if hess in FD_METHODS:
             finite_diff_options["method"] = hess
             finite_diff_options["rel_step"] = finite_diff_rel_step
             finite_diff_options["as_linear_operator"] = True
-            finite_diff_options["bounds"] = finite_diff_bounds
             self.x_diff = np.copy(self.x)
         if jac in FD_METHODS and hess in FD_METHODS:
             raise ValueError("Whenever the Jacobian is estimated via "
@@ -348,8 +348,6 @@ class VectorFunction:
                 self.H.update(delta_x, delta_grad)
                 self.H_updated = True
                 return self.H
-        else:
-            evaluate_hess = None
         self.evaluate_hess = evaluate_hess
 
         if isinstance(hess, HessianUpdateStrategy):
@@ -405,59 +403,70 @@ class VectorFunction:
         return self.H
 
 
-class LinearVectorFunction:
+class LinearVectorFunction(object):
     """Linear vector function and its derivatives.
 
     Defines a linear function F = A x, where x is n-dimensional vector and
     A is m-by-n matrix. The Jacobian is constant and equals to A. The Hessian
     is identically zero and it is returned as a csr matrix.
     """
-    def __init__(self, A, sparse_jacobian):
+    def __init__(self, A, x0, sparse_jacobian):
         if sparse_jacobian or sparse_jacobian is None and sps.issparse(A):
-            self.A = sps.csr_matrix(A)
+            self.J = sps.csr_matrix(A)
             self.sparse_jacobian = True
         elif sps.issparse(A):
-            self.A = A.toarray()
+            self.J = A.toarray()
             self.sparse_jacobian = False
         else:
-            self.A = np.atleast_2d(A)
+            self.J = np.atleast_2d(A)
             self.sparse_jacobian = False
 
-        self.m, self.n = self.A.shape
+        self.m, self.n = self.J.shape
+
+        self.x = np.atleast_1d(x0).astype(float)
+        self.f = self.J.dot(self.x)
+        self.f_updated = True
+
+        self.v = np.zeros(self.m, dtype=float)
         self.H = sps.csr_matrix((self.n, self.n))
 
+    def change_x(self, x):
+        self.x = x
+        self.f_updated = False
+
     def fun(self, x):
-        return self.A.dot(x)
+        if not np.array_equal(x, self.x):
+            self.change_x(x)
+        if not self.f_updated:
+            self.f = self.J.dot(x)
+            self.f_updated = True
+        return self.f
 
     def jac(self, x):
-        return self.A
+        if not np.array_equal(x, self.x):
+            self.change_x(x)
+        return self.J
 
     def hess(self, x, v):
+        if not np.array_equal(x, self.x):
+            self.change_x(x)
+        self.v = v
         return self.H
 
 
-class IdentityVectorFunction:
+class IdentityVectorFunction(LinearVectorFunction):
     """Identity vector function and its derivatives.
 
     The Jacobian is the identity matrix, returned as a dense array when
     `sparse_jacobian=False` and as a csr matrix otherwise. The Hessian is
     identically zero and it is returned as a csr matrix.
     """
-    def __init__(self, n, sparse_jacobian):
+    def __init__(self, x0, sparse_jacobian):
+        n = len(x0)
         if sparse_jacobian or sparse_jacobian is None:
-            self.A = sps.eye(n, format='csr')
-            self.sparse_jacobian = True
+            A = sps.eye(n, format='csr')
+            sparse_jacobian = True
         else:
-            self.A = np.eye(n)
-            self.sparse_jacobian = False
-        self.m = self.n = n
-        self.H = sps.csr_matrix((n, n))
-
-    def fun(self, x):
-        return x
-
-    def jac(self, x):
-        return self.A
-
-    def hess(self, x, v):
-        return self.H
+            A = np.eye(n)
+            sparse_jacobian = False
+        super(IdentityVectorFunction, self).__init__(A, x0, sparse_jacobian)

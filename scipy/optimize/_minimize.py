@@ -30,10 +30,7 @@ from ._trustregion_ncg import _minimize_trust_ncg
 from ._trustregion_krylov import _minimize_trust_krylov
 from ._trustregion_exact import _minimize_trustregion_exact
 from ._trustregion_constr import _minimize_trustregion_constr
-from ._constraints import (NonlinearConstraint,
-                           LinearConstraint,
-                           BoxConstraint)
-from ._hessian_update_strategy import HessianUpdateStrategy, BFGS, SR1
+from ._constraints import Bounds, new_bounds_to_old, old_bound_to_new
 
 
 # constrained minimization
@@ -139,18 +136,20 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         where x is a (n,) ndarray, p is an arbitrary vector with
         dimension (n,) and `args` is a tuple with the fixed
         parameters.
-    bounds : sequence, optional
-        Bounds for variables (only for L-BFGS-B, TNC and SLSQP).
-        ``(min, max)`` pairs for each element in ``x``, defining
-        the bounds on that parameter. Use None for one of ``min`` or
-        ``max`` when there is no bound in that direction.
+    bounds : sequence or `Bounds`, optional
+        Bounds on variables for L-BFGS-B, TNC, SLSQP and
+        trust-constr methods. There are two ways to specify the bounds:
+
+            1. Instance of `Bounds` class.
+            2. Sequence of ``(min, max)`` pairs for each element in `x`. None
+               is used to specify no bound.
+
     constraints : {Constraint, dict} or List of {Constraint, dict}, optional
         Constraints definition (only for COBYLA, SLSQP and trust-constr).
         Constraints for 'trust-constr' are defined as a single object or a
         list of objects specifying constraints to the optimization problem.
         Available constraints are:
 
-            - `BoxConstraint`
             - `LinearConstraint`
             - `NonlinearConstraint`
 
@@ -575,6 +574,15 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
             options.setdefault('gtol', tol)
             options.setdefault('barrier_tol', tol)
 
+    if bounds is not None:
+        if meth == 'trust-constr':
+            if not isinstance(bounds, Bounds):
+                lb, ub = old_bound_to_new(bounds)
+                bounds = Bounds(lb, ub)
+        elif method in ('l-bfgs-b', 'tnc', 'slqp'):
+            if isinstance(bounds, Bounds):
+                bounds = new_bounds_to_old(bounds.lb, bounds.ub, x0.shape[0])
+
     if meth == '_custom':
         return method(fun, x0, args=args, jac=jac, hess=hess, hessp=hessp,
                       bounds=bounds, constraints=constraints,
@@ -603,8 +611,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
                                constraints, callback=callback, **options)
     elif meth == 'trust-constr':
         return _minimize_trustregion_constr(fun, x0, args, jac, hess, hessp,
-                                            constraints, callback=callback,
-                                            **options)
+                                            bounds, constraints,
+                                            callback=callback, **options)
     elif meth == 'dogleg':
         return _minimize_dogleg(fun, x0, args, jac, hess,
                                 callback=callback, **options)

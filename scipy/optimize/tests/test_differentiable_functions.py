@@ -38,12 +38,14 @@ class TestScalarFunction(TestCase):
         ngev = 0
 
         x0 = [1.0, 0.0]
-        analit = ScalarFunction(ex.fun, x0, (), ex.grad, None, None)
+        analit = ScalarFunction(ex.fun, x0, (), ex.grad,
+                                ex.hess, None, (-np.inf, np.inf))
         nfev += 1
         ngev += 1
         assert_array_equal(ex.nfev, nfev)
         assert_array_equal(ex.ngev, ngev)
-        approx = ScalarFunction(ex.fun, x0, (), '2-point', None, None)
+        approx = ScalarFunction(ex.fun, x0, (), '2-point',
+                                ex.hess, None, (-np.inf, np.inf))
         nfev += 3
         assert_array_equal(ex.nfev, nfev)
         assert_array_equal(ex.ngev, ngev)
@@ -117,14 +119,16 @@ class TestScalarFunction(TestCase):
         nhev = 0
 
         x0 = [1.0, 0.0]
-        analit = ScalarFunction(ex.fun, x0, (), ex.grad, ex.hess, None)
+        analit = ScalarFunction(ex.fun, x0, (), ex.grad,
+                                ex.hess, None, (-np.inf, np.inf))
         nfev += 1
         ngev += 1
         nhev += 1
         assert_array_equal(ex.nfev, nfev)
         assert_array_equal(ex.ngev, ngev)
         assert_array_equal(ex.nhev, nhev)
-        approx = ScalarFunction(ex.fun, x0, (), ex.grad, '2-point', None)
+        approx = ScalarFunction(ex.fun, x0, (), ex.grad,
+                                '2-point', None, (-np.inf, np.inf))
         assert_(isinstance(approx.H, LinearOperator))
         for v in ([1.0, 2.0], [3.0, 4.0], [5.0, 2.0]):
             assert_array_equal(analit.f, approx.f)
@@ -230,6 +234,7 @@ class ExVectorialFunction:
         return v[0]*4*np.eye(2) + v[1]*np.array([[24*x[0], 0],
                                                  [0, 8]])
 
+
 class TestVectorialFunction(TestCase):
 
     def test_finite_difference_jac(self):
@@ -239,13 +244,13 @@ class TestVectorialFunction(TestCase):
 
         x0 = [1.0, 0.0]
         v0 = [0.0, 1.0]
-        analit = VectorFunction(ex.fun, x0, ex.jac, None, None, None,
+        analit = VectorFunction(ex.fun, x0, ex.jac, ex.hess, None, None,
                                 (-np.inf, np.inf), None)
         nfev += 1
         njev += 1
         assert_array_equal(ex.nfev, nfev)
         assert_array_equal(ex.njev, njev)
-        approx = VectorFunction(ex.fun, x0, '2-point', None, None, None,
+        approx = VectorFunction(ex.fun, x0, '2-point', ex.hess, None, None,
                                 (-np.inf, np.inf), None)
         nfev += 3
         assert_array_equal(ex.nfev, nfev)
@@ -421,27 +426,28 @@ def test_LinearVectorFunction():
         [-1, 2, 0],
         [0, 4, 2]
     ])
+    x0 = np.zeros(3)
     A_sparse = csr_matrix(A_dense)
     x = np.array([1, -1, 0])
     v = np.array([-1, 1])
     Ax = np.array([-3, -4])
 
-    f1 = LinearVectorFunction(A_dense, None)
+    f1 = LinearVectorFunction(A_dense, x0, None)
     assert_(not f1.sparse_jacobian)
 
-    f2 = LinearVectorFunction(A_dense, True)
+    f2 = LinearVectorFunction(A_dense, x0, True)
     assert_(f2.sparse_jacobian)
 
-    f3 = LinearVectorFunction(A_dense, False)
+    f3 = LinearVectorFunction(A_dense, x0, False)
     assert_(not f3.sparse_jacobian)
 
-    f4 = LinearVectorFunction(A_sparse, None)
+    f4 = LinearVectorFunction(A_sparse, x0, None)
     assert_(f4.sparse_jacobian)
 
-    f5 = LinearVectorFunction(A_sparse, True)
+    f5 = LinearVectorFunction(A_sparse, x0, True)
     assert_(f5.sparse_jacobian)
 
-    f6 = LinearVectorFunction(A_sparse, False)
+    f6 = LinearVectorFunction(A_sparse, x0, False)
     assert_(not f6.sparse_jacobian)
 
     assert_array_equal(f1.fun(x), Ax)
@@ -451,10 +457,28 @@ def test_LinearVectorFunction():
     assert_array_equal(f1.hess(x, v).toarray(), np.zeros((3, 3)))
 
 
+def test_LinearVectorFunction_memoization():
+    A = np.array([[-1, 2, 0], [0, 4, 2]])
+    x0 = np.array([1, 2, -1])
+    fun = LinearVectorFunction(A, x0, False)
+
+    assert_array_equal(x0, fun.x)
+    assert_array_equal(A.dot(x0), fun.f)
+
+    x1 = np.array([-1, 3, 10])
+    assert_array_equal(A, fun.jac(x1))
+    assert_array_equal(x1, fun.x)
+    assert_array_equal(A.dot(x0), fun.f)
+    assert_array_equal(A.dot(x1), fun.fun(x1))
+    assert_array_equal(A.dot(x1), fun.f)
+
+
 def test_IdentityVectorFunction():
-    f1 = IdentityVectorFunction(3, None)
-    f2 = IdentityVectorFunction(3, False)
-    f3 = IdentityVectorFunction(3, True)
+    x0 = np.zeros(3)
+
+    f1 = IdentityVectorFunction(x0, None)
+    f2 = IdentityVectorFunction(x0, False)
+    f3 = IdentityVectorFunction(x0, True)
 
     assert_(f1.sparse_jacobian)
     assert_(not f2.sparse_jacobian)

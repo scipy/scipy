@@ -20,7 +20,6 @@ def equality_constrained_sqp(fun_and_constr, grad_and_jac, lagr_hess,
                              jac0, stop_criteria, state,
                              initial_penalty,
                              initial_trust_radius,
-                             return_all,
                              factorization_method,
                              trust_lb=None,
                              trust_ub=None,
@@ -87,12 +86,8 @@ def equality_constrained_sqp(fun_and_constr, grad_and_jac, lagr_hess,
     state.constr_violation = norm(b, np.inf) if len(b) > 0 else 0
     state.niter += 1
     state.x = x
-    state.v = v
     state.trust_radius = trust_radius
     state.penalty = penalty
-    if return_all:
-        state.allvecs += [np.copy(x)]
-        state.allmult += [np.copy(v)]
 
     compute_hess = True
     while not stop_criteria(state):
@@ -155,7 +150,6 @@ def equality_constrained_sqp(fun_and_constr, grad_and_jac, lagr_hess,
         f_next, b_next = fun_and_constr(x_next)
         # Increment funcion evaluation counter
         state.nfev += 1
-        state.ncev += 1
         # Compute merit function at trial point
         merit_function_next = f_next + penalty*norm(b_next)
         # Compute actual reduction according to formula (3.54),
@@ -176,7 +170,6 @@ def equality_constrained_sqp(fun_and_constr, grad_and_jac, lagr_hess,
             f_soc, b_soc = fun_and_constr(x_soc)
             # Increment funcion evaluation counter
             state.nfev += 1
-            state.ncev += 1
             # Recompute actual reduction
             merit_function_soc = f_soc + penalty*norm(b_soc)
             actual_reduction_soc = merit_function - merit_function_soc
@@ -215,7 +208,6 @@ def equality_constrained_sqp(fun_and_constr, grad_and_jac, lagr_hess,
             c, A = grad_and_jac(x)
             S = scaling(x)
             # Increment funcion evaluation counter
-            state.ngev += 1
             state.njev += 1
             # Get projections
             Z, LS, Y = projections(A, factorization_method)
@@ -225,7 +217,6 @@ def equality_constrained_sqp(fun_and_constr, grad_and_jac, lagr_hess,
             compute_hess = True
             # Store state
             state.x = x
-            state.v = v
             # Otimality values
             state.optimality = norm(c + A.T.dot(v), np.inf)
             state.constr_violation = norm(b, np.inf) if len(b) > 0 else 0
@@ -237,8 +228,5 @@ def equality_constrained_sqp(fun_and_constr, grad_and_jac, lagr_hess,
         state.penalty = penalty
         state.cg_niter += info_cg["niter"]
         state.cg_info = info_cg
-        if return_all:
-            state.allvecs.append(np.copy(x))
-            state.allmult.append(np.copy(v))
 
     return state

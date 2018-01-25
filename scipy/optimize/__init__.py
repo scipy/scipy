@@ -46,7 +46,14 @@ as a list of objects from the following classes:
 
    NonlinearConstraint - Class defining general nonlinear constraints.
    LinearConstraint - Class defining general linear constraints.
-   BoxConstraint - Class defining box constraints.
+
+Simple bound constraints are handled separately and there is a special class
+for them:
+
+.. autosummary::
+   :toctree: generated/
+
+   Bounds - Bound constraints.
 
 Quasi-Newton strategies implementing `HessianUpdateStrategy`
 interface can be used to approximate the Hessian in `minimize`
@@ -278,7 +285,7 @@ from ._differentialevolution import differential_evolution
 from ._lsq import least_squares, lsq_linear
 from ._constraints import (NonlinearConstraint,
                            LinearConstraint,
-                           BoxConstraint)
+                           Bounds)
 from ._hessian_update_strategy import HessianUpdateStrategy, BFGS, SR1
 
 __all__ = [s for s in dir() if not s.startswith('_')]

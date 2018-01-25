@@ -4,13 +4,11 @@ import pytest
 from scipy.linalg import block_diag
 from scipy.sparse import csc_matrix
 from numpy.testing import (TestCase, assert_array_almost_equal,
-                           assert_array_equal, assert_array_less,
-                           assert_raises, assert_equal, assert_,
-                           run_module_suite, assert_allclose, assert_warns,
-                           dec)
+                           assert_array_less)
+from pytest import raises
 from scipy.optimize import (NonlinearConstraint,
                             LinearConstraint,
-                            BoxConstraint,
+                            Bounds,
                             minimize,
                             BFGS,
                             SR1)
@@ -30,6 +28,7 @@ class Maratos:
         self.x_opt = np.array([1.0, 0.0])
         self.constr_jac = constr_jac
         self.constr_hess = constr_hess
+        self.bounds = None
 
     def fun(self, x):
         return 2*(x[0]**2 + x[1]**2 - 1) - x[0]
@@ -47,7 +46,7 @@ class Maratos:
 
         if self.constr_jac is None:
             def jac(x):
-                return [[4*x[0], 4*x[1]]]
+                return [[2*x[0], 2*x[1]]]
         else:
             jac = self.constr_jac
 
@@ -57,7 +56,7 @@ class Maratos:
         else:
             hess = self.constr_hess
 
-        return NonlinearConstraint(fun, ("equals", 1), jac, hess)
+        return NonlinearConstraint(fun, 1, 1, jac, hess)
 
 
 class MaratosTestArgs:
@@ -76,6 +75,7 @@ class MaratosTestArgs:
         self.constr_hess = constr_hess
         self.a = a
         self.b = b
+        self.bounds = None
 
     def _test_args(self, a, b):
         if self.a != a or self.b != b:
@@ -110,7 +110,7 @@ class MaratosTestArgs:
         else:
             hess = self.constr_hess
 
-        return NonlinearConstraint(fun, ("equals", 1), jac, hess)
+        return NonlinearConstraint(fun, 1, 1, jac, hess)
 
 
 class MaratosGradInFunc:
@@ -127,6 +127,7 @@ class MaratosGradInFunc:
         self.x_opt = np.array([1.0, 0.0])
         self.constr_jac = constr_jac
         self.constr_hess = constr_hess
+        self.bounds = None
 
     def fun(self, x):
         return (2*(x[0]**2 + x[1]**2 - 1) - x[0],
@@ -156,7 +157,7 @@ class MaratosGradInFunc:
         else:
             hess = self.constr_hess
 
-        return NonlinearConstraint(fun, ("equals", 1), jac, hess)
+        return NonlinearConstraint(fun, 1, 1, jac, hess)
 
 
 class HyperbolicIneq:
@@ -173,6 +174,7 @@ class HyperbolicIneq:
         self.x_opt = [1.952823, 0.088659]
         self.constr_jac = constr_jac
         self.constr_hess = constr_hess
+        self.bounds = Bounds(0, np.inf)
 
     def fun(self, x):
         return 1/2*(x[0] - 2)**2 + 1/2*(x[1] - 1/2)**2
@@ -197,13 +199,11 @@ class HyperbolicIneq:
         if self.constr_hess is None:
             def hess(x, v):
                 return 2*v[0]*np.array([[1/(x[0] + 1)**3, 0],
-                                    [0, 0]])
+                                        [0, 0]])
         else:
             hess = self.constr_hess
 
-        nonlinear = NonlinearConstraint(fun, ("greater", 1/4), jac, hess)
-        box = BoxConstraint(("greater",))
-        return (nonlinear, box)
+        return NonlinearConstraint(fun, 0.25, np.inf, jac, hess)
 
 
 class Rosenbrock:
@@ -217,6 +217,7 @@ class Rosenbrock:
         rng = np.random.RandomState(random_state)
         self.x0 = rng.uniform(-1, 1, n)
         self.x_opt = np.ones(n)
+        self.bounds = None
 
     def fun(self, x):
         x = np.asarray(x)
@@ -264,12 +265,13 @@ class IneqRosenbrock(Rosenbrock):
         Rosenbrock.__init__(self, 2, random_state)
         self.x0 = [-1, -0.5]
         self.x_opt = [0.5022, 0.2489]
+        self.bounds = None
 
     @property
     def constr(self):
         A = [[1, 2]]
         b = 1
-        return LinearConstraint(A, ("less", b))
+        return LinearConstraint(A, -np.inf, b)
 
 
 class EqIneqRosenbrock(Rosenbrock):
@@ -286,6 +288,7 @@ class EqIneqRosenbrock(Rosenbrock):
         Rosenbrock.__init__(self, 2, random_state)
         self.x0 = [-1, -0.5]
         self.x_opt = [0.41494, 0.17011]
+        self.bounds = None
 
     @property
     def constr(self):
@@ -293,8 +296,8 @@ class EqIneqRosenbrock(Rosenbrock):
         b_ineq = 1
         A_eq = [[2, 1]]
         b_eq = 1
-        return (LinearConstraint(A_ineq, ("less", b_ineq)),
-                LinearConstraint(A_eq, ("equals", b_eq)))
+        return (LinearConstraint(A_ineq, -np.inf, b_ineq),
+                LinearConstraint(A_eq, b_eq, b_eq))
 
 
 class Elec:
@@ -325,6 +328,7 @@ class Elec:
         self.x_opt = None
         self.constr_jac = constr_jac
         self.constr_hess = constr_hess
+        self.bounds = None
 
     def _get_cordinates(self, x):
         x_coord = x[:self.n_electrons]
@@ -420,7 +424,7 @@ class Elec:
         else:
             hess = self.constr_hess
 
-        return NonlinearConstraint(fun, ("less",), jac, hess)
+        return NonlinearConstraint(fun, -np.inf, 0, jac, hess)
 
 
 class TestTrustRegionConstr(TestCase):
@@ -463,6 +467,7 @@ class TestTrustRegionConstr(TestCase):
                     result = minimize(prob.fun, prob.x0,
                                       method='trust-constr',
                                       jac=grad, hess=hess,
+                                      bounds=prob.bounds,
                                       constraints=prob.constr)
 
                     if prob.x_opt is not None:
@@ -506,6 +511,7 @@ class TestTrustRegionConstr(TestCase):
         result = minimize(prob.fun, prob.x0,
                           method='trust-constr',
                           jac=prob.grad, hessp=hessp,
+                          bounds=prob.bounds,
                           constraints=prob.constr)
 
         if prob.x_opt is not None:
@@ -530,6 +536,7 @@ class TestTrustRegionConstr(TestCase):
         result = minimize(prob.fun, prob.x0, ("a", 234),
                           method='trust-constr',
                           jac=prob.grad, hess=prob.hess,
+                          bounds=prob.bounds,
                           constraints=prob.constr)
 
         if prob.x_opt is not None:
@@ -551,6 +558,5 @@ class TestTrustRegionConstr(TestCase):
     def test_raise_exception(self):
         prob = Maratos()
 
-        assert_raises(ValueError, minimize, prob.fun, prob.x0, method='trust-constr',
-                      jac='2-point', hess='2-point', constraints=prob.constr)
-
+        raises(ValueError, minimize, prob.fun, prob.x0, method='trust-constr',
+               jac='2-point', hess='2-point', constraints=prob.constr)

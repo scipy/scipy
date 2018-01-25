@@ -1,182 +1,132 @@
 from __future__ import division, print_function, absolute_import
-import numpy as np
-from scipy.optimize._constraints import (BoxConstraint,
-                                         LinearConstraint,
-                                         NonlinearConstraint,
-                                         _check_kind,
-                                         _check_enforce_feasibility,
-                                         _reinforce_box_constraint)
-from numpy.testing import (TestCase, assert_array_almost_equal,
-                           assert_array_equal, assert_array_less,
-                           assert_equal, assert_,
-                           run_module_suite, assert_allclose, assert_warns,
-                           dec)
 import pytest
+import numpy as np
+from numpy.testing import TestCase, assert_array_equal
+import scipy.sparse as sps
+from scipy.optimize._constraints import (
+    Bounds, LinearConstraint, NonlinearConstraint, PreparedConstraint,
+    new_bounds_to_old, old_bound_to_new, strict_bounds)
 
 
-class TestCheckKind(TestCase):
+class TestStrictBounds(TestCase):
+    def test_scalarvalue_unique_enforce_feasibility(self):
+        m = 3
+        lb = 2
+        ub = 4
+        enforce_feasibility = False
+        strict_lb, strict_ub = strict_bounds(lb, ub,
+                                             enforce_feasibility,
+                                             m)
+        assert_array_equal(strict_lb, [-np.inf, -np.inf, -np.inf])
+        assert_array_equal(strict_ub, [np.inf, np.inf, np.inf])
 
-    def test_kind_wrong_type(self):
-        with pytest.raises(ValueError):
-            _check_kind(1, "bla")
+        enforce_feasibility = True
+        strict_lb, strict_ub = strict_bounds(lb, ub,
+                                             enforce_feasibility,
+                                             m)
+        assert_array_equal(strict_lb, [2, 2, 2])
+        assert_array_equal(strict_ub, [4, 4, 4])
 
-    def test_kind_empty(self):
-        with pytest.raises(ValueError):
-            _check_kind(1, [])
+    def test_vectorvalue_unique_enforce_feasibility(self):
+        m = 3
+        lb = [1, 2, 3]
+        ub = [4, 5, 6]
+        enforce_feasibility = False
+        strict_lb, strict_ub = strict_bounds(lb, ub,
+                                              enforce_feasibility,
+                                              m)
+        assert_array_equal(strict_lb, [-np.inf, -np.inf, -np.inf])
+        assert_array_equal(strict_ub, [np.inf, np.inf, np.inf])
 
-    def test_kind_invalid_format(self):
-        with pytest.raises(ValueError):
-            _check_kind(3, ["interval", [1, 2, 3]])
+        enforce_feasibility = True
+        strict_lb, strict_ub = strict_bounds(lb, ub,
+                                              enforce_feasibility,
+                                              m)
+        assert_array_equal(strict_lb, [1, 2, 3])
+        assert_array_equal(strict_ub, [4, 5, 6])
 
-    def test_kind_mismatching_ub_lb(self):
-        with pytest.raises(ValueError):
-            _check_kind(3, ["interval", [1, 2, 3], [1, 2]])
+    def test_scalarvalue_vector_enforce_feasibility(self):
+        m = 3
+        lb = 2
+        ub = 4
+        enforce_feasibility = [False, True, False]
+        strict_lb, strict_ub = strict_bounds(lb, ub,
+                                             enforce_feasibility,
+                                             m)
+        assert_array_equal(strict_lb, [-np.inf, 2, -np.inf])
+        assert_array_equal(strict_ub, [np.inf, 4, np.inf])
 
-    def test_kind_ub_smaller_than_lb(self):
-        with pytest.raises(ValueError):
-            _check_kind(3, ["interval", [1, 2, 3], [1, 2, 1]])
-
-    def test_string(self):
-        keyword, lb = _check_kind("greater", 3)
-        assert_equal(keyword, "greater")
-        assert_equal(lb, [0, 0, 0])
-
-    def test_broadcast(self):
-        keyword, lb = _check_kind(("greater", 1), 3)
-        assert_equal(keyword, "greater")
-        assert_equal(lb, [1, 1, 1])
-
-
-class TestCheckEnforceFeasibility(TestCase):
-
-    def test_wrong_size(self):
-        with pytest.raises(ValueError):
-            _check_enforce_feasibility([True, True], 3)
-
-    def test_single_value(self):
-        f = _check_enforce_feasibility(True, 3)
-        assert_array_equal(f, [True, True, True])
-
-
-class TestReinforceBoxConstraints(TestCase):
-
-    def test_reinforce_box_constraints(self):
-        lb = np.array([0, 20, 30])
-        ub = np.array([0.5, np.inf, 70])
-        enforce_feasibility = np.array([True, False, True],
-                                       dtype=bool)
-        kind = ("interval", lb, ub)
-        x0 = [1, 2, 3]
-        x0 = _reinforce_box_constraint(kind, enforce_feasibility, x0)
-        assert_array_less(lb[enforce_feasibility], x0[enforce_feasibility])
-        assert_array_less(x0[enforce_feasibility], ub[enforce_feasibility])
-
-
-class TestBoxConstraint(TestCase):
-
-    def test_unfeasible_initial_point(self):
-        lb = np.array([0, 20, 30])
-        ub = np.array([0.5, np.inf, 70])
-        x0 = np.array([1, 2, 3])
-        enforce_feasibility = np.array([False, True, True],
-                                       dtype=bool)
-        kind = ("interval", lb, ub)
-        box = BoxConstraint(kind, enforce_feasibility)
-        with pytest.warns(UserWarning):
-            x0_new = box._evaluate_and_initialize(x0)
-        assert_((lb[enforce_feasibility] <= x0_new[enforce_feasibility]).all())
-        assert_((x0_new[enforce_feasibility] <= ub[enforce_feasibility]).all())
-
-    def test_box_to_linear_conversion(self):
-        box = BoxConstraint(("interval", [10, 20, 30], [50, np.inf, 70]))
-        x0 = np.array([1, 2, 3])
-        x0 = box._evaluate_and_initialize(x0)
-        linear = box._to_linear()
-        assert_array_equal(linear.A.todense(), np.eye(3))
-
-    def test_box_to_nonlinear_conversion(self):
-        box = BoxConstraint(("interval", [10, 20, 30], [50, np.inf, 70]))
-        x0 = np.array([1, 2, 3])
-        x0 = box._evaluate_and_initialize(x0)
-        nonlinear = box._to_nonlinear()
-        assert_array_equal(nonlinear.fun(x0), x0)
-        assert_array_equal(nonlinear.jac(x0).todense(), np.eye(3))
+    def test_vectorvalue_vector_enforce_feasibility(self):
+        m = 3
+        lb = [1, 2, 3]
+        ub = [4, 6, np.inf]
+        enforce_feasibility = [True, False, True]
+        strict_lb, strict_ub = strict_bounds(lb, ub,
+                                             enforce_feasibility,
+                                             m)
+        assert_array_equal(strict_lb, [1, -np.inf, 3])
+        assert_array_equal(strict_ub, [4, np.inf, np.inf])
 
 
-class TestLinearConstraint(TestCase):
+def test_prepare_constraint_infeasible_x0():
+    lb = np.array([0, 20, 30])
+    ub = np.array([0.5, np.inf, 70])
+    x0 = np.array([1, 2, 3])
+    enforce_feasibility = np.array([False, True, True], dtype=bool)
+    bounds = Bounds(lb, ub, enforce_feasibility)
+    pytest.raises(ValueError, PreparedConstraint, bounds, x0)
 
-    def test_unfeasible_initial_point(self):
-        x0 = np.array([1, 2, 3, 4])
-        A = np.array([[1, 2, 3, 4], [5, 0, 0, 6], [7, 0, 8, 0]])
-        enforce_feasibility = np.array([True, True, True],
-                                       dtype=bool)
-        kind = ("less",)
-        linear = LinearConstraint(A, kind, enforce_feasibility)
-        with pytest.raises(ValueError):
-            linear._evaluate_and_initialize(x0)
+    x0 = np.array([1, 2, 3, 4])
+    A = np.array([[1, 2, 3, 4], [5, 0, 0, 6], [7, 0, 8, 0]])
+    enforce_feasibility = np.array([True, True, True], dtype=bool)
+    linear = LinearConstraint(A, -np.inf, 0, enforce_feasibility)
+    pytest.raises(ValueError, PreparedConstraint, linear, x0)
 
-    def test_linear_to_nonlinear_conversion(self):
-        x0 = np.array([1, 2, 3, 4])
-        A = np.array([[1, 2, 3, 4], [5, 0, 0, 6], [7, 0, 8, 0]])
-        enforce_feasibility = np.array([False, False, False],
-                                       dtype=bool)
-        kind = ("less",)
-        linear = LinearConstraint(A, kind, enforce_feasibility)
-        x0 = linear._evaluate_and_initialize(x0)
-        nonlinear = linear._to_nonlinear()
-        assert_array_equal(nonlinear.fun(x0), A.dot(x0))
-        assert_array_equal(nonlinear.jac(x0), A)
+    def fun(x):
+        return A.dot(x)
+
+    def jac(x):
+        return A
+
+    def hess(x, v):
+        return sps.csr_matrix((4, 4))
+
+    nonlinear = NonlinearConstraint(fun, -np.inf, 0, jac, hess,
+                                    enforce_feasibility)
+    pytest.raises(ValueError, PreparedConstraint, nonlinear, x0)
 
 
-class TestNonlinearConstraint(TestCase):
+def test_new_bounds_to_old():
+    lb = np.array([-np.inf, 2, 3])
+    ub = np.array([3, np.inf, 10])
 
-    def test_unfeasible_initial_point(self):
-        x0 = np.array([1, 2, 3, 4])
-        A = np.array([[1, 2, 3, 4], [5, 0, 0, 6], [7, 0, 8, 0]])
+    bounds = [(None, 3), (2, None), (3, 10)]
+    assert_array_equal(new_bounds_to_old(lb, ub, 3), bounds)
 
-        def fun(x):
-            return A.dot(x)
+    bounds_single_lb = [(-1, 3), (-1, None), (-1, 10)]
+    assert_array_equal(new_bounds_to_old(-1, ub, 3), bounds_single_lb)
 
-        def jac(x):
-            return A
+    bounds_no_lb = [(None, 3), (None, None), (None, 10)]
+    assert_array_equal(new_bounds_to_old(-np.inf, ub, 3), bounds_no_lb)
 
-        enforce_feasibility = np.array([True, True, True],
-                                       dtype=bool)
-        kind = ("less",)
-        nonlinear = NonlinearConstraint(fun, kind, jac, None, enforce_feasibility)
-        with pytest.raises(ValueError):
-            nonlinear._evaluate_and_initialize(x0)
+    bounds_single_ub = [(None, 20), (2, 20), (3, 20)]
+    assert_array_equal(new_bounds_to_old(lb, 20, 3), bounds_single_ub)
 
-    def test_approximated_hessian(self):
+    bounds_no_ub = [(None, None), (2, None), (3, None)]
+    assert_array_equal(new_bounds_to_old(lb, np.inf, 3), bounds_no_ub)
 
-        def fun(x):
-            return [x[0]**2 + x[1]**3,
-                    2/x[0] + x[0]*x[1]**2]
+    bounds_single_both = [(1, 2), (1, 2), (1, 2)]
+    assert_array_equal(new_bounds_to_old(1, 2, 3), bounds_single_both)
 
-        def jac(x):
-            return [[2*x[0], 3*x[1]**2],
-                    [-2/x[0]**2 + x[1]**2, 2*x[0]*x[1]]]
+    bounds_no_both = [(None, None), (None, None), (None, None)]
+    assert_array_equal(new_bounds_to_old(-np.inf, np.inf, 3), bounds_no_both)
 
-        def hess(x, v):
-            return (v[0]*np.array([[2, 0],
-                                  [0, 6*x[1]]]) +
-                    v[1]*np.array([[4/x[0]**3, 2*x[1]],
-                                   [2*x[1], 2*x[0]]]))
 
-        x0 = [1, 2]
-        nonlinear_exact = NonlinearConstraint(fun, ("equals"), jac, hess)
-        nonlinear_exact._evaluate_and_initialize(x0)
-        nonlinear_approx = NonlinearConstraint(fun, ("equals"), jac, "2-point")
-        nonlinear_approx._evaluate_and_initialize(x0)
-        np.random.seed(1)
-        for i in range(10):
-            v = np.random.uniform(-5, 5, 2)
-            for j in range(5):
-                x = np.random.uniform(-5, 5, 2)
-                H_exact = nonlinear_exact.hess(x, v)
-                H_approx = nonlinear_approx.hess(x, v)
-                for l in range(5):
-                    p = np.random.uniform(-5, 5, 2)
-                    print(H_approx, H_exact)
-                    assert_array_almost_equal(H_approx.dot(p)/H_exact.dot(p),
-                                              np.ones(2), 5)
+def test_old_bounds_to_new():
+    bounds = ([1, 2], (None, 3), (-1, None))
+    lb_true = np.array([1, -np.inf, -1])
+    ub_true = np.array([2, 3, np.inf])
+
+    lb, ub = old_bound_to_new(bounds)
+    assert_array_equal(lb, lb_true)
+    assert_array_equal(ub, ub_true)

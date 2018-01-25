@@ -80,7 +80,7 @@ class BarrierSubproblem:
         s = self.get_slack(z)
         # Compute function and constraints
         f = self.fun(x)
-        c_ineq, c_eq = self.constr(x)
+        c_eq, c_ineq = self.constr(x)
         # Return objective function and constraints
         return (self._compute_function(f, c_ineq, s),
                 self._compute_constr(c_ineq, c_eq, s))
@@ -130,7 +130,7 @@ class BarrierSubproblem:
         s = self.get_slack(z)
         # Compute first derivatives
         g = self.grad(x)
-        J_ineq, J_eq = self.jac(x)
+        J_eq, J_ineq = self.jac(x)
         # Return gradient and jacobian
         return (self._compute_gradient(g),
                 self._compute_jacobian(J_eq, J_ineq, s))
@@ -260,7 +260,6 @@ def tr_interior_point(fun, grad, lagr_hess, n_vars, n_ineq, n_eq,
                       initial_tolerance,
                       initial_penalty,
                       initial_trust_radius,
-                      return_all,
                       factorization_method):
     """Trust-region interior points method.
 
@@ -329,7 +328,7 @@ def tr_interior_point(fun, grad, lagr_hess, n_vars, n_ineq, n_eq,
             subprob.lagrangian_hessian,
             z, fun0_subprob, grad0_subprob,
             constr0_subprob, jac0_subprob, subprob.stop_criteria,
-            state, initial_penalty, state.trust_radius, return_all,
+            state, initial_penalty, state.trust_radius,
             factorization_method, trust_lb, trust_ub, subprob.scaling)
         z = state.x
         if stop_criteria(state):
@@ -340,15 +339,5 @@ def tr_interior_point(fun, grad, lagr_hess, n_vars, n_ineq, n_eq,
 
     # Get x and s
     state.x = subprob.get_variables(z)
-    state.s = subprob.get_slack(z)
-    # Return all
-    if return_all:
-        allvecs = []
-        allslack = []
-        for z in state.allvecs:
-            allvecs += [subprob.get_variables(z)]
-            allslack += [subprob.get_slack(z)]
-        state.allvecs = allvecs
-        state.allslack = allslack
 
     return state
