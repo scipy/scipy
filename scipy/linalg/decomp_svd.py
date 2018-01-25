@@ -250,6 +250,25 @@ def diagsvd(s, M, N):
     S : (M, N) ndarray
         The S-matrix in the singular value decomposition
 
+    See Also
+    --------
+    svd : Singular value decomposition of a matrix
+    svdvals : Compute singular values of a matrix.
+
+    Examples
+    --------
+    >>> from scipy.linalg import diagsvd
+    >>> vals = np.array([1, 2, 3])  # The array representing the computed svd
+    >>> diagsvd(vals, 3, 4)
+    array([[1, 0, 0, 0],
+           [0, 2, 0, 0],
+           [0, 0, 3, 0]])
+    >>> diagsvd(vals, 4, 3)
+    array([[1, 0, 0],
+           [0, 2, 0],
+           [0, 0, 3],
+           [0, 0, 0]])
+
     """
     part = diag(s)
     typ = part.dtype.char
@@ -287,6 +306,18 @@ def orth(A, rcond=None):
     --------
     svd : Singular value decomposition of a matrix
     null_space : Matrix null space
+
+    Examples
+    --------
+    >>> from scipy.linalg import orth
+    >>> A = np.array([[2, 0, 0], [0, 5, 0]])  # rank 2 array
+    >>> orth(A)
+    array([[0., 1.],
+           [1., 0.]])
+    >>> orth(A.T)
+    array([[0., 1.],
+           [1., 0.],
+           [0., 0.]])
 
     """
     u, s, vh = svd(A, full_matrices=False)

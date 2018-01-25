@@ -3298,11 +3298,11 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate'):
             b = ma.masked_invalid(b)
 
             if nan_policy == 'propagate':
-                rho, pval = mstats_basic.spearmanr(a, b, axis)
+                rho, pval = mstats_basic.spearmanr(a, b, use_ties=True)
                 return SpearmanrResult(rho * np.nan, pval * np.nan)
 
             if nan_policy == 'omit':
-                return mstats_basic.spearmanr(a, b, axis)
+                return mstats_basic.spearmanr(a, b, use_ties=True)
 
         br = np.apply_along_axis(rankdata, axisout, b)
     n = a.shape[axisout]
