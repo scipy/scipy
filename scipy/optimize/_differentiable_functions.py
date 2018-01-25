@@ -423,8 +423,8 @@ class LinearVectorFunction:
             self.A = np.atleast_2d(A)
             self.sparse_jacobian = False
 
-        n = self.A.shape[1]
-        self.H = sps.csr_matrix((n, n))
+        self.m, self.n = self.A.shape
+        self.H = sps.csr_matrix((self.n, self.n))
 
     def fun(self, x):
         return self.A.dot(x)
@@ -450,6 +450,7 @@ class IdentityVectorFunction:
         else:
             self.A = np.eye(n)
             self.sparse_jacobian = False
+        self.m = self.n = n
         self.H = sps.csr_matrix((n, n))
 
     def fun(self, x):
