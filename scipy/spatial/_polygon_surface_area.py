@@ -124,8 +124,13 @@ def calc_heading(lambda_range, phi_range,
     phi_2 = phi_range[next_index]
     delta_lambda = lambda_1 - lambda_2
 
+    if delta_lambda > np.pi:
+        delta_lambda -= 2 * np.pi
+    elif delta_lambda < (-np.pi):
+        delta_lambda += 2 * np.pi
+
     term_1 = math.sin(delta_lambda) * math.cos(phi_2)
-    term_2 = math.cos(phi_1) * math.cos(phi_2)
+    term_2 = math.cos(phi_1) * math.sin(phi_2)
     term_3 = math.sin(phi_1) * math.cos(phi_2) * math.cos(delta_lambda)
     result = math.atan2(term_1, term_2 - term_3)
     course_angle = np.rad2deg(result % (2 * math.pi))
@@ -148,7 +153,7 @@ def pole_in_polygon(vertices):
     lambda_range = np.arctan2(vertices[...,1], vertices[...,0])
     phi_range = np.arcsin((vertices[...,2]))
     list_course_angles = []
-    for i in range(vertices.shape[0] - 1):
+    for i in range(vertices.shape[0]):
         if i == (vertices.shape[0] - 1):
             next_index = 0
         else:
@@ -183,14 +188,24 @@ def pole_in_polygon(vertices):
 
     list_course_angles.append(list_course_angles[0])
     angles = np.array(list_course_angles)
-    net_angle = np.sum(angles[1:] - angles[:-1])
+    # delta values should be capped at 180 degrees
+    # and follow a CW or CCW directionality
+    deltas = angles[1:] - angles[:-1]
+    deltas[deltas > 180] -= 360
+    deltas[deltas < -180] += 360
+    net_angle = np.sum(deltas)
 
     if abs(net_angle) == 0:
         # there's a pole in the polygon
         return 1
-    else:
+    elif abs(net_angle) == 360:
         # no single pole in the polygon
+        # a normal CW or CCW-sorted
+        # polygon
         return 0
+    else:
+        # something went wrong
+        return -1
 
 def poly_area(vertices, radius=None, threshold=1e-21,
               cython=None, discretizations=500):
