@@ -537,7 +537,7 @@ def test_functional_sph_Vor(cython):
                                      discretizations=9000)
         area_sum += polygon_area
 
-    assert area_sum == expected_area
+    assert_allclose(area_sum, expected_area)
 
 @pytest.mark.parametrize("polygon, pole_present", [
         # test polygon that contains North Pole

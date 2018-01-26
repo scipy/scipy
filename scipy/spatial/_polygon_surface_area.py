@@ -195,10 +195,10 @@ def pole_in_polygon(vertices):
     deltas[deltas < -180] += 360
     net_angle = np.sum(deltas)
 
-    if abs(net_angle) == 0:
+    if np.allclose(net_angle, 0.0):
         # there's a pole in the polygon
         return 1
-    elif abs(net_angle) == 360:
+    elif np.allclose(abs(net_angle), 360.0):
         # no single pole in the polygon
         # a normal CW or CCW-sorted
         # polygon
@@ -208,7 +208,8 @@ def pole_in_polygon(vertices):
         return -1
 
 def poly_area(vertices, radius=None, threshold=1e-21,
-              cython=None, discretizations=500):
+              cython=None, discretizations=500,
+              n_rot=50):
     # calculate the surface area of a planar or spherical polygon
     # crude pure Python implementation for handling a single
     # polygon at a time
@@ -293,6 +294,26 @@ def poly_area(vertices, radius=None, threshold=1e-21,
         vertices = convert_cartesian_array_to_spherical_array(vertices)
         vertices[...,0] = 1.
         vertices = convert_spherical_array_to_cartesian_array(vertices)
+
+        # try to handle spherical polygons that contain
+        # a pole by rotating them; failing that,
+        # return an area of np.nan
+
+        # rotate around y axis to move away
+        # from the N/ S poles
+        rot_axis = np.array([[0,1,0]]).ravel()
+        while pole_in_polygon(vertices) == 1:
+            n_rot -= 1
+            rot_angle = np.random.random_sample() * (np.pi / 6.)
+            if n_rot == 0:
+                return np.nan
+            else:
+               # use Rodrigues' rotation formula
+               for index in range(vertices.shape[0]):
+                  row = vertices[index][:]
+                  vertices[index] = (row * math.cos(rot_angle) +
+                               np.cross(rot_axis, row) * math.sin(rot_angle) +
+                               rot_axis * (np.dot(row, rot_axis)) * (1 - math.cos(rot_angle)))
 
         if cython is None:
             area = _spherical_polygon_area(vertices, radius, discretizations)
