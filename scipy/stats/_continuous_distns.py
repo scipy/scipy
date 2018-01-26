@@ -4093,14 +4093,13 @@ class moyal_gen(rv_continuous):
 
     Notes
     -----
-    The probability density function for `moyal` is::
+    The probability density function for `moyal` is:
 
     .. math::
 
-        f(x) = \exp{-\frac{1}{2}(x+\exp{-x})} / \sqrt(2\pi)
+        f(x) = \exp(-(x + \exp(-x))/2) / \sqrt{2\pi}
 
-    `moyal` takes ``loc`` as a location parameter and ``scale``
-    as a scale parameter. Here :math:`x` is the usual standardized form.
+    %(after_notes)s
 
     This distribution has utility in high-energy physics and radiation
     detection. It describes the energy loss of a charged relativistic
@@ -4122,8 +4121,6 @@ class moyal_gen(rv_continuous):
            Experimentalists; International Report SUF-PFY/96-01", Chapter 26,
            University of Stockholm: Stockholm, Sweden, (2007).
            www.stat.rice.edu/~dobelman/textfiles/DistributionsHandbook.pdf
-
-    %(after_notes)s
 
     .. versionadded:: 1.1.0
 
