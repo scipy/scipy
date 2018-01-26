@@ -30,6 +30,8 @@ import scipy.stats.mstats_basic as mstats_basic
 from scipy._lib._version import NumpyVersion
 from scipy._lib.six import xrange
 from .common_tests import check_named_results
+from scipy.special import kv
+from scipy.integrate import quad
 
 """ Numbers in docstrings beginning with 'W' refer to the section numbers
     and headings found in the STATISTICS QUIZ of Leland Wilkinson.  These are
@@ -4507,9 +4509,8 @@ class TestRatioUnif(object):
     def test_rv_generation(self):
         # normal distribution
         f = stats.norm.pdf
-        x_bound = np.sqrt(f(np.sqrt(2))) * np.sqrt(2)
-        x1, x2, y2 = -x_bound, x_bound, np.sqrt(f(0))
-        rvs = stats.rvs_ratio_unif(f, x1=x1, x2=x2, y2=y2, size=2500,
+        x2, y2 = np.sqrt(f(np.sqrt(2))) * np.sqrt(2), np.sqrt(f(0))
+        rvs = stats.rvs_ratio_unif(f, x1=-x2, x2=x2, y2=y2, size=2500,
                                    random_state=12345)
         assert_equal(stats.kstest(rvs, 'norm')[1] > 0.25, True)
         # same but find x1, x2, y2 numerically
@@ -4522,7 +4523,7 @@ class TestRatioUnif(object):
         assert_equal(stats.kstest(rvs, 'expon')[1] > 0.25, True)
 
     def test_shape(self):
-        # test shape of return value
+        # test shape of return value depending on size parameter
         f = stats.norm.pdf
         b = (-3, 3)
         r1 = stats.rvs_ratio_unif(f, size=3, bounds=b, random_state=1234)
@@ -4530,7 +4531,67 @@ class TestRatioUnif(object):
         r3 = stats.rvs_ratio_unif(f, size=(3, 1), bounds=b, random_state=1234)
         assert_equal(r1, r2)
         assert_equal(r2, r3.flatten())
+        assert_equal(r1.shape, (3,))
+        assert_equal(r3.shape, (3, 1))
 
         r4 = stats.rvs_ratio_unif(f, size=(3, 3, 3), bounds=b, random_state=12)
         r5 = stats.rvs_ratio_unif(f, size=27, bounds=b, random_state=12)
         assert_equal(r4.flatten(), r5)
+        assert_equal(r4.shape, (3, 3, 3))
+
+        r6 = stats.rvs_ratio_unif(f, bounds=b, random_state=1234)
+        r7 = stats.rvs_ratio_unif(f, size=1, bounds=b, random_state=1234)
+        r8 = stats.rvs_ratio_unif(f, size=(1, ), bounds=b, random_state=1234)
+        assert_equal(r6, r7)
+        assert_equal(r7, r8)
+
+    def test_random_state(self):
+        f = stats.norm.pdf
+        b = (-3, 3)
+        np.random.seed(1234)
+        r1 = stats.rvs_ratio_unif(f, size=(3, 4), bounds=b)
+        r2 = stats.rvs_ratio_unif(f, size=(3, 4), bounds=b, random_state=1234)
+        assert_equal(r1, r2)
+
+    def test_exceptions(self):
+        f = stats.norm.pdf
+        # bounds not specified in case any of x1, x2, y2 is None
+        assert_raises(Exception, stats.rvs_ratio_unif, pdf=f, x1=0, x2=1)
+        assert_raises(Exception, stats.rvs_ratio_unif, pdf=f, x2=1, y2=1)
+        assert_raises(Exception, stats.rvs_ratio_unif, pdf=f, x2=1, y2=1)
+        # need x1 < x2
+        assert_raises(ValueError,
+                      stats.rvs_ratio_unif, pdf=f, x1=3, x2=1, y2=1)
+        assert_raises(ValueError,
+                      stats.rvs_ratio_unif, pdf=f, x1=1, x2=1, y2=1)
+        # need y2 > 0
+        assert_raises(ValueError,
+                      stats.rvs_ratio_unif, pdf=f, x1=1, x2=1, y2=-1)
+        assert_raises(ValueError,
+                      stats.rvs_ratio_unif, pdf=f, x1=1, x2=1, y2=0)     
+
+    def test_gig(self):
+        # test generalized inverse gaussian distribution
+        p, b = 0.5, 0.75
+
+        def gig_mode(p, b):
+            return b / (np.sqrt((p - 1)**2 + b**2) + 1 - p)
+
+        def gig_pdf(x, p, b):
+            c = 1/(2 * kv(p, b))
+            return c * x**(p - 1) * np.exp(- b * (x + 1/x) / 2)
+
+        def gig_cdf(x, p, b):
+            x = np.atleast_1d(x)
+            cdf = [quad(gig_pdf, 0, xi, args=(p, b))[0] for xi in x]
+            return np.array(cdf)
+
+        s = kv(p+2, b) / kv(p, b)
+        x2 = np.sqrt(gig_pdf(gig_mode(p + 2, b), p + 2, b) * s)
+        y2 = np.sqrt(gig_pdf(gig_mode(p, b), p, b))
+
+        rvs = stats.rvs_ratio_unif(lambda x: gig_pdf(x, p, b), x1=0, x2=x2,
+                                   y2=y2, random_state=1234, size=1500)
+
+        assert_equal(stats.kstest(rvs, lambda x: gig_cdf(x, p, b))[1] > 0.25,
+                     True)

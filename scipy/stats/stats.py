@@ -6094,6 +6094,13 @@ def rvs_ratio_unif(pdf, size=1, x1=None, x2=None, y2=None, shift=0,
     if y2 < 0:
         raise ValueError("y2 must be positive.")
 
+    exp_iter = 2 * (x2 - x1) * y2  # rejection constant (see [1])
+    if exp_iter > 30:
+        msg = "The expected number of iterations to generate a single random" \
+              " number from the desired distribution is larger than " \
+              "{}, potentially causing bad performance.".format(int(exp_iter))
+        warnings.warn(msg, RuntimeWarning)
+
     size1d = tuple(np.atleast_1d(size))
     N = np.prod(size1d)  # number of rvs needed, reshape upon return
 

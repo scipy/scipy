@@ -294,6 +294,7 @@ Statistical distances
 
    wasserstein_distance
    energy_distance
+   rvs_ratio_unif
 
 Circular statistical functions
 ==============================
