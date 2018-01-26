@@ -47,27 +47,6 @@ def convert_spherical_array_to_cartesian_array(spherical_coord_array,angle_measu
     cartesian_coord_array[...,2] = spherical_coord_array[...,0] * np.cos(spherical_coord_array[...,2])
     return cartesian_coord_array
 
-def _vertex_index_strider(index, num_vertices):
-    # handle the wrapping / iteration over
-    # polygon vertices in either CW or CCW
-    # sort order
-    forward_index = index + 1
-    backward_index = index - 1
-    if forward_index >= num_vertices:
-        forward_index = 0
-    return forward_index, backward_index
-
-def _planar_polygon_area(vertices):
-    num_vertices = vertices.shape[0]
-    area_sum = 0
-    for i in xrange(num_vertices):
-        forward_index, backward_index = _vertex_index_strider(i, num_vertices)
-        delta_x = (vertices[forward_index][0] -
-                   vertices[backward_index][0])
-        area_sum += delta_x * vertices[i][1]
-    area = -0.5 * area_sum
-    return area
-
 def _slerp(start_coord,
            end_coord,
            n_pts):
@@ -322,10 +301,7 @@ def poly_area(vertices, radius=None, threshold=1e-21,
             #area = _surface_area.spherical_polygon_area(vertices, radius,
                                                         #discretizations)
     else: # planar polygon
-        if cython is None:
-            area = _planar_polygon_area(vertices)
-        else: # cython code for planar polygon SA
-            area = _surface_area.planar_polygon_area(vertices)
+        area = _surface_area.planar_polygon_area(vertices)
     
     return abs(area)
 
