@@ -160,7 +160,7 @@ static PyObject *call_python_function(PyObject *func, npy_intp n, double *x, PyO
     PYERR2(error_obj,"Result from function call is not a proper array of floats.");
 
   fvec_sz = PyArray_SIZE(result_array);
-  if(out_size != -1 && (int)fvec_sz != out_size){
+  if(out_size != -1 && fvec_sz != out_size){
       PyErr_SetString(PyExc_ValueError, "The array returned by a function changed size between calls");
       Py_DECREF(result_array);
       goto fail;
