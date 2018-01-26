@@ -51,6 +51,12 @@ population.
 An in-place ``resize`` method has been added to all sparse matrix formats,
 which was only available for ``scipy.sparse.dok_matrix`` in previous releases.
 
+
+`scipy.stats` improvements
+----------------------------
+
+The Moyal distribution has been added as `scipy.stats.moyal`.
+
 Deprecated features
 ===================
 
