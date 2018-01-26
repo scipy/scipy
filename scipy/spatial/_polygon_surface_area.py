@@ -15,8 +15,6 @@ import math
 
 #
 # Copyright (C)  James Nichols and Tyler Reddy
-# Contributions from Tyler Reddy are owned by LANL
-# and respect the scipy distribution license
 #
 # Distributed under the same BSD license as Scipy.
 
