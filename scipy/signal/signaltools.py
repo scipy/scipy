@@ -1982,14 +1982,13 @@ def residuez(b, a, tol=1e-3, rtype='avg'):
     for i in range(len(p)):
         round_p = p[i]*0.0
         sig_digits = int(math.ceil(-math.log(tol,10)))
-        # if iscomplex(p[i]):
-        #     round_p = round_p+round(p[i].real,sig_digits)
-        #     round_p = round_p+round(p[i].imag,sig_digits)*1j
-        # else:
-        #     round_p = round(p[i],sig_digits)
-        # p[i] = round_p
+        if iscomplex(p[i]):
+            round_p = round_p+round(p[i].real,sig_digits)
+            round_p = round_p+round(p[i].imag,sig_digits)*1j
+        else:
+            round_p = round(p[i],sig_digits)
+        p[i] = round_p
     pout, mult = unique_roots(p, tol=tol, rtype=rtype)
-    print(pout)
     p = []
     for n in range(len(pout)):
         p.extend([pout[n]] * mult[n])
