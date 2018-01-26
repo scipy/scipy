@@ -162,7 +162,7 @@ def singular_leading_submatrix(A, U, k):
     Returns
     -------
     delta : float
-        Amout that should be added to the element (k, k) of the
+        Amount that should be added to the element (k, k) of the
         leading k by k submatrix of ``A`` to make it singular.
     v : ndarray
         A vector such that ``v.T B v = 0``. Where B is the matrix A after
