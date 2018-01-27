@@ -1029,7 +1029,7 @@ class TestMultinomial(object):
 
         vals3 = multinomial.logpmf([3, 4], 0, [-2, 3])
         assert_allclose(vals3, np.NAN, rtol=1e-8)
-
+        
     def test_reduces_binomial(self):
         # test that the multinomial pmf reduces to the binomial pmf in the 2d
         # case
@@ -1082,6 +1082,9 @@ class TestMultinomial(object):
 
         vals4 = multinomial.pmf([1,2], 4, (.3, .7))
         assert_allclose(vals4, 0, rtol=1e-8)
+        
+        vals5 = multinomial.pmf([3, 3, 0], 6, [2/3.0, 1/3.0, 0])
+        assert_allclose(vals5, 0.219478737997, rtol=1e-8)
 
     def test_pmf_broadcasting(self):
         vals0 = multinomial.pmf([1, 2], 3, [[.1, .9], [.2, .8]])

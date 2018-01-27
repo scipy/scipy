@@ -142,9 +142,9 @@ class TestTrimmedStats(object):
 class TestCorrPearsonr(object):
     """ W.II.D. Compute a correlation matrix on all the variables.
 
-        All the correlations, except for ZERO and MISS, shoud be exactly 1.
+        All the correlations, except for ZERO and MISS, should be exactly 1.
         ZERO and MISS should have undefined or missing correlations with the
-        other variables.  The same should go for SPEARMAN corelations, if
+        other variables.  The same should go for SPEARMAN correlations, if
         your program has them.
     """
     def test_pXX(self):
@@ -409,7 +409,7 @@ class TestFisherExact(object):
 class TestCorrSpearmanr(object):
     """ W.II.D. Compute a correlation matrix on all the variables.
 
-        All the correlations, except for ZERO and MISS, shoud be exactly 1.
+        All the correlations, except for ZERO and MISS, should be exactly 1.
         ZERO and MISS should have undefined or missing correlations with the
         other variables.  The same should go for SPEARMAN corelations, if
         your program has them.
@@ -626,6 +626,20 @@ class TestCorrSpearmanrTies(object):
         sr = stats.spearmanr(x, y)
         pr = stats.pearsonr(xr, yr)
         assert_almost_equal(sr, pr)
+
+    def test_tie2(self):
+        # Test tie-handling if inputs contain nan's
+        # Data without nan's
+        x1 = [1, 2, 2.5, 2]
+        y1 = [1, 3, 2.5, 4]
+        # Same data with nan's
+        x2 = [1, 2, 2.5, 2, np.nan]
+        y2 = [1, 3, 2.5, 4, np.nan]
+
+        # Results for two data sets should be the same if nan's are ignored
+        sr1 = stats.spearmanr(x1, y1)
+        sr2 = stats.spearmanr(x2, y2, nan_policy='omit')
+        assert_almost_equal(sr1, sr2)
 
 
 #    W.II.E.  Tabulate X against X, using BIG as a case weight.  The values
@@ -2020,7 +2034,7 @@ class TestMoments(object):
         #   sum((testcase-mean(testcase,axis=0))**4,axis=0)/((sqrt(var(testcase)*3/4))**4)/4
         #   sum((test2-mean(testmathworks,axis=0))**4,axis=0)/((sqrt(var(testmathworks)*4/5))**4)/5
         #   Set flags for axis = 0 and
-        #   fisher=0 (Pearson's defn of kurtosis for compatiability with Matlab)
+        #   fisher=0 (Pearson's defn of kurtosis for compatibility with Matlab)
         y = stats.kurtosis(self.testmathworks, 0, fisher=0, bias=1)
         assert_approx_equal(y, 2.1658856802973, 10)
 
@@ -2567,7 +2581,7 @@ def test_friedmanchisquare():
           array([3,5,4,3,4,4,3,3,3,4,4,4])]
 
     # From Jerrorl H. Zar, "Biostatistical Analysis"(example 12.6), Xf=10.68, 0.005 < p < 0.01:
-    # Probability from this example is inexact using Chisquare aproximation of Friedman Chisquare.
+    # Probability from this example is inexact using Chisquare approximation of Friedman Chisquare.
     x3 = [array([7.0,9.9,8.5,5.1,10.3]),
           array([5.3,5.7,4.7,3.5,7.7]),
           array([4.9,7.6,5.5,2.8,8.4]),

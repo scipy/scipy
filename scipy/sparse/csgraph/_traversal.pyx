@@ -729,7 +729,7 @@ cdef int _connected_components_undirected(
 
                 labels[v] = label
 
-                # Push children onto the stack if they havn't been
+                # Push children onto the stack if they haven't been
                 # seen at all yet.
                 for j in range(indptr1[v], indptr1[v+1]):
                     w = indices1[j]

@@ -76,13 +76,13 @@ def cholesky(a, lower=False, overwrite_a=False, check_finite=True):
 
     Examples
     --------
-    >>> from scipy import array, linalg, dot
-    >>> a = array([[1,-2j],[2j,5]])
-    >>> L = linalg.cholesky(a, lower=True)
+    >>> from scipy.linalg import cholesky
+    >>> a = np.array([[1,-2j],[2j,5]])
+    >>> L = cholesky(a, lower=True)
     >>> L
     array([[ 1.+0.j,  0.+0.j],
            [ 0.+2.j,  1.+0.j]])
-    >>> dot(L, L.T.conj())
+    >>> L @ L.T.conj()
     array([[ 1.+0.j,  0.-2.j],
            [ 0.+2.j,  5.+0.j]])
 
@@ -137,6 +137,19 @@ def cho_factor(a, lower=False, overwrite_a=False, check_finite=True):
     cho_solve : Solve a linear set equations using the Cholesky factorization
                 of a matrix.
 
+    Examples
+    --------
+    >>> from scipy.linalg import cho_factor
+    >>> A = np.array([[9, 3, 1, 5], [3, 7, 5, 1], [1, 5, 9, 2], [5, 1, 2, 6]])
+    >>> c, low = cho_factor(A)
+    >>> c
+    array([[3.        , 1.        , 0.33333333, 1.66666667],
+           [3.        , 2.44948974, 1.90515869, -0.27216553],
+           [1.        , 5.        , 2.29330749, 0.8559528 ],
+           [5.        , 1.        , 2.        , 1.55418563]])
+    >>> np.allclose(np.triu(c).T @ np. triu(c) - A, np.zeros((4, 4)))
+    True
+
     """
     c, lower = _cholesky(a, lower=lower, overwrite_a=overwrite_a, clean=False,
                          check_finite=check_finite)
@@ -167,6 +180,15 @@ def cho_solve(c_and_lower, b, overwrite_b=False, check_finite=True):
     See also
     --------
     cho_factor : Cholesky factorization of a matrix
+
+    Examples
+    --------
+    >>> from scipy.linalg import cho_factor, cho_solve
+    >>> A = np.array([[9, 3, 1, 5], [3, 7, 5, 1], [1, 5, 9, 2], [5, 1, 2, 6]])
+    >>> c, low = cho_factor(A)
+    >>> x = cho_solve((c, low), [1, 1, 1, 1])
+    >>> np.allclose(A @ x - [1, 1, 1, 1], np.zeros(4))
+    True
 
     """
     (c, lower) = c_and_lower
@@ -231,6 +253,18 @@ def cholesky_banded(ab, overwrite_ab=False, lower=False, check_finite=True):
     c : (u + 1, M) ndarray
         Cholesky factorization of a, in the same banded format as ab
 
+    Examples
+    --------
+    >>> from scipy.linalg import cholesky_banded
+    >>> from numpy import allclose, zeros, diag
+    >>> Ab = np.array([[0, 0, 1j, 2, 3j], [0, -1, -2, 3, 4], [9, 8, 7, 6, 9]])
+    >>> A = np.diag(Ab[0,2:], k=2) + np.diag(Ab[1,1:], k=1)
+    >>> A = A + A.conj().T + np.diag(Ab[2, :])
+    >>> c = cholesky_banded(Ab)
+    >>> C = np.diag(c[0, 2:], k=2) + np.diag(c[1, 1:], k=1) + np.diag(c[2, :])
+    >>> np.allclose(C.conj().T @ C - A, np.zeros((5, 5)))
+    True
+
     """
     if check_finite:
         ab = asarray_chkfinite(ab)
@@ -248,14 +282,16 @@ def cholesky_banded(ab, overwrite_ab=False, lower=False, check_finite=True):
 
 
 def cho_solve_banded(cb_and_lower, b, overwrite_b=False, check_finite=True):
-    """Solve the linear equations A x = b, given the Cholesky factorization of A.
+    """
+    Solve the linear equations ``A x = b``, given the Cholesky factorization of
+    the banded hermitian ``A``.
 
     Parameters
     ----------
-    (cb, lower) : tuple, (array, bool)
+    (cb, lower) : tuple, (ndarray, bool)
         `cb` is the Cholesky factorization of A, as given by cholesky_banded.
         `lower` must be the same value that was given to cholesky_banded.
-    b : array
+    b : array_like
         Right-hand side
     overwrite_b : bool, optional
         If True, the function will overwrite the values in `b`.
@@ -277,6 +313,17 @@ def cho_solve_banded(cb_and_lower, b, overwrite_b=False, check_finite=True):
     -----
 
     .. versionadded:: 0.8.0
+
+    Examples
+    --------
+    >>> from scipy.linalg import cholesky_banded, cho_solve_banded
+    >>> Ab = np.array([[0, 0, 1j, 2, 3j], [0, -1, -2, 3, 4], [9, 8, 7, 6, 9]])
+    >>> A = np.diag(Ab[0,2:], k=2) + np.diag(Ab[1,1:], k=1)
+    >>> A = A + A.conj().T + np.diag(Ab[2, :])
+    >>> c = cholesky_banded(Ab)
+    >>> x = cho_solve_banded((c, False), np.ones(5))
+    >>> np.allclose(A @ x - np.ones(5), np.zeros(5))
+    True
 
     """
     (cb, lower) = cb_and_lower

@@ -1234,3 +1234,9 @@ def test_save_unicode_field(tmpdir):
     filename = os.path.join(str(tmpdir), 'test.mat')
     test_dict = {u'a':{u'b':1,u'c':'test_str'}}
     savemat(filename, test_dict)
+
+
+def test_filenotfound():
+    # Check the correct error is thrown
+    assert_raises(IOError, loadmat, "NotExistentFile00.mat")
+    assert_raises(IOError, loadmat, "NotExistentFile00")

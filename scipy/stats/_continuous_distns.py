@@ -4170,6 +4170,96 @@ class kappa3_gen(rv_continuous):
         return outputs[:]
 kappa3 = kappa3_gen(a=0.0, name='kappa3')
 
+class moyal_gen(rv_continuous):
+    r"""A Moyal continuous random variable.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability density function for `moyal` is::
+
+    .. math::
+
+        f(x) = \exp{-\frac{1}{2}(x+\exp{-x})} / \sqrt(2\pi)
+
+    `moyal` takes ``loc`` as a location parameter and ``scale``
+    as a scale parameter. Here :math:`x` is the usual standardized form.
+
+    This distribution has utility in high-energy physics and radiation
+    detection. It describes the energy loss of a charged relativistic
+    particle due to ionization of the medium [1]_. It also provides an
+    approximation for the Landau distribution. For an in depth description
+    see [2]_. For additional description, see [3]_.
+
+    References
+    ----------
+    .. [1] J.E. Moyal, "XXX. Theory of ionization fluctuations",
+           The London, Edinburgh, and Dublin Philosophical Magazine
+           and Journal of Science, vol 46, 263-280, (1955).
+           https://doi.org/10.1080/14786440308521076 (gated)
+    .. [2] G. Cordeiro et al., "The beta Moyal: a useful skew distribution",
+           International Journal of Research and Reviews in Applied Sciences,
+           vol 10, 171-192, (2012).
+           http://www.arpapress.com/Volumes/Vol10Issue2/IJRRAS_10_2_02.pdf
+    .. [3] C. Walck, "Handbook on Statistical Distributions for
+           Experimentalists; International Report SUF-PFY/96-01", Chapter 26,
+           University of Stockholm: Stockholm, Sweden, (2007).
+           www.stat.rice.edu/~dobelman/textfiles/DistributionsHandbook.pdf
+
+    %(after_notes)s
+
+    .. versionadded:: 1.1.0
+
+    %(example)s
+
+    """
+    def _rvs(self):
+        sz, rndm = self._size, self._random_state
+        u1 = gamma.rvs(a = 0.5, scale = 2, size=sz, random_state=rndm)
+        return -np.log(u1)
+
+    def _pdf(self, x):
+        return np.exp(-0.5 * (x + np.exp(-x))) / np.sqrt(2*np.pi)
+
+    def _cdf(self, x):
+        return sc.erfc(np.exp(-0.5 * x) / np.sqrt(2))
+
+    def _sf(self, x):
+        return sc.erf(np.exp(-0.5 * x) / np.sqrt(2))
+
+    def _ppf(self, x):
+        return -np.log(2 * sc.erfcinv(x)**2)
+
+    def _stats(self):
+        mu = np.log(2) + np.euler_gamma
+        mu2 = np.pi**2 / 2
+        g1 = 28 * np.sqrt(2) * sc.zeta(3) / np.pi**3
+        g2 = 4.
+        return mu, mu2, g1, g2
+
+    def _munp(self, n):
+        if n == 1.0:
+            return np.log(2) + np.euler_gamma
+        elif n == 2.0:
+            return np.pi**2 / 2 + (np.log(2) + np.euler_gamma)**2
+        elif n == 3.0:
+            tmp1 = 1.5 * np.pi**2 * (np.log(2)+np.euler_gamma)
+            tmp2 = (np.log(2)+np.euler_gamma)**3
+            tmp3 = 14 * sc.zeta(3)
+            return tmp1 + tmp2 + tmp3
+        elif n == 4.0:
+            tmp1 = 4 * 14 * sc.zeta(3) * (np.log(2) + np.euler_gamma)
+            tmp2 = 3 * np.pi**2 * (np.log(2) + np.euler_gamma)**2
+            tmp3 = (np.log(2) + np.euler_gamma)**4
+            tmp4 = 7 * np.pi**4 / 4
+            return tmp1 + tmp2 + tmp3 + tmp4
+        else:
+            # return generic for higher moments
+            # return rv_continuous._mom1_sc(self, n, b)
+            return self._mom1_sc(n)
+moyal = moyal_gen(name="moyal")
+
 
 class nakagami_gen(rv_continuous):
     r"""A Nakagami continuous random variable.
@@ -5272,18 +5362,25 @@ class trapz_gen(rv_continuous):
         return (c >= 0) & (c <= 1) & (d >= 0) & (d <= 1) & (d >= c)
 
     def _pdf(self, x, c, d):
-        u = 2 / (d - c + 1)
+        u = 2 / (d-c+1)
 
-        condlist = [x < c, x <= d, x > d]
-        choicelist = [u * x / c, u, u * (1 - x) / (1 - d)]
-        return np.select(condlist, choicelist)
+        return _lazyselect([x < c,
+                            (c <= x) & (x <= d),
+                            x > d],
+                           [lambda x, c, d, u: u * x / c,
+                            lambda x, c, d, u: u,
+                            lambda x, c, d, u: u * (1-x) / (1-d)],
+                            (x, c, d, u))
 
     def _cdf(self, x, c, d):
-        condlist = [x < c, x <= d, x > d]
-        choicelist = [x**2 / c / (d - c + 1),
-                      (c + 2 * (x - c)) / (d - c + 1),
-                      1 - ((1 - x)**2 / (d - c + 1) / (1 - d))]
-        return np.select(condlist, choicelist)
+        return _lazyselect([x < c,
+                            (c <= x) & (x <= d),
+                            x > d],
+                           [lambda x, c, d: x**2 / c / (d-c+1),
+                            lambda x, c, d: (c + 2 * (x-c)) / (d-c+1),
+                            lambda x, c, d: 1-((1-x) ** 2
+                                               / (d-c+1) / (1-d))],
+                            (x, c, d))
 
     def _ppf(self, q, c, d):
         qc, qd = self._cdf(c, c, d), self._cdf(d, c, d)
@@ -5324,13 +5421,36 @@ class triang_gen(rv_continuous):
         return (c >= 0) & (c <= 1)
 
     def _pdf(self, x, c):
-        return np.where(x < c, 2*x/c, 2*(1-x)/(1-c))
+        # 0: edge case where c=0
+        # 1: generalised case for x < c, don't use x <= c, as it doesn't cope
+        #    with c = 0.
+        # 2: generalised case for x >= c, but doesn't cope with c = 1
+        # 3: edge case where c=1
+        r = _lazyselect([c == 0,
+                         x < c,
+                         (x >= c) & (c != 1),
+                         c == 1],
+                        [lambda x, c: 2 - 2 * x,
+                         lambda x, c: 2 * x / c,
+                         lambda x, c: 2 * (1 - x) / (1 - c),
+                         lambda x, c: 2 * x],
+                        (x, c))
+        return r
 
     def _cdf(self, x, c):
-        return np.where(x < c, x*x/c, (x*x-2*x+c)/(c-1))
+        r = _lazyselect([c == 0,
+                         x < c,
+                         (x >= c) & (c != 1),
+                         c == 1],
+                        [lambda x, c: 2*x - x*x,
+                         lambda x, c: x * x / c,
+                         lambda x, c: (x*x - 2*x + c) / (c-1),
+                         lambda x, c: x * x],
+                        (x, c))
+        return r
 
     def _ppf(self, q, c):
-        return np.where(q < c, np.sqrt(c*q), 1-np.sqrt((1-c)*(1-q)))
+        return np.where(q < c, np.sqrt(c * q), 1-np.sqrt((1-c) * (1-q)))
 
     def _stats(self, c):
         return ((c+1.0)/3.0,

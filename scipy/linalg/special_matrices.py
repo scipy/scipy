@@ -365,7 +365,7 @@ def leslie(f, s):
     Create a Leslie matrix.
 
     Given the length n array of fecundity coefficients `f` and the length
-    n-1 array of survival coefficents `s`, return the associated Leslie matrix.
+    n-1 array of survival coefficients `s`, return the associated Leslie matrix.
 
     Parameters
     ----------

@@ -162,7 +162,7 @@ def singular_leading_submatrix(A, U, k):
     Returns
     -------
     delta : float
-        Amout that should be added to the element (k, k) of the
+        Amount that should be added to the element (k, k) of the
         leading k by k submatrix of ``A`` to make it singular.
     v : ndarray
         A vector such that ``v.T B v = 0``. Where B is the matrix A after
@@ -229,7 +229,7 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
         self.niter = 0
 
         # ``k_easy`` and ``k_hard`` are parameters used
-        # to detemine the stop criteria to the iterative
+        # to determine the stop criteria to the iterative
         # subproblem solver. Take a look at pp. 194-197
         # from reference _[1] for a more detailed description.
         self.k_easy = k_easy

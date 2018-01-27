@@ -1030,7 +1030,7 @@ class dopri5(IntegratorBase):
     messages = {1: 'computation successful',
                 2: 'comput. successful (interrupted by solout)',
                 -1: 'input is not consistent',
-                -2: 'larger nmax is needed',
+                -2: 'larger nsteps is needed',
                 -3: 'step size becomes too small',
                 -4: 'problem is probably stiff (interrupted)',
                 }

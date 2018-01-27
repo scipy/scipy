@@ -380,6 +380,24 @@ def simps(y, x=None, dx=1, axis=-1, even='avg'):
     the samples are not equally spaced, then the result is exact only
     if the function is a polynomial of order 2 or less.
 
+    Examples
+    --------
+    >>> from scipy import integrate
+    >>> x = np.arange(0, 10)
+    >>> y = np.arange(0, 10)
+
+    >>> integrate.simps(y, x)
+    40.5
+
+    >>> y = np.power(x, 3)
+    >>> integrate.simps(y, x)
+    1642.5
+    >>> integrate.quad(lambda x: x**3, 0, 9)[0]
+    1640.25
+
+    >>> integrate.simps(y, x, even='first')
+    1644.5
+
     """
     y = np.asarray(y)
     nd = len(y.shape)
@@ -519,7 +537,7 @@ def romb(y, dx=1.0, axis=-1, show=False):
             formstr = "%%%d.%df" % (width, precis)
 
             title = "Richardson Extrapolation Table for Romberg Integration"
-            print("", title.center(68), "=" * 68, sep="\n", end="")
+            print("", title.center(68), "=" * 68, sep="\n", end="\n")
             for i in xrange(k+1):
                 for j in xrange(i+1):
                     print(formstr % R[(i, j)], end=" ")

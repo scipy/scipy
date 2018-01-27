@@ -146,10 +146,19 @@ double psi_asy(double x)
 double psi(double x)
 {
     double y = 0.0;
-    double q, r, w;
+    double q, r;
     int i, n;
 
-    if (x == 0) {
+    if (npy_isnan(x)) {
+	return x;
+    }
+    else if (x == NPY_INFINITY) {
+	return x;
+    }
+    else if (x == -NPY_INFINITY) {
+	return NPY_NAN;
+    }
+    else if (x == 0) {
 	mtherr("psi", SING);
 	return npy_copysign(NPY_INFINITY, -x);
     }
@@ -166,10 +175,9 @@ double psi(double x)
 
     /* check for positive integer up to 10 */
     if ((x <= 10.0) && (x == floor(x))) {
-	n = x;
+	n = (int)x;
 	for (i = 1; i < n; i++) {
-	    w = i;
-	    y += 1.0 / w;
+	    y += 1.0 / i;
 	}
 	y -= NPY_EULER;
 	return y;

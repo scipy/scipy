@@ -3298,11 +3298,11 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate'):
             b = ma.masked_invalid(b)
 
             if nan_policy == 'propagate':
-                rho, pval = mstats_basic.spearmanr(a, b, axis)
+                rho, pval = mstats_basic.spearmanr(a, b, use_ties=True)
                 return SpearmanrResult(rho * np.nan, pval * np.nan)
 
             if nan_policy == 'omit':
-                return mstats_basic.spearmanr(a, b, axis)
+                return mstats_basic.spearmanr(a, b, use_ties=True)
 
         br = np.apply_along_axis(rankdata, axisout, b)
     n = a.shape[axisout]
@@ -3708,10 +3708,10 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
         return WeightedTauResult(np.nan, np.nan)  # Return NaN if arrays are empty
 
     # If there are NaNs we apply _toint64()
-    if np.isnan(np.min(x)):
-            x = _toint64(x)
-    if np.isnan(np.min(y)):
-            y = _toint64(y)
+    if np.isnan(np.sum(x)):
+        x = _toint64(x)
+    if np.isnan(np.sum(x)):
+        y = _toint64(y)
 
     # Reduce to ranks unsupported types
     if x.dtype != y.dtype:
@@ -5458,7 +5458,7 @@ def _cdf_distance(p, u_values, v_values, u_weights=None, v_weights=None):
     # Compute the differences between pairs of successive values of u and v.
     deltas = np.diff(all_values)
 
-    # Get the repective positions of the values of u and v among the values of
+    # Get the respective positions of the values of u and v among the values of
     # both distributions.
     u_cdf_indices = u_values[u_sorter].searchsorted(all_values[:-1], 'right')
     v_cdf_indices = v_values[v_sorter].searchsorted(all_values[:-1], 'right')

@@ -300,7 +300,13 @@ cdef inline double spherical_jn_d_real(long n, double x) nogil:
         return -spherical_jn_real(1, x)
     else:
         if x == 0:
-            return 0
+            # DLMF 10.51.2 doesn't work, so use 10.51.1 to get the
+            # exact value
+            if n == 1:
+                return 1.0/3
+            else:
+                return 0
+        # DLMF 10.51.2
         return (spherical_jn_real(n - 1, x) -
                 (n + 1)*spherical_jn_real(n, x)/x)
 

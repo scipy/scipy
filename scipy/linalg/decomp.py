@@ -180,6 +180,23 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
         band matrices
     eigh_tridiagonal : eigenvalues and right eiegenvectors for
         symmetric/Hermitian tridiagonal matrices
+
+    Examples
+    --------
+    >>> from scipy import linalg
+    >>> a = np.array([[0., -1.], [1., 0.]])
+    >>> linalg.eigvals(a)
+    array([0.+1.j, 0.-1.j])
+
+    >>> b = np.array([[0., 1.], [1., 1.]])
+    >>> linalg.eigvals(a, b)
+    array([ 1.+0.j, -1.+0.j])
+
+    >>> a = np.array([[3., 0., 0.], [0., 8., 0.], [0., 0., 7.]])
+    >>> linalg.eigvals(a, homogeneous_eigvals=True)
+    array([[3.+0.j, 8.+0.j, 7.+0.j],
+           [1.+0.j, 1.+0.j, 1.+0.j]])
+
     """
     a1 = _asarray_validated(a, check_finite=check_finite)
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
@@ -325,6 +342,15 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
     eigh : eigenvalues and right eigenvectors for symmetric/Hermitian arrays
     eigh_tridiagonal : eigenvalues and right eiegenvectors for
         symmetric/Hermitian tridiagonal matrices
+
+    Examples
+    --------
+    >>> from scipy.linalg import eigh
+    >>> A = np.array([[6, 3, 1, 5], [3, 0, 5, 1], [1, 5, 6, 2], [5, 1, 2, 2]])
+    >>> w, v = eigh(A)
+    >>> np.allclose(A @ v - v @ np.diag(w), np.zeros((4, 4)))
+    True
+
     """
     a1 = _asarray_validated(a, check_finite=check_finite)
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
@@ -571,6 +597,25 @@ def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
     eigh : eigenvalues and right eigenvectors for symmetric/Hermitian arrays
     eigh_tridiagonal : eigenvalues and right eiegenvectors for
         symmetric/Hermitian tridiagonal matrices
+
+    Examples
+    --------
+    >>> from scipy.linalg import eig_banded
+    >>> A = np.array([[1, 5, 2, 0], [5, 2, 5, 2], [2, 5, 3, 5], [0, 2, 5, 4]])
+    >>> Ab = np.array([[1, 2, 3, 4], [5, 5, 5, 0], [2, 2, 0, 0]])
+    >>> w, v = eig_banded(Ab, lower=True)
+    >>> np.allclose(A @ v - v @ np.diag(w), np.zeros((4, 4)))
+    True
+    >>> w = eig_banded(Ab, lower=True, eigvals_only=True)
+    >>> w
+    array([-4.26200532, -2.22987175,  3.95222349, 12.53965359])
+
+    Request only the eigenvalues between ``[-3, 4]``
+
+    >>> w, v = eig_banded(Ab, lower=True, select='v', select_range=[-3, 4])
+    >>> w
+    array([-2.22987175,  3.95222349])
+
     """
     if eigvals_only or overwrite_a_band:
         a1 = _asarray_validated(a_band, check_finite=check_finite)
@@ -681,6 +726,23 @@ def eigvals(a, b=None, overwrite_a=False, check_finite=True,
     eigvals_banded : eigenvalues for symmetric/Hermitian band matrices
     eigvalsh_tridiagonal : eigenvalues of symmetric/Hermitian tridiagonal
         matrices
+
+    Examples
+    --------
+    >>> from scipy import linalg
+    >>> a = np.array([[0., -1.], [1., 0.]])
+    >>> linalg.eigvals(a)
+    array([0.+1.j, 0.-1.j])
+
+    >>> b = np.array([[0., 1.], [1., 1.]])
+    >>> linalg.eigvals(a, b)
+    array([ 1.+0.j, -1.+0.j])
+
+    >>> a = np.array([[3., 0., 0.], [0., 8., 0.], [0., 0., 7.]])
+    >>> linalg.eigvals(a, homogeneous_eigvals=True)
+    array([[3.+0.j, 8.+0.j, 7.+0.j],
+           [1.+0.j, 1.+0.j, 1.+0.j]])
+
     """
     return eig(a, b=b, left=0, right=0, overwrite_a=overwrite_a,
                check_finite=check_finite,
@@ -757,6 +819,15 @@ def eigvalsh(a, b=None, lower=True, overwrite_a=False,
     eigvals_banded : eigenvalues for symmetric/Hermitian band matrices
     eigvalsh_tridiagonal : eigenvalues of symmetric/Hermitian tridiagonal
         matrices
+
+    Examples
+    --------
+    >>> from scipy.linalg import eigvalsh
+    >>> A = np.array([[6, 3, 1, 5], [3, 0, 5, 1], [1, 5, 6, 2], [5, 1, 2, 2]])
+    >>> w = eigvalsh(A)
+    >>> w
+    array([-3.74637491, -0.76263923,  6.08502336, 12.42399079])
+
     """
     return eigh(a, b=b, lower=lower, eigvals_only=True,
                 overwrite_a=overwrite_a, overwrite_b=overwrite_b,
@@ -841,6 +912,15 @@ def eigvals_banded(a_band, lower=False, overwrite_a_band=False,
     eigvals : eigenvalues of general arrays
     eigh : eigenvalues and right eigenvectors for symmetric/Hermitian arrays
     eig : eigenvalues and right eigenvectors for non-symmetric arrays
+
+    Examples
+    --------
+    >>> from scipy.linalg import eigvals_banded
+    >>> A = np.array([[1, 5, 2, 0], [5, 2, 5, 2], [2, 5, 3, 5], [0, 2, 5, 4]])
+    >>> Ab = np.array([[1, 2, 3, 4], [5, 5, 5, 0], [2, 2, 0, 0]])
+    >>> w = eigvals_banded(Ab, lower=True)
+    >>> w
+    array([-4.26200532, -2.22987175,  3.95222349, 12.53965359])
     """
     return eig_banded(a_band, lower=lower, eigvals_only=1,
                       overwrite_a_band=overwrite_a_band, select=select,
@@ -910,6 +990,17 @@ def eigvalsh_tridiagonal(d, e, select='a', select_range=None,
     --------
     eigh_tridiagonal : eigenvalues and right eiegenvectors for
         symmetric/Hermitian tridiagonal matrices
+
+    Examples
+    --------
+    >>> from scipy.linalg import eigvalsh_tridiagonal, eigvalsh
+    >>> d = 3*np.ones(4)
+    >>> e = -1*np.ones(3)
+    >>> w = eigvalsh_tridiagonal(d, e)
+    >>> A = np.diag(d) + np.diag(e, k=1) + np.diag(e, k=-1)
+    >>> w2 = eigvalsh(A)  # Verify with other eigenvalue routines
+    >>> np.allclose(w - w2, np.zeros(4))
+    True
     """
     return eigh_tridiagonal(
         d, e, eigvals_only=True, select=select, select_range=select_range,
@@ -993,6 +1084,16 @@ def eigh_tridiagonal(d, e, eigvals_only=False, select='a', select_range=None,
     Notes
     -----
     This function makes use of LAPACK ``S/DSTEMR`` routines.
+
+    Examples
+    --------
+    >>> from scipy.linalg import eigh_tridiagonal
+    >>> d = 3*np.ones(4)
+    >>> e = -1*np.ones(3)
+    >>> w, v = eigh_tridiagonal(d, e)
+    >>> A = np.diag(d) + np.diag(e, k=1) + np.diag(e, k=-1)
+    >>> np.allclose(A @ v - v @ np.diag(w), np.zeros((4, 4)))
+    True
     """
     d = _asarray_validated(d, check_finite=check_finite)
     e = _asarray_validated(e, check_finite=check_finite)
@@ -1109,6 +1210,18 @@ def hessenberg(a, calc_q=False, overwrite_a=False, check_finite=True):
         Unitary/orthogonal similarity transformation matrix ``A = Q H Q^H``.
         Only returned if ``calc_q=True``.
 
+    Examples
+    --------
+    >>> from scipy.linalg import hessenberg
+    >>> A = np.array([[2, 5, 8, 7], [5, 2, 2, 8], [7, 5, 6, 6], [5, 4, 4, 8]])
+    >>> H, Q = hessenberg(A, calc_q=True)
+    >>> H
+    array([[  2.        , -11.65843866,   1.42005301,   0.25349066],
+           [ -9.94987437,  14.53535354,  -5.31022304,   2.43081618],
+           [  0.        ,  -1.83299243,   0.38969961,  -0.51527034],
+           [  0.        ,   0.        ,  -3.83189513,   1.07494686]])
+    >>> np.allclose(Q @ H @ Q.conj().T - A, np.zeros((4, 4)))
+    True
     """
     a1 = _asarray_validated(a, check_finite=check_finite)
     if len(a1.shape) != 2 or (a1.shape[0] != a1.shape[1]):
