@@ -3090,35 +3090,19 @@ class norminvgauss_gen(rv_continuous):
 
     .. math::
 
-        f(x; a, b) = 
-        \frac{a  \exp\left(\sqrt{a^2 - b^2} + b x\right)}
-        {\pi \sqrt{1 + x^2}} \, K_1\left(a * sqrt{1 + x^2}\right)
+        f(x; a, b) = (a \exp(\sqrt{a^2 - b^2} + b x)) /
+        (\pi \sqrt{1 + x^2}} \, K_1(a * \sqrt{1 + x^2}))
 
     where `x` is a real number, the parameter `a` is the tail heaviness
     and `b` is the asymmetry parameter satisfying `a > 0` and `abs(b) <= a`.
     `K_1` is the modified Bessel function of second kind (`scipy.special.k1`).
 
-    Due to the scaling properties of the distributions, note that
-
-    .. math::
-
-        norminvgauss.pdf(x, a d, b d, loc=\mu, scale=d) =
-        \frac{a  d \exp\left(d \sqrt{a^2 - b^2} + b (x - \mu)\right)}
-        {\pi \sqrt{d^2 + (x - \mu)^2}} \,
-        K_1\left(a sqrt{d^2 + (x - \mu)^2}\right),
-
-    which is another frequently used parametrisation of the distribution using
-    an additional scale and location parameter.
-
     %(after_notes)s
 
     A normal inverse Gaussian random variable with parameters `a` and `b` can
     be expressed  as `X = b * V + sqrt(V) * X` where `X` is `norm(0,1)`
-    and `V` is `invgauss(mu=1/sqrt(a**2 - b**2))`.
-
-    When the parameter `mu` of `invgauss` is too small (`mu <= 0.0028`),
-    NaNs are returned. When sampling from the normal inverse Gaussian, this
-    is the case if `a**2 - b**2 >= 1/0.0028**2`.
+    and `V` is `invgauss(mu=1/sqrt(a**2 - b**2))`. This representation is used
+    to generate random variates.
 
     References
     ----------
@@ -3142,7 +3126,7 @@ class norminvgauss_gen(rv_continuous):
         gamma = np.sqrt(a**2 - b**2)
         fac1 = a / np.pi * np.exp(gamma)
         sq = np.sqrt(1 + x**2)
-        return (fac1 * sc.k1e(a * sq) * np.exp(b*x - a*sq) / sq)
+        return fac1 * sc.k1e(a * sq) * np.exp(b*x - a*sq) / sq
 
     def _rvs(self, a, b):
         # note: X = b * V + sqrt(V) * X is norminvgaus(a,b) if X is standard
