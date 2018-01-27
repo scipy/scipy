@@ -110,7 +110,7 @@ static PyObject *multipack_python_jacobian=NULL;
 static PyObject *multipack_extra_arguments=NULL;    /* a tuple */
 static int multipack_jac_transpose=1;
 
-static PyObject *call_python_function(PyObject *func, npy_intp n, double *x, PyObject *args, int dim, PyObject *error_obj)
+static PyObject *call_python_function(PyObject *func, npy_intp n, double *x, PyObject *args, int dim, PyObject *error_obj, npy_intp out_size)
 {
   /*
     This is a generic function to call a python function that takes a 1-D
@@ -130,6 +130,7 @@ static PyObject *call_python_function(PyObject *func, npy_intp n, double *x, PyO
   PyObject *arg1 = NULL;
   PyObject *result = NULL;
   PyArrayObject *result_array = NULL;
+  npy_intp fvec_sz = 0;
 
   /* Build sequence argument from inputs */
   sequence = (PyArrayObject *)PyArray_SimpleNewFromData(1, &n, NPY_DOUBLE, (char *)x);
@@ -157,6 +158,13 @@ static PyObject *call_python_function(PyObject *func, npy_intp n, double *x, PyO
 
   if ((result_array = (PyArrayObject *)PyArray_ContiguousFromObject(result, NPY_DOUBLE, dim-1, dim))==NULL) 
     PYERR2(error_obj,"Result from function call is not a proper array of floats.");
+
+  fvec_sz = PyArray_SIZE(result_array);
+  if(out_size != -1 && fvec_sz != out_size){
+      PyErr_SetString(PyExc_ValueError, "The array returned by a function changed size between calls");
+      Py_DECREF(result_array);
+      goto fail;
+  }
 
   Py_DECREF(result);
   Py_DECREF(arglist);
