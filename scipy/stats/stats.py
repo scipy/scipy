@@ -6036,7 +6036,7 @@ def rvs_ratio_unif(pdf, size=1, x1=None, x2=None, y2=None, shift=0,
     >>> x_bound = np.sqrt(f(np.sqrt(2))) * np.sqrt(2)
     >>> x1, x2, y2 = -x_bound, x_bound, np.sqrt(f(0))
     >>> np.random.seed(12345)
-    >>> rvs = rvs_ratio_unif(f, x1=x1, x2=x2, y2=y2, size=2500)
+    >>> rvs = stats.rvs_ratio_unif(f, x1=x1, x2=x2, y2=y2, size=2500)
 
     The K-S test confirms that the random variates are indeed normally
     distributed (p-value does not reject normality):
@@ -6047,15 +6047,15 @@ def rvs_ratio_unif(pdf, size=1, x1=None, x2=None, y2=None, shift=0,
     numerically over the region specified by `bounds`.
 
     >>> np.random.seed(12345)
-    >>> rvs = rvs_ratio_unif(f, size=2500, bounds=(-100, 100))
+    >>> rvs = stats.rvs_ratio_unif(f, size=2500, bounds=(-100, 100))
     >>> stats.kstest(rvs, 'norm')[1]
     0.3732986992033126
 
     The exponential distribution provides another example where the bounding
     rectangle can be determined explicitly.
     >>> np.random.seed(12345)
-    >>> rvs = rvs_ratio_unif(lambda x: np.exp(-x), x1=0, x2=2*np.exp(-1), y2=1,
-    >>> ...                  size=1000)
+    >>> rvs = stats.rvs_ratio_unif(lambda x: np.exp(-x), x1=0, x2=2*np.exp(-1),
+    >>> ...                        y2=1, size=1000)
     >>> stats.kstest(rvs, 'expon')[1]
     0.52369231518316373
 
