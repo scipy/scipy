@@ -6055,7 +6055,7 @@ def rvs_ratio_unif(pdf, size=1, x1=None, x2=None, y2=None, shift=0,
     rectangle can be determined explicitly.
     >>> np.random.seed(12345)
     >>> rvs = stats.rvs_ratio_unif(lambda x: np.exp(-x), x1=0, x2=2*np.exp(-1),
-    >>> ...                        y2=1, size=1000)
+    ...                            y2=1, size=1000)
     >>> stats.kstest(rvs, 'expon')[1]
     0.52369231518316373
 
