@@ -6022,9 +6022,10 @@ def rvs_ratio_unif(pdf, size=1, x1=None, x2=None, y2=None, shift=0,
     References
     ----------
     .. [1] L. Devroye, "Non-Uniform Random Variate Generation",
-    Springer-Verlag, 1986.
+       Springer-Verlag, 1986.
+
     .. [2] W. Hoermann and J. Leydold, "Generating generalized inverse Gaussian
-    random variates", Statistics and Computing, Vol 24(4), p. 547--557, 2014.
+       random variates", Statistics and Computing, 24(4), p. 547--557, 2014.
 
     Examples
     --------
