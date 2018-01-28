@@ -948,8 +948,17 @@ class TestCephes(object):
         assert_allclose(zeta(2,2), pi**2/6 - 1, rtol=1e-12)
 
     def test_zetac(self):
-        assert_equal(cephes.zetac(0),-1.5)
+        assert_equal(cephes.zetac(0), -1.5)
         assert_equal(cephes.zetac(1.0), np.inf)
+        # Expected values in the following were computed using
+        # Wolfram Alpha `Zeta[x] - 1`:
+        rtol = 1e-12
+        assert_allclose(cephes.zetac(-2.1), -0.9972705002153750, rtol=rtol)
+        assert_allclose(cephes.zetac(0.8), -5.437538415895550, rtol=rtol)
+        assert_allclose(cephes.zetac(0.9999), -10000.42279161673, rtol=rtol)
+        assert_allclose(cephes.zetac(9), 0.002008392826082214, rtol=rtol)
+        assert_allclose(cephes.zetac(50), 8.881784210930816e-16, rtol=rtol)
+        assert_allclose(cephes.zetac(75), 2.646977960169853e-23, rtol=rtol)
 
     def test_zeta_1arg(self):
         assert_allclose(zeta(2), pi**2/6, rtol=1e-12)
