@@ -949,6 +949,7 @@ class TestCephes(object):
 
     def test_zetac(self):
         assert_equal(cephes.zetac(0),-1.5)
+        assert_equal(cephes.zetac(1.0), np.inf)
 
     def test_zeta_1arg(self):
         assert_allclose(zeta(2), pi**2/6, rtol=1e-12)

@@ -56,7 +56,7 @@
  */
 static double azetac[] = {
     -1.50000000000000000000E0,
-    1.70141183460469231730E38,  /* infinity. */
+    0.0,  /* Not used; zetac(1.0) is infinity. */
     6.44934066848226436472E-1,
     2.02056903159594285400E-1,
     8.23232337111381915160E-2,
@@ -186,6 +186,10 @@ double x;
         return (b - 1.0);
     }
 
+    if (x == 1.0) {
+        return NPY_INFINITY;
+    }
+
     if (x >= MAXL2) {
         return (0.0);       /* because first term is 2**-x */
     }
@@ -208,11 +212,6 @@ double x;
         w = 1.0 - x;
         a = polevl(x, R, 5) / (w * p1evl(x, S, 5));
         return (a);
-    }
-
-    if (x == 1.0) {
-        mtherr("zetac", SING);
-        return (NPY_INFINITY);
     }
 
     if (x <= 10.0) {
