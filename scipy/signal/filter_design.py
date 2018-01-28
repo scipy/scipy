@@ -1569,6 +1569,11 @@ def lp2lp(b, a, wo=1.0):
     from an analog low-pass filter prototype with unity cutoff frequency, in
     transfer function ('ba') representation.
 
+    See Also
+    --------
+    lp2hp, lp2bp, lp2bs, bilinear
+    lp2lp_zpk
+
     """
     a, b = map(atleast_1d, (a, b))
     try:
@@ -1593,6 +1598,11 @@ def lp2hp(b, a, wo=1.0):
     Return an analog high-pass filter with cutoff frequency `wo`
     from an analog low-pass filter prototype with unity cutoff frequency, in
     transfer function ('ba') representation.
+
+    See Also
+    --------
+    lp2lp, lp2bp, lp2bs, bilinear
+    lp2hp_zpk
 
     """
     a, b = map(atleast_1d, (a, b))
@@ -1627,6 +1637,11 @@ def lp2bp(b, a, wo=1.0, bw=1.0):
     Return an analog band-pass filter with center frequency `wo` and
     bandwidth `bw` from an analog low-pass filter prototype with unity
     cutoff frequency, in transfer function ('ba') representation.
+
+    See Also
+    --------
+    lp2lp, lp2hp, lp2bs, bilinear
+    lp2bp_zpk
 
     """
     a, b = map(atleast_1d, (a, b))
@@ -1665,6 +1680,11 @@ def lp2bs(b, a, wo=1.0, bw=1.0):
     bandwidth `bw` from an analog low-pass filter prototype with unity
     cutoff frequency, in transfer function ('ba') representation.
 
+    See Also
+    --------
+    lp2lp, lp2hp, lp2bp, bilinear
+    lp2bs_zpk
+
     """
     a, b = map(atleast_1d, (a, b))
     D = len(a) - 1
@@ -1700,6 +1720,12 @@ def bilinear(b, a, fs=1.0):
     """Return a digital filter from an analog one using a bilinear transform.
 
     The bilinear transform substitutes ``(z-1) / (z+1)`` for ``s``.
+
+    See Also
+    --------
+    lp2lp, lp2hp, lp2bp, lp2bs
+    bilinear_zpk
+
     """
     fs = float(fs)
     a, b = map(atleast_1d, (a, b))
@@ -2042,6 +2068,11 @@ def bilinear_zpk(z, p, k, fs):
     k : float
         System gain of the transformed digital filter.
 
+    See Also
+    --------
+    lp2lp_zpk, lp2hp_zpk, lp2bp_zpk, lp2bs_zpk
+    bilinear
+
     Notes
     -----
     .. versionadded:: 1.1.0
@@ -2095,6 +2126,11 @@ def lp2lp_zpk(z, p, k, wo=1.0):
         Poles of the transformed low-pass filter transfer function.
     k : float
         System gain of the transformed low-pass filter.
+
+    See Also
+    --------
+    lp2hp_zpk, lp2bp_zpk, lp2bs_zpk, bilinear
+    lp2lp
 
     Notes
     -----
@@ -2150,6 +2186,11 @@ def lp2hp_zpk(z, p, k, wo=1.0):
         Poles of the transformed high-pass filter transfer function.
     k : float
         System gain of the transformed high-pass filter.
+
+    See Also
+    --------
+    lp2lp_zpk, lp2bp_zpk, lp2bs_zpk, bilinear
+    lp2hp
 
     Notes
     -----
@@ -2214,6 +2255,11 @@ def lp2bp_zpk(z, p, k, wo=1.0, bw=1.0):
         Poles of the transformed band-pass filter transfer function.
     k : float
         System gain of the transformed band-pass filter.
+
+    See Also
+    --------
+    lp2lp_zpk, lp2hp_zpk, lp2bs_zpk, bilinear
+    lp2bp
 
     Notes
     -----
@@ -2288,6 +2334,11 @@ def lp2bs_zpk(z, p, k, wo=1.0, bw=1.0):
         Poles of the transformed band-stop filter transfer function.
     k : float
         System gain of the transformed band-stop filter.
+
+    See Also
+    --------
+    lp2lp_zpk, lp2hp_zpk, lp2bp_zpk, bilinear
+    lp2bs
 
     Notes
     -----
