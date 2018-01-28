@@ -235,18 +235,13 @@ def circulant(c):
            [2, 1, 3],
            [3, 2, 1]])
 
-    References
-    ----------
-    .. [1] Stack Overflow, "Create a matrix from a vector where each row is a
-           shifted version of the vector", https://stackoverflow.com/a/43735362
-
     """
     c = np.asarray(c).ravel()
     # Form an extended array that could be strided to give circulant version
     c_ext = np.concatenate((c[::-1], c[:0:-1]))
     L = len(c)
     n = c_ext.strides[0]
-    return as_strided(c_ext[L-1:], (L, L), (-n, n)).copy()
+    return as_strided(c_ext[L-1:], shape=(L, L), strides=(-n, n)).copy()
 
 
 def hankel(c, r=None):
