@@ -146,19 +146,21 @@ class TestLapack(object):
 class TestLeastSquaresSolvers(object):
 
     def test_gels(self):
+        seed(1234)
         # Test fat/tall matrix argument handling - gh-issue #8329
-        for dtype in DTYPES:
+        for ind, dtype in enumerate(DTYPES):
             m = 10
             n = 20
             nrhs = 1
-            a1 = np.ones((m, n), dtype=dtype)
-            b1 = np.ones((m,), dtype=dtype)
-            gels, gels_lwork = get_lapack_funcs(('gels', 'gels_lwork'),
-                                                dtype=dtype)
+            a1 = rand(m, n).astype(dtype)
+            b1 = rand(n).astype(dtype)
+            gls, glslw = get_lapack_funcs(('gels', 'gels_lwork'), dtype=dtype)
 
             # Request of sizes
-            lwork = _compute_lwork(gels_lwork, m, n, nrhs)
-            _, _, info = gels(a1, b1, lwork=lwork)
+            lwork = _compute_lwork(glslw, m, n, nrhs)
+            _, _, info = gls(a1, b1, lwork=lwork)
+            assert_(info >= 0)
+            _, _, info = gls(a1, b1, trans='TTCC'[ind], lwork=lwork)
             assert_(info >= 0)
 
         for dtype in REAL_DTYPES:

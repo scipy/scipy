@@ -1478,10 +1478,10 @@ subroutine <prefix>gels(trans,m,n,nrhs,a,lda,b,ldb,work,lwork,info)
      integer intent(hide),depend(b):: nrhs = shape(b,1)
      <ftype> dimension(m,n),intent(in,out,copy,out=lqr):: a
      integer intent(hide),depend(a):: lda = MAX(1,shape(a,0))
-     <ftype> intent(in,out,copy,out=x),depend(trans,m,n),dimension((*trans=='N'?m:n),nrhs),check(shape(b,0)==(*trans=='N'?m:n)) :: b
+     <ftype> intent(in,out,copy,out=x),depend(trans,m,n),dimension(MAX(m,n),nrhs),check(shape(b,0)==MAX(m,n)) :: b
      integer depend(b),intent(hide):: ldb = MAX(1,MAX(m,n))
      integer optional,intent(in),depend(nrhs,m,n),check(lwork>=1||lwork==-1)::lwork=MAX(MIN(m,n)+MAX(MIN(m,n),nrhs),1)
-     <ftype> depend(lwork),dimension(lwork),intent(hide,cache):: work
+     <ftype> depend(lwork),dimension(MAX(1,lwork)),intent(hide,cache):: work
      integer intent(out)::info
 
 end subroutine <prefix>gels
