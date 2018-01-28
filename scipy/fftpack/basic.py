@@ -330,6 +330,14 @@ def ifft(x, n=None, axis=-1, overwrite_x=False):
     If the data type of `x` is real, a "real IFFT" algorithm is automatically
     used, which roughly halves the computation time.
 
+    Examples
+    --------
+    >>> from scipy.fftpack import fft, ifft
+    >>> import numpy as np
+    >>> x = np.arange(5)
+    >>> np.allclose(ifft(fft(x)), x, atol=1e-15)  # within numerical accuracy.
+    True
+
     """
     tmp = _asfarray(x)
 
@@ -659,6 +667,14 @@ def ifftn(x, shape=None, axes=None, overwrite_x=False):
     See Also
     --------
     fftn : for detailed information.
+
+    Examples
+    --------
+    >>> from scipy.fftpack import fftn, ifftn
+    >>> import numpy as np
+    >>> y = (-np.arange(16), 8 - np.arange(16), np.arange(16))
+    >>> np.allclose(y, ifftn(fftn(y)))
+    True
 
     """
     return _raw_fftn_dispatch(x, shape, axes, overwrite_x, -1)

@@ -882,7 +882,9 @@ def binary_propagation(input, structure=None, mask=None,
     References
     ----------
     .. [1] http://cmm.ensmp.fr/~serra/cours/pdf/en/ch6en.pdf, slide 15.
-    .. [2] http://www.qi.tnw.tudelft.nl/Courses/FIP/noframes/fip-Morpholo.html#Heading102
+    .. [2] I.T. Young, J.J. Gerbrands, and L.J. van Vliet, "Fundamentals of
+        image processing", 1998
+        ftp://qiftp.tudelft.nl/DIPimage/docs/FIP2.3.pdf
 
     Examples
     --------

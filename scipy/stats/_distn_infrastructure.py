@@ -2745,12 +2745,6 @@ class rv_discrete(rv_generic):
                 '\n    scale : array_like, '
                 'optional\n        scale parameter (default=1)', '')
 
-    @property
-    @np.deprecate(message="`return_integers` attribute is not used anywhere any "
-                          " longer and is deprecated in scipy 0.18.")
-    def return_integers(self):
-        return 1
-
     def _updated_ctor_param(self):
         """ Return the current version of _ctor_param, possibly updated by user.
 
@@ -3349,12 +3343,6 @@ class rv_sample(rv_discrete):
 
         self._construct_docstrings(name, longname, extradoc)
 
-    @property
-    @np.deprecate(message="`return_integers` attribute is not used anywhere any"
-                          " longer and is deprecated in scipy 0.18.")
-    def return_integers(self):
-        return 0
-
     def _pmf(self, x):
         return np.select([x == k for k in self.xk],
                          [np.broadcast_arrays(p, x)[0] for p in self.pk], 0)
@@ -3386,25 +3374,6 @@ class rv_sample(rv_discrete):
     def generic_moment(self, n):
         n = asarray(n)
         return np.sum(self.xk**n[np.newaxis, ...] * self.pk, axis=0)
-
-    @np.deprecate(message="moment_gen method is not used anywhere any more "
-                          "and is deprecated in scipy 0.18.")
-    def moment_gen(self, t):
-        t = asarray(t)
-        return np.sum(exp(self.xk * t[np.newaxis, ...]) * self.pk, axis=0)
-
-    @property
-    @np.deprecate(message="F attribute is not used anywhere any longer and "
-                          "is deprecated in scipy 0.18.")
-    def F(self):
-        return dict(zip(self.xk, self.qvals))
-
-    @property
-    @np.deprecate(message="Finv attribute is not used anywhere any longer and "
-                          "is deprecated in scipy 0.18.")
-    def Finv(self):
-        decreasing_keys = sorted(self.F.keys(), reverse=True)
-        return dict((self.F[k], k) for k in decreasing_keys)
 
 
 def get_distribution_names(namespace_pairs, rv_base_class):

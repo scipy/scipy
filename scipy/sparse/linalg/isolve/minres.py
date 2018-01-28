@@ -41,9 +41,9 @@ This file is a translation of the following MATLAB implementation:
 @set_docstring(header,
                Ainfo,
                footer)
-def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
+def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
            M=None, callback=None, show=False, check=False):
-    A,M,x,b,postprocess = make_system(A,M,x0,b,xtype)
+    A, M, x, b, postprocess = make_system(A, M, x0, b)
 
     matvec = A.matvec
     psolve = M.matvec

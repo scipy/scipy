@@ -1262,7 +1262,7 @@ class TestNdimage:
 
     def test_fourier_gaussian_real01(self):
         for shape in [(32, 16), (31, 15)]:
-            for type in [numpy.float32, numpy.float64]:
+            for type, dec in zip([numpy.float32, numpy.float64], [6, 14]):
                 a = numpy.zeros(shape, type)
                 a[0, 0] = 1.0
                 a = fft.rfft(a, shape[0], 0)
@@ -1271,11 +1271,11 @@ class TestNdimage:
                                                        shape[0], 0)
                 a = fft.ifft(a, shape[1], 1)
                 a = fft.irfft(a, shape[0], 0)
-                assert_almost_equal(ndimage.sum(a), 1)
+                assert_almost_equal(ndimage.sum(a), 1, decimal=dec)
 
     def test_fourier_gaussian_complex01(self):
         for shape in [(32, 16), (31, 15)]:
-            for type in [numpy.complex64, numpy.complex128]:
+            for type, dec in zip([numpy.complex64, numpy.complex128], [6, 14]):
                 a = numpy.zeros(shape, type)
                 a[0, 0] = 1.0
                 a = fft.fft(a, shape[0], 0)
@@ -1284,11 +1284,11 @@ class TestNdimage:
                                                        0)
                 a = fft.ifft(a, shape[1], 1)
                 a = fft.ifft(a, shape[0], 0)
-                assert_almost_equal(ndimage.sum(a.real), 1.0)
+                assert_almost_equal(ndimage.sum(a.real), 1.0, decimal=dec)
 
     def test_fourier_uniform_real01(self):
         for shape in [(32, 16), (31, 15)]:
-            for type in [numpy.float32, numpy.float64]:
+            for type, dec in zip([numpy.float32, numpy.float64], [6, 14]):
                 a = numpy.zeros(shape, type)
                 a[0, 0] = 1.0
                 a = fft.rfft(a, shape[0], 0)
@@ -1297,11 +1297,11 @@ class TestNdimage:
                                                       shape[0], 0)
                 a = fft.ifft(a, shape[1], 1)
                 a = fft.irfft(a, shape[0], 0)
-                assert_almost_equal(ndimage.sum(a), 1.0)
+                assert_almost_equal(ndimage.sum(a), 1.0, decimal=dec)
 
     def test_fourier_uniform_complex01(self):
         for shape in [(32, 16), (31, 15)]:
-            for type in [numpy.complex64, numpy.complex128]:
+            for type, dec in zip([numpy.complex64, numpy.complex128], [6, 14]):
                 a = numpy.zeros(shape, type)
                 a[0, 0] = 1.0
                 a = fft.fft(a, shape[0], 0)
@@ -1309,11 +1309,11 @@ class TestNdimage:
                 a = ndimage.fourier_uniform(a, [5.0, 2.5], -1, 0)
                 a = fft.ifft(a, shape[1], 1)
                 a = fft.ifft(a, shape[0], 0)
-                assert_almost_equal(ndimage.sum(a.real), 1.0)
+                assert_almost_equal(ndimage.sum(a.real), 1.0, decimal=dec)
 
     def test_fourier_shift_real01(self):
         for shape in [(32, 16), (31, 15)]:
-            for dtype in [numpy.float32, numpy.float64]:
+            for dtype, dec in zip([numpy.float32, numpy.float64], [4, 11]):
                 expected = numpy.arange(shape[0] * shape[1], dtype=dtype)
                 expected.shape = shape
                 a = fft.rfft(expected, shape[0], 0)
@@ -1321,12 +1321,12 @@ class TestNdimage:
                 a = ndimage.fourier_shift(a, [1, 1], shape[0], 0)
                 a = fft.ifft(a, shape[1], 1)
                 a = fft.irfft(a, shape[0], 0)
-                assert_array_almost_equal(a[1:, 1:], expected[:-1, :-1])
-                assert_array_almost_equal(a.imag, numpy.zeros(shape))
+                assert_array_almost_equal(a[1:, 1:], expected[:-1, :-1], decimal=dec)
+                assert_array_almost_equal(a.imag, numpy.zeros(shape), decimal=dec)
 
     def test_fourier_shift_complex01(self):
         for shape in [(32, 16), (31, 15)]:
-            for type in [numpy.complex64, numpy.complex128]:
+            for type, dec in zip([numpy.complex64, numpy.complex128], [4, 11]):
                 expected = numpy.arange(shape[0] * shape[1],
                                        dtype=type)
                 expected.shape = shape
@@ -1335,12 +1335,12 @@ class TestNdimage:
                 a = ndimage.fourier_shift(a, [1, 1], -1, 0)
                 a = fft.ifft(a, shape[1], 1)
                 a = fft.ifft(a, shape[0], 0)
-                assert_array_almost_equal(a.real[1:, 1:], expected[:-1, :-1])
-                assert_array_almost_equal(a.imag, numpy.zeros(shape))
+                assert_array_almost_equal(a.real[1:, 1:], expected[:-1, :-1], decimal=dec)
+                assert_array_almost_equal(a.imag, numpy.zeros(shape), decimal=dec)
 
     def test_fourier_ellipsoid_real01(self):
         for shape in [(32, 16), (31, 15)]:
-            for type in [numpy.float32, numpy.float64]:
+            for type, dec in zip([numpy.float32, numpy.float64], [5, 14]):
                 a = numpy.zeros(shape, type)
                 a[0, 0] = 1.0
                 a = fft.rfft(a, shape[0], 0)
@@ -1349,11 +1349,12 @@ class TestNdimage:
                                               shape[0], 0)
                 a = fft.ifft(a, shape[1], 1)
                 a = fft.irfft(a, shape[0], 0)
-                assert_almost_equal(ndimage.sum(a), 1.0)
+                assert_almost_equal(ndimage.sum(a), 1.0, decimal=dec)
 
     def test_fourier_ellipsoid_complex01(self):
         for shape in [(32, 16), (31, 15)]:
-            for type in [numpy.complex64, numpy.complex128]:
+            for type, dec in zip([numpy.complex64, numpy.complex128],
+                                 [5, 14]):
                 a = numpy.zeros(shape, type)
                 a[0, 0] = 1.0
                 a = fft.fft(a, shape[0], 0)
@@ -1362,7 +1363,7 @@ class TestNdimage:
                                                         0)
                 a = fft.ifft(a, shape[1], 1)
                 a = fft.ifft(a, shape[0], 0)
-                assert_almost_equal(ndimage.sum(a.real), 1.0)
+                assert_almost_equal(ndimage.sum(a.real), 1.0, decimal=dec)
 
     def test_spline01(self):
         for type in self.types:

@@ -92,8 +92,7 @@ References
 
 .. [2] "Hierarchical clustering." API Reference Documentation.
    The Wolfram Research, Inc.
-   http://reference.wolfram.com/mathematica/HierarchicalClustering/tutorial/
-   HierarchicalClustering.html.
+   https://reference.wolfram.com/language/HierarchicalClustering/tutorial/HierarchicalClustering.html.
    Accessed October 1, 2007.
 
 .. [3] Gower, JC and Ross, GJS. "Minimum Spanning Trees and Single Linkage
@@ -611,7 +610,7 @@ def linkage(y, method='single', metric='euclidean', optimal_ordering=False):
 
     Warning: When the minimum distance pair in the forest is chosen, there
     may be two or more pairs with the same minimum distance. This
-    implementation may chose a different minimum than the MATLAB
+    implementation may choose a different minimum than the MATLAB
     version.
 
     Parameters

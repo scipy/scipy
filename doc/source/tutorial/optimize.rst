@@ -136,9 +136,9 @@ through the ``jac`` parameter as illustrated below.
     ...                options={'disp': True})
     Optimization terminated successfully.
              Current function value: 0.000000
-             Iterations: 32                     # may vary
-             Function evaluations: 34
-             Gradient evaluations: 34
+             Iterations: 51                     # may vary
+             Function evaluations: 63
+             Gradient evaluations: 63
     >>> res.x
     array([1., 1., 1., 1., 1.])
 

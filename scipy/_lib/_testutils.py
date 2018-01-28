@@ -123,6 +123,6 @@ def _get_mem_available():
             # Linux >= 3.14
             return info['memavailable']
         else:
-            return info['memfree'] + info['memcached']
+            return info['memfree'] + info['cached']
 
     return None

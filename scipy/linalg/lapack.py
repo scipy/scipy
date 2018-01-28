@@ -180,6 +180,9 @@ All functions
    csysvx_lwork
    zsysvx_lwork
 
+   ssygst
+   dsygst
+
    ssytrd
    dsytrd
 
@@ -203,6 +206,9 @@ All functions
 
    chesvx_lwork
    zhesvx_lwork
+
+   chegst
+   zhegst
 
    sgetrf
    dgetrf
@@ -393,6 +399,18 @@ All functions
 
    ssbevx
    dsbevx
+
+   sstebz
+   dstebz
+
+   sstemr
+   dstemr
+
+   ssterf
+   dsterf
+
+   sstein
+   dstein
 
    sstev
    dstev

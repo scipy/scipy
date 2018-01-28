@@ -340,3 +340,15 @@ def test_dtypes_of_operator_sum():
 
     assert_equal(sum_real.dtype, np.float64)
     assert_equal(sum_complex.dtype, np.complex128)
+
+def test_no_double_init():
+    call_count = [0]
+
+    def matvec(v):
+        call_count[0] += 1
+        return v
+
+    # It should call matvec exactly once (in order to determine the
+    # operator dtype)
+    A = interface.LinearOperator((2, 2), matvec=matvec)
+    assert_equal(call_count[0], 1)

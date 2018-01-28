@@ -68,7 +68,10 @@ class TestPlacePoles(object):
         # values are almost equal. This is to improve code coverage but I
         # have no way to be sure this code is really reached
 
-        self._check(A, B, (2,2,3,3))
+        # on some architectures this can lead to a RuntimeWarning invalid
+        # value in divide (see gh-7590), so suppress it for now
+        with np.errstate(invalid='ignore'):
+            self._check(A, B, (2,2,3,3))
 
     def test_complex(self):
         # Test complex pole placement on a linearized car model, taken from L.

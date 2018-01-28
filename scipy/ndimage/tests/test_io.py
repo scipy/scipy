@@ -20,16 +20,19 @@ def test_imread():
     with suppress_warnings() as sup:
         # PIL causes a Py3k ResourceWarning
         sup.filter(message="unclosed file")
+        sup.filter(DeprecationWarning)
         img = ndi.imread(lp, mode="RGB")
     assert_array_equal(img.shape, (300, 420, 3))
 
     with suppress_warnings() as sup:
         # PIL causes a Py3k ResourceWarning
         sup.filter(message="unclosed file")
+        sup.filter(DeprecationWarning)
         img = ndi.imread(lp, flatten=True)
     assert_array_equal(img.shape, (300, 420))
 
     with open(lp, 'rb') as fobj:
-        img = ndi.imread(fobj, mode="RGB")
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning)
+            img = ndi.imread(fobj, mode="RGB")
         assert_array_equal(img.shape, (300, 420, 3))
-

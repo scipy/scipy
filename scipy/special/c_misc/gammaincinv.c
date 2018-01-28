@@ -41,6 +41,9 @@ gammaincinv(double a, double y)
     double best_x, best_f, errest;
     fsolve_result_t r;
 
+    if (npy_isnan(a) || npy_isnan(y)) {
+      return NPY_NAN;
+    }
     if (a <= 0.0 || y <= 0.0 || y >= 0.25) {
         return cephes_igami(a, 1-y);
     }

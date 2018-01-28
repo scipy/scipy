@@ -12,7 +12,7 @@ from pytest import raises as assert_raises
 from numpy.testing import (
     assert_equal,
     assert_almost_equal, assert_array_equal, assert_array_almost_equal,
-    assert_allclose, assert_, assert_warns)
+    assert_allclose, assert_, assert_warns, assert_array_less)
 from scipy._lib._numpy_compat import suppress_warnings
 from numpy import array, arange
 import numpy as np
@@ -21,10 +21,11 @@ from scipy.ndimage.filters import correlate1d
 from scipy.optimize import fmin
 from scipy import signal
 from scipy.signal import (
-    correlate, convolve, convolve2d, fftconvolve, hann, choose_conv_method,
+    correlate, convolve, convolve2d, fftconvolve, choose_conv_method,
     hilbert, hilbert2, lfilter, lfilter_zi, filtfilt, butter, zpk2tf, zpk2sos,
     invres, invresz, vectorstrength, lfiltic, tf2sos, sosfilt, sosfiltfilt,
     sosfilt_zi, tf2zpk, BadCoefficients)
+from scipy.signal.windows import hann
 from scipy.signal.signaltools import _filtfilt_gust
 
 
@@ -291,7 +292,7 @@ class _TestConvolve2d(object):
                          fillvalue=[1, 2])
             warnings.filterwarnings(
                 "error", message="`fillvalue` must be scalar or an array ",
-                category=DeprecationWarning)   
+                category=DeprecationWarning)
             assert_raises(DeprecationWarning, convolve2d, [[1]], [[1, 2]],
                           fillvalue=[1, 2])
 
@@ -1183,6 +1184,11 @@ def test_lfilter_bad_object():
     assert_raises(TypeError, lfilter, [None], [1.0], [1.0, 2.0, 3.0])
 
 
+def test_lfilter_notimplemented_input():
+    # Should not crash, gh-7991
+    assert_raises(NotImplementedError, lfilter, [2,3], [4,5], [1,2,3,4,5])
+
+
 @pytest.mark.parametrize('dt', [np.ubyte, np.byte, np.ushort, np.short, np.uint, int,
                  np.ulonglong, np.ulonglong, np.float32, np.float64,
                  np.longdouble, Decimal])
@@ -1721,13 +1727,13 @@ class TestDecimate(object):
         # Sinusoids at 0.8*nyquist, windowed to avoid edge artifacts
         freqs = np.array(rates_to) * 0.8 / 2
         d = (np.exp(1j * 2 * np.pi * freqs[:, np.newaxis] * t)
-             * signal.tukey(t.size, 0.1))
+             * signal.windows.tukey(t.size, 0.1))
 
         for rate_to in rates_to:
             q = rate // rate_to
             t_to = np.arange(rate_to*t_tot+1) / float(rate_to)
             d_tos = (np.exp(1j * 2 * np.pi * freqs[:, np.newaxis] * t_to)
-                     * signal.tukey(t_to.size, 0.1))
+                     * signal.windows.tukey(t_to.size, 0.1))
 
             # Set up downsampling filters, match v0.17 defaults
             if method == 'fir':
@@ -1758,6 +1764,18 @@ class TestDecimate(object):
             # Complex vectors should be aligned, only compare below nyquist
             assert_allclose(np.angle(h_resps.conj()*h_resamps)[subnyq], 0,
                             atol=1e-3, rtol=1e-3)
+
+    def test_auto_n(self):
+        # Test that our value of n is a reasonable choice (depends on
+        # the downsampling factor)
+        sfreq = 100.
+        n = 1000
+        t = np.arange(n) / sfreq
+        # will alias for decimations (>= 15)
+        x = np.sqrt(2. / n) * np.sin(2 * np.pi * (sfreq / 30.) * t)
+        assert_allclose(np.linalg.norm(x), 1., rtol=1e-3)
+        x_out = signal.decimate(x, 30, ftype='fir')
+        assert_array_less(np.linalg.norm(x_out), 0.01)
 
 
 class TestHilbert(object):

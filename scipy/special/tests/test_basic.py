@@ -349,15 +349,29 @@ class TestCephes(object):
         assert_array_almost_equal_nulp(found.real, expected.real, 20)
 
     def test_fdtr(self):
-        assert_equal(cephes.fdtr(1,1,0),0.0)
+        assert_equal(cephes.fdtr(1, 1, 0), 0.0)
+        # Computed using Wolfram Alpha: CDF[FRatioDistribution[1e-6, 5], 10]
+        assert_allclose(cephes.fdtr(1e-6, 5, 10), 0.9999940790193488,
+                        rtol=1e-12)
 
     def test_fdtrc(self):
-        assert_equal(cephes.fdtrc(1,1,0),1.0)
+        assert_equal(cephes.fdtrc(1, 1, 0), 1.0)
+        # Computed using Wolfram Alpha:
+        #   1 - CDF[FRatioDistribution[2, 1/10], 1e10]
+        assert_allclose(cephes.fdtrc(2, 0.1, 1e10), 0.27223784621293512,
+                        rtol=1e-12)
 
     def test_fdtri(self):
-        # cephes.fdtri(1,1,0.5)  #BUG: gives NaN, should be 1
         assert_allclose(cephes.fdtri(1, 1, [0.499, 0.501]),
                         array([0.9937365, 1.00630298]), rtol=1e-6)
+        # From Wolfram Alpha:
+        #   CDF[FRatioDistribution[1/10, 1], 3] = 0.8756751669632105666874...
+        p = 0.8756751669632105666874
+        assert_allclose(cephes.fdtri(0.1, 1, p), 3, rtol=1e-12)
+
+    @pytest.mark.xfail(reason='Returns nan on i686.')
+    def test_fdtri_mysterious_failure(self):
+        assert_allclose(cephes.fdtri(1, 1, 0.5), 1)
 
     def test_fdtridfd(self):
         assert_equal(cephes.fdtridfd(1,0,0),5.0)
@@ -702,15 +716,10 @@ class TestCephes(object):
         p = cephes.ncfdtr(2, dfd, 0.25, 15)
         assert_allclose(cephes.ncfdtridfd(2, p, 0.25, 15), dfd)
 
-    @pytest.mark.xfail((sys.platform == "win32" and
-                        platform.architecture()[0] == "32bit" and
-                        NumpyVersion(np.__version__) < "1.14.0"),
-                       reason=("Can fail on win32 if FPU is in wrong mode, "
-                               "see gh-7726"))
     def test_ncfdtridfn(self):
-        dfn = [1, 2, 3]
+        dfn = [0.1, 1, 2, 3, 1e4]
         p = cephes.ncfdtr(dfn, 2, 0.25, 15)
-        assert_allclose(cephes.ncfdtridfn(p, 2, 0.25, 15), dfn)
+        assert_allclose(cephes.ncfdtridfn(p, 2, 0.25, 15), dfn, rtol=1e-5)
 
     def test_ncfdtrinc(self):
         nc = [0.5, 1.5, 2.0]
@@ -2654,6 +2663,10 @@ class TestBessel(object):
         assert_(isnan(special.airye(-1)[0:2]).all(), special.airye(-1))
         assert_(not isnan(special.airye(-1)[2:4]).any(), special.airye(-1))
 
+    def test_gh_7909(self):
+        assert_(special.kv(1.5, 0) == np.inf)
+        assert_(special.kve(1.5, 0) == np.inf)
+
     def test_ticket_503(self):
         """Real-valued Bessel I overflow"""
         assert_tol_equal(special.iv(1, 700), 1.528500390233901e302)
@@ -3409,4 +3422,3 @@ def test_pseudo_huber():
     z = np.array(np.random.randn(10, 2).tolist() + [[0, 0.5], [0.5, 0]])
     w = np.vectorize(xfunc, otypes=[np.float64])(z[:,0], z[:,1])
     assert_func_equal(special.pseudo_huber, w, z, rtol=1e-13, atol=1e-13)
-

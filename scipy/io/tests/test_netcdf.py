@@ -103,7 +103,7 @@ def test_read_write_files():
         # mmap.  When n * n_bytes(var_type) is not divisible by 4, this
         # raised an error in pupynere 1.0.12 and scipy rev 5893, because
         # calculated vsize was rounding up in units of 4 - see
-        # http://www.unidata.ucar.edu/software/netcdf/docs/netcdf.html
+        # https://www.unidata.ucar.edu/software/netcdf/docs/user_guide.html
         with open('simple.nc', 'rb') as fobj:
             with netcdf_file(fobj) as f:
                 # by default, don't use mmap for file-like

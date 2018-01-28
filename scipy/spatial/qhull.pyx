@@ -354,7 +354,7 @@ cdef class _Qhull:
             raise QhullError(msg)
 
     @cython.final
-    def __del__(self):
+    def __dealloc__(self):
         self.close()
         self._messages.close()
 
@@ -1731,7 +1731,7 @@ class Delaunay(_QhullUser):
     We can plot it:
 
     >>> import matplotlib.pyplot as plt
-    >>> plt.triplot(points[:,0], points[:,1], tri.simplices.copy())
+    >>> plt.triplot(points[:,0], points[:,1], tri.simplices)
     >>> plt.plot(points[:,0], points[:,1], 'o')
     >>> plt.show()
 

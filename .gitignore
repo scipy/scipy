@@ -137,6 +137,7 @@ scipy/interpolate/_bspl.c
 scipy/interpolate/interpnd.c
 scipy/interpolate/src/dfitpack-f2pywrappers.f
 scipy/interpolate/src/dfitpackmodule.c
+scipy/io/_test_fortranmodule.c
 scipy/io/matlab/mio5_utils.c
 scipy/io/matlab/mio_utils.c
 scipy/io/matlab/streams.c
@@ -249,4 +250,3 @@ scipy/stats/_stats.c
 scipy/version.py
 scipy/special/_exprel.c
 scipy/optimize/_group_columns.c
-

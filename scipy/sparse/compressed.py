@@ -16,7 +16,7 @@ from .dia import dia_matrix
 from . import _sparsetools
 from .sputils import (upcast, upcast_char, to_native, isdense, isshape,
                       getdtype, isscalarlike, IndexMixin, get_index_dtype,
-                      downcast_intp_index, get_sum_dtype)
+                      downcast_intp_index, get_sum_dtype, check_shape)
 
 
 class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
@@ -36,7 +36,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             if isshape(arg1):
                 # It's a tuple of matrix dimensions (M, N)
                 # create empty matrix
-                self.shape = arg1   # spmatrix checks for errors here
+                self._shape = check_shape(arg1)
                 M, N = self.shape
                 # Select index dtype large enough to pass array and
                 # scalar parameters to sparsetools
@@ -80,7 +80,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         # Read matrix dimensions given, if any
         if shape is not None:
-            self.shape = shape   # spmatrix will check for errors
+            self._shape = check_shape(shape)
         else:
             if self.shape is None:
                 # shape not already set, try to infer dimensions
@@ -90,7 +90,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 except:
                     raise ValueError('unable to infer matrix dimensions')
                 else:
-                    self.shape = self._swap((major_dim,minor_dim))
+                    self._shape = check_shape(self._swap((major_dim,minor_dim)))
 
         if dtype is not None:
             self.data = np.asarray(self.data, dtype=dtype)
@@ -123,7 +123,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         self.data = other.data
         self.indices = other.indices
         self.indptr = other.indptr
-        self.shape = other.shape
+        self._shape = check_shape(other.shape)
 
     def check_format(self, full_check=True):
         """check whether the matrix format is valid

@@ -5,16 +5,12 @@ SciPy Roadmap
 
 Most of this roadmap is intended to provide a high-level view on what is
 most needed per SciPy submodule in terms of new functionality, bug fixes, etc.
-Part of those are must-haves for the ``1.0`` version of Scipy.
-Furthermore it contains ideas for major new features - those are marked as such,
-and are not needed for SciPy to become 1.0.  Things not mentioned in this roadmap are
+Besides important "business as usual" changes, it contains ideas for major new
+features - those are marked as such, and are expected to take significant
+dedicated effort.  Things not mentioned in this roadmap are
 not necessarily unimportant or out of scope, however we (the SciPy developers)
 want to provide to our users and contributors a clear picture of where SciPy is
-going and where help is needed most urgently.
-
-When a module is in a 1.0-ready state, it means that it has the functionality
-we consider essential and has an API and code quality (including documentation
-and tests) that's of high enough quality.
+going and where help is needed most.
 
 
 General
@@ -26,20 +22,12 @@ those first on the scipy-dev mailing list.
 
 API changes
 ```````````
-In general, we want to take advantage of the major version change to fix some
-known warts in the API.  The change from 0.x.x to 1.x.x is the chance to fix
-those API issues that we all know are ugly warts.  Example: unify the
-convention for specifying tolerances (including absolute, relative, argument
-and function value tolerances) of the optimization functions.  More API issues
-will be noted in the module sections below.  However, there should be
-*clear value* in making a breaking change.  The 1.0 version label is not a
-license to just break things - see it as a normal release with a somewhat
-more aggressive/extensive set of cleanups.
+In general, we want to evolve the API to remove known warts as much as possible,
+*however as much as possible without breaking backwards compatibility*.
 
-It should be made more clear what is public and what is private in SciPy.
-Everything private should be underscored as much as possible.  Now this is done
-consistently when we add new code, but for 1.0 it should also be done for
-existing code.
+Also, it should be made (even) more clear what is public and what is private in
+SciPy.  Everything private should be named starting with an underscore as much
+as possible.
 
 
 Test coverage
@@ -48,19 +36,18 @@ Test coverage of code added in the last few years is quite good, and we aim for
 a high coverage for all new code that is added.  However, there is still a
 significant amount of old code for which coverage is poor.  Bringing that up to
 the current standard is probably not realistic, but we should plug the biggest
-holes.  Additionally the coverage should be tracked over time and we should
-ensure it only goes up.
+holes.  
 
 Besides coverage there is also the issue of correctness - older code may have a
 few tests that provide decent statement coverage, but that doesn't necessarily
 say much about whether the code does what it says on the box.  Therefore code
-review of some parts of the code (``stats`` and ``signal`` in particular) is
-necessary.
+review of some parts of the code (``stats``,``signal`` and ``ndimage`` in
+particular) is necessary.
 
 
 Documentation
 `````````````
-The documentation is in decent shape.  Expanding of current docstrings and
+The documentation is in good shape.  Expanding of current docstrings and
 putting them in the standard NumPy format should continue, so the number of
 reST errors and glitches in the html docs decreases.  Most modules also have a
 tutorial in the reference guide that is a good introduction, however there are
@@ -69,9 +56,6 @@ a few missing or incomplete tutorials - this should be fixed.
 
 Other
 `````
-Scipy 1.0 will likely contain more backwards-incompatible changes than a minor
-release.  Therefore we will have a longer-lived maintenance branch of the last
-0.X release.
 
 Regarding Cython code:
 
@@ -79,23 +63,21 @@ Regarding Cython code:
     .so files too large.  This needs measuring.
   - Cython's old syntax for using NumPy arrays should be removed and replaced
     with Cython memoryviews.
-  - New feature idea: more of the currently wrapped libraries should export
-    Cython-importable versions that can be used without linking.
 
 Regarding build environments:
 
-  - NumPy and SciPy should both build from source on Windows with a MinGW-w64
-    toolchain and be compatible with Python
-    installations compiled with either the same MinGW or with MSVC.
+  - SciPy builds from source on Windows now with a MSVC + MinGW-w64 gfortran
+    toolchain.  This still needs to prove itself, but is looking good so far.
+  - Support for Accelerate will be dropped, likely in SciPy 1.1.0.  If there is
+    enough interest, we may want to write wrappers so the BLAS part of Accelerate
+    can still be used.
   - Bento development has stopped, so will remain having an experimental,
     use-at-your-own-risk status.  Only the people that use it will be
     responsible for keeping the Bento build updated.
 
-A more complete continuous integration setup is needed; at the moment we often
-find out right before a release that there are issues on some less-often used
-platform or Python version.  At least needed are Windows (MSVC and MingwPy),
-Linux and OS X builds, coverage of the lowest and highest Python and NumPy
-versions that are supported.
+Continuous integration is in good shape, it covers Windows, macOS and Linux, as well
+as a range of versions of our dependencies and building release quality wheels.
+
 
 Modules
 -------
@@ -132,23 +114,16 @@ integrate
 Needed for ODE solvers:
 
   - Documentation is pretty bad, needs fixing
-  - A promising new ODE solver interface is in progress: gh-6326.
-    This needs to be finished and merged.  After that, older API can
-    possibly be deprecated.
+  - A new ODE solver interface  (``solve_ivp``) was added in SciPy 1.0.0.
+    In the future we can consider (soft-)deprecating the older API.
 
 The numerical integration functions are in good shape.  Support for integrating
 complex-valued functions and integrating multiple intervals (see gh-3325) could
-be added, but is not required for SciPy 1.0.
+be added.
 
 
 interpolate
 ```````````
-Needed:
-
-  - Both fitpack and fitpack2 interfaces will be kept.
-  - splmake is deprecated; is different spline representation, we need exactly one
-  - interp1d/interp2d are somewhat ugly but widely used, so we keep them.
-
 
 Ideas for new features:
 
@@ -187,16 +162,13 @@ Ideas for new features:
 
 misc
 ````
-``scipy.misc`` will be removed as a public module.  The functions in it can be
-moved to other modules:
+``scipy.misc`` will be removed as a public module.  Most functions in it have
+been moved to another submodule or deprecated.  The few that are left:
 
-  - ``pilutil``, images : ``ndimage``
-  - ``comb``, ``factorial``, ``logsumexp``, ``pade`` : ``special``
-  - ``doccer`` : move to ``scipy._lib``
+  - ``doccer`` : move to ``scipy._lib`` (making it private)
   - ``info``, ``who`` : these are NumPy functions
-  - ``derivative``, ``central_diff_weight`` : remove, replace with more extensive
-    functionality for numerical differentiation - likely in a new module
-    ``scipy.diff`` (see below)
+  - ``derivative``, ``central_diff_weight`` : remove, possibly replacing them
+    with more extensive functionality for numerical differentiation.
 
 
 ndimage
@@ -258,10 +230,10 @@ things are done in `interpolate`), and eliminate any duplication.
 
 *Filter design*: merge `firwin` and `firwin2` so `firwin2` can be removed.
 
-*Continuous-Time Linear Systems*: remove `lsim2`, `impulse2`, `step2`.  Make
-`lsim`, `impulse` and `step` "just work" for any input system.  Improve
-performance of ltisys (less internal transformations between different
-representations). Fill gaps in lti system conversion functions.
+*Continuous-Time Linear Systems*: remove `lsim2`, `impulse2`, `step2`.  The
+`lsim`, `impulse` and `step` functions now "just work" for any input system.
+Further improve the performance of ``ltisys`` (fewer internal transformations
+between different representations). Fill gaps in lti system conversion functions.
 
 *Second Order Sections*: Make SOS filtering equally capable as existing
 methods. This includes ltisys objects, an `lfiltic` equivalent, and numerically
@@ -362,20 +334,6 @@ stats
 probably, this fits better in Statsmodels (which already has a lot more KDE
 functionality).
 
-``stats.mstats`` is a useful module for worked with data with missing values.
-One problem it has though is that in many cases the functions have diverged
-from their counterparts in ``scipy.stats``.  The ``mstats`` functions should be
-updated so that the two sets of functions are consistent.
-
-
-weave
-`````
-This module is deprecated and will be removed for Scipy 1.0.  It has been
-packaged as a separate package "weave", which users that still rely on the
-functionality provided by ``scipy.weave`` should use.
-
-Also note that this is the only module that was not ported to Python 3.
-
 
 New modules under discussion
 ----------------------------
@@ -386,6 +344,9 @@ Currently Scipy doesn't provide much support for numerical differentiation.
 A new ``scipy.diff`` module for that is discussed in
 https://github.com/scipy/scipy/issues/2035.  There's also a fairly detailed
 GSoC proposal to build on, see `here <https://github.com/scipy/scipy/wiki/Proposal:-add-finite-difference-numerical-derivatives-as-scipy.diff>`_.
+There has been a second (unsuccessful) GSoC project in 2017.  Recent discussion
+and the host of alternatives available make it unlikely that a new ``scipy.diff``
+submodule will be added in the near future.
 
 There is also ``approx_derivative`` in ``optimize``, which is still private
 but could form a solid basis for this module.

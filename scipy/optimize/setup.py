@@ -75,6 +75,10 @@ def configuration(parent_package='',top_path=None):
     config.add_subpackage('_trlib')
 
     config.add_data_dir('tests')
+
+    # Add license files
+    config.add_data_files('lbfgsb/README')
+
     return config
 
 

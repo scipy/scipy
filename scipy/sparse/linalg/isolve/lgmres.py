@@ -98,10 +98,11 @@ def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
 
     References
     ----------
-    .. [1] A.H. Baker and E.R. Jessup and T. Manteuffel,
-             SIAM J. Matrix Anal. Appl. 26, 962 (2005).
-    .. [2] A.H. Baker, PhD thesis, University of Colorado (2003).
-             http://amath.colorado.edu/activities/thesis/allisonb/Thesis.ps
+    .. [1] A.H. Baker and E.R. Jessup and T. Manteuffel, "A Technique for
+             Accelerating the Convergence of Restarted GMRES", SIAM J. Matrix
+             Anal. Appl. 26, 962 (2005).
+    .. [2] A.H. Baker, "On Improving the Performance of the Linear Solver
+             restarted GMRES", PhD thesis, University of Colorado (2003).
 
     Examples
     --------

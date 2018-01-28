@@ -11,7 +11,7 @@ from numpy.testing import assert_equal, assert_
 from scipy._lib._version import NumpyVersion
 
 from scipy.sparse import (csc_matrix, csr_matrix, bsr_matrix, dia_matrix,
-                          coo_matrix, save_npz, load_npz)
+                          coo_matrix, save_npz, load_npz, dok_matrix)
 
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
@@ -83,3 +83,11 @@ def test_py23_compatibility():
     assert_equal(a.toarray(), c.toarray())
     assert_equal(b.toarray(), c.toarray())
 
+def test_implemented_error():
+    # Attempts to save an unsupported type and checks that an
+    # NotImplementedError is raised.
+
+    x = dok_matrix((2,3))
+    x[0,1] = 1
+
+    assert_raises(NotImplementedError, save_npz, 'x.npz', x)

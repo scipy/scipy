@@ -158,14 +158,14 @@ class CheckOptimizeParameterized(CheckOptimize):
                         atol=1e-6)
 
         # Ensure that function call counts are 'known good'; these are from
-        # Scipy 1.0.0. Don't allow them to increase.
-        assert_(self.funccalls == 9, self.funccalls)
-        assert_(self.gradcalls == 7, self.gradcalls)
+        # Scipy 0.7.0. Don't allow them to increase.
+        assert_(self.funccalls == 10, self.funccalls)
+        assert_(self.gradcalls == 8, self.gradcalls)
 
-        # Ensure that the function behaves the same; this is from Scipy 1.0.0
+        # Ensure that the function behaves the same; this is from Scipy 0.7.0
         assert_allclose(self.trace[6:8],
-                        [[7.323472e-15, -5.248650e-01, 4.875251e-01],
-                         [7.323472e-15, -5.248650e-01, 4.875251e-01]],
+                        [[0, -5.25060743e-01, 4.87748473e-01],
+                         [0, -5.24885582e-01, 4.87530347e-01]],
                         atol=1e-14, rtol=1e-7)
 
     def test_bfgs_infinite(self):
@@ -434,6 +434,18 @@ def test_neldermead_xatol_fatol():
                  optimize._minimize._minimize_neldermead,
                  func, [1, 1], xtol=1e-3, ftol=1e-3, maxiter=2)
 
+def test_neldermead_adaptive():
+    func = lambda x: np.sum(x**2)
+    p0 = [0.15746215, 0.48087031, 0.44519198, 0.4223638, 0.61505159, 0.32308456,
+      0.9692297, 0.4471682, 0.77411992, 0.80441652, 0.35994957, 0.75487856,
+      0.99973421, 0.65063887, 0.09626474]
+   
+    res = optimize.minimize(func, p0, method='Nelder-Mead')
+    assert_equal(res.success, False)
+ 
+    res = optimize.minimize(func, p0, method='Nelder-Mead',
+                    options={'adaptive':True})
+    assert_equal(res.success, True)
 
 class TestOptimizeWrapperDisp(CheckOptimizeParameterized):
     use_wrapper = True

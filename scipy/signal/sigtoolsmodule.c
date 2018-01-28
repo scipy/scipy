@@ -1181,111 +1181,114 @@ static PyObject *sigtools_order_filterND(PyObject *NPY_UNUSED(dummy),
 }
 
 
+static char doc_remez[] =
+    "h = _remez(numtaps, bands, des, weight, type, fs, maxiter, grid_density)\n"
+    "  returns the optimal (in the Chebyshev/minimax sense) FIR filter impulse\n"
+    "  response given a set of band edges, the desired response on those bands,\n"
+    "  and the weight given to the error in those bands.  Bands is a monotonic\n"
+    "  vector with band edges given in frequency domain where fs is the sampling\n"
+    "  frequency.";
 
-static char doc_remez[] = "h = _remez(numtaps, bands, des, weight, type, Hz, maxiter, grid_density) \n  returns the optimal (in the Chebyshev/minimax sense) FIR filter impulse \n  response given a set of band edges, the desired response on those bands,\n  and the weight given to the error in those bands.  Bands is a monotonic\n   vector with band edges given in frequency domain where Hz is the sampling\n   frequency.";
- 
-static PyObject *sigtools_remez(PyObject *NPY_UNUSED(dummy), PyObject *args) {
-        PyObject *bands, *des, *weight;
-        int k, numtaps, numbands, type = BANDPASS, err; 
-	PyArrayObject *a_bands=NULL, *a_des=NULL, *a_weight=NULL;
-	PyArrayObject *h=NULL;
-	intp ret_dimens; int maxiter = 25, grid_density = 16;
-	double oldvalue, *dptr, Hz = 1.0;
-        char mystr[255];
-       
+static PyObject *sigtools_remez(PyObject *NPY_UNUSED(dummy), PyObject *args)
+{
+    PyObject *bands, *des, *weight;
+    int k, numtaps, numbands, type = BANDPASS, err; 
+    PyArrayObject *a_bands=NULL, *a_des=NULL, *a_weight=NULL;
+    PyArrayObject *h=NULL;
+    intp ret_dimens; int maxiter = 25, grid_density = 16;
+    double oldvalue, *dptr, fs = 1.0;
+    char mystr[255];
 
+    if (!PyArg_ParseTuple(args, "iOOO|idii", &numtaps, &bands, &des, &weight, 
+                          &type, &fs, &maxiter, &grid_density)) {
+        return NULL;
+    }
 
-        if (!PyArg_ParseTuple(args, "iOOO|idii", &numtaps, &bands, &des, &weight, 
-                              &type, &Hz, &maxiter, &grid_density))
-	    return NULL;
-
-	if (type != BANDPASS && type != DIFFERENTIATOR && type != HILBERT) {
-	    PyErr_SetString(PyExc_ValueError,
-	                    "The type must be BANDPASS, DIFFERENTIATOR, or HILBERT.");
-	  return NULL;
-	}
-	
-	if (numtaps < 2) {
-	    PyErr_SetString(PyExc_ValueError,
-                            "The number of taps must be greater than 1.");
-	  return NULL;
-	}
-	
-	
-	a_bands = (PyArrayObject *)PyArray_ContiguousFromObject(bands, NPY_DOUBLE,1,1);
-	if (a_bands == NULL) goto fail;
-	a_des = (PyArrayObject *)PyArray_ContiguousFromObject(des, NPY_DOUBLE,1,1);
-	if (a_des == NULL) goto fail;
-	a_weight = (PyArrayObject *)PyArray_ContiguousFromObject(weight, NPY_DOUBLE,1,1);
-	if (a_weight == NULL) goto fail;
-
-
-	numbands = PyArray_DIMS(a_des)[0];
-	if ((PyArray_DIMS(a_bands)[0] != 2*numbands) || 
-            (PyArray_DIMS(a_weight)[0] != numbands)) {
-	  PyErr_SetString(PyExc_ValueError,
-			  "The inputs desired and weight must have same length.\n  " \
-                          "The input bands must have twice this length.");
-	  goto fail;
+    if (type != BANDPASS && type != DIFFERENTIATOR && type != HILBERT) {
+        PyErr_SetString(PyExc_ValueError,
+                        "The type must be BANDPASS, DIFFERENTIATOR, or HILBERT.");
+        return NULL;
 	}
 
-      /* 
-       * Check the bands input to see if it is monotonic, divide by 
-       * Hz to take from range 0 to 0.5 and check to see if in that range
-       */ 
-	dptr = (double *)PyArray_DATA(a_bands);
-	oldvalue = 0;
-	for (k=0; k < 2*numbands; k++) {
-	  if (*dptr < oldvalue) {
-	    PyErr_SetString(PyExc_ValueError,
-			  "Bands must be monotonic starting at zero.");
-	    goto fail;
-	  }
-	  if (*dptr * 2 > Hz) {
-	    PyErr_SetString(PyExc_ValueError,
-			  "Band edges should be less than 1/2 the sampling frequency");
-	    goto fail;
-	  }
-	  oldvalue = *dptr;
-	  *dptr = oldvalue / Hz;  /* Change so that sampling frequency is 1.0 */
-	  dptr++;
-	}
+    if (numtaps < 2) {
+        PyErr_SetString(PyExc_ValueError,
+                        "The number of taps must be greater than 1.");
+        return NULL;
+    }
 
-	ret_dimens = numtaps;
-	h = (PyArrayObject *)PyArray_SimpleNew(1, &ret_dimens, NPY_DOUBLE);
-	if (h == NULL) goto fail;
+    a_bands = (PyArrayObject *)PyArray_ContiguousFromObject(bands, NPY_DOUBLE,1,1);
+    if (a_bands == NULL) goto fail;
+    a_des = (PyArrayObject *)PyArray_ContiguousFromObject(des, NPY_DOUBLE,1,1);
+    if (a_des == NULL) goto fail;
+    a_weight = (PyArrayObject *)PyArray_ContiguousFromObject(weight, NPY_DOUBLE,1,1);
+    if (a_weight == NULL) goto fail;
 
-	err=pre_remez((double *)PyArray_DATA(h), numtaps, numbands, 
-                      (double *)PyArray_DATA(a_bands),
-                      (double *)PyArray_DATA(a_des),
-                      (double *)PyArray_DATA(a_weight),
-                      type, maxiter, grid_density);
-        if (err < 0) {
-	  if (err == -1) {
-            sprintf(mystr, "Failure to converge after %d iterations.\n", maxiter);
-	    PyErr_SetString(PyExc_ValueError, mystr);
-	    goto fail;
-	  }
-	  else if (err == -2) {
-	    PyErr_NoMemory();
+    numbands = PyArray_DIMS(a_des)[0];
+    if ((PyArray_DIMS(a_bands)[0] != 2*numbands) || 
+        (PyArray_DIMS(a_weight)[0] != numbands)) {
+	    PyErr_SetString(PyExc_ValueError,
+                        "The inputs desired and weight must have same length.\n  "
+                        "The input bands must have twice this length.");
+        goto fail;
+    }
+
+    /* 
+     * Check the bands input to see if it is monotonic, divide by 
+     * fs to take from range 0 to 0.5 and check to see if in that range
+     */ 
+    dptr = (double *)PyArray_DATA(a_bands);
+    oldvalue = 0;
+    for (k=0; k < 2*numbands; k++) {
+        if (*dptr < oldvalue) {
+            PyErr_SetString(PyExc_ValueError,
+                            "Bands must be monotonic starting at zero.");
             goto fail;
-	  }
-	}
+        }
+        if (*dptr * 2 > fs) {
+            PyErr_SetString(PyExc_ValueError,
+                            "Band edges should be less than 1/2 the sampling frequency");
+            goto fail;
+        }
+        oldvalue = *dptr;
+        *dptr = oldvalue / fs;  /* Change so that sampling frequency is 1.0 */
+        dptr++;
+    }
 
-	Py_DECREF(a_bands);
-	Py_DECREF(a_des);
-	Py_DECREF(a_weight);
+    ret_dimens = numtaps;
+    h = (PyArrayObject *)PyArray_SimpleNew(1, &ret_dimens, NPY_DOUBLE);
+    if (h == NULL) goto fail;
+
+    err = pre_remez((double *)PyArray_DATA(h), numtaps, numbands, 
+                    (double *)PyArray_DATA(a_bands),
+                    (double *)PyArray_DATA(a_des),
+                    (double *)PyArray_DATA(a_weight),
+                    type, maxiter, grid_density);
+    if (err < 0) {
+        if (err == -1) {
+            sprintf(mystr, "Failure to converge after %d iterations.\n", maxiter);
+	        PyErr_SetString(PyExc_ValueError, mystr);
+	        goto fail;
+        }
+        else if (err == -2) {
+            PyErr_NoMemory();
+            goto fail;
+        }
+    }
+
+    Py_DECREF(a_bands);
+    Py_DECREF(a_des);
+    Py_DECREF(a_weight);
 
 	return PyArray_Return(h);
 
- fail:
-	Py_XDECREF(a_bands);
-	Py_XDECREF(a_des);
-	Py_XDECREF(a_weight);
-	Py_XDECREF(h);
-	return NULL;
+fail:
+    Py_XDECREF(a_bands);
+    Py_XDECREF(a_des);
+    Py_XDECREF(a_weight);
+    Py_XDECREF(h);
+    return NULL;
 }
-   
+
 static char doc_median2d[] = "filt = _median2d(data, size)";
 
 extern void f_medfilt2(float*,float*,intp*,intp*);

@@ -69,8 +69,8 @@ C     .. Local Scalars ..
       INTEGER i,icent,ierr,status
 C     ..
 C     .. External Functions ..
-      DOUBLE PRECISION alngam
-      EXTERNAL alngam
+      DOUBLE PRECISION alngam, betaln
+      EXTERNAL alngam, betaln
 C     ..
 C     .. Intrinsic Functions ..
       INTRINSIC log,dble,exp
@@ -151,8 +151,14 @@ C     Now sum terms backward from icent until convergence or all done
 
       xmult = centwt
       i = icent
-      dnterm = exp(alngam(adn+b)-alngam(adn+1.0D0)-alngam(b)+
+      IF (adn.LT.2D0) THEN
+          dnterm = exp(alngam(adn+b)-alngam(adn+1.0D0)-alngam(b)+
      +         adn*log(xx)+b*log(yy))
+      ELSE
+C         Same expression, but avoid problems for large adn
+          dnterm = exp(-betaln(adn,b)-log(adn)+
+     +         adn*log(xx)+b*log(yy))
+      END IF
    30 IF (qsmall(xmult*betdn) .OR. i.LE.0) GO TO 40
       xmult = xmult* (i/xnonc)
       i = i - 1
@@ -172,8 +178,14 @@ C     Now sum forwards until convergence
      +             b*log(yy))
 
       ELSE
-          upterm = exp(alngam(aup-1+b)-alngam(aup)-alngam(b)+
+          IF (aup.LT.2D0) THEN
+              upterm = exp(alngam(aup-1+b)-alngam(aup)-alngam(b)+
      +             (aup-1)*log(xx)+b*log(yy))
+          ELSE
+C             Same expression, but avoid problems for large aup
+              upterm = exp(-betaln(aup-1,b)-log(aup-1)+
+     +             (aup-1)*log(xx)+b*log(yy))
+          END IF
       END IF
 
       GO TO 60

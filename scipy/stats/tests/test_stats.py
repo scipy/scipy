@@ -1019,144 +1019,6 @@ def test_theilslopes():
     assert_almost_equal(lower, 3.71, decimal=2)
 
 
-class TestHistogram(object):
-    # Tests that histogram works as it should, and keeps old behaviour
-    #
-    # what is untested:
-    # - multidimensional arrays (since 'a' is ravel'd as the first line in the method)
-    # - very large arrays
-    # - Nans, Infs, empty and otherwise bad inputs
-
-    # sample arrays to test the histogram with
-    low_values = np.array([0.2, 0.3, 0.4, 0.5, 0.5, 0.6, 0.7, 0.8, 0.9, 1.1, 1.2],
-                          dtype=float)  # 11 values
-    high_range = np.array([2, 3, 4, 2, 21, 32, 78, 95, 65, 66, 66, 66, 66, 4],
-                          dtype=float)  # 14 values
-    low_range = np.array([2, 3, 3, 2, 3, 2.4, 2.1, 3.1, 2.9, 2.6, 2.7, 2.8, 2.2, 2.001],
-                         dtype=float)  # 14 values
-    few_values = np.array([2.0, 3.0, -1.0, 0.0], dtype=float)  # 4 values
-
-    def test_simple(self):
-        # Tests that each of the tests works as expected with default params
-        #
-        # basic tests, with expected results (no weighting)
-        # results taken from the previous (slower) version of histogram
-        basic_tests = ((self.low_values, (np.array([1., 1., 1., 2., 2.,
-                                                     1., 1., 0., 1., 1.]),
-                                          0.14444444444444446, 0.11111111111111112, 0)),
-                       (self.high_range, (np.array([5., 0., 1., 1., 0.,
-                                                     0., 5., 1., 0., 1.]),
-                                          -3.1666666666666661, 10.333333333333332, 0)),
-                       (self.low_range, (np.array([3., 1., 1., 1., 0., 1.,
-                                                    1., 2., 3., 1.]),
-                                         1.9388888888888889, 0.12222222222222223, 0)),
-                       (self.few_values, (np.array([1., 0., 1., 0., 0., 0.,
-                                                     0., 1., 0., 1.]),
-                                          -1.2222222222222223, 0.44444444444444448, 0)),
-                       )
-        for inputs, expected_results in basic_tests:
-            with suppress_warnings() as sup:
-                sup.filter(DeprecationWarning,
-                           message="`histogram` is deprecated")
-                given_results = stats.histogram(inputs)
-
-            assert_array_almost_equal(expected_results[0], given_results[0],
-                                      decimal=2)
-            for i in range(1, 4):
-                assert_almost_equal(expected_results[i], given_results[i],
-                                    decimal=2)
-
-    def test_empty(self):
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, message="`histogram` is deprecated")
-            res = stats.histogram([])
-
-        # expected values
-        e_count = [0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]
-        e_lowerlimit = 0
-        e_binsize = 0.1
-        e_extrapoints = 0
-
-        assert_allclose(res.count, e_count, rtol=1e-15)
-        assert_equal(res.lowerlimit, e_lowerlimit)
-        assert_almost_equal(res.binsize, e_binsize)
-        assert_equal(res.extrapoints, e_extrapoints)
-
-    def test_reduced_bins(self):
-        # Tests that reducing the number of bins produces expected results
-
-        # basic tests, with expected results (no weighting),
-        # except number of bins is halved to 5
-        # results taken from the previous (slower) version of histogram
-        basic_tests = ((self.low_values, (np.array([2., 3., 3., 1., 2.]),
-                                          0.075000000000000011, 0.25, 0)),
-                       (self.high_range, (np.array([5., 2., 0., 6., 1.]),
-                                          -9.625, 23.25, 0)),
-                       (self.low_range, (np.array([4., 2., 1., 3., 4.]),
-                                         1.8625, 0.27500000000000002, 0)),
-                       (self.few_values, (np.array([1., 1., 0., 1., 1.]),
-                                          -1.5, 1.0, 0)),
-                       )
-        for inputs, expected_results in basic_tests:
-            with suppress_warnings() as sup:
-                sup.filter(DeprecationWarning,
-                           message="`histogram` is deprecated")
-                given_results = stats.histogram(inputs, numbins=5)
-
-            assert_array_almost_equal(expected_results[0], given_results[0],
-                                      decimal=2)
-            for i in range(1, 4):
-                assert_almost_equal(expected_results[i], given_results[i],
-                                    decimal=2)
-
-    def test_increased_bins(self):
-        # Tests that increasing the number of bins produces expected results
-
-        # basic tests, with expected results (no weighting),
-        # except number of bins is double to 20
-        # results taken from the previous (slower) version of histogram
-        basic_tests = ((self.low_values, (np.array([1., 0., 1., 0., 1.,
-                                                     0., 2., 0., 1., 0.,
-                                                     1., 1., 0., 1., 0.,
-                                                     0., 0., 1., 0., 1.]),
-                                          0.1736842105263158, 0.052631578947368418, 0)),
-                       (self.high_range, (np.array([5., 0., 0., 0., 1.,
-                                                     0., 1., 0., 0., 0.,
-                                                     0., 0., 0., 5., 0.,
-                                                     0., 1., 0., 0., 1.]),
-                                          -0.44736842105263142, 4.8947368421052628, 0)),
-                       (self.low_range, (np.array([3., 0., 1., 1., 0., 0.,
-                                                    0., 1., 0., 0., 1., 0.,
-                                                    1., 0., 1., 0., 1., 3.,
-                                                    0., 1.]),
-                                         1.9710526315789474, 0.057894736842105263, 0)),
-                       (self.few_values, (np.array([1., 0., 0., 0., 0., 1.,
-                                                     0., 0., 0., 0., 0., 0.,
-                                                     0., 0., 1., 0., 0., 0.,
-                                                     0., 1.]),
-                                          -1.1052631578947367, 0.21052631578947367, 0)),
-                       )
-        for inputs, expected_results in basic_tests:
-            with suppress_warnings() as sup:
-                sup.filter(DeprecationWarning,
-                           message="`histogram` is deprecated")
-                given_results = stats.histogram(inputs, numbins=20)
-
-            assert_array_almost_equal(expected_results[0], given_results[0],
-                                      decimal=2)
-            for i in range(1, 4):
-                assert_almost_equal(expected_results[i], given_results[i],
-                                    decimal=2)
-
-    def test_histogram_result_attributes(self):
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, message="`histogram` is deprecated")
-            res = stats.histogram(self.low_range, numbins=20)
-
-        attributes = ('count', 'lowerlimit', 'binsize', 'extrapoints')
-        check_named_results(res, attributes)
-
-
 def test_cumfreq():
     x = [1, 4, 2, 1, 3, 1]
     cumfreqs, lowlim, binsize, extrapoints = stats.cumfreq(x, numbins=4)
@@ -1545,17 +1407,6 @@ class TestVariability(object):
 
     testcase = [1,2,3,4]
     scalar_testcase = 4.
-
-    def test_signaltonoise(self):
-        # This is not in R, so used:
-        #     mean(testcase, axis=0) / (sqrt(var(testcase) * 3/4))
-
-        # y = stats.signaltonoise(self.shoes[0])
-        # assert_approx_equal(y,4.5709967)
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, "`signaltonoise` is deprecated")
-            y = stats.signaltonoise(self.testcase)
-        assert_approx_equal(y, 2.236067977)
 
     def test_sem(self):
         # This is not in R, so used:
@@ -2207,20 +2058,6 @@ class TestMoments(object):
                      np.mean(self.testcase_moment_accuracy)
         assert_allclose(np.power(tc_no_mean, 42).mean(),
                             stats.moment(self.testcase_moment_accuracy, 42))
-
-
-class TestThreshold(object):
-    def test_basic(self):
-        a = [-1, 2, 3, 4, 5, -1, -2]
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, "`threshold` is deprecated")
-            assert_array_equal(stats.threshold(a), a)
-            assert_array_equal(stats.threshold(a, 3, None, 0),
-                               [0, 0, 3, 4, 5, 0, 0])
-            assert_array_equal(stats.threshold(a, None, 3, 0),
-                               [-1, 2, 3, 0, 0, -1, -2])
-            assert_array_equal(stats.threshold(a, 2, 4, 0),
-                               [0, 2, 3, 4, 0, 0, 0])
 
 
 class TestStudentTest(object):

@@ -193,9 +193,14 @@ scipy_signal_sigtools_linear_filter(PyObject * NPY_UNUSED(dummy), PyObject * arg
         if (str == NULL) {
             goto fail;
         }
+#if PY_VERSION_HEX >= 0x03000000
+        msg = PyUnicode_FromFormat(
+                        "input type '%U' not supported\n", str);
+#else
         s = PyString_AsString(str);
         msg = PyString_FromFormat(
                         "input type '%s' not supported\n", s);
+#endif
         Py_DECREF(str);
         if (msg == NULL) {
             goto fail;

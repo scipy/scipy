@@ -8,7 +8,8 @@ import numpy as np
 from scipy._lib.six import xrange
 from scipy._lib._numpy_compat import broadcast_to
 from .sputils import (isdense, isscalarlike, isintlike,
-                      get_sum_dtype, validateaxis)
+                      get_sum_dtype, validateaxis, check_reshape_kwargs,
+                      check_shape)
 
 __all__ = ['spmatrix', 'isspmatrix', 'issparse',
            'SparseWarning', 'SparseEfficiencyWarning']
@@ -77,26 +78,10 @@ class spmatrix(object):
 
     def set_shape(self, shape):
         """See `reshape`."""
-        shape = tuple(shape)
-
-        if len(shape) != 2:
-            raise ValueError("Only two-dimensional sparse "
-                             "arrays are supported.")
-        try:
-            shape = int(shape[0]), int(shape[1])  # floats, other weirdness
-        except:
-            raise TypeError('invalid shape')
-
-        if not (shape[0] >= 0 and shape[1] >= 0):
-            raise ValueError('invalid shape')
-
-        if (self._shape != shape) and (self._shape is not None):
-            try:
-                self = self.reshape(shape)
-            except NotImplementedError:
-                raise NotImplementedError("Reshaping not implemented for %s." %
-                                          self.__class__.__name__)
-        self._shape = shape
+        # Make sure copy is False since this is in place
+        # Make sure format is unchanged because we are doing a __dict__ swap
+        new_matrix = self.reshape(shape, copy=False).asformat(self.format)
+        self.__dict__ = new_matrix.__dict__
 
     def get_shape(self):
         """Get shape of a matrix."""
@@ -104,29 +89,47 @@ class spmatrix(object):
 
     shape = property(fget=get_shape, fset=set_shape)
 
-    def reshape(self, shape, order='C'):
-        """
+    def reshape(self, *args, **kwargs):
+        """reshape(self, shape, order='C', copy=False)
+
         Gives a new shape to a sparse matrix without changing its data.
 
         Parameters
         ----------
         shape : length-2 tuple of ints
             The new shape should be compatible with the original shape.
-        order : 'C', optional
-            This argument is in the signature *solely* for NumPy
-            compatibility reasons. Do not pass in anything except
-            for the default value, as this argument is not used.
+        order : {'C', 'F'}, optional
+            Read the elements using this index order. 'C' means to read and
+            write the elements using C-like index order; e.g. read entire first
+            row, then second row, etc. 'F' means to read and write the elements
+            using Fortran-like index order; e.g. read entire first column, then
+            second column, etc.
+        copy : bool, optional
+            Indicates whether or not attributes of self should be copied
+            whenever possible. The degree to which attributes are copied varies
+            depending on the type of sparse matrix being used.
 
         Returns
         -------
-        reshaped_matrix : `self` with the new dimensions of `shape`
+        reshaped_matrix : sparse matrix
+            A sparse matrix with the given `shape`, not necessarily of the same
+            format as the current object.
 
         See Also
         --------
         np.matrix.reshape : NumPy's implementation of 'reshape' for matrices
         """
-        raise NotImplementedError("Reshaping not implemented for %s." %
-                                  self.__class__.__name__)
+        # If the shape already matches, don't bother doing an actual reshape
+        # Otherwise, the default is to convert to COO and use its reshape
+        shape = check_shape(args, self.shape)
+        order, copy = check_reshape_kwargs(kwargs)
+        if shape == self.shape:
+            if copy:
+                return self.copy()
+            else:
+                return self
+
+        return self.tocoo(copy=copy).reshape(shape, order=order, copy=False)
 
     def astype(self, dtype, casting='unsafe', copy=True):
         """Cast the matrix elements to a specified type.

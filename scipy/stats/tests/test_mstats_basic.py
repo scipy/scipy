@@ -502,14 +502,6 @@ class TestVariability(object):
     """
     testcase = ma.fix_invalid([1,2,3,4,np.nan])
 
-    def test_signaltonoise(self):
-        # This is not in R, so used:
-        #     mean(testcase, axis=0) / (sqrt(var(testcase)*3/4))
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, "`signaltonoise` is deprecated!")
-            y = mstats.signaltonoise(self.testcase)
-        assert_almost_equal(y, 2.236067977)
-
     def test_sem(self):
         # This is not in R, so used: sqrt(var(testcase)*3/4) / sqrt(3)
         y = mstats.sem(self.testcase)
@@ -1058,36 +1050,6 @@ class TestCompareWithStats(object):
             r = stats.moment(y)
             rm = stats.mstats.moment(ym)
             assert_almost_equal(r, rm, 10)
-
-    def test_signaltonoise(self):
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, "`signaltonoise` is deprecated!")
-            for n in self.get_n():
-                x, y, xm, ym = self.generate_xy_sample(n)
-
-                r = stats.signaltonoise(x)
-                rm = stats.mstats.signaltonoise(xm)
-                assert_almost_equal(r, rm, 10)
-
-                r = stats.signaltonoise(y)
-                rm = stats.mstats.signaltonoise(ym)
-                assert_almost_equal(r, rm, 10)
-
-    def test_betai(self):
-        np.random.seed(12345)
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, "`betai` is deprecated!")
-            for i in range(10):
-                a = np.random.rand() * 5.
-                b = np.random.rand() * 200.
-
-                assert_equal(stats.betai(a, b, 0.), 0.)
-                assert_equal(stats.betai(a, b, 1.), 1.)
-                assert_equal(stats.mstats.betai(a, b, 0.), 0.)
-                assert_equal(stats.mstats.betai(a, b, 1.), 1.)
-                x = np.random.rand()
-                assert_almost_equal(stats.betai(a, b, x),
-                                    stats.mstats.betai(a, b, x), decimal=13)
 
     def test_zscore(self):
         for n in self.get_n():

@@ -2,6 +2,7 @@ from __future__ import division, print_function, absolute_import
 
 import os
 import copy
+import pytest
 
 import numpy as np
 from numpy.testing import (assert_equal, assert_almost_equal,
@@ -12,6 +13,7 @@ from scipy._lib.six import xrange
 
 import scipy.spatial.qhull as qhull
 from scipy.spatial import cKDTree as KDTree
+from scipy.spatial import Voronoi
 
 import itertools
 
@@ -163,6 +165,10 @@ class Test_Qhull(object):
         assert_raises(RuntimeError, x.get_voronoi_diagram)
         y.close()
         assert_raises(RuntimeError, y.get_voronoi_diagram)
+
+    def test_issue_8051(self):
+        points = np.array([[0, 0], [0, 1], [0, 2], [1, 0], [1, 1], [1, 2],[2, 0], [2, 1], [2, 2]])
+        Voronoi(points)
 
 
 class TestUtilities(object):
