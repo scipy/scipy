@@ -45,28 +45,12 @@ def convert_spherical_array_to_cartesian_array(spherical_coord_array,angle_measu
     cartesian_coord_array[...,2] = spherical_coord_array[...,0] * np.cos(spherical_coord_array[...,2])
     return cartesian_coord_array
 
-def _slerp(start_coord,
-           end_coord,
-           n_pts):
-    # spherical linear interpolation between points
-    # on great circle arc
-    # see: https://en.wikipedia.org/wiki/Slerp#Geometric_Slerp
-    # NOTE: could we use scipy.interpolate.RectSphereBivariateSpline instead?
-    omega = np.arccos(np.dot(start_coord, end_coord))
-    t_values = np.linspace(0, 1, n_pts)
-    new_pts = []
-    for t in t_values:
-        new_pt = (((np.sin((1 - t) * omega) / np.sin(omega)) * start_coord) +
-                  ((np.sin(t * omega) / np.sin(omega)) * end_coord))
-        new_pts.append(new_pt)
-    return np.array(new_pts)
-
 def _spherical_polygon_area(vertices, radius, discretizations):
     num_vertices = vertices.shape[0]
     area_sum = 0
 
     for i in xrange(num_vertices):
-        new_pts = _slerp(vertices[i], vertices[i-1], discretizations)
+        new_pts = _surface_area._slerp(vertices[i], vertices[i-1], discretizations)
 
         lambda_range = np.arctan2(new_pts[...,1], new_pts[...,0])
         phi_range = np.arcsin((new_pts[...,2]))
@@ -149,7 +133,7 @@ def pole_in_polygon(vertices):
         # strategy: discretize arc path between
         # points 1 and 2 and take the penultimate
         # point for bearing calculation
-        new_pts = _slerp(vertices[i], vertices[next_index],
+        new_pts = _surface_area._slerp(vertices[i], vertices[next_index],
                          n_pts=900)
         new_lambda_range = np.arctan2(new_pts[...,1], new_pts[...,0])
         new_phi_range = np.arcsin((new_pts[...,2]))
