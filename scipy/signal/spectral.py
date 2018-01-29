@@ -1201,7 +1201,7 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
         raise ValueError('Window, STFT shape and noverlap do not satisfy the '
                          'COLA constraint.')
 
-    # Rearrange axes if neccessary
+    # Rearrange axes if necessary
     if time_axis != Zxx.ndim-1 or freq_axis != Zxx.ndim-2:
         # Turn negative indices to positive for the call to transpose
         if freq_axis < 0:
@@ -1467,14 +1467,7 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
     t : ndarray
         Array of times corresponding to each data segment
     result : ndarray
-        Array of output data, contents dependant on *mode* kwarg.
-
-    References
-    ----------
-    .. [1] Stack Overflow, "Rolling window for 1D arrays in Numpy?",
-           http://stackoverflow.com/a/6811241
-    .. [2] Stack Overflow, "Using strides for an efficient moving
-           average filter", http://stackoverflow.com/a/4947453
+        Array of output data, contents dependent on *mode* kwarg.
 
     Notes
     -----
@@ -1538,7 +1531,7 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
             if not same_data and y.ndim > 1:
                 y = np.rollaxis(y, axis, len(y.shape))
 
-    # Check if x and y are the same length, zero-pad if neccesary
+    # Check if x and y are the same length, zero-pad if necessary
     if not same_data:
         if x.shape[-1] != y.shape[-1]:
             if x.shape[-1] < y.shape[-1]:
@@ -1692,7 +1685,7 @@ def _fft_helper(x, win, detrend_func, nperseg, noverlap, nfft, sides):
     scipy.signal._spectral_helper
 
     This is a helper function that does the main FFT calculation for
-    `_spectral helper`. All input valdiation is performed there, and the
+    `_spectral helper`. All input validation is performed there, and the
     data axis is assumed to be the last axis of x. It is not designed to
     be called externally. The windows are not averaged over; the result
     from each window is returned.
@@ -1701,11 +1694,6 @@ def _fft_helper(x, win, detrend_func, nperseg, noverlap, nfft, sides):
     -------
     result : ndarray
         Array of FFT data
-
-    References
-    ----------
-    .. [1] Stack Overflow, "Repeat NumPy array without replicating
-           data?", http://stackoverflow.com/a/5568169
 
     Notes
     -----
@@ -1717,6 +1705,7 @@ def _fft_helper(x, win, detrend_func, nperseg, noverlap, nfft, sides):
     if nperseg == 1 and noverlap == 0:
         result = x[..., np.newaxis]
     else:
+        # http://stackoverflow.com/a/5568169
         step = nperseg - noverlap
         shape = x.shape[:-1]+((x.shape[-1]-noverlap)//step, nperseg)
         strides = x.strides[:-1]+(step*x.strides[-1], x.strides[-1])

@@ -1610,7 +1610,7 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
     >>> ax2.imshow(data_interp, interpolation='nearest')
     >>> plt.show()
 
-    Chosing the optimal value of ``s`` can be a delicate task. Recommended
+    Choosing the optimal value of ``s`` can be a delicate task. Recommended
     values for ``s`` depend on the accuracy of the data values.  If the user
     has an idea of the statistical errors on the data, she can also find a
     proper estimate for ``s``. By assuming that, if she specifies the

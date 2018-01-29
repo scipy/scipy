@@ -90,6 +90,7 @@ Continuous distributions
    lomax             -- Lomax (Pareto of the second kind)
    maxwell           -- Maxwell
    mielke            -- Mielke's Beta-Kappa
+   moyal             -- Moyal
    nakagami          -- Nakagami
    ncx2              -- Non-central chi-squared
    ncf               -- Non-central F
@@ -135,7 +136,7 @@ Multivariate distributions
    multinomial           -- Multinomial distribution
    special_ortho_group   -- SO(N) group
    ortho_group           -- O(N) group
-   unitary_group         -- U(N) gropu
+   unitary_group         -- U(N) group
    random_correlation    -- random correlation matrices
 
 Discrete distributions

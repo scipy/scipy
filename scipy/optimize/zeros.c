@@ -164,7 +164,7 @@ _brentq(PyObject *self, PyObject *args)
 }
 
 /*
- * Standard Python module inteface
+ * Standard Python module interface
  */
 
 static PyMethodDef

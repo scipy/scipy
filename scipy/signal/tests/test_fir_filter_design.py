@@ -549,7 +549,7 @@ class TestMinimumPhase(object):
         k = [0.349585548646686, 0.373552164395447, 0.326082685363438,
              0.077152207480935, -0.129943946349364, -0.059355880509749]
         m = minimum_phase(h, 'hilbert')
-        assert_allclose(m, k, rtol=1e-3)
+        assert_allclose(m, k, rtol=2e-3)
 
         # f=[0 0.8 0.9 1];
         # a=[0 0 1 1];
@@ -560,4 +560,4 @@ class TestMinimumPhase(object):
              0.100787844523204, -0.065832656741252, 0.035361328741024,
              -0.014977068692269, -0.158416139047557]
         m = minimum_phase(h, 'hilbert', n_fft=2**19)
-        assert_allclose(m, k, rtol=1e-3)
+        assert_allclose(m, k, rtol=2e-3)

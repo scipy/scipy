@@ -1302,7 +1302,7 @@ cdef int _find_simplex_directed(DelaunayInfo_t *d, double *c,
                                 double *x, int *start, double eps,
                                 double eps_broad) nogil:
     """
-    Find simplex containing point `x` via a directed walk in the tesselation.
+    Find simplex containing point `x` via a directed walk in the tessellation.
 
     If the simplex is found, the array `c` is filled with the corresponding
     barycentric coordinates.
@@ -1322,11 +1322,11 @@ cdef int _find_simplex_directed(DelaunayInfo_t *d, double *c,
     3) Consequently, the k-th neighbour simplex is *closer* to the target point
        than the present simplex, if projected on the normal of the k-th ridge.
 
-    4) In a regular tesselation, hopping to any such direction is OK.
+    4) In a regular tessellation, hopping to any such direction is OK.
 
        Also, if one of the negative-coordinate neighbors happens to be -1,
-       then the target point is outside the tesselation (because the
-       tesselation is convex!).
+       then the target point is outside the tessellation (because the
+       tessellation is convex!).
 
     5) If all barycentric coordinates are in [-eps, 1+eps], we have found the
        simplex containing the target point.
@@ -1451,7 +1451,7 @@ cdef int _find_simplex(DelaunayInfo_t *d, double *c,
         Now, the maximally positive-distant simplex is [3, 2, 0], although
         the simplex containing the point is [4, 2, 1].
 
-    In this algorithm, we walk around the tesselation trying to locate
+    In this algorithm, we walk around the tessellation trying to locate
     a positive-distant facet. After finding one, we fall back to a
     directed search.
 
@@ -1476,7 +1476,7 @@ cdef int _find_simplex(DelaunayInfo_t *d, double *c,
     # Lift point to paraboloid
     _lift_point(d, x, z)
 
-    # Walk the tesselation searching for a facet with a positive planar distance
+    # Walk the tessellation searching for a facet with a positive planar distance
     best_dist = _distplane(d, isimplex, z)
     changed = 1
     while changed:
@@ -1614,7 +1614,7 @@ class Delaunay(_QhullUser):
     """
     Delaunay(points, furthest_site=False, incremental=False, qhull_options=None)
 
-    Delaunay tesselation in N dimensions.
+    Delaunay tessellation in N dimensions.
 
     .. versionadded:: 0.9
 
@@ -1673,7 +1673,7 @@ class Delaunay(_QhullUser):
     vertex_to_simplex : ndarray of int, shape (npoints,)
         Lookup array, from a vertex, to some simplex which it is a part of.
         If qhull option "Qc" was not specified, the list will contain -1
-        for points that are not vertices of the tesselation.
+        for points that are not vertices of the tessellation.
     convex_hull : ndarray of int, shape (nfaces, ndim)
         Vertices of facets forming the convex hull of the point set.
         The array contains the indices of the points belonging to
@@ -1710,7 +1710,7 @@ class Delaunay(_QhullUser):
 
     Notes
     -----
-    The tesselation is computed using the Qhull library 
+    The tessellation is computed using the Qhull library 
     `Qhull library <http://www.qhull.org/>`__.
 
     .. note::

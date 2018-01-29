@@ -311,7 +311,7 @@ class Metropolis(object):
         If new is higher than old, there is a chance it will be accepted,
         less likely for larger differences.
         """
-        w = math.exp(min(0, -(energy_new - energy_old) * self.beta))
+        w = math.exp(min(0, -float(energy_new - energy_old) * self.beta))
         rand = self.random_state.rand()
         return w >= rand
 
@@ -329,6 +329,16 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
                  seed=None):
     """
     Find the global minimum of a function using the basin-hopping algorithm
+
+    Basin-hopping is a two-phase method that combines a global stepping
+    algorithm with local minimization at each step.  Designed to mimic
+    the natural process of energy minimization of clusters of atoms, it works
+    well for similar problems with "funnel-like, but rugged" energy landscapes
+    [5]_.
+
+    As the step-taking, step acceptance, and minimization methods are all
+    customizable, this function can also be used to implement other two-phase
+    methods.
 
     Parameters
     ----------
@@ -460,20 +470,24 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     minimum.
 
     Choosing ``stepsize``:  This is a crucial parameter in ``basinhopping`` and
-    depends on the problem being solved.  Ideally it should be comparable to
-    the typical separation between local minima of the function being
-    optimized.  ``basinhopping`` will, by default, adjust ``stepsize`` to find
-    an optimal value, but this may take many iterations.  You will get quicker
-    results if you set a sensible value for ``stepsize``.
+    depends on the problem being solved.  The step is chosen uniformly in the
+    region from x0-stepsize to x0+stepsize, in each dimension.  Ideally it
+    should be comparable to the typical separation (in argument values) between
+    local minima of the function being optimized.  ``basinhopping`` will, by
+    default, adjust ``stepsize`` to find an optimal value, but this may take
+    many iterations.  You will get quicker results if you set a sensible
+    initial value for ``stepsize``.
 
-    Choosing ``T``: The parameter ``T`` is the temperature used in the
-    Metropolis criterion.  Basinhopping steps are accepted with probability
-    ``1`` if ``func(xnew) < func(xold)``, or otherwise with probability::
+    Choosing ``T``: The parameter ``T`` is the "temperature" used in the
+    Metropolis criterion.  Basinhopping steps are always accepted if
+    ``func(xnew) < func(xold)``.  Otherwise, they are accepted with
+    probability::
 
         exp( -(func(xnew) - func(xold)) / T )
 
     So, for best results, ``T`` should to be comparable to the typical
-    difference in function values between local minima.
+    difference (in function values) between local minima.  (The height of
+    "walls" between local minima is irrelevant.)
 
     If ``T`` is 0, the algorithm becomes Monotonic Basin-Hopping, in which all
     steps that increase energy are rejected.
@@ -492,6 +506,10 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
         1987, 84, 6611.
     .. [4] Wales, D. J. and Scheraga, H. A., Global optimization of clusters,
         crystals, and biomolecules, Science, 1999, 285, 1368.
+    .. [5] Olson, B., Hashmi, I., Molloy, K., and Shehu1, A., Basin Hopping as
+        a General and Versatile Optimization Framework for the Characterization
+        of Biological Macromolecules, Advances in Artificial Intelligence,
+        Volume 2012 (2012), Article ID 674832, :doi:`10.1155/2012/674832`
 
     Examples
     --------

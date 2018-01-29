@@ -2,19 +2,19 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy
-from numpy import asarray_chkfinite, single, asarray
+from numpy import asarray_chkfinite, single, asarray, array
+from numpy.linalg import norm
 
 from scipy._lib.six import callable
 
 # Local imports.
-from . import misc
 from .misc import LinAlgError, _datacopied
 from .lapack import get_lapack_funcs
 from .decomp import eigvals
 
 __all__ = ['schur', 'rsf2csf']
 
-_double_precision = ['i','l','d']
+_double_precision = ['i', 'l', 'd']
 
 
 def schur(a, output='real', lwork=None, overwrite_a=False, sort=None,
@@ -86,8 +86,37 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None,
     --------
     rsf2csf : Convert real Schur form to complex Schur form
 
+    Examples
+    --------
+    >>> from scipy.linalg import schur, eigvals
+    >>> A = np.array([[0, 2, 2], [0, 1, 2], [1, 0, 1]])
+    >>> T, Z = schur(A)
+    >>> T
+    array([[ 2.65896708,  1.42440458, -1.92933439],
+           [ 0.        , -0.32948354, -0.49063704],
+           [ 0.        ,  1.31178921, -0.32948354]])
+    >>> Z
+    array([[0.72711591, -0.60156188, 0.33079564],
+           [0.52839428, 0.79801892, 0.28976765],
+           [0.43829436, 0.03590414, -0.89811411]])
+
+    >>> T2, Z2 = schur(A, output='complex')
+    >>> T2
+    array([[ 2.65896708, -1.22839825+1.32378589j,  0.42590089+1.51937378j],
+           [ 0.        , -0.32948354+0.80225456j, -0.59877807+0.56192146j],
+           [ 0.        ,  0.                    , -0.32948354-0.80225456j]])
+    >>> eigvals(T2)
+    array([2.65896708, -0.32948354+0.80225456j, -0.32948354-0.80225456j])
+
+    An arbitrary custom eig-sorting condition, having positive imaginary part, 
+    which is satisfied by only one eigenvalue
+
+    >>> T3, Z3, sdim = schur(A, output='complex', sort=lambda x: x.imag > 0)
+    >>> sdim
+    1
+
     """
-    if output not in ['real','complex','r','c']:
+    if output not in ['real', 'complex', 'r', 'c']:
         raise ValueError("argument must be 'real', or 'complex'")
     if check_finite:
         a1 = asarray_chkfinite(a)
@@ -96,7 +125,7 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None,
     if len(a1.shape) != 2 or (a1.shape[0] != a1.shape[1]):
         raise ValueError('expected square matrix')
     typ = a1.dtype.char
-    if output in ['complex','c'] and typ not in ['F','D']:
+    if output in ['complex', 'c'] and typ not in ['F', 'D']:
         if typ in _double_precision:
             a1 = a1.astype('D')
             typ = 'D'
@@ -118,24 +147,24 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None,
         if callable(sort):
             sfunction = sort
         elif sort == 'lhp':
-            sfunction = lambda x: (numpy.real(x) < 0.0)
+            sfunction = lambda x: (x.real < 0.0)
         elif sort == 'rhp':
-            sfunction = lambda x: (numpy.real(x) >= 0.0)
+            sfunction = lambda x: (x.real >= 0.0)
         elif sort == 'iuc':
             sfunction = lambda x: (abs(x) <= 1.0)
         elif sort == 'ouc':
             sfunction = lambda x: (abs(x) > 1.0)
         else:
-            raise ValueError("sort parameter must be None, a callable, or " +
-                "one of ('lhp','rhp','iuc','ouc')")
+            raise ValueError("'sort' parameter must either be 'None', or a "
+                             "callable, or one of ('lhp','rhp','iuc','ouc')")
 
     result = gees(sfunction, a1, lwork=lwork, overwrite_a=overwrite_a,
-        sort_t=sort_t)
+                  sort_t=sort_t)
 
     info = result[-1]
     if info < 0:
-        raise ValueError('illegal value in %d-th argument of internal gees'
-                                                                    % -info)
+        raise ValueError('illegal value in {}-th argument of internal gees'
+                         ''.format(-info))
     elif info == a1.shape[0] + 1:
         raise LinAlgError('Eigenvalues could not be separated for reordering.')
     elif info == a1.shape[0] + 2:
@@ -152,7 +181,8 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None,
 eps = numpy.finfo(float).eps
 feps = numpy.finfo(single).eps
 
-_array_kind = {'b':0, 'h':0, 'B': 0, 'i':0, 'l': 0, 'f': 0, 'd': 0, 'F': 1, 'D': 1}
+_array_kind = {'b': 0, 'h': 0, 'B': 0, 'i': 0, 'l': 0,
+               'f': 0, 'd': 0, 'F': 1, 'D': 1}
 _array_precision = {'i': 1, 'l': 1, 'f': 0, 'd': 1, 'F': 0, 'D': 1}
 _array_type = [['f', 'd'], ['F', 'D']]
 
@@ -190,58 +220,76 @@ def rsf2csf(T, Z, check_finite=True):
     Parameters
     ----------
     T : (M, M) array_like
-        Real Schur form of the original matrix
+        Real Schur form of the original array
     Z : (M, M) array_like
         Schur transformation matrix
     check_finite : bool, optional
-        Whether to check that the input matrices contain only finite numbers.
+        Whether to check that the input arrays contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
 
     Returns
     -------
     T : (M, M) ndarray
-        Complex Schur form of the original matrix
+        Complex Schur form of the original array
     Z : (M, M) ndarray
         Schur transformation matrix corresponding to the complex form
 
-    See also
+    See Also
     --------
-    schur : Schur decompose a matrix
+    schur : Schur decomposition of an array
+
+    Examples
+    --------
+    >>> from scipy.linalg import schur, rsf2csf
+    >>> A = np.array([[0, 2, 2], [0, 1, 2], [1, 0, 1]])
+    >>> T, Z = schur(A)
+    >>> T
+    array([[ 2.65896708,  1.42440458, -1.92933439],
+           [ 0.        , -0.32948354, -0.49063704],
+           [ 0.        ,  1.31178921, -0.32948354]])
+    >>> Z
+    array([[0.72711591, -0.60156188, 0.33079564],
+           [0.52839428, 0.79801892, 0.28976765],
+           [0.43829436, 0.03590414, -0.89811411]])
+    >>> T2 , Z2 = rsf2csf(T, Z)
+    >>> T2
+    array([[2.65896708+0.j, -1.64592781+0.743164187j, -1.21516887+1.00660462j],
+           [0.+0.j , -0.32948354+8.02254558e-01j, -0.82115218-2.77555756e-17j],
+           [0.+0.j , 0.+0.j, -0.32948354-0.802254558j]])
+    >>> Z2
+    array([[0.72711591+0.j,  0.28220393-0.31385693j,  0.51319638-0.17258824j],
+           [0.52839428+0.j,  0.24720268+0.41635578j, -0.68079517-0.15118243j],
+           [0.43829436+0.j, -0.76618703+0.01873251j, -0.03063006+0.46857912j]])
 
     """
     if check_finite:
         Z, T = map(asarray_chkfinite, (Z, T))
     else:
-        Z,T = map(asarray, (Z,T))
-    if len(Z.shape) != 2 or Z.shape[0] != Z.shape[1]:
-        raise ValueError("matrix must be square.")
-    if len(T.shape) != 2 or T.shape[0] != T.shape[1]:
-        raise ValueError("matrix must be square.")
+        Z, T = map(asarray, (Z, T))
+
+    for ind, X in enumerate([Z, T]):
+        if X.ndim != 2 or X.shape[0] != X.shape[1]:
+            raise ValueError("Input '{}' must be square.".format('ZT'[ind]))
+
     if T.shape[0] != Z.shape[0]:
-        raise ValueError("matrices must be same dimension.")
+        raise ValueError("Input array shapes must match: Z: {} vs. T: {}"
+                         "".format(Z.shape, T.shape))
     N = T.shape[0]
-    arr = numpy.array
-    t = _commonType(Z, T, arr([3.0],'F'))
+    t = _commonType(Z, T, array([3.0], 'F'))
     Z, T = _castCopy(t, Z, T)
-    conj = numpy.conj
-    dot = numpy.dot
-    r_ = numpy.r_
-    transp = numpy.transpose
+
     for m in range(N-1, 0, -1):
-        if abs(T[m,m-1]) > eps*(abs(T[m-1,m-1]) + abs(T[m,m])):
-            k = slice(m-1, m+1)
-            mu = eigvals(T[k,k]) - T[m,m]
-            r = misc.norm([mu[0], T[m,m-1]])
+        if abs(T[m, m-1]) > eps*(abs(T[m-1, m-1]) + abs(T[m, m])):
+            mu = eigvals(T[m-1:m+1, m-1:m+1]) - T[m, m]
+            r = norm([mu[0], T[m, m-1]])
             c = mu[0] / r
-            s = T[m,m-1] / r
-            G = r_[arr([[conj(c), s]], dtype=t), arr([[-s, c]], dtype=t)]
-            Gc = conj(transp(G))
-            j = slice(m-1, N)
-            T[k,j] = dot(G, T[k,j])
-            i = slice(0, m+1)
-            T[i,k] = dot(T[i,k], Gc)
-            i = slice(0, N)
-            Z[i,k] = dot(Z[i,k], Gc)
-        T[m,m-1] = 0.0
+            s = T[m, m-1] / r
+            G = array([[c.conj(), s], [-s, c]], dtype=t)
+
+            T[m-1:m+1, m-1:] = G.dot(T[m-1:m+1, m-1:])
+            T[:m+1, m-1:m+1] = T[:m+1, m-1:m+1].dot(G.conj().T)
+            Z[:, m-1:m+1] = Z[:, m-1:m+1].dot(G.conj().T)
+
+        T[m, m-1] = 0.0
     return T, Z

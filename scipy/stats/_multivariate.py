@@ -2947,7 +2947,7 @@ class multinomial_gen(multi_rv_generic):
         p[...,-1] = 1. - p[...,:-1].sum(axis=-1)
 
         # true for bad p
-        pcond = np.any(p <= 0, axis=-1)
+        pcond = np.any(p < 0, axis=-1)
         pcond |= np.any(p > 1, axis=-1)
 
         n = np.array(n, dtype=np.int, copy=True)

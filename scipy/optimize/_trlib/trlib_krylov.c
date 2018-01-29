@@ -151,7 +151,7 @@ trlib_int_t trlib_krylov_min_internal(
                 irblk[0] = 0; // start pointer to first irreducible block
                 *warm_lam0 = 0;  // coldstart, so no warmstart information on multiplier available
                 *warm_lam = 0;  // coldstart, so no warmstart information on multiplier available
-                *lanczos_switch = -1; // indicate that no lanczos switch occured
+                *lanczos_switch = -1; // indicate that no lanczos switch occurred
                 *exit_tri = 0;  // set return code from #trlib_tri_factor_min to 0 just to be on the safe side
                 *sub_fail_tri = 0;  // set sub_fail from #trlib_tri_factor_min to 0 just to be on the safe side
                 *iter_tri = 0;  // set newton iter from #trlib_tri_factor_min to 0 just to be on the safe side
@@ -244,7 +244,7 @@ trlib_int_t trlib_krylov_min_internal(
                             delta_fac0[*ii] = delta[*ii] + *lam0 - gamma[*ii-1]*gamma[*ii-1]/delta_fac0[*ii-1];
                             // check if regularized tridiagonal is still positive definite for warmstart
                             warm_fac0 = delta_fac0[*ii] > 0.0;
-                            if(warm_fac0) { TRLIB_PRINTLN_2("Factorization update succesful, still pos def!") } else { TRLIB_PRINTLN_2("Factorization update failed, got negative diagonal %e!", delta_fac0[*ii]) }
+                            if(warm_fac0) { TRLIB_PRINTLN_2("Factorization update successful, still pos def!") } else { TRLIB_PRINTLN_2("Factorization update failed, got negative diagonal %e!", delta_fac0[*ii]) }
                         }
                     }
                     /* call trlib_tri_factor_min to solve tridiagonal problem, store solution candidate in h
@@ -392,7 +392,7 @@ trlib_int_t trlib_krylov_min_internal(
                 /* reentry with smaller trust region radius
                    we implement hotstart by not making use of the CG basis but rather the Lanczos basis
                    as this covers both cases: the interior and the boundary cases
-                   the additional cost by doing this is neglible since we most likely will just do one iteration */
+                   the additional cost by doing this is negligible since we most likely will just do one iteration */
                 // solve the corresponding tridiagonal problem, check for convergence and otherwise continue to iterate
                 irblk[*nirblk] = *ii+1;
                 *exit_tri = trlib_tri_factor_min(
@@ -495,7 +495,7 @@ trlib_int_t trlib_krylov_min_internal(
                 /* reentry with new gradient trust region radius
                    we implement hotstart by not making use of the CG basis but rather the Lanczos basis
                    as this covers both cases: the interior and the boundary cases
-                   the additional cost by doing this is neglible since we most likely will just do one iteration */
+                   the additional cost by doing this is negligible since we most likely will just do one iteration */
                 // solve the corresponding tridiagonal problem, check for convergence and otherwise continue to iterate
                 irblk[*nirblk] = *ii+1;
                 *exit_tri = trlib_tri_factor_min(

@@ -573,10 +573,17 @@ class TestFligner(object):
                                   11)
 
     def test_trimmed1(self):
+        # Perturb input to break ties in the transformed data 
+        # See https://github.com/scipy/scipy/pull/8042 for more details
+        rs = np.random.RandomState(123)
+        _perturb = lambda g: (np.asarray(g) + 1e-10*rs.randn(len(g))).tolist()
+        g1_ = _perturb(g1)
+        g2_ = _perturb(g2)
+        g3_ = _perturb(g3)
         # Test that center='trimmed' gives the same result as center='mean'
         # when proportiontocut=0.
-        Xsq1, pval1 = stats.fligner(g1, g2, g3, center='mean')
-        Xsq2, pval2 = stats.fligner(g1, g2, g3, center='trimmed',
+        Xsq1, pval1 = stats.fligner(g1_, g2_, g3_, center='mean')
+        Xsq2, pval2 = stats.fligner(g1_, g2_, g3_, center='trimmed',
                                     proportiontocut=0.0)
         assert_almost_equal(Xsq1, Xsq2)
         assert_almost_equal(pval1, pval2)

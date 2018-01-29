@@ -131,6 +131,33 @@ class spmatrix(object):
 
         return self.tocoo(copy=copy).reshape(shape, order=order, copy=False)
 
+    def resize(self, shape):
+        """Resize the matrix in-place to dimensions given by ``shape``
+
+        Any elements that lie within the new shape will remain at the same
+        indices, while non-zero elements lying outside the new shape are
+        removed.
+
+        Parameters
+        ----------
+        shape : (int, int)
+            number of rows and columns in the new matrix
+
+        Notes
+        -----
+        The semantics are not identical to `numpy.ndarray.resize` or
+        `numpy.resize`.  Here, the same data will be maintained at each index
+        before and after reshape, if that index is within the new bounds.  In
+        numpy, resizing maintains contiguity of the array, moving elements
+        around in the logical matrix but not within a flattened representation.
+
+        We give no guarantees about whether the underlying data attributes
+        (arrays, etc.) will be modified in place or replaced with new objects.
+        """
+        # As an inplace operation, this requires implementation in each format.
+        raise NotImplementedError(
+            '{}.resize is not implemented'.format(type(self).__name__))
+
     def astype(self, dtype, casting='unsafe', copy=True):
         """Cast the matrix elements to a specified type.
 
@@ -914,14 +941,14 @@ class spmatrix(object):
             integer is used while if `a` is unsigned then an unsigned integer
             of the same precision as the platform integer is used.
 
-            .. versionadded: 0.18.0
+            .. versionadded:: 0.18.0
 
         out : np.matrix, optional
             Alternative output matrix in which to place the result. It must
             have the same shape as the expected output, but the type of the
             output values will be cast if necessary.
 
-            .. versionadded: 0.18.0
+            .. versionadded:: 0.18.0
 
         Returns
         -------
@@ -987,14 +1014,14 @@ class spmatrix(object):
             is `float64`; for floating point inputs, it is the same as the
             input dtype.
 
-            .. versionadded: 0.18.0
+            .. versionadded:: 0.18.0
 
         out : np.matrix, optional
             Alternative output matrix in which to place the result. It must
             have the same shape as the expected output, but the type of the
             output values will be cast if necessary.
 
-            .. versionadded: 0.18.0
+            .. versionadded:: 0.18.0
 
         Returns
         -------
@@ -1050,7 +1077,7 @@ class spmatrix(object):
             Which diagonal to set, corresponding to elements a[i, i+k].
             Default: 0 (the main diagonal).
 
-            .. versionadded: 1.0
+            .. versionadded:: 1.0
 
         See also
         --------

@@ -44,7 +44,7 @@ def _minimize_trust_krylov(fun, x0, args=(), jac=None, hess=None, hessp=None,
     # For details consult the documentation of trlib_krylov_min
     # in _trlib/trlib_krylov.h
     #
-    # Optimality of this choice of parameters among a range of possibilites
+    # Optimality of this choice of parameters among a range of possibilities
     # has been tested on the unconstrained subset of the CUTEst library.
 
     if inexact:

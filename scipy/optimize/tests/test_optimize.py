@@ -321,6 +321,14 @@ class CheckOptimizeParameterized(CheckOptimize):
                               full_output=True, disp=False, retall=False,
                               initial_simplex=simplex)
 
+    def test_ncg_negative_maxiter(self):
+        # Regression test for gh-8241
+        opts = {'maxiter': -1}
+        result = optimize.minimize(self.func, self.startparams,
+                                   method='Newton-CG', jac=self.grad,
+                                   args=(), options=opts)
+        assert_(result.status == 1)
+
     def test_ncg(self):
         # line-search Newton conjugate gradient optimization routine
         if self.use_wrapper:
@@ -1181,6 +1189,17 @@ class TestBrute:
         assert_allclose(resbrute[0], self.solution, atol=1e-3)
         assert_allclose(resbrute[1], self.func(self.solution, *self.params),
                         atol=1e-3)
+
+    def test_1D(self):
+        # test that for a 1D problem the test function is passed an array,
+        # not a scalar.
+        def f(x):
+            assert_(len(x.shape) == 1)
+            assert_(x.shape[0] == 1)
+            return x ** 2
+
+        optimize.brute(f, [(-1, 1)], Ns=3, finish=None)
+
 
 class TestIterationLimits(object):
     # Tests that optimisation does not give up before trying requested

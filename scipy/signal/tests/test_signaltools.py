@@ -689,7 +689,7 @@ class TestResample(object):
             if dtype in (np.complex64, np.complex128):
                 x += 1j * random_state.randn(size)
 
-            # resample_poly assumes zeros outside of signl, wheras filtfilt
+            # resample_poly assumes zeros outside of signl, whereas filtfilt
             # can only constant-pad. Make them equivalent:
             x[0] = 0
             x[-1] = 0
@@ -1200,6 +1200,17 @@ class TestCorrelateReal(object):
         y_r = np.array([0, 2, 5, 8, 3]).astype(dt)
         return a, b, y_r
 
+    def equal_tolerance(self, res_dt):
+        # default value of keyword
+        decimal = 6
+        try:
+            dt_info = np.finfo(res_dt)
+            if hasattr(dt_info, 'resolution'):
+                decimal = int(-0.5*np.log10(dt_info.resolution))
+        except Exception:
+            pass
+        return decimal
+
     def test_method(self, dt):
         if dt == Decimal:
             method = choose_conv_method([Decimal(4)], [Decimal(3)])
@@ -1209,8 +1220,8 @@ class TestCorrelateReal(object):
             y_fft = correlate(a, b, method='fft')
             y_direct = correlate(a, b, method='direct')
 
-            assert_array_almost_equal(y_r, y_fft)
-            assert_array_almost_equal(y_r, y_direct)
+            assert_array_almost_equal(y_r, y_fft, decimal=self.equal_tolerance(y_fft.dtype))
+            assert_array_almost_equal(y_r, y_direct, decimal=self.equal_tolerance(y_fft.dtype))
             assert_equal(y_fft.dtype, dt)
             assert_equal(y_direct.dtype, dt)
 
@@ -1374,6 +1385,24 @@ class TestCorrelateComplex(object):
         assert_array_almost_equal(y, y_r, decimal=self.decimal(dt) - 1)
         assert_equal(y.dtype, dt)
 
+    def test_rank0(self, dt):
+        a = np.array(np.random.randn()).astype(dt)
+        a += 1j * np.array(np.random.randn()).astype(dt)
+        b = np.array(np.random.randn()).astype(dt)
+        b += 1j * np.array(np.random.randn()).astype(dt)
+
+        y_r = (correlate(a.real, b.real)
+               + correlate(a.imag, b.imag)).astype(dt)
+        y_r += 1j * (-correlate(a.real, b.imag) + correlate(a.imag, b.real))
+
+        y = correlate(a, b, 'full')
+        assert_array_almost_equal(y, y_r, decimal=self.decimal(dt) - 1)
+        assert_equal(y.dtype, dt)
+
+        assert_equal(correlate([1], [2j]), correlate(1, 2j))
+        assert_equal(correlate([2j], [3j]), correlate(2j, 3j))
+        assert_equal(correlate([3j], [4]), correlate(3j, 4))
+
 
 class TestCorrelate2d(object):
 
@@ -1407,6 +1436,11 @@ class TestCorrelate2d(object):
 
         assert_raises(ValueError, signal.correlate2d, *(a, b), **{'mode': 'valid'})
         assert_raises(ValueError, signal.correlate2d, *(b, a), **{'mode': 'valid'})
+
+    def test_complex_input(self):
+        assert_equal(signal.correlate2d([[1]], [[2j]]), -2j)
+        assert_equal(signal.correlate2d([[2j]], [[3j]]), 6)
+        assert_equal(signal.correlate2d([[3j]], [[4]]), 12j)
 
 
 class TestLFilterZI(object):
@@ -1834,7 +1868,7 @@ class TestHilbert(object):
         aa = hilbert(a, axis=-1)
         assert_equal(hilbert(a.T, axis=0), aa.T)
         # test 1d
-        assert_equal(hilbert(a[0]), aa[0])
+        assert_almost_equal(hilbert(a[0]), aa[0], 14)
 
         # test N
         aan = hilbert(a, N=20, axis=-1)

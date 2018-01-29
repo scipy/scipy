@@ -165,7 +165,7 @@ c            ! a1 '    !
 c        a = !    ' a2 !
 c            ! 0  '    !
 c  with a2 a n7 x k matrix and a1 a n10 x n10 upper triangular
-c  matrix of bandwith k+1 ( n10 = n7-k).
+c  matrix of bandwidth k+1 ( n10 = n7-k).
 c  initialization.
         do 70 i=1,nk1
           z(i) = 0.

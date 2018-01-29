@@ -376,6 +376,23 @@ class dia_matrix(_data_matrix):
         else:
             return dia_matrix((data,self.offsets), shape=self.shape)
 
+    def resize(self, *shape):
+        shape = check_shape(shape)
+        M, N = shape
+        # we do not need to handle the case of expanding N
+        self.data = self.data[:, :N]
+
+        if (M > self.shape[0] and
+                np.any(self.offsets + self.shape[0] < self.data.shape[1])):
+            # explicitly clear values that were previously hidden
+            mask = (self.offsets[:, None] + self.shape[0] <=
+                    np.arange(self.data.shape[1]))
+            self.data[mask] = 0
+
+        self._shape = shape
+
+    resize.__doc__ = spmatrix.resize.__doc__
+
 
 def isspmatrix_dia(x):
     """Is x of dia_matrix type?

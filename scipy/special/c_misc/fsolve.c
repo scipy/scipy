@@ -17,7 +17,7 @@ max(double a, double b)
    and always keeps a bounding interval, unlike Newton's method.
 
    The false position steps are either unmodified, or modified with
-   the Anderson-Bjorck method as appropiate. Theoretically, this has
+   the Anderson-Bjorck method as appropriate. Theoretically, this has
    a "speed of convergence" of 1.7 (bisection is 1, Newton is 2).
 
    Input

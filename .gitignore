@@ -241,6 +241,7 @@ scipy/special/cython_special.h
 scipy/special/cython_special.pxd
 scipy/special/cython_special.pyx
 scipy/special/specfunmodule.c
+scipy/special/tests/data/*.npz
 scipy/stats/_rank.c
 scipy/stats/mvn-f2pywrappers.f
 scipy/stats/mvnmodule.c

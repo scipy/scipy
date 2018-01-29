@@ -11,6 +11,7 @@ from numpy.testing import (assert_equal, assert_allclose,
                            assert_string_equal, assert_)
 from pytest import raises as assert_raises
 
+
 class TestDifferentialEvolutionSolver(object):
 
     def setup_method(self):
@@ -101,6 +102,18 @@ class TestDifferentialEvolutionSolver(object):
         assert_equal(solver.strategy, 'randtobest1exp')
         assert_equal(solver.mutation_func.__name__, '_randtobest1')
 
+        solver = DifferentialEvolutionSolver(rosen,
+                                             self.bounds,
+                                             strategy='currenttobest1bin')
+        assert_equal(solver.strategy, 'currenttobest1bin')
+        assert_equal(solver.mutation_func.__name__, '_currenttobest1')
+
+        solver = DifferentialEvolutionSolver(rosen,
+                                             self.bounds,
+                                             strategy='currenttobest1exp')
+        assert_equal(solver.strategy, 'currenttobest1exp')
+        assert_equal(solver.mutation_func.__name__, '_currenttobest1')
+
     def test__mutate1(self):
         # strategies */1/*, i.e. rand/1/bin, best/1/exp, etc.
         result = np.array([0.05])
@@ -125,8 +138,14 @@ class TestDifferentialEvolutionSolver(object):
 
     def test__randtobest1(self):
         # strategies randtobest/1/*
+        result = np.array([0.15])
+        trial = self.dummy_solver2._randtobest1((2, 3, 4, 5, 6))
+        assert_allclose(trial, result)
+
+    def test__currenttobest1(self):
+        # strategies currenttobest/1/*
         result = np.array([0.1])
-        trial = self.dummy_solver2._randtobest1(1, (2, 3, 4, 5, 6))
+        trial = self.dummy_solver2._currenttobest1(1, (2, 3, 4, 5, 6))
         assert_allclose(trial, result)
 
     def test_can_init_with_dithering(self):
@@ -184,9 +203,11 @@ class TestDifferentialEvolutionSolver(object):
         assert_equal(0.3, self.dummy_solver._unscale_parameters(trial))
 
     def test__ensure_constraint(self):
-        trial = np.array([1.1, -100, 2., 300., -0.00001])
+        trial = np.array([1.1, -100, 0.9, 2., 300., -0.00001])
         self.dummy_solver._ensure_constraint(trial)
-        assert_equal(np.all(trial <= 1), True)
+
+        assert_equal(trial[2], 0.9)
+        assert_(np.logical_and(trial >= 0, trial <= 1).all())
 
     def test_differential_evolution(self):
         # test that the Jmin of DifferentialEvolutionSolver
@@ -354,26 +375,26 @@ class TestDifferentialEvolutionSolver(object):
         result = differential_evolution(rosen, bounds, popsize=1815, maxiter=1)
 
     def test_calculate_population_energies(self):
-        # if popsize is 2 then the overall generation has size (4,)
-        solver = DifferentialEvolutionSolver(rosen, self.bounds, popsize=2)
+        # if popsize is 3 then the overall generation has size (6,)
+        solver = DifferentialEvolutionSolver(rosen, self.bounds, popsize=3)
         solver._calculate_population_energies()
 
         assert_equal(np.argmin(solver.population_energies), 0)
 
-        # initial calculation of the energies should require 4 nfev.
-        assert_equal(solver._nfev, 4)
+        # initial calculation of the energies should require 6 nfev.
+        assert_equal(solver._nfev, 6)
 
     def test_iteration(self):
         # test that DifferentialEvolutionSolver is iterable
-        # if popsize is 2 then the overall generation has size (4,)
-        solver = DifferentialEvolutionSolver(rosen, self.bounds, popsize=2,
-                                             maxfun=8)
+        # if popsize is 3 then the overall generation has size (6,)
+        solver = DifferentialEvolutionSolver(rosen, self.bounds, popsize=3,
+                                             maxfun=12)
         x, fun = next(solver)
         assert_equal(np.size(x, 0), 2)
 
-        # 4 nfev are required for initial calculation of energies, 4 nfev are
-        # required for the evolution of the 4 population members.
-        assert_equal(solver._nfev, 8)
+        # 6 nfev are required for initial calculation of energies, 6 nfev are
+        # required for the evolution of the 6 population members.
+        assert_equal(solver._nfev, 12)
 
         # the next generation should halt because it exceeds maxfun
         assert_raises(StopIteration, next, solver)
@@ -426,3 +447,31 @@ class TestDifferentialEvolutionSolver(object):
         assert_equal(solver._nfev, 0)
         assert_(np.all(np.isinf(solver.population_energies)))
 
+        # we should be able to initialise with our own array
+        population = np.linspace(-1, 3, 10).reshape(5, 2)
+        solver = DifferentialEvolutionSolver(rosen, self.bounds,
+                                             init=population,
+                                             strategy='best2bin',
+                                             atol=0.01, seed=1, popsize=5)
+
+        assert_equal(solver._nfev, 0)
+        assert_(np.all(np.isinf(solver.population_energies)))
+        assert_(solver.num_population_members == 5)
+        assert_(solver.population_shape == (5, 2))
+
+        # check that the population was initialised correctly
+        unscaled_population = np.clip(solver._unscale_parameters(population),
+                                      0, 1)
+        assert_almost_equal(solver.population[:5], unscaled_population)
+
+        # population values need to be clipped to bounds
+        assert_almost_equal(np.min(solver.population[:5]), 0)
+        assert_almost_equal(np.max(solver.population[:5]), 1)
+
+        # shouldn't be able to initialise with an array if it's the wrong shape
+        # this would have too many parameters
+        population = np.linspace(-1, 3, 15).reshape(5, 3)
+        assert_raises(ValueError,
+                      DifferentialEvolutionSolver,
+                      *(rosen, self.bounds),
+                      **{'init': population})

@@ -143,7 +143,7 @@
  *
  *  **User provided storage**
  *
- *  The user has to manage 5/6 vectors refered by the names
+ *  The user has to manage 5/6 vectors referred by the names
  *  :math:`g`, :math:`g_-`, :math:`v`, :math:`s`, :math:`p`, :math:`\textit{Hp}`
  *  and a matrix :math:`Q` with :c:data:`itmax` columns to store the
  *  Lanczos directions :math:`p_i`.
@@ -255,7 +255,7 @@
  *  :param ctl_invariant: 
  *
  *                 - set to :c:macro:`TRLIB_CLC_NO_EXP_INV` if you want to search only in the first invariant Krylov subspace
- *                 - set to :c:macro:`TRLIB_CLC_EXP_INV_LOC` if you wnat to continue to expand the Krylov subspaces but terminate if there is convergence indication in the subspaces sampled so far.
+ *                 - set to :c:macro:`TRLIB_CLC_EXP_INV_LOC` if you want to continue to expand the Krylov subspaces but terminate if there is convergence indication in the subspaces sampled so far.
  *                 - set to :c:macro:`TRLIB_CLC_EXP_INV_GLO` if you want to continue to expand the Krylov subspaces even in the case of convergence to a local minimizer within in the subspaces sampled so far. Reverse communication continues as long as ctl_invariant is set to :c:macro:`TRLIB_CLC_EXP_INV_GLO`, so you should reset :c:data:`ctl_invariant` to either :c:macro:`TRLIB_CLC_EXP_INV_LOC` or :c:macro:`TRLIB_CLC_EXP_INV_LOC` if there is no reason to continue, for example because you cannot find a new nonzero random vector orthogonal to the sampled directions if :c:data:`action` is :c:macro:`TRLIB_CLA_NEW_KRYLOV`.
  *
  *  :type ctl_invariant: trlib_int_t, input
@@ -285,7 +285,7 @@
  *                 5       6                index to block with smallest leftmost
  *                 6       7                flag that indicates if warmstart information to :math:`\lambda_0` is available
  *                 7       8                flag that indicates if warmstart information to :math:`\lambda` is available
- *                 8       9                iteration in which switched to Lanczos iteration, ``-1``: no switch occured
+ *                 8       9                iteration in which switched to Lanczos iteration, ``-1``: no switch occurred
  *                 9       10               return code from :c:func:`trlib_tri_factor_min`
  *                 10      11               :c:data:`sub_fail` exit code from subrotines called in :c:func:`trlib_tri_factor_min`
  *                 11      12               number of newton iterations needed in :c:func:`trlib_tri_factor_min`
@@ -407,7 +407,7 @@
  *      - :c:macro:`TRLIB_CLR_CONTINUE` no convergence yet, continue in reverse communication
  *      - :c:macro:`TRLIB_CLR_CONV_BOUND` successful exit with converged solution on boundary, end reverse communication process
  *      - :c:macro:`TRLIB_CLR_CONV_INTERIOR` successful exit with converged interior solution, end reverse communication process
- *      - :c:macro:`TRLIB_CLR_APPROX_HARD` succesful exit with approximate solution, hard case occured, end reverse communication process
+ *      - :c:macro:`TRLIB_CLR_APPROX_HARD` successful exit with approximate solution, hard case occurred, end reverse communication process
  *      - :c:macro:`TRLIB_CLR_NEWTON_BREAK` exit with breakdown in Newton iteration in :c:func:`trlib_tri_factor_min`, most likely converged to boundary solution
  *      - :c:macro:`TRLIB_TTR_HARD_INIT_LAM` hard case encountered without being able to find suitable initial :math:`\lambda` for Newton iteration, returned approximate stationary point that maybe suboptimal
  *      - :c:macro:`TRLIB_CLR_ITMAX` iteration limit exceeded, end reverse communication process
@@ -418,8 +418,8 @@
  *      - :c:macro:`TRLIB_CLR_UNLIKE_CONV` exit early as convergence seems to be unlikely
  *      - :c:macro:`TRLIB_CLR_PCINDEF` preconditioner apperas to be indefinite, end reverse communication process
  *      - :c:macro:`TRLIB_CLR_UNEXPECT_INT` unexpected interior solution found, expected boundary solution, end reverse communication process
- *      - :c:macro:`TRLIB_CLR_FAIL_TTR` failure occured in :c:func:`trlib_tri_factor_min`, check :c:data:`iwork[7]` and :c:data:`iwork[8]` for details
- *      - :c:macro:`TRLIB_CLR_FAIL_HARD` failure due to occurence of hard case: invariant subspace encountered without local convergence and request for early termination without exploring further invariant subspaces
+ *      - :c:macro:`TRLIB_CLR_FAIL_TTR` failure occurred in :c:func:`trlib_tri_factor_min`, check :c:data:`iwork[7]` and :c:data:`iwork[8]` for details
+ *      - :c:macro:`TRLIB_CLR_FAIL_HARD` failure due to occurrence of hard case: invariant subspace encountered without local convergence and request for early termination without exploring further invariant subspaces
  *
  *  :rtype: trlib_int_t
  *

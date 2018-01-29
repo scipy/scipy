@@ -214,7 +214,7 @@ def freqs_zpk(z, p, k, worN=None):
 
     Notes
     -----
-    .. versionadded: 0.19.0
+    .. versionadded:: 0.19.0
 
     Examples
     --------
@@ -493,7 +493,7 @@ def freqz_zpk(z, p, k, worN=None, whole=False):
 
     Notes
     -----
-    .. versionadded: 0.19.0
+    .. versionadded:: 0.19.0
 
     Examples
     --------
@@ -583,7 +583,7 @@ def group_delay(system, w=None, whole=False):
 
     For the details of numerical computation of the group delay refer to [1]_.
 
-    .. versionadded: 0.16.0
+    .. versionadded:: 0.16.0
 
     See Also
     --------
@@ -1215,7 +1215,7 @@ def zpk2sos(z, p, k, pairing='nearest'):
     *Algorithms*
 
     The current algorithms are designed specifically for use with digital
-    filters. (The output coefficents are not correct for analog filters.)
+    filters. (The output coefficients are not correct for analog filters.)
 
     The steps in the ``pairing='nearest'`` and ``pairing='keep_odd'``
     algorithms are mostly shared. The ``nearest`` algorithm attempts to
@@ -3963,7 +3963,7 @@ def iirnotch(w0, Q):
 
     Notes
     -----
-    .. versionadded: 0.19.0
+    .. versionadded:: 0.19.0
 
     References
     ----------
@@ -4042,7 +4042,7 @@ def iirpeak(w0, Q):
 
     Notes
     -----
-    .. versionadded: 0.19.0
+    .. versionadded:: 0.19.0
 
     References
     ----------

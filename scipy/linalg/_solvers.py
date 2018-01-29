@@ -25,6 +25,7 @@ from .special_matrices import kron, block_diag
 
 __all__ = ['solve_sylvester',
            'solve_continuous_lyapunov', 'solve_discrete_lyapunov',
+           'solve_lyapunov',
            'solve_continuous_are', 'solve_discrete_are']
 
 
@@ -512,11 +513,12 @@ def solve_continuous_are(a, b, q, r, e=None, s=None, balanced=True):
     if balanced:
         x *= sca[:m, None] * sca[:m]
 
-    # Check the deviation from symmetry for success
+    # Check the deviation from symmetry for lack of success
+    # See proof of Thm.5 item 3 in [2]
     u_sym = u00.conj().T.dot(u10)
     n_u_sym = norm(u_sym, 1)
     u_sym = u_sym - u_sym.conj().T
-    sym_threshold = np.max([np.spacing(1000.), n_u_sym])
+    sym_threshold = np.max([np.spacing(1000.), 0.1*n_u_sym])
 
     if norm(u_sym, 1) > sym_threshold:
         raise LinAlgError('The associated Hamiltonian pencil has eigenvalues '
@@ -719,11 +721,12 @@ def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
     if balanced:
         x *= sca[:m, None] * sca[:m]
 
-    # Check the deviation from symmetry for success
+    # Check the deviation from symmetry for lack of success
+    # See proof of Thm.5 item 3 in [2]
     u_sym = u00.conj().T.dot(u10)
     n_u_sym = norm(u_sym, 1)
     u_sym = u_sym - u_sym.conj().T
-    sym_threshold = np.max([np.spacing(1000.), n_u_sym])
+    sym_threshold = np.max([np.spacing(1000.), 0.1*n_u_sym])
 
     if norm(u_sym, 1) > sym_threshold:
         raise LinAlgError('The associated symplectic pencil has eigenvalues'
