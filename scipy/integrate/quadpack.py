@@ -332,12 +332,19 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
     """
     if not isinstance(args, tuple):
         args = (args,)
-    if (weight is None):
+
+    # check the limits of integration: \int_a^b, expect a < b
+    flip, a, b = b < a, min(a, b), max(a, b)
+
+    if weight is None:
         retval = _quad(func, a, b, args, full_output, epsabs, epsrel, limit,
                        points)
     else:
         retval = _quad_weight(func, a, b, args, full_output, epsabs, epsrel,
                               limlst, limit, maxp1, weight, wvar, wopts)
+
+    if flip:
+        retval = (-retval[0],) + retval[1:]
 
     ier = retval[-1]
     if ier == 0:
