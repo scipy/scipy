@@ -226,7 +226,6 @@ def poly_area(vertices, radius=None, threshold=1e-21,
         # to preserve the three-point form of the plane-check
         # determinant
         current_vert = 0
-        plane_counts = 0
         plane_failures = 0
         while current_vert <= (num_vertices - 3):
             candidate_plane = np.concatenate((np.zeros((1,3)),
@@ -236,9 +235,7 @@ def poly_area(vertices, radius=None, threshold=1e-21,
             candidate_plane = np.concatenate((candidate_plane.T,
                                               one_pads))
 
-            if np.linalg.det(candidate_plane) == 0:
-                plane_counts += 1
-            else:
+            if np.linalg.det(candidate_plane) != 0:
                 # if any of the vertices aren't on the plane with
                 # the origin we can safely break out
                 plane_failures += 1
