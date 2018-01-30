@@ -128,7 +128,7 @@ cdef inline double binom(double n, double k) nogil:
             else:
                 return num * sin(k*pi)
     else:
-        return 1/beta(1 + n - k, 1 + k)/(n + 1)
+        return 1/(n + 1)/beta(1 + n - k, 1 + k)
 
 #-----------------------------------------------------------------------------
 # Jacobi
