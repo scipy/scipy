@@ -183,6 +183,7 @@ Charles Masson for the Wasserstein and the Cramér-von Mises statistical
 Felix Lenders for implementing trust-trlib method.
 Dezmond Goff for adding optional out parameter to pdist/cdist
 Nick R. Papior for allowing a wider choice of solvers
+Sean Quinn for the Moyal distribution
 
 Institutions
 ------------

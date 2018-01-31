@@ -215,6 +215,39 @@ class TestQuad(object):
         assert_quad(quad(myfunc, 0, 5, args=0.4, weight='cauchy', wvar=2.0),
                     tabledValue, errTol=1.9e-8)
 
+    def test_b_less_than_a(self):
+        def f(x, p, q):
+            return p * np.exp(-q*x)
+
+        val_1, err_1 = quad(f, 0, np.inf, args=(2, 3))
+        val_2, err_2 = quad(f, np.inf, 0, args=(2, 3))
+        assert_allclose(val_1, -val_2, atol=max(err_1, err_2))
+
+    def test_b_less_than_a_2(self):
+        def f(x, s):
+            return np.exp(-x**2 / 2 / s) / np.sqrt(2.*s)
+
+        val_1, err_1 = quad(f, -np.inf, np.inf, args=(2,))
+        val_2, err_2 = quad(f, np.inf, -np.inf, args=(2,))
+        assert_allclose(val_1, -val_2, atol=max(err_1, err_2))
+
+    def test_b_less_than_a_3(self):
+        def f(x):
+            return 1.0
+
+        val_1, err_1 = quad(f, 0, 1, weight='alg', wvar=(0, 0))
+        val_2, err_2 = quad(f, 1, 0, weight='alg', wvar=(0, 0))
+        assert_allclose(val_1, -val_2, atol=max(err_1, err_2))
+
+    def test_b_less_than_a_full_output(self):
+        def f(x):
+            return 1.0
+
+        res_1 = quad(f, 0, 1, weight='alg', wvar=(0, 0), full_output=True)
+        res_2 = quad(f, 1, 0, weight='alg', wvar=(0, 0), full_output=True)
+        err = max(res_1[1], res_2[1])
+        assert_allclose(res_1[0], -res_2[0], atol=err)
+
     def test_double_integral(self):
         # 8) Double Integral test
         def simpfunc(y, x):       # Note order of arguments.
