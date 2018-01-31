@@ -20,6 +20,7 @@ from numpy import (allclose, angle, arange, argsort, array, asarray,
                    product, r_, ravel, real_if_close, reshape,
                    roots, sort, take, transpose, unique, where, zeros,
                    zeros_like)
+from numpy.lib.type_check import iscomplex
 import numpy as np
 import math
 from scipy.special import factorial
@@ -1978,6 +1979,15 @@ def residuez(b, a, tol=1e-3, rtype='avg'):
     b = brev[::-1]
     p = roots(a)
     r = p * 0.0
+    for i in range(len(p)):
+        round_p = p[i]*0.0
+        sig_digits = int(math.ceil(-math.log(tol,10)))
+        if iscomplex(p[i]):
+            round_p = round_p+round(p[i].real,sig_digits)
+            round_p = round_p+round(p[i].imag,sig_digits)*1j
+        else:
+            round_p = round(p[i],sig_digits)
+        p[i] = round_p
     pout, mult = unique_roots(p, tol=tol, rtype=rtype)
     p = []
     for n in range(len(pout)):
