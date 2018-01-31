@@ -1,7 +1,8 @@
 import numpy as np
 cimport numpy as np
 cimport cython
-from libc.math cimport sin, acos
+from libc.math cimport (sin, acos, atan2,
+                        cos, M_PI)
 
 cdef int vertex_index_strider(int index, int num_vertices):
     cdef int forward_index
@@ -69,3 +70,21 @@ def _slerp(double[:] start_coord,
                       ((sin(t * omega) / sin(omega)) * end_coord[j]))
         new_pts[i] = new_pt
     return new_pts
+
+def calc_heading(double[:] lambda_range,
+                 double[:] phi_range,
+                 int i,
+                 int next_index):
+
+    cdef double lambda_1 = lambda_range[i]
+    cdef double lambda_2 = lambda_range[next_index]
+    cdef double phi_1 = phi_range[i]
+    cdef double phi_2 = phi_range[next_index]
+    cdef double delta_lambda = lambda_1 - lambda_2
+    cdef double term_1 = sin(delta_lambda) * cos(phi_2)
+    cdef double term_2 = cos(phi_1) * sin(phi_2)
+    cdef double term_3 = sin(phi_1) * cos(phi_2) * cos(delta_lambda)
+    cdef double result = atan2(term_1, term_2 - term_3)
+    cdef double course_angle = result % (2 * M_PI)
+    course_angle = course_angle * 180.0 / M_PI
+    return course_angle

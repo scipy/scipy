@@ -77,26 +77,6 @@ def _spherical_polygon_area(vertices, radius, discretizations):
     area = area_sum
     return area
 
-def calc_heading(lambda_range, phi_range,
-                 i, next_index):
-    lambda_1 = lambda_range[i]
-    lambda_2 = lambda_range[next_index]
-    phi_1 = phi_range[i]
-    phi_2 = phi_range[next_index]
-    delta_lambda = lambda_1 - lambda_2
-
-    if delta_lambda > np.pi:
-        delta_lambda -= 2 * np.pi
-    elif delta_lambda < (-np.pi):
-        delta_lambda += 2 * np.pi
-
-    term_1 = math.sin(delta_lambda) * math.cos(phi_2)
-    term_2 = math.cos(phi_1) * math.sin(phi_2)
-    term_3 = math.sin(phi_1) * math.cos(phi_2) * math.cos(delta_lambda)
-    result = math.atan2(term_1, term_2 - term_3)
-    course_angle = np.rad2deg(result % (2 * math.pi))
-    return course_angle
-
 def pole_in_polygon(vertices):
     # determine if the North or South Pole is contained
     # within the spherical polygon defined by vertices
@@ -122,7 +102,7 @@ def pole_in_polygon(vertices):
 
         # calculate heading when leaving point 1
         # the "departure" heading
-        course_angle = calc_heading(lambda_range,
+        course_angle = _surface_area.calc_heading(lambda_range,
                                     phi_range,
                                     i,
                                     next_index)
@@ -141,7 +121,7 @@ def pole_in_polygon(vertices):
         # the "arrival" heading is estimated between
         # penultimate (-2) and final (-1) index
         # points
-        course_angle = calc_heading(new_lambda_range,
+        course_angle = _surface_area.calc_heading(new_lambda_range,
                                     new_phi_range,
                                     -2,
                                     -1)
