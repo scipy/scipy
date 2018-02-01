@@ -837,7 +837,7 @@ def circular_convolve(in1, in2, period):
     in2 = _periodic_summation(in2, period)
 
     return np.array([np.dot(np.roll(in1[::-1], k+1), in2)
-                     for k in np.arange(period)])
+                     for k in range(period)])
 
 
 def _periodic_summation(x, period):
