@@ -73,7 +73,7 @@ def _gen_ridge_line(start_locs, max_locs, length, distances, gaps):
     return [locs[:, 0], locs[:, 1]]
 
 
-class TestArgMaxma1d(object):
+class TestArgmaxima1d(object):
 
     def test_empty(self):
         """Test with empty signal."""
@@ -109,9 +109,11 @@ class TestArgMaxma1d(object):
         """Test input validation and raised exceptions."""
         with raises(ValueError, match="wrong number of dimensions"):
             _argmaxima1d(np.ones((1, 1)))
-        with raises(ValueError, match="expected 'float64_t' but got 'long'"):
+        with raises(ValueError, match="expected 'float64_t'"):
             _argmaxima1d(np.ones(1, dtype=int))
-        with raises(TypeError, match="expected numpy.ndarray, got NoneType"):
+        with raises(TypeError, match="a bytes-like object is required"):
+            _argmaxima1d([1., 2.])
+        with raises(TypeError, match="'x' must not be None"):
             _argmaxima1d(None)
 
 

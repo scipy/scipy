@@ -12,7 +12,7 @@ __all__ = ['_argmaxima1d']
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
-def _argmaxima1d(np.ndarray[np.float64_t, ndim=1] x not None):
+def _argmaxima1d(np.float64_t[:] x not None):
     """
     Find indices of local maxima in a 1D array.
 
@@ -36,8 +36,11 @@ def _argmaxima1d(np.ndarray[np.float64_t, ndim=1] x not None):
 
     Notes
     -----
-    A maxima is defined as one or more samples of equal value that are
-    surrounded on both sides by atleast one smaller sample.
+    - Compared to `argrelmax` this function is significantly faster and can
+      detect maxima that are more than one sample wide. However this comes at
+      the cost of beeing only applicable to 1D arrays.
+    - A maxima is defined as one or more samples of equal value that are
+      surrounded on both sides by atleast one smaller sample.
 
     .. versionadded:: 1.1.0
     """
