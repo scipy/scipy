@@ -347,9 +347,13 @@ int NI_ArrayToLineBuffer(NI_LineBuffer *buffer,
                                    pa, pb, length, buffer->line_stride);
             CASE_COPY_DATA_TO_LINE(NPY_LONGLONG, npy_longlong,
                                    pa, pb, length, buffer->line_stride);
+            CASE_COPY_DATA_TO_LINE(NPY_HALF, npy_half,
+                                   pa, pb, length, buffer->line_stride);
             CASE_COPY_DATA_TO_LINE(NPY_FLOAT, npy_float,
                                    pa, pb, length, buffer->line_stride);
             CASE_COPY_DATA_TO_LINE(NPY_DOUBLE, npy_double,
+                                   pa, pb, length, buffer->line_stride);
+            CASE_COPY_DATA_TO_LINE(NPY_LONGDOUBLE, npy_longdouble,
                                    pa, pb, length, buffer->line_stride);
         default:
             PyErr_Format(PyExc_RuntimeError, "array type %d not supported",
@@ -425,9 +429,13 @@ int NI_LineBufferToArray(NI_LineBuffer *buffer)
                                    pb, pa, length, buffer->line_stride);
             CASE_COPY_LINE_TO_DATA(NPY_LONGLONG, npy_longlong,
                                    pb, pa, length, buffer->line_stride);
+            CASE_COPY_LINE_TO_DATA(NPY_HALF, npy_half,
+                                   pb, pa, length, buffer->line_stride);
             CASE_COPY_LINE_TO_DATA(NPY_FLOAT, npy_float,
                                    pb, pa, length, buffer->line_stride);
             CASE_COPY_LINE_TO_DATA(NPY_DOUBLE, npy_double,
+                                   pb, pa, length, buffer->line_stride);
+            CASE_COPY_LINE_TO_DATA(NPY_LONGDOUBLE, npy_longdouble,
                                    pb, pa, length, buffer->line_stride);
         default:
             PyErr_Format(PyExc_RuntimeError, "array type %d not supported",
