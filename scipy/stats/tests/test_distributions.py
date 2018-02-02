@@ -1635,6 +1635,21 @@ class TestFitMethod(object):
         assert_raises(ValueError, stats.beta.fit, y, f0=0, f1=1,
                       floc=2, fscale=3)
 
+    def test_expon_fit(self):
+        x = np.array([2, 2, 4, 4, 4, 4, 4, 8])
+
+        loc, scale = stats.expon.fit(x)
+        assert_equal(loc, 2)    # x.min()
+        assert_equal(scale, 2)  # x.mean() - x.min()
+
+        loc, scale = stats.expon.fit(x, fscale=3)
+        assert_equal(loc, 2)    # x.min()
+        assert_equal(scale, 3)  # fscale
+
+        loc, scale = stats.expon.fit(x, floc=0)
+        assert_equal(loc, 0)    # floc
+        assert_equal(scale, 4)  # x.mean() - loc
+
     def test_fshapes(self):
         # take a beta distribution, with shapes='a, b', and make sure that
         # fa is equivalent to f0, and fb is equivalent to f1

@@ -1186,6 +1186,53 @@ class expon_gen(rv_continuous):
 
     def _entropy(self):
         return 1.0
+
+    @inherit_docstring_from(rv_continuous)
+    def fit(self, data, *args, **kwds):
+        """%(super)s
+        This function (expon_gen.fit) uses explicit formulas for the maximum
+        likelihood estimation of the parameters, so the `optimizer`, `loc`
+        and `scale` keyword arguments are ignored.
+        """
+        if len(args) > 0:
+            raise TypeError("Too many arguments.")
+
+        floc = kwds.pop('floc', None)
+        fscale = kwds.pop('fscale', None)
+
+        # Ignore the optimizer-related keyword arguments, if given.
+        kwds.pop('loc', None)
+        kwds.pop('scale', None)
+        kwds.pop('optimizer', None)
+        if kwds:
+            raise TypeError("Unknown arguments: %s." % kwds)
+
+        if floc is not None and fscale is not None:
+            # This check is for consistency with `rv_continuous.fit`.
+            raise ValueError("All parameters fixed. There is nothing to "
+                             "optimize.")
+
+        data = np.asarray(data)
+        data_min = data.min()
+        if floc is None:
+            # ML estimate of the location is the minimum of the data.
+            loc = data_min
+        else:
+            loc = floc
+            if data_min < loc:
+                # There are values that are less than the specified loc.
+                raise FitDataError("expon", lower=floc, upper=np.inf)
+
+        if fscale is None:
+            # ML estimate of the scale is the shifted mean.
+            scale = data.mean() - loc
+        else:
+            scale = fscale
+
+        # We expect the return values to be floating point, so ensure it
+        # by explicitly converting to float.
+        return float(loc), float(scale)
+
 expon = expon_gen(a=0.0, name='expon')
 
 
