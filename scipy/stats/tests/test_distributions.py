@@ -1524,8 +1524,9 @@ class TestFitMethod(object):
         np.random.seed(12345)
         with np.errstate(all='ignore'):
             x = stats.lognorm.rvs(0.25, 0., 20.0, size=20)
+            expected_shape = np.sqrt(((np.log(x) - np.log(20))**2).mean())
             assert_allclose(np.array(stats.lognorm.fit(x, floc=0, fscale=20)),
-                            [0.25888672, 0, 20], atol=1e-5)
+                            [expected_shape, 0, 20], atol=1e-8)
 
     def test_fix_fit_norm(self):
         x = np.arange(1, 6)
@@ -1649,6 +1650,26 @@ class TestFitMethod(object):
         loc, scale = stats.expon.fit(x, floc=0)
         assert_equal(loc, 0)    # floc
         assert_equal(scale, 4)  # x.mean() - loc
+
+    def test_lognorm_fit(self):
+        x = np.array([1.5, 3, 10, 15, 23, 59])
+        lnxm1 = np.log(x - 1)
+
+        shape, loc, scale = stats.lognorm.fit(x, floc=1)
+        assert_allclose(shape, lnxm1.std(), rtol=1e-12)
+        assert_equal(loc, 1)
+        assert_allclose(scale, np.exp(lnxm1.mean()), rtol=1e-12)
+
+        shape, loc, scale = stats.lognorm.fit(x, floc=1, fscale=6)
+        assert_allclose(shape, np.sqrt(((lnxm1 - np.log(6))**2).mean()),
+                        rtol=1e-12)
+        assert_equal(loc, 1)
+        assert_equal(scale, 6)
+
+        shape, loc, scale = stats.lognorm.fit(x, floc=1, fix_s=0.75)
+        assert_equal(shape, 0.75)
+        assert_equal(loc, 1)
+        assert_allclose(scale, np.exp(lnxm1.mean()), rtol=1e-12)
 
     def test_fshapes(self):
         # take a beta distribution, with shapes='a, b', and make sure that
