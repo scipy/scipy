@@ -111,7 +111,7 @@ class TestArgmaxima1d(object):
             _argmaxima1d(np.ones((1, 1)))
         with raises(ValueError, match="expected 'float64_t'"):
             _argmaxima1d(np.ones(1, dtype=int))
-        with raises(TypeError, match="a bytes-like object is required"):
+        with raises(TypeError, match="list"):
             _argmaxima1d([1., 2.])
         with raises(TypeError, match="'x' must not be None"):
             _argmaxima1d(None)
