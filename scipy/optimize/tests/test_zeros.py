@@ -5,7 +5,7 @@ from math import sqrt, exp, sin, cos
 from numpy.testing import (assert_warns, assert_, 
                            assert_allclose,
                            assert_equal)
-from numpy import finfo
+from numpy import finfo, exp as np_exp, sin as np_sin, asarray
 
 from scipy.optimize import zeros as cc
 from scipy.optimize import zeros
@@ -55,6 +55,33 @@ class TestBasic(object):
             assert_allclose(f(x), 0, atol=1e-6)
             x = zeros.newton(f, 3, fprime=f_1, fprime2=f_2, tol=1e-6)
             assert_allclose(f(x), 0, atol=1e-6)
+
+    def test_newton_array(self):
+        """test newton with array"""
+
+        def f_solarcell(i, v, il, io, rs, rsh, vt):
+            vd = v + i * rs
+            return il - io * (np_exp(vd / vt) - 1.0) - vd / rsh - i
+
+        def f_prime(i, v, il, io, rs, rsh, vt):
+            return -io * np_exp((v + i * rs) / vt) * rs / vt - rs / rsh - 1
+
+        il = (np_sin(range(10)) + 1.0) * 7.0
+        v = asarray([
+            5.32725221e+00,   5.48673747e+00,   5.49539973e+00,
+            5.36387202e+00,   4.80237316e+00,   1.43764452e+00,
+            5.23063958e+00,   5.46094772e+00,   5.50512718e+00,
+            5.42046290e+00
+        ])
+        args = (v, il, 1e-09, 0.004, 10, 0.27456)
+        x0 = 7.0
+        x = zeros.newton(f_solarcell, x0, f_prime, args)
+        y = (6.17264965e+00,   1.17702805e+01,   1.22219954e+01,
+             7.11017681e+00,   1.18151293e+00,   1.43707955e-01,
+             4.31928228e+00,   1.05419107e+01,   1.27552490e+01,
+             8.91225749e+00)
+        assert_allclose(x, y)
+        return x
 
     def test_deriv_zero_warning(self):
         func = lambda x: x**2

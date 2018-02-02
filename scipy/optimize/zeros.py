@@ -3,7 +3,7 @@ from __future__ import division, print_function, absolute_import
 import warnings
 
 from . import _zeros
-from numpy import finfo, sign, sqrt
+from numpy import finfo, sign, sqrt, asarray, abs as np_abs
 
 _iter = 100
 _xtol = 2e-12
@@ -168,7 +168,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
         for iter in range(maxiter):
             myargs = (p0,) + args
             fder = fprime(*myargs)
-            if fder == 0:
+            if (asarray(fder) == 0).any():
                 msg = "derivative was zero."
                 warnings.warn(msg, RuntimeWarning)
                 return p0
@@ -185,7 +185,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
                     p = p0 - fder / fder2
                 else:
                     p = p0 - 2*fval / (fder + sign(fder) * sqrt(discr))
-            if abs(p - p0) < tol:
+            if (np_abs(p - p0) < tol).all():
                 return p
             p0 = p
     else:
