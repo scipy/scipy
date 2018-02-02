@@ -8,7 +8,8 @@ import warnings
 
 import numpy as np
 
-from scipy.misc.doccer import inherit_docstring_from
+from scipy.misc.doccer import (extend_notes_in_docstring,
+                               replace_notes_in_docstring)
 from scipy import optimize
 from scipy import integrate
 import scipy.special as sc
@@ -164,13 +165,11 @@ class norm_gen(rv_continuous):
     def _entropy(self):
         return 0.5*(np.log(2*np.pi)+1)
 
-    @inherit_docstring_from(rv_continuous)
+    @replace_notes_in_docstring(rv_continuous, notes="""\
+        This function uses explicit formulas for the maximum likelihood
+        estimation of the normal distribution parameters, so the
+        `optimizer` argument is ignored.\n\n""")
     def fit(self, data, **kwds):
-        """%(super)s
-        This function (norm_gen.fit) uses explicit formulas for the maximum
-        likelihood estimation of the parameters, so the `optimizer` argument
-        is ignored.
-        """
         floc = kwds.get('floc', None)
         fscale = kwds.get('fscale', None)
 
@@ -432,13 +431,11 @@ class beta_gen(rv_continuous):
         a, b = optimize.fsolve(func, (1.0, 1.0))
         return super(beta_gen, self)._fitstart(data, args=(a, b))
 
-    @inherit_docstring_from(rv_continuous)
-    def fit(self, data, *args, **kwds):
-        """%(super)s
+    @extend_notes_in_docstring(rv_continuous, notes="""\
         In the special case where both `floc` and `fscale` are given, a
         `ValueError` is raised if any value `x` in `data` does not satisfy
-        `floc < x < floc + fscale`.
-        """
+        `floc < x < floc + fscale`.\n\n""")
+    def fit(self, data, *args, **kwds):
         # Override rv_continuous.fit, so we can more efficiently handle the
         # case where floc and fscale are given.
 
@@ -1187,13 +1184,11 @@ class expon_gen(rv_continuous):
     def _entropy(self):
         return 1.0
 
-    @inherit_docstring_from(rv_continuous)
+    @replace_notes_in_docstring(rv_continuous, notes="""\
+        This function uses explicit formulas for the maximum likelihood
+        estimation of the exponential distribution parameters, so the
+        `optimizer`, `loc` and `scale` keyword arguments are ignored.\n\n""")
     def fit(self, data, *args, **kwds):
-        """%(super)s
-        This function (expon_gen.fit) uses explicit formulas for the maximum
-        likelihood estimation of the parameters, so the `optimizer`, `loc`
-        and `scale` keyword arguments are ignored.
-        """
         if len(args) > 0:
             raise TypeError("Too many arguments.")
 
@@ -2402,7 +2397,11 @@ class gamma_gen(rv_continuous):
         a = 4 / (1e-8 + _skew(data)**2)
         return super(gamma_gen, self)._fitstart(data, args=(a,))
 
-    @inherit_docstring_from(rv_continuous)
+    @extend_notes_in_docstring(rv_continuous, notes="""\
+        When the location is fixed by using the argument `floc`, this
+        function uses explicit formulas or solves a simpler numerical
+        problem than the full ML optimization problem.  So in that case,
+        the `optimizer`, `loc` and `scale` arguments are ignored.\n\n""")
     def fit(self, data, *args, **kwds):
         f0 = (kwds.get('f0', None) or kwds.get('fa', None) or
               kwds.get('fix_a', None))
@@ -3687,7 +3686,11 @@ class lognorm_gen(rv_continuous):
     def _entropy(self, s):
         return 0.5 * (1 + np.log(2*np.pi) + 2 * np.log(s))
 
-    @inherit_docstring_from(rv_continuous)
+    @extend_notes_in_docstring(rv_continuous, notes="""\
+        When the location parameter is fixed by using the `floc` argument,
+        this function uses explicit formulas for the maximum likelihood
+        estimation of the log-normal shape and scale parameters, so the
+        `optimizer`, `loc` and `scale` keyword arguments are ignored.\n\n""")
     def fit(self, data, *args, **kwds):
         floc = kwds.get('floc', None)
         if floc is None:
