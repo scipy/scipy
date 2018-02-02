@@ -1982,6 +1982,12 @@ def residuez(b, a, tol=1e-3, rtype='avg'):
     p = []
     for n in range(len(pout)):
         p.extend([pout[n]] * mult[n])
+        if iscomplex(p[i]):
+            round_p = round_p+round(p[i].real,sig_digits)
+            round_p = round_p+round(p[i].imag,sig_digits)*1j
+        else:
+            round_p = round(p[i],sig_digits)
+        p[i] = round_p
     p = asarray(p)
     # Compute the residue from the general formula (for discrete-time)
     #  the polynomial is in z**(-1) and the multiplication is by terms
