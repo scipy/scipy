@@ -70,6 +70,7 @@ Continuous distributions
    halfnorm          -- Half Normal
    halfgennorm       -- Generalized Half Normal
    hypsecant         -- Hyperbolic Secant
+   hypsecant2        -- Hyperbolic Squared Secant
    invgamma          -- Inverse Gamma
    invgauss          -- Inverse Gaussian
    invweibull        -- Inverse Weibull

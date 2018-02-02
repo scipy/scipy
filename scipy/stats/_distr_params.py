@@ -51,6 +51,7 @@ distcont = [
     ['halflogistic', ()],
     ['halfnorm', ()],
     ['hypsecant', ()],
+    ['hypsecant2', ()],
     ['invgamma', (4.0668996136993067,)],
     ['invgauss', (0.14546264555347513,)],
     ['invweibull', (10.58,)],

@@ -2919,6 +2919,32 @@ class hypsecant_gen(rv_continuous):
 hypsecant = hypsecant_gen(name='hypsecant')
 
 
+class hypsecant2_gen(rv_continuous):
+    r"""A hyperbolic squared secant continuous random variable.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability density function for `hypsecant2` is:
+
+    .. math::
+
+        f(x) = \frac{\pi}{4\sqrt(3)} sech^(2)(\pi*x/2/\sqrt(3))
+
+    %(after_notes)s
+
+    %(example)s
+
+    """
+    def _pdf(self, x):
+        return np.pi/4./np.sqrt(3)/np.cosh(np.pi*x/2./np.sqrt(3.))
+
+    def _cdf(self, x):
+        return 0.5*(1 + np.tanh(x*np.pi/2./np.sqrt(3.)))
+hypsecant2 = hypsecant2_gen(name='hypsecant2')
+
+
 class gausshyper_gen(rv_continuous):
     r"""A Gauss hypergeometric continuous random variable.
 
