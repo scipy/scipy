@@ -164,7 +164,6 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
         # Multiply by 1.0 to convert to floating point.  We don't use float(x0)
         # so it still works if x0 is complex.
         p0 = asarray(1.0 * x0)  # convert to ndarray
-        fder2 = 0
         for iter in range(maxiter):
             myargs = (p0,) + args
             fder = asarray(fprime(*myargs))  # convert to ndarray
@@ -173,18 +172,32 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
                 warnings.warn(msg, RuntimeWarning)
                 return p0
             fval = asarray(func(*myargs))  # convert to ndarray
-            if fprime2 is not None:
-                fder2 = fprime2(*myargs)
-            if fder2 == 0:
+            if fprime2 is None:
                 # Newton step
                 p = p0 - fval / fder
             else:
+                fder2 = asarray(fprime2(*myargs))  # convert to ndarray
+                # Halley's method
+                # https://en.wikipedia.org/wiki/Halley%27s_method
+                p = p0 - 2 * fval * fder / (2 * fder ** 2 - fval * fder2)
+                # this version has overflow issues
+                # p = p0 - 1 / (fder / fval - fder2 / fder / 2)
                 # Parabolic Halley's method
-                discr = fder ** 2 - 2 * fval * fder2
-                if discr < 0:
-                    p = p0 - fder / fder2
-                else:
-                    p = p0 - 2*fval / (fder + sign(fder) * sqrt(discr))
+                # https://de.wikipedia.org/wiki/Halley-Verfahren
+                # see GH #5922
+                # discr = fder ** 2 - 2 * fval * fder2
+                # idx = discr < 0  # indices
+                # # initialize array of zeros
+                # p = asarray([0.0] * idx.size).reshape(idx.shape)
+                # # first time only, expand p0 if necessary
+                # if not iter and p0.size == 1:
+                #     p0 = p0.repeat(p.size).reshape(idx.shape)
+                # if idx.any():
+                #     p[idx] = p0[idx] - fder[idx] / fder2[idx]
+                # if not idx.all():
+                #     p[~idx] = p0[~idx] - 2*fval[~idx] / (
+                #             fder[~idx] + sign(fder[~idx]) * sqrt(discr[~idx])
+                #     )
             if np_abs(p - p0).max() < tol:
                 return p
             p0 = p

@@ -63,8 +63,11 @@ class TestBasic(object):
             vd = v + i * rs
             return il - io * (np_exp(vd / vt) - 1.0) - vd / rsh - i
 
-        def f_prime(i, v, il, io, rs, rsh, vt):
+        def fprime(i, v, il, io, rs, rsh, vt):
             return -io * np_exp((v + i * rs) / vt) * rs / vt - rs / rsh - 1
+
+        def fprime2(i, v, il, io, rs, rsh, vt):
+            return -io * np_exp((v + i * rs) / vt) * (rs / vt)**2
 
         il = (np_sin(range(10)) + 1.0) * 7.0
         v = asarray([
@@ -75,11 +78,14 @@ class TestBasic(object):
         ])
         args = (v, il, 1e-09, 0.004, 10, 0.27456)
         x0 = 7.0
-        x = zeros.newton(f_solarcell, x0, f_prime, args)
+        x = zeros.newton(f_solarcell, x0, fprime, args)
         y = (6.17264965, 11.7702805, 12.2219954,
              7.11017681, 1.18151293, 0.143707955,
              4.31928228, 10.5419107, 12.7552490,
              8.91225749)
+        assert_allclose(x, y)
+        # test halley's
+        x = zeros.newton(f_solarcell, x0, fprime, args, fprime2=fprime2)
         assert_allclose(x, y)
         return x
 
