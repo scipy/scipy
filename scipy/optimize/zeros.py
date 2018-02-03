@@ -180,24 +180,6 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
                 # Halley's method
                 # https://en.wikipedia.org/wiki/Halley%27s_method
                 p = p0 - 2 * fval * fder / (2 * fder ** 2 - fval * fder2)
-                # this version has overflow issues
-                # p = p0 - 1 / (fder / fval - fder2 / fder / 2)
-                # Parabolic Halley's method
-                # https://de.wikipedia.org/wiki/Halley-Verfahren
-                # see GH #5922
-                # discr = fder ** 2 - 2 * fval * fder2
-                # idx = discr < 0  # indices
-                # # initialize array of zeros
-                # p = asarray([0.0] * idx.size).reshape(idx.shape)
-                # # first time only, expand p0 if necessary
-                # if not iter and p0.size == 1:
-                #     p0 = p0.repeat(p.size).reshape(idx.shape)
-                # if idx.any():
-                #     p[idx] = p0[idx] - fder[idx] / fder2[idx]
-                # if not idx.all():
-                #     p[~idx] = p0[~idx] - 2*fval[~idx] / (
-                #             fder[~idx] + sign(fder[~idx]) * sqrt(discr[~idx])
-                #     )
             if np_abs(p - p0).max() < tol:
                 return p
             p0 = p
