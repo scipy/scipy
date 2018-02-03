@@ -163,16 +163,16 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
         # Newton-Rapheson method
         # Multiply by 1.0 to convert to floating point.  We don't use float(x0)
         # so it still works if x0 is complex.
-        p0 = 1.0 * x0
+        p0 = asarray(1.0 * x0)  # convert to ndarray
         fder2 = 0
         for iter in range(maxiter):
             myargs = (p0,) + args
-            fder = fprime(*myargs)
-            if (asarray(fder) == 0).any():
+            fder = asarray(fprime(*myargs))  # convert to ndarray
+            if (fder == 0).any():
                 msg = "derivative was zero."
                 warnings.warn(msg, RuntimeWarning)
                 return p0
-            fval = func(*myargs)
+            fval = asarray(func(*myargs))  # convert to ndarray
             if fprime2 is not None:
                 fder2 = fprime2(*myargs)
             if fder2 == 0:
@@ -185,7 +185,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
                     p = p0 - fder / fder2
                 else:
                     p = p0 - 2*fval / (fder + sign(fder) * sqrt(discr))
-            if (np_abs(p - p0) < tol).all():
+            if np_abs(p - p0).max() < tol:
                 return p
             p0 = p
     else:
