@@ -3,7 +3,7 @@ from __future__ import division, print_function, absolute_import
 import warnings
 
 from . import _zeros
-from numpy import finfo, sign, sqrt, asarray, abs as np_abs
+from numpy import finfo, sqrt, asarray, abs as np_abs, where
 
 _iter = 100
 _xtol = 2e-12
@@ -185,27 +185,27 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
             p0 = p
     else:
         # Secant method
-        p0 = x0
-        if x0 >= 0:
-            p1 = x0*(1 + 1e-4) + 1e-4
-        else:
-            p1 = x0*(1 + 1e-4) - 1e-4
-        q0 = func(*((p0,) + args))
-        q1 = func(*((p1,) + args))
+        p0 = asarray(x0)
+        dx = finfo(float).eps**0.33
+        dp = where(x0 >= 0, dx, -dx)
+        p1 = x0 * (1 + dx) + dp
+        q0 = asarray(func(*((p0,) + args)))
+        q1 = asarray(func(*((p1,) + args)))
         for iter in range(maxiter):
-            if q1 == q0:
-                if p1 != p0:
-                    msg = "Tolerance of %s reached" % (p1 - p0)
+            # check for divide by zero
+            if (q1 == q0).any():
+                if (p1 != p0).any():
+                    msg = "Tolerance of %s reached" % sqrt(sum((p1 - p0)**2))
                     warnings.warn(msg, RuntimeWarning)
                 return (p1 + p0)/2.0
             else:
                 p = p1 - q1*(p1 - p0)/(q1 - q0)
-            if abs(p - p1) < tol:
+            if np_abs(p - p1).max() < tol:
                 return p
             p0 = p1
             q0 = q1
             p1 = p
-            q1 = func(*((p1,) + args))
+            q1 = asarray(func(*((p1,) + args)))
     msg = "Failed to converge after %d iterations, value is %s" % (maxiter, p)
     raise RuntimeError(msg)
 

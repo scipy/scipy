@@ -87,6 +87,9 @@ class TestBasic(object):
         # test halley's
         x = zeros.newton(f_solarcell, x0, fprime, args, fprime2=fprime2)
         assert_allclose(x, y)
+        # test secant
+        x = zeros.newton(f_solarcell, x0, args=args)
+        assert_allclose(x, y)
         return x
 
     def test_deriv_zero_warning(self):
