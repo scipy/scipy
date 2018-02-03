@@ -158,6 +158,7 @@ int NI_InitLineBuffer(PyArrayObject *array, int axis, npy_intp size1,
         NI_ExtendMode extend_mode, double extend_value, NI_LineBuffer *buffer)
 {
     npy_intp line_length = 0, array_lines = 0, size;
+    int array_type;
 
     size = PyArray_SIZE(array);
     /* check if the buffer is big enough: */
@@ -165,6 +166,37 @@ int NI_InitLineBuffer(PyArrayObject *array, int axis, npy_intp size1,
         PyErr_SetString(PyExc_RuntimeError, "buffer too small");
         return 0;
     }
+    /*
+     * Check that the data type is supported, against the types listed in
+     * NI_ArrayToLineBuffer
+     */
+    array_type = NI_CanonicalType(PyArray_TYPE(array));
+    switch (array_type) {
+    case NPY_BOOL:
+    case NPY_UBYTE:
+    case NPY_USHORT:
+    case NPY_UINT:
+    case NPY_ULONG:
+    case NPY_ULONGLONG:
+    case NPY_BYTE:
+    case NPY_SHORT:
+    case NPY_INT:
+    case NPY_LONG:
+    case NPY_LONGLONG:
+    case NPY_FLOAT:
+    case NPY_DOUBLE:
+        break;
+    default:
+#if PY_VERSION_HEX >= 0x03040000
+        PyErr_Format(PyExc_RuntimeError, "array type %R not supported",
+                     (PyObject *)PyArray_DTYPE(array));
+#else
+        PyErr_Format(PyExc_RuntimeError, "array type %d not supported",
+                     array_type);
+#endif
+        return 0;
+    }
+
     /* Initialize a line iterator to move over the array: */
     if (!NI_InitPointIterator(array, &(buffer->iterator)))
         return 0;
@@ -178,13 +210,7 @@ int NI_InitLineBuffer(PyArrayObject *array, int axis, npy_intp size1,
     buffer->array_data = (void *)PyArray_DATA(array);
     buffer->buffer_data = buffer_data;
     buffer->buffer_lines = buffer_lines;
-    buffer->array_type = NI_CanonicalType(PyArray_TYPE(array));
-    if (buffer->array_type > 12)
-    {
-        PyErr_Format(PyExc_RuntimeError, "array type %d not supported",
-                    buffer->array_type);
-        return 0;
-    }
+    buffer->array_type = array_type;
     buffer->array_lines = array_lines;
     buffer->next_line = 0;
     buffer->size1 = size1;
