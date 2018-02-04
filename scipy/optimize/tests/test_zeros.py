@@ -89,7 +89,7 @@ class TestBasic(object):
         assert_allclose(x, y)
         # test secant
         x = zeros.newton(lambda x, y: y - x**2, 4.0, args=([15.0, 17.0], ))
-        assert_allclose(x, (3.87400821, 4.1240382))
+        assert_allclose(x, (3.872983346207417, 4.123105625617661))
         with assert_warns(RuntimeWarning):
             zeros.newton(f_solarcell, x0, args=args)
 
