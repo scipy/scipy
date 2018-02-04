@@ -163,7 +163,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
         # Newton-Rapheson method
         # Multiply by 1.0 to convert to floating point.  We don't use float(x0)
         # so it still works if x0 is complex.
-        p0 = asarray(1.0 * x0)  # convert to ndarray
+        p0 = 1.0 * asarray(x0)  # convert to ndarray
         for iter in range(maxiter):
             myargs = (p0,) + args
             fder = asarray(fprime(*myargs))  # convert to ndarray
@@ -187,14 +187,15 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
         # Secant method
         p0 = asarray(x0)
         dx = finfo(float).eps**0.33
-        dp = where(x0 >= 0, dx, -dx)
-        p1 = x0 * (1 + dx) + dp
+        dp = where(p0 >= 0, dx, -dx)
+        p1 = p0 * (1 + dx) + dp
         q0 = asarray(func(*((p0,) + args)))
         q1 = asarray(func(*((p1,) + args)))
         for iter in range(maxiter):
-            # check for divide by zero
-            if (q1 == q0).any():
-                if (p1 != p0).any():
+            divide_by_zero = (q1 == q0)
+            if divide_by_zero.any():
+                tolerance_reached = (p1 != p0)
+                if (divide_by_zero & tolerance_reached).any():
                     msg = "Tolerance of %s reached" % sqrt(sum((p1 - p0)**2))
                     warnings.warn(msg, RuntimeWarning)
                 return (p1 + p0)/2.0

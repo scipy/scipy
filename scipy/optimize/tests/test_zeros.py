@@ -90,8 +90,9 @@ class TestBasic(object):
         # test secant
         x = zeros.newton(lambda x, y: y - x**2, 4.0, args=([15.0, 17.0], ))
         assert_allclose(x, (3.872983346207417, 4.123105625617661))
-        with assert_warns(RuntimeWarning):
-            zeros.newton(f_solarcell, x0, args=args)
+        # test derivative zero warning
+        assert_warns(RuntimeWarning, zeros.newton,
+                     lambda x: x**2, [0., 0.], lambda x: 2*x)
 
     def test_deriv_zero_warning(self):
         func = lambda x: x**2
