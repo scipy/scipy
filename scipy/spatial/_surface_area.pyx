@@ -28,25 +28,6 @@ def planar_polygon_area(double[:,::1] vertices):
     area *= 0.5
     return area
 
-@cython.boundscheck(False)
-def spherical_polygon_area(double[:,:] vertices, double radius):
-    cdef double [:] lambda_vals = np.arctan2(vertices[...,1],
-                                             vertices[...,0])
-    cdef double [:] phi_vals = np.arcsin(np.asarray(vertices[...,2]) / radius)
-    cdef int N = vertices.shape[0]
-    cdef int i, forward_index, backward_index
-    cdef double area = 0
-    cdef double delta_lambda
-
-    for i in range(N):
-        forward_index = vertex_index_strider(i, N)
-        backward_index = i - 1
-        delta_lambda = (lambda_vals[forward_index] -
-                        lambda_vals[backward_index])
-        area += delta_lambda * sin(phi_vals[i])
-    area = (radius ** 2) * area
-    return area
-
 def _slerp(double[:] start_coord,
            double[:] end_coord,
            int n_pts):
@@ -168,3 +149,40 @@ def pole_in_polygon(double [:,:] vertices):
     else:
         # something went wrong
         return -1
+
+def _spherical_polygon_area(double[:,:] vertices,
+                            double radius,
+                            int discretizations):
+    cdef int num_vertices = vertices.shape[0]
+    cdef double area_sum = 0
+    cdef double area_element, second_term, delta_lambda
+    cdef int i, j
+    cdef double[:,:] new_pts
+    cdef double[:] lambda_range, phi_range
+
+    for i in range(num_vertices):
+        new_pts = _slerp(vertices[i], vertices[i-1], discretizations)
+
+        lambda_range = np.arctan2(new_pts[...,1], new_pts[...,0])
+        phi_range = np.arcsin((new_pts[...,2]))
+        # NOTE: early stage handling of antipodes
+        if phi_range[0] == phi_range[-1]:
+            phi_range[:] = phi_range[0]
+        area_element = 0
+        for j in range(discretizations - 1):
+            delta_lambda = (lambda_range[j+1] -
+                            lambda_range[j])
+
+            # at the + / - pi transition point
+            # of the unit circle
+            # add or subtract 2 * pi to the delta
+            # based on original sign
+            if delta_lambda > np.pi:
+                delta_lambda -= 2 * np.pi
+            elif delta_lambda < (-np.pi):
+                delta_lambda += 2 * np.pi
+
+            second_term = 2 + sin(phi_range[j]) + sin(phi_range[j+1])
+            area_element += (delta_lambda * second_term * (radius ** 2) * 0.5)
+        area_sum += area_element
+    return area_sum

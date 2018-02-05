@@ -45,37 +45,6 @@ def convert_spherical_array_to_cartesian_array(spherical_coord_array,angle_measu
     cartesian_coord_array[...,2] = spherical_coord_array[...,0] * np.cos(spherical_coord_array[...,2])
     return cartesian_coord_array
 
-def _spherical_polygon_area(vertices, radius, discretizations):
-    num_vertices = vertices.shape[0]
-    area_sum = 0
-
-    for i in xrange(num_vertices):
-        new_pts = _surface_area._slerp(vertices[i], vertices[i-1], discretizations)
-
-        lambda_range = np.arctan2(new_pts[...,1], new_pts[...,0])
-        phi_range = np.arcsin((new_pts[...,2]))
-        # NOTE: early stage handling of antipodes
-        if phi_range[0] == phi_range[-1]:
-            phi_range[:] = phi_range[0]
-        area_element = 0
-        for j in xrange(discretizations - 1):
-            delta_lambda = (lambda_range[j+1] -
-                            lambda_range[j])
-
-            # at the + / - pi transition point
-            # of the unit circle
-            # add or subtract 2 * pi to the delta
-            # based on original sign
-            if delta_lambda > np.pi:
-                delta_lambda -= 2 * np.pi
-            elif delta_lambda < (-np.pi):
-                delta_lambda += 2 * np.pi
-
-            second_term = 2 + np.sin(phi_range[j]) + np.sin(phi_range[j+1])
-            area_element += (delta_lambda * second_term * (radius ** 2) * 0.5)
-        area_sum += area_element
-    area = area_sum
-    return area
 
 
 def poly_area(vertices, radius=None, threshold=1e-21,
@@ -183,12 +152,9 @@ def poly_area(vertices, radius=None, threshold=1e-21,
                                np.cross(rot_axis, row) * math.sin(rot_angle) +
                                rot_axis * (np.dot(row, rot_axis)) * (1 - math.cos(rot_angle)))
 
-        if cython is None:
-            area = _spherical_polygon_area(vertices, radius, discretizations)
-        else: # cython code for spherical polygon SA
-            area = _spherical_polygon_area(vertices, radius, discretizations)
-            #area = _surface_area.spherical_polygon_area(vertices, radius,
-                                                        #discretizations)
+        area = _surface_area._spherical_polygon_area(vertices,
+                                                    radius,
+                                                    discretizations)
     else: # planar polygon
         area = _surface_area.planar_polygon_area(vertices)
     
