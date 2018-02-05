@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.spatial import _polygon_surface_area as psa
+from scipy.spatial import _surface_area
 from scipy.spatial import SphericalVoronoi
 from scipy.spatial.distance import pdist
 from numpy.testing import (assert_equal, assert_raises,
@@ -572,6 +573,6 @@ def test_pole_in_polygon(polygon, pole_present):
     # BOTH N & S Poles are contained within a
     # single polygon
 
-    result = psa.pole_in_polygon(polygon)
+    result = _surface_area.pole_in_polygon(polygon)
     expected = pole_present
     assert result == expected

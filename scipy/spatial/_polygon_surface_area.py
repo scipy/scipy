@@ -77,76 +77,6 @@ def _spherical_polygon_area(vertices, radius, discretizations):
     area = area_sum
     return area
 
-def pole_in_polygon(vertices):
-    # determine if the North or South Pole is contained
-    # within the spherical polygon defined by vertices
-    # the implementation is based on discussion
-    # here: https://blog.element84.com/determining-if-a-spherical-polygon-contains-a-pole.html
-    # and the course calculation component of the aviation
-    # formulary here: http://www.edwilliams.org/avform.htm#Crs
-
-    #TODO: handle case where initial point is within
-    # i.e., expected machine precision of a pole
-
-    #TODO: handle case where both the N & S poles
-    # are contained within a given polygon
-
-    lambda_range = np.arctan2(vertices[...,1], vertices[...,0])
-    phi_range = np.arcsin((vertices[...,2]))
-    list_course_angles = []
-    for i in range(vertices.shape[0]):
-        if i == (vertices.shape[0] - 1):
-            next_index = 0
-        else:
-            next_index = i + 1
-
-        # calculate heading when leaving point 1
-        # the "departure" heading
-        course_angle = _surface_area.calc_heading(lambda_range,
-                                    phi_range,
-                                    i,
-                                    next_index)
-
-        list_course_angles.append(course_angle)
-
-        # calcualte heading when arriving at point 2
-        # strategy: discretize arc path between
-        # points 1 and 2 and take the penultimate
-        # point for bearing calculation
-        new_pts = _surface_area._slerp(vertices[i], vertices[next_index],
-                         n_pts=900)
-        new_lambda_range = np.arctan2(new_pts[...,1], new_pts[...,0])
-        new_phi_range = np.arcsin((new_pts[...,2]))
-
-        # the "arrival" heading is estimated between
-        # penultimate (-2) and final (-1) index
-        # points
-        course_angle = _surface_area.calc_heading(new_lambda_range,
-                                    new_phi_range,
-                                    -2,
-                                    -1)
-        list_course_angles.append(course_angle)
-
-    list_course_angles.append(list_course_angles[0])
-    angles = np.array(list_course_angles)
-    # delta values should be capped at 180 degrees
-    # and follow a CW or CCW directionality
-    deltas = angles[1:] - angles[:-1]
-    deltas[deltas > 180] -= 360
-    deltas[deltas < -180] += 360
-    net_angle = np.sum(deltas)
-
-    if np.allclose(net_angle, 0.0):
-        # there's a pole in the polygon
-        return 1
-    elif np.allclose(abs(net_angle), 360.0):
-        # no single pole in the polygon
-        # a normal CW or CCW-sorted
-        # polygon
-        return 0
-    else:
-        # something went wrong
-        return -1
 
 def poly_area(vertices, radius=None, threshold=1e-21,
               cython=None, discretizations=500,
@@ -240,7 +170,7 @@ def poly_area(vertices, radius=None, threshold=1e-21,
         # rotate around y axis to move away
         # from the N/ S poles
         rot_axis = np.array([[0,1,0]]).ravel()
-        while pole_in_polygon(vertices) == 1:
+        while _surface_area.pole_in_polygon(vertices) == 1:
             n_rot -= 1
             rot_angle = np.random.random_sample() * (np.pi / 6.)
             if n_rot == 0:

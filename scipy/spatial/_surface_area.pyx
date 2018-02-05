@@ -88,3 +88,83 @@ def calc_heading(double[:] lambda_range,
     cdef double course_angle = result % (2 * M_PI)
     course_angle = course_angle * 180.0 / M_PI
     return course_angle
+
+def pole_in_polygon(double [:,:] vertices):
+    # determine if the North or South Pole is contained
+    # within the spherical polygon defined by vertices
+    # the implementation is based on discussion
+    # here: https://blog.element84.com/determining-if-a-spherical-polygon-contains-a-pole.html
+    # and the course calculation component of the aviation
+    # formulary here: http://www.edwilliams.org/avform.htm#Crs
+
+    #TODO: handle case where initial point is within
+    # i.e., expected machine precision of a pole
+
+    #TODO: handle case where both the N & S poles
+    # are contained within a given polygon
+
+    cdef double[:] lambda_range = np.arctan2(vertices[...,1], vertices[...,0])
+    cdef double[:] phi_range = np.arcsin((vertices[...,2]))
+    cdef double[:] new_lambda_range, new_phi_range
+    cdef int i
+    cdef int N = vertices.shape[0]
+    cdef double[:,:] new_pts
+    cdef double net_angle, course_angle
+    cdef int next_index
+    cdef int counter = 0
+    cdef double[:] course_angles = np.empty((2 * N + 1), dtype=np.float64)
+
+    for i in range(N):
+        if i == (N - 1):
+            next_index = 0
+        else:
+            next_index = i + 1
+
+        # calculate heading when leaving point 1
+        # the "departure" heading
+        course_angle = calc_heading(lambda_range,
+                                    phi_range,
+                                    i,
+                                    next_index)
+
+        course_angles[counter] = course_angle
+
+        # calcualte heading when arriving at point 2
+        # strategy: discretize arc path between
+        # points 1 and 2 and take the penultimate
+        # point for bearing calculation
+        new_pts = _slerp(vertices[i], vertices[next_index],
+                         n_pts=900)
+        new_lambda_range = np.arctan2(new_pts[...,1], new_pts[...,0])
+        new_phi_range = np.arcsin((new_pts[...,2]))
+
+        # the "arrival" heading is estimated between
+        # penultimate (-2) and final (-1) index
+        # points
+        course_angle = calc_heading(new_lambda_range,
+                                    new_phi_range,
+                                    -2,
+                                    -1)
+        course_angles[counter + 1] = course_angle
+        counter += 2
+
+    course_angles[counter] = course_angles[0]
+    angles = np.array(course_angles)
+    # delta values should be capped at 180 degrees
+    # and follow a CW or CCW directionality
+    deltas = angles[1:] - angles[:-1]
+    deltas[deltas > 180] -= 360
+    deltas[deltas < -180] += 360
+    net_angle = np.sum(deltas)
+
+    if np.allclose(net_angle, 0.0):
+        # there's a pole in the polygon
+        return 1
+    elif np.allclose(abs(net_angle), 360.0):
+        # no single pole in the polygon
+        # a normal CW or CCW-sorted
+        # polygon
+        return 0
+    else:
+        # something went wrong
+        return -1
