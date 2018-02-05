@@ -169,7 +169,7 @@ def poly_area(vertices, radius=None, threshold=1e-21,
 
         # rotate around y axis to move away
         # from the N/ S poles
-        rot_axis = np.array([[0,1,0]]).ravel()
+        rot_axis = np.array([0,1,0])
         while _surface_area.pole_in_polygon(vertices) == 1:
             n_rot -= 1
             rot_angle = np.random.random_sample() * (np.pi / 6.)
@@ -177,8 +177,8 @@ def poly_area(vertices, radius=None, threshold=1e-21,
                 return np.nan
             else:
                # use Rodrigues' rotation formula
-               for index in range(vertices.shape[0]):
-                  row = vertices[index][:]
+               for index in range(num_vertices):
+                  row = vertices[index]
                   vertices[index] = (row * math.cos(rot_angle) +
                                np.cross(rot_axis, row) * math.sin(rot_angle) +
                                rot_axis * (np.dot(row, rot_axis)) * (1 - math.cos(rot_angle)))
@@ -193,9 +193,3 @@ def poly_area(vertices, radius=None, threshold=1e-21,
         area = _surface_area.planar_polygon_area(vertices)
     
     return abs(area)
-
-
-
-
-
-
