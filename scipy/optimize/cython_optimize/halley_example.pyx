@@ -19,13 +19,18 @@ cdef double fprime(double i, tuple args):
     return -io * exp((v + i * rs) / vt) * rs / vt - rs / rsh - 1
 
 
+cdef double fprime2(double i, tuple args):
+    v, il, io, rs, rsh, vt = args
+    return -io * exp((v + i * rs) / vt) * (rs / vt)**2
+
+
 #solver
-cdef double solarcell_newton(tuple args):
+def solarcell_halley(args):
     """test newton with array"""
-    return zeros.newton(f_solarcell, 6.0, fprime, args)
+    return zeros.newton(f_solarcell, 7.0, fprime, args, fprime2=fprime2)
 
 
 # cython
-def bench_cython_newton(v=5.25, il=IL, args=(1e-09, 0.004, 10, 0.27456)):
-    return map(solarcell_newton,
-               ((v, il_,) + args for il_ in il))
+def bench_cython_halley():
+    return map(solarcell_halley,
+                 ((5.25, il, 1e-09, 0.004, 10, 0.27456) for il in IL))

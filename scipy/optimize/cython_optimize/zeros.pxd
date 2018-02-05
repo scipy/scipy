@@ -1,4 +1,4 @@
 
-ctypedef float (*callback_type)(float, tuple);
+ctypedef double (*callback_type)(double, tuple);
 
-cdef float newton(callback_type func, float x0, callback_type fprime, tuple args)
+cdef double newton(callback_type func, double x0, callback_type fprime, tuple args)
