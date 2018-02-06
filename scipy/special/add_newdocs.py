@@ -6811,11 +6811,41 @@ add_newdoc("scipy.special", "zetac",
 
     .. math:: \\zeta(x) = \\sum_{k=2}^{\\infty} 1 / k^x,
 
-    where ``x > 1``.
+    where ``x > 1``.  For ``x < 1``, the analytic continuation is computed.
+
+    Because of limitations of the numerical algoithm, ``zetac(x)`` returns 0
+    for `x` less than -30.8148.
+
+    Parameters
+    ----------
+    x : array_like of float
+        Values at which to compute zeta(x) - 1 (must be real).
+
+    Returns
+    -------
+    out : array_like
+        Values of zeta(x) - 1.
 
     See Also
     --------
     zeta
+
+    Examples
+    --------
+    >>> from scipy.special import zetac, zeta
+
+    Some special values:
+
+    >>> zetac(2), np.pi**2/6 - 1
+    (0.64493406684822641, 0.6449340668482264)
+
+    >>> zetac(-1), -1.0/12 - 1
+    (-1.0833333333333333, -1.0833333333333333)
+
+    Compare ``zetac(x)`` to ``zeta(x) - 1`` for large `x`:
+
+    >>> zetac(60), zeta(60) - 1
+    (8.673617380119933e-19, 0.0)
 
     """)
 
