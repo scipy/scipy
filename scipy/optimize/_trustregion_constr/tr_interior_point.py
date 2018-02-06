@@ -54,6 +54,7 @@ class BarrierSubproblem:
         self.grad0 = self._compute_gradient(grad0)
         self.constr0 = self._compute_constr(constr_ineq0, constr_eq0, s0)
         self.jac0 = self._compute_jacobian(jac_eq0, jac_ineq0, s0)
+        self.terminate = False
 
     def update(self, barrier_parameter, tolerance):
         self.barrier_parameter = barrier_parameter
@@ -240,15 +241,26 @@ class BarrierSubproblem:
                                self.n_vars+self.n_ineq),
                               matvec)
 
-    def stop_criteria(self, state):
+    def stop_criteria(self, state, optimality, constr_violation,
+                      trust_radius, penalty, cg_info, nfev, njev,
+                      nhev):
         """Stop criteria to the barrier problem.
         The criteria here proposed is similar to formula (2.3)
         from [1]_, p.879.
         """
-        return (state.optimality < self.tolerance
-                and state.constr_violation < self.tolerance) \
-            or self.global_stop_criteria(state) \
-            or state.trust_radius < self.xtol
+        if self.global_stop_criteria(state, optimality,
+                                     constr_violation,
+                                     trust_radius, penalty,
+                                     cg_info, nfev, njev, nhev,
+                                     self.barrier_parameter,
+                                     self.tolerance):
+            self.terminate = True
+            return True
+        else:
+            g_cond = (optimality < self.tolerance and
+                      constr_violation < self.tolerance)
+            x_cond = trust_radius < self.xtol
+            return g_cond or x_cond
 
 
 def tr_interior_point(fun, grad, lagr_hess, n_vars, n_ineq, n_eq,
@@ -283,18 +295,15 @@ def tr_interior_point(fun, grad, lagr_hess, n_vars, n_ineq, n_eq,
     if enforce_feasibility is None:
         enforce_feasibility = np.zeros(n_ineq, bool)
     # Initial Values
-    state.barrier_parameter = initial_barrier_parameter
-    state.tolerance = initial_tolerance
-    state.trust_radius = initial_trust_radius
-    state.penalty = initial_penalty
-    state.optimality = np.inf
-    state.constr_violation = np.inf
+    barrier_parameter = initial_barrier_parameter
+    tolerance = initial_tolerance
+    trust_radius = initial_trust_radius
     # Define initial value for the slack variables
     s0 = np.maximum(-1.5*constr_ineq0, np.ones(n_ineq))
     # Define barrier subproblem
     subprob = BarrierSubproblem(
         x0, s0, fun, grad, lagr_hess, n_vars, n_ineq, n_eq, constr, jac,
-        state.barrier_parameter, state.tolerance, enforce_feasibility,
+        barrier_parameter, tolerance, enforce_feasibility,
         stop_criteria, xtol, fun0, grad0, constr_ineq0, jac_ineq0,
         constr_eq0, jac_eq0)
     # Define initial parameter for the first iteration.
@@ -312,32 +321,31 @@ def tr_interior_point(fun, grad, lagr_hess, n_vars, n_ineq, n_eq,
     while True:
         if not first_barrier_prob:
             # Update parameters
-            state.trust_radius = max(initial_trust_radius,
-                                     TRUST_ENLARGEMENT*state.trust_radius)
+            trust_radius = max(initial_trust_radius,
+                               TRUST_ENLARGEMENT*trust_radius)
             # TODO: Use more advanced strategies from [2]_
             # to update this parameters.
-            state.barrier_parameter *= BARRIER_DECAY_RATIO
-            state.tolerance *= BARRIER_DECAY_RATIO
+            barrier_parameter *= BARRIER_DECAY_RATIO
+            tolerance *= BARRIER_DECAY_RATIO
         first_barrier_prob = False
         # Update Barrier Problem
-        subprob.update(state.barrier_parameter, state.tolerance)
+        subprob.update(barrier_parameter, tolerance)
         # Solve SQP subproblem
-        state = equality_constrained_sqp(
+        z, state = equality_constrained_sqp(
             subprob.function_and_constraints,
             subprob.gradient_and_jacobian,
             subprob.lagrangian_hessian,
             z, fun0_subprob, grad0_subprob,
             constr0_subprob, jac0_subprob, subprob.stop_criteria,
-            state, initial_penalty, state.trust_radius,
+            state, initial_penalty, trust_radius,
             factorization_method, trust_lb, trust_ub, subprob.scaling)
-        z = state.x
-        if stop_criteria(state):
+        if subprob.terminate:
             break
         # Compute initial values for next iteration
         fun0_subprob, constr0_subprob = subprob.function_and_constraints(z)
         grad0_subprob, jac0_subprob = subprob.gradient_and_jacobian(z)
 
     # Get x and s
-    state.x = subprob.get_variables(z)
+    x = subprob.get_variables(z)
 
-    return state
+    return x, state

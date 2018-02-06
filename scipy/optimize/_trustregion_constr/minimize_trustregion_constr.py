@@ -107,17 +107,37 @@ class ip_printer:
         print("")
 
 
-# Define update state routine
-def update_state(state, objective, prepared_constraints, start_time):
-    # Store function (and gradient) evaluation
+def update_state_sqp(state, objective, prepared_constraints, start_time,
+                     optimality, constr_violation, trust_radius, penalty,
+                     cg_info, nfev, njev, nhev):
+    state.niter += 1
+    state.nfev += nfev
+    state.njev += njev
+    state.nhev += nhev
+    state.x = objective.x
     state.fun = objective.f
     state.grad = objective.g
-    # Store constraint (and Jacobian) evaluation
+    state.v = [c.fun.v for c in prepared_constraints]
     state.constr = [c.fun.f for c in prepared_constraints]
     state.jac = [c.fun.J for c in prepared_constraints]
-    state.v = [c.fun.v for c in prepared_constraints]
-    # Recompute execution time
     state.execution_time = time.time() - start_time
+    state.trust_radius = trust_radius
+    state.penalty = penalty
+    state.optimality = optimality
+    state.constr_violation = constr_violation
+    state.cg_niter += cg_info["niter"]
+    state.cg_stop_cond = cg_info["stop_cond"]
+    return state
+
+
+def update_state_ip(state, objective, prepared_constraints, start_time,
+                    optimality, constr_violation, trust_radius, penalty,
+                    cg_info, nfev, njev, nhev, barrier_parameter, tolerance):
+    state = update_state_sqp(state, objective, prepared_constraints,
+                             start_time, optimality, constr_violation,
+                             trust_radius, penalty, cg_info, nfev, njev, nhev)
+    state.barrier_parameter = barrier_parameter
+    state.tolerance = tolerance
     return state
 
 
@@ -368,7 +388,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
 
     # Construct OptimizeResult
     state = OptimizeResult(
-        niter=0, nfev=1, njev=1, nhev=0,
+        niter=0, nfev=1, njev=1, nhev=1,
         cg_niter=0, cg_info={}, fun=objective.f, grad=objective.g,
         constr=[c.fun.f for c in prepared_constraints],
         jac=[c.fun.J for c in prepared_constraints],
@@ -380,12 +400,15 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
 
     # Define stop criteria
     if method == 'equality_constrained_sqp':
-        def stop_criteria(state):
-            state = update_state(state, objective, prepared_constraints,
-                                 start_time)
+        def stop_criteria(state, optimality, constr_violation, trust_radius,
+                          penalty, cg_info, nfev, njev, nhev):
+            state = update_state_sqp(state, objective, prepared_constraints,
+                                     start_time, optimality, constr_violation,
+                                     trust_radius, penalty, cg_info,
+                                     nfev, njev, nhev)
             if verbose >= 2:
                 sqp_printer.print_problem_iter(state.niter,
-                                               state.nfev,
+                                               1,
                                                state.cg_niter,
                                                state.trust_radius,
                                                state.penalty,
@@ -402,12 +425,17 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
                 state.status = 0
             return state.status in (0, 1, 2, 3)
     elif method == 'tr_interior_point':
-        def stop_criteria(state):
-            state = update_state(state, objective, prepared_constraints,
-                                 start_time)
+        def stop_criteria(state, optimality, constr_violation, trust_radius,
+                          penalty, cg_info, nfev, njev, nhev,
+                          barrier_parameter, tolerance):
+            state = update_state_ip(state, objective, prepared_constraints,
+                                    start_time, optimality, constr_violation,
+                                    trust_radius, penalty, cg_info,
+                                    nfev, njev, nhev,
+                                    barrier_parameter, tolerance)
             if verbose >= 2:
                 ip_printer.print_problem_iter(state.niter,
-                                              state.nfev,
+                                              1,
                                               state.cg_niter,
                                               state.barrier_parameter,
                                               state.trust_radius,
@@ -449,7 +477,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
             J_eq, _ = canonical.jac(x)
             return g, J_eq
 
-        result = equality_constrained_sqp(
+        _, result = equality_constrained_sqp(
             fun_and_constr, grad_and_jac, lagrangian_hess,
             x0, objective.f, objective.g,
             c_eq0, J_eq0,
@@ -458,7 +486,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
             factorization_method)
 
     elif method == 'tr_interior_point':
-        result = tr_interior_point(
+        _, result = tr_interior_point(
             objective.fun, objective.grad, lagrangian_hess,
             n_vars, canonical.n_ineq, canonical.n_eq,
             canonical.fun, canonical.jac,
@@ -484,7 +512,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
         print("Number of iteractions: {0}, function evaluations: {1}, "
               "CG iterations: {2}, optimality: {3:.2e}, "
               "constraint violation: {4:.2e}, execution time: {5:4.2} s."
-              .format(result.niter, result.nfev, result.cg_niter,
+              .format(result.niter, 1, result.cg_niter,
                       result.optimality, result.constr_violation,
                       result.execution_time))
     return result

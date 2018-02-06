@@ -17,7 +17,8 @@ def default_scaling(x):
 
 def equality_constrained_sqp(fun_and_constr, grad_and_jac, lagr_hess,
                              x0, fun0, grad0, constr0,
-                             jac0, stop_criteria, state,
+                             jac0, stop_criteria,
+                             state,
                              initial_penalty,
                              initial_trust_radius,
                              factorization_method,
@@ -80,21 +81,28 @@ def equality_constrained_sqp(fun_and_constr, grad_and_jac, lagr_hess,
     Z, LS, Y = projections(A, factorization_method)
     # Compute least-square lagrange multipliers
     v = -LS.dot(c)
+    # Counters
+    nfev, njev, nhev = 0, 0, 0
 
     # Update state parameters
-    state.optimality = norm(c + A.T.dot(v), np.inf)
-    state.constr_violation = norm(b, np.inf) if len(b) > 0 else 0
-    state.niter += 1
-    state.x = x
-    state.trust_radius = trust_radius
-    state.penalty = penalty
+    optimality = norm(c + A.T.dot(v), np.inf)
+    constr_violation = norm(b, np.inf) if len(b) > 0 else 0
+    trust_radius = trust_radius
+    penalty = penalty
+    cg_info = {'niter': 0, 'stop_cond': 0,
+               'hits_boundary': False}
 
     compute_hess = True
-    while not stop_criteria(state):
+    while not stop_criteria(state, optimality, constr_violation,
+                            trust_radius, penalty, cg_info,
+                            nfev, njev, nhev):
+        # Reset counters
+        nfev, njev, nhev = 0, 0, 0
+
         # Compute Lagrangian Hessian
         if compute_hess:
             H = lagr_hess(x, v)
-            state.nhev += 1
+            nhev += 1
 
         # Normal Step - `dn`
         # minimize 1/2*||A dn + b||^2
@@ -118,7 +126,7 @@ def equality_constrained_sqp(fun_and_constr, grad_and_jac, lagr_hess,
         trust_radius_t = np.sqrt(trust_radius**2 - np.linalg.norm(dn)**2)
         lb_t = trust_lb - dn
         ub_t = trust_ub - dn
-        dt, info_cg = projected_cg(H, c_t, Z, Y, b_t,
+        dt, cg_info = projected_cg(H, c_t, Z, Y, b_t,
                                    trust_radius_t,
                                    lb_t, ub_t)
 
@@ -149,7 +157,7 @@ def equality_constrained_sqp(fun_and_constr, grad_and_jac, lagr_hess,
         x_next = x + S.dot(d)
         f_next, b_next = fun_and_constr(x_next)
         # Increment funcion evaluation counter
-        state.nfev += 1
+        nfev += 1
         # Compute merit function at trial point
         merit_function_next = f_next + penalty*norm(b_next)
         # Compute actual reduction according to formula (3.54),
@@ -169,7 +177,7 @@ def equality_constrained_sqp(fun_and_constr, grad_and_jac, lagr_hess,
             x_soc = x + S.dot(d + t*y)
             f_soc, b_soc = fun_and_constr(x_soc)
             # Increment funcion evaluation counter
-            state.nfev += 1
+            nfev += 1
             # Recompute actual reduction
             merit_function_soc = f_soc + penalty*norm(b_soc)
             actual_reduction_soc = merit_function - merit_function_soc
@@ -201,32 +209,24 @@ def equality_constrained_sqp(fun_and_constr, grad_and_jac, lagr_hess,
                     trust_radius *= MIN_TRUST_REDUCTION
 
         # Update iteration
-        state.niter += 1
         if reduction_ratio >= SUFFICIENT_REDUCTION_RATIO:
             x = x_next
             f, b = f_next, b_next
             c, A = grad_and_jac(x)
             S = scaling(x)
             # Increment funcion evaluation counter
-            state.njev += 1
+            njev += 1
             # Get projections
             Z, LS, Y = projections(A, factorization_method)
             # Compute least-square lagrange multipliers
             v = -LS.dot(c)
             # Set Flag
             compute_hess = True
-            # Store state
-            state.x = x
             # Otimality values
-            state.optimality = norm(c + A.T.dot(v), np.inf)
-            state.constr_violation = norm(b, np.inf) if len(b) > 0 else 0
+            optimality = norm(c + A.T.dot(v), np.inf)
+            constr_violation = norm(b, np.inf) if len(b) > 0 else 0
         else:
             penalty = previous_penalty
             compute_hess = False
-        # Store values
-        state.trust_radius = trust_radius
-        state.penalty = penalty
-        state.cg_niter += info_cg["niter"]
-        state.cg_info = info_cg
 
-    return state
+    return x, state
