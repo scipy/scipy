@@ -335,15 +335,15 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
             f, g = func_and_grad(x)
         elif task_str.startswith(b'NEW_X'):
             # new iteration
-            if n_iterations > maxiter:
-                task[:] = 'STOP: TOTAL NO. of ITERATIONS EXCEEDS LIMIT'
+            n_iterations += 1
+            if callback is not None:
+                callback(x)
+
+            if n_iterations >= maxiter:
+                task[:] = 'STOP: TOTAL NO. of ITERATIONS REACHED LIMIT'
             elif n_function_evals[0] > maxfun:
                 task[:] = ('STOP: TOTAL NO. of f AND g EVALUATIONS '
                            'EXCEEDS LIMIT')
-            else:
-                n_iterations += 1
-                if callback is not None:
-                    callback(x)
         else:
             break
 
@@ -352,7 +352,7 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
         warnflag = 0
     elif n_function_evals[0] > maxfun:
         warnflag = 1
-    elif n_iterations > maxiter:
+    elif n_iterations >= maxiter:
         warnflag = 1
     else:
         warnflag = 2
