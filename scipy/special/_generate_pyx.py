@@ -146,8 +146,8 @@ i1 -- i1: d->d                                             -- cephes.h
 i1e -- i1e: d->d                                           -- cephes.h
 gammaincc -- igamc: dd->d                                  -- cephes.h
 gammainc -- igam: dd->d                                    -- cephes.h
-gammaincinv -- gammaincinv: dd->d                          -- cephes.h
-gammainccinv -- igami: dd->d                               -- cephes.h
+gammaincinv -- igami: dd->d                                -- cephes.h
+gammainccinv -- igamci: dd->d                              -- cephes.h
 iv -- iv: dd->d, cbesi_wrap: dD->D                         -- cephes.h, amos_wrappers.h
 ive -- cbesi_wrap_e_real: dd->d, cbesi_wrap_e: dD->D       -- amos_wrappers.h
 ellipj -- ellpj: dd*dddd->*i                               -- cephes.h
