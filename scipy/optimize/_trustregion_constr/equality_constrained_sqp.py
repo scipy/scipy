@@ -81,8 +81,6 @@ def equality_constrained_sqp(fun_and_constr, grad_and_jac, lagr_hess,
     Z, LS, Y = projections(A, factorization_method)
     # Compute least-square lagrange multipliers
     v = -LS.dot(c)
-    # Counters
-    nfev, njev, nhev = 0, 0, 0
 
     # Update state parameters
     optimality = norm(c + A.T.dot(v), np.inf)
@@ -94,15 +92,10 @@ def equality_constrained_sqp(fun_and_constr, grad_and_jac, lagr_hess,
 
     compute_hess = True
     while not stop_criteria(state, optimality, constr_violation,
-                            trust_radius, penalty, cg_info,
-                            nfev, njev, nhev):
-        # Reset counters
-        nfev, njev, nhev = 0, 0, 0
-
+                            trust_radius, penalty, cg_info):
         # Compute Lagrangian Hessian
         if compute_hess:
             H = lagr_hess(x, v)
-            nhev += 1
 
         # Normal Step - `dn`
         # minimize 1/2*||A dn + b||^2
@@ -156,8 +149,6 @@ def equality_constrained_sqp(fun_and_constr, grad_and_jac, lagr_hess,
         # Evaluate function and constraints at trial point
         x_next = x + S.dot(d)
         f_next, b_next = fun_and_constr(x_next)
-        # Increment funcion evaluation counter
-        nfev += 1
         # Compute merit function at trial point
         merit_function_next = f_next + penalty*norm(b_next)
         # Compute actual reduction according to formula (3.54),
@@ -176,8 +167,6 @@ def equality_constrained_sqp(fun_and_constr, grad_and_jac, lagr_hess,
             # Compute tentative point
             x_soc = x + S.dot(d + t*y)
             f_soc, b_soc = fun_and_constr(x_soc)
-            # Increment funcion evaluation counter
-            nfev += 1
             # Recompute actual reduction
             merit_function_soc = f_soc + penalty*norm(b_soc)
             actual_reduction_soc = merit_function - merit_function_soc
@@ -214,8 +203,6 @@ def equality_constrained_sqp(fun_and_constr, grad_and_jac, lagr_hess,
             f, b = f_next, b_next
             c, A = grad_and_jac(x)
             S = scaling(x)
-            # Increment funcion evaluation counter
-            njev += 1
             # Get projections
             Z, LS, Y = projections(A, factorization_method)
             # Compute least-square lagrange multipliers

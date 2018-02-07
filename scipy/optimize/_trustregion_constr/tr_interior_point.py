@@ -242,16 +242,14 @@ class BarrierSubproblem:
                               matvec)
 
     def stop_criteria(self, state, optimality, constr_violation,
-                      trust_radius, penalty, cg_info, nfev, njev,
-                      nhev):
+                      trust_radius, penalty, cg_info):
         """Stop criteria to the barrier problem.
         The criteria here proposed is similar to formula (2.3)
         from [1]_, p.879.
         """
-        if self.global_stop_criteria(state, optimality,
-                                     constr_violation,
+        if self.global_stop_criteria(state, 
                                      trust_radius, penalty,
-                                     cg_info, nfev, njev, nhev,
+                                     cg_info,
                                      self.barrier_parameter,
                                      self.tolerance):
             self.terminate = True
@@ -347,5 +345,4 @@ def tr_interior_point(fun, grad, lagr_hess, n_vars, n_ineq, n_eq,
 
     # Get x and s
     x = subprob.get_variables(z)
-
     return x, state

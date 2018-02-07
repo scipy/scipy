@@ -2,6 +2,7 @@ from __future__ import division, print_function, absolute_import
 import time
 import numpy as np
 from scipy.sparse.linalg import LinearOperator
+from .._differentiable_functions import VectorFunction
 from .._constraints import (
     NonlinearConstraint, LinearConstraint, PreparedConstraint, strict_bounds)
 from ..optimize import OptimizeResult
@@ -53,89 +54,137 @@ TERMINATION_MESSAGES = {
     3: "`callback` function requested termination"
 }
 
-
-class sqp_printer:
+class basic_printer:
     @staticmethod
     def print_header():
-        print("|{0:^7}|{1:^7}|{2:^7}|{3:^10}|{4:^10}|{5:^10}|{6:^10}|"
-              .format("niter", "f evals", "CG iter", "tr radius", "penalty",
+        print("|{0:^7}|{1:^7}|{2:^7}|{3:^13}|{4:^10}|{5:^10}|{6:^10}|"
+              .format("niter", "f evals", "CG iter", "obj func", "tr radius",
                       "opt", "c viol"))
         s = "-"*6 + ":"
         s2 = ":" + "-"*8 + ":"
+        s3 = ":" + "-"*11 + ":"
         print("|{0:^7}|{1:^7}|{2:^7}|{3:^10}|{4:^10}|{5:^10}|{6:^10}|"
-              .format(s, s, s, s2, s2, s2, s2))
+              .format(s, s, s, s3, s2, s2, s2))
 
     @staticmethod
     def print_problem_iter(niter, nfev, cg_niter, tr_radius,
-                           penalty, opt, c_viol):
-        print("|{0:>7}|{1:>7}|{2:>7}| {3:^1.2e} | {4:^1.2e} |"
+                           fun, opt, c_viol):
+        print("|{0:>7}|{1:>7}|{2:>7}| {3:^+1.4e} | {4:^1.2e} |"
               " {5:^1.2e} | {6:^1.2e} |"
-              .format(niter, nfev, cg_niter, tr_radius, penalty,
+              .format(niter, nfev, cg_niter, fun, tr_radius,
                       opt, c_viol))
 
     @staticmethod
     def print_footer():
         print("")
-        print((7*3 + 10*4 + 8)*"-")
+        print((7*3 + 10*3 + 13 + 8)*"-")
+        print("")
+
+
+class sqp_printer:
+    @staticmethod
+    def print_header():
+        print("|{0:^7}|{1:^7}|{2:^7}|{3:^13}|{4:^10}|{5:^10}|{6:^10}|{7:^10}|{8:^7}|"
+              .format("niter", "f evals", "CG iter", "obj func", "tr radius",
+                      "opt", "c viol", "penalty", "CG stop"))
+        s = "-"*6 + ":"
+        s2 = ":" + "-"*8 + ":"
+        s3 = ":" + "-"*11 + ":"
+        print("|{0:^7}|{1:^7}|{2:^7}|{3:^13}|{4:^10}|{5:^10}|{6:^10}|{7:^10}|{8:^7}|"
+              .format(s, s, s, s3, s2, s2, s2, s2, s))
+
+    @staticmethod
+    def print_problem_iter(niter, nfev, cg_niter, tr_radius,
+                           fun, opt, c_viol, penalty, cg_stop_cond):
+        print("|{0:>7}|{1:>7}|{2:>7}| {3:^+1.4e} | {4:^+1.1e} |"
+              " {5:^+1.1e} | {6:^+1.1e} | {7:^+1.1e} |{8:>7}|"
+              .format(niter, nfev, cg_niter, tr_radius, fun,
+                      opt, c_viol, penalty, cg_stop_cond))
+
+    @staticmethod
+    def print_footer():
+        print("")
+        print((7*3 + 10*4 + 13 + 7 + 10)*"-")
         print("")
 
 
 class ip_printer:
     @staticmethod
     def print_header():
-        print("|{0:^7}|{1:^7}|{2:^7}|{3:^13}|{4:^10}|{5:^10}|{6:^10}|{7:^10}|"
-              .format("nitr", "f evals", "CG iter", "barrier param",
-                      "tr radius", "penalty", "opt", "c viol"))
+        print("|{0:^7}|{1:^7}|{2:^7}|{3:^13}|{4:^10}|{5:^10}|{6:^10}|{7:^10}|{8:^13}|{9:^7}|"
+              .format("niter", "f evals", "CG iter", "obj func", "tr radius",
+                      "opt", "c viol", "penalty", "barrier param", "CG stop"))
         s = "-"*6 + ":"
-        s2 = ":" + "-"*11 + ":"
-        s3 = ":" + "-"*8 + ":"
-        print("|{0:^7}|{1:^7}|{2:^7}|{3:^13}|{4:^10}|{5:^10}|{6:^10}|{7:^10}|"
-              .format(s, s, s, s2, s3, s3, s3, s3))
+        s2 = ":" + "-"*8 + ":"
+        s3 = ":" + "-"*11 + ":"
+        print("|{0:^7}|{1:^7}|{2:^7}|{3:^10}|{4:^10}|{5:^10}|{6:^10}|{7:^10}|{8:^13}|{9:^7}|"
+              .format(s, s, s, s3, s2, s2, s2, s2, s3, s))
 
     @staticmethod
-    def print_problem_iter(niter, nfev, cg_niter, barrier_parameter, tr_radius,
-                           penalty, opt, c_viol):
-        print("|{0:>7}|{1:>7}|{2:>7}|   {3:^1.2e}  | "
-              "{4:^1.2e} | {5:^1.2e} | {6:^1.2e} | {7:^1.2e} |"
-              .format(niter, nfev, cg_niter, barrier_parameter,
-                      tr_radius, penalty, opt, c_viol))
+    def print_problem_iter(niter, nfev, cg_niter, tr_radius,
+                           fun, opt, c_viol, penalty,
+                           barrier_parameter, cg_stop_cond):
+        print("|{0:>7}|{1:>7}|{2:>7}| {3:^+1.4e} | {4:^1.2e} |"
+              " {5:^1.2e} | {6:^1.2e} | {7:^1.2e} |   {8:^1.2e}  |{9:>7}|"
+              .format(niter, nfev, cg_niter, fun, tr_radius,
+                      opt, c_viol, penalty, barrier_parameter, cg_stop_cond))
 
     @staticmethod
     def print_footer():
         print("")
-        print((7*3 + 13 + 10*4 + 9)*"-")
+        print((7*3 + 10*4 + 13*2 + 7 + 11)*"-")
         print("")
 
 
 def update_state_sqp(state, objective, prepared_constraints, start_time,
-                     optimality, constr_violation, trust_radius, penalty,
-                     cg_info, nfev, njev, nhev):
+                     trust_radius, penalty, cg_info):
     state.niter += 1
-    state.nfev += nfev
-    state.njev += njev
-    state.nhev += nhev
     state.x = objective.x
     state.fun = objective.f
     state.grad = objective.g
+    state.nfev = objective.nfev
+    state.njev = objective.ngev
+    state.nhev = objective.nhev
+
     state.v = [c.fun.v for c in prepared_constraints]
     state.constr = [c.fun.f for c in prepared_constraints]
     state.jac = [c.fun.J for c in prepared_constraints]
+    state.constr_nfev = [c.fun.nfev if isinstance(c.fun, VectorFunction) else 0
+                         for c in prepared_constraints]
+    state.constr_njev = [c.fun.njev if isinstance(c.fun, VectorFunction) else 0
+                         for c in prepared_constraints]
+    state.constr_nhev = [c.fun.nhev if isinstance(c.fun, VectorFunction) else 0
+                         for c in prepared_constraints]
+
     state.execution_time = time.time() - start_time
     state.trust_radius = trust_radius
     state.penalty = penalty
-    state.optimality = optimality
-    state.constr_violation = constr_violation
     state.cg_niter += cg_info["niter"]
     state.cg_stop_cond = cg_info["stop_cond"]
+
+    # Compute Lagrangian Gradient
+    state.lagrangian_grad = np.copy(state.grad)
+    for c in prepared_constraints:
+        state.lagrangian_grad += c.fun.J.T.dot(c.fun.v)
+    state.optimality = np.linalg.norm(state.lagrangian_grad, np.inf)
+
+    # Compute maximum constraint violation
+    state.constr_violation = 0
+    for i in range(len(prepared_constraints)):
+        lb = prepared_constraints[i].bounds[0]
+        ub = prepared_constraints[i].bounds[1]
+        c = state.constr[i]
+        state.constr_violation = np.max([state.constr_violation,
+                                         np.max(lb-c),
+                                         np.max(c-ub)])
+
     return state
 
 
 def update_state_ip(state, objective, prepared_constraints, start_time,
-                    optimality, constr_violation, trust_radius, penalty,
-                    cg_info, nfev, njev, nhev, barrier_parameter, tolerance):
+                    trust_radius, penalty, cg_info, barrier_parameter, tolerance):
     state = update_state_sqp(state, objective, prepared_constraints,
-                             start_time, optimality, constr_violation,
-                             trust_radius, penalty, cg_info, nfev, njev, nhev)
+                             start_time, trust_radius, penalty, cg_info)
     state.barrier_parameter = barrier_parameter
     state.tolerance = tolerance
     return state
@@ -225,6 +274,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
             * 0 (default) : work silently.
             * 1 : display a termination report.
             * 2 : display progress during iterations.
+            * 3 : display progress during iterations (more complete report).
 
     disp : bool, optional
         If True (default) then `verbose` will be set to 1 if it was 0.
@@ -233,64 +283,33 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
     -------
     `OptimizeResult` with the following fields defined:
     x : ndarray, shape (n,)
-        Solution found
+        Solution found.
     fun : float
         Objective function at the solution.
     grad : ndarray, shape (n,)
         Gradient of the objective function at the solution.
-    v : list of ndarray
-        List of estimated Lagrange multipliers at the solution.
-        This list will give the lagrange multiplers in the same
-        order  used in `constraints`. When bound constraints are
-        present one extra element will be included (in the end of
-        the list) to account to the Lagrange multipliers of these
-         constraints.
-    constr : list of ndarray
-        List of constraint values at the solution. This list
-        will give the values in the same order used in `constraints`.
-        When bound constraints are  present one extra element will
-        be include(in the end of the list) to account to the values
-        of these constraints.
-    jac : list of {ndarray, sparse matrix}
-        List of constraints jacobians evaluated at the solution.
-        This list will give the values in the same order used in `constraints`.
-        When bound constraints are  present one extra element will
-        be include (in the end of the list) to account to the values
-        of these constraints Jacobians.
+    lagrangian_grad : ndarray, shape (n,)
+        Gradient of the Lagrangian function at the solution.
+    nfev : integer
+        Number of objective function evaluations.
+    ngev : integer
+        Number of gradient evaluations. Will be zero when
+        using finite-differences approximations.
+    nhev : integer
+        Number of Hessian evaluations. Will be zero when
+        using finite-differences or quasi-Newton approximations.
     niter : int
         Total number of iterations.
-    nfev : int
-        Total number of function evaluations. The same counter
-        is used both for number of objective function,
-        equality and inequality constraints evaluations
-        because these quantities are always evaluated the same
-        number of times.
-    njev : int
-        Total number of first derivative evaluations. The same counter
-        is used both for number of objective function gradient and
-        equality and inequality constraints Jacobians evaluations
-        because these quantities are always evaluated the same
-        number of times.
-    nhev : int
-        Total number of second derivative evaluations.The same counter
-        is used both for number of objective function, equality and
-        inequality constraints Hessian evaluations because these
-        quantities are always evaluated the same number of times.
     cg_niter : int
         Total number of CG iterations.
-    cg_info : Dict
-        Dictionary containing information about the latest CG iteration:
+    cg_stop_cond : int
+        Reason for CG subproblem termination at last iteration:
 
-            - 'niter' : Number of iterations.
-            - 'stop_cond' : Reason for CG subproblem termination:
-
-                1. Iteration limit was reached;
-                2. Reached the trust-region boundary;
-                3. Negative curvature detected;
-                4. Tolerance was satisfied.
-
-            - 'hits_boundary' : True if the proposed step is on the boundary
-              of the trust region.
+            * 0 : CG subproblem not evaluated;
+            * 1 : Iteration limit was reached;
+            * 2 : Reached the trust-region boundary;
+            * 3 : Negative curvature detected;
+            * 4 : Tolerance was satisfied.
 
     execution_time : float
         Total execution time.
@@ -317,9 +336,50 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
     method : {'equality_constrained_sqp', 'tr_interior_point'}
         Optimization method used.
     constr_violation : float
-        Constraint violation at last iteration.
+        Maximum constraint violation at the solution.
     optimality : float
-        Norm of the Lagrangian gradient at last iteration.
+        Infinity norm of the Lagrangian gradient at the solution.
+    constr : list of ndarray
+        List of constraint values at the solution. This list will give
+        the values in the same order used  in `constraints`. When bound
+        constraints are present one extra element will be include(in
+        the end of the list) to account to the values corresponding
+        to these constraints
+    jac : list of {ndarray, sparse matrix}
+        List of constraints Jacobian matrices evaluated at the solution.
+        This list will give the values in the same order used in
+        `constraints`. When bound constraints are present one extra element
+        will be include (in the end of the list) to account to the values
+        of these constraints Jacobian matrices.
+    v : list of ndarray
+        List of estimated Lagrange multipliers at the solution.
+        This list will give the lagrange multiplers in the same
+        order  used in `constraints`. When bound constraints are
+        present one extra element will be included (in the end of
+        the list) to account to the Lagrange multipliers of these
+        constraints.
+    constr_nfev : list of int
+        Number of constraint evaluations for each of the constraints.
+        This list will give the values in the same order used in
+        `constraints`. When bound constraints are present one extra element
+        will be include (in the end of the list) to account to the values
+        of these constraints Jacobian matrices.
+    constr_njev : list of int
+        Number of Jacobian matrix evaluations for each of the constraints.
+        This list will give the values in the same order used in
+        `constraints`. When bound constraints are present one extra element
+        will be include (in the end of the list) to account to the values
+        of these constraints Jacobian matrices. Counters associated
+        with linear and bound constraints or with constraints using
+        finite-difference aproximations will be zero.
+    constr_nhev : list of int
+        Number of Hessian evaluations for each of the constraints.
+        This list will give the values in the same order used in
+        `constraints`. When bound constraints are present one extra element
+        will be include (in the end of the list) to account to the values
+        of these constraints Jacobian matrices. Counters associated
+        with linear and bound constraints or with constraints using
+        finite-difference or quasi-Newton aproximations will be zero.
     """
     x0 = np.atleast_1d(x0).astype(float)
     n_vars = np.size(x0)
@@ -388,10 +448,15 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
 
     # Construct OptimizeResult
     state = OptimizeResult(
-        niter=0, nfev=1, njev=1, nhev=1,
-        cg_niter=0, cg_info={}, fun=objective.f, grad=objective.g,
+        niter=0, nfev=0, njev=0, nhev=0,
+        cg_niter=0, cg_stop_cond=0,
+        fun=objective.f, grad=objective.g,
+        lagrangian_grad=np.copy(objective.g),
         constr=[c.fun.f for c in prepared_constraints],
         jac=[c.fun.J for c in prepared_constraints],
+        constr_nfev=[0 for c in prepared_constraints],
+        constr_njev=[0 for c in prepared_constraints],
+        constr_nhev=[0 for c in prepared_constraints],
         v=[c.fun.v for c in prepared_constraints],
         method=method)
 
@@ -401,19 +466,27 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
     # Define stop criteria
     if method == 'equality_constrained_sqp':
         def stop_criteria(state, optimality, constr_violation, trust_radius,
-                          penalty, cg_info, nfev, njev, nhev):
+                          penalty, cg_info):
             state = update_state_sqp(state, objective, prepared_constraints,
-                                     start_time, optimality, constr_violation,
-                                     trust_radius, penalty, cg_info,
-                                     nfev, njev, nhev)
-            if verbose >= 2:
+                                     start_time, trust_radius, penalty, cg_info)
+            if verbose == 2:
+                basic_printer.print_problem_iter(state.niter,
+                                                 state.nfev,
+                                                 state.cg_niter,
+                                                 state.trust_radius,
+                                                 state.fun,
+                                                 state.optimality,
+                                                 state.constr_violation)
+            if verbose > 2:
                 sqp_printer.print_problem_iter(state.niter,
-                                               1,
+                                               state.nfev,
                                                state.cg_niter,
                                                state.trust_radius,
-                                               state.penalty,
+                                               state.fun,
                                                state.optimality,
-                                               state.constr_violation)
+                                               state.constr_violation,
+                                               state.penalty,
+                                               state.cg_stop_cond)
             state.status = None
             if (callback is not None) and callback(state.x, state):
                 state.status = 3
@@ -425,28 +498,34 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
                 state.status = 0
             return state.status in (0, 1, 2, 3)
     elif method == 'tr_interior_point':
-        def stop_criteria(state, optimality, constr_violation, trust_radius,
-                          penalty, cg_info, nfev, njev, nhev,
-                          barrier_parameter, tolerance):
+        def stop_criteria(state, trust_radius, penalty, cg_info, barrier_parameter,
+                          tolerance):
             state = update_state_ip(state, objective, prepared_constraints,
-                                    start_time, optimality, constr_violation,
-                                    trust_radius, penalty, cg_info,
-                                    nfev, njev, nhev,
+                                    start_time, trust_radius, penalty, cg_info,
                                     barrier_parameter, tolerance)
-            if verbose >= 2:
+            if verbose == 2:
+                basic_printer.print_problem_iter(state.niter,
+                                                 state.nfev,
+                                                 state.cg_niter,
+                                                 state.trust_radius,
+                                                 state.fun,
+                                                 state.optimality,
+                                                 state.constr_violation)
+            if verbose > 2:
                 ip_printer.print_problem_iter(state.niter,
-                                              1,
+                                              state.nfev,
                                               state.cg_niter,
-                                              state.barrier_parameter,
                                               state.trust_radius,
-                                              state.penalty,
+                                              state.fun,
                                               state.optimality,
-                                              state.constr_violation)
+                                              state.constr_violation,
+                                              state.penalty,
+                                              state.barrier_parameter,
+                                              state.cg_stop_cond)
             state.status = None
             if (callback is not None) and callback(state.x, state):
                 state.status = 3
-            elif (state.optimality < gtol and state.constr_violation < gtol
-                  and state.barrier_parameter < barrier_tol):
+            elif state.optimality < gtol and state.constr_violation < gtol:
                 state.status = 1
             elif (state.trust_radius < xtol
                   and state.barrier_parameter < barrier_tol):
@@ -455,7 +534,9 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
                 state.status = 0
             return state.status in (0, 1, 2, 3)
 
-    if verbose >= 2:
+    if verbose == 2:
+        basic_printer.print_header()
+    elif verbose > 2:
         if method == 'equality_constrained_sqp':
             sqp_printer.print_header()
         if method == 'tr_interior_point':
@@ -502,7 +583,9 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
 
     result.message = TERMINATION_MESSAGES[result.status]
 
-    if verbose >= 2:
+    if verbose == 2:
+        basic_printer.print_footer()
+    elif verbose > 2:
         if method == 'equality_constrained_sqp':
             sqp_printer.print_footer()
         if method == 'tr_interior_point':
@@ -512,7 +595,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
         print("Number of iteractions: {0}, function evaluations: {1}, "
               "CG iterations: {2}, optimality: {3:.2e}, "
               "constraint violation: {4:.2e}, execution time: {5:4.2} s."
-              .format(result.niter, 1, result.cg_niter,
+              .format(result.niter, result.nfev, result.cg_niter,
                       result.optimality, result.constr_violation,
                       result.execution_time))
     return result

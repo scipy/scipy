@@ -21,6 +21,7 @@ class ScalarFunction(object):
                  finite_diff_bounds):
         self.x = np.atleast_1d(x0).astype(float)
         self.n = self.x.size
+        self.nfev, self.ngev, self.nhev = 0, 0, 0
         finite_diff_options = {}
         if grad in FD_METHODS:
             finite_diff_options["method"] = grad
@@ -40,9 +41,11 @@ class ScalarFunction(object):
 
         # Function evaluation
         def fun_wrapped(x):
+            self.nfev += 1
             return fun(x, *args)
         self.f = fun(self.x, *args)
         self.f_updated = True
+        self.nfev += 1
 
         def evaluate_fun():
             self.f = fun_wrapped(self.x)
@@ -53,9 +56,11 @@ class ScalarFunction(object):
         # Gradient evaluation
         if callable(grad):
             def grad_wrapped(x):
+                self.ngev += 1
                 return np.atleast_1d(grad(x, *args))
             self.g = np.atleast_1d(grad(self.x, *args))
             self.g_updated = True
+            self.ngev += 1
 
             def evaluate_grad():
                 self.g = grad_wrapped(self.x)
@@ -79,18 +84,22 @@ class ScalarFunction(object):
         if callable(hess):
             self.H = hess(x0, *args)
             self.H_updated = True
+            self.nhev += 1
 
             if sps.issparse(self.H):
                 def hess_wrapped(x):
+                    self.nhev += 1
                     return sps.csr_matrix(hess(x, *args))
                 self.H = sps.csr_matrix(self.H)
 
             elif isinstance(self.H, LinearOperator):
                 def hess_wrapped(x):
+                    self.nhev += 1
                     return hess(x, *args)
 
             else:
                 def hess_wrapped(x):
+                    self.nhev += 1
                     return np.atleast_2d(np.asarray(hess(x, *args)))
                 self.H = np.atleast_2d(np.asarray(self.H))
 
@@ -176,6 +185,7 @@ class VectorFunction(object):
                  finite_diff_bounds, sparse_jacobian):
         self.x = np.atleast_1d(x0).astype(float)
         self.n = self.x.size
+        self.nfev, self.njev, self.nhev = 0, 0, 0
         finite_diff_options = {}
         if jac in FD_METHODS:
             finite_diff_options["method"] = jac
@@ -196,18 +206,16 @@ class VectorFunction(object):
                              "finite-differences, we require the Hessian to "
                              "be estimated using one of the quasi-Newton "
                              "strategies.")
-        if isinstance(hess, HessianUpdateStrategy):
-            self.x_prev = np.copy(self.x)
 
         # Function evaluation
         def fun_wrapped(x):
+            self.nfev += 1
             return np.atleast_1d(fun(x))
         self.f = np.atleast_1d(fun(self.x))
         self.f_updated = True
+        self.nfev += 1
         self.v = np.zeros_like(self.f)
         self.m = self.v.size
-        if isinstance(hess, HessianUpdateStrategy):
-            self.v_prev = np.copy(self.v)
 
         def evaluate_fun():
             self.f = fun_wrapped(self.x)
@@ -219,22 +227,26 @@ class VectorFunction(object):
         if callable(jac):
             self.J = jac(self.x)
             self.J_updated = True
+            self.njev += 1
 
             if sparse_jacobian or \
                (sparse_jacobian is None and sps.issparse(self.J)):
                 def jac_wrapped(x):
+                    self.njev += 1
                     return sps.csr_matrix(jac(x))
                 self.J = sps.csr_matrix(self.J)
                 self.sparse_jacobian = True
 
             elif sps.issparse(self.J):
                 def jac_wrapped(x):
+                    self.njev += 1
                     return jac(x).toarray()
                 self.J = self.J.toarray()
                 self.sparse_jacobian = False
 
             else:
                 def jac_wrapped(x):
+                    self.njev += 1
                     return np.atleast_2d(jac(x))
                 self.J = np.atleast_2d(self.J)
                 self.sparse_jacobian = False
@@ -289,18 +301,22 @@ class VectorFunction(object):
         if callable(hess):
             self.H = hess(self.x, self.v)
             self.H_updated = True
+            self.nhev += 1
 
             if sps.issparse(self.H):
                 def hess_wrapped(x, v):
+                    self.nhev += 1
                     return sps.csr_matrix(hess(x))
                 self.H = sps.csr_matrix(self.H)
 
             elif isinstance(self.H, LinearOperator):
                 def hess_wrapped(x, v):
+                    self.nhev += 1
                     return hess(x, v)
 
             else:
                 def hess_wrapped(x, v):
+                    self.nhev += 1
                     return np.atleast_2d(np.asarray(hess(x, v)))
                 self.H = np.atleast_2d(np.asarray(self.H))
 
@@ -331,7 +347,6 @@ class VectorFunction(object):
             self.H = hess
             self.H.initialize(len(x0), 'hess')
             self.H_updated = True
-            self.J_prev = deepcopy(self.J)
 
             def evaluate_hess():
                 return self.H
@@ -341,13 +356,11 @@ class VectorFunction(object):
             def update_x(x):
                 x_prev = deepcopy(self.x)
                 J_prev = deepcopy(self.J)
-                print(np.shape(self.J), np.shape(J_prev))
                 self.x = x
                 self.f_updated = False
                 self.evaluate_jac()
                 self.J_updated = True
                 delta_x = self.x - x_prev
-                print(np.shape(self.J), np.shape(J_prev))
                 delta_grad = self.J.T.dot(self.v) - J_prev.T.dot(self.v)
                 self.H.update(delta_x, delta_grad)
                 self.H_updated = True
