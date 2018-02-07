@@ -27,7 +27,7 @@ matrix:
     - python: 3.6
       env:
         - TESTMODE=full
-        - COVERAGE=--coverage
+        - COVERAGE="--coverage --gcov"
         - NUMPYSPEC=numpy
     - python: 3.5
       env:
@@ -168,10 +168,16 @@ script:
 after_success:
   - ccache -s
   # Upload coverage information
-  - if [ "${COVERAGE}" == "--coverage" ]; then
-        pushd build/testenv/lib/python*/site-packages/;
-        codecov;
-        popd;
+  - |
+    if [ -n "${COVERAGE}" ]; then
+        RUN_DIR=`echo build/testenv/lib/python*/site-packages`
+        # Produce gcov output for codecov to find
+        find build -name '*.gcno' -type f -exec gcov -pb {} +
+        mv *.gcov "$RUN_DIR/"
+        # Run codecov
+        pushd "$RUN_DIR"
+        codecov -X gcov
+        popd
     fi
 notifications:
   # Perhaps we should have status emails sent to the mailing list, but
