@@ -573,6 +573,31 @@ class TestOptimizeSimple(CheckOptimize):
         assert_allclose(self.func(params), self.func(self.solution),
                         atol=1e-6)
 
+    def test_l_bfgs_b_maxiter(self):
+        # gh7854
+        # Ensure that not more than maxiters are ever run.
+        class Callback(object):
+            def __init__(self):
+                self.nit = 0
+                self.fun = None
+                self.x = None
+
+            def __call__(self, x):
+                self.x = x
+                self.fun = optimize.rosen(x)
+                self.nit += 1
+
+        c = Callback()
+        res = optimize.minimize(optimize.rosen, [0., 0.], method='l-bfgs-b',
+                                callback=c, options={'maxiter': 5})
+
+        assert_equal(res.nit, 5)
+        assert_almost_equal(res.x, c.x)
+        assert_almost_equal(res.fun, c.fun)
+        assert_equal(res.status, 1)
+        assert_(res.success is False)
+        assert_equal(res.message.decode(), 'STOP: TOTAL NO. of ITERATIONS REACHED LIMIT')
+
     def test_minimize_l_bfgs_b(self):
         # Minimize with L-BFGS-B method
         opts = {'disp': False, 'maxiter': self.maxiter}
