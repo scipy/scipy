@@ -350,9 +350,7 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
     task_str = task.tostring().strip(b'\x00').strip()
     if task_str.startswith(b'CONV'):
         warnflag = 0
-    elif n_function_evals[0] > maxfun:
-        warnflag = 1
-    elif n_iterations >= maxiter:
+    elif n_function_evals[0] > maxfun or n_iterations >= maxiter:
         warnflag = 1
     else:
         warnflag = 2
