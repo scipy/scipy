@@ -243,7 +243,7 @@ class BFGS(FullHessianUpdateStrategy):
         This number, scaled by a normalization factor, defines the
         minimum curvature ``dot(delta_grad, delta_x)`` allowed to go
         unaffected by the exception strategy. By default is equal to
-        1e-2 when ``exception_strategy = 'skip_update'`` and equal
+        1e-8 when ``exception_strategy = 'skip_update'`` and equal
         to 0.2 when ``exception_strategy = 'damped_bfgs'``.
     init_scale : {float, 'auto'}
         Matrix scale at first iteration. At the first
@@ -269,7 +269,7 @@ class BFGS(FullHessianUpdateStrategy):
             if min_curvature is not None:
                 self.min_curvature = min_curvature
             else:
-                self.min_curvature = 1e-2
+                self.min_curvature = 1e-8
         elif exception_strategy == 'damped_bfgs':
             if min_curvature is not None:
                 self.min_curvature = min_curvature

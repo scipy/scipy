@@ -37,8 +37,6 @@ class ScalarFunction(object):
                              "finite-differences, we require the Hessian "
                              "to be estimated using one of the "
                              "quasi-Newton strategies.")
-        if isinstance(hess, HessianUpdateStrategy):
-            self.x_prev = np.copy(self.x)
 
         # Function evaluation
         def fun_wrapped(x):
@@ -117,29 +115,24 @@ class ScalarFunction(object):
             self.H = hess
             self.H.initialize(len(x0), 'hess')
             self.H_updated = True
-            self.g_prev = np.copy(self.g)
 
             def evaluate_hess():
-                if not self.g_updated:
-                    self.evaluate_grad()
-                delta_x = self.x - self.x_prev
-                delta_grad = self.g - self.g_prev
-                self.H.update(delta_x, delta_grad)
-                self.H_updated = True
                 return self.H
         self.evaluate_hess = evaluate_hess
 
         # Update current point
         if isinstance(hess, HessianUpdateStrategy):
             def update_x(x):
-                self.x_prev = self.x
-                if not self.g_updated:
-                    self.evaluate_grad()
-                self.g_prev = self.g
+                x_prev = deepcopy(self.x)
+                g_prev = deepcopy(self.g)
                 self.x = x
                 self.f_updated = False
-                self.g_updated = False
-                self.H_updated = False
+                self.evaluate_grad()
+                self.g_updated = True
+                delta_x = self.x - x_prev
+                delta_grad = self.g - g_prev
+                self.H.update(delta_x, delta_grad)
+                self.H_updated = True
 
         else:
             def update_x(x):
@@ -341,30 +334,23 @@ class VectorFunction(object):
             self.J_prev = deepcopy(self.J)
 
             def evaluate_hess():
-                if not self.J_updated:
-                    self.evaluate_jac()
-                delta_x = self.x - self.x_prev
-                delta_grad = self.J.T.dot(self.v) - self.J_prev.T.dot(self.v)
-                self.H.update(delta_x, delta_grad)
-                self.H_updated = True
                 return self.H
         self.evaluate_hess = evaluate_hess
 
         if isinstance(hess, HessianUpdateStrategy):
             def update_x(x):
-                self.x_prev = self.x
-                if not self.J_updated:
-                    self.evaluate_jac()
-                self.J_prev = self.J
+                x_prev = deepcopy(self.x)
+                J_prev = deepcopy(self.J)
+                print(np.shape(self.J), np.shape(J_prev))
                 self.x = x
                 self.f_updated = False
-                self.J_updated = False
-                self.H_updated = False
-
-            def update_v(v):
-                self.v_prev = self.v
-                self.v = v
-                self.H_updated = False
+                self.evaluate_jac()
+                self.J_updated = True
+                delta_x = self.x - x_prev
+                print(np.shape(self.J), np.shape(J_prev))
+                delta_grad = self.J.T.dot(self.v) - J_prev.T.dot(self.v)
+                self.H.update(delta_x, delta_grad)
+                self.H_updated = True
 
         else:
             def update_x(x):
@@ -373,9 +359,9 @@ class VectorFunction(object):
                 self.J_updated = False
                 self.H_updated = False
 
-            def update_v(v):
-                self.v = v
-                self.H_updated = False
+        def update_v(v):
+            self.v = v
+            self.H_updated = False
         self.update_x = update_x
         self.update_v = update_v
 
@@ -394,10 +380,12 @@ class VectorFunction(object):
         return self.J
 
     def hess(self, x, v):
-        if not np.array_equal(x, self.x):
-            self.update_x(x)
+        # v should ALWAYS be updated before x
+        # because of HessianUpdateStategy.
         if not np.array_equal(v, self.v):
             self.update_v(v)
+        if not np.array_equal(x, self.x):
+            self.update_x(x)
         if not self.H_updated:
             self.evaluate_hess()
         return self.H
