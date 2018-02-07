@@ -30,7 +30,8 @@
  * Zero is returned for x > log2(NPY_INFINITY).
  *
  * An overflow error may occur for large negative x, due to the
- * Gamma function in the reflection formula.
+ * Gamma function in the reflection formula, so nan is returned
+ * for x < -30.8148.
  *
  * ACCURACY:
  *
@@ -177,7 +178,7 @@ double x;
     if (x < 0.0) {
         if (x < -30.8148) {
             mtherr("zetac", OVERFLOW);
-            return (0.0);
+            return (NPY_NAN);
         }
         s = 1.0 - x;
         w = zetac(s);

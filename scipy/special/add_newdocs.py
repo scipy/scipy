@@ -6813,8 +6813,8 @@ add_newdoc("scipy.special", "zetac",
 
     where ``x > 1``.  For ``x < 1``, the analytic continuation is computed.
 
-    Because of limitations of the numerical algoithm, ``zetac(x)`` returns 0
-    for `x` less than -30.8148.
+    Because of limitations of the numerical algorithm, ``zetac(x)`` returns
+    `nan` for `x` less than -30.8148.
 
     Parameters
     ----------
