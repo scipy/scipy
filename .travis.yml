@@ -14,11 +14,11 @@ matrix:
         - PEP8=1
         - NUMPYSPEC=numpy
       before_install:
-        - pip install pep8==1.7.0
+        - pip install pycodestyle==1.7.0
         - pip install pyflakes==1.1.0
       script:
         - PYFLAKES_NODOCTEST=1 pyflakes scipy benchmarks/benchmarks | grep -E -v 'unable to detect undefined names|assigned to but never used|imported but unused|redefinition of unused|may be undefined, or defined from star imports' > test.out; cat test.out; test \! -s test.out
-        - pep8 scipy benchmarks/benchmarks
+        - pycodestyle scipy benchmarks/benchmarks
     - python: 2.7
       env:
         - TESTMODE=fast
