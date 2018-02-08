@@ -494,8 +494,8 @@ def lobpcg(A, X,
         if verbosityLevel > 10:
             print(ii)
 
-        _lambda = _lambda[ii].astype(np.float64)
-        eigBlockVector = np.asarray(eigBlockVector[:,ii].astype(np.float64))
+        _lambda = _lambda[ii]
+        eigBlockVector = eigBlockVector[:,ii]
 
         lambdaHistory.append(_lambda)
 
