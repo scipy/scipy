@@ -177,10 +177,10 @@ def _spherical_polygon_area(double[:,:] vertices,
             # of the unit circle
             # add or subtract 2 * pi to the delta
             # based on original sign
-            if delta_lambda > np.pi:
-                delta_lambda -= 2 * np.pi
-            elif delta_lambda < (-np.pi):
-                delta_lambda += 2 * np.pi
+            if delta_lambda > M_PI:
+                delta_lambda -= 2 * M_PI
+            elif delta_lambda < (-M_PI):
+                delta_lambda += 2 * M_PI
 
             second_term = 2 + sin(phi_range[j]) + sin(phi_range[j+1])
             area_element += (delta_lambda * second_term * (radius ** 2) * 0.5)
