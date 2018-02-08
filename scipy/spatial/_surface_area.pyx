@@ -22,9 +22,9 @@ def planar_polygon_area(double[:,::1] vertices):
     for i in range(N):
         forward_index = vertex_index_strider(i, N)
         backward_index = i - 1
-        delta_x = (vertices[forward_index][0] -
-                   vertices[backward_index][0])
-        area += delta_x * vertices[i][1]
+        delta_x = (vertices[forward_index, 0] -
+                   vertices[backward_index, 0])
+        area += delta_x * vertices[i, 1]
     area *= 0.5
     return area
 
@@ -35,15 +35,14 @@ def _slerp(double[:] start_coord,
     # on great circle arc
     # see: https://en.wikipedia.org/wiki/Slerp#Geometric_Slerp
     # NOTE: could we use scipy.interpolate.RectSphereBivariateSpline instead?
-    cdef double[:] t_values
     cdef double omega
     cdef double[:,:] new_pts = np.empty((n_pts, 3), dtype=np.float64)
     cdef double[:] new_pt = np.empty(3)
     cdef int i, j
     cdef double t
+    cdef double[:] t_values = np.linspace(0, 1, n_pts)
 
     omega = acos(np.dot(start_coord, end_coord))
-    t_values = np.linspace(0, 1, n_pts)
     for i in range(n_pts):
         t = t_values[i]
         for j in range(3):
@@ -52,22 +51,19 @@ def _slerp(double[:] start_coord,
         new_pts[i] = new_pt
     return new_pts
 
+@cython.boundscheck(False)
 def calc_heading(double[:] lambda_range,
                  double[:] phi_range,
                  int i,
                  int next_index):
 
-    cdef double lambda_1 = lambda_range[i]
-    cdef double lambda_2 = lambda_range[next_index]
     cdef double phi_1 = phi_range[i]
     cdef double phi_2 = phi_range[next_index]
-    cdef double delta_lambda = lambda_1 - lambda_2
-    cdef double term_1 = sin(delta_lambda) * cos(phi_2)
-    cdef double term_2 = cos(phi_1) * sin(phi_2)
-    cdef double term_3 = sin(phi_1) * cos(phi_2) * cos(delta_lambda)
-    cdef double result = atan2(term_1, term_2 - term_3)
-    cdef double course_angle = result % (2 * M_PI)
-    course_angle = course_angle * 180.0 / M_PI
+    cdef double delta_lambda = lambda_range[i] - lambda_range[next_index]
+    cdef double result = atan2(sin(delta_lambda) * cos(phi_2),
+                               cos(phi_1) * sin(phi_2) -
+                               sin(phi_1) * cos(phi_2) * cos(delta_lambda))
+    cdef double course_angle = result % (2 * M_PI) * 180.0 / M_PI
     return course_angle
 
 def pole_in_polygon(double [:,:] vertices):
