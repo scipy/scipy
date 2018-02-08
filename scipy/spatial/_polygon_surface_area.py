@@ -18,32 +18,6 @@ import math
 #
 # Distributed under the same BSD license as Scipy.
 
-def convert_cartesian_array_to_spherical_array(coord_array,angle_measure='radians'):
-    '''Take shape (N,3) cartesian coord_array and return an array of the same shape in spherical polar form (r, theta, phi). Based on StackOverflow response: http://stackoverflow.com/a/4116899
-    use radians for the angles by default, degrees if angle_measure == 'degrees' '''
-    spherical_coord_array = np.zeros(coord_array.shape)
-    xy = coord_array[...,0]**2 + coord_array[...,1]**2
-    spherical_coord_array[...,0] = np.sqrt(xy + coord_array[...,2]**2)
-    spherical_coord_array[...,1] = np.arctan2(coord_array[...,1], coord_array[...,0])
-    spherical_coord_array[...,2] = np.arccos(coord_array[...,2] / spherical_coord_array[...,0])
-    if angle_measure == 'degrees':
-        spherical_coord_array[...,1] = np.degrees(spherical_coord_array[...,1])
-        spherical_coord_array[...,2] = np.degrees(spherical_coord_array[...,2])
-    return spherical_coord_array
-
-def convert_spherical_array_to_cartesian_array(spherical_coord_array,angle_measure='radians'):
-    '''Take shape (N,3) spherical_coord_array (r,theta,phi) and return an array of the same shape in cartesian coordinate form (x,y,z). Based on the equations provided at: http://en.wikipedia.org/wiki/List_of_common_coordinate_transformations#From_spherical_coordinates
-    use radians for the angles by default, degrees if angle_measure == 'degrees' '''
-    cartesian_coord_array = np.zeros(spherical_coord_array.shape)
-    #convert to radians if degrees are used in input (prior to Cartesian conversion process)
-    if angle_measure == 'degrees':
-        spherical_coord_array[...,1] = np.deg2rad(spherical_coord_array[...,1])
-        spherical_coord_array[...,2] = np.deg2rad(spherical_coord_array[...,2])
-    #now the conversion to Cartesian coords
-    cartesian_coord_array[...,0] = spherical_coord_array[...,0] * np.cos(spherical_coord_array[...,1]) * np.sin(spherical_coord_array[...,2])
-    cartesian_coord_array[...,1] = spherical_coord_array[...,0] * np.sin(spherical_coord_array[...,1]) * np.sin(spherical_coord_array[...,2])
-    cartesian_coord_array[...,2] = spherical_coord_array[...,0] * np.cos(spherical_coord_array[...,2])
-    return cartesian_coord_array
 
 
 
@@ -128,9 +102,9 @@ def poly_area(vertices, radius=None, threshold=1e-21,
             return 2. * np.pi * (radius ** 2) 
 
         # normalize vertices to unit sphere
-        vertices = convert_cartesian_array_to_spherical_array(vertices)
+        vertices = _surface_area.convert_cartesian_array_to_spherical_array(vertices)
         vertices[...,0] = 1.
-        vertices = convert_spherical_array_to_cartesian_array(vertices)
+        vertices = _surface_area.convert_spherical_array_to_cartesian_array(vertices)
 
         # try to handle spherical polygons that contain
         # a pole by rotating them; failing that,

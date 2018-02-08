@@ -282,7 +282,7 @@ class TestSplittingTriangles(object):
         radius = 1.0
         vertices = np.array([[-1,0,0],
                              [0,1,0],
-                             [0,0,1]])
+                             [0,0,1]], dtype=np.float64)
         # divide by six for expected subtriangle areas
         # compare to expected area in test_quarter_hemisphere_area
         expected_sub_area = (np.pi * (radius ** 2)) / 6.
