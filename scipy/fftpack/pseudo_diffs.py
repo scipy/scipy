@@ -78,6 +78,8 @@ def diff(x,order=1,period=None, _cache=_cache):
     overwrite_x = _datacopied(tmp, x)
     return convolve.convolve(tmp,omega,swap_real_imag=order % 2,
                              overwrite_x=overwrite_x)
+
+
 del _cache
 
 
@@ -146,6 +148,8 @@ def tilbert(x, h, period=None, _cache=_cache):
 
     overwrite_x = _datacopied(tmp, x)
     return convolve.convolve(tmp,omega,swap_real_imag=1,overwrite_x=overwrite_x)
+
+
 del _cache
 
 
@@ -186,6 +190,8 @@ def itilbert(x,h,period=None, _cache=_cache):
         _cache[(n,h)] = omega
     overwrite_x = _datacopied(tmp, x)
     return convolve.convolve(tmp,omega,swap_real_imag=1,overwrite_x=overwrite_x)
+
+
 del _cache
 
 
@@ -251,6 +257,8 @@ def hilbert(x, _cache=_cache):
         _cache[n] = omega
     overwrite_x = _datacopied(tmp, x)
     return convolve.convolve(tmp,omega,swap_real_imag=1,overwrite_x=overwrite_x)
+
+
 del _cache
 
 
@@ -323,6 +331,8 @@ def cs_diff(x, a, b, period=None, _cache=_cache):
         _cache[(n,a,b)] = omega
     overwrite_x = _datacopied(tmp, x)
     return convolve.convolve(tmp,omega,swap_real_imag=1,overwrite_x=overwrite_x)
+
+
 del _cache
 
 
@@ -377,6 +387,8 @@ def sc_diff(x, a, b, period=None, _cache=_cache):
         _cache[(n,a,b)] = omega
     overwrite_x = _datacopied(tmp, x)
     return convolve.convolve(tmp,omega,swap_real_imag=1,overwrite_x=overwrite_x)
+
+
 del _cache
 
 
@@ -430,6 +442,8 @@ def ss_diff(x, a, b, period=None, _cache=_cache):
         _cache[(n,a,b)] = omega
     overwrite_x = _datacopied(tmp, x)
     return convolve.convolve(tmp,omega,overwrite_x=overwrite_x)
+
+
 del _cache
 
 
@@ -485,6 +499,8 @@ def cc_diff(x, a, b, period=None, _cache=_cache):
         _cache[(n,a,b)] = omega
     overwrite_x = _datacopied(tmp, x)
     return convolve.convolve(tmp,omega,overwrite_x=overwrite_x)
+
+
 del _cache
 
 
@@ -536,5 +552,6 @@ def shift(x, a, period=None, _cache=_cache):
     overwrite_x = _datacopied(tmp, x)
     return convolve.convolve_z(tmp,omega_real,omega_imag,
                                overwrite_x=overwrite_x)
+
 
 del _cache

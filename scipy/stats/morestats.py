@@ -1311,6 +1311,7 @@ def shapiro(x):
 
     return w, pw
 
+
 # Values from Stephens, M A, "EDF Statistics for Goodness of Fit and
 #             Some Comparisons", Journal of he American Statistical
 #             Association, Vol. 69, Issue 347, Sept. 1974, pp 730-737

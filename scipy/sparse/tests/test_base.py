@@ -63,6 +63,7 @@ class _UFuncCheck(object):
         global HAS_NUMPY_UFUNC
         HAS_NUMPY_UFUNC = True
 
+
 HAS_NUMPY_UFUNC = False
 np.add(_UFuncCheck(), np.array([1]))
 
@@ -3779,6 +3780,7 @@ class TestCSR(sparse_test_class()):
         for x in [a, b, c, d, e, f]:
             x + x
 
+
 TestCSR.init_class()
 
 
@@ -3926,6 +3928,7 @@ class TestCSC(sparse_test_class()):
         for x in [a, b, c, d, e, f]:
             x + x
 
+
 TestCSC.init_class()
 
 
@@ -4025,6 +4028,7 @@ class TestDOK(sparse_test_class(minmax=False, nnz_axis=False)):
         b = dok_matrix((3,3))
         b[:,0] = 0
         assert_(len(b.keys()) == 0, "Unexpected entries in keys")
+
 
 TestDOK.init_class()
 
@@ -4127,6 +4131,7 @@ class TestLIL(sparse_test_class(minmax=False)):
         a = lil_matrix(np.ones((3,3)))
         a *= 2.
         a[0, :] = 0
+
 
 TestLIL.init_class()
 
@@ -4233,6 +4238,7 @@ class TestCOO(sparse_test_class(getset=False,
         y = x.reshape(new_shape, copy=True)
         assert_(not np.may_share_memory(y.data, x.data))
 
+
 TestCOO.init_class()
 
 
@@ -4270,6 +4276,7 @@ class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=Fals
     @pytest.mark.skip(reason='DIA stores extra zeros')
     def test_getnnz_axis(self):
         pass
+
 
 TestDIA.init_class()
 
@@ -4429,6 +4436,7 @@ class TestBSR(sparse_test_class(getset=False,
         # These shouldn't fail
         for x in [a, b, c, d, e, f]:
             x + x
+
 
 TestBSR.init_class()
 

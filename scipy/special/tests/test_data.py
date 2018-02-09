@@ -199,6 +199,7 @@ def clog1p(x, y):
     z = log1p(x + 1j*y)
     return z.real, z.imag
 
+
 BOOST_TESTS = [
         data(arccosh, 'acosh_data_ipp-acosh_data', 0, 1, rtol=5e-13),
         data(arccosh, 'acosh_data_ipp-acosh_data', 0j, 1, rtol=5e-13),

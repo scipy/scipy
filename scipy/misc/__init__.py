@@ -90,6 +90,8 @@ source = np.deprecate(_source, message=_msg % {"name": "source"})
 @np.deprecate(message=_msg % {"name": "info.(..., toplevel='scipy')"})
 def info(object=None,maxwidth=76,output=sys.stdout,toplevel='scipy'):
     return _info(object, maxwidth, output, toplevel)
+
+
 info.__doc__ = _info.__doc__
 del sys
 

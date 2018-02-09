@@ -379,6 +379,7 @@ def hmean(a, axis=0, dtype=None):
         raise ValueError("Harmonic mean only defined if all elements greater "
                          "than zero")
 
+
 ModeResult = namedtuple('ModeResult', ('mode', 'count'))
 
 
@@ -1155,6 +1156,7 @@ def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
     else:
         return vals
 
+
 DescribeResult = namedtuple('DescribeResult',
                             ('nobs', 'minmax', 'mean', 'variance', 'skewness',
                              'kurtosis'))
@@ -1241,6 +1243,7 @@ def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
 #         NORMALITY TESTS           #
 #####################################
 
+
 SkewtestResult = namedtuple('SkewtestResult', ('statistic', 'pvalue'))
 
 
@@ -1320,6 +1323,7 @@ def skewtest(a, axis=0, nan_policy='propagate'):
     Z = delta * np.log(y / alpha + np.sqrt((y / alpha)**2 + 1))
 
     return SkewtestResult(Z, 2 * distributions.norm.sf(np.abs(Z)))
+
 
 KurtosistestResult = namedtuple('KurtosistestResult', ('statistic', 'pvalue'))
 
@@ -1409,6 +1413,7 @@ def kurtosistest(a, axis=0, nan_policy='propagate'):
 
     # zprob uses upper tail, so Z needs to be positive
     return KurtosistestResult(Z, 2 * distributions.norm.sf(np.abs(Z)))
+
 
 NormaltestResult = namedtuple('NormaltestResult', ('statistic', 'pvalue'))
 
@@ -2824,6 +2829,7 @@ def trim_mean(a, proportiontocut, axis=0):
     sl[axis] = slice(lowercut, uppercut)
     return np.mean(atmp[sl], axis=axis)
 
+
 F_onewayResult = namedtuple('F_onewayResult', ('statistic', 'pvalue'))
 
 
@@ -3174,6 +3180,7 @@ def fisher_exact(table, alternative='two-sided'):
 
     return oddsratio, pvalue
 
+
 SpearmanrResult = namedtuple('SpearmanrResult', ('correlation', 'pvalue'))
 
 
@@ -3322,6 +3329,7 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate'):
         return SpearmanrResult(rs[1, 0], prob[1, 0])
     else:
         return SpearmanrResult(rs, prob)
+
 
 PointbiserialrResult = namedtuple('PointbiserialrResult',
                                   ('correlation', 'pvalue'))
@@ -3866,6 +3874,7 @@ def _equal_var_ttest_denom(v1, n1, v2, n2):
     denom = np.sqrt(svar * (1.0 / n1 + 1.0 / n2))
     return df, denom
 
+
 Ttest_indResult = namedtuple('Ttest_indResult', ('statistic', 'pvalue'))
 
 
@@ -4081,6 +4090,7 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate'):
 
     return Ttest_indResult(*res)
 
+
 Ttest_relResult = namedtuple('Ttest_relResult', ('statistic', 'pvalue'))
 
 
@@ -4177,6 +4187,7 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate'):
     t, prob = _ttest_finish(df, t)
 
     return Ttest_relResult(t, prob)
+
 
 KstestResult = namedtuple('KstestResult', ('statistic', 'pvalue'))
 
@@ -4360,6 +4371,7 @@ def _count(a, axis=None):
         else:
             num = a.shape[axis]
     return num
+
 
 Power_divergenceResult = namedtuple('Power_divergenceResult',
                                     ('statistic', 'pvalue'))
@@ -4686,6 +4698,7 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
     return power_divergence(f_obs, f_exp=f_exp, ddof=ddof, axis=axis,
                             lambda_="pearson")
 
+
 Ks_2sampResult = namedtuple('Ks_2sampResult', ('statistic', 'pvalue'))
 
 
@@ -4910,6 +4923,7 @@ def mannwhitneyu(x, y, use_continuity=True, alternative=None):
         u = min(u1, u2)
     return MannwhitneyuResult(u, p)
 
+
 RanksumsResult = namedtuple('RanksumsResult', ('statistic', 'pvalue'))
 
 
@@ -4957,6 +4971,7 @@ def ranksums(x, y):
     prob = 2 * distributions.norm.sf(abs(z))
 
     return RanksumsResult(z, prob)
+
 
 KruskalResult = namedtuple('KruskalResult', ('statistic', 'pvalue'))
 
