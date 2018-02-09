@@ -9,9 +9,11 @@ from scipy._lib.six import xrange
 from scipy.signal.wavelets import cwt, ricker
 from scipy.stats import scoreatpercentile
 
+from ._peak_finding_utils import _argmaxima1d
+
 
 __all__ = ['argrelmin', 'argrelmax', 'argrelextrema', 'peak_prominences',
-           'peak_widths', 'find_peaks_cwt']
+           'peak_widths', 'find_peaks', 'find_peaks_cwt']
 
 
 def _boolrelextrema(data, comparator, axis=0, order=1, mode='clip'):
@@ -561,6 +563,407 @@ def peak_widths(x, peaks, rel_height=0.5, **kwargs):
         right_ips[i] = right_ip + left_bases[i]
 
     return widths, wheights, left_ips, right_ips
+
+
+def _unpack_filter_args(interval, x, peaks):
+    """
+    Parse filter arguments for `scipy.signal.find_peaks`.
+
+    Parameters
+    ----------
+    interval : number or ndarray or sequence
+        Either a number or ndarray or a 2-element sequence of the former. The
+        first value is always interpreted as `imin` and the second, if supplied,
+        as `imax`.
+    x : ndarray
+        The signal with `peaks`.
+    peaks : ndarray
+        An array with indices used to reduce `imin` and / or `imax` if those are
+        arrays.
+
+    Returns
+    -------
+    imin, imax : number or ndarray or None
+        Minimal and maximal value in `argument`.
+
+    Raises
+    ------
+    ValueError :
+        If interval border is given as array and its size does not match the size
+        of `x`.
+
+    Notes
+    -----
+
+    .. versionadded:: 1.1.0
+    """
+    try:
+        imin, imax = interval
+    except (TypeError, ValueError):
+        imin, imax = (interval, None)
+
+    # Reduce arrays if arrays
+    if isinstance(imin, np.ndarray):
+        if imin.size != x.size:
+            raise ValueError('array size of lower interval border must match x')
+        imin = imin[peaks]
+    if isinstance(imax, np.ndarray):
+        if imax.size != x.size:
+            raise ValueError('array size of upper interval border must match x')
+        imax = imax[peaks]
+
+    return imin, imax
+
+
+def _filter_generic(peaks, peak_property, pmin, pmax):
+    """
+    Evaluate where a generic peak property confirms to an interval.
+
+    Parameters
+    ----------
+    peaks : ndarray
+        Peaks as indices of a one-dimensional array.
+    peak_property : ndarray
+        An array with properties for each peak.
+    pmin : None or number or ndarray
+        Lower interval boundary for `peak_property`.
+    pmax : None or number or ndarray
+        Upper interval boundary for `peak_property`.
+
+    Returns
+    -------
+    keep : bool
+        A boolean mask evaluating to true where `peak_property` fullfills the
+        requirements.
+
+    See Also
+    --------
+    find_peaks
+
+    Notes
+    -----
+
+    .. versionadded:: 1.1.0
+    """
+    keep = np.ones(peaks.size, dtype=bool)
+    if pmin is not None:
+        keep &= (pmin <= peak_property)
+    if pmax is not None:
+        keep &= (peak_property <= pmax)
+    return keep
+
+
+def _filter_by_peak_threshold(x, peaks, tmin, tmax):
+    """
+    Evaluate which peaks fullfill the threshold requirements.
+
+    Parameters
+    ----------
+    x : ndarray
+        A one-dimensional array which is indexable by `peaks`.
+    peaks : ndarray
+        Indices of peaks in `x`.
+    tmin, tmax : scalar or ndarray or None
+         Minimal and / or maximal required thresholds. If supplied as ndarrays
+         their size must match `peaks`.
+
+    Returns
+    -------
+    keep : bool
+        A boolean mask evaluating to true where `peaks` fullfill the threshold
+        requirements.
+    left_thresholds, right_thresholds : ndarray
+        Array matching `peak` containing the thresholds of each peak on
+        both sides.
+
+    Notes
+    -----
+
+    .. versionadded:: 1.1.0
+    """
+    # Stack thresholds on both sides to make min / max operations easier:
+    # tmin is compared with the smaller, and tmax with the greater thresold to
+    # each peak's side
+    stacked_thresholds = np.vstack([x[peaks] - x[peaks - 1],
+                                    x[peaks] - x[peaks + 1]])
+    keep = np.ones(peaks.size, dtype=bool)
+    if tmin is not None:
+        min_thresholds = np.min(stacked_thresholds, axis=0)
+        keep &= (tmin <= min_thresholds)
+    if tmax is not None:
+        max_thresholds = np.max(stacked_thresholds, axis=0)
+        keep &= (max_thresholds <= tmax)
+
+    return keep, stacked_thresholds[0], stacked_thresholds[1]
+
+
+# Code for _filter_by_peak_distance was adapted from
+# https://github.com/demotu/BMC/blob/master/functions/detect_peaks.py
+# by Marcos Duarte under the MIT license:
+#
+#     Copyright (c) 2013 Marcos Duarte
+#
+#     Permission is hereby granted, free of charge, to any person
+#     obtaining a copy of this software and associated documentation
+#     files (the "Software"), to deal in the Software without
+#     restriction, including without limitation the rights to use,
+#     copy, modify, merge, publish, distribute, sublicense, and/or sell
+#     copies of the Software, and to permit persons to whom the
+#     Software is furnished to do so, subject to the following
+#     conditions:
+#
+#     The above copyright notice and this permission notice shall be
+#     included in all copies or substantial portions of the Software.
+#
+#     THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+#     EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+#     OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+#     NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+#     HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+#     WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+#     FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+#     OTHER DEALINGS IN THE SOFTWARE.
+
+def _filter_by_peak_distance(peaks, priority, dmin):
+    """
+    Flag neighbouring peaks for removal to ensure a minimal distance.
+
+    Parameters
+    ----------
+    peaks : ndarray
+        Indices of peaks in `vector`.
+    priority : ndarray
+        An array with priorities matching `peaks` used to determine priority of
+        peaks. A peak with a higher priority value is kept over one with a lower
+        one.
+    dmin : number
+        Minimal distance that peaks must be spaced.
+
+    Returns
+    -------
+    keep : ndarray[bool]
+        A boolean mask matching `peaks` that evaluates to true for each peak
+        that must be removed in order to fullfill the requirement.
+
+    Notes
+    -----
+
+    .. versionadded:: 1.1.0
+    """
+    # Peaks are evaluated by priority (larger first)
+    eval_peaks = peaks[np.argsort(priority)][::-1]
+
+    # Flag peaks for deletion
+    del_flag = np.zeros(eval_peaks.size, dtype=bool)
+    for i in range(eval_peaks.size):
+        if not del_flag[i]:
+            # Flag peaks in intervall +-distance around current peak
+            del_flag |= (eval_peaks > eval_peaks[i] - dmin) \
+                        & (eval_peaks < eval_peaks[i] + dmin)
+            # Keep current peak
+            del_flag[i] = False
+
+    keep = ~del_flag[np.argsort(eval_peaks)]
+
+    return keep
+
+
+def find_peaks(x, height=None, threshold=None, distance=None,
+               prominence=None, width=None, wlen=None, rel_height=0.5):
+    """
+    Find a subset of peaks inside a signal.
+
+    This function takes a one-dimensional array and finds all local maxima by
+    simple comparision of neighbouring values. A subset of these peaks can be
+    selected by specifying requirements (filter options) for a peak's properties.
+
+    Parameters
+    ----------
+    x : sequence
+        A signal with peaks.
+    height : number or ndarray or sequence, optional
+        Required height of peaks. Either a number, ``None``, an array matching
+        `x` or a 2-element sequence of the former. The first element is
+        always interpreted as the  minimum and the second, if supplied, as the
+        maximum required height.
+    threshold : number or ndarray or sequence, optional
+        Required threshold of peaks, the vertical distance to its neighbouring
+        samples. Either a number, ``None``, an array matching `x` or a
+        2-element sequence of the former. The first element is always
+        interpreted as the  minimum and the second, if supplied, as the maximum
+        required threshold.
+    distance : number, optional
+        Required minimal horizontal distance (>= 1) in samples between
+        neighbouring peaks. The removal order is explained in the notes section.
+    prominence : number or ndarray or sequence, optional
+        Required prominence of peaks. Either a number, ``None``, an array
+        matching `x` or a 2-element sequence of the former. The first
+        element is always interpreted as the  minimum and the second, if
+        supplied, as the maximum required prominence.
+    width : number or ndarray or sequence, optional
+        Required width of peaks. Either a number, ``None``, an array
+        matching `x` or a 2-element sequence of the former. The first
+        element is always interpreted as the  minimum and the second, if
+        supplied, as the maximum required prominence.
+    wlen : number, optional
+        Used for calculation of the peaks prominences thus it is only used if
+        one of the arguments `prominence` or `width` is given. See argument
+        `wlen` in `scipy.signal.peak_prominences` for a full description of its
+        effects.
+    rel_height : float, optional
+        Used for calculation of the peaks width thus it is only used if `width`
+        is given. See argument  `rel_height` in `scipy.signal.peak_widths` for a
+        full description of its effects.
+
+    Returns
+    -------
+    peaks : ndarray
+        Indices of peaks in `x` that satisfy all requirements.
+    properties : dict
+        A dictionary containing properties of the returned peaks which were
+        calculated as intermediate results during filtering:
+
+        * If `height` is given, the value of `x` at each peak is returned
+          with the key 'peak_heights'.
+        * If `threshold` is given, the keys 'left_thresholds' and
+          'right_thresholds' contain a peaks vertical distance to its
+          neighbouring samples.
+        * If `prominence` is given, the keys 'prominences', 'left_bases' and
+          'right_bases' are accessible. See `scipy.signal.peak_prominences` for
+          a description of their content.
+        * If `width` is given, the keys 'wheights', 'left_ips' and 'right_ips'
+          are accessible. See `scipy.signal.peak_widths` for a description of
+          their content.
+
+    See Also
+    --------
+    find_peaks_cwt
+        Find peaks using the wavelet transformation.
+    peak_prominences
+        Directly calculate the prominence of peaks.
+    peak_widths
+        Directly calculate the width of peaks.
+
+    Notes
+    -----
+    Because this function searches for local maxima by direct sample comparison,
+    the determined peak locations can be off for noisy signals if the noise
+    changes the position of a local maximum. In those cases, smoothing the signal
+    may be more appropriate before searching for peaks or using other peak
+    finding and fitting methods (like `find_peaks_cwt`).
+
+    Some additional comments on filtering with requirements:
+
+    * Almost all filter options (excluding filtering by distance) allow the
+      specification of half-open or closed intervals, e.g ``1`` or ``(1, None)``
+      define the half-open interval :math:`[3, \\infty]` while ``(None, 1)``
+      defines the interval :math:`[-\\infty, 3]`.
+    * The border is always included in the interval used to select valid peaks.
+    * The order of input arguments for the different filters mirrors the actual
+      order in which they are applied. In most cases this order is the fastest
+      one because faster filter operations are applied first to reduce the
+      number of peaks that need to be evaluated later.
+    * Filtering by distance is accomplished by iterating over all peaks in
+      descending order based on their height and removing all lower peaks that
+      are to close. This option can be quite slow if a large number of peaks
+      needs to be evaluated. Try to reduce the number of peaks with cheaper
+      (previous) filter options first.
+    * Use `wlen` to reduce the time it takes to filter by prominence or width if
+      `x` is large or has many local maxima (see
+      `scipy.signal.peak_prominences`).
+    * For several filter options the interval borders can be specified with
+      arrays matching `x` in shape which enables dynamic filter constrains.
+
+    .. versionadded:: 1.1.0
+
+    Examples
+    --------
+    Create test signal and find peaks with a minimal prominence of 0.5
+
+    >>> from scipy.signal import find_peaks
+    >>> t = np.linspace(0, 8 * np.pi, 1000)
+    >>> x = np.sin(t) + 0.2 * np.sin(10 * t) + 0.1 * t
+    >>> peaks, properties = find_peaks(x, prominence=0.5)
+    >>> peaks
+    array([ 57, 306, 556, 806])
+
+    Plot results
+
+    >>> import matplotlib.pyplot as plt
+    >>> countour_height = x[peaks] - properties['prominences']
+    >>> plt.plot(t, x)
+    >>> plt.plot(t[peaks], x[peaks], "x")
+    >>> plt.vlines(t[peaks], ymin=countour_height, ymax=x[peaks])
+    """
+    # _argmaxima1d expects array of dtype 'float64'
+    x = np.asarray(x, dtype=np.float64)
+    if x.ndim != 1:
+        raise ValueError('`x` must have exactly one dimension')
+    if distance is not None and distance < 1:
+        raise ValueError('`distance` must be greater or equal to 1')
+
+    peaks = _argmaxima1d(x)
+    properties = {}
+
+    if peaks.size == 0:
+        # Skip filtering if no peaks where found
+        return peaks, properties
+
+    # Filter by height
+    if height is not None:
+        peak_heights = x[peaks]
+        hmin, hmax = _unpack_filter_args(height, x, peaks)
+        keep = _filter_generic(peaks, peak_heights, hmin, hmax)
+        peaks = peaks[keep]
+        properties["peak_heights"] = peak_heights[keep]
+
+    # Filter by threshold
+    if threshold is not None:
+        tmin, tmax = _unpack_filter_args(threshold, x, peaks)
+        keep, left_thresholds, right_thresholds = _filter_by_peak_threshold(
+            x, peaks, tmin, tmax)
+        peaks = peaks[keep]
+        properties["left_thresholds"] = left_thresholds
+        properties["right_thresholds"] = right_thresholds
+        properties = {key: array[keep] for key, array in properties.items()}
+
+    # Filter by distance
+    if distance is not None:
+        keep = _filter_by_peak_distance(peaks, x[peaks], distance)
+        peaks = peaks[keep]
+        properties = {key: array[keep] for key, array in properties.items()}
+
+    if prominence is not None or width is not None:
+        # Prominence is required for both filter options
+        properties.update(zip(
+            ['prominences', 'left_bases', 'right_bases'],
+            peak_prominences(x, peaks, wlen=wlen)
+        ))
+
+        # Filter by prominence
+        if prominence is not None:
+            pmin, pmax = _unpack_filter_args(prominence, x, peaks)
+            keep = _filter_generic(peaks, properties['prominences'], pmin, pmax)
+            peaks = peaks[keep]
+            properties = {key: array[keep] for key, array in properties.items()}
+
+        # Filter by width
+        if width is not None:
+            # Calculate the widths
+            properties.update(zip(
+                ['widths', 'wheights', 'left_ips', 'right_ips'],
+                peak_widths(x, peaks,
+                            rel_height=rel_height,
+                            prominences=properties['prominences'],
+                            left_bases=properties['left_bases'],
+                            right_bases=properties['right_bases'])
+            ))
+            wmin, wmax = _unpack_filter_args(width, x, peaks)
+            keep = _filter_generic(peaks, properties['widths'], wmin, wmax)
+            peaks = peaks[keep]
+            properties = {key: array[keep] for key, array in properties.items()}
+
+    return peaks, properties
 
 
 def _identify_ridge_lines(matr, max_distances, gap_thresh):
