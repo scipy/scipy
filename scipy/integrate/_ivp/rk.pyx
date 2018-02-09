@@ -1,9 +1,10 @@
 from __future__ import division, print_function, absolute_import
 import numpy as np
-from .base import OdeSolver, DenseOutput
+from .base import DenseOutput
 from .common import (validate_max_step, validate_tol, select_initial_step,
                      norm, warn_extraneous)
 
+from .base cimport OdeSolver
 
 # Multiply steps computed from asymptotic behaviour of errors by this.
 SAFETY = 0.9
@@ -78,7 +79,7 @@ def rk_step(fun, t, y, f, h, A, B, C, E, K):
     return y_new, f_new, error
 
 
-class RungeKutta(OdeSolver):
+cdef class RungeKutta(OdeSolver):
     """Base class for explicit Runge-Kutta methods."""
     C = NotImplemented
     A = NotImplemented

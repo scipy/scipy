@@ -1,10 +1,13 @@
 import numpy as np
+import functools
+
 from scipy.integrate import ode
 from .common import validate_tol, warn_extraneous
-from .base import OdeSolver, DenseOutput
+from .base import DenseOutput
 
+from .base cimport OdeSolver
 
-class LSODA(OdeSolver):
+cdef class LSODA(OdeSolver):
     """Adams/BDF method with automatic stiffness detection and switching.
 
     This is a wrapper to the Fortran solver from ODEPACK [1]_. It switches
@@ -102,6 +105,9 @@ class LSODA(OdeSolver):
            on Scientific and Statistical Computing, Vol. 4, No. 1, pp. 136-148,
            1983.
     """
+    cdef public:
+        object _lsoda_solver
+
     def __init__(self, fun, t0, y0, t_bound, first_step=None, min_step=0.0,
                  max_step=np.inf, rtol=1e-3, atol=1e-6, jac=None, lband=None,
                  uband=None, vectorized=False, **extraneous):
@@ -127,7 +133,7 @@ class LSODA(OdeSolver):
             def jac():
                 return None
 
-        solver = ode(self.fun, jac)
+        solver = ode(functools.partial(self.fun), functools.partial(jac))
         solver.set_integrator('lsoda', rtol=rtol, atol=atol, max_step=max_step,
                               min_step=min_step, first_step=first_step,
                               lband=lband, uband=uband)

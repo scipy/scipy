@@ -6,7 +6,9 @@ from scipy.sparse.linalg import splu
 from scipy.optimize._numdiff import group_columns
 from .common import (validate_max_step, validate_tol, select_initial_step,
                      norm, num_jac, EPS, warn_extraneous)
-from .base import OdeSolver, DenseOutput
+from .base import DenseOutput
+
+from .base cimport OdeSolver
 
 S6 = 6 ** 0.5
 
@@ -177,7 +179,7 @@ def predict_factor(h_abs, h_abs_old, error_norm, error_norm_old):
     return factor
 
 
-class Radau(OdeSolver):
+cdef class Radau(OdeSolver):
     """Implicit Runge-Kutta method of Radau IIA family of order 5.
 
     The implementation follows [1]_. The error is controlled with a
@@ -277,6 +279,13 @@ class Radau(OdeSolver):
            sparse Jacobian matrices", Journal of the Institute of Mathematics
            and its Applications, 13, pp. 117-120, 1974.
     """
+    cdef public:
+        object LU
+        object LU_real 
+        object LU_complex
+        object Z
+        object current_jac
+
     def __init__(self, fun, t0, y0, t_bound, max_step=np.inf,
                  rtol=1e-3, atol=1e-6, jac=None, jac_sparsity=None,
                  vectorized=False, **extraneous):

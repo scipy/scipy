@@ -6,8 +6,9 @@ from scipy.sparse.linalg import splu
 from scipy.optimize._numdiff import group_columns
 from .common import (validate_max_step, validate_tol, select_initial_step,
                      norm, EPS, num_jac, warn_extraneous)
-from .base import OdeSolver, DenseOutput
+from .base import DenseOutput
 
+from .base cimport OdeSolver
 
 MAX_ORDER = 5
 NEWTON_MAXITER = 4
@@ -69,7 +70,7 @@ def solve_bdf_system(fun, t_new, y_predict, c, psi, LU, solve_lu, scale, tol):
     return converged, k + 1, y, d
 
 
-class BDF(OdeSolver):
+cdef class BDF(OdeSolver):
     """Implicit method based on backward-differentiation formulas.
 
     This is a variable order method with the order varying automatically from
@@ -178,6 +179,15 @@ class BDF(OdeSolver):
            sparse Jacobian matrices", Journal of the Institute of Mathematics
            and its Applications, 13, pp. 117-120, 1974.
     """
+    cdef public:
+        object problem_order
+        object LU
+        object n_equal_steps
+        object D
+        object gamma
+        object alpha
+        object error_const
+
     def __init__(self, fun, t0, y0, t_bound, max_step=np.inf,
                  rtol=1e-3, atol=1e-6, jac=None, jac_sparsity=None,
                  vectorized=False, **extraneous):
@@ -230,7 +240,7 @@ class BDF(OdeSolver):
         D[1] = f * self.h_abs * self.direction
         self.D = D
 
-        self.order = 1
+        self.problem_order = 1
         self.n_equal_steps = 0
         self.LU = None
 
@@ -295,18 +305,18 @@ class BDF(OdeSolver):
         min_step = 10 * np.abs(np.nextafter(t, self.direction * np.inf) - t)
         if self.h_abs > max_step:
             h_abs = max_step
-            change_D(D, self.order, max_step / self.h_abs)
+            change_D(D, self.problem_order, max_step / self.h_abs)
             self.n_equal_steps = 0
         elif self.h_abs < min_step:
             h_abs = min_step
-            change_D(D, self.order, min_step / self.h_abs)
+            change_D(D, self.problem_order, min_step / self.h_abs)
             self.n_equal_steps = 0
         else:
             h_abs = self.h_abs
 
         atol = self.atol
         rtol = self.rtol
-        order = self.order
+        order = self.problem_order
 
         alpha = self.alpha
         gamma = self.gamma
@@ -419,7 +429,7 @@ class BDF(OdeSolver):
 
         delta_order = np.argmax(factors) - 1
         order += delta_order
-        self.order = order
+        self.problem_order = order
 
         factor = min(MAX_FACTOR, safety * np.max(factors))
         self.h_abs *= factor
@@ -431,15 +441,15 @@ class BDF(OdeSolver):
 
     def _dense_output_impl(self):
         return BdfDenseOutput(self.t_old, self.t, self.h_abs * self.direction,
-                              self.order, self.D[:self.order + 1].copy())
+                              self.problem_order, self.D[:self.problem_order + 1].copy())
 
 
 class BdfDenseOutput(DenseOutput):
     def __init__(self, t_old, t, h, order, D):
         super(BdfDenseOutput, self).__init__(t_old, t)
-        self.order = order
-        self.t_shift = self.t - h * np.arange(self.order)
-        self.denom = h * (1 + np.arange(self.order))
+        self.problem_order = order
+        self.t_shift = self.t - h * np.arange(self.problem_order)
+        self.denom = h * (1 + np.arange(self.problem_order))
         self.D = D
 
     def _call_impl(self, t):

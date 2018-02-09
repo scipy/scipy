@@ -23,7 +23,7 @@ def check_arguments(fun, y0, support_complex):
     return fun_wrapped, y0
 
 
-class OdeSolver(object):
+cdef class OdeSolver:
     """Base class for ODE solvers.
 
     In order to implement a new solver you need to follow the guidelines:
