@@ -6,6 +6,7 @@
 *$
 *.bak
 .idea/*
+.vscode/*
 *.kdev4
 *.org
 .project
