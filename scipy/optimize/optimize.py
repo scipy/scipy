@@ -23,7 +23,7 @@ __all__ = ['fmin', 'fmin_powell', 'fmin_bfgs', 'fmin_ncg', 'fmin_cg',
            'fminbound', 'brent', 'golden', 'bracket', 'rosen', 'rosen_der',
            'rosen_hess', 'rosen_hess_prod', 'brute', 'approx_fprime',
            'line_search', 'check_grad', 'OptimizeResult', 'show_options',
-           'OptimizeWarning']
+           'OptimizeWarning', 'Optimizer', 'Function', 'NelderMead', 'BFGS']
 
 __docformat__ = "restructuredtext en"
 
@@ -38,6 +38,7 @@ from .linesearch import (line_search_wolfe1, line_search_wolfe2,
                          line_search_wolfe2 as line_search,
                          LineSearchWarning)
 from scipy._lib._util import getargspec_no_self as _getargspec
+from ._numdiff import approx_derivative
 
 
 # standard status messages of optimizers
@@ -284,6 +285,7 @@ def rosen_hess_prod(x, p):
 
 
 def wrap_function(function, args):
+    # wrap a function to save the number of calls to that function.
     ncalls = [0]
     if function is None:
         return ncalls, None
@@ -293,6 +295,19 @@ def wrap_function(function, args):
         return function(*(wrapper_args + args))
 
     return ncalls, function_wrapper
+
+
+def wrap_callback_function(function):
+    # wrap a callback function to save the iterations at each step
+    allvecs = []
+    if function is None:
+        return allvecs, None
+
+    def function_wrapper(x):
+        allvecs.append(asarray(x).copy())
+        return function(x)
+
+    return allvecs, function_wrapper
 
 
 def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
@@ -483,168 +498,39 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
         unknown_options.pop('xtol')
 
     _check_unknown_options(unknown_options)
-    maxfun = maxfev
-    retall = return_all
 
-    fcalls, func = wrap_function(func, args)
-
-    if adaptive:
-        dim = float(len(x0))
-        rho = 1
-        chi = 1 + 2/dim
-        psi = 0.75 - 1/(2*dim)
-        sigma = 1 - 1/dim
-    else:
-        rho = 1
-        chi = 2
-        psi = 0.5
-        sigma = 0.5
-
-    nonzdelt = 0.05
-    zdelt = 0.00025
-
-    x0 = asfarray(x0).flatten()
-
-    if initial_simplex is None:
-        N = len(x0)
-
-        sim = numpy.zeros((N + 1, N), dtype=x0.dtype)
-        sim[0] = x0
-        for k in range(N):
-            y = numpy.array(x0, copy=True)
-            if y[k] != 0:
-                y[k] = (1 + nonzdelt)*y[k]
-            else:
-                y[k] = zdelt
-            sim[k + 1] = y
-    else:
-        sim = np.asfarray(initial_simplex).copy()
-        if sim.ndim != 2 or sim.shape[0] != sim.shape[1] + 1:
-            raise ValueError("`initial_simplex` should be an array of shape (N+1,N)")
-        if len(x0) != sim.shape[1]:
-            raise ValueError("Size of `initial_simplex` is not consistent with `x0`")
-        N = sim.shape[1]
-
-    if retall:
-        allvecs = [sim[0]]
-
+    N = asarray(x0).size
     # If neither are set, then set both to default
-    if maxiter is None and maxfun is None:
+    if maxiter is None and maxfev is None:
         maxiter = N * 200
-        maxfun = N * 200
+        maxfev = N * 200
     elif maxiter is None:
         # Convert remaining Nones, to np.inf, unless the other is np.inf, in
         # which case use the default to avoid unbounded iteration
-        if maxfun == np.inf:
+        if maxfev == np.inf:
             maxiter = N * 200
         else:
             maxiter = np.inf
-    elif maxfun is None:
+    elif maxfev is None:
         if maxiter == np.inf:
-            maxfun = N * 200
+            maxfev = N * 200
         else:
-            maxfun = np.inf
+            maxfev = np.inf
 
-    one2np1 = list(range(1, N + 1))
-    fsim = numpy.zeros((N + 1,), float)
+    function = Function(func=func, args=args)
+    opt = NelderMead(function, x0, initial_simplex=initial_simplex,
+                     xatol=xatol, fatol=fatol, adaptive=adaptive,
+                     **unknown_options)
 
-    for k in range(N + 1):
-        fsim[k] = func(sim[k])
+    allvecs, wrapped_callback = wrap_callback_function(callback)
+    if return_all:
+        allvecs.append(asfarray(x0).flatten())
 
-    ind = numpy.argsort(fsim)
-    fsim = numpy.take(fsim, ind, 0)
-    # sort so sim[0,:] has the lowest function value
-    sim = numpy.take(sim, ind, 0)
-
-    iterations = 1
-
-    while (fcalls[0] < maxfun and iterations < maxiter):
-        if (numpy.max(numpy.ravel(numpy.abs(sim[1:] - sim[0]))) <= xatol and
-                numpy.max(numpy.abs(fsim[0] - fsim[1:])) <= fatol):
-            break
-
-        xbar = numpy.add.reduce(sim[:-1], 0) / N
-        xr = (1 + rho) * xbar - rho * sim[-1]
-        fxr = func(xr)
-        doshrink = 0
-
-        if fxr < fsim[0]:
-            xe = (1 + rho * chi) * xbar - rho * chi * sim[-1]
-            fxe = func(xe)
-
-            if fxe < fxr:
-                sim[-1] = xe
-                fsim[-1] = fxe
-            else:
-                sim[-1] = xr
-                fsim[-1] = fxr
-        else:  # fsim[0] <= fxr
-            if fxr < fsim[-2]:
-                sim[-1] = xr
-                fsim[-1] = fxr
-            else:  # fxr >= fsim[-2]
-                # Perform contraction
-                if fxr < fsim[-1]:
-                    xc = (1 + psi * rho) * xbar - psi * rho * sim[-1]
-                    fxc = func(xc)
-
-                    if fxc <= fxr:
-                        sim[-1] = xc
-                        fsim[-1] = fxc
-                    else:
-                        doshrink = 1
-                else:
-                    # Perform an inside contraction
-                    xcc = (1 - psi) * xbar + psi * sim[-1]
-                    fxcc = func(xcc)
-
-                    if fxcc < fsim[-1]:
-                        sim[-1] = xcc
-                        fsim[-1] = fxcc
-                    else:
-                        doshrink = 1
-
-                if doshrink:
-                    for j in one2np1:
-                        sim[j] = sim[0] + sigma * (sim[j] - sim[0])
-                        fsim[j] = func(sim[j])
-
-        ind = numpy.argsort(fsim)
-        sim = numpy.take(sim, ind, 0)
-        fsim = numpy.take(fsim, ind, 0)
-        if callback is not None:
-            callback(sim[0])
-        iterations += 1
-        if retall:
-            allvecs.append(sim[0])
-
-    x = sim[0]
-    fval = numpy.min(fsim)
-    warnflag = 0
-
-    if fcalls[0] >= maxfun:
-        warnflag = 1
-        msg = _status_message['maxfev']
-        if disp:
-            print('Warning: ' + msg)
-    elif iterations >= maxiter:
-        warnflag = 2
-        msg = _status_message['maxiter']
-        if disp:
-            print('Warning: ' + msg)
-    else:
-        msg = _status_message['success']
-        if disp:
-            print(msg)
-            print("         Current function value: %f" % fval)
-            print("         Iterations: %d" % iterations)
-            print("         Function evaluations: %d" % fcalls[0])
-
-    result = OptimizeResult(fun=fval, nit=iterations, nfev=fcalls[0],
-                            status=warnflag, success=(warnflag == 0),
-                            message=msg, x=x, final_simplex=(sim, fsim))
-    if retall:
+    result = opt.solve(maxiter=maxiter, maxfun=maxfev,
+                       callback=wrapped_callback, disp=disp)
+    if return_all:
         result['allvecs'] = allvecs
+
     return result
 
 
@@ -945,127 +831,51 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
 
     """
     _check_unknown_options(unknown_options)
-    f = fun
-    fprime = jac
-    epsilon = eps
-    retall = return_all
 
-    x0 = asarray(x0).flatten()
-    if x0.ndim == 0:
-        x0.shape = (1,)
+    function = Function(fun, args=args, grad=jac, fd_method='abs',
+                        step=eps)
+    opt = BFGS(function, x0, gtol=gtol, norm=norm)
+
+    allvecs, wrapped_callback = wrap_callback_function(callback)
+    allvecs.append(asfarray(x0).flatten().copy())
+
     if maxiter is None:
-        maxiter = len(x0) * 200
-    func_calls, f = wrap_function(f, args)
-    if fprime is None:
-        grad_calls, myfprime = wrap_function(approx_fprime, (f, epsilon))
-    else:
-        grad_calls, myfprime = wrap_function(fprime, args)
-    gfk = myfprime(x0)
-    k = 0
-    N = len(x0)
-    I = numpy.eye(N, dtype=int)
-    Hk = I
+        maxiter = opt.N * 200
 
-    # Sets the initial step guess to dx ~ 1
-    old_fval = f(x0)
-    old_old_fval = old_fval + np.linalg.norm(gfk) / 2
+    result = opt.solve(maxiter=maxiter, callback=wrapped_callback)
 
-    xk = x0
-    if retall:
-        allvecs = [x0]
-    sk = [2 * gtol]
-    warnflag = 0
-    gnorm = vecnorm(gfk, ord=norm)
-    while (gnorm > gtol) and (k < maxiter):
-        pk = -numpy.dot(Hk, gfk)
-        try:
-            alpha_k, fc, gc, old_fval, old_old_fval, gfkp1 = \
-                     _line_search_wolfe12(f, myfprime, xk, pk, gfk,
-                                          old_fval, old_old_fval, amin=1e-100, amax=1e100)
-        except _LineSearchError:
-            # Line search failed to find a better solution.
-            warnflag = 2
-            break
-
-        xkp1 = xk + alpha_k * pk
-        if retall:
-            allvecs.append(xkp1)
-        sk = xkp1 - xk
-        xk = xkp1
-        if gfkp1 is None:
-            gfkp1 = myfprime(xkp1)
-
-        yk = gfkp1 - gfk
-        gfk = gfkp1
-        if callback is not None:
-            callback(xk)
-        k += 1
-        gnorm = vecnorm(gfk, ord=norm)
-        if (gnorm <= gtol):
-            break
-
-        if not numpy.isfinite(old_fval):
-            # We correctly found +-Inf as optimal value, or something went
-            # wrong.
-            warnflag = 2
-            break
-
-        try:  # this was handled in numeric, let it remaines for more safety
-            rhok = 1.0 / (numpy.dot(yk, sk))
-        except ZeroDivisionError:
-            rhok = 1000.0
-            if disp:
-                print("Divide-by-zero encountered: rhok assumed large")
-        if isinf(rhok):  # this is patch for numpy
-            rhok = 1000.0
-            if disp:
-                print("Divide-by-zero encountered: rhok assumed large")
-        A1 = I - sk[:, numpy.newaxis] * yk[numpy.newaxis, :] * rhok
-        A2 = I - yk[:, numpy.newaxis] * sk[numpy.newaxis, :] * rhok
-        Hk = numpy.dot(A1, numpy.dot(Hk, A2)) + (rhok * sk[:, numpy.newaxis] *
-                                                 sk[numpy.newaxis, :])
-
-    fval = old_fval
-    if np.isnan(fval):
-        # This can happen if the first call to f returned NaN;
-        # the loop is then never entered.
-        warnflag = 2
-
-    if warnflag == 2:
-        msg = _status_message['pr_loss']
-        if disp:
-            print("Warning: " + msg)
-            print("         Current function value: %f" % fval)
-            print("         Iterations: %d" % k)
-            print("         Function evaluations: %d" % func_calls[0])
-            print("         Gradient evaluations: %d" % grad_calls[0])
-
-    elif k >= maxiter:
-        warnflag = 1
-        msg = _status_message['maxiter']
-        if disp:
-            print("Warning: " + msg)
-            print("         Current function value: %f" % fval)
-            print("         Iterations: %d" % k)
-            print("         Function evaluations: %d" % func_calls[0])
-            print("         Gradient evaluations: %d" % grad_calls[0])
-    else:
-        msg = _status_message['success']
-        if disp:
-            print(msg)
-            print("         Current function value: %f" % fval)
-            print("         Iterations: %d" % k)
-            print("         Function evaluations: %d" % func_calls[0])
-            print("         Gradient evaluations: %d" % grad_calls[0])
-
-    result = OptimizeResult(fun=fval, jac=gfk, hess_inv=Hk, nfev=func_calls[0],
-                            njev=grad_calls[0], status=warnflag,
-                            success=(warnflag == 0), message=msg, x=xk,
-                            nit=k)
-    if retall:
+    if return_all:
         result['allvecs'] = allvecs
-    return result
 
+    # Gradient and / or function calls not changing.
+    if opt.warn_flag == 3:
+        result['status'] = 2
+        result['message'] = _status_message['pr_loss']
+        if disp:
+            print("Warning: " + result.message)
+            print("         Current function value: %f" % opt.fun)
+            print("         Iterations: %d" % opt.nit)
+            print("         Function evaluations: %d" % opt.nfev)
+            print("         Gradient evaluations: %d" % opt.njev)
+    elif opt.nit >= maxiter:
+        result['status'] = 1
+        result['message'] = _status_message['maxiter']
+        if disp:
+            print("Warning: " + result['message'])
+            print("         Current function value: %f" % opt.fun)
+            print("         Iterations: %d" % opt.nit)
+            print("         Function evaluations: %d" % opt.nfev)
+            print("         Gradient evaluations: %d" % opt.njev)
+    else:
+        result['message'] = _status_message['success']
+        if disp:
+            print(result['message'])
+            print("         Current function value: %f" % opt.fun)
+            print("         Iterations: %d" % opt.nit)
+            print("         Function evaluations: %d" % opt.nfev)
+            print("         Gradient evaluations: %d" % opt.njev)
+
+    return result
 
 def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
             maxiter=None, full_output=0, disp=1, retall=0, callback=None):
@@ -3060,6 +2870,919 @@ def show_options(solver=None, method=None, disp=True):
         return
     else:
         return text
+
+
+class Optimizer(object):
+    """
+    Class based minimization of scalar functions of one or more variables::
+
+        minimize f(x) subject to
+
+        g_i(x) >= 0,  i = 1,...,m
+        h_j(x)  = 0,  j = 1,...,p
+
+    where x is a vector of one or more variables.
+    ``g_i(x)`` are the inequality constraints.
+    ``h_j(x)`` are the equality constraints.
+
+    Optionally, the lower and upper bounds for each element in x can also be
+    specified using the `bounds` argument.
+    """
+    opt_options = {'bounds': None, 'x0': None}
+
+    """
+    Implementation notes
+    --------------------
+    1. Solvers that inherit Optimizer should use Optimizer.func, Optimizer.jac,
+        and Optimizer.hess to make sure that function counting is carried out
+    correctly.
+    2. Solvers that inherit Optimizer should ensure that they call
+        `super(InheritingOptimizer, self).__init__(func)` for correct
+        functioning.
+    3. No calculation of functions are expected to happen in __init__, they
+        should only happen in __next__.
+    4. The result property (if overridden) should include
+        ```
+        if self.fun is None:
+            self.fun = self.func(self.x)
+        ```
+        because if maxiter is set to 0 then the function will have never been
+        evaluated and self.fun will be None. Some optimizers don't provide x0,
+        only doing that after first iteration. In this case self.x will be None
+        before the first iteration is done. 
+    5. Solver hyper_parameters should be exposed in the `_hyper` dictionary,
+        which should be set in the inheriting Optimizer. This `_hyper`
+        dictionary is visible from the `hyper_parameters` property.
+    6. To stop iteration the __next__ method should raise a StopIteration
+        exception, which is caught in Optimizer.__call__.
+    7. Subclassing Optimizers should use the Optimizer.func, Optimizer.grad,
+        Optimizer.hess and Optimizer.func_and_grad callables, rather than
+        calling the Function directly. This is because the Optimizer keeps
+        track of function calls
+    """
+    def __init__(self, func, *args, **options):
+        self.opt_options.update(options)
+        if not isinstance(func, Function):
+            raise ValueError("`func` needs to be a Function object.")
+
+        self._func = func
+        self._njev = np.zeros((1,), dtype=int)
+        self._nfev = np.zeros((1,), dtype=int)
+        self._nhev = np.zeros((1,), dtype=int)
+
+        # wrap the constituent methods to permit counting of the number
+        # of function calls
+        def fgh_call(f, g, h, obj, meth):
+            def wrapper(x, **kwds):
+                val = meth(x, **kwds)
+                f[0] += obj.f_calls
+                g[0] += obj.g_calls
+                h[0] += obj.h_calls
+                return val
+
+            return wrapper
+
+        self.func = fgh_call(self._nfev, self._njev, self._nhev,
+                             self._func, self._func.func)
+        self.grad = fgh_call(self._nfev, self._njev, self._nhev,
+                             self._func, self._func.grad)
+        self.hess = fgh_call(self._nfev, self._njev, self._nhev,
+                             self._func, self._func.hess)
+        self.func_and_grad = fgh_call(self._nfev, self._njev, self._nhev,
+                             self._func, self._func.func_and_grad)
+
+        # really want the options as attributes
+        for k, v in self.opt_options.items():
+            setattr(self, k, v)
+
+        self.x = None
+        if self.opt_options['x0'] is not None:
+            self.x = np.asarray(self.opt_options['x0']).copy()
+
+        self.fun = None
+        self.hess_inv = None
+
+        self.status = 0
+        self.return_all = False
+        self.success = False
+        self.message = None
+        self.warn_flag = 0
+        self.options = {}
+        self._hyper = {}
+        self.nit = 0
+
+    @property
+    def nfev(self):
+        """The total number of function evaluations used by the solver."""
+        return self._nfev[0]
+
+    @nfev.setter
+    def nfev(self, val):
+        """Set the total number of function evaluations used by the solver."""
+        self._nfev[0] = val
+
+    @property
+    def njev(self):
+        """The number of jacobian evaluations"""
+        return self._njev[0]
+
+    @property
+    def nhev(self):
+        """The number of hessian evaluations."""
+        return self._nhev[0]
+
+    @property
+    def hyper_parameters(self):
+        """Dictionary containing solver hyperparameters."""
+        return self._hyper
+
+    @property
+    def result(self):
+        """
+        The optimization result represented as a `OptimizeResult` object.
+
+        Attributes
+        ----------
+        x : ndarray
+            The solution of the optimization.
+        success : bool
+            Whether or not the status of the optimizer is error free AND the
+            optimizer has converged.
+        status : int
+            Status of the optimizer.
+
+            - 0 if no error,
+            - 1 if too many function evaluations
+            - 2 if too many iterations
+            - other if stopped for another reason, given in `message`
+        message : str
+            Description of the cause of the termination.
+        fun, jac, hess: ndarray
+            Values of objective function, its Jacobian and its Hessian (if
+            available). The Hessians may be approximations, see the documentation
+            of the function in question.
+        hess_inv : object
+            Inverse of the objective function's Hessian; may be an approximation.
+            Not available for all solvers. The type of this attribute may be
+            either np.ndarray or scipy.sparse.linalg.LinearOperator.
+        nfev, njev, nhev : int
+            Number of evaluations of the objective functions and of its
+            Jacobian and Hessian.
+        nit : int
+            Number of iterations performed by the optimizer.
+        """
+        # override to set other fields.
+
+        # user may have set maxiter = 0, in which case the function may never
+        # have been evaluated. Note: self.x may not have been set either. Most
+        # optimizers that have x0 would set that in __init__, but some
+        # optimizers (DifferentialEvolutionSolver) aren't given x0, and only
+        # work out self.x in the first iteration. Therefore nfev will always
+        # be at least one, even if maxiter ==  maxfun == 0.
+        if self.fun is None:
+            self.fun = self.func(self.x)
+
+        result = OptimizeResult(
+            x=self.x,
+            fun=self.fun,
+            nfev=self.nfev,
+            nit=self.nit,
+            message=self.message,
+            success=(self.warning_flag == 0 and self.converged()))
+
+        return result
+
+    def __call__(self, iterations, maxfun=np.inf, callback=None):
+        """
+        Advance the solver by a number of steps.
+
+        Parameters
+        ----------
+        iterations : int
+            The number of iterations to perform.
+        maxfun : int, optional
+            Limits the total number of function evaluations.
+        callback : callable, optional
+            Function called as `callable(x)` the end of each iteration.
+
+        Returns
+        -------
+        result: OptimizeResult
+            The optimization result represented as a OptimizeResult object.
+
+        Notes
+        -----
+        If the solver converges, if `Optimizer.nfev` reaches `maxfun`, or if
+        `Optimizer.nit` reaches `iterations` then iteration will stop before
+        the requested number of iterations has been carried out. If you wish
+        to do further iterations then reset `Optimizer.nit`, or
+        `Optimizer.nfev`, to zero.
+        Do not set `iterations` to `np.inf` without capping `maxfun`, as the
+        solver may run indefinitely.
+        """
+        while self.nit < iterations and self.nfev < maxfun:
+            try:
+                x, f = next(self)
+            except StopIteration:
+                break
+
+            if callback is not None:
+                callback(np.copy(self.x))
+
+            # need to do following after callback to make sure number of
+            # iterations matches number of callbacks.
+            if self.warn_flag:
+                break
+
+        if self.nfev >= maxfun:
+            self.warn_flag = 1
+            self.message = ("STOP: TOTAL NO. of FUNCTION EVALUATIONS EXCEEDS"
+                           " LIMIT")
+        elif self.nit >= iterations:
+            self.warn_flag = 2
+            self.message = "STOP: TOTAL NO. of ITERATIONS REACHED LIMIT"
+        elif self.converged():
+            self.message = _status_message['success']
+
+        return self.result
+
+    @property
+    def N(self):
+        """
+        The dimensionality of the problem, `np.size(x)`.
+        """
+        if self.x is not None:
+            return self.x.size
+        elif self.x0 is not None:
+            return self.x0.size
+        return RuntimeError("Cannot determine problem size at this time,"
+                            " perform at least one iteration")
+
+    def solve(self, maxiter=np.inf, maxfun=np.inf, callback=None, disp=False):
+        """
+        Run the solver through to completion.
+
+        Parameters
+        ----------
+        maxiter : int, optional
+            Maximum number of iterations to use during solving
+        maxfun : int, optional
+            Maximum number of function evaluations to use during solving
+        callback : callable, optional
+            Called as `callback(x)` at the end of every solver iteration.
+        disp : bool, optional
+            Set to True to print convergence messages.
+
+        Returns
+        -------
+        result: OptimizeResult
+            The optimization result represented as a `OptimizeResult` object.
+            See `Optimizer.result` for further details.
+
+        Notes
+        -----
+        If both `maxiter` and `maxfun` are set to `np.inf`, then `maxiter` is
+        capped at `len(x) * 200`
+        """
+        # If neither are set, then cap `maxiter`
+        if maxiter == np.inf and maxfun == np.inf:
+            maxiter = self.N * 200
+
+        result = self(maxiter, callback=callback, maxfun=maxfun)
+
+        if disp and self.warn_flag:
+            print('Warning: ' + self.message)
+        elif disp and not self.warn_flag:
+            print(self.message)
+            print("         Current function value: %f" % self.fun)
+            print("         Iterations: %d" % self.nit)
+            print("         Function evaluations: %d" % self.nfev)
+
+        self._finish_up()
+        return result
+
+    def converged(self):
+        """
+        The truth of whether the solver has converged.
+        """
+        raise NotImplementedError
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        """
+        Advance the solver by a single iteration.
+        To indicate that further iteration is not possible you can raise
+        StopIteration, or set warn_flag != 0.
+        """
+        # Should be over-ridden by each class based solver.
+        raise NotImplementedError
+
+    def next(self):
+        """
+        Advance the solver by a single iteration.
+        """
+        # next() is required for compatibility with Python2.7.
+        return self.__next__()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        self._finish_up()
+
+    def _finish_up(self):
+        """
+        Each class based solver should override this to define end-of-run
+        actions. It gets called at the end of `solve`, and during
+        `__exit__` of the context manager. It may be useful to close
+        resources that need to be terminated.
+        """
+        pass
+
+    def show_options(self):
+        # each optimizer should return their own options text.
+        return ""
+
+
+fd_options = ('abs', '2-point', '3-point', 'cs')
+
+
+class Function(object):
+    """
+    Class to evaluate a function. `func`, `grad`, and `hess` callables can be
+    provided. Alternatively this class can be inherited and one of the
+    `func`, `grad`, or `hess` methods can be overridden.
+
+    Parameters
+    ----------
+    func : callable, optional
+        Evaluated as `func(*((x,) + args), **kwargs)` where `args` and `kwargs`
+        are extra parameters.
+    args : tuple, optional
+        Extra positional arguments supplied to each of `func`, `jac` and
+        `hess`.
+    kwargs : None or dict
+        Extra keyword arguments supplied to each of `func`, `jac` and `hess`.
+    grad : callable, optional
+        The gradient of the function.
+    hess : callable, optional
+        The Hessian of the function.
+    step : None or array-like
+        The finite difference delta. If array-like specifies the delta for
+        each of the values in `x`. If None, then a suitable step is chosen.
+    fd_method : str
+        Specifies the numerical differentiation method. One of:
+
+            'abs' - `step` contains the absolute finite difference delta
+            '2-point' - `step` contains relative finite difference delta, for
+                first order accuracy of forward or backward difference
+            '3-point' - `step` contains relative finite difference delta, for
+                second order accuracy of central difference
+            'cs' - use a complex-step finite difference scheme. This assumes
+                that the user function is real-valued and can be
+                analytically continued to the complex plane. Otherwise,
+                produces bogus results.
+    Notes
+    -----
+    If `func` is not provided then the `func` method must be overridden.
+    If `grad` (or `hess`) is not provided, or the `grad` method not overridden,
+    then the gradient and Hessian are estimated via numerical differentiation.
+    If you inherit this object you must set the f_calls, g_calls, and h_calls
+    attributes used during a single visit to each of `func`, `grad`, or `hess`,
+    for visiting Optimizers to keep track of the number of function
+    evaluations.
+    """
+    def __init__(self, func=None, args=(), kwargs=None, grad=None, hess=None,
+                 step=None, fd_method='2-point'):
+        self._func = func
+        self.args = args
+        self.kwargs = {}
+        if kwargs is not None:
+            self.kwargs.update(kwargs)
+        self._grad_fun = grad
+        self._hess_fun = hess
+
+        self.step = step
+        if fd_method not in fd_options:
+            raise RuntimeError("fd_method must be one of 'abs', '2-point',"
+                               " '3-point', 'cs'")
+        self.fd_method = fd_method
+
+        # these are only valid for the last call of func, grad, hess.
+        self.f_calls = 0
+        self.g_calls = 0
+        self.h_calls = 0
+
+    def __call__(self, x):
+        """
+        Evaluate the function at position `x`.
+
+        Parameters
+        ----------
+        x : array-like
+
+        Returns
+        -------
+        val : float
+        """
+        return self.func(x)
+
+    def func(self, x):
+        """
+        Evaluate the function at position `x`.
+
+        Parameters
+        ----------
+        x : array-like
+
+        Returns
+        -------
+        val : float
+            The value of the function at position `x`.
+        """
+        self.f_calls = 1
+        self.g_calls = 0
+        self.h_calls = 0
+        return self._func(*((x,) + self.args), **self.kwargs)
+
+    def grad(self, x, f0=None):
+        """
+        Evaluate the gradient of the function at position `x`.
+
+        Parameters
+        ----------
+        x : array-like
+            Parameter vector
+        f0 : None or float
+            function evaluated at x
+
+        Returns
+        -------
+        grad : array-like
+            The Jacobian gradient of the function at position `x`.
+        """
+
+        if self._grad_fun is not None:
+            self.f_calls = 0
+            g = self._grad_fun(*((x,) + self.args), **self.kwargs)
+        else:
+            fcalls, wrapped_fun = wrap_function(self.func, ())
+
+            # relative or absolute step
+            if self.fd_method == 'abs':
+                step = self.step
+                if step is None:
+                    step = _epsilon
+                g = _approx_fprime_helper(x, wrapped_fun, step, f0=f0)
+            else:
+                # ('2-point', '3-point', 'cs')
+                g = approx_derivative(wrapped_fun, x, f0=f0,
+                                      method=self.fd_method,
+                                      rel_step=self.step)
+
+            self.f_calls = fcalls[0]
+
+        self.g_calls = 1
+        self.h_calls = 0
+        return g
+
+    # TODO - hessp implementation.
+    def hess(self, x, p=None):
+        """
+        Evaluate the Hessian at position `x`.
+
+        Parameters
+        ----------
+        x : array-like
+            Parameter vector
+        p : array-like
+            vector for hessp
+        Returns
+        -------
+        hess : array-like
+            The Hessian of the function at position `x`.
+        """
+        if self._hess_fun is not None:
+            self.h_calls = 1
+            return self._hess_fun(*((x,) + self.args), **self.kwargs)
+        else:
+            g_calls, wrapped_grad = wrap_function(self.grad, ())
+            g = self.grad(x)
+            f_calls_one_grad = self.f_calls
+
+            # TODO - perhaps only allow approx_derivative with relstep
+            # relative or absolute step
+            if self.fd_method == 'abs':
+                step = self.step
+                if step is None:
+                    step = _epsilon
+                h = _approx_fprime_helper(x, wrapped_grad, step, f0=g)
+            else:
+                # ('2-point', '3-point', 'cs')
+                h = approx_derivative(wrapped_grad, x, f0=g,
+                                      rel_step=self.step,
+                                      method=self.fd_method)
+
+            # total f_calls should just be a multiple of how many times it
+            # takes for one grad call, multiplied by the total number of
+            # grad calls. If grad doesn't call func then f_calls_one_grad
+            # will be zero.
+            self.f_calls = self.g_calls * f_calls_one_grad
+            self.g_calls = g_calls[0] + 1
+            self.h_calls = 1
+            return h
+
+    def func_and_grad(self, x):
+        """Evaluated function and gradient"""
+        f = self.func(x)
+        g = self.grad(x, f0=f)
+
+        self.f_calls = self.f_calls + 1
+        self.g_calls = 1
+        self.h_calls = 0
+        return f, g
+
+
+class NelderMead(Optimizer):
+    """
+    Minimize a function using the downhill simplex algorithm.
+
+    This algorithm only uses function values, not derivatives or second
+    derivatives.
+
+    Parameters
+    ----------
+    func : optimize.Function
+        The objective function to be minimized.
+    x0 : ndarray
+        Initial guess.
+    xatol : float, optional
+        Absolute error in xopt between iterations that is acceptable for
+        convergence.
+    fatol : number, optional
+        Absolute error in func(xopt) between iterations that is acceptable for
+        convergence.
+    initial_simplex : array_like of shape (N + 1, N), optional
+        Initial simplex. If given, overrides `x0`.
+        ``initial_simplex[j,:]`` should contain the coordinates of
+        the j-th vertex of the ``N+1`` vertices in the simplex, where
+        ``N`` is the dimension.
+
+    See also
+    --------
+    minimize: Interface to minimization algorithms for multivariate
+        functions. See the 'Nelder-Mead' `method` in particular.
+
+    Notes
+    -----
+    Uses a Nelder-Mead simplex algorithm to find the minimum of function of
+    one or more variables.
+
+    This algorithm has a long history of successful use in applications.
+    But it will usually be slower than an algorithm that uses first or
+    second derivative information. In practice it can have poor
+    performance in high-dimensional problems and is not robust to
+    minimizing complicated functions. Additionally, there currently is no
+    complete theory describing when the algorithm will successfully
+    converge to the minimum, or how fast it will if it does. Both the ftol and
+    xtol criteria must be met for convergence.
+
+    Examples
+    --------
+    >>> def f(x):
+    ...     return x**2
+
+    >>> from scipy import optimize
+
+    >>> minimum = optimize.fmin(f, 1)
+    Optimization terminated successfully.
+             Current function value: 0.000000
+             Iterations: 17
+             Function evaluations: 34
+    >>> minimum[0]
+    -8.8817841970012523e-16
+
+    References
+    ----------
+    .. [1] Nelder, J.A. and Mead, R. (1965), "A simplex method for function
+           minimization", The Computer Journal, 7, pp. 308-313
+
+    .. [2] Wright, M.H. (1996), "Direct Search Methods: Once Scorned, Now
+           Respectable", in Numerical Analysis 1995, Proceedings of the
+           1995 Dundee Biennial Conference in Numerical Analysis, D.F.
+           Griffiths and G.A. Watson (Eds.), Addison Wesley Longman,
+           Harlow, UK, pp. 191-208.
+
+    """
+    def __init__(self, func, x0, xatol=1e-4, fatol=1e-4,
+                 initial_simplex=None, adaptive=False, **unknown_options):
+
+        options = {'x0': asfarray(x0).flatten()}
+        super(NelderMead, self).__init__(func, **options)
+        _check_unknown_options(unknown_options)
+
+        self.xatol = xatol
+        self.fatol = fatol
+        self.adaptive = adaptive
+        self.initial_simplex = initial_simplex
+        self.simplex = None
+        self.f_simplex = None
+
+        N = self.N
+
+        d = self.hyper_parameters
+        d.update({'rho': 1, 'chi': 2, 'psi': 0.5, 'sigma': 0.5,
+                  'xatol': xatol, 'fatol': fatol, 'adaptive': adaptive})
+
+        if self.adaptive:
+            d['chi'] = 1 + 2. / N
+            d['psi'] = 0.75 - 1 / (2. * N)
+            d['sigma'] = 1 - 1. / N
+
+        nonzdelt = 0.05
+        zdelt = 0.00025
+
+        if initial_simplex is None:
+            self.simplex = numpy.zeros((N + 1, N), dtype=self.x0.dtype)
+            self.simplex[0] = self.x0
+            for k in range(N):
+                y = numpy.array(self.x0, copy=True)
+                if y[k] != 0:
+                    y[k] = (1 + nonzdelt) * y[k]
+                else:
+                    y[k] = zdelt
+                self.simplex[k + 1] = y
+        else:
+            self.simplex = np.asfarray(initial_simplex).copy()
+            if (self.simplex.ndim != 2 or
+                    self.simplex.shape[0] != self.simplex.shape[1] + 1):
+                raise ValueError("`initial_simplex` should be an array of"
+                                 " shape (N+1,N)")
+            if N != self.simplex.shape[1]:
+                raise ValueError("Size of `initial_simplex` is not"
+                                 " consistent with `x0`")
+
+        self.f_simplex = numpy.zeros((N + 1,), float)
+        self.x = self.simplex[0]
+
+    def converged(self):
+        """
+        The truth of whether the solver has converged.
+        """
+        sim = self.simplex
+        fsim = self.f_simplex
+        d = self.hyper_parameters
+        xatol = d['xatol']
+        fatol = d['fatol']
+
+        if (numpy.max(numpy.ravel(numpy.abs(sim[1:] - sim[0]))) <= xatol and
+                numpy.max(numpy.abs(fsim[0] - fsim[1:])) <= fatol):
+            return True
+        return False
+
+    def __next__(self):
+        sim = self.simplex
+        fsim = self.f_simplex
+        N = self.N
+
+        if self.nit == 0:
+            for k in range(N + 1):
+                fsim[k] = self.func(sim[k])
+
+            ind = numpy.argsort(fsim)
+            self.f_simplex = np.take(fsim, ind, 0)
+
+            # sort so simplex[0,:] has the lowest function value
+            self.simplex = np.take(sim, ind, 0)
+
+            self.nit = 1
+            self.x = self.simplex[0]
+            self.fun = self.f_simplex[0]
+            return np.copy(self.x), self.fun
+
+        d = self.hyper_parameters
+        rho = d['rho']
+        chi = d['chi']
+        psi = d['psi']
+        sigma = d['sigma']
+        xatol = d['xatol']
+        fatol = d['fatol']
+
+        if (numpy.max(numpy.abs(fsim[0] - fsim[1:])) <= fatol and
+                numpy.max(numpy.ravel(numpy.abs(sim[1:] - sim[0]))) <= xatol):
+            raise StopIteration
+
+        xbar = numpy.add.reduce(sim[:-1], 0) / N
+        xr = (1 + rho) * xbar - rho * sim[-1]
+        fxr = self.func(xr)
+        doshrink = 0
+
+        if fxr < fsim[0]:
+            xe = (1 + rho * chi) * xbar - rho * chi * sim[-1]
+            fxe = self.func(xe)
+
+            if fxe < fxr:
+                sim[-1] = xe
+                fsim[-1] = fxe
+            else:
+                sim[-1] = xr
+                fsim[-1] = fxr
+        else:  # fsim[0] <= fxr
+            if fxr < fsim[-2]:
+                sim[-1] = xr
+                fsim[-1] = fxr
+            else:  # fxr >= fsim[-2]
+                # Perform contraction
+                if fxr < fsim[-1]:
+                    xc = (1 + psi * rho) * xbar - psi * rho * sim[-1]
+                    fxc = self.func(xc)
+
+                    if fxc <= fxr:
+                        sim[-1] = xc
+                        fsim[-1] = fxc
+                    else:
+                        doshrink = 1
+                else:
+                    # Perform an inside contraction
+                    xcc = (1 - psi) * xbar + psi * sim[-1]
+                    fxcc = self.func(xcc)
+
+                    if fxcc < fsim[-1]:
+                        sim[-1] = xcc
+                        fsim[-1] = fxcc
+                    else:
+                        doshrink = 1
+
+                if doshrink:
+                    for j in range(1, N + 1):
+                        sim[j] = sim[0] + sigma * (sim[j] - sim[0])
+                        fsim[j] = self.func(sim[j])
+
+        ind = numpy.argsort(fsim)
+        self.simplex = np.take(sim, ind, 0)
+        self.f_simplex = np.take(fsim, ind, 0)
+
+        self.x = self.simplex[0]
+        self.fun = self.f_simplex[0]
+        self.nit += 1
+
+        return np.copy(self.x), self.fun
+
+    @property
+    def result(self):
+        """
+        The optimization result represented as a `OptimizeResult` object.
+        Important attributes are:
+        x : ndarray
+            the solution array.
+        fun : float
+            `func` evaluated at the minimum
+        success : bool
+            flag indicating if the optimizer finished successfully.
+        message: str
+            describing the cause of termination.
+        status: int
+            whether problems were encountered
+                1 : Maximum number of function evaluations made.
+                2 : Maximum number of iterations reached.
+        allvecs: list
+            the solution at each iteration.
+        """
+        if self.fun is None:
+            self.fun = self.func(self.x)
+
+        result = OptimizeResult(fun=self.fun,
+                                nit=self.nit,
+                                nfev=self.nfev,
+                                status=self.warn_flag,
+                                success=(self.warn_flag == 0 and
+                                         self.converged()),
+                                message=self.message,
+                                x=self.x,
+                                final_simplex=(self.simplex,
+                                               self.f_simplex))
+
+        return result
+
+
+class BFGS(Optimizer):
+    def __init__(self, func, x0, gtol=1e-5, norm=Inf,
+                 **unknown_options):
+
+        options = {'x0': asfarray(x0).flatten()}
+        super(BFGS, self).__init__(func, **options)
+        d = self.hyper_parameters
+        d.update({'gtol': gtol, 'norm': norm})
+
+        # gfk is the evaluated jacobian
+        self.gfk = None
+        self.gnorm = np.inf
+        self.old_fun = None
+        self.old_old_fun = None
+        self.I = numpy.eye(self.N, dtype=int)
+        self.Hk = self.I
+        self.sk = [2 * gtol]
+        self.pk = None
+        self.yk = None
+
+    def converged(self):
+        d = self.hyper_parameters
+        return self.gnorm <= d['gtol']
+
+    def __next__(self):
+        d = self.hyper_parameters
+
+        if self.nit == 0:
+            # Sets the initial step guess to dx ~ 1
+            self.old_fun, self.gfk = self.func_and_grad(self.x)
+            self.old_old_fun = self.old_fun + np.linalg.norm(self.gfk) / 2.
+            self.gnorm = vecnorm(self.gfk, ord=d['norm'])
+
+        if self.gnorm <= d['gtol']:
+            raise StopIteration
+
+        self.pk = -numpy.dot(self.Hk, self.gfk)
+        try:
+            # I think fc and gc are numbers of function counts.
+            alpha_k, fc, gc, self.old_fun, self.old_old_fun, gfkp1 = \
+                _line_search_wolfe12(self.func, self.grad, self.x,
+                                     self.pk, self.gfk, self.old_fun,
+                                     self.old_old_fun, amin=1e-100, amax=1e100)
+        except _LineSearchError:
+            # Line search failed to find a better solution.
+            self.warn_flag = 3
+            raise StopIteration
+
+        # update solution
+        xkp1 = self.x + alpha_k * self.pk
+        self.sk = xkp1 - self.x
+        self.x = xkp1
+        self.fun = self.old_fun
+
+        if gfkp1 is None:
+            gfkp1 = self.grad(self.x)
+
+        self.yk = gfkp1 - self.gfk
+        self.gfk = gfkp1
+
+        self.nit += 1
+        self.gnorm = vecnorm(self.gfk, ord=d['norm'])
+
+        if self.gnorm <= d['gtol']:
+            # Converged
+            # don't raise StopIteration here because we want the callback
+            # to be called after this iteration.
+            return np.copy(self.x), self.fun
+
+        if not numpy.isfinite(self.old_fun):
+            # We correctly found +-Inf as optimal value, or something went
+            # wrong.
+            self.warn_flag = 3
+            raise StopIteration
+
+        try:  # this was handled in numeric, let it remain for safety
+            rhok = 1.0 / (numpy.dot(self.yk, self.sk))
+        except ZeroDivisionError:
+            rhok = 1000.0
+            # if disp:
+            #     print("Divide-by-zero encountered: rhok assumed large")
+        if isinf(rhok):  # this is a patch for numpy
+            rhok = 1000.0
+            # if disp:
+            #     print("Divide-by-zero encountered: rhok assumed large")
+        A1 = self.I - self.sk[:, numpy.newaxis] * self.yk[numpy.newaxis, :] * rhok
+        A2 = self.I - self.yk[:, numpy.newaxis] * self.sk[numpy.newaxis, :] * rhok
+        self.Hk = numpy.dot(A1, numpy.dot(self.Hk, A2)) + (rhok * self.sk[:, numpy.newaxis] *
+                                                 self.sk[numpy.newaxis, :])
+
+        return np.copy(self.x), self.fun
+
+    @property
+    def result(self):
+        if self.fun is None:
+            self.fun = self.func(self.x)
+
+        if np.isnan(self.fun):
+            # This can happen if the first call to f returned NaN;
+            # the loop is then never entered.
+            self.warn_flag = 3
+
+        if self.warn_flag == 3:
+            self.message = _status_message['pr_loss']
+
+        result = OptimizeResult(fun=self.fun,
+                                x=self.x,
+                                jac=self.gfk,
+                                hess_inv=self.Hk,
+                                nfev=self.nfev,
+                                njev=self.njev,
+                                status=self.warn_flag,
+                                success=(self.warn_flag == 0 and self.converged()),
+                                message=self.message,
+                                nit=self.nit)
+        return result
 
 
 def main():

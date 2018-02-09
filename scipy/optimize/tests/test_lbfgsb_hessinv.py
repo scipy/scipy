@@ -41,5 +41,3 @@ def test_2():
         result1.hess_inv(np.array([1, 0])))
     assert_allclose(H1, H2)
     assert_allclose(H1, result2.hess_inv, rtol=1e-2, atol=0.03)
-
-
