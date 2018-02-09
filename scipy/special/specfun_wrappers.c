@@ -23,8 +23,6 @@
 #endif
 #endif
 
-extern double cephes_struve(double, double);
-
 extern void F_FUNC(cgama,CGAMA)(double*,double*,int*,double*,double*);
 extern void F_FUNC(hygfz,HYGFZ)(double*,double*,double*,npy_cdouble*,npy_cdouble*,int*);
 extern void F_FUNC(cchg,CCHG)(double*,double*,npy_cdouble*,npy_cdouble*);
@@ -198,72 +196,6 @@ npy_cdouble cerf_wrap(npy_cdouble z) {
 
   F_FUNC(cerror,CERROR)(&z, &outz);
   return outz;
-}
-
-double struve_wrap(double v, double x) {
-  double out;
-  double rem;
-  int flag=0;
-
-  if (x < 0) {
-      rem = fmod(v, 2.0);
-      if (rem == 0) {
-          x = -x;
-          flag = 1;
-      } else if (rem == 1 || rem == -1) {
-          x = -x;
-          flag = 0;
-      } else {
-          /* non-integer v and x < 0 => complex-valued */
-          return NPY_NAN;
-      }
-  }
-
-  if ((v<-8.0) || (v>12.5)) {
-    out = cephes_struve(v, x);  /* from cephes */
-  }
-  else if (v==0.0) {
-    F_FUNC(stvh0,STVH0)(&x,&out);
-    CONVINF("struve", out);
-  }
-  else if (v==1.0) {
-    F_FUNC(stvh1,STVH1)(&x,&out);
-    CONVINF("struve", out);
-  }
-  else {
-    F_FUNC(stvhv,STVHV)(&v,&x,&out);
-    CONVINF("struve", out);
-  }
-  if (flag) out = -out;
-  return out;
-}
-
-double modstruve_wrap(double v, double x) {
-  double out;
-  int flag=0;
-
-  if ((x < 0) & (floor(v)!=v)) return NPY_NAN;
-  if (v==0.0) {
-    if (x < 0) {x = -x; flag=1;}
-    F_FUNC(stvl0,STVL0)(&x,&out);
-    CONVINF("modstruve", out);
-    if (flag) out = -out;
-    return out;
-  }
-  if (v==1.0) {
-    if (x < 0) x=-x;
-    F_FUNC(stvl1,STVL1)(&x,&out);
-    CONVINF("modstruve", out);
-    return out;
-  }
-  if (x<0) {
-    x = -x;
-    flag = 1;
-  }
-  F_FUNC(stvlv,STVLV)(&v,&x,&out);
-  CONVINF("modstruve", out);
-  if (flag && (!((int)floor(v) % 2))) out = -out;
-  return out;
 }
 
 double itstruve0_wrap(double x) {
