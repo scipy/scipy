@@ -2192,50 +2192,6 @@ C
 
 C       **********************************
 
-        SUBROUTINE STVL1(X,SL1)
-C
-C       ================================================
-C       Purpose: Compute modified Struve function L1(x)
-C       Input :  x   --- Argument of L1(x) ( x ≥ 0 )
-C       Output:  SL1 --- L1(x)
-C       ================================================
-C
-        IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-        PI=3.141592653589793D0
-        R=1.0D0
-        IF (X.LE.20.0D0) THEN
-           S=0.0D0
-           DO 10 K=1,60
-              R=R*X*X/(4.0D0*K*K-1.0D0)
-              S=S+R
-              IF (DABS(R).LT.DABS(S)*1.0D-12) GO TO 15
-10         CONTINUE
-15         SL1=2.0D0/PI*S
-        ELSE
-           S=1.0D0
-           KM=INT(.50*X)
-           IF (X.GT.50) KM=25
-           DO 20 K=1,KM
-              R=R*(2.0D0*K+3.0D0)*(2.0D0*K+1.0D0)/(X*X)
-              S=S+R
-              IF (DABS(R/S).LT.1.0D-12) GO TO 25
-20            CONTINUE
-25         SL1=2.0D0/PI*(-1.0D0+1.0D0/(X*X)+3.0D0*S/X**4)
-           A1=DEXP(X)/DSQRT(2.0D0*PI*X)
-           R=1.0D0
-           BI1=1.0D0
-           DO 30 K=1,16
-              R=-0.125D0*R*(4.0D0-(2.0D0*K-1.0D0)**2)/(K*X)
-              BI1=BI1+R
-              IF (DABS(R/BI1).LT.1.0D-12) GO TO 35
-30         CONTINUE
-35         SL1=SL1+A1*BI1
-        ENDIF
-        RETURN
-        END
-
-C       **********************************
-
         SUBROUTINE CLQN(N,X,Y,CQN,CQD)
 C
 C       ==================================================
@@ -2292,50 +2248,6 @@ C
         CQD(0)=(CQN(1)-Z*CQN(0))/(Z*Z-1.0D0)
         DO 30 K=1,N
 30         CQD(K)=(K*Z*CQN(K)-K*CQN(K-1))/(Z*Z-1.0D0)
-        RETURN
-        END
-
-C       **********************************
-
-        SUBROUTINE STVL0(X,SL0)
-C
-C       ================================================
-C       Purpose: Compute modified Struve function L0(x)
-C       Input :  x   --- Argument of L0(x) ( x ≥ 0 )
-C       Output:  SL0 --- L0(x)
-C       ================================================
-C
-        IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-        PI=3.141592653589793D0
-        S=1.0D0
-        R=1.0D0
-        IF (X.LE.20.0D0) THEN
-           A0=2.0D0*X/PI
-           DO 10 K=1,60
-              R=R*(X/(2.0D0*K+1.0D0))**2
-              S=S+R
-              IF (DABS(R/S).LT.1.0D-12) GO TO 15
-10         CONTINUE
-15         SL0=A0*S
-        ELSE
-           KM=INT(.5*(X+1.0))
-           IF (X.GE.50.0) KM=25
-           DO 20 K=1,KM
-              R=R*((2.0D0*K-1.0D0)/X)**2
-              S=S+R
-              IF (DABS(R/S).LT.1.0D-12) GO TO 25
-20         CONTINUE
-25         A1=DEXP(X)/DSQRT(2.0D0*PI*X)
-           R=1.0D0
-           BI0=1.0D0
-           DO 30 K=1,16
-              R=0.125D0*R*(2.0D0*K-1.0D0)**2/(K*X)
-              BI0=BI0+R
-              IF (DABS(R/BI0).LT.1.0D-12) GO TO 35
-30         CONTINUE
-35         BI0=A1*BI0
-           SL0=-2.0D0/(PI*X)*S+BI0
-        ENDIF
         RETURN
         END
 
@@ -4440,51 +4352,6 @@ C       Forward recurrence for Yn
         RETURN
         END
 
-
-C       **********************************
-
-        SUBROUTINE STVH1(X,SH1)
-C
-C       =============================================
-C       Purpose: Compute Struve function H1(x)
-C       Input :  x   --- Argument of H1(x) ( x ≥ 0 )
-C       Output:  SH1 --- H1(x)
-C       =============================================
-C
-        IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-        PI=3.141592653589793D0
-        R=1.0D0
-        IF (X.LE.20.0D0) THEN
-           S=0.0D0
-           A0=-2.0D0/PI
-           DO 10 K=1,60
-              R=-R*X*X/(4.0D0*K*K-1.0D0)
-              S=S+R
-              IF (DABS(R).LT.DABS(S)*1.0D-12) GO TO 15
-10         CONTINUE
-15         SH1=A0*S
-        ELSE
-           S=1.0D0
-           KM=INT(.5*X)
-           IF (X.GT.50.D0) KM=25
-           DO 20 K=1,KM
-              R=-R*(4.0D0*K*K-1.0D0)/(X*X)
-              S=S+R
-              IF (DABS(R).LT.DABS(S)*1.0D-12) GO TO 25
-20         CONTINUE
-25         T=4.0D0/X
-           T2=T*T
-           P1=((((.42414D-5*T2-.20092D-4)*T2+.580759D-4)*T2
-     &        -.223203D-3)*T2+.29218256D-2)*T2+.3989422819D0
-           Q1=T*(((((-.36594D-5*T2+.1622D-4)*T2-.398708D-4)*
-     &        T2+.1064741D-3)*T2-.63904D-3)*T2+.0374008364D0)
-           TA1=X-.75D0*PI
-           BY1=2.0D0/DSQRT(X)*(P1*DSIN(TA1)+Q1*DCOS(TA1))
-           SH1=2.0/PI*(1.0D0+S/(X*X))+BY1
-        ENDIF
-        RETURN
-        END
-
 C       **********************************
 
         SUBROUTINE LEGZO(N,X,W)
@@ -5800,51 +5667,6 @@ C       DLMF 13.3.1
         ENDIF
         A=A1
         X=X0
-        RETURN
-        END
-
-
-
-C       **********************************
-
-        SUBROUTINE STVH0(X,SH0)
-C
-C       =============================================
-C       Purpose: Compute Struve function H0(x)
-C       Input :  x   --- Argument of H0(x) ( x ≥ 0 )
-C       Output:  SH0 --- H0(x)
-C       =============================================
-C
-        IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-        PI=3.141592653589793D0
-        S=1.0D0
-        R=1.0D0
-        IF (X.LE.20.0D0) THEN
-           A0=2.0*X/PI
-           DO 10 K=1,60
-              R=-R*X/(2.0D0*K+1.0D0)*X/(2.0D0*K+1.0D0)
-              S=S+R
-              IF (DABS(R).LT.DABS(S)*1.0D-12) GO TO 15
-10         CONTINUE
-15         SH0=A0*S
-        ELSE
-           KM=INT(.5*(X+1.0))
-           IF (X.GE.50.0) KM=25
-           DO 20 K=1,KM
-              R=-R*((2.0D0*K-1.0D0)/X)**2
-              S=S+R
-              IF (DABS(R).LT.DABS(S)*1.0D-12) GO TO 25
-20         CONTINUE
-25         T=4.0D0/X
-           T2=T*T
-           P0=((((-.37043D-5*T2+.173565D-4)*T2-.487613D-4)
-     &        *T2+.17343D-3)*T2-.1753062D-2)*T2+.3989422793D0
-           Q0=T*(((((.32312D-5*T2-.142078D-4)*T2+.342468D-4)*
-     &        T2-.869791D-4)*T2+.4564324D-3)*T2-.0124669441D0)
-           TA0=X-.25D0*PI
-           BY0=2.0D0/DSQRT(X)*(P0*DSIN(TA0)+Q0*DCOS(TA0))
-           SH0=2.0D0/(PI*X)*S+BY0
-        ENDIF
         RETURN
         END
 
@@ -9557,93 +9379,6 @@ C
 
 C       **********************************
 
-        SUBROUTINE STVLV(V,X,SLV)
-C
-C       ======================================================
-C       Purpose:  Compute modified Struve function Lv(x) with
-C                 an arbitrary order v
-C       Input :   v   --- Order of Lv(x)  ( |v| ≤ 20 )
-C                 x   --- Argument of Lv(x) ( x ≥ 0 )
-C       Output:   SLV --- Lv(x)
-C       Routine called: GAMMA2 to compute the gamma function
-C       ======================================================
-C
-        IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-        PI=3.141592653589793D0
-        IF (X.EQ.0.0D0) THEN
-           IF (V.GT.-1.0.OR.INT(V)-V.EQ.0.5D0) THEN
-              SLV=0.0D0
-           ELSE IF (V.LT.-1.0D0) THEN
-              SLV=(-1)**(INT(0.5D0-V)-1)*1.0D+300
-           ELSE IF (V.EQ.-1.0D0) THEN
-              SLV=2.0D0/PI
-           ENDIF
-           RETURN
-        ENDIF
-        IF (X.LE.40.0D0) THEN
-           V0=V+1.5D0
-           CALL GAMMA2(V0,GA)
-           S=2.0D0/(DSQRT(PI)*GA)
-           R1=1.0D0
-           DO 10 K=1,100
-              VA=K+1.5D0
-              CALL GAMMA2(VA,GA)
-              VB=V+K+1.5D0
-              CALL GAMMA2(VB,GB)
-              R1=R1*(0.5D0*X)**2
-              R2=R1/(GA*GB)
-              S=S+R2
-              IF (DABS(R2/S).LT.1.0D-12) GO TO 15
-10         CONTINUE
-15         SLV=(0.5D0*X)**(V+1.0D0)*S
-        ELSE
-           SA=-1.0D0/PI*(0.5D0*X)**(V-1.0)
-           V0=V+0.5D0
-           CALL GAMMA2(V0,GA)
-           S=-DSQRT(PI)/GA
-           R1=-1.0D0
-           DO 20 K=1,12
-              VA=K+0.5D0
-              CALL GAMMA2(VA,GA)
-              VB=-K+V+0.5D0
-              CALL GAMMA2(VB,GB)
-              R1=-R1/(0.5D0*X)**2
-              S=S+R1*GA/GB
-20         CONTINUE
-           S0=SA*S
-           U=DABS(V)
-           N=INT(U)
-           U0=U-N
-           BIV0=0.0D0
-           DO 35 L=0,1
-              VT=U0+L
-              R=1.0D0
-              BIV=1.0D0
-              DO 25 K=1,16
-                 R=-0.125*R*(4.0*VT*VT-(2.0*K-1.0D0)**2)/(K*X)
-                 BIV=BIV+R
-                 IF (DABS(R/BIV).LT.1.0D-12) GO TO 30
-25            CONTINUE
-30            IF (L.EQ.0) BIV0=BIV
-35         CONTINUE
-           BF=0.0D0
-           BF0=BIV0
-           BF1=BIV
-           DO 40 K=2,N
-              BF=-2.0D0*(K-1.0+U0)/X*BF1+BF0
-              BF0=BF1
-40            BF1=BF
-           IF (N.EQ.0) BIV=BIV0
-           IF (N.GT.1) BIV=BF
-           SLV=DEXP(X)/DSQRT(2.0D0*PI*X)*BIV+S0
-        ENDIF
-        RETURN
-        END
-
-
-
-C       **********************************
-
         SUBROUTINE RCTY(N,X,NM,RY,DY)
 C
 C       ========================================================
@@ -12969,8 +12704,6 @@ C
         RETURN
         END
 
-
-
 C       **********************************
 
         SUBROUTINE JELP(U,HK,ESN,ECN,EDN,EPH)
@@ -13012,149 +12745,3 @@ C
         EDN=DSQRT(1.0D0-HK*HK*ESN*ESN)
         RETURN
         END
-
-C       **********************************
-
-        SUBROUTINE STVHV(V,X,HV)
-C
-C       =====================================================
-C       Purpose: Compute Struve function Hv(x) with an
-C                arbitrary order v
-C       Input :  v  --- Order of Hv(x)  ( -8.0 ≤ v ≤ 12.5 )
-C                x  --- Argument of Hv(x) ( x ≥ 0 )
-C       Output:  HV --- Hv(x)
-C       Note: numerically unstable away from the above range for `v`
-C       Routine called: GAMMA2 to compute the gamma function
-C       =====================================================
-C
-        IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-        PI=3.141592653589793D0
-        IF (X.EQ.0.0D0) THEN
-           IF (V.GT.-1.0.OR.INT(V)-V.EQ.0.5D0) THEN
-              HV=0.0D0
-           ELSE IF (V.LT.-1.0D0) THEN
-              HV=(-1)**(INT(0.5D0-V)-1)*1.0D+300
-           ELSE IF (V.EQ.-1.0D0) THEN
-              HV=2.0D0/PI
-           ENDIF
-           RETURN
-        ENDIF
-        BYV=0.0D0
-        BF=0.0D0
-        QU0=0.0D0
-        PU0=0.0D0
-        IF (X.LE.20.0D0) THEN
-C          Power series for Hv (Abramowitz & Stegun 12.1.3)
-           V0=V+1.5D0
-           CALL GAMMA2(V0,GA)
-           S=2.0D0/(DSQRT(PI)*GA)
-           R1=1.0D0
-           DO 10 K=1,100
-              VA=K+1.5D0
-              CALL GAMMA2(VA,GA)
-              VB=V+K+1.5D0
-              CALL GAMMA2(VB,GB)
-              R1=-R1*(0.5D0*X)**2
-              R2=R1/(GA*GB)
-              S=S+R2
-              IF (DABS(R2).LT.DABS(S)*1.0D-12) GO TO 15
-10         CONTINUE
-15         HV=(0.5D0*X)**(V+1.0D0)*S
-        ELSE
-C          Asymptotic large |z| expansion for Hv - Yv  (Abm & Stg 12.1.29)
-           SA=(0.5D0*X)**(V-1.0)/PI
-           V0=V+0.5D0
-           CALL GAMMA2(V0,GA)
-           S=DSQRT(PI)/GA
-           R1=1.0D0
-           DO 20 K=1,12
-              VA=K+0.5D0
-              CALL GAMMA2(VA,GA)
-              VB=-K+V+0.5D0
-              CALL GAMMA2(VB,GB)
-              R1=R1/(0.5D0*X)**2
-              S=S+R1*GA/GB
-20         CONTINUE
-           S0=SA*S
-
-C          Compute Y_(|v|-N)   (Abm & Stg 9.2.6)
-           U=DABS(V)
-           N=INT(U)
-           U0=U-N
-           DO 35 L=0,1
-              VT=4.0D0*(U0+L)**2
-              R1=1.0D0
-              PU1=1.0D0
-              DO 25 K=1,12
-                 R1=-0.0078125D0*R1*(VT-(4.0*K-3.0D0)**2)*
-     &             (VT-(4.0D0*K-1.0)**2)/((2.0D0*K-1.0)*K*X*X)
-                 PU1=PU1+R1
-25            CONTINUE
-              QU1=1.0D0
-              R2=1.0D0
-              DO 30 K=1,12
-                 R2=-0.0078125D0*R2*(VT-(4.0D0*K-1.0)**2)*
-     &             (VT-(4.0D0*K+1.0)**2)/((2.0D0*K+1.0)*K*X*X)
-                 QU1=QU1+R2
-30            CONTINUE
-              QU1=0.125D0*(VT-1.0D0)/X*QU1
-              IF (L.EQ.0) THEN
-                 PU0=PU1
-                 QU0=QU1
-              ENDIF
-35         CONTINUE
-           T0=X-(0.5*U0+0.25D0)*PI
-           T1=X-(0.5*U0+0.75D0)*PI
-           SR=DSQRT(2.0D0/(PI*X))
-           BY0=SR*(PU0*DSIN(T0)+QU0*DCOS(T0))
-           BY1=SR*(PU1*DSIN(T1)+QU1*DCOS(T1))
-
-C          Compute Y_|v|   (Abm & Stg 9.1.27)
-           BF0=BY0
-           BF1=BY1
-           DO 40 K=2,N
-              BF=2.0D0*(K-1.0+U0)/X*BF1-BF0
-              BF0=BF1
-40            BF1=BF
-           IF (N.EQ.0) BYV=BY0
-           IF (N.EQ.1) BYV=BY1
-           IF (N.GT.1) BYV=BF
-
-C          Compute Y_v  (handle the case v < 0 appropriately)
-           IF (V .LT. 0) THEN
-              IF (U0 .EQ. 0) THEN
-C                Use symmetry (Abm & Stg 9.1.5)
-                 BYV=(-1)**N*BYV
-              ELSE
-C                Use relation between Yv & Jv (Abm & Stg 9.1.6)
-
-C                Compute J_(|v|-N) (Abm & Stg 9.2.5)
-                 BJ0=SR*(PU0*DCOS(T0)-QU0*DSIN(T0))
-                 BJ1=SR*(PU1*DCOS(T1)-QU1*DSIN(T1))
-C                Forward recurrence for J_|v| (Abm & Stg 9.1.27)
-C                It's OK for the limited range -8.0 ≤ v ≤ 12.5,
-C                since x >= 20 here; but would be unstable for v <~ -20
-                 BF0=BJ0
-                 BF1=BJ1
-                 DO 50 K=2,N
-                    BF=2.0D0*(K-1.0+U0)/X*BF1-BF0
-                    BF0=BF1
-50                  BF1=BF
-                 IF (N.EQ.0) BJV=BJ0
-                 IF (N.EQ.1) BJV=BJ1
-                 IF (N.GT.1) BJV=BF
-
-C                Compute Y_v    (Abm & Stg 9.1.6)
-                 BYV = DCOS(V*PI)*BYV + DSIN(-V*PI)*BJV
-              END IF
-           END IF
-
-C          Compute H_v
-           HV=BYV+S0
-        ENDIF
-        RETURN
-        END
-
-
-
-C       **********************************
