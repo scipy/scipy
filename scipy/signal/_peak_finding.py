@@ -11,7 +11,7 @@ from scipy.stats import scoreatpercentile
 
 
 __all__ = ['argrelmin', 'argrelmax', 'argrelextrema', 'peak_prominences',
-           'find_peaks_cwt']
+           'peak_widths', 'find_peaks_cwt']
 
 
 def _boolrelextrema(data, comparator, axis=0, order=1, mode='clip'):
@@ -393,6 +393,174 @@ def peak_prominences(x, peaks, wlen=None):
         right_bases[i] += wleft
 
     return prominences, left_bases, right_bases
+
+
+def peak_widths(x, peaks, rel_height=0.5, **kwargs):
+    """
+    Calculate the width of each each peak in a signal.
+
+    This function calculates the horizontal width of a peak at a relative
+    distance to the peak's height and prominence.
+
+    Parameters
+    ----------
+    x : sequence
+        A signal with peaks.
+    peaks : sequence
+        Indices of peaks in `x`.
+    rel_height : float, optional
+        Chooses the relative height at which the peak width is measured as a
+        percentage of its prominence. 1. calculates the width of the peak at its
+        lowest contour line while 0.5 evaluates at half the prominence height.
+        Must be a number greater 0. See notes for further explanation.
+    prominences : ndarray, optional
+        The prominences for each peak in `peaks`.
+    left_bases, right_bases : ndarray, optional
+        The peaks' bases as indices in `x` to the left and right of each peak.
+    wlen : int, optional
+        A window length in samples (see `scipy.signal.peak_prominences`). This
+        argument is only used if the above three parameters aren't given in
+        which case they are calculated using `wlen`.
+
+    Returns
+    -------
+    widths : ndarray
+        The widths for each peak.
+    wheights : ndarray
+        The heights at which the `widths` where evaluated.
+    left_ips, right_ips : ndarray
+        Interpolated positions of left and right intersection points of a
+        horizontal line at the respective evaluation height.
+
+    See Also
+    --------
+    find_peaks, peak_prominences
+
+    Notes
+    -----
+    The basic algorithm to calculate a peak's width is as follows:
+
+    * Calculate the evaluation height :math:`h_{eval}` with the formular
+
+      .. math:: h_{eval} = h_{Peak} - P \\cdot R
+
+      where :math:`h_{Peak}` is the height of the peak itself, :math:`P` is the
+      peak's prominence and :math:`R` a positive ratio specified with the
+      argument `rel_height`.
+    * Draw a horizontal line at the evaluation height to both sides, starting at
+      the peak's current vertical position until the lines either intersect a
+      slope, the signal border or cross the vertical position of the peak's
+      base (see `scipy.signal.peak_prominences` for an definition). For the first
+      case, intersection with the signal, the true intersection point is
+      estimated with linear interpolation.
+    * Calculate the width as the horizontal distance between the intersection
+      points on both sides.
+
+    As shown above to calculate a peaks width its prominence must be known. You
+    can supply these data yourself with the arguments `prominences`, `left_bases`
+    and `right_bases`. Otherwise they are internally calculated using `wlen` if
+    supplied (see `peak_prominences`).
+
+    .. versionadded:: 1.1.0
+
+    Examples
+    --------
+    Prepare a test signal with growing peak widths
+
+    >>> from scipy.signal import chirp, find_peaks, peak_widths
+    >>> x = np.arange(0, 500)
+    >>> x = abs(chirp(x, 1e-4, x.max(), 1.1e-2)) + 2 * x / x.max()
+
+    Find all peaks and calculate their widths at half the prominence height
+
+    >>> peaks, _ = find_peaks(x)
+    >>> widths, heights, lpos, rpos = peak_widths(x, peaks)
+    >>> widths
+    array([ 77.858817  ,  61.89410638,  45.78585182,  37.96839594,
+            33.15842405,  29.92968807])
+
+    Plot signal, peaks and contour lines at which the widths where calculated
+
+    >>> import matplotlib.pyplot as plt
+    >>> plt.plot(x)
+    >>> plt.plot(peaks, x[peaks], "x", color="C1")
+    >>> plt.hlines(y=heights, xmin=lpos, xmax=rpos, color="C1")
+    """
+    x = np.asarray(x)
+    peaks = np.asarray(peaks)
+
+    if peaks.size == 0:
+        # Handle empty peaks
+        return tuple(np.array([]) for _ in range(4))
+
+    if x.ndim != 1:
+        raise ValueError('`x` must have exactly one dimension')
+    if peaks.ndim != 1:
+        raise ValueError('`peaks` must have exactly one dimension')
+    if x.size <= peaks.max():
+        raise ValueError('an index in `peaks` exceeds the size of `x`')
+    if not np.issubdtype(peaks.dtype, np.integer):
+        raise ValueError('`peaks` must be an array of integers')
+    if rel_height < 0.0:
+        raise ValueError('`rel_height` must be greater or equal 0.0')
+
+    if any(kwargs.get(key) is None for key in ['prominences', 'left_bases',
+                                               'right_bases']):
+        # Calculate prominence if not supplied and use wlen if supplied
+        prominences, left_bases, right_bases = peak_prominences(
+            x, peaks, wlen=kwargs.get("wlen"))
+    else:
+        prominences = kwargs.get('prominences')
+        left_bases = kwargs.get('left_bases')
+        right_bases = kwargs.get('right_bases')
+
+    # Calculate evaluation height for each peak
+    wheights = x[peaks] - np.asarray(prominences) * rel_height
+
+    widths = np.zeros(peaks.size)
+    left_ips = np.zeros(peaks.size)
+    right_ips = np.zeros(peaks.size)
+    for i, (peak, height) in enumerate(zip(peaks, wheights)):
+
+        # Maximal peak width is from base to base
+        window = x[left_bases[i]:right_bases[i] + 1]
+        peak -= left_bases[i]
+        # Positions where `window` is smaller reference height
+        is_smaller = np.where(window < height)[0]
+
+        try:
+            # Nearest position to the left of peak with
+            # x[left] > x[peak]
+            left_ip = is_smaller[is_smaller < peak].max()
+        except ValueError:
+            left_ip = None
+        try:
+            # Nearest position to right of peak with
+            # x[right] > x[peak]
+            right_ip = is_smaller[is_smaller > peak].min()
+        except ValueError:
+            right_ip = None
+
+        # If not at window border (ip is None), interpolate sub-sample position
+        # to get reasonable precision for steep slopes, do for both sides
+        if left_ip is None:
+            left_ip = 0
+        else:
+            y1, y2 = window[left_ip], window[left_ip + 1]
+            left_ip += (height - y1) / (y2 - y1)
+        if right_ip is None:
+            right_ip = window.size - 1
+        else:
+            y1, y2 = window[right_ip], window[right_ip - 1]
+            right_ip -= (height - y1) / (y2 - y1)
+
+        widths[i] = right_ip - left_ip
+
+        # Correct window offset
+        left_ips[i] = left_ip + left_bases[i]
+        right_ips[i] = right_ip + left_bases[i]
+
+    return widths, wheights, left_ips, right_ips
 
 
 def _identify_ridge_lines(matr, max_distances, gap_thresh):

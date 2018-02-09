@@ -283,6 +283,7 @@ Peak finding
    argrelextrema    -- Calculate the relative extrema of data
    find_peaks_cwt   -- Find peaks in a 1-D array with wavelet transformation.
    peak_prominences -- Calculate the prominence of each peak in a signal.
+   peak_widths      -- Calculate the width of each peak in a signal.
 
 Spectral Analysis
 =================
