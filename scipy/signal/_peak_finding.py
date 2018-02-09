@@ -10,7 +10,8 @@ from scipy.signal.wavelets import cwt, ricker
 from scipy.stats import scoreatpercentile
 
 
-__all__ = ['argrelmin', 'argrelmax', 'argrelextrema', 'find_peaks_cwt']
+__all__ = ['argrelmin', 'argrelmax', 'argrelextrema', 'peak_prominences',
+           'find_peaks_cwt']
 
 
 def _boolrelextrema(data, comparator, axis=0, order=1, mode='clip'):
@@ -233,6 +234,167 @@ def argrelextrema(data, comparator, axis=0, order=1, mode='clip'):
     return np.where(results)
 
 
+def peak_prominences(x, peaks, wlen=None):
+    """
+    Calculate the prominence of each peak in a signal.
+
+    The prominence of a peak measures how much a peak stands out from the
+    surrounding baseline of the signal and is defined as the vertical
+    distance between the peak and its lowest contour line.
+
+    Parameters
+    ----------
+    x : sequence
+        A signal with peaks.
+    peaks : sequence
+        Indices of peaks in `x`.
+    wlen : number, optional
+        A window length in samples that limits the search for the lowest
+        contour line to a symmetric interval around the evaluated peak. If not
+        given the entire signal `x` is used. Use this parameter to speed up the
+        calculation significantly for large vectors (see Notes).
+
+    Returns
+    -------
+    prominences : ndarray
+        The calculated prominences for each peak in `peaks`.
+    left_bases, right_bases : ndarray
+        The peaks' bases as indices in `x` to the left and right of each peak.
+        The higher base of each pair is a peak's lowest contour line (see Notes
+        for a more details).
+
+    See Also
+    --------
+    find_peaks, peak_widths
+
+    Notes
+    -----
+    Strategy to compute a peak's prominence:
+
+    * Extend a horizontal line from the current peak to the left and right until
+      the line either reaches the window end (see `wlen`) or intersects the
+      signal again at the slope of a higher peak.
+    * On each side find the minimal signal value within the interval defined
+      above. These points are the peak's bases.
+    * The higher one of the two bases marks the peak's lowest contour line. The
+      prominence can then be calculated as the vertical difference between the
+      peaks height itself and its lowest contour line.
+
+    Searching for the peak's bases can be slow for large `x` because the full
+    signal needs to be evaluated for each peak. This evaluation area can be
+    limited with the parameter `wlen` which restricts the algorithm to a window
+    around the current peak and can shorten the calculation time significantly.
+    However this may stop the algorithm from finding the true global contour
+    line if the peak's bases are outside this window. Instead a higher contour
+    line is found within the restricted window leading to a smaller calculated
+    prominence. In practice this is only relevant for the largest set of peaks
+    in vector. This behavior may even be used intentionally to calculate "local"
+    prominences.
+
+    .. versionadded:: 1.1.0
+
+    References
+    ----------
+    .. [1] Wikipedia Article for Topographic Prominence:
+       https://en.wikipedia.org/wiki/Topographic_prominence
+
+    Examples
+    --------
+    Create signal test signal with two overlayed harmonic functions
+
+    >>> x = np.linspace(0, 6 * np.pi, 1000)
+    >>> x = np.sin(x) + 0.6 * np.sin(2.6 * x)
+
+    Find all peaks and calculate prominences
+
+    >>> from scipy.signal import find_peaks, peak_prominences
+    >>> peaks, _ = find_peaks(x)
+    >>> prominences = peak_prominences(x, peaks)[0]
+    >>> prominences
+    array([ 1.24159486,  0.47840168,  0.28470524,  3.10716793,  0.284603  ,
+            0.47822491,  2.48340261,  0.47822491])
+
+    Calculate the height of each peak's contour line and plot the results
+
+    >>> contour_heights = x[peaks] - prominences
+    >>> import matplotlib.pyplot as plt
+    >>> plt.plot(x)
+    >>> plt.plot(peaks, x[peaks], "x")
+    >>> plt.vlines(peaks, ymin=contour_heights, ymax=x[peaks])
+    """
+    x = np.asarray(x)
+    peaks = np.asarray(peaks)
+    if peaks.size == 0:
+        # Handle empty peaks
+        return np.array([]), np.array([], dtype=int), np.array([], dtype=int)
+
+    if x.ndim != 1:
+        raise ValueError('`x` must have exactly one dimension')
+    if peaks.ndim != 1:
+        raise ValueError('`peaks` must have exactly one dimension')
+    if x.size <= peaks.max():
+        raise ValueError('an index in `peaks` exceeds the size of `x`')
+    if not np.issubdtype(peaks.dtype, np.integer):
+        raise ValueError('`peaks` must be an array of integers')
+    if wlen is not None and wlen < 3:
+            raise ValueError('`wlen` must be at least 3')
+
+    # Prepare return arguments
+    prominences = np.zeros(peaks.size)
+    left_bases = np.zeros(peaks.size, dtype=int)
+    right_bases = np.zeros(peaks.size, dtype=int)
+
+    for i, peak in enumerate(peaks):
+        # If wlen is twice the size of x the symmetric window always covers
+        # the full x
+        if wlen is not None and wlen < x.size * 2:
+            wlen = int(wlen)
+            # Calculate window borders around the evaluated peak
+            wleft = peak - wlen // 2
+            wright = peak + wlen // 2
+            # Handle border cases
+            wleft = 0 if wleft < 0 else wleft
+            wright = x.size if x.size < wright else wright
+            # Use slice for prominence calculation
+            window = x[wleft:wright]
+            # Correct peak position in x
+            peak -= wleft
+        else:
+            # Use full x for prominence calculation
+            window = x
+            wleft = 0
+
+        # Positions where window is larger than current peak height
+        greater_peak = np.where(window > window[peak])[0]
+
+        try:
+            # Nearest position to the left of peak with
+            # window[left] > window[peak]
+            left = greater_peak[greater_peak < peak].max()
+        except ValueError:
+            left = 0
+        try:
+            # Nearest position to right of peak with
+            # window[right] > window[peak]
+            right = greater_peak[greater_peak > peak].min()
+        except ValueError:
+            right = None
+
+        # Base indices to the left and right of peak in window
+        left_bases[i] = window[left:peak].argmin() + left
+        right_bases[i] = window[peak:right].argmin() + peak
+
+        # Calculate lowest contour and its vertical distance to peak
+        lowest_contour = max(window[left_bases[i]], window[right_bases[i]])
+        prominences[i] = window[peak] - lowest_contour
+
+        # Correct window offset
+        left_bases[i] += wleft
+        right_bases[i] += wleft
+
+    return prominences, left_bases, right_bases
+
+
 def _identify_ridge_lines(matr, max_distances, gap_thresh):
     """
     Identify ridges in the 2-D matrix.
@@ -420,7 +582,7 @@ def _filter_ridge_lines(cwt, ridge_lines, window_size=None, min_length=None,
 def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None,
                    gap_thresh=None, min_length=None, min_snr=1, noise_perc=10):
     """
-    Attempt to find the peaks in a 1-D array.
+    Find peaks in a 1-D array with wavelet transformation.
 
     The general approach is to smooth `vector` by convolving it with
     `wavelet(width)` for each width in `widths`. Relative maxima which
@@ -436,8 +598,8 @@ def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None,
         this range should cover the expected width of peaks of interest.
     wavelet : callable, optional
         Should take two parameters and return a 1-D array to convolve
-        with `vector`. The first parameter determines the number of points 
-        of the returned wavelet array, the second parameter is the scale 
+        with `vector`. The first parameter determines the number of points
+        of the returned wavelet array, the second parameter is the scale
         (`width`) of the wavelet. Should be normalized and symmetric.
         Default is the ricker wavelet.
     max_distances : ndarray, optional
@@ -470,7 +632,7 @@ def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None,
 
     See Also
     --------
-    cwt
+    find_peaks, cwt
 
     Notes
     -----
