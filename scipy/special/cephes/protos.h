@@ -136,9 +136,6 @@ extern double sin(double x);
 extern double cos(double x);
 extern double radian(double d, double m, double s);
 
-/*
- * extern void sincos ( double x, double *s, double *c, int flg );
- */
 extern double sindg(double x);
 extern double cosdg(double x);
 extern double sinh(double x);
