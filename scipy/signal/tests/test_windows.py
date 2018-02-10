@@ -548,7 +548,7 @@ def test_windowfunc_basics():
         window = getattr(windows, window_name)
         with suppress_warnings() as sup:
             sup.filter(UserWarning, "This window is not suitable")
-            if window_name == 'slepian':
+            if window_name in ('slepian', 'hanning'):
                 sup.filter(DeprecationWarning)
             # Check symmetry for odd and even lengths
             w1 = window(8, *params, sym=True)

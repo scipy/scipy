@@ -328,7 +328,7 @@ from .windows import get_window  # keep this one in signal namespace
 # deal with * -> windows.* deprecation
 deprecated_windows = ('boxcar', 'triang', 'parzen', 'bohman', 'blackman',
                       'nuttall', 'blackmanharris', 'flattop', 'bartlett',
-                      'hanning', 'barthann', 'hamming', 'kaiser', 'gaussian',
+                      'barthann', 'hamming', 'kaiser', 'gaussian',
                       'general_gaussian', 'chebwin', 'slepian', 'cosine',
                       'hann', 'exponential', 'tukey')
 

@@ -816,7 +816,9 @@ def hann(M, sym=True):
     return _truncate(w, needs_trunc)
 
 
-hanning = hann
+@np.deprecate(new_name='scipy.signal.windows.hann')
+def hanning(*args, **kwargs):
+    return hann(*args, **kwargs)
 
 
 def tukey(M, alpha=0.5, sym=True):
