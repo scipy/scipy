@@ -3,6 +3,7 @@
 
 from __future__ import division, print_function, absolute_import
 
+import itertools
 import numpy as np
 
 from numpy.testing import (assert_equal, assert_array_equal,
@@ -10,7 +11,7 @@ from numpy.testing import (assert_equal, assert_array_equal,
 from pytest import raises as assert_raises
 from scipy._lib._numpy_compat import suppress_warnings
 
-from numpy import zeros, arange, array, abs, max, ones, eye, iscomplexobj
+from numpy import zeros, arange, array, ones, eye, iscomplexobj
 from scipy.linalg import norm
 from scipy.sparse import spdiags, csr_matrix, SparseEfficiencyWarning
 
@@ -330,6 +331,31 @@ def _check_reentrancy(solver, is_reentrant):
         assert_allclose(y, [1, 1, 1])
 
 
+def test_atol():
+    # TODO: add atol= also to solvers [cg, cgs, bicg, bicgstab, gmres, qmr, minres]
+    solvers = [lgmres, gcrotmk]
+
+    np.random.seed(1234)
+    A = np.random.rand(10, 10)
+    A = A.dot(A.T) + 10 * np.eye(10)
+    b = 1e3 * np.random.rand(10)
+    b_norm = np.linalg.norm(b)
+
+    tols = np.r_[0, np.logspace(np.log10(1e-10), np.log10(1e2), 7), np.inf]
+
+    for solver, tol, atol in itertools.product(solvers, tols, tols):
+        if tol == 0 and atol == 0:
+            continue
+
+        x, info = solver(A, b, tol=tol, atol=atol)
+        assert_equal(info, 0)
+
+        residual = A.dot(x) - b
+        err = np.linalg.norm(residual)
+        atol2 = tol * b_norm
+        assert_(err <= max(atol, atol2))
+
+
 #------------------------------------------------------------------------------
 
 class TestQMR(object):
@@ -388,7 +414,7 @@ class TestGMRES(object):
         rvec[0] = 1.0
         callback = lambda r:store_residual(r, rvec)
         x,flag = gmres(A, b, x0=zeros(A.shape[0]), tol=1e-16, maxiter=maxiter, callback=callback)
-        diff = max(abs((rvec - array([1.0, 0.81649658092772603]))))
+        diff = np.amax(np.abs((rvec - array([1.0, 0.81649658092772603]))))
         assert_(diff < 1e-5)
 
     def test_abi(self):
@@ -403,4 +429,3 @@ class TestGMRES(object):
         assert_(iscomplexobj(x))
         assert_allclose(r_x, x)
         assert_(r_info == info)
-
