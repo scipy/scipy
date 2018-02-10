@@ -1,7 +1,6 @@
-
 #include <math.h>
-extern double cephes_Gamma (double x);
 
+#include "cephes.h"
 
 #define EPS 1.0e-17
 
@@ -20,8 +19,8 @@ double besselpoly(double a, double lambda, double nu) {
   if ((nu < 0) && (floor(nu)==nu)) {
     nu = -nu;
     factor = ((int) nu) % 2;
-  }    
-  Sm = exp(nu*log(a))/(cephes_Gamma(nu+1)*(lambda+nu+1));
+  }
+  Sm = exp(nu*log(a))/(Gamma(nu+1)*(lambda+nu+1));
   m = 0;
   do {
     sum += Sm;
@@ -35,9 +34,3 @@ double besselpoly(double a, double lambda, double nu) {
   else
     return -sum;
 }
-
-
-
-
-
-

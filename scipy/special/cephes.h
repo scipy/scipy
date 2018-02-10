@@ -10,8 +10,6 @@
 #ifndef CEPHES_H
 #define CEPHES_H
 
-#include "cephes/cephes_names.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif

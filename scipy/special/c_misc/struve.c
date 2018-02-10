@@ -235,7 +235,7 @@ double struve_power_series(double v, double z, int is_h, double *err)
     else {
         scaleexp = 0;
     }
-    
+
     term = 2 / sqrt(M_PI) * exp(tmp) * gammasgn(v + 1.5);
     sum = term;
     maxterm = 0;
@@ -413,7 +413,7 @@ static double bessel_y(double v, double x)
 
 static double bessel_i(double v, double x)
 {
-    return cephes_iv(v, x);
+    return iv(v, x);
 }
 
 static double bessel_j(double v, double x)
