@@ -52,7 +52,7 @@ def _extend_mode_to_code(mode):
         raise RuntimeError('boundary mode not supported')
 
 
-def _normalize_sequence(input, rank, array_type=None):
+def _normalize_sequence(input, rank):
     """If input is a scalar, create a sequence of length equal to the
     rank by duplicating the input. If input is a sequence,
     check if its length is equal to the length of array.
