@@ -14,6 +14,7 @@ from scipy.sparse.linalg.interface import LinearOperator
 from scipy.sparse.linalg import splu
 from scipy.sparse.linalg.isolve import lgmres, gmres
 
+from scipy._lib._numpy_compat import suppress_warnings
 
 Am = csr_matrix(array([[-2,1,0,0,0,9],
                        [1,-2,1,0,5,0],
@@ -87,8 +88,10 @@ class TestLGMRES(object):
         b = np.random.rand(10000)
 
         # The inner arnoldi should be equivalent to gmres
-        x0, flag0 = lgmres(A, b, x0=zeros(A.shape[0]), inner_m=15, maxiter=1)
-        x1, flag1 = gmres(A, b, x0=zeros(A.shape[0]), restart=15, maxiter=1)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, ".*called without specifying.*")
+            x0, flag0 = lgmres(A, b, x0=zeros(A.shape[0]), inner_m=15, maxiter=1)
+            x1, flag1 = gmres(A, b, x0=zeros(A.shape[0]), restart=15, maxiter=1)
 
         assert_equal(flag0, 1)
         assert_equal(flag1, 1)

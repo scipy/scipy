@@ -164,7 +164,9 @@ def test_maxiter():
     for solver in params.solvers:
         if solver in case.skip:
             continue
-        check_maxiter(solver, case)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, ".*called without specifying.*")
+            check_maxiter(solver, case)
 
 
 def assert_normclose(a, b, tol=1e-8):
@@ -197,7 +199,9 @@ def test_convergence():
         for case in params.cases:
             if solver in case.skip:
                 continue
-            check_convergence(solver, case)
+            with suppress_warnings() as sup:
+                sup.filter(DeprecationWarning, ".*called without specifying.*")
+                check_convergence(solver, case)
 
 
 def check_precond_dummy(solver, case):
@@ -238,7 +242,9 @@ def test_precond_dummy():
     for solver in params.solvers:
         if solver in case.skip:
             continue
-        check_precond_dummy(solver, case)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, ".*called without specifying.*")
+            check_precond_dummy(solver, case)
 
 
 def check_precond_inverse(solver, case):
@@ -292,7 +298,9 @@ def test_precond_inverse():
             continue
         if solver is qmr:
             continue
-        check_precond_inverse(solver, case)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, ".*called without specifying.*")
+            check_precond_inverse(solver, case)
 
 
 def test_gmres_basic():
@@ -301,7 +309,9 @@ def test_gmres_basic():
     b[0] = 1
     x = np.linalg.solve(A, b)
 
-    x_gm, err = gmres(A, b, restart=5, maxiter=1)
+    with suppress_warnings() as sup:
+        sup.filter(DeprecationWarning, ".*called without specifying.*")
+        x_gm, err = gmres(A, b, restart=5, maxiter=1)
 
     assert_allclose(x_gm[0], 0.359, rtol=1e-2)
 
@@ -310,7 +320,9 @@ def test_reentrancy():
     non_reentrant = [cg, cgs, bicg, bicgstab, gmres, qmr]
     reentrant = [lgmres, minres, gcrotmk]
     for solver in reentrant + non_reentrant:
-        _check_reentrancy(solver, solver in reentrant)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, ".*called without specifying.*")
+            _check_reentrancy(solver, solver in reentrant)
 
 
 def _check_reentrancy(solver, is_reentrant):
@@ -445,7 +457,9 @@ class TestGMRES(object):
         rvec = zeros(maxiter+1)
         rvec[0] = 1.0
         callback = lambda r:store_residual(r, rvec)
-        x,flag = gmres(A, b, x0=zeros(A.shape[0]), tol=1e-16, maxiter=maxiter, callback=callback)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, ".*called without specifying.*")
+            x,flag = gmres(A, b, x0=zeros(A.shape[0]), tol=1e-16, maxiter=maxiter, callback=callback)
         diff = np.amax(np.abs((rvec - array([1.0, 0.81649658092772603]))))
         assert_(diff < 1e-5)
 
@@ -453,10 +467,12 @@ class TestGMRES(object):
         # Check we don't segfault on gmres with complex argument
         A = eye(2)
         b = ones(2)
-        r_x, r_info = gmres(A, b)
-        r_x = r_x.astype(complex)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, ".*called without specifying.*")
+            r_x, r_info = gmres(A, b)
+            r_x = r_x.astype(complex)
 
-        x, info = gmres(A.astype(complex), b.astype(complex))
+            x, info = gmres(A.astype(complex), b.astype(complex))
 
         assert_(iscomplexobj(x))
         assert_allclose(r_x, x)
@@ -464,7 +480,7 @@ class TestGMRES(object):
 
     def test_atol_legacy(self):
         with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, "gmres called without specifying.*")
+            sup.filter(DeprecationWarning, ".*called without specifying.*")
 
             # Check the strange legacy behavior: the tolerance is interpreted
             # as atol, but only for the initial residual
