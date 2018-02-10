@@ -55,10 +55,9 @@
 *          On input, the maximum iterations to be performed.
 *          On output, actual number of iterations performed.
 *
-*  RESID   (input/output) DOUBLE PRECISION
+*  RESID   (input) DOUBLE PRECISION
 *          On input, the allowable convergence measure for
-*          norm( b - A*x ) / norm( b ).
-*          On output, the final value of this measure.
+*          norm( b - A*x ).
 *
 *  INFO    (output) INTEGER
 *
@@ -120,7 +119,7 @@
 *     .. Local Scalars ..
       INTEGER          R, D, P, PTLD, Q, S, V, VTLD, W, WTLD, Y, YTLD,
      $                 Z, ZTLD, MAXIT, NEED1, NEED2
-      <rt>   TOL, BNRM2, RHOTOL, BETATOL,
+      <rt>   TOL, RHOTOL, BETATOL,
      $       GAMMATOL, DELTATOL,
      $       EPSTOL, XITOL,
      $       <sdsd=s,d,s,d>GETBREAK, 
@@ -299,10 +298,7 @@
  2    CONTINUE
 *****************
 *
-      IF ( <rc>NRM2( N, WORK(1,R), 1 ) .LT. TOL ) GO TO 30
-*
-      BNRM2 = <rc>NRM2( N, B, 1 )
-      IF ( BNRM2.EQ.ZERO ) BNRM2 = ONE
+      IF ( <rc>NRM2( N, WORK(1,R), 1 ) .LE. TOL ) GO TO 30
 *
       CALL <_c>COPY( N, WORK(1,R), 1, WORK(1,VTLD), 1 )
 ******CALL PSOLVEQ( WORK(1,Y), WORK(1,VTLD), 'LEFT' )

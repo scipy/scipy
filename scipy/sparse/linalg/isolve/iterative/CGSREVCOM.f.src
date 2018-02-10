@@ -61,10 +61,9 @@
 *          On input, the maximum iterations to be performed.
 *          On output, actual number of iterations performed.
 *
-*  RESID   (input/output) DOUBLE PRECISION
+*  RESID   (input) DOUBLE PRECISION
 *          On input, the allowable convergence measure for
-*          norm( b - A*x ) / norm( b ).
-*          On output, the final value of this measure.
+*          norm( b - A*x ).
 *
 *  INFO    (output) INTEGER
 *

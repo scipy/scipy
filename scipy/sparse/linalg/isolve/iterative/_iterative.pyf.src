@@ -101,16 +101,6 @@ python module _iterative ! in
             <_t> intent(out) :: sclr2
             integer intent(in, out) :: ijob
         end subroutine <_c>gmresrevcom
-
-        subroutine <_c>stoptest2(n,r,b,bnrm2,resid,tol,info) ! in STOPTEST2.f
-            integer, intent(hide), depend(b) :: n=len(b)
-            <_t>, dimension(n), intent(in) :: r
-            <_t>, dimension(n), intent(in) :: b
-            <rt=real, double precision, real, double precision>, intent(in, out) :: bnrm2
-            <rt>, intent(out) :: resid
-            <rt>, intent(in) :: tol
-            integer, intent(in, out) :: info
-        end subroutine <_c>stoptest2
     end interface 
 end python module _iterative
 

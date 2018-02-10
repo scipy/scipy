@@ -332,8 +332,9 @@ def _check_reentrancy(solver, is_reentrant):
 
 
 def test_atol():
-    # TODO: add atol= also to solvers [cg, cgs, bicg, bicgstab, gmres, qmr, minres]
-    solvers = [lgmres, gcrotmk]
+    # TODO: minres. It didn't historically use absolute tolerances, so
+    # fixing it is less urgent.
+    solvers = [cg, cgs, bicg, bicgstab, gmres, qmr, lgmres, gcrotmk]
 
     np.random.seed(1234)
     A = np.random.rand(10, 10)
@@ -354,6 +355,35 @@ def test_atol():
         err = np.linalg.norm(residual)
         atol2 = tol * b_norm
         assert_(err <= max(atol, atol2))
+
+
+def test_zero_rhs():
+    solvers = [cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres, gcrotmk]
+
+    np.random.seed(1234)
+    A = np.random.rand(10, 10)
+    A = A.dot(A.T) + 10 * np.eye(10)
+
+    b = np.zeros(10)
+
+    tols = np.r_[np.logspace(np.log10(1e-10), np.log10(1e2), 7)]
+
+    for solver, tol in itertools.product(solvers, tols):
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, ".*called without specifying.*")
+
+            x, info = solver(A, b, tol=tol)
+            assert_equal(info, 0)
+            assert_allclose(x, 0, atol=1e-15)
+
+            if solver is not minres:
+                x, info = solver(A, b, tol=tol, atol=tol)
+                assert_equal(info, 0)
+                assert_allclose(x, 0, atol=1e-15)
+
+                x, info = solver(A, b, tol=tol, atol=0)
+                assert_equal(info, 0)
+                assert_allclose(x, 0, atol=1e-15)
 
 
 #------------------------------------------------------------------------------
@@ -394,7 +424,9 @@ class TestQMR(object):
         M1 = LinearOperator((n,n), matvec=L_solve, rmatvec=LT_solve)
         M2 = LinearOperator((n,n), matvec=U_solve, rmatvec=UT_solve)
 
-        x,info = qmr(A, b, tol=1e-8, maxiter=15, M1=M1, M2=M2)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, ".*called without specifying.*")
+            x,info = qmr(A, b, tol=1e-8, maxiter=15, M1=M1, M2=M2)
 
         assert_equal(info,0)
         assert_normclose(A*x, b, tol=1e-8)
@@ -429,3 +461,30 @@ class TestGMRES(object):
         assert_(iscomplexobj(x))
         assert_allclose(r_x, x)
         assert_(r_info == info)
+
+    def test_atol_legacy(self):
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, "gmres called without specifying.*")
+
+            # Check the strange legacy behavior: the tolerance is interpreted
+            # as atol, but only for the initial residual
+            A = eye(2)
+            b = 1e-6 * ones(2)
+            x, info = gmres(A, b, tol=1e-5)
+            assert_array_equal(x, np.zeros(2))
+
+            A = eye(2)
+            b = ones(2)
+            x, info = gmres(A, b, tol=1e-5)
+            assert_(np.linalg.norm(A.dot(x) - b) <= 1e-5*np.linalg.norm(b))
+            assert_allclose(x, b, atol=0, rtol=1e-8)
+
+            A = np.random.rand(30, 30)
+            b = 1e-6 * ones(30)
+            x, info = gmres(A, b, tol=1e-7, restart=20)
+            assert_(np.linalg.norm(A.dot(x) - b) > 1e-7)
+
+        A = eye(2)
+        b = 1e-10 * ones(2)
+        x, info = gmres(A, b, tol=1e-8, atol=0)
+        assert_(np.linalg.norm(A.dot(x) - b) <= 1e-8*np.linalg.norm(b))

@@ -12,6 +12,7 @@
 *     EiITERkhout, Pozo, Romine, and van der Vorst, SIAM Publications,
 *     1993. (ftp netlib2.cs.utk.edu; cd linalg; get templates.ps).
 *
+      IMPLICIT NONE
 *     .. Scalar Arguments ..
       INTEGER            N, RESTRT, LDW, LDW2, ITER, INFO
       <rt=real,double precision,real,double precision>  RESID
@@ -107,7 +108,7 @@
       <_t>  <xdot=wsdot,ddot,wcdotc,wzdotc>
       <_t>  toz
       <_t>    TMPVAL
-      <rt>    BNRM2, RNORM, TOL,  
+      <rt>    RNORM, TOL,
      $     <rc=ws,d,wsc,dz>NRM2,
      $     <rc>APPROXRES
 
@@ -240,9 +241,7 @@
  2    CONTINUE
 *****************
 *
-      IF ( <rc>NRM2( N, WORK(1,R), 1 ).LT.TOL ) GO TO 200
-      BNRM2 = <rc>NRM2( N, B, 1 )
-      IF ( BNRM2.EQ.ZERO ) BNRM2 = ONE
+      IF ( <rc>NRM2( N, WORK(1,R), 1 ).LE.TOL ) GO TO 200
 *
       ITER = 0
    10 CONTINUE
@@ -321,7 +320,7 @@
 *           final approximation vector X and quit.
 *
             RESID = <rc>APPROXRES( I, WORK2( 1,I+H-1 ), WORK( 1,S ),
-     $                         WORK2( 1,GIV ), LDW2 ) / BNRM2
+     $                         WORK2( 1,GIV ), LDW2 )
             IF ( RESID.LE.TOL ) THEN
                CALL <_c>UPDATE(I, N, X, WORK2( 1,H ), LDW2, 
      $                     WORK(1,Y), WORK(1,S), WORK( 1,V ), LDW)
@@ -406,6 +405,7 @@
 *     =========================================================
       SUBROUTINE <_c>ORTHOH( I, N, H, V, LDV, W )
 *
+      IMPLICIT NONE
       INTEGER            I, N, LDV
       <_t>   H( * ), W( * ), V( LDV,* )
 *
@@ -436,6 +436,7 @@
 *     =========================================================
       SUBROUTINE <_c>APPLYGIVENS( I, H, GIVENS, LDG )
 *
+      IMPLICIT NONE
       INTEGER            I, LDG
       <_t>   H( * ), GIVENS( LDG,* )
 *
@@ -477,6 +478,7 @@
       <rt=real,double precision,real,double precision>
      $     FUNCTION <rc=ws,d,wsc,dz>APPROXRES( I, H, S, GIVENS, LDG )
 *
+      IMPLICIT NONE
       INTEGER            I, LDG
       <_t>   H( * ), S( * ), GIVENS( LDG,* )
 *
@@ -504,6 +506,7 @@
 *     ===============================================================
       SUBROUTINE <_c>UPDATE( I, N, X, H, LDH, Y, S, V, LDV )
 *
+      IMPLICIT NONE
       INTEGER            N, I, J, LDH, LDV
       <_t>   X( * ), Y( * ), S( * ), H( LDH,* ), V( LDV,* )
       EXTERNAL           <_c>AXPY, <_c>COPY, <_c>TRSV
@@ -527,6 +530,7 @@
 *     ===============================================================
       SUBROUTINE <_c>GETGIV( A, B, C, S )
 *
+      IMPLICIT NONE
       <_t>   A, B, C, S, TEMP, ZERO, ONE
       PARAMETER  ( 
      $     ZERO = 0.0, 
@@ -557,6 +561,7 @@
 *     ================================================================
       SUBROUTINE <_c>ROTVEC( X, Y, C, S )
 *
+      IMPLICIT NONE
       <_t>   X, Y, C, S, TEMP
 
 *
@@ -574,6 +579,7 @@
 *
 *     Construct the I-th elementary vector E, scaled by ALPHA.
 *
+      IMPLICIT NONE
       INTEGER            I, J, N
       <_t>   ALPHA, E( * )
 *
