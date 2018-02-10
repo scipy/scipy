@@ -941,7 +941,9 @@ class IterInv(LinearOperator):
        helper class to repeatedly solve M*x=b
        using an iterative method.
     """
-    def __init__(self, M, ifunc=gmres, tol=0):
+    def __init__(self, M, ifunc=None, tol=0):
+        if ifunc is None:
+            ifunc = lambda A, b, tol: gmres(A, b, tol=tol, atol=0)
         if tol <= 0:
             # when tol=0, ARPACK uses machine tolerance as calculated
             # by LAPACK's _LAMCH function.  We should match this
@@ -971,7 +973,9 @@ class IterOpInv(LinearOperator):
        helper class to repeatedly solve [A-sigma*M]*x = b
        using an iterative method
     """
-    def __init__(self, A, M, sigma, ifunc=gmres, tol=0):
+    def __init__(self, A, M, sigma, ifunc=None, tol=0):
+        if ifunc is None:
+            ifunc = lambda A, b, tol: gmres(A, b, tol=tol, atol=0)
         if tol <= 0:
             # when tol=0, ARPACK uses machine tolerance as calculated
             # by LAPACK's _LAMCH function.  We should match this
