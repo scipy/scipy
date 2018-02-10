@@ -175,8 +175,6 @@ extern double sqrt ( double x );
 extern double stdtr ( int k, double t );
 extern double stdtri ( int k, double p );
 
-
-extern double struve ( double v, double x );
 extern double yv ( double v, double x);
 /*
 extern double tan ( double x );

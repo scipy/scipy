@@ -79,7 +79,6 @@
 #define spence cephes_spence
 #define stdtr cephes_stdtr
 #define stdtri cephes_stdtri
-#define struve cephes_struve
 #define yv cephes_yv
 #define tandg cephes_tandg
 #define cotdg cephes_cotdg
