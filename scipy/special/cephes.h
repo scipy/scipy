@@ -10,8 +10,6 @@
 #ifndef CEPHES_H
 #define CEPHES_H
 
-#include "cephes/cephes_names.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -160,9 +158,6 @@ extern double simpsn ( double f[], double delta );
 extern int simq ( double A[], double B[], double X[], int n, int flag, int IPS[] );
 */
 extern double radian ( double d, double m, double s );
-/*
-extern int sincos ( double x, double *s, double *c, int flg );
-*/
 extern double sindg ( double x );
 extern double cosdg ( double x );
 /*

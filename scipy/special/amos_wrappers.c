@@ -6,6 +6,7 @@
  */
 
 #include "amos_wrappers.h"
+#include "cephes.h"
 
 #define CADDR(z) (double *)(&((z).real)), (double*)(&((z).imag))
 #define F2C_CST(z) (double *)&((z)->real), (double *)&((z)->imag)
@@ -150,8 +151,6 @@ rotate_i(npy_cdouble i, npy_cdouble k, double v)
     return w;
 }
 
-int cephes_airy(double x, double *ai, double *aip, double *bi, double *bip);
-
 int airy_wrap(double x, double *ai, double *aip, double *bi, double *bip)
 {
     npy_cdouble z, zai, zaip, zbi, zbip;
@@ -169,7 +168,7 @@ int airy_wrap(double x, double *ai, double *aip, double *bi, double *bip)
         *bip = zbip.real;
     }
     else {
-        cephes_airy(x, ai, aip, bi, bip);
+        airy(x, ai, aip, bi, bip);
     }
     return 0;
 }
@@ -415,8 +414,6 @@ npy_cdouble cbesj_wrap( double v, npy_cdouble z) {
   return cy_j;
 }
 
-double cephes_jv(double v, double x);
-
 double cbesj_wrap_real(double v, double x)
 {
     npy_cdouble z, r;
@@ -431,7 +428,7 @@ double cbesj_wrap_real(double v, double x)
     r = cbesj_wrap(v, z);
     if (r.real != r.real) {
         /* AMOS returned NaN, possibly due to overflow */
-        return cephes_jv(v, x);
+        return jv(v, x);
     }
     return r.real;
 }
@@ -527,8 +524,6 @@ npy_cdouble cbesy_wrap( double v, npy_cdouble z) {
   return cy_y;
 }
 
-double cephes_yv(double v, double x);
-
 double cbesy_wrap_real(double v, double x)
 {
     npy_cdouble z, r;
@@ -543,7 +538,7 @@ double cbesy_wrap_real(double v, double x)
     r = cbesy_wrap(v, z);
     if (r.real != r.real) {
         /* AMOS returned NaN, possibly due to overflow */
-        return cephes_yv(v, x);
+        return yv(v, x);
     }
     return r.real;
 }
