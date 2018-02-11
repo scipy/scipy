@@ -165,7 +165,7 @@ script:
   - python -u $OPTIMIZE runtests.py -g -m $TESTMODE $COVERAGE $USE_WHEEL_BUILD -- -rfEX -n 3 2>&1 | tee runtests.log
   - tools/validate_runtests_log.py $TESTMODE < runtests.log
   - if [ "${REFGUIDE_CHECK}" == "1" ]; then python runtests.py -g --refguide-check; fi
-after_success:
+after_script:
   - ccache -s
   # Upload coverage information
   - |
