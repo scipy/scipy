@@ -10,11 +10,7 @@ from ._complexstuff cimport (
 cdef extern from "float.h":
     double DBL_MAX, DBL_MIN
 
-cdef extern from "cephes.h":
-    double iv(double v, double x) nogil
-    double jv(double n, double x) nogil
-    double Gamma(double x) nogil
-    double lgam(double x) nogil
+from ._cephes cimport iv, jv, Gamma, lgam
 
 cdef extern from "c_misc/misc.h":
     double gammasgn(double x) nogil
@@ -30,7 +26,7 @@ cdef extern from "amos_wrappers.h":
 cdef inline double _hyp0f1_real(double v, double z) nogil:
     cdef double arg, v1, arg_exp, bess_val
 
-    # handle poles, zeros 
+    # handle poles, zeros
     if v <= 0.0 and v == floor(v):
         return NAN
     if z == 0.0 and v != 0.0:
@@ -44,7 +40,7 @@ cdef inline double _hyp0f1_real(double v, double z) nogil:
         arg = sqrt(z)
         arg_exp = xlogy(1.0-v, arg) + lgam(v)
         bess_val = iv(v-1, 2.0*arg)
-        
+
         if (arg_exp > log(DBL_MAX) or bess_val == 0 or   # overflow
             arg_exp < log(DBL_MIN) or isinf(bess_val)):  # underflow
             return _hyp0f1_asy(v, z)
@@ -56,7 +52,7 @@ cdef inline double _hyp0f1_real(double v, double z) nogil:
 
 
 cdef inline double _hyp0f1_asy(double v, double z) nogil:
-    r"""Asymptotic expansion for I_{v-1}(2*sqrt(z)) * Gamma(v) 
+    r"""Asymptotic expansion for I_{v-1}(2*sqrt(z)) * Gamma(v)
     for real $z > 0$ and $v\to +\infty$.
 
     Based off DLMF 10.41
@@ -109,7 +105,7 @@ cdef inline double complex _hyp0f1_cmplx(double v, double complex z) nogil:
         double complex arg, s
         double complex t1, t2
 
-    # handle poles, zeros 
+    # handle poles, zeros
     if v <= 0.0 and v == floor(v):
         return NAN
     if z.real == 0.0 and z.imag == 0.0 and v != 0.0:
@@ -133,4 +129,3 @@ cdef inline double complex _hyp0f1_cmplx(double v, double complex z) nogil:
         r = cbesj_wrap(v-1.0, npy_cdouble_from_double_complex(s))
 
     return double_complex_from_npy_cdouble(r) * Gamma(v) * zpow(arg, 1.0 - v)
-

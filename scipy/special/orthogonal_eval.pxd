@@ -11,7 +11,7 @@ References
 
 .. [LP] P. Levrie & R. Piessens, A note on the evaluation of orthogonal
         polynomials using recurrence relations, Internal Report TW74 (1985)
-        Dept. of Computer Science, K.U. Leuven, Belgium 
+        Dept. of Computer Science, K.U. Leuven, Belgium
         https://lirias.kuleuven.be/handle/123456789/131600
 
 """
@@ -31,17 +31,12 @@ from ._complexstuff cimport (
     double_complex_from_npy_cdouble)
 
 from . cimport sf_error
-
-cdef extern from "cephes.h":
-    double Gamma(double x) nogil
-    double lgam(double x) nogil
-    double beta (double a, double b) nogil
-    double lbeta (double a, double b) nogil
-    double hyp2f1_wrap "hyp2f1" (double a, double b, double c, double x) nogil 
+from ._cephes cimport Gamma, lgam, beta, lbeta
+from ._cephes cimport hyp2f1 as hyp2f1_wrap
 
 cdef extern from "specfun_wrappers.h":
     double hyp1f1_wrap(double a, double b, double x) nogil
-    npy_cdouble chyp2f1_wrap( double a, double b, double c, npy_cdouble z) nogil 
+    npy_cdouble chyp2f1_wrap( double a, double b, double c, npy_cdouble z) nogil
     npy_cdouble chyp1f1_wrap( double a, double b, npy_cdouble z) nogil
 
 cdef extern from "c_misc/misc.h":
@@ -135,9 +130,9 @@ cdef inline double binom(double n, double k) nogil:
 #-----------------------------------------------------------------------------
 
 cdef inline number_t eval_jacobi(double n, double alpha, double beta, number_t x) nogil:
-    cdef double a, b, c, d 
+    cdef double a, b, c, d
     cdef number_t g
-    
+
     d = binom(n+alpha, n)
     a = -n
     b = n + alpha + beta + 1
@@ -156,10 +151,10 @@ cdef inline double eval_jacobi_l(long n, double alpha, double beta, double x) no
     elif n == 0:
         return 1.0
     elif n == 1:
-        return 0.5*(2*(alpha+1)+(alpha+beta+2)*(x-1)) 
+        return 0.5*(2*(alpha+1)+(alpha+beta+2)*(x-1))
     else:
         d = (alpha+beta+2)*(x - 1) / (2*(alpha+1))
-        p = d + 1 
+        p = d + 1
         for kk in range(n-1):
             k = kk+1.0
             t = 2*k+alpha+beta
@@ -233,7 +228,7 @@ cdef inline double eval_gegenbauer_l(long n, double alpha, double x) nogil:
         return p
     else:
         d = x - 1
-        p = x 
+        p = x
         for kk in range(n-1):
             k = kk+1.0
             d = (2*(k+alpha)/(k+2*alpha))*(x-1)*p + (k/(k+2*alpha)) * d
@@ -409,7 +404,7 @@ cdef inline double eval_legendre_l(long n, double x) nogil:
         return p
     else:
         d = x - 1
-        p = x 
+        p = x
         for kk in range(n-1):
             k = kk+1.0
             d = ((2*k+1)/(k+1))*(x-1)*p + (k/(k+1)) * d
@@ -463,8 +458,8 @@ cdef inline double eval_genlaguerre_l(long n, double alpha, double x) nogil:
     elif n == 1:
         return -x+alpha+1
     else:
-        d = -x/(alpha+1) 
-        p = d + 1 
+        d = -x/(alpha+1)
+        p = d + 1
         for kk in range(n-1):
             k = kk+1.0
             d = -x/(k+alpha+1)*p + (k/(k+alpha+1)) * d
@@ -511,4 +506,3 @@ cdef inline double eval_hermitenorm(long n, double x) nogil:
 @cython.cdivision(True)
 cdef inline double eval_hermite(long n, double x) nogil:
     return eval_hermitenorm(n, sqrt(2)*x) * 2**(n/2.0)
-
