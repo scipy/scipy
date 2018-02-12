@@ -18,9 +18,6 @@ import math
 #
 # Distributed under the same BSD license as Scipy.
 
-
-
-
 def poly_area(vertices, radius=None, threshold=1e-21,
               cython=None, discretizations=500,
               n_rot=50):
@@ -80,10 +77,10 @@ def poly_area(vertices, radius=None, threshold=1e-21,
         # determinant
         current_vert = 0
         plane_failures = 0
+        one_pads = np.ones((1, 4))
         while current_vert <= (num_vertices - 3):
             candidate_plane = np.concatenate((np.zeros((1,3)),
                                               vertices[current_vert:current_vert + 3]))
-            one_pads = np.ones((1, candidate_plane.shape[0]))
 
             candidate_plane = np.concatenate((candidate_plane.T,
                                               one_pads))
