@@ -39,9 +39,7 @@ cdef extern from "amos_wrappers.h":
     npy_cdouble cbesy_wrap(double v, npy_cdouble z) nogil
     double cbesy_wrap_real(double v, double x) nogil
 
-cdef extern from "cephes.h":
-    double iv(double v, double x) nogil
-
+from ._cephes cimport iv
 
 # Fused type wrappers
 
