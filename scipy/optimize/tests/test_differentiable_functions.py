@@ -76,15 +76,14 @@ class TestScalarFunction(TestCase):
         assert_array_almost_equal(g_analit, g_approx)
 
         x = [2.0, 1.0]
-        analit.update_x(x)
-        g_analit = analit.evaluate_grad()
+        g_analit = analit.grad(x)
         ngev += 1
         assert_array_equal(ex.nfev, nfev)
         assert_array_equal(analit.nfev+approx.nfev, nfev)
         assert_array_equal(ex.ngev, ngev)
         assert_array_equal(analit.ngev+approx.ngev, ngev)
-        approx.update_x(x)
-        g_approx = approx.evaluate_grad()
+
+        g_approx = approx.grad(x)
         nfev += 3
         assert_array_equal(ex.nfev, nfev)
         assert_array_equal(analit.nfev+approx.nfev, nfev)
@@ -93,18 +92,16 @@ class TestScalarFunction(TestCase):
         assert_array_almost_equal(g_analit, g_approx)
 
         x = [2.5, 0.3]
-        analit.update_x(x)
-        f_analit = analit.evaluate_fun()
-        g_analit = analit.evaluate_grad()
+        f_analit = analit.fun(x)
+        g_analit = analit.grad(x)
         nfev += 1
         ngev += 1
         assert_array_equal(ex.nfev, nfev)
         assert_array_equal(analit.nfev+approx.nfev, nfev)
         assert_array_equal(ex.ngev, ngev)
         assert_array_equal(analit.ngev+approx.ngev, ngev)
-        approx.update_x(x)
-        f_approx = approx.evaluate_fun()
-        g_approx = approx.evaluate_grad()
+        f_approx = approx.fun(x)
+        g_approx = approx.grad(x)
         nfev += 3
         assert_array_equal(ex.nfev, nfev)
         assert_array_equal(analit.nfev+approx.nfev, nfev)
@@ -167,8 +164,7 @@ class TestScalarFunction(TestCase):
         assert_array_equal(analit.nhev+approx.nhev, nhev)
 
         x = [2.0, 1.0]
-        analit.update_x(x)
-        H_analit = analit.evaluate_hess()
+        H_analit = analit.hess(x)
         nhev += 1
         assert_array_equal(ex.nfev, nfev)
         assert_array_equal(analit.nfev+approx.nfev, nfev)
@@ -176,8 +172,7 @@ class TestScalarFunction(TestCase):
         assert_array_equal(analit.ngev+approx.ngev, ngev)
         assert_array_equal(ex.nhev, nhev)
         assert_array_equal(analit.nhev+approx.nhev, nhev)
-        approx.update_x(x)
-        H_approx = approx.evaluate_hess()
+        H_approx = approx.hess(x)
         assert_(isinstance(H_approx, LinearOperator))
         for v in ([1.0, 2.0], [3.0, 4.0], [5.0, 2.0]):
             assert_array_almost_equal(H_analit.dot(v), H_approx.dot(v))
@@ -211,9 +206,8 @@ class TestScalarFunction(TestCase):
         assert_array_equal(analit.nhev+approx.nhev, nhev)
 
         x = [2.5, 0.3]
-        analit.update_x(x)
-        _ = analit.evaluate_grad()
-        H_analit = analit.evaluate_hess()
+        _ = analit.grad(x)
+        H_analit = analit.hess(x)
         ngev += 1
         nhev += 1
         assert_array_equal(ex.nfev, nfev)
@@ -222,9 +216,8 @@ class TestScalarFunction(TestCase):
         assert_array_equal(analit.ngev+approx.ngev, ngev)
         assert_array_equal(ex.nhev, nhev)
         assert_array_equal(analit.nhev+approx.nhev, nhev)
-        approx.update_x(x)
-        _ = approx.evaluate_grad()
-        H_approx = approx.evaluate_hess()
+        _ = approx.grad(x)
+        H_approx = approx.hess(x)
         assert_(isinstance(H_approx, LinearOperator))
         for v in ([1.0, 2.0], [3.0, 4.0], [5.0, 2.0]):
             assert_array_almost_equal(H_analit.dot(v), H_approx.dot(v))
@@ -247,7 +240,6 @@ class TestScalarFunction(TestCase):
         assert_array_equal(analit.ngev+approx.ngev, ngev)
         assert_array_equal(ex.nhev, nhev)
         assert_array_equal(analit.nhev+approx.nhev, nhev)
-        approx.update_x(x)
         _ = approx.grad(x)
         H_approx = approx.hess(x)
         assert_(isinstance(H_approx, LinearOperator))
@@ -332,15 +324,13 @@ class TestVectorialFunction(TestCase):
         assert_array_almost_equal(J_analit, J_approx, decimal=4)
 
         x = [2.0, 1.0]
-        analit.update_x(x)
-        J_analit = analit.evaluate_jac()
+        J_analit = analit.jac(x)
         njev += 1
         assert_array_equal(ex.nfev, nfev)
         assert_array_equal(analit.nfev+approx.nfev, nfev)
         assert_array_equal(ex.njev, njev)
         assert_array_equal(analit.njev+approx.njev, njev)
-        approx.update_x(x)
-        J_approx = approx.evaluate_jac()
+        J_approx = approx.jac(x)
         nfev += 3
         assert_array_equal(ex.nfev, nfev)
         assert_array_equal(analit.nfev+approx.nfev, nfev)
@@ -349,18 +339,16 @@ class TestVectorialFunction(TestCase):
         assert_array_almost_equal(J_analit, J_approx)
 
         x = [2.5, 0.3]
-        analit.update_x(x)
-        f_analit = analit.evaluate_fun()
-        J_analit = analit.evaluate_jac()
+        f_analit = analit.fun(x)
+        J_analit = analit.jac(x)
         nfev += 1
         njev += 1
         assert_array_equal(ex.nfev, nfev)
         assert_array_equal(analit.nfev+approx.nfev, nfev)
         assert_array_equal(ex.njev, njev)
         assert_array_equal(analit.njev+approx.njev, njev)
-        approx.update_x(x)
-        f_approx = approx.evaluate_fun()
-        J_approx = approx.evaluate_jac()
+        f_approx = approx.fun(x)
+        J_approx = approx.jac(x)
         nfev += 3
         assert_array_equal(ex.nfev, nfev)
         assert_array_equal(analit.nfev+approx.nfev, nfev)
@@ -424,8 +412,7 @@ class TestVectorialFunction(TestCase):
         assert_array_equal(analit.nhev+approx.nhev, nhev)
 
         x = [2.0, 1.0]
-        analit.update_x(x)
-        H_analit = analit.evaluate_hess()
+        H_analit = analit.hess(x, v0)
         nhev += 1
         assert_array_equal(ex.nfev, nfev)
         assert_array_equal(analit.nfev+approx.nfev, nfev)
@@ -433,11 +420,11 @@ class TestVectorialFunction(TestCase):
         assert_array_equal(analit.njev+approx.njev, njev)
         assert_array_equal(ex.nhev, nhev)
         assert_array_equal(analit.nhev+approx.nhev, nhev)
-        approx.update_x(x)
-        H_approx = approx.evaluate_hess()
+        H_approx = approx.hess(x, v0)
         assert_(isinstance(H_approx, LinearOperator))
         for p in ([1.0, 2.0], [3.0, 4.0], [5.0, 2.0]):
-            assert_array_almost_equal(H_analit.dot(p), H_approx.dot(p))
+            assert_array_almost_equal(H_analit.dot(p), H_approx.dot(p),
+                                      decimal=5)
         njev += 4
         assert_array_equal(ex.nfev, nfev)
         assert_array_equal(analit.nfev+approx.nfev, nfev)
@@ -469,9 +456,8 @@ class TestVectorialFunction(TestCase):
         assert_array_equal(analit.nhev+approx.nhev, nhev)
 
         x = [2.5, 0.3]
-        analit.update_x(x)
-        _ = analit.evaluate_jac()
-        H_analit = analit.evaluate_hess()
+        _ = analit.jac(x)
+        H_analit = analit.hess(x, v0)
         njev += 1
         nhev += 1
         assert_array_equal(ex.nfev, nfev)
@@ -480,9 +466,8 @@ class TestVectorialFunction(TestCase):
         assert_array_equal(analit.njev+approx.njev, njev)
         assert_array_equal(ex.nhev, nhev)
         assert_array_equal(analit.nhev+approx.nhev, nhev)
-        approx.update_x(x)
-        _ = approx.evaluate_jac()
-        H_approx = approx.evaluate_hess()
+        _ = approx.jac(x)
+        H_approx = approx.hess(x, v0)
         assert_(isinstance(H_approx, LinearOperator))
         for v in ([1.0, 2.0], [3.0, 4.0], [5.0, 2.0]):
             assert_array_almost_equal(H_analit.dot(v), H_approx.dot(v), decimal=4)
@@ -506,7 +491,6 @@ class TestVectorialFunction(TestCase):
         assert_array_equal(analit.njev+approx.njev, njev)
         assert_array_equal(ex.nhev, nhev)
         assert_array_equal(analit.nhev+approx.nhev, nhev)
-        approx.update_x(x)
         _ = approx.jac(x)
         H_approx = approx.hess(x, v)
         assert_(isinstance(H_approx, LinearOperator))

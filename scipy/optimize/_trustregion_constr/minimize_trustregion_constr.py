@@ -6,11 +6,20 @@ from .._differentiable_functions import VectorFunction
 from .._constraints import (
     NonlinearConstraint, LinearConstraint, PreparedConstraint, strict_bounds)
 from ..optimize import OptimizeResult
-from .._differentiable_functions import ScalarFunction, IdentityVectorFunction
+from .._differentiable_functions import ScalarFunction
 from .equality_constrained_sqp import equality_constrained_sqp
 from .canonical_constraint import (CanonicalConstraint,
                                    initial_constraints_as_canonical)
 from .tr_interior_point import tr_interior_point
+from .report import BasicReport, SQPReport, IPReport
+
+
+TERMINATION_MESSAGES = {
+    0: "The maximum number of function evaluations is exceeded.",
+    1: "`gtol` termination condition is satisfied.",
+    2: "`xtol` termination condition is satisfied.",
+    3: "`callback` function requested termination"
+}
 
 
 class HessianLinearOperator(object):
@@ -45,95 +54,6 @@ class LagrangianHessian(object):
             return H_objective.dot(p) + H_constraints.dot(p)
 
         return LinearOperator((self.n, self.n), matvec)
-
-
-TERMINATION_MESSAGES = {
-    0: "The maximum number of function evaluations is exceeded.",
-    1: "`gtol` termination condition is satisfied.",
-    2: "`xtol` termination condition is satisfied.",
-    3: "`callback` function requested termination"
-}
-
-class basic_printer:
-    @staticmethod
-    def print_header():
-        print("|{0:^7}|{1:^7}|{2:^7}|{3:^13}|{4:^10}|{5:^10}|{6:^10}|"
-              .format("niter", "f evals", "CG iter", "obj func", "tr radius",
-                      "opt", "c viol"))
-        s = "-"*6 + ":"
-        s2 = ":" + "-"*8 + ":"
-        s3 = ":" + "-"*11 + ":"
-        print("|{0:^7}|{1:^7}|{2:^7}|{3:^10}|{4:^10}|{5:^10}|{6:^10}|"
-              .format(s, s, s, s3, s2, s2, s2))
-
-    @staticmethod
-    def print_problem_iter(niter, nfev, cg_niter, tr_radius,
-                           fun, opt, c_viol):
-        print("|{0:>7}|{1:>7}|{2:>7}| {3:^+1.4e} | {4:^1.2e} |"
-              " {5:^1.2e} | {6:^1.2e} |"
-              .format(niter, nfev, cg_niter, fun, tr_radius,
-                      opt, c_viol))
-
-    @staticmethod
-    def print_footer():
-        print("")
-        print((7*3 + 10*3 + 13 + 8)*"-")
-        print("")
-
-
-class sqp_printer:
-    @staticmethod
-    def print_header():
-        print("|{0:^7}|{1:^7}|{2:^7}|{3:^13}|{4:^10}|{5:^10}|{6:^10}|{7:^10}|{8:^7}|"
-              .format("niter", "f evals", "CG iter", "obj func", "tr radius",
-                      "opt", "c viol", "penalty", "CG stop"))
-        s = "-"*6 + ":"
-        s2 = ":" + "-"*8 + ":"
-        s3 = ":" + "-"*11 + ":"
-        print("|{0:^7}|{1:^7}|{2:^7}|{3:^13}|{4:^10}|{5:^10}|{6:^10}|{7:^10}|{8:^7}|"
-              .format(s, s, s, s3, s2, s2, s2, s2, s))
-
-    @staticmethod
-    def print_problem_iter(niter, nfev, cg_niter, tr_radius,
-                           fun, opt, c_viol, penalty, cg_stop_cond):
-        print("|{0:>7}|{1:>7}|{2:>7}| {3:^+1.4e} | {4:^+1.1e} |"
-              " {5:^+1.1e} | {6:^+1.1e} | {7:^+1.1e} |{8:>7}|"
-              .format(niter, nfev, cg_niter, tr_radius, fun,
-                      opt, c_viol, penalty, cg_stop_cond))
-
-    @staticmethod
-    def print_footer():
-        print("")
-        print((7*3 + 10*4 + 13 + 7 + 10)*"-")
-        print("")
-
-
-class ip_printer:
-    @staticmethod
-    def print_header():
-        print("|{0:^7}|{1:^7}|{2:^7}|{3:^13}|{4:^10}|{5:^10}|{6:^10}|{7:^10}|{8:^13}|{9:^7}|"
-              .format("niter", "f evals", "CG iter", "obj func", "tr radius",
-                      "opt", "c viol", "penalty", "barrier param", "CG stop"))
-        s = "-"*6 + ":"
-        s2 = ":" + "-"*8 + ":"
-        s3 = ":" + "-"*11 + ":"
-        print("|{0:^7}|{1:^7}|{2:^7}|{3:^10}|{4:^10}|{5:^10}|{6:^10}|{7:^10}|{8:^13}|{9:^7}|"
-              .format(s, s, s, s3, s2, s2, s2, s2, s3, s))
-
-    @staticmethod
-    def print_problem_iter(niter, nfev, cg_niter, tr_radius,
-                           fun, opt, c_viol, penalty,
-                           barrier_parameter, cg_stop_cond):
-        print("|{0:>7}|{1:>7}|{2:>7}| {3:^+1.4e} | {4:^1.2e} |"
-              " {5:^1.2e} | {6:^1.2e} | {7:^1.2e} |   {8:^1.2e}  |{9:>7}|"
-              .format(niter, nfev, cg_niter, fun, tr_radius,
-                      opt, c_viol, penalty, barrier_parameter, cg_stop_cond))
-
-    @staticmethod
-    def print_footer():
-        print("")
-        print((7*3 + 10*4 + 13*2 + 7 + 11)*"-")
-        print("")
 
 
 def update_state_sqp(state, objective, prepared_constraints, start_time,
@@ -470,23 +390,23 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
             state = update_state_sqp(state, objective, prepared_constraints,
                                      start_time, trust_radius, penalty, cg_info)
             if verbose == 2:
-                basic_printer.print_problem_iter(state.niter,
-                                                 state.nfev,
-                                                 state.cg_niter,
-                                                 state.trust_radius,
-                                                 state.fun,
-                                                 state.optimality,
-                                                 state.constr_violation)
-            if verbose > 2:
-                sqp_printer.print_problem_iter(state.niter,
-                                               state.nfev,
-                                               state.cg_niter,
-                                               state.trust_radius,
-                                               state.fun,
-                                               state.optimality,
-                                               state.constr_violation,
-                                               state.penalty,
-                                               state.cg_stop_cond)
+                BasicReport.print_iteration(state.niter,
+                                            state.nfev,
+                                            state.cg_niter,
+                                            state.fun,
+                                            state.trust_radius,
+                                            state.optimality,
+                                            state.constr_violation)
+            elif verbose > 2:
+                SQPReport.print_iteration(state.niter,
+                                          state.nfev,
+                                          state.cg_niter,
+                                          state.fun,
+                                          state.trust_radius,
+                                          state.optimality,
+                                          state.constr_violation,
+                                          state.penalty,
+                                          state.cg_stop_cond)
             state.status = None
             if (callback is not None) and callback(state.x, state):
                 state.status = 3
@@ -504,24 +424,24 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
                                     start_time, trust_radius, penalty, cg_info,
                                     barrier_parameter, tolerance)
             if verbose == 2:
-                basic_printer.print_problem_iter(state.niter,
-                                                 state.nfev,
-                                                 state.cg_niter,
-                                                 state.trust_radius,
-                                                 state.fun,
-                                                 state.optimality,
-                                                 state.constr_violation)
-            if verbose > 2:
-                ip_printer.print_problem_iter(state.niter,
-                                              state.nfev,
-                                              state.cg_niter,
-                                              state.trust_radius,
-                                              state.fun,
-                                              state.optimality,
-                                              state.constr_violation,
-                                              state.penalty,
-                                              state.barrier_parameter,
-                                              state.cg_stop_cond)
+                BasicReport.print_iteration(state.niter,
+                                            state.nfev,
+                                            state.cg_niter,
+                                            state.fun,
+                                            state.trust_radius,
+                                            state.optimality,
+                                            state.constr_violation)
+            elif verbose > 2:
+                IPReport.print_iteration(state.niter,
+                                         state.nfev,
+                                         state.cg_niter,
+                                         state.fun,
+                                         state.trust_radius,
+                                         state.optimality,
+                                         state.constr_violation,
+                                         state.penalty,
+                                         state.barrier_parameter,
+                                         state.cg_stop_cond)
             state.status = None
             if (callback is not None) and callback(state.x, state):
                 state.status = 3
@@ -535,12 +455,12 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
             return state.status in (0, 1, 2, 3)
 
     if verbose == 2:
-        basic_printer.print_header()
+        BasicReport.print_header()
     elif verbose > 2:
         if method == 'equality_constrained_sqp':
-            sqp_printer.print_header()
-        if method == 'tr_interior_point':
-            ip_printer.print_header()
+            SQPReport.print_header()
+        elif method == 'tr_interior_point':
+            IPReport.print_header()
 
     # Call inferior function to do the optimization
     if method == 'equality_constrained_sqp':
@@ -584,17 +504,17 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
     result.message = TERMINATION_MESSAGES[result.status]
 
     if verbose == 2:
-        basic_printer.print_footer()
+        BasicReport.print_footer()
     elif verbose > 2:
         if method == 'equality_constrained_sqp':
-            sqp_printer.print_footer()
+            SQPReport.print_footer()
         if method == 'tr_interior_point':
-            ip_printer.print_footer()
+            IPReport.print_footer()
     if verbose >= 1:
         print(result.message)
-        print("Number of iteractions: {0}, function evaluations: {1}, "
-              "CG iterations: {2}, optimality: {3:.2e}, "
-              "constraint violation: {4:.2e}, execution time: {5:4.2} s."
+        print("Number of iterations: {}, function evaluations: {}, "
+              "CG iterations: {}, optimality: {:.2e}, "
+              "constraint violation: {:.2e}, execution time: {:4.2} s."
               .format(result.niter, result.nfev, result.cg_niter,
                       result.optimality, result.constr_violation,
                       result.execution_time))
