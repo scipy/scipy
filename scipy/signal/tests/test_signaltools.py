@@ -1361,6 +1361,17 @@ class TestCorrelateReal(object):
         assert_raises(ValueError, correlate, [1], [[2]])
         assert_raises(ValueError, correlate, [3], 2)
 
+    def test_numpy_fastpath(self):
+        a = [1, 2, 3]
+        b = [4, 5]
+        assert_allclose(correlate(a, b, mode='same'), [5, 14, 23])
+
+        a = [1, 2, 3]
+        b = [4, 5, 6]
+        assert_allclose(correlate(a, b, mode='same'), [17, 32, 23])
+        assert_allclose(correlate(a, b, mode='full'), [6, 17, 32, 23, 12])
+        assert_allclose(correlate(a, b, mode='valid'), [32])
+
 
 @pytest.mark.parametrize('dt', [np.csingle, np.cdouble, np.clongdouble])
 class TestCorrelateComplex(object):
