@@ -2,12 +2,16 @@ from __future__ import division, print_function, absolute_import
 
 import warnings
 
-TOL = 1.48e-8
-MAXITER = 50
+import cython
+
+cdef double TOL = 1.48e-8
+cdef int MAXITER = 50
 
 
+@cython.cdivision(True)
 cdef double newton(callback_type func, double p0, callback_type fprime, tuple args):
     # Newton-Rapheson method
+    cdef double fder, fval, p
     for iter in range(MAXITER):
         fder = fprime(p0, args)
         if fder == 0:
