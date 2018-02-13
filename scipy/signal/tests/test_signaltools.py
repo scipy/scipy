@@ -539,6 +539,9 @@ class TestFFTConvolve(object):
         assert_raises(ValueError, fftconvolve, [1], [[2]])
         assert_raises(ValueError, fftconvolve, [3], 2)
 
+    def test_invalid_flags(self):
+        assert_raises(ValueError, fftconvolve, [1], [2], mode='chips')
+
 
 class TestMedFilt(object):
 
