@@ -235,6 +235,15 @@ class TestConvolve(_TestConvolve):
                 assert_equal(fft, 2**(2*n))
                 assert_equal(direct, 2**(2*n))
 
+    def test_mismatched_dims(self):
+        # Input arrays should have the same number of dimensions
+        assert_raises(ValueError, convolve, [1], 2, method='direct')
+        assert_raises(ValueError, convolve, 1, [2], method='direct')
+        assert_raises(ValueError, convolve, [1], 2, method='fft')
+        assert_raises(ValueError, convolve, 1, [2], method='fft')
+        assert_raises(ValueError, convolve, [1], [[2]])
+        assert_raises(ValueError, convolve, [3], 2)
+
 
 class _TestConvolve2d(object):
 
@@ -386,6 +395,11 @@ class TestConvolve2d(_TestConvolve2d):
                 signal.convolve2d([a], [b], mode=mode)),
                 signal.convolve(a, b, mode=mode))
 
+    def test_invalid_dims(self):
+        assert_raises(ValueError, convolve2d, 3, 4)
+        assert_raises(ValueError, convolve2d, [3], [4])
+        assert_raises(ValueError, convolve2d, [[[3]]], [[[4]]])
+
 
 class TestFFTConvolve(object):
 
@@ -518,6 +532,12 @@ class TestFFTConvolve(object):
 
         assert_raises(ValueError, fftconvolve, *(a, b), **{'mode': 'valid'})
         assert_raises(ValueError, fftconvolve, *(b, a), **{'mode': 'valid'})
+
+    def test_mismatched_dims(self):
+        assert_raises(ValueError, fftconvolve, [1], 2)
+        assert_raises(ValueError, fftconvolve, 1, [2])
+        assert_raises(ValueError, fftconvolve, [1], [[2]])
+        assert_raises(ValueError, fftconvolve, [3], 2)
 
 
 class TestMedFilt(object):
@@ -1331,6 +1351,15 @@ class TestCorrelateReal(object):
         assert_raises(ValueError, correlate, a, b, mode='ham', method='direct')
         assert_raises(ValueError, correlate, a, b, mode='full', method='bacon')
         assert_raises(ValueError, correlate, a, b, mode='same', method='bacon')
+
+    def test_mismatched_dims(self):
+        # Input arrays should have the same number of dimensions
+        assert_raises(ValueError, correlate, [1], 2, method='direct')
+        assert_raises(ValueError, correlate, 1, [2], method='direct')
+        assert_raises(ValueError, correlate, [1], 2, method='fft')
+        assert_raises(ValueError, correlate, 1, [2], method='fft')
+        assert_raises(ValueError, correlate, [1], [[2]])
+        assert_raises(ValueError, correlate, [3], 2)
 
 
 @pytest.mark.parametrize('dt', [np.csingle, np.cdouble, np.clongdouble])
