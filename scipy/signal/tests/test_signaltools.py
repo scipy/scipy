@@ -2351,3 +2351,14 @@ class TestSOSFilt(object):
         # Expected steady state value of the step response of this filter:
         ss = np.prod(sos[:, :3].sum(axis=-1) / sos[:, 3:].sum(axis=-1))
         assert_allclose(y, ss, rtol=1e-13)
+
+
+class TestDeconvolve(object):
+
+    def test_basic(self):
+        # From docstring example
+        original = [0, 1, 0, 0, 1, 1, 0, 0]
+        impulse_response = [2, 1]
+        recorded = [0, 2, 1, 0, 2, 3, 1, 0, 0]
+        recovered, remainder = signal.deconvolve(recorded, impulse_response)
+        assert_allclose(recovered, original)
