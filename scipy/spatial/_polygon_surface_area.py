@@ -19,7 +19,7 @@ import math
 # Distributed under the same BSD license as Scipy.
 
 def poly_area(vertices, radius=None, threshold=1e-21,
-              cython=None, discretizations=500,
+              discretizations=500,
               n_rot=50):
     # calculate the surface area of a planar or spherical polygon
     # crude pure Python implementation for handling a single

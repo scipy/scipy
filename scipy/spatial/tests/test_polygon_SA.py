@@ -9,16 +9,15 @@ from numpy.testing import (assert_equal, assert_raises,
 from scipy.spatial import split_spherical_triangle
 import pytest
 
-@pytest.mark.parametrize("cython, radius, threshold", [
-    (None, 1e-20, 1e-22),
-    (1, 1e-20, 1e-22),
-    (None, 1e-10, 1e-12),
-    (1, 1e-10, 1e-12),
-    (None, 1e10, 1e-2),
-    (1, 1e10, 1e-2),
+@pytest.mark.parametrize("radius, threshold", [
+    (1e-20, 1e-22),
+    (1e-20, 1e-22),
+    (1e-10, 1e-12),
+    (1e-10, 1e-12),
+    (1e10, 1e-2),
+    (1e10, 1e-2),
     ])
-def test_duplicate_filter(cython,
-                          radius,
+def test_duplicate_filter(radius,
                           threshold):
     # check that a ValueError is raised
     # for duplicate polygon vertices
@@ -38,26 +37,25 @@ def test_duplicate_filter(cython,
     with pytest.raises(ValueError) as excinfo:
         psa.poly_area(vertices,
                       radius,
-                      threshold,
-                      cython=cython)
+                      threshold)
         assert str(excinfo.value) == expected_str
 
 # property test random subset of floats 
 # for the radius value
-@pytest.mark.parametrize("cython, radius", [
-(None, 1e-20),
-(1, 1e-20),
-(None, 1e20),
-(1, 1e20),
-(None, 1e10),
-(1, 1e10),
-(None, 0.05),
-(1, 0.05),
+@pytest.mark.parametrize("radius", [
+(1e-20),
+(1e-20),
+(1e20),
+(1e20),
+(1e10),
+(1e10),
+(0.05),
+(0.05),
 ])
 class TestSimpleAreas(object):
     # test polygon surface area calculations
     # for known / straightforward cases
-    def test_half_hemisphere_area(self, cython, radius):
+    def test_half_hemisphere_area(self, radius):
         # the area of half a hemisphere should
         # be 1/4 the area of the entire sphere
         vertices = np.array([[-1,0,0],
@@ -67,11 +65,10 @@ class TestSimpleAreas(object):
         expected_area = np.pi * (radius ** 2)
         actual_area = psa.poly_area(vertices=vertices,
                                     radius=radius,
-                                    cython=cython,
                                     discretizations=7000)
         assert_allclose(actual_area, expected_area)
 
-    def test_half_hemisphere_area_reverse_order(self, cython, radius):
+    def test_half_hemisphere_area_reverse_order(self, radius):
         # the area of half a hemisphere should
         # be 1/4 the area of the entire sphere
         # reverse order of vertex sorting
@@ -82,11 +79,10 @@ class TestSimpleAreas(object):
         expected_area = np.pi * (radius ** 2)
         actual_area = psa.poly_area(vertices=vertices,
                                     radius=radius,
-                                    cython=cython,
                                     discretizations=9000)
         assert_allclose(actual_area, expected_area)
 
-    def test_quarter_hemisphere_area(self, cython, radius):
+    def test_quarter_hemisphere_area(self, radius):
         # the area of 1/4 of a hemisphere should
         # be 1/8 the area of the entire sphere
         vertices = np.array([[-1,0,0],
@@ -95,11 +91,10 @@ class TestSimpleAreas(object):
         expected_area = (np.pi * (radius ** 2)) / 2.
         actual_area = psa.poly_area(vertices=vertices,
                                     radius=radius,
-                                    cython=cython,
                                     discretizations=9000)
         assert_allclose(actual_area, expected_area)
 
-    def test_quarter_hemisphere_area_south(self, cython,
+    def test_quarter_hemisphere_area_south(self,
                                            radius):
         # include the South Pole as a vertex
         # because this is a potential weakness of
@@ -111,19 +106,18 @@ class TestSimpleAreas(object):
         expected_area = (np.pi * (radius ** 2)) / 2.
         actual_area = psa.poly_area(vertices=vertices,
                                     radius=radius,
-                                    cython=cython,
                                     discretizations=9000)
         assert_allclose(actual_area, expected_area)
 
-@pytest.mark.parametrize("cython, radius", [
-    (None, 0),
-    (1, 0),
-    (None, -1e-10),
-    (1, -1e-10),
-    (None, -5),
-    (1, -5),
+@pytest.mark.parametrize("radius", [
+    (0),
+    (0),
+    (-1e-10),
+    (-1e-10),
+    (-5),
+    (-5),
     ])
-def test_zero_radius_area(cython, radius):
+def test_zero_radius_area(radius):
     # an appropriate exception should be raised
     # for r <= 0.0
     vertices = np.array([[-1,0,0],
@@ -131,23 +125,22 @@ def test_zero_radius_area(cython, radius):
                          [0,0,1]]) * radius
     with pytest.raises(ValueError):
         psa.poly_area(vertices=vertices,
-                      radius=radius,
-                      cython=cython)
+                      radius=radius)
 
-@pytest.mark.parametrize("cython, base, height", [
+@pytest.mark.parametrize("base, height", [
 # stochastic failures observed with really high
 # magnitudes here (e20), so scaled back to
 # more reasonable magnitudes (e8)
-(None, 1e-8, 1e-8),
-(1, 1e-8, 1e-8),
-(None, 1e8, 1e8),
-(1, 1e8, 1e8),
-(None, 0.5, 0.5),
-(1, 0.5, 0.5),
+(1e-8, 1e-8),
+(1e-8, 1e-8),
+(1e8, 1e8),
+(1e8, 1e8),
+(0.5, 0.5),
+(0.5, 0.5),
 ])
 class TestSimplePlanarTri(object):
 
-    def test_planar_triangle_area(self, cython, base, height):
+    def test_planar_triangle_area(self, base, height):
         # simple triangle area test
         # confirm that base * height / 2 result
         # is respected for a variety of base and
@@ -156,11 +149,10 @@ class TestSimplePlanarTri(object):
                                       [base,0,0],
                                       [base / 2.,height,0]])
         expected = 0.5 * base * height
-        actual = psa.poly_area(vertices=triangle_vertices,
-                               cython=cython)
+        actual = psa.poly_area(vertices=triangle_vertices)
         assert_allclose(actual, expected)
 
-    def test_planar_triangle_area_reverse(self, cython, base, height):
+    def test_planar_triangle_area_reverse(self, base, height):
         # simple triangle area test
         # confirm that base * height / 2 result
         # is respected for a variety of base and
@@ -170,17 +162,16 @@ class TestSimplePlanarTri(object):
                                       [base,0,0],
                                       [0,0,0]])
         expected = 0.5 * base * height
-        actual = psa.poly_area(vertices=triangle_vertices,
-                               cython=cython)
+        actual = psa.poly_area(vertices=triangle_vertices)
         assert_allclose(actual, expected)
 
-@pytest.mark.parametrize("cython, radius", [
-(None, 1e-20),
-(1, 1e-20),
-(None, 1e20),
-(1, 1e20),
-(None, 0.5),
-(1, 0.5),
+@pytest.mark.parametrize("radius", [
+(1e-20),
+(1e-20),
+(1e20),
+(1e20),
+(0.5),
+(0.5),
 ])
 class TestRadianAreas(object):
     # compare spherical polygon surface areas
@@ -197,7 +188,7 @@ class TestRadianAreas(object):
         area = (sum_radian_angles - (n_vertices - 2) * np.pi) * (radius ** 2)
         return area
 
-    def test_double_octant_area_both_orders(self, cython, radius):
+    def test_double_octant_area_both_orders(self, radius):
         # the octant of a sphere (1/8 of total area;
         # 1/4 of a hemisphere) is known to have 3
         # right angles
@@ -221,28 +212,26 @@ class TestRadianAreas(object):
         # check cw and ccw vertex sorting
         actual_area = psa.poly_area(vertices=sample_vertices,
                                     radius=radius,
-                                    cython=cython,
                                     discretizations=7000)
         actual_area_reverse = psa.poly_area(vertices=sample_vertices[::-1],
                                     radius=radius,
-                                    cython=cython,
                                     discretizations=7000)
         assert_allclose(actual_area, expected_area)
         assert_allclose(actual_area_reverse, expected_area)
 
-@pytest.mark.parametrize("cython, radius", [
-(None, 1e-20),
-(1, 1e-20),
-(None, 1e20),
-(1, 1e20),
-(None, 0.5),
-(1, 0.5),
+@pytest.mark.parametrize("radius", [
+(1e-20),
+(1e-20),
+(1e20),
+(1e20),
+(0.5),
+(0.5),
 ])
 class TestConvolutedAreas(object):
     # test more convoluted / tricky shapes
     # as input for surface area calculations
 
-    def test_spherical_three_sixteen(self, cython, radius):
+    def test_spherical_three_sixteen(self, radius):
         # a 5 vertex spherical polygon consisting of
         # an octant (1/8 total sphere area) and
         # half an octant (1/16 total sphere area)
@@ -255,22 +244,19 @@ class TestConvolutedAreas(object):
         # check cw and ccw vertex sorting
         actual_area = psa.poly_area(vertices=sample_vertices,
                                     radius=radius,
-                                    cython=cython,
                                     discretizations=9000)
         actual_area_reverse = psa.poly_area(vertices=sample_vertices[::-1],
                                     radius=radius,
-                                    cython=cython,
                                     discretizations=9000)
         assert_allclose(actual_area, expected_area)
         assert_allclose(actual_area_reverse, expected_area)
 
-@pytest.mark.parametrize("cython", [None, 1])
 class TestSplittingTriangles(object):
     # tests that leverage the splitting of
     # spherical triangles into 3 equal
     # area subtriangles
 
-    def test_subtriangles_simple(self, cython):
+    def test_subtriangles_simple(self):
         # start off with a spherical
         # triangle that covers 1/4
         # of a hemisphere and split into
@@ -291,7 +277,6 @@ class TestSplittingTriangles(object):
         # (before splitting into 3 subtriangles)
         original_tri_area = psa.poly_area(vertices=vertices,
                                     radius=radius,
-                                    cython=cython,
                                     discretizations=9000)
 
         # find the central point D that splits the
@@ -318,7 +303,6 @@ class TestSplittingTriangles(object):
                                      vertices_subtriangle_3]:
             actual_subtriangle_area = psa.poly_area(subtriangle_vertices,
                                                       1.0,
-                                                      cython=cython,
                                                       discretizations=7000)
             assert_allclose(actual_subtriangle_area, expected_sub_area)
 
@@ -334,8 +318,7 @@ class TestSplittingTriangles(object):
     ])
     def test_subtriangles_iterative(self,
                                     radius,
-                                    iterations,
-                                    cython):
+                                    iterations):
         # iteratively subdivide a simple
         # initial spherical triangle into 3 equal
         # area parts & verify expected
@@ -346,7 +329,6 @@ class TestSplittingTriangles(object):
 
         original_tri_area = psa.poly_area(vertices=vertices,
                                     radius=radius,
-                                    cython=cython,
                                     discretizations=12000)
         new_tri_area = original_tri_area
 
@@ -360,13 +342,11 @@ class TestSplittingTriangles(object):
             vertices = new_vertices
             new_tri_area = psa.poly_area(vertices=vertices,
                                         radius=radius,
-                                        cython=cython,
                                         discretizations=9000)
 
         expected_sub_area = original_tri_area / (3 ** iterations)
         actual_subtriangle_area = psa.poly_area(vertices=new_vertices,
                                                 radius=radius,
-                                                cython=cython,
                                                 discretizations=9000)
         assert_allclose(actual_subtriangle_area,
                         expected_sub_area)
@@ -381,8 +361,7 @@ class TestSplittingTriangles(object):
     ])
     def test_convoluted_polygons(self,
                                  radius,
-                                 iterations,
-                                 cython):
+                                 iterations):
         # use spherical triangle 3-way splitting
         # to generate convoluted multi-vertex
         # spherical polygons
@@ -392,7 +371,6 @@ class TestSplittingTriangles(object):
 
         original_area = psa.poly_area(vertices=vertices,
                                       radius=radius,
-                                      cython=cython,
                                       discretizations=12000)
 
         # build up convoluted spherical polygons by
@@ -430,19 +408,16 @@ class TestSplittingTriangles(object):
 
             new_tri_area = psa.poly_area(vertices=new_subtri,
                                         radius=radius,
-                                        cython=cython,
                                         discretizations=92000)
 
         actual_polygon_area = psa.poly_area(vertices=vertices,
                                             radius=radius,
-                                            cython=cython,
                                             discretizations=92000)
 
         assert_allclose(actual_polygon_area,
                         expected_area)
 
-@pytest.mark.parametrize("cython", [None, 1])
-def test_hemisphere_handling(cython):
+def test_hemisphere_handling():
     # a spherical polygon that encompasses
     # exactly one hemisphere can present
     # unique challenges (i.e., ambiguity
@@ -458,7 +433,6 @@ def test_hemisphere_handling(cython):
     expected_SA = 2 * np.pi
     actual_SA = psa.poly_area(vertices=equatorial_vertices,
                               radius=1,
-                              cython=cython,
                               discretizations=7000)
     assert actual_SA == expected_SA
 
@@ -480,13 +454,12 @@ def test_antipode_ambiguity():
                       radius=1)
         assert str(excinfo.value) == expected_str
 
-@pytest.mark.parametrize("cython, radius", [
-    (None, None),
-    (1, None),
-    (None, 1.1,),
-    (1, 1.1),
+@pytest.mark.parametrize("radius", [
+    (None),
+    (1.1,),
+    (11.191),
     ])
-def test_vertex_min(cython, radius):
+def test_vertex_min(radius):
     # verify that poly_area requires at least
     # three vertices, in both planar and
     # spherical contexts
@@ -496,12 +469,10 @@ def test_vertex_min(cython, radius):
     expected_str = "An input polygon must have at least 3 vertices."
     with pytest.raises(ValueError) as excinfo:
         psa.poly_area(vertices=vertices,
-                      radius=radius,
-                      cython=cython)
+                      radius=radius)
         assert str(excinfo.value) == expected_str
 
-@pytest.mark.parametrize("cython", [None, 1])
-def test_functional_sph_Vor(cython):
+def test_functional_sph_Vor():
     # a functional test that verifies
     # that the sum of all spherical
     # polygon surface areas from
@@ -534,7 +505,6 @@ def test_functional_sph_Vor(cython):
         polygon = sv.vertices[region]
         polygon_area = psa.poly_area(vertices=polygon,
                                      radius=1,
-                                     cython=cython,
                                      discretizations=9000)
         area_sum += polygon_area
 
