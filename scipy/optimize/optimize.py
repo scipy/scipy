@@ -880,7 +880,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
         1 : Maximum number of iterations exceeded.
         2 : Gradient and/or function calls not changing.
     allvecs  :  list
-        `OptimizeResult` at each iteration.  Only returned if retall is True.
+        The value of xopt at each iteration.  Only returned if retall is True.
 
     See also
     --------
