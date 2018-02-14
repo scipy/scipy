@@ -768,6 +768,9 @@ def convolve(in1, in2, mode='full', method='auto'):
 
     if volume.ndim == kernel.ndim == 0:
         return volume * kernel
+    elif volume.ndim != kernel.ndim:
+        raise ValueError("volume and kernel should have the same "
+                         "dimensionality")
 
     if _inputs_swap_needed(mode, volume.shape, kernel.shape):
         # Convolution is commutative; order doesn't have any effect on output
