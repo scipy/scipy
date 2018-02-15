@@ -3761,7 +3761,7 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate'):
     a : array_like
         sample observation
     popmean : float or array_like
-        expected value in null hypothesis, if array_like than it must have the
+        expected value in null hypothesis. If array_like, then it must have the
         same shape as `a` excluding the axis dimension
     axis : int or None, optional
         Axis along which to compute test. If None, compute over the whole
