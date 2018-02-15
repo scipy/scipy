@@ -412,7 +412,7 @@ def peak_widths(x, peaks, rel_height=0.5, **kwargs):
         Indices of peaks in `x`.
     rel_height : float, optional
         Chooses the relative height at which the peak width is measured as a
-        percentage of its prominence. 1. calculates the width of the peak at its
+        percentage of its prominence. 1.0 calculates the width of the peak at its
         lowest contour line while 0.5 evaluates at half the prominence height.
         Must be a number greater 0. See notes for further explanation.
     prominences : ndarray, optional
@@ -420,7 +420,7 @@ def peak_widths(x, peaks, rel_height=0.5, **kwargs):
     left_bases, right_bases : ndarray, optional
         The peaks' bases as indices in `x` to the left and right of each peak.
     wlen : int, optional
-        A window length in samples (see `scipy.signal.peak_prominences`). This
+        A window length in samples (see `peak_prominences`). This
         argument is only used if the above three parameters aren't given in
         which case they are calculated using `wlen`.
 
@@ -452,9 +452,9 @@ def peak_widths(x, peaks, rel_height=0.5, **kwargs):
     * Draw a horizontal line at the evaluation height to both sides, starting at
       the peak's current vertical position until the lines either intersect a
       slope, the signal border or cross the vertical position of the peak's
-      base (see `scipy.signal.peak_prominences` for an definition). For the first
-      case, intersection with the signal, the true intersection point is
-      estimated with linear interpolation.
+      base (see `peak_prominences` for an definition). For the first case,
+      intersection with the signal, the true intersection point is estimated with
+      linear interpolation.
     * Calculate the width as the horizontal distance between the intersection
       points on both sides.
 
@@ -470,16 +470,16 @@ def peak_widths(x, peaks, rel_height=0.5, **kwargs):
     Prepare a test signal with growing peak widths
 
     >>> from scipy.signal import chirp, find_peaks, peak_widths
-    >>> x = np.arange(0, 500)
-    >>> x = abs(chirp(x, 1e-4, x.max(), 1.1e-2)) + 2 * x / x.max()
+    >>> x = np.linspace(0, 500, 500)
+    >>> x = abs(chirp(x, 1e-4, x.max(), 1.1e-2)) + 2.0 * x / x.max()
 
-    Find all peaks and calculate their widths at half the prominence height
+    Find all peaks and calculate their widths at the relative height of 0.5
 
     >>> peaks, _ = find_peaks(x)
-    >>> widths, heights, lpos, rpos = peak_widths(x, peaks)
+    >>> widths, heights, lpos, rpos = peak_widths(x, peaks, rel_height=0.5)
     >>> widths
-    array([ 77.858817  ,  61.89410638,  45.78585182,  37.96839594,
-            33.15842405,  29.92968807])
+    array([77.7462348 , 62.19574776, 45.57709222, 37.902356  , 33.33210357,
+           29.81097122])
 
     Plot signal, peaks and contour lines at which the widths where calculated
 
@@ -567,7 +567,7 @@ def peak_widths(x, peaks, rel_height=0.5, **kwargs):
 
 def _unpack_filter_args(interval, x, peaks):
     """
-    Parse filter arguments for `scipy.signal.find_peaks`.
+    Parse filter arguments for `find_peaks`.
 
     Parameters
     ----------
@@ -808,12 +808,11 @@ def find_peaks(x, height=None, threshold=None, distance=None,
     wlen : number, optional
         Used for calculation of the peaks prominences thus it is only used if
         one of the arguments `prominence` or `width` is given. See argument
-        `wlen` in `scipy.signal.peak_prominences` for a full description of its
-        effects.
+        `wlen` in `peak_prominences` for a full description of its effects.
     rel_height : float, optional
         Used for calculation of the peaks width thus it is only used if `width`
-        is given. See argument  `rel_height` in `scipy.signal.peak_widths` for a
-        full description of its effects.
+        is given. See argument  `rel_height` in `peak_widths` for a full
+        description of its effects.
 
     Returns
     -------
@@ -829,11 +828,10 @@ def find_peaks(x, height=None, threshold=None, distance=None,
           'right_thresholds' contain a peaks vertical distance to its
           neighbouring samples.
         * If `prominence` is given, the keys 'prominences', 'left_bases' and
-          'right_bases' are accessible. See `scipy.signal.peak_prominences` for
-          a description of their content.
+          'right_bases' are accessible. See `peak_prominences` for a description
+          of their content.
         * If `width` is given, the keys 'wheights', 'left_ips' and 'right_ips'
-          are accessible. See `scipy.signal.peak_widths` for a description of
-          their content.
+          are accessible. See `peak_widths` for a description of their content.
 
     See Also
     --------
@@ -869,8 +867,7 @@ def find_peaks(x, height=None, threshold=None, distance=None,
       needs to be evaluated. Try to reduce the number of peaks with cheaper
       (previous) filter options first.
     * Use `wlen` to reduce the time it takes to filter by prominence or width if
-      `x` is large or has many local maxima (see
-      `scipy.signal.peak_prominences`).
+      `x` is large or has many local maxima (see `peak_prominences`).
     * For several filter options the interval borders can be specified with
       arrays matching `x` in shape which enables dynamic filter constrains.
 
