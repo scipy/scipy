@@ -29,3 +29,15 @@ cdef double solarcell_newton(tuple args):
 def bench_cython_newton(v=5.25, il=IL, args=(1e-09, 0.004, 10, 0.27456)):
     return map(solarcell_newton,
                ((v, il_,) + args for il_ in il))
+
+
+#solver
+cdef double solarcell_bisect(tuple args):
+    """test newton with array"""
+    return zeros.bisect(f_solarcell, 0, 0.7, args, 0.01, 0.01, 10)
+
+
+# cython
+def bench_cython_bisect(v=5.25, il=IL, args=(1e-09, 0.004, 10, 0.27456)):
+    return map(solarcell_bisect,
+               ((v, il_,) + args for il_ in il))
