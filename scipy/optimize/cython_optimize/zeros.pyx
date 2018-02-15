@@ -14,10 +14,9 @@ cdef double scipy_zeros_functions_func(double x, c_zeros.scipy_zeros_parameters 
     cdef c_zeros.scipy_zeros_parameters *myparams
     cdef tuple args
     cdef callback_type_tup f
-    cdef double retval
 
     myparams = params
-    args = <object > <void *> myparams.args
+    args = <tuple> myparams.args if myparams.args is not NULL else ()
     #cpython.Py_XINCREF(args)
     f = myparams.function
 
