@@ -405,6 +405,9 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
             'return_all': retall,
             'initial_simplex': initial_simplex}
 
+    if callback is not None:
+        callback = lambda x : callback(np.copy(x))
+
     res = _minimize_neldermead(func, x0, args, callback=callback, **opts)
     if full_output:
         retlist = res['x'], res['fun'], res['nit'], res['nfev'], res['status']
