@@ -496,7 +496,8 @@ class MMFile (object):
         dtype = self.DTYPES_BY_FIELD.get(field, None)
 
         has_symmetry = self.has_symmetry
-        is_integer = field == self.FIELD_INTEGER or field == self.FIELD_UNSIGNED
+        is_integer = field == self.FIELD_INTEGER 
+        is_unsigned_integer =  field == self.FIELD_UNSIGNED
         is_complex = field == self.FIELD_COMPLEX
         is_skew = symm == self.SYMMETRY_SKEW_SYMMETRIC
         is_herm = symm == self.SYMMETRY_HERMITIAN
@@ -515,6 +516,8 @@ class MMFile (object):
                 if not line or line.startswith(b'%'):
                     continue
                 if is_integer:
+                    aij = int(line)
+                if is_unsigned_integer:
                     aij = int(line)
                 elif is_complex:
                     aij = complex(*map(float, line.split()))
@@ -562,6 +565,8 @@ class MMFile (object):
                 i, j = i-1, j-1
                 if is_integer:
                     aij = int(l[2])
+                elif is_unsigned_integer:
+                    aij = int(l[2])
                 elif is_complex:
                     aij = complex(*map(float, l[2:]))
                 else:
@@ -591,6 +596,8 @@ class MMFile (object):
                 V = ones(entries, dtype='int8')
             elif is_integer:
                 V = zeros(entries, dtype='intp')
+            elif is_unsigned_integer:
+                V = zeros(entries, dtype='uint64')
             elif is_complex:
                 V = zeros(entries, dtype='complex')
             else:
@@ -609,6 +616,8 @@ class MMFile (object):
 
                 if not is_pattern:
                     if is_integer:
+                        V[entry_number] = int(l[2])
+                    elif is_unsigned_integer:
                         V[entry_number] = int(l[2])
                     elif is_complex:
                         V[entry_number] = complex(*map(float, l[2:]))
