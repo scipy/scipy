@@ -59,10 +59,7 @@ class TestMMIOArray(object):
 
     def test_64bit_unsigned_integer(self):
         a = array([[2**31, 2**32], [2**63-2, 2**63-1]], dtype=np.uint64)
-        if (np.intp(0).itemsize < 8):
-            assert_raises(OverflowError, mmwrite, self.fn, a)
-        else:
-            self.check_exact(a, (2, 2, 4, 'array', 'unsigned-integer', 'general'))
+        self.check_exact(a, (2, 2, 4, 'array', 'unsigned-integer', 'general'))
 
     def test_simple_upper_triangle_integer(self):
         self.check_exact([[0, 1], [0, 0]],
@@ -176,7 +173,7 @@ class TestMMIOSparseCSR(TestMMIOArray):
                          (2, 2, 4, 'coordinate', 'unsigned-integer', 'general'))
 
     def test_32bit_unsigned_integer(self):
-        a = scipy.sparse.csr_matrix(array([[2**31-1, 2**31+2],
+        a = scipy.sparse.csr_matrix(array([[2**31-1, 2**31-2],
                                            [2**31-3, 2**31-4]],
                                           dtype=np.uint32))
         self.check_exact(a, (2, 2, 4, 'coordinate', 'unsigned-integer', 'general'))
@@ -185,10 +182,7 @@ class TestMMIOSparseCSR(TestMMIOArray):
         a = scipy.sparse.csr_matrix(array([[2**32+1, 2**32+1],
                                            [2**63-2, 2**63-1]],
                                           dtype=np.uint64))
-        if (np.intp(0).itemsize < 8):
-            assert_raises(OverflowError, mmwrite, self.fn, a)
-        else:
-            self.check_exact(a, (2, 2, 4, 'coordinate', 'unsigned-integer', 'general'))
+        self.check_exact(a, (2, 2, 4, 'coordinate', 'unsigned-integer', 'general'))
 
     def test_simple_upper_triangle_integer(self):
         self.check_exact(scipy.sparse.csr_matrix([[0, 1], [0, 0]]),
