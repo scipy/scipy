@@ -85,7 +85,6 @@ class _data_matrix(spmatrix):
         else:
             return self
 
-
     conj.__doc__ = spmatrix.conj.__doc__
 
     def copy(self):
