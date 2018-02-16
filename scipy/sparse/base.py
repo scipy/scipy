@@ -720,7 +720,7 @@ class spmatrix(object):
 
         """
         if np.issubdtype(self.dtype, np.complexfloating):
-            return self.tocsr().conj()
+            return self.tocsr(copy=copy).conj()
         elif copy:
             return self.copy()
         else:
