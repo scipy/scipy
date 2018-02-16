@@ -517,7 +517,7 @@ class MMFile (object):
                     continue
                 if is_integer:
                     aij = int(line)
-                if is_unsigned_integer:
+                elif is_unsigned_integer:
                     aij = int(line)
                 elif is_complex:
                     aij = complex(*map(float, line.split()))
