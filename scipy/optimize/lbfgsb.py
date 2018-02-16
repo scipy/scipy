@@ -195,6 +195,9 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
             'callback': callback,
             'maxls': maxls}
 
+    if callback is not None:
+        callback, _callback = lambda x: _callback(np.copy(x)), callback
+
     res = _minimize_lbfgsb(fun, x0, args=args, jac=jac, bounds=bounds,
                            **opts)
     d = {'grad': res['jac'],

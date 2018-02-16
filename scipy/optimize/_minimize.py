@@ -435,6 +435,9 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         warn('Method %s cannot handle bounds.' % method,
              RuntimeWarning)
     # - callback
+    if callback is not None:
+        callback, _callback = lambda x: _callback(np.copy(x)), callback
+
     if (meth in ('cobyla',) and callback is not None):
         warn('Method %s does not support callback.' % method, RuntimeWarning)
     # - return_all
