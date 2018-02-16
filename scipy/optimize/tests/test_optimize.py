@@ -745,7 +745,6 @@ class TestOptimizeSimple(CheckOptimize):
 
         assert not any(x[0] is x[1] for x in itertools.combinations(results, 2))        
  
-
     @pytest.mark.parametrize('method', ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg',
                               'l-bfgs-b', 'tnc', 'cobyla', 'slsqp'])
     def test_no_increase(self, method):
