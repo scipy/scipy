@@ -88,6 +88,7 @@ setup.cfg
 # pytest cache #
 ################
 .cache/*
+.pytest_cache/*
 
 # Patches #
 ###########
