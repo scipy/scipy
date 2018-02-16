@@ -497,7 +497,7 @@ class MMFile (object):
 
         has_symmetry = self.has_symmetry
         is_integer = field == self.FIELD_INTEGER 
-        is_unsigned_integer =  field == self.FIELD_UNSIGNED
+        is_unsigned_integer = field == self.FIELD_UNSIGNED
         is_complex = field == self.FIELD_COMPLEX
         is_skew = symm == self.SYMMETRY_SKEW_SYMMETRIC
         is_herm = symm == self.SYMMETRY_HERMITIAN
