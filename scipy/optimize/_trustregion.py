@@ -218,9 +218,9 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
 
         # append the best guess, call back, increment the iteration count
         if return_all:
-            allvecs.append(x)
+            allvecs.append(np.copy(x))
         if callback is not None:
-            callback(x)
+            callback(np.copy(x))
         k += 1
 
         # check if the gradient is small enough to stop
