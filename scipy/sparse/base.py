@@ -703,16 +703,31 @@ class spmatrix(object):
         """
         return self.tocsr().transpose(axes=axes, copy=copy)
 
-    def conj(self):
+    def conj(self, copy=True):
         """Element-wise complex conjugation.
 
-        If the matrix is of non-complex data type, then this method does
-        nothing and the data is not copied.
-        """
-        return self.tocsr().conj()
+        If the matrix is of non-complex data type and `copy` is False,
+        this method does nothing and the data is not copied.
 
-    def conjugate(self):
-        return self.conj()
+        Parameters
+        ----------
+        copy : bool, optional
+            If True, the result is guaranteed to not share data with self.
+
+        Returns
+        -------
+        A : The element-wise complex conjugate.
+
+        """
+        if np.issubdtype(self.dtype, np.complexfloating):
+            return self.tocsr(copy=copy).conj(copy=False)
+        elif copy:
+            return self.copy()
+        else:
+            return self
+
+    def conjugate(self, copy=True):
+        return self.conj(copy=copy)
 
     conjugate.__doc__ = conj.__doc__
 
