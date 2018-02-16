@@ -17,7 +17,6 @@ cdef double scipy_zeros_functions_func(double x, c_zeros.scipy_zeros_parameters 
 
     myparams = params
     args = <tuple> myparams.args if myparams.args is not NULL else ()
-    #cpython.Py_XINCREF(args)
     f = myparams.function
 
     return f(x, args)  # recall callback_type takes a double and a tuple
@@ -45,8 +44,14 @@ cdef double newton(callback_type_tup func, double p0, callback_type_tup fprime, 
 
 # cythonized way to call scalar bisect
 cdef double bisect(callback_type_tup f, double xa, double xb, tuple args, double xtol, double rtol, int iter):
-    cdef c_zeros.scipy_zeros_parameters *myparams
+    cdef c_zeros.scipy_zeros_parameters myparams
     # create params struct
-    myparams.args = <void *> args
+    print('args =')
+    print(args)
+    myparams.args = <cpython.PyObject *> args
     myparams.function = f
-    return c_zeros.bisect(scipy_zeros_functions_func, xa, xb, xtol, rtol, iter, <c_zeros.default_parameters *> myparams)
+    print('f(xa, args) =')
+    print(f(xa, args))
+    print('f(xb, args) =')
+    print(f(xb, args))
+    return c_zeros.bisect(scipy_zeros_functions_func, xa, xb, xtol, rtol, iter, <c_zeros.default_parameters *> &myparams)

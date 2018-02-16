@@ -34,7 +34,7 @@ def bench_cython_newton(v=5.25, il=IL, args=(1e-09, 0.004, 10, 0.27456)):
 #solver
 cdef double solarcell_bisect(tuple args):
     """test newton with array"""
-    return zeros.bisect(f_solarcell, 0, 0.7, args, 0.01, 0.01, 10)
+    return zeros.bisect(f_solarcell, 7, 0, args, 0.001, 0.001, 10)
 
 
 # cython

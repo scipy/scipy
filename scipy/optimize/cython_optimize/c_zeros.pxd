@@ -1,14 +1,13 @@
+cimport cpython
+
 ctypedef double (*callback_type_tup)(double, tuple)
 
-cdef extern from "../zeros.c":
-    # a parameter structure that has the function and the args tuple
-    # this is a contract with the zero solver functions that can't be broken
-    ctypedef struct scipy_zeros_parameters:
-        int funcalls
-        int iterations
-        int error_num
-        callback_type_tup function
-        void *args
+ctypedef struct scipy_zeros_parameters:
+    int funcalls
+    int iterations
+    int error_num
+    callback_type_tup function
+    cpython.PyObject *args
 
 ctypedef double (*callback_type)(double, scipy_zeros_parameters*)
 
