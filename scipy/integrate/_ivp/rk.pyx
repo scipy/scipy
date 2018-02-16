@@ -167,7 +167,7 @@ cdef class RungeKutta(OdeSolver):
         return RkDenseOutput(self.t_old, self.t, self.y_old, Q)
 
 
-class RK23(RungeKutta):
+cdef class RK23(RungeKutta):
     """Explicit Runge-Kutta method of order 3(2).
 
     This uses the Bogacki-Shampine pair of formulas [1]_. The error is controlled
@@ -253,7 +253,7 @@ class RK23(RungeKutta):
                   [0, -1, 1]])
 
 
-class RK45(RungeKutta):
+cdef class RK45(RungeKutta):
     """Explicit Runge-Kutta method of order 5(4).
 
     This uses the Dormand-Prince pair of formulas [1]_. The error is controlled

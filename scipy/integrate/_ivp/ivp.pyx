@@ -3,11 +3,12 @@ import inspect
 import numpy as np
 from .bdf import BDF
 from .radau import Radau
-from .rk import RK23, RK45
 from .lsoda import LSODA
 from scipy.optimize import OptimizeResult
 from .common import EPS, OdeSolution
 from .base import OdeSolver
+
+from .rk cimport RK23, RK45
 
 
 METHODS = {'RK23': RK23,
