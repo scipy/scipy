@@ -78,11 +78,11 @@ class TestMMIOArray(object):
                          (2, 2, 4, 'array', 'integer', 'symmetric'))
 
     def test_simple_skew_symmetric_integer(self):
-        self.check_exact([[1, 2], [-2, 4]],
+        self.check_exact([[0, 2], [-2, 0]],
                          (2, 2, 4, 'array', 'integer', 'skew-symmetric'))
 
     def test_simple_skew_symmetric_float(self):
-        self.check(array([[1, 2], [-2.0, 4]], 'f'),
+        self.check(array([[0, 2], [-2.0, 0.0]], 'f'),
                    (2, 2, 4, 'array', 'real', 'skew-symmetric'))
 
     def test_simple_hermitian_complex(self):
