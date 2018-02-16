@@ -712,11 +712,11 @@ class spmatrix(object):
         Parameters
         ----------
         copy : bool, optional
-            Whether always a copy should be returned.
+            If True, the result is guaranteed to not share data with self.
 
         Returns
         -------
-        A : `self` with the data element-wise complex conjugated.
+        A : The element-wise complex conjugate.
 
         """
         if np.issubdtype(self.dtype, np.complexfloating):
