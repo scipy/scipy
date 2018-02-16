@@ -701,7 +701,7 @@ class spmatrix(object):
         np.matrix.transpose : NumPy's implementation of 'transpose'
                               for matrices
         """
-        return self.tocsr().transpose(axes=axes, copy=copy)
+        return self.tocsr(copy=copy).transpose(axes=axes, copy=False)
 
     def conj(self, copy=True):
         """Element-wise complex conjugation.
