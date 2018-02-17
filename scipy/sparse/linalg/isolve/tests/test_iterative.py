@@ -534,3 +534,36 @@ class TestGMRES(object):
         b = 1e-10 * ones(2)
         x, info = gmres(A, b, tol=1e-8, atol=0)
         assert_(np.linalg.norm(A.dot(x) - b) <= 1e-8*np.linalg.norm(b))
+
+    def test_defective_precond_breakdown(self):
+        # Breakdown due to defective preconditioner
+        M = np.eye(3)
+        M[2,2] = 0
+
+        b = np.array([0, 1, 1])
+        x = np.array([1, 0, 0])
+        A = np.diag([2, 3, 4])
+
+        x, info = gmres(A, b, x0=x, M=M, tol=1e-15, atol=0)
+
+        # Should not return nans, nor terminate with false success
+        assert_(not np.isnan(x).any())
+        if info == 0:
+            assert_(np.linalg.norm(A.dot(x) - b) <= 1e-15*np.linalg.norm(b))
+
+        # The solution should be OK outside null space of M
+        assert_allclose(M.dot(A.dot(x)), M.dot(b))
+
+    def test_defective_matrix_breakdown(self):
+        # Breakdown due to defective matrix
+        A = np.array([[0, 1, 0], [1, 0, 0], [0, 0, 0]])
+        b = np.array([1, 0, 1])
+        x, info = gmres(A, b, tol=1e-8, atol=0)
+
+        # Should not return nans, nor terminate with false success
+        assert_(not np.isnan(x).any())
+        if info == 0:
+            assert_(np.linalg.norm(A.dot(x) - b) <= 1e-8*np.linalg.norm(b))
+
+        # The solution should be OK outside null space of A
+        assert_allclose(A.dot(A.dot(x)), A.dot(b))
