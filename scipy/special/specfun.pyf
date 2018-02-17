@@ -55,7 +55,6 @@ python module specfun ! in
         ! cv0
         ! cvqm
         ! cvql
-        ! csphjy
         ! ittjyb
 
         ! ittjya
@@ -362,7 +361,6 @@ python module specfun ! in
         end subroutine cyzo
         ! klvnb
         ! rmn2so
-        ! csphik
         ! bjndd
         ! sphj
         subroutine othpl(kf,n,x,pl,dpl) ! in :specfun:specfun.f
