@@ -7,6 +7,7 @@ cdef extern from "cephes.h" nogil:
     double lbeta(double a, double b);
     double btdtr(double a, double b, double x);
     double cbrt(double x);
+    double chbevl(double x, double *array, int n);
     double chdtrc(double df, double x);
     double chdtr(double df, double x);
     double chdtri(double df, double y);
@@ -26,6 +27,7 @@ cdef extern from "cephes.h" nogil:
     int fresnl(double xxa, double *ssa, double *cca);
     double Gamma(double x);
     double lgam(double x);
+    double lgam_sgn(double x, int *sign);
     double gdtr(double a, double b, double x);
     double gdtrc(double a, double b, double x);
     double gdtri(double a, double b, double y);

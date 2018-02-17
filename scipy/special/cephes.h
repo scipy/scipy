@@ -28,9 +28,7 @@ extern double lbeta ( double a, double b );
 extern double btdtr ( double a, double b, double x );
 
 extern double cbrt ( double x );
-/*
-extern double chbevl ( double x, void *P, int n );
-*/
+extern double chbevl ( double x, double array[], int n );
 extern double chdtrc ( double df, double x );
 extern double chdtr ( double df, double x );
 extern double chdtri ( double df, double y );
@@ -70,6 +68,7 @@ extern double ldexp ( double x, int pw2 );
 extern int fresnl ( double xxa, double *ssa, double *cca );
 extern double Gamma ( double x );
 extern double lgam ( double x );
+extern double lgam_sgn( double x, int *sign );
 
 extern double gdtr ( double a, double b, double x );
 extern double gdtrc ( double a, double b, double x );
