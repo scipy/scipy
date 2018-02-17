@@ -718,7 +718,6 @@ class MMFile (object):
             stream.write(asbytes('%i %i\n' % (rows, cols)))
 
             if field in (self.FIELD_INTEGER, self.FIELD_REAL):
-				
                 if symmetry == self.SYMMETRY_GENERAL:
                     for j in range(cols):
                         for i in range(rows):
