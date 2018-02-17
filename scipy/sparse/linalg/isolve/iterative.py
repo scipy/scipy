@@ -497,12 +497,21 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, M=None, callback=
     revcom = getattr(_iterative, ltr + 'gmresrevcom')
 
     bnrm2 = np.linalg.norm(b)
+    Mb_nrm2 = np.linalg.norm(psolve(b))
     get_residual = lambda: np.linalg.norm(matvec(x) - b)
     atol = _get_atol(tol, atol, bnrm2, get_residual, 'gmres')
     if atol == 'exit':
         return postprocess(x), 0
 
-    resid = atol
+    if bnrm2 == 0:
+        return postprocess(b), 0
+
+    # Tolerance passed to GMRESREVCOM applies to the inner iteration
+    # and deals with the left-preconditioned residual.
+    ptol_max_factor = 1.0
+    ptol = Mb_nrm2 * min(ptol_max_factor, atol / bnrm2)
+    resid = np.nan
+    presid = np.nan
     ndx1 = 1
     ndx2 = -1
     # Use _aligned_zeros to work around a f2py bug in Numpy 1.9.1
@@ -517,18 +526,14 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, M=None, callback=
     resid_ready = False
     iter_num = 1
     while True:
-        olditer = iter_
-        x, iter_, resid, info, ndx1, ndx2, sclr1, sclr2, ijob = \
-           revcom(b, x, restrt, work, work2, iter_, resid, info, ndx1, ndx2, ijob)
-        # if callback is not None and iter_ > olditer:
-        #    callback(x)
+        x, iter_, presid, info, ndx1, ndx2, sclr1, sclr2, ijob = \
+           revcom(b, x, restrt, work, work2, iter_, presid, info, ndx1, ndx2, ijob, ptol)
         slice1 = slice(ndx1-1, ndx1-1+n)
         slice2 = slice(ndx2-1, ndx2-1+n)
         if (ijob == -1):  # gmres success, update last residual
             if resid_ready and callback is not None:
-                callback(resid / bnrm2)
+                callback(presid / bnrm2)
                 resid_ready = False
-
             break
         elif (ijob == 1):
             work[slice2] *= sclr2
@@ -543,7 +548,7 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, M=None, callback=
             work[slice2] *= sclr2
             work[slice2] += sclr1*matvec(work[slice1])
             if resid_ready and callback is not None:
-                callback(resid / bnrm2)
+                callback(presid / bnrm2)
                 resid_ready = False
                 iter_num = iter_num+1
 
@@ -553,16 +558,29 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, M=None, callback=
                 ftflag = False
             resid, info = _stoptest(work[slice1], atol)
 
+            # Inner loop tolerance control
+            if info or presid > ptol:
+                ptol_max_factor = min(1.0, 1.5 * ptol_max_factor)
+            else:
+                # Inner loop tolerance OK, but outer loop not.
+                ptol_max_factor = max(1e-16, 0.25 * ptol_max_factor)
+
+            if resid != 0:
+                ptol = presid * min(ptol_max_factor, atol / resid)
+            else:
+                ptol = presid * ptol_max_factor
+
         old_ijob = ijob
         ijob = 2
 
         if iter_num > maxiter:
+            info = maxiter
             break
 
     if info >= 0 and not (resid <= atol):
         # info isn't set appropriately otherwise
         info = maxiter
-
+        
     return postprocess(x), info
 
 

@@ -1,7 +1,7 @@
 *  -*- fortran -*-
       SUBROUTINE <_c>GMRESREVCOM(N, B, X, RESTRT, WORK, LDW, WORK2,
      $                  LDW2, ITER, RESID, INFO, NDX1, NDX2, SCLR1, 
-     $                  SCLR2, IJOB)
+     $                  SCLR2, IJOB, TOL)
 *
 *  -- Iterative template routine --
 *     Univ. of Tennessee and Oak Ridge National Laboratory
@@ -15,7 +15,7 @@
       IMPLICIT NONE
 *     .. Scalar Arguments ..
       INTEGER            N, RESTRT, LDW, LDW2, ITER, INFO
-      <rt=real,double precision,real,double precision>  RESID
+      <rt=real,double precision,real,double precision>  RESID, TOL
       INTEGER            NDX1, NDX2
       <_t>   SCLR1, SCLR2
       INTEGER            IJOB
@@ -68,11 +68,10 @@
 *          On input, the maximum iterations to be performed.
 *          On output, actual number of iterations performed.
 *
-*  RESID   (input/output) DOUBLE PRECISION
-*          On input, the allowable error tolerance.
-*          On output, the norm of the residual vector if solution
-*          approximated to tolerance, otherwise reset to input
-*          tolerance.
+*  RESID   (output) DOUBLE PRECISION
+*          On output, the norm of the preconditioned residual vector
+*          if solution approximated to tolerance, otherwise reset
+*          to input tolerance.
 *
 *  INFO    (output) INTEGER
 *          =  0:  successful exit
@@ -94,6 +93,9 @@
 *  IJOB    (input/output) INTEGER. 
 *          Used to communicate job code between the two levels.
 *
+*  TOL     (input) DOUBLE PRECISION. 
+*          On input, the allowable absolute error tolerance
+*          for the preconditioned residual.
 *  ============================================================
 *
 *     .. Parameters ..
@@ -108,7 +110,7 @@
       <_t>  <xdot=wsdot,ddot,wcdotc,wzdotc>
       <_t>  toz
       <_t>    TMPVAL
-      <rt>    RNORM, TOL,
+      <rt>    RNORM,
      $     <rc=ws,d,wsc,dz>NRM2,
      $     <rc>APPROXRES
 
@@ -148,7 +150,6 @@
 *
       INFO = 0
       MAXIT = ITER
-      TOL   = RESID
 *
 *     Alias workspace columns.
 *
@@ -241,8 +242,6 @@
  2    CONTINUE
 *****************
 *
-      IF ( <rc>NRM2( N, WORK(1,R), 1 ).LE.TOL ) GO TO 200
-*
       ITER = 0
    10 CONTINUE
 *
@@ -316,15 +315,13 @@
      $         CALL <_c>APPLYGIVENS(I, WORK2( 1,I+H-1 ), WORK2( 1,GIV ),
      $                           LDW2 )
 *
-*           Approxiyate residual norm. Check tolerance. If okay, compute
-*           final approximation vector X and quit.
+*           Approximate residual norm. Check tolerance. If okay, break out
+*           from the inner loop.
 *
             RESID = <rc>APPROXRES( I, WORK2( 1,I+H-1 ), WORK( 1,S ),
      $                         WORK2( 1,GIV ), LDW2 )
             IF ( RESID.LE.TOL ) THEN
-               CALL <_c>UPDATE(I, N, X, WORK2( 1,H ), LDW2, 
-     $                     WORK(1,Y), WORK(1,S), WORK( 1,V ), LDW)
-               GO TO 200
+               GO TO 51
             ENDIF
             i = i + 1
             go to 49
@@ -333,7 +330,7 @@
 *
 *        Compute current solution vector X.
 *
-         CALL <_c>UPDATE(RESTRT, N, X, WORK2( 1,H ), LDW2,
+   51    CALL <_c>UPDATE(I, N, X, WORK2( 1,H ), LDW2,
      $               WORK(1,Y), WORK( 1,S ), WORK( 1,V ), LDW )
 *
 *        Compute residual vector R, find norm,

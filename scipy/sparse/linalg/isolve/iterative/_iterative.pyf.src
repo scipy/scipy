@@ -83,7 +83,7 @@ python module _iterative ! in
             <_t>, intent(out) :: sclr2
             integer, intent(in, out) :: ijob
         end subroutine <_c>qmrrevcom
-        subroutine <_c>gmresrevcom(n,b,x,restrt,work,ldw,work2,ldw2,iter,resid,info,ndx1,ndx2,sclr1,sclr2,ijob) ! in :iterative:GMRESREVCOM.f
+        subroutine <_c>gmresrevcom(n,b,x,restrt,work,ldw,work2,ldw2,iter,resid,info,ndx1,ndx2,sclr1,sclr2,ijob,tol) ! in :iterative:GMRESREVCOM.f
             integer, intent(hide), depend(b) :: n=len(b)
             <_t> dimension(n) :: b
             <_t> dimension(n), intent(in,out) :: x
@@ -100,6 +100,7 @@ python module _iterative ! in
             <_t> intent(out) :: sclr1
             <_t> intent(out) :: sclr2
             integer intent(in, out) :: ijob
+            <rt>, intent(in) :: tol
         end subroutine <_c>gmresrevcom
     end interface 
 end python module _iterative

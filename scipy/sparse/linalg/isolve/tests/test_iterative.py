@@ -8,6 +8,7 @@ import numpy as np
 
 from numpy.testing import (assert_equal, assert_array_equal,
      assert_, assert_allclose)
+import pytest
 from pytest import raises as assert_raises
 from scipy._lib._numpy_compat import suppress_warnings
 
@@ -343,10 +344,10 @@ def _check_reentrancy(solver, is_reentrant):
         assert_allclose(y, [1, 1, 1])
 
 
-def test_atol():
+@pytest.mark.parametrize("solver", [cg, cgs, bicg, bicgstab, gmres, qmr, lgmres, gcrotmk])
+def test_atol(solver):
     # TODO: minres. It didn't historically use absolute tolerances, so
     # fixing it is less urgent.
-    solvers = [cg, cgs, bicg, bicgstab, gmres, qmr, lgmres, gcrotmk]
 
     np.random.seed(1234)
     A = np.random.rand(10, 10)
@@ -356,11 +357,24 @@ def test_atol():
 
     tols = np.r_[0, np.logspace(np.log10(1e-10), np.log10(1e2), 7), np.inf]
 
-    for solver, tol, atol in itertools.product(solvers, tols, tols):
+    # Check effect of badly scaled preconditioners
+    M0 = np.random.randn(10, 10)
+    M0 = M0.dot(M0.T)
+    Ms = [None, 1e-6 * M0, 1e6 * M0]
+
+    for M, tol, atol in itertools.product(Ms, tols, tols):
         if tol == 0 and atol == 0:
             continue
 
-        x, info = solver(A, b, tol=tol, atol=atol)
+        if solver is qmr:
+            if M is not None:
+                M = aslinearoperator(M)
+                M2 = aslinearoperator(np.eye(10))
+            else:
+                M2 = None
+            x, info = solver(A, b, M1=M, M2=M2, tol=tol, atol=atol)
+        else:
+            x, info = solver(A, b, M=M, tol=tol, atol=atol)
         assert_equal(info, 0)
 
         residual = A.dot(x) - b
@@ -369,18 +383,16 @@ def test_atol():
         assert_(err <= max(atol, atol2))
 
 
-def test_zero_rhs():
-    solvers = [cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres, gcrotmk]
-
+@pytest.mark.parametrize("solver", [cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres, gcrotmk])
+def test_zero_rhs(solver):
     np.random.seed(1234)
     A = np.random.rand(10, 10)
     A = A.dot(A.T) + 10 * np.eye(10)
 
     b = np.zeros(10)
-
     tols = np.r_[np.logspace(np.log10(1e-10), np.log10(1e2), 7)]
 
-    for solver, tol in itertools.product(solvers, tols):
+    for tol in tols:
         with suppress_warnings() as sup:
             sup.filter(DeprecationWarning, ".*called without specifying.*")
 
@@ -391,11 +403,11 @@ def test_zero_rhs():
             if solver is not minres:
                 x, info = solver(A, b, tol=tol, atol=tol)
                 assert_equal(info, 0)
-                assert_allclose(x, 0, atol=1e-15)
+                assert_allclose(x, 0, atol=1e-300)
 
                 x, info = solver(A, b, tol=tol, atol=0)
                 assert_equal(info, 0)
-                assert_allclose(x, 0, atol=1e-15)
+                assert_allclose(x, 0, atol=1e-300)
 
 
 #------------------------------------------------------------------------------
@@ -460,8 +472,20 @@ class TestGMRES(object):
         with suppress_warnings() as sup:
             sup.filter(DeprecationWarning, ".*called without specifying.*")
             x,flag = gmres(A, b, x0=zeros(A.shape[0]), tol=1e-16, maxiter=maxiter, callback=callback)
-        diff = np.amax(np.abs((rvec - array([1.0, 0.81649658092772603]))))
-        assert_(diff < 1e-5)
+
+        # Expected output from Scipy 1.0.0
+        assert_allclose(rvec, array([1.0, 0.81649658092772603]), rtol=1e-10)
+
+        # Test preconditioned callback
+        M = 1e-3 * np.eye(A.shape[0])
+        rvec = zeros(maxiter+1)
+        rvec[0] = 1.0
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, ".*called without specifying.*")
+            x, flag = gmres(A, b, M=M, tol=1e-16, maxiter=maxiter, callback=callback)
+
+        # Expected output from Scipy 1.0.0 (callback has preconditioned residual!)
+        assert_allclose(rvec, array([1.0, 1e-3 * 0.81649658092772603]), rtol=1e-10)
 
     def test_abi(self):
         # Check we don't segfault on gmres with complex argument
