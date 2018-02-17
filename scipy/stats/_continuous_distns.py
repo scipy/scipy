@@ -1,4 +1,4 @@
-#
+﻿#
 # Author:  Travis Oliphant  2002-2011 with contributions from
 #          SciPy Developers 2004-2011
 #
@@ -3123,6 +3123,74 @@ class invgauss_gen(rv_continuous):
     def _stats(self, mu):
         return mu, mu**3.0, 3*np.sqrt(mu), 15*mu
 invgauss = invgauss_gen(a=0.0, name='invgauss')
+
+
+class norminvgauss_gen(rv_continuous):
+    r"""A Normal Inverse Gaussian continuous random variable.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability density function for `norminvgauss` is:
+
+    .. math::
+
+        f(x; a, b) = (a \exp(\sqrt{a^2 - b^2} + b x)) /
+        (\pi \sqrt{1 + x^2}} \, K_1(a * \sqrt{1 + x^2}))
+
+    where `x` is a real number, the parameter `a` is the tail heaviness
+    and `b` is the asymmetry parameter satisfying `a > 0` and `abs(b) <= a`.
+    `K_1` is the modified Bessel function of second kind (`scipy.special.k1`).
+
+    %(after_notes)s
+
+    A normal inverse Gaussian random variable with parameters `a` and `b` can
+    be expressed  as `X = b * V + sqrt(V) * X` where `X` is `norm(0,1)`
+    and `V` is `invgauss(mu=1/sqrt(a**2 - b**2))`. This representation is used
+    to generate random variates.
+
+    References
+    ----------
+    O. Barndorff-Nielsen, "Hyperbolic Distributions and Distributions on
+    Hyperbolae", Scandinavian Journal of Statistics, Vol. 5(3),
+    pp. 151-157, 1978.
+
+    O. Barndorff-Nielsen, "Normal Inverse Gaussian Distributions and Stochastic
+    Volatility Modelling", Scandinavian Journal of Statistics, Vol. 24,
+    pp. 1–13, 1997.
+
+    %(example)s
+
+    """
+    _support_mask = rv_continuous._open_support_mask
+
+    def _argcheck(self, a, b):
+        return (a > 0) & (np.absolute(b) < a)
+
+    def _pdf(self, x, a, b):
+        gamma = np.sqrt(a**2 - b**2)
+        fac1 = a / np.pi * np.exp(gamma)
+        sq = np.sqrt(1 + x**2)
+        return fac1 * sc.k1e(a * sq) * np.exp(b*x - a*sq) / sq
+
+    def _rvs(self, a, b):
+        # note: X = b * V + sqrt(V) * X is norminvgaus(a,b) if X is standard
+        # normal and V is invgauss(mu=1/sqrt(a**2 - b**2))
+        gamma = np.sqrt(a**2 - b**2)
+        sz, rndm = self._size, self._random_state
+        ig = invgauss.rvs(mu=1/gamma, size=sz, random_state=rndm)
+        return b * ig + np.sqrt(ig) * norm.rvs(size=sz, random_state=rndm)
+
+    def _stats(self, a, b):
+        gamma = np.sqrt(a**2 - b**2)
+        mean = b / gamma
+        variance = a**2 / gamma**3
+        skewness = 3.0 * b / (a * np.sqrt(gamma))
+        kurtosis = 3.0 * (1 + 4 * b**2 / a**2) / gamma
+        return mean, variance, skewness, kurtosis
+
+norminvgauss = norminvgauss_gen(name="norminvgauss")
 
 
 class invweibull_gen(rv_continuous):

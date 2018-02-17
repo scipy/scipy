@@ -96,6 +96,7 @@ Continuous distributions
    ncf               -- Non-central F
    nct               -- Non-central Student's T
    norm              -- Normal (Gaussian)
+   norminvgauss      -- Normal Inverse Gaussian
    pareto            -- Pareto
    pearson3          -- Pearson type III
    powerlaw          -- Power-function
