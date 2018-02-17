@@ -935,28 +935,36 @@ class LuInv(LinearOperator):
         return lu_solve(self.M_lu, x)
 
 
+def gmres_loose(A, b, tol):
+    """
+    gmres with looser termination condition.
+    """
+    b = np.asarray(b)
+    min_tol = 1000 * np.sqrt(b.size) * np.finfo(b.dtype).eps
+    return gmres(A, b, tol=max(tol, min_tol), atol=0)
+
+
 class IterInv(LinearOperator):
     """
     IterInv:
        helper class to repeatedly solve M*x=b
        using an iterative method.
     """
-    def __init__(self, M, ifunc=None, tol=0):
-        if ifunc is None:
-            ifunc = lambda A, b, tol: gmres(A, b, tol=tol, atol=0)
-        if tol <= 0:
-            # when tol=0, ARPACK uses machine tolerance as calculated
-            # by LAPACK's _LAMCH function.  We should match this
-            tol = 2 * np.finfo(M.dtype).eps
+    def __init__(self, M, ifunc=gmres_loose, tol=0):
         self.M = M
-        self.ifunc = ifunc
-        self.tol = tol
         if hasattr(M, 'dtype'):
             self.dtype = M.dtype
         else:
             x = np.zeros(M.shape[1])
             self.dtype = (M * x).dtype
         self.shape = M.shape
+
+        if tol <= 0:
+            # when tol=0, ARPACK uses machine tolerance as calculated
+            # by LAPACK's _LAMCH function.  We should match this
+            tol = 2 * np.finfo(self.dtype).eps
+        self.ifunc = ifunc
+        self.tol = tol
 
     def _matvec(self, x):
         b, info = self.ifunc(self.M, x, tol=self.tol)
@@ -973,18 +981,10 @@ class IterOpInv(LinearOperator):
        helper class to repeatedly solve [A-sigma*M]*x = b
        using an iterative method
     """
-    def __init__(self, A, M, sigma, ifunc=None, tol=0):
-        if ifunc is None:
-            ifunc = lambda A, b, tol: gmres(A, b, tol=tol, atol=0)
-        if tol <= 0:
-            # when tol=0, ARPACK uses machine tolerance as calculated
-            # by LAPACK's _LAMCH function.  We should match this
-            tol = 2 * np.finfo(A.dtype).eps
+    def __init__(self, A, M, sigma, ifunc=gmres_loose, tol=0):
         self.A = A
         self.M = M
         self.sigma = sigma
-        self.ifunc = ifunc
-        self.tol = tol
 
         def mult_func(x):
             return A.matvec(x) - sigma * M.matvec(x)
@@ -1004,6 +1004,13 @@ class IterOpInv(LinearOperator):
                                      mult_func,
                                      dtype=dtype)
         self.shape = A.shape
+
+        if tol <= 0:
+            # when tol=0, ARPACK uses machine tolerance as calculated
+            # by LAPACK's _LAMCH function.  We should match this
+            tol = 2 * np.finfo(self.OP.dtype).eps
+        self.ifunc = ifunc
+        self.tol = tol
 
     def _matvec(self, x):
         b, info = self.ifunc(self.OP, x, tol=self.tol)
