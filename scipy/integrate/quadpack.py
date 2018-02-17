@@ -560,6 +560,21 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
     romb : integrator for sampled data
     scipy.special : for coefficients and roots of orthogonal polynomials
 
+    Examples
+    --------
+
+    Calculate :math: double integration exp(-x*y)/y**5
+    Limits from 0 to inf
+
+    >>> from scipy import integrate
+    >>> from numpy as np
+    >>> def f(y,x):
+            return np.exp(-y*x)/y**5
+    >>> integrate.dblquad(f,0, np.inf,lambda x: 1, lambda x: np.inf)
+        (0.2000000000189363, 1.3682975855986131e-08)
+
+
+
     """
     def temp_ranges(*args):
         return [gfun(args[0]), hfun(args[0])]
