@@ -380,6 +380,12 @@ def test_atol(solver):
         residual = A.dot(x) - b
         err = np.linalg.norm(residual)
         atol2 = tol * b_norm
+
+        # XXX: cg and cgs use approximate residual for termination
+        if solver in (cg, cgs):
+            atol *= 2
+            atol2 *= 2
+
         assert_(err <= max(atol, atol2))
 
 
