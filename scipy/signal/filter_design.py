@@ -308,8 +308,8 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=None):
     Returns
     -------
     w : ndarray
-        The normalized frequencies at which `h` was computed, in
-        radians/sample.
+        The frequencies at which `h` was computed.  If `fs` is specified,
+        these are in the same units.  Otherwise they are in radians/sample.
     h : ndarray
         The frequency response, as complex numbers.
 
@@ -451,6 +451,10 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=None):
         zm1 = exp(-1j * w)
         h = (npp_polyval(zm1, b, tensor=False) /
              npp_polyval(zm1, a, tensor=False))
+
+    if fs is not None:
+        w = w*fs/(2*pi)
+
     if plot is not None:
         plot(w, h)
 
@@ -495,8 +499,8 @@ def freqz_zpk(z, p, k, worN=512, whole=False, fs=None):
     Returns
     -------
     w : ndarray
-        The normalized frequencies at which `h` was computed, in
-        radians/sample.
+        The frequencies at which `h` was computed.  If `fs` is specified,
+        these are in the same units.  Otherwise they are in radians/sample.
     h : ndarray
         The frequency response.
 
@@ -552,6 +556,9 @@ def freqz_zpk(z, p, k, worN=512, whole=False, fs=None):
     zm1 = exp(1j * w)
     h = k * polyvalfromroots(zm1, z) / polyvalfromroots(zm1, p)
 
+    if fs is not None:
+        w = w*fs/(2*pi)
+
     return w, h
 
 
@@ -589,8 +596,9 @@ def group_delay(system, w=512, whole=False, fs=None):
     Returns
     -------
     w : ndarray
-        The normalized frequencies at which the group delay was computed,
-        in radians/sample.
+        The frequencies at which group delay was computed.  If `fs` is
+        specified, these are in the same units.  Otherwise they are in
+        radians/sample.
     gd : ndarray
         The group delay.
 
@@ -657,6 +665,10 @@ def group_delay(system, w=512, whole=False, fs=None):
 
     gd = np.zeros_like(w)
     gd[~singular] = np.real(num[~singular] / den[~singular]) - a.size + 1
+
+    if fs is not None:
+        w = w*fs/(2*pi)
+
     return w, gd
 
 
@@ -716,8 +728,8 @@ def sosfreqz(sos, worN=None, whole=False, fs=None):
     Returns
     -------
     w : ndarray
-        The normalized frequencies at which `h` was computed, in
-        radians/sample.
+        The frequencies at which `h` was computed.  If `fs` is specified,
+        these are in the same units.  Otherwise they are in radians/sample.
     h : ndarray
         The frequency response, as complex numbers.
 
@@ -3146,7 +3158,8 @@ def buttord(wp, ws, gpass, gstop, analog=False, fs=None):
         The lowest order for a Butterworth filter which meets specs.
     wn : ndarray or float
         The Butterworth natural frequency (i.e. the "3dB frequency").  Should
-        be used with `butter` to give filter results.
+        be used with `butter` to give filter results. If `fs` is specified,
+        this is in the same units, and `fs` must also be passed to `butter`.
 
     See Also
     --------
@@ -3267,6 +3280,10 @@ def buttord(wp, ws, gpass, gstop, analog=False, fs=None):
 
     if len(wn) == 1:
         wn = wn[0]
+
+    if fs is not None:
+        wn = wn*fs/2
+
     return ord, wn
 
 
@@ -3311,7 +3328,8 @@ def cheb1ord(wp, ws, gpass, gstop, analog=False, fs=None):
         The lowest order for a Chebyshev type I filter that meets specs.
     wn : ndarray or float
         The Chebyshev natural frequency (the "3dB frequency") for use with
-        `cheby1` to give filter results.
+        `cheby1` to give filter results. If `fs` is specified,
+        this is in the same units, and `fs` must also be passed to `cheby1`.
 
     See Also
     --------
@@ -3400,6 +3418,10 @@ def cheb1ord(wp, ws, gpass, gstop, analog=False, fs=None):
 
     if len(wn) == 1:
         wn = wn[0]
+
+    if fs is not None:
+        wn = wn*fs/2
+
     return ord, wn
 
 
@@ -3444,7 +3466,8 @@ def cheb2ord(wp, ws, gpass, gstop, analog=False, fs=None):
         The lowest order for a Chebyshev type II filter that meets specs.
     wn : ndarray or float
         The Chebyshev natural frequency (the "3dB frequency") for use with
-        `cheby2` to give filter results.
+        `cheby2` to give filter results. If `fs` is specified,
+        this is in the same units, and `fs` must also be passed to `cheby2`.
 
     See Also
     --------
@@ -3557,6 +3580,10 @@ def cheb2ord(wp, ws, gpass, gstop, analog=False, fs=None):
 
     if len(wn) == 1:
         wn = wn[0]
+
+    if fs is not None:
+        wn = wn*fs/2
+
     return ord, wn
 
 
@@ -3601,7 +3628,8 @@ def ellipord(wp, ws, gpass, gstop, analog=False, fs=None):
         The lowest order for an Elliptic (Cauer) filter that meets specs.
     wn : ndarray or float
         The Chebyshev natural frequency (the "3dB frequency") for use with
-        `ellip` to give filter results.
+        `ellip` to give filter results. If `fs` is specified,
+        this is in the same units, and `fs` must also be passed to `ellip`.
 
     See Also
     --------
@@ -3691,6 +3719,10 @@ def ellipord(wp, ws, gpass, gstop, analog=False, fs=None):
 
     if len(wn) == 1:
         wn = wn[0]
+
+    if fs is not None:
+        wn = wn*fs/2
+
     return ord, wn
 
 
