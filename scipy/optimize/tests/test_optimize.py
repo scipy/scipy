@@ -731,7 +731,6 @@ class TestOptimizeSimple(CheckOptimize):
                              'fmin_bfgs', 'fmin_cg', 'fmin_ncg','fmin_powell',
                              'fmin_slsqp', 'fmin_tnc'])
     def test_minimize_copies_array(self, method):
-        # Check that the minimize() tol= argument does something
         def func(z):
             x, y = z
             return x**2*y**2 + x**4 + 1
