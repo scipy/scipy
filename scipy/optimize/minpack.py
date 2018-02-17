@@ -256,7 +256,7 @@ def _root_hybr(func, x0, args=(), jac=None,
     try:
         sol['message'] = errors[status]
     except KeyError:
-        info['message'] = errors['unknown']
+        sol['message'] = errors['unknown']
 
     return sol
 
