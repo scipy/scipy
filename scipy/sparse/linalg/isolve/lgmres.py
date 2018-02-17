@@ -144,6 +144,7 @@ def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
     nrm2 = get_blas_funcs('nrm2', [b])
 
     b_norm = nrm2(b)
+    ptol_max_factor = 1.0
 
     for k_outer in xrange(maxiter):
         r_outer = matvec(x) - b
@@ -175,14 +176,16 @@ def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
 
         v0 = scal(1.0/inner_res_0, v0)
 
+        ptol = min(ptol_max_factor, max(atol, tol*b_norm)/r_norm)
+
         try:
-            Q, R, B, vs, zs, y = _fgmres(matvec,
-                                         v0,
-                                         inner_m,
-                                         lpsolve=psolve,
-                                         atol=max(atol, tol*b_norm)/r_norm,
-                                         outer_v=outer_v,
-                                         prepend_outer_v=prepend_outer_v)
+            Q, R, B, vs, zs, y, pres = _fgmres(matvec,
+                                               v0,
+                                               inner_m,
+                                               lpsolve=psolve,
+                                               atol=ptol,
+                                               outer_v=outer_v,
+                                               prepend_outer_v=prepend_outer_v)
             y *= inner_res_0
             if not np.isfinite(y).all():
                 # Overflow etc. in computation. There's no way to
@@ -192,6 +195,12 @@ def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
             # Floating point over/underflow, non-finite result from
             # matmul etc. -- report failure.
             return postprocess(x), k_outer + 1
+
+        # Inner loop tolerance control
+        if pres > ptol:
+            ptol_max_factor = min(1.0, 1.5 * ptol_max_factor)
+        else:
+            ptol_max_factor = max(1e-16, 0.25 * ptol_max_factor)
 
         # -- GMRES terminated: eval solution
         dx = zs[0]*y[0]

@@ -58,6 +58,8 @@ def _fgmres(matvec, v0, m, atol, lpsolve=None, rpsolve=None, cs=(), outer_v=(),
         Columns of matrix Z
     y : ndarray
         Solution to ||H y - e_1||_2 = min!
+    res : float
+        The final (preconditioned) residual norm
 
     """
 
@@ -71,6 +73,7 @@ def _fgmres(matvec, v0, m, atol, lpsolve=None, rpsolve=None, cs=(), outer_v=(),
     vs = [v0]
     zs = []
     y = None
+    res = np.nan
 
     m = m + len(outer_v)
 
@@ -176,7 +179,7 @@ def _fgmres(matvec, v0, m, atol, lpsolve=None, rpsolve=None, cs=(), outer_v=(),
 
     B = B[:,:j+1]
 
-    return Q, R, B, vs, zs, y
+    return Q, R, B, vs, zs, y, res
 
 
 def gcrotmk(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
@@ -367,12 +370,12 @@ def gcrotmk(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
         cs = [c for c, u in CU]
 
         try:
-            Q, R, B, vs, zs, y = _fgmres(matvec,
-                                        r/beta,
-                                        ml,
-                                        rpsolve=psolve,
-                                        atol=max(atol, tol*b_norm)/beta,
-                                        cs=cs)
+            Q, R, B, vs, zs, y, pres = _fgmres(matvec,
+                                               r/beta,
+                                               ml,
+                                               rpsolve=psolve,
+                                               atol=max(atol, tol*b_norm)/beta,
+                                               cs=cs)
             y *= beta
         except LinAlgError:
             # Floating point over/underflow, non-finite result from
