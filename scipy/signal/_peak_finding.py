@@ -267,7 +267,10 @@ def peak_prominences(x, peaks, wlen=None):
 
     See Also
     --------
-    find_peaks, peak_widths
+    find_peaks
+        Find a subset of peaks inside a signal.
+    peak_widths
+        Calculate the width of peaks.
 
     Notes
     -----
@@ -302,14 +305,16 @@ def peak_prominences(x, peaks, wlen=None):
 
     Examples
     --------
-    Create signal test signal with two overlayed harmonic functions
+    >>> from scipy.signal import find_peaks, peak_prominences
+    >>> import matplotlib.pyplot as plt
+
+    Create a test signal with two overlayed harmonics
 
     >>> x = np.linspace(0, 6 * np.pi, 1000)
     >>> x = np.sin(x) + 0.6 * np.sin(2.6 * x)
 
     Find all peaks and calculate prominences
 
-    >>> from scipy.signal import find_peaks, peak_prominences
     >>> peaks, _ = find_peaks(x)
     >>> prominences = peak_prominences(x, peaks)[0]
     >>> prominences
@@ -319,10 +324,10 @@ def peak_prominences(x, peaks, wlen=None):
     Calculate the height of each peak's contour line and plot the results
 
     >>> contour_heights = x[peaks] - prominences
-    >>> import matplotlib.pyplot as plt
     >>> plt.plot(x)
     >>> plt.plot(peaks, x[peaks], "x")
-    >>> plt.vlines(peaks, ymin=contour_heights, ymax=x[peaks])
+    >>> plt.vlines(x=peaks, ymin=contour_heights, ymax=x[peaks])
+    >>> plt.show()
     """
     x = np.asarray(x)
     peaks = np.asarray(peaks)
@@ -397,7 +402,7 @@ def peak_prominences(x, peaks, wlen=None):
     return prominences, left_bases, right_bases
 
 
-def peak_widths(x, peaks, rel_height=0.5, **kwargs):
+def peak_widths(x, peaks, rel_height=0.5, prominence_data=None, wlen=None):
     """
     Calculate the width of each each peak in a signal.
 
@@ -415,40 +420,40 @@ def peak_widths(x, peaks, rel_height=0.5, **kwargs):
         percentage of its prominence. 1.0 calculates the width of the peak at its
         lowest contour line while 0.5 evaluates at half the prominence height.
         Must be a number greater 0. See notes for further explanation.
-    prominences : ndarray, optional
-        The prominences for each peak in `peaks`.
-    left_bases, right_bases : ndarray, optional
-        The peaks' bases as indices in `x` to the left and right of each peak.
+    prominence_data : tuple, optional
+        A tuple of three arrays matching the output of `peak_prominences` when
+        called with the same arguments for `x` and `peaks`. This data is
+        calculated internally if not provided (see `wlen`).
     wlen : int, optional
-        A window length in samples (see `peak_prominences`). This
-        argument is only used if the above three parameters aren't given in
-        which case they are calculated using `wlen`.
+        A window length in samples (see `peak_prominences`). This argument is
+        only used if `prominence_data` is not given in which case the missing
+        data is calculated using `wlen`.
 
     Returns
     -------
     widths : ndarray
         The widths for each peak.
-    wheights : ndarray
-        The heights at which the `widths` where evaluated.
+    width_heights : ndarray
+        The height of the contour lines at which the `widths` where evaluated.
     left_ips, right_ips : ndarray
         Interpolated positions of left and right intersection points of a
         horizontal line at the respective evaluation height.
 
     See Also
     --------
-    find_peaks, peak_prominences
+    find_peaks
+        Find a subset of peaks inside a signal.
+    peak_prominences
+        Calculate the prominence of peaks.
 
     Notes
     -----
     The basic algorithm to calculate a peak's width is as follows:
 
-    * Calculate the evaluation height :math:`h_{eval}` with the formular
-
-      .. math:: h_{eval} = h_{Peak} - P \\cdot R
-
-      where :math:`h_{Peak}` is the height of the peak itself, :math:`P` is the
-      peak's prominence and :math:`R` a positive ratio specified with the
-      argument `rel_height`.
+    * Calculate the evaluation height :math:`h_{eval}` with the formula
+      :math:`h_{eval} = h_{Peak} - P \\cdot R`, where :math:`h_{Peak}` is the
+      height of the peak itself, :math:`P` is the peak's prominence and :math:`R`
+      a positive ratio specified with the argument `rel_height`.
     * Draw a horizontal line at the evaluation height to both sides, starting at
       the peak's current vertical position until the lines either intersect a
       slope, the signal border or cross the vertical position of the peak's
@@ -467,9 +472,11 @@ def peak_widths(x, peaks, rel_height=0.5, **kwargs):
 
     Examples
     --------
-    Prepare a test signal with growing peak widths
-
     >>> from scipy.signal import chirp, find_peaks, peak_widths
+    >>> import matplotlib.pyplot as plt
+
+    Create a test signal with growing peak widths
+
     >>> x = np.linspace(0, 500, 500)
     >>> x = abs(chirp(x, 1e-4, x.max(), 1.1e-2)) + 2.0 * x / x.max()
 
@@ -483,10 +490,10 @@ def peak_widths(x, peaks, rel_height=0.5, **kwargs):
 
     Plot signal, peaks and contour lines at which the widths where calculated
 
-    >>> import matplotlib.pyplot as plt
     >>> plt.plot(x)
     >>> plt.plot(peaks, x[peaks], "x", color="C1")
     >>> plt.hlines(y=heights, xmin=lpos, xmax=rpos, color="C1")
+    >>> plt.show()
     """
     x = np.asarray(x)
     peaks = np.asarray(peaks)
@@ -506,23 +513,19 @@ def peak_widths(x, peaks, rel_height=0.5, **kwargs):
     if rel_height < 0.0:
         raise ValueError('`rel_height` must be greater or equal 0.0')
 
-    if any(kwargs.get(key) is None for key in ['prominences', 'left_bases',
-                                               'right_bases']):
+    if prominence_data is None:
         # Calculate prominence if not supplied and use wlen if supplied
-        prominences, left_bases, right_bases = peak_prominences(
-            x, peaks, wlen=kwargs.get("wlen"))
+        prominences, left_bases, right_bases = peak_prominences(x, peaks, wlen)
     else:
-        prominences = kwargs.get('prominences')
-        left_bases = kwargs.get('left_bases')
-        right_bases = kwargs.get('right_bases')
+        prominences, left_bases, right_bases = prominence_data
 
     # Calculate evaluation height for each peak
-    wheights = x[peaks] - np.asarray(prominences) * rel_height
+    width_heights = x[peaks] - np.asarray(prominences) * rel_height
 
     widths = np.zeros(peaks.size)
     left_ips = np.zeros(peaks.size)
     right_ips = np.zeros(peaks.size)
-    for i, (peak, height) in enumerate(zip(peaks, wheights)):
+    for i, (peak, height) in enumerate(zip(peaks, width_heights)):
 
         # Maximal peak width is from base to base
         window = x[left_bases[i]:right_bases[i] + 1]
@@ -562,7 +565,7 @@ def peak_widths(x, peaks, rel_height=0.5, **kwargs):
         left_ips[i] = left_ip + left_bases[i]
         right_ips[i] = right_ip + left_bases[i]
 
-    return widths, wheights, left_ips, right_ips
+    return widths, width_heights, left_ips, right_ips
 
 
 def _unpack_filter_args(interval, x, peaks):
@@ -626,14 +629,16 @@ def _filter_generic(peaks, peak_property, pmin, pmax):
     peak_property : ndarray
         An array with properties for each peak.
     pmin : None or number or ndarray
-        Lower interval boundary for `peak_property`.
+        Lower interval boundary for `peak_property`. ``None`` is interpreted as
+        an open border.
     pmax : None or number or ndarray
-        Upper interval boundary for `peak_property`.
+        Upper interval boundary for `peak_property`. ``None`` is interpreted as
+        an open border.
 
     Returns
     -------
     keep : bool
-        A boolean mask evaluating to true where `peak_property` fullfills the
+        A boolean mask evaluating to true where `peak_property` fulfills the
         requirements.
 
     See Also
@@ -665,7 +670,8 @@ def _filter_by_peak_threshold(x, peaks, tmin, tmax):
         Indices of peaks in `x`.
     tmin, tmax : scalar or ndarray or None
          Minimal and / or maximal required thresholds. If supplied as ndarrays
-         their size must match `peaks`.
+         their size must match `peaks`. ``None`` is interpreted as an open
+         border.
 
     Returns
     -------
@@ -806,11 +812,11 @@ def find_peaks(x, height=None, threshold=None, distance=None,
         element is always interpreted as the  minimum and the second, if
         supplied, as the maximum required prominence.
     wlen : number, optional
-        Used for calculation of the peaks prominences thus it is only used if
+        Used for calculation of the peaks prominences, thus it is only used if
         one of the arguments `prominence` or `width` is given. See argument
         `wlen` in `peak_prominences` for a full description of its effects.
     rel_height : float, optional
-        Used for calculation of the peaks width thus it is only used if `width`
+        Used for calculation of the peaks width, thus it is only used if `width`
         is given. See argument  `rel_height` in `peak_widths` for a full
         description of its effects.
 
@@ -822,16 +828,21 @@ def find_peaks(x, height=None, threshold=None, distance=None,
         A dictionary containing properties of the returned peaks which were
         calculated as intermediate results during filtering:
 
-        * If `height` is given, the value of `x` at each peak is returned
-          with the key 'peak_heights'.
-        * If `threshold` is given, the keys 'left_thresholds' and
-          'right_thresholds' contain a peaks vertical distance to its
-          neighbouring samples.
-        * If `prominence` is given, the keys 'prominences', 'left_bases' and
-          'right_bases' are accessible. See `peak_prominences` for a description
-          of their content.
-        * If `width` is given, the keys 'wheights', 'left_ips' and 'right_ips'
-          are accessible. See `peak_widths` for a description of their content.
+        * 'peak_heights'
+              If `height` is given, the value of `x` at each peak.
+        * 'left_thresholds', 'right_thresholds'
+              If `threshold` is given, these keys contain a peaks vertical
+              distance to its neighbouring samples.
+        * 'peak_prominences', 'right_bases', 'left_bases'
+              If `prominence` is given, these keys are accessible. See
+              `peak_prominences` for a description of their content.
+        * 'width_heights', 'left_ips', 'right_ips'
+              If `width` is given, these keys are accessible. See `peak_widths`
+              for a description of their content.
+
+        To calculate and return properties without filtering, provide the open
+        interval ``(None, None)`` as an argument to the appropriate filter
+        option.
 
     See Also
     --------
@@ -846,26 +857,28 @@ def find_peaks(x, height=None, threshold=None, distance=None,
     -----
     Because this function searches for local maxima by direct sample comparison,
     the determined peak locations can be off for noisy signals if the noise
-    changes the position of a local maximum. In those cases, smoothing the signal
-    may be more appropriate before searching for peaks or using other peak
-    finding and fitting methods (like `find_peaks_cwt`).
+    changes the position of a local maximum. In those cases consider smoothing
+    the signal before searching for peaks or using other peak finding and fitting
+    methods (like `find_peaks_cwt`).
 
     Some additional comments on filtering with requirements:
 
     * Almost all filter options (excluding filtering by distance) allow the
       specification of half-open or closed intervals, e.g ``1`` or ``(1, None)``
       define the half-open interval :math:`[3, \\infty]` while ``(None, 1)``
-      defines the interval :math:`[-\\infty, 3]`.
+      defines the interval :math:`[-\\infty, 3]`. The open interval
+      ``(None, None)`` can be specified as well, which returns the matching
+      unfiltered properties.
     * The border is always included in the interval used to select valid peaks.
-    * The order of input arguments for the different filters mirrors the actual
-      order in which they are applied. In most cases this order is the fastest
-      one because faster filter operations are applied first to reduce the
-      number of peaks that need to be evaluated later.
+    * The order of filter arguments given in the function definition above
+      mirrors the actual order in which they are applied. In most cases this
+      order is the fastest one because faster filter operations are applied first
+      to reduce the number of peaks that need to be evaluated later.
     * Filtering by distance is accomplished by iterating over all peaks in
       descending order based on their height and removing all lower peaks that
-      are to close. This option can be quite slow if a large number of peaks
-      needs to be evaluated. Try to reduce the number of peaks with cheaper
-      (previous) filter options first.
+      are too close. This option can be quite slow if many peaks need to be
+      evaluated. Try to reduce the number of peaks with cheaper (previous) filter
+      options first.
     * Use `wlen` to reduce the time it takes to filter by prominence or width if
       `x` is large or has many local maxima (see `peak_prominences`).
     * For several filter options the interval borders can be specified with
@@ -875,22 +888,50 @@ def find_peaks(x, height=None, threshold=None, distance=None,
 
     Examples
     --------
-    Create test signal and find peaks with a minimal prominence of 0.5
-
     >>> from scipy.signal import find_peaks
-    >>> t = np.linspace(0, 8 * np.pi, 1000)
-    >>> x = np.sin(t) + 0.2 * np.sin(10 * t) + 0.1 * t
-    >>> peaks, properties = find_peaks(x, prominence=0.5)
-    >>> peaks
-    array([ 57, 306, 556, 806])
-
-    Plot results
-
     >>> import matplotlib.pyplot as plt
-    >>> countour_height = x[peaks] - properties['prominences']
-    >>> plt.plot(t, x)
-    >>> plt.plot(t[peaks], x[peaks], "x")
-    >>> plt.vlines(t[peaks], ymin=countour_height, ymax=x[peaks])
+
+    Create test signal `x` using 7 harmonics:
+
+    >>> gains = [1, -1, 0.6, 0.5, 0.4, 0.3, 0.1]
+    >>> freqs = [2, 3.5, 6, 7.1, 11.1, 12, 20]
+    >>> t = np.linspace(0, 6, 1000)
+    >>> x = sum(g * np.sin(f * t) for g, f in zip(gains, freqs))
+
+    Find all peaks (local maxima) in `x`
+
+    >>> peaks, _ = find_peaks(x)
+    >>> peaks
+    array([ 25, 119, 205, 275, 381, 495, 586, 782, 892, 952])
+
+    and plot the results
+
+    >>> plt.figure()
+    >>> plt.plot(x)
+    >>> plt.plot(peaks, x[peaks], 'x')
+    >>> plt.show()
+
+    This time, find peaks that have a minimal prominence of 0.5 and whose peak
+    base is not more than 150 samples wide (``width=(None, 150)``). For this we
+    need to use the option ``rel_height=1.0`` which will evaluate the width at
+    the peaks base.
+
+    >>> peaks, prop = find_peaks(
+    ...     x, prominence=0.5, width=(None, 150), rel_height=1.0)
+    >>> peaks, prop['prominences'], prop['widths']
+    (array([ 25, 381, 892]),
+     array([1.40613266, 0.50503469, 1.23546031]),
+     array([59.57018554, 57.9368999 , 86.11729375]))
+
+    and plot the results including the calculated peak properties
+
+    >>> plt.figure()
+    >>> plt.plot(x)
+    >>> plt.plot(peaks, x[peaks], 'x')
+    >>> plt.vlines(x=peaks, ymin=prop['width_heights'], ymax=x[peaks])
+    >>> plt.hlines(y=prop['width_heights'], xmin=prop['left_ips'],
+    ...            xmax=prop['right_ips'])
+    >>> plt.show()
     """
     # _argmaxima1d expects array of dtype 'float64'
     x = np.asarray(x, dtype=np.float64)
@@ -902,20 +943,17 @@ def find_peaks(x, height=None, threshold=None, distance=None,
     peaks = _argmaxima1d(x)
     properties = {}
 
-    if peaks.size == 0:
-        # Skip filtering if no peaks where found
-        return peaks, properties
-
     # Filter by height
     if height is not None:
         peak_heights = x[peaks]
+        # Filter by height
         hmin, hmax = _unpack_filter_args(height, x, peaks)
         keep = _filter_generic(peaks, peak_heights, hmin, hmax)
         peaks = peaks[keep]
         properties["peak_heights"] = peak_heights[keep]
 
-    # Filter by threshold
     if threshold is not None:
+        # Filter by threshold
         tmin, tmax = _unpack_filter_args(threshold, x, peaks)
         keep, left_thresholds, right_thresholds = _filter_by_peak_threshold(
             x, peaks, tmin, tmax)
@@ -924,41 +962,41 @@ def find_peaks(x, height=None, threshold=None, distance=None,
         properties["right_thresholds"] = right_thresholds
         properties = {key: array[keep] for key, array in properties.items()}
 
-    # Filter by distance
     if distance is not None:
+        # Filter by distance
         keep = _filter_by_peak_distance(peaks, x[peaks], distance)
         peaks = peaks[keep]
         properties = {key: array[keep] for key, array in properties.items()}
 
     if prominence is not None or width is not None:
-        # Prominence is required for both filter options
+        # Calculate prominence (required for both filter options)
         properties.update(zip(
             ['prominences', 'left_bases', 'right_bases'],
             peak_prominences(x, peaks, wlen=wlen)
         ))
 
+    if prominence is not None:
         # Filter by prominence
-        if prominence is not None:
-            pmin, pmax = _unpack_filter_args(prominence, x, peaks)
-            keep = _filter_generic(peaks, properties['prominences'], pmin, pmax)
-            peaks = peaks[keep]
-            properties = {key: array[keep] for key, array in properties.items()}
+        pmin, pmax = _unpack_filter_args(prominence, x, peaks)
+        keep = _filter_generic(peaks, properties['prominences'], pmin, pmax)
+        peaks = peaks[keep]
+        properties = {key: array[keep] for key, array in properties.items()}
 
+    if width is not None:
+        # Calculate widths
+        properties.update(zip(
+            ['widths', 'width_heights', 'left_ips', 'right_ips'],
+            peak_widths(x, peaks,
+                        rel_height=rel_height,
+                        prominence_data=(properties['prominences'],
+                                         properties['left_bases'],
+                                         properties['right_bases']))
+        ))
         # Filter by width
-        if width is not None:
-            # Calculate the widths
-            properties.update(zip(
-                ['widths', 'wheights', 'left_ips', 'right_ips'],
-                peak_widths(x, peaks,
-                            rel_height=rel_height,
-                            prominences=properties['prominences'],
-                            left_bases=properties['left_bases'],
-                            right_bases=properties['right_bases'])
-            ))
-            wmin, wmax = _unpack_filter_args(width, x, peaks)
-            keep = _filter_generic(peaks, properties['widths'], wmin, wmax)
-            peaks = peaks[keep]
-            properties = {key: array[keep] for key, array in properties.items()}
+        wmin, wmax = _unpack_filter_args(width, x, peaks)
+        keep = _filter_generic(peaks, properties['widths'], wmin, wmax)
+        peaks = peaks[keep]
+        properties = {key: array[keep] for key, array in properties.items()}
 
     return peaks, properties
 

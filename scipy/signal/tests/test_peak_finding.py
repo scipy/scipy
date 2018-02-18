@@ -488,15 +488,23 @@ class TestFindPeaks(object):
         """
         Test behavior for signal without local maxima.
         """
-        peaks = find_peaks(np.ones(10))[0]
+        open_interval = (None, None)
+        property_keys = {'peak_heights', 'left_thresholds', 'right_thresholds',
+                         'prominences', 'left_bases', 'right_bases', 'widths',
+                         'width_heights', 'left_ips', 'right_ips'}
+        peaks, props = find_peaks(np.ones(10),
+                                  height=open_interval, threshold=open_interval,
+                                  prominence=open_interval, width=open_interval)
         assert_(peaks.size == 0)
+        for key in property_keys:
+            assert_(props[key].size == 0)
 
     def test_filter_by_height(self):
         """
         Test filtering by peak height.
         """
         x = (0., 1/3, 0., 2.5, 0, 4., 0)
-        peaks, props = find_peaks(x, height=0)
+        peaks, props = find_peaks(x, height=(None, None))
         assert_equal(peaks, np.array([1, 3, 5]))
         assert_equal(props['peak_heights'], np.array([1/3, 2.5, 4.]))
         assert_equal(find_peaks(x, height=0.5)[0], np.array([3, 5]))
@@ -508,7 +516,7 @@ class TestFindPeaks(object):
         Test filtering by threshold.
         """
         x = (0, 2, 1, 4, -1)
-        peaks, props = find_peaks(x, threshold=1)
+        peaks, props = find_peaks(x, threshold=(None, None))
         assert_equal(peaks, np.array([1, 3]))
         assert_equal(props['left_thresholds'], np.array([2, 3]))
         assert_equal(props['right_thresholds'], np.array([1, 5]))
@@ -568,7 +576,7 @@ class TestFindPeaks(object):
         assert_(peaks.size == 1)
         assert_(peaks == 7)
         assert_(props['widths'] == 1.35)
-        assert_(props['wheights'] == 1.)
+        assert_(props['width_heights'] == 1.)
         assert_(props['left_ips'] == 6.4)
         assert_(props['right_ips'] == 7.75)
 
