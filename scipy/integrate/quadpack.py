@@ -563,17 +563,15 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
     Examples
     --------
 
-    Calculate :math: double integration exp(-x*y)/y**5
-    Limits from 0 to inf
+    Calculate :math: double integration x*y**2
+    Integrating over rectangle with x ranging from 0 to 2
+    and y ranging from 0 to 1
 
     >>> from scipy import integrate
-    >>> from numpy as np
     >>> def f(y,x):
-            return np.exp(-y*x)/y**5
-    >>> integrate.dblquad(f,0, np.inf,lambda x: 1, lambda x: np.inf)
-        (0.2000000000189363, 1.3682975855986131e-08)
-
-
+            return x*y**2
+    >>> integrate.dblquad(f,0,2,lambda x: 0,lambda x: 1)
+        (0.6666666666666667, 7.401486830834377e-15)
 
     """
     def temp_ranges(*args):
