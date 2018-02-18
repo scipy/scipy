@@ -568,8 +568,7 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
     and y ranging from 0 to 1
 
     >>> from scipy import integrate
-    >>> def f(y,x):
-            return x*y**2
+    >>> f=lambda y,x: x*y**2
     >>> integrate.dblquad(f,0,2,lambda x: 0,lambda x: 1)
         (0.6666666666666667, 7.401486830834377e-15)
 
