@@ -25,19 +25,10 @@ def poly_area(vertices,
               n_rot=50,
               n_polygons=1):
 
-    if n_polygons == 1:
-        area = _surface_area.poly_area(vertices=vertices,
-                                       radius=radius,
-                                       threshold=threshold,
-                                       discretizations=discretizations,
-                                       n_rot=n_rot)
-    else:
-        area = np.empty(n_polygons)
-        for polygon in xrange(n_polygons):
-            area[polygon] = _surface_area.poly_area(vertices=vertices[polygon],
-                                                    radius=radius,
-                                                    threshold=threshold,
-                                                    discretizations=discretizations,
-                                                    n_rot=n_rot)
-
+    area = _surface_area.poly_area_dispatch(vertices=vertices,
+                                            radius=radius,
+                                            threshold=threshold,
+                                            discretizations=discretizations,
+                                            n_rot=n_rot,
+                                            n_polygons=n_polygons)
     return area

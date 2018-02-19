@@ -327,3 +327,27 @@ def poly_area(double[:,:] vertices,
         area = planar_polygon_area(vertices)
     
     return abs(area)
+
+def poly_area_dispatch(vertices,
+                       radius=None,
+                       double threshold=1e-21,
+                       int discretizations=500,
+                       int n_rot=50,
+                       int n_polygons=1):
+    cdef int polygon
+
+    if n_polygons == 1:
+        area = poly_area(vertices=vertices,
+                                       radius=radius,
+                                       threshold=threshold,
+                                       discretizations=discretizations,
+                                       n_rot=n_rot)
+    else:
+        area = np.empty(n_polygons)
+        for polygon in range(n_polygons):
+            area[polygon] = poly_area(vertices=vertices[polygon],
+                                      radius=radius,
+                                      threshold=threshold,
+                                      discretizations=discretizations,
+                                      n_rot=n_rot)
+    return area
