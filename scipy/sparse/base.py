@@ -319,7 +319,7 @@ class spmatrix(object):
                 return self
         else:
             try:
-                convert_method = getattr(self, 'to' + format)()
+                convert_method = getattr(self, 'to' + format)
             except AttributeError as e:
                 raise ValueError('Format {} is unknown.'.format(format))
             else:
