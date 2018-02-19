@@ -321,7 +321,7 @@ class spmatrix(object):
             try:
                 convert_method = getattr(self, 'to' + format)()
             except AttributeError as e:
-                raise ValueError('Format {} is unknown.'.format(format)) from e
+                raise ValueError('Format {} is unknown.'.format(format))
             else:
                 return convert_method(copy=copy)
 
