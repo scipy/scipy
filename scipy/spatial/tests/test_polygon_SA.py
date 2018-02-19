@@ -426,7 +426,7 @@ def test_hemisphere_handling():
     equatorial_vertices = np.array([[-1,0,0],
                                     [0,1,0],
                                     [1,0,0],
-                                    [0,-1,0]])
+                                    [0,-1,0]], dtype=np.float64)
 
     # expected surface area for hemisphere
     # of unit sphere

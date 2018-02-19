@@ -4,6 +4,7 @@ cimport numpy as np
 cimport cython
 from libc.math cimport (sin, acos, atan2,
                         cos, M_PI, abs)
+from libc.stdlib cimport RAND_MAX, rand
 
 cdef int vertex_index_strider(int index, int num_vertices):
     cdef int forward_index
@@ -205,7 +206,7 @@ def convert_spherical_array_to_cartesian_array(double[:,:] spherical_coord_array
     cartesian_coord_array[...,2] = spherical_coord_array[...,0] * np.cos(spherical_coord_array[...,2])
     return cartesian_coord_array
 
-def poly_area(vertices,
+def poly_area(double[:,:] vertices,
               radius=None,
               double threshold=1e-21,
               int discretizations=500,
@@ -219,10 +220,11 @@ def poly_area(vertices,
     cdef int num_vertices = vertices.shape[0]
     cdef double[:,:] one_pads = np.ones((1, 4), dtype=np.float64)
     cdef double[:,:] candidate_plane
-    cdef int current_vert, plane_failures
+    cdef int current_vert, plane_failures, k, index
     cdef double[:] rot_axis = np.array([0,1,0], dtype=np.float64)
-    cdef double rot_angle, area
+    cdef double rot_angle, area, dot_prod
     cdef double angle_factor = M_PI / 6.
+    cdef double[:] cross_prod, row
     # require that a planar or spherical triangle is
     # the smallest possible input polygon
     if num_vertices < 3:
@@ -305,16 +307,18 @@ def poly_area(vertices,
         # from the N/ S poles
         while pole_in_polygon(vertices) == 1:
             n_rot -= 1
-            rot_angle = np.random.random_sample() * angle_factor
+            rot_angle = rand() / <float> RAND_MAX * angle_factor
             if n_rot == 0:
                 return np.nan
             else:
                # use Rodrigues' rotation formula
                for index in range(num_vertices):
-                  row = vertices[index]
-                  vertices[index] = (row * cos(rot_angle) +
-                               np.cross(rot_axis, row) * sin(rot_angle) +
-                               rot_axis * (np.dot(row, rot_axis)) * (1 - cos(rot_angle)))
+                  cross_prod = np.cross(rot_axis, vertices[index])
+                  dot_prod = np.dot(vertices[index], rot_axis)
+                  for k in range(3):
+                      vertices[index, k] = (vertices[index,k] * cos(rot_angle) +
+                                   cross_prod[k] * sin(rot_angle) +
+                                   rot_axis[k] * dot_prod * (1 - cos(rot_angle)))
 
         area = _spherical_polygon_area(vertices,
                                        radius,
