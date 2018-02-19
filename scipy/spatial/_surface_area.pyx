@@ -338,10 +338,10 @@ def poly_area_dispatch(vertices,
 
     if n_polygons == 1:
         area = poly_area(vertices=vertices,
-                                       radius=radius,
-                                       threshold=threshold,
-                                       discretizations=discretizations,
-                                       n_rot=n_rot)
+                         radius=radius,
+                         threshold=threshold,
+                         discretizations=discretizations,
+                         n_rot=n_rot)
     else:
         area = np.empty(n_polygons)
         for polygon in range(n_polygons):
