@@ -18,13 +18,26 @@ import math
 #
 # Distributed under the same BSD license as Scipy.
 
-def poly_area(vertices, radius=None, threshold=1e-21,
+def poly_area(vertices,
+              radius=None,
+              threshold=1e-21,
               discretizations=500,
-              n_rot=50):
+              n_rot=50,
+              n_polygons=1):
 
-    area = _surface_area.poly_area(vertices=vertices,
-                                   radius=radius,
-                                   threshold=threshold,
-                                   discretizations=discretizations,
-                                   n_rot=n_rot)
+    if n_polygons == 1:
+        area = _surface_area.poly_area(vertices=vertices,
+                                       radius=radius,
+                                       threshold=threshold,
+                                       discretizations=discretizations,
+                                       n_rot=n_rot)
+    else:
+        area = np.empty(n_polygons)
+        for polygon in xrange(n_polygons):
+            area[polygon] = _surface_area.poly_area(vertices=vertices[polygon],
+                                                    radius=radius,
+                                                    threshold=threshold,
+                                                    discretizations=discretizations,
+                                                    n_rot=n_rot)
+
     return area

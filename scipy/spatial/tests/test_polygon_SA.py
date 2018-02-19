@@ -501,14 +501,24 @@ def test_functional_sph_Vor():
 
     expected_area = 4. * np.pi
     area_sum = 0
+    list_polygons = []
     for region in sv.regions:
         polygon = sv.vertices[region]
+        list_polygons.append(polygon)
         polygon_area = psa.poly_area(vertices=polygon,
                                      radius=1,
                                      discretizations=9000)
         area_sum += polygon_area
 
+    # repeat for case of multiple polygon input
+    # (vectorization approach)
+    area_array = psa.poly_area(vertices=list_polygons,
+                                        radius=1,
+                                        discretizations=9000,
+                                        n_polygons=len(list_polygons))
+
     assert_allclose(area_sum, expected_area)
+    assert_allclose(area_array.sum(), expected_area)
 
 @pytest.mark.parametrize("polygon, pole_present", [
         # test polygon that contains North Pole
