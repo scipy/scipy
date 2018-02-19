@@ -314,20 +314,20 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
        #(1.3333333333333333, 1.4802973661668752e-14)
        print((1.0**3/3.0 + 1.0) - (0.0**3/3.0 + 0.0)) #Analytic result
        # 1.3333333333333333
-    
+
     Be aware that pulse shapes and other sharp features as compared to the
     size of the integration interval may not be integrated correctly using
     this method. A simplified example of this limitation is integrating a
     y-axis reflected step function with many zero values within the integrals
     bounds.
-    
+
     >>> y = lambda x: 1 if x<=0 else 0
     >>> integrate.quad(y, -1, 1)
     (1.0, 1.1102230246251565e-14)
     >>> integrate.quad(y, -1, 100)
     (1.0000000002199108, 1.0189464580163188e-08)
     >>> integrate.quad(y, -1, 10000)
-    (0.0, 0.0) 
+    (0.0, 0.0)
 
     """
     if not isinstance(args, tuple):
@@ -559,6 +559,18 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
     simps : integrator for sampled data
     romb : integrator for sampled data
     scipy.special : for coefficients and roots of orthogonal polynomials
+
+    Examples
+    --------
+
+    Returns double integration of ``x*y**2``
+    Integrating over rectangle with x ranging from 0 to 2
+    and y ranging from 0 to 1
+
+    >>> from scipy import integrate
+    >>> f=lambda y,x: x*y**2
+    >>> integrate.dblquad(f,0,2,lambda x: 0,lambda x: 1)
+        (0.6666666666666667, 7.401486830834377e-15)
 
     """
     def temp_ranges(*args):
