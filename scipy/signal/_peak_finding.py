@@ -268,7 +268,7 @@ def peak_prominences(x, peaks, wlen=None):
     See Also
     --------
     find_peaks
-        Find a subset of peaks inside a signal.
+        Find peaks inside a signal based on peak properties.
     peak_widths
         Calculate the width of peaks.
 
@@ -344,7 +344,7 @@ def peak_prominences(x, peaks, wlen=None):
     if not np.issubdtype(peaks.dtype, np.integer):
         raise ValueError('`peaks` must be an array of integers')
     if wlen is not None and wlen < 3:
-            raise ValueError('`wlen` must be at least 3')
+        raise ValueError('`wlen` must be at least 3')
 
     # Prepare return arguments
     prominences = np.zeros(peaks.size)
@@ -406,7 +406,7 @@ def peak_widths(x, peaks, rel_height=0.5, prominence_data=None, wlen=None):
     """
     Calculate the width of each each peak in a signal.
 
-    This function calculates the horizontal width of a peak at a relative
+    This function calculates the width of a peak in samples at a relative
     distance to the peak's height and prominence.
 
     Parameters
@@ -432,7 +432,7 @@ def peak_widths(x, peaks, rel_height=0.5, prominence_data=None, wlen=None):
     Returns
     -------
     widths : ndarray
-        The widths for each peak.
+        The widths for each peak in samples.
     width_heights : ndarray
         The height of the contour lines at which the `widths` where evaluated.
     left_ips, right_ips : ndarray
@@ -442,7 +442,7 @@ def peak_widths(x, peaks, rel_height=0.5, prominence_data=None, wlen=None):
     See Also
     --------
     find_peaks
-        Find a subset of peaks inside a signal.
+        Find peaks inside a signal based on peak properties.
     peak_prominences
         Calculate the prominence of peaks.
 
@@ -568,9 +568,9 @@ def peak_widths(x, peaks, rel_height=0.5, prominence_data=None, wlen=None):
     return widths, width_heights, left_ips, right_ips
 
 
-def _unpack_filter_args(interval, x, peaks):
+def _unpack_condition_args(interval, x, peaks):
     """
-    Parse filter arguments for `find_peaks`.
+    Parse condition arguments for `find_peaks`.
 
     Parameters
     ----------
@@ -618,28 +618,26 @@ def _unpack_filter_args(interval, x, peaks):
     return imin, imax
 
 
-def _filter_generic(peaks, peak_property, pmin, pmax):
+def _select_by_property(peak_properties, pmin, pmax):
     """
-    Evaluate where a generic peak property confirms to an interval.
+    Evaluate where the generic property of peaks confirms to an interval.
 
     Parameters
     ----------
-    peaks : ndarray
-        Peaks as indices of a one-dimensional array.
-    peak_property : ndarray
+    peak_properties : ndarray
         An array with properties for each peak.
     pmin : None or number or ndarray
-        Lower interval boundary for `peak_property`. ``None`` is interpreted as
+        Lower interval boundary for `peak_properties`. ``None`` is interpreted as
         an open border.
     pmax : None or number or ndarray
-        Upper interval boundary for `peak_property`. ``None`` is interpreted as
+        Upper interval boundary for `peak_properties`. ``None`` is interpreted as
         an open border.
 
     Returns
     -------
     keep : bool
-        A boolean mask evaluating to true where `peak_property` fulfills the
-        requirements.
+        A boolean mask evaluating to true where `peak_properties` confirms to the
+        interval.
 
     See Also
     --------
@@ -650,17 +648,17 @@ def _filter_generic(peaks, peak_property, pmin, pmax):
 
     .. versionadded:: 1.1.0
     """
-    keep = np.ones(peaks.size, dtype=bool)
+    keep = np.ones(peak_properties.size, dtype=bool)
     if pmin is not None:
-        keep &= (pmin <= peak_property)
+        keep &= (pmin <= peak_properties)
     if pmax is not None:
-        keep &= (peak_property <= pmax)
+        keep &= (peak_properties <= pmax)
     return keep
 
 
-def _filter_by_peak_threshold(x, peaks, tmin, tmax):
+def _select_by_peak_threshold(x, peaks, tmin, tmax):
     """
-    Evaluate which peaks fullfill the threshold requirements.
+    Evaluate which peaks fulfill the threshold condition.
 
     Parameters
     ----------
@@ -676,8 +674,8 @@ def _filter_by_peak_threshold(x, peaks, tmin, tmax):
     Returns
     -------
     keep : bool
-        A boolean mask evaluating to true where `peaks` fullfill the threshold
-        requirements.
+        A boolean mask evaluating to true where `peaks` fulfill the threshold
+        condition.
     left_thresholds, right_thresholds : ndarray
         Array matching `peak` containing the thresholds of each peak on
         both sides.
@@ -703,7 +701,7 @@ def _filter_by_peak_threshold(x, peaks, tmin, tmax):
     return keep, stacked_thresholds[0], stacked_thresholds[1]
 
 
-# Code for _filter_by_peak_distance was adapted from
+# Code for _select_by_peak_distance was adapted from
 # https://github.com/demotu/BMC/blob/master/functions/detect_peaks.py
 # by Marcos Duarte under the MIT license:
 #
@@ -730,9 +728,9 @@ def _filter_by_peak_threshold(x, peaks, tmin, tmax):
 #     FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 #     OTHER DEALINGS IN THE SOFTWARE.
 
-def _filter_by_peak_distance(peaks, priority, dmin):
+def _select_by_peak_distance(peaks, priority, dmin):
     """
-    Flag neighbouring peaks for removal to ensure a minimal distance.
+    Evaluate which peaks fulfill the distance condition.
 
     Parameters
     ----------
@@ -748,8 +746,8 @@ def _filter_by_peak_distance(peaks, priority, dmin):
     Returns
     -------
     keep : ndarray[bool]
-        A boolean mask matching `peaks` that evaluates to true for each peak
-        that must be removed in order to fullfill the requirement.
+        A boolean mask evaluating to true where `peaks` fulfill the distance
+        condition.
 
     Notes
     -----
@@ -777,11 +775,11 @@ def _filter_by_peak_distance(peaks, priority, dmin):
 def find_peaks(x, height=None, threshold=None, distance=None,
                prominence=None, width=None, wlen=None, rel_height=0.5):
     """
-    Find a subset of peaks inside a signal.
+    Find peaks inside a signal based on peak properties.
 
     This function takes a one-dimensional array and finds all local maxima by
-    simple comparision of neighbouring values. A subset of these peaks can be
-    selected by specifying requirements (filter options) for a peak's properties.
+    simple comparison of neighbouring values. Optionally, a subset of these peaks
+    can be selected by specifying conditions for a peak's properties.
 
     Parameters
     ----------
@@ -807,7 +805,7 @@ def find_peaks(x, height=None, threshold=None, distance=None,
         element is always interpreted as the  minimum and the second, if
         supplied, as the maximum required prominence.
     width : number or ndarray or sequence, optional
-        Required width of peaks. Either a number, ``None``, an array
+        Required width of peaks in samples. Either a number, ``None``, an array
         matching `x` or a 2-element sequence of the former. The first
         element is always interpreted as the  minimum and the second, if
         supplied, as the maximum required prominence.
@@ -823,13 +821,14 @@ def find_peaks(x, height=None, threshold=None, distance=None,
     Returns
     -------
     peaks : ndarray
-        Indices of peaks in `x` that satisfy all requirements.
+        Indices of peaks in `x` that satisfy all given conditions.
     properties : dict
         A dictionary containing properties of the returned peaks which were
-        calculated as intermediate results during filtering:
+        calculated as intermediate results during evaluation of the specified
+        conditions:
 
         * 'peak_heights'
-              If `height` is given, the value of `x` at each peak.
+              If `height` is given, the height of each peak in `x`.
         * 'left_thresholds', 'right_thresholds'
               If `threshold` is given, these keys contain a peaks vertical
               distance to its neighbouring samples.
@@ -840,9 +839,9 @@ def find_peaks(x, height=None, threshold=None, distance=None,
               If `width` is given, these keys are accessible. See `peak_widths`
               for a description of their content.
 
-        To calculate and return properties without filtering, provide the open
-        interval ``(None, None)`` as an argument to the appropriate filter
-        option.
+        To calculate and return properties without excluding peaks, provide the
+        open interval ``(None, None)`` as a value to the appropriate argument
+        (excluding `distance`).
 
     See Also
     --------
@@ -861,28 +860,30 @@ def find_peaks(x, height=None, threshold=None, distance=None,
     the signal before searching for peaks or using other peak finding and fitting
     methods (like `find_peaks_cwt`).
 
-    Some additional comments on filtering with requirements:
+    Some additional comments on specifying conditions:
 
-    * Almost all filter options (excluding filtering by distance) allow the
-      specification of half-open or closed intervals, e.g ``1`` or ``(1, None)``
-      define the half-open interval :math:`[3, \\infty]` while ``(None, 1)``
-      defines the interval :math:`[-\\infty, 3]`. The open interval
-      ``(None, None)`` can be specified as well, which returns the matching
-      unfiltered properties.
+    * Almost all conditions (excluding `distance`) can be given as half-open or
+      closed intervals, e.g ``1`` or ``(1, None)`` defines the half-open interval
+      :math:`[1, \\infty]` while ``(None, 1)`` defines the interval
+      :math:`[-\\infty, 1]`. The open interval ``(None, None)`` can be specified
+      as well, which returns the matching properties without exclusion of peaks.
     * The border is always included in the interval used to select valid peaks.
-    * The order of filter arguments given in the function definition above
-      mirrors the actual order in which they are applied. In most cases this
-      order is the fastest one because faster filter operations are applied first
-      to reduce the number of peaks that need to be evaluated later.
-    * Filtering by distance is accomplished by iterating over all peaks in
-      descending order based on their height and removing all lower peaks that
-      are too close. This option can be quite slow if many peaks need to be
-      evaluated. Try to reduce the number of peaks with cheaper (previous) filter
-      options first.
-    * Use `wlen` to reduce the time it takes to filter by prominence or width if
-      `x` is large or has many local maxima (see `peak_prominences`).
-    * For several filter options the interval borders can be specified with
-      arrays matching `x` in shape which enables dynamic filter constrains.
+    * For several conditions the interval borders can be specified with
+      arrays matching `x` in shape which enables dynamic constrains based on
+      the sample position.
+    * The order of arguments given in the function definition above mirrors the
+      actual order in which conditions are evaluated. In most cases this order is
+      the fastest one because faster operations are applied first to reduce the
+      number of peaks that need to be evaluated later.
+    * Satisfying the distance condition is accomplished by iterating over all
+      peaks in descending order based on their height and removing all lower
+      peaks that are too close. This option can be quite slow if many peaks need
+      to be evaluated. Try to reduce the number of peaks beforehand by
+      specifying conditions that are evaluated before this one (`height` and
+      `threshold`).
+    * Use `wlen` to reduce the time it takes to evaluate the conditions for
+      `prominence` or `width` if `x` is large or has many local maxima
+      (see `peak_prominences`).
 
     .. versionadded:: 1.1.0
 
@@ -914,7 +915,7 @@ def find_peaks(x, height=None, threshold=None, distance=None,
     This time, find peaks that have a minimal prominence of 0.5 and whose peak
     base is not more than 150 samples wide (``width=(None, 150)``). For this we
     need to use the option ``rel_height=1.0`` which will evaluate the width at
-    the peaks base.
+    the peak's base.
 
     >>> peaks, prop = find_peaks(
     ...     x, prominence=0.5, width=(None, 150), rel_height=1.0)
@@ -943,19 +944,18 @@ def find_peaks(x, height=None, threshold=None, distance=None,
     peaks = _argmaxima1d(x)
     properties = {}
 
-    # Filter by height
     if height is not None:
+        # Evaluate height condition
         peak_heights = x[peaks]
-        # Filter by height
-        hmin, hmax = _unpack_filter_args(height, x, peaks)
-        keep = _filter_generic(peaks, peak_heights, hmin, hmax)
+        hmin, hmax = _unpack_condition_args(height, x, peaks)
+        keep = _select_by_property(peak_heights, hmin, hmax)
         peaks = peaks[keep]
         properties["peak_heights"] = peak_heights[keep]
 
     if threshold is not None:
-        # Filter by threshold
-        tmin, tmax = _unpack_filter_args(threshold, x, peaks)
-        keep, left_thresholds, right_thresholds = _filter_by_peak_threshold(
+        # Evaluate threshold condition
+        tmin, tmax = _unpack_condition_args(threshold, x, peaks)
+        keep, left_thresholds, right_thresholds = _select_by_peak_threshold(
             x, peaks, tmin, tmax)
         peaks = peaks[keep]
         properties["left_thresholds"] = left_thresholds
@@ -963,22 +963,22 @@ def find_peaks(x, height=None, threshold=None, distance=None,
         properties = {key: array[keep] for key, array in properties.items()}
 
     if distance is not None:
-        # Filter by distance
-        keep = _filter_by_peak_distance(peaks, x[peaks], distance)
+        # Evaluate distance condition
+        keep = _select_by_peak_distance(peaks, x[peaks], distance)
         peaks = peaks[keep]
         properties = {key: array[keep] for key, array in properties.items()}
 
     if prominence is not None or width is not None:
-        # Calculate prominence (required for both filter options)
+        # Calculate prominence (required for both conditions)
         properties.update(zip(
             ['prominences', 'left_bases', 'right_bases'],
             peak_prominences(x, peaks, wlen=wlen)
         ))
 
     if prominence is not None:
-        # Filter by prominence
-        pmin, pmax = _unpack_filter_args(prominence, x, peaks)
-        keep = _filter_generic(peaks, properties['prominences'], pmin, pmax)
+        # Evaluate prominence condition
+        pmin, pmax = _unpack_condition_args(prominence, x, peaks)
+        keep = _select_by_property(properties['prominences'], pmin, pmax)
         peaks = peaks[keep]
         properties = {key: array[keep] for key, array in properties.items()}
 
@@ -986,15 +986,13 @@ def find_peaks(x, height=None, threshold=None, distance=None,
         # Calculate widths
         properties.update(zip(
             ['widths', 'width_heights', 'left_ips', 'right_ips'],
-            peak_widths(x, peaks,
-                        rel_height=rel_height,
-                        prominence_data=(properties['prominences'],
-                                         properties['left_bases'],
-                                         properties['right_bases']))
+            peak_widths(x, peaks, rel_height, (properties['prominences'],
+                                               properties['left_bases'],
+                                               properties['right_bases']))
         ))
-        # Filter by width
-        wmin, wmax = _unpack_filter_args(width, x, peaks)
-        keep = _filter_generic(peaks, properties['widths'], wmin, wmax)
+        # Evaluate width condition
+        wmin, wmax = _unpack_condition_args(width, x, peaks)
+        keep = _select_by_property(properties['widths'], wmin, wmax)
         peaks = peaks[keep]
         properties = {key: array[keep] for key, array in properties.items()}
 
@@ -1238,7 +1236,10 @@ def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None,
 
     See Also
     --------
-    find_peaks, cwt
+    cwt
+        Continuous wavelet transform.
+    find_peaks
+        Find peaks inside a signal based on peak properties.
 
     Notes
     -----

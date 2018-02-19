@@ -9,7 +9,7 @@ from pytest import raises
 
 from scipy._lib.six import xrange
 from scipy.signal._peak_finding import (argrelmax, argrelmin,
-    peak_prominences, peak_widths, _unpack_filter_args, find_peaks,
+    peak_prominences, peak_widths, _unpack_condition_args, find_peaks,
     find_peaks_cwt, _identify_ridge_lines)
 from scipy.signal._peak_finding_utils import _argmaxima1d
 
@@ -456,52 +456,56 @@ class TestPeakWidths(object):
             peak_widths(np.arange(10), [1, 2], rel_height=-1)
 
 
-def test_unpack_filter_args():
+def test_unpack_condition_args():
     """
-    Verify parsing of filter arguments for `scipy.signal.find_peaks` function.
+    Verify parsing of condition arguments for `scipy.signal.find_peaks` function.
     """
     x = np.arange(10)
     amin_true = x
     amax_true = amin_true + 10
     peaks = amin_true[1::2]
 
-    # Test unpacking with None or full interval
-    assert_((1, None) == _unpack_filter_args(1, x, peaks))
-    assert_((None, 2) == _unpack_filter_args((None, 2), x, peaks))
-    assert_((3., 4.5) == _unpack_filter_args((3., 4.5), x, peaks))
+    # Test unpacking with None or interval
+    assert_((None, None) == _unpack_condition_args((None, None), x, peaks))
+    assert_((1, None) == _unpack_condition_args(1, x, peaks))
+    assert_((1, None) == _unpack_condition_args((1, None), x, peaks))
+    assert_((None, 2) == _unpack_condition_args((None, 2), x, peaks))
+    assert_((3., 4.5) == _unpack_condition_args((3., 4.5), x, peaks))
 
     # Test if borders are correctly reduced with `peaks`
-    amin_calc, amax_calc = _unpack_filter_args((amin_true, amax_true), x, peaks)
+    amin_calc, amax_calc = _unpack_condition_args((amin_true, amax_true), x, peaks)
     assert_equal(amin_calc, amin_true[peaks])
     assert_equal(amax_calc, amax_true[peaks])
 
     # Test raises if array borders don't match x
     with raises(ValueError, match="array size of lower"):
-        _unpack_filter_args(amin_true, np.arange(11), peaks)
+        _unpack_condition_args(amin_true, np.arange(11), peaks)
     with raises(ValueError, match="array size of upper"):
-        _unpack_filter_args((None, amin_true), np.arange(11), peaks)
+        _unpack_condition_args((None, amin_true), np.arange(11), peaks)
 
 
 class TestFindPeaks(object):
+
+    # Keys of optionally returned properties
+    property_keys = {'peak_heights', 'left_thresholds', 'right_thresholds',
+                     'prominences', 'left_bases', 'right_bases', 'widths',
+                     'width_heights', 'left_ips', 'right_ips'}
 
     def test_constant(self):
         """
         Test behavior for signal without local maxima.
         """
         open_interval = (None, None)
-        property_keys = {'peak_heights', 'left_thresholds', 'right_thresholds',
-                         'prominences', 'left_bases', 'right_bases', 'widths',
-                         'width_heights', 'left_ips', 'right_ips'}
         peaks, props = find_peaks(np.ones(10),
                                   height=open_interval, threshold=open_interval,
                                   prominence=open_interval, width=open_interval)
         assert_(peaks.size == 0)
-        for key in property_keys:
+        for key in self.property_keys:
             assert_(props[key].size == 0)
 
-    def test_filter_by_height(self):
+    def test_height_condition(self):
         """
-        Test filtering by peak height.
+        Test height condition for peaks.
         """
         x = (0., 1/3, 0., 2.5, 0, 4., 0)
         peaks, props = find_peaks(x, height=(None, None))
@@ -511,9 +515,9 @@ class TestFindPeaks(object):
         assert_equal(find_peaks(x, height=(None, 3))[0], np.array([1, 3]))
         assert_equal(find_peaks(x, height=(2, 3))[0], np.array([3]))
 
-    def test_filter_by_threshold(self):
+    def test_threshold_condition(self):
         """
-        Test filtering by threshold.
+        Test threshold condition for peaks.
         """
         x = (0, 2, 1, 4, -1)
         peaks, props = find_peaks(x, threshold=(None, None))
@@ -526,50 +530,50 @@ class TestFindPeaks(object):
         assert_equal(find_peaks(x, threshold=(None, 4))[0], np.array([1]))
         assert_equal(find_peaks(x, threshold=(2, 4))[0], np.array([]))
 
-    def test_filter_by_distance(self):
+    def test_distance_condition(self):
         """
-        Test filtering by peak distance.
+        Test distance condition for peaks.
         """
         # Peaks of different height with constant distance
         peaks_all = np.arange(1, 21, 3)
         x = np.zeros(21)
         x[peaks_all] += np.linspace(1, 2, peaks_all.size)
         # Filter every second peak
-        peaks_filt = find_peaks(x, distance=4)[0]
-        # Test if peaks_filt is subset of peaks_all
+        peaks_subset = find_peaks(x, distance=4)[0]
+        # Test if peaks_subset is subset of peaks_all
         assert_(
-            np.setdiff1d(peaks_filt, peaks_all, assume_unique=True).size == 0
+            np.setdiff1d(peaks_subset, peaks_all, assume_unique=True).size == 0
         )
         # Test that every second peak was removed
-        assert_equal(np.diff(peaks_filt), 6)
+        assert_equal(np.diff(peaks_subset), 6)
 
         # Test priority of peak removal
         x = [-2, 1, -1, 0, -3]
-        peaks_filt = find_peaks(x, distance=10)[0]  # use distance > x size
-        assert_(peaks_filt.size == 1 and peaks_filt[0] == 1)
+        peaks_subset = find_peaks(x, distance=10)[0]  # use distance > x size
+        assert_(peaks_subset.size == 1 and peaks_subset[0] == 1)
 
-    def test_filter_by_prominence(self):
+    def test_prominence_condition(self):
         """
-        Test filtering by peak prominence.
+        Test prominence condition for peaks.
         """
         x = np.linspace(0, 10, 100)
-        peaks = np.arange(1, 99, 2)
-        offset = np.linspace(1, 10, peaks.size)
-        x[peaks] += offset
-        prominences = x[peaks] - x[peaks + 1]
+        peaks_true = np.arange(1, 99, 2)
+        offset = np.linspace(1, 10, peaks_true.size)
+        x[peaks_true] += offset
+        prominences = x[peaks_true] - x[peaks_true + 1]
         interval = (3, 9)
         keep = np.where(
             (interval[0] <= prominences) & (prominences <= interval[1]))
 
-        peaks_filt, properties = find_peaks(x, prominence=interval)
-        assert_equal(peaks_filt, peaks[keep])
+        peaks_calc, properties = find_peaks(x, prominence=interval)
+        assert_equal(peaks_calc, peaks_true[keep])
         assert_equal(properties['prominences'], prominences[keep])
         assert_equal(properties['left_bases'], 0)
-        assert_equal(properties['right_bases'], peaks[keep] + 1)
+        assert_equal(properties['right_bases'], peaks_true[keep] + 1)
 
-    def test_filter_by_width(self):
+    def test_width_condition(self):
         """
-        Test filtering by peak width.
+        Test width condition for peaks.
         """
         x = np.array([1, 0, 1, 2, 1, 0, -1, 4, 0])
         peaks, props = find_peaks(x, width=(None, 2), rel_height=0.75)
@@ -582,17 +586,20 @@ class TestFindPeaks(object):
 
     def test_properties(self):
         """
-        Test filtering with returned properties.
+        Test returned properties.
         """
+        open_interval = (None, None)
         x = [0, 1, 0, 2, 1.5, 0, 3, 0, 5, 9]
-        peaks, properties = find_peaks(x, height=1.5, threshold=1, width=0)
-        assert_(len(properties) == 10)
-        for array in properties.values():
-            assert_(peaks.size == array.size)
+        peaks, props = find_peaks(x,
+                                  height=open_interval, threshold=open_interval,
+                                  prominence=open_interval, width=open_interval)
+        assert_(len(props) == len(self.property_keys))
+        for key in self.property_keys:
+            assert_(peaks.size == props[key].size)
 
     def test_raises(self):
         """
-        Test excpetions raised by function.
+        Test exceptions raised by function.
         """
         with raises(ValueError, match="dimension"):
             find_peaks(np.array(1))
