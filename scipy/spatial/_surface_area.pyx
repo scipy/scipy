@@ -30,27 +30,30 @@ def planar_polygon_area(double[:,::1] vertices):
     area *= 0.5
     return area
 
-def _slerp(double[:] start_coord,
-           double[:] end_coord,
-           int n_pts):
+@cython.cdivision(True)
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef _slerp(double[:] start_coord,
+            double[:] end_coord,
+            int n_pts):
     # spherical linear interpolation between points
     # on great circle arc
     # see: https://en.wikipedia.org/wiki/Slerp#Geometric_Slerp
     # NOTE: could we use scipy.interpolate.RectSphereBivariateSpline instead?
-    cdef double omega
-    cdef double[:,:] new_pts = np.empty((n_pts, 3), dtype=np.float64)
-    cdef double[:] new_pt = np.empty(3)
-    cdef int i, j
-    cdef double t
-    cdef double[:] t_values = np.linspace(0, 1, n_pts)
+    cdef:
+        double omega = acos(np.dot(start_coord, end_coord))
+        double sin_omega = sin(omega)
+        double[:,:] new_pts = np.empty((n_pts, 3), dtype=np.float64)
+        int i, j
+        double factors[2]
+        double[::1] t_values = np.linspace(0, 1, n_pts)
 
-    omega = acos(np.dot(start_coord, end_coord))
-    for i in range(n_pts):
-        t = t_values[i]
+    for i in xrange(n_pts):
+        factors[0] = sin((1 - t_values[i]) * omega) / sin_omega
+        factors[1] = sin(t_values[i] * omega) / sin_omega
         for j in range(3):
-            new_pt[j] = (((sin((1 - t) * omega) / sin(omega)) * start_coord[j]) +
-                      ((sin(t * omega) / sin(omega)) * end_coord[j]))
-        new_pts[i] = new_pt
+            new_pts[i,j] = ((factors[0] * start_coord[j]) +
+                            (factors[1] * end_coord[j]))
     return new_pts
 
 @cython.boundscheck(False)
