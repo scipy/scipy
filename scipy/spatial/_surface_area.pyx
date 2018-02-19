@@ -1,8 +1,9 @@
 import numpy as np
+from scipy.spatial.distance import pdist, cdist
 cimport numpy as np
 cimport cython
 from libc.math cimport (sin, acos, atan2,
-                        cos, M_PI)
+                        cos, M_PI, abs)
 
 cdef int vertex_index_strider(int index, int num_vertices):
     cdef int forward_index
@@ -203,3 +204,122 @@ def convert_spherical_array_to_cartesian_array(double[:,:] spherical_coord_array
     cartesian_coord_array[...,1] = spherical_coord_array[...,0] * np.sin(spherical_coord_array[...,1]) * np.sin(spherical_coord_array[...,2])
     cartesian_coord_array[...,2] = spherical_coord_array[...,0] * np.cos(spherical_coord_array[...,2])
     return cartesian_coord_array
+
+def poly_area(vertices,
+              radius=None,
+              double threshold=1e-21,
+              int discretizations=500,
+              int n_rot=50):
+    # calculate the surface area of a planar or spherical polygon
+    # crude pure Python implementation for handling a single
+    # polygon at a time
+    # based on JPL Publication 07-3 by Chamberlain and Duquette (2007)
+    # for planar polygons we currently still require x,y,z coords
+    # can just set i.e., z = 0 for all vertices
+    cdef int num_vertices = vertices.shape[0]
+    cdef double[:,:] one_pads = np.ones((1, 4), dtype=np.float64)
+    cdef double[:,:] candidate_plane
+    cdef int current_vert, plane_failures
+    cdef double[:] rot_axis = np.array([0,1,0], dtype=np.float64)
+    cdef double rot_angle, area
+    cdef double angle_factor = M_PI / 6.
+    # require that a planar or spherical triangle is
+    # the smallest possible input polygon
+    if num_vertices < 3:
+        err_str = "An input polygon must have at least 3 vertices."
+        raise ValueError(err_str)
+
+    min_vertex_dist = pdist(vertices).min()
+    if min_vertex_dist < threshold:
+        err_str = '''Duplicate vertices detected based on minimum
+                     distance {min_vertex_dist} and threshold value
+                     {threshold}.'''.format(min_vertex_dist=min_vertex_dist,
+                                            threshold=threshold)
+        raise ValueError(err_str)
+
+
+    if radius is not None: # spherical polygons
+        if radius <= threshold:
+            err_str = 'radius must be > {threshold}'.format(threshold=threshold)
+            raise ValueError(err_str)
+
+        # if any two *consecutive* vertices in the spherical polygon
+        # are antipodes, there's an infinite set of
+        # geodesics connecting them, and we cannot
+        # possibly guess the appropriate surface area
+        dist_matrix = cdist(vertices, vertices)
+        # TODO: use a threshold for the floating
+        # point dist comparison here
+        matches = np.where(dist_matrix == (2. * radius))
+        # can't handle consecutive matches that are antipodes
+        if np.any(np.abs(matches[0] - matches[1]) == 1):
+            raise ValueError("Consecutive antipodal vertices are ambiguous.")
+
+        # a great circle can only occur if the origin lies in a plane
+        # with all vertices of the input spherical polygon
+        # the input spherical polygon must have at least three vertices
+        # to begin with (i.e., spherical triangle as smallest possible
+        # spherical polygon) so we can safely assume (and check above)
+        # three input vertices plus the origin for our test here
+
+        # points lie in a common plane if the determinant below
+        # is zero (informally, see:
+        # https://math.stackexchange.com/a/684580/480070 
+        # and http://mathworld.wolfram.com/Plane.html eq. 18)
+
+        # have to iterate through the vertices in chunks
+        # to preserve the three-point form of the plane-check
+        # determinant
+        current_vert = 0
+        plane_failures = 0
+        while current_vert <= (num_vertices - 3):
+            candidate_plane = np.concatenate((np.zeros((1,3)),
+                                              vertices[current_vert:current_vert + 3]))
+
+            candidate_plane = np.concatenate((candidate_plane.T,
+                                              one_pads))
+
+            if np.linalg.det(candidate_plane) != 0:
+                # if any of the vertices aren't on the plane with
+                # the origin we can safely break out
+                plane_failures += 1
+                break
+
+            current_vert += 1
+
+        if plane_failures == 0:
+            # we have a great circle so
+            # return hemisphere area
+            return 2. * M_PI * (radius ** 2) 
+
+        # normalize vertices to unit sphere
+        vertices = convert_cartesian_array_to_spherical_array(vertices)
+        vertices[...,0] = 1.
+        vertices = convert_spherical_array_to_cartesian_array(vertices)
+
+        # try to handle spherical polygons that contain
+        # a pole by rotating them; failing that,
+        # return an area of np.nan
+
+        # rotate around y axis to move away
+        # from the N/ S poles
+        while pole_in_polygon(vertices) == 1:
+            n_rot -= 1
+            rot_angle = np.random.random_sample() * angle_factor
+            if n_rot == 0:
+                return np.nan
+            else:
+               # use Rodrigues' rotation formula
+               for index in range(num_vertices):
+                  row = vertices[index]
+                  vertices[index] = (row * cos(rot_angle) +
+                               np.cross(rot_axis, row) * sin(rot_angle) +
+                               rot_axis * (np.dot(row, rot_axis)) * (1 - cos(rot_angle)))
+
+        area = _spherical_polygon_area(vertices,
+                                       radius,
+                                       discretizations)
+    else: # planar polygon
+        area = planar_polygon_area(vertices)
+    
+    return abs(area)
