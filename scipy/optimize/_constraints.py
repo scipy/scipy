@@ -44,7 +44,7 @@ class NonlinearConstraint(object):
     hess : {callable, '2-point', '3-point', 'cs', HessianUpdateStrategy, None}, optional
         Method for computing the Hessian matrix. The keywords
         {'2-point', '3-point', 'cs'} select a finite difference scheme for
-        numerical  estimation.  Alternativelly, objects implementing
+        numerical  estimation.  Alternatively, objects implementing
         `HessianUpdateStrategy` interface can be used to approximate the
         Hessian. Currently available implementations are:
 
@@ -83,7 +83,7 @@ class NonlinearConstraint(object):
     The scheme 'cs' is potentially the most accurate, but requires the function
     to correctly handles complex inputs and be analytically continuable to the
     complex plane. The scheme '3-point' is more accurate than '2-point' but
-    requires twice as much operations.
+    requires twice as many operations.
     """
     def __init__(self, fun, lb, ub, jac='2-point', hess=BFGS(),
                  keep_feasible=False, finite_diff_rel_step=None,
@@ -168,7 +168,7 @@ class Bounds(object):
 
 
 class PreparedConstraint(object):
-    """Constraint prepared from a user defined constrained.
+    """Constraint prepared from a user defined constraint.
 
     On creation it will check whether a constraint definition is valid and
     the initial point is feasible. If created successfully, it will contain

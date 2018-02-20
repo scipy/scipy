@@ -477,7 +477,7 @@ class TestTrustRegionConstr(TestCase):
                             assert_array_less(result.optimality, 1e-8)
                     # xtol
                     if result.status == 2:
-                        assert_array_less(result.trust_radius, 1e-8)
+                        assert_array_less(result.tr_radius, 1e-8)
 
                         if result.method == "tr_interior_point":
                             assert_array_less(result.barrier_parameter, 1e-8)
@@ -522,7 +522,7 @@ class TestTrustRegionConstr(TestCase):
             assert_array_less(result.optimality, 1e-8)
         # xtol
         if result.status == 2:
-            assert_array_less(result.trust_radius, 1e-8)
+            assert_array_less(result.tr_radius, 1e-8)
 
             if result.method == "tr_interior_point":
                 assert_array_less(result.barrier_parameter, 1e-8)
@@ -547,7 +547,7 @@ class TestTrustRegionConstr(TestCase):
             assert_array_less(result.optimality, 1e-8)
         # xtol
         if result.status == 2:
-            assert_array_less(result.trust_radius, 1e-8)
+            assert_array_less(result.tr_radius, 1e-8)
 
             if result.method == "tr_interior_point":
                 assert_array_less(result.barrier_parameter, 1e-8)

@@ -196,7 +196,7 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, f0=None,
         to a 1-d array.
     method : {'3-point', '2-point', 'cs'}, optional
         Finite difference method to use:
-            - '2-point' - use the fist order accuracy forward or backward
+            - '2-point' - use the first order accuracy forward or backward
                           difference.
             - '3-point' - use central difference in interior points and the
                           second order accuracy forward or backward difference
