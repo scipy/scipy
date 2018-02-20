@@ -303,7 +303,7 @@ class spmatrix(object):
         ----------
         format : {str, None}
             The desired sparse matrix format ("csr", "csc", "lil", "dok", ...)
-            or None for no conversation.
+            or None for no conversion.
         copy : bool, optional
             If True, the result is guaranteed to not share data with self.
 
