@@ -296,25 +296,34 @@ class spmatrix(object):
         raise TypeError("sparse matrix length is ambiguous; use getnnz()"
                         " or shape[0]")
 
-    def asformat(self, format):
-        """Return this matrix in a given sparse format
+    def asformat(self, format, copy=False):
+        """Return this matrix in the passed sparse format.
 
         Parameters
         ----------
-        format : {string, None}
-            desired sparse matrix format
-                - None for no format conversion
-                - "csr" for csr_matrix format
-                - "csc" for csc_matrix format
-                - "lil" for lil_matrix format
-                - "dok" for dok_matrix format and so on
+        format : {str, None}
+            The desired sparse matrix format ("csr", "csc", "lil", "dok", ...)
+            or None for no conversion.
+        copy : bool, optional
+            If True, the result is guaranteed to not share data with self.
+
+        Returns
+        -------
+        A : This matrix in the passed sparse format.
 
         """
-
         if format is None or format == self.format:
-            return self
+            if copy:
+                return self.copy()
+            else:
+                return self
         else:
-            return getattr(self, 'to' + format)()
+            try:
+                convert_method = getattr(self, 'to' + format)
+            except AttributeError:
+                raise ValueError('Format {} is unknown.'.format(format))
+            else:
+                return convert_method(copy=copy)
 
     ###################################################################
     #  NOTE: All arithmetic operations use csr_matrix by default.
