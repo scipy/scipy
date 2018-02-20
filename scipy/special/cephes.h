@@ -12,6 +12,10 @@
 
 #include "cephes/cephes_names.h"
 
+#if __GNUC__ >= 4
+#pragma GCC visibility push(hidden)
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -200,6 +204,10 @@ extern double lanczos_sum_expg_scaled( double x );
 
 #ifdef __cplusplus
 }
+#endif
+
+#if __GNUC__ >= 4
+#pragma GCC visibility pop
 #endif
 
 #endif /* CEPHES_H */

@@ -33,6 +33,10 @@
 #ifndef LANCZOS_H
 #define LANCZOS_H
 
+#if __GNUC__ >= 4
+#pragma GCC visibility push(hidden)
+#endif
+
 
 static double lanczos_num[13] = {
     2.506628274631000270164908177133837338626,
@@ -129,5 +133,9 @@ static double lanczos_sum_near_2_d[12] = {
 };
 
 static double lanczos_g = 6.024680040776729583740234375;
+
+#if __GNUC__ >= 4
+#pragma GCC visibility pop
+#endif
 
 #endif

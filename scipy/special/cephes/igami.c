@@ -7,14 +7,12 @@
 #include "mconf.h"
 #include "_c99compat.h"
 
-double find_inverse_s(double, double);
-double didonato_SN(double, double, unsigned, double);
-double find_inverse_gamma(double, double, double);
-double igami(double, double);
-double igamci(double, double);
+static double find_inverse_s(double, double);
+static double didonato_SN(double, double, unsigned, double);
+static double find_inverse_gamma(double, double, double);
 
 
-double find_inverse_s(double p, double q)
+static double find_inverse_s(double p, double q)
 {
     /*
      * Computation of the Incomplete Gamma Function Ratios and their Inverse
@@ -43,7 +41,7 @@ double find_inverse_s(double p, double q)
 }
 
 
-double didonato_SN(double a, double x, unsigned N, double tolerance)
+static double didonato_SN(double a, double x, unsigned N, double tolerance)
 {
     /*
      * Computation of the Incomplete Gamma Function Ratios and their Inverse
@@ -72,7 +70,7 @@ double didonato_SN(double a, double x, unsigned N, double tolerance)
 }
 
 
-double find_inverse_gamma(double a, double p, double q)
+static double find_inverse_gamma(double a, double p, double q)
 {
     /*
      * In order to understand what's going on here, you will

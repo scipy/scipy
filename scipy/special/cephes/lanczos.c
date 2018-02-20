@@ -31,7 +31,7 @@ double lanczos_sum_expg_scaled(double x)
 }
 
 
-double lanczos_sum_near_1(double dx)
+static double lanczos_sum_near_1(double dx)
 {
     double result = 0;
     unsigned k;
@@ -43,7 +43,7 @@ double lanczos_sum_near_1(double dx)
 }
 
 
-double lanczos_sum_near_2(double dx)
+static double lanczos_sum_near_2(double dx)
 {
     double result = 0;
     double x = dx + 2;

@@ -42,6 +42,10 @@
     } while (0)
 #define ABS(x) ((x)<0 ? -(x) : (x))
 
+#if __GNUC__ >= 4
+#pragma GCC visibility push(hidden)
+#endif
+
 npy_cdouble clngamma_wrap( npy_cdouble z);
 npy_cdouble chyp2f1_wrap( double a, double b, double c, npy_cdouble z);
 npy_cdouble chyp1f1_wrap( double a, double b, npy_cdouble z);
@@ -110,16 +114,9 @@ double oblate_segv_wrap(double, double, double);
 
 int modified_fresnel_plus_wrap(double x, npy_cdouble *F, npy_cdouble *K);
 int modified_fresnel_minus_wrap(double x, npy_cdouble *F, npy_cdouble *K);
+
+#if __GNUC__ >= 4
+#pragma GCC visibility pop
 #endif
 
-
-
-
-  
-
-
-
-
-
-
-
+#endif

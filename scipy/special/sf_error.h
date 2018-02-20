@@ -1,6 +1,10 @@
 #ifndef SF_ERROR_H_
 #define SF_ERROR_H_
 
+#if __GNUC__ >= 4
+#pragma GCC visibility push(hidden)
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -33,6 +37,10 @@ sf_action_t sf_error_get_action(sf_error_t code);
 
 #ifdef __cplusplus
 }
+#endif
+
+#if __GNUC__ >= 4
+#pragma GCC visibility pop
 #endif
 
 #endif /* SF_ERROR_H_ */
