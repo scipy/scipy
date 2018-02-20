@@ -119,13 +119,11 @@ extern double MACHEP, MAXLOG;
 static double big = 4.503599627370496e15;
 static double biginv = 2.22044604925031308085e-16;
 
-double igam(double, double);
-double igamc(double, double);
-double igamc_continued_fraction(double, double);
-double igam_leading_factor(double, double);
-double igam_series(double, double);
-double igamc_series(double, double);
-double asymptotic_series(double, double, int);
+static double igamc_continued_fraction(double, double);
+static double igam_leading_factor(double, double);
+static double igam_series(double, double);
+static double igamc_series(double, double);
+static double asymptotic_series(double, double, int);
 
 
 double igam(a, x)
@@ -237,7 +235,7 @@ double igam_fac(double a, double x)
 
 
 /* Compute igamc using DLMF 8.9.2. */
-double igamc_continued_fraction(double a, double x)
+static double igamc_continued_fraction(double a, double x)
 {
     int i;
     double ans, ax, c, yc, r, t, y, z;
@@ -292,7 +290,7 @@ double igamc_continued_fraction(double a, double x)
 
 
 /* Compute igam using DLMF 8.11.4. */
-double igam_series(double a, double x)
+static double igam_series(double a, double x)
 {
     int i;
     double ans, ax, c, r;
@@ -323,7 +321,7 @@ double igam_series(double a, double x)
 /* Compute igamc using DLMF 8.7.3. This is related to the series in
  * igam_series but extra care is taken to avoid cancellation.
  */
-double igamc_series(double a, double x)
+static double igamc_series(double a, double x)
 {
     int n;
     double fac = 1;
@@ -346,7 +344,7 @@ double igamc_series(double a, double x)
 
 
 /* Compute igam/igamc using DLMF 8.12.3/8.12.4. */
-double asymptotic_series(double a, double x, int func)
+static double asymptotic_series(double a, double x, int func)
 {
     int k, n, sgn;
     int maxpow = 0;

@@ -13,7 +13,7 @@
 #include "lanczos.h"
 
 
-double lanczos_sum(double x)
+static double lanczos_sum(double x)
 {
     return ratevl(x, lanczos_num,
 		  sizeof(lanczos_num) / sizeof(lanczos_num[0]) - 1,
