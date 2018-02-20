@@ -57,10 +57,10 @@ cdef _slerp(double[:] start_coord,
     return new_pts
 
 @cython.boundscheck(False)
-def calc_heading(double[:] lambda_range,
-                 double[:] phi_range,
-                 int i,
-                 int next_index):
+cdef calc_heading(double[:] lambda_range,
+                  double[:] phi_range,
+                  int i,
+                  int next_index):
 
     cdef double phi_1 = phi_range[i]
     cdef double phi_2 = phi_range[next_index]
