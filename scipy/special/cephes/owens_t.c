@@ -91,7 +91,7 @@ static double WTS[] = {
 };
 
 
-int get_method(double h, double a) {
+static int get_method(double h, double a) {
     int ihint, iaint, i;
 
     ihint = 14;
@@ -114,17 +114,17 @@ int get_method(double h, double a) {
 }
 
 
-double owens_t_norm1(double x) {
+static double owens_t_norm1(double x) {
     return erf(x / sqrt(2)) / 2;
 }
 
 
-double owens_t_norm2(double x) {
+static double owens_t_norm2(double x) {
     return erfc(x / sqrt(2)) / 2;
 }
 
 
-double owensT1(double h, double a, double m) {
+static double owensT1(double h, double a, double m) {
     int j = 1;
     int jj = 1;
 
@@ -154,7 +154,7 @@ double owensT1(double h, double a, double m) {
 }
 
 
-double owensT2(double h, double a, double ah, double m) {
+static double owensT2(double h, double a, double ah, double m) {
     int i = 1;
     int maxi = 2 * m + 1;
     double hs = h * h;
@@ -179,7 +179,7 @@ double owensT2(double h, double a, double ah, double m) {
 }
 
 
-double owensT3(double h, double a, double ah) {
+static double owensT3(double h, double a, double ah) {
     double aa, hh, y, vi, zi, result;
     int i;
 
@@ -203,7 +203,7 @@ double owensT3(double h, double a, double ah) {
 }
 
 
-double owensT4(double h, double a, double m) {
+static double owensT4(double h, double a, double m) {
     double maxi, hh, naa, ai, yi, result;
     int i;
 
@@ -232,7 +232,7 @@ double owensT4(double h, double a, double m) {
 }
 
 
-double owensT5(double h, double a) {
+static double owensT5(double h, double a) {
     double result, r, aa, nhh;
     int i;
 
@@ -252,7 +252,7 @@ double owensT5(double h, double a) {
 }
 
 
-double owensT6(double h, double a) {
+static double owensT6(double h, double a) {
     double normh, y, r, result;
 
     normh = owens_t_norm2(h);
@@ -268,7 +268,7 @@ double owensT6(double h, double a) {
 }
 
 
-double owens_t_dispatch(double h, double a, double ah) {
+static double owens_t_dispatch(double h, double a, double ah) {
     int index, meth_code;
     double m, result;
 
