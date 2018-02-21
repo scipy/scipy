@@ -241,11 +241,12 @@ def _binary_erosion(input, structure, iterations, mask, output,
 
     if iterations == 1:
         _nd_image.binary_erosion(input, structure, mask, output,
-                                     border_value, origin, invert, cit, 0)
+                                 border_value, origin, invert, cit, 0)
         return return_value
     elif cit and not brute_force:
-        changed, coordinate_list = _nd_image.binary_erosion(input,
-             structure, mask, output, border_value, origin, invert, cit, 1)
+        changed, coordinate_list = _nd_image.binary_erosion(
+            input, structure, mask, output,
+            border_value, origin, invert, cit, 1)
         structure = structure[tuple([slice(None, None, -1)] *
                                     structure.ndim)]
         for ii in range(len(origin)):
@@ -267,20 +268,22 @@ def _binary_erosion(input, structure, iterations, mask, output,
             tmp_out = numpy.zeros(input.shape, bool)
         if not iterations & 1:
             tmp_in, tmp_out = tmp_out, tmp_in
-        changed = _nd_image.binary_erosion(input, structure, mask,
-                            tmp_out, border_value, origin, invert, cit, 0)
+        changed = _nd_image.binary_erosion(
+            input, structure, mask, tmp_out,
+            border_value, origin, invert, cit, 0)
         ii = 1
         while (ii < iterations) or (iterations < 1) and changed:
             tmp_in, tmp_out = tmp_out, tmp_in
-            changed = _nd_image.binary_erosion(tmp_in, structure, mask,
-                            tmp_out, border_value, origin, invert, cit, 0)
+            changed = _nd_image.binary_erosion(
+                tmp_in, structure, mask, tmp_out,
+                border_value, origin, invert, cit, 0)
             ii += 1
         if return_value is not None:
             return tmp_out
 
 
-def binary_erosion(input, structure=None, iterations=1, mask=None,
-        output=None, border_value=0, origin=0, brute_force=False):
+def binary_erosion(input, structure=None, iterations=1, mask=None, output=None,
+                   border_value=0, origin=0, brute_force=False):
     """
     Multi-dimensional binary erosion with a given structuring element.
 
@@ -371,7 +374,8 @@ def binary_erosion(input, structure=None, iterations=1, mask=None,
 
 
 def binary_dilation(input, structure=None, iterations=1, mask=None,
-        output=None, border_value=0, origin=0, brute_force=False):
+                    output=None, border_value=0, origin=0,
+                    brute_force=False):
     """
     Multi-dimensional binary dilation with the given structuring element.
 
@@ -1164,7 +1168,7 @@ def grey_erosion(input, size=None, footprint=None, structure=None,
 
 
 def grey_dilation(input, size=None, footprint=None, structure=None,
-                 output=None, mode="reflect", cval=0.0, origin=0):
+                  output=None, mode="reflect", cval=0.0, origin=0):
     """
     Calculate a greyscale dilation, using either a structuring element,
     or a footprint corresponding to a flat structuring element.
@@ -1473,9 +1477,8 @@ def grey_closing(input, size=None, footprint=None, structure=None,
                         cval, origin)
 
 
-def morphological_gradient(input, size=None, footprint=None,
-                        structure=None, output=None, mode="reflect",
-                        cval=0.0, origin=0):
+def morphological_gradient(input, size=None, footprint=None, structure=None,
+                           output=None, mode="reflect", cval=0.0, origin=0):
     """
     Multi-dimensional morphological gradient.
 
@@ -1882,9 +1885,8 @@ def distance_transform_bf(input, metric="euclidean", sampling=None,
         return None
 
 
-def distance_transform_cdt(input, metric='chessboard',
-                        return_distances=True, return_indices=False,
-                        distances=None, indices=None):
+def distance_transform_cdt(input, metric='chessboard', return_distances=True,
+                           return_indices=False, distances=None, indices=None):
     """
     Distance transform for chamfer type of transforms.
 
@@ -1955,7 +1957,7 @@ def distance_transform_cdt(input, metric='chessboard',
 
     rank = dt.ndim
     if return_indices:
-        sz = numpy.product(dt.shape,axis=0)
+        sz = numpy.product(dt.shape, axis=0)
         ft = numpy.arange(sz, dtype=numpy.int32)
         ft.shape = dt.shape
     else:
@@ -1999,9 +2001,8 @@ def distance_transform_cdt(input, metric='chessboard',
         return None
 
 
-def distance_transform_edt(input, sampling=None,
-                        return_distances=True, return_indices=False,
-                        distances=None, indices=None):
+def distance_transform_edt(input, sampling=None, return_distances=True,
+                           return_indices=False, distances=None, indices=None):
     """
     Exact euclidean distance transform.
 
@@ -2130,8 +2131,7 @@ def distance_transform_edt(input, sampling=None,
         if ft.dtype.type != numpy.int32:
             raise RuntimeError('indices must be of int32 type')
     else:
-        ft = numpy.zeros((input.ndim,) + input.shape,
-                            dtype=numpy.int32)
+        ft = numpy.zeros((input.ndim,) + input.shape, dtype=numpy.int32)
 
     _nd_image.euclidean_feature_transform(input, sampling, ft)
     # if requested, calculate the distance transform
