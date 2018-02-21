@@ -23,7 +23,8 @@ from pytest import raises as assert_raises
 
 from scipy._lib._numpy_compat import suppress_warnings
 from scipy import optimize
-from scipy.optimize import (Function, NelderMead, Optimizer, BFGS, LBFGSB)
+from scipy.optimize.optimize import (Function, NelderMead, Optimizer, BFGS)
+from scipy.optimize.lbfgsb import LBFGSB
 
 
 def logit(x):

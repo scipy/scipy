@@ -18,9 +18,6 @@ Local Optimization
    minimize_scalar - Unified interface for minimizers of univariate functions
    OptimizeResult - The optimization result returned by some optimizers
    OptimizeWarning - The optimization encountered problems
-   Optimizer - Base class for object oriented solvers
-   Function - Class for describing a scalar function to be used by object
-        oriented solvers
 
 The `minimize` function supports the following methods:
 
@@ -47,18 +44,6 @@ The `minimize_scalar` function supports the following methods:
    optimize.minimize_scalar-brent
    optimize.minimize_scalar-bounded
    optimize.minimize_scalar-golden
-
-The following class based solvers are available:
-
-.. toctree::
-
-    LBFGSB - Zhu, Byrd, and Nocedal's constrained optimizer
-    NelderMead - Nelder-Mead Simplex algorithm
-    BFGS - Quasi-Newton method (Broydon-Fletcher-Goldfarb-Shanno)
-
-The specific optimization method interfaces below in this subsection are
-not recommended for use in new scripts; all of these methods are accessible
-via a newer, more consistent interface provided by the functions above.
 
 General-purpose multivariate methods:
 
@@ -253,7 +238,7 @@ from ._minimize import *
 from ._root import *
 from .minpack import *
 from .zeros import *
-from .lbfgsb import fmin_l_bfgs_b, LbfgsInvHessProduct, LBFGSB
+from .lbfgsb import fmin_l_bfgs_b, LbfgsInvHessProduct
 from .tnc import fmin_tnc
 from .cobyla import fmin_cobyla
 from .nonlin import *

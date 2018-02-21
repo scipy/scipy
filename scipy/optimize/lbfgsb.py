@@ -45,7 +45,7 @@ from .optimize import (approx_fprime, MemoizeJac, OptimizeResult,
                        _approx_fprime_helper, Function, Optimizer)
 from scipy.sparse.linalg import LinearOperator
 
-__all__ = ['fmin_l_bfgs_b', 'LbfgsInvHessProduct', 'LBFGSB']
+__all__ = ['fmin_l_bfgs_b', 'LbfgsInvHessProduct']
 
 
 def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
