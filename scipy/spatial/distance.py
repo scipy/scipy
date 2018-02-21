@@ -116,11 +116,11 @@ from functools import partial
 from collections import namedtuple
 from scipy._lib.six import callable, string_types
 from scipy._lib.six import xrange
+from scipy._lib._util import _asarray_validated
 
 from . import _distance_wrap
 from . import _hausdorff
 from ..linalg import norm
-from ..sparse import issparse
 
 
 def _args_to_kwargs_xdist(args, kwargs, metric, func_name):
@@ -1861,9 +1861,7 @@ def pdist(X, metric='euclidean', *args, **kwargs):
     # between all pairs of vectors in X using the distance metric 'abc' but
     # with a more succinct, verifiable, but less efficient implementation.
 
-    if issparse(X):
-        raise TypeError("pdist does not support sparse matrix input," +
-                        " use sklearn's pairwise_distances instead.")
+    X = _asarray_validated(X, sparse_ok=False)
     kwargs = _args_to_kwargs_xdist(args, kwargs, metric, "pdist")
 
     X = np.asarray(X, order='c')
