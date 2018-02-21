@@ -1203,7 +1203,7 @@ class TestNdimage:
         def shift(x):
             return (x[0] + 0.5,)
 
-        data = numpy.array([1, 2, 3, 4])
+        data = numpy.array([1, 2, 3, 4.])
         expected = {'constant': [1.5, 2.5, 3.5, -1, -1, -1, -1],
                     'wrap': [1.5, 2.5, 3.5, 1.5, 2.5, 3.5, 1.5],
                     'mirror': [1.5, 2.5, 3.5, 3.5, 2.5, 1.5, 1.5],
@@ -2880,7 +2880,7 @@ class TestNdimage:
         fts.append(ft)
         ft = numpy.indices(data.shape, dtype=numpy.int32)
         ndimage.distance_transform_edt(
-            data, return_distances=False,return_indices=True, indices=ft)
+            data, return_distances=False, return_indices=True, indices=ft)
         fts.append(ft)
         dt, ft = ndimage.distance_transform_edt(
             data, return_indices=True)
@@ -4390,6 +4390,26 @@ class TestNdimage:
                                       structure=structure)
         assert_array_almost_equal(expected, output)
 
+    def test_white_tophat03(self):
+        array = numpy.array([[1, 0, 0, 0, 0, 0, 0],
+                             [0, 1, 1, 1, 1, 1, 0],
+                             [0, 1, 1, 1, 1, 1, 0],
+                             [0, 1, 1, 1, 1, 1, 0],
+                             [0, 1, 1, 1, 0, 1, 0],
+                             [0, 1, 1, 1, 1, 1, 0],
+                             [0, 0, 0, 0, 0, 0, 1]], dtype=numpy.bool_)
+        structure = numpy.ones((3, 3), dtype=numpy.bool_)
+        expected = numpy.array([[0, 1, 1, 0, 0, 0, 0],
+                                [1, 0, 0, 1, 1, 1, 0],
+                                [1, 0, 0, 1, 1, 1, 0],
+                                [0, 1, 1, 0, 0, 0, 1],
+                                [0, 1, 1, 0, 1, 0, 1],
+                                [0, 1, 1, 0, 0, 0, 1],
+                                [0, 0, 0, 1, 1, 1, 1]], dtype=numpy.bool_)
+
+        output = ndimage.white_tophat(array, structure=structure)
+        assert_array_equal(expected, output)
+
     def test_black_tophat01(self):
         array = numpy.array([[3, 2, 5, 1, 4],
                              [7, 6, 9, 3, 5],
@@ -4416,6 +4436,26 @@ class TestNdimage:
         output = ndimage.black_tophat(array, footprint=footprint,
                                       structure=structure)
         assert_array_almost_equal(expected, output)
+
+    def test_black_tophat03(self):
+        array = numpy.array([[1, 0, 0, 0, 0, 0, 0],
+                             [0, 1, 1, 1, 1, 1, 0],
+                             [0, 1, 1, 1, 1, 1, 0],
+                             [0, 1, 1, 1, 1, 1, 0],
+                             [0, 1, 1, 1, 0, 1, 0],
+                             [0, 1, 1, 1, 1, 1, 0],
+                             [0, 0, 0, 0, 0, 0, 1]], dtype=numpy.bool_)
+        structure = numpy.ones((3, 3), dtype=numpy.bool_)
+        expected = numpy.array([[0, 1, 1, 1, 1, 1, 1],
+                                [1, 0, 0, 0, 0, 0, 1],
+                                [1, 0, 0, 0, 0, 0, 1],
+                                [1, 0, 0, 0, 0, 0, 1],
+                                [1, 0, 0, 0, 1, 0, 1],
+                                [1, 0, 0, 0, 0, 0, 1],
+                                [1, 1, 1, 1, 1, 1, 0]], dtype=numpy.bool_)
+
+        output = ndimage.black_tophat(array, structure=structure)
+        assert_array_equal(expected, output)
 
     def test_hit_or_miss01(self):
         struct = [[0, 1, 0],
