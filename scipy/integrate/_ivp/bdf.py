@@ -205,7 +205,7 @@ class BDF(OdeSolver):
             def solve_lu(LU, b):
                 return LU.solve(b)
 
-            I = eye(self.n, format='csc', dtype=self.y.dtype)
+            K = eye(self.n, format='csc', dtype=self.y.dtype)
         else:
             def lu(A):
                 self.nlu += 1
