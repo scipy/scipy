@@ -437,7 +437,7 @@ def to_writeable(source):
         for field, value in source.items():
             if (isinstance(field, string_types) and
                     field[0] not in '_0123456789'):
-                dtype.append((field, object))
+                dtype.append((str(field), object))
                 values.append(value)
         if dtype:
             return np.array([tuple(values)], dtype)

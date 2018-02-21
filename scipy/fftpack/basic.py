@@ -330,6 +330,14 @@ def ifft(x, n=None, axis=-1, overwrite_x=False):
     If the data type of `x` is real, a "real IFFT" algorithm is automatically
     used, which roughly halves the computation time.
 
+    Examples
+    --------
+    >>> from scipy.fftpack import fft, ifft
+    >>> import numpy as np
+    >>> x = np.arange(5)
+    >>> np.allclose(ifft(fft(x)), x, atol=1e-15)  # within numerical accuracy.
+    True
+
     """
     tmp = _asfarray(x)
 
@@ -395,7 +403,7 @@ def rfft(x, n=None, axis=-1, overwrite_x=False):
 
     See Also
     --------
-    fft, irfft, scipy.fftpack.basic
+    fft, irfft, numpy.fft.rfft
 
     Notes
     -----
@@ -405,6 +413,9 @@ def rfft(x, n=None, axis=-1, overwrite_x=False):
     inputs will be converted to single precision.  Non floating-point inputs
     will be converted to double precision.  Long-double precision inputs are
     not supported.
+
+    To get an output with a complex datatype, consider using the related
+    function `numpy.fft.rfft`.
 
     Examples
     --------
@@ -460,7 +471,7 @@ def irfft(x, n=None, axis=-1, overwrite_x=False):
 
     See Also
     --------
-    rfft, ifft
+    rfft, ifft, numpy.fft.irfft
 
     Notes
     -----
@@ -484,6 +495,8 @@ def irfft(x, n=None, axis=-1, overwrite_x=False):
 
     For details on input parameters, see `rfft`.
 
+    To process (conjugate-symmetric) frequency-domain data with a complex
+    datatype, consider using the related function `numpy.fft.irfft`.
     """
     tmp = _asfarray(x)
     if not numpy.isrealobj(tmp):
@@ -654,6 +667,14 @@ def ifftn(x, shape=None, axes=None, overwrite_x=False):
     See Also
     --------
     fftn : for detailed information.
+
+    Examples
+    --------
+    >>> from scipy.fftpack import fftn, ifftn
+    >>> import numpy as np
+    >>> y = (-np.arange(16), 8 - np.arange(16), np.arange(16))
+    >>> np.allclose(y, ifftn(fftn(y)))
+    True
 
     """
     return _raw_fftn_dispatch(x, shape, axes, overwrite_x, -1)

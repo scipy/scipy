@@ -4,9 +4,9 @@ from __future__ import division, print_function, absolute_import
 import sys
 import numpy as np
 
-from numpy.testing import (assert_equal, assert_raises, assert_allclose,
-                           assert_array_equal, assert_almost_equal,
-                           TestCase, run_module_suite)
+from numpy.testing import (assert_equal, assert_allclose,
+                           assert_array_equal, assert_almost_equal)
+from pytest import raises as assert_raises
 
 import scipy.ndimage as sndi
 from scipy.ndimage.filters import _gaussian_kernel1d
@@ -69,12 +69,12 @@ def test_gaussian_kernel1d():
 def test_orders_gauss():
     # Check order inputs to Gaussians
     arr = np.zeros((1,))
-    yield assert_equal, 0, sndi.gaussian_filter(arr, 1, order=0)
-    yield assert_equal, 0, sndi.gaussian_filter(arr, 1, order=3)
-    yield assert_raises, ValueError, sndi.gaussian_filter, arr, 1, -1
-    yield assert_equal, 0, sndi.gaussian_filter1d(arr, 1, axis=-1, order=0)
-    yield assert_equal, 0, sndi.gaussian_filter1d(arr, 1, axis=-1, order=3)
-    yield assert_raises, ValueError, sndi.gaussian_filter1d, arr, 1, -1, -1
+    assert_equal(0, sndi.gaussian_filter(arr, 1, order=0))
+    assert_equal(0, sndi.gaussian_filter(arr, 1, order=3))
+    assert_raises(ValueError, sndi.gaussian_filter, arr, 1, -1)
+    assert_equal(0, sndi.gaussian_filter1d(arr, 1, axis=-1, order=0))
+    assert_equal(0, sndi.gaussian_filter1d(arr, 1, axis=-1, order=3))
+    assert_raises(ValueError, sndi.gaussian_filter1d, arr, 1, -1, -1)
 
 
 def test_valid_origins():
@@ -301,7 +301,7 @@ def test_gaussian_truncate():
     assert_equal(n, 15)
 
 
-class TestThreading(TestCase):
+class TestThreading(object):
     def check_func_thread(self, n, fun, args, out):
         from threading import Thread
         thrds = [Thread(target=fun, args=args, kwargs={'output': out[x]}) for x in range(n)]
@@ -401,6 +401,10 @@ def test_footprint_all_zeros():
     with assert_raises(ValueError):
         sndi.maximum_filter(arr, footprint=kernel)
 
-
-if __name__ == "__main__":
-    run_module_suite(argv=sys.argv)
+def test_gaussian_filter():
+    # Test gaussian filter with np.float16
+    # gh-8207
+    data = np.array([1],dtype = np.float16)
+    sigma = 1.0
+    with assert_raises(RuntimeError):
+        sndi.gaussian_filter(data,sigma)

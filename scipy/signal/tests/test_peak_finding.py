@@ -2,12 +2,15 @@ from __future__ import division, print_function, absolute_import
 
 import copy
 
+from pytest import raises
+
 import numpy as np
-from numpy.testing import (TestCase, run_module_suite, assert_equal,
-    assert_array_equal, assert_)
+from numpy.testing import assert_equal, assert_array_equal, assert_
+
+from scipy._lib.six import xrange
 from scipy.signal._peak_finding import (argrelmax, argrelmin,
     find_peaks_cwt, _identify_ridge_lines)
-from scipy._lib.six import xrange
+from scipy.signal._peak_finding_utils import _argmaxima1d
 
 
 def _gen_gaussians(center_locs, sigmas, total_length):
@@ -70,7 +73,51 @@ def _gen_ridge_line(start_locs, max_locs, length, distances, gaps):
     return [locs[:, 0], locs[:, 1]]
 
 
-class TestRidgeLines(TestCase):
+class TestArgmaxima1d(object):
+
+    def test_empty(self):
+        """Test with empty signal."""
+        x = np.array([], dtype=np.float64)
+        assert_equal(_argmaxima1d(x), np.array([]))
+
+    def test_linear(self):
+        """Test with linear signal."""
+        x = np.linspace(0, 100)
+        assert_equal(_argmaxima1d(x), np.array([]))
+
+    def test_simple(self):
+        """Test with simple signal."""
+        x = np.linspace(-10, 10, 50)
+        x[2::3] += 1
+        assert_equal(_argmaxima1d(x), np.arange(2, 50, 3))
+
+    def test_flat_maxima(self):
+        """Test if flat maxima are detected correctly."""
+        x = np.array([-1.3, 0, 1, 0, 2, 2, 0, 3, 3, 3, 0, 4, 4, 4, 4, 0, 5])
+        assert_equal(_argmaxima1d(x), np.array([2, 4, 8, 12]))
+
+    def test_signal_edges(self):
+        """Test if correct behavior on signal edges."""
+        x1 = np.array([1., 0, 2])
+        assert_equal(_argmaxima1d(x1), np.array([]))
+        x2 = np.array([3., 3, 0, 4, 4])
+        assert_equal(_argmaxima1d(x2), np.array([]))
+        x3 = np.array([5., 5, 5, 0, 6, 6, 6])
+        assert_equal(_argmaxima1d(x3), np.array([]))
+
+    def test_exceptions(self):
+        """Test input validation and raised exceptions."""
+        with raises(ValueError, match="wrong number of dimensions"):
+            _argmaxima1d(np.ones((1, 1)))
+        with raises(ValueError, match="expected 'float64_t'"):
+            _argmaxima1d(np.ones(1, dtype=int))
+        with raises(TypeError, match="list"):
+            _argmaxima1d([1., 2.])
+        with raises(TypeError, match="'x' must not be None"):
+            _argmaxima1d(None)
+
+
+class TestRidgeLines(object):
 
     def test_empty(self):
         test_matr = np.zeros([20, 100])
@@ -162,7 +209,7 @@ class TestRidgeLines(TestCase):
             np.testing.assert_array_less(np.abs(agaps), max(gaps) + 0.1)
 
 
-class TestArgrel(TestCase):
+class TestArgrel(object):
 
     def test_empty(self):
         # Regression test for gh-2832.
@@ -245,7 +292,7 @@ class TestArgrel(TestCase):
             assert_((act_locs == (rel_max_cols[inds] - rot_factor*rw)).all())
 
 
-class TestFindPeaks(TestCase):
+class TestFindPeaks(object):
 
     def test_find_peaks_exact(self):
         """
@@ -295,6 +342,3 @@ class TestFindPeaks(TestCase):
         found_locs = find_peaks_cwt(test_data, widths, min_snr=5, noise_perc=30)
         np.testing.assert_equal(len(found_locs), 0)
 
-
-if __name__ == "__main__":
-    run_module_suite()

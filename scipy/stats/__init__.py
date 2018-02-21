@@ -37,6 +37,7 @@ Continuous distributions
    chi               -- Chi
    chi2              -- Chi-squared
    cosine            -- Cosine
+   crystalball       -- Crystalball
    dgamma            -- Double Gamma
    dweibull          -- Double Weibull
    erlang            -- Erlang
@@ -49,8 +50,8 @@ Continuous distributions
    fisk              -- Fisk
    foldcauchy        -- Folded Cauchy
    foldnorm          -- Folded Normal
-   frechet_r         -- Frechet Right Sided, Extreme Value Type II (Extreme LB) or weibull_min
-   frechet_l         -- Frechet Left Sided, Weibull_max
+   frechet_r         -- Deprecated. Alias for weibull_min
+   frechet_l         -- Deprecated. Alias for weibull_max
    genlogistic       -- Generalized Logistic
    gennorm           -- Generalized normal
    genpareto         -- Generalized Pareto
@@ -89,11 +90,13 @@ Continuous distributions
    lomax             -- Lomax (Pareto of the second kind)
    maxwell           -- Maxwell
    mielke            -- Mielke's Beta-Kappa
+   moyal             -- Moyal
    nakagami          -- Nakagami
    ncx2              -- Non-central chi-squared
    ncf               -- Non-central F
    nct               -- Non-central Student's T
    norm              -- Normal (Gaussian)
+   norminvgauss      -- Normal Inverse Gaussian
    pareto            -- Pareto
    pearson3          -- Pearson type III
    powerlaw          -- Power-function
@@ -134,7 +137,7 @@ Multivariate distributions
    multinomial           -- Multinomial distribution
    special_ortho_group   -- SO(N) group
    ortho_group           -- O(N) group
-   unitary_group         -- U(N) gropu
+   unitary_group         -- U(N) group
    random_correlation    -- random correlation matrices
 
 Discrete distributions
@@ -192,8 +195,6 @@ which work for masked arrays.
    :toctree: generated/
 
    cumfreq
-   histogram2
-   histogram
    itemfreq
    percentileofscore
    scoreatpercentile
@@ -210,7 +211,6 @@ which work for masked arrays.
    :toctree: generated/
 
    obrientransform
-   signaltonoise
    bayes_mvs
    mvsdist
    sem
@@ -222,7 +222,6 @@ which work for masked arrays.
    :toctree: generated/
 
    sigmaclip
-   threshold
    trimboth
    trim1
 
@@ -237,7 +236,6 @@ which work for masked arrays.
    weightedtau
    linregress
    theilslopes
-   f_value
 
 .. autosummary::
    :toctree: generated/
@@ -258,8 +256,6 @@ which work for masked arrays.
    kruskal
    friedmanchisquare
    combine_pvalues
-   ss
-   square_of_sums
    jarque_bera
 
 .. autosummary::
@@ -288,8 +284,8 @@ which work for masked arrays.
 .. autosummary::
    :toctree: generated/
 
-   chisqprob
-   betai
+   wasserstein_distance
+   energy_distance
 
 Circular statistical functions
 ==============================
@@ -357,5 +353,6 @@ from ._multivariate import *
 
 __all__ = [s for s in dir() if not s.startswith("_")]  # Remove dunders.
 
-from numpy.testing import Tester
-test = Tester().test
+from scipy._lib._testutils import PytestTester
+test = PytestTester(__name__)
+del PytestTester

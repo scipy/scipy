@@ -124,7 +124,7 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
        1980. User Guide for MINPACK-1.
     .. [2] C. T. Kelley. 1995. Iterative Methods for Linear and Nonlinear
         Equations. Society for Industrial and Applied Mathematics.
-        <http://www.siam.org/books/kelley/>
+        <http://www.siam.org/books/kelley/fr16/index.php>
     .. [3] W. La Cruz, J.M. Martinez, M. Raydan. Math. Comp. 75, 1429 (2006).
 
     Examples

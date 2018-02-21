@@ -4,9 +4,9 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from numpy import arange, add, array, eye, copy, sqrt
-from numpy.testing import (TestCase, run_module_suite, assert_raises,
-    assert_equal, assert_array_equal, assert_array_almost_equal,
-    assert_allclose)
+from numpy.testing import (assert_equal, assert_array_equal,
+                           assert_array_almost_equal, assert_allclose)
+from pytest import raises as assert_raises
 
 from scipy._lib.six import xrange
 
@@ -24,7 +24,7 @@ def get_mat(n):
     return data
 
 
-class TestTri(TestCase):
+class TestTri(object):
     def test_basic(self):
         assert_equal(tri(4),array([[1,0,0,0],
                                    [1,1,0,0],
@@ -64,7 +64,7 @@ class TestTri(TestCase):
                                           [1,1,0]]))
 
 
-class TestTril(TestCase):
+class TestTril(object):
     def test_basic(self):
         a = (100*get_mat(5)).astype('l')
         b = a.copy()
@@ -87,7 +87,7 @@ class TestTril(TestCase):
         assert_equal(tril(a,k=-2),b)
 
 
-class TestTriu(TestCase):
+class TestTriu(object):
     def test_basic(self):
         a = (100*get_mat(5)).astype('l')
         b = a.copy()
@@ -110,7 +110,7 @@ class TestTriu(TestCase):
         assert_equal(triu(a,k=-2),b)
 
 
-class TestToeplitz(TestCase):
+class TestToeplitz(object):
 
     def test_basic(self):
         y = toeplitz([1,2,3])
@@ -157,7 +157,7 @@ class TestToeplitz(TestCase):
         assert_array_equal(t, [[1,2,3]])
 
 
-class TestHankel(TestCase):
+class TestHankel(object):
     def test_basic(self):
         y = hankel([1,2,3])
         assert_array_equal(y, [[1,2,3], [2,3,0], [3,0,0]])
@@ -165,13 +165,13 @@ class TestHankel(TestCase):
         assert_array_equal(y, [[1,2,3], [2,3,4], [3,4,5]])
 
 
-class TestCirculant(TestCase):
+class TestCirculant(object):
     def test_basic(self):
         y = circulant([1,2,3])
         assert_array_equal(y, [[1,3,2], [2,1,3], [3,2,1]])
 
 
-class TestHadamard(TestCase):
+class TestHadamard(object):
 
     def test_basic(self):
 
@@ -188,7 +188,7 @@ class TestHadamard(TestCase):
         assert_raises(ValueError, hadamard, 5)
 
 
-class TestLeslie(TestCase):
+class TestLeslie(object):
 
     def test_bad_shapes(self):
         assert_raises(ValueError, leslie, [[1,1],[2,2]], [3,4,5])
@@ -205,7 +205,7 @@ class TestLeslie(TestCase):
         assert_array_equal(a, expected)
 
 
-class TestCompanion(TestCase):
+class TestCompanion(object):
 
     def test_bad_shapes(self):
         assert_raises(ValueError, companion, [[1,1],[2,2]])
@@ -312,7 +312,7 @@ class TestKron:
         assert_array_equal(a, expected)
 
 
-class TestHelmert(TestCase):
+class TestHelmert(object):
 
     def test_orthogonality(self):
         for n in range(1, 7):
@@ -331,7 +331,7 @@ class TestHelmert(TestCase):
                 assert_allclose(U.T.dot(U), np.eye(n-1), atol=1e-12)
 
 
-class TestHilbert(TestCase):
+class TestHilbert(object):
 
     def test_basic(self):
         h3 = array([[1.0, 1/2., 1/3.],
@@ -345,7 +345,7 @@ class TestHilbert(TestCase):
         assert_equal(h0.shape, (0,0))
 
 
-class TestInvHilbert(TestCase):
+class TestInvHilbert(object):
 
     def test_basic(self):
         invh1 = array([[1]])
@@ -501,7 +501,7 @@ class TestInvHilbert(TestCase):
             assert_allclose(a.dot(b), eye(n), atol=1e-15*c, rtol=1e-15*c)
 
 
-class TestPascal(TestCase):
+class TestPascal(object):
 
     cases = [
         (1, array([[1]]), array([[1]])),
@@ -573,29 +573,26 @@ def test_invpascal():
     for n in ns:
         for kind in kinds:
             for exact in [True, False]:
-                yield check_invpascal, n, kind, exact
+                check_invpascal(n, kind, exact)
 
     ns = [19, 34, 35, 50]
     for n in ns:
         for kind in kinds:
-            yield check_invpascal, n, kind, True
+            check_invpascal(n, kind, True)
 
 
 def test_dft():
     m = dft(2)
     expected = array([[1.0, 1.0], [1.0, -1.0]])
-    yield (assert_array_almost_equal, m, expected)
+    assert_array_almost_equal(m, expected)
     m = dft(2, scale='n')
-    yield (assert_array_almost_equal, m, expected/2.0)
+    assert_array_almost_equal(m, expected/2.0)
     m = dft(2, scale='sqrtn')
-    yield (assert_array_almost_equal, m, expected/sqrt(2.0))
+    assert_array_almost_equal(m, expected/sqrt(2.0))
 
     x = array([0, 1, 2, 3, 4, 5, 0, 1])
     m = dft(8)
     mx = m.dot(x)
     fx = fftpack.fft(x)
-    yield (assert_array_almost_equal, mx, fx)
+    assert_array_almost_equal(mx, fx)
 
-
-if __name__ == "__main__":
-    run_module_suite()

@@ -1,12 +1,12 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import assert_allclose, run_module_suite
+from numpy.testing import assert_allclose
 from scipy.stats import (binned_statistic, binned_statistic_2d,
                          binned_statistic_dd)
 
 from scipy._lib.six import u
-from common_tests import check_named_results
+from .common_tests import check_named_results
 
 
 class TestBinnedStatistic(object):
@@ -296,11 +296,11 @@ class TestBinnedStatistic(object):
         y = self.y
         v = self.v
 
-        stat, edgesx, bcx = binned_statistic(x, v, 'mean', bins=10)
+        stat, edgesx, bcx = binned_statistic(x, v, 'mean', bins=20)
         stat, edgesy, bcy = binned_statistic(y, v, 'mean', bins=10)
 
         stat2, edgesx2, edgesy2, bc2 = binned_statistic_2d(
-            x, y, v, 'mean', bins=10, expand_binnumbers=True)
+            x, y, v, 'mean', bins=(20, 10), expand_binnumbers=True)
 
         bcx3 = np.searchsorted(edgesx, x, side='right')
         bcy3 = np.searchsorted(edgesy, y, side='right')
@@ -425,16 +425,13 @@ class TestBinnedStatistic(object):
         X = self.X
         v = self.v
 
-        stat, edgesx, bcx = binned_statistic(X[:, 0], v, 'mean', bins=10)
-        stat, edgesy, bcy = binned_statistic(X[:, 1], v, 'mean', bins=10)
+        stat, edgesx, bcx = binned_statistic(X[:, 0], v, 'mean', bins=15)
+        stat, edgesy, bcy = binned_statistic(X[:, 1], v, 'mean', bins=20)
         stat, edgesz, bcz = binned_statistic(X[:, 2], v, 'mean', bins=10)
 
         stat2, edges2, bc2 = binned_statistic_dd(
-            X, v, 'mean', bins=10, expand_binnumbers=True)
+            X, v, 'mean', bins=(15, 20, 10), expand_binnumbers=True)
 
         assert_allclose(bcx, bc2[0])
         assert_allclose(bcy, bc2[1])
         assert_allclose(bcz, bc2[2])
-
-if __name__ == "__main__":
-    run_module_suite()

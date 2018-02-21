@@ -438,9 +438,9 @@ cdef int _estimate_gradients_2d_global(qhull.DelaunayInfo_t *d, double *data,
                 s[k] = 0
 
             # walk over neighbours of given point
-            for jpoint2 in xrange(d.vertex_neighbors_indices[ipoint],
-                                  d.vertex_neighbors_indices[ipoint+1]):
-                ipoint2 = d.vertex_neighbors_indptr[jpoint2]
+            for jpoint2 in xrange(d.vertex_neighbors_indptr[ipoint],
+                                  d.vertex_neighbors_indptr[ipoint+1]):
+                ipoint2 = d.vertex_neighbors_indices[jpoint2]
 
                 # edge
                 ex = d.points[2*ipoint2 + 0] - d.points[2*ipoint + 0]

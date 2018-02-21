@@ -115,10 +115,10 @@ except AttributeError:
 #-----------------------------------
 
 # Source of the release notes
-RELEASE = 'doc/release/1.0.0-notes.rst'
+RELEASE = 'doc/release/1.1.0-notes.rst'
 
 # Start/end of the log (from git)
-LOG_START = 'v0.19.0'
+LOG_START = 'v1.0.0'
 LOG_END = 'master'
 
 
@@ -333,7 +333,7 @@ def sdist():
         os.unlink(os.path.join('dist', tarball_name("xztar")))
     sh('xz %s' % os.path.join('dist', tarball_name("tar")), ignore_error=True)
 
-    # Copy the superpack into installers dir
+    # Copy the sdists into installers dir
     if not os.path.exists(options.installers.installersdir):
         os.makedirs(options.installers.installersdir)
 
@@ -352,15 +352,11 @@ def sdist():
 
 @task
 def release(options):
-    """Automate everything to be done for a release with numpy-vendor"""
+    """sdists, release notes and changelog.  Docs and wheels are built in
+    separate steps (see doc/source/dev/releasing.rst).
+    """
     # Source tarballs
     sdist()
-
-    # Windows .exe installers
-    options.python_version = '2.7'
-    bdist_superpack(options)
-    options.python_version = '3.4'
-    bdist_superpack(options)
 
     # README (gpg signed) and Changelog
     write_release_and_log()

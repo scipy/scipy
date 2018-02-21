@@ -143,7 +143,7 @@ typedef void tnc_callback(double x[], void *state);
  * accuracy  : relative precision for finite difference calculations
  *             if <= machine_precision, set to sqrt(machine_precision)
  * fmin      : minimum function value estimate
- * ftol      : precision goal for the value of f in the stoping criterion
+ * ftol      : precision goal for the value of f in the stopping criterion
  *             if ftol < 0.0, ftol is set to accuracy
  * xtol      : precision goal for the value of x in the stopping criterion
  *             (after applying x scaling factors)

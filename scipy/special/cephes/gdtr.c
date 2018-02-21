@@ -131,5 +131,5 @@ double a, b, y;
 	return (NPY_NAN);
     }
 
-    return (igami(b, 1.0 - y) / a);
+    return (igamci(b, 1.0 - y) / a);
 }

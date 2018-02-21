@@ -7,7 +7,7 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from numpy.testing import (assert_equal, assert_almost_equal, assert_allclose,
-                           assert_, run_module_suite)
+                           assert_)
 from scipy._lib._numpy_compat import suppress_warnings
 from scipy.special._testutils import assert_func_equal
 from scipy.special import ellip_harm, ellip_harm_2, ellip_normal
@@ -271,6 +271,3 @@ def test_ellip_harm():
     points = np.array(points)
     assert_func_equal(ellip_harm, ellip_harm_known, points, rtol=1e-12)
 
-
-if __name__ == "__main__":
-    run_module_suite()

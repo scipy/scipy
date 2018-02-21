@@ -69,7 +69,7 @@ from __future__ import division, print_function, absolute_import
 #         # arguments
 #         # to these functions.
 #         <calculate y1>
-#         if <calculation was unsuccesful>:
+#         if <calculation was unsuccessful>:
 #             self.success = 0
 #         return t1,y1
 #
@@ -324,16 +324,16 @@ class ode(object):
     >>> dt = 1
     >>> while r.successful() and r.t < t1:
     ...     print(r.t+dt, r.integrate(r.t+dt))
-    (1, array([-0.71038232+0.23749653j,  0.40000271+0.j        ]))
-    (2.0, array([ 0.19098503-0.52359246j,  0.22222356+0.j        ]))
-    (3.0, array([ 0.47153208+0.52701229j,  0.15384681+0.j        ]))
-    (4.0, array([-0.61905937+0.30726255j,  0.11764744+0.j        ]))
-    (5.0, array([ 0.02340997-0.61418799j,  0.09523835+0.j        ]))
-    (6.0, array([ 0.58643071+0.339819j,  0.08000018+0.j      ]))
-    (7.0, array([-0.52070105+0.44525141j,  0.06896565+0.j        ]))
-    (8.0, array([-0.15986733-0.61234476j,  0.06060616+0.j        ]))
-    (9.0, array([ 0.64850462+0.15048982j,  0.05405414+0.j        ]))
-    (10.0, array([-0.38404699+0.56382299j,  0.04878055+0.j        ]))
+    1 [-0.71038232+0.23749653j  0.40000271+0.j        ]
+    2.0 [ 0.19098503-0.52359246j  0.22222356+0.j        ]
+    3.0 [ 0.47153208+0.52701229j  0.15384681+0.j        ]
+    4.0 [-0.61905937+0.30726255j  0.11764744+0.j        ]
+    5.0 [ 0.02340997-0.61418799j  0.09523835+0.j        ]
+    6.0 [ 0.58643071+0.339819j  0.08000018+0.j      ]
+    7.0 [-0.52070105+0.44525141j  0.06896565+0.j        ]
+    8.0 [-0.15986733-0.61234476j  0.06060616+0.j        ]
+    9.0 [ 0.64850462+0.15048982j  0.05405414+0.j        ]
+    10.0 [-0.38404699+0.56382299j  0.04878055+0.j        ]
 
     References
     ----------
@@ -443,6 +443,15 @@ class ode(object):
         except AttributeError:
             self.set_integrator('')
         return self._integrator.success == 1
+
+    def get_return_code(self):
+        """Extracts the return code for the integration to enable better control
+        if the integration fails."""
+        try:
+            self._integrator
+        except AttributeError:
+            self.set_integrator('')
+        return self._integrator.istate
 
     def set_f_params(self, *args):
         """Set extra parameters for user-supplied function f."""
@@ -681,6 +690,7 @@ class IntegratorConcurrencyError(RuntimeError):
 class IntegratorBase(object):
     runner = None  # runner is None => integrator is not available
     success = None  # success==1 if integrator was called successfully
+    istate = None  # istate > 0 means success, istate < 0 means failure
     supports_run_relax = None
     supports_step = None
     supports_solout = False
@@ -910,13 +920,15 @@ class vode(IntegratorBase):
         args = ((f, jac, y0, t0, t1) + tuple(self.call_args) +
                 (f_params, jac_params))
         y1, t, istate = self.runner(*args)
+        self.istate = istate
         if istate < 0:
-            warnings.warn(self.__class__.__name__ + ': ' +
-                          self.messages.get(istate,
-                                            'Unexpected istate=%s' % istate))
+            unexpected_istate_msg = 'Unexpected istate={:d}'.format(istate)
+            warnings.warn('{:s}: {:s}'.format(self.__class__.__name__,
+                          self.messages.get(istate, unexpected_istate_msg)))
             self.success = 0
         else:
             self.call_args[3] = 2  # upgrade istate from 1 to 2
+            self.istate = 2
         return y1, t
 
     def step(self, *args):
@@ -1018,7 +1030,7 @@ class dopri5(IntegratorBase):
     messages = {1: 'computation successful',
                 2: 'comput. successful (interrupted by solout)',
                 -1: 'input is not consistent',
-                -2: 'larger nmax is needed',
+                -2: 'larger nsteps is needed',
                 -3: 'step size becomes too small',
                 -4: 'problem is probably stiff (interrupted)',
                 }
@@ -1074,11 +1086,13 @@ class dopri5(IntegratorBase):
         self.success = 1
 
     def run(self, f, jac, y0, t0, t1, f_params, jac_params):
-        x, y, iwork, idid = self.runner(*((f, t0, y0, t1) +
+        x, y, iwork, istate = self.runner(*((f, t0, y0, t1) +
                                           tuple(self.call_args) + (f_params,)))
-        if idid < 0:
-            warnings.warn(self.name + ': ' +
-                          self.messages.get(idid, 'Unexpected idid=%s' % idid))
+        self.istate = istate
+        if istate < 0:
+            unexpected_istate_msg = 'Unexpected istate={:d}'.format(istate)
+            warnings.warn('{:s}: {:s}'.format(self.__class__.__name__,
+                          self.messages.get(istate, unexpected_istate_msg)))
             self.success = 0
         return y, x
 
@@ -1245,13 +1259,15 @@ class lsoda(IntegratorBase):
         args = [f, y0, t0, t1] + self.call_args[:-1] + \
                [jac, self.call_args[-1], f_params, 0, jac_params]
         y1, t, istate = self.runner(*args)
+        self.istate = istate
         if istate < 0:
-            warnings.warn('lsoda: ' +
-                          self.messages.get(istate,
-                                            'Unexpected istate=%s' % istate))
+            unexpected_istate_msg = 'Unexpected istate={:d}'.format(istate)
+            warnings.warn('{:s}: {:s}'.format(self.__class__.__name__,
+                          self.messages.get(istate, unexpected_istate_msg)))
             self.success = 0
         else:
             self.call_args[3] = 2  # upgrade istate from 1 to 2
+            self.istate = 2
         return y1, t
 
     def step(self, *args):

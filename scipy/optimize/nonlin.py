@@ -260,7 +260,7 @@ def nonlin_solve(F, x0, jacobian='krylov', iter=None, verbose=False,
     ----------
     .. [KIM] C. T. Kelley, \"Iterative Methods for Linear and Nonlinear
        Equations\". Society for Industrial and Applied Mathematics. (1995)
-       http://www.siam.org/books/kelley/
+       http://www.siam.org/books/kelley/fr16/index.php
 
     """
 
@@ -1422,6 +1422,7 @@ class KrylovJacobian(Jacobian):
             self.method_kw['maxiter'] = 1
             # Carry LGMRES's `outer_v` vectors across nonlinear iterations
             self.method_kw.setdefault('outer_v', [])
+            self.method_kw.setdefault('prepend_outer_v', True)
             # But don't carry the corresponding Jacobian*v products, in case
             # the Jacobian changes a lot in the nonlinear step
             #

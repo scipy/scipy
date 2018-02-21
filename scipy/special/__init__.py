@@ -68,7 +68,6 @@ Bessel Functions
    :toctree: generated/
 
    jv       -- Bessel function of the first kind of real order and complex argument.
-   jn       -- Bessel function of the first kind of real order and complex argument
    jve      -- Exponentially scaled Bessel function of order `v`.
    yn       -- Bessel function of the second kind of integer order and real argument.
    yv       -- Bessel function of the second kind of real order and complex argument.
@@ -656,5 +655,6 @@ from numpy.dual import register_func
 register_func('i0',i0)
 del register_func
 
-from numpy.testing import Tester
-test = Tester().test
+from scipy._lib._testutils import PytestTester
+test = PytestTester(__name__)
+del PytestTester

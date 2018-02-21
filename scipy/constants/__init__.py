@@ -260,12 +260,6 @@ Temperature
    :toctree: generated/
 
    convert_temperature
-   C2K
-   K2C
-   F2C
-   C2F
-   F2K
-   K2F
 
 Energy
 ------
@@ -340,5 +334,7 @@ if __doc__ is not None:
 del _constant_names
 
 __all__ = [s for s in dir() if not s.startswith('_')]
-from numpy.testing import Tester
-test = Tester().test
+
+from scipy._lib._testutils import PytestTester
+test = PytestTester(__name__)
+del PytestTester

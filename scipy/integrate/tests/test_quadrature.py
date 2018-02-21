@@ -1,10 +1,10 @@
 from __future__ import division, print_function, absolute_import
 
-import warnings
 import numpy as np
 from numpy import cos, sin, pi
-from numpy.testing import TestCase, run_module_suite, assert_equal, \
+from numpy.testing import assert_equal, \
     assert_almost_equal, assert_allclose, assert_
+from scipy._lib._numpy_compat import suppress_warnings
 
 from scipy.integrate import (quadrature, romberg, romb, newton_cotes,
                              cumtrapz, quad, simps, fixed_quad)
@@ -29,7 +29,7 @@ class TestFixedQuad(object):
         assert_allclose(got, expected, rtol=1e-12)
 
 
-class TestQuadrature(TestCase):
+class TestQuadrature(object):
     def quad(self, x, a, b, args):
         raise NotImplementedError
 
@@ -93,10 +93,9 @@ class TestQuadrature(TestCase):
         assert_allclose(val, val2, rtol=1e-8, atol=0)
 
         # should be equal to romb with 2**k+1 samples
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', category=AccuracyWarning)
-            val3 = romberg(lambda x: np.cos(0.2*x), x.min(), x.max(),
-                           divmax=4)
+        with suppress_warnings() as sup:
+            sup.filter(AccuracyWarning, "divmax .4. exceeded")
+            val3 = romberg(lambda x: np.cos(0.2*x), x.min(), x.max(), divmax=4)
         assert_allclose(val, val3, rtol=1e-12, atol=0)
 
     def test_non_dtype(self):
@@ -158,7 +157,7 @@ class TestQuadrature(TestCase):
         assert_equal(simps(y, x=x, even='last'), 14)
 
 
-class TestCumtrapz(TestCase):
+class TestCumtrapz(object):
     def test_1d(self):
         x = np.linspace(-2, 2, num=5)
         y = x
@@ -232,6 +231,3 @@ class TestCumtrapz(TestCase):
         y_expected = [1.23, -4.5, -6., -4.5, 0.]
         assert_allclose(y_int, y_expected)
 
-
-if __name__ == "__main__":
-    run_module_suite()

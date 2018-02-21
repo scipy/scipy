@@ -1,3 +1,5 @@
+.. _making-a-release:
+
 Making a SciPy release
 ======================
 
@@ -57,11 +59,11 @@ Before branching, ensure that the release notes are updated as far as possible.
 Include the output of ``tools/gh_lists.py`` and ``tools/authors.py`` in the
 release notes.
 
-Maintenance branches are named ``maintenance/0.<minor-version>.x``.  To create
-one, simply push a branch with the correct name to the scipy repo.  Immediately
-after, push a commit where you increment the version number on the master
-branch and add release notes for that new version.
-Send an email to scipy-dev to let people know that you've done this.
+Maintenance branches are named ``maintenance/<major>.<minor>.x`` (e.g. 0.19.x).
+To create one, simply push a branch with the correct name to the scipy repo.
+Immediately after, push a commit where you increment the version number on the
+master branch and add release notes for that new version.  Send an email to
+scipy-dev to let people know that you've done this.
 
 
 Tagging a release
@@ -85,10 +87,13 @@ Then edit ``setup.py`` to get the correct version number (set
 ``ISRELEASED = True``) and commit it with a message like ``REL: set version to
 <version-number>``.  Don't push this commit to the Scipy repo yet.
 
-Finally tag the release locally with ``git tag -s <v0.x.y>`` (the ``-s`` ensures
+Finally tag the release locally with ``git tag -s <v1.x.y>`` (the ``-s`` ensures
 the tag is signed).  Continue with building release artifacts (next section).
-Only push the release commit and tag to the scipy repo once you have built the
-docs and Windows installers successfully.  After that push, also push a second
+Only push the release commit to the scipy repo once you have built the
+sdists and docs successfully.  Then continue with building wheels.  Only push
+the release tag to the repo once all wheels have been built successfully on
+TravisCI and Appveyor (if it fails, you have to move the tag otherwise - which
+is bad practice).  Finally, after pushing the tag, also push a second
 commit which increment the version number and sets ``ISRELEASED`` to False
 again.
 
@@ -97,53 +102,64 @@ Building release artifacts
 --------------------------
 Here is a complete list of artifacts created for a release:
 
-- source archives (``.tar.gz``, ``.zip`` and ``.tar.xz``)
-- Binary wheels, for OS X only at the moment
+- source archives (``.tar.gz``, ``.zip`` and ``.tar.xz`` for GitHub Releases,
+  only ``.tar.gz`` is uploaded to PyPI)
+- Binary wheels for Windows, Linx and OS X
 - Documentation (``html``, ``pdf``)
 - A ``README`` file
 - A ``Changelog`` file
 
-All of these except the OS X wheel are built by running ``paver release`` in
-the repo root.  Do this after you've created the signed tag.  If this completes
-without issues, push the release tag to the scipy repo.  This is needed because
-the OS X wheel build automatically builds the last tag.
+Source archives, Changelog and README are built by running ``paver release`` in
+the repo root, and end up in ``REPO_ROOT/release/``.  Do this after you've
+created the signed tag locally.  If this completes without issues, push the release
+commit (not the tag, see section above) to the scipy repo.
 
-To build wheels for OS X, push a commit to the master branch of
-https://github.com/MacPython/scipy-wheels.  This triggers builds for all needed
-Python versions on TravisCI.  Check in the ``.travis.yml`` config file what
-version of Python and Numpy are used for the builds (it needs to be the lowest
-supported Numpy version for each Python version).  See the README file in the
-scipy-wheels repo for more details.
+To build wheels, push a commit to the master branch of
+https://github.com/MacPython/scipy-wheels .  This triggers builds for all needed
+Python versions on TravisCI.  Update and check the ``.travis.yml`` and ``appveyor.yml``
+config files what commit to build, and what Python and Numpy are used for the
+builds (it needs to be the lowest supported Numpy version for each Python
+version).  See the README file in the scipy-wheels repo for more details.
 
-The TravisCI builds run the tests from the built wheels and if they pass upload
-the wheels to http://wheels.scipy.org/.  From there you can copy them for
-uploading to PyPI (see next section).
+The TravisCI and Appveyor builds run the tests from the built wheels and if they pass,
+upload the wheels to a container pointed to at https://github.com/MacPython/scipy-wheels
+
+From there you can download them for uploading to PyPI.  This can be
+done in an automated fashion with `terryfy <https://github.com/MacPython/terryfy>`_
+(note the -n switch which makes it only download the wheels and skip the upload
+to PyPI step - we want to be able to check the wheels and put their checksums
+into README first)::
+
+  $ python wheel-uploader -n -v -c -w REPO_ROOT/release/installers -t win scipy 0.19.0
+  $ python wheel-uploader -n -v -c -w REPO_ROOT/release/installers -t macosx scipy 0.19.0
+  $ python wheel-uploader -n -v -c -w REPO_ROOT/release/installers -t manylinux1 scipy 0.19.0
+
+After this, we want to regenerate the README file, in order to have the MD5 and SHA256
+checksums of the just downloaded wheels in it.  Run::
+
+  $ paver write_release_and_log
 
 
 Uploading release artifacts
 ---------------------------
 For a release there are currently five places on the web to upload things to:
 
-- PyPI (tarballs, OS X wheels)
+- PyPI (tarballs, wheels)
 - Github releases (tarballs, release notes, Changelog)
 - scipy.org (an announcement of the release)
 - docs.scipy.org (html/pdf docs)
 
 **PyPI:**
 
-``twine upload -s <tarballs or wheels to upload>``
+Upload first the wheels and then the sdist::
+
+  twine upload -s REPO_ROOT/release/installers/*.whl
+  twine upload -s REPO_ROOT/release/installers/scipy-1.x.y.tar.gz
 
 **Github Releases:**
 
 Use GUI on https://github.com/scipy/scipy/releases to create release and
 upload all release artifacts.
-
-**SourceForge:**
-
-The main download sites are PyPI and Github Releases.  Older releases are stored
-on SourceForce ( http://sourceforge.net/projects/scipy/files/scipy).  That
-download site has a "Latest" folder which redirects users to PyPI/GitHub, so
-it's not needed to upload anything to SourceForge for new releases.
 
 **scipy.org:**
 
@@ -155,7 +171,7 @@ Update the News section in ``www/index.rst`` and then do
 
 First build the scipy docs, by running ``make dist`` in ``scipy/doc/``.  Verify
 that they look OK, then upload them to the doc server with
-``make upload USERNAME=rgommers RELEASE=0.17.0``.  Note that SSH access to the
+``make upload USERNAME=rgommers RELEASE=0.19.0``.  Note that SSH access to the
 doc server is needed; ask @pv (server admin) or @rgommers (can upload) if you
 don't have that.
 

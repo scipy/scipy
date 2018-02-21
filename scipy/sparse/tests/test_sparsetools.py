@@ -6,15 +6,15 @@ import gc
 import re
 import threading
 
-from nose import SkipTest
 import numpy as np
-from numpy.testing import (assert_raises, assert_equal, dec, run_module_suite, assert_,
-                           assert_allclose)
+from numpy.testing import assert_equal, assert_, assert_allclose
 from scipy.sparse import (_sparsetools, coo_matrix, csr_matrix, csc_matrix,
                           bsr_matrix, dia_matrix)
 from scipy.sparse.sputils import supported_dtypes
-from scipy._lib._testutils import xslow
+from scipy._lib._testutils import check_free_memory
 
+import pytest
+from pytest import raises as assert_raises
 
 def test_exception():
     assert_raises(MemoryError, _sparsetools.test_throw_error)
@@ -62,6 +62,27 @@ def test_regression_std_vector_dtypes():
         assert_equal(a.getcol(0).todense(), ad[:,0])
 
 
+def test_nnz_overflow():
+    # Regression test for gh-7230 / gh-7871, checking that coo_todense
+    # with nnz > int32max doesn't overflow.
+    nnz = np.iinfo(np.int32).max + 1
+    # Ensure ~20 GB of RAM is free to run this test.
+    check_free_memory((4 + 4 + 1) * nnz / 1e6 + 0.5)
+
+    # Use nnz duplicate entries to keep the dense version small.
+    row = np.zeros(nnz, dtype=np.int32)
+    col = np.zeros(nnz, dtype=np.int32)
+    data = np.zeros(nnz, dtype=np.int8)
+    data[-1] = 4
+    s = coo_matrix((data, (row, col)), shape=(1, 1), copy=False)
+    # Sums nnz duplicates to produce a 1x1 array containing 4.
+    d = s.toarray()
+
+    assert_allclose(d, [[4]])
+
+
+@pytest.mark.skipif(not (sys.platform.startswith('linux') and np.dtype(np.intp).itemsize >= 8),
+                    reason="test requires 64-bit Linux")
 class TestInt32Overflow(object):
     """
     Some of the sparsetools routines use dense 2D matrices whose
@@ -69,18 +90,22 @@ class TestInt32Overflow(object):
     routines used to suffer from int32 wraparounds; here, we try to
     check that the wraparounds don't occur any more.
     """
+    # choose n large enough
+    n = 50000
 
-    def __init__(self):
-        # choose n large enough
-        self.n = 50000
+    def setup_method(self):
         assert self.n**2 > np.iinfo(np.int32).max
 
-    @dec.skipif(not sys.platform.startswith('linux'), "test requires Linux")
-    @dec.skipif(np.dtype(np.intp).itemsize < 8, "test requires 64-bit system")
-    def setUp(self):
-        check_free_memory(5000)
+        # check there's enough memory even if everything is run at the
+        # same time
+        try:
+            parallel_count = int(os.environ.get('PYTEST_XDIST_WORKER_COUNT', '1'))
+        except ValueError:
+            parallel_count = np.inf
 
-    def tearDown(self):
+        check_free_memory(3000 * parallel_count)
+
+    def teardown_method(self):
         gc.collect()
 
     def test_coo_todense(self):
@@ -101,7 +126,7 @@ class TestInt32Overflow(object):
         del r
         gc.collect()
 
-    @dec.slow
+    @pytest.mark.slow
     def test_matvecs(self):
         # Check *_matvecs routines
         n = self.n
@@ -123,7 +148,7 @@ class TestInt32Overflow(object):
         del b
         gc.collect()
 
-    @dec.slow
+    @pytest.mark.slow
     def test_dia_matvec(self):
         # Check: huge dia_matrix _matvec
         n = self.n
@@ -136,100 +161,107 @@ class TestInt32Overflow(object):
         del data, offsets, m, v, r
         gc.collect()
 
-    @dec.slow
-    def test_bsr_1_block(self):
+    _bsr_ops = [pytest.param("matmat", marks=pytest.mark.xslow),
+                pytest.param("matvecs", marks=pytest.mark.xslow),
+                "matvec",
+                "diagonal",
+                "sort_indices",
+                pytest.param("transpose", marks=pytest.mark.xslow)]
+
+    @pytest.mark.slow
+    @pytest.mark.parametrize("op", _bsr_ops)
+    def test_bsr_1_block(self, op):
         # Check: huge bsr_matrix (1-block)
         #
         # The point here is that indices inside a block may overflow.
 
-        def check(op):
+        def get_matrix():
             n = self.n
             data = np.ones((1, n, n), dtype=np.int8)
             indptr = np.array([0, 1], dtype=np.int32)
             indices = np.array([0], dtype=np.int32)
             m = bsr_matrix((data, indices, indptr), blocksize=(n, n), copy=False)
             del data, indptr, indices
-            getattr(self, "_check_bsr_" + op)(m)
-            del m
+            return m
+
+        gc.collect()
+        try:
+            getattr(self, "_check_bsr_" + op)(get_matrix)
+        finally:
             gc.collect()
 
-        for op in ("matmat", "matvecs", "matvec", "diagonal",
-                   "sort_indices", "transpose"):
-            yield check, op
-
-    @dec.slow
-    def test_bsr_n_block(self):
+    @pytest.mark.slow
+    @pytest.mark.parametrize("op", _bsr_ops)
+    def test_bsr_n_block(self, op):
         # Check: huge bsr_matrix (n-block)
         #
         # The point here is that while indices within a block don't
         # overflow, accumulators across many block may.
 
-        def check(op):
+        def get_matrix():
             n = self.n
             data = np.ones((n, n, 1), dtype=np.int8)
             indptr = np.array([0, n], dtype=np.int32)
             indices = np.arange(n, dtype=np.int32)
             m = bsr_matrix((data, indices, indptr), blocksize=(n, 1), copy=False)
             del data, indptr, indices
-            getattr(self, "_check_bsr_" + op)(m)
-            del m
+            return m
+
+        gc.collect()
+        try:
+            getattr(self, "_check_bsr_" + op)(get_matrix)
+        finally:
             gc.collect()
 
-        for op in ("matmat", "matvecs", "matvec", "diagonal",
-                   "sort_indices", "transpose"):
-            yield check, op
-
-    @xslow
     def _check_bsr_matvecs(self, m):
+        m = m()
         n = self.n
 
         # _matvecs
         r = m.dot(np.ones((n, 2), dtype=np.int8))
         assert_equal(r[0,0], np.int8(n))
-        del r
-        gc.collect()
 
     def _check_bsr_matvec(self, m):
+        m = m()
         n = self.n
 
         # _matvec
         r = m.dot(np.ones((n,), dtype=np.int8))
         assert_equal(r[0], np.int8(n))
-        del r
-        gc.collect()
 
     def _check_bsr_diagonal(self, m):
+        m = m()
         n = self.n
 
         # _diagonal
         r = m.diagonal()
         assert_equal(r, np.ones(n))
-        del r
-        gc.collect()
 
     def _check_bsr_sort_indices(self, m):
         # _sort_indices
+        m = m()
         m.sort_indices()
 
-    @xslow
     def _check_bsr_transpose(self, m):
         # _transpose
+        m = m()
         m.transpose()
 
-    @xslow
     def _check_bsr_matmat(self, m):
+        m = m()
         n = self.n
 
         # _bsr_matmat
         m2 = bsr_matrix(np.ones((n, 2), dtype=np.int8), blocksize=(m.blocksize[1], 2))
         m.dot(m2)  # shouldn't SIGSEGV
+        del m2
 
         # _bsr_matmat
         m2 = bsr_matrix(np.ones((2, n), dtype=np.int8), blocksize=(2, m.blocksize[0]))
         m2.dot(m)  # shouldn't SIGSEGV
 
 
-@dec.skipif(True, "64-bit indices in sparse matrices not available")
+@pytest.mark.skip(reason="64-bit indices in sparse matrices not available")
 def test_csr_matmat_int64_overflow():
     n = 3037000500
     assert n**2 > np.iinfo(np.int64).max
@@ -293,43 +325,3 @@ def test_endianness():
 
     assert_allclose(a.dot(v), [1, 3, 6, 5])
     assert_allclose(b.dot(v), [1, 3, 6, 5])
-
-
-def check_free_memory(free_mb):
-    meminfo = get_mem_info_linux()
-
-    if meminfo['memfree'] + meminfo['cached'] < free_mb * 1e6:
-        raise SkipTest("test requires %d MB of free memory" % (int(free_mb),))
-
-
-def get_mem_info_linux():
-    """
-    Get information about available memory.
-
-    Returns a dict of items in /proc/meminfo
-    """
-    info = {}
-    with open('/proc/meminfo', 'r') as f:
-        for line in f:
-            p = line.split()
-            info[p[0].strip(':').lower()] = float(p[1]) * 1e3
-    return info
-
-
-def get_own_memusage_linux():
-    """
-    Return the memory usage of the current process (in bytes)
-    """
-    with open('/proc/%d/status' % os.getpid(), 'r') as f:
-        procdata = f.read()
-
-    m = re.search(r'VmRSS:\s*(\d+)\s*kB', procdata, re.S | re.I)
-    if m is not None:
-        memusage = float(m.group(1)) * 1e3
-        return memusage
-
-    return np.nan
-
-
-if __name__ == "__main__":
-    run_module_suite()

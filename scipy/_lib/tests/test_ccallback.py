@@ -1,9 +1,10 @@
 from __future__ import division, print_function, absolute_import
 
-from numpy.testing import assert_equal, assert_raises, assert_
+from numpy.testing import assert_equal, assert_
+from pytest import raises as assert_raises
 
 import time
-import nose
+import pytest
 import ctypes
 import threading
 from scipy._lib import _ccallback_c as _test_ccallback_cython
@@ -31,7 +32,7 @@ def callback_python(a, user_data=None):
 
 def _get_cffi_func(base, signature):
     if not HAVE_CFFI:
-        raise nose.SkipTest("cffi not installed")
+        pytest.skip("cffi not installed")
 
     # Get function address
     voidp = ctypes.cast(base, ctypes.c_void_p)
@@ -50,7 +51,7 @@ def _get_ctypes_data():
 
 def _get_cffi_data():
     if not HAVE_CFFI:
-        raise nose.SkipTest("cffi not installed")
+        pytest.skip("cffi not installed")
     ffi = cffi.FFI()
     return ffi.new('double *', 2.0)
 
@@ -117,7 +118,7 @@ def test_callbacks():
     for caller in sorted(CALLERS.keys()):
         for func in sorted(FUNCS.keys()):
             for user_data in sorted(USER_DATAS.keys()):
-                yield check, caller, func, user_data
+                check(caller, func, user_data)
 
 
 def test_bad_callbacks():
@@ -150,7 +151,7 @@ def test_bad_callbacks():
     for caller in sorted(CALLERS.keys()):
         for func in sorted(BAD_FUNCS.keys()):
             for user_data in sorted(USER_DATAS.keys()):
-                yield check, caller, func, user_data
+                check(caller, func, user_data)
 
 
 def test_signature_override():
@@ -195,4 +196,4 @@ def test_threadsafety():
         assert_equal(results, [2.0**count]*len(threads))
 
     for caller in CALLERS.keys():
-        yield check, caller
+        check(caller)

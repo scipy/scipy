@@ -3,9 +3,10 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from numpy.testing import (assert_equal, assert_almost_equal, assert_array_equal,
-        assert_array_almost_equal, assert_allclose, assert_raises, TestCase,
-        run_module_suite)
+        assert_array_almost_equal, assert_allclose)
 from scipy._lib._numpy_compat import suppress_warnings
+from pytest import raises as assert_raises
+
 from numpy import array, diff, linspace, meshgrid, ones, pi, shape
 from scipy.interpolate.fitpack import bisplrep, bisplev
 from scipy.interpolate.fitpack2 import (UnivariateSpline,
@@ -15,7 +16,7 @@ from scipy.interpolate.fitpack2 import (UnivariateSpline,
         RectSphereBivariateSpline)
 
 
-class TestUnivariateSpline(TestCase):
+class TestUnivariateSpline(object):
     def test_linear_constant(self):
         x = [1,2,3]
         y = [3,3,3]
@@ -184,7 +185,7 @@ class TestUnivariateSpline(TestCase):
                 **dict(x=x, y=y, t=t, w=w, check_finite=True))
 
 
-class TestLSQBivariateSpline(TestCase):
+class TestLSQBivariateSpline(object):
     # NOTE: The systems in this test class are rank-deficient
     def test_linear_constant(self):
         x = [1,1,1,2,2,2,3,3,3]
@@ -262,7 +263,7 @@ class TestLSQBivariateSpline(TestCase):
         assert_array_equal(lut([], [], grid=False), np.zeros((0,)))
 
 
-class TestSmoothBivariateSpline(TestCase):
+class TestSmoothBivariateSpline(object):
     def test_linear_constant(self):
         x = [1,1,1,2,2,2,3,3,3]
         y = [1,2,3,1,2,3,1,2,3]
@@ -326,8 +327,8 @@ class TestSmoothBivariateSpline(TestCase):
         assert_almost_equal(res1, res2)
 
 
-class TestLSQSphereBivariateSpline(TestCase):
-    def setUp(self):
+class TestLSQSphereBivariateSpline(object):
+    def setup_method(self):
         # define the input data and coordinates
         ntheta, nphi = 70, 90
         theta = linspace(0.5/(ntheta - 1), 1 - 0.5/(ntheta - 1), ntheta) * pi
@@ -355,8 +356,8 @@ class TestLSQSphereBivariateSpline(TestCase):
         assert_array_almost_equal(self.lut_lsq([], [], grid=False), np.zeros((0,)))
 
 
-class TestSmoothSphereBivariateSpline(TestCase):
-    def setUp(self):
+class TestSmoothSphereBivariateSpline(object):
+    def setup_method(self):
         theta = array([.25*pi, .25*pi, .25*pi, .5*pi, .5*pi, .5*pi, .75*pi,
                        .75*pi, .75*pi])
         phi = array([.5 * pi, pi, 1.5 * pi, .5 * pi, pi, 1.5 * pi, .5 * pi, pi,
@@ -374,7 +375,7 @@ class TestSmoothSphereBivariateSpline(TestCase):
         assert_array_almost_equal(self.lut([], [], grid=False), np.zeros((0,)))
 
 
-class TestRectBivariateSpline(TestCase):
+class TestRectBivariateSpline(object):
     def test_defaults(self):
         x = array([1,2,3,4,5])
         y = array([1,2,3,4,5])
@@ -430,7 +431,7 @@ class TestRectBivariateSpline(TestCase):
         assert_allclose(lut(x, y), lut(x[:,None], y[None,:], grid=False))
 
 
-class TestRectSphereBivariateSpline(TestCase):
+class TestRectSphereBivariateSpline(object):
     def test_defaults(self):
         y = linspace(0.01, 2*pi-0.01, 7)
         x = linspace(0.01, pi-0.01, 7)
@@ -508,6 +509,3 @@ def _numdiff_2d(func, x, y, dx=0, dy=0, eps=1e-8):
                 - func(x + eps, y - eps) + func(x - eps, y - eps)) / (2*eps)**2
     else:
         raise ValueError("invalid derivative order")
-
-if __name__ == "__main__":
-    run_module_suite()

@@ -9,7 +9,6 @@ from warnings import WarningMessage
 import re
 from functools import wraps
 import numpy as np
-from numpy.testing.nosetester import import_nose
 
 from scipy._lib._version import NumpyVersion
 
@@ -50,31 +49,6 @@ else:
                 raise AssertionError("First warning for %s is not a "
                         "%s( is %s)" % (func.__name__, warning_class, l[0]))
         return result
-
-
-def assert_raises_regex(exception_class, expected_regexp,
-                        callable_obj=None, *args, **kwargs):
-    """
-    Fail unless an exception of class exception_class and with message that
-    matches expected_regexp is thrown by callable when invoked with arguments
-    args and keyword arguments kwargs.
-    Name of this function adheres to Python 3.2+ reference, but should work in
-    all versions down to 2.6.
-    Notes
-    -----
-    .. versionadded:: 1.8.0
-    """
-    __tracebackhide__ = True  # Hide traceback for py.test
-    nose = import_nose()
-
-    if sys.version_info.major >= 3:
-        funcname = nose.tools.assert_raises_regex
-    else:
-        # Only present in Python 2.7, missing from unittest in 2.6
-            funcname = nose.tools.assert_raises_regexp
-
-    return funcname(exception_class, expected_regexp, callable_obj,
-                    *args, **kwargs)
 
 
 if NumpyVersion(np.__version__) >= '1.10.0':
@@ -213,7 +187,7 @@ if NumpyVersion(np.__version__) > '1.12.0.dev':
     polyvalfromroots = np.polynomial.polynomial.polyvalfromroots
 else:
     def polyvalfromroots(x, r, tensor=True):
-        """
+        r"""
         Evaluate a polynomial specified by its roots at points x.
 
         This function is copypasted from numpy 1.12.0.dev.

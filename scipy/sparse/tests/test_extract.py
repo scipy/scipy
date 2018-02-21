@@ -2,15 +2,15 @@
 
 from __future__ import division, print_function, absolute_import
 
-from numpy.testing import TestCase, assert_equal
+from numpy.testing import assert_equal
 from scipy.sparse import csr_matrix
 
 import numpy as np
 from scipy.sparse import extract
 
 
-class TestExtract(TestCase):
-    def setUp(self):
+class TestExtract(object):
+    def setup_method(self):
         self.cases = [
             csr_matrix([[1,2]]),
             csr_matrix([[1,0]]),

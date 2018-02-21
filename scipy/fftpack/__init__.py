@@ -19,8 +19,12 @@ Fast Fourier Transforms (FFTs)
    irfft - Inverse of rfft
    dct - Discrete cosine transform
    idct - Inverse discrete cosine transform
+   dctn - n-dimensional Discrete cosine transform
+   idctn - n-dimensional Inverse discrete cosine transform
    dst - Discrete sine transform
    idst - Inverse discrete sine transform
+   dstn - n-dimensional Discrete sine transform
+   idstn - n-dimensional Inverse discrete sine transform
 
 Differential and pseudo-differential operators
 ==============================================
@@ -102,7 +106,9 @@ for k in ['fft', 'ifft', 'fftn', 'ifftn', 'fft2', 'ifft2']:
 del k, register_func
 
 from .realtransforms import *
-__all__.extend(['dct', 'idct', 'dst', 'idst'])
+__all__.extend(['dct', 'idct', 'dst', 'idst', 'dctn', 'idctn', 'dstn',
+                'idstn'])
 
-from numpy.testing import Tester
-test = Tester().test
+from scipy._lib._testutils import PytestTester
+test = PytestTester(__name__)
+del PytestTester

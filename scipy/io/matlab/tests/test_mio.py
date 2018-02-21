@@ -7,6 +7,7 @@ Need function load / save / roundtrip tests
 from __future__ import division, print_function, absolute_import
 
 import os
+from collections import OrderedDict
 from os.path import join as pjoin, dirname
 from glob import glob
 from io import BytesIO
@@ -19,8 +20,8 @@ import shutil
 import gzip
 
 from numpy.testing import (assert_array_equal, assert_array_almost_equal,
-                           assert_equal, assert_raises, run_module_suite,
-                           assert_)
+                           assert_equal, assert_)
+from pytest import raises as assert_raises
 from scipy._lib._numpy_compat import suppress_warnings
 
 import numpy as np
@@ -337,7 +338,7 @@ def test_load():
         files = glob(filt)
         assert_(len(files) > 0,
                 "No files for test %s using filter %s" % (name, filt))
-        yield _load_check_case, name, files, expected
+        _load_check_case(name, files, expected)
 
 
 # generator for whos tests
@@ -350,7 +351,7 @@ def test_whos():
         files = glob(filt)
         assert_(len(files) > 0,
                 "No files for test %s using filter %s" % (name, filt))
-        yield _whos_check_case, name, files, expected, classes
+        _whos_check_case(name, files, expected, classes)
 
 
 # generator for round trip tests
@@ -360,7 +361,7 @@ def test_round_trip():
         name = case['name'] + '_round_trip'
         expected = case['expected']
         for format in (['4', '5'] if case['name'] in case_table4_names else ['5']):
-            yield _rt_check_case, name, expected, format
+            _rt_check_case(name, expected, format)
 
 
 def test_gzip_simple():
@@ -524,15 +525,15 @@ def test_cell_with_one_thing_in_it():
 def test_writer_properties():
     # Tests getting, setting of properties of matrix writer
     mfw = MatFile5Writer(BytesIO())
-    yield assert_equal, mfw.global_vars, []
+    assert_equal(mfw.global_vars, [])
     mfw.global_vars = ['avar']
-    yield assert_equal, mfw.global_vars, ['avar']
-    yield assert_equal, mfw.unicode_strings, False
+    assert_equal(mfw.global_vars, ['avar'])
+    assert_equal(mfw.unicode_strings, False)
     mfw.unicode_strings = True
-    yield assert_equal, mfw.unicode_strings, True
-    yield assert_equal, mfw.long_field_names, False
+    assert_equal(mfw.unicode_strings, True)
+    assert_equal(mfw.long_field_names, False)
     mfw.long_field_names = True
-    yield assert_equal, mfw.long_field_names, True
+    assert_equal(mfw.long_field_names, True)
 
 
 def test_use_small_element():
@@ -547,23 +548,17 @@ def test_use_small_element():
     sio.truncate(0)
     sio.seek(0)
     wtr.put_variables({'aaaa': arr})
-    yield assert_, w_sz - len(sio.getvalue()) > 4
+    assert_(w_sz - len(sio.getvalue()) > 4)
     # Whereas increasing name size makes less difference
     sio.truncate(0)
     sio.seek(0)
     wtr.put_variables({'aaaaaa': arr})
-    yield assert_, len(sio.getvalue()) - w_sz < 4
+    assert_(len(sio.getvalue()) - w_sz < 4)
 
 
 def test_save_dict():
     # Test that dict can be saved (as recarray), loaded as matstruct
-    dict_types = ((dict, False),)
-    try:
-        from collections import OrderedDict
-    except ImportError:
-        pass
-    else:
-        dict_types += ((OrderedDict, True),)
+    dict_types = ((dict, False), (OrderedDict, True),)
     ab_exp = np.array([[(1, 2)]], dtype=[('a', object), ('b', object)])
     ba_exp = np.array([[(2, 1)]], dtype=[('b', object), ('a', object)])
     for dict_type, is_ordered in dict_types:
@@ -615,24 +610,24 @@ def test_compression():
     savemat(stream, {'arr':arr})
     raw_len = len(stream.getvalue())
     vals = loadmat(stream)
-    yield assert_array_equal, vals['arr'], arr
+    assert_array_equal(vals['arr'], arr)
     stream = BytesIO()
     savemat(stream, {'arr':arr}, do_compression=True)
     compressed_len = len(stream.getvalue())
     vals = loadmat(stream)
-    yield assert_array_equal, vals['arr'], arr
-    yield assert_, raw_len > compressed_len
+    assert_array_equal(vals['arr'], arr)
+    assert_(raw_len > compressed_len)
     # Concatenate, test later
     arr2 = arr.copy()
     arr2[0,0] = 1
     stream = BytesIO()
     savemat(stream, {'arr':arr, 'arr2':arr2}, do_compression=False)
     vals = loadmat(stream)
-    yield assert_array_equal, vals['arr2'], arr2
+    assert_array_equal(vals['arr2'], arr2)
     stream = BytesIO()
     savemat(stream, {'arr':arr, 'arr2':arr2}, do_compression=True)
     vals = loadmat(stream)
-    yield assert_array_equal, vals['arr2'], arr2
+    assert_array_equal(vals['arr2'], arr2)
 
 
 def test_single_object():
@@ -656,17 +651,17 @@ def test_skip_variable():
     # Prove that it loads with loadmat
     #
     d = loadmat(filename, struct_as_record=True)
-    yield assert_, 'first' in d
-    yield assert_, 'second' in d
+    assert_('first' in d)
+    assert_('second' in d)
     #
     # Make the factory
     #
-    factory = mat_reader_factory(filename, struct_as_record=True)
+    factory, file_opened = mat_reader_factory(filename, struct_as_record=True)
     #
     # This is where the factory breaks with an error in MatMatrixGetter.to_next
     #
     d = factory.get_variables('second')
-    yield assert_, 'second' in d
+    assert_('second' in d)
     factory.mat_stream.close()
 
 
@@ -787,18 +782,18 @@ def test_recarray():
     savemat(stream, {'arr': arr})
     d = loadmat(stream, struct_as_record=False)
     a20 = d['arr'][0,0]
-    yield assert_equal, a20.f1, 0.5
-    yield assert_equal, a20.f2, 'python'
+    assert_equal(a20.f1, 0.5)
+    assert_equal(a20.f2, 'python')
     d = loadmat(stream, struct_as_record=True)
     a20 = d['arr'][0,0]
-    yield assert_equal, a20['f1'], 0.5
-    yield assert_equal, a20['f2'], 'python'
+    assert_equal(a20['f1'], 0.5)
+    assert_equal(a20['f2'], 'python')
     # structs always come back as object types
-    yield assert_equal, a20.dtype, np.dtype([('f1', 'O'),
-                                             ('f2', 'O')])
+    assert_equal(a20.dtype, np.dtype([('f1', 'O'),
+                                      ('f2', 'O')]))
     a21 = d['arr'].flat[1]
-    yield assert_equal, a21['f1'], 99
-    yield assert_equal, a21['f2'], 'not perl'
+    assert_equal(a21['f1'], 99)
+    assert_equal(a21['f2'], 'not perl')
 
 
 def test_save_object():
@@ -983,13 +978,13 @@ def test_mat_dtype():
     rdr = MatFile5Reader(fp, mat_dtype=False)
     d = rdr.get_variables()
     fp.close()
-    yield assert_equal, d['testmatrix'].dtype.kind, 'u'
+    assert_equal(d['testmatrix'].dtype.kind, 'u')
 
     fp = open(double_eg, 'rb')
     rdr = MatFile5Reader(fp, mat_dtype=True)
     d = rdr.get_variables()
     fp.close()
-    yield assert_equal, d['testmatrix'].dtype.kind, 'f'
+    assert_equal(d['testmatrix'].dtype.kind, 'f')
 
 
 def test_sparse_in_struct():
@@ -999,7 +994,7 @@ def test_sparse_in_struct():
     stream = BytesIO()
     savemat(stream, {'a':st})
     d = loadmat(stream, struct_as_record=True)
-    yield assert_array_equal, d['a'][0,0]['sparsefield'].todense(), np.eye(4)
+    assert_array_equal(d['a'][0,0]['sparsefield'].todense(), np.eye(4))
 
 
 def test_mat_struct_squeeze():
@@ -1230,5 +1225,13 @@ def test_bad_utf8():
                  b'\x80 am broken'.decode('utf8', 'replace'))
 
 
-if __name__ == "__main__":
-    run_module_suite()
+def test_save_unicode_field(tmpdir):
+    filename = os.path.join(str(tmpdir), 'test.mat')
+    test_dict = {u'a':{u'b':1,u'c':'test_str'}}
+    savemat(filename, test_dict)
+
+
+def test_filenotfound():
+    # Check the correct error is thrown
+    assert_raises(IOError, loadmat, "NotExistentFile00.mat")
+    assert_raises(IOError, loadmat, "NotExistentFile00")

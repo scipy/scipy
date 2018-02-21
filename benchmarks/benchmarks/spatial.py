@@ -3,8 +3,22 @@ from __future__ import division, absolute_import, print_function
 import numpy as np
 
 try:
-    from scipy.spatial import (cKDTree, KDTree, SphericalVoronoi, distance,
-    ConvexHull, Voronoi)
+    from scipy.spatial import cKDTree, KDTree
+except ImportError:
+    pass
+
+try:
+    from scipy.spatial import distance
+except ImportError:
+    pass
+
+try:
+    from scipy.spatial import ConvexHull, Voronoi
+except ImportError:
+    pass
+
+try:
+    from scipy.spatial import SphericalVoronoi
 except ImportError:
     pass
 
@@ -212,7 +226,7 @@ class SphericalVorSort(Benchmark):
         """
         self.sv.sort_vertices_of_regions()
 
-class Cdist(Benchmark):
+class Xdist(Benchmark):
     params = ([10, 100, 1000], ['euclidean', 'minkowski', 'cityblock',
     'seuclidean', 'sqeuclidean', 'cosine', 'correlation', 'hamming', 'jaccard',
     'chebyshev', 'canberra', 'braycurtis', 'mahalanobis', 'yule', 'dice',
@@ -223,12 +237,24 @@ class Cdist(Benchmark):
     def setup(self, num_points, metric):
         np.random.seed(123)
         self.points = np.random.random_sample((num_points, 3))
+        # use an equal weight vector to satisfy those metrics
+        # that require weights
+        if metric == 'wminkowski':
+            self.w = np.ones(3)
+        else:
+            self.w = None
 
     def time_cdist(self, num_points, metric):
         """Time scipy.spatial.distance.cdist over a range of input data
         sizes and metrics.
         """
-        distance.cdist(self.points, self.points, metric)
+        distance.cdist(self.points, self.points, metric, w=self.w)
+
+    def time_pdist(self, num_points, metric):
+        """Time scipy.spatial.distance.pdist over a range of input data
+        sizes and metrics.
+        """
+        distance.pdist(self.points, metric, w=self.w)
 
 
 class ConvexHullBench(Benchmark):

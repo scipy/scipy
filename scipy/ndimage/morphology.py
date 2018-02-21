@@ -882,7 +882,9 @@ def binary_propagation(input, structure=None, mask=None,
     References
     ----------
     .. [1] http://cmm.ensmp.fr/~serra/cours/pdf/en/ch6en.pdf, slide 15.
-    .. [2] http://www.qi.tnw.tudelft.nl/Courses/FIP/noframes/fip-Morpholo.html#Heading102
+    .. [2] I.T. Young, J.J. Gerbrands, and L.J. van Vliet, "Fundamentals of
+        image processing", 1998
+        ftp://qiftp.tudelft.nl/DIPimage/docs/FIP2.3.pdf
 
     Examples
     --------
@@ -1076,7 +1078,7 @@ def grey_erosion(input, size=None, footprint=None, structure=None,
         Structuring element used for the grayscale erosion. `structure`
         may be a non-flat structuring element.
     output : array, optional
-        An array used for storing the ouput of the erosion may be provided.
+        An array used for storing the output of the erosion may be provided.
     mode : {'reflect','constant','nearest','mirror', 'wrap'}, optional
         The `mode` parameter determines how the array borders are
         handled, where `cval` is the value when mode is equal to
@@ -1186,7 +1188,7 @@ def grey_dilation(input, size=None, footprint=None, structure=None,
         Structuring element used for the grayscale dilation. `structure`
         may be a non-flat structuring element.
     output : array, optional
-        An array used for storing the ouput of the dilation may be provided.
+        An array used for storing the output of the dilation may be provided.
     mode : {'reflect','constant','nearest','mirror', 'wrap'}, optional
         The `mode` parameter determines how the array borders are
         handled, where `cval` is the value when mode is equal to
@@ -1331,7 +1333,7 @@ def grey_opening(input, size=None, footprint=None, structure=None,
         Structuring element used for the grayscale opening. `structure`
         may be a non-flat structuring element.
     output : array, optional
-        An array used for storing the ouput of the opening may be provided.
+        An array used for storing the output of the opening may be provided.
     mode : {'reflect', 'constant', 'nearest', 'mirror', 'wrap'}, optional
         The `mode` parameter determines how the array borders are
         handled, where `cval` is the value when mode is equal to
@@ -1412,7 +1414,7 @@ def grey_closing(input, size=None, footprint=None, structure=None,
         Structuring element used for the grayscale closing. `structure`
         may be a non-flat structuring element.
     output : array, optional
-        An array used for storing the ouput of the closing may be provided.
+        An array used for storing the output of the closing may be provided.
     mode : {'reflect', 'constant', 'nearest', 'mirror', 'wrap'}, optional
         The `mode` parameter determines how the array borders are
         handled, where `cval` is the value when mode is equal to
@@ -1496,7 +1498,7 @@ def morphological_gradient(input, size=None, footprint=None,
         Structuring element used for the morphology operations.
         `structure` may be a non-flat structuring element.
     output : array, optional
-        An array used for storing the ouput of the morphological gradient
+        An array used for storing the output of the morphological gradient
         may be provided.
     mode : {'reflect', 'constant', 'nearest', 'mirror', 'wrap'}, optional
         The `mode` parameter determines how the array borders are

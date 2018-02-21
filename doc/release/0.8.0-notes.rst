@@ -155,7 +155,7 @@ New sparse least squares solver
 -------------------------------
 
 The `lsqr` function was added to `scipy.sparse`.  `This routine
-<http://www.stanford.edu/group/SOL/software/lsqr.html>`_ finds a
+<http://web.stanford.edu/group/SOL/software/lsqr/>`_ finds a
 least-squares solution to a large, sparse, linear system of equations.
 
 ARPACK-based sparse SVD

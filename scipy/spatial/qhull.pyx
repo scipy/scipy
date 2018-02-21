@@ -18,8 +18,8 @@ cimport numpy as np
 cimport cython
 from . cimport qhull
 from . cimport setlist
-from libc cimport stdio, stdlib
-from cpython cimport PyBytes_FromStringAndSize, PY_VERSION_HEX
+from libc cimport stdlib
+from scipy._lib.messagestream cimport MessageStream
 
 from numpy.compat import asbytes
 import os
@@ -205,7 +205,6 @@ from libc.stdlib cimport qsort
 #------------------------------------------------------------------------------
 
 cdef extern from "qhull_misc.h":
-    stdio.FILE *qhull_open_memstream(char **, size_t *)
     void qhull_misc_lib_check()
     void qh_dgetrf(int *m, int *n, double *a, int *lda, int *ipiv,
                    int *info) nogil
@@ -228,87 +227,6 @@ class QhullError(RuntimeError):
 
 
 @cython.final
-cdef class _QhullMessageStream:
-    """
-    Qhull emits error messages to FILE* streams, which we should capture.
-    Do this by directing them to a temporary file.
-    """
-    cdef stdio.FILE *handle
-    cdef bytes _filename
-    cdef bint _removed
-    cdef size_t _memstream_size
-    cdef char *_memstream_ptr
-
-    def __init__(self):
-        # Try first in-memory files, if available
-        self._memstream_ptr = NULL
-        self.handle = qhull_open_memstream(&self._memstream_ptr,
-                                           &self._memstream_size)
-        if self.handle != NULL:
-            self._removed = 1
-            return
-
-        # Fall back to temporary files
-        fd, filename = tempfile.mkstemp(prefix='qhull-err-')
-        os.close(fd)
-        self._filename = filename.encode(sys.getfilesystemencoding())
-        self.handle = stdio.fopen(self._filename, "w+")
-        if self.handle == NULL:
-            stdio.remove(self._filename)
-            raise IOError("Failed to open file {0}".format(self._filename))
-        self._removed = 0
-
-        # Use a posix-style deleted file, if possible
-        if stdio.remove(self._filename) == 0:
-            self._removed = 1
-
-    def __del__(self):
-        self.close()
-
-    def get(self):
-        cdef long pos
-        cdef size_t nread
-        cdef np.uint8_t[::1] buf
-        cdef bytes obj
-
-        pos = stdio.ftell(self.handle)
-        if pos <= 0:
-            return ""
-
-        if self._memstream_ptr != NULL:
-            stdio.fflush(self.handle)
-            obj = PyBytes_FromStringAndSize(self._memstream_ptr, pos)
-        else:
-            arr = np.zeros(pos, dtype=np.uint8)
-            buf = arr
-
-            stdio.rewind(self.handle)
-            nread = stdio.fread(<void*>&buf[0], 1, pos, self.handle)
-            obj = arr[:nread].tostring()
-
-        if PY_VERSION_HEX >= 0x03000000:
-            return obj.decode('latin1')
-        else:
-            return obj
-
-    def clear(self):
-        stdio.rewind(self.handle)
-
-    def close(self):
-        if self._memstream_ptr != NULL:
-            stdlib.free(self._memstream_ptr)
-            self._memstream_ptr = NULL
-
-        if self.handle != NULL:
-            stdio.fclose(self.handle)
-            self.handle = NULL
-
-        if not self._removed:
-            stdio.remove(self._filename)
-            self._removed = 1
-
-
-@cython.final
 cdef class _Qhull:
     # Note that the qhT struct is allocated separately --- otherwise
     # it may end up allocated in a way not compatible with the CRT
@@ -317,7 +235,7 @@ cdef class _Qhull:
 
     cdef list _point_arrays
     cdef list _dual_point_arrays
-    cdef _QhullMessageStream _messages
+    cdef MessageStream _messages
 
     cdef public bytes options
     cdef public bytes mode_option
@@ -345,7 +263,7 @@ cdef class _Qhull:
         cdef int exitcode
 
         self._qh = NULL
-        self._messages = _QhullMessageStream()
+        self._messages = MessageStream()
 
         points = np.ascontiguousarray(points, dtype=np.double)
 
@@ -436,7 +354,7 @@ cdef class _Qhull:
             raise QhullError(msg)
 
     @cython.final
-    def __del__(self):
+    def __dealloc__(self):
         self.close()
         self._messages.close()
 
@@ -1384,7 +1302,7 @@ cdef int _find_simplex_directed(DelaunayInfo_t *d, double *c,
                                 double *x, int *start, double eps,
                                 double eps_broad) nogil:
     """
-    Find simplex containing point `x` via a directed walk in the tesselation.
+    Find simplex containing point `x` via a directed walk in the tessellation.
 
     If the simplex is found, the array `c` is filled with the corresponding
     barycentric coordinates.
@@ -1404,11 +1322,11 @@ cdef int _find_simplex_directed(DelaunayInfo_t *d, double *c,
     3) Consequently, the k-th neighbour simplex is *closer* to the target point
        than the present simplex, if projected on the normal of the k-th ridge.
 
-    4) In a regular tesselation, hopping to any such direction is OK.
+    4) In a regular tessellation, hopping to any such direction is OK.
 
        Also, if one of the negative-coordinate neighbors happens to be -1,
-       then the target point is outside the tesselation (because the
-       tesselation is convex!).
+       then the target point is outside the tessellation (because the
+       tessellation is convex!).
 
     5) If all barycentric coordinates are in [-eps, 1+eps], we have found the
        simplex containing the target point.
@@ -1533,7 +1451,7 @@ cdef int _find_simplex(DelaunayInfo_t *d, double *c,
         Now, the maximally positive-distant simplex is [3, 2, 0], although
         the simplex containing the point is [4, 2, 1].
 
-    In this algorithm, we walk around the tesselation trying to locate
+    In this algorithm, we walk around the tessellation trying to locate
     a positive-distant facet. After finding one, we fall back to a
     directed search.
 
@@ -1558,7 +1476,7 @@ cdef int _find_simplex(DelaunayInfo_t *d, double *c,
     # Lift point to paraboloid
     _lift_point(d, x, z)
 
-    # Walk the tesselation searching for a facet with a positive planar distance
+    # Walk the tessellation searching for a facet with a positive planar distance
     best_dist = _distplane(d, isimplex, z)
     changed = 1
     while changed:
@@ -1696,7 +1614,7 @@ class Delaunay(_QhullUser):
     """
     Delaunay(points, furthest_site=False, incremental=False, qhull_options=None)
 
-    Delaunay tesselation in N dimensions.
+    Delaunay tessellation in N dimensions.
 
     .. versionadded:: 0.9
 
@@ -1755,7 +1673,7 @@ class Delaunay(_QhullUser):
     vertex_to_simplex : ndarray of int, shape (npoints,)
         Lookup array, from a vertex, to some simplex which it is a part of.
         If qhull option "Qc" was not specified, the list will contain -1
-        for points that are not vertices of the tesselation.
+        for points that are not vertices of the tessellation.
     convex_hull : ndarray of int, shape (nfaces, ndim)
         Vertices of facets forming the convex hull of the point set.
         The array contains the indices of the points belonging to
@@ -1778,9 +1696,9 @@ class Delaunay(_QhullUser):
         .. versionadded:: 0.12.0
     vertices
         Same as `simplices`, but deprecated.
-    vertex_neighbor_vertices : tuple of two ndarrays of int; (indices, indptr)
+    vertex_neighbor_vertices : tuple of two ndarrays of int; (indptr, indices)
         Neighboring vertices of vertices. The indices of neighboring
-        vertices of vertex `k` are ``indptr[indices[k]:indices[k+1]]``.
+        vertices of vertex `k` are ``indices[indptr[k]:indptr[k+1]]``.
 
     Raises
     ------
@@ -1792,7 +1710,7 @@ class Delaunay(_QhullUser):
 
     Notes
     -----
-    The tesselation is computed using the Qhull library 
+    The tessellation is computed using the Qhull library 
     `Qhull library <http://www.qhull.org/>`__.
 
     .. note::
@@ -1813,7 +1731,7 @@ class Delaunay(_QhullUser):
     We can plot it:
 
     >>> import matplotlib.pyplot as plt
-    >>> plt.triplot(points[:,0], points[:,1], tri.simplices.copy())
+    >>> plt.triplot(points[:,0], points[:,1], tri.simplices)
     >>> plt.plot(points[:,0], points[:,1], 'o')
     >>> plt.show()
 
@@ -1990,9 +1908,9 @@ class Delaunay(_QhullUser):
         """
         Neighboring vertices of vertices.
 
-        Tuple of two ndarrays of int: (indices, indptr). The indices of
+        Tuple of two ndarrays of int: (indptr, indices). The indices of
         neighboring vertices of vertex `k` are
-        ``indptr[indices[k]:indices[k+1]]``.
+        ``indices[indptr[k]:indptr[k+1]]``.
 
         """
         cdef int i, j, k, m, is_neighbor, is_missing, ndata, idata
@@ -2275,7 +2193,7 @@ cdef int _get_delaunay_info(DelaunayInfo_t *info,
     else:
         info.vertex_to_simplex = NULL
     if compute_vertex_neighbor_vertices:
-        vn_indices, vn_indptr = obj.vertex_neighbor_vertices
+        vn_indptr, vn_indices = obj.vertex_neighbor_vertices
         info.vertex_neighbors_indices = <int*>vn_indices.data
         info.vertex_neighbors_indptr = <int*>vn_indptr.data
     else:

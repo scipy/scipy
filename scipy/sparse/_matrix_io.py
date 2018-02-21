@@ -44,7 +44,7 @@ def save_npz(file, matrix, compressed=True):
     >>> import scipy.sparse
     >>> sparse_matrix = scipy.sparse.csc_matrix(np.array([[0, 0, 3], [4, 0, 0]]))
     >>> sparse_matrix
-    <2x3 sparse matrix of type '<type 'numpy.int64'>'
+    <2x3 sparse matrix of type '<class 'numpy.int64'>'
        with 2 stored elements in Compressed Sparse Column format>
     >>> sparse_matrix.todense()
     matrix([[0, 0, 3],
@@ -54,16 +54,13 @@ def save_npz(file, matrix, compressed=True):
     >>> sparse_matrix = scipy.sparse.load_npz('/tmp/sparse_matrix.npz')
 
     >>> sparse_matrix
-    <2x3 sparse matrix of type '<type 'numpy.int64'>'
+    <2x3 sparse matrix of type '<class 'numpy.int64'>'
        with 2 stored elements in Compressed Sparse Column format>
     >>> sparse_matrix.todense()
     matrix([[0, 0, 3],
             [4, 0, 0]], dtype=int64)
     """
-
-    arrays_dict = dict(format=matrix.format.encode('ascii'),
-                       shape=matrix.shape,
-                       data=matrix.data)
+    arrays_dict = {}
     if matrix.format in ('csc', 'csr', 'bsr'):
         arrays_dict.update(indices=matrix.indices, indptr=matrix.indptr)
     elif matrix.format == 'dia':
@@ -72,7 +69,11 @@ def save_npz(file, matrix, compressed=True):
         arrays_dict.update(row=matrix.row, col=matrix.col)
     else:
         raise NotImplementedError('Save is not implemented for sparse matrix of format {}.'.format(matrix.format))
-
+    arrays_dict.update(
+        format=matrix.format.encode('ascii'),
+        shape=matrix.shape,
+        data=matrix.data
+    )
     if compressed:
         np.savez_compressed(file, **arrays_dict)
     else:
@@ -110,7 +111,7 @@ def load_npz(file):
     >>> import scipy.sparse
     >>> sparse_matrix = scipy.sparse.csc_matrix(np.array([[0, 0, 3], [4, 0, 0]]))
     >>> sparse_matrix
-    <2x3 sparse matrix of type '<type 'numpy.int64'>'
+    <2x3 sparse matrix of type '<class 'numpy.int64'>'
        with 2 stored elements in Compressed Sparse Column format>
     >>> sparse_matrix.todense()
     matrix([[0, 0, 3],
@@ -120,7 +121,7 @@ def load_npz(file):
     >>> sparse_matrix = scipy.sparse.load_npz('/tmp/sparse_matrix.npz')
 
     >>> sparse_matrix
-    <2x3 sparse matrix of type '<type 'numpy.int64'>'
+    <2x3 sparse matrix of type '<class 'numpy.int64'>'
         with 2 stored elements in Compressed Sparse Column format>
     >>> sparse_matrix.todense()
     matrix([[0, 0, 3],

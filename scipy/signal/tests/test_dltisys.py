@@ -3,19 +3,18 @@
 
 from __future__ import division, print_function, absolute_import
 
-import warnings
 import numpy as np
-from numpy.testing import (TestCase, run_module_suite, assert_equal,
+from numpy.testing import (assert_equal,
                            assert_array_almost_equal, assert_array_equal,
-                           assert_allclose, assert_, assert_raises,
-                           assert_almost_equal)
+                           assert_allclose, assert_, assert_almost_equal)
+from pytest import raises as assert_raises
 from scipy._lib._numpy_compat import suppress_warnings
 from scipy.signal import (dlsim, dstep, dimpulse, tf2zpk, lti, dlti,
                           StateSpace, TransferFunction, ZerosPolesGain,
                           dfreqresp, dbode, BadCoefficients)
 
 
-class TestDLTI(TestCase):
+class TestDLTI(object):
 
     def test_dlsim(self):
 
@@ -397,7 +396,7 @@ class TestZerosPolesGain(object):
         assert_(s.to_zpk() is not s)
 
 
-class Test_dfreqresp(TestCase):
+class Test_dfreqresp(object):
 
     def test_manual(self):
         # Test dfreqresp() real part calculation (manual sanity check).
@@ -599,6 +598,3 @@ class TestTransferFunctionZConversion(object):
         assert_equal(num, num2)
         assert_equal([5, 6, 0], den2)
 
-
-if __name__ == "__main__":
-    run_module_suite()

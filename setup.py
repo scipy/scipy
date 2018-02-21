@@ -41,11 +41,8 @@ License :: OSI Approved :: BSD License
 Programming Language :: C
 Programming Language :: Python
 Programming Language :: Python :: 2
-Programming Language :: Python :: 2.6
 Programming Language :: Python :: 2.7
 Programming Language :: Python :: 3
-Programming Language :: Python :: 3.2
-Programming Language :: Python :: 3.3
 Programming Language :: Python :: 3.4
 Programming Language :: Python :: 3.5
 Programming Language :: Python :: 3.6
@@ -59,7 +56,7 @@ Operating System :: MacOS
 """
 
 MAJOR = 1
-MINOR = 0
+MINOR = 1
 MICRO = 0
 ISRELEASED = False
 VERSION = '%d.%d.%d' % (MAJOR, MINOR, MICRO)

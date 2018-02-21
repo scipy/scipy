@@ -11,5 +11,6 @@ utilities in submodules of ``_lib`` can be run with::
 """
 from __future__ import division, print_function, absolute_import
 
-from numpy.testing import Tester
-test = Tester().test
+from scipy._lib._testutils import PytestTester
+test = PytestTester(__name__)
+del PytestTester

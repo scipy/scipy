@@ -3,7 +3,7 @@ from __future__ import division, print_function, absolute_import
 from warnings import warn
 
 import numpy as np
-from numpy import asarray, empty, ravel, nonzero
+from numpy import asarray
 from scipy.sparse import (isspmatrix_csc, isspmatrix_csr, isspmatrix,
                           SparseEfficiencyWarning, csc_matrix, csr_matrix)
 from scipy.linalg import LinAlgError
@@ -35,6 +35,10 @@ def use_solver(**kwargs):
     useUmfpack : bool, optional
         Use UMFPACK over SuperLU. Has effect only if scikits.umfpack is
         installed. Default: True
+    assumeSortedIndices : bool, optional
+        Allow UMFPACK to skip the step of sorting indices for a CSR/CSC matrix.
+        Has effect only if useUmfpack is True and scikits.umfpack is installed.
+        Default: False
 
     Notes
     -----
@@ -50,14 +54,31 @@ def use_solver(**kwargs):
     """
     if 'useUmfpack' in kwargs:
         globals()['useUmfpack'] = kwargs['useUmfpack']
-
-    #TODO: pass other options to scikit
+    if useUmfpack and 'assumeSortedIndices' in kwargs:
+        umfpack.configure(assumeSortedIndices=kwargs['assumeSortedIndices'])
 
 def _get_umf_family(A):
     """Get umfpack family string given the sparse matrix dtype."""
-    family = {'di': 'di', 'Di': 'zi', 'dl': 'dl', 'Dl': 'zl'}
-    dt = A.dtype.char + A.indices.dtype.char
-    return family[dt]
+    _families = {
+        (np.float64, np.int32): 'di',
+        (np.complex128, np.int32): 'zi',
+        (np.float64, np.int64): 'dl',
+        (np.complex128, np.int64): 'zl'
+    }
+
+    f_type = np.sctypeDict[A.dtype.name]
+    i_type = np.sctypeDict[A.indices.dtype.name]
+
+    try:
+        family = _families[(f_type, i_type)]
+
+    except KeyError:
+        msg = 'only float64 or complex128 matrices with int32 or int64' \
+            ' indices are supported! (got: matrix: %s, indices: %s)' \
+            % (f_type, i_type)
+        raise ValueError(msg)
+
+    return family
 
 def spsolve(A, b, permc_spec=None, use_umfpack=True):
     """Solve the sparse linear system Ax=b, where b may be a vector or a matrix.
@@ -204,7 +225,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
 
 
 def splu(A, permc_spec=None, diag_pivot_thresh=None,
-         drop_tol=None, relax=None, panel_size=None, options=dict()):
+         relax=None, panel_size=None, options=dict()):
     """
     Compute the LU decomposition of a sparse, square matrix.
 
@@ -224,8 +245,6 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
     diag_pivot_thresh : float, optional
         Threshold used for a diagonal entry to be an acceptable pivot.
         See SuperLU user's guide for details [1]_
-    drop_tol : float, optional
-        (deprecated) No effect.
     relax : int, optional
         Expert option for customizing the degree of relaxing supernodes.
         See SuperLU user's guide for details [1]_
@@ -402,7 +421,6 @@ def factorized(A):
             A = csc_matrix(A)
             warn('splu requires CSC matrix format', SparseEfficiencyWarning)
 
-        A.sort_indices()
         A = A.asfptype()  # upcast to a floating point format
 
         if A.dtype.char not in 'dD':

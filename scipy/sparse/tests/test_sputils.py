@@ -3,12 +3,13 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import (TestCase, run_module_suite, assert_equal,
-                           assert_raises)
+from numpy.testing import assert_equal, assert_raises
+from pytest import raises as assert_raises
 from scipy.sparse import sputils
+from scipy._lib._numpy_compat import suppress_warnings
 
 
-class TestSparseUtils(TestCase):
+class TestSparseUtils(object):
 
     def test_upcast(self):
         assert_equal(sputils.upcast('intc'), np.intc)
@@ -36,10 +37,13 @@ class TestSparseUtils(TestCase):
         assert_equal(sputils.isscalarlike((1, 2)), False)
 
     def test_isintlike(self):
-        assert_equal(sputils.isintlike(3.0), True)
         assert_equal(sputils.isintlike(-4), True)
         assert_equal(sputils.isintlike(np.array(3)), True)
         assert_equal(sputils.isintlike(np.array([3])), False)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning,
+                       "Inexact indices into sparse matrices are deprecated")
+            assert_equal(sputils.isintlike(3.0), True)
 
         assert_equal(sputils.isintlike(2.5), False)
         assert_equal(sputils.isintlike(1 + 3j), False)
@@ -53,6 +57,10 @@ class TestSparseUtils(TestCase):
         assert_equal(sputils.isshape((1.5, 2)), False)
         assert_equal(sputils.isshape((2, 2, 2)), False)
         assert_equal(sputils.isshape(([2], 2)), False)
+        assert_equal(sputils.isshape((-1, 2), nonneg=False),True)
+        assert_equal(sputils.isshape((2, -1), nonneg=False),True)
+        assert_equal(sputils.isshape((-1, 2), nonneg=True),False)
+        assert_equal(sputils.isshape((2, -1), nonneg=True),False)
 
     def test_issequence(self):
         assert_equal(sputils.issequence((1,)), True)
@@ -79,15 +87,67 @@ class TestSparseUtils(TestCase):
         assert_equal(sputils.isdense(np.matrix([1])), True)
 
     def test_validateaxis(self):
-        func = sputils.validateaxis
-
-        assert_raises(TypeError, func, (0, 1))
-        assert_raises(TypeError, func, 1.5)
-        assert_raises(ValueError, func, 3)
+        assert_raises(TypeError, sputils.validateaxis, (0, 1))
+        assert_raises(TypeError, sputils.validateaxis, 1.5)
+        assert_raises(ValueError, sputils.validateaxis, 3)
 
         # These function calls should not raise errors
         for axis in (-2, -1, 0, 1, None):
-            func(axis)
+            sputils.validateaxis(axis)
 
-if __name__ == "__main__":
-    run_module_suite()
+    def test_get_index_dtype(self):
+        imax = np.iinfo(np.int32).max
+        too_big = imax + 1
+
+        # Check that uint32's with no values too large doesn't return
+        # int64
+        a1 = np.ones(90, dtype='uint32')
+        a2 = np.ones(90, dtype='uint32')
+        assert_equal(
+            np.dtype(sputils.get_index_dtype((a1, a2), check_contents=True)),
+            np.dtype('int32')
+        )
+
+        # Check that if we can not convert but all values are less than or
+        # equal to max that we can just convert to int32
+        a1[-1] = imax
+        assert_equal(
+            np.dtype(sputils.get_index_dtype((a1, a2), check_contents=True)),
+            np.dtype('int32')
+        )
+
+        # Check that if it can not convert directly and the contents are
+        # too large that we return int64
+        a1[-1] = too_big
+        assert_equal(
+            np.dtype(sputils.get_index_dtype((a1, a2), check_contents=True)),
+            np.dtype('int64')
+        )
+
+        # test that if can not convert and didn't specify to check_contents
+        # we return int64
+        a1 = np.ones(89, dtype='uint32')
+        a2 = np.ones(89, dtype='uint32')
+        assert_equal(
+            np.dtype(sputils.get_index_dtype((a1, a2))),
+            np.dtype('int64')
+        )
+
+        # Check that even if we have arrays that can be converted directly
+        # that if we specify a maxval directly it takes precedence
+        a1 = np.ones(12, dtype='uint32')
+        a2 = np.ones(12, dtype='uint32')
+        assert_equal(
+            np.dtype(sputils.get_index_dtype(
+                (a1, a2), maxval=too_big, check_contents=True
+            )),
+            np.dtype('int64')
+        )
+
+        # Check that an array with a too max size and maxval set
+        # still returns int64
+        a1[-1] = too_big
+        assert_equal(
+            np.dtype(sputils.get_index_dtype((a1, a2), maxval=too_big)),
+            np.dtype('int64')
+        )

@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 from __future__ import division, print_function, absolute_import
 
 from os.path import join, dirname
@@ -47,6 +46,9 @@ def configuration(parent_package='',top_path=None):
                          extra_info=lapack_opt,
                          **numpy_nodepr_api
                          )
+
+    # Add license files
+    config.add_data_files('SuperLU/License.txt')
 
     return config
 

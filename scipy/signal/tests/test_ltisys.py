@@ -4,7 +4,9 @@ import warnings
 
 import numpy as np
 from numpy.testing import (assert_almost_equal, assert_equal, assert_allclose,
-                           assert_, assert_raises, TestCase, run_module_suite)
+                           assert_)
+from pytest import raises as assert_raises
+
 from scipy._lib._numpy_compat import suppress_warnings
 from scipy.signal import (ss2tf, tf2ss, lsim2, impulse2, step2, lti,
                           dlti, bode, freqresp, lsim, impulse, step,
@@ -35,7 +37,7 @@ def _assert_poles_close(P1,P2, rtol=1e-8, atol=1e-8):
             raise ValueError("Can't find pole " + str(p1) + " in " + str(P2))
 
 
-class TestPlacePoles(TestCase):
+class TestPlacePoles(object):
 
     def _check(self, A, B, P, **kwargs):
         """
@@ -66,7 +68,10 @@ class TestPlacePoles(TestCase):
         # values are almost equal. This is to improve code coverage but I
         # have no way to be sure this code is really reached
 
-        self._check(A, B, (2,2,3,3))
+        # on some architectures this can lead to a RuntimeWarning invalid
+        # value in divide (see gh-7590), so suppress it for now
+        with np.errstate(invalid='ignore'):
+            self._check(A, B, (2,2,3,3))
 
     def test_complex(self):
         # Test complex pole placement on a linearized car model, taken from L.
@@ -238,7 +243,7 @@ class TestPlacePoles(TestCase):
 
 class TestSS2TF:
 
-    def tst_matrix_shapes(self, p, q, r):
+    def check_matrix_shapes(self, p, q, r):
         ss2tf(np.zeros((p, p)),
               np.zeros((p, q)),
               np.zeros((r, p)),
@@ -248,7 +253,7 @@ class TestSS2TF:
         # Each tuple holds:
         #   number of states, number of inputs, number of outputs
         for p, q, r in [(3, 3, 3), (1, 3, 3), (1, 1, 1)]:
-            yield self.tst_matrix_shapes, p, q, r
+            self.check_matrix_shapes(p, q, r)
 
     def test_basic(self):
         # Test a round trip through tf2ss and ss2tf.
@@ -619,12 +624,12 @@ class _TestImpulseFuncs(object):
 
 
 class TestImpulse2(_TestImpulseFuncs):
-    def setup(self):
+    def setup_method(self):
         self.func = impulse2
 
 
 class TestImpulse(_TestImpulseFuncs):
-    def setup(self):
+    def setup_method(self):
         self.func = impulse
 
 
@@ -696,7 +701,7 @@ class _TestStepFuncs(object):
 
 
 class TestStep2(_TestStepFuncs):
-    def setup(self):
+    def setup_method(self):
         self.func = step2
 
     def test_05(self):
@@ -713,7 +718,7 @@ class TestStep2(_TestStepFuncs):
 
 
 class TestStep(_TestStepFuncs):
-    def setup(self):
+    def setup_method(self):
         self.func = step
 
     def test_complex_input(self):
@@ -829,7 +834,7 @@ class TestZerosPolesGain(object):
 
 
 class Test_abcd_normalize(object):
-    def setup(self):
+    def setup_method(self):
         self.A = np.array([[1.0, 2.0], [3.0, 4.0]])
         self.B = np.array([[-1.0], [5.0]])
         self.C = np.array([[4.0, 5.0]])
@@ -1137,6 +1142,3 @@ class Test_freqresp(object):
         assert_almost_equal(H.real, expected.real)
         assert_almost_equal(H.imag, expected.imag)
 
-
-if __name__ == "__main__":
-    run_module_suite()

@@ -1,6 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
-from numpy.testing import dec, assert_, assert_array_equal
+import pytest
+from numpy.testing import assert_, assert_array_equal
 from scipy._lib._numpy_compat import suppress_warnings
 
 try:
@@ -18,10 +19,10 @@ from scipy.spatial import \
      Delaunay, Voronoi, ConvexHull
 
 
+@pytest.mark.skipif(not has_matplotlib, reason="Matplotlib not available")
 class TestPlotting:
     points = [(0,0), (0,1), (1,0), (1,1)]
 
-    @dec.skipif(not has_matplotlib, "Matplotlib not available")
     def test_delaunay(self):
         # Smoke test
         fig = plt.figure()
@@ -35,7 +36,6 @@ class TestPlotting:
         assert_(r is fig)
         delaunay_plot_2d(obj, ax=fig.gca())
 
-    @dec.skipif(not has_matplotlib, "Matplotlib not available")
     def test_voronoi(self):
         # Smoke test
         fig = plt.figure()
@@ -48,7 +48,6 @@ class TestPlotting:
         voronoi_plot_2d(obj)
         voronoi_plot_2d(obj, show_vertices=False)
 
-    @dec.skipif(not has_matplotlib, "Matplotlib not available")
     def test_convex_hull(self):
         # Smoke test
         fig = plt.figure()
