@@ -7,10 +7,9 @@ files '_ufuncs.c' and '_ufuncs_cxx.c' by first producing Cython.
 This will generate both calls to PyUFunc_FromFuncAndData and the
 required ufunc inner loops.
 
-The syntax in the ufunc signature list is
+The functions signatures are contained in 'functions.json', the syntax
+for a function signature is
 
-    <line>:           <ufunc_name> '--' <kernels> '--' <headers>
-    <kernels>:        <function> [',' <function>]*
     <function>:       <name> ':' <input> '*' <output>
                         '->' <retval> '*' <ignored_retval>
     <input>:          <typecode>*
@@ -70,258 +69,6 @@ the same shared library.
 """
 
 from __future__ import division, print_function, absolute_import
-
-#---------------------------------------------------------------------------------
-# Special function listing
-#---------------------------------------------------------------------------------
-
-#
-#
-
-# Ufuncs without C++
-FUNCS = """
-_sf_error_test_function -- _sf_error_test_function: i->i   -- sf_error.pxd
-sph_harm -- sph_harmonic: iidd->D, sph_harmonic_unsafe: dddd->D -- sph_harm.pxd, _legacy.pxd
-_lambertw -- lambertw_scalar: Dld->D                       -- lambertw.pxd
-wrightomega -- wrightomega : D->D                          -- _wright.h++
-_ellip_harm -- ellip_harmonic: ddiiddd->d, ellip_harmonic_unsafe: ddddddd->d --_ellip_harm.pxd, _legacy.pxd
-logit -- logitf: f->f, logit: d->d, logitl: g->g           -- _logit.h
-expit -- expitf: f->f, expit: d->d, expitl: g->g           -- _logit.h
-bdtrc -- bdtrc: iid->d, bdtrc_unsafe: ddd->d               -- cephes.h, _legacy.pxd
-bdtr -- bdtr: iid->d, bdtr_unsafe: ddd->d                  -- cephes.h, _legacy.pxd
-bdtri -- bdtri: iid->d, bdtri_unsafe: ddd->d               -- cephes.h, _legacy.pxd
-binom -- binom: dd->d                                      -- orthogonal_eval.pxd
-btdtr -- btdtr: ddd->d                                     -- cephes.h
-btdtri -- incbi: ddd->d                                    -- cephes.h
-fdtrc -- fdtrc: ddd->d                                     -- cephes.h
-fdtr -- fdtr: ddd->d                                       -- cephes.h
-fdtri -- fdtri: ddd->d                                     -- cephes.h
-gdtrc -- gdtrc: ddd->d                                     -- cephes.h
-gdtr -- gdtr: ddd->d                                       -- cephes.h
-hyp0f1 -- _hyp0f1_real: dd->d, _hyp0f1_cmplx: dD->D        -- _hyp0f1.pxd
-hyp2f1 -- hyp2f1: dddd->d, chyp2f1_wrap: dddD->D           -- cephes.h, specfun_wrappers.h
-hyp1f1 -- hyp1f1_wrap: ddd->d, chyp1f1_wrap: ddD->D        -- specfun_wrappers.h
-hyperu -- hypU_wrap: ddd->d                                -- specfun_wrappers.h
-hyp2f0 -- hyp2f0: dddi*d->d, hyp2f0_unsafe: dddd*d->d      -- cephes.h, _legacy.pxd
-hyp1f2 -- onef2: dddd*d->d                                 -- cephes.h
-hyp3f0 -- threef0: dddd*d->d                               -- cephes.h
-betainc -- incbet: ddd->d                                  -- cephes.h
-betaincinv -- incbi: ddd->d                                -- cephes.h
-nbdtrc -- nbdtrc: iid->d, nbdtrc_unsafe: ddd->d            -- cephes.h, _legacy.pxd
-nbdtr -- nbdtr: iid->d, nbdtr_unsafe: ddd->d               -- cephes.h, _legacy.pxd
-nbdtri -- nbdtri: iid->d, nbdtri_unsafe: ddd->d            -- cephes.h, _legacy.pxd
-beta -- beta: dd->d                                        -- cephes.h
-betaln -- lbeta: dd->d                                     -- cephes.h
-cbrt -- cbrt: d->d                                         -- cephes.h
-chdtrc -- chdtrc: dd->d                                    -- cephes.h
-chdtr -- chdtr: dd->d                                      -- cephes.h
-chdtri -- chdtri: dd->d                                    -- cephes.h
-ellipeinc -- ellie: dd->d                                  -- cephes.h
-ellipkinc -- ellik: dd->d                                  -- cephes.h
-ellipe -- ellpe: d->d                                      -- cephes.h
-ellipkm1 -- ellpk: d->d                                    -- cephes.h
-eval_jacobi --      eval_jacobi[double]: dddd->d,     eval_jacobi[double complex]: dddD->D,     eval_jacobi_l: lddd->d -- orthogonal_eval.pxd
-eval_sh_jacobi --   eval_sh_jacobi[double]: dddd->d,  eval_sh_jacobi[double complex]: dddD->D,  eval_sh_jacobi_l: lddd->d -- orthogonal_eval.pxd
-eval_gegenbauer --  eval_gegenbauer[double]: ddd->d,  eval_gegenbauer[double complex]: ddD->D,  eval_gegenbauer_l: ldd->d -- orthogonal_eval.pxd
-eval_chebyt --      eval_chebyt[double]: dd->d,       eval_chebyt[double complex]: dD->D,       eval_chebyt_l: ld->d -- orthogonal_eval.pxd
-eval_chebyu --      eval_chebyu[double]: dd->d,       eval_chebyu[double complex]: dD->D,       eval_chebyu_l: ld->d -- orthogonal_eval.pxd
-eval_chebyc --      eval_chebyc[double]: dd->d,       eval_chebyc[double complex]: dD->D,       eval_chebyc_l: ld->d -- orthogonal_eval.pxd
-eval_chebys --      eval_chebys[double]: dd->d,       eval_chebys[double complex]: dD->D,       eval_chebys_l: ld->d -- orthogonal_eval.pxd
-eval_sh_chebyt --   eval_sh_chebyt[double]: dd->d,    eval_sh_chebyt[double complex]: dD->D,    eval_sh_chebyt_l:ld->d -- orthogonal_eval.pxd
-eval_sh_chebyu --   eval_sh_chebyu[double]: dd->d,    eval_sh_chebyu[double complex]: dD->D,    eval_sh_chebyu_l:ld->d -- orthogonal_eval.pxd
-eval_legendre --    eval_legendre[double]: dd->d,     eval_legendre[double complex]: dD->D,     eval_legendre_l: ld->d -- orthogonal_eval.pxd
-eval_sh_legendre -- eval_sh_legendre[double]: dd->d,  eval_sh_legendre[double complex]: dD->D,  eval_sh_legendre_l:ld->d -- orthogonal_eval.pxd
-eval_genlaguerre -- eval_genlaguerre[double]: ddd->d, eval_genlaguerre[double complex]: ddD->D, eval_genlaguerre_l:ldd->d -- orthogonal_eval.pxd
-eval_laguerre --    eval_laguerre[double]: dd->d,     eval_laguerre[double complex]: dD->D,     eval_laguerre_l:ld->d -- orthogonal_eval.pxd
-eval_hermite  -- eval_hermite: ld->d                       -- orthogonal_eval.pxd
-eval_hermitenorm -- eval_hermitenorm: ld->d                -- orthogonal_eval.pxd
-exp10 -- exp10: d->d                                       -- cephes.h
-exp2 -- exp2: d->d                                         -- cephes.h
-gamma -- Gamma: d->d, cgamma: D->D                         -- cephes.h, _loggamma.pxd
-gammaln -- lgam: d->d                                      -- cephes.h
-gammasgn -- gammasgn: d->d                                 -- c_misc/misc.h
-i0 -- i0: d->d                                             -- cephes.h
-i0e -- i0e: d->d                                           -- cephes.h
-i1 -- i1: d->d                                             -- cephes.h
-i1e -- i1e: d->d                                           -- cephes.h
-gammaincc -- igamc: dd->d                                  -- cephes.h
-gammainc -- igam: dd->d                                    -- cephes.h
-gammaincinv -- igami: dd->d                                -- cephes.h
-gammainccinv -- igamci: dd->d                              -- cephes.h
-iv -- iv: dd->d, cbesi_wrap: dD->D                         -- cephes.h, amos_wrappers.h
-ive -- cbesi_wrap_e_real: dd->d, cbesi_wrap_e: dD->D       -- amos_wrappers.h
-ellipj -- ellpj: dd*dddd->*i                               -- cephes.h
-expn -- expn: id->d, expn_unsafe: dd->d                    -- cephes.h, _legacy.pxd
-exp1 -- exp1_wrap: d->d, cexp1_wrap: D->D                  -- specfun_wrappers.h
-expi -- expi_wrap: d->d, cexpi_wrap: D->D                  -- specfun_wrappers.h
-kn -- cbesk_wrap_real_int: id->d, kn_unsafe: dd->d         -- cephes.h, _legacy.pxd
-pdtrc -- pdtrc: id->d, pdtrc_unsafe: dd->d                 -- cephes.h, _legacy.pxd
-pdtr -- pdtr: id->d, pdtr_unsafe: dd->d                    -- cephes.h, _legacy.pxd
-pdtri -- pdtri: id->d, pdtri_unsafe: dd->d                 -- cephes.h, _legacy.pxd
-yn -- yn: id->d, yn_unsafe: dd->d                          -- cephes.h, _legacy.pxd
-smirnov -- smirnov: id->d, smirnov_unsafe: dd->d           -- cephes.h, _legacy.pxd
-smirnovi -- smirnovi: id->d, smirnovi_unsafe: dd->d        -- cephes.h, _legacy.pxd
-agm -- agm: dd->d                                          -- _agm.pxd
-airy -- airy_wrap: d*dddd->*i, cairy_wrap: D*DDDD->*i      -- amos_wrappers.h
-itairy -- itairy_wrap: d*dddd->*i                          -- specfun_wrappers.h
-airye -- cairy_wrap_e_real: d*dddd->*i, cairy_wrap_e: D*DDDD->*i -- amos_wrappers.h
-fresnel -- fresnl: d*dd->*i, cfresnl_wrap: D*DD->*i        -- cephes.h, specfun_wrappers.h
-shichi -- shichi: d*dd->*i, cshichi: D*DD->*i              -- cephes.h, _sici.pxd
-sici -- sici: d*dd->*i, csici: D*DD->*i                    -- cephes.h, _sici.pxd
-itj0y0 -- it1j0y0_wrap: d*dd->*i                           -- specfun_wrappers.h
-it2j0y0 -- it2j0y0_wrap: d*dd->*i                          -- specfun_wrappers.h
-iti0k0 -- it1i0k0_wrap: d*dd->*i                           -- specfun_wrappers.h
-it2i0k0 -- it2i0k0_wrap: d*dd->*i                          -- specfun_wrappers.h
-j0 -- j0: d->d                                             -- cephes.h
-y0 -- y0: d->d                                             -- cephes.h
-j1 -- j1: d->d                                             -- cephes.h
-y1 -- y1: d->d                                             -- cephes.h
-jv -- cbesj_wrap_real: dd->d, cbesj_wrap: dD->D            -- amos_wrappers.h
-jve -- cbesj_wrap_e_real: dd->d, cbesj_wrap_e: dD->D       -- amos_wrappers.h
-yv -- cbesy_wrap_real: dd->d, cbesy_wrap: dD->D            -- amos_wrappers.h
-yve -- cbesy_wrap_e_real: dd->d, cbesy_wrap_e: dD->D       -- amos_wrappers.h
-k0 -- k0: d->d                                             -- cephes.h
-k0e -- k0e: d->d                                           -- cephes.h
-k1 -- k1: d->d                                             -- cephes.h
-k1e -- k1e: d->d                                           -- cephes.h
-kv -- cbesk_wrap_real: dd->d, cbesk_wrap: dD->D            -- amos_wrappers.h
-kve -- cbesk_wrap_e_real: dd->d, cbesk_wrap_e: dD->D       -- amos_wrappers.h
-hankel1 -- cbesh_wrap1: dD->D                              -- amos_wrappers.h
-hankel1e -- cbesh_wrap1_e: dD->D                           -- amos_wrappers.h
-hankel2 -- cbesh_wrap2: dD->D                              -- amos_wrappers.h
-hankel2e -- cbesh_wrap2_e: dD->D                           -- amos_wrappers.h
-ndtr -- ndtr: d->d, faddeeva_ndtr: D->D                    -- cephes.h, _faddeeva.h++
-log_ndtr -- log_ndtr: d->d, faddeeva_log_ndtr: D->D        -- cephes.h, _faddeeva.h++
-ndtri -- ndtri: d->d                                       -- cephes.h
-psi -- digamma: d->d, cdigamma: D->D                       -- _digamma.pxd, _digamma.pxd
-rgamma -- rgamma: d->d, crgamma: D->D                      -- cephes.h, _loggamma.pxd
-round -- round: d->d                                       -- cephes.h
-sindg -- sindg: d->d                                       -- cephes.h
-cosdg -- cosdg: d->d                                       -- cephes.h
-radian -- radian: ddd->d                                   -- cephes.h
-tandg -- tandg: d->d                                       -- cephes.h
-cotdg -- cotdg: d->d                                       -- cephes.h
-log1p -- log1p: d->d, clog1p: D->D                         -- cephes.h, _cunity.pxd
-expm1 -- expm1: d->d, cexpm1: D->D                         -- cephes.h, _cunity.pxd
-cosm1 -- cosm1: d->d                                       -- cephes.h
-spence -- spence: d->d, cspence: D-> D                     -- cephes.h, _spence.pxd
-zetac -- zetac: d->d                                       -- cephes.h
-struve -- struve_h: dd->d                                  -- misc.h
-modstruve -- struve_l: dd->d                               -- misc.h
-_struve_power_series -- struve_power_series:  ddi*d->d     -- misc.h
-_struve_asymp_large_z -- struve_asymp_large_z: ddi*d->d    -- misc.h
-_struve_bessel_series -- struve_bessel_series: ddi*d->d    -- misc.h
-itstruve0 -- itstruve0_wrap: d->d                          -- specfun_wrappers.h
-it2struve0 -- it2struve0_wrap: d->d                        -- specfun_wrappers.h
-itmodstruve0 -- itmodstruve0_wrap: d->d                    -- specfun_wrappers.h
-kelvin -- kelvin_wrap: d*DDDD->*i                          -- specfun_wrappers.h
-ber -- ber_wrap: d->d                                      -- specfun_wrappers.h
-bei -- bei_wrap: d->d                                      -- specfun_wrappers.h
-ker -- ker_wrap: d->d                                      -- specfun_wrappers.h
-kei -- kei_wrap: d->d                                      -- specfun_wrappers.h
-berp -- berp_wrap: d->d                                    -- specfun_wrappers.h
-beip -- beip_wrap: d->d                                    -- specfun_wrappers.h
-kerp -- kerp_wrap: d->d                                    -- specfun_wrappers.h
-keip -- keip_wrap: d->d                                    -- specfun_wrappers.h
-_zeta -- zeta: dd->d                                       -- cephes.h
-kolmogorov -- kolmogorov: d->d                             -- cephes.h
-kolmogi -- kolmogi: d->d                                   -- cephes.h
-besselpoly -- besselpoly: ddd->d                           -- c_misc/misc.h
-btdtria -- cdfbet3_wrap: ddd->d                            -- cdf_wrappers.h
-btdtrib -- cdfbet4_wrap: ddd->d                            -- cdf_wrappers.h
-bdtrik -- cdfbin2_wrap: ddd->d                             -- cdf_wrappers.h
-bdtrin -- cdfbin3_wrap: ddd->d                             -- cdf_wrappers.h
-chdtriv -- cdfchi3_wrap: dd->d                             -- cdf_wrappers.h
-chndtr -- cdfchn1_wrap: ddd->d                             -- cdf_wrappers.h
-chndtrix -- cdfchn2_wrap: ddd->d                           -- cdf_wrappers.h
-chndtridf -- cdfchn3_wrap: ddd->d                          -- cdf_wrappers.h
-chndtrinc -- cdfchn4_wrap: ddd->d                          -- cdf_wrappers.h
-fdtridfd -- cdff4_wrap: ddd->d                             -- cdf_wrappers.h
-ncfdtr -- cdffnc1_wrap: dddd->d                            -- cdf_wrappers.h
-ncfdtri -- cdffnc2_wrap: dddd->d                           -- cdf_wrappers.h
-ncfdtridfn -- cdffnc3_wrap: dddd->d                        -- cdf_wrappers.h
-ncfdtridfd -- cdffnc4_wrap: dddd->d                        -- cdf_wrappers.h
-ncfdtrinc -- cdffnc5_wrap: dddd->d                         -- cdf_wrappers.h
-gdtrix -- cdfgam2_wrap: ddd->d                             -- cdf_wrappers.h
-gdtrib -- cdfgam3_wrap: ddd->d                             -- cdf_wrappers.h
-gdtria -- cdfgam4_wrap: ddd->d                             -- cdf_wrappers.h
-nbdtrik -- cdfnbn2_wrap: ddd->d                            -- cdf_wrappers.h
-nbdtrin -- cdfnbn3_wrap: ddd->d                            -- cdf_wrappers.h
-nrdtrimn -- cdfnor3_wrap: ddd->d                           -- cdf_wrappers.h
-nrdtrisd -- cdfnor4_wrap: ddd->d                           -- cdf_wrappers.h
-pdtrik -- cdfpoi2_wrap: dd->d                              -- cdf_wrappers.h
-stdtr -- cdft1_wrap: dd->d                                 -- cdf_wrappers.h
-stdtrit -- cdft2_wrap: dd->d                               -- cdf_wrappers.h
-stdtridf -- cdft3_wrap: dd->d                              -- cdf_wrappers.h
-nctdtr -- cdftnc1_wrap: ddd->d                             -- cdf_wrappers.h
-nctdtrit -- cdftnc2_wrap: ddd->d                           -- cdf_wrappers.h
-nctdtridf -- cdftnc3_wrap: ddd->d                          -- cdf_wrappers.h
-nctdtrinc -- cdftnc4_wrap: ddd->d                          -- cdf_wrappers.h
-tklmbda -- tukeylambdacdf: dd->d                           -- cdf_wrappers.h
-mathieu_a -- cem_cva_wrap: dd->d                           -- specfun_wrappers.h
-mathieu_b -- sem_cva_wrap: dd->d                           -- specfun_wrappers.h
-mathieu_cem -- cem_wrap: ddd*dd->*i                        -- specfun_wrappers.h
-mathieu_sem -- sem_wrap: ddd*dd->*i                        -- specfun_wrappers.h
-mathieu_modcem1 -- mcm1_wrap: ddd*dd->*i                   -- specfun_wrappers.h
-mathieu_modcem2 -- mcm2_wrap: ddd*dd->*i                   -- specfun_wrappers.h
-mathieu_modsem1 -- msm1_wrap: ddd*dd->*i                   -- specfun_wrappers.h
-mathieu_modsem2 -- msm2_wrap: ddd*dd->*i                   -- specfun_wrappers.h
-lpmv -- pmv_wrap: ddd->d                                   -- specfun_wrappers.h
-pbwa -- pbwa_wrap: dd*dd->*i                               -- specfun_wrappers.h
-pbdv -- pbdv_wrap: dd*dd->*i                               -- specfun_wrappers.h
-pbvv -- pbvv_wrap: dd*dd->*i                               -- specfun_wrappers.h
-pro_cv -- prolate_segv_wrap: ddd->d                        -- specfun_wrappers.h
-obl_cv -- oblate_segv_wrap: ddd->d                         -- specfun_wrappers.h
-pro_ang1_cv -- prolate_aswfa_wrap: ddddd*dd->*i            -- specfun_wrappers.h
-pro_rad1_cv -- prolate_radial1_wrap: ddddd*dd->*i          -- specfun_wrappers.h
-pro_rad2_cv -- prolate_radial2_wrap: ddddd*dd->*i          -- specfun_wrappers.h
-obl_ang1_cv -- oblate_aswfa_wrap: ddddd*dd->*i             -- specfun_wrappers.h
-obl_rad1_cv -- oblate_radial1_wrap: ddddd*dd->*i           -- specfun_wrappers.h
-obl_rad2_cv -- oblate_radial2_wrap: ddddd*dd->*i           -- specfun_wrappers.h
-pro_ang1 -- prolate_aswfa_nocv_wrap: dddd*d->d             -- specfun_wrappers.h
-pro_rad1 -- prolate_radial1_nocv_wrap: dddd*d->d           -- specfun_wrappers.h
-pro_rad2 -- prolate_radial2_nocv_wrap: dddd*d->d           -- specfun_wrappers.h
-obl_ang1 -- oblate_aswfa_nocv_wrap: dddd*d->d              -- specfun_wrappers.h
-obl_rad1 -- oblate_radial1_nocv_wrap: dddd*d->d            -- specfun_wrappers.h
-obl_rad2 -- oblate_radial2_nocv_wrap: dddd*d->d            -- specfun_wrappers.h
-modfresnelp -- modified_fresnel_plus_wrap: d*DD->*i        -- specfun_wrappers.h
-modfresnelm -- modified_fresnel_minus_wrap: d*DD->*i       -- specfun_wrappers.h
-wofz -- faddeeva_w: D->D                                   -- _faddeeva.h++
-erfc -- erfc: d->d, faddeeva_erfc: D->D                    -- cephes.h, _faddeeva.h++
-erf -- erf: d->d, faddeeva_erf: D->D                       -- cephes.h, _faddeeva.h++
-dawsn -- faddeeva_dawsn: d->d, faddeeva_dawsn_complex: D->D -- _faddeeva.h++
-erfcx -- faddeeva_erfcx: d->d, faddeeva_erfcx_complex: D->D -- _faddeeva.h++
-erfi -- faddeeva_erfi: d->d, faddeeva_erfi_complex: D->D   -- _faddeeva.h++
-xlogy -- xlogy[double]: dd->d, xlogy[double_complex]: DD->D -- _xlogy.pxd
-xlog1py -- xlog1py[double]: dd->d, xlog1py[double_complex]: DD->D   -- _xlogy.pxd
-poch -- poch: dd->d                                        -- c_misc/misc.h
-boxcox -- boxcox: dd->d                                    -- _boxcox.pxd
-boxcox1p -- boxcox1p: dd->d                                -- _boxcox.pxd
-inv_boxcox -- inv_boxcox: dd->d                            -- _boxcox.pxd
-inv_boxcox1p -- inv_boxcox1p: dd->d                        -- _boxcox.pxd
-entr -- entr: d->d                                         -- _convex_analysis.pxd
-kl_div -- kl_div: dd->d                                    -- _convex_analysis.pxd
-rel_entr -- rel_entr: dd->d                                -- _convex_analysis.pxd
-huber -- huber: dd->d                                      -- _convex_analysis.pxd
-pseudo_huber -- pseudo_huber: dd->d                        -- _convex_analysis.pxd
-exprel -- exprel: d->d                                     -- _exprel.pxd
-_spherical_yn -- spherical_yn_real: ld->d, spherical_yn_complex: lD->D -- _spherical_bessel.pxd
-_spherical_jn -- spherical_jn_real: ld->d, spherical_jn_complex: lD->D -- _spherical_bessel.pxd
-_spherical_in -- spherical_in_real: ld->d, spherical_in_complex: lD->D -- _spherical_bessel.pxd
-_spherical_kn -- spherical_kn_real: ld->d, spherical_kn_complex: lD->D -- _spherical_bessel.pxd
-_spherical_yn_d -- spherical_yn_d_real: ld->d, spherical_yn_d_complex: lD->D -- _spherical_bessel.pxd
-_spherical_jn_d -- spherical_jn_d_real: ld->d, spherical_jn_d_complex: lD->D -- _spherical_bessel.pxd
-_spherical_in_d -- spherical_in_d_real: ld->d, spherical_in_d_complex: lD->D -- _spherical_bessel.pxd
-_spherical_kn_d -- spherical_kn_d_real: ld->d, spherical_kn_d_complex: lD->D -- _spherical_bessel.pxd
-loggamma -- loggamma: D->D                                 -- _loggamma.pxd
-_sinpi -- dsinpi: d->d, csinpi: D->D                       -- _trig.pxd
-_cospi -- dcospi: d->d, ccospi: D->D                       -- _trig.pxd
-_lgam1p -- lgam1p: d->d                                    -- cephes.h
-_lanczos_sum_expg_scaled -- lanczos_sum_expg_scaled: d->d  -- cephes.h
-_log1pmx -- log1pmx: d->d                                  -- cephes.h
-_igam_fac -- igam_fac: dd->d                               -- cephes.h
-owens_t -- owens_t: dd->d                                  -- cephes.h
-"""
 
 #---------------------------------------------------------------------------------
 # Extra code
@@ -403,6 +150,7 @@ import re
 import textwrap
 import itertools
 import numpy
+import json
 
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -760,33 +508,28 @@ class Func(object):
     Base class for Ufunc and FusedFunc.
 
     """
-    def __init__(self, name, signatures, headers):
+    def __init__(self, name, signatures):
         self.name = name
-        self.signatures = self._parse_signatures(signatures, headers)
+        self.signatures = []
         self.function_name_overrides = {}
 
-    def _parse_signatures(self, sigs_str, headers_str):
-        sigs = [x.strip() for x in sigs_str.split(",") if x.strip()]
-        headers = [x.strip() for x in headers_str.split(",") if x.strip()]
-        if len(headers) == 1:
-            headers = headers * len(sigs)
-        if len(headers) != len(sigs):
-            raise ValueError("%s: Number of headers and signatures doesn't match: %r -- %r" % (
-                self.name, sigs_str, headers_str))
-        return [self._parse_signature(x) + (h,) for x, h in zip(sigs, headers)]
+        for header in signatures.keys():
+            for name, sig in signatures[header].items():
+                inarg, outarg, ret = self._parse_signature(sig)
+                self.signatures.append((name, inarg, outarg, ret, header))
 
     def _parse_signature(self, sig):
-        m = re.match(r"\s*(.*):\s*([fdgFDGil]*)\s*\*\s*([fdgFDGil]*)\s*->\s*([*fdgFDGil]*)\s*$", sig)
+        m = re.match(r"\s*([fdgFDGil]*)\s*\*\s*([fdgFDGil]*)\s*->\s*([*fdgFDGil]*)\s*$", sig)
         if m:
-            func, inarg, outarg, ret = [x.strip() for x in m.groups()]
+            inarg, outarg, ret = [x.strip() for x in m.groups()]
             if ret.count('*') > 1:
-                raise ValueError("%s: Invalid signature: %r" % (self.name, sig))
-            return (func, inarg, outarg, ret)
-        m = re.match(r"\s*(.*):\s*([fdgFDGil]*)\s*->\s*([fdgFDGil]?)\s*$", sig)
+                raise ValueError("{}: Invalid signature: {}".format(self.name, sig))
+            return inarg, outarg, ret
+        m = re.match(r"\s*([fdgFDGil]*)\s*->\s*([fdgFDGil]?)\s*$", sig)
         if m:
-            func, inarg, ret = [x.strip() for x in m.groups()]
-            return (func, inarg, "", ret)
-        raise ValueError("%s: Invalid signature: %r" % (self.name, sig))
+            inarg, ret = [x.strip() for x in m.groups()]
+            return inarg, "", ret
+        raise ValueError("{}: Invalid signature: {}".format(self.name, sig))
 
     def get_prototypes(self, nptypes_for_h=False):
         prototypes = []
@@ -822,23 +565,6 @@ class Func(object):
         else:
             return "%s%s" % (prefix, c_base_name,)
 
-    @classmethod
-    def parse_all(cls, ufunc_str):
-        ufuncs = []
-
-        lines = ufunc_str.splitlines()
-        lines.sort()
-
-        for line in lines:
-            line = line.strip()
-            if not line:
-                continue
-            m = re.match(r"^([a-z0-9_]+)\s*--\s*(.*?)\s*--(.*)$", line)
-            if not m:
-                raise ValueError("Unparseable line %r" % line)
-            ufuncs.append(cls(m.group(1), m.group(2), m.group(3)))
-        return ufuncs
-
 
 class Ufunc(Func):
     """
@@ -867,8 +593,8 @@ class Ufunc(Func):
         Overrides for the function names in signatures
 
     """
-    def __init__(self, name, signatures, headers):
-        super(Ufunc, self).__init__(name, signatures, headers)
+    def __init__(self, name, signatures):
+        super(Ufunc, self).__init__(name, signatures)
         self.doc = add_newdocs.get("scipy.special." + name)
         if self.doc is None:
             raise ValueError("No docstring for ufunc %r" % name)
@@ -977,8 +703,8 @@ class FusedFunc(Func):
     cimported in cython.
 
     """
-    def __init__(self, name, signatures, headers):
-        super(FusedFunc, self).__init__(name, signatures, headers)
+    def __init__(self, name, signatures):
+        super(FusedFunc, self).__init__(name, signatures)
         self.doc = "See the documentation for scipy.special." + self.name
         # "codes" are the keys for CY_TYPES
         self.incodes, self.outcodes = self._get_codes()
@@ -1634,9 +1360,13 @@ def main():
         print("scipy/special/_generate_pyx.py: all files up-to-date")
         return
 
-    ufuncs = Ufunc.parse_all(FUNCS)
+    ufuncs, fused_funcs = [], []
+    with open('functions.json') as data:
+        functions = json.load(data)
+    for f, sig in functions.items():
+        ufuncs.append(Ufunc(f, sig))
+        fused_funcs.append(FusedFunc(f, sig))
     generate_ufuncs("_ufuncs", "_ufuncs_cxx", ufuncs)
-    fused_funcs = FusedFunc.parse_all(FUNCS)
     generate_fused_funcs("cython_special", "_ufuncs", fused_funcs)
 
 
