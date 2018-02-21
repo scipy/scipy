@@ -224,7 +224,7 @@ def _binary_erosion(input, structure, iterations, mask, output,
         raise RuntimeError('structure and input must have same dimensionality')
     if not structure.flags.contiguous:
         structure = structure.copy()
-    if numpy.product(structure.shape,axis=0) < 1:
+    if numpy.product(structure.shape, axis=0) < 1:
         raise RuntimeError('structure must not be empty')
     if mask is not None:
         mask = numpy.asarray(mask)
@@ -1687,11 +1687,17 @@ def white_tophat(input, size=None, footprint=None, structure=None,
     if isinstance(output, numpy.ndarray):
         grey_dilation(tmp, size, footprint, structure, output, mode, cval,
                       origin)
-        return numpy.subtract(input, output, output)
+        if input.dtype == numpy.bool_:
+            return numpy.bitwise_xor(input, output, output)
+        else:
+            return numpy.subtract(input, output, output)
     else:
         tmp = grey_dilation(tmp, size, footprint, structure, None, mode,
                             cval, origin)
-        return input - tmp
+        if input.dtype == numpy.bool_:
+            return numpy.bitwise_xor(input, tmp)
+        else:
+            return numpy.subtract(input, tmp)
 
 
 def black_tophat(input, size=None, footprint=None,
@@ -1741,11 +1747,17 @@ def black_tophat(input, size=None, footprint=None,
     if isinstance(output, numpy.ndarray):
         grey_erosion(tmp, size, footprint, structure, output, mode, cval,
                      origin)
-        return numpy.subtract(output, input, output)
+        if input.dtype == numpy.bool_:
+            return numpy.bitwise_xor(output, input, output)
+        else:
+            return numpy.subtract(output, input, output)
     else:
         tmp = grey_erosion(tmp, size, footprint, structure, None, mode,
                            cval, origin)
-        return tmp - input
+        if input.dtype == numpy.bool_:
+            return numpy.bitwise_xor(tmp, input)
+        else:
+            return numpy.subtract(tmp, input)
 
 
 def distance_transform_bf(input, metric="euclidean", sampling=None,
