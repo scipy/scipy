@@ -11,10 +11,7 @@ import pytest
 
 @pytest.mark.parametrize("radius, threshold", [
     (1e-20, 1e-22),
-    (1e-20, 1e-22),
     (1e-10, 1e-12),
-    (1e-10, 1e-12),
-    (1e10, 1e-2),
     (1e10, 1e-2),
     ])
 def test_duplicate_filter(radius,
@@ -44,12 +41,8 @@ def test_duplicate_filter(radius,
 # for the radius value
 @pytest.mark.parametrize("radius", [
 (1e-20),
-(1e-20),
-(1e20),
 (1e20),
 (1e10),
-(1e10),
-(0.05),
 (0.05),
 ])
 class TestSimpleAreas(object):
@@ -111,10 +104,7 @@ class TestSimpleAreas(object):
 
 @pytest.mark.parametrize("radius", [
     (0),
-    (0),
     (-1e-10),
-    (-1e-10),
-    (-5),
     (-5),
     ])
 def test_zero_radius_area(radius):
@@ -132,10 +122,7 @@ def test_zero_radius_area(radius):
 # magnitudes here (e20), so scaled back to
 # more reasonable magnitudes (e8)
 (1e-8, 1e-8),
-(1e-8, 1e-8),
 (1e8, 1e8),
-(1e8, 1e8),
-(0.5, 0.5),
 (0.5, 0.5),
 ])
 class TestSimplePlanarTri(object):
@@ -167,10 +154,7 @@ class TestSimplePlanarTri(object):
 
 @pytest.mark.parametrize("radius", [
 (1e-20),
-(1e-20),
 (1e20),
-(1e20),
-(0.5),
 (0.5),
 ])
 class TestRadianAreas(object):
@@ -221,10 +205,7 @@ class TestRadianAreas(object):
 
 @pytest.mark.parametrize("radius", [
 (1e-20),
-(1e-20),
 (1e20),
-(1e20),
-(0.5),
 (0.5),
 ])
 class TestConvolutedAreas(object):
