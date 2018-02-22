@@ -2903,8 +2903,8 @@ class Optimizer(object):
     correctly.
     2. Solvers that inherit Optimizer should ensure that they call
         `super(InheritingOptimizer, self).__init__(func)` for correct
-        functioning.
-    3. No calculation of functions are expected to happen in __init__, they
+        functioning (i.e. attributes and methods are setup correctly).
+    3. No evaluation of functions are expected to happen in __init__, they
         should only happen in __next__.
     4. The result property (if overridden) should include
         ```
@@ -2917,18 +2917,26 @@ class Optimizer(object):
         before the first iteration is done. 
     5. Solver hyper_parameters should be exposed in the `_hyper` dictionary,
         which should be set in the inheriting Optimizer. This `_hyper`
-        dictionary is visible from the `hyper_parameters` property.
+        dictionary is visible from the `hyper_parameters` property. Only make
+        visible attributes that you expect a user to change.
     6. To stop iteration the __next__ method should raise a StopIteration
         exception, which is caught in Optimizer.__call__.
+    7. The user can halt evaluation by raising StopIteration in Function and
+        in the callback. Doing so in the callback is not considered an error
+        state (they can raise a different error to signify that), doing so in
+        the Function is considered an error state.
     7. Subclassing Optimizers should use the Optimizer.func, Optimizer.grad,
-        Optimizer.hess and Optimizer.func_and_grad callables, rather than
-        calling the Function directly. This is because the base Optimizer class
-        keeps track of function calls via closures.
+        Optimizer.hess and Optimizer.func_and_grad callable attributes, rather
+        than calling the Function directly. This is because the base Optimizer
+        class keeps track of function calls via closures.
     8. After each iteration in ``solve`` a user can provide a callback function
         to receive status updates. These updates are provided as an
         intermediate `OptimizeResult` - not a final solution. If an
         Optimizer would like to provide more fields to this intermediate result
-        they should override the `Optimizer_callback` method.
+        they should override the `Optimizer_callback` method. The callback can
+        raise StopIteration to halt.
+    9. After adding a scalar Optimizer it should be added to the parameterised
+         tests in `tests.test_optimize::Test_Optimizer`.
     """
     def __init__(self, func, *args, **options):
         self.opt_options.update(options)
