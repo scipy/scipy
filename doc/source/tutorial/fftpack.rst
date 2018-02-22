@@ -189,7 +189,7 @@ coefficients with this special ordering.
 >>> from scipy.fftpack import fft, rfft, irfft
 >>> x = np.array([1.0, 2.0, 1.0, -1.0, 1.5, 1.0])
 >>> fft(x)
-array([ 5.5 +0.j        ,  2.25-0.4330127 j, -2.75-1.29903811j,
+array([ 5.5 +0.j        ,  2.25-0.4330127j , -2.75-1.29903811j,
         1.5 +0.j        , -2.75+1.29903811j,  2.25+0.4330127 j])
 >>> yr = rfft(x)
 >>> yr
