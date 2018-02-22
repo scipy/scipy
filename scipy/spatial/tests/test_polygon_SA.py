@@ -525,15 +525,17 @@ def test_functional_sph_Vor():
                    [ 0.31296667,-0.00864412,-0.94972477],
                    [ 0.05186796, 0.19835707,-0.97875645]]),
        1),
-        ])
+       # test polygon that contains BOTH poles
+       (np.array([[-0.05405951,-0.05413891, 0.99706898],
+                  [-0.05413891, 0.99853341, 0.        ],
+                  [-0.05405951,-0.05413891,-0.99706898],
+                  [ 0.05405951,-0.05413891,-0.99706898],
+                  [ 0.05413891, 0.99853341, 0.        ],
+                  [ 0.05405951,-0.05413891, 0.99706898]]),
+        1)])
 def test_pole_in_polygon(polygon, pole_present):
     # test that we can determine if a spherical
-    # polygon contains the North or the South Pole
-
-    # NOTE: we do not cover the case where
-    # BOTH N & S Poles are contained within a
-    # single polygon
-
+    # polygon contains the North and / or the South Pole
     result = _surface_area.pole_in_polygon(polygon)
     expected = pole_present
     assert result == expected
