@@ -3088,9 +3088,9 @@ class Optimizer(object):
             The wall-time (in seconds) for this solver call is provided as the
             `walltime` attribute.
             The callback can halt optimization early by raising
-            `StopIteration`. This is not considered a failure and a final
-            `OptimizeResult` is still returned, although convergence may not
-            have been reached. However, other Exceptions are propgated.
+            `StopIteration`. A final `OptimizeResult` is still returned,
+            although convergence may not have been reached. Other Exceptions
+            are propgated.
         allvecs : bool, optional
             Keep a record of `x` at each iteration step. This sets the
             `allvecs` attribute in `result`.
@@ -3123,18 +3123,6 @@ class Optimizer(object):
         while self.nit < iterations and self.nfev < maxfun:
             try:
                 x, f = next(self)
-            except StopIteration:
-                break
-            # don't put the solver callback in the same try/except location as
-            # next. This is because `next` stops by raising StopIteration when
-            # convergence is reached. At this point you still need to callback.
-            # Can't put it in 'except' because the Optimizer also raises
-            # StopIteration when there is a problem, in which case you don't
-            # want to callback.
-            # Can't put it in 'finally' because the callback can also flag
-            # stopping by raising StopIteration itself.
-            try:
-                # don't append to allvecs by default, appending is slow
                 if allvecs:
                     _allvecs.append(np.copy(self.x))
 
@@ -3175,9 +3163,8 @@ class Optimizer(object):
             The wall-time (in seconds) for this solver call is provided as the
             `walltime` attribute.
             The callback can halt optimization early by raising
-            `StopIteration`. This is not considered a failure and a final
-            `OptimizeResult` is still returned. However, other Exceptions are
-            propgated upwards.
+            `StopIteration`, a final `OptimizeResult` is still returned. Other
+            Exceptions are propgated upwards.
         """
         res = OptimizeResult(x=np.copy(self.x),
                              fun=self.fun,
@@ -3219,9 +3206,8 @@ class Optimizer(object):
             The wall-time (in seconds) for this solver call is provided as the
             `time` attribute.
             The callback can halt optimization early by raising
-            `StopIteration`. This is not considered a failure and a final
-            `OptimizeResult` is still returned. However, other Exceptions are
-            propgated upwards.
+            `StopIteration`, a final `OptimizeResult` is still returned. Other
+            Exceptions are propgated upwards.
         disp : bool, optional
             Set to True to print convergence messages.
         allvecs : bool, optional
@@ -3241,9 +3227,7 @@ class Optimizer(object):
         If the solver converges, if `Optimizer.nfev` reaches `maxfun`, if
         `Optimizer.nit` reaches `iterations`, or if `StopIteration` is raised
         by `Function` or `callback`, then iteration will stop before the
-        requested number of iterations has been carried out. `callback` raising
-        `StopIteration` is not considered an error, but `Function` raising the
-        same Exception is.
+        requested number of iterations has been carried out.
         """
         # If neither are set, then cap `maxiter`
         if maxiter == np.inf and maxfun == np.inf:
