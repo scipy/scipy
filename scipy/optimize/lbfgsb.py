@@ -42,7 +42,8 @@ from numpy import array, asarray, float64, int32, zeros
 from . import _lbfgsb
 from .optimize import (approx_fprime, MemoizeJac, OptimizeResult,
                        _check_unknown_options, wrap_function,
-                       _approx_fprime_helper, Function, Optimizer)
+                       _approx_fprime_helper, Function, Optimizer,
+                       wrap_callback)
 from scipy.sparse.linalg import LinearOperator
 
 __all__ = ['fmin_l_bfgs_b', 'LbfgsInvHessProduct']
@@ -264,9 +265,11 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
         else:
             iprint = disp
 
+    wrapped_callback = wrap_callback(callback)
     opt = LBFGSB(function, x0, bounds=bounds, maxcor=maxcor, ftol=ftol,
                  gtol=gtol, iprint=iprint, maxls=maxls)
-    result = opt.solve(maxfun=maxfun, maxiter=maxiter, callback=callback,
+    result = opt.solve(maxfun=maxfun, maxiter=maxiter,
+                       callback=wrapped_callback,
                        disp=disp)
 
     # fix up warn_flag because `Optimizer` objects set warn_flag to 1 for

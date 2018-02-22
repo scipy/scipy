@@ -1291,7 +1291,7 @@ class TestIterationLimits(object):
                         res["nit"] >= default_iters*2)
 
 
-class ExpSin(optimize.Function):
+class ExpSin(Function):
     def __init__(self):
         super(ExpSin, self).__init__()
         self.func_calls = 0
@@ -1543,13 +1543,21 @@ class Test_Optimizer(object):
         kwargs['x0'] = np.array([1.1, 1.1])
 
         class Callback():
-            def __init__(self):
+            def __init__(self, limit_it=None, error_it=None):
                 self.counts = 0
                 self.x = []
+                # use limit_it to see if we should stop iteration early.
+                self.limit_it = limit_it
+                self.error_it = error_it
 
-            def __call__(self, x):
+            def __call__(self, res):
+                # res is intermediate OptimizeResult
                 self.counts += 1
-                self.x.append(x)
+                self.x.append(res.x)
+                if self.counts == self.limit_it:
+                    raise StopIteration
+                if self.error_it == self.counts:
+                    raise RuntimeError
 
         # TODO: tighten gtol for BFGS, investigate whether warn_flag can be
         # amended to allow success if line search fails to find better solution
@@ -1606,6 +1614,40 @@ class Test_Optimizer(object):
         # we only asked for a small amount of iterations, so we should hit
         # limit
         assert_(optimizer.warn_flag != 0)
+
+        # test that iteration halts if callback raises StopIteration
+        callee = Callback(limit_it=2)
+        optimizer = opt(func, *args, **kwargs)
+        res = optimizer.solve(callback=callee)
+        assert_equal(callee.counts, 2)
+        assert_equal(optimizer.nit, 2)
+
+        # test that iteration halts if function raises StopIteration
+        # with only 3 function evaluations it shouldn't have converged
+        # (unless it's a super solver).
+        def fwrapper(function):
+            calls = [0]
+
+            def wrapped_fun(x):
+                val = function(x)
+                calls[0] += 1
+                if calls[0] == 3:
+                    raise StopIteration
+                return val
+
+            return wrapped_fun
+
+        func = Function(fwrapper(optimize.rosen))
+        optimizer = opt(func, *args, **kwargs)
+        res = optimizer.solve()
+        assert_(not res.success)
+
+        # test that if callback raises other errors they are still raised.
+        optimizer = opt(func, *args, **kwargs)
+        with pytest.raises(RuntimeError):
+            callee = Callback(error_it=2)
+            res = optimizer.solve(callback=callee)
+        assert_equal(optimizer.nit, 2)
 
         # test that the context manager works
         with opt(func, *args, **kwargs) as optimizer:

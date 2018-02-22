@@ -29,6 +29,9 @@ __docformat__ = "restructuredtext en"
 
 import warnings
 import sys
+import time
+from functools import partial
+
 import numpy
 from scipy._lib.six import callable, xrange
 from numpy import (atleast_1d, eye, mgrid, argmin, zeros, shape, squeeze,
@@ -297,17 +300,17 @@ def wrap_function(function, args):
     return ncalls, function_wrapper
 
 
-def wrap_callback_function(function):
-    # wrap a callback function to save the iterations at each step
-    allvecs = []
+def wrap_callback(function, attrs=('x')):
+    # call a traditional callback, depending on what the arguments
+    # the callback required.
     if function is None:
-        return allvecs, None
+        return None
 
-    def function_wrapper(x):
-        allvecs.append(asarray(x).copy())
-        return function(x)
+    def function_wrapper(res):
+        args = [res[attr] for attr in attrs]
+        return function(*args)
 
-    return allvecs, function_wrapper
+    return function_wrapper
 
 
 def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
@@ -522,13 +525,14 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
                      xatol=xatol, fatol=fatol, adaptive=adaptive,
                      **unknown_options)
 
-    allvecs, wrapped_callback = wrap_callback_function(callback)
-    if return_all:
-        allvecs.append(asfarray(x0).flatten())
-
+    wrapped_callback = wrap_callback(callback)
     result = opt.solve(maxiter=maxiter, maxfun=maxfev,
-                       callback=wrapped_callback, disp=disp)
+                       callback=wrapped_callback, disp=disp,
+                       allvecs=return_all)
+    print(list(result.keys()))
     if return_all:
+        allvecs = [asfarray(x0).flatten().copy()]
+        allvecs.extend(result['allvecs'])
         result['allvecs'] = allvecs
 
     return result
@@ -836,15 +840,16 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
                         step=eps)
     opt = BFGS(function, x0, gtol=gtol, norm=norm)
 
-    allvecs, wrapped_callback = wrap_callback_function(callback)
-    allvecs.append(asfarray(x0).flatten().copy())
-
     if maxiter is None:
         maxiter = opt.N * 200
 
-    result = opt.solve(maxiter=maxiter, callback=wrapped_callback)
+    wrapped_callback = wrap_callback(callback)
+    result = opt.solve(maxiter=maxiter, callback=wrapped_callback,
+                       allvecs=return_all)
 
     if return_all:
+        allvecs = [asfarray(x0).flatten().copy()]
+        allvecs.extend(result['allvecs'])
         result['allvecs'] = allvecs
 
     # Gradient and / or function calls not changing.
@@ -2917,8 +2922,13 @@ class Optimizer(object):
         exception, which is caught in Optimizer.__call__.
     7. Subclassing Optimizers should use the Optimizer.func, Optimizer.grad,
         Optimizer.hess and Optimizer.func_and_grad callables, rather than
-        calling the Function directly. This is because the Optimizer keeps
-        track of function calls
+        calling the Function directly. This is because the base Optimizer class
+        keeps track of function calls via closures.
+    8. After each iteration in ``solve`` a user can provide a callback function
+        to receive status updates. These updates are provided as an
+        intermediate `OptimizeResult` - not a final solution. If an
+        Optimizer would like to provide more fields to this intermediate result
+        they should override the `Optimizer_callback` method.
     """
     def __init__(self, func, *args, **options):
         self.opt_options.update(options)
@@ -3052,7 +3062,8 @@ class Optimizer(object):
 
         return result
 
-    def __call__(self, iterations, maxfun=np.inf, callback=None):
+    def __call__(self, iterations, maxfun=np.inf, callback=None,
+                 allvecs=False):
         """
         Advance the solver by a number of steps.
 
@@ -3063,7 +3074,18 @@ class Optimizer(object):
         maxfun : int, optional
             Limits the total number of function evaluations.
         callback : callable, optional
-            Function called as `callable(x)` the end of each iteration.
+            Function called at the end of each iteration as ``callable(res)``,
+            where `res` is an intermediate `OptimizeResult` object. The range
+            of attributes provided in `res` depend on the specific Optimizer.
+            The wall-time (in seconds) for this solver call is provided as the
+            `walltime` attribute.
+            The callback can halt optimization early by raising
+            `StopIteration`. This is not considered a failure and a final
+            `OptimizeResult` is still returned, although convergence may not
+            have been reached. However, other Exceptions are propgated.
+        allvecs : bool, optional
+            Keep a record of `x` at each iteration step. This sets the
+            `allvecs` attribute in `result`.
 
         Returns
         -------
@@ -3072,25 +3094,46 @@ class Optimizer(object):
 
         Notes
         -----
-        If the solver converges, if `Optimizer.nfev` reaches `maxfun`, or if
-        `Optimizer.nit` reaches `iterations` then iteration will stop before
-        the requested number of iterations has been carried out. If you wish
-        to do further iterations then reset `Optimizer.nit`, or
-        `Optimizer.nfev`, to zero.
+        If the solver converges, if `Optimizer.nfev` reaches `maxfun`, if
+        `Optimizer.nit` reaches `iterations`, or if `StopIteration` is raised,
+        then iteration will stop before the requested number of iterations has
+        been carried out. If you wish to do further iterations then reset
+        `Optimizer.nit`, or `Optimizer.nfev`, to zero.
         Do not set `iterations` to `np.inf` without capping `maxfun`, as the
         solver may run indefinitely.
         """
+        # arrange the users callback
+        solver_callback = lambda: None
+        start_time = time.time()
+        if callback is not None:
+            solver_callback = partial(self._callback,
+                                      callback, start_time)
+
+        # keep a record of all the iterations.
+        _allvecs = []
+
         while self.nit < iterations and self.nfev < maxfun:
             try:
                 x, f = next(self)
             except StopIteration:
                 break
+            # don't put the solver callback in the same try/except location as
+            # next. This is because `next` stops by raising StopIteration when
+            # convergence is reached. At this point you still need to callback.
+            # Can't put it in 'except' because the Optimizer also raises
+            # StopIteration when there is a problem, in which case you don't
+            # want to callback.
+            # Can't put it in 'finally' because the callback can also flag
+            # stopping by raising StopIteration itself.
+            try:
+                # don't append to allvecs by default, appending is slow
+                if allvecs:
+                    _allvecs.append(np.copy(self.x))
 
-            if callback is not None:
-                callback(np.copy(self.x))
+                solver_callback()
+            except StopIteration:
+                break
 
-            # need to do following after callback to make sure number of
-            # iterations matches number of callbacks.
             if self.warn_flag:
                 break
 
@@ -3104,7 +3147,39 @@ class Optimizer(object):
         elif self.converged():
             self.message = _status_message['success']
 
-        return self.result
+        res = self.result
+        res['walltime'] = time.time() - start_time
+        if allvecs:
+            res['allvecs'] = _allvecs
+
+        return res
+
+    def _callback(self, callback, start_time):
+        """
+        Function called after each iteration solver iteration.
+
+        Parameters
+        ----------
+        callback : callable, optional
+            Function called at the end of each iteration as ``callable(res)``,
+            where `res` is an intermediate `OptimizeResult` object. The range
+            of attributes provided in `res` depend on the specific Optimizer.
+            The wall-time (in seconds) for this solver call is provided as the
+            `walltime` attribute.
+            The callback can halt optimization early by raising
+            `StopIteration`. This is not considered a failure and a final
+            `OptimizeResult` is still returned. However, other Exceptions are
+            propgated upwards.
+        """
+        res = OptimizeResult(x=np.copy(self.x),
+                             fun=self.fun,
+                             nfev=self.nfev,
+                             njev=self.njev,
+                             nhev=self.nhev,
+                             nit=self.nit,
+                             walltime=time.time() - start_time)
+
+        callback(res)
 
     @property
     def N(self):
@@ -3118,7 +3193,8 @@ class Optimizer(object):
         return RuntimeError("Cannot determine problem size at this time,"
                             " perform at least one iteration")
 
-    def solve(self, maxiter=np.inf, maxfun=np.inf, callback=None, disp=False):
+    def solve(self, maxiter=np.inf, maxfun=np.inf, callback=None, disp=False,
+              allvecs=False):
         """
         Run the solver through to completion.
 
@@ -3129,9 +3205,20 @@ class Optimizer(object):
         maxfun : int, optional
             Maximum number of function evaluations to use during solving
         callback : callable, optional
-            Called as `callback(x)` at the end of every solver iteration.
+            Function called at the end of each iteration as ``callable(res)``,
+            where `res` is an intermediate `OptimizeResult` object. The range
+            of attributes provided in `res` depend on the specific Optimizer.
+            The wall-time (in seconds) for this solver call is provided as the
+            `time` attribute.
+            The callback can halt optimization early by raising
+            `StopIteration`. This is not considered a failure and a final
+            `OptimizeResult` is still returned. However, other Exceptions are
+            propgated upwards.
         disp : bool, optional
             Set to True to print convergence messages.
+        allvecs : bool, optional
+            Keep a record of `x` at each iteration step. This sets the
+            `allvecs` attribute in `result`.
 
         Returns
         -------
@@ -3143,12 +3230,19 @@ class Optimizer(object):
         -----
         If both `maxiter` and `maxfun` are set to `np.inf`, then `maxiter` is
         capped at `len(x) * 200`
+        If the solver converges, if `Optimizer.nfev` reaches `maxfun`, if
+        `Optimizer.nit` reaches `iterations`, or if `StopIteration` is raised
+        by `Function` or `callback`, then iteration will stop before the
+        requested number of iterations has been carried out. `callback` raising
+        `StopIteration` is not considered an error, but `Function` raising the
+        same Exception is.
         """
         # If neither are set, then cap `maxiter`
         if maxiter == np.inf and maxfun == np.inf:
             maxiter = self.N * 200
 
-        result = self(maxiter, callback=callback, maxfun=maxfun)
+        result = self(maxiter, callback=callback, maxfun=maxfun,
+                      allvecs=allvecs)
 
         if disp and self.warn_flag:
             print('Warning: ' + self.message)
