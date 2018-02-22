@@ -96,7 +96,7 @@ def bayes_mvs(data, alpha=0.90):
     >>> var
     Variance(statistic=10.0, minmax=(3.176724206..., 24.45910382...))
     >>> std
-    Std_dev(statistic=2.9724954732045084, minmax=(1.7823367265645143, 4.9456146050146312))
+    Std_dev(statistic=2.9724954732045084, minmax=(1.7823367265645143, 4.945614605014631))
 
     Now we generate some normally distributed random data, and get estimates of
     mean and standard deviation with 95% confidence intervals for those
