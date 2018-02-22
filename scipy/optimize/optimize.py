@@ -3356,6 +3356,9 @@ class Function(object):
     for visiting Optimizers to keep track of the number of function
     evaluations.
     """
+
+    # TODO bounds on the parameters, such that finite differences never exceeds
+    # them.
     def __init__(self, func=None, args=(), kwargs=None, grad=None, hess=None,
                  step=None, fd_method='2-point'):
         self._func = func

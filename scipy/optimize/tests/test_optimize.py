@@ -1483,6 +1483,25 @@ class TestFunction(object):
         assert_allclose(g, der_logit(x0))
 
 
+class Callback():
+    def __init__(self, limit_it=None, error_it=None):
+        self.counts = 0
+        self.x = []
+        # use limit_it to see if we should stop iteration early.
+        self.limit_it = limit_it
+        self.error_it = error_it
+
+    def __call__(self, res):
+        # res should be an intermediate OptimizeResult
+        assert_(isinstance(res, optimize.OptimizeResult))
+        self.counts += 1
+        self.x.append(res.x)
+        if self.counts == self.limit_it:
+            raise StopIteration
+        if self.error_it == self.counts:
+            raise RuntimeError
+
+
 @pytest.mark.parametrize("opt,args,kwargs", [
     (Optimizer, (), {}),
     (NelderMead, (), {'x0': [1.5]}),
@@ -1542,23 +1561,6 @@ class Test_Optimizer(object):
         func = Function(optimize.rosen)
         kwargs['x0'] = np.array([1.1, 1.1])
 
-        class Callback():
-            def __init__(self, limit_it=None, error_it=None):
-                self.counts = 0
-                self.x = []
-                # use limit_it to see if we should stop iteration early.
-                self.limit_it = limit_it
-                self.error_it = error_it
-
-            def __call__(self, res):
-                # res is intermediate OptimizeResult
-                self.counts += 1
-                self.x.append(res.x)
-                if self.counts == self.limit_it:
-                    raise StopIteration
-                if self.error_it == self.counts:
-                    raise RuntimeError
-
         # TODO: tighten gtol for BFGS, investigate whether warn_flag can be
         # amended to allow success if line search fails to find better solution
         callee = Callback()
@@ -1567,6 +1569,8 @@ class Test_Optimizer(object):
         assert_equal(res.nit, callee.counts)
         assert_equal(optimizer.nit, callee.counts)
         assert_(res.nit <= 1000)
+        # all the optimizers should pass on Rosen, especially when we're so
+        # close to the solution.
         assert_(optimizer.converged())
         assert_(res.success)
         assert_(optimizer.warn_flag == 0)
