@@ -27,6 +27,15 @@ def assert_quad(value_and_err, tabled_value, errTol=1.5e-8):
         assert_array_less(err, errTol)
 
 
+def get_clib_test_routine(name, restype, *argtypes):
+    capsule = getattr(clib_test, name)
+    PyCapsule_GetPointer = ctypes.pythonapi.PyCapsule_GetPointer
+    PyCapsule_GetPointer.restype = ctypes.c_void_p
+    PyCapsule_GetPointer.argtypes = [ctypes.py_object, ctypes.c_char_p]
+    ptr = PyCapsule_GetPointer(capsule, None)
+    return ctypes.cast(ptr, ctypes.CFUNCTYPE(restype, *argtypes))
+
+
 class TestCtypesQuad(object):
     def setup_method(self):
         if sys.platform == 'win32':
@@ -66,27 +75,21 @@ class TestCtypesQuad(object):
         quad(LowLevelCallable(sine_ctypes), 0, 1)
 
     def test_ctypes_variants(self):
-        lib = ctypes.CDLL(clib_test.__file__)
+        sin_0 = get_clib_test_routine('_sin_0', ctypes.c_double,
+                                      ctypes.c_double, ctypes.c_void_p)
 
-        sin_0 = lib._sin_0
-        sin_0.restype = ctypes.c_double
-        sin_0.argtypes = [ctypes.c_double, ctypes.c_void_p]
+        sin_1 = get_clib_test_routine('_sin_1', ctypes.c_double,
+                                      ctypes.c_int, ctypes.POINTER(ctypes.c_double),
+                                      ctypes.c_void_p)
 
-        sin_1 = lib._sin_1
-        sin_1.restype = ctypes.c_double
-        sin_1.argtypes = [ctypes.c_int, ctypes.POINTER(ctypes.c_double), ctypes.c_void_p]
+        sin_2 = get_clib_test_routine('_sin_2', ctypes.c_double,
+                                      ctypes.c_double)
 
-        sin_2 = lib._sin_2
-        sin_2.restype = ctypes.c_double
-        sin_2.argtypes = [ctypes.c_double]
+        sin_3 = get_clib_test_routine('_sin_3', ctypes.c_double,
+                                      ctypes.c_int, ctypes.POINTER(ctypes.c_double))
 
-        sin_3 = lib._sin_3
-        sin_3.restype = ctypes.c_double
-        sin_3.argtypes = [ctypes.c_int, ctypes.POINTER(ctypes.c_double)]
-
-        sin_4 = lib._sin_3
-        sin_4.restype = ctypes.c_double
-        sin_4.argtypes = [ctypes.c_int, ctypes.c_double]
+        sin_4 = get_clib_test_routine('_sin_3', ctypes.c_double,
+                                      ctypes.c_int, ctypes.c_double)
 
         all_sigs = [sin_0, sin_1, sin_2, sin_3, sin_4]
         legacy_sigs = [sin_2, sin_4]
@@ -110,29 +113,27 @@ class TestCtypesQuad(object):
 
 class TestMultivariateCtypesQuad(object):
     def setup_method(self):
-        self.lib = ctypes.CDLL(clib_test.__file__)
         restype = ctypes.c_double
         argtypes = (ctypes.c_int, ctypes.c_double)
         for name in ['_multivariate_typical', '_multivariate_indefinite',
                      '_multivariate_sin']:
-            func = getattr(self.lib, name)
-            func.restype = restype
-            func.argtypes = argtypes
+            func = get_clib_test_routine(name, restype, *argtypes)
+            setattr(self, name, func)
 
     def test_typical(self):
         # 1) Typical function with two extra arguments:
-        assert_quad(quad(self.lib._multivariate_typical, 0, pi, (2, 1.8)),
+        assert_quad(quad(self._multivariate_typical, 0, pi, (2, 1.8)),
                     0.30614353532540296487)
 
     def test_indefinite(self):
         # 2) Infinite integration limits --- Euler's constant
-        assert_quad(quad(self.lib._multivariate_indefinite, 0, Inf),
+        assert_quad(quad(self._multivariate_indefinite, 0, Inf),
                     0.577215664901532860606512)
 
     def test_threadsafety(self):
         # Ensure multivariate ctypes are threadsafe
         def threadsafety(y):
-            return y + quad(self.lib._multivariate_sin, 0, 1)[0]
+            return y + quad(self._multivariate_sin, 0, 1)[0]
         assert_quad(quad(threadsafety, 0, 1), 0.9596976941318602)
 
 
