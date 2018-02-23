@@ -2049,16 +2049,13 @@ def describe(a, axis=0, ddof=0, bias=True):
     >>> from scipy.stats.mstats import describe
     >>> ma = np.ma.array(range(6), mask=[0, 0, 0, 1, 1, 1])
     >>> describe(ma)
-    DescribeResult(nobs=3, minmax=(masked_array(data = 0,
-                 mask = False,
-           fill_value = 999999)
-    , masked_array(data = 2,
-                 mask = False,
-           fill_value = 999999)
-    ), mean=1.0, variance=0.66666666666666663, skewness=masked_array(data = 0.0,
-                 mask = False,
-           fill_value = 1e+20)
-    , kurtosis=-1.5)
+    DescribeResult(nobs=3, minmax=(masked_array(data=0,
+                 mask=False,
+           fill_value=999999), masked_array(data=2,
+                 mask=False,
+           fill_value=999999)), mean=1.0, variance=0.6666666666666666,
+           skewness=masked_array(data=0., mask=False, fill_value=1e+20),
+            kurtosis=-1.5)
 
     """
     a, axis = _chk_asarray(a, axis)
@@ -2335,9 +2332,9 @@ def mquantiles(a, prob=list([.25,.5,.75]), alphap=.4, betap=.4, axis=None,
     ...                  [  40., -999., -999.],
     ...                  [  36., -999., -999.]])
     >>> print(mquantiles(data, axis=0, limit=(0, 50)))
-    [[ 19.2   14.6    1.45]
-     [ 40.    37.5    2.5 ]
-     [ 42.8   40.05   3.55]]
+    [[19.2  14.6   1.45]
+     [40.   37.5   2.5 ]
+     [42.8  40.05  3.55]]
 
     >>> data[:, 2] = -999.
     >>> print(mquantiles(data, axis=0, limit=(0, 50)))
