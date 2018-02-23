@@ -502,7 +502,7 @@ def romb(y, dx=1.0, axis=-1, show=False):
     >>> integrate.romb(y)
     -0.742561336672229
 
-    >>> integrate.romb(y, show='True')
+    >>> integrate.romb(y, show=True)
     Richardson Extrapolation Table for Romberg Integration       
     ====================================================================
     -0.81576 
