@@ -514,7 +514,6 @@ def romb(y, dx=1.0, axis=-1, show=False):
 
     -0.742561336672229
 
-
     """
     y = np.asarray(y)
     nd = len(y.shape)
