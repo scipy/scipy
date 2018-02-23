@@ -709,38 +709,38 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
 
         >>> dd, ii = tree.query([[0, 0], [2.1, 2.9]], k=1)
         >>> print(dd, ii)
-        [ 2.          0.14142136] [ 0 13]
+        [2.         0.14142136] [ 0 13]
 
         To query the nearest neighbours and return unsqueezed result, use
 
         >>> dd, ii = tree.query([[0, 0], [2.1, 2.9]], k=[1])
         >>> print(dd, ii)
-        [[ 2.        ]
-         [ 0.14142136]] [[ 0]
+        [[2.        ]
+         [0.14142136]] [[ 0]
          [13]]
 
         To query the second nearest neighbours and return unsqueezed result, use
 
         >>> dd, ii = tree.query([[0, 0], [2.1, 2.9]], k=[2])
         >>> print(dd, ii)
-        [[ 2.23606798]
-         [ 0.90553851]] [[ 6]
+        [[2.23606798]
+         [0.90553851]] [[ 6]
          [12]]
 
         To query the first and second nearest neighbours, use
 
         >>> dd, ii = tree.query([[0, 0], [2.1, 2.9]], k=2)
         >>> print(dd, ii)
-        [[ 2.          2.23606798]
-         [ 0.14142136  0.90553851]] [[ 0  6]
+        [[2.         2.23606798]
+         [0.14142136 0.90553851]] [[ 0  6]
          [13 12]]
 
         or, be more specific
 
         >>> dd, ii = tree.query([[0, 0], [2.1, 2.9]], k=[1, 2])
         >>> print(dd, ii)
-        [[ 2.          2.23606798]
-         [ 0.14142136  0.90553851]] [[ 0  6]
+        [[2.         2.23606798]
+         [0.14142136 0.90553851]] [[ 0  6]
          [13 12]]
 
         """

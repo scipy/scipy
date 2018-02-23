@@ -57,7 +57,7 @@ def linregress(x, y=None):
     To get coefficient of determination (r_squared)
 
     >>> print("r-squared:", r_value**2)
-    r-squared: 0.080402268539
+    r-squared: 0.08040226853902833
 
     Plot the data along with the fitted line
 
