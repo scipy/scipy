@@ -1116,9 +1116,9 @@ def minimum_position(input, labels=None, index=None):
 
     If no index is given, non-zero `labels` are processed:
 
-    >>> ndimage.minimum_position(a, label)
+    >>> ndimage.minimum_position(a, labels=label)
     (2, 0)
-    >>> ndimage.minimum_position(b, label)
+    >>> ndimage.minimum_position(b, labels=label)
     (0, 0)
 
     """
