@@ -1209,13 +1209,13 @@ def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
     >>> from scipy import stats
     >>> a = np.arange(10)
     >>> stats.describe(a)
-    DescribeResult(nobs=10, minmax=(0, 9), mean=4.5, variance=9.1666666666666661,
+    DescribeResult(nobs=10, minmax=(0, 9), mean=4.5, variance=9.166666666666666,
                    skewness=0.0, kurtosis=-1.2242424242424244)
     >>> b = [[1, 2], [3, 4]]
     >>> stats.describe(b)
     DescribeResult(nobs=2, minmax=(array([1, 2]), array([3, 4])),
-                   mean=array([ 2., 3.]), variance=array([ 2., 2.]),
-                   skewness=array([ 0., 0.]), kurtosis=array([-2., -2.]))
+                   mean=array([2., 3.]), variance=array([2., 2.]),
+                   skewness=array([0., 0.]), kurtosis=array([-2., -2.]))
 
     """
     a, axis = _chk_asarray(a, axis)
@@ -1285,11 +1285,11 @@ def skewtest(a, axis=0, nan_policy='propagate'):
     --------
     >>> from scipy.stats import skewtest
     >>> skewtest([1, 2, 3, 4, 5, 6, 7, 8])
-    SkewtestResult(statistic=1.0108048609177787, pvalue=0.31210983614218968)
+    SkewtestResult(statistic=1.0108048609177787, pvalue=0.3121098361421897)
     >>> skewtest([2, 8, 0, 4, 1, 9, 9, 0])
-    SkewtestResult(statistic=0.44626385374196975, pvalue=0.65540666312754592)
+    SkewtestResult(statistic=0.44626385374196975, pvalue=0.6554066631275459)
     >>> skewtest([1, 2, 3, 4, 5, 6, 7, 8000])
-    SkewtestResult(statistic=3.5717735103604071, pvalue=0.00035457199058231331)
+    SkewtestResult(statistic=3.571773510360407, pvalue=0.0003545719905823133)
     >>> skewtest([100, 100, 100, 100, 100, 100, 100, 101])
     SkewtestResult(statistic=3.5717766638478072, pvalue=0.000354567720281634)
     """
@@ -1365,7 +1365,7 @@ def kurtosistest(a, axis=0, nan_policy='propagate'):
     --------
     >>> from scipy.stats import kurtosistest
     >>> kurtosistest(list(range(20)))
-    KurtosistestResult(statistic=-1.7058104152122062, pvalue=0.088043383325283484)
+    KurtosistestResult(statistic=-1.7058104152122062, pvalue=0.08804338332528348)
 
     >>> np.random.seed(28041990)
     >>> s = np.random.normal(0, 1, 1000)
@@ -3695,7 +3695,7 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
     >>> stats.weightedtau(x, y, rank=None)
     WeightedTauResult(correlation=-0.4157652301037516, pvalue=nan)
     >>> stats.weightedtau(y, x, rank=None)
-    WeightedTauResult(correlation=-0.71813413296990281, pvalue=nan)
+    WeightedTauResult(correlation=-0.7181341329699028, pvalue=nan)
 
     """
     x = np.asarray(x).ravel()
@@ -3934,7 +3934,7 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     >>> from scipy.stats import ttest_ind_from_stats
     >>> ttest_ind_from_stats(mean1=15.0, std1=np.sqrt(87.5), nobs1=13,
     ...                      mean2=12.0, std2=np.sqrt(39.0), nobs2=11)
-    Ttest_indResult(statistic=0.90513580933102689, pvalue=0.37519967975814872)
+    Ttest_indResult(statistic=0.9051358093310269, pvalue=0.3751996797581487)
 
     For comparison, here is the data from which those summary statistics
     were taken.  With this data, we can compute the same result using
@@ -3944,7 +3944,7 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     >>> b = np.array([2, 4, 6, 9, 11, 13, 14, 15, 18, 19, 21])
     >>> from scipy.stats import ttest_ind
     >>> ttest_ind(a, b)
-    Ttest_indResult(statistic=0.905135809331027, pvalue=0.37519967975814861)
+    Ttest_indResult(statistic=0.905135809331027, pvalue=0.3751996797581486)
 
     """
     if equal_var:
@@ -5015,13 +5015,13 @@ def kruskal(*args, **kwargs):
     >>> x = [1, 3, 5, 7, 9]
     >>> y = [2, 4, 6, 8, 10]
     >>> stats.kruskal(x, y)
-    KruskalResult(statistic=0.27272727272727337, pvalue=0.60150813444058948)
+    KruskalResult(statistic=0.2727272727272734, pvalue=0.6015081344405895)
 
     >>> x = [1, 1, 1]
     >>> y = [2, 2, 2]
     >>> z = [2, 2]
     >>> stats.kruskal(x, y, z)
-    KruskalResult(statistic=7.0, pvalue=0.030197383422318501)
+    KruskalResult(statistic=7.0, pvalue=0.0301973834223185)
 
     """
     args = list(map(np.asarray, args))
@@ -5564,10 +5564,10 @@ def find_repeats(arr):
     --------
     >>> from scipy import stats
     >>> stats.find_repeats([2, 1, 2, 3, 2, 2, 5])
-    RepeatedResults(values=array([ 2.]), counts=array([4]))
+    RepeatedResults(values=array([2.]), counts=array([4]))
 
     >>> stats.find_repeats([[10, 20, 1, 2], [5, 5, 4, 4]])
-    RepeatedResults(values=array([ 4.,  5.]), counts=array([2, 2]))
+    RepeatedResults(values=array([4.,  5.]), counts=array([2, 2]))
 
     """
     # Note: always copies.
