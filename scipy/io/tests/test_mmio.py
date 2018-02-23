@@ -8,10 +8,14 @@ import numpy as np
 from numpy import array, transpose, pi
 from numpy.testing import (assert_equal,
                            assert_array_equal, assert_array_almost_equal)
+import pytest
 from pytest import raises as assert_raises
 
 import scipy.sparse
 from scipy.io.mmio import mminfo, mmread, mmwrite
+
+parametrize_args = [('integer', 'int'),
+                    ('unsigned-integer', 'uint')]
 
 
 class TestMMIOArray(object):
@@ -34,56 +38,38 @@ class TestMMIOArray(object):
         b = mmread(self.fn)
         assert_equal(a, b)
 
-    def test_simple_integer(self):
-        self.check_exact([[1, 2], [3, 4]],
-                         (2, 2, 4, 'array', 'integer', 'general'))
-    
-    def test_32bit_integer(self):
-        a = array([[2**31-1, 2**31-2], [2**31-3, 2**31-4]], dtype=np.int32)
-        self.check_exact(a, (2, 2, 4, 'array', 'integer', 'general'))
+    @pytest.mark.parametrize('typeval, dtype', parametrize_args)
+    def test_simple_integer(self, typeval, dtype):
+        self.check_exact(array([[1, 2], [3, 4]], dtype=dtype),
+                         (2, 2, 4, 'array', typeval, 'general'))
 
-    def test_64bit_integer(self):
-        a = array([[2**31, 2**32], [2**63-2, 2**63-1]], dtype=np.int64)
+    @pytest.mark.parametrize('typeval, dtype', parametrize_args)
+    def test_32bit_integer(self, typeval, dtype):
+        a = array([[2**31-1, 2**31-2], [2**31-3, 2**31-4]], dtype=dtype)
+        self.check_exact(a, (2, 2, 4, 'array', typeval, 'general'))
+
+    @pytest.mark.parametrize('typeval, dtype', parametrize_args)
+    def test_64bit_integer(self, typeval, dtype):
+        a = array([[2**31, 2**32], [2**63-2, 2**63-1]], dtype=dtype)
         if (np.intp(0).itemsize < 8):
             assert_raises(OverflowError, mmwrite, self.fn, a)
         else:
-            self.check_exact(a, (2, 2, 4, 'array', 'integer', 'general'))
+            self.check_exact(a, (2, 2, 4, 'array', typeval, 'general'))
 
-    def test_simple_unsigned_integer(self):
-        self.check_exact(array([[1, 2], [3, 4]],'uint'),
-                         (2, 2, 4, 'array', 'unsigned-integer', 'general'))
-    
-    def test_32bit_unsigned_integer(self):
-        a = array([[2**31-1, 2**31-2], [2**31-3, 2**31-4]], dtype=np.uint32)
-        self.check_exact(a, (2, 2, 4, 'array', 'unsigned-integer', 'general'))
+    @pytest.mark.parametrize('typeval, dtype', parametrize_args)
+    def test_simple_upper_triangle_integer(self, typeval, dtype):
+        self.check_exact(array([[0, 1], [0, 0]], dtype=dtype),
+                         (2, 2, 4, 'array', typeval, 'general'))
 
-    def test_64bit_unsigned_integer(self):
-        a = array([[2**31, 2**32], [2**63-2, 2**63-1]], dtype=np.uint64)
-        self.check_exact(a, (2, 2, 4, 'array', 'unsigned-integer', 'general'))
+    @pytest.mark.parametrize('typeval, dtype', parametrize_args)
+    def test_simple_lower_triangle_integer(self, typeval, dtype):
+        self.check_exact(array([[0, 0], [1, 0]], dtype=dtype),
+                         (2, 2, 4, 'array', typeval, 'general'))
 
-    def test_simple_upper_triangle_integer(self):
-        self.check_exact([[0, 1], [0, 0]],
-                         (2, 2, 4, 'array', 'integer', 'general'))
-
-    def test_simple_lower_triangle_integer(self):
-        self.check_exact([[0, 0], [1, 0]],
-                         (2, 2, 4, 'array', 'integer', 'general'))
-
-    def test_simple_rectangular_integer(self):
-        self.check_exact([[1, 2, 3], [4, 5, 6]],
-                         (2, 3, 6, 'array', 'integer', 'general'))
-
-    def test_simple_upper_triangle_unsigned_integer(self):
-        self.check_exact(array([[0, 1], [0, 0]],'uint'),
-                         (2, 2, 4, 'array', 'unsigned-integer', 'general'))
-
-    def test_simple_lower_triangle_unsigned_integer(self):
-        self.check_exact(array([[0, 0], [1, 0]],'uint'),
-                         (2, 2, 4, 'array', 'unsigned-integer', 'general'))
-
-    def test_simple_rectangular_unsigned_integer(self):
-        self.check_exact(array([[1, 2, 3], [4, 5, 6]],'uint'),
-                         (2, 3, 6, 'array', 'unsigned-integer', 'general'))
+    @pytest.mark.parametrize('typeval, dtype', parametrize_args)
+    def test_simple_rectangular_integer(self, typeval, dtype):
+        self.check_exact(array([[1, 2, 3], [4, 5, 6]], dtype=dtype),
+                         (2, 3, 6, 'array', typeval, 'general'))
 
     def test_simple_rectangular_float(self):
         self.check([[1, 2], [3.5, 4], [5, 6]],
@@ -97,17 +83,14 @@ class TestMMIOArray(object):
         self.check([[1, 2], [3, 4j]],
                    (2, 2, 4, 'array', 'complex', 'general'))
 
-    def test_simple_symmetric_integer(self):
-        self.check_exact([[1, 2], [2, 4]],
-                         (2, 2, 4, 'array', 'integer', 'symmetric'))
+    @pytest.mark.parametrize('typeval, dtype', parametrize_args)
+    def test_simple_symmetric_integer(self, typeval, dtype):
+        self.check_exact(array([[1, 2], [2, 4]], dtype=dtype),
+                         (2, 2, 4, 'array', typeval, 'symmetric'))
 
     def test_simple_skew_symmetric_integer(self):
         self.check_exact([[0, 2], [-2, 0]],
                          (2, 2, 4, 'array', 'integer', 'skew-symmetric'))
-
-    def test_simple_symmetric_unsigned_integer(self):
-        self.check_exact(array([[1, 2], [2, 4]],'uint'),
-                         (2, 2, 4, 'array', 'unsigned-integer', 'symmetric'))
 
     def test_simple_skew_symmetric_float(self):
         self.check(array([[0, 2], [-2.0, 0.0]], 'f'),
@@ -149,9 +132,10 @@ class TestMMIOSparseCSR(TestMMIOArray):
         b = mmread(self.fn)
         assert_equal(a.todense(), b.todense())
 
-    def test_simple_integer(self):
-        self.check_exact(scipy.sparse.csr_matrix([[1, 2], [3, 4]]),
-                         (2, 2, 4, 'coordinate', 'integer', 'general'))
+    @pytest.mark.parametrize('typeval, dtype', parametrize_args)
+    def test_simple_integer(self, typeval, dtype):
+        self.check_exact(scipy.sparse.csr_matrix([[1, 2], [3, 4]], dtype=dtype),
+                         (2, 2, 4, 'coordinate', typeval, 'general'))
 
     def test_32bit_integer(self):
         a = scipy.sparse.csr_matrix(array([[2**31-1, -2**31+2],
@@ -168,10 +152,6 @@ class TestMMIOSparseCSR(TestMMIOArray):
         else:
             self.check_exact(a, (2, 2, 4, 'coordinate', 'integer', 'general'))
 
-    def test_simple_unsigned_integer(self):
-        self.check_exact(scipy.sparse.csr_matrix([[1, 2], [3, 4]],dtype=np.uint),
-                         (2, 2, 4, 'coordinate', 'unsigned-integer', 'general'))
-
     def test_32bit_unsigned_integer(self):
         a = scipy.sparse.csr_matrix(array([[2**31-1, 2**31-2],
                                            [2**31-3, 2**31-4]],
@@ -184,29 +164,20 @@ class TestMMIOSparseCSR(TestMMIOArray):
                                           dtype=np.uint64))
         self.check_exact(a, (2, 2, 4, 'coordinate', 'unsigned-integer', 'general'))
 
-    def test_simple_upper_triangle_integer(self):
-        self.check_exact(scipy.sparse.csr_matrix([[0, 1], [0, 0]]),
-                         (2, 2, 1, 'coordinate', 'integer', 'general'))
+    @pytest.mark.parametrize('typeval, dtype', parametrize_args)
+    def test_simple_upper_triangle_integer(self, typeval, dtype):
+        self.check_exact(scipy.sparse.csr_matrix([[0, 1], [0, 0]], dtype=dtype),
+                         (2, 2, 1, 'coordinate', typeval, 'general'))
 
-    def test_simple_lower_triangle_integer(self):
-        self.check_exact(scipy.sparse.csr_matrix([[0, 0], [1, 0]]),
-                         (2, 2, 1, 'coordinate', 'integer', 'general'))
+    @pytest.mark.parametrize('typeval, dtype', parametrize_args)
+    def test_simple_lower_triangle_integer(self, typeval, dtype):
+        self.check_exact(scipy.sparse.csr_matrix([[0, 0], [1, 0]], dtype=dtype),
+                         (2, 2, 1, 'coordinate', typeval, 'general'))
 
-    def test_simple_rectangular_integer(self):
-        self.check_exact(scipy.sparse.csr_matrix([[1, 2, 3], [4, 5, 6]]),
-                         (2, 3, 6, 'coordinate', 'integer', 'general'))
-    
-    def test_simple_upper_triangle_unsigned_integer(self):
-        self.check_exact(scipy.sparse.csr_matrix([[0, 1], [0, 0]],dtype=np.uint),
-                         (2, 2, 1, 'coordinate', 'unsigned-integer', 'general'))
-
-    def test_simple_lower_triangle_unsigned_integer(self):
-        self.check_exact(scipy.sparse.csr_matrix([[0, 0], [1, 0]],dtype=np.uint),
-                         (2, 2, 1, 'coordinate', 'unsigned-integer', 'general'))
-
-    def test_simple_rectangular_unsigned_integer(self):
-        self.check_exact(scipy.sparse.csr_matrix([[1, 2, 3], [4, 5, 6]],dtype=np.uint),
-                         (2, 3, 6, 'coordinate', 'unsigned-integer', 'general'))
+    @pytest.mark.parametrize('typeval, dtype', parametrize_args)
+    def test_simple_rectangular_integer(self, typeval, dtype):
+        self.check_exact(scipy.sparse.csr_matrix([[1, 2, 3], [4, 5, 6]], dtype=dtype),
+                         (2, 3, 6, 'coordinate', typeval, 'general'))
 
     def test_simple_rectangular_float(self):
         self.check(scipy.sparse.csr_matrix([[1, 2], [3.5, 4], [5, 6]]),
@@ -220,17 +191,14 @@ class TestMMIOSparseCSR(TestMMIOArray):
         self.check(scipy.sparse.csr_matrix([[1, 2], [3, 4j]]),
                    (2, 2, 4, 'coordinate', 'complex', 'general'))
 
-    def test_simple_symmetric_integer(self):
-        self.check_exact(scipy.sparse.csr_matrix([[1, 2], [2, 4]]),
-                         (2, 2, 3, 'coordinate', 'integer', 'symmetric'))
+    @pytest.mark.parametrize('typeval, dtype', parametrize_args)
+    def test_simple_symmetric_integer(self, typeval, dtype):
+        self.check_exact(scipy.sparse.csr_matrix([[1, 2], [2, 4]], dtype=dtype),
+                         (2, 2, 3, 'coordinate', typeval, 'symmetric'))
 
     def test_simple_skew_symmetric_integer(self):
         self.check_exact(scipy.sparse.csr_matrix([[1, 2], [-2, 4]]),
                          (2, 2, 3, 'coordinate', 'integer', 'skew-symmetric'))
-
-    def test_simple_symmetric_unsigned_integer(self):
-        self.check_exact(scipy.sparse.csr_matrix([[1, 2], [2, 4]],dtype=np.uint),
-                         (2, 2, 3, 'coordinate', 'unsigned-integer', 'symmetric'))
 
     def test_simple_skew_symmetric_float(self):
         self.check(scipy.sparse.csr_matrix(array([[1, 2], [-2.0, 4]], 'f')),
@@ -700,4 +668,3 @@ class TestMMIOCoordinate(object):
                 assert_array_equal(A.col, [n-1])
                 assert_array_almost_equal(A.data,
                     [float('%%.%dg' % precision % value)])
-
