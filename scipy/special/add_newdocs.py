@@ -3943,7 +3943,7 @@ add_newdoc("scipy.special", "j0",
     two rational functions of degree 6/6 and 7/7.
 
     This function is a wrapper for the Cephes [1]_ routine `j0`.
-    It should not to be confused with the spherical Bessel functions (see
+    It should not be confused with the spherical Bessel functions (see
     `spherical_jn`).
 
     See also
@@ -3981,7 +3981,7 @@ add_newdoc("scipy.special", "j1",
     functions of degree 5/5.
 
     This function is a wrapper for the Cephes [1]_ routine `j1`.
-    It should not to be confused with the spherical Bessel functions (see
+    It should not be confused with the spherical Bessel functions (see
     `spherical_jn`).
 
     See also
