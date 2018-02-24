@@ -54,21 +54,21 @@ def norm(x, ord=None, axis=None):
 
     The following norms can be calculated:
 
-    =====  ============================  
-    ord    norm for sparse matrices             
-    =====  ============================  
-    None   Frobenius norm                
-    'fro'  Frobenius norm
-    'spec' Spectral norm                
-    inf    max(sum(abs(x), axis=1))      
-    -inf   min(sum(abs(x), axis=1))      
-    0      abs(x).sum(axis=axis)                           
-    1      max(sum(abs(x), axis=0))      
-    -1     min(sum(abs(x), axis=0))      
-    2      Spectral norm  
-    -2     Not implemented      
-    other  Not implemented                               
-    =====  ============================  
+    ======  ============================  
+    ord     norm for sparse matrices             
+    ======  ============================  
+    None    Frobenius norm                
+    'fro'   Frobenius norm
+    'spec'  Spectral norm                
+    inf     max(sum(abs(x), axis=1))      
+    -inf    min(sum(abs(x), axis=1))      
+    0       abs(x).sum(axis=axis)                           
+    1       max(sum(abs(x), axis=0))      
+    -1      min(sum(abs(x), axis=0))      
+    2       Spectral norm  
+    -2      Not implemented      
+    other   Not implemented                               
+    ======  ============================  
 
     The Frobenius norm is given by [1]_:
 
