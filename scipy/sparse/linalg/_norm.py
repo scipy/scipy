@@ -146,7 +146,9 @@ def norm(x, ord=None, axis=None):
             raise ValueError('Duplicate axes given.')
         if ord in (2, 'spec'):
             # spectral norm
+            from scipy.sparse import csc_matrix 
             from scipy.sparse.linalg import svds
+            x = csc_matrix(x, dtype=float)
             u, s, vt = svds(x, k=1)
             return s[0]
         elif ord == -2:
@@ -176,7 +178,9 @@ def norm(x, ord=None, axis=None):
             M = abs(x).min(axis=a)
         elif ord == 'spec':
             # Spectral norm
+            from scipy.sparse import csc_matrix 
             from scipy.sparse.linalg import svds
+            x = csc_matrix(x, dtype=float)
             u, s, vt = svds(x, k=1)
             return s[0]
         elif ord == 0:
