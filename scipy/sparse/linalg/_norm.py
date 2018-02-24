@@ -58,7 +58,8 @@ def norm(x, ord=None, axis=None):
     ord    norm for sparse matrices             
     =====  ============================  
     None   Frobenius norm                
-    'fro'  Frobenius norm                
+    'fro'  Frobenius norm
+    'spec' Spectral norm                
     inf    max(sum(abs(x), axis=1))      
     -inf   min(sum(abs(x), axis=1))      
     0      abs(x).sum(axis=axis)                           
@@ -72,6 +73,8 @@ def norm(x, ord=None, axis=None):
     The Frobenius norm is given by [1]_:
 
         :math:`||A||_F = [\\sum_{i,j} abs(a_{i,j})^2]^{1/2}`
+    
+    The Spectral norm is just the largest singular value.
 
     References
     ----------
@@ -105,6 +108,8 @@ def norm(x, ord=None, axis=None):
     7
     >>> norm(b, -1)
     6
+    >>> norm(b, 'spec')
+    7.3484692283495345
 
     """
     if not issparse(x):
@@ -154,6 +159,12 @@ def norm(x, ord=None, axis=None):
         elif ord in (None, 'f', 'fro'):
             # The axis order does not matter for this norm.
             return _sparse_frobenius_norm(x)
+        elif ord == 'spec':
+            from scipy.sparse import csc_matrix 
+            from scipy.sparse.linalg import svds, eigs
+            x = csr_matrix(x, dtype=float)
+            u, s, vt = svds(x, k=1)
+            return s[0]
         else:
             raise ValueError("Invalid norm order for matrices.")
     elif len(axis) == 1:
@@ -165,6 +176,13 @@ def norm(x, ord=None, axis=None):
             M = abs(x).max(axis=a)
         elif ord == -Inf:
             M = abs(x).min(axis=a)
+        elif ord == 'spec':
+            # Spectral norm
+            from scipy.sparse import csc_matrix 
+            from scipy.sparse.linalg import svds, eigs
+            x = csr_matrix(x, dtype=float)
+            u, s, vt = svds(x, k=1)
+            return s[0]
         elif ord == 0:
             # Zero norm
             M = (x != 0).sum(axis=a)
