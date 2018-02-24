@@ -1113,14 +1113,6 @@ def minimum_position(input, labels=None, index=None):
     >>> label, pos = ndimage.label(b)
     >>> ndimage.minimum_position(b, label, index=np.arange(1, pos+1))
     [(0, 0), (0, 3), (3, 1)]
-
-    If no index is given, non-zero `labels` are processed:
-
-    >>> ndimage.minimum_position(a, labels=label)
-    (2, 0)
-    >>> ndimage.minimum_position(b, labels=label)
-    (0, 0)
-
     """
     dims = numpy.array(numpy.asarray(input).shape)
     # see numpy.unravel_index to understand this line.
