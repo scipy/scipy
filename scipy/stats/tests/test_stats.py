@@ -148,7 +148,8 @@ class TestCorrPearsonr(object):
         your program has them.
     """
     def test_divide_by_zero(self):
-        y = stats.pearsonr([0.89038028146423564557, 1.10961971853576435443], [0.66995440445715814803, 1.33004559554284207401])
+        y = stats.pearsonr([0.89038028146423564557, 1.10961971853576435443], 
+            [0.66995440445715814803, 1.33004559554284207401])
         r = y[0]
         assert_approx_equal(r, 0.9999999999999998)    
     
