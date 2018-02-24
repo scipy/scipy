@@ -3006,7 +3006,7 @@ def pearsonr(x, y):
     # floating point arithmetic.
     r = max(min(r, 1.0), -1.0)
     df = n - 2
-    if abs(r) == 1.0:
+    if abs(r) == 1.0 or df == 0:
         prob = 0.0
     else:
         t_squared = r**2 * (df / ((1.0 - r) * (1.0 + r)))
