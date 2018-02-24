@@ -48,7 +48,7 @@ class TestMMIOArray(object):
         a = array([[2**31-1, 2**31-2], [2**31-3, 2**31-4]], dtype=dtype)
         self.check_exact(a, (2, 2, 4, 'array', typeval, 'general'))
 
-    def test_64bit_integer(self, typeval, dtype):
+    def test_64bit_integer(self):
         a = array([[2**31, 2**32], [2**63-2, 2**63-1]], dtype=dtype)
         if (np.intp(0).itemsize < 8):
             assert_raises(OverflowError, mmwrite, self.fn, a)
