@@ -162,7 +162,7 @@ def norm(x, ord=None, axis=None):
         elif ord == 'spec':
             from scipy.sparse import csc_matrix 
             from scipy.sparse.linalg import svds, eigs
-            x = csr_matrix(x, dtype=float)
+            x = csc_matrix(x, dtype=float)
             u, s, vt = svds(x, k=1)
             return s[0]
         else:
@@ -180,7 +180,7 @@ def norm(x, ord=None, axis=None):
             # Spectral norm
             from scipy.sparse import csc_matrix 
             from scipy.sparse.linalg import svds, eigs
-            x = csr_matrix(x, dtype=float)
+            x = csc_matrix(x, dtype=float)
             u, s, vt = svds(x, k=1)
             return s[0]
         elif ord == 0:
