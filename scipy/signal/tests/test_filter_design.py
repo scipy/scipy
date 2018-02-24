@@ -451,6 +451,13 @@ class TestFreqs(object):
         assert_array_almost_equal(w1, w2)
         assert_array_almost_equal(h1, h2)
 
+    def test_w_types(self):
+        for w in (8, np.int8(8), np.int16(8), np.int32(8), np.int64(8),
+                  np.array(8)):
+            w, h = freqs([1.0], [1.0], worN=w)
+            assert_equal(len(w), 8)
+            assert_array_almost_equal(h, np.ones(8))
+
 
 class TestFreqs_zpk(object):
 
@@ -727,6 +734,13 @@ class TestFreqz(object):
             assert_allclose(h1, h2)
             assert_allclose(w, w1)
 
+    def test_w_types(self):
+        for w in (8, np.int8(8), np.int16(8), np.int32(8), np.int64(8),
+                  np.array(8)):
+            w, h = freqz([1.0], worN=w)
+            assert_array_almost_equal(w, np.pi * np.arange(8) / 8.)
+            assert_array_almost_equal(h, np.ones(8))
+
 
 class TestSOSFreqz(object):
 
@@ -896,6 +910,13 @@ class TestSOSFreqz(object):
             assert_allclose(h1, h2)
             assert_allclose(w, w1)
 
+    def test_w_types(self):
+        for w in (8, np.int8(8), np.int16(8), np.int32(8), np.int64(8),
+                  np.array(8)):
+            w, h = sosfreqz([1, 0, 0, 1, 0, 0], worN=w)
+            assert_array_almost_equal(w, np.pi * np.arange(8) / 8.)
+            assert_array_almost_equal(h, np.ones(8))
+
 
 class TestFreqz_zpk(object):
 
@@ -970,6 +991,13 @@ class TestFreqz_zpk(object):
             w2, h2 = freqz_zpk(z, p, k, 2*pi*np.array(w)/fs)
             assert_allclose(h1, h2)
             assert_allclose(w, w1)
+
+    def test_w_types(self):
+        for w in (8, np.int8(8), np.int16(8), np.int32(8), np.int64(8),
+                  np.array(8)):
+            w, h = freqz_zpk([], [], 1, worN=w)
+            assert_array_almost_equal(w, np.pi * np.arange(8) / 8.)
+            assert_array_almost_equal(h, np.ones(8))
 
 
 class TestNormalize(object):
@@ -3522,3 +3550,10 @@ class TestGroupDelay(object):
                             0.317932917836572, 0.261371844762525,
                             0.229038045801298, 0.212185774208521])
         assert_array_almost_equal(gd, norm_gd)
+
+    def test_w_types(self):
+        for w in (8, np.int8(8), np.int16(8), np.int32(8), np.int64(8),
+                  np.array(8)):
+            w, gd = group_delay((1, 1), w)
+            assert_array_almost_equal(w, pi * np.arange(8) / 8)
+            assert_array_almost_equal(gd, np.zeros(8))

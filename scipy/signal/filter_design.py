@@ -162,9 +162,13 @@ def freqs(b, a, worN=200, plot=None):
     """
     if worN is None:
         w = findfreqs(b, a, 200)
-    elif isinstance(worN, int):
-        N = worN
-        w = findfreqs(b, a, N)
+    elif np.ndim(worN) == 0:
+        try:
+            N = operator.index(worN)
+        except TypeError:
+            pass
+        else:
+            w = findfreqs(b, a, N)
     else:
         w = worN
     w = atleast_1d(w)
@@ -241,9 +245,13 @@ def freqs_zpk(z, p, k, worN=200):
 
     if worN is None:
         w = findfreqs(z, p, 200, kind='zp')
-    elif isinstance(worN, int):
-        N = worN
-        w = findfreqs(z, p, N, kind='zp')
+    elif np.ndim(worN) == 0:
+        try:
+            N = operator.index(worN)
+        except TypeError:
+            pass
+        else:
+            w = findfreqs(z, p, N, kind='zp')
     else:
         w = worN
 
@@ -413,7 +421,10 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=None):
 
     h = None
     try:
-        worN = operator.index(worN)
+        if np.ndim(worN) == 0:
+            worN = operator.index(worN)
+        else:
+            raise TypeError
     except TypeError:  # not int-like
         w = atleast_1d(worN)
         if fs is not None:
@@ -545,9 +556,13 @@ def freqz_zpk(z, p, k, worN=512, whole=False, fs=None):
         lastpoint = pi
     if worN is None:
         w = numpy.linspace(0, lastpoint, 512, endpoint=False)
-    elif isinstance(worN, int):
-        N = worN
-        w = numpy.linspace(0, lastpoint, N, endpoint=False)
+    elif np.ndim(worN) == 0:
+        try:
+            N = operator.index(worN)
+        except TypeError:
+            pass
+        else:
+            w = numpy.linspace(0, lastpoint, N, endpoint=False)
     else:
         w = atleast_1d(worN)
         if fs is not None:
@@ -641,11 +656,16 @@ def group_delay(system, w=512, whole=False, fs=None):
     if w is None:
         w = 512
 
-    if isinstance(w, int):
-        if whole:
-            w = np.linspace(0, 2 * pi, w, endpoint=False)
+    if np.ndim(w) == 0:
+        try:
+            w = operator.index(w)
+        except TypeError:
+            pass
         else:
-            w = np.linspace(0, pi, w, endpoint=False)
+            if whole:
+                w = np.linspace(0, 2 * pi, w, endpoint=False)
+            else:
+                w = np.linspace(0, pi, w, endpoint=False)
 
     w = np.atleast_1d(w)
     if fs is not None:
