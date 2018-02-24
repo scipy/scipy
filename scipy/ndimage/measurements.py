@@ -1104,10 +1104,12 @@ def minimum_position(input, labels=None, index=None):
     (2, 0)
     >>> ndimage.minimum_position(b)
     (0, 2)
+
     Features to process can be specified using `labels` and `index`:
     >>> label, pos = ndimage.label(a)
     >>> ndimage.minimum_position(a, label, index=np.arange(1, pos+1))
     [(2, 0)]
+
     >>> label, pos = ndimage.label(b)
     >>> ndimage.minimum_position(b, label, index=np.arange(1, pos+1))
     [(0, 0), (0, 3), (3, 1)]
