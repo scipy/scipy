@@ -489,6 +489,29 @@ def romb(y, dx=1.0, axis=-1, show=False):
     ode : ODE integrators
     odeint : ODE integrators
 
+    Examples
+    --------
+    >>> from scipy import integrate
+    >>> x = np.arange(10, 14.25, 0.25)
+    >>> y = np.arange(3, 12)
+
+    >>> integrate.romb(y)
+    56.0
+
+    >>> y = np.sin(np.power(x, 2.5))
+    >>> integrate.romb(y)
+    -0.742561336672229
+
+    >>> integrate.romb(y, show=True)
+    Richardson Extrapolation Table for Romberg Integration       
+    ====================================================================
+    -0.81576 
+    4.63862  6.45674 
+    -1.10581 -3.02062 -3.65245 
+    -2.57379 -3.06311 -3.06595 -3.05664 
+    -1.34093 -0.92997 -0.78776 -0.75160 -0.74256 
+    ====================================================================
+    -0.742561336672229
     """
     y = np.asarray(y)
     nd = len(y.shape)
