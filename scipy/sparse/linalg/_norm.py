@@ -65,7 +65,7 @@ def norm(x, ord=None, axis=None):
     0      abs(x).sum(axis=axis)                           
     1      max(sum(abs(x), axis=0))      
     -1     min(sum(abs(x), axis=0))      
-    2      Not implemented  
+    2      Spectral norm  
     -2     Not implemented      
     other  Not implemented                               
     =====  ============================  
@@ -110,6 +110,8 @@ def norm(x, ord=None, axis=None):
     6
     >>> norm(b, 'spec')
     7.3484692283495345
+    >>> norm(b, 2)
+    7.3484692283495345
 
     """
     if not issparse(x):
@@ -142,9 +144,11 @@ def norm(x, ord=None, axis=None):
                              (axis, x.shape))
         if row_axis % nd == col_axis % nd:
             raise ValueError('Duplicate axes given.')
-        if ord == 2:
-            raise NotImplementedError
-            #return _multi_svd_norm(x, row_axis, col_axis, amax)
+        if ord in (2, 'spec'):
+            # spectral norm
+            from scipy.sparse.linalg import svds
+            u, s, vt = svds(x, k=1)
+            return s[0]
         elif ord == -2:
             raise NotImplementedError
             #return _multi_svd_norm(x, row_axis, col_axis, amin)
@@ -159,12 +163,6 @@ def norm(x, ord=None, axis=None):
         elif ord in (None, 'f', 'fro'):
             # The axis order does not matter for this norm.
             return _sparse_frobenius_norm(x)
-        elif ord == 'spec':
-            from scipy.sparse import csc_matrix 
-            from scipy.sparse.linalg import svds, eigs
-            x = csc_matrix(x, dtype=float)
-            u, s, vt = svds(x, k=1)
-            return s[0]
         else:
             raise ValueError("Invalid norm order for matrices.")
     elif len(axis) == 1:
@@ -178,9 +176,7 @@ def norm(x, ord=None, axis=None):
             M = abs(x).min(axis=a)
         elif ord == 'spec':
             # Spectral norm
-            from scipy.sparse import csc_matrix 
-            from scipy.sparse.linalg import svds, eigs
-            x = csc_matrix(x, dtype=float)
+            from scipy.sparse.linalg import svds
             u, s, vt = svds(x, k=1)
             return s[0]
         elif ord == 0:
