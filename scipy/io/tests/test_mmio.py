@@ -12,7 +12,7 @@ import pytest
 from pytest import raises as assert_raises
 
 import scipy.sparse
-from scipy.io.mmio import mminfo, mmread, mmwrite
+from mmiox import mminfo, mmread, mmwrite
 
 parametrize_args = [('integer', 'int'),
                     ('unsigned-integer', 'uint')]
@@ -48,13 +48,16 @@ class TestMMIOArray(object):
         a = array([[2**31-1, 2**31-2], [2**31-3, 2**31-4]], dtype=dtype)
         self.check_exact(a, (2, 2, 4, 'array', typeval, 'general'))
 
-    @pytest.mark.parametrize('typeval, dtype', parametrize_args)
     def test_64bit_integer(self, typeval, dtype):
         a = array([[2**31, 2**32], [2**63-2, 2**63-1]], dtype=dtype)
         if (np.intp(0).itemsize < 8):
             assert_raises(OverflowError, mmwrite, self.fn, a)
         else:
             self.check_exact(a, (2, 2, 4, 'array', typeval, 'general'))
+
+    def test_64bit_unsigned_integer(self):
+        a = array([[2**31, 2**32], [2**64-2, 2**64-1]], dtype=np.uint64)
+        self.check_exact(a, (2, 2, 4, 'array', 'unsigned-integer', 'general'))
 
     @pytest.mark.parametrize('typeval, dtype', parametrize_args)
     def test_simple_upper_triangle_integer(self, typeval, dtype):
@@ -160,7 +163,7 @@ class TestMMIOSparseCSR(TestMMIOArray):
 
     def test_64bit_unsigned_integer(self):
         a = scipy.sparse.csr_matrix(array([[2**32+1, 2**32+1],
-                                           [2**63-2, 2**63-1]],
+                                           [2**64-2, 2**64-1]],
                                           dtype=np.uint64))
         self.check_exact(a, (2, 2, 4, 'coordinate', 'unsigned-integer', 'general'))
 
