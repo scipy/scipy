@@ -12,7 +12,7 @@ import pytest
 from pytest import raises as assert_raises
 
 import scipy.sparse
-from mmiox import mminfo, mmread, mmwrite
+from scipy.io.mmio import mminfo, mmread, mmwrite
 
 parametrize_args = [('integer', 'int'),
                     ('unsigned-integer', 'uint')]
