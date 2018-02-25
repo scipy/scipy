@@ -13,7 +13,7 @@ import numpy as np
 
 from scipy._lib.six import xrange, zip
 from .base import spmatrix, isspmatrix
-from ._index import IndexMixin
+from ._index import IndexMixin, INT_TYPES
 from .sputils import (getdtype, isshape, isscalarlike, upcast_scalar,
                       get_index_dtype, check_shape, check_reshape_kwargs)
 from . import _csparsetools
@@ -207,8 +207,8 @@ class lil_matrix(spmatrix, IndexMixin):
     def __getitem__(self, key):
         # Fast path for simple (int, int) indexing.
         if (isinstance(key, tuple) and len(key) == 2 and
-                isinstance(key[0], (int, np.integer)) and
-                isinstance(key[1], (int, np.integer))):
+                isinstance(key[0], INT_TYPES) and
+                isinstance(key[1], INT_TYPES)):
             # lil_get1 handles validation for us.
             return self._get_intXint(*key)
         # Everything else takes the normal path.
@@ -227,8 +227,8 @@ class lil_matrix(spmatrix, IndexMixin):
     def __getitem__(self, key):
         # Fast path for simple (int, int) indexing.
         if (isinstance(key, tuple) and len(key) == 2 and
-                isinstance(key[0], (int, np.integer)) and
-                isinstance(key[1], (int, np.integer))):
+                isinstance(key[0], INT_TYPES) and
+                isinstance(key[1], INT_TYPES)):
             # lil_get1 handles validation for us.
             return self._get_intXint(*key)
         # Everything else takes the normal path.
@@ -335,8 +335,8 @@ class lil_matrix(spmatrix, IndexMixin):
     def __setitem__(self, key, x):
         # Fast path for simple (int, int) indexing.
         if (isinstance(key, tuple) and len(key) == 2 and
-                isinstance(key[0], (int, np.integer)) and
-                isinstance(key[1], (int, np.integer))):
+                isinstance(key[0], INT_TYPES) and
+                isinstance(key[1], INT_TYPES)):
             x = self.dtype.type(x)
             if x.size > 1:
                 raise ValueError("Trying to assign a sequence to an item")
