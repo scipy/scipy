@@ -28,11 +28,7 @@ def assert_quad(value_and_err, tabled_value, errTol=1.5e-8):
 
 
 def get_clib_test_routine(name, restype, *argtypes):
-    capsule = getattr(clib_test, name)
-    PyCapsule_GetPointer = ctypes.pythonapi.PyCapsule_GetPointer
-    PyCapsule_GetPointer.restype = ctypes.c_void_p
-    PyCapsule_GetPointer.argtypes = [ctypes.py_object, ctypes.c_char_p]
-    ptr = PyCapsule_GetPointer(capsule, None)
+    ptr = getattr(clib_test, name)
     return ctypes.cast(ptr, ctypes.CFUNCTYPE(restype, *argtypes))
 
 
