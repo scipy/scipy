@@ -568,7 +568,7 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
     and y ranging from 0 to 1
 
     >>> from scipy import integrate
-    >>> f = lambda y,x: x*y**2
+    >>> f = lambda y, x: x*y**2
     >>> integrate.dblquad(f, 0, 2, lambda x: 0, lambda x: 1)
         (0.6666666666666667, 7.401486830834377e-15)
 
@@ -640,9 +640,9 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
     x ranging from 1 to 2, y ranging from 2 to 3, z ranging from 0 to 1
 
     >>> from scipy import integrate
-    >>> f = lambda z,y,x: x*y*z
+    >>> f = lambda z, y, x: x*y*z
     >>> integrate.tplquad(f, 1, 2, lambda x: 2, lambda x: 3,
-                          lambda x,y: 0, lambda x,y: 1)
+    ...                   lambda x, y: 0, lambda x, y: 1)
     (1.8750000000000002, 3.324644794257407e-14)
 
 
