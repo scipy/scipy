@@ -552,6 +552,21 @@ class TestMedFilt(object):
         a.strides = 16
         assert_(signal.medfilt(a, 1) == 5.)
 
+    def test_refcounting(self):
+        # Check a refcounting-related crash
+        a = Decimal(123)
+        x = np.array([a, a], dtype=object)
+        if hasattr(sys, 'getrefcount'):
+            n = 2 * sys.getrefcount(a)
+        else:
+            n = 10
+        # Shouldn't segfault:
+        for j in range(n):
+            signal.medfilt(x)
+        if hasattr(sys, 'getrefcount'):
+            assert_(sys.getrefcount(a) < n)
+        assert_equal(x, [a, a])
+
 
 class TestWiener(object):
 
