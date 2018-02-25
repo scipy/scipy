@@ -296,25 +296,34 @@ class spmatrix(object):
         raise TypeError("sparse matrix length is ambiguous; use getnnz()"
                         " or shape[0]")
 
-    def asformat(self, format):
-        """Return this matrix in a given sparse format
+    def asformat(self, format, copy=False):
+        """Return this matrix in the passed sparse format.
 
         Parameters
         ----------
-        format : {string, None}
-            desired sparse matrix format
-                - None for no format conversion
-                - "csr" for csr_matrix format
-                - "csc" for csc_matrix format
-                - "lil" for lil_matrix format
-                - "dok" for dok_matrix format and so on
+        format : {str, None}
+            The desired sparse matrix format ("csr", "csc", "lil", "dok", ...)
+            or None for no conversion.
+        copy : bool, optional
+            If True, the result is guaranteed to not share data with self.
+
+        Returns
+        -------
+        A : This matrix in the passed sparse format.
 
         """
-
         if format is None or format == self.format:
-            return self
+            if copy:
+                return self.copy()
+            else:
+                return self
         else:
-            return getattr(self, 'to' + format)()
+            try:
+                convert_method = getattr(self, 'to' + format)
+            except AttributeError:
+                raise ValueError('Format {} is unknown.'.format(format))
+            else:
+                return convert_method(copy=copy)
 
     ###################################################################
     #  NOTE: All arithmetic operations use csr_matrix by default.
@@ -1173,75 +1182,6 @@ class spmatrix(object):
             return out
         else:
             return np.zeros(self.shape, dtype=self.dtype, order=order)
-
-    def __numpy_ufunc__(self, func, method, pos, inputs, **kwargs):
-        """Method for compatibility with NumPy's ufuncs and dot
-        functions.
-        """
-
-        if any(not isinstance(x, spmatrix) and np.asarray(x).dtype == object
-               for x in inputs):
-            # preserve previous behavior with object arrays
-            with_self = list(inputs)
-            with_self[pos] = np.asarray(self, dtype=object)
-            return getattr(func, method)(*with_self, **kwargs)
-
-        out = kwargs.pop('out', None)
-        if method != '__call__' or kwargs:
-            return NotImplemented
-
-        without_self = list(inputs)
-        del without_self[pos]
-        without_self = tuple(without_self)
-
-        if func is np.multiply:
-            result = self.multiply(*without_self)
-        elif func is np.add:
-            result = self.__add__(*without_self)
-        elif func is np.dot:
-            if pos == 0:
-                result = self.__mul__(inputs[1])
-            else:
-                result = self.__rmul__(inputs[0])
-        elif func is np.subtract:
-            if pos == 0:
-                result = self.__sub__(inputs[1])
-            else:
-                result = self.__rsub__(inputs[0])
-        elif func is np.divide:
-            true_divide = (sys.version_info[0] >= 3)
-            rdivide = (pos == 1)
-            result = self._divide(*without_self,
-                                  true_divide=true_divide,
-                                  rdivide=rdivide)
-        elif func is np.true_divide:
-            rdivide = (pos == 1)
-            result = self._divide(*without_self,
-                                  true_divide=True,
-                                  rdivide=rdivide)
-        elif func is np.maximum:
-            result = self.maximum(*without_self)
-        elif func is np.minimum:
-            result = self.minimum(*without_self)
-        elif func is np.absolute:
-            result = abs(self)
-        elif func in _ufuncs_with_fixed_point_at_zero:
-            func_name = func.__name__
-            if hasattr(self, func_name):
-                result = getattr(self, func_name)()
-            else:
-                result = getattr(self.tocsr(), func_name)()
-        else:
-            return NotImplemented
-
-        if out is not None:
-            if not isinstance(out, spmatrix) and isinstance(result, spmatrix):
-                out[...] = result.todense()
-            else:
-                out[...] = result
-            result = out
-
-        return result
 
 
 def isspmatrix(x):

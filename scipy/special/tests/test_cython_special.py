@@ -266,7 +266,8 @@ PARAMS = [
     (special.yn, cython_special.yn, ('ld', 'dd'), None),
     (special.yv, cython_special.yv, ('dd', 'dD'), None),
     (special.yve, cython_special.yve, ('dd', 'dD'), None),
-    (special.zetac, cython_special.zetac, ('d',), None)
+    (special.zetac, cython_special.zetac, ('d',), None),
+    (special.owens_t, cython_special.owens_t, ('dd',), None)
 ]
 
 
