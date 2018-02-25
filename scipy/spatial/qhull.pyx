@@ -648,11 +648,8 @@ cdef class _Qhull:
                             with gil:
                                 tmp = coplanar
                                 coplanar = None
-                                try:
-                                    tmp.resize(2 * ncoplanar + 1, 3)
-                                except ValueError:
-                                    # Work around Cython issue on Python 2.4
-                                    tmp = np.resize(tmp, (2*ncoplanar+1, 3))
+                                # The array is always safe to resize
+                                tmp.resize(2 * ncoplanar + 1, 3, refcheck=False)
                                 coplanar = tmp
 
                         coplanar[ncoplanar, 0] = qh_pointid(self._qh, point)
@@ -884,10 +881,8 @@ cdef class _Qhull:
                 if nvoronoi_vertices >= voronoi_vertices.shape[0]:
                     tmp = voronoi_vertices
                     voronoi_vertices = None
-                    try:
-                        tmp.resize(2*nvoronoi_vertices + 1, self.ndim)
-                    except ValueError:
-                        tmp = np.resize(tmp, (2*nvoronoi_vertices+1, self.ndim))
+                    # Array is safe to resize
+                    tmp.resize(2*nvoronoi_vertices + 1, self.ndim, refcheck=False)
                     voronoi_vertices = tmp
 
                 for k in range(self.ndim):
@@ -962,7 +957,8 @@ cdef class _Qhull:
 
             if nextremes + 2 >= extremes.shape[0]:
                 extremes = None
-                extremes_arr.resize(2*extremes_arr.shape[0]+1)
+                # Array is safe to resize
+                extremes_arr.resize(2*extremes_arr.shape[0]+1, refcheck=False)
                 extremes = extremes_arr
 
             if vertexA.visitid != self._qh[0].vertex_visit:
@@ -982,7 +978,8 @@ cdef class _Qhull:
                 break
 
         extremes = None
-        extremes_arr.resize(nextremes)
+        # This array is always safe to resize
+        extremes_arr.resize(nextremes, refcheck=False)
         return extremes_arr
 
 
@@ -997,7 +994,8 @@ cdef void _visit_voronoi(qhT *_qh, void *ptr, vertexT *vertex, vertexT *vertexA,
 
     if qh._nridges >= qh._ridge_points.shape[0]:
         try:
-            qh._ridge_points.resize(2*qh._nridges + 1, 2)
+            # The array is guaranteed to be safe to resize
+            qh._ridge_points.resize(2*qh._nridges + 1, 2, refcheck=False)
         except Exception, e:
             qh._ridge_error = e
             return
@@ -2005,20 +2003,13 @@ class Delaunay(_QhullUser):
                     if m >= msize:
                         arr = None
                         msize = 2*msize + 1
-                        try:
-                            out.resize(msize, ndim)
-                        except ValueError:
-                            # Work around Cython bug on Python 2.4
-                            out = np.resize(out, (msize, ndim))
+                        # Array is safe to resize
+                        out.resize(msize, ndim, refcheck=False)
                         arr = out
 
         arr = None
-        try:
-            out.resize(m, ndim)
-        except ValueError:
-            # XXX: work around a Cython bug on Python 2.4
-            #      still leaks memory, though
-            return np.resize(out, (m, ndim))
+        # Array is safe to resize
+        out.resize(m, ndim, refcheck=False)
         return out
 
     @cython.boundscheck(False)
