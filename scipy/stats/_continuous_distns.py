@@ -5555,6 +5555,21 @@ class skew_norm_gen(rv_continuous):
     def _pdf(self, x, a):
         return 2.*_norm_pdf(x)*_norm_cdf(a*x)
 
+    def _cdf_single(self, x, *args):
+        if x <= 0:
+            cdf = integrate.quad(self._pdf, self.a, x, args=args)[0]
+        else:
+            t1 = integrate.quad(self._pdf, self.a, 0, args=args)[0]
+            t2 = integrate.quad(self._pdf, 0, x, args=args)[0]
+            cdf = t1 + t2
+        if cdf > 1:
+            # Presumably numerical noise, e.g. 1.0000000000000002
+            cdf = 1.0
+        return cdf
+
+    def _sf(self, x, a):
+        return self._cdf(-x, -a)
+
     def _rvs(self, a):
         u0 = self._random_state.normal(size=self._size)
         v = self._random_state.normal(size=self._size)
