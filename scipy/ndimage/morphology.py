@@ -275,8 +275,6 @@ def _binary_erosion(input, structure, iterations, mask, output,
                 tmp_in, structure, mask, tmp_out,
                 border_value, origin, invert, cit, 0)
             ii += 1
-        if tmp_out is not output:
-            output[:] = tmp_out
         return output
 
 
