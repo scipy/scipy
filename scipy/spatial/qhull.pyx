@@ -353,37 +353,52 @@ cdef class _Qhull:
             self.close()
             raise QhullError(msg)
 
-    @cython.final
-    def __dealloc__(self):
-        self.close()
-        self._messages.close()
-
     def check_active(self):
         if self._qh == NULL:
             raise RuntimeError("Qhull instance is closed")
+
+    @cython.final
+    def __dealloc__(self):
+        cdef int curlong, totlong
+
+        if self._qh != NULL:
+            qh_freeqhull(self._qh, qh_ALL)
+            qh_memfreeshort(self._qh, &curlong, &totlong)
+            stdlib.free(self._qh)
+            self._qh = NULL
+
+            if curlong != 0 or totlong != 0:
+                raise QhullError(
+                    "qhull: did not free %d bytes (%d pieces)" %
+                    (totlong, curlong))
+
+        self._messages.close()
 
     @cython.final
     def close(self):
         """
         Uninitialize this instance
         """
+        # Note: this is direct copypaste from __dealloc__(), keep it
+        # in sync with that.  The code must be written directly in
+        # __dealloc__, because otherwise the generated C code tries to
+        # call PyObject_GetAttrStr(self, "close") which on Pypy
+        # crashes.
+
         cdef int curlong, totlong
 
-        if self._qh == NULL:
-            return
+        if self._qh != NULL:
+            qh_freeqhull(self._qh, qh_ALL)
+            qh_memfreeshort(self._qh, &curlong, &totlong)
+            stdlib.free(self._qh)
+            self._qh = NULL
 
-        qh_freeqhull(self._qh, qh_ALL)
-        qh_memfreeshort(self._qh, &curlong, &totlong)
-
-        stdlib.free(self._qh)
-        self._qh = NULL
+            if curlong != 0 or totlong != 0:
+                raise QhullError(
+                    "qhull: did not free %d bytes (%d pieces)" %
+                    (totlong, curlong))
 
         self._messages.close()
-
-        if curlong != 0 or totlong != 0:
-            raise QhullError(
-                "qhull: did not free %d bytes (%d pieces)" %
-                (totlong, curlong))
 
     @cython.final
     def get_points(self):
