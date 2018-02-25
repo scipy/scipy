@@ -261,7 +261,7 @@ def _binary_erosion(input, structure, iterations, mask, output,
                                   origin, invert, coordinate_list)
         return output
     else:
-        tmp_in = np.empty_like(input, dtype=bool)
+        tmp_in = numpy.empty_like(input, dtype=bool)
         tmp_out = output
         if iterations >= 1 and not iterations & 1:
             tmp_in, tmp_out = tmp_out, tmp_in
@@ -269,7 +269,7 @@ def _binary_erosion(input, structure, iterations, mask, output,
             input, structure, mask, tmp_out,
             border_value, origin, invert, cit, 0)
         ii = 1
-        while ii < iterations or (iteration < 1 and changed):
+        while ii < iterations or (iterations < 1 and changed):
             tmp_in, tmp_out = tmp_out, tmp_in
             changed = _nd_image.binary_erosion(
                 tmp_in, structure, mask, tmp_out,
