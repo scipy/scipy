@@ -54,19 +54,6 @@ def assert_in(member, collection, msg=None):
     assert_(member in collection, msg=msg if msg is not None else "%r not found in %r" % (member, collection))
 
 
-# Check for __numpy_ufunc__
-class _UFuncCheck(object):
-    def __array__(self):
-        return np.array([1])
-
-    def __numpy_ufunc__(self, *a, **kwargs):
-        global HAS_NUMPY_UFUNC
-        HAS_NUMPY_UFUNC = True
-
-HAS_NUMPY_UFUNC = False
-np.add(_UFuncCheck(), np.array([1]))
-
-
 # Only test matmul operator (A @ B) when available (Python 3.5+)
 TEST_MATMUL = hasattr(operator, 'matmul')
 
@@ -1961,13 +1948,11 @@ class _TestCommon(object):
 
     def test_unary_ufunc_overrides(self):
         def check(name):
-            if not HAS_NUMPY_UFUNC:
-                if name == "sign":
-                    pytest.skip("sign conflicts with comparison op "
-                                "support on Numpy without __numpy_ufunc__")
-                if self.spmatrix in (dok_matrix, lil_matrix):
-                    pytest.skip("Unary ops not implemented for dok/lil "
-                                "with Numpy without __numpy_ufunc__")
+            if name == "sign":
+                pytest.skip("sign conflicts with comparison op "
+                            "support on Numpy")
+            if self.spmatrix in (dok_matrix, lil_matrix):
+                pytest.skip("Unary ops not implemented for dok/lil")
             ufunc = getattr(np, name)
 
             X = self.spmatrix(np.arange(20).reshape(4, 5) / 20.)
@@ -1976,176 +1961,11 @@ class _TestCommon(object):
             X2 = ufunc(X)
             assert_array_equal(X2.toarray(), X0)
 
-            if HAS_NUMPY_UFUNC:
-                # the out argument doesn't work on Numpy without __numpy_ufunc__
-                out = np.zeros_like(X0)
-                X3 = ufunc(X, out=out)
-                assert_(X3 is out)
-                assert_array_equal(todense(X3), ufunc(todense(X)))
-
-                out = csc_matrix(out.shape, dtype=out.dtype)
-                out[:,1] = 999
-                X4 = ufunc(X, out=out)
-                assert_(X4 is out)
-                assert_array_equal(todense(X4), ufunc(todense(X)))
-
         for name in ["sin", "tan", "arcsin", "arctan", "sinh", "tanh",
                      "arcsinh", "arctanh", "rint", "sign", "expm1", "log1p",
                      "deg2rad", "rad2deg", "floor", "ceil", "trunc", "sqrt",
                      "abs"]:
             check(name)
-
-    @pytest.mark.skipif(not HAS_NUMPY_UFUNC, reason="feature requires Numpy with __numpy_ufunc__")
-    def test_binary_ufunc_overrides(self):
-        # data
-        a = np.array([[1, 2, 3],
-                      [4, 5, 0],
-                      [7, 8, 9]])
-        b = np.array([[9, 8, 7],
-                      [6, 0, 0],
-                      [3, 2, 1]])
-        c = 1.0
-        d = 1 + 2j
-        e = 5
-
-        asp = self.spmatrix(a)
-        bsp = self.spmatrix(b)
-
-        a_items = dict(dense=a, scalar=c, cplx_scalar=d, int_scalar=e, sparse=asp)
-        b_items = dict(dense=b, scalar=c, cplx_scalar=d, int_scalar=e, sparse=bsp)
-
-        def check(i, j, dtype):
-            ax = a_items[i]
-            bx = b_items[j]
-
-            if issparse(ax):
-                ax = ax.astype(dtype)
-            if issparse(bx):
-                bx = bx.astype(dtype)
-
-            a = todense(ax)
-            b = todense(bx)
-
-            def check_one(ufunc, allclose=False):
-                # without out argument
-                expected = ufunc(a, b)
-                got = ufunc(ax, bx)
-                if allclose:
-                    assert_allclose(todense(got), expected,
-                                    rtol=5e-15, atol=0)
-                else:
-                    assert_array_equal(todense(got), expected)
-
-                # with out argument
-                out = np.zeros(got.shape, dtype=got.dtype)
-                out.fill(np.nan)
-                got = ufunc(ax, bx, out=out)
-                assert_(got is out)
-                if allclose:
-                    assert_allclose(todense(got), expected,
-                                    rtol=5e-15, atol=0)
-                else:
-                    assert_array_equal(todense(got), expected)
-
-                out = csr_matrix(got.shape, dtype=out.dtype)
-                out[0,:] = 999
-                got = ufunc(ax, bx, out=out)
-                assert_(got is out)
-                if allclose:
-                    assert_allclose(todense(got), expected,
-                                    rtol=5e-15, atol=0)
-                else:
-                    assert_array_equal(todense(got), expected)
-
-            # -- associative
-
-            # multiply
-            check_one(np.multiply)
-
-            # add
-            if isscalarlike(ax) or isscalarlike(bx):
-                try:
-                    check_one(np.add)
-                except NotImplementedError:
-                    # Not implemented for all spmatrix types
-                    pass
-            else:
-                check_one(np.add)
-
-            # maximum
-            check_one(np.maximum)
-
-            # minimum
-            check_one(np.minimum)
-
-            # -- non-associative
-
-            # dot
-            check_one(np.dot)
-
-            # subtract
-            if isscalarlike(ax) or isscalarlike(bx):
-                try:
-                    check_one(np.subtract)
-                except NotImplementedError:
-                    # Not implemented for all spmatrix types
-                    pass
-            else:
-                check_one(np.subtract)
-
-            # divide
-            with np.errstate(divide='ignore', invalid='ignore'):
-                if isscalarlike(bx):
-                    # Rounding error may be different, as the sparse implementation
-                    # computes a/b -> a * (1/b) if b is a scalar
-                    check_one(np.divide, allclose=True)
-                else:
-                    check_one(np.divide)
-
-                # true_divide
-                if isscalarlike(bx):
-                    check_one(np.true_divide, allclose=True)
-                else:
-                    check_one(np.true_divide)
-
-        for i in a_items.keys():
-            for j in b_items.keys():
-                for dtype in [np.int_, np.float_, np.complex_]:
-                    if i == 'sparse' or j == 'sparse':
-                        check(i, j, dtype)
-
-    @pytest.mark.skipif(not HAS_NUMPY_UFUNC, reason="feature requires Numpy with __numpy_ufunc__")
-    def test_ufunc_object_array(self):
-        # This tests compatibility with previous Numpy object array
-        # ufunc behavior. See gh-3345.
-        a = self.spmatrix([[1, 2]])
-        b = self.spmatrix([[3], [4]])
-        c = self.spmatrix([[5], [6]])
-
-        # Should distribute the operation across the object array
-        d = np.multiply(a, np.array([[b], [c]]))
-        assert_(d.dtype == np.object_)
-        assert_(d.shape == (2, 1))
-        assert_allclose(d[0,0].A, (a*b).A)
-        assert_allclose(d[1,0].A, (a*c).A)
-
-        # Lists also get cast to object arrays
-        d = np.multiply(a, [[b], [c]])
-        assert_(d.dtype == np.object_)
-        assert_(d.shape == (2, 1))
-        assert_allclose(d[0,0].A, (a*b).A)
-        assert_allclose(d[1,0].A, (a*c).A)
-
-        # This returned NotImplemented in Numpy < 1.9; do it properly now
-        d = np.multiply(np.array([[b], [c]]), a)
-        assert_(d.dtype == np.object_)
-        assert_(d.shape == (2, 1))
-        assert_allclose(d[0,0].A, (b*a).A)
-        assert_allclose(d[1,0].A, (c*a).A)
-
-        d = np.subtract(np.array(b, dtype=object), c)
-        assert_(isinstance(d, sparse.spmatrix))
-        assert_allclose(d.A, (b - c).A)
 
     def test_resize(self):
         # resize(shape) resizes the matrix in-place
