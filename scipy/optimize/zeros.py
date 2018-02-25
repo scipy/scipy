@@ -3,11 +3,11 @@ from __future__ import division, print_function, absolute_import
 import warnings
 
 from . import _zeros
-from numpy import finfo, sqrt, asarray, abs as np_abs, where
+import numpy as np
 
 _iter = 100
 _xtol = 2e-12
-_rtol = 4*finfo(float).eps
+_rtol = 4*np.finfo(float).eps
 
 __all__ = ['newton', 'bisect', 'ridder', 'brentq', 'brenth']
 
@@ -163,50 +163,50 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
         # Newton-Rapheson method
         # Multiply by 1.0 to convert to floating point.  We don't use float(x0)
         # so it still works if x0 is complex.
-        p0 = 1.0 * asarray(x0)  # convert to ndarray
+        p0 = 1.0 * np.asarray(x0)  # convert to ndarray
         for iter in range(maxiter):
             myargs = (p0,) + args
-            fder = asarray(fprime(*myargs))  # convert to ndarray
+            fder = np.asarray(fprime(*myargs))  # convert to ndarray
             if (fder == 0).any():
                 msg = "derivative was zero."
                 warnings.warn(msg, RuntimeWarning)
                 return p0
-            fval = asarray(func(*myargs))  # convert to ndarray
+            fval = np.asarray(func(*myargs))  # convert to ndarray
             if fprime2 is None:
                 # Newton step
                 p = p0 - fval / fder
             else:
-                fder2 = asarray(fprime2(*myargs))  # convert to ndarray
+                fder2 = np.asarray(fprime2(*myargs))  # convert to ndarray
                 # Halley's method
                 # https://en.wikipedia.org/wiki/Halley%27s_method
                 p = p0 - 2 * fval * fder / (2 * fder ** 2 - fval * fder2)
-            if np_abs(p - p0).max() < tol:
+            if np.abs(p - p0).max() < tol:
                 return p
             p0 = p
     else:
         # Secant method
-        p0 = asarray(x0)
-        dx = finfo(float).eps**0.33
-        dp = where(p0 >= 0, dx, -dx)
+        p0 = np.asarray(x0)
+        dx = np.finfo(float).eps**0.33
+        dp = np.where(p0 >= 0, dx, -dx)
         p1 = p0 * (1 + dx) + dp
-        q0 = asarray(func(*((p0,) + args)))
-        q1 = asarray(func(*((p1,) + args)))
+        q0 = np.asarray(func(*((p0,) + args)))
+        q1 = np.asarray(func(*((p1,) + args)))
         for iter in range(maxiter):
             divide_by_zero = (q1 == q0)
             if divide_by_zero.any():
                 tolerance_reached = (p1 != p0)
                 if (divide_by_zero & tolerance_reached).any():
-                    msg = "Tolerance of %s reached" % sqrt(sum((p1 - p0)**2))
+                    msg = "Tolerance of %s reached" % np.sqrt(sum((p1 - p0)**2))
                     warnings.warn(msg, RuntimeWarning)
                 return (p1 + p0)/2.0
             else:
                 p = p1 - q1*(p1 - p0)/(q1 - q0)
-            if np_abs(p - p1).max() < tol:
+            if np.abs(p - p1).max() < tol:
                 return p
             p0 = p1
             q0 = q1
             p1 = p
-            q1 = asarray(func(*((p1,) + args)))
+            q1 = np.asarray(func(*((p1,) + args)))
     msg = "Failed to converge after %d iterations, value is %s" % (maxiter, p)
     raise RuntimeError(msg)
 
