@@ -1464,102 +1464,50 @@ interface
 
    end subroutine <prefix2c>gesvd_lwork
 
-   subroutine <prefix2>gels(trans,m,n,nrhs,a,lda,b,ldb,work,lwork,info)
+subroutine <prefix>gels(trans,m,n,nrhs,a,lda,b,ldb,work,lwork,info)
 
    ! lqr,x,info = gels(a,b,lwork=..,overwrite_a=False,overwrite_b=False)
    ! Solve Minimize 2-norm(A * X - B).
 
-     fortranname <prefix2>gels
      callstatement (*f2py_func)(trans,&m,&n,&nrhs,a,&lda,b,&ldb,work,&lwork,&info)
-     callprotoargument char*,int*,int*,int*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,int*,int*
+     callprotoargument char*,int*,int*,int*,<ctype>*,int*,<ctype>*,int*,<ctype>*,int*,int*
 
-     character optional,intent(in),check(*trans=='N'||*trans=='T'):: trans = 'N'
-     integer depend(b),intent(hide):: nrhs = shape(b,1)
-     integer depend(a),intent(hide):: lda = shape(a,0)
+     character optional,intent(in),check(*trans=='N'||*trans==<'T',\0,'C',\2>):: trans = 'N'
      integer intent(hide),depend(a):: m = shape(a,0)
      integer intent(hide),depend(a):: n = shape(a,1)
-     integer depend(b),intent(hide):: ldb = shape(b,0)
-     integer optional,intent(in),depend(nrhs,m,n),&
-          check(lwork>=1||lwork==-1) &
-          :: lwork=MAX( MIN(m,n) + MAX(MIN(m,n), nrhs ), 1 )
-     <ftype2> dimension(m,nrhs),intent(in,out,copy,out=x) :: b
-     <ftype2> dimension(m,n),intent(in,out,copy,out=lqr) :: a
-     <ftype2> depend(lwork),dimension(MAX(lwork,1)),intent(hide,cache):: work
+     integer intent(hide),depend(b):: nrhs = shape(b,1)
+     <ftype> dimension(m,n),intent(in,out,copy,out=lqr):: a
+     integer intent(hide),depend(a):: lda = MAX(1,shape(a,0))
+     <ftype> intent(in,out,copy,out=x),depend(trans,m,n),dimension(MAX(m,n),nrhs),check(shape(b,0)==MAX(m,n)) :: b
+     integer depend(b),intent(hide):: ldb = MAX(1,MAX(m,n))
+     integer optional,intent(in),depend(nrhs,m,n),check(lwork>=1||lwork==-1)::lwork=MAX(MIN(m,n)+MAX(MIN(m,n),nrhs),1)
+     <ftype> depend(lwork),dimension(MAX(1,lwork)),intent(hide,cache):: work
      integer intent(out)::info
 
-   end subroutine <prefix2>gels
+end subroutine <prefix>gels
 
-   subroutine <prefix2>gels_lwork(trans,m,n,nrhs,a,lda,b,ldb,work,lwork,info)
+subroutine <prefix>gels_lwork(trans,m,n,nrhs,a,lda,b,ldb,work,lwork,info)
+   ! ?GELS LWORK Query for optimal block size
 
-   ! work,info = gels_lwork(m,n,nrhs,trans='N')
-   ! Query for optimal lwork size
-
-     fortranname <prefix2>gels
+     fortranname <prefix>gels
      callstatement (*f2py_func)(trans,&m,&n,&nrhs,&a,&lda,&b,&ldb,&work,&lwork,&info)
-     callprotoargument char*,int*,int*,int*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,int*,int*
+     callprotoargument char*,int*,int*,int*,<ctype>*,int*,<ctype>*,int*,<ctype>*,int*,int*
 
-     character optional,intent(in),check(*trans=='N'||*trans=='T'):: trans = 'N'
-     integer intent(in) :: m
-     integer intent(in) :: n
-     integer intent(in) :: nrhs
-     integer depend(m),intent(hide):: lda = m
-     integer depend(m),intent(hide):: ldb = m
-     integer intent(hide) :: lwork = -1
-     <ftype2> intent(hide) :: a
-     <ftype2> intent(hide) :: b
-     <ftype2> intent(out) :: work
+     character optional,intent(in),check(*trans=='N'||*trans==<'T',\0,'C',\2>):: trans = 'N'
+     integer intent(in),check(m>=0) :: m
+     integer intent(in),check(n>=0) :: n
+     integer intent(in),check(nrhs>=0) :: nrhs
+
+     <ftype> intent(hide):: a
+     integer intent(hide):: lda = MAX(1,m)
+     <ftype> intent(hide):: b
+     integer intent(hide):: ldb = MAX(1,MAX(m,n))
+     integer intent(hide):: lwork=-1
+
+     <ftype> intent(out):: work
      integer intent(out)::info
 
-   end subroutine <prefix2>gels_lwork
-
-   subroutine <prefix2c>gels(trans,m,n,nrhs,a,lda,b,ldb,work,lwork,info)
-
-   ! lqr,x,info = gels(a,b,lwork=..,overwrite_a=False,overwrite_b=False)
-   ! Solve Minimize 2-norm(A * X - B).
-
-     fortranname <prefix2c>gels
-     callstatement (*f2py_func)(trans,&m,&n,&nrhs,a,&lda,b,&ldb,work,&lwork,&info)
-     callprotoargument char*,int*,int*,int*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2c>*,int*,int*
-
-     character optional,intent(in),check(*trans=='N'||*trans=='T'):: trans = 'N'
-     integer depend(b),intent(hide):: nrhs = shape(b,1)
-     integer depend(a),intent(hide):: lda = shape(a,0)
-     integer intent(hide),depend(a):: m = shape(a,0)
-     integer intent(hide),depend(a):: n = shape(a,1)
-     integer depend(b),intent(hide):: ldb = shape(b,0)
-     integer optional,intent(in),depend(nrhs,m,n),&
-          check(lwork>=1||lwork==-1) &
-          :: lwork=MAX( MIN(m,n) + MAX(MIN(m,n), nrhs ), 1 )
-
-     <ftype2c> dimension(m,n),intent(in,out,copy,out=lqr) :: a
-     <ftype2c> dimension(m,nrhs),intent(in,out,copy,out=x) :: b
-     <ftype2c> depend(lwork),dimension(MAX(lwork,1)),intent(hide,cache):: work
-     integer intent(out)::info
-
-   end subroutine <prefix2c>gels
-
-   subroutine <prefix2c>gels_lwork(trans,m,n,nrhs,a,lda,b,ldb,work,lwork,info)
-
-   ! work,info = gels_lwork(m,n,nrhs,trans='N')
-   ! Query for optimal lwork size
-
-     fortranname <prefix2c>gels
-     callstatement (*f2py_func)(trans,&m,&n,&nrhs,&a,&lda,&b,&ldb,&work,&lwork,&info)
-     callprotoargument char*,int*,int*,int*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2c>*,int*,int*
-
-     character optional,intent(in),check(*trans=='N'||*trans=='T'):: trans = 'N'
-     integer intent(in) :: m
-     integer intent(in) :: n
-     integer intent(in) :: nrhs
-     integer depend(m),intent(hide):: lda = m
-     integer depend(m),intent(hide):: ldb = m
-     integer intent(hide) :: lwork = -1
-     <ftype2c> intent(hide) :: a
-     <ftype2c> intent(hide) :: b
-     <ftype2c> intent(out) :: work
-     integer intent(out)::info
-
-   end subroutine <prefix2>gels_lwork
+end subroutine <prefix>gels_lwork
 
    subroutine <prefix2>gelss(m,n,minmn,maxmn,nrhs,a,b,s,cond,r,work,lwork,info)
 

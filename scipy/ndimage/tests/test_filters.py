@@ -400,3 +400,11 @@ def test_footprint_all_zeros():
     kernel = np.zeros((3, 3), bool)
     with assert_raises(ValueError):
         sndi.maximum_filter(arr, footprint=kernel)
+
+def test_gaussian_filter():
+    # Test gaussian filter with np.float16
+    # gh-8207
+    data = np.array([1],dtype = np.float16)
+    sigma = 1.0
+    with assert_raises(RuntimeError):
+        sndi.gaussian_filter(data,sigma)

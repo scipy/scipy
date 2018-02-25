@@ -661,6 +661,24 @@ class TestLinprogSimplex(LinprogCommonTests):
 class BaseTestLinprogIP(LinprogCommonTests):
     method = "interior-point"
 
+    def test_bounds_equal_but_infeasible(self):
+        c = [-4, 1]
+        A_ub = [[7, -2], [0, 1], [2, -2]]
+        b_ub = [14, 0, 3]
+        bounds = [(2, 2), (0, None)]
+        res = linprog(c=c, A_ub=A_ub, b_ub=b_ub, bounds=bounds,
+                      method=self.method)
+        _assert_infeasible(res)
+
+    def test_bounds_equal_but_infeasible2(self):
+        c = [-4, 1]
+        A_eq = [[7, -2], [0, 1], [2, -2]]
+        b_eq = [14, 0, 3]
+        bounds = [(2, 2), (0, None)]
+        res = linprog(c=c, A_eq=A_eq, b_eq=b_eq, bounds=bounds,
+                      method=self.method)
+        _assert_infeasible(res)
+
     def test_magic_square_bug_7044(self):
         # test linprog with a problem with a rank-deficient A_eq matrix
         A, b, c, N = magic_square(3)

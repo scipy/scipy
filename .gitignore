@@ -88,6 +88,7 @@ setup.cfg
 # pytest cache #
 ################
 .cache/*
+.pytest_cache/*
 
 # Patches #
 ###########
@@ -185,6 +186,7 @@ scipy/optimize/nnls/_nnlsmodule.c
 scipy/optimize/slsqp/_slsqpmodule.c
 scipy/optimize/_lsq/givens_elimination.c
 scipy/optimize/_trlib/_trlib.c
+scipy/signal/_peak_finding_utils.c
 scipy/signal/_spectral.c
 scipy/signal/_max_len_seq_inner.c
 scipy/signal/_upfirdn_apply.c

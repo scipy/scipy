@@ -296,25 +296,34 @@ class spmatrix(object):
         raise TypeError("sparse matrix length is ambiguous; use getnnz()"
                         " or shape[0]")
 
-    def asformat(self, format):
-        """Return this matrix in a given sparse format
+    def asformat(self, format, copy=False):
+        """Return this matrix in the passed sparse format.
 
         Parameters
         ----------
-        format : {string, None}
-            desired sparse matrix format
-                - None for no format conversion
-                - "csr" for csr_matrix format
-                - "csc" for csc_matrix format
-                - "lil" for lil_matrix format
-                - "dok" for dok_matrix format and so on
+        format : {str, None}
+            The desired sparse matrix format ("csr", "csc", "lil", "dok", ...)
+            or None for no conversion.
+        copy : bool, optional
+            If True, the result is guaranteed to not share data with self.
+
+        Returns
+        -------
+        A : This matrix in the passed sparse format.
 
         """
-
         if format is None or format == self.format:
-            return self
+            if copy:
+                return self.copy()
+            else:
+                return self
         else:
-            return getattr(self, 'to' + format)()
+            try:
+                convert_method = getattr(self, 'to' + format)
+            except AttributeError:
+                raise ValueError('Format {} is unknown.'.format(format))
+            else:
+                return convert_method(copy=copy)
 
     ###################################################################
     #  NOTE: All arithmetic operations use csr_matrix by default.
@@ -701,18 +710,33 @@ class spmatrix(object):
         np.matrix.transpose : NumPy's implementation of 'transpose'
                               for matrices
         """
-        return self.tocsr().transpose(axes=axes, copy=copy)
+        return self.tocsr(copy=copy).transpose(axes=axes, copy=False)
 
-    def conj(self):
+    def conj(self, copy=True):
         """Element-wise complex conjugation.
 
-        If the matrix is of non-complex data type, then this method does
-        nothing and the data is not copied.
-        """
-        return self.tocsr().conj()
+        If the matrix is of non-complex data type and `copy` is False,
+        this method does nothing and the data is not copied.
 
-    def conjugate(self):
-        return self.conj()
+        Parameters
+        ----------
+        copy : bool, optional
+            If True, the result is guaranteed to not share data with self.
+
+        Returns
+        -------
+        A : The element-wise complex conjugate.
+
+        """
+        if np.issubdtype(self.dtype, np.complexfloating):
+            return self.tocsr(copy=copy).conj(copy=False)
+        elif copy:
+            return self.copy()
+        else:
+            return self
+
+    def conjugate(self, copy=True):
+        return self.conj(copy=copy)
 
     conjugate.__doc__ = conj.__doc__
 

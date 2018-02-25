@@ -1,47 +1,17 @@
-/*                                                     struve.c
- *
- *      Struve function
- *
- *
- *
- * SYNOPSIS:
- *
- * double v, x, y, struve();
- *
- * y = struve( v, x );
- *
- *
- *
- * DESCRIPTION:
- *
- * Computes the Struve function Hv(x) of order v, argument x.
- * Negative x is rejected unless v is an integer.
- *
- * This module also contains the hypergeometric functions 1F2
- * and 3F0 and a routine for the Bessel function Yv(x) with
- * noninteger v.
- *
- *
- *
- * ACCURACY:
- *
- * Not accurately characterized, but spot checked against tables.
- *
- */
-
-
 /*
- * Cephes Math Library Release 2.81:  June, 2000
- * Copyright 1984, 1987, 1989, 2000 by Stephen L. Moshier
+ * Cephes Math Library Release 2.8: June, 2000
+ * Copyright 1984, 1987, 2000 by Stephen L. Moshier
  */
+
 #include "mconf.h"
+
 #define DEBUG 0
+
 static double stop = 1.37e-17;
 extern double MACHEP;
 
-double onef2(a, b, c, x, err)
-double a, b, c, x;
-double *err;
+
+double onef2(double a, double b, double c, double x, double *err)
 {
     double n, a0, sum, t;
     double an, bn, cn, max, z;
@@ -106,11 +76,7 @@ double *err;
 }
 
 
-
-
-double threef0(a, b, c, x, err)
-double a, b, c, x;
-double *err;
+double threef0(double a, double b, double c, double x, double *err)
 {
     double n, a0, sum, t, conv, conv1;
     double an, bn, cn, max, z;
@@ -191,81 +157,10 @@ double *err;
 }
 
 
-
-
-double struve(v, x)
-double v, x;
-{
-    double y, ya, f, g, h, t;
-    double onef2err, threef0err;
-
-    if (x == 0.0) {
-	if (v > -1) {
-	    return 0.0;
-	}
-	else if (v < -1) {
-	    if ((int) (floor(0.5 - v) - 1) % 2)
-		return -NPY_INFINITY;
-	    else
-		return NPY_INFINITY;
-	}
-	else {
-	    return 2.0 / NPY_PI;
-	}
-    }
-
-    f = floor(v);
-    if ((v < 0) && (v - f == 0.5)) {
-	y = jv(-v, x);
-	f = 1.0 - f;
-	g = 2.0 * floor(f / 2.0);
-	if (g != f)
-	    y = -y;
-	return (y);
-    }
-    t = 0.25 * x * x;
-    f = fabs(x);
-    g = 1.5 * fabs(v);
-    if ((f > 30.0) && (f > g)) {
-	onef2err = 1.0e38;
-	y = 0.0;
-    }
-    else {
-	y = onef2(1.0, 1.5, 1.5 + v, -t, &onef2err);
-    }
-
-    if ((f < 18.0) || (x < 0.0)) {
-	threef0err = 1.0e38;
-	ya = 0.0;
-    }
-    else {
-	ya = threef0(1.0, 0.5, 0.5 - v, -1.0 / t, &threef0err);
-    }
-
-    f = sqrt(NPY_PI);
-    h = pow(0.5 * x, v - 1.0);
-
-    if (onef2err <= threef0err) {
-	g = gamma(v + 1.5);
-	y = y * h * t / (0.5 * f * g);
-	return (y);
-    }
-    else {
-	g = gamma(v + 0.5);
-	ya = ya * h / (f * g);
-	ya = ya + yv(v, x);
-	return (ya);
-    }
-}
-
-
-
-
-/* Bessel function of noninteger order
+/*
+ * Bessel function of noninteger order
  */
-
-double yv(v, x)
-double v, x;
+double yv(double v, double x)
 {
     double y, t;
     int n;
@@ -298,19 +193,3 @@ double v, x;
 
     return (y);
 }
-
-/* Crossover points between ascending series and asymptotic series
- * for Struve function
- *
- *      v       x
- * 
- *      0      19.2
- *      1      18.95
- *      2      19.15
- *      3      19.3
- *      5      19.7
- *     10      21.35
- *     20      26.35
- *     30      32.31
- *     40      40.0
- */

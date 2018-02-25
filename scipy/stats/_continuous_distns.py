@@ -1,4 +1,4 @@
-#
+﻿#
 # Author:  Travis Oliphant  2002-2011 with contributions from
 #          SciPy Developers 2004-2011
 #
@@ -8,7 +8,8 @@ import warnings
 
 import numpy as np
 
-from scipy.misc.doccer import inherit_docstring_from
+from scipy.misc.doccer import (extend_notes_in_docstring,
+                               replace_notes_in_docstring)
 from scipy import optimize
 from scipy import integrate
 import scipy.special as sc
@@ -164,13 +165,11 @@ class norm_gen(rv_continuous):
     def _entropy(self):
         return 0.5*(np.log(2*np.pi)+1)
 
-    @inherit_docstring_from(rv_continuous)
+    @replace_notes_in_docstring(rv_continuous, notes="""\
+        This function uses explicit formulas for the maximum likelihood
+        estimation of the normal distribution parameters, so the
+        `optimizer` argument is ignored.\n\n""")
     def fit(self, data, **kwds):
-        """%(super)s
-        This function (norm_gen.fit) uses explicit formulas for the maximum
-        likelihood estimation of the parameters, so the `optimizer` argument
-        is ignored.
-        """
         floc = kwds.get('floc', None)
         fscale = kwds.get('fscale', None)
 
@@ -432,13 +431,11 @@ class beta_gen(rv_continuous):
         a, b = optimize.fsolve(func, (1.0, 1.0))
         return super(beta_gen, self)._fitstart(data, args=(a, b))
 
-    @inherit_docstring_from(rv_continuous)
-    def fit(self, data, *args, **kwds):
-        """%(super)s
+    @extend_notes_in_docstring(rv_continuous, notes="""\
         In the special case where both `floc` and `fscale` are given, a
         `ValueError` is raised if any value `x` in `data` does not satisfy
-        `floc < x < floc + fscale`.
-        """
+        `floc < x < floc + fscale`.\n\n""")
+    def fit(self, data, *args, **kwds):
         # Override rv_continuous.fit, so we can more efficiently handle the
         # case where floc and fscale are given.
 
@@ -1186,6 +1183,51 @@ class expon_gen(rv_continuous):
 
     def _entropy(self):
         return 1.0
+
+    @replace_notes_in_docstring(rv_continuous, notes="""\
+        This function uses explicit formulas for the maximum likelihood
+        estimation of the exponential distribution parameters, so the
+        `optimizer`, `loc` and `scale` keyword arguments are ignored.\n\n""")
+    def fit(self, data, *args, **kwds):
+        if len(args) > 0:
+            raise TypeError("Too many arguments.")
+
+        floc = kwds.pop('floc', None)
+        fscale = kwds.pop('fscale', None)
+
+        # Ignore the optimizer-related keyword arguments, if given.
+        kwds.pop('loc', None)
+        kwds.pop('scale', None)
+        kwds.pop('optimizer', None)
+        if kwds:
+            raise TypeError("Unknown arguments: %s." % kwds)
+
+        if floc is not None and fscale is not None:
+            # This check is for consistency with `rv_continuous.fit`.
+            raise ValueError("All parameters fixed. There is nothing to "
+                             "optimize.")
+
+        data = np.asarray(data)
+        data_min = data.min()
+        if floc is None:
+            # ML estimate of the location is the minimum of the data.
+            loc = data_min
+        else:
+            loc = floc
+            if data_min < loc:
+                # There are values that are less than the specified loc.
+                raise FitDataError("expon", lower=floc, upper=np.inf)
+
+        if fscale is None:
+            # ML estimate of the scale is the shifted mean.
+            scale = data.mean() - loc
+        else:
+            scale = fscale
+
+        # We expect the return values to be floating point, so ensure it
+        # by explicitly converting to float.
+        return float(loc), float(scale)
+
 expon = expon_gen(a=0.0, name='expon')
 
 
@@ -2355,7 +2397,11 @@ class gamma_gen(rv_continuous):
         a = 4 / (1e-8 + _skew(data)**2)
         return super(gamma_gen, self)._fitstart(data, args=(a,))
 
-    @inherit_docstring_from(rv_continuous)
+    @extend_notes_in_docstring(rv_continuous, notes="""\
+        When the location is fixed by using the argument `floc`, this
+        function uses explicit formulas or solves a simpler numerical
+        problem than the full ML optimization problem.  So in that case,
+        the `optimizer`, `loc` and `scale` arguments are ignored.\n\n""")
     def fit(self, data, *args, **kwds):
         f0 = (kwds.get('f0', None) or kwds.get('fa', None) or
               kwds.get('fix_a', None))
@@ -3079,6 +3125,74 @@ class invgauss_gen(rv_continuous):
 invgauss = invgauss_gen(a=0.0, name='invgauss')
 
 
+class norminvgauss_gen(rv_continuous):
+    r"""A Normal Inverse Gaussian continuous random variable.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability density function for `norminvgauss` is:
+
+    .. math::
+
+        f(x; a, b) = (a \exp(\sqrt{a^2 - b^2} + b x)) /
+        (\pi \sqrt{1 + x^2}} \, K_1(a * \sqrt{1 + x^2}))
+
+    where `x` is a real number, the parameter `a` is the tail heaviness
+    and `b` is the asymmetry parameter satisfying `a > 0` and `abs(b) <= a`.
+    `K_1` is the modified Bessel function of second kind (`scipy.special.k1`).
+
+    %(after_notes)s
+
+    A normal inverse Gaussian random variable with parameters `a` and `b` can
+    be expressed  as `X = b * V + sqrt(V) * X` where `X` is `norm(0,1)`
+    and `V` is `invgauss(mu=1/sqrt(a**2 - b**2))`. This representation is used
+    to generate random variates.
+
+    References
+    ----------
+    O. Barndorff-Nielsen, "Hyperbolic Distributions and Distributions on
+    Hyperbolae", Scandinavian Journal of Statistics, Vol. 5(3),
+    pp. 151-157, 1978.
+
+    O. Barndorff-Nielsen, "Normal Inverse Gaussian Distributions and Stochastic
+    Volatility Modelling", Scandinavian Journal of Statistics, Vol. 24,
+    pp. 1–13, 1997.
+
+    %(example)s
+
+    """
+    _support_mask = rv_continuous._open_support_mask
+
+    def _argcheck(self, a, b):
+        return (a > 0) & (np.absolute(b) < a)
+
+    def _pdf(self, x, a, b):
+        gamma = np.sqrt(a**2 - b**2)
+        fac1 = a / np.pi * np.exp(gamma)
+        sq = np.sqrt(1 + x**2)
+        return fac1 * sc.k1e(a * sq) * np.exp(b*x - a*sq) / sq
+
+    def _rvs(self, a, b):
+        # note: X = b * V + sqrt(V) * X is norminvgaus(a,b) if X is standard
+        # normal and V is invgauss(mu=1/sqrt(a**2 - b**2))
+        gamma = np.sqrt(a**2 - b**2)
+        sz, rndm = self._size, self._random_state
+        ig = invgauss.rvs(mu=1/gamma, size=sz, random_state=rndm)
+        return b * ig + np.sqrt(ig) * norm.rvs(size=sz, random_state=rndm)
+
+    def _stats(self, a, b):
+        gamma = np.sqrt(a**2 - b**2)
+        mean = b / gamma
+        variance = a**2 / gamma**3
+        skewness = 3.0 * b / (a * np.sqrt(gamma))
+        kurtosis = 3.0 * (1 + 4 * b**2 / a**2) / gamma
+        return mean, variance, skewness, kurtosis
+
+norminvgauss = norminvgauss_gen(name="norminvgauss")
+
+
 class invweibull_gen(rv_continuous):
     r"""An inverted Weibull continuous random variable.
 
@@ -3639,6 +3753,69 @@ class lognorm_gen(rv_continuous):
 
     def _entropy(self, s):
         return 0.5 * (1 + np.log(2*np.pi) + 2 * np.log(s))
+
+    @extend_notes_in_docstring(rv_continuous, notes="""\
+        When the location parameter is fixed by using the `floc` argument,
+        this function uses explicit formulas for the maximum likelihood
+        estimation of the log-normal shape and scale parameters, so the
+        `optimizer`, `loc` and `scale` keyword arguments are ignored.\n\n""")
+    def fit(self, data, *args, **kwds):
+        floc = kwds.get('floc', None)
+        if floc is None:
+            # loc is not fixed.  Use the default fit method.
+            return super(lognorm_gen, self).fit(data, *args, **kwds)
+
+        f0 = (kwds.get('f0', None) or kwds.get('fs', None) or
+              kwds.get('fix_s', None))
+        fscale = kwds.get('fscale', None)
+
+        if len(args) > 1:
+            raise TypeError("Too many input arguments.")
+        for name in ['f0', 'fs', 'fix_s', 'floc', 'fscale', 'loc', 'scale',
+                     'optimizer']:
+            kwds.pop(name, None)
+        if kwds:
+            raise TypeError("Unknown arguments: %s." % kwds)
+
+        # Special case: loc is fixed.  Use the maximum likelihood formulas
+        # instead of the numerical solver.
+
+        if f0 is not None and fscale is not None:
+            # This check is for consistency with `rv_continuous.fit`.
+            raise ValueError("All parameters fixed. There is nothing to "
+                             "optimize.")
+
+        data = np.asarray(data)
+        floc = float(floc)
+        if floc != 0:
+            # Shifting the data by floc. Don't do the subtraction in-place,
+            # because `data` might be a view of the input array.
+            data = data - floc
+        if np.any(data <= 0):
+            raise FitDataError("lognorm", lower=floc, upper=np.inf)
+        lndata = np.log(data)
+
+        # Three cases to handle:
+        # * shape and scale both free
+        # * shape fixed, scale free
+        # * shape free, scale fixed
+
+        if fscale is None:
+            # scale is free.
+            scale = np.exp(lndata.mean())
+            if f0 is None:
+                # shape is free.
+                shape = lndata.std()
+            else:
+                # shape is fixed.
+                shape = float(f0)
+        else:
+            # scale is fixed, shape is free
+            scale = float(fscale)
+            shape = np.sqrt(((lndata - np.log(scale))**2).mean())
+
+        return shape, floc, scale
+
 lognorm = lognorm_gen(a=0.0, name='lognorm')
 
 
