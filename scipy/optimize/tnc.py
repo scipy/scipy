@@ -413,6 +413,7 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
     return OptimizeResult(x=x, fun=funv, jac=jacv, nfev=nf, nit=nit, status=rc,
                           message=RCSTRINGS[rc], success=(-1 < rc < 3))
 
+
 if __name__ == '__main__':
     # Examples for TNC
 
