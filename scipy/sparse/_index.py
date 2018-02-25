@@ -5,6 +5,12 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 from .sputils import isintlike
 
+try:
+    INT_TYPES = (int, long, np.integer)
+except NameError:
+    # long is not defined in Python3
+    INT_TYPES = (int, np.integer)
+
 
 class IndexMixin(object):
     """
@@ -13,8 +19,8 @@ class IndexMixin(object):
     def __getitem__(self, key):
         row, col = self._validate_indices(key)
         # Dispatch to specialized methods.
-        if isinstance(row, int):
-            if isinstance(col, int):
+        if isinstance(row, INT_TYPES):
+            if isinstance(col, INT_TYPES):
                 return self._get_intXint(row, col)
             elif isinstance(col, slice):
                 return self._get_intXslice(row, col)
@@ -22,7 +28,7 @@ class IndexMixin(object):
                 return self._get_intXarray(row, col)
             raise IndexError('index results in >2 dimensions')
         elif isinstance(row, slice):
-            if isinstance(col, int):
+            if isinstance(col, INT_TYPES):
                 return self._get_sliceXint(row, col)
             elif isinstance(col, slice):
                 if row == slice(None) and row == col:
@@ -32,12 +38,12 @@ class IndexMixin(object):
                 return self._get_sliceXarray(row, col)
             raise IndexError('index results in >2 dimensions')
         elif row.ndim == 1:
-            if isinstance(col, int):
+            if isinstance(col, INT_TYPES):
                 return self._get_arrayXint(row, col)
             elif isinstance(col, slice):
                 return self._get_arrayXslice(row, col)
         else:  # row.ndim == 2
-            if isinstance(col, int):
+            if isinstance(col, INT_TYPES):
                 return self._get_arrayXint(row, col)
             elif isinstance(col, slice):
                 raise IndexError('index results in >2 dimensions')
@@ -56,7 +62,7 @@ class IndexMixin(object):
     def __setitem__(self, key, x):
         row, col = self._validate_indices(key)
 
-        if isinstance(row, int) and isinstance(col, int):
+        if isinstance(row, INT_TYPES) and isinstance(col, INT_TYPES):
             x = np.asarray(x, dtype=self.dtype)
             if x.size != 1:
                 raise ValueError('Trying to assign a sequence to an item')
