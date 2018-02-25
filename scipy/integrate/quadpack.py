@@ -563,9 +563,8 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
     Examples
     --------
 
-    Returns double integration of ``x * y**2``
-    Integrating over rectangle with x ranging from 0 to 2
-    and y ranging from 0 to 1
+    Compute the double integral of ``x * y**2`` over the box
+    ``x`` ranging from 0 to 2 and ``y`` ranging from 0 to 1.
 
     >>> from scipy import integrate
     >>> f = lambda y, x: x*y**2
@@ -636,8 +635,8 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
     Examples
     --------
 
-    Returns triple integration of ``x * y * z``
-    x ranging from 1 to 2, y ranging from 2 to 3, z ranging from 0 to 1
+    Compute the triple integral of ``x * y * z``, over ``x`` ranging 
+    from 1 to 2, ``y`` ranging from 2 to 3, ``z`` ranging from 0 to 1.
 
     >>> from scipy import integrate
     >>> f = lambda z, y, x: x*y*z
