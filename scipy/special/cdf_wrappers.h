@@ -15,6 +15,10 @@
 
 #include <numpy/npy_math.h>
 
+#if __GNUC__ >= 4
+#pragma GCC visibility push(hidden)
+#endif
+
 extern double cdfbet3_wrap(double p, double x, double b);
 extern double cdfbet4_wrap(double p, double x, double a);
 
@@ -60,4 +64,9 @@ extern double cdftnc3_wrap(double p, double nc, double t);
 extern double cdftnc4_wrap(double df, double p, double t);
 
 extern double tukeylambdacdf(double x, double lambda);
+
+#if __GNUC__ >= 4
+#pragma GCC visibility pop
+#endif
+
 #endif

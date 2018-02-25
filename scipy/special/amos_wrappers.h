@@ -20,6 +20,11 @@
       }                                               \
     } while (0)
 
+
+#if __GNUC__ >= 4
+#pragma GCC visibility push(hidden)
+#endif
+
 int ierr_to_sferr( int nz, int ierr);
 void set_nan_if_no_computation_done(npy_cdouble *var, int ierr);
 int airy_wrap(double x, double *ai, double *aip, double *bi, double *bip);
@@ -57,15 +62,8 @@ int cbesy_(doublecomplex *, double *, int *, int *, doublecomplex *, int *, doub
 int cbesh_(doublecomplex *, double *, int *, int *, int *, doublecomplex *, int *, int *);
 */
 
+#if __GNUC__ >= 4
+#pragma GCC visibility pop
 #endif
 
-
-
-  
-
-
-
-
-
-
-
+#endif

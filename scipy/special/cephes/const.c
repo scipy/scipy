@@ -50,6 +50,10 @@
 
 #include "mconf.h"
 
+#if __GNUC__ >= 4
+#pragma GCC visibility push(hidden)
+#endif
+
 #ifdef UNK
 double MACHEP = 1.11022302462515654042E-16;	/* 2**-53 */
 
@@ -126,4 +130,8 @@ extern unsigned short MINLOG[];
 extern unsigned short SQ2OPI[];
 extern unsigned short LOGSQ2[];
 extern unsigned short THPIO4[];
+#endif
+
+#if __GNUC__ >= 4
+#pragma GCC visibility pop
 #endif

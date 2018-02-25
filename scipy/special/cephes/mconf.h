@@ -65,6 +65,10 @@
 #include "cephes.h"
 #include "polevl.h"
 
+#if __GNUC__ >= 4
+#pragma GCC visibility push(hidden)
+#endif
+
 /* Constant definitions for math error conditions
  */
 
@@ -117,6 +121,10 @@ extern void mtherr(const char *name, int code);
 #define cephes_isnan(x) npy_isnan(x)
 #define cephes_isinf(x) npy_isinf(x)
 #define cephes_isfinite(x) npy_isfinite(x)
+#endif
+
+#if __GNUC__ >= 4
+#pragma GCC visibility pop
 #endif
 
 #endif				/* CEPHES_MCONF_H */
