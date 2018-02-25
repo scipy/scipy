@@ -8,7 +8,7 @@ EXTENSIONS = []
 
 # newton_zero
 EXTENSIONS.append(
-    Extension("scipy.optimize.cython_optimize.zeros", ["zeros.pyx"],
+    Extension("zeros", ["zeros.pyx"],
               include_dirs=[np.get_include()])
 )
 
