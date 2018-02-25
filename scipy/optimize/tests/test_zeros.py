@@ -5,7 +5,7 @@ from math import sqrt, exp, sin, cos
 from numpy.testing import (assert_warns, assert_, 
                            assert_allclose,
                            assert_equal)
-from numpy import finfo, exp as np_exp, sin as np_sin, asarray
+import numpy as np
 
 from scipy.optimize import zeros as cc
 from scipy.optimize import zeros
@@ -18,8 +18,8 @@ class TestBasic(object):
     def run_check(self, method, name):
         a = .5
         b = sqrt(3)
-        xtol = 4*finfo(float).eps
-        rtol = 4*finfo(float).eps
+        xtol = 4*np.finfo(float).eps
+        rtol = 4*np.finfo(float).eps
         for function, fname in zip(functions, fstrings):
             zero, r = method(function, a, b, xtol=xtol, rtol=rtol,
                              full_output=True)
@@ -59,40 +59,44 @@ class TestBasic(object):
     def test_newton_array(self):
         """test newton with array"""
 
-        def f_solarcell(i, v, il, io, rs, rsh, vt):
-            vd = v + i * rs
-            return il - io * (np_exp(vd / vt) - 1.0) - vd / rsh - i
+        def f1(x, *a):
+            b = a[0] + x * a[3]
+            return a[1] - a[2] * (np.exp(b / a[5]) - 1.0) - b / a[4] - x
 
-        def fprime(i, v, il, io, rs, rsh, vt):
-            return -io * np_exp((v + i * rs) / vt) * rs / vt - rs / rsh - 1
+        def f1_1(x, *a):
+            b = a[3] / a[5]
+            return -a[2] * np.exp(a[0] / a[5] + x * b) * b - a[3] / a[4] - 1
 
-        def fprime2(i, v, il, io, rs, rsh, vt):
-            return -io * np_exp((v + i * rs) / vt) * (rs / vt)**2
+        def f1_2(x, *a):
+            b = a[3] / a[5]
+            return -a[2] * np.exp(a[0] / a[5] + x * b) * b ** 2
 
-        il = (np_sin(range(10)) + 1.0) * 7.0
-        v = asarray([
+        a0 = np.array([
             5.32725221, 5.48673747, 5.49539973,
             5.36387202, 4.80237316, 1.43764452,
             5.23063958, 5.46094772, 5.50512718,
             5.42046290
         ])
-        args = (v, il, 1e-09, 0.004, 10, 0.27456)
+        a1 = (np.sin(range(10)) + 1.0) * 7.0
+        args = (a0, a1, 1e-09, 0.004, 10, 0.27456)
         x0 = 7.0
-        x = zeros.newton(f_solarcell, x0, fprime, args)
-        y = (6.17264965, 11.7702805, 12.2219954,
-             7.11017681, 1.18151293, 0.143707955,
-             4.31928228, 10.5419107, 12.7552490,
-             8.91225749)
-        assert_allclose(x, y)
+        x = zeros.newton(f1, x0, f1_1, args)
+        x_expected = (
+            6.17264965, 11.7702805, 12.2219954,
+            7.11017681, 1.18151293, 0.143707955,
+            4.31928228, 10.5419107, 12.7552490,
+            8.91225749
+        )
+        assert_allclose(x, x_expected)
         # test halley's
-        x = zeros.newton(f_solarcell, x0, fprime, args, fprime2=fprime2)
-        assert_allclose(x, y)
+        x = zeros.newton(f1, x0, f1_1, args, fprime2=f1_2)
+        assert_allclose(x, x_expected)
         # test secant
-        x = zeros.newton(lambda x, y: y - x**2, 4.0, args=([15.0, 17.0], ))
+        x = zeros.newton(lambda y, z: z - y ** 2, 4.0, args=([15.0, 17.0],))
         assert_allclose(x, (3.872983346207417, 4.123105625617661))
         # test derivative zero warning
         assert_warns(RuntimeWarning, zeros.newton,
-                     lambda x: x**2, [0., 0.], lambda x: 2*x)
+                     lambda y: y ** 2, [0., 0.], lambda y: 2 * y)
 
     def test_deriv_zero_warning(self):
         func = lambda x: x**2
@@ -107,8 +111,8 @@ def test_gh_5555():
         return x - root
 
     methods = [cc.bisect, cc.ridder]
-    xtol = 4*finfo(float).eps
-    rtol = 4*finfo(float).eps
+    xtol = 4*np.finfo(float).eps
+    rtol = 4*np.finfo(float).eps
     for method in methods:
         res = method(f, -1e8, 1e7, xtol=xtol, rtol=rtol)
         assert_allclose(root, res, atol=xtol, rtol=rtol,
@@ -132,7 +136,7 @@ def test_gh_5557():
             return x - 0.6
 
     atol = 0.51
-    rtol = 4*finfo(float).eps
+    rtol = 4*np.finfo(float).eps
     methods = [cc.brentq, cc.brenth]
     for method in methods:
         res = method(f, 0, 1, xtol=atol, rtol=rtol)
