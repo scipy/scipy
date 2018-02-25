@@ -222,6 +222,7 @@ class multi_rv_frozen(object):
     def random_state(self, seed):
         self._dist._random_state = check_random_state(seed)
 
+
 _mvn_doc_default_callparams = """\
 mean : array_like, optional
     Mean of the distribution (default zero)
@@ -766,6 +767,7 @@ class multivariate_normal_frozen(multi_rv_frozen):
         rank = self.cov_info.rank
         return 0.5 * (rank * (_LOG_2PI + 1) + log_pdet)
 
+
 # Set frozen generator docstrings from corresponding docstrings in
 # multivariate_normal_gen and fill in default strings in class docstrings
 for name in ['logpdf', 'pdf', 'logcdf', 'cdf', 'rvs']:
@@ -1128,6 +1130,7 @@ class matrix_normal_gen(multi_rv_generic):
             #out = np.squeeze(out, axis=0)
             out = out.reshape(mean.shape)
         return out
+
 
 matrix_normal = matrix_normal_gen()
 
@@ -2160,6 +2163,8 @@ class wishart_gen(multi_rv_generic):
         c_decomp = scipy.linalg.cholesky(scale, lower=True)
         logdet = 2 * np.sum(np.log(c_decomp.diagonal()))
         return c_decomp, logdet
+
+
 wishart = wishart_gen()
 
 
@@ -2217,6 +2222,7 @@ class wishart_frozen(multi_rv_frozen):
 
     def entropy(self):
         return self._dist._entropy(self.dim, self.df, self.log_det_scale)
+
 
 # Set frozen generator docstrings from corresponding docstrings in
 # Wishart and fill in default strings in class docstrings
@@ -2711,6 +2717,7 @@ class invwishart_gen(wishart_gen):
         # Need to find reference for inverse Wishart entropy
         raise AttributeError
 
+
 invwishart = invwishart_gen()
 
 class invwishart_frozen(multi_rv_frozen):
@@ -2780,6 +2787,7 @@ class invwishart_frozen(multi_rv_frozen):
     def entropy(self):
         # Need to find reference for inverse Wishart entropy
         raise AttributeError
+
 
 # Set frozen generator docstrings from corresponding docstrings in
 # inverse Wishart and fill in default strings in class docstrings
@@ -3203,6 +3211,7 @@ class multinomial_frozen(multi_rv_frozen):
     def rvs(self, size=1, random_state=None):
         return self._dist.rvs(self.n, self.p, size, random_state)
 
+
 # Set frozen generator docstrings from corresponding docstrings in
 # multinomial and fill in default strings in class docstrings
 for name in ['logpmf', 'pmf', 'mean', 'cov', 'rvs']:
@@ -3333,6 +3342,7 @@ class special_ortho_group_gen(multi_rv_generic):
         # Equivalent to np.dot(np.diag(D), H) but faster, apparently
         H = (D*H.T).T
         return H
+
 
 special_ortho_group = special_ortho_group_gen()
 
@@ -3468,6 +3478,7 @@ class ortho_group_gen(multi_rv_generic):
             mat[n:, n:] = Hx
             H = np.dot(H, mat)
         return H
+
 
 ortho_group = ortho_group_gen()
 
@@ -3657,6 +3668,7 @@ class random_correlation_gen(multi_rv_generic):
 
         return m
 
+
 random_correlation = random_correlation_gen()
 
 class unitary_group_gen(multi_rv_generic):
@@ -3747,5 +3759,6 @@ class unitary_group_gen(multi_rv_generic):
         d = r.diagonal()
         q *= d/abs(d)
         return q
+
 
 unitary_group = unitary_group_gen()

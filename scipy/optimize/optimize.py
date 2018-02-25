@@ -149,6 +149,7 @@ def is_array_scalar(x):
     """
     return np.size(x) == 1
 
+
 _epsilon = sqrt(numpy.finfo(float).eps)
 
 

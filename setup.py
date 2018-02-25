@@ -145,6 +145,7 @@ if not release:
     finally:
         a.close()
 
+
 try:
     from sphinx.setup_command import BuildDoc
     HAVE_SPHINX = True

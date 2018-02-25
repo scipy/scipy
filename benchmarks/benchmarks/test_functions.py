@@ -154,6 +154,7 @@ class Beale(object):
                 2. * (2.625 - x + x * y**3) * (3. * x * y**2))
         return np.array([dfdx, dfdy])
 
+
 """
 Global Test functions for minimizers.
 

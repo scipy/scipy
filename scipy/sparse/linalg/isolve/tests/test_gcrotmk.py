@@ -29,6 +29,8 @@ count = [0]
 def matvec(v):
     count[0] += 1
     return Am*v
+
+
 A = LinearOperator(matvec=matvec, shape=Am.shape, dtype=Am.dtype)
 
 

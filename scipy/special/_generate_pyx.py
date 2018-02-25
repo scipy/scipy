@@ -464,6 +464,7 @@ def underscore(arg):
 def cast_order(c):
     return ['ilfdgFDG'.index(x) for x in c]
 
+
 # These downcasts will cause the function to return NaNs, unless the
 # values happen to coincide exactly.
 DANGEROUS_DOWNCAST = set([

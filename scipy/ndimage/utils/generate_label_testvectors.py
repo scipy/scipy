@@ -40,4 +40,5 @@ def generate_test_vecs(infile, strelfile, resultfile):
     np.savetxt(strelfile, strels, fmt="%d")
     np.savetxt(resultfile, results, fmt="%d")
 
+
 generate_test_vecs("label_inputs.txt", "label_strels.txt", "label_results.txt")

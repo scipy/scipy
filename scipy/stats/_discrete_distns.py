@@ -84,6 +84,8 @@ class binom_gen(rv_discrete):
         k = np.r_[0:n + 1]
         vals = self._pmf(k, n, p)
         return np.sum(entr(vals), axis=0)
+
+
 binom = binom_gen(name='binom')
 
 
@@ -138,6 +140,8 @@ class bernoulli_gen(binom_gen):
 
     def _entropy(self, p):
         return entr(p) + entr(1-p)
+
+
 bernoulli = bernoulli_gen(b=1, name='bernoulli')
 
 
@@ -204,6 +208,8 @@ class nbinom_gen(rv_discrete):
         g1 = (Q+P)/sqrt(n*P*Q)
         g2 = (1.0 + 6*P*Q) / (n*P*Q)
         return mu, var, g1, g2
+
+
 nbinom = nbinom_gen(name='nbinom')
 
 
@@ -265,6 +271,8 @@ class geom_gen(rv_discrete):
         g1 = (2.0-p) / sqrt(qr)
         g2 = np.polyval([1, -6, 6], p)/(1.0-p)
         return mu, var, g1, g2
+
+
 geom = geom_gen(a=1, name='geom', longname="A geometric")
 
 
@@ -398,6 +406,8 @@ class hypergeom_gen(rv_discrete):
             k2 = np.arange(quant + 1, draw + 1)
             res.append(logsumexp(self._logpmf(k2, tot, good, draw)))
         return np.asarray(res)
+
+
 hypergeom = hypergeom_gen(name='hypergeom')
 
 
@@ -450,6 +460,8 @@ class logser_gen(rv_discrete):
         mu4 = mu4p - 4*mu3p*mu + 6*mu2p*mu*mu - 3*mu**4
         g2 = mu4 / var**2 - 3.0
         return mu, var, g1, g2
+
+
 logser = logser_gen(a=1, name='logser', longname='A logarithmic')
 
 
@@ -512,6 +524,7 @@ class poisson_gen(rv_discrete):
         g1 = _lazywhere(mu_nonzero, (tmp,), lambda x: sqrt(1.0/x), np.inf)
         g2 = _lazywhere(mu_nonzero, (tmp,), lambda x: 1.0/x, np.inf)
         return mu, var, g1, g2
+
 
 poisson = poisson_gen(name="poisson", longname='A Poisson')
 
@@ -576,6 +589,8 @@ class planck_gen(rv_discrete):
         l = lambda_
         C = (1-exp(-l))
         return l*exp(-l)/C - log(C)
+
+
 planck = planck_gen(name='planck', longname='A discrete exponential ')
 
 
@@ -630,6 +645,8 @@ class boltzmann_gen(rv_discrete):
         g2 = z*(1+4*z+z*z)*trm**4 - N**4 * zN*(1+4*zN+zN*zN)
         g2 = g2 / trm2 / trm2
         return mu, var, g1, g2
+
+
 boltzmann = boltzmann_gen(name='boltzmann',
         longname='A truncated discrete exponential ')
 
@@ -700,6 +717,7 @@ class randint_gen(rv_discrete):
     def _entropy(self, low, high):
         return log(high - low)
 
+
 randint = randint_gen(name='randint', longname='A discrete uniform '
                       '(random integer)')
 
@@ -743,6 +761,8 @@ class zipf_gen(rv_discrete):
             a > n + 1, (a, n),
             lambda a, n: special.zeta(a - n, 1) / special.zeta(a, 1),
             np.inf)
+
+
 zipf = zipf_gen(a=1, name='zipf', longname='A Zipf')
 
 
@@ -793,6 +813,8 @@ class dlaplace_gen(rv_discrete):
 
     def _entropy(self, a):
         return a / sinh(a) - log(tanh(a/2.0))
+
+
 dlaplace = dlaplace_gen(a=-np.inf,
                         name='dlaplace', longname='A discrete Laplacian')
 
@@ -852,6 +874,8 @@ class skellam_gen(rv_discrete):
         g1 = mean / sqrt((var)**3)
         g2 = 1 / var
         return mean, var, g1, g2
+
+
 skellam = skellam_gen(a=-np.inf, name="skellam", longname='A Skellam')
 
 

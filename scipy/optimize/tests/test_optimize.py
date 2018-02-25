@@ -1115,6 +1115,7 @@ def himmelblau_hess(p):
     return np.array([[12*x**2 + 4*y - 42, 4*x + 4*y],
                      [4*x + 4*y, 4*x + 12*y**2 - 26]])
 
+
 himmelblau_x0 = [-0.27, -0.9]
 himmelblau_xopt = [3, 2]
 himmelblau_min = 0.0

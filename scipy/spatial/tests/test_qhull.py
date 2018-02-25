@@ -36,6 +36,7 @@ def assert_unordered_tuple_list_equal(a, b, tpl=tuple):
     b.sort()
     assert_equal(a, b)
 
+
 np.random.seed(1234)
 
 points = [(0,0), (0,1), (1,0), (1,1), (0.5, 0.5), (0.5, 1.5)]
@@ -121,6 +122,7 @@ def _add_inc_data(name, chunksize):
     new_name = "%s-chunk-%d" % (name, chunksize)
     assert new_name not in INCREMENTAL_DATASETS
     INCREMENTAL_DATASETS[new_name] = (chunks, opts)
+
 
 for name in DATASETS:
     for chunksize in 1, 4, 16:

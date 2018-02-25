@@ -1213,4 +1213,5 @@ def isspmatrix(x):
     """
     return isinstance(x, spmatrix)
 
+
 issparse = isspmatrix
