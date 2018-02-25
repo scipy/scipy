@@ -563,13 +563,12 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
     Examples
     --------
 
-    Returns double integration of ``x*y**2``
-    Integrating over rectangle with x ranging from 0 to 2
-    and y ranging from 0 to 1
+    Compute the double integral of ``x * y**2`` over the box
+    ``x`` ranging from 0 to 2 and ``y`` ranging from 0 to 1.
 
     >>> from scipy import integrate
-    >>> f=lambda y,x: x*y**2
-    >>> integrate.dblquad(f,0,2,lambda x: 0,lambda x: 1)
+    >>> f = lambda y, x: x*y**2
+    >>> integrate.dblquad(f, 0, 2, lambda x: 0, lambda x: 1)
         (0.6666666666666667, 7.401486830834377e-15)
 
     """
@@ -632,6 +631,19 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
     ode: ODE integrators
     odeint: ODE integrators
     scipy.special: For coefficients and roots of orthogonal polynomials
+
+    Examples
+    --------
+
+    Compute the triple integral of ``x * y * z``, over ``x`` ranging 
+    from 1 to 2, ``y`` ranging from 2 to 3, ``z`` ranging from 0 to 1.
+
+    >>> from scipy import integrate
+    >>> f = lambda z, y, x: x*y*z
+    >>> integrate.tplquad(f, 1, 2, lambda x: 2, lambda x: 3,
+    ...                   lambda x, y: 0, lambda x, y: 1)
+    (1.8750000000000002, 3.324644794257407e-14)
+
 
     """
     # f(z, y, x)
