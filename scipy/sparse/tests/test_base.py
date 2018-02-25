@@ -54,6 +54,7 @@ import pytest
 def assert_in(member, collection, msg=None):
     assert_(member in collection, msg=msg if msg is not None else "%r not found in %r" % (member, collection))
 
+
 # Only test matmul operator (A @ B) when available (Python 3.5+)
 TEST_MATMUL = hasattr(operator, 'matmul')
 
