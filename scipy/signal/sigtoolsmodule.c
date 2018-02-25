@@ -852,6 +852,7 @@ PyObject *PyArray_OrderFilterND(PyObject *op1, PyObject *op2, int order) {
 	intp *ret_ind;
 	CompareFunction compare_func;
 	char *zptr=NULL;
+	PyArray_CopySwapFunc *copyswap;
 
 	/* Get Array objects from input */
 	typenum = PyArray_ObjectType(op1, 0);  
@@ -906,6 +907,8 @@ PyObject *PyArray_OrderFilterND(PyObject *op1, PyObject *op2, int order) {
 
 	os = PyArray_ITEMSIZE(ret);
 	op = PyArray_DATA(ret);
+
+	copyswap = PyArray_DESCR(ret)->f->copyswap;
 
 	bytes_in_array = PyArray_NDIM(ap1)*sizeof(intp);
 	mode_dep = malloc(bytes_in_array);
@@ -980,8 +983,15 @@ PyObject *PyArray_OrderFilterND(PyObject *op1, PyObject *op2, int order) {
 
 	  fill_buffer(ap1_ptr,ap1,ap2,sort_buffer,n2,check,b_ind,temp_ind,offsets);
 	  qsort(sort_buffer, n2_nonzero, is1, compare_func);
-	  memcpy(op, sort_buffer + order*is1, os);
-          
+
+	  /*
+	   * Use copyswap for correct refcounting with object arrays
+	   * (sort_buffer has borrowed references, op owns references). Note
+	   * also that os == PyArray_ITEMSIZE(ret) and we are copying a single
+	   * scalar here.
+	   */
+	  copyswap(op, sort_buffer + order*is1, 0, NULL);
+
           /* increment index counter */
 	  incr = increment(ret_ind,PyArray_NDIM(ret),PyArray_DIMS(ret)); 
           /* increment to next output index */
