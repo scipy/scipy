@@ -1684,20 +1684,16 @@ def white_tophat(input, size=None, footprint=None, structure=None,
     """
     tmp = grey_erosion(input, size, footprint, structure, None, mode,
                        cval, origin)
-    if isinstance(output, numpy.ndarray):
-        grey_dilation(tmp, size, footprint, structure, output, mode, cval,
-                      origin)
-        if input.dtype == numpy.bool_:
-            return numpy.bitwise_xor(input, output, output)
-        else:
-            return numpy.subtract(input, output, output)
+    tmp = grey_dilation(tmp, size, footprint, structure, output, mode,
+                        cval, origin)
+    if tmp is None:
+        tmp = output
+
+    if input.dtype == numpy.bool_ and tmp.dtype == numpy.bool_:
+        numpy.bitwise_xor(input, tmp, out=tmp)
     else:
-        tmp = grey_dilation(tmp, size, footprint, structure, None, mode,
-                            cval, origin)
-        if input.dtype == numpy.bool_:
-            return numpy.bitwise_xor(input, tmp)
-        else:
-            return numpy.subtract(input, tmp)
+        numpy.subtract(input, tmp, out=tmp)
+    return tmp
 
 
 def black_tophat(input, size=None, footprint=None,
@@ -1744,20 +1740,16 @@ def black_tophat(input, size=None, footprint=None,
     """
     tmp = grey_dilation(input, size, footprint, structure, None, mode,
                         cval, origin)
-    if isinstance(output, numpy.ndarray):
-        grey_erosion(tmp, size, footprint, structure, output, mode, cval,
-                     origin)
-        if input.dtype == numpy.bool_:
-            return numpy.bitwise_xor(output, input, output)
-        else:
-            return numpy.subtract(output, input, output)
+    tmp = grey_erosion(tmp, size, footprint, structure, output, mode,
+                       cval, origin)
+    if tmp is None:
+        tmp = output
+
+    if input.dtype == numpy.bool_ and tmp.dtype == numpy.bool_:
+        numpy.bitwise_xor(tmp, input, out=tmp)
     else:
-        tmp = grey_erosion(tmp, size, footprint, structure, None, mode,
-                           cval, origin)
-        if input.dtype == numpy.bool_:
-            return numpy.bitwise_xor(tmp, input)
-        else:
-            return numpy.subtract(tmp, input)
+        numpy.subtract(tmp, input, out=tmp)
+    return tmp
 
 
 def distance_transform_bf(input, metric="euclidean", sampling=None,
