@@ -1668,7 +1668,7 @@ def cmplx_sort(p):
     >>> vals = [1, 4, 1+1.j, 3]
     >>> p_sorted, indx = signal.cmplx_sort(vals)
     >>> p_sorted
-    array([1.0+0.j, 1.0+1.j, 3.+0.j, 4.+0.j])
+    array([ 1.+0.j,  1.+1.j,  3.+0.j,  4.+0.j])
     >>> indx
     array([0, 2, 3, 1])
 
