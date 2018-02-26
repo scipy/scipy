@@ -8,11 +8,21 @@ This module contains low-level functions from the BLAS library.
 
 .. note::
 
-   With overwrite option input arrays may be overwritten.
-   This is usually true if memory order and data type allows it.
-   But it is not guaranteed and is typical f2py behaviour.
-   This is clearly explained in
-   :std:doc:`f2py/python-usage` (Array arguments section)
+   The common ``overwrite_<>`` option in many routines, allows the
+   input arrays to be overwritten to avoid extra memory allocation.
+   However this requires the array to satisfy two conditions
+   which are memory order and the data type to match exactly the
+   order and the type expected by the routine.
+   
+   As an example, if you pass a double precision float array to any
+   ``S....`` routine which expects single precision arguments, f2py
+   will create an intermediate array to match the argument types and
+   overwriting will be performed on that intermediate array.
+   
+   Similarly, if a C-contiguous array is passed, f2py will pass a 
+   FORTRAN-contiguous array internally. Please make sure that these
+   details are satisfied. More information can be found in the f2py
+   documentation.
 
 
 .. warning::
