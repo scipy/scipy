@@ -292,8 +292,8 @@ class TestSplittingTriangles(object):
     # current tolerance limit for area calc
     (1.0, 1),
     (200.2, 1),
-    (1.0, 10),
-    (200.2, 10),
+    (1.0, 9),
+    (200.2, 9),
     (3.0, 7),
     (390.9872, 5),
     ])
