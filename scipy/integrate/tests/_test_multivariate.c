@@ -64,9 +64,9 @@ static const routine_t routines[] = {
 };
 
 
-static int create_capsules(PyObject *module)
+static int create_pointers(PyObject *module)
 {
-    PyObject *d, *capsule = NULL;
+    PyObject *d, *obj = NULL;
     int i;
 
     d = PyModule_GetDict(module);
@@ -75,24 +75,24 @@ static int create_capsules(PyObject *module)
     }
 
     for (i = 0; i < sizeof(routines) / sizeof(routine_t); ++i) {
-        capsule = PyCapsule_New(routines[i].ptr, NULL, NULL);
-        if (capsule == NULL) {
+        obj = PyLong_FromVoidPtr(routines[i].ptr);
+        if (obj == NULL) {
             goto fail;
         }
 
-        if (PyDict_SetItemString(d, routines[i].name, capsule)) {
+        if (PyDict_SetItemString(d, routines[i].name, obj)) {
             goto fail;
         }
 
-        Py_DECREF(capsule);
-        capsule = NULL;
+        Py_DECREF(obj);
+        obj = NULL;
     }
 
-    Py_XDECREF(capsule);
+    Py_XDECREF(obj);
     return 0;
 
 fail:
-    Py_XDECREF(capsule);
+    Py_XDECREF(obj);
     return -1;
 }
 
@@ -118,7 +118,7 @@ PyInit__test_multivariate(void)
     if (m == NULL) {
         return NULL;
     }
-    if (create_capsules(m)) {
+    if (create_pointers(m)) {
         Py_DECREF(m);
         return NULL;
     }
@@ -135,6 +135,6 @@ init_test_multivariate(void)
     if (m == NULL) {
         return;
     }
-    create_capsules(m);
+    create_pointers(m);
 }
 #endif
