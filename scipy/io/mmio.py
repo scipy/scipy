@@ -158,7 +158,7 @@ class MMFile (object):
     FIELD_REAL = 'real'
     FIELD_COMPLEX = 'complex'
     FIELD_PATTERN = 'pattern'
-    FIELD_VALUES = (FIELD_INTEGER,FIELD_UNSIGNED,FIELD_REAL, FIELD_COMPLEX, FIELD_PATTERN)
+    FIELD_VALUES = (FIELD_INTEGER, FIELD_UNSIGNED, FIELD_REAL, FIELD_COMPLEX, FIELD_PATTERN)
 
     @classmethod
     def _validate_field(self, field):
