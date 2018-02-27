@@ -209,11 +209,11 @@ def convert_spherical_array_to_cartesian_array(double[:,:] spherical_coord_array
     cartesian_coord_array[...,2] = spherical_coord_array[...,0] * np.cos(spherical_coord_array[...,2])
     return cartesian_coord_array
 
-def poly_area(double[:,:] vertices,
-              radius=None,
-              double threshold=1e-21,
-              int discretizations=500,
-              int n_rot=50):
+cdef poly_area(double[:,:] vertices,
+               radius=None,
+               double threshold=1e-21,
+               int discretizations=500,
+               int n_rot=50):
     # calculate the surface area of a planar or spherical polygon
     # crude pure Python implementation for handling a single
     # polygon at a time
@@ -225,7 +225,7 @@ def poly_area(double[:,:] vertices,
     cdef double[:,:] candidate_plane
     cdef int current_vert, plane_failures, k, index
     cdef double[:] rot_axis = np.array([0,1,0], dtype=np.float64)
-    cdef double rot_angle, area, dot_prod
+    cdef double rot_angle, area, dot_prod, min_vertex_dist
     cdef double angle_factor = M_PI / 6.
     cdef double[:] cross_prod, row
     # require that a planar or spherical triangle is
