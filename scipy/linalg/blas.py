@@ -13,17 +13,16 @@ This module contains low-level functions from the BLAS library.
    However this requires the array to satisfy two conditions
    which are memory order and the data type to match exactly the
    order and the type expected by the routine.
-   
+
    As an example, if you pass a double precision float array to any
    ``S....`` routine which expects single precision arguments, f2py
    will create an intermediate array to match the argument types and
    overwriting will be performed on that intermediate array.
-   
-   Similarly, if a C-contiguous array is passed, f2py will pass a 
+
+   Similarly, if a C-contiguous array is passed, f2py will pass a
    FORTRAN-contiguous array internally. Please make sure that these
    details are satisfied. More information can be found in the f2py
    documentation.
-
 
 .. warning::
 
