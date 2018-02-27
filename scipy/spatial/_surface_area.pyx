@@ -204,9 +204,12 @@ def convert_spherical_array_to_cartesian_array(double[:,:] spherical_coord_array
     use radians for the angles by default'''
     cartesian_coord_array = np.zeros(np.asarray(spherical_coord_array).shape)
     #now the conversion to Cartesian coords
-    cartesian_coord_array[...,0] = spherical_coord_array[...,0] * np.cos(spherical_coord_array[...,1]) * np.sin(spherical_coord_array[...,2])
-    cartesian_coord_array[...,1] = spherical_coord_array[...,0] * np.sin(spherical_coord_array[...,1]) * np.sin(spherical_coord_array[...,2])
-    cartesian_coord_array[...,2] = spherical_coord_array[...,0] * np.cos(spherical_coord_array[...,2])
+
+    # NOTE: since our workflow always enforces a unit sphere
+    # these equations are now simplified
+    cartesian_coord_array[...,0] = np.cos(spherical_coord_array[...,1]) * np.sin(spherical_coord_array[...,2])
+    cartesian_coord_array[...,1] = np.sin(spherical_coord_array[...,1]) * np.sin(spherical_coord_array[...,2])
+    cartesian_coord_array[...,2] = np.cos(spherical_coord_array[...,2])
     return cartesian_coord_array
 
 cdef poly_area(double[:,:] vertices,
