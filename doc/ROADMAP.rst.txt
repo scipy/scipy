@@ -41,7 +41,7 @@ holes.
 Besides coverage there is also the issue of correctness - older code may have a
 few tests that provide decent statement coverage, but that doesn't necessarily
 say much about whether the code does what it says on the box.  Therefore code
-review of some parts of the code (``stats``,``signal`` and ``ndimage`` in
+review of some parts of the code (``stats``, ``signal`` and ``ndimage`` in
 particular) is necessary.
 
 
