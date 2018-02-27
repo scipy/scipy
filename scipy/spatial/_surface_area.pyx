@@ -188,28 +188,27 @@ def _spherical_polygon_area(double[:,:] vertices,
         area_sum += area_element
     return area_sum
 
-def convert_cartesian_array_to_spherical_array(double[:,:] coord_array):
+def convert_cartesian_array_to_spherical_array(double[:,:] coord_array,
+                                               double radius):
     '''Take shape (N,3) cartesian coord_array and return an array of the same shape in spherical polar form (r, theta, phi). Based on StackOverflow response: http://stackoverflow.com/a/4116899
     use radians for the angles by default'''
-    spherical_coord_array = np.zeros(np.asarray(coord_array).shape, dtype=np.float64)
-
-    xy = np.square(coord_array[...,0]) + np.square(coord_array[...,1])
-    spherical_coord_array[...,0] = np.sqrt(xy + np.square(coord_array[...,2]))
-    spherical_coord_array[...,1] = np.arctan2(coord_array[...,1], coord_array[...,0])
-    spherical_coord_array[...,2] = np.arccos(np.divide(coord_array[...,2], spherical_coord_array[...,0]))
+    spherical_coord_array = np.zeros((np.asarray(coord_array).shape[0], 2), dtype=np.float64)
+    spherical_coord_array[...,0] = np.arctan2(coord_array[...,1], coord_array[...,0])
+    spherical_coord_array[...,1] = np.arccos(np.divide(coord_array[...,2], radius))
     return spherical_coord_array
 
 def convert_spherical_array_to_cartesian_array(double[:,:] spherical_coord_array):
     '''Take shape (N,3) spherical_coord_array (r,theta,phi) and return an array of the same shape in cartesian coordinate form (x,y,z). Based on the equations provided at: http://en.wikipedia.org/wiki/List_of_common_coordinate_transformations#From_spherical_coordinates
     use radians for the angles by default'''
-    cartesian_coord_array = np.zeros(np.asarray(spherical_coord_array).shape)
+    cartesian_coord_array = np.zeros((np.asarray(spherical_coord_array).shape[0], 3),
+                                      dtype=np.float64)
     #now the conversion to Cartesian coords
 
     # NOTE: since our workflow always enforces a unit sphere
     # these equations are now simplified
-    cartesian_coord_array[...,0] = np.cos(spherical_coord_array[...,1]) * np.sin(spherical_coord_array[...,2])
-    cartesian_coord_array[...,1] = np.sin(spherical_coord_array[...,1]) * np.sin(spherical_coord_array[...,2])
-    cartesian_coord_array[...,2] = np.cos(spherical_coord_array[...,2])
+    cartesian_coord_array[...,0] = np.cos(spherical_coord_array[...,0]) * np.sin(spherical_coord_array[...,1])
+    cartesian_coord_array[...,1] = np.sin(spherical_coord_array[...,0]) * np.sin(spherical_coord_array[...,1])
+    cartesian_coord_array[...,2] = np.cos(spherical_coord_array[...,1])
     return cartesian_coord_array
 
 cdef poly_area(double[:,:] vertices,
@@ -301,8 +300,7 @@ cdef poly_area(double[:,:] vertices,
             return 2. * M_PI * (radius ** 2) 
 
         # normalize vertices to unit sphere
-        vertices = convert_cartesian_array_to_spherical_array(vertices)
-        vertices[...,0] = 1.
+        vertices = convert_cartesian_array_to_spherical_array(vertices, radius)
         vertices = convert_spherical_array_to_cartesian_array(vertices)
 
         # try to handle spherical polygons that contain
