@@ -114,7 +114,6 @@ class TestArgmaxima1d(object):
         assert_equal(maxima, np.array([]))
         assert_(maxima.base is None)
 
-
     def test_exceptions(self):
         """Test input validation and raised exceptions."""
         with raises(ValueError, match="wrong number of dimensions"):
