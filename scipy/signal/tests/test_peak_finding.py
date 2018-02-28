@@ -2,6 +2,7 @@ from __future__ import division, print_function, absolute_import
 
 import copy
 
+import pytest
 from pytest import raises
 
 import numpy as np
@@ -78,32 +79,40 @@ class TestArgmaxima1d(object):
     def test_empty(self):
         """Test with empty signal."""
         x = np.array([], dtype=np.float64)
-        assert_equal(_argmaxima1d(x), np.array([]))
+        maxima = _argmaxima1d(x)
+        assert_equal(maxima, np.array([]))
+        assert_(maxima.base is None)
 
     def test_linear(self):
         """Test with linear signal."""
         x = np.linspace(0, 100)
-        assert_equal(_argmaxima1d(x), np.array([]))
+        maxima = _argmaxima1d(x)
+        assert_equal(maxima, np.array([]))
+        assert_(maxima.base is None)
 
     def test_simple(self):
         """Test with simple signal."""
         x = np.linspace(-10, 10, 50)
         x[2::3] += 1
-        assert_equal(_argmaxima1d(x), np.arange(2, 50, 3))
+        maxima = _argmaxima1d(x)
+        assert_equal(maxima, np.arange(2, 50, 3))
+        assert_(maxima.base is None)
 
     def test_flat_maxima(self):
         """Test if flat maxima are detected correctly."""
         x = np.array([-1.3, 0, 1, 0, 2, 2, 0, 3, 3, 3, 0, 4, 4, 4, 4, 0, 5])
-        assert_equal(_argmaxima1d(x), np.array([2, 4, 8, 12]))
+        maxima = _argmaxima1d(x)
+        assert_equal(maxima, np.array([2, 4, 8, 12]))
+        assert_(maxima.base is None)
 
-    def test_signal_edges(self):
+    @pytest.mark.parametrize(
+        'x', [np.array([1., 0, 2]), np.array([3., 3, 0, 4, 4]),
+              np.array([5., 5, 5, 0, 6, 6, 6])])
+    def test_signal_edges(self, x):
         """Test if correct behavior on signal edges."""
-        x1 = np.array([1., 0, 2])
-        assert_equal(_argmaxima1d(x1), np.array([]))
-        x2 = np.array([3., 3, 0, 4, 4])
-        assert_equal(_argmaxima1d(x2), np.array([]))
-        x3 = np.array([5., 5, 5, 0, 6, 6, 6])
-        assert_equal(_argmaxima1d(x3), np.array([]))
+        maxima = _argmaxima1d(x)
+        assert_equal(maxima, np.array([]))
+        assert_(maxima.base is None)
 
     def test_exceptions(self):
         """Test input validation and raised exceptions."""
