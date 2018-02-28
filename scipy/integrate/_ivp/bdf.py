@@ -205,7 +205,7 @@ class BDF(OdeSolver):
             def solve_lu(LU, b):
                 return LU.solve(b)
 
-            K = eye(self.n, format='csc', dtype=self.y.dtype)
+            Identity = eye(self.n, format='csc', dtype=self.y.dtype)
         else:
             def lu(A):
                 self.nlu += 1
@@ -214,11 +214,11 @@ class BDF(OdeSolver):
             def solve_lu(LU, b):
                 return lu_solve(LU, b, overwrite_b=True)
 
-            K = np.identity(self.n, dtype=self.y.dtype)
+            Identity = np.identity(self.n, dtype=self.y.dtype)
 
         self.lu = lu
         self.solve_lu = solve_lu
-        self.I = K
+        self.I = Identity
 
         kappa = np.array([0, -0.1850, -1/9, -0.0823, -0.0415, 0])
         self.gamma = np.hstack((0, np.cumsum(1 / np.arange(1, MAX_ORDER + 1))))

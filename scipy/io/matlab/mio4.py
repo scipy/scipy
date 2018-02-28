@@ -118,7 +118,7 @@ class VarReader4(object):
                           UserWarning)
         quot, rest = divmod(rest, 100)  # unused, should be 0
         if quot != 0:
-            raise ValueError('Quot in MOPT integer should be 0, wrong format?')
+            raise ValueError('O in MOPT integer should be 0, wrong format?')
         P, rest = divmod(rest, 10)  # data type code e.g miDOUBLE (see above)
         T = rest  # matrix type code e.g. mxFULL_CLASS (see above)
         dims = (data['mrows'], data['ncols'])
