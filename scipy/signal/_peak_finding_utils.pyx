@@ -46,7 +46,7 @@ def _argmaxima1d(np.float64_t[:] x not None):
     """
     # Preallocate, there can't be more maxima than half the size of `x`
     cdef np.ndarray[np.int64_t, ndim=1] maxima
-    maxima = np.empty(x.shape[0] // 2, dtype=np.int64)
+    maxima = np.empty(x.shape[0] // 2, dtype=np.intp)
     cdef Py_ssize_t m = 0  # Pointer to the end of valid area in `maxima`
 
     # Variables to loop over `x`
@@ -72,4 +72,5 @@ def _argmaxima1d(np.float64_t[:] x not None):
                 i = i_ahead
         i += 1
 
-    return maxima[:m]  # Return only valid part of array
+    maxima.resize(m, refcheck=False)  # Keep only valid part of array memory.
+    return maxima
