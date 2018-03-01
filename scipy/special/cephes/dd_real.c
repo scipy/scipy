@@ -298,6 +298,7 @@ dd_exp(const double2 a)
     const double inv_k = 1.0 / k;
     double m;
     double2 r, s, t, p;
+    int i = 0;
 
     if (a.x[0] <= -709.0) {
         return DD_C_ZERO;
@@ -322,7 +323,6 @@ dd_exp(const double2 a)
     s = dd_add(r, dd_mul_pwr2(p, 0.5));
     p = dd_mul(p, r);
     t = dd_mul(p, inv_fact[0]);
-    int i = 0;
     do {
         s = dd_add(s, t);
         p = dd_mul(p, r);
@@ -424,7 +424,7 @@ dd_log10(const double2 a)
 }
 
 double2
-dd_log_d(const double a)
+dd_log_d(double a)
 {
     return dd_log(dd_create(a, 0));
 }
