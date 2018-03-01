@@ -32,7 +32,6 @@
 #include <float.h>
 #include <limits.h>
 #include <math.h>
-#include <stdbool.h>
 
 #include "_c99compat.h"
 
@@ -68,18 +67,30 @@ extern "C" {
 /* Define this macro to be the isnan(x) function. */
 #define DD_ISNAN isnan
 
-
 /* Set the following to 1 to set commonly used function
    to be inlined.  This should be set to 1 unless the compiler
    does not support the "inline" keyword, or if building for
    debugging purposes. */
-#define DD_DO_INLINE 1
+#if defined(__STDC__) && defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
+#define DD_TRY_INLINE 1
+#endif
 
-#ifdef DD_DO_INLINE
+// Define one of: DD_INLINE_IS_INLINE, DD_INLINE_IS_STATIC_INLINE and DD_INLINE_IS_EXTERN
+#ifdef DD_TRY_INLINE
+/* For C11 conformant compilers, declare inline in definition, extern inline in dd_real.c
+  Otherwise declare static inline. */
+#if defined(__STDC__) && defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+#define DD_INLINE_IS_INLINE
 #define DD_INLINE inline
 #else
+#define DD_INLINE_IS_STATIC_INLINE
+#define DD_INLINE static inline
+#endif /* __STDC_VERSION__ */
+#else
+#define DD_INLINE_IS_EXTERN
 #define DD_INLINE
-#endif
+#endif /* DD_TRY_INLINE */
+
 
 typedef struct double2
 {
@@ -113,100 +124,99 @@ extern const int DD_C_NDIGITS;
 #define DD_STATIC_CAST(T, X) ((T)(X))
 #endif
 
-#ifdef DD_DO_INLINE
+#if defined(DD_INLINE_IS_INLINE) || defined(DD_INLINE_IS_STATIC_INLINE) 
 #include "dd_real_inline.h"
-
 #else
 
 /*********** Inline basic functions ************/
 
-DD_INLINE double dd_hi(const double2 a);
-DD_INLINE double dd_lo(const double2 a);
-DD_INLINE bool dd_isnan(const double2 a);
-DD_INLINE bool dd_isfinite(const double2 a);
-DD_INLINE bool dd_isinf(const double2 a);
-DD_INLINE bool dd_is_zero(const double2 a);
-DD_INLINE bool dd_is_one(const double2 a);
-DD_INLINE bool dd_is_positive(const double2 a);
-DD_INLINE bool dd_is_negative(const double2 a);
-DD_INLINE double dd_to_double(const double2 a);
-DD_INLINE int dd_to_int(const double2 a);
+extern double dd_hi(const double2 a);
+extern double dd_lo(const double2 a);
+extern int dd_isnan(const double2 a);
+extern int dd_isfinite(const double2 a);
+extern int dd_isinf(const double2 a);
+extern int dd_is_zero(const double2 a);
+extern int dd_is_one(const double2 a);
+extern int dd_is_positive(const double2 a);
+extern int dd_is_negative(const double2 a);
+extern double dd_to_double(const double2 a);
+extern int dd_to_int(const double2 a);
 
 /*********** Equality Comparisons ************/
 
-DD_INLINE int dd_comp(const double2 a, const double2 b);
-DD_INLINE int dd_comp_dd_d(const double2 a, double b);
-DD_INLINE int dd_comp_d_dd(double a, const double2 b);
+extern int dd_comp(const double2 a, const double2 b);
+extern int dd_comp_dd_d(const double2 a, double b);
+extern int dd_comp_d_dd(double a, const double2 b);
 
 /*********** Creation ************/
-DD_INLINE double2 dd_create(double hi, double lo);
-DD_INLINE double2 dd_zero(void);
-DD_INLINE double2 dd_create_d(double h);
-DD_INLINE double2 dd_create_i(int h);
-DD_INLINE double2 dd_create_dp(const double *d);
+extern double2 dd_create(double hi, double lo);
+extern double2 dd_zero(void);
+extern double2 dd_create_d(double h);
+extern double2 dd_create_i(int h);
+extern double2 dd_create_dp(const double *d);
 
 /*********** Unary Minus ***********/
-DD_INLINE double2 dd_neg(double2 a);
+extern double2 dd_neg(const double2 a);
 
 /*********** Rounding to integer ***********/
 
-DD_INLINE double2 dd_nint(const double2 a);
-DD_INLINE double2 dd_floor(const double2 a);
-DD_INLINE double2 dd_ceil(const double2 a);
-DD_INLINE double2 dd_aint(const double2 a);
+extern double2 dd_nint(const double2 a);
+extern double2 dd_floor(const double2 a);
+extern double2 dd_ceil(const double2 a);
+extern double2 dd_aint(const double2 a);
 
-DD_INLINE double2 dd_abs(const double2 a);
-DD_INLINE double2 dd_fabs(const double2 a);
+extern double2 dd_abs(const double2 a);
+extern double2 dd_fabs(const double2 a);
 
 /*********** Normalizing ***********/
 
-DD_INLINE double2 dd_ldexp(const double2 a, int expt);
-DD_INLINE double2 dd_frexp(const double2 a, int *expt);
+extern double2 dd_ldexp(const double2 a, int expt);
+extern double2 dd_frexp(const double2 a, int *expt);
 
 /*********** Additions/Subtractions ************/
-DD_INLINE double2 dd_add_d_d(double a, double b);
-DD_INLINE double2 dd_ieee_add(const double2 a, const double2 b);
-DD_INLINE double2 dd_sloppy_add(const double2 a, const double2 b);
-DD_INLINE double2 dd_add(const double2 a, const double2 b);
-DD_INLINE double2 dd_add_dd_d(const double2 a, double b);
-DD_INLINE double2 dd_add_d_dd(double a, const double2 b);
+extern double2 dd_add_d_d(double a, double b);
+extern double2 dd_ieee_add(const double2 a, const double2 b);
+extern double2 dd_sloppy_add(const double2 a, const double2 b);
+extern double2 dd_add(const double2 a, const double2 b);
+extern double2 dd_add_dd_d(const double2 a, double b);
+extern double2 dd_add_d_dd(double a, const double2 b);
 
-DD_INLINE double2 dd_sub_d_d(double a, double b);
-DD_INLINE double2 dd_sub(const double2 a, const double2 b);
-DD_INLINE double2 dd_sub_dd_d(const double2 a, double b);
-DD_INLINE double2 dd_sub_d_dd(double a, const double2 b);
+extern double2 dd_sub_d_d(double a, double b);
+extern double2 dd_sub(const double2 a, const double2 b);
+extern double2 dd_sub_dd_d(const double2 a, double b);
+extern double2 dd_sub_d_dd(double a, const double2 b);
 
 /*********** Multiplications ************/
-DD_INLINE double2 dd_mul_d_d(double a, double b);
-DD_INLINE double2 dd_mul_pwr2(const double2 a, double b);
-DD_INLINE double2 dd_mul_dd_d(const double2 a, double b);
-DD_INLINE double2 dd_mul_d_dd(double a, const double2 b);
-DD_INLINE double2 dd_mul(const double2 a, const double2 b);
+extern double2 dd_mul_d_d(double a, double b);
+extern double2 dd_mul_pwr2(const double2 a, double b);
+extern double2 dd_mul_dd_d(const double2 a, double b);
+extern double2 dd_mul_d_dd(double a, const double2 b);
+extern double2 dd_mul(const double2 a, const double2 b);
 
 /*********** Divisions ************/
 
-DD_INLINE double2 dd_sloppy_div(const double2 a, const double2 b);
-DD_INLINE double2 dd_accurate_div(const double2 a, const double2 b);
-DD_INLINE double2 dd_div(const double2 a, const double2 b);
-DD_INLINE double2 dd_inv(const double2 a);
+extern double2 dd_sloppy_div(const double2 a, const double2 b);
+extern double2 dd_accurate_div(const double2 a, const double2 b);
+extern double2 dd_div(const double2 a, const double2 b);
+extern double2 dd_inv(const double2 a);
 
-DD_INLINE double2 dd_div_d_dd(double a, const double2 b);
-DD_INLINE double2 dd_div_dd_d(double2 a, double b);
-DD_INLINE double2 dd_div_d_d(double a, double b);
+extern double2 dd_div_d_dd(double a, const double2 b);
+extern double2 dd_div_dd_d(const double2 a, double b);
+extern double2 dd_div_d_d(double a, double b);
 
 /********** Remainder **********/
-DD_INLINE double2 dd_drem(const double2 a, const double2 b);
-DD_INLINE double2 dd_divrem(const double2 a, const double2 b, double2 *r);
-DD_INLINE double2 dd_fmod(const double2 a, const double2 b);
+extern double2 dd_drem(const double2 a, const double2 b);
+extern double2 dd_divrem(const double2 a, const double2 b, double2 *r);
+extern double2 dd_fmod(const double2 a, const double2 b);
 
 /*********** Squaring **********/
-DD_INLINE double2 dd_sqr(const double2 a);
-DD_INLINE double2 dd_sqr_d(double a);
+extern double2 dd_sqr(const double2 a);
+extern double2 dd_sqr_d(double a);
 
 /*********** Random number generator ************/
-DD_INLINE double2 dd_rand(void);
+extern double2 dd_rand(void);
 
-#endif  /* DD_INLINE */
+#endif  /* DD_INLINE_IS_INLINE ||  DD_INLINE_IS_STATIC_INLINE */
 
 
 /* Non-inline functions */

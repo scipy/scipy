@@ -15,16 +15,15 @@
  * This code taken from v2.3.18 of the qd package.
 */
 
+#include "mconf.h"
 #include <float.h>
 #include <limits.h>
 #include <math.h>
 #include <stdlib.h>
 
-#include <numpy/npy_math.h>
-
 #include "dd_real.h"
 
-#ifndef DD_DO_INLINE
+#ifdef DD_INLINE_IS_EXTERN
 #include "dd_real_inline.h"
 #endif
 
@@ -82,6 +81,8 @@ dd_error(const char *msg)
 int
 get_double_expn(double x)
 {
+    int i = 0;
+    double y;
     if (x == 0.0) {
         return INT_MIN;
     }
@@ -89,8 +90,7 @@ get_double_expn(double x)
         return INT_MAX;
     }
 
-    double y = fabs(x);
-    int i = 0;
+    y = fabs(x);
     if (y < 1.0) {
         while (y < 1.0) {
             y *= 2.0;
@@ -126,6 +126,7 @@ dd_sqrt(const double2 a)
        Also, the multiplication (a*x) and [-]*x can be done with
        only half the precision.
     */
+    double x, ax;
 
     if (dd_is_zero(a))
         return DD_C_ZERO;
@@ -135,8 +136,8 @@ dd_sqrt(const double2 a)
         return DD_C_NAN;
     }
 
-    double x = 1.0 / sqrt(a.x[0]);
-    double ax = a.x[0] * x;
+    x = 1.0 / sqrt(a.x[0]);
+    ax = a.x[0] * x;
     return dd_add_d_d(ax, dd_sub(a, dd_sqr_d(ax)).x[0] * (x * 0.5));
 }
 
@@ -167,6 +168,7 @@ dd_nroot(const double2 a, int n)
        which converges quadratically.  We can then find
       a^{1/n} by taking the reciprocal.
     */
+    double2 r, x;
 
     if (n <= 0) {
         dd_error("(dd_nroot): N must be positive.");
@@ -189,8 +191,8 @@ dd_nroot(const double2 a, int n)
         return DD_C_ZERO;
 
     /* Note  a^{-1/n} = exp(-log(a)/n) */
-    double2 r = dd_abs(a);
-    double2 x = dd_create_d(exp(-log(r.x[0]) / n));
+    r = dd_abs(a);
+    x = dd_create_d(exp(-log(r.x[0]) / n));
 
     /* Perform Newton's iteration. */
     x = dd_add(
@@ -208,17 +210,16 @@ dd_nroot(const double2 a, int n)
 double2
 dd_npwr(const double2 a, int n)
 {
-    if (n == 0) {
+    double2 r = a;
+    double2 s = DD_C_ONE;
+    int N = abs(n);
+    if (N == 0) {
         if (dd_is_zero(a)) {
             dd_error("(dd_npwr): Invalid argument.");
             return DD_C_NAN;
         }
         return DD_C_ONE;
     }
-
-    double2 r = a;
-    double2 s = DD_C_ONE;
-    int N = abs(n);
 
     if (N > 1) {
         /* Use binary exponentiation */
@@ -295,6 +296,8 @@ dd_exp(const double2 a)
 
     const double k = 512.0;
     const double inv_k = 1.0 / k;
+    double m;
+    double2 r, s, t, p;
 
     if (a.x[0] <= -709.0) {
         return DD_C_ZERO;
@@ -312,9 +315,8 @@ dd_exp(const double2 a)
         return DD_C_E;
     }
 
-    double m = floor(a.x[0] / DD_C_LOG2.x[0] + 0.5);
-    double2 r = dd_mul_pwr2(dd_sub(a, dd_mul_dd_d(DD_C_LOG2, m)), inv_k);
-    double2 s, t, p;
+    m = floor(a.x[0] / DD_C_LOG2.x[0] + 0.5);
+    r = dd_mul_pwr2(dd_sub(a, dd_mul_dd_d(DD_C_LOG2, m)), inv_k);
 
     p = dd_sqr(r);
     s = dd_add(r, dd_mul_pwr2(p, 0.5));
@@ -329,7 +331,6 @@ dd_exp(const double2 a)
     } while (fabs(dd_to_double(t)) > inv_k * DD_C_EPS && i < 5);
 
     s = dd_add(s, t);
-    /* s += t; */
 
     s = dd_add(dd_mul_pwr2(s, 2.0), dd_sqr(s));
     s = dd_add(dd_mul_pwr2(s, 2.0), dd_sqr(s));
@@ -372,6 +373,7 @@ dd_log(const double2 a)
 
        Only one iteration is needed, since Newton's iteration
        approximately doubles the number of digits per iteration. */
+    double2 x;
 
     if (dd_is_one(a)) {
         return DD_C_ZERO;
@@ -382,7 +384,7 @@ dd_log(const double2 a)
         return DD_C_NAN;
     }
 
-    double2 x = dd_create_d(log(a.x[0])); /* Initial approximation */
+    x = dd_create_d(log(a.x[0])); /* Initial approximation */
 
     /* x = x + a * exp(-x) - 1.0; */
     x = dd_add(x, dd_sub(dd_mul(a, dd_exp(dd_neg(x))), DD_C_ONE));
@@ -394,13 +396,13 @@ double2
 dd_log1p(const double2 a)
 {
     double2 ans;
-    double la;
+    double la, elam1, ll;
     if (a.x[0] <= -1.0) {
         return DD_C_NEGINF;
     }
     la = log1p(a.x[0]);
-    double elam1 = expm1(la);
-    double ll = log1p(a.x[1]/(1+a.x[0]));
+    elam1 = expm1(la);
+    ll = log1p(a.x[1] / (1 + a.x[0]));
     if (a.x[0] > 0) {
         ll -= (elam1 - a.x[0])/(elam1+1);
     }
@@ -481,7 +483,7 @@ polyroot(const double2 *c, int n, const double2 x0, int max_iter,
     double2 x = x0;
     double2 f;
     double2 *d = DD_STATIC_CAST(double2 *, calloc(sizeof(double2), n));
-    bool conv = false;
+    int conv = 0;
     int i;
     double max_c = fabs(dd_to_double(c[0]));
     double v;
@@ -505,7 +507,7 @@ polyroot(const double2 *c, int n, const double2 x0, int max_iter,
         f = polyeval(c, n, x);
 
         if (fabs(dd_to_double(f)) < thresh) {
-            conv = true;
+            conv = 1;
             break;
         }
         x = dd_sub(x, (dd_div(f, polyeval(d, n - 1, x))));
@@ -523,11 +525,9 @@ polyroot(const double2 *c, int n, const double2 x0, int max_iter,
 
 
 // Instantiate a single copy of the inline functions for code that needs it.
-#ifdef DD_DO_INLINE
+#ifdef DD_INLINE_IS_INLINE
 
-/*
-  First the basic routines taking double arguments, returning 1 or 2 doubles
-*/
+/* First the basic routines taking double arguments, returning 1/2 doubles */
 
 extern inline double quick_two_sum(double a, double b, double *err);
 extern inline double quick_two_diff(double a, double b, double *err);
@@ -544,20 +544,19 @@ extern inline double to_double(double a);
 extern inline int to_int(double a);
 extern inline int two_comp(const double a, const double b);
 
-
 extern inline double dd_hi(const double2 a);
 extern inline double dd_lo(const double2 a);
-extern inline bool dd_isnan(const double2 a);
-extern inline bool dd_isfinite(const double2 a);
-extern inline bool dd_isinf(const double2 a);
-extern inline bool dd_is_zero(const double2 a);
-extern inline bool dd_is_one(const double2 a);
-extern inline bool dd_is_positive(const double2 a);
-extern inline bool dd_is_negative(const double2 a);
+extern inline int dd_isnan(const double2 a);
+extern inline int dd_isfinite(const double2 a);
+extern inline int dd_isinf(const double2 a);
+extern inline int dd_is_zero(const double2 a);
+extern inline int dd_is_one(const double2 a);
+extern inline int dd_is_positive(const double2 a);
+extern inline int dd_is_negative(const double2 a);
 extern inline double dd_to_double(const double2 a);
 extern inline int dd_to_int(const double2 a);
 
-/*********** Equality Comparisons ************/
+/*********** Equality and Comparisons ************/
 
 extern inline int dd_comp(const double2 a, const double2 b);
 extern inline int dd_comp_dd_d(const double2 a, double b);
@@ -571,7 +570,7 @@ extern inline double2 dd_create_i(int h);
 extern inline double2 dd_create_dp(const double *d);
 
 /*********** Unary Minus ***********/
-extern inline double2 dd_neg(double2 a);
+extern inline double2 dd_neg(const double2 a);
 
 /*********** Rounding to integer ***********/
 
@@ -616,7 +615,7 @@ extern inline double2 dd_div(const double2 a, const double2 b);
 extern inline double2 dd_inv(const double2 a);
 
 extern inline double2 dd_div_d_dd(double a, const double2 b);
-extern inline double2 dd_div_dd_d(double2 a, double b);
+extern inline double2 dd_div_dd_d(const double2 a, double b);
 extern inline double2 dd_div_d_d(double a, double b);
 
 /********** Remainder **********/

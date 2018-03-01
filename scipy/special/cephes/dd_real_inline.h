@@ -17,7 +17,6 @@
 #include <float.h>
 #include <limits.h>
 #include <math.h>
-#include <stdbool.h>
 
 #define _DD_SPLITTER 134217729.0               // = 2^27 + 1
 #define _DD_SPLIT_THRESH 6.69692879491417e+299 // = 2^996
@@ -37,7 +36,8 @@ DD_INLINE double
 quick_two_sum(double a, double b, double *err)
 {
     volatile double s = a + b;
-    *err = b - (s - a);
+    volatile double c = s - a;
+    *err = b - c;
     return s;
 }
 
@@ -46,7 +46,8 @@ DD_INLINE double
 quick_two_diff(double a, double b, double *err)
 {
     volatile double s = a - b;
-    *err = (a - s) - b;
+    volatile double c = a - s;
+    *err = c - b;
     return s;
 }
 
@@ -55,8 +56,10 @@ DD_INLINE double
 two_sum(double a, double b, double *err)
 {
     volatile double s = a + b;
-    volatile double bb = s - a;
-    *err = (a - (s - bb)) + (b - bb);
+    volatile double c = s - a;
+    volatile double d = b - c;
+    volatile double e = s - c;
+    *err = (a - e) + d;
     return s;
 }
 
@@ -65,8 +68,10 @@ DD_INLINE double
 two_diff(double a, double b, double *err)
 {
     volatile double s = a - b;
-    volatile double bb = s - a;
-    *err = (a - (s - bb)) - (b + bb);
+    volatile double c = s - a;
+    volatile double d = b + c;
+    volatile double e = s - c;
+    *err = (a - e) - d;
     return s;
 }
 
@@ -74,18 +79,20 @@ two_diff(double a, double b, double *err)
 DD_INLINE void
 two_split(double a, double *hi, double *lo)
 {
-    volatile double temp;
+    volatile double temp, tempma;
     if (a > _DD_SPLIT_THRESH || a < -_DD_SPLIT_THRESH) {
         a *= 3.7252902984619140625e-09; // 2^-28
         temp = _DD_SPLITTER * a;
-        *hi = temp - (temp - a);
+        tempma = temp - a;
+        *hi = temp - tempma;
         *lo = a - *hi;
         *hi *= 268435456.0; // 2^28
         *lo *= 268435456.0; // 2^28
     }
     else {
         temp = _DD_SPLITTER * a;
-        *hi = temp - (temp - a);
+        tempma = temp - a;
+        *hi = temp - tempma;
         *lo = a - *hi;
     }
 }
@@ -121,9 +128,11 @@ two_sqr(double a, double *err)
     return p;
 #else
     double hi, lo;
+    volatile double c;
     double q = a * a;
     two_split(a, &hi, &lo);
-    *err = ((hi * hi - q) + 2.0 * hi * lo) + lo * lo;
+    c = hi * hi - q;
+    *err = (c + 2.0 * hi * lo) + lo * lo;
     return q;
 #endif
 }
@@ -210,43 +219,43 @@ dd_lo(const double2 a)
     return a.x[1];
 }
 
-DD_INLINE bool
+DD_INLINE int
 dd_isnan(const double2 a)
 {
     return (DD_ISNAN(a.x[0]) || DD_ISNAN(a.x[1]));
 }
 
-DD_INLINE bool
+DD_INLINE int
 dd_isfinite(const double2 a)
 {
     return DD_ISFINITE(a.x[0]);
 }
 
-DD_INLINE bool
+DD_INLINE int
 dd_isinf(const double2 a)
 {
     return DD_ISINF(a.x[0]);
 }
 
-DD_INLINE bool
+DD_INLINE int
 dd_is_zero(const double2 a)
 {
     return (a.x[0] == 0.0);
 }
 
-DD_INLINE bool
+DD_INLINE int
 dd_is_one(const double2 a)
 {
     return (a.x[0] == 1.0 && a.x[1] == 0.0);
 }
 
-DD_INLINE bool
+DD_INLINE int
 dd_is_positive(const double2 a)
 {
     return (a.x[0] > 0.0);
 }
 
-DD_INLINE bool
+DD_INLINE int
 dd_is_negative(const double2 a)
 {
     return (a.x[0] < 0.0);
@@ -336,7 +345,7 @@ dd_create_dp(const double *d)
 
 /*********** Unary Minus ***********/
 DD_INLINE double2
-dd_neg(double2 a)
+dd_neg(const double2 a)
 {
     double2 ret = {{-a.x[0], -a.x[1]}};
     return ret;

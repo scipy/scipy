@@ -433,6 +433,9 @@ nextPowerOf2(double x)
 static double
 modnx(int n, double x, int *pnxfloor, double *pnx)
 {
+    /* Compute floor(n*x) and remainder *exactly*
+    * If remainder is too close to 1 (E.g. (1, -DBL_EPSILON/2))
+    *  round up and adjust   */
     double2 alphaD, nxD, nxfloorD;
     int nxfloor;
     double alpha;
@@ -458,12 +461,12 @@ static void
 updateBinomial(double2 *Cman, int *Cexpt, int n, int j)
 {
     int expt;
-    assert (!dd_is_zero(*Cman));
     double2 rat = div_dd(n - j, j + 1.0);
-    double2 CD2 = mul_DD(*Cman, rat);
-    double2 manD = frexpD(CD2, &expt);
+    double2 man2 = mul_DD(*Cman, rat);
+    man2 = frexpD(man2, &expt);
+    assert (!dd_is_zero(man2));
     *Cexpt += expt;
-    *Cman = manD;
+    *Cman = man2;
 }
 
 
@@ -471,7 +474,7 @@ static double2
 powsimp_D(double2 a,  int m)
 {
     /* Using dd_npwr() here would be quite time-consuming.  Tradeoff accuracy-time by using pow().*/
-    double ans;
+    double ans, r, adj;
     if (m <= 0) {
         if (m == 0) {
             return DD_C_ONE;
@@ -482,8 +485,8 @@ powsimp_D(double2 a,  int m)
         return DD_C_ZERO;
     }
     ans = pow(a.x[0], m);
-    double r = a.x[1]/a.x[0];
-    double adj = m*r;
+    r = a.x[1]/a.x[0];
+    adj = m*r;
     if (fabs(adj) > 1e-8) {
         if (fabs(adj) < 1e-4) {
            // Take 1st two terms of Tayler Series for (1+r)^m
@@ -513,66 +516,65 @@ pow2(double a, double b,  int m)
 static double2
 pow2Scaled_D(double2 a, int m, int *pExponent)
 {
-    double2 ansD;
-    int ansE;
+    double2 ans, x;
+    int ansE, xE;
+    int maxExpt = _MAX_EXPONENT;
+    int q, r, x2mE, x2rE, x2mqE;
+    double2 x2r, x2m, x2mq;
+
     if (m <= 0)
     {
-        int L, L2;
+        int aE1, aE2;
         if (m == 0) {
             RETURN_M_E(DD_C_ONE, 0);
         }
-        double2 ans = pow2Scaled_D(a, -m, &L);
-        ansD = frexpD(div_dD(1.0, ans), &L2);
-        ansE = -L + L2;
-        RETURN_M_E(ansD, ansE);
+        ans = pow2Scaled_D(a, -m, &aE1);
+        ans = frexpD(dd_inv(ans), &aE2);
+        ansE = -aE1 + aE2;
+        RETURN_M_E(ans, ansE);
     }
-    int xL;
-    double2 xD = frexpD(a, &xL);
+    x = frexpD(a, &xE);
     if (m == 1) {
-        RETURN_M_E(xD, xL);
+        RETURN_M_E(x, xE);
     }
-    // xD ^ maxExpt >= 2^{-1022}
-    // =>  maxExpt = 1022 / log2(xD.x[0]) = 708 / log(xD.x[0])
-    //            = 708/((1-xD.x[0] + xD.x[0]^2/2 - ...) <= 708/(1-xD.x[0])
-    int maxExpt = _MAX_EXPONENT;
-    if (m*(xD.x[0]-1) / xD.x[0] < -_MAX_EXPONENT * NPY_LOGE2) {
-        double lg2x = log(xD.x[0])/NPY_LOGE2;
-        double lgAns = m*lg2x;
+    // x ^ maxExpt >= 2^{-960}
+    // =>  maxExpt = 960 / log2(x.x[0]) = 708 / log(x.x[0])
+    //            = 665/((1-x.x[0] + x.x[0]^2/2 - ...) <= 665/(1-x.x[0])
+    // Quick check to see if we might need to break up the exponentiation
+    if (m*(x.x[0]-1) / x.x[0] < -_MAX_EXPONENT * NPY_LOGE2) {
+        // Now do it carefully, calling log()
+        double lg2x = log(x.x[0]) / NPY_LOGE2;
+        double lgAns = m * lg2x;
         if (lgAns <= -_MAX_EXPONENT) {
             maxExpt = (int)(nextPowerOf2(-_MAX_EXPONENT / lg2x + 1)/2);
         }
     }
     if (m <= maxExpt)
     {
-#if 1
-        double2 ans1 = powsimp_D(xD, m);
-        ansD = frexpD(ans1, &ansE);
-        ansE += m * xL;
-        RETURN_M_E(ansD, ansE);
-#else
-        double ans1 = pow2(xD.x[0], xD.x[1], m);
-        ans1 = frexp(ans1, &ansE);
-        ansE += m * xL;
-        RETURN_M_E(add_dd(ans1, 0), ansE);
-#endif
+        double2 ans1 = powsimp_D(x, m);
+        ans = frexpD(ans1, &ansE);
+        ansE += m * xE;
+        RETURN_M_E(ans, ansE);
     }
-    int q = m / maxExpt;
-    int r = m % maxExpt;
-    int rE, qE, q512E;
-    double2 ansr = pow2Scaled_D(xD, r, &rE);       // x^r
-    double2 ansq = pow2Scaled_D(xD, maxExpt, &qE); // x^512
-    double2 ansq512 = pow2Scaled_D(ansq, q, &q512E);     //  (x^512)^q
-    q512E += qE * q;
-    ansD = frexpD(mul_DD(ansr, ansq512), &ansE);
-    ansE += q512E + rE;
-    ansE += m*xL;
-    RETURN_M_E(ansD, ansE);
+
+    q = m / maxExpt;
+    r = m % maxExpt;
+    // x^m = (x^maxExpt)^q * x^r
+    x2r = pow2Scaled_D(x, r, &x2rE);
+    x2m = pow2Scaled_D(x, maxExpt, &x2mE);
+    x2mq = pow2Scaled_D(x2m, q, &x2mqE);
+    ans = frexpD(mul_DD(x2r, x2mq), &ansE);
+    x2mqE += x2mE * q;
+    ansE += x2mqE + x2rE;
+    ansE += m * xE;
+    RETURN_M_E(ans, ansE);
 }
 
 
 static double2
 pow4_D(double a, double b, double c, double d, int m)
 {
+    /* Compute ((a+b)/(c+d)) ^ m */
     double2 A, C, X;
     if (m <= 0){
         if (m == 0) {
@@ -592,7 +594,6 @@ pow4_D(double a, double b, double c, double d, int m)
     return powsimp_D(X, m);
 }
 
-
 static double
 pow4(double a, double b, double c, double d, int m)
 {
@@ -600,9 +601,13 @@ pow4(double a, double b, double c, double d, int m)
     return dd_to_double(ret);
 }
 
+
 static double2
 logpow4_D(double a, double b, double c, double d, int m)
 {
+    /* Compute log(((a+b)/(c+d)) ^ m)
+       == m * log((a+b)/(c+d))
+       == m * log( 1 + (a+b-c-d)/(c+d)) */
     double2 ans;
     double2 A, C, X;
     if (m == 0) {
@@ -638,20 +643,20 @@ logpow4(double a, double b, double c, double d, int m)
 
 /* Compute a single term in the summation  */
 static void
-computeAjnx(int n, double x, int v, double2 Cman, int Cexpt,
-            double2 *pt1, double2 *pt2, double2 *pAi)
+computeAvnx(int n, double x, int v, double2 Cman, int Cexpt,
+            double2 *pt1, double2 *pt2, double2 *pAv)
 {
-    int L1, L2, Lans;
-    double2 Ai;
+    int t1E, t2E, ansE;
+    double2 Av;
     double2 t2x = sub_Dd(div_dd(n - v, n), x);  //  1 - x - v/n
-    double2 t2 = pow2Scaled_D(t2x, n-v, &L2);
+    double2 t2 = pow2Scaled_D(t2x, n-v, &t2E);
     double2 t1x = add_Dd(div_dd(v, n), x);   // x + v/n
-    double2 t1 = pow2Scaled_D(t1x, v-1, &L1);
+    double2 t1 = pow2Scaled_D(t1x, v-1, &t1E);
     double2 ans = mul_DD(t1, t2);
     ans = mul_DD(ans, Cman);
-    Lans = Cexpt + L1 + L2;
-    Ai = ldexpD(ans, Lans);
-    *pAi = Ai;
+    ansE = Cexpt + t1E + t2E;
+    Av = ldexpD(ans, ansE);
+    *pAv = Av;
     *pt1 = t1;
     *pt2 = t2;
 }
@@ -772,7 +777,7 @@ _smirnov_all_sd(int n, double x)
         for (j = firstJ; j < nTerms; j += 1) {
             int v = start + j * step;
 
-            computeAjnx(n, x, v, Cman, Cexpt, &t1, &t2, &Aj);
+            computeAvnx(n, x, v, Cman, Cexpt, &t1, &t2, &Aj);
 
             if (dd_isfinite(Aj) && !dd_is_zero(Aj)) {
                 dAjCoeff = sub_DD(div_dD((n * (v - 1)), add_dd(nxfl + v, alpha)),
