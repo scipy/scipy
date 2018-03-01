@@ -1029,7 +1029,7 @@ class TestMultinomial(object):
 
         vals3 = multinomial.logpmf([3, 4], 0, [-2, 3])
         assert_allclose(vals3, np.NAN, rtol=1e-8)
-
+        
     def test_reduces_binomial(self):
         # test that the multinomial pmf reduces to the binomial pmf in the 2d
         # case
@@ -1082,6 +1082,9 @@ class TestMultinomial(object):
 
         vals4 = multinomial.pmf([1,2], 4, (.3, .7))
         assert_allclose(vals4, 0, rtol=1e-8)
+        
+        vals5 = multinomial.pmf([3, 3, 0], 6, [2/3.0, 1/3.0, 0])
+        assert_allclose(vals5, 0.219478737997, rtol=1e-8)
 
     def test_pmf_broadcasting(self):
         vals0 = multinomial.pmf([1, 2], 3, [[.1, .9], [.2, .8]])
@@ -1288,9 +1291,9 @@ class TestSpecialOrthoGroup(object):
     def test_reproducibility(self):
         np.random.seed(514)
         x = special_ortho_group.rvs(3)
-        expected = np.array([[0.99394515, -0.04527879, 0.10011432],
-                             [-0.04821555, 0.63900322, 0.76769144],
-                             [-0.09873351, -0.76787024, 0.63295101]])
+        expected = np.array([[-0.99394515, -0.04527879, 0.10011432],
+                             [0.04821555, -0.99846897, 0.02711042],
+                             [0.09873351, 0.03177334, 0.99460653]])
         assert_array_almost_equal(x, expected)
 
         random_state = np.random.RandomState(seed=514)
@@ -1334,7 +1337,7 @@ class TestSpecialOrthoGroup(object):
         # Generate samples
         dim = 5
         samples = 1000  # Not too many, or the test takes too long
-        ks_prob = 0.39  # ...so don't expect much precision
+        ks_prob = .05
         np.random.seed(514)
         xs = special_ortho_group.rvs(dim, size=samples)
 
@@ -1355,16 +1358,16 @@ class TestSpecialOrthoGroup(object):
 
 class TestOrthoGroup(object):
     def test_reproducibility(self):
-        np.random.seed(514)
+        np.random.seed(515)
         x = ortho_group.rvs(3)
-        x2 = ortho_group.rvs(3, random_state=514)
+        x2 = ortho_group.rvs(3, random_state=515)
         # Note this matrix has det -1, distinguishing O(N) from SO(N)
-        expected = np.array([[0.993945, -0.045279, 0.100114],
-                             [-0.048216, -0.998469, 0.02711],
-                             [-0.098734, 0.031773, 0.994607]])
+        assert_almost_equal(np.linalg.det(x), -1)
+        expected = np.array([[0.94449759, -0.21678569, -0.24683651],
+                             [-0.13147569, -0.93800245, 0.3207266],
+                             [0.30106219, 0.27047251, 0.9144431]])
         assert_array_almost_equal(x, expected)
         assert_array_almost_equal(x2, expected)
-        assert_almost_equal(np.linalg.det(x), -1)
 
     def test_invalid_dim(self):
         assert_raises(ValueError, ortho_group.rvs, None)
@@ -1373,18 +1376,25 @@ class TestOrthoGroup(object):
         assert_raises(ValueError, ortho_group.rvs, 2.5)
 
     def test_det_and_ortho(self):
-        xs = [ortho_group.rvs(dim)
-              for dim in range(2,12)
-              for i in range(3)]
+        xs = [[ortho_group.rvs(dim)
+               for i in range(10)]
+              for dim in range(2,12)]
 
-        # Test that determinants are always +1
-        dets = [np.fabs(np.linalg.det(x)) for x in xs]
-        assert_allclose(dets, [1.]*30, rtol=1e-13)
+        # Test that abs determinants are always +1
+        dets = np.array([[np.linalg.det(x) for x in xx] for xx in xs])
+        assert_allclose(np.fabs(dets), np.ones(dets.shape), rtol=1e-13)
+
+        # Test that we get both positive and negative determinants
+        # Check that we have at least one and less than 10 negative dets in a sample of 10. The rest are positive by the previous test.
+        # Test each dimension separately
+        assert_array_less([0]*10, [np.where(d < 0)[0].shape[0] for d in dets])
+        assert_array_less([np.where(d < 0)[0].shape[0] for d in dets], [10]*10)
 
         # Test that these are orthogonal matrices
-        for x in xs:
-            assert_array_almost_equal(np.dot(x, x.T),
-                                      np.eye(x.shape[0]))
+        for xx in xs:
+            for x in xx:
+                assert_array_almost_equal(np.dot(x, x.T),
+                                          np.eye(x.shape[0]))
 
     def test_haar(self):
         # Test that the distribution is constant under rotation
@@ -1394,7 +1404,7 @@ class TestOrthoGroup(object):
         # Generate samples
         dim = 5
         samples = 1000  # Not too many, or the test takes too long
-        ks_prob = 0.39  # ...so don't expect much precision
+        ks_prob = .05
         np.random.seed(518)  # Note that the test is sensitive to seed too
         xs = ortho_group.rvs(dim, size=samples)
 
@@ -1412,6 +1422,31 @@ class TestOrthoGroup(object):
         pairs = [(e0, e1) for e0 in els for e1 in els if e0 > e1]
         ks_tests = [ks_2samp(proj[p0], proj[p1])[1] for (p0, p1) in pairs]
         assert_array_less([ks_prob]*len(pairs), ks_tests)
+
+    def test_pairwise_distances(self):
+        # Test that the distribution of pairwise distances is close to correct.
+        np.random.seed(514)
+
+        def random_ortho(dim):
+            u, _s, v = np.linalg.svd(np.random.normal(size=(dim, dim)))
+            return np.dot(u, v)
+
+        for dim in range(2, 6):
+            def generate_test_statistics(rvs, N=1000, eps=1e-10):
+                stats = np.array([
+                    np.sum((rvs(dim=dim) - rvs(dim=dim))**2)
+                    for _ in range(N)
+                ])
+                # Add a bit of noise to account for numeric accuracy.
+                stats += np.random.uniform(-eps, eps, size=stats.shape)
+                return stats
+
+            expected = generate_test_statistics(random_ortho)
+            actual = generate_test_statistics(scipy.stats.ortho_group.rvs)
+
+            _D, p = scipy.stats.ks_2samp(expected, actual)
+
+            assert_array_less(.05, p)
 
 class TestRandomCorrelation(object):
     def test_reproducibility(self):

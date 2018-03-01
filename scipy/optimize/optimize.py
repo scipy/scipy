@@ -149,6 +149,7 @@ def is_array_scalar(x):
     """
     return np.size(x) == 1
 
+
 _epsilon = sqrt(numpy.finfo(float).eps)
 
 
@@ -456,9 +457,9 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     ----------
     .. [1] Gao, F. and Han, L.
        Implementing the Nelder-Mead simplex algorithm with adaptive
-       parameters. 2012. Computational Optimization and Applications. 
+       parameters. 2012. Computational Optimization and Applications.
        51:1, pp. 259-277
-       
+
     """
     if 'ftol' in unknown_options:
         warnings.warn("ftol is deprecated for Nelder-Mead,"
@@ -486,7 +487,7 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     retall = return_all
 
     fcalls, func = wrap_function(func, args)
-           
+
     if adaptive:
         dim = float(len(x0))
         rho = 1
@@ -498,7 +499,7 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
         chi = 2
         psi = 0.5
         sigma = 0.5
-        
+
     nonzdelt = 0.05
     zdelt = 0.00025
 
@@ -880,7 +881,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
         1 : Maximum number of iterations exceeded.
         2 : Gradient and/or function calls not changing.
     allvecs  :  list
-        `OptimizeResult` at each iteration.  Only returned if retall is True.
+        The value of xopt at each iteration.  Only returned if retall is True.
 
     See also
     --------
@@ -1557,6 +1558,7 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
     if retall:
         allvecs = [xk]
     k = 0
+    gfk = None
     old_fval = f(x0)
     old_old_fval = None
     float64eps = numpy.finfo(numpy.float64).eps
@@ -1727,8 +1729,12 @@ def _minimize_scalar_bounded(func, bounds, args=(),
     -------
     maxiter : int
         Maximum number of iterations to perform.
-    disp : bool
-        Set to True to print convergence messages.
+    disp: int, optional
+        If non-zero, print messages.
+            0 : no message printing.
+            1 : non-convergence notification messages only.
+            2 : print a message on convergence too.
+            3 : print iteration results.
     xatol : float
         Absolute error in solution `xopt` acceptable for convergence.
 
@@ -1923,7 +1929,7 @@ class Brent:
             a = xc
             b = xa
         deltax = 0.0
-        funcalls = 1
+        funcalls += 1
         iter = 0
         while (iter < self.maxiter):
             tol1 = self.tol * numpy.abs(x) + _mintol
@@ -2069,7 +2075,7 @@ def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500):
 
     Does not ensure that the minimum lies in the range specified by
     `brack`. See `fminbound`.
-    
+
     Examples
     --------
     We illustrate the behaviour of the function when `brack` is of
@@ -2079,7 +2085,7 @@ def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500):
 
     >>> def f(x):
     ...     return x**2
-    
+
     >>> from scipy import optimize
 
     >>> minimum = optimize.brent(f,brack=(1,2))
@@ -2178,7 +2184,7 @@ def golden(func, args=(), brack=None, tol=_epsilon,
 
     >>> def f(x):
     ...     return x**2
-    
+
     >>> from scipy import optimize
 
     >>> minimum = optimize.golden(f, brack=(1, 2))
@@ -2679,6 +2685,12 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
     ``full_output=True`` are affected in addition by the ``finish`` argument
     (see Notes).
 
+    The brute force approach is inefficient because the number of grid points
+    increases exponentially - the number of grid points to evaluate is
+    ``Ns ** len(x)``. Consequently, even with coarse grid spacing, even
+    moderately sized problems can take a long time to run, and/or run into
+    memory limitations.
+
     Parameters
     ----------
     func : callable
@@ -2834,7 +2846,7 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
         lrange = lrange[0]
 
     def _scalarfunc(*params):
-        params = squeeze(asarray(params))
+        params = asarray(params).flatten()
         return func(params, *args)
 
     vecfunc = vectorize(_scalarfunc)

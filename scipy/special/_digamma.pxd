@@ -14,11 +14,8 @@ import cython
 from libc.math cimport ceil, fabs, M_PI
 from ._complexstuff cimport number_t, nan, zlog, zabs
 from ._trig cimport sinpi, cospi
+from ._cephes cimport zeta, psi
 from . cimport sf_error
-
-cdef extern from "cephes.h":
-    double zeta(double x, double q) nogil
-    double psi(double x) nogil
 
 # Use the asymptotic series for z away from the negative real axis
 # with abs(z) > smallabsz.

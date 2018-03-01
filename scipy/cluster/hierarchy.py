@@ -486,10 +486,10 @@ def linkage(y, method='single', metric='euclidean', optimal_ordering=False):
     """
     Perform hierarchical/agglomerative clustering.
 
-    The input y may be either a 1d compressed distance matrix
+    The input y may be either a 1d condensed distance matrix
     or a 2d array of observation vectors.
 
-    If y is a 1d compressed distance matrix,
+    If y is a 1d condensed distance matrix,
     then y must be a :math:`{n \\choose 2}` sized
     vector where n is the number of original observations paired
     in the distance matrix. The behavior of this function is very
@@ -1319,13 +1319,13 @@ def inconsistent(Z, d=2):
     >>> X = [[i] for i in [2, 8, 0, 4, 1, 9, 9, 0]]
     >>> Z = linkage(X, 'ward')
     >>> print(Z)
-    [[  5.           6.           0.           2.        ]
-     [  2.           7.           0.           2.        ]
-     [  0.           4.           1.           2.        ]
-     [  1.           8.           1.15470054   3.        ]
-     [  9.          10.           2.12132034   4.        ]
-     [  3.          12.           4.11096096   5.        ]
-     [ 11.          13.          14.07183949   8.        ]]
+    [[ 5.          6.          0.          2.        ]
+     [ 2.          7.          0.          2.        ]
+     [ 0.          4.          1.          2.        ]
+     [ 1.          8.          1.15470054  3.        ]
+     [ 9.         10.          2.12132034  4.        ]
+     [ 3.         12.          4.11096096  5.        ]
+     [11.         13.         14.07183949  8.        ]]
     >>> inconsistent(Z)
     array([[ 0.        ,  0.        ,  1.        ,  0.        ],
            [ 0.        ,  0.        ,  1.        ,  0.        ],
@@ -1712,23 +1712,27 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
         The criterion to use in forming flat clusters. This can
         be any of the following values:
 
-          ``inconsistent`` : If a cluster node and all its
+          ``inconsistent`` : 
+              If a cluster node and all its
               descendants have an inconsistent value less than or equal
               to `t` then all its leaf descendants belong to the
               same flat cluster. When no non-singleton cluster meets
               this criterion, every node is assigned to its own
               cluster. (Default)
 
-          ``distance`` : Forms flat clusters so that the original
+          ``distance`` : 
+              Forms flat clusters so that the original
               observations in each flat cluster have no greater a
               cophenetic distance than `t`.
 
-          ``maxclust`` : Finds a minimum threshold ``r`` so that
+          ``maxclust`` : 
+              Finds a minimum threshold ``r`` so that
               the cophenetic distance between any two original
               observations in the same flat cluster is no more than
               ``r`` and no more than `t` flat clusters are formed.
 
-          ``monocrit`` : Forms a flat cluster from a cluster node c
+          ``monocrit`` : 
+              Forms a flat cluster from a cluster node c
               with index i when ``monocrit[j] <= t``.
 
               For example, to threshold on the maximum mean distance
@@ -1738,7 +1742,8 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
                   MR = maxRstat(Z, R, 3)
                   cluster(Z, t=0.8, criterion='monocrit', monocrit=MR)
 
-          ``maxclust_monocrit`` : Forms a flat cluster from a
+          ``maxclust_monocrit`` : 
+              Forms a flat cluster from a
               non-singleton cluster node ``c`` when ``monocrit[i] <=
               r`` for all cluster indices ``i`` below and including
               ``c``. ``r`` is minimized such that no more than ``t``

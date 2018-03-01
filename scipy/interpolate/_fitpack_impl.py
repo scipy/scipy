@@ -310,6 +310,7 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
     else:
         return tcku
 
+
 _curfit_cache = {'t': array([], float), 'wrk': array([], float),
                  'iwrk': array([], intc)}
 
@@ -791,6 +792,7 @@ def spalde(x, tck):
 
 # def _curfit(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
 #           full_output=0,nest=None,per=0,quiet=1):
+
 
 _surfit_cache = {'tx': array([], float), 'ty': array([], float),
                  'wrk': array([], float), 'iwrk': array([], intc)}

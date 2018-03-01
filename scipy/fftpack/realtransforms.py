@@ -1,5 +1,5 @@
 """
-Real spectrum tranforms (DCT, DST, MDCT)
+Real spectrum transforms (DCT, DST, MDCT)
 """
 from __future__ import division, print_function, absolute_import
 

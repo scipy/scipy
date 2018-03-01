@@ -2,12 +2,16 @@ from __future__ import division, print_function, absolute_import
 
 import copy
 
+import pytest
+from pytest import raises
+
 import numpy as np
-from numpy.testing import (assert_equal,
-    assert_array_equal, assert_)
+from numpy.testing import assert_equal, assert_array_equal, assert_
+
+from scipy._lib.six import xrange
 from scipy.signal._peak_finding import (argrelmax, argrelmin,
     find_peaks_cwt, _identify_ridge_lines)
-from scipy._lib.six import xrange
+from scipy.signal._peak_finding_utils import _argmaxima1d
 
 
 def _gen_gaussians(center_locs, sigmas, total_length):
@@ -68,6 +72,58 @@ def _gen_ridge_line(start_locs, max_locs, length, distances, gaps):
         locs[ind, :] = [nextrow, nextcol]
 
     return [locs[:, 0], locs[:, 1]]
+
+
+class TestArgmaxima1d(object):
+
+    def test_empty(self):
+        """Test with empty signal."""
+        x = np.array([], dtype=np.float64)
+        maxima = _argmaxima1d(x)
+        assert_equal(maxima, np.array([]))
+        assert_(maxima.base is None)
+
+    def test_linear(self):
+        """Test with linear signal."""
+        x = np.linspace(0, 100)
+        maxima = _argmaxima1d(x)
+        assert_equal(maxima, np.array([]))
+        assert_(maxima.base is None)
+
+    def test_simple(self):
+        """Test with simple signal."""
+        x = np.linspace(-10, 10, 50)
+        x[2::3] += 1
+        maxima = _argmaxima1d(x)
+        assert_equal(maxima, np.arange(2, 50, 3))
+        assert_(maxima.base is None)
+
+    def test_flat_maxima(self):
+        """Test if flat maxima are detected correctly."""
+        x = np.array([-1.3, 0, 1, 0, 2, 2, 0, 3, 3, 3, 0, 4, 4, 4, 4, 0, 5])
+        maxima = _argmaxima1d(x)
+        assert_equal(maxima, np.array([2, 4, 8, 12]))
+        assert_(maxima.base is None)
+
+    @pytest.mark.parametrize(
+        'x', [np.array([1., 0, 2]), np.array([3., 3, 0, 4, 4]),
+              np.array([5., 5, 5, 0, 6, 6, 6])])
+    def test_signal_edges(self, x):
+        """Test if correct behavior on signal edges."""
+        maxima = _argmaxima1d(x)
+        assert_equal(maxima, np.array([]))
+        assert_(maxima.base is None)
+
+    def test_exceptions(self):
+        """Test input validation and raised exceptions."""
+        with raises(ValueError, match="wrong number of dimensions"):
+            _argmaxima1d(np.ones((1, 1)))
+        with raises(ValueError, match="expected 'float64_t'"):
+            _argmaxima1d(np.ones(1, dtype=int))
+        with raises(TypeError, match="list"):
+            _argmaxima1d([1., 2.])
+        with raises(TypeError, match="'x' must not be None"):
+            _argmaxima1d(None)
 
 
 class TestRidgeLines(object):

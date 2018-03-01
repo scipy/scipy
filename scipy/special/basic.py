@@ -523,7 +523,9 @@ def kvp(v, z, n=1):
 
     >>> from scipy.special import kvp
     >>> kvp(5, (1, 2, 3+5j))
-    array([-1849.0354+0.j    ,   -25.7735+0.j    ,    -0.0307+0.0875j])
+    array([-1.84903536e+03+0.j        , -2.57735387e+01+0.j        ,
+           -3.06627741e-02+0.08750845j])
+
 
     Calculate for a single value at multiple orders:
 
@@ -836,6 +838,7 @@ def assoc_laguerre(x, n, k=0.0):
 
     """
     return orthogonal.eval_genlaguerre(n, k, x)
+
 
 digamma = psi
 
@@ -2136,6 +2139,11 @@ def zeta(x, q=None, out=None):
     out : ndarray, optional
         Output array for the computed values.
 
+    Returns
+    -------
+    out : array_like
+        Values of zeta(x).
+
     Notes
     -----
     The two-argument version is the Hurwitz zeta function:
@@ -2144,9 +2152,30 @@ def zeta(x, q=None, out=None):
 
     Riemann zeta function corresponds to ``q = 1``.
 
-    See also
+    See Also
     --------
     zetac
+
+    Examples
+    --------
+    >>> from scipy.special import zeta, polygamma, factorial
+
+    Some specific values:
+
+    >>> zeta(2), np.pi**2/6
+    (1.6449340668482266, 1.6449340668482264)
+
+    >>> zeta(4), np.pi**4/90
+    (1.0823232337111381, 1.082323233711138)
+
+    Relation to the `polygamma` function:
+
+    >>> m = 3
+    >>> x = 1.25
+    >>> polygamma(m, x)
+    array(2.782144009188397)
+    >>> (-1)**(m+1) * factorial(m) * zeta(m+1, x)
+    2.7821440091883969
 
     """
     if q is None:

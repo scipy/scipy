@@ -2138,7 +2138,6 @@ class rv_continuous(rv_generic):
         returned answer is not guaranteed to be the globally optimal MLE, it
         may only be locally optimal, or the optimization may fail altogether.
 
-
         Examples
         --------
 

@@ -17,22 +17,9 @@ cdef extern from "numpy/npy_math.h" nogil:
     double npy_isnan(double)
     double nan "NPY_NAN"
 
-cdef extern from "cephes.h":
-    double bdtrc(int k, int n, double p) nogil
-    double bdtr(int k, int n, double p) nogil
-    double bdtri(int k, int n, double y) nogil
-    double expn(int n, double x) nogil
-    double hyp2f0(double a, double b, double x, int type, double *err) nogil
-    double nbdtrc(int k, int n, double p) nogil
-    double nbdtr(int k, int n, double p) nogil
-    double nbdtri(int k, int n, double p) nogil
-    double pdtrc(int k, double m) nogil
-    double pdtr(int k, double m) nogil
-    double pdtri(int k, double y) nogil
-    double kn(int n, double x) nogil
-    double yn(int n, double x) nogil
-    double smirnov(int n, double e) nogil
-    double smirnovi(int n, double p) nogil
+from ._cephes cimport (bdtrc, bdtr, bdtri, expn, hyp2f0, nbdtrc,
+                       nbdtr, nbdtri, pdtrc, pdtr, pdtri, kn, yn,
+                       smirnov, smirnovi)
 
 cdef extern from "amos_wrappers.h":
     double cbesk_wrap_real_int(int n, double z) nogil

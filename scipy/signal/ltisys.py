@@ -194,8 +194,8 @@ class lti(LinearTimeInvariant):
 
     >>> signal.lti([3, 4], [1, 2])
     TransferFunctionContinuous(
-    array([ 3.,  4.]),
-    array([ 1.,  2.]),
+    array([3., 4.]),
+    array([1., 2.]),
     dt: None
     )
 
@@ -371,8 +371,8 @@ class dlti(LinearTimeInvariant):
 
     >>> signal.dlti([3, 4], [1, 2], dt=0.1)
     TransferFunctionDiscrete(
-    array([ 3.,  4.]),
-    array([ 1.,  2.]),
+    array([3., 4.]),
+    array([1., 2.]),
     dt: 0.1
     )
 
@@ -538,19 +538,19 @@ class TransferFunction(LinearTimeInvariant):
 
     >>> signal.TransferFunction(num, den)
     TransferFunctionContinuous(
-    array([ 1.,  3.,  3.]),
-    array([ 1.,  2.,  1.]),
+    array([1., 3., 3.]),
+    array([1., 2., 1.]),
     dt: None
     )
 
-    Contruct the transfer function with a sampling time of 0.1 seconds:
+    Construct the transfer function with a sampling time of 0.1 seconds:
 
     .. math:: H(z) = \frac{z^2 + 3z + 3}{z^2 + 2z + 1}
 
     >>> signal.TransferFunction(num, den, dt=0.1)
     TransferFunctionDiscrete(
-    array([ 1.,  3.,  3.]),
-    array([ 1.,  2.,  1.]),
+    array([1., 3., 3.]),
+    array([1., 2., 1.]),
     dt: 0.1
     )
 
@@ -1268,10 +1268,10 @@ class StateSpace(LinearTimeInvariant):
 
     >>> sys.to_discrete(0.1)
     StateSpaceDiscrete(
-    array([[ 1. ,  0.1],
-           [ 0. ,  1. ]]),
-    array([[ 0.005],
-           [ 0.1  ]]),
+    array([[1. , 0.1],
+           [0. , 1. ]]),
+    array([[0.005],
+           [0.1  ]]),
     array([[1, 0]]),
     array([[0]]),
     dt: 0.1
@@ -1282,10 +1282,10 @@ class StateSpace(LinearTimeInvariant):
 
     >>> signal.StateSpace(a, b, c, d, dt=0.1)
     StateSpaceDiscrete(
-    array([[ 1. ,  0.1],
-           [ 0. ,  1. ]]),
-    array([[ 0.005],
-           [ 0.1  ]]),
+    array([[1. , 0.1],
+           [0. , 1. ]]),
+    array([[0.005],
+           [0.1  ]]),
     array([[1, 0]]),
     array([[0]]),
     dt: 0.1

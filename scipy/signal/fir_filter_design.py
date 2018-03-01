@@ -32,9 +32,9 @@ def _get_fs(fs, nyq):
 
 # Some notes on function parameters:
 #
-# `cutoff` and `width` are given as a numbers between 0 and 1.  These are
+# `cutoff` and `width` are given as numbers between 0 and 1.  These are
 # relative frequencies, expressed as a fraction of the Nyquist frequency.
-# For example, if the Nyquist frequency is 2KHz, then width=0.15 is a width
+# For example, if the Nyquist frequency is 2 KHz, then width=0.15 is a width
 # of 300 Hz.
 #
 # The `order` of a FIR filter is one less than the number of taps.

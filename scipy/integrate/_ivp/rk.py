@@ -140,7 +140,10 @@ class RungeKutta(OdeSolver):
             scale = atol + np.maximum(np.abs(y), np.abs(y_new)) * rtol
             error_norm = norm(error / scale)
 
-            if error_norm < 1:
+            if error_norm == 0.0:
+                h_abs *= MAX_FACTOR
+                step_accepted = True
+            elif error_norm < 1:
                 h_abs *= min(MAX_FACTOR,
                              max(1, SAFETY * error_norm ** (-1 / (order + 1))))
                 step_accepted = True
@@ -166,12 +169,12 @@ class RungeKutta(OdeSolver):
 class RK23(RungeKutta):
     """Explicit Runge-Kutta method of order 3(2).
 
-    The Bogacki-Shamping pair of formulas is used [1]_. The error is controlled
-    assuming 2nd order accuracy, but steps are taken using a 3rd oder accurate
-    formula (local extrapolation is done). A cubic Hermit polynomial is used
-    for the dense output.
+    This uses the Bogacki-Shampine pair of formulas [1]_. The error is controlled
+    assuming accuracy of the second-order method, but steps are taken using the
+    third-order accurate formula (local extrapolation is done). A cubic Hermite
+    polynomial is used for the dense output.
 
-    Can be applied in a complex domain.
+    Can be applied in the complex domain.
 
     Parameters
     ----------
@@ -182,24 +185,22 @@ class RK23(RungeKutta):
         shape (n,). Or alternatively it can have shape (n, k), then ``fun``
         must return array_like with shape (n, k), i.e. each column
         corresponds to a single column in ``y``. The choice between the two
-        options is determined by `vectorized` argument (see below). The
-        vectorized implementation allows faster approximation of the Jacobian
-        by finite differences.
+        options is determined by `vectorized` argument (see below).
     t0 : float
         Initial time.
     y0 : array_like, shape (n,)
         Initial state.
     t_bound : float
-        Boundary time --- the integration won't continue beyond it. It also
+        Boundary time - the integration won't continue beyond it. It also
         determines the direction of the integration.
     max_step : float, optional
-        Maximum allowed step size. Default is np.inf, i.e. the step is not
+        Maximum allowed step size. Default is np.inf, i.e. the step size is not
         bounded and determined solely by the solver.
     rtol, atol : float and array_like, optional
         Relative and absolute tolerances. The solver keeps the local error
         estimates less than ``atol + rtol * abs(y)``. Here `rtol` controls a
         relative accuracy (number of correct digits). But if a component of `y`
-        is approximately below `atol` then the error only needs to fall within
+        is approximately below `atol`, the error only needs to fall within
         the same `atol` threshold, and the number of correct digits is not
         guaranteed. If components of y have different scales, it might be
         beneficial to set different `atol` values for different components by
@@ -227,11 +228,11 @@ class RK23(RungeKutta):
     step_size : float
         Size of the last successful step. None if no steps were made yet.
     nfev : int
-        Number of the system's rhs evaluations.
+        Number evaluations of the system's right-hand side.
     njev : int
-        Number of the Jacobian evaluations.
+        Number of evaluations of the Jacobian. Is always 0 for this solver as it does not use the Jacobian.
     nlu : int
-        Number of LU decompositions.
+        Number of LU decompositions. Is always 0 for this solver.
 
     References
     ----------
@@ -254,40 +255,38 @@ class RK23(RungeKutta):
 class RK45(RungeKutta):
     """Explicit Runge-Kutta method of order 5(4).
 
-    The Dormand-Prince pair of formulas is used [1]_. The error is controlled
-    assuming 4th order accuracy, but steps are taken using a 5th
-    oder accurate formula (local extrapolation is done). A quartic
-    interpolation polynomial is used for the dense output [2]_.
+    This uses the Dormand-Prince pair of formulas [1]_. The error is controlled
+    assuming accuracy of the fourth-order method accuracy, but steps are taken
+    using the fifth-order accurate formula (local extrapolation is done).
+    A quartic interpolation polynomial is used for the dense output [2]_.
 
-    Can be applied in a complex domain.
+    Can be applied in the complex domain.
 
     Parameters
     ----------
     fun : callable
         Right-hand side of the system. The calling signature is ``fun(t, y)``.
-        Here ``t`` is a scalar and there are two options for ndarray ``y``.
-        It can either have shape (n,), then ``fun`` must return array_like with
-        shape (n,). Or alternatively it can have shape (n, k), then ``fun``
-        must return array_like with shape (n, k), i.e. each column
+        Here ``t`` is a scalar, and there are two options for the ndarray ``y``:
+        It can either have shape (n,); then ``fun`` must return array_like with
+        shape (n,). Alternatively it can have shape (n, k); then ``fun``
+        must return an array_like with shape (n, k), i.e. each column
         corresponds to a single column in ``y``. The choice between the two
-        options is determined by `vectorized` argument (see below). The
-        vectorized implementation allows faster approximation of the Jacobian
-        by finite differences.
+        options is determined by `vectorized` argument (see below).
     t0 : float
-        Initial value of the independent variable.
+        Initial time.
     y0 : array_like, shape (n,)
-        Initial values of the dependent variable.
+        Initial state.
     t_bound : float
-        Boundary time --- the integration won't continue beyond it. It also
+        Boundary time - the integration won't continue beyond it. It also
         determines the direction of the integration.
     max_step : float, optional
-        Maximum allowed step size. Default is np.inf, i.e. the step is not
+        Maximum allowed step size. Default is np.inf, i.e. the step size is not
         bounded and determined solely by the solver.
     rtol, atol : float and array_like, optional
         Relative and absolute tolerances. The solver keeps the local error
         estimates less than ``atol + rtol * abs(y)``. Here `rtol` controls a
         relative accuracy (number of correct digits). But if a component of `y`
-        is approximately below `atol` then the error only needs to fall within
+        is approximately below `atol`, the error only needs to fall within
         the same `atol` threshold, and the number of correct digits is not
         guaranteed. If components of y have different scales, it might be
         beneficial to set different `atol` values for different components by
@@ -315,11 +314,11 @@ class RK45(RungeKutta):
     step_size : float
         Size of the last successful step. None if no steps were made yet.
     nfev : int
-        Number of the system's rhs evaluations.
+        Number evaluations of the system's right-hand side.
     njev : int
-        Number of the Jacobian evaluations.
+        Number of evaluations of the Jacobian. Is always 0 for this solver as it does not use the Jacobian.
     nlu : int
-        Number of LU decompositions.
+        Number of LU decompositions. Is always 0 for this solver.
 
     References
     ----------

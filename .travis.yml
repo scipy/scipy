@@ -14,11 +14,11 @@ matrix:
         - PEP8=1
         - NUMPYSPEC=numpy
       before_install:
-        - pip install pep8==1.7.0
+        - pip install pycodestyle==2.3.1
         - pip install pyflakes==1.1.0
       script:
         - PYFLAKES_NODOCTEST=1 pyflakes scipy benchmarks/benchmarks | grep -E -v 'unable to detect undefined names|assigned to but never used|imported but unused|redefinition of unused|may be undefined, or defined from star imports' > test.out; cat test.out; test \! -s test.out
-        - pep8 scipy benchmarks/benchmarks
+        - pycodestyle scipy benchmarks/benchmarks
     - python: 2.7
       env:
         - TESTMODE=fast
@@ -27,7 +27,7 @@ matrix:
     - python: 3.6
       env:
         - TESTMODE=full
-        - COVERAGE=--coverage
+        - COVERAGE="--coverage --gcov"
         - NUMPYSPEC=numpy
     - python: 3.5
       env:
@@ -75,6 +75,7 @@ before_install:
       free -m
       export PATH=/usr/lib/ccache:$PATH
     elif [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+      brew cask uninstall oclint
       brew install gcc ccache libmpc
       touch config.sh
       git clone --depth=1 https://github.com/matthew-brett/multibuild.git
@@ -97,7 +98,7 @@ before_install:
   - df -h
   - ulimit -a
   - mkdir builds
-  - pushd builds
+  - cd builds
   # Need to install Cython 0.23.4 from source to avoid errors for Python 3.6
   - travis_retry pip install --upgrade pip setuptools wheel
   - travis_retry pip install cython==0.25.2
@@ -121,10 +122,14 @@ before_install:
   - |
     if [ "${REFGUIDE_CHECK}" == "1" ]; then
         travis_retry pip install matplotlib Sphinx==1.5.5
+        # XXX: Install older numpy as a workaround for float printing changes.
+        # XXX: We'll remove this once numpy 1.14.1 is released to fix its printing
+        # XXX: bugs
+        travis_retry pip install 'numpy!=1.14.0'
     fi
   - python -V
   - ccache -s
-  - popd
+  - cd ..
   - set -o pipefail
 script:
   - python -c 'import numpy as np; print("relaxed strides checking:", np.ones((10,1),order="C").flags.f_contiguous)'
@@ -146,27 +151,35 @@ script:
         echo "setup.py sdist"
         python tools/suppress_output.py python setup.py sdist
         # Move out of source directory to avoid finding local scipy
-        pushd dist
+        cd dist
         # Use pip --build option to make ccache work better.
         # However, this option is partially broken
         # (see https://github.com/pypa/pip/issues/4242)
         # and some shenanigans are needed to make it work.
         echo "pip install"
         python ../tools/suppress_output.py pip install --no-cache-dir --build="$HOME/builds" --upgrade "file://`echo -n $PWD/scipy*`#egg=scipy" -v
-        popd
+        cd ..
         USE_WHEEL_BUILD="--no-build"
     fi
   - export SCIPY_AVAILABLE_MEM=3G
   - python -u $OPTIMIZE runtests.py -g -m $TESTMODE $COVERAGE $USE_WHEEL_BUILD -- -rfEX -n 3 2>&1 | tee runtests.log
   - tools/validate_runtests_log.py $TESTMODE < runtests.log
   - if [ "${REFGUIDE_CHECK}" == "1" ]; then python runtests.py -g --refguide-check; fi
-after_success:
+  # Check dynamic symbol hiding works on Linux
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ./tools/check_pyext_symbol_hiding.sh build; fi
+after_script:
   - ccache -s
   # Upload coverage information
-  - if [ "${COVERAGE}" == "--coverage" ]; then
-        pushd build/testenv/lib/python*/site-packages/;
-        codecov;
-        popd;
+  - |
+    if [ -n "${COVERAGE}" ]; then
+        RUN_DIR=`echo build/testenv/lib/python*/site-packages`
+        # Produce gcov output for codecov to find
+        find build -name '*.gcno' -type f -exec gcov -pb {} +
+        mv *.gcov "$RUN_DIR/"
+        # Run codecov
+        pushd "$RUN_DIR"
+        codecov -X gcov
+        popd
     fi
 notifications:
   # Perhaps we should have status emails sent to the mailing list, but

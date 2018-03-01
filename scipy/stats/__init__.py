@@ -90,11 +90,13 @@ Continuous distributions
    lomax             -- Lomax (Pareto of the second kind)
    maxwell           -- Maxwell
    mielke            -- Mielke's Beta-Kappa
+   moyal             -- Moyal
    nakagami          -- Nakagami
    ncx2              -- Non-central chi-squared
    ncf               -- Non-central F
    nct               -- Non-central Student's T
    norm              -- Normal (Gaussian)
+   norminvgauss      -- Normal Inverse Gaussian
    pareto            -- Pareto
    pearson3          -- Pearson type III
    powerlaw          -- Power-function

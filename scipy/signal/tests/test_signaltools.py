@@ -552,6 +552,21 @@ class TestMedFilt(object):
         a.strides = 16
         assert_(signal.medfilt(a, 1) == 5.)
 
+    def test_refcounting(self):
+        # Check a refcounting-related crash
+        a = Decimal(123)
+        x = np.array([a, a], dtype=object)
+        if hasattr(sys, 'getrefcount'):
+            n = 2 * sys.getrefcount(a)
+        else:
+            n = 10
+        # Shouldn't segfault:
+        for j in range(n):
+            signal.medfilt(x)
+        if hasattr(sys, 'getrefcount'):
+            assert_(sys.getrefcount(a) < n)
+        assert_equal(x, [a, a])
+
 
 class TestWiener(object):
 
@@ -1385,6 +1400,24 @@ class TestCorrelateComplex(object):
         assert_array_almost_equal(y, y_r, decimal=self.decimal(dt) - 1)
         assert_equal(y.dtype, dt)
 
+    def test_rank0(self, dt):
+        a = np.array(np.random.randn()).astype(dt)
+        a += 1j * np.array(np.random.randn()).astype(dt)
+        b = np.array(np.random.randn()).astype(dt)
+        b += 1j * np.array(np.random.randn()).astype(dt)
+
+        y_r = (correlate(a.real, b.real)
+               + correlate(a.imag, b.imag)).astype(dt)
+        y_r += 1j * (-correlate(a.real, b.imag) + correlate(a.imag, b.real))
+
+        y = correlate(a, b, 'full')
+        assert_array_almost_equal(y, y_r, decimal=self.decimal(dt) - 1)
+        assert_equal(y.dtype, dt)
+
+        assert_equal(correlate([1], [2j]), correlate(1, 2j))
+        assert_equal(correlate([2j], [3j]), correlate(2j, 3j))
+        assert_equal(correlate([3j], [4]), correlate(3j, 4))
+
 
 class TestCorrelate2d(object):
 
@@ -1418,6 +1451,11 @@ class TestCorrelate2d(object):
 
         assert_raises(ValueError, signal.correlate2d, *(a, b), **{'mode': 'valid'})
         assert_raises(ValueError, signal.correlate2d, *(b, a), **{'mode': 'valid'})
+
+    def test_complex_input(self):
+        assert_equal(signal.correlate2d([[1]], [[2j]]), -2j)
+        assert_equal(signal.correlate2d([[2j]], [[3j]]), 6)
+        assert_equal(signal.correlate2d([[3j]], [[4]]), 12j)
 
 
 class TestLFilterZI(object):

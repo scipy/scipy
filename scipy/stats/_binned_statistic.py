@@ -402,7 +402,7 @@ def binned_statistic_dd(sample, values, statistic='mean',
 
     range : sequence, optional
         A sequence of lower and upper bin edges to be used if the edges are
-        not given explicitely in `bins`. Defaults to the minimum and maximum
+        not given explicitly in `bins`. Defaults to the minimum and maximum
         values along each dimension.
     expand_binnumbers : bool, optional
         'False' (default): the returned `binnumber` is a shape (N,) array of

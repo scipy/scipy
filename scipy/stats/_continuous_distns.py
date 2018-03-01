@@ -1,4 +1,4 @@
-#
+﻿#
 # Author:  Travis Oliphant  2002-2011 with contributions from
 #          SciPy Developers 2004-2011
 #
@@ -8,9 +8,11 @@ import warnings
 
 import numpy as np
 
-from scipy.misc.doccer import inherit_docstring_from
+from scipy.misc.doccer import (extend_notes_in_docstring,
+                               replace_notes_in_docstring)
 from scipy import optimize
-from scipy import integrate, interpolate
+from scipy import integrate
+from scipy import interpolate
 import scipy.special as sc
 from scipy._lib._numpy_compat import broadcast_to
 
@@ -44,6 +46,8 @@ class ksone_gen(rv_continuous):
 
     def _ppf(self, q, n):
         return sc.smirnovi(n, 1.0 - q)
+
+
 ksone = ksone_gen(a=0.0, name='ksone')
 
 
@@ -61,6 +65,8 @@ class kstwobign_gen(rv_continuous):
 
     def _ppf(self, q):
         return sc.kolmogi(1.0 - q)
+
+
 kstwobign = kstwobign_gen(a=0.0, name='kstwobign')
 
 
@@ -164,13 +170,11 @@ class norm_gen(rv_continuous):
     def _entropy(self):
         return 0.5*(np.log(2*np.pi)+1)
 
-    @inherit_docstring_from(rv_continuous)
+    @replace_notes_in_docstring(rv_continuous, notes="""\
+        This function uses explicit formulas for the maximum likelihood
+        estimation of the normal distribution parameters, so the
+        `optimizer` argument is ignored.\n\n""")
     def fit(self, data, **kwds):
-        """%(super)s
-        This function (norm_gen.fit) uses explicit formulas for the maximum
-        likelihood estimation of the parameters, so the `optimizer` argument
-        is ignored.
-        """
         floc = kwds.get('floc', None)
         fscale = kwds.get('fscale', None)
 
@@ -194,6 +198,7 @@ class norm_gen(rv_continuous):
             scale = fscale
 
         return loc, scale
+
 
 norm = norm_gen(name='norm')
 
@@ -238,6 +243,8 @@ class alpha_gen(rv_continuous):
 
     def _stats(self, a):
         return [np.inf]*2 + [np.nan]*2
+
+
 alpha = alpha_gen(a=0.0, name='alpha')
 
 
@@ -276,6 +283,8 @@ class anglit_gen(rv_continuous):
 
     def _entropy(self):
         return 1-np.log(2)
+
+
 anglit = anglit_gen(a=-np.pi/4, b=np.pi/4, name='anglit')
 
 
@@ -318,6 +327,8 @@ class arcsine_gen(rv_continuous):
 
     def _entropy(self):
         return -0.24156447527049044468
+
+
 arcsine = arcsine_gen(a=0.0, b=1.0, name='arcsine')
 
 
@@ -432,13 +443,11 @@ class beta_gen(rv_continuous):
         a, b = optimize.fsolve(func, (1.0, 1.0))
         return super(beta_gen, self)._fitstart(data, args=(a, b))
 
-    @inherit_docstring_from(rv_continuous)
-    def fit(self, data, *args, **kwds):
-        """%(super)s
+    @extend_notes_in_docstring(rv_continuous, notes="""\
         In the special case where both `floc` and `fscale` are given, a
         `ValueError` is raised if any value `x` in `data` does not satisfy
-        `floc < x < floc + fscale`.
-        """
+        `floc < x < floc + fscale`.\n\n""")
+    def fit(self, data, *args, **kwds):
         # Override rv_continuous.fit, so we can more efficiently handle the
         # case where floc and fscale are given.
 
@@ -530,6 +539,7 @@ class beta_gen(rv_continuous):
 
         return a, b, floc, fscale
 
+
 beta = beta_gen(a=0.0, b=1.0, name='beta')
 
 
@@ -594,6 +604,8 @@ class betaprime_gen(rv_continuous):
                             np.inf)
         else:
             raise NotImplementedError
+
+
 betaprime = betaprime_gen(a=0.0, name='betaprime')
 
 
@@ -647,6 +659,8 @@ class bradford_gen(rv_continuous):
     def _entropy(self, c):
         k = np.log(1+c)
         return k/2.0 - np.log(c/k)
+
+
 bradford = bradford_gen(a=0.0, b=1.0, name='bradford')
 
 
@@ -700,6 +714,8 @@ class burr_gen(rv_continuous):
     def _munp(self, n, c, d):
         nc = 1. * n / c
         return d * sc.beta(1.0 - nc, d + nc)
+
+
 burr = burr_gen(a=0.0, name='burr')
 
 
@@ -773,6 +789,8 @@ class burr12_gen(rv_continuous):
     def _munp(self, n, c, d):
         nc = 1. * n / c
         return d * sc.beta(1.0 + nc, d - nc)
+
+
 burr12 = burr12_gen(a=0.0, name='burr12')
 
 
@@ -822,6 +840,8 @@ class fisk_gen(burr_gen):
 
     def _entropy(self, c):
         return 2 - np.log(c)
+
+
 fisk = fisk_gen(a=0.0, name='fisk')
 
 
@@ -870,6 +890,8 @@ class cauchy_gen(rv_continuous):
         # Initialize ML guesses using quartiles instead of moments.
         p25, p50, p75 = np.percentile(data, [25, 50, 75])
         return p50, (p75 - p25)/2
+
+
 cauchy = cauchy_gen(name='cauchy')
 
 
@@ -929,6 +951,8 @@ class chi_gen(rv_continuous):
         g2 = 2*df*(1.0-df)-6*mu**4 + 4*mu**2 * (2*df-1)
         g2 /= np.asarray(mu2**2.0)
         return mu, mu2, g1, g2
+
+
 chi = chi_gen(a=0.0, name='chi')
 
 
@@ -981,6 +1005,8 @@ class chi2_gen(rv_continuous):
         g1 = 2*np.sqrt(2.0/df)
         g2 = 12.0/df
         return mu, mu2, g1, g2
+
+
 chi2 = chi2_gen(a=0.0, name='chi2')
 
 
@@ -1017,6 +1043,8 @@ class cosine_gen(rv_continuous):
 
     def _entropy(self):
         return np.log(4*np.pi)-1.0
+
+
 cosine = cosine_gen(a=-np.pi, b=np.pi, name='cosine')
 
 
@@ -1072,6 +1100,8 @@ class dgamma_gen(rv_continuous):
     def _stats(self, a):
         mu2 = a*(a+1.0)
         return 0.0, mu2, 0.0, (a+2.0)*(a+3.0)/mu2-3.0
+
+
 dgamma = dgamma_gen(name='dgamma')
 
 
@@ -1128,6 +1158,8 @@ class dweibull_gen(rv_continuous):
     # so overall we're saving one or two gamma function evaluations here.
     def _stats(self, c):
         return 0, None, 0, None
+
+
 dweibull = dweibull_gen(name='dweibull')
 
 
@@ -1186,6 +1218,52 @@ class expon_gen(rv_continuous):
 
     def _entropy(self):
         return 1.0
+
+    @replace_notes_in_docstring(rv_continuous, notes="""\
+        This function uses explicit formulas for the maximum likelihood
+        estimation of the exponential distribution parameters, so the
+        `optimizer`, `loc` and `scale` keyword arguments are ignored.\n\n""")
+    def fit(self, data, *args, **kwds):
+        if len(args) > 0:
+            raise TypeError("Too many arguments.")
+
+        floc = kwds.pop('floc', None)
+        fscale = kwds.pop('fscale', None)
+
+        # Ignore the optimizer-related keyword arguments, if given.
+        kwds.pop('loc', None)
+        kwds.pop('scale', None)
+        kwds.pop('optimizer', None)
+        if kwds:
+            raise TypeError("Unknown arguments: %s." % kwds)
+
+        if floc is not None and fscale is not None:
+            # This check is for consistency with `rv_continuous.fit`.
+            raise ValueError("All parameters fixed. There is nothing to "
+                             "optimize.")
+
+        data = np.asarray(data)
+        data_min = data.min()
+        if floc is None:
+            # ML estimate of the location is the minimum of the data.
+            loc = data_min
+        else:
+            loc = floc
+            if data_min < loc:
+                # There are values that are less than the specified loc.
+                raise FitDataError("expon", lower=floc, upper=np.inf)
+
+        if fscale is None:
+            # ML estimate of the scale is the shifted mean.
+            scale = data.mean() - loc
+        else:
+            scale = fscale
+
+        # We expect the return values to be floating point, so ensure it
+        # by explicitly converting to float.
+        return float(loc), float(scale)
+
+
 expon = expon_gen(a=0.0, name='expon')
 
 
@@ -1264,6 +1342,8 @@ class exponnorm_gen(rv_continuous):
         skw = 2 * K**3 * opK2**(-1.5)
         krt = 6.0 * K2 * K2 * opK2**(-2)
         return K, opK2, skw, krt
+
+
 exponnorm = exponnorm_gen(name='exponnorm')
 
 
@@ -1307,6 +1387,8 @@ class exponweib_gen(rv_continuous):
 
     def _ppf(self, q, a, c):
         return (-sc.log1p(-q**(1.0/a)))**np.asarray(1.0/c)
+
+
 exponweib = exponweib_gen(a=0.0, name='exponweib')
 
 
@@ -1358,6 +1440,8 @@ class exponpow_gen(rv_continuous):
 
     def _ppf(self, q, b):
         return pow(sc.log1p(-sc.log1p(-q)), 1.0/b)
+
+
 exponpow = exponpow_gen(a=0.0, name='exponpow')
 
 
@@ -1426,6 +1510,8 @@ class fatiguelife_gen(rv_continuous):
         g1 = 4 * c * (11*c2 + 6.0) / np.power(den, 1.5)
         g2 = 6 * c2 * (93*c2 + 40.0) / den**2.0
         return mu, mu2, g1, g2
+
+
 fatiguelife = fatiguelife_gen(a=0.0, name='fatiguelife')
 
 
@@ -1462,6 +1548,8 @@ class foldcauchy_gen(rv_continuous):
 
     def _stats(self, c):
         return np.inf, np.inf, np.nan, np.nan
+
+
 foldcauchy = foldcauchy_gen(a=0.0, name='foldcauchy')
 
 
@@ -1543,6 +1631,8 @@ class f_gen(rv_continuous):
         g2 *= 3. / 2.
 
         return mu, mu2, g1, g2
+
+
 f = f_gen(a=0.0, name='f')
 
 
@@ -1607,6 +1697,8 @@ class foldnorm_gen(rv_continuous):
         g2 = g2 / mu2**2.0 - 3.
 
         return mu, mu2, g1, g2
+
+
 foldnorm = foldnorm_gen(a=0.0, name='foldnorm')
 
 
@@ -1661,6 +1753,7 @@ class weibull_min_gen(rv_continuous):
 
     def _entropy(self, c):
         return -_EULER / c - np.log(c) + _EULER + 1
+
 
 weibull_min = weibull_min_gen(a=0.0, name='weibull_min')
 
@@ -1720,6 +1813,7 @@ class weibull_max_gen(rv_continuous):
 
     def _entropy(self, c):
         return -_EULER / c - np.log(c) + _EULER + 1
+
 
 weibull_max = weibull_max_gen(b=0.0, name='weibull_max')
 
@@ -1829,6 +1923,7 @@ class frechet_r_gen(weibull_min_gen):
     def var(self, *args, **kwargs):
         return weibull_min_gen.var(self, *args, **kwargs)
 
+
 frechet_r = frechet_r_gen(a=0.0, name='frechet_r')
 
 
@@ -1933,6 +2028,7 @@ class frechet_l_gen(weibull_max_gen):
     def var(self, *args, **kwargs):
         return weibull_max_gen.var(self, *args, **kwargs)
 
+
 frechet_l = frechet_l_gen(b=0.0, name='frechet_l')
 
 
@@ -1982,6 +2078,8 @@ class genlogistic_gen(rv_continuous):
         g2 = np.pi**4/15.0 + 6*sc.zeta(4, c)
         g2 /= mu2**2.0
         return mu, mu2, g1, g2
+
+
 genlogistic = genlogistic_gen(name='genlogistic')
 
 
@@ -2067,6 +2165,8 @@ class genpareto_gen(rv_continuous):
 
     def _entropy(self, c):
         return 1. + c
+
+
 genpareto = genpareto_gen(a=0.0, name='genpareto')
 
 
@@ -2112,6 +2212,8 @@ class genexpon_gen(rv_continuous):
 
     def _logpdf(self, x, a, b, c):
         return np.log(a+b*(-sc.expm1(-c*x))) + (-a-b)*x+b*(-sc.expm1(-c*x))/c
+
+
 genexpon = genexpon_gen(a=0.0, name='genexpon')
 
 
@@ -2246,6 +2348,7 @@ class genextreme_gen(rv_continuous):
     def _entropy(self, c):
         return _EULER*(1 - c) + 1
 
+
 genextreme = genextreme_gen(name='genextreme')
 
 
@@ -2355,7 +2458,11 @@ class gamma_gen(rv_continuous):
         a = 4 / (1e-8 + _skew(data)**2)
         return super(gamma_gen, self)._fitstart(data, args=(a,))
 
-    @inherit_docstring_from(rv_continuous)
+    @extend_notes_in_docstring(rv_continuous, notes="""\
+        When the location is fixed by using the argument `floc`, this
+        function uses explicit formulas or solves a simpler numerical
+        problem than the full ML optimization problem.  So in that case,
+        the `optimizer`, `loc` and `scale` arguments are ignored.\n\n""")
     def fit(self, data, *args, **kwds):
         f0 = (kwds.get('f0', None) or kwds.get('fa', None) or
               kwds.get('fix_a', None))
@@ -2420,6 +2527,7 @@ class gamma_gen(rv_continuous):
 
         return a, floc, scale
 
+
 gamma = gamma_gen(a=0.0, name='gamma')
 
 
@@ -2479,6 +2587,8 @@ class erlang_gen(gamma_gen):
             `f0=<integer>`, the fit method can be constrained to fit the data to
             a specific integer shape parameter.
             """)
+
+
 erlang = erlang_gen(a=0.0, name='erlang')
 
 
@@ -2543,6 +2653,8 @@ class gengamma_gen(rv_continuous):
     def _entropy(self, a, c):
         val = sc.psi(a)
         return a*(1-val) + 1.0/c*val + sc.gammaln(a) - np.log(abs(c))
+
+
 gengamma = gengamma_gen(a=0.0, name='gengamma')
 
 
@@ -2592,6 +2704,8 @@ class genhalflogistic_gen(rv_continuous):
 
     def _entropy(self, c):
         return 2 - (2*c+1)*np.log(2)
+
+
 genhalflogistic = genhalflogistic_gen(a=0.0, name='genhalflogistic')
 
 
@@ -2632,6 +2746,8 @@ class gompertz_gen(rv_continuous):
 
     def _entropy(self, c):
         return 1.0 - np.log(c) - np.exp(c)*sc.expn(1, c)
+
+
 gompertz = gompertz_gen(a=0.0, name='gompertz')
 
 
@@ -2683,6 +2799,8 @@ class gumbel_r_gen(rv_continuous):
     def _entropy(self):
         # http://en.wikipedia.org/wiki/Gumbel_distribution
         return _EULER + 1.
+
+
 gumbel_r = gumbel_r_gen(name='gumbel_r')
 
 
@@ -2740,6 +2858,8 @@ class gumbel_l_gen(rv_continuous):
 
     def _entropy(self):
         return _EULER + 1.
+
+
 gumbel_l = gumbel_l_gen(name='gumbel_l')
 
 
@@ -2781,6 +2901,8 @@ class halfcauchy_gen(rv_continuous):
 
     def _entropy(self):
         return np.log(2*np.pi)
+
+
 halfcauchy = halfcauchy_gen(a=0.0, name='halfcauchy')
 
 
@@ -2831,6 +2953,8 @@ class halflogistic_gen(rv_continuous):
 
     def _entropy(self):
         return 2-np.log(2)
+
+
 halflogistic = halflogistic_gen(a=0.0, name='halflogistic')
 
 
@@ -2880,6 +3004,8 @@ class halfnorm_gen(rv_continuous):
 
     def _entropy(self):
         return 0.5*np.log(np.pi/2.0)+0.5
+
+
 halfnorm = halfnorm_gen(a=0.0, name='halfnorm')
 
 
@@ -2916,6 +3042,8 @@ class hypsecant_gen(rv_continuous):
 
     def _entropy(self):
         return np.log(2*np.pi)
+
+
 hypsecant = hypsecant_gen(name='hypsecant')
 
 
@@ -2957,6 +3085,8 @@ class gausshyper_gen(rv_continuous):
         num = sc.hyp2f1(c, a+n, a+b+n, -z)
         den = sc.hyp2f1(c, a, a+b, -z)
         return fac*num / den
+
+
 gausshyper = gausshyper_gen(a=0.0, b=1.0, name='gausshyper')
 
 
@@ -3023,6 +3153,8 @@ class invgamma_gen(rv_continuous):
 
     def _entropy(self, a):
         return a - (a+1.0) * sc.psi(a) + sc.gammaln(a)
+
+
 invgamma = invgamma_gen(a=0.0, name='invgamma')
 
 
@@ -3076,7 +3208,78 @@ class invgauss_gen(rv_continuous):
 
     def _stats(self, mu):
         return mu, mu**3.0, 3*np.sqrt(mu), 15*mu
+
+
 invgauss = invgauss_gen(a=0.0, name='invgauss')
+
+
+class norminvgauss_gen(rv_continuous):
+    r"""A Normal Inverse Gaussian continuous random variable.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability density function for `norminvgauss` is:
+
+    .. math::
+
+        f(x; a, b) = (a \exp(\sqrt{a^2 - b^2} + b x)) /
+        (\pi \sqrt{1 + x^2}} \, K_1(a * \sqrt{1 + x^2}))
+
+    where `x` is a real number, the parameter `a` is the tail heaviness
+    and `b` is the asymmetry parameter satisfying `a > 0` and `abs(b) <= a`.
+    `K_1` is the modified Bessel function of second kind (`scipy.special.k1`).
+
+    %(after_notes)s
+
+    A normal inverse Gaussian random variable with parameters `a` and `b` can
+    be expressed  as `X = b * V + sqrt(V) * X` where `X` is `norm(0,1)`
+    and `V` is `invgauss(mu=1/sqrt(a**2 - b**2))`. This representation is used
+    to generate random variates.
+
+    References
+    ----------
+    O. Barndorff-Nielsen, "Hyperbolic Distributions and Distributions on
+    Hyperbolae", Scandinavian Journal of Statistics, Vol. 5(3),
+    pp. 151-157, 1978.
+
+    O. Barndorff-Nielsen, "Normal Inverse Gaussian Distributions and Stochastic
+    Volatility Modelling", Scandinavian Journal of Statistics, Vol. 24,
+    pp. 1–13, 1997.
+
+    %(example)s
+
+    """
+    _support_mask = rv_continuous._open_support_mask
+
+    def _argcheck(self, a, b):
+        return (a > 0) & (np.absolute(b) < a)
+
+    def _pdf(self, x, a, b):
+        gamma = np.sqrt(a**2 - b**2)
+        fac1 = a / np.pi * np.exp(gamma)
+        sq = np.sqrt(1 + x**2)
+        return fac1 * sc.k1e(a * sq) * np.exp(b*x - a*sq) / sq
+
+    def _rvs(self, a, b):
+        # note: X = b * V + sqrt(V) * X is norminvgaus(a,b) if X is standard
+        # normal and V is invgauss(mu=1/sqrt(a**2 - b**2))
+        gamma = np.sqrt(a**2 - b**2)
+        sz, rndm = self._size, self._random_state
+        ig = invgauss.rvs(mu=1/gamma, size=sz, random_state=rndm)
+        return b * ig + np.sqrt(ig) * norm.rvs(size=sz, random_state=rndm)
+
+    def _stats(self, a, b):
+        gamma = np.sqrt(a**2 - b**2)
+        mean = b / gamma
+        variance = a**2 / gamma**3
+        skewness = 3.0 * b / (a * np.sqrt(gamma))
+        kurtosis = 3.0 * (1 + 4 * b**2 / a**2) / gamma
+        return mean, variance, skewness, kurtosis
+
+
+norminvgauss = norminvgauss_gen(name="norminvgauss")
 
 
 class invweibull_gen(rv_continuous):
@@ -3127,6 +3330,8 @@ class invweibull_gen(rv_continuous):
 
     def _entropy(self, c):
         return 1+_EULER + _EULER / c - np.log(c)
+
+
 invweibull = invweibull_gen(a=0, name='invweibull')
 
 
@@ -3172,6 +3377,8 @@ class johnsonsb_gen(rv_continuous):
 
     def _ppf(self, q, a, b):
         return 1.0 / (1 + np.exp(-1.0 / b * (_norm_ppf(q) - a)))
+
+
 johnsonsb = johnsonsb_gen(a=0.0, b=1.0, name='johnsonsb')
 
 
@@ -3217,6 +3424,8 @@ class johnsonsu_gen(rv_continuous):
 
     def _ppf(self, q, a, b):
         return np.sinh((_norm_ppf(q) - a) / b)
+
+
 johnsonsu = johnsonsu_gen(name='johnsonsu')
 
 
@@ -3256,6 +3465,8 @@ class laplace_gen(rv_continuous):
 
     def _entropy(self):
         return np.log(2)+1
+
+
 laplace = laplace_gen(name='laplace')
 
 
@@ -3303,6 +3514,8 @@ class levy_gen(rv_continuous):
 
     def _stats(self):
         return np.inf, np.inf, np.nan, np.nan
+
+
 levy = levy_gen(a=0.0, name="levy")
 
 
@@ -3350,6 +3563,8 @@ class levy_l_gen(rv_continuous):
 
     def _stats(self):
         return np.inf, np.inf, np.nan, np.nan
+
+
 levy_l = levy_l_gen(b=0.0, name="levy_l")
 
 
@@ -3770,6 +3985,8 @@ class levy_stable_gen(rv_continuous):
         g1 = 0. if alpha == 2. else np.NaN
         g2 = 0. if alpha == 2. else np.NaN 
         return mu, mu2, g1, g2
+
+
 levy_stable = levy_stable_gen(name='levy_stable')
 
 
@@ -3822,6 +4039,8 @@ class logistic_gen(rv_continuous):
     def _entropy(self):
         # http://en.wikipedia.org/wiki/Logistic_distribution
         return 2.0
+
+
 logistic = logistic_gen(name='logistic')
 
 
@@ -3869,6 +4088,7 @@ class loggamma_gen(rv_continuous):
         skewness = sc.polygamma(2, c) / np.power(var, 1.5)
         excess_kurtosis = sc.polygamma(3, c) / (var*var)
         return mean, var, skewness, excess_kurtosis
+
 
 loggamma = loggamma_gen(name='loggamma')
 
@@ -3920,6 +4140,8 @@ class loglaplace_gen(rv_continuous):
 
     def _entropy(self, c):
         return np.log(2.0/c) + 1.0
+
+
 loglaplace = loglaplace_gen(a=0.0, name='loglaplace')
 
 
@@ -3995,6 +4217,70 @@ class lognorm_gen(rv_continuous):
 
     def _entropy(self, s):
         return 0.5 * (1 + np.log(2*np.pi) + 2 * np.log(s))
+
+    @extend_notes_in_docstring(rv_continuous, notes="""\
+        When the location parameter is fixed by using the `floc` argument,
+        this function uses explicit formulas for the maximum likelihood
+        estimation of the log-normal shape and scale parameters, so the
+        `optimizer`, `loc` and `scale` keyword arguments are ignored.\n\n""")
+    def fit(self, data, *args, **kwds):
+        floc = kwds.get('floc', None)
+        if floc is None:
+            # loc is not fixed.  Use the default fit method.
+            return super(lognorm_gen, self).fit(data, *args, **kwds)
+
+        f0 = (kwds.get('f0', None) or kwds.get('fs', None) or
+              kwds.get('fix_s', None))
+        fscale = kwds.get('fscale', None)
+
+        if len(args) > 1:
+            raise TypeError("Too many input arguments.")
+        for name in ['f0', 'fs', 'fix_s', 'floc', 'fscale', 'loc', 'scale',
+                     'optimizer']:
+            kwds.pop(name, None)
+        if kwds:
+            raise TypeError("Unknown arguments: %s." % kwds)
+
+        # Special case: loc is fixed.  Use the maximum likelihood formulas
+        # instead of the numerical solver.
+
+        if f0 is not None and fscale is not None:
+            # This check is for consistency with `rv_continuous.fit`.
+            raise ValueError("All parameters fixed. There is nothing to "
+                             "optimize.")
+
+        data = np.asarray(data)
+        floc = float(floc)
+        if floc != 0:
+            # Shifting the data by floc. Don't do the subtraction in-place,
+            # because `data` might be a view of the input array.
+            data = data - floc
+        if np.any(data <= 0):
+            raise FitDataError("lognorm", lower=floc, upper=np.inf)
+        lndata = np.log(data)
+
+        # Three cases to handle:
+        # * shape and scale both free
+        # * shape fixed, scale free
+        # * shape free, scale fixed
+
+        if fscale is None:
+            # scale is free.
+            scale = np.exp(lndata.mean())
+            if f0 is None:
+                # shape is free.
+                shape = lndata.std()
+            else:
+                # shape is fixed.
+                shape = float(f0)
+        else:
+            # scale is fixed, shape is free
+            scale = float(fscale)
+            shape = np.sqrt(((lndata - np.log(scale))**2).mean())
+
+        return shape, floc, scale
+
+
 lognorm = lognorm_gen(a=0.0, name='lognorm')
 
 
@@ -4046,6 +4332,8 @@ class gilbrat_gen(rv_continuous):
 
     def _entropy(self):
         return 0.5 * np.log(2 * np.pi) + 0.5
+
+
 gilbrat = gilbrat_gen(a=0.0, name='gilbrat')
 
 
@@ -4098,6 +4386,8 @@ class maxwell_gen(rv_continuous):
 
     def _entropy(self):
         return _EULER + 0.5*np.log(2*np.pi)-0.5
+
+
 maxwell = maxwell_gen(a=0.0, name='maxwell')
 
 
@@ -4133,6 +4423,8 @@ class mielke_gen(rv_continuous):
     def _ppf(self, q, k, s):
         qsk = pow(q, s*1.0/k)
         return pow(qsk/(1.0-qsk), 1.0/s)
+
+
 mielke = mielke_gen(a=0.0, name='mielke')
 
 
@@ -4384,6 +4676,8 @@ class kappa4_gen(rv_continuous):
 
         outputs = [None if r < maxr else np.nan for r in range(1, 5)]
         return outputs[:]
+
+
 kappa4 = kappa4_gen(name='kappa4')
 
 
@@ -4440,7 +4734,98 @@ class kappa3_gen(rv_continuous):
     def _stats(self, a):
         outputs = [None if i < a else np.nan for i in range(1, 5)]
         return outputs[:]
+
+
 kappa3 = kappa3_gen(a=0.0, name='kappa3')
+
+class moyal_gen(rv_continuous):
+    r"""A Moyal continuous random variable.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability density function for `moyal` is:
+
+    .. math::
+
+        f(x) = \exp(-(x + \exp(-x))/2) / \sqrt{2\pi}
+
+    %(after_notes)s
+
+    This distribution has utility in high-energy physics and radiation
+    detection. It describes the energy loss of a charged relativistic
+    particle due to ionization of the medium [1]_. It also provides an
+    approximation for the Landau distribution. For an in depth description
+    see [2]_. For additional description, see [3]_.
+
+    References
+    ----------
+    .. [1] J.E. Moyal, "XXX. Theory of ionization fluctuations",
+           The London, Edinburgh, and Dublin Philosophical Magazine
+           and Journal of Science, vol 46, 263-280, (1955).
+           https://doi.org/10.1080/14786440308521076 (gated)
+    .. [2] G. Cordeiro et al., "The beta Moyal: a useful skew distribution",
+           International Journal of Research and Reviews in Applied Sciences,
+           vol 10, 171-192, (2012).
+           http://www.arpapress.com/Volumes/Vol10Issue2/IJRRAS_10_2_02.pdf
+    .. [3] C. Walck, "Handbook on Statistical Distributions for
+           Experimentalists; International Report SUF-PFY/96-01", Chapter 26,
+           University of Stockholm: Stockholm, Sweden, (2007).
+           www.stat.rice.edu/~dobelman/textfiles/DistributionsHandbook.pdf
+
+    .. versionadded:: 1.1.0
+
+    %(example)s
+
+    """
+    def _rvs(self):
+        sz, rndm = self._size, self._random_state
+        u1 = gamma.rvs(a = 0.5, scale = 2, size=sz, random_state=rndm)
+        return -np.log(u1)
+
+    def _pdf(self, x):
+        return np.exp(-0.5 * (x + np.exp(-x))) / np.sqrt(2*np.pi)
+
+    def _cdf(self, x):
+        return sc.erfc(np.exp(-0.5 * x) / np.sqrt(2))
+
+    def _sf(self, x):
+        return sc.erf(np.exp(-0.5 * x) / np.sqrt(2))
+
+    def _ppf(self, x):
+        return -np.log(2 * sc.erfcinv(x)**2)
+
+    def _stats(self):
+        mu = np.log(2) + np.euler_gamma
+        mu2 = np.pi**2 / 2
+        g1 = 28 * np.sqrt(2) * sc.zeta(3) / np.pi**3
+        g2 = 4.
+        return mu, mu2, g1, g2
+
+    def _munp(self, n):
+        if n == 1.0:
+            return np.log(2) + np.euler_gamma
+        elif n == 2.0:
+            return np.pi**2 / 2 + (np.log(2) + np.euler_gamma)**2
+        elif n == 3.0:
+            tmp1 = 1.5 * np.pi**2 * (np.log(2)+np.euler_gamma)
+            tmp2 = (np.log(2)+np.euler_gamma)**3
+            tmp3 = 14 * sc.zeta(3)
+            return tmp1 + tmp2 + tmp3
+        elif n == 4.0:
+            tmp1 = 4 * 14 * sc.zeta(3) * (np.log(2) + np.euler_gamma)
+            tmp2 = 3 * np.pi**2 * (np.log(2) + np.euler_gamma)**2
+            tmp3 = (np.log(2) + np.euler_gamma)**4
+            tmp4 = 7 * np.pi**4 / 4
+            return tmp1 + tmp2 + tmp3 + tmp4
+        else:
+            # return generic for higher moments
+            # return rv_continuous._mom1_sc(self, n, b)
+            return self._mom1_sc(n)
+
+
+moyal = moyal_gen(name="moyal")
 
 
 class nakagami_gen(rv_continuous):
@@ -4483,6 +4868,8 @@ class nakagami_gen(rv_continuous):
         g2 = -6*mu**4*nu + (8*nu-2)*mu**2-2*nu + 1
         g2 /= nu*mu2**2.0
         return mu, mu2, g1, g2
+
+
 nakagami = nakagami_gen(a=0.0, name="nakagami")
 
 
@@ -4532,6 +4919,8 @@ class ncx2_gen(rv_continuous):
                 2*val,
                 np.sqrt(8)*(val+nc)/val**1.5,
                 12.0*(val+2*nc)/val**2.0)
+
+
 ncx2 = ncx2_gen(a=0.0, name='ncx2')
 
 
@@ -4608,6 +4997,8 @@ class ncf_gen(rv_continuous):
                        ((dfn+nc/2.0)**2.0 + (dfn+nc)*(dfd-2.0)) /
                        ((dfd-2.0)**2.0 * (dfd-4.0)))
         return mu, mu2, None, None
+
+
 ncf = ncf_gen(a=0.0, name='ncf')
 
 
@@ -4673,6 +5064,8 @@ class t_gen(rv_continuous):
                         lambda df: 6.0 / (df-4.0),
                         np.nan)
         return 0, mu2, g1, g2
+
+
 t = t_gen(name='t')
 
 
@@ -4767,6 +5160,8 @@ class nct_gen(rv_continuous):
             mu4 = c44 * nc**4 + c42*nc**2 + c40
             g2 = np.where(df > 4, mu4/mu2**2 - 3., np.nan)
         return mu, mu2, g1, g2
+
+
 nct = nct_gen(name="nct")
 
 
@@ -4834,6 +5229,8 @@ class pareto_gen(rv_continuous):
 
     def _entropy(self, c):
         return 1 + 1.0/c - np.log(c)
+
+
 pareto = pareto_gen(a=1.0, name="pareto")
 
 
@@ -4887,6 +5284,8 @@ class lomax_gen(rv_continuous):
 
     def _entropy(self, c):
         return 1+1.0/c-np.log(c)
+
+
 lomax = lomax_gen(a=0.0, name="lomax")
 
 
@@ -5030,6 +5429,8 @@ class pearson3_gen(rv_continuous):
         ans[mask] = _norm_ppf(q[mask])
         ans[invmask] = sc.gammaincinv(alpha, q[invmask])/beta + zeta
         return ans
+
+
 pearson3 = pearson3_gen(name="pearson3")
 
 
@@ -5081,6 +5482,8 @@ class powerlaw_gen(rv_continuous):
 
     def _entropy(self, a):
         return 1 - 1.0/a - np.log(a)
+
+
 powerlaw = powerlaw_gen(a=0.0, b=1.0, name="powerlaw")
 
 
@@ -5121,6 +5524,8 @@ class powerlognorm_gen(rv_continuous):
 
     def _ppf(self, q, c, s):
         return np.exp(-s * _norm_ppf(pow(1.0 - q, 1.0 / c)))
+
+
 powerlognorm = powerlognorm_gen(a=0.0, name="powerlognorm")
 
 
@@ -5159,6 +5564,8 @@ class powernorm_gen(rv_continuous):
 
     def _ppf(self, q, c):
         return -_norm_ppf(pow(1.0 - q, 1.0 / c))
+
+
 powernorm = powernorm_gen(name='powernorm')
 
 
@@ -5209,6 +5616,8 @@ class rdist_gen(rv_continuous):
     def _munp(self, n, c):
         numerator = (1 - (n % 2)) * sc.beta((n + 1.0) / 2, c / 2.0)
         return numerator / sc.beta(1. / 2, c / 2.)
+
+
 rdist = rdist_gen(a=-1.0, b=1.0, name="rdist")
 
 
@@ -5270,6 +5679,8 @@ class rayleigh_gen(rv_continuous):
 
     def _entropy(self):
         return _EULER/2.0 + 1 - 0.5*np.log(2)
+
+
 rayleigh = rayleigh_gen(a=0.0, name="rayleigh")
 
 
@@ -5319,6 +5730,8 @@ class reciprocal_gen(rv_continuous):
 
     def _entropy(self, a, b):
         return 0.5*np.log(a*b)+np.log(np.log(b/a))
+
+
 reciprocal = reciprocal_gen(name="reciprocal")
 
 
@@ -5380,6 +5793,8 @@ class rice_gen(rv_continuous):
         b2 = b*b/2.0
         return (2.0**(nd2) * np.exp(-b2) * sc.gamma(n1) *
                 sc.hyp1f1(n1, 1, b2))
+
+
 rice = rice_gen(a=0.0, name="rice")
 
 
@@ -5423,6 +5838,8 @@ class recipinvgauss_gen(rv_continuous):
 
     def _rvs(self, mu):
         return 1.0/self._random_state.wald(mu, 1.0, size=self._size)
+
+
 recipinvgauss = recipinvgauss_gen(a=0.0, name='recipinvgauss')
 
 
@@ -5458,6 +5875,8 @@ class semicircular_gen(rv_continuous):
 
     def _entropy(self):
         return 0.64472988584940017414
+
+
 semicircular = semicircular_gen(a=-1.0, b=1.0, name="semicircular")
 
 
@@ -5515,6 +5934,7 @@ class skew_norm_gen(rv_continuous):
 
         return output
 
+
 skewnorm = skew_norm_gen(name='skewnorm')
 
 
@@ -5544,18 +5964,25 @@ class trapz_gen(rv_continuous):
         return (c >= 0) & (c <= 1) & (d >= 0) & (d <= 1) & (d >= c)
 
     def _pdf(self, x, c, d):
-        u = 2 / (d - c + 1)
+        u = 2 / (d-c+1)
 
-        condlist = [x < c, x <= d, x > d]
-        choicelist = [u * x / c, u, u * (1 - x) / (1 - d)]
-        return np.select(condlist, choicelist)
+        return _lazyselect([x < c,
+                            (c <= x) & (x <= d),
+                            x > d],
+                           [lambda x, c, d, u: u * x / c,
+                            lambda x, c, d, u: u,
+                            lambda x, c, d, u: u * (1-x) / (1-d)],
+                            (x, c, d, u))
 
     def _cdf(self, x, c, d):
-        condlist = [x < c, x <= d, x > d]
-        choicelist = [x**2 / c / (d - c + 1),
-                      (c + 2 * (x - c)) / (d - c + 1),
-                      1 - ((1 - x)**2 / (d - c + 1) / (1 - d))]
-        return np.select(condlist, choicelist)
+        return _lazyselect([x < c,
+                            (c <= x) & (x <= d),
+                            x > d],
+                           [lambda x, c, d: x**2 / c / (d-c+1),
+                            lambda x, c, d: (c + 2 * (x-c)) / (d-c+1),
+                            lambda x, c, d: 1-((1-x) ** 2
+                                               / (d-c+1) / (1-d))],
+                            (x, c, d))
 
     def _ppf(self, q, c, d):
         qc, qd = self._cdf(c, c, d), self._cdf(d, c, d)
@@ -5564,6 +5991,8 @@ class trapz_gen(rv_continuous):
                       0.5 * q * (1 + d - c) + 0.5 * c,
                       1 - np.sqrt((1 - q) * (d - c + 1) * (1 - d))]
         return np.select(condlist, choicelist)
+
+
 trapz = trapz_gen(a=0.0, b=1.0, name="trapz")
 
 
@@ -5596,13 +6025,36 @@ class triang_gen(rv_continuous):
         return (c >= 0) & (c <= 1)
 
     def _pdf(self, x, c):
-        return np.where(x < c, 2*x/c, 2*(1-x)/(1-c))
+        # 0: edge case where c=0
+        # 1: generalised case for x < c, don't use x <= c, as it doesn't cope
+        #    with c = 0.
+        # 2: generalised case for x >= c, but doesn't cope with c = 1
+        # 3: edge case where c=1
+        r = _lazyselect([c == 0,
+                         x < c,
+                         (x >= c) & (c != 1),
+                         c == 1],
+                        [lambda x, c: 2 - 2 * x,
+                         lambda x, c: 2 * x / c,
+                         lambda x, c: 2 * (1 - x) / (1 - c),
+                         lambda x, c: 2 * x],
+                        (x, c))
+        return r
 
     def _cdf(self, x, c):
-        return np.where(x < c, x*x/c, (x*x-2*x+c)/(c-1))
+        r = _lazyselect([c == 0,
+                         x < c,
+                         (x >= c) & (c != 1),
+                         c == 1],
+                        [lambda x, c: 2*x - x*x,
+                         lambda x, c: x * x / c,
+                         lambda x, c: (x*x - 2*x + c) / (c-1),
+                         lambda x, c: x * x],
+                        (x, c))
+        return r
 
     def _ppf(self, q, c):
-        return np.where(q < c, np.sqrt(c*q), 1-np.sqrt((1-c)*(1-q)))
+        return np.where(q < c, np.sqrt(c * q), 1-np.sqrt((1-c) * (1-q)))
 
     def _stats(self, c):
         return ((c+1.0)/3.0,
@@ -5612,6 +6064,8 @@ class triang_gen(rv_continuous):
 
     def _entropy(self, c):
         return 0.5-np.log(2)
+
+
 triang = triang_gen(a=0.0, b=1.0, name="triang")
 
 
@@ -5669,6 +6123,8 @@ class truncexpon_gen(rv_continuous):
     def _entropy(self, b):
         eB = np.exp(b)
         return np.log(eB-1)+(1+eB*(b-1.0))/(1.0-eB)
+
+
 truncexpon = truncexpon_gen(a=0.0, name='truncexpon')
 
 
@@ -5729,6 +6185,8 @@ class truncnorm_gen(rv_continuous):
         mu = (pA - pB) / d   # correction sign
         mu2 = 1 + (a*pA - b*pB) / d - mu*mu
         return mu, mu2, None, None
+
+
 truncnorm = truncnorm_gen(name='truncnorm')
 
 
@@ -5778,6 +6236,8 @@ class tukeylambda_gen(rv_continuous):
         def integ(p):
             return np.log(pow(p, lam-1)+pow(1-p, lam-1))
         return integrate.quad(integ, 0, 1)[0]
+
+
 tukeylambda = tukeylambda_gen(name='tukeylambda')
 
 
@@ -5808,6 +6268,8 @@ class uniform_gen(rv_continuous):
 
     def _entropy(self):
         return 0.0
+
+
 uniform = uniform_gen(a=0.0, b=1.0, name='uniform')
 
 
@@ -5857,6 +6319,8 @@ class vonmises_gen(rv_continuous):
     def _entropy(self, kappa):
         return (-kappa * sc.i1(kappa) / sc.i0(kappa) +
                 np.log(2 * np.pi * sc.i0(kappa)))
+
+
 vonmises = vonmises_gen(name='vonmises')
 vonmises_line = vonmises_gen(a=-np.pi, b=np.pi, name='vonmises_line')
 
@@ -5899,6 +6363,8 @@ class wald_gen(invgauss_gen):
 
     def _stats(self):
         return 1.0, 1.0, 3.0, 15.0
+
+
 wald = wald_gen(a=0.0, name="wald")
 
 
@@ -5959,6 +6425,8 @@ class wrapcauchy_gen(rv_continuous):
 
     def _entropy(self, c):
         return np.log(2*np.pi*(1-c*c))
+
+
 wrapcauchy = wrapcauchy_gen(a=0.0, b=2*np.pi, name='wrapcauchy')
 
 
@@ -6023,6 +6491,8 @@ class gennorm_gen(rv_continuous):
 
     def _entropy(self, beta):
         return 1. / beta - np.log(.5 * beta) + sc.gammaln(1. / beta)
+
+
 gennorm = gennorm_gen(name='gennorm')
 
 
@@ -6083,6 +6553,8 @@ class halfgennorm_gen(rv_continuous):
 
     def _entropy(self, beta):
         return 1.0/beta - np.log(beta) + sc.gammaln(1.0/beta)
+
+
 halfgennorm = halfgennorm_gen(a=0, name='halfgennorm')
 
 
@@ -6178,6 +6650,8 @@ class crystalball_gen(rv_continuous):
         In addition we restrict beta to be positive
         """
         return (m > 1) & (beta > 0)
+
+
 crystalball = crystalball_gen(name='crystalball', longname="A Crystalball Function")
 
 
@@ -6248,6 +6722,8 @@ class argus_gen(rv_continuous):
         Return survival function of the argus function
         """
         return _argus_phi(chi * np.sqrt(1 - x**2)) / _argus_phi(chi)
+
+
 argus = argus_gen(name='argus', longname="An Argus Function", a=0.0, b=1.0)
 
 

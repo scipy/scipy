@@ -1,4 +1,4 @@
-C     SUBROUTINE NNLS  (A,MDA,M,N,B,X,RNORM,W,ZZ,INDEX,MODE)
+C     SUBROUTINE NNLS  (A,MDA,M,N,B,X,RNORM,W,ZZ,INDEX,MODE,MAXITER)
 C   
 C  Algorithm NNLS: NONNEGATIVE LEAST SQUARES
 C   
@@ -44,13 +44,16 @@ C             MEANINGS.
 C             1     THE SOLUTION HAS BEEN COMPUTED SUCCESSFULLY.
 C             2     THE DIMENSIONS OF THE PROBLEM ARE BAD.  
 C                   EITHER M .LE. 0 OR N .LE. 0.
-C             3    ITERATION COUNT EXCEEDED.  MORE THAN 3*N ITERATIONS. 
+C             3    ITERATION COUNT EXCEEDED.  MORE THAN MAXITER ITERATIONS.
+C     MAXITER THE MAXIMUM ALLOWED NUMBER OF ITERATIONS.
+C             IF NEGATIVE, THE LIMIT IS TAKEN AS THE DEFAULT, 3*N.              
 C   
 C     ------------------------------------------------------------------
-      SUBROUTINE NNLS (A,MDA,M,N,B,X,RNORM,W,ZZ,INDEX,MODE) 
+      SUBROUTINE NNLS (A,MDA,M,N,B,X,RNORM,W,ZZ,INDEX,MODE,MAXITER) 
 C     ------------------------------------------------------------------
       integer I, II, IP, ITER, ITMAX, IZ, IZ1, IZ2, IZMAX, J, JJ, JZ, L
       integer M, MDA, MODE,N, NPP1, NSETP, RTNKEY
+      integer MAXITER
 c     integer INDEX(N)  
 c     double precision A(MDA,N), B(M), W(N), X(N), ZZ(M)   
       integer INDEX(*)  
@@ -67,7 +70,11 @@ C     ------------------------------------------------------------------
          RETURN
       endif
       ITER=0
-      ITMAX=3*N 
+      IF (MAXITER .le. 0) then
+          ITMAX=3*N 
+      ELSE
+          ITMAX = MAXITER
+      ENDIF
 C   
 C                    INITIALIZE THE ARRAYS INDEX() AND X(). 
 C   

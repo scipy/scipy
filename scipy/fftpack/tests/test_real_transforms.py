@@ -158,7 +158,7 @@ class _TestDCTBase(object):
 
 class _TestDCTIIBase(_TestDCTBase):
     def test_definition_matlab(self):
-        # Test correspondance with matlab (orthornomal mode).
+        # Test correspondence with matlab (orthornomal mode).
         for i in range(len(X)):
             dt = np.result_type(np.float32, self.rdt)
             x = np.array(X[i], dtype=dt)

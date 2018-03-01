@@ -317,13 +317,12 @@ FAQ
 *I based my code on existing Matlab/R/... code I found online, is this OK?*
 
 It depends.  SciPy is distributed under a BSD license, so if the code that you
-based your code on is also BSD licensed or has a BSD-compatible license (MIT,
-Apache, ...) then it's OK.  Code which is GPL-licensed, has no clear license,
-requires citation or is free for academic use only can't be included in SciPy.
-Therefore if you copied existing code with such a license or made a direct
-translation to Python of it, your code can't be included.  See also `license
-compatibility`_.
-
+based your code on is also BSD licensed or has a BSD-compatible license (e.g.
+MIT, PSF) then it's OK.  Code which is GPL or Apache licensed, has no
+clear license, requires citation or is free for academic use only can't be
+included in SciPy.  Therefore if you copied existing code with such a license
+or made a direct translation to Python of it, your code can't be included.
+If you're unsure, please ask on the scipy-dev mailing list.
 
 *Why is SciPy under the BSD license and not, say, the GPL?*
 
@@ -477,8 +476,6 @@ suite.
 .. _documentation wiki: https://docs.scipy.org/scipy/Front%20Page/
 
 .. _SciPy Central: http://scipy-central.org/
-
-.. _license compatibility: https://scipy.github.io/old-wiki/pages/License_Compatibility.html
 
 .. _doctest: http://www.doughellmann.com/PyMOTW/doctest/
 

@@ -212,7 +212,7 @@ def correlate(in1, in2, mode='full', method='auto'):
     in2 = asarray(in2)
 
     if in1.ndim == in2.ndim == 0:
-        return in1 * in2
+        return in1 * in2.conj()
     elif in1.ndim != in2.ndim:
         raise ValueError("in1 and in2 should have the same dimensionality")
 
@@ -1112,7 +1112,7 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
 
     val = _valfrommode(mode)
     bval = _bvalfromboundary(boundary)
-    out = sigtools._convolve2d(in1, in2, 0, val, bval, fillvalue)
+    out = sigtools._convolve2d(in1, in2.conj(), 0, val, bval, fillvalue)
 
     if swapped_inputs:
         out = out[::-1, ::-1]

@@ -8,7 +8,7 @@ cdef extern from "_complexstuff.h":
     double npy_atan2(double y, double x) nogil
     np.npy_cdouble npy_clog(np.npy_cdouble x) nogil
     np.npy_cdouble npy_cexp(np.npy_cdouble x) nogil
-    
+
 
 cdef extern from "c_misc/double2.h":
     ctypedef struct double2_t:
@@ -19,22 +19,20 @@ cdef extern from "c_misc/double2.h":
     void double2_mul(double2_t* a, double2_t* b, double2_t* c) nogil
     double double2_double(double2_t* a) nogil
 
-cdef extern from "cephes.h":
-    double log1p(double x) nogil
-    double expm1(double x) nogil
-    double cosm1(double x) nogil
+from ._cephes cimport log1p, expm1, cosm1
+
 
 # log(z + 1) = log(x + 1 + 1j*y)
 #             = log(sqrt((x+1)**2 + y**2)) + 1j*atan2(y, x+1)
-# 
+#
 # Using atan2(y, x+1) for the imaginary part is always okay.  The real part
 # needs to be calculated more carefully.  For |z| large, the naive formula
-# log(z + 1) can be used.  When |z| is small, rewrite as 
+# log(z + 1) can be used.  When |z| is small, rewrite as
 #
 # log(sqrt((x+1)**2 + y**2)) = 0.5*log(x**2 + 2*x +1 + y**2)
 #       = 0.5 * log1p(x**2 + y**2 + 2*x)
 #       = 0.5 * log1p(hypot(x,y) * (hypot(x, y) + 2*x/hypot(x,y)))
-# 
+#
 # This expression suffers from cancellation when x < 0 and
 # y = +/-sqrt(2*fabs(x)). To get around this cancellation problem, we use
 # double-double precision when necessary.
@@ -43,7 +41,7 @@ cdef inline double complex clog1p(double complex z) nogil:
     cdef np.npy_cdouble ret
 
     if not zisfinite(z):
-        z = z + 1 
+        z = z + 1
         ret = npy_clog(npy_cdouble_from_double_complex(z))
         return double_complex_from_npy_cdouble(ret)
 
@@ -51,7 +49,7 @@ cdef inline double complex clog1p(double complex z) nogil:
     zi = z.imag
 
     if zi == 0.0 and zr >= -1.0:
-        return zpack(log1p(zr), 0.0) 
+        return zpack(log1p(zr), 0.0)
 
     az = zabs(z)
     if az < 0.707:
@@ -74,7 +72,7 @@ cdef inline double complex clog1p_ddouble(double zr, double zi) nogil:
     double2_init(&r, zr)
     double2_init(&i, zi)
     double2_init(&two, 2.0)
-    
+
     double2_mul(&r, &r, &rsqr)
     double2_mul(&i, &i, &isqr)
     double2_mul(&two, &r, &rtwo)
@@ -83,10 +81,10 @@ cdef inline double complex clog1p_ddouble(double zr, double zi) nogil:
 
     x = 0.5 * log1p(double2_double(&absm1))
     y = npy_atan2(zi, zr+1.0)
-    return zpack(x, y) 
- 
+    return zpack(x, y)
+
 # cexpm1(z) = cexp(z) - 1
-# 
+#
 # The imaginary part of this is easily computed via exp(z.real)*sin(z.imag)
 # The real part is difficult to compute when there is cancellation e.g. when
 # z.real = -log(cos(z.imag)).  There isn't a way around this problem  that
@@ -115,4 +113,3 @@ cdef inline double complex cexpm1(double complex z) nogil:
         y = exp(zr)*sin(zi)
 
     return zpack(x, y)
-

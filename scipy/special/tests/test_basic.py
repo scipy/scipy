@@ -39,7 +39,7 @@ import scipy.special._ufuncs as cephes
 from scipy.special import ellipk, zeta
 
 from scipy.special._testutils import assert_tol_equal, with_special_errors, \
-     assert_func_equal
+     assert_func_equal, FuncData
 
 from scipy._lib._numpy_compat import suppress_warnings
 from scipy._lib._version import NumpyVersion
@@ -112,6 +112,28 @@ class TestCephes(object):
                           binom_int(nk[:,0], nk[:,1]),
                           nk,
                           atol=0, rtol=0)
+
+    def test_binom_nooverflow_8346(self):
+        # Test (binom(n, k) doesn't overflow prematurely */
+        dataset = [
+            (1000, 500, 2.70288240945436551e+299),
+            (1002, 501, 1.08007396880791225e+300),
+            (1004, 502, 4.31599279169058121e+300),
+            (1006, 503, 1.72468101616263781e+301),
+            (1008, 504, 6.89188009236419153e+301),
+            (1010, 505, 2.75402257948335448e+302),
+            (1012, 506, 1.10052048531923757e+303),
+            (1014, 507, 4.39774063758732849e+303),
+            (1016, 508, 1.75736486108312519e+304),
+            (1018, 509, 7.02255427788423734e+304),
+            (1020, 510, 2.80626776829962255e+305),
+            (1022, 511, 1.12140876377061240e+306),
+            (1024, 512, 4.48125455209897109e+306),
+            (1026, 513, 1.79075474304149900e+307),
+            (1028, 514, 7.15605105487789676e+307)
+        ]
+        dataset = np.asarray(dataset)
+        FuncData(cephes.binom, dataset, (0, 1), 2, rtol=1e-12).check()
 
     def test_bdtr(self):
         assert_equal(cephes.bdtr(1,1,0.5),1.0)
@@ -926,7 +948,17 @@ class TestCephes(object):
         assert_allclose(zeta(2,2), pi**2/6 - 1, rtol=1e-12)
 
     def test_zetac(self):
-        assert_equal(cephes.zetac(0),-1.5)
+        assert_equal(cephes.zetac(0), -1.5)
+        assert_equal(cephes.zetac(1.0), np.inf)
+        # Expected values in the following were computed using
+        # Wolfram Alpha `Zeta[x] - 1`:
+        rtol = 1e-12
+        assert_allclose(cephes.zetac(-2.1), -0.9972705002153750, rtol=rtol)
+        assert_allclose(cephes.zetac(0.8), -5.437538415895550, rtol=rtol)
+        assert_allclose(cephes.zetac(0.9999), -10000.42279161673, rtol=rtol)
+        assert_allclose(cephes.zetac(9), 0.002008392826082214, rtol=rtol)
+        assert_allclose(cephes.zetac(50), 8.881784210930816e-16, rtol=rtol)
+        assert_allclose(cephes.zetac(75), 2.646977960169853e-23, rtol=rtol)
 
     def test_zeta_1arg(self):
         assert_allclose(zeta(2), pi**2/6, rtol=1e-12)
@@ -1637,7 +1669,7 @@ class TestErf(object):
 
     def test_erfcinv(self):
         i = special.erfcinv(1)
-        # Use assert_array_equal instead of assert_equal, so the comparsion
+        # Use assert_array_equal instead of assert_equal, so the comparison
         # of -0.0 and 0.0 doesn't fail.
         assert_array_equal(i, 0)
 

@@ -23,6 +23,7 @@ import sys
 import subprocess
 import textwrap
 import warnings
+import sysconfig
 
 
 if sys.version_info[:2] < (2, 7) or (3, 0) <= sys.version_info[:2] < (3, 4):
@@ -41,11 +42,8 @@ License :: OSI Approved :: BSD License
 Programming Language :: C
 Programming Language :: Python
 Programming Language :: Python :: 2
-Programming Language :: Python :: 2.6
 Programming Language :: Python :: 2.7
 Programming Language :: Python :: 3
-Programming Language :: Python :: 3.2
-Programming Language :: Python :: 3.3
 Programming Language :: Python :: 3.4
 Programming Language :: Python :: 3.5
 Programming Language :: Python :: 3.6
@@ -148,6 +146,7 @@ if not release:
     finally:
         a.close()
 
+
 try:
     from sphinx.setup_command import BuildDoc
     HAVE_SPHINX = True
@@ -193,6 +192,52 @@ class sdist_checked(sdist):
     def run(self):
         check_submodules()
         sdist.run(self)
+
+
+def get_build_ext_override():
+    """
+    Custom build_ext command to tweak extension building.
+    """
+    from numpy.distutils.command.build_ext import build_ext as old_build_ext
+
+    class build_ext(old_build_ext):
+        def build_extension(self, ext):
+            # When compiling with GNU compilers, use a version script to
+            # hide symbols during linking.
+            if self.__is_using_gnu_linker(ext):
+                export_symbols = self.get_export_symbols(ext)
+                text = '{global: %s; local: *; };' % (';'.join(export_symbols),)
+
+                script_fn = os.path.join(self.build_temp, 'link-version-{}.map'.format(ext.name))
+                with open(script_fn, 'w') as f:
+                    f.write(text)
+                    ext.extra_link_args.append('-Wl,--version-script=' + script_fn)
+
+            old_build_ext.build_extension(self, ext)
+
+        def __is_using_gnu_linker(self, ext):
+            if not sys.platform.startswith('linux'):
+                return False
+
+            # Fortran compilation with gfortran uses it also for
+            # linking. For the C compiler, we detect gcc in a similar
+            # way as distutils does it in
+            # UnixCCompiler.runtime_library_dir_option
+            if ext.language == 'f90':
+                is_gcc = (self._f90_compiler.compiler_type in ('gnu', 'gnu95'))
+            elif ext.language == 'f77':
+                is_gcc = (self._f77_compiler.compiler_type in ('gnu', 'gnu95'))
+            else:
+                is_gcc = False
+                if self.compiler.compiler_type == 'unix':
+                    cc = sysconfig.get_config_var("CC")
+                    if not cc:
+                        cc = ""
+                    compiler_name = os.path.basename(cc)
+                    is_gcc = "gcc" in compiler_name or "g++" in compiler_name
+            return is_gcc and sysconfig.get_config_var('GNULD') == 'yes'
+
+    return build_ext
 
 
 def generate_cython():
@@ -396,6 +441,10 @@ def setup_package():
 
     if run_build:
         from numpy.distutils.core import setup
+
+        # Customize extension building
+        cmdclass['build_ext'] = get_build_ext_override()
+
         cwd = os.path.abspath(os.path.dirname(__file__))
         if not os.path.exists(os.path.join(cwd, 'PKG-INFO')):
             # Generate Cython sources, unless building from source release

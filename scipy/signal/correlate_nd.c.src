@@ -201,7 +201,7 @@ static int _imp_correlate_nd_object(PyArrayNeighborhoodIterObject *curx,
             /*
              * compute tmp2 = acc + x * y. Not all objects supporting the
              * number protocol support inplace operations, so we do it the most
-             * straightfoward way.
+             * straightforward way.
              */
             tmp = PyNumber_Multiply(*((PyObject**)curneighx->dataptr),
                                     *((PyObject**)ity->dataptr));

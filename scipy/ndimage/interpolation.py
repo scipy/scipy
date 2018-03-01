@@ -42,14 +42,9 @@ __all__ = ['spline_filter1d', 'spline_filter', 'geometric_transform',
            'map_coordinates', 'affine_transform', 'shift', 'zoom', 'rotate']
 
 
-def _extend_mode_to_code(mode):
-    mode = _ni_support._extend_mode_to_code(mode)
-    return mode
-
-
 def spline_filter1d(input, order=3, axis=-1, output=numpy.float64):
     """
-    Calculates a one-dimensional spline filter along the given axis.
+    Calculate a one-dimensional spline filter along the given axis.
 
     The lines of the array along the given axis are filtered by a
     spline filter. The order of the spline must be >= 2 and <= 5.
@@ -235,7 +230,7 @@ def geometric_transform(input, mapping, output_shape=None,
     array([3, 2, 1, 1, 2])
     >>> geometric_transform(b, shift_func, mode='wrap')
     array([2, 3, 4, 1, 2])
-    
+
     """
     if order < 0 or order > 5:
         raise RuntimeError('spline order not supported')
@@ -246,7 +241,7 @@ def geometric_transform(input, mapping, output_shape=None,
         output_shape = input.shape
     if input.ndim < 1 or len(output_shape) < 1:
         raise RuntimeError('input and output rank must be > 0')
-    mode = _extend_mode_to_code(mode)
+    mode = _ni_support._extend_mode_to_code(mode)
     if prefilter and order > 1:
         filtered = spline_filter(input, order, output=numpy.float64)
     else:
@@ -346,7 +341,7 @@ def map_coordinates(input, coordinates, output=None, order=3,
         raise RuntimeError('input and output rank must be > 0')
     if coordinates.shape[0] != input.ndim:
         raise RuntimeError('invalid shape for coordinate array')
-    mode = _extend_mode_to_code(mode)
+    mode = _ni_support._extend_mode_to_code(mode)
     if prefilter and order > 1:
         filtered = spline_filter(input, order, output=numpy.float64)
     else:
@@ -453,7 +448,7 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
         output_shape = input.shape
     if input.ndim < 1 or len(output_shape) < 1:
         raise RuntimeError('input and output rank must be > 0')
-    mode = _extend_mode_to_code(mode)
+    mode = _ni_support._extend_mode_to_code(mode)
     if prefilter and order > 1:
         filtered = spline_filter(input, order, output=numpy.float64)
     else:
@@ -550,7 +545,7 @@ def shift(input, shift, output=None, order=3, mode='constant', cval=0.0,
         raise TypeError('Complex type not supported')
     if input.ndim < 1:
         raise RuntimeError('input and output rank must be > 0')
-    mode = _extend_mode_to_code(mode)
+    mode = _ni_support._extend_mode_to_code(mode)
     if prefilter and order > 1:
         filtered = spline_filter(input, order, output=numpy.float64)
     else:
@@ -604,6 +599,25 @@ def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
         The zoomed input. If `output` is given as a parameter, None is
         returned.
 
+    Examples
+    --------
+    >>> from scipy import ndimage, misc
+    >>> import matplotlib.pyplot as plt
+
+    >>> fig = plt.figure()
+    >>> ax1 = fig.add_subplot(121)  # left side
+    >>> ax2 = fig.add_subplot(122)  # right side
+    >>> ascent = misc.ascent()
+    >>> result = ndimage.zoom(ascent, 3.0)
+    >>> ax1.imshow(ascent)
+    >>> ax2.imshow(result)
+    >>> plt.show()
+
+    >>> print(ascent.shape)
+    (512, 512)
+
+    >>> print(result.shape)
+    (1536, 1536)
     """
     if order < 0 or order > 5:
         raise RuntimeError('spline order not supported')
@@ -612,7 +626,7 @@ def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
         raise TypeError('Complex type not supported')
     if input.ndim < 1:
         raise RuntimeError('input and output rank must be > 0')
-    mode = _extend_mode_to_code(mode)
+    mode = _ni_support._extend_mode_to_code(mode)
     if prefilter and order > 1:
         filtered = spline_filter(input, order, output=numpy.float64)
     else:
@@ -719,12 +733,12 @@ def rotate(input, angle, axes=(1, 0), reshape=True,
     m21 = -math.sin(angle)
     m22 = math.cos(angle)
     matrix = numpy.array([[m11, m12],
-                             [m21, m22]], dtype=numpy.float64)
+                          [m21, m22]], dtype=numpy.float64)
     iy = input.shape[axes[0]]
     ix = input.shape[axes[1]]
     if reshape:
         mtrx = numpy.array([[m11, -m21],
-                               [-m12, m22]], dtype=numpy.float64)
+                            [-m12, m22]], dtype=numpy.float64)
         minc = [0, 0]
         maxc = [0, 0]
         coor = numpy.dot(mtrx, [0, ix])
@@ -757,7 +771,7 @@ def rotate(input, angle, axes=(1, 0), reshape=True,
                          order, mode, cval, prefilter)
     else:
         coordinates = []
-        size = numpy.product(input.shape,axis=0)
+        size = numpy.product(input.shape, axis=0)
         size //= input.shape[axes[0]]
         size //= input.shape[axes[1]]
         for ii in range(input.ndim):

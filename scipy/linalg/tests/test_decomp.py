@@ -303,9 +303,9 @@ class TestEig(object):
         K = array(([2,-1,-1],[-1,2,-1],[-1,-1,2]))
         D = array(([1,-1,0],[-1,1,0],[0,0,0]))
         Z = zeros((3,3))
-        I = identity(3)
-        A = bmat([[I,Z],[Z,-K]])
-        B = bmat([[Z,I],[M,D]])
+        I3 = identity(3)
+        A = bmat([[I3, Z], [Z, -K]])
+        B = bmat([[Z, I3], [M, D]])
 
         olderr = np.seterr(all='ignore')
         try:
@@ -2253,10 +2253,10 @@ class TestOrdQZ(object):
         return tuple(ret)
 
     def check(self, A, B, sort, AA, BB, alpha, beta, Q, Z):
-        I = np.eye(*A.shape)
+        Id = np.eye(*A.shape)
         # make sure Q and Z are orthogonal
-        assert_array_almost_equal(Q.dot(Q.T.conj()), I)
-        assert_array_almost_equal(Z.dot(Z.T.conj()), I)
+        assert_array_almost_equal(Q.dot(Q.T.conj()), Id)
+        assert_array_almost_equal(Z.dot(Z.T.conj()), Id)
         # check factorization
         assert_array_almost_equal(Q.dot(AA), A.dot(Z))
         assert_array_almost_equal(Q.dot(BB), B.dot(Z))

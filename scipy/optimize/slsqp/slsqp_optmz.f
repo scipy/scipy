@@ -112,7 +112,7 @@ C*                   ON EXIT : REQUIRED ACCURACY FOR SOLUTION OBTAINED *
 C*                1: FUNCTION EVALUATION, (F&C)                        *
 C*                                                                     *
 C*                   FAILURE MODES:                                    *
-C*                2: NUMBER OF EQUALITY CONTRAINTS LARGER THAN N       *
+C*                2: NUMBER OF EQUALITY CONSTRAINTS LARGER THAN N      *
 C*                3: MORE THAN 3*N ITERATIONS IN LSQ SUBPROBLEM        *
 C*                4: INEQUALITY CONSTRAINTS INCOMPATIBLE               *
 C*                5: SINGULAR MATRIX E IN LSQ SUBPROBLEM               *
@@ -198,7 +198,7 @@ C*  which should be referenced if the user publishes results of SLSQP  *
 C*                                                                     *
 C*  DATE:           APRIL - OCTOBER, 1981.                             *
 C*  STATUS:         DECEMBER, 31-ST, 1984.                             *
-C*  STATUS:         MARCH   , 21-ST, 1987, REVISED TO FORTAN 77        *
+C*  STATUS:         MARCH   , 21-ST, 1987, REVISED TO FORTRAN 77       *
 C*  STATUS:         MARCH   , 20-th, 1989, REVISED TO MS-FORTRAN       *
 C*  STATUS:         APRIL   , 14-th, 1989, HESSE   in-line coded       *
 C*  STATUS:         FEBRUARY, 28-th, 1991, FORTRAN/2 Version 1.04      *

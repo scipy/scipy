@@ -146,8 +146,8 @@ i1 -- i1: d->d                                             -- cephes.h
 i1e -- i1e: d->d                                           -- cephes.h
 gammaincc -- igamc: dd->d                                  -- cephes.h
 gammainc -- igam: dd->d                                    -- cephes.h
-gammaincinv -- gammaincinv: dd->d                          -- cephes.h
-gammainccinv -- igami: dd->d                               -- cephes.h
+gammaincinv -- igami: dd->d                                -- cephes.h
+gammainccinv -- igamci: dd->d                              -- cephes.h
 iv -- iv: dd->d, cbesi_wrap: dD->D                         -- cephes.h, amos_wrappers.h
 ive -- cbesi_wrap_e_real: dd->d, cbesi_wrap_e: dD->D       -- amos_wrappers.h
 ellipj -- ellpj: dd*dddd->*i                               -- cephes.h
@@ -320,6 +320,7 @@ _lgam1p -- lgam1p: d->d                                    -- cephes.h
 _lanczos_sum_expg_scaled -- lanczos_sum_expg_scaled: d->d  -- cephes.h
 _log1pmx -- log1pmx: d->d                                  -- cephes.h
 _igam_fac -- igam_fac: dd->d                               -- cephes.h
+owens_t -- owens_t: dd->d                                  -- cephes.h
 """
 
 #---------------------------------------------------------------------------------
@@ -462,6 +463,7 @@ def underscore(arg):
 
 def cast_order(c):
     return ['ilfdgFDG'.index(x) for x in c]
+
 
 # These downcasts will cause the function to return NaNs, unless the
 # values happen to coincide exactly.

@@ -564,7 +564,7 @@ def least_squares(
     Examples
     --------
     In this example we find a minimum of the Rosenbrock function without bounds
-    on independed variables.
+    on independent variables.
 
     >>> def fun_rosenbrock(x):
     ...     return np.array([10 * (x[1] - x[0]**2), (1 - x[0])])

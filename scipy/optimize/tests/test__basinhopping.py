@@ -20,12 +20,6 @@ def func1d(x):
     return f, df
 
 
-def func1d_nograd(x):
-    f = cos(14.5 * x - 0.3) + (x + 0.2) * x
-    df = np.array(-14.5 * sin(14.5 * x - 0.3) + 2. * x + 0.2)
-    return f, df
-
-
 def func2d_nograd(x):
     f = cos(14.5 * x[0] - 0.3) + (x[1] + 0.2) * x[1] + (x[0] + 0.2) * x[0]
     return f
@@ -306,6 +300,13 @@ class TestBasinHopping(object):
         basinhopping(func2d, [1.0, 1.0], minimizer_kwargs=minimizer_kwargs,
                      niter=10, callback=callback2, seed=10)
         assert_equal(np.array(f_1), np.array(f_2))
+
+    def test_monotonic_basin_hopping(self):
+        # test 1d minimizations with gradient and T=0
+        i = 0
+        res = basinhopping(func1d, self.x0[i], minimizer_kwargs=self.kwargs,
+                           niter=self.niter, disp=self.disp, T=0)
+        assert_almost_equal(res.x, self.sol[i], self.tol)
 
 
 class Test_Storage(object):

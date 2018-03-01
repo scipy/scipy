@@ -237,6 +237,9 @@ from .construct import *
 from .extract import *
 from ._matrix_io import *
 
+# For backward compatibility with v0.19.
+from . import csgraph
+
 __all__ = [s for s in dir() if not s.startswith('_')]
 
 from scipy._lib._testutils import PytestTester

@@ -735,6 +735,7 @@ def linregress(x, y=None):
 
     return LinregressResult(slope, intercept, r, prob, sterrest)
 
+
 if stats_linregress.__doc__:
     linregress.__doc__ = stats_linregress.__doc__ + genmissingvaldoc
 
@@ -846,6 +847,8 @@ def ttest_1samp(a, popmean, axis=0):
     prob = special.betainc(0.5*df, 0.5, df/(df + t*t))
 
     return Ttest_1sampResult(t, prob)
+
+
 ttest_onesamp = ttest_1samp
 
 
@@ -1056,6 +1059,8 @@ def kruskal(*args):
     df = len(output) - 1
     prob = distributions.chi2.sf(H, df)
     return KruskalResult(H, prob)
+
+
 kruskalwallis = kruskal
 
 
@@ -1107,6 +1112,8 @@ def ks_twosamp(data1, data2, alternative="two-sided"):
                          "should be in 'two-sided', 'less' or 'greater'")
 
     return (d, prob)
+
+
 ks_2samp = ks_twosamp
 
 
@@ -1219,6 +1226,7 @@ def trimr(a, limits=None, inclusive=(True, True), axis=None):
     else:
         return ma.apply_along_axis(_trimr1D, axis, a, lolim,uplim,loinc,upinc)
 
+
 trimdoc = """
     Parameters
     ----------
@@ -1275,6 +1283,7 @@ def trim(a, limits=None, inclusive=(True,True), relative=False, axis=None):
         return trimr(a, limits=limits, inclusive=inclusive, axis=axis)
     else:
         return trima(a, limits=limits, inclusive=inclusive)
+
 
 if trim.__doc__ is not None:
     trim.__doc__ = trim.__doc__ % trimdoc
@@ -1349,6 +1358,7 @@ def trimtail(data, proportiontocut=0.2, tail='left', inclusive=(True,True),
         raise TypeError("The tail argument should be in ('left','right')")
 
     return trimr(data, limits=limits, axis=axis, inclusive=inclusive)
+
 
 trim1 = trimtail
 
@@ -2049,16 +2059,13 @@ def describe(a, axis=0, ddof=0, bias=True):
     >>> from scipy.stats.mstats import describe
     >>> ma = np.ma.array(range(6), mask=[0, 0, 0, 1, 1, 1])
     >>> describe(ma)
-    DescribeResult(nobs=3, minmax=(masked_array(data = 0,
-                 mask = False,
-           fill_value = 999999)
-    , masked_array(data = 2,
-                 mask = False,
-           fill_value = 999999)
-    ), mean=1.0, variance=0.66666666666666663, skewness=masked_array(data = 0.0,
-                 mask = False,
-           fill_value = 1e+20)
-    , kurtosis=-1.5)
+    DescribeResult(nobs=3, minmax=(masked_array(data=0,
+                 mask=False,
+           fill_value=999999), masked_array(data=2,
+                 mask=False,
+           fill_value=999999)), mean=1.0, variance=0.6666666666666666,
+           skewness=masked_array(data=0., mask=False, fill_value=1e+20),
+            kurtosis=-1.5)
 
     """
     a, axis = _chk_asarray(a, axis)
@@ -2335,9 +2342,9 @@ def mquantiles(a, prob=list([.25,.5,.75]), alphap=.4, betap=.4, axis=None,
     ...                  [  40., -999., -999.],
     ...                  [  36., -999., -999.]])
     >>> print(mquantiles(data, axis=0, limit=(0, 50)))
-    [[ 19.2   14.6    1.45]
-     [ 40.    37.5    2.5 ]
-     [ 42.8   40.05   3.55]]
+    [[19.2  14.6   1.45]
+     [40.   37.5   2.5 ]
+     [42.8  40.05  3.55]]
 
     >>> data[:, 2] = -999.
     >>> print(mquantiles(data, axis=0, limit=(0, 50)))
@@ -2439,6 +2446,7 @@ def plotting_positions(data, alpha=0.4, beta=0.4):
     plpos[data.argsort(axis=None)[:n]] = ((np.arange(1, n+1) - alpha) /
                                           (n + 1.0 - alpha - beta))
     return ma.array(plpos, mask=data._mask)
+
 
 meppf = plotting_positions
 
