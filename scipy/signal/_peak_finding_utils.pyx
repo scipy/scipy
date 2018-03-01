@@ -38,7 +38,7 @@ def _argmaxima1d(np.float64_t[:] x not None):
     -----
     - Compared to `argrelmax` this function is significantly faster and can
       detect maxima that are more than one sample wide. However this comes at
-      the cost of beeing only applicable to 1D arrays.
+      the cost of being only applicable to 1D arrays.
     - A maxima is defined as one or more samples of equal value that are
       surrounded on both sides by atleast one smaller sample.
 
@@ -50,7 +50,7 @@ def _argmaxima1d(np.float64_t[:] x not None):
     cdef Py_ssize_t m = 0  # Pointer to the end of valid area in `maxima`
 
     # Variables to loop over `x`
-    cdef Py_ssize_t i = 1  # Pointer to curent sample, first one can't be maxima
+    cdef Py_ssize_t i = 1  # Pointer to current sample, first one can't be maxima
     cdef Py_ssize_t i_max = x.shape[0] - 1  # Last sample can't be maxima
     cdef Py_ssize_t i_ahead  # Pointer to look ahead of current sample
 
