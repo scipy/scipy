@@ -2,9 +2,15 @@ from __future__ import division, print_function, absolute_import
 
 from math import sqrt, exp, sin, cos
 
+try:
+    import mpmath
+except ImportError:
+    mpmath = None
+
 from numpy.testing import (assert_warns, assert_, 
                            assert_allclose,
-                           assert_equal)
+                           assert_equal, assert_array_less)
+from numpy.testing.decorators import skipif
 from numpy import finfo
 
 from scipy.optimize import zeros as cc
@@ -112,3 +118,36 @@ class TestRootResults:
                          "           root: 1.0")
         assert_equal(repr(r), expected_repr)
 
+
+@skipif(mpmath is None)  # skip if mpmath is None
+def test_halley_convergence():
+    """addresses gh5922: Suboptimal convergence of Halley's"""
+    points = []
+
+    def f(x):
+        points.append(x)
+        return mpmath.sin(x)
+
+    def fprime(x):
+        return mpmath.cos(x)
+
+    def fprime2(x):
+        return -mpmath.sin(x)
+
+    with mpmath.workdps(4000):
+        tol = mpmath.mpf('1e-4000')
+        root = zeros.newton(
+            f, mpmath.mpf(3.5), fprime=fprime, fprime2=fprime2,
+            tol=tol, maxiter=100
+        )
+        assert_allclose(float(root), float(mpmath.pi), atol=1e-6)
+
+        digits = []  # roughly the number of correct digits
+        for p in points:
+            digits.append(abs(mpmath.log10(abs(p - mpmath.pi))))
+        ratios = []
+        for i in range(len(digits) - 1):
+            ratios.append(digits[i + 1] / digits[i])
+
+        # they should all be close to 3
+        assert_array_less(3.0, ratios)
