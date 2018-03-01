@@ -309,10 +309,16 @@ def binary_erosion(input, structure=None, iterations=1, mask=None, output=None,
     output : ndarray, optional
         Array of the same shape as input, into which the output is placed.
         By default, a new array is created.
-    origin : int or tuple of ints, optional
-        Placement of the filter, by default 0.
     border_value : int (cast to 0 or 1), optional
         Value at the border in the output array.
+    origin : int or tuple of ints, optional
+        Placement of the filter, by default 0.
+    brute_force : boolean, optional
+        Memory condition: if False, only the pixels whose value was changed in
+        the last iteration are tracked as candidates to be updated (eroded) in
+        the current iteration; if True all pixels are considered as candidates
+        for erosion, regardless of what happened in the previous iteration.
+        False by default.
 
     Returns
     -------
@@ -398,10 +404,16 @@ def binary_dilation(input, structure=None, iterations=1, mask=None,
     output : ndarray, optional
         Array of the same shape as input, into which the output is placed.
         By default, a new array is created.
-    origin : int or tuple of ints, optional
-        Placement of the filter, by default 0.
     border_value : int (cast to 0 or 1), optional
         Value at the border in the output array.
+    origin : int or tuple of ints, optional
+        Placement of the filter, by default 0.
+    brute_force : boolean, optional
+        Memory condition: if False, only the pixels whose value was changed in
+        the last iteration are tracked as candidates to be updated (dilated)
+        in the current iteration; if True all pixels are considered as
+        candidates for dilation, regardless of what happened in the previous
+        iteration. False by default.
 
     Returns
     -------
