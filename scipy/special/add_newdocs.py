@@ -4425,6 +4425,35 @@ add_newdoc("scipy.special", "kolmogorov",
     probability that sqrt(n) * max absolute deviation > y.
     """)
 
+add_newdoc("scipy.special", "kolmogc",
+    """
+    kolmogc(y)
+
+    Cumulative distribution function of Kolmogorov distribution
+
+    Returns the cumulative distribution function of
+    Kolmogorov's limiting distribution (Kn* for large n) of a
+    two-sided test for equality between an empirical and a theoretical
+    distribution. It is equal to the (limit as n->infinity of the)
+    probability that sqrt(n) * max absolute deviation <= y.
+    """)
+
+add_newdoc("scipy.special", "kolmogp",
+    """
+    kolmogp(y)
+
+    Derivative of kolmogorov.
+    """)
+
+add_newdoc("scipy.special", "kolmogci",
+    """
+    kolmogci(p)
+
+    Inverse function to kolmogc
+
+    Returns y such that ``kolmogc(y) == p``.
+    """)
+
 add_newdoc("scipy.special", "kv",
     r"""
     kv(v, z)
@@ -6339,7 +6368,7 @@ add_newdoc("scipy.special", "sindg",
 
 add_newdoc("scipy.special", "smirnov",
     """
-    smirnov(n, e)
+    smirnov(n, x)
 
     Kolmogorov-Smirnov complementary cumulative distribution function
 
@@ -6348,16 +6377,46 @@ add_newdoc("scipy.special", "smirnov",
     equality between an empirical and a theoretical distribution. It
     is equal to the probability that the maximum difference between a
     theoretical distribution and an empirical one based on `n` samples
-    is greater than e.
+    is greater than x.
+    """)
+
+add_newdoc("scipy.special", "smirnovc",
+    """
+    smirnovc(n, x)
+
+    Kolmogorov-Smirnov cumulative distribution function
+
+    Returns the exact Kolmogorov-Smirnov cumulative
+    distribution function (Dn+ or Dn-) for a one-sided test of
+    equality between an empirical and a theoretical distribution. It
+    is equal to the probability that the maximum difference between a
+    theoretical distribution and an empirical one based on `n` samples
+    is less than or equal to x.
     """)
 
 add_newdoc("scipy.special", "smirnovi",
     """
-    smirnovi(n, y)
+    smirnovi(n, p)
 
     Inverse to `smirnov`
 
-    Returns ``e`` such that ``smirnov(n, e) = y``.
+    Returns ``x`` such that ``smirnov(n, x) = p``.
+    """)
+
+add_newdoc("scipy.special", "smirnovci",
+    """
+    smirnovci(n, p)
+
+    Inverse to `smirnovc`
+
+    Returns ``x`` such that ``smirnovc(n, x) = p``.
+    """)
+
+add_newdoc("scipy.special", "smirnovp",
+    """
+    smirnovp(n, x)
+
+    Derivative of `smirnov`
     """)
 
 add_newdoc("scipy.special", "spence",

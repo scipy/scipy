@@ -160,7 +160,11 @@ pdtr -- pdtr: id->d, pdtr_unsafe: dd->d                    -- cephes.h, _legacy.
 pdtri -- pdtri: id->d, pdtri_unsafe: dd->d                 -- cephes.h, _legacy.pxd
 yn -- yn: id->d, yn_unsafe: dd->d                          -- cephes.h, _legacy.pxd
 smirnov -- smirnov: id->d, smirnov_unsafe: dd->d           -- cephes.h, _legacy.pxd
+smirnovc -- smirnovc: id->d, smirnovc_unsafe: dd->d        -- cephes.h, _legacy.pxd
 smirnovi -- smirnovi: id->d, smirnovi_unsafe: dd->d        -- cephes.h, _legacy.pxd
+smirnovci -- smirnovci: id->d, smirnovci_unsafe: dd->d     -- cephes.h, _legacy.pxd
+smirnovp -- smirnovp: id->d, smirnovp_unsafe: dd->d        -- cephes.h, _legacy.pxd
+
 agm -- agm: dd->d                                          -- _agm.pxd
 airy -- airy_wrap: d*dddd->*i, cairy_wrap: D*DDDD->*i      -- amos_wrappers.h
 itairy -- itairy_wrap: d*dddd->*i                          -- specfun_wrappers.h
@@ -226,6 +230,9 @@ keip -- keip_wrap: d->d                                    -- specfun_wrappers.h
 _zeta -- zeta: dd->d                                       -- cephes.h
 kolmogorov -- kolmogorov: d->d                             -- cephes.h
 kolmogi -- kolmogi: d->d                                   -- cephes.h
+kolmogc -- kolmogc: d->d                                   -- cephes.h
+kolmogp -- kolmogp: d->d                                   -- cephes.h
+kolmogci -- kolmogci: d->d                                 -- cephes.h
 besselpoly -- besselpoly: ddd->d                           -- c_misc/misc.h
 btdtria -- cdfbet3_wrap: ddd->d                            -- cdf_wrappers.h
 btdtrib -- cdfbet4_wrap: ddd->d                            -- cdf_wrappers.h
