@@ -173,13 +173,16 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
                 warnings.warn(msg, RuntimeWarning)
                 return p0
             fval = func(*myargs)
+            newton_step = fval / fder
             if fprime2 is None:
                 # Newton step
-                p = p0 - fval / fder
+                p = p0 - newton_step
             else:
                 fder2 = fprime2(*myargs)
                 # Halley's method
-                p = p0 - 2 * fval * fder / (2 * fder ** 2 - fval * fder2)
+                p = p0 - newton_step / (1.0 - 0.5 * newton_step * fder2 / fder)
+                # refactor common form to reduce overflow or divide by zero
+                # p = p0 - 2 * fval * fder / (2 * fder ** 2 - fval * fder2)
             if abs(p - p0) < tol:
                 return p
             p0 = p
