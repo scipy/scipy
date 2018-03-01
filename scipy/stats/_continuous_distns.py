@@ -55,6 +55,7 @@ class ksone_gen(rv_continuous):
     def _isf(self, q, n):
         return sc.smirnovi(n, q)
 
+
 ksone = ksone_gen(a=0.0, name='ksone')
 
 
@@ -78,6 +79,7 @@ class kstwobign_gen(rv_continuous):
 
     def _isf(self, q):
         return sc.kolmogi(q)
+
 
 kstwobign = kstwobign_gen(a=0.0, name='kstwobign')
 

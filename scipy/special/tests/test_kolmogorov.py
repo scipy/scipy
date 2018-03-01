@@ -5,7 +5,6 @@ import itertools
 import numpy as np
 from numpy.testing import assert_
 from scipy.special._testutils import FuncData
-import pytest
 
 from scipy.special import smirnov, smirnovi, smirnovc, smirnovci, smirnovp
 from scipy.special import kolmogorov, kolmogi, kolmogc, kolmogci, kolmogp
@@ -164,6 +163,7 @@ class TestSmirnovi(object):
     def test_round_trip(self):
         def _sm_smi(n, p):
             return smirnov(n, smirnovi(n, p))
+
         def _smc_smci(n, p):
             return smirnovc(n, smirnovci(n, p))
 
@@ -226,7 +226,7 @@ class TestSmirnovp(object):
         # Check derivative at x=1/2n  (Discontinuous at x=1/n, so check at x=1/2n)
         n = np.arange(1, 20)
         x = 1.0/2/n
-        pp = -(n*x+1)* (1+x)**(n-2)
+        pp = -(n*x+1) * (1+x)**(n-2)
         dataset0 = np.column_stack([n, x, pp])
         FuncData(smirnovp, dataset0, (0, 1), 2, rtol=_rtol).check()
 
@@ -234,7 +234,7 @@ class TestSmirnovp(object):
         # Check derivative at x=1/n  (Discontinuous at x=1/n, hard to tell if x==1/n, only use n=power of 2)
         n = 2**np.arange(1, 10)
         x = 1.0/n
-        pp = -(n*x+1)* (1+x)**(n-2) + 0.5
+        pp = -(n*x+1) * (1+x)**(n-2) + 0.5
         dataset0 = np.column_stack([n, x, pp])
         FuncData(smirnovp, dataset0, (0, 1), 2, rtol=_rtol).check()
 
@@ -243,12 +243,12 @@ class TestSmirnovp(object):
         n = np.arange(3, 20)
 
         x = 1.0/n - 2*np.finfo(float).eps
-        pp = -(n*x+1)* (1+x)**(n-2)
+        pp = -(n*x+1) * (1+x)**(n-2)
         dataset0 = np.column_stack([n, x, pp])
         FuncData(smirnovp, dataset0, (0, 1), 2, rtol=_rtol).check()
 
         x = 1.0/n + 2*np.finfo(float).eps
-        pp = -(n*x+1)* (1+x)**(n-2) + 1
+        pp = -(n*x+1) * (1+x)**(n-2) + 1
         dataset1 = np.column_stack([n, x, pp])
         FuncData(smirnovp, dataset1, (0, 1), 2, rtol=_rtol).check()
 
@@ -260,7 +260,7 @@ class TestKolmogorov(object):
     def test_basic(self):
         dataset = [(0, 1.0),
                    (0.5, 0.96394524366487511),
-                   (0.8275735551899077,  0.5000000000000000),
+                   (0.8275735551899077, 0.5000000000000000),
                    (1, 0.26999967167735456),
                    (2, 0.00067092525577969533)]
 
@@ -277,13 +277,13 @@ class TestKolmogorov(object):
                    0.0222179626165251, 0.0119520432391966, 0.0061774306344441,
                    0.0030676213475797, 0.0014636048371873, 0.0006709252557797]
 
-        dataset_c = [0.0000000000000000,    6.609305242245699e-53, 5.050407338670114e-13,
-                     9.305801334566668e-06, 0.0028076732227017,    0.0360547563351249,
-                     0.1357172209493958,    0.2887648049703110,    0.4558575884258019,
-                     0.6072692920593457,    0.7300003283226455,    0.8222818073935988,
-                     0.8877503333292751,    0.9319077781552336,    0.9603181204618857,
-                     0.9777820373834749,    0.9880479567608034,    0.9938225693655559,
-                     0.9969323786524203,    0.9985363951628127,    0.9993290747442203]
+        dataset_c = [0.0000000000000000, 6.609305242245699e-53, 5.050407338670114e-13,
+                     9.305801334566668e-06, 0.0028076732227017, 0.0360547563351249,
+                     0.1357172209493958, 0.2887648049703110, 0.4558575884258019,
+                     0.6072692920593457, 0.7300003283226455, 0.8222818073935988,
+                     0.8877503333292751, 0.9319077781552336, 0.9603181204618857,
+                     0.9777820373834749, 0.9880479567608034, 0.9938225693655559,
+                     0.9969323786524203, 0.9985363951628127, 0.9993290747442203]
 
         dataset = np.column_stack([x, dataset])
         FuncData(kolmogorov, dataset, (0,), 1, rtol=_rtol).check()
@@ -313,7 +313,6 @@ class TestKolmogorov(object):
         dataset_c = np.column_stack([p[:-1], dataset_c[:-1]])
         FuncData(kolmogci, dataset_c, (0,), 1, rtol=_rtol).check()
 
-
     def test_smallx(self):
         epsilon = 0.1 ** np.arange(1, 14)
         x = np.array([0.571173265106, 0.441027698518, 0.374219690278, 0.331392659217,
@@ -327,16 +326,18 @@ class TestKolmogorov(object):
     def test_round_trip(self):
         def _ki_k(_x):
             return kolmogi(kolmogorov(_x))
+
         def _kci_kc(_x):
             return kolmogci(kolmogc(_x))
 
         x = np.linspace(0.0, 2.0, 21, endpoint=True)
-        x02 = x[(x==0) | (x > 0.21)]  # Exclude 0.1, 0.2.  0.2 almost makes succeeds, but 0.1 has no chance.
+        x02 = x[(x == 0) | (x > 0.21)]  # Exclude 0.1, 0.2.  0.2 almost makes succeeds, but 0.1 has no chance.
         dataset02 = np.column_stack([x02, x02])
         FuncData(_ki_k, dataset02, (0,), 1, rtol=_rtol).check()
 
         dataset = np.column_stack([x, x])
         FuncData(_kci_kc, dataset, (0,), 1, rtol=_rtol).check()
+
 
 class TestKolmogi(object):
     def test_nan(self):
