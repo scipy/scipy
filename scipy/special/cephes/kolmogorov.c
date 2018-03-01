@@ -458,7 +458,7 @@ static void
 updateBinomial(double2 *Cman, int *Cexpt, int n, int j)
 {
     int expt;
-    assert (!dd_is_zero(Cman));
+    assert (!dd_is_zero(*Cman));
     double2 rat = div_dd(n - j, j + 1.0);
     double2 CD2 = mul_DD(*Cman, rat);
     double2 manD = frexpD(CD2, &expt);
