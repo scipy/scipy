@@ -107,7 +107,6 @@ class TestSmirnovi(object):
     def test_nan(self):
         assert_(np.isnan(smirnovi(1, np.nan)))
 
-    # @pytest.mark.xfail(reason="test fails; smirnovi() is not always accurate")
     def test_basic(self):
         dataset = [(1, 0.4, 0.6),
                    (1, 0.6, 0.4),
@@ -122,7 +121,6 @@ class TestSmirnovi(object):
         dataset[:, 1] = 1 - dataset[:, 1]
         FuncData(smirnovci, dataset, (0, 1), 2, rtol=_rtol).check()
 
-    # @pytest.mark.xfail(reason="test fails; smirnovi(_,0) is not accurate")
     def test_x_equals_0(self):
         dataset = [(n, 0, 1) for n in itertools.chain(range(2, 20), range(1010, 1020))]
         dataset = np.asarray(dataset)
@@ -137,7 +135,6 @@ class TestSmirnovi(object):
         dataset[:, 1] = 1 - dataset[:, 1]
         FuncData(smirnovci, dataset, (0, 1), 2, rtol=_rtol).check()
 
-    # @pytest.mark.xfail(reason="test fails; smirnovi(1,) is not accurate")
     def test_n_equals_1(self):
         pp = np.linspace(0, 1, 101, endpoint=True)
         # dataset = np.array([(1, p, 1-p) for p in pp])
@@ -146,7 +143,6 @@ class TestSmirnovi(object):
         dataset[:, 1] = 1 - dataset[:, 1]
         FuncData(smirnovci, dataset, (0, 1), 2, rtol=_rtol).check()
 
-    # @pytest.mark.xfail(reason="test fails; smirnovi(2,_) is not accurate")
     def test_n_equals_2(self):
         x = np.linspace(0.5, 1, 101, endpoint=True)
         p = np.power(1-x, 2)
@@ -156,7 +152,6 @@ class TestSmirnovi(object):
         dataset[:, 1] = 1 - dataset[:, 1]
         FuncData(smirnovci, dataset, (0, 1), 2, rtol=_rtol).check()
 
-    # @pytest.mark.xfail(reason="test fails; smirnovi(3,_) is not accurate")
     def test_n_equals_3(self):
         x = np.linspace(0.7, 1, 31, endpoint=True)
         p = np.power(1-x, 3)
@@ -166,7 +161,6 @@ class TestSmirnovi(object):
         dataset[:, 1] = 1 - dataset[:, 1]
         FuncData(smirnovci, dataset, (0, 1), 2, rtol=_rtol).check()
 
-    # @pytest.mark.xfail(reason="test fails; smirnovi(_,_) is not accurate")
     def test_round_trip(self):
         def _sm_smi(n, p):
             return smirnov(n, smirnovi(n, p))
@@ -330,7 +324,6 @@ class TestKolmogorov(object):
         dataset = np.column_stack([x, 1-epsilon])
         FuncData(kolmogorov, dataset, (0,), 1, rtol=_rtol).check()
 
-    # @pytest.mark.xfail(reason="test fails; kolmogi() is not accurate for small p")
     def test_round_trip(self):
         def _ki_k(_x):
             return kolmogi(kolmogorov(_x))
@@ -349,7 +342,6 @@ class TestKolmogi(object):
     def test_nan(self):
         assert_(np.isnan(kolmogi(np.nan)))
 
-    # @pytest.mark.xfail(reason="test fails; kolmogi() is not accurate for small p")
     def test_basic(self):
         dataset = [(1.0, 0),
                    (0.96394524366487511, 0.5),
