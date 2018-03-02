@@ -35,7 +35,7 @@ class AsymmetricQuadratic(object):
 class SlowRosen(object):
 
     def fun(self, x):
-        time.sleep(50e-6)
+        time.sleep(40e-6)
         return rosen(x)
 
 
