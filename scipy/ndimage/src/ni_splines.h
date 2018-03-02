@@ -3,7 +3,7 @@
 
 
 /*
- * For context in the theory behind this code, see:
+ * For context on the theory behind this code, see:
  *
  * M. Unser, A. Aldroubi and M. Eden, "Fast B-spline transforms for
  * continuous image representation and interpolation," in IEEE
@@ -27,6 +27,7 @@ get_spline_interpolation_weights(double x, int order, double *weights);
 
 /* The maximum number of poles for supported spline orders. */
 #define MAX_SPLINE_FILTER_POLES 2
+
 
 /*
  * Stores in `poles` the values of the poles of a spline filter of the
@@ -114,5 +115,5 @@ void
 set_initial_anticausal_coefficient(double *coefficients, npy_intp len,
                                    double pole);
 
-#endif
 
+#endif
