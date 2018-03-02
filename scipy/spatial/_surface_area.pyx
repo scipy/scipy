@@ -151,25 +151,22 @@ def pole_in_polygon(double [:,:] vertices):
         # something went wrong
         return -1
 
+@cython.boundscheck(False)
 cdef _spherical_polygon_area(double[:,:] vertices,
                              double radius,
                              int discretizations):
-    cdef int num_vertices = vertices.shape[0]
-    cdef double area_sum = 0
-    cdef double area_element, second_term, delta_lambda
-    cdef int i, j
-    cdef double[:,:] new_pts
-    cdef double[:] lambda_range, phi_range
+    cdef:
+        int num_vertices = vertices.shape[0]
+        double area_sum = 0
+        double second_term, delta_lambda
+        int i, j
+        double[:,:] new_pts
 
-    for i in range(num_vertices):
+    for i in xrange(num_vertices):
         new_pts = _slerp(vertices[i], vertices[i-1], discretizations)
-
-        lambda_range = np.arctan2(new_pts[...,1], new_pts[...,0])
-        phi_range = np.arcsin((new_pts[...,2]))
-        area_element = 0
-        for j in range(discretizations - 1):
-            delta_lambda = (lambda_range[j+1] -
-                            lambda_range[j])
+        for j in xrange(discretizations - 1):
+            delta_lambda = (atan2(new_pts[j + 1, 1], new_pts[j + 1, 0]) -
+                            atan2(new_pts[j, 1], new_pts[j, 0]))
 
             # at the + / - pi transition point
             # of the unit circle
@@ -180,10 +177,9 @@ cdef _spherical_polygon_area(double[:,:] vertices,
             elif delta_lambda < (-M_PI):
                 delta_lambda += 2 * M_PI
 
-            second_term = 2 + sin(phi_range[j]) + sin(phi_range[j+1])
-            area_element += (delta_lambda * second_term * (radius ** 2) * 0.5)
-        area_sum += area_element
-    return area_sum
+            second_term = 2 + new_pts[j, 2] + new_pts[j + 1, 2]
+            area_sum += (delta_lambda * second_term * 0.5)
+    return area_sum * radius * radius
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
