@@ -151,9 +151,9 @@ def pole_in_polygon(double [:,:] vertices):
         # something went wrong
         return -1
 
-def _spherical_polygon_area(double[:,:] vertices,
-                            double radius,
-                            int discretizations):
+cdef _spherical_polygon_area(double[:,:] vertices,
+                             double radius,
+                             int discretizations):
     cdef int num_vertices = vertices.shape[0]
     cdef double area_sum = 0
     cdef double area_element, second_term, delta_lambda
@@ -166,9 +166,6 @@ def _spherical_polygon_area(double[:,:] vertices,
 
         lambda_range = np.arctan2(new_pts[...,1], new_pts[...,0])
         phi_range = np.arcsin((new_pts[...,2]))
-        # NOTE: early stage handling of antipodes
-        if phi_range[0] == phi_range[-1]:
-            phi_range[:] = phi_range[0]
         area_element = 0
         for j in range(discretizations - 1):
             delta_lambda = (lambda_range[j+1] -
