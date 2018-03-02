@@ -103,11 +103,15 @@ def argrelmin(data, axis=0, order=1, mode='clip'):
 
     See Also
     --------
-    argrelextrema, argrelmax
+    argrelextrema, argrelmax, find_peaks
 
     Notes
     -----
-    This function uses `argrelextrema` with np.less as comparator.
+    This function uses `argrelextrema` with np.less as comparator. Therefore it
+    requires a strict inequality on both sides of a value to consider it a
+    minimum. This means flat minima (more than one sample wide) are not detected.
+    In case of one-dimensional `data` `find_peaks` can be used to detect all
+    local minima, including flat ones, by calling it with negated `data`.
 
     .. versionadded:: 0.11.0
 
@@ -156,11 +160,15 @@ def argrelmax(data, axis=0, order=1, mode='clip'):
 
     See Also
     --------
-    argrelextrema, argrelmin
+    argrelextrema, argrelmin, find_peaks
 
     Notes
     -----
-    This function uses `argrelextrema` with np.greater as comparator.
+    This function uses `argrelextrema` with np.greater as comparator. Therefore
+    it  requires a strict inequality on both sides of a value to consider it a
+    maximum. This means flat maxima (more than one sample wide) are not detected.
+    In case of one-dimensional `data` `find_peaks` can be used to detect all
+    local maxima, including flat ones.
 
     .. versionadded:: 0.11.0
 
