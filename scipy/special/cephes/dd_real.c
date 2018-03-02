@@ -39,9 +39,18 @@ const double2 DD_C_SAFE_MAX =
     _DD_REAL_INIT(1.7976931080746007281e+308, 9.97920154767359795037e+291);
 const int _DD_C_NDIGITS = 31;
 
-const double2 DD_C_NAN = _DD_REAL_INIT(NAN, NAN);
-const double2 DD_C_INF = _DD_REAL_INIT(INFINITY, INFINITY);
-const double2 DD_C_NEGINF = _DD_REAL_INIT(-INFINITY, -INFINITY);
+/* Need compile-time constants for initialization of const double2 structs */
+#ifdef NAN
+#define DD_NAN NAN
+#define DD_INFINITY INFINITY
+#else
+#define DD_NAN NPY_NAN
+#define DD_INFINITY NPY_INFINITY
+#endif /* NAN */
+
+const double2 DD_C_NAN = _DD_REAL_INIT(DD_NAN, DD_NAN);
+const double2 DD_C_INF = _DD_REAL_INIT(DD_INFINITY, DD_INFINITY);
+const double2 DD_C_NEGINF = _DD_REAL_INIT(-DD_INFINITY, -DD_INFINITY);
 const double2 DD_C_ZERO = _DD_REAL_INIT(0.0, 0.0);
 const double2 DD_C_ONE = _DD_REAL_INIT(1.0, 0.0);
 

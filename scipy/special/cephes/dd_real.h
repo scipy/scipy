@@ -71,7 +71,7 @@ extern "C" {
    to be inlined.  This should be set to 1 unless the compiler
    does not support the "inline" keyword, or if building for
    debugging purposes. */
-#if defined(__STDC__) && defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
+#if defined(__STDC__) && defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)
 #define DD_TRY_INLINE 1
 #endif
 
