@@ -30,10 +30,19 @@
  * [n(1-d)] is the largest integer not exceeding n(1-d).
  * nCv is the number of combinations of n things taken v at a time.
 
- * The algorithms used below for the Smirnov distibution appear in
- * "Computing the Cumulative Distribution Function and Quantiles of the One-sided Kolmogorov-Smirnov Statistic"
- * http://arxiv.org/abs/1802.06966
-
+ * Sources:
+ * [1] Smirnov, N.V. "Approximate laws of distribution of random variables from empirical data"
+ *     Usp. Mat. Nauk, 1944. http://mi.mathnet.ru/umn8798
+ * [2] Birnbaum, Z. W. and Tingey, Fred H.
+ *     "One-Sided Confidence Contours for Probability Distribution Functions",
+ *     Ann. Math. Statist. 1951.  http://dx.doi.org/10.1214/aoms/1177729550
+ * [3] Dwass, Meyer, "The Distribution of a Generalized $\mathrm{D}^+_n$ Statistic",
+ *     Ann. Math. Statist., 1959.  https://doi.org/10.1214/aoms/1177706085
+ * [4] van Mulbregt, Paul, "Computing the Cumulative Distribution Function and Quantiles of the One-sided Kolmogorov-Smirnov Statistic"
+ *     http://arxiv.org/abs/1802.06966
+ * [5] van Mulbregt, Paul,  "Computing the Cumulative Distribution Function and Quantiles of the limit of the Two-sided Kolmogorov-Smirnov Statistic"
+ *     https://arxiv.org/abs/1803.00426
+ *
  */
 
 #include "mconf.h"
