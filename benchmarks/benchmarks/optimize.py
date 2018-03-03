@@ -255,7 +255,7 @@ class BenchSmoothUnbounded(Benchmark):
         ['rosenbrock_slow', 'rosenbrock_nograd', 'rosenbrock', 'rosenbrock_tight',
          'simple_quadratic', 'asymmetric_quadratic',
          'sin_1d', 'booth', 'beale', 'LJ'],
-        ["COBYLA", 'Powell',
+        ["COBYLA", 'Powell', 'nelder-mead',
          'L-BFGS-B', 'BFGS', 'CG', 'TNC', 'SLSQP',
          "Newton-CG", 'dogleg', 'trust-ncg', 'trust-exact',
          'trust-krylov'],
