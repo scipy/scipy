@@ -5555,6 +5555,9 @@ class skew_norm_gen(rv_continuous):
     def _pdf(self, x, a):
         return 2.*_norm_pdf(x)*_norm_cdf(a*x)
 
+    def _cdf(self, x, a):
+        return _norm_cdf(x) - 2*sc.owens_t(x, a)
+
     def _rvs(self, a):
         u0 = self._random_state.normal(size=self._size)
         v = self._random_state.normal(size=self._size)
