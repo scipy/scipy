@@ -43,48 +43,36 @@ jobs:
           path: doc/build/html-scipyorg
           destination: html-scipyorg
 
-
 # Upload build output to scipy/devdocs repository, using SSH deploy keys.
 # The keys are only available for builds on master branch.
 # https://developer.github.com/guides/managing-deploy-keys/
 # https://circleci.com/docs/2.0/configuration-reference/#add_ssh_keys
 
-  deploy:
-    docker:
-      - image: circleci/python:3.6.1
-
-    working_directory: ~/repo
-
-    steps:
       - run:
-          name: Upload docs to GitHub
+          name: upload
           command: |
-            set -e;
-            mkdir -p ~/.ssh
-            echo -e "Host *\nStrictHostKeyChecking no" > ~/.ssh/config
-            chmod og= ~/.ssh/config
-            git clone git@github.com:scipy/devdocs.git devdocs;
-            cd devdocs;
-            (git checkout --orphan tmp && git branch -D gh-pages || true);
-            git checkout --orphan gh-pages;
-            git reset --hard;
-            cp -R ../doc/build/html-scipyorg/. .;
-            touch .nojekyll;
-            git config --global user.email "scipy-circleci-bot@nomail";
-            git config --global user.name "scipy-circleci-bot";
-            git config --global push.default simple;
-            git add . > /dev/null;
-            git commit -m "Docs build of $CIRCLE_SHA1";
-            git push --set-upstream origin gh-pages --force
+            if [ "${CIRCLE_BRANCH}" == "master" ]; then
+              set -e;
+              mkdir -p ~/.ssh
+              echo -e "Host *\nStrictHostKeyChecking no" > ~/.ssh/config
+              chmod og= ~/.ssh/config
+              git clone git@github.com:scipy/devdocs.git devdocs;
+              cd devdocs;
+              (git checkout --orphan tmp && git branch -D gh-pages || true);
+              git checkout --orphan gh-pages;
+              git reset --hard;
+              cp -R ../doc/build/html-scipyorg/. .;
+              touch .nojekyll;
+              git config --global user.email "scipy-circleci-bot@nomail";
+              git config --global user.name "scipy-circleci-bot";
+              git config --global push.default simple;
+              git add . > /dev/null;
+              git commit -m "Docs build of $CIRCLE_SHA1";
+              git push --set-upstream origin gh-pages --force
+            fi
 
 workflows:
   version: 2
   build_and_deploy:
     jobs:
       - build
-      - deploy:
-          requires:
-            - build
-          filters:
-            branches:
-              only: master
