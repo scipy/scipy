@@ -207,7 +207,6 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'combine_pvalues', 'wasserstein_distance', 'energy_distance',
            'brunnermunzel', 'epps_singleton_2samp']
 
-
 def _chk_asarray(a, axis):
     if axis is None:
         a = np.ravel(a)
