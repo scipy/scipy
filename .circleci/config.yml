@@ -1,0 +1,87 @@
+version: 2
+jobs:
+  build:
+    docker:
+      # CircleCI maintains a library of pre-built images
+      # documented at https://circleci.com/docs/2.0/circleci-images/
+      - image: circleci/python:3.6.1
+
+    working_directory: ~/repo
+
+    steps:
+      - checkout
+
+      - run:
+          name: update submodules
+          command: |
+            git submodule init
+            git submodule update
+
+      - run:
+          name: install Debian dependencies
+          command: |
+            sudo apt-get update
+            sudo apt-get install libatlas-dev libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libfreetype6-dev libpng-dev zlib1g-dev texlive-fonts-recommended
+
+      - run:
+          name: setup Python venv
+          command: |
+            python3 -m venv venv
+            . venv/bin/activate
+            pip install --install-option="--no-cython-compile" Cython==0.25
+            pip install numpy
+            pip install nose mpmath argparse Pillow codecov matplotlib Sphinx==1.5.5
+
+      - run:
+          name: test
+          command: |
+            . venv/bin/activate
+            export SHELL=$(which bash)
+            python -u runtests.py -g --shell -- -c 'make -C doc PYTHON=python html-scipyorg'
+
+      - store_artifacts:
+          path: doc/build/html-scipyorg
+          destination: html-scipyorg
+
+
+# Upload build output to scipy/devdocs repository, using SSH deploy keys.
+# The keys are only available for builds on master branch.
+# https://developer.github.com/guides/managing-deploy-keys/
+# https://circleci.com/docs/2.0/configuration-reference/#add_ssh_keys
+
+  deploy:
+    docker:
+      - image: circleci/python:3.6.1
+
+    working_directory: ~/repo
+
+    steps:
+      - run:
+          name: Upload docs to GitHub
+          command: |
+            set -e;
+            git clone git@github.com:scipy/devdocs.git devdocs;
+            cd devdocs;
+            (git checkout --orphan tmp && git branch -D gh-pages || true);
+            git checkout --orphan gh-pages;
+            git reset --hard;
+            cp -R ../doc/build/html-scipyorg/. .;
+            touch .nojekyll;
+            git config --global user.email "scipy-circleci-bot@nomail";
+            git config --global user.name "scipy-circleci-bot";
+            git config --global push.default simple;
+            git add . > /dev/null;
+            git commit -m "Docs build of $CIRCLE_SHA1";
+            git push --set-upstream origin gh-pages --force
+
+workflows:
+  version: 2
+  build_and_deploy:
+    jobs:
+      - build
+      - deploy:
+          requires:
+            - build
+          filters:
+            branches:
+              only: master
