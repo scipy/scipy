@@ -60,6 +60,7 @@ jobs:
           name: Upload docs to GitHub
           command: |
             set -e;
+            export GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no"
             git clone git@github.com:scipy/devdocs.git devdocs;
             cd devdocs;
             (git checkout --orphan tmp && git branch -D gh-pages || true);
