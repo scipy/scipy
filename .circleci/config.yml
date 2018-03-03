@@ -60,6 +60,7 @@ jobs:
           name: Upload docs to GitHub
           command: |
             set -e;
+            mkdir -p ~/.ssh
             echo -e "Host *\nStrictHostKeyChecking no" > ~/.ssh/config
             chmod og= ~/.ssh/config
             git clone git@github.com:scipy/devdocs.git devdocs;
