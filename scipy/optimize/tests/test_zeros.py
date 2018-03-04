@@ -10,8 +10,10 @@ except ImportError:
 from numpy.testing import (assert_warns, assert_, 
                            assert_allclose,
                            assert_equal, assert_array_less)
-from numpy.testing.decorators import skipif
+
 from numpy import finfo
+
+import pytest
 
 from scipy.optimize import zeros as cc
 from scipy.optimize import zeros
@@ -119,7 +121,7 @@ class TestRootResults:
         assert_equal(repr(r), expected_repr)
 
 
-@skipif(mpmath is None)  # skip if mpmath is None
+@pytest.mark.skipif(mpmath is None)  # skip if mpmath is None
 def test_halley_convergence():
     """addresses gh5922: Suboptimal convergence of Halley's"""
     points = []
