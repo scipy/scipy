@@ -2,7 +2,7 @@ from __future__ import division, print_function, absolute_import
 import warnings
 import cython
 cimport cpython
-cimport c_zeros
+from scipy.optimize.cython_optimize cimport c_zeros
 
 cdef double TOL = 1.48e-8
 cdef int MAXITER = 50
