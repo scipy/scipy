@@ -23,7 +23,7 @@ cdef double scipy_zeros_functions_func(double x, c_zeros.scipy_zeros_parameters 
 
 
 @cython.cdivision(True)
-cdef double newton(callback_type_tup func, double p0, callback_type_tup fprime, tuple args):
+cdef double newton(callback_type func, double p0, callback_type fprime, void *args):
     # Newton-Rapheson method
     cdef double fder, fval, p
     for iter in range(MAXITER):
@@ -43,7 +43,7 @@ cdef double newton(callback_type_tup func, double p0, callback_type_tup fprime, 
 
 
 # cythonized way to call scalar bisect
-cdef double bisect(callback_type_tup f, double xa, double xb, tuple args, double xtol, double rtol, int iter):
+cdef double bisect(callback_type f, double xa, double xb, void *args, double xtol, double rtol, int iter):
     cdef c_zeros.scipy_zeros_parameters myparams
     # create params struct
     myparams.args = <cpython.PyObject *> args
