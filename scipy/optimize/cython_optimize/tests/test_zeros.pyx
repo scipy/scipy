@@ -26,7 +26,7 @@ cdef double solarcell_newton(tuple args):
 
 
 # cython
-def bench_cython_newton(v=5.25, il=IL, args=(1e-09, 0.004, 10, 0.27456)):
+def test_cython_newton(v=5.25, il=IL, args=(1e-09, 0.004, 10, 0.27456)):
     return map(solarcell_newton,
                ((v, il_,) + args for il_ in il))
 
@@ -38,6 +38,6 @@ cdef double solarcell_bisect(tuple args):
 
 
 # cython
-def bench_cython_bisect(v=5.25, il=IL, args=(1e-09, 0.004, 10, 0.27456)):
+def test_cython_bisect(v=5.25, il=IL, args=(1e-09, 0.004, 10, 0.27456)):
     return map(solarcell_bisect,
                ((v, il_,) + args for il_ in il))
