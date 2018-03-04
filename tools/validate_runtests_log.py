@@ -25,16 +25,17 @@ if __name__ == "__main__":
     # full or fast test suite?
     try:
         testmode = sys.argv[1]
-        if testmode not in ('fast', 'full'):
+        if testmode not in ('fast', 'full', 'slow'):
             raise IndexError
     except IndexError:
-        raise ValueError("Usage: validate.py {full|fast} < logfile.")
+        raise ValueError("Usage: validate.py {full|fast|slow} < logfile.")
 
     # fetch the expected number of tests
     # these numbers are for 10d5dfe8b7
     # XXX: this should probably track the commit hash or commit date
     expected_size = {'full': 11000,
-                     'fast': 10000}
+                     'fast': 10000,
+                     'slow': 300}
 
     # read in the log, parse for the pytest printout
     r1 = re.compile("(?P<num_failed>\d+) failed, (?P<num_passed>\d+) passed,.* in (?P<time>\d+\S+)")
