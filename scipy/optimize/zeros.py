@@ -71,7 +71,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
     Find a zero of the function `func` given a nearby starting point `x0`.
     The Newton-Raphson method is used if the derivative `fprime` of `func`
     is provided, otherwise the secant method is used.  If the second order
-    derivate `fprime2` of `func` is provided, then Halley's method is used.
+    derivative `fprime2` of `func` is provided, then Halley's method is used.
 
     Parameters
     ----------

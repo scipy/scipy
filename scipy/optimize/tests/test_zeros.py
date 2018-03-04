@@ -121,7 +121,7 @@ class TestRootResults:
         assert_equal(repr(r), expected_repr)
 
 
-@pytest.mark.skipif(mpmath is None)  # skip if mpmath is None
+@pytest.mark.skipif(mpmath is None, reason="skip if mpmath is None")
 def test_halley_convergence():
     """addresses gh5922: Suboptimal convergence of Halley's"""
     points = []
