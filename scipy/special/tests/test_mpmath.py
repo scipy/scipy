@@ -1911,6 +1911,12 @@ class TestSystematic(object):
                             [Arg(a=1, b=1e10, inclusive_a=False),
                              Arg(a=0, inclusive_a=False)])
 
+    def test_zetac(self):
+        assert_mpmath_equal(sc.zetac,
+                            lambda x: mpmath.zeta(x) - 1,
+                            [Arg(-100, 100)],
+                            nan_ok=False, dps=45, rtol=1e-13)
+
     def test_boxcox(self):
 
         def mp_boxcox(x, lmbda):
