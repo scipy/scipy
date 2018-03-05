@@ -64,6 +64,10 @@ jobs:
       - attach_workspace:
           at: /tmp/build
 
+      - add_ssh_keys:
+          fingerprints:
+            - "eb:75:f0:c2:bf:9f:ba:96:80:1e:6b:98:6f:0b:60:63"
+
       - run:
           name: upload
           command: |
