@@ -64,9 +64,8 @@ def spline_filter1d(input, order=3, axis=-1, output=numpy.float64):
 
     Returns
     -------
-    spline_filter1d : ndarray or None
-        The filtered input. If `output` is given as a parameter, None is
-        returned.
+    spline_filter1d : ndarray
+        The filtered input.
 
     """
     if order < 0 or order > 5:
@@ -74,13 +73,13 @@ def spline_filter1d(input, order=3, axis=-1, output=numpy.float64):
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
         raise TypeError('Complex type not supported')
-    output, return_value = _ni_support._get_output(output, input)
+    output = _ni_support._get_output(output, input)
     if order in [0, 1]:
         output[...] = numpy.array(input)
     else:
         axis = _ni_support._check_axis(axis, input.ndim)
         _nd_image.spline_filter1d(input, order, axis, output)
-    return return_value
+    return output
 
 
 def spline_filter(input, order=3, output=numpy.float64):
@@ -107,14 +106,14 @@ def spline_filter(input, order=3, output=numpy.float64):
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
         raise TypeError('Complex type not supported')
-    output, return_value = _ni_support._get_output(output, input)
+    output = _ni_support._get_output(output, input)
     if order not in [0, 1] and input.ndim > 0:
         for axis in range(input.ndim):
             spline_filter1d(input, order, axis, output=output)
             input = output
     else:
         output[...] = input[...]
-    return return_value
+    return output
 
 
 def geometric_transform(input, mapping, output_shape=None,
@@ -164,9 +163,8 @@ def geometric_transform(input, mapping, output_shape=None,
 
     Returns
     -------
-    return_value : ndarray or None
-        The filtered input. If `output` is given as a parameter, None is
-        returned.
+    output : ndarray
+        The filtered input.
 
     See Also
     --------
@@ -246,12 +244,12 @@ def geometric_transform(input, mapping, output_shape=None,
         filtered = spline_filter(input, order, output=numpy.float64)
     else:
         filtered = input
-    output, return_value = _ni_support._get_output(output, input,
+    output = _ni_support._get_output(output, input,
                                                    shape=output_shape)
     _nd_image.geometric_transform(filtered, mapping, None, None, None, output,
                                   order, mode, cval, extra_arguments,
                                   extra_keywords)
-    return return_value
+    return output
 
 
 def map_coordinates(input, coordinates, output=None, order=3,
@@ -346,11 +344,11 @@ def map_coordinates(input, coordinates, output=None, order=3,
         filtered = spline_filter(input, order, output=numpy.float64)
     else:
         filtered = input
-    output, return_value = _ni_support._get_output(output, input,
+    output = _ni_support._get_output(output, input,
                                                    shape=output_shape)
     _nd_image.geometric_transform(filtered, None, coordinates, None, None,
                                   output, order, mode, cval, None, None)
-    return return_value
+    return output
 
 
 def affine_transform(input, matrix, offset=0.0, output_shape=None,
@@ -414,9 +412,8 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
 
     Returns
     -------
-    affine_transform : ndarray or None
-        The transformed input. If `output` is given as a parameter, None is
-        returned.
+    affine_transform : ndarray
+        The transformed input.
 
     Notes
     -----
@@ -453,7 +450,7 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
         filtered = spline_filter(input, order, output=numpy.float64)
     else:
         filtered = input
-    output, return_value = _ni_support._get_output(output, input,
+    output = _ni_support._get_output(output, input,
                                                    shape=output_shape)
     matrix = numpy.asarray(matrix, dtype=numpy.float64)
     if matrix.ndim not in [1, 2] or matrix.shape[0] < 1:
@@ -493,7 +490,7 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
     else:
         _nd_image.geometric_transform(filtered, None, None, matrix, offset,
                                       output, order, mode, cval, None, None)
-    return return_value
+    return output
 
 
 def shift(input, shift, output=None, order=3, mode='constant', cval=0.0,
@@ -533,9 +530,8 @@ def shift(input, shift, output=None, order=3, mode='constant', cval=0.0,
 
     Returns
     -------
-    shift : ndarray or None
-        The shifted input. If `output` is given as a parameter, None is
-        returned.
+    shift : ndarray
+        The shifted input.
 
     """
     if order < 0 or order > 5:
@@ -550,14 +546,14 @@ def shift(input, shift, output=None, order=3, mode='constant', cval=0.0,
         filtered = spline_filter(input, order, output=numpy.float64)
     else:
         filtered = input
-    output, return_value = _ni_support._get_output(output, input)
+    output = _ni_support._get_output(output, input)
     shift = _ni_support._normalize_sequence(shift, input.ndim)
     shift = [-ii for ii in shift]
     shift = numpy.asarray(shift, dtype=numpy.float64)
     if not shift.flags.contiguous:
         shift = shift.copy()
     _nd_image.zoom_shift(filtered, None, shift, output, order, mode, cval)
-    return return_value
+    return output
 
 
 def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
@@ -595,9 +591,8 @@ def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
 
     Returns
     -------
-    zoom : ndarray or None
-        The zoomed input. If `output` is given as a parameter, None is
-        returned.
+    zoom : ndarray
+        The zoomed input.
 
     Examples
     --------
@@ -650,11 +645,11 @@ def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
                         out=numpy.ones_like(input.shape, dtype=numpy.float64),
                         where=zoom_div != 0)
 
-    output, return_value = _ni_support._get_output(output, input,
+    output = _ni_support._get_output(output, input,
                                                    shape=output_shape)
     zoom = numpy.ascontiguousarray(zoom)
     _nd_image.zoom_shift(filtered, zoom, None, output, order, mode, cval)
-    return return_value
+    return output
 
 
 def _minmax(coor, minc, maxc):
@@ -711,9 +706,8 @@ def rotate(input, angle, axes=(1, 0), reshape=True,
 
     Returns
     -------
-    rotate : ndarray or None
-        The rotated input. If `output` is given as a parameter, None is
-        returned.
+    rotate : ndarray
+        The rotated input.
 
     """
     input = numpy.asarray(input)
@@ -764,7 +758,7 @@ def rotate(input, angle, axes=(1, 0), reshape=True,
     output_shape[axes[0]] = oy
     output_shape[axes[1]] = ox
     output_shape = tuple(output_shape)
-    output, return_value = _ni_support._get_output(output, input,
+    output = _ni_support._get_output(output, input,
                                                    shape=output_shape)
     if input.ndim <= 2:
         affine_transform(input, matrix, offset, output_shape, output,
@@ -795,4 +789,4 @@ def rotate(input, angle, axes=(1, 0), reshape=True,
                     break
                 else:
                     coordinates[jj] = 0
-    return return_value
+    return output

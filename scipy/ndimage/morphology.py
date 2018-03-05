@@ -237,12 +237,12 @@ def _binary_erosion(input, structure, iterations, mask, output,
             raise TypeError('Complex output type not supported')
     else:
         output = bool
-    output, return_value = _ni_support._get_output(output, input)
+    output = _ni_support._get_output(output, input)
 
     if iterations == 1:
         _nd_image.binary_erosion(input, structure, mask, output,
                                  border_value, origin, invert, cit, 0)
-        return return_value
+        return output
     elif cit and not brute_force:
         changed, coordinate_list = _nd_image.binary_erosion(
             input, structure, mask, output,
@@ -259,27 +259,23 @@ def _binary_erosion(input, structure, iterations, mask, output,
             structure = structure.copy()
         _nd_image.binary_erosion2(output, structure, mask, iterations - 1,
                                   origin, invert, coordinate_list)
-        return return_value
+        return output
     else:
-        tmp_in = numpy.zeros(input.shape, bool)
-        if return_value is None:
-            tmp_out = output
-        else:
-            tmp_out = numpy.zeros(input.shape, bool)
-        if not iterations & 1:
+        tmp_in = numpy.empty_like(input, dtype=bool)
+        tmp_out = output
+        if iterations >= 1 and not iterations & 1:
             tmp_in, tmp_out = tmp_out, tmp_in
         changed = _nd_image.binary_erosion(
             input, structure, mask, tmp_out,
             border_value, origin, invert, cit, 0)
         ii = 1
-        while (ii < iterations) or (iterations < 1) and changed:
+        while ii < iterations or (iterations < 1 and changed):
             tmp_in, tmp_out = tmp_out, tmp_in
             changed = _nd_image.binary_erosion(
                 tmp_in, structure, mask, tmp_out,
                 border_value, origin, invert, cit, 0)
             ii += 1
-        if return_value is not None:
-            return tmp_out
+        return output
 
 
 def binary_erosion(input, structure=None, iterations=1, mask=None, output=None,

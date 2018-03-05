@@ -1462,6 +1462,6 @@ def watershed_ift(input, markers, structure=None, output=None):
     else:
         output = markers.dtype
 
-    output, return_value = _ni_support._get_output(output, input)
+    output = _ni_support._get_output(output, input)
     _nd_image.watershed_ift(input, markers, structure, output)
-    return return_value
+    return output
