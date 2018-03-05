@@ -2,14 +2,14 @@ from __future__ import division, print_function, absolute_import
 
 import copy
 
+import numpy as np
+from numpy.testing import (assert_equal, assert_array_equal, assert_)
 import pytest
 from pytest import raises
 
-import numpy as np
-from numpy.testing import assert_equal, assert_array_equal, assert_
-
 from scipy._lib.six import xrange
 from scipy.signal._peak_finding import (argrelmax, argrelmin,
+    peak_prominences, peak_widths, _unpack_condition_args, find_peaks,
     find_peaks_cwt, _identify_ridge_lines)
 from scipy.signal._peak_finding_utils import _argmaxima1d
 
@@ -301,7 +301,315 @@ class TestArgrel(object):
             assert_((act_locs == (rel_max_cols[inds] - rot_factor*rw)).all())
 
 
+class TestPeakProminences(object):
+
+    def test_empty(self):
+        """
+        Test if an empty array is returned if no peaks are provided.
+        """
+        proms = peak_prominences([], [])[0]
+        assert_(isinstance(proms, np.ndarray))
+        assert_equal(proms.size, 0)
+        proms = peak_prominences([1, 2, 3], [])[0]
+        assert_(isinstance(proms, np.ndarray))
+        assert_equal(proms.size, 0)
+        out = peak_prominences([], [])
+        for arr in out:
+            assert_(isinstance(arr, np.ndarray))
+            assert_equal(arr.size, 0)
+
+    def test_basic(self):
+        """
+        Test if height of prominences is correctly calculated in signal with
+        rising baseline (peak widths are 1 sample).
+        """
+        x = np.linspace(1, 4, 7)  # Rising baseline
+        peak_heights = [2, 4, 1.2]  # Peak heights
+        peak_pos = [1, 3, 5]
+        desired = []
+        for h, p in zip(peak_heights, peak_pos):
+            x[p] += h
+            # Peak prominence is difference between vector[peak] and next
+            # sample to the right
+            desired.append(x[p] - x[p + 1])
+        actual = peak_prominences(x, [1, 3, 5])[0]
+        assert_equal(actual, desired)
+
+    def test_wlen(self):
+        """
+        Test if wlen actually shrinks the evaluation range.
+        """
+        t = np.linspace(0, 4 * np.pi, 1000)
+        x = abs(np.sin(t))
+        peaks = argrelmax(x)[0]
+        # Raise 2 baseline of peaks in the middle
+        x[250:750] += 0.3
+        # If entire x is used the middle two peaks should have a prominence
+        # of approx. 1 + 0.3, otherwise minima between second and third peak
+        # should be lowest contour line and prominence should be < 1.1
+        proms_wlen = peak_prominences(x, peaks, wlen=600)[0]
+        assert_(np.all(proms_wlen < 1.1))
+        # If window length is 2
+        assert_equal(peak_prominences(x, peaks)[0],
+                     peak_prominences(x, peaks, wlen=(x.size * 2))[0])
+
+    def test_raises(self):
+        """
+        Verfiy that argument validation works as intended.
+        """
+        with raises(ValueError, match='dimension'):
+            # x with dimension > 1
+            peak_prominences(np.zeros((3, 4)), np.ones(3))
+        with raises(ValueError, match='dimension'):
+            # x with dimension < 1
+            peak_prominences(3, [0,])
+        with raises(ValueError, match='dimension'):
+            # peaks with dimension > 1
+            peak_prominences(np.arange(10), np.ones((3, 2)))
+        with raises(ValueError, match='dimension'):
+            # peaks with dimension < 1
+            peak_prominences(np.arange(10), 3)
+        with raises(ValueError, match='index'):
+            # peak pos exceeds x.size
+            peak_prominences(np.arange(10), [8, 11])
+        with raises(ValueError, match='index'):
+            # empty x with peaks supplied
+            peak_prominences([], [1, 2])
+        with raises(ValueError, match='integers'):
+            # peak is not of subtype int
+            peak_prominences(np.arange(10), [1.1, 2.3])
+        with raises(ValueError, match='wlen'):
+            # wlen < 3
+            peak_prominences(np.arange(10), [3, 5], wlen=2)
+
+
+class TestPeakWidths(object):
+
+    def test_empty(self):
+        """
+        Test if an empty array is returned if no peaks are provided.
+        """
+        widths = peak_widths([], [])[0]
+        assert_(isinstance(widths, np.ndarray))
+        assert_equal(widths.size, 0)
+        widths = peak_widths([1, 2, 3], [])[0]
+        assert_(isinstance(widths, np.ndarray))
+        assert_equal(widths.size, 0)
+        out = peak_widths([], [])
+        for arr in out:
+            assert_(isinstance(arr, np.ndarray))
+            assert_equal(arr.size, 0)
+
+    def test_basic(self):
+        """
+        Test a simple use case with easy to verify results at different relative
+        heights.
+        """
+        x = np.array([1, 0, 1, 2, 1, 0, -1])
+        prominence = 2
+        iteration = [
+            # rh, w_true, lip_true, rip_true
+            (0., 0., 3., 3.),
+            (0.25, 1., 2.5, 3.5),
+            (0.5, 2., 2., 4.),
+            (0.75, 3., 1.5, 4.5),
+            (1., 4., 1., 5.),
+            (2., 5., 1., 6.),
+            (3., 5., 1., 6.)
+        ]
+        for rh, w_true, lip_true, rip_true in iteration:
+            w_calc, height, lip_calc, rip_calc = peak_widths(x, [3], rh)
+            assert_(w_calc == w_true)
+            assert_(height == 2 - rh * prominence)
+            assert_(lip_calc == lip_true)
+            assert_(rip_calc == rip_true)
+        # Additional test without argument ret_pos
+        assert_(peak_widths([1, 2, 1], [1])[0], 1)
+
+    def test_raises(self):
+        """
+        Verfiy that argument validation works as intended.
+        """
+        with raises(ValueError, match='dimension'):
+            # x with dimension > 1
+            peak_widths(np.zeros((3, 4)), np.ones(3))
+        with raises(ValueError, match='dimension'):
+            # x with dimension < 1
+            peak_widths(3, [0, ])
+        with raises(ValueError, match='dimension'):
+            # peaks with dimension > 1
+            peak_widths(np.arange(10), np.ones((3, 2)))
+        with raises(ValueError, match='dimension'):
+            # peaks with dimension < 1
+            peak_widths(np.arange(10), 3)
+        with raises(ValueError, match='index'):
+            # peak pos exceeds x.size
+            peak_widths(np.arange(10), [8, 11])
+        with raises(ValueError, match='index'):
+            # empty x with peaks supplied
+            peak_widths([], [1, 2])
+        with raises(ValueError, match='integers'):
+            # peak is not of subtype int
+            peak_widths(np.arange(10), [1.1, 2.3])
+        with raises(ValueError, match='rel_height'):
+            # rel_height is < 0
+            peak_widths(np.arange(10), [1, 2], rel_height=-1)
+
+
+def test_unpack_condition_args():
+    """
+    Verify parsing of condition arguments for `scipy.signal.find_peaks` function.
+    """
+    x = np.arange(10)
+    amin_true = x
+    amax_true = amin_true + 10
+    peaks = amin_true[1::2]
+
+    # Test unpacking with None or interval
+    assert_((None, None) == _unpack_condition_args((None, None), x, peaks))
+    assert_((1, None) == _unpack_condition_args(1, x, peaks))
+    assert_((1, None) == _unpack_condition_args((1, None), x, peaks))
+    assert_((None, 2) == _unpack_condition_args((None, 2), x, peaks))
+    assert_((3., 4.5) == _unpack_condition_args((3., 4.5), x, peaks))
+
+    # Test if borders are correctly reduced with `peaks`
+    amin_calc, amax_calc = _unpack_condition_args((amin_true, amax_true), x, peaks)
+    assert_equal(amin_calc, amin_true[peaks])
+    assert_equal(amax_calc, amax_true[peaks])
+
+    # Test raises if array borders don't match x
+    with raises(ValueError, match="array size of lower"):
+        _unpack_condition_args(amin_true, np.arange(11), peaks)
+    with raises(ValueError, match="array size of upper"):
+        _unpack_condition_args((None, amin_true), np.arange(11), peaks)
+
+
 class TestFindPeaks(object):
+
+    # Keys of optionally returned properties
+    property_keys = {'peak_heights', 'left_thresholds', 'right_thresholds',
+                     'prominences', 'left_bases', 'right_bases', 'widths',
+                     'width_heights', 'left_ips', 'right_ips'}
+
+    def test_constant(self):
+        """
+        Test behavior for signal without local maxima.
+        """
+        open_interval = (None, None)
+        peaks, props = find_peaks(np.ones(10),
+                                  height=open_interval, threshold=open_interval,
+                                  prominence=open_interval, width=open_interval)
+        assert_(peaks.size == 0)
+        for key in self.property_keys:
+            assert_(props[key].size == 0)
+
+    def test_height_condition(self):
+        """
+        Test height condition for peaks.
+        """
+        x = (0., 1/3, 0., 2.5, 0, 4., 0)
+        peaks, props = find_peaks(x, height=(None, None))
+        assert_equal(peaks, np.array([1, 3, 5]))
+        assert_equal(props['peak_heights'], np.array([1/3, 2.5, 4.]))
+        assert_equal(find_peaks(x, height=0.5)[0], np.array([3, 5]))
+        assert_equal(find_peaks(x, height=(None, 3))[0], np.array([1, 3]))
+        assert_equal(find_peaks(x, height=(2, 3))[0], np.array([3]))
+
+    def test_threshold_condition(self):
+        """
+        Test threshold condition for peaks.
+        """
+        x = (0, 2, 1, 4, -1)
+        peaks, props = find_peaks(x, threshold=(None, None))
+        assert_equal(peaks, np.array([1, 3]))
+        assert_equal(props['left_thresholds'], np.array([2, 3]))
+        assert_equal(props['right_thresholds'], np.array([1, 5]))
+        assert_equal(find_peaks(x, threshold=2)[0], np.array([3]))
+        assert_equal(find_peaks(x, threshold=3.5)[0], np.array([]))
+        assert_equal(find_peaks(x, threshold=(None, 5))[0], np.array([1, 3]))
+        assert_equal(find_peaks(x, threshold=(None, 4))[0], np.array([1]))
+        assert_equal(find_peaks(x, threshold=(2, 4))[0], np.array([]))
+
+    def test_distance_condition(self):
+        """
+        Test distance condition for peaks.
+        """
+        # Peaks of different height with constant distance
+        peaks_all = np.arange(1, 21, 3)
+        x = np.zeros(21)
+        x[peaks_all] += np.linspace(1, 2, peaks_all.size)
+        # Filter every second peak
+        peaks_subset = find_peaks(x, distance=4)[0]
+        # Test if peaks_subset is subset of peaks_all
+        assert_(
+            np.setdiff1d(peaks_subset, peaks_all, assume_unique=True).size == 0
+        )
+        # Test that every second peak was removed
+        assert_equal(np.diff(peaks_subset), 6)
+
+        # Test priority of peak removal
+        x = [-2, 1, -1, 0, -3]
+        peaks_subset = find_peaks(x, distance=10)[0]  # use distance > x size
+        assert_(peaks_subset.size == 1 and peaks_subset[0] == 1)
+
+    def test_prominence_condition(self):
+        """
+        Test prominence condition for peaks.
+        """
+        x = np.linspace(0, 10, 100)
+        peaks_true = np.arange(1, 99, 2)
+        offset = np.linspace(1, 10, peaks_true.size)
+        x[peaks_true] += offset
+        prominences = x[peaks_true] - x[peaks_true + 1]
+        interval = (3, 9)
+        keep = np.where(
+            (interval[0] <= prominences) & (prominences <= interval[1]))
+
+        peaks_calc, properties = find_peaks(x, prominence=interval)
+        assert_equal(peaks_calc, peaks_true[keep])
+        assert_equal(properties['prominences'], prominences[keep])
+        assert_equal(properties['left_bases'], 0)
+        assert_equal(properties['right_bases'], peaks_true[keep] + 1)
+
+    def test_width_condition(self):
+        """
+        Test width condition for peaks.
+        """
+        x = np.array([1, 0, 1, 2, 1, 0, -1, 4, 0])
+        peaks, props = find_peaks(x, width=(None, 2), rel_height=0.75)
+        assert_(peaks.size == 1)
+        assert_(peaks == 7)
+        assert_(props['widths'] == 1.35)
+        assert_(props['width_heights'] == 1.)
+        assert_(props['left_ips'] == 6.4)
+        assert_(props['right_ips'] == 7.75)
+
+    def test_properties(self):
+        """
+        Test returned properties.
+        """
+        open_interval = (None, None)
+        x = [0, 1, 0, 2, 1.5, 0, 3, 0, 5, 9]
+        peaks, props = find_peaks(x,
+                                  height=open_interval, threshold=open_interval,
+                                  prominence=open_interval, width=open_interval)
+        assert_(len(props) == len(self.property_keys))
+        for key in self.property_keys:
+            assert_(peaks.size == props[key].size)
+
+    def test_raises(self):
+        """
+        Test exceptions raised by function.
+        """
+        with raises(ValueError, match="dimension"):
+            find_peaks(np.array(1))
+        with raises(ValueError, match="dimension"):
+            find_peaks(np.ones((2, 2)))
+        with raises(ValueError, match="distance"):
+            find_peaks(np.arange(10), distance=-1)
+
+
+class TestFindPeaksCwt(object):
 
     def test_find_peaks_exact(self):
         """
