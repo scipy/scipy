@@ -534,17 +534,21 @@ class TestFindPeaks(object):
         """
         Test distance condition for peaks.
         """
-        # Peaks of different height with constant distance
+        # Peaks of different height with constant distance 3
         peaks_all = np.arange(1, 21, 3)
         x = np.zeros(21)
         x[peaks_all] += np.linspace(1, 2, peaks_all.size)
-        # Filter every second peak
-        peaks_subset = find_peaks(x, distance=4)[0]
+
+        # Test if peaks with "minimal" distance are still selected (distance = 3)
+        assert_equal(find_peaks(x, distance=3)[0], peaks_all)
+
+        # Select every second peak (distance > 3)
+        peaks_subset = find_peaks(x, distance=3.0001)[0]
         # Test if peaks_subset is subset of peaks_all
         assert_(
             np.setdiff1d(peaks_subset, peaks_all, assume_unique=True).size == 0
         )
-        # Test that every second peak was removed
+        # Test if every second peak was removed
         assert_equal(np.diff(peaks_subset), 6)
 
         # Test priority of peak removal
