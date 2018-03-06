@@ -461,3 +461,30 @@ cdef _fill_dtype_map2(map):
 
 _fill_dtype_map(_LIL_FANCY_GET_DISPATCH, np.typecodes['Integer'])
 _fill_dtype_map2(_LIL_FANCY_SET_DISPATCH)
+
+
+def lil_matvec(int M, int N,
+               object[:] rows,
+               object[:] data,
+               cnp.ndarray vec,
+               cnp.ndarray result):
+    """
+    Compute y = A * x for LIL matrix A and dense vectors x and y.
+
+    Parameters
+    ----------
+    M, N, rows, data
+        The data from the LIL matrix A.
+    vec
+        The vector x as array.
+    res
+        The vector y as array.
+        Must be preallocated to shape `N`!
+
+    """
+
+    for i in range(M):
+        result_i = 0
+        for (j, A_ij) in zip(rows[i], data[i]):
+            result_i += A_ij * vec[j]
+        result[i] = result_i
