@@ -18,6 +18,12 @@ EXTENSIONS.append(
               include_dirs=[np.get_include()])
 )
 
+# structs
+EXTENSIONS.append(
+    Extension("test.test_zeros_struct", ["tests/test_zeros_struct.pyx"],
+              include_dirs=[np.get_include()])
+)
+
 setup(
     name='cython optimize api',
     ext_modules=cythonize(EXTENSIONS),

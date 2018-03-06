@@ -24,7 +24,7 @@ IL = [sin(il) + 6.0 for il in range(NUM_OF_IRRAD)]
 # governing equations
 cdef double f_solarcell(double i, test_params *args):
     cdef test_params *myargs
-    cdef double v, il, io, rs, rsh, vt\
+    cdef double v, il, io, rs, rsh, vt
     # unpack structure
     myargs = args
     v = myargs.voltage
@@ -32,14 +32,14 @@ cdef double f_solarcell(double i, test_params *args):
     io = myargs.dark_current
     rs = myargs.series_resistance
     rsh = myargs.shunt_resistsance
-    vth = myargs.thermal_voltage
+    vt = myargs.thermal_voltage
     vd = v + i * rs
     return il - io * (exp(vd / vt) - 1.0) - vd / rsh - i
 
 
 cdef double fprime(double i, test_params *args):
     cdef test_params *myargs
-    cdef double v, il, io, rs, rsh, vt\
+    cdef double v, il, io, rs, rsh, vt
     # unpack structure
     myargs = args
     v = myargs.voltage
@@ -47,7 +47,7 @@ cdef double fprime(double i, test_params *args):
     io = myargs.dark_current
     rs = myargs.series_resistance
     rsh = myargs.shunt_resistsance
-    vth = myargs.thermal_voltage
+    vt = myargs.thermal_voltage
     return -io * exp((v + i * rs) / vt) * rs / vt - rs / rsh - 1
 
 
