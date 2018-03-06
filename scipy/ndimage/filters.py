@@ -75,25 +75,70 @@ footprint : array, optional
 """
 _mode_doc = \
 """mode : {'reflect', 'constant', 'nearest', 'mirror', 'wrap'}, optional
-    The `mode` parameter determines how the array borders are
-    handled, where `cval` is the value when mode is equal to
-    'constant'. Default is 'reflect'"""
+    The `mode` parameter determines how the input array is extended
+    when the filter overlaps a border. Default is 'reflect'. Behavior
+    for each valid value is as follows:
+
+    'reflect' (`d c b a | a b c d | d c b a`)
+        The input is extended by reflecting about the edge of the last
+        pixel.
+
+    'constant' (`k k k k | a b c d | k k k k`)
+        The input is extended by filling all values beyond the edge with
+        the same constant value, defined by the `cval` parameter.
+
+    'nearest' (`a a a a | a b c d | d d d d`)
+        The input is extended by replicating the last pixel.
+
+    'mirror' (`d c b | a b c d | c b a`)
+        The input is extended by reflecting about the center of the last
+        pixel.
+
+    'wrap' (`a b c d | a b c d | a b c d`)
+        The input is extended by wrapping around to the opposite edge."""
 _mode_multiple_doc = \
 """mode : str or sequence, optional
-    The `mode` parameter determines how the array borders are
-    handled. Valid modes are {'reflect', 'constant', 'nearest',
-    'mirror', 'wrap'}. `cval` is the value used when mode is equal to
-    'constant'. A list of modes with length equal to the number of
-    axes can be provided to specify different modes for different
-    axes. Default is 'reflect'"""
+    The `mode` parameter determines how the input array is extended
+    when the filter overlaps a border. By passing a sequence of modes
+    with length equal to the number of dimensions of the input array,
+    different modes can be specified along each axis. Default value is
+    'reflect'. The valid values and their behavior is as follows:
+
+    'reflect' (`d c b a | a b c d | d c b a`)
+        The input is extended by reflecting about the edge of the last
+        pixel.
+
+    'constant' (`k k k k | a b c d | k k k k`)
+        The input is extended by filling all values beyond the edge with
+        the same constant value, defined by the `cval` parameter.
+
+    'nearest' (`a a a a | a b c d | d d d d`)
+        The input is extended by replicating the last pixel.
+
+    'mirror' (`d c b | a b c d | c b a`)
+        The input is extended by reflecting about the center of the last
+        pixel.
+
+    'wrap' (`a b c d | a b c d | a b c d`)
+        The input is extended by wrapping around to the opposite edge."""
 _cval_doc = \
 """cval : scalar, optional
     Value to fill past edges of input if `mode` is 'constant'. Default
     is 0.0"""
 _origin_doc = \
-"""origin : scalar, optional
-    The `origin` parameter controls the placement of the filter.
-    Default 0.0."""
+"""origin : int, optional
+    Controls the placement of the filter on the input array's pixels.
+    A value of 0 (the default) centers the filter over the pixel, with
+    positive values shifting the filter to the left, and negative ones
+    to the right."""
+_origin_multiple_doc = \
+"""origin : int or sequence, optional
+    Controls the placement of the filter on the input array's pixels.
+    A value of 0 (the default) centers the filter over the pixel, with
+    positive values shifting the filter to the left, and negative ones
+    to the right. By passing a sequence of origins with length equal to
+    the number of dimensions of the input array, different shifts can
+    be specified along each axis."""
 _extra_arguments_doc = \
 """extra_arguments : sequence, optional
     Sequence of extra positional arguments to pass to passed function"""
@@ -110,6 +155,7 @@ docdict = {
     'mode_multiple': _mode_multiple_doc,
     'cval': _cval_doc,
     'origin': _origin_doc,
+    'origin_multiple': _origin_multiple_doc,
     'extra_arguments': _extra_arguments_doc,
     'extra_keywords': _extra_keywords_doc,
     }
@@ -685,24 +731,13 @@ def correlate(input, weights, output=None, mode='reflect', cval=0.0,
 
     Parameters
     ----------
-    input : array-like
-        input array to filter
+    %(input)s
     weights : ndarray
         array of weights, same number of dimensions as input
-    output : array, optional
-        The ``output`` parameter passes an array in which to store the
-        filter output. Output array should have different name as
-        compared to input array to avoid aliasing errors.
-    mode : {'reflect','constant','nearest','mirror', 'wrap'}, optional
-        The ``mode`` parameter determines how the array borders are
-        handled, where ``cval`` is the value when mode is equal to
-        'constant'. Default is 'reflect'
-    cval : scalar, optional
-        Value to fill past edges of input if ``mode`` is 'constant'. Default
-        is 0.0
-    origin : scalar, optional
-        The ``origin`` parameter controls the placement of the filter.
-        Default 0
+    %(output)s
+    %(mode_multiple)s
+    %(cval)s
+    %(origin_multiple)s
 
     See Also
     --------
@@ -722,25 +757,15 @@ def convolve(input, weights, output=None, mode='reflect', cval=0.0,
 
     Parameters
     ----------
-    input : array_like
-        Input array to filter.
+    %(input)s
     weights : array_like
         Array of weights, same number of dimensions as input
-    output : ndarray, optional
-        The `output` parameter passes an array in which to store the
-        filter output. Output array should have different name as
-        compared to input array to avoid aliasing errors.
-    mode : {'reflect','constant','nearest','mirror', 'wrap'}, optional
-        the `mode` parameter determines how the array borders are
-        handled. For 'constant' mode, values beyond borders are set to be
-        `cval`. Default is 'reflect'.
+    %(output)s
+    %(mode_multiple)s
     cval : scalar, optional
         Value to fill past edges of input if `mode` is 'constant'. Default
         is 0.0
-    origin : array_like, optional
-        The `origin` parameter controls the placement of the filter,
-        relative to the centre of the current element of the input.
-        Default of 0 is equivalent to ``(0,)*input.ndim``.
+    %(origin_multiple)s
 
     Returns
     -------
@@ -883,7 +908,7 @@ def uniform_filter(input, size=3, output=None, mode="reflect",
     %(output)s
     %(mode_multiple)s
     %(cval)s
-    %(origin)s
+    %(origin_multiple)s
 
     Returns
     -------
@@ -1116,7 +1141,7 @@ def minimum_filter(input, size=None, footprint=None, output=None,
     %(output)s
     %(mode_multiple)s
     %(cval)s
-    %(origin)s
+    %(origin_multiple)s
 
     Returns
     -------
@@ -1153,7 +1178,7 @@ def maximum_filter(input, size=None, footprint=None, output=None,
     %(output)s
     %(mode_multiple)s
     %(cval)s
-    %(origin)s
+    %(origin_multiple)s
 
     Returns
     -------
@@ -1244,9 +1269,9 @@ def rank_filter(input, rank, size=None, footprint=None, output=None,
         indicates the largest element.
     %(size_foot)s
     %(output)s
-    %(mode)s
+    %(mode_multiple)s
     %(cval)s
-    %(origin)s
+    %(origin_multiple)s
 
     Returns
     -------
@@ -1282,9 +1307,9 @@ def median_filter(input, size=None, footprint=None, output=None,
     %(input)s
     %(size_foot)s
     %(output)s
-    %(mode)s
+    %(mode_multiple)s
     %(cval)s
-    %(origin)s
+    %(origin_multiple)s
 
     Returns
     -------
@@ -1322,9 +1347,9 @@ def percentile_filter(input, percentile, size=None, footprint=None,
         percentile = -20 equals percentile = 80
     %(size_foot)s
     %(output)s
-    %(mode)s
+    %(mode_multiple)s
     %(cval)s
-    %(origin)s
+    %(origin_multiple)s
 
     Returns
     -------
@@ -1449,9 +1474,9 @@ def generic_filter(input, function, size=None, footprint=None,
         Function to apply at each element.
     %(size_foot)s
     %(output)s
-    %(mode)s
+    %(mode_multiple)s
     %(cval)s
-    %(origin)s
+    %(origin_multiple)s
     %(extra_arguments)s
     %(extra_keywords)s
 
