@@ -536,6 +536,7 @@ def test_functional_sph_Vor():
 def test_pole_in_polygon(polygon, pole_present):
     # test that we can determine if a spherical
     # polygon contains the North and / or the South Pole
-    result = _surface_area.pole_in_polygon(polygon)
+    t_values = np.linspace(0, 1, 900)
+    result = _surface_area.pole_in_polygon(polygon, t_values)
     expected = pole_present
     assert result == expected

@@ -35,7 +35,8 @@ def planar_polygon_area(double[:,::1] vertices):
 @cython.wraparound(False)
 cdef _slerp(double[:] start_coord,
             double[:] end_coord,
-            int n_pts):
+            int n_pts,
+            double[::1] t_values):
     # spherical linear interpolation between points
     # on great circle arc
     # see: https://en.wikipedia.org/wiki/Slerp#Geometric_Slerp
@@ -46,7 +47,6 @@ cdef _slerp(double[:] start_coord,
         double[:,:] new_pts = np.empty((n_pts, 3), dtype=np.float64)
         int i, j
         double factors[2]
-        double[::1] t_values = np.linspace(0, 1, n_pts)
 
     for i in xrange(n_pts):
         factors[0] = sin((1 - t_values[i]) * omega) / sin_omega
@@ -71,7 +71,7 @@ cdef calc_heading(double[:] lambda_range,
     cdef double course_angle = result % (2 * M_PI) * 180.0 / M_PI
     return course_angle
 
-def pole_in_polygon(double [:,:] vertices):
+def pole_in_polygon(double [:,:] vertices, double[::1] t_values):
     # determine if the North or South Pole is contained
     # within the spherical polygon defined by vertices
     # the implementation is based on discussion
@@ -94,6 +94,7 @@ def pole_in_polygon(double [:,:] vertices):
     cdef double net_angle, course_angle
     cdef int next_index
     cdef int counter = 0
+    cdef int n_pts = 900
     cdef double[:] course_angles = np.empty((2 * N + 1), dtype=np.float64)
 
     for i in range(N):
@@ -116,7 +117,8 @@ def pole_in_polygon(double [:,:] vertices):
         # points 1 and 2 and take the penultimate
         # point for bearing calculation
         new_pts = _slerp(vertices[i], vertices[next_index],
-                         n_pts=900)
+                         n_pts=n_pts,
+                         t_values=t_values)
         new_lambda_range = np.arctan2(new_pts[...,1], new_pts[...,0])
         new_phi_range = np.arcsin((new_pts[...,2]))
 
@@ -154,7 +156,8 @@ def pole_in_polygon(double [:,:] vertices):
 @cython.boundscheck(False)
 cdef _spherical_polygon_area(double[:,:] vertices,
                              double radius,
-                             int discretizations):
+                             int discretizations,
+                             double[::1] t_values):
     cdef:
         int num_vertices = vertices.shape[0]
         double area_sum = 0
@@ -163,7 +166,8 @@ cdef _spherical_polygon_area(double[:,:] vertices,
         double[:,:] new_pts
 
     for i in xrange(num_vertices):
-        new_pts = _slerp(vertices[i], vertices[i-1], discretizations)
+        new_pts = _slerp(vertices[i], vertices[i-1], discretizations,
+                         t_values)
         for j in xrange(discretizations - 1):
             delta_lambda = (atan2(new_pts[j + 1, 1], new_pts[j + 1, 0]) -
                             atan2(new_pts[j, 1], new_pts[j, 0]))
@@ -202,6 +206,7 @@ cdef normalize_to_unit_sphere(double[:,:] coord_array,
     return cartesian_coord_array
 
 cdef poly_area(double[:,:] vertices,
+               double[::1] t_values,
                radius=None,
                double threshold=1e-21,
                int discretizations=500,
@@ -298,7 +303,7 @@ cdef poly_area(double[:,:] vertices,
 
         # rotate around y axis to move away
         # from the N/ S poles
-        while pole_in_polygon(vertices) == 1:
+        while pole_in_polygon(vertices, t_values) == 1:
             n_rot -= 1
             rot_angle = rand() / <float> RAND_MAX * angle_factor
             if n_rot == 0:
@@ -315,7 +320,8 @@ cdef poly_area(double[:,:] vertices,
 
         area = _spherical_polygon_area(vertices,
                                        radius,
-                                       discretizations)
+                                       discretizations,
+                                       t_values)
     else: # planar polygon
         area = planar_polygon_area(vertices)
     
@@ -327,10 +333,13 @@ def poly_area_dispatch(vertices,
                        int discretizations=500,
                        int n_rot=50,
                        int n_polygons=1):
-    cdef int polygon
+    cdef:
+        int polygon
+        double[::1] t_values = np.linspace(0, 1, discretizations)
 
     if n_polygons == 1:
         area = poly_area(vertices=vertices,
+                         t_values=t_values,
                          radius=radius,
                          threshold=threshold,
                          discretizations=discretizations,
@@ -339,6 +348,7 @@ def poly_area_dispatch(vertices,
         area = np.empty(n_polygons)
         for polygon in range(n_polygons):
             area[polygon] = poly_area(vertices=vertices[polygon],
+                                      t_values=t_values,
                                       radius=radius,
                                       threshold=threshold,
                                       discretizations=discretizations,
