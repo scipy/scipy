@@ -14,7 +14,7 @@ EXTENSIONS.append(
 
 # ivexample
 EXTENSIONS.append(
-    Extension("tests.test_zeros", ["tests/test_zeros.pyx"],
+    Extension("tests.zeros_examples", ["tests/zeros_examples.pyx"],
               include_dirs=[np.get_include()])
 )
 
