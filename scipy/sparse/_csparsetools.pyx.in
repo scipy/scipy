@@ -463,11 +463,14 @@ _fill_dtype_map(_LIL_FANCY_GET_DISPATCH, np.typecodes['Integer'])
 _fill_dtype_map2(_LIL_FANCY_SET_DISPATCH)
 
 
-def lil_matvec(int M, int N,
-               object[:] rows,
-               object[:] data,
-               cnp.ndarray vec,
-               cnp.ndarray result):
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def lil_matvec(const cython.integral M,
+               const cython.integral N,
+               const cython.integral[:] rows,
+               const cython.numeric[:] data,
+               cnp.ndarray[cython.numeric] vec,
+               cnp.ndarray[cython.numeric] result):
     """
     Compute y = A * x for LIL matrix A and dense vectors x and y.
 
@@ -483,8 +486,10 @@ def lil_matvec(int M, int N,
 
     """
 
+    cdef cython.integral i, k, j
+    cdef cython.numeric result_i
     for i in range(M):
         result_i = 0
-        for (j, A_ij) in zip(rows[i], data[i]):
-            result_i += A_ij * vec[j]
+        for k, j in enumerate(data):
+            result_i = result_i + data[k] * vec[j]
         result[i] = result_i
