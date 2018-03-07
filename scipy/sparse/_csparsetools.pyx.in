@@ -490,6 +490,6 @@ def lil_matvec(const cython.integral M,
     cdef cython.numeric result_i
     for i in range(M):
         result_i = 0
-        for k, j in enumerate(data):
+        for k, j in enumerate(rows):
             result_i = result_i + data[k] * vec[j]
         result[i] = result_i
