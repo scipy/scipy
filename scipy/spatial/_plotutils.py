@@ -157,26 +157,25 @@ def voronoi_plot_2d(vor, ax=None, **kw):
     --------
     Set of point:
 
-    >>> import numpy as np    
     >>> import matplotlib.pyplot as plt
     >>> points = np.random.rand(10,2) #random
-    >>> plt.scatter(points[:,0],point[:,1])
-    >>> plt.show()
+    >>> fig = plt.figure()
+    >>> ax = fig.add_subplot('111', aspect='equal')
+    >>> ax.scatter(points[:,0],points[:,1])
 
     Voronoi diagram of the points:
 
     >>> from scipy.spatial import Voronoi, voronoi_plot_2d
     >>> vor = Voronoi(points)
 
-    using voronoi_plot_2d for visualisation:
+    using `voronoi_plot_2d` for visualisation:
 
     >>> voronoi_plot_2d(vor)
-    >>> plt.show()
 
-    using voronoi_plot_2d for visualisation with enhancements:
+    using `voronoi_plot_2d` for visualisation with enhancements:
 
-    >>> voronoi_plot_2d(vor, show_verices=False, line_color='orange',\
-            line_width=2, line_alpha=0.6, point_size=2)
+    >>> voronoi_plot_2d(vor, show_vertices=False, line_colors='orange',
+    ...                 line_width=2, line_alpha=0.6, point_size=2)
     >>> plt.show()
 
     """

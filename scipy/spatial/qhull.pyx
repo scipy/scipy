@@ -2416,7 +2416,6 @@ class Voronoi(_QhullUser):
     --------
     Voronoi diagram for a set of point:
 
-    >>> import numpy as np    
     >>> points = np.array([[0, 0], [0, 1], [0, 2], [1, 0], [1, 1], [1, 2],
     ...                    [2, 0], [2, 1], [2, 2]])
     >>> from scipy.spatial import Voronoi, voronoi_plot_2d
@@ -2580,7 +2579,6 @@ class HalfspaceIntersection(_QhullUser):
     Halfspace intersection of planes forming some polygon
 
     >>> from scipy.spatial import HalfspaceIntersection
-    >>> import numpy as np
     >>> halfspaces = np.array([[-1, 0., 0.],
     ...                        [0., -1., 0.],
     ...                        [2., 1., -4.],
