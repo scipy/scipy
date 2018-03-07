@@ -113,8 +113,9 @@ def _read_data_chunk(fid, format_tag, channels, bit_depth, is_big_endian, is_rf6
     if not is_rf64:
         size = struct.unpack(fmt, fid.read(4))[0]
     else:
-        pos = fid.tell() #remember current position
-        fid.seek(28) #chunk size is stored in file header now
+        pos = fid.tell()
+        # chunk size is stored in file header for RF64
+        fid.seek(28) 
         size = struct.unpack('<Q', fid.read(8))[0]
         fid.seek(pos)
 
