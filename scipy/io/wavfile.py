@@ -13,6 +13,7 @@ from __future__ import division, print_function, absolute_import
 import sys
 import numpy
 import struct
+import binascii
 import warnings
 
 
@@ -102,7 +103,7 @@ def _read_fmt_chunk(fid, is_big_endian):
 
 
 # assumes file pointer is immediately after the 'data' id
-def _read_data_chunk(fid, format_tag, channels, bit_depth, is_big_endian,
+def _read_data_chunk(fid, format_tag, channels, bit_depth, is_big_endian, is_rf64,
                      mmap=False):
     if is_big_endian:
         fmt = '>I'
@@ -110,7 +111,13 @@ def _read_data_chunk(fid, format_tag, channels, bit_depth, is_big_endian,
         fmt = '<I'
 
     # Size of the data subchunk in bytes
-    size = struct.unpack(fmt, fid.read(4))[0]
+    if not is_rf64:
+        size = struct.unpack(fmt, fid.read(4))[0]
+    else:
+        pos = fid.tell() #remember current position
+        fid.seek(28) #chunk size is stored in file header now
+        size = struct.unpack('<Q', fid.read(8))[0]
+        fid.seek(pos)
 
     # Number of bytes per sample
     bytes_per_sample = bit_depth//8
@@ -126,7 +133,7 @@ def _read_data_chunk(fid, format_tag, channels, bit_depth, is_big_endian,
         else:
             dtype += 'f%d' % bytes_per_sample
     if not mmap:
-        data = numpy.frombuffer(fid.read(size), dtype=dtype)
+        data = numpy.fromstring(fid.read(size), dtype=dtype)
     else:
         start = fid.tell()
         data = numpy.memmap(fid, dtype=dtype, mode='c', offset=start,
@@ -157,24 +164,36 @@ def _skip_unknown_chunk(fid, is_big_endian):
 def _read_riff_chunk(fid):
     str1 = fid.read(4)  # File signature
     if str1 == b'RIFF':
+        is_rf64 = False
         is_big_endian = False
         fmt = '<I'
     elif str1 == b'RIFX':
+        is_rf64 = False
         is_big_endian = True
         fmt = '>I'
+    elif str1 == b'RF64':
+        is_rf64 = True
+        is_big_endian = False
+        fmt = '<I'
     else:
         # There are also .wav files with "FFIR" or "XFIR" signatures?
         raise ValueError("File format {}... not "
                          "understood.".format(repr(str1)))
-
     # Size of entire file
-    file_size = struct.unpack(fmt, fid.read(4))[0] + 8
+    if not is_rf64:
+        file_size = struct.unpack(fmt, fid.read(4))[0] + 8
+        str2 = fid.read(4)
+    else:
+        fid.read(4) # skip 0xFFFFFFFF (-1) bytes
+        str2 = fid.read(4)
+        fid.read(8) # skip 'ds64' and header size bytes
+        file_size = struct.unpack('<Q', fid.read(8))[0] + 8 #Size of entire file
+        fid.read(20) #jump to end of extended header
 
-    str2 = fid.read(4)
     if str2 != b'WAVE':
         raise ValueError("Not a WAV file.")
 
-    return file_size, is_big_endian
+    return file_size, is_big_endian, is_rf64
 
 
 def read(filename, mmap=False):
@@ -233,7 +252,7 @@ def read(filename, mmap=False):
         fid = open(filename, 'rb')
 
     try:
-        file_size, is_big_endian = _read_riff_chunk(fid)
+        file_size, is_big_endian, is_rf64 = _read_riff_chunk(fid)
         fmt_chunk_received = False
         channels = 1
         bit_depth = 8
@@ -241,7 +260,6 @@ def read(filename, mmap=False):
         while fid.tell() < file_size:
             # read the next chunk
             chunk_id = fid.read(4)
-
             if not chunk_id:
                 raise ValueError("Unexpected end of file.")
             elif len(chunk_id) < 4:
@@ -261,7 +279,7 @@ def read(filename, mmap=False):
                 if not fmt_chunk_received:
                     raise ValueError("No fmt chunk before data")
                 data = _read_data_chunk(fid, format_tag, channels, bit_depth,
-                                        is_big_endian, mmap)
+                                        is_big_endian, is_rf64, mmap)
             elif chunk_id == b'LIST':
                 # Someday this could be handled properly but for now skip it
                 _skip_unknown_chunk(fid, is_big_endian)
