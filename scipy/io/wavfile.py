@@ -183,11 +183,14 @@ def _read_riff_chunk(fid):
         file_size = struct.unpack(fmt, fid.read(4))[0] + 8
         str2 = fid.read(4)
     else:
-        fid.read(4) # skip 0xFFFFFFFF (-1) bytes
+        # skip 0xFFFFFFFF (-1) bytes
+        fid.read(4)
         str2 = fid.read(4)
-        fid.read(8) # skip 'ds64' and header size bytes
-        file_size = struct.unpack('<Q', fid.read(8))[0] + 8 #Size of entire file
-        fid.read(20) #jump to end of extended header
+        # skip 'ds64' and header size bytes
+        fid.read(8) 
+        file_size = struct.unpack('<Q', fid.read(8))[0] + 8 
+        # jump to end of extended header
+        fid.read(20) 
 
     if str2 != b'WAVE':
         raise ValueError("Not a WAV file.")
