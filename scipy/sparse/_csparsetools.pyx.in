@@ -467,8 +467,8 @@ _fill_dtype_map2(_LIL_FANCY_SET_DISPATCH)
 @cython.wraparound(False)
 def lil_matvec(const cython.integral M,
                const cython.integral N,
-               const cython.integral[:] rows,
-               const cython.numeric[:] data,
+               cnp.ndarray [list] rows,
+               cnp.ndarray [list] data,
                cnp.ndarray[cython.numeric] vec,
                cnp.ndarray[cython.numeric] result):
     """
