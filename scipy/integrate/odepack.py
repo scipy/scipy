@@ -154,6 +154,7 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
 
     See Also
     --------
+    solve_ivp : Solve an initial value problem for a system of ODEs.
     ode : a more object-oriented integrator based on VODE.
     quad : for finding the area under a curve.
 
@@ -187,12 +188,12 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
     >>> c = 5.0
 
     For initial conditions, we assume the pendulum is nearly vertical
-    with `theta(0)` = `pi` - 0.1, and it initially at rest, so
+    with `theta(0)` = `pi` - 0.1, and is initially at rest, so
     `omega(0)` = 0.  Then the vector of initial conditions is
 
     >>> y0 = [np.pi - 0.1, 0.0]
 
-    We generate a solution 101 evenly spaced samples in the interval
+    We will generate a solution at 101 evenly spaced samples in the interval
     0 <= `t` <= 10.  So our array of times is:
 
     >>> t = np.linspace(0, 10, 101)
