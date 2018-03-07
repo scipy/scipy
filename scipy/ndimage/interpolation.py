@@ -34,6 +34,7 @@ import math
 import numpy
 from . import _ni_support
 from . import _nd_image
+from . import _ni_docstrings
 from functools import wraps
 
 import warnings
@@ -42,6 +43,7 @@ __all__ = ['spline_filter1d', 'spline_filter', 'geometric_transform',
            'map_coordinates', 'affine_transform', 'shift', 'zoom', 'rotate']
 
 
+@_ni_docstrings.docfiller
 def spline_filter1d(input, order=3, axis=-1, output=numpy.float64):
     """
     Calculate a one-dimensional spline filter along the given axis.
@@ -51,8 +53,7 @@ def spline_filter1d(input, order=3, axis=-1, output=numpy.float64):
 
     Parameters
     ----------
-    input : array_like
-        The input array.
+    %(input)s
     order : int, optional
         The order of the spline, default is 3.
     axis : int, optional
@@ -116,6 +117,7 @@ def spline_filter(input, order=3, output=numpy.float64):
     return output
 
 
+@_ni_docstrings.docfiller
 def geometric_transform(input, mapping, output_shape=None,
                         output=None, order=3,
                         mode='constant', cval=0.0, prefilter=True,
@@ -130,32 +132,20 @@ def geometric_transform(input, mapping, output_shape=None,
 
     Parameters
     ----------
-    input : array_like
-        The input array.
+    %(input)s
     mapping : {callable, scipy.LowLevelCallable}
         A callable object that accepts a tuple of length equal to the output
         array rank, and returns the corresponding input coordinates as a tuple
         of length equal to the input array rank.
     output_shape : tuple of ints, optional
         Shape tuple.
-    output : ndarray or dtype, optional
-        The array in which to place the output, or the dtype of the returned
-        array.
+    %(output)s
     order : int, optional
         The order of the spline interpolation, default is 3.
         The order has to be in the range 0-5.
-    mode : str, optional
-        Points outside the boundaries of the input are filled according
-        to the given mode ('constant', 'nearest', 'reflect', 'mirror' or 'wrap').
-        Default is 'constant'.
-    cval : scalar, optional
-        Value used for points outside the boundaries of the input if
-        ``mode='constant'``. Default is 0.0
-    prefilter : bool, optional
-        The parameter prefilter determines if the input is pre-filtered with
-        `spline_filter` before interpolation (necessary for spline
-        interpolation of order > 1).  If False, it is assumed that the input is
-        already filtered. Default is True.
+    %(mode)s
+    %(cval)s
+    %(prefilter)s
     extra_arguments : tuple, optional
         Extra arguments passed to `mapping`.
     extra_keywords : dict, optional
@@ -244,14 +234,14 @@ def geometric_transform(input, mapping, output_shape=None,
         filtered = spline_filter(input, order, output=numpy.float64)
     else:
         filtered = input
-    output = _ni_support._get_output(output, input,
-                                                   shape=output_shape)
+    output = _ni_support._get_output(output, input, shape=output_shape)
     _nd_image.geometric_transform(filtered, mapping, None, None, None, output,
                                   order, mode, cval, extra_arguments,
                                   extra_keywords)
     return output
 
 
+@_ni_docstrings.docfiller
 def map_coordinates(input, coordinates, output=None, order=3,
                     mode='constant', cval=0.0, prefilter=True):
     """
@@ -269,28 +259,16 @@ def map_coordinates(input, coordinates, output=None, order=3,
 
     Parameters
     ----------
-    input : ndarray
-        The input array.
+    %(input)s
     coordinates : array_like
         The coordinates at which `input` is evaluated.
-    output : ndarray or dtype, optional
-        The array in which to place the output, or the dtype of the returned
-        array.
+    %(output)s
     order : int, optional
         The order of the spline interpolation, default is 3.
         The order has to be in the range 0-5.
-    mode : str, optional
-        Points outside the boundaries of the input are filled according
-        to the given mode ('constant', 'nearest', 'reflect', 'mirror' or 'wrap').
-        Default is 'constant'.
-    cval : scalar, optional
-        Value used for points outside the boundaries of the input if
-        ``mode='constant'``. Default is 0.0
-    prefilter : bool, optional
-        The parameter prefilter determines if the input is pre-filtered with
-        `spline_filter` before interpolation (necessary for spline
-        interpolation of order > 1).  If False, it is assumed that the input is
-        already filtered. Default is True.
+    %(mode)s
+    %(cval)s
+    %(prefilter)s
 
     Returns
     -------
@@ -351,6 +329,7 @@ def map_coordinates(input, coordinates, output=None, order=3,
     return output
 
 
+@_ni_docstrings.docfiller
 def affine_transform(input, matrix, offset=0.0, output_shape=None,
                      output=None, order=3,
                      mode='constant', cval=0.0, prefilter=True):
@@ -363,8 +342,7 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
 
     Parameters
     ----------
-    input : ndarray
-        The input array.
+    %(input)s
     matrix : ndarray
         The inverse coordinate transformation matrix, mapping output
         coordinates to input coordinates. If ``ndim`` is the number of
@@ -390,25 +368,13 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
         contain one value for each axis.
     output_shape : tuple of ints, optional
         Shape tuple.
-    output : ndarray or dtype, optional
-        The array in which to place the output, or the dtype of the returned
-        array.
+    %(output)s
     order : int, optional
         The order of the spline interpolation, default is 3.
         The order has to be in the range 0-5.
-    mode : str, optional
-        Points outside the boundaries of the input are filled according
-        to the given mode ('constant', 'nearest', 'reflect', 'mirror' or
-        'wrap').
-        Default is 'constant'.
-    cval : scalar, optional
-        Value used for points outside the boundaries of the input if
-        ``mode='constant'``. Default is 0.0
-    prefilter : bool, optional
-        The parameter prefilter determines if the input is pre-filtered with
-        `spline_filter` before interpolation (necessary for spline
-        interpolation of order > 1).  If False, it is assumed that the input is
-        already filtered. Default is True.
+    %(mode)s
+    %(cval)s
+    %(prefilter)s
 
     Returns
     -------
@@ -493,6 +459,7 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
     return output
 
 
+@_ni_docstrings.docfiller
 def shift(input, shift, output=None, order=3, mode='constant', cval=0.0,
           prefilter=True):
     """
@@ -504,29 +471,17 @@ def shift(input, shift, output=None, order=3, mode='constant', cval=0.0,
 
     Parameters
     ----------
-    input : ndarray
-        The input array.
+    %(input)s
     shift : float or sequence
         The shift along the axes. If a float, `shift` is the same for each
         axis. If a sequence, `shift` should contain one value for each axis.
-    output : ndarray or dtype, optional
-        The array in which to place the output, or the dtype of the returned
-        array.
+    %(output)s
     order : int, optional
         The order of the spline interpolation, default is 3.
         The order has to be in the range 0-5.
-    mode : str, optional
-        Points outside the boundaries of the input are filled according
-        to the given mode ('constant', 'nearest', 'reflect', 'mirror' or 'wrap').
-        Default is 'constant'.
-    cval : scalar, optional
-        Value used for points outside the boundaries of the input if
-        ``mode='constant'``. Default is 0.0
-    prefilter : bool, optional
-        The parameter prefilter determines if the input is pre-filtered with
-        `spline_filter` before interpolation (necessary for spline
-        interpolation of order > 1).  If False, it is assumed that the input is
-        already filtered. Default is True.
+    %(mode)s
+    %(cval)s
+    %(prefilter)s
 
     Returns
     -------
@@ -556,6 +511,7 @@ def shift(input, shift, output=None, order=3, mode='constant', cval=0.0,
     return output
 
 
+@_ni_docstrings.docfiller
 def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
          prefilter=True):
     """
@@ -565,29 +521,17 @@ def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
 
     Parameters
     ----------
-    input : ndarray
-        The input array.
+    %(input)s
     zoom : float or sequence
         The zoom factor along the axes. If a float, `zoom` is the same for each
         axis. If a sequence, `zoom` should contain one value for each axis.
-    output : ndarray or dtype, optional
-        The array in which to place the output, or the dtype of the returned
-        array.
+    %(output)s
     order : int, optional
         The order of the spline interpolation, default is 3.
         The order has to be in the range 0-5.
-    mode : str, optional
-        Points outside the boundaries of the input are filled according
-        to the given mode ('constant', 'nearest', 'reflect', 'mirror' or 'wrap').
-        Default is 'constant'.
-    cval : scalar, optional
-        Value used for points outside the boundaries of the input if
-        ``mode='constant'``. Default is 0.0
-    prefilter : bool, optional
-        The parameter prefilter determines if the input is pre-filtered with
-        `spline_filter` before interpolation (necessary for spline
-        interpolation of order > 1).  If False, it is assumed that the input is
-        already filtered. Default is True.
+    %(mode)s
+    %(cval)s
+    %(prefilter)s
 
     Returns
     -------
@@ -664,8 +608,7 @@ def _minmax(coor, minc, maxc):
     return minc, maxc
 
 
-def rotate(input, angle, axes=(1, 0), reshape=True,
-           output=None, order=3,
+def rotate(input, angle, axes=(1, 0), reshape=True, output=None, order=3,
            mode='constant', cval=0.0, prefilter=True):
     """
     Rotate an array.
@@ -675,8 +618,7 @@ def rotate(input, angle, axes=(1, 0), reshape=True,
 
     Parameters
     ----------
-    input : ndarray
-        The input array.
+    %(input)s
     angle : float
         The rotation angle in degrees.
     axes : tuple of 2 ints, optional
@@ -685,24 +627,13 @@ def rotate(input, angle, axes=(1, 0), reshape=True,
     reshape : bool, optional
         If `reshape` is true, the output shape is adapted so that the input
         array is contained completely in the output. Default is True.
-    output : ndarray or dtype, optional
-        The array in which to place the output, or the dtype of the returned
-        array.
+    %(output)s
     order : int, optional
         The order of the spline interpolation, default is 3.
         The order has to be in the range 0-5.
-    mode : str, optional
-        Points outside the boundaries of the input are filled according
-        to the given mode ('constant', 'nearest', 'reflect', 'mirror' or 'wrap').
-        Default is 'constant'.
-    cval : scalar, optional
-        Value used for points outside the boundaries of the input if
-        ``mode='constant'``. Default is 0.0
-    prefilter : bool, optional
-        The parameter prefilter determines if the input is pre-filtered with
-        `spline_filter` before interpolation (necessary for spline
-        interpolation of order > 1).  If False, it is assumed that the input is
-        already filtered. Default is True.
+    %(mode)s
+    %(cval)s
+    %(prefilter)s
 
     Returns
     -------
