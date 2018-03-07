@@ -159,9 +159,6 @@ def voronoi_plot_2d(vor, ax=None, **kw):
 
     >>> import matplotlib.pyplot as plt
     >>> points = np.random.rand(10,2) #random
-    >>> fig = plt.figure()
-    >>> ax = fig.add_subplot('111', aspect='equal')
-    >>> ax.scatter(points[:,0],points[:,1])
 
     Voronoi diagram of the points:
 
