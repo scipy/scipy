@@ -34,6 +34,7 @@ import math
 import numpy
 from . import _ni_support
 from . import _nd_image
+from . import _ni_docstrings
 from scipy.misc import doccer
 from scipy._lib._version import NumpyVersion
 
@@ -47,123 +48,7 @@ __all__ = ['correlate1d', 'convolve1d', 'gaussian_filter1d', 'gaussian_filter',
            'generic_filter1d', 'generic_filter']
 
 
-_input_doc = \
-"""input : array_like
-    Input array to filter."""
-_axis_doc = \
-"""axis : int, optional
-    The axis of `input` along which to calculate. Default is -1."""
-_output_doc = \
-"""output : array, optional
-    The `output` parameter passes an array in which to store the
-    filter output. Output array should have different name as compared
-    to input array to avoid aliasing errors."""
-_size_foot_doc = \
-"""size : scalar or tuple, optional
-    See footprint, below
-footprint : array, optional
-    Either `size` or `footprint` must be defined.  `size` gives
-    the shape that is taken from the input array, at every element
-    position, to define the input to the filter function.
-    `footprint` is a boolean array that specifies (implicitly) a
-    shape, but also which of the elements within this shape will get
-    passed to the filter function.  Thus ``size=(n,m)`` is equivalent
-    to ``footprint=np.ones((n,m))``.  We adjust `size` to the number
-    of dimensions of the input array, so that, if the input array is
-    shape (10,10,10), and `size` is 2, then the actual size used is
-    (2,2,2).
-"""
-_mode_doc = \
-"""mode : {'reflect', 'constant', 'nearest', 'mirror', 'wrap'}, optional
-    The `mode` parameter determines how the input array is extended
-    when the filter overlaps a border. Default is 'reflect'. Behavior
-    for each valid value is as follows:
-
-    'reflect' (`d c b a | a b c d | d c b a`)
-        The input is extended by reflecting about the edge of the last
-        pixel.
-
-    'constant' (`k k k k | a b c d | k k k k`)
-        The input is extended by filling all values beyond the edge with
-        the same constant value, defined by the `cval` parameter.
-
-    'nearest' (`a a a a | a b c d | d d d d`)
-        The input is extended by replicating the last pixel.
-
-    'mirror' (`d c b | a b c d | c b a`)
-        The input is extended by reflecting about the center of the last
-        pixel.
-
-    'wrap' (`a b c d | a b c d | a b c d`)
-        The input is extended by wrapping around to the opposite edge."""
-_mode_multiple_doc = \
-"""mode : str or sequence, optional
-    The `mode` parameter determines how the input array is extended
-    when the filter overlaps a border. By passing a sequence of modes
-    with length equal to the number of dimensions of the input array,
-    different modes can be specified along each axis. Default value is
-    'reflect'. The valid values and their behavior is as follows:
-
-    'reflect' (`d c b a | a b c d | d c b a`)
-        The input is extended by reflecting about the edge of the last
-        pixel.
-
-    'constant' (`k k k k | a b c d | k k k k`)
-        The input is extended by filling all values beyond the edge with
-        the same constant value, defined by the `cval` parameter.
-
-    'nearest' (`a a a a | a b c d | d d d d`)
-        The input is extended by replicating the last pixel.
-
-    'mirror' (`d c b | a b c d | c b a`)
-        The input is extended by reflecting about the center of the last
-        pixel.
-
-    'wrap' (`a b c d | a b c d | a b c d`)
-        The input is extended by wrapping around to the opposite edge."""
-_cval_doc = \
-"""cval : scalar, optional
-    Value to fill past edges of input if `mode` is 'constant'. Default
-    is 0.0"""
-_origin_doc = \
-"""origin : int, optional
-    Controls the placement of the filter on the input array's pixels.
-    A value of 0 (the default) centers the filter over the pixel, with
-    positive values shifting the filter to the left, and negative ones
-    to the right."""
-_origin_multiple_doc = \
-"""origin : int or sequence, optional
-    Controls the placement of the filter on the input array's pixels.
-    A value of 0 (the default) centers the filter over the pixel, with
-    positive values shifting the filter to the left, and negative ones
-    to the right. By passing a sequence of origins with length equal to
-    the number of dimensions of the input array, different shifts can
-    be specified along each axis."""
-_extra_arguments_doc = \
-"""extra_arguments : sequence, optional
-    Sequence of extra positional arguments to pass to passed function"""
-_extra_keywords_doc = \
-"""extra_keywords : dict, optional
-    dict of extra keyword arguments to pass to passed function"""
-
-docdict = {
-    'input': _input_doc,
-    'axis': _axis_doc,
-    'output': _output_doc,
-    'size_foot': _size_foot_doc,
-    'mode': _mode_doc,
-    'mode_multiple': _mode_multiple_doc,
-    'cval': _cval_doc,
-    'origin': _origin_doc,
-    'origin_multiple': _origin_multiple_doc,
-    'extra_arguments': _extra_arguments_doc,
-    'extra_keywords': _extra_keywords_doc,
-    }
-
-docfiller = doccer.filldoc(docdict)
-
-
-@docfiller
+@_ni_docstrings.docfiller
 def correlate1d(input, weights, axis=-1, output=None, mode="reflect",
                 cval=0.0, origin=0):
     """Calculate a one-dimensional correlation along the given axis.
@@ -207,7 +92,7 @@ def correlate1d(input, weights, axis=-1, output=None, mode="reflect",
     return output
 
 
-@docfiller
+@_ni_docstrings.docfiller
 def convolve1d(input, weights, axis=-1, output=None, mode="reflect",
                cval=0.0, origin=0):
     """Calculate a one-dimensional convolution along the given axis.
@@ -265,7 +150,7 @@ def _gaussian_kernel1d(sigma, order, radius):
     return phi_x
 
 
-@docfiller
+@_ni_docstrings.docfiller
 def gaussian_filter1d(input, sigma, axis=-1, order=0, output=None,
                       mode="reflect", cval=0.0, truncate=4.0):
     """One-dimensional Gaussian filter.
@@ -318,7 +203,7 @@ def gaussian_filter1d(input, sigma, axis=-1, order=0, output=None,
     return correlate1d(input, weights, axis, output, mode, cval, 0)
 
 
-@docfiller
+@_ni_docstrings.docfiller
 def gaussian_filter(input, sigma, order=0, output=None,
                     mode="reflect", cval=0.0, truncate=4.0):
     """Multidimensional Gaussian filter.
@@ -404,7 +289,7 @@ def gaussian_filter(input, sigma, order=0, output=None,
     return output
 
 
-@docfiller
+@_ni_docstrings.docfiller
 def prewitt(input, axis=-1, output=None, mode="reflect", cval=0.0):
     """Calculate a Prewitt filter.
 
@@ -441,7 +326,7 @@ def prewitt(input, axis=-1, output=None, mode="reflect", cval=0.0):
     return output
 
 
-@docfiller
+@_ni_docstrings.docfiller
 def sobel(input, axis=-1, output=None, mode="reflect", cval=0.0):
     """Calculate a Sobel filter.
 
@@ -478,7 +363,7 @@ def sobel(input, axis=-1, output=None, mode="reflect", cval=0.0):
     return output
 
 
-@docfiller
+@_ni_docstrings.docfiller
 def generic_laplace(input, derivative2, output=None, mode="reflect",
                     cval=0.0,
                     extra_arguments=(),
@@ -520,7 +405,7 @@ def generic_laplace(input, derivative2, output=None, mode="reflect",
     return output
 
 
-@docfiller
+@_ni_docstrings.docfiller
 def laplace(input, output=None, mode="reflect", cval=0.0):
     """N-dimensional Laplace filter based on approximate second derivatives.
 
@@ -550,7 +435,7 @@ def laplace(input, output=None, mode="reflect", cval=0.0):
     return generic_laplace(input, derivative2, output, mode, cval)
 
 
-@docfiller
+@_ni_docstrings.docfiller
 def gaussian_laplace(input, sigma, output=None, mode="reflect",
                      cval=0.0, **kwargs):
     """Multidimensional Laplace filter using gaussian second derivatives.
@@ -598,7 +483,7 @@ def gaussian_laplace(input, sigma, output=None, mode="reflect",
                            extra_keywords=kwargs)
 
 
-@docfiller
+@_ni_docstrings.docfiller
 def generic_gradient_magnitude(input, derivative, output=None,
                                mode="reflect", cval=0.0,
                                extra_arguments=(), extra_keywords=None):
@@ -645,7 +530,7 @@ def generic_gradient_magnitude(input, derivative, output=None,
     return output
 
 
-@docfiller
+@_ni_docstrings.docfiller
 def gaussian_gradient_magnitude(input, sigma, output=None,
                                 mode="reflect", cval=0.0, **kwargs):
     """Multidimensional gradient magnitude using Gaussian derivatives.
@@ -721,7 +606,7 @@ def _correlate_or_convolve(input, weights, output, mode, cval, origin,
     return output
 
 
-@docfiller
+@_ni_docstrings.docfiller
 def correlate(input, weights, output=None, mode='reflect', cval=0.0,
               origin=0):
     """
@@ -747,7 +632,7 @@ def correlate(input, weights, output=None, mode='reflect', cval=0.0,
                                   origin, False)
 
 
-@docfiller
+@_ni_docstrings.docfiller
 def convolve(input, weights, output=None, mode='reflect', cval=0.0,
              origin=0):
     """
@@ -853,7 +738,7 @@ def convolve(input, weights, output=None, mode='reflect', cval=0.0,
                                   origin, True)
 
 
-@docfiller
+@_ni_docstrings.docfiller
 def uniform_filter1d(input, size, axis=-1, output=None,
                      mode="reflect", cval=0.0, origin=0):
     """Calculate a one-dimensional uniform filter along the given axis.
@@ -893,7 +778,7 @@ def uniform_filter1d(input, size, axis=-1, output=None,
     return output
 
 
-@docfiller
+@_ni_docstrings.docfiller
 def uniform_filter(input, size=3, output=None, mode="reflect",
                    cval=0.0, origin=0):
     """Multi-dimensional uniform filter.
@@ -955,7 +840,7 @@ def uniform_filter(input, size=3, output=None, mode="reflect",
     return output
 
 
-@docfiller
+@_ni_docstrings.docfiller
 def minimum_filter1d(input, size, axis=-1, output=None,
                      mode="reflect", cval=0.0, origin=0):
     """Calculate a one-dimensional minimum filter along the given axis.
@@ -1007,7 +892,7 @@ def minimum_filter1d(input, size, axis=-1, output=None,
     return output
 
 
-@docfiller
+@_ni_docstrings.docfiller
 def maximum_filter1d(input, size, axis=-1, output=None,
                      mode="reflect", cval=0.0, origin=0):
     """Calculate a one-dimensional maximum filter along the given axis.
@@ -1129,7 +1014,7 @@ def _min_or_max_filter(input, size, footprint, structure, output, mode,
     return output
 
 
-@docfiller
+@_ni_docstrings.docfiller
 def minimum_filter(input, size=None, footprint=None, output=None,
                    mode="reflect", cval=0.0, origin=0):
     """Calculate a multi-dimensional minimum filter.
@@ -1166,7 +1051,7 @@ def minimum_filter(input, size=None, footprint=None, output=None,
                               cval, origin, 1)
 
 
-@docfiller
+@_ni_docstrings.docfiller
 def maximum_filter(input, size=None, footprint=None, output=None,
                    mode="reflect", cval=0.0, origin=0):
     """Calculate a multi-dimensional maximum filter.
@@ -1203,7 +1088,7 @@ def maximum_filter(input, size=None, footprint=None, output=None,
                               cval, origin, 0)
 
 
-@docfiller
+@_ni_docstrings.docfiller
 def _rank_filter(input, rank, size=None, footprint=None, output=None,
                  mode="reflect", cval=0.0, origin=0, operation='rank'):
     input = numpy.asarray(input)
@@ -1256,7 +1141,7 @@ def _rank_filter(input, rank, size=None, footprint=None, output=None,
         return output
 
 
-@docfiller
+@_ni_docstrings.docfiller
 def rank_filter(input, rank, size=None, footprint=None, output=None,
                 mode="reflect", cval=0.0, origin=0):
     """Calculate a multi-dimensional rank filter.
@@ -1296,7 +1181,7 @@ def rank_filter(input, rank, size=None, footprint=None, output=None,
                         origin, 'rank')
 
 
-@docfiller
+@_ni_docstrings.docfiller
 def median_filter(input, size=None, footprint=None, output=None,
                   mode="reflect", cval=0.0, origin=0):
     """
@@ -1334,7 +1219,7 @@ def median_filter(input, size=None, footprint=None, output=None,
                         origin, 'median')
 
 
-@docfiller
+@_ni_docstrings.docfiller
 def percentile_filter(input, percentile, size=None, footprint=None,
                       output=None, mode="reflect", cval=0.0, origin=0):
     """Calculate a multi-dimensional percentile filter.
@@ -1374,7 +1259,7 @@ def percentile_filter(input, percentile, size=None, footprint=None,
                         cval, origin, 'percentile')
 
 
-@docfiller
+@_ni_docstrings.docfiller
 def generic_filter1d(input, function, filter_size, axis=-1,
                      output=None, mode="reflect", cval=0.0, origin=0,
                      extra_arguments=(), extra_keywords=None):
@@ -1457,7 +1342,7 @@ def generic_filter1d(input, function, filter_size, axis=-1,
     return output
 
 
-@docfiller
+@_ni_docstrings.docfiller
 def generic_filter(input, function, size=None, footprint=None,
                    output=None, mode="reflect", cval=0.0, origin=0,
                    extra_arguments=(), extra_keywords=None):
