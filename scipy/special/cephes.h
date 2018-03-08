@@ -193,8 +193,14 @@ extern double zetac ( double x );
 
 extern double smirnov (int n, double e );
 extern double smirnovi (int n, double p );
+extern double smirnovp (int n, double x );
+extern double smirnovi (int n, double p );
+extern double smirnovci (int n, double p );
 extern double kolmogorov ( double x );
 extern double kolmogi ( double p );
+extern double kolmogp ( double x );
+extern double kolmogc ( double x );
+extern double kolmogci ( double p );
 
 extern double lanczos_sum_expg_scaled( double x );
 
