@@ -52,7 +52,8 @@ __all__ = ['spline_filter1d', 'spline_filter', 'geometric_transform',
 
 
 @docfiller
-def spline_filter1d(input, order=3, axis=-1, output=numpy.float64):
+def spline_filter1d(input, order=3, axis=-1, output=numpy.float64,
+                    mode='mirror'):
     """
     Calculate a one-dimensional spline filter along the given axis.
 
@@ -70,12 +71,24 @@ def spline_filter1d(input, order=3, axis=-1, output=numpy.float64):
     output : ndarray or dtype, optional
         The array in which to place the output, or the dtype of the returned
         array. Default is `numpy.float64`.
+    %(mode)s
 
     Returns
     -------
     spline_filter1d : ndarray
         The filtered input.
 
+    Notes
+    -----
+    All functions in `ndimage.interpolation` internally use a b-spline
+    representation of the input image. Whenever using b-splines of
+    `order > 1`, the input image values have to be converted to b-spline
+    coefficients first, which is done by applying this one-dimensional
+    spline filter sequentially along all axes of the input. All of the
+    functions that require such an input will automatically filter their
+    inputs, a behavior controllable through the `prefilter` keyword
+    argument. For functions that accept a `mode` parameter, the results
+    will only be correct if it matches the `mode` used when filtering.
     """
     if order < 0 or order > 5:
         raise RuntimeError('spline order not supported')
@@ -86,12 +99,13 @@ def spline_filter1d(input, order=3, axis=-1, output=numpy.float64):
     if order in [0, 1]:
         output[...] = numpy.array(input)
     else:
+        mode = _ni_support._extend_mode_to_code(mode)
         axis = _ni_support._check_axis(axis, input.ndim)
-        _nd_image.spline_filter1d(input, order, axis, output)
+        _nd_image.spline_filter1d(input, order, axis, mode, output)
     return output
 
 
-def spline_filter(input, order=3, output=numpy.float64):
+def spline_filter(input, order=3, output=numpy.float64, mode='mirror'):
     """
     Multi-dimensional spline filter.
 
@@ -118,7 +132,7 @@ def spline_filter(input, order=3, output=numpy.float64):
     output = _ni_support._get_output(output, input)
     if order not in [0, 1] and input.ndim > 0:
         for axis in range(input.ndim):
-            spline_filter1d(input, order, axis, output=output)
+            spline_filter1d(input, order, axis, output=output, mode=mode)
             input = output
     else:
         output[...] = input[...]
