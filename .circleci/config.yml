@@ -99,7 +99,6 @@ workflows:
           requires:
             - build
 
-# Commented out, until we get this to work on the PR
-#          filters:
-#            branches:
-#              only: master
+          filters:
+            branches:
+              only: master
