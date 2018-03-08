@@ -167,11 +167,11 @@ def voronoi_plot_2d(vor, ax=None, **kw):
 
     using `voronoi_plot_2d` for visualisation:
 
-    >>> voronoi_plot_2d(vor)
+    >>> fig = voronoi_plot_2d(vor)
 
     using `voronoi_plot_2d` for visualisation with enhancements:
 
-    >>> voronoi_plot_2d(vor, show_vertices=False, line_colors='orange',
+    >>> fig = voronoi_plot_2d(vor, show_vertices=False, line_colors='orange',
     ...                 line_width=2, line_alpha=0.6, point_size=2)
     >>> plt.show()
 
