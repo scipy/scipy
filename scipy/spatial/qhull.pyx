@@ -2424,7 +2424,7 @@ class Voronoi(_QhullUser):
     Plot it:
 
     >>> import matplotlib.pyplot as plt
-    >>> voronoi_plot_2d(vor)
+    >>> fig = voronoi_plot_2d(vor)
     >>> plt.show()
 
     The Voronoi vertices:
@@ -2579,7 +2579,6 @@ class HalfspaceIntersection(_QhullUser):
     Halfspace intersection of planes forming some polygon
 
     >>> from scipy.spatial import HalfspaceIntersection
-    >>> import numpy as np
     >>> halfspaces = np.array([[-1, 0., 0.],
     ...                        [0., -1., 0.],
     ...                        [2., 1., -4.],
