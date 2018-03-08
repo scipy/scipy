@@ -34,6 +34,7 @@ The `minimize` function supports the following methods:
    optimize.minimize-slsqp
    optimize.minimize-dogleg
    optimize.minimize-trustncg
+   optimize.minimize-trustkrylov
    optimize.minimize-trustexact
 
 The `minimize_scalar` function supports the following methods:
@@ -205,10 +206,10 @@ The `linprog` function supports the following methods:
    optimize.linprog-interior-point
 
 The simplex method supports callback functions, such as:
-    
+
 .. autosummary::
    :toctree: generated/
-   
+
    linprog_verbose_callback -- Sample callback function for linprog (simplex)
 
 Assignment problems:

@@ -1,8 +1,9 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import assert_array_equal, \
-    assert_array_almost_equal_nulp, assert_raises, assert_almost_equal
+from numpy.testing import (assert_array_equal,
+        assert_array_almost_equal_nulp, assert_almost_equal)
+from pytest import raises as assert_raises
 
 from scipy.special import gammaln, multigammaln
 

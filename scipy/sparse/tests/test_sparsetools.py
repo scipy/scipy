@@ -7,14 +7,14 @@ import re
 import threading
 
 import numpy as np
-from numpy.testing import (assert_raises, assert_equal, assert_, assert_allclose)
+from numpy.testing import assert_equal, assert_, assert_allclose
 from scipy.sparse import (_sparsetools, coo_matrix, csr_matrix, csc_matrix,
                           bsr_matrix, dia_matrix)
 from scipy.sparse.sputils import supported_dtypes
 from scipy._lib._testutils import check_free_memory
 
 import pytest
-
+from pytest import raises as assert_raises
 
 def test_exception():
     assert_raises(MemoryError, _sparsetools.test_throw_error)
@@ -60,6 +60,25 @@ def test_regression_std_vector_dtypes():
 
         # getcol is one function using std::vector typemaps, and should not fail
         assert_equal(a.getcol(0).todense(), ad[:,0])
+
+
+def test_nnz_overflow():
+    # Regression test for gh-7230 / gh-7871, checking that coo_todense
+    # with nnz > int32max doesn't overflow.
+    nnz = np.iinfo(np.int32).max + 1
+    # Ensure ~20 GB of RAM is free to run this test.
+    check_free_memory((4 + 4 + 1) * nnz / 1e6 + 0.5)
+
+    # Use nnz duplicate entries to keep the dense version small.
+    row = np.zeros(nnz, dtype=np.int32)
+    col = np.zeros(nnz, dtype=np.int32)
+    data = np.zeros(nnz, dtype=np.int8)
+    data[-1] = 4
+    s = coo_matrix((data, (row, col)), shape=(1, 1), copy=False)
+    # Sums nnz duplicates to produce a 1x1 array containing 4.
+    d = s.toarray()
+
+    assert_allclose(d, [[4]])
 
 
 @pytest.mark.skipif(not (sys.platform.startswith('linux') and np.dtype(np.intp).itemsize >= 8),

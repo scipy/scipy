@@ -1,7 +1,8 @@
 HookFile: bscript
 
 Recurse:
-    _lsq
+    _lsq,
+    _trlib
 
 Library:
     CompiledLibrary: minpack

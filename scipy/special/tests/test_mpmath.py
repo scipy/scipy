@@ -8,6 +8,9 @@ import numpy as np
 from numpy.testing import assert_, assert_allclose
 from numpy import pi
 import pytest
+import itertools
+
+from distutils.version import LooseVersion
 
 import scipy.special as sc
 from scipy._lib.six import with_metaclass
@@ -102,11 +105,16 @@ def test_hyp0f1_gh_1609():
 # hyp2f1
 # ------------------------------------------------------------------------------
 
-@check_version(mpmath, '0.14')
+@check_version(mpmath, '1.0.0')
 def test_hyp2f1_strange_points():
     pts = [
-        (2, -1, -1, 0.7),
-        (2, -2, -2, 0.7),
+        (2, -1, -1, 0.7),  # expected: 2.4
+        (2, -2, -2, 0.7),  # expected: 3.87
+    ]
+    pts += list(itertools.product([2, 1, -0.7, -1000], repeat=4))
+    pts = [
+        (a, b, c, x) for a, b, c, x in pts
+        if b == c and round(b) == b and b < 0 and b != -1000
     ]
     kw = dict(eliminate=True)
     dataset = [p + (float(mpmath.hyp2f1(*p, **kw)),) for p in pts]
@@ -663,6 +671,25 @@ def test_wrightomega_region2():
 
 
 # ------------------------------------------------------------------------------
+# lambertw
+# ------------------------------------------------------------------------------
+
+@pytest.mark.slow
+@check_version(mpmath, '0.19')
+def test_lambertw_smallz():
+    x, y = np.linspace(-1, 1, 25), np.linspace(-1, 1, 25)
+    x, y = np.meshgrid(x, y)
+    z = (x + 1j*y).flatten()
+
+    dataset = []
+    for z0 in z:
+        dataset.append((z0, complex(mpmath.lambertw(z0))))
+    dataset = np.asarray(dataset)
+
+    FuncData(sc.lambertw, dataset, 0, 1, rtol=1e-13).check()
+
+
+# ------------------------------------------------------------------------------
 # Systematic tests
 # ------------------------------------------------------------------------------
 
@@ -879,7 +906,7 @@ class TestSystematic(object):
                             np.array(bad_points),
                             dps=400,
                             ignore_inf_sign=True,
-                            atol=1e-14)
+                            atol=1e-11)
 
     def test_betainc(self):
         assert_mpmath_equal(sc.betainc,
@@ -1036,9 +1063,10 @@ class TestSystematic(object):
         assert_(sc.exprel(-np.inf) == 0)
 
     def test_expm1_complex(self):
+        # Oscillates as a function of Im[z], so limit range to avoid loss of precision
         assert_mpmath_equal(sc.expm1,
                             mpmath.expm1,
-                            [ComplexArg()])
+                            [ComplexArg(complex(-np.inf, -1e7), complex(np.inf, 1e7))])
 
     def test_log1p_complex(self):
         assert_mpmath_equal(sc.log1p,
@@ -1275,8 +1303,10 @@ class TestSystematic(object):
 
             # Mpmath 0.17 gives wrong results (spurious zero) in some cases, so
             # compute the value by perturbing the result
-            if float(r) == 0 and n <= 1-a and a < -1 and float(a) == int(float(a)):
+            if float(r) == 0 and a < -1 and float(a) == int(float(a)):
                 r = mpmath.gegenbauer(n, a + mpmath.mpf('1e-50'), x)
+                if abs(r) < mpmath.mpf('1e-50'):
+                    r = mpmath.mpf('0.0')
 
             # Differing overflow thresholds in scipy vs. mpmath
             if abs(r) > 1e270:
@@ -1291,9 +1321,9 @@ class TestSystematic(object):
             return r
         assert_mpmath_equal(sc_gegenbauer,
                             exception_to_nan(gegenbauer),
-                            [IntArg(0, 100), Arg(), Arg()],
+                            [IntArg(0, 100), Arg(-1e9, 1e9), Arg()],
                             n=40000, dps=100,
-                            ignore_inf_sign=True)
+                            ignore_inf_sign=True, rtol=1e-6)
 
         # Check the small-x expansion
         assert_mpmath_equal(sc_gegenbauer,
@@ -1349,7 +1379,7 @@ class TestSystematic(object):
     def test_hyp0f1_complex(self):
         assert_mpmath_equal(lambda a, z: sc.hyp0f1(a.real, z),
                             exception_to_nan(lambda a, x: mpmath.hyp0f1(a, x, **HYPERKW)),
-                            [Arg(-25, 25), ComplexArg(complex(-120, -120), complex(120, 120))])
+                            [Arg(-10, 10), ComplexArg(complex(-120, -120), complex(120, 120))])
         # NB: The range of the first parameter ("v") are limited by an overflow
         # in the intermediate calculations. Can be fixed by implementing an
         # asymptotic expansion for Bessel functions for large order.
@@ -1495,10 +1525,11 @@ class TestSystematic(object):
                             [IntArg(), Arg()], n=20000)
 
     @pytest.mark.xfail(condition=_is_32bit_platform, reason="see gh-3551 for bad points")
-    def test_lambertw(self):
-        assert_mpmath_equal(lambda x, k: sc.lambertw(x, int(k)),
-                            lambda x, k: mpmath.lambertw(x, int(k)),
-                            [Arg(), IntArg(0, 10)])
+    def test_lambertw_real(self):
+        assert_mpmath_equal(lambda x, k: sc.lambertw(x, int(k.real)),
+                            lambda x, k: mpmath.lambertw(x, int(k.real)),
+                            [ComplexArg(-np.inf, np.inf), IntArg(0, 10)],
+                            rtol=1e-13, nan_ok=False)
 
     def test_lanczos_sum_expg_scaled(self):
         maxgamma = 171.624376956302725
@@ -1506,7 +1537,15 @@ class TestSystematic(object):
         g = 6.024680040776729583740234375
 
         def gamma(x):
-            return ((x + g - 0.5)/e)**(x - 0.5)*_lanczos_sum_expg_scaled(x)
+            with np.errstate(over='ignore'):
+                fac = ((x + g - 0.5)/e)**(x - 0.5)
+                if fac != np.inf:
+                    res = fac*_lanczos_sum_expg_scaled(x)
+                else:
+                    fac = ((x + g - 0.5)/e)**(0.5*(x - 0.5))
+                    res = fac*_lanczos_sum_expg_scaled(x)
+                    res *= fac
+            return res
 
         assert_mpmath_equal(gamma,
                             mpmath.gamma,
@@ -1578,7 +1617,8 @@ class TestSystematic(object):
 
         assert_mpmath_equal(lpnm_2,
                             legenp,
-                            [IntArg(-100, 100), Arg(-100, 100), Arg(-1, 1)])
+                            [IntArg(-100, 100), Arg(-100, 100), Arg(-1, 1)],
+                            atol=1e-10)
 
     def test_legenp_complex_2(self):
         def clpnm(n, m, z):
@@ -1716,11 +1756,11 @@ class TestSystematic(object):
         # is thus accurate in only a very small range.
         assert_mpmath_equal(pcfw,
                             mpmath.pcfw,
-                            [Arg(-5, 5), Arg(-5, 5)], rtol=1e-12, n=100)
+                            [Arg(-5, 5), Arg(-5, 5)], rtol=1e-8, n=100)
 
         assert_mpmath_equal(dpcfw,
                             mpmath_dpcfw,
-                            [Arg(-5, 5), Arg(-5, 5)], rtol=1e-12, n=100)
+                            [Arg(-5, 5), Arg(-5, 5)], rtol=1e-9, n=100)
 
     @pytest.mark.xfail(run=False, reason="issues at large arguments (atol OK, rtol not) and <eps-close to z=0")
     def test_polygamma(self):
@@ -1747,16 +1787,22 @@ class TestSystematic(object):
                             exception_to_nan(mpmath.rgamma),
                             [ComplexArg()], rtol=5e-13)
 
-    @pytest.mark.xfail(condition=_is_32bit_platform, reason="see gh-3551 for bad points")
+    @pytest.mark.xfail(reason=("see gh-3551 for bad points on 32 bit "
+                               "systems and gh-8095 for another bad "
+                               "point"))
     def test_rf(self):
-        def mppoch(a, m):
-            # deal with cases where the result in double precision
-            # hits exactly a non-positive integer, but the
-            # corresponding extended-precision mpf floats don't
-            if float(a + m) == int(a + m) and float(a + m) <= 0:
-                a = mpmath.mpf(a)
-                m = int(a + m) - a
-            return mpmath.rf(a, m)
+        if LooseVersion(mpmath.__version__) >= LooseVersion("1.0.0"):
+            # no workarounds needed
+            mppoch = mpmath.rf
+        else:
+            def mppoch(a, m):
+                # deal with cases where the result in double precision
+                # hits exactly a non-positive integer, but the
+                # corresponding extended-precision mpf floats don't
+                if float(a + m) == int(a + m) and float(a + m) <= 0:
+                    a = mpmath.mpf(a)
+                    m = int(a + m) - a
+                return mpmath.rf(a, m)
 
         assert_mpmath_equal(sc.poch,
                             mppoch,

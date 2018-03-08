@@ -15,7 +15,7 @@ NO WARRANTY IS EXPRESSED OR IMPLIED.  USE AT YOUR OWN RISK.
 common FORTRAN code in the package ODEPACK.
 
 The wrappers are meant to be nearly direct translations between the
-FORTAN code and Python.  Some parameters like sizes do not need to be
+FORTRAN code and Python.  Some parameters like sizes do not need to be
 passed since they are available from the objects.
 
 It is anticipated that a pure Python module be written to call these lower

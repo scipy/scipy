@@ -137,8 +137,7 @@ from __future__ import division, print_function, absolute_import
 
 __docformat__ = "restructuredtext en"
 
-__all__ = ['cs_graph_components',
-           'connected_components',
+__all__ = ['connected_components',
            'laplacian',
            'shortest_path',
            'floyd_warshall',
@@ -162,7 +161,6 @@ __all__ = ['cs_graph_components',
            'csgraph_to_masked',
            'NegativeCycleError']
 
-from ._components import cs_graph_components
 from ._laplacian import laplacian
 from ._shortest_path import shortest_path, floyd_warshall, dijkstra,\
     bellman_ford, johnson, NegativeCycleError
@@ -174,15 +172,6 @@ from ._reordering import reverse_cuthill_mckee, maximum_bipartite_matching, \
 from ._tools import construct_dist_matrix, reconstruct_path,\
     csgraph_from_dense, csgraph_to_dense, csgraph_masked_from_dense,\
     csgraph_from_masked, csgraph_to_masked
-
-from numpy import deprecate as _deprecate
-cs_graph_components = _deprecate(cs_graph_components,
-                                 message=("In the future, use "
-                                          "csgraph.connected_components. Note "
-                                          "that this new function has a "
-                                          "slightly different interface: see "
-                                          "the docstring for more "
-                                          "information."))
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)

@@ -10,6 +10,7 @@ import warnings
 class ODEintWarning(Warning):
     pass
 
+
 _msgs = {2: "Integration successful.",
          1: "Nothing was done; the integration time was 0.",
          -1: "Excess work done on this call (perhaps wrong Dfun type).",
@@ -28,6 +29,9 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
            mxords=5, printmessg=0):
     """
     Integrate a system of ordinary differential equations.
+    
+    .. note:: For new code, use `scipy.integrate.solve_ivp` to solve a
+              differential equation.
 
     Solve a system of ordinary differential equations using lsoda from the
     FORTRAN library odepack.
@@ -35,18 +39,18 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
     Solves the initial value problem for stiff or non-stiff systems
     of first order ode-s::
 
-        dy/dt = func(y, t0, ...)
+        dy/dt = func(y, t, ...)
 
     where y can be a vector.
 
-    *Note*: The first two arguments of ``func(y, t0, ...)`` are in the
-    opposite order of the arguments in the system definition function used
-    by the `scipy.integrate.ode` class.
+    .. note:: The first two arguments of ``func(y, t, ...)`` are in the
+              opposite order of the arguments in the system definition
+              function used by the `scipy.integrate.ode` class.
 
     Parameters
     ----------
-    func : callable(y, t0, ...)
-        Computes the derivative of y at t0.
+    func : callable(y, t, ...)
+        Computes the derivative of y at t.
     y0 : array
         Initial condition on y (can be a vector).
     t : array
@@ -54,7 +58,7 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
         value point should be the first element of this sequence.
     args : tuple, optional
         Extra arguments to pass to function.
-    Dfun : callable(y, t0, ...)
+    Dfun : callable(y, t, ...)
         Gradient (Jacobian) of `func`.
     col_deriv : bool, optional
         True if `Dfun` defines derivatives down columns (faster),

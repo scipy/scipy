@@ -14,17 +14,17 @@ from numpy import (arange, array, dot, zeros, identity, conjugate, transpose,
 import numpy.linalg as linalg
 from numpy.random import random
 
-from numpy.testing import (assert_raises,
-                           assert_equal, assert_almost_equal, assert_,
+from numpy.testing import (assert_equal, assert_almost_equal, assert_,
                            assert_array_almost_equal, assert_allclose,
                            assert_array_equal)
 import pytest
+from pytest import raises as assert_raises
 from scipy._lib._numpy_compat import suppress_warnings
 
 from scipy.linalg import (solve, inv, det, lstsq, pinv, pinv2, pinvh, norm,
                           solve_banded, solveh_banded, solve_triangular,
                           solve_circulant, circulant, LinAlgError, block_diag,
-                          matrix_balance)
+                          matrix_balance, LinAlgWarning)
 
 from scipy.linalg.basic import LstsqLapackError
 from scipy.linalg._testutils import assert_no_overwrite
@@ -713,7 +713,7 @@ class TestSolve(object):
         b = np.ones(2)
         with warnings.catch_warnings():
             warnings.simplefilter('error')
-            assert_raises(RuntimeWarning, solve, a, b)
+            assert_raises(LinAlgWarning, solve, a, b)
 
     def test_empty_rhs(self):
         a = np.eye(2)
@@ -730,10 +730,15 @@ class TestSolve(object):
 
     def test_transposed_keyword(self):
         A = np.arange(9).reshape(3, 3) + 1
-        x = solve(np.tril(A)/9, np.ones(3), transposed=1)
+        x = solve(np.tril(A)/9, np.ones(3), transposed=True)
         assert_array_almost_equal(x, [1.2, 0.2, 1])
-        x = solve(np.tril(A)/9, np.ones(3), transposed=0)
+        x = solve(np.tril(A)/9, np.ones(3), transposed=False)
         assert_array_almost_equal(x, [9, -5.4, -1.2])
+
+    def test_transposed_notimplemented(self):
+        a = np.eye(3).astype(complex)
+        with assert_raises(NotImplementedError):
+            solve(a, a, transposed=True)
 
     def test_nonsquare_a(self):
         assert_raises(ValueError, solve, [1, 2], 1)
@@ -771,12 +776,26 @@ class TestSolve(object):
             elif assume_a == 'pos':
                 a = a.conj().T.dot(a) + 0.1*np.eye(size)
 
-            x = solve(a, b, assume_a=assume_a)
             tol = 1e-12 if dtype in (np.float64, np.complex128) else 1e-6
+
+            if assume_a in ['gen', 'sym', 'her']:
+                # We revert the tolerance from before
+                #   4b4a6e7c34fa4060533db38f9a819b98fa81476c
+                if dtype in (np.float32, np.complex64):
+                    tol *= 10
+
+            x = solve(a, b, assume_a=assume_a)
             assert_allclose(a.dot(x), b,
                             atol=tol * size,
                             rtol=tol * size,
                             err_msg=err_msg)
+
+            if assume_a == 'sym' and dtype not in (np.complex64, np.complex128):
+                x = solve(a, b, assume_a=assume_a, transposed=True)
+                assert_allclose(a.dot(x), b,
+                                atol=tol * size,
+                                rtol=tol * size,
+                                err_msg=err_msg)
 
 
 class TestSolveTriangular(object):

@@ -4,8 +4,9 @@ from __future__ import division, print_function, absolute_import
 import sys
 import numpy as np
 
-from numpy.testing import (assert_equal, assert_raises, assert_allclose,
+from numpy.testing import (assert_equal, assert_allclose,
                            assert_array_equal, assert_almost_equal)
+from pytest import raises as assert_raises
 
 import scipy.ndimage as sndi
 from scipy.ndimage.filters import _gaussian_kernel1d
@@ -399,3 +400,11 @@ def test_footprint_all_zeros():
     kernel = np.zeros((3, 3), bool)
     with assert_raises(ValueError):
         sndi.maximum_filter(arr, footprint=kernel)
+
+def test_gaussian_filter():
+    # Test gaussian filter with np.float16
+    # gh-8207
+    data = np.array([1],dtype = np.float16)
+    sigma = 1.0
+    with assert_raises(RuntimeError):
+        sndi.gaussian_filter(data,sigma)

@@ -1,7 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
-from numpy.testing import assert_array_almost_equal, assert_array_equal, \
-    assert_raises
+from numpy.testing import assert_array_almost_equal, assert_array_equal
+from pytest import raises as assert_raises
 
 from numpy import array, transpose, dot, conjugate, zeros_like, empty
 from numpy.random import random

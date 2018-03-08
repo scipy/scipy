@@ -16,7 +16,7 @@ from scipy.special import (
     ellipe, ellipeinc, ellipk, ellipkm1, ellipkinc, ellipj,
     erf, erfc, erfinv, erfcinv, exp1, expi, expn,
     bdtrik, btdtr, btdtri, btdtria, btdtrib, chndtr, gdtr, gdtrc, gdtrix, gdtrib,
-    nbdtrik, pdtrik,
+    nbdtrik, pdtrik, owens_t,
     mathieu_a, mathieu_b, mathieu_cem, mathieu_sem, mathieu_modcem1,
     mathieu_modsem1, mathieu_modcem2, mathieu_modsem2,
     ellip_harm, ellip_harm_2, spherical_jn, spherical_yn,
@@ -199,6 +199,7 @@ def clog1p(x, y):
     z = log1p(x + 1j*y)
     return z.real, z.imag
 
+
 BOOST_TESTS = [
         data(arccosh, 'acosh_data_ipp-acosh_data', 0, 1, rtol=5e-13),
         data(arccosh, 'acosh_data_ipp-acosh_data', 0j, 1, rtol=5e-13),
@@ -269,11 +270,11 @@ BOOST_TESTS = [
 
         data(digamma, 'digamma_data_ipp-digamma_data', 0, 1),
         data(digamma, 'digamma_data_ipp-digamma_data', 0j, 1),
-        data(digamma, 'digamma_neg_data_ipp-digamma_neg_data', 0, 1, rtol=1e-13),
+        data(digamma, 'digamma_neg_data_ipp-digamma_neg_data', 0, 1, rtol=2e-13),
         data(digamma, 'digamma_neg_data_ipp-digamma_neg_data', 0j, 1, rtol=1e-13),
-        data(digamma, 'digamma_root_data_ipp-digamma_root_data', 0, 1, rtol=1e-11),
-        data(digamma, 'digamma_root_data_ipp-digamma_root_data', 0j, 1, rtol=1e-11),
-        data(digamma, 'digamma_small_data_ipp-digamma_small_data', 0, 1),
+        data(digamma, 'digamma_root_data_ipp-digamma_root_data', 0, 1, rtol=1e-15),
+        data(digamma, 'digamma_root_data_ipp-digamma_root_data', 0j, 1, rtol=1e-15),
+        data(digamma, 'digamma_small_data_ipp-digamma_small_data', 0, 1, rtol=1e-15),
         data(digamma, 'digamma_small_data_ipp-digamma_small_data', 0j, 1, rtol=1e-14),
 
         data(ellipk_, 'ellint_k_data_ipp-ellint_k_data', 0, 1),
@@ -397,13 +398,13 @@ BOOST_TESTS = [
         data(zeta_, 'zeta_1_up_data_ipp-zeta_1_up_data', 0, 1, param_filter=(lambda s: s > 1)),
         data(zeta_, 'zeta_1_below_data_ipp-zeta_1_below_data', 0, 1, param_filter=(lambda s: s > 1)),
 
-        data(gammaincinv, 'gamma_inv_small_data_ipp-gamma_inv_small_data', (0,1), 2, rtol=3e-11, knownfailure='gammaincinv bad few small points'),
-        data(gammaincinv, 'gamma_inv_data_ipp-gamma_inv_data', (0,1), 2, rtol=1e-12),
+        data(gammaincinv, 'gamma_inv_small_data_ipp-gamma_inv_small_data', (0,1), 2, rtol=1e-11),
+        data(gammaincinv, 'gamma_inv_data_ipp-gamma_inv_data', (0,1), 2, rtol=1e-14),
         data(gammaincinv, 'gamma_inv_big_data_ipp-gamma_inv_big_data', (0,1), 2, rtol=1e-11),
 
-        data(gammainccinv, 'gamma_inv_small_data_ipp-gamma_inv_small_data', (0,1), 3, rtol=2e-12),
-        data(gammainccinv, 'gamma_inv_data_ipp-gamma_inv_data', (0,1), 3, rtol=2e-14),
-        data(gammainccinv, 'gamma_inv_big_data_ipp-gamma_inv_big_data', (0,1), 3, rtol=3e-12),
+        data(gammainccinv, 'gamma_inv_small_data_ipp-gamma_inv_small_data', (0,1), 3, rtol=1e-12),
+        data(gammainccinv, 'gamma_inv_data_ipp-gamma_inv_data', (0,1), 3, rtol=1e-14),
+        data(gammainccinv, 'gamma_inv_big_data_ipp-gamma_inv_big_data', (0,1), 3, rtol=1e-14),
 
         data(gdtrix_, 'gamma_inv_small_data_ipp-gamma_inv_small_data', (0,1), 2, rtol=3e-13, knownfailure='gdtrix unflow some points'),
         data(gdtrix_, 'gamma_inv_data_ipp-gamma_inv_data', (0,1), 2, rtol=3e-15),
@@ -423,6 +424,9 @@ BOOST_TESTS = [
 
         data(spherical_jn_, 'sph_bessel_data_ipp-sph_bessel_data', (0,1), 2, rtol=1e-13),
         data(spherical_yn_, 'sph_neumann_data_ipp-sph_neumann_data', (0,1), 2, rtol=8e-15),
+
+        data(owens_t, 'owenst_data_ipp-owens_t', (0, 1), 2, rtol=5e-14),
+        data(owens_t, 'owenst_data_ipp-owens_t_alarge', (0, 1), 2, rtol=5e-15),
 
         # -- not used yet (function does not exist in scipy):
         # 'ellint_pi2_data_ipp-ellint_pi2_data',
@@ -494,4 +498,3 @@ def _test_factory(test, dtype=np.double):
             test.check(dtype=dtype)
         finally:
             np.seterr(**olderr)
-

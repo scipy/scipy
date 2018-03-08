@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
 import sys, os, re
+from datetime import date
 
 # Check Sphinx version
 import sphinx
@@ -51,7 +52,7 @@ master_doc = 'index'
 
 # General substitutions.
 project = 'SciPy'
-copyright = '2008-2016, The Scipy community'
+copyright = '2008-%s, The SciPy community' % date.today().year
 
 # The default replacements for |version| and |release|, also used in various
 # other places throughout the built documents.
@@ -217,8 +218,9 @@ latex_use_modindex = False
 # Intersphinx configuration
 # -----------------------------------------------------------------------------
 intersphinx_mapping = {
-        'http://docs.python.org/dev': None,
-        'https://docs.scipy.org/doc/numpy': None,
+        'python': ('http://docs.python.org/dev', None),
+        'numpy': ('https://docs.scipy.org/doc/numpy', None),
+        'matplotlib': ('http://matplotlib.org', None),
 }
 
 

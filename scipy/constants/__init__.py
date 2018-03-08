@@ -260,12 +260,6 @@ Temperature
    :toctree: generated/
 
    convert_temperature
-   C2K
-   K2C
-   F2C
-   C2F
-   F2K
-   K2F
 
 Energy
 ------

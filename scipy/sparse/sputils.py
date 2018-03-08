@@ -3,6 +3,7 @@
 
 from __future__ import division, print_function, absolute_import
 
+import operator
 import warnings
 import numpy as np
 
@@ -138,6 +139,7 @@ def get_index_dtype(arrays=(), maxval=None, check_contents=False):
 
     """
 
+    int32min = np.iinfo(np.int32).min
     int32max = np.iinfo(np.int32).max
 
     dtype = np.intc
@@ -150,7 +152,7 @@ def get_index_dtype(arrays=(), maxval=None, check_contents=False):
 
     for arr in arrays:
         arr = np.asarray(arr)
-        if arr.dtype > np.int32:
+        if not np.can_cast(arr.dtype, np.int32):
             if check_contents:
                 if arr.size == 0:
                     # a bigger type not needed
@@ -158,8 +160,7 @@ def get_index_dtype(arrays=(), maxval=None, check_contents=False):
                 elif np.issubdtype(arr.dtype, np.integer):
                     maxval = arr.max()
                     minval = arr.min()
-                    if (minval >= np.iinfo(np.int32).min and
-                            maxval <= np.iinfo(np.int32).max):
+                    if minval >= int32min and maxval <= int32max:
                         # a bigger type not needed
                         continue
 
@@ -189,16 +190,28 @@ def isintlike(x):
     """Is x appropriate as an index into a sparse matrix? Returns True
     if it can be cast safely to a machine int.
     """
-    if not isscalarlike(x):
+    # Fast-path check to eliminate non-scalar values. operator.index would
+    # catch this case too, but the exception catching is slow.
+    if np.ndim(x) != 0:
         return False
     try:
-        return bool(int(x) == x)
+        operator.index(x)
     except (TypeError, ValueError):
-        return False
+        try:
+            loose_int = bool(int(x) == x)
+        except (TypeError, ValueError):
+            return False
+        if loose_int:
+            warnings.warn("Inexact indices into sparse matrices are deprecated",
+                          DeprecationWarning)
+        return loose_int
+    return True
 
 
-def isshape(x):
+def isshape(x, nonneg=False):
     """Is x a valid 2-tuple of dimensions?
+
+    If nonneg, also checks that the dimensions are non-negative.
     """
     try:
         # Assume it's a tuple of matrix dimensions (M, N)
@@ -208,7 +221,8 @@ def isshape(x):
     else:
         if isintlike(M) and isintlike(N):
             if np.ndim(M) == 0 and np.ndim(N) == 0:
-                return True
+                if not nonneg or (M >= 0 and N >= 0):
+                    return True
         return False
 
 
@@ -249,6 +263,82 @@ def validateaxis(axis):
 
         if not (-2 <= axis <= 1):
             raise ValueError("axis out of range")
+
+
+def check_shape(args, current_shape=None):
+    """Imitate numpy.matrix handling of shape arguments"""
+    if len(args) == 0:
+        raise TypeError("function missing 1 required positional argument: "
+                        "'shape'")
+    elif len(args) == 1:
+        try:
+            shape_iter = iter(args[0])
+        except TypeError:
+            new_shape = (operator.index(args[0]), )
+        else:
+            new_shape = tuple(operator.index(arg) for arg in shape_iter)
+    else:
+        new_shape = tuple(operator.index(arg) for arg in args)
+
+    if current_shape is None:
+        if len(new_shape) != 2:
+            raise ValueError('shape must be a 2-tuple of positive integers')
+        elif new_shape[0] < 0 or new_shape[1] < 0:
+            raise ValueError("'shape' elements cannot be negative")
+
+    else:
+        # Check the current size only if needed
+        current_size = np.prod(current_shape, dtype=int)
+
+        # Check for negatives
+        negative_indexes = [i for i, x in enumerate(new_shape) if x < 0]
+        if len(negative_indexes) == 0:
+            new_size = np.prod(new_shape, dtype=int)
+            if new_size != current_size:
+                raise ValueError('cannot reshape array of size {} into shape {}'
+                                 .format(new_size, new_shape))
+        elif len(negative_indexes) == 1:
+            skip = negative_indexes[0]
+            specified = np.prod(new_shape[0:skip] + new_shape[skip+1:])
+            unspecified, remainder = divmod(current_size, specified)
+            if remainder != 0:
+                err_shape = tuple('newshape' if x < 0 else x for x in new_shape)
+                raise ValueError('cannot reshape array of size {} into shape {}'
+                                 ''.format(current_size, err_shape))
+            new_shape = new_shape[0:skip] + (unspecified,) + new_shape[skip+1:]
+        else:
+            raise ValueError('can only specify one unknown dimension')
+
+        # Add and remove ones like numpy.matrix.reshape
+        if len(new_shape) != 2:
+            new_shape = tuple(arg for arg in new_shape if arg != 1)
+
+            if len(new_shape) == 0:
+                new_shape = (1, 1)
+            elif len(new_shape) == 1:
+                new_shape = (1, new_shape[0])
+
+    if len(new_shape) > 2:
+        raise ValueError('shape too large to be a matrix')
+
+    return new_shape
+
+
+def check_reshape_kwargs(kwargs):
+    """Unpack keyword arguments for reshape function.
+
+    This is useful because keyword arguments after star arguments are not
+    allowed in Python 2, but star keyword arguments are. This function unpacks
+    'order' and 'copy' from the star keyword arguments (with defaults) and
+    throws an error for any remaining.
+    """
+
+    order = kwargs.pop('order', 'C')
+    copy = kwargs.pop('copy', False)
+    if kwargs:  # Some unused kwargs remain
+        raise TypeError('reshape() got unexpected keywords arguments: {}'
+                        .format(', '.join(kwargs.keys())))
+    return order, copy
 
 
 class IndexMixin(object):

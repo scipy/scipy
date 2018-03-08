@@ -194,8 +194,8 @@ class lti(LinearTimeInvariant):
 
     >>> signal.lti([3, 4], [1, 2])
     TransferFunctionContinuous(
-    array([ 3.,  4.]),
-    array([ 1.,  2.]),
+    array([3., 4.]),
+    array([1., 2.]),
     dt: None
     )
 
@@ -371,8 +371,8 @@ class dlti(LinearTimeInvariant):
 
     >>> signal.dlti([3, 4], [1, 2], dt=0.1)
     TransferFunctionDiscrete(
-    array([ 3.,  4.]),
-    array([ 1.,  2.]),
+    array([3., 4.]),
+    array([1., 2.]),
     dt: 0.1
     )
 
@@ -538,19 +538,19 @@ class TransferFunction(LinearTimeInvariant):
 
     >>> signal.TransferFunction(num, den)
     TransferFunctionContinuous(
-    array([ 1.,  3.,  3.]),
-    array([ 1.,  2.,  1.]),
+    array([1., 3., 3.]),
+    array([1., 2., 1.]),
     dt: None
     )
 
-    Contruct the transfer function with a sampling time of 0.1 seconds:
+    Construct the transfer function with a sampling time of 0.1 seconds:
 
     .. math:: H(z) = \frac{z^2 + 3z + 3}{z^2 + 2z + 1}
 
     >>> signal.TransferFunction(num, den, dt=0.1)
     TransferFunctionDiscrete(
-    array([ 1.,  3.,  3.]),
-    array([ 1.,  2.,  1.]),
+    array([1., 3., 3.]),
+    array([1., 2., 1.]),
     dt: 0.1
     )
 
@@ -1268,10 +1268,10 @@ class StateSpace(LinearTimeInvariant):
 
     >>> sys.to_discrete(0.1)
     StateSpaceDiscrete(
-    array([[ 1. ,  0.1],
-           [ 0. ,  1. ]]),
-    array([[ 0.005],
-           [ 0.1  ]]),
+    array([[1. , 0.1],
+           [0. , 1. ]]),
+    array([[0.005],
+           [0.1  ]]),
     array([[1, 0]]),
     array([[0]]),
     dt: 0.1
@@ -1282,10 +1282,10 @@ class StateSpace(LinearTimeInvariant):
 
     >>> signal.StateSpace(a, b, c, d, dt=0.1)
     StateSpaceDiscrete(
-    array([[ 1. ,  0.1],
-           [ 0. ,  1. ]]),
-    array([[ 0.005],
-           [ 0.1  ]]),
+    array([[1. , 0.1],
+           [0. , 1. ]]),
+    array([[0.005],
+           [0.1  ]]),
     array([[1, 0]]),
     array([[0]]),
     dt: 0.1
@@ -2935,12 +2935,12 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
                 diag_poles[idx+1, idx] = np.imag(p)
                 idx += 1  # skip next one
             idx += 1
-        gain_matrix = np.linalg.lstsq(B, diag_poles-A)[0]
+        gain_matrix = np.linalg.lstsq(B, diag_poles-A, rcond=-1)[0]
         transfer_matrix = np.eye(A.shape[0])
         cur_rtol = np.nan
         nb_iter = np.nan
     else:
-        # step A (p1144 KNV) and begining of step F: decompose
+        # step A (p1144 KNV) and beginning of step F: decompose
         # dot(U1.T, A-P[i]*I).T and build our set of transfer_matrix vectors
         # in the same loop
         ker_pole = []

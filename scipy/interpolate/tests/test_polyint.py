@@ -6,8 +6,8 @@ import numpy as np
 
 from numpy.testing import (
     assert_almost_equal, assert_array_equal, assert_array_almost_equal,
-    assert_allclose, assert_equal, assert_,
-    assert_raises)
+    assert_allclose, assert_equal, assert_)
+from pytest import raises as assert_raises
 
 from scipy.interpolate import (
     KroghInterpolator, krogh_interpolate,
@@ -50,6 +50,7 @@ def check_shape(interpolator_cls, x_shape, y_shape, deriv_shape=None, axis=0,
 
         yi, y = np.broadcast_arrays(yi, yv)
         assert_allclose(yi, y)
+
 
 SHAPES = [(), (0,), (1,), (6, 2, 5)]
 

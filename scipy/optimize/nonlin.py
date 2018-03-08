@@ -163,6 +163,7 @@ def _safe_norm(v):
 # Generic nonlinear solver machinery
 #------------------------------------------------------------------------------
 
+
 _doc_parts = dict(
     params_basic="""
     F : function(x) -> f
@@ -260,7 +261,7 @@ def nonlin_solve(F, x0, jacobian='krylov', iter=None, verbose=False,
     ----------
     .. [KIM] C. T. Kelley, \"Iterative Methods for Linear and Nonlinear
        Equations\". Society for Industrial and Applied Mathematics. (1995)
-       http://www.siam.org/books/kelley/
+       http://www.siam.org/books/kelley/fr16/index.php
 
     """
 
@@ -362,6 +363,7 @@ def nonlin_solve(F, x0, jacobian='krylov', iter=None, verbose=False,
         return _array_like(x, x0), info
     else:
         return _array_like(x, x0)
+
 
 _set_doc(nonlin_solve)
 
@@ -881,6 +883,7 @@ class LowRankMatrix(object):
 
         del self.cs[q:]
         del self.ds[q:]
+
 
 _doc_parts['broyden_params'] = """
     alpha : float, optional
@@ -1422,6 +1425,7 @@ class KrylovJacobian(Jacobian):
             self.method_kw['maxiter'] = 1
             # Carry LGMRES's `outer_v` vectors across nonlinear iterations
             self.method_kw.setdefault('outer_v', [])
+            self.method_kw.setdefault('prepend_outer_v', True)
             # But don't carry the corresponding Jacobian*v products, in case
             # the Jacobian changes a lot in the nonlinear step
             #
@@ -1527,6 +1531,7 @@ def %(name)s(F, xin, iter=None %(kw)s, verbose=False, maxiter=None,
     func.__doc__ = jac.__doc__
     _set_doc(func)
     return func
+
 
 broyden1 = _nonlin_wrapper('broyden1', BroydenFirst)
 broyden2 = _nonlin_wrapper('broyden2', BroydenSecond)

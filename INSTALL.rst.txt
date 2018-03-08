@@ -17,11 +17,11 @@ you are not familiar with compiling software from sources.
 Recommended distributions are:
 
   - Enthought Canopy (https://www.enthought.com/products/canopy/)
-  - Anaconda (https://www.continuum.io/anaconda)
+  - Anaconda (https://www.anaconda.com)
   - Python(x,y) (http://python-xy.github.io/)
   - WinPython (https://winpython.github.io/)
 
-The rest of this install documentation does summarize how to build Scipy.  Note
+The rest of this install documentation summarizes how to build Scipy.  Note
 that more extensive (and possibly more up-to-date) build instructions are
 maintained at http://scipy.org/scipylib/building/index.html
 
@@ -61,12 +61,10 @@ Compilers
 
 There are two ways to build Scipy on Windows:
 
-1. Use Intel MKL, and Intel compilers or ifort + MSVC.  This is currently the
-   most robust method.
-2. Use MingwPy__.  This is a GCC toolchain that will be used in the future to
-   distribute Scipy binaries on PyPi.  See the MingwPy website for details.
-
-__ https://mingwpy.github.io/ 
+1. Use Intel MKL, and Intel compilers or ifort + MSVC.  This is what Anaconda
+   and Enthought Canopy use.
+2. Use MSVC + gfortran with OpenBLAS.  This is how the SciPy Windows wheels are
+   built.
 
 
 Mac OS X
@@ -129,18 +127,11 @@ From tarballs
 Unpack ``SciPy-<version>.tar.gz``, change to the ``SciPy-<version>/``
 directory, and run::
 
-  python setup.py install --user
+  pip install . -v --user
 
 This may take several minutes to half an hour depending on the speed of your
-computer.  To install to a user-specific location instead, run::
+computer.
 
-  python setup.py install --prefix=$MYDIR
-
-where $MYDIR is, for example, $HOME or $HOME/usr.
-
-        ** Note 1: On Unix, you should avoid installing in /usr, but rather in
-        /usr/local or somewhere else. /usr is generally 'owned' by your package
-        manager, and you may overwrite a packaged Scipy this way.
 
 TESTING
 =======
@@ -153,6 +144,11 @@ To test SciPy after installation (highly recommended), execute in Python
 To run the full test suite use
 
    >>> scipy.test('full')
+
+If you are upgrading from an older SciPy release, please test your code for any
+deprecation warnings before and after upgrading to avoid surprises:
+
+   $ python -Wd -c my_code_that_shouldnt_break.py
 
 Please note that you must have version 1.0 or later of the Pytest test
 framework installed in order to run the tests.  More information about Pytest is

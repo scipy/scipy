@@ -3,8 +3,7 @@ from __future__ import division, print_function, absolute_import
 import math
 import numpy as np
 
-from numpy.testing import assert_allclose, \
-     assert_
+from numpy.testing import assert_allclose, assert_
 
 from scipy.optimize import fmin_cobyla, minimize
 
@@ -26,8 +25,9 @@ class TestCobyla(object):
         return -self.con1(x)
 
     def test_simple(self):
+        # use disp=True as smoke test for gh-8118
         x = fmin_cobyla(self.fun, self.x0, [self.con1, self.con2], rhobeg=1,
-                        rhoend=1e-5, iprint=0, maxfun=100)
+                        rhoend=1e-5, maxfun=100, disp=True)
         assert_allclose(x, self.solution, atol=1e-4)
 
     def test_minimize_simple(self):
@@ -96,10 +96,10 @@ def test_vector_constraints():
     fsol = 0.8
 
     # testing fmin_cobyla
-    sol = fmin_cobyla(fun, x0, cons_list, rhoend=1e-5, iprint=0)
+    sol = fmin_cobyla(fun, x0, cons_list, rhoend=1e-5)
     assert_allclose(sol, xsol, atol=1e-4)
 
-    sol = fmin_cobyla(fun, x0, fmin, rhoend=1e-5, iprint=0)
+    sol = fmin_cobyla(fun, x0, fmin, rhoend=1e-5)
     assert_allclose(fun(sol), 1, atol=1e-4)
 
     # testing minimize

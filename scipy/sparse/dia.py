@@ -11,7 +11,7 @@ import numpy as np
 from .base import isspmatrix, _formats, spmatrix
 from .data import _data_matrix
 from .sputils import (isshape, upcast_char, getdtype, get_index_dtype,
-                      get_sum_dtype, validateaxis)
+                      get_sum_dtype, validateaxis, check_shape)
 from ._sparsetools import dia_matvec
 
 
@@ -83,7 +83,7 @@ class dia_matrix(_data_matrix):
                 arg1 = arg1.copy()
             self.data = arg1.data
             self.offsets = arg1.offsets
-            self.shape = arg1.shape
+            self._shape = check_shape(arg1.shape)
         elif isspmatrix(arg1):
             if isspmatrix_dia(arg1) and copy:
                 A = arg1.copy()
@@ -91,12 +91,12 @@ class dia_matrix(_data_matrix):
                 A = arg1.todia()
             self.data = A.data
             self.offsets = A.offsets
-            self.shape = A.shape
+            self._shape = check_shape(A.shape)
         elif isinstance(arg1, tuple):
             if isshape(arg1):
                 # It's a tuple of matrix dimensions (M, N)
                 # create empty matrix
-                self.shape = arg1   # spmatrix checks for errors here
+                self._shape = check_shape(arg1)
                 self.data = np.zeros((0,0), getdtype(dtype, default=float))
                 idx_dtype = get_index_dtype(maxval=max(self.shape))
                 self.offsets = np.zeros((0), dtype=idx_dtype)
@@ -113,7 +113,7 @@ class dia_matrix(_data_matrix):
                     self.offsets = np.atleast_1d(np.array(arg1[1],
                                                           dtype=get_index_dtype(maxval=max(shape)),
                                                           copy=copy))
-                    self.shape = shape
+                    self._shape = check_shape(shape)
         else:
             #must be dense, convert to COO first, then to DIA
             try:
@@ -125,7 +125,7 @@ class dia_matrix(_data_matrix):
             A = coo_matrix(arg1, dtype=dtype, shape=shape).todia()
             self.data = A.data
             self.offsets = A.offsets
-            self.shape = A.shape
+            self._shape = check_shape(A.shape)
 
         if dtype is not None:
             self.data = self.data.astype(dtype)
@@ -375,6 +375,23 @@ class dia_matrix(_data_matrix):
             return dia_matrix((data, self.offsets.copy()), shape=self.shape)
         else:
             return dia_matrix((data,self.offsets), shape=self.shape)
+
+    def resize(self, *shape):
+        shape = check_shape(shape)
+        M, N = shape
+        # we do not need to handle the case of expanding N
+        self.data = self.data[:, :N]
+
+        if (M > self.shape[0] and
+                np.any(self.offsets + self.shape[0] < self.data.shape[1])):
+            # explicitly clear values that were previously hidden
+            mask = (self.offsets[:, None] + self.shape[0] <=
+                    np.arange(self.data.shape[1]))
+            self.data[mask] = 0
+
+        self._shape = shape
+
+    resize.__doc__ = spmatrix.resize.__doc__
 
 
 def isspmatrix_dia(x):

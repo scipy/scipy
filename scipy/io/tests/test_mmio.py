@@ -7,8 +7,8 @@ import shutil
 import numpy as np
 from numpy import array, transpose, pi
 from numpy.testing import (assert_equal,
-                           assert_array_equal, assert_array_almost_equal,
-                           assert_raises)
+                           assert_array_equal, assert_array_almost_equal)
+from pytest import raises as assert_raises
 
 import scipy.sparse
 from scipy.io.mmio import mminfo, mmread, mmwrite

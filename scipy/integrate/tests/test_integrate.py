@@ -13,7 +13,8 @@ from scipy._lib.six import xrange
 
 from numpy.testing import (
     assert_, assert_array_almost_equal,
-    assert_raises, assert_allclose, assert_array_equal, assert_equal)
+    assert_allclose, assert_array_equal, assert_equal)
+from pytest import raises as assert_raises
 from scipy.integrate import odeint, ode, complex_ode
 
 #------------------------------------------------------------------------------
@@ -454,7 +455,7 @@ class CoupledDecay(ODE):
     lband = 1
     uband = 0
 
-    lmbd = [0.17, 0.23, 0.29]  # fictious decay constants
+    lmbd = [0.17, 0.23, 0.29]  # fictitious decay constants
 
     def f(self, z, t):
         lmbd = self.lmbd

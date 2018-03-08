@@ -91,11 +91,15 @@ class Quad(Benchmark):
         self.f_python = lambda x: sin(x)
         self.f_cython = from_cython(_ccallback_c, "sine")
 
-        lib = ctypes.CDLL(clib_test.__file__)
-
-        self.f_ctypes = lib._multivariate_sin
-        self.f_ctypes.restype = ctypes.c_double
-        self.f_ctypes.argtypes = (ctypes.c_int, ctypes.c_double)  # sic -- for backward compat
+        try:
+            from scipy.integrate.tests.test_quadpack import get_clib_test_routine
+            self.f_ctypes = get_clib_test_routine('_multivariate_sin', ctypes.c_double,
+                                                  ctypes.c_int, ctypes.c_double)
+        except ImportError:
+            lib = ctypes.CDLL(clib_test.__file__)
+            self.f_ctypes = lib._multivariate_sin
+            self.f_ctypes.restype = ctypes.c_double
+            self.f_ctypes.argtypes = (ctypes.c_int, ctypes.c_double)
 
         if cffi is not None:
             voidp = ctypes.cast(self.f_ctypes, ctypes.c_void_p)

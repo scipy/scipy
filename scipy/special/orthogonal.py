@@ -84,6 +84,7 @@ from scipy import linalg
 from scipy.special import airy
 
 # Local imports.
+from . import _ufuncs
 from . import _ufuncs as cephes
 _gam = cephes.gamma
 from . import specfun
@@ -134,11 +135,11 @@ class orthopoly1d(np.poly1d):
                 eval_func = lambda x: evf(x) / knn
             mu = mu / abs(kn)
             kn = 1.0
-            
+
         # compute coefficients from roots, then scale
         poly = np.poly1d(roots, r=True)
         np.poly1d.__init__(self, poly.coeffs * float(kn))
-        
+
         # TODO: In numpy 1.13, there is no need to use __dict__ to access attributes
         self.__dict__['weights'] = np.array(list(zip(roots,
                                                      weights, equiv_weights)))
@@ -234,7 +235,7 @@ def roots_jacobi(n, alpha, beta, mu=False):
     alpha : float
         alpha must be > -1
     beta : float
-        beta must be > 0
+        beta must be > -1
     mu : bool, optional
         If True, return the sum of the weights, optional.
 
@@ -393,7 +394,7 @@ def sh_jacobi(n, p, q, monic=False):
 
     .. math::
 
-        G_n^{(p, q)}(x) 
+        G_n^{(p, q)}(x)
           = \binom{2n + p - 1}{n}^{-1}P_n^{(p - q, q - 1)}(2x - 1),
 
     where :math:`P_n^{(\cdot, \cdot)}` is the nth Jacobi polynomial.
@@ -505,7 +506,7 @@ def genlaguerre(n, alpha, monic=False):
     Defined to be the solution of
 
     .. math::
-        x\frac{d^2}{dx^2}L_n^{(\alpha)} 
+        x\frac{d^2}{dx^2}L_n^{(\alpha)}
           + (\alpha + 1 - x)\frac{d}{dx}L_n^{(\alpha)}
           + nL_n^{(\alpha)} = 0,
 
@@ -1391,9 +1392,8 @@ def roots_chebyt(n, mu=False):
     m = int(n)
     if n < 1 or n != m:
         raise ValueError('n must be a positive integer.')
-    x = np.cos(np.arange(2 * m - 1, 0, -2) * pi / (2 * m))
-    w = np.empty_like(x)
-    w.fill(pi/m)
+    x = _ufuncs._sinpi(np.arange(-m + 1, m, 2) / (2*m))
+    w = np.full_like(x, pi/m)
     if mu:
         return x, w, pi
     else:

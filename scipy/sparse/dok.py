@@ -16,7 +16,8 @@ from scipy._lib.six import zip as izip, xrange, iteritems, iterkeys, itervalues
 
 from .base import spmatrix, isspmatrix
 from .sputils import (isdense, getdtype, isshape, isintlike, isscalarlike,
-                      upcast, upcast_scalar, IndexMixin, get_index_dtype)
+                      upcast, upcast_scalar, IndexMixin, get_index_dtype,
+                      check_shape)
 
 try:
     from operator import isSequenceType as _is_sequence
@@ -84,7 +85,7 @@ class dok_matrix(spmatrix, IndexMixin, dict):
         self.dtype = getdtype(dtype, default=float)
         if isinstance(arg1, tuple) and isshape(arg1):  # (M,N)
             M, N = arg1
-            self.shape = (M, N)
+            self._shape = check_shape((M, N))
         elif isspmatrix(arg1):  # Sparse ctor
             if isspmatrix_dok(arg1) and copy:
                 arg1 = arg1.copy()
@@ -95,7 +96,7 @@ class dok_matrix(spmatrix, IndexMixin, dict):
                 arg1 = arg1.astype(dtype)
 
             dict.update(self, arg1)
-            self.shape = arg1.shape
+            self._shape = check_shape(arg1.shape)
             self.dtype = arg1.dtype
         else:  # Dense ctor
             try:
@@ -109,7 +110,7 @@ class dok_matrix(spmatrix, IndexMixin, dict):
             from .coo import coo_matrix
             d = coo_matrix(arg1, dtype=dtype).todok()
             dict.update(self, d)
-            self.shape = arg1.shape
+            self._shape = check_shape(arg1.shape)
             self.dtype = d.dtype
 
     def update(self, val):
@@ -122,6 +123,14 @@ class dok_matrix(spmatrix, IndexMixin, dict):
         `dok_matrix` data. Main purpose is to be used for effcient conversion
         from other spmatrix classes. Has no checking if `data` is valid."""
         return dict.update(self, data)
+
+    def set_shape(self, shape):
+        new_matrix = self.reshape(shape, copy=False).asformat(self.format)
+        self.__dict__ = new_matrix.__dict__
+        dict.clear(self)
+        dict.update(self, new_matrix)
+
+    shape = property(fget=spmatrix.get_shape, fset=set_shape)
 
     def getnnz(self, axis=None):
         if axis is not None:
@@ -462,9 +471,9 @@ class dok_matrix(spmatrix, IndexMixin, dict):
 
         idx_dtype = get_index_dtype(maxval=max(self.shape))
         data = np.fromiter(itervalues(self), dtype=self.dtype, count=self.nnz)
-        I = np.fromiter((i for i, _ in iterkeys(self)), dtype=idx_dtype, count=self.nnz)
-        J = np.fromiter((j for _, j in iterkeys(self)), dtype=idx_dtype, count=self.nnz)
-        A = coo_matrix((data, (I, J)), shape=self.shape, dtype=self.dtype)
+        row = np.fromiter((i for i, _ in iterkeys(self)), dtype=idx_dtype, count=self.nnz)
+        col = np.fromiter((j for _, j in iterkeys(self)), dtype=idx_dtype, count=self.nnz)
+        A = coo_matrix((data, (row, col)), shape=self.shape, dtype=self.dtype)
         A.has_canonical_format = True
         return A
 
@@ -482,13 +491,8 @@ class dok_matrix(spmatrix, IndexMixin, dict):
 
     tocsc.__doc__ = spmatrix.tocsc.__doc__
 
-    def resize(self, shape):
-        """Resize the matrix in-place to dimensions given by `shape`.
-
-        Any non-zero elements that lie outside the new shape are removed.
-        """
-        if not isshape(shape):
-            raise TypeError("Dimensions must be a 2-tuple of positive integers")
+    def resize(self, *shape):
+        shape = check_shape(shape)
         newM, newN = shape
         M, N = self.shape
         if newM < M or newN < N:
@@ -497,6 +501,8 @@ class dok_matrix(spmatrix, IndexMixin, dict):
                 if i >= newM or j >= newN:
                     del self[i, j]
         self._shape = shape
+
+    resize.__doc__ = spmatrix.resize.__doc__
 
 
 def isspmatrix_dok(x):

@@ -4,7 +4,9 @@ import warnings
 
 import numpy as np
 from numpy.testing import (assert_almost_equal, assert_equal, assert_allclose,
-                           assert_, assert_raises)
+                           assert_)
+from pytest import raises as assert_raises
+
 from scipy._lib._numpy_compat import suppress_warnings
 from scipy.signal import (ss2tf, tf2ss, lsim2, impulse2, step2, lti,
                           dlti, bode, freqresp, lsim, impulse, step,
@@ -66,7 +68,10 @@ class TestPlacePoles(object):
         # values are almost equal. This is to improve code coverage but I
         # have no way to be sure this code is really reached
 
-        self._check(A, B, (2,2,3,3))
+        # on some architectures this can lead to a RuntimeWarning invalid
+        # value in divide (see gh-7590), so suppress it for now
+        with np.errstate(invalid='ignore'):
+            self._check(A, B, (2,2,3,3))
 
     def test_complex(self):
         # Test complex pole placement on a linearized car model, taken from L.

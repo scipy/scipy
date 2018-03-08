@@ -381,6 +381,14 @@ def expm_cond(A, check_finite=True):
     expm : Compute the exponential of a matrix.
     expm_frechet : Compute the Frechet derivative of the matrix exponential.
 
+    Examples
+    --------
+    >>> from scipy.linalg import expm_cond
+    >>> A = np.array([[-0.3, 0.2, 0.6], [0.6, 0.3, -0.1], [-0.7, 1.2, 0.9]])
+    >>> k = expm_cond(A)
+    >>> k
+    1.7787805864469866
+
     """
     if check_finite:
         A = np.asarray_chkfinite(A)

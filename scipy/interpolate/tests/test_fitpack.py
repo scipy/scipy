@@ -4,8 +4,9 @@ import os
 
 import numpy as np
 from numpy.testing import (assert_equal, assert_allclose, assert_,
-    assert_raises, assert_almost_equal,
-    assert_raises, assert_array_almost_equal)
+                           assert_almost_equal, assert_array_almost_equal)
+from pytest import raises as assert_raises
+
 from numpy import array, asarray, pi, sin, cos, arange, dot, ravel, sqrt, round
 from scipy import interpolate
 from scipy.interpolate.fitpack import (splrep, splev, bisplrep, bisplev,

@@ -30,7 +30,7 @@
  * to obtain a nonlocal return on error conditions, in cases where there's no
  * mechanism to interrupt computation. Note that this is the last-resort option,
  * and only safe if there is no memory allocation between setjmp/longjmp (or you
- * need to add additonal cleanup yourself).
+ * need to add additional cleanup yourself).
  *
  */
 

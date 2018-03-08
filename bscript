@@ -138,6 +138,16 @@ def _generate_cython():
     if p != 0:
         raise RuntimeError("Running cythonize failed!")
 
+def _generate_npz_data():
+    print("Generating scipy.special test data files")
+    cwd = os.path.abspath(os.path.dirname(__file__))
+    makenpz = os.path.join(cwd, 'scipy', 'special', 'utils', 'makenpz.py')
+    data_dir = os.path.join(cwd, 'scipy', 'special', 'tests', 'data')
+    for name in ['boost', 'gsl', 'local']:
+        subprocess.check_call([sys.executable, makenpz,
+                               '--use-timestamp',
+                               os.path.join(data_dir, name)])
+
 @hooks.post_configure
 def post_configure(context):
     opts = context.waf_options_context
@@ -187,6 +197,7 @@ def post_configure(context):
     conf.parse_flags(npymath_info.cflags() + " " + npymath_info.libs(), "NPYMATH")
 
     _generate_cython()
+    _generate_npz_data()
 
 
 FULLVERSION, GIT_REVISION = setup.get_version_info()

@@ -77,7 +77,7 @@ parameter):
              Function evaluations: 571
 
     >>> print(res.x)
-    [ 1.  1.  1.  1.  1.]
+    [1. 1. 1. 1. 1.]
 
 The simplex algorithm is probably the simplest way to minimize a fairly
 well-behaved function. It requires only function evaluations and is a good
@@ -136,9 +136,9 @@ through the ``jac`` parameter as illustrated below.
     ...                options={'disp': True})
     Optimization terminated successfully.
              Current function value: 0.000000
-             Iterations: 32                     # may vary
-             Function evaluations: 34
-             Gradient evaluations: 34
+             Iterations: 51                     # may vary
+             Function evaluations: 63
+             Gradient evaluations: 63
     >>> res.x
     array([1., 1., 1., 1., 1.])
 
@@ -332,11 +332,73 @@ Hessian product example:
     >>> res.x
     array([1., 1., 1., 1., 1.])
 
+Trust-Region Truncated Generalized Lanczos / Conjugate Gradient Algorithm (``method='trust-krylov'``)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Similar to the ``trust-ncg`` method, the ``trust-krylov`` method is a method
+suitable for large-scale problems as it uses the hessian only as linear
+operator by means of matrix-vector products.
+It solves the quadratic subproblem more accurately than the ``trust-ncg``
+method.
+
+.. math::
+   :nowrap:
+
+   \begin{eqnarray*}
+      \min_{\mathbf{p}} f\left(\mathbf{x}_{k}\right)+\nabla f\left(\mathbf{x}_{k}\right)\cdot\mathbf{p}+\frac{1}{2}\mathbf{p}^{T}\mathbf{H}\left(\mathbf{x}_{k}\right)\mathbf{p};&\\
+      \text{subject to: } \|\mathbf{p}\|\le \Delta.&
+    \end{eqnarray*}
+
+This method wraps the [TRLIB]_ implementation of the [GLTR]_ method solving
+exactly a trust-region subproblem restricted to a truncated Krylov subspace.
+For indefinite problems it is usually better to use this method as it reduces
+the number of nonlinear iterations at the expense of few more matrix-vector
+products per subproblem solve in comparison to the ``trust-ncg`` method.
+
+Full Hessian example:
+"""""""""""""""""""""
+
+    >>> res = minimize(rosen, x0, method='trust-krylov',
+    ...                jac=rosen_der, hess=rosen_hess,
+    ...                options={'gtol': 1e-8, 'disp': True})
+    Optimization terminated successfully.
+             Current function value: 0.000000
+             Iterations: 19                    # may vary
+             Function evaluations: 20
+             Gradient evaluations: 20
+             Hessian evaluations: 18
+    >>> res.x
+    array([1., 1., 1., 1., 1.])
+
+Hessian product example:
+""""""""""""""""""""""""
+
+    >>> res = minimize(rosen, x0, method='trust-krylov',
+    ...                jac=rosen_der, hessp=rosen_hess_p,
+    ...                options={'gtol': 1e-8, 'disp': True})
+    Optimization terminated successfully.
+             Current function value: 0.000000
+             Iterations: 19                    # may vary
+             Function evaluations: 20
+             Gradient evaluations: 20
+             Hessian evaluations: 0
+    >>> res.x
+    array([1., 1., 1., 1., 1.])
+
+.. [TRLIB] F. Lenders, C. Kirches, A. Potschka: "trlib: A vector-free
+           implementation of the GLTR method for iterative solution of
+           the trust region problem", https://arxiv.org/abs/1611.04718
+
+.. [GLTR]  N. Gould, S. Lucidi, M. Roma, P. Toint: "Solving the
+           Trust-Region Subproblem using the Lanczos Method",
+           SIAM J. Optim., 9(2), 504--525, (1999).
+           http://epubs.siam.org/doi/abs/10.1137/S1052623497322735
+
 
 Trust-Region Nearly Exact Algorithm (``method='trust-exact'``)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Both methods ``Newton-CG`` and ``trust-ncg`` are suitable for dealing with
+All methods ``Newton-CG``, ``trust-ncg`` and ``trust-krylov`` are suitable for dealing with
 large-scale problems (problems with thousands of variables). That is because the conjugate
 gradient algorithm approximatelly solve the trust-region subproblem (or invert the Hessian)
 by iterations without the explicit Hessian factorization. Since only the product of the Hessian
@@ -447,7 +509,7 @@ Now an unconstrained optimization can be performed as:
                 Function evaluations: 5
                 Gradient evaluations: 4
     >>> print(res.x)
-    [ 2.  1.]
+    [2. 1.]
 
 and a constrained optimization as:
 
@@ -459,7 +521,7 @@ and a constrained optimization as:
                 Function evaluations: 14
                 Gradient evaluations: 9
     >>> print(res.x)
-    [ 1.00000009  1.        ]
+    [1.00000009 1.        ]
 
 
 Least-squares minimization (:func:`least_squares`)

@@ -4,8 +4,8 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import assert_almost_equal, \
-        assert_raises
+from numpy.testing import assert_almost_equal
+from pytest import raises as assert_raises
 
 import scipy.optimize
 
