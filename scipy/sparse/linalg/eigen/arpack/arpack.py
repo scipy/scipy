@@ -1238,6 +1238,10 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
         raise ValueError("k=%d must be greater than 0." % k)
 
     if k >= n - 1:
+        warnings.warn("k >= N - 1 for N * N square matrix. "
+                      "Attempting to use scipy.linalg.eig instead.",
+                      RuntimeWarning)
+
         if issparse(A):
             raise TypeError("Cannot use scipy.linalg.eig for sparse A with "
                             "k >= N - 1. Use scipy.linalg.eig(A.toarray()) or"
@@ -1248,9 +1252,6 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
         if isinstance(M, LinearOperator):
             raise TypeError("Cannot use scipy.linalg.eig for LinearOperator "
                             "M with k >= N - 1.")
-
-        warnings.warn("k >= N - 1 for N * N square matrix. "
-                      "Using scipy.linalg.eig instead.", RuntimeWarning)
 
         return eig(A, b=M, right=return_eigenvectors)
 
@@ -1539,6 +1540,10 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         raise ValueError("k must be greater than 0.")
 
     if k >= n:
+        warnings.warn("k >= N for N * N square matrix. "
+                      "Attempting to use scipy.linalg.eigh instead.",
+                      RuntimeWarning)
+
         if issparse(A):
             raise TypeError("Cannot use scipy.linalg.eigh for sparse A with "
                             "k >= N. Use scipy.linalg.eigh(A.toarray()) or"
@@ -1549,9 +1554,6 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         if isinstance(M, LinearOperator):
             raise TypeError("Cannot use scipy.linalg.eigh for LinearOperator "
                             "M with k >= N.")
-
-        warnings.warn("k >= N for N * N square matrix. "
-                      "Using scipy.linalg.eigh instead.", RuntimeWarning)
 
         return eigh(A, b=M, eigvals_only=not return_eigenvectors)
 
