@@ -482,6 +482,8 @@ ctypedef fused result_type:
     cnp.complex64_t
     cnp.complex128_t
 
+@cython.boundscheck(False)
+@cython.wraparound(False)
 def lil_matvec(cython.integral M,
                cython.integral N,
                cnp.ndarray[list] rows,
