@@ -51,10 +51,10 @@ be found at
 New features
 ============
 
-Delaunay tesselations (``scipy.spatial``)
+Delaunay tessellations (``scipy.spatial``)
 -----------------------------------------
 
-Scipy now includes routines for computing Delaunay tesselations in N
+Scipy now includes routines for computing Delaunay tessellations in N
 dimensions, powered by the Qhull_ computational geometry library. Such
 calculations can now make use of the new ``scipy.spatial.Delaunay``
 interface.

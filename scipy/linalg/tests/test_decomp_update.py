@@ -3,8 +3,8 @@ from __future__ import division, print_function, absolute_import
 import itertools
 
 import numpy as np
-from numpy.testing import (assert_, assert_allclose, assert_raises,
-         assert_equal)
+from numpy.testing import assert_, assert_allclose, assert_equal
+from pytest import raises as assert_raises
 from scipy import linalg
 import scipy.linalg._decomp_update as _decomp_update
 from scipy.linalg._decomp_update import *

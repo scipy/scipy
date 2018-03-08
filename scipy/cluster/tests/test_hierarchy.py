@@ -34,9 +34,9 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import (assert_raises,
-                           assert_allclose, assert_equal, assert_, assert_warns)
+from numpy.testing import assert_allclose, assert_equal, assert_, assert_warns
 import pytest
+from pytest import raises as assert_raises
 
 from scipy._lib.six import xrange, u
 
@@ -577,7 +577,7 @@ class TestCorrespond(object):
 
     def test_correspond_4_and_up(self):
         # Tests correspond(Z, y) on linkage and CDMs over observation sets of
-        # different sizes. Correspondance should be false.
+        # different sizes. Correspondence should be false.
         for (i, j) in (list(zip(list(range(2, 4)), list(range(3, 5)))) +
                        list(zip(list(range(3, 5)), list(range(2, 4))))):
             y = np.random.rand(i*(i-1)//2)
@@ -589,7 +589,7 @@ class TestCorrespond(object):
 
     def test_correspond_4_and_up_2(self):
         # Tests correspond(Z, y) on linkage and CDMs over observation sets of
-        # different sizes. Correspondance should be false.
+        # different sizes. Correspondence should be false.
         for (i, j) in (list(zip(list(range(2, 7)), list(range(16, 21)))) +
                        list(zip(list(range(2, 7)), list(range(16, 21))))):
             y = np.random.rand(i*(i-1)//2)

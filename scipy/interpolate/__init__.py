@@ -163,7 +163,6 @@ new code):
 .. autosummary::
    :toctree: generated/
 
-   ppform
    spleval
    spline
    splmake

@@ -1,6 +1,5 @@
 numpy
 cython
-nose
 pytest-timeout
 pytest-xdist
 pytest-env

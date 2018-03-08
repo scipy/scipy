@@ -14,11 +14,12 @@ from __future__ import division, print_function, absolute_import
 import itertools
 
 import numpy as np
-from numpy.testing import (assert_raises, assert_allclose, assert_equal,
+from numpy.testing import (assert_allclose, assert_equal,
                            assert_,
                            assert_almost_equal, assert_warns,
                            assert_array_less)
 import pytest
+from pytest import raises as assert_raises
 
 from scipy._lib._numpy_compat import suppress_warnings
 from scipy import optimize
@@ -157,14 +158,14 @@ class CheckOptimizeParameterized(CheckOptimize):
                         atol=1e-6)
 
         # Ensure that function call counts are 'known good'; these are from
-        # Scipy 1.0.0. Don't allow them to increase.
-        assert_(self.funccalls == 9, self.funccalls)
-        assert_(self.gradcalls == 7, self.gradcalls)
+        # Scipy 0.7.0. Don't allow them to increase.
+        assert_(self.funccalls == 10, self.funccalls)
+        assert_(self.gradcalls == 8, self.gradcalls)
 
-        # Ensure that the function behaves the same; this is from Scipy 1.0.0
+        # Ensure that the function behaves the same; this is from Scipy 0.7.0
         assert_allclose(self.trace[6:8],
-                        [[7.323472e-15, -5.248650e-01, 4.875251e-01],
-                         [7.323472e-15, -5.248650e-01, 4.875251e-01]],
+                        [[0, -5.25060743e-01, 4.87748473e-01],
+                         [0, -5.24885582e-01, 4.87530347e-01]],
                         atol=1e-14, rtol=1e-7)
 
     def test_bfgs_infinite(self):
@@ -320,6 +321,14 @@ class CheckOptimizeParameterized(CheckOptimize):
                               full_output=True, disp=False, retall=False,
                               initial_simplex=simplex)
 
+    def test_ncg_negative_maxiter(self):
+        # Regression test for gh-8241
+        opts = {'maxiter': -1}
+        result = optimize.minimize(self.func, self.startparams,
+                                   method='Newton-CG', jac=self.grad,
+                                   args=(), options=opts)
+        assert_(result.status == 1)
+
     def test_ncg(self):
         # line-search Newton conjugate gradient optimization routine
         if self.use_wrapper:
@@ -433,6 +442,18 @@ def test_neldermead_xatol_fatol():
                  optimize._minimize._minimize_neldermead,
                  func, [1, 1], xtol=1e-3, ftol=1e-3, maxiter=2)
 
+def test_neldermead_adaptive():
+    func = lambda x: np.sum(x**2)
+    p0 = [0.15746215, 0.48087031, 0.44519198, 0.4223638, 0.61505159, 0.32308456,
+      0.9692297, 0.4471682, 0.77411992, 0.80441652, 0.35994957, 0.75487856,
+      0.99973421, 0.65063887, 0.09626474]
+   
+    res = optimize.minimize(func, p0, method='Nelder-Mead')
+    assert_equal(res.success, False)
+ 
+    res = optimize.minimize(func, p0, method='Nelder-Mead',
+                    options={'adaptive':True})
+    assert_equal(res.success, True)
 
 class TestOptimizeWrapperDisp(CheckOptimizeParameterized):
     use_wrapper = True
@@ -551,6 +572,31 @@ class TestOptimizeSimple(CheckOptimize):
 
         assert_allclose(self.func(params), self.func(self.solution),
                         atol=1e-6)
+
+    def test_l_bfgs_b_maxiter(self):
+        # gh7854
+        # Ensure that not more than maxiters are ever run.
+        class Callback(object):
+            def __init__(self):
+                self.nit = 0
+                self.fun = None
+                self.x = None
+
+            def __call__(self, x):
+                self.x = x
+                self.fun = optimize.rosen(x)
+                self.nit += 1
+
+        c = Callback()
+        res = optimize.minimize(optimize.rosen, [0., 0.], method='l-bfgs-b',
+                                callback=c, options={'maxiter': 5})
+
+        assert_equal(res.nit, 5)
+        assert_almost_equal(res.x, c.x)
+        assert_almost_equal(res.fun, c.fun)
+        assert_equal(res.status, 1)
+        assert_(res.success is False)
+        assert_equal(res.message.decode(), 'STOP: TOTAL NO. of ITERATIONS REACHED LIMIT')
 
     def test_minimize_l_bfgs_b(self):
         # Minimize with L-BFGS-B method
@@ -1069,6 +1115,7 @@ def himmelblau_hess(p):
     return np.array([[12*x**2 + 4*y - 42, 4*x + 4*y],
                      [4*x + 4*y, 4*x + 12*y**2 - 26]])
 
+
 himmelblau_x0 = [-0.27, -0.9]
 himmelblau_xopt = [3, 2]
 himmelblau_min = 0.0
@@ -1168,6 +1215,17 @@ class TestBrute:
         assert_allclose(resbrute[0], self.solution, atol=1e-3)
         assert_allclose(resbrute[1], self.func(self.solution, *self.params),
                         atol=1e-3)
+
+    def test_1D(self):
+        # test that for a 1D problem the test function is passed an array,
+        # not a scalar.
+        def f(x):
+            assert_(len(x.shape) == 1)
+            assert_(x.shape[0] == 1)
+            return x ** 2
+
+        optimize.brute(f, [(-1, 1)], Ns=3, finish=None)
+
 
 class TestIterationLimits(object):
     # Tests that optimisation does not give up before trying requested

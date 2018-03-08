@@ -22,24 +22,12 @@ def configuration(parent_package='', top_path=None):
     if inc_dirs[0] != get_python_inc(plat_specific=1):
         inc_dirs.append(get_python_inc(plat_specific=1))
     inc_dirs.append(get_numpy_include_dirs())
+    inc_dirs.append(join(dirname(dirname(__file__)), '_lib'))
 
     cfg = dict(get_sys_info('lapack_opt'))
     cfg.setdefault('include_dirs', []).extend(inc_dirs)
-
-    def get_qhull_misc_config(ext, build_dir):
-        # Generate a header file containing defines
-        config_cmd = config.get_config_cmd()
-        defines = []
-        if config_cmd.check_func('open_memstream', decl=True, call=True):
-            defines.append(('HAVE_OPEN_MEMSTREAM', '1'))
-        target = join(dirname(__file__), 'qhull_misc_config.h')
-        with open(target, 'w') as f:
-            for name, value in defines:
-                f.write('#define {0} {1}\n'.format(name, value))
-
     config.add_extension('qhull',
-                         sources=['qhull.c'] + qhull_src +
-                         [get_qhull_misc_config],
+                         sources=['qhull.c'] + qhull_src,
                          **cfg)
 
     # cKDTree
@@ -51,8 +39,7 @@ def configuration(parent_package='', top_path=None):
                    'count_neighbors.cxx',
                    'query_ball_point.cxx',
                    'query_ball_tree.cxx',
-                   'sparse_distances.cxx',
-                   'fmax.cxx']
+                   'sparse_distances.cxx']
 
     ckdtree_src = [join('ckdtree', 'src', x) for x in ckdtree_src]
 
@@ -63,7 +50,6 @@ def configuration(parent_package='', top_path=None):
                        'cpp_utils.h',
                        'distance_base.h',
                        'distance.h',
-                       'fmax.h',
                        'ordered_pair.h',
                        'partial_sort.h',
                        'rectangle.h']
@@ -87,6 +73,9 @@ def configuration(parent_package='', top_path=None):
 
     config.add_extension('_hausdorff',
                          sources=['_hausdorff.c'])
+
+    # Add license files
+    config.add_data_files('qhull/COPYING.txt')
 
     return config
 

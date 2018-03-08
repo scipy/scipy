@@ -1,4 +1,4 @@
-* Note: The test program has been removed and a utlity routine mvnun has been
+* Note: The test program has been removed and a utility routine mvnun has been
 * added.  RTK 2004-08-10
 *
 * Copyright 2000 by Alan Genz.
@@ -42,12 +42,24 @@
       double precision lower(d), upper(d), releps, abseps,
      &                 error, value, stdev(d), rho(d*(d-1)/2), 
      &                 covar(d,d),
-     &                 nlower(d), nupper(d), means(d,n), tmpval
+     &                 nlower(d), nupper(d), means(d,n), tmpval,
+     &                 inf
       integer i, j
+
+      inf = 0d0
+      inf = 1d0 / inf
 
       do i=1,d
         stdev(i) = dsqrt(covar(i,i))
-        infin(i) = 2
+        if (upper(i).eq.inf.and.lower(i).eq.-inf) then
+           infin(i) = -1
+        else if (lower(i).eq.-inf) then
+           infin(i) = 0
+        else if (upper(i).eq.inf) then
+           infin(i) = 1
+        else
+           infin(i) = 2
+        end if
       end do
       do i=1,d
         do j=1,i-1
@@ -113,7 +125,7 @@
 *     INFORM INTEGER, termination status parameter:
 *            if INFORM = 0, normal completion with ERROR < EPS;
 *            if INFORM = 1, completion with ERROR > EPS and MAXPTS 
-*                           function vaules used; increase MAXPTS to 
+*                           function values used; increase MAXPTS to 
 *                           decrease ERROR;
 *            if INFORM = 2, N > 500 or N < 1.
 *
@@ -199,7 +211,7 @@
       END DO
       RETURN
 *
-*     Entry point for intialization.
+*     Entry point for initialization.
 *
       ENTRY MVNDNT( N, CORREL, LOWER, UPPER, INFIN, INFIS, D, E )
       MVNDNT = 0

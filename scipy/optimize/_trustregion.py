@@ -103,7 +103,7 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
                            subproblem=None, initial_trust_radius=1.0,
                            max_trust_radius=1000.0, eta=0.15, gtol=1e-4,
                            maxiter=None, disp=False, return_all=False,
-                           callback=None, **unknown_options):
+                           callback=None, inexact=True, **unknown_options):
     """
     Minimization of scalar function of one or more variables using a
     trust-region algorithm.
@@ -122,6 +122,10 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
             Maximum number of iterations to perform.
         disp : bool
             If True, print convergence message.
+        inexact : bool
+            Accuracy to solve subproblems. If True requires less nonlinear
+            iterations, but more vector products. Only effective for method
+            trust-krylov.
 
     This function is called by the `minimize` function.
     It is not supposed to be called directly.

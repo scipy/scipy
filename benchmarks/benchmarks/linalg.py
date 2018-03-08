@@ -153,3 +153,59 @@ class Lstsq(Benchmark):
             sl.lstsq(self.A, self.b, cond=None, overwrite_a=False,
                      overwrite_b=False, check_finite=False,
                      lapack_driver=lapack_driver)
+
+
+class SpecialMatrices(Benchmark):
+    param_names = ['size']
+    params = [[4, 128]]
+
+    def setup(self, size):
+        self.x = np.arange(1, size + 1).astype(float)
+        self.small_blocks = [np.ones([2, 2])] * (size//2)
+        self.big_blocks = [np.ones([size//2, size//2]),
+                           np.ones([size//2, size//2])]
+
+    def time_block_diag_small(self, size):
+        sl.block_diag(*self.small_blocks)
+
+    def time_block_diag_big(self, size):
+        sl.block_diag(*self.big_blocks)
+
+    def time_circulant(self, size):
+        sl.circulant(self.x)
+
+    def time_companion(self, size):
+        sl.companion(self.x)
+
+    def time_dft(self, size):
+        sl.dft(size)
+
+    def time_hadamard(self, size):
+        sl.hadamard(size)
+
+    def time_hankel(self, size):
+        sl.hankel(self.x)
+
+    def time_helmert(self, size):
+        sl.helmert(size)
+
+    def time_hilbert(self, size):
+        sl.hilbert(size)
+
+    def time_invhilbert(self, size):
+        sl.invhilbert(size)
+
+    def time_leslie(self, size):
+        sl.leslie(self.x, self.x[1:])
+
+    def time_pascal(self, size):
+        sl.pascal(size)
+
+    def time_invpascal(self, size):
+        sl.invpascal(size)
+
+    def time_toeplitz(self, size):
+        sl.toeplitz(self.x)
+
+    def time_tri(self, size):
+        sl.tri(size)

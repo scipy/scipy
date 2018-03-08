@@ -398,7 +398,7 @@ def safe_date(value, date_format, datetime_unit):
 
 
 class MetaData(object):
-    """Small container to keep useful informations on a ARFF dataset.
+    """Small container to keep useful information on a ARFF dataset.
 
     Knows about attributes names and types.
 
@@ -658,6 +658,7 @@ def test_weka(filename):
     print(data.size)
     for i in meta:
         print_attribute(i, meta[i], data[i])
+
 
 # make sure nose does not find this as a test
 test_weka.__test__ = False

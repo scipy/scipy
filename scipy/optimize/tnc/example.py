@@ -19,6 +19,7 @@ def function(x):
         g[1] = -g[1]
     return f, g
 
+
 # Optimizer call
 rc, nf, x = tnc.minimize(function, [-7, 3], [-10, 1], [10, 10])
 

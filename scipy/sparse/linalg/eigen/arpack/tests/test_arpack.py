@@ -10,9 +10,10 @@ import threading
 
 import numpy as np
 
-from numpy.testing import assert_allclose, \
-        assert_array_almost_equal_nulp, \
-        assert_raises, assert_equal, assert_array_equal
+from numpy.testing import (assert_allclose, assert_array_almost_equal_nulp,
+                           assert_equal, assert_array_equal)
+from pytest import raises as assert_raises
+import pytest
 
 from numpy import dot, conj, random
 from scipy.linalg import eig, eigh, hilbert, svd
@@ -21,7 +22,9 @@ from scipy.sparse.linalg import LinearOperator, aslinearoperator
 from scipy.sparse.linalg.eigen.arpack import eigs, eigsh, svds, \
      ArpackNoConvergence, arpack
 
-from scipy._lib._gcutils import assert_deallocated
+from scipy.linalg import svd, hilbert
+
+from scipy._lib._gcutils import assert_deallocated, IS_PYPY
 from scipy._lib._numpy_compat import suppress_warnings
 
 
@@ -799,6 +802,7 @@ def test_svd_linop():
                                 np.dot(U2, np.dot(np.diag(s2), VH2)), rtol=eps)
 
 
+@pytest.mark.skipif(IS_PYPY, reason="Test not meaningful on PyPy")
 def test_linearoperator_deallocation():
     # Check that the linear operators used by the Arpack wrappers are
     # deallocatable by reference counting -- they are big objects, so

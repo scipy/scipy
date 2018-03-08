@@ -222,6 +222,7 @@ class multi_rv_frozen(object):
     def random_state(self, seed):
         self._dist._random_state = check_random_state(seed)
 
+
 _mvn_doc_default_callparams = """\
 mean : array_like, optional
     Mean of the distribution (default zero)
@@ -766,6 +767,7 @@ class multivariate_normal_frozen(multi_rv_frozen):
         rank = self.cov_info.rank
         return 0.5 * (rank * (_LOG_2PI + 1) + log_pdet)
 
+
 # Set frozen generator docstrings from corresponding docstrings in
 # multivariate_normal_gen and fill in default strings in class docstrings
 for name in ['logpdf', 'pdf', 'logcdf', 'cdf', 'rvs']:
@@ -1128,6 +1130,7 @@ class matrix_normal_gen(multi_rv_generic):
             #out = np.squeeze(out, axis=0)
             out = out.reshape(mean.shape)
         return out
+
 
 matrix_normal = matrix_normal_gen()
 
@@ -2160,6 +2163,8 @@ class wishart_gen(multi_rv_generic):
         c_decomp = scipy.linalg.cholesky(scale, lower=True)
         logdet = 2 * np.sum(np.log(c_decomp.diagonal()))
         return c_decomp, logdet
+
+
 wishart = wishart_gen()
 
 
@@ -2217,6 +2222,7 @@ class wishart_frozen(multi_rv_frozen):
 
     def entropy(self):
         return self._dist._entropy(self.dim, self.df, self.log_det_scale)
+
 
 # Set frozen generator docstrings from corresponding docstrings in
 # Wishart and fill in default strings in class docstrings
@@ -2711,6 +2717,7 @@ class invwishart_gen(wishart_gen):
         # Need to find reference for inverse Wishart entropy
         raise AttributeError
 
+
 invwishart = invwishart_gen()
 
 class invwishart_frozen(multi_rv_frozen):
@@ -2780,6 +2787,7 @@ class invwishart_frozen(multi_rv_frozen):
     def entropy(self):
         # Need to find reference for inverse Wishart entropy
         raise AttributeError
+
 
 # Set frozen generator docstrings from corresponding docstrings in
 # inverse Wishart and fill in default strings in class docstrings
@@ -2947,7 +2955,7 @@ class multinomial_gen(multi_rv_generic):
         p[...,-1] = 1. - p[...,:-1].sum(axis=-1)
 
         # true for bad p
-        pcond = np.any(p <= 0, axis=-1)
+        pcond = np.any(p < 0, axis=-1)
         pcond |= np.any(p > 1, axis=-1)
 
         n = np.array(n, dtype=np.int, copy=True)
@@ -3203,6 +3211,7 @@ class multinomial_frozen(multi_rv_frozen):
     def rvs(self, size=1, random_state=None):
         return self._dist.rvs(self.n, self.p, size, random_state)
 
+
 # Set frozen generator docstrings from corresponding docstrings in
 # multinomial and fill in default strings in class docstrings
 for name in ['logpmf', 'pmf', 'mean', 'cov', 'rvs']:
@@ -3308,6 +3317,8 @@ class special_ortho_group_gen(multi_rv_generic):
             Random size N-dimensional matrices, dimension (size, dim, dim)
 
         """
+        random_state = self._get_random_state(random_state)
+
         size = int(size)
         if size > 1:
             return np.array([self.rvs(dim, size=1, random_state=random_state)
@@ -3315,26 +3326,23 @@ class special_ortho_group_gen(multi_rv_generic):
 
         dim = self._process_parameters(dim)
 
-        random_state = self._get_random_state(random_state)
-
         H = np.eye(dim)
-        D = np.ones((dim,))
-        for n in range(1, dim):
-            x = random_state.normal(size=(dim-n+1,))
-
-            D[n-1] = np.sign(x[0])
-            x[0] -= D[n-1]*np.sqrt((x*x).sum())
+        D = np.empty((dim,))
+        for n in range(dim-1):
+            x = random_state.normal(size=(dim-n,))
+            D[n] = np.sign(x[0]) if x[0] != 0 else 1
+            x[0] += D[n]*np.sqrt((x*x).sum())
             # Householder transformation
-            Hx = (np.eye(dim-n+1)
+            Hx = (np.eye(dim-n)
                   - 2.*np.outer(x, x)/(x*x).sum())
             mat = np.eye(dim)
-            mat[n-1:, n-1:] = Hx
+            mat[n:, n:] = Hx
             H = np.dot(H, mat)
-            # Fix the last sign such that the determinant is 1
-        D[-1] = (-1)**(1-(dim % 2))*D.prod()
+        D[-1] = (-1)**(dim-1)*D[:-1].prod()
         # Equivalent to np.dot(np.diag(D), H) but faster, apparently
         H = (D*H.T).T
         return H
+
 
 special_ortho_group = special_ortho_group_gen()
 
@@ -3448,6 +3456,8 @@ class ortho_group_gen(multi_rv_generic):
             Random size N-dimensional matrices, dimension (size, dim, dim)
 
         """
+        random_state = self._get_random_state(random_state)
+
         size = int(size)
         if size > 1:
             return np.array([self.rvs(dim, size=1, random_state=random_state)
@@ -3455,21 +3465,20 @@ class ortho_group_gen(multi_rv_generic):
 
         dim = self._process_parameters(dim)
 
-        random_state = self._get_random_state(random_state)
-
         H = np.eye(dim)
-        for n in range(1, dim):
-            x = random_state.normal(size=(dim-n+1,))
+        for n in range(dim):
+            x = random_state.normal(size=(dim-n,))
             # random sign, 50/50, but chosen carefully to avoid roundoff error
-            D = np.sign(x[0])
+            D = np.sign(x[0]) if x[0] != 0 else 1
             x[0] += D*np.sqrt((x*x).sum())
             # Householder transformation
-            Hx = -D*(np.eye(dim-n+1)
+            Hx = -D*(np.eye(dim-n)
                      - 2.*np.outer(x, x)/(x*x).sum())
             mat = np.eye(dim)
-            mat[n-1:, n-1:] = Hx
+            mat[n:, n:] = Hx
             H = np.dot(H, mat)
         return H
+
 
 ortho_group = ortho_group_gen()
 
@@ -3518,7 +3527,6 @@ class random_correlation_gen(multi_rv_generic):
            [-0.20387311,  1.        , -0.24351129,  0.06703474],
            [ 0.18366501, -0.24351129,  1.        ,  0.38530195],
            [-0.04953711,  0.06703474,  0.38530195,  1.        ]])
-
     >>> import scipy.linalg
     >>> e, v = scipy.linalg.eigh(x)
     >>> e
@@ -3660,6 +3668,7 @@ class random_correlation_gen(multi_rv_generic):
 
         return m
 
+
 random_correlation = random_correlation_gen()
 
 class unitary_group_gen(multi_rv_generic):
@@ -3735,6 +3744,8 @@ class unitary_group_gen(multi_rv_generic):
             Random size N-dimensional matrices, dimension (size, dim, dim)
 
         """
+        random_state = self._get_random_state(random_state)
+
         size = int(size)
         if size > 1:
             return np.array([self.rvs(dim, size=1, random_state=random_state)
@@ -3742,13 +3753,12 @@ class unitary_group_gen(multi_rv_generic):
 
         dim = self._process_parameters(dim)
 
-        random_state = self._get_random_state(random_state)
-
         z = 1/math.sqrt(2)*(random_state.normal(size=(dim,dim)) +
                             1j*random_state.normal(size=(dim,dim)))
         q, r = scipy.linalg.qr(z)
         d = r.diagonal()
         q *= d/abs(d)
         return q
+
 
 unitary_group = unitary_group_gen()

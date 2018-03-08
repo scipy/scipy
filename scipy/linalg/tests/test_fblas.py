@@ -10,13 +10,13 @@ from __future__ import division, print_function, absolute_import
 
 from numpy import float32, float64, complex64, complex128, arange, array, \
                   zeros, shape, transpose, newaxis, common_type, conjugate
+
 from scipy.linalg import _fblas as fblas
 
 from scipy._lib.six import xrange
 
 from numpy.testing import assert_array_equal, \
     assert_allclose, assert_array_almost_equal, assert_
-
 
 # decimal accuracy to require between Python and LAPACK/BLAS calculations
 accuracy = 5
@@ -28,7 +28,7 @@ accuracy = 5
 def matrixmultiply(a, b):
     if len(b.shape) == 1:
         b_is_vector = True
-        b = b[:,newaxis]
+        b = b[:, newaxis]
     else:
         b_is_vector = False
     assert_(a.shape[1] == b.shape[0])
@@ -37,74 +37,75 @@ def matrixmultiply(a, b):
         for j in xrange(b.shape[1]):
             s = 0
             for k in xrange(a.shape[1]):
-                s += a[i,k] * b[k, j]
-            c[i,j] = s
+                s += a[i, k] * b[k, j]
+            c[i, j] = s
     if b_is_vector:
         c = c.reshape((a.shape[0],))
     return c
 
 ##################################################
-### Test blas ?axpy
+# Test blas ?axpy
 
 
 class BaseAxpy(object):
     ''' Mixin class for axpy tests '''
 
     def test_default_a(self):
-        x = arange(3.,dtype=self.dtype)
-        y = arange(3.,dtype=x.dtype)
+        x = arange(3., dtype=self.dtype)
+        y = arange(3., dtype=x.dtype)
         real_y = x*1.+y
-        y = self.blas_func(x,y)
-        assert_array_equal(real_y,y)
+        y = self.blas_func(x, y)
+        assert_array_equal(real_y, y)
 
     def test_simple(self):
-        x = arange(3.,dtype=self.dtype)
-        y = arange(3.,dtype=x.dtype)
+        x = arange(3., dtype=self.dtype)
+        y = arange(3., dtype=x.dtype)
         real_y = x*3.+y
-        y = self.blas_func(x,y,a=3.)
-        assert_array_equal(real_y,y)
+        y = self.blas_func(x, y, a=3.)
+        assert_array_equal(real_y, y)
 
     def test_x_stride(self):
-        x = arange(6.,dtype=self.dtype)
-        y = zeros(3,x.dtype)
-        y = arange(3.,dtype=x.dtype)
+        x = arange(6., dtype=self.dtype)
+        y = zeros(3, x.dtype)
+        y = arange(3., dtype=x.dtype)
         real_y = x[::2]*3.+y
-        y = self.blas_func(x,y,a=3.,n=3,incx=2)
-        assert_array_equal(real_y,y)
+        y = self.blas_func(x, y, a=3., n=3, incx=2)
+        assert_array_equal(real_y, y)
 
     def test_y_stride(self):
-        x = arange(3.,dtype=self.dtype)
-        y = zeros(6,x.dtype)
+        x = arange(3., dtype=self.dtype)
+        y = zeros(6, x.dtype)
         real_y = x*3.+y[::2]
-        y = self.blas_func(x,y,a=3.,n=3,incy=2)
-        assert_array_equal(real_y,y[::2])
+        y = self.blas_func(x, y, a=3., n=3, incy=2)
+        assert_array_equal(real_y, y[::2])
 
     def test_x_and_y_stride(self):
-        x = arange(12.,dtype=self.dtype)
-        y = zeros(6,x.dtype)
+        x = arange(12., dtype=self.dtype)
+        y = zeros(6, x.dtype)
         real_y = x[::4]*3.+y[::2]
-        y = self.blas_func(x,y,a=3.,n=3,incx=4,incy=2)
-        assert_array_equal(real_y,y[::2])
+        y = self.blas_func(x, y, a=3., n=3, incx=4, incy=2)
+        assert_array_equal(real_y, y[::2])
 
     def test_x_bad_size(self):
-        x = arange(12.,dtype=self.dtype)
-        y = zeros(6,x.dtype)
+        x = arange(12., dtype=self.dtype)
+        y = zeros(6, x.dtype)
         try:
-            self.blas_func(x,y,n=4,incx=5)
+            self.blas_func(x, y, n=4, incx=5)
         except:  # what kind of error should be caught?
             return
         # should catch error and never get here
         assert_(0)
 
     def test_y_bad_size(self):
-        x = arange(12.,dtype=self.dtype)
-        y = zeros(6,x.dtype)
+        x = arange(12., dtype=self.dtype)
+        y = zeros(6, x.dtype)
         try:
-            self.blas_func(x,y,n=3,incy=5)
+            self.blas_func(x, y, n=3, incy=5)
         except:  # what kind of error should be caught?
             return
         # should catch error and never get here
         assert_(0)
+
 
 try:
     class TestSaxpy(BaseAxpy):
@@ -118,6 +119,7 @@ except AttributeError:
 class TestDaxpy(BaseAxpy):
     blas_func = fblas.daxpy
     dtype = float64
+
 
 try:
     class TestCaxpy(BaseAxpy):
@@ -134,32 +136,33 @@ class TestZaxpy(BaseAxpy):
 
 
 ##################################################
-### Test blas ?scal
+# Test blas ?scal
 
 class BaseScal(object):
     ''' Mixin class for scal testing '''
 
     def test_simple(self):
-        x = arange(3.,dtype=self.dtype)
+        x = arange(3., dtype=self.dtype)
         real_x = x*3.
-        x = self.blas_func(3.,x)
-        assert_array_equal(real_x,x)
+        x = self.blas_func(3., x)
+        assert_array_equal(real_x, x)
 
     def test_x_stride(self):
-        x = arange(6.,dtype=self.dtype)
+        x = arange(6., dtype=self.dtype)
         real_x = x.copy()
-        real_x[::2] = x[::2]*array(3.,self.dtype)
-        x = self.blas_func(3.,x,n=3,incx=2)
-        assert_array_equal(real_x,x)
+        real_x[::2] = x[::2]*array(3., self.dtype)
+        x = self.blas_func(3., x, n=3, incx=2)
+        assert_array_equal(real_x, x)
 
     def test_x_bad_size(self):
-        x = arange(12.,dtype=self.dtype)
+        x = arange(12., dtype=self.dtype)
         try:
-            self.blas_func(2.,x,n=4,incx=5)
+            self.blas_func(2., x, n=4, incx=5)
         except:  # what kind of error should be caught?
             return
         # should catch error and never get here
         assert_(0)
+
 
 try:
     class TestSscal(BaseScal):
@@ -173,6 +176,7 @@ except AttributeError:
 class TestDscal(BaseScal):
     blas_func = fblas.dscal
     dtype = float64
+
 
 try:
     class TestCscal(BaseScal):
@@ -189,50 +193,50 @@ class TestZscal(BaseScal):
 
 
 ##################################################
-### Test blas ?copy
+# Test blas ?copy
 
 class BaseCopy(object):
     ''' Mixin class for copy testing '''
 
     def test_simple(self):
-        x = arange(3.,dtype=self.dtype)
-        y = zeros(shape(x),x.dtype)
-        y = self.blas_func(x,y)
-        assert_array_equal(x,y)
+        x = arange(3., dtype=self.dtype)
+        y = zeros(shape(x), x.dtype)
+        y = self.blas_func(x, y)
+        assert_array_equal(x, y)
 
     def test_x_stride(self):
-        x = arange(6.,dtype=self.dtype)
-        y = zeros(3,x.dtype)
-        y = self.blas_func(x,y,n=3,incx=2)
-        assert_array_equal(x[::2],y)
+        x = arange(6., dtype=self.dtype)
+        y = zeros(3, x.dtype)
+        y = self.blas_func(x, y, n=3, incx=2)
+        assert_array_equal(x[::2], y)
 
     def test_y_stride(self):
-        x = arange(3.,dtype=self.dtype)
-        y = zeros(6,x.dtype)
-        y = self.blas_func(x,y,n=3,incy=2)
-        assert_array_equal(x,y[::2])
+        x = arange(3., dtype=self.dtype)
+        y = zeros(6, x.dtype)
+        y = self.blas_func(x, y, n=3, incy=2)
+        assert_array_equal(x, y[::2])
 
     def test_x_and_y_stride(self):
-        x = arange(12.,dtype=self.dtype)
-        y = zeros(6,x.dtype)
-        y = self.blas_func(x,y,n=3,incx=4,incy=2)
-        assert_array_equal(x[::4],y[::2])
+        x = arange(12., dtype=self.dtype)
+        y = zeros(6, x.dtype)
+        y = self.blas_func(x, y, n=3, incx=4, incy=2)
+        assert_array_equal(x[::4], y[::2])
 
     def test_x_bad_size(self):
-        x = arange(12.,dtype=self.dtype)
-        y = zeros(6,x.dtype)
+        x = arange(12., dtype=self.dtype)
+        y = zeros(6, x.dtype)
         try:
-            self.blas_func(x,y,n=4,incx=5)
+            self.blas_func(x, y, n=4, incx=5)
         except:  # what kind of error should be caught?
             return
         # should catch error and never get here
         assert_(0)
 
     def test_y_bad_size(self):
-        x = arange(12.,dtype=self.dtype)
-        y = zeros(6,x.dtype)
+        x = arange(12., dtype=self.dtype)
+        y = zeros(6, x.dtype)
         try:
-            self.blas_func(x,y,n=3,incy=5)
+            self.blas_func(x, y, n=3, incy=5)
         except:  # what kind of error should be caught?
             return
         # should catch error and never get here
@@ -244,6 +248,7 @@ class BaseCopy(object):
     #    y = zeros(shape(x))
     #    self.blas_func(x,y)
     #    assert_array_equal(x,y)
+
 
 try:
     class TestScopy(BaseCopy):
@@ -257,6 +262,7 @@ except AttributeError:
 class TestDcopy(BaseCopy):
     blas_func = fblas.dcopy
     dtype = float64
+
 
 try:
     class TestCcopy(BaseCopy):
@@ -273,66 +279,67 @@ class TestZcopy(BaseCopy):
 
 
 ##################################################
-### Test blas ?swap
+# Test blas ?swap
 
 class BaseSwap(object):
     ''' Mixin class for swap tests '''
 
     def test_simple(self):
-        x = arange(3.,dtype=self.dtype)
-        y = zeros(shape(x),x.dtype)
+        x = arange(3., dtype=self.dtype)
+        y = zeros(shape(x), x.dtype)
         desired_x = y.copy()
         desired_y = x.copy()
-        x, y = self.blas_func(x,y)
-        assert_array_equal(desired_x,x)
-        assert_array_equal(desired_y,y)
+        x, y = self.blas_func(x, y)
+        assert_array_equal(desired_x, x)
+        assert_array_equal(desired_y, y)
 
     def test_x_stride(self):
-        x = arange(6.,dtype=self.dtype)
-        y = zeros(3,x.dtype)
+        x = arange(6., dtype=self.dtype)
+        y = zeros(3, x.dtype)
         desired_x = y.copy()
         desired_y = x.copy()[::2]
-        x, y = self.blas_func(x,y,n=3,incx=2)
-        assert_array_equal(desired_x,x[::2])
-        assert_array_equal(desired_y,y)
+        x, y = self.blas_func(x, y, n=3, incx=2)
+        assert_array_equal(desired_x, x[::2])
+        assert_array_equal(desired_y, y)
 
     def test_y_stride(self):
-        x = arange(3.,dtype=self.dtype)
-        y = zeros(6,x.dtype)
+        x = arange(3., dtype=self.dtype)
+        y = zeros(6, x.dtype)
         desired_x = y.copy()[::2]
         desired_y = x.copy()
-        x, y = self.blas_func(x,y,n=3,incy=2)
-        assert_array_equal(desired_x,x)
-        assert_array_equal(desired_y,y[::2])
+        x, y = self.blas_func(x, y, n=3, incy=2)
+        assert_array_equal(desired_x, x)
+        assert_array_equal(desired_y, y[::2])
 
     def test_x_and_y_stride(self):
-        x = arange(12.,dtype=self.dtype)
-        y = zeros(6,x.dtype)
+        x = arange(12., dtype=self.dtype)
+        y = zeros(6, x.dtype)
         desired_x = y.copy()[::2]
         desired_y = x.copy()[::4]
-        x, y = self.blas_func(x,y,n=3,incx=4,incy=2)
-        assert_array_equal(desired_x,x[::4])
-        assert_array_equal(desired_y,y[::2])
+        x, y = self.blas_func(x, y, n=3, incx=4, incy=2)
+        assert_array_equal(desired_x, x[::4])
+        assert_array_equal(desired_y, y[::2])
 
     def test_x_bad_size(self):
-        x = arange(12.,dtype=self.dtype)
-        y = zeros(6,x.dtype)
+        x = arange(12., dtype=self.dtype)
+        y = zeros(6, x.dtype)
         try:
-            self.blas_func(x,y,n=4,incx=5)
+            self.blas_func(x, y, n=4, incx=5)
         except:  # what kind of error should be caught?
             return
         # should catch error and never get here
         assert_(0)
 
     def test_y_bad_size(self):
-        x = arange(12.,dtype=self.dtype)
-        y = zeros(6,x.dtype)
+        x = arange(12., dtype=self.dtype)
+        y = zeros(6, x.dtype)
         try:
-            self.blas_func(x,y,n=3,incy=5)
+            self.blas_func(x, y, n=3, incy=5)
         except:  # what kind of error should be caught?
             return
         # should catch error and never get here
         assert_(0)
+
 
 try:
     class TestSswap(BaseSwap):
@@ -346,6 +353,7 @@ except AttributeError:
 class TestDswap(BaseSwap):
     blas_func = fblas.dswap
     dtype = float64
+
 
 try:
     class TestCswap(BaseSwap):
@@ -361,103 +369,104 @@ class TestZswap(BaseSwap):
     dtype = complex128
 
 ##################################################
-### Test blas ?gemv
-### This will be a mess to test all cases.
+# Test blas ?gemv
+# This will be a mess to test all cases.
 
 
 class BaseGemv(object):
     ''' Mixin class for gemv tests '''
 
-    def get_data(self,x_stride=1,y_stride=1):
+    def get_data(self, x_stride=1, y_stride=1):
         mult = array(1, dtype=self.dtype)
         if self.dtype in [complex64, complex128]:
             mult = array(1+1j, dtype=self.dtype)
         from numpy.random import normal, seed
         seed(1234)
         alpha = array(1., dtype=self.dtype) * mult
-        beta = array(1.,dtype=self.dtype) * mult
-        a = normal(0.,1.,(3,3)).astype(self.dtype) * mult
-        x = arange(shape(a)[0]*x_stride,dtype=self.dtype) * mult
-        y = arange(shape(a)[1]*y_stride,dtype=self.dtype) * mult
-        return alpha,beta,a,x,y
+        beta = array(1., dtype=self.dtype) * mult
+        a = normal(0., 1., (3, 3)).astype(self.dtype) * mult
+        x = arange(shape(a)[0]*x_stride, dtype=self.dtype) * mult
+        y = arange(shape(a)[1]*y_stride, dtype=self.dtype) * mult
+        return alpha, beta, a, x, y
 
     def test_simple(self):
-        alpha,beta,a,x,y = self.get_data()
-        desired_y = alpha*matrixmultiply(a,x)+beta*y
-        y = self.blas_func(alpha,a,x,beta,y)
-        assert_array_almost_equal(desired_y,y)
+        alpha, beta, a, x, y = self.get_data()
+        desired_y = alpha*matrixmultiply(a, x)+beta*y
+        y = self.blas_func(alpha, a, x, beta, y)
+        assert_array_almost_equal(desired_y, y)
 
     def test_default_beta_y(self):
-        alpha,beta,a,x,y = self.get_data()
-        desired_y = matrixmultiply(a,x)
-        y = self.blas_func(1,a,x)
-        assert_array_almost_equal(desired_y,y)
+        alpha, beta, a, x, y = self.get_data()
+        desired_y = matrixmultiply(a, x)
+        y = self.blas_func(1, a, x)
+        assert_array_almost_equal(desired_y, y)
 
     def test_simple_transpose(self):
-        alpha,beta,a,x,y = self.get_data()
-        desired_y = alpha*matrixmultiply(transpose(a),x)+beta*y
-        y = self.blas_func(alpha,a,x,beta,y,trans=1)
-        assert_array_almost_equal(desired_y,y)
+        alpha, beta, a, x, y = self.get_data()
+        desired_y = alpha*matrixmultiply(transpose(a), x)+beta*y
+        y = self.blas_func(alpha, a, x, beta, y, trans=1)
+        assert_array_almost_equal(desired_y, y)
 
     def test_simple_transpose_conj(self):
-        alpha,beta,a,x,y = self.get_data()
-        desired_y = alpha*matrixmultiply(transpose(conjugate(a)),x)+beta*y
-        y = self.blas_func(alpha,a,x,beta,y,trans=2)
-        assert_array_almost_equal(desired_y,y)
+        alpha, beta, a, x, y = self.get_data()
+        desired_y = alpha*matrixmultiply(transpose(conjugate(a)), x)+beta*y
+        y = self.blas_func(alpha, a, x, beta, y, trans=2)
+        assert_array_almost_equal(desired_y, y)
 
     def test_x_stride(self):
-        alpha,beta,a,x,y = self.get_data(x_stride=2)
-        desired_y = alpha*matrixmultiply(a,x[::2])+beta*y
-        y = self.blas_func(alpha,a,x,beta,y,incx=2)
-        assert_array_almost_equal(desired_y,y)
+        alpha, beta, a, x, y = self.get_data(x_stride=2)
+        desired_y = alpha*matrixmultiply(a, x[::2])+beta*y
+        y = self.blas_func(alpha, a, x, beta, y, incx=2)
+        assert_array_almost_equal(desired_y, y)
 
     def test_x_stride_transpose(self):
-        alpha,beta,a,x,y = self.get_data(x_stride=2)
-        desired_y = alpha*matrixmultiply(transpose(a),x[::2])+beta*y
-        y = self.blas_func(alpha,a,x,beta,y,trans=1,incx=2)
+        alpha, beta, a, x, y = self.get_data(x_stride=2)
+        desired_y = alpha*matrixmultiply(transpose(a), x[::2])+beta*y
+        y = self.blas_func(alpha, a, x, beta, y, trans=1, incx=2)
         assert_array_almost_equal(desired_y, y)
 
     def test_x_stride_assert(self):
         # What is the use of this test?
-        alpha,beta,a,x,y = self.get_data(x_stride=2)
+        alpha, beta, a, x, y = self.get_data(x_stride=2)
         try:
-            y = self.blas_func(1,a,x,1,y,trans=0,incx=3)
+            y = self.blas_func(1, a, x, 1, y, trans=0, incx=3)
             assert_(0)
         except:
             pass
         try:
-            y = self.blas_func(1,a,x,1,y,trans=1,incx=3)
+            y = self.blas_func(1, a, x, 1, y, trans=1, incx=3)
             assert_(0)
         except:
             pass
 
     def test_y_stride(self):
-        alpha,beta,a,x,y = self.get_data(y_stride=2)
+        alpha, beta, a, x, y = self.get_data(y_stride=2)
         desired_y = y.copy()
-        desired_y[::2] = alpha*matrixmultiply(a,x)+beta*y[::2]
-        y = self.blas_func(alpha,a,x,beta,y,incy=2)
-        assert_array_almost_equal(desired_y,y)
+        desired_y[::2] = alpha*matrixmultiply(a, x)+beta*y[::2]
+        y = self.blas_func(alpha, a, x, beta, y, incy=2)
+        assert_array_almost_equal(desired_y, y)
 
     def test_y_stride_transpose(self):
-        alpha,beta,a,x,y = self.get_data(y_stride=2)
+        alpha, beta, a, x, y = self.get_data(y_stride=2)
         desired_y = y.copy()
-        desired_y[::2] = alpha*matrixmultiply(transpose(a),x)+beta*y[::2]
-        y = self.blas_func(alpha,a,x,beta,y,trans=1,incy=2)
-        assert_array_almost_equal(desired_y,y)
+        desired_y[::2] = alpha*matrixmultiply(transpose(a), x)+beta*y[::2]
+        y = self.blas_func(alpha, a, x, beta, y, trans=1, incy=2)
+        assert_array_almost_equal(desired_y, y)
 
     def test_y_stride_assert(self):
         # What is the use of this test?
-        alpha,beta,a,x,y = self.get_data(y_stride=2)
+        alpha, beta, a, x, y = self.get_data(y_stride=2)
         try:
-            y = self.blas_func(1,a,x,1,y,trans=0,incy=3)
+            y = self.blas_func(1, a, x, 1, y, trans=0, incy=3)
             assert_(0)
         except:
             pass
         try:
-            y = self.blas_func(1,a,x,1,y,trans=1,incy=3)
+            y = self.blas_func(1, a, x, 1, y, trans=1, incy=3)
             assert_(0)
         except:
             pass
+
 
 try:
     class TestSgemv(BaseGemv):
@@ -481,7 +490,7 @@ try:
                 address = tmp.__array_interface__["data"][0]
                 # Find offset into array giving desired alignment
                 for offset in range(align):
-                    if (address + offset) % align == 0: 
+                    if (address + offset) % align == 0:
                         break
                 tmp = tmp[offset:offset+N*d.nbytes].view(dtype=dtype)
                 return tmp.reshape(shape, order=order)
@@ -493,10 +502,10 @@ try:
                 return aligned
 
             def assert_dot_close(A, X, desired):
-                assert_allclose(self.blas_func(1.0,A,X), desired,
-                    rtol=1e-5, atol=1e-7)
+                assert_allclose(self.blas_func(1.0, A, X), desired,
+                                rtol=1e-5, atol=1e-7)
 
-            testdata = product((15,32), (10000,), (200,89), ('C','F'))
+            testdata = product((15, 32), (10000,), (200, 89), ('C', 'F'))
             for align, m, n, a_order in testdata:
                 A_d = np.random.rand(m, n)
                 X_d = np.random.rand(n)
@@ -515,6 +524,7 @@ class TestDgemv(BaseGemv):
     blas_func = fblas.dgemv
     dtype = float64
 
+
 try:
     class TestCgemv(BaseGemv):
         blas_func = fblas.cgemv
@@ -527,6 +537,7 @@ except AttributeError:
 class TestZgemv(BaseGemv):
     blas_func = fblas.zgemv
     dtype = complex128
+
 
 """
 ##################################################
@@ -582,8 +593,8 @@ class TestDger(BaseGer):
     dtype = float64
 """
 ##################################################
-### Test blas ?gerc
-### This will be a mess to test all cases.
+# Test blas ?gerc
+# This will be a mess to test all cases.
 
 """
 class BaseGerComplex(BaseGer):

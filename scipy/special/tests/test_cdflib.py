@@ -21,7 +21,10 @@ The following functions still need tests:
 """
 from __future__ import division, print_function, absolute_import
 
+import itertools
+
 import numpy as np
+from numpy.testing import assert_equal
 import pytest
 
 import scipy.special as sp
@@ -43,7 +46,7 @@ class ProbArg(object):
         # Include the endpoints for compatibility with Arg et. al.
         self.a = 0
         self.b = 1
-    
+
     def values(self, n):
         """Return an array containing approximatively n numbers."""
         m = max(1, n//3)
@@ -65,7 +68,7 @@ class EndpointFilter(object):
         mask1 = np.abs(x - self.a) < self.rtol*np.abs(self.a) + self.atol
         mask2 = np.abs(x - self.b) < self.rtol*np.abs(self.b) + self.atol
         return np.where(mask1 | mask2, False, True)
-            
+
 
 class _CDFData(object):
     def __init__(self, spfunc, mpfunc, index, argspec, spfunc_first=True,
@@ -80,7 +83,7 @@ class _CDFData(object):
         self.n = n
         self.rtol = rtol
         self.atol = atol
-        
+
         if not isinstance(argspec, list):
             self.endpt_rtol = None
             self.endpt_atol = None
@@ -120,7 +123,7 @@ class _CDFData(object):
     def get_param_filter(self):
         if self.endpt_rtol is None and self.endpt_atol is None:
             return None
-        
+
         filters = []
         for rtol, atol, spec in zip(self.endpt_rtol, self.endpt_atol, self.argspec):
             if rtol is None and atol is None:
@@ -133,7 +136,7 @@ class _CDFData(object):
 
             filters.append(EndpointFilter(spec.a, spec.b, rtol, atol))
         return filters
-        
+
     def check(self):
         # Generate values for the arguments
         args = get_args(self.argspec, self.n)
@@ -170,7 +173,7 @@ def _f_cdf(dfn, dfd, x):
     ub = dfn*x/(dfn*x + dfd)
     res = mpmath.betainc(dfn/2, dfd/2, x2=ub, regularized=True)
     return res
-    
+
 
 def _student_t_cdf(df, t, dps=None):
     if dps is None:
@@ -221,12 +224,12 @@ class TestCDFlib(object):
             _binomial_cdf,
             1, [IntArg(1, 1000), ProbArg(), ProbArg()],
             rtol=1e-4, endpt_atol=[None, None, 1e-6])
-    
+
     def test_btdtria(self):
         _assert_inverts(
             sp.btdtria,
             lambda a, b, x: mpmath.betainc(a, b, x2=x, regularized=True),
-            0, [ProbArg(), Arg(0, 1e3, inclusive_a=False),
+            0, [ProbArg(), Arg(0, 1e2, inclusive_a=False),
                 Arg(0, 1, inclusive_a=False, inclusive_b=False)],
             rtol=1e-6)
 
@@ -237,7 +240,7 @@ class TestCDFlib(object):
             lambda a, b, x: mpmath.betainc(a, b, x2=x, regularized=True),
             1, [Arg(0, 1e2, inclusive_a=False), ProbArg(),
              Arg(0, 1, inclusive_a=False, inclusive_b=False)],
-            rtol=1e-7, endpt_atol=[None, 1e-20, 1e-20])
+            rtol=1e-7, endpt_atol=[None, 1e-18, 1e-15])
 
     @pytest.mark.xfail(run=False)
     def test_fdtridfd(self):
@@ -246,14 +249,14 @@ class TestCDFlib(object):
             _f_cdf,
             1, [IntArg(1, 100), ProbArg(), Arg(0, 100, inclusive_a=False)],
             rtol=1e-7)
-        
+
     def test_gdtria(self):
         _assert_inverts(
             sp.gdtria,
             lambda a, b, x: mpmath.gammainc(b, b=a*x, regularized=True),
             0, [ProbArg(), Arg(0, 1e3, inclusive_a=False),
                 Arg(0, 1e4, inclusive_a=False)], rtol=1e-7,
-            endpt_atol=[None, 1e-10, 1e-10])
+            endpt_atol=[None, 1e-7, 1e-10])
 
     def test_gdtrib(self):
         # Use small values of a and x or mpmath doesn't converge
@@ -269,7 +272,7 @@ class TestCDFlib(object):
             lambda a, b, x: mpmath.gammainc(b, b=a*x, regularized=True),
             2, [Arg(0, 1e3, inclusive_a=False), Arg(0, 1e3, inclusive_a=False),
                 ProbArg()], rtol=1e-7,
-            endpt_atol=[None, 1e-10, 1e-10])
+            endpt_atol=[None, 1e-7, 1e-10])
 
     def test_stdtr(self):
         # Ideally the left endpoint for Arg() should be 0.
@@ -316,7 +319,7 @@ class TestCDFlib(object):
             _noncentral_chi_cdf,
             2, [Arg(0, 100, inclusive_a=False), IntArg(1, 100), ProbArg()],
             n=1000, rtol=1e-4, atol=1e-15)
-        
+
     def test_chndtrix(self):
         # Use a larger atol since mpmath is doing numerical integration
         _assert_inverts(
@@ -338,9 +341,9 @@ class TestCDFlib(object):
         _assert_inverts(
             sp.tklmbda,
             _tukey_lmbda_quantile,
-            0, [ProbArg(), Arg(-np.inf, 0, inclusive_b=False)],
+            0, [ProbArg(), Arg(-25, 0, inclusive_b=False)],
             spfunc_first=False, rtol=1e-5,
-            endpt_atol=[1e-9, None])
+            endpt_atol=[1e-9, 1e-5])
 
     @pytest.mark.xfail(run=False)
     def test_tklmbda_pos_shape(self):
@@ -349,3 +352,58 @@ class TestCDFlib(object):
             _tukey_lmbda_quantile,
             0, [ProbArg(), Arg(0, 100, inclusive_a=False)],
             spfunc_first=False, rtol=1e-5)
+
+
+def test_nonfinite():
+    funcs = [
+        ("btdtria", 3),
+        ("btdtrib", 3),
+        ("bdtrik", 3),
+        ("bdtrin", 3),
+        ("chdtriv", 2),
+        ("chndtr", 3),
+        ("chndtrix", 3),
+        ("chndtridf", 3),
+        ("chndtrinc", 3),
+        ("fdtridfd", 3),
+        ("ncfdtr", 4),
+        ("ncfdtri", 4),
+        ("ncfdtridfn", 4),
+        ("ncfdtridfd", 4),
+        ("ncfdtrinc", 4),
+        ("gdtrix", 3),
+        ("gdtrib", 3),
+        ("gdtria", 3),
+        ("nbdtrik", 3),
+        ("nbdtrin", 3),
+        ("nrdtrimn", 3),
+        ("nrdtrisd", 3),
+        ("pdtrik", 2),
+        ("stdtr", 2),
+        ("stdtrit", 2),
+        ("stdtridf", 2),
+        ("nctdtr", 3),
+        ("nctdtrit", 3),
+        ("nctdtridf", 3),
+        ("nctdtrinc", 3),
+        ("tklmbda", 2),
+    ]
+
+    np.random.seed(1)
+
+    for func, numargs in funcs:
+        func = getattr(sp, func)
+
+        args_choices = [(float(x), np.nan, np.inf, -np.inf) for x in
+                        np.random.rand(numargs)]
+
+        for args in itertools.product(*args_choices):
+            res = func(*args)
+
+            if any(np.isnan(x) for x in args):
+                # Nan inputs should result to nan output
+                assert_equal(res, np.nan)
+            else:
+                # All other inputs should return something (but not
+                # raise exceptions or cause hangs)
+                pass

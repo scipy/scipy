@@ -7,6 +7,7 @@ Need function load / save / roundtrip tests
 from __future__ import division, print_function, absolute_import
 
 import os
+from collections import OrderedDict
 from os.path import join as pjoin, dirname
 from glob import glob
 from io import BytesIO
@@ -19,8 +20,8 @@ import shutil
 import gzip
 
 from numpy.testing import (assert_array_equal, assert_array_almost_equal,
-                           assert_equal, assert_raises,
-                           assert_)
+                           assert_equal, assert_)
+from pytest import raises as assert_raises
 from scipy._lib._numpy_compat import suppress_warnings
 
 import numpy as np
@@ -43,6 +44,7 @@ def mlarr(*args, **kwargs):
     arr = np.array(*args, **kwargs)
     arr.shape = matdims(arr)
     return arr
+
 
 # Define cases to test
 theta = np.pi/4*np.arange(9,dtype=float).reshape(1,9)
@@ -557,13 +559,7 @@ def test_use_small_element():
 
 def test_save_dict():
     # Test that dict can be saved (as recarray), loaded as matstruct
-    dict_types = ((dict, False),)
-    try:
-        from collections import OrderedDict
-    except ImportError:
-        pass
-    else:
-        dict_types += ((OrderedDict, True),)
+    dict_types = ((dict, False), (OrderedDict, True),)
     ab_exp = np.array([[(1, 2)]], dtype=[('a', object), ('b', object)])
     ba_exp = np.array([[(2, 1)]], dtype=[('b', object), ('a', object)])
     for dict_type, is_ordered in dict_types:
@@ -1229,3 +1225,14 @@ def test_bad_utf8():
     assert_equal(res['bad_string'],
                  b'\x80 am broken'.decode('utf8', 'replace'))
 
+
+def test_save_unicode_field(tmpdir):
+    filename = os.path.join(str(tmpdir), 'test.mat')
+    test_dict = {u'a':{u'b':1,u'c':'test_str'}}
+    savemat(filename, test_dict)
+
+
+def test_filenotfound():
+    # Check the correct error is thrown
+    assert_raises(IOError, loadmat, "NotExistentFile00.mat")
+    assert_raises(IOError, loadmat, "NotExistentFile00")

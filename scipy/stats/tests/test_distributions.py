@@ -10,8 +10,9 @@ import pickle
 
 from numpy.testing import (assert_equal,
     assert_array_equal, assert_almost_equal, assert_array_almost_equal,
-    assert_allclose, assert_, assert_raises, assert_warns)
+    assert_allclose, assert_, assert_warns)
 import pytest
+from pytest import raises as assert_raises
 from scipy._lib._numpy_compat import suppress_warnings
 
 import numpy
@@ -35,7 +36,7 @@ DOCSTRINGS_STRIPPED = sys.flags.optimize > 1
 dists = ['uniform', 'norm', 'lognorm', 'expon', 'beta',
          'powerlaw', 'bradford', 'burr', 'fisk', 'cauchy', 'halfcauchy',
          'foldcauchy', 'gamma', 'gengamma', 'loggamma',
-         'alpha', 'anglit', 'arcsine', 'betaprime', 'dgamma',
+         'alpha', 'anglit', 'arcsine', 'betaprime', 'dgamma', 'moyal',
          'exponnorm', 'exponweib', 'exponpow', 'frechet_l', 'frechet_r',
          'gilbrat', 'f', 'ncf', 'chi2', 'chi', 'nakagami', 'genpareto',
          'genextreme', 'genhalflogistic', 'pareto', 'lomax', 'halfnorm',
@@ -60,12 +61,16 @@ def test_api_regression():
 
 # check function for test generator
 def check_distribution(dist, args, alpha):
-    D, pval = stats.kstest(dist, '', args=args, N=1000)
-    if (pval < alpha):
+    with suppress_warnings() as sup:
+        # frechet_l and frechet_r are deprecated, so all their
+        # methods generate DeprecationWarnings.
+        sup.filter(category=DeprecationWarning, message=".*frechet_")
         D, pval = stats.kstest(dist, '', args=args, N=1000)
-        assert_(pval > alpha,
-                msg="D = {}; pval = {}; alpha = {}; args = {}".format(
-                    D, pval, alpha, args))
+        if (pval < alpha):
+            D, pval = stats.kstest(dist, '', args=args, N=1000)
+            assert_(pval > alpha,
+                    msg="D = {}; pval = {}; alpha = {}; args = {}".format(
+                        D, pval, alpha, args))
 
 
 def cases_test_all_distributions():
@@ -292,6 +297,44 @@ class TestNBinom(object):
         assert_equal(val, 0)
 
 
+class TestNormInvGauss(object):
+    def setup_method(self):
+        np.random.seed(1234)
+
+    def test_cdf_R(self):
+        # test pdf and cdf vals against R
+        # require("GeneralizedHyperbolic")
+        # x_test <- c(-7, -5, 0, 8, 15)
+        # r_cdf <- GeneralizedHyperbolic::pnig(x_test, mu = 0, a = 1, b = 0.5)
+        # r_pdf <- GeneralizedHyperbolic::dnig(x_test, mu = 0, a = 1, b = 0.5)
+        r_cdf = np.array([8.034920282e-07, 2.512671945e-05, 3.186661051e-01,
+                          9.988650664e-01, 9.999848769e-01])
+        x_test = np.array([-7, -5, 0, 8, 15])
+        vals_cdf = stats.norminvgauss.cdf(x_test, a=1, b=0.5)
+        assert_allclose(vals_cdf, r_cdf, atol=1e-9)
+
+    def test_pdf_R(self):
+        # values from R as defined in test_cdf_R
+        r_pdf = np.array([1.359600783e-06, 4.413878805e-05, 4.555014266e-01,
+                          7.450485342e-04, 8.917889931e-06])
+        x_test = np.array([-7, -5, 0, 8, 15])
+        vals_pdf = stats.norminvgauss.pdf(x_test, a=1, b=0.5)
+        assert_allclose(vals_pdf, r_pdf, atol=1e-9)
+
+    def test_stats(self):
+        a, b = 1, 0.5
+        gamma = np.sqrt(a**2 - b**2)
+        v_stats = (b / gamma, a**2 / gamma**3, 3.0 * b / (a * np.sqrt(gamma)),
+                   3.0 * (1 + 4 * b**2 / a**2) / gamma)
+        assert_equal(v_stats, stats.norminvgauss.stats(a, b, moments='mvsk'))
+
+    def test_ppf(self):
+        a, b = 1, 0.5
+        x_test = np.array([0.001, 0.5, 0.999])
+        vals = stats.norminvgauss.ppf(x_test, a, b)
+        assert_allclose(x_test, stats.norminvgauss.cdf(vals, a, b))
+
+
 class TestGeom(object):
     def setup_method(self):
         np.random.seed(1234)
@@ -338,6 +381,21 @@ class TestGeom(object):
     def test_ppf(self):
         vals = stats.geom.ppf([0.5, 0.75, 0.875], 0.5)
         expected = array([1.0, 2.0, 3.0])
+        assert_array_almost_equal(vals, expected)
+
+
+class TestPlanck(object):
+    def setup_method(self):
+        np.random.seed(1234)
+
+    def test_sf(self):
+        vals = stats.planck.sf([1, 2, 3], 5.)
+        expected = array([4.5399929762484854e-05, 3.0590232050182579e-07, 2.0611536224385579e-09])
+        assert_array_almost_equal(vals, expected)
+
+    def test_logsf(self):
+        vals = stats.planck.logsf([1000., 2000., 3000.], 1000.)
+        expected = array([-1001000., -2001000., -3001000.])
         assert_array_almost_equal(vals, expected)
 
 
@@ -410,7 +468,8 @@ class TestTruncnorm(object):
     def test_gh_2477_large_values(self):
         # Check a case that fails because of extreme tailness.
         low, high = 100, 101
-        x = stats.truncnorm.rvs(low, high, 0, 1, size=10)
+        with np.errstate(divide='ignore'):
+            x = stats.truncnorm.rvs(low, high, 0, 1, size=10)
         assert_(low < x.min() < x.max() < high)
 
     def test_gh_1489_trac_962_rvs(self):
@@ -1139,14 +1198,14 @@ class TestSkewNorm(object):
 
     def test_moments(self):
         X = stats.skewnorm.rvs(a=4, size=int(1e6), loc=5, scale=2)
-        assert_array_almost_equal([np.mean(X), np.var(X), stats.skew(X), stats.kurtosis(X)],
-                                   stats.skewnorm.stats(a=4, loc=5, scale=2, moments='mvsk'),
-                                   decimal=2)
+        expected = [np.mean(X), np.var(X), stats.skew(X), stats.kurtosis(X)]
+        computed = stats.skewnorm.stats(a=4, loc=5, scale=2, moments='mvsk')
+        assert_array_almost_equal(computed, expected, decimal=2)
 
         X = stats.skewnorm.rvs(a=-4, size=int(1e6), loc=5, scale=2)
-        assert_array_almost_equal([np.mean(X), np.var(X), stats.skew(X), stats.kurtosis(X)],
-                                   stats.skewnorm.stats(a=-4, loc=5, scale=2, moments='mvsk'),
-                                   decimal=2)
+        expected = [np.mean(X), np.var(X), stats.skew(X), stats.kurtosis(X)]
+        computed = stats.skewnorm.stats(a=-4, loc=5, scale=2, moments='mvsk')
+        assert_array_almost_equal(computed, expected, decimal=2)
 
 
 class TestExpon(object):
@@ -1457,19 +1516,16 @@ class TestFitMethod(object):
         if dist in self.skip:
             pytest.skip("%s fit known to fail" % dist)
         distfunc = getattr(stats, dist)
-        with np.errstate(all='ignore'):
+        with np.errstate(all='ignore'), suppress_warnings() as sup:
+            sup.filter(category=DeprecationWarning, message=".*frechet_")
             res = distfunc.rvs(*args, **{'size': 200})
             vals = distfunc.fit(res)
             vals2 = distfunc.fit(res, optimizer='powell')
         # Only check the length of the return
         # FIXME: should check the actual results to see if we are 'close'
         #   to what was created --- but what is 'close' enough
-        if dist == 'frechet':
-            assert_(len(vals) == len(args))
-            assert_(len(vals2) == len(args))
-        else:
-            assert_(len(vals) == 2+len(args))
-            assert_(len(vals2) == 2+len(args))
+        assert_(len(vals) == 2+len(args))
+        assert_(len(vals2) == 2+len(args))
 
     @pytest.mark.slow
     @pytest.mark.parametrize('dist,args,alpha', cases_test_all_distributions())
@@ -1479,7 +1535,8 @@ class TestFitMethod(object):
         if dist in self.skip + ['frechet']:
             pytest.skip("%s fit known to fail" % dist)
         distfunc = getattr(stats, dist)
-        with np.errstate(all='ignore'):
+        with np.errstate(all='ignore'), suppress_warnings() as sup:
+            sup.filter(category=DeprecationWarning, message=".*frechet_")
             res = distfunc.rvs(*args, **{'size': 200})
             vals = distfunc.fit(res, floc=0)
             vals2 = distfunc.fit(res, fscale=1)
@@ -1505,8 +1562,9 @@ class TestFitMethod(object):
         np.random.seed(12345)
         with np.errstate(all='ignore'):
             x = stats.lognorm.rvs(0.25, 0., 20.0, size=20)
+            expected_shape = np.sqrt(((np.log(x) - np.log(20))**2).mean())
             assert_allclose(np.array(stats.lognorm.fit(x, floc=0, fscale=20)),
-                            [0.25888672, 0, 20], atol=1e-5)
+                            [expected_shape, 0, 20], atol=1e-8)
 
     def test_fix_fit_norm(self):
         x = np.arange(1, 6)
@@ -1615,6 +1673,41 @@ class TestFitMethod(object):
         # Check that attempting to fix all the parameters raises a ValueError.
         assert_raises(ValueError, stats.beta.fit, y, f0=0, f1=1,
                       floc=2, fscale=3)
+
+    def test_expon_fit(self):
+        x = np.array([2, 2, 4, 4, 4, 4, 4, 8])
+
+        loc, scale = stats.expon.fit(x)
+        assert_equal(loc, 2)    # x.min()
+        assert_equal(scale, 2)  # x.mean() - x.min()
+
+        loc, scale = stats.expon.fit(x, fscale=3)
+        assert_equal(loc, 2)    # x.min()
+        assert_equal(scale, 3)  # fscale
+
+        loc, scale = stats.expon.fit(x, floc=0)
+        assert_equal(loc, 0)    # floc
+        assert_equal(scale, 4)  # x.mean() - loc
+
+    def test_lognorm_fit(self):
+        x = np.array([1.5, 3, 10, 15, 23, 59])
+        lnxm1 = np.log(x - 1)
+
+        shape, loc, scale = stats.lognorm.fit(x, floc=1)
+        assert_allclose(shape, lnxm1.std(), rtol=1e-12)
+        assert_equal(loc, 1)
+        assert_allclose(scale, np.exp(lnxm1.mean()), rtol=1e-12)
+
+        shape, loc, scale = stats.lognorm.fit(x, floc=1, fscale=6)
+        assert_allclose(shape, np.sqrt(((lnxm1 - np.log(6))**2).mean()),
+                        rtol=1e-12)
+        assert_equal(loc, 1)
+        assert_equal(scale, 6)
+
+        shape, loc, scale = stats.lognorm.fit(x, floc=1, fix_s=0.75)
+        assert_equal(shape, 0.75)
+        assert_equal(loc, 1)
+        assert_allclose(scale, np.exp(lnxm1.mean()), rtol=1e-12)
 
     def test_fshapes(self):
         # take a beta distribution, with shapes='a, b', and make sure that
@@ -2273,7 +2366,7 @@ class TestRdist(object):
 
 class TestTrapz(object):
     def test_reduces_to_triang(self):
-        modes = [0.3, 0.5]
+        modes = [0, 0.3, 0.5, 1]
         for mode in modes:
             x = [0, mode, 1]
             assert_almost_equal(stats.trapz.pdf(x, mode, mode),
@@ -2283,33 +2376,26 @@ class TestTrapz(object):
 
     def test_reduces_to_uniform(self):
         x = np.linspace(0, 1, 10)
-        with suppress_warnings() as sup, np.errstate(divide='ignore'):
-            sup.filter(RuntimeWarning,
-                       "invalid value encountered in true_divide")
-            assert_almost_equal(stats.trapz.pdf(x, 0, 1), stats.uniform.pdf(x))
-            assert_almost_equal(stats.trapz.cdf(x, 0, 1), stats.uniform.cdf(x))
+        assert_almost_equal(stats.trapz.pdf(x, 0, 1), stats.uniform.pdf(x))
+        assert_almost_equal(stats.trapz.cdf(x, 0, 1), stats.uniform.cdf(x))
 
     def test_cases(self):
-        with suppress_warnings() as sup, np.errstate(divide='ignore'):
-            sup.filter(RuntimeWarning,
-                       "invalid value encountered in true_divide")
+        # edge cases
+        assert_almost_equal(stats.trapz.pdf(0, 0, 0), 2)
+        assert_almost_equal(stats.trapz.pdf(1, 1, 1), 2)
+        assert_almost_equal(stats.trapz.pdf(0.5, 0, 0.8), 1.11111111111111111)
+        assert_almost_equal(stats.trapz.pdf(0.5, 0.2, 1.0), 1.11111111111111111)
 
-            # edge cases
-            assert_almost_equal(stats.trapz.pdf(0, 0, 0), 2)
-            assert_almost_equal(stats.trapz.pdf(1, 1, 1), 2)
-            assert_almost_equal(stats.trapz.pdf(0.5, 0, 0.8), 1.11111111111111111)
-            assert_almost_equal(stats.trapz.pdf(0.5, 0.2, 1.0), 1.11111111111111111)
+        # straightforward case
+        assert_almost_equal(stats.trapz.pdf(0.1, 0.2, 0.8), 0.625)
+        assert_almost_equal(stats.trapz.pdf(0.5, 0.2, 0.8), 1.25)
+        assert_almost_equal(stats.trapz.pdf(0.9, 0.2, 0.8), 0.625)
 
-            # straightforward case
-            assert_almost_equal(stats.trapz.pdf(0.1, 0.2, 0.8), 0.625)
-            assert_almost_equal(stats.trapz.pdf(0.5, 0.2, 0.8), 1.25)
-            assert_almost_equal(stats.trapz.pdf(0.9, 0.2, 0.8), 0.625)
-
-            assert_almost_equal(stats.trapz.cdf(0.1, 0.2, 0.8), 0.03125)
-            assert_almost_equal(stats.trapz.cdf(0.2, 0.2, 0.8), 0.125)
-            assert_almost_equal(stats.trapz.cdf(0.5, 0.2, 0.8), 0.5)
-            assert_almost_equal(stats.trapz.cdf(0.9, 0.2, 0.8), 0.96875)
-            assert_almost_equal(stats.trapz.cdf(1.0, 0.2, 0.8), 1.0)
+        assert_almost_equal(stats.trapz.cdf(0.1, 0.2, 0.8), 0.03125)
+        assert_almost_equal(stats.trapz.cdf(0.2, 0.2, 0.8), 0.125)
+        assert_almost_equal(stats.trapz.cdf(0.5, 0.2, 0.8), 0.5)
+        assert_almost_equal(stats.trapz.cdf(0.9, 0.2, 0.8), 0.96875)
+        assert_almost_equal(stats.trapz.cdf(1.0, 0.2, 0.8), 1.0)
 
     def test_trapz_vect(self):
         # test that array-valued shapes and arguments are handled
@@ -2327,6 +2413,25 @@ class TestTrapz(object):
 
         assert_allclose(v, res.reshape(v.shape), atol=1e-15)
 
+
+class TestTriang(object):
+    def test_edge_cases(self):
+        with np.errstate(all='raise'):
+            assert_equal(stats.triang.pdf(0, 0), 2.)
+            assert_equal(stats.triang.pdf(0.5, 0), 1.)
+            assert_equal(stats.triang.pdf(1, 0), 0.)
+
+            assert_equal(stats.triang.pdf(0, 1), 0)
+            assert_equal(stats.triang.pdf(0.5, 1), 1.)
+            assert_equal(stats.triang.pdf(1, 1), 2)
+
+            assert_equal(stats.triang.cdf(0., 0.), 0.)
+            assert_equal(stats.triang.cdf(0.5, 0.), 0.75)
+            assert_equal(stats.triang.cdf(1.0, 0.), 1.0)
+
+            assert_equal(stats.triang.cdf(0., 1.), 0.)
+            assert_equal(stats.triang.cdf(0.5, 1.), 0.25)
+            assert_equal(stats.triang.cdf(1., 1.), 1)
 
 def test_540_567():
     # test for nan returned in tickets 540, 567
@@ -3145,7 +3250,7 @@ def test_crystalball_function_moments():
     expected_0th_moment = np.array([1.0, 1.0, 1.0, 1.0, 1.0])
     calculated_0th_moment = stats.crystalball._munp(0, beta, m)
     assert_allclose(expected_0th_moment, calculated_0th_moment, rtol=0.001)
-    
+
     # calculated using wolframalpha.com
     # e.g. for beta = 2 and m = 3 we calculate the norm like this:
     # integrate exp(-x^2/2) from -2 to infinity + integrate (3/2)^3*exp(-2^2/2)*(3/2-2-x)^(-3) from -infinity to -2
@@ -3154,19 +3259,19 @@ def test_crystalball_function_moments():
     expected_1th_moment = np.array([-0.21992, -3.03265, np.inf, -0.135335, -0.003174]) / norm
     calculated_1th_moment = stats.crystalball._munp(1, beta, m)
     assert_allclose(expected_1th_moment, calculated_1th_moment, rtol=0.001)
-    
+
     expected_2th_moment = np.array([np.inf, np.inf, np.inf, 3.2616, 2.519908]) / norm
     calculated_2th_moment = stats.crystalball._munp(2, beta, m)
     assert_allclose(expected_2th_moment, calculated_2th_moment, rtol=0.001)
-    
+
     expected_3th_moment = np.array([np.inf, np.inf, np.inf, np.inf, -0.0577668]) / norm
     calculated_3th_moment = stats.crystalball._munp(3, beta, m)
     assert_allclose(expected_3th_moment, calculated_3th_moment, rtol=0.001)
-    
+
     expected_4th_moment = np.array([np.inf, np.inf, np.inf, np.inf, 7.78468]) / norm
     calculated_4th_moment = stats.crystalball._munp(4, beta, m)
     assert_allclose(expected_4th_moment, calculated_4th_moment, rtol=0.001)
-    
+
     expected_5th_moment = np.array([np.inf, np.inf, np.inf, np.inf, -1.31086]) / norm
     calculated_5th_moment = stats.crystalball._munp(5, beta, m)
     assert_allclose(expected_5th_moment, calculated_5th_moment, rtol=0.001)
@@ -3200,7 +3305,7 @@ class TestHistogram(object):
         histogram = np.histogram([1, 2, 2, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 5,
                                   6, 6, 6, 6, 7, 7, 7, 8, 8, 9], bins=8)
         self.template = stats.rv_histogram(histogram)
-        
+
         data = stats.norm.rvs(loc=1.0, scale=2.5,size=10000, random_state=123)
         norm_histogram = np.histogram(data, bins=50)
         self.norm_template = stats.rv_histogram(norm_histogram)
@@ -3248,7 +3353,7 @@ class TestHistogram(object):
         assert_allclose(self.template.ppf(self.template.cdf(x)), x)
         x = np.linspace(0.0, 1.0, 100)
         assert_allclose(self.template.cdf(self.template.ppf(x)), x)
-        
+
         x = np.linspace(-2, 2, 10)
         assert_allclose(self.norm_template.cdf(x),
                         stats.norm.cdf(x, loc=1.0, scale=2.5), rtol=0.1)
@@ -3279,7 +3384,7 @@ class TestHistogram(object):
         for n in range(4):
             assert_allclose(self.norm_template._munp(n),
                             stats.norm._munp(n, 1.0, 2.5), rtol=0.05)
-    
+
     def test_entropy(self):
         assert_allclose(self.norm_template.entropy(),
                         stats.norm.entropy(loc=1.0, scale=2.5), rtol=0.05)

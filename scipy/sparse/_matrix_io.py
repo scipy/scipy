@@ -60,10 +60,7 @@ def save_npz(file, matrix, compressed=True):
     matrix([[0, 0, 3],
             [4, 0, 0]], dtype=int64)
     """
-
-    arrays_dict = dict(format=matrix.format.encode('ascii'),
-                       shape=matrix.shape,
-                       data=matrix.data)
+    arrays_dict = {}
     if matrix.format in ('csc', 'csr', 'bsr'):
         arrays_dict.update(indices=matrix.indices, indptr=matrix.indptr)
     elif matrix.format == 'dia':
@@ -72,7 +69,11 @@ def save_npz(file, matrix, compressed=True):
         arrays_dict.update(row=matrix.row, col=matrix.col)
     else:
         raise NotImplementedError('Save is not implemented for sparse matrix of format {}.'.format(matrix.format))
-
+    arrays_dict.update(
+        format=matrix.format.encode('ascii'),
+        shape=matrix.shape,
+        data=matrix.data
+    )
     if compressed:
         np.savez_compressed(file, **arrays_dict)
     else:

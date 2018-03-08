@@ -76,11 +76,13 @@ distcont = [
     ['lomax', (1.8771398388773268,)],
     ['maxwell', ()],
     ['mielke', (10.4, 3.6)],
+    ['moyal', ()],
     ['nakagami', (4.9673794866666237,)],
     ['ncf', (27, 27, 0.41578441799226107)],
     ['nct', (14, 0.24045031331198066)],
     ['ncx2', (21, 1.0560465975116415)],
     ['norm', ()],
+    ['norminvgauss', (1., 0.5)],
     ['pareto', (2.621716532144454,)],
     ['pearson3', (0.1,)],
     ['powerlaw', (1.6591133289905851,)],
@@ -118,7 +120,7 @@ distdiscrete = [
     ['hypergeom',(30, 12, 6)],
     ['hypergeom',(21,3,12)],  # numpy.random (3,18,12) numpy ticket:921
     ['hypergeom',(21,18,11)],  # numpy.random (18,3,11) numpy ticket:921
-    ['logser', (0.6,)],  # reenabled, numpy ticket:921
+    ['logser', (0.6,)],  # re-enabled, numpy ticket:921
     ['nbinom', (5, 0.5)],
     ['nbinom', (0.4, 0.4)],  # from tickets: 583
     ['planck', (0.51,)],   # 4.1

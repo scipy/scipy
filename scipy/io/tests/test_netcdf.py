@@ -11,8 +11,8 @@ from glob import glob
 from contextlib import contextmanager
 
 import numpy as np
-from numpy.testing import (assert_, assert_allclose, assert_raises,
-    assert_equal)
+from numpy.testing import assert_, assert_allclose, assert_equal
+from pytest import raises as assert_raises
 
 from scipy.io.netcdf import netcdf_file
 
@@ -103,7 +103,7 @@ def test_read_write_files():
         # mmap.  When n * n_bytes(var_type) is not divisible by 4, this
         # raised an error in pupynere 1.0.12 and scipy rev 5893, because
         # calculated vsize was rounding up in units of 4 - see
-        # http://www.unidata.ucar.edu/software/netcdf/docs/netcdf.html
+        # https://www.unidata.ucar.edu/software/netcdf/docs/user_guide.html
         with open('simple.nc', 'rb') as fobj:
             with netcdf_file(fobj) as f:
                 # by default, don't use mmap for file-like
@@ -164,6 +164,66 @@ def test_read_write_sio():
     with netcdf_file(eg_sio_64, version=2) as f_64:
         check_simple(f_64)
         assert_equal(f_64.version_byte, 2)
+
+
+def test_bytes():
+    raw_file = BytesIO()
+    f = netcdf_file(raw_file, mode='w')
+    # Dataset only has a single variable, dimension and attribute to avoid
+    # any ambiguity related to order.
+    f.a = 'b'
+    f.createDimension('dim', 1)
+    var = f.createVariable('var', np.int16, ('dim',))
+    var[0] = -9999
+    var.c = 'd'
+    f.sync()
+
+    actual = raw_file.getvalue()
+
+    expected = (b'CDF\x01'
+                b'\x00\x00\x00\x00'
+                b'\x00\x00\x00\x0a'
+                b'\x00\x00\x00\x01'
+                b'\x00\x00\x00\x03'
+                b'dim\x00'
+                b'\x00\x00\x00\x01'
+                b'\x00\x00\x00\x0c'
+                b'\x00\x00\x00\x01'
+                b'\x00\x00\x00\x01'
+                b'a\x00\x00\x00'
+                b'\x00\x00\x00\x02'
+                b'\x00\x00\x00\x01'
+                b'b\x00\x00\x00'
+                b'\x00\x00\x00\x0b'
+                b'\x00\x00\x00\x01'
+                b'\x00\x00\x00\x03'
+                b'var\x00'
+                b'\x00\x00\x00\x01'
+                b'\x00\x00\x00\x00'
+                b'\x00\x00\x00\x0c'
+                b'\x00\x00\x00\x01'
+                b'\x00\x00\x00\x01'
+                b'c\x00\x00\x00'
+                b'\x00\x00\x00\x02'
+                b'\x00\x00\x00\x01'
+                b'd\x00\x00\x00'
+                b'\x00\x00\x00\x03'
+                b'\x00\x00\x00\x04'
+                b'\x00\x00\x00\x78'
+                b'\xd8\xf1\x80\x01')
+
+    assert_equal(actual, expected)
+
+
+def test_encoded_fill_value():
+    with netcdf_file(BytesIO(), mode='w') as f:
+        f.createDimension('x', 1)
+        var = f.createVariable('var', 'S1', ('x',))
+        assert_equal(var._get_encoded_fill_value(), b'\x00')
+        var._FillValue = b'\x01'
+        assert_equal(var._get_encoded_fill_value(), b'\x01')
+        var._FillValue = b'\x00\x00'  # invalid, wrong size
+        assert_equal(var._get_encoded_fill_value(), b'\x00')
 
 
 def test_read_example_data():
@@ -319,9 +379,9 @@ def test_open_append():
         f.close()
 
 
-def test_append_recordDimension(): 
-    dataSize = 100   
-    
+def test_append_recordDimension():
+    dataSize = 100
+
     with in_tempdir():
         # Create file with record time dimension
         with netcdf_file('withRecordDimension.nc', 'w') as f:
@@ -333,30 +393,30 @@ def test_append_recordDimension():
             f.createDimension('y', dataSize)
             y = f.createVariable('y', 'd', ('y',))
             y[:] = np.array(range(dataSize))
-            f.createVariable('testData', 'i', ('time', 'x', 'y'))  
+            f.createVariable('testData', 'i', ('time', 'x', 'y'))
             f.flush()
-            f.close()        
-        
-        for i in range(2): 
-            # Open the file in append mode and add data 
+            f.close()
+
+        for i in range(2):
+            # Open the file in append mode and add data
             with netcdf_file('withRecordDimension.nc', 'a') as f:
                 f.variables['time'].data = np.append(f.variables["time"].data, i)
                 f.variables['testData'][i, :, :] = np.ones((dataSize, dataSize))*i
                 f.flush()
-                
+
             # Read the file and check that append worked
-            with netcdf_file('withRecordDimension.nc') as f:            
+            with netcdf_file('withRecordDimension.nc') as f:
                 assert_equal(f.variables['time'][-1], i)
                 assert_equal(f.variables['testData'][-1, :, :].copy(), np.ones((dataSize, dataSize))*i)
                 assert_equal(f.variables['time'].data.shape[0], i+1)
                 assert_equal(f.variables['testData'].data.shape[0], i+1)
-                
+
         # Read the file and check that 'data' was not saved as user defined
         # attribute of testData variable during append operation
         with netcdf_file('withRecordDimension.nc') as f:
-            with assert_raises(KeyError) as ar:            
+            with assert_raises(KeyError) as ar:
                 f.variables['testData']._attributes['data']
-            ex = ar.exception
+            ex = ar.value
             assert_equal(ex.args[0], 'data')
 
 def test_maskandscale():

@@ -2,9 +2,10 @@ from __future__ import division, print_function, absolute_import
 
 import warnings
 
-from numpy.testing import assert_, assert_equal, assert_raises
+from numpy.testing import assert_, assert_equal
 from scipy._lib._numpy_compat import suppress_warnings
 import pytest
+from pytest import raises as assert_raises
 
 import scipy.special as sc
 from scipy.special._ufuncs import _sf_error_test_function

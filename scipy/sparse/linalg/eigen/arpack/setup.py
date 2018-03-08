@@ -33,7 +33,12 @@ def configuration(parent_package='',top_path=None):
                          )
 
     config.add_data_dir('tests')
+
+    # Add license files
+    config.add_data_files('ARPACK/COPYING')
+
     return config
+
 
 if __name__ == '__main__':
     from numpy.distutils.core import setup

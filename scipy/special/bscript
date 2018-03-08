@@ -13,20 +13,23 @@ def pre_build(context):
 
     context.tweak_extension("_cephes",
                           use="sc_amos sc_toms sc_c_misc sc_cephes sc_mach " \
-                              "sc_cdf sc_specfun NPYMATH CLIB")
+                              "sc_cdf sc_specfun NPYMATH CLIB",
+                              includes="../_lib")
+
+    context.tweak_library("sc_cephes", includes="../_lib")
 
     context.tweak_extension("_ufuncs_cxx", features="cxx cxxshlib pyext bento",
-                            use="NPYMATH")
+                            use="NPYMATH", includes="../_lib")
 
     context.tweak_extension("_ufuncs",
                             use="sc_amos sc_c_misc sc_cephes sc_mach sc_cdf "\
                                 "sc_specfun NPYMATH CLIB LAPACK",
-                            includes=["c_misc"])
+                            includes=["c_misc", "../_lib"])
 
     context.tweak_extension("cython_special",
                             use="sc_amos sc_c_misc sc_cephes sc_mach sc_cdf "\
                                 "sc_specfun NPYMATH CLIB LAPACK",
-                            includes=["c_misc", "."],
+                            includes=["c_misc", ".", "../_lib"],
                             defines=['CYTHON_SPECIAL=1'])
 
     context.tweak_extension("_ellip_harm_2",
@@ -35,4 +38,5 @@ def pre_build(context):
 
     context.tweak_extension("_test_round",
                             use="NPYMATH",
-                            includes=["_round.h", "c_misc/double2.h"])
+                            includes=["_round.h", "c_misc/double2.h",
+                                      "../_lib"])

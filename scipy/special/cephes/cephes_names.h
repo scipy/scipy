@@ -10,6 +10,7 @@
 #define btdtr cephes_btdtr
 #define cbrt cephes_cbrt
 #define chdtrc cephes_chdtrc
+#define chbevl cephes_chbevl
 #define chdtr cephes_chdtr
 #define chdtri cephes_chdtri
 #define dawsn cephes_dawsn
@@ -28,6 +29,7 @@
 #define fresnl cephes_fresnl
 #define Gamma cephes_Gamma
 #define lgam cephes_lgam
+#define lgam_sgn cephes_lgam_sgn
 #define gdtr cephes_gdtr
 #define gdtrc cephes_gdtrc
 #define gdtri cephes_gdtri
@@ -79,7 +81,6 @@
 #define spence cephes_spence
 #define stdtr cephes_stdtr
 #define stdtri cephes_stdtri
-#define struve cephes_struve
 #define yv cephes_yv
 #define tandg cephes_tandg
 #define cotdg cephes_cotdg
@@ -93,5 +94,6 @@
 #define smirnovi cephes_smirnovi
 #define kolmogorov cephes_kolmogorov
 #define kolmogi cephes_kolmogi
+#define owens_t cephes_owens_t
 
 #endif

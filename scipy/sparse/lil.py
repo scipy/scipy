@@ -7,12 +7,15 @@ __docformat__ = "restructuredtext en"
 
 __all__ = ['lil_matrix','isspmatrix_lil']
 
+from bisect import bisect_left
+
 import numpy as np
 
-from scipy._lib.six import xrange
+from scipy._lib.six import xrange, zip
 from .base import spmatrix, isspmatrix
 from .sputils import (getdtype, isshape, isscalarlike, IndexMixin,
-                      upcast_scalar, get_index_dtype, isintlike)
+                      upcast_scalar, get_index_dtype, isintlike, check_shape,
+                      check_reshape_kwargs)
 from . import _csparsetools
 
 
@@ -95,7 +98,7 @@ class lil_matrix(spmatrix, IndexMixin):
             if dtype is not None:
                 A = A.astype(dtype)
 
-            self.shape = A.shape
+            self._shape = check_shape(A.shape)
             self.dtype = A.dtype
             self.rows = A.rows
             self.data = A.data
@@ -104,7 +107,7 @@ class lil_matrix(spmatrix, IndexMixin):
                 if shape is not None:
                     raise ValueError('invalid use of shape parameter')
                 M, N = arg1
-                self.shape = (M,N)
+                self._shape = check_shape((M, N))
                 self.rows = np.empty((M,), dtype=object)
                 self.data = np.empty((M,), dtype=object)
                 for i in range(M):
@@ -122,36 +125,10 @@ class lil_matrix(spmatrix, IndexMixin):
                 from .csr import csr_matrix
                 A = csr_matrix(A, dtype=dtype).tolil()
 
-                self.shape = A.shape
+                self._shape = check_shape(A.shape)
                 self.dtype = A.dtype
                 self.rows = A.rows
                 self.data = A.data
-
-    def set_shape(self,shape):
-        shape = tuple(shape)
-
-        if len(shape) != 2:
-            raise ValueError("Only two-dimensional sparse arrays "
-                                     "are supported.")
-        try:
-            shape = int(shape[0]),int(shape[1])  # floats, other weirdness
-        except:
-            raise TypeError('invalid shape')
-
-        if not (shape[0] >= 0 and shape[1] >= 0):
-            raise ValueError('invalid shape')
-
-        if (self._shape != shape) and (self._shape is not None):
-            try:
-                self = self.reshape(shape)
-            except NotImplementedError:
-                raise NotImplementedError("Reshaping not implemented for %s." %
-                                          self.__class__.__name__)
-        self._shape = shape
-
-    set_shape.__doc__ = spmatrix.set_shape.__doc__
-
-    shape = property(fget=spmatrix.get_shape, fset=set_shape)
 
     def __iadd__(self,other):
         self[:,:] = self + other
@@ -411,33 +388,62 @@ class lil_matrix(spmatrix, IndexMixin):
 
     copy.__doc__ = spmatrix.copy.__doc__
 
-    def reshape(self, shape, order='C'):
-        if type(order) != str or order != 'C':
-            raise ValueError(("Sparse matrices do not support "
-                              "an 'order' parameter."))
+    def reshape(self, *args, **kwargs):
+        shape = check_shape(args, self.shape)
+        order, copy = check_reshape_kwargs(kwargs)
 
-        if type(shape) != tuple:
-            raise TypeError("a tuple must be passed in for 'shape'")
-
-        if len(shape) != 2:
-            raise ValueError("a length-2 tuple must be passed in for 'shape'")
+        # Return early if reshape is not required
+        if shape == self.shape:
+            if copy:
+                return self.copy()
+            else:
+                return self
 
         new = lil_matrix(shape, dtype=self.dtype)
-        j_max = self.shape[1]
 
-        # Size is ambiguous for sparse matrices, so in order to check 'total
-        # dimension', we need to take the product of their dimensions instead
-        if new.shape[0] * new.shape[1] != self.shape[0] * self.shape[1]:
-            raise ValueError("the product of the dimensions for the new sparse "
-                             "matrix must equal that of the original matrix")
+        if order == 'C':
+            ncols = self.shape[1]
+            for i, row in enumerate(self.rows):
+                for col, j in enumerate(row):
+                    new_r, new_c = np.unravel_index(i * ncols + j, shape)
+                    new[new_r, new_c] = self[i, j]
+        elif order == 'F':
+            nrows = self.shape[0]
+            for i, row in enumerate(self.rows):
+                for col, j in enumerate(row):
+                    new_r, new_c = np.unravel_index(i + j * nrows, shape, order)
+                    new[new_r, new_c] = self[i, j]
+        else:
+            raise ValueError("'order' must be 'C' or 'F'")
 
-        for i, row in enumerate(self.rows):
-            for col, j in enumerate(row):
-                new_r, new_c = np.unravel_index(i*j_max + j, shape)
-                new[new_r, new_c] = self[i, j]
         return new
 
     reshape.__doc__ = spmatrix.reshape.__doc__
+
+    def resize(self, *shape):
+        shape = check_shape(shape)
+        new_M, new_N = shape
+        M, N = self.shape
+
+        if new_M < M:
+            self.rows = self.rows[:new_M]
+            self.data = self.data[:new_M]
+        elif new_M > M:
+            self.rows = np.resize(self.rows, new_M)
+            self.data = np.resize(self.data, new_M)
+            for i in range(M, new_M):
+                self.rows[i] = []
+                self.data[i] = []
+
+        if new_N < N:
+            for row, data in zip(self.rows, self.data):
+                trunc = bisect_left(row, new_N)
+                del row[trunc:]
+                del data[trunc:]
+
+        self._shape = shape
+
+    resize.__doc__ = spmatrix.resize.__doc__
 
     def toarray(self, order=None, out=None):
         d = self._process_toarray_args(order, out)
@@ -449,7 +455,7 @@ class lil_matrix(spmatrix, IndexMixin):
     toarray.__doc__ = spmatrix.toarray.__doc__
 
     def transpose(self, axes=None, copy=False):
-        return self.tocsr().transpose(axes=axes, copy=copy).tolil()
+        return self.tocsr(copy=copy).transpose(axes=axes, copy=False).tolil(copy=False)
 
     transpose.__doc__ = spmatrix.transpose.__doc__
 
@@ -464,19 +470,10 @@ class lil_matrix(spmatrix, IndexMixin):
     def tocsr(self, copy=False):
         lst = [len(x) for x in self.rows]
         idx_dtype = get_index_dtype(maxval=max(self.shape[1], sum(lst)))
-        indptr = np.asarray(lst, dtype=idx_dtype)
-        indptr = np.concatenate((np.array([0], dtype=idx_dtype),
-                                 np.cumsum(indptr, dtype=idx_dtype)))
 
-        indices = []
-        for x in self.rows:
-            indices.extend(x)
-        indices = np.asarray(indices, dtype=idx_dtype)
-
-        data = []
-        for x in self.data:
-            data.extend(x)
-        data = np.asarray(data, dtype=self.dtype)
+        indptr = np.cumsum([0] + lst, dtype=idx_dtype)
+        indices = np.array([x for y in self.rows for x in y], dtype=idx_dtype)
+        data = np.array([x for y in self.data for x in y], dtype=self.dtype)
 
         from .csr import csr_matrix
         return csr_matrix((data, indices, indptr), shape=self.shape)

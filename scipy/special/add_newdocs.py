@@ -3,14 +3,9 @@
 # The syntax is designed to look like the function add_newdoc is being
 # called from numpy.lib, but in this file add_newdoc puts the
 # docstrings in a dictionary. This dictionary is used in
-# generate_ufuncs.py to generate the docstrings for the ufuncs in
+# _generate_pyx.py to generate the docstrings for the ufuncs in
 # scipy.special at the C level when the ufuncs are created at compile
 # time.
-#
-# Note : After editing this file and committing changes, please run
-# generate_funcs.py and commit the changes as a separate commit with a comment
-# such as : GEN: special: run generate_ufuncs.py
-
 
 from __future__ import division, print_function, absolute_import
 
@@ -268,7 +263,7 @@ add_newdoc("scipy.special", "airy",
            http://www.netlib.org/cephes/index.html
     .. [2] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
            of a Complex Argument and Nonnegative Order",
-           http://netlib.org/amos/.org/amos/
+           http://netlib.org/amos/
 
     Examples
     --------
@@ -3365,10 +3360,51 @@ add_newdoc("scipy.special", "hyp2f0",
     """)
 
 add_newdoc("scipy.special", "hyp2f1",
-    """
+    r"""
     hyp2f1(a, b, c, z)
 
-    Gauss hypergeometric function 2F1(a, b; c; z).
+    Gauss hypergeometric function 2F1(a, b; c; z)
+
+    Parameters
+    ----------
+    a, b, c : array_like
+        Arguments, should be real-valued.
+    z : array_like
+        Argument, real or complex.
+
+    Returns
+    -------
+    hyp2f1 : scalar or ndarray
+        The values of the gaussian hypergeometric function.
+
+    See also
+    --------
+    hyp0f1 : confluent hypergeometric limit function.
+    hyp1f1 : Kummer's (confluent hypergeometric) function.
+
+    Notes
+    -----
+    This function is defined for :math:`|z| < 1` as
+
+    .. math::
+
+       \mathrm{hyp2f1}(a, b, c, z) = \sum_{n=0}^\infty
+       \frac{(a)_n (b)_n}{(c)_n}\frac{z^n}{n!},
+
+    and defined on the rest of the complex z-plane by analytic continuation.
+    Here :math:`(\cdot)_n` is the Pochhammer symbol; see `poch`. When
+    :math:`n` is an integer the result is a polynomial of degree :math:`n`.
+
+    The implementation for complex values of ``z`` is described in [1]_.
+
+    References
+    ----------
+    .. [1] S. Zhang and J.M. Jin, "Computation of Special Functions", Wiley 1996
+    .. [2] Cephes Mathematical Functions Library,
+           http://www.netlib.org/cephes/index.html
+    .. [3] NIST Digital Library of Mathematical Functions
+           http://dlmf.nist.gov/
+
     """)
 
 add_newdoc("scipy.special", "hyp3f0",
@@ -3626,7 +3662,7 @@ add_newdoc("scipy.special", "it2struve0",
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
     """)
 
 add_newdoc("scipy.special", "itairy",
@@ -3665,7 +3701,7 @@ add_newdoc("scipy.special", "itairy",
 
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
     """)
 
 add_newdoc("scipy.special", "iti0k0",
@@ -3724,7 +3760,7 @@ add_newdoc("scipy.special", "itmodstruve0",
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """)
 
@@ -3760,7 +3796,7 @@ add_newdoc("scipy.special", "itstruve0",
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """)
 
@@ -3907,7 +3943,7 @@ add_newdoc("scipy.special", "j0",
     two rational functions of degree 6/6 and 7/7.
 
     This function is a wrapper for the Cephes [1]_ routine `j0`.
-    It should not to be confused with the spherical Bessel functions (see
+    It should not be confused with the spherical Bessel functions (see
     `spherical_jn`).
 
     See also
@@ -3945,7 +3981,7 @@ add_newdoc("scipy.special", "j1",
     functions of degree 5/5.
 
     This function is a wrapper for the Cephes [1]_ routine `j1`.
-    It should not to be confused with the spherical Bessel functions (see
+    It should not be confused with the spherical Bessel functions (see
     `spherical_jn`).
 
     See also
@@ -4003,9 +4039,9 @@ add_newdoc("scipy.special", "jv",
     Bessel function :math:`I_v`,
 
     .. math::
-        J_v(z) = \exp(n\pi\imath/2) I_v(-\imath z)\qquad (\Im z > 0)
+        J_v(z) = \exp(v\pi\imath/2) I_v(-\imath z)\qquad (\Im z > 0)
 
-        J_v(z) = \exp(-n\pi\imath/2) I_v(\imath z)\qquad (\Im z < 0)
+        J_v(z) = \exp(-v\pi\imath/2) I_v(\imath z)\qquad (\Im z < 0)
 
     For negative `v` values the formula,
 
@@ -4059,9 +4095,9 @@ add_newdoc("scipy.special", "jve",
     Bessel function :math:`I_v`,
 
     .. math::
-        J_v(z) = \exp(n\pi\imath/2) I_v(-\imath z)\qquad (\Im z > 0)
+        J_v(z) = \exp(v\pi\imath/2) I_v(-\imath z)\qquad (\Im z > 0)
 
-        J_v(z) = \exp(-n\pi\imath/2) I_v(\imath z)\qquad (\Im z < 0)
+        J_v(z) = \exp(-v\pi\imath/2) I_v(\imath z)\qquad (\Im z < 0)
 
     For negative `v` values the formula,
 
@@ -5854,7 +5890,7 @@ add_newdoc("scipy.special", "pbwa",
            http://dlmf.nist.gov/14.30
     .. [2] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
     """)
 
 add_newdoc("scipy.special", "pdtr",
@@ -6775,11 +6811,41 @@ add_newdoc("scipy.special", "zetac",
 
     .. math:: \\zeta(x) = \\sum_{k=2}^{\\infty} 1 / k^x,
 
-    where ``x > 1``.
+    where ``x > 1``.  For ``x < 1``, the analytic continuation is computed.
+
+    Because of limitations of the numerical algorithm, ``zetac(x)`` returns
+    `nan` for `x` less than -30.8148.
+
+    Parameters
+    ----------
+    x : array_like of float
+        Values at which to compute zeta(x) - 1 (must be real).
+
+    Returns
+    -------
+    out : array_like
+        Values of zeta(x) - 1.
 
     See Also
     --------
     zeta
+
+    Examples
+    --------
+    >>> from scipy.special import zetac, zeta
+
+    Some special values:
+
+    >>> zetac(2), np.pi**2/6 - 1
+    (0.64493406684822641, 0.6449340668482264)
+
+    >>> zetac(-1), -1.0/12 - 1
+    (-1.0833333333333333, -1.0833333333333333)
+
+    Compare ``zetac(x)`` to ``zeta(x) - 1`` for large `x`:
+
+    >>> zetac(60), zeta(60) - 1
+    (8.673617380119933e-19, 0.0)
 
     """)
 
@@ -6931,4 +6997,41 @@ add_newdoc("scipy.special", "_sinpi",
 add_newdoc("scipy.special", "_cospi",
     """
     Internal function, do not use.
+    """)
+
+add_newdoc("scipy.special", "owens_t",
+    """
+    owens_t(h, a)
+
+    Owen's T Function.
+
+    The function T(h, a) gives the probability of the event
+    (X > h and 0 < Y < a * X) where X and Y are independent
+    standard normal random variables.
+
+    Parameters
+    ----------
+    h: array_like
+        Input value.
+    a: array_like
+        Input value.
+
+    Returns
+    -------
+    t: scalar or ndarray
+        Probability of the event (X > h and 0 < Y < a * X),
+        where X and Y are independent standard normal random variables.
+
+    Examples
+    --------
+    >>> from scipy import special
+    >>> a = 3.5
+    >>> h = 0.78
+    >>> special.owens_t(h, a)
+    0.10877216734852274
+
+    References
+    ----------
+    .. [1] M. Patefield and D. Tandy, "Fast and accurate calculation of
+           Owen's T Function", Statistical Software vol. 5, pp. 1-25, 2000.
     """)

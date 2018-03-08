@@ -280,7 +280,7 @@ def _solve_simplex(T, n, basis, maxiter=1000, phase=2, callback=None,
     tol : float
         The tolerance which determines when a solution is "close enough" to
         zero in Phase 1 to be considered a basic feasible solution or close
-        enough to positive to to serve as an optimal solution.
+        enough to positive to serve as an optimal solution.
     nit0 : int
         The initial iteration number used to keep an accurate iteration total
         in a two-phase problem.
@@ -452,7 +452,7 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     tol : float
         The tolerance which determines when a solution is "close enough" to
         zero in Phase 1 to be considered a basic feasible solution or close
-        enough to positive to to serve as an optimal solution.
+        enough to positive to serve as an optimal solution.
     bland : bool
         If True, use Bland's anti-cycling rule [3] to choose pivots to
         prevent cycling.  If False, choose pivots which should lead to a
@@ -869,7 +869,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         ``max`` will be applied to all variables in the problem.
     method : str, optional
         Type of solver.  :ref:`'simplex' <optimize.linprog-simplex>`
-        and :ref:`'interior point' <optimize.linprog-interior-point>`
+        and :ref:`'interior-point' <optimize.linprog-interior-point>`
         are supported.
     callback : callable, optional (simplex only)
         If a callback function is provide, it will be called within each
@@ -1017,10 +1017,10 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
          fun: -22.0
      message: 'Optimization terminated successfully.'
          nit: 1
-       slack: array([ 39.,   0.])
+       slack: array([39.,  0.])
       status: 0
      success: True
-           x: array([ 10.,  -3.])
+           x: array([10., -3.])
 
     Note the actual objective value is 11.428571.  In this case we minimized
     the negative of the objective function.

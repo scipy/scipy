@@ -31,6 +31,7 @@ Using any of these subpackages requires an explicit import.  For example,
  odr                          --- Orthogonal Distance Regression
  optimize                     --- Optimization Tools
  signal                       --- Signal Processing Tools
+ signal.windows               --- Window functions
  sparse                       --- Sparse Matrices
  sparse.linalg                --- Sparse Linear Algebra
  sparse.linalg.dsolve         --- Linear Solvers
@@ -102,7 +103,7 @@ else:
     except ImportError:
         msg = """Error importing scipy: you cannot import scipy while
         being in scipy source directory; please exit the scipy source
-        tree first, and relaunch your python intepreter."""
+        tree first, and relaunch your python interpreter."""
         raise ImportError(msg)
 
     from scipy.version import version as __version__

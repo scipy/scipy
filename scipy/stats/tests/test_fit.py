@@ -4,8 +4,8 @@ import os
 
 import numpy as np
 from numpy.testing import assert_allclose
+from scipy._lib._numpy_compat import suppress_warnings
 import pytest
-
 from scipy import stats
 
 from .test_continuous_basic import distcont
@@ -49,7 +49,6 @@ def cases_test_cont_fit():
     # this tests the closeness of the estimated parameters to the true
     # parameters with fit method of continuous distributions
     # Note: is slow, some distributions don't converge with sample size <= 10000
-
     for distname, arg in distcont:
         if distname not in skip_fit:
             yield distname, arg
@@ -81,7 +80,8 @@ def test_cont_fit(distname, arg):
         # Note that if a fit succeeds, the other fit_sizes are skipped
         np.random.seed(1234)
 
-        with np.errstate(all='ignore'):
+        with np.errstate(all='ignore'), suppress_warnings() as sup:
+            sup.filter(category=DeprecationWarning, message=".*frechet_")
             rvs = distfn.rvs(size=fit_size, *arg)
             est = distfn.fit(rvs)  # start with default values
 

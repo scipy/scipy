@@ -64,7 +64,7 @@ c                     if dqawoe is to be used only once, icall must
 c                     be set to 1.  assume that during this call, the
 c                     chebyshev moments (for clenshaw-curtis integration
 c                     of degree 24) have been computed for intervals of
-c                     lenghts (abs(b-a))*2**(-l), l=0,1,2,...momcom-1.
+c                     lengths (abs(b-a))*2**(-l), l=0,1,2,...momcom-1.
 c                     if icall.gt.1 this means that dqawoe has been
 c                     called twice or more on intervals of the same
 c                     length abs(b-a). the chebyshev moments already
@@ -74,7 +74,7 @@ c
 c            maxp1  - integer
 c                     gives an upper bound on the number of chebyshev
 c                     moments which can be stored, i.e. for the
-c                     intervals of lenghts abs(b-a)*2**(-l),
+c                     intervals of lengths abs(b-a)*2**(-l),
 c                     l=0,1, ..., maxp1-2, maxp1.ge.1.
 c                     if maxp1.lt.1, the routine will end with ier = 6.
 c

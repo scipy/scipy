@@ -74,7 +74,7 @@ def warning_calls():
         # use tokenize to auto-detect encoding on systems where no
         # default encoding is defined (e.g. LANG='C')
         with tokenize.open(str(path)) as file:
-            tree = ast.parse(file.read())
+            tree = ast.parse(file.read(), filename=str(path))
             finder = FindFuncs(path.relative_to(base))
             finder.visit(tree)
             bad_filters.extend(finder.bad_filters)
@@ -88,14 +88,16 @@ def warning_calls():
 def test_warning_calls_filters(warning_calls):
     bad_filters, bad_stacklevels = warning_calls
 
-    # There is still one missing occurance in optimize.py,
+    # There is still one missing occurrence in optimize.py,
     # this is one that should be fixed and this removed then.
     bad_filters = [item for item in bad_filters
                    if 'optimize.py' not in item]
 
     if bad_filters:
         raise AssertionError(
-            "ignore filter should not be used; found in:\n    {}".format(
+            "warning ignore filter should not be used, instead, use\n"
+            "scipy._lib._numpy_compat.suppress_warnings (in tests only);\n"
+            "found in:\n    {}".format(
                 "\n    ".join(bad_filters)))
 
 
@@ -108,8 +110,9 @@ def test_warning_calls_stacklevels(warning_calls):
     msg = ""
 
     if bad_filters:
-        msg += "ignore filter should not be used:\n    {}".format(
-            "\n    ".join(bad_filters))
+        msg += ("warning ignore filter should not be used, instead, use\n"
+                "scipy._lib._numpy_compat.suppress_warnings (in tests only);\n"
+                "found in:\n    {}".format("\n    ".join(bad_filters)))
         msg += "\n\n"
 
     if bad_stacklevels:

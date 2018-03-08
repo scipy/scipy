@@ -13,6 +13,11 @@ import sys
 __all__ = ['PytestTester', 'check_free_memory']
 
 
+class FPUModeChangeWarning(RuntimeWarning):
+    """Warning about FPU mode change"""
+    pass
+
+
 class PytestTester(object):
     """
     Pytest test runner entry point.
@@ -118,6 +123,6 @@ def _get_mem_available():
             # Linux >= 3.14
             return info['memavailable']
         else:
-            return info['memfree'] + info['memcached']
+            return info['memfree'] + info['cached']
 
     return None

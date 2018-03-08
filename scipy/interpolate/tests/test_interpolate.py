@@ -3,8 +3,11 @@ from __future__ import division, print_function, absolute_import
 import itertools
 
 from numpy.testing import (assert_, assert_equal, assert_almost_equal,
-        assert_array_almost_equal, assert_raises, assert_array_equal,
-        dec, assert_allclose)
+        assert_array_almost_equal, assert_array_equal,
+        assert_allclose)
+from pytest import raises as assert_raises
+import pytest
+
 from numpy import mgrid, pi, sin, ogrid, poly1d, linspace
 import numpy as np
 
@@ -12,7 +15,7 @@ from scipy._lib.six import xrange
 from scipy._lib._numpy_compat import _assert_warns, suppress_warnings
 
 from scipy.interpolate import (interp1d, interp2d, lagrange, PPoly, BPoly,
-         ppform, splrep, splev, splantider, splint, sproot, Akima1DInterpolator,
+         splrep, splev, splantider, splint, sproot, Akima1DInterpolator,
          RegularGridInterpolator, LinearNDInterpolator, NearestNDInterpolator,
          RectBivariateSpline, interpn, NdPPoly, BSpline)
 
@@ -20,7 +23,7 @@ from scipy.special import poch, gamma
 
 from scipy.interpolate import _ppoly
 
-from scipy._lib._gcutils import assert_deallocated
+from scipy._lib._gcutils import assert_deallocated, IS_PYPY
 
 from scipy.integrate import nquad
 
@@ -610,6 +613,7 @@ class TestInterp1D(object):
             self._check_complex(np.complex64, kind)
             self._check_complex(np.complex128, kind)
 
+    @pytest.mark.skipif(IS_PYPY, reason="Test not meaningful on PyPy")
     def test_circular_refs(self):
         # Test interp1d can be automatically garbage collected
         x = np.linspace(0, 1)
@@ -1573,7 +1577,7 @@ class TestBPolyCalculus(object):
         #        (x-1)/2  for x \in [1, 3]
         #
         # antiderivative is then
-        # F(x) = x**2 / 2            for x \in [0, 1), 
+        # F(x) = x**2 / 2            for x \in [0, 1),
         #        0.5*x*(x/2 - 1) + A  for x \in [1, 3]
         # where A = 3/4 for continuity at x = 1.
         x = [0, 1, 3]
@@ -1581,7 +1585,7 @@ class TestBPolyCalculus(object):
 
         bp = BPoly(c, x)
         bi = bp.antiderivative()
-        
+
         xx = np.linspace(0, 3, 11)
         assert_allclose(bi(xx),
                         np.where(xx < 1, xx**2 / 2.,
@@ -1673,7 +1677,7 @@ class TestBPolyCalculus(object):
         b = BPoly(c, x)
 
         xx = np.linspace(0, 1, 21)
-        
+
         assert_allclose(b.derivative(-1)(xx), b.antiderivative()(xx),
                         atol=1e-12, rtol=1e-12)
         assert_allclose(b.derivative(1)(xx), b.antiderivative(-1)(xx),
@@ -1878,18 +1882,6 @@ class TestBPolyFromDerivatives(object):
         p = BPoly.from_derivatives([0, 1], [[0], [0]], orders=orders)
         assert_almost_equal(p(0), 0)
         orders = 1
-
-
-class TestPpform(object):
-    def test_shape(self):
-        np.random.seed(1234)
-        c = np.random.rand(3, 12, 5, 6, 7)
-        x = np.sort(np.random.rand(13))
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, "ppform is deprecated")
-            p = ppform(c, x)
-        xp = np.random.rand(3, 4)
-        assert_equal(p(xp).shape, (3, 4, 5, 6, 7))
 
 
 class TestNdPPoly(object):

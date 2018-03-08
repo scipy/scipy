@@ -61,7 +61,7 @@
 #ifndef CEPHES_POLEV
 #define CEPHES_POLEV
 
-#include "protos.h"
+#include "cephes.h"
 #include <numpy/npy_common.h>
 
 static NPY_INLINE double polevl(double x, double coef[], int N)
@@ -138,7 +138,7 @@ static NPY_INLINE double ratevl(double x, double num[], int M, double denom[], i
     } else {
 	p = denom;
     }
-    
+
     denom_ans = *p;
     p += dir;
     for (i = 1; i <= N; i++) {

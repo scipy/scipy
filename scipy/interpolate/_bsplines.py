@@ -241,7 +241,7 @@ class BSpline(object):
 
     @property
     def tck(self):
-        """Equvalent to ``(self.t, self.c, self.k)`` (read-only).
+        """Equivalent to ``(self.t, self.c, self.k)`` (read-only).
         """
         return self.t, self.c, self.k
 

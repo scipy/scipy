@@ -64,7 +64,7 @@ int raw_multipack_calling_function(int *n, double *x, double *fvec, int *iflag)
 
   PyArrayObject *result_array = NULL;
  
-  result_array = (PyArrayObject *)call_python_function(multipack_python_function, *n, x, multipack_extra_arguments, 1, minpack_error);
+  result_array = (PyArrayObject *)call_python_function(multipack_python_function, *n, x, multipack_extra_arguments, 1, minpack_error, *n);
   if (result_array == NULL) {
     *iflag = -1;
     return -1;
@@ -90,7 +90,7 @@ int jac_multipack_calling_function(int *n, double *x, double *fvec, double *fjac
   PyArrayObject *result_array;
 
   if (*iflag == 1) {
-    result_array = (PyArrayObject *)call_python_function(multipack_python_function, *n, x, multipack_extra_arguments, 1, minpack_error);
+    result_array = (PyArrayObject *)call_python_function(multipack_python_function, *n, x, multipack_extra_arguments, 1, minpack_error, *n);
     if (result_array == NULL) {
       *iflag = -1;
       return -1;
@@ -98,7 +98,7 @@ int jac_multipack_calling_function(int *n, double *x, double *fvec, double *fjac
     memcpy(fvec, PyArray_DATA(result_array), (*n)*sizeof(double));
   }
   else {         /* iflag == 2 */
-    result_array = (PyArrayObject *)call_python_function(multipack_python_jacobian, *n, x, multipack_extra_arguments, 2, minpack_error);
+    result_array = (PyArrayObject *)call_python_function(multipack_python_jacobian, *n, x, multipack_extra_arguments, 2, minpack_error, (*n)*(*ldfjac));
     if (result_array == NULL) {
       *iflag = -1;
       return -1;
@@ -123,7 +123,7 @@ int raw_multipack_lm_function(int *m, int *n, double *x, double *fvec, int *ifla
 
   PyArrayObject *result_array = NULL;
  
-  result_array = (PyArrayObject *)call_python_function(multipack_python_function,*n, x, multipack_extra_arguments, 1, minpack_error);
+  result_array = (PyArrayObject *)call_python_function(multipack_python_function,*n, x, multipack_extra_arguments, 1, minpack_error, *m);
   if (result_array == NULL) {
     *iflag = -1;
     return -1;
@@ -148,7 +148,7 @@ int jac_multipack_lm_function(int *m, int *n, double *x, double *fvec, double *f
   PyArrayObject *result_array;
 
   if (*iflag == 1) {
-    result_array = (PyArrayObject *)call_python_function(multipack_python_function, *n, x, multipack_extra_arguments, 1, minpack_error);
+    result_array = (PyArrayObject *)call_python_function(multipack_python_function, *n, x, multipack_extra_arguments, 1, minpack_error, *m);
     if (result_array == NULL) {
       *iflag = -1;
       return -1;
@@ -156,7 +156,7 @@ int jac_multipack_lm_function(int *m, int *n, double *x, double *fvec, double *f
     memcpy(fvec, PyArray_DATA(result_array), (*m)*sizeof(double));
   }
   else {         /* iflag == 2 */
-    result_array = (PyArrayObject *)call_python_function(multipack_python_jacobian, *n, x, multipack_extra_arguments, 2, minpack_error);
+    result_array = (PyArrayObject *)call_python_function(multipack_python_jacobian, *n, x, multipack_extra_arguments, 2, minpack_error, (*n)*(*ldfjac));
     if (result_array == NULL) {
       *iflag = -1;
       return -1;
@@ -186,7 +186,7 @@ int smjac_multipack_lm_function(int *m, int *n, double *x, double *fvec, double 
   PyArrayObject *result_array;
 
   if (*iflag == 1) {
-    result_array = (PyArrayObject *)call_python_function(multipack_python_function, *n, x, multipack_extra_arguments, 1, minpack_error);
+    result_array = (PyArrayObject *)call_python_function(multipack_python_function, *n, x, multipack_extra_arguments, 1, minpack_error, *m);
     if (result_array == NULL) {
       *iflag = -1;
       return -1;
@@ -209,7 +209,7 @@ int smjac_multipack_lm_function(int *m, int *n, double *x, double *fvec, double 
       return -1;
     }
 
-    result_array = (PyArrayObject *)call_python_function(multipack_python_jacobian, *n, x, newargs, 2, minpack_error);
+    result_array = (PyArrayObject *)call_python_function(multipack_python_jacobian, *n, x, newargs, 2, minpack_error, *n);
     if (result_array == NULL) {
       Py_DECREF(newargs);
       *iflag = -1;
@@ -260,7 +260,7 @@ static PyObject *minpack_hybrd(PyObject *dummy, PyObject *args) {
   if (maxfev < 0) maxfev = 200*(n+1);
 
   /* Setup array to hold the function evaluations */
-  ap_fvec = (PyArrayObject *)call_python_function(fcn, n, x, extra_args, 1, minpack_error);
+  ap_fvec = (PyArrayObject *)call_python_function(fcn, n, x, extra_args, 1, minpack_error, -1);
   if (ap_fvec == NULL) goto fail;
   fvec = (double *) PyArray_DATA(ap_fvec);
   if (PyArray_NDIM(ap_fvec) == 0)
@@ -361,7 +361,7 @@ static PyObject *minpack_hybrj(PyObject *dummy, PyObject *args) {
   if (maxfev < 0) maxfev = 100*(n+1);
 
   /* Setup array to hold the function evaluations */
-  ap_fvec = (PyArrayObject *)call_python_function(fcn, n, x, extra_args, 1, minpack_error);
+  ap_fvec = (PyArrayObject *)call_python_function(fcn, n, x, extra_args, 1, minpack_error, -1);
   if (ap_fvec == NULL) goto fail;
   fvec = (double *) PyArray_DATA(ap_fvec);
   if (PyArray_NDIM(ap_fvec) == 0)
@@ -467,7 +467,7 @@ static PyObject *minpack_lmdif(PyObject *dummy, PyObject *args) {
   if (maxfev < 0) maxfev = 200*(n+1);
 
   /* Setup array to hold the function evaluations and find it's size*/
-  ap_fvec = (PyArrayObject *)call_python_function(fcn, n, x, extra_args, 1, minpack_error);
+  ap_fvec = (PyArrayObject *)call_python_function(fcn, n, x, extra_args, 1, minpack_error, -1);
   if (ap_fvec == NULL) goto fail;
   fvec = (double *) PyArray_DATA(ap_fvec);
   m = (PyArray_NDIM(ap_fvec) > 0 ? PyArray_DIMS(ap_fvec)[0] : 1);
@@ -562,7 +562,7 @@ static PyObject *minpack_lmder(PyObject *dummy, PyObject *args) {
   if (maxfev < 0) maxfev = 100*(n+1);
 
   /* Setup array to hold the function evaluations */
-  ap_fvec = (PyArrayObject *)call_python_function(fcn, n, x, extra_args, 1, minpack_error);
+  ap_fvec = (PyArrayObject *)call_python_function(fcn, n, x, extra_args, 1, minpack_error, -1);
   if (ap_fvec == NULL) goto fail;
   fvec = (double *) PyArray_DATA(ap_fvec);
 

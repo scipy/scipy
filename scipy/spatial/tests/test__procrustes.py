@@ -1,8 +1,8 @@
 from __future__ import absolute_import, division, print_function
 
 import numpy as np
-from numpy.testing import (assert_allclose,
-                           assert_equal, assert_almost_equal, assert_raises)
+from numpy.testing import assert_allclose, assert_equal, assert_almost_equal
+from pytest import raises as assert_raises
 
 from scipy.spatial import procrustes
 

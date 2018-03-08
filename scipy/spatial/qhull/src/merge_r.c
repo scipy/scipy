@@ -117,7 +117,7 @@ void qh_premerge(qhT *qh, vertexT *apex, realT maxcentrum, realT maxangle) {
       mark non-simplicial facets, facet->newmerge
       set qh.newvertext_list to qh.vertex_list
       add all vertices to qh.newvertex_list
-      if a pre-merge occured
+      if a pre-merge occurred
         set vertex->delridge {will retest the ridge}
         if qh.MERGEexact
           call qh_reducevertices()
@@ -2990,7 +2990,7 @@ boolT qh_reducevertices(qhT *qh) {
   design:
     intersect vertices of all facet neighbors of vertex
     determine ridges for these vertices
-    if find a new vertex for vertex amoung these ridges and vertices
+    if find a new vertex for vertex among these ridges and vertices
       rename vertex to the new vertex
 */
 vertexT *qh_redundant_vertex(qhT *qh, vertexT *vertex) {
