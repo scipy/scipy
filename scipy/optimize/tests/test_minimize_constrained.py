@@ -12,6 +12,7 @@ from scipy.optimize import (NonlinearConstraint,
                             minimize,
                             BFGS,
                             SR1)
+from scipy._lib._numpy_compat import suppress_warnings
 
 
 class Maratos:
