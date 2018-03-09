@@ -540,3 +540,38 @@ def test_pole_in_polygon(polygon, pole_present):
     result = _surface_area.pole_in_polygon(polygon, t_values)
     expected = pole_present
     assert result == expected
+
+def test_multiple_planar_polygons():
+    # test that an input list of PLANAR
+    # polygons can be handled with
+    # the appropriate area array
+    # returned
+    # NOTE: an example that works with planar
+    # Voronoi class from scipy would perhaps
+    # be even more compelling, but we would
+    # have to think about edges at infinity (etc.)
+
+    def rectangle_area(w, l):
+        return w * l
+
+    expected_areas = []
+    # in this case the list of polygons could be
+    # an array since all rectangles have the same
+    # shape, but will use nested (arrays in list)
+    # data structure for testing purposes to
+    # comply with more usual scenarios
+    list_rectangles = []
+    length = 3.019
+    for width in range(3,20):
+        expected_areas.append(rectangle_area(width, length))
+        # generate all test rectangle coords from a base
+        # vertex at the origin
+        current_rectangle = np.array([[0,0,0],
+                                      [0,length,0],
+                                      [width,length,0],
+                                      [width,0,0]])
+        list_rectangles.append(current_rectangle)
+
+    area_array = psa.poly_area(vertices=list_rectangles,
+                               n_polygons=len(list_rectangles))
+    assert_allclose(area_array, expected_areas)

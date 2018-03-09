@@ -24,6 +24,8 @@ cdef planar_polygon_area(double[:,:] vertices):
     for i in range(N):
         forward_index = vertex_index_strider(i, N)
         backward_index = i - 1
+        if backward_index < 0:
+            backward_index = N - 1
         delta_x = (vertices[forward_index, 0] -
                    vertices[backward_index, 0])
         area += delta_x * vertices[i, 1]
