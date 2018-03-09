@@ -15,7 +15,7 @@ cdef int vertex_index_strider(int index, int num_vertices):
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def planar_polygon_area(double[:,::1] vertices):
+cdef planar_polygon_area(double[:,:] vertices):
     cdef int N = vertices.shape[0]
     cdef int i, forward_index, backward_index
     cdef double area = 0
