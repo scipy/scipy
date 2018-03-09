@@ -56,6 +56,7 @@ cdef _slerp(double[:] start_coord,
                             (factors[1] * end_coord[j]))
     return new_pts
 
+@cython.cdivision(True)
 @cython.boundscheck(False)
 cdef calc_heading(double[:] lambda_range,
                   double[:] phi_range,
