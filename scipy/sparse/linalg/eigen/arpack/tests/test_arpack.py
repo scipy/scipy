@@ -22,8 +22,6 @@ from scipy.sparse.linalg import LinearOperator, aslinearoperator
 from scipy.sparse.linalg.eigen.arpack import eigs, eigsh, svds, \
      ArpackNoConvergence, arpack
 
-from scipy.linalg import svd, hilbert
-
 from scipy._lib._gcutils import assert_deallocated, IS_PYPY
 from scipy._lib._numpy_compat import suppress_warnings
 
