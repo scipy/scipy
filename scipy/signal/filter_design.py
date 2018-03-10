@@ -293,23 +293,24 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=None):
         If a single integer, then compute at that many frequencies.  This is
         a convenient alternative to::
 
-            np.linspace(0, 2*pi if whole else pi, N, endpoint=False)
+            np.linspace(0, fs if whole else fs/2, N, endpoint=False)
 
         Using a number that is fast for FFT computations can result in
-        faster computations (see Notes).
-        If an array_like, compute the response at the frequencies given.  If
-        `fs` is specified, these are in the same units as `fs`, otherwise,
-        they are in radians/sample.
+        faster computations (see Notes).  If None (default), then N=512.
+
+        If an array_like, compute the response at the frequencies given.
+        These are in the same units as `fs`.
     whole : bool, optional
         Normally, frequencies are computed from 0 to the Nyquist frequency,
-        pi radians/sample (upper-half of unit-circle).  If `whole` is True,
-        compute frequencies from 0 to 2*pi radians/sample.
+        fs/2 (upper-half of unit-circle).  If `whole` is True, compute
+        frequencies from 0 to fs.
     plot : callable
         A callable that takes two arguments. If given, the return parameters
         `w` and `h` are passed to plot. Useful for plotting the frequency
         response inside `freqz`.
     fs : float
-        The sampling frequency of the digital system.
+        The sampling frequency of the digital system.  Defaults to 2*pi
+        radians/sample (so w is from 0 to pi).
 
         .. versionadded:: 1.1.0
 
@@ -477,7 +478,7 @@ def freqz_zpk(z, p, k, worN=512, whole=False, fs=None):
     Compute the frequency response of a digital filter in ZPK form.
 
     Given the Zeros, Poles and Gain of a digital filter, compute its frequency
-    response::
+    response:
 
     :math:`H(z)=k \prod_i (z - Z[i]) / \prod_j (z - P[j])`
 
@@ -493,17 +494,18 @@ def freqz_zpk(z, p, k, worN=512, whole=False, fs=None):
     k : scalar
         Gain of a linear filter
     worN : {None, int, array_like}, optional
-        If single integer (default 512, same as None), then compute at `worN`
-        frequencies equally spaced around the unit circle. If an array_like,
-        compute the response at the frequencies given. If `fs` is specified,
-        these are in the same units as `fs`, otherwise, they are in
-        radians/sample.
+        If a single integer, then compute at that many frequencies.  If None
+        (default), then N=512.
+
+        If an array_like, compute the response at the frequencies given.
+        These are in the same units as `fs`.
     whole : bool, optional
         Normally, frequencies are computed from 0 to the Nyquist frequency,
-        pi radians/sample (upper-half of unit-circle).  If `whole` is True,
-        compute frequencies from 0 to 2*pi radians/sample.
+        fs/2 (upper-half of unit-circle).  If `whole` is True, compute
+        frequencies from 0 to fs.
     fs : float
-        The sampling frequency of the digital system.
+        The sampling frequency of the digital system.  Defaults to 2*pi
+        radians/sample (so w is from 0 to pi).
 
         .. versionadded:: 1.1.0
 
@@ -592,19 +594,19 @@ def group_delay(system, w=512, whole=False, fs=None):
     ----------
     system : tuple of array_like (b, a)
         Numerator and denominator coefficients of a filter transfer function.
-    w : {None, int, array-like}, optional
-        If None, then compute at 512 frequencies equally spaced
-        around the unit circle.
-        If a single integer, then compute at that many frequencies.
-        If array, compute the delay at the frequencies given. If
-        `fs` is specified, these are in the same units as `fs`, otherwise,
-        they are in radians/sample.
+    w : {None, int, array_like}, optional
+        If a single integer, then compute at that many frequencies.  If None
+        (default), then N=512.
+
+        If an array_like, compute the delay at the frequencies given.  These
+        are in the same units as `fs`.
     whole : bool, optional
         Normally, frequencies are computed from 0 to the Nyquist frequency,
-        pi radians/sample (upper-half of unit-circle).  If `whole` is True,
-        compute frequencies from 0 to ``2*pi`` radians/sample.
+        fs/2 (upper-half of unit-circle).  If `whole` is True, compute
+        frequencies from 0 to fs.
     fs : float
-        The sampling frequency of the digital system.
+        The sampling frequency of the digital system.  Defaults to 2*pi
+        radians/sample (so w is from 0 to pi).
 
         .. versionadded:: 1.1.0
 
@@ -728,20 +730,20 @@ def sosfreqz(sos, worN=None, whole=False, fs=None):
         coefficients and the last three providing the denominator
         coefficients.
     worN : {None, int, array_like}, optional
-        If None (default), then compute at 512 frequencies equally spaced
-        around the unit circle.
         If a single integer, then compute at that many frequencies.
         Using a number that is fast for FFT computations can result in
-        faster computations (see Notes of `freqz`).
+        faster computations (see Notes of `freqz`).  If None (default), then
+        N=512.
+
         If an array_like, compute the response at the frequencies given (must
-        be 1D). If `fs` is specified, these are in the same units as `fs`,
-        otherwise, they are in radians/sample.
+        be 1D).  These are in the same units as `fs`.
     whole : bool, optional
         Normally, frequencies are computed from 0 to the Nyquist frequency,
-        pi radians/sample (upper-half of unit-circle).  If `whole` is True,
-        compute frequencies from 0 to 2*pi radians/sample.
+        fs/2 (upper-half of unit-circle).  If `whole` is True, compute
+        frequencies from 0 to fs.
     fs : float
-        The sampling frequency of the digital system.
+        The sampling frequency of the digital system.  Defaults to 2*pi
+        radians/sample (so w is from 0 to pi).
 
         .. versionadded:: 1.1.0
 
@@ -1831,16 +1833,14 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
     ----------
     wp, ws : float
         Passband and stopband edge frequencies.
-        For digital filters, these are normalized from 0 to 1, where 1 is the
-        Nyquist frequency, pi radians/sample.  (`wp` and `ws` are thus in
-        half-cycles / sample.)  For example:
+        For digital filters, these are in the same units as `fs`.  By default,
+        `fs` is 2 half-cycles/sample, so these are normalized from 0 to 1,
+        where 1 is the Nyquist frequency.  For example:
 
             - Lowpass:   wp = 0.2,          ws = 0.3
             - Highpass:  wp = 0.3,          ws = 0.2
             - Bandpass:  wp = [0.2, 0.5],   ws = [0.1, 0.6]
             - Bandstop:  wp = [0.1, 0.6],   ws = [0.2, 0.5]
-
-        Or, if `fs` is specified, these are in the same units as `fs`.
 
         For analog filters, `wp` and `ws` are angular frequencies (e.g. rad/s).
     gpass : float
@@ -2477,10 +2477,10 @@ def butter(N, Wn, btype='low', analog=False, output='ba', fs=None):
         For a Butterworth filter, this is the point at which the gain
         drops to 1/sqrt(2) that of the passband (the "-3 dB point").
 
-        For digital filters, `Wn` is normalized from 0 to 1, where 1 is the
-        Nyquist frequency, pi radians/sample.  (`Wn` is thus in
-        half-cycles / sample.) Or, if `fs` is specified, `Wn` is in the same
-        units as `fs`.
+        For digital filters, `Wn` are in the same units as `fs`.  By default,
+        `fs` is 2 half-cycles/sample, so these are normalized from 0 to 1,
+        where 1 is the Nyquist frequency.  (`Wn` is thus in
+        half-cycles / sample.)
 
         For analog filters, `Wn` is an angular frequency (e.g. rad/s).
     btype : {'lowpass', 'highpass', 'bandpass', 'bandstop'}, optional
@@ -2583,10 +2583,10 @@ def cheby1(N, rp, Wn, btype='low', analog=False, output='ba', fs=None):
         For Type I filters, this is the point in the transition band at which
         the gain first drops below -`rp`.
 
-        For digital filters, `Wn` is normalized from 0 to 1, where 1 is the
-        Nyquist frequency, pi radians/sample.  (`Wn` is thus in
-        half-cycles / sample.) Or, if `fs` is specified, `Wn` is in the same
-        units as `fs`.
+        For digital filters, `Wn` are in the same units as `fs`.  By default,
+        `fs` is 2 half-cycles/sample, so these are normalized from 0 to 1,
+        where 1 is the Nyquist frequency.  (`Wn` is thus in
+        half-cycles / sample.)
 
         For analog filters, `Wn` is an angular frequency (e.g. rad/s).
     btype : {'lowpass', 'highpass', 'bandpass', 'bandstop'}, optional
@@ -2698,10 +2698,10 @@ def cheby2(N, rs, Wn, btype='low', analog=False, output='ba', fs=None):
         For Type II filters, this is the point in the transition band at which
         the gain first reaches -`rs`.
 
-        For digital filters, `Wn` is normalized from 0 to 1, where 1 is the
-        Nyquist frequency, pi radians/sample.  (`Wn` is thus in
-        half-cycles / sample.) Or, if `fs` is specified, `Wn` is in the same
-        units as `fs`.
+        For digital filters, `Wn` are in the same units as `fs`.  By default,
+        `fs` is 2 half-cycles/sample, so these are normalized from 0 to 1,
+        where 1 is the Nyquist frequency.  (`Wn` is thus in
+        half-cycles / sample.)
 
         For analog filters, `Wn` is an angular frequency (e.g. rad/s).
     btype : {'lowpass', 'highpass', 'bandpass', 'bandstop'}, optional
@@ -2811,10 +2811,10 @@ def ellip(N, rp, rs, Wn, btype='low', analog=False, output='ba', fs=None):
         For elliptic filters, this is the point in the transition band at
         which the gain first drops below -`rp`.
 
-        For digital filters, `Wn` is normalized from 0 to 1, where 1 is the
-        Nyquist frequency, pi radians/sample.  (`Wn` is thus in
-        half-cycles / sample.) Or, if `fs` is specified, `Wn` is in the same
-        units as `fs`.
+        For digital filters, `Wn` are in the same units as `fs`.  By default,
+        `fs` is 2 half-cycles/sample, so these are normalized from 0 to 1,
+        where 1 is the Nyquist frequency.  (`Wn` is thus in
+        half-cycles / sample.)
 
         For analog filters, `Wn` is an angular frequency (e.g. rad/s).
     btype : {'lowpass', 'highpass', 'bandpass', 'bandstop'}, optional
@@ -2928,10 +2928,10 @@ def bessel(N, Wn, btype='low', analog=False, output='ba', norm='phase',
         by the `norm` parameter).
         For analog filters, `Wn` is an angular frequency (e.g. rad/s).
 
-        For digital filters, `Wn` is normalized from 0 to 1, where 1 is the
-        Nyquist frequency, pi radians/sample.  (`Wn` is thus in
-        half-cycles / sample.) Or, if `fs` is specified, `Wn` is in the same
-        units as `fs`.
+        For digital filters, `Wn` are in the same units as `fs`.  By default,
+        `fs` is 2 half-cycles/sample, so these are normalized from 0 to 1,
+        where 1 is the Nyquist frequency.  (`Wn` is thus in
+        half-cycles / sample.)
     btype : {'lowpass', 'highpass', 'bandpass', 'bandstop'}, optional
         The type of filter.  Default is 'lowpass'.
     analog : bool, optional
@@ -3148,16 +3148,16 @@ def buttord(wp, ws, gpass, gstop, analog=False, fs=None):
     ----------
     wp, ws : float
         Passband and stopband edge frequencies.
-        For digital filters, these are normalized from 0 to 1, where 1 is the
-        Nyquist frequency, pi radians/sample.  (`wp` and `ws` are thus in
+
+        For digital filters, these are in the same units as `fs`.  By default,
+        `fs` is 2 half-cycles/sample, so these are normalized from 0 to 1,
+        where 1 is the Nyquist frequency.  (`wp` and `ws` are thus in
         half-cycles / sample.)  For example:
 
             - Lowpass:   wp = 0.2,          ws = 0.3
             - Highpass:  wp = 0.3,          ws = 0.2
             - Bandpass:  wp = [0.2, 0.5],   ws = [0.1, 0.6]
             - Bandstop:  wp = [0.1, 0.6],   ws = [0.2, 0.5]
-
-        Or, if `fs` is specified, these are in the same units as `fs`.
 
         For analog filters, `wp` and `ws` are angular frequencies (e.g. rad/s).
     gpass : float
@@ -3318,16 +3318,16 @@ def cheb1ord(wp, ws, gpass, gstop, analog=False, fs=None):
     ----------
     wp, ws : float
         Passband and stopband edge frequencies.
-        For digital filters, these are normalized from 0 to 1, where 1 is the
-        Nyquist frequency, pi radians/sample.  (`wp` and `ws` are thus in
+
+        For digital filters, these are in the same units as `fs`.  By default,
+        `fs` is 2 half-cycles/sample, so these are normalized from 0 to 1,
+        where 1 is the Nyquist frequency.  (`wp` and `ws` are thus in
         half-cycles / sample.)  For example:
 
             - Lowpass:   wp = 0.2,          ws = 0.3
             - Highpass:  wp = 0.3,          ws = 0.2
             - Bandpass:  wp = [0.2, 0.5],   ws = [0.1, 0.6]
             - Bandstop:  wp = [0.1, 0.6],   ws = [0.2, 0.5]
-
-        Or, if `fs` is specified, these are in the same units as `fs`.
 
         For analog filters, `wp` and `ws` are angular frequencies (e.g. rad/s).
     gpass : float
@@ -3456,16 +3456,16 @@ def cheb2ord(wp, ws, gpass, gstop, analog=False, fs=None):
     ----------
     wp, ws : float
         Passband and stopband edge frequencies.
-        For digital filters, these are normalized from 0 to 1, where 1 is the
-        Nyquist frequency, pi radians/sample.  (`wp` and `ws` are thus in
+
+        For digital filters, these are in the same units as `fs`.  By default,
+        `fs` is 2 half-cycles/sample, so these are normalized from 0 to 1,
+        where 1 is the Nyquist frequency.  (`wp` and `ws` are thus in
         half-cycles / sample.)  For example:
 
             - Lowpass:   wp = 0.2,          ws = 0.3
             - Highpass:  wp = 0.3,          ws = 0.2
             - Bandpass:  wp = [0.2, 0.5],   ws = [0.1, 0.6]
             - Bandstop:  wp = [0.1, 0.6],   ws = [0.2, 0.5]
-
-        Or, if `fs` is specified, these are in the same units as `fs`.
 
         For analog filters, `wp` and `ws` are angular frequencies (e.g. rad/s).
     gpass : float
@@ -3618,16 +3618,16 @@ def ellipord(wp, ws, gpass, gstop, analog=False, fs=None):
     ----------
     wp, ws : float
         Passband and stopband edge frequencies.
-        For digital filters, these are normalized from 0 to 1, where 1 is the
-        Nyquist frequency, pi radians/sample.  (`wp` and `ws` are thus in
+
+        For digital filters, these are in the same units as `fs`.  By default,
+        `fs` is 2 half-cycles/sample, so these are normalized from 0 to 1,
+        where 1 is the Nyquist frequency.  (`wp` and `ws` are thus in
         half-cycles / sample.)  For example:
 
             - Lowpass:   wp = 0.2,          ws = 0.3
             - Highpass:  wp = 0.3,          ws = 0.2
             - Bandpass:  wp = [0.2, 0.5],   ws = [0.1, 0.6]
             - Bandstop:  wp = [0.1, 0.6],   ws = [0.2, 0.5]
-
-        Or, if `fs` is specified, these are in the same units as `fs`.
 
         For analog filters, `wp` and `ws` are angular frequencies (e.g. rad/s).
     gpass : float
@@ -4272,7 +4272,7 @@ def iirnotch(w0, Q, fs=None):
     ----------
     w0 : float
         Frequency to remove from a signal. If `fs` is specified, this is in
-        the same units as `fs`. Otherwise, it is a normalized scalar that must
+        the same units as `fs`. By default, it is a normalized scalar that must
         satisfy  ``0 < w0 < 1``, with ``w0 = 1`` corresponding to half of the
         sampling frequency.
     Q : float
@@ -4356,7 +4356,7 @@ def iirpeak(w0, Q, fs=None):
     ----------
     w0 : float
         Frequency to be retained in a signal. If `fs` is specified, this is in
-        the same units as `fs`. Otherwise, it is a normalized scalar that must
+        the same units as `fs`. By default, it is a normalized scalar that must
         satisfy  ``0 < w0 < 1``, with ``w0 = 1`` corresponding to half of the
         sampling frequency.
     Q : float
@@ -4435,7 +4435,8 @@ def _design_notch_peak_filter(w0, Q, ftype, fs=None):
     Parameters
     ----------
     w0 : float
-        Normalized frequency to remove from a signal. It is a
+        Normalized frequency to remove from a signal. If `fs` is specified,
+        this is in the same units as `fs`. By default, it is a normalized
         scalar that must satisfy  ``0 < w0 < 1``, with ``w0 = 1``
         corresponding to half of the sampling frequency.
     Q : float
