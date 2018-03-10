@@ -2,18 +2,10 @@ from __future__ import division, print_function, absolute_import
 
 from math import sqrt, exp, sin, cos
 
-try:
-    import mpmath
-except ImportError:
-    mpmath = None
-
 from numpy.testing import (assert_warns, assert_, 
                            assert_allclose,
-                           assert_equal, assert_array_less)
-
+                           assert_equal)
 from numpy import finfo
-
-import pytest
 
 from scipy.optimize import zeros as cc
 from scipy.optimize import zeros
@@ -121,35 +113,18 @@ class TestRootResults:
         assert_equal(repr(r), expected_repr)
 
 
-@pytest.mark.skipif(mpmath is None, reason="skip if mpmath is None")
-def test_halley_convergence():
-    """addresses gh5922: Suboptimal convergence of Halley's"""
-    points = []
+def test_complex_halley(self):
+    """Test Halley's works with complex roots"""
+    def f(x, *a):
+        return a[0] * x**2 + a[1] * x + a[2]
 
-    def f(x):
-        points.append(x)
-        return mpmath.sin(x)
+    def f_1(x, *a):
+        return 2 * a[0] * x + a[1]
 
-    def fprime(x):
-        return mpmath.cos(x)
+    def f_2(x, *a):
+        return 2 * a[0]
 
-    def fprime2(x):
-        return -mpmath.sin(x)
-
-    with mpmath.workdps(4000):
-        tol = mpmath.mpf('1e-4000')
-        root = zeros.newton(
-            f, mpmath.mpf(3.5), fprime=fprime, fprime2=fprime2,
-            tol=tol, maxiter=100
-        )
-        assert_allclose(float(root), float(mpmath.pi), atol=1e-6)
-
-        digits = []  # roughly the number of correct digits
-        for p in points:
-            digits.append(abs(mpmath.log10(abs(p - mpmath.pi))))
-        ratios = []
-        for i in range(len(digits) - 1):
-            ratios.append(digits[i + 1] / digits[i])
-
-        # they should all be close to 3
-        assert_array_less(3.0, ratios)
+    z = complex(1.0, 2.0)
+    y = zeros.newton(f, z, args=(2., 3., 4.), fprime=f_1, fprime2=f_2, tol=1e-6)
+    # (-0.75000000000000078+1.1989578808281789j)
+    assert_allclose(f(y), 0, atol=1e-6)
