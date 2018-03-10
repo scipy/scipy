@@ -71,8 +71,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
     Find a zero of the function `func` given a nearby starting point `x0`.
     The Newton-Raphson method is used if the derivative `fprime` of `func`
     is provided, otherwise the secant method is used.  If the second order
-    derivate `fprime2` of `func` is provided, parabolic Halley's method
-    is used.
+    derivative `fprime2` of `func` is provided, then Halley's method is used.
 
     Parameters
     ----------
@@ -95,8 +94,8 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
     fprime2 : function, optional
         The second order derivative of the function when available and
         convenient. If it is None (default), then the normal Newton-Raphson
-        or the secant method is used. If it is given, parabolic Halley's
-        method is used.
+        or the secant method is used. If it is not None, then Halley's method
+        is used.
 
     Returns
     -------
@@ -131,9 +130,12 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
     
     >>> from scipy import optimize
 
-    ``fprime`` and ``fprime2`` not provided, use secant method
+    ``fprime`` not provided, use secant method
     
     >>> root = optimize.newton(f, 1.5)
+    >>> root
+    1.0000000000000016
+    >>> root = optimize.newton(f, 1.5, fprime2=lambda x: 6 * x)
     >>> root
     1.0000000000000016
 
@@ -143,12 +145,8 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
     >>> root
     1.0
     
-    ``fprime2`` provided, ``fprime`` provided/not provided use parabolic
-    Halley's method
+    Both ``fprime2`` and ``fprime`` provided, use Halley's method
 
-    >>> root = optimize.newton(f, 1.5, fprime2=lambda x: 6 * x)
-    >>> root
-    1.0000000000000016
     >>> root = optimize.newton(f, 1.5, fprime=lambda x: 3 * x**2,
     ...                        fprime2=lambda x: 6 * x)
     >>> root
@@ -173,18 +171,14 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
                 warnings.warn(msg, RuntimeWarning)
                 return p0
             fval = func(*myargs)
-            if fprime2 is not None:
-                fder2 = fprime2(*myargs)
-            if fder2 == 0:
+            newton_step = fval / fder
+            if fprime2 is None:
                 # Newton step
-                p = p0 - fval / fder
+                p = p0 - newton_step
             else:
-                # Parabolic Halley's method
-                discr = fder ** 2 - 2 * fval * fder2
-                if discr < 0:
-                    p = p0 - fder / fder2
-                else:
-                    p = p0 - 2*fval / (fder + sign(fder) * sqrt(discr))
+                fder2 = fprime2(*myargs)
+                # Halley's method
+                p = p0 - newton_step / (1.0 - 0.5 * newton_step * fder2 / fder)
             if abs(p - p0) < tol:
                 return p
             p0 = p
