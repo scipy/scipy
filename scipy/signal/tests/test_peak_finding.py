@@ -307,80 +307,101 @@ class TestPeakProminences(object):
         """
         Test if an empty array is returned if no peaks are provided.
         """
-        proms = peak_prominences([], [])[0]
-        assert_(isinstance(proms, np.ndarray))
-        assert_equal(proms.size, 0)
-        proms = peak_prominences([1, 2, 3], [])[0]
-        assert_(isinstance(proms, np.ndarray))
-        assert_equal(proms.size, 0)
+        out = peak_prominences([1, 2, 3], [])
+        for arr, dtype in zip(out, [np.float64, np.intp, np.intp]):
+            assert_(arr.size == 0)
+            assert_(arr.dtype == dtype)
+
         out = peak_prominences([], [])
-        for arr in out:
-            assert_(isinstance(arr, np.ndarray))
-            assert_equal(arr.size, 0)
+        for arr, dtype in zip(out, [np.float64, np.intp, np.intp]):
+            assert_(arr.size == 0)
+            assert_(arr.dtype == dtype)
 
     def test_basic(self):
         """
         Test if height of prominences is correctly calculated in signal with
         rising baseline (peak widths are 1 sample).
         """
-        x = np.linspace(1, 4, 7)  # Rising baseline
-        peak_heights = [2, 4, 1.2]  # Peak heights
-        peak_pos = [1, 3, 5]
-        desired = []
-        for h, p in zip(peak_heights, peak_pos):
-            x[p] += h
-            # Peak prominence is difference between vector[peak] and next
-            # sample to the right
-            desired.append(x[p] - x[p + 1])
-        actual = peak_prominences(x, [1, 3, 5])[0]
-        assert_equal(actual, desired)
+        # Prepare basic signal
+        x = np.array([-1, 1.2, 1.2, 1, 3.2, 1.3, 2.88, 2.1])
+        peaks = np.array([1, 2, 4, 6])
+        lbases = np.array([0, 0, 0, 5])
+        rbases = np.array([3, 3, 5, 7])
+        proms = x[peaks] - np.max([x[lbases], x[rbases]], axis=0)
+        # Test if calculation matches handcrafted result
+        out = peak_prominences(x, peaks)
+        assert_equal(out[0], proms)
+        assert_equal(out[1], lbases)
+        assert_equal(out[2], rbases)
+
+    def test_edge_cases(self):
+        """
+        Test edge cases.
+        """
+        # Peaks have same height, prominence and bases
+        x = [0, 2, 1, 2, 1, 2, 0]
+        peaks = [1, 3, 5]
+        proms, lbases, rbases = peak_prominences(x, peaks)
+        assert_equal(proms, [2, 2, 2])
+        assert_equal(lbases, [0, 0, 0])
+        assert_equal(rbases, [6, 6, 6])
+
+        # Peaks have same height & prominence but different bases
+        x = [0, 1, 0, 1, 0, 1, 0]
+        peaks = np.array([1, 3, 5])
+        proms, lbases, rbases = peak_prominences(x, peaks)
+        assert_equal(proms, [1, 1, 1])
+        assert_equal(lbases, peaks - 1)
+        assert_equal(rbases, peaks + 1)
+
+    def test_non_contiguous(self):
+        """
+        Test with non-C-contiguous input arrays.
+        """
+        x = np.repeat([-9, 9, 9, 0, 3, 1], 2)
+        peaks = np.repeat([1, 2, 4], 2)
+        proms, lbases, rbases = peak_prominences(x[::2], peaks[::2])
+        assert_equal(proms, [9, 9, 2])
+        assert_equal(lbases, [0, 0, 3])
+        assert_equal(rbases, [3, 3, 5])
 
     def test_wlen(self):
         """
-        Test if wlen actually shrinks the evaluation range.
+        Test if wlen actually shrinks the evaluation range correctly.
         """
-        t = np.linspace(0, 4 * np.pi, 1000)
-        x = abs(np.sin(t))
-        peaks = argrelmax(x)[0]
-        # Raise 2 baseline of peaks in the middle
-        x[250:750] += 0.3
-        # If entire x is used the middle two peaks should have a prominence
-        # of approx. 1 + 0.3, otherwise minima between second and third peak
-        # should be lowest contour line and prominence should be < 1.1
-        proms_wlen = peak_prominences(x, peaks, wlen=600)[0]
-        assert_(np.all(proms_wlen < 1.1))
-        # If window length is 2
-        assert_equal(peak_prominences(x, peaks)[0],
-                     peak_prominences(x, peaks, wlen=(x.size * 2))[0])
+        x = [0, 1, 2, 3, 1, 0, -1]
+        peak = [3]
+        # Test rounding behavior of wlen
+        assert_equal(peak_prominences(x, peak), [3., 0, 6])
+        for wlen, i in [(8, 0), (7, 0), (6, 0), (5, 1), (3.2, 1), (3, 2), (1.1, 2)]:
+            assert_equal(peak_prominences(x, peak, wlen), [3. - i, 0 + i, 6 - i])
 
     def test_raises(self):
         """
         Verfiy that argument validation works as intended.
         """
+        # x with dimension > 1
         with raises(ValueError, match='dimension'):
-            # x with dimension > 1
-            peak_prominences(np.zeros((3, 4)), np.ones(3))
+            peak_prominences([[0, 1, 1, 0]], [1, 2])
+        # peaks with dimension > 1
         with raises(ValueError, match='dimension'):
-            # x with dimension < 1
+            peak_prominences([0, 1, 1, 0], [[1, 2]])
+        # x with dimension < 1
+        with raises(ValueError, match='dimension'):
             peak_prominences(3, [0,])
-        with raises(ValueError, match='dimension'):
-            # peaks with dimension > 1
-            peak_prominences(np.arange(10), np.ones((3, 2)))
-        with raises(ValueError, match='dimension'):
-            # peaks with dimension < 1
-            peak_prominences(np.arange(10), 3)
-        with raises(ValueError, match='index'):
-            # peak pos exceeds x.size
-            peak_prominences(np.arange(10), [8, 11])
-        with raises(ValueError, match='index'):
-            # empty x with peaks supplied
+        # empty x with peaks supplied
+        with raises(ValueError, match='not a valid peak'):
             peak_prominences([], [1, 2])
-        with raises(ValueError, match='integers'):
-            # peak is not of subtype int
-            peak_prominences(np.arange(10), [1.1, 2.3])
+        # invalid peaks
+        for p in [-1, 0, 1, 2, 3]:
+            with raises(ValueError, match=str(p) + ' is not a valid peak'):
+                peak_prominences([1, 0, 2], [p,])
+        # peaks is not cast-able to np.intp
+        with raises(TypeError, match='Cannot safely cast'):
+            peak_prominences([0, 1, 1, 0], [1.1, 2.3])
+        # wlen < 3
         with raises(ValueError, match='wlen'):
-            # wlen < 3
-            peak_prominences(np.arange(10), [3, 5], wlen=2)
+            peak_prominences(np.arange(10), [3, 5], wlen=1)
 
 
 class TestPeakWidths(object):
