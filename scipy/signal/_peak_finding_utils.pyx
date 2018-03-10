@@ -9,7 +9,7 @@ cimport numpy as np
 from libc.math cimport ceil
 
 
-__all__ = ['_argmaxima1d', '_select_by_peak_distance']
+__all__ = ['_argmaxima1d', '_select_by_peak_distance', '_peak_prominences']
 
 
 @cython.wraparound(False)
@@ -148,3 +148,98 @@ def _select_by_peak_distance(np.intp_t[:] peaks not None,
                 k += 1
 
     return keep.base.view(dtype=np.bool)  # Return as boolean array
+
+
+@cython.wraparound(False)
+@cython.boundscheck(False)
+def _peak_prominences(np.float64_t[::1] x not None,
+                      np.intp_t[::1] peaks not None,
+                      np.intp_t wlen):
+    """
+    Calculate the prominence of each peak in a signal.
+
+    Parameters
+    ----------
+    x : ndarray
+        A signal with peaks.
+    peaks : ndarray
+        Indices of peaks in `x`.
+    wlen : np.intp
+        A window length in samples (see `peak_prominences`) which is rounded up
+        to the nearest odd integer. If smaller than 2 the entire signal `x` is
+        used.
+
+    Returns
+    -------
+    prominences : ndarray
+        The calculated prominences for each peak in `peaks`.
+    left_bases, right_bases : ndarray
+        The peaks' bases as indices in `x` to the left and right of each peak.
+
+    Raises
+    ------
+    ValueError
+        If an index in `peaks` doesn't point to a local maximum in `x`.
+
+    Notes
+    -----
+    This is the inner function to `peak_prominences`.
+
+    .. versionadded:: 1.1.0
+    """
+    cdef:
+        np.float64_t[::1] prominences
+        np.intp_t[::1] left_bases, right_bases
+        np.float64_t left_min, right_min
+        np.intp_t peak_nr, peak, i_min, i_max, i
+        bint raise_error
+
+    raise_error = False
+    prominences = np.empty(peaks.shape[0], dtype=np.float64)
+    left_bases = np.empty(peaks.shape[0], dtype=np.intp)
+    right_bases = np.empty(peaks.shape[0], dtype=np.intp)
+
+    with nogil:
+        for peak_nr in range(peaks.shape[0]):
+            peak = peaks[peak_nr]
+            i_min = 0
+            i_max = x.shape[0] - 1
+
+            if 2 <= wlen:
+                # Adjust window around the evaluated peak (within bounds);
+                # if wlen is even the resulting window length is is implicitly
+                # rounded to next odd integer
+                i_min = max(peak - wlen // 2, i_min)
+                i_max = min(peak + wlen // 2, i_max)
+
+            # Find the left base in interval [i_min, peak]
+            i = peak
+            left_min = x[peak]
+            while i_min <= i and x[i] <= x[peak]:
+                if x[i] < left_min:
+                    left_min = x[i]
+                    left_bases[peak_nr] = i
+                i -= 1
+            if not left_min < x[peak]:
+                raise_error = True  # Raise error outside nogil statement
+                break
+
+            # Find the right base in interval [peak, i_max]
+            i = peak
+            right_min = x[peak]
+            while i <= i_max and x[i] <= x[peak]:
+                if x[i] < right_min:
+                    right_min = x[i]
+                    right_bases[peak_nr] = i
+                i += 1
+            if not right_min < x[peak]:
+                raise_error = True  # Raise error outside nogil statement
+                break
+
+            prominences[peak_nr] = x[peak] - max(left_min, right_min)
+
+    if raise_error:
+        raise ValueError(str(peak) + ' is not a valid peak')
+
+    # Return memoryviews as ndarrays
+    return prominences.base, left_bases.base, right_bases.base
