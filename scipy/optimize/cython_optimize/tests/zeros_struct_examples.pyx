@@ -8,7 +8,7 @@ from math import exp, sin
 
 from scipy.optimize.cython_optimize cimport zeros
 
-#
+# test parameter structure
 ctypedef struct test_params:
     double voltage
     double light_current
