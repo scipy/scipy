@@ -113,7 +113,7 @@ class TestRootResults:
         assert_equal(repr(r), expected_repr)
 
 
-def test_complex_halley(self):
+def test_complex_halley():
     """Test Halley's works with complex roots"""
     def f(x, *a):
         return a[0] * x**2 + a[1] * x + a[2]
