@@ -529,24 +529,28 @@ def freqz_zpk(z, p, k, worN=512, whole=False, fs=None):
 
     Examples
     --------
+    Design a 4th-order digital Butterworth filter with cut-off of 100 Hz in a
+    system with sample rate of 1000 Hz, and plot the frequency response:
+
     >>> from scipy import signal
-    >>> z, p, k = signal.butter(4, 0.2, output='zpk')
-    >>> w, h = signal.freqz_zpk(z, p, k)
+    >>> z, p, k = signal.butter(4, 100, output='zpk', fs=1000)
+    >>> w, h = signal.freqz_zpk(z, p, k, fs=1000)
 
     >>> import matplotlib.pyplot as plt
     >>> fig = plt.figure()
-    >>> plt.title('Digital filter frequency response')
-    >>> ax1 = fig.add_subplot(111)
+    >>> ax1 = fig.add_subplot(1, 1, 1)
+    >>> ax1.set_title('Digital filter frequency response')
 
-    >>> plt.plot(w, 20 * np.log10(abs(h)), 'b')
-    >>> plt.ylabel('Amplitude [dB]', color='b')
-    >>> plt.xlabel('Frequency [rad/sample]')
+    >>> ax1.plot(w, 20 * np.log10(abs(h)), 'b')
+    >>> ax1.set_ylabel('Amplitude [dB]', color='b')
+    >>> ax1.set_xlabel('Frequency [Hz]')
+    >>> ax1.grid()
 
     >>> ax2 = ax1.twinx()
     >>> angles = np.unwrap(np.angle(h))
-    >>> plt.plot(w, angles, 'g')
-    >>> plt.ylabel('Angle (radians)', color='g')
-    >>> plt.grid()
+    >>> ax2.plot(w, angles, 'g')
+    >>> ax2.set_ylabel('Angle [radians]', color='g')
+
     >>> plt.axis('tight')
     >>> plt.show()
 
@@ -1930,10 +1934,10 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
     Wn : array_like
         A scalar or length-2 sequence giving the critical frequencies.
 
-        For digital filters, `Wn` is normalized from 0 to 1, where 1 is the
-        Nyquist frequency, pi radians/sample.  (`Wn` is thus in
-        half-cycles / sample.) Or, if `fs` is specified, `Wn` is in the same
-        units as `fs`.
+        For digital filters, `Wn` are in the same units as `fs`.  By default,
+        `fs` is 2 half-cycles/sample, so these are normalized from 0 to 1,
+        where 1 is the Nyquist frequency.  (`Wn` is thus in
+        half-cycles / sample.)
 
         For analog filters, `Wn` is an angular frequency (e.g. rad/s).
     rp : float, optional
@@ -1990,20 +1994,38 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
 
     Examples
     --------
-    Generate a 17th-order Chebyshev II bandpass filter and plot the frequency
-    response:
+    Generate a 17th-order Chebyshev II analog bandpass filter from 50 Hz to
+    200 Hz and plot the frequency response:
 
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
 
-    >>> b, a = signal.iirfilter(17, [50, 200], rs=60, btype='band',
-    ...                         analog=True, ftype='cheby2')
+    >>> b, a = signal.iirfilter(17, [2*np.pi*50, 2*np.pi*200], rs=60,
+    ...                         btype='band', analog=True, ftype='cheby2')
     >>> w, h = signal.freqs(b, a, 1000)
     >>> fig = plt.figure()
     >>> ax = fig.add_subplot(111)
+    >>> ax.semilogx(w / (2*np.pi), 20 * np.log10(abs(h)))
+    >>> ax.set_title('Chebyshev Type II bandpass frequency response')
+    >>> ax.set_xlabel('Frequency [Hz]')
+    >>> ax.set_ylabel('Amplitude [dB]')
+    >>> ax.axis((10, 1000, -100, 10))
+    >>> ax.grid(which='both', axis='both')
+    >>> plt.show()
+
+    Create a digital filter with the same properties, in a system with
+    sampling rate of 2000 Hz, and plot the frequency response.  (Second-order
+    sections implementation is required for a filter of this order):
+
+    >>> sos = signal.iirfilter(17, [50, 200], rs=60, btype='band',
+    ...                        analog=False, ftype='cheby2', fs=2000,
+    ...                        output='sos')
+    >>> w, h = signal.sosfreqz(sos, 2000, fs=2000)
+    >>> fig = plt.figure()
+    >>> ax = fig.add_subplot(1, 1, 1)
     >>> ax.semilogx(w, 20 * np.log10(abs(h)))
     >>> ax.set_title('Chebyshev Type II bandpass frequency response')
-    >>> ax.set_xlabel('Frequency [radians / second]')
+    >>> ax.set_xlabel('Frequency [Hz]')
     >>> ax.set_ylabel('Amplitude [dB]')
     >>> ax.axis((10, 1000, -100, 10))
     >>> ax.grid(which='both', axis='both')
@@ -4305,8 +4327,8 @@ def iirnotch(w0, Q, fs=None):
 
     Examples
     --------
-    Design and plot filter to remove the 60Hz component from a
-    signal sampled at 200Hz, using a quality factor Q = 30
+    Design and plot filter to remove the 60 Hz component from a
+    signal sampled at 200 Hz, using a quality factor Q = 30
 
     >>> from scipy import signal
     >>> import numpy as np
@@ -4315,14 +4337,11 @@ def iirnotch(w0, Q, fs=None):
     >>> fs = 200.0  # Sample frequency (Hz)
     >>> f0 = 60.0  # Frequency to be removed from signal (Hz)
     >>> Q = 30.0  # Quality factor
-    >>> w0 = f0/(fs/2)  # Normalized Frequency
     >>> # Design notch filter
-    >>> b, a = signal.iirnotch(w0, Q)
+    >>> b, a = signal.iirnotch(f0, Q, fs)
 
     >>> # Frequency response
-    >>> w, h = signal.freqz(b, a)
-    >>> # Generate frequency axis
-    >>> freq = w*fs/(2*np.pi)
+    >>> freq, h = signal.freqz(b, a, fs=fs)
     >>> # Plot
     >>> fig, ax = plt.subplots(2, 1, figsize=(8, 6))
     >>> ax[0].plot(freq, 20*np.log10(abs(h)), color='blue')
@@ -4389,8 +4408,8 @@ def iirpeak(w0, Q, fs=None):
 
     Examples
     --------
-    Design and plot filter to remove the frequencies other than the 300Hz
-    component from a signal sampled at 1000Hz, using a quality factor Q = 30
+    Design and plot filter to remove the frequencies other than the 300 Hz
+    component from a signal sampled at 1000 Hz, using a quality factor Q = 30
 
     >>> from scipy import signal
     >>> import numpy as np
@@ -4399,14 +4418,11 @@ def iirpeak(w0, Q, fs=None):
     >>> fs = 1000.0  # Sample frequency (Hz)
     >>> f0 = 300.0  # Frequency to be retained (Hz)
     >>> Q = 30.0  # Quality factor
-    >>> w0 = f0/(fs/2)  # Normalized Frequency
     >>> # Design peak filter
-    >>> b, a = signal.iirpeak(w0, Q)
+    >>> b, a = signal.iirpeak(f0, Q, fs)
 
     >>> # Frequency response
-    >>> w, h = signal.freqz(b, a)
-    >>> # Generate frequency axis
-    >>> freq = w*fs/(2*np.pi)
+    >>> freq, h = signal.freqz(b, a, fs=fs)
     >>> # Plot
     >>> fig, ax = plt.subplots(2, 1, figsize=(8, 6))
     >>> ax[0].plot(freq, 20*np.log10(abs(h)), color='blue')
