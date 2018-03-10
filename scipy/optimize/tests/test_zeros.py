@@ -125,6 +125,7 @@ def test_complex_halley():
         return 2 * a[0]
 
     z = complex(1.0, 2.0)
-    y = zeros.newton(f, z, args=(2., 3., 4.), fprime=f_1, fprime2=f_2, tol=1e-6)
+    coeffs = (2.0, 3.0, 4.0)
+    y = zeros.newton(f, z, args=coeffs, fprime=f_1, fprime2=f_2, tol=1e-6)
     # (-0.75000000000000078+1.1989578808281789j)
-    assert_allclose(f(y), 0, atol=1e-6)
+    assert_allclose(f(y, *coeffs), 0, atol=1e-6)
