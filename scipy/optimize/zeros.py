@@ -127,11 +127,11 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
 
     >>> def f(x):
     ...     return (x**3 - 1)  # only one real root at x = 1
-    
+
     >>> from scipy import optimize
 
     ``fprime`` not provided, use secant method
-    
+
     >>> root = optimize.newton(f, 1.5)
     >>> root
     1.0000000000000016
@@ -140,11 +140,11 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
     1.0000000000000016
 
     Only ``fprime`` provided, use Newton Raphson method
-    
+
     >>> root = optimize.newton(f, 1.5, fprime=lambda x: 3 * x**2)
     >>> root
     1.0
-    
+
     Both ``fprime2`` and ``fprime`` provided, use Halley's method
 
     >>> root = optimize.newton(f, 1.5, fprime=lambda x: 3 * x**2,
@@ -157,11 +157,69 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
         raise ValueError("tol too small (%g <= 0)" % tol)
     if maxiter < 1:
         raise ValueError("maxiter must be greater than 0")
+    if not np.isscalar(x0):
+        return _array_newton(func, x0, fprime, args, tol, maxiter, fprime2)
     if fprime is not None:
-        # Newton-Rapheson method
+        # Newton-Raphson method
         # Multiply by 1.0 to convert to floating point.  We don't use float(x0)
         # so it still works if x0 is complex.
-        p0 = 1.0 * np.asarray(x0)  # convert to ndarray
+        p0 = 1.0 * x0
+        fder2 = 0
+        for iter in range(maxiter):
+            myargs = (p0,) + args
+            fder = fprime(*myargs)
+            if fder == 0:
+                msg = "derivative was zero."
+                warnings.warn(msg, RuntimeWarning)
+                return p0
+            fval = func(*myargs)
+            newton_step = fval / fder
+            if fprime2 is None:
+                # Newton step
+                p = p0 - newton_step
+            else:
+                fder2 = fprime2(*myargs)
+                # Halley's method
+                p = p0 - newton_step / (1.0 - 0.5 * newton_step * fder2 / fder)
+            if abs(p - p0) < tol:
+                return p
+            p0 = p
+    else:
+        # Secant method
+        p0 = x0
+        if x0 >= 0:
+            p1 = x0*(1 + 1e-4) + 1e-4
+        else:
+            p1 = x0*(1 + 1e-4) - 1e-4
+        q0 = func(*((p0,) + args))
+        q1 = func(*((p1,) + args))
+        for iter in range(maxiter):
+            if q1 == q0:
+                if p1 != p0:
+                    msg = "Tolerance of %s reached" % (p1 - p0)
+                    warnings.warn(msg, RuntimeWarning)
+                return (p1 + p0)/2.0
+            else:
+                p = p1 - q1*(p1 - p0)/(q1 - q0)
+            if abs(p - p1) < tol:
+                return p
+            p0 = p1
+            q0 = q1
+            p1 = p
+            q1 = func(*((p1,) + args))
+    msg = "Failed to converge after %d iterations, value is %s" % (maxiter, p)
+    raise RuntimeError(msg)
+
+
+def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2):
+    """
+    A vectorized version of Newton, Halley, and secant methods for arrays. Do
+    not use this method directly. This method is called from :func:`newton`
+    when ``np.isscalar(x0)`` is true. For docstring, see :func:`newton`.
+    """
+    p0 = np.asarray(x0)  # convert to ndarray
+    if fprime is not None:
+        # Newton-Raphson method
         for iter in range(maxiter):
             myargs = (p0,) + args
             fder = np.asarray(fprime(*myargs))  # convert to ndarray
@@ -183,7 +241,6 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
             p0 = p
     else:
         # Secant method
-        p0 = np.asarray(x0)
         dx = np.finfo(float).eps**0.33
         dp = np.where(p0 >= 0, dx, -dx)
         p1 = p0 * (1 + dx) + dp
