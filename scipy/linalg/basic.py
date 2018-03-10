@@ -435,18 +435,18 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
     # Validate shapes.
     if a1.shape[-1] != b1.shape[0]:
         raise ValueError("shapes of ab and b are not compatible.")
-    (l, u) = l_and_u
-    if l + u + 1 != a1.shape[0]:
+    (nlower, nupper) = l_and_u
+    if nlower + nupper + 1 != a1.shape[0]:
         raise ValueError("invalid values for the number of lower and upper "
                          "diagonals: l+u+1 (%d) does not equal ab.shape[0] "
-                         "(%d)" % (l+u+1, ab.shape[0]))
+                         "(%d)" % (nlower + nupper + 1, ab.shape[0]))
 
     overwrite_b = overwrite_b or _datacopied(b1, b)
     if a1.shape[-1] == 1:
         b2 = np.array(b1, copy=(not overwrite_b))
         b2 /= a1[1, 0]
         return b2
-    if l == u == 1:
+    if nlower == nupper == 1:
         overwrite_ab = overwrite_ab or _datacopied(a1, ab)
         gtsv, = get_lapack_funcs(('gtsv',), (a1, b1))
         du = a1[0, 1:]
@@ -456,9 +456,9 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
                                    overwrite_ab, overwrite_b)
     else:
         gbsv, = get_lapack_funcs(('gbsv',), (a1, b1))
-        a2 = np.zeros((2*l+u+1, a1.shape[1]), dtype=gbsv.dtype)
-        a2[l:, :] = a1
-        lu, piv, x, info = gbsv(l, u, a2, b1, overwrite_ab=True,
+        a2 = np.zeros((2*nlower + nupper + 1, a1.shape[1]), dtype=gbsv.dtype)
+        a2[nlower:, :] = a1
+        lu, piv, x, info = gbsv(nlower, nupper, a2, b1, overwrite_ab=True,
                                 overwrite_b=overwrite_b)
     if info == 0:
         return x

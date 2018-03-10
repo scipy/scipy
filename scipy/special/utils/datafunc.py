@@ -56,6 +56,7 @@ def run_test(filename, funcs, args=[0]):
 
         return data[:, 0], y
 
+
 if __name__ == '__main__':
     from convert import DATA_DIR
     import os

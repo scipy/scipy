@@ -14,7 +14,7 @@
 #include "mconf.h"
 #include "_c99compat.h"
 
-static int SELECT_METHOD[] = {
+static const int SELECT_METHOD[] = {
     0, 0, 1, 12, 12, 12, 12, 12, 12, 12, 12, 15, 15, 15, 8,
     0, 1, 1, 2, 2, 4, 4, 13, 13, 14, 14, 15, 15, 15, 8,
     1, 1, 2, 2, 2, 4, 4, 14, 14, 14, 14, 15, 15, 15, 9,
@@ -25,18 +25,18 @@ static int SELECT_METHOD[] = {
     1, 2 , 3 , 3 , 5, 5, 17, 17, 17, 17, 16, 16, 16, 11, 11
 };
 
-static double HRANGE[] = {0.02, 0.06, 0.09, 0.125, 0.26, 0.4, 0.6, 1.6,
+static const double HRANGE[] = {0.02, 0.06, 0.09, 0.125, 0.26, 0.4, 0.6, 1.6,
     1.7, 2.33, 2.4, 3.36, 3.4, 4.8};
 
-static double ARANGE[] = {0.025, 0.09, 0.15, 0.36, 0.5, 0.9, 0.99999};
+static const double ARANGE[] = {0.025, 0.09, 0.15, 0.36, 0.5, 0.9, 0.99999};
 
-static double ORD[] = {2, 3, 4, 5, 7, 10, 12, 18, 10, 20, 30, 0, 4, 7,
+static const double ORD[] = {2, 3, 4, 5, 7, 10, 12, 18, 10, 20, 30, 0, 4, 7,
     8, 20, 0, 0};
 
-static int METHODS[] = {1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 3, 4, 4, 4, 4,
+static const int METHODS[] = {1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 3, 4, 4, 4, 4,
     5, 6};
 
-static double C[] = {
+static const double C[] = {
     0.99999999999999999999999729978162447266851932041876728736094298092917625009873,
     -0.99999999999999999999467056379678391810626533251885323416799874878563998732905968,
     0.99999999999999999824849349313270659391127814689133077036298754586814091034842536,
@@ -70,7 +70,7 @@ static double C[] = {
     9.072354320794357587710929507988814669454281514268844884841547607134260303118208E-6
 };
 
-static double PTS[] = {
+static const double PTS[] = {
     0.35082039676451715489E-02, 0.31279042338030753740E-01,
     0.85266826283219451090E-01, 0.16245071730812277011E+00,
     0.25851196049125434828E+00, 0.36807553840697533536E+00,
@@ -80,7 +80,7 @@ static double PTS[] = {
     0.99178832974629703586E+00
 };
 
-static double WTS[] = {
+static const double WTS[] = {
     0.18831438115323502887E-01, 0.18567086243977649478E-01,
     0.18042093461223385584E-01, 0.17263829606398753364E-01,
     0.16243219975989856730E-01, 0.14994592034116704829E-01,
@@ -91,7 +91,7 @@ static double WTS[] = {
 };
 
 
-int get_method(double h, double a) {
+static int get_method(double h, double a) {
     int ihint, iaint, i;
 
     ihint = 14;
@@ -114,17 +114,17 @@ int get_method(double h, double a) {
 }
 
 
-double owens_t_norm1(double x) {
+static double owens_t_norm1(double x) {
     return erf(x / sqrt(2)) / 2;
 }
 
 
-double owens_t_norm2(double x) {
+static double owens_t_norm2(double x) {
     return erfc(x / sqrt(2)) / 2;
 }
 
 
-double owensT1(double h, double a, double m) {
+static double owensT1(double h, double a, double m) {
     int j = 1;
     int jj = 1;
 
@@ -154,7 +154,7 @@ double owensT1(double h, double a, double m) {
 }
 
 
-double owensT2(double h, double a, double ah, double m) {
+static double owensT2(double h, double a, double ah, double m) {
     int i = 1;
     int maxi = 2 * m + 1;
     double hs = h * h;
@@ -179,7 +179,7 @@ double owensT2(double h, double a, double ah, double m) {
 }
 
 
-double owensT3(double h, double a, double ah) {
+static double owensT3(double h, double a, double ah) {
     double aa, hh, y, vi, zi, result;
     int i;
 
@@ -203,7 +203,7 @@ double owensT3(double h, double a, double ah) {
 }
 
 
-double owensT4(double h, double a, double m) {
+static double owensT4(double h, double a, double m) {
     double maxi, hh, naa, ai, yi, result;
     int i;
 
@@ -232,7 +232,7 @@ double owensT4(double h, double a, double m) {
 }
 
 
-double owensT5(double h, double a) {
+static double owensT5(double h, double a) {
     double result, r, aa, nhh;
     int i;
 
@@ -252,7 +252,7 @@ double owensT5(double h, double a) {
 }
 
 
-double owensT6(double h, double a) {
+static double owensT6(double h, double a) {
     double normh, y, r, result;
 
     normh = owens_t_norm2(h);
@@ -268,7 +268,7 @@ double owensT6(double h, double a) {
 }
 
 
-double owens_t_dispatch(double h, double a, double ah) {
+static double owens_t_dispatch(double h, double a, double ah) {
     int index, meth_code;
     double m, result;
 

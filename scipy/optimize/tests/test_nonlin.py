@@ -33,12 +33,16 @@ def F(x):
     c = 0.01
     f = -d*x - c*float(x.T*x)*x
     return f
+
+
 F.xin = [1,1,1,1,1]
 F.KNOWN_BAD = {}
 
 
 def F2(x):
     return x
+
+
 F2.xin = [1,2,3,4,5,6]
 F2.KNOWN_BAD = {'linearmixing': nonlin.linearmixing,
                 'excitingmixing': nonlin.excitingmixing}
@@ -46,6 +50,8 @@ F2.KNOWN_BAD = {'linearmixing': nonlin.linearmixing,
 
 def F2_lucky(x):
     return x
+
+
 F2_lucky.xin = [0,0,0,0,0,0]
 F2_lucky.KNOWN_BAD = {}
 
@@ -54,6 +60,8 @@ def F3(x):
     A = np.mat('-2 1 0; 1 -2 1; 0 1 -2')
     b = np.mat('1 2 3')
     return np.dot(A, x) - b
+
+
 F3.xin = [1,2,3]
 F3.KNOWN_BAD = {}
 
@@ -61,6 +69,8 @@ F3.KNOWN_BAD = {}
 def F4_powell(x):
     A = 1e4
     return [A*x[0]*x[1] - 1, np.exp(-x[0]) + np.exp(-x[1]) - (1 + 1/A)]
+
+
 F4_powell.xin = [-1, -2]
 F4_powell.KNOWN_BAD = {'linearmixing': nonlin.linearmixing,
                        'excitingmixing': nonlin.excitingmixing,
@@ -69,6 +79,8 @@ F4_powell.KNOWN_BAD = {'linearmixing': nonlin.linearmixing,
 
 def F5(x):
     return pressure_network(x, 4, np.array([.5, .5, .5, .5]))
+
+
 F5.xin = [2., 0, 2, 0]
 F5.KNOWN_BAD = {'excitingmixing': nonlin.excitingmixing,
                 'linearmixing': nonlin.linearmixing,
@@ -82,6 +94,8 @@ def F6(x):
     v = np.array([(x1 + 3) * (x2**5 - 7) + 3*6,
                   np.sin(x2 * np.exp(x1) - 1)])
     return -np.linalg.solve(J0, v)
+
+
 F6.xin = [-0.5, 1.4]
 F6.KNOWN_BAD = {'excitingmixing': nonlin.excitingmixing,
                 'linearmixing': nonlin.linearmixing,

@@ -51,6 +51,7 @@ def check_shape(interpolator_cls, x_shape, y_shape, deriv_shape=None, axis=0,
         yi, y = np.broadcast_arrays(yi, yv)
         assert_allclose(yi, y)
 
+
 SHAPES = [(), (0,), (1,), (6, 2, 5)]
 
 

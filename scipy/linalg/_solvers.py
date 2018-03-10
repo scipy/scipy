@@ -198,6 +198,7 @@ def solve_continuous_lyapunov(a, q):
 
     return u.dot(y).dot(u.conj().T)
 
+
 # For backwards compatibility, keep the old name
 solve_lyapunov = solve_continuous_lyapunov
 

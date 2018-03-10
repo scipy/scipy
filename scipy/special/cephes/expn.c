@@ -64,7 +64,7 @@
 #define BIG  1.44115188075855872E+17
 extern double MACHEP, MAXLOG;
 
-double expn_large_n(int, double);
+static double expn_large_n(int, double);
 
 
 double expn(int n, double x)
@@ -191,7 +191,7 @@ double expn(int n, double x)
 
 
 /* Asymptotic expansion for large n, DLMF 8.20(ii) */
-double expn_large_n(int n, double x)
+static double expn_large_n(int n, double x)
 {
     int k;
     double p = n;

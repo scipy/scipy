@@ -1093,6 +1093,33 @@ def minimum_position(input, labels=None, index=None):
     label, minimum, median, maximum_position, extrema, sum, mean, variance,
     standard_deviation
 
+    Examples
+    --------
+    >>> a = np.array([[10, 20, 30],
+    ...               [40, 80, 100],
+    ...               [1, 100, 200]])
+    >>> b = np.array([[1, 2, 0, 1],
+    ...               [5, 3, 0, 4],
+    ...               [0, 0, 0, 7],
+    ...               [9, 3, 0, 0]])
+
+    >>> from scipy import ndimage
+    
+    >>> ndimage.minimum_position(a)
+    (2, 0)
+    >>> ndimage.minimum_position(b)
+    (0, 2)
+
+    Features to process can be specified using `labels` and `index`:
+
+    >>> label, pos = ndimage.label(a)
+    >>> ndimage.minimum_position(a, label, index=np.arange(1, pos+1))
+    [(2, 0)]
+
+    >>> label, pos = ndimage.label(b)
+    >>> ndimage.minimum_position(b, label, index=np.arange(1, pos+1))
+    [(0, 0), (0, 3), (3, 1)]
+
     """
     dims = numpy.array(numpy.asarray(input).shape)
     # see numpy.unravel_index to understand this line.
@@ -1435,6 +1462,6 @@ def watershed_ift(input, markers, structure=None, output=None):
     else:
         output = markers.dtype
 
-    output, return_value = _ni_support._get_output(output, input)
+    output = _ni_support._get_output(output, input)
     _nd_image.watershed_ift(input, markers, structure, output)
-    return return_value
+    return output
