@@ -3613,7 +3613,7 @@ class levy_stable_gen(rv_continuous):
     for pdf calculation. Setting the threshold to None (default) will disable FFT. For cdf 
     calculations the Zolatarev method is superior in accuracy, so FFT is disabled by default.
     
-    Fitting uses quantile estimation method in [MC].
+    Fitting estimate uses quantile estimation method in [MC].
 
     %(after_notes)s
     
@@ -3971,14 +3971,7 @@ class levy_stable_gen(rv_continuous):
         delta = np.clip(zeta-beta*c*np.tan(np.pi*alpha/2.) if alpha == 1. else zeta, np.finfo(float).eps, np.inf) 
     
         return (alpha, beta, delta, c)
-    
-    # Override fit method using quantile estimates.
-    def fit(self, data, *args, **kwds):
-        """Use McCullock 1986 method - Simple Consistent Estimators
-            of Stable Distribution Parameters
-        """
-        return self._fitstart(data, *args, **kwds)
-    
+        
     def _stats(self, alpha, beta):
         mu = 0 
         mu2 = 2
