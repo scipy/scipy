@@ -13,13 +13,14 @@ from scipy.optimize import zeros
 # Import testing parameters
 from scipy.optimize._tstutils import functions, fstrings
 
+TOL = 4*np.finfo(float).eps  # tolerance
+
 
 class TestBasic(object):
     def run_check(self, method, name):
         a = .5
         b = sqrt(3)
-        xtol = 4*np.finfo(float).eps
-        rtol = 4*np.finfo(float).eps
+        xtol = rtol = TOL
         for function, fname in zip(functions, fstrings):
             zero, r = method(function, a, b, xtol=xtol, rtol=rtol,
                              full_output=True)
@@ -111,8 +112,7 @@ def test_gh_5555():
         return x - root
 
     methods = [cc.bisect, cc.ridder]
-    xtol = 4*np.finfo(float).eps
-    rtol = 4*np.finfo(float).eps
+    xtol = rtol = TOL
     for method in methods:
         res = method(f, -1e8, 1e7, xtol=xtol, rtol=rtol)
         assert_allclose(root, res, atol=xtol, rtol=rtol,
@@ -136,7 +136,7 @@ def test_gh_5557():
             return x - 0.6
 
     atol = 0.51
-    rtol = 4*np.finfo(float).eps
+    rtol = TOL
     methods = [cc.brentq, cc.brenth]
     for method in methods:
         res = method(f, 0, 1, xtol=atol, rtol=rtol)
