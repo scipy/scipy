@@ -506,8 +506,8 @@ def binary_dilation(input, structure=None, iterations=1, mask=None,
                            output, border_value, origin, 1, brute_force)
 
 
-def binary_opening(input, structure=None, iterations=1, output=None,
-                   origin=0, mask=None, border_value=0, brute_force=False):
+def binary_opening(input, structure=None, iterations=1, mask=None,
+        output=None, border_value=0, origin=0, brute_force=False):
     """
     Multi-dimensional binary opening with the given structuring element.
 
