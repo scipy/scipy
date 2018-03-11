@@ -507,7 +507,7 @@ def binary_dilation(input, structure=None, iterations=1, mask=None,
 
 
 def binary_opening(input, structure=None, iterations=1, output=None,
-                   origin=0):
+                   origin=0, mask=None, border_value=0, brute_force=False):
     """
     Multi-dimensional binary opening with the given structuring element.
 
@@ -535,6 +535,17 @@ def binary_opening(input, structure=None, iterations=1, output=None,
         By default, a new array is created.
     origin : int or tuple of ints, optional
         Placement of the filter, by default 0.
+    mask : array_like, optional
+        If a mask is given, only those elements with a True value at
+        the corresponding mask element are modified at each iteration.
+    border_value : int (cast to 0 or 1), optional
+        Value at the border in the output array.
+    brute_force : boolean, optional
+        Memory condition: if False, only the pixels whose value was changed in
+        the last iteration are tracked as candidates to be updated (eroded) in
+        the current iteration; if true all pixels are considered as candidates
+        for erosion, regardless of what happened in the previous iteration.
+        False by default.
 
     Returns
     -------
@@ -606,10 +617,10 @@ def binary_opening(input, structure=None, iterations=1, output=None,
         rank = input.ndim
         structure = generate_binary_structure(rank, 1)
 
-    tmp = binary_erosion(input, structure, iterations, None, None, 0,
-                         origin)
-    return binary_dilation(tmp, structure, iterations, None, output, 0,
-                           origin)
+    tmp = binary_erosion(input, structure, iterations, mask, None, border_value,
+                         origin, brute_force)
+    return binary_dilation(tmp, structure, iterations, mask, output, border_value,
+                           origin, brute_force)
 
 
 def binary_closing(input, structure=None, iterations=1, output=None,
