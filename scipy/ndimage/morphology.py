@@ -506,8 +506,8 @@ def binary_dilation(input, structure=None, iterations=1, mask=None,
                            output, border_value, origin, 1, brute_force)
 
 
-def binary_opening(input, structure=None, iterations=1, output=None,
-                   origin=0):
+def binary_opening(input, structure=None, iterations=1, mask=None,
+        output=None, border_value=0, origin=0, brute_force=False):
     """
     Multi-dimensional binary opening with the given structuring element.
 
@@ -606,10 +606,10 @@ def binary_opening(input, structure=None, iterations=1, output=None,
         rank = input.ndim
         structure = generate_binary_structure(rank, 1)
 
-    tmp = binary_erosion(input, structure, iterations, None, None, 0,
-                         origin)
-    return binary_dilation(tmp, structure, iterations, None, output, 0,
-                           origin)
+    tmp = binary_erosion(input, structure, iterations, mask,
+            None, border_value, origin, brute_force)
+    return binary_dilation(tmp, structure, iterations, mask,
+            output, border_value, origin, brute_force)
 
 
 def binary_closing(input, structure=None, iterations=1, output=None,
