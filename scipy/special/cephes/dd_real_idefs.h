@@ -11,8 +11,8 @@
  * arithmetic package.
  */
 
-#ifndef  _DD_REAL_INLINE_H_
-#define  _DD_REAL_INLINE_H_ 1
+#ifndef  _DD_REAL_IDEFS_H_
+#define  _DD_REAL_IDEFS_H_ 1
 
 #include <float.h>
 #include <limits.h>
@@ -25,180 +25,7 @@
 extern "C" {
 #endif
 
-/*
- ************************************************************************
-  First the basic routines taking double arguments, returning 1/2 doubles
- ************************************************************************
-*/
-
-/* Computes fl(a+b) and err(a+b).  Assumes |a| >= |b|. */
-DD_INLINE double
-quick_two_sum(double a, double b, double *err)
-{
-    volatile double s = a + b;
-    volatile double c = s - a;
-    *err = b - c;
-    return s;
-}
-
-/* Computes fl(a-b) and err(a-b).  Assumes |a| >= |b| */
-DD_INLINE double
-quick_two_diff(double a, double b, double *err)
-{
-    volatile double s = a - b;
-    volatile double c = a - s;
-    *err = c - b;
-    return s;
-}
-
-/* Computes fl(a+b) and err(a+b).  */
-DD_INLINE double
-two_sum(double a, double b, double *err)
-{
-    volatile double s = a + b;
-    volatile double c = s - a;
-    volatile double d = b - c;
-    volatile double e = s - c;
-    *err = (a - e) + d;
-    return s;
-}
-
-/* Computes fl(a-b) and err(a-b).  */
-DD_INLINE double
-two_diff(double a, double b, double *err)
-{
-    volatile double s = a - b;
-    volatile double c = s - a;
-    volatile double d = b + c;
-    volatile double e = s - c;
-    *err = (a - e) - d;
-    return s;
-}
-
-/* Computes high word and lo word of a */
-DD_INLINE void
-two_split(double a, double *hi, double *lo)
-{
-    volatile double temp, tempma;
-    if (a > _DD_SPLIT_THRESH || a < -_DD_SPLIT_THRESH) {
-        a *= 3.7252902984619140625e-09; // 2^-28
-        temp = _DD_SPLITTER * a;
-        tempma = temp - a;
-        *hi = temp - tempma;
-        *lo = a - *hi;
-        *hi *= 268435456.0; // 2^28
-        *lo *= 268435456.0; // 2^28
-    }
-    else {
-        temp = _DD_SPLITTER * a;
-        tempma = temp - a;
-        *hi = temp - tempma;
-        *lo = a - *hi;
-    }
-}
-
-/* Computes fl(a*b) and err(a*b). */
-DD_INLINE double
-two_prod(double a, double b, double *err)
-{
-#ifdef DD_FMS
-    volatile double p = a * b;
-    *err = DD_FMS(a, b, p);
-    return p;
-#else
-    double a_hi, a_lo, b_hi, b_lo;
-    double p = a * b;
-    volatile double c, d;
-    two_split(a, &a_hi, &a_lo);
-    two_split(b, &b_hi, &b_lo);
-    c = a_hi * b_hi - p;
-    d = c + a_hi * b_lo + a_lo * b_hi;
-    *err = d + a_lo * b_lo;
-    return p;
-#endif
-}
-
-/* Computes fl(a*a) and err(a*a).  Faster than the above method. */
-DD_INLINE double
-two_sqr(double a, double *err)
-{
-#ifdef DD_FMS
-    volatile double p = a * a;
-    *err = DD_FMS(a, a, p);
-    return p;
-#else
-    double hi, lo;
-    volatile double c;
-    double q = a * a;
-    two_split(a, &hi, &lo);
-    c = hi * hi - q;
-    *err = (c + 2.0 * hi * lo) + lo * lo;
-    return q;
-#endif
-}
-
-DD_INLINE double
-two_div(double a, double b, double *err)
-{
-    volatile double q1, q2;
-    double p1, p2;
-    double s, e;
-
-    q1 = a / b;
-
-    /* Compute  a - q1 * b */
-    p1 = two_prod(q1, b, &p2);
-    s = two_diff(a, p1, &e);
-    e -= p2;
-
-    /* get next approximation */
-    q2 = (s + e) / b;
-
-    return quick_two_sum(q1, q2, err);
-}
-
-/* Computes the nearest integer to d. */
-DD_INLINE double
-nint(double d)
-{
-    if (d == floor(d)) {
-        return d;
-    }
-    return floor(d + 0.5);
-}
-
-/* Computes the truncated integer. */
-DD_INLINE double
-aint(double d)
-{
-    return (d >= 0.0 ? floor(d) : ceil(d));
-}
-
-DD_INLINE double
-sqr(double t)
-{
-    return t * t;
-}
-
-DD_INLINE double
-to_double(double a)
-{
-    return a;
-}
-
-DD_INLINE int
-to_int(double a)
-{
-    return DD_STATIC_CAST(int, a);
-}
-
-DD_INLINE int
-two_comp(const double a, const double b)
-{
-    /* Works for all non-NAN inputs */
-    return (a < b ? -1 : (a > b ? 1 : 0));
-}
-
+#include "dd_idefs.h"
 
 /*
  ************************************************************************
@@ -355,12 +182,12 @@ dd_neg(const double2 a)
 DD_INLINE double2
 dd_nint(const double2 a)
 {
-    double hi = nint(a.x[0]);
+    double hi = two_nint(a.x[0]);
     double lo;
 
     if (hi == a.x[0]) {
         /* High word is an integer already.  Round the low word.*/
-        lo = nint(a.x[1]);
+        lo = two_nint(a.x[1]);
 
         /* Renormalize. This is needed if x[0] = some integer, x[1] = 1/2.*/
         hi = quick_two_sum(hi, lo, &lo);
@@ -733,4 +560,4 @@ dd_sqr_d(double a)
 #endif
 
 
-#endif  /*  _DD_REAL_INLINE_H_ */
+#endif  /*  _DD_REAL_IDEFS_H_ */

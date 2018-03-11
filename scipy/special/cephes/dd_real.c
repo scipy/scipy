@@ -24,33 +24,24 @@
 #include "dd_real.h"
 
 #ifdef DD_INLINE_IS_EXTERN
-#include "dd_real_inline.h"
+#include "dd_real_idefs.h"
 #endif
 
 
 #define _DD_REAL_INIT(A, B)  {{A, B}}
 
+
 const double DD_C_EPS = 4.93038065763132e-32; // 2^-104
-const double DD_C_MIN_NORMALIZED =
-    2.0041683600089728e-292; // = 2^(-1022 + 53)
+const double DD_C_MIN_NORMALIZED = 2.0041683600089728e-292; // = 2^(-1022 + 53)
+
+/*  Compile-time initialization of const double2 structs */
+
 const double2 DD_C_MAX =
     _DD_REAL_INIT(1.79769313486231570815e+308, 9.97920154767359795037e+291);
 const double2 DD_C_SAFE_MAX =
     _DD_REAL_INIT(1.7976931080746007281e+308, 9.97920154767359795037e+291);
 const int _DD_C_NDIGITS = 31;
 
-/* Need compile-time constants for initialization of const double2 structs */
-#ifdef NAN
-#define DD_NAN NAN
-#define DD_INFINITY INFINITY
-#else
-#define DD_NAN NPY_NAN
-#define DD_INFINITY NPY_INFINITY
-#endif /* NAN */
-
-const double2 DD_C_NAN = _DD_REAL_INIT(DD_NAN, DD_NAN);
-const double2 DD_C_INF = _DD_REAL_INIT(DD_INFINITY, DD_INFINITY);
-const double2 DD_C_NEGINF = _DD_REAL_INIT(-DD_INFINITY, -DD_INFINITY);
 const double2 DD_C_ZERO = _DD_REAL_INIT(0.0, 0.0);
 const double2 DD_C_ONE = _DD_REAL_INIT(1.0, 0.0);
 
@@ -73,6 +64,12 @@ const double2 DD_C_LOG2 =
     _DD_REAL_INIT(6.931471805599452862e-01, 2.319046813846299558e-17);
 const double2 DD_C_LOG10 =
     _DD_REAL_INIT(2.302585092994045901e+00, -2.170756223382249351e-16);
+
+#ifdef DD_C_NAN_IS_CONST
+const double2 DD_C_NAN = _DD_REAL_INIT(NAN, NAN);
+const double2 DD_C_INF = _DD_REAL_INIT(INFINITY, INFINITY);
+const double2 DD_C_NEGINF = _DD_REAL_INIT(-INFINITY, -INFINITY);
+#endif /* NAN */
 
 
 /* This routine is called whenever a fatal error occurs. */
@@ -287,7 +284,7 @@ static const double2 inv_fact[] = {
     {{4.77947733238738525e-14,  4.39920548583408126e-31}},
     {{2.81145725434552060e-15,  1.65088427308614326e-31}}
 };
-static const int n_inv_fact = sizeof(inv_fact) / sizeof(inv_fact[0]);
+//static const int n_inv_fact = sizeof(inv_fact) / sizeof(inv_fact[0]);
 
 /* Exponential.  Computes exp(x) in double-double precision. */
 
@@ -532,108 +529,8 @@ polyroot(const double2 *c, int n, const double2 x0, int max_iter,
 }
 
 
-
 // Instantiate a single copy of the inline functions for code that needs it.
 #ifdef DD_INLINE_IS_INLINE
-
-/* First the basic routines taking double arguments, returning 1/2 doubles */
-
-extern inline double quick_two_sum(double a, double b, double *err);
-extern inline double quick_two_diff(double a, double b, double *err);
-extern inline double two_sum(double a, double b, double *err);
-extern inline double two_diff(double a, double b, double *err);
-extern inline void split(double a, double *hi, double *lo);
-extern inline double two_prod(double a, double b, double *err);
-extern inline double two_sqr(double a, double *err);
-extern inline double two_div(double a, double b, double *err);
-extern inline double nint(double d);
-extern inline double aint(double d);
-extern inline double sqr(double t);
-extern inline double to_double(double a);
-extern inline int to_int(double a);
-extern inline int two_comp(const double a, const double b);
-
-extern inline double dd_hi(const double2 a);
-extern inline double dd_lo(const double2 a);
-extern inline int dd_isnan(const double2 a);
-extern inline int dd_isfinite(const double2 a);
-extern inline int dd_isinf(const double2 a);
-extern inline int dd_is_zero(const double2 a);
-extern inline int dd_is_one(const double2 a);
-extern inline int dd_is_positive(const double2 a);
-extern inline int dd_is_negative(const double2 a);
-extern inline double dd_to_double(const double2 a);
-extern inline int dd_to_int(const double2 a);
-
-/*********** Equality and Comparisons ************/
-
-extern inline int dd_comp(const double2 a, const double2 b);
-extern inline int dd_comp_dd_d(const double2 a, double b);
-extern inline int dd_comp_d_dd(double a, const double2 b);
-
-/*********** Creation ************/
-extern inline double2 dd_create(double hi, double lo);
-extern inline double2 dd_zero(void);
-extern inline double2 dd_create_d(double h);
-extern inline double2 dd_create_i(int h);
-extern inline double2 dd_create_dp(const double *d);
-
-/*********** Unary Minus ***********/
-extern inline double2 dd_neg(const double2 a);
-
-/*********** Rounding to integer ***********/
-
-extern inline double2 dd_nint(const double2 a);
-extern inline double2 dd_floor(const double2 a);
-extern inline double2 dd_ceil(const double2 a);
-extern inline double2 dd_aint(const double2 a);
-
-extern inline double2 dd_abs(const double2 a);
-extern inline double2 dd_fabs(const double2 a);
-
-/*********** Normalizing ***********/
-
-extern inline double2 dd_ldexp(const double2 a, int expt);
-extern inline double2 dd_frexp(const double2 a, int *expt);
-
-/*********** Additions/Subtractions ************/
-extern inline double2 dd_add_d_d(double a, double b);
-extern inline double2 dd_ieee_add(const double2 a, const double2 b);
-extern inline double2 dd_sloppy_add(const double2 a, const double2 b);
-extern inline double2 dd_add(const double2 a, const double2 b);
-extern inline double2 dd_add_dd_d(const double2 a, double b);
-extern inline double2 dd_add_d_dd(double a, const double2 b);
-
-extern inline double2 dd_sub_d_d(double a, double b);
-extern inline double2 dd_sub(const double2 a, const double2 b);
-extern inline double2 dd_sub_dd_d(const double2 a, double b);
-extern inline double2 dd_sub_d_dd(double a, const double2 b);
-
-/*********** Multiplications ************/
-extern inline double2 dd_mul_d_d(double a, double b);
-extern inline double2 dd_mul_pwr2(const double2 a, double b);
-extern inline double2 dd_mul_dd_d(const double2 a, double b);
-extern inline double2 dd_mul_d_dd(double a, const double2 b);
-extern inline double2 dd_mul(const double2 a, const double2 b);
-
-/*********** Divisions ************/
-
-extern inline double2 dd_sloppy_div(const double2 a, const double2 b);
-extern inline double2 dd_accurate_div(const double2 a, const double2 b);
-extern inline double2 dd_div(const double2 a, const double2 b);
-extern inline double2 dd_inv(const double2 a);
-
-extern inline double2 dd_div_d_dd(double a, const double2 b);
-extern inline double2 dd_div_dd_d(const double2 a, double b);
-extern inline double2 dd_div_d_d(double a, double b);
-
-/********** Remainder **********/
-extern inline double2 dd_drem(const double2 a, const double2 b);
-extern inline double2 dd_divrem(const double2 a, const double2 b, double2 *r);
-extern inline double2 dd_fmod(const double2 a, const double2 b);
-
-/*********** Squaring **********/
-extern inline double2 dd_sqr(const double2 a);
-extern inline double2 dd_sqr_d(double a);
-
+#include "dd_idecls.h"
+#include "dd_real_idecls.h"
 #endif  /* DD_DO_INLINE */

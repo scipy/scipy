@@ -44,7 +44,7 @@ extern "C" {
 /* If fast fused multiply-add is available, define to the correct macro for
    using it.  It is invoked as DD_FMA(a, b, c) to compute fl(a * b + c).
    If correctly rounded multiply-add is not available (or if unsure),
-   keep it undefined.*/
+   keep it undefined. */
 #ifndef DD_FMA
 #ifdef FP_FAST_FMA
 #define DD_FMA(A, B, C) fma((A), (B), (C))
@@ -59,13 +59,13 @@ extern "C" {
 #endif
 
 /* Define this macro to be the isfinite(x) function. */
-#define DD_ISFINITE isfinite
+#define DD_ISFINITE sc_isfinite
 
 /* Define this macro to be the isinf(x) function. */
-#define DD_ISINF isinf
+#define DD_ISINF sc_isinf
 
 /* Define this macro to be the isnan(x) function. */
-#define DD_ISNAN isnan
+#define DD_ISNAN sc_isnan
 
 /* Set the following to 1 to set commonly used function
    to be inlined.  This should be set to 1 unless the compiler
@@ -77,25 +77,47 @@ extern "C" {
 
 // Define one of: DD_INLINE_IS_INLINE, DD_INLINE_IS_STATIC_INLINE and DD_INLINE_IS_EXTERN
 #ifdef DD_TRY_INLINE
-/* For C11 conformant compilers, declare inline in definition, extern inline in dd_real.c
-  Otherwise declare static inline. */
-#if defined(__STDC__) && defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
-#define DD_INLINE_IS_INLINE
-#define DD_INLINE inline
-#else
-#define DD_INLINE_IS_STATIC_INLINE
-#define DD_INLINE static inline
-#endif /* __STDC_VERSION__ */
-#else
-#define DD_INLINE_IS_EXTERN
-#define DD_INLINE
+/* For C11 conformant compilers, declare inline in definition, extern inline in dd_real.c.
+  For older MSVC compilers, use inline (C++) or __inline (C).
+  Otherwise declare static inline.
+ */
+ #if defined(__STDC__) && defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+  #define DD_INLINE_IS_INLINE
+  #define DD_INLINE inline
+  #define DD_EXTERN_INLINE extern inline
+ #else
+  #define DD_EXTERN_INLINE extern
+  #define DD_INLINE_IS_STATIC_INLINE
+  #if defined(_MSC_VER) && !defined(__cplusplus)
+   #define DD_INLINE static __inline
+  #else
+   #define DD_INLINE static inline
+  #endif /* _MSC_VER */
+ #endif /* __STDC_VERSION__ */
+#else /* ! DD_TRY_INLINE */
+ #define DD_INLINE_IS_EXTERN
+ #define DD_INLINE
+ #define DD_EXTERN_INLINE extern
 #endif /* DD_TRY_INLINE */
 
+#ifdef __cplusplus
+#define DD_STATIC_CAST(T, X) (static_cast<T>(X))
+#else
+#define DD_STATIC_CAST(T, X) ((T)(X))
+#endif
 
+/* double2 struct defintion, some external always-present double2 constants.
+*/
 typedef struct double2
 {
     double x[2];
 } double2;
+
+extern const double DD_C_EPS;
+extern const double DD_C_MIN_NORMALIZED;
+extern const double2 DD_C_MAX;
+extern const double2 DD_C_SAFE_MAX;
+extern const int DD_C_NDIGITS;
 
 extern const double2 DD_C_2PI;
 extern const double2 DD_C_PI;
@@ -106,118 +128,28 @@ extern const double2 DD_C_PI16;
 extern const double2 DD_C_E;
 extern const double2 DD_C_LOG2;
 extern const double2 DD_C_LOG10;
-extern const double2 DD_C_NAN;
-extern const double2 DD_C_INF;
-extern const double2 DD_C_NEGINF;
 extern const double2 DD_C_ZERO;
 extern const double2 DD_C_ONE;
 
-extern const double DD_C_EPS;
-extern const double DD_C_MIN_NORMALIZED;
-extern const double2 DD_C_MAX;
-extern const double2 DD_C_SAFE_MAX;
-extern const int DD_C_NDIGITS;
-
-#ifdef __cplusplus
-#define DD_STATIC_CAST(T, X) (static_cast<T>(X))
+#if defined(__STDC__) && defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L) && defined(NAN)
+#define DD_C_NAN_IS_CONST
+extern const double2 DD_C_NAN;
+extern const double2 DD_C_INF;
+extern const double2 DD_C_NEGINF;
 #else
-#define DD_STATIC_CAST(T, X) ((T)(X))
+#define DD_C_NAN (dd_create(NPY_NAN, NPY_NAN))
+#define DD_C_INF (dd_create(NPY_INFINITY, NPY_INFINITY))
+#define DD_C_NEGINF (dd_create(-NPY_INFINITY, -NPY_INFINITY))
 #endif
 
-#if defined(DD_INLINE_IS_INLINE) || defined(DD_INLINE_IS_STATIC_INLINE) 
-#include "dd_real_inline.h"
+
+/* Include either the inline definitions or declarations of these same functions */
+
+#if defined(DD_INLINE_IS_INLINE) || defined(DD_INLINE_IS_STATIC_INLINE)
+#include "dd_real_idefs.h"
 #else
-
-/*********** Inline basic functions ************/
-
-extern double dd_hi(const double2 a);
-extern double dd_lo(const double2 a);
-extern int dd_isnan(const double2 a);
-extern int dd_isfinite(const double2 a);
-extern int dd_isinf(const double2 a);
-extern int dd_is_zero(const double2 a);
-extern int dd_is_one(const double2 a);
-extern int dd_is_positive(const double2 a);
-extern int dd_is_negative(const double2 a);
-extern double dd_to_double(const double2 a);
-extern int dd_to_int(const double2 a);
-
-/*********** Equality Comparisons ************/
-
-extern int dd_comp(const double2 a, const double2 b);
-extern int dd_comp_dd_d(const double2 a, double b);
-extern int dd_comp_d_dd(double a, const double2 b);
-
-/*********** Creation ************/
-extern double2 dd_create(double hi, double lo);
-extern double2 dd_zero(void);
-extern double2 dd_create_d(double h);
-extern double2 dd_create_i(int h);
-extern double2 dd_create_dp(const double *d);
-
-/*********** Unary Minus ***********/
-extern double2 dd_neg(const double2 a);
-
-/*********** Rounding to integer ***********/
-
-extern double2 dd_nint(const double2 a);
-extern double2 dd_floor(const double2 a);
-extern double2 dd_ceil(const double2 a);
-extern double2 dd_aint(const double2 a);
-
-extern double2 dd_abs(const double2 a);
-extern double2 dd_fabs(const double2 a);
-
-/*********** Normalizing ***********/
-
-extern double2 dd_ldexp(const double2 a, int expt);
-extern double2 dd_frexp(const double2 a, int *expt);
-
-/*********** Additions/Subtractions ************/
-extern double2 dd_add_d_d(double a, double b);
-extern double2 dd_ieee_add(const double2 a, const double2 b);
-extern double2 dd_sloppy_add(const double2 a, const double2 b);
-extern double2 dd_add(const double2 a, const double2 b);
-extern double2 dd_add_dd_d(const double2 a, double b);
-extern double2 dd_add_d_dd(double a, const double2 b);
-
-extern double2 dd_sub_d_d(double a, double b);
-extern double2 dd_sub(const double2 a, const double2 b);
-extern double2 dd_sub_dd_d(const double2 a, double b);
-extern double2 dd_sub_d_dd(double a, const double2 b);
-
-/*********** Multiplications ************/
-extern double2 dd_mul_d_d(double a, double b);
-extern double2 dd_mul_pwr2(const double2 a, double b);
-extern double2 dd_mul_dd_d(const double2 a, double b);
-extern double2 dd_mul_d_dd(double a, const double2 b);
-extern double2 dd_mul(const double2 a, const double2 b);
-
-/*********** Divisions ************/
-
-extern double2 dd_sloppy_div(const double2 a, const double2 b);
-extern double2 dd_accurate_div(const double2 a, const double2 b);
-extern double2 dd_div(const double2 a, const double2 b);
-extern double2 dd_inv(const double2 a);
-
-extern double2 dd_div_d_dd(double a, const double2 b);
-extern double2 dd_div_dd_d(const double2 a, double b);
-extern double2 dd_div_d_d(double a, double b);
-
-/********** Remainder **********/
-extern double2 dd_drem(const double2 a, const double2 b);
-extern double2 dd_divrem(const double2 a, const double2 b, double2 *r);
-extern double2 dd_fmod(const double2 a, const double2 b);
-
-/*********** Squaring **********/
-extern double2 dd_sqr(const double2 a);
-extern double2 dd_sqr_d(double a);
-
-/*********** Random number generator ************/
-extern double2 dd_rand(void);
-
+#include "dd_real_idecls.h"
 #endif  /* DD_INLINE_IS_INLINE ||  DD_INLINE_IS_STATIC_INLINE */
-
 
 /* Non-inline functions */
 
@@ -225,18 +157,19 @@ extern double2 dd_rand(void);
 double2 dd_npwr(const double2 a, int n);
 
 /*********** Transcendental Functions ************/
-
 double2 dd_exp(const double2 a);
 double2 dd_log(const double2 a);
 double2 dd_expm1(const double2 a);
 double2 dd_log1p(const double2 a);
 double2 dd_log10(const double2 a);
-
 double2 dd_log_d(double a);
 
 /* Returns the exponent of the double precision number.
    Returns INT_MIN is x is zero, and INT_MAX if x is INF or NaN. */
 int get_double_expn(double x);
+
+/*********** Random number generator ************/
+extern double2 dd_rand(void);
 
 
 #ifdef __cplusplus
