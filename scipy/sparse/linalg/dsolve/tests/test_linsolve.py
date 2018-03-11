@@ -1,5 +1,6 @@
 from __future__ import division, print_function, absolute_import
 
+import sys
 import threading
 
 import numpy as np
@@ -546,6 +547,7 @@ class TestSplu(object):
         lu = splu(a_)
         assert_array_equal(lu.perm_r, lu.perm_c)
 
+    @pytest.mark.skipif(not hasattr(sys, 'getrefcount'), reason="no sys.getrefcount")
     def test_lu_refcount(self):
         # Test that we are keeping track of the reference count with splu.
         n = 30
@@ -557,7 +559,6 @@ class TestSplu(object):
         lu = splu(a_)
 
         # And now test that we don't have a refcount bug
-        import sys
         rc = sys.getrefcount(lu)
         for attr in ('perm_r', 'perm_c'):
             perm = getattr(lu, attr)

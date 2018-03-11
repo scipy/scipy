@@ -455,7 +455,7 @@ class lil_matrix(spmatrix, IndexMixin):
     toarray.__doc__ = spmatrix.toarray.__doc__
 
     def transpose(self, axes=None, copy=False):
-        return self.tocsr().transpose(axes=axes, copy=copy).tolil()
+        return self.tocsr(copy=copy).transpose(axes=axes, copy=False).tolil(copy=False)
 
     transpose.__doc__ = spmatrix.transpose.__doc__
 

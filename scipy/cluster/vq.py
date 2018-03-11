@@ -264,6 +264,7 @@ def py_vq(obs, code_book, check_finite=True):
     min_dist = dist[np.arange(len(code)), code]
     return code, min_dist
 
+
 # py_vq2 was equivalent to py_vq
 py_vq2 = np.deprecate(py_vq, old_name='py_vq2', new_name='py_vq')
 
@@ -515,6 +516,7 @@ def _krandinit(data, k):
     x += mu
     return x
 
+
 _valid_init_meth = {'random': _krandinit, 'points': _kpoints}
 
 
@@ -528,6 +530,7 @@ def _missing_raise():
     """raise a ClusterError when called."""
     raise ClusterError("One of the clusters is empty. "
                        "Re-run kmeans with a different initialization.")
+
 
 _valid_miss_meth = {'warn': _missing_warn, 'raise': _missing_raise}
 

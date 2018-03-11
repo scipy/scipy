@@ -1748,7 +1748,7 @@ end subroutine <prefix>gels_lwork
      callprotoargument int*,int*,int*,<ctype2c>*,int*,<ctype2c>*,int*,int*,<ctype2>*,int*,<ctype2c>*,int*,<ctype2>*,int*
 
      integer intent(in) :: m
-     integer intent(in)):: n
+     integer intent(in) :: n
      integer intent(hide) :: maxmn = MAX(m,n)
      <ftype2c> intent(hide) :: a
 

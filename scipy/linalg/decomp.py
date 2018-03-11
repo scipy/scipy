@@ -343,6 +343,12 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
     eigh_tridiagonal : eigenvalues and right eiegenvectors for
         symmetric/Hermitian tridiagonal matrices
 
+    Notes
+    -----
+    This function does not check the input array for being hermitian/symmetric
+    in order to allow for representing arrays with only their upper/lower
+    triangular parts.
+
     Examples
     --------
     >>> from scipy.linalg import eigh
@@ -819,6 +825,12 @@ def eigvalsh(a, b=None, lower=True, overwrite_a=False,
     eigvals_banded : eigenvalues for symmetric/Hermitian band matrices
     eigvalsh_tridiagonal : eigenvalues of symmetric/Hermitian tridiagonal
         matrices
+
+    Notes
+    -----
+    This function does not check the input array for being hermitian/symmetric
+    in order to allow for representing arrays with only their upper/lower
+    triangular parts.
 
     Examples
     --------

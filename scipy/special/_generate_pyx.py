@@ -320,6 +320,7 @@ _lgam1p -- lgam1p: d->d                                    -- cephes.h
 _lanczos_sum_expg_scaled -- lanczos_sum_expg_scaled: d->d  -- cephes.h
 _log1pmx -- log1pmx: d->d                                  -- cephes.h
 _igam_fac -- igam_fac: dd->d                               -- cephes.h
+owens_t -- owens_t: dd->d                                  -- cephes.h
 """
 
 #---------------------------------------------------------------------------------
@@ -462,6 +463,7 @@ def underscore(arg):
 
 def cast_order(c):
     return ['ilfdgFDG'.index(x) for x in c]
+
 
 # These downcasts will cause the function to return NaNs, unless the
 # values happen to coincide exactly.

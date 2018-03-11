@@ -163,6 +163,7 @@ def _safe_norm(v):
 # Generic nonlinear solver machinery
 #------------------------------------------------------------------------------
 
+
 _doc_parts = dict(
     params_basic="""
     F : function(x) -> f
@@ -362,6 +363,7 @@ def nonlin_solve(F, x0, jacobian='krylov', iter=None, verbose=False,
         return _array_like(x, x0), info
     else:
         return _array_like(x, x0)
+
 
 _set_doc(nonlin_solve)
 
@@ -881,6 +883,7 @@ class LowRankMatrix(object):
 
         del self.cs[q:]
         del self.ds[q:]
+
 
 _doc_parts['broyden_params'] = """
     alpha : float, optional
@@ -1528,6 +1531,7 @@ def %(name)s(F, xin, iter=None %(kw)s, verbose=False, maxiter=None,
     func.__doc__ = jac.__doc__
     _set_doc(func)
     return func
+
 
 broyden1 = _nonlin_wrapper('broyden1', BroydenFirst)
 broyden2 = _nonlin_wrapper('broyden2', BroydenSecond)

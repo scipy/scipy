@@ -77,7 +77,7 @@ static double A[] = {
 };
 
 
-double digamma_imp_1_2(double x)
+static double digamma_imp_1_2(double x)
 {
     /*
      * Rational approximation on [1, 2] taken from Boost.
@@ -127,7 +127,7 @@ double digamma_imp_1_2(double x)
 }
 
 
-double psi_asy(double x)
+static double psi_asy(double x)
 {
     double y, z;
 

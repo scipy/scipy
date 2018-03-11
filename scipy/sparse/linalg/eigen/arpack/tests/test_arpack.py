@@ -13,17 +13,17 @@ import numpy as np
 from numpy.testing import (assert_allclose, assert_array_almost_equal_nulp,
                            assert_equal, assert_array_equal)
 from pytest import raises as assert_raises
+import pytest
 
 from numpy import dot, conj, random
-from scipy.linalg import eig, eigh
+from scipy.linalg import eig, eigh, hilbert, svd
 from scipy.sparse import csc_matrix, csr_matrix, isspmatrix, diags
 from scipy.sparse.linalg import LinearOperator, aslinearoperator
 from scipy.sparse.linalg.eigen.arpack import eigs, eigsh, svds, \
      ArpackNoConvergence, arpack
 
-from scipy.linalg import svd, hilbert
-
-from scipy._lib._gcutils import assert_deallocated
+from scipy._lib._gcutils import assert_deallocated, IS_PYPY
+from scipy._lib._numpy_compat import suppress_warnings
 
 
 # precision for tests
@@ -100,6 +100,23 @@ def generate_matrix(N, complex=False, hermitian=False,
             i = np.random.randint(N, size=N * N // 2)
             j = np.random.randint(N, size=N * N // 2)
             M[i,j] = 0
+    return M
+
+
+def generate_matrix_symmetric(N, pos_definite=False, sparse=False):
+    M = np.random.random((N, N))
+
+    M = 0.5 * (M + M.T)  # Make M symmetric
+
+    if pos_definite:
+        Id = N * np.eye(N)
+        if sparse:
+            M = csr_matrix(M)
+        M += Id
+    else:
+        if sparse:
+            M = csr_matrix(M)
+
     return M
 
 
@@ -497,7 +514,7 @@ def test_eigen_bad_shapes():
 
 def test_eigen_bad_kwargs():
     # Test eigen on wrong keyword argument
-    A = csc_matrix(np.zeros((2, 2)))
+    A = csc_matrix(np.zeros((8, 8)))
     assert_raises(ValueError, eigs, A, which='XX')
 
 
@@ -783,6 +800,7 @@ def test_svd_linop():
                                 np.dot(U2, np.dot(np.diag(s2), VH2)), rtol=eps)
 
 
+@pytest.mark.skipif(IS_PYPY, reason="Test not meaningful on PyPy")
 def test_linearoperator_deallocation():
     # Check that the linear operators used by the Arpack wrappers are
     # deallocatable by reference counting -- they are big objects, so
@@ -895,3 +913,53 @@ def test_regression_arpackng_1315():
         assert_allclose(np.sort(w), np.sort(w0[-9:]),
                         rtol=1e-4)
 
+
+def test_eigs_for_k_greater():
+    # Test eigs() for k beyond limits.
+    A_sparse = diags([1, -2, 1], [-1, 0, 1], shape=(4, 4))  # sparse
+    A = generate_matrix(4, sparse=False)
+    M_dense = np.random.random((4, 4))
+    M_sparse = generate_matrix(4, sparse=True)
+    M_linop = aslinearoperator(M_dense)
+    eig_tuple1 = eig(A, b=M_dense)
+    eig_tuple2 = eig(A, b=M_sparse)
+
+    with suppress_warnings() as sup:
+        sup.filter(RuntimeWarning)
+
+        assert_equal(eigs(A, M=M_dense, k=3), eig_tuple1)
+        assert_equal(eigs(A, M=M_dense, k=4), eig_tuple1)
+        assert_equal(eigs(A, M=M_dense, k=5), eig_tuple1)
+        assert_equal(eigs(A, M=M_sparse, k=5), eig_tuple2)
+
+        # M as LinearOperator
+        assert_raises(TypeError, eigs, A, M=M_linop, k=3)
+
+        # Test 'A' for different types
+        assert_raises(TypeError, eigs, aslinearoperator(A), k=3)
+        assert_raises(TypeError, eigs, A_sparse, k=3)
+
+
+def test_eigsh_for_k_greater():
+    # Test eigsh() for k beyond limits.
+    A_sparse = diags([1, -2, 1], [-1, 0, 1], shape=(4, 4))  # sparse
+    A = generate_matrix(4, sparse=False)
+    M_dense = generate_matrix_symmetric(4, pos_definite=True)
+    M_sparse = generate_matrix_symmetric(4, pos_definite=True, sparse=True)
+    M_linop = aslinearoperator(M_dense)
+    eig_tuple1 = eigh(A, b=M_dense)
+    eig_tuple2 = eigh(A, b=M_sparse)
+
+    with suppress_warnings() as sup:
+        sup.filter(RuntimeWarning)
+
+        assert_equal(eigsh(A, M=M_dense, k=4), eig_tuple1)
+        assert_equal(eigsh(A, M=M_dense, k=5), eig_tuple1)
+        assert_equal(eigsh(A, M=M_sparse, k=5), eig_tuple2)
+
+        # M as LinearOperator
+        assert_raises(TypeError, eigsh, A, M=M_linop, k=4)
+
+        # Test 'A' for different types
+        assert_raises(TypeError, eigsh, aslinearoperator(A), k=4)
+        assert_raises(TypeError, eigsh, A_sparse, M=M_dense, k=4)

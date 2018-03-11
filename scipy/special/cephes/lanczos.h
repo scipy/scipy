@@ -34,7 +34,7 @@
 #define LANCZOS_H
 
 
-static double lanczos_num[13] = {
+static const double lanczos_num[13] = {
     2.506628274631000270164908177133837338626,
     210.8242777515793458725097339207133627117,
     8071.672002365816210638002902272250613822,
@@ -50,7 +50,7 @@ static double lanczos_num[13] = {
     23531376880.41075968857200767445163675473
 };
 
-static double lanczos_denom[13] = {
+static const double lanczos_denom[13] = {
     1,
     66,
     1925,
@@ -66,7 +66,7 @@ static double lanczos_denom[13] = {
     0
 };
 
-static double lanczos_sum_expg_scaled_num[13] = {
+static const double lanczos_sum_expg_scaled_num[13] = {
     0.006061842346248906525783753964555936883222,
     0.5098416655656676188125178644804694509993,
     19.51992788247617482847860966235652136208,
@@ -82,7 +82,7 @@ static double lanczos_sum_expg_scaled_num[13] = {
     56906521.91347156388090791033559122686859
 };
 
-static double lanczos_sum_expg_scaled_denom[13] = {
+static const double lanczos_sum_expg_scaled_denom[13] = {
     1,
     66,
     1925,
@@ -98,7 +98,7 @@ static double lanczos_sum_expg_scaled_denom[13] = {
     0
 };
 
-static double lanczos_sum_near_1_d[12] = {
+static const double lanczos_sum_near_1_d[12] = {
     0.3394643171893132535170101292240837927725e-9,
     -0.2499505151487868335680273909354071938387e-8,
     0.8690926181038057039526127422002498960172e-8,
@@ -113,7 +113,7 @@ static double lanczos_sum_near_1_d[12] = {
     2.208709979316623790862569924861841433016
 };
 
-static double lanczos_sum_near_2_d[12] = {
+static const double lanczos_sum_near_2_d[12] = {
     0.1009141566987569892221439918230042368112e-8,
     -0.7430396708998719707642735577238449585822e-8,
     0.2583592566524439230844378948704262291927e-7,
@@ -128,6 +128,6 @@ static double lanczos_sum_near_2_d[12] = {
     6.565936202082889535528455955485877361223
 };
 
-static double lanczos_g = 6.024680040776729583740234375;
+static const double lanczos_g = 6.024680040776729583740234375;
 
 #endif

@@ -184,6 +184,7 @@ def scalar_search_wolfe1(phi, derphi, phi0=None, old_phi0=None, derphi0=None,
 
     return stp, phi1, phi0
 
+
 line_search = line_search_wolfe1
 
 

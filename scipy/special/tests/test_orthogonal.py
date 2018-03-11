@@ -562,6 +562,12 @@ def test_roots_chebyt():
     assert_raises(ValueError, sc.roots_chebyt, 0)
     assert_raises(ValueError, sc.roots_chebyt, 3.3)
 
+def test_chebyt_symmetry():
+    x, w = sc.roots_chebyt(21)
+    pos, neg = x[:10], x[11:]
+    assert_equal(neg, -pos[::-1])
+    assert_equal(x[10], 0)
+
 def test_roots_chebyu():
     weightf = orth.chebyu(5).weight_func
     verify_gauss_quad(sc.roots_chebyu, orth.eval_chebyu, weightf, -1., 1., 5)
@@ -748,4 +754,3 @@ def test_roots_genlaguerre():
 def test_gh_6721():
     # Regresssion test for gh_6721. This should not raise.
     sc.chebyt(65)(0.2)
-

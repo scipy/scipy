@@ -35,6 +35,7 @@ def _get_ufuncs():
             ufunc_names.append(name)
     return ufuncs, ufunc_names
 
+
 UFUNCS, UFUNC_NAMES = _get_ufuncs()
 
 
