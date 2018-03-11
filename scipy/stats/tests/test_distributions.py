@@ -1441,6 +1441,9 @@ class TestLevyStable(object):
             [(1.48,-.22), 0.00233, 0.01717]
             ]
 
+        stats.levy_stable.pdf_fft_min_points_threshold = 100
+        stats.levy_stable.pdf_default_method = 'zolotarev'
+        
         for args, loc, scale in param_sets:
             x = stats.levy_stable.rvs(*args, loc=loc, scale=scale, size=10000)
             alpha1, beta1, loc1, scale1 = stats.levy_stable.fit(x)
