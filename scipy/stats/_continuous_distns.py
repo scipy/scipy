@@ -3613,7 +3613,10 @@ class levy_stable_gen(rv_continuous):
     for pdf calculation. Setting the threshold to None (default) will disable FFT. For cdf 
     calculations the Zolatarev method is superior in accuracy, so FFT is disabled by default.
     
-    Fitting estimate uses quantile estimation method in [MC].
+    Fitting estimate uses quantile estimation method in [MC]. MLE estimation of parameters in
+    fit method uses this quantile estimate initially. Note that MLE doesn't always converge if 
+    using FFT for pdf calculations; so it's best that pdf_fft_min_points_threshold is left unset
+    or set to default value of 100. 
 
     %(after_notes)s
     
