@@ -601,16 +601,18 @@ def test_ellipj():
             p = u0 + du0
             dataset.append((p, m0)+mpmath_ellipj(p, m0))
 
-    # Add the points that will use the m near 1 method
-    m = 0.99999999999
-    K = float(mpmath.ellipk(m))
-    # Picking (random) values within each quarter-period K
-    # over two full +- periods in u.
-    u = [-4.35*K,-3.45*K,-2.74*K,-1.33*K,-0.34*K,
-       0.22*K,1.45*K,2.66*K,3.21*K,4.67*K]
+    # Add points that will use the m near 1 method
+    m = [1.0 - 1.e-9,1.0 - 1.e-10,1.0 - 1.e-11]
+    
+    for m0 in m:
+        K = float(mpmath.ellipk(m0))
+        # Picking (random) values within each quarter-period K
+        # over two full +- periods in u.
+        u = [-4.35*K,-3.45*K,-2.74*K,-1.33*K,-0.34*K,
+             0.22*K,1.45*K,2.66*K,3.21*K,4.67*K]
 
-    for u0 in u:
-        dataset.append((u0,m)+mpmath_ellipj(u0,m))
+        for u0 in u:
+            dataset.append((u0,m0)+mpmath_ellipj(u0,m0))
 
     dataset = np.asarray(dataset)
     
