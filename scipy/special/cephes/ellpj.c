@@ -32,10 +32,10 @@
  * algorithm, except when m is within 1e-9 of 0 or 1.
  *
  * In the latter case, when m is near 1, the functions `sn`, `cn`, and `dn`
- * are found using an approximation for `phi` given by 16.15.4 in [2]. 
+ * are found using an approximation for `phi` given by 16.15.4 in [2].
  * As this approximation is only valid when `phi < pi/2` (i.e.,
- * when `u<K`), the computation only uses 16.15.4 to find the "principal" 
- * part of `phi` or the remainder `dphi=phi%(pi/2)`. The returned value 
+ * when `u<K`), the computation only uses 16.15.4 to find the "principal"
+ * part of `phi` or the remainder `dphi=phi%(pi/2)`. The returned value
  * value of `phi`, valid for all `u`, is `pi*n/2+dphi` where `n=floor(u/K)`
  * and `K` is the quarter-period.
  *
@@ -107,7 +107,7 @@ int ellpj(double u, double m, double *sn, double *cn, double *dn, double *ph)
         /* Evaluate the complete elliptic integral using the
            1-m<<1 approximation in ellpk.c */
         K = ellpk(1.0-m);
-	uabs=fabs(u);
+        uabs = fabs(u);
         j = (int)(uabs/K);
         du = uabs-((double)j)*K;
         r = j%4;
@@ -129,9 +129,9 @@ int ellpj(double u, double m, double *sn, double *cn, double *dn, double *ph)
             phi = NPY_PI_2-phi;
         }
         phi += ((double)j)*NPY_PI_2;
-	if (u < 0) {
-	    phi *= -1.0;
-	}
+        if (u < 0) {
+            phi *= -1.0;
+        }
 
         *sn = sin(phi);
         *cn = cos(phi);
@@ -179,7 +179,7 @@ int ellpj(double u, double m, double *sn, double *cn, double *dn, double *ph)
     dnfac = cos(phi - b);
     /* See discussion after DLMF 22.20.5 */
     if (fabs(dnfac) < 0.1) {
-	*dn = sqrt(1 - m*(*sn)*(*sn));
+        *dn = sqrt(1 - m*(*sn)*(*sn));
     }
     else {
         *dn = t / dnfac;
