@@ -579,13 +579,19 @@ def test_cospi_zeros():
 # ------------------------------------------------------------------------------
 
 @check_version(mpmath, '0.19')
-def test_dn_quarter_period():
-    def dn(u, m):
-        return sc.ellipj(u, m)[2]
+def test_ellipj():
+    def wrap_ellipj(u, m):
+        sn,cn,dn,phi = sc.ellipj(u,m)
+        return sn,cn,dn
 
-    def mpmath_dn(u, m):
-        return float(mpmath.ellipfun("dn", u=u, m=m))
+    def mpmath_ellipj(u, m):
+        sn = float(mpmath.ellipfun("sn",u=u,m=m))
+        cn = float(mpmath.ellipfun("cn",u=u,m=m))
+        dn = float(mpmath.ellipfun("dn",u=u,m=m))
+        return sn,cn,dn
 
+    # Add the points that will be calculated using
+    # the AGM method
     m = np.linspace(0, 1, 20)
     du = np.r_[-np.logspace(-1, -15, 10), 0, np.logspace(-15, -1, 10)]
     dataset = []
@@ -593,10 +599,22 @@ def test_dn_quarter_period():
         u0 = float(mpmath.ellipk(m0))
         for du0 in du:
             p = u0 + du0
-            dataset.append((p, m0, mpmath_dn(p, m0)))
-    dataset = np.asarray(dataset)
+            dataset.append((p, m0)+mpmath_ellipj(p, m0))
 
-    FuncData(dn, dataset, (0, 1), 2, rtol=1e-10).check()
+    # Add the points that will use the m near 1 method
+    m = 0.99999999999
+    K = float(mpmath.ellipk(m))
+    # Picking (random) values within each quarter-period K
+    # over two full +- periods in u.
+    u = [-4.35*K,-3.45*K,-2.74*K,-1.33*K,-0.34*K,
+       0.22*K,1.45*K,2.66*K,3.21*K,4.67*K]
+
+    for u0 in u:
+        dataset.append((u0,m)+mpmath_ellipj(u0,m))
+
+    dataset = np.asarray(dataset)
+    
+    FuncData(wrap_ellipj, dataset, (0, 1), (2,3,4), atol=1e-12).check()
 
 
 # ------------------------------------------------------------------------------
