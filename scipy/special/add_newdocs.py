@@ -1310,9 +1310,16 @@ add_newdoc("scipy.special", "ellipj",
     the amplitude of `u`.
 
     Computation is by means of the arithmetic-geometric mean algorithm,
-    except when `m` is within 1e-9 of 0 or 1.  In the latter case with `m`
-    close to 1, the approximation applies only for `phi < pi/2`.
-
+    except when `m` is within 1e-9 of 0 or 1.  
+    
+    In the latter case, when m is near 1, the functions `sn`, `cn`, and `dn`
+    are found using an approximation for `phi` given by 16.15.4 in [2]. 
+    As this approximation is only valid when `phi < pi/2` (i.e.,
+    when `u<K`), the computation only uses 16.15.4 to find the "principal" 
+    part of `phi` or the remainder `dphi=phi%(pi/2)`. The returned value 
+    value of `phi`, valid for all `u`, is `pi*n/2+dphi` where `n=floor(u/K)`
+    and `K` is the quarter-period.
+        
     See also
     --------
     ellipk : Complete elliptic integral of the first kind.
@@ -1321,6 +1328,9 @@ add_newdoc("scipy.special", "ellipj",
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/index.html
+    .. [2] Milton Abramowitz and Irene A. Stegun, eds.
+           Handbook of Mathematical Functions with Formulas,
+           Graphs, and Mathematical Tables. New York: Dover, 1972.
     """)
 
 add_newdoc("scipy.special", "ellipkm1",
