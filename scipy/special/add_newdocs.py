@@ -1313,11 +1313,11 @@ add_newdoc("scipy.special", "ellipj",
     except when `m` is within 1e-9 of 0 or 1.  
     
     In the latter case, when m is near 1, the functions `sn`, `cn`, and `dn`
-    are found using an approximation for `phi` given by 16.15.4 in [2]. 
+    are found using an approximation for `phi` given by 16.15.4 in [2]_. 
     As this approximation is only valid when `phi < pi/2` (i.e.,
     when `u<K`), the computation only uses 16.15.4 to find the "principal" 
-    part of `phi` or the remainder `dphi=phi%(pi/2)`. The returned value 
-    value of `phi`, valid for all `u`, is `pi*n/2+dphi` where `n=floor(u/K)`
+    part of `phi` or the remainder ``dphi=phi%(pi/2)``. The returned value 
+    value of `phi`, valid for all `u`, is ``pi*n/2+dphi`` where ``n=floor(u/K)``
     and `K` is the quarter-period.
         
     See also
