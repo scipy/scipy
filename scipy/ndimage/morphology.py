@@ -541,11 +541,11 @@ def binary_opening(input, structure=None, iterations=1, output=None,
     border_value : int (cast to 0 or 1), optional
         Value at the border in the output array.
     brute_force : boolean, optional
-	Memory contition: if False, only the pixels whose value was changed in
-	the last iteration are tracked as candidates to be updated in the
-	current iteration; if true all pixels are considered as candidates for
-	update, regardless of what happened in the previous iteration.
-	False by default.
+        Memory condition: if False, only the pixels whose value was changed in
+        the last iteration are tracked as candidates to be updated in the
+        current iteration; if true all pixels are considered as candidates for
+        update, regardless of what happened in the previous iteration.
+        False by default.
 
     Returns
     -------
