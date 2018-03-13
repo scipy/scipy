@@ -506,6 +506,7 @@ def binary_dilation(input, structure=None, iterations=1, mask=None,
                            output, border_value, origin, 1, brute_force)
 
 
+@_ni_docstrings.docfiller
 def binary_opening(input, structure=None, iterations=1, output=None,
                    origin=0, mask=None, border_value=0, brute_force=False):
     """
@@ -541,11 +542,11 @@ def binary_opening(input, structure=None, iterations=1, output=None,
     border_value : int (cast to 0 or 1), optional
         Value at the border in the output array.
     brute_force : boolean, optional
-        Memory condition: if False, only the pixels whose value was changed in
-        the last iteration are tracked as candidates to be updated (eroded) in
-        the current iteration; if true all pixels are considered as candidates
-        for erosion, regardless of what happened in the previous iteration.
-        False by default.
+	Memory contition: if False, only the pixels whose value was changed in
+	the last iteration are tracked as candidates to be updated (eroded) in
+	the current iteration; if true all pixels are considered as candidates
+	for erosion, regardless of what happened in the previous iteration.
+	False by default.
 
     Returns
     -------
