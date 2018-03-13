@@ -348,7 +348,7 @@ class VectorFunction(object):
             if sps.issparse(self.H):
                 def hess_wrapped(x, v):
                     self.nhev += 1
-                    return sps.csr_matrix(hess(x))
+                    return sps.csr_matrix(hess(x, v))
                 self.H = sps.csr_matrix(self.H)
 
             elif isinstance(self.H, LinearOperator):

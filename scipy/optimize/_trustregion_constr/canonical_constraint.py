@@ -57,25 +57,16 @@ class CanonicalConstraint(object):
         if np.all(lb == -np.inf) and np.all(ub == np.inf):
             return cls.empty(cfun.n)
 
-        n_bounds = lb.shape[0]
-        if np.all(lb == ub):
-            fun, jac, hess = cls._equal_to_canonical(cfun, lb)
-            n_eq = n_bounds
-            n_ineq = 0
-            keep_feasible = np.empty(0, dtype=bool)
+        if np.all(lb == -np.inf) and np.all(ub == np.inf):
+            return cls.empty(cfun.n)
+        elif np.all(lb == ub):
+            return cls._equal_to_canonical(cfun, lb)
         elif np.all(lb == -np.inf):
-            fun, jac, hess, keep_feasible, n_ineq \
-                = cls._less_to_canonical(cfun, ub, keep_feasible)
-            n_eq = 0
+            return cls._less_to_canonical(cfun, ub, keep_feasible)
         elif np.all(ub == np.inf):
-            fun, jac, hess, keep_feasible, n_ineq \
-                = cls._greater_to_canonical(cfun, lb, keep_feasible)
-            n_eq = 0
+            return cls._greater_to_canonical(cfun, lb, keep_feasible)
         else:
-            (fun, jac, hess, keep_feasible, n_eq, n_ineq) \
-                = cls._interval_to_canonical(cfun, lb, ub, keep_feasible)
-
-        return cls(n_eq, n_ineq, fun, jac, hess, keep_feasible)
+            return cls._interval_to_canonical(cfun, lb, ub, keep_feasible)
 
     @classmethod
     def empty(cls, n):
@@ -153,15 +144,20 @@ class CanonicalConstraint(object):
 
         n_eq = sum(c.n_eq for c in canonical_constraints)
         n_ineq = sum(c.n_ineq for c in canonical_constraints)
-        keep_feasible = np.hstack((
-            c.keep_feasible for c in canonical_constraints))
+        keep_feasible = np.array(np.hstack((
+            c.keep_feasible for c in canonical_constraints)), dtype=bool)
 
         return cls(n_eq, n_ineq, fun, jac, hess, keep_feasible)
 
-    @staticmethod
-    def _equal_to_canonical(cfun, value):
+    @classmethod
+    def _equal_to_canonical(cls, cfun, value):
         empty_fun = np.empty(0)
         n = cfun.n
+
+        n_eq = value.shape[0]
+        n_ineq = 0
+        keep_feasible = np.empty(0, dtype=bool)
+
         if cfun.sparse_jacobian:
             empty_jac = sps.csr_matrix((0, n))
         else:
@@ -176,10 +172,17 @@ class CanonicalConstraint(object):
         def hess(x, v_eq, v_ineq):
             return cfun.hess(x, v_eq)
 
-        return fun, jac, hess
+        empty_fun = np.empty(0)
+        n = cfun.n
+        if cfun.sparse_jacobian:
+            empty_jac = sps.csr_matrix((0, n))
+        else:
+            empty_jac = np.empty((0, n))
 
-    @staticmethod
-    def _less_to_canonical(cfun, ub, keep_feasible):
+        return cls(n_eq, n_ineq, fun, jac, hess, keep_feasible)
+
+    @classmethod
+    def _less_to_canonical(cls, cfun, ub, keep_feasible):
         empty_fun = np.empty(0)
         n = cfun.n
         if cfun.sparse_jacobian:
@@ -188,7 +191,7 @@ class CanonicalConstraint(object):
             empty_jac = np.empty((0, n))
 
         finite_ub = ub < np.inf
-        keep_feasible = keep_feasible[finite_ub]
+        n_eq = 0
         n_ineq = np.sum(finite_ub)
 
         if np.all(finite_ub):
@@ -202,6 +205,7 @@ class CanonicalConstraint(object):
                 return cfun.hess(x, v_ineq)
         else:
             finite_ub = np.nonzero(finite_ub)[0]
+            keep_feasible = keep_feasible[finite_ub]
             ub = ub[finite_ub]
 
             def fun(x):
@@ -211,14 +215,14 @@ class CanonicalConstraint(object):
                 return empty_jac, cfun.jac(x)[finite_ub]
 
             def hess(x, v_eq, v_ineq):
-                v = np.zeros_like(cfun.m)
+                v = np.zeros(cfun.m)
                 v[finite_ub] = v_ineq
                 return cfun.hess(x, v)
 
-        return fun, jac, hess, keep_feasible, n_ineq
+        return cls(n_eq, n_ineq, fun, jac, hess, keep_feasible)
 
-    @staticmethod
-    def _greater_to_canonical(cfun, lb, keep_feasible):
+    @classmethod
+    def _greater_to_canonical(cls, cfun, lb, keep_feasible):
         empty_fun = np.empty(0)
         n = cfun.n
         if cfun.sparse_jacobian:
@@ -227,7 +231,7 @@ class CanonicalConstraint(object):
             empty_jac = np.empty((0, n))
 
         finite_lb = lb > -np.inf
-        keep_feasible = keep_feasible[finite_lb]
+        n_eq = 0
         n_ineq = np.sum(finite_lb)
 
         if np.all(finite_lb):
@@ -241,6 +245,7 @@ class CanonicalConstraint(object):
                 return cfun.hess(x, -v_ineq)
         else:
             finite_lb = np.nonzero(finite_lb)[0]
+            keep_feasible = keep_feasible[finite_lb]
             lb = lb[finite_lb]
 
             def fun(x):
@@ -250,14 +255,14 @@ class CanonicalConstraint(object):
                 return empty_jac, -cfun.jac(x)[finite_lb]
 
             def hess(x, v_eq, v_ineq):
-                v = np.zeros_like(cfun.m)
+                v = np.zeros(cfun.m)
                 v[finite_lb] = -v_ineq
-                return cfun.hess(x, v_ineq)
+                return cfun.hess(x, v)
 
-        return fun, jac, hess, keep_feasible, n_ineq
+        return cls(n_eq, n_ineq, fun, jac, hess, keep_feasible)
 
-    @staticmethod
-    def _interval_to_canonical(cfun, lb, ub, keep_feasible):
+    @classmethod
+    def _interval_to_canonical(cls, cfun, lb, ub, keep_feasible):
         lb_inf = lb == -np.inf
         ub_inf = ub == np.inf
         equal = lb == ub
@@ -269,10 +274,11 @@ class CanonicalConstraint(object):
         less = np.nonzero(less)[0]
         greater = np.nonzero(greater)[0]
         interval = np.nonzero(interval)[0]
-        n_equal = equal.shape[0]
         n_less = less.shape[0]
         n_greater = greater.shape[0]
         n_interval = interval.shape[0]
+        n_ineq = n_less + n_greater + 2 * n_interval
+        n_eq = equal.shape[0]
 
         keep_feasible = np.hstack((keep_feasible[less],
                                    keep_feasible[greater],
@@ -302,10 +308,14 @@ class CanonicalConstraint(object):
             return eq, ineq
 
         def hess(x, v_eq, v_ineq):
-            v_l = v_ineq[:n_less]
-            v_g = v_ineq[n_less:n_less + n_greater]
-            v_il = v_ineq[-2 * n_interval:-n_interval]
-            v_ig = v_ineq[-n_interval:]
+            n_start = 0
+            v_l = v_ineq[n_start:n_start + n_less]
+            n_start += n_less
+            v_g = v_ineq[n_start:n_start + n_greater]
+            n_start += n_greater
+            v_il = v_ineq[n_start:n_start + n_interval]
+            n_start += n_interval
+            v_ig = v_ineq[n_start:n_start + n_interval]
 
             v = np.zeros_like(lb)
             v[equal] = v_eq
@@ -315,8 +325,7 @@ class CanonicalConstraint(object):
 
             return cfun.hess(x, v)
 
-        return (fun, jac, hess, keep_feasible, n_equal,
-                n_less + n_greater + 2 * n_interval)
+        return cls(n_eq, n_ineq, fun, jac, hess, keep_feasible)
 
 
 def initial_constraints_as_canonical(n, prepared_constraints, sparse_jacobian):
