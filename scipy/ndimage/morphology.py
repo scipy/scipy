@@ -1399,7 +1399,8 @@ def grey_opening(input, size=None, footprint=None, structure=None,
     >>> # Note that the local maximum a[3,3] has disappeared
 
     """
-    warnings.warn("ignoring size because footprint is set", UserWarning, stacklevel=2)
+    if (size is not None) and (footprint is not None):
+        warnings.warn("ignoring size because footprint is set", UserWarning, stacklevel=2)
     tmp = grey_erosion(input, size, footprint, structure, None, mode,
                        cval, origin)
     return grey_dilation(tmp, size, footprint, structure, output, mode,
@@ -1694,7 +1695,8 @@ def white_tophat(input, size=None, footprint=None, structure=None,
     black_tophat
 
     """
-    warnings.warn("ignoring size because footprint is set", UserWarning, stacklevel=2)
+    if (size is not None) and (footprint is not None):
+        warnings.warn("ignoring size because footprint is set", UserWarning, stacklevel=2)
     tmp = grey_erosion(input, size, footprint, structure, None, mode,
                        cval, origin)
     tmp = grey_dilation(tmp, size, footprint, structure, output, mode,
