@@ -66,9 +66,8 @@ def _bvalfromboundary(boundary):
     try:
         return _boundarydict[boundary] << 2
     except KeyError:
-        raise ValueError("Acceptable boundary flags are 'fill', 'wrap'"
-                         " (or 'circular'), \n  and 'symm'"
-                         " (or 'symmetric').")
+        raise ValueError("Acceptable boundary flags are 'fill', 'circular' "
+                         "(or 'wrap'), and 'symmetric' (or 'symm').")
 
 
 def _inputs_swap_needed(mode, shape1, shape2):
