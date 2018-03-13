@@ -39,6 +39,17 @@ class BadCoefficients(UserWarning):
 abs = absolute
 
 
+def _is_int_type(x):
+    if np.ndim(x) != 0:
+        return False
+    try:
+        operator.index(x)
+    except TypeError:
+        return False
+    else:
+        return True
+
+
 def findfreqs(num, den, N, kind='ba'):
     """
     Find array of frequencies for computing the response of an analog filter.
@@ -162,16 +173,11 @@ def freqs(b, a, worN=200, plot=None):
     """
     if worN is None:
         w = findfreqs(b, a, 200)
-    elif np.ndim(worN) == 0:
-        try:
-            N = operator.index(worN)
-        except TypeError:
-            pass
-        else:
-            w = findfreqs(b, a, N)
+    elif _is_int_type(worN):
+        w = findfreqs(b, a, worN)
     else:
-        w = worN
-    w = atleast_1d(w)
+        w = atleast_1d(worN)
+
     s = 1j * w
     h = polyval(b, s) / polyval(a, s)
     if plot is not None:
@@ -245,13 +251,8 @@ def freqs_zpk(z, p, k, worN=200):
 
     if worN is None:
         w = findfreqs(z, p, 200, kind='zp')
-    elif np.ndim(worN) == 0:
-        try:
-            N = operator.index(worN)
-        except TypeError:
-            pass
-        else:
-            w = findfreqs(z, p, N, kind='zp')
+    elif _is_int_type(worN):
+        w = findfreqs(z, p, worN, kind='zp')
     else:
         w = worN
 
@@ -421,30 +422,24 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=None):
         worN = 512
 
     h = None
-    try:
-        if np.ndim(worN) == 0:
-            worN = operator.index(worN)
-        else:
-            raise TypeError
-    except TypeError:  # not int-like
-        w = atleast_1d(worN)
-        if fs is not None:
-            w = 2*pi*w/fs
-    else:
-        if worN < 0:
-            raise ValueError('worN must be nonnegative, got %s' % (worN,))
+
+    if _is_int_type(worN):
+        N = operator.index(worN)
+        del worN
+        if N < 0:
+            raise ValueError('worN must be nonnegative, got %s' % (N,))
         lastpoint = 2 * pi if whole else pi
-        w = np.linspace(0, lastpoint, worN, endpoint=False)
-        if (a.size == 1 and worN >= b.shape[0] and
-                fftpack.next_fast_len(worN) == worN and
+        w = np.linspace(0, lastpoint, N, endpoint=False)
+        if (a.size == 1 and N >= b.shape[0] and
+                fftpack.next_fast_len(N) == N and
                 (b.ndim == 1 or (b.shape[-1] == 1))):
-            # if worN is fast, 2 * worN will be fast, too, so no need to check
-            n_fft = worN if whole else worN * 2
+            # if N is fast, 2 * N will be fast, too, so no need to check
+            n_fft = N if whole else N * 2
             if np.isrealobj(b) and np.isrealobj(a):
                 fft_func = np.fft.rfft
             else:
                 fft_func = fftpack.fft
-            h = fft_func(b, n=n_fft, axis=0)[:worN]
+            h = fft_func(b, n=n_fft, axis=0)[:N]
             h /= a
             if fft_func is np.fft.rfft and whole:
                 # exclude DC and maybe Nyquist (no need to use axis_reverse
@@ -457,7 +452,11 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=None):
                 h = h[..., 0]
                 # Rotate the first axis of h to the end.
                 h = np.rollaxis(h, 0, h.ndim)
-    del worN
+    else:
+        w = atleast_1d(worN)
+        del worN
+        if fs is not None:
+            w = 2*pi*w/fs
 
     if h is None:  # still need to compute using freqs w
         zm1 = exp(-1j * w)
@@ -556,19 +555,16 @@ def freqz_zpk(z, p, k, worN=512, whole=False, fs=None):
 
     """
     z, p = map(atleast_1d, (z, p))
+
     if whole:
         lastpoint = 2 * pi
     else:
         lastpoint = pi
+
     if worN is None:
         w = numpy.linspace(0, lastpoint, 512, endpoint=False)
-    elif np.ndim(worN) == 0:
-        try:
-            N = operator.index(worN)
-        except TypeError:
-            pass
-        else:
-            w = numpy.linspace(0, lastpoint, N, endpoint=False)
+    elif _is_int_type(worN):
+        w = numpy.linspace(0, lastpoint, worN, endpoint=False)
     else:
         w = atleast_1d(worN)
         if fs is not None:
@@ -662,20 +658,16 @@ def group_delay(system, w=512, whole=False, fs=None):
     if w is None:
         w = 512
 
-    if np.ndim(w) == 0:
-        try:
-            w = operator.index(w)
-        except TypeError:
-            pass
+    if _is_int_type(w):
+        if whole:
+            w = np.linspace(0, 2 * pi, w, endpoint=False)
         else:
-            if whole:
-                w = np.linspace(0, 2 * pi, w, endpoint=False)
-            else:
-                w = np.linspace(0, pi, w, endpoint=False)
+            w = np.linspace(0, pi, w, endpoint=False)
+    else:
+        w = np.atleast_1d(w)
+        if fs is not None:
+            w = 2*pi*w/fs
 
-    w = np.atleast_1d(w)
-    if fs is not None:
-        w = 2*pi*w/fs
     b, a = map(np.atleast_1d, system)
     c = np.convolve(b, a[::-1])
     cr = c * np.arange(c.size)
@@ -765,7 +757,6 @@ def sosfreqz(sos, worN=None, whole=False, fs=None):
 
     Notes
     -----
-
     .. versionadded:: 0.19.0
 
     Examples
