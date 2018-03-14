@@ -2723,7 +2723,6 @@ def test_subspace_angles():
     assert_raises(ValueError, subspace_angles, x[:-1], x)
 
 
-
 class TestCDF2RDF(object):
 
     def test_single_array2x2_real(self):
