@@ -2729,25 +2729,25 @@ class TestCDF2RDF(object):
         X = np.array([[1, 2], [3, -1]])
         w, v = np.linalg.eig(X)
         wr, vr = cdf2rdf(w, v)
-        assert_array_almost_equal(vr @ wr, X @ vr)
+        assert_array_almost_equal(vr.dot(wr), X.dot(vr))
 
     def test_single_array2x2_complex(self):
         X = np.array([[1, 2], [-2, 1]])
         w, v = np.linalg.eig(X)
         wr, vr = cdf2rdf(w, v)
-        assert_array_almost_equal(vr @ wr, X @ vr)
+        assert_array_almost_equal(vr.dot(wr), X.dot(vr))
 
     def test_single_array3x3_real(self):
         X = np.array([[1, 2, 3], [1, 2, 3], [2, 5, 6]])
         w, v = np.linalg.eig(X)
         wr, vr = cdf2rdf(w, v)
-        assert_array_almost_equal(vr @ wr, X @ vr)
+        assert_array_almost_equal(vr.dot(wr), X.dot(vr))
 
     def test_single_array3x3_complex(self):
         X = np.array([[1, 2, 3], [0, 4, 5], [0, -5, 4]])
         w, v = np.linalg.eig(X)
         wr, vr = cdf2rdf(w, v)
-        assert_array_almost_equal(vr @ wr, X @ vr)
+        assert_array_almost_equal(vr.dot(wr), X.dot(vr))
 
     def test_random_stacked_arrays(self):
         N = int(1e4)
@@ -2755,7 +2755,8 @@ class TestCDF2RDF(object):
             X = np.random.rand(N, M, M)
             w, v = np.linalg.eig(X)
             wr, vr = cdf2rdf(w, v)
-            assert_array_almost_equal(vr @ wr, X @ vr)
+            assert_array_almost_equal(np.einsum('bij, bjk -> bik', vr, wr),
+                                      np.einsum('bij, bjk -> bik', X, vr))
 
     def test_empty_array_error(self):
         """Check that passing an empty array raises a ValueError."""
