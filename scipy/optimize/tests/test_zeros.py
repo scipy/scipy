@@ -80,7 +80,7 @@ class TestBasic(object):
         ])
         a1 = (np.sin(range(10)) + 1.0) * 7.0
         args = (a0, a1, 1e-09, 0.004, 10, 0.27456)
-        x0 = 7.0
+        x0 = [7.0] * 10
         x = zeros.newton(f1, x0, f1_1, args)
         x_expected = (
             6.17264965, 11.7702805, 12.2219954,
@@ -93,7 +93,7 @@ class TestBasic(object):
         x = zeros.newton(f1, x0, f1_1, args, fprime2=f1_2)
         assert_allclose(x, x_expected)
         # test secant
-        x = zeros.newton(lambda y, z: z - y ** 2, 4.0, args=([15.0, 17.0],))
+        x = zeros.newton(lambda y, z: z - y ** 2, [4.0]*2, args=([15.0, 17.0],))
         assert_allclose(x, (3.872983346207417, 4.123105625617661))
         # test derivative zero warning
         assert_warns(RuntimeWarning, zeros.newton,
