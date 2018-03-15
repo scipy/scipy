@@ -18,9 +18,6 @@
 #include <limits.h>
 #include <math.h>
 
-#define _DD_SPLITTER 134217729.0               // = 2^27 + 1
-#define _DD_SPLIT_THRESH 6.69692879491417e+299 // = 2^996
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -33,77 +30,76 @@ extern "C" {
  ************************************************************************
 */
 
-
-DD_INLINE double
+static double
 dd_hi(const double2 a)
 {
     return a.x[0];
 }
 
-DD_INLINE double
+static double
 dd_lo(const double2 a)
 {
     return a.x[1];
 }
 
-DD_INLINE int
+static int
 dd_isnan(const double2 a)
 {
     return (DD_ISNAN(a.x[0]) || DD_ISNAN(a.x[1]));
 }
 
-DD_INLINE int
+static int
 dd_isfinite(const double2 a)
 {
     return DD_ISFINITE(a.x[0]);
 }
 
-DD_INLINE int
+static int
 dd_isinf(const double2 a)
 {
     return DD_ISINF(a.x[0]);
 }
 
-DD_INLINE int
+static int
 dd_is_zero(const double2 a)
 {
     return (a.x[0] == 0.0);
 }
 
-DD_INLINE int
+static int
 dd_is_one(const double2 a)
 {
     return (a.x[0] == 1.0 && a.x[1] == 0.0);
 }
 
-DD_INLINE int
+static int
 dd_is_positive(const double2 a)
 {
     return (a.x[0] > 0.0);
 }
 
-DD_INLINE int
+static int
 dd_is_negative(const double2 a)
 {
     return (a.x[0] < 0.0);
 }
 
 /* Cast to double. */
-DD_INLINE double
+static double
 dd_to_double(const double2 a)
 {
     return a.x[0];
 }
 
 /* Cast to int. */
-DD_INLINE int
+static int
 dd_to_int(const double2 a)
 {
     return DD_STATIC_CAST(int, a.x[0]);
 }
 
 /*********** Equality and Other Comparisons ************/
-DD_INLINE int
+static int
 dd_comp(const double2 a, const double2 b)
 {
     int cmp = two_comp(a.x[0], b.x[0]);
@@ -113,7 +109,7 @@ dd_comp(const double2 a, const double2 b)
     return cmp;
 }
 
-DD_INLINE int
+static int
 dd_comp_dd_d(const double2 a, double b)
 {
     int cmp = two_comp(a.x[0], b);
@@ -123,7 +119,7 @@ dd_comp_dd_d(const double2 a, double b)
     return cmp;
 }
 
-DD_INLINE int
+static int
 dd_comp_d_dd(double a, const double2 b)
 {
     int cmp = two_comp(a, b.x[0]);
@@ -135,34 +131,34 @@ dd_comp_d_dd(double a, const double2 b)
 
 
 /*********** Creation ************/
-DD_INLINE double2
+static double2
 dd_create(double hi, double lo)
 {
     double2 ret = {{hi, lo}};
     return ret;
 }
 
-DD_INLINE double2
+static double2
 dd_zero(void)
 {
     return DD_C_ZERO;
 }
 
-DD_INLINE double2
+static double2
 dd_create_d(double hi)
 {
     double2 ret = {{hi, 0.0}};
     return ret;
 }
 
-DD_INLINE double2
+static double2
 dd_create_i(int hi)
 {
     double2 ret = {{DD_STATIC_CAST(double, hi), 0.0}};
     return ret;
 }
 
-DD_INLINE double2
+static double2
 dd_create_dp(const double *d)
 {
     double2 ret = {{d[0], d[1]}};
@@ -171,15 +167,16 @@ dd_create_dp(const double *d)
 
 
 /*********** Unary Minus ***********/
-DD_INLINE double2
+static double2
 dd_neg(const double2 a)
 {
     double2 ret = {{-a.x[0], -a.x[1]}};
     return ret;
 }
 
+/*********** Rounding ************/
 /* Round to Nearest integer */
-DD_INLINE double2
+static double2
 dd_nint(const double2 a)
 {
     double hi = two_nint(a.x[0]);
@@ -205,7 +202,7 @@ dd_nint(const double2 a)
     return dd_create(hi, lo);
 }
 
-DD_INLINE double2
+static double2
 dd_floor(const double2 a)
 {
     double hi = floor(a.x[0]);
@@ -220,7 +217,7 @@ dd_floor(const double2 a)
     return dd_create(hi, lo);
 }
 
-DD_INLINE double2
+static double2
 dd_ceil(const double2 a)
 {
     double hi = ceil(a.x[0]);
@@ -235,35 +232,35 @@ dd_ceil(const double2 a)
     return dd_create(hi, lo);
 }
 
-DD_INLINE double2
+static double2
 dd_aint(const double2 a)
 {
     return (a.x[0] >= 0.0) ? dd_floor(a) : dd_ceil(a);
 }
 
 /* Absolute value */
-DD_INLINE double2
+static double2
 dd_abs(const double2 a)
 {
     return (a.x[0] < 0.0 ? dd_neg(a) : a);
 }
 
-DD_INLINE double2
+static double2
 dd_fabs(const double2 a)
 {
     return dd_abs(a);
 }
 
-/*********** Normalizing ***********/
 
+/*********** Normalizing ***********/
 /* double-double * (2.0 ^ expt) */
-DD_INLINE double2
+static double2
 dd_ldexp(const double2 a, int expt)
 {
     return dd_create(ldexp(a.x[0], expt), ldexp(a.x[1], expt));
 }
 
-DD_INLINE double2
+static double2
 dd_frexp(const double2 a, int *expt)
 {
 //    r"""return b and l s.t. 0.5<=|b|<1 and 2^l == a
@@ -284,8 +281,7 @@ dd_frexp(const double2 a, int *expt)
 
 
 /*********** Additions ************/
-
-DD_INLINE double2
+static double2
 dd_add_d_d(double a, double b)
 {
     double s, e;
@@ -293,7 +289,7 @@ dd_add_d_d(double a, double b)
     return dd_create(s, e);
 }
 
-DD_INLINE double2
+static double2
 dd_add_dd_d(const double2 a, double b)
 {
     double s1, s2;
@@ -303,7 +299,7 @@ dd_add_dd_d(const double2 a, double b)
     return dd_create(s1, s2);
 }
 
-DD_INLINE double2
+static double2
 dd_add_d_dd(double a, const double2 b)
 {
     double s1, s2;
@@ -313,7 +309,7 @@ dd_add_d_dd(double a, const double2 b)
     return dd_create(s1, s2);
 }
 
-DD_INLINE double2
+static double2
 dd_ieee_add(const double2 a, const double2 b)
 {
     /* This one satisfies IEEE style error bound,
@@ -329,7 +325,7 @@ dd_ieee_add(const double2 a, const double2 b)
     return dd_create(s1, s2);
 }
 
-DD_INLINE double2
+static double2
 dd_sloppy_add(const double2 a, const double2 b)
 {
     /* This is the less accurate version ... obeys Cray-style
@@ -342,7 +338,7 @@ dd_sloppy_add(const double2 a, const double2 b)
     return dd_create(s, e);
 }
 
-DD_INLINE double2
+static double2
 dd_add(const double2 a, const double2 b)
 {
     /* Always require IEEE-style error bounds */
@@ -351,7 +347,7 @@ dd_add(const double2 a, const double2 b)
 
 /*********** Subtractions ************/
 /* double-double = double - double */
-DD_INLINE double2
+static double2
 dd_sub_d_d(double a, double b)
 {
     double s, e;
@@ -359,13 +355,13 @@ dd_sub_d_d(double a, double b)
     return dd_create(s, e);
 }
 
-DD_INLINE double2
+static double2
 dd_sub(const double2 a, const double2 b)
 {
     return dd_ieee_add(a, dd_neg(b));
 }
 
-DD_INLINE double2
+static double2
 dd_sub_dd_d(const double2 a, double b)
 {
     double s1, s2;
@@ -375,7 +371,7 @@ dd_sub_dd_d(const double2 a, double b)
     return dd_create(s1, s2);
 }
 
-DD_INLINE double2
+static double2
 dd_sub_d_dd(double a, const double2 b)
 {
     double s1, s2;
@@ -386,10 +382,9 @@ dd_sub_d_dd(double a, const double2 b)
 }
 
 
-
 /*********** Multiplications ************/
 /* double-double = double * double */
-DD_INLINE double2
+static double2
 dd_mul_d_d(double a, double b)
 {
     double p, e;
@@ -398,13 +393,13 @@ dd_mul_d_d(double a, double b)
 }
 
 /* double-double * double,  where double is a power of 2. */
-DD_INLINE double2
+static double2
 dd_mul_pwr2(const double2 a, double b)
 {
     return dd_create(a.x[0] * b, a.x[1] * b);
 }
 
-DD_INLINE double2
+static double2
 dd_mul(const double2 a, const double2 b)
 {
     double p1, p2;
@@ -414,7 +409,7 @@ dd_mul(const double2 a, const double2 b)
     return dd_create(p1, p2);
 }
 
-DD_INLINE double2
+static double2
 dd_mul_dd_d(const double2 a, double b)
 {
     double p1, p2, e1, e2;
@@ -424,7 +419,7 @@ dd_mul_dd_d(const double2 a, double b)
     return dd_create(p1, e1);
 }
 
-DD_INLINE double2
+static double2
 dd_mul_d_dd(double a, const double2 b)
 {
     double p1, p2, e1, e2;
@@ -436,7 +431,7 @@ dd_mul_d_dd(double a, const double2 b)
 
 
 /*********** Divisions ************/
-DD_INLINE double2
+static double2
 dd_sloppy_div(const double2 a, const double2 b)
 {
     double s1, s2;
@@ -459,7 +454,7 @@ dd_sloppy_div(const double2 a, const double2 b)
     return r;
 }
 
-DD_INLINE double2
+static double2
 dd_accurate_div(const double2 a, const double2 b)
 {
     double q1, q2, q3;
@@ -479,47 +474,46 @@ dd_accurate_div(const double2 a, const double2 b)
     return r;
 }
 
-DD_INLINE double2
+static double2
 dd_div(const double2 a, const double2 b)
 {
     return dd_accurate_div(a, b);
 }
 
-DD_INLINE double2
+static double2
 dd_div_d_d(double a, double b)
 {
     return dd_accurate_div(dd_create_d(a), dd_create_d(b));
 }
 
-DD_INLINE double2
+static double2
 dd_div_dd_d(const double2 a, double b)
 {
     return dd_accurate_div(a, dd_create_d(b));
 }
 
-DD_INLINE double2
+static double2
 dd_div_d_dd(double a, const double2 b)
 {
     return dd_accurate_div(dd_create_d(a), b);
 }
 
-DD_INLINE double2
+static double2
 dd_inv(const double2 a)
 {
     return dd_div(DD_C_ONE, a);
 }
 
 
-
 /********** Remainder **********/
-DD_INLINE double2
+static double2
 dd_drem(const double2 a, const double2 b)
 {
     double2 n = dd_nint(dd_div(a, b));
     return dd_sub(a, dd_mul(n, b));
 }
 
-DD_INLINE double2
+static double2
 dd_divrem(const double2 a, const double2 b, double2 *r)
 {
     double2 n = dd_nint(dd_div(a, b));
@@ -527,7 +521,7 @@ dd_divrem(const double2 a, const double2 b, double2 *r)
     return n;
 }
 
-DD_INLINE double2
+static double2
 dd_fmod(const double2 a, const double2 b)
 {
     double2 n = dd_aint(dd_div(a, b));
@@ -535,7 +529,7 @@ dd_fmod(const double2 a, const double2 b)
 }
 
 /*********** Squaring **********/
-DD_INLINE double2
+static double2
 dd_sqr(const double2 a)
 {
     double p1, p2;
@@ -547,7 +541,7 @@ dd_sqr(const double2 a)
     return dd_create(s1, s2);
 }
 
-DD_INLINE double2
+static double2
 dd_sqr_d(double a)
 {
     double p1, p2;
@@ -558,6 +552,5 @@ dd_sqr_d(double a)
 #ifdef __cplusplus
 }
 #endif
-
 
 #endif  /*  _DD_REAL_IDEFS_H_ */

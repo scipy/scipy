@@ -67,46 +67,13 @@ extern "C" {
 /* Define this macro to be the isnan(x) function. */
 #define DD_ISNAN sc_isnan
 
-/* Set the following to 1 to set commonly used function
-   to be inlined.  This should be set to 1 unless the compiler
-   does not support the "inline" keyword, or if building for
-   debugging purposes. */
-#if defined(__STDC__) && defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)
-#define DD_TRY_INLINE 1
-#endif
-
-// Define one of: DD_INLINE_IS_INLINE, DD_INLINE_IS_STATIC_INLINE and DD_INLINE_IS_EXTERN
-#ifdef DD_TRY_INLINE
-/* For C11 conformant compilers, declare inline in definition, extern inline in dd_real.c.
-  For older MSVC compilers, use inline (C++) or __inline (C).
-  Otherwise declare static inline.
- */
- #if defined(__STDC__) && defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
-  #define DD_INLINE_IS_INLINE
-  #define DD_INLINE inline
-  #define DD_EXTERN_INLINE extern inline
- #else
-  #define DD_EXTERN_INLINE extern
-  #define DD_INLINE_IS_STATIC_INLINE
-  #if defined(_MSC_VER) && !defined(__cplusplus)
-   #define DD_INLINE static __inline
-  #else
-   #define DD_INLINE static inline
-  #endif /* _MSC_VER */
- #endif /* __STDC_VERSION__ */
-#else /* ! DD_TRY_INLINE */
- #define DD_INLINE_IS_EXTERN
- #define DD_INLINE
- #define DD_EXTERN_INLINE extern
-#endif /* DD_TRY_INLINE */
-
 #ifdef __cplusplus
 #define DD_STATIC_CAST(T, X) (static_cast<T>(X))
 #else
 #define DD_STATIC_CAST(T, X) ((T)(X))
 #endif
 
-/* double2 struct defintion, some external always-present double2 constants.
+/* double2 struct definition, some external always-present double2 constants.
 */
 typedef struct double2
 {
@@ -143,13 +110,8 @@ extern const double2 DD_C_NEGINF;
 #endif
 
 
-/* Include either the inline definitions or declarations of these same functions */
-
-#if defined(DD_INLINE_IS_INLINE) || defined(DD_INLINE_IS_STATIC_INLINE)
+/* Include the inline definitions of functions */
 #include "dd_real_idefs.h"
-#else
-#include "dd_real_idecls.h"
-#endif  /* DD_INLINE_IS_INLINE ||  DD_INLINE_IS_STATIC_INLINE */
 
 /* Non-inline functions */
 

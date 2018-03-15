@@ -18,21 +18,21 @@
 #include <limits.h>
 #include <math.h>
 
-#define _DD_SPLITTER 134217729.0               // = 2^27 + 1
-#define _DD_SPLIT_THRESH 6.69692879491417e+299 // = 2^996
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#define _DD_SPLITTER 134217729.0               // = 2^27 + 1
+#define _DD_SPLIT_THRESH 6.69692879491417e+299 // = 2^996
+
 /*
  ************************************************************************
-  First the basic routines taking double arguments, returning 1 (or 2) doubles
+  The basic routines taking double arguments, returning 1 (or 2) doubles
  ************************************************************************
 */
 
 /* Computes fl(a+b) and err(a+b).  Assumes |a| >= |b|. */
-DD_INLINE double
+static double
 quick_two_sum(double a, double b, double *err)
 {
     volatile double s = a + b;
@@ -42,7 +42,7 @@ quick_two_sum(double a, double b, double *err)
 }
 
 /* Computes fl(a-b) and err(a-b).  Assumes |a| >= |b| */
-DD_INLINE double
+static double
 quick_two_diff(double a, double b, double *err)
 {
     volatile double s = a - b;
@@ -52,7 +52,7 @@ quick_two_diff(double a, double b, double *err)
 }
 
 /* Computes fl(a+b) and err(a+b).  */
-DD_INLINE double
+static double
 two_sum(double a, double b, double *err)
 {
     volatile double s = a + b;
@@ -64,7 +64,7 @@ two_sum(double a, double b, double *err)
 }
 
 /* Computes fl(a-b) and err(a-b).  */
-DD_INLINE double
+static double
 two_diff(double a, double b, double *err)
 {
     volatile double s = a - b;
@@ -76,7 +76,7 @@ two_diff(double a, double b, double *err)
 }
 
 /* Computes high word and lo word of a */
-DD_INLINE void
+static void
 two_split(double a, double *hi, double *lo)
 {
     volatile double temp, tempma;
@@ -98,7 +98,7 @@ two_split(double a, double *hi, double *lo)
 }
 
 /* Computes fl(a*b) and err(a*b). */
-DD_INLINE double
+static double
 two_prod(double a, double b, double *err)
 {
 #ifdef DD_FMS
@@ -115,11 +115,11 @@ two_prod(double a, double b, double *err)
     d = c + a_hi * b_lo + a_lo * b_hi;
     *err = d + a_lo * b_lo;
     return p;
-#endif
+#endif  /* DD_FMA */
 }
 
 /* Computes fl(a*a) and err(a*a).  Faster than the above method. */
-DD_INLINE double
+static double
 two_sqr(double a, double *err)
 {
 #ifdef DD_FMS
@@ -134,10 +134,10 @@ two_sqr(double a, double *err)
     c = hi * hi - q;
     *err = (c + 2.0 * hi * lo) + lo * lo;
     return q;
-#endif
+#endif /* DD_FMS */
 }
 
-DD_INLINE double
+static double
 two_div(double a, double b, double *err)
 {
     volatile double q1, q2;
@@ -158,7 +158,7 @@ two_div(double a, double b, double *err)
 }
 
 /* Computes the nearest integer to d. */
-DD_INLINE double
+static double
 two_nint(double d)
 {
     if (d == floor(d)) {
@@ -168,7 +168,7 @@ two_nint(double d)
 }
 
 /* Computes the truncated integer. */
-DD_INLINE double
+static double
 two_aint(double d)
 {
     return (d >= 0.0 ? floor(d) : ceil(d));
@@ -176,7 +176,7 @@ two_aint(double d)
 
 
 /* Compare a and b */
-DD_INLINE int
+static int
 two_comp(const double a, const double b)
 {
     /* Works for non-NAN inputs */
@@ -184,10 +184,8 @@ two_comp(const double a, const double b)
 }
 
 
-
 #ifdef __cplusplus
 }
 #endif
-
 
 #endif  /*  _DD_IDEFS_H_ */

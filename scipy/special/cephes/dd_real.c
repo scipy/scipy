@@ -23,13 +23,7 @@
 
 #include "dd_real.h"
 
-#ifdef DD_INLINE_IS_EXTERN
-#include "dd_real_idefs.h"
-#endif
-
-
 #define _DD_REAL_INIT(A, B)  {{A, B}}
-
 
 const double DD_C_EPS = 4.93038065763132e-32; // 2^-104
 const double DD_C_MIN_NORMALIZED = 2.0041683600089728e-292; // = 2^(-1022 + 53)
@@ -527,10 +521,3 @@ polyroot(const double2 *c, int n, const double2 x0, int max_iter,
 
     return x;
 }
-
-
-// Instantiate a single copy of the inline functions for code that needs it.
-#ifdef DD_INLINE_IS_INLINE
-#include "dd_idecls.h"
-#include "dd_real_idecls.h"
-#endif  /* DD_DO_INLINE */
