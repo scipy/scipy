@@ -9,7 +9,7 @@ def softmax(X, theta=1.0, axis=None):
 
     Compute the softmax of each element along an axis of X.
 
-    ..math:: \sigma(X)_j = \frac{e^{\theta x_j}}{\sum_{k=1}^{K}e^{\theta x_k}} \textrm{for} j = 1, \ldots, K
+    .. math:: \sigma(X)_j = \frac{e^{\theta x_j}}{\sum_{k=1}^{K}e^{\theta x_k}} \textrm{ for } j = 1, \ldots, K
 
     Parameters
     ----------
