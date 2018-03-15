@@ -132,7 +132,7 @@ Andrew Nelson for scipy.optimize.differential_evolution.
 Brian Newsom for work on ctypes multivariate integration.
 Nathan Woods for work on multivariate integration.
 Brianna Laugher for bug fixes.
-Johannes Kulick for the Dirichlet distribution.
+Johannes Kulick for the Dirichlet distribution and the softmax function.
 Bastian Venthur for bug fixes.
 Alex Rothberg for stats.combine_pvalues.
 Brandon Liu for stats.combine_pvalues.

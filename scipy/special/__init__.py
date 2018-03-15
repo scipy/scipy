@@ -599,6 +599,7 @@ Other Special Functions
    factorialk -- [+]Multifactorial of n of order k, n(!!...!).
    shichi     -- Hyperbolic sine and cosine integrals.
    sici       -- Sine and cosine integrals.
+   softmax    -- Softmax function.
    spence     -- Spence's function, also known as the dilogarithm.
    zeta       -- Riemann zeta function.
    zetac      -- Riemann zeta function minus 1.
@@ -640,7 +641,7 @@ from .sf_error import SpecialFunctionWarning, SpecialFunctionError
 from ._ufuncs import *
 
 from .basic import *
-from ._logsumexp import logsumexp
+from ._logsumexp import logsumexp, softmax
 from . import specfun
 from . import orthogonal
 from .orthogonal import *
