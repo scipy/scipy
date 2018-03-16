@@ -208,6 +208,7 @@ cdef normalize_to_unit_sphere(double[:,:] coord_array,
         cartesian_coord_array[i,2] = cos(spherical_vals[1])
     return cartesian_coord_array
 
+@cython.cdivision(True)
 cdef poly_area(double[:,:] vertices,
                double[::1] t_values,
                radius=None,
