@@ -3,7 +3,7 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 from scipy._lib._util import _asarray_validated
 
-__all__ = ["logsumexp"]
+__all__ = ["logsumexp", "softmax"]
 
 def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
     """Compute the log of the sum of exponentials of input elements.
@@ -125,3 +125,29 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
         return out, sgn
     else:
         return out
+
+
+def softmax(x, axis=None):
+    r"""
+    Softmax function
+
+    Compute the softmax of each element along an axis of X.
+
+    .. math:: \sigma(X)_j = \frac{e^{x_j}}{\sum_{k=1}^{K}e^{x_k}} \textrm{ for } j = 1, \ldots, K
+
+    Parameters
+    ----------
+    x : array_like
+        Input array.
+    axis : int, optional
+           axis to compute values along. Default is the first non-singleton axis.
+
+    Returns
+    -------
+    s : ndarray
+        an array the same size as X. The result will sum to 1 along the specified axis.
+    """
+
+    # compute in log space for numerical stability
+    sigma = np.exp(x - logsumexp(x, axis=axis, keepdims=True))
+    return sigma
