@@ -391,32 +391,40 @@ class TestAndersonKSamp(object):
         x1 = np.linspace(1, 100, 100)
         # test case: different distributions;p-value floored at 0.01
         # test case for issue #5493 / #8536
-        res = stats.anderson_ksamp([x1, x1 + 40.5], midrank=False)
-        assert_almost_equal(res.statistic, 41.105, 3)
-        assert_equal(res.significance_level, 0.01)
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, message='p-value floored')
+            s, _, p = stats.anderson_ksamp([x1, x1 + 40.5], midrank=False)
+        assert_almost_equal(s, 41.105, 3)
+        assert_equal(p, 0.01)
 
-        res = stats.anderson_ksamp([x1, x1 + 40.5])
-        assert_almost_equal(res.statistic, 41.235, 3)
-        assert_equal(res.significance_level, 0.01)
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, message='p-value floored')
+            s, _, p = stats.anderson_ksamp([x1, x1 + 40.5])
+        assert_almost_equal(s, 41.235, 3)
+        assert_equal(p, 0.01)
 
         # test case: similar distributions --> p-value capped at 0.25
-        res = stats.anderson_ksamp([x1, x1 + .5], midrank=False)
-        assert_almost_equal(res.statistic, -1.2824, 4)
-        assert_equal(res.significance_level, 0.25)
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, message='p-value capped')
+            s, _, p = stats.anderson_ksamp([x1, x1 + .5], midrank=False)
+        assert_almost_equal(s, -1.2824, 4)
+        assert_equal(p, 0.25)
 
-        res = stats.anderson_ksamp([x1, x1 + .5])
-        assert_almost_equal(res.statistic, -1.2944, 4)
-        assert_equal(res.significance_level, 0.25)
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, message='p-value capped')
+            s, _, p = stats.anderson_ksamp([x1, x1 + .5])
+        assert_almost_equal(s, -1.2944, 4)
+        assert_equal(p, 0.25)
 
         # test case: check interpolated p-value in range [0.01, 0.25] (no ties)
-        res = stats.anderson_ksamp([x1, x1 + 7.5], midrank=False)
-        assert_almost_equal(res.statistic, 1.4923, 4)
-        assert_allclose(res.significance_level, 0.0775, atol=0.005, rtol=0)
+        s, _, p = stats.anderson_ksamp([x1, x1 + 7.5], midrank=False)
+        assert_almost_equal(s, 1.4923, 4)
+        assert_allclose(p, 0.0775, atol=0.005, rtol=0)
 
         # test case: check interpolated p-value in range [0.01, 0.25] (w/ ties)
-        res = stats.anderson_ksamp([x1, x1 + 6])
-        assert_almost_equal(res.statistic, 0.6389, 4)
-        assert_allclose(res.significance_level, 0.1798, atol=0.005, rtol=0)
+        s, _, p = stats.anderson_ksamp([x1, x1 + 6])
+        assert_almost_equal(s, 0.6389, 4)
+        assert_allclose(p, 0.1798, atol=0.005, rtol=0)
 
     def test_not_enough_samples(self):
         assert_raises(ValueError, stats.anderson_ksamp, np.ones(5))

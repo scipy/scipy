@@ -1678,10 +1678,12 @@ def anderson_ksamp(samples, midrank=True):
     sig = np.array([0.25, 0.1, 0.05, 0.025, 0.01])
     if A2 < critical.min():
         p = sig.max()
-        warnings.warn("p-value capped: true value larger than " + str(p))
+        warnings.warn("p-value capped: true value larger than {}".format(p),
+                      stacklevel=2)
     elif A2 > critical.max():
         p = sig.min()
-        warnings.warn("p-value floored: true value smaller than " + str(p))
+        warnings.warn("p-value floored: true value smaller than {}".format(p),
+                      stacklevel=2)
     else:
         # interpolation of probit of significance level
         pf = np.polyfit(critical, log(sig), 2)
