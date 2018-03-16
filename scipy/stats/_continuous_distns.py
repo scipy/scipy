@@ -4485,7 +4485,7 @@ class nakagami_gen(rv_continuous):
 
     .. math::
 
-        f(x, nu) = \frac{2 \nu^\nu}{\gamma(\nu)} x^{2\nu-1} \exp(-\nu x^2)
+        f(x, nu) = \frac{2 \nu^\nu}{\Gamma(\nu)} x^{2\nu-1} \exp(-\nu x^2)
 
     for ``x > 0``, ``nu > 0``.
 
