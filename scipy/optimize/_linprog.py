@@ -171,7 +171,7 @@ def _pivot_col(T, tol=1.0E-12, bland=False):
     return True, np.ma.where(ma == ma.min())[0][0]
 
 
-def _pivot_row(T, pivcol, phase, tol=1.0E-12):
+def _pivot_row(T, basis, pivcol, phase, tol=1.0E-12, bland=False):
     """
     Given a linear programming simplex tableau, determine the row for the
     pivot operation.
@@ -207,7 +207,10 @@ def _pivot_row(T, pivcol, phase, tol=1.0E-12):
         return False, np.nan
     mb = np.ma.masked_where(T[:-k, pivcol] <= tol, T[:-k, -1], copy=False)
     q = mb / ma
-    return True, np.ma.where(q == q.min())[0][0]
+    min_rows = np.ma.where(q == q.min())[0]
+    if bland:
+        return True, min_rows[np.argmin(np.take(basis, min_rows))]
+    return True, min_rows[0]
 
 
 def _solve_simplex(T, n, basis, maxiter=1000, phase=2, callback=None,
@@ -355,7 +358,7 @@ def _solve_simplex(T, n, basis, maxiter=1000, phase=2, callback=None,
             complete = True
         else:
             # Find the pivot row
-            pivrow_found, pivrow = _pivot_row(T, pivcol, phase, tol)
+            pivrow_found, pivrow = _pivot_row(T, basis, pivcol, phase, tol, bland)
             if not pivrow_found:
                 status = 3
                 complete = True
