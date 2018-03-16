@@ -11,9 +11,9 @@ from scipy._lib.six import string_types
 
 __all__ = ['boxcar', 'triang', 'parzen', 'bohman', 'blackman', 'nuttall',
            'blackmanharris', 'flattop', 'bartlett', 'hanning', 'barthann',
-           'hamming', 'kaiser', 'gaussian', 'general_gaussian', 'chebwin',
-           'slepian', 'cosine', 'hann', 'exponential', 'tukey', 'dpss',
-           'get_window']
+           'hamming', 'kaiser', 'gaussian', 'general_cosine','general_gaussian',
+           'general_hamming', 'chebwin', 'slepian', 'cosine', 'hann',
+           'exponential', 'tukey', 'dpss', 'get_window']
 
 
 def _len_guards(M):
@@ -39,7 +39,7 @@ def _truncate(w, needed):
         return w
 
 
-def _cos_win(M, a, sym=True):
+def general_cosine(M, a, sym=True):
     r"""
     Generic weighted sum of cosine terms window
 
@@ -86,11 +86,11 @@ def _cos_win(M, a, sym=True):
     Figure 42 by plotting the window and its frequency response, and confirm
     the sidelobe level in red:
 
-    >>> from scipy import signal
+    >>> from scipy.signal.windows import general_cosine
     >>> from scipy.fftpack import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
-    >>> window = signal._cos_win(1000, HFT90D, sym=False)
+    >>> window = general_cosine(1000, HFT90D, sym=False)
     >>> plt.plot(window)
     >>> plt.title("HFT90D window")
     >>> plt.ylabel("Amplitude")
@@ -436,13 +436,7 @@ def blackman(M, sym=True):
 
     """
     # Docstring adapted from NumPy's blackman function
-    if _len_guards(M):
-        return np.ones(M)
-    M, needs_trunc = _extend(M, sym)
-
-    w = _cos_win(M, [0.42, 0.50, 0.08])
-
-    return _truncate(w, needs_trunc)
+    return general_cosine(M, [0.42, 0.50, 0.08], sym)
 
 
 def nuttall(M, sym=True):
@@ -501,13 +495,7 @@ def nuttall(M, sym=True):
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
-    if _len_guards(M):
-        return np.ones(M)
-    M, needs_trunc = _extend(M, sym)
-
-    w = _cos_win(M, [0.3635819, 0.4891775, 0.1365995, 0.0106411])
-
-    return _truncate(w, needs_trunc)
+    return general_cosine(M, [0.3635819, 0.4891775, 0.1365995, 0.0106411], sym)
 
 
 def blackmanharris(M, sym=True):
@@ -554,13 +542,7 @@ def blackmanharris(M, sym=True):
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
-    if _len_guards(M):
-        return np.ones(M)
-    M, needs_trunc = _extend(M, sym)
-
-    w = _cos_win(M, [0.35875, 0.48829, 0.14128, 0.01168])
-
-    return _truncate(w, needs_trunc)
+    return general_cosine(M, [0.35875, 0.48829, 0.14128, 0.01168], sym)
 
 
 def flattop(M, sym=True):
@@ -621,14 +603,8 @@ def flattop(M, sym=True):
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
-    if _len_guards(M):
-        return np.ones(M)
-    M, needs_trunc = _extend(M, sym)
-
     a = [0.21557895, 0.41663158, 0.277263158, 0.083578947, 0.006947368]
-    w = _cos_win(M, a)
-
-    return _truncate(w, needs_trunc)
+    return general_cosine(M, a, sym)
 
 
 def bartlett(M, sym=True):
@@ -807,14 +783,7 @@ def hann(M, sym=True):
 
     """
     # Docstring adapted from NumPy's hanning function
-    if _len_guards(M):
-        return np.ones(M)
-    M, needs_trunc = _extend(M, sym)
-
-    w = _cos_win(M, [0.5, 0.5])
-
-    return _truncate(w, needs_trunc)
-
+    return general_hamming(M, 0.5, sym)
 
 @np.deprecate(new_name='scipy.signal.windows.hann')
 def hanning(*args, **kwargs):
@@ -958,6 +927,94 @@ def barthann(M, sym=True):
 
     return _truncate(w, needs_trunc)
 
+def general_hamming(M, alpha, sym=True):
+    r"""Return a generalized Hamming window.
+
+    The generalized Hamming window is constructed by multiplying a rectangular
+    window by one period of a cosine function [1]_.
+
+    Parameters
+    ----------
+    M : int
+        Number of points in the output window. If zero or less, an empty
+        array is returned.
+    alpha : float
+        The window coefficient, :math:`\alpha`
+    sym : bool, optional
+        When True (default), generates a symmetric window, for use in filter
+        design.
+        When False, generates a periodic window, for use in spectral analysis.
+
+    Returns
+    -------
+    w : ndarray
+        The window, with the maximum value normalized to 1 (though the value 1
+        does not appear if `M` is even and `sym` is True).
+
+    Notes
+    -----
+    The generalized Hamming window is defined as
+
+    .. math:: w(n) = \alpha - \left(1 - \alpha\right) \cos\left(\frac{2\pi{n}}{M-1}\right)
+              \qquad 0 \leq n \leq M-1
+
+    Both the common Hamming window and Hann window are special cases of the
+    generalized Hamming window with :math:`\alpha` = 0.54 and :math:`\alpha` =
+    0.5, respectively [2]_.
+
+    See Also
+    --------
+    hamming, hann
+
+    Examples
+    --------
+    The Sentinel-1A/B Instrument Processing Facility uses generalized Hamming
+    windows in the processing of spaceborne Synthetic Aperture Radar (SAR)
+    data [3]_. The facility uses various values for the :math:`\alpha` parameter
+    based on operating mode of the SAR instrument. Some common :math:`\alpha`
+    values include 0.75, 0.7 and 0.52 [4]_. As an example, we plot these different
+    windows.
+
+    >>> from scipy.signal.windows import general_hamming
+    >>> from scipy.fftpack import fft, fftshift
+    >>> import matplotlib.pyplot as plt
+
+    >>> plt.figure()
+    >>> plt.title("Generalized Hamming Windows")
+    >>> plt.ylabel("Amplitude")
+    >>> plt.xlabel("Sample")
+    >>> spatial_plot = plt.axes()
+
+    >>> plt.figure()
+    >>> plt.title("Frequency Responses")
+    >>> plt.ylabel("Normalized magnitude [dB]")
+    >>> plt.xlabel("Normalized frequency [cycles per sample]")
+    >>> freq_plot = plt.axes()
+
+    >>> for alpha in [0.75, 0.7, 0.52]:
+    ...     window = general_hamming(41, alpha)
+    ...     spatial_plot.plot(window, label="{:.2f}".format(alpha))
+    ...     A = fft(window, 2048) / (len(window)/2.0)
+    ...     freq = np.linspace(-0.5, 0.5, len(A))
+    ...     response = 20 * np.log10(np.abs(fftshift(A / abs(A).max())))
+    ...     freq_plot.plot(freq, response, label="{:.2f}".format(alpha))
+    >>> freq_plot.legend(loc="upper right")
+    >>> spatial_plot.legend(loc="upper right")
+
+    References
+    ----------
+    .. [1] DSPRelated, "Generalized Hamming Window Family",
+           https://www.dsprelated.com/freebooks/sasp/Generalized_Hamming_Window_Family.html
+    .. [2] Wikipedia, "Window function",
+           http://en.wikipedia.org/wiki/Window_function
+    .. [3] Riccardo Piantanida ESA, "Sentinel-1 Level 1 Detailed Algorithm
+           Definition",
+           https://sentinel.esa.int/documents/247904/1877131/Sentinel-1-Level-1-Detailed-Algorithm-Definition
+    .. [4] Matthieu Bourbigot ESA, "Sentinel-1 Product Definition",
+           https://sentinel.esa.int/documents/247904/1877131/Sentinel-1-Product-Definition
+    """
+    return general_cosine(M, [alpha, 1. - alpha], sym)
+
 
 def hamming(M, sym=True):
     r"""Return a Hamming window.
@@ -1034,14 +1091,7 @@ def hamming(M, sym=True):
 
     """
     # Docstring adapted from NumPy's hamming function
-    if _len_guards(M):
-        return np.ones(M)
-    M, needs_trunc = _extend(M, sym)
-
-    w = _cos_win(M, [0.54, 0.46])
-
-    return _truncate(w, needs_trunc)
-
+    return general_hamming(M, 0.54, sym)
 
 def kaiser(M, beta, sym=True):
     r"""Return a Kaiser window.

@@ -248,7 +248,9 @@ but we list them here for convenience:
    windows.exponential       -- Exponential window
    windows.flattop           -- Flat top window
    windows.gaussian          -- Gaussian window
+   windows.general_cosine    -- Generalized Cosine window
    windows.general_gaussian  -- Generalized Gaussian window
+   windows.general_hamming   -- Generalized Hamming window
    windows.hamming           -- Hamming window
    windows.hann              -- Hann window
    windows.hanning           -- Hann window

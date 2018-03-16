@@ -185,6 +185,7 @@ Dezmond Goff for adding optional out parameter to pdist/cdist
 Nick R. Papior for allowing a wider choice of solvers
 Sean Quinn for the Moyal distribution
 Lars Grüter for contributions to peak finding in scipy.signal
+Jordan Heemskerk for exposing additional windowing functions in scipy.signal.
 
 Institutions
 ------------
@@ -197,3 +198,4 @@ The University of Stellenbosch for funding the development of
     the SciKits portal.
 Google Inc. for updating documentation of hypergeometric distribution.
 Datadog Inc. for contributions to scipy.stats.
+Urthecast Inc. for exposing additional windowing functions in scipy.signal.
