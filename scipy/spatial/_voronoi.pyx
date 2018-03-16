@@ -21,6 +21,7 @@ __all__ = ['sort_vertices_of_regions']
 # array-filling placeholder that can never occur
 DEF ARRAY_FILLER = -2
 
+@cython.boundscheck(False)
 cdef void remaining_filter(np.npy_intp shape, np.npy_intp[:] remaining,
                            np.npy_intp current_simplex):
     cdef np.npy_intp i
@@ -47,7 +48,7 @@ def sort_vertices_of_regions(int[:,::1] simplices, regions):
         sorted_vertices[:] = ARRAY_FILLER
         current_simplex = remaining[0]
         for i in range(3):
-            k = simplices[current_simplex][i]
+            k = simplices[current_simplex, i]
             if k != n:
                 current_vertex = k
                 break
