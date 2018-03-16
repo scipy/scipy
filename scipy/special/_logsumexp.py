@@ -133,14 +133,14 @@ def softmax(x, axis=None):
 
     Compute the softmax of each element along an axis of X.
 
-    .. math:: \sigma(X)_j = \frac{e^{x_j}}{\sum_{k=1}^{K}e^{x_k}} \textrm{ for } j = 1, \ldots, K
+    .. math:: \sigma(X)_j = \frac{e^{x_j}}{\sum_k e^{x_k}}
 
     Parameters
     ----------
     x : array_like
         Input array.
     axis : int, optional
-           axis to compute values along. Default is the first non-singleton axis.
+           axis to compute values along. Default is None and softmax will be computed over all axes.
 
     Returns
     -------
