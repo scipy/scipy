@@ -117,7 +117,7 @@ def _read_data_chunk(fid, format_tag, channels, bit_depth, is_big_endian, is_rf6
         # chunk size is stored in file header for RF64
         fid.seek(28) 
         size = struct.unpack('<Q', fid.read(8))[0]
-        fid.seek(pos)
+        fid.seek(pos+4)
 
     # Number of bytes per sample
     bytes_per_sample = bit_depth//8
@@ -174,7 +174,7 @@ def _read_riff_chunk(fid):
     elif str1 == b'RF64':
         is_rf64 = True
         is_big_endian = False
-        fmt = '<I'
+        fmt = '<Q'
     else:
         # There are also .wav files with "FFIR" or "XFIR" signatures?
         raise ValueError("File format {}... not "
@@ -189,7 +189,7 @@ def _read_riff_chunk(fid):
         str2 = fid.read(4)
         # skip 'ds64' and header size bytes
         fid.read(8) 
-        file_size = struct.unpack('<Q', fid.read(8))[0] + 8 
+        file_size = struct.unpack(fmt, fid.read(8))[0] + 8 
         # jump to end of extended header
         fid.read(20) 
 
@@ -385,20 +385,36 @@ def write(filename, rate, data):
         header_data += struct.pack('<I', len(fmt_chunk_data))
         header_data += fmt_chunk_data
 
+        # check data size (needs to be immediately before the data chunk)
+        # if too large for standard RIFF, use RF64 instead
+        if ((len(header_data)-4-4) + (4+4+data.nbytes)) > 0xFFFFFFFF:
+            header_data = b''
+            header_data += b'RF64'
+            header_data += b'\xFF\xFF\xFF\xFF'
+            header_data += b'WAVE'
+            header_data += b'ds64'
+            header_data += struct.pack('<I', 28)
+            # will be filled later with real file size
+            header_data += struct.pack('<Q', data.nbytes)
+            header_data += struct.pack('<Q', data.nbytes)
+            header_data += struct.pack('<Q', data.shape[0])
+            header_data += struct.pack('<I', 0)
+            header_data += b'fmt '
+            header_data += struct.pack('<I', len(fmt_chunk_data))
+            header_data += fmt_chunk_data
+
         # fact chunk (non-PCM files)
         if not (dkind == 'i' or dkind == 'u'):
             header_data += b'fact'
             header_data += struct.pack('<II', 4, data.shape[0])
 
-        # check data size (needs to be immediately before the data chunk)
-        if ((len(header_data)-4-4) + (4+4+data.nbytes)) > 0xFFFFFFFF:
-            raise ValueError("Data exceeds wave file size limit")
-
         fid.write(header_data)
 
         # data chunk
         fid.write(b'data')
-        fid.write(struct.pack('<I', data.nbytes))
+        # write data chunk size, unless its too big in which case 0xFFFFFFFF is written
+        fid.write(struct.pack('<I', min(data.nbytes, 4294967295)))
+
         if data.dtype.byteorder == '>' or (data.dtype.byteorder == '=' and
                                            sys.byteorder == 'big'):
             data = data.byteswap()
