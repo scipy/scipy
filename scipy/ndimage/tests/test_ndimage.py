@@ -4587,9 +4587,9 @@ class TestBinaryOpeningClosing:
         self.array = a
         self.sq3x3 = numpy.ones((3,3))
         self.opened_old = ndimage.binary_opening(self.array, self.sq3x3,
-                                                1, None, 0)
+                                                 1, None, 0)
         self.closed_old = ndimage.binary_closing(self.array, self.sq3x3,
-                                                1, None, 0)
+                                                 1, None, 0)
 
     def test_opening_new_arguments(self):
         opened_new = ndimage.binary_opening(self.array, self.sq3x3, 1, None,

@@ -618,13 +618,13 @@ def binary_opening(input, structure=None, iterations=1, output=None,
         structure = generate_binary_structure(rank, 1)
 
     tmp = binary_erosion(input, structure, iterations, mask, None,
-                        border_value, origin, brute_force)
+                         border_value, origin, brute_force)
     return binary_dilation(tmp, structure, iterations, mask, output,
-                            border_value, origin, brute_force)
+                           border_value, origin, brute_force)
 
 
 def binary_closing(input, structure=None, iterations=1, output=None,
-                    origin=0, mask=None, border_value=0, brute_force=False):
+                   origin=0, mask=None, border_value=0, brute_force=False):
     """
     Multi-dimensional binary closing with the given structuring element.
 
@@ -758,9 +758,9 @@ def binary_closing(input, structure=None, iterations=1, output=None,
         structure = generate_binary_structure(rank, 1)
 
     tmp = binary_dilation(input, structure, iterations, mask, None,
-                            border_value, origin, brute_force)
+                          border_value, origin, brute_force)
     return binary_erosion(tmp, structure, iterations, mask, output,
-                            border_value, origin, brute_force)
+                          border_value, origin, brute_force)
 
 
 def binary_hit_or_miss(input, structure1=None, structure2=None,
