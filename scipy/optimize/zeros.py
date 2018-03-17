@@ -64,7 +64,7 @@ def results_c(full_output, r):
 
 # Newton-Raphson method
 def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
-           fprime2=None):
+           fprime2=None, **kwargs):
     """
     Find a zero using the Newton-Raphson or secant method.
 
@@ -158,14 +158,14 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
     if maxiter < 1:
         raise ValueError("maxiter must be greater than 0")
     if not np.isscalar(x0):
-        return _array_newton(func, x0, fprime, args, tol, maxiter, fprime2)
+        return _array_newton(func, x0, fprime, args, tol, maxiter, fprime2,
+                             **kwargs)
     if fprime is not None:
         # Newton-Raphson method
         # Multiply by 1.0 to convert to floating point.  We don't use float(x0)
         # so it still works if x0 is complex.
         p0 = 1.0 * x0
-        fder2 = 0
-        for iter in range(maxiter):
+        for iteration in range(maxiter):
             myargs = (p0,) + args
             fder = fprime(*myargs)
             if fder == 0:
@@ -193,7 +193,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
             p1 = x0*(1 + 1e-4) - 1e-4
         q0 = func(*((p0,) + args))
         q1 = func(*((p1,) + args))
-        for iter in range(maxiter):
+        for iteration in range(maxiter):
             if q1 == q0:
                 if p1 != p0:
                     msg = "Tolerance of %s reached" % (p1 - p0)
@@ -211,32 +211,41 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
     raise RuntimeError(msg)
 
 
-def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2):
+def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2,
+                  failure_idx_flag=False):
     """
     A vectorized version of Newton, Halley, and secant methods for arrays. Do
     not use this method directly. This method is called from :func:`newton`
     when ``np.isscalar(x0)`` is true. For docstring, see :func:`newton`.
     """
     p0 = np.asarray(x0)  # convert to ndarray
+    failures = np.ones(p0.shape, dtype=bool)  # at start, nothing converged
     if fprime is not None:
         # Newton-Raphson method
-        for iter in range(maxiter):
+        for iteration in range(maxiter):
             myargs = (p0,) + args
             fder = np.asarray(fprime(*myargs))  # convert to ndarray
-            if (fder == 0).any():
-                msg = "derivative was zero."
+            zero_der = (fder == 0)
+            if zero_der.all():
+                msg = "all derivatives were zero."
                 warnings.warn(msg, RuntimeWarning)
+                if failure_idx_flag:
+                    p0 = (p0, failures, zero_der)
                 return p0
             fval = np.asarray(func(*myargs))  # convert to ndarray
             newton_step = fval / fder
-            if fprime2 is None:
-                # Newton step
-                p = p0 - newton_step
-            else:
-                fder2 = np.asarray(fprime2(*myargs))  # convert to ndarray
-                # Halley's method
-                p = p0 - newton_step / (1.0 - 0.5 * newton_step * fder2 / fder)
-            if np.abs(p - p0).max() < tol:
+            fder2 = 0 if fprime2 is None else np.asarray(fprime2(*myargs))
+            # if fder is zero, warns "RuntimeWarning: divide by zero"
+            p = p0 - newton_step / (1.0 - 0.5 * newton_step * fder2 / fder)
+            p = np.where(zero_der, p0, p)  # where zero der, use last guess
+            failures = np.abs(p - p0) >= tol  # items not yet converged
+            # stop iterating if there aren't any failures, not incl zero der
+            if not failures[~zero_der].any():
+                if zero_der.any():
+                    msg = "some derivatives were zero."
+                    warnings.warn(msg, RuntimeWarning)
+                if failure_idx_flag:
+                    p = (p, failures, zero_der)
                 return p
             p0 = p
     else:
@@ -246,24 +255,47 @@ def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2):
         p1 = p0 * (1 + dx) + dp
         q0 = np.asarray(func(*((p0,) + args)))
         q1 = np.asarray(func(*((p1,) + args)))
-        for iter in range(maxiter):
-            divide_by_zero = (q1 == q0)
-            if divide_by_zero.any():
-                tolerance_reached = (p1 != p0)
-                if (divide_by_zero & tolerance_reached).any():
-                    msg = "Tolerance of %s reached" % np.sqrt(sum((p1 - p0)**2))
+        for iteration in range(maxiter):
+            zero_der = (q1 == q0)
+            nonzero_dp = (p1 != p0)
+            if zero_der.all():
+                if nonzero_dp.any():
+                    rms = np.sqrt(
+                        sum((p1[nonzero_dp] - p0[nonzero_dp])**2)
+                    )
+                    msg = "RMS of %s where callback isn't zero" % rms
                     warnings.warn(msg, RuntimeWarning)
-                return (p1 + p0)/2.0
-            else:
-                p = p1 - q1*(p1 - p0)/(q1 - q0)
-            if np.abs(p - p1).max() < tol:
+                p_avg = (p1 + p0) / 2.0
+                if failure_idx_flag:
+                    p_avg = (p_avg, failures, zero_der)
+                return p_avg
+            p = p1 - q1*(p1 - p0)/(q1 - q0)
+            p = np.where(zero_der, (p1 + p0)/2.0, p)
+            failures = np.abs(p - p1) >= tol  # not yet converged
+            # stop iterating if there aren't any failures, not incl zero der
+            if not failures[~zero_der].any():
+                # non-zero dp, but infinite newton step
+                zero_der_nz_dp = (zero_der & nonzero_dp)
+                if zero_der_nz_dp.any():
+                    rms = np.sqrt(
+                        sum((p1[zero_der_nz_dp] - p0[zero_der_nz_dp])**2)
+                    )
+                    msg = "RMS of %s where callback isn't zero" % rms
+                    warnings.warn(msg, RuntimeWarning)
+                if failure_idx_flag:
+                    p = (p, failures, zero_der)
                 return p
             p0 = p1
             q0 = q1
             p1 = p
             q1 = np.asarray(func(*((p1,) + args)))
     msg = "Failed to converge after %d iterations, value is %s" % (maxiter, p)
-    raise RuntimeError(msg)
+    if failures.all():
+        raise RuntimeError(msg)
+    warnings.warn(msg, RuntimeWarning)
+    if failure_idx_flag:
+        p = (p, failures, zero_der)
+    return p
 
 
 def bisect(f, a, b, args=(),
