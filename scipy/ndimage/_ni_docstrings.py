@@ -19,7 +19,7 @@ _output_doc = (
     will be created.""")
 _size_foot_doc = (
 """size : scalar or tuple, optional
-    See footprint, below
+    See footprint, below. Ignored if footprint is given.
 footprint : array, optional
     Either `size` or `footprint` must be defined.  `size` gives
     the shape that is taken from the input array, at every element
@@ -30,7 +30,7 @@ footprint : array, optional
     to ``footprint=np.ones((n,m))``.  We adjust `size` to the number
     of dimensions of the input array, so that, if the input array is
     shape (10,10,10), and `size` is 2, then the actual size used is
-    (2,2,2).""")
+    (2,2,2). When `footprint` is given, `size` is ignored.""")
 _mode_doc = (
 """mode : {'reflect', 'constant', 'nearest', 'mirror', 'wrap'}, optional
     The `mode` parameter determines how the input array is extended
