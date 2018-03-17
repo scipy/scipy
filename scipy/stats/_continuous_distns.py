@@ -2408,14 +2408,14 @@ class gamma_gen(rv_continuous):
 
     .. math::
 
-        f(x, a) = \frac{x^{a-1} \exp(-x)}{\gamma(a)}
+        f(x, a) = \frac{x^{a-1} \exp(-x)}{\Gamma(a)}
 
-    for :math:`x \ge 0`, :math:`a > 0`. Here :math:`\gamma(a)` refers to the
+    for :math:`x \ge 0`, :math:`a > 0`. Here :math:`\Gamma(a)` refers to the
     gamma function.
 
     `gamma` has a shape parameter `a` which needs to be set explicitly.
 
-    When :math:`a` is an integer, :math:`\gamma` reduces to the Erlang
+    When :math:`a` is an integer, `gamma` reduces to the Erlang
     distribution, and when :math:`a=1` to the exponential distribution.
 
     %(after_notes)s
