@@ -978,4 +978,4 @@ improvements.
 
 Copyright
 =========
-Andrew Nelson and Scott Sievert, Feb 2018.
+This document has been placed in the public domain, Feb 2018.
