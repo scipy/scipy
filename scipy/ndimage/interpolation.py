@@ -80,15 +80,15 @@ def spline_filter1d(input, order=3, axis=-1, output=numpy.float64,
 
     Notes
     -----
-    All functions in `ndimage.interpolation` internally use a b-spline
-    representation of the input image. Whenever using b-splines of
-    `order > 1`, the input image values have to be converted to b-spline
-    coefficients first, which is done by applying this one-dimensional
-    spline filter sequentially along all axes of the input. All of the
-    functions that require such an input will automatically filter their
-    inputs, a behavior controllable through the `prefilter` keyword
-    argument. For functions that accept a `mode` parameter, the results
-    will only be correct if it matches the `mode` used when filtering.
+    All functions in `ndimage.interpolation` do spline interpolation of
+    the input image. If using b-splines of `order > 1`, the input image
+    values have to be converted to b-spline coefficients first, which is
+    done by applying this one-dimensional filter sequentially along all
+    axes of the input. All functions that require b-spline coefficients
+    will automatically filter their inputs, a behavior controllable with
+    the `prefilter` keyword argument. For functions that accept a `mode`
+    parameter, the result will only be correct if it matches the `mode`
+    used when filtering.
     """
     if order < 0 or order > 5:
         raise RuntimeError('spline order not supported')
@@ -101,7 +101,7 @@ def spline_filter1d(input, order=3, axis=-1, output=numpy.float64,
     else:
         mode = _ni_support._extend_mode_to_code(mode)
         axis = _ni_support._check_axis(axis, input.ndim)
-        _nd_image.spline_filter1d(input, order, axis, mode, output)
+        _nd_image.spline_filter1d(input, order, axis, output, mode)
     return output
 
 

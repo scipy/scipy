@@ -677,10 +677,9 @@ static PyObject *Py_SplineFilter1D(PyObject *obj, PyObject *args)
     PyArrayObject *input = NULL, *output = NULL;
     int axis, order, mode;
 
-    if (!PyArg_ParseTuple(args, "O&iiiO&",
-                          NI_ObjectToInputArray, &input,
-                          &order, &axis, &mode,
-                          NI_ObjectToOutputArray, &output))
+    if (!PyArg_ParseTuple(args, "O&iiO&i",
+                          NI_ObjectToInputArray, &input, &order, &axis,
+                          NI_ObjectToOutputArray, &output, &mode))
         goto exit;
 
     NI_SplineFilter1D(input, order, axis, mode, output);

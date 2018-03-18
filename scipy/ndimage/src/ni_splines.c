@@ -175,7 +175,7 @@ _init_causal_mirror(double *c, const npy_intp n, const double z)
 static void
 _init_anticausal_mirror(double *c, const npy_intp n, const double z)
 {
-    c[n - 1] = (z * c[n - 2] + c[n - 1]) * (1 - z) * (1 - z) / (1 - z * z);
+    c[n - 1] = (z * c[n - 2] + c[n - 1]) * z / (z * z - 1);
 }
 
 
@@ -203,7 +203,7 @@ _init_anticausal_wrap(double *c, const npy_intp n, const double z)
         c[n - 1] += z_i * c[i];
         z_i *= z;
     }
-    c[n - 1] *= (1 - z) * (1 - z) / (1 - z_i); /* z_i = pow(z, n) */
+    c[n - 1] *= z / (z_i - 1); /* z_i = pow(z, n) */
 }
 
 
@@ -228,7 +228,7 @@ _init_causal_reflect(double *c, const npy_intp n, const double z)
 void
 _init_anticausal_reflect(double *c, const npy_intp n, const double z)
 {
-    c[n - 1] *= 1 - z;
+    c[n - 1] *= z / (z - 1);
 }
 
 
@@ -254,7 +254,6 @@ _apply_filter(double *c, npy_intp n, double z, init_fn *causal_init,
               init_fn *anticausal_init)
 {
     npy_intp i;
-    const double mult = (1 - z) * (1 - z);
 
     causal_init(c, n, z);
     for (i = 1; i < n; ++i) {
@@ -262,14 +261,30 @@ _apply_filter(double *c, npy_intp n, double z, init_fn *causal_init,
     }
     anticausal_init(c, n, z);
     for (i = n - 2; i >= 0; --i) {
-        c[i] = z * c[i + 1] + mult * c[i];
+        c[i] = z * (c[i + 1] - c[i]);
+    }
+}
+
+
+static void
+_apply_filter_gain(double *c, npy_intp n, const double *zs, int nz)
+{
+    double gain = 1.0;
+
+    while (nz--) {
+        const double z = *zs++;
+        gain *= (1.0 - z) * (1.0 - 1.0 / z);
+    }
+
+    while (n--) {
+        *c++ *= gain;
     }
 }
 
 
 void
-apply_filter(double *coefficients, const npy_intp len, const double pole,
-             NI_ExtendMode mode)
+apply_filter(double *coefficients, const npy_intp len, const double *poles,
+             int npoles, NI_ExtendMode mode)
 {
     init_fn *causal;
     init_fn *anticausal;
@@ -293,5 +308,9 @@ apply_filter(double *coefficients, const npy_intp len, const double pole,
             assert(0); /* We should never get here. */
     }
 
-    _apply_filter(coefficients, len, pole, causal, anticausal);
+    _apply_filter_gain(coefficients, len, poles, npoles);
+
+    while (npoles--) {
+        _apply_filter(coefficients, len, *poles++, causal, anticausal);
+    }
 }

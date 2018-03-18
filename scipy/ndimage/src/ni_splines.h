@@ -35,14 +35,14 @@ get_filter_poles(int order, int *npoles, double *poles);
 
 
 /*
- * Applies the causal and anticausal filters for a pole to the array of
- * coefficients. Recursively applying this filter for all poles of a
- * given order is equivalent to solving the banded linear systems of
- * equations that computes the spline coefficients for an input array.
+ * Applies the causal and anticausal filters for all poles to the array
+ * of coefficients. This is equivalent to solving the banded linear
+ * system of equations that computes the spline coefficients for an
+ * input array.
  */
 void
-apply_filter(double *coefficients, const npy_intp len, const double pole,
-             NI_ExtendMode mode);
+apply_filter(double *coefficients, const npy_intp len, const double *poles,
+             int npoles, NI_ExtendMode mode);
 
 
 #endif

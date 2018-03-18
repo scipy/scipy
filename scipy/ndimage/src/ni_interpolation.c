@@ -129,7 +129,7 @@ map_coordinate(double in, npy_intp len, int mode)
 int NI_SplineFilter1D(PyArrayObject *input, int order, int axis,
                       NI_ExtendMode mode, PyArrayObject *output)
 {
-    int hh, npoles = 0, more;
+    int npoles = 0, more;
     npy_intp kk, lines, len;
     double *buffer = NULL, gain, poles[MAX_SPLINE_FILTER_POLES];
     NI_LineBuffer iline_buffer, oline_buffer;
@@ -173,9 +173,7 @@ int NI_SplineFilter1D(PyArrayObject *input, int order, int axis,
             double *ln = NI_GET_LINE(iline_buffer, kk);
             /* spline filter: */
             if (len > 1) {
-                for(hh = 0; hh < npoles; hh++) {
-                    apply_filter(ln, len, poles[hh], mode);
-                }
+                apply_filter(ln, len, poles, npoles, mode);
             }
         }
 
