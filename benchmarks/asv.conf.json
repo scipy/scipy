@@ -29,7 +29,7 @@
     "matrix": {
         "numpy": [],
         "Tempita": [],
-        "Cython": [],
+        "Cython": ["0.27.3"],
         "pytest": [],
         "six": [],
     },
