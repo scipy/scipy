@@ -180,6 +180,8 @@ def _pivot_row(T, basis, pivcol, phase, tol=1.0E-12, bland=False):
     ----------
     T : 2D ndarray
         The simplex tableau.
+    basis : array
+        A list of the current basic variables.
     pivcol : int
         The index of the pivot column.
     phase : int
@@ -188,6 +190,9 @@ def _pivot_row(T, basis, pivcol, phase, tol=1.0E-12, bland=False):
         Elements in the pivot column smaller than tol will not be considered
         for pivoting.  Nominally this value is zero, but numerical issues
         cause a tolerance about zero to be necessary.
+    bland : bool
+        If True, use Bland's rule for selection of the row (if more than one
+        row can be used, choose the one with the lowest variable index).
 
     Returns
     -------
