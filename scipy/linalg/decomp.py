@@ -200,10 +200,10 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
     >>> a = np.array([[0., -1.], [1., 0.]])
     >>> linalg.eigvals(a) == linalg.eig(a)[0]
     array([ True,  True])
-    >>> linalg.eig(a,left=True,right=False)[1] # normalized left eigenvector
+    >>> linalg.eig(a, left=True, right=False)[1] # normalized left eigenvector
     array([[-0.70710678+0.        j, -0.70710678-0.        j],
            [ 0.        +0.70710678j,  0.        -0.70710678j]])
-    >>> linalg.eig(a,left=False,right=True)[1] # normalized right eigenvector
+    >>> linalg.eig(a, left=False, right=True)[1] # normalized right eigenvector
     array([[0.70710678+0.        j, 0.70710678-0.        j],
            [0.        -0.70710678j, 0.        +0.70710678j]])
 
