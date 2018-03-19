@@ -75,6 +75,7 @@ before_install:
       export PATH=/usr/lib/ccache:$PATH
       free -m
     elif [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+      brew cask uninstall oclint
       brew install gcc ccache
       touch config.sh
       git clone https://github.com/matthew-brett/multibuild.git
@@ -102,16 +103,16 @@ before_install:
   - df -h
   - ulimit -a
   - mkdir builds
-  - pushd builds
+  - cd builds
   # Install gmpy2 dependencies
   - mkdir -p $HOME/.local
   - wget ftp://ftp.gnu.org/gnu/mpc/mpc-1.0.2.tar.gz
   - tar xzvf mpc-1.0.2.tar.gz
-  - pushd mpc-1.0.2
+  - cd mpc-1.0.2
   - ./configure --prefix=$HOME/.local
   - make
   - make install
-  - popd
+  - cd ..
   - export CPATH=$HOME/.local/include
   - export LIBRARY_PATH=$HOME/.local/lib
   - export LD_LIBRARY_PATH=$HOME/.local/lib
@@ -130,7 +131,7 @@ before_install:
     fi
   - python -V
   - ccache -s
-  - popd
+  - cd ..
   - set -o pipefail
 script:
   - python -c 'import numpy as np; print("relaxed strides checking:", np.ones((10,1),order="C").flags.f_contiguous)'
@@ -152,14 +153,14 @@ script:
         echo "setup.py sdist"
         python tools/suppress_output.py python setup.py sdist
         # Move out of source directory to avoid finding local scipy
-        pushd dist
+        cd dist
         # Use pip --build option to make ccache work better.
         # However, this option is partially broken
         # (see https://github.com/pypa/pip/issues/4242)
         # and some shenanigans are needed to make it work.
         echo "pip install"
         python ../tools/suppress_output.py pip install --build="$HOME/builds" --upgrade "file://`echo -n $PWD/scipy*`#egg=scipy" -v
-        popd
+        cd ..
         USE_WHEEL_BUILD="--no-build"
     fi
   - export SCIPY_AVAILABLE_MEM=3G
@@ -170,9 +171,9 @@ after_success:
   - ccache -s
   # Upload coverage information
   - if [ "${COVERAGE}" == "--coverage" ]; then
-        pushd build/testenv/lib/python*/site-packages/;
+        cd build/testenv/lib/python*/site-packages/;
         codecov;
-        popd;
+        cd ..;
     fi
 notifications:
   # Perhaps we should have status emails sent to the mailing list, but
