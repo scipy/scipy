@@ -35,6 +35,7 @@ matrix:
         - COVERAGE=
         - USE_WHEEL=1
         - REFGUIDE_CHECK=1
+        - NUMPYSPEC="numpy==1.13.3"
     - python: 3.4
       env:
         - TESTMODE=fast
