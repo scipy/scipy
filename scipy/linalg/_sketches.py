@@ -8,7 +8,7 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 
 from scipy._lib._util import check_random_state
-import scipy.sparse
+from scipy.sparse import csr_matrix
 
 __all__ = ['clarkson_woodruff_transform']
 
@@ -44,12 +44,12 @@ def cwt_matrix(n_rows, n_columns, seed=None):
     .. math:: ||SA|| == (1 \pm \epsilon)||A||
     Where epsilon is related to the size of S
     """
-    S = scipy.sparse.csr_matrix((n_rows, n_columns))
+    S = csr_matrix((n_rows, n_columns))
     nz_positions = np.random.randint(0, n_rows, n_columns)
     rng = check_random_state(seed)
     values = rng.choice([1, -1], n_columns)
     for i in range(n_columns):
-        S[nz_positions[i],i] = values[i]
+        S[nz_positions[i], i] = values[i]
 
     return S
 
