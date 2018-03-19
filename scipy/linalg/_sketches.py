@@ -8,6 +8,7 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 
 from scipy._lib._util import check_random_state
+import scipy.sparse
 
 __all__ = ['clarkson_woodruff_transform']
 
@@ -43,12 +44,12 @@ def cwt_matrix(n_rows, n_columns, seed=None):
     .. math:: ||SA|| == (1 \pm \epsilon)||A||
     Where epsilon is related to the size of S
     """
-    S = np.zeros((n_rows, n_columns))
+    S = scipy.sparse.csr_matrix((n_rows, n_columns))
     nz_positions = np.random.randint(0, n_rows, n_columns)
     rng = check_random_state(seed)
     values = rng.choice([1, -1], n_columns)
     for i in range(n_columns):
-        S[nz_positions[i]][i] = values[i]
+        S[nz_positions[i],i] = values[i]
 
     return S
 
@@ -99,7 +100,7 @@ def clarkson_woodruff_transform(input_matrix, sketch_size, seed=None):
 
     >>> from scipy import linalg
     >>> n_rows, n_columns, sketch_n_rows = (2000, 100, 100)
-    >>> threshold = 0.1
+    >>> threshold = 0.01
     >>> tmp = np.random.normal(0, 0.1, n_rows*n_columns)
     >>> A = np.reshape(tmp, (n_rows, n_columns))
     >>> sketch = linalg.clarkson_woodruff_transform(A, sketch_n_rows)
@@ -118,4 +119,4 @@ def clarkson_woodruff_transform(input_matrix, sketch_size, seed=None):
 
     """
     S = cwt_matrix(sketch_size, input_matrix.shape[0], seed)
-    return np.dot(S, input_matrix)
+    return S.dot(input_matrix)
