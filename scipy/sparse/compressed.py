@@ -297,7 +297,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             res = self._binopt(other, '_gt_' if op_name == '_le_' else '_lt_')
             return all_true - res
         else:
-            raise ValueError("Operands could not be compared.")
+            return NotImplemented
 
     def __lt__(self, other):
         return self._inequality(other, operator.lt, '_lt_',
