@@ -184,7 +184,7 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
     Examples
     --------
     >>> from scipy import linalg
-    >>>a = np.array([[0., -1.], [1., 0.]])
+    >>> a = np.array([[0., -1.], [1., 0.]])
     >>> linalg.eigvals(a)
     array([0.+1.j, 0.-1.j])
 
