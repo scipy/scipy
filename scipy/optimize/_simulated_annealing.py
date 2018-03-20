@@ -24,8 +24,8 @@ class VisitingDistribution(object):
     chain, the class implements the strategy for generating new location
     changes.
     """
-    tail_limit = 1.e8
-    min_visit_bound = 1.e-10
+    TAIL_LIMIT = 1.e8
+    MIN_VISIT_BOUND = 1.e-10
 
     def __init__(self, lb, ub, visiting_param, rand_state):
         self.visiting_param = visiting_param
@@ -45,22 +45,22 @@ class VisitingDistribution(object):
                 temperature) for _ in range(dim)])
             upper_sample = self.rand_state.random_sample()
             lower_sample = self.rand_state.random_sample()
-            visits[visits > self.tail_limit] = self.tail_limit * upper_sample
-            visits[visits < -self.tail_limit] = -self.tail_limit * lower_sample
+            visits[visits > self.TAIL_LIMIT] = self.TAIL_LIMIT * upper_sample
+            visits[visits < -self.TAIL_LIMIT] = -self.TAIL_LIMIT * lower_sample
             x_visit = visits + x
             a = x_visit - self.lower
             b = np.fmod(a, self.bound_range) + self.bound_range
             x_visit = np.fmod(b, self.bound_range) + self.lower
             x_visit[np.fabs(
-                x_visit - self.lower) < self.min_visit_bound] += 1.e-10
+                x_visit - self.lower) < self.MIN_VISIT_BOUND] += 1.e-10
         else:
             # Changing only one coordinate at a time based on Markov chain step
             x_visit = np.copy(x)
             visit = self.visit_fn(temperature)
-            if visit > self.tail_limit:
-                visit = self.tail_limit * self.rand_state.random_sample()
-            elif visit < -self.tail_limit:
-                visit = -self.tail_limit * self.rand_state.random_sample()
+            if visit > self.TAIL_LIMIT:
+                visit = self.TAIL_LIMIT * self.rand_state.random_sample()
+            elif visit < -self.TAIL_LIMIT:
+                visit = -self.TAIL_LIMIT * self.rand_state.random_sample()
             index = step - dim
             x_visit[index] = visit + x[index]
             a = x_visit[index] - self.lower[index]
@@ -68,8 +68,8 @@ class VisitingDistribution(object):
             x_visit[index] = np.fmod(b, self.bound_range[
                 index]) + self.lower[index]
             if np.fabs(x_visit[index] - self.lower[
-                    index]) < self.min_visit_bound:
-                x_visit[index] += self.min_visit_bound
+                    index]) < self.MIN_VISIT_BOUND:
+                x_visit[index] += self.MIN_VISIT_BOUND
         return x_visit
 
     def visit_fn(self, temperature):
@@ -144,7 +144,11 @@ class EnergyState():
         init_error = True
         reinit_counter = 0
         while init_error:
-            self.current_energy = obj_fun_wrapper.func(self.current_location)
+            self.current_energy = obj_fun_wrapper.func(
+                self.current_location,
+                *obj_fun_wrapper.fun_args,
+            )
+            obj_fun_wrapper.nb_fun_call += 1
             if self.current_energy is None:
                 raise ValueError('Objective function is returning None')
             if (self.current_energy >= BIG_VALUE or
@@ -204,7 +208,11 @@ class MarkovChain(object):
             x_visit = self.visit_dist.visiting(
                 self.state.current_location, j, temperature)
             # Calling the objective function
-            e = self.obj_fun_wrapper.func_wrapper(x_visit)
+            e = self.obj_fun_wrapper.func(
+                x_visit,
+                *self.obj_fun_wrapper.fun_args,
+            )
+            self.obj_fun_wrapper.nb_fun_call += 1
             if e < self.state.current_energy:
                 #  print('Better energy: {0}'.format(e))
                 # We have got a better ernergy value
@@ -312,14 +320,11 @@ class ObjectiveFunWrapper(object):
         }
         self.kwargs['bounds'] = list(zip(self.lower, self.upper))
 
-    def func_wrapper(self, x):
-        self.nb_fun_call += 1
-        return self.func(x, *self.fun_args)
-
     def local_search(self, x):
         x_tmp = np.copy(x)
-        fun_temp = self.func_wrapper(x)
-        mres = self.minimizer(self.func_wrapper, x, **self.kwargs)
+        fun_temp = self.func(x, *self.fun_args)
+        mres = self.minimizer(self.func, x, *self.fun_args, **self.kwargs)
+        self.nb_fun_call += mres.nfev 
         # Check if is valid value
         is_finite = np.all(np.isfinite(mres.x)) and np.isfinite(mres.fun)
         in_bounds = np.all(mres.x >= self.lower) and np.all(
@@ -338,7 +343,7 @@ def simulated_annealing(func, x0, bounds, maxiter=1000, local_search_options={},
         no_local_search=False):
     """
     Find the global minimum of a function using the Simulated Dual Annealing
-    algorithm
+    algorithm.
 
     Parameters
     ----------
@@ -347,18 +352,14 @@ def simulated_annealing(func, x0, bounds, maxiter=1000, local_search_options={},
         ``f(x, *args)``, where ``x`` is the argument in the form of a 1-D array
         and ``args`` is a  tuple of any additional fixed parameters needed to
         completely specify the function.
-    x0 : ndarray
-        The starting coordinates. If ``None`` is provided, initial
-        coordinates are automatically generated.
-    bounds : sequence
+    x0 : ndarray, shape(n,)
+        A single initial starting point coordinates. If ``None`` is provided,
+        initial coordinates are automatically generated.
+    bounds : sequence, shape (n, 2) 
         Bounds for variables.  ``(min, max)`` pairs for each element in ``x``,
-        defining the lower and upper bounds for the optimizing argument of
-        `func`. It is required to have ``len(bounds) == len(x)``.
-        ``len(bounds)`` is used to determine the number of parameters in ``x``.
+        defining bounds for the objective function parameter.
     maxiter : int, optional
-        The maximum number of simulated_annealing  iterations. Increase this
-        value if the objective function is very complicated with high
-        dimensions.
+        The maximum number of global search iterations. Default value is 1000.
     local_search_options : dict, optional
         Extra keyword arguments to be passed to the local minimizer
             ``scipy.optimize.minimize()`` Some important options could be:
@@ -369,22 +370,22 @@ def simulated_annealing(func, x0, bounds, maxiter=1000, local_search_options={},
                 its derivatives (Jacobian, Hessian).
     initial_temp : float, optional
         The initial temperature, use higher values to facilitates a wider
-        search of the energy landscape, allowing simulated_annealing  to escape
-        local minima that it is trapped in.
+        search of the energy landscape, allowing simulated_annealing to escape
+        local minima that it is trapped in. Default value is 5230.
     visit : float, optional
         Parameter for visiting distribution. Higher values give the visiting
         distribution a heavier tail, this makes the algorithm jump to a more
-        distant region. The value range is (0, 3]
+        distant region. The value range is (0, 3]. Default value is 2.62. 
     accept : float, optional
         Parameter for acceptance distribution. It is used to control the
         probability of acceptance. The lower the acceptance parameter, the
-        smaller the probability of acceptance. It has to be any negative value.
+        smaller the probability of acceptance. Default value is -5.0.
     maxfun : int, optional
         Soft limit for the number of objective function calls. If the
         algorithm is in the middle of a local search, this number will be
         exceeded, the algorithm will stop just after the local search is
         done.
-    seed : int or `np.random.RandomState`, optional
+    seed : {int, `np.random.RandomState`}, optional
         If `seed` is not specified the `np.RandomState` singleton is used.
         If `seed` is an int, a new `np.random.RandomState` instance is used,
         seeded with seed.
@@ -393,7 +394,7 @@ def simulated_annealing(func, x0, bounds, maxiter=1000, local_search_options={},
         Specify `seed` for repeatable minimizations. The random numbers
         generated with this seed only affect the visiting distribution
         function and new coordinates generation.
-    no_local_search : boolean, optional
+    no_local_search : bool, optional
         If `no_local_search` is set to `True`, a traditional Generalized
         Simulated Annealing will be performed with no local search
         strategy applied.
@@ -412,14 +413,12 @@ def simulated_annealing(func, x0, bounds, maxiter=1000, local_search_options={},
     SDA is an implementation of the Simulated Dual Annealing. This stochastic
     approach [3]_ implements the generalization of CSA (Classical Simulated
     Annealing) and FSA (Fast Simulated Annealing) [1]_ [2]_ coupled to a
-    strategy for applying a local search on accepted locations [4]_. A first
-    implementation was done in C++ for the R language [5]_ and has been
-    benchmarked [6]_. Extensive benchmarks for the Python version have also
-    been performed against several global optimization methods [7]_. SDA
-    introduces an advanced dual annealing method to refine the solution found
-    by the generalized annealing process. This algorithm uses a distorted
-    Cauchy-Lorentz visiting distribution, with its shape controlled by the
-    parameter :math:`q_{v}`
+    strategy for applying a local search on accepted locations [4]_.
+    Alternative implementation of this same algorithm is described in [5]_ and
+    benchmarks are presented in [6]_. SDA introduces an advanced dual annealing
+    method to refine the solution found by the generalized annealing process.
+    This algorithm uses a distorted Cauchy-Lorentz visiting distribution, with
+    its shape controlled by the parameter :math:`q_{v}`
 
     .. math::
 
@@ -461,24 +460,20 @@ def simulated_annealing(func, x0, bounds, maxiter=1000, local_search_options={},
 
     References
     ----------
-    .. [1] Tsallis C (1988). "Possible generalization of Boltzmann-Gibbs
-        statistics." Journal of Statistical Physics, 52, 479-487.
-    .. [2] Tsallis C, Stariolo DA (1996). "Generalized Simulated Annealing."
-        Physica A, 233, 395-406.
-    .. [3] Xiang Y, Sun DY, Fan W, Gong XG (1997). "Generalized Simulated
-        Annealing Algorithm and Its Application to the Thomson Model."
-        Physics Letters A, 233, 216-220.
-    .. [4] Xiang Y, Gong XG (2000a). "Efficiency of Generalized Simulated
-        Annealing." PHYSICAL REVIEW E, 62, 4473.
-    .. [5] Xiang Y, Gubian S, Suomela B, Hoeng J. (2013). "Generalized
+    .. [1] Tsallis C. Possible generalization of Boltzmann-Gibbs
+        statistics. Journal of Statistical Physics, 52, 479-487 (1998).
+    .. [2] Tsallis C, Stariolo DA. Generalized Simulated Annealing.
+        Physica A, 233, 395-406 (1996).
+    .. [3] Xiang Y, Sun DY, Fan W, Gong XG. Generalized Simulated
+        Annealing Algorithm and Its Application to the Thomson Model.
+        Physics Letters A, 233, 216-220 (1997).
+    .. [4] Xiang Y, Gong XG. Efficiency of Generalized Simulated
+        Annealing. Physical Review E, 62, 4473 (2000).
+    .. [5] Xiang Y, Gubian S, Suomela B, Hoeng J. Generalized
         Simulated Annealing for Efficient Global Optimization: the GenSA
-        Package for R". The R Journal, Volume 5/1, June 2013.
-        http://journal.r-project.org/.
-    .. [6] Mullen, K. (2014). Continuous Global Optimization in R. Journal of
-        Statistical Software, 60(6), 1 - 45.
-        http://dx.doi.org/10.18637/jss.v060.i06
-    .. [7] Xiang Y, Gubian S, Martin F. Simulated dual annealing method for
-        efficient global optimization. Forthcoming.
+        Package for R. The R Journal, Volume 5/1 (2013).
+    .. [6] Mullen, K. Continuous Global Optimization in R. Journal of
+        Statistical Software, 60(6), 1 - 45, (2014). DOI:10.18637/jss.v060.i06
 
     Examples
     --------
@@ -492,8 +487,12 @@ def simulated_annealing(func, x0, bounds, maxiter=1000, local_search_options={},
     >>> lw = [-5.12] * 10
     >>> up = [5.12] * 10
     >>> ret = simulated_annealing(func, None, bounds=list(zip(lw, up)))
-    >>> print("global minimum: xmin = {0}, f(xmin) = {1}".format(
+    >>> print("global minimum: xmin = {0}, f(xmin) = {1:.6f}".format(
     ...    ret.x, ret.fun))
+
+    global minimum: xmin = [ -5.30926309e-09  -9.47607022e-09  -4.09044159e-09
+    -8.91916554e-09 -7.58266242e-09  -7.51256718e-09  -5.29363641e-09
+    -5.77883504e-09 -4.36341509e-09  -5.22583018e-09], f(xmin) = 0.000000
     """
 
     if x0 is not None and not len(x0) == len(bounds):
@@ -523,7 +522,6 @@ def simulated_annealing(func, x0, bounds, maxiter=1000, local_search_options={},
                                energy_state)
 
     # Run the search lopp 
-
     max_steps_reached = False
     iteration = 0
     t1 = np.exp((visit - 1) * np.log(2.0)) - 1.0
