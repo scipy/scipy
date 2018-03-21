@@ -29,6 +29,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from __future__ import division, print_function, absolute_import
+import warnings
 
 import numpy
 from . import _ni_support
@@ -507,7 +508,7 @@ def binary_dilation(input, structure=None, iterations=1, mask=None,
 
 
 def binary_opening(input, structure=None, iterations=1, output=None,
-                   origin=0):
+                   origin=0, mask=None, border_value=0, brute_force=False):
     """
     Multi-dimensional binary opening with the given structuring element.
 
@@ -535,6 +536,17 @@ def binary_opening(input, structure=None, iterations=1, output=None,
         By default, a new array is created.
     origin : int or tuple of ints, optional
         Placement of the filter, by default 0.
+    mask : array_like, optional
+        If a mask is given, only those elements with a True value at
+        the corresponding mask element are modified at each iteration.
+    border_value : int (cast to 0 or 1), optional
+        Value at the border in the output array.
+    brute_force : boolean, optional
+        Memory condition: if False, only the pixels whose value was changed in
+        the last iteration are tracked as candidates to be updated in the
+        current iteration; if true all pixels are considered as candidates for
+        update, regardless of what happened in the previous iteration.
+        False by default.
 
     Returns
     -------
@@ -606,14 +618,14 @@ def binary_opening(input, structure=None, iterations=1, output=None,
         rank = input.ndim
         structure = generate_binary_structure(rank, 1)
 
-    tmp = binary_erosion(input, structure, iterations, None, None, 0,
-                         origin)
-    return binary_dilation(tmp, structure, iterations, None, output, 0,
-                           origin)
+    tmp = binary_erosion(input, structure, iterations, mask, None,
+                         border_value, origin, brute_force)
+    return binary_dilation(tmp, structure, iterations, mask, output,
+                           border_value, origin, brute_force)
 
 
 def binary_closing(input, structure=None, iterations=1, output=None,
-                   origin=0):
+                   origin=0, mask=None, border_value=0, brute_force=False):
     """
     Multi-dimensional binary closing with the given structuring element.
 
@@ -641,6 +653,17 @@ def binary_closing(input, structure=None, iterations=1, output=None,
         By default, a new array is created.
     origin : int or tuple of ints, optional
         Placement of the filter, by default 0.
+    mask : array_like, optional
+        If a mask is given, only those elements with a True value at
+        the corresponding mask element are modified at each iteration.
+    border_value : int (cast to 0 or 1), optional
+        Value at the border in the output array.
+    brute_force : boolean, optional
+        Memory condition: if False, only the pixels whose value was changed in
+        the last iteration are tracked as candidates to be updated in the
+        current iteration; if true al pixels are considered as candidates for
+        update, regardless of what happened in the previous iteration.
+        False by default.
 
     Returns
     -------
@@ -735,10 +758,10 @@ def binary_closing(input, structure=None, iterations=1, output=None,
         rank = input.ndim
         structure = generate_binary_structure(rank, 1)
 
-    tmp = binary_dilation(input, structure, iterations, None, None, 0,
-                          origin)
-    return binary_erosion(tmp, structure, iterations, None, output, 0,
-                          origin)
+    tmp = binary_dilation(input, structure, iterations, mask, None,
+                          border_value, origin, brute_force)
+    return binary_erosion(tmp, structure, iterations, mask, output,
+                          border_value, origin, brute_force)
 
 
 def binary_hit_or_miss(input, structure1=None, structure2=None,
@@ -1398,6 +1421,8 @@ def grey_opening(input, size=None, footprint=None, structure=None,
     >>> # Note that the local maximum a[3,3] has disappeared
 
     """
+    if (size is not None) and (footprint is not None):
+        warnings.warn("ignoring size because footprint is set", UserWarning, stacklevel=2)
     tmp = grey_erosion(input, size, footprint, structure, None, mode,
                        cval, origin)
     return grey_dilation(tmp, size, footprint, structure, output, mode,
@@ -1479,6 +1504,8 @@ def grey_closing(input, size=None, footprint=None, structure=None,
     >>> # Note that the local minimum a[3,3] has disappeared
 
     """
+    if (size is not None) and (footprint is not None):
+        warnings.warn("ignoring size because footprint is set", UserWarning, stacklevel=2)
     tmp = grey_dilation(input, size, footprint, structure, None, mode,
                         cval, origin)
     return grey_erosion(tmp, size, footprint, structure, output, mode,
@@ -1690,6 +1717,8 @@ def white_tophat(input, size=None, footprint=None, structure=None,
     black_tophat
 
     """
+    if (size is not None) and (footprint is not None):
+        warnings.warn("ignoring size because footprint is set", UserWarning, stacklevel=2)
     tmp = grey_erosion(input, size, footprint, structure, None, mode,
                        cval, origin)
     tmp = grey_dilation(tmp, size, footprint, structure, output, mode,
@@ -1746,6 +1775,8 @@ def black_tophat(input, size=None, footprint=None,
     white_tophat, grey_opening, grey_closing
 
     """
+    if (size is not None) and (footprint is not None):
+        warnings.warn("ignoring size because footprint is set", UserWarning, stacklevel=2)
     tmp = grey_dilation(input, size, footprint, structure, None, mode,
                         cval, origin)
     tmp = grey_erosion(tmp, size, footprint, structure, output, mode,

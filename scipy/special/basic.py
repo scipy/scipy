@@ -59,7 +59,7 @@ def diric(x, n):
 
     The Dirichlet function is defined as::
 
-        diric(x) = sin(x * n/2) / (n * sin(x / 2)),
+        diric(x, n) = sin(x * n/2) / (n * sin(x / 2)),
 
     where `n` is a positive integer.
 

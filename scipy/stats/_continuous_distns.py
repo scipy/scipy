@@ -2408,14 +2408,14 @@ class gamma_gen(rv_continuous):
 
     .. math::
 
-        f(x, a) = \frac{x^{a-1} \exp(-x)}{\gamma(a)}
+        f(x, a) = \frac{x^{a-1} \exp(-x)}{\Gamma(a)}
 
-    for :math:`x \ge 0`, :math:`a > 0`. Here :math:`\gamma(a)` refers to the
+    for :math:`x \ge 0`, :math:`a > 0`. Here :math:`\Gamma(a)` refers to the
     gamma function.
 
     `gamma` has a shape parameter `a` which needs to be set explicitly.
 
-    When :math:`a` is an integer, :math:`\gamma` reduces to the Erlang
+    When :math:`a` is an integer, `gamma` reduces to the Erlang
     distribution, and when :math:`a=1` to the exponential distribution.
 
     %(after_notes)s
@@ -3283,6 +3283,9 @@ norminvgauss = norminvgauss_gen(name="norminvgauss")
 
 class invweibull_gen(rv_continuous):
     r"""An inverted Weibull continuous random variable.
+
+    This distribution is also known as the Fréchet distribution or the
+    type II extreme value distribution.
 
     %(before_notes)s
 
@@ -4482,7 +4485,7 @@ class nakagami_gen(rv_continuous):
 
     .. math::
 
-        f(x, nu) = \frac{2 \nu^\nu}{\gamma(\nu)} x^{2\nu-1} \exp(-\nu x^2)
+        f(x, nu) = \frac{2 \nu^\nu}{\Gamma(\nu)} x^{2\nu-1} \exp(-\nu x^2)
 
     for ``x > 0``, ``nu > 0``.
 

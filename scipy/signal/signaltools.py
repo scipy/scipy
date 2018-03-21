@@ -56,25 +56,18 @@ _rfft_lock = threading.Lock()
 
 def _valfrommode(mode):
     try:
-        val = _modedict[mode]
+        return _modedict[mode]
     except KeyError:
-        if mode not in [0, 1, 2]:
-            raise ValueError("Acceptable mode flags are 'valid' (0),"
-                             " 'same' (1), or 'full' (2).")
-        val = mode
-    return val
+        raise ValueError("Acceptable mode flags are 'valid',"
+                         " 'same', or 'full'.")
 
 
 def _bvalfromboundary(boundary):
     try:
-        val = _boundarydict[boundary] << 2
+        return _boundarydict[boundary] << 2
     except KeyError:
-        if val not in [0, 1, 2]:
-            raise ValueError("Acceptable boundary flags are 'fill', 'wrap'"
-                             " (or 'circular'), \n  and 'symm'"
-                             " (or 'symmetric').")
-        val = boundary << 2
-    return val
+        raise ValueError("Acceptable boundary flags are 'fill', 'circular' "
+                         "(or 'wrap'), and 'symmetric' (or 'symm').")
 
 
 def _inputs_swap_needed(mode, shape1, shape2):

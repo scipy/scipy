@@ -17,6 +17,7 @@ python module _nnls ! in
             integer , intent(out):: mode
             integer :: maxiter
         end subroutine nnls
+    end interface
 end python module _nnls
 
 ! This file was auto-generated with f2py (version:2_5878).
