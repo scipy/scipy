@@ -85,8 +85,6 @@ def equality_constrained_sqp(fun_and_constr, grad_and_jac, lagr_hess,
     # Update state parameters
     optimality = norm(c + A.T.dot(v), np.inf)
     constr_violation = norm(b, np.inf) if len(b) > 0 else 0
-    trust_radius = trust_radius
-    penalty = penalty
     cg_info = {'niter': 0, 'stop_cond': 0,
                'hits_boundary': False}
 

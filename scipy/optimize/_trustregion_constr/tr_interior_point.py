@@ -313,21 +313,8 @@ def tr_interior_point(fun, grad, lagr_hess, n_vars, n_ineq, n_eq,
                           np.full(subprob.n_ineq, -BOUNDARY_PARAMETER)))
     trust_ub = np.full(subprob.n_vars+subprob.n_ineq, np.inf)
 
-    # If there are inequality constraints solve a
-    # sequence of barrier problems
-    first_barrier_prob = True
+    # Solves a sequence of barrier problems
     while True:
-        if not first_barrier_prob:
-            # Update parameters
-            trust_radius = max(initial_trust_radius,
-                               TRUST_ENLARGEMENT*trust_radius)
-            # TODO: Use more advanced strategies from [2]_
-            # to update this parameters.
-            barrier_parameter *= BARRIER_DECAY_RATIO
-            tolerance *= BARRIER_DECAY_RATIO
-        first_barrier_prob = False
-        # Update Barrier Problem
-        subprob.update(barrier_parameter, tolerance)
         # Solve SQP subproblem
         z, state = equality_constrained_sqp(
             subprob.function_and_constraints,
@@ -339,6 +326,15 @@ def tr_interior_point(fun, grad, lagr_hess, n_vars, n_ineq, n_eq,
             factorization_method, trust_lb, trust_ub, subprob.scaling)
         if subprob.terminate:
             break
+        # Update parameters
+        trust_radius = max(initial_trust_radius,
+                           TRUST_ENLARGEMENT*state.tr_radius)
+        # TODO: Use more advanced strategies from [2]_
+        # to update this parameters.
+        barrier_parameter *= BARRIER_DECAY_RATIO
+        tolerance *= BARRIER_DECAY_RATIO
+        # Update Barrier Problem
+        subprob.update(barrier_parameter, tolerance)
         # Compute initial values for next iteration
         fun0_subprob, constr0_subprob = subprob.function_and_constraints(z)
         grad0_subprob, jac0_subprob = subprob.gradient_and_jacobian(z)
