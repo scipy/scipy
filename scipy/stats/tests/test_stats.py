@@ -789,11 +789,12 @@ def test_weightedtau():
     # NaNs
     x = [12, 2, 1, 12, 2]
     y = [1, 4, 7, 1, np.nan]
-    tau, p_value = stats.weightedtau(x, y)
-    assert_approx_equal(tau, -0.56694968153682723)
-    x = [12, 2, np.nan, 12, 2]
-    tau, p_value = stats.weightedtau(x, y)
-    assert_approx_equal(tau, -0.56694968153682723)
+    with np.errstate(invalid="ignore"):
+        tau, p_value = stats.weightedtau(x, y)
+        assert_approx_equal(tau, -0.56694968153682723)
+        x = [12, 2, np.nan, 12, 2]
+        tau, p_value = stats.weightedtau(x, y)
+        assert_approx_equal(tau, -0.56694968153682723)
 
 
 def test_weightedtau_vs_quadratic():

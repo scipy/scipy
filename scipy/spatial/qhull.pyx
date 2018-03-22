@@ -2418,7 +2418,7 @@ class Voronoi(_QhullUser):
     Plot it:
 
     >>> import matplotlib.pyplot as plt
-    >>> voronoi_plot_2d(vor)
+    >>> fig = voronoi_plot_2d(vor)
     >>> plt.show()
 
     The Voronoi vertices:

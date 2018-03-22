@@ -196,8 +196,7 @@ def _minimize_cobyla(fun, x0, args=(), constraints=(),
     _check_unknown_options(unknown_options)
     maxfun = maxiter
     rhoend = tol
-    if not disp:
-        iprint = 0
+    iprint = int(bool(disp))
 
     # check constraints
     if isinstance(constraints, dict):

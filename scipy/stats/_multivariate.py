@@ -3308,6 +3308,8 @@ class special_ortho_group_gen(multi_rv_generic):
             Random size N-dimensional matrices, dimension (size, dim, dim)
 
         """
+        random_state = self._get_random_state(random_state)
+
         size = int(size)
         if size > 1:
             return np.array([self.rvs(dim, size=1, random_state=random_state)
@@ -3315,23 +3317,19 @@ class special_ortho_group_gen(multi_rv_generic):
 
         dim = self._process_parameters(dim)
 
-        random_state = self._get_random_state(random_state)
-
         H = np.eye(dim)
-        D = np.ones((dim,))
-        for n in range(1, dim):
-            x = random_state.normal(size=(dim-n+1,))
-
-            D[n-1] = np.sign(x[0])
-            x[0] -= D[n-1]*np.sqrt((x*x).sum())
+        D = np.empty((dim,))
+        for n in range(dim-1):
+            x = random_state.normal(size=(dim-n,))
+            D[n] = np.sign(x[0]) if x[0] != 0 else 1
+            x[0] += D[n]*np.sqrt((x*x).sum())
             # Householder transformation
-            Hx = (np.eye(dim-n+1)
+            Hx = (np.eye(dim-n)
                   - 2.*np.outer(x, x)/(x*x).sum())
             mat = np.eye(dim)
-            mat[n-1:, n-1:] = Hx
+            mat[n:, n:] = Hx
             H = np.dot(H, mat)
-            # Fix the last sign such that the determinant is 1
-        D[-1] = (-1)**(1-(dim % 2))*D.prod()
+        D[-1] = (-1)**(dim-1)*D[:-1].prod()
         # Equivalent to np.dot(np.diag(D), H) but faster, apparently
         H = (D*H.T).T
         return H
@@ -3448,6 +3446,8 @@ class ortho_group_gen(multi_rv_generic):
             Random size N-dimensional matrices, dimension (size, dim, dim)
 
         """
+        random_state = self._get_random_state(random_state)
+
         size = int(size)
         if size > 1:
             return np.array([self.rvs(dim, size=1, random_state=random_state)
@@ -3455,19 +3455,17 @@ class ortho_group_gen(multi_rv_generic):
 
         dim = self._process_parameters(dim)
 
-        random_state = self._get_random_state(random_state)
-
         H = np.eye(dim)
-        for n in range(1, dim):
-            x = random_state.normal(size=(dim-n+1,))
+        for n in range(dim):
+            x = random_state.normal(size=(dim-n,))
             # random sign, 50/50, but chosen carefully to avoid roundoff error
-            D = np.sign(x[0])
+            D = np.sign(x[0]) if x[0] != 0 else 1
             x[0] += D*np.sqrt((x*x).sum())
             # Householder transformation
-            Hx = -D*(np.eye(dim-n+1)
+            Hx = -D*(np.eye(dim-n)
                      - 2.*np.outer(x, x)/(x*x).sum())
             mat = np.eye(dim)
-            mat[n-1:, n-1:] = Hx
+            mat[n:, n:] = Hx
             H = np.dot(H, mat)
         return H
 
@@ -3518,7 +3516,6 @@ class random_correlation_gen(multi_rv_generic):
            [-0.20387311,  1.        , -0.24351129,  0.06703474],
            [ 0.18366501, -0.24351129,  1.        ,  0.38530195],
            [-0.04953711,  0.06703474,  0.38530195,  1.        ]])
-
     >>> import scipy.linalg
     >>> e, v = scipy.linalg.eigh(x)
     >>> e
@@ -3735,14 +3732,14 @@ class unitary_group_gen(multi_rv_generic):
             Random size N-dimensional matrices, dimension (size, dim, dim)
 
         """
+        random_state = self._get_random_state(random_state)
+
         size = int(size)
         if size > 1:
             return np.array([self.rvs(dim, size=1, random_state=random_state)
                              for i in range(size)])
 
         dim = self._process_parameters(dim)
-
-        random_state = self._get_random_state(random_state)
 
         z = 1/math.sqrt(2)*(random_state.normal(size=(dim,dim)) +
                             1j*random_state.normal(size=(dim,dim)))

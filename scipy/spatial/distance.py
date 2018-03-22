@@ -275,8 +275,6 @@ def _validate_mahalanobis_kwargs(X, m, n, **kwargs):
 
 
 def _validate_minkowski_kwargs(X, m, n, **kwargs):
-    if 'w' in kwargs:
-        kwargs['w'] = _convert_to_double(kwargs['w'])
     if 'p' not in kwargs:
         kwargs['p'] = 2.
     return kwargs
@@ -327,6 +325,13 @@ def _validate_vector(u, dtype=None):
     if u.ndim > 1:
         raise ValueError("Input vector should be 1-D.")
     return u
+
+
+def _validate_weights(w, dtype=np.double):
+    w = _validate_vector(w, dtype=dtype)
+    if np.any(w < 0):
+        raise ValueError("Input weights should be all non-negative")
+    return w
 
 
 def _validate_wminkowski_kwargs(X, m, n, **kwargs):
@@ -469,7 +474,7 @@ def minkowski(u, v, p=2, w=None):
         raise ValueError("p must be at least 1")
     u_v = u - v
     if w is not None:
-        w = _validate_vector(w)
+        w = _validate_weights(w)
         if p == 1:
             root_w = w
         if p == 2:
