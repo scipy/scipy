@@ -3,6 +3,7 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 from numpy.linalg import norm
 from scipy.linalg import get_blas_funcs
+from warnings import warn
 
 
 __all__ = ['HessianUpdateStrategy', 'BFGS', 'SR1']
@@ -133,6 +134,7 @@ class FullHessianUpdateStrategy(HessianUpdateStrategy):
             When set to 'inv_hess' its inverse will be used instead.
         """
         self.first_iteration = True
+        self.n = n
         self.approx_type = approx_type
         if approx_type not in ('hess', 'inv_hess'):
             raise ValueError("`approx_type` must be 'hess' or 'inv_hess'.")
@@ -148,7 +150,7 @@ class FullHessianUpdateStrategy(HessianUpdateStrategy):
         # p.143 formula (6.20).
         s_norm2 = np.dot(delta_x, delta_x)
         y_norm2 = np.dot(delta_grad, delta_grad)
-        ys = np.dot(delta_grad, delta_x)
+        ys = np.abs(np.dot(delta_grad, delta_x))
         if ys == 0.0 or y_norm2 == 0 or s_norm2 == 0:
             return 1
         if self.approx_type == 'hess':
@@ -176,6 +178,13 @@ class FullHessianUpdateStrategy(HessianUpdateStrategy):
             ``delta_grad = grad(x2) - grad(x1)``.
         """
         if np.all(delta_x == 0.0):
+            return
+        if np.all(delta_grad == 0.0):
+            warn('delta_grad == 0.0. Check if the approximated '
+                 'function is linear. If the function is linear '
+                 'better results can be obtained by defining the '
+                 'Hessian as zero instead of using quasi-Newton '
+                 'approximations.', UserWarning)
             return
         if self.first_iteration:
             # Get user specific scale
@@ -233,10 +242,10 @@ class BFGS(FullHessianUpdateStrategy):
 
     Parameters
     ----------
-    exception_strategy : {'skip_update', 'damped_bfgs'}, optional
+    exception_strategy : {'skip_update', 'damp_update'}, optional
         Define how to proceed when the curvature condition is violated.
         Set it to 'skip_update' to just skip the update. Or, alternatively,
-        set it to 'damped_bfgs' to interpolate between the actual BFGS
+        set it to 'damp_update' to interpolate between the actual BFGS
         result and the unmodified matrix. Both exceptions strategies
         are explained  in [1]_, p.536-537.
     min_curvature : float
@@ -244,7 +253,7 @@ class BFGS(FullHessianUpdateStrategy):
         minimum curvature ``dot(delta_grad, delta_x)`` allowed to go
         unaffected by the exception strategy. By default is equal to
         1e-8 when ``exception_strategy = 'skip_update'`` and equal
-        to 0.2 when ``exception_strategy = 'damped_bfgs'``.
+        to 0.2 when ``exception_strategy = 'damp_update'``.
     init_scale : {float, 'auto'}
         Matrix scale at first iteration. At the first
         iteration the Hessian matrix or its inverse will be initialized
@@ -270,14 +279,14 @@ class BFGS(FullHessianUpdateStrategy):
                 self.min_curvature = min_curvature
             else:
                 self.min_curvature = 1e-8
-        elif exception_strategy == 'damped_bfgs':
+        elif exception_strategy == 'damp_update':
             if min_curvature is not None:
                 self.min_curvature = min_curvature
             else:
                 self.min_curvature = 0.2
         else:
             raise ValueError("`exception_strategy` must be 'skip_updated' "
-                             "or 'damped_bfgs'.")
+                             "or 'damp_update'.")
 
         super(BFGS, self).__init__(init_scale)
         self.exception_strategy = exception_strategy
@@ -332,8 +341,19 @@ class BFGS(FullHessianUpdateStrategy):
         wz = np.dot(w, z)
         Mw = self.dot(w)
         wMw = Mw.dot(w)
-        if wMw == 0.0:
-            return
+        # Guarantee that wMw > 0 by reinitializing matrix.
+        # While this is always true in exact arithmetics,
+        # indefinite matrix may appear due to roundoff errors.
+        if wMw <= 0.0:
+            scale = self._auto_scale(delta_x, delta_grad)
+            # Reinitialize matrix
+            if self.approx_type == 'hess':
+                self.B = scale * np.eye(self.n, dtype=float)
+            else:
+                self.H = scale * np.eye(self.n, dtype=float)
+            # Do common operations for new matrix
+            Mw = self.dot(w)
+            wMw = Mw.dot(w)
         # Check if curvature condition is violated
         if wz <= self.min_curvature * wMw:
             # If the option 'skip_update' is set
@@ -341,15 +361,13 @@ class BFGS(FullHessianUpdateStrategy):
             # is violated.
             if self.exception_strategy == 'skip_update':
                 return
-            # If the option 'damped_bfgs' is set we
+            # If the option 'damp_update' is set we
             # interpolate between the actual BFGS
             # result and the unmodified matrix.
-            elif self.exception_strategy == 'damped_bfgs':
+            elif self.exception_strategy == 'damp_update':
                 update_factor = (1-self.min_curvature) / (1 - wz/wMw)
                 z = update_factor*z + (1-update_factor)*Mw
                 wz = np.dot(w, z)
-                Mw = self.dot(w)
-                wMw = Mw.dot(w)
         # Update matrix
         if self.approx_type == 'hess':
             self._update_hessian(wz, Mw, wMw, z)

@@ -540,7 +540,7 @@ def projected_cg(H, c, Z, Y, b, trust_radius=np.inf,
     hits_boundary = False
     stop_cond = 1
     counter = 0
-    last_feasible_x = np.empty_like(x)
+    last_feasible_x = np.zeros_like(x)
     k = 0
     for i in range(max_iter):
         # Stop criteria - Tolerance : r.T g < tol

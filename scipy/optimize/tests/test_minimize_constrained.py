@@ -455,7 +455,7 @@ class TestTrustRegionConstr(TestCase):
                 for hess in (prob.hess,
                              '3-point',
                              SR1(),
-                             BFGS(exception_strategy='damped_bfgs'),
+                             BFGS(exception_strategy='damp_update'),
                              BFGS(exception_strategy='skip_update')):
 
                     # Remove exceptions
@@ -464,12 +464,13 @@ class TestTrustRegionConstr(TestCase):
                         continue
                     if prob.grad is True and grad in ('3-point', False):
                         continue
-
-                    result = minimize(prob.fun, prob.x0,
-                                      method='trust-constr',
-                                      jac=grad, hess=hess,
-                                      bounds=prob.bounds,
-                                      constraints=prob.constr)
+                    with suppress_warnings() as sup:
+                        sup.filter(UserWarning, "delta_grad == 0.0")
+                        result = minimize(prob.fun, prob.x0,
+                                          method='trust-constr',
+                                          jac=grad, hess=hess,
+                                          bounds=prob.bounds,
+                                          constraints=prob.constr)
 
                     if prob.x_opt is not None:
                         assert_array_almost_equal(result.x, prob.x_opt, decimal=5)
