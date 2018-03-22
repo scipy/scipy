@@ -16,11 +16,12 @@ from __future__ import division, print_function, absolute_import
 
 __all__ = ['eig', 'eigvals', 'eigh', 'eigvalsh',
            'eig_banded', 'eigvals_banded',
-           'eigh_tridiagonal', 'eigvalsh_tridiagonal', 'hessenberg']
+           'eigh_tridiagonal', 'eigvalsh_tridiagonal', 'hessenberg', 'cdf2rdf']
 
 import numpy
 from numpy import (array, isfinite, inexact, nonzero, iscomplexobj, cast,
-                   flatnonzero, conj, asarray, argsort, empty)
+                   flatnonzero, conj, asarray, argsort, empty, newaxis,
+                   argwhere, iscomplex, eye, zeros, einsum)
 # Local imports
 from scipy._lib.six import xrange
 from scipy._lib._util import _asarray_validated
@@ -1267,3 +1268,138 @@ def hessenberg(a, calc_q=False, overwrite_a=False, check_finite=True):
     q, info = orghr(a=hq, tau=tau, lo=lo, hi=hi, lwork=lwork, overwrite_a=1)
     _check_info(info, 'orghr (hessenberg)', positive=False)
     return h, q
+
+
+def cdf2rdf(w, v):
+    """
+    Converts complex eigenvalues ``w`` and eigenvectors ``v`` to real
+    eigenvalues in a block diagonal form ``wr`` and the associated real
+    eigenvectors ``vr``, such that::
+
+        vr @ wr = X @ vr
+
+    continues to hold, where ``X`` is the original array for which ``w`` and
+    ``v`` are the eigenvalues and eigenvectors.
+
+    Parameters
+    ----------
+    w : array_like
+        Complex or real eigenvalues array of size (M,) for a single matrix, or
+        size (..., M) for multiple stacked matrices
+    v : array_like
+        Complex or real eigenvectors array of size (M, M) for a single matrix,
+        or size (..., M, M) for multiple stacked matrices
+
+    Returns
+    -------
+    wr : ndarray
+        Real diagonal block form of eigenvalues, with size (M, M) for single
+        matrix, or (..., M, M) for multiple stacked matrices.
+    vr : ndarray
+        Real eigenvectors associated with ``wr``, with size (M, M) for
+        single matrix, or (..., M, M) for multiple stacked arrays.
+
+    Notes
+    -----
+    ``w``, ``v`` must be the eigenstructure for some *real* matrix ``X``.
+    For example, obtained by ``w, v = scipy.linalg.eig(X)`` or
+    ``w, v = numpy.linalg.eig(X)`` in which case ``X`` can also represent
+    stacked arrays.
+
+    Examples
+    --------
+    >>> X = np.array([[1, 2, 3], [0, 4, 5], [0, -5, 4]])
+    >>> X
+    array([[ 1,  2,  3],
+           [ 0,  4,  5],
+           [ 0, -5,  4]])
+
+    >>> from scipy import linalg
+    >>> w, v = linalg.eig(X)
+    >>> w
+    array([ 1.+0.j,  4.+5.j,  4.-5.j])
+    >>> v
+    array([[ 1.00000+0.j     , -0.01906-0.40016j, -0.01906+0.40016j],
+           [ 0.00000+0.j     ,  0.00000-0.64788j,  0.00000+0.64788j],
+           [ 0.00000+0.j     ,  0.64788+0.j     ,  0.64788-0.j     ]])
+
+    >>> wr, vr = linalg.cdf2rdf(w, v)
+    >>> wr
+    array([[ 1.,  0.,  0.],
+           [ 0.,  4.,  5.],
+           [ 0., -5.,  4.]])
+    >>> vr
+    array([[ 1.     ,  0.40016, -0.01906],
+           [ 0.     ,  0.64788,  0.     ],
+           [ 0.     ,  0.     ,  0.64788]])
+
+    >>> vr @ wr
+    array([[ 1.     ,  1.69593,  1.9246 ],
+           [ 0.     ,  2.59153,  3.23942],
+           [ 0.     , -3.23942,  2.59153]])
+    >>> X @ vr
+    array([[ 1.     ,  1.69593,  1.9246 ],
+           [ 0.     ,  2.59153,  3.23942],
+           [ 0.     , -3.23942,  2.59153]])
+    """
+    w1, v1 = _asarray_validated(w), _asarray_validated(v)
+    if w1.ndim < 1 or w1.ndim > 2:
+        raise ValueError('expected w to be a one-dimensional array or '
+                         'two-dimensional stacked array')
+    if w1.shape[-1] < 2:
+        raise ValueError('expected w array to have 2 or more elements')
+    if v1.ndim < 2 or v1.ndim > 3:
+        raise ValueError('expected v to be a two-dimensional array or '
+                         'three-dimensional stacked array')
+    if v1.shape[-2] != v1.shape[-1] or w1.shape[-1] < 2:
+        raise ValueError('expected v to be a square matrix or stacked square '
+                         'matrices: v1.shape[-2] = v1.shape[-1]')
+    if len(v1.shape) != len(w1.shape) + 1:
+        raise ValueError('expected eigenvectors array to have exactly one '
+                         'dimension more than eigenvalues array')
+    if v1.shape[-1] != w1.shape[-1]:
+        raise ValueError('expected the same number of eigenvalues as '
+                         'eigenvectors')
+
+    # number of stacked matrices and number of eigenvalues in each matrix
+    if w.ndim == 1:
+        stacked = False
+        M, n = 1, w.size
+        w = w[newaxis, :]
+        v = v[newaxis, :, :]
+    else:
+        stacked = True
+        M, n = w.shape
+
+    # get indices for each first pair of complex eigenvalues
+    idx_im = argwhere(iscomplex(w))
+
+    # check if all complex eigenvalues have conjugate pairs
+    if len(idx_im[::2, 0]) != len(idx_im[1::2, 0]):
+        raise ValueError('expected complex-conjugate pairs of eigenvalues')
+
+    # all eigenvalues to diagonal form
+    w_mat = zeros((M, n, n))
+    di = range(n)
+    w_mat[:, di, di] = w[:, di].real
+
+    # complex eigenvalues to real block diagonal form
+    mat, k = idx_im[::2, 0], idx_im[::2, 1]
+    w_mat[mat, k, k+1] = w[mat, k].imag
+    w_mat[mat, k+1, k] = w[mat, k+1].imag
+    wr = w_mat.real
+
+    # compute real eigenvectors associated with real block diagonal eigenvalues
+    u = array([eye(n, n, dtype=numpy.complex128)] * M).reshape(M, n, n)
+    u[mat, k, k] = 0.5j
+    u[mat, k, k+1] = 0.5
+    u[mat, k+1, k] = -0.5j
+    u[mat, k+1, k+1] = 0.5
+    # multipy matrices v and u (equivalent to v @ u)
+    vr = einsum('bij, bjk -> bik', v, u).real
+
+    # remove first axis for non stacked arrays
+    if not stacked:
+        wr = wr[0, :, :]
+        vr = vr[0, :, :]
+    return wr, vr
