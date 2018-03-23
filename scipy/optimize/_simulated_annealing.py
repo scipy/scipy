@@ -106,7 +106,7 @@ class VisitingDistribution(object):
                 y_gaussian_sample = sample2 * 2.0 - 1.0
                 self.square_gaussian = self.x_gaussian_sample ** 2 + \
                     y_gaussian_sample ** 2
-            self.square_root_gaussian = np.sqrt(-2.0 / self.square_gaussian * \
+            self.square_root_gaussian = np.sqrt(-2.0 / self.square_gaussian * 
                 np.log(self.square_gaussian))
             return self.square_root_gaussian * y_gaussian_sample
         else:
