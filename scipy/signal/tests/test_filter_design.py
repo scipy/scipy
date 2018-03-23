@@ -3188,4 +3188,4 @@ class TestGroupDelay(object):
         w1, gd1 = group_delay((1, 1))
         w2, gd2 = group_delay((1, 1), None)
         assert_array_almost_equal(w1,w2)
-        assert_array_almost_equal(h1,h2)
+        assert_array_almost_equal(gd1,gd2)
