@@ -33,9 +33,9 @@ class VisitingDistribution(object):
         self.lower = lb
         self.upper = ub
         self.bound_range = ub - lb
-        self.x_gauss = None
-        self.s_gauss = 0
-        self.root_gauss = None
+        self.x_gaussian_sample = None
+        self.square_gaussian = 0
+        self.square_root_gaussian = None
 
     def visiting(self, x, step, temperature):
         dim = x.size
@@ -97,18 +97,20 @@ class VisitingDistribution(object):
     def gaussian_fn(self, axis):
         if axis == 1:
             enter = True
-            while enter or (self.s_gauss <= 0 or self.s_gauss >= 1):
+            while enter or (self.square_gaussian <= 0 or
+                            self.square_gaussian >= 1):
                 enter = False
                 sample1 = self.rand_state.random_sample()
-                self.x_gauss = sample1 * 2.0 - 1.0
+                self.x_gaussian_sample = sample1 * 2.0 - 1.0
                 sample2 = self.rand_state.random_sample()
-                y_gauss = sample2 * 2.0 - 1.0
-                self.s_gauss = self.x_gauss ** 2 + y_gauss ** 2
-            self.root_gauss = np.sqrt(-2.0 / self.s_gauss * np.log(
-                self.s_gauss))
-            return self.root_gauss * y_gauss
+                y_gaussian_sample = sample2 * 2.0 - 1.0
+                self.square_gaussian = self.x_gaussian_sample ** 2 + \
+                    y_gaussian_sample ** 2
+            self.square_root_gaussian = np.sqrt(-2.0 / self.square_gaussian * \
+                np.log(self.square_gaussian))
+            return self.square_root_gaussian * y_gaussian_sample
         else:
-            return self.root_gauss * self.x_gauss
+            return self.square_root_gaussian * self.x_gaussian_sample
 
 
 class EnergyState():
