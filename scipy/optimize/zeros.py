@@ -216,43 +216,36 @@ def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2,
     not use this method directly. This method is called from :func:`newton`
     when ``np.isscalar(x0)`` is true. For docstring, see :func:`newton`.
     """
-    p0 = np.asarray(x0)  # convert to ndarray
-    failures = np.ones(p0.shape, dtype=bool)  # at start, nothing converged
+    p = np.asarray(x0)
+    failures = np.ones_like(p, dtype=bool)  # at start, nothing converged
     if fprime is not None:
         # Newton-Raphson method
         for iteration in range(maxiter):
-            myargs = (p0,) + args
-            fder = np.asarray(fprime(*myargs))  # convert to ndarray
+            fder = np.asarray(fprime(p, *args))
             zero_der = (fder == 0)
+            # stop iterating if all derivatives are zero
             if zero_der.all():
-                msg = "all derivatives were zero."
-                warnings.warn(msg, RuntimeWarning)
-                if failure_idx_flag:
-                    p0 = (p0, failures, zero_der)
-                return p0
-            fval = np.asarray(func(*myargs))  # convert to ndarray
-            newton_step = fval / fder
-            fder2 = 0 if fprime2 is None else np.asarray(fprime2(*myargs))
-            # if fder is zero, warns "RuntimeWarning: divide by zero"
-            p = p0 - newton_step / (1.0 - 0.5 * newton_step * fder2 / fder)
-            p = np.where(zero_der, p0, p)  # where zero der, use last guess
-            failures = np.abs(p - p0) >= tol  # items not yet converged
+                break
+            fval = np.asarray(func(p, *args))
+            # Newton step
+            dp = fval / fder
+            if fprime2 is not None:
+                fder2 = np.asarray(fprime2(p, *args))
+                # if fder is zero, warns "RuntimeWarning: divide by zero"
+                dp = dp / (1.0 - 0.5 * dp * fder2 / fder)
+            p = np.where(zero_der, p, p - dp)  # use last guess where zero der
+            failures = np.abs(dp) >= tol  # items not yet converged
             # stop iterating if there aren't any failures, not incl zero der
             if not failures[~zero_der].any():
-                if zero_der.any():
-                    msg = "some derivatives were zero."
-                    warnings.warn(msg, RuntimeWarning)
-                if failure_idx_flag:
-                    p = (p, failures, zero_der)
-                return p
-            p0 = p
+                break
     else:
         # Secant method
+        p0 = p
         dx = np.finfo(float).eps**0.33
         dp = np.where(p0 >= 0, dx, -dx)
         p1 = p0 * (1 + dx) + dp
-        q0 = np.asarray(func(*((p0,) + args)))
-        q1 = np.asarray(func(*((p1,) + args)))
+        q0 = np.asarray(func(p0, *args))
+        q1 = np.asarray(func(p1, *args))
         for iteration in range(maxiter):
             zero_der = (q1 == q0)
             nonzero_dp = (p1 != p0)
@@ -286,13 +279,19 @@ def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2,
             p0 = p1
             q0 = q1
             p1 = p
-            q1 = np.asarray(func(*((p1,) + args)))
-    msg = "Failed to converge after %d iterations, value is %s" % (maxiter, p)
-    if failures.all():
-        raise RuntimeError(msg)
-    warnings.warn(msg, RuntimeWarning)
+            q1 = np.asarray(func(p1, *args))
+    if zero_der.any():
+        all_or_some = 'all' if zero_der.all() else 'some'
+        msg = "%s derivatives were zero" % all_or_some
+        warnings.warn(msg, RuntimeWarning)
+    elif failures.all():
+        raise RuntimeError(
+            "Failed to converge after %d iterations, value is %s" % (
+                maxiter, p
+            )
+        )
     if failure_idx_flag:
-        p = (p, failures, zero_der)
+        p = p, failures, zero_der
     return p
 
 
