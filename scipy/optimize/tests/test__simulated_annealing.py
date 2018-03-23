@@ -11,8 +11,8 @@ from scipy.optimize._simulated_annealing import ObjectiveFunWrapper
 from scipy.optimize._simulated_annealing import EnergyState
 import numpy as np
 from numpy.testing import (assert_equal, TestCase, assert_allclose,
-                           assert_almost_equal, assert_raises,
-                           assert_array_less)
+                           assert_almost_equal, assert_array_less)
+from pytest import raises as assert_raises
 from scipy._lib._util import check_random_state
 
 
@@ -77,7 +77,7 @@ class TestSimulatedAnnealing(TestCase):
         lower = np.array(lu[0])
         upper = np.array(lu[1])
         es = EnergyState(lower, upper)
-        assert_raises(ValueError, es.reset, *(owf, check_random_state(None)))
+        assert_raises(ValueError, es.reset, owf, check_random_state(None))
 
     def test_high_dim(self):
         ret = simulated_annealing(self.func, None, self.hd_bounds)
@@ -96,8 +96,8 @@ class TestSimulatedAnnealing(TestCase):
         assert_almost_equal(np.std(values), 1., 1)
 
     def test_max_reinit(self):
-        assert_raises(ValueError, simulated_annealing, *(self.weirdfunc, None,
-                                           self.ld_bounds))
+        assert_raises(ValueError, simulated_annealing, self.weirdfunc, None,
+                                           self.ld_bounds)
 
     def test_reproduce(self):
         seed = 1234
@@ -111,5 +111,5 @@ class TestSimulatedAnnealing(TestCase):
 
     def test_bounds_integrity(self):
         wrong_bounds = [(-5.12, 5.12), (1, 0), (5.12, 5.12)]
-        assert_raises(ValueError, simulated_annealing, *(
-            self.func, None, wrong_bounds))
+        assert_raises(ValueError, simulated_annealing, self.func, None,
+            wrong_bounds)
