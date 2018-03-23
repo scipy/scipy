@@ -444,6 +444,13 @@ class TestFreqs(object):
                       plot=lambda w, h: 1 / 0)
         freqs([1.0], [1.0], worN=8, plot=plot)
 
+    def test_backward_compat(self):
+        # For backward compatibility, test if None act as a wrapper for default
+        w1, h1 = freqs([1.0],[1.0])
+        w2, h2 = freqs([1.0],[1.0],None)
+        assert_array_almost_equal(w1,w2)
+        assert_array_almost_equal(h1,h2)
+
 
 class TestFreqs_zpk(object):
 
@@ -484,6 +491,12 @@ class TestFreqs_zpk(object):
         assert_allclose(w1, w2)
         assert_allclose(h1, h2, rtol=1e-6)
 
+    def test_backward_compat(self):
+        # For backward compatibility, test if None act as a wrapper for default
+        w1, h1 = freqs_zpk([1.0],[1.0],[1.0])
+        w2, h2 = freqs_zpk([1.0],[1.0],[1.0],None)
+        assert_array_almost_equal(w1,w2)
+        assert_array_almost_equal(h1,h2)
 
 class TestFreqz(object):
 
@@ -670,6 +683,13 @@ class TestFreqz(object):
                     assert_equal(ww, worN.ravel())
                     assert_allclose(hh, h[k, :, :].ravel())
 
+    def test_backward_compat(self):
+        # For backward compatibility, test if None act as a wrapper for default
+        w1, h1 = freqz([1.0], 1)
+        w2, h2 = freqz([1.0], 1, None)
+        assert_array_almost_equal(w1,w2)
+        assert_array_almost_equal(h1,h2)
+
 
 class TestSOSFreqz(object):
 
@@ -834,6 +854,12 @@ class TestFreqz_zpk(object):
         assert_allclose(w1, w2)
         assert_allclose(h1, h2, rtol=1e-6)
 
+    def test_backward_compat(self):
+        # For backward compatibility, test if None act as a wrapper for default
+        w1, h1 = freqz_zpk([0.5], [0.5], 1.0)
+        w2, h2 = freqz_zpk([0.5], [0.5], 1.0, None)
+        assert_array_almost_equal(w1,w2)
+        assert_array_almost_equal(h1,h2)
 
 class TestNormalize(object):
 
@@ -3156,3 +3182,10 @@ class TestGroupDelay(object):
 
         w, gd = assert_warns(UserWarning, group_delay, (b, a), w=w)
         assert_allclose(gd, 0)
+
+    def test_backward_compat(self):
+        # For backward compatibility, test if None act as a wrapper for default
+        w1, gd1 = group_delay((1, 1))
+        w2, gd2 = group_delay((1, 1), None)
+        assert_array_almost_equal(w1,w2)
+        assert_array_almost_equal(h1,h2)
