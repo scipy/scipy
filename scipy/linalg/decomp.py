@@ -1299,12 +1299,19 @@ def cdf2rdf(w, v):
         Real eigenvectors associated with ``wr``, with size (M, M) for
         single matrix, or (..., M, M) for multiple stacked arrays.
 
+    See Also
+    --------
+    eig : Eigenvalues and right eigenvectors for non-symmetric arrays
+    rsf2csf : Convert real Schur form to complex Schur form
+
     Notes
     -----
     ``w``, ``v`` must be the eigenstructure for some *real* matrix ``X``.
     For example, obtained by ``w, v = scipy.linalg.eig(X)`` or
     ``w, v = numpy.linalg.eig(X)`` in which case ``X`` can also represent
     stacked arrays.
+
+    .. versionadded:: 1.1.0
 
     Examples
     --------
