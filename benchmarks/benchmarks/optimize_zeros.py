@@ -70,22 +70,33 @@ class NewtonArray(Benchmark):
     def setup(self, vec, meth):
         if vec == 'loop':
             if meth == 'newton':
-                self.fvec = lambda f, x0, args, fprime, fprime2=None: [
+                self.fvec = lambda f, x0, args, fprime, fprime2: [
                     newton(f, x, args=(a0, a1) + args[2:], fprime=fprime)
                     for (x, a0, a1) in zip(x0, args[0], args[1])
                 ]
             elif meth == 'halley':
                 self.fvec = lambda f, x0, args, fprime, fprime2: [
-                    newton(f, x, args=(a0, a1) + args[2:], fprime=fprime, fprime2=fprime2)
-                    for (x, a0, a1) in zip(x0, args[0], args[1])
+                    newton(
+                        f, x, args=(a0, a1) + args[2:], fprime=fprime,
+                        fprime2=fprime2
+                    ) for (x, a0, a1) in zip(x0, args[0], args[1])
                 ]
             else:
-                self.fvec = lambda f, x0, args, fprime=None, fprime2=None: [
+                self.fvec = lambda f, x0, args, fprime, fprime2: [
                     newton(f, x, args=(a0, a1) + args[2:]) for (x, a0, a1)
                     in zip(x0, args[0], args[1])
                 ]
         else:
-            self.fvec = newton
+            if meth == 'newton':
+                self.fvec = lambda f, x0, args, fprime, fprime2: newton(
+                    f, x0, args=args, fprime=fprime
+                )
+            elif meth == 'halley':
+                self.fvec = newton
+            else:
+                self.fvec = lambda f, x0, args, fprime, fprime2: newton(
+                    f, x0, args=args
+                )
 
     def time_array_newton(self, vec, meth):
 
