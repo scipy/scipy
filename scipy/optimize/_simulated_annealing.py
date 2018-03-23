@@ -209,10 +209,8 @@ class MarkovChain(object):
             x_visit = self.visit_dist.visiting(
                 self.state.current_location, j, temperature)
             # Calling the objective function
-            e = self.obj_fun_wrapper.func(
-                x_visit,
-                *self.obj_fun_wrapper.fun_args,
-            )
+            e = self.obj_fun_wrapper.func(x_visit,
+                *self.obj_fun_wrapper.fun_args)
             self.obj_fun_wrapper.nb_fun_call += 1
             if e < self.state.current_energy:
                 #  print('Better energy: {0}'.format(e))
