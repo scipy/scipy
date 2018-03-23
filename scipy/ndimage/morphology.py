@@ -539,14 +539,20 @@ def binary_opening(input, structure=None, iterations=1, output=None,
     mask : array_like, optional
         If a mask is given, only those elements with a True value at
         the corresponding mask element are modified at each iteration.
+
+        .. versionadded:: 1.1.0
     border_value : int (cast to 0 or 1), optional
         Value at the border in the output array.
+
+        .. versionadded:: 1.1.0
     brute_force : boolean, optional
         Memory condition: if False, only the pixels whose value was changed in
         the last iteration are tracked as candidates to be updated in the
         current iteration; if true all pixels are considered as candidates for
         update, regardless of what happened in the previous iteration.
         False by default.
+
+        .. versionadded:: 1.1.0
 
     Returns
     -------
@@ -656,14 +662,20 @@ def binary_closing(input, structure=None, iterations=1, output=None,
     mask : array_like, optional
         If a mask is given, only those elements with a True value at
         the corresponding mask element are modified at each iteration.
+
+        .. versionadded:: 1.1.0
     border_value : int (cast to 0 or 1), optional
         Value at the border in the output array.
+
+        .. versionadded:: 1.1.0
     brute_force : boolean, optional
         Memory condition: if False, only the pixels whose value was changed in
         the last iteration are tracked as candidates to be updated in the
         current iteration; if true al pixels are considered as candidates for
         update, regardless of what happened in the previous iteration.
         False by default.
+
+        .. versionadded:: 1.1.0
 
     Returns
     -------
