@@ -157,11 +157,11 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
         raise ValueError("tol too small (%g <= 0)" % tol)
     if maxiter < 1:
         raise ValueError("maxiter must be greater than 0")
+    # Multiply by 1.0 to convert to floating point.  We don't use float(x0)
+    # so it still works if x0 is complex.
     p0 = 1.0 * x0
     if fprime is not None:
         # Newton-Rapheson method
-        # Multiply by 1.0 to convert to floating point.  We don't use float(x0)
-        # so it still works if x0 is complex.
         for iter in range(maxiter):
             fder = fprime(p0, *args)
             if fder == 0:
