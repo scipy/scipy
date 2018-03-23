@@ -147,10 +147,8 @@ class EnergyState():
         init_error = True
         reinit_counter = 0
         while init_error:
-            self.current_energy = obj_fun_wrapper.func(
-                self.current_location,
-                *obj_fun_wrapper.fun_args,
-            )
+            self.current_energy = obj_fun_wrapper.func(self.current_location,
+                *obj_fun_wrapper.fun_args)
             obj_fun_wrapper.nb_fun_call += 1
             if self.current_energy is None:
                 raise ValueError('Objective function is returning None')
