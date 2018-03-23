@@ -73,6 +73,7 @@ class VisitingDistribution(object):
         return x_visit
 
     def visit_fn(self, temperature):
+        # Formula Visita from p. 405 of reference [2]
         factor1 = np.exp(np.log(temperature) / (self.visiting_param - 1.0))
         factor2 = np.exp((4.0 - self.visiting_param) * np.log(
             self.visiting_param - 1.0))
@@ -414,11 +415,11 @@ def simulated_annealing(func, x0, bounds, maxiter=1000, local_search_options={},
     approach [3]_ implements the generalization of CSA (Classical Simulated
     Annealing) and FSA (Fast Simulated Annealing) [1]_ [2]_ coupled to a
     strategy for applying a local search on accepted locations [4]_.
-    Alternative implementation of this same algorithm is described in [5]_ and
-    benchmarks are presented in [6]_. SDA introduces an advanced dual annealing
-    method to refine the solution found by the generalized annealing process.
-    This algorithm uses a distorted Cauchy-Lorentz visiting distribution, with
-    its shape controlled by the parameter :math:`q_{v}`
+    An alternative implementation of this same algorithm is described in [5]_
+    and benchmarks are presented in [6]_. SDA introduces an advanced dual
+    annealing method to refine the solution found by the generalized annealing
+    process. This algorithm uses a distorted Cauchy-Lorentz visiting
+    distribution, with its shape controlled by the parameter :math:`q_{v}`
 
     .. math::
 
