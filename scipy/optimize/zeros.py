@@ -64,7 +64,7 @@ def results_c(full_output, r):
 
 # Newton-Raphson, Halley, or Secant method
 def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
-           fprime2=None, **kwargs):
+           fprime2=None, failure_idx_flag=None):
     """
     Find a zero using the Newton-Raphson or secant method.
 
@@ -74,10 +74,10 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
     derivative `fprime2` of `func` is also provided, then Halley's method is
     used.
 
-    If `x0` is a sequence, then `func` must be a vector function, and `newton`
-    returns an array. An optional flag appends boolean arrays of which elements
-    failed to converge and where the solver stopped due to an infinite Newton
-    step.
+    If `x0` is a sequence, then `newton` returns an array, and `func` must be
+    vectorized and return a sequence or array of the same shape as it's first
+    argument. An optional flag appends boolean arrays of which elements failed
+    to converge and where the solver stopped due to an infinite Newton step.
 
     Parameters
     ----------
