@@ -446,10 +446,10 @@ class TestFreqs(object):
 
     def test_backward_compat(self):
         # For backward compatibility, test if None act as a wrapper for default
-        w1, h1 = freqs([1.0],[1.0])
-        w2, h2 = freqs([1.0],[1.0],None)
-        assert_array_almost_equal(w1,w2)
-        assert_array_almost_equal(h1,h2)
+        w1, h1 = freqs([1.0], [1.0])
+        w2, h2 = freqs([1.0], [1.0], None)
+        assert_array_almost_equal(w1, w2)
+        assert_array_almost_equal(h1, h2)
 
 
 class TestFreqs_zpk(object):
@@ -493,10 +493,10 @@ class TestFreqs_zpk(object):
 
     def test_backward_compat(self):
         # For backward compatibility, test if None act as a wrapper for default
-        w1, h1 = freqs_zpk([1.0],[1.0],[1.0])
-        w2, h2 = freqs_zpk([1.0],[1.0],[1.0],None)
-        assert_array_almost_equal(w1,w2)
-        assert_array_almost_equal(h1,h2)
+        w1, h1 = freqs_zpk([1.0], [1.0], [1.0])
+        w2, h2 = freqs_zpk([1.0], [1.0], [1.0], None)
+        assert_array_almost_equal(w1, w2)
+        assert_array_almost_equal(h1, h2)
 
 class TestFreqz(object):
 
@@ -687,8 +687,8 @@ class TestFreqz(object):
         # For backward compatibility, test if None act as a wrapper for default
         w1, h1 = freqz([1.0], 1)
         w2, h2 = freqz([1.0], 1, None)
-        assert_array_almost_equal(w1,w2)
-        assert_array_almost_equal(h1,h2)
+        assert_array_almost_equal(w1, w2)
+        assert_array_almost_equal(h1, h2)
 
 
 class TestSOSFreqz(object):
@@ -858,8 +858,8 @@ class TestFreqz_zpk(object):
         # For backward compatibility, test if None act as a wrapper for default
         w1, h1 = freqz_zpk([0.5], [0.5], 1.0)
         w2, h2 = freqz_zpk([0.5], [0.5], 1.0, None)
-        assert_array_almost_equal(w1,w2)
-        assert_array_almost_equal(h1,h2)
+        assert_array_almost_equal(w1, w2)
+        assert_array_almost_equal(h1, h2)
 
 class TestNormalize(object):
 
@@ -3187,5 +3187,5 @@ class TestGroupDelay(object):
         # For backward compatibility, test if None act as a wrapper for default
         w1, gd1 = group_delay((1, 1))
         w2, gd2 = group_delay((1, 1), None)
-        assert_array_almost_equal(w1,w2)
-        assert_array_almost_equal(gd1,gd2)
+        assert_array_almost_equal(w1, w2)
+        assert_array_almost_equal(gd1, gd2)
