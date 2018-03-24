@@ -62,7 +62,7 @@ def results_c(full_output, r):
         return r
 
 
-# Newton-Raphson method
+# Newton-Raphson, Halley, or Secant method
 def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
            fprime2=None, **kwargs):
     """
@@ -71,7 +71,13 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
     Find a zero of the function `func` given a nearby starting point `x0`.
     The Newton-Raphson method is used if the derivative `fprime` of `func`
     is provided, otherwise the secant method is used.  If the second order
-    derivative `fprime2` of `func` is provided, then Halley's method is used.
+    derivative `fprime2` of `func` is also provided, then Halley's method is
+    used.
+
+    If `x0` is a sequence, then `func` must be a vector function, and `newton`
+    returns an array. An optional flag appends boolean arrays of which elements
+    failed to converge and where the solver stopped due to an infinite Newton
+    step.
 
     Parameters
     ----------
@@ -96,11 +102,18 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
         convenient. If it is None (default), then the normal Newton-Raphson
         or the secant method is used. If it is not None, then Halley's method
         is used.
+    failure_idx_flag : boolean, optional
+        Only used if `x0` is a sequence. If `True` then two extras boolean
+        arrays of failures and zero derivatives are appended to the return.
 
     Returns
     -------
     zero : float
         Estimated location where function is zero.
+    failures : boolean array, optional
+        For vector functions, indicates which elements failed to converge.
+    zero_der : boolean array, optional
+        For vector functions, indicates which elements had a zero derivative.
 
     See Also
     --------
@@ -278,12 +291,14 @@ def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2,
             all_or_some = 'all' if zero_der.all() else 'some'
             msg = "%s derivatives were zero" % all_or_some
             warnings.warn(msg, RuntimeWarning)
-    elif failures.all():
-        raise RuntimeError(
-            "Failed to converge after %d iterations, value is %s" % (
-                maxiter, p
-            )
+    elif failures.any():
+        all_or_some = 'all' if failures.all() else 'some'
+        msg = (
+            "%s failed to converge after %d iterations" % (all_or_some, maxiter)
         )
+        if failures.all():
+            raise RuntimeError(msg)
+        warnings.warn(msg, RuntimeWarning)
     if failure_idx_flag:
         p = p, failures, zero_der
     return p
