@@ -231,7 +231,6 @@ def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2,
     """
     p = np.asarray(x0)
     failures = np.ones_like(p, dtype=bool)  # at start, nothing converged
-    warnings.simplefilter('ignore', RuntimeWarning)
     if fprime is not None:
         # Newton-Raphson method
         for iteration in range(maxiter):
@@ -274,7 +273,6 @@ def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2,
             p1, p = p, p1
             q0 = q1
             q1 = np.asarray(func(p1, *args))
-    warnings.resetwarnings()
     if zero_der.any():
         # secant warnings
         if fprime is None:
