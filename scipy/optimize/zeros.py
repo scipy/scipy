@@ -240,45 +240,45 @@ def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2,
                 break
     else:
         # Secant method
-        p0 = p
         dx = np.finfo(float).eps**0.33
-        dp = np.where(p0 >= 0, dx, -dx)
-        p1 = p0 * (1 + dx) + dp
-        q0 = np.asarray(func(p0, *args))
+        p1 = p * (1 + dx) + np.where(p >= 0, dx, -dx)
+        q0 = np.asarray(func(p, *args))
         q1 = np.asarray(func(p1, *args))
         for iteration in range(maxiter):
             zero_der = (q1 == q0)
-            nonzero_dp = (p1 != p0)
+            nonzero_dp = (p1 != p)
             if zero_der.all():
                 if nonzero_dp.any():
                     rms = np.sqrt(
-                        sum((p1[nonzero_dp] - p0[nonzero_dp])**2)
+                        sum((p1[nonzero_dp] - p[nonzero_dp])**2)
                     )
                     msg = "RMS of %s where callback isn't zero" % rms
                     warnings.warn(msg, RuntimeWarning)
-                p_avg = (p1 + p0) / 2.0
+                p_avg = (p1 + p) / 2.0
                 if failure_idx_flag:
-                    p_avg = (p_avg, failures, zero_der)
+                    p_avg = p_avg, failures, zero_der
                 return p_avg
-            p = p1 - q1*(p1 - p0)/(q1 - q0)
-            p = np.where(zero_der, (p1 + p0)/2.0, p)
-            failures = np.abs(p - p1) >= tol  # not yet converged
+            # Secant Step
+            #  if q1 == q0, warns "RuntimeWarning: divide by zero"
+            #  if q1 == q0 and p1 == p, warns "RuntimeWarning: invalid value"
+            dp = q1 * (p1 - p) / (q1 - q0)
+            p = np.where(zero_der, (p1 + p) / 2.0, p1 - dp)
+            failures = np.abs(dp) >= tol  # not yet converged
             # stop iterating if there aren't any failures, not incl zero der
             if not failures[~zero_der].any():
                 # non-zero dp, but infinite newton step
                 zero_der_nz_dp = (zero_der & nonzero_dp)
                 if zero_der_nz_dp.any():
                     rms = np.sqrt(
-                        sum((p1[zero_der_nz_dp] - p0[zero_der_nz_dp])**2)
+                        sum((p1[zero_der_nz_dp] - p[zero_der_nz_dp])**2)
                     )
                     msg = "RMS of %s where callback isn't zero" % rms
                     warnings.warn(msg, RuntimeWarning)
                 if failure_idx_flag:
-                    p = (p, failures, zero_der)
+                    p = p, failures, zero_der
                 return p
-            p0 = p1
+            p1, p = p, p1
             q0 = q1
-            p1 = p
             q1 = np.asarray(func(p1, *args))
     if zero_der.any():
         all_or_some = 'all' if zero_der.all() else 'some'
