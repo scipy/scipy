@@ -218,6 +218,7 @@ def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2,
     """
     p = np.asarray(x0)
     failures = np.ones_like(p, dtype=bool)  # at start, nothing converged
+    warnings.simplefilter('ignore', RuntimeWarning)
     if fprime is not None:
         # Newton-Raphson method
         for iteration in range(maxiter):
@@ -231,9 +232,9 @@ def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2,
             dp = fval / fder
             if fprime2 is not None:
                 fder2 = np.asarray(fprime2(p, *args))
-                # if fder is zero, warns "RuntimeWarning: divide by zero"
                 dp = dp / (1.0 - 0.5 * dp * fder2 / fder)
-            p = np.where(zero_der, p, p - dp)  # use last guess where zero der
+            # use last guess where derivative is zero
+            p = np.where(zero_der, p, p - dp)
             failures = np.abs(dp) >= tol  # items not yet converged
             # stop iterating if there aren't any failures, not incl zero der
             if not failures[~zero_der].any():
@@ -246,44 +247,37 @@ def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2,
         q1 = np.asarray(func(p1, *args))
         for iteration in range(maxiter):
             zero_der = (q1 == q0)
-            nonzero_dp = (p1 != p)
+            # stop iterating if all derivatives are zero
             if zero_der.all():
-                if nonzero_dp.any():
-                    rms = np.sqrt(
-                        sum((p1[nonzero_dp] - p[nonzero_dp])**2)
-                    )
-                    msg = "RMS of %s where callback isn't zero" % rms
-                    warnings.warn(msg, RuntimeWarning)
-                p_avg = (p1 + p) / 2.0
-                if failure_idx_flag:
-                    p_avg = p_avg, failures, zero_der
-                return p_avg
+                p = (p1 + p) / 2.0
+                break
             # Secant Step
-            #  if q1 == q0, warns "RuntimeWarning: divide by zero"
-            #  if q1 == q0 and p1 == p, warns "RuntimeWarning: invalid value"
             dp = q1 * (p1 - p) / (q1 - q0)
             p = np.where(zero_der, (p1 + p) / 2.0, p1 - dp)
             failures = np.abs(dp) >= tol  # not yet converged
             # stop iterating if there aren't any failures, not incl zero der
             if not failures[~zero_der].any():
-                # non-zero dp, but infinite newton step
-                zero_der_nz_dp = (zero_der & nonzero_dp)
-                if zero_der_nz_dp.any():
-                    rms = np.sqrt(
-                        sum((p1[zero_der_nz_dp] - p[zero_der_nz_dp])**2)
-                    )
-                    msg = "RMS of %s where callback isn't zero" % rms
-                    warnings.warn(msg, RuntimeWarning)
-                if failure_idx_flag:
-                    p = p, failures, zero_der
-                return p
+                break
             p1, p = p, p1
             q0 = q1
             q1 = np.asarray(func(p1, *args))
+    warnings.resetwarnings()
     if zero_der.any():
-        all_or_some = 'all' if zero_der.all() else 'some'
-        msg = "%s derivatives were zero" % all_or_some
-        warnings.warn(msg, RuntimeWarning)
+        # secant warnings
+        if fprime is None:
+            nonzero_dp = (p1 != p)
+            # non-zero dp, but infinite newton step
+            zero_der_nz_dp = (zero_der & nonzero_dp)
+            if zero_der_nz_dp.any():
+                rms = np.sqrt(
+                    sum((p1[zero_der_nz_dp] - p[zero_der_nz_dp]) ** 2)
+                )
+                warnings.warn("RMS of %s reached" % rms, RuntimeWarning)
+        # netwon or halley warnings
+        else:
+            all_or_some = 'all' if zero_der.all() else 'some'
+            msg = "%s derivatives were zero" % all_or_some
+            warnings.warn(msg, RuntimeWarning)
     elif failures.all():
         raise RuntimeError(
             "Failed to converge after %d iterations, value is %s" % (
