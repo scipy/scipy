@@ -2158,7 +2158,16 @@ def tsearch(tri, xi):
     """
     return tri.find_simplex(xi)
 
-Delaunay.add_points.__func__.__doc__ = _QhullUser._add_points.__doc__
+# Set docstring for foo to docstring of bar, working around change in Cython 0.28
+# See https://github.com/scipy/scipy/pull/8581
+def _copy_docstr(dst, src):
+    try:
+        dst.__doc__ = src.__doc__
+    except AttributeError:
+        dst.__func__.__doc__ = src.__func__.__doc__
+
+
+_copy_docstr(Delaunay.add_points, _QhullUser._add_points)
 
 #------------------------------------------------------------------------------
 # Delaunay triangulation interface, for low-level C
@@ -2353,7 +2362,7 @@ class ConvexHull(_QhullUser):
             self._vertices = np.unique(self.simplices)
         return self._vertices
 
-ConvexHull.add_points.__func__.__doc__ = _QhullUser._add_points.__doc__
+_copy_docstr(ConvexHull.add_points, _QhullUser._add_points)
 
 #------------------------------------------------------------------------------
 # Voronoi diagrams
@@ -2505,7 +2514,8 @@ class Voronoi(_QhullUser):
                                         self.ridge_vertices))
         return self._ridge_dict
 
-Voronoi.add_points.__func__.__doc__ = _QhullUser._add_points.__doc__
+
+_copy_docstr(Voronoi.add_points, _QhullUser._add_points)
 
 #------------------------------------------------------------------------------
 # Halfspace Intersection
