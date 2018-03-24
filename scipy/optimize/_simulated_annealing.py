@@ -486,12 +486,13 @@ def simulated_annealing(func, x0, bounds, maxiter=1000, local_search_options={},
     >>> lw = [-5.12] * 10
     >>> up = [5.12] * 10
     >>> ret = simulated_annealing(func, None, bounds=list(zip(lw, up)))
-    >>> print("global minimum: xmin = {0}, f(xmin) = {1:.6f}".format(
-    ...    ret.x, ret.fun))
+    >>> #print("global minimum: xmin = {0}, f(xmin) = {1:.6f}".format(
+    ... #   ret.x, ret.fun))
 
     global minimum: xmin = [ -5.30926309e-09  -9.47607022e-09  -4.09044159e-09
     -8.91916554e-09 -7.58266242e-09  -7.51256718e-09  -5.29363641e-09
     -5.77883504e-09 -4.36341509e-09  -5.22583018e-09], f(xmin) = 0.000000
+    
     """
 
     if x0 is not None and not len(x0) == len(bounds):
