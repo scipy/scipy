@@ -62,7 +62,6 @@ def results_c(full_output, r):
         return r
 
 
-# Newton-Raphson, Halley, or Secant method
 def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
            fprime2=None, failure_idx_flag=None):
     """
@@ -170,12 +169,12 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
         raise ValueError("tol too small (%g <= 0)" % tol)
     if maxiter < 1:
         raise ValueError("maxiter must be greater than 0")
-    if not np.isscalar(x0):
-        return _array_newton(func, x0, fprime, args, tol, maxiter, fprime2,
-                             **kwargs)
     # Multiply by 1.0 to convert to floating point.  We don't use float(x0)
     # so it still works if x0 is complex.
     p0 = 1.0 * x0
+    if not np.isscalar(x0):
+        return _array_newton(func, x0, fprime, args, tol, maxiter, fprime2,
+                             failure_idx_flag)
     if fprime is not None:
         # Newton-Raphson method
         for iteration in range(maxiter):
@@ -241,12 +240,12 @@ def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2,
                 break
             fval = np.asarray(func(p, *args))
             # Newton step
-            dp = fval / fder
+            dp = fval[~zero_der] / fder[~zero_der]
             if fprime2 is not None:
                 fder2 = np.asarray(fprime2(p, *args))
-                dp = dp / (1.0 - 0.5 * dp * fder2 / fder)
+                dp = dp / (1.0 - 0.5 * dp * fder2[~zero_der] / fder[~zero_der])
             # use last guess where derivative is zero
-            p = np.where(zero_der, p, p - dp)
+            p[~zero_der] -= dp
             failures = np.abs(dp) >= tol  # items not yet converged
             # stop iterating if there aren't any failures, not incl zero der
             if not failures[~zero_der].any():
