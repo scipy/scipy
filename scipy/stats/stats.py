@@ -3451,7 +3451,7 @@ def pointbiserialr(x, y):
 KendalltauResult = namedtuple('KendalltauResult', ('correlation', 'pvalue'))
 
 
-def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
+def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='automatic'):
     """
     Calculate Kendall's tau, a correlation measure for ordinal data.
 
@@ -3474,6 +3474,12 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
         values. Default is 'propagate'. Note that if the input contains nan
         'omit' delegates to mstats_basic.kendalltau(), which has a different
         implementation.
+    method: {'automatic', 'asymptotic', 'exact'}, optional
+        Defines which method is used to calculate the p-value [5]_. 
+        'asymptotic' uses a normal approximation valid for large samples. 
+        'exact' computes the exact p-value, but can only be used if no ties 
+        are present. 'automatic' is the default and selects the appropriate 
+        method based on a trade-off between speed and accuracy.
 
     Returns
     -------
@@ -3511,6 +3517,8 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
     .. [4] Peter M. Fenwick, "A new data structure for cumulative frequency
            tables", Software: Practice and Experience, Vol. 24, No. 3,
            pp. 327-336, 1994.
+    .. [5] Maurice G. Kendall, "Rank Correlation Methods" (4th Edition), 
+           Charles Griffin & Co., 1970.
 
     Examples
     --------
@@ -3589,14 +3597,51 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
     # Limit range to fix computational errors
     tau = min(1., max(-1., tau))
 
-    # con_minus_dis is approx normally distributed with this variance [3]_
-    var = (size * (size - 1) * (2.*size + 5) - x1 - y1) / 18. + (
-        2. * xtie * ytie) / (size * (size - 1)) + x0 * y0 / (9. *
-        size * (size - 1) * (size - 2))
-    pvalue = special.erfc(np.abs(con_minus_dis) / np.sqrt(var) / np.sqrt(2))
+    if method == 'exact' and ( xtie != 0 or ytie != 0):
+        raise ValueError("Ties found, exact method cannot be used.")
+        
+    if method == 'automatic':
+        if ( xtie == 0 and ytie == 0 ) and ( size <= 33 or min(dis, tot-dis) <= 1) :
+            method = 'exact'
+        else:
+            method = 'asymptotic'
+        
+    if xtie == 0 and ytie == 0 and method == 'exact':
+        # Exact p-value, see Maurice G. Kendall, "Rank Correlation Methods" (4th Edition), Charles Griffin & Co., 1970.
+        c = min(dis, tot-dis)
+        if size <= 0:
+            raise ValueError
+        elif c < 0 or 2*c > size*(size-1):
+            raise ValueError
+        elif size == 1:
+            pvalue = 1.0
+        elif size == 2:
+            pvalue = 1.0
+        elif c == 0:
+            pvalue = 2.0/np.math.factorial(size)
+        elif c == 1:
+            pvalue = 2.0/np.math.factorial(size-1)
+        else:
+            old = [0.0]*(c+1)
+            new = [0.0]*(c+1)
+            new[0] = 1.0
+            new[1] = 1.0
+            for j in range(3,size+1):
+                old = new[:]
+                for k in range(1,min(j,c+1)):
+                    new[k] += new[k-1]
+                for k in range(j,c+1):
+                    new[k] += new[k-1] - old[k-j]
+            pvalue = 2.0*sum(new)/np.math.factorial(size)
 
-    # Limit range to fix computational errors
-    return KendalltauResult(min(1., max(-1., tau)), pvalue)
+    else:
+        # con_minus_dis is approx normally distributed with this variance [3]_
+        var = (size * (size - 1) * (2.*size + 5) - x1 - y1) / 18. + (
+            2. * xtie * ytie) / (size * (size - 1)) + x0 * y0 / (9. *
+            size * (size - 1) * (size - 2))
+        pvalue = special.erfc(np.abs(con_minus_dis) / np.sqrt(var) / np.sqrt(2))
+
+    return KendalltauResult(tau, pvalue)
 
 
 WeightedTauResult = namedtuple('WeightedTauResult', ('correlation', 'pvalue'))
