@@ -1,7 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
 import warnings
-
+from collections import namedtuple
 from . import _zeros
 import numpy as np
 
@@ -107,7 +107,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
 
     Returns
     -------
-    zero : float
+    root : float
         Estimated location where function is zero.
     failures : boolean array, optional
         For vector functions, indicates which elements failed to converge.
@@ -303,7 +303,8 @@ def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2,
             raise RuntimeError(msg)
         warnings.warn(msg, RuntimeWarning)
     if failure_idx_flag:
-        p = p, failures, zero_der
+        result = namedtuple('result', ('root', 'failures', 'zero_der'))
+        p = result(p, failures, zero_der)
     return p
 
 
