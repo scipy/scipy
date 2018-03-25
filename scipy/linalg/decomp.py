@@ -1396,7 +1396,8 @@ def cdf2rdf(w, v):
     wr[mat, k, j] = w[mat, k].imag
 
     # compute real eigenvectors associated with real block diagonal eigenvalues
-    u = array([eye(n, n, dtype=numpy.complex128)] * M).reshape(M, n, n)
+    u = zeros((M, n, n), dtype=numpy.cdouble)
+    u[:, di, di] = 1.0
     u[mat, j, j] = 0.5j
     u[mat, j, k] = 0.5
     u[mat, k, j] = -0.5j
