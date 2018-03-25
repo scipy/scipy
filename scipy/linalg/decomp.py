@@ -1345,18 +1345,22 @@ def cdf2rdf(w, v):
            [ 0.     , -3.23942,  2.59153]])
     """
     w, v = _asarray_validated(w), _asarray_validated(v)
+
+    # check dimensions
     if w.ndim < 1 or w.ndim > 2:
         raise ValueError('expected w to be a one-dimensional array or '
                          'two-dimensional stacked array')
     if v.ndim < 2 or v.ndim > 3:
         raise ValueError('expected v to be a two-dimensional array or '
                          'three-dimensional stacked array')
+    if v.ndim != w.ndim + 1:
+        raise ValueError('expected eigenvectors array to have exactly one '
+                         'dimension more than eigenvalues array')
+
+    # check shapes
     if v.shape[-2] != v.shape[-1]:
         raise ValueError('expected v to be a square matrix or stacked square '
                          'matrices: v.shape[-2] = v.shape[-1]')
-    if len(v.shape) != len(w.shape) + 1:
-        raise ValueError('expected eigenvectors array to have exactly one '
-                         'dimension more than eigenvalues array')
     if v.shape[-1] != w.shape[-1]:
         raise ValueError('expected the same number of eigenvalues as '
                          'eigenvectors')
