@@ -1281,6 +1281,8 @@ def cdf2rdf(w, v):
     continues to hold, where ``X`` is the original array for which ``w`` and
     ``v`` are the eigenvalues and eigenvectors.
 
+    .. versionadded:: 1.1.0
+
     Parameters
     ----------
     w : array_like
