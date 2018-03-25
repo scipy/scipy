@@ -169,12 +169,12 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
         raise ValueError("tol too small (%g <= 0)" % tol)
     if maxiter < 1:
         raise ValueError("maxiter must be greater than 0")
-    # Multiply by 1.0 to convert to floating point.  We don't use float(x0)
-    # so it still works if x0 is complex.
-    p0 = 1.0 * x0
     if not np.isscalar(x0):
         return _array_newton(func, x0, fprime, args, tol, maxiter, fprime2,
                              failure_idx_flag)
+    # Multiply by 1.0 to convert to floating point.  We don't use float(x0)
+    # so it still works if x0 is complex.
+    p0 = 1.0 * x0
     if fprime is not None:
         # Newton-Raphson method
         for iteration in range(maxiter):
@@ -228,7 +228,10 @@ def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2,
     not use this method directly. This method is called from :func:`newton`
     when ``np.isscalar(x0)`` is true. For docstring, see :func:`newton`.
     """
-    p = np.asarray(x0)
+    try:
+        p = np.asarray(x0, dtype=float)
+    except TypeError:  # can't convert complex to float
+        p = np.asarray(x0)
     failures = np.ones_like(p, dtype=bool)  # at start, nothing converged
     if fprime is not None:
         # Newton-Raphson method
