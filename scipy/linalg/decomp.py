@@ -1344,22 +1344,22 @@ def cdf2rdf(w, v):
            [ 0.     ,  2.59153,  3.23942],
            [ 0.     , -3.23942,  2.59153]])
     """
-    w1, v1 = _asarray_validated(w), _asarray_validated(v)
-    if w1.ndim < 1 or w1.ndim > 2:
+    w, v = _asarray_validated(w), _asarray_validated(v)
+    if w.ndim < 1 or w.ndim > 2:
         raise ValueError('expected w to be a one-dimensional array or '
                          'two-dimensional stacked array')
-    if w1.shape[-1] < 2:
+    if w.shape[-1] < 2:
         raise ValueError('expected w array to have 2 or more elements')
-    if v1.ndim < 2 or v1.ndim > 3:
+    if v.ndim < 2 or v.ndim > 3:
         raise ValueError('expected v to be a two-dimensional array or '
                          'three-dimensional stacked array')
-    if v1.shape[-2] != v1.shape[-1] or w1.shape[-1] < 2:
+    if v.shape[-2] != v.shape[-1] or w.shape[-1] < 2:
         raise ValueError('expected v to be a square matrix or stacked square '
-                         'matrices: v1.shape[-2] = v1.shape[-1]')
-    if len(v1.shape) != len(w1.shape) + 1:
+                         'matrices: v.shape[-2] = v.shape[-1]')
+    if len(v.shape) != len(w.shape) + 1:
         raise ValueError('expected eigenvectors array to have exactly one '
                          'dimension more than eigenvalues array')
-    if v1.shape[-1] != w1.shape[-1]:
+    if v.shape[-1] != w.shape[-1]:
         raise ValueError('expected the same number of eigenvalues as '
                          'eigenvectors')
 
