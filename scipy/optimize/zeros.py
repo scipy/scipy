@@ -238,18 +238,18 @@ def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2,
         # Newton-Raphson method
         for iteration in range(maxiter):
             fder = np.asarray(fprime(p, *args))
-            zero_der = (fder == 0)
+            nz_der = (fder != 0)
             # stop iterating if all derivatives are zero
-            if zero_der.all():
+            if not nz_der.any():
                 break
             fval = np.asarray(func(p, *args))
             # Newton step
-            dp = fval[~zero_der] / fder[~zero_der]
+            dp = fval[nz_der] / fder[nz_der]
             if fprime2 is not None:
                 fder2 = np.asarray(fprime2(p, *args))
-                dp = dp / (1.0 - 0.5 * dp * fder2[~zero_der] / fder[~zero_der])
+                dp = dp / (1.0 - 0.5 * dp * fder2[nz_der] / fder[nz_der])
             # only update nonzero derivatives
-            p[~zero_der] -= dp
+            p[nz_der] -= dp
             failures = np.abs(dp) >= tol  # items not yet converged
             # stop iterating if there aren't any failures, not incl zero der
             if not failures.any():
@@ -262,17 +262,18 @@ def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2,
         q1 = np.asarray(func(p1, *args))
         active = np.ones_like(p, dtype=bool)
         for iteration in range(maxiter):
-            zero_der = (q1 == q0)
+            nz_der = (q1 != q0)
             # stop iterating if all derivatives are zero
-            if zero_der.all():
+            if not nz_der.any():
                 p = (p1 + p) / 2.0
                 break
             # Secant Step
-            dp = (q1 * (p1 - p))[~zero_der] / (q1 - q0)[~zero_der]
+            dp = (q1 * (p1 - p))[nz_der] / (q1 - q0)[nz_der]
             # only update nonzero derivatives
-            p[~zero_der] = p1[~zero_der] - dp
-            p[zero_der & active] = (p1 + p)[zero_der & active] / 2.0
-            active[active] &= ~zero_der  # don't assign zero derivatives again
+            p[nz_der] = p1[nz_der] - dp
+            active_zero_der = ~nz_der & active
+            p[active_zero_der] = (p1 + p)[active_zero_der] / 2.0
+            active[active] &= nz_der  # don't assign zero derivatives again
             failures = np.abs(dp) >= tol  # not yet converged
             # stop iterating if there aren't any failures, not incl zero der
             if not failures.any():
@@ -280,6 +281,7 @@ def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2,
             p1, p = p, p1
             q0 = q1
             q1 = np.asarray(func(p1, *args))
+    zero_der = ~nz_der
     if zero_der.any():
         # secant warnings
         if fprime is None:
