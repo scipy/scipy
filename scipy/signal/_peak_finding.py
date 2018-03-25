@@ -412,7 +412,7 @@ def peak_prominences(x, peaks, wlen=None):
 
 def peak_widths(x, peaks, rel_height=0.5, prominence_data=None, wlen=None):
     """
-    Calculate the width of each each peak in a signal.
+    Calculate the width of each peak in a signal.
 
     This function calculates the width of a peak in samples at a relative
     distance to the peak's height and prominence.
