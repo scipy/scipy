@@ -1348,12 +1348,10 @@ def cdf2rdf(w, v):
     if w.ndim < 1 or w.ndim > 2:
         raise ValueError('expected w to be a one-dimensional array or '
                          'two-dimensional stacked array')
-    if w.shape[-1] < 2:
-        raise ValueError('expected w array to have 2 or more elements')
     if v.ndim < 2 or v.ndim > 3:
         raise ValueError('expected v to be a two-dimensional array or '
                          'three-dimensional stacked array')
-    if v.shape[-2] != v.shape[-1] or w.shape[-1] < 2:
+    if v.shape[-2] != v.shape[-1]:
         raise ValueError('expected v to be a square matrix or stacked square '
                          'matrices: v.shape[-2] = v.shape[-1]')
     if len(v.shape) != len(w.shape) + 1:

@@ -2734,6 +2734,13 @@ class TestCDF2RDF(object):
             self.matmul(x, v)
         )
 
+    def test_single_array0x0real(self):
+        # eig doesn't support 0x0 in old versions of numpy
+        X = np.empty((0, 0))
+        w, v = np.empty(0), np.empty((0, 0))
+        wr, vr = cdf2rdf(w, v)
+        self.assert_eig_valid(wr, vr, X)
+
     def test_single_array2x2_real(self):
         X = np.array([[1, 2], [3, -1]])
         w, v = np.linalg.eig(X)
@@ -2758,10 +2765,10 @@ class TestCDF2RDF(object):
         wr, vr = cdf2rdf(w, v)
         self.assert_eig_valid(wr, vr, X)
 
-    def test_random_stacked_arrays(self):
-        N = int(1e4)
-        for M in range(2, 7):
-            X = np.random.rand(N, M, M)
+    def test_random_1d_stacked_arrays(self):
+        # cannot test M == 0 due to bug in old numpy
+        for M in range(1, 7):
+            X = np.random.rand(10000, M, M)
             w, v = np.linalg.eig(X)
             wr, vr = cdf2rdf(w, v)
             self.assert_eig_valid(wr, vr, X)
