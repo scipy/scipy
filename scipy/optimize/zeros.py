@@ -251,7 +251,7 @@ def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2,
             p[~zero_der] -= dp
             failures = np.abs(dp) >= tol  # items not yet converged
             # stop iterating if there aren't any failures, not incl zero der
-            if not failures[~zero_der].any():
+            if not failures.any():
                 break
     else:
         # Secant method
@@ -259,6 +259,7 @@ def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2,
         p1 = p * (1 + dx) + np.where(p >= 0, dx, -dx)
         q0 = np.asarray(func(p, *args))
         q1 = np.asarray(func(p1, *args))
+        active = np.ones_like(p, dtype=bool)
         for iteration in range(maxiter):
             zero_der = (q1 == q0)
             # stop iterating if all derivatives are zero
@@ -266,11 +267,13 @@ def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2,
                 p = (p1 + p) / 2.0
                 break
             # Secant Step
-            dp = q1 * (p1 - p) / (q1 - q0)
-            p = np.where(zero_der, (p1 + p) / 2.0, p1 - dp)
+            dp = (q1 * (p1 - p))[~zero_der] / (q1 - q0)[~zero_der]
+            p[~zero_der] = p1[~zero_der] - dp
+            p[zero_der & active] = (p1 + p)[zero_der & active] / 2.0
+            active[active] &= ~zero_der  # don't assign zero derivatives again
             failures = np.abs(dp) >= tol  # not yet converged
             # stop iterating if there aren't any failures, not incl zero der
-            if not failures[~zero_der].any():
+            if not failures.any():
                 break
             p1, p = p, p1
             q0 = q1
