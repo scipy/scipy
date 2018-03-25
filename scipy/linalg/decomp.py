@@ -1374,10 +1374,12 @@ def cdf2rdf(w, v):
         M, n = w.shape
 
     # get indices for each first pair of complex eigenvalues
-    idx_im = argwhere(iscomplex(w))
+    complex_mask = iscomplex(w)
+    n_complex = complex_mask.sum(axis=-1)
+    idx_im = argwhere(complex_mask)
 
     # check if all complex eigenvalues have conjugate pairs
-    if len(idx_im[::2, 0]) != len(idx_im[1::2, 0]):
+    if not (n_complex % 2 == 0).all():
         raise ValueError('expected complex-conjugate pairs of eigenvalues')
 
     # all eigenvalues to diagonal form

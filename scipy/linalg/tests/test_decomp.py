@@ -2784,3 +2784,11 @@ class TestCDF2RDF(object):
         X = np.array([[1, 2, 3], [1, 2, 3], [2, 5, 6+1j]])
         w, v = np.linalg.eig(X)
         assert_raises(ValueError, cdf2rdf, w, v)
+
+        # different arrays in the stack, so not conjugate
+        X = np.array([
+            [[1, 2, 3], [1, 2, 3], [2, 5, 6+1j]],
+            [[1, 2, 3], [1, 2, 3], [2, 5, 6-1j]],
+        ])
+        w, v = np.linalg.eig(X)
+        assert_raises(ValueError, cdf2rdf, w, v)
