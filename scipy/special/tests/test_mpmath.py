@@ -998,14 +998,10 @@ class TestSystematic(object):
                             rtol=1e-8)
 
     def test_cospi(self):
-        # Without the extra factor of 2 in the relative tolerance as
-        # compared to sinpi there will be one failure at ~0.318 with
-        # an rdiff of ~6e-16. Neither the Taylor series nor the system
-        # cosine are accurate enough here.
         eps = np.finfo(float).eps
         assert_mpmath_equal(_cospi,
                             mpmath.cospi,
-                            [Arg()], nan_ok=False, rtol=4*eps)
+                            [Arg()], nan_ok=False, rtol=eps)
 
     def test_cospi_complex(self):
         assert_mpmath_equal(_cospi,
@@ -1812,7 +1808,7 @@ class TestSystematic(object):
     def test_sinpi(self):
         eps = np.finfo(float).eps
         assert_mpmath_equal(_sinpi, mpmath.sinpi,
-                            [Arg()], nan_ok=False, rtol=2*eps)
+                            [Arg()], nan_ok=False, rtol=eps)
 
     def test_sinpi_complex(self):
         assert_mpmath_equal(_sinpi, mpmath.sinpi,
