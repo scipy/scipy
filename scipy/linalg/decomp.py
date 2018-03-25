@@ -1386,17 +1386,18 @@ def cdf2rdf(w, v):
     w_mat[:, di, di] = w[:, di].real
 
     # complex eigenvalues to real block diagonal form
-    mat, k = idx_im[::2, 0], idx_im[::2, 1]
-    w_mat[mat, k, k+1] = w[mat, k].imag
-    w_mat[mat, k+1, k] = w[mat, k+1].imag
+    mat, j = idx_im[::2, 0], idx_im[::2, 1]
+    k = j + 1
+    w_mat[mat, j, k] = w[mat, j].imag
+    w_mat[mat, k, j] = w[mat, k].imag
     wr = w_mat.real
 
     # compute real eigenvectors associated with real block diagonal eigenvalues
     u = array([eye(n, n, dtype=numpy.complex128)] * M).reshape(M, n, n)
-    u[mat, k, k] = 0.5j
-    u[mat, k, k+1] = 0.5
-    u[mat, k+1, k] = -0.5j
-    u[mat, k+1, k+1] = 0.5
+    u[mat, j, j] = 0.5j
+    u[mat, j, k] = 0.5
+    u[mat, k, j] = -0.5j
+    u[mat, k, k] = 0.5
     # multipy matrices v and u (equivalent to v @ u)
     vr = einsum('bij, bjk -> bik', v, u).real
 
