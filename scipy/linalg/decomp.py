@@ -1381,16 +1381,15 @@ def cdf2rdf(w, v):
         raise ValueError('expected complex-conjugate pairs of eigenvalues')
 
     # all eigenvalues to diagonal form
-    w_mat = zeros((M, n, n))
+    wr = zeros((M, n, n), dtype=w.real.dtype)
     di = range(n)
-    w_mat[:, di, di] = w[:, di].real
+    wr[:, di, di] = w[:, di].real
 
     # complex eigenvalues to real block diagonal form
     mat, j = idx_im[::2, 0], idx_im[::2, 1]
     k = j + 1
-    w_mat[mat, j, k] = w[mat, j].imag
-    w_mat[mat, k, j] = w[mat, k].imag
-    wr = w_mat.real
+    wr[mat, j, k] = w[mat, j].imag
+    wr[mat, k, j] = w[mat, k].imag
 
     # compute real eigenvectors associated with real block diagonal eigenvalues
     u = array([eye(n, n, dtype=numpy.complex128)] * M).reshape(M, n, n)
