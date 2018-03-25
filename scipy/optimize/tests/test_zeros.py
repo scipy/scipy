@@ -2,10 +2,12 @@ from __future__ import division, print_function, absolute_import
 
 from math import sqrt, exp, sin, cos
 
-from numpy.testing import (assert_warns, assert_, 
+from numpy.testing import (assert_warns, assert_,
                            assert_allclose,
                            assert_equal)
 import numpy as np
+
+import pytest
 
 from scipy.optimize import zeros as cc
 from scipy.optimize import zeros
@@ -57,7 +59,7 @@ class TestBasic(object):
             x = zeros.newton(f, 3, fprime=f_1, fprime2=f_2, tol=1e-6)
             assert_allclose(f(x), 0, atol=1e-6)
 
-    def test_newton_array(self):
+    def test_array_newton(self):
         """test newton with array"""
 
         def f1(x, *a):
@@ -93,11 +95,29 @@ class TestBasic(object):
         x = zeros.newton(f1, x0, f1_1, args, fprime2=f1_2)
         assert_allclose(x, x_expected)
         # test secant
-        x = zeros.newton(lambda y, z: z - y ** 2, [4.0]*2, args=([15.0, 17.0],))
+        x = zeros.newton(f1, x0, args=args)
+        assert_allclose(x, x_expected)
+
+    def test_array_newton_integers(self):
+        # test secant with float
+        x = zeros.newton(lambda y, z: z - y ** 2, [4.0] * 2,
+                         args=([15.0, 17.0],))
         assert_allclose(x, (3.872983346207417, 4.123105625617661))
+        # test integer becomes float
+        x = zeros.newton(lambda y, z: z - y ** 2, [4] * 2, args=([15, 17],))
+        assert_allclose(x, (3.872983346207417, 4.123105625617661))
+
+    def test_array_newton_zero_der_failures(self):
         # test derivative zero warning
         assert_warns(RuntimeWarning, zeros.newton,
                      lambda y: y ** 2, [0., 0.], lambda y: 2 * y)
+        # test failures and zero_der
+        with pytest.warns(RuntimeWarning):
+            results = zeros.newton(lambda y: y ** 2, [0., 0.], lambda y: 2 * y,
+                                   failure_idx_flag=True)
+            assert_allclose(results.root, 0)
+            assert results.zero_der.all()
+            assert results.failures.all()
 
     def test_deriv_zero_warning(self):
         func = lambda x: x**2
@@ -170,4 +190,8 @@ def test_complex_halley():
     coeffs = (2.0, 3.0, 4.0)
     y = zeros.newton(f, z, args=coeffs, fprime=f_1, fprime2=f_2, tol=1e-6)
     # (-0.75000000000000078+1.1989578808281789j)
+    assert_allclose(f(y, *coeffs), 0, atol=1e-6)
+    z = z * 10
+    coeffs = (2.0, 3.0, 4.0)
+    y = zeros.newton(f, z, args=coeffs, fprime=f_1, fprime2=f_2, tol=1e-6)
     assert_allclose(f(y, *coeffs), 0, atol=1e-6)

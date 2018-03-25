@@ -84,9 +84,10 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
         The function whose zero is wanted. It must be a function of a
         single variable of the form f(x,a,b,c...), where a,b,c... are extra
         arguments that can be passed in the `args` parameter.
-    x0 : float
+    x0 : float, sequence, or array
         An initial estimate of the zero that should be somewhere near the
-        actual zero.
+        actual zero. If not scalar, then `func` must be vectorized and return
+        a sequence or array of the same shape as it's first argument.
     fprime : function, optional
         The derivative of the function when available and convenient. If it
         is None (default), then the secant method is used.
@@ -107,7 +108,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
 
     Returns
     -------
-    root : float
+    root : float, sequence, or array
         Estimated location where function is zero.
     failures : boolean array, optional
         For vector functions, indicates which elements failed to converge.
@@ -247,7 +248,7 @@ def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2,
             if fprime2 is not None:
                 fder2 = np.asarray(fprime2(p, *args))
                 dp = dp / (1.0 - 0.5 * dp * fder2[~zero_der] / fder[~zero_der])
-            # use last guess where derivative is zero
+            # only update nonzero derivatives
             p[~zero_der] -= dp
             failures = np.abs(dp) >= tol  # items not yet converged
             # stop iterating if there aren't any failures, not incl zero der
@@ -268,6 +269,7 @@ def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2,
                 break
             # Secant Step
             dp = (q1 * (p1 - p))[~zero_der] / (q1 - q0)[~zero_der]
+            # only update nonzero derivatives
             p[~zero_der] = p1[~zero_der] - dp
             p[zero_der & active] = (p1 + p)[zero_der & active] / 2.0
             active[active] &= ~zero_der  # don't assign zero derivatives again
@@ -288,16 +290,16 @@ def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2,
                 rms = np.sqrt(
                     sum((p1[zero_der_nz_dp] - p[zero_der_nz_dp]) ** 2)
                 )
-                warnings.warn("RMS of %s reached" % rms, RuntimeWarning)
+                warnings.warn('RMS of {:g} reached'.format(rms), RuntimeWarning)
         # netwon or halley warnings
         else:
             all_or_some = 'all' if zero_der.all() else 'some'
-            msg = "%s derivatives were zero" % all_or_some
+            msg = '{:s} derivatives were zero'.format(all_or_some)
             warnings.warn(msg, RuntimeWarning)
     elif failures.any():
         all_or_some = 'all' if failures.all() else 'some'
-        msg = (
-            "%s failed to converge after %d iterations" % (all_or_some, maxiter)
+        msg = '{0:s} failed to converge after {1:d} iterations'.format(
+            all_or_some, maxiter
         )
         if failures.all():
             raise RuntimeError(msg)
