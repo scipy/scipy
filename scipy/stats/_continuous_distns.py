@@ -1280,8 +1280,8 @@ class exponnorm_gen(rv_continuous):
 
     .. math::
 
-        f(x, K) = \frac{1}{2K} \exp(\frac{1}{2 K^2}) \exp(-x / K)
-                  \text{erfc}-\frac{x - 1/K}{\sqrt{2}}
+        f(x, K) = \frac{1}{2K} \exp\left(\frac{1}{2 K^2}\right) \exp(-x / K)
+                  \text{erfc}\left(-\frac{x - 1/K}{\sqrt{2}}\right)
 
     where the shape parameter :math:`K > 0`.
 
@@ -1298,7 +1298,7 @@ class exponnorm_gen(rv_continuous):
     :math:`\sigma`.
     In the present parameterization this corresponds to having ``loc`` and
     ``scale`` equal to :math:`\mu` and :math:`\sigma`, respectively, and
-    shape parameter :math:`K = 1/\sigma\lambda`.
+    shape parameter :math:`K = 1/(\sigma\lambda)`.
 
     .. versionadded:: 0.16.0
 
