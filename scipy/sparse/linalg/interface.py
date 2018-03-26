@@ -647,7 +647,7 @@ class IdentityOperator(LinearOperator):
         return self
 
 
-def aslinearoperator(A):
+def aslinearoperator(A, dtype=None):
     """Return A as a LinearOperator.
 
     'A' may be any of the following types:
@@ -658,6 +658,13 @@ def aslinearoperator(A):
      - An object with .shape and .matvec attributes
 
     See the LinearOperator documentation for additional information.
+
+    Parameters
+    ----------
+    A : matrix-like
+        The object implementing the linear operator.
+    dtype : dtype, optional
+        Data type of the operator application result.
 
     Examples
     --------
@@ -682,11 +689,10 @@ def aslinearoperator(A):
     else:
         if hasattr(A, 'shape') and hasattr(A, 'matvec'):
             rmatvec = None
-            dtype = None
 
             if hasattr(A, 'rmatvec'):
                 rmatvec = A.rmatvec
-            if hasattr(A, 'dtype'):
+            if dtype is None and hasattr(A, 'dtype'):
                 dtype = A.dtype
             return LinearOperator(A.shape, A.matvec,
                                   rmatvec=rmatvec, dtype=dtype)
