@@ -120,7 +120,7 @@ def test_hyp2f1_strange_points():
     dataset = [p + (float(mpmath.hyp2f1(*p, **kw)),) for p in pts]
     dataset = np.array(dataset, dtype=np.float_)
 
-    FuncData(sc.hyp2f1, dataset, (0, 1, 2, 3), 4, rtol=1e-10).check()
+    FuncData(sc.hyp2f1, dataset, (0,1,2,3), 4, rtol=1e-10).check()
 
 
 @check_version(mpmath, '0.13')
@@ -129,7 +129,7 @@ def test_hyp2f1_real_some_points():
         (1, 2, 3, 0),
         (1./3, 2./3, 5./6, 27./32),
         (1./4, 1./2, 3./4, 80./81),
-        (2, -2, -3, 3),
+        (2,-2, -3, 3),
         (2, -3, -2, 3),
         (2, -1.5, -1.5, 3),
         (1, 2, 3, 0),
@@ -153,7 +153,7 @@ def test_hyp2f1_real_some_points():
 
     olderr = np.seterr(invalid='ignore')
     try:
-        FuncData(sc.hyp2f1, dataset, (0, 1, 2, 3), 4, rtol=1e-10).check()
+        FuncData(sc.hyp2f1, dataset, (0,1,2,3), 4, rtol=1e-10).check()
     finally:
         np.seterr(**olderr)
 
@@ -163,9 +163,9 @@ def test_hyp2f1_some_points_2():
     # Taken from mpmath unit tests -- this point failed for mpmath 0.13 but
     # was fixed in their SVN since then
     pts = [
-        (112, (51, 10), (-9, 10), -0.99999),
-        (10, -900, 10.5, 0.99),
-        (10, -900, -10.5, 0.99),
+        (112, (51,10), (-9,10), -0.99999),
+        (10,-900,10.5,0.99),
+        (10,-900,-10.5,0.99),
     ]
 
     def fev(x):
@@ -177,7 +177,7 @@ def test_hyp2f1_some_points_2():
     dataset = [tuple(map(fev, p)) + (float(mpmath.hyp2f1(*p)),) for p in pts]
     dataset = np.array(dataset, dtype=np.float_)
 
-    FuncData(sc.hyp2f1, dataset, (0, 1, 2, 3), 4, rtol=1e-10).check()
+    FuncData(sc.hyp2f1, dataset, (0,1,2,3), 4, rtol=1e-10).check()
 
 
 @check_version(mpmath, '0.13')
@@ -196,7 +196,7 @@ def test_hyp2f1_real_some():
 
     olderr = np.seterr(invalid='ignore')
     try:
-        FuncData(sc.hyp2f1, dataset, (0, 1, 2, 3), 4, rtol=1e-9,
+        FuncData(sc.hyp2f1, dataset, (0,1,2,3), 4, rtol=1e-9,
                  ignore_inf_sign=True).check()
     finally:
         np.seterr(**olderr)
@@ -239,7 +239,7 @@ def test_erf_complex():
         mpmath.mp.dps = 70
         x1, y1 = np.meshgrid(np.linspace(-10, 1, 31), np.linspace(-10, 1, 11))
         x2, y2 = np.meshgrid(np.logspace(-80, .8, 31), np.logspace(-80, .8, 11))
-        points = np.r_[x1.ravel(), x2.ravel()] + 1j*np.r_[y1.ravel(), y2.ravel()]
+        points = np.r_[x1.ravel(),x2.ravel()] + 1j*np.r_[y1.ravel(), y2.ravel()]
 
         assert_func_equal(sc.erf, lambda x: complex(mpmath.erf(x)), points,
                           vectorized=False, rtol=1e-13)
@@ -303,7 +303,7 @@ def test_lpmv():
 
     olderr = np.seterr(invalid='ignore')
     try:
-        FuncData(evf, dataset, (0, 1, 2), 3, rtol=1e-10, atol=1e-14).check()
+        FuncData(evf, dataset, (0,1,2), 3, rtol=1e-10, atol=1e-14).check()
     finally:
         np.seterr(**olderr)
 
@@ -324,7 +324,7 @@ def test_beta():
               -1, -2.3, -3, -100.3, -10003.4]
     a = b
 
-    ab = np.array(np.broadcast_arrays(a[:, None], b[None, :])).reshape(2, -1).T
+    ab = np.array(np.broadcast_arrays(a[:,None], b[None,:])).reshape(2, -1).T
 
     old_dps, old_prec = mpmath.mp.dps, mpmath.mp.prec
     try:
@@ -1592,7 +1592,7 @@ class TestSystematic(object):
     def test_legenp(self):
         def lpnm(n, m, z):
             try:
-                v = sc.lpmn(m, n, z)[0][-1, -1]
+                v = sc.lpmn(m, n, z)[0][-1,-1]
             except ValueError:
                 return np.nan
             if abs(v) > 1e306:
@@ -1643,7 +1643,7 @@ class TestSystematic(object):
     def test_legenp_complex_2(self):
         def clpnm(n, m, z):
             try:
-                return sc.clpmn(m.real, n.real, z, type=2)[0][-1, -1]
+                return sc.clpmn(m.real, n.real, z, type=2)[0][-1,-1]
             except ValueError:
                 return np.nan
 
@@ -1656,7 +1656,7 @@ class TestSystematic(object):
         # mpmath is quite slow here
         x = np.array([-2, -0.99, -0.5, 0, 1e-5, 0.5, 0.99, 20, 2e3])
         y = np.array([-1e3, -0.5, 0.5, 1.3])
-        z = (x[:, None] + 1j*y[None, :]).ravel()
+        z = (x[:,None] + 1j*y[None,:]).ravel()
 
         assert_mpmath_equal(clpnm,
                             legenp,
@@ -1667,7 +1667,7 @@ class TestSystematic(object):
     def test_legenp_complex_3(self):
         def clpnm(n, m, z):
             try:
-                return sc.clpmn(m.real, n.real, z, type=3)[0][-1, -1]
+                return sc.clpmn(m.real, n.real, z, type=3)[0][-1,-1]
             except ValueError:
                 return np.nan
 
@@ -1680,7 +1680,7 @@ class TestSystematic(object):
         # mpmath is quite slow here
         x = np.array([-2, -0.99, -0.5, 0, 1e-5, 0.5, 0.99, 20, 2e3])
         y = np.array([-1e3, -0.5, 0.5, 1.3])
-        z = (x[:, None] + 1j*y[None, :]).ravel()
+        z = (x[:,None] + 1j*y[None,:]).ravel()
 
         assert_mpmath_equal(clpnm,
                             legenp,
@@ -1691,7 +1691,7 @@ class TestSystematic(object):
     @pytest.mark.xfail(run=False, reason="apparently picks wrong function at |z| > 1")
     def test_legenq(self):
         def lqnm(n, m, z):
-            return sc.lqmn(m, n, z)[0][-1, -1]
+            return sc.lqmn(m, n, z)[0][-1,-1]
 
         def legenq(n, m, z):
             if abs(z) < 1e-15:
@@ -1706,7 +1706,7 @@ class TestSystematic(object):
     @nonfunctional_tooslow
     def test_legenq_complex(self):
         def lqnm(n, m, z):
-            return sc.lqmn(int(m.real), int(n.real), z)[0][-1, -1]
+            return sc.lqmn(int(m.real), int(n.real), z)[0][-1,-1]
 
         def legenq(n, m, z):
             if abs(z) < 1e-15:
