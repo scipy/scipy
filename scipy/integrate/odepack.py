@@ -77,6 +77,8 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
         If True, the first two arguments of `func` (and `Dfun`, if given)
         must ``t, y`` instead of the default ``y, t``.
 
+        .. versionadded:: 1.1.0
+
     Returns
     -------
     y : array, shape (len(t), len(y0))

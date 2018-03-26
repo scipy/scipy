@@ -25,12 +25,23 @@ This release requires Python 2.7 or 3.4+ and NumPy 1.8.2 or greater.
 New features
 ============
 
+`scipy.integrate` improvements
+------------------------------
+
+The argument ``tfirst`` has been added to the function
+`scipy.integrate.odeint`.  This allows `odeint` to use the same
+user functions as `scipy.integrate.solve_ivp` and `scipy.integrate.ode`
+without the need for wrapping them in a function that swaps the first
+two arguments.
+
+
 `scipy.linalg` improvements
 ----------------------------
 
 The function `scipy.linalg.ldl` has been added for factorization of
 indefinite symmetric/hermitian matrices into triangular and block
 diagonal matrices.
+
 
 `scipy.optimize` improvements
 -----------------------------
