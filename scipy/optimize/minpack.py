@@ -58,7 +58,8 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
     Parameters
     ----------
     func : callable ``f(x, *args)``
-        A function that takes at least one (possibly vector) argument.
+        A function that takes at least one (possibly vector) argument,
+        and returns a value of the same length.
     x0 : ndarray
         The starting estimate for the roots of ``func(x) = 0``.
     args : tuple, optional
