@@ -9,7 +9,7 @@ from scipy._lib.six import xrange
 from scipy.signal.wavelets import cwt, ricker
 from scipy.stats import scoreatpercentile
 
-from ._peak_finding_utils import _argmaxima1d
+from ._peak_finding_utils import _argmaxima1d, _select_by_peak_distance
 
 
 __all__ = ['argrelmin', 'argrelmax', 'argrelextrema', 'peak_prominences',
@@ -709,77 +709,6 @@ def _select_by_peak_threshold(x, peaks, tmin, tmax):
     return keep, stacked_thresholds[0], stacked_thresholds[1]
 
 
-# Code for _select_by_peak_distance was adapted from
-# https://github.com/demotu/BMC/blob/master/functions/detect_peaks.py
-# by Marcos Duarte under the MIT license:
-#
-#     Copyright (c) 2013 Marcos Duarte
-#
-#     Permission is hereby granted, free of charge, to any person
-#     obtaining a copy of this software and associated documentation
-#     files (the "Software"), to deal in the Software without
-#     restriction, including without limitation the rights to use,
-#     copy, modify, merge, publish, distribute, sublicense, and/or sell
-#     copies of the Software, and to permit persons to whom the
-#     Software is furnished to do so, subject to the following
-#     conditions:
-#
-#     The above copyright notice and this permission notice shall be
-#     included in all copies or substantial portions of the Software.
-#
-#     THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-#     EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
-#     OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-#     NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
-#     HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
-#     WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-#     FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
-#     OTHER DEALINGS IN THE SOFTWARE.
-
-def _select_by_peak_distance(peaks, priority, dmin):
-    """
-    Evaluate which peaks fulfill the distance condition.
-
-    Parameters
-    ----------
-    peaks : ndarray
-        Indices of peaks in `vector`.
-    priority : ndarray
-        An array with priorities matching `peaks` used to determine priority of
-        peaks. A peak with a higher priority value is kept over one with a lower
-        one.
-    dmin : number
-        Minimal distance that peaks must be spaced.
-
-    Returns
-    -------
-    keep : ndarray[bool]
-        A boolean mask evaluating to true where `peaks` fulfill the distance
-        condition.
-
-    Notes
-    -----
-
-    .. versionadded:: 1.1.0
-    """
-    # Peaks are evaluated by priority (larger first)
-    eval_peaks = peaks[np.argsort(priority)][::-1]
-
-    # Flag peaks for deletion
-    del_flag = np.zeros(eval_peaks.size, dtype=bool)
-    for i in range(eval_peaks.size):
-        if not del_flag[i]:
-            # Flag peaks in intervall +-distance around current peak
-            del_flag |= (eval_peaks > eval_peaks[i] - dmin) \
-                        & (eval_peaks < eval_peaks[i] + dmin)
-            # Keep current peak
-            del_flag[i] = False
-
-    keep = ~del_flag[np.argsort(eval_peaks)]
-
-    return keep
-
-
 def find_peaks(x, height=None, threshold=None, distance=None,
                prominence=None, width=None, wlen=None, rel_height=0.5):
     """
@@ -885,10 +814,7 @@ def find_peaks(x, height=None, threshold=None, distance=None,
       number of peaks that need to be evaluated later.
     * Satisfying the distance condition is accomplished by iterating over all
       peaks in descending order based on their height and removing all lower
-      peaks that are too close. This option can be quite slow if many peaks need
-      to be evaluated. Try to reduce the number of peaks beforehand by
-      specifying conditions that are evaluated before this one (`height` and
-      `threshold`).
+      peaks that are too close.
     * Use `wlen` to reduce the time it takes to evaluate the conditions for
       `prominence` or `width` if `x` is large or has many local maxima
       (see `peak_prominences`).

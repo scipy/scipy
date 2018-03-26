@@ -3,11 +3,13 @@ Utility functions for finding peaks in signals.
 """
 
 import numpy as np
-cimport numpy as np
 import cython
 
+cimport numpy as np
+from libc.math cimport ceil
 
-__all__ = ['_argmaxima1d']
+
+__all__ = ['_argmaxima1d', '_select_by_peak_distance']
 
 
 @cython.wraparound(False)
@@ -74,3 +76,75 @@ def _argmaxima1d(np.float64_t[:] x not None):
 
     maxima.resize(m, refcheck=False)  # Keep only valid part of array memory.
     return maxima
+
+
+@cython.wraparound(False)
+@cython.boundscheck(False)
+def _select_by_peak_distance(np.intp_t[:] peaks not None,
+                             np.float64_t[:] priority not None,
+                             np.float64_t distance):
+    """
+    Evaluate which peaks fulfill the distance condition.
+
+    Parameters
+    ----------
+    peaks : ndarray
+        Indices of peaks in `vector`.
+    priority : ndarray
+        An array matching `peaks` used to determine priority of each peak. A
+        peak with a higher priority value is kept over one with a lower one.
+    distance : np.float64
+        Minimal distance that peaks must be spaced.
+
+    Returns
+    -------
+    keep : ndarray[bool]
+        A boolean mask evaluating to true where `peaks` fulfill the distance
+        condition.
+
+    Notes
+    -----
+    Declaring the input arrays as C-contiguous doesn't seem to have performance
+    advantages.
+
+    .. versionadded:: 1.1.0
+    """
+    cdef:
+        np.intp_t[::1] priority_to_position
+        np.int8_t[::1] keep
+        np.intp_t i, j, k, peaks_size, distance_
+
+    peaks_size = peaks.shape[0]
+    # Round up because actual peak distance can only be natural number
+    distance_ = <np.intp_t>ceil(distance)
+    keep = np.ones(peaks_size, dtype=np.int8)  # Prepare array of flags
+
+    # Create map from `i` (index for `peaks` sorted by `priority`) to `j` (index
+    # for `peaks` sorted by position). This allows to iterate `peaks` and `keep`
+    # with `j` by order of `priority` while still maintaining the ability to
+    # step to neighbouring peaks with (`j` + 1) or (`j` - 1).
+    priority_to_position = np.argsort(priority)
+
+    with nogil:
+        # Highest priority first -> iterate in reverse order (decreasing)
+        for i in range(peaks_size - 1, -1, -1):
+            # "Translate" `i` to `j` which points to current peak whose
+            # neighbours are to be evaluated
+            j = priority_to_position[i]
+            if keep[j] == 0:
+                # Skip evaluation for peak already marked as "don't keep"
+                continue
+
+            k = j - 1
+            # Flag "earlier" peaks for removal until minimal distance is exceeded
+            while 0 <= k and peaks[j] - peaks[k] < distance_:
+                keep[k] = 0
+                k -= 1
+
+            k = j + 1
+            # Flag "later" peaks for removal until minimal distance is exceeded
+            while k < peaks_size and peaks[k] - peaks[j] < distance_:
+                keep[k] = 0
+                k += 1
+
+    return keep.base.view(dtype=np.bool)  # Return as boolean array
