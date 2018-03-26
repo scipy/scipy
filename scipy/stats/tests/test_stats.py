@@ -664,9 +664,9 @@ def test_kendalltau():
     assert_approx_equal(res[1], expected[1])
 
     # swap a couple of values
-    b=y[1]
-    y[1]=y[2]
-    y[2]=b
+    b = y[1]
+    y[1] = y[2]
+    y[2] = b
     # Cross-check with exact result from R:
     # cor.test(x,y,method="kendall",exact=1)
     expected = (0.9555555555555556, 5.511463844797e-06)
@@ -675,9 +675,9 @@ def test_kendalltau():
     assert_approx_equal(res[1], expected[1])
 
     # swap a couple more
-    b=y[5]
-    y[5]=y[6]
-    y[6]=b
+    b = y[5]
+    y[5] = y[6]
+    y[6] = b
     # Cross-check with exact result from R:
     # cor.test(x,y,method="kendall",exact=1)
     expected = (0.9111111111111111, 2.976190476190e-05)
@@ -696,9 +696,9 @@ def test_kendalltau():
     assert_approx_equal(res[1], expected[1])
 
     # swap a couple of values
-    b=y[1]
-    y[1]=y[2]
-    y[2]=b
+    b = y[1]
+    y[1] = y[2]
+    y[2] = b
     # Cross-check with exact result from R:
     # cor.test(x,y,method="kendall",exact=1)
     expected = (-0.9555555555555556, 5.511463844797e-06)
@@ -707,9 +707,9 @@ def test_kendalltau():
     assert_approx_equal(res[1], expected[1])
 
     # swap a couple more
-    b=y[5]
-    y[5]=y[6]
-    y[6]=b
+    b = y[5]
+    y[5] = y[6]
+    y[6] = b
     # Cross-check with exact result from R:
     # cor.test(x,y,method="kendall",exact=1)
     expected = (-0.9111111111111111, 2.976190476190e-05)

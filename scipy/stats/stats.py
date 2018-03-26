@@ -3597,11 +3597,11 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='autom
     # Limit range to fix computational errors
     tau = min(1., max(-1., tau))
 
-    if method == 'exact' and ( xtie != 0 or ytie != 0):
+    if method == 'exact' and (xtie != 0 or ytie != 0):
         raise ValueError("Ties found, exact method cannot be used.")
         
     if method == 'automatic':
-        if ( xtie == 0 and ytie == 0 ) and ( size <= 33 or min(dis, tot-dis) <= 1) :
+        if (xtie == 0 and ytie == 0) and (size <= 33 or min(dis, tot-dis) <= 1):
             method = 'exact'
         else:
             method = 'asymptotic'
