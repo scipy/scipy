@@ -1,9 +1,10 @@
 from __future__ import division, print_function, absolute_import
 
+import pytest
 from numpy.testing import assert_equal, assert_allclose
 from scipy._lib._numpy_compat import suppress_warnings
 
-from scipy.misc import pade, logsumexp, face, ascent
+from scipy.misc import pade, logsumexp, face, ascent, electrocardiogram
 from scipy.special import logsumexp as sc_logsumexp
 
 
@@ -28,3 +29,15 @@ def test_face():
 
 def test_ascent():
     assert_equal(ascent().shape, (512, 512))
+
+
+@pytest.mark.xfail(reason="data file not yet added")
+def test_electrocardiogram():
+    # ECG in mV
+    ecg = electrocardiogram(physical_unit=True)
+    assert_equal(ecg.shape, (108000,))
+    assert ecg.dtype == float
+    # ECG in ADU
+    ecg = electrocardiogram(physical_unit=False)
+    assert_equal(ecg.shape, (108000,))
+    assert ecg.dtype == int

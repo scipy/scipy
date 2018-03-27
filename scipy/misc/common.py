@@ -5,9 +5,10 @@ Functions which are common and require SciPy Base and Level 1 SciPy
 
 from __future__ import division, print_function, absolute_import
 
-from numpy import arange, newaxis, hstack, product, array, frombuffer
+from numpy import arange, newaxis, hstack, product, array, frombuffer, load
 
-__all__ = ['central_diff_weights', 'derivative', 'ascent', 'face']
+__all__ = ['central_diff_weights', 'derivative', 'ascent', 'face',
+           'electrocardiogram']
 
 
 def central_diff_weights(Np, ndiv=1):
@@ -201,3 +202,70 @@ def face(gray=False):
     if gray is True:
         face = (0.21 * face[:,:,0] + 0.71 * face[:,:,1] + 0.07 * face[:,:,2]).astype('uint8')
     return face
+
+
+def electrocardiogram(physical_unit=True):
+    """
+    Load an electrocardiogram as an example for a one-dimensional signal.
+
+    The returned signal is a 5 minute long electrocardiogram (ECG), a medical
+    recording of the hearts electrical activity, sampled at 360 Hz.
+
+    Parameters
+    ----------
+    physical_unit : bool, optional
+        If true, the returned ECG uses the physical unit millivolt (mV)
+        otherwise the raw output of the ADC is returned.
+
+    Returns
+    -------
+    ecg : ndarray
+        The electrocardiogram.
+
+    Notes
+    -----
+    The provided signal is an excerpt (19:35 to 24:35) from the `record 208`_
+    (lead MLII) provided by the MIT-BIH Arrhythmia Database [1]_ on
+    PhysioNet [2]_. The excerpt includes noise induced artifacts, typical
+    heartbeats as well as frequent premature ventricular contractions, an
+    heartbeat outside the normal sinus rhythm.
+
+    .. _record 208: https://physionet.org/physiobank/database/html/mitdbdir/records.htm#208
+
+    .. versionadded:: 1.1.0
+
+    References
+    ----------
+    .. [1] Moody GB, Mark RG. The impact of the MIT-BIH Arrhythmia Database.
+           IEEE Eng in Med and Biol 20(3):45-50 (May-June 2001).
+           (PMID: 11446209); doi:10.13026/C2F305
+    .. [2] Goldberger AL, Amaral LAN, Glass L, Hausdorff JM, Ivanov PCh,
+           Mark RG, Mietus JE, Moody GB, Peng C-K, Stanley HE. PhysioBank,
+           PhysioToolkit, and PhysioNet: Components of a New Research Resource
+           for Complex Physiologic Signals. Circulation 101(23):e215-e220;
+           Circulation Electronic Pages: http://circ.ahajournals.org/content/101/23/e215.full];
+           2000 (June 13).; doi: 10.1161/01.CIR.101.23.e215
+
+    Examples
+    -------
+    >>> import scipy.misc
+    >>> ecg = scipy.misc.electrocardiogram()
+    >>> ecg.shape, ecg.mean(), ecg.std()
+    ((108000,), -0.16405791666666666, 0.5991142031793398)
+
+    Plot first five seconds (1800 samples) of the signal:
+
+    >>> import matplotlib.pyplot as plt
+    >>> time = np.arange(ecg.size) / 360
+    >>> plt.plot(time[:1800], ecg[:1800])
+    >>> plt.xlabel("time in s")
+    >>> plt.ylabel("ECG in mV")
+    >>> plt.show()
+    """
+    import os
+    file_path = os.path.join(os.path.dirname(__file__), "ecg.dat")
+    with load(file_path) as file:
+        ecg = file["ecg"].astype(int)
+    if physical_unit:
+        ecg = (ecg - 1024) / 200.0  # (ecg - adc_zero) / adc_gain
+    return ecg
