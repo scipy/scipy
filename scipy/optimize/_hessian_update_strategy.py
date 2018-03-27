@@ -285,7 +285,7 @@ class BFGS(FullHessianUpdateStrategy):
             else:
                 self.min_curvature = 0.2
         else:
-            raise ValueError("`exception_strategy` must be 'skip_updated' "
+            raise ValueError("`exception_strategy` must be 'skip_update' "
                              "or 'damp_update'.")
 
         super(BFGS, self).__init__(init_scale)

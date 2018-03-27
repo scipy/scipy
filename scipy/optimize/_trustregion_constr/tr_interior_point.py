@@ -241,13 +241,16 @@ class BarrierSubproblem:
                                self.n_vars+self.n_ineq),
                               matvec)
 
-    def stop_criteria(self, state, optimality, constr_violation,
+    def stop_criteria(self, state, z, last_iteration_failed,
+                      optimality, constr_violation,
                       trust_radius, penalty, cg_info):
         """Stop criteria to the barrier problem.
         The criteria here proposed is similar to formula (2.3)
         from [1]_, p.879.
         """
-        if self.global_stop_criteria(state, 
+        x = self.get_variables(z)
+        if self.global_stop_criteria(state, x,
+                                     last_iteration_failed, 
                                      trust_radius, penalty,
                                      cg_info,
                                      self.barrier_parameter,

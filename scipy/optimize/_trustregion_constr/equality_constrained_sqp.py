@@ -88,11 +88,12 @@ def equality_constrained_sqp(fun_and_constr, grad_and_jac, lagr_hess,
     cg_info = {'niter': 0, 'stop_cond': 0,
                'hits_boundary': False}
 
-    compute_hess = True
-    while not stop_criteria(state, optimality, constr_violation,
+    last_iteration_failed = False
+    while not stop_criteria(state, x, last_iteration_failed,
+                            optimality, constr_violation,
                             trust_radius, penalty, cg_info):
         # Compute Lagrangian Hessian
-        if compute_hess:
+        if not last_iteration_failed:
             H = lagr_hess(x, v)
 
         # Normal Step - `dn`
@@ -206,12 +207,12 @@ def equality_constrained_sqp(fun_and_constr, grad_and_jac, lagr_hess,
             # Compute least-square lagrange multipliers
             v = -LS.dot(c)
             # Set Flag
-            compute_hess = True
+            last_iteration_failed = False
             # Otimality values
             optimality = norm(c + A.T.dot(v), np.inf)
             constr_violation = norm(b, np.inf) if len(b) > 0 else 0
         else:
             penalty = previous_penalty
-            compute_hess = False
+            last_iteration_failed = True
 
     return x, state
