@@ -45,10 +45,6 @@ The `minimize_scalar` function supports the following methods:
    optimize.minimize_scalar-bounded
    optimize.minimize_scalar-golden
 
-The specific optimization method interfaces below in this subsection are
-not recommended for use in new scripts; all of these methods are accessible
-via a newer, more consistent interface provided by the functions above.
-
 General-purpose multivariate methods:
 
 .. autosummary::

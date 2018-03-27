@@ -23,18 +23,21 @@ from pytest import raises as assert_raises
 
 from scipy._lib._numpy_compat import suppress_warnings
 from scipy import optimize
+from scipy.optimize.optimize import (Function, NelderMead, Optimizer, BFGS)
+from scipy.optimize.lbfgsb import LBFGSB
+
+
+def logit(x):
+    return 1 / (1 + np.exp(-x))
+
+
+def der_logit(x):
+    return np.exp(-x) / (1 + np.exp(-x)) ** 2
 
 
 def test_check_grad():
     # Verify if check_grad is able to estimate the derivative of the
     # logistic function.
-
-    def logit(x):
-        return 1 / (1 + np.exp(-x))
-
-    def der_logit(x):
-        return np.exp(-x) / (1 + np.exp(-x))**2
-
     x0 = np.array([1.5])
 
     r = optimize.check_grad(logit, der_logit, x0)
@@ -592,11 +595,12 @@ class TestOptimizeSimple(CheckOptimize):
                                 callback=c, options={'maxiter': 5})
 
         assert_equal(res.nit, 5)
+        assert_equal(res.nit, c.nit)
         assert_almost_equal(res.x, c.x)
         assert_almost_equal(res.fun, c.fun)
         assert_equal(res.status, 1)
         assert_(res.success is False)
-        assert_equal(res.message.decode(), 'STOP: TOTAL NO. of ITERATIONS REACHED LIMIT')
+        assert_equal(res.message, 'STOP: TOTAL NO. of ITERATIONS REACHED LIMIT')
 
     def test_minimize_l_bfgs_b(self):
         # Minimize with L-BFGS-B method
@@ -1253,7 +1257,7 @@ class TestIterationLimits(object):
                       method=method, options={"maxfev":mfev})
                 assert_(self.funcalls == res["nfev"])
                 if res["success"]:
-                    assert_(res["nfev"] < mfev)
+                    assert_(res["nfev"] <= mfev)
                 else:
                     assert_(res["nfev"] >= mfev)
             for mit in [50, 500,5000]:
@@ -1285,3 +1289,372 @@ class TestIterationLimits(object):
                 else:
                     assert_(res["nfev"] >= default_iters*2 or
                         res["nit"] >= default_iters*2)
+
+
+class ExpSin(Function):
+    def __init__(self):
+        super(ExpSin, self).__init__()
+        self.func_calls = 0
+        self.grad_calls = 0
+        self.hess_calls = 0
+
+    def func(self, x):
+        self.func_calls += 1
+        return np.exp(-x[0]) + np.sin(x[1])
+
+    def grad(self, x):
+        self.grad_calls += 1
+        return np.array([-np.exp(-x[0]), np.cos(x[1])])
+
+    def hess(self, x):
+        self.hess_calls += 1
+        return np.exp(-x[0]) - np.sin(x[1])
+
+
+def expsin_f(x):
+    return np.exp(-x[0]) + np.sin(x[1])
+
+
+def expsin_g(x):
+    return np.array([-np.exp(-x[0]), np.cos(x[1])])
+
+
+def expsin_h(x):
+    return np.exp(-x[0]) - np.sin(x[1])
+
+
+class TestFunction(object):
+    def setup_method(self):
+        pass
+
+    def test_f(self):
+        x = [0.5, 0.5]
+        es = ExpSin()
+        f = es(x)
+
+        # evaluated Function is correct compared to
+        # function
+        assert_equal(f, expsin_f(x))
+        assert_almost_equal(f, 1.0859561983168364)
+
+        func = Function(func=expsin_f, grad=expsin_g)
+        # both func.__call__ and func.func work.
+        assert_equal(func(x), f)
+        assert_equal(func.f_calls, 1)
+        assert_equal(func.func(x), f)
+        assert_equal(func.f_calls, 1)
+        assert_equal(func.g_calls, 0)
+        assert_equal(func.h_calls, 0)
+
+        # func_and_grad works, with correct number of function
+        # calls
+        f_fg, g_fg = func.func_and_grad(x)
+        assert_equal(f_fg, f)
+        assert_equal(func.f_calls, 1)
+        assert_equal(func.g_calls, 1)
+
+        # test that function calls are correct for func_and_grad
+        # (numerical diff)
+        es = ExpSin()
+        func = Function(func=es.func)
+        f, g = func.func_and_grad(x)
+        assert_equal(func.f_calls, es.func_calls)
+
+    def test_g(self):
+        x = [0.5, 0.5]
+        es = ExpSin()
+
+        g_ana = es.grad(x)
+        # evaluated g is the same analytically and numerically
+        # function
+        func = Function(es.func, fd_method='2-point')
+        assert_allclose(func.grad(x), g_ana)
+
+        func = Function(es.func, fd_method='3-point')
+        assert_allclose(func.grad(x), g_ana)
+
+        func = Function(es.func, fd_method='abs')
+        assert_allclose(func.grad(x), g_ana)
+
+        # number of function/grad calls is correct
+        es = ExpSin()
+        g = es.grad(x)
+        assert_equal(es.func_calls, 0)
+
+        func = Function(es.func, fd_method='abs')
+        es.func_calls = 0
+        func.grad(x)
+        assert_equal(func.f_calls, es.func_calls)
+        assert_equal(func.g_calls, 1)
+
+        func = Function(es.func, fd_method='2-point')
+        es.func_calls = 0
+        func.grad(x)
+        assert_equal(func.f_calls, es.func_calls)
+        assert_equal(func.g_calls, 1)
+
+        func = Function(es.func, fd_method='3-point')
+        es.func_calls = 0
+        func.grad(x)
+        assert_equal(func.f_calls, es.func_calls)
+        assert_equal(func.g_calls, 1)
+
+    def test_grad_logit(self):
+        # Verify grad of logistic function
+        x0 = np.array([1.5])
+
+        func = Function(func=logit, grad=der_logit)
+        assert_allclose(func.grad(x0), der_logit(x0))
+
+        func = Function(func=logit, fd_method='3-point')
+        assert_allclose(func.grad(x0), der_logit(x0))
+
+        func = Function(func=logit, fd_method='2-point')
+        assert_allclose(func.grad(x0), der_logit(x0))
+
+        func = Function(func=logit, fd_method='abs')
+        assert_allclose(func.grad(x0), der_logit(x0))
+
+        # hand check absolute step finite difference
+        func = Function(func=logit, fd_method='abs', step=1e-1)
+        f0 = func(x0)
+        f1 = func(x0 + 0.1)
+        der = (f1 - f0) / 0.1
+        assert_allclose(func.grad(x0), der)
+
+    def test_fgh_berger(self):
+        berger = CheckOptimize()
+        berger.setup_method()
+
+        function = Function(func=berger.func, grad=berger.grad,
+                            hess=berger.hess)
+
+        solution = np.array([0., -0.524869316, 0.487525860])
+
+        assert_allclose(function.func(solution), berger.func(solution))
+        assert_allclose(function.grad(solution), berger.grad(solution))
+        assert_allclose(function.hess(solution), berger.hess(solution))
+
+        # check numdiff grad on Berger
+        function = Function(func=berger.func, fd_method='3-point')
+        assert_almost_equal(function.grad(solution), berger.grad(solution))
+
+        function = Function(func=berger.func, fd_method='2-point')
+        assert_almost_equal(function.grad(solution), berger.grad(solution))
+
+        function = Function(func=berger.func, fd_method='abs')
+        assert_almost_equal(function.grad(solution), berger.grad(solution))
+
+        # check Hessian on Berger
+        # numdiff from grad
+        function = Function(func=berger.func, grad=berger.grad,
+                            fd_method='3-point')
+        assert_allclose(function.hess(solution), berger.hess(solution),
+                        atol=1e-8)
+
+        # TODO THIS DOESN'T work with 'abs', and is not close enough with
+        # 3-point
+        # numdiff from func
+        function = Function(func=berger.func, fd_method='3-point')
+        assert_allclose(function.hess(solution+0.01),
+                            berger.hess(solution+0.01),
+                            atol=1e-5)
+
+    def test_args_kwargs(self):
+        # we want args and kwargs to be passed to the function we're trying
+        # to calculate.
+
+        # define new logit with arg and kwarg. Set the default to 2, so
+        # we know if the kwarg is set by the caller.
+        def logit(x, num, den=2):
+            return num / (den + np.exp(-x))
+
+        x0 = np.array([1.5])
+
+        # make a Function with the arg and kwarg
+        func = Function(func=logit, args=(1, ),kwargs={'den': 1},
+                        fd_method='3-point')
+
+        # check that the func and grad eval are correct.
+        assert_allclose(func.func(x0), logit(x0, 1, den=1))
+        assert_allclose(func.grad(x0), der_logit(x0))
+        f, g = func.func_and_grad(x0)
+        assert_allclose(f, logit(x0, 1, den=1))
+        assert_allclose(g, der_logit(x0))
+
+
+class Callback():
+    def __init__(self, limit_it=None, error_it=None):
+        self.counts = 0
+        self.x = []
+        # use limit_it to see if we should stop iteration early.
+        self.limit_it = limit_it
+        self.error_it = error_it
+
+    def __call__(self, res):
+        # res should be an intermediate OptimizeResult
+        assert_(isinstance(res, optimize.OptimizeResult))
+        self.counts += 1
+        self.x.append(res.x)
+        if self.counts == self.limit_it:
+            raise StopIteration
+        if self.error_it == self.counts:
+            raise RuntimeError
+
+
+@pytest.mark.parametrize("opt,args,kwargs", [
+    (Optimizer, (), {}),
+    (NelderMead, (), {'x0': [1.5]}),
+    (BFGS, (), {'x0': [1.5], 'gtol':1e-4}),
+    (LBFGSB, (), {'x0': [1.5]}),
+])
+class Test_Optimizer(object):
+    # Optimizer base class functionality
+
+    def setup_method(self):
+        pass
+
+    def test_initalisation(self, opt, args, kwargs):
+        # optimizer object must fail __init__ if not passed Function.
+        with pytest.raises(ValueError):
+            opt(None, *args, **kwargs)
+
+    def test_func(self, opt, args, kwargs):
+        # test that the optimizer itself can calculate a func, gradient
+        # and with the correct number of function calls.
+        func = Function(func=logit, fd_method='3-point')
+        x0 = np.array([1.5])
+        optimizer = opt(func, *args, **kwargs)
+
+        assert_equal(optimizer.func(x0), logit((x0)))
+        assert_equal(optimizer.nfev, 1)
+        assert_allclose(optimizer.grad(x0), der_logit(x0))
+        # a grad call with 3 point central difference should require 3 func
+        # calls
+        assert_equal(optimizer.nfev, 4)
+        assert_equal(optimizer.njev, 1)
+        _ = optimizer.func_and_grad(x0)
+        assert_equal(optimizer.nfev, 7)
+        assert_equal(optimizer.njev, 2)
+
+        func = Function(func=logit, grad=der_logit)
+        optimizer = opt(func, *args, **kwargs)
+        _ = optimizer.grad(x0)
+        assert_equal(optimizer.nfev, 0)
+        assert_equal(optimizer.njev, 1)
+
+    def test_attributes(self, opt, args, kwargs):
+        # this is also a loose test to see if the super class init has been
+        # called, as all these attributes should be present.
+        optimizer = opt(Function(logit), *args, **kwargs)
+
+        required_attr = ['x', 'fun', 'status', 'message', 'warn_flag', 'nit',
+                         'options', '_hyper']
+
+        assert_(np.all([hasattr(optimizer, attr) for attr in required_attr]))
+
+    def test_smoke(self, opt, args, kwargs):
+        # smoke test for Optimizers with rosen to check if thing runs
+        if opt is Optimizer:
+            return
+
+        func = Function(optimize.rosen)
+        kwargs['x0'] = np.array([1.1, 1.1])
+
+        # TODO: tighten gtol for BFGS, investigate whether warn_flag can be
+        # amended to allow success if line search fails to find better solution
+        callee = Callback()
+        optimizer = opt(func, *args, **kwargs)
+        res = optimizer.solve(maxiter=1000, callback=callee)
+        assert_equal(res.nit, callee.counts)
+        assert_equal(optimizer.nit, callee.counts)
+        assert_(res.nit <= 1000)
+        # all the optimizers should pass on Rosen, especially when we're so
+        # close to the solution.
+        assert_(optimizer.converged())
+        assert_(res.success)
+        assert_(optimizer.warn_flag == 0)
+        assert_equal(optimizer.fun, res.fun)
+        assert_equal(res.x, callee.x[-1])
+        assert_equal(optimizer.x, callee.x[-1])
+
+        # examine if the problem dimensionality is correct
+        assert_equal(optimizer.N, 2)
+
+        # solve shouldn't run if maxiter is 0.
+        callee = Callback()
+        optimizer = opt(func, *args, **kwargs)
+        res = optimizer.solve(maxiter=0, callback=callee)
+        assert_equal(callee.counts, 0)
+        assert_equal(optimizer.nit, 0)
+        assert_equal(res.nit, optimizer.nit)
+
+        # solve shouldn't run if maxfun is 0.
+        # NOTE optimizer.nfev will be 1, because as a minimum the optimizer
+        # has to have function evaluated for the result.
+        callee = Callback()
+        optimizer = opt(func, *args, **kwargs)
+        res = optimizer.solve(maxfun=0, callback=callee)
+        assert_equal(callee.counts, 0)
+        assert_equal(optimizer.nfev, 1)
+        assert_equal(optimizer.fun, func(res.x))
+
+        # test that stepwise iteration is possible. This will check that
+        # __next__ is overridden otherwise there will be a NotImplemented Error
+        optimizer = opt(func, *args, **kwargs)
+        x, f = next(optimizer)
+        assert_equal(optimizer.nit, 1)
+
+        # tests that the result from the iterator is a copy. This is because
+        # users may not expect arrays to be passed by reference.
+        assert_(id(x) is not id(optimizer.x))
+
+        # test __call__ method
+        callee = Callback()
+        optimizer = opt(func, *args, **kwargs)
+        res = optimizer(5, callback=callee)
+        assert_equal(callee.counts, 5)
+        assert_equal(optimizer.nit, 5)
+        # we only asked for a small amount of iterations, so we should hit
+        # limit
+        assert_(optimizer.warn_flag != 0)
+
+        # test that iteration halts if callback raises StopIteration
+        callee = Callback(limit_it=2)
+        optimizer = opt(func, *args, **kwargs)
+        res = optimizer.solve(callback=callee)
+        assert_equal(callee.counts, 2)
+        assert_equal(optimizer.nit, 2)
+
+        # test that iteration halts if function raises StopIteration
+        # with only 3 function evaluations it shouldn't have converged
+        # (unless it's a super solver).
+        def fwrapper(function):
+            calls = [0]
+
+            def wrapped_fun(x):
+                val = function(x)
+                calls[0] += 1
+                if calls[0] == 3:
+                    raise StopIteration
+                return val
+
+            return wrapped_fun
+
+        func = Function(fwrapper(optimize.rosen))
+        optimizer = opt(func, *args, **kwargs)
+        res = optimizer.solve()
+        assert_(not res.success)
+
+        # test that if callback raises other errors they are still raised.
+        optimizer = opt(func, *args, **kwargs)
+        with pytest.raises(RuntimeError):
+            callee = Callback(error_it=2)
+            res = optimizer.solve(callback=callee)
+        assert_equal(optimizer.nit, 2)
+
+        # test that the context manager works
+        with opt(func, *args, **kwargs) as optimizer:
+            # more detailed _finish_up behaviour should be tested for each
+            # Optimizer
+            res = optimizer.solve()
