@@ -81,6 +81,8 @@ def equality_constrained_sqp(fun_and_constr, grad_and_jac, lagr_hess,
     Z, LS, Y = projections(A, factorization_method)
     # Compute least-square lagrange multipliers
     v = -LS.dot(c)
+    # Compute Hessian
+    H = lagr_hess(x, v)
 
     # Update state parameters
     optimality = norm(c + A.T.dot(v), np.inf)
@@ -92,10 +94,6 @@ def equality_constrained_sqp(fun_and_constr, grad_and_jac, lagr_hess,
     while not stop_criteria(state, x, last_iteration_failed,
                             optimality, constr_violation,
                             trust_radius, penalty, cg_info):
-        # Compute Lagrangian Hessian
-        if not last_iteration_failed:
-            H = lagr_hess(x, v)
-
         # Normal Step - `dn`
         # minimize 1/2*||A dn + b||^2
         # subject to:
@@ -106,7 +104,7 @@ def equality_constrained_sqp(fun_and_constr, grad_and_jac, lagr_hess,
                              BOX_FACTOR*trust_lb,
                              BOX_FACTOR*trust_ub)
 
-        # Tangential Step - `dn`
+        # Tangential Step - `dt`
         # Solve the QP problem:
         # minimize 1/2 dt.T H dt + dt.T (H dn + c)
         # subject to:
@@ -206,6 +204,8 @@ def equality_constrained_sqp(fun_and_constr, grad_and_jac, lagr_hess,
             Z, LS, Y = projections(A, factorization_method)
             # Compute least-square lagrange multipliers
             v = -LS.dot(c)
+            # Compute Hessian
+            H = lagr_hess(x, v)
             # Set Flag
             last_iteration_failed = False
             # Otimality values
