@@ -380,12 +380,6 @@ def test_atol(solver):
         residual = A.dot(x) - b
         err = np.linalg.norm(residual)
         atol2 = tol * b_norm
-
-        # XXX: cg and cgs use approximate residual for termination
-        if solver in (cg, cgs):
-            atol *= 2
-            atol2 *= 2
-
         assert_(err <= max(atol, atol2))
 
 
@@ -406,7 +400,15 @@ def test_zero_rhs(solver):
             assert_equal(info, 0)
             assert_allclose(x, 0, atol=1e-15)
 
+            x, info = solver(A, b, tol=tol, x0=ones(10))
+            assert_equal(info, 0)
+            assert_allclose(x, 0, atol=tol)
+
             if solver is not minres:
+                x, info = solver(A, b, tol=tol, atol=0, x0=ones(10))
+                if info == 0:
+                    assert_allclose(x, 0)
+
                 x, info = solver(A, b, tol=tol, atol=tol)
                 assert_equal(info, 0)
                 assert_allclose(x, 0, atol=1e-300)

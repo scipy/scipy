@@ -317,6 +317,11 @@ def cg(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None):
                 info = -1
                 ftflag = False
             resid, info = _stoptest(work[slice1], atol)
+            if info == 1 and iter_ > 1:
+                # recompute residual and recheck, to avoid
+                # accumulating rounding error
+                work[slice1] = b - matvec(x)
+                resid, info = _stoptest(work[slice1], atol)
         ijob = 2
 
     if info > 0 and iter_ == maxiter and not (resid <= atol):
@@ -380,7 +385,18 @@ def cgs(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None)
                 info = -1
                 ftflag = False
             resid, info = _stoptest(work[slice1], atol)
+            if info == 1 and iter_ > 1:
+                # recompute residual and recheck, to avoid
+                # accumulating rounding error
+                work[slice1] = b - matvec(x)
+                resid, info = _stoptest(work[slice1], atol)
         ijob = 2
+
+    if info == -10:
+        # termination due to breakdown: check for convergence
+        resid, ok = _stoptest(b - matvec(x), atol)
+        if ok:
+            info = 0
 
     if info > 0 and iter_ == maxiter and not (resid <= atol):
         # info isn't set appropriately otherwise
