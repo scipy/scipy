@@ -10,8 +10,11 @@ from ._large_scale_constrained import (tr_interior_point,
                                        equality_constrained_sqp)
 from warnings import warn
 from copy import deepcopy
+from scipy.sparse.linalg import LinearOperator
+import scipy.sparse as spc
 import time
 from .optimize import OptimizeResult
+from ._numdiff import approx_derivative
 
 
 TERMINATION_MESSAGES = {
@@ -20,6 +23,21 @@ TERMINATION_MESSAGES = {
     2: "`xtol` termination condition is satisfied.",
     3: "`callback` function requested termination"
 }
+
+
+class Memoize:
+    "Memoize decorator, used to avoid repeated calls to the same function."
+    def __init__(self, x0, f0):
+        self._x = x0
+        self._f = f0
+
+    def __call__(self, function):
+        def new_function(x):
+            if not np.array_equal(x, self._x):
+                self._x = x
+                self._f = function(x)
+            return self._f
+        return new_function
 
 
 class sqp_printer:
@@ -75,7 +93,7 @@ class ip_printer:
         print("")
 
 
-def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
+def minimize_constrained(fun, x0, grad, hess='2-point', constraints=(),
                          method=None, xtol=1e-8, gtol=1e-8,
                          sparse_jacobian=None, options={},
                          callback=None, max_iter=1000,
@@ -99,13 +117,21 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
             grad(x) -> array_like, shape (n,)
 
         where x is an array with shape (n,).
-    hess : {callable, None}, optional
-        Hessian of the objective function:
+    hess : {callable, '2-point', '3-point', 'cs', None}, optional
+        Method for computing the Hessian matrix. The keywords
+        select a finite difference scheme for numerical
+        estimation. The scheme '3-point' is more accurate, but requires
+        twice as much operations compared to '2-point' (default). The
+        scheme 'cs' uses complex steps, and while potentially the most
+        accurate, it is applicable only when `fun` correctly handles
+        complex inputs and can be analytically continued to the complex
+        plane. If it is a callable, it should return the 
+        Hessian matrix of `dot(fun, v)`:
 
-            hess(x) -> {LinearOperator, sparse matrix,  ndarray}, shape (n, n)
+            hess(x, v) -> {LinearOperator, sparse matrix, ndarray}, shape (n, n)
 
-        where x is an array with shape (n,). When ``hess`` is None it considers
-        the hessian is an matrix filled with zeros.
+        where x is a (n,) ndarray and v is a (m,) ndarray. When ``hess``
+        is None it considers the hessian is an matrix filled with zeros.
     constraints : Constraint or List of Constraint's, optional
         A single object or a list of objects specifying
         constraints to the optimization problem.
@@ -347,12 +373,53 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
     # Initial value
     x0 = np.atleast_1d(x0).astype(float)
     n_vars = np.size(x0)
+
     # Evaluate initial point
     f0 = fun(x0)
     g0 = np.atleast_1d(grad(x0))
 
-    def grad_wrapped(x):
-        return np.atleast_1d(grad(x))
+    # Define Gradient
+    if hess in ('2-point', '3-point', 'cs'):
+        # Need to memoize gradient wrapper in order
+        # to avoid repeated calls that occur
+        # when using finite differences.
+        @Memoize(x0, g0)
+        def grad_wrapped(x):
+            return np.atleast_1d(grad(x))
+
+    else:
+        def grad_wrapped(x):
+            return np.atleast_1d(grad(x))
+
+    # Check Hessian
+    if callable(hess):
+        H0 = hess(x0)
+
+        if spc.issparse(H0):
+            H0 = spc.csr_matrix(H0)
+
+            def hess_wrapped(x):
+                return spc.csr_matrix(hess(x))
+
+        elif isinstance(H0, LinearOperator):
+            def hess_wrapped(x):
+                return hess(x)
+
+        else:
+            H0 = np.atleast_2d(np.asarray(H0))
+
+            def hess_wrapped(x):
+                return np.atleast_2d(np.asarray(hess(x)))
+
+    elif hess in ('2-point', '3-point', 'cs'):
+        approx_method = hess
+
+        def hess_wrapped(x):
+            return approx_derivative(grad_wrapped, x, approx_method,
+                                     as_linear_operator=True)
+
+    else:
+        hess_wrapped = hess
 
     # Put constraints in list format when needed
     if isinstance(constraints, (NonlinearConstraint,
@@ -370,7 +437,7 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
         constr = to_canonical(copied_constraints)
 
     # Generate Lagrangian hess function
-    lagr_hess = lagrangian_hessian(constr, hess)
+    lagr_hess = lagrangian_hessian(constr, hess_wrapped)
 
     # Construct OptimizeResult
     state = OptimizeResult(niter=0, nfev=1, ngev=1,

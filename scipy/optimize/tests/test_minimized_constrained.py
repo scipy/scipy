@@ -49,6 +49,12 @@ class Maratos:
         return NonlinearConstraint(fun, ("equals", 1), jac, hess)
 
 
+class MaratosApproxHess(Maratos):
+    @property
+    def hess(self):
+        return '3-point'
+
+
 class HyperbolicIneq:
     """Problem 15.1 from Nocedal and Wright
 
@@ -86,6 +92,12 @@ class HyperbolicIneq:
         nonlinear = NonlinearConstraint(fun, ("greater", 1/4), jac, hess)
         box = BoxConstraint(("greater",))
         return (nonlinear, box)
+
+
+class HyperbolicIneqApproxHess(HyperbolicIneq):
+    @property
+    def hess(self):
+        return '3-point'
 
 
 class Rosenbrock:
@@ -297,11 +309,19 @@ class Elec:
         return NonlinearConstraint(fun, ("less",), jac, hess)
 
 
+class ElecApproxHess(Elec):
+    @property
+    def hess(self):
+        return '2-point'
+
+
 class TestMinimizeConstrained(TestCase):
 
     def test_list_of_problems(self):
         list_of_problems = [Maratos(),
+                            MaratosApproxHess(),
                             HyperbolicIneq(),
+                            HyperbolicIneqApproxHess(),
                             Rosenbrock(),
                             Rosenbrock(n=10),
                             IneqRosenbrock(),
@@ -311,6 +331,40 @@ class TestMinimizeConstrained(TestCase):
         for prob in list_of_problems:
             result = minimize_constrained(prob.fun, prob.x0,
                                           prob.grad, prob.hess,
+                                          prob.constr)
+
+            if prob.x_opt is not None:
+                assert_array_almost_equal(result.x, prob.x_opt, decimal=5)
+
+            # gtol
+            if result.status == 1:
+                assert_array_less(result.optimality, 1e-8)
+
+            # xtol
+            if result.status == 2:
+                assert_array_less(result.trust_radius, 1e-8)
+
+                if result.method == "tr_interior_point":
+                    assert_array_less(result.barrier_parameter, 1e-8)
+
+            # max iter
+            if result.status in (0, 3):
+                raise RuntimeError("Invalid termination condition.")
+
+    def test_approximated_hessian(self):
+        list_of_problems = [Maratos(),
+                            MaratosApproxHess(),
+                            HyperbolicIneq(),
+                            HyperbolicIneqApproxHess(),
+                            Rosenbrock(),
+                            Rosenbrock(n=10),
+                            IneqRosenbrock(),
+                            EqIneqRosenbrock(),
+                            Elec(n_electrons=10)]
+
+        for prob in list_of_problems:
+            result = minimize_constrained(prob.fun, prob.x0,
+                                          prob.grad, '2-point',
                                           prob.constr)
 
             if prob.x_opt is not None:
