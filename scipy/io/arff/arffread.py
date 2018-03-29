@@ -659,6 +659,7 @@ def test_weka(filename):
     for i in meta:
         print_attribute(i, meta[i], data[i])
 
+
 # make sure nose does not find this as a test
 test_weka.__test__ = False
 

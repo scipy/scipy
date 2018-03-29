@@ -45,6 +45,18 @@ can now accept an array. This array allows the user to specify the entire
 population.
 
 
+`scipy.signal` improvements
+---------------------------
+
+Three new functions for peak finding in one-dimensional arrays were added.
+`scipy.signal.find_peaks` searches for peaks (local maxima) based on simple value
+comparison of neighbouring samples and returns those peaks whose properties match
+optionally specified conditions for their height, prominence, width, threshold
+and distance to each other. `scipy.signal.peak_prominences` and
+`scipy.signal.peak_width` can directly calculate the prominences or widths of
+known peaks.
+
+
 `scipy.sparse` improvements
 ----------------------------
 

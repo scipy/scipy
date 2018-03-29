@@ -11,6 +11,7 @@
 *     Eijkhout, Pozo, Romine, and van der Vorst, SIAM Publications,
 *     1993. (ftp netlib2.cs.utk.edu; cd linalg; get templates.ps).
 *
+      IMPLICIT NONE
 *     .. Scalar Arguments ..
       INTEGER            N, LDW, ITER, INFO 
       <rt=real,double precision,real,double precision>   RESID
@@ -58,7 +59,7 @@
 *
 *  RESID   (input/output) DOUBLE PRECISION
 *          On input, the allowable convergence measure for
-*          norm( b - A*x ) / norm( b ).
+*          norm( b - A*x ).
 *          On output, the final value of this measure.
 *
 *  INFO    (output) INTEGER
@@ -113,7 +114,7 @@
 *     .. Local Scalars ..
       INTEGER            R, RTLD, P, PHAT, V, S, SHAT, T, MAXIT,
      $                   NEED1, NEED2
-      <rt>   TOL, BNRM2, 
+      <rt>   TOL,
      $     RHOTOL, OMEGATOL, <sdsd=s,d,s,d>GETBREAK, 
      $     <rc=ws,d,wsc,dz>NRM2
       <_t>   ALPHA, BETA, RHO, RHO1, OMEGA, TMPVAL,
@@ -254,9 +255,6 @@
 
       CALL <_c>COPY( N, WORK(1,R), 1, WORK(1,RTLD), 1 )
 *
-      BNRM2 = <rc>NRM2( N, B, 1 )
-      IF ( BNRM2 .EQ. ZERO ) BNRM2 = ONE
-*
       ITER = 0
 *
    10 CONTINUE
@@ -318,7 +316,7 @@
       CALL <_c>COPY( N, WORK(1,R), 1, WORK(1,S), 1 )
       IF ( <rc>NRM2( N, WORK(1,S), 1 ).LE.TOL ) THEN
          CALL <_c>AXPY( N, ALPHA, WORK(1,PHAT), 1, X, 1 )
-         RESID = <rc>NRM2( N, WORK(1,S), 1 ) / BNRM2
+         RESID = <rc>NRM2( N, WORK(1,S), 1 )
          GO TO 30
       ELSE
 *

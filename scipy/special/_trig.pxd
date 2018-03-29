@@ -3,7 +3,7 @@
 # floating point), it's possible to compute them with greater accuracy
 # than sin(z), cos(z).
 #
-from libc.math cimport sin, cos, sinh, cosh, exp, fabs, ceil, M_PI
+from libc.math cimport sin, cos, sinh, cosh, exp, fabs, fmod, M_PI
 from ._complexstuff cimport number_t, double_complex, zpack
 
 cdef extern from "numpy/npy_math.h":
@@ -16,63 +16,37 @@ DEF TOL = 2.220446049250313e-16
 cdef inline double dsinpi(double x) nogil:
     """Compute sin(pi*x) for real arguments."""
     cdef:
-        double p = ceil(x)
-        double hp = p/2
+        double s = 1.0
+        double r
 
-    # Make p the even integer closest to x
-    if hp != ceil(hp):
-        p -= 1
-    # x is in (-1, 1]
-    x -= p
-    # Reflect x in (0.5, 1] to [0, 0.5).
-    if x > 0.5:
-        x = 1 - x
-    # Reflect x in (-1, -0.5) to (-0.5, 0)
-    if x < -0.5:
-        x = -1 - x
-    return sin(M_PI*x)
+    if x < 0.0:
+        x = -x
+        s = -1.0
 
-
-cdef inline double cospi_taylor(double x) nogil:
-    """
-    Taylor series for cos(pi*x) around x = 0.5. Since the root is
-    exactly representable in double precision we get gains over
-    just using cos(z) here.
-
-    """
-    cdef:
-        int n
-        double xx, term, res
-
-    x = M_PI*(x - 0.5)
-    xx = x*x
-    term = -x
-    res = term
-    for n in range(1, 20):
-        term *= -xx/((2*n + 1)*(2*n))
-        res += term
-        if fabs(term) <= TOL*fabs(res):
-            break
-    return res
+    r = fmod(x, 2.0)
+    if r < 0.5:
+        return s*sin(M_PI*r)
+    elif r > 1.5:
+        return s*sin(M_PI*(r - 2.0))
+    else:
+        return -s*sin(M_PI*(r - 1.0))
 
 
 cdef inline double dcospi(double x) nogil:
     """Compute cos(pi*x) for real arguments."""
-    cdef:
-        double p = ceil(x)
-        double hp = p/2
+    cdef double r
 
-    # Make p the even integer closest to x
-    if hp != ceil(hp):
-        p -= 1
-    # x is in (-1, 1].
-    x -= p
-    if fabs(x - 0.5) < 0.2:
-        return cospi_taylor(x)
-    elif fabs(x + 0.5) < 0.2:
-        return cospi_taylor(-x)
+    if x < 0.0:
+        x = -x
+
+    r = fmod(x, 2.0)
+    if r == 0.5:
+        # We don't want to return -0.0
+        return 0.0
+    if r < 1.0:
+        return -sin(M_PI*(r - 0.5))
     else:
-        return cos(M_PI*x)
+        return sin(M_PI*(r - 1.5))
 
 
 cdef inline double complex csinpi(double complex z) nogil:

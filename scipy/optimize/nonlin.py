@@ -163,6 +163,7 @@ def _safe_norm(v):
 # Generic nonlinear solver machinery
 #------------------------------------------------------------------------------
 
+
 _doc_parts = dict(
     params_basic="""
     F : function(x) -> f
@@ -362,6 +363,7 @@ def nonlin_solve(F, x0, jacobian='krylov', iter=None, verbose=False,
         return _array_like(x, x0), info
     else:
         return _array_like(x, x0)
+
 
 _set_doc(nonlin_solve)
 
@@ -881,6 +883,7 @@ class LowRankMatrix(object):
 
         del self.cs[q:]
         del self.ds[q:]
+
 
 _doc_parts['broyden_params'] = """
     alpha : float, optional
@@ -1416,6 +1419,9 @@ class KrylovJacobian(Jacobian):
             # Replace GMRES's outer iteration with Newton steps
             self.method_kw['restrt'] = inner_maxiter
             self.method_kw['maxiter'] = 1
+            self.method_kw.setdefault('atol', 0)
+        elif self.method is scipy.sparse.linalg.gcrotmk:
+            self.method_kw.setdefault('atol', 0)
         elif self.method is scipy.sparse.linalg.lgmres:
             self.method_kw['outer_k'] = outer_k
             # Replace LGMRES's outer iteration with Newton steps
@@ -1430,6 +1436,7 @@ class KrylovJacobian(Jacobian):
             #      See eg. Brown & Saad. But needs to be implemented separately
             #      since it's not an inexact Newton method.
             self.method_kw.setdefault('store_outer_Av', False)
+            self.method_kw.setdefault('atol', 0)
 
         for key, value in kw.items():
             if not key.startswith('inner_'):
@@ -1528,6 +1535,7 @@ def %(name)s(F, xin, iter=None %(kw)s, verbose=False, maxiter=None,
     func.__doc__ = jac.__doc__
     _set_doc(func)
     return func
+
 
 broyden1 = _nonlin_wrapper('broyden1', BroydenFirst)
 broyden2 = _nonlin_wrapper('broyden2', BroydenSecond)

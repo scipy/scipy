@@ -62,7 +62,7 @@ fails_cmplx = set(['beta', 'betaprime', 'chi', 'chi2', 'dgamma', 'dweibull',
                    'erlang', 'f', 'gamma', 'gausshyper', 'gengamma',
                    'gennorm', 'genpareto', 'halfgennorm', 'invgamma',
                    'ksone', 'kstwobign', 'levy_l', 'loggamma', 'logistic',
-                   'maxwell', 'nakagami', 'ncf', 'nct', 'ncx2',
+                   'maxwell', 'nakagami', 'ncf', 'nct', 'ncx2', 'norminvgauss',
                    'pearson3', 'rice', 't', 'skewnorm', 'tukeylambda',
                    'vonmises', 'vonmises_line', 'rv_histogram_instance'])
 
@@ -231,9 +231,8 @@ def test_rvs_broadcast(dist, shape_args):
     # implementation detail of the distribution, not a requirement.  If
     # the implementation the rvs() method of a distribution changes, this
     # test might also have to be changed.
-    shape_only = dist in ['betaprime', 'dgamma', 'exponnorm',
-                          'nct', 'dweibull', 'rice', 'levy_stable',
-                          'skewnorm']
+    shape_only = dist in ['betaprime', 'dgamma', 'exponnorm', 'norminvgauss',
+                          'nct', 'dweibull', 'rice', 'levy_stable', 'skewnorm']
 
     distfunc = getattr(stats, dist)
     loc = np.zeros(2)

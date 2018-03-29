@@ -983,88 +983,6 @@ C
 
 
 
-C       **********************************
-
-        SUBROUTINE CSPHJY(N,Z,NM,CSJ,CDJ,CSY,CDY)
-C
-C       ==========================================================
-C       Purpose: Compute spherical Bessel functions jn(z) & yn(z)
-C                and their derivatives for a complex argument
-C       Input :  z --- Complex argument
-C                n --- Order of jn(z) & yn(z) ( n = 0,1,2,... )
-C       Output:  CSJ(n) --- jn(z)
-C                CDJ(n) --- jn'(z)
-C                CSY(n) --- yn(z)
-C                CDY(n) --- yn'(z)
-C                NM --- Highest order computed
-C       Routines called:
-C                MSTA1 and MSTA2 for computing the starting
-C                point for backward recurrence
-C       ==========================================================
-C
-        IMPLICIT COMPLEX*16 (C,Z)
-        DOUBLE PRECISION A0
-        DIMENSION CSJ(0:N),CDJ(0:N),CSY(0:N),CDY(0:N)
-        A0=CDABS(Z)
-        NM=N
-        IF (A0.LT.1.0D-60) THEN
-           DO 10 K=0,N
-              CSJ(K)=0.0D0
-              CDJ(K)=0.0D0
-              CSY(K)=-1.0D+300
-10            CDY(K)=1.0D+300
-           CSJ(0)=(1.0D0,0.0D0)
-           IF (N.GT.0) THEN
-              CDJ(1)=(.333333333333333D0,0.0D0)
-           ENDIF
-           RETURN
-        ENDIF
-        CSJ(0)=CDSIN(Z)/Z
-        CDJ(0)=(CDCOS(Z)-CDSIN(Z)/Z)/Z
-        CSY(0)=-CDCOS(Z)/Z
-        CDY(0)=(CDSIN(Z)+CDCOS(Z)/Z)/Z
-        IF (N.LT.1) THEN
-           RETURN
-        ENDIF
-        CSJ(1)=(CSJ(0)-CDCOS(Z))/Z
-        IF (N.GE.2) THEN
-           CSA=CSJ(0)
-           CSB=CSJ(1)
-           M=MSTA1(A0,200)
-           IF (M.LT.N) THEN
-              NM=M
-           ELSE
-              M=MSTA2(A0,N,15)
-           ENDIF
-           CF0=0.0D0
-           CF1=1.0D0-100
-           DO 15 K=M,0,-1
-              CF=(2.0D0*K+3.0D0)*CF1/Z-CF0
-              IF (K.LE.NM) CSJ(K)=CF
-              CF0=CF1
-15            CF1=CF
-           IF (CDABS(CSA).GT.CDABS(CSB)) CS=CSA/CF1
-           IF (CDABS(CSA).LE.CDABS(CSB)) CS=CSB/CF0
-           DO 20 K=0,NM
-20            CSJ(K)=CS*CSJ(K)
-        ENDIF
-        DO 25 K=1,NM
-25         CDJ(K)=CSJ(K-1)-(K+1.0D0)*CSJ(K)/Z
-        CSY(1)=(CSY(0)-CDSIN(Z))/Z
-        CDY(1)=(2.0D0*CDY(0)-CDCOS(Z))/Z
-        DO 30 K=2,NM
-           IF (CDABS(CSJ(K-1)).GT.CDABS(CSJ(K-2))) THEN
-              CSY(K)=(CSJ(K)*CSY(K-1)-1.0D0/(Z*Z))/CSJ(K-1)
-           ELSE
-              CSY(K)=(CSJ(K)*CSY(K-2)-(2.0D0*K-1.0D0)/Z**3)/CSJ(K-2)
-           ENDIF
-30      CONTINUE
-        DO 35 K=2,NM
-35         CDY(K)=CSY(K-1)-(K+1.0D0)*CSY(K)/Z
-        RETURN
-        END
-
-
         INTEGER FUNCTION MSTA1(X,MP)
 C
 C       ===================================================
@@ -9712,87 +9630,6 @@ C
 
 C       **********************************
 
-        SUBROUTINE CSPHIK(N,Z,NM,CSI,CDI,CSK,CDK)
-C
-C       =======================================================
-C       Purpose: Compute modified spherical Bessel functions
-C                and their derivatives for a complex argument
-C       Input :  z --- Complex argument
-C                n --- Order of in(z) & kn(z) ( n = 0,1,2,... )
-C       Output:  CSI(n) --- in(z)
-C                CDI(n) --- in'(z)
-C                CSK(n) --- kn(z)
-C                CDK(n) --- kn'(z)
-C                NM --- Highest order computed
-C       Routines called:
-C                MSTA1 and MSTA2 for computing the starting
-C                point for backward recurrence
-C       =======================================================
-C
-        IMPLICIT COMPLEX*16 (C,Z)
-        DOUBLE PRECISION A0,PI
-        DIMENSION CSI(0:N),CDI(0:N),CSK(0:N),CDK(0:N)
-        PI=3.141592653589793D0
-        A0=CDABS(Z)
-        NM=N
-        IF (A0.LT.1.0D-60) THEN
-           DO 10 K=0,N
-              CSI(K)=0.0D0
-              CDI(K)=0.0D0
-              CSK(K)=1.0D+300
-10            CDK(K)=-1.0D+300
-           CSI(0)=1.0D0
-           CDI(1)=0.3333333333333333D0
-           RETURN
-        ENDIF
-        CI = DCMPLX(0.0D0, 1.0D0)
-        CSINH=CDSIN(CI*Z)/CI
-        CCOSH=CDCOS(CI*Z)
-        CSI0=CSINH/Z
-        CSI1=(-CSINH/Z+CCOSH)/Z
-        CSI(0)=CSI0
-        CSI(1)=CSI1
-        IF (N.GE.2) THEN
-           M=MSTA1(A0,200)
-           IF (M.LT.N) THEN
-              NM=M
-           ELSE
-              M=MSTA2(A0,N,15)
-           ENDIF
-           CF0=0.0D0
-           CF1=1.0D0-100
-           DO 15 K=M,0,-1
-              CF=(2.0D0*K+3.0D0)*CF1/Z+CF0
-              IF (K.LE.NM) CSI(K)=CF
-              CF0=CF1
-15            CF1=CF
-           IF (CDABS(CSI0).GT.CDABS(CSI1)) CS=CSI0/CF
-           IF (CDABS(CSI0).LE.CDABS(CSI1)) CS=CSI1/CF0
-           DO 20 K=0,NM
-20            CSI(K)=CS*CSI(K)
-        ENDIF
-        CDI(0)=CSI(1)
-        DO 25 K=1,NM
-25         CDI(K)=CSI(K-1)-(K+1.0D0)*CSI(K)/Z
-        CSK(0)=0.5D0*PI/Z*CDEXP(-Z)
-        CSK(1)=CSK(0)*(1.0D0+1.0D0/Z)
-        DO 30 K=2,NM
-           IF (CDABS(CSI(K-1)).GT.CDABS(CSI(K-2))) THEN
-              CSK(K)=(0.5D0*PI/(Z*Z)-CSI(K)*CSK(K-1))/CSI(K-1)
-           ELSE
-              CSK(K)=(CSI(K)*CSK(K-2)+(K-0.5D0)*PI/Z**3)/CSI(K-2)
-           ENDIF
-30      CONTINUE
-        CDK(0)=-CSK(1)
-        DO 35 K=1,NM
-35         CDK(K)=-CSK(K-1)-(K+1.0D0)*CSK(K)/Z
-        RETURN
-        END
-
-
-
-C       **********************************
-
         SUBROUTINE BJNDD(N,X,BJ,DJ,FJ)
 C
 C       =====================================================
@@ -9836,7 +9673,7 @@ C       **********************************
 
 
         SUBROUTINE SPHJ(N,X,NM,SJ,DJ)
-C       MODIFIED to ALLOW N=0 CASE (ALSO IN CSPHJY, SPHY)
+C       MODIFIED to ALLOW N=0 CASE (ALSO IN SPHY)
 C
 C       =======================================================
 C       Purpose: Compute spherical Bessel functions jn(x) and

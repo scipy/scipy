@@ -31,84 +31,10 @@
 
 #include "ni_support.h"
 #include "ni_interpolation.h"
+#include "ni_splines.h"
 #include <stdlib.h>
 #include <math.h>
 
-/* calculate the B-spline interpolation coefficients for given x: */
-static void
-spline_coefficients(double x, int order, double *result)
-{
-    int hh;
-    double y, start;
-
-    if (order & 1) {
-        start = (int)floor(x) - order / 2;
-    } else {
-        start = (int)floor(x + 0.5) - order / 2;
-    }
-
-    for(hh = 0; hh <= order; hh++)  {
-        y = fabs(start - x + hh);
-
-        switch(order) {
-        case 1:
-            result[hh] = y > 1.0 ? 0.0 : 1.0 - y;
-            break;
-        case 2:
-            if (y < 0.5) {
-                result[hh] = 0.75 - y * y;
-            } else if (y < 1.5) {
-                y = 1.5 - y;
-                result[hh] = 0.5 * y * y;
-            } else {
-                result[hh] = 0.0;
-            }
-            break;
-        case 3:
-            if (y < 1.0) {
-                result[hh] =
-                    (y * y * (y - 2.0) * 3.0 + 4.0) / 6.0;
-            } else if (y < 2.0) {
-                y = 2.0 - y;
-                result[hh] = y * y * y / 6.0;
-            } else {
-                result[hh] = 0.0;
-            }
-            break;
-        case 4:
-            if (y < 0.5) {
-                y *= y;
-                result[hh] = y * (y * 0.25 - 0.625) + 115.0 / 192.0;
-            } else if (y < 1.5) {
-                result[hh] = y * (y * (y * (5.0 / 6.0 - y / 6.0) - 1.25) +
-                                                    5.0 / 24.0) + 55.0 / 96.0;
-            } else if (y < 2.5) {
-                y -= 2.5;
-                y *= y;
-                result[hh] = y * y / 24.0;
-            } else {
-                result[hh] = 0.0;
-            }
-            break;
-        case 5:
-            if (y < 1.0) {
-                double f = y * y;
-                result[hh] =
-                    f * (f * (0.25 - y / 12.0) - 0.5) + 0.55;
-            } else if (y < 2.0) {
-                result[hh] = y * (y * (y * (y * (y / 24.0 - 0.375)
-                                                                        + 1.25) -  1.75) + 0.625) + 0.425;
-            } else if (y < 3.0) {
-                double f = 3.0 - y;
-                y = f * f;
-                result[hh] = f * y * y / 120.0;
-            } else {
-                result[hh] = 0.0;
-            }
-            break;
-        }
-    }
-}
 
 /* map a coordinate outside the borders, according to the requested
      boundary condition: */
@@ -198,13 +124,14 @@ map_coordinate(double in, npy_intp len, int mode)
 #define BUFFER_SIZE 256000
 #define TOLERANCE 1e-15
 
+
 /* one-dimensional spline filter: */
 int NI_SplineFilter1D(PyArrayObject *input, int order, int axis,
                                             PyArrayObject *output)
 {
     int hh, npoles = 0, more;
     npy_intp kk, ll, lines, len;
-    double *buffer = NULL, weight, pole[2];
+    double *buffer = NULL, gain, poles[MAX_SPLINE_FILTER_POLES];
     NI_LineBuffer iline_buffer, oline_buffer;
     NPY_BEGIN_THREADS_DEF;
 
@@ -213,32 +140,11 @@ int NI_SplineFilter1D(PyArrayObject *input, int order, int axis,
         goto exit;
 
     /* these are used in the spline filter calculation below: */
-    switch (order) {
-    case 2:
-        npoles = 1;
-        pole[0] = sqrt(8.0) - 3.0;
-        break;
-    case 3:
-        npoles = 1;
-        pole[0] = sqrt(3.0) - 2.0;
-        break;
-    case 4:
-        npoles = 2;
-        pole[0] = sqrt(664.0 - sqrt(438976.0)) + sqrt(304.0) - 19.0;
-        pole[1] = sqrt(664.0 + sqrt(438976.0)) - sqrt(304.0) - 19.0;
-        break;
-    case 5:
-        npoles = 2;
-        pole[0] = sqrt(67.5 - sqrt(4436.25)) + sqrt(26.25) - 6.5;
-        pole[1] = sqrt(67.5 + sqrt(4436.25)) - sqrt(26.25) - 6.5;
-        break;
-    default:
-        break;
+    if (get_filter_poles(order, &npoles, poles)) {
+        goto exit;
     }
 
-    weight = 1.0;
-    for(hh = 0; hh < npoles; hh++)
-        weight *= (1.0 - pole[hh]) * (1.0 - 1.0 / pole[hh]);
+    gain = filter_gain(poles, npoles);
 
     /* allocate an initialize the line buffer, only a single one is used,
          because the calculation is in-place: */
@@ -267,40 +173,21 @@ int NI_SplineFilter1D(PyArrayObject *input, int order, int axis,
             double *ln = NI_GET_LINE(iline_buffer, kk);
             /* spline filter: */
             if (len > 1) {
-                for(ll = 0; ll < len; ll++)
-                    ln[ll] *= weight;
+                apply_gain(gain, ln, len);
                 for(hh = 0; hh < npoles; hh++) {
-                    double p = pole[hh];
-                    int max = (int)ceil(log(TOLERANCE) / log(fabs(p)));
-                    if (max < len) {
-                        double zn = p;
-                        double sum = ln[0];
-                        for(ll = 1; ll < max; ll++) {
-                            sum += zn * ln[ll];
-                            zn *= p;
-                        }
-                        ln[0] = sum;
-                    } else {
-                        double zn = p;
-                        double iz = 1.0 / p;
-                        double z2n = pow(p, (double)(len - 1));
-                        double sum = ln[0] + z2n * ln[len - 1];
-                        z2n *= z2n * iz;
-                        for(ll = 1; ll <= len - 2; ll++) {
-                            sum += (zn + z2n) * ln[ll];
-                            zn *= p;
-                            z2n *= iz;
-                        }
-                        ln[0] = sum / (1.0 - zn * zn);
+                    const double pole = poles[hh];
+                    set_initial_causal_coefficient(ln, len, pole, TOLERANCE);
+                    for(ll = 1; ll < len; ll++) {
+                        ln[ll] += pole * ln[ll - 1];
                     }
-                    for(ll = 1; ll < len; ll++)
-                        ln[ll] += p * ln[ll - 1];
-                    ln[len-1] = (p / (p * p - 1.0)) * (ln[len-1] + p * ln[len-2]);
-                    for(ll = len - 2; ll >= 0; ll--)
-                        ln[ll] = p * (ln[ll + 1] - ln[ll]);
+                    set_initial_anticausal_coefficient(ln, len, pole);
+                    for(ll = len - 2; ll >= 0; ll--) {
+                        ln[ll] = pole * (ln[ll + 1] - ln[ll]);
+                    }
                 }
             }
         }
+
         /* copy lines from buffer to array: */
         if (!NI_LineBufferToArray(&oline_buffer)) {
             goto exit;
@@ -477,7 +364,7 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
             if (!map(io.coordinates, icoor, orank, irank, map_data)) {
                 if (!PyErr_Occurred())
                     PyErr_SetString(PyExc_RuntimeError,
-                                                    "unknown error in mapping function");
+                                    "unknown error in mapping function");
                 goto exit;
             }
             NPY_BEGIN_THREADS;
@@ -568,7 +455,7 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
                     /* we are not at the border, use precalculated offsets: */
                     edge_offsets[hh] = NULL;
                 }
-                spline_coefficients(cc, order, splvals[hh]);
+                get_spline_interpolation_weights(cc, order, splvals[hh]);
             } else {
                 /* we use the constant border condition: */
                 constant = 1;
@@ -684,8 +571,8 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
 }
 
 int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
-                                 PyArrayObject* shift_ar, PyArrayObject *output,
-                                 int order, int mode, double cval)
+                 PyArrayObject* shift_ar, PyArrayObject *output,
+                 int order, int mode, double cval)
 {
     char *po, *pi;
     npy_intp **zeros = NULL, **offsets = NULL, ***edge_offsets = NULL;
@@ -817,7 +704,7 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
                         PyErr_NoMemory();
                         goto exit;
                     }
-                    spline_coefficients(cc, order, splvals[jj][kk]);
+                    get_spline_interpolation_weights(cc, order, splvals[jj][kk]);
                 }
             } else {
                 zeros[jj][kk] = 1;

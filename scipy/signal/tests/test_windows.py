@@ -284,6 +284,27 @@ class TestGaussian(object):
                          0.8007374029168081])
 
 
+class TestGeneralCosine(object):
+
+    def test_basic(self):
+        assert_allclose(windows.general_cosine(5, [0.5, 0.3, 0.2]),
+                        [0.4, 0.3, 1, 0.3, 0.4])
+        assert_allclose(windows.general_cosine(4, [0.5, 0.3, 0.2], sym=False),
+                        [0.4, 0.3, 1, 0.3])
+
+class TestGeneralHamming(object):
+
+    def test_basic(self):
+        assert_allclose(windows.general_hamming(5, 0.7),
+                        [0.4, 0.7, 1.0, 0.7, 0.4])
+        assert_allclose(windows.general_hamming(5, 0.75, sym=False),
+                        [0.5, 0.6727457514, 0.9522542486,
+                         0.9522542486, 0.6727457514])
+        assert_allclose(windows.general_hamming(6, 0.75, sym=True),
+                        [0.5, 0.6727457514, 0.9522542486,
+                        0.9522542486, 0.6727457514, 0.5])
+
+
 class TestHamming(object):
 
     def test_basic(self):

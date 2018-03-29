@@ -77,6 +77,7 @@ def getargspec(f):
     spec = getfullargspec(f)
     return ArgSpec(spec.args, spec.varargs, spec.varkw, spec.defaults)
 
+
 DEF = re.compile(r'\s*def\s*([_\w][_\w\d]*)\s*\(')
 
 
@@ -281,6 +282,7 @@ class ContextManager(_GeneratorContextManager):
         return FunctionMaker.create(
             func, "with _self_: return _func_(%(shortsignature)s)",
             dict(_self_=self, _func_=func), __wrapped__=func)
+
 
 init = getfullargspec(_GeneratorContextManager.__init__)
 n_args = len(init.args)

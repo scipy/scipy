@@ -45,6 +45,7 @@ def mlarr(*args, **kwargs):
     arr.shape = matdims(arr)
     return arr
 
+
 # Define cases to test
 theta = np.pi/4*np.arange(9,dtype=float).reshape(1,9)
 case_table4 = [

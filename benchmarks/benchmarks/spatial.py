@@ -55,6 +55,7 @@ class Build(Benchmark):
         else:
             self.cls(self.data)
 
+
 LEAF_SIZES = [8, 128]
 BOX_SIZES = [None, 0.0, 1.0]
 
