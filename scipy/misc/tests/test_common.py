@@ -31,13 +31,8 @@ def test_ascent():
     assert_equal(ascent().shape, (512, 512))
 
 
-@pytest.mark.xfail(reason="data file not yet added")
 def test_electrocardiogram():
-    # ECG in mV
-    ecg = electrocardiogram(physical_unit=True)
+    # Test shape and dtype of signal
+    ecg = electrocardiogram()
     assert_equal(ecg.shape, (108000,))
     assert ecg.dtype == float
-    # ECG in ADU
-    ecg = electrocardiogram(physical_unit=False)
-    assert_equal(ecg.shape, (108000,))
-    assert ecg.dtype == int

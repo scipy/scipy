@@ -204,18 +204,12 @@ def face(gray=False):
     return face
 
 
-def electrocardiogram(physical_unit=True):
+def electrocardiogram():
     """
     Load an electrocardiogram as an example for a one-dimensional signal.
 
     The returned signal is a 5 minute long electrocardiogram (ECG), a medical
     recording of the hearts electrical activity, sampled at 360 Hz.
-
-    Parameters
-    ----------
-    physical_unit : bool, optional
-        If true, the returned ECG uses the physical unit millivolt (mV)
-        otherwise the raw output of the ADC is returned.
 
     Returns
     -------
@@ -265,7 +259,7 @@ def electrocardiogram(physical_unit=True):
     import os
     file_path = os.path.join(os.path.dirname(__file__), "ecg.dat")
     with load(file_path) as file:
-        ecg = file["ecg"].astype(int)
-    if physical_unit:
-        ecg = (ecg - 1024) / 200.0  # (ecg - adc_zero) / adc_gain
+        ecg = file["ecg"].astype(int)  # Unsigned int -> signed int
+    # Convert raw output of ADC to mV: (ecg - adc_zero) / adc_gain
+    ecg = (ecg - 1024) / 200.0
     return ecg
