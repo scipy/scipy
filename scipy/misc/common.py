@@ -214,15 +214,14 @@ def electrocardiogram():
     Returns
     -------
     ecg : ndarray
-        The electrocardiogram.
+        The electrocardiogram in millivolt (mV) sampled at 360 Hz.
 
     Notes
     -----
     The provided signal is an excerpt (19:35 to 24:35) from the `record 208`_
     (lead MLII) provided by the MIT-BIH Arrhythmia Database [1]_ on
     PhysioNet [2]_. The excerpt includes noise induced artifacts, typical
-    heartbeats as well as frequent premature ventricular contractions, an
-    heartbeat outside the normal sinus rhythm.
+    heartbeats as well as pathological changes.
 
     .. _record 208: https://physionet.org/physiobank/database/html/mitdbdir/records.htm#208
 
@@ -241,20 +240,57 @@ def electrocardiogram():
            2000 (June 13).; doi: 10.1161/01.CIR.101.23.e215
 
     Examples
-    -------
-    >>> import scipy.misc
-    >>> ecg = scipy.misc.electrocardiogram()
+    --------
+    >>> from scipy.misc import electrocardiogram
+    >>> ecg = electrocardiogram()
     >>> ecg.shape, ecg.mean(), ecg.std()
-    ((108000,), -0.16405791666666666, 0.5991142031793398)
+    ((108000,), -0.16510875, 0.5992473991177294)
 
-    Plot first five seconds (1800 samples) of the signal:
+    As stated the signal features several areas with a different morphology.
 
     >>> import matplotlib.pyplot as plt
-    >>> time = np.arange(ecg.size) / 360
-    >>> plt.plot(time[:1800], ecg[:1800])
+    >>> fs = 360
+    >>> time = np.arange(ecg.size) / fs
+    >>> plt.plot(time, ecg)
     >>> plt.xlabel("time in s")
     >>> plt.ylabel("ECG in mV")
+    >>> plt.xlim(9, 10.2)
+    >>> plt.ylim(-1, 1.5)
     >>> plt.show()
+
+    The first few seconds show a the electrical activity of a heart in normal
+    sinus rhythm as seen above.
+
+    >>> plt.plot(time, ecg)
+    >>> plt.xlabel("time in s")
+    >>> plt.ylabel("ECG in mV")
+    >>> plt.xlim(46.5, 50)
+    >>> plt.ylim(-2, 1.5)
+    >>> plt.show()
+
+    After second 16, the first premature ventricular contractions, also called
+    extrasystoles, appear. These have a different morphology compared to typical
+    heartbeats which can be easily observed in the plot above.
+
+    >>> plt.plot(time, ecg)
+    >>> plt.xlabel("time in s")
+    >>> plt.ylabel("ECG in mV")
+    >>> plt.xlim(207, 215)
+    >>> plt.ylim(-2, 3.5)
+    >>> plt.show()
+
+    At several points large artifacts disturb the recording.
+
+    >>> from scipy.signal import welch
+    >>> f, Pxx = welch(ecg, fs=fs, nperseg=2048, scaling="spectrum")
+    >>> plt.semilogy(f, Pxx)
+    >>> plt.xlabel("Frequency in Hz")
+    >>> plt.ylabel("Power spectrum of the ECG in mV**2")
+    >>> plt.show()
+
+    Examining the power spectrum reveals that most of the biosignal is made up
+    of lower frequencies. At 60 Hz the noise induced by the mains electricity
+    can be clearly observed.
     """
     import os
     file_path = os.path.join(os.path.dirname(__file__), "ecg.dat")
