@@ -231,13 +231,12 @@ def electrocardiogram():
     ----------
     .. [1] Moody GB, Mark RG. The impact of the MIT-BIH Arrhythmia Database.
            IEEE Eng in Med and Biol 20(3):45-50 (May-June 2001).
-           (PMID: 11446209); doi:10.13026/C2F305
+           (PMID: 11446209); https://doi.org/10.13026/C2F305
     .. [2] Goldberger AL, Amaral LAN, Glass L, Hausdorff JM, Ivanov PCh,
            Mark RG, Mietus JE, Moody GB, Peng C-K, Stanley HE. PhysioBank,
            PhysioToolkit, and PhysioNet: Components of a New Research Resource
            for Complex Physiologic Signals. Circulation 101(23):e215-e220;
-           Circulation Electronic Pages: http://circ.ahajournals.org/content/101/23/e215.full];
-           2000 (June 13).; doi: 10.1161/01.CIR.101.23.e215
+           https://doi.org/10.1161/01.CIR.101.23.e215
 
     Examples
     --------
@@ -251,6 +250,7 @@ def electrocardiogram():
     >>> import matplotlib.pyplot as plt
     >>> fs = 360
     >>> time = np.arange(ecg.size) / fs
+    >>> plt.figure()
     >>> plt.plot(time, ecg)
     >>> plt.xlabel("time in s")
     >>> plt.ylabel("ECG in mV")
@@ -261,6 +261,7 @@ def electrocardiogram():
     The first few seconds show a the electrical activity of a heart in normal
     sinus rhythm as seen above.
 
+    >>> plt.figure()
     >>> plt.plot(time, ecg)
     >>> plt.xlabel("time in s")
     >>> plt.ylabel("ECG in mV")
@@ -272,6 +273,7 @@ def electrocardiogram():
     extrasystoles, appear. These have a different morphology compared to typical
     heartbeats which can be easily observed in the plot above.
 
+    >>> plt.figure()
     >>> plt.plot(time, ecg)
     >>> plt.xlabel("time in s")
     >>> plt.ylabel("ECG in mV")
@@ -283,6 +285,7 @@ def electrocardiogram():
 
     >>> from scipy.signal import welch
     >>> f, Pxx = welch(ecg, fs=fs, nperseg=2048, scaling="spectrum")
+    >>> plt.figure()
     >>> plt.semilogy(f, Pxx)
     >>> plt.xlabel("Frequency in Hz")
     >>> plt.ylabel("Power spectrum of the ECG in mV**2")
