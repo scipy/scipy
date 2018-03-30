@@ -209,7 +209,7 @@ def electrocardiogram():
     Load an electrocardiogram as an example for a one-dimensional signal.
 
     The returned signal is a 5 minute long electrocardiogram (ECG), a medical
-    recording of the hearts electrical activity, sampled at 360 Hz.
+    recording of the heart's electrical activity, sampled at 360 Hz.
 
     Returns
     -------
@@ -242,11 +242,13 @@ def electrocardiogram():
     --------
     >>> from scipy.misc import electrocardiogram
     >>> ecg = electrocardiogram()
+    >>> ecg
+    array([-0.245, -0.215, -0.185, ..., -0.405, -0.395, -0.385])
     >>> ecg.shape, ecg.mean(), ecg.std()
     ((108000,), -0.16510875, 0.5992473991177294)
 
     As stated the signal features several areas with a different morphology.
-    E.g. the first few seconds show a the electrical activity of a heart in
+    E.g. the first few seconds show the electrical activity of a heart in
     normal sinus rhythm as seen below.
 
     >>> import matplotlib.pyplot as plt
@@ -261,7 +263,8 @@ def electrocardiogram():
 
     After second 16 however, the first premature ventricular contractions, also
     called extrasystoles, appear. These have a different morphology compared to
-    typical heartbeats which can be easily observed in the following plot.
+    typical heartbeats. The difference can easily be observed in the following
+    plot.
 
     >>> plt.plot(time, ecg)
     >>> plt.xlabel("time in s")
@@ -288,12 +291,13 @@ def electrocardiogram():
     >>> plt.semilogy(f, Pxx)
     >>> plt.xlabel("Frequency in Hz")
     >>> plt.ylabel("Power spectrum of the ECG in mV**2")
+    >>> plt.xlim(f[[0, -1]])
     >>> plt.show()
     """
     import os
     file_path = os.path.join(os.path.dirname(__file__), "ecg.dat")
     with load(file_path) as file:
-        ecg = file["ecg"].astype(int)  # Unsigned int -> signed int
+        ecg = file["ecg"].astype(int)  # np.uint16 -> int
     # Convert raw output of ADC to mV: (ecg - adc_zero) / adc_gain
     ecg = (ecg - 1024) / 200.0
     return ecg
