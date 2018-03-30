@@ -1,7 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
 import pytest
-from numpy.testing import assert_equal, assert_allclose
+from numpy.testing import assert_equal, assert_allclose, assert_almost_equal
 from scipy._lib._numpy_compat import suppress_warnings
 
 from scipy.misc import pade, logsumexp, face, ascent, electrocardiogram
@@ -32,7 +32,9 @@ def test_ascent():
 
 
 def test_electrocardiogram():
-    # Test shape and dtype of signal
+    # Test shape, dtype and stats of signal
     ecg = electrocardiogram()
-    assert_equal(ecg.shape, (108000,))
     assert ecg.dtype == float
+    assert_equal(ecg.shape, (108000,))
+    assert_almost_equal(ecg.mean(), -0.16510875)
+    assert_almost_equal(ecg.std(), 0.5992473991177294)
