@@ -186,6 +186,7 @@ Nick R. Papior for allowing a wider choice of solvers
 Sean Quinn for the Moyal distribution
 Lars Grüter for contributions to peak finding in scipy.signal
 Jordan Heemskerk for exposing additional windowing functions in scipy.signal.
+Michael Tartre (Two Sigma Investments) for contributions to weighted distance functions.
 
 Institutions
 ------------
