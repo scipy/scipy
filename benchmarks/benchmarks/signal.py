@@ -48,7 +48,7 @@ class Convolve2D(Benchmark):
         np.random.seed(1234)
         # sample a bunch of pairs of 2d arrays
         pairs = []
-        for ma, na, mb, nb in product((1, 2, 8, 13, 30), repeat=4):
+        for ma, na, mb, nb in product((8, 13, 30, 36), repeat=4):
             a = np.random.randn(ma, na)
             b = np.random.randn(mb, nb)
             pairs.append((a, b))
@@ -107,35 +107,30 @@ class Convolve(Benchmark):
             b = np.random.randn(nb)
             pairs['1d'].append((a, b))
 
-        for ma, na, mb, nb in product((8, 13, 35), repeat=4):
-            a = np.random.randn(ma, na)
-            b = np.random.randn(mb, nb)
-            pairs['2d'].append((a, b))
+        for n_image in [256, 512, 1024]:
+            for n_kernel in [3, 5, 7]:
+                x = np.random.randn(n_image, n_image)
+                h = np.random.randn(n_kernel, n_kernel)
+                pairs['2d'].append((x, h))
         self.pairs = pairs
 
     def time_convolve(self, mode):
         for a, b in self.pairs['1d']:
             if b.shape[0] > a.shape[0]:
                 continue
-            if mode == 'valid' and a.ndim == b.ndim == 2:
-                if b.shape[0] > a.shape[0] or b.shape[1] > a.shape[1]:
-                    continue
             signal.convolve(a, b, mode=mode)
 
     def time_convolve2d(self, mode):
         for a, b in self.pairs['2d']:
-            if mode == 'valid' and (b.shape[0] > a.shape[0] or
-                                    b.shape[1] > a.shape[1]):
-                continue
+            if mode == 'valid':
+                if b.shape[0] > a.shape[0] or b.shape[1] > a.shape[1]:
+                    continue
             signal.convolve(a, b, mode=mode)
 
     def time_correlate(self, mode):
         for a, b in self.pairs['1d']:
             if b.shape[0] > a.shape[0]:
                 continue
-            if mode == 'valid' and a.ndim == b.ndim == 2:
-                if b.shape[0] > a.shape[0] or b.shape[1] > a.shape[1]:
-                    continue
             signal.correlate(a, b, mode=mode)
 
     def time_correlate2d(self, mode):
