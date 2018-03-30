@@ -1782,27 +1782,25 @@ def percentileofscore(a, score, kind='rank'):
     60.0
 
     """
-    a = np.array(a)
+    if np.isnan(score):
+        return np.nan
     n = len(a)
+    if n == 0:
+        return 100.0
 
     if kind == 'rank':
-        if not np.any(a == score):
-            a = np.append(a, score)
-            a_len = np.array(list(range(len(a))))
-        else:
-            a_len = np.array(list(range(len(a)))) + 1.0
-
-        a = np.sort(a)
-        idx = [a == score]
-        pct = (np.mean(a_len[idx]) / n) * 100.0
+        # Use np.array(score) to avoid converting a to an np.array
+        left = np.count_nonzero(a < np.array(score))
+        right = np.count_nonzero(a <= np.array(score))
+        pct = (right + left + (1 if right > left else 0)) * 50.0/n
         return pct
-
     elif kind == 'strict':
-        return np.sum(a < score) / float(n) * 100
+        return np.count_nonzero(a < np.array(score)) / float(n) * 100
     elif kind == 'weak':
-        return np.sum(a <= score) / float(n) * 100
+        return np.count_nonzero(a <= np.array(score)) / float(n) * 100
     elif kind == 'mean':
-        return (np.sum(a < score) + np.sum(a <= score)) * 50 / float(n)
+        pct = (np.count_nonzero(a < np.array(score)) + np.count_nonzero(a <= np.array(score))) / float(n) * 50
+        return pct
     else:
         raise ValueError("kind can only be 'rank', 'strict', 'weak' or 'mean'")
 
