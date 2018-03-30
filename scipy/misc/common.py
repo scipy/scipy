@@ -246,11 +246,12 @@ def electrocardiogram():
     ((108000,), -0.16510875, 0.5992473991177294)
 
     As stated the signal features several areas with a different morphology.
+    E.g. the first few seconds show a the electrical activity of a heart in
+    normal sinus rhythm as seen below.
 
     >>> import matplotlib.pyplot as plt
     >>> fs = 360
     >>> time = np.arange(ecg.size) / fs
-    >>> plt.figure()
     >>> plt.plot(time, ecg)
     >>> plt.xlabel("time in s")
     >>> plt.ylabel("ECG in mV")
@@ -258,10 +259,10 @@ def electrocardiogram():
     >>> plt.ylim(-1, 1.5)
     >>> plt.show()
 
-    The first few seconds show a the electrical activity of a heart in normal
-    sinus rhythm as seen above.
+    After second 16 however, the first premature ventricular contractions, also
+    called extrasystoles, appear. These have a different morphology compared to
+    typical heartbeats which can be easily observed in the following plot.
 
-    >>> plt.figure()
     >>> plt.plot(time, ecg)
     >>> plt.xlabel("time in s")
     >>> plt.ylabel("ECG in mV")
@@ -269,11 +270,8 @@ def electrocardiogram():
     >>> plt.ylim(-2, 1.5)
     >>> plt.show()
 
-    After second 16, the first premature ventricular contractions, also called
-    extrasystoles, appear. These have a different morphology compared to typical
-    heartbeats which can be easily observed in the plot above.
+    At several points large artifacts disturb the recording, e.g.:
 
-    >>> plt.figure()
     >>> plt.plot(time, ecg)
     >>> plt.xlabel("time in s")
     >>> plt.ylabel("ECG in mV")
@@ -281,19 +279,16 @@ def electrocardiogram():
     >>> plt.ylim(-2, 3.5)
     >>> plt.show()
 
-    At several points large artifacts disturb the recording.
+    Finally, examining the power spectrum reveals that most of the biosignal is
+    made up of lower frequencies. At 60 Hz the noise induced by the mains
+    electricity can be clearly observed.
 
     >>> from scipy.signal import welch
     >>> f, Pxx = welch(ecg, fs=fs, nperseg=2048, scaling="spectrum")
-    >>> plt.figure()
     >>> plt.semilogy(f, Pxx)
     >>> plt.xlabel("Frequency in Hz")
     >>> plt.ylabel("Power spectrum of the ECG in mV**2")
     >>> plt.show()
-
-    Examining the power spectrum reveals that most of the biosignal is made up
-    of lower frequencies. At 60 Hz the noise induced by the mains electricity
-    can be clearly observed.
     """
     import os
     file_path = os.path.join(os.path.dirname(__file__), "ecg.dat")
