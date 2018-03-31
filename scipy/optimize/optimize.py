@@ -2958,7 +2958,7 @@ def show_options(solver=None, method=None, disp=True):
             ('dogleg', 'scipy.optimize._trustregion_dogleg._minimize_dogleg'),
             ('l-bfgs-b', 'scipy.optimize.lbfgsb._minimize_lbfgsb'),
             ('nelder-mead', 'scipy.optimize.optimize._minimize_neldermead'),
-            ('newtoncg', 'scipy.optimize.optimize._minimize_newtoncg'),
+            ('newton-cg', 'scipy.optimize.optimize._minimize_newtoncg'),
             ('powell', 'scipy.optimize.optimize._minimize_powell'),
             ('slsqp', 'scipy.optimize.slsqp._minimize_slsqp'),
             ('tnc', 'scipy.optimize.tnc._minimize_tnc'),
@@ -3012,6 +3012,7 @@ def show_options(solver=None, method=None, disp=True):
                 text.append(show_options(solver, name, disp=False))
             text = "".join(text)
         else:
+            method = method.lower()
             methods = dict(doc_routines[solver])
             if method not in methods:
                 raise ValueError("Unknown method %r" % (method,))
