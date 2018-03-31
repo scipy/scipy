@@ -520,7 +520,7 @@ class TestEigBanded(object):
 
         # extracting eigenvalues with respect to an index range
         ind1 = 2
-        ind2 = 6
+        ind2 = np.longlong(6)
         w_sym_ind = eigvals_banded(self.bandmat_sym,
                                     select='i', select_range=(ind1, ind2))
         assert_array_almost_equal(sort(w_sym_ind),

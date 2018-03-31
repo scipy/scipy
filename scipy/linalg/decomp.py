@@ -506,9 +506,10 @@ def _check_select(select, select_range, max_ev, max_len):
             if max_ev == 0:
                 max_ev = max_len
         else:  # 2 (index)
-            if sr.dtype.char.lower() not in 'lih':
+            if sr.dtype.char.lower() not in 'hilqp':
                 raise ValueError('when using select="i", select_range must '
-                                 'contain integers, got dtype %s' % sr.dtype)
+                                 'contain integers, got dtype %s (%s)'
+                                 % (sr.dtype, sr.dtype.char))
             # translate Python (0 ... N-1) into Fortran (1 ... N) with + 1
             il, iu = sr + 1
             if min(il, iu) < 1 or max(il, iu) > max_len:
