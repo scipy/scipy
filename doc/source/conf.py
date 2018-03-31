@@ -168,6 +168,9 @@ latex_documents = [
 # If false, no module index is generated.
 latex_use_modindex = False
 
+# fix issues with Unicode characters
+latex_engine = 'xelatex'
+
 latex_elements = {
     # The paper size ('letterpaper' or 'a4paper').
     #
@@ -204,11 +207,22 @@ latex_elements = {
                 \item\relax}%
                {\endlist}
 \makeatother
+% Avoid small font size in code-blocks
+\fvset{fontsize=auto}
+% Use left-alignment per default in tabulary rendered tables
+\newcolumntype{T}{L}
+% Get some useful deeper bookmarks and table of contents in PDF
+\setcounter{tocdepth}{1}
 ''',
-
     # Latex figure (float) alignment
     #
     # 'figure_align': 'htbp',
+
+    # benefit from  Sphinx built-in workaround of LaTeX's list limitations
+    'maxlistdepth': '12',
+
+    # reduce TeX warnings about underfull boxes in the index
+    'printindex': r'\raggedright\printindex',
 }
 
 
