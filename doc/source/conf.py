@@ -213,9 +213,6 @@ latex_elements = {
 \newcolumntype{T}{L}
 % Get some useful deeper bookmarks and table of contents in PDF
 \setcounter{tocdepth}{1}
-% hack baseline to fit better with DejaVu characters,
-% this improves tables too
-\renewcommand{\baselinestretch}{1.2}
 ''',
     # Latex figure (float) alignment
     #
@@ -226,13 +223,6 @@ latex_elements = {
 
     # reduce TeX warnings about underfull boxes in the index
     'printindex': r'\raggedright\printindex',
-
-    # use DejaVu to match included graphics
-    'fontpkg': r'''
-\setmainfont{DejaVu Serif}
-\setsansfont{DejaVu Sans}
-\setmonofont{DejaVu Sans Mono}
-   ''',
 }
 
 
