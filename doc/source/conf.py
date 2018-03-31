@@ -213,6 +213,9 @@ latex_elements = {
 \newcolumntype{T}{L}
 % Get some useful deeper bookmarks and table of contents in PDF
 \setcounter{tocdepth}{1}
+% Fix: ≠ is unknown to XeLaTeX's default font Latin Modern
+\usepackage{newunicodechar}
+\newunicodechar{≠}{\ensuremath{\neq}}
 ''',
     # Latex figure (float) alignment
     #
@@ -223,6 +226,10 @@ latex_elements = {
 
     # reduce TeX warnings about underfull boxes in the index
     'printindex': r'\raggedright\printindex',
+
+    # avoid potential problems arising from erroneous mark-up of the
+    # \mathbf{\Gamma} type
+    'passoptionstopackages': r'\PassOptionsToPackage{no-math}{fontspec}',
 }
 
 
