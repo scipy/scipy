@@ -30,7 +30,7 @@ jobs:
             . venv/bin/activate
             pip install --install-option="--no-cython-compile" Cython==0.25
             pip install numpy
-            pip install nose mpmath argparse Pillow codecov matplotlib Sphinx==1.5.5
+            pip install nose mpmath argparse Pillow codecov matplotlib Sphinx==1.7.2
 
       - run:
           name: test
