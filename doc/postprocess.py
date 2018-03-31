@@ -40,10 +40,15 @@ def process_html(fn, lines):
 def process_tex(lines):
     """
     Remove unnecessary section titles from the LaTeX file.
+
+    And fix autosummary LaTeX bug in Sphinx < 1.7.3
+    (cf https://github.com/sphinx-doc/sphinx/issues/4790)
     """
     new_lines = []
     for line in lines:
         line = re.sub(r'^\s*\\strong{See Also:}\s*$', r'\paragraph{See Also}', line)
+
+        line = line.replace(r'p{0.5\linewidth}', r'\X{1}{2}')
 
         if (line.startswith(r'\section{scipy.')
             or line.startswith(r'\subsection{scipy.')
