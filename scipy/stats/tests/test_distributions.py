@@ -1207,6 +1207,32 @@ class TestSkewNorm(object):
         computed = stats.skewnorm.stats(a=-4, loc=5, scale=2, moments='mvsk')
         assert_array_almost_equal(computed, expected, decimal=2)
 
+    def test_cdf_large_x(self):
+        # Regression test for gh-7746.
+        # The x values are large enough that the closest 64 bit floating
+        # point representation of the exact CDF is 1.0.
+        p = stats.skewnorm.cdf([10, 20, 30], -1)
+        assert_allclose(p, np.ones(3), rtol=1e-14)
+        p = stats.skewnorm.cdf(25, 2.5)
+        assert_allclose(p, 1.0, rtol=1e-14)
+
+    def test_cdf_sf_small_values(self):
+        # Triples are [x, a, cdf(x, a)].  These values were computed
+        # using CDF[SkewNormDistribution[0, 1, a], x] in Wolfram Alpha.
+        cdfvals = [
+            [-8, 1, 3.870035046664392611e-31],
+            [-4, 2, 8.1298399188811398e-21],
+            [-2, 5, 1.55326826787106273e-26],
+            [-9, -1, 2.257176811907681295e-19],
+            [-10, -4, 1.523970604832105213e-23],
+        ]
+        for x, a, cdfval in cdfvals:
+            p = stats.skewnorm.cdf(x, a)
+            assert_allclose(p, cdfval, rtol=1e-8)
+            # For the skew normal distribution, sf(-x, -a) = cdf(x, a).
+            p = stats.skewnorm.sf(-x, -a)
+            assert_allclose(p, cdfval, rtol=1e-8)
+
 
 class TestExpon(object):
     def test_zero(self):
