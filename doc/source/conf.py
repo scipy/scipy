@@ -187,6 +187,11 @@ latex_elements = {
 \renewenvironment{description}%
 {\begin{latexdescription}[\setleftmargin{60pt}\breaklabel\setlabelstyle{\bfseries\itshape}]}%
 {\end{latexdescription}}
+% Fix bug in expdlist's modified \@item
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\@item{{\@breaklabel} }{{\@breaklabel}}{}{}
+\makeatother
 
 % Make Examples/etc section headers smaller and more compact
 \titlespacing*{\paragraph}{0pt}{1ex}{0pt}
