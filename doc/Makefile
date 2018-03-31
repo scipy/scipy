@@ -53,14 +53,14 @@ INSTALL_DIR = $(CURDIR)/build/inst-dist/
 INSTALL_PPH = $(INSTALL_DIR)/lib/python$(PYVER)/site-packages:$(INSTALL_DIR)/local/lib/python$(PYVER)/site-packages:$(INSTALL_DIR)/lib/python$(PYVER)/dist-packages:$(INSTALL_DIR)/local/lib/python$(PYVER)/dist-packages
 UPLOAD_DIR=/srv/docs_scipy_org/doc/scipy-$(RELEASE)
 
-DIST_VARS=PYTHON="PYTHONPATH=$(INSTALL_PPH):$$PYTHONPATH python$(PYVER)" SPHINXBUILD="LANG=C PYTHONPATH=$(INSTALL_PPH):$$PYTHONPATH python$(PYVER) `which sphinx-build`"
+DIST_VARS=PYTHON="PYTHONPATH=$(INSTALL_PPH):$$PYTHONPATH $(PYTHON)" SPHINXBUILD="PYTHONPATH=$(INSTALL_PPH):$$PYTHONPATH $(SPHINXBUILD)"
 
 dist:
 	make $(DIST_VARS) real-dist
 
 real-dist: dist-build html html-scipyorg
 	test -d build/latex || make latex
-	make -C build/latex all-pdf
+	make -C build/latex all-pdf LATEXOPTS="-halt-on-error"
 	-test -d build/htmlhelp || make htmlhelp-build
 	-rm -rf build/dist
 	mkdir -p build/dist
