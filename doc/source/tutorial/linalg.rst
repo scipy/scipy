@@ -571,7 +571,7 @@ matrix has a singular value decomposition. Sometimes, the singular
 values are called the spectrum of :math:`\mathbf{A}.` The command
 :obj:`linalg.svd` will return :math:`\mathbf{U}` ,
 :math:`\mathbf{V}^{H}` , and :math:`\sigma_{i}` as an array of the
-singular values. To obtain the matrix :math:`\mathbf{\Sigma}` use
+singular values. To obtain the matrix :math:`\boldsymbol{\Sigma}` use
 :obj:`linalg.diagsvd`. The following example illustrates the use of
 :obj:`linalg.svd` .
 
