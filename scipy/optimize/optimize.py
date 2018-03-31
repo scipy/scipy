@@ -3012,6 +3012,7 @@ def show_options(solver=None, method=None, disp=True):
                 text.append(show_options(solver, name, disp=False))
             text = "".join(text)
         else:
+            method = method.lower()
             methods = dict(doc_routines[solver])
             if method not in methods:
                 raise ValueError("Unknown method %r" % (method,))
