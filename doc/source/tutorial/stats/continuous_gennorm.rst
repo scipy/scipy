@@ -19,7 +19,7 @@ Functions
 .. math::
     :nowrap:
 
-     \begin{eqnarray*} F\left(x; \right) & = & \frac{1}{2} + \rm{sgn}\left(x\right) \frac{\gamma\left(1/\beta, x^{\beta}\right)}{2\Gamma\left(1/\beta\right)} \end{eqnarray*}
+    \begin{eqnarray*} F\left(x; \right) & = & \frac{1}{2} + \mathrm{sgn}\left(x\right) \frac{\gamma\left(1/\beta, x^{\beta}\right)}{2\Gamma\left(1/\beta\right)} \end{eqnarray*}
      
 :math:`\gamma` is the lower incomplete gamma function. 
 :math:`\gamma\left(s, x\right) = \int_0^x t^{s-1} e^{-t} dt` 
