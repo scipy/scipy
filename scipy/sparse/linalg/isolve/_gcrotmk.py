@@ -361,7 +361,14 @@ def gcrotmk(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
         beta = nrm2(r)
 
         # -- check stopping condition
-        if beta <= max(atol, tol * b_norm):
+        beta_tol = max(atol, tol * b_norm)
+
+        if beta <= beta_tol and (j_outer > 0 or CU):
+            # recompute residual to avoid rounding error
+            r = b - matvec(x)
+            beta = nrm2(r)
+
+        if beta <= beta_tol:
             j_outer = -1
             break
 
