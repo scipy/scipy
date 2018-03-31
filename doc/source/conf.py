@@ -136,7 +136,7 @@ html_static_path = ['_static']
 html_last_updated_fmt = '%b %d, %Y'
 
 html_additional_pages = {}
-html_use_modindex = True
+html_domain_indices = True
 html_copy_source = False
 html_file_suffix = '.html'
 
@@ -166,7 +166,7 @@ latex_documents = [
 #latex_appendices = []
 
 # If false, no module index is generated.
-latex_use_modindex = False
+latex_domain_indices = False
 
 # fix issues with Unicode characters
 latex_engine = 'xelatex'
