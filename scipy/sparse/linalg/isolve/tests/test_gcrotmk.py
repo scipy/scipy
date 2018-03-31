@@ -54,7 +54,7 @@ class TestGCROTMK(object):
         x0, count_0 = do_solve()
         x1, count_1 = do_solve(M=M)
 
-        assert_equal(count_1, 2)
+        assert_equal(count_1, 3)
         assert_(count_1 < count_0/2)
         assert_(allclose(x1, x0, rtol=1e-14))
 
@@ -144,10 +144,10 @@ class TestGCROTMK(object):
             # should converge immediately
             x1, count_1 = do_solve(CU=CU, discard_C=discard_C)
             if discard_C:
-                assert_equal(count_1, 1 + len(CU))
+                assert_equal(count_1, 2 + len(CU))
             else:
-                assert_equal(count_1, 2)
-            assert_(count_1 < count_0/2)
+                assert_equal(count_1, 3)
+            assert_(count_1 <= count_0/2)
             assert_allclose(x1, x0, atol=1e-14)
 
     def test_denormals(self):
