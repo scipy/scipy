@@ -702,7 +702,7 @@ class netcdf_file(object):
                     pos = self.fp.tell()
                     self.fp.seek(begin_)
                     data = frombuffer(self.fp.read(a_size), dtype=dtype_
-                                     ).copy()
+                                      ).copy()
                     data.shape = shape
                     self.fp.seek(pos)
 
