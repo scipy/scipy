@@ -54,91 +54,91 @@ docheaders = {'methods': """\nMethods\n-------\n""",
               'examples': """\nExamples\n--------\n"""}
 
 _doc_rvs = """\
-``rvs(%(shapes)s, loc=0, scale=1, size=1, random_state=None)``
+rvs(%(shapes)s, loc=0, scale=1, size=1, random_state=None)
     Random variates.
 """
 _doc_pdf = """\
-``pdf(x, %(shapes)s, loc=0, scale=1)``
+pdf(x, %(shapes)s, loc=0, scale=1)
     Probability density function.
 """
 _doc_logpdf = """\
-``logpdf(x, %(shapes)s, loc=0, scale=1)``
+logpdf(x, %(shapes)s, loc=0, scale=1)
     Log of the probability density function.
 """
 _doc_pmf = """\
-``pmf(k, %(shapes)s, loc=0, scale=1)``
+pmf(k, %(shapes)s, loc=0, scale=1)
     Probability mass function.
 """
 _doc_logpmf = """\
-``logpmf(k, %(shapes)s, loc=0, scale=1)``
+logpmf(k, %(shapes)s, loc=0, scale=1)
     Log of the probability mass function.
 """
 _doc_cdf = """\
-``cdf(x, %(shapes)s, loc=0, scale=1)``
+cdf(x, %(shapes)s, loc=0, scale=1)
     Cumulative distribution function.
 """
 _doc_logcdf = """\
-``logcdf(x, %(shapes)s, loc=0, scale=1)``
+logcdf(x, %(shapes)s, loc=0, scale=1)
     Log of the cumulative distribution function.
 """
 _doc_sf = """\
-``sf(x, %(shapes)s, loc=0, scale=1)``
+sf(x, %(shapes)s, loc=0, scale=1)
     Survival function  (also defined as ``1 - cdf``, but `sf` is sometimes more accurate).
 """
 _doc_logsf = """\
-``logsf(x, %(shapes)s, loc=0, scale=1)``
+logsf(x, %(shapes)s, loc=0, scale=1)
     Log of the survival function.
 """
 _doc_ppf = """\
-``ppf(q, %(shapes)s, loc=0, scale=1)``
+ppf(q, %(shapes)s, loc=0, scale=1)
     Percent point function (inverse of ``cdf`` --- percentiles).
 """
 _doc_isf = """\
-``isf(q, %(shapes)s, loc=0, scale=1)``
+isf(q, %(shapes)s, loc=0, scale=1)
     Inverse survival function (inverse of ``sf``).
 """
 _doc_moment = """\
-``moment(n, %(shapes)s, loc=0, scale=1)``
+moment(n, %(shapes)s, loc=0, scale=1)
     Non-central moment of order n
 """
 _doc_stats = """\
-``stats(%(shapes)s, loc=0, scale=1, moments='mv')``
+stats(%(shapes)s, loc=0, scale=1, moments='mv')
     Mean('m'), variance('v'), skew('s'), and/or kurtosis('k').
 """
 _doc_entropy = """\
-``entropy(%(shapes)s, loc=0, scale=1)``
+entropy(%(shapes)s, loc=0, scale=1)
     (Differential) entropy of the RV.
 """
 _doc_fit = """\
-``fit(data, %(shapes)s, loc=0, scale=1)``
+fit(data, %(shapes)s, loc=0, scale=1)
     Parameter estimates for generic data.
 """
 _doc_expect = """\
-``expect(func, args=(%(shapes_)s), loc=0, scale=1, lb=None, ub=None, conditional=False, **kwds)``
+expect(func, args=(%(shapes_)s), loc=0, scale=1, lb=None, ub=None, conditional=False, **kwds)
     Expected value of a function (of one argument) with respect to the distribution.
 """
 _doc_expect_discrete = """\
-``expect(func, args=(%(shapes_)s), loc=0, lb=None, ub=None, conditional=False)``
+expect(func, args=(%(shapes_)s), loc=0, lb=None, ub=None, conditional=False)
     Expected value of a function (of one argument) with respect to the distribution.
 """
 _doc_median = """\
-``median(%(shapes)s, loc=0, scale=1)``
+median(%(shapes)s, loc=0, scale=1)
     Median of the distribution.
 """
 _doc_mean = """\
-``mean(%(shapes)s, loc=0, scale=1)``
+mean(%(shapes)s, loc=0, scale=1)
     Mean of the distribution.
 """
 _doc_var = """\
-``var(%(shapes)s, loc=0, scale=1)``
+var(%(shapes)s, loc=0, scale=1)
     Variance of the distribution.
 """
 _doc_std = """\
-``std(%(shapes)s, loc=0, scale=1)``
+std(%(shapes)s, loc=0, scale=1)
     Standard deviation of the distribution.
 """
 _doc_interval = """\
-``interval(alpha, %(shapes)s, loc=0, scale=1)``
+interval(alpha, %(shapes)s, loc=0, scale=1)
     Endpoints of the range that contains alpha percent of the distribution
 """
 _doc_allmethods = ''.join([docheaders['methods'], _doc_rvs, _doc_pdf,

@@ -1824,7 +1824,7 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False):
     >>> fig.tight_layout()
     >>> plt.show()
 
-    Using a standard :math:`l_{$\\infty$}`` norm would produce two unity values
+    Using a standard :math:`l_{\\infty}` norm would produce two unity values
     for even `M`, but only one unity value for odd `M`. This produces uneven
     window power that can be counteracted by the approximate correction
     ``M**2/float(M**2+NW)``, which can be selected by using
