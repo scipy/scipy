@@ -701,7 +701,8 @@ class netcdf_file(object):
                 else:
                     pos = self.fp.tell()
                     self.fp.seek(begin_)
-                    data = frombuffer(self.fp.read(a_size), dtype=dtype_)
+                    data = frombuffer(self.fp.read(a_size), dtype=dtype_
+                                     ).copy()
                     data.shape = shape
                     self.fp.seek(pos)
 
@@ -723,7 +724,8 @@ class netcdf_file(object):
             else:
                 pos = self.fp.tell()
                 self.fp.seek(begin)
-                rec_array = frombuffer(self.fp.read(self._recs*self._recsize), dtype=dtypes)
+                rec_array = frombuffer(self.fp.read(self._recs*self._recsize),
+                                       dtype=dtypes).copy()
                 rec_array.shape = (self._recs,)
                 self.fp.seek(pos)
 
@@ -766,7 +768,7 @@ class netcdf_file(object):
         self.fp.read(-count % 4)  # read padding
 
         if typecode is not 'c':
-            values = frombuffer(values, dtype='>%s' % typecode)
+            values = frombuffer(values, dtype='>%s' % typecode).copy()
             if values.shape == (1,):
                 values = values[0]
         else:
