@@ -2581,14 +2581,15 @@ def sigmaclip(a, low=4., high=4.):
     """
     Iterative sigma-clipping of array elements.
 
-    The output array contains only those elements of the input array `c`
-    that satisfy the conditions ::
-
-        mean(c) - std(c)*low < c < mean(c) + std(c)*high
-
     Starting from the full sample, all elements outside the critical range are
-    removed. The iteration continues with a new critical range until no
-    elements are outside the range.
+    removed, i.e. all elements of the input array `c` that satisfy either of
+    the following conditions ::
+
+        c < mean(c) - std(c)*low
+        c > mean(c) + std(c)*high
+
+    The iteration continues with the updated sample until no
+    elements are outside the (updated) range.
 
     Parameters
     ----------
@@ -2639,7 +2640,7 @@ def sigmaclip(a, low=4., high=4.):
         size = c.size
         critlower = c_mean - c_std * low
         critupper = c_mean + c_std * high
-        c = c[(c > critlower) & (c < critupper)]
+        c = c[(c >= critlower) & (c <= critupper)]
         delta = size - c.size
 
     return SigmaclipResult(c, critlower, critupper)
