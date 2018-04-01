@@ -1735,6 +1735,24 @@ class TestFitMethod(object):
         assert_equal(loc, 1)
         assert_allclose(scale, np.exp(lnxm1.mean()), rtol=1e-12)
 
+    def test_uniform_fit(self):
+        x = np.array([1.0, 1.1, 1.2, 9.0])
+
+        loc, scale = stats.uniform.fit(x)
+        assert_equal(loc, x.min())
+        assert_equal(scale, x.ptp())
+
+        loc, scale = stats.uniform.fit(x, floc=0)
+        assert_equal(loc, 0)
+        assert_equal(scale, x.max())
+
+        loc, scale = stats.uniform.fit(x, fscale=10)
+        assert_equal(loc, 0)
+        assert_equal(scale, 10)
+
+        assert_raises(ValueError, stats.uniform.fit, x, floc=2.0)
+        assert_raises(ValueError, stats.uniform.fit, x, fscale=5.0)
+
     def test_fshapes(self):
         # take a beta distribution, with shapes='a, b', and make sure that
         # fa is equivalent to f0, and fb is equivalent to f1
