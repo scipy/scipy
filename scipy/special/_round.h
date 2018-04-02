@@ -7,7 +7,7 @@
 
 #include <numpy/npy_math.h>
 #include "_c99compat.h"
-#include "c_misc/double2.h"
+#include "cephes/dd_real.h"
 
 
 double add_round_up(double a, double b)
@@ -18,7 +18,7 @@ double add_round_up(double a, double b)
 	return NPY_NAN;
     }
 
-    s = double_sum_err(a, b, &err);
+    s = two_sum(a, b, &err);
     if (err > 0) {
 	/* fl(a + b) rounded down */
 	return npy_nextafter(s, NPY_INFINITY);
@@ -38,7 +38,7 @@ double add_round_down(double a, double b)
 	return NPY_NAN;
     }
 
-    s = double_sum_err(a, b, &err);
+    s = two_sum(a, b, &err);
     if (err < 0) {
 	return npy_nextafter(s, -NPY_INFINITY);
     }
