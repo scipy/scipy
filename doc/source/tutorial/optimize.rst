@@ -532,7 +532,7 @@ with Jacobian matrix:
    :nowrap:
 
      \begin{equation*} J(x) =
-     \left[\begin{array}{c} 2x_0 & 1 \\ 2x_0 & -1\end{array}\right],\end{equation*}
+     \left[\begin{array}{cc} 2x_0 & 1 \\ 2x_0 & -1\end{array}\right],\end{equation*}
 
 and linear combination of the Hessians:
 
@@ -540,8 +540,8 @@ and linear combination of the Hessians:
    :nowrap:
 
      \begin{equation*} H(x, v) = \sum_{i=0}^1 v_i \nabla^2 c_i(x) =
-     v_0\left[\begin{array}{c} 2 & 0 \\ 0 & 0\end{array}\right] + 
-     v_1\left[\begin{array}{c} 2 & 0 \\ 0 & 0\end{array}\right],
+     v_0\left[\begin{array}{cc} 2 & 0 \\ 0 & 0\end{array}\right] + 
+     v_1\left[\begin{array}{cc} 2 & 0 \\ 0 & 0\end{array}\right],
      \end{equation*}
 
 is defined using a :func:`NonlinearConstraint` object.
