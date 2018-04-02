@@ -316,7 +316,7 @@ one patch to this release, names in alphabetical order):
 * Tim Cera
 * Lawrence Chan +
 * David Cournapeau
-* Drazen Lucanin +
+* Dražen Lučanin +
 * Alexander J. Dunlap +
 * endolith
 * André Gaul +
