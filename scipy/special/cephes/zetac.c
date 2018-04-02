@@ -56,7 +56,7 @@
 /* Riemann zeta(x) - 1
  * for integer arguments between 0 and 30.
  */
-static double azetac[] = {
+static const double azetac[] = {
     -1.50000000000000000000E0,
     0.0,  /* Not used; zetac(1.0) is infinity. */
     6.44934066848226436472E-1,
@@ -302,7 +302,7 @@ static NPY_INLINE double zetac_reflection(double x)
     /* Group large terms together to prevent overflow */
     s = pow((x + lanczos_g + 0.5) / (2 * NPY_PI * NPY_E), x + 0.5);
     /* Reduce the argument to sine */
-    x_shift = x - 4*floor(x / 4);
+    x_shift = fmod(x, 4);
     s *= -SQRT_2_PI * sin(0.5 * NPY_PI * x_shift);
     s *= lanczos_sum_expg_scaled(x + 1) * zeta(x + 1, 1);
     return s - 1.0;
