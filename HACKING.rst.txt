@@ -504,6 +504,6 @@ suite.
 
 .. _mailing lists: https://www.scipy.org/scipylib/mailing-lists.html
 
-.. _Anaconda SciPy Dev Part I: https://youtu.be/1rPOSNd0ULI
+.. _Anaconda SciPy Dev Part I (macOS): https://youtu.be/1rPOSNd0ULI
 
-.. _Anaconda SciPy Dev Part II: https://youtu.be/Faz29u5xIZc
+.. _Anaconda SciPy Dev Part II (macOS): https://youtu.be/Faz29u5xIZc
