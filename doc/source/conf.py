@@ -194,6 +194,14 @@ latex_elements = {
 \usepackage{etoolbox}
 \makeatletter
 \patchcmd\@item{{\@breaklabel} }{{\@breaklabel}}{}{}
+% Fix bug in expdlist's way of breaking the line after long item label
+\def\breaklabel{%
+    \def\@breaklabel{%
+        \leavevmode\par
+        % now a hack because Sphinx inserts \leavevmode after term node
+        \def\leavevmode{\def\leavevmode{\unhbox\voidb@x}}%
+    }%
+}
 \makeatother
 
 % Make Examples/etc section headers smaller and more compact
