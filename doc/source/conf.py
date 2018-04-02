@@ -187,8 +187,15 @@ latex_elements = {
 \usepackage{expdlist}
 \let\latexdescription=\description
 \let\endlatexdescription=\enddescription
-\renewenvironment{description}%
-{\begin{latexdescription}[\setleftmargin{60pt}\breaklabel\setlabelstyle{\bfseries\itshape}]}%
+\renewenvironment{description}
+{\renewenvironment{description}
+   {\begin{latexdescription}%
+    [\setleftmargin{50pt}\breaklabel\setlabelstyle{\bfseries}]%
+   }%
+   {\end{latexdescription}}%
+ \begin{latexdescription}%
+    [\setleftmargin{15pt}\breaklabel\setlabelstyle{\bfseries\itshape}]%
+}%
 {\end{latexdescription}}
 % Fix bug in expdlist's modified \@item
 \usepackage{etoolbox}
