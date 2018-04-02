@@ -562,11 +562,15 @@ def process_fortran_name(name, funcname):
     return name
 
 
+def called_name(name):
+    included = ['zladiv', 'zdotu', 'zdotc']
+    excluded = ['chla_transtype', 'clanhf', 'slansf']
+    if (name[0] in 'cs' and name not in excluded) or name in included:
+        return "w" + name
+    return name
+
 def fort_subroutine_wrapper(name, ret_type, args):
-    if name[0] in ['c', 's'] or name in ['zladiv', 'zdotu', 'zdotc']:
-        wrapper = 'w' + name
-    else:
-        wrapper = name
+    wrapper = called_name(name)
     types, names = arg_names_and_types(args)
     argnames = ',\n     +    '.join(names)
 
