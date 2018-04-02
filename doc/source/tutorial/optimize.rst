@@ -196,7 +196,7 @@ For example, the Hessian when :math:`N=5` is
 
 .. math::
 
-    \mathbf{H}=\left[\begin{array}{ccccc} 1200x_{0}^{2}-400x_{1}+2 & -400x_{0} & 0 & 0 & 0\\ -400x_{0} & 202+1200x_{1}^{2}-400x_{2} & -400x_{1} & 0 & 0\\ 0 & -400x_{1} & 202+1200x_{2}^{2}-400x_{3} & -400x_{2} & 0\\ 0 &  & -400x_{2} & 202+1200x_{3}^{2}-400x_{4} & -400x_{3}\\ 0 & 0 & 0 & -400x_{3} & 200\end{array}\right].
+    \mathbf{H}=\begin{bmatrix} 1200x_{0}^{2}-400x_{1}+2 & -400x_{0} & 0 & 0 & 0\\ -400x_{0} & 202+1200x_{1}^{2}-400x_{2} & -400x_{1} & 0 & 0\\ 0 & -400x_{1} & 202+1200x_{2}^{2}-400x_{3} & -400x_{2} & 0\\ 0 &  & -400x_{2} & 202+1200x_{3}^{2}-400x_{4} & -400x_{3}\\ 0 & 0 & 0 & -400x_{3} & 200\end{bmatrix}.
 
 The code which computes this Hessian along with the code to minimize
 the function using Newton-CG method is shown in the following example:
@@ -244,7 +244,7 @@ elements:
 
 .. math::
 
-    \mathbf{H}\left(\mathbf{x}\right)\mathbf{p}=\left[\begin{array}{c} \left(1200x_{0}^{2}-400x_{1}+2\right)p_{0}-400x_{0}p_{1}\\ \vdots\\ -400x_{i-1}p_{i-1}+\left(202+1200x_{i}^{2}-400x_{i+1}\right)p_{i}-400x_{i}p_{i+1}\\ \vdots\\ -400x_{N-2}p_{N-2}+200p_{N-1}\end{array}\right].
+    \mathbf{H}\left(\mathbf{x}\right)\mathbf{p}=\begin{bmatrix} \left(1200x_{0}^{2}-400x_{1}+2\right)p_{0}-400x_{0}p_{1}\\ \vdots\\ -400x_{i-1}p_{i-1}+\left(202+1200x_{i}^{2}-400x_{i+1}\right)p_{i}-400x_{i}p_{i+1}\\ \vdots\\ -400x_{N-2}p_{N-2}+200p_{N-1}\end{bmatrix}.
 
 Code which makes use of this Hessian product to minimize the
 Rosenbrock function using :func:`minimize` follows:
@@ -504,10 +504,10 @@ and :math:`2 x_0 + x_1 = 1` can be written in the linear constraint standard for
 .. math::
    :nowrap:
 
-     \begin{equation*} \left[\begin{array}{c}-\infty \\1\end{array}\right] \leq
-      \left[\begin{array}{cc} 1& 2 \\ 2& 1\end{array}\right]
-       \left[\begin{array}{c} x_0 \\x_1\end{array}\right] \leq
-        \left[\begin{array}{c} 1 \\ 1\end{array}\right],\end{equation*}
+     \begin{equation*} \begin{bmatrix}-\infty \\1\end{bmatrix} \leq
+      \begin{bmatrix} 1& 2 \\ 2& 1\end{bmatrix}
+       \begin{bmatrix} x_0 \\x_1\end{bmatrix} \leq
+        \begin{bmatrix} 1 \\ 1\end{bmatrix},\end{equation*}
 
 and defined using a :func:`LinearConstraint` object.
 
@@ -522,9 +522,9 @@ The nonlinear constraint:
    :nowrap:
 
      \begin{equation*} c(x) =
-     \left[\begin{array}{c} x_0^2 + x_1 \\ x_0^2 - x_1\end{array}\right]
+     \begin{bmatrix} x_0^2 + x_1 \\ x_0^2 - x_1\end{bmatrix}
       \leq 
-      \left[\begin{array}{c} 1 \\ 1\end{array}\right], \end{equation*}
+      \begin{bmatrix} 1 \\ 1\end{bmatrix}, \end{equation*}
 
 with Jacobian matrix:
 
@@ -532,7 +532,7 @@ with Jacobian matrix:
    :nowrap:
 
      \begin{equation*} J(x) =
-     \left[\begin{array}{c} 2x_0 & 1 \\ 2x_0 & -1\end{array}\right],\end{equation*}
+     \begin{bmatrix} 2x_0 & 1 \\ 2x_0 & -1\end{bmatrix},\end{equation*}
 
 and linear combination of the Hessians:
 
@@ -540,8 +540,8 @@ and linear combination of the Hessians:
    :nowrap:
 
      \begin{equation*} H(x, v) = \sum_{i=0}^1 v_i \nabla^2 c_i(x) =
-     v_0\left[\begin{array}{c} 2 & 0 \\ 0 & 0\end{array}\right] + 
-     v_1\left[\begin{array}{c} 2 & 0 \\ 0 & 0\end{array}\right],
+     v_0\begin{bmatrix} 2 & 0 \\ 0 & 0\end{bmatrix} + 
+     v_1\begin{bmatrix} 2 & 0 \\ 0 & 0\end{bmatrix},
      \end{equation*}
 
 is defined using a :func:`NonlinearConstraint` object.
