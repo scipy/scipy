@@ -3,10 +3,17 @@
  *
  * This work was supported by the Director, Office of Science, Division
  * of Mathematical, Information, and Computational Sciences of the
- * U.S. Department of Energy under contract number DE-AC03-76SF00098.
+ * U.S. Department of Energy under contract numbers DE-AC03-76SF00098 and
+ * DE-AC02-05CH11231.
+ * 
+ * Copyright (c) 2003-2009, The Regents of the University of California,
+ * through Lawrence Berkeley National Laboratory (subject to receipt of
+ * any required approvals from U.S. Dept. of Energy) All rights reserved.
  *
- * Copyright (c) 2000-2007
- *
+ * By downloading or using this software you are agreeing to the modified
+ * BSD license "BSD-LBNL-License.doc" (see LICENSE.txt).
+ */
+/*
  * Contains implementation of non-inlined functions of double-double
  * package.  Inlined functions are found in dd_real_inline.h.
  */
