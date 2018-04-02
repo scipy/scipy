@@ -216,6 +216,14 @@ latex_elements = {
 % Fix: ≠ is unknown to XeLaTeX's default font Latin Modern
 \usepackage{newunicodechar}
 \newunicodechar{≠}{\ensuremath{\neq}}
+% Get PDF to use maximal depth bookmarks
+\hypersetup{bookmarksdepth=subparagraph}
+% reduce hyperref warnings
+\pdfstringdefDisableCommands{%
+  \let\sphinxupquote\empty
+  \let\sphinxstyleliteralintitle\empty
+  \let\sphinxstyleemphasis\empty
+}
 ''',
     # Latex figure (float) alignment
     #
