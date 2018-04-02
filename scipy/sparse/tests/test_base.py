@@ -2006,6 +2006,8 @@ class _TestCommon(object):
 
 
 class _TestInplaceArithmetic(object):
+    @pytest.mark.skipif(NumpyVersion(np.__version__) < "1.13.0",
+                        reason="numpy version doesn't respect array priority")
     def test_inplace_dense(self):
         a = np.ones((3, 4))
         b = self.spmatrix(a)
