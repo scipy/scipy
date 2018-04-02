@@ -1,7 +1,10 @@
 from __future__ import division, print_function, absolute_import
 
+import sys
+
 import numpy as np
 from numpy.testing import assert_equal, assert_allclose
+import pytest
 
 from scipy.special._ufuncs import _sinpi as sinpi
 from scipy.special._ufuncs import _cospi as cospi
@@ -50,6 +53,10 @@ def test_intermediate_overlow():
     assert_allclose(cospi(p), std)
 
 
+@pytest.mark.xfail('win32' in sys.platform
+                   and np.intp(0).itemsize < 8
+                   and sys.version_info < (3, 5),
+                   reason="fails on 32-bit Windows with old MSVC")
 def test_zero_sign():
     y = sinpi(-0.0)
     assert y == 0.0
