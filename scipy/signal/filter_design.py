@@ -172,6 +172,7 @@ def freqs(b, a, worN=200, plot=None):
 
     """
     if worN is None:
+        # For backwards compatibility
         w = findfreqs(b, a, 200)
     elif _is_int_type(worN):
         w = findfreqs(b, a, worN)
@@ -250,6 +251,7 @@ def freqs_zpk(z, p, k, worN=200):
         raise ValueError('k must be a single scalar gain')
 
     if worN is None:
+        # For backwards compatibility
         w = findfreqs(z, p, 200, kind='zp')
     elif _is_int_type(worN):
         w = findfreqs(z, p, worN, kind='zp')
@@ -419,6 +421,7 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=None):
     a = atleast_1d(a)
 
     if worN is None:
+        # For backwards compatibility
         worN = 512
 
     h = None
@@ -562,6 +565,7 @@ def freqz_zpk(z, p, k, worN=512, whole=False, fs=None):
         lastpoint = pi
 
     if worN is None:
+        # For backwards compatibility
         w = numpy.linspace(0, lastpoint, 512, endpoint=False)
     elif _is_int_type(worN):
         w = numpy.linspace(0, lastpoint, worN, endpoint=False)
@@ -656,6 +660,7 @@ def group_delay(system, w=512, whole=False, fs=None):
 
     """
     if w is None:
+        # For backwards compatibility
         w = 512
 
     if _is_int_type(w):
