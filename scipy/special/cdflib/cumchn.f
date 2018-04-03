@@ -76,7 +76,7 @@ C     .. Statement Functions ..
       LOGICAL qsmall
 C     ..
 C     .. Data statements ..
-      DATA eps/1.0D-5/
+      DATA eps/1.0D-15/
       DATA abstol/1.0D-300/
 C     ..
 C     .. Statement Function definitions ..

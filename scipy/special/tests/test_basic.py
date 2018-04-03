@@ -218,10 +218,28 @@ class TestCephes(object):
 
     def test_chndtr(self):
         assert_equal(cephes.chndtr(0,1,0),0.0)
-        p = cephes.chndtr(np.linspace(20, 25, 5), 2, 1.07458615e+02)
-        assert_allclose(p, [1.21805009e-09, 2.81979982e-09, 6.25652736e-09,
-                            1.33520017e-08, 2.74909967e-08],
-                        rtol=1e-6, atol=0)
+
+        # Each row holds (x, nu, lam, expected_value)
+        # These values were computed using Wolfram Alpha with
+        #     CDF[NoncentralChiSquareDistribution[nu, lam], x]
+        values = np.array([
+            [25.00, 20.0, 400, 4.1210655112396197139e-57],
+            [25.00, 8.00, 250, 2.3988026526832425878e-29],
+            [0.001, 8.00, 40., 5.3761806201366039084e-24],
+            [0.010, 8.00, 40., 5.45396231055999457039e-20],
+            [20.00, 2.00, 107, 1.39390743555819597802e-9],
+            [22.50, 2.00, 107, 7.11803307138105870671e-9],
+            [25.00, 2.00, 107, 3.11041244829864897313e-8],
+            [3.000, 2.00, 1.0, 0.62064365321954362734],
+            [350.0, 300., 10., 0.93880128006276407710],
+            [100.0, 13.5, 10., 0.99999999650104210949],
+            [700.0, 20.0, 400, 0.99999999925680650105],
+            [150.0, 13.5, 10., 0.99999999999999983046],
+            [160.0, 13.5, 10., 0.99999999999999999518],  # 1.0
+        ])
+        cdf = cephes.chndtr(values[:, 0], values[:, 1], values[:, 2])
+        assert_allclose(cdf, values[:, 3], rtol=1e-12)
+
         assert_almost_equal(cephes.chndtr(np.inf, np.inf, 0), 2.0)
         assert_almost_equal(cephes.chndtr(2, 1, np.inf), 0.0)
         assert_(np.isnan(cephes.chndtr(np.nan, 1, 2)))
