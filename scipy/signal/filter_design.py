@@ -304,7 +304,7 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=None):
     whole : bool, optional
         Normally, frequencies are computed from 0 to the Nyquist frequency,
         fs/2 (upper-half of unit-circle).  If `whole` is True, compute
-        frequencies from 0 to fs.
+        frequencies from 0 to fs.  Ignored if w is array_like.
     plot : callable
         A callable that takes two arguments. If given, the return parameters
         `w` and `h` are passed to plot. Useful for plotting the frequency
@@ -501,7 +501,7 @@ def freqz_zpk(z, p, k, worN=512, whole=False, fs=None):
     whole : bool, optional
         Normally, frequencies are computed from 0 to the Nyquist frequency,
         fs/2 (upper-half of unit-circle).  If `whole` is True, compute
-        frequencies from 0 to fs.
+        frequencies from 0 to fs.  Ignored if w is array_like.
     fs : float
         The sampling frequency of the digital system.  Defaults to 2*pi
         radians/sample (so w is from 0 to pi).
@@ -603,7 +603,7 @@ def group_delay(system, w=512, whole=False, fs=None):
     whole : bool, optional
         Normally, frequencies are computed from 0 to the Nyquist frequency,
         fs/2 (upper-half of unit-circle).  If `whole` is True, compute
-        frequencies from 0 to fs.
+        frequencies from 0 to fs.  Ignored if w is array_like.
     fs : float
         The sampling frequency of the digital system.  Defaults to 2*pi
         radians/sample (so w is from 0 to pi).
