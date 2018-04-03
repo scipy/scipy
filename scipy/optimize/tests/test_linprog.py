@@ -615,6 +615,17 @@ class LinprogCommonTests(object):
                       method=self.method, options=self.options)
         _assert_success(res, desired_x=b, desired_fun=np.sum(b))
 
+    def test_bug_8663(self):
+        A = [[0, -7]]
+        b = [-6]
+        c = [1, 5]
+        bounds = [(0, None), (None, None)]
+        res = linprog(c, A_eq=A, b_eq=b, bounds=bounds,
+                      method=self.method, options=self.options)
+        _assert_success(res,
+                        desired_x=[0, 6./7],
+                        desired_fun=5*6./7)
+
 
 class TestLinprogSimplex(LinprogCommonTests):
     method = "simplex"
