@@ -2475,7 +2475,7 @@ void qh_point_add(qhT *qh, setT *set, pointT *point, void *elem) {
     qh_fprintf(qh, qh->ferr, 7067, "qhull internal warning (point_add): unknown point %p id %d\n",
       point, id);
   else if (id >= size) {
-    qh_fprintf(qh, qh->ferr, 6160, "qhull internal errror(point_add): point p%d is out of bounds(%d)\n",
+    qh_fprintf(qh, qh->ferr, 6160, "qhull internal error(point_add): point p%d is out of bounds(%d)\n",
              id, size);
     qh_errexit(qh, qh_ERRqhull, NULL, NULL);
   }else

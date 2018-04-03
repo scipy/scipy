@@ -77,8 +77,13 @@ class _data_matrix(spmatrix):
 
     astype.__doc__ = spmatrix.astype.__doc__
 
-    def conj(self):
-        return self._with_data(self.data.conj())
+    def conj(self, copy=True):
+        if np.issubdtype(self.dtype, np.complexfloating):
+            return self._with_data(self.data.conj(), copy=copy)
+        elif copy:
+            return self.copy()
+        else:
+            return self
 
     conj.__doc__ = spmatrix.conj.__doc__
 

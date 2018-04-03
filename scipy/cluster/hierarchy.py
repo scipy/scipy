@@ -490,7 +490,7 @@ def linkage(y, method='single', metric='euclidean', optimal_ordering=False):
     or a 2d array of observation vectors.
 
     If y is a 1d condensed distance matrix,
-    then y must be a :math:`{n \\choose 2}` sized
+    then y must be a :math:`\\binom{n}{2}` sized
     vector where n is the number of original observations paired
     in the distance matrix. The behavior of this function is very
     similar to the MATLAB linkage function.
@@ -1319,13 +1319,13 @@ def inconsistent(Z, d=2):
     >>> X = [[i] for i in [2, 8, 0, 4, 1, 9, 9, 0]]
     >>> Z = linkage(X, 'ward')
     >>> print(Z)
-    [[  5.           6.           0.           2.        ]
-     [  2.           7.           0.           2.        ]
-     [  0.           4.           1.           2.        ]
-     [  1.           8.           1.15470054   3.        ]
-     [  9.          10.           2.12132034   4.        ]
-     [  3.          12.           4.11096096   5.        ]
-     [ 11.          13.          14.07183949   8.        ]]
+    [[ 5.          6.          0.          2.        ]
+     [ 2.          7.          0.          2.        ]
+     [ 0.          4.          1.          2.        ]
+     [ 1.          8.          1.15470054  3.        ]
+     [ 9.         10.          2.12132034  4.        ]
+     [ 3.         12.          4.11096096  5.        ]
+     [11.         13.         14.07183949  8.        ]]
     >>> inconsistent(Z)
     array([[ 0.        ,  0.        ,  1.        ,  0.        ],
            [ 0.        ,  0.        ,  1.        ,  0.        ],

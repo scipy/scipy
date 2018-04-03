@@ -109,9 +109,9 @@ of ``X`` and compare them to the known results:
 
     >>> evals_large, evecs_large = eigsh(X, 3, which='LM')
     >>> print(evals_all[-3:])
-    [ 29.1446102   30.05821805  31.19467646]
+    [29.1446102  30.05821805 31.19467646]
     >>> print(evals_large)
-    [ 29.1446102   30.05821805  31.19467646]
+    [29.1446102  30.05821805 31.19467646]
     >>> print(np.dot(evecs_large.T, evecs_all[:,-3:]))
     array([[-1.  0.  0.],       # may vary (signs)
            [ 0.  1.  0.],

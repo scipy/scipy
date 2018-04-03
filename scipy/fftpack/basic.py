@@ -95,6 +95,7 @@ def _fake_cfftnd(x, shape, *a, **kw):
     else:
         return _fftpack.zfftnd(x, shape, *a, **kw).astype(numpy.complex64)
 
+
 _DTYPE_TO_FFT = {
 #        numpy.dtype(numpy.float32): _fftpack.crfft,
         numpy.dtype(numpy.float32): _fake_crfft,

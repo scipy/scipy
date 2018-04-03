@@ -7,6 +7,18 @@
 #include "Python.h"
 #include <setjmp.h>
 
+#ifdef PYPY_VERSION
+    /*
+     * As described in http://doc.pypy.org/en/latest/cpython_differences.html#c-api-differences,
+     * "assignment to a PyTupleObject is not supported after the tuple is used internally,
+     * even by another C-API function call."
+     */
+    #define PyArgs(Operation) PyList_##Operation
+#else
+    /* Using a list in CPython raises "TypeError: argument list must be a tuple" */
+    #define PyArgs(Operation) PyTuple_##Operation
+#endif
+
 typedef struct {
     int funcalls;
     int iterations;
@@ -35,7 +47,7 @@ scipy_zeros_functions_func(double x, void *params)
 
     args = myparams->args;
     f = myparams->function;
-    PyTuple_SetItem(args, 0, Py_BuildValue("d",x));
+    PyArgs(SetItem)(args, 0, Py_BuildValue("d",x));
     retval=PyObject_CallObject(f,args);
     if (retval == NULL) {
         longjmp(myparams->env, 1);
@@ -75,10 +87,10 @@ call_solver(solver_type solver, PyObject *self, PyObject *args)
 
     len = PyTuple_Size(xargs);
     /* Make room for the double as first argument */
-    fargs = PyTuple_New(len + 1);
+    fargs = PyArgs(New)(len + 1);
     if (fargs == NULL) {
         PyErr_SetString(PyExc_RuntimeError,
-                "Failed to allocate argument tuple");
+                "Failed to allocate arguments");
         return NULL;
     }
 
@@ -89,7 +101,7 @@ call_solver(solver_type solver, PyObject *self, PyObject *args)
             return NULL;
         }
         Py_INCREF(item);
-        PyTuple_SET_ITEM(fargs, i+1, item);
+        PyArgs(SET_ITEM)(fargs, i+1, item);
     }
 
     params.function = f;

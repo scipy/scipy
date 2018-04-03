@@ -160,6 +160,7 @@ def ellip_harm_2(h2, k2, n, p, s):
 def _ellip_normal_vec(h2, k2, n, p):
     return _ellipsoid_norm(h2, k2, n, p)
 
+
 _ellip_normal_vec = np.vectorize(_ellip_normal_vec, otypes='d')
 
 

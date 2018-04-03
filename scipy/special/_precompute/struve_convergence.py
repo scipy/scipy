@@ -46,8 +46,9 @@ def err_metric(a, b, atol=1e-290):
 
 
 def do_plot(is_h=True):
-    from scipy.special._ufuncs import \
-         _struve_power_series, _struve_asymp_large_z, _struve_bessel_series
+    from scipy.special._ufuncs import (_struve_power_series,
+                                       _struve_asymp_large_z,
+                                       _struve_bessel_series)
 
     vs = np.linspace(-1000, 1000, 91)
     zs = np.sort(np.r_[1e-5, 1.0, np.linspace(0, 700, 91)[1:]])
@@ -116,12 +117,6 @@ def main():
     plt.savefig('struve_convergence.png')
     plt.show()
 
+
 if __name__ == "__main__":
-    import os
-    import sys
-    if '--main' in sys.argv:
-        main()
-    else:
-        import subprocess
-        subprocess.call([sys.executable, os.path.join('..', '..', '..', 'runtests.py'),
-                         '-g', '--python', __file__, '--main'])
+    main()

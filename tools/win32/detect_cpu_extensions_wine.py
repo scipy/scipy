@@ -96,6 +96,7 @@ def process(fn):
 # Instruction lists
 #------------------------------------------------------------------------------
 
+
 # x86
 EXTS_x86 = dict(
     _486='bswap cmpxch cpuid invd invlpg wbinvd xadd',

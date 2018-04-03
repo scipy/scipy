@@ -76,6 +76,7 @@ class OdrStop(Exception):
     """
     pass
 
+
 # Backwards compatibility
 odr_error = OdrError
 odr_stop = OdrStop

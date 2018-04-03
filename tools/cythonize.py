@@ -120,6 +120,7 @@ def process_tempita_pyx(fromfile, tofile, cwd):
         f.write(pyxcontent)
     process_pyx(pyxfile, tofile, cwd)
 
+
 rules = {
     # fromext : function
     '.pyx': process_pyx,

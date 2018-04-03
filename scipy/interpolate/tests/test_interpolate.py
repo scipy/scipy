@@ -6,6 +6,7 @@ from numpy.testing import (assert_, assert_equal, assert_almost_equal,
         assert_array_almost_equal, assert_array_equal,
         assert_allclose)
 from pytest import raises as assert_raises
+import pytest
 
 from numpy import mgrid, pi, sin, ogrid, poly1d, linspace
 import numpy as np
@@ -22,7 +23,7 @@ from scipy.special import poch, gamma
 
 from scipy.interpolate import _ppoly
 
-from scipy._lib._gcutils import assert_deallocated
+from scipy._lib._gcutils import assert_deallocated, IS_PYPY
 
 from scipy.integrate import nquad
 
@@ -612,6 +613,7 @@ class TestInterp1D(object):
             self._check_complex(np.complex64, kind)
             self._check_complex(np.complex128, kind)
 
+    @pytest.mark.skipif(IS_PYPY, reason="Test not meaningful on PyPy")
     def test_circular_refs(self):
         # Test interp1d can be automatically garbage collected
         x = np.linspace(0, 1)

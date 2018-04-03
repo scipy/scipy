@@ -79,6 +79,8 @@ Filter design
 
    bilinear      -- Digital filter from an analog filter using
                     -- the bilinear transform.
+   bilinear_zpk  -- Digital filter from an analog filter using
+                    -- the bilinear transform.
    findfreqs     -- Find array of frequencies for computing filter response.
    firls         -- FIR filter design using least-squares error minimization.
    firwin        -- Windowed FIR filter design, with frequency response
@@ -126,9 +128,13 @@ Lower-level filter design functions:
    cmplx_sort     -- Sort roots based on magnitude.
    ellipap        -- Return (z,p,k) for analog prototype of elliptic filter.
    lp2bp          -- Transform a lowpass filter prototype to a bandpass filter.
+   lp2bp_zpk      -- Transform a lowpass filter prototype to a bandpass filter.
    lp2bs          -- Transform a lowpass filter prototype to a bandstop filter.
+   lp2bs_zpk      -- Transform a lowpass filter prototype to a bandstop filter.
    lp2hp          -- Transform a lowpass filter prototype to a highpass filter.
+   lp2hp_zpk      -- Transform a lowpass filter prototype to a highpass filter.
    lp2lp          -- Transform a lowpass filter prototype to a lowpass filter.
+   lp2lp_zpk      -- Transform a lowpass filter prototype to a lowpass filter.
    normalize      -- Normalize polynomial representation of a transfer function.
 
 
@@ -242,7 +248,9 @@ but we list them here for convenience:
    windows.exponential       -- Exponential window
    windows.flattop           -- Flat top window
    windows.gaussian          -- Gaussian window
+   windows.general_cosine    -- Generalized Cosine window
    windows.general_gaussian  -- Generalized Gaussian window
+   windows.general_hamming   -- Generalized Hamming window
    windows.hamming           -- Hamming window
    windows.hann              -- Hann window
    windows.hanning           -- Hann window
@@ -272,10 +280,13 @@ Peak finding
 .. autosummary::
    :toctree: generated/
 
-   find_peaks_cwt -- Attempt to find the peaks in the given 1-D array
-   argrelmin      -- Calculate the relative minima of data
-   argrelmax      -- Calculate the relative maxima of data
-   argrelextrema  -- Calculate the relative extrema of data
+   argrelmin        -- Calculate the relative minima of data
+   argrelmax        -- Calculate the relative maxima of data
+   argrelextrema    -- Calculate the relative extrema of data
+   find_peaks       -- Find a subset of peaks inside a signal.
+   find_peaks_cwt   -- Find peaks in a 1-D array with wavelet transformation.
+   peak_prominences -- Calculate the prominence of each peak in a signal.
+   peak_widths      -- Calculate the width of each peak in a signal.
 
 Spectral Analysis
 =================
@@ -322,7 +333,7 @@ from .windows import get_window  # keep this one in signal namespace
 # deal with * -> windows.* deprecation
 deprecated_windows = ('boxcar', 'triang', 'parzen', 'bohman', 'blackman',
                       'nuttall', 'blackmanharris', 'flattop', 'bartlett',
-                      'hanning', 'barthann', 'hamming', 'kaiser', 'gaussian',
+                      'barthann', 'hamming', 'kaiser', 'gaussian',
                       'general_gaussian', 'chebwin', 'slepian', 'cosine',
                       'hann', 'exponential', 'tukey')
 

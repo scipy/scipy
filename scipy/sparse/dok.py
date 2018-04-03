@@ -471,9 +471,9 @@ class dok_matrix(spmatrix, IndexMixin, dict):
 
         idx_dtype = get_index_dtype(maxval=max(self.shape))
         data = np.fromiter(itervalues(self), dtype=self.dtype, count=self.nnz)
-        I = np.fromiter((i for i, _ in iterkeys(self)), dtype=idx_dtype, count=self.nnz)
-        J = np.fromiter((j for _, j in iterkeys(self)), dtype=idx_dtype, count=self.nnz)
-        A = coo_matrix((data, (I, J)), shape=self.shape, dtype=self.dtype)
+        row = np.fromiter((i for i, _ in iterkeys(self)), dtype=idx_dtype, count=self.nnz)
+        col = np.fromiter((j for _, j in iterkeys(self)), dtype=idx_dtype, count=self.nnz)
+        A = coo_matrix((data, (row, col)), shape=self.shape, dtype=self.dtype)
         A.has_canonical_format = True
         return A
 

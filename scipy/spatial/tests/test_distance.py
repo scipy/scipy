@@ -615,6 +615,34 @@ class TestCdist(object):
             out5 = np.empty((out_r, out_c), dtype=np.int64)
             assert_raises(ValueError, cdist, X1, X2, metric, out=out5, **kwargs)
 
+    def test_striding(self):
+        # test that striding is handled correct with calls to
+        # _copy_array_if_base_present
+        eps = 1e-07
+        X1 = eo['cdist-X1'][::2, ::2]
+        X2 = eo['cdist-X2'][::2, ::2]
+        X1_copy = X1.copy()
+        X2_copy = X2.copy()
+
+        # confirm equivalence
+        assert_equal(X1, X1_copy)
+        assert_equal(X2, X2_copy)
+        # confirm contiguity
+        assert_(not X1.flags.c_contiguous)
+        assert_(not X2.flags.c_contiguous)
+        assert_(X1_copy.flags.c_contiguous)
+        assert_(X2_copy.flags.c_contiguous)
+
+        for metric in _METRICS_NAMES:
+            kwargs = dict()
+            if metric in ['minkowski', 'wminkowski']:
+                kwargs['p'] = 1.23
+                if metric == 'wminkowski':
+                    kwargs['w'] = 1.0 / X1.std(axis=0)
+            Y1 = cdist(X1, X2, metric, **kwargs)
+            Y2 = cdist(X1_copy, X2_copy, metric, **kwargs)
+            # test that output is numerically equivalent
+            _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
 class TestPdist(object):
 
@@ -1373,6 +1401,27 @@ class TestPdist(object):
             out5 = np.empty(out_size, dtype=np.int64)
             assert_raises(ValueError, pdist, X, metric, out=out5, **kwargs)
 
+    def test_striding(self):
+        # test that striding is handled correct with calls to
+        # _copy_array_if_base_present
+        eps = 1e-07
+        X = eo['random-float32-data'][::5, ::2]
+        X_copy = X.copy()
+
+        # confirm contiguity
+        assert_(not X.flags.c_contiguous)
+        assert_(X_copy.flags.c_contiguous)
+
+        for metric in _METRICS_NAMES:
+            kwargs = dict()
+            if metric in ['minkowski', 'wminkowski']:
+                kwargs['p'] = 1.23
+            if metric == 'wminkowski':
+                kwargs['w'] = 1.0 / X.std(axis=0)
+            Y1 = pdist(X, metric, **kwargs)
+            Y2 = pdist(X_copy, metric, **kwargs)
+            # test that output is numerically equivalent
+            _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
 class TestSomeDistanceFunctions(object):
 
@@ -1961,4 +2010,3 @@ def test__validate_vector():
 
     x = [[1, 2], [3, 4]]
     assert_raises(ValueError, _validate_vector, x)
-

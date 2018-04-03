@@ -503,6 +503,10 @@ class MMFile (object):
             a = zeros((rows, cols), dtype=dtype)
             line = 1
             i, j = 0, 0
+            if is_skew:
+                a[i, j] = 0
+                if i < rows - 1:
+                    i += 1
             while line:
                 line = stream.readline()
                 if not line or line.startswith(b'%'):
@@ -529,8 +533,17 @@ class MMFile (object):
                         i = 0
                     else:
                         i = j
-            if not (i in [0, j] and j == cols):
-                raise ValueError("Parse error, did not read all lines.")
+                        if is_skew:
+                            a[i, j] = 0
+                            if i < rows-1:
+                                i += 1     
+                                
+            if is_skew:
+                if not (i in [0, j] and j == cols - 1):
+                    raise ValueError("Parse error, did not read all lines.")
+            else:
+                if not (i in [0, j] and j == cols):
+                    raise ValueError("Parse error, did not read all lines.")
 
         elif format == self.FORMAT_COORDINATE and coo_matrix is None:
             # Read sparse matrix to dense when coo_matrix is not available.
@@ -699,19 +712,22 @@ class MMFile (object):
             stream.write(asbytes('%%%s\n' % (line)))
 
         template = self._field_template(field, precision)
-
         # write dense format
         if rep == self.FORMAT_ARRAY:
-
             # write shape spec
             stream.write(asbytes('%i %i\n' % (rows, cols)))
 
             if field in (self.FIELD_INTEGER, self.FIELD_REAL):
-
                 if symmetry == self.SYMMETRY_GENERAL:
                     for j in range(cols):
                         for i in range(rows):
                             stream.write(asbytes(template % a[i, j]))
+                            
+                elif symmetry == self.SYMMETRY_SKEW_SYMMETRIC:
+                    for j in range(cols):
+                        for i in range(j + 1, rows):
+                            stream.write(asbytes(template % a[i, j]))
+                            
                 else:
                     for j in range(cols):
                         for i in range(j, rows):

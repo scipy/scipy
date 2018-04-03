@@ -1,7 +1,7 @@
 # Makefile for Sphinx documentation
 #
 
-PYVER ?= 2.7
+PYVER ?= 3.6
 PYTHON = python$(PYVER)
 
 # You can set these variables from the command line.
@@ -12,8 +12,8 @@ PAPER         =
 FILES=
 
 # Internal variables.
-PAPEROPT_a4     = -D latex_paper_size=a4
-PAPEROPT_letter = -D latex_paper_size=letter
+PAPEROPT_a4     = -D "latex_elements.papersize=a4paper"
+PAPEROPT_letter = -D "latex_elements.papersize=letterpaper"
 ALLSPHINXOPTS   = -d build/doctrees $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) source
 
 .PHONY: help clean html web pickle htmlhelp latex changes linkcheck \
@@ -53,14 +53,14 @@ INSTALL_DIR = $(CURDIR)/build/inst-dist/
 INSTALL_PPH = $(INSTALL_DIR)/lib/python$(PYVER)/site-packages:$(INSTALL_DIR)/local/lib/python$(PYVER)/site-packages:$(INSTALL_DIR)/lib/python$(PYVER)/dist-packages:$(INSTALL_DIR)/local/lib/python$(PYVER)/dist-packages
 UPLOAD_DIR=/srv/docs_scipy_org/doc/scipy-$(RELEASE)
 
-DIST_VARS=PYTHON="PYTHONPATH=$(INSTALL_PPH):$$PYTHONPATH python$(PYVER)" SPHINXBUILD="LANG=C PYTHONPATH=$(INSTALL_PPH):$$PYTHONPATH python$(PYVER) `which sphinx-build`"
+DIST_VARS=PYTHON="PYTHONPATH=$(INSTALL_PPH):$$PYTHONPATH $(PYTHON)" SPHINXBUILD="PYTHONPATH=$(INSTALL_PPH):$$PYTHONPATH $(SPHINXBUILD)"
 
 dist:
 	make $(DIST_VARS) real-dist
 
 real-dist: dist-build html html-scipyorg
 	test -d build/latex || make latex
-	make -C build/latex all-pdf
+	make -C build/latex all-pdf LATEXOPTS="-halt-on-error"
 	-test -d build/htmlhelp || make htmlhelp-build
 	-rm -rf build/dist
 	mkdir -p build/dist
@@ -92,7 +92,6 @@ upload:
 	    $(UPLOAD_DIR)/scipy-html-$(RELEASE).zip
 	ssh $(USERNAME)@new.scipy.org rm $(UPLOAD_DIR)/dist.tar.gz
 	ssh $(USERNAME)@new.scipy.org ln -snf scipy-$(RELEASE) /srv/docs_scipy_org/doc/scipy
-	ssh $(USERNAME)@new.scipy.org /srv/bin/fixperm-scipy_org.sh
 
 #------------------------------------------------------------------------------
 # Basic Sphinx generation rules for different formats
@@ -135,7 +134,6 @@ latex:
 	mkdir -p build/latex build/doctrees
 	$(SPHINXBUILD) -b latex $(ALLSPHINXOPTS) build/latex $(FILES)
 	$(PYTHON) postprocess.py tex build/latex/*.tex
-	perl -pi -e 's/\t(latex.*|pdflatex) (.*)/\t-$$1 -interaction batchmode $$2/' build/latex/Makefile
 	@echo
 	@echo "Build finished; the LaTeX files are in build/latex."
 	@echo "Run \`make all-pdf' or \`make all-ps' in that directory to" \

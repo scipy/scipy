@@ -14,6 +14,7 @@ from scipy.sparse.linalg.interface import LinearOperator
 from scipy.sparse.linalg import splu
 from scipy.sparse.linalg.isolve import lgmres, gmres
 
+from scipy._lib._numpy_compat import suppress_warnings
 
 Am = csr_matrix(array([[-2,1,0,0,0,9],
                        [1,-2,1,0,5,0],
@@ -28,12 +29,16 @@ count = [0]
 def matvec(v):
     count[0] += 1
     return Am*v
+
+
 A = LinearOperator(matvec=matvec, shape=Am.shape, dtype=Am.dtype)
 
 
 def do_solve(**kw):
     count[0] = 0
-    x0, flag = lgmres(A, b, x0=zeros(A.shape[0]), inner_m=6, tol=1e-14, **kw)
+    with suppress_warnings() as sup:
+        sup.filter(DeprecationWarning, ".*called without specifying.*")
+        x0, flag = lgmres(A, b, x0=zeros(A.shape[0]), inner_m=6, tol=1e-14, **kw)
     count_0 = count[0]
     assert_(allclose(A*x0, b, rtol=1e-12, atol=1e-12), norm(A*x0-b))
     return x0, count_0
@@ -85,8 +90,10 @@ class TestLGMRES(object):
         b = np.random.rand(10000)
 
         # The inner arnoldi should be equivalent to gmres
-        x0, flag0 = lgmres(A, b, x0=zeros(A.shape[0]), inner_m=15, maxiter=1)
-        x1, flag1 = gmres(A, b, x0=zeros(A.shape[0]), restart=15, maxiter=1)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, ".*called without specifying.*")
+            x0, flag0 = lgmres(A, b, x0=zeros(A.shape[0]), inner_m=15, maxiter=1)
+            x1, flag1 = gmres(A, b, x0=zeros(A.shape[0]), restart=15, maxiter=1)
 
         assert_equal(flag0, 1)
         assert_equal(flag1, 1)
@@ -104,31 +111,36 @@ class TestLGMRES(object):
         for n in [3, 5, 10, 100]:
             A = 2*eye(n)
 
-            b = np.ones(n)
-            x, info = lgmres(A, b, maxiter=10)
-            assert_equal(info, 0)
-            assert_allclose(A.dot(x) - b, 0, atol=1e-14)
+            with suppress_warnings() as sup:
+                sup.filter(DeprecationWarning, ".*called without specifying.*")
 
-            x, info = lgmres(A, b, tol=0, maxiter=10)
-            if info == 0:
+                b = np.ones(n)
+                x, info = lgmres(A, b, maxiter=10)
+                assert_equal(info, 0)
                 assert_allclose(A.dot(x) - b, 0, atol=1e-14)
 
-            b = np.random.rand(n)
-            x, info = lgmres(A, b, maxiter=10)
-            assert_equal(info, 0)
-            assert_allclose(A.dot(x) - b, 0, atol=1e-14)
+                x, info = lgmres(A, b, tol=0, maxiter=10)
+                if info == 0:
+                    assert_allclose(A.dot(x) - b, 0, atol=1e-14)
 
-            x, info = lgmres(A, b, tol=0, maxiter=10)
-            if info == 0:
+                b = np.random.rand(n)
+                x, info = lgmres(A, b, maxiter=10)
+                assert_equal(info, 0)
                 assert_allclose(A.dot(x) - b, 0, atol=1e-14)
+
+                x, info = lgmres(A, b, tol=0, maxiter=10)
+                if info == 0:
+                    assert_allclose(A.dot(x) - b, 0, atol=1e-14)
 
     def test_nans(self):
         A = eye(3, format='lil')
         A[1,1] = np.nan
         b = np.ones(3)
 
-        x, info = lgmres(A, b, tol=0, maxiter=10)
-        assert_equal(info, 1)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, ".*called without specifying.*")
+            x, info = lgmres(A, b, tol=0, maxiter=10)
+            assert_equal(info, 1)
 
     def test_breakdown_with_outer_v(self):
         A = np.array([[1, 2], [3, 4]], dtype=float)
@@ -139,7 +151,9 @@ class TestLGMRES(object):
 
         # The inner iteration should converge to the correct solution,
         # since it's in the outer vector list
-        xp, info = lgmres(A, b, outer_v=[(v0, None), (x, None)], maxiter=1)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, ".*called without specifying.*")
+            xp, info = lgmres(A, b, outer_v=[(v0, None), (x, None)], maxiter=1)
 
         assert_allclose(xp, x, atol=1e-12)
 
@@ -159,7 +173,9 @@ class TestLGMRES(object):
         ]
 
         for b in bs:
-            xp, info = lgmres(A, b, maxiter=1)
+            with suppress_warnings() as sup:
+                sup.filter(DeprecationWarning, ".*called without specifying.*")
+                xp, info = lgmres(A, b, maxiter=1)
             resp = np.linalg.norm(A.dot(xp) - b)
 
             K = np.c_[b, A.dot(b), A.dot(A.dot(b)), A.dot(A.dot(A.dot(b)))]
@@ -178,7 +194,9 @@ class TestLGMRES(object):
 
         b = np.array([1, 1])
 
-        xp, info = lgmres(A, b)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, ".*called without specifying.*")
+            xp, info = lgmres(A, b)
 
         if info == 0:
             assert_allclose(A.dot(xp), b)

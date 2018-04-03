@@ -36,7 +36,7 @@ DOCSTRINGS_STRIPPED = sys.flags.optimize > 1
 dists = ['uniform', 'norm', 'lognorm', 'expon', 'beta',
          'powerlaw', 'bradford', 'burr', 'fisk', 'cauchy', 'halfcauchy',
          'foldcauchy', 'gamma', 'gengamma', 'loggamma',
-         'alpha', 'anglit', 'arcsine', 'betaprime', 'dgamma',
+         'alpha', 'anglit', 'arcsine', 'betaprime', 'dgamma', 'moyal',
          'exponnorm', 'exponweib', 'exponpow', 'frechet_l', 'frechet_r',
          'gilbrat', 'f', 'ncf', 'chi2', 'chi', 'nakagami', 'genpareto',
          'genextreme', 'genhalflogistic', 'pareto', 'lomax', 'halfnorm',
@@ -295,6 +295,44 @@ class TestNBinom(object):
         # logpmf(0,1,1) shouldn't return nan (regression test for gh-4029)
         val = scipy.stats.nbinom.logpmf(0, 1, 1)
         assert_equal(val, 0)
+
+
+class TestNormInvGauss(object):
+    def setup_method(self):
+        np.random.seed(1234)
+
+    def test_cdf_R(self):
+        # test pdf and cdf vals against R
+        # require("GeneralizedHyperbolic")
+        # x_test <- c(-7, -5, 0, 8, 15)
+        # r_cdf <- GeneralizedHyperbolic::pnig(x_test, mu = 0, a = 1, b = 0.5)
+        # r_pdf <- GeneralizedHyperbolic::dnig(x_test, mu = 0, a = 1, b = 0.5)
+        r_cdf = np.array([8.034920282e-07, 2.512671945e-05, 3.186661051e-01,
+                          9.988650664e-01, 9.999848769e-01])
+        x_test = np.array([-7, -5, 0, 8, 15])
+        vals_cdf = stats.norminvgauss.cdf(x_test, a=1, b=0.5)
+        assert_allclose(vals_cdf, r_cdf, atol=1e-9)
+
+    def test_pdf_R(self):
+        # values from R as defined in test_cdf_R
+        r_pdf = np.array([1.359600783e-06, 4.413878805e-05, 4.555014266e-01,
+                          7.450485342e-04, 8.917889931e-06])
+        x_test = np.array([-7, -5, 0, 8, 15])
+        vals_pdf = stats.norminvgauss.pdf(x_test, a=1, b=0.5)
+        assert_allclose(vals_pdf, r_pdf, atol=1e-9)
+
+    def test_stats(self):
+        a, b = 1, 0.5
+        gamma = np.sqrt(a**2 - b**2)
+        v_stats = (b / gamma, a**2 / gamma**3, 3.0 * b / (a * np.sqrt(gamma)),
+                   3.0 * (1 + 4 * b**2 / a**2) / gamma)
+        assert_equal(v_stats, stats.norminvgauss.stats(a, b, moments='mvsk'))
+
+    def test_ppf(self):
+        a, b = 1, 0.5
+        x_test = np.array([0.001, 0.5, 0.999])
+        vals = stats.norminvgauss.ppf(x_test, a, b)
+        assert_allclose(x_test, stats.norminvgauss.cdf(vals, a, b))
 
 
 class TestGeom(object):
@@ -1169,6 +1207,32 @@ class TestSkewNorm(object):
         computed = stats.skewnorm.stats(a=-4, loc=5, scale=2, moments='mvsk')
         assert_array_almost_equal(computed, expected, decimal=2)
 
+    def test_cdf_large_x(self):
+        # Regression test for gh-7746.
+        # The x values are large enough that the closest 64 bit floating
+        # point representation of the exact CDF is 1.0.
+        p = stats.skewnorm.cdf([10, 20, 30], -1)
+        assert_allclose(p, np.ones(3), rtol=1e-14)
+        p = stats.skewnorm.cdf(25, 2.5)
+        assert_allclose(p, 1.0, rtol=1e-14)
+
+    def test_cdf_sf_small_values(self):
+        # Triples are [x, a, cdf(x, a)].  These values were computed
+        # using CDF[SkewNormDistribution[0, 1, a], x] in Wolfram Alpha.
+        cdfvals = [
+            [-8, 1, 3.870035046664392611e-31],
+            [-4, 2, 8.1298399188811398e-21],
+            [-2, 5, 1.55326826787106273e-26],
+            [-9, -1, 2.257176811907681295e-19],
+            [-10, -4, 1.523970604832105213e-23],
+        ]
+        for x, a, cdfval in cdfvals:
+            p = stats.skewnorm.cdf(x, a)
+            assert_allclose(p, cdfval, rtol=1e-8)
+            # For the skew normal distribution, sf(-x, -a) = cdf(x, a).
+            p = stats.skewnorm.sf(-x, -a)
+            assert_allclose(p, cdfval, rtol=1e-8)
+
 
 class TestExpon(object):
     def test_zero(self):
@@ -1524,8 +1588,9 @@ class TestFitMethod(object):
         np.random.seed(12345)
         with np.errstate(all='ignore'):
             x = stats.lognorm.rvs(0.25, 0., 20.0, size=20)
+            expected_shape = np.sqrt(((np.log(x) - np.log(20))**2).mean())
             assert_allclose(np.array(stats.lognorm.fit(x, floc=0, fscale=20)),
-                            [0.25888672, 0, 20], atol=1e-5)
+                            [expected_shape, 0, 20], atol=1e-8)
 
     def test_fix_fit_norm(self):
         x = np.arange(1, 6)
@@ -1634,6 +1699,59 @@ class TestFitMethod(object):
         # Check that attempting to fix all the parameters raises a ValueError.
         assert_raises(ValueError, stats.beta.fit, y, f0=0, f1=1,
                       floc=2, fscale=3)
+
+    def test_expon_fit(self):
+        x = np.array([2, 2, 4, 4, 4, 4, 4, 8])
+
+        loc, scale = stats.expon.fit(x)
+        assert_equal(loc, 2)    # x.min()
+        assert_equal(scale, 2)  # x.mean() - x.min()
+
+        loc, scale = stats.expon.fit(x, fscale=3)
+        assert_equal(loc, 2)    # x.min()
+        assert_equal(scale, 3)  # fscale
+
+        loc, scale = stats.expon.fit(x, floc=0)
+        assert_equal(loc, 0)    # floc
+        assert_equal(scale, 4)  # x.mean() - loc
+
+    def test_lognorm_fit(self):
+        x = np.array([1.5, 3, 10, 15, 23, 59])
+        lnxm1 = np.log(x - 1)
+
+        shape, loc, scale = stats.lognorm.fit(x, floc=1)
+        assert_allclose(shape, lnxm1.std(), rtol=1e-12)
+        assert_equal(loc, 1)
+        assert_allclose(scale, np.exp(lnxm1.mean()), rtol=1e-12)
+
+        shape, loc, scale = stats.lognorm.fit(x, floc=1, fscale=6)
+        assert_allclose(shape, np.sqrt(((lnxm1 - np.log(6))**2).mean()),
+                        rtol=1e-12)
+        assert_equal(loc, 1)
+        assert_equal(scale, 6)
+
+        shape, loc, scale = stats.lognorm.fit(x, floc=1, fix_s=0.75)
+        assert_equal(shape, 0.75)
+        assert_equal(loc, 1)
+        assert_allclose(scale, np.exp(lnxm1.mean()), rtol=1e-12)
+
+    def test_uniform_fit(self):
+        x = np.array([1.0, 1.1, 1.2, 9.0])
+
+        loc, scale = stats.uniform.fit(x)
+        assert_equal(loc, x.min())
+        assert_equal(scale, x.ptp())
+
+        loc, scale = stats.uniform.fit(x, floc=0)
+        assert_equal(loc, 0)
+        assert_equal(scale, x.max())
+
+        loc, scale = stats.uniform.fit(x, fscale=10)
+        assert_equal(loc, 0)
+        assert_equal(scale, 10)
+
+        assert_raises(ValueError, stats.uniform.fit, x, floc=2.0)
+        assert_raises(ValueError, stats.uniform.fit, x, fscale=5.0)
 
     def test_fshapes(self):
         # take a beta distribution, with shapes='a, b', and make sure that

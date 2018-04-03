@@ -257,6 +257,7 @@ Raw Statistical Functions
    boxcox1p     -- Compute the Box-Cox transformation of 1 + `x`.
    inv_boxcox   -- Compute the inverse of the Box-Cox transformation.
    inv_boxcox1p -- Compute the inverse of the Box-Cox transformation.
+   owens_t      -- Owen's T Function.
 
 
 Information Theory Functions

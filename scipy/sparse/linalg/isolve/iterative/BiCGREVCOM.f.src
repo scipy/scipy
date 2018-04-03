@@ -12,6 +12,7 @@
 *     Eijkhout, Pozo, Romine, and van der Vorst, SIAM Publications,
 *     1993. (ftp netlib2.cs.utk.edu; cd linalg; get templates.ps).
 *
+      IMPLICIT NONE
 *     .. Scalar Arguments ..
       INTEGER            N, LDW, ITER, INFO
       <rt=real,double precision,real,double precision>  RESID
@@ -55,10 +56,9 @@
 *          On input, the maximum iterations to be performed.
 *          On output, actual number of iterations performed.
 *
-*  RESID   (input/output) DOUBLE PRECISION
+*  RESID   (input) DOUBLE PRECISION
 *          On input, the allowable convergence measure for
-*          norm( b - A*x ) / norm( b ).
-*          On output, the final value of this measure.
+*          norm( b - A*x ).
 *
 *  INFO    (output) INTEGER
 *
@@ -110,7 +110,7 @@
 *     .. Local Scalars ..
       INTEGER            R, RTLD, Z, ZTLD, P, PTLD, Q, QTLD, MAXIT,
      $                   NEED1, NEED2
-      <rt>   TOL, BNRM2, RHOTOL, 
+      <rt>   TOL, RHOTOL, 
      $       <sdsd=s,d,s,d>GETBREAK,  
      $       <rc=ws,d,wsc,dz>NRM2
       <_t>  ALPHA, BETA, RHO, RHO1, <xdot=wsdot,ddot,wcdotc,wzdotc>
@@ -243,8 +243,6 @@
       IF ( <rc>NRM2( N, WORK(1,R), 1 ).LE.TOL ) GO TO 30
 *
       CALL <_c>COPY( N, WORK(1,R), 1, WORK(1,RTLD), 1 )
-      BNRM2 = <rc>NRM2( N, B, 1 )
-      IF ( BNRM2.EQ.ZERO ) BNRM2 = ONE
 *
       ITER = 0
 *

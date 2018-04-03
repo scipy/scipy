@@ -12,14 +12,16 @@ import pytest
 from pytest import raises as assert_raises
 from scipy._lib._numpy_compat import suppress_warnings
 
-from numpy import array, spacing, sin, pi, sort
+from numpy import array, spacing, sin, pi, sort, sqrt
 from scipy.signal import (BadCoefficients, bessel, besselap, bilinear, buttap,
                           butter, buttord, cheb1ap, cheb1ord, cheb2ap,
                           cheb2ord, cheby1, cheby2, ellip, ellipap, ellipord,
                           firwin, freqs_zpk, freqs, freqz, freqz_zpk,
                           group_delay, iirfilter, iirnotch, iirpeak, lp2bp,
                           lp2bs, lp2hp, lp2lp, normalize, sos2tf, sos2zpk,
-                          sosfreqz, tf2sos, tf2zpk, zpk2sos, zpk2tf)
+                          sosfreqz, tf2sos, tf2zpk, zpk2sos, zpk2tf,
+                          bilinear_zpk, lp2lp_zpk, lp2hp_zpk, lp2bp_zpk,
+                          lp2bs_zpk)
 from scipy.signal.filter_design import (_cplxreal, _cplxpair, _norm_factor,
                                         _bessel_poly, _bessel_zeros)
 
@@ -442,6 +444,13 @@ class TestFreqs(object):
                       plot=lambda w, h: 1 / 0)
         freqs([1.0], [1.0], worN=8, plot=plot)
 
+    def test_backward_compat(self):
+        # For backward compatibility, test if None act as a wrapper for default
+        w1, h1 = freqs([1.0], [1.0])
+        w2, h2 = freqs([1.0], [1.0], None)
+        assert_array_almost_equal(w1, w2)
+        assert_array_almost_equal(h1, h2)
+
 
 class TestFreqs_zpk(object):
 
@@ -482,6 +491,12 @@ class TestFreqs_zpk(object):
         assert_allclose(w1, w2)
         assert_allclose(h1, h2, rtol=1e-6)
 
+    def test_backward_compat(self):
+        # For backward compatibility, test if None act as a wrapper for default
+        w1, h1 = freqs_zpk([1.0], [1.0], [1.0])
+        w2, h2 = freqs_zpk([1.0], [1.0], [1.0], None)
+        assert_array_almost_equal(w1, w2)
+        assert_array_almost_equal(h1, h2)
 
 class TestFreqz(object):
 
@@ -668,6 +683,13 @@ class TestFreqz(object):
                     assert_equal(ww, worN.ravel())
                     assert_allclose(hh, h[k, :, :].ravel())
 
+    def test_backward_compat(self):
+        # For backward compatibility, test if None act as a wrapper for default
+        w1, h1 = freqz([1.0], 1)
+        w2, h2 = freqz([1.0], 1, None)
+        assert_array_almost_equal(w1, w2)
+        assert_array_almost_equal(h1, h2)
+
 
 class TestSOSFreqz(object):
 
@@ -832,6 +854,12 @@ class TestFreqz_zpk(object):
         assert_allclose(w1, w2)
         assert_allclose(h1, h2, rtol=1e-6)
 
+    def test_backward_compat(self):
+        # For backward compatibility, test if None act as a wrapper for default
+        w1, h1 = freqz_zpk([0.5], [0.5], 1.0)
+        w2, h2 = freqz_zpk([0.5], [0.5], 1.0, None)
+        assert_array_almost_equal(w1, w2)
+        assert_array_almost_equal(h1, h2)
 
 class TestNormalize(object):
 
@@ -950,6 +978,105 @@ class TestBilinear(object):
                                   decimal=4)
         assert_array_almost_equal(a_z, [1, -1.2158, 0.72826],
                                   decimal=4)
+
+
+class TestLp2lp_zpk(object):
+
+    def test_basic(self):
+        z = []
+        p = [(-1+1j)/np.sqrt(2), (-1-1j)/np.sqrt(2)]
+        k = 1
+        z_lp, p_lp, k_lp = lp2lp_zpk(z, p, k, 5)
+        assert_array_equal(z_lp, [])
+        assert_allclose(sort(p_lp), sort(p)*5)
+        assert_allclose(k_lp, 25)
+
+        # Pseudo-Chebyshev with both poles and zeros
+        z = [-2j, +2j]
+        p = [-0.75, -0.5-0.5j, -0.5+0.5j]
+        k = 3
+        z_lp, p_lp, k_lp = lp2lp_zpk(z, p, k, 20)
+        assert_allclose(sort(z_lp), sort([-40j, +40j]))
+        assert_allclose(sort(p_lp), sort([-15, -10-10j, -10+10j]))
+        assert_allclose(k_lp, 60)
+
+
+class TestLp2hp_zpk(object):
+
+    def test_basic(self):
+        z = []
+        p = [(-1+1j)/np.sqrt(2), (-1-1j)/np.sqrt(2)]
+        k = 1
+
+        z_hp, p_hp, k_hp = lp2hp_zpk(z, p, k, 5)
+        assert_array_equal(z_hp, [0, 0])
+        assert_allclose(sort(p_hp), sort(p)*5)
+        assert_allclose(k_hp, 1)
+
+        z = [-2j, +2j]
+        p = [-0.75, -0.5-0.5j, -0.5+0.5j]
+        k = 3
+        z_hp, p_hp, k_hp = lp2hp_zpk(z, p, k, 6)
+        assert_allclose(sort(z_hp), sort([-3j, 0, +3j]))
+        assert_allclose(sort(p_hp), sort([-8, -6-6j, -6+6j]))
+        assert_allclose(k_hp, 32)
+
+
+class TestLp2bp_zpk(object):
+
+    def test_basic(self):
+        z = [-2j, +2j]
+        p = [-0.75, -0.5-0.5j, -0.5+0.5j]
+        k = 3
+        z_bp, p_bp, k_bp = lp2bp_zpk(z, p, k, 15, 8)
+        assert_allclose(sort(z_bp), sort([-25j, -9j, 0, +9j, +25j]))
+        assert_allclose(sort(p_bp), sort([-3 + 6j*sqrt(6),
+                                          -3 - 6j*sqrt(6),
+                                          +2j+sqrt(-8j-225)-2,
+                                          -2j+sqrt(+8j-225)-2,
+                                          +2j-sqrt(-8j-225)-2,
+                                          -2j-sqrt(+8j-225)-2, ]))
+        assert_allclose(k_bp, 24)
+
+
+class TestLp2bs_zpk(object):
+
+    def test_basic(self):
+        z = [-2j, +2j]
+        p = [-0.75, -0.5-0.5j, -0.5+0.5j]
+        k = 3
+
+        z_bs, p_bs, k_bs = lp2bs_zpk(z, p, k, 35, 12)
+
+        assert_allclose(sort(z_bs), sort([+35j, -35j,
+                                          +3j+sqrt(1234)*1j,
+                                          -3j+sqrt(1234)*1j,
+                                          +3j-sqrt(1234)*1j,
+                                          -3j-sqrt(1234)*1j]))
+        assert_allclose(sort(p_bs), sort([+3j*sqrt(129) - 8,
+                                          -3j*sqrt(129) - 8,
+                                          (-6 + 6j) - sqrt(-1225 - 72j),
+                                          (-6 - 6j) - sqrt(-1225 + 72j),
+                                          (-6 + 6j) + sqrt(-1225 - 72j),
+                                          (-6 - 6j) + sqrt(-1225 + 72j), ]))
+        assert_allclose(k_bs, 32)
+
+
+class TestBilinear_zpk(object):
+
+    def test_basic(self):
+        z = [-2j, +2j]
+        p = [-0.75, -0.5-0.5j, -0.5+0.5j]
+        k = 3
+
+        z_d, p_d, k_d = bilinear_zpk(z, p, k, 10)
+
+        assert_allclose(sort(z_d), sort([(20-2j)/(20+2j), (20+2j)/(20-2j),
+                                         -1]))
+        assert_allclose(sort(p_d), sort([77/83,
+                                         (1j/2 + 39/2) / (41/2 - 1j/2),
+                                         (39/2 - 1j/2) / (1j/2 + 41/2), ]))
+        assert_allclose(k_d, 9696/69803)
 
 
 class TestPrototypeType(object):
@@ -3055,3 +3182,10 @@ class TestGroupDelay(object):
 
         w, gd = assert_warns(UserWarning, group_delay, (b, a), w=w)
         assert_allclose(gd, 0)
+
+    def test_backward_compat(self):
+        # For backward compatibility, test if None act as a wrapper for default
+        w1, gd1 = group_delay((1, 1))
+        w2, gd2 = group_delay((1, 1), None)
+        assert_array_almost_equal(w1, w2)
+        assert_array_almost_equal(gd1, gd2)

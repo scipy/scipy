@@ -3,6 +3,7 @@
 
 from __future__ import division, print_function, absolute_import
 
+import warnings
 import numpy as np
 from numpy.linalg import LinAlgError
 from scipy._lib.six import xrange
@@ -16,7 +17,7 @@ __all__ = ['lgmres']
 
 def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
            inner_m=30, outer_k=3, outer_v=None, store_outer_Av=True,
-           prepend_outer_v=False):
+           prepend_outer_v=False, atol=None):
     """
     Solve a matrix equation using the LGMRES algorithm.
 
@@ -32,9 +33,14 @@ def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
         Right hand side of the linear system. Has shape (N,) or (N,1).
     x0  : {array, matrix}
         Starting guess for the solution.
-    tol : float, optional
-        Tolerance to achieve. The algorithm terminates when either the relative
-        or the absolute residual is below `tol`.
+    tol, atol : float, optional
+        Tolerances for convergence, ``norm(residual) <= max(tol*norm(b), atol)``.
+        The default for ``atol`` is `tol`.
+
+        .. warning::
+
+           The default value for `atol` will be changed in a future release.
+           For future compatibility, specify `atol` explicitly.
     maxiter : int, optional
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved.
@@ -121,6 +127,13 @@ def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
     if not np.isfinite(b).all():
         raise ValueError("RHS must contain only finite numbers")
 
+    if atol is None:
+        warnings.warn("scipy.sparse.linalg.lgmres called without specifying `atol`. "
+                      "The default value will change in the future. To preserve "
+                      "current behavior, set ``atol=tol``.",
+                      category=DeprecationWarning, stacklevel=2)
+        atol = tol
+
     matvec = A.matvec
     psolve = M.matvec
 
@@ -131,8 +144,7 @@ def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
     nrm2 = get_blas_funcs('nrm2', [b])
 
     b_norm = nrm2(b)
-    if b_norm == 0:
-        b_norm = 1
+    ptol_max_factor = 1.0
 
     for k_outer in xrange(maxiter):
         r_outer = matvec(x) - b
@@ -147,11 +159,10 @@ def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
                 x = x.astype(r_outer.dtype)
             axpy, dot, scal, nrm2 = get_blas_funcs(['axpy', 'dot', 'scal', 'nrm2'],
                                                    (x, r_outer))
-            trtrs = get_lapack_funcs('trtrs', (x, r_outer))
 
         # -- check stopping condition
         r_norm = nrm2(r_outer)
-        if r_norm <= tol * b_norm or r_norm <= tol:
+        if r_norm <= max(atol, tol * b_norm):
             break
 
         # -- inner LGMRES iteration
@@ -165,14 +176,16 @@ def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
 
         v0 = scal(1.0/inner_res_0, v0)
 
+        ptol = min(ptol_max_factor, max(atol, tol*b_norm)/r_norm)
+
         try:
-            Q, R, B, vs, zs, y = _fgmres(matvec,
-                                         v0,
-                                         inner_m,
-                                         lpsolve=psolve,
-                                         atol=tol*b_norm/r_norm,
-                                         outer_v=outer_v,
-                                         prepend_outer_v=prepend_outer_v)
+            Q, R, B, vs, zs, y, pres = _fgmres(matvec,
+                                               v0,
+                                               inner_m,
+                                               lpsolve=psolve,
+                                               atol=ptol,
+                                               outer_v=outer_v,
+                                               prepend_outer_v=prepend_outer_v)
             y *= inner_res_0
             if not np.isfinite(y).all():
                 # Overflow etc. in computation. There's no way to
@@ -182,6 +195,12 @@ def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
             # Floating point over/underflow, non-finite result from
             # matmul etc. -- report failure.
             return postprocess(x), k_outer + 1
+
+        # Inner loop tolerance control
+        if pres > ptol:
+            ptol_max_factor = min(1.0, 1.5 * ptol_max_factor)
+        else:
+            ptol_max_factor = max(1e-16, 0.25 * ptol_max_factor)
 
         # -- GMRES terminated: eval solution
         dx = zs[0]*y[0]

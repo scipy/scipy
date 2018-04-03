@@ -29,11 +29,13 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from __future__ import division, print_function, absolute_import
+import warnings
 
 import math
 import numpy
 from . import _ni_support
 from . import _nd_image
+from . import _ni_docstrings
 from scipy.misc import doccer
 from scipy._lib._version import NumpyVersion
 
@@ -47,77 +49,7 @@ __all__ = ['correlate1d', 'convolve1d', 'gaussian_filter1d', 'gaussian_filter',
            'generic_filter1d', 'generic_filter']
 
 
-_input_doc = \
-"""input : array_like
-    Input array to filter."""
-_axis_doc = \
-"""axis : int, optional
-    The axis of `input` along which to calculate. Default is -1."""
-_output_doc = \
-"""output : array, optional
-    The `output` parameter passes an array in which to store the
-    filter output. Output array should have different name as compared
-    to input array to avoid aliasing errors."""
-_size_foot_doc = \
-"""size : scalar or tuple, optional
-    See footprint, below
-footprint : array, optional
-    Either `size` or `footprint` must be defined.  `size` gives
-    the shape that is taken from the input array, at every element
-    position, to define the input to the filter function.
-    `footprint` is a boolean array that specifies (implicitly) a
-    shape, but also which of the elements within this shape will get
-    passed to the filter function.  Thus ``size=(n,m)`` is equivalent
-    to ``footprint=np.ones((n,m))``.  We adjust `size` to the number
-    of dimensions of the input array, so that, if the input array is
-    shape (10,10,10), and `size` is 2, then the actual size used is
-    (2,2,2).
-"""
-_mode_doc = \
-"""mode : {'reflect', 'constant', 'nearest', 'mirror', 'wrap'}, optional
-    The `mode` parameter determines how the array borders are
-    handled, where `cval` is the value when mode is equal to
-    'constant'. Default is 'reflect'"""
-_mode_multiple_doc = \
-"""mode : str or sequence, optional
-    The `mode` parameter determines how the array borders are
-    handled. Valid modes are {'reflect', 'constant', 'nearest',
-    'mirror', 'wrap'}. `cval` is the value used when mode is equal to
-    'constant'. A list of modes with length equal to the number of
-    axes can be provided to specify different modes for different
-    axes. Default is 'reflect'"""
-_cval_doc = \
-"""cval : scalar, optional
-    Value to fill past edges of input if `mode` is 'constant'. Default
-    is 0.0"""
-_origin_doc = \
-"""origin : scalar, optional
-    The `origin` parameter controls the placement of the filter.
-    Default 0.0."""
-_extra_arguments_doc = \
-"""extra_arguments : sequence, optional
-    Sequence of extra positional arguments to pass to passed function"""
-_extra_keywords_doc = \
-"""extra_keywords : dict, optional
-    dict of extra keyword arguments to pass to passed function"""
-
-docdict = {
-    'input': _input_doc,
-    'axis': _axis_doc,
-    'output': _output_doc,
-    'size_foot': _size_foot_doc,
-    'mode': _mode_doc,
-    'mode_multiple': _mode_multiple_doc,
-    'cval': _cval_doc,
-    'origin': _origin_doc,
-    'extra_arguments': _extra_arguments_doc,
-    'extra_keywords': _extra_keywords_doc,
-    }
-
-docfiller = doccer.filldoc(docdict)
-
-
-@docfiller
+@_ni_docstrings.docfiller
 def correlate1d(input, weights, axis=-1, output=None, mode="reflect",
                 cval=0.0, origin=0):
     """Calculate a one-dimensional correlation along the given axis.
@@ -145,7 +77,7 @@ def correlate1d(input, weights, axis=-1, output=None, mode="reflect",
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
         raise TypeError('Complex type not supported')
-    output, return_value = _ni_support._get_output(output, input)
+    output = _ni_support._get_output(output, input)
     weights = numpy.asarray(weights, dtype=numpy.float64)
     if weights.ndim != 1 or weights.shape[0] < 1:
         raise RuntimeError('no filter weights given')
@@ -158,10 +90,10 @@ def correlate1d(input, weights, axis=-1, output=None, mode="reflect",
     mode = _ni_support._extend_mode_to_code(mode)
     _nd_image.correlate1d(input, weights, axis, output, mode, cval,
                           origin)
-    return return_value
+    return output
 
 
-@docfiller
+@_ni_docstrings.docfiller
 def convolve1d(input, weights, axis=-1, output=None, mode="reflect",
                cval=0.0, origin=0):
     """Calculate a one-dimensional convolution along the given axis.
@@ -219,7 +151,7 @@ def _gaussian_kernel1d(sigma, order, radius):
     return phi_x
 
 
-@docfiller
+@_ni_docstrings.docfiller
 def gaussian_filter1d(input, sigma, axis=-1, order=0, output=None,
                       mode="reflect", cval=0.0, truncate=4.0):
     """One-dimensional Gaussian filter.
@@ -272,7 +204,7 @@ def gaussian_filter1d(input, sigma, axis=-1, order=0, output=None,
     return correlate1d(input, weights, axis, output, mode, cval, 0)
 
 
-@docfiller
+@_ni_docstrings.docfiller
 def gaussian_filter(input, sigma, order=0, output=None,
                     mode="reflect", cval=0.0, truncate=4.0):
     """Multidimensional Gaussian filter.
@@ -341,7 +273,7 @@ def gaussian_filter(input, sigma, order=0, output=None,
     >>> plt.show()
     """
     input = numpy.asarray(input)
-    output, return_value = _ni_support._get_output(output, input)
+    output = _ni_support._get_output(output, input)
     orders = _ni_support._normalize_sequence(order, input.ndim)
     sigmas = _ni_support._normalize_sequence(sigma, input.ndim)
     modes = _ni_support._normalize_sequence(mode, input.ndim)
@@ -355,10 +287,10 @@ def gaussian_filter(input, sigma, order=0, output=None,
             input = output
     else:
         output[...] = input[...]
-    return return_value
+    return output
 
 
-@docfiller
+@_ni_docstrings.docfiller
 def prewitt(input, axis=-1, output=None, mode="reflect", cval=0.0):
     """Calculate a Prewitt filter.
 
@@ -386,16 +318,16 @@ def prewitt(input, axis=-1, output=None, mode="reflect", cval=0.0):
     """
     input = numpy.asarray(input)
     axis = _ni_support._check_axis(axis, input.ndim)
-    output, return_value = _ni_support._get_output(output, input)
+    output = _ni_support._get_output(output, input)
     modes = _ni_support._normalize_sequence(mode, input.ndim)
     correlate1d(input, [-1, 0, 1], axis, output, modes[axis], cval, 0)
     axes = [ii for ii in range(input.ndim) if ii != axis]
     for ii in axes:
         correlate1d(output, [1, 1, 1], ii, output, modes[ii], cval, 0,)
-    return return_value
+    return output
 
 
-@docfiller
+@_ni_docstrings.docfiller
 def sobel(input, axis=-1, output=None, mode="reflect", cval=0.0):
     """Calculate a Sobel filter.
 
@@ -423,16 +355,16 @@ def sobel(input, axis=-1, output=None, mode="reflect", cval=0.0):
     """
     input = numpy.asarray(input)
     axis = _ni_support._check_axis(axis, input.ndim)
-    output, return_value = _ni_support._get_output(output, input)
+    output = _ni_support._get_output(output, input)
     modes = _ni_support._normalize_sequence(mode, input.ndim)
     correlate1d(input, [-1, 0, 1], axis, output, modes[axis], cval, 0)
     axes = [ii for ii in range(input.ndim) if ii != axis]
     for ii in axes:
         correlate1d(output, [1, 2, 1], ii, output, modes[ii], cval, 0)
-    return return_value
+    return output
 
 
-@docfiller
+@_ni_docstrings.docfiller
 def generic_laplace(input, derivative2, output=None, mode="reflect",
                     cval=0.0,
                     extra_arguments=(),
@@ -459,7 +391,7 @@ def generic_laplace(input, derivative2, output=None, mode="reflect",
     if extra_keywords is None:
         extra_keywords = {}
     input = numpy.asarray(input)
-    output, return_value = _ni_support._get_output(output, input)
+    output = _ni_support._get_output(output, input)
     axes = list(range(input.ndim))
     if len(axes) > 0:
         modes = _ni_support._normalize_sequence(mode, len(axes))
@@ -471,10 +403,10 @@ def generic_laplace(input, derivative2, output=None, mode="reflect",
             output += tmp
     else:
         output[...] = input[...]
-    return return_value
+    return output
 
 
-@docfiller
+@_ni_docstrings.docfiller
 def laplace(input, output=None, mode="reflect", cval=0.0):
     """N-dimensional Laplace filter based on approximate second derivatives.
 
@@ -504,7 +436,7 @@ def laplace(input, output=None, mode="reflect", cval=0.0):
     return generic_laplace(input, derivative2, output, mode, cval)
 
 
-@docfiller
+@_ni_docstrings.docfiller
 def gaussian_laplace(input, sigma, output=None, mode="reflect",
                      cval=0.0, **kwargs):
     """Multidimensional Laplace filter using gaussian second derivatives.
@@ -552,7 +484,7 @@ def gaussian_laplace(input, sigma, output=None, mode="reflect",
                            extra_keywords=kwargs)
 
 
-@docfiller
+@_ni_docstrings.docfiller
 def generic_gradient_magnitude(input, derivative, output=None,
                                mode="reflect", cval=0.0,
                                extra_arguments=(), extra_keywords=None):
@@ -580,7 +512,7 @@ def generic_gradient_magnitude(input, derivative, output=None,
     if extra_keywords is None:
         extra_keywords = {}
     input = numpy.asarray(input)
-    output, return_value = _ni_support._get_output(output, input)
+    output = _ni_support._get_output(output, input)
     axes = list(range(input.ndim))
     if len(axes) > 0:
         modes = _ni_support._normalize_sequence(mode, len(axes))
@@ -596,10 +528,10 @@ def generic_gradient_magnitude(input, derivative, output=None,
         numpy.sqrt(output, output, casting='unsafe')
     else:
         output[...] = input[...]
-    return return_value
+    return output
 
 
-@docfiller
+@_ni_docstrings.docfiller
 def gaussian_gradient_magnitude(input, sigma, output=None,
                                 mode="reflect", cval=0.0, **kwargs):
     """Multidimensional gradient magnitude using Gaussian derivatives.
@@ -669,13 +601,13 @@ def _correlate_or_convolve(input, weights, output, mode, cval, origin,
             raise ValueError('invalid origin')
     if not weights.flags.contiguous:
         weights = weights.copy()
-    output, return_value = _ni_support._get_output(output, input)
+    output = _ni_support._get_output(output, input)
     mode = _ni_support._extend_mode_to_code(mode)
     _nd_image.correlate(input, weights, output, mode, cval, origins)
-    return return_value
+    return output
 
 
-@docfiller
+@_ni_docstrings.docfiller
 def correlate(input, weights, output=None, mode='reflect', cval=0.0,
               origin=0):
     """
@@ -685,24 +617,13 @@ def correlate(input, weights, output=None, mode='reflect', cval=0.0,
 
     Parameters
     ----------
-    input : array-like
-        input array to filter
+    %(input)s
     weights : ndarray
         array of weights, same number of dimensions as input
-    output : array, optional
-        The ``output`` parameter passes an array in which to store the
-        filter output. Output array should have different name as
-        compared to input array to avoid aliasing errors.
-    mode : {'reflect','constant','nearest','mirror', 'wrap'}, optional
-        The ``mode`` parameter determines how the array borders are
-        handled, where ``cval`` is the value when mode is equal to
-        'constant'. Default is 'reflect'
-    cval : scalar, optional
-        Value to fill past edges of input if ``mode`` is 'constant'. Default
-        is 0.0
-    origin : scalar, optional
-        The ``origin`` parameter controls the placement of the filter.
-        Default 0
+    %(output)s
+    %(mode_multiple)s
+    %(cval)s
+    %(origin_multiple)s
 
     See Also
     --------
@@ -712,7 +633,7 @@ def correlate(input, weights, output=None, mode='reflect', cval=0.0,
                                   origin, False)
 
 
-@docfiller
+@_ni_docstrings.docfiller
 def convolve(input, weights, output=None, mode='reflect', cval=0.0,
              origin=0):
     """
@@ -722,25 +643,15 @@ def convolve(input, weights, output=None, mode='reflect', cval=0.0,
 
     Parameters
     ----------
-    input : array_like
-        Input array to filter.
+    %(input)s
     weights : array_like
         Array of weights, same number of dimensions as input
-    output : ndarray, optional
-        The `output` parameter passes an array in which to store the
-        filter output. Output array should have different name as
-        compared to input array to avoid aliasing errors.
-    mode : {'reflect','constant','nearest','mirror', 'wrap'}, optional
-        the `mode` parameter determines how the array borders are
-        handled. For 'constant' mode, values beyond borders are set to be
-        `cval`. Default is 'reflect'.
+    %(output)s
+    %(mode_multiple)s
     cval : scalar, optional
         Value to fill past edges of input if `mode` is 'constant'. Default
         is 0.0
-    origin : array_like, optional
-        The `origin` parameter controls the placement of the filter,
-        relative to the centre of the current element of the input.
-        Default of 0 is equivalent to ``(0,)*input.ndim``.
+    %(origin_multiple)s
 
     Returns
     -------
@@ -828,7 +739,7 @@ def convolve(input, weights, output=None, mode='reflect', cval=0.0,
                                   origin, True)
 
 
-@docfiller
+@_ni_docstrings.docfiller
 def uniform_filter1d(input, size, axis=-1, output=None,
                      mode="reflect", cval=0.0, origin=0):
     """Calculate a one-dimensional uniform filter along the given axis.
@@ -859,16 +770,16 @@ def uniform_filter1d(input, size, axis=-1, output=None,
     axis = _ni_support._check_axis(axis, input.ndim)
     if size < 1:
         raise RuntimeError('incorrect filter size')
-    output, return_value = _ni_support._get_output(output, input)
+    output = _ni_support._get_output(output, input)
     if (size // 2 + origin < 0) or (size // 2 + origin >= size):
         raise ValueError('invalid origin')
     mode = _ni_support._extend_mode_to_code(mode)
     _nd_image.uniform_filter1d(input, size, axis, output, mode, cval,
                                origin)
-    return return_value
+    return output
 
 
-@docfiller
+@_ni_docstrings.docfiller
 def uniform_filter(input, size=3, output=None, mode="reflect",
                    cval=0.0, origin=0):
     """Multi-dimensional uniform filter.
@@ -883,7 +794,7 @@ def uniform_filter(input, size=3, output=None, mode="reflect",
     %(output)s
     %(mode_multiple)s
     %(cval)s
-    %(origin)s
+    %(origin_multiple)s
 
     Returns
     -------
@@ -913,7 +824,7 @@ def uniform_filter(input, size=3, output=None, mode="reflect",
     >>> plt.show()
     """
     input = numpy.asarray(input)
-    output, return_value = _ni_support._get_output(output, input)
+    output = _ni_support._get_output(output, input)
     sizes = _ni_support._normalize_sequence(size, input.ndim)
     origins = _ni_support._normalize_sequence(origin, input.ndim)
     modes = _ni_support._normalize_sequence(mode, input.ndim)
@@ -927,10 +838,10 @@ def uniform_filter(input, size=3, output=None, mode="reflect",
             input = output
     else:
         output[...] = input[...]
-    return return_value
+    return output
 
 
-@docfiller
+@_ni_docstrings.docfiller
 def minimum_filter1d(input, size, axis=-1, output=None,
                      mode="reflect", cval=0.0, origin=0):
     """Calculate a one-dimensional minimum filter along the given axis.
@@ -973,16 +884,16 @@ def minimum_filter1d(input, size, axis=-1, output=None,
     axis = _ni_support._check_axis(axis, input.ndim)
     if size < 1:
         raise RuntimeError('incorrect filter size')
-    output, return_value = _ni_support._get_output(output, input)
+    output = _ni_support._get_output(output, input)
     if (size // 2 + origin < 0) or (size // 2 + origin >= size):
         raise ValueError('invalid origin')
     mode = _ni_support._extend_mode_to_code(mode)
     _nd_image.min_or_max_filter1d(input, size, axis, output, mode, cval,
                                   origin, 1)
-    return return_value
+    return output
 
 
-@docfiller
+@_ni_docstrings.docfiller
 def maximum_filter1d(input, size, axis=-1, output=None,
                      mode="reflect", cval=0.0, origin=0):
     """Calculate a one-dimensional maximum filter along the given axis.
@@ -1030,17 +941,19 @@ def maximum_filter1d(input, size, axis=-1, output=None,
     axis = _ni_support._check_axis(axis, input.ndim)
     if size < 1:
         raise RuntimeError('incorrect filter size')
-    output, return_value = _ni_support._get_output(output, input)
+    output = _ni_support._get_output(output, input)
     if (size // 2 + origin < 0) or (size // 2 + origin >= size):
         raise ValueError('invalid origin')
     mode = _ni_support._extend_mode_to_code(mode)
     _nd_image.min_or_max_filter1d(input, size, axis, output, mode, cval,
                                   origin, 0)
-    return return_value
+    return output
 
 
 def _min_or_max_filter(input, size, footprint, structure, output, mode,
                        cval, origin, minimum):
+    if (size is not None) and (footprint is not None):
+        warnings.warn("ignoring size because footprint is set", UserWarning, stacklevel=3)
     if structure is None:
         if footprint is None:
             if size is None:
@@ -1066,7 +979,7 @@ def _min_or_max_filter(input, size, footprint, structure, output, mode,
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
         raise TypeError('Complex type not supported')
-    output, return_value = _ni_support._get_output(output, input)
+    output = _ni_support._get_output(output, input)
     origins = _ni_support._normalize_sequence(origin, input.ndim)
     if separable:
         sizes = _ni_support._normalize_sequence(size, input.ndim)
@@ -1101,10 +1014,10 @@ def _min_or_max_filter(input, size, footprint, structure, output, mode,
         mode = _ni_support._extend_mode_to_code(mode)
         _nd_image.min_or_max_filter(input, footprint, structure, output,
                                     mode, cval, origins, minimum)
-    return return_value
+    return output
 
 
-@docfiller
+@_ni_docstrings.docfiller
 def minimum_filter(input, size=None, footprint=None, output=None,
                    mode="reflect", cval=0.0, origin=0):
     """Calculate a multi-dimensional minimum filter.
@@ -1116,7 +1029,7 @@ def minimum_filter(input, size=None, footprint=None, output=None,
     %(output)s
     %(mode_multiple)s
     %(cval)s
-    %(origin)s
+    %(origin_multiple)s
 
     Returns
     -------
@@ -1141,7 +1054,7 @@ def minimum_filter(input, size=None, footprint=None, output=None,
                               cval, origin, 1)
 
 
-@docfiller
+@_ni_docstrings.docfiller
 def maximum_filter(input, size=None, footprint=None, output=None,
                    mode="reflect", cval=0.0, origin=0):
     """Calculate a multi-dimensional maximum filter.
@@ -1153,7 +1066,7 @@ def maximum_filter(input, size=None, footprint=None, output=None,
     %(output)s
     %(mode_multiple)s
     %(cval)s
-    %(origin)s
+    %(origin_multiple)s
 
     Returns
     -------
@@ -1178,9 +1091,11 @@ def maximum_filter(input, size=None, footprint=None, output=None,
                               cval, origin, 0)
 
 
-@docfiller
+@_ni_docstrings.docfiller
 def _rank_filter(input, rank, size=None, footprint=None, output=None,
                  mode="reflect", cval=0.0, origin=0, operation='rank'):
+    if (size is not None) and (footprint is not None):
+        warnings.warn("ignoring size because footprint is set", UserWarning, stacklevel=3)
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
         raise TypeError('Complex type not supported')
@@ -1224,14 +1139,14 @@ def _rank_filter(input, rank, size=None, footprint=None, output=None,
         return maximum_filter(input, None, footprint, output, mode, cval,
                               origins)
     else:
-        output, return_value = _ni_support._get_output(output, input)
+        output = _ni_support._get_output(output, input)
         mode = _ni_support._extend_mode_to_code(mode)
         _nd_image.rank_filter(input, rank, footprint, output, mode, cval,
                               origins)
-        return return_value
+        return output
 
 
-@docfiller
+@_ni_docstrings.docfiller
 def rank_filter(input, rank, size=None, footprint=None, output=None,
                 mode="reflect", cval=0.0, origin=0):
     """Calculate a multi-dimensional rank filter.
@@ -1244,9 +1159,9 @@ def rank_filter(input, rank, size=None, footprint=None, output=None,
         indicates the largest element.
     %(size_foot)s
     %(output)s
-    %(mode)s
+    %(mode_multiple)s
     %(cval)s
-    %(origin)s
+    %(origin_multiple)s
 
     Returns
     -------
@@ -1271,7 +1186,7 @@ def rank_filter(input, rank, size=None, footprint=None, output=None,
                         origin, 'rank')
 
 
-@docfiller
+@_ni_docstrings.docfiller
 def median_filter(input, size=None, footprint=None, output=None,
                   mode="reflect", cval=0.0, origin=0):
     """
@@ -1282,9 +1197,9 @@ def median_filter(input, size=None, footprint=None, output=None,
     %(input)s
     %(size_foot)s
     %(output)s
-    %(mode)s
+    %(mode_multiple)s
     %(cval)s
-    %(origin)s
+    %(origin_multiple)s
 
     Returns
     -------
@@ -1309,7 +1224,7 @@ def median_filter(input, size=None, footprint=None, output=None,
                         origin, 'median')
 
 
-@docfiller
+@_ni_docstrings.docfiller
 def percentile_filter(input, percentile, size=None, footprint=None,
                       output=None, mode="reflect", cval=0.0, origin=0):
     """Calculate a multi-dimensional percentile filter.
@@ -1322,9 +1237,9 @@ def percentile_filter(input, percentile, size=None, footprint=None,
         percentile = -20 equals percentile = 80
     %(size_foot)s
     %(output)s
-    %(mode)s
+    %(mode_multiple)s
     %(cval)s
-    %(origin)s
+    %(origin_multiple)s
 
     Returns
     -------
@@ -1349,7 +1264,7 @@ def percentile_filter(input, percentile, size=None, footprint=None,
                         cval, origin, 'percentile')
 
 
-@docfiller
+@_ni_docstrings.docfiller
 def generic_filter1d(input, function, filter_size, axis=-1,
                      output=None, mode="reflect", cval=0.0, origin=0,
                      extra_arguments=(), extra_keywords=None):
@@ -1418,7 +1333,7 @@ def generic_filter1d(input, function, filter_size, axis=-1,
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
         raise TypeError('Complex type not supported')
-    output, return_value = _ni_support._get_output(output, input)
+    output = _ni_support._get_output(output, input)
     if filter_size < 1:
         raise RuntimeError('invalid filter size')
     axis = _ni_support._check_axis(axis, input.ndim)
@@ -1429,10 +1344,10 @@ def generic_filter1d(input, function, filter_size, axis=-1,
     _nd_image.generic_filter1d(input, function, filter_size, axis, output,
                                mode, cval, origin, extra_arguments,
                                extra_keywords)
-    return return_value
+    return output
 
 
-@docfiller
+@_ni_docstrings.docfiller
 def generic_filter(input, function, size=None, footprint=None,
                    output=None, mode="reflect", cval=0.0, origin=0,
                    extra_arguments=(), extra_keywords=None):
@@ -1449,9 +1364,9 @@ def generic_filter(input, function, size=None, footprint=None,
         Function to apply at each element.
     %(size_foot)s
     %(output)s
-    %(mode)s
+    %(mode_multiple)s
     %(cval)s
-    %(origin)s
+    %(origin_multiple)s
     %(extra_arguments)s
     %(extra_keywords)s
 
@@ -1486,6 +1401,8 @@ def generic_filter(input, function, size=None, footprint=None,
     not be used in new code.
 
     """
+    if (size is not None) and (footprint is not None):
+        warnings.warn("ignoring size because footprint is set", UserWarning, stacklevel=2)
     if extra_keywords is None:
         extra_keywords = {}
     input = numpy.asarray(input)
@@ -1507,8 +1424,8 @@ def generic_filter(input, function, size=None, footprint=None,
             raise ValueError('invalid origin')
     if not footprint.flags.contiguous:
         footprint = footprint.copy()
-    output, return_value = _ni_support._get_output(output, input)
+    output = _ni_support._get_output(output, input)
     mode = _ni_support._extend_mode_to_code(mode)
     _nd_image.generic_filter(input, function, footprint, output, mode,
                              cval, origins, extra_arguments, extra_keywords)
-    return return_value
+    return output
