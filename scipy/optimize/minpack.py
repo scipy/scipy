@@ -373,6 +373,8 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
            min   sum((ydata - f(xdata, params))**2, axis=0)
          params
 
+    The solution, `x`, is always a 1D array, regardless of the shape of `x0`,
+    or whether `x0` is a scalar.
     """
     x0 = asarray(x0).flatten()
     n = len(x0)
