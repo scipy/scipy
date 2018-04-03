@@ -109,7 +109,7 @@ def bayes_mvs(data, alpha=0.90):
     >>> import matplotlib.pyplot as plt
     >>> fig = plt.figure()
     >>> ax = fig.add_subplot(111)
-    >>> ax.hist(data, bins=100, normed=True, label='Histogram of data')
+    >>> ax.hist(data, bins=100, density=True, label='Histogram of data')
     >>> ax.vlines(res_mean.statistic, 0, 0.5, colors='r', label='Estimated mean')
     >>> ax.axvspan(res_mean.minmax[0],res_mean.minmax[1], facecolor='r',
     ...            alpha=0.2, label=r'Estimated mean (95% limits)')

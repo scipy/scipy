@@ -6609,7 +6609,7 @@ class rv_histogram(rv_continuous):
     >>> import matplotlib.pyplot as plt
     >>> X = np.linspace(-5.0, 5.0, 100)
     >>> plt.title("PDF from Template")
-    >>> plt.hist(data, normed=True, bins=100)
+    >>> plt.hist(data, density=True, bins=100)
     >>> plt.plot(X, hist_dist.pdf(X), label='PDF')
     >>> plt.plot(X, hist_dist.cdf(X), label='CDF')
     >>> plt.show()
