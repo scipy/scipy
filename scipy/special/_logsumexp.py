@@ -5,6 +5,7 @@ from scipy._lib._util import _asarray_validated
 
 __all__ = ["logsumexp"]
 
+
 def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
     """Compute the log of the sum of exponentials of input elements.
 
@@ -35,6 +36,7 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
         as NaN. Default is False (no sign information).
 
         .. versionadded:: 0.16.0
+
     Returns
     -------
     res : ndarray
@@ -91,7 +93,7 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
     """
     a = _asarray_validated(a, check_finite=False)
     if b is not None:
-        a, b = np.broadcast_arrays(a,b)
+        a, b = np.broadcast_arrays(a, b)
         if np.any(b == 0):
             a = a + 0.  # promote to at least float
             a[b == 0] = -np.inf

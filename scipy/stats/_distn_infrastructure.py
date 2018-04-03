@@ -202,7 +202,7 @@ Generate random numbers:
 
 And compare the histogram:
 
->>> ax.hist(r, normed=True, histtype='stepfilled', alpha=0.2)
+>>> ax.hist(r, density=True, histtype='stepfilled', alpha=0.2)
 >>> ax.legend(loc='best', frameon=False)
 >>> plt.show()
 
