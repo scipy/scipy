@@ -266,7 +266,7 @@ def freqs_zpk(z, p, k, worN=200):
     return w, h
 
 
-def freqz(b, a=1, worN=512, whole=False, plot=None, fs=None):
+def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi):
     """
     Compute the frequency response of a digital filter.
 
@@ -292,14 +292,13 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=None):
         and ``b.shape[1:]``, ``a.shape[1:]``, and the shape of the frequencies
         array must be compatible for broadcasting.
     worN : {None, int, array_like}, optional
-        If None, then compute at 512 equally spaced frequencies.
-        If a single integer, then compute at that many frequencies.  This is
-        a convenient alternative to::
+        If a single integer, then compute at that many frequencies (default is
+        N=512).  This is a convenient alternative to::
 
             np.linspace(0, fs if whole else fs/2, N, endpoint=False)
 
         Using a number that is fast for FFT computations can result in
-        faster computations (see Notes).  If None (default), then N=512.
+        faster computations (see Notes).
 
         If an array_like, compute the response at the frequencies given.
         These are in the same units as `fs`.
@@ -311,7 +310,7 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=None):
         A callable that takes two arguments. If given, the return parameters
         `w` and `h` are passed to plot. Useful for plotting the frequency
         response inside `freqz`.
-    fs : float
+    fs : float, optional
         The sampling frequency of the digital system.  Defaults to 2*pi
         radians/sample (so w is from 0 to pi).
 
@@ -458,16 +457,14 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=None):
     else:
         w = atleast_1d(worN)
         del worN
-        if fs is not None:
-            w = 2*pi*w/fs
+        w = 2*pi*w/fs
 
     if h is None:  # still need to compute using freqs w
         zm1 = exp(-1j * w)
         h = (npp_polyval(zm1, b, tensor=False) /
              npp_polyval(zm1, a, tensor=False))
 
-    if fs is not None:
-        w = w*fs/(2*pi)
+    w = w*fs/(2*pi)
 
     if plot is not None:
         plot(w, h)
@@ -475,7 +472,7 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=None):
     return w, h
 
 
-def freqz_zpk(z, p, k, worN=512, whole=False, fs=None):
+def freqz_zpk(z, p, k, worN=512, whole=False, fs=2*pi):
     r"""
     Compute the frequency response of a digital filter in ZPK form.
 
@@ -496,8 +493,8 @@ def freqz_zpk(z, p, k, worN=512, whole=False, fs=None):
     k : scalar
         Gain of a linear filter
     worN : {None, int, array_like}, optional
-        If a single integer, then compute at that many frequencies.  If None
-        (default), then N=512.
+        If a single integer, then compute at that many frequencies (default is
+        N=512).
 
         If an array_like, compute the response at the frequencies given.
         These are in the same units as `fs`.
@@ -505,7 +502,7 @@ def freqz_zpk(z, p, k, worN=512, whole=False, fs=None):
         Normally, frequencies are computed from 0 to the Nyquist frequency,
         fs/2 (upper-half of unit-circle).  If `whole` is True, compute
         frequencies from 0 to fs.  Ignored if w is array_like.
-    fs : float
+    fs : float, optional
         The sampling frequency of the digital system.  Defaults to 2*pi
         radians/sample (so w is from 0 to pi).
 
@@ -571,19 +568,17 @@ def freqz_zpk(z, p, k, worN=512, whole=False, fs=None):
         w = numpy.linspace(0, lastpoint, worN, endpoint=False)
     else:
         w = atleast_1d(worN)
-        if fs is not None:
-            w = 2*pi*w/fs
+        w = 2*pi*w/fs
 
     zm1 = exp(1j * w)
     h = k * polyvalfromroots(zm1, z) / polyvalfromroots(zm1, p)
 
-    if fs is not None:
-        w = w*fs/(2*pi)
+    w = w*fs/(2*pi)
 
     return w, h
 
 
-def group_delay(system, w=512, whole=False, fs=None):
+def group_delay(system, w=512, whole=False, fs=2*pi):
     r"""Compute the group delay of a digital filter.
 
     The group delay measures by how many samples amplitude envelopes of
@@ -599,8 +594,8 @@ def group_delay(system, w=512, whole=False, fs=None):
     system : tuple of array_like (b, a)
         Numerator and denominator coefficients of a filter transfer function.
     w : {None, int, array_like}, optional
-        If a single integer, then compute at that many frequencies.  If None
-        (default), then N=512.
+        If a single integer, then compute at that many frequencies (default is
+        N=512).
 
         If an array_like, compute the delay at the frequencies given.  These
         are in the same units as `fs`.
@@ -608,7 +603,7 @@ def group_delay(system, w=512, whole=False, fs=None):
         Normally, frequencies are computed from 0 to the Nyquist frequency,
         fs/2 (upper-half of unit-circle).  If `whole` is True, compute
         frequencies from 0 to fs.  Ignored if w is array_like.
-    fs : float
+    fs : float, optional
         The sampling frequency of the digital system.  Defaults to 2*pi
         radians/sample (so w is from 0 to pi).
 
@@ -670,8 +665,7 @@ def group_delay(system, w=512, whole=False, fs=None):
             w = np.linspace(0, pi, w, endpoint=False)
     else:
         w = np.atleast_1d(w)
-        if fs is not None:
-            w = 2*pi*w/fs
+        w = 2*pi*w/fs
 
     b, a = map(np.atleast_1d, system)
     c = np.convolve(b, a[::-1])
@@ -689,8 +683,7 @@ def group_delay(system, w=512, whole=False, fs=None):
     gd = np.zeros_like(w)
     gd[~singular] = np.real(num[~singular] / den[~singular]) - a.size + 1
 
-    if fs is not None:
-        w = w*fs/(2*pi)
+    w = w*fs/(2*pi)
 
     return w, gd
 
@@ -708,7 +701,7 @@ def _validate_sos(sos):
     return sos, n_sections
 
 
-def sosfreqz(sos, worN=None, whole=False, fs=None):
+def sosfreqz(sos, worN=None, whole=False, fs=2*pi):
     """
     Compute the frequency response of a digital filter in SOS format.
 
@@ -731,10 +724,9 @@ def sosfreqz(sos, worN=None, whole=False, fs=None):
         coefficients and the last three providing the denominator
         coefficients.
     worN : {None, int, array_like}, optional
-        If a single integer, then compute at that many frequencies.
-        Using a number that is fast for FFT computations can result in
-        faster computations (see Notes of `freqz`).  If None (default), then
-        N=512.
+        If a single integer, then compute at that many frequencies (default is
+        N=512).  Using a number that is fast for FFT computations can result
+        in faster computations (see Notes of `freqz`).
 
         If an array_like, compute the response at the frequencies given (must
         be 1D).  These are in the same units as `fs`.
@@ -742,7 +734,7 @@ def sosfreqz(sos, worN=None, whole=False, fs=None):
         Normally, frequencies are computed from 0 to the Nyquist frequency,
         fs/2 (upper-half of unit-circle).  If `whole` is True, compute
         frequencies from 0 to fs.
-    fs : float
+    fs : float, optional
         The sampling frequency of the digital system.  Defaults to 2*pi
         radians/sample (so w is from 0 to pi).
 
@@ -1862,7 +1854,7 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
     output : {'ba', 'zpk', 'sos'}, optional
         Type of output:  numerator/denominator ('ba'), pole-zero ('zpk'), or
         second-order sections ('sos'). Default is 'ba'.
-    fs : float
+    fs : float, optional
         The sampling frequency of the digital system.
 
         .. versionadded:: 1.1.0
@@ -1959,7 +1951,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
     output : {'ba', 'zpk', 'sos'}, optional
         Type of output:  numerator/denominator ('ba'), pole-zero ('zpk'), or
         second-order sections ('sos'). Default is 'ba'.
-    fs : float
+    fs : float, optional
         The sampling frequency of the digital system.
 
         .. versionadded:: 1.1.0
@@ -2509,7 +2501,7 @@ def butter(N, Wn, btype='low', analog=False, output='ba', fs=None):
     output : {'ba', 'zpk', 'sos'}, optional
         Type of output:  numerator/denominator ('ba'), pole-zero ('zpk'), or
         second-order sections ('sos'). Default is 'ba'.
-    fs : float
+    fs : float, optional
         The sampling frequency of the digital system.
 
         .. versionadded:: 1.1.0
@@ -2615,7 +2607,7 @@ def cheby1(N, rp, Wn, btype='low', analog=False, output='ba', fs=None):
     output : {'ba', 'zpk', 'sos'}, optional
         Type of output:  numerator/denominator ('ba'), pole-zero ('zpk'), or
         second-order sections ('sos'). Default is 'ba'.
-    fs : float
+    fs : float, optional
         The sampling frequency of the digital system.
 
         .. versionadded:: 1.1.0
@@ -2730,7 +2722,7 @@ def cheby2(N, rs, Wn, btype='low', analog=False, output='ba', fs=None):
     output : {'ba', 'zpk', 'sos'}, optional
         Type of output:  numerator/denominator ('ba'), pole-zero ('zpk'), or
         second-order sections ('sos'). Default is 'ba'.
-    fs : float
+    fs : float, optional
         The sampling frequency of the digital system.
 
         .. versionadded:: 1.1.0
@@ -2843,7 +2835,7 @@ def ellip(N, rp, rs, Wn, btype='low', analog=False, output='ba', fs=None):
     output : {'ba', 'zpk', 'sos'}, optional
         Type of output:  numerator/denominator ('ba'), pole-zero ('zpk'), or
         second-order sections ('sos'). Default is 'ba'.
-    fs : float
+    fs : float, optional
         The sampling frequency of the digital system.
 
         .. versionadded:: 1.1.0
@@ -2982,7 +2974,7 @@ def bessel(N, Wn, btype='low', analog=False, output='ba', norm='phase',
             angular frequency `Wn`.
 
         .. versionadded:: 0.18.0
-    fs : float
+    fs : float, optional
         The sampling frequency of the digital system.
 
         .. versionadded:: 1.1.0
@@ -3185,7 +3177,7 @@ def buttord(wp, ws, gpass, gstop, analog=False, fs=None):
     analog : bool, optional
         When True, return an analog filter, otherwise a digital filter is
         returned.
-    fs : float
+    fs : float, optional
         The sampling frequency of the digital system.
 
         .. versionadded:: 1.1.0
@@ -3355,7 +3347,7 @@ def cheb1ord(wp, ws, gpass, gstop, analog=False, fs=None):
     analog : bool, optional
         When True, return an analog filter, otherwise a digital filter is
         returned.
-    fs : float
+    fs : float, optional
         The sampling frequency of the digital system.
 
         .. versionadded:: 1.1.0
@@ -3493,7 +3485,7 @@ def cheb2ord(wp, ws, gpass, gstop, analog=False, fs=None):
     analog : bool, optional
         When True, return an analog filter, otherwise a digital filter is
         returned.
-    fs : float
+    fs : float, optional
         The sampling frequency of the digital system.
 
         .. versionadded:: 1.1.0
@@ -3655,7 +3647,7 @@ def ellipord(wp, ws, gpass, gstop, analog=False, fs=None):
     analog : bool, optional
         When True, return an analog filter, otherwise a digital filter is
         returned.
-    fs : float
+    fs : float, optional
         The sampling frequency of the digital system.
 
         .. versionadded:: 1.1.0
@@ -4278,7 +4270,7 @@ def besselap(N, norm='phase'):
     return asarray([]), asarray(p, dtype=complex), float(k)
 
 
-def iirnotch(w0, Q, fs=None):
+def iirnotch(w0, Q, fs=2):
     """
     Design second-order IIR notch digital filter.
 
@@ -4297,7 +4289,7 @@ def iirnotch(w0, Q, fs=None):
         Quality factor. Dimensionless parameter that characterizes
         notch filter -3 dB bandwidth ``bw`` relative to its center
         frequency, ``Q = w0/bw``.
-    fs : float
+    fs : float, optional
         The sampling frequency of the digital system.
 
         .. versionadded:: 1.1.0
@@ -4359,7 +4351,7 @@ def iirnotch(w0, Q, fs=None):
     return _design_notch_peak_filter(w0, Q, "notch", fs)
 
 
-def iirpeak(w0, Q, fs=None):
+def iirpeak(w0, Q, fs=2):
     """
     Design second-order IIR peak (resonant) digital filter.
 
@@ -4378,7 +4370,7 @@ def iirpeak(w0, Q, fs=None):
         Quality factor. Dimensionless parameter that characterizes
         peak filter -3 dB bandwidth ``bw`` relative to its center
         frequency, ``Q = w0/bw``.
-    fs : float
+    fs : float, optional
         The sampling frequency of the digital system.
 
         .. versionadded:: 1.1.0
@@ -4440,7 +4432,7 @@ def iirpeak(w0, Q, fs=None):
     return _design_notch_peak_filter(w0, Q, "peak", fs)
 
 
-def _design_notch_peak_filter(w0, Q, ftype, fs=None):
+def _design_notch_peak_filter(w0, Q, ftype, fs=2):
     """
     Design notch or peak digital filter.
 
@@ -4460,7 +4452,7 @@ def _design_notch_peak_filter(w0, Q, ftype, fs=None):
 
             - notch filter : ``notch``
             - peak filter  : ``peak``
-    fs : float
+    fs : float, optional
         The sampling frequency of the digital system.
 
         .. versionadded:: 1.1.0:
@@ -4475,8 +4467,7 @@ def _design_notch_peak_filter(w0, Q, ftype, fs=None):
     # Guarantee that the inputs are floats
     w0 = float(w0)
     Q = float(Q)
-    if fs is not None:
-        w0 = 2*w0/fs
+    w0 = 2*w0/fs
 
     # Checks if w0 is within the range
     if w0 > 1.0 or w0 < 0.0:
