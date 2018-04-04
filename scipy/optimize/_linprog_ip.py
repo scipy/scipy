@@ -850,7 +850,8 @@ def _postprocess(
         complete=False,
         undo=[],
         status=0,
-        message=""):
+        message="",
+        tol=1e-8):
     """
     Given solution x to presolved, standard form linear program x, add
     fixed variables back into the problem and undo the variable substitutions
@@ -887,9 +888,12 @@ def _postprocess(
              2 : Problem appears to be infeasible
              3 : Problem appears to be unbounded
              4 : Serious numerical difficulties encountered
+             5 : Other
 
     message : str
         A string descriptor of the exit status of the optimization.
+    tol : float
+        Termination tolerance; see [1]_ Section 4.5.
 
     Returns
     -------
@@ -962,8 +966,26 @@ def _postprocess(
     # report residuals of ORIGINAL EQ constraints
     con = b_eq - A_eq.dot(x)
 
-    if status == 0 and (np.isnan(x).any() or np.isnan(fun) or
-                        np.isnan(slack).any() or np.isnan(con).any()):
+    # Patch for bug #8664. Detecting this sort of issue earlier
+    # (via abnormalities in the indicators) would be better.
+    bounds = np.array(bounds)  # again, this should have been the standard form
+    lb = bounds[:, 0]
+    ub = bounds[:, 1]
+    lb[np.equal(lb, None)] = -np.inf
+    ub[np.equal(ub, None)] = np.inf
+    tol = np.sqrt(tol)  # Somewhat arbitrary, but status 5 is very unusual
+    if status == 0 and ((slack < -tol).any() or (np.abs(con) > tol).any() or
+                        (x < lb - tol).any() or (x > ub + tol).any()):
+        status = 5
+        message = ("The solution does not satisfy the constraints, yet "
+                   "no errors were raised and there is no certificate of "
+                   "infeasibility or unboundedness. This is known to occur "
+                   "if the `presolve` option is False and the problem is "
+                   "infeasible. If you uncounter this under different "
+                   "circumstances, please submit a bug report. Otherwise, "
+                   "please enable presolve.")
+    elif status == 0 and (np.isnan(x).any() or np.isnan(fun) or
+                          np.isnan(slack).any() or np.isnan(con).any()):
         status = 4
         message = ("Numerical difficulties were encountered but no errors "
                    "were raised. This is known to occur if the 'presolve' "
@@ -1875,6 +1897,7 @@ def _linprog_ip(
                  2 : Problem appears to be infeasible
                  3 : Problem appears to be unbounded
                  4 : Serious numerical difficulties encountered
+                 5 : Other
 
         nit : int
             The number of iterations performed.
@@ -2123,7 +2146,7 @@ def _linprog_ip(
     # need modified bounds here to translate variables appropriately
     x, fun, slack, con, status, message = _postprocess(
         x, c_o, A_ub_o, b_ub_o, A_eq_o, b_eq_o,
-        bounds, complete, undo, status, message)
+        bounds, complete, undo, status, message, tol)
 
     sol = {
         'x': x,

@@ -963,6 +963,23 @@ class TestLinprogIPSparse(BaseTestLinprogIP):
 class TestLinprogIPDense(BaseTestLinprogIP):
     options = {"sparse": False}
 
+    def test_bug_8664(self):
+        # Very weak test. Ideally should run for all options and should
+        # detect infeasibility for all options.
+        c = [4]
+        A_ub = [[2], [5]]
+        b_ub = [4, 4]
+        A_eq = [[0], [-8], [9]]
+        b_eq = [3, 2, 10]
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning)
+            sup.filter(OptimizeWarning, "Solving system with option...")
+            o = {key: self.options[key] for key in self.options}
+            o["presolve"] = False
+            res = linprog(c, A_ub, b_ub, A_eq, b_eq, options=o,
+                          method=self.method)
+        assert_(not res.success, "incorrectly reported success")
+
 
 class TestLinprogIPSparsePresolve(BaseTestLinprogIP):
     options = {"sparse": True, "_sparse_presolve": True}
