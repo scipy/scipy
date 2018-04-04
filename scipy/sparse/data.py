@@ -29,10 +29,15 @@ class _data_matrix(spmatrix):
         self.data.dtype = newtype
     dtype = property(fget=_get_dtype, fset=_set_dtype)
 
-    def _deduped_data(self):
+    def _deduped_data(self, copy=False):
         if hasattr(self, 'sum_duplicates'):
-            self.sum_duplicates()
-        return self.data
+            x = self.copy() if copy else self
+            x.sum_duplicates()
+            return x.data
+        elif copy:
+            return self.data.copy()
+        else:
+            return self.data
 
     def __abs__(self):
         return self._with_data(abs(self._deduped_data()))
@@ -67,8 +72,9 @@ class _data_matrix(spmatrix):
     def astype(self, dtype, casting='unsafe', copy=True):
         dtype = np.dtype(dtype)
         if self.dtype != dtype:
+            data = self._deduped_data(copy=copy)
             return self._with_data(
-                self._deduped_data().astype(dtype, casting=casting, copy=copy),
+                data.astype(dtype, casting=casting, copy=False),
                 copy=copy)
         elif copy:
             return self.copy()
