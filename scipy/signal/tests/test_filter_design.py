@@ -451,12 +451,19 @@ class TestFreqs(object):
         assert_array_almost_equal(w1, w2)
         assert_array_almost_equal(h1, h2)
 
-    def test_w_types(self):
-        for w in (8, np.int8(8), np.int16(8), np.int32(8), np.int64(8),
+    def test_w_or_N_types(self):
+        # Measure at 8 equally-spaced points
+        for N in (8, np.int8(8), np.int16(8), np.int32(8), np.int64(8),
                   np.array(8)):
-            w, h = freqs([1.0], [1.0], worN=w)
+            w, h = freqs([1.0], [1.0], worN=N)
             assert_equal(len(w), 8)
             assert_array_almost_equal(h, np.ones(8))
+
+        # Measure at frequency 8 rad/sec
+        for w in (8.0, 8.0+0j):
+            w_out, h = freqs([1.0], [1.0], worN=w)
+            assert_array_almost_equal(w_out, [8])
+            assert_array_almost_equal(h, [1])
 
 
 class TestFreqs_zpk(object):
@@ -504,6 +511,21 @@ class TestFreqs_zpk(object):
         w2, h2 = freqs_zpk([1.0], [1.0], [1.0], None)
         assert_array_almost_equal(w1, w2)
         assert_array_almost_equal(h1, h2)
+
+    def test_w_or_N_types(self):
+        # Measure at 8 equally-spaced points
+        for N in (8, np.int8(8), np.int16(8), np.int32(8), np.int64(8),
+                  np.array(8)):
+            w, h = freqs_zpk([], [], 1, worN=N)
+            assert_equal(len(w), 8)
+            assert_array_almost_equal(h, np.ones(8))
+
+        # Measure at frequency 8 rad/sec
+        for w in (8.0, 8.0+0j):
+            w_out, h = freqs_zpk([], [], 1, worN=w)
+            assert_array_almost_equal(w_out, [8])
+            assert_array_almost_equal(h, [1])
+
 
 class TestFreqz(object):
 
@@ -686,7 +708,8 @@ class TestFreqz(object):
                 assert_equal(h.shape, (2,) + worN.shape)
                 for k in range(2):
                     ww, hh = freqz(b[:, k, 0, 0], a[:, k, 0, 0],
-                                   worN=worN.ravel(), whole=whole)
+                                   worN=worN.ravel(),
+                                   whole=whole)
                     assert_equal(ww, worN.ravel())
                     assert_allclose(hh, h[k, :, :].ravel())
 
@@ -704,29 +727,31 @@ class TestFreqz(object):
         a = [1.0, -1.3199152021838287, 0.80341991081938424,
              -0.16767146321568049]
 
-        # N = None
-        w1, h1 = freqz(b, a, whole=False, fs=fs)
-        w2, h2 = freqz(b, a, whole=False)
+        # N = None, whole=False
+        w1, h1 = freqz(b, a, fs=fs)
+        w2, h2 = freqz(b, a)
         assert_allclose(h1, h2)
         assert_allclose(w1, np.linspace(0, fs/2, 512, endpoint=False))
 
+        # N = None, whole=True
         w1, h1 = freqz(b, a, whole=True, fs=fs)
         w2, h2 = freqz(b, a, whole=True)
         assert_allclose(h1, h2)
         assert_allclose(w1, np.linspace(0, fs, 512, endpoint=False))
 
-        # N = 5
-        w1, h1 = freqz(b, a, 5, whole=False, fs=fs)
-        w2, h2 = freqz(b, a, 5, whole=False)
+        # N = 5, whole=False
+        w1, h1 = freqz(b, a, 5, fs=fs)
+        w2, h2 = freqz(b, a, 5)
         assert_allclose(h1, h2)
         assert_allclose(w1, np.linspace(0, fs/2, 5, endpoint=False))
 
+        # N = 5, whole=True
         w1, h1 = freqz(b, a, 5, whole=True, fs=fs)
         w2, h2 = freqz(b, a, 5, whole=True)
         assert_allclose(h1, h2)
         assert_allclose(w1, np.linspace(0, fs, 5, endpoint=False))
 
-        # w is an array
+        # w is an array_like
         for w in ([123], (123,), np.array([123]), (50, 123, 230),
                   np.array([50, 123, 230])):
             w1, h1 = freqz(b, a, w, fs=fs)
@@ -734,12 +759,27 @@ class TestFreqz(object):
             assert_allclose(h1, h2)
             assert_allclose(w, w1)
 
-    def test_w_types(self):
-        for w in (8, np.int8(8), np.int16(8), np.int32(8), np.int64(8),
+    def test_w_or_N_types(self):
+        # Measure at 7 (polyval) or 8 (fft) equally-spaced points
+        for N in (7, np.int8(7), np.int16(7), np.int32(7), np.int64(7),
+                  np.array(7),
+                  8, np.int8(8), np.int16(8), np.int32(8), np.int64(8),
                   np.array(8)):
-            w, h = freqz([1.0], worN=w)
-            assert_array_almost_equal(w, np.pi * np.arange(8) / 8.)
-            assert_array_almost_equal(h, np.ones(8))
+
+            w, h = freqz([1.0], worN=N)
+            assert_array_almost_equal(w, np.pi * np.arange(N) / N)
+            assert_array_almost_equal(h, np.ones(N))
+
+            w, h = freqz([1.0], worN=N, fs=100)
+            assert_array_almost_equal(w, np.linspace(0, 50, N, endpoint=False))
+            assert_array_almost_equal(h, np.ones(N))
+
+        # Measure at frequency 8 Hz
+        for w in (8.0, 8.0+0j):
+            # Only makes sense when fs is specified
+            w_out, h = freqz([1.0], worN=w, fs=100)
+            assert_array_almost_equal(w_out, [8])
+            assert_array_almost_equal(h, [1])
 
 
 class TestSOSFreqz(object):
@@ -880,29 +920,31 @@ class TestSOSFreqz(object):
                 1.0, -0.37256600288916636, 0.0],
                [1.0, 1.0, 0.0, 1.0, -0.9495739996946778, 0.45125966317124144]]
 
-        # N = None
-        w1, h1 = sosfreqz(sos, whole=False, fs=fs)
-        w2, h2 = sosfreqz(sos, whole=False)
+        # N = None, whole=False
+        w1, h1 = sosfreqz(sos, fs=fs)
+        w2, h2 = sosfreqz(sos)
         assert_allclose(h1, h2)
         assert_allclose(w1, np.linspace(0, fs/2, 512, endpoint=False))
 
+        # N = None, whole=True
         w1, h1 = sosfreqz(sos, whole=True, fs=fs)
         w2, h2 = sosfreqz(sos, whole=True)
         assert_allclose(h1, h2)
         assert_allclose(w1, np.linspace(0, fs, 512, endpoint=False))
 
-        # N = 5
-        w1, h1 = sosfreqz(sos, 5, whole=False, fs=fs)
-        w2, h2 = sosfreqz(sos, 5, whole=False)
+        # N = 5, whole=False
+        w1, h1 = sosfreqz(sos, 5, fs=fs)
+        w2, h2 = sosfreqz(sos, 5)
         assert_allclose(h1, h2)
         assert_allclose(w1, np.linspace(0, fs/2, 5, endpoint=False))
 
+        # N = 5, whole=True
         w1, h1 = sosfreqz(sos, 5, whole=True, fs=fs)
         w2, h2 = sosfreqz(sos, 5, whole=True)
         assert_allclose(h1, h2)
         assert_allclose(w1, np.linspace(0, fs, 5, endpoint=False))
 
-        # w is an array
+        # w is an array_like
         for w in ([123], (123,), np.array([123]), (50, 123, 230),
                   np.array([50, 123, 230])):
             w1, h1 = sosfreqz(sos, w, fs=fs)
@@ -910,12 +952,27 @@ class TestSOSFreqz(object):
             assert_allclose(h1, h2)
             assert_allclose(w, w1)
 
-    def test_w_types(self):
-        for w in (8, np.int8(8), np.int16(8), np.int32(8), np.int64(8),
+    def test_w_or_N_types(self):
+        # Measure at 7 (polyval) or 8 (fft) equally-spaced points
+        for N in (7, np.int8(7), np.int16(7), np.int32(7), np.int64(7),
+                  np.array(7),
+                  8, np.int8(8), np.int16(8), np.int32(8), np.int64(8),
                   np.array(8)):
-            w, h = sosfreqz([1, 0, 0, 1, 0, 0], worN=w)
-            assert_array_almost_equal(w, np.pi * np.arange(8) / 8.)
-            assert_array_almost_equal(h, np.ones(8))
+
+            w, h = sosfreqz([1, 0, 0, 1, 0, 0], worN=N)
+            assert_array_almost_equal(w, np.pi * np.arange(N) / N)
+            assert_array_almost_equal(h, np.ones(N))
+
+            w, h = sosfreqz([1, 0, 0, 1, 0, 0], worN=N, fs=100)
+            assert_array_almost_equal(w, np.linspace(0, 50, N, endpoint=False))
+            assert_array_almost_equal(h, np.ones(N))
+
+        # Measure at frequency 8 Hz
+        for w in (8.0, 8.0+0j):
+            # Only makes sense when fs is specified
+            w_out, h = sosfreqz([1, 0, 0, 1, 0, 0], worN=w, fs=100)
+            assert_array_almost_equal(w_out, [8])
+            assert_array_almost_equal(h, [1])
 
 
 class TestFreqz_zpk(object):
@@ -962,29 +1019,31 @@ class TestFreqz_zpk(object):
              0.4747869998473389-0.4752230717749344j]
         k = 0.03934683014103762
 
-        # N = None
+        # N = None, whole=False
         w1, h1 = freqz_zpk(z, p, k, whole=False, fs=fs)
         w2, h2 = freqz_zpk(z, p, k, whole=False)
         assert_allclose(h1, h2)
         assert_allclose(w1, np.linspace(0, fs/2, 512, endpoint=False))
 
+        # N = None, whole=True
         w1, h1 = freqz_zpk(z, p, k, whole=True, fs=fs)
         w2, h2 = freqz_zpk(z, p, k, whole=True)
         assert_allclose(h1, h2)
         assert_allclose(w1, np.linspace(0, fs, 512, endpoint=False))
 
-        # N = 5
-        w1, h1 = freqz_zpk(z, p, k, 5, whole=False, fs=fs)
-        w2, h2 = freqz_zpk(z, p, k, 5, whole=False)
+        # N = 5, whole=False
+        w1, h1 = freqz_zpk(z, p, k, 5, fs=fs)
+        w2, h2 = freqz_zpk(z, p, k, 5)
         assert_allclose(h1, h2)
         assert_allclose(w1, np.linspace(0, fs/2, 5, endpoint=False))
 
+        # N = 5, whole=True
         w1, h1 = freqz_zpk(z, p, k, 5, whole=True, fs=fs)
         w2, h2 = freqz_zpk(z, p, k, 5, whole=True)
         assert_allclose(h1, h2)
         assert_allclose(w1, np.linspace(0, fs, 5, endpoint=False))
 
-        # w is an array
+        # w is an array_like
         for w in ([123], (123,), np.array([123]), (50, 123, 230),
                   np.array([50, 123, 230])):
             w1, h1 = freqz_zpk(z, p, k, w, fs=fs)
@@ -992,12 +1051,25 @@ class TestFreqz_zpk(object):
             assert_allclose(h1, h2)
             assert_allclose(w, w1)
 
-    def test_w_types(self):
-        for w in (8, np.int8(8), np.int16(8), np.int32(8), np.int64(8),
+    def test_w_or_N_types(self):
+        # Measure at 8 equally-spaced points
+        for N in (8, np.int8(8), np.int16(8), np.int32(8), np.int64(8),
                   np.array(8)):
-            w, h = freqz_zpk([], [], 1, worN=w)
+
+            w, h = freqz_zpk([], [], 1, worN=N)
             assert_array_almost_equal(w, np.pi * np.arange(8) / 8.)
             assert_array_almost_equal(h, np.ones(8))
+
+            w, h = freqz_zpk([], [], 1, worN=N, fs=100)
+            assert_array_almost_equal(w, np.linspace(0, 50, 8, endpoint=False))
+            assert_array_almost_equal(h, np.ones(8))
+
+        # Measure at frequency 8 Hz
+        for w in (8.0, 8.0+0j):
+            # Only makes sense when fs is specified
+            w_out, h = freqz_zpk([], [], 1, worN=w, fs=100)
+            assert_array_almost_equal(w_out, [8])
+            assert_array_almost_equal(h, [1])
 
 
 class TestNormalize(object):
@@ -3551,9 +3623,16 @@ class TestGroupDelay(object):
                             0.229038045801298, 0.212185774208521])
         assert_array_almost_equal(gd, norm_gd)
 
-    def test_w_types(self):
-        for w in (8, np.int8(8), np.int16(8), np.int32(8), np.int64(8),
+    def test_w_or_N_types(self):
+        # Measure at 8 equally-spaced points
+        for N in (8, np.int8(8), np.int16(8), np.int32(8), np.int64(8),
                   np.array(8)):
-            w, gd = group_delay((1, 1), w)
+            w, gd = group_delay((1, 1), N)
             assert_array_almost_equal(w, pi * np.arange(8) / 8)
             assert_array_almost_equal(gd, np.zeros(8))
+
+        # Measure at frequency 8 rad/sec
+        for w in (8.0, 8.0+0j):
+            w_out, gd = group_delay((1, 1), w)
+            assert_array_almost_equal(w_out, [8])
+            assert_array_almost_equal(gd, [0])
