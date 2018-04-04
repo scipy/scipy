@@ -164,6 +164,8 @@ Surhud More for enhancing scipy.optimize.curve_fit to accept covariant errors
 on data.
 Antonio H. Ribeiro for implementing irrnotch, iirpeak functions and
     trust-exact and trust-constr optimization methods.
+Matt Haberland for the interior point linear programming method and
+    SciPy development videos.
 Ilhan Polat for bug fixes on Riccati solvers.
 Sebastiano Vigna for code in the stats package related to Kendall's tau.
 John Draper for bug fixes.

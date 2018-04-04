@@ -383,16 +383,24 @@ interpreter.
 *Are there any video examples for installing from source, setting up a 
 development environment, etc...?*
 
-Currently, there are two video demonstrations for macOS:
+Currently, there are two video demonstrations for Anaconda Python on macOS:
 
 `Anaconda SciPy Dev Part I (macOS)`_ is a four-minute
 overview of installing Anaconda, building SciPy from source, and testing
 changes made to SciPy from the Spyder IDE.
 
 `Anaconda SciPy Dev Part II (macOS)`_ shows how to use
-a virtual environment to easily switch between the ”pre-built version" of SciPy
-installed with Anaconda and your “source-built version" of SciPy created
+a virtual environment to easily switch between the "pre-built version" of SciPy
+installed with Anaconda and your "source-built version" of SciPy created
 according to Part I.
+
+
+*Are there any video examples of the basic development workflow?*
+
+`SciPy Development Workflow`_ is a five-minute example of fixing a bug and 
+submitting a pull request. While it's intended as a followup to
+`Anaconda SciPy Dev Part I (macOS)`_ and `Anaconda SciPy Dev Part II (macOS)`_,
+the process is similar for other development setups.
 
 
 *Can I use a programming language other than Python to speed up my code?*
@@ -507,3 +515,5 @@ suite.
 .. _Anaconda SciPy Dev Part I (macOS): https://youtu.be/1rPOSNd0ULI
 
 .. _Anaconda SciPy Dev Part II (macOS): https://youtu.be/Faz29u5xIZc
+
+.. _SciPy Development Workflow: https://youtu.be/HgU01gJbzMY
