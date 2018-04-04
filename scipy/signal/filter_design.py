@@ -701,7 +701,7 @@ def _validate_sos(sos):
     return sos, n_sections
 
 
-def sosfreqz(sos, worN=None, whole=False, fs=2*pi):
+def sosfreqz(sos, worN=512, whole=False, fs=2*pi):
     """
     Compute the frequency response of a digital filter in SOS format.
 
