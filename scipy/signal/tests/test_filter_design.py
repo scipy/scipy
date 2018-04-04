@@ -704,13 +704,13 @@ class TestFreqz(object):
         for whole in [False, True]:
             for worN in [np.random.rand(6, 7), np.empty((6, 0))]:
                 w, h = freqz(b, a, worN=worN, whole=whole)
-                assert_array_equal(w, worN)
+                assert_allclose(w, worN, rtol=1e-14)
                 assert_equal(h.shape, (2,) + worN.shape)
                 for k in range(2):
                     ww, hh = freqz(b[:, k, 0, 0], a[:, k, 0, 0],
                                    worN=worN.ravel(),
                                    whole=whole)
-                    assert_equal(ww, worN.ravel())
+                    assert_allclose(ww, worN.ravel(), rtol=1e-14)
                     assert_allclose(hh, h[k, :, :].ravel())
 
     def test_backward_compat(self):
