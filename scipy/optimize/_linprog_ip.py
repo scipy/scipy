@@ -888,7 +888,6 @@ def _postprocess(
              2 : Problem appears to be infeasible
              3 : Problem appears to be unbounded
              4 : Serious numerical difficulties encountered
-             5 : Other
 
     message : str
         A string descriptor of the exit status of the optimization.
@@ -976,7 +975,7 @@ def _postprocess(
     tol = np.sqrt(tol)  # Somewhat arbitrary, but status 5 is very unusual
     if status == 0 and ((slack < -tol).any() or (np.abs(con) > tol).any() or
                         (x < lb - tol).any() or (x > ub + tol).any()):
-        status = 5
+        status = 4
         message = ("The solution does not satisfy the constraints, yet "
                    "no errors were raised and there is no certificate of "
                    "infeasibility or unboundedness. This is known to occur "
@@ -1265,7 +1264,9 @@ def _get_delta(
                             "approached. However, if you see this frequently, "
                             "your problem may be numerically challenging. "
                             "If you cannot improve the formulation, consider "
-                            "setting 'lstsq' to True.", OptimizeWarning)
+                            "setting 'lstsq' to True. Consider also setting "
+                            "`presolve` to True, if it is not already.",
+                            OptimizeWarning)
                         lstsq = True
                 else:
                     raise e
@@ -1897,7 +1898,6 @@ def _linprog_ip(
                  2 : Problem appears to be infeasible
                  3 : Problem appears to be unbounded
                  4 : Serious numerical difficulties encountered
-                 5 : Other
 
         nit : int
             The number of iterations performed.
