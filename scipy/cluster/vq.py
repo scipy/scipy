@@ -327,7 +327,7 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True):
     the last iteration is less than some threshold. This yields
     a code book mapping centroids to codes and vice versa.
 
-    Distortion is defined as the sum of the squared differences
+    Distortion is defined as the mean Euclidean distance
     between the observations and the corresponding centroid.
 
     Parameters
