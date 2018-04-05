@@ -2575,6 +2575,7 @@ def butter(N, Wn, btype='low', analog=False, output='ba', fs=None):
     >>> ax2.set_title('After 15 Hz high-pass filter')
     >>> ax2.axis([0, 1, -2, 2])
     >>> ax2.set_xlabel('Time [seconds]')
+    >>> plt.tight_layout()
     >>> plt.show()
     """
     return iirfilter(N, Wn, btype=btype, analog=analog,
@@ -2690,6 +2691,7 @@ def cheby1(N, rp, Wn, btype='low', analog=False, output='ba', fs=None):
     >>> ax2.set_title('After 15 Hz high-pass filter')
     >>> ax2.axis([0, 1, -2, 2])
     >>> ax2.set_xlabel('Time [seconds]')
+    >>> plt.tight_layout()
     >>> plt.show()
     """
     return iirfilter(N, Wn, rp=rp, btype=btype, analog=analog,
@@ -2922,6 +2924,7 @@ def ellip(N, rp, rs, Wn, btype='low', analog=False, output='ba', fs=None):
     >>> ax2.set_title('After 17 Hz high-pass filter')
     >>> ax2.axis([0, 1, -2, 2])
     >>> ax2.set_xlabel('Time [seconds]')
+    >>> plt.tight_layout()
     >>> plt.show()
     """
     return iirfilter(N, Wn, rs=rs, rp=rp, btype=btype, analog=analog,
