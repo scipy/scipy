@@ -325,8 +325,8 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi):
     Returns
     -------
     w : ndarray
-        The frequencies at which `h` was computed.  If `fs` is specified,
-        these are in the same units.  Otherwise they are in radians/sample.
+        The frequencies at which `h` was computed, in the same units as `fs`.
+        By default, `w` is normalized to the range [0, pi) (radians/sample).
     h : ndarray
         The frequency response, as complex numbers.
 
@@ -517,10 +517,10 @@ def freqz_zpk(z, p, k, worN=512, whole=False, fs=2*pi):
     Returns
     -------
     w : ndarray
-        The frequencies at which `h` was computed.  If `fs` is specified,
-        these are in the same units.  Otherwise they are in radians/sample.
+        The frequencies at which `h` was computed, in the same units as `fs`.
+        By default, `w` is normalized to the range [0, pi) (radians/sample).
     h : ndarray
-        The frequency response.
+        The frequency response, as complex numbers.
 
     See Also
     --------
@@ -618,9 +618,9 @@ def group_delay(system, w=512, whole=False, fs=2*pi):
     Returns
     -------
     w : ndarray
-        The frequencies at which group delay was computed.  If `fs` is
-        specified, these are in the same units.  Otherwise they are in
-        radians/sample.
+        The frequencies at which group delay was computed, in the same units
+        as `fs`.  By default, `w` is normalized to the range [0, pi)
+        (radians/sample).
     gd : ndarray
         The group delay.
 
@@ -749,8 +749,8 @@ def sosfreqz(sos, worN=512, whole=False, fs=2*pi):
     Returns
     -------
     w : ndarray
-        The frequencies at which `h` was computed.  If `fs` is specified,
-        these are in the same units.  Otherwise they are in radians/sample.
+        The frequencies at which `h` was computed, in the same units as `fs`.
+        By default, `w` is normalized to the range [0, pi) (radians/sample).
     h : ndarray
         The frequency response, as complex numbers.
 
