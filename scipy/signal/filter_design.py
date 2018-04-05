@@ -2009,7 +2009,8 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
 
     Create a digital filter with the same properties, in a system with
     sampling rate of 2000 Hz, and plot the frequency response.  (Second-order
-    sections implementation is required for a filter of this order):
+    sections implementation is required to ensure stability of a filter of
+    this order):
 
     >>> sos = signal.iirfilter(17, [50, 200], rs=60, btype='band',
     ...                        analog=False, ftype='cheby2', fs=2000,
