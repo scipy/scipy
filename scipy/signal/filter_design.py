@@ -2556,7 +2556,7 @@ def butter(N, Wn, btype='low', analog=False, output='ba', fs=None):
 
     Generate a signal made up of 10 Hz and 20 Hz, sampled at 1 kHz
 
-    >>> t = np.linspace(0, 1, 1000)  # 1 second
+    >>> t = np.linspace(0, 1, 1000, False)  # 1 second
     >>> sig = np.sin(2*np.pi*10*t) + np.sin(2*np.pi*20*t)
     >>> fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
     >>> ax1.plot(t, sig)
@@ -2671,7 +2671,7 @@ def cheby1(N, rp, Wn, btype='low', analog=False, output='ba', fs=None):
 
     Generate a signal made up of 10 Hz and 20 Hz, sampled at 1 kHz
 
-    >>> t = np.linspace(0, 1, 1000)  # 1 second
+    >>> t = np.linspace(0, 1, 1000, False)  # 1 second
     >>> sig = np.sin(2*np.pi*10*t) + np.sin(2*np.pi*20*t)
     >>> fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
     >>> ax1.plot(t, sig)
@@ -2781,7 +2781,7 @@ def cheby2(N, rs, Wn, btype='low', analog=False, output='ba', fs=None):
 
     Generate a signal made up of 10 Hz and 20 Hz, sampled at 1 kHz
 
-    >>> t = np.linspace(0, 1, 1000)  # 1 second
+    >>> t = np.linspace(0, 1, 1000, False)  # 1 second
     >>> sig = np.sin(2*np.pi*10*t) + np.sin(2*np.pi*20*t)
     >>> fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
     >>> ax1.plot(t, sig)
@@ -2903,7 +2903,7 @@ def ellip(N, rp, rs, Wn, btype='low', analog=False, output='ba', fs=None):
 
     Generate a signal made up of 10 Hz and 20 Hz, sampled at 1 kHz
 
-    >>> t = np.linspace(0, 1, 1000)  # 1 second
+    >>> t = np.linspace(0, 1, 1000, False)  # 1 second
     >>> sig = np.sin(2*np.pi*10*t) + np.sin(2*np.pi*20*t)
     >>> fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
     >>> ax1.plot(t, sig)
