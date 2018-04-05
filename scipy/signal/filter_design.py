@@ -4280,7 +4280,7 @@ def besselap(N, norm='phase'):
     return asarray([]), asarray(p, dtype=complex), float(k)
 
 
-def iirnotch(w0, Q, fs=2):
+def iirnotch(w0, Q, fs=2.0):
     """
     Design second-order IIR notch digital filter.
 
@@ -4361,7 +4361,7 @@ def iirnotch(w0, Q, fs=2):
     return _design_notch_peak_filter(w0, Q, "notch", fs)
 
 
-def iirpeak(w0, Q, fs=2):
+def iirpeak(w0, Q, fs=2.0):
     """
     Design second-order IIR peak (resonant) digital filter.
 
@@ -4442,7 +4442,7 @@ def iirpeak(w0, Q, fs=2):
     return _design_notch_peak_filter(w0, Q, "peak", fs)
 
 
-def _design_notch_peak_filter(w0, Q, ftype, fs=2):
+def _design_notch_peak_filter(w0, Q, ftype, fs=2.0):
     """
     Design notch or peak digital filter.
 
