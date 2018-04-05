@@ -365,7 +365,7 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi):
     >>> import matplotlib.pyplot as plt
     >>> fig = plt.figure()
     >>> plt.title('Digital filter frequency response')
-    >>> ax1 = fig.add_subplot(111)
+    >>> ax1 = fig.add_subplot(1, 1, 1)
 
     >>> plt.plot(w, 20 * np.log10(abs(h)), 'b')
     >>> plt.ylabel('Amplitude [dB]', color='b')
@@ -1998,7 +1998,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
     ...                         btype='band', analog=True, ftype='cheby2')
     >>> w, h = signal.freqs(b, a, 1000)
     >>> fig = plt.figure()
-    >>> ax = fig.add_subplot(111)
+    >>> ax = fig.add_subplot(1, 1, 1)
     >>> ax.semilogx(w / (2*np.pi), 20 * np.log10(abs(h)))
     >>> ax.set_title('Chebyshev Type II bandpass frequency response')
     >>> ax.set_xlabel('Frequency [Hz]')
