@@ -327,7 +327,7 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True):
     the last iteration is less than some threshold. This yields
     a code book mapping centroids to codes and vice versa.
 
-    Distortion is defined as the mean Euclidean distance
+    Distortion is defined as the sum of the squared distances
     between the observations and the corresponding centroid.
 
     Parameters
@@ -373,8 +373,12 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True):
        not necessarily the globally minimal distortion.
 
     distortion : float
-       The distortion between the observations passed and the
-       centroids generated.
+       The mean (non-squared) Euclidean distance
+       between the observations passed and the
+       centroids generated. (Note the difference w.r.t. the minimization
+       objective function, also called "distortion", which is defined
+       as the sum of the squared distances between the observations and
+       the corresponding centroids).
 
     See Also
     --------
