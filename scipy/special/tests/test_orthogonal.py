@@ -531,7 +531,7 @@ def test_roots_gegenbauer():
     # to a scaled down copy of T_n(x) there.
     vgq(rootf(0), orth.eval_chebyt, weightf(0), -1., 1., 5)
     vgq(rootf(0), orth.eval_chebyt, weightf(0), -1., 1., 25)
-    vgq(rootf(0), orth.eval_chebyt, weightf(0), -1., 1., 100)
+    vgq(rootf(0), orth.eval_chebyt, weightf(0), -1., 1., 100, atol=1e-12)
 
     x, w = sc.roots_gegenbauer(5, 2, False)
     y, v, m = sc.roots_gegenbauer(5, 2, True)
@@ -549,7 +549,7 @@ def test_roots_chebyt():
     weightf = orth.chebyt(5).weight_func
     verify_gauss_quad(sc.roots_chebyt, orth.eval_chebyt, weightf, -1., 1., 5)
     verify_gauss_quad(sc.roots_chebyt, orth.eval_chebyt, weightf, -1., 1., 25)
-    verify_gauss_quad(sc.roots_chebyt, orth.eval_chebyt, weightf, -1., 1., 100)
+    verify_gauss_quad(sc.roots_chebyt, orth.eval_chebyt, weightf, -1., 1., 100, atol=1e-12)
 
     x, w = sc.roots_chebyt(5, False)
     y, v, m = sc.roots_chebyt(5, True)
@@ -589,7 +589,7 @@ def test_roots_chebyc():
     weightf = orth.chebyc(5).weight_func
     verify_gauss_quad(sc.roots_chebyc, orth.eval_chebyc, weightf, -2., 2., 5)
     verify_gauss_quad(sc.roots_chebyc, orth.eval_chebyc, weightf, -2., 2., 25)
-    verify_gauss_quad(sc.roots_chebyc, orth.eval_chebyc, weightf, -2., 2., 100)
+    verify_gauss_quad(sc.roots_chebyc, orth.eval_chebyc, weightf, -2., 2., 100, atol=1e-12)
 
     x, w = sc.roots_chebyc(5, False)
     y, v, m = sc.roots_chebyc(5, True)
