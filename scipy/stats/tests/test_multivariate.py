@@ -680,6 +680,15 @@ class TestDirichlet(object):
     def test_data_with_zeros(self):
         alpha = np.array([1.0, 2.0, 3.0, 4.0])
         x = np.array([0.1, 0.0, 0.2, 0.7])
+        dirichlet.pdf(x, alpha)
+        dirichlet.logpdf(x, alpha)
+        alpha = np.array([1.0, 1.0, 1.0, 1.0])
+        assert_almost_equal(dirichlet.pdf(x, alpha), 6)
+        assert_almost_equal(dirichlet.logpdf(x, alpha), np.log(6))
+
+    def test_data_with_zeros_and_small_alpha(self):
+        alpha = np.array([1.0, 0.5, 3.0, 4.0])
+        x = np.array([0.1, 0.0, 0.2, 0.7])
         assert_raises(ValueError, dirichlet.pdf, x, alpha)
         assert_raises(ValueError, dirichlet.logpdf, x, alpha)
 
