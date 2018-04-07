@@ -2768,7 +2768,7 @@ class TestCDF2RDF(object):
     def test_random_1d_stacked_arrays(self):
         # cannot test M == 0 due to bug in old numpy
         for M in range(1, 7):
-            X = np.random.rand(10000, M, M)
+            X = np.random.rand(100, M, M)
             w, v = np.linalg.eig(X)
             wr, vr = cdf2rdf(w, v)
             self.assert_eig_valid(wr, vr, X)
@@ -2776,7 +2776,7 @@ class TestCDF2RDF(object):
     def test_random_2d_stacked_arrays(self):
         # cannot test M == 0 due to bug in old numpy
         for M in range(1, 7):
-            X = np.random.rand(100, 100, M, M)
+            X = np.random.rand(10, 10, M, M)
             w, v = np.linalg.eig(X)
             wr, vr = cdf2rdf(w, v)
             self.assert_eig_valid(wr, vr, X)
