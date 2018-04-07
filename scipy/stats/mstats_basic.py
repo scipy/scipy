@@ -466,8 +466,8 @@ def spearmanr(x, y, use_ties=True):
     if use_ties:
         xties = count_tied_groups(x)
         yties = count_tied_groups(y)
-        corr_x = np.sum(v*k*(k**2-1) for (k,v) in iteritems(xties))/12.
-        corr_y = np.sum(v*k*(k**2-1) for (k,v) in iteritems(yties))/12.
+        corr_x = sum(v*k*(k**2-1) for (k,v) in iteritems(xties))/12.
+        corr_y = sum(v*k*(k**2-1) for (k,v) in iteritems(yties))/12.
     else:
         corr_x = corr_y = 0
 
@@ -548,8 +548,8 @@ def kendalltau(x, y, use_ties=True, use_missing=False):
 
     var_s = n*(n-1)*(2*n+5)
     if use_ties:
-        var_s -= np.sum(v*k*(k-1)*(2*k+5)*1. for (k,v) in iteritems(xties))
-        var_s -= np.sum(v*k*(k-1)*(2*k+5)*1. for (k,v) in iteritems(yties))
+        var_s -= sum(v*k*(k-1)*(2*k+5)*1. for (k,v) in iteritems(xties))
+        var_s -= sum(v*k*(k-1)*(2*k+5)*1. for (k,v) in iteritems(yties))
         v1 = np.sum([v*k*(k-1) for (k, v) in iteritems(xties)], dtype=float) *\
              np.sum([v*k*(k-1) for (k, v) in iteritems(yties)], dtype=float)
         v1 /= 2.*n*(n-1)
@@ -585,12 +585,12 @@ def kendalltau_seasonal(x):
     (n,m) = x.shape
     n_p = x.count(0)
 
-    S_szn = np.sum(msign(x[i:]-x[i]).sum(0) for i in range(n))
+    S_szn = sum(msign(x[i:]-x[i]).sum(0) for i in range(n))
     S_tot = S_szn.sum()
 
     n_tot = x.count()
     ties = count_tied_groups(x.compressed())
-    corr_ties = np.sum(v*k*(k-1) for (k,v) in iteritems(ties))
+    corr_ties = sum(v*k*(k-1) for (k,v) in iteritems(ties))
     denom_tot = ma.sqrt(1.*n_tot*(n_tot-1)*(n_tot*(n_tot-1)-corr_ties))/2.
 
     R = rankdata(x, axis=0, use_missing=True)
@@ -599,10 +599,10 @@ def kendalltau_seasonal(x):
     denom_szn = ma.empty(m, dtype=float)
     for j in range(m):
         ties_j = count_tied_groups(x[:,j].compressed())
-        corr_j = np.sum(v*k*(k-1) for (k,v) in iteritems(ties_j))
+        corr_j = sum(v*k*(k-1) for (k,v) in iteritems(ties_j))
         cmb = n_p[j]*(n_p[j]-1)
         for k in range(j,m,1):
-            K[j,k] = np.sum(msign((x[i:,j]-x[i,j])*(x[i:,k]-x[i,k])).sum()
+            K[j,k] = sum(msign((x[i:,j]-x[i,j])*(x[i:,k]-x[i,k])).sum()
                                for i in range(n))
             covmat[j,k] = (K[j,k] + 4*(R[:,j]*R[:,k]).sum() -
                            n*(n_p[j]+1)*(n_p[k]+1))/3.
@@ -1005,7 +1005,7 @@ def mannwhitneyu(x,y, use_continuity=True):
     mu = (nx*ny)/2.
     sigsq = (nt**3 - nt)/12.
     ties = count_tied_groups(ranks)
-    sigsq -= np.sum(v*(k**3-k) for (k,v) in iteritems(ties))/12.
+    sigsq -= sum(v*(k**3-k) for (k,v) in iteritems(ties))/12.
     sigsq *= nx*ny/float(nt*(nt-1))
 
     if use_continuity:
@@ -1051,7 +1051,7 @@ def kruskal(*args):
     H = 12./(ntot*(ntot+1)) * (sumrk**2/ngrp).sum() - 3*(ntot+1)
     # Tie correction
     ties = count_tied_groups(ranks)
-    T = 1. - np.sum(v*(k**3-k) for (k,v) in iteritems(ties))/float(ntot**3-ntot)
+    T = 1. - sum(v*(k**3-k) for (k,v) in iteritems(ties))/float(ntot**3-ntot)
     if T == 0:
         raise ValueError('All numbers are identical in kruskal')
 
