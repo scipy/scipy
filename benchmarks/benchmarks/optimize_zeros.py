@@ -7,11 +7,7 @@ try:
     from scipy.optimize._tstutils import methods, mstrings, functions, fstrings
 except ImportError:
     pass
-try:
-    from scipy.optimize.zeros import newton
-except ImportError:
-    pass
-
+from scipy.optimize import newton  # newton predates benchmarks
 
 from .common import Benchmark
 
