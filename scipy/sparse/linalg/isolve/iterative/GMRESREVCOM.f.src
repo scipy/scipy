@@ -114,6 +114,7 @@
      $     <rc=ws,d,wsc,dz>NRM2,
      $     <rc>APPROXRES
 
+      LOGICAL BRKDWN
 *
 *     indicates where to resume from. Only valid when IJOB = 2!
       INTEGER RLBL
@@ -150,6 +151,7 @@
 *
       INFO = 0
       MAXIT = ITER
+      BRKDWN = .FALSE.
 *
 *     Alias workspace columns.
 *
@@ -271,6 +273,7 @@
 *
 *         DO 50 I = 1, RESTRT
          i = 1
+         BRKDWN = .FALSE.
  49      if (i.gt.restrt) go to 50
 ************CALL MATVEC( ONE, WORK( 1,V+I-1 ), ZERO, WORK( 1,AV ) )
 *
@@ -304,7 +307,7 @@
 *           the previous I-1 columns.
 *
             CALL <_c>ORTHOH( I, N, WORK2( 1,I+H-1 ), WORK( 1,V ), LDW,
-     $                   WORK( 1,W ) )
+     $                   WORK( 1,W ), BRKDWN )
 *
             IF ( I.GT.0 )
 *
@@ -320,7 +323,7 @@
 *
             RESID = <rc>APPROXRES( I, WORK2( 1,I+H-1 ), WORK( 1,S ),
      $                         WORK2( 1,GIV ), LDW2 )
-            IF ( RESID.LE.TOL ) THEN
+            IF ( RESID.LE.TOL .OR. BRKDWN ) THEN
                GO TO 51
             ENDIF
             i = i + 1
@@ -368,6 +371,12 @@
  7       CONTINUE
 *****************
          IF( INFO.EQ.1 ) GO TO 200
+         IF( BRKDWN ) THEN
+*           Reached breakdown (= exact solution), but the external
+*           tolerance check failed. Bail out with failure.
+            INFO = 1
+            GO TO 100
+         ENDIF
 *
          IF ( ITER.EQ.MAXIT ) THEN
             INFO = 1
@@ -400,11 +409,12 @@
 *     END SUBROUTINE <_c>GMRESREVCOM
 *
 *     =========================================================
-      SUBROUTINE <_c>ORTHOH( I, N, H, V, LDV, W )
+      SUBROUTINE <_c>ORTHOH( I, N, H, V, LDV, W, BRKDWN )
 *
       IMPLICIT NONE
       INTEGER            I, N, LDV
       <_t>   H( * ), W( * ), V( LDV,* )
+      LOGICAL            BRKDWN
 *
 *     Construct the I-th column of the upper Hessenberg matrix H
 *     using the Gram-Schmidt process on V and W.
@@ -423,8 +433,13 @@
    10 CONTINUE
       H( I+1 ) = <rc>NRM2( N, W, 1 )
       CALL <_c>COPY( N, W, 1, V( 1,I+1 ), 1 )
-      TMPVAL = ONE / H( I+1 )
-      CALL <_c>SCAL( N, TMPVAL, V( 1,I+1 ), 1 )
+      IF (H(I+1).EQ.0) THEN
+         BRKDWN = .TRUE.
+      ELSE
+         BRKDWN = .FALSE.
+         TMPVAL = ONE / H( I+1 )
+         CALL <_c>SCAL( N, TMPVAL, V( 1,I+1 ), 1 )
+      ENDIF
 *
       RETURN
 *
@@ -510,8 +525,26 @@
 *
 *     Solve H*y = s for upper triangualar H.
 *
+      integer k, m
       CALL <_c>COPY( I, S, 1, Y, 1 )
-      CALL <_c>TRSV( 'UPPER', 'NOTRANS', 'NONUNIT', I, H, LDH, Y, 1 )
+*
+*     Pseudoinverse vs. zero diagonals in H,
+*     which may appear in breakdown conditions.
+*
+      J = I
+ 5    IF (J.GT.0) THEN
+         IF (H(J,J).EQ.0) THEN
+            Y(J) = 0
+            J = J - 1
+            GO TO 5
+         ENDIF
+      ENDIF
+*
+*     Solve triangular system
+*
+      IF (J.GT.0) THEN
+         CALL <_c>TRSV( 'UPPER', 'NOTRANS', 'NONUNIT', J, H, LDH, Y, 1 )
+      END IF
 *
 *     Compute current solution vector X.
 *
