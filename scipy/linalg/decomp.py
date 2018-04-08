@@ -1282,23 +1282,26 @@ def cdf2rdf(w, v):
     continues to hold, where ``X`` is the original array for which ``w`` and
     ``v`` are the eigenvalues and eigenvectors.
 
+    .. versionadded:: 1.1.0
+
     Parameters
     ----------
-    w : array_like
-        Complex or real eigenvalues array of size (M,) for a single matrix, or
-        size (..., M) for multiple stacked matrices
-    v : array_like
-        Complex or real eigenvectors array of size (M, M) for a single matrix,
-        or size (..., M, M) for multiple stacked matrices
+    w : (..., M) array_like
+        Complex or real eigenvalues, an array or stack of arrays
+
+        Conjugate pairs must not be interleaved, else the wrong result
+        will be produced. So ``[1+1j, 1, 1-1j]`` will give a correct result, but
+        ``[1+1j, 2+1j, 1-1j, 2-1j]`` will not.
+
+    v : (..., M, M) array_like
+        Complex or real eigenvectors, a square array or stack of square arrays.
 
     Returns
     -------
-    wr : ndarray
-        Real diagonal block form of eigenvalues, with size (M, M) for single
-        matrix, or (..., M, M) for multiple stacked matrices.
-    vr : ndarray
-        Real eigenvectors associated with ``wr``, with size (M, M) for
-        single matrix, or (..., M, M) for multiple stacked arrays.
+    wr : (..., M, M) ndarray
+        Real diagonal block form of eigenvalues
+    vr : (..., M, M) ndarray
+        Real eigenvectors associated with ``wr``
 
     See Also
     --------
@@ -1350,64 +1353,67 @@ def cdf2rdf(w, v):
            [ 0.     ,  2.59153,  3.23942],
            [ 0.     , -3.23942,  2.59153]])
     """
-    w1, v1 = _asarray_validated(w), _asarray_validated(v)
-    if w1.ndim < 1 or w1.ndim > 2:
-        raise ValueError('expected w to be a one-dimensional array or '
-                         'two-dimensional stacked array')
-    if w1.shape[-1] < 2:
-        raise ValueError('expected w array to have 2 or more elements')
-    if v1.ndim < 2 or v1.ndim > 3:
-        raise ValueError('expected v to be a two-dimensional array or '
-                         'three-dimensional stacked array')
-    if v1.shape[-2] != v1.shape[-1] or w1.shape[-1] < 2:
-        raise ValueError('expected v to be a square matrix or stacked square '
-                         'matrices: v1.shape[-2] = v1.shape[-1]')
-    if len(v1.shape) != len(w1.shape) + 1:
+    w, v = _asarray_validated(w), _asarray_validated(v)
+
+    # check dimensions
+    if w.ndim < 1:
+        raise ValueError('expected w to be at least one-dimensional')
+    if v.ndim < 2:
+        raise ValueError('expected v to be at least two-dimensional')
+    if v.ndim != w.ndim + 1:
         raise ValueError('expected eigenvectors array to have exactly one '
                          'dimension more than eigenvalues array')
-    if v1.shape[-1] != w1.shape[-1]:
+
+    # check shapes
+    n = w.shape[-1]
+    M = w.shape[:-1]
+    if v.shape[-2] != v.shape[-1]:
+        raise ValueError('expected v to be a square matrix or stacked square '
+                         'matrices: v.shape[-2] = v.shape[-1]')
+    if v.shape[-1] != n:
         raise ValueError('expected the same number of eigenvalues as '
                          'eigenvectors')
 
-    # number of stacked matrices and number of eigenvalues in each matrix
-    if w.ndim == 1:
-        stacked = False
-        M, n = 1, w.size
-        w = w[newaxis, :]
-        v = v[newaxis, :, :]
-    else:
-        stacked = True
-        M, n = w.shape
-
     # get indices for each first pair of complex eigenvalues
-    idx_im = argwhere(iscomplex(w))
+    complex_mask = iscomplex(w)
+    n_complex = complex_mask.sum(axis=-1)
 
     # check if all complex eigenvalues have conjugate pairs
-    if len(idx_im[::2, 0]) != len(idx_im[1::2, 0]):
+    if not (n_complex % 2 == 0).all():
         raise ValueError('expected complex-conjugate pairs of eigenvalues')
 
+    # find complex indices
+    idx = nonzero(complex_mask)
+    idx_stack = idx[:-1]
+    idx_elem = idx[-1]
+
+    # filter them to conjugate indices, assuming pairs are not interleaved
+    j = idx_elem[0::2]
+    k = idx_elem[1::2]
+    stack_ind = ()
+    for i in idx_stack:
+        # should never happen, assuming nonzero orders by the last axis
+        assert (i[0::2] == i[1::2]).all(), "Conjugate pair spanned different arrays!"
+        stack_ind += (i[0::2],)
+
     # all eigenvalues to diagonal form
-    w_mat = zeros((M, n, n))
+    wr = zeros(M + (n, n), dtype=w.real.dtype)
     di = range(n)
-    w_mat[:, di, di] = w[:, di].real
+    wr[..., di, di] = w.real
 
     # complex eigenvalues to real block diagonal form
-    mat, k = idx_im[::2, 0], idx_im[::2, 1]
-    w_mat[mat, k, k+1] = w[mat, k].imag
-    w_mat[mat, k+1, k] = w[mat, k+1].imag
-    wr = w_mat.real
+    wr[stack_ind + (j, k)] = w[stack_ind + (j,)].imag
+    wr[stack_ind + (k, j)] = w[stack_ind + (k,)].imag
 
     # compute real eigenvectors associated with real block diagonal eigenvalues
-    u = array([eye(n, n, dtype=numpy.complex128)] * M).reshape(M, n, n)
-    u[mat, k, k] = 0.5j
-    u[mat, k, k+1] = 0.5
-    u[mat, k+1, k] = -0.5j
-    u[mat, k+1, k+1] = 0.5
-    # multipy matrices v and u (equivalent to v @ u)
-    vr = einsum('bij, bjk -> bik', v, u).real
+    u = zeros(M + (n, n), dtype=numpy.cdouble)
+    u[..., di, di] = 1.0
+    u[stack_ind + (j, j)] = 0.5j
+    u[stack_ind + (j, k)] = 0.5
+    u[stack_ind + (k, j)] = -0.5j
+    u[stack_ind + (k, k)] = 0.5
 
-    # remove first axis for non stacked arrays
-    if not stacked:
-        wr = wr[0, :, :]
-        vr = vr[0, :, :]
+    # multipy matrices v and u (equivalent to v @ u)
+    vr = einsum('...ij,...jk->...ik', v, u).real
+
     return wr, vr

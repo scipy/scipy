@@ -2725,42 +2725,64 @@ def test_subspace_angles():
 
 class TestCDF2RDF(object):
 
+    def matmul(self, a, b):
+        return np.einsum('...ij,...jk->...ik', a, b)
+
+    def assert_eig_valid(self, w, v, x):
+        assert_array_almost_equal(
+            self.matmul(v, w),
+            self.matmul(x, v)
+        )
+
+    def test_single_array0x0real(self):
+        # eig doesn't support 0x0 in old versions of numpy
+        X = np.empty((0, 0))
+        w, v = np.empty(0), np.empty((0, 0))
+        wr, vr = cdf2rdf(w, v)
+        self.assert_eig_valid(wr, vr, X)
+
     def test_single_array2x2_real(self):
         X = np.array([[1, 2], [3, -1]])
         w, v = np.linalg.eig(X)
         wr, vr = cdf2rdf(w, v)
-        assert_array_almost_equal(vr.dot(wr), X.dot(vr))
+        self.assert_eig_valid(wr, vr, X)
 
     def test_single_array2x2_complex(self):
         X = np.array([[1, 2], [-2, 1]])
         w, v = np.linalg.eig(X)
         wr, vr = cdf2rdf(w, v)
-        assert_array_almost_equal(vr.dot(wr), X.dot(vr))
+        self.assert_eig_valid(wr, vr, X)
 
     def test_single_array3x3_real(self):
         X = np.array([[1, 2, 3], [1, 2, 3], [2, 5, 6]])
         w, v = np.linalg.eig(X)
         wr, vr = cdf2rdf(w, v)
-        assert_array_almost_equal(vr.dot(wr), X.dot(vr))
+        self.assert_eig_valid(wr, vr, X)
 
     def test_single_array3x3_complex(self):
         X = np.array([[1, 2, 3], [0, 4, 5], [0, -5, 4]])
         w, v = np.linalg.eig(X)
         wr, vr = cdf2rdf(w, v)
-        assert_array_almost_equal(vr.dot(wr), X.dot(vr))
+        self.assert_eig_valid(wr, vr, X)
 
-    def test_random_stacked_arrays(self):
-        N = int(1e4)
-        for M in range(2, 7):
-            X = np.random.rand(N, M, M)
+    def test_random_1d_stacked_arrays(self):
+        # cannot test M == 0 due to bug in old numpy
+        for M in range(1, 7):
+            X = np.random.rand(100, M, M)
             w, v = np.linalg.eig(X)
             wr, vr = cdf2rdf(w, v)
-            assert_array_almost_equal(np.einsum('bij, bjk -> bik', vr, wr),
-                                      np.einsum('bij, bjk -> bik', X, vr))
+            self.assert_eig_valid(wr, vr, X)
 
-    def test_empty_array_error(self):
-        # Check that passing an empty array raises a ValueError.
-        w, v = np.array([]), np.array([])
+    def test_random_2d_stacked_arrays(self):
+        # cannot test M == 0 due to bug in old numpy
+        for M in range(1, 7):
+            X = np.random.rand(10, 10, M, M)
+            w, v = np.linalg.eig(X)
+            wr, vr = cdf2rdf(w, v)
+            self.assert_eig_valid(wr, vr, X)
+
+    def test_low_dimensionality_error(self):
+        w, v = np.empty(()), np.array((2,))
         assert_raises(ValueError, cdf2rdf, w, v)
 
     def test_not_square_error(self):
@@ -2768,19 +2790,27 @@ class TestCDF2RDF(object):
         w, v = np.arange(3), np.arange(6).reshape(3,2)
         assert_raises(ValueError, cdf2rdf, w, v)
 
-    def test_mismatch_error(self):
+    def test_swapped_v_w_error(self):
         # Check that exchanging places of w and v raises ValueError.
         X = np.array([[1, 2, 3], [0, 4, 5], [0, -5, 4]])
         w, v = np.linalg.eig(X)
         assert_raises(ValueError, cdf2rdf, v, w)
 
     def test_non_associated_error(self):
-        # Check that passing non-associated eigenvactors raises a ValueError.
+        # Check that passing non-associated eigenvectors raises a ValueError.
         w, v = np.arange(3), np.arange(16).reshape(4,4)
         assert_raises(ValueError, cdf2rdf, w, v)
 
     def test_not_conjugate_pairs(self):
         # Check that passing non-conjugate pairs raises a ValueError.
         X = np.array([[1, 2, 3], [1, 2, 3], [2, 5, 6+1j]])
+        w, v = np.linalg.eig(X)
+        assert_raises(ValueError, cdf2rdf, w, v)
+
+        # different arrays in the stack, so not conjugate
+        X = np.array([
+            [[1, 2, 3], [1, 2, 3], [2, 5, 6+1j]],
+            [[1, 2, 3], [1, 2, 3], [2, 5, 6-1j]],
+        ])
         w, v = np.linalg.eig(X)
         assert_raises(ValueError, cdf2rdf, w, v)
