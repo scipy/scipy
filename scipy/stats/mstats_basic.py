@@ -1757,7 +1757,7 @@ def winsorize(a, limits=None, inclusive=(True, True), inplace=False,
         indicate an open interval.
     inclusive : {(True, True) tuple}, optional
         Tuple indicating whether the number of data being masked on each side
-        should be rounded (True) or truncated (False).
+        should be truncated (True) or rounded (False).
     inplace : {False, True}, optional
         Whether to winsorize in place (True) or to use a copy (False)
     axis : {None, int}, optional
