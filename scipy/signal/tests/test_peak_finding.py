@@ -3,8 +3,8 @@ from __future__ import division, print_function, absolute_import
 import copy
 
 import numpy as np
-from numpy.testing import (assert_, assert_equal, assert_almost_equal,
-    assert_array_equal, )
+from numpy.testing import (assert_, assert_equal, assert_allclose,
+    assert_array_equal)
 import pytest
 from pytest import raises
 
@@ -422,27 +422,28 @@ class TestPeakWidths(object):
             assert_(isinstance(arr, np.ndarray))
             assert_equal(arr.size, 0)
 
-    @pytest.mark.parametrize("rel_height, width_true, lip_true, rip_true", [
-        (0., 0., 3., 3.),
-        (0.25, 1., 2.5, 3.5),
-        (0.5, 2., 2., 4.),
-        (0.75, 3., 1.5, 4.5),
-        (1., 4., 1., 5.),
-        (2., 5., 1., 6.),
-        (3., 5., 1., 6.)
-    ])
-    def test_basic(self, rel_height, width_true, lip_true, rip_true):
+    def test_basic(self):
         """
         Test a simple use case with easy to verify results at different relative
         heights.
         """
         x = np.array([1, 0, 1, 2, 1, 0, -1])
         prominence = 2
-        width_calc, height, lip_calc, rip_calc = peak_widths(x, [3], rel_height)
-        assert_almost_equal(width_calc, width_true)
-        assert_almost_equal(height, 2 - rel_height * prominence)
-        assert_almost_equal(lip_calc, lip_true)
-        assert_almost_equal(rip_calc, rip_true)
+        for rel_height, width_true, lip_true, rip_true in [
+            (0., 0., 3., 3.),
+            (0.25, 1., 2.5, 3.5),
+            (0.5, 2., 2., 4.),
+            (0.75, 3., 1.5, 4.5),
+            (1., 4., 1., 5.),
+            (2., 5., 1., 6.),
+            (3., 5., 1., 6.)
+        ]:
+            width_calc, height, lip_calc, rip_calc = peak_widths(
+                x, [3], rel_height)
+            assert_allclose(width_calc, width_true)
+            assert_allclose(height, 2 - rel_height * prominence)
+            assert_allclose(lip_calc, lip_true)
+            assert_allclose(rip_calc, rip_true)
 
     def test_non_contiguous(self):
         """
@@ -485,24 +486,31 @@ class TestPeakWidths(object):
             # prominence data contains None
             peak_widths([1, 2, 1], [1], prominence_data=(None, None, None))
 
-    @pytest.mark.parametrize("prominence_data", [
-        (1., -1, 2),  # left base not in x
-        (1., 0, 3),  # right base not in x
-        (1., 1, 2),  # left base same as peak
-        (1., 0, 1)  # right base same as peak
-    ])
-    def test_mismatching_prominence_data(self, prominence_data):
-        """Test with mismatching peak and prominence data."""
+    def test_mismatching_prominence_data(self):
+        """Test with mismatching peak and / or prominence data."""
         x = [0, 1, 0]
         peak = [1]
-        # Make sure input is matches output of signal.prominences
-        prominence_data = (
-            np.array([prominence_data[0]]).astype(np.float64, order='C'),
-            np.array([prominence_data[1]]).astype(np.intp, order='C'),
-            np.array([prominence_data[2]]).astype(np.intp, order='C')
-        )
-        with raises(ValueError, match='prominence data'):
-            peak_widths(x, peak, prominence_data=prominence_data)
+        for i, (peaks, left_bases, right_bases) in enumerate([
+            ((1.,), (-1,), (2,)),  # left base not in x
+            ((1.,), (0,), (3,)),  # right base not in x
+            ((1.,), (1,), (2,)),  # left base same as peak
+            ((1.,), (0,), (1,)),  # right base same as peak
+            ((1., 1.), (0, 0), (2, 2)),  # array shapes don't match peaks
+            ((1., 1.), (0,), (2,)),  # arrays with different shapes
+            ((1.,), (0, 0), (2,)),  # arrays with different shapes
+            ((1.,), (0,), (2, 2))  # arrays with different shapes
+        ]):
+            # Make sure input is matches output of signal.prominences
+            prominence_data = (np.array(peaks, dtype=np.float64),
+                               np.array(left_bases, dtype=np.intp),
+                               np.array(right_bases, dtype=np.intp))
+            # Test for correct exception
+            if i < 4:
+                match = "prominence data is invalid for peak"
+            else:
+                match = "arrays in `prominence_data` must have the same shape"
+            with raises(ValueError, match=match):
+                peak_widths(x, peak, prominence_data=prominence_data)
 
 
 def test_unpack_condition_args():
@@ -632,10 +640,10 @@ class TestFindPeaks(object):
         peaks, props = find_peaks(x, width=(None, 2), rel_height=0.75)
         assert_equal(peaks.size, 1)
         assert_equal(peaks, 7)
-        assert_almost_equal(props['widths'], 1.35)
-        assert_almost_equal(props['width_heights'], 1.)
-        assert_almost_equal(props['left_ips'], 6.4)
-        assert_almost_equal(props['right_ips'], 7.75)
+        assert_allclose(props['widths'], 1.35)
+        assert_allclose(props['width_heights'], 1.)
+        assert_allclose(props['left_ips'], 6.4)
+        assert_allclose(props['right_ips'], 7.75)
 
     def test_properties(self):
         """

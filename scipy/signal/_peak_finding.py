@@ -417,9 +417,9 @@ def peak_widths(x, peaks, rel_height=0.5, prominence_data=None, wlen=None):
         Indices of peaks in `x`.
     rel_height : float, optional
         Chooses the relative height at which the peak width is measured as a
-        percentage of its prominence. 1.0 calculates the width of the peak at its
-        lowest contour line while 0.5 evaluates at half the prominence height.
-        Must be a number greater 0. See notes for further explanation.
+        percentage of its prominence. 1.0 calculates the width of the peak at
+        its lowest contour line while 0.5 evaluates at half the prominence
+        height. Must be a number greater 0. See notes for further explanation.
     prominence_data : tuple, optional
         A tuple of three arrays matching the output of `peak_prominences` when
         called with the same arguments `x` and `peaks`. This data is calculated
@@ -444,7 +444,8 @@ def peak_widths(x, peaks, rel_height=0.5, prominence_data=None, wlen=None):
     ValueError
         If `prominence_data` is supplied but doesn't satisfy the condition
         ``0 <= left_base <= peak <= right_base < x.shape[0]`` for each peak,
-        has the wrong dtype or is not C-contiguous.
+        has the wrong dtype, is not C-contiguous or does not have the same
+        shape.
 
     See Also
     --------
@@ -459,14 +460,14 @@ def peak_widths(x, peaks, rel_height=0.5, prominence_data=None, wlen=None):
 
     * Calculate the evaluation height :math:`h_{eval}` with the formula
       :math:`h_{eval} = h_{Peak} - P \\cdot R`, where :math:`h_{Peak}` is the
-      height of the peak itself, :math:`P` is the peak's prominence and :math:`R`
-      a positive ratio specified with the argument `rel_height`.
+      height of the peak itself, :math:`P` is the peak's prominence and
+      :math:`R` a positive ratio specified with the argument `rel_height`.
     * Draw a horizontal line at the evaluation height to both sides, starting at
       the peak's current vertical position until the lines either intersect a
       slope, the signal border or cross the vertical position of the peak's
       base (see `peak_prominences` for an definition). For the first case,
-      intersection with the signal, the true intersection point is estimated with
-      linear interpolation.
+      intersection with the signal, the true intersection point is estimated
+      with linear interpolation.
     * Calculate the width as the horizontal distance between the chosen
       endpoints on both sides. As a consequence of this the maximal possible
       width for each peak is the horizontal distance between its bases.

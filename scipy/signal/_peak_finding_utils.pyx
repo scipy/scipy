@@ -240,21 +240,20 @@ def _peak_prominences(np.float64_t[::1] x not None,
             prominences[peak_nr] = x[peak] - max(left_min, right_min)
 
     if raise_error:
-        raise ValueError(str(peak) + ' is not a valid peak')
+        raise ValueError('{} is not a valid peak'.format(peak))
 
     # Return memoryviews as ndarrays
     return prominences.base, left_bases.base, right_bases.base
 
 
-@cython.nonecheck(True)
 @cython.wraparound(False)
 @cython.boundscheck(False)
-def _peak_widths(np.float64_t[::1] x,
-                 np.intp_t[::1] peaks,
+def _peak_widths(np.float64_t[::1] x not None,
+                 np.intp_t[::1] peaks not None,
                  np.float64_t rel_height,
-                 np.float64_t[::1] prominences,
-                 np.intp_t[::1] left_bases,
-                 np.intp_t[::1] right_bases):
+                 np.float64_t[::1] prominences not None,
+                 np.intp_t[::1] left_bases not None,
+                 np.intp_t[::1] right_bases not None):
     """
     Calculate the width of each each peak in a signal.
 
@@ -287,7 +286,8 @@ def _peak_widths(np.float64_t[::1] x,
     ------
     ValueError
         If the supplied prominence data doesn't satisfy the condition
-        ``0 <= left_base <= peak <= right_base < x.shape[0]`` for each peak.
+        ``0 <= left_base <= peak <= right_base < x.shape[0]`` for each peak or
+        if `peaks`, `left_bases` and `right_bases` don't share the same shape.
 
     Notes
     -----
@@ -300,6 +300,11 @@ def _peak_widths(np.float64_t[::1] x,
         np.float64_t height, left_ip, right_ip
         np.intp_t p, peak, i, i_max, i_min
         bint raise_error
+
+    if not (peaks.shape[0] == prominences.shape[0] == left_bases.shape[0] ==
+            right_bases.shape[0]):
+        raise ValueError("arrays in `prominence_data` must have the same shape "
+                         "as `peaks`")
 
     raise_error = False
     widths = np.empty(peaks.shape[0], dtype=np.float64)
@@ -341,6 +346,6 @@ def _peak_widths(np.float64_t[::1] x,
             right_ips[p] = right_ip
 
     if raise_error:
-        raise ValueError("prominence data is invalid for peak " + str(peak))
+        raise ValueError("prominence data is invalid for peak {}".format(peak))
 
     return widths.base, width_heights.base, left_ips.base, right_ips.base
