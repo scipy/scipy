@@ -198,6 +198,18 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
     array([[3.+0.j, 8.+0.j, 7.+0.j],
            [1.+0.j, 1.+0.j, 1.+0.j]])
 
+    >>> a = np.array([[0., -1.], [1., 0.]])
+    >>> linalg.eigvals(a) == linalg.eig(a)[0]
+    array([ True,  True])
+    >>> linalg.eig(a, left=True, right=False)[1] # normalized left eigenvector
+    array([[-0.70710678+0.j        , -0.70710678-0.j        ],
+           [-0.        +0.70710678j, -0.        -0.70710678j]])
+    >>> linalg.eig(a, left=False, right=True)[1] # normalized right eigenvector
+    array([[0.70710678+0.j        , 0.70710678-0.j        ],
+           [0.        -0.70710678j, 0.        +0.70710678j]])
+
+
+
     """
     a1 = _asarray_validated(a, check_finite=check_finite)
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
