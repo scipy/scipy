@@ -1784,22 +1784,22 @@ def percentileofscore(a, score, kind='rank'):
     """
     if np.isnan(score):
         return np.nan
+    a = np.asarray(a)
     n = len(a)
     if n == 0:
         return 100.0
 
     if kind == 'rank':
-        # Use np.array(score) to avoid converting a to an np.array
-        left = np.count_nonzero(a < np.array(score))
-        right = np.count_nonzero(a <= np.array(score))
+        left = np.count_nonzero(a < score)
+        right = np.count_nonzero(a <= score)
         pct = (right + left + (1 if right > left else 0)) * 50.0/n
         return pct
     elif kind == 'strict':
-        return np.count_nonzero(a < np.array(score)) / float(n) * 100
+        return np.count_nonzero(a < score) / float(n) * 100
     elif kind == 'weak':
-        return np.count_nonzero(a <= np.array(score)) / float(n) * 100
+        return np.count_nonzero(a <= score) / float(n) * 100
     elif kind == 'mean':
-        pct = (np.count_nonzero(a < np.array(score)) + np.count_nonzero(a <= np.array(score))) / float(n) * 50
+        pct = (np.count_nonzero(a < score) + np.count_nonzero(a <= score)) / float(n) * 50
         return pct
     else:
         raise ValueError("kind can only be 'rank', 'strict', 'weak' or 'mean'")
