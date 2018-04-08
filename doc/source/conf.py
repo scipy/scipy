@@ -187,13 +187,28 @@ latex_elements = {
 \usepackage{expdlist}
 \let\latexdescription=\description
 \let\endlatexdescription=\enddescription
-\renewenvironment{description}%
-{\begin{latexdescription}[\setleftmargin{60pt}\breaklabel\setlabelstyle{\bfseries\itshape}]}%
+\renewenvironment{description}
+{\renewenvironment{description}
+   {\begin{latexdescription}%
+    [\setleftmargin{50pt}\breaklabel\setlabelstyle{\bfseries}]%
+   }%
+   {\end{latexdescription}}%
+ \begin{latexdescription}%
+    [\setleftmargin{15pt}\breaklabel\setlabelstyle{\bfseries\itshape}]%
+}%
 {\end{latexdescription}}
 % Fix bug in expdlist's modified \@item
 \usepackage{etoolbox}
 \makeatletter
 \patchcmd\@item{{\@breaklabel} }{{\@breaklabel}}{}{}
+% Fix bug in expdlist's way of breaking the line after long item label
+\def\breaklabel{%
+    \def\@breaklabel{%
+        \leavevmode\par
+        % now a hack because Sphinx inserts \leavevmode after term node
+        \def\leavevmode{\def\leavevmode{\unhbox\voidb@x}}%
+    }%
+}
 \makeatother
 
 % Make Examples/etc section headers smaller and more compact
