@@ -1056,6 +1056,7 @@ class _TestCommon(object):
                 sM = self.spmatrix(M, shape=(3,3), dtype=dtype)
                 sMinv = inv(sM)
             assert_array_almost_equal(sMinv.dot(sM).todense(), np.eye(3))
+            assert_raises(TypeError, inv, M)
         for dtype in [float]:
             check(dtype)
 
