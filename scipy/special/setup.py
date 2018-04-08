@@ -130,11 +130,10 @@ def configuration(parent_package='',top_path=None):
 
     # testing for _round.h
     config.add_extension('_test_round',
-                         sources=['_test_round.c', 'sf_error.c'],
-                         depends=['_round.h'] + cephes_hdr + cephes_src,
+                         sources=['_test_round.c'],
+                         depends=['_round.h', 'cephes/dd_idefs.h'],
                          include_dirs=[numpy.get_include()] + inc_dirs,
-                         extra_info=get_info('npymath'),
-                         libraries=['sc_cephes'])
+                         extra_info=get_info('npymath'))
 
     config.add_data_files('tests/*.py')
     config.add_data_files('tests/data/README')

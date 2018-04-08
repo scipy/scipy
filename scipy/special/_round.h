@@ -7,7 +7,7 @@
 
 #include <numpy/npy_math.h>
 #include "_c99compat.h"
-#include "cephes/dd_real.h"
+#include "cephes/dd_idefs.h"
 
 
 double add_round_up(double a, double b)

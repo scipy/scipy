@@ -14,18 +14,6 @@ cdef extern from "_round.h":
 cdef extern from "numpy/npy_math.h":
     int npy_isnan(double) nogil
 
-cimport numpy as np
-
-cdef extern from "numpy/ufuncobject.h":
-    int PyUFunc_getfperr() nogil
-
-cdef public int wrap_PyUFunc_getfperr() nogil:
-    """
-    Call PyUFunc_getfperr in a context where PyUFunc_API array is initialized;
-    this avoids messing with the UNIQUE_SYMBOL #defines
-    """
-    return PyUFunc_getfperr()
-
 
 def have_fenv():
     old_round = fegetround()
