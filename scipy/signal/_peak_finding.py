@@ -815,49 +815,70 @@ def find_peaks(x, height=None, threshold=None, distance=None,
 
     Examples
     --------
-    >>> from scipy.signal import find_peaks
+    To demonstrate this function's usage we use an signal `x` supplied with
+    SciPy (see `scipy.misc.electrocardiogram`). Let's find all peaks (local
+    maxima) in `x` whose amplitude lies above 0.
+
     >>> import matplotlib.pyplot as plt
-
-    Create test signal `x` using 7 harmonics:
-
-    >>> gains = [1, -1, 0.6, 0.5, 0.4, 0.3, 0.1]
-    >>> freqs = [2, 3.5, 6, 7.1, 11.1, 12, 20]
-    >>> t = np.linspace(0, 6, 1000)
-    >>> x = sum(g * np.sin(f * t) for g, f in zip(gains, freqs))
-
-    Find all peaks (local maxima) in `x`
-
-    >>> peaks, _ = find_peaks(x)
-    >>> peaks
-    array([ 25, 119, 205, 275, 381, 495, 586, 782, 892, 952])
-
-    and plot the results
-
-    >>> plt.figure()
+    >>> from scipy.misc import electrocardiogram
+    >>> from scipy.signal import find_peaks
+    >>> x = electrocardiogram()[2000:4000]
+    >>> peaks, _ = find_peaks(x, height=0)
     >>> plt.plot(x)
-    >>> plt.plot(peaks, x[peaks], 'x')
+    >>> plt.plot(peaks, x[peaks], "x")
+    >>> plt.plot(np.zeros_like(x), "--", color="gray")
     >>> plt.show()
 
-    This time, find peaks that have a minimal prominence of 0.5 and whose peak
-    base is not more than 150 samples wide (``width=(None, 150)``). For this we
-    need to use the option ``rel_height=1.0`` which will evaluate the width at
-    the peak's base.
+    We can select peaks below 0 with ``height=(None, 0)`` or use arrays matching
+    `x` in size to reflect a changing condition for different parts of the
+    signal.
 
-    >>> peaks, prop = find_peaks(
-    ...     x, prominence=0.5, width=(None, 150), rel_height=1.0)
-    >>> peaks, prop['prominences'], prop['widths']
-    (array([ 25, 381, 892]),
-     array([1.40613266, 0.50503469, 1.23546031]),
-     array([59.57018554, 57.9368999 , 86.11729375]))
-
-    and plot the results including the calculated peak properties
-
-    >>> plt.figure()
+    >>> border = np.sin(np.linspace(0, 3 * np.pi, x.size))
+    >>> peaks, _ = find_peaks(x, height=(-border, border))
     >>> plt.plot(x)
-    >>> plt.plot(peaks, x[peaks], 'x')
-    >>> plt.vlines(x=peaks, ymin=prop['width_heights'], ymax=x[peaks])
-    >>> plt.hlines(y=prop['width_heights'], xmin=prop['left_ips'],
-    ...            xmax=prop['right_ips'])
+    >>> plt.plot(-border, "--", color="gray")
+    >>> plt.plot(border, ":", color="gray")
+    >>> plt.plot(peaks, x[peaks], "x")
+    >>> plt.show()
+
+    Another useful condition for periodic signals can be given with the
+    `distance` argument. In this case we can easily select the positions of
+    QRS complexes within the Elektrocardiogram (ECG) by demanding a distance of
+    at least 150 samples.
+
+    >>> peaks, _ = find_peaks(x, distance=150)
+    >>> np.diff(peaks)
+    array([186, 180, 177, 171, 177, 169, 167, 164, 158, 162, 172])
+    >>> plt.plot(x)
+    >>> plt.plot(peaks, x[peaks], "x")
+    >>> plt.show()
+
+    Especially for noisy signals peaks can be easily grouped by their
+    prominence (see `peak_prominences`). E.g. we can select all peaks except
+    for the mentioned QRS complexes by limiting the allowed prominenence to 0.6.
+
+    >>> peaks, properties = find_peaks(x, prominence=(None, 0.6))
+    >>> properties["prominences"].max()
+    0.5049999999999999
+    >>> plt.plot(x)
+    >>> plt.plot(peaks, x[peaks], "x")
+    >>> plt.show()
+
+    And finally let's examine a different section of the ECG which contains
+    beat forms of different shape. To select only the atypical heart beats we
+    combine two conditions: a minimal prominence of 1 and width of at least 20
+    samples.
+
+    >>> x = electrocardiogram()[17000:18000]
+    >>> peaks, properties = find_peaks(x, prominence=1, width=20)
+    >>> properties["prominences"], properties["widths"]
+    (array([1.495, 2.3  ]), array([36.93773946, 39.32723577]))
+    >>> plt.plot(x)
+    >>> plt.plot(peaks, x[peaks], "x")
+    >>> plt.vlines(x=peaks, ymin=x[peaks] - properties["prominences"],
+    ...            ymax = x[peaks], color = "C1")  # Visualize prominence
+    >>> plt.hlines(y=properties["width_heights"], xmin=properties["left_ips"],
+    ...            xmax=properties["right_ips"], color = "C1")  # Visualize width
     >>> plt.show()
     """
     # _argmaxima1d expects array of dtype 'float64'
