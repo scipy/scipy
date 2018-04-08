@@ -1276,7 +1276,9 @@ class TestItemfreq(object):
         # Check itemfreq works for all dtypes (adapted from np.unique tests)
         def _check_itemfreq(dt):
             a = np.array(self.a, dt)
-            v = stats.itemfreq(a)
+            with suppress_warnings() as sup:
+                sup.filter(DeprecationWarning)
+                v = stats.itemfreq(a)
             assert_array_equal(v[:, 0], [1, 2, 5, 7])
             assert_array_equal(v[:, 1], np.array([20, 10, 20, 20], dtype=dt))
 
@@ -1292,7 +1294,9 @@ class TestItemfreq(object):
         aa[:] = a
         bb = np.empty(len(b), dt)
         bb[:] = b
-        v = stats.itemfreq(aa)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning)
+            v = stats.itemfreq(aa)
         assert_array_equal(v[:, 0], bb)
 
     def test_structured_arrays(self):
@@ -1300,7 +1304,9 @@ class TestItemfreq(object):
         dt = [('', 'i'), ('', 'i')]
         aa = np.array(list(zip(a, a)), dt)
         bb = np.array(list(zip(b, b)), dt)
-        v = stats.itemfreq(aa)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning)
+            v = stats.itemfreq(aa)
         # Arrays don't compare equal because v[:,0] is object array
         assert_equal(tuple(v[2, 0]), tuple(bb[2]))
 

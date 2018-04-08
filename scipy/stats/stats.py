@@ -1548,6 +1548,8 @@ def jarque_bera(x):
 #        FREQUENCY FUNCTIONS        #
 #####################################
 
+@np.deprecate(message="`itemfreq` is deprecated and will be removed in a "
+              "future version. Use instead `np.unique(..., return_counts=True)`")
 def itemfreq(a):
     """
     Return a 2-D array of item frequencies.
