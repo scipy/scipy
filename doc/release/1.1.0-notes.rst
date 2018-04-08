@@ -64,7 +64,7 @@ Three new functions for peak finding in one-dimensional arrays were added.
 comparison of neighbouring samples and returns those peaks whose properties match
 optionally specified conditions for their height, prominence, width, threshold
 and distance to each other. `scipy.signal.peak_prominences` and
-`scipy.signal.peak_width` can directly calculate the prominences or widths of
+`scipy.signal.peak_widths` can directly calculate the prominences or widths of
 known peaks.
 
 
