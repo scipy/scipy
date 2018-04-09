@@ -19,7 +19,7 @@ cdef extern from "numpy/npy_math.h" nogil:
 
 from ._cephes cimport (bdtrc, bdtr, bdtri, expn, hyp2f0, nbdtrc,
                        nbdtr, nbdtri, pdtrc, pdtr, pdtri, kn, yn,
-                       smirnov, smirnovi)
+                       smirnov, smirnovi, smirnovc, smirnovci, smirnovp, )
 
 cdef extern from "amos_wrappers.h":
     double cbesk_wrap_real_int(int n, double z) nogil
@@ -135,8 +135,26 @@ cdef inline double smirnov_unsafe(double n, double e) nogil:
     _legacy_cast_check("smirnov", n, 0)
     return smirnov(<int>n, e)
 
+cdef inline double smirnovc_unsafe(double n, double e) nogil:
+    if npy_isnan(n):
+        return n
+    _legacy_cast_check("smirnovc", n, 0)
+    return smirnovc(<int>n, e)
+
+cdef inline double smirnovp_unsafe(double n, double e) nogil:
+    if npy_isnan(n):
+        return n
+    _legacy_cast_check("smirnovp", n, 0)
+    return smirnovp(<int>n, e)
+
 cdef inline double smirnovi_unsafe(double n, double p) nogil:
     if npy_isnan(n):
         return n
     _legacy_cast_check("smirnovi", n, 0)
     return smirnovi(<int>n, p)
+
+cdef inline double smirnovci_unsafe(double n, double p) nogil:
+    if npy_isnan(n):
+        return n
+    _legacy_cast_check("smirnovci", n, 0)
+    return smirnovci(<int>n, p)
