@@ -391,7 +391,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
     >>> res = shgo(f, bounds, iters=3, constraints=cons)
     >>> res
          fun: 29.894378159142136
-        funl: array([ 29.89437816])
+        funl: array([29.89437816])
      message: 'Optimization terminated successfully.'
         nfev: 119
          nit: 3
@@ -399,10 +399,8 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
        nlhev: 0
        nljev: 5
      success: True
-           x: array([  6.35521569e-01,   1.13700270e-13,   3.12701881e-01,
-             5.17765506e-02])
-          xl: array([[  6.35521569e-01,   1.13700270e-13,   3.12701881e-01,
-              5.17765506e-02]])
+           x: array([6.35521569e-01, 1.13700270e-13, 3.12701881e-01, 5.17765506e-02])
+          xl: array([[6.35521569e-01, 1.13700270e-13, 3.12701881e-01, 5.17765506e-02]])
 
     >>> g1(res.x), g2(res.x), h1(res.x)
     (-5.0626169922907138e-14, -2.9594104944408173e-12, 0.0)
@@ -411,8 +409,8 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
 
     References
     ----------
-    .. [1] Endres, SC (2017) "A simplicial homology algorithm for Lipschitz
-           optimisation".
+    .. [1] Endres, SC, Sandrock, C, Focke, WW (2018) "A simplicial homology
+           algorithm for lipschitz optimisation", Journal of Global Optimization.
     .. [2] Sobol, IM (1967) "The distribution of points in a cube and the
            approximate evaluation of integrals", USSR Comput. Math. Math. Phys.
            7, 86-112.

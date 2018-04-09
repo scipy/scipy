@@ -23,7 +23,6 @@ import numpy as np
 
 __all__ = ['Sobol']
 
-
 class Sobol:
     def __init__(self):
         # Init class variables
