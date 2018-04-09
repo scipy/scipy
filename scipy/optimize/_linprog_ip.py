@@ -558,6 +558,8 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, rr):
             return (c, c0, A_ub, b_ub, A_eq, b_eq, bounds,
                     x, undo, complete, status, message)
 
+    ub_mod = ub
+    lb_mod = lb
     if np.any(i_f):
         c0 += c[i_f].dot(lb[i_f])
         b_eq = b_eq - A_eq[:, i_f].dot(lb[i_f])
@@ -569,6 +571,9 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, rr):
         # record of variables to be added back in
         undo = [np.where(i_f)[0], lb[i_f]]
         # don't remove these entries from bounds; they'll be used later.
+        # but we _also_ need a version of the bounds with these removed
+        lb_mod = lb[i_nf]
+        ub_mod = ub[i_nf]
 
     # no constraints indicates that problem is trivial
     if A_eq.size == 0 and A_ub.size == 0:
@@ -593,8 +598,8 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, rr):
             message = ("The solution was determined in presolve as there are "
                        "no non-trivial constraints.")
         complete = True
-        x[c < 0] = ub[c < 0]
-        x[c > 0] = lb[c > 0]
+        x[c < 0] = ub_mod[c < 0]
+        x[c > 0] = lb_mod[c > 0]
         # if this is not the last step of presolve, should convert bounds back
         # to array and return here
 

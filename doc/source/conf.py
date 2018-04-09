@@ -5,10 +5,10 @@ from datetime import date
 
 # Check Sphinx version
 import sphinx
-if sphinx.__version__ < "1.1":
-    raise RuntimeError("Sphinx 1.1 or newer required")
+if sphinx.__version__ < "1.6":
+    raise RuntimeError("Sphinx 1.6 or newer required")
 
-needs_sphinx = '1.1'
+needs_sphinx = '1.6'
 
 # -----------------------------------------------------------------------------
 # General configuration
@@ -136,7 +136,7 @@ html_static_path = ['_static']
 html_last_updated_fmt = '%b %d, %Y'
 
 html_additional_pages = {}
-html_use_modindex = True
+html_domain_indices = True
 html_copy_source = False
 html_file_suffix = '.html'
 
@@ -148,12 +148,6 @@ mathjax_path = "scipy-mathjax/MathJax.js?config=scipy-mathjax"
 # -----------------------------------------------------------------------------
 # LaTeX output
 # -----------------------------------------------------------------------------
-
-# The paper size ('letter' or 'a4').
-#latex_paper_size = 'letter'
-
-# The font size ('10pt', '11pt' or '12pt').
-#latex_font_size = '10pt'
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, document class [howto/manual]).
@@ -168,59 +162,107 @@ latex_documents = [
 # the title page.
 #latex_logo = None
 
-# For "manual" documents, if this is true, then toplevel headings are parts,
-# not chapters.
-#latex_use_parts = False
-
-# Additional stuff for the LaTeX preamble.
-latex_preamble = r'''
-\usepackage{amsmath}
-
-\DeclareUnicodeCharacter{00A0}{\nobreakspace}
-
-% In the parameters etc. sections, align uniformly, and adjust label emphasis
-\usepackage{expdlist}
-\let\latexdescription=\description
-\let\endlatexdescription=\enddescription
-\renewenvironment{description}%
-{\begin{latexdescription}[\setleftmargin{60pt}\breaklabel\setlabelstyle{\bfseries\itshape}]}%
-{\end{latexdescription}}
-
-% Make Examples/etc section headers smaller and more compact
-\makeatletter
-\titleformat{\paragraph}{\normalsize\normalfont\bfseries\itshape}%
-            {\py@NormalColor}{0em}{\py@NormalColor}{\py@NormalColor}
-\titlespacing*{\paragraph}{0pt}{1ex}{0pt}
-\makeatother
-
-% Save vertical space in parameter lists and elsewhere
-\makeatletter
-\renewenvironment{quote}%
-               {\list{}{\topsep=0pt%
-                        \parsep \z@ \@plus\p@}%
-                \item\relax}%
-               {\endlist}
-\makeatother
-
-% Fix footer/header
-\renewcommand{\chaptermark}[1]{\markboth{\MakeUppercase{\thechapter.\ #1}}{}}
-\renewcommand{\sectionmark}[1]{\markright{\MakeUppercase{\thesection.\ #1}}}
-'''
-
 # Documents to append as an appendix to all manuals.
 #latex_appendices = []
 
 # If false, no module index is generated.
-latex_use_modindex = False
+latex_domain_indices = False
+
+# fix issues with Unicode characters
+latex_engine = 'xelatex'
+
+latex_elements = {
+    # The paper size ('letterpaper' or 'a4paper').
+    #
+    # 'papersize': 'letterpaper',
+
+    # The font size ('10pt', '11pt' or '12pt').
+    #
+    # 'pointsize': '10pt',
+
+    # Additional stuff for the LaTeX preamble.
+    #
+    'preamble': r'''
+% In the parameters etc. sections, align uniformly, and adjust label emphasis
+\usepackage{expdlist}
+\let\latexdescription=\description
+\let\endlatexdescription=\enddescription
+\renewenvironment{description}
+{\renewenvironment{description}
+   {\begin{latexdescription}%
+    [\setleftmargin{50pt}\breaklabel\setlabelstyle{\bfseries}]%
+   }%
+   {\end{latexdescription}}%
+ \begin{latexdescription}%
+    [\setleftmargin{15pt}\breaklabel\setlabelstyle{\bfseries\itshape}]%
+}%
+{\end{latexdescription}}
+% Fix bug in expdlist's modified \@item
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\@item{{\@breaklabel} }{{\@breaklabel}}{}{}
+% Fix bug in expdlist's way of breaking the line after long item label
+\def\breaklabel{%
+    \def\@breaklabel{%
+        \leavevmode\par
+        % now a hack because Sphinx inserts \leavevmode after term node
+        \def\leavevmode{\def\leavevmode{\unhbox\voidb@x}}%
+    }%
+}
+\makeatother
+
+% Make Examples/etc section headers smaller and more compact
+\titlespacing*{\paragraph}{0pt}{1ex}{0pt}
+
+% Save vertical space in parameter lists and elsewhere
+\makeatletter
+\renewenvironment{quote}%
+               {\list{}{\topsep=0pt\relax
+                        \parsep \z@ \@plus\p@}%
+                \item\relax}%
+               {\endlist}
+\makeatother
+% Avoid small font size in code-blocks
+\fvset{fontsize=auto}
+% Use left-alignment per default in tabulary rendered tables
+\newcolumntype{T}{L}
+% Get some useful deeper bookmarks and table of contents in PDF
+\setcounter{tocdepth}{1}
+% Fix: ≠ is unknown to XeLaTeX's default font Latin Modern
+\usepackage{newunicodechar}
+\newunicodechar{≠}{\ensuremath{\neq}}
+% Get PDF to use maximal depth bookmarks
+\hypersetup{bookmarksdepth=subparagraph}
+% reduce hyperref warnings
+\pdfstringdefDisableCommands{%
+  \let\sphinxupquote\empty
+  \let\sphinxstyleliteralintitle\empty
+  \let\sphinxstyleemphasis\empty
+}
+''',
+    # Latex figure (float) alignment
+    #
+    # 'figure_align': 'htbp',
+
+    # benefit from  Sphinx built-in workaround of LaTeX's list limitations
+    'maxlistdepth': '12',
+
+    # reduce TeX warnings about underfull boxes in the index
+    'printindex': r'\raggedright\printindex',
+
+    # avoid potential problems arising from erroneous mark-up of the
+    # \mathbf{\Gamma} type
+    'passoptionstopackages': r'\PassOptionsToPackage{no-math}{fontspec}',
+}
 
 
 # -----------------------------------------------------------------------------
 # Intersphinx configuration
 # -----------------------------------------------------------------------------
 intersphinx_mapping = {
-        'python': ('http://docs.python.org/dev', None),
+        'python': ('https://docs.python.org/dev', None),
         'numpy': ('https://docs.scipy.org/doc/numpy', None),
-        'matplotlib': ('http://matplotlib.org', None),
+        'matplotlib': ('https://matplotlib.org', None),
 }
 
 

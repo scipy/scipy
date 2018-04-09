@@ -1240,11 +1240,21 @@ def _dirichlet_check_input(alpha, x):
             raise ValueError("The input must be one dimensional or a two "
                              "dimensional matrix containing the entries.")
 
-    if np.min(x) <= 0:
-        raise ValueError("Each entry in 'x' must be greater than zero.")
+    if np.min(x) < 0:
+        raise ValueError("Each entry in 'x' must be greater than or equal to zero.")
 
     if np.max(x) > 1:
         raise ValueError("Each entry in 'x' must be smaller or equal one.")
+
+    # Check x_i > 0 or alpha_i > 1
+    xeq0 = (x == 0)
+    alphalt1 = (alpha < 1)
+    if x.shape != alpha.shape:
+        alphalt1 = np.repeat(alphalt1, x.shape[-1], axis=-1).reshape(x.shape)
+    chk = np.logical_and(xeq0, alphalt1)
+
+    if np.sum(chk):
+        raise ValueError("Each entry in 'x' must be greater than zero if its alpha is less than one.")
 
     if (np.abs(np.sum(x, 0) - 1.0) > 10e-10).any():
         raise ValueError("The input vector 'x' must lie within the normal "
@@ -1368,7 +1378,7 @@ class dirichlet_gen(multi_rv_generic):
 
         """
         lnB = _lnB(alpha)
-        return - lnB + np.sum((np.log(x.T) * (alpha - 1)).T, 0)
+        return - lnB + np.sum((xlogy(alpha - 1, x.T)).T, 0)
 
     def logpdf(self, x, alpha):
         """

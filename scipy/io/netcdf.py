@@ -192,9 +192,9 @@ class netcdf_file(object):
     >>> time.units = 'days since 2008-01-01'
     >>> f.close()
 
-    Note the assignment of ``range(10)`` to ``time[:]``.  Exposing the slice
+    Note the assignment of ``arange(10)`` to ``time[:]``.  Exposing the slice
     of the time variable allows for the data to be set in the object, rather
-    than letting ``range(10)`` overwrite the ``time`` variable.
+    than letting ``arange(10)`` overwrite the ``time`` variable.
 
     To read the NetCDF file we just created:
 
@@ -701,7 +701,8 @@ class netcdf_file(object):
                 else:
                     pos = self.fp.tell()
                     self.fp.seek(begin_)
-                    data = frombuffer(self.fp.read(a_size), dtype=dtype_)
+                    data = frombuffer(self.fp.read(a_size), dtype=dtype_
+                                      ).copy()
                     data.shape = shape
                     self.fp.seek(pos)
 
@@ -723,7 +724,8 @@ class netcdf_file(object):
             else:
                 pos = self.fp.tell()
                 self.fp.seek(begin)
-                rec_array = frombuffer(self.fp.read(self._recs*self._recsize), dtype=dtypes)
+                rec_array = frombuffer(self.fp.read(self._recs*self._recsize),
+                                       dtype=dtypes).copy()
                 rec_array.shape = (self._recs,)
                 self.fp.seek(pos)
 
@@ -766,7 +768,7 @@ class netcdf_file(object):
         self.fp.read(-count % 4)  # read padding
 
         if typecode is not 'c':
-            values = frombuffer(values, dtype='>%s' % typecode)
+            values = frombuffer(values, dtype='>%s' % typecode).copy()
             if values.shape == (1,):
                 values = values[0]
         else:

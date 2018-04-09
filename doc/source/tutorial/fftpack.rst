@@ -276,7 +276,7 @@ Scipy uses the following definition of the unnormalized DCT-I
 .. math::
 
     y[k] = x_0 + (-1)^k x_{N-1} + 2\sum_{n=1}^{N-2} x[n]
-    \cos\left({\pi nk\over N-1}\right),
+    \cos\left(\frac{\pi nk}{N-1}\right),
     \qquad 0 \le k < N.
 
 Only ``None`` is supported as normalization mode for DCT-I. Note also that the

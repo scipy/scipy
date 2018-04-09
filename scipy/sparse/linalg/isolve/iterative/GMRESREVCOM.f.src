@@ -1,7 +1,7 @@
 *  -*- fortran -*-
       SUBROUTINE <_c>GMRESREVCOM(N, B, X, RESTRT, WORK, LDW, WORK2,
      $                  LDW2, ITER, RESID, INFO, NDX1, NDX2, SCLR1, 
-     $                  SCLR2, IJOB)
+     $                  SCLR2, IJOB, TOL)
 *
 *  -- Iterative template routine --
 *     Univ. of Tennessee and Oak Ridge National Laboratory
@@ -12,9 +12,10 @@
 *     EiITERkhout, Pozo, Romine, and van der Vorst, SIAM Publications,
 *     1993. (ftp netlib2.cs.utk.edu; cd linalg; get templates.ps).
 *
+      IMPLICIT NONE
 *     .. Scalar Arguments ..
       INTEGER            N, RESTRT, LDW, LDW2, ITER, INFO
-      <rt=real,double precision,real,double precision>  RESID
+      <rt=real,double precision,real,double precision>  RESID, TOL
       INTEGER            NDX1, NDX2
       <_t>   SCLR1, SCLR2
       INTEGER            IJOB
@@ -67,11 +68,10 @@
 *          On input, the maximum iterations to be performed.
 *          On output, actual number of iterations performed.
 *
-*  RESID   (input/output) DOUBLE PRECISION
-*          On input, the allowable error tolerance.
-*          On output, the norm of the residual vector if solution
-*          approximated to tolerance, otherwise reset to input
-*          tolerance.
+*  RESID   (output) DOUBLE PRECISION
+*          On output, the norm of the preconditioned residual vector
+*          if solution approximated to tolerance, otherwise reset
+*          to input tolerance.
 *
 *  INFO    (output) INTEGER
 *          =  0:  successful exit
@@ -93,6 +93,9 @@
 *  IJOB    (input/output) INTEGER. 
 *          Used to communicate job code between the two levels.
 *
+*  TOL     (input) DOUBLE PRECISION. 
+*          On input, the allowable absolute error tolerance
+*          for the preconditioned residual.
 *  ============================================================
 *
 *     .. Parameters ..
@@ -107,10 +110,11 @@
       <_t>  <xdot=wsdot,ddot,wcdotc,wzdotc>
       <_t>  toz
       <_t>    TMPVAL
-      <rt>    BNRM2, RNORM, TOL,  
+      <rt>    RNORM,
      $     <rc=ws,d,wsc,dz>NRM2,
      $     <rc>APPROXRES
 
+      LOGICAL BRKDWN
 *
 *     indicates where to resume from. Only valid when IJOB = 2!
       INTEGER RLBL
@@ -147,7 +151,7 @@
 *
       INFO = 0
       MAXIT = ITER
-      TOL   = RESID
+      BRKDWN = .FALSE.
 *
 *     Alias workspace columns.
 *
@@ -240,10 +244,6 @@
  2    CONTINUE
 *****************
 *
-      IF ( <rc>NRM2( N, WORK(1,R), 1 ).LT.TOL ) GO TO 200
-      BNRM2 = <rc>NRM2( N, B, 1 )
-      IF ( BNRM2.EQ.ZERO ) BNRM2 = ONE
-*
       ITER = 0
    10 CONTINUE
 *
@@ -273,6 +273,7 @@
 *
 *         DO 50 I = 1, RESTRT
          i = 1
+         BRKDWN = .FALSE.
  49      if (i.gt.restrt) go to 50
 ************CALL MATVEC( ONE, WORK( 1,V+I-1 ), ZERO, WORK( 1,AV ) )
 *
@@ -306,7 +307,7 @@
 *           the previous I-1 columns.
 *
             CALL <_c>ORTHOH( I, N, WORK2( 1,I+H-1 ), WORK( 1,V ), LDW,
-     $                   WORK( 1,W ) )
+     $                   WORK( 1,W ), BRKDWN )
 *
             IF ( I.GT.0 )
 *
@@ -317,15 +318,13 @@
      $         CALL <_c>APPLYGIVENS(I, WORK2( 1,I+H-1 ), WORK2( 1,GIV ),
      $                           LDW2 )
 *
-*           Approxiyate residual norm. Check tolerance. If okay, compute
-*           final approximation vector X and quit.
+*           Approximate residual norm. Check tolerance. If okay, break out
+*           from the inner loop.
 *
             RESID = <rc>APPROXRES( I, WORK2( 1,I+H-1 ), WORK( 1,S ),
-     $                         WORK2( 1,GIV ), LDW2 ) / BNRM2
-            IF ( RESID.LE.TOL ) THEN
-               CALL <_c>UPDATE(I, N, X, WORK2( 1,H ), LDW2, 
-     $                     WORK(1,Y), WORK(1,S), WORK( 1,V ), LDW)
-               GO TO 200
+     $                         WORK2( 1,GIV ), LDW2 )
+            IF ( RESID.LE.TOL .OR. BRKDWN ) THEN
+               GO TO 51
             ENDIF
             i = i + 1
             go to 49
@@ -334,7 +333,7 @@
 *
 *        Compute current solution vector X.
 *
-         CALL <_c>UPDATE(RESTRT, N, X, WORK2( 1,H ), LDW2,
+   51    CALL <_c>UPDATE(I, N, X, WORK2( 1,H ), LDW2,
      $               WORK(1,Y), WORK( 1,S ), WORK( 1,V ), LDW )
 *
 *        Compute residual vector R, find norm,
@@ -372,6 +371,12 @@
  7       CONTINUE
 *****************
          IF( INFO.EQ.1 ) GO TO 200
+         IF( BRKDWN ) THEN
+*           Reached breakdown (= exact solution), but the external
+*           tolerance check failed. Bail out with failure.
+            INFO = 1
+            GO TO 100
+         ENDIF
 *
          IF ( ITER.EQ.MAXIT ) THEN
             INFO = 1
@@ -404,10 +409,12 @@
 *     END SUBROUTINE <_c>GMRESREVCOM
 *
 *     =========================================================
-      SUBROUTINE <_c>ORTHOH( I, N, H, V, LDV, W )
+      SUBROUTINE <_c>ORTHOH( I, N, H, V, LDV, W, BRKDWN )
 *
+      IMPLICIT NONE
       INTEGER            I, N, LDV
       <_t>   H( * ), W( * ), V( LDV,* )
+      LOGICAL            BRKDWN
 *
 *     Construct the I-th column of the upper Hessenberg matrix H
 *     using the Gram-Schmidt process on V and W.
@@ -426,8 +433,13 @@
    10 CONTINUE
       H( I+1 ) = <rc>NRM2( N, W, 1 )
       CALL <_c>COPY( N, W, 1, V( 1,I+1 ), 1 )
-      TMPVAL = ONE / H( I+1 )
-      CALL <_c>SCAL( N, TMPVAL, V( 1,I+1 ), 1 )
+      IF (H(I+1).EQ.0) THEN
+         BRKDWN = .TRUE.
+      ELSE
+         BRKDWN = .FALSE.
+         TMPVAL = ONE / H( I+1 )
+         CALL <_c>SCAL( N, TMPVAL, V( 1,I+1 ), 1 )
+      ENDIF
 *
       RETURN
 *
@@ -436,6 +448,7 @@
 *     =========================================================
       SUBROUTINE <_c>APPLYGIVENS( I, H, GIVENS, LDG )
 *
+      IMPLICIT NONE
       INTEGER            I, LDG
       <_t>   H( * ), GIVENS( LDG,* )
 *
@@ -477,6 +490,7 @@
       <rt=real,double precision,real,double precision>
      $     FUNCTION <rc=ws,d,wsc,dz>APPROXRES( I, H, S, GIVENS, LDG )
 *
+      IMPLICIT NONE
       INTEGER            I, LDG
       <_t>   H( * ), S( * ), GIVENS( LDG,* )
 *
@@ -504,14 +518,33 @@
 *     ===============================================================
       SUBROUTINE <_c>UPDATE( I, N, X, H, LDH, Y, S, V, LDV )
 *
+      IMPLICIT NONE
       INTEGER            N, I, J, LDH, LDV
       <_t>   X( * ), Y( * ), S( * ), H( LDH,* ), V( LDV,* )
       EXTERNAL           <_c>AXPY, <_c>COPY, <_c>TRSV
 *
 *     Solve H*y = s for upper triangualar H.
 *
+      integer k, m
       CALL <_c>COPY( I, S, 1, Y, 1 )
-      CALL <_c>TRSV( 'UPPER', 'NOTRANS', 'NONUNIT', I, H, LDH, Y, 1 )
+*
+*     Pseudoinverse vs. zero diagonals in H,
+*     which may appear in breakdown conditions.
+*
+      J = I
+ 5    IF (J.GT.0) THEN
+         IF (H(J,J).EQ.0) THEN
+            Y(J) = 0
+            J = J - 1
+            GO TO 5
+         ENDIF
+      ENDIF
+*
+*     Solve triangular system
+*
+      IF (J.GT.0) THEN
+         CALL <_c>TRSV( 'UPPER', 'NOTRANS', 'NONUNIT', J, H, LDH, Y, 1 )
+      END IF
 *
 *     Compute current solution vector X.
 *
@@ -527,6 +560,7 @@
 *     ===============================================================
       SUBROUTINE <_c>GETGIV( A, B, C, S )
 *
+      IMPLICIT NONE
       <_t>   A, B, C, S, TEMP, ZERO, ONE
       PARAMETER  ( 
      $     ZERO = 0.0, 
@@ -557,6 +591,7 @@
 *     ================================================================
       SUBROUTINE <_c>ROTVEC( X, Y, C, S )
 *
+      IMPLICIT NONE
       <_t>   X, Y, C, S, TEMP
 
 *
@@ -574,6 +609,7 @@
 *
 *     Construct the I-th elementary vector E, scaled by ALPHA.
 *
+      IMPLICIT NONE
       INTEGER            I, J, N
       <_t>   ALPHA, E( * )
 *

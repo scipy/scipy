@@ -21,7 +21,7 @@ jobs:
           name: install Debian dependencies
           command: |
             sudo apt-get update
-            sudo apt-get install libatlas-dev libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libfreetype6-dev libpng-dev zlib1g-dev texlive-fonts-recommended
+            sudo apt-get install libatlas-dev libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libfreetype6-dev libpng-dev zlib1g-dev texlive-fonts-recommended texlive-latex-recommended texlive-latex-extra texlive-generic-extra latexmk texlive-xetex
 
       - run:
           name: setup Python venv
@@ -30,14 +30,16 @@ jobs:
             . venv/bin/activate
             pip install --install-option="--no-cython-compile" Cython==0.25
             pip install numpy
-            pip install nose mpmath argparse Pillow codecov matplotlib Sphinx==1.5.5
+            pip install nose mpmath argparse Pillow codecov matplotlib Sphinx==1.7.2
 
       - run:
           name: test
           command: |
             . venv/bin/activate
             export SHELL=$(which bash)
-            python -u runtests.py -g --shell -- -c 'make -C doc PYTHON=python html-scipyorg'
+            python -u runtests.py -g --shell -- -c 'make -C doc PYTHON=python html-scipyorg latex'
+            make -C doc/build/latex all-pdf LATEXOPTS="-file-line-error -halt-on-error"
+            cp -f doc/build/latex/scipy-ref.pdf doc/build/html-scipyorg/
 
       - store_artifacts:
           path: doc/build/html-scipyorg

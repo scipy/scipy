@@ -1419,6 +1419,9 @@ class KrylovJacobian(Jacobian):
             # Replace GMRES's outer iteration with Newton steps
             self.method_kw['restrt'] = inner_maxiter
             self.method_kw['maxiter'] = 1
+            self.method_kw.setdefault('atol', 0)
+        elif self.method is scipy.sparse.linalg.gcrotmk:
+            self.method_kw.setdefault('atol', 0)
         elif self.method is scipy.sparse.linalg.lgmres:
             self.method_kw['outer_k'] = outer_k
             # Replace LGMRES's outer iteration with Newton steps
@@ -1433,6 +1436,7 @@ class KrylovJacobian(Jacobian):
             #      See eg. Brown & Saad. But needs to be implemented separately
             #      since it's not an inexact Newton method.
             self.method_kw.setdefault('store_outer_Av', False)
+            self.method_kw.setdefault('atol', 0)
 
         for key, value in kw.items():
             if not key.startswith('inner_'):

@@ -35,7 +35,7 @@ def save(ar, fileName):
 
 
 def _assert_symmetric(M, rtol=1e-5, atol=1e-8):
-    assert_allclose(M.T, M, rtol=rtol, atol=atol)
+    assert_allclose(M.T.conj(), M, rtol=rtol, atol=atol)
 
 
 ##
@@ -81,7 +81,7 @@ def _makeOperator(operatorInput, expectedShape):
 
 def _applyConstraints(blockVectorV, factYBY, blockVectorBY, blockVectorY):
     """Changes blockVectorV in place."""
-    gramYBV = np.dot(blockVectorBY.T, blockVectorV)
+    gramYBV = np.dot(blockVectorBY.T.conj(), blockVectorV)
     tmp = cho_solve(factYBY, gramYBV)
     blockVectorV -= np.dot(blockVectorY, tmp)
 
@@ -92,7 +92,7 @@ def _b_orthonormalize(B, blockVectorV, blockVectorBV=None, retInvR=False):
             blockVectorBV = B(blockVectorV)
         else:
             blockVectorBV = blockVectorV  # Shared data!!!
-    gramVBV = np.dot(blockVectorV.T, blockVectorBV)
+    gramVBV = np.dot(blockVectorV.T.conj(), blockVectorBV)
     gramVBV = cholesky(gramVBV)
     gramVBV = inv(gramVBV, overwrite_a=True)
     # gramVBV is now R^{-1}.
@@ -340,7 +340,7 @@ def lobpcg(A, X,
             blockVectorBY = blockVectorY
 
         # gramYBY is a dense array.
-        gramYBY = np.dot(blockVectorY.T, blockVectorBY)
+        gramYBY = np.dot(blockVectorY.T.conj(), blockVectorBY)
         try:
             # gramYBY is a Cholesky factor from now on...
             gramYBY = cho_factor(gramYBY)
@@ -356,7 +356,7 @@ def lobpcg(A, X,
     ##
     # Compute the initial Ritz vectors: solve the eigenproblem.
     blockVectorAX = A(blockVectorX)
-    gramXAX = np.dot(blockVectorX.T, blockVectorAX)
+    gramXAX = np.dot(blockVectorX.T.conj(), blockVectorAX)
 
     _lambda, eigBlockVector = eigh(gramXAX, check_finite=False)
     ii = np.argsort(_lambda)[:sizeX]
@@ -455,29 +455,29 @@ def lobpcg(A, X,
         # Perform the Rayleigh Ritz Procedure:
         # Compute symmetric Gram matrices:
 
-        xaw = np.dot(blockVectorX.T, activeBlockVectorAR)
-        waw = np.dot(activeBlockVectorR.T, activeBlockVectorAR)
-        xbw = np.dot(blockVectorX.T, activeBlockVectorBR)
+        xaw = np.dot(blockVectorX.T.conj(), activeBlockVectorAR)
+        waw = np.dot(activeBlockVectorR.T.conj(), activeBlockVectorAR)
+        xbw = np.dot(blockVectorX.T.conj(), activeBlockVectorBR)
 
         if iterationNumber > 0:
-            xap = np.dot(blockVectorX.T, activeBlockVectorAP)
-            wap = np.dot(activeBlockVectorR.T, activeBlockVectorAP)
-            pap = np.dot(activeBlockVectorP.T, activeBlockVectorAP)
-            xbp = np.dot(blockVectorX.T, activeBlockVectorBP)
-            wbp = np.dot(activeBlockVectorR.T, activeBlockVectorBP)
+            xap = np.dot(blockVectorX.T.conj(), activeBlockVectorAP)
+            wap = np.dot(activeBlockVectorR.T.conj(), activeBlockVectorAP)
+            pap = np.dot(activeBlockVectorP.T.conj(), activeBlockVectorAP)
+            xbp = np.dot(blockVectorX.T.conj(), activeBlockVectorBP)
+            wbp = np.dot(activeBlockVectorR.T.conj(), activeBlockVectorBP)
 
             gramA = np.bmat([[np.diag(_lambda), xaw, xap],
-                              [xaw.T, waw, wap],
-                              [xap.T, wap.T, pap]])
+                              [xaw.T.conj(), waw, wap],
+                              [xap.T.conj(), wap.T.conj(), pap]])
 
             gramB = np.bmat([[ident0, xbw, xbp],
-                              [xbw.T, ident, wbp],
-                              [xbp.T, wbp.T, ident]])
+                              [xbw.T.conj(), ident, wbp],
+                              [xbp.T.conj(), wbp.T.conj(), ident]])
         else:
             gramA = np.bmat([[np.diag(_lambda), xaw],
-                              [xaw.T, waw]])
+                              [xaw.T.conj(), waw]])
             gramB = np.bmat([[ident0, xbw],
-                              [xbw.T, ident]])
+                              [xbw.T.conj(), ident]])
 
         _assert_symmetric(gramA)
         _assert_symmetric(gramB)
@@ -494,8 +494,8 @@ def lobpcg(A, X,
         if verbosityLevel > 10:
             print(ii)
 
-        _lambda = _lambda[ii].astype(np.float64)
-        eigBlockVector = np.asarray(eigBlockVector[:,ii].astype(np.float64))
+        _lambda = _lambda[ii]
+        eigBlockVector = eigBlockVector[:,ii]
 
         lambdaHistory.append(_lambda)
 

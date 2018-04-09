@@ -1276,7 +1276,9 @@ class TestItemfreq(object):
         # Check itemfreq works for all dtypes (adapted from np.unique tests)
         def _check_itemfreq(dt):
             a = np.array(self.a, dt)
-            v = stats.itemfreq(a)
+            with suppress_warnings() as sup:
+                sup.filter(DeprecationWarning)
+                v = stats.itemfreq(a)
             assert_array_equal(v[:, 0], [1, 2, 5, 7])
             assert_array_equal(v[:, 1], np.array([20, 10, 20, 20], dtype=dt))
 
@@ -1292,7 +1294,9 @@ class TestItemfreq(object):
         aa[:] = a
         bb = np.empty(len(b), dt)
         bb[:] = b
-        v = stats.itemfreq(aa)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning)
+            v = stats.itemfreq(aa)
         assert_array_equal(v[:, 0], bb)
 
     def test_structured_arrays(self):
@@ -1300,7 +1304,9 @@ class TestItemfreq(object):
         dt = [('', 'i'), ('', 'i')]
         aa = np.array(list(zip(a, a)), dt)
         bb = np.array(list(zip(b, b)), dt)
-        v = stats.itemfreq(aa)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning)
+            v = stats.itemfreq(aa)
         # Arrays don't compare equal because v[:,0] is object array
         assert_equal(tuple(v[2, 0]), tuple(bb[2]))
 
@@ -3856,9 +3862,9 @@ class TestTrim(object):
         assert_equal(stats.trim_mean([], 0.6), np.nan)
 
 
-class TestSigamClip(object):
+class TestSigmaClip(object):
     def test_sigmaclip1(self):
-        a = np.concatenate((np.linspace(9.5,10.5,31),np.linspace(0,20,5)))
+        a = np.concatenate((np.linspace(9.5, 10.5, 31), np.linspace(0, 20, 5)))
         fact = 4  # default
         c, low, upp = stats.sigmaclip(a)
         assert_(c.min() > low)
@@ -3868,7 +3874,7 @@ class TestSigamClip(object):
         assert_equal(c.size, a.size)
 
     def test_sigmaclip2(self):
-        a = np.concatenate((np.linspace(9.5,10.5,31),np.linspace(0,20,5)))
+        a = np.concatenate((np.linspace(9.5, 10.5, 31), np.linspace(0, 20, 5)))
         fact = 1.5
         c, low, upp = stats.sigmaclip(a, fact, fact)
         assert_(c.min() > low)
@@ -3879,14 +3885,15 @@ class TestSigamClip(object):
         assert_equal(a.size, 36)  # check original array unchanged
 
     def test_sigmaclip3(self):
-        a = np.concatenate((np.linspace(9.5,10.5,11),np.linspace(-100,-50,3)))
+        a = np.concatenate((np.linspace(9.5, 10.5, 11),
+                            np.linspace(-100, -50, 3)))
         fact = 1.8
         c, low, upp = stats.sigmaclip(a, fact, fact)
         assert_(c.min() > low)
         assert_(c.max() < upp)
         assert_equal(low, c.mean() - fact*c.std())
         assert_equal(upp, c.mean() + fact*c.std())
-        assert_equal(c, np.linspace(9.5,10.5,11))
+        assert_equal(c, np.linspace(9.5, 10.5, 11))
 
     def test_sigmaclip_result_attributes(self):
         a = np.concatenate((np.linspace(9.5, 10.5, 11),
@@ -3895,6 +3902,12 @@ class TestSigamClip(object):
         res = stats.sigmaclip(a, fact, fact)
         attributes = ('clipped', 'lower', 'upper')
         check_named_results(res, attributes)
+
+    def test_std_zero(self):
+        # regression test #8632
+        x = np.ones(10)
+        assert_equal(stats.sigmaclip(x)[0], x)
+
 
 class TestFOneWay(object):
     def test_trivial(self):

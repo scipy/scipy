@@ -247,11 +247,26 @@ def test_itemset_no_segfault_on_readonly():
     with suppress_warnings() as sup:
         sup.filter(RuntimeWarning,
                    "Cannot close a netcdf_file opened with mmap=True, when netcdf_variables or arrays referring to its data still exist")
-        with netcdf_file(filename, 'r') as f:
+        with netcdf_file(filename, 'r', mmap=True) as f:
             time_var = f.variables['time']
 
     # time_var.assignValue(42) should raise a RuntimeError--not seg. fault!
     assert_raises(RuntimeError, time_var.assignValue, 42)
+
+
+def test_appending_issue_gh_8625():
+    stream = BytesIO()
+
+    with make_simple(stream, mode='w') as f:
+        f.createDimension('x', 2)
+        f.createVariable('x', float, ('x',))
+        f.variables['x'][...] = 1
+        f.flush()
+        contents = stream.getvalue()
+
+    stream = BytesIO(contents)
+    with netcdf_file(stream, mode='a') as f:
+        f.variables['x'][...] = 2
 
 
 def test_write_invalid_dtype():

@@ -109,7 +109,7 @@ def bayes_mvs(data, alpha=0.90):
     >>> import matplotlib.pyplot as plt
     >>> fig = plt.figure()
     >>> ax = fig.add_subplot(111)
-    >>> ax.hist(data, bins=100, normed=True, label='Histogram of data')
+    >>> ax.hist(data, bins=100, density=True, label='Histogram of data')
     >>> ax.vlines(res_mean.statistic, 0, 0.5, colors='r', label='Estimated mean')
     >>> ax.axvspan(res_mean.minmax[0],res_mean.minmax[1], facecolor='r',
     ...            alpha=0.2, label=r'Estimated mean (95% limits)')
@@ -1335,8 +1335,7 @@ def anderson(x, dist='norm'):
     """
     Anderson-Darling test for data coming from a particular distribution
 
-    The Anderson-Darling test is a modification of the Kolmogorov-
-    Smirnov test `kstest` for the null hypothesis that a sample is
+    The Anderson-Darling tests the null hypothesis that a sample is
     drawn from a population that follows a particular distribution.
     For the Anderson-Darling test, the critical values depend on
     which distribution is being tested against.  This function works
@@ -1364,6 +1363,10 @@ def anderson(x, dist='norm'):
         differing set of significance levels depending on the
         distribution that is being tested against.
 
+    See Also
+    --------
+    kstest : The Kolmogorov-Smirnov test for goodness-of-fit.
+
     Notes
     -----
     Critical values provided are for the following significance levels:
@@ -1375,9 +1378,10 @@ def anderson(x, dist='norm'):
     Gumbel
         25%, 10%, 5%, 2.5%, 1%
 
-    If A2 is larger than these critical values then for the corresponding
-    significance level, the null hypothesis that the data come from the
-    chosen distribution can be rejected.
+    If the returned statistic is larger than these critical values then
+    for the corresponding significance level, the null hypothesis that
+    the data come from the chosen distribution can be rejected.
+    The returned statistic is referred to as 'A2' in the references.
 
     References
     ----------
