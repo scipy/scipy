@@ -75,8 +75,14 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
 
     If `x0` is a sequence, then `newton` returns an array, and `func` must be
     vectorized and return a sequence or array of the same shape as it's first
-    argument. An optional flag appends boolean arrays of which elements failed
-    to converge and where the solver stopped due to an infinite Newton step.
+    argument. If an optional argument, `failure_idx_flag`, is `True`, then the
+    return is a named tuple `(root, failures, zero_der)` in which `root` is an
+    array of the locations where `func` is zero, `zero_der` is a boolean array,
+    the same size as `root`, of the elements which had an infinite Newton step,
+    and `failures` is another boolean array of the elements that had a finite
+    Newton step but failed to converge before `maxiter` was reached. So if the
+    flag is `True` and the output is `x`, then the failures are represented by
+    `x.root[~x.zero_der][x.failures]`.
 
     Parameters
     ----------
@@ -111,7 +117,8 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
     root : float, sequence, or array
         Estimated location where function is zero.
     failures : boolean array, optional
-        For vector functions, indicates which elements failed to converge.
+        For vector functions, indicates which of the non-zero derivative
+        elements failed to converge before `maxiter` was reached.
     zero_der : boolean array, optional
         For vector functions, indicates which elements had a zero derivative.
 
