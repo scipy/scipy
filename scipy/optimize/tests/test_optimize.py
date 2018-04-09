@@ -727,6 +727,67 @@ class TestOptimizeSimple(CheckOptimize):
             assert_(func(sol1.x) < func(sol2.x),
                     "%s: %s vs. %s" % (method, func(sol1.x), func(sol2.x)))
 
+    @pytest.mark.parametrize('method', ['fmin', 'fmin_powell', 'fmin_cg', 'fmin_bfgs',
+                                        'fmin_ncg', 'fmin_l_bfgs_b', 'fmin_tnc',
+                                        'fmin_slsqp',
+                                        'Nelder-Mead', 'Powell', 'CG', 'BFGS', 'Newton-CG', 'L-BFGS-B',
+                                        'TNC', 'SLSQP', 'trust-constr', 'dogleg', 'trust-ncg',
+                                        'trust-exact', 'trust-krylov'])
+    def test_minimize_callback_copies_array(self, method):
+        # Check that arrays passed to callbacks are not modified
+        # inplace by the optimizer afterward
+
+        if method in ('fmin_tnc', 'fmin_l_bfgs_b'):
+            func = lambda x: (optimize.rosen(x), optimize.rosen_der(x))
+        else:
+            func = optimize.rosen
+            jac = optimize.rosen_der
+            hess = optimize.rosen_hess
+
+        x0 = np.zeros(10)
+
+        # Set options
+        kwargs = {}
+        if method.startswith('fmin'):
+            routine = getattr(optimize, method)
+            if method == 'fmin_slsqp':
+                kwargs['iter'] = 5
+            elif method == 'fmin_tnc':
+                kwargs['maxfun'] = 100
+            else:
+                kwargs['maxiter'] = 5
+        else:
+            def routine(*a, **kw):
+                kw['method'] = method
+                return optimize.minimize(*a, **kw)
+
+            if method == 'TNC':
+                kwargs['options'] = dict(maxiter=100)
+            else:
+                kwargs['options'] = dict(maxiter=5)
+
+        if method in ('fmin_ncg',):
+            kwargs['fprime'] = jac
+        elif method in ('Newton-CG',):
+            kwargs['jac'] = jac
+        elif method in ('trust-krylov', 'trust-exact', 'trust-ncg', 'dogleg',
+                        'trust-constr'):
+            kwargs['jac'] = jac
+            kwargs['hess'] = hess
+
+        # Run with callback
+        results = []
+
+        def callback(x, *args, **kwargs):
+            results.append((x, np.copy(x)))
+
+        sol = routine(func, x0, callback=callback, **kwargs)
+
+        # Check returned arrays coincide with their copies and have no memory overlap
+        assert_(len(results) > 2)
+        assert_(all(np.all(x == y) for x, y in results))
+        assert_(not any(np.may_share_memory(x[0], y[0]) for x, y in itertools.combinations(results, 2)))
+
     @pytest.mark.parametrize('method', ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg',
                               'l-bfgs-b', 'tnc', 'cobyla', 'slsqp'])
     def test_no_increase(self, method):

@@ -415,7 +415,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
                                           state.constr_penalty,
                                           state.cg_stop_cond)
             state.status = None
-            if callback is not None and callback(state.x, state):
+            if callback is not None and callback(np.copy(state.x), state):
                 state.status = 3
             elif state.optimality < gtol and state.constr_violation < gtol:
                 state.status = 1
@@ -452,7 +452,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
                                          state.barrier_parameter,
                                          state.cg_stop_cond)
             state.status = None
-            if callback is not None and callback(state.x, state):
+            if callback is not None and callback(np.copy(state.x), state):
                 state.status = 3
             elif state.optimality < gtol and state.constr_violation < gtol:
                 state.status = 1
