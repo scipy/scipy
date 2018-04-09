@@ -77,12 +77,10 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
     vectorized and return a sequence or array of the same shape as it's first
     argument. If an optional argument, `failure_idx_flag`, is `True`, then the
     return is a named tuple `(root, failures, zero_der)` in which `root` is an
-    array of the locations where `func` is zero, `zero_der` is a boolean array,
-    the same size as `root`, of the elements which had an infinite Newton step,
-    and `failures` is another boolean array of the elements that had a finite
-    Newton step but failed to converge before `maxiter` was reached. So if the
-    flag is `True` and the output is `x`, then the failures are represented by
-    `x.root[~x.zero_der][x.failures]`.
+    array of the locations where `func` is zero, `failures` is an array, same
+    size as `root`, of booleans that are `True` where `func` failed to converge,
+    and `zero_der` is another boolean array of the same size where `func` had a
+    zero derivative.
 
     Parameters
     ----------
@@ -117,8 +115,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
     root : float, sequence, or array
         Estimated location where function is zero.
     failures : boolean array, optional
-        For vector functions, indicates which of the non-zero derivative
-        elements failed to converge before `maxiter` was reached.
+        For vector functions, indicates which elements failed to converge.
     zero_der : boolean array, optional
         For vector functions, indicates which elements had a zero derivative.
 
@@ -257,9 +254,9 @@ def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2,
                 dp = dp / (1.0 - 0.5 * dp * fder2[nz_der] / fder[nz_der])
             # only update nonzero derivatives
             p[nz_der] -= dp
-            failures = np.abs(dp) >= tol  # items not yet converged
+            failures[nz_der] = np.abs(dp) >= tol  # items not yet converged
             # stop iterating if there aren't any failures, not incl zero der
-            if not failures.any():
+            if not failures[nz_der].any():
                 break
     else:
         # Secant method
@@ -281,14 +278,14 @@ def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2,
             active_zero_der = ~nz_der & active
             p[active_zero_der] = (p1 + p)[active_zero_der] / 2.0
             active &= nz_der  # don't assign zero derivatives again
-            failures = np.abs(dp) >= tol  # not yet converged
+            failures[nz_der] = np.abs(dp) >= tol  # not yet converged
             # stop iterating if there aren't any failures, not incl zero der
-            if not failures.any():
+            if not failures[nz_der].any():
                 break
             p1, p = p, p1
             q0 = q1
             q1 = np.asarray(func(p1, *args))
-    zero_der = ~nz_der
+    zero_der = ~nz_der & failures  # don't include converged with zero-ders
     if zero_der.any():
         # secant warnings
         if fprime is None:
