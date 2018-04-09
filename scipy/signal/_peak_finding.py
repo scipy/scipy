@@ -419,7 +419,7 @@ def peak_widths(x, peaks, rel_height=0.5, prominence_data=None, wlen=None):
         Chooses the relative height at which the peak width is measured as a
         percentage of its prominence. 1.0 calculates the width of the peak at
         its lowest contour line while 0.5 evaluates at half the prominence
-        height. Must be a number greater 0. See notes for further explanation.
+        height. Must be at least 0. See notes for further explanation.
     prominence_data : tuple, optional
         A tuple of three arrays matching the output of `peak_prominences` when
         called with the same arguments `x` and `peaks`. This data is calculated

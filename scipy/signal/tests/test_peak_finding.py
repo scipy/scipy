@@ -512,6 +512,17 @@ class TestPeakWidths(object):
             with raises(ValueError, match=match):
                 peak_widths(x, peak, prominence_data=prominence_data)
 
+    def test_intersection_rules(self):
+        """Test if x == eval_height counts as an intersection."""
+        # Flatt peak with two possible intersection points if evaluated at 1
+        x = [0, 1, 2, 1, 3, 3, 3, 1, 2, 1, 0]
+        # relative height is 0 -> width is 0 as well
+        assert_allclose(peak_widths(x, peaks=[5], rel_height=0),
+                        [(0.,), (3.,), (5.,), (5.,)])
+        # width_height == x counts as intersection -> nearest 1 is chosen
+        assert_allclose(peak_widths(x, peaks=[5], rel_height=2/3),
+                        [(4.,), (1.,), (3.,), (7.,)])
+
 
 def test_unpack_condition_args():
     """
