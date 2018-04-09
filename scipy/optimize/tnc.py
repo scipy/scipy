@@ -34,6 +34,8 @@ value of the function, and whose second argument is the gradient of the function
 
 from __future__ import division, print_function, absolute_import
 
+import numpy as np
+
 from scipy.optimize import moduleTNC, approx_fprime
 from .optimize import MemoizeJac, OptimizeResult, _check_unknown_options
 from numpy import inf, array, zeros, asfarray
@@ -271,6 +273,9 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
             'gtol': pgtol,
             'rescale': rescale,
             'disp': False}
+
+    if callback is not None:
+        callback, _callback = lambda x: _callback(np.copy(x)), callback
 
     res = _minimize_tnc(fun, x0, args, jac, bounds, callback=callback, **opts)
 

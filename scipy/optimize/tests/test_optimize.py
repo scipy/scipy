@@ -726,7 +726,24 @@ class TestOptimizeSimple(CheckOptimize):
                                      method=method)
             assert_(func(sol1.x) < func(sol2.x),
                     "%s: %s vs. %s" % (method, func(sol1.x), func(sol2.x)))
+    
+    @pytest.mark.parametrize('method', ['minimize', 'fmin_l_bfgs_b', 'fmin',
+                             'fmin_bfgs', 'fmin_cg', 'fmin_ncg','fmin_powell',
+                             'fmin_slsqp', 'fmin_tnc'])
+    def test_minimize_copies_array(self, method):
+        def func(z):
+            x, y = z
+            return x**2*y**2 + x**4 + 1
 
+        method = getattr(optimize, method)
+        results = []
+        optimize.minimize(
+            func, [1, 1], tol=1e-10, method='slsqp',
+            callback=lambda x: results.append(x),
+        )
+
+        assert not any(x[0] is x[1] for x in itertools.combinations(results, 2))        
+ 
     @pytest.mark.parametrize('method', ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg',
                               'l-bfgs-b', 'tnc', 'cobyla', 'slsqp'])
     def test_no_increase(self, method):

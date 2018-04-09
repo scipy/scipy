@@ -187,6 +187,9 @@ def fmin_slsqp(func, x0, eqcons=(), f_eqcons=None, ieqcons=(), f_ieqcons=None,
             'eps': epsilon,
             'callback': callback}
 
+    if callback is not None:
+        callback, _callback = lambda x: _callback(np.copy(x)), callback
+
     # Build the constraints as a tuple of dictionaries
     cons = ()
     # 1. constraints of the 1st kind (eqcons, ieqcons); no Jacobian; take

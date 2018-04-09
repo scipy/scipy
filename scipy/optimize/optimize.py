@@ -406,6 +406,9 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
             'return_all': retall,
             'initial_simplex': initial_simplex}
 
+    if callback is not None:
+        callback, _callback = lambda x: _callback(np.copy(x)), callback
+
     res = _minimize_neldermead(func, x0, args, callback=callback, **opts)
     if full_output:
         retlist = res['x'], res['fun'], res['nit'], res['nfev'], res['status']
@@ -906,6 +909,9 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
             'maxiter': maxiter,
             'return_all': retall}
 
+    if callback is not None:
+        callback, _callback = lambda x: _callback(np.copy(x)), callback
+
     res = _minimize_bfgs(f, x0, args, fprime, callback=callback, **opts)
 
     if full_output:
@@ -1211,6 +1217,9 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
             'maxiter': maxiter,
             'return_all': retall}
 
+    if callback is not None:
+        callback, _callback = lambda x: _callback(np.copy(x)), callback
+
     res = _minimize_cg(f, x0, args, fprime, callback=callback, **opts)
 
     if full_output:
@@ -1451,6 +1460,9 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
             'maxiter': maxiter,
             'disp': disp,
             'return_all': retall}
+
+    if callback is not None:
+        callback, _callback = lambda x: _callback(np.copy(x)), callback
 
     res = _minimize_newtoncg(f, x0, args, fprime, fhess, fhess_p,
                              callback=callback, **opts)
@@ -2483,6 +2495,9 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
             'disp': disp,
             'direc': direc,
             'return_all': retall}
+
+    if callback is not None:
+        callback, _callback = lambda x: _callback(np.copy(x)), callback
 
     res = _minimize_powell(func, x0, args, callback=callback, **opts)
 
