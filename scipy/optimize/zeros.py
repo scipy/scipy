@@ -273,7 +273,7 @@ def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2,
             p[nz_der] = p1[nz_der] - dp
             active_zero_der = ~nz_der & active
             p[active_zero_der] = (p1 + p)[active_zero_der] / 2.0
-            active[active] &= nz_der  # don't assign zero derivatives again
+            active &= nz_der  # don't assign zero derivatives again
             failures = np.abs(dp) >= tol  # not yet converged
             # stop iterating if there aren't any failures, not incl zero der
             if not failures.any():

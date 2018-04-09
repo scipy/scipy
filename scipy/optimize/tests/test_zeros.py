@@ -98,6 +98,12 @@ class TestBasic(object):
         x = zeros.newton(f1, x0, args=args)
         assert_allclose(x, x_expected)
 
+    def test_array_secant_active_zero_der(self):
+        """test secant doesn't continue to iterate zero derivatives"""
+        x = zeros.newton(lambda x, *a: x*x - a[0], x0=[4.123, 5],
+                         args=[np.array([17, 25])])
+        assert_allclose(x, (4.123105625617661, 5.0))
+
     def test_array_newton_integers(self):
         # test secant with float
         x = zeros.newton(lambda y, z: z - y ** 2, [4.0] * 2,
