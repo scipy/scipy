@@ -4498,8 +4498,8 @@ add_newdoc("scipy.special", "kolmogorov",
     >>> print('Dn=%f, sqrt(n)*Dn=%f' % (Dn, Kn))
     Dn=0.058286, sqrt(n)*Dn=1.843153
     >>> print(chr(10).join(['For a sample of size n drawn from a Normal(0, 1) distribution:',
-              ' the approximate Kolmogorov probability that sqrt(n)*Dn>=%f is %f' %  (Kn, kolmogorov(Kn)),
-              ' the approximate Kolmogorov probability that sqrt(n)*Dn<=%f is %f' %  (Kn, kolmogc(Kn))]))
+    ...   ' the approximate Kolmogorov probability that sqrt(n)*Dn>=%f is %f' %  (Kn, kolmogorov(Kn)),
+    ...   ' the approximate Kolmogorov probability that sqrt(n)*Dn<=%f is %f' %  (Kn, kolmogc(Kn))]))
     For a sample of size n drawn from a Normal(0, 1) distribution:
      the approximate Kolmogorov probability that sqrt(n)*Dn>=1.843153 is 0.002240
      the approximate Kolmogorov probability that sqrt(n)*Dn<=1.843153 is 0.997760
@@ -6605,11 +6605,11 @@ add_newdoc("scipy.special", "smirnov",
     Dn-=0.563278, Dn+=0.001005
     >>> probs = smirnov(n, Dnpm)
     >>> print(chr(10).join(['For a sample of size %d drawn from a N(0, 1) distribution:' % n,
-              'Smirnov n=%d: Prob(Dn- >= %f) = %.4f' % (n, Dnpm[0], probs[0]),
-              'Smirnov n=%d: Prob(Dn+ >= %f) = %.4f' % (n, Dnpm[1], probs[1])]))
+    ...      ' Smirnov n=%d: Prob(Dn- >= %f) = %.4f' % (n, Dnpm[0], probs[0]),
+    ...      ' Smirnov n=%d: Prob(Dn+ >= %f) = %.4f' % (n, Dnpm[1], probs[1])]))
     For a sample of size 5 drawn from a N(0, 1) distribution:
-    Smirnov n=5: Prob(Dn- >= 0.563278) = 0.0250
-    Smirnov n=5: Prob(Dn+ >= 0.001005) = 0.9990
+     Smirnov n=5: Prob(Dn- >= 0.563278) = 0.0250
+     Smirnov n=5: Prob(Dn+ >= 0.001005) = 0.9990
 
     Plot the Empirical CDF against the target Normal(0, 1) CDF
 
