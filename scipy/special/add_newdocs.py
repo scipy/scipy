@@ -4497,7 +4497,7 @@ add_newdoc("scipy.special", "kolmogorov",
     >>> Kn = np.sqrt(n) * Dn
     >>> print('Dn=%f, sqrt(n)*Dn=%f' % (Dn, Kn))
     Dn=0.058286, sqrt(n)*Dn=1.843153
-    >>> print('\n'.join(['For a sample of size n drawn from a Normal(0, 1) distribution:',
+    >>> print(chr(10).join(['For a sample of size n drawn from a Normal(0, 1) distribution:',
               ' the approximate Kolmogorov probability that sqrt(n)*Dn>=%f is %f' %  (Kn, kolmogorov(Kn)),
               ' the approximate Kolmogorov probability that sqrt(n)*Dn<=%f is %f' %  (Kn, kolmogc(Kn))]))
     For a sample of size n drawn from a Normal(0, 1) distribution:
@@ -4506,7 +4506,6 @@ add_newdoc("scipy.special", "kolmogorov",
 
     Plot the Empirical CDF against the target Normal(0, 1) CDF.
 
-    >>> import matplotlib
     >>> import matplotlib.pyplot as plt
     >>> plt.step(np.concatenate([[-3], x]), ecdfs, where='post', label='Empirical CDF')
     >>> x3 = np.linspace(-3, 3, 100)
@@ -6535,7 +6534,7 @@ add_newdoc("scipy.special", "sindg",
     """)
 
 add_newdoc("scipy.special", "smirnov",
-    """
+    r"""
     smirnov(n, x)
 
     Kolmogorov-Smirnov complementary cumulative distribution function
@@ -6605,7 +6604,7 @@ add_newdoc("scipy.special", "smirnov",
     >>> print('Dn-=%f, Dn+=%f' % (Dnpm[0], Dnpm[1]))
     Dn-=0.563278, Dn+=0.001005
     >>> probs = smirnov(n, Dnpm)
-    >>> print('\n'.join(['For a sample of size %d drawn from a N(0, 1) distribution:' % n,
+    >>> print(chr(10).join(['For a sample of size %d drawn from a N(0, 1) distribution:' % n,
               'Smirnov n=%d: Prob(Dn- >= %f) = %.4f' % (n, Dnpm[0], probs[0]), 
               'Smirnov n=%d: Prob(Dn+ >= %f) = %.4f' % (n, Dnpm[1], probs[1])]))
     For a sample of size 5 drawn from a N(0, 1) distribution:
