@@ -1,5 +1,6 @@
 import logging
 import numpy
+import pytest
 from pytest import raises as assert_raises, warns
 from scipy.optimize import shgo
 from scipy.optimize._shgo import SHGO
@@ -339,7 +340,7 @@ class TestShgoSobolTestFunctions(object):
         """NLP: Hock and Schittkowski problem 18"""
         run_test(test3_1)
 
-    @numpy.testing.decorators.slow
+    @pytest.mark.slow
     def test_f4_sobol(self):
         """NLP: (High dimensional) Hock and Schittkowski 11 problem (HS11)"""
         # run_test(test4_1, n=500)
@@ -394,7 +395,7 @@ class TestShgoSimplicialTestFunctions(object):
         """NLP: Hock and Schittkowski problem 18"""
         run_test(test3_1, n=1, sampling_method='simplicial')
 
-    @numpy.testing.decorators.slow
+    @pytest.mark.slow
     def test_f4_simplicial(self):
         """NLP: (High dimensional) Hock and Schittkowski 11 problem (HS11)"""
         run_test(test4_1, n=1, sampling_method='simplicial')
@@ -460,7 +461,7 @@ class TestShgoArguments(object):
             res = shgo(test.f, test.bounds, n=1, sampling_method='simplicial',
                        callback=callback_func, options={'disp': True})
 
-    @numpy.testing.decorators.slow
+    @pytest.mark.slow
     def test_4_1_known_f_min(self):
         """Test known function minima stopping criteria"""
         # Specify known function value
@@ -471,7 +472,7 @@ class TestShgoArguments(object):
         run_test(test4_1, n=None, test_atol=1e-5, options=options,
                  sampling_method='simplicial')
 
-    @numpy.testing.decorators.slow
+    @pytest.mark.slow
     def test_4_2_known_f_min(self):
         """Test Global mode limiting local evalutions"""
         options = {  # Specify known function value
@@ -484,7 +485,7 @@ class TestShgoArguments(object):
         run_test(test4_1, n=None, test_atol=1e-5, options=options,
                  sampling_method='simplicial')
 
-    @numpy.testing.decorators.slow
+    @pytest.mark.slow
     def test_4_3_known_f_min(self):
         """Test Global mode limiting local evalutions"""
         options = {  # Specify known function value

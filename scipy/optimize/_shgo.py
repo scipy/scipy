@@ -338,7 +338,6 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
     the number of iterations to 5 increased from the default 1 for a total of
     60 x 5 = 300 initial sampling points.
 
-
     >>> result_2 = shgo(eggholder, bounds, n=60, iters=5, sampling_method='sobol')
     >>> len(result.xl), len(result_2.xl)
     (13, 39)
