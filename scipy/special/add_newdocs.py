@@ -4439,7 +4439,7 @@ add_newdoc("scipy.special", "kolmogi",
     """)
 
 add_newdoc("scipy.special", "kolmogorov",
-    """
+    r"""
     kolmogorov(y)
 
     Complementary cumulative distribution (Survival Function) function of Kolmogorov distribution
@@ -4496,9 +4496,13 @@ add_newdoc("scipy.special", "kolmogorov",
     >>> Dn = np.max(gaps)
     >>> Kn = np.sqrt(n) * Dn
     >>> print('Dn=%f, sqrt(n)*Dn=%f' % (Dn, Kn))
-    >>> print('For a sample of size n drawn from a Normal(0, 1) distribution:')
-    >>> print(' the approximate Kolmogorov probability that sqrt(n)*Dn>=%f is %f' %  (Kn, kolmogorov(Kn)))
-    >>> print(' the approximate Kolmogorov probability that sqrt(n)*Dn<=%f is %f' %  (Kn, kolmogc(Kn)))
+    Dn=0.058286, sqrt(n)*Dn=1.843153
+    >>> print('\n'.join(['For a sample of size n drawn from a Normal(0, 1) distribution:',
+              ' the approximate Kolmogorov probability that sqrt(n)*Dn>=%f is %f' %  (Kn, kolmogorov(Kn)),
+              ' the approximate Kolmogorov probability that sqrt(n)*Dn<=%f is %f' %  (Kn, kolmogc(Kn))]))
+    For a sample of size n drawn from a Normal(0, 1) distribution:
+     the approximate Kolmogorov probability that sqrt(n)*Dn>=1.843153 is 0.002240
+     the approximate Kolmogorov probability that sqrt(n)*Dn<=1.843153 is 0.997760
 
     Plot the Empirical CDF against the target Normal(0, 1) CDF.
 
@@ -4516,7 +4520,7 @@ add_newdoc("scipy.special", "kolmogorov",
     """)
 
 add_newdoc("scipy.special", "kolmogc",
-    """
+    r"""
     kolmogc(y)
 
     Cumulative distribution function of Kolmogorov distribution
@@ -4605,7 +4609,7 @@ add_newdoc("scipy.special", "kolmogci",
 
     See Also
     --------
-    kolmogi : The Inverse Survival Fucntion for the distribution
+    kolmogi : The Inverse Survival Function for the distribution
     scipy.stats.kstwobign : Provides the functionality as a continuous distribution
     smirnov, smirnovi, smirnovc, smirnovci, smirnovp : Functions for the one-sided distribution
 
@@ -6601,9 +6605,9 @@ add_newdoc("scipy.special", "smirnov",
     >>> print('Dn-=%f, Dn+=%f' % (Dnpm[0], Dnpm[1]))
     Dn-=0.563278, Dn+=0.001005
     >>> probs = smirnov(n, Dnpm)
-    >>> print('For a sample of size %d drawn from a N(0, 1) distribution:' % n)
-    >>> print('Smirnov n=%d: Prob(Dn- >= %f) = %.4f' % (n, Dnpm[0], probs[0]))
-    >>> print('Smirnov n=%d: Prob(Dn+ >= %f) = %.4f' % (n, Dnpm[1], probs[1]))
+    >>> print('\n'.join(['For a sample of size %d drawn from a N(0, 1) distribution:' % n,
+              'Smirnov n=%d: Prob(Dn- >= %f) = %.4f' % (n, Dnpm[0], probs[0]), 
+              'Smirnov n=%d: Prob(Dn+ >= %f) = %.4f' % (n, Dnpm[1], probs[1])]))
     For a sample of size 5 drawn from a N(0, 1) distribution:
     Smirnov n=5: Prob(Dn- >= 0.563278) = 0.0250
     Smirnov n=5: Prob(Dn+ >= 0.001005) = 0.9990
@@ -6654,7 +6658,6 @@ add_newdoc("scipy.special", "smirnovc",
     smirnovp : The derivative of the Survival Function for the distribution.
     scipy.stats.ksone : Provides the functionality as a continuous distribution
     kolmogorov, kolmogi, kolmogc, kolmogci, kolmogp : Functions for the two-sided distribution
-
     """)
 
 add_newdoc("scipy.special", "smirnovi",
