@@ -1012,20 +1012,22 @@ _smirnovi(int n, double psf, double pcdf)
 double
 smirnov(int n, double x)
 {
+    ThreeProbs probs;
     if (npy_isnan(x)) {
         return NPY_NAN;
     }
-    ThreeProbs probs =  _smirnov_all_sd(n, x);
+    probs =  _smirnov_all_sd(n, x);
     return probs.sf;
 }
 
 double
 smirnovc(int n, double x)
 {
+    ThreeProbs probs;
     if (npy_isnan(x)) {
         return NPY_NAN;
     }
-    ThreeProbs probs =  _smirnov_all_sd(n, x);
+    probs =  _smirnov_all_sd(n, x);
     return probs.cdf;
 }
 
@@ -1036,6 +1038,7 @@ smirnovc(int n, double x)
 double
 smirnovp(int n, double x)
 {
+    ThreeProbs probs;
     /* This comparison should assure returning NaN whenever
      * x is NaN itself.  */
     if (!(n > 0 && x >= 0.0 && x <= 1.0)) {
@@ -1053,7 +1056,7 @@ smirnovp(int n, double x)
     if (x == 0.0) {
         return -1.0;
     }
-    ThreeProbs probs =  _smirnov_all_sd(n, x);
+    probs =  _smirnov_all_sd(n, x);
     return -probs.pdf;
 }
 
