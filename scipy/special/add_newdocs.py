@@ -2874,7 +2874,7 @@ add_newdoc("scipy.special", "gdtrc",
 
     See Also
     --------
-    gdtr, gdtri
+    gdtr, gdtrix
 
     Notes
     -----
