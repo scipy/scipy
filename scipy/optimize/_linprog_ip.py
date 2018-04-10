@@ -1697,9 +1697,11 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol,
                 x, y, z, tau, kappa = _do_step(
                     x, y, z, tau, kappa, d_x, d_y, d_z, d_tau, d_kappa, alpha)
 
-        except (LinAlgError, FloatingPointError):
+        except (LinAlgError, FloatingPointError,
+                ValueError, ZeroDivisionError):
             # this can happen when sparse solver is used and presolve
-            # is turned off. I've never seen it otherwise.
+            # is turned off. Also observed ValueError in AppVeyor Python 3.6
+            # Win32 build (PR #8676). I've never seen it otherwise.
             status = 4
             message = _get_message(status)
             break
