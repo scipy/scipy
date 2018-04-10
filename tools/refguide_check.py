@@ -755,7 +755,10 @@ def check_doctests_testfile(fname, verbose, ns=None,
         return results
 
     full_name = fname
-    text = open(fname).read()
+    if sys.version_info.major <= 2:
+        text = open(fname).read()
+    else:
+        text = open(fname, encoding='utf-8').read()
 
     PSEUDOCODE = set(['some_function', 'some_module', 'import example',
                       'ctypes.CDLL',     # likely need compiling, skip it

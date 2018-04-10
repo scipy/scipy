@@ -360,9 +360,9 @@ def null_space(A, rcond=None):
 
     >>> from scipy.linalg import null_space
     >>> A = np.array([[1, 1], [1, 1]])
-    >>> null_space(A)
-    array([[-0.70710678],
-           [ 0.70710678]])
+    >>> null_space(A) * np.sign(A[0,0])  # Remove the sign ambiguity of the vector
+    array([[ 0.70710678],
+           [-0.70710678]])
 
     Two-dimensional null space:
 
