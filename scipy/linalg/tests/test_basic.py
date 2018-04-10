@@ -751,7 +751,7 @@ class TestSolve(object):
         assert_raises(ValueError, solve, 1, 1, assume_a='zxcv')
 
     def test_all_type_size_routine_combinations(self):
-        sizes = [10, 100, 700]
+        sizes = [10, 100]
         assume_as = ['gen', 'sym', 'pos', 'her']
         dtypes = [np.float32, np.float64, np.complex64, np.complex128]
         for size, assume_a, dtype in itertools.product(sizes, assume_as,
