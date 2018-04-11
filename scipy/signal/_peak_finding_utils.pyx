@@ -9,7 +9,8 @@ cimport numpy as np
 from libc.math cimport ceil
 
 
-__all__ = ['_argmaxima1d', '_select_by_peak_distance', '_peak_prominences']
+__all__ = ['_argmaxima1d', '_select_by_peak_distance', '_peak_prominences',
+           '_peak_widths']
 
 
 @cython.wraparound(False)
@@ -239,7 +240,112 @@ def _peak_prominences(np.float64_t[::1] x not None,
             prominences[peak_nr] = x[peak] - max(left_min, right_min)
 
     if raise_error:
-        raise ValueError(str(peak) + ' is not a valid peak')
+        raise ValueError('{} is not a valid peak'.format(peak))
 
     # Return memoryviews as ndarrays
     return prominences.base, left_bases.base, right_bases.base
+
+
+@cython.wraparound(False)
+@cython.boundscheck(False)
+def _peak_widths(np.float64_t[::1] x not None,
+                 np.intp_t[::1] peaks not None,
+                 np.float64_t rel_height,
+                 np.float64_t[::1] prominences not None,
+                 np.intp_t[::1] left_bases not None,
+                 np.intp_t[::1] right_bases not None):
+    """
+    Calculate the width of each each peak in a signal.
+
+    Parameters
+    ----------
+    x : ndarray
+        A signal with peaks.
+    peaks : ndarray
+        Indices of peaks in `x`.
+    rel_height : np.float64
+        Chooses the relative height at which the peak width is measured as a
+        percentage of its prominence (see `peak_widths`).
+    prominences : ndarray
+        Prominences of each peak in `peaks` as returned by `peak_prominences`.
+    left_bases, right_bases : ndarray
+        Left and right bases of each peak in `peaks` as returned by
+        `peak_prominences`.
+
+    Returns
+    -------
+    widths : ndarray
+        The widths for each peak in samples.
+    width_heights : ndarray
+        The height of the contour lines at which the `widths` where evaluated.
+    left_ips, right_ips : ndarray
+        Interpolated positions of left and right intersection points of a
+        horizontal line at the respective evaluation height.
+
+    Raises
+    ------
+    ValueError
+        If the supplied prominence data doesn't satisfy the condition
+        ``0 <= left_base <= peak <= right_base < x.shape[0]`` for each peak or
+        if `peaks`, `left_bases` and `right_bases` don't share the same shape.
+
+    Notes
+    -----
+    This is the inner function to `peak_widths`.
+
+    .. versionadded:: 1.1.0
+    """
+    cdef:
+        np.float64_t[::1] widths, width_heights, left_ips, right_ips
+        np.float64_t height, left_ip, right_ip
+        np.intp_t p, peak, i, i_max, i_min
+        bint raise_error
+
+    if not (peaks.shape[0] == prominences.shape[0] == left_bases.shape[0] ==
+            right_bases.shape[0]):
+        raise ValueError("arrays in `prominence_data` must have the same shape "
+                         "as `peaks`")
+
+    raise_error = False
+    widths = np.empty(peaks.shape[0], dtype=np.float64)
+    width_heights = np.empty(peaks.shape[0], dtype=np.float64)
+    left_ips = np.empty(peaks.shape[0], dtype=np.float64)
+    right_ips = np.empty(peaks.shape[0], dtype=np.float64)
+
+    with nogil:
+        for p in range(peaks.shape[0]):
+            i_min = left_bases[p]
+            i_max = right_bases[p]
+            peak = peaks[p]
+            # Validate bounds and order
+            if not 0 <= i_min < peak < i_max < x.shape[0]:
+                raise_error = True
+                break
+            height = width_heights[p] = x[peak] - prominences[p] * rel_height
+
+            # Find intersection point on left side
+            i = peak
+            while i_min < i and height < x[i]:
+                i -= 1
+            left_ip = <np.float64_t>i
+            if x[i] < height:
+                # Interpolate if true intersection height is between samples
+                left_ip += (height - x[i]) / (x[i + 1] - x[i])
+
+            # Find intersection point on right side
+            i = peak
+            while i < i_max and height < x[i]:
+                i += 1
+            right_ip = <np.float64_t>i
+            if  x[i] < height:
+                # Interpolate if true intersection height is between samples
+                right_ip -= (height - x[i]) / (x[i - 1] - x[i])
+
+            widths[p] = right_ip - left_ip
+            left_ips[p] = left_ip
+            right_ips[p] = right_ip
+
+    if raise_error:
+        raise ValueError("prominence data is invalid for peak {}".format(peak))
+
+    return widths.base, width_heights.base, left_ips.base, right_ips.base
