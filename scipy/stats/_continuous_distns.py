@@ -3579,43 +3579,48 @@ class levy_stable_gen(rv_continuous):
 
     Notes
     -----
-    Levy-stable distribution (only random variates available -- ignore other
-    docs)
-    
-    The distribution has characteristic function::
-    
-        cf = exp(i*t*mu-(abs(c*t)**alpha)*(1-i*beta*sign(t)*Phi(alpha, t)))
+    The distribution for `levy_stable` has characteristic function:
+
+    .. math::
+            
+        \varphi(t; \alpha, \beta, c, \mu) = e^{ it\mu -|ct|^{\alpha }(1-i\beta \operatorname{sign}(t)\Phi(\alpha ,t )) }
+
+    where:
+              
+    .. math::
         
-    where::
-    
-        Phi = tan(pi*alpha/2), if alpha != 1 
-              -2*log(np.abs(t))/pi, otherwise
-             
-    The probability density function for `levy_stable` is is::
-    
-        levy_stable.pdf(x) = integral( exp(-i*x*t) * cf / (2*pi) )
+        \Phi = \begin{cases}
+                \tan \left({\frac {\pi \alpha }{2}}\right)&\alpha \neq 1\\
+                -{\frac {2}{\pi }}\log |t|&\alpha =1
+                \end{cases}
+           
+    The probability density function for `levy_stable` is:
         
-    where ``-Inf < t < Inf``. This integral does not have a known closed form.
+    .. math::
     
-    For evaluation of pdf we use either Zolotarev S_0 parameterization with integration, 
+        f(x) = \frac{1}{2\pi}\int_{-\infty}^\infty \varphi(t)e^{-ixt}\,dt
+        
+    where :math:`-\infty < t < \infty`. This integral does not have a known closed form.
+    
+    For evaluation of pdf we use either Zolotarev :math:`S_0` parameterization with integration, 
     direct integration of standard parameterization of characteristic function or FFT of 
     characteristic function. FFT is used if number of points is greater than 
-    levy_stable.pdf_fft_min_points_threshold (defaults to 100) otherwise we use one of the 
-    other methods. Setting the threshold to None will disable FFT. The default method is 
-    Zolotarev's but can be changed by setting levy_stable.pdf_default_method to any string 
+    ``levy_stable.pdf_fft_min_points_threshold`` (defaults to 100) otherwise we use one of the 
+    other methods. Setting the threshold to ``None`` will disable FFT. The default method is 
+    Zolotarev's but can be changed by setting ``levy_stable.pdf_default_method`` to any string 
     other than 'zolotarev'. To increase accuracy of FFT calculation one can specify 
-    levy_stable.pdf_fft_grid_spacing (defaults to 0.01) and pdf_fft_n_points_two_power 
-    (defaults to a value that covers the input range * 4). Setting pdf_fft_n_points_two_power 
+    ``levy_stable.pdf_fft_grid_spacing`` (defaults to 0.01) and ``pdf_fft_n_points_two_power`` 
+    (defaults to a value that covers the input range * 4). Setting ``pdf_fft_n_points_two_power`` 
     to 16 should be sufficiently accurate in most cases at the expense of CPU time.
     
-    For evaluation of cdf we use Zolatarev S_0 parameterization with integration or integral of
+    For evaluation of cdf we use Zolatarev :math:`S_0` parameterization with integration or integral of
     the pdf FFT interpolated spline. The settings affecting FFT calculation are the same as
-    for pdf calculation. Setting the threshold to None (default) will disable FFT. For cdf 
+    for pdf calculation. Setting the threshold to ``None`` (default) will disable FFT. For cdf 
     calculations the Zolatarev method is superior in accuracy, so FFT is disabled by default.
     
     Fitting estimate uses quantile estimation method in [MC]. MLE estimation of parameters in
     fit method uses this quantile estimate initially. Note that MLE doesn't always converge if 
-    using FFT for pdf calculations; so it's best that pdf_fft_min_points_threshold is left unset
+    using FFT for pdf calculations; so it's best that ``pdf_fft_min_points_threshold`` is left unset
     or set to default value of 100. 
 
     %(after_notes)s
