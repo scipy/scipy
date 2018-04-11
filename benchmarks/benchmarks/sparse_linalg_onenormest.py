@@ -5,8 +5,9 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 
 try:
-    import scipy.sparse.linalg
     import scipy.sparse
+    import scipy.special  # import cycle workaround for some versions
+    import scipy.sparse.linalg
 except ImportError:
     pass
 
