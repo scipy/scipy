@@ -313,6 +313,11 @@ def peak_prominences(x, peaks, wlen=None):
     of peaks in `x`. This behavior may even be used intentionally to calculate
     "local" prominences.
 
+    .. warning::
+
+       This function may return unexpected results for data containing NaNs. To
+       avoid this, NaNs should either be removed or replaced.
+
     .. versionadded:: 1.1.0
 
     References
@@ -467,6 +472,11 @@ def peak_widths(x, peaks, rel_height=0.5, prominence_data=None, wlen=None):
     can supply these data yourself with the arguments `prominences`, `left_bases`
     and `right_bases`. Otherwise they are internally calculated using `wlen` if
     supplied (see `peak_prominences`).
+
+    .. warning::
+
+       This function may return unexpected results for data containing NaNs. To
+       avoid this, NaNs should either be removed or replaced.
 
     .. versionadded:: 1.1.0
 
@@ -717,13 +727,13 @@ def find_peaks(x, height=None, threshold=None, distance=None,
     height : number or ndarray or sequence, optional
         Required height of peaks. Either a number, ``None``, an array matching
         `x` or a 2-element sequence of the former. The first element is
-        always interpreted as the  minimum and the second, if supplied, as the
-        maximum required height.
+        always interpreted as the  minimal and the second, if supplied, as the
+        maximal required height.
     threshold : number or ndarray or sequence, optional
         Required threshold of peaks, the vertical distance to its neighbouring
         samples. Either a number, ``None``, an array matching `x` or a
         2-element sequence of the former. The first element is always
-        interpreted as the  minimum and the second, if supplied, as the maximum
+        interpreted as the  minimal and the second, if supplied, as the maximal
         required threshold.
     distance : number, optional
         Required minimal horizontal distance (>= 1) in samples between
@@ -731,13 +741,13 @@ def find_peaks(x, height=None, threshold=None, distance=None,
     prominence : number or ndarray or sequence, optional
         Required prominence of peaks. Either a number, ``None``, an array
         matching `x` or a 2-element sequence of the former. The first
-        element is always interpreted as the  minimum and the second, if
-        supplied, as the maximum required prominence.
+        element is always interpreted as the  minimal and the second, if
+        supplied, as the maximal required prominence.
     width : number or ndarray or sequence, optional
         Required width of peaks in samples. Either a number, ``None``, an array
         matching `x` or a 2-element sequence of the former. The first
-        element is always interpreted as the  minimum and the second, if
-        supplied, as the maximum required prominence.
+        element is always interpreted as the  minimal and the second, if
+        supplied, as the maximal required prominence.
     wlen : number, optional
         Used for calculation of the peaks prominences, thus it is only used if
         one of the arguments `prominence` or `width` is given. See argument
@@ -783,15 +793,14 @@ def find_peaks(x, height=None, threshold=None, distance=None,
 
     Notes
     -----
-    Because this function searches for local maxima by direct sample comparison,
-    the determined peak locations can be off for noisy signals if the noise
-    changes the position of a local maximum. In those cases consider smoothing
-    the signal before searching for peaks or using other peak finding and
-    fitting methods (like `find_peaks_cwt`).
-
-    For flat peaks (more than one sample of equal amplitude wide) the index of
-    the middle sample is returned (rounded down in case the number of samples is
-    even).
+    In the context of this function, a peak or local maximum is defined as any
+    sample whose two direct neighbours have a smaller amplitude. For flat peaks
+    (more than one sample of equal amplitude wide) the index of the middle
+    sample is returned (rounded down in case the number of samples is even).
+    For noisy signals the peak locations can be off because the noise might
+    change the position of local maxima. In those cases consider smoothing the
+    signal before searching for peaks or use other peak finding and fitting
+    methods (like `find_peaks_cwt`).
 
     Some additional comments on specifying conditions:
 
@@ -814,6 +823,11 @@ def find_peaks(x, height=None, threshold=None, distance=None,
     * Use `wlen` to reduce the time it takes to evaluate the conditions for
       `prominence` or `width` if `x` is large or has many local maxima
       (see `peak_prominences`).
+
+    .. warning::
+
+       This function may return unexpected results for data containing NaNs. To
+       avoid this, NaNs should either be removed or replaced.
 
     .. versionadded:: 1.1.0
 
