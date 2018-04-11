@@ -3,6 +3,7 @@ Functions for identifying peaks in signals.
 """
 from __future__ import division, print_function, absolute_import
 
+import warnings
 import math
 import numpy as np
 
@@ -375,6 +376,9 @@ def peak_prominences(x, peaks, wlen=None):
     x = np.asarray(x, order='C', dtype=np.float64)
     if x.ndim != 1:
         raise ValueError('`x` must have exactly one dimension')
+    if np.isnan(np.sum(x)):
+        warnings.warn("encountered NaN in `x` which may lead to unexpected "
+                      "results", RuntimeWarning)
 
     peaks = np.asarray(peaks)
     if peaks.size == 0:
@@ -514,6 +518,9 @@ def peak_widths(x, peaks, rel_height=0.5, prominence_data=None, wlen=None):
     x = np.asarray(x, order='C', dtype=np.float64)
     if x.ndim != 1:
         raise ValueError('`x` must have exactly one dimension')
+    if np.isnan(np.sum(x)):
+        warnings.warn("encountered NaN in `x` which may lead to unexpected "
+                      "results", RuntimeWarning)
 
     peaks = np.asarray(peaks)
     if peaks.size == 0:
@@ -857,6 +864,9 @@ def find_peaks(x, height=None, threshold=None, distance=None,
         raise ValueError('`x` must have exactly one dimension')
     if distance is not None and distance < 1:
         raise ValueError('`distance` must be greater or equal to 1')
+    if np.isnan(np.sum(x)):
+        warnings.warn("encountered NaN in `x` which may lead to unexpected "
+                      "results", RuntimeWarning)
 
     peaks = _argmaxima1d(x)
     properties = {}
