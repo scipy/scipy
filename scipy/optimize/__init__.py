@@ -129,6 +129,7 @@ Global Optimization
    basinhopping - Basinhopping stochastic optimizer
    brute - Brute force searching optimizer
    differential_evolution - stochastic minimization using differential evolution
+   shgo - simplicial homology global optimisation
 
 Rosenbrock function
 -------------------
@@ -287,6 +288,7 @@ from ._constraints import (NonlinearConstraint,
                            LinearConstraint,
                            Bounds)
 from ._hessian_update_strategy import HessianUpdateStrategy, BFGS, SR1
+from ._shgo import shgo
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 
