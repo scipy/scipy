@@ -14,11 +14,8 @@ below are not available without it.
 .. autosummary::
    :toctree: generated/
 
-   ascent - Get example image for processing
    central_diff_weights - Weights for an n-point central m-th derivative
    derivative - Find the n-th derivative of a function at a point
-   face - Get example image for processing
-   electrocardiogram - Load an example of a one-dimensional signal.
 
 Deprecated functions:
 
@@ -35,12 +32,15 @@ Deprecated functions:
    imshow - Simple showing of an image through an external viewer [requires Pillow]
    toimage - Takes a numpy array and returns a PIL image [requires Pillow]
 
-
 Deprecated aliases:
 
 .. autosummary::
    :toctree: generated/
 
+   ascent - Get example image for processing (imported from `scipy.datasets`)
+   face - Get example image for processing (imported from `scipy.datasets`)
+   electrocardiogram - Load an example of a one-dimensional signal
+       (imported from `scipy.datasets`)
    comb - Combinations of N things taken k at a time, "N choose k" (imported from `scipy.special`)
    factorial  - The factorial function, ``n! = special.gamma(n+1)``
                 (imported from `scipy.special`)
@@ -59,7 +59,8 @@ Deprecated aliases:
 from __future__ import division, print_function, absolute_import
 
 __all__ = ['who', 'source', 'info', 'doccer', 'pade',
-           'comb', 'factorial', 'factorial2', 'factorialk', 'logsumexp']
+           'comb', 'factorial', 'factorial2', 'factorialk', 'logsumexp',
+           'ascent', 'face', 'electrocardiogram']
 
 from . import doccer
 from .common import *
@@ -68,6 +69,8 @@ import numpy as np
 from scipy.interpolate._pade import pade as _pade
 from scipy.special import (comb as _comb, logsumexp as _lsm,
         factorial as _fact, factorial2 as _fact2, factorialk as _factk)
+from scipy.datasets import (ascent as _ascent, face as _face,
+                            electrocardiogram as _electrocardiogram)
 
 import sys
 
@@ -78,6 +81,15 @@ logsumexp = np.deprecate(_lsm, message=_msg % {"name": _lsm.__name__})
 factorial = np.deprecate(_fact, message=_msg % {"name": _fact.__name__})
 factorial2 = np.deprecate(_fact2, message=_msg % {"name": _fact2.__name__})
 factorialk = np.deprecate(_factk, message=_msg % {"name": _factk.__name__})
+
+_msg = ("Importing `%(name)s` from scipy.misc is deprecated in scipy 1.1.0. Use "
+        "`scipy.datasets.%(name)s` instead.")
+ascent = np.deprecate(_ascent, message=_msg % {"name": _ascent.__name__})
+face = np.deprecate(_face, message=_msg % {"name": _face.__name__})
+
+_msg = ("Importing `electrocardiogram` from scipy.misc is deprecated in "
+        "scipy 1.2.0. Use `scipy.datasets.electrocardiogram` instead.")
+electrocardiogram = np.deprecate(_electrocardiogram, message=_msg)
 
 _msg = ("Importing `pade` from scipy.misc is deprecated in scipy 1.0.0. Use "
         "`scipy.interpolate.pade` instead.")

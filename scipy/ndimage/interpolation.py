@@ -540,13 +540,13 @@ def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
 
     Examples
     --------
-    >>> from scipy import ndimage, misc
+    >>> from scipy import ndimage, datasets
     >>> import matplotlib.pyplot as plt
 
     >>> fig = plt.figure()
     >>> ax1 = fig.add_subplot(121)  # left side
     >>> ax2 = fig.add_subplot(122)  # right side
-    >>> ascent = misc.ascent()
+    >>> ascent = datasets.ascent()
     >>> result = ndimage.zoom(ascent, 3.0)
     >>> ax1.imshow(ascent)
     >>> ax2.imshow(result)
