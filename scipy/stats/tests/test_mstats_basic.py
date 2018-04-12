@@ -1276,10 +1276,11 @@ class TestCompareWithStats(object):
             assert_almost_equal(r.T, rm[0:len(x)])
 
 
-class TestBrunnerMunzel(TestCase):
+class TestBrunnerMunzel(object):
     # Data from (Lumley, 1996)
-    X = np.ma.masked_invalid([1,2,1,1,1,np.nan,1,1,1,1,1,2,4,1,1,np.nan])
-    Y = np.ma.masked_invalid([3,3,4,3,np.nan,1,2,3,1,1,5,4])
+    X = np.ma.masked_invalid([1, 2, 1, 1, 1, np.nan, 1, 1,
+                              1, 1, 1, 2, 4, 1, 1, np.nan])
+    Y = np.ma.masked_invalid([3, 3, 4, 3, np.nan, 1, 2, 3, 1, 1, 5, 4])
     significant = 14
 
     def test_brunnermunzel_one_sided(self):
@@ -1375,4 +1376,3 @@ class TestBrunnerMunzel(TestCase):
         assert_(np.isnan(p2))
         assert_(np.isnan(u3))
         assert_(np.isnan(p3))
-

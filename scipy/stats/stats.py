@@ -5164,10 +5164,13 @@ def friedmanchisquare(*args):
 
     return FriedmanchisquareResult(chisq, distributions.chi2.sf(chisq, k - 1))
 
-BrunnerMunzelResult = namedtuple('BrunnerMunzelResult', ('statistic', 'pvalue'))
+
+BrunnerMunzelResult = namedtuple('BrunnerMunzelResult',
+                                 ('statistic', 'pvalue'))
 
 
-def brunnermunzel(x, y, alternative="two-sided", distribution="t", nan_policy='propagate'):
+def brunnermunzel(x, y, alternative="two-sided", distribution="t",
+                  nan_policy='propagate'):
     """
     Computes the Brunner-Munzel test on samples x and y
 
@@ -5175,9 +5178,9 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t", nan_policy='p
     when values are taken one by one from each group, the probabilities of
     getting large values in both groups are equal.
     Unlike the Wilcoxon-Mann-Whitney's U test, this does not require the
-    assumption of equivariance of two groups. Note that this does not assume the
-    distributions are same. This test works on two independent samples, which
-    may have different sizes.
+    assumption of equivariance of two groups. Note that this does not assume
+    the distributions are same. This test works on two independent samples,
+    which may have different sizes.
 
     Parameters
     ----------
@@ -5256,8 +5259,7 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t", nan_policy='p
     ny = len(y)
     if nx == 0 or ny == 0:
         return BrunnerMunzelResult(np.nan, np.nan)
-    nc = nx + ny
-    rankc = rankdata(np.concatenate((x,y)))
+    rankc = rankdata(np.concatenate((x, y)))
     rankcx = rankc[0:nx]
     rankcy = rankc[nx:nx+ny]
     rankcx_mean = np.mean(rankcx)
@@ -5271,9 +5273,6 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t", nan_policy='p
     Sx /= nx - 1
     Sy = np.sum(np.power(rankcy - ranky - rankcy_mean + ranky_mean, 2.0))
     Sy /= ny - 1
-
-    sigmax = Sx / np.power(nc - nx, 2.0)
-    sigmay = Sx / np.power(nc - ny, 2.0)
 
     wbfn = nx * ny * (rankcy_mean - rankcx_mean)
     wbfn /= (nx + ny) * np.sqrt(nx * Sx + ny * Sy)
