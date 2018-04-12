@@ -166,6 +166,10 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
 
     # Backwards compatibility - old keyword.
     if sym_pos:
+        warn('Use of the "sym_pos" keyword is deprecated '
+             'and this keyword will be removed in future '
+             'versions of SciPy. Use assume_a="pos" instead.',
+             DeprecationWarning, stacklevel=2)
         assume_a = 'pos'
 
     if assume_a not in ('gen', 'sym', 'her', 'pos'):

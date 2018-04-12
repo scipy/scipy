@@ -541,7 +541,7 @@ class TestSolve(object):
         a = [[2, 3], [3, 5]]
         for lower in [0, 1]:
             for b in ([[1, 0], [0, 1]], [1, 0]):
-                x = solve(a, b, sym_pos=1, lower=lower)
+                x = solve(a, b, lower=lower, assume_a='pos')
                 assert_array_almost_equal(dot(a, x), b)
 
     def test_simple_sym_complex(self):
@@ -550,7 +550,7 @@ class TestSolve(object):
                   [[1j, 1j],
                    [0, 2]],
                   ]:
-            x = solve(a, b, sym_pos=1)
+            x = solve(a, b, assume_a='pos')
             assert_array_almost_equal(dot(a, x), b)
 
     def test_simple_complex(self):
@@ -605,7 +605,7 @@ class TestSolve(object):
                 a[i, j] = a[j, i]
         for i in range(4):
             b = random([n])
-            x = solve(a, b, sym_pos=1)
+            x = solve(a, b, assume_a='pos')
             assert_array_almost_equal(dot(a, x), b)
 
     def test_random_sym_complex(self):
@@ -619,7 +619,7 @@ class TestSolve(object):
                 a[i, j] = conjugate(a[j, i])
         b = random([n])+2j*random([n])
         for i in range(2):
-            x = solve(a, b, sym_pos=1)
+            x = solve(a, b, assume_a='pos')
             assert_array_almost_equal(dot(a, x), b)
 
     def test_check_finite(self):
