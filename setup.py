@@ -257,7 +257,9 @@ def parse_setuppy_commands():
     Return a boolean value for whether or not to run the build or not (avoid
     parsing Cython and template files if False).
     """
-    if len(sys.argv) < 2:
+    args = sys.argv[1:]
+
+    if not args:
         # User forgot to give an argument probably, let setuptools handle that.
         return True
 
@@ -267,12 +269,9 @@ def parse_setuppy_commands():
                      '--contact-email', '--url', '--license', '--description',
                      '--long-description', '--platforms', '--classifiers',
                      '--keywords', '--provides', '--requires', '--obsoletes']
-    # Add commands that do more than print info, but also don't need Cython and
-    # template parsing.
-    info_commands.extend(['egg_info', 'install_egg_info', 'rotate'])
 
     for command in info_commands:
-        if command in sys.argv[1:]:
+        if command in args:
             return False
 
     # Note that 'alias', 'saveopts' and 'setopt' commands also seem to work
@@ -284,12 +283,12 @@ def parse_setuppy_commands():
                      'build_sphinx')
 
     for command in good_commands:
-        if command in sys.argv[1:]:
+        if command in args:
             return True
 
     # The following commands are supported, but we need to show more
     # useful messages to the user
-    if 'install' in sys.argv[1:]:
+    if 'install' in args:
         print(textwrap.dedent("""
             Note: if you need reliable uninstall behavior, then install
             with pip instead of using `setup.py install`:
@@ -301,7 +300,7 @@ def parse_setuppy_commands():
             """))
         return True
 
-    if '--help' in sys.argv[1:] or '-h' in sys.argv[1]:
+    if '--help' in args or '-h' in sys.argv[1]:
         print(textwrap.dedent("""
             SciPy-specific help
             -------------------
@@ -318,6 +317,7 @@ def parse_setuppy_commands():
             ------------------------
             """))
         return False
+
 
     # The following commands aren't supported.  They can only be executed when
     # the user explicitly adds a --force command-line argument.
@@ -358,11 +358,18 @@ def parse_setuppy_commands():
         bad_commands[command] = "`setup.py %s` is not supported" % command
 
     for command in bad_commands.keys():
-        if command in sys.argv[1:]:
+        if command in args:
             print(textwrap.dedent(bad_commands[command]) +
                   "\nAdd `--force` to your command to use it anyway if you "
                   "must (unsupported).\n")
             sys.exit(1)
+
+    # Commands that do more than print info, but also don't need Cython and
+    # template parsing.
+    other_commands = ['egg_info', 'install_egg_info', 'rotate']
+    for command in other_commands:
+        if command in args:
+            return False
 
     # If we got here, we didn't detect what setup.py command was given
     warnings.warn("Unrecognized setuptools command, proceeding with "
