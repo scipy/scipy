@@ -3258,7 +3258,7 @@ class norminvgauss_gen(rv_continuous):
     def _pdf(self, x, a, b):
         gamma = np.sqrt(a**2 - b**2)
         fac1 = a / np.pi * np.exp(gamma)
-        sq = np.sqrt(1 + x**2)
+        sq = np.hypot(1, x)  # reduce overflows
         return fac1 * sc.k1e(a * sq) * np.exp(b*x - a*sq) / sq
 
     def _rvs(self, a, b):
