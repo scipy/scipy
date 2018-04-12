@@ -162,7 +162,7 @@ Bill Sacks for fixes to netcdf i/o.
 Kolja Glogowski for a bug fix in scipy.special.
 Surhud More for enhancing scipy.optimize.curve_fit to accept covariant errors
 on data.
-Antonio H. Ribeiro for implementing irrnotch, iirpeak functions and
+Antonio H. Ribeiro for implementing iirnotch, iirpeak functions and
     trust-exact and trust-constr optimization methods.
 Matt Haberland for the interior point linear programming method and
     SciPy development videos.

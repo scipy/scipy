@@ -313,6 +313,11 @@ def peak_prominences(x, peaks, wlen=None):
     of peaks in `x`. This behavior may even be used intentionally to calculate
     "local" prominences.
 
+    .. warning::
+
+       This function may return unexpected results for data containing NaNs. To
+       avoid this, NaNs should either be removed or replaced.
+
     .. versionadded:: 1.1.0
 
     References
@@ -475,6 +480,11 @@ def peak_widths(x, peaks, rel_height=0.5, prominence_data=None, wlen=None):
     As shown above to calculate a peak's width its prominence and bases must be
     known. You can supply these yourself with the argument `prominence_data`.
     Otherwise they are internally calculated (see `peak_prominences`).
+
+    .. warning::
+
+       This function may return unexpected results for data containing NaNs. To
+       avoid this, NaNs should either be removed or replaced.
 
     .. versionadded:: 1.1.0
 
@@ -677,8 +687,8 @@ def find_peaks(x, height=None, threshold=None, distance=None,
     Find peaks inside a signal based on peak properties.
 
     This function takes a one-dimensional array and finds all local maxima by
-    simple comparison of neighbouring values. Optionally, a subset of these peaks
-    can be selected by specifying conditions for a peak's properties.
+    simple comparison of neighbouring values. Optionally, a subset of these
+    peaks can be selected by specifying conditions for a peak's properties.
 
     Parameters
     ----------
@@ -687,13 +697,13 @@ def find_peaks(x, height=None, threshold=None, distance=None,
     height : number or ndarray or sequence, optional
         Required height of peaks. Either a number, ``None``, an array matching
         `x` or a 2-element sequence of the former. The first element is
-        always interpreted as the  minimum and the second, if supplied, as the
-        maximum required height.
+        always interpreted as the  minimal and the second, if supplied, as the
+        maximal required height.
     threshold : number or ndarray or sequence, optional
         Required threshold of peaks, the vertical distance to its neighbouring
         samples. Either a number, ``None``, an array matching `x` or a
         2-element sequence of the former. The first element is always
-        interpreted as the  minimum and the second, if supplied, as the maximum
+        interpreted as the  minimal and the second, if supplied, as the maximal
         required threshold.
     distance : number, optional
         Required minimal horizontal distance (>= 1) in samples between
@@ -701,13 +711,13 @@ def find_peaks(x, height=None, threshold=None, distance=None,
     prominence : number or ndarray or sequence, optional
         Required prominence of peaks. Either a number, ``None``, an array
         matching `x` or a 2-element sequence of the former. The first
-        element is always interpreted as the  minimum and the second, if
-        supplied, as the maximum required prominence.
+        element is always interpreted as the  minimal and the second, if
+        supplied, as the maximal required prominence.
     width : number or ndarray or sequence, optional
         Required width of peaks in samples. Either a number, ``None``, an array
         matching `x` or a 2-element sequence of the former. The first
-        element is always interpreted as the  minimum and the second, if
-        supplied, as the maximum required prominence.
+        element is always interpreted as the  minimal and the second, if
+        supplied, as the maximal required prominence.
     wlen : number, optional
         Used for calculation of the peaks prominences, thus it is only used if
         one of the arguments `prominence` or `width` is given. See argument
@@ -753,17 +763,20 @@ def find_peaks(x, height=None, threshold=None, distance=None,
 
     Notes
     -----
-    Because this function searches for local maxima by direct sample comparison,
-    the determined peak locations can be off for noisy signals if the noise
-    changes the position of a local maximum. In those cases consider smoothing
-    the signal before searching for peaks or using other peak finding and fitting
+    In the context of this function, a peak or local maximum is defined as any
+    sample whose two direct neighbours have a smaller amplitude. For flat peaks
+    (more than one sample of equal amplitude wide) the index of the middle
+    sample is returned (rounded down in case the number of samples is even).
+    For noisy signals the peak locations can be off because the noise might
+    change the position of local maxima. In those cases consider smoothing the
+    signal before searching for peaks or use other peak finding and fitting
     methods (like `find_peaks_cwt`).
 
     Some additional comments on specifying conditions:
 
     * Almost all conditions (excluding `distance`) can be given as half-open or
-      closed intervals, e.g ``1`` or ``(1, None)`` defines the half-open interval
-      :math:`[1, \\infty]` while ``(None, 1)`` defines the interval
+      closed intervals, e.g ``1`` or ``(1, None)`` defines the half-open
+      interval :math:`[1, \\infty]` while ``(None, 1)`` defines the interval
       :math:`[-\\infty, 1]`. The open interval ``(None, None)`` can be specified
       as well, which returns the matching properties without exclusion of peaks.
     * The border is always included in the interval used to select valid peaks.
@@ -771,9 +784,9 @@ def find_peaks(x, height=None, threshold=None, distance=None,
       arrays matching `x` in shape which enables dynamic constrains based on
       the sample position.
     * The order of arguments given in the function definition above mirrors the
-      actual order in which conditions are evaluated. In most cases this order is
-      the fastest one because faster operations are applied first to reduce the
-      number of peaks that need to be evaluated later.
+      actual order in which conditions are evaluated. In most cases this order
+      is the fastest one because faster operations are applied first to reduce
+      the number of peaks that need to be evaluated later.
     * Satisfying the distance condition is accomplished by iterating over all
       peaks in descending order based on their height and removing all lower
       peaks that are too close.
@@ -781,11 +794,16 @@ def find_peaks(x, height=None, threshold=None, distance=None,
       `prominence` or `width` if `x` is large or has many local maxima
       (see `peak_prominences`).
 
+    .. warning::
+
+       This function may return unexpected results for data containing NaNs. To
+       avoid this, NaNs should either be removed or replaced.
+
     .. versionadded:: 1.1.0
 
     Examples
     --------
-    To demonstrate this function's usage we use an signal `x` supplied with
+    To demonstrate this function's usage we use a signal `x` supplied with
     SciPy (see `scipy.misc.electrocardiogram`). Let's find all peaks (local
     maxima) in `x` whose amplitude lies above 0.
 
@@ -813,7 +831,7 @@ def find_peaks(x, height=None, threshold=None, distance=None,
 
     Another useful condition for periodic signals can be given with the
     `distance` argument. In this case we can easily select the positions of
-    QRS complexes within the Elektrocardiogram (ECG) by demanding a distance of
+    QRS complexes within the electrocardiogram (ECG) by demanding a distance of
     at least 150 samples.
 
     >>> peaks, _ = find_peaks(x, distance=150)
@@ -846,9 +864,9 @@ def find_peaks(x, height=None, threshold=None, distance=None,
     >>> plt.plot(x)
     >>> plt.plot(peaks, x[peaks], "x")
     >>> plt.vlines(x=peaks, ymin=x[peaks] - properties["prominences"],
-    ...            ymax = x[peaks], color = "C1")  # Visualize prominence
+    ...            ymax = x[peaks], color = "C1")
     >>> plt.hlines(y=properties["width_heights"], xmin=properties["left_ips"],
-    ...            xmax=properties["right_ips"], color = "C1")  # Visualize width
+    ...            xmax=properties["right_ips"], color = "C1")
     >>> plt.show()
     """
     # _argmaxima1d expects array of dtype 'float64'
