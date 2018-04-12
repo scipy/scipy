@@ -936,6 +936,13 @@ class TestInterp(object):
             y[-1] = z
             assert_raises(ValueError, make_interp_spline, x, y)
 
+    @pytest.mark.parametrize('k', [1, 2, 3, 5])
+    def test_list_input(self, k):
+        # regression test for gh-8714: TypeError for x, y being lists and k=2
+        x = list(range(10))
+        y = [a**2 for a in x]
+        make_interp_spline(x, y, k=k)
+
     def test_multiple_rhs(self):
         yy = np.c_[np.sin(self.xx), np.cos(self.xx)]
         der_l = [(1, [1., 2.])]
