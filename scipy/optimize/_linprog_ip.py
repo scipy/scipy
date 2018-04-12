@@ -1031,7 +1031,8 @@ def _get_solver(sparse=False, lstsq=False, sym_pos=True, cholesky=True):
             # this seems to cache the matrix factorization, so solving
             # with multiple right hand sides is much faster
             def solve(M, r, sym_pos=sym_pos):
-                return sp.linalg.solve(M, r, sym_pos=sym_pos)
+                solve_kw = 'pos' if sym_pos else 'gen'
+                return sp.linalg.solve(M, r, assume_a=solve_kw)
 
     return solve
 
