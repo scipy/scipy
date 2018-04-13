@@ -11,7 +11,8 @@ from numpy import (isscalar, r_, log, around, unique, asarray,
                    zeros, arange, sort, amin, amax, any, atleast_1d,
                    sqrt, ceil, floor, array, compress,
                    pi, exp, ravel, count_nonzero, sin, cos, arctan2, hypot)
-if NumpyVersion(np.__version__) < '1.15.0':
+
+if NumpyVersion(np.__version__) < '1.15.0.dev':
     from numpy.testing.decorators import setastest
 else:
     from numpy.testing import setastest
