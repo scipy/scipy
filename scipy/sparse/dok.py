@@ -392,15 +392,11 @@ class dok_matrix(spmatrix, IndexMixin, dict):
 
     def getrow(self, i):
         """Returns the i-th row as a (1 x n) DOK matrix."""
-        new = dok_matrix((1, self.shape[1]), dtype=self.dtype)
-        dict.update(new, (((0, j), self[i, j]) for j in xrange(self.shape[1])))
-        return new
+        return self._get_intXslice(i, slice(0, self.shape[1]))
 
     def getcol(self, j):
         """Returns the j-th column as a (m x 1) DOK matrix."""
-        new = dok_matrix((self.shape[0], 1), dtype=self.dtype)
-        dict.update(new, (((i, 0), self[i, j]) for i in xrange(self.shape[0])))
-        return new
+        return self._get_sliceXint(slice(0, self.shape[0]), j)
 
     def tocoo(self, copy=False):
         from .coo import coo_matrix
