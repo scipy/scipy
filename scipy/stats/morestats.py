@@ -3,15 +3,15 @@ from __future__ import division, print_function, absolute_import
 import math
 import warnings
 from collections import namedtuple
-from distutils.version import LooseVersion
+
+from scipy._lib._version import NumpyVersion
 
 import numpy as np
 from numpy import (isscalar, r_, log, around, unique, asarray,
                    zeros, arange, sort, amin, amax, any, atleast_1d,
                    sqrt, ceil, floor, array, compress,
                    pi, exp, ravel, count_nonzero, sin, cos, arctan2, hypot)
-# https://github.com/numpy/numpy/pull/10850
-if np.__version__ < LooseVersion('1.15'):
+if NumpyVersion(np.__version__) < '1.15.0':
     from numpy.testing.decorators import setastest
 else:
     from numpy.testing import setastest
