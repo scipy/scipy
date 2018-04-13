@@ -390,14 +390,6 @@ class dok_matrix(spmatrix, IndexMixin, dict):
 
     copy.__doc__ = spmatrix.copy.__doc__
 
-    def getrow(self, i):
-        """Returns the i-th row as a (1 x n) DOK matrix."""
-        return self._get_intXslice(i, slice(0, self.shape[1]))
-
-    def getcol(self, j):
-        """Returns the j-th column as a (m x 1) DOK matrix."""
-        return self._get_sliceXint(slice(0, self.shape[0]), j)
-
     def tocoo(self, copy=False):
         from .coo import coo_matrix
         if self.nnz == 0:
