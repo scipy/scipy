@@ -117,26 +117,26 @@ class IndexMixin(object):
 
         if isintlike(row):
             row = int(row)
+            if row < -M or row >= M:
+                raise IndexError('row index (%d) out of range' % row)
             if row < 0:
                 row += M
-            if row < 0 or row >= M:
-                raise IndexError('row index (%d) out of range' % row)
         elif not isinstance(row, slice):
             row = self._asindices(row, M)
 
         if isintlike(col):
             col = int(col)
+            if col < -N or col >= N:
+                raise IndexError('column index (%d) out of range' % col)
             if col < 0:
                 col += N
-            if col < 0 or col >= N:
-                raise IndexError('column index (%d) out of range' % col)
         elif not isinstance(col, slice):
             col = self._asindices(col, N)
 
         return row, col
 
-    def _asindices(self, idx, N):
-        """Convert `idx` to a valid index for an axis with length N.
+    def _asindices(self, idx, length):
+        """Convert `idx` to a valid index for an axis with a given length.
 
         Subclasses that need special validation can override this method.
         """
@@ -153,16 +153,16 @@ class IndexMixin(object):
 
         # Check bounds
         max_indx = x.max()
-        if max_indx >= N:
+        if max_indx >= length:
             raise IndexError('index (%d) out of range' % max_indx)
 
         min_indx = x.min()
         if min_indx < 0:
-            if min_indx < -N:
-                raise IndexError('index (%d) out of range' % (N + min_indx))
+            if min_indx < -length:
+                raise IndexError('index (%d) out of range' % min_indx)
             if x is idx or not x.flags.owndata:
                 x = x.copy()
-            x[x < 0] += N
+            x[x < 0] += length
         return x
 
     def getrow(self, i):
@@ -170,10 +170,10 @@ class IndexMixin(object):
         """
         M, N = self.shape
         i = int(i)
+        if i < -M or i >= M:
+            raise IndexError('index (%d) out of range' % i)
         if i < 0:
             i += M
-        if i < 0 or i >= M:
-            raise IndexError('index (%d) out of range' % i)
         return self._get_intXslice(i, slice(None))
 
     def getcol(self, i):
@@ -181,10 +181,10 @@ class IndexMixin(object):
         """
         M, N = self.shape
         i = int(i)
+        if i < -N or i >= N:
+            raise IndexError('index (%d) out of range' % i)
         if i < 0:
             i += N
-        if i < 0 or i >= N:
-            raise IndexError('index (%d) out of range' % i)
         return self._get_sliceXint(slice(None), i)
 
     def _get_intXint(self, row, col):
@@ -232,7 +232,7 @@ class IndexMixin(object):
 
 def _unpack_index(index):
     """ Parse index. Always return a tuple of the form (row, col).
-    Where row/col is a integer, slice, or array of integers.
+    Valid type for row/col is integer, slice, or array of integers.
     """
     # First, check if indexing with single boolean matrix.
     from .base import spmatrix, isspmatrix
@@ -277,7 +277,10 @@ def _check_ellipsis(index):
     if not isinstance(index, tuple):
         return index
 
-    # Find first ellipsis
+    # TODO: Deprecate this multiple-ellipsis handling,
+    #       as numpy no longer supports it.
+
+    # Find first ellipsis.
     for j, v in enumerate(index):
         if v is Ellipsis:
             first_ellipsis = j
