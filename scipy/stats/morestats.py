@@ -3,13 +3,18 @@ from __future__ import division, print_function, absolute_import
 import math
 import warnings
 from collections import namedtuple
+from distutils.version import LooseVersion
 
 import numpy as np
 from numpy import (isscalar, r_, log, around, unique, asarray,
                    zeros, arange, sort, amin, amax, any, atleast_1d,
                    sqrt, ceil, floor, array, compress,
                    pi, exp, ravel, count_nonzero, sin, cos, arctan2, hypot)
-from numpy.testing.decorators import setastest
+# https://github.com/numpy/numpy/pull/10850
+if np.__version__ < LooseVersion('1.15'):
+    from numpy.testing.decorators import setastest
+else:
+    from numpy.testing import setastest
 
 from scipy._lib.six import string_types
 from scipy import optimize
