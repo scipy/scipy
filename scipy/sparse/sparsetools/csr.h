@@ -1311,7 +1311,8 @@ void csr_row_slice(const I start,
 
 
 /*
- * Slice columns given as an array of indices, pass 1.
+ * Slice columns given as an array of indices (pass 1).
+ * This pass counts idx entries and computes a new indptr.
  *
  * Input Arguments:
  *   I  n_idx           - number of indices to slice
@@ -1344,7 +1345,7 @@ void csr_column_index1(const I n_idx,
 
     // Compute new indptr
     I new_nnz = 0;
-    Bp[0] = new_nnz;
+    Bp[0] = 0;
     for(I i = 0; i < n_row; i++){
         for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
             new_nnz += col_offsets[Aj[jj]];
@@ -1353,16 +1354,15 @@ void csr_column_index1(const I n_idx,
     }
 
     // cumsum in-place
-    I cumsum = col_offsets[0];
     for(I j = 1; j < n_col; j++){
-        cumsum += col_offsets[j];
-        col_offsets[j] = cumsum;
+        col_offsets[j] += col_offsets[j - 1];
     }
 }
 
 
 /*
- * Slice columns given as an array of indices, pass 2.
+ * Slice columns given as an array of indices (pass 2).
+ * This pass populates indices/data entries for selected columns.
  *
  * Input Arguments:
  *   I  col_order[n_idx]   - order of col indices
@@ -1389,7 +1389,7 @@ void csr_column_index2(const I col_order[],
     for(I jj = 0; jj < nnz; jj++){
         const I j = Aj[jj];
         const I offset = col_offsets[j];
-        const I prev_offset = (j==0) ? 0 : col_offsets[j-1];
+        const I prev_offset = j == 0 ? 0 : col_offsets[j-1];
         if (offset != prev_offset) {
             const T v = Ax[jj];
             for(I k = prev_offset; k < offset; k++){
