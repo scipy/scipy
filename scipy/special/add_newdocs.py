@@ -6535,7 +6535,7 @@ add_newdoc("scipy.special", "sindg",
 
 add_newdoc("scipy.special", "smirnov",
     r"""
-    smirnov(n, x)
+    smirnov(n, d)
 
     Kolmogorov-Smirnov complementary cumulative distribution function
 
@@ -6544,19 +6544,19 @@ add_newdoc("scipy.special", "smirnov",
     equality between an empirical and a theoretical distribution. It
     is equal to the probability that the maximum difference between a
     theoretical distribution and an empirical one based on `n` samples
-    is greater than x.
+    is greater than d.
 
     Parameters
     ----------
     n : int
       Number of samples
-    x : float array_like
+    d : float array_like
       Deviation between the ECDF and the CDF
 
     Returns
     -------
     float
-        The value(s) of smirnov(n, x), Prob(Dn >= x)
+        The value(s) of smirnov(n, d), Prob(Dn >= d)
 
     See Also
     --------
@@ -6627,7 +6627,7 @@ add_newdoc("scipy.special", "smirnov",
 
 add_newdoc("scipy.special", "smirnovc",
     """
-    smirnovc(n, x)
+    smirnovc(n, d)
 
     Kolmogorov-Smirnov one-sided cumulative distribution function
 
@@ -6636,19 +6636,19 @@ add_newdoc("scipy.special", "smirnovc",
     equality between an empirical and a theoretical distribution. It
     is equal to the probability that the maximum difference between a
     theoretical distribution and an empirical one based on `n` samples
-    is less than or equal to x.
+    is less than or equal to d.
 
     Parameters
     ----------
     n : int
       Number of samples
-    x : float array_like
+    d : float array_like
       Deviation between the ECDF and the CDF
 
     Returns
     -------
     float
-        The value(s) of smirnovc(n, x), Prob(Dn <= x)
+        The value(s) of smirnovc(n, d), Prob(Dn <= d)
 
     See Also
     --------
@@ -6665,7 +6665,7 @@ add_newdoc("scipy.special", "smirnovi",
 
     Inverse to `smirnov`
 
-    Returns `x` such that ``smirnov(n, x) = p``, the critical value.
+    Returns `d` such that ``smirnov(n, d) = p``, the critical value.
     corresponding to `p`
 
     Parameters
@@ -6694,7 +6694,7 @@ add_newdoc("scipy.special", "smirnovci",
 
     Inverse to `smirnovc`
 
-    Returns `x` such that ``smirnovc(n, x) = p``.
+    Returns `d` such that ``smirnovc(n, d) = p``.
 
     Parameters
     ----------
@@ -6719,18 +6719,18 @@ add_newdoc("scipy.special", "smirnovci",
 
 add_newdoc("scipy.special", "smirnovp",
     """
-    smirnovp(n, x)
+    smirnovp(n, d)
 
     Derivative of `smirnov`.
 
-    As ``smirnov(n, x)`` is the Survivor Function, ``smirnovp(n, x)`` is the negative of
-    the PDF at that value of `x`.
+    As ``smirnov(n, d)`` is the Survivor Function, ``smirnovp(n, d)`` is the negative of
+    the PDF at that value of `d`.
 
     Parameters
     ----------
     n : int
       Number of samples
-    x : float array_like
+    d : float array_like
       Deviation between the ECDF and the CDF
 
     Returns

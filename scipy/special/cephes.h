@@ -129,10 +129,10 @@ extern double yn(int n, double x);
 extern double zeta(double x, double q);
 extern double zetac(double x);
 
-extern double smirnov(int n, double x);
+extern double smirnov(int n, double d);
 extern double smirnovi(int n, double p);
-extern double smirnovp(int n, double x);
-extern double smirnovc(int n, double p);
+extern double smirnovp(int n, double d);
+extern double smirnovc(int n, double d);
 extern double smirnovci(int n, double p);
 extern double kolmogorov(double x);
 extern double kolmogi(double p);
