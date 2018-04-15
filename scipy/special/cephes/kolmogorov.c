@@ -90,7 +90,6 @@ const int SMIRNOV_MAX_COMPUTE_N = 1000000;
 #endif
 
 /* from cephes constants */
-extern double MAXLOG;
 extern double MINLOG;
 
 /* exp() of anything below this returns 0 */
