@@ -350,6 +350,9 @@ def deco(name):
         return f(*args, **kwargs)
 
     wrapped.__name__ = name
+    wrapped.__module__ = 'scipy.signal'
+    if hasattr(f, '__qualname__'):
+        wrapped.__qualname__ = f.__qualname__
 
     if f.__doc__ is not None:
         lines = f.__doc__.splitlines()
