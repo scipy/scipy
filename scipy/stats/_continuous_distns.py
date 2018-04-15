@@ -14,13 +14,13 @@ from scipy import optimize
 from scipy import integrate
 import scipy.special as sc
 from scipy._lib._numpy_compat import broadcast_to
+from scipy._lib._util import _lazyselect, _lazywhere
 
 from . import _stats
 from ._tukeylambda_stats import (tukeylambda_variance as _tlvar,
                                  tukeylambda_kurtosis as _tlkurt)
 from ._distn_infrastructure import (get_distribution_names, _kurtosis,
-                                    _lazyselect, _lazywhere, _ncx2_cdf,
-                                    _ncx2_log_pdf, _ncx2_pdf,
+                                    _ncx2_cdf, _ncx2_log_pdf, _ncx2_pdf,
                                     rv_continuous, _skew, valarray)
 from ._constants import _XMIN, _EULER, _ZETA3, _XMAX, _LOGXMAX
 

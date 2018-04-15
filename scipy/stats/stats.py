@@ -167,11 +167,11 @@ from numpy import array, asarray, ma, zeros
 
 from scipy._lib.six import callable, string_types
 from scipy._lib._version import NumpyVersion
+from scipy._lib._util import _lazywhere
 import scipy.special as special
 import scipy.linalg as linalg
 from . import distributions
 from . import mstats_basic
-from ._distn_infrastructure import _lazywhere
 from ._stats_mstats_common import _find_repeats, linregress, theilslopes
 from ._stats import _kendall_dis, _toint64, _weightedrankedtau
 
