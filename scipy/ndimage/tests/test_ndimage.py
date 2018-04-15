@@ -1645,6 +1645,15 @@ class TestNdimage:
             result = out if returned is None else returned
             assert_array_almost_equal(result, [1])
 
+    def test_geometric_transform_with_string_output(self):
+        data = numpy.array([1])
+
+        def mapping(x):
+            return x
+        out = ndimage.geometric_transform(data, mapping, output='f')
+        assert_(out.dtype is numpy.dtype('f'))
+        assert_array_almost_equal(out, [1])
+
     def test_map_coordinates01(self):
         data = numpy.array([[4, 1, 3, 2],
                             [7, 6, 8, 5],
@@ -1700,6 +1709,13 @@ class TestNdimage:
             returned = ndimage.map_coordinates(data, idx, output=out)
             result = out if returned is None else returned
             assert_array_almost_equal(result, expected)
+
+    def test_map_coordinates_with_string_output(self):
+        data = numpy.array([[1]])
+        idx = numpy.indices(data.shape)
+        out = ndimage.map_coordinates(data, idx, output='f')
+        assert_(out.dtype is numpy.dtype('f'))
+        assert_array_almost_equal(out, [[1]])
 
     @pytest.mark.skipif('win32' in sys.platform or numpy.intp(0).itemsize < 8,
                         reason="do not run on 32 bit or windows (no sparse memory)")
@@ -1997,6 +2013,12 @@ class TestNdimage:
             returned = ndimage.affine_transform(data, [[1]], output=out)
             result = out if returned is None else returned
             assert_array_almost_equal(result, [1])
+
+    def test_affine_transform_with_string_output(self):
+        data = numpy.array([1])
+        out = ndimage.affine_transform(data, [[1]], output='f')
+        assert_(out.dtype is numpy.dtype('f'))
+        assert_array_almost_equal(out, [1])
 
     def test_shift01(self):
         data = numpy.array([1])
