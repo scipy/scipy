@@ -26,8 +26,11 @@ centroid index of the centroid closest to it.
 
 A vector v belongs to cluster i if it is closer to centroid i than
 any other centroids. If v belongs to i, we say centroid i is the
-dominating centroid of v. The k-means algorithm iteratively reclassifies
-the observations into clusters and recalculates the centroids until
+dominating centroid of v. The k-means algorithm tries to
+minimize distortion, which is defined as the sum of the squared distances
+between each observation vector and its dominating centroid. 
+This is achieved by iteratively reclassifying
+the observations into clusters and recalculating the centroids until
 a configuration is reached in which the centroids are stable. One can 
 also define a maximum number of iterations.
 
