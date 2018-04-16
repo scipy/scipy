@@ -32,10 +32,7 @@ a configuration is reached in which the distortion, defined as the
 average (non-squared) distance between the observations and their
 dominating centroids is stable. Note that the convergence criterion
 is not minimum distortion, but stable distortion. One can also define a
-maximum number of iterations. When the algorithm has
-converged, the sum of the squared distances of the observations to the
-corresponding centroids is at a local minimum. The sum of the squared
-distances is, however, not calculated at any point in the algorithm.
+maximum number of iterations.
 
 Since vector quantization is a natural application for k-means,
 information theory terminology is often used.  The centroid index
