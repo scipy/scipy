@@ -1343,7 +1343,8 @@ def pinv2(a, cond=None, rcond=None, return_rank=False, check_finite=True):
         Cutoff for 'small' singular values.
         Singular values smaller than ``rcond*largest_singular_value``
         are considered zero.
-        If None or -1, suitable machine precision is used.
+        If None or -1, it uses machine precision according to the data type
+        returned by `decomp_svd.svd`.
     return_rank : bool, optional
         if True, return the effective rank of the matrix
     check_finite : bool, optional
