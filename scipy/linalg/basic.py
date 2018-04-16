@@ -1283,6 +1283,7 @@ def pinv(a, cond=None, rcond=None, return_rank=False, check_finite=True):
         Cutoff for 'small' singular values in the least-squares solver.
         Singular values smaller than ``rcond * largest_singular_value``
         are considered zero.
+        If None, it uses machine precision of the datatype from lapack_driver.
     return_rank : bool, optional
         if True, return the effective rank of the matrix
     check_finite : bool, optional
