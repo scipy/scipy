@@ -1259,6 +1259,8 @@ def pinv(a, cond=None, rcond=None, return_rank=False, check_finite=True):
         Cutoff for 'small' singular values in the least-squares solver.
         Singular values smaller than ``rcond * largest_singular_value``
         are considered zero.
+        If None, it is set to ``np.finfo(a.dtype).eps``.
+        If `a` is an array of integers, it is set to ``np.finfo('float64').eps``.
     return_rank : bool, optional
         if True, return the effective rank of the matrix
     check_finite : bool, optional
@@ -1318,7 +1320,9 @@ def pinv2(a, cond=None, rcond=None, return_rank=False, check_finite=True):
         Cutoff for 'small' singular values.
         Singular values smaller than ``rcond*largest_singular_value``
         are considered zero.
-        If None or -1, suitable machine precision is used.
+        If None and the dtype of `a` is `np.float32`,
+        it is set to ``np.finfo('float32').eps * 1E3``.
+        Otherwise, it is set to ``np.finfo('float64').eps * 1E6``.
     return_rank : bool, optional
         if True, return the effective rank of the matrix
     check_finite : bool, optional
@@ -1385,11 +1389,12 @@ def pinvh(a, cond=None, rcond=None, lower=True, return_rank=False,
     a : (N, N) array_like
         Real symmetric or complex hermetian matrix to be pseudo-inverted
     cond, rcond : float or None
-        Cutoff for 'small' eigenvalues.
-        Singular values smaller than rcond * largest_eigenvalue are considered
-        zero.
-
-        If None or -1, suitable machine precision is used.
+        Cutoff for 'small' singular values.
+        Singular values smaller than ``rcond*largest_singular_value``
+        are considered zero.
+        If None and the dtype of `a` is `'float32'`,
+        it is set to ``np.finfo('float32').eps * 1E3``.
+        Otherwise, it is set to ``np.finfo('float64').eps * 1E6``.
     lower : bool, optional
         Whether the pertinent array data is taken from the lower or upper
         triangle of a. (Default: lower)
