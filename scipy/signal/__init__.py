@@ -330,12 +330,16 @@ from ._peak_finding import *
 from .windows import get_window  # keep this one in signal namespace
 
 
-# deal with * -> windows.* deprecation
+# deal with * -> windows.* doc-only soft-deprecation
 deprecated_windows = ('boxcar', 'triang', 'parzen', 'bohman', 'blackman',
                       'nuttall', 'blackmanharris', 'flattop', 'bartlett',
                       'barthann', 'hamming', 'kaiser', 'gaussian',
                       'general_gaussian', 'chebwin', 'slepian', 'cosine',
                       'hann', 'exponential', 'tukey')
+
+# backward compatibility imports for actually deprecated windows not
+# in the above list
+from .windows import hanning
 
 
 def deco(name):
@@ -346,6 +350,9 @@ def deco(name):
         return f(*args, **kwargs)
 
     wrapped.__name__ = name
+    wrapped.__module__ = 'scipy.signal'
+    if hasattr(f, '__qualname__'):
+        wrapped.__qualname__ = f.__qualname__
 
     if f.__doc__ is not None:
         lines = f.__doc__.splitlines()
