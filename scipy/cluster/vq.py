@@ -28,11 +28,8 @@ A vector v belongs to cluster i if it is closer to centroid i than
 any other centroids. If v belongs to i, we say centroid i is the
 dominating centroid of v. The k-means algorithm iteratively reclassifies
 the observations into clusters and recalculates the centroids until
-a configuration is reached in which the distortion, defined as the
-average (non-squared) distance between the observations and their
-dominating centroids is stable. Note that the convergence criterion
-is not minimum distortion, but stable distortion. One can also define a
-maximum number of iterations.
+a configuration is reached in which the centroids are stable. One can 
+also define a maximum number of iterations.
 
 Since vector quantization is a natural application for k-means,
 information theory terminology is often used.  The centroid index
@@ -322,13 +319,13 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True):
     Performs k-means on a set of observation vectors forming k clusters.
 
     The k-means algorithm adjusts the classification of the observations
-    into clusters and updates the cluster centroids until sufficient
-    progress cannot be made, i.e. the change in distortion since
-    the last iteration is less than some threshold. This yields
+    into clusters and updates the cluster centroids until the position of
+    the centroids is stable over successive iterations. In this 
+    implementation of the algorithm, the stability of the centroids is 
+    determined by checking the absolute value of the change in the average 
+    (non-squared) distance between the observations and their corresponding 
+    centroids against a threshold. This yields
     a code book mapping centroids to codes and vice versa.
-
-    Distortion is defined as the average (non-squared) distance
-    between the observations and the corresponding centroids.
 
     Parameters
     ----------
