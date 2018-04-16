@@ -247,9 +247,15 @@ Raw Statistical Functions
    chndtrinc    -- Inverse to `chndtr` vs `nc`
    chndtrix     -- Inverse to `chndtr` vs `x`
    smirnov      -- Kolmogorov-Smirnov complementary cumulative distribution function
+   smirnovc     -- Kolmogorov-Smirnov cumulative distribution function
    smirnovi     -- Inverse to `smirnov`
+   smirnovci    -- Inverse to `smirnovc`
+   smirnovp     -- Derivative of `smirnov`
    kolmogorov   -- Complementary cumulative distribution function of Kolmogorov distribution
-   kolmogi      -- Inverse function to kolmogorov
+   kolmogi      -- Inverse function to `kolmogorov`
+   kolmogp      -- Derivative of `kolmogorov`
+   kolmogc      -- Cumulative distribution function of Kolmogorov distribution
+   kolmogci     -- Inverse function to `kolmogc`
    tklmbda      -- Tukey-Lambda cumulative distribution function
    logit        -- Logit ufunc for ndarrays.
    expit        -- Expit ufunc for ndarrays.

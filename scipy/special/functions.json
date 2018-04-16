@@ -846,9 +846,24 @@
             "cbesk_wrap_real_int": "id->d"
         }
     },
+    "kolmogc": {
+        "cephes.h": {
+            "kolmogc": "d->d"
+        }
+    },
+    "kolmogci": {
+        "cephes.h": {
+            "kolmogci": "d->d"
+        }
+    },
     "kolmogi": {
         "cephes.h": {
             "kolmogi": "d->d"
+        }
+    },
+    "kolmogp": {
+        "cephes.h": {
+            "kolmogp": "d->d"
         }
     },
     "kolmogorov": {
@@ -1246,12 +1261,36 @@
             "smirnov": "id->d"
         }
     },
+    "smirnovc": {
+        "_legacy.pxd": {
+            "smirnovc_unsafe": "dd->d"
+        },
+        "cephes.h": {
+            "smirnovc": "id->d"
+        }
+    },
+    "smirnovci": {
+        "_legacy.pxd": {
+            "smirnovci_unsafe": "dd->d"
+        },
+        "cephes.h": {
+            "smirnovci": "id->d"
+        }
+    },
     "smirnovi": {
         "_legacy.pxd": {
             "smirnovi_unsafe": "dd->d"
         },
         "cephes.h": {
             "smirnovi": "id->d"
+        }
+    },
+    "smirnovp": {
+        "_legacy.pxd": {
+            "smirnovp_unsafe": "dd->d"
+        },
+        "cephes.h": {
+            "smirnovp": "id->d"
         }
     },
     "spence": {
