@@ -372,7 +372,9 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True):
     distortion : float
        The mean (non-squared) Euclidean distance
        between the observations passed and the
-       centroids generated.
+       centroids generated. Note the difference to the standard definition of
+       distortion in the context of the K-means algorithm, which is the sum 
+       of the squared distances.
 
     See Also
     --------
