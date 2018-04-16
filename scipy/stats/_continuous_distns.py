@@ -41,11 +41,20 @@ class ksone_gen(rv_continuous):
     %(default)s
 
     """
+    def _pdf(self, x, n):
+        return -sc.smirnovp(n, x)
+
     def _cdf(self, x, n):
-        return 1.0 - sc.smirnov(n, x)
+        return sc.smirnovc(n, x)
+
+    def _sf(self, x, n):
+        return sc.smirnov(n, x)
 
     def _ppf(self, q, n):
-        return sc.smirnovi(n, 1.0 - q)
+        return sc.smirnovci(n, q)
+
+    def _isf(self, q, n):
+        return sc.smirnovi(n, q)
 
 
 ksone = ksone_gen(a=0.0, name='ksone')
@@ -57,14 +66,20 @@ class kstwobign_gen(rv_continuous):
     %(default)s
 
     """
+    def _pdf(self, x):
+        return -sc.kolmogp(x)
+
     def _cdf(self, x):
-        return 1.0 - sc.kolmogorov(x)
+        return sc.kolmogc(x)
 
     def _sf(self, x):
         return sc.kolmogorov(x)
 
     def _ppf(self, q):
-        return sc.kolmogi(1.0 - q)
+        return sc.kolmogci(q)
+
+    def _isf(self, q):
+        return sc.kolmogi(q)
 
 
 kstwobign = kstwobign_gen(a=0.0, name='kstwobign')
