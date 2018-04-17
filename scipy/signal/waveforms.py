@@ -391,7 +391,7 @@ def chirp(t, f0, t1, f1, method='linear', phi=0, vertex_zero=True):
     >>> ff, tt, Sxx = spectrogram(w, fs=fs, noverlap=256, nperseg=512,
     ...                           nfft=2048)
     >>> plt.pcolormesh(tt, ff[:513], Sxx[:513], cmap='gray_r')
-    >>> plt.title('Quadratic Chirp, f(0)=2500, f(10)=250\\n' +
+    >>> plt.title('Quadratic Chirp, f(0)=1500, f(10)=250\\n' +
     ...           '(vertex_zero=False)')
     >>> plt.xlabel('t (sec)')
     >>> plt.ylabel('Frequency (Hz)')
