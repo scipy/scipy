@@ -326,7 +326,7 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True):
     the centroids is stable over successive iterations. In this 
     implementation of the algorithm, the stability of the centroids is 
     determined by comparing the absolute value of the change in the average 
-    (non-squared) distance between the observations and their corresponding 
+    Euclidean distance between the observations and their corresponding 
     centroids against a threshold. This yields
     a code book mapping centroids to codes and vice versa.
 
