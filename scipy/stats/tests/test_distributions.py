@@ -8,9 +8,9 @@ import re
 import sys
 import pickle
 
-from numpy.testing import (assert_equal,
-    assert_array_equal, assert_almost_equal, assert_array_almost_equal,
-    assert_allclose, assert_, assert_warns)
+from numpy.testing import (assert_equal, assert_array_equal,
+                           assert_almost_equal, assert_array_almost_equal,
+                           assert_allclose, assert_, assert_warns)
 import pytest
 from pytest import raises as assert_raises
 from scipy._lib._numpy_compat import suppress_warnings
@@ -43,9 +43,10 @@ dists = ['uniform', 'norm', 'lognorm', 'expon', 'beta',
          'halflogistic', 'fatiguelife', 'foldnorm', 'ncx2', 't', 'nct',
          'weibull_min', 'weibull_max', 'dweibull', 'maxwell', 'rayleigh',
          'genlogistic', 'logistic', 'gumbel_l', 'gumbel_r', 'gompertz',
-         'hypsecant', 'laplace', 'reciprocal', 'trapz', 'triang', 'tukeylambda',
-         'vonmises', 'vonmises_line', 'pearson3', 'gennorm', 'halfgennorm',
-         'rice', 'kappa4', 'kappa3', 'truncnorm', 'argus', 'crystalball']
+         'hypsecant', 'laplace', 'reciprocal', 'trapz', 'triang',
+         'tukeylambda', 'vonmises', 'vonmises_line', 'pearson3', 'gennorm',
+         'halfgennorm', 'rice', 'kappa4', 'kappa3', 'truncnorm', 'argus',
+         'crystalball']
 
 
 def _assert_hasattr(a, b, msg=None):
@@ -138,10 +139,11 @@ def test_vonmises_numerical():
     assert_almost_equal(vm.cdf(0), 0.5)
 
 
-@pytest.mark.parametrize('dist', ['alpha', 'betaprime', 'burr', 'burr12',
-             'fatiguelife', 'invgamma', 'invgauss', 'invweibull',
-             'johnsonsb', 'levy', 'levy_l', 'lognorm', 'gilbrat',
-             'powerlognorm', 'rayleigh', 'wald'])
+@pytest.mark.parametrize('dist',
+                         ['alpha', 'betaprime', 'burr', 'burr12',
+                          'fatiguelife', 'invgamma', 'invgauss', 'invweibull',
+                          'johnsonsb', 'levy', 'levy_l', 'lognorm', 'gilbrat',
+                          'powerlognorm', 'rayleigh', 'wald'])
 def test_support(dist):
     """gh-6235"""
     dct = dict(distcont)
@@ -390,7 +392,9 @@ class TestPlanck(object):
 
     def test_sf(self):
         vals = stats.planck.sf([1, 2, 3], 5.)
-        expected = array([4.5399929762484854e-05, 3.0590232050182579e-07, 2.0611536224385579e-09])
+        expected = array([4.5399929762484854e-05,
+                          3.0590232050182579e-07,
+                          2.0611536224385579e-09])
         assert_array_almost_equal(vals, expected)
 
     def test_logsf(self):
@@ -1424,6 +1428,7 @@ class TestChi2(object):
         assert_almost_equal(stats.chi2.pdf(100, 100), 0.028162503162596778,
                             decimal=14)
 
+
 class TestGumbelL(object):
     # gh-6228
     def test_cdf_ppf(self):
@@ -2138,18 +2143,18 @@ class TestExpect(object):
         lo, hi = 0, 113
         res = stats.randint.expect(lambda x: x, (lo, hi))
         assert_allclose(res,
-            sum(_ for _ in range(lo, hi)) / (hi - lo), atol=1e-15)
+                        sum(_ for _ in range(lo, hi)) / (hi - lo), atol=1e-15)
 
     def test_zipf(self):
         # Test that there is no infinite loop even if the sum diverges
         assert_warns(RuntimeWarning, stats.zipf.expect,
-            lambda x: x**2, (2,))
+                     lambda x: x**2, (2,))
 
     def test_discrete_kwds(self):
         # check that discrete expect accepts keywords to control the summation
         n0 = stats.poisson.expect(lambda x: 1, args=(2,))
         n1 = stats.poisson.expect(lambda x: 1, args=(2,),
-            maxcount=1001, chunksize=32, tolerance=1e-8)
+                                  maxcount=1001, chunksize=32, tolerance=1e-8)
         assert_almost_equal(n0, n1, decimal=14)
 
     def test_moment(self):
@@ -2427,8 +2432,10 @@ class TestTrapz(object):
         # edge cases
         assert_almost_equal(stats.trapz.pdf(0, 0, 0), 2)
         assert_almost_equal(stats.trapz.pdf(1, 1, 1), 2)
-        assert_almost_equal(stats.trapz.pdf(0.5, 0, 0.8), 1.11111111111111111)
-        assert_almost_equal(stats.trapz.pdf(0.5, 0.2, 1.0), 1.11111111111111111)
+        assert_almost_equal(stats.trapz.pdf(0.5, 0, 0.8),
+                            1.11111111111111111)
+        assert_almost_equal(stats.trapz.pdf(0.5, 0.2, 1.0),
+                            1.11111111111111111)
 
         # straightforward case
         assert_almost_equal(stats.trapz.pdf(0.1, 0.2, 0.8), 0.625)
@@ -2476,6 +2483,7 @@ class TestTriang(object):
             assert_equal(stats.triang.cdf(0., 1.), 0.)
             assert_equal(stats.triang.cdf(0.5, 1.), 0.25)
             assert_equal(stats.triang.cdf(1., 1.), 1)
+
 
 def test_540_567():
     # test for nan returned in tickets 540, 567
@@ -2712,7 +2720,8 @@ def test_ksone_fit_freeze():
         olderr = np.seterr(invalid='ignore')
         with suppress_warnings() as sup:
             sup.filter(IntegrationWarning,
-                       "The maximum number of subdivisions .50. has been achieved.")
+                       "The maximum number of subdivisions .50. has been "
+                       "achieved.")
             sup.filter(RuntimeWarning,
                        "floating point number truncated to an integer")
             stats.ksone.fit(d)
@@ -3208,17 +3217,19 @@ def test_burr12_ppf_small_arg():
     quantile = stats.burr12.ppf(prob, 2, 3)
     # The expected quantile was computed using mpmath:
     #   >>> import mpmath
+    #   >>> mpmath.mp.dps = 100
     #   >>> prob = mpmath.mpf('1e-16')
     #   >>> c = mpmath.mpf(2)
     #   >>> d = mpmath.mpf(3)
-    #   >>> float(((1-q)**(-1/d) - 1)**(1/c))
+    #   >>> float(((1-prob)**(-1/d) - 1)**(1/c))
     #   5.7735026918962575e-09
     assert_allclose(quantile, 5.7735026918962575e-09)
 
 
 def test_crystalball_function():
     """
-    All values are calculated using the independent implementation of the ROOT framework (see https://root.cern.ch/).
+    All values are calculated using the independent implementation of the
+    ROOT framework (see https://root.cern.ch/).
     Corresponding ROOT code is given in the comments.
     """
     X = np.linspace(-5.0, 5.0, 21)[:-1]
@@ -3243,8 +3254,10 @@ def test_crystalball_function():
                          0.000131497, 1.57051e-05])
     assert_allclose(expected, calculated, rtol=0.001)
 
-    # for(float x = -5.0; x < 5.0; x+=0.5)
-    #   std::cout << ROOT::Math::crystalball_pdf(x, 2.0, 3.0, 2.0, 0.5) << ", ";
+    # for(float x = -5.0; x < 5.0; x+=0.5) {
+    #   std::cout << ROOT::Math::crystalball_pdf(x, 2.0, 3.0, 2.0, 0.5);
+    #   std::cout << ", ";
+    # }
     calculated = stats.crystalball.pdf(X, beta=2.0, m=3.0, loc=0.5, scale=2.0)
     expected = np.array([0.00785921, 0.0111902, 0.0167037, 0.0265249,
                          0.0423866, 0.0636298, 0.0897324, 0.118876, 0.147944,
@@ -3272,8 +3285,10 @@ def test_crystalball_function():
                          0.999997])
     assert_allclose(expected, calculated, rtol=0.001)
 
-    # for(float x = -5.0; x < 5.0; x+=0.5)
-    #   std::cout << ROOT::Math::crystalball_cdf(x, 2.0, 3.0, 2.0, 0.5) << ", ";
+    # for(float x = -5.0; x < 5.0; x+=0.5) {
+    #   std::cout << ROOT::Math::crystalball_cdf(x, 2.0, 3.0, 2.0, 0.5);
+    #   std::cout << ", ";
+    # }
     calculated = stats.crystalball.cdf(X, beta=2.0, m=3.0, loc=0.5, scale=2.0)
     expected = np.array([0.0176832, 0.0223803, 0.0292315, 0.0397873, 0.0567945,
                          0.0830763, 0.121242, 0.173323, 0.24011, 0.320592,
@@ -3284,7 +3299,8 @@ def test_crystalball_function():
 
 def test_crystalball_function_moments():
     """
-    All values are calculated using the pdf formula and the integrate function of Mathematica
+    All values are calculated using the pdf formula and the integrate function
+    of Mathematica
     """
     # The Last two (alpha, n) pairs test the special case n == alpha**2
     beta = np.array([2.0, 1.0, 3.0, 2.0, 3.0])
@@ -3297,34 +3313,42 @@ def test_crystalball_function_moments():
 
     # calculated using wolframalpha.com
     # e.g. for beta = 2 and m = 3 we calculate the norm like this:
-    # integrate exp(-x^2/2) from -2 to infinity + integrate (3/2)^3*exp(-2^2/2)*(3/2-2-x)^(-3) from -infinity to -2
+    #   integrate exp(-x^2/2) from -2 to infinity +
+    #   integrate (3/2)^3*exp(-2^2/2)*(3/2-2-x)^(-3) from -infinity to -2
     norm = np.array([2.5511, 3.01873, 2.51065, 2.53983, 2.507410455])
 
-    expected_1th_moment = np.array([-0.21992, -3.03265, np.inf, -0.135335, -0.003174]) / norm
+    a = np.array([-0.21992, -3.03265, np.inf, -0.135335, -0.003174])
+    expected_1th_moment = a / norm
     calculated_1th_moment = stats.crystalball._munp(1, beta, m)
     assert_allclose(expected_1th_moment, calculated_1th_moment, rtol=0.001)
 
-    expected_2th_moment = np.array([np.inf, np.inf, np.inf, 3.2616, 2.519908]) / norm
+    a = np.array([np.inf, np.inf, np.inf, 3.2616, 2.519908])
+    expected_2th_moment = a / norm
     calculated_2th_moment = stats.crystalball._munp(2, beta, m)
     assert_allclose(expected_2th_moment, calculated_2th_moment, rtol=0.001)
 
-    expected_3th_moment = np.array([np.inf, np.inf, np.inf, np.inf, -0.0577668]) / norm
+    a = np.array([np.inf, np.inf, np.inf, np.inf, -0.0577668])
+    expected_3th_moment = a / norm
     calculated_3th_moment = stats.crystalball._munp(3, beta, m)
     assert_allclose(expected_3th_moment, calculated_3th_moment, rtol=0.001)
 
-    expected_4th_moment = np.array([np.inf, np.inf, np.inf, np.inf, 7.78468]) / norm
+    a = np.array([np.inf, np.inf, np.inf, np.inf, 7.78468])
+    expected_4th_moment = a / norm
     calculated_4th_moment = stats.crystalball._munp(4, beta, m)
     assert_allclose(expected_4th_moment, calculated_4th_moment, rtol=0.001)
 
-    expected_5th_moment = np.array([np.inf, np.inf, np.inf, np.inf, -1.31086]) / norm
+    a = np.array([np.inf, np.inf, np.inf, np.inf, -1.31086])
+    expected_5th_moment = a / norm
     calculated_5th_moment = stats.crystalball._munp(5, beta, m)
     assert_allclose(expected_5th_moment, calculated_5th_moment, rtol=0.001)
 
 
 def test_argus_function():
     # There is no usable reference implementation.
-    # (RooFit implementation returns unreasonable results which are not normalized correctly)
-    # Instead we do some tests if the distribution behaves as expected for different shapes and scales
+    # (RootFit implementation returns unreasonable results which are not
+    # normalized correctly.)
+    # Instead we do some tests if the distribution behaves as expected for
+    # different shapes and scales.
     for i in range(1, 10):
         for j in range(1, 10):
             assert_equal(stats.argus.pdf(i + 0.001, chi=j, scale=i), 0.0)
@@ -3334,7 +3358,8 @@ def test_argus_function():
 
     for i in range(1, 10):
         assert_equal(stats.argus.cdf(1.0, chi=i), 1.0)
-        assert_equal(stats.argus.cdf(1.0, chi=i), 1.0 - stats.argus.sf(1.0, chi=i))
+        assert_equal(stats.argus.cdf(1.0, chi=i),
+                     1.0 - stats.argus.sf(1.0, chi=i))
 
 
 class TestHistogram(object):
@@ -3350,7 +3375,7 @@ class TestHistogram(object):
                                   6, 6, 6, 6, 7, 7, 7, 8, 8, 9], bins=8)
         self.template = stats.rv_histogram(histogram)
 
-        data = stats.norm.rvs(loc=1.0, scale=2.5,size=10000, random_state=123)
+        data = stats.norm.rvs(loc=1.0, scale=2.5, size=10000, random_state=123)
         norm_histogram = np.histogram(data, bins=50)
         self.norm_template = stats.rv_histogram(norm_histogram)
 
@@ -3432,4 +3457,3 @@ class TestHistogram(object):
     def test_entropy(self):
         assert_allclose(self.norm_template.entropy(),
                         stats.norm.entropy(loc=1.0, scale=2.5), rtol=0.05)
-
