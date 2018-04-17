@@ -3232,9 +3232,10 @@ class norminvgauss_gen(rv_continuous):
 
     %(after_notes)s
 
-    A normal inverse Gaussian random variable with parameters `a` and `b` can
-    be expressed  as `X = b * V + sqrt(V) * X` where `X` is `norm(0,1)`
-    and `V` is `invgauss(mu=1/sqrt(a**2 - b**2))`. This representation is used
+    A normal inverse Gaussian random variable `Y` with parameters `a` and `b`
+    can be expressed as a normal mean-variance mixture:
+    `Y = b * V + sqrt(V) * X` where `X` is `norm(0,1)` and `V` is
+    `invgauss(mu=1/sqrt(a**2 - b**2))`. This representation is used
     to generate random variates.
 
     References
