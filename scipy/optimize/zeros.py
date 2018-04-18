@@ -3,13 +3,13 @@ from __future__ import division, print_function, absolute_import
 import warnings
 
 from . import _zeros
-from numpy import finfo, sign, sqrt
+from numpy import finfo, isfinite, abs
 
 _iter = 100
 _xtol = 2e-12
 _rtol = 4*finfo(float).eps
 
-__all__ = ['newton', 'bisect', 'ridder', 'brentq', 'brenth']
+__all__ = ['newton', 'sidi', 'bisect', 'ridder', 'brentq', 'brenth']
 
 CONVERGED = 'converged'
 SIGNERR = 'sign error'
@@ -204,6 +204,198 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
             q1 = func(p1, *args)
     msg = "Failed to converge after %d iterations, value is %s" % (maxiter, p)
     raise RuntimeError(msg)
+
+
+def _withinTolerance(x, y, atol, rtol):
+    diff = abs(x - y)
+    result = (diff <= (atol + rtol * abs(y)))
+    return result
+
+
+# Sidi's method
+def sidi(f, a, b, args=(), k=2,
+         xtol=_xtol, rtol=_rtol, maxiter=_iter,
+         full_output=False, disp=True):
+    """
+    Find a zero using Sidi's method.
+
+    Uses Sidi's method to find a zero of the function `f` on
+    the sign changing interval [a , b].  The method is a generalization
+    of the secant method and uses higher order divided differences and
+    Newton's interpolation formula to construct successive aprpoximations
+    to the root.
+
+    [Sidi2008]_ provides the description of the algorithm.
+    When applying the method with a specific k to a function
+    with (k+1) continuous derivatives on the interval [a, b],
+    the order of convergence is s_k.
+    s_1, s_2, s_3, ... = 1.618, 1.839, 1.928,...
+
+    Parameters
+    ----------
+    f : function
+        Python function returning a number.  The function :math:`f`
+        must be continuous, and :math:`f(a)` and :math:`f(b)` must
+        have opposite signs.
+    a : number
+        One end of the bracketing interval :math:`[a, b]`.
+    b : number
+        The other end of the bracketing interval :math:`[a, b]`.
+    k : number
+        The degree of the method, k>=1.  The default is 2.
+        k=1 is the Secant method.  Higher degrees use more divided difference terms.
+    xtol : number, optional
+        The computed root ``x0`` will satisfy ``np.allclose(x, x0,
+        atol=xtol, rtol=rtol)``, where ``x`` is the exact root. The
+        parameter must be nonnegative.
+    rtol : number, optional
+        The computed root ``x0`` will satisfy ``np.allclose(x, x0,
+        atol=xtol, rtol=rtol)``, where ``x`` is the exact root.
+    maxiter : number, optional
+        if convergence is not achieved in maxiter iterations, an error is
+        raised.  Must be >= 0.
+    args : tuple, optional
+        containing extra arguments for the function `f`.
+        `f` is called by ``apply(f, (x)+args)``.
+    full_output : bool, optional
+        If `full_output` is False, the root is returned.  If `full_output` is
+        True, the return value is ``(x, r)``, where `x` is the root, and `r` is
+        a RootResults object.
+    disp : bool, optional
+        If True, raise RuntimeError if the algorithm didn't converge.
+
+    Returns
+    -------
+    x0 : float
+        Zero of `f` between `a` and `b`.
+    r : RootResults (present if ``full_output = True``)
+        Object containing information about the convergence.  In particular,
+        ``r.converged`` is True if the routine converged.
+
+    See Also
+    --------
+    brentq, brenth, ridder, bisect, newton
+    fsolve : find zeroes in n dimensions.
+
+    Notes
+    -----
+    `f` must be continuous.  f(a) and f(b) must have opposite signs.
+
+    Examples
+    --------
+
+    >>> def f(x):
+    ...     return (x**3 - 1)  # only one real root at x = 1
+
+    >>> from scipy import optimize
+
+    >>> root = optimize.sidi(f, 0, 2)
+    >>> root
+    1.0000000000000016
+
+
+    References
+    ----------
+    .. [Sidi2008]
+       Sidi, Avram,
+       *Generalization of the secant method for nonlinear equations.*.
+       Applied Mathematics E-Notes,
+       http://eudml.org/doc/55912,
+
+    """
+    if xtol <= 0:
+        raise ValueError("xtol too small (%g <= 0)" % xtol)
+    if rtol < _rtol:
+        raise ValueError("rtol too small (%g < %g)" % (rtol, _rtol))
+    if maxiter < 1:
+        raise ValueError("maxiter must be greater than 0")
+    if b <= a:
+        raise ValueError("Invalid bracket %s" % [a, b])
+    if not isfinite(a):
+        raise ValueError("a is not finite" % a)
+    if k < 1:
+        raise ValueError("k too small (%d < %d" % (k, 2))
+    # if k >4:
+    #     raise ValueError("k too big (%d > %d" % (k, 4))
+
+    if not isinstance(args, tuple):
+        args = (args,)
+
+    function_calls = 0
+
+    fa = f(a, *args)
+    function_calls += 1
+    if fa == 0:
+        return results_c(full_output, (a, function_calls, 0,  0))
+    fb = f(b, *args)
+    function_calls += 1
+    if fb == 0:
+        return results_c(full_output, (b, function_calls, 0, 0))
+    if fa * fb > 0:
+        return results_c(full_output, (a, function_calls, 0, -1))
+
+    # Instead of keeping a full triangular array of f values and
+    # divided differences, just keep the trailing diagonal
+    # I.e. [f7, f67, f567, f4567]
+    #  -> [f8, f78=(f7-f8)/(x7-x8), f678=(f67-f78)/(x6-x8), f5678=(f567-f678)/(x5-x8)]
+    def _addXF(xx, ff, x, fx, k):
+        xx.insert(0, x)
+        ff.insert(0, fx)
+        for i in range(1, min(k+2, len(xx))):
+            ff[i] = (ff[i] - ff[i - 1]) / (xx[i] - xx[0])
+        if len(xx) > k+2:
+            xx.pop(-1)
+            ff.pop(-1)
+
+    xx = [a]
+    ff = [fa]
+    _addXF(xx, ff, b, fb, k)
+
+    for iter in range(maxiter):
+        denom = ff[1]
+        m = 1.0
+        for i in range(1, min(k+1, len(xx)-1)):
+            m *= xx[0] - xx[i]
+            denom += ff[i+1] * m
+        if denom == 0:
+            msg = "denominator was zero."
+            warnings.warn(msg, RuntimeWarning)
+            return results_c(full_output, (xx[0], function_calls, iter, -2))
+
+        delta = ff[0] / denom
+        assert isfinite(delta)
+        xn = xx[0] - delta
+        # If outside bracket, use mid-point of two most previous values
+        if not (a <= xn <= b):
+            xn = (xx[0] + xx[1])/2
+
+        if _withinTolerance(xn, xx[0], xtol, rtol):
+            return results_c(full_output, (xn, function_calls, iter, 0))
+
+        # Ensure the next value is not already in the list
+        if xn in xx:
+            # Start with the midpoint of the two most previous values.
+            # progessively look closer and closer to the most recent value.
+            for j in range(10):
+                # Linear combination (1-l)*x0 + l*x1, where l=1/2^j
+                pw2 = 2.0**j
+                xn = (pw2-1.0)/pw2 * xx[0] + 1.0/pw2 * xx[1]
+                if xn not in xx:
+                    break
+            if xn in xx:
+                msg = "Can't find unused x-value." # Hence divided differences will fail...
+                warnings.warn(msg, RuntimeWarning)
+                return results_c(full_output, (xx[0], function_calls, iter, -2))
+
+        fxn = f(xn, *args)
+        function_calls += 1
+        if fxn == 0:
+            return results_c(full_output, (xn, function_calls, iter, 0))
+        _addXF(xx, ff, xn, fxn, k)
+
+    if disp:
+        msg = "Failed to converge after %d iterations, value is %s" % (maxiter, xn)
+        raise RuntimeError(msg)
 
 
 def bisect(f, a, b, args=(),
