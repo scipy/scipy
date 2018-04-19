@@ -70,7 +70,7 @@ Tagging a release
 -----------------
 First ensure that you have set up GPG correctly.  See
 https://github.com/scipy/scipy/issues/4919 for a discussion of signing release
-tags, and http://keyring.debian.org/creating-key.html for instructions on
+tags, and https://keyring.debian.org/creating-key.html for instructions on
 creating a GPG key if you do not have one.
 
 To make your key more readily identifiable as you, consider sending your key
