@@ -7,14 +7,18 @@ from numpy import finfo, isfinite, abs
 
 _iter = 100
 _xtol = 2e-12
-_rtol = 4*finfo(float).eps
+_rtol = 4 * finfo(float).eps
 
 __all__ = ['newton', 'sidi', 'bisect', 'ridder', 'brentq', 'brenth']
 
 CONVERGED = 'converged'
 SIGNERR = 'sign error'
 CONVERR = 'convergence error'
-flag_map = {0: CONVERGED, -1: SIGNERR, -2: CONVERR}
+_ECONVERGED = 0
+_ESIGNERR = -1
+_ECONVERR = -2
+
+flag_map = {_ECONVERGED: CONVERGED, _ESIGNERR: SIGNERR, _ECONVERR: CONVERR}
 
 
 class RootResults(object):
@@ -32,6 +36,7 @@ class RootResults(object):
     flag : str
         Description of the cause of termination.
     """
+
     def __init__(self, root, iterations, function_calls, flag):
         self.root = root
         self.iterations = iterations
@@ -62,9 +67,30 @@ def results_c(full_output, r):
         return r
 
 
+def _results_select(full_output, r):
+    r"""Select from a tuple of (root, funccalls, iterations, flag)"""
+    x, funcalls, iterations, flag = r
+    if full_output:
+        results = RootResults(root=x,
+                              iterations=iterations,
+                              function_calls=funcalls,
+                              flag=flag)
+        return x, results
+    return x
+
+
+def _withinTolerance(x, y, atol, rtol):
+    diff = abs(x - y)
+    # z = max(abs(x), abs(y))
+    z = abs(y)
+    result = (diff <= (atol + rtol * z)) # /2
+    return result
+
+
 # Newton-Raphson method
 def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
-           fprime2=None):
+           fprime2=None,
+           full_output=False, disp=True):
     """
     Find a zero using the Newton-Raphson or secant method.
 
@@ -160,15 +186,19 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
     # Multiply by 1.0 to convert to floating point.  We don't use float(x0)
     # so it still works if x0 is complex.
     p0 = 1.0 * x0
+    funcalls = 0
     if fprime is not None:
-        # Newton-Rapheson method
-        for iter in range(maxiter):
+        # Newton-Raphson method
+        for itr in range(maxiter):
             fder = fprime(p0, *args)
+            funcalls += 1
             if fder == 0:
-                msg = "derivative was zero."
-                warnings.warn(msg, RuntimeWarning)
-                return p0
+                if disp:
+                    msg = "derivative was zero."
+                    warnings.warn(msg, RuntimeWarning)
+                return _results_select(full_output, (p0, funcalls, itr + 1, _ECONVERR))
             fval = func(p0, *args)
+            funcalls += 1
             newton_step = fval / fder
             if fprime2 is None:
                 # Newton step
@@ -178,72 +208,102 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
                 # Halley's method
                 p = p0 - newton_step / (1.0 - 0.5 * newton_step * fder2 / fder)
             if abs(p - p0) < tol:
-                return p
+                return _results_select(full_output, (p, funcalls, itr + 1, _ECONVERGED))
             p0 = p
     else:
         # Secant method
         if x0 >= 0:
-            p1 = x0*(1 + 1e-4) + 1e-4
+            p1 = x0 * (1 + 1e-4) + 1e-4
         else:
-            p1 = x0*(1 + 1e-4) - 1e-4
+            p1 = x0 * (1 + 1e-4) - 1e-4
         q0 = func(p0, *args)
+        funcalls += 1
         q1 = func(p1, *args)
-        for iter in range(maxiter):
+        funcalls += 1
+        for itr in range(maxiter):
             if q1 == q0:
                 if p1 != p0:
-                    msg = "Tolerance of %s reached" % (p1 - p0)
-                    warnings.warn(msg, RuntimeWarning)
-                return (p1 + p0)/2.0
+                    if disp:
+                        msg = "Tolerance of %s reached" % (p1 - p0)
+                        warnings.warn(msg, RuntimeWarning)
+                    p = (p1 + p0) / 2.0
+                    return _results_select(full_output, (p, funcalls, itr + 1, _ECONVERGED))
             else:
-                p = p1 - q1*(p1 - p0)/(q1 - q0)
+                p = p1 - q1 * (p1 - p0) / (q1 - q0)
             if abs(p - p1) < tol:
-                return p
+                return _results_select(full_output, (p, funcalls, itr + 1, _ECONVERGED))
             p0 = p1
             q0 = q1
             p1 = p
             q1 = func(p1, *args)
-    msg = "Failed to converge after %d iterations, value is %s" % (maxiter, p)
-    raise RuntimeError(msg)
+            funcalls += 1
+    if disp:
+        msg = "Failed to converge after %d iterations, value is %s" % (itr + 1, p)
+        raise RuntimeError(msg)
+
+    return _results_select(full_output, (p, funcalls, itr + 1, _ECONVERR))
 
 
-def _withinTolerance(x, y, atol, rtol):
-    diff = abs(x - y)
-    result = (diff <= (atol + rtol * abs(y)))
-    return result
+# Helpers for Sidi's method
+# Update the divided differences "matrix"
+# Instead of keeping a full triangular array of f values and
+# divided differences, just keep the trailing diagonal
+# I.e. [f7, f67, f567]  ->
+#  [f8, f78=(f7-f8)/(x7-x8), f678=(f67-f78)/(x6-x8)]
+# See diagram on [Sidi2008, p118]
+def _updateDividedDiffs(xx, divdiffs, x, fx, k):
+    xx.insert(0, x)
+    divdiffs.insert(0, fx)
+    # for i in range(1, min(k + 2, len(xx))):
+    for i in range(1, len(xx)):
+        divdiffs[i] = (divdiffs[i] - divdiffs[i - 1]) / (xx[i] - xx[0])
+    if len(xx) > k + 1:
+        xx.pop(-1)
+        divdiffs.pop(-1)
+
+
+def _updateBracket(brkt, fbrkt, x, fx):
+    r"""Update [x0, x1], [f0, f1] with the knowledge that func(x) = fx"""
+    if not brkt:
+        return
+    if brkt[0] < x < brkt[1]:
+        if (fx < 0) == (fbrkt[0] < 0):
+            brkt[0] = x
+            fbrkt[0] = fx
+        else:
+            assert (fx < 0) == (fbrkt[0] > 0)
+            brkt[1] = x
+            fbrkt[1] = fx
 
 
 # Sidi's method
 def sidi(f, a, b, args=(), k=2,
-         xtol=_xtol, rtol=_rtol, maxiter=_iter,
-         full_output=False, disp=True):
+         xtol=_xtol, rtol=_rtol, maxiter=_iter, safe=True,
+         full_output=False, disp=True, debug=False):
     """
     Find a zero using Sidi's method.
 
-    Uses Sidi's method to find a zero of the function `f` on
-    the sign changing interval [a , b].  The method is a generalization
-    of the secant method and uses higher order divided differences and
-    Newton's interpolation formula to construct successive aprpoximations
-    to the root.
-
-    [Sidi2008]_ provides the description of the algorithm.
-    When applying the method with a specific k to a function
-    with (k+1) continuous derivatives on the interval [a, b],
-    the order of convergence is s_k.
-    s_1, s_2, s_3, ... = 1.618, 1.839, 1.928,...
+    Uses Sidi's method [Sidi2008] to find a zero of the function `f` on
+    the sign changing interval [a, b].  The method is a generalization
+    of the secant method.  Newton's interpolation formula constructs
+    a polynomial p_k(x) through k+1 points.  The derivative of p_k(x0)
+    is used as a replacement for f'(x0) in the Newton-Raphson formula.
+    Divided differences enable an efficient computation of p_k'(x).
 
     Parameters
     ----------
     f : function
         Python function returning a number.  The function :math:`f`
-        must be continuous, and :math:`f(a)` and :math:`f(b)` must
+        must be continuous, and :math:`f(a)` and :math:`f(b)`
         have opposite signs.
     a : number
         One end of the bracketing interval :math:`[a, b]`.
     b : number
         The other end of the bracketing interval :math:`[a, b]`.
-    k : number
-        The degree of the method, k>=1.  The default is 2.
-        k=1 is the Secant method.  Higher degrees use more divided difference terms.
+    k : number, optional
+        The degree of the interpolating polynomial, k>=1.  The default is 2.
+        k=1 is the Secant method.  Higher degrees use more divided
+        difference terms.
     xtol : number, optional
         The computed root ``x0`` will satisfy ``np.allclose(x, x0,
         atol=xtol, rtol=rtol)``, where ``x`` is the exact root. The
@@ -263,6 +323,14 @@ def sidi(f, a, b, args=(), k=2,
         a RootResults object.
     disp : bool, optional
         If True, raise RuntimeError if the algorithm didn't converge.
+    safe : bool, optional
+        If True, whenever an intermediate derivative is 0, a bisection
+        step is performsd.
+        If False and [a, b] is a bracketing interval, iterates outside
+        the interval report a convergence error.
+        If False and [a, b] is not a bracketing interval, a and b are
+        just the first two iterates, and iterations proceed until
+        either convergence, or the maximum number of iterations is exceeded.
 
     Returns
     -------
@@ -279,7 +347,14 @@ def sidi(f, a, b, args=(), k=2,
 
     Notes
     -----
-    `f` must be continuous.  f(a) and f(b) must have opposite signs.
+    `f` must be continuous.
+    If safe is True, f(a) and f(b) must have opposite signs.
+    Otherwise [a, b] is treated as a bracketing interval iff f(a)
+    and f(b) have opposite signs.
+    If f has at least (k+1) continuous derivatives, then Sidi's method
+    of degree k has approximate order of convergence s_k, where
+    s_1, s_2, s_3, ... = 1.618, 1.839, 1.928, ...
+    k=1 is just the secant method.
 
     Examples
     --------
@@ -288,10 +363,15 @@ def sidi(f, a, b, args=(), k=2,
     ...     return (x**3 - 1)  # only one real root at x = 1
 
     >>> from scipy import optimize
-
-    >>> root = optimize.sidi(f, 0, 2)
+    >>> root, results = optimize.sidi(f, 0, 2, full_output=True)
     >>> root
-    1.0000000000000016
+    1.0
+    >>> results
+          converged: True
+               flag: 'converged'
+     function_calls: 11
+         iterations: 9
+               root: 1.0
 
 
     References
@@ -309,93 +389,127 @@ def sidi(f, a, b, args=(), k=2,
         raise ValueError("rtol too small (%g < %g)" % (rtol, _rtol))
     if maxiter < 1:
         raise ValueError("maxiter must be greater than 0")
-    if b <= a:
-        raise ValueError("Invalid bracket %s" % [a, b])
     if not isfinite(a):
         raise ValueError("a is not finite" % a)
+    if not isfinite(b):
+        raise ValueError("b is not finite" % b)
     if k < 1:
-        raise ValueError("k too small (%d < %d" % (k, 2))
-    # if k >4:
-    #     raise ValueError("k too big (%d > %d" % (k, 4))
+        raise ValueError("k too small (%d < %d" % (k, 1))
+    if b <= a and safe:
+        raise ValueError("Invalid bracket %s" % [a, b])
 
     if not isinstance(args, tuple):
         args = (args,)
 
-    function_calls = 0
+    funcalls = 0
 
     fa = f(a, *args)
-    function_calls += 1
+    funcalls += 1
     if fa == 0:
-        return results_c(full_output, (a, function_calls, 0,  0))
+        return _results_select(full_output, (a, funcalls, 0, _ECONVERGED))
     fb = f(b, *args)
-    function_calls += 1
+    funcalls += 1
     if fb == 0:
-        return results_c(full_output, (b, function_calls, 0, 0))
+        return _results_select(full_output, (b, funcalls, 0, _ECONVERGED))
+
+    # Ensure starting from the endpoint with the smaller of the two absolute fvalues
+    if abs(fa) > abs(fb):
+        xvals, divdiffs = [a], [fa]
+        _updateDividedDiffs(xvals, divdiffs, b, fb, k)
+    else:
+        xvals, divdiffs = [b], [fb]
+        _updateDividedDiffs(xvals, divdiffs, a, fa, k)
+
+    # Is this a bracketing interval?
     if fa * fb > 0:
-        return results_c(full_output, (a, function_calls, 0, -1))
+        if safe:
+            return _results_select(full_output, (a, funcalls, 0, _ESIGNERR))
+        brkt = []
+        fbrk = []
+    else:
+        brkt = [a, b]
+        fbrk = [fa, fb]
 
-    # Instead of keeping a full triangular array of f values and
-    # divided differences, just keep the trailing diagonal
-    # I.e. [f7, f67, f567, f4567]
-    #  -> [f8, f78=(f7-f8)/(x7-x8), f678=(f67-f78)/(x6-x8), f5678=(f567-f678)/(x5-x8)]
-    def _addXF(xx, ff, x, fx, k):
-        xx.insert(0, x)
-        ff.insert(0, fx)
-        for i in range(1, min(k+2, len(xx))):
-            ff[i] = (ff[i] - ff[i - 1]) / (xx[i] - xx[0])
-        if len(xx) > k+2:
-            xx.pop(-1)
-            ff.pop(-1)
-
-    xx = [a]
-    ff = [fa]
-    _addXF(xx, ff, b, fb, k)
-
-    for iter in range(maxiter):
-        denom = ff[1]
+    for itr in range(maxiter):
+        denom = divdiffs[1]
         m = 1.0
-        for i in range(1, min(k+1, len(xx)-1)):
-            m *= xx[0] - xx[i]
-            denom += ff[i+1] * m
+        for i in range(1, min(k + 1, len(xvals) - 1)):
+            m *= xvals[0] - xvals[i]
+            denom += divdiffs[i + 1] * m
         if denom == 0:
-            msg = "denominator was zero."
-            warnings.warn(msg, RuntimeWarning)
-            return results_c(full_output, (xx[0], function_calls, iter, -2))
+            if not safe:
+                if disp:
+                    msg = "Denominator is zero during iteration %d, value is %s (%s)" % (
+                        itr, xvals[0], divdiffs)
+                    raise RuntimeError(msg)
+                return _results_select(full_output, (xvals[0], funcalls, itr, _ECONVERR))
+            if debug:
+                print(' DENOM0 %d :  xvals=%s, divdiffs=%s' % (itr, xvals, divdiffs))
+            xn = sum(brkt) / 2.0
+            delta = xvals[0] - xn
+        else:
+            delta = divdiffs[0] / denom
+            assert isfinite(delta)
+            xn = xvals[0] - delta
+            # If the movement was too small to register...
+            if delta != 0 and xn == xvals[0]:
+                return _results_select(full_output, (xn, funcalls, itr + 1, _ECONVERGED))
 
-        delta = ff[0] / denom
-        assert isfinite(delta)
-        xn = xx[0] - delta
-        # If outside bracket, use mid-point of two most previous values
-        if not (a <= xn <= b):
-            xn = (xx[0] + xx[1])/2
+        # If outside bracket
+        if brkt and not (brkt[0] <= xn <= brkt[1]):
+            if safe:
+                # Disallow iterates outside of [a, b]
+                # Disallow consecutive iterates to be outside the brkt
+                if not (a <= xn <= b) or not (brkt[0] <= xvals[0] <= brkt[1]):
+                    # reset
+                    if debug:
+                        print(' RESET %d :  brkt=[%25.17e, %25.17e], xn=%25.17e, xvals[0]=%25.17e' %
+                              (itr, brkt[0], brkt[1], xn, xvals[0]))
+                    xvals, divdiffs = [brkt[0]], [fbrk[0]]
+                    _updateDividedDiffs(xvals, divdiffs, brkt[1], fbrk[1], k)
+                    #  use mid-point of brkt
+                    xn = sum(brkt[:2]) / 2.0
+            elif not (a <= xn <= b):
+                # [a, b] is a containing bracket, we've gone outside
+                if disp:
+                    msg = ("Iterate %f outside bracket during iteration %d, "
+                           "last value is %s") % (xn, itr, xvals[0])
+                    raise RuntimeError(msg)
+                break
 
-        if _withinTolerance(xn, xx[0], xtol, rtol):
-            return results_c(full_output, (xn, function_calls, iter, 0))
+        if not brkt and _withinTolerance(xn, xvals[0], xtol, rtol):
+            return _results_select(full_output, (xn, funcalls, itr + 1, _ECONVERGED))
 
         # Ensure the next value is not already in the list
-        if xn in xx:
-            # Start with the midpoint of the two most previous values.
-            # progessively look closer and closer to the most recent value.
-            for j in range(10):
-                # Linear combination (1-l)*x0 + l*x1, where l=1/2^j
-                pw2 = 2.0**j
-                xn = (pw2-1.0)/pw2 * xx[0] + 1.0/pw2 * xx[1]
-                if xn not in xx:
-                    break
-            if xn in xx:
-                msg = "Can't find unused x-value." # Hence divided differences will fail...
-                warnings.warn(msg, RuntimeWarning)
-                return results_c(full_output, (xx[0], function_calls, iter, -2))
+        if safe and xn in xvals:
+            print(' INLIST %d :  xn=%27.17e  delta=%25.17e  xvals=%s, divdiffs=%s' % (itr, xn, delta, xvals, divdiffs))
+            xn = sum(brkt) / 2.0
 
         fxn = f(xn, *args)
-        function_calls += 1
+        funcalls += 1
         if fxn == 0:
-            return results_c(full_output, (xn, function_calls, iter, 0))
-        _addXF(xx, ff, xn, fxn, k)
+            return _results_select(full_output, (xn, funcalls, itr + 1, _ECONVERGED))
+
+        if debug:
+            if brkt:
+                print('I=%2d brkt=[%25.17e, %25.17e] gp=%11.4e  xn=%25.17e  [%11.4e %11.4e]  %11.4e' % (
+                  itr, brkt[0], brkt[1], brkt[1] - brkt[0], xn, xn-brkt[0], xn-brkt[1], xn-xvals[0]))
+            else:
+                print('I=%2d xvals=[%25.17e, %25.17e] gp=%11.4e  xn=%25.17e  %11.4e %11.4e' % (
+                    itr, xvals[0], xvals[1], xvals[1] - xvals[0], xn, xn - xvals[0], xn - xvals[1]))
+
+        _updateDividedDiffs(xvals, divdiffs, xn, fxn, k)
+        _updateBracket(brkt, fbrk, xn, fxn)
+        if brkt and (brkt[0] <= xn <= brkt[1]):
+            if _withinTolerance(brkt[0], brkt[1], xtol, rtol):
+                return _results_select(full_output, (xn, funcalls, itr + 1, _ECONVERGED))
 
     if disp:
-        msg = "Failed to converge after %d iterations, value is %s" % (maxiter, xn)
+        msg = "Failed to converge after %d iterations, value is %s" % (
+            itr + 1, xvals[0])
         raise RuntimeError(msg)
+
+    return _results_select(full_output, (xvals[0], funcalls, itr + 1, _ECONVERR))
 
 
 def bisect(f, a, b, args=(),
@@ -476,7 +590,7 @@ def bisect(f, a, b, args=(),
         raise ValueError("xtol too small (%g <= 0)" % xtol)
     if rtol < _rtol:
         raise ValueError("rtol too small (%g < %g)" % (rtol, _rtol))
-    r = _zeros._bisect(f,a,b,xtol,rtol,maxiter,args,full_output,disp)
+    r = _zeros._bisect(f, a, b, xtol, rtol, maxiter, args, full_output, disp)
     return results_c(full_output, r)
 
 
@@ -571,7 +685,7 @@ def ridder(f, a, b, args=(),
         raise ValueError("xtol too small (%g <= 0)" % xtol)
     if rtol < _rtol:
         raise ValueError("rtol too small (%g < %g)" % (rtol, _rtol))
-    r = _zeros._ridder(f,a,b,xtol,rtol,maxiter,args,full_output,disp)
+    r = _zeros._ridder(f, a, b, xtol, rtol, maxiter, args, full_output, disp)
     return results_c(full_output, r)
 
 
@@ -699,7 +813,7 @@ def brentq(f, a, b, args=(),
         raise ValueError("xtol too small (%g <= 0)" % xtol)
     if rtol < _rtol:
         raise ValueError("rtol too small (%g < %g)" % (rtol, _rtol))
-    r = _zeros._brentq(f,a,b,xtol,rtol,maxiter,args,full_output,disp)
+    r = _zeros._brentq(f, a, b, xtol, rtol, maxiter, args, full_output, disp)
     return results_c(full_output, r)
 
 
@@ -800,5 +914,5 @@ def brenth(f, a, b, args=(),
         raise ValueError("xtol too small (%g <= 0)" % xtol)
     if rtol < _rtol:
         raise ValueError("rtol too small (%g < %g)" % (rtol, _rtol))
-    r = _zeros._brenth(f,a, b, xtol, rtol, maxiter, args, full_output, disp)
+    r = _zeros._brenth(f, a, b, xtol, rtol, maxiter, args, full_output, disp)
     return results_c(full_output, r)
