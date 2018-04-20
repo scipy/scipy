@@ -352,9 +352,10 @@ class hypergeom_gen(rv_discrete):
     def _logpmf(self, k, M, n, N):
         tot, good = M, n
         bad = tot - good
-        return betaln(good+1, 1) + betaln(bad+1,1) + betaln(tot-N+1, N+1)\
-            - betaln(k+1, good-k+1) - betaln(N-k+1,bad-N+k+1)\
-            - betaln(tot+1, 1)
+        result = (betaln(good+1, 1) + betaln(bad+1, 1) + betaln(tot-N+1, N+1) -
+                  betaln(k+1, good-k+1) - betaln(N-k+1, bad-N+k+1) -
+                  betaln(tot+1, 1))
+        return result
 
     def _pmf(self, k, M, n, N):
         # same as the following but numerically more precise
@@ -806,8 +807,9 @@ class dlaplace_gen(rv_discrete):
 
     def _ppf(self, q, a):
         const = 1 + exp(a)
-        vals = ceil(np.where(q < 1.0 / (1 + exp(-a)), log(q*const) / a - 1,
-                                                      -log((1-q) * const) / a))
+        vals = ceil(np.where(q < 1.0 / (1 + exp(-a)),
+                             log(q*const) / a - 1,
+                             -log((1-q) * const) / a))
         vals1 = vals - 1
         return np.where(self._cdf(vals1, a) >= q, vals1, vals)
 
@@ -862,16 +864,16 @@ class skellam_gen(rv_discrete):
 
     def _pmf(self, x, mu1, mu2):
         px = np.where(x < 0,
-                _ncx2_pdf(2*mu2, 2*(1-x), 2*mu1)*2,
-                _ncx2_pdf(2*mu1, 2*(1+x), 2*mu2)*2)
+                      _ncx2_pdf(2*mu2, 2*(1-x), 2*mu1)*2,
+                      _ncx2_pdf(2*mu1, 2*(1+x), 2*mu2)*2)
         # ncx2.pdf() returns nan's for extremely low probabilities
         return px
 
     def _cdf(self, x, mu1, mu2):
         x = floor(x)
         px = np.where(x < 0,
-                _ncx2_cdf(2*mu2, -2*x, 2*mu1),
-                1-_ncx2_cdf(2*mu1, 2*(x+1), 2*mu2))
+                      _ncx2_cdf(2*mu2, -2*x, 2*mu1),
+                      1 - _ncx2_cdf(2*mu1, 2*(x+1), 2*mu2))
         return px
 
     def _stats(self, mu1, mu2):
