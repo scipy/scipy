@@ -364,8 +364,8 @@ def sidi(f, a, b, args=(), k=2,
     >>> results
           converged: True
                flag: 'converged'
-     function_calls: 11
-         iterations: 9
+     function_calls: 10
+         iterations: 8
                root: 1.0
 
 
