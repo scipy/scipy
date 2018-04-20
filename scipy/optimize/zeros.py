@@ -201,9 +201,8 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
             fder = fprime(p0, *args)
             funcalls += 1
             if fder == 0:
-                if disp:
-                    msg = "derivative was zero."
-                    warnings.warn(msg, RuntimeWarning)
+                msg = "derivative was zero."
+                warnings.warn(msg, RuntimeWarning)
                 return _results_select(full_output, (p0, funcalls, itr + 1, _ECONVERR))
             fval = func(p0, *args)
             funcalls += 1
@@ -231,11 +230,10 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
         for itr in range(maxiter):
             if q1 == q0:
                 if p1 != p0:
-                    if disp:
-                        msg = "Tolerance of %s reached" % (p1 - p0)
-                        warnings.warn(msg, RuntimeWarning)
-                    p = (p1 + p0) / 2.0
-                    return _results_select(full_output, (p, funcalls, itr + 1, _ECONVERGED))
+                    msg = "Tolerance of %s reached" % (p1 - p0)
+                    warnings.warn(msg, RuntimeWarning)
+                p = (p1 + p0) / 2.0
+                return _results_select(full_output, (p, funcalls, itr + 1, _ECONVERGED))
             else:
                 p = p1 - q1 * (p1 - p0) / (q1 - q0)
             if abs(p - p1) < tol:
