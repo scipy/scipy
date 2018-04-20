@@ -81,9 +81,8 @@ def _results_select(full_output, r):
 
 def _withinTolerance(x, y, atol, rtol):
     diff = abs(x - y)
-    # z = max(abs(x), abs(y))
     z = abs(y)
-    result = (diff <= (atol + rtol * z)) # /2
+    result = (diff <= (atol + rtol * z))
     return result
 
 
@@ -245,13 +244,13 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
 
 
 # Helpers for Sidi's method
-# Update the divided differences "matrix"
-# Instead of keeping a full triangular array of f values and
-# divided differences, just keep the trailing diagonal
-# I.e. [f7, f67, f567]  ->
-#  [f8, f78=(f7-f8)/(x7-x8), f678=(f67-f78)/(x6-x8)]
-# See diagram on [Sidi2008, p118]
 def _updateDividedDiffs(xx, divdiffs, x, fx, k):
+    r'''Update the divided differences "matrix"'''
+    # Instead of keeping a full triangular array of f values and
+    # divided differences, just keep the trailing diagonal
+    # I.e. [f7, f67, f567]  ->
+    #    [f8, f78=(f7-f8)/(x7-x8), f678=(f67-f78)/(x6-x8)]
+    # See diagram on [Sidi2008, p118]
     xx.insert(0, x)
     divdiffs.insert(0, fx)
     # for i in range(1, min(k + 2, len(xx))):
@@ -267,19 +266,15 @@ def _updateBracket(brkt, fbrkt, x, fx):
     if not brkt:
         return
     if brkt[0] < x < brkt[1]:
-        if (fx < 0) == (fbrkt[0] < 0):
-            brkt[0] = x
-            fbrkt[0] = fx
-        else:
-            assert (fx < 0) == (fbrkt[0] > 0)
-            brkt[1] = x
-            fbrkt[1] = fx
+        repidx = (0 if (fx < 0) == (fbrkt[0] < 0) else 1)
+        brkt[repidx] = x
+        fbrkt[repidx] = fx
 
 
 # Sidi's method
 def sidi(f, a, b, args=(), k=2,
          xtol=_xtol, rtol=_rtol, maxiter=_iter, safe=True,
-         full_output=False, disp=True, debug=False):
+         full_output=False, disp=True):
     """
     Find a zero using Sidi's method.
 
@@ -424,11 +419,9 @@ def sidi(f, a, b, args=(), k=2,
     if fa * fb > 0:
         if safe:
             return _results_select(full_output, (a, funcalls, 0, _ESIGNERR))
-        brkt = []
-        fbrk = []
+        brkt, fbrk= [], []
     else:
-        brkt = [a, b]
-        fbrk = [fa, fb]
+        brkt, fbrk = [a, b], [fa, fb]
 
     for itr in range(maxiter):
         denom = divdiffs[1]
@@ -443,10 +436,7 @@ def sidi(f, a, b, args=(), k=2,
                         itr, xvals[0], divdiffs)
                     raise RuntimeError(msg)
                 return _results_select(full_output, (xvals[0], funcalls, itr, _ECONVERR))
-            if debug:
-                print(' DENOM0 %d :  xvals=%s, divdiffs=%s' % (itr, xvals, divdiffs))
             xn = sum(brkt) / 2.0
-            delta = xvals[0] - xn
         else:
             delta = divdiffs[0] / denom
             assert isfinite(delta)
@@ -459,12 +449,9 @@ def sidi(f, a, b, args=(), k=2,
         if brkt and not (brkt[0] <= xn <= brkt[1]):
             if safe:
                 # Disallow iterates outside of [a, b]
-                # Disallow consecutive iterates to be outside the brkt
+                # Disallow two consecutive iterates to be outside the brkt
                 if not (a <= xn <= b) or not (brkt[0] <= xvals[0] <= brkt[1]):
                     # reset
-                    if debug:
-                        print(' RESET %d :  brkt=[%25.17e, %25.17e], xn=%25.17e, xvals[0]=%25.17e' %
-                              (itr, brkt[0], brkt[1], xn, xvals[0]))
                     xvals, divdiffs = [brkt[0]], [fbrk[0]]
                     _updateDividedDiffs(xvals, divdiffs, brkt[1], fbrk[1], k)
                     #  use mid-point of brkt
@@ -477,12 +464,8 @@ def sidi(f, a, b, args=(), k=2,
                     raise RuntimeError(msg)
                 break
 
-        if not brkt and _withinTolerance(xn, xvals[0], xtol, rtol):
-            return _results_select(full_output, (xn, funcalls, itr + 1, _ECONVERGED))
-
         # Ensure the next value is not already in the list
         if safe and xn in xvals:
-            print(' INLIST %d :  xn=%27.17e  delta=%25.17e  xvals=%s, divdiffs=%s' % (itr, xn, delta, xvals, divdiffs))
             xn = sum(brkt) / 2.0
 
         fxn = f(xn, *args)
@@ -490,18 +473,14 @@ def sidi(f, a, b, args=(), k=2,
         if fxn == 0:
             return _results_select(full_output, (xn, funcalls, itr + 1, _ECONVERGED))
 
-        if debug:
-            if brkt:
-                print('I=%2d brkt=[%25.17e, %25.17e] gp=%11.4e  xn=%25.17e  [%11.4e %11.4e]  %11.4e' % (
-                  itr, brkt[0], brkt[1], brkt[1] - brkt[0], xn, xn-brkt[0], xn-brkt[1], xn-xvals[0]))
-            else:
-                print('I=%2d xvals=[%25.17e, %25.17e] gp=%11.4e  xn=%25.17e  %11.4e %11.4e' % (
-                    itr, xvals[0], xvals[1], xvals[1] - xvals[0], xn, xn - xvals[0], xn - xvals[1]))
-
         _updateDividedDiffs(xvals, divdiffs, xn, fxn, k)
         _updateBracket(brkt, fbrk, xn, fxn)
-        if brkt and (brkt[0] <= xn <= brkt[1]):
-            if _withinTolerance(brkt[0], brkt[1], xtol, rtol):
+
+        if brkt:
+            if (brkt[0] <= xn <= brkt[1]) and _withinTolerance(brkt[0], brkt[1], xtol, rtol):
+                return _results_select(full_output, (xn, funcalls, itr + 1, _ECONVERGED))
+        else:
+            if _withinTolerance(xn, xvals[1], xtol, rtol):
                 return _results_select(full_output, (xn, funcalls, itr + 1, _ECONVERGED))
 
     if disp:
