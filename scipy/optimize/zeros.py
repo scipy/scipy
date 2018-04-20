@@ -367,8 +367,8 @@ def sidi(f, a, b, args=(), k=2,
     >>> results
           converged: True
                flag: 'converged'
-     function_calls: 10
-         iterations: 8
+     function_calls: 11
+         iterations: 9
                root: 1.0
 
 
@@ -477,7 +477,7 @@ def sidi(f, a, b, args=(), k=2,
         _updateDividedDiffs(xvals, divdiffs, xn, fxn, k)
         _updateBracket(brkt, fbrk, xn, fxn)
 
-        if brkt:
+        if is_bracket:
             # We are in the current bracket and the length of the bracket
             # is small enough to guarantee that np.isclose(xn, r) for any
             # r in the bracket.

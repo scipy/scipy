@@ -58,7 +58,7 @@ class TestBasic(object):
         f2p = lambda x: exp(x) + sin(x)
 
         data = [[f1, f1p, 0, 3, sqrt(2)+1],
-                [f2, f2p, -2*pi, 3, -4.72129275884768607e+00 ]
+                [f2, f2p, -2*pi, 3, -4.72129275884768607]
                 ]
 
         xtol = 4 * finfo(float).eps
