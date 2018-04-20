@@ -354,7 +354,7 @@ def sidi(f, a, b, args=(), k=2,
     k=1 is just the secant method.
     Muller's method use the interpolating polynomial to approximate `f`.
     Sidi's method uses the derivative of the interpolating polynomial to
-    approximate the derivative of `f`.  to find a
+    approximate the derivative of `f`.
 
     Examples
     --------
