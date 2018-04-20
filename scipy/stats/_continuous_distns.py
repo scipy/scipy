@@ -969,6 +969,8 @@ class chi2_gen(rv_continuous):
 
         f(x, df) = \frac{1}{(2 \gamma(df/2)} (x/2)^{df/2-1} \exp(-x/2)
 
+    for x > 0.
+
     `chi2` takes ``df`` as a shape parameter.
 
     %(after_notes)s
@@ -5457,7 +5459,8 @@ class recipinvgauss_gen(rv_continuous):
 
     .. math::
 
-        f(x, \mu) = \frac{1}{\sqrt{2\pi x}} \frac{\exp(-(1-\mu x)^2}{2x\mu^2)}
+        f(x, \mu) = \frac{1}{\sqrt{2\pi x}}
+                    \exp\left(\frac{-(1-\mu x)^2}{2\mu^2x}\right)
 
     for :math:`x \ge 0`.
 
@@ -6497,9 +6500,9 @@ class argus_gen(rv_continuous):
     .. math::
 
         f(x, \chi) = \frac{\chi^3}{\sqrt{2\pi} \Psi(\chi)} x \sqrt{1-x^2}
-                     \exp(- 0.5 \chi^2 (1 - x^2))
+                     \exp(-\chi^2 (1 - x^2)/2)
 
-        where:
+    for 0 < x < 1, where
 
     .. math::
 
