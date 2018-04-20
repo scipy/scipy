@@ -121,11 +121,20 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
         convenient. If it is None (default), then the normal Newton-Raphson
         or the secant method is used. If it is not None, then Halley's method
         is used.
+    full_output : bool, optional
+        If `full_output` is False, the root is returned.  If `full_output` is
+        True, the return value is ``(x, r)``, where `x` is the root, and `r` is
+        a RootResults object.
+    disp : bool, optional
+        If True, display a RuntimeError if the algorithm didn't converge.
 
     Returns
     -------
     zero : float
         Estimated location where function is zero.
+    r : RootResults (present if ``full_output = True``)
+        Object containing information about the convergence.  In particular,
+        ``r.converged`` is True if the routine converged.
 
     See Also
     --------
@@ -245,15 +254,14 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
 
 # Helpers for Sidi's method
 def _updateDividedDiffs(xx, divdiffs, x, fx, k):
-    r'''Update the divided differences "matrix"'''
+    r'''Update the divided differences "matrix" with (x, f(x))'''
     # Instead of keeping a full triangular array of f values and
     # divided differences, just keep the trailing diagonal
-    # I.e. [f7, f67, f567]  ->
-    #    [f8, f78=(f7-f8)/(x7-x8), f678=(f67-f78)/(x6-x8)]
+    # E.g. [f7, f67, f567]  + (x8, f8) ->
+    #       [f8, f78=(f7-f8)/(x7-x8), f678=(f67-f78)/(x6-x8)]
     # See diagram on [Sidi2008, p118]
     xx.insert(0, x)
     divdiffs.insert(0, fx)
-    # for i in range(1, min(k + 2, len(xx))):
     for i in range(1, len(xx)):
         divdiffs[i] = (divdiffs[i] - divdiffs[i - 1]) / (xx[i] - xx[0])
     if len(xx) > k + 1:
@@ -266,14 +274,14 @@ def _updateBracket(brkt, fbrkt, x, fx):
     if not brkt:
         return
     if brkt[0] < x < brkt[1]:
-        repidx = (0 if (fx < 0) == (fbrkt[0] < 0) else 1)
-        brkt[repidx] = x
-        fbrkt[repidx] = fx
+        replaceIndex = (0 if (fx < 0) == (fbrkt[0] < 0) else 1)
+        brkt[replaceIndex] = x
+        fbrkt[replaceIndex] = fx
 
 
 # Sidi's method
 def sidi(f, a, b, args=(), k=2,
-         xtol=_xtol, rtol=_rtol, maxiter=_iter, safe=True,
+         xtol=_xtol, rtol=_rtol, maxiter=_iter, is_bracket=True,
          full_output=False, disp=True):
     """
     Find a zero using Sidi's method.
@@ -297,8 +305,7 @@ def sidi(f, a, b, args=(), k=2,
         The other end of the bracketing interval :math:`[a, b]`.
     k : number, optional
         The degree of the interpolating polynomial, k>=1.  The default is 2.
-        k=1 is the Secant method.  Higher degrees use more divided
-        difference terms.
+        Higher degrees use more divided difference terms.
     xtol : number, optional
         The computed root ``x0`` will satisfy ``np.allclose(x, x0,
         atol=xtol, rtol=rtol)``, where ``x`` is the exact root. The
@@ -318,14 +325,11 @@ def sidi(f, a, b, args=(), k=2,
         a RootResults object.
     disp : bool, optional
         If True, raise RuntimeError if the algorithm didn't converge.
-    safe : bool, optional
-        If True, whenever an intermediate derivative is 0, a bisection
-        step is performsd.
-        If False and [a, b] is a bracketing interval, iterates outside
-        the interval report a convergence error.
-        If False and [a, b] is not a bracketing interval, a and b are
-        just the first two iterates, and iterations proceed until
-        either convergence, or the maximum number of iterations is exceeded.
+    is_bracket : bool, optional
+        If True, restrict root to lie within the bracket [a, b]
+        If False, a and b are just the first two iterates, and iterations
+        proceed until either convergence, or the maximum number of
+        iterations is exceeded.
 
     Returns
     -------
@@ -343,13 +347,14 @@ def sidi(f, a, b, args=(), k=2,
     Notes
     -----
     `f` must be continuous.
-    If safe is True, f(a) and f(b) must have opposite signs.
-    Otherwise [a, b] is treated as a bracketing interval iff f(a)
-    and f(b) have opposite signs.
+    If is_bracket is True, f(a) and f(b) must have opposite signs.
     If f has at least (k+1) continuous derivatives, then Sidi's method
     of degree k has approximate order of convergence s_k, where
     s_1, s_2, s_3, ... = 1.618, 1.839, 1.928, ...
     k=1 is just the secant method.
+    Muller's method use the interpolating polynomial to approximate `f`.
+    Sidi's method uses the derivative of the interpolating polynomial to
+    approximate the derivative of `f`.  to find a
 
     Examples
     --------
@@ -390,7 +395,7 @@ def sidi(f, a, b, args=(), k=2,
         raise ValueError("b is not finite" % b)
     if k < 1:
         raise ValueError("k too small (%d < %d" % (k, 1))
-    if b <= a and safe:
+    if is_bracket and b <= a:
         raise ValueError("Invalid bracket %s" % [a, b])
 
     if not isinstance(args, tuple):
@@ -407,21 +412,20 @@ def sidi(f, a, b, args=(), k=2,
     if fb == 0:
         return _results_select(full_output, (b, funcalls, 0, _ECONVERGED))
 
-    # Ensure starting from the endpoint with the smaller of the two absolute fvalues
-    if abs(fa) > abs(fb):
-        xvals, divdiffs = [a], [fa]
-        _updateDividedDiffs(xvals, divdiffs, b, fb, k)
-    else:
-        xvals, divdiffs = [b], [fb]
-        _updateDividedDiffs(xvals, divdiffs, a, fa, k)
-
     # Is this a bracketing interval?
     if fa * fb > 0:
-        if safe:
+        if is_bracket:
             return _results_select(full_output, (a, funcalls, 0, _ESIGNERR))
-        brkt, fbrk= [], []
+        brkt, fbrk = [], []
     else:
         brkt, fbrk = [a, b], [fa, fb]
+
+    # Ensure starting from the endpoint with the smaller of the two absolute fvalues
+    x01, f01 = [a, b], [fa, fb]
+    if abs(fa) > abs(fb):
+        x01, f01 = list(reversed(x01)), list(reversed(f01))
+    xvals, divdiffs = [x01.pop(0)], [f01.pop(0)]
+    _updateDividedDiffs(xvals, divdiffs, x01.pop(0), f01.pop(0), k)
 
     for itr in range(maxiter):
         denom = divdiffs[1]
@@ -430,7 +434,7 @@ def sidi(f, a, b, args=(), k=2,
             m *= xvals[0] - xvals[i]
             denom += divdiffs[i + 1] * m
         if denom == 0:
-            if not safe:
+            if not is_bracket:
                 if disp:
                     msg = "Denominator is zero during iteration %d, value is %s (%s)" % (
                         itr, xvals[0], divdiffs)
@@ -445,27 +449,19 @@ def sidi(f, a, b, args=(), k=2,
             if delta != 0 and xn == xvals[0]:
                 return _results_select(full_output, (xn, funcalls, itr + 1, _ECONVERGED))
 
-        # If outside bracket
-        if brkt and not (brkt[0] <= xn <= brkt[1]):
-            if safe:
-                # Disallow iterates outside of [a, b]
-                # Disallow two consecutive iterates to be outside the brkt
-                if not (a <= xn <= b) or not (brkt[0] <= xvals[0] <= brkt[1]):
-                    # reset
-                    xvals, divdiffs = [brkt[0]], [fbrk[0]]
-                    _updateDividedDiffs(xvals, divdiffs, brkt[1], fbrk[1], k)
-                    #  use mid-point of brkt
-                    xn = sum(brkt[:2]) / 2.0
-            elif not (a <= xn <= b):
-                # [a, b] is a containing bracket, we've gone outside
-                if disp:
-                    msg = ("Iterate %f outside bracket during iteration %d, "
-                           "last value is %s") % (xn, itr, xvals[0])
-                    raise RuntimeError(msg)
-                break
+        # If outside current bracket
+        if is_bracket and not (brkt[0] <= xn <= brkt[1]):
+            # Disallow iterates outside of [a, b]
+            # Disallow two consecutive iterates to be outside the brkt
+            if not (a <= xn <= b) or not (brkt[0] <= xvals[0] <= brkt[1]):
+                # reset
+                xvals, divdiffs = [brkt[0]], [fbrk[0]]
+                _updateDividedDiffs(xvals, divdiffs, brkt[1], fbrk[1], k)
+                #  use mid-point of brkt
+                xn = sum(brkt[:2]) / 2.0
 
         # Ensure the next value is not already in the list
-        if safe and xn in xvals:
+        if brkt and xn in xvals:
             xn = sum(brkt) / 2.0
 
         fxn = f(xn, *args)
@@ -473,13 +469,26 @@ def sidi(f, a, b, args=(), k=2,
         if fxn == 0:
             return _results_select(full_output, (xn, funcalls, itr + 1, _ECONVERGED))
 
+        if not brkt and (divdiffs[0] < 0) == (fxn > 0):
+            # Initial a, b not a bracket, but now we found two x's with oppositely signed f's.
+            brkt, fbrk = [xvals[0], xn], [divdiffs[0], fxn]
+            if brkt[0] > brkt[1]:
+                brkt = [brkt[1], brkt[0]]
+                fbrk = [fbrk[1], fbrk[0]]
+
         _updateDividedDiffs(xvals, divdiffs, xn, fxn, k)
         _updateBracket(brkt, fbrk, xn, fxn)
 
         if brkt:
+            # We are in the current bracket and the length of the bracket
+            # is small enough to guarantee that np.isclose(xn, r) for any
+            # r in the bracket.
+            # Using convergence of the xvals would require fewer iterations,
+            # but doesn't guarantee np.isclose(xn, r)
             if (brkt[0] <= xn <= brkt[1]) and _withinTolerance(brkt[0], brkt[1], xtol, rtol):
                 return _results_select(full_output, (xn, funcalls, itr + 1, _ECONVERGED))
         else:
+            # Use convergence of the sequence of xvals.
             if _withinTolerance(xn, xvals[1], xtol, rtol):
                 return _results_select(full_output, (xn, funcalls, itr + 1, _ECONVERGED))
 
