@@ -1,6 +1,6 @@
 from __future__ import division, print_function, absolute_import
 
-from math import sqrt, exp, sin, cos, pi, isclose
+from math import sqrt, exp, sin, cos, pi
 
 from numpy.testing import (assert_warns, assert_, 
                            assert_allclose,
