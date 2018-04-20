@@ -606,17 +606,22 @@ class boltzmann_gen(rv_discrete):
 
     .. math::
 
-        f(k) = (1-\exp(-\lambda) \exp(-\lambda k)/(1-\exp(-\lambda N))
+        f(k) = (1-\exp(-\lambda)) \exp(-\lambda k) / (1-\exp(-\lambda N))
 
     for :math:`k = 0,..., N-1`.
 
-    `boltzmann` takes :math:`\lambda` and :math:`N` as shape parameters.
+    `boltzmann` takes :math:`\lambda > 0` and :math:`N > 0` as shape parameters.
 
     %(after_notes)s
 
     %(example)s
 
     """
+    def _argcheck(self, lambda_, N):
+        self.a = 0
+        self.b = N - 1
+        return (lambda_ > 0) & (N > 0)
+
     def _pmf(self, k, lambda_, N):
         # boltzmann.pmf(k) =
         #               (1-exp(-lambda_)*exp(-lambda_*k)/(1-exp(-lambda_*N))
@@ -649,7 +654,7 @@ class boltzmann_gen(rv_discrete):
 
 
 boltzmann = boltzmann_gen(name='boltzmann',
-        longname='A truncated discrete exponential ')
+                          longname='A truncated discrete exponential ')
 
 
 class randint_gen(rv_discrete):

@@ -1,8 +1,8 @@
 from __future__ import division, print_function, absolute_import 
 
-from scipy.stats import hypergeom, bernoulli
+from scipy.stats import hypergeom, bernoulli, boltzmann
 import numpy as np
-from numpy.testing import assert_almost_equal
+from numpy.testing import assert_almost_equal, assert_equal, assert_allclose
 
 def test_hypergeom_logpmf():
     # symmetries test
@@ -29,3 +29,21 @@ def test_hypergeom_logpmf():
     bernoulli_logpmf = bernoulli.logpmf(k,K/N)
     assert_almost_equal(hypergeom_logpmf, bernoulli_logpmf, decimal=12)
 
+
+def test_boltzmann_upper_bound():
+    k = np.arange(-3, 5)
+
+    N = 1
+    p = boltzmann.pmf(k, 0.123, N)
+    expected = k == 0
+    assert_equal(p, expected)
+
+    lam = np.log(2)
+    N = 3
+    p = boltzmann.pmf(k, lam, N)
+    expected = [0, 0, 0, 4/7, 2/7, 1/7, 0, 0]
+    assert_allclose(p, expected, rtol=1e-13)
+
+    c = boltzmann.cdf(k, lam, N)
+    expected = [0, 0, 0, 4/7, 6/7, 1, 1, 1]
+    assert_allclose(c, expected, rtol=1e-13)
