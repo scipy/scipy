@@ -270,7 +270,7 @@ def single(y):
 
     Examples
     --------
-    >>> from scipy.cluster.hierarchy import single
+    >>> from scipy.cluster.hierarchy import single, fcluster
     >>> from scipy.spatial.distance import pdist
 
     First we need a toy dataset to play with:
@@ -281,10 +281,10 @@ def single(y):
     x        x
     x x    x x
 
-    >>> X = [[0, 0], [0, 0.1], [0.1, 0],
-             [0, 1], [0, 0.9], [0.1, 1],
-             [1, 0], [0.9, 0], [1, 0.1], 
-             [1, 1], [0.9, 1], [1, 0.9]]
+    >>> X = [[0, 0], [0, 1], [1, 0],
+             [0, 4], [0, 3], [1, 4],
+             [4, 0], [3, 0], [4, 1], 
+             [4, 4], [3, 4], [4, 3]]
 
     Then we get a condensed distance matrix from this dataset:
     
@@ -295,25 +295,35 @@ def single(y):
     >>> Z = single(y)
 
     >>> Z
-    array([[ 3. ,  4. ,  0.1,  2. ],
-           [ 6. ,  7. ,  0.1,  2. ],
-           [ 9. , 10. ,  0.1,  2. ],
-           [11. , 14. ,  0.1,  3. ],
-           [ 0. ,  1. ,  0.1,  2. ],
-           [ 2. , 16. ,  0.1,  3. ],
-           [ 5. , 12. ,  0.1,  3. ],
-           [ 8. , 13. ,  0.1,  3. ],
-           [17. , 18. ,  0.8,  6. ],
-           [19. , 20. ,  0.8,  9. ],
-           [15. , 21. ,  0.8, 12. ]])
+    array([[ 0.,  1.,  1.,  2.],
+           [ 2., 12.,  1.,  3.],
+           [ 3.,  4.,  1.,  2.],
+           [ 5., 14.,  1.,  3.],
+           [ 6.,  7.,  1.,  2.],
+           [ 8., 16.,  1.,  3.],
+           [ 9., 10.,  1.,  2.],
+           [11., 18.,  1.,  3.],
+           [13., 15.,  2.,  6.],
+           [17., 20.,  2.,  9.],
+           [19., 21.,  2., 12.]])
 
-    The linkage matrix Z represents a dendrogram (the output of 
-    the hierarchical clustering).
-    See :func:`scipy.cluster.hierarchy.linkage` for a detailed 
+    The linkage matrix Z represents a dendrogram - see 
+    :func:`scipy.cluster.hierarchy.linkage` for a detailed 
     explanation of its contents.
 
+    We can use :func:`scipy.cluster.hierarchy.fcluster` to 
+    see to which cluster would each initial point belong 
+    given a distance threshold:   
+
+    >>> fcluster(Z, 0.9, criterion='distance')
+    array([ 7,  8,  9, 10, 11, 12,  4,  5,  6,  1,  2,  3], dtype=int32)
+    >>> fcluster(Z, 1, criterion='distance')
+    array([3, 3, 3, 4, 4, 4, 2, 2, 2, 1, 1, 1], dtype=int32)
+    >>> fcluster(Z, 2, criterion='distance')
+    array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], dtype=int32)
+
     Also :func:`scipy.cluster.hierarchy.dendrogram` can be used 
-    to generate a graphical representation of the dendrogram.
+    to generate a plot of the dendrogram.
 
     """
     return linkage(y, method='single', metric='euclidean')
