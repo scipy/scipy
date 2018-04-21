@@ -1697,6 +1697,22 @@ def tmax(a, upperlimit=None, axis=0, inclusive=True):
     Notes
     -----
     For more details on `tmax`, see `stats.tmax`.
+    
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.stats import mstats
+    >>> a = np.array([[6, 8, 3, 0],
+    ...               [3, 9, 1, 2],
+    ...               [8, 7, 8, 2],
+    ...               [5, 6, 0, 2],
+    ...               [4, 5, 5, 2]])
+    ...               
+    ...               
+    >>> mstats.tmax(a,4)
+    masked_array(data=[4, --, 3, 2],
+                 mask=[False,  True, False, False],
+           fill_value=999999)
 
     """
     a, axis = _chk_asarray(a, axis)
