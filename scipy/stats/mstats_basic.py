@@ -1646,6 +1646,21 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True):
     Notes
     -----
     For more details on `tmin`, see `stats.tmin`.
+    
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.stats import mstats
+    >>> a = np.array([[6, 8, 3, 0],
+    ...               [3, 2, 1, 2],
+    ...               [8, 1, 8, 2],
+    ...               [5, 3, 0, 2],
+    ...               [4, 7, 5, 2]])
+    ...               
+    >>> mstats.tmin(a,5)
+    masked_array(data=[5, 7, 5, --],
+                 mask=[False, False, False,  True],
+           fill_value=999999)
 
     """
     a, axis = _chk_asarray(a, axis)
