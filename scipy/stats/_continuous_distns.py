@@ -3944,6 +3944,8 @@ class levy_stable_gen(rv_continuous):
         pdf_default_method_name = getattr(self, 'pdf_default_method', 'zolotarev')
         if pdf_default_method_name == 'zolotarev':
             pdf_single_value_method = levy_stable_gen._pdf_single_value_zolotarev
+	elif pdf_default_name == 'expansion':
+	    pdf_single_value_method = levy_stable_gen._pdf_single_value_expansion
         else:
             pdf_single_value_method = levy_stable_gen._pdf_single_value_cf_integrate
         
