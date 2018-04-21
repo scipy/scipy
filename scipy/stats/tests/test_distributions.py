@@ -1453,6 +1453,15 @@ class TestGumbelL(object):
         assert_allclose(x, xx)
         
 class TestLevyStable(object):
+
+    def test_pdf_finite(self):
+        for method in ('quadrature', 'zolotarev'):
+            stats.levy_stable.pdf_default_method = method
+            for alpha in np.linspace(np.finfo(np.float32).eps, 2, 50):
+                for beta in np.linspace(-1, 1, 50):
+                    for x in np.linspace(-10, 10, 100):
+                        pdf = stats.levy_stable._pdf(x, alpha, beta)
+                        assert_(np.isfinite(pdf))
     
     def test_fit(self):
         # contruct data to have percentiles that match
