@@ -116,6 +116,7 @@ from functools import partial
 from collections import namedtuple
 from scipy._lib.six import callable, string_types
 from scipy._lib.six import xrange
+from scipy._lib._util import _asarray_validated
 
 from . import _distance_wrap
 from . import _hausdorff
@@ -268,7 +269,7 @@ def _validate_mahalanobis_kwargs(X, m, n, **kwargs):
                              "are required." % (m, n, n + 1))
         CV = np.atleast_2d(np.cov(X.astype(np.double).T))
         VI = np.linalg.inv(CV).T.copy()
-    kwargs["VI"] = _copy_array_if_base_present(_convert_to_double(VI))
+    kwargs["VI"] = _convert_to_double(VI)
     return kwargs
 
 
@@ -1860,12 +1861,11 @@ def pdist(X, metric='euclidean', *args, **kwargs):
     # between all pairs of vectors in X using the distance metric 'abc' but
     # with a more succinct, verifiable, but less efficient implementation.
 
+    X = _asarray_validated(X, sparse_ok=False, objects_ok=True, mask_ok=True,
+                           check_finite=False)
     kwargs = _args_to_kwargs_xdist(args, kwargs, metric, "pdist")
 
     X = np.asarray(X, order='c')
-
-    # The C code doesn't do striding.
-    X = _copy_array_if_base_present(X)
 
     s = X.shape
     if len(s) != 2:
@@ -2582,10 +2582,6 @@ def cdist(XA, XB, metric='euclidean', *args, **kwargs):
 
     XA = np.asarray(XA, order='c')
     XB = np.asarray(XB, order='c')
-
-    # The C code doesn't do striding.
-    XA = _copy_array_if_base_present(XA)
-    XB = _copy_array_if_base_present(XB)
 
     s = XA.shape
     sB = XB.shape

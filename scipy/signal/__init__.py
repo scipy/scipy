@@ -248,7 +248,9 @@ but we list them here for convenience:
    windows.exponential       -- Exponential window
    windows.flattop           -- Flat top window
    windows.gaussian          -- Gaussian window
+   windows.general_cosine    -- Generalized Cosine window
    windows.general_gaussian  -- Generalized Gaussian window
+   windows.general_hamming   -- Generalized Hamming window
    windows.hamming           -- Hamming window
    windows.hann              -- Hann window
    windows.hanning           -- Hann window
@@ -278,10 +280,13 @@ Peak finding
 .. autosummary::
    :toctree: generated/
 
-   find_peaks_cwt -- Attempt to find the peaks in the given 1-D array
-   argrelmin      -- Calculate the relative minima of data
-   argrelmax      -- Calculate the relative maxima of data
-   argrelextrema  -- Calculate the relative extrema of data
+   argrelmin        -- Calculate the relative minima of data
+   argrelmax        -- Calculate the relative maxima of data
+   argrelextrema    -- Calculate the relative extrema of data
+   find_peaks       -- Find a subset of peaks inside a signal.
+   find_peaks_cwt   -- Find peaks in a 1-D array with wavelet transformation.
+   peak_prominences -- Calculate the prominence of each peak in a signal.
+   peak_widths      -- Calculate the width of each peak in a signal.
 
 Spectral Analysis
 =================
@@ -325,12 +330,16 @@ from ._peak_finding import *
 from .windows import get_window  # keep this one in signal namespace
 
 
-# deal with * -> windows.* deprecation
+# deal with * -> windows.* doc-only soft-deprecation
 deprecated_windows = ('boxcar', 'triang', 'parzen', 'bohman', 'blackman',
                       'nuttall', 'blackmanharris', 'flattop', 'bartlett',
                       'barthann', 'hamming', 'kaiser', 'gaussian',
                       'general_gaussian', 'chebwin', 'slepian', 'cosine',
                       'hann', 'exponential', 'tukey')
+
+# backward compatibility imports for actually deprecated windows not
+# in the above list
+from .windows import hanning
 
 
 def deco(name):
@@ -341,6 +350,9 @@ def deco(name):
         return f(*args, **kwargs)
 
     wrapped.__name__ = name
+    wrapped.__module__ = 'scipy.signal'
+    if hasattr(f, '__qualname__'):
+        wrapped.__qualname__ = f.__qualname__
 
     if f.__doc__ is not None:
         lines = f.__doc__.splitlines()

@@ -31,6 +31,7 @@ __all__ = ['argstoarray',
            'ttest_ind','ttest_rel','tvar',
            'variation',
            'winsorize',
+           'brunnermunzel',
            ]
 
 import numpy as np
@@ -466,8 +467,8 @@ def spearmanr(x, y, use_ties=True):
     if use_ties:
         xties = count_tied_groups(x)
         yties = count_tied_groups(y)
-        corr_x = np.sum(v*k*(k**2-1) for (k,v) in iteritems(xties))/12.
-        corr_y = np.sum(v*k*(k**2-1) for (k,v) in iteritems(yties))/12.
+        corr_x = sum(v*k*(k**2-1) for (k,v) in iteritems(xties))/12.
+        corr_y = sum(v*k*(k**2-1) for (k,v) in iteritems(yties))/12.
     else:
         corr_x = corr_y = 0
 
@@ -548,8 +549,8 @@ def kendalltau(x, y, use_ties=True, use_missing=False):
 
     var_s = n*(n-1)*(2*n+5)
     if use_ties:
-        var_s -= np.sum(v*k*(k-1)*(2*k+5)*1. for (k,v) in iteritems(xties))
-        var_s -= np.sum(v*k*(k-1)*(2*k+5)*1. for (k,v) in iteritems(yties))
+        var_s -= sum(v*k*(k-1)*(2*k+5)*1. for (k,v) in iteritems(xties))
+        var_s -= sum(v*k*(k-1)*(2*k+5)*1. for (k,v) in iteritems(yties))
         v1 = np.sum([v*k*(k-1) for (k, v) in iteritems(xties)], dtype=float) *\
              np.sum([v*k*(k-1) for (k, v) in iteritems(yties)], dtype=float)
         v1 /= 2.*n*(n-1)
@@ -585,12 +586,12 @@ def kendalltau_seasonal(x):
     (n,m) = x.shape
     n_p = x.count(0)
 
-    S_szn = np.sum(msign(x[i:]-x[i]).sum(0) for i in range(n))
+    S_szn = sum(msign(x[i:]-x[i]).sum(0) for i in range(n))
     S_tot = S_szn.sum()
 
     n_tot = x.count()
     ties = count_tied_groups(x.compressed())
-    corr_ties = np.sum(v*k*(k-1) for (k,v) in iteritems(ties))
+    corr_ties = sum(v*k*(k-1) for (k,v) in iteritems(ties))
     denom_tot = ma.sqrt(1.*n_tot*(n_tot-1)*(n_tot*(n_tot-1)-corr_ties))/2.
 
     R = rankdata(x, axis=0, use_missing=True)
@@ -599,10 +600,10 @@ def kendalltau_seasonal(x):
     denom_szn = ma.empty(m, dtype=float)
     for j in range(m):
         ties_j = count_tied_groups(x[:,j].compressed())
-        corr_j = np.sum(v*k*(k-1) for (k,v) in iteritems(ties_j))
+        corr_j = sum(v*k*(k-1) for (k,v) in iteritems(ties_j))
         cmb = n_p[j]*(n_p[j]-1)
         for k in range(j,m,1):
-            K[j,k] = np.sum(msign((x[i:,j]-x[i,j])*(x[i:,k]-x[i,k])).sum()
+            K[j,k] = sum(msign((x[i:,j]-x[i,j])*(x[i:,k]-x[i,k])).sum()
                                for i in range(n))
             covmat[j,k] = (K[j,k] + 4*(R[:,j]*R[:,k]).sum() -
                            n*(n_p[j]+1)*(n_p[k]+1))/3.
@@ -1005,7 +1006,7 @@ def mannwhitneyu(x,y, use_continuity=True):
     mu = (nx*ny)/2.
     sigsq = (nt**3 - nt)/12.
     ties = count_tied_groups(ranks)
-    sigsq -= np.sum(v*(k**3-k) for (k,v) in iteritems(ties))/12.
+    sigsq -= sum(v*(k**3-k) for (k,v) in iteritems(ties))/12.
     sigsq *= nx*ny/float(nt*(nt-1))
 
     if use_continuity:
@@ -1051,7 +1052,7 @@ def kruskal(*args):
     H = 12./(ntot*(ntot+1)) * (sumrk**2/ngrp).sum() - 3*(ntot+1)
     # Tie correction
     ties = count_tied_groups(ranks)
-    T = 1. - np.sum(v*(k**3-k) for (k,v) in iteritems(ties))/float(ntot**3-ntot)
+    T = 1. - sum(v*(k**3-k) for (k,v) in iteritems(ties))/float(ntot**3-ntot)
     if T == 0:
         raise ValueError('All numbers are identical in kruskal')
 
@@ -1757,7 +1758,7 @@ def winsorize(a, limits=None, inclusive=(True, True), inplace=False,
         indicate an open interval.
     inclusive : {(True, True) tuple}, optional
         Tuple indicating whether the number of data being masked on each side
-        should be rounded (True) or truncated (False).
+        should be truncated (True) or rounded (False).
     inplace : {False, True}, optional
         Whether to winsorize in place (True) or to use a copy (False)
     axis : {None, int}, optional
@@ -2615,3 +2616,95 @@ def friedmanchisquare(*args):
 
     return FriedmanchisquareResult(chisq,
                                    distributions.chi2.sf(chisq, k-1))
+
+
+BrunnerMunzelResult = namedtuple('BrunnerMunzelResult', ('statistic', 'pvalue'))
+
+
+def brunnermunzel(x, y, alternative="two-sided", distribution="t"):
+    """
+    Computes the Brunner-Munzel test on samples x and y
+
+    Missing values in `x` and/or `y` are discarded.
+
+    Parameters
+    ----------
+    x, y : array_like
+        Array of samples, should be one-dimensional.
+    alternative :  'less', 'two-sided', or 'greater', optional
+        Whether to get the p-value for the one-sided hypothesis ('less'
+        or 'greater') or for the two-sided hypothesis ('two-sided').
+        Defaults value is 'two-sided' .
+    distribution: 't' or 'normal', optional
+        Whether to get the p-value by t-distribution or by standard normal
+        distribution.
+        Defaults value is 't' .
+
+    Returns
+    -------
+    statistic : float
+        The Brunner-Munzer W statistic.
+    pvalue : float
+        p-value assuming an t distribution. One-sided or
+        two-sided, depending on the choice of `alternative` and `distribution`.
+
+    See Also
+    --------
+    mannwhitneyu : Mann-Whitney rank test on two samples.
+
+    Notes
+    -------
+    For more details on `brunnermunzel`, see `stats.brunnermunzel`.
+
+    """
+    x = ma.asarray(x).compressed().view(ndarray)
+    y = ma.asarray(y).compressed().view(ndarray)
+    nx = len(x)
+    ny = len(y)
+    if nx == 0 or ny == 0:
+        return BrunnerMunzelResult(np.nan, np.nan)
+    nc = nx + ny
+    rankc = rankdata(np.concatenate((x,y)))
+    rankcx = rankc[0:nx]
+    rankcy = rankc[nx:nx+ny]
+    rankcx_mean = np.mean(rankcx)
+    rankcy_mean = np.mean(rankcy)
+    rankx = rankdata(x)
+    ranky = rankdata(y)
+    rankx_mean = np.mean(rankx)
+    ranky_mean = np.mean(ranky)
+
+    Sx = np.sum(np.power(rankcx - rankx - rankcx_mean + rankx_mean, 2.0))
+    Sx /= nx - 1
+    Sy = np.sum(np.power(rankcy - ranky - rankcy_mean + ranky_mean, 2.0))
+    Sy /= ny - 1
+
+    sigmax = Sx / np.power(nc - nx, 2.0)
+    sigmay = Sx / np.power(nc - ny, 2.0)
+
+    wbfn = nx * ny * (rankcy_mean - rankcx_mean)
+    wbfn /= (nx + ny) * np.sqrt(nx * Sx + ny * Sy)
+
+    if distribution == "t":
+        df_numer = np.power(nx * Sx + ny * Sy, 2.0)
+        df_denom = np.power(nx * Sx, 2.0) / (nx - 1)
+        df_denom += np.power(ny * Sy, 2.0) / (ny - 1)
+        df = df_numer / df_denom
+        p = distributions.t.cdf(wbfn, df)
+    elif distribution == "normal":
+        p = distributions.norm.cdf(wbfn)
+    else:
+        raise ValueError(
+            "distribution should be 't' or 'normal'")
+
+    if alternative == "greater":
+        p = p
+    elif alternative == "less":
+        p = 1 - p
+    elif alternative == "two-sided":
+        p = 2 * np.min([p, 1-p])
+    else:
+        raise ValueError(
+            "alternative should be 'less', 'greater' or 'two-sided'")
+
+    return BrunnerMunzelResult(wbfn, p) 

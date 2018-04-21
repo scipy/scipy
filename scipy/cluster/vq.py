@@ -28,12 +28,11 @@ A vector v belongs to cluster i if it is closer to centroid i than
 any other centroids. If v belongs to i, we say centroid i is the
 dominating centroid of v. The k-means algorithm tries to
 minimize distortion, which is defined as the sum of the squared distances
-between each observation vector and its dominating centroid.  Each
-step of the k-means algorithm refines the choices of centroids to
-reduce distortion. The change in distortion is used as a
-stopping criterion: when the change is lower than a threshold, the
-k-means algorithm is not making sufficient progress and
-terminates. One can also define a maximum number of iterations.
+between each observation vector and its dominating centroid. 
+The minimization is achieved by iteratively reclassifying
+the observations into clusters and recalculating the centroids until
+a configuration is reached in which the centroids are stable. One can 
+also define a maximum number of iterations.
 
 Since vector quantization is a natural application for k-means,
 information theory terminology is often used.  The centroid index
@@ -322,13 +321,14 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True):
     """
     Performs k-means on a set of observation vectors forming k clusters.
 
-    The k-means algorithm adjusts the centroids until sufficient
-    progress cannot be made, i.e. the change in distortion since
-    the last iteration is less than some threshold. This yields
+    The k-means algorithm adjusts the classification of the observations
+    into clusters and updates the cluster centroids until the position of
+    the centroids is stable over successive iterations. In this 
+    implementation of the algorithm, the stability of the centroids is 
+    determined by comparing the absolute value of the change in the average 
+    Euclidean distance between the observations and their corresponding 
+    centroids against a threshold. This yields
     a code book mapping centroids to codes and vice versa.
-
-    Distortion is defined as the sum of the squared differences
-    between the observations and the corresponding centroid.
 
     Parameters
     ----------
@@ -373,8 +373,10 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True):
        not necessarily the globally minimal distortion.
 
     distortion : float
-       The distortion between the observations passed and the
-       centroids generated.
+       The mean (non-squared) Euclidean distance between the observations 
+       passed and the centroids generated. Note the difference to the standard
+       definition of distortion in the context of the K-means algorithm, which 
+       is the sum of the squared distances.
 
     See Also
     --------

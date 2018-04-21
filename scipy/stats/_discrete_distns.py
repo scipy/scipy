@@ -7,13 +7,14 @@ from __future__ import division, print_function, absolute_import
 from scipy import special
 from scipy.special import entr, logsumexp, betaln, gammaln as gamln
 from scipy._lib._numpy_compat import broadcast_to
+from scipy._lib._util import _lazywhere
 
 from numpy import floor, ceil, log, exp, sqrt, log1p, expm1, tanh, cosh, sinh
 
 import numpy as np
 
 from ._distn_infrastructure import (
-        rv_discrete, _lazywhere, _ncx2_pdf, _ncx2_cdf, get_distribution_names)
+        rv_discrete, _ncx2_pdf, _ncx2_cdf, get_distribution_names)
 
 
 class binom_gen(rv_discrete):

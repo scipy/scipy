@@ -1056,6 +1056,7 @@ class _TestCommon(object):
                 sM = self.spmatrix(M, shape=(3,3), dtype=dtype)
                 sMinv = inv(sM)
             assert_array_almost_equal(sMinv.dot(sM).todense(), np.eye(3))
+            assert_raises(TypeError, inv, M)
         for dtype in [float]:
             check(dtype)
 
@@ -2006,6 +2007,8 @@ class _TestCommon(object):
 
 
 class _TestInplaceArithmetic(object):
+    @pytest.mark.skipif(NumpyVersion(np.__version__) < "1.13.0",
+                        reason="numpy version doesn't respect array priority")
     def test_inplace_dense(self):
         a = np.ones((3, 4))
         b = self.spmatrix(a)
@@ -4347,10 +4350,6 @@ class _NonCanonicalMixin(object):
 
     @pytest.mark.skip(reason='nnz counts explicit zeros')
     def test_empty(self):
-        pass
-
-    @pytest.mark.xfail(run=False, reason='unary ufunc overrides broken with non-canonical matrix')
-    def test_unary_ufunc_overrides(self):
         pass
 
 

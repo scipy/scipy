@@ -550,7 +550,7 @@ def _zoom(a_lo, a_hi, phi_lo, phi_hi, derphi_lo,
         #
         # if the result is too close to the end points (or out of the
         # interval) then use quadratic interpolation with phi_lo,
-        # derphi_lo and phi_hi if the result is stil too close to the
+        # derphi_lo and phi_hi if the result is still too close to the
         # end points (or out of the interval) then use bisection
 
         if (i > 0):

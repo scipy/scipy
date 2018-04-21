@@ -14,7 +14,7 @@ import numpy as np
 from numpy.testing import assert_, assert_allclose, assert_equal
 from pytest import raises as assert_raises
 
-from scipy.io.netcdf import netcdf_file
+from scipy.io.netcdf import netcdf_file, IS_PYPY
 
 from scipy._lib._numpy_compat import suppress_warnings
 from scipy._lib._tmpdirs import in_tempdir
@@ -82,8 +82,8 @@ def test_read_write_files():
 
         # To read the NetCDF file we just created::
         with netcdf_file('simple.nc') as f:
-            # Using mmap is the default
-            assert_(f.use_mmap)
+            # Using mmap is the default (but not on pypy)
+            assert_equal(f.use_mmap, not IS_PYPY)
             check_simple(f)
             assert_equal(f._attributes['appendRan'], 1)
 
@@ -111,10 +111,14 @@ def test_read_write_files():
                 check_simple(f)
 
         # Read file from fileobj, with mmap
-        with open('simple.nc', 'rb') as fobj:
-            with netcdf_file(fobj, mmap=True) as f:
-                assert_(f.use_mmap)
-                check_simple(f)
+        with suppress_warnings() as sup:
+            if IS_PYPY:
+                sup.filter(RuntimeWarning,
+                           "Cannot close a netcdf_file opened with mmap=True.*")
+            with open('simple.nc', 'rb') as fobj:
+                with netcdf_file(fobj, mmap=True) as f:
+                    assert_(f.use_mmap)
+                    check_simple(f)
 
         # Again read it in append mode (adding another att)
         with open('simple.nc', 'r+b') as fobj:
@@ -243,11 +247,26 @@ def test_itemset_no_segfault_on_readonly():
     with suppress_warnings() as sup:
         sup.filter(RuntimeWarning,
                    "Cannot close a netcdf_file opened with mmap=True, when netcdf_variables or arrays referring to its data still exist")
-        with netcdf_file(filename, 'r') as f:
+        with netcdf_file(filename, 'r', mmap=True) as f:
             time_var = f.variables['time']
 
     # time_var.assignValue(42) should raise a RuntimeError--not seg. fault!
     assert_raises(RuntimeError, time_var.assignValue, 42)
+
+
+def test_appending_issue_gh_8625():
+    stream = BytesIO()
+
+    with make_simple(stream, mode='w') as f:
+        f.createDimension('x', 2)
+        f.createVariable('x', float, ('x',))
+        f.variables['x'][...] = 1
+        f.flush()
+        contents = stream.getvalue()
+
+    stream = BytesIO(contents)
+    with netcdf_file(stream, mode='a') as f:
+        f.variables['x'][...] = 2
 
 
 def test_write_invalid_dtype():
@@ -314,12 +333,13 @@ def test_ticket_1720():
 def test_mmaps_segfault():
     filename = pjoin(TEST_DATA_PATH, 'example_1.nc')
 
-    with warnings.catch_warnings():
-        warnings.simplefilter("error")
-        with netcdf_file(filename, mmap=True) as f:
-            x = f.variables['lat'][:]
-            # should not raise warnings
-            del x
+    if not IS_PYPY:
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            with netcdf_file(filename, mmap=True) as f:
+                x = f.variables['lat'][:]
+                # should not raise warnings
+                del x
 
     def doit():
         with netcdf_file(filename, mmap=True) as f:

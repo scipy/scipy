@@ -100,7 +100,7 @@ def findfreqs(num, den, N, kind='ba'):
     return w
 
 
-def freqs(b, a, worN=None, plot=None):
+def freqs(b, a, worN=200, plot=None):
     """
     Compute frequency response of analog filter.
 
@@ -176,7 +176,7 @@ def freqs(b, a, worN=None, plot=None):
     return w, h
 
 
-def freqs_zpk(z, p, k, worN=None):
+def freqs_zpk(z, p, k, worN=200):
     """
     Compute frequency response of analog filter.
 
@@ -255,7 +255,7 @@ def freqs_zpk(z, p, k, worN=None):
     return w, h
 
 
-def freqz(b, a=1, worN=None, whole=False, plot=None):
+def freqz(b, a=1, worN=512, whole=False, plot=None):
     """
     Compute the frequency response of a digital filter.
 
@@ -281,7 +281,7 @@ def freqz(b, a=1, worN=None, whole=False, plot=None):
         and ``b.shape[1:]``, ``a.shape[1:]``, and the shape of the frequencies
         array must be compatible for broadcasting.
     worN : {None, int, array_like}, optional
-        If None (default), then compute at 512 equally spaced frequencies.
+        If None, then compute at 512 equally spaced frequencies.
         If a single integer, then compute at that many frequencies.  This is
         a convenient alternative to::
 
@@ -450,7 +450,7 @@ def freqz(b, a=1, worN=None, whole=False, plot=None):
     return w, h
 
 
-def freqz_zpk(z, p, k, worN=None, whole=False):
+def freqz_zpk(z, p, k, worN=512, whole=False):
     r"""
     Compute the frequency response of a digital filter in ZPK form.
 
@@ -540,7 +540,7 @@ def freqz_zpk(z, p, k, worN=None, whole=False):
     return w, h
 
 
-def group_delay(system, w=None, whole=False):
+def group_delay(system, w=512, whole=False):
     r"""Compute the group delay of a digital filter.
 
     The group delay measures by how many samples amplitude envelopes of
@@ -556,7 +556,7 @@ def group_delay(system, w=None, whole=False):
     system : tuple of array_like (b, a)
         Numerator and denominator coefficients of a filter transfer function.
     w : {None, int, array-like}, optional
-        If None (default), then compute at 512 frequencies equally spaced
+        If None, then compute at 512 frequencies equally spaced
         around the unit circle.
         If a single integer, then compute at that many frequencies.
         If array, compute the delay at the frequencies given

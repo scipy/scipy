@@ -15,10 +15,10 @@ import warnings
 
 from scipy.misc import doccer
 from ._distr_params import distcont, distdiscrete
-from scipy._lib._util import check_random_state, _lazywhere, _lazyselect
+from scipy._lib._util import check_random_state
 from scipy._lib._util import _valarray as valarray
 
-from scipy.special import (comb, chndtr, entr, rel_entr, kl_div, xlogy, ive)
+from scipy.special import (comb, chndtr, entr, rel_entr, xlogy, ive)
 
 # for root finding for discrete distribution ppf, and max likelihood estimation
 from scipy import optimize
@@ -29,11 +29,9 @@ from scipy import integrate
 # to approximate the pdf of a continuous distribution given its cdf
 from scipy.misc import derivative
 
-from numpy import (arange, putmask, ravel, take, ones, shape, ndarray,
-                   product, reshape, zeros, floor, logical_and, log, sqrt, exp)
-
-from numpy import (place, argsort, argmax, vectorize,
-                   asarray, nan, inf, isinf, NINF, empty)
+from numpy import (arange, putmask, ravel, ones, shape, ndarray, zeros, floor,
+                   logical_and, log, sqrt, place, argmax, vectorize, asarray,
+                   nan, inf, isinf, NINF, empty)
 
 import numpy as np
 
@@ -54,91 +52,91 @@ docheaders = {'methods': """\nMethods\n-------\n""",
               'examples': """\nExamples\n--------\n"""}
 
 _doc_rvs = """\
-``rvs(%(shapes)s, loc=0, scale=1, size=1, random_state=None)``
+rvs(%(shapes)s, loc=0, scale=1, size=1, random_state=None)
     Random variates.
 """
 _doc_pdf = """\
-``pdf(x, %(shapes)s, loc=0, scale=1)``
+pdf(x, %(shapes)s, loc=0, scale=1)
     Probability density function.
 """
 _doc_logpdf = """\
-``logpdf(x, %(shapes)s, loc=0, scale=1)``
+logpdf(x, %(shapes)s, loc=0, scale=1)
     Log of the probability density function.
 """
 _doc_pmf = """\
-``pmf(k, %(shapes)s, loc=0, scale=1)``
+pmf(k, %(shapes)s, loc=0, scale=1)
     Probability mass function.
 """
 _doc_logpmf = """\
-``logpmf(k, %(shapes)s, loc=0, scale=1)``
+logpmf(k, %(shapes)s, loc=0, scale=1)
     Log of the probability mass function.
 """
 _doc_cdf = """\
-``cdf(x, %(shapes)s, loc=0, scale=1)``
+cdf(x, %(shapes)s, loc=0, scale=1)
     Cumulative distribution function.
 """
 _doc_logcdf = """\
-``logcdf(x, %(shapes)s, loc=0, scale=1)``
+logcdf(x, %(shapes)s, loc=0, scale=1)
     Log of the cumulative distribution function.
 """
 _doc_sf = """\
-``sf(x, %(shapes)s, loc=0, scale=1)``
+sf(x, %(shapes)s, loc=0, scale=1)
     Survival function  (also defined as ``1 - cdf``, but `sf` is sometimes more accurate).
 """
 _doc_logsf = """\
-``logsf(x, %(shapes)s, loc=0, scale=1)``
+logsf(x, %(shapes)s, loc=0, scale=1)
     Log of the survival function.
 """
 _doc_ppf = """\
-``ppf(q, %(shapes)s, loc=0, scale=1)``
+ppf(q, %(shapes)s, loc=0, scale=1)
     Percent point function (inverse of ``cdf`` --- percentiles).
 """
 _doc_isf = """\
-``isf(q, %(shapes)s, loc=0, scale=1)``
+isf(q, %(shapes)s, loc=0, scale=1)
     Inverse survival function (inverse of ``sf``).
 """
 _doc_moment = """\
-``moment(n, %(shapes)s, loc=0, scale=1)``
+moment(n, %(shapes)s, loc=0, scale=1)
     Non-central moment of order n
 """
 _doc_stats = """\
-``stats(%(shapes)s, loc=0, scale=1, moments='mv')``
+stats(%(shapes)s, loc=0, scale=1, moments='mv')
     Mean('m'), variance('v'), skew('s'), and/or kurtosis('k').
 """
 _doc_entropy = """\
-``entropy(%(shapes)s, loc=0, scale=1)``
+entropy(%(shapes)s, loc=0, scale=1)
     (Differential) entropy of the RV.
 """
 _doc_fit = """\
-``fit(data, %(shapes)s, loc=0, scale=1)``
+fit(data, %(shapes)s, loc=0, scale=1)
     Parameter estimates for generic data.
 """
 _doc_expect = """\
-``expect(func, args=(%(shapes_)s), loc=0, scale=1, lb=None, ub=None, conditional=False, **kwds)``
+expect(func, args=(%(shapes_)s), loc=0, scale=1, lb=None, ub=None, conditional=False, **kwds)
     Expected value of a function (of one argument) with respect to the distribution.
 """
 _doc_expect_discrete = """\
-``expect(func, args=(%(shapes_)s), loc=0, lb=None, ub=None, conditional=False)``
+expect(func, args=(%(shapes_)s), loc=0, lb=None, ub=None, conditional=False)
     Expected value of a function (of one argument) with respect to the distribution.
 """
 _doc_median = """\
-``median(%(shapes)s, loc=0, scale=1)``
+median(%(shapes)s, loc=0, scale=1)
     Median of the distribution.
 """
 _doc_mean = """\
-``mean(%(shapes)s, loc=0, scale=1)``
+mean(%(shapes)s, loc=0, scale=1)
     Mean of the distribution.
 """
 _doc_var = """\
-``var(%(shapes)s, loc=0, scale=1)``
+var(%(shapes)s, loc=0, scale=1)
     Variance of the distribution.
 """
 _doc_std = """\
-``std(%(shapes)s, loc=0, scale=1)``
+std(%(shapes)s, loc=0, scale=1)
     Standard deviation of the distribution.
 """
 _doc_interval = """\
-``interval(alpha, %(shapes)s, loc=0, scale=1)``
+interval(alpha, %(shapes)s, loc=0, scale=1)
     Endpoints of the range that contains alpha percent of the distribution
 """
 _doc_allmethods = ''.join([docheaders['methods'], _doc_rvs, _doc_pdf,
@@ -202,7 +200,7 @@ Generate random numbers:
 
 And compare the histogram:
 
->>> ax.hist(r, normed=True, histtype='stepfilled', alpha=0.2)
+>>> ax.hist(r, density=True, histtype='stepfilled', alpha=0.2)
 >>> ax.legend(loc='best', frameon=False)
 >>> plt.show()
 
@@ -562,12 +560,12 @@ def _parse_args_stats(self, %(shape_arg_str)s %(locscale_in)s, moments='mv'):
 
 
 # Both the continuous and discrete distributions depend on ncx2.
-# I think the function name ncx2 is an abbreviation for noncentral chi squared.
+# The function name ncx2 is an abbreviation for noncentral chi squared.
 
 def _ncx2_log_pdf(x, df, nc):
-    # We use (xs**2 + ns**2)/2 = (xs - ns)**2/2  + xs*ns, and include the factor
-    # of exp(-xs*ns) into the ive function to improve numerical stability
-    # at large values of xs. See also `rice.pdf`.
+    # We use (xs**2 + ns**2)/2 = (xs - ns)**2/2  + xs*ns, and include the
+    # factor of exp(-xs*ns) into the ive function to improve numerical
+    # stability at large values of xs. See also `rice.pdf`.
     df2 = df/2.0 - 1.0
     xs, ns = np.sqrt(x), np.sqrt(nc)
     res = xlogy(df2/2.0, x/nc) - 0.5*(xs - ns)**2
@@ -738,7 +736,7 @@ class rv_generic(object):
         self.__doc__ = self.__doc__.replace('(, ', '(').replace(', )', ')')
 
     def _construct_default_doc(self, longname=None, extradoc=None,
-                docdict=None, discrete='continuous'):
+                               docdict=None, discrete='continuous'):
         """Construct instance docstring from the default template."""
         if longname is None:
             longname = 'A'
@@ -2247,7 +2245,8 @@ class rv_continuous(rv_generic):
         if support_width <= 0:
             return loc_hat, scale_hat
 
-        # Compute the proposed support according to the loc and scale estimates.
+        # Compute the proposed support according to the loc and scale
+        # estimates.
         a_hat = loc_hat + a * scale_hat
         b_hat = loc_hat + b * scale_hat
 
@@ -2449,10 +2448,6 @@ def _drv2_ppfsingle(self, q, *args):  # Use basic bisection algorithm
         if (qb == q):
             return b
         if b <= a+1:
-            # testcase: return wrong number at lower index
-            # python -c "from scipy.stats import zipf;print zipf.ppf(0.01, 2)" wrong
-            # python -c "from scipy.stats import zipf;print zipf.ppf([0.01, 0.61, 0.77, 0.83], 2)"
-            # python -c "from scipy.stats import logser;print logser.ppf([0.1, 0.66, 0.86, 0.93], 0.6)"
             if qa > q:
                 return a
             else:
@@ -2655,8 +2650,8 @@ class rv_discrete(rv_generic):
 
     """
     def __new__(cls, a=0, b=inf, name=None, badvalue=None,
-                 moment_tol=1e-8, values=None, inc=1, longname=None,
-                 shapes=None, extradoc=None, seed=None):
+                moment_tol=1e-8, values=None, inc=1, longname=None,
+                shapes=None, extradoc=None, seed=None):
 
         if values is not None:
             # dispatch to a subclass
@@ -3178,8 +3173,8 @@ class rv_discrete(rv_generic):
         depending on the function, `func`. If it does exist, but the sum converges
         slowly, the accuracy of the result may be rather low. For instance, for
         ``zipf(4)``, accuracy for mean, variance in example is only 1e-5.
-        increasing `maxcount` and/or `chunksize` may improve the result, but may also
-        make zipf very slow.
+        increasing `maxcount` and/or `chunksize` may improve the result, but may
+        also make zipf very slow.
 
         The function is not vectorized.
 
@@ -3261,7 +3256,8 @@ def _expect(fun, lb, ub, x0, inc, maxcount=1000, tolerance=1e-10,
 def _iter_chunked(x0, x1, chunksize=4, inc=1):
     """Iterate from x0 to x1 in chunks of chunksize and steps inc.
 
-    x0 must be finite, x1 need not be. In the latter case, the iterator is infinite.
+    x0 must be finite, x1 need not be. In the latter case, the iterator is
+    infinite.
     Handles both x0 < x1 and x0 > x1. In the latter case, iterates downwards
     (make sure to set inc < 0.)
 

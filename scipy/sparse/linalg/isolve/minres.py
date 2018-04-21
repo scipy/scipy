@@ -4,45 +4,67 @@ from numpy import sqrt, inner, finfo, zeros
 from numpy.linalg import norm
 
 from .utils import make_system
-from .iterative import set_docstring
 
 __all__ = ['minres']
 
 
-header = \
-"""Use MINimum RESidual iteration to solve Ax=b
-
-MINRES minimizes norm(A*x - b) for a real symmetric matrix A.  Unlike
-the Conjugate Gradient method, A can be indefinite or singular.
-
-If shift != 0 then the method solves (A - shift*I)x = b
-"""
-
-Ainfo = "The real symmetric N-by-N matrix of the linear system"
-
-footer = \
-"""
-Notes
------
-THIS FUNCTION IS EXPERIMENTAL AND SUBJECT TO CHANGE!
-
-References
-----------
-Solution of sparse indefinite systems of linear equations,
-    C. C. Paige and M. A. Saunders (1975),
-    SIAM J. Numer. Anal. 12(4), pp. 617-629.
-    https://web.stanford.edu/group/SOL/software/minres/
-
-This file is a translation of the following MATLAB implementation:
-    https://web.stanford.edu/group/SOL/software/minres/minres-matlab.zip
-"""
-
-
-@set_docstring(header,
-               Ainfo,
-               footer)
 def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
            M=None, callback=None, show=False, check=False):
+    """
+    Use MINimum RESidual iteration to solve Ax=b
+
+    MINRES minimizes norm(A*x - b) for a real symmetric matrix A.  Unlike
+    the Conjugate Gradient method, A can be indefinite or singular.
+
+    If shift != 0 then the method solves (A - shift*I)x = b
+
+    Parameters
+    ----------
+    A : {sparse matrix, dense matrix, LinearOperator}
+        The real symmetric N-by-N matrix of the linear system
+    b : {array, matrix}
+        Right hand side of the linear system. Has shape (N,) or (N,1).
+
+    Returns
+    -------
+    x : {array, matrix}
+        The converged solution.
+    info : integer
+        Provides convergence information:
+            0  : successful exit
+            >0 : convergence to tolerance not achieved, number of iterations
+            <0 : illegal input or breakdown
+
+    Other Parameters
+    ----------------
+    x0  : {array, matrix}
+        Starting guess for the solution.
+    tol : float
+        Tolerance to achieve. The algorithm terminates when the relative
+        residual is below `tol`.
+    maxiter : integer
+        Maximum number of iterations.  Iteration will stop after maxiter
+        steps even if the specified tolerance has not been achieved.
+    M : {sparse matrix, dense matrix, LinearOperator}
+        Preconditioner for A.  The preconditioner should approximate the
+        inverse of A.  Effective preconditioning dramatically improves the
+        rate of convergence, which implies that fewer iterations are needed
+        to reach a given error tolerance.
+    callback : function
+        User-supplied function to call after each iteration.  It is called
+        as callback(xk), where xk is the current solution vector.
+
+    References
+    ----------
+    Solution of sparse indefinite systems of linear equations,
+        C. C. Paige and M. A. Saunders (1975),
+        SIAM J. Numer. Anal. 12(4), pp. 617-629.
+        https://web.stanford.edu/group/SOL/software/minres/
+
+    This file is a translation of the following MATLAB implementation:
+        https://web.stanford.edu/group/SOL/software/minres/minres-matlab.zip
+
+    """
     A, M, x, b, postprocess = make_system(A, M, x0, b)
 
     matvec = A.matvec

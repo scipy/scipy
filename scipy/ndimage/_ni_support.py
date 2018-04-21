@@ -73,19 +73,14 @@ def _get_output(output, input, shape=None):
         shape = input.shape
     if output is None:
         output = numpy.zeros(shape, dtype=input.dtype.name)
-        return_value = output
     elif type(output) in [type(type), type(numpy.zeros((4,)).dtype)]:
         output = numpy.zeros(shape, dtype=output)
-        return_value = output
     elif type(output) in string_types:
         output = numpy.typeDict[output]
         output = numpy.zeros(shape, dtype=output)
-        return_value = output
-    else:
-        if output.shape != shape:
-            raise RuntimeError("output shape not correct")
-        return_value = None
-    return output, return_value
+    elif output.shape != shape:
+        raise RuntimeError("output shape not correct")
+    return output
 
 
 def _check_axis(axis, rank):

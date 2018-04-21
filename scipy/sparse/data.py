@@ -129,9 +129,8 @@ for npfunc in _ufuncs_with_fixed_point_at_zero:
 
     def _create_method(op):
         def method(self):
-            result = op(self.data)
-            x = self._with_data(result, copy=True)
-            return x
+            result = op(self._deduped_data())
+            return self._with_data(result, copy=True)
 
         method.__doc__ = ("Element-wise %s.\n\n"
                           "See numpy.%s for more information." % (name, name))

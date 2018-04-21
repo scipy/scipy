@@ -119,6 +119,16 @@ class _TestConvolve(object):
         assert_array_equal(convolve(big, small, 'valid'),
                            out_array[1:3, 1:3, 1:3])
 
+    def test_invalid_params(self):
+        a = [3, 4, 5]
+        b = [1, 2, 3]
+        assert_raises(ValueError, convolve, a, b, mode='spam')
+        assert_raises(ValueError, convolve, a, b, mode='eggs', method='fft')
+        assert_raises(ValueError, convolve, a, b, mode='ham', method='direct')
+        assert_raises(ValueError, convolve, a, b, mode='full', method='bacon')
+        assert_raises(ValueError, convolve, a, b, mode='same', method='bacon')
+
+
 class TestConvolve(_TestConvolve):
 
     def test_valid_mode2(self):
@@ -224,6 +234,15 @@ class TestConvolve(_TestConvolve):
                 assert_equal(fft, direct)
                 assert_equal(fft, 2**(2*n))
                 assert_equal(direct, 2**(2*n))
+
+    def test_mismatched_dims(self):
+        # Input arrays should have the same number of dimensions
+        assert_raises(ValueError, convolve, [1], 2, method='direct')
+        assert_raises(ValueError, convolve, 1, [2], method='direct')
+        assert_raises(ValueError, convolve, [1], 2, method='fft')
+        assert_raises(ValueError, convolve, 1, [2], method='fft')
+        assert_raises(ValueError, convolve, [1], [[2]])
+        assert_raises(ValueError, convolve, [3], 2)
 
 
 class _TestConvolve2d(object):
@@ -376,6 +395,11 @@ class TestConvolve2d(_TestConvolve2d):
                 signal.convolve2d([a], [b], mode=mode)),
                 signal.convolve(a, b, mode=mode))
 
+    def test_invalid_dims(self):
+        assert_raises(ValueError, convolve2d, 3, 4)
+        assert_raises(ValueError, convolve2d, [3], [4])
+        assert_raises(ValueError, convolve2d, [[[3]]], [[[4]]])
+
 
 class TestFFTConvolve(object):
 
@@ -508,6 +532,15 @@ class TestFFTConvolve(object):
 
         assert_raises(ValueError, fftconvolve, *(a, b), **{'mode': 'valid'})
         assert_raises(ValueError, fftconvolve, *(b, a), **{'mode': 'valid'})
+
+    def test_mismatched_dims(self):
+        assert_raises(ValueError, fftconvolve, [1], 2)
+        assert_raises(ValueError, fftconvolve, 1, [2])
+        assert_raises(ValueError, fftconvolve, [1], [[2]])
+        assert_raises(ValueError, fftconvolve, [3], 2)
+
+    def test_invalid_flags(self):
+        assert_raises(ValueError, fftconvolve, [1], [2], mode='chips')
 
 
 class TestMedFilt(object):
@@ -1204,9 +1237,10 @@ def test_lfilter_notimplemented_input():
     assert_raises(NotImplementedError, lfilter, [2,3], [4,5], [1,2,3,4,5])
 
 
-@pytest.mark.parametrize('dt', [np.ubyte, np.byte, np.ushort, np.short, np.uint, int,
-                 np.ulonglong, np.ulonglong, np.float32, np.float64,
-                 np.longdouble, Decimal])
+@pytest.mark.parametrize('dt', [np.ubyte, np.byte, np.ushort, np.short,
+                                np.uint, int, np.ulonglong, np.ulonglong,
+                                np.float32, np.float64, np.longdouble,
+                                Decimal])
 class TestCorrelateReal(object):
     def _setup_rank1(self, dt):
         a = np.linspace(0, 3, 4).astype(dt)
@@ -1316,7 +1350,11 @@ class TestCorrelateReal(object):
         assert_array_almost_equal(y, y_r)
         assert_equal(y.dtype, dt)
 
-    def test_invalid_shapes(self, dt):
+
+class TestCorrelate(object):
+    # Tests that don't depend on dtype
+
+    def test_invalid_shapes(self):
         # By "invalid," we mean that no one
         # array has dimensions that are all at
         # least as large as the corresponding
@@ -1327,6 +1365,35 @@ class TestCorrelateReal(object):
 
         assert_raises(ValueError, correlate, *(a, b), **{'mode': 'valid'})
         assert_raises(ValueError, correlate, *(b, a), **{'mode': 'valid'})
+
+    def test_invalid_params(self):
+        a = [3, 4, 5]
+        b = [1, 2, 3]
+        assert_raises(ValueError, correlate, a, b, mode='spam')
+        assert_raises(ValueError, correlate, a, b, mode='eggs', method='fft')
+        assert_raises(ValueError, correlate, a, b, mode='ham', method='direct')
+        assert_raises(ValueError, correlate, a, b, mode='full', method='bacon')
+        assert_raises(ValueError, correlate, a, b, mode='same', method='bacon')
+
+    def test_mismatched_dims(self):
+        # Input arrays should have the same number of dimensions
+        assert_raises(ValueError, correlate, [1], 2, method='direct')
+        assert_raises(ValueError, correlate, 1, [2], method='direct')
+        assert_raises(ValueError, correlate, [1], 2, method='fft')
+        assert_raises(ValueError, correlate, 1, [2], method='fft')
+        assert_raises(ValueError, correlate, [1], [[2]])
+        assert_raises(ValueError, correlate, [3], 2)
+
+    def test_numpy_fastpath(self):
+        a = [1, 2, 3]
+        b = [4, 5]
+        assert_allclose(correlate(a, b, mode='same'), [5, 14, 23])
+
+        a = [1, 2, 3]
+        b = [4, 5, 6]
+        assert_allclose(correlate(a, b, mode='same'), [17, 32, 23])
+        assert_allclose(correlate(a, b, mode='full'), [6, 17, 32, 23, 12])
+        assert_allclose(correlate(a, b, mode='valid'), [32])
 
 
 @pytest.mark.parametrize('dt', [np.csingle, np.cdouble, np.clongdouble])
@@ -2304,3 +2371,14 @@ class TestSOSFilt(object):
         # Expected steady state value of the step response of this filter:
         ss = np.prod(sos[:, :3].sum(axis=-1) / sos[:, 3:].sum(axis=-1))
         assert_allclose(y, ss, rtol=1e-13)
+
+
+class TestDeconvolve(object):
+
+    def test_basic(self):
+        # From docstring example
+        original = [0, 1, 0, 0, 1, 1, 0, 0]
+        impulse_response = [2, 1]
+        recorded = [0, 2, 1, 0, 2, 3, 1, 0, 0]
+        recovered, remainder = signal.deconvolve(recorded, impulse_response)
+        assert_allclose(recovered, original)

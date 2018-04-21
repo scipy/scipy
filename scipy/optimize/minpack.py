@@ -58,7 +58,8 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
     Parameters
     ----------
     func : callable ``f(x, *args)``
-        A function that takes at least one (possibly vector) argument.
+        A function that takes at least one (possibly vector) argument,
+        and returns a value of the same length.
     x0 : ndarray
         The starting estimate for the roots of ``func(x) = 0``.
     args : tuple, optional
@@ -372,6 +373,8 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
            min   sum((ydata - f(xdata, params))**2, axis=0)
          params
 
+    The solution, `x`, is always a 1D array, regardless of the shape of `x0`,
+    or whether `x0` is a scalar.
     """
     x0 = asarray(x0).flatten()
     n = len(x0)

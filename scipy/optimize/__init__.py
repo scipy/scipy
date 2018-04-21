@@ -14,8 +14,8 @@ Local Optimization
 .. autosummary::
    :toctree: generated/
 
-   minimize - Unified interface for minimizers of multivariate functions
-   minimize_scalar - Unified interface for minimizers of univariate functions
+   minimize - Interface for minimizers of multivariate functions
+   minimize_scalar - Interface for minimizers of univariate functions
    OptimizeResult - The optimization result returned by some optimizers
    OptimizeWarning - The optimization encountered problems
 
@@ -32,10 +32,39 @@ The `minimize` function supports the following methods:
    optimize.minimize-tnc
    optimize.minimize-cobyla
    optimize.minimize-slsqp
+   optimize.minimize-trustconstr
    optimize.minimize-dogleg
    optimize.minimize-trustncg
    optimize.minimize-trustkrylov
    optimize.minimize-trustexact
+
+Constraints are passed to `minimize` function as a single object or
+as a list of objects from the following classes:
+
+.. autosummary::
+   :toctree: generated/
+
+   NonlinearConstraint - Class defining general nonlinear constraints.
+   LinearConstraint - Class defining general linear constraints.
+
+Simple bound constraints are handled separately and there is a special class
+for them:
+
+.. autosummary::
+   :toctree: generated/
+
+   Bounds - Bound constraints.
+
+Quasi-Newton strategies implementing `HessianUpdateStrategy`
+interface can be used to approximate the Hessian in `minimize`
+function (available only for the 'trust-constr' method). Available
+quasi-Newton methods implementing this interface are:
+
+.. autosummary::
+   :toctree: generated/
+
+   BFGS - Broyden-Fletcher-Goldfarb-Shanno (BFGS) Hessian update strategy.
+   SR1 - Symmetric-rank-1 Hessian update strategy.
 
 The `minimize_scalar` function supports the following methods:
 
@@ -232,6 +261,7 @@ Utilities
 
    show_options - Show specific options optimization solvers
    LbfgsInvHessProduct - Linear operator for L-BFGS approximate inverse Hessian
+   HessianUpdateStrategy - Interface for implementing Hessian update strategies
 
 """
 
@@ -253,6 +283,10 @@ from ._linprog import linprog, linprog_verbose_callback
 from ._hungarian import linear_sum_assignment
 from ._differentialevolution import differential_evolution
 from ._lsq import least_squares, lsq_linear
+from ._constraints import (NonlinearConstraint,
+                           LinearConstraint,
+                           Bounds)
+from ._hessian_update_strategy import HessianUpdateStrategy, BFGS, SR1
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 

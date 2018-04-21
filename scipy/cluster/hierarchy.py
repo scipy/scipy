@@ -490,7 +490,7 @@ def linkage(y, method='single', metric='euclidean', optimal_ordering=False):
     or a 2d array of observation vectors.
 
     If y is a 1d condensed distance matrix,
-    then y must be a :math:`{n \\choose 2}` sized
+    then y must be a :math:`\\binom{n}{2}` sized
     vector where n is the number of original observations paired
     in the distance matrix. The behavior of this function is very
     similar to the MATLAB linkage function.

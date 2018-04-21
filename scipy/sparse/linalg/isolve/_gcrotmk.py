@@ -3,6 +3,7 @@
 
 from __future__ import division, print_function, absolute_import
 
+import warnings
 import numpy as np
 from numpy.linalg import LinAlgError
 from scipy._lib.six import xrange
@@ -57,6 +58,8 @@ def _fgmres(matvec, v0, m, atol, lpsolve=None, rpsolve=None, cs=(), outer_v=(),
         Columns of matrix Z
     y : ndarray
         Solution to ||H y - e_1||_2 = min!
+    res : float
+        The final (preconditioned) residual norm
 
     """
 
@@ -70,6 +73,7 @@ def _fgmres(matvec, v0, m, atol, lpsolve=None, rpsolve=None, cs=(), outer_v=(),
     vs = [v0]
     zs = []
     y = None
+    res = np.nan
 
     m = m + len(outer_v)
 
@@ -175,11 +179,12 @@ def _fgmres(matvec, v0, m, atol, lpsolve=None, rpsolve=None, cs=(), outer_v=(),
 
     B = B[:,:j+1]
 
-    return Q, R, B, vs, zs, y
+    return Q, R, B, vs, zs, y, res
 
 
 def gcrotmk(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
-            m=20, k=None, CU=None, discard_C=False, truncate='oldest'):
+            m=20, k=None, CU=None, discard_C=False, truncate='oldest',
+            atol=None):
     """
     Solve a matrix equation using flexible GCROT(m,k) algorithm.
 
@@ -191,9 +196,14 @@ def gcrotmk(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
         Right hand side of the linear system. Has shape (N,) or (N,1).
     x0  : {array, matrix}
         Starting guess for the solution.
-    tol : float, optional
-        Tolerance to achieve. The algorithm terminates when either the relative
-        or the absolute residual is below `tol`.
+    tol, atol : float, optional
+        Tolerances for convergence, ``norm(residual) <= max(tol*norm(b), atol)``.
+        The default for ``atol`` is `tol`.
+
+        .. warning::
+
+           The default value for `atol` will be changed in a future release.
+           For future compatibility, specify `atol` explicitly.
     maxiter : int, optional
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved.
@@ -259,6 +269,13 @@ def gcrotmk(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
     if truncate not in ('oldest', 'smallest'):
         raise ValueError("Invalid value for 'truncate': %r" % (truncate,))
 
+    if atol is None:
+        warnings.warn("scipy.sparse.linalg.gcrotmk called without specifying `atol`. "
+                      "The default value will change in the future. To preserve "
+                      "current behavior, set ``atol=tol``.",
+                      category=DeprecationWarning, stacklevel=2)
+        atol = tol
+
     matvec = A.matvec
     psolve = M.matvec
 
@@ -275,8 +292,6 @@ def gcrotmk(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
     axpy, dot, scal, nrm2 = get_blas_funcs(['axpy', 'dot', 'scal', 'nrm2'], (x, r))
 
     b_norm = nrm2(b)
-    if b_norm == 0:
-        b_norm = 1
 
     if discard_C:
         CU[:] = [(None, u) for c, u in CU]
@@ -346,7 +361,14 @@ def gcrotmk(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
         beta = nrm2(r)
 
         # -- check stopping condition
-        if beta <= max(tol, tol * b_norm):
+        beta_tol = max(atol, tol * b_norm)
+
+        if beta <= beta_tol and (j_outer > 0 or CU):
+            # recompute residual to avoid rounding error
+            r = b - matvec(x)
+            beta = nrm2(r)
+
+        if beta <= beta_tol:
             j_outer = -1
             break
 
@@ -355,12 +377,12 @@ def gcrotmk(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
         cs = [c for c, u in CU]
 
         try:
-            Q, R, B, vs, zs, y = _fgmres(matvec,
-                                        r/beta,
-                                        ml,
-                                        rpsolve=psolve,
-                                        atol=tol*b_norm/beta,
-                                        cs=cs)
+            Q, R, B, vs, zs, y, pres = _fgmres(matvec,
+                                               r/beta,
+                                               ml,
+                                               rpsolve=psolve,
+                                               atol=max(atol, tol*b_norm)/beta,
+                                               cs=cs)
             y *= beta
         except LinAlgError:
             # Floating point over/underflow, non-finite result from

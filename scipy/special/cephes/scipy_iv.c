@@ -74,8 +74,8 @@
 extern double MACHEP;
 
 static double iv_asymptotic(double v, double x);
-void ikv_asymptotic_uniform(double v, double x, double *Iv, double *Kv);
-void ikv_temme(double v, double x, double *Iv, double *Kv);
+static void ikv_asymptotic_uniform(double v, double x, double *Iv, double *Kv);
+static void ikv_temme(double v, double x, double *Iv, double *Kv);
 
 double iv(double v, double x)
 {
@@ -242,7 +242,7 @@ static const double asymptotic_ufactors[N_UFACTORS][N_UFACTOR_TERMS] = {
 /*
  * Compute Iv, Kv from (AMS5 9.7.7 + 9.7.8), asymptotic expansion for large v
  */
-void ikv_asymptotic_uniform(double v, double x,
+static void ikv_asymptotic_uniform(double v, double x,
 			    double *i_value, double *k_value)
 {
     double i_prefactor, k_prefactor;
@@ -525,7 +525,7 @@ enum {
  * Compute I(v, x) and K(v, x) simultaneously by Temme's method, see
  * Temme, Journal of Computational Physics, vol 19, 324 (1975)
  */
-void ikv_temme(double v, double x, double *Iv_p, double *Kv_p)
+static void ikv_temme(double v, double x, double *Iv_p, double *Kv_p)
 {
     /* Kv1 = K_(v+1), fv = I_(v+1) / I_v */
     /* Ku1 = K_(u+1), fu = I_(u+1) / I_u */

@@ -24,10 +24,30 @@ from scipy.integrate import odeint, ode, complex_ode
 
 class TestOdeint(object):
     # Check integrate.odeint
+
     def _do_problem(self, problem):
         t = arange(0.0, problem.stop_t, 0.05)
+
+        # Basic case
         z, infodict = odeint(problem.f, problem.z0, t, full_output=True)
         assert_(problem.verify(z, t))
+
+        # Use tfirst=True
+        z, infodict = odeint(lambda t, y: problem.f(y, t), problem.z0, t,
+                             full_output=True, tfirst=True)
+        assert_(problem.verify(z, t))
+
+        if hasattr(problem, 'jac'):
+            # Use Dfun
+            z, infodict = odeint(problem.f, problem.z0, t, Dfun=problem.jac,
+                                 full_output=True)
+            assert_(problem.verify(z, t))
+
+            # Use Dfun and tfirst=True
+            z, infodict = odeint(lambda t, y: problem.f(y, t), problem.z0, t,
+                                 Dfun=lambda t, y: problem.jac(y, t),
+                                 full_output=True, tfirst=True)
+            assert_(problem.verify(z, t))
 
     def test_odeint(self):
         for problem_cls in PROBLEMS:
@@ -715,6 +735,16 @@ def test_odeint_banded_jacobian():
     # code.  That would cause errors or excessive jacobian evaluations.
     assert_array_equal(info1['nje'], info2['nje'])
     assert_array_equal(info3['nje'], info4['nje'])
+
+    # Test the use of tfirst
+    sol1ty, info1ty = odeint(lambda t, y, c: func(y, t, c), y0, t, args=(c,),
+                             full_output=True, atol=1e-13, rtol=1e-11,
+                             mxstep=10000,
+                             Dfun=lambda t, y, c: jac(y, t, c), tfirst=True)
+    # The code should execute the exact same sequence of floating point
+    # calculations, so these should be exactly equal.  We'll be safe and use
+    # a small tolerance.
+    assert_allclose(sol1, sol1ty, rtol=1e-12, err_msg="sol1 != sol1ty")
 
 
 def test_odeint_errors():

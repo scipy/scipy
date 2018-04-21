@@ -240,6 +240,25 @@ class LinprogCommonTests(object):
                           method=self.method)
         _assert_success(res, desired_x=[1, 0, 1, 0])
 
+    def test_linprog_cyclic_bland_bug_8561(self):
+        # Test that pivot row is chosen correctly when using Bland's rule
+        c = np.array([7, 0, -4, 1.5, 1.5])
+        A_ub = np.array([
+            [4, 5.5, 1.5, 1.0, -3.5],
+            [1, -2.5, -2, 2.5, 0.5],
+            [3, -0.5, 4, -12.5, -7],
+            [-1, 4.5, 2, -3.5, -2],
+            [5.5, 2, -4.5, -1, 9.5]])
+        b_ub = np.array([0, 0, 0, 0, 1])
+        if self.method == "simplex":
+            res = linprog(c, A_ub=A_ub, b_ub=b_ub,
+                          options=dict(maxiter=100, bland=True),
+                          method=self.method)
+        else:
+            res = linprog(c, A_ub=A_ub, b_ub=b_ub, options=dict(maxiter=100),
+                          method=self.method)
+        _assert_success(res, desired_x=[0, 0, 19, 16/3, 29/3])
+
     def test_linprog_unbounded(self):
         # Test linprog response to an unbounded problem
         c = np.array([1, 1]) * -1  # maximize
@@ -615,6 +634,17 @@ class LinprogCommonTests(object):
                       method=self.method, options=self.options)
         _assert_success(res, desired_x=b, desired_fun=np.sum(b))
 
+    def test_bug_8663(self):
+        A = [[0, -7]]
+        b = [-6]
+        c = [1, 5]
+        bounds = [(0, None), (None, None)]
+        res = linprog(c, A_eq=A, b_eq=b, bounds=bounds,
+                      method=self.method, options=self.options)
+        _assert_success(res,
+                        desired_x=[0, 6./7],
+                        desired_fun=5*6./7)
+
 
 class TestLinprogSimplex(LinprogCommonTests):
     method = "simplex"
@@ -858,6 +888,22 @@ class BaseTestLinprogIP(LinprogCommonTests):
                       method=self.method,
                       options=o)
         _assert_unbounded(res)
+
+    def test_bug_8664(self):
+        # Weak test. Ideally should _detect infeasibility_ for all options.
+        c = [4]
+        A_ub = [[2], [5]]
+        b_ub = [4, 4]
+        A_eq = [[0], [-8], [9]]
+        b_eq = [3, 2, 10]
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning)
+            sup.filter(OptimizeWarning, "Solving system with option...")
+            o = {key: self.options[key] for key in self.options}
+            o["presolve"] = False
+            res = linprog(c, A_ub, b_ub, A_eq, b_eq, options=o,
+                          method=self.method)
+        assert_(not res.success, "incorrectly reported success")
 
 
 class TestLinprogIPSpecific:

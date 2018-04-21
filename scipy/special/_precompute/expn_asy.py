@@ -49,11 +49,11 @@ def main():
         f.write("#define nA {}\n".format(len(A)))
         for k, Ak in enumerate(A):
             tmp = ', '.join([str(x.evalf(18)) for x in Ak.coeffs()])
-            f.write("double A{}[] = {{{}}};\n".format(k, tmp))
+            f.write("static const double A{}[] = {{{}}};\n".format(k, tmp))
         tmp = ", ".join(["A{}".format(k) for k in range(K + 1)])
-        f.write("double *A[] = {{{}}};\n".format(tmp))
+        f.write("static const double *A[] = {{{}}};\n".format(tmp))
         tmp = ", ".join([str(Ak.degree()) for Ak in A])
-        f.write("int Adegs[] = {{{}}};\n".format(tmp))
+        f.write("static const int Adegs[] = {{{}}};\n".format(tmp))
     os.rename(fn + '.new', fn)
 
 

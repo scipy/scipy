@@ -2158,7 +2158,16 @@ def tsearch(tri, xi):
     """
     return tri.find_simplex(xi)
 
-Delaunay.add_points.__func__.__doc__ = _QhullUser._add_points.__doc__
+# Set docstring for foo to docstring of bar, working around change in Cython 0.28
+# See https://github.com/scipy/scipy/pull/8581
+def _copy_docstr(dst, src):
+    try:
+        dst.__doc__ = src.__doc__
+    except AttributeError:
+        dst.__func__.__doc__ = src.__func__.__doc__
+
+
+_copy_docstr(Delaunay.add_points, _QhullUser._add_points)
 
 #------------------------------------------------------------------------------
 # Delaunay triangulation interface, for low-level C
@@ -2260,9 +2269,13 @@ class ConvexHull(_QhullUser):
 
         If option "Qc" is not specified, this list is not computed.
     area : float
-        Area of the convex hull
+        Area of the convex hull.
+        
+        .. versionadded:: 0.17.0
     volume : float
-        Volume of the convex hull
+        Volume of the convex hull.
+        
+        .. versionadded:: 0.17.0
 
     Raises
     ------
@@ -2353,7 +2366,7 @@ class ConvexHull(_QhullUser):
             self._vertices = np.unique(self.simplices)
         return self._vertices
 
-ConvexHull.add_points.__func__.__doc__ = _QhullUser._add_points.__doc__
+_copy_docstr(ConvexHull.add_points, _QhullUser._add_points)
 
 #------------------------------------------------------------------------------
 # Voronoi diagrams
@@ -2424,7 +2437,7 @@ class Voronoi(_QhullUser):
     Plot it:
 
     >>> import matplotlib.pyplot as plt
-    >>> voronoi_plot_2d(vor)
+    >>> fig = voronoi_plot_2d(vor)
     >>> plt.show()
 
     The Voronoi vertices:
@@ -2505,7 +2518,8 @@ class Voronoi(_QhullUser):
                                         self.ridge_vertices))
         return self._ridge_dict
 
-Voronoi.add_points.__func__.__doc__ = _QhullUser._add_points.__doc__
+
+_copy_docstr(Voronoi.add_points, _QhullUser._add_points)
 
 #------------------------------------------------------------------------------
 # Halfspace Intersection
@@ -2579,7 +2593,6 @@ class HalfspaceIntersection(_QhullUser):
     Halfspace intersection of planes forming some polygon
 
     >>> from scipy.spatial import HalfspaceIntersection
-    >>> import numpy as np
     >>> halfspaces = np.array([[-1, 0., 0.],
     ...                        [0., -1., 0.],
     ...                        [2., 1., -4.],
