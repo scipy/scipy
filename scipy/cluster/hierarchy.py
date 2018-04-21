@@ -268,6 +268,53 @@ def single(y):
     linkage: for advanced creation of hierarchical clusterings.
     scipy.spatial.distance.pdist : pairwise distance metrics
 
+    Examples
+    --------
+    >>> from scipy.cluster.hierarchy import single
+    >>> from scipy.spatial.distance import pdist
+
+    First we need a toy dataset to play with:
+
+    x x    x x
+    x        x
+
+    x        x
+    x x    x x
+
+    >>> X = [[0, 0], [0, 0.1], [0.1, 0],
+             [0, 1], [0, 0.9], [0.1, 1],
+             [1, 0], [0.9, 0], [1, 0.1], 
+             [1, 1], [0.9, 1], [1, 0.9]]
+
+    Then we get a condensed distance matrix from this dataset:
+    
+    >>> y = pdist(X)
+
+    Finally, we can perform the clustering
+
+    >>> Z = single(y)
+
+    >>> Z
+    array([[ 3. ,  4. ,  0.1,  2. ],
+           [ 6. ,  7. ,  0.1,  2. ],
+           [ 9. , 10. ,  0.1,  2. ],
+           [11. , 14. ,  0.1,  3. ],
+           [ 0. ,  1. ,  0.1,  2. ],
+           [ 2. , 16. ,  0.1,  3. ],
+           [ 5. , 12. ,  0.1,  3. ],
+           [ 8. , 13. ,  0.1,  3. ],
+           [17. , 18. ,  0.8,  6. ],
+           [19. , 20. ,  0.8,  9. ],
+           [15. , 21. ,  0.8, 12. ]])
+
+    The linkage matrix Z represents a dendrogram (the output of 
+    the hierarchical clustering).
+    See :func:`scipy.cluster.hierarchy.linkage` for a detailed 
+    explanation of its contents.
+
+    Also :func:`scipy.cluster.hierarchy.dendrogram` can be used 
+    to generate a graphical representation of the dendrogram.
+
     """
     return linkage(y, method='single', metric='euclidean')
 
