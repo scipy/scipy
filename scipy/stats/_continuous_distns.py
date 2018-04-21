@@ -3583,11 +3583,26 @@ class levy_stable_gen(rv_continuous):
 
     Notes
     -----
-    The distribution for `levy_stable` has characteristic function:
+    ..math:: \alpha-stable  distributions form a rich family of probability distributions 
+    which arises in central limit theorem problems. Stable distributions and their variants 
+    are also known under diferent names to different scientific communities, 
+    e.g. physicicts like to call Symmetric Stable Laws Levy Flights.
+
+    The densities of stable laws are well represented by Fox's H-fuctions [ZOL1]. 
+
+
+    The class of probability distributions for `levy_stable` is well represented by the characteristic functions:
 
     .. math::
-            
-        \varphi(t; \alpha, \beta, c, \mu) = e^{ it\mu -|ct|^{\alpha }(1-i\beta \operatorname{sign}(t)\Phi(\alpha ,t )) }
+        \varphi(k; \alpha, z, \mu) = e^{ ik\mu + zk^{\alpha} } 
+
+    where 0 < ..math::\alpha  <=2  is a stability parameter, which describes the parameter of power law decay of the tails, 
+    how z is complex valued parameter. Depending on the parametrization of the complex number z, different parametrisations 
+    are available. We will stick to the notation introduced in Zolotarev's [ZO2]. 
+    First, we start by parametrising z i nalgebraic form " a + ib": 
+
+    .. math::         
+        \varphi(k; \alpha, \beta, c, \mu) = e^{ ik\mu -|ct|^{\alpha }(1-i\beta \operatorname{sign}(k)\Phi(\alpha ,k ))}
 
     where:
               
@@ -3595,16 +3610,16 @@ class levy_stable_gen(rv_continuous):
         
         \Phi = \begin{cases}
                 \tan \left({\frac {\pi \alpha }{2}}\right)&\alpha \neq 1\\
-                -{\frac {2}{\pi }}\log |t|&\alpha =1
+                -{\frac {2}{\pi }}\log |k|&\alpha =1
                 \end{cases}
            
     The probability density function for `levy_stable` is:
         
     .. math::
     
-        f(x) = \frac{1}{2\pi}\int_{-\infty}^\infty \varphi(t)e^{-ixt}\,dt
+        f(x) = \frac{1}{2\pi}\int_{-\infty}^\infty \varphi(k)e^{-ixk}\,dk
         
-    where :math:`-\infty < t < \infty`. This integral does not have a known closed form.
+    where :math:`-\infty < k < \infty`. This integral does not have a known closed form.
     
     For evaluation of pdf we use either Zolotarev :math:`S_0` parameterization with integration, 
     direct integration of standard parameterization of characteristic function or FFT of 
@@ -3631,12 +3646,17 @@ class levy_stable_gen(rv_continuous):
     
     References
     ----------    
+    .. [ZOL1] Zolotarev V.M., 1993. On Representation of Densities of Stable Laws by Special Functions. 
+       SIAM ... 
+    .. [NO] Nolan J.P., 1997. Numerical Calculations of Stable Densities and Distribution Functions. 
+       Commun Statist. - Stochastic Models, 13(4), p.759-774
     .. [MC] McCulloch, J., 1986. Simple consistent estimators of stable distribution parameters.
        Communications in Statistics - Simulation and Computation 15, 11091136.
     .. [MS] Mittnik, S.T. Rachev, T. Doganoglu, D. Chenyao, 1999. Maximum likelihood estimation 
        of stable Paretian models, Mathematical and Computer Modelling, Volume 29, Issue 10, 
        1999, Pages 275-293.
     .. [BS] Borak, S., Hardle, W., Rafal, W. 2005. Stable distributions, Economic Risk. 
+
 
     %(example)s
 
@@ -3817,50 +3837,62 @@ class levy_stable_gen(rv_continuous):
 
     @staticmethod
     def _pdf_single_value_zolotarev(x, alpha, beta):
-        """Calculate pdf using Zolotarev's methods as detailed in [BS].
         """
-        zeta = -beta*np.tan(np.pi*alpha/2.)
+        Calculate pdf using Nolan's version of Zolotarev's Integral representation 
+        as detailed in [NO].
+        """
+
         if alpha != 1:
-            x0 = x + zeta  # convert to S_0 parameterization
-            xi = np.arctan(-zeta)/alpha
-            
+            zeta = -beta * np.tan(np.pi * alpha / 2.) 
+            x0 = x - zeta  # Zolotarev's M-parametrisation shift
+            xi = np.arctan(-zeta) / alpha
+
             def V(theta):
-                return np.cos(alpha*xi)**(1/(alpha-1)) * \
-                                (np.cos(theta)/np.sin(alpha*(xi+theta)))**(alpha/(alpha-1)) * \
-                                (np.cos(alpha*xi+(alpha-1)*theta)/np.cos(theta))
-            if x0 > zeta:
+                return np.cos(alpha * xi)**( 1/ (alpha - 1)) * \
+                            (np.cos(theta) / np.sin(alpha * (xi + theta)))**(alpha/(alpha-1)) * \
+                            (np.cos(alpha * xi + (alpha-1) * theta) / np.cos(theta))
+            if x0 > 0:
+                def g(theta):
+                    # !!! for |alpha-1|< eps the exponent starts to explode !!!
+                    return x0**(alpha / (alpha - 1)) * V(theta) 
+            
                 def f(theta):
-                    return V(theta)*(x0-zeta)**(alpha/(alpha-1))*np.exp(-V(theta)*(x0-zeta)**(alpha/(alpha-1)))
+                    return g(theta) * np.exp(-g(theta))
 
                 with np.errstate(all="ignore"):
-                    intg_max = optimize.minimize_scalar(lambda theta: -f(theta), bounds=[-xi, np.pi/2])
+                    intg_max = optimize.minimize_scalar(lambda theta: -f(theta), bounds=[-xi, np.pi / 2. ])
                     intg = integrate.quad(f, -xi, np.pi/2, points=[intg_max.x])[0]
-                    return alpha * intg / np.pi / np.abs(alpha-1) / (x0-zeta)
-            elif x0 == zeta:
-                return sc.gamma(1+1/alpha)*np.cos(xi)/np.pi/((1+zeta**2)**(1/alpha/2))
+                    return alpha * intg / (np.pi * np.abs(alpha - 1) * x0)
+            elif x0 == 0:
+                return (sc.gamma(1 + 1 / alpha) * np.cos(xi)) / (np.pi * ( 1 + zeta**2)**(1 / (2 * alpha)))
             else:
                 return levy_stable_gen._pdf_single_value_zolotarev(-x, alpha, -beta)
         else:
-            # since location zero, no need to reposition x for S_0 parameterization
-            xi = np.pi/2
+            xi = np.pi / 2.
             if beta != 0:                
                 def V(theta):
-                    expr_1 = np.pi/2+beta*theta
-                    return 2. * expr_1 * np.exp(expr_1*np.tan(theta)/beta) / np.cos(theta) / np.pi 
+                    expr_1 = np.pi / 2. + beta * theta
+                    return (2. / np.pi) * (expr_1 / np.cos(theta)) * np.exp(expr_1 * np.tan(theta) / beta)
+                
+                def g(theta):
+                    multiplier = np.exp(-(np.pi * x) / (2.* beta))
+                    return multiplier * V(theta) 
+                
+                def f(theta):
+                    return g(theta) * np.exp(-g(theta))
             
                 with np.errstate(all="ignore"):
-                    expr_1 = np.exp(-np.pi*x/beta/2.)
-                    int_1 = integrate.fixed_quad(lambda theta: V(theta)*np.exp(-expr_1 * V(theta)), -np.pi/2, np.pi/2)[0]
-                    return expr_1 * int_1 / np.abs(beta) / 2.
+                    intg = integrate.fixed_quad(lambda theta: f(theta), -np.pi/2, np.pi/2)[0]
+                    return intg / (2. * np.abs(beta))
             else:
-                return 1/(1+x**2)/np.pi
+                return 1 / ((1 + x**2) * np.pi)
 
     @staticmethod
     def _cdf_single_value_zolotarev(x, alpha, beta):
         """Calculate cdf using Zolotarev's methods as detailed in [BS].
         """
-        zeta = -beta*np.tan(np.pi*alpha/2.)
         if alpha != 1:
+            zeta = -beta*np.tan(np.pi*alpha/2.)
             x0 = x + zeta  # convert to S_0 parameterization
             xi = np.arctan(-zeta)/alpha
             
