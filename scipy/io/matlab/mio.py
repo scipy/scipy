@@ -136,6 +136,27 @@ def loadmat(file_name, mdict=None, appendmat=True, **kwargs):
     files.  Because scipy does not supply one, we do not implement the
     HDF5 / 7.3 interface here.
 
+    Examples
+    --------
+    >>> from os.path import dirname, join as pjoin
+    >>> import scipy.io as sio
+
+    Get the filename for an example .mat file from the tests/data directory.
+
+    >>> data_dir = pjoin(dirname(sio.__file__), 'matlab', 'tests', 'data')
+    >>> mat_fname = pjoin(data_dir, 'testdouble_7.4_GLNX86.mat')
+
+    Load the .mat file contents.
+
+    >>> mat_contents = sio.loadmat(mat_fname)
+
+    The result is a dictionary, one key/value pair for each variable:
+
+    >>> sorted(mat_contents.keys())
+    ['__globals__', '__header__', '__version__', 'testdouble']
+    >>> mat_contents['testdouble']
+    array([[0.        , 0.78539816, 1.57079633, 2.35619449, 3.14159265,
+            3.92699082, 4.71238898, 5.49778714, 6.28318531]])
     """
     variable_names = kwargs.pop('variable_names', None)
     MR, file_opened = mat_reader_factory(file_name, appendmat, **kwargs)
