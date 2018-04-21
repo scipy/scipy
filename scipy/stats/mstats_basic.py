@@ -291,6 +291,17 @@ def mode(a, axis=0):
     Notes
     -----
     For more details, see `stats.mode`.
+    
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy import stats
+    >>> from scipy.stats import mstats
+    >>> m_arr = np.ma.array([1, 1, 0, 0, 0, 0], mask=[0, 0, 1, 1, 1, 0])
+    >>> scipy.stats.mode(m_arr)
+    ModeResult(mode=array([0]), count=array([4]))
+    >>> mstats.mode(m_arr)
+    ModeResult(mode=array([1.]), count=array([2.]))
 
     """
     a, axis = _chk_asarray(a, axis)
@@ -1570,6 +1581,25 @@ def tmean(a, limits=None, inclusive=(True, True), axis=None):
     Notes
     -----
     For more details on `tmean`, see `stats.tmean`.
+    
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.stats import mstats
+    >>> a = np.array([[6, 8, 3, 0],
+    ...               [3, 9, 1, 2],
+    ...               [8, 7, 8, 2],
+    ...               [5, 6, 0, 2],
+    ...               [4, 5, 5, 2]])
+    ...               
+    ...               
+    >>> mstats.tmean(a,(2,5))
+    3.3
+    >>> mstats.tmean(a,(2,5),axis=0)
+    masked_array(data=[4.0, 5.0, 4.0, 2.0],
+                 mask=[False, False, False, False],
+           fill_value=1e+20)
+
 
     """
     return trima(a, limits=limits, inclusive=inclusive).mean(axis=axis)
