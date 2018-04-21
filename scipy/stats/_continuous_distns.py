@@ -3641,7 +3641,6 @@ class levy_stable_gen(rv_continuous):
     %(example)s
 
     """
-
     def _rvs(self, alpha, beta):
 
         def alpha1func(alpha, beta, TH, aTH, bTH, cosTH, tanTH, W):
@@ -3685,19 +3684,57 @@ class levy_stable_gen(rv_continuous):
     def _argcheck(self, alpha, beta):
         return (alpha > 0) & (alpha <= 2) & (beta <= 1) & (beta >= -1)
 
+
     @staticmethod
-    def _cf(t, alpha, beta, mu=0, c=1):
+    def _beta_switch(alpha, beta, **par):
+        """
+        Function for transforming the beta value accepted for each parameterisation.
+	Parameterisations A and B require different values for beta.
+	Parameterisations C and P require the value of beta used by parameterisation 2.
+	All alpha values are the same.
+	The value par given is the parameterisation from which the beta is being transformed.
+        """
+        K = lambda a: a - q + np.sign(1-a)
+
+	if par == "A":
+	    return np.arctan(beta*np.tan(np.pi * alpha/2)) * 2/(np.pi * K(alpha))
+
+        elif par == "B":
+	    return (np.tan((np.pi*K(alpha)*beta)/2))/np.tan(np.pi*alpha/2)
+
+
+    @staticmethod
+    def _cf(t, alpha, beta, mu=0, c=1, parameterisation_type="A"):
         """
         Args:
             t
             alpha
             beta
-            mu: location parameter
-            c: scale parameter
+            mu: location parameterisation_typeameter
+            c: scale parameterisation_typeameter
         """
-        Phi = lambda alpha, t: np.tan(np.pi*alpha/2) if alpha != 1 else -2.0*np.log(np.abs(t))/np.pi
-        return np.exp(1j*t*mu-(np.abs(c*t)**alpha)*(1-1j*beta*np.sign(t)*Phi(alpha, t)))
-        
+
+        K = lambda a: a - q + np.sign(1-a)
+
+        if parameterisation_type == "A":
+            Phi = lambda alpha, t: np.tan(np.pi*alpha/2) if alpha != 1 else -2.0*np.log(np.abs(t))/np.pi
+            return np.exp(1j*t*mu-(np.abs(c*t)**alpha)*(1-1j*beta*np.sign(t)*Phi(alpha, t)))
+    
+        elif parameterisation_type == "B":
+            return np.exp((-np.abs(c*t)**alpha)*np.exp(-1j*beta*K(alpha)*np.sign(t)*np.pi/2))
+    
+        elif parameterisation_type == "C":
+            Delta = lambda beta, k, alpha: beta*k/alpha
+            return np.exp((-np.abs(c*t)**alpha)*np.exp(-1j*Delta(beta, K(alpha), alpha)*alpha*np.sign(t)*np.pi/2))
+    
+        elif parameterisation_type == "P":
+            P1 = lambda beta, k, alpha: 1/2 + beta*k/(2*alpha)
+            return np.exp((-np.abs(c*t)**alpha)*np.exp(-1j*alpha*(2*P1(beta, K(alpha), alpha) - 1)*np.sign(t)*np.pi/2))
+
+        else:
+            raise ValueError("parameterisation_type must be an accepted parameterisation. IE A, B, C, P")
+
+
     @staticmethod
     def _pdf_from_cf_with_fft(cf, h=0.01, q=9):
         """Calculates pdf from cf using fft. Using region around 0 with N=2**q points
@@ -3710,8 +3747,11 @@ class levy_stable_gen(rv_continuous):
         return (x, density)
     
     @staticmethod
-    def _pdf_single_value_cf_integrate(x, alpha, beta):
-        cf = lambda t: levy_stable_gen._cf(t, alpha, beta)
+    def _pdf_single_value_cf_integrate(x, alpha, beta, **kwargs):
+        if 'parameterisation_type' in kwargs:
+            cf = lambda t: levy_stable_gen._cf(t, alpha, beta, parameterisation_type=kwargs['parameterisation_type'])
+	else:
+            cf = lambda t: levy_stable_gen._cf(t, alpha, beta)
         return integrate.quad(lambda t: np.real(np.exp(-1j*t*x)*cf(t)), -np.inf, np.inf, limit=1000)[0]/np.pi/2
     
     @staticmethod
