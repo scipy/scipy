@@ -3690,7 +3690,7 @@ class levy_stable_gen(rv_continuous):
         """
         Function for transforming the beta value accepted for each parameterisation.
 	Parameterisations A and B require different values for beta.
-	Parameterisations C and P require the value of beta used by parameterisation 2.
+	Parameterisations C and P require the value of beta used by parameterisation B.
 	All alpha values are the same.
 	The value par given is the parameterisation from which the beta is being transformed.
         """
@@ -3753,7 +3753,68 @@ class levy_stable_gen(rv_continuous):
 	else:
             cf = lambda t: levy_stable_gen._cf(t, alpha, beta)
         return integrate.quad(lambda t: np.real(np.exp(-1j*t*x)*cf(t)), -np.inf, np.inf, limit=1000)[0]/np.pi/2
-    
+
+
+    @staticmethod
+    def _pdf_single_value_expansion(x, alpha, beta, precision = 10, asymptotic = False):
+
+        """
+	Results for the pdf at a single point calculated using expansions.
+	Convergent solutions are available for |x| <= 1. Asymptotic solutions are
+	available for larger |x| and are increasingly accurate as |x| increases.
+	"""
+
+        K = lambda a: a - q + np.sign(1-a)
+        P1 = 1/2 + beta*K(alpha)/(2*alpha)
+
+	lnf1_element = lambda i: sc.gammaln(alpha*i + 1) - sc.gammaln(i + 1) + np.log(np.sin(alpha*i*np.pi*(1-P1))) - \
+                                (alpha*i + 1)*np.log(x) - np.log(np.pi)
+
+	lnf2_element = lambda i: sc.gammaln(i/(alpha+1)) - sc.gammaln(i+1) + np.log(np.sin(i*np.pi*(1-P1))) + \
+	                        (i-1)*np.log(x) - np.log(np.pi)
+        if np.abs(x) <= 1:
+            if 0 < alpha < 1:
+	        lnf_element = lnf1_element
+            else:
+	        lnf_element = lnf2_element
+
+        elif 1 < np.abs(x) <= 5:
+	    warnings.warn("The value given for x is too large for a good approximation. Treat result with caution.", category=RuntimeWarning)
+            if 0 < alpha < 1:
+	        lnf_element = lnf1_element
+		asymptotic = True
+            else:
+	        lnf_element = lnf2_element
+		asymptotic = True
+	else: #|x|>5
+            if 0 < alpha < 1:
+	        lnf_element = lnf2_element
+		asymptotic = True
+            else:
+	        lnf_element = lnf1_element
+		asymptotic = True
+	    
+	k = 1
+        d = np.exp(lnf_element(k))
+        f = d
+        if asymptotic:
+            d0 = (np.exp(lnf_element(1)))
+            while np.abs(d) <= d0:
+	        k += 1
+  	        d = np.exp(lnf_element(k))
+	        f += d
+	        if k == 100:
+	            break
+        else:
+            while np.abs(d/f) > precision/100:
+     	        k += 1
+	        d = np.exp(lnf_element(k))
+	        f += d
+	        if k == 100:
+	            break
+        return f
+
+
     @staticmethod
     def _pdf_single_value_zolotarev(x, alpha, beta):
         """Calculate pdf using Zolotarev's methods as detailed in [BS].
