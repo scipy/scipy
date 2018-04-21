@@ -3686,9 +3686,17 @@ class levy_stable_gen(rv_continuous):
         return (alpha > 0) & (alpha <= 2) & (beta <= 1) & (beta >= -1)
 
     @staticmethod
-    def _cf(t, alpha, beta):
+    def _cf(t, alpha, beta, mu=0, c=1):
+        """
+        Args:
+            t
+            alpha
+            beta
+            mu: location parameter
+            c: scale parameter
+        """
         Phi = lambda alpha, t: np.tan(np.pi*alpha/2) if alpha != 1 else -2.0*np.log(np.abs(t))/np.pi
-        return np.exp(-(np.abs(t)**alpha)*(1-1j*beta*np.sign(t)*Phi(alpha, t)))
+        return np.exp(1j*t*mu-(np.abs(location*t)**alpha)*(1-1j*beta*np.sign(t)*Phi(alpha, t)))
         
     @staticmethod
     def _pdf_from_cf_with_fft(cf, h=0.01, q=9):
