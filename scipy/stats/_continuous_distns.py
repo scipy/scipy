@@ -3894,12 +3894,13 @@ class levy_stable_gen(rv_continuous):
 
 
     @classmethod
-    def _pdf_single_value_expansion(cls, x, alpha, beta, asymptotic = False):
+    def _pdf_single_value_expansion(cls, x, alpha, beta, asymptotic = False, iterations=100):
 
         """
         Results for the pdf at a single point calculated using expansions.
         Convergent solutions are available for |x| <= 1. Asymptotic solutions are
         available for larger |x| and are increasingly accurate as |x| increases.
+        TODO        Method remains experimental and needs improvement.
         """
 
         K = lambda a: a - 1 + np.sign(1-a)
@@ -3915,18 +3916,22 @@ class levy_stable_gen(rv_continuous):
         x = np.abs(x)
 
         """
+        logarithmic elements: potential performance improvement at the cost of accuracy if these are implemented then exponentiated 
+        rather than directly calculating gamma functions.
+        ----------------------------------------------
+
         lnf1_element = lambda i,p: sc.gammaln(alpha*i + 1) - sc.gammaln(i + 1) + np.log(0j+np.sin(alpha*i*np.pi*(1-p))) - \
                                 (alpha*i + 1)*np.log(x) - np.log(np.pi)
 
         lnf2_element = lambda i,p: sc.gammaln(1+i/alpha) - sc.gammaln(i+1) + np.log(0j+np.sin(i*np.pi*(1-p))) + \
                             (i-1)*np.log(x) - np.log(np.pi)
         """
+
         def lnf1_element(i, p):
             gamma1 = sc.gammaln(alpha*i + 1)
             gamma2 = sc.gammaln(i + 1)
             sin_term = np.sin(alpha*i*np.pi*(1-p))
             x_power = np.exp(-(alpha*i + 1) * np.log(x))
-            # print(gamma1, gamma2, sin_term, x_power)
             return np.exp(gamma1-gamma2) * sin_term * x_power/np.pi
 
         def lnf2_element(i, p): 
@@ -3934,7 +3939,6 @@ class levy_stable_gen(rv_continuous):
             gamma2 = sc.gammaln(i+1) 
             sin_term = np.sin(i*np.pi*(1-p))
             x_power = np.exp((i-1) * np.log(x))
-            # print(gamma1, gamma2, sin_term, x_power)
             return np.exp(gamma1-gamma2) * sin_term * x_power/np.pi
         
 
@@ -3960,23 +3964,21 @@ class levy_stable_gen(rv_continuous):
                 lnf_element = lnf1_element
                 asymptotic = True
         
+        #TODO implement changing behaviour for asymptotic and convergent expansions.
+        #Current implementation simply iterates 100 terms of each rather than 
+        #measuring to a desired precision or awaiting for the asymptotic increase
+
         k = 1
-        d = lnf_element(k, p)
-        f = d
         if asymptotic:
-            d0 = lnf_element(1, p)
-            while k <= 100:
-                k += 1
+            while k <= iterations:
                 d = lnf_element(k, p)
-                # print('Power:', -(alpha*k + 1))
-                # print(f)
                 f += d
+                k += 1
         else:
-            while k <= 100:
-                k += 1
+            while k <= iterations:
                 d = lnf_element(k, p)
-                # print(f)
                 f += d
+                k += 1
         return f.real
 
 
