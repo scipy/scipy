@@ -3695,12 +3695,12 @@ class levy_stable_gen(rv_continuous):
                 tan_betaB = beta * np.tan(np.pi * alpha / 2.)
                 b = np.arctan(tan_betaB) / alpha
 
-                factor1 = sin(alpha * (U + b)) / cos_U**(1.0 / alpha)
-                factor2 = (cos((1. - alpha) * U - alpha * b) / E)**((1 - alpha) / alpha)
+                factor1 = np.sin(alpha * (U + b)) / cos_U**(1.0 / alpha)
+                factor2 = (np.cos((1. - alpha) * U - alpha * b) / E)**((1 - alpha) / alpha)
                 scaler = (1. + tan_betaB**2.)**(1 / (2. * alpha))
                 return scaler * factor1 * factor2
         
-        return genetate_stable_rvs(alpha, beta, U, E)
+        return generate_stable_rvs(alpha, beta, U, E)
 
 
     def _argcheck(self, alpha, beta, **par):
