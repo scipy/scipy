@@ -3725,30 +3725,30 @@ class levy_stable_gen(rv_continuous):
         """
         K = lambda a: a - 1. + np.sign(1. - a)
         
-        def _a_to_b(alpha, beta, c)):
+        def _a_to_b(alpha, beta, scale)):
             beta = np.arctan(beta * np.tan(np.pi * alpha / 2.)) * 2. / (np.pi * K(alpha))
-            c = c/cos(beta)
-            return dict(alpha=alpha, beta=beta,c=c)
+            scale = scale/cos(beta)
+            return dict(alpha=alpha, beta=beta,scale=scale)
 
-        def _b_to_c(dict(alpha, beta, c)):
+        def _b_to_c(dict(alpha, beta, scale)):
             delta = beta*K(alpha)/alpha
-            return dict(alpha=alpha, beta=beta, c=c, delta=delta)
+            return dict(alpha=alpha, beta=beta, scale=scale, delta=delta)
 
         def _b_to_p(alpha, beta)
             p_1 = 1/2 + beta*K(alpha)/(2*alpha)
 
-        def _b_to_a(alpha, beta, c):
-            c = c*cos(beta)
+        def _b_to_a(alpha, beta, scale):
+            scale = scale*cos(beta)
             beta = (np.tan((np.pi * K(alpha) * beta) / 2.)) / np.tan(np.pi * alpha / 2.)
-            return dict(alpha=alpha, beta=beta,c=c)
+            return dict(alpha=alpha, beta=beta,scale=scale)
         
-        def _p_to_b(alpha, c, p_1):
+        def _p_to_b(alpha, scale, p_1):
             beta = (2*p_1 - 1) * alpha/K(alpha)
-            return dict(alpha=alpha, beta=beta,c=c)
+            return dict(alpha=alpha, beta=beta,scale=scale)
         
-        def _c_to_b(alpha, c, delta):
+        def _c_to_b(alpha, scale, delta):
             beta = alpha*delta/K(alpha)
-            return dict(alpha=alpha, beta=beta,c=c)
+            return dict(alpha=alpha, beta=beta,scale=scale)
 
 
         in_dict = dict(A = _a_to_b,
