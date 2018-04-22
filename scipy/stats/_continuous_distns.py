@@ -3584,11 +3584,18 @@ class levy_stable_gen(rv_continuous):
     Notes
     -----
     ..math:: \alpha-stable  distributions form a rich family of probability distributions 
-    which arises in central limit theorem problems. Stable distributions and their variants 
+    which arises in the central limit theorem problems. Stable distributions and their variants 
     are also known under diferent names to different scientific communities, 
-    e.g. physicicts like to call Symmetric Stable Laws Levy Flights.
+    e.g. physicicts like to call Symmetric Stable Laws as Levy Flights, whereas mathematicians 
+    calls the distributions ..math:: \alpha-stable distributions. We will refer this class 
+    of distributions as Levy Stable laws / distributions.
 
-    The densities of stable laws are well represented by Fox's H-fuctions [ZOL1]. 
+    The densities of Levy Stable laws are well represented by Fox's H-fuctions [ZOL1].  
+    The representations as compositions of elementary functions are available only for few specific cases.
+    For ..math::\alpha = 2 the density reduces to Gaussian distributions. For symmetric case 
+    of ..math::\alpha = 1 the Levy Stable law is known as a Cauchy distribution. For ..math::\alpha = 0.5
+    and skewness distribution taking its extreme value, the density is of the form of Levy Distribution 
+    (see levy, levy_l). 
 
 
     The class of probability distributions for `levy_stable` is well represented by the characteristic functions:
@@ -3596,13 +3603,13 @@ class levy_stable_gen(rv_continuous):
     .. math::
         \varphi(k; \alpha, z, \mu) = e^{ ik\mu + zk^{\alpha} } 
 
-    where 0 < ..math::\alpha  <=2  is a stability parameter, which describes the parameter of power law decay of the tails, 
-    how z is complex valued parameter. Depending on the parametrization of the complex number z, different parametrisations 
+    where 0 < ..math::\alpha  <=2  is the stability parameter, which describes the parameter of power law decay of the tails. 
+    Parameter z is a complex number. Depending on the parameterization of the complex number z, different parameterizations 
     are available. We will stick to the notation introduced in Zolotarev's [ZO2]. 
-    First, we start by parametrising z i nalgebraic form " a + ib": 
+    First, we start by representing z in the algebraic form  "a(1 + ib)", in particular: 
 
     .. math::         
-        \varphi(k; \alpha, \beta, c, \mu) = e^{ ik\mu -|ct|^{\alpha }(1-i\beta \operatorname{sign}(k)\Phi(\alpha ,k ))}
+        \varphi(k; \alpha, \beta, c, \mu) = e^{ ik\mu -|ck|^{\alpha }(1-i\beta \operatorname{sign}(k)\Phi(\alpha ,k ))}
 
     where:
               
@@ -3656,53 +3663,50 @@ class levy_stable_gen(rv_continuous):
        of stable Paretian models, Mathematical and Computer Modelling, Volume 29, Issue 10, 
        1999, Pages 275-293.
     .. [BS] Borak, S., Hardle, W., Rafal, W. 2005. Stable distributions, Economic Risk. 
+    .. [WE] Weron . 1995. ... add the paper 
 
 
     %(example)s
 
     """
-    def _rvs(self, alpha, beta):
 
-        def alpha1func(alpha, beta, TH, aTH, bTH, cosTH, tanTH, W):
-            return (2/np.pi*(np.pi/2 + bTH)*tanTH -
-                    beta*np.log((np.pi/2*W*cosTH)/(np.pi/2 + bTH)))
 
-        def beta0func(alpha, beta, TH, aTH, bTH, cosTH, tanTH, W):
-            return (W/(cosTH/np.tan(aTH) + np.sin(TH)) *
-                    ((np.cos(aTH) + np.sin(aTH)*tanTH)/W)**(1.0/alpha))
-
-        def otherwise(alpha, beta, TH, aTH, bTH, cosTH, tanTH, W):
-            # alpha is not 1 and beta is not 0
-            val0 = beta*np.tan(np.pi*alpha/2)
-            th0 = np.arctan(val0)/alpha
-            val3 = W/(cosTH/np.tan(alpha*(th0 + TH)) + np.sin(TH))
-            res3 = val3*((np.cos(aTH) + np.sin(aTH)*tanTH -
-                          val0*(np.sin(aTH) - np.cos(aTH)*tanTH))/W)**(1.0/alpha)
-            return res3
-
-        def alphanot1func(alpha, beta, TH, aTH, bTH, cosTH, tanTH, W):
-            res = _lazywhere(beta == 0,
-                             (alpha, beta, TH, aTH, bTH, cosTH, tanTH, W),
-                             beta0func, f2=otherwise)
-            return res
-
+    def _rvs(self, alpha, beta, **par):
+        """
+        Generates a vector of random stable variables under parameterization A 
+        using Weron's formulation [WE].
+        """
+        #TODO: add transformation into different parameterizations
+        
+        # generate the random vector of the given size self._size
         sz = self._size
-        alpha = broadcast_to(alpha, sz)
-        beta = broadcast_to(beta, sz)
-        TH = uniform.rvs(loc=-np.pi/2.0, scale=np.pi, size=sz,
+        U = uniform.rvs(loc=-np.pi/2.0, scale=np.pi, size=sz,
                          random_state=self._random_state)
-        W = expon.rvs(size=sz, random_state=self._random_state)
-        aTH = alpha*TH
-        bTH = beta*TH
-        cosTH = np.cos(TH)
-        tanTH = np.tan(TH)
-        res = _lazywhere(alpha == 1,
-                         (alpha, beta, TH, aTH, bTH, cosTH, tanTH, W),
-                         alpha1func, f2=alphanot1func)
-        return res
+        E = expon.rvs(size=sz, random_state=self._random_state)
+        
 
-    def _argcheck(self, alpha, beta):
+        def generate_stable_rvs(alpha, beta, U, E):
+            cos_U = np.cos(U)
+            tan_U = np.tan(U)
+            if alpha==1:
+                return (2./np.pi) * ((np.pi/2. + beta * U) * tan_U -
+                    beta * np.log(E * cos_U) / (np.pi/2. + b * U))
+            else:
+                tan_betaB = beta * np.tan(np.pi * alpha / 2.)
+                b = np.arctan(tan_betaB) / alpha
+
+                factor1 = sin(alpha * (U + b)) / cos_U**(1.0 / alpha)
+                factor2 = (cos((1. - alpha) * U - alpha * b) / E)**((1 - alpha) / alpha)
+                scaler = (1. + tan_betaB**2.)**(1 / (2. * alpha))
+                return scaler * factor1 * factor2
+        
+        return genetate_stable_rvs(alpha, beta, U, E)
+
+
+    def _argcheck(self, alpha, beta, **par):
+        # TODO: add parameters checks for different paramterisations too 
         return (alpha > 0) & (alpha <= 2) & (beta <= 1) & (beta >= -1)
+        
 
 
     @staticmethod
@@ -3719,45 +3723,55 @@ class levy_stable_gen(rv_continuous):
             beta:
             original_parameterisation_type
         """
-        K = lambda a: a - 1 + np.sign(1-a)
+        K = lambda a: a - 1. + np.sign(1. - a)
 
-        if original_parameterisation_type == "A":
-            return np.arctan(beta*np.tan(np.pi * alpha/2)) * 2/(np.pi * K(alpha))
+        if original_parameterisation_type == "A": # here we assume that beta is under parameterization B on input 
+            return np.arctan(beta * np.tan(np.pi * alpha / 2.)) * 2. / (np.pi * K(alpha))
 
         elif original_parameterisation_type == "B":
-            return (np.tan((np.pi*K(alpha)*beta)/2))/np.tan(np.pi*alpha/2)
+            return (np.tan((np.pi * K(alpha) * beta) / 2.)) / np.tan(np.pi * alpha / 2.)
 
 
     @staticmethod
-    def _cf(t, alpha, beta, mu=0, c=1, parameterisation_type="A"):
+    def _cf(k, alpha, beta, mu=0, c=1, parameterisation_type="A"):
         """
-        Args:
-            t
-            alpha
-            beta
-            mu: location parameterisation_typeameter
-            c: scale parameterisation_typeameter
+        Characteristic functions under different parameterizations.
+        Default parameterization is "A". 
+
+        Arguments:
+        ----------
+        k :  float
+        alpha : float
+            Stability parameter with values in (0,2]. 
+        beta : float
+            Asymmetry parameter under parameterization A, takes values in [-1, 1].
+
+        mu: float
+            Location parameter. Default setting: mu=0.
+        c: float
+            Scale parameter under parameterization A, takes positive real values.
+            Default setting: c=1. 
         """
 
-        K = lambda a: a - 1 + np.sign(1-a)
+        K = lambda a: a - 1. + np.sign(1. - a)
 
         if parameterisation_type == "A":
-            Phi = lambda alpha, t: np.tan(np.pi*alpha/2) if alpha != 1 else -2.0*np.log(np.abs(t))/np.pi
-            return np.exp(1j*t*mu-(np.abs(c*t)**alpha)*(1-1j*beta*np.sign(t)*Phi(alpha, t)))
+            Phi = lambda alpha, k: np.tan(np.pi * alpha / 2.) if alpha != 1 else -2.0*np.log(np.abs(k)) / np.pi
+            return np.exp(1j*k*mu-(np.abs(c*k)**alpha)*(1-1j*beta*np.sign(k)*Phi(alpha, k)))
     
         elif parameterisation_type == "B":
-            return np.exp((-np.abs(c*t)**alpha)*np.exp(-1j*beta*K(alpha)*np.sign(t)*np.pi/2))
+            return np.exp((-np.abs(c * k)**alpha) * np.exp(-1j * beta * K(alpha) * np.sign(k) * np.pi / 2.))
     
         elif parameterisation_type == "C":
-            Delta = lambda beta, k, alpha: beta*k/alpha
-            return np.exp((-np.abs(c*t)**alpha)*np.exp(-1j*Delta(beta, K(alpha), alpha)*alpha*np.sign(t)*np.pi/2))
+            Delta = lambda beta, k_alpha, alpha: beta * k_alpha / alpha
+            return np.exp((-np.abs(c * k)**alpha) * np.exp(-1j * Delta(beta, K(alpha), alpha) * alpha * np.sign(k) * np.pi / 2.))
     
         elif parameterisation_type == "P":
-            P1 = lambda beta, k, alpha: 1/2 + beta*k/(2*alpha)
-            return np.exp((-np.abs(c*t)**alpha)*np.exp(-1j*alpha*(2*P1(beta, K(alpha), alpha) - 1)*np.sign(t)*np.pi/2))
+            P1 = lambda beta, k_alpha, alpha: 0.5 + beta * k_alpha / (2. * alpha)
+            return np.exp((-np.abs(c * k)**alpha) * np.exp(-1j * alpha * (2 * P1(beta, K(alpha), alpha) - 1) * np.sign(k) * np.pi / 2.))
 
         else:
-            raise ValueError("parameterisation_type must be an accepted parameterisation. IE A, B, C, P")
+            raise ValueError("parameterisation_type must be a supported parameterisation: 'A', 'B', 'C', 'P'")
 
 
     @staticmethod
