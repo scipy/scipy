@@ -3761,7 +3761,7 @@ class levy_stable_gen(rv_continuous):
                         C = _b_to_c,
                         P = _b_to_p)
 
-        return out_dict[destination_parameterisation_type](in_dict[origin_parameterisation_type](**kwargs))
+        return out_dict[destination_parameterisation_type](**in_dict[origin_parameterisation_type](**kwargs))
 
 
     @staticmethod
