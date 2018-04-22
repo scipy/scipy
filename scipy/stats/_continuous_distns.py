@@ -3609,7 +3609,7 @@ class levy_stable_gen(rv_continuous):
     First, we start by representing z in the algebraic form  "a(1 + ib)", in particular: 
 
     .. math::         
-        \varphi(k; \alpha, \beta, c, \mu) = e^{ ik\mu -|ck|^{\alpha }(1-i\beta \operatorname{sign}(k)\Phi(\alpha ,k ))}
+        \varphi(k; \alpha, \beta_A, c_A, \mu) = e^{ ik\mu -|c_A k|^{\alpha }(1-i\beta_A \operatorname{sign}(k)\Phi(\alpha ,k ))}
 
     where:
               
@@ -3619,51 +3619,118 @@ class levy_stable_gen(rv_continuous):
                 \tan \left({\frac {\pi \alpha }{2}}\right)&\alpha \neq 1\\
                 -{\frac {2}{\pi }}\log |k|&\alpha =1
                 \end{cases}
-           
-    The probability density function for `levy_stable` is:
+    This is the commonly know parametrization, referred to by parameterization A. 
+    It is our default setting for returning the values.  
+    
+    This implementation supports also 3 more parameterizations, which 
+    arise by representing complex number z in polar coordinates "r ..math::\exp{ i ..math::\theta }". 
+    The characteristic functions take the following form: 
+    - Parameterization B: 
+
+    .. math::         
+        \varphi(k; \alpha, \beta_B, c_B, \mu) = e^{ ik\mu -|c_B k|^{\alpha }{-i\beta_B K(\alpha) \operatorname{sign}(k)\pi/2}
+
+    where:
+              
+    .. math::
+        K(\alpha) = \alpha -1 + sgn(1 - \alpha), 
+        -1 < \beta_B K(\alpha) < 1, 
+        and the transformation relationship between parameterization A and B are given by: 
+
+    ..math::
+        \beta_B K(alpha) = \frac{2}{\pi} atan(\beta_A \tan[\pi\alpha / 2])
+        c_B = \frac{c_A}{\cos \beta_B}
+
+    - Parameterization C:
+    .. math::         
+        \varphi(k; \alpha, \delta, c_C, \mu) = e^{ ik\mu -|c_C k|^{\alpha }{-i\alpha \delta \operatorname{sign}(k)\pi/2}
+
+    where:
+              
+    ..math::
+         \delta =\frac{\beta_B K(alpha)}{\alpha} = \frac{2}{\alpha \pi} atan(\beta_A \tan[\pi\alpha / 2])
+         c_C = c_B = \frac{c_A}{\cos \beta_B}
+ 
+    - Parameterization P:
+    .. math::         
+        \varphi(k; \alpha, p_1, c_C, \mu) = e^{ ik\mu -|c_P k|^{\alpha }{-i\alpha (p_1 - p_2) \operatorname{sign}(k)\pi/2}
+
+    where:
+              
+    ..math::
+        p_1 + p_2 = 1 and 
+        0 <= p_1, p_2 <= 1 for 0 < \alpha < 1, 
+        1 / \alpha <= p_1, p_2 <= 1 - 1 / \alpha for 1 < \alpha < 2. 
+
+        p_1 = \frac{1 + \delta}{2} = \frac{1}{2} + \frac{\beta_B K(alpha)}{2\alpha} = 
+            \frac{1}{2} + \frac{1}{\alpha \pi} atan(\beta_A \tan[\pi\alpha / 2])
+         c_P = c_C = c_B = \frac{c_A}{\cos \beta_B}
+
+    The parameterization P has rather intuitive relation to CDF of stable law. 
+    The parameter p_1 = 1 - CDF(0, \alpha, p_1, c), i.e. the parameter p_1 gives value 
+    of the size of the probability mass on the positive real line and therefore gives 
+    valuable information about the asymmetry of the distribution. 
+
+
+
+    The probability density function for Levy Stable distribution is then well defined by inverse Fourier 
+    transform of the characteristic function:
         
     .. math::
     
-        f(x) = \frac{1}{2\pi}\int_{-\infty}^\infty \varphi(k)e^{-ixk}\,dk
+        f(x) = \frac{1}{2\pi}\int_{-\infty}^\infty \varphi(k)e^{-ixk}\dk
         
-    where :math:`-\infty < k < \infty`. This integral does not have a known closed form.
+    where :math:`-\infty < k < \infty`. 
     
-    For evaluation of pdf we use either Zolotarev :math:`S_0` parameterization with integration, 
-    direct integration of standard parameterization of characteristic function or FFT of 
-    characteristic function. FFT is used if number of points is greater than 
-    ``levy_stable.pdf_fft_min_points_threshold`` (defaults to 100) otherwise we use one of the 
+    For evaluation of PDF and CDF of this integral the different numerical methods are supported. 
+    The default method is Nolan's numerical method based on Zolotarev's Integral representation [NO, ZOL2].
+    Other methods use power series representations derived in [BE]. These performs well for the values |x| << 1 
+    and |x| >> 1, i.e. the Taylor series expanded around origin 
+    and asymptotic expansions for the far tails of the density. 
+
+    The currently supported method are also direct integration of standard parameterization 
+    of characteristic function or FFT of characteristic function. These methods are however recommended to 
+    use only for the experimental setup, because they suffer with numerical instability due to Gibs phenomena. 
+    FFT is used if number of points is greater than ``levy_stable.pdf_fft_min_points_threshold`` 
+    (defaults to 100) otherwise we use one of the 
     other methods. Setting the threshold to ``None`` will disable FFT. The default method is 
     Zolotarev's but can be changed by setting ``levy_stable.pdf_default_method`` to any string 
     other than 'zolotarev'. To increase accuracy of FFT calculation one can specify 
     ``levy_stable.pdf_fft_grid_spacing`` (defaults to 0.01) and ``pdf_fft_n_points_two_power`` 
     (defaults to a value that covers the input range * 4). Setting ``pdf_fft_n_points_two_power`` 
     to 16 should be sufficiently accurate in most cases at the expense of CPU time.
+    For evaluation of CDF the integral of the pdf FFT interpolated spline. 
+    The settings affecting FFT calculation are the same as
+    for pdf calculation. Setting the threshold to ``None`` (default) will disable FFT. 
+    For cdf calculations the Zolatarev method is superior in accuracy, so FFT is disabled by default.
     
-    For evaluation of cdf we use Zolatarev :math:`S_0` parameterization with integration or integral of
-    the pdf FFT interpolated spline. The settings affecting FFT calculation are the same as
-    for pdf calculation. Setting the threshold to ``None`` (default) will disable FFT. For cdf 
-    calculations the Zolatarev method is superior in accuracy, so FFT is disabled by default.
-    
-    Fitting estimate uses quantile estimation method in [MC]. MLE estimation of parameters in
-    fit method uses this quantile estimate initially. Note that MLE doesn't always converge if 
-    using FFT for pdf calculations; so it's best that ``pdf_fft_min_points_threshold`` is left unset
-    or set to default value of 100. 
+    The supported methods for fitting the estimates of the parameters under parameterization A are  
+    "quantile" method (see [MC]) and the estimation based on using "empirical characteristic function", (see [KO]). 
+    MLE estimation of parameters in fit method uses the quantile method initially. 
+    Note that MLE doesn't always converge if using FFT for pdf calculations; 
+    so it's best that ``pdf_fft_min_points_threshold`` is left unset or set to default value of 100. 
 
     %(after_notes)s
     
     References
     ----------    
-    .. [ZOL1] Zolotarev V.M., 1993. On Representation of Densities of Stable Laws by Special Functions. 
+    .. [ZOL1] Zolotarev V.M., 1993. On representation of densities of stable laws by special functions. 
        SIAM ... 
-    .. [NO] Nolan J.P., 1997. Numerical Calculations of Stable Densities and Distribution Functions. 
+    .. [ZOL2] Zolotarev V.M., 1986. One-dimensional stable distributions.
+       Amer. Math. Soc., Providence, RI.
+    .. [BE] Bergstrom H., 1952. On some expansions of stable distribution functions. 
+       Arkiv for Matematik 2, 4, p.375-378
+       [NO] Nolan J.P., 1997. Numerical calculations of stable densities and distribution functions. 
        Commun Statist. - Stochastic Models, 13(4), p.759-774
     .. [MC] McCulloch, J., 1986. Simple consistent estimators of stable distribution parameters.
-       Communications in Statistics - Simulation and Computation 15, 11091136.
+       Commun. Statist.–Simula. 15(4) 1109–1136
+       [KO] Koutrouvelis, I. A., 1980. Regression–Type Estimation of the Parameters of Stable Laws.
+       J. Amer. Statist. Assoc. 75, p.918–928.
     .. [MS] Mittnik, S.T. Rachev, T. Doganoglu, D. Chenyao, 1999. Maximum likelihood estimation 
        of stable Paretian models, Mathematical and Computer Modelling, Volume 29, Issue 10, 
        1999, Pages 275-293.
-    .. [BS] Borak, S., Hardle, W., Rafal, W. 2005. Stable distributions, Economic Risk. 
-    .. [WE] Weron . 1995. ... add the paper 
+    .. [WE] Weron A, Weron R., 1995. Computer Simulation of Levy alpha-stable variables and processes. 
+       Chaos - The interplay between stochastic and deterministic behaviour, Springer, p.545 - 558  
 
 
     %(example)s
