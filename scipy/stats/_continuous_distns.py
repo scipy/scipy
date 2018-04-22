@@ -3680,7 +3680,7 @@ class levy_stable_gen(rv_continuous):
         
         # generate the random vector of the given size self._size
         sz = self._size
-        U = uniform.rvs(loc=-np.pi/2.0, scale=np.pi, size=sz,
+        U = uniform.rvs(loc=-np.pi / 2.0, scale=np.pi, size=sz,
                          random_state=self._random_state)
         E = expon.rvs(size=sz, random_state=self._random_state)
         
@@ -3689,14 +3689,14 @@ class levy_stable_gen(rv_continuous):
             cos_U = np.cos(U)
             tan_U = np.tan(U)
             if alpha==1:
-                return (2./np.pi) * ((np.pi/2. + beta * U) * tan_U -
-                    beta * np.log(E * cos_U) / (np.pi/2. + b * U))
+                return (2. / np.pi) * ((np.pi / 2. + beta * U) * tan_U -
+                    beta * np.log(E * cos_U) / (np.pi / 2. + b * U))
             else:
                 tan_betaB = beta * np.tan(np.pi * alpha / 2.)
                 b = np.arctan(tan_betaB) / alpha
 
                 factor1 = np.sin(alpha * (U + b)) / cos_U**(1.0 / alpha)
-                factor2 = (np.cos((1. - alpha) * U - alpha * b) / E)**((1 - alpha) / alpha)
+                factor2 = (np.cos((1. - alpha) * U - alpha * b) / E)**((1. - alpha) / alpha)
                 scaler = (1. + tan_betaB**2.)**(1 / (2. * alpha))
                 return scaler * factor1 * factor2
         
@@ -3765,42 +3765,42 @@ class levy_stable_gen(rv_continuous):
 
 
     @staticmethod
-    def _cf(k, alpha, beta, mu=0, c=1, parameterisation_type="A"):
+    def _cf(k, alpha, beta, location=0, scale=1, parameterisation_type="A"):
         """
         Characteristic functions under different parameterizations.
         Default parameterization is "A". 
 
-        Arguments:
+        Args:
         ----------
         k :  float
         alpha : float
             Stability parameter with values in (0,2]. 
         beta : float
             Asymmetry parameter under parameterization A, takes values in [-1, 1].
-
-        mu: float
-            Location parameter. Default setting: mu=0.
-        c: float
+        location: float
+            Location parameter. Default setting: location=0.
+        scale: float
             Scale parameter under parameterization A, takes positive real values.
-            Default setting: c=1. 
+            Default setting: scale=1. 
         """
 
         K = lambda a: a - 1. + np.sign(1. - a)
 
+        common_exponent = 1j * k * location - (np.abs(scale * k) ** alpha)
         if parameterisation_type == "A":
             Phi = lambda alpha, k: np.tan(np.pi * alpha / 2.) if alpha != 1 else -2.0*np.log(np.abs(k)) / np.pi
-            return np.exp(1j*k*mu-(np.abs(c*k)**alpha)*(1-1j*beta*np.sign(k)*Phi(alpha, k)))
+            return np.exp(common_exponent * (1 - 1j * beta * np.sign(k) * Phi(alpha, k)))
     
         elif parameterisation_type == "B":
-            return np.exp((-np.abs(c * k)**alpha) * np.exp(-1j * beta * K(alpha) * np.sign(k) * np.pi / 2.))
+            return np.exp(common_exponent * np.exp(-1j * beta * K(alpha) * np.sign(k) * np.pi / 2.))
     
         elif parameterisation_type == "C":
             Delta = lambda beta, k_alpha, alpha: beta * k_alpha / alpha
-            return np.exp((-np.abs(c * k)**alpha) * np.exp(-1j * Delta(beta, K(alpha), alpha) * alpha * np.sign(k) * np.pi / 2.))
+            return np.exp(common_exponent * np.exp(-1j * Delta(beta, K(alpha), alpha) * alpha * np.sign(k) * np.pi / 2.))
     
         elif parameterisation_type == "P":
             P1 = lambda beta, k_alpha, alpha: 0.5 + beta * k_alpha / (2. * alpha)
-            return np.exp((-np.abs(c * k)**alpha) * np.exp(-1j * alpha * (2 * P1(beta, K(alpha), alpha) - 1) * np.sign(k) * np.pi / 2.))
+            return np.exp(common_exponent * np.exp(-1j * alpha * (2 * P1(beta, K(alpha), alpha) - 1) * np.sign(k) * np.pi / 2.))
 
         else:
             raise ValueError("parameterisation_type must be a supported parameterisation: 'A', 'B', 'C', 'P'")
@@ -4202,12 +4202,12 @@ class levy_stable_gen(rv_continuous):
         else:
             alpha = 2.0
             beta = np.sign(nu_beta)
-        c = (p75 - p25) / phi_3_1(beta, alpha)[0] 
-        zeta = p50 + c*phi_5_1(beta, alpha)[0]
-        delta = np.clip(zeta-beta*c*np.tan(np.pi*alpha/2.) if alpha == 1. else zeta, 
-                np.finfo(float).eps, np.inf) 
-    
-        return (alpha, beta, delta, c)
+        scale = (p75 - p25) / phi_3_1(beta, alpha)[0] 
+        zeta = p50 + scale * phi_5_1(beta, alpha)[0]
+        zeta = (zeta - beta * scale * np.tan(np.pi * alpha/2.) 
+                if alpha == 1. else zeta)
+        location = np.clip(zeta, np.finfo(float).eps, np.inf)
+        return (alpha, beta, location, scale)
 
 
     def _empirical_characteristic_function(self, data, u):
@@ -4215,16 +4215,35 @@ class levy_stable_gen(rv_continuous):
         return empirical_phi
 
     def _fitstart_empirical_characteristic_function(self, data):
+        # Regression 1
         u_k = np.linspace(0.1, 1., 10)
         empirical_phi_k = np.array([self._empirical_characteristic_function(
             data, u) for u in u_k])
         y_k = np.log(-np.log(np.square(np.abs(empirical_phi_k))))
-        raise NotImplementedError()
+        x_k = np.log(u_k)
+        slope, intercept = np.polyfit(x_k, y_k, 1)
+        alpha = slope
+        scale = np.exp((intercept - np.log(2))/alpha)
+        # Regression 2
+        u_l = u_k * 0.5
+        empirical_phi_l = np.array([self._empirical_characteristic_function(
+            data, u) for u in u_l])
+        phi_imag_real = empirical_phi_l.imag/empirical_phi_l.real
+        non_principal_int = np.floor((phi_imag_real + np.pi/2.)/np.pi)
+        z_l = np.arctan(phi_imag_real) + np.pi * non_principal_int
+        u_l_alpha = np.float_power(np.abs(u_l), alpha) * np.sign(u_l)
+        x_l = np.vstack([u_l, u_l_alpha]).T
+        slope_1, slope_2 = np.linalg.lstsq(x_l, z_l)[0]
+        location = slope_1
+        slope_2_divisor = np.float_power(scale, alpha) * np.tan(
+                np.pi * alpha/2.)
+        beta = slope_2/slope_2_divisor
+        return (alpha, beta, location, scale)
 
 
     def _fitstart(self, data):
         method = getattr(self, 'fit_method', 'quantile')
-        if method == 'empirical_characteristic_function':
+        if method == 'ephi_imag_real phi_imag_real mpirical_characteristic_function':
             return self._fitstart_quantile(data)
         else:
             return self._fitstart_empirical_characteristic_function(data)
