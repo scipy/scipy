@@ -1120,7 +1120,6 @@ class TestPdist(object):
         eps = 1e-08
         X = eo['pdist-double-inp']
         Y_right = eo['pdist-jensenshannon']
-        Y_wrong = eo['pdist-jensenshannon-iris']
         Y_test1 = pdist(X, 'jensenshannon')
         _assert_within_tol(Y_test1, Y_right, eps)
 

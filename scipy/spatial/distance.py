@@ -1234,6 +1234,8 @@ def jensenshannon(p, q, base=None):
     js : double
         The Jensen-Shannon distance between `p` and `q`
 
+    .. versionadded:: 1.0.2
+
     Examples
     --------
     >>> from scipy.spatial import distance
