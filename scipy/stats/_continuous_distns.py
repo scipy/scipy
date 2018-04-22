@@ -5,7 +5,7 @@
 from __future__ import division, print_function, absolute_import
 
 import warnings
-
+import functools
 import numpy as np
 
 from scipy.misc.doccer import (extend_notes_in_docstring,
@@ -3706,21 +3706,26 @@ class levy_stable_gen(rv_continuous):
 
 
     @staticmethod
-    def _beta_switch(alpha, beta, **par):
+    def _beta_switch(alpha, beta, original_parameterisation_type):
         """
         Function for transforming the beta value accepted for each parameterisation.
-	Parameterisations A and B require different values for beta.
-	Parameterisations C and P require the value of beta used by parameterisation B.
-	All alpha values are the same.
-	The value par given is the parameterisation from which the beta is being transformed.
+        Parameterisations A and B require different values for beta. 
+        Parameterisations C and P require the value of beta used by parameterisation B.
+        All alpha values are the same.
+        The value par given is the parameterisation from which the beta is being transformed.
+
+        Args:
+            alpha:
+            beta:
+            original_parameterisation_type
         """
-        K = lambda a: a - q + np.sign(1-a)
+        K = lambda a: a - 1 + np.sign(1-a)
 
-	if par == "A":
-	    return np.arctan(beta*np.tan(np.pi * alpha/2)) * 2/(np.pi * K(alpha))
+        if original_parameterisation_type == "A":
+            return np.arctan(beta*np.tan(np.pi * alpha/2)) * 2/(np.pi * K(alpha))
 
-        elif par == "B":
-	    return (np.tan((np.pi*K(alpha)*beta)/2))/np.tan(np.pi*alpha/2)
+        elif original_parameterisation_type == "B":
+            return (np.tan((np.pi*K(alpha)*beta)/2))/np.tan(np.pi*alpha/2)
 
 
     @staticmethod
@@ -3734,7 +3739,7 @@ class levy_stable_gen(rv_continuous):
             c: scale parameterisation_typeameter
         """
 
-        K = lambda a: a - q + np.sign(1-a)
+        K = lambda a: a - 1 + np.sign(1-a)
 
         if parameterisation_type == "A":
             Phi = lambda alpha, t: np.tan(np.pi*alpha/2) if alpha != 1 else -2.0*np.log(np.abs(t))/np.pi
@@ -3770,69 +3775,96 @@ class levy_stable_gen(rv_continuous):
     def _pdf_single_value_cf_integrate(x, alpha, beta, **kwargs):
         if 'parameterisation_type' in kwargs:
             cf = lambda t: levy_stable_gen._cf(t, alpha, beta, parameterisation_type=kwargs['parameterisation_type'])
-	else:
+        else:
             cf = lambda t: levy_stable_gen._cf(t, alpha, beta)
         return integrate.quad(lambda t: np.real(np.exp(-1j*t*x)*cf(t)), -np.inf, np.inf, limit=1000)[0]/np.pi/2
 
 
-    @staticmethod
-    def _pdf_single_value_expansion(x, alpha, beta, precision = 10, asymptotic = False):
+    @classmethod
+    def _pdf_single_value_expansion(cls, x, alpha, beta, precision = 10, asymptotic = False):
 
         """
-	Results for the pdf at a single point calculated using expansions.
-	Convergent solutions are available for |x| <= 1. Asymptotic solutions are
-	available for larger |x| and are increasingly accurate as |x| increases.
-	"""
+        Results for the pdf at a single point calculated using expansions.
+        Convergent solutions are available for |x| <= 1. Asymptotic solutions are
+        available for larger |x| and are increasingly accurate as |x| increases.
+        """
 
-        K = lambda a: a - q + np.sign(1-a)
-        P1 = 1/2 + beta*K(alpha)/(2*alpha)
+        K = lambda a: a - 1 + np.sign(1-a)
+        beta_B = cls._beta_switch(alpha, beta, 'A')
+        # print('beta_B:', beta_B)
+        P1 = 1/2 + beta_B * K(alpha)/(2 * alpha)
+        # print('P1:', P1)
 
-	lnf1_element = lambda i: sc.gammaln(alpha*i + 1) - sc.gammaln(i + 1) + np.log(np.sin(alpha*i*np.pi*(1-P1))) - \
+        if x >= 0:
+            p = P1
+        else:
+            p = 1-P1
+        x = np.abs(x)
+
+        """
+        lnf1_element = lambda i,p: sc.gammaln(alpha*i + 1) - sc.gammaln(i + 1) + np.log(0j+np.sin(alpha*i*np.pi*(1-p))) - \
                                 (alpha*i + 1)*np.log(x) - np.log(np.pi)
 
-	lnf2_element = lambda i: sc.gammaln(i/(alpha+1)) - sc.gammaln(i+1) + np.log(np.sin(i*np.pi*(1-P1))) + \
-	                        (i-1)*np.log(x) - np.log(np.pi)
+        lnf2_element = lambda i,p: sc.gammaln(1+i/alpha) - sc.gammaln(i+1) + np.log(0j+np.sin(i*np.pi*(1-p))) + \
+                            (i-1)*np.log(x) - np.log(np.pi)
+        """
+        def lnf1_element(i, p):
+            gamma1 = sc.gammaln(alpha*i + 1)
+            gamma2 = sc.gammaln(i + 1)
+            sin_term = np.sin(alpha*i*np.pi*(1-p))
+            x_power = np.exp(-(alpha*i + 1) * np.log(x))
+            # print(gamma1, gamma2, sin_term, x_power)
+            return np.exp(gamma1-gamma2) * sin_term * x_power/np.pi
+
+        def lnf2_element(i, p): 
+            gamma1 = sc.gammaln(1+i/alpha)
+            gamma2 = sc.gammaln(i+1) 
+            sin_term = np.sin(i*np.pi*(1-p))
+            x_power = np.exp((i-1) * np.log(x))
+            # print(gamma1, gamma2, sin_term, x_power)
+            return np.exp(gamma1-gamma2) * sin_term * x_power/np.pi
+        
+
         if np.abs(x) <= 1:
             if 0 < alpha < 1:
-	        lnf_element = lnf1_element
+                lnf_element = lnf1_element
             else:
-	        lnf_element = lnf2_element
+                lnf_element = lnf2_element
 
         elif 1 < np.abs(x) <= 5:
-	    warnings.warn("The value given for x is too large for a good approximation. Treat result with caution.", category=RuntimeWarning)
+            warnings.warn("The value given for x is too large for a good approximation. Treat result with caution.", category=RuntimeWarning)
             if 0 < alpha < 1:
-	        lnf_element = lnf1_element
-		asymptotic = True
+                lnf_element = lnf1_element
+                asymptotic = True
             else:
-	        lnf_element = lnf2_element
-		asymptotic = True
-	else: #|x|>5
+                lnf_element = lnf2_element
+                asymptotic = True
+        else:  #|x|>5
             if 0 < alpha < 1:
-	        lnf_element = lnf2_element
-		asymptotic = True
+                lnf_element = lnf2_element
+                asymptotic = True
             else:
-	        lnf_element = lnf1_element
-		asymptotic = True
-	    
-	k = 1
-        d = np.exp(lnf_element(k))
+                lnf_element = lnf1_element
+                asymptotic = True
+        
+        k = 1
+        d = lnf_element(k, p)
         f = d
         if asymptotic:
-            d0 = (np.exp(lnf_element(1)))
-            while np.abs(d) <= d0:
-	        k += 1
-  	        d = np.exp(lnf_element(k))
-	        f += d
-	        if k == 100:
-	            break
+            d0 = lnf_element(1, p)
+            while k <= 100:
+                k += 1
+                d = lnf_element(k, p)
+                # print('Power:', -(alpha*k + 1))
+                # print(f)
+                f += d
         else:
-            while np.abs(d/f) > precision/100:
-     	        k += 1
-	        d = np.exp(lnf_element(k))
-	        f += d
-	        if k == 100:
-	            break
-        return f
+            while k <= 100:
+                k += 1
+                d = lnf_element(k, p)
+                # print(f)
+                f += d
+        return f.real
 
 
     @staticmethod
@@ -3944,10 +3976,13 @@ class levy_stable_gen(rv_continuous):
         pdf_default_method_name = getattr(self, 'pdf_default_method', 'zolotarev')
         if pdf_default_method_name == 'zolotarev':
             pdf_single_value_method = levy_stable_gen._pdf_single_value_zolotarev
-	elif pdf_default_name == 'expansion':
-	    pdf_single_value_method = levy_stable_gen._pdf_single_value_expansion
-        else:
+        elif pdf_default_method_name == 'expansion':
+            pdf_single_value_method = levy_stable_gen._pdf_single_value_expansion
+        elif pdf_default_method_name == 'quadrature':
             pdf_single_value_method = levy_stable_gen._pdf_single_value_cf_integrate
+        else:
+            raise ValueError('pdf_default_method should have a value in '
+                    '("zolotarev", "quadrature", "expansion").')
         
         fft_min_points_threshold = getattr(self, 'pdf_fft_min_points_threshold', 100)
         fft_grid_spacing = getattr(self, 'pdf_fft_grid_spacing', 0.01)
@@ -4010,7 +4045,7 @@ class levy_stable_gen(rv_continuous):
                 
         return data_out.T[0]
     
-    def _fitstart(self, data):
+    def _fitstart_quantile(self, data):
         # We follow McCullock 1986 method - Simple Consistent Estimators
         # of Stable Distribution Parameters
         
@@ -4123,9 +4158,30 @@ class levy_stable_gen(rv_continuous):
             beta = np.sign(nu_beta)
         c = (p75 - p25) / phi_3_1(beta, alpha)[0] 
         zeta = p50 + c*phi_5_1(beta, alpha)[0]
-        delta = np.clip(zeta-beta*c*np.tan(np.pi*alpha/2.) if alpha == 1. else zeta, np.finfo(float).eps, np.inf) 
+        delta = np.clip(zeta-beta*c*np.tan(np.pi*alpha/2.) if alpha == 1. else zeta, 
+                np.finfo(float).eps, np.inf) 
     
         return (alpha, beta, delta, c)
+
+
+    def _empirical_characteristic_function(self, data, u):
+        empirical_phi = np.mean(np.exp(1j * data * u))
+        return empirical_phi
+
+    def _fitstart_empirical_characteristic_function(self, data):
+        u_k = np.linspace(0.1, 1., 10)
+        empirical_phi_k = np.array([self._empirical_characteristic_function(
+            data, u) for u in u_k])
+        y_k = np.log(-np.log(np.square(np.abs(empirical_phi_k))))
+        raise NotImplementedError()
+
+
+    def _fitstart(self, data):
+        method = getattr(self, 'fit_method', 'quantile')
+        if method == 'empirical_characteristic_function':
+            return self._fitstart_quantile(data)
+        else:
+            return self._fitstart_empirical_characteristic_function(data)
         
     def _stats(self, alpha, beta):
         mu = 0 
