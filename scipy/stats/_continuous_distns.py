@@ -3671,7 +3671,7 @@ class levy_stable_gen(rv_continuous):
     """
 
 
-    def _rvs(self, alpha, beta, **par):
+    def _rvs(self, alpha, beta, parameterisation='A'):
         """
         Generates a vector of random stable variables under parameterization A 
         using Weron's formulation [WE].
@@ -3710,26 +3710,58 @@ class levy_stable_gen(rv_continuous):
 
 
     @staticmethod
-    def _beta_switch(alpha, beta, original_parameterisation_type):
+    def _param_switch(original_parameterisation_type, destination_parameterisation_type, **kwargs):
         """
-        Function for transforming the beta value accepted for each parameterisation.
+        Function for transforming the values accepted for each parameterisation.
         Parameterisations A and B require different values for beta. 
-        Parameterisations C and P require the value of beta used by parameterisation B.
+        Parameterisations C and P require the values of delta and P_1 respectively.
         All alpha values are the same.
-        The value par given is the parameterisation from which the beta is being transformed.
 
         Args:
-            alpha:
-            beta:
             original_parameterisation_type
+            destination_parameterisation_type
+            kwargs:
+                alpha, beta, c, delta, P_1 as applicable
         """
         K = lambda a: a - 1. + np.sign(1. - a)
+        
+        def _a_to_b(alpha, beta, c)):
+            beta = np.arctan(beta * np.tan(np.pi * alpha / 2.)) * 2. / (np.pi * K(alpha))
+            c = c/cos(beta)
+            return dict(alpha=alpha, beta=beta,c=c)
 
-        if original_parameterisation_type == "A": # here we assume that beta is under parameterization B on input 
-            return np.arctan(beta * np.tan(np.pi * alpha / 2.)) * 2. / (np.pi * K(alpha))
+        def _b_to_c(dict(alpha, beta, c)):
+            delta = beta*K(alpha)/alpha
+            return dict(alpha=alpha, beta=beta, c=c, delta=delta)
 
-        elif original_parameterisation_type == "B":
-            return (np.tan((np.pi * K(alpha) * beta) / 2.)) / np.tan(np.pi * alpha / 2.)
+        def _b_to_p(alpha, beta)
+            p_1 = 1/2 + beta*K(alpha)/(2*alpha)
+
+        def _b_to_a(alpha, beta, c):
+            c = c*cos(beta)
+            beta = (np.tan((np.pi * K(alpha) * beta) / 2.)) / np.tan(np.pi * alpha / 2.)
+            return dict(alpha=alpha, beta=beta,c=c)
+        
+        def _p_to_b(alpha, c, p_1):
+            beta = (2*p_1 - 1) * alpha/K(alpha)
+            return dict(alpha=alpha, beta=beta,c=c)
+        
+        def _c_to_b(alpha, c, delta):
+            beta = alpha*delta/K(alpha)
+            return dict(alpha=alpha, beta=beta,c=c)
+
+
+        in_dict = dict(A = _a_to_b,
+                       B = lambda *args: args,
+                       C = _c_to_b,
+                       P = _p_to_b)
+
+        out_dict = dict(A = _b_to_a,
+                        B = lambda *args: args,
+                        C = _b_to_c,
+                        P = _b_to_p)
+
+        return out_dict[destination_parameterisation_type](in_dict[origin_parameterisation_type](**kwargs))
 
 
     @staticmethod
@@ -3795,7 +3827,7 @@ class levy_stable_gen(rv_continuous):
 
 
     @classmethod
-    def _pdf_single_value_expansion(cls, x, alpha, beta, precision = 10, asymptotic = False):
+    def _pdf_single_value_expansion(cls, x, alpha, beta, asymptotic = False):
 
         """
         Results for the pdf at a single point calculated using expansions.
@@ -3804,7 +3836,7 @@ class levy_stable_gen(rv_continuous):
         """
 
         K = lambda a: a - 1 + np.sign(1-a)
-        beta_B = cls._beta_switch(alpha, beta, 'A')
+        beta_B = cls._param_switch('A', 'B', beta=beta, alpha=alpha, c=1)['beta']
         # print('beta_B:', beta_B)
         P1 = 1/2 + beta_B * K(alpha)/(2 * alpha)
         # print('P1:', P1)
