@@ -3663,6 +3663,7 @@ class levy_stable_gen(rv_continuous):
        of stable Paretian models, Mathematical and Computer Modelling, Volume 29, Issue 10, 
        1999, Pages 275-293.
     .. [BS] Borak, S., Hardle, W., Rafal, W. 2005. Stable distributions, Economic Risk. 
+    .. [WE] Weron . 1995. ... add the paper 
 
 
     %(example)s
@@ -3670,45 +3671,36 @@ class levy_stable_gen(rv_continuous):
     """
 
 
-    def _rvs(self, alpha, beta):
-
-        def alpha1func(alpha, beta, TH, aTH, bTH, cosTH, tanTH, W):
-            return (2/np.pi*(np.pi/2 + bTH)*tanTH -
-                    beta*np.log((np.pi/2*W*cosTH)/(np.pi/2 + bTH)))
-
-        def beta0func(alpha, beta, TH, aTH, bTH, cosTH, tanTH, W):
-            return (W/(cosTH/np.tan(aTH) + np.sin(TH)) *
-                    ((np.cos(aTH) + np.sin(aTH)*tanTH)/W)**(1.0/alpha))
-
-        def otherwise(alpha, beta, TH, aTH, bTH, cosTH, tanTH, W):
-            # alpha is not 1 and beta is not 0
-            val0 = beta*np.tan(np.pi*alpha/2)
-            th0 = np.arctan(val0)/alpha
-            val3 = W/(cosTH/np.tan(alpha*(th0 + TH)) + np.sin(TH))
-            res3 = val3*((np.cos(aTH) + np.sin(aTH)*tanTH -
-                          val0*(np.sin(aTH) - np.cos(aTH)*tanTH))/W)**(1.0/alpha)
-            return res3
-
-        def alphanot1func(alpha, beta, TH, aTH, bTH, cosTH, tanTH, W):
-            res = _lazywhere(beta == 0,
-                             (alpha, beta, TH, aTH, bTH, cosTH, tanTH, W),
-                             beta0func, f2=otherwise)
-            return res
-
+    def _rvs(self, alpha, beta, **par):
+        """
+        Generates a vector of random stable variables under parameterization A 
+        using Weron's formulation [WE].
+        """
+        #TODO: add transformation into different parameterizations
+        
+        # generate the random vector of the given size self._size
         sz = self._size
-        alpha = broadcast_to(alpha, sz)
-        beta = broadcast_to(beta, sz)
-        TH = uniform.rvs(loc=-np.pi/2.0, scale=np.pi, size=sz,
+        U = uniform.rvs(loc=-np.pi/2.0, scale=np.pi, size=sz,
                          random_state=self._random_state)
-        W = expon.rvs(size=sz, random_state=self._random_state)
-        aTH = alpha*TH
-        bTH = beta*TH
-        cosTH = np.cos(TH)
-        tanTH = np.tan(TH)
-        res = _lazywhere(alpha == 1,
-                         (alpha, beta, TH, aTH, bTH, cosTH, tanTH, W),
-                         alpha1func, f2=alphanot1func)
-        return res
+        E = expon.rvs(size=sz, random_state=self._random_state)
+        
+
+        def generate_stable_rvs(alpha, beta, U, E):
+            cos_U = np.cos(U)
+            tan_U = np.tan(U)
+            if alpha==1:
+                return (2./np.pi) * ((np.pi/2. + beta * U) * tan_U -
+                    beta * np.log(E * cos_U) / (np.pi/2. + b * U))
+            else:
+                tan_betaB = beta * np.tan(np.pi * alpha / 2.)
+                b = np.arctan(tan_betaB) / alpha
+
+                factor1 = sin(alpha * (U + b)) / cos_U**(1.0 / alpha)
+                factor2 = (cos((1. - alpha) * U - alpha * b) / E)**((1 - alpha) / alpha)
+                scaler = (1. + tan_betaB**2.)**(1 / (2. * alpha))
+                return scaler * factor1 * factor2
+        
+        return genetate_stable_rvs(alpha, beta, U, E)
 
 
     def _argcheck(self, alpha, beta, **par):
