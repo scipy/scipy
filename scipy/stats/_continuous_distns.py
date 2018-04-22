@@ -3836,7 +3836,7 @@ class levy_stable_gen(rv_continuous):
         """
 
         K = lambda a: a - 1 + np.sign(1-a)
-        beta_B = cls._param_switch('A', 'B', beta=beta, alpha=alpha, c=1)['beta']
+        beta_B = cls._param_switch('A', 'B', beta=beta, alpha=alpha, scale=1)['beta']
         # print('beta_B:', beta_B)
         P1 = 1/2 + beta_B * K(alpha)/(2 * alpha)
         # print('P1:', P1)
