@@ -3680,7 +3680,7 @@ class levy_stable_gen(rv_continuous):
         
         # generate the random vector of the given size self._size
         sz = self._size
-        U = uniform.rvs(loc=-np.pi/2.0, scale=np.pi, size=sz,
+        U = uniform.rvs(loc=-np.pi / 2.0, scale=np.pi, size=sz,
                          random_state=self._random_state)
         E = expon.rvs(size=sz, random_state=self._random_state)
         
@@ -3689,14 +3689,14 @@ class levy_stable_gen(rv_continuous):
             cos_U = np.cos(U)
             tan_U = np.tan(U)
             if alpha==1:
-                return (2./np.pi) * ((np.pi/2. + beta * U) * tan_U -
-                    beta * np.log(E * cos_U) / (np.pi/2. + b * U))
+                return (2. / np.pi) * ((np.pi / 2. + beta * U) * tan_U -
+                    beta * np.log(E * cos_U) / (np.pi / 2. + b * U))
             else:
                 tan_betaB = beta * np.tan(np.pi * alpha / 2.)
                 b = np.arctan(tan_betaB) / alpha
 
                 factor1 = np.sin(alpha * (U + b)) / cos_U**(1.0 / alpha)
-                factor2 = (np.cos((1. - alpha) * U - alpha * b) / E)**((1 - alpha) / alpha)
+                factor2 = (np.cos((1. - alpha) * U - alpha * b) / E)**((1. - alpha) / alpha)
                 scaler = (1. + tan_betaB**2.)**(1 / (2. * alpha))
                 return scaler * factor1 * factor2
         
