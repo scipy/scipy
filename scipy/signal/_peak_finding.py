@@ -870,7 +870,7 @@ def find_peaks(x, height=None, threshold=None, distance=None,
     >>> plt.show()
     """
     # _argmaxima1d expects array of dtype 'float64'
-    x = np.asarray(x, dtype=np.float64)
+    x = np.asarray(x, dtype=np.float64, order='C')
     if x.ndim != 1:
         raise ValueError('`x` must have exactly one dimension')
     if distance is not None and distance < 1:
