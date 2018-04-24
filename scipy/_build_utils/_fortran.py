@@ -7,7 +7,8 @@ from distutils.dep_util import newer
 
 __all__ = ['needs_g77_abi_wrapper', 'split_fortran_files',
            'get_g77_abi_wrappers',
-           'needs_sgemv_fix', 'get_sgemv_fix']
+           'needs_sgemv_fix', 'get_sgemv_fix',
+           'uses_veclib', 'uses_accelerate']
 
 
 def uses_veclib(info):
