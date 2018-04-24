@@ -14,17 +14,17 @@ from numpy import (arange, array, dot, zeros, identity, conjugate, transpose,
 import numpy.linalg as linalg
 from numpy.random import random
 
-from numpy.testing import (assert_raises,
-                           assert_equal, assert_almost_equal, assert_,
+from numpy.testing import (assert_equal, assert_almost_equal, assert_,
                            assert_array_almost_equal, assert_allclose,
                            assert_array_equal)
 import pytest
+from pytest import raises as assert_raises
 from scipy._lib._numpy_compat import suppress_warnings
 
 from scipy.linalg import (solve, inv, det, lstsq, pinv, pinv2, pinvh, norm,
                           solve_banded, solveh_banded, solve_triangular,
                           solve_circulant, circulant, LinAlgError, block_diag,
-                          matrix_balance)
+                          matrix_balance, LinAlgWarning)
 
 from scipy.linalg.basic import LstsqLapackError
 from scipy.linalg._testutils import assert_no_overwrite
@@ -713,7 +713,7 @@ class TestSolve(object):
         b = np.ones(2)
         with warnings.catch_warnings():
             warnings.simplefilter('error')
-            assert_raises(RuntimeWarning, solve, a, b)
+            assert_raises(LinAlgWarning, solve, a, b)
 
     def test_empty_rhs(self):
         a = np.eye(2)
@@ -730,10 +730,15 @@ class TestSolve(object):
 
     def test_transposed_keyword(self):
         A = np.arange(9).reshape(3, 3) + 1
-        x = solve(np.tril(A)/9, np.ones(3), transposed=1)
+        x = solve(np.tril(A)/9, np.ones(3), transposed=True)
         assert_array_almost_equal(x, [1.2, 0.2, 1])
-        x = solve(np.tril(A)/9, np.ones(3), transposed=0)
+        x = solve(np.tril(A)/9, np.ones(3), transposed=False)
         assert_array_almost_equal(x, [9, -5.4, -1.2])
+
+    def test_transposed_notimplemented(self):
+        a = np.eye(3).astype(complex)
+        with assert_raises(NotImplementedError):
+            solve(a, a, transposed=True)
 
     def test_nonsquare_a(self):
         assert_raises(ValueError, solve, [1, 2], 1)
@@ -746,11 +751,10 @@ class TestSolve(object):
         assert_raises(ValueError, solve, 1, 1, assume_a='zxcv')
 
     def test_all_type_size_routine_combinations(self):
-        sizes = [10, 100, 1000]
+        sizes = [10, 100]
         assume_as = ['gen', 'sym', 'pos', 'her']
         dtypes = [np.float32, np.float64, np.complex64, np.complex128]
-        for size, assume_a, dtype in itertools.product(sizes,
-                                                       assume_as,
+        for size, assume_a, dtype in itertools.product(sizes, assume_as,
                                                        dtypes):
             is_complex = dtype in (np.complex64, np.complex128)
             if assume_a == 'her' and not is_complex:
@@ -771,12 +775,27 @@ class TestSolve(object):
             elif assume_a == 'pos':
                 a = a.conj().T.dot(a) + 0.1*np.eye(size)
 
-            x = solve(a, b, assume_a=assume_a)
             tol = 1e-12 if dtype in (np.float64, np.complex128) else 1e-6
+
+            if assume_a in ['gen', 'sym', 'her']:
+                # We revert the tolerance from before
+                #   4b4a6e7c34fa4060533db38f9a819b98fa81476c
+                if dtype in (np.float32, np.complex64):
+                    tol *= 10
+
+            x = solve(a, b, assume_a=assume_a)
             assert_allclose(a.dot(x), b,
                             atol=tol * size,
                             rtol=tol * size,
                             err_msg=err_msg)
+
+            if assume_a == 'sym' and dtype not in (np.complex64,
+                                                   np.complex128):
+                x = solve(a, b, assume_a=assume_a, transposed=True)
+                assert_allclose(a.dot(x), b,
+                                atol=tol * size,
+                                rtol=tol * size,
+                                err_msg=err_msg)
 
 
 class TestSolveTriangular(object):
@@ -1215,44 +1234,40 @@ class TestLstsq(object):
             sup.filter(RuntimeWarning,
                        "internal gelsd driver lwork query error,.*"
                        "Falling back to 'gelss' driver.")
-            for dtype in REAL_DTYPES:
-                a = np.array(((1, 20), (-30, 4)), dtype=dtype)
-                for bt in (((1, 0), (0, 1)), (1, 0),
-                           ((2, 1), (-30, 4))):
-                    for lapack_driver in TestLstsq.lapack_drivers:
-                            for overwrite in (True, False):
-                                for check_finite in (True, False):
-                                    b = np.array(bt, dtype=dtype)
-                                    # Store values in case they are overwritten
-                                    # later
-                                    a1 = a.copy()
-                                    b1 = b.copy()
-                                    try:
-                                        out = lstsq(a1, b1,
-                                                    lapack_driver=lapack_driver,
-                                                    check_finite=check_finite,
-                                                    overwrite_a=overwrite,
-                                                    overwrite_b=overwrite)
-                                    except LstsqLapackError:
-                                        if lapack_driver is None:
-                                            mesg = (
-                                                'LstsqLapackError raised with '
-                                                'lapack_driver being None.')
-                                            raise AssertionError(mesg)
-                                        else:
-                                            # can't proceed,
-                                            # skip to the next iteration
-                                            continue
-                                    x = out[0]
-                                    r = out[2]
-                                    assert_(r == 2,
-                                            'expected efficient rank 2, '
-                                            'got %s' % r)
-                                    assert_allclose(
-                                          dot(a, x), b,
-                                          rtol=25 * _eps_cast(a.dtype),
-                                          atol=25 * _eps_cast(a.dtype),
-                                          err_msg="driver: %s" % lapack_driver)
+
+        at = np.array(((1, 20), (-30, 4)))
+        for dtype, bt, lapack_driver, overwrite, check_finite in \
+            itertools.product(REAL_DTYPES,
+                              (((1, 0), (0, 1)), (1, 0), ((2, 1), (-30, 4))),
+                              TestLstsq.lapack_drivers,
+                              (True, False),
+                              (True, False)):
+
+            a = at.astype(dtype)
+            b = np.array(bt, dtype=dtype)
+            # Store values in case they are overwritten
+            # later
+            a1 = a.copy()
+            b1 = b.copy()
+            try:
+                out = lstsq(a1, b1, lapack_driver=lapack_driver,
+                            check_finite=check_finite, overwrite_a=overwrite,
+                            overwrite_b=overwrite)
+            except LstsqLapackError:
+                if lapack_driver is None:
+                    raise AssertionError('LstsqLapackError raised with '
+                                         '"lapack_driver" being "None".')
+                else:
+                    # can't proceed,
+                    # skip to the next iteration
+                    continue
+            x = out[0]
+            r = out[2]
+            assert_(r == 2, 'expected efficient rank 2, got %s' % r)
+            assert_allclose(dot(a, x), b,
+                            rtol=25 * _eps_cast(a.dtype),
+                            atol=25 * _eps_cast(a.dtype),
+                            err_msg="driver: %s" % lapack_driver)
 
     def test_zero_size(self):
         for a_shape, b_shape in (((0, 2), (0,)),

@@ -4,6 +4,10 @@ SciPy Tutorial
 
 .. sectionauthor:: Travis E. Oliphant
 
+.. raw:: latex
+
+   \addtocontents{toc}{\protect\setcounter{tocdepth}{2}}
+
 .. toctree::
    :maxdepth: 1
 
@@ -22,3 +26,7 @@ SciPy Tutorial
    stats
    ndimage
    io
+
+.. raw:: latex
+
+   \addtocontents{toc}{\protect\setcounter{tocdepth}{1}}

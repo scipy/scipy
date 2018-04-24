@@ -47,7 +47,11 @@ def configuration(parent_package='',top_path=None):
                          **numpy_nodepr_api
                          )
 
+    # Add license files
+    config.add_data_files('SuperLU/License.txt')
+
     return config
+
 
 if __name__ == '__main__':
     from numpy.distutils.core import setup

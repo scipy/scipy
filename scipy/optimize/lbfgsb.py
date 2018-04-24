@@ -335,24 +335,22 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
             f, g = func_and_grad(x)
         elif task_str.startswith(b'NEW_X'):
             # new iteration
-            if n_iterations > maxiter:
-                task[:] = 'STOP: TOTAL NO. of ITERATIONS EXCEEDS LIMIT'
+            n_iterations += 1
+            if callback is not None:
+                callback(np.copy(x))
+
+            if n_iterations >= maxiter:
+                task[:] = 'STOP: TOTAL NO. of ITERATIONS REACHED LIMIT'
             elif n_function_evals[0] > maxfun:
                 task[:] = ('STOP: TOTAL NO. of f AND g EVALUATIONS '
                            'EXCEEDS LIMIT')
-            else:
-                n_iterations += 1
-                if callback is not None:
-                    callback(x)
         else:
             break
 
     task_str = task.tostring().strip(b'\x00').strip()
     if task_str.startswith(b'CONV'):
         warnflag = 0
-    elif n_function_evals[0] > maxfun:
-        warnflag = 1
-    elif n_iterations > maxiter:
+    elif n_function_evals[0] > maxfun or n_iterations >= maxiter:
         warnflag = 1
     else:
         warnflag = 2
@@ -468,67 +466,3 @@ class LbfgsInvHessProduct(LinearOperator):
             Hk = np.dot(A1, np.dot(Hk, A2)) + (rho[i] * s[i][:, np.newaxis] *
                                                         s[i][np.newaxis, :])
         return Hk
-
-
-if __name__ == '__main__':
-    def func(x):
-        f = 0.25 * (x[0] - 1) ** 2
-        for i in range(1, x.shape[0]):
-            f += (x[i] - x[i-1] ** 2) ** 2
-        f *= 4
-        return f
-
-    def grad(x):
-        g = zeros(x.shape, float64)
-        t1 = x[1] - x[0] ** 2
-        g[0] = 2 * (x[0] - 1) - 16 * x[0] * t1
-        for i in range(1, g.shape[0] - 1):
-            t2 = t1
-            t1 = x[i + 1] - x[i] ** 2
-            g[i] = 8 * t2 - 16*x[i] * t1
-        g[-1] = 8 * t1
-        return g
-
-    def func_and_grad(x):
-        return func(x), grad(x)
-
-    class Problem(object):
-        def fun(self, x):
-            return func_and_grad(x)
-
-    factr = 1e7
-    pgtol = 1e-5
-
-    n = 25
-    m = 10
-
-    bounds = [(None, None)] * n
-    for i in range(0, n, 2):
-        bounds[i] = (1.0, 100)
-    for i in range(1, n, 2):
-        bounds[i] = (-100, 100)
-
-    x0 = zeros((n,), float64)
-    x0[:] = 3
-
-    x, f, d = fmin_l_bfgs_b(func, x0, fprime=grad, m=m,
-                            factr=factr, pgtol=pgtol)
-    print(x)
-    print(f)
-    print(d)
-    x, f, d = fmin_l_bfgs_b(func, x0, approx_grad=1,
-                            m=m, factr=factr, pgtol=pgtol)
-    print(x)
-    print(f)
-    print(d)
-    x, f, d = fmin_l_bfgs_b(func_and_grad, x0, approx_grad=0,
-                            m=m, factr=factr, pgtol=pgtol)
-    print(x)
-    print(f)
-    print(d)
-    p = Problem()
-    x, f, d = fmin_l_bfgs_b(p.fun, x0, approx_grad=0,
-                            m=m, factr=factr, pgtol=pgtol)
-    print(x)
-    print(f)
-    print(d)

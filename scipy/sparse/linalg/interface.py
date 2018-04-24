@@ -130,7 +130,7 @@ class LinearOperator(object):
     def __new__(cls, *args, **kwargs):
         if cls is LinearOperator:
             # Operate as _CustomLinearOperator factory.
-            return _CustomLinearOperator(*args, **kwargs)
+            return super(LinearOperator, cls).__new__(_CustomLinearOperator)
         else:
             obj = super(LinearOperator, cls).__new__(cls)
 
@@ -659,13 +659,18 @@ def aslinearoperator(A):
 
     See the LinearOperator documentation for additional information.
 
+    Notes
+    -----
+    If 'A' has no .dtype attribute, the data type is determined by calling
+    :func:`LinearOperator.matvec()` - set the .dtype attribute to prevent this
+    call upon the linear operator creation.
+
     Examples
     --------
     >>> from scipy.sparse.linalg import aslinearoperator
     >>> M = np.array([[1,2,3],[4,5,6]], dtype=np.int32)
     >>> aslinearoperator(M)
     <2x3 MatrixLinearOperator with dtype=int32>
-
     """
     if isinstance(A, LinearOperator):
         return A

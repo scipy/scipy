@@ -2,8 +2,9 @@ from __future__ import division, print_function, absolute_import
 
 import os
 import sys
-from os.path import join
+from os.path import join, dirname
 from distutils.sysconfig import get_python_inc
+import subprocess
 import numpy
 from numpy.distutils.misc_util import get_numpy_include_dirs
 
@@ -31,6 +32,7 @@ def configuration(parent_package='',top_path=None):
     if inc_dirs[0] != get_python_inc(plat_specific=1):
         inc_dirs.append(get_python_inc(plat_specific=1))
     inc_dirs.insert(0, get_numpy_include_dirs())
+    inc_dirs.append(join(dirname(dirname(__file__)), '_lib'))
 
     # C libraries
     c_misc_src = [join('c_misc','*.c')]
@@ -93,7 +95,7 @@ def configuration(parent_package='',top_path=None):
     config.add_extension('_ufuncs_cxx',
                          sources=ufuncs_cxx_src,
                          depends=ufuncs_cxx_dep,
-                         include_dirs=[curdir],
+                         include_dirs=[curdir] + inc_dirs,
                          define_macros=define_macros,
                          extra_info=get_info("npymath"))
 
@@ -129,12 +131,23 @@ def configuration(parent_package='',top_path=None):
     # testing for _round.h
     config.add_extension('_test_round',
                          sources=['_test_round.c'],
-                         depends=['_round.h', 'c_misc/double2.h'],
-                         include_dirs=[numpy.get_include()],
+                         depends=['_round.h', 'cephes/dd_idefs.h'],
+                         include_dirs=[numpy.get_include()] + inc_dirs,
                          extra_info=get_info('npymath'))
 
     config.add_data_files('tests/*.py')
     config.add_data_files('tests/data/README')
+
+    # regenerate npz data files
+    makenpz = os.path.join(os.path.dirname(__file__),
+                           'utils', 'makenpz.py')
+    data_dir = os.path.join(os.path.dirname(__file__),
+                            'tests', 'data')
+    for name in ['boost', 'gsl', 'local']:
+        subprocess.check_call([sys.executable, makenpz,
+                               '--use-timestamp',
+                               os.path.join(data_dir, name)])
+
     config.add_data_files('tests/data/*.npz')
 
     config.add_subpackage('_precompute')

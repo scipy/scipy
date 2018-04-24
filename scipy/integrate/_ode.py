@@ -69,7 +69,7 @@ from __future__ import division, print_function, absolute_import
 #         # arguments
 #         # to these functions.
 #         <calculate y1>
-#         if <calculation was unsuccesful>:
+#         if <calculation was unsuccessful>:
 #             self.success = 0
 #         return t1,y1
 #
@@ -325,14 +325,14 @@ class ode(object):
     >>> while r.successful() and r.t < t1:
     ...     print(r.t+dt, r.integrate(r.t+dt))
     1 [-0.71038232+0.23749653j  0.40000271+0.j        ]
-    2.0 [ 0.19098503-0.52359246j  0.22222356+0.j        ]
-    3.0 [ 0.47153208+0.52701229j  0.15384681+0.j        ]
+    2.0 [0.19098503-0.52359246j 0.22222356+0.j        ]
+    3.0 [0.47153208+0.52701229j 0.15384681+0.j        ]
     4.0 [-0.61905937+0.30726255j  0.11764744+0.j        ]
-    5.0 [ 0.02340997-0.61418799j  0.09523835+0.j        ]
-    6.0 [ 0.58643071+0.339819j  0.08000018+0.j      ]
+    5.0 [0.02340997-0.61418799j 0.09523835+0.j        ]
+    6.0 [0.58643071+0.339819j 0.08000018+0.j      ]
     7.0 [-0.52070105+0.44525141j  0.06896565+0.j        ]
     8.0 [-0.15986733-0.61234476j  0.06060616+0.j        ]
-    9.0 [ 0.64850462+0.15048982j  0.05405414+0.j        ]
+    9.0 [0.64850462+0.15048982j 0.05405414+0.j        ]
     10.0 [-0.38404699+0.56382299j  0.04878055+0.j        ]
 
     References
@@ -446,7 +446,89 @@ class ode(object):
 
     def get_return_code(self):
         """Extracts the return code for the integration to enable better control
-        if the integration fails."""
+        if the integration fails.
+
+        In general, a return code > 0 implies success while a return code < 0
+        implies failure.
+
+        Notes
+        -----
+        This section describes possible return codes and their meaning, for available
+        integrators that can be selected by `set_integrator` method.
+
+        "vode"
+
+        ===========  =======
+        Return Code  Message
+        ===========  =======
+        2            Integration successful.
+        -1           Excess work done on this call. (Perhaps wrong MF.)
+        -2           Excess accuracy requested. (Tolerances too small.)
+        -3           Illegal input detected. (See printed message.)
+        -4           Repeated error test failures. (Check all input.)
+        -5           Repeated convergence failures. (Perhaps bad Jacobian
+                     supplied or wrong choice of MF or tolerances.)
+        -6           Error weight became zero during problem. (Solution
+                     component i vanished, and ATOL or ATOL(i) = 0.)
+        ===========  =======
+
+        "zvode"
+
+        ===========  =======
+        Return Code  Message
+        ===========  =======
+        2            Integration successful.
+        -1           Excess work done on this call. (Perhaps wrong MF.)
+        -2           Excess accuracy requested. (Tolerances too small.)
+        -3           Illegal input detected. (See printed message.)
+        -4           Repeated error test failures. (Check all input.)
+        -5           Repeated convergence failures. (Perhaps bad Jacobian
+                     supplied or wrong choice of MF or tolerances.)
+        -6           Error weight became zero during problem. (Solution
+                     component i vanished, and ATOL or ATOL(i) = 0.)
+        ===========  =======
+
+        "dopri5"
+
+        ===========  =======
+        Return Code  Message
+        ===========  =======
+        1            Integration successful.
+        2            Integration successful (interrupted by solout).
+        -1           Input is not consistent.
+        -2           Larger nsteps is needed.
+        -3           Step size becomes too small.
+        -4           Problem is probably stiff (interrupted).
+        ===========  =======
+
+        "dop853"
+
+        ===========  =======
+        Return Code  Message
+        ===========  =======
+        1            Integration successful.
+        2            Integration successful (interrupted by solout).
+        -1           Input is not consistent.
+        -2           Larger nsteps is needed.
+        -3           Step size becomes too small.
+        -4           Problem is probably stiff (interrupted).
+        ===========  =======
+
+        "lsoda"
+
+        ===========  =======
+        Return Code  Message
+        ===========  =======
+        2            Integration successful.
+        -1           Excess work done on this call (perhaps wrong Dfun type).
+        -2           Excess accuracy requested (tolerances too small).
+        -3           Illegal input detected (internal error).
+        -4           Repeated error test failures (internal error).
+        -5           Repeated convergence failures (perhaps bad Jacobian or tolerances).
+        -6           Error weight became zero during problem.
+        -7           Internal workspace insufficient to finish (internal error).
+        ===========  =======
+        """
         try:
             self._integrator
         except AttributeError:
@@ -1030,7 +1112,7 @@ class dopri5(IntegratorBase):
     messages = {1: 'computation successful',
                 2: 'comput. successful (interrupted by solout)',
                 -1: 'input is not consistent',
-                -2: 'larger nmax is needed',
+                -2: 'larger nsteps is needed',
                 -3: 'step size becomes too small',
                 -4: 'problem is probably stiff (interrupted)',
                 }

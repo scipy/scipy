@@ -162,7 +162,7 @@ def singular_leading_submatrix(A, U, k):
     Returns
     -------
     delta : float
-        Amout that should be added to the element (k, k) of the
+        Amount that should be added to the element (k, k) of the
         leading k by k submatrix of ``A`` to make it singular.
     v : ndarray
         A vector such that ``v.T B v = 0``. Where B is the matrix A after
@@ -229,7 +229,7 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
         self.niter = 0
 
         # ``k_easy`` and ``k_hard`` are parameters used
-        # to detemine the stop criteria to the iterative
+        # to determine the stop criteria to the iterative
         # subproblem solver. Take a look at pp. 194-197
         # from reference _[1] for a more detailed description.
         self.k_easy = k_easy
@@ -306,9 +306,9 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
 
             self.niter += 1
 
-            # Check if factorization succeded
+            # Check if factorization succeeded
             if info == 0 and self.jac_mag > self.CLOSE_TO_ZERO:
-                # Successfull factorization
+                # Successful factorization
 
                 # Solve `U.T U p = s`
                 p = cho_solve((U, False), -self.jac)
@@ -361,13 +361,13 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
                                             overwrite_a=False,
                                             clean=True)
 
-                    # Check if the factorization have succeded
+                    # Check if the factorization have succeeded
                     #
-                    if info == 0:  # Successfull factorization
+                    if info == 0:  # Successful factorization
                         # Update damping factor
                         lambda_current = lambda_new
                         already_factorized = True
-                    else:  # Unsuccessfull factorization
+                    else:  # Unsuccessful factorization
                         # Update uncertanty bounds
                         lambda_lb = max(lambda_lb, lambda_new)
 
@@ -412,9 +412,9 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
                 lambda_current = max(np.sqrt(lambda_lb * lambda_ub),
                                      lambda_lb + self.UPDATE_COEFF*(lambda_ub-lambda_lb))
 
-            else:  # Unsuccessfull factorization
+            else:  # Unsuccessful factorization
 
-                # Compute auxiliar terms
+                # Compute auxiliary terms
                 delta, v = singular_leading_submatrix(H, U, info)
                 v_norm = norm(v)
 

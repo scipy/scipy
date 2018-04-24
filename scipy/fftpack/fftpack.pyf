@@ -83,7 +83,7 @@ python module _fftpack
          intent(c) destroy_drfft_cache
        end subroutine destroy_drfft_cache
 
-       /* Single precision version */
+       ! Single precision version
        subroutine cfft(x,n,direction,howmany,normalize)
          ! y = fft(x[,n,direction,normalize,overwrite_x])
          intent(c) cfft

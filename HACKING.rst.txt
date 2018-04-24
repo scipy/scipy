@@ -209,7 +209,7 @@ do one of::
 
     $ python runtests.py -v
     $ python runtests.py -v -s optimize
-    $ python runtests.py -v -t scipy/special/tests/test_basic.py:test_xlogy
+    $ python runtests.py -v -t scipy.special.tests.test_basic::test_xlogy
     $ python runtests.py --ipython
     $ python runtests.py --python somescript.py
     $ python runtests.py --bench
@@ -217,8 +217,8 @@ do one of::
 This builds Scipy first, so the first time it may take some time.  If
 you specify ``-n``, the tests are run against the version of Scipy (if
 any) found on current PYTHONPATH.  *Note: if you run into a build issue,
-more detailed build documentation can be found at
-http://scipy.org/scipylib/building/index.html.*
+more detailed build documentation can be found in :doc:`building/index` and at
+https://github.com/scipy/scipy/tree/master/doc/source/building*
 
 Using ``runtests.py`` is the recommended approach to running tests.
 There are also a number of alternatives to it, for example in-place
@@ -317,13 +317,12 @@ FAQ
 *I based my code on existing Matlab/R/... code I found online, is this OK?*
 
 It depends.  SciPy is distributed under a BSD license, so if the code that you
-based your code on is also BSD licensed or has a BSD-compatible license (MIT,
-Apache, ...) then it's OK.  Code which is GPL-licensed, has no clear license,
-requires citation or is free for academic use only can't be included in SciPy.
-Therefore if you copied existing code with such a license or made a direct
-translation to Python of it, your code can't be included.  See also `license
-compatibility`_.
-
+based your code on is also BSD licensed or has a BSD-compatible license (e.g.
+MIT, PSF) then it's OK.  Code which is GPL or Apache licensed, has no
+clear license, requires citation or is free for academic use only can't be
+included in SciPy.  Therefore if you copied existing code with such a license
+or made a direct translation to Python of it, your code can't be included.
+If you're unsure, please ask on the scipy-dev mailing list.
 
 *Why is SciPy under the BSD license and not, say, the GPL?*
 
@@ -379,6 +378,29 @@ and on Windows
 Now editing a Python source file in SciPy allows you to immediately
 test and use your changes (in ``.py`` files), by simply restarting the
 interpreter.
+
+
+*Are there any video examples for installing from source, setting up a 
+development environment, etc...?*
+
+Currently, there are two video demonstrations for Anaconda Python on macOS:
+
+`Anaconda SciPy Dev Part I (macOS)`_ is a four-minute
+overview of installing Anaconda, building SciPy from source, and testing
+changes made to SciPy from the Spyder IDE.
+
+`Anaconda SciPy Dev Part II (macOS)`_ shows how to use
+a virtual environment to easily switch between the "pre-built version" of SciPy
+installed with Anaconda and your "source-built version" of SciPy created
+according to Part I.
+
+
+*Are there any video examples of the basic development workflow?*
+
+`SciPy Development Workflow`_ is a five-minute example of fixing a bug and 
+submitting a pull request. While it's intended as a followup to
+`Anaconda SciPy Dev Part I (macOS)`_ and `Anaconda SciPy Dev Part II (macOS)`_,
+the process is similar for other development setups.
 
 
 *Can I use a programming language other than Python to speed up my code?*
@@ -458,7 +480,7 @@ suite.
 
 .. _SciPy API: https://docs.scipy.org/doc/scipy/reference/api.html
 
-.. _SciPy Roadmap: http://docs.scipy.org/doc/scipy/reference/roadmap.html
+.. _SciPy Roadmap: https://scipy.github.io/devdocs/roadmap.html
 
 .. _git workflow: http://docs.scipy.org/doc/numpy/dev/gitwash/index.html
 
@@ -478,8 +500,6 @@ suite.
 
 .. _SciPy Central: http://scipy-central.org/
 
-.. _license compatibility: https://www.scipy.org/License_Compatibility
-
 .. _doctest: http://www.doughellmann.com/PyMOTW/doctest/
 
 .. _virtualenv: http://www.virtualenv.org/
@@ -492,3 +512,8 @@ suite.
 
 .. _mailing lists: https://www.scipy.org/scipylib/mailing-lists.html
 
+.. _Anaconda SciPy Dev Part I (macOS): https://youtu.be/1rPOSNd0ULI
+
+.. _Anaconda SciPy Dev Part II (macOS): https://youtu.be/Faz29u5xIZc
+
+.. _SciPy Development Workflow: https://youtu.be/HgU01gJbzMY

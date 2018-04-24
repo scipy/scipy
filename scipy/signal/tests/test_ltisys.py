@@ -4,7 +4,9 @@ import warnings
 
 import numpy as np
 from numpy.testing import (assert_almost_equal, assert_equal, assert_allclose,
-                           assert_, assert_raises)
+                           assert_)
+from pytest import raises as assert_raises
+
 from scipy._lib._numpy_compat import suppress_warnings
 from scipy.signal import (ss2tf, tf2ss, lsim2, impulse2, step2, lti,
                           dlti, bode, freqresp, lsim, impulse, step,
@@ -12,6 +14,8 @@ from scipy.signal import (ss2tf, tf2ss, lsim2, impulse2, step2, lti,
                           TransferFunction, StateSpace, ZerosPolesGain)
 from scipy.signal.filter_design import BadCoefficients
 import scipy.linalg as linalg
+
+import scipy._lib.six as six
 
 
 def _assert_poles_close(P1,P2, rtol=1e-8, atol=1e-8):
@@ -66,7 +70,10 @@ class TestPlacePoles(object):
         # values are almost equal. This is to improve code coverage but I
         # have no way to be sure this code is really reached
 
-        self._check(A, B, (2,2,3,3))
+        # on some architectures this can lead to a RuntimeWarning invalid
+        # value in divide (see gh-7590), so suppress it for now
+        with np.errstate(invalid='ignore'):
+            self._check(A, B, (2,2,3,3))
 
     def test_complex(self):
         # Test complex pole placement on a linearized car model, taken from L.
@@ -779,6 +786,122 @@ class TestStateSpace(object):
         assert_equal(s.poles, [1])
         assert_equal(s.zeros, [0])
         assert_(s.dt is None)
+
+    def test_operators(self):
+        # Test +/-/* operators on systems
+
+        class BadType(object):
+            pass
+
+        s1 = StateSpace(np.array([[-0.5, 0.7], [0.3, -0.8]]),
+                        np.array([[1], [0]]),
+                        np.array([[1, 0]]),
+                        np.array([[0]]),
+                        )
+
+        s2 = StateSpace(np.array([[-0.2, -0.1], [0.4, -0.1]]),
+                        np.array([[1], [0]]),
+                        np.array([[1, 0]]),
+                        np.array([[0]])
+                        )
+
+        s_discrete = s1.to_discrete(0.1)
+        s2_discrete = s2.to_discrete(0.2)
+
+        # Impulse response
+        t = np.linspace(0, 1, 100)
+        u = np.zeros_like(t)
+        u[0] = 1
+
+        # Test multiplication
+        for typ in six.integer_types + (float, complex, np.float32,
+                                        np.complex128, np.array):
+            assert_allclose(lsim(typ(2) * s1, U=u, T=t)[1],
+                            typ(2) * lsim(s1, U=u, T=t)[1])
+
+            assert_allclose(lsim(s1 * typ(2), U=u, T=t)[1],
+                            lsim(s1, U=u, T=t)[1] * typ(2))
+
+            assert_allclose(lsim(s1 / typ(2), U=u, T=t)[1],
+                            lsim(s1, U=u, T=t)[1] / typ(2))
+
+            with assert_raises(TypeError):
+                typ(2) / s1
+
+        assert_allclose(lsim(s1 * 2, U=u, T=t)[1],
+                        lsim(s1, U=2 * u, T=t)[1])
+
+        assert_allclose(lsim(s1 * s2, U=u, T=t)[1],
+                        lsim(s1, U=lsim(s2, U=u, T=t)[1], T=t)[1],
+                        atol=1e-5)
+
+        with assert_raises(TypeError):
+            s1 / s1
+
+        with assert_raises(TypeError):
+            s1 * s_discrete
+
+        with assert_raises(TypeError):
+            # Check different discretization constants
+            s_discrete * s2_discrete
+
+        with assert_raises(TypeError):
+            s1 * BadType()
+
+        with assert_raises(TypeError):
+            BadType() * s1
+
+        with assert_raises(TypeError):
+            s1 / BadType()
+
+        with assert_raises(TypeError):
+            BadType() / s1
+
+        # Test addition
+        assert_allclose(lsim(s1 + 2, U=u, T=t)[1],
+                        2 * u + lsim(s1, U=u, T=t)[1])
+
+        # Check for dimension missmatch
+        with assert_raises(ValueError):
+            s1 + np.array([1, 2])
+
+        with assert_raises(ValueError):
+            np.array([1, 2]) + s1
+
+        with assert_raises(TypeError):
+            s1 + s_discrete
+
+        with assert_raises(ValueError):
+            s1 / np.array([[1, 2], [3, 4]])
+
+        with assert_raises(TypeError):
+            # Check different discretization constants
+            s_discrete + s2_discrete
+
+        with assert_raises(TypeError):
+            s1 + BadType()
+
+        with assert_raises(TypeError):
+            BadType() + s1
+
+        assert_allclose(lsim(s1 + s2, U=u, T=t)[1],
+                        lsim(s1, U=u, T=t)[1] + lsim(s2, U=u, T=t)[1])
+
+        # Test substraction
+        assert_allclose(lsim(s1 - 2, U=u, T=t)[1],
+                        -2 * u + lsim(s1, U=u, T=t)[1])
+
+        assert_allclose(lsim(2 - s1, U=u, T=t)[1],
+                        2 * u + lsim(-s1, U=u, T=t)[1])
+
+        assert_allclose(lsim(s1 - s2, U=u, T=t)[1],
+                        lsim(s1, U=u, T=t)[1] - lsim(s2, U=u, T=t)[1])
+
+        with assert_raises(TypeError):
+            s1 - BadType()
+
+        with assert_raises(TypeError):
+            BadType() - s1
 
 
 class TestTransferFunction(object):

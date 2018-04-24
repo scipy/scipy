@@ -38,7 +38,6 @@ from .linesearch import (line_search_wolfe1, line_search_wolfe2,
                          line_search_wolfe2 as line_search,
                          LineSearchWarning)
 from scipy._lib._util import getargspec_no_self as _getargspec
-from scipy.linalg import get_blas_funcs
 
 
 # standard status messages of optimizers
@@ -149,6 +148,7 @@ def is_array_scalar(x):
 
     """
     return np.size(x) == 1
+
 
 _epsilon = sqrt(numpy.finfo(float).eps)
 
@@ -422,7 +422,8 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
 def _minimize_neldermead(func, x0, args=(), callback=None,
                          maxiter=None, maxfev=None, disp=False,
                          return_all=False, initial_simplex=None,
-                         xatol=1e-4, fatol=1e-4, **unknown_options):
+                         xatol=1e-4, fatol=1e-4, adaptive=False,
+                         **unknown_options):
     """
     Minimization of scalar function of one or more variables using the
     Nelder-Mead algorithm.
@@ -448,6 +449,16 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     fatol : number, optional
         Absolute error in func(xopt) between iterations that is acceptable for
         convergence.
+    adaptive : bool, optional
+        Adapt algorithm parameters to dimensionality of problem. Useful for
+        high-dimensional minimization [1]_.
+
+    References
+    ----------
+    .. [1] Gao, F. and Han, L.
+       Implementing the Nelder-Mead simplex algorithm with adaptive
+       parameters. 2012. Computational Optimization and Applications.
+       51:1, pp. 259-277
 
     """
     if 'ftol' in unknown_options:
@@ -477,10 +488,18 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
 
     fcalls, func = wrap_function(func, args)
 
-    rho = 1
-    chi = 2
-    psi = 0.5
-    sigma = 0.5
+    if adaptive:
+        dim = float(len(x0))
+        rho = 1
+        chi = 1 + 2/dim
+        psi = 0.75 - 1/(2*dim)
+        sigma = 1 - 1/dim
+    else:
+        rho = 1
+        chi = 2
+        psi = 0.5
+        sigma = 0.5
+
     nonzdelt = 0.05
     zdelt = 0.00025
 
@@ -862,7 +881,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
         1 : Maximum number of iterations exceeded.
         2 : Gradient and/or function calls not changing.
     allvecs  :  list
-        `OptimizeResult` at each iteration.  Only returned if retall is True.
+        The value of xopt at each iteration.  Only returned if retall is True.
 
     See also
     --------
@@ -947,11 +966,6 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
     I = numpy.eye(N, dtype=int)
     Hk = I
 
-    # get needed blas functions
-    syr = get_blas_funcs('syr', dtype='d')  # Symetric rank 1 update
-    syr2 = get_blas_funcs('syr2', dtype='d')  # Symetric rank 2 update
-    symv = get_blas_funcs('symv', dtype='d')  # Symetric matrix-vector product
-
     # Sets the initial step guess to dx ~ 1
     old_fval = f(x0)
     old_old_fval = old_fval + np.linalg.norm(gfk) / 2
@@ -959,11 +973,10 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
     xk = x0
     if retall:
         allvecs = [x0]
-    sk = [2 * gtol]
     warnflag = 0
     gnorm = vecnorm(gfk, ord=norm)
     while (gnorm > gtol) and (k < maxiter):
-        pk = symv(-1, Hk, gfk)
+        pk = -numpy.dot(Hk, gfk)
         try:
             alpha_k, fc, gc, old_fval, old_old_fval, gfkp1 = \
                      _line_search_wolfe12(f, myfprime, xk, pk, gfk,
@@ -985,6 +998,7 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
         gfk = gfkp1
         if callback is not None:
             callback(xk)
+        k += 1
         gnorm = vecnorm(gfk, ord=norm)
         if (gnorm <= gtol):
             break
@@ -995,9 +1009,8 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
             warnflag = 2
             break
 
-        yk_sk = np.dot(yk, sk)
         try:  # this was handled in numeric, let it remaines for more safety
-            rhok = 1.0 / yk_sk
+            rhok = 1.0 / (numpy.dot(yk, sk))
         except ZeroDivisionError:
             rhok = 1000.0
             if disp:
@@ -1006,31 +1019,10 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
             rhok = 1000.0
             if disp:
                 print("Divide-by-zero encountered: rhok assumed large")
-
-        # Heristic to adjust Hk for k == 0
-        # described at Nocedal/Wright "Numerical Optimization"
-        # p.143 formula (6.20)
-        if k == 0:
-            Hk = yk_sk / np.dot(yk, yk)*I
-
-        # Implement BFGS update using the formula:
-        # Hk <- Hk + ((Hk yk).T yk+sk.T yk)*(rhok**2)*sk sk.T -rhok*[(Hk yk)sk.T +sk(Hk yk).T]
-        # This formula is equivalent to (6.17) from
-        # Nocedal/Wright "Numerical Optimization"
-        # written in a more efficient way for implementation.
-        Hk_yk = symv(1, Hk, yk)
-        c = rhok**2 * (yk_sk+Hk_yk.dot(yk))
-        Hk = syr2(-rhok, sk, Hk_yk, a=Hk)
-        Hk = syr(c, sk, a=Hk)
-
-        k += 1
-
-    # The matrix Hk is obtained from the
-    # symmetric representation that were being
-    # used to store it.
-    Hk_triu = numpy.triu(Hk)
-    Hk_diag = numpy.diag(Hk)
-    Hk = Hk_triu + Hk_triu.T - numpy.diag(Hk_diag)
+        A1 = I - sk[:, numpy.newaxis] * yk[numpy.newaxis, :] * rhok
+        A2 = I - yk[:, numpy.newaxis] * sk[numpy.newaxis, :] * rhok
+        Hk = numpy.dot(A1, numpy.dot(Hk, A2)) + (rhok * sk[:, numpy.newaxis] *
+                                                 sk[numpy.newaxis, :])
 
     fval = old_fval
     if np.isnan(fval):
@@ -1040,30 +1032,18 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
 
     if warnflag == 2:
         msg = _status_message['pr_loss']
-        if disp:
-            print("Warning: " + msg)
-            print("         Current function value: %f" % fval)
-            print("         Iterations: %d" % k)
-            print("         Function evaluations: %d" % func_calls[0])
-            print("         Gradient evaluations: %d" % grad_calls[0])
-
     elif k >= maxiter:
         warnflag = 1
         msg = _status_message['maxiter']
-        if disp:
-            print("Warning: " + msg)
-            print("         Current function value: %f" % fval)
-            print("         Iterations: %d" % k)
-            print("         Function evaluations: %d" % func_calls[0])
-            print("         Gradient evaluations: %d" % grad_calls[0])
     else:
         msg = _status_message['success']
-        if disp:
-            print(msg)
-            print("         Current function value: %f" % fval)
-            print("         Iterations: %d" % k)
-            print("         Function evaluations: %d" % func_calls[0])
-            print("         Gradient evaluations: %d" % grad_calls[0])
+
+    if disp:
+        print("%s%s" % ("Warning: " if warnflag != 0 else "", msg))
+        print("         Current function value: %f" % fval)
+        print("         Iterations: %d" % k)
+        print("         Function evaluations: %d" % func_calls[0])
+        print("         Gradient evaluations: %d" % grad_calls[0])
 
     result = OptimizeResult(fun=fval, jac=gfk, hess_inv=Hk, nfev=func_calls[0],
                             njev=grad_calls[0], status=warnflag,
@@ -1355,30 +1335,18 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
     fval = old_fval
     if warnflag == 2:
         msg = _status_message['pr_loss']
-        if disp:
-            print("Warning: " + msg)
-            print("         Current function value: %f" % fval)
-            print("         Iterations: %d" % k)
-            print("         Function evaluations: %d" % func_calls[0])
-            print("         Gradient evaluations: %d" % grad_calls[0])
-
     elif k >= maxiter:
         warnflag = 1
         msg = _status_message['maxiter']
-        if disp:
-            print("Warning: " + msg)
-            print("         Current function value: %f" % fval)
-            print("         Iterations: %d" % k)
-            print("         Function evaluations: %d" % func_calls[0])
-            print("         Gradient evaluations: %d" % grad_calls[0])
     else:
         msg = _status_message['success']
-        if disp:
-            print(msg)
-            print("         Current function value: %f" % fval)
-            print("         Iterations: %d" % k)
-            print("         Function evaluations: %d" % func_calls[0])
-            print("         Gradient evaluations: %d" % grad_calls[0])
+
+    if disp:
+        print("%s%s" % ("Warning: " if warnflag != 0 else "", msg))
+        print("         Current function value: %f" % fval)
+        print("         Iterations: %d" % k)
+        print("         Function evaluations: %d" % func_calls[0])
+        print("         Gradient evaluations: %d" % grad_calls[0])
 
     result = OptimizeResult(fun=fval, jac=gfk, nfev=func_calls[0],
                             njev=grad_calls[0], status=warnflag,
@@ -1565,6 +1533,7 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
     if retall:
         allvecs = [xk]
     k = 0
+    gfk = None
     old_fval = f(x0)
     old_old_fval = None
     float64eps = numpy.finfo(numpy.float64).eps
@@ -1735,8 +1704,12 @@ def _minimize_scalar_bounded(func, bounds, args=(),
     -------
     maxiter : int
         Maximum number of iterations to perform.
-    disp : bool
-        Set to True to print convergence messages.
+    disp: int, optional
+        If non-zero, print messages.
+            0 : no message printing.
+            1 : non-convergence notification messages only.
+            2 : print a message on convergence too.
+            3 : print iteration results.
     xatol : float
         Absolute error in solution `xopt` acceptable for convergence.
 
@@ -1931,7 +1904,7 @@ class Brent:
             a = xc
             b = xa
         deltax = 0.0
-        funcalls = 1
+        funcalls += 1
         iter = 0
         while (iter < self.maxiter):
             tol1 = self.tol * numpy.abs(x) + _mintol
@@ -2077,7 +2050,7 @@ def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500):
 
     Does not ensure that the minimum lies in the range specified by
     `brack`. See `fminbound`.
-    
+
     Examples
     --------
     We illustrate the behaviour of the function when `brack` is of
@@ -2087,7 +2060,7 @@ def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500):
 
     >>> def f(x):
     ...     return x**2
-    
+
     >>> from scipy import optimize
 
     >>> minimum = optimize.brent(f,brack=(1,2))
@@ -2186,7 +2159,7 @@ def golden(func, args=(), brack=None, tol=_epsilon,
 
     >>> def f(x):
     ...     return x**2
-    
+
     >>> from scipy import optimize
 
     >>> minimum = optimize.golden(f, brack=(1, 2))
@@ -2687,6 +2660,12 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
     ``full_output=True`` are affected in addition by the ``finish`` argument
     (see Notes).
 
+    The brute force approach is inefficient because the number of grid points
+    increases exponentially - the number of grid points to evaluate is
+    ``Ns ** len(x)``. Consequently, even with coarse grid spacing, even
+    moderately sized problems can take a long time to run, and/or run into
+    memory limitations.
+
     Parameters
     ----------
     func : callable
@@ -2842,7 +2821,7 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
         lrange = lrange[0]
 
     def _scalarfunc(*params):
-        params = squeeze(asarray(params))
+        params = asarray(params).flatten()
         return func(params, *args)
 
     vecfunc = vectorize(_scalarfunc)
@@ -2965,7 +2944,8 @@ def show_options(solver=None, method=None, disp=True):
 
     `scipy.optimize.linprog`
 
-    - :ref:`simplex     <optimize.linprog-simplex>`
+    - :ref:`simplex         <optimize.linprog-simplex>`
+    - :ref:`interior-point  <optimize.linprog-interior-point>`
 
     """
     import textwrap
@@ -2978,7 +2958,7 @@ def show_options(solver=None, method=None, disp=True):
             ('dogleg', 'scipy.optimize._trustregion_dogleg._minimize_dogleg'),
             ('l-bfgs-b', 'scipy.optimize.lbfgsb._minimize_lbfgsb'),
             ('nelder-mead', 'scipy.optimize.optimize._minimize_neldermead'),
-            ('newtoncg', 'scipy.optimize.optimize._minimize_newtoncg'),
+            ('newton-cg', 'scipy.optimize.optimize._minimize_newtoncg'),
             ('powell', 'scipy.optimize.optimize._minimize_powell'),
             ('slsqp', 'scipy.optimize.slsqp._minimize_slsqp'),
             ('tnc', 'scipy.optimize.tnc._minimize_tnc'),
@@ -2998,6 +2978,7 @@ def show_options(solver=None, method=None, disp=True):
         ),
         'linprog': (
             ('simplex', 'scipy.optimize._linprog._linprog_simplex'),
+            ('interior-point', 'scipy.optimize._linprog._linprog_ip'),
         ),
         'minimize_scalar': (
             ('brent', 'scipy.optimize.optimize._minimize_scalar_brent'),
@@ -3031,6 +3012,7 @@ def show_options(solver=None, method=None, disp=True):
                 text.append(show_options(solver, name, disp=False))
             text = "".join(text)
         else:
+            method = method.lower()
             methods = dict(doc_routines[solver])
             if method not in methods:
                 raise ValueError("Unknown method %r" % (method,))

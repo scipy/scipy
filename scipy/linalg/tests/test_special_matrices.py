@@ -4,9 +4,9 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from numpy import arange, add, array, eye, copy, sqrt
-from numpy.testing import (assert_raises,
-    assert_equal, assert_array_equal, assert_array_almost_equal,
-    assert_allclose)
+from numpy.testing import (assert_equal, assert_array_equal,
+                           assert_array_almost_equal, assert_allclose)
+from pytest import raises as assert_raises
 
 from scipy._lib.six import xrange
 
@@ -317,9 +317,9 @@ class TestHelmert(object):
     def test_orthogonality(self):
         for n in range(1, 7):
             H = helmert(n, full=True)
-            I = np.eye(n)
-            assert_allclose(H.dot(H.T), I, atol=1e-12)
-            assert_allclose(H.T.dot(H), I, atol=1e-12)
+            Id = np.eye(n)
+            assert_allclose(H.dot(H.T), Id, atol=1e-12)
+            assert_allclose(H.T.dot(H), Id, atol=1e-12)
 
     def test_subspace(self):
         for n in range(2, 7):

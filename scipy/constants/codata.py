@@ -1353,6 +1353,7 @@ def find(sub=None, disp=False):
     else:
         return result
 
+
 # Table is lacking some digits for exact values: calculate from definition
 c = value('speed of light in vacuum')
 mu0 = 4e-7 * pi

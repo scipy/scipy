@@ -12,8 +12,9 @@ Nearest-neighbor Queries
 
    KDTree      -- class for efficient nearest-neighbor queries
    cKDTree     -- class for efficient nearest-neighbor queries (faster impl.)
-   distance    -- module containing many different distance measures
    Rectangle
+
+Distance metrics are contained in the :mod:`scipy.spatial.distance` submodule.
 
 Delaunay Triangulation, Convex Hulls and Voronoi Diagrams
 =========================================================
@@ -43,7 +44,7 @@ Plotting Helpers
 Simplex representation
 ======================
 The simplices (triangles, tetrahedra, ...) appearing in the Delaunay
-tesselation (N-dim simplices), convex hull facets, and Voronoi ridges
+tessellation (N-dim simplices), convex hull facets, and Voronoi ridges
 (N-1 dim simplices) are represented in the following scheme::
 
     tess = Delaunay(points)
@@ -51,7 +52,7 @@ tesselation (N-dim simplices), convex hull facets, and Voronoi ridges
     voro = Voronoi(points)
 
     # coordinates of the j-th vertex of the i-th simplex
-    tess.points[tess.simplices[i, j], :]        # tesselation element
+    tess.points[tess.simplices[i, j], :]        # tessellation element
     hull.points[hull.simplices[i, j], :]        # convex hull facet
     voro.vertices[voro.ridge_vertices[i, j], :] # ridge between Voronoi cells
 

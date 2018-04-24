@@ -10,6 +10,7 @@ import warnings
 class ODEintWarning(Warning):
     pass
 
+
 _msgs = {2: "Integration successful.",
          1: "Nothing was done; the integration time was 0.",
          -1: "Excess work done on this call (perhaps wrong Dfun type).",
@@ -25,9 +26,12 @@ _msgs = {2: "Integration successful.",
 def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
            ml=None, mu=None, rtol=None, atol=None, tcrit=None, h0=0.0,
            hmax=0.0, hmin=0.0, ixpr=0, mxstep=0, mxhnil=0, mxordn=12,
-           mxords=5, printmessg=0):
+           mxords=5, printmessg=0, tfirst=False):
     """
     Integrate a system of ordinary differential equations.
+    
+    .. note:: For new code, use `scipy.integrate.solve_ivp` to solve a
+              differential equation.
 
     Solve a system of ordinary differential equations using lsoda from the
     FORTRAN library odepack.
@@ -35,18 +39,23 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
     Solves the initial value problem for stiff or non-stiff systems
     of first order ode-s::
 
-        dy/dt = func(y, t0, ...)
+        dy/dt = func(y, t, ...)  [or func(t, y, ...)]
 
     where y can be a vector.
 
-    *Note*: The first two arguments of ``func(y, t0, ...)`` are in the
-    opposite order of the arguments in the system definition function used
-    by the `scipy.integrate.ode` class.
+    .. note:: By default, the required order of the first two arguments of
+              `func` are in the opposite order of the arguments in the system
+              definition function used by the `scipy.integrate.ode` class and
+              the function `scipy.integrate.solve_ivp`.  To use a function with
+              the signature ``func(t, y, ...)``, the argument `tfirst` must be
+              set to ``True``.
 
     Parameters
     ----------
-    func : callable(y, t0, ...)
-        Computes the derivative of y at t0.
+    func : callable(y, t, ...) or callable(t, y, ...)
+        Computes the derivative of y at t.
+        If the signature is ``callable(t, y, ...)``, then the argument
+        `tfirst` must be set ``True``.
     y0 : array
         Initial condition on y (can be a vector).
     t : array
@@ -54,8 +63,10 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
         value point should be the first element of this sequence.
     args : tuple, optional
         Extra arguments to pass to function.
-    Dfun : callable(y, t0, ...)
+    Dfun : callable(y, t, ...) or callable(t, y, ...)
         Gradient (Jacobian) of `func`.
+        If the signature is ``callable(t, y, ...)``, then the argument
+        `tfirst` must be set ``True``.
     col_deriv : bool, optional
         True if `Dfun` defines derivatives down columns (faster),
         otherwise `Dfun` should define derivatives across rows.
@@ -63,6 +74,11 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
         True if to return a dictionary of optional outputs as the second output
     printmessg : bool, optional
         Whether to print the convergence message
+    tfirst: bool, optional
+        If True, the first two arguments of `func` (and `Dfun`, if given)
+        must ``t, y`` instead of the default ``y, t``.
+
+        .. versionadded:: 1.1.0
 
     Returns
     -------
@@ -141,6 +157,7 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
 
     See Also
     --------
+    solve_ivp : Solve an initial value problem for a system of ODEs.
     ode : a more object-oriented integrator based on VODE.
     quad : for finding the area under a curve.
 
@@ -174,12 +191,12 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
     >>> c = 5.0
 
     For initial conditions, we assume the pendulum is nearly vertical
-    with `theta(0)` = `pi` - 0.1, and it initially at rest, so
+    with `theta(0)` = `pi` - 0.1, and is initially at rest, so
     `omega(0)` = 0.  Then the vector of initial conditions is
 
     >>> y0 = [np.pi - 0.1, 0.0]
 
-    We generate a solution 101 evenly spaced samples in the interval
+    We will generate a solution at 101 evenly spaced samples in the interval
     0 <= `t` <= 10.  So our array of times is:
 
     >>> t = np.linspace(0, 10, 101)
@@ -212,7 +229,8 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
     y0 = copy(y0)
     output = _odepack.odeint(func, y0, t, args, Dfun, col_deriv, ml, mu,
                              full_output, rtol, atol, tcrit, h0, hmax, hmin,
-                             ixpr, mxstep, mxhnil, mxordn, mxords)
+                             ixpr, mxstep, mxhnil, mxordn, mxords,
+                             int(bool(tfirst)))
     if output[-1] < 0:
         warning_msg = _msgs[output[-1]] + " Run with full_output = 1 to get quantitative information."
         warnings.warn(warning_msg, ODEintWarning)

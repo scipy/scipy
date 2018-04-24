@@ -7,9 +7,8 @@ from collections import namedtuple
 import numpy as np
 from numpy import (isscalar, r_, log, around, unique, asarray,
                    zeros, arange, sort, amin, amax, any, atleast_1d,
-                   sqrt, ceil, floor, array, poly1d, compress,
+                   sqrt, ceil, floor, array, compress,
                    pi, exp, ravel, count_nonzero, sin, cos, arctan2, hypot)
-from numpy.testing.decorators import setastest
 
 from scipy._lib.six import string_types
 from scipy import optimize
@@ -27,7 +26,7 @@ __all__ = ['mvsdist',
            'boxcox_llf', 'boxcox', 'boxcox_normmax', 'boxcox_normplot',
            'shapiro', 'anderson', 'ansari', 'bartlett', 'levene', 'binom_test',
            'fligner', 'mood', 'wilcoxon', 'median_test',
-           'pdf_fromgamma', 'circmean', 'circvar', 'circstd', 'anderson_ksamp'
+           'circmean', 'circvar', 'circstd', 'anderson_ksamp'
            ]
 
 
@@ -92,11 +91,11 @@ def bayes_mvs(data, alpha=0.90):
     >>> data = [6, 9, 12, 7, 8, 8, 13]
     >>> mean, var, std = stats.bayes_mvs(data)
     >>> mean
-    Mean(statistic=9.0, minmax=(7.1036502226125329, 10.896349777387467))
+    Mean(statistic=9.0, minmax=(7.103650222612533, 10.896349777387467))
     >>> var
     Variance(statistic=10.0, minmax=(3.176724206..., 24.45910382...))
     >>> std
-    Std_dev(statistic=2.9724954732045084, minmax=(1.7823367265645143, 4.9456146050146295))
+    Std_dev(statistic=2.9724954732045084, minmax=(1.7823367265645143, 4.945614605014631))
 
     Now we generate some normally distributed random data, and get estimates of
     mean and standard deviation with 95% confidence intervals for those
@@ -109,7 +108,7 @@ def bayes_mvs(data, alpha=0.90):
     >>> import matplotlib.pyplot as plt
     >>> fig = plt.figure()
     >>> ax = fig.add_subplot(111)
-    >>> ax.hist(data, bins=100, normed=True, label='Histogram of data')
+    >>> ax.hist(data, bins=100, density=True, label='Histogram of data')
     >>> ax.vlines(res_mean.statistic, 0, 0.5, colors='r', label='Estimated mean')
     >>> ax.axvspan(res_mean.minmax[0],res_mean.minmax[1], facecolor='r',
     ...            alpha=0.2, label=r'Estimated mean (95% limits)')
@@ -1240,7 +1239,7 @@ def boxcox_normplot(x, la, lb, plot=None, N=80):
     return lmbdas, ppcc
 
 
-def shapiro(x, a=None, reta=False):
+def shapiro(x):
     """
     Perform the Shapiro-Wilk test for normality.
 
@@ -1251,13 +1250,6 @@ def shapiro(x, a=None, reta=False):
     ----------
     x : array_like
         Array of sample data.
-    a : array_like, optional
-        Array of internal parameters used in the calculation.  If these
-        are not given, they will be computed internally.  If x has length
-        n, then a must have length n/2.
-    reta : bool, optional
-        Whether or not to return the internally computed a values.  The
-        default is False.
 
     Returns
     -------
@@ -1265,9 +1257,6 @@ def shapiro(x, a=None, reta=False):
         The test statistic.
     p-value : float
         The p-value for the hypothesis test.
-    a : array_like, optional
-        If `reta` is True, then these are the internally computed "a"
-        values that may be passed into this function on future calls.
 
     See Also
     --------
@@ -1302,21 +1291,15 @@ def shapiro(x, a=None, reta=False):
     (0.9772805571556091, 0.08144091814756393)
 
     """
-    if a is not None or reta:
-        warnings.warn("input parameters 'a' and 'reta' are scheduled to be "
-                      "removed in version 0.18.0", FutureWarning)
     x = np.ravel(x)
 
     N = len(x)
     if N < 3:
         raise ValueError("Data must be at least length 3.")
-    if a is None:
-        a = zeros(N, 'f')
-        init = 0
-    else:
-        if len(a) != N // 2:
-            raise ValueError("len(a) must equal len(x)/2")
-        init = 1
+
+    a = zeros(N, 'f')
+    init = 0
+
     y = sort(x)
     a, w, pw, ifault = statlib.swilk(y, a[:N//2], init)
     if ifault not in [0, 2]:
@@ -1324,10 +1307,9 @@ def shapiro(x, a=None, reta=False):
                       "may not be accurate.")
     if N > 5000:
         warnings.warn("p-value may not be accurate for N > 5000.")
-    if reta:
-        return w, pw, a
-    else:
-        return w, pw
+
+    return w, pw
+
 
 # Values from Stephens, M A, "EDF Statistics for Goodness of Fit and
 #             Some Comparisons", Journal of he American Statistical
@@ -1352,8 +1334,7 @@ def anderson(x, dist='norm'):
     """
     Anderson-Darling test for data coming from a particular distribution
 
-    The Anderson-Darling test is a modification of the Kolmogorov-
-    Smirnov test `kstest` for the null hypothesis that a sample is
+    The Anderson-Darling tests the null hypothesis that a sample is
     drawn from a population that follows a particular distribution.
     For the Anderson-Darling test, the critical values depend on
     which distribution is being tested against.  This function works
@@ -1381,6 +1362,10 @@ def anderson(x, dist='norm'):
         differing set of significance levels depending on the
         distribution that is being tested against.
 
+    See Also
+    --------
+    kstest : The Kolmogorov-Smirnov test for goodness-of-fit.
+
     Notes
     -----
     Critical values provided are for the following significance levels:
@@ -1392,9 +1377,10 @@ def anderson(x, dist='norm'):
     Gumbel
         25%, 10%, 5%, 2.5%, 1%
 
-    If A2 is larger than these critical values then for the corresponding
-    significance level, the null hypothesis that the data come from the
-    chosen distribution can be rejected.
+    If the returned statistic is larger than these critical values then
+    for the corresponding significance level, the null hypothesis that
+    the data come from the chosen distribution can be rejected.
+    The returned statistic is referred to as 'A2' in the references.
 
     References
     ----------
@@ -1692,8 +1678,10 @@ def anderson_ksamp(samples, midrank=True):
     pf = np.polyfit(critical, log(np.array([0.25, 0.1, 0.05, 0.025, 0.01])), 2)
     if A2 < critical.min() or A2 > critical.max():
         warnings.warn("approximate p-value will be computed by extrapolation")
-
-    p = math.exp(np.polyval(pf, A2))
+    try:
+        p = math.exp(np.polyval(pf, A2))
+    except (OverflowError,):
+        p = float("inf")
     return Anderson_ksampResult(A2, critical, p)
 
 
@@ -1983,7 +1971,6 @@ def levene(*args, **kwds):
     return LeveneResult(W, pval)
 
 
-@setastest(False)
 def binom_test(x, n=None, p=0.5, alternative='two-sided'):
     """
     Perform a test that the probability of success is p.
@@ -2124,7 +2111,11 @@ def fligner(*args, **kwds):
 
     References
     ----------
-    .. [1] http://www.stat.psu.edu/~bgl/center/tr/TR993.ps
+    .. [1] Park, C. and Lindsay, B. G. (1999). Robust Scale Estimation and
+           Hypothesis Testing based on Quadratic Inference Function. Technical
+           Report #99-03, Center for Likelihood Studies, Pennsylvania State
+           University.
+           http://cecas.clemson.edu/~cspark/cv/paper/qif/draftqif2.pdf
 
     .. [2] Fligner, M.A. and Killeen, T.J. (1976). Distribution-free two-sample
            tests for scale. 'Journal of the American Statistical Association.'
@@ -2425,7 +2416,6 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False):
     return WilcoxonResult(T, prob)
 
 
-@setastest(False)
 def median_test(*args, **kwds):
     """
     Mood's median test.
@@ -2650,49 +2640,6 @@ def median_test(*args, **kwds):
     return stat, p, grand_median, table
 
 
-def _hermnorm(N):
-    # return the negatively normalized hermite polynomials up to order N-1
-    #  (inclusive)
-    #  using the recursive relationship
-    #  p_n+1 = p_n(x)' - x*p_n(x)
-    #   and p_0(x) = 1
-    plist = [None] * N
-    plist[0] = poly1d(1)
-    for n in range(1, N):
-        plist[n] = plist[n-1].deriv() - poly1d([1, 0]) * plist[n-1]
-
-    return plist
-
-
-# Note: when removing pdf_fromgamma, also remove the _hermnorm support function
-@np.deprecate(message="scipy.stats.pdf_fromgamma is deprecated in scipy 0.16.0 "
-                      "in favour of statsmodels.distributions.ExpandedNormal.")
-def pdf_fromgamma(g1, g2, g3=0.0, g4=None):
-    if g4 is None:
-        g4 = 3 * g2**2
-    sigsq = 1.0 / g2
-    sig = sqrt(sigsq)
-    mu = g1 * sig**3.0
-    p12 = _hermnorm(13)
-    for k in range(13):
-        p12[k] /= sig**k
-
-    # Add all of the terms to polynomial
-    totp = (p12[0] - g1/6.0*p12[3] +
-            g2/24.0*p12[4] + g1**2/72.0 * p12[6] -
-            g3/120.0*p12[5] - g1*g2/144.0*p12[7] - g1**3.0/1296.0*p12[9] +
-            g4/720*p12[6] + (g2**2/1152.0 + g1*g3/720)*p12[8] +
-            g1**2 * g2/1728.0*p12[10] + g1**4.0 / 31104.0*p12[12])
-    # Final normalization
-    totp = totp / sqrt(2*pi) / sig
-
-    def thefunc(x):
-        xn = (x - mu) / sig
-        return totp(xn) * exp(-xn**2 / 2.)
-
-    return thefunc
-
-
 def _circfuncs_common(samples, high, low):
     samples = np.asarray(samples)
     if samples.size == 0:
@@ -2722,13 +2669,13 @@ def circmean(samples, high=2*pi, low=0, axis=None):
     -------
     circmean : float
         Circular mean.
-        
+
     Examples
     --------
     >>> from scipy.stats import circmean
     >>> circmean([0.1, 2*np.pi+0.2, 6*np.pi+0.3])
     0.2
-    
+
     >>> from scipy.stats import circmean
     >>> circmean([0.2, 1.4, 2.6], high = 1, low = 0)
     0.4
@@ -2771,13 +2718,13 @@ def circvar(samples, high=2*pi, low=0, axis=None):
     -----
     This uses a definition of circular variance that in the limit of small
     angles returns a number close to the 'linear' variance.
-    
+
     Examples
     --------
     >>> from scipy.stats import circvar
     >>> circvar([0, 2*np.pi/3, 5*np.pi/3])
     2.19722457734
-    
+
     """
     samples, ang = _circfuncs_common(samples, high, low)
     S = sin(ang).mean(axis=axis)
@@ -2813,7 +2760,7 @@ def circstd(samples, high=2*pi, low=0, axis=None):
     -----
     This uses a definition of circular standard deviation that in the limit of
     small angles returns a number close to the 'linear' standard deviation.
-    
+
     Examples
     --------
     >>> from scipy.stats import circstd
@@ -2826,4 +2773,3 @@ def circstd(samples, high=2*pi, low=0, axis=None):
     C = cos(ang).mean(axis=axis)
     R = hypot(S, C)
     return ((high - low)/2.0/pi) * sqrt(-2*log(R))
-

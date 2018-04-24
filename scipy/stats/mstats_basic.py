@@ -12,10 +12,9 @@ from __future__ import division, print_function, absolute_import
 
 
 __all__ = ['argstoarray',
-           'betai',
            'count_tied_groups',
            'describe',
-           'f_oneway','f_value_wilks_lambda','find_repeats','friedmanchisquare',
+           'f_oneway', 'find_repeats','friedmanchisquare',
            'kendalltau','kendalltau_seasonal','kruskal','kruskalwallis',
            'ks_twosamp','ks_2samp','kurtosis','kurtosistest',
            'linregress',
@@ -25,13 +24,14 @@ __all__ = ['argstoarray',
            'pearsonr','plotting_positions','pointbiserialr',
            'rankdata',
            'scoreatpercentile','sem',
-           'sen_seasonal_slopes','signaltonoise','skew','skewtest','spearmanr',
-           'theilslopes','threshold','tmax','tmean','tmin','trim','trimboth',
+           'sen_seasonal_slopes','skew','skewtest','spearmanr',
+           'theilslopes','tmax','tmean','tmin','trim','trimboth',
            'trimtail','trima','trimr','trimmed_mean','trimmed_std',
            'trimmed_stde','trimmed_var','tsem','ttest_1samp','ttest_onesamp',
            'ttest_ind','ttest_rel','tvar',
            'variation',
            'winsorize',
+           'brunnermunzel',
            ]
 
 import numpy as np
@@ -323,17 +323,6 @@ def mode(a, axis=0):
     return ModeResult(*output)
 
 
-@np.deprecate(message="mstats.betai is deprecated in scipy 0.17.0; "
-              "use special.betainc instead.")
-def betai(a, b, x):
-    """
-    betai() is deprecated in scipy 0.17.0.
-
-    For details about this function, see `stats.betai`.
-    """
-    return _betai(a, b, x)
-
-
 def _betai(a, b, x):
     x = np.asanyarray(x)
     x = ma.where(x < 1.0, x, 1.0)  # if x > 1 then return 1.0
@@ -478,8 +467,8 @@ def spearmanr(x, y, use_ties=True):
     if use_ties:
         xties = count_tied_groups(x)
         yties = count_tied_groups(y)
-        corr_x = np.sum(v*k*(k**2-1) for (k,v) in iteritems(xties))/12.
-        corr_y = np.sum(v*k*(k**2-1) for (k,v) in iteritems(yties))/12.
+        corr_x = sum(v*k*(k**2-1) for (k,v) in iteritems(xties))/12.
+        corr_y = sum(v*k*(k**2-1) for (k,v) in iteritems(yties))/12.
     else:
         corr_x = corr_y = 0
 
@@ -560,8 +549,8 @@ def kendalltau(x, y, use_ties=True, use_missing=False):
 
     var_s = n*(n-1)*(2*n+5)
     if use_ties:
-        var_s -= np.sum(v*k*(k-1)*(2*k+5)*1. for (k,v) in iteritems(xties))
-        var_s -= np.sum(v*k*(k-1)*(2*k+5)*1. for (k,v) in iteritems(yties))
+        var_s -= sum(v*k*(k-1)*(2*k+5)*1. for (k,v) in iteritems(xties))
+        var_s -= sum(v*k*(k-1)*(2*k+5)*1. for (k,v) in iteritems(yties))
         v1 = np.sum([v*k*(k-1) for (k, v) in iteritems(xties)], dtype=float) *\
              np.sum([v*k*(k-1) for (k, v) in iteritems(yties)], dtype=float)
         v1 /= 2.*n*(n-1)
@@ -597,12 +586,12 @@ def kendalltau_seasonal(x):
     (n,m) = x.shape
     n_p = x.count(0)
 
-    S_szn = np.sum(msign(x[i:]-x[i]).sum(0) for i in range(n))
+    S_szn = sum(msign(x[i:]-x[i]).sum(0) for i in range(n))
     S_tot = S_szn.sum()
 
     n_tot = x.count()
     ties = count_tied_groups(x.compressed())
-    corr_ties = np.sum(v*k*(k-1) for (k,v) in iteritems(ties))
+    corr_ties = sum(v*k*(k-1) for (k,v) in iteritems(ties))
     denom_tot = ma.sqrt(1.*n_tot*(n_tot-1)*(n_tot*(n_tot-1)-corr_ties))/2.
 
     R = rankdata(x, axis=0, use_missing=True)
@@ -611,10 +600,10 @@ def kendalltau_seasonal(x):
     denom_szn = ma.empty(m, dtype=float)
     for j in range(m):
         ties_j = count_tied_groups(x[:,j].compressed())
-        corr_j = np.sum(v*k*(k-1) for (k,v) in iteritems(ties_j))
+        corr_j = sum(v*k*(k-1) for (k,v) in iteritems(ties_j))
         cmb = n_p[j]*(n_p[j]-1)
         for k in range(j,m,1):
-            K[j,k] = np.sum(msign((x[i:,j]-x[i,j])*(x[i:,k]-x[i,k])).sum()
+            K[j,k] = sum(msign((x[i:,j]-x[i,j])*(x[i:,k]-x[i,k])).sum()
                                for i in range(n))
             covmat[j,k] = (K[j,k] + 4*(R[:,j]*R[:,k]).sum() -
                            n*(n_p[j]+1)*(n_p[k]+1))/3.
@@ -747,6 +736,7 @@ def linregress(x, y=None):
 
     return LinregressResult(slope, intercept, r, prob, sterrest)
 
+
 if stats_linregress.__doc__:
     linregress.__doc__ = stats_linregress.__doc__ + genmissingvaldoc
 
@@ -858,6 +848,8 @@ def ttest_1samp(a, popmean, axis=0):
     prob = special.betainc(0.5*df, 0.5, df/(df + t*t))
 
     return Ttest_1sampResult(t, prob)
+
+
 ttest_onesamp = ttest_1samp
 
 
@@ -1014,7 +1006,7 @@ def mannwhitneyu(x,y, use_continuity=True):
     mu = (nx*ny)/2.
     sigsq = (nt**3 - nt)/12.
     ties = count_tied_groups(ranks)
-    sigsq -= np.sum(v*(k**3-k) for (k,v) in iteritems(ties))/12.
+    sigsq -= sum(v*(k**3-k) for (k,v) in iteritems(ties))/12.
     sigsq *= nx*ny/float(nt*(nt-1))
 
     if use_continuity:
@@ -1060,7 +1052,7 @@ def kruskal(*args):
     H = 12./(ntot*(ntot+1)) * (sumrk**2/ngrp).sum() - 3*(ntot+1)
     # Tie correction
     ties = count_tied_groups(ranks)
-    T = 1. - np.sum(v*(k**3-k) for (k,v) in iteritems(ties))/float(ntot**3-ntot)
+    T = 1. - sum(v*(k**3-k) for (k,v) in iteritems(ties))/float(ntot**3-ntot)
     if T == 0:
         raise ValueError('All numbers are identical in kruskal')
 
@@ -1068,6 +1060,8 @@ def kruskal(*args):
     df = len(output) - 1
     prob = distributions.chi2.sf(H, df)
     return KruskalResult(H, prob)
+
+
 kruskalwallis = kruskal
 
 
@@ -1119,46 +1113,9 @@ def ks_twosamp(data1, data2, alternative="two-sided"):
                          "should be in 'two-sided', 'less' or 'greater'")
 
     return (d, prob)
+
+
 ks_2samp = ks_twosamp
-
-
-@np.deprecate(message="mstats.threshold is deprecated in scipy 0.17.0")
-def threshold(a, threshmin=None, threshmax=None, newval=0):
-    """
-    Clip array to a given value.
-
-    Similar to numpy.clip(), except that values less than `threshmin` or
-    greater than `threshmax` are replaced by `newval`, instead of by
-    `threshmin` and `threshmax` respectively.
-
-    Parameters
-    ----------
-    a : ndarray
-        Input data
-    threshmin : {None, float}, optional
-        Lower threshold. If None, set to the minimum value.
-    threshmax : {None, float}, optional
-        Upper threshold. If None, set to the maximum value.
-    newval : {0, float}, optional
-        Value outside the thresholds.
-
-    Returns
-    -------
-    threshold : ndarray
-        Returns `a`, with values less then `threshmin` and values greater
-        `threshmax` replaced with `newval`.
-
-    """
-    a = ma.array(a, copy=True)
-    mask = np.zeros(a.shape, dtype=bool)
-    if threshmin is not None:
-        mask |= (a < threshmin).filled(False)
-
-    if threshmax is not None:
-        mask |= (a > threshmax).filled(False)
-
-    a[mask] = newval
-    return a
 
 
 def trima(a, limits=None, inclusive=(True,True)):
@@ -1270,6 +1227,7 @@ def trimr(a, limits=None, inclusive=(True, True), axis=None):
     else:
         return ma.apply_along_axis(_trimr1D, axis, a, lolim,uplim,loinc,upinc)
 
+
 trimdoc = """
     Parameters
     ----------
@@ -1326,6 +1284,7 @@ def trim(a, limits=None, inclusive=(True,True), relative=False, axis=None):
         return trimr(a, limits=limits, inclusive=inclusive, axis=axis)
     else:
         return trima(a, limits=limits, inclusive=inclusive)
+
 
 if trim.__doc__ is not None:
     trim.__doc__ = trim.__doc__ % trimdoc
@@ -1400,6 +1359,7 @@ def trimtail(data, proportiontocut=0.2, tail='left', inclusive=(True,True),
         raise TypeError("The tail argument should be in ('left','right')")
 
     return trimr(data, limits=limits, axis=axis, inclusive=inclusive)
+
 
 trim1 = trimtail
 
@@ -1798,7 +1758,7 @@ def winsorize(a, limits=None, inclusive=(True, True), inplace=False,
         indicate an open interval.
     inclusive : {(True, True) tuple}, optional
         Tuple indicating whether the number of data being masked on each side
-        should be rounded (True) or truncated (False).
+        should be truncated (True) or rounded (False).
     inplace : {False, True}, optional
         Whether to winsorize in place (True) or to use a copy (False)
     axis : {None, int}, optional
@@ -1818,13 +1778,13 @@ def winsorize(a, limits=None, inclusive=(True, True), inplace=False,
             if low_include:
                 lowidx = int(low_limit * n)
             else:
-                lowidx = np.round(low_limit * n)
+                lowidx = np.round(low_limit * n).astype(int)
             a[idx[:lowidx]] = a[idx[lowidx]]
         if up_limit is not None:
             if up_include:
                 upidx = n - int(n * up_limit)
             else:
-                upidx = n - np.round(n * up_limit)
+                upidx = n - np.round(n * up_limit).astype(int)
             a[idx[upidx:]] = a[idx[upidx - 1]]
         return a
 
@@ -2100,16 +2060,13 @@ def describe(a, axis=0, ddof=0, bias=True):
     >>> from scipy.stats.mstats import describe
     >>> ma = np.ma.array(range(6), mask=[0, 0, 0, 1, 1, 1])
     >>> describe(ma)
-    DescribeResult(nobs=3, minmax=(masked_array(data = 0,
-                 mask = False,
-           fill_value = 999999)
-    , masked_array(data = 2,
-                 mask = False,
-           fill_value = 999999)
-    ), mean=1.0, variance=0.66666666666666663, skewness=masked_array(data = 0.0,
-                 mask = False,
-           fill_value = 1e+20)
-    , kurtosis=-1.5)
+    DescribeResult(nobs=3, minmax=(masked_array(data=0,
+                 mask=False,
+           fill_value=999999), masked_array(data=2,
+                 mask=False,
+           fill_value=999999)), mean=1.0, variance=0.6666666666666666,
+           skewness=masked_array(data=0., mask=False, fill_value=1e+20),
+            kurtosis=-1.5)
 
     """
     a, axis = _chk_asarray(a, axis)
@@ -2386,9 +2343,9 @@ def mquantiles(a, prob=list([.25,.5,.75]), alphap=.4, betap=.4, axis=None,
     ...                  [  40., -999., -999.],
     ...                  [  36., -999., -999.]])
     >>> print(mquantiles(data, axis=0, limit=(0, 50)))
-    [[ 19.2   14.6    1.45]
-     [ 40.    37.5    2.5 ]
-     [ 42.8   40.05   3.55]]
+    [[19.2  14.6   1.45]
+     [40.   37.5   2.5 ]
+     [42.8  40.05  3.55]]
 
     >>> data[:, 2] = -999.
     >>> print(mquantiles(data, axis=0, limit=(0, 50)))
@@ -2491,6 +2448,7 @@ def plotting_positions(data, alpha=0.4, beta=0.4):
                                           (n + 1.0 - alpha - beta))
     return ma.array(plpos, mask=data._mask)
 
+
 meppf = plotting_positions
 
 
@@ -2518,25 +2476,6 @@ def obrientransform(*args):
         raise ValueError("Lack of convergence in obrientransform.")
 
     return data
-
-
-@np.deprecate(message="mstats.signaltonoise is deprecated in scipy 0.16.0")
-def signaltonoise(data, axis=0):
-    """Calculates the signal-to-noise ratio, as the ratio of the mean over
-    standard deviation along the given axis.
-
-    Parameters
-    ----------
-    data : sequence
-        Input data
-    axis : {0, int}, optional
-        Axis along which to compute. If None, the computation is performed
-        on a flat version of the array.
-    """
-    data = ma.array(data, copy=False)
-    m = data.mean(axis)
-    sd = data.std(axis, ddof=0)
-    return m/sd
 
 
 def sem(a, axis=0, ddof=1):
@@ -2627,25 +2566,6 @@ def f_oneway(*args):
     return F_onewayResult(f, prob)
 
 
-@np.deprecate(message="mstats.f_value_wilks_lambda deprecated in scipy 0.17.0")
-def f_value_wilks_lambda(ER, EF, dfnum, dfden, a, b):
-    """Calculation of Wilks lambda F-statistic for multivariate data, per
-    Maxwell & Delaney p.657.
-    """
-    ER = ma.array(ER, copy=False, ndmin=2)
-    EF = ma.array(EF, copy=False, ndmin=2)
-    if ma.getmask(ER).any() or ma.getmask(EF).any():
-        raise NotImplementedError("Not implemented when the inputs "
-                                  "have missing data")
-
-    lmbda = np.linalg.det(EF) / np.linalg.det(ER)
-    q = ma.sqrt(((a-1)**2*(b-1)**2 - 2) / ((a-1)**2 + (b-1)**2 - 5))
-    q = ma.filled(q, 1)
-    n_um = (1 - lmbda**(1.0/q))*(a-1)*(b-1)
-    d_en = lmbda**(1.0/q) / (n_um*q - 0.5*(a-1)*(b-1) + 1)
-    return n_um / d_en
-
-
 FriedmanchisquareResult = namedtuple('FriedmanchisquareResult',
                                      ('statistic', 'pvalue'))
 
@@ -2687,8 +2607,8 @@ def friedmanchisquare(*args):
         ranked = ranked._data
     (k,n) = ranked.shape
     # Ties correction
-    repeats = np.array([find_repeats(_) for _ in ranked.T], dtype=object)
-    ties = repeats[repeats.nonzero()].reshape(-1,2)[:,-1].astype(int)
+    repeats = [find_repeats(row) for row in ranked.T]
+    ties = np.array([y for x, y in repeats if x.size > 0])
     tie_correction = 1 - (ties**3-ties).sum()/float(n*(k**3-k))
 
     ssbg = np.sum((ranked.sum(-1) - n*(k+1)/2.)**2)
@@ -2696,3 +2616,95 @@ def friedmanchisquare(*args):
 
     return FriedmanchisquareResult(chisq,
                                    distributions.chi2.sf(chisq, k-1))
+
+
+BrunnerMunzelResult = namedtuple('BrunnerMunzelResult', ('statistic', 'pvalue'))
+
+
+def brunnermunzel(x, y, alternative="two-sided", distribution="t"):
+    """
+    Computes the Brunner-Munzel test on samples x and y
+
+    Missing values in `x` and/or `y` are discarded.
+
+    Parameters
+    ----------
+    x, y : array_like
+        Array of samples, should be one-dimensional.
+    alternative :  'less', 'two-sided', or 'greater', optional
+        Whether to get the p-value for the one-sided hypothesis ('less'
+        or 'greater') or for the two-sided hypothesis ('two-sided').
+        Defaults value is 'two-sided' .
+    distribution: 't' or 'normal', optional
+        Whether to get the p-value by t-distribution or by standard normal
+        distribution.
+        Defaults value is 't' .
+
+    Returns
+    -------
+    statistic : float
+        The Brunner-Munzer W statistic.
+    pvalue : float
+        p-value assuming an t distribution. One-sided or
+        two-sided, depending on the choice of `alternative` and `distribution`.
+
+    See Also
+    --------
+    mannwhitneyu : Mann-Whitney rank test on two samples.
+
+    Notes
+    -------
+    For more details on `brunnermunzel`, see `stats.brunnermunzel`.
+
+    """
+    x = ma.asarray(x).compressed().view(ndarray)
+    y = ma.asarray(y).compressed().view(ndarray)
+    nx = len(x)
+    ny = len(y)
+    if nx == 0 or ny == 0:
+        return BrunnerMunzelResult(np.nan, np.nan)
+    nc = nx + ny
+    rankc = rankdata(np.concatenate((x,y)))
+    rankcx = rankc[0:nx]
+    rankcy = rankc[nx:nx+ny]
+    rankcx_mean = np.mean(rankcx)
+    rankcy_mean = np.mean(rankcy)
+    rankx = rankdata(x)
+    ranky = rankdata(y)
+    rankx_mean = np.mean(rankx)
+    ranky_mean = np.mean(ranky)
+
+    Sx = np.sum(np.power(rankcx - rankx - rankcx_mean + rankx_mean, 2.0))
+    Sx /= nx - 1
+    Sy = np.sum(np.power(rankcy - ranky - rankcy_mean + ranky_mean, 2.0))
+    Sy /= ny - 1
+
+    sigmax = Sx / np.power(nc - nx, 2.0)
+    sigmay = Sx / np.power(nc - ny, 2.0)
+
+    wbfn = nx * ny * (rankcy_mean - rankcx_mean)
+    wbfn /= (nx + ny) * np.sqrt(nx * Sx + ny * Sy)
+
+    if distribution == "t":
+        df_numer = np.power(nx * Sx + ny * Sy, 2.0)
+        df_denom = np.power(nx * Sx, 2.0) / (nx - 1)
+        df_denom += np.power(ny * Sy, 2.0) / (ny - 1)
+        df = df_numer / df_denom
+        p = distributions.t.cdf(wbfn, df)
+    elif distribution == "normal":
+        p = distributions.norm.cdf(wbfn)
+    else:
+        raise ValueError(
+            "distribution should be 't' or 'normal'")
+
+    if alternative == "greater":
+        p = p
+    elif alternative == "less":
+        p = 1 - p
+    elif alternative == "two-sided":
+        p = 2 * np.min([p, 1-p])
+    else:
+        raise ValueError(
+            "alternative should be 'less', 'greater' or 'two-sided'")
+
+    return BrunnerMunzelResult(wbfn, p) 

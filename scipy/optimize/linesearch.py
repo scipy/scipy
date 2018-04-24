@@ -184,6 +184,7 @@ def scalar_search_wolfe1(phi, derphi, phi0=None, old_phi0=None, derphi0=None,
 
     return stp, phi1, phi0
 
+
 line_search = line_search_wolfe1
 
 
@@ -549,7 +550,7 @@ def _zoom(a_lo, a_hi, phi_lo, phi_hi, derphi_lo,
         #
         # if the result is too close to the end points (or out of the
         # interval) then use quadratic interpolation with phi_lo,
-        # derphi_lo and phi_hi if the result is stil too close to the
+        # derphi_lo and phi_hi if the result is still too close to the
         # end points (or out of the interval) then use bisection
 
         if (i > 0):
@@ -690,7 +691,7 @@ def scalar_search_armijo(phi, phi0, derphi0, c1=1e-4, alpha0=1, amin=0):
         return alpha1, phi_a1
 
     # Otherwise loop with cubic interpolation until we find an alpha which
-    # satifies the first Wolfe condition (since we are backtracking, we will
+    # satisfies the first Wolfe condition (since we are backtracking, we will
     # assume that the value of alpha is not too small and satisfies the second
     # condition.
 

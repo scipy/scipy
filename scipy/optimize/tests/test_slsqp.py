@@ -5,8 +5,8 @@ from __future__ import division, print_function, absolute_import
 
 import pytest
 from numpy.testing import (assert_, assert_array_almost_equal,
-                           assert_allclose, assert_equal,
-                           assert_raises)
+                           assert_allclose, assert_equal)
+from pytest import raises as assert_raises
 import numpy as np
 
 from scipy.optimize import fmin_slsqp, minimize

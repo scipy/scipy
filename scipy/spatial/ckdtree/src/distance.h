@@ -1,4 +1,5 @@
 #include "distance_base.h"
+#include "_c99compat.h"
 
 struct PlainDist1D {
     static inline const npy_float64 side_distance_from_min_max(

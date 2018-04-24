@@ -1,4 +1,7 @@
-from numpy.testing import assert_, assert_raises
+from __future__ import division, absolute_import, print_function
+
+from numpy.testing import assert_
+from pytest import raises as assert_raises
 from scipy._lib._version import NumpyVersion
 
 

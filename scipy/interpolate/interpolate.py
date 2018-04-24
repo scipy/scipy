@@ -4,7 +4,7 @@ from __future__ import division, print_function, absolute_import
 
 
 __all__ = ['interp1d', 'interp2d', 'spline', 'spleval', 'splmake', 'spltopp',
-           'ppform', 'lagrange', 'PPoly', 'BPoly', 'NdPPoly',
+           'lagrange', 'PPoly', 'BPoly', 'NdPPoly',
            'RegularGridInterpolator', 'interpn']
 
 
@@ -61,7 +61,7 @@ def lagrange(x, w):
     -------
     lagrange : `numpy.poly1d` instance
         The Lagrange interpolating polynomial.
-    
+
     Examples
     --------
     Interpolate :math:`f(x) = x^3` by 3 points.
@@ -70,7 +70,7 @@ def lagrange(x, w):
     >>> x = np.array([0, 1, 2])
     >>> y = x**3
     >>> poly = lagrange(x, y)
-    
+
     Since there are only 3 points, Lagrange polynomial has degree 2. Explicitly,
     it is given by
 
@@ -362,10 +362,12 @@ class interp1d(_Interpolator1D):
         axis must be equal to the length of `x`.
     kind : str or int, optional
         Specifies the kind of interpolation as a string
-        ('linear', 'nearest', 'zero', 'slinear', 'quadratic', 'cubic'
-        where 'zero', 'slinear', 'quadratic' and 'cubic' refer to a spline
-        interpolation of zeroth, first, second or third order) or as an
-        integer specifying the order of the spline interpolator to use.
+        ('linear', 'nearest', 'zero', 'slinear', 'quadratic', 'cubic',
+        'previous', 'next', where 'zero', 'slinear', 'quadratic' and 'cubic'
+        refer to a spline interpolation of zeroth, first, second or third
+        order; 'previous' and 'next' simply return the previous or next value
+        of the point) or as an integer specifying the order of the spline
+        interpolator to use.
         Default is 'linear'.
     axis : int, optional
         Specifies the axis of `y` along which to interpolate.
@@ -440,7 +442,7 @@ class interp1d(_Interpolator1D):
         elif isinstance(kind, int):
             order = kind
             kind = 'spline'
-        elif kind not in ('linear', 'nearest'):
+        elif kind not in ('linear', 'nearest', 'previous', 'next'):
             raise NotImplementedError("%s is unsupported: Use fitpack "
                                       "routines for other types." % kind)
         x = array(x, copy=self.copy)
@@ -475,7 +477,7 @@ class interp1d(_Interpolator1D):
         # interpolation methods, in order to avoid circular references to self
         # stored in the bound instance methods, and therefore delayed garbage
         # collection.  See: http://docs.python.org/2/reference/datamodel.html
-        if kind in ('linear', 'nearest'):
+        if kind in ('linear', 'nearest', 'previous', 'next'):
             # Make a "view" of the y array that is rotated to the interpolation
             # axis.
             minval = 2
@@ -486,6 +488,19 @@ class interp1d(_Interpolator1D):
                 self.x_bds = self.x_bds[1:] + self.x_bds[:-1]
 
                 self._call = self.__class__._call_nearest
+            elif kind == 'previous':
+                # Side for np.searchsorted and index for clipping
+                self._side = 'left'
+                self._ind = 0
+                # Move x by one floating point value to the left
+                self._x_shift = np.nextafter(self.x, -np.inf)
+                self._call = self.__class__._call_previousnext
+            elif kind == 'next':
+                self._side = 'right'
+                self._ind = 1
+                # Move x by one floating point value to the right
+                self._x_shift = np.nextafter(self.x, np.inf)
+                self._call = self.__class__._call_previousnext
             else:
                 # Check if we can delegate to numpy.interp (2x-10x faster).
                 cond = self.x.dtype == np.float_ and self.y.dtype == np.float_
@@ -571,7 +586,7 @@ class interp1d(_Interpolator1D):
         return np.interp(x_new, self.x, self.y)
 
     def _call_linear(self, x_new):
-        # 2. Find where in the orignal data, the values to interpolate
+        # 2. Find where in the original data, the values to interpolate
         #    would be inserted.
         #    Note: If x_new[n] == x[m], then m is returned by searchsorted.
         x_new_indices = searchsorted(self.x, x_new)
@@ -613,6 +628,21 @@ class interp1d(_Interpolator1D):
 
         # 4. Calculate the actual value for each entry in x_new.
         y_new = self._y[x_new_indices]
+
+        return y_new
+
+    def _call_previousnext(self, x_new):
+        """Use previous/next neighbour of x_new, y_new = f(x_new)."""
+
+        # 1. Get index of left/right value
+        x_new_indices = searchsorted(self._x_shift, x_new, side=self._side)
+
+        # 2. Clip x_new_indices so that they are within the range of x indices.
+        x_new_indices = x_new_indices.clip(1-self._ind,
+                                           len(self.x)-self._ind).astype(intp)
+
+        # 3. Calculate the actual value for each entry in x_new.
+        y_new = self._y[x_new_indices+self._ind-1]
 
         return y_new
 
@@ -2315,8 +2345,8 @@ class RegularGridInterpolator(object):
     avoids expensive triangulation of the input data by taking advantage of the
     regular grid structure.
 
-    If any of `points` have a dimension of size 1, linear interpolation will 
-    return an array of `nan` values. Nearest-neighbor interpolation will work 
+    If any of `points` have a dimension of size 1, linear interpolation will
+    return an array of `nan` values. Nearest-neighbor interpolation will work
     as usual in this case.
 
     .. versionadded:: 0.14
@@ -2640,7 +2670,7 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
 
 
 # backward compatibility wrapper
-class ppform(PPoly):
+class _ppform(PPoly):
     """
     Deprecated piecewise polynomial class.
 
@@ -2649,7 +2679,7 @@ class ppform(PPoly):
     """
 
     def __init__(self, coeffs, breaks, fill=0.0, sort=False):
-        warnings.warn("ppform is deprecated -- use PPoly instead",
+        warnings.warn("_ppform is deprecated -- use PPoly instead",
                       category=DeprecationWarning)
 
         if sort:
@@ -2853,11 +2883,12 @@ def spleval(xck, xnew, deriv=0):
     return res
 
 
+# When `spltopp` gets removed, also remove the _ppform class.
 @np.deprecate(message="spltopp is deprecated in scipy 0.19.0, "
                       "use PPoly.from_spline instead.")
 def spltopp(xk, cvals, k):
     """Return a piece-wise polynomial object from a fixed-spline tuple."""
-    return ppform.fromspline(xk, cvals, k)
+    return _ppform.fromspline(xk, cvals, k)
 
 
 @np.deprecate(message="spline is deprecated in scipy 0.19.0, "

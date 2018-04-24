@@ -6,19 +6,22 @@ from distutils.version import LooseVersion
 import numpy as np
 from numpy.testing import (assert_array_almost_equal,
                            assert_array_equal, assert_array_less,
-                           assert_raises, assert_equal, assert_,
+                           assert_equal, assert_,
                            assert_allclose, assert_warns)
-from numpy import array, spacing, sin, pi, sort
 import pytest
-
+from pytest import raises as assert_raises
 from scipy._lib._numpy_compat import suppress_warnings
+
+from numpy import array, spacing, sin, pi, sort, sqrt
 from scipy.signal import (BadCoefficients, bessel, besselap, bilinear, buttap,
                           butter, buttord, cheb1ap, cheb1ord, cheb2ap,
                           cheb2ord, cheby1, cheby2, ellip, ellipap, ellipord,
                           firwin, freqs_zpk, freqs, freqz, freqz_zpk,
                           group_delay, iirfilter, iirnotch, iirpeak, lp2bp,
                           lp2bs, lp2hp, lp2lp, normalize, sos2tf, sos2zpk,
-                          sosfreqz, tf2sos, tf2zpk, zpk2sos, zpk2tf)
+                          sosfreqz, tf2sos, tf2zpk, zpk2sos, zpk2tf,
+                          bilinear_zpk, lp2lp_zpk, lp2hp_zpk, lp2bp_zpk,
+                          lp2bs_zpk)
 from scipy.signal.filter_design import (_cplxreal, _cplxpair, _norm_factor,
                                         _bessel_poly, _bessel_zeros)
 
@@ -29,7 +32,8 @@ except ImportError:
 
 
 def mpmath_check(min_ver):
-    return pytest.mark.skipif(mpmath is None or LooseVersion(mpmath.__version__) < LooseVersion(min_ver),
+    return pytest.mark.skipif(mpmath is None or
+                              LooseVersion(mpmath.__version__) < LooseVersion(min_ver),
                               reason="mpmath version >= %s required" % min_ver)
 
 
@@ -440,6 +444,13 @@ class TestFreqs(object):
                       plot=lambda w, h: 1 / 0)
         freqs([1.0], [1.0], worN=8, plot=plot)
 
+    def test_backward_compat(self):
+        # For backward compatibility, test if None act as a wrapper for default
+        w1, h1 = freqs([1.0], [1.0])
+        w2, h2 = freqs([1.0], [1.0], None)
+        assert_array_almost_equal(w1, w2)
+        assert_array_almost_equal(h1, h2)
+
 
 class TestFreqs_zpk(object):
 
@@ -480,6 +491,12 @@ class TestFreqs_zpk(object):
         assert_allclose(w1, w2)
         assert_allclose(h1, h2, rtol=1e-6)
 
+    def test_backward_compat(self):
+        # For backward compatibility, test if None act as a wrapper for default
+        w1, h1 = freqs_zpk([1.0], [1.0], [1.0])
+        w2, h2 = freqs_zpk([1.0], [1.0], [1.0], None)
+        assert_array_almost_equal(w1, w2)
+        assert_array_almost_equal(h1, h2)
 
 class TestFreqz(object):
 
@@ -494,8 +511,34 @@ class TestFreqz(object):
 
     def test_basic(self):
         w, h = freqz([1.0], worN=8)
-        assert_array_almost_equal(w, np.pi * np.arange(8.0) / 8)
+        assert_array_almost_equal(w, np.pi * np.arange(8) / 8.)
         assert_array_almost_equal(h, np.ones(8))
+        w, h = freqz([1.0], worN=9)
+        assert_array_almost_equal(w, np.pi * np.arange(9) / 9.)
+        assert_array_almost_equal(h, np.ones(9))
+
+        for a in [1, np.ones(2)]:
+            w, h = freqz(np.ones(2), a, worN=0)
+            assert_equal(w.shape, (0,))
+            assert_equal(h.shape, (0,))
+            assert_equal(h.dtype, np.dtype('complex128'))
+
+        t = np.linspace(0, 1, 4, endpoint=False)
+        for b, a, h_whole in zip(
+                ([1., 0, 0, 0], np.sin(2 * np.pi * t)),
+                ([1., 0, 0, 0], [0.5, 0, 0, 0]),
+                ([1., 1., 1., 1.], [0, -4j, 0, 4j])):
+            w, h = freqz(b, a, worN=4, whole=True)
+            expected_w = np.linspace(0, 2 * np.pi, 4, endpoint=False)
+            assert_array_almost_equal(w, expected_w)
+            assert_array_almost_equal(h, h_whole)
+            # simultaneously check int-like support
+            w, h = freqz(b, a, worN=np.int32(4), whole=True)
+            assert_array_almost_equal(w, expected_w)
+            assert_array_almost_equal(h, h_whole)
+            w, h = freqz(b, a, worN=w, whole=True)
+            assert_array_almost_equal(w, expected_w)
+            assert_array_almost_equal(h, h_whole)
 
     def test_basic_whole(self):
         w, h = freqz([1.0], worN=8, whole=True)
@@ -511,6 +554,141 @@ class TestFreqz(object):
         assert_raises(ZeroDivisionError, freqz, [1.0], worN=8,
                       plot=lambda w, h: 1 / 0)
         freqz([1.0], worN=8, plot=plot)
+
+    def test_fft_wrapping(self):
+        # Some simple real FIR filters
+        bs = list()  # filters
+        as_ = list()
+        hs_whole = list()
+        hs_half = list()
+        # 3 taps
+        t = np.linspace(0, 1, 3, endpoint=False)
+        bs.append(np.sin(2 * np.pi * t))
+        as_.append(3.)
+        hs_whole.append([0, -0.5j, 0.5j])
+        hs_half.append([0, np.sqrt(1./12.), -0.5j])
+        # 4 taps
+        t = np.linspace(0, 1, 4, endpoint=False)
+        bs.append(np.sin(2 * np.pi * t))
+        as_.append(0.5)
+        hs_whole.append([0, -4j, 0, 4j])
+        hs_half.append([0, np.sqrt(8), -4j, -np.sqrt(8)])
+        del t
+        for ii, b in enumerate(bs):
+            # whole
+            a = as_[ii]
+            expected_w = np.linspace(0, 2 * np.pi, len(b), endpoint=False)
+            w, h = freqz(b, a, worN=expected_w, whole=True)  # polyval
+            err_msg = 'b = %s, a=%s' % (b, a)
+            assert_array_almost_equal(w, expected_w, err_msg=err_msg)
+            assert_array_almost_equal(h, hs_whole[ii], err_msg=err_msg)
+            w, h = freqz(b, a, worN=len(b), whole=True)  # FFT
+            assert_array_almost_equal(w, expected_w, err_msg=err_msg)
+            assert_array_almost_equal(h, hs_whole[ii], err_msg=err_msg)
+            # non-whole
+            expected_w = np.linspace(0, np.pi, len(b), endpoint=False)
+            w, h = freqz(b, a, worN=expected_w, whole=False)  # polyval
+            assert_array_almost_equal(w, expected_w, err_msg=err_msg)
+            assert_array_almost_equal(h, hs_half[ii], err_msg=err_msg)
+            w, h = freqz(b, a, worN=len(b), whole=False)  # FFT
+            assert_array_almost_equal(w, expected_w, err_msg=err_msg)
+            assert_array_almost_equal(h, hs_half[ii], err_msg=err_msg)
+
+        # some random FIR filters (real + complex)
+        # assume polyval is accurate
+        rng = np.random.RandomState(0)
+        for ii in range(2, 10):  # number of taps
+            b = rng.randn(ii)
+            for kk in range(2):
+                a = rng.randn(1) if kk == 0 else rng.randn(3)
+                for jj in range(2):
+                    if jj == 1:
+                        b = b + rng.randn(ii) * 1j
+                    # whole
+                    expected_w = np.linspace(0, 2 * np.pi, ii, endpoint=False)
+                    w, expected_h = freqz(b, a, worN=expected_w, whole=True)
+                    assert_array_almost_equal(w, expected_w)
+                    w, h = freqz(b, a, worN=ii, whole=True)
+                    assert_array_almost_equal(w, expected_w)
+                    assert_array_almost_equal(h, expected_h)
+                    # half
+                    expected_w = np.linspace(0, np.pi, ii, endpoint=False)
+                    w, expected_h = freqz(b, a, worN=expected_w, whole=False)
+                    assert_array_almost_equal(w, expected_w)
+                    w, h = freqz(b, a, worN=ii, whole=False)
+                    assert_array_almost_equal(w, expected_w)
+                    assert_array_almost_equal(h, expected_h)
+
+    def test_broadcasting1(self):
+        # Test broadcasting with worN an integer or a 1-D array,
+        # b and a are n-dimensional arrays.
+        np.random.seed(123)
+        b = np.random.rand(3, 5, 1)
+        a = np.random.rand(2, 1)
+        for whole in [False, True]:
+            # Test with worN being integers (one fast for FFT and one not),
+            # a 1-D array, and an empty array.
+            for worN in [16, 17, np.linspace(0, 1, 10), np.array([])]:
+                w, h = freqz(b, a, worN=worN, whole=whole)
+                for k in range(b.shape[1]):
+                    bk = b[:, k, 0]
+                    ak = a[:, 0]
+                    ww, hh = freqz(bk, ak, worN=worN, whole=whole)
+                    assert_allclose(ww, w)
+                    assert_allclose(hh, h[k])
+
+    def test_broadcasting2(self):
+        # Test broadcasting with worN an integer or a 1-D array,
+        # b is an n-dimensional array, and a is left at the default value.
+        np.random.seed(123)
+        b = np.random.rand(3, 5, 1)
+        for whole in [False, True]:
+            for worN in [16, 17, np.linspace(0, 1, 10)]:
+                w, h = freqz(b, worN=worN, whole=whole)
+                for k in range(b.shape[1]):
+                    bk = b[:, k, 0]
+                    ww, hh = freqz(bk, worN=worN, whole=whole)
+                    assert_allclose(ww, w)
+                    assert_allclose(hh, h[k])
+
+    def test_broadcasting3(self):
+        # Test broadcasting where b.shape[-1] is the same length
+        # as worN, and a is left at the default value.
+        np.random.seed(123)
+        N = 16
+        b = np.random.rand(3, N)
+        for whole in [False, True]:
+            for worN in [N, np.linspace(0, 1, N)]:
+                w, h = freqz(b, worN=worN, whole=whole)
+                assert_equal(w.size, N)
+                for k in range(N):
+                    bk = b[:, k]
+                    ww, hh = freqz(bk, worN=w[k], whole=whole)
+                    assert_allclose(ww, w[k])
+                    assert_allclose(hh, h[k])
+
+    def test_broadcasting4(self):
+        # Test broadcasting with worN a 2-D array.
+        np.random.seed(123)
+        b = np.random.rand(4, 2, 1, 1)
+        a = np.random.rand(5, 2, 1, 1)
+        for whole in [False, True]:
+            for worN in [np.random.rand(6, 7), np.empty((6, 0))]:
+                w, h = freqz(b, a, worN=worN, whole=whole)
+                assert_array_equal(w, worN)
+                assert_equal(h.shape, (2,) + worN.shape)
+                for k in range(2):
+                    ww, hh = freqz(b[:, k, 0, 0], a[:, k, 0, 0], worN=worN.ravel(),
+                                   whole=whole)
+                    assert_equal(ww, worN.ravel())
+                    assert_allclose(hh, h[k, :, :].ravel())
+
+    def test_backward_compat(self):
+        # For backward compatibility, test if None act as a wrapper for default
+        w1, h1 = freqz([1.0], 1)
+        w2, h2 = freqz([1.0], 1, None)
+        assert_array_almost_equal(w1, w2)
+        assert_array_almost_equal(h1, h2)
 
 
 class TestSOSFreqz(object):
@@ -676,6 +854,12 @@ class TestFreqz_zpk(object):
         assert_allclose(w1, w2)
         assert_allclose(h1, h2, rtol=1e-6)
 
+    def test_backward_compat(self):
+        # For backward compatibility, test if None act as a wrapper for default
+        w1, h1 = freqz_zpk([0.5], [0.5], 1.0)
+        w2, h2 = freqz_zpk([0.5], [0.5], 1.0, None)
+        assert_array_almost_equal(w1, w2)
+        assert_array_almost_equal(h1, h2)
 
 class TestNormalize(object):
 
@@ -796,6 +980,105 @@ class TestBilinear(object):
                                   decimal=4)
 
 
+class TestLp2lp_zpk(object):
+
+    def test_basic(self):
+        z = []
+        p = [(-1+1j)/np.sqrt(2), (-1-1j)/np.sqrt(2)]
+        k = 1
+        z_lp, p_lp, k_lp = lp2lp_zpk(z, p, k, 5)
+        assert_array_equal(z_lp, [])
+        assert_allclose(sort(p_lp), sort(p)*5)
+        assert_allclose(k_lp, 25)
+
+        # Pseudo-Chebyshev with both poles and zeros
+        z = [-2j, +2j]
+        p = [-0.75, -0.5-0.5j, -0.5+0.5j]
+        k = 3
+        z_lp, p_lp, k_lp = lp2lp_zpk(z, p, k, 20)
+        assert_allclose(sort(z_lp), sort([-40j, +40j]))
+        assert_allclose(sort(p_lp), sort([-15, -10-10j, -10+10j]))
+        assert_allclose(k_lp, 60)
+
+
+class TestLp2hp_zpk(object):
+
+    def test_basic(self):
+        z = []
+        p = [(-1+1j)/np.sqrt(2), (-1-1j)/np.sqrt(2)]
+        k = 1
+
+        z_hp, p_hp, k_hp = lp2hp_zpk(z, p, k, 5)
+        assert_array_equal(z_hp, [0, 0])
+        assert_allclose(sort(p_hp), sort(p)*5)
+        assert_allclose(k_hp, 1)
+
+        z = [-2j, +2j]
+        p = [-0.75, -0.5-0.5j, -0.5+0.5j]
+        k = 3
+        z_hp, p_hp, k_hp = lp2hp_zpk(z, p, k, 6)
+        assert_allclose(sort(z_hp), sort([-3j, 0, +3j]))
+        assert_allclose(sort(p_hp), sort([-8, -6-6j, -6+6j]))
+        assert_allclose(k_hp, 32)
+
+
+class TestLp2bp_zpk(object):
+
+    def test_basic(self):
+        z = [-2j, +2j]
+        p = [-0.75, -0.5-0.5j, -0.5+0.5j]
+        k = 3
+        z_bp, p_bp, k_bp = lp2bp_zpk(z, p, k, 15, 8)
+        assert_allclose(sort(z_bp), sort([-25j, -9j, 0, +9j, +25j]))
+        assert_allclose(sort(p_bp), sort([-3 + 6j*sqrt(6),
+                                          -3 - 6j*sqrt(6),
+                                          +2j+sqrt(-8j-225)-2,
+                                          -2j+sqrt(+8j-225)-2,
+                                          +2j-sqrt(-8j-225)-2,
+                                          -2j-sqrt(+8j-225)-2, ]))
+        assert_allclose(k_bp, 24)
+
+
+class TestLp2bs_zpk(object):
+
+    def test_basic(self):
+        z = [-2j, +2j]
+        p = [-0.75, -0.5-0.5j, -0.5+0.5j]
+        k = 3
+
+        z_bs, p_bs, k_bs = lp2bs_zpk(z, p, k, 35, 12)
+
+        assert_allclose(sort(z_bs), sort([+35j, -35j,
+                                          +3j+sqrt(1234)*1j,
+                                          -3j+sqrt(1234)*1j,
+                                          +3j-sqrt(1234)*1j,
+                                          -3j-sqrt(1234)*1j]))
+        assert_allclose(sort(p_bs), sort([+3j*sqrt(129) - 8,
+                                          -3j*sqrt(129) - 8,
+                                          (-6 + 6j) - sqrt(-1225 - 72j),
+                                          (-6 - 6j) - sqrt(-1225 + 72j),
+                                          (-6 + 6j) + sqrt(-1225 - 72j),
+                                          (-6 - 6j) + sqrt(-1225 + 72j), ]))
+        assert_allclose(k_bs, 32)
+
+
+class TestBilinear_zpk(object):
+
+    def test_basic(self):
+        z = [-2j, +2j]
+        p = [-0.75, -0.5-0.5j, -0.5+0.5j]
+        k = 3
+
+        z_d, p_d, k_d = bilinear_zpk(z, p, k, 10)
+
+        assert_allclose(sort(z_d), sort([(20-2j)/(20+2j), (20+2j)/(20-2j),
+                                         -1]))
+        assert_allclose(sort(p_d), sort([77/83,
+                                         (1j/2 + 39/2) / (41/2 - 1j/2),
+                                         (39/2 - 1j/2) / (1j/2 + 41/2), ]))
+        assert_allclose(k_d, 9696/69803)
+
+
 class TestPrototypeType(object):
 
     def test_output_type(self):
@@ -813,8 +1096,9 @@ class TestPrototypeType(object):
 
 
 def dB(x):
-    # Return magnitude in decibels
-    return 20 * np.log10(abs(x))
+    # Return magnitude in decibels, avoiding divide-by-zero warnings
+    # (and deal with some "not less-ordered" errors when -inf shows up)
+    return 20 * np.log10(np.maximum(np.abs(x), np.finfo(np.float64).tiny))
 
 
 class TestButtord(object):
@@ -2847,6 +3131,8 @@ class TestIIRFilter(object):
     def test_invalid_wn_range(self):
         # For digital filters, 0 <= Wn <= 1
         assert_raises(ValueError, iirfilter, 1, 2, btype='low')
+        assert_raises(ValueError, iirfilter, 1, [0.5, 1], btype='band')
+        assert_raises(ValueError, iirfilter, 1, [0., 0.5], btype='band')
         assert_raises(ValueError, iirfilter, 1, -1, btype='high')
         assert_raises(ValueError, iirfilter, 1, [1, 2], btype='band')
         assert_raises(ValueError, iirfilter, 1, [10, 20], btype='stop')
@@ -2897,3 +3183,9 @@ class TestGroupDelay(object):
         w, gd = assert_warns(UserWarning, group_delay, (b, a), w=w)
         assert_allclose(gd, 0)
 
+    def test_backward_compat(self):
+        # For backward compatibility, test if None act as a wrapper for default
+        w1, gd1 = group_delay((1, 1))
+        w2, gd2 = group_delay((1, 1), None)
+        assert_array_almost_equal(w1, w2)
+        assert_array_almost_equal(gd1, gd2)

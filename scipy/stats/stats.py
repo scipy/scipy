@@ -70,7 +70,6 @@ Frequency Stats
     itemfreq
     scoreatpercentile
     percentileofscore
-    histogram
     cumfreq
     relfreq
 
@@ -80,7 +79,6 @@ Variability
    :toctree: generated/
 
     obrientransform
-    signaltonoise
     sem
     zmap
     zscore
@@ -91,7 +89,6 @@ Trimming Functions
 .. autosummary::
    :toctree: generated/
 
-   threshold
    trimboth
    trim1
 
@@ -126,15 +123,16 @@ Inferential Stats
    wilcoxon
    kruskal
    friedmanchisquare
+   brunnermunzel
    combine_pvalues
 
-Probability Calculations
-------------------------
+Statistical Distances
+---------------------
 .. autosummary::
    :toctree: generated/
 
-   chisqprob
-   betai
+   wasserstein_distance
+   energy_distance
 
 ANOVA Functions
 ---------------
@@ -142,15 +140,12 @@ ANOVA Functions
    :toctree: generated/
 
    f_oneway
-   f_value
 
 Support Functions
 -----------------
 .. autosummary::
    :toctree: generated/
 
-   ss
-   square_of_sums
    rankdata
 
 References
@@ -172,11 +167,11 @@ from numpy import array, asarray, ma, zeros
 
 from scipy._lib.six import callable, string_types
 from scipy._lib._version import NumpyVersion
+from scipy._lib._util import _lazywhere
 import scipy.special as special
 import scipy.linalg as linalg
 from . import distributions
 from . import mstats_basic
-from ._distn_infrastructure import _lazywhere
 from ._stats_mstats_common import _find_repeats, linregress, theilslopes
 from ._stats import _kendall_dis, _toint64, _weightedrankedtau
 
@@ -185,9 +180,9 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'tmin', 'tmax', 'tstd', 'tsem', 'moment', 'variation',
            'skew', 'kurtosis', 'describe', 'skewtest', 'kurtosistest',
            'normaltest', 'jarque_bera', 'itemfreq',
-           'scoreatpercentile', 'percentileofscore', 'histogram',
-           'histogram2', 'cumfreq', 'relfreq', 'obrientransform',
-           'signaltonoise', 'sem', 'zmap', 'zscore', 'iqr', 'threshold',
+           'scoreatpercentile', 'percentileofscore',
+           'cumfreq', 'relfreq', 'obrientransform',
+           'sem', 'zmap', 'zscore', 'iqr',
            'sigmaclip', 'trimboth', 'trim1', 'trim_mean', 'f_oneway',
            'pearsonr', 'fisher_exact', 'spearmanr', 'pointbiserialr',
            'kendalltau', 'weightedtau',
@@ -195,10 +190,9 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'ttest_ind', 'ttest_ind_from_stats', 'ttest_rel', 'kstest',
            'chisquare', 'power_divergence', 'ks_2samp', 'mannwhitneyu',
            'tiecorrect', 'ranksums', 'kruskal', 'friedmanchisquare',
-           'chisqprob', 'betai',
-           'f_value_wilks_lambda', 'f_value', 'f_value_multivariate',
-           'ss', 'square_of_sums', 'fastsort', 'rankdata',
-           'combine_pvalues', ]
+           'rankdata',
+           'combine_pvalues', 'wasserstein_distance', 'energy_distance',
+           'brunnermunzel']
 
 
 def _chk_asarray(a, axis):
@@ -244,7 +238,7 @@ def _contains_nan(a, nan_policy='propagate'):
         with np.errstate(invalid='ignore'):
             contains_nan = np.isnan(np.sum(a))
     except TypeError:
-        # If the check cannot be properly performed we fallback to omiting
+        # If the check cannot be properly performed we fallback to omitting
         # nan values and raising a warning. This can happen when attempting to
         # sum things that are not numbers (e.g. as in the function `mode`).
         contains_nan = False
@@ -386,6 +380,7 @@ def hmean(a, axis=0, dtype=None):
     else:
         raise ValueError("Harmonic mean only defined if all elements greater "
                          "than zero")
+
 
 ModeResult = namedtuple('ModeResult', ('mode', 'count'))
 
@@ -1163,6 +1158,7 @@ def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
     else:
         return vals
 
+
 DescribeResult = namedtuple('DescribeResult',
                             ('nobs', 'minmax', 'mean', 'variance', 'skewness',
                              'kurtosis'))
@@ -1217,13 +1213,13 @@ def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
     >>> from scipy import stats
     >>> a = np.arange(10)
     >>> stats.describe(a)
-    DescribeResult(nobs=10, minmax=(0, 9), mean=4.5, variance=9.1666666666666661,
+    DescribeResult(nobs=10, minmax=(0, 9), mean=4.5, variance=9.166666666666666,
                    skewness=0.0, kurtosis=-1.2242424242424244)
     >>> b = [[1, 2], [3, 4]]
     >>> stats.describe(b)
     DescribeResult(nobs=2, minmax=(array([1, 2]), array([3, 4])),
-                   mean=array([ 2., 3.]), variance=array([ 2., 2.]),
-                   skewness=array([ 0., 0.]), kurtosis=array([-2., -2.]))
+                   mean=array([2., 3.]), variance=array([2., 2.]),
+                   skewness=array([0., 0.]), kurtosis=array([-2., -2.]))
 
     """
     a, axis = _chk_asarray(a, axis)
@@ -1248,6 +1244,7 @@ def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
 #####################################
 #         NORMALITY TESTS           #
 #####################################
+
 
 SkewtestResult = namedtuple('SkewtestResult', ('statistic', 'pvalue'))
 
@@ -1293,11 +1290,11 @@ def skewtest(a, axis=0, nan_policy='propagate'):
     --------
     >>> from scipy.stats import skewtest
     >>> skewtest([1, 2, 3, 4, 5, 6, 7, 8])
-    SkewtestResult(statistic=1.0108048609177787, pvalue=0.31210983614218968)
+    SkewtestResult(statistic=1.0108048609177787, pvalue=0.3121098361421897)
     >>> skewtest([2, 8, 0, 4, 1, 9, 9, 0])
-    SkewtestResult(statistic=0.44626385374196975, pvalue=0.65540666312754592)
+    SkewtestResult(statistic=0.44626385374196975, pvalue=0.6554066631275459)
     >>> skewtest([1, 2, 3, 4, 5, 6, 7, 8000])
-    SkewtestResult(statistic=3.5717735103604071, pvalue=0.00035457199058231331)
+    SkewtestResult(statistic=3.571773510360407, pvalue=0.0003545719905823133)
     >>> skewtest([100, 100, 100, 100, 100, 100, 100, 101])
     SkewtestResult(statistic=3.5717766638478072, pvalue=0.000354567720281634)
     """
@@ -1329,12 +1326,13 @@ def skewtest(a, axis=0, nan_policy='propagate'):
 
     return SkewtestResult(Z, 2 * distributions.norm.sf(np.abs(Z)))
 
+
 KurtosistestResult = namedtuple('KurtosistestResult', ('statistic', 'pvalue'))
 
 
 def kurtosistest(a, axis=0, nan_policy='propagate'):
     """
-    Test whether a dataset has normal kurtosis
+    Test whether a dataset has normal kurtosis.
 
     This function tests the null hypothesis that the kurtosis
     of the population from which the sample was drawn is that
@@ -1373,7 +1371,7 @@ def kurtosistest(a, axis=0, nan_policy='propagate'):
     --------
     >>> from scipy.stats import kurtosistest
     >>> kurtosistest(list(range(20)))
-    KurtosistestResult(statistic=-1.7058104152122062, pvalue=0.088043383325283484)
+    KurtosistestResult(statistic=-1.7058104152122062, pvalue=0.08804338332528348)
 
     >>> np.random.seed(28041990)
     >>> s = np.random.normal(0, 1, 1000)
@@ -1417,6 +1415,7 @@ def kurtosistest(a, axis=0, nan_policy='propagate'):
 
     # zprob uses upper tail, so Z needs to be positive
     return KurtosistestResult(Z, 2 * distributions.norm.sf(np.abs(Z)))
+
 
 NormaltestResult = namedtuple('NormaltestResult', ('statistic', 'pvalue'))
 
@@ -1551,6 +1550,8 @@ def jarque_bera(x):
 #        FREQUENCY FUNCTIONS        #
 #####################################
 
+@np.deprecate(message="`itemfreq` is deprecated and will be removed in a "
+              "future version. Use instead `np.unique(..., return_counts=True)`")
 def itemfreq(a):
     """
     Return a 2-D array of item frequencies.
@@ -1785,74 +1786,31 @@ def percentileofscore(a, score, kind='rank'):
     60.0
 
     """
-    a = np.array(a)
+    if np.isnan(score):
+        return np.nan
+    a = np.asarray(a)
     n = len(a)
+    if n == 0:
+        return 100.0
 
     if kind == 'rank':
-        if not np.any(a == score):
-            a = np.append(a, score)
-            a_len = np.array(list(range(len(a))))
-        else:
-            a_len = np.array(list(range(len(a)))) + 1.0
-
-        a = np.sort(a)
-        idx = [a == score]
-        pct = (np.mean(a_len[idx]) / n) * 100.0
+        left = np.count_nonzero(a < score)
+        right = np.count_nonzero(a <= score)
+        pct = (right + left + (1 if right > left else 0)) * 50.0/n
         return pct
-
     elif kind == 'strict':
-        return np.sum(a < score) / float(n) * 100
+        return np.count_nonzero(a < score) / float(n) * 100
     elif kind == 'weak':
-        return np.sum(a <= score) / float(n) * 100
+        return np.count_nonzero(a <= score) / float(n) * 100
     elif kind == 'mean':
-        return (np.sum(a < score) + np.sum(a <= score)) * 50 / float(n)
+        pct = (np.count_nonzero(a < score) + np.count_nonzero(a <= score)) / float(n) * 50
+        return pct
     else:
         raise ValueError("kind can only be 'rank', 'strict', 'weak' or 'mean'")
 
 
-@np.deprecate(message=("scipy.stats.histogram2 is deprecated in scipy 0.16.0; "
-                       "use np.histogram2d instead"))
-def histogram2(a, bins):
-    """
-    Compute histogram using divisions in bins.
-
-    Count the number of times values from array `a` fall into
-    numerical ranges defined by `bins`.  Range x is given by
-    bins[x] <= range_x < bins[x+1] where x =0,N and N is the
-    length of the `bins` array.  The last range is given by
-    bins[N] <= range_N < infinity.  Values less than bins[0] are
-    not included in the histogram.
-
-    Parameters
-    ----------
-    a : array_like of rank 1
-        The array of values to be assigned into bins
-    bins : array_like of rank 1
-        Defines the ranges of values to use during histogramming.
-
-    Returns
-    -------
-    histogram2 : ndarray of rank 1
-        Each value represents the occurrences for a given bin (range) of
-        values.
-
-    """
-    # comment: probably obsoleted by numpy.histogram()
-    n = np.searchsorted(np.sort(a), bins)
-    n = np.concatenate([n, [len(a)]])
-    return n[1:] - n[:-1]
-
 HistogramResult = namedtuple('HistogramResult',
                              ('count', 'lowerlimit', 'binsize', 'extrapoints'))
-
-
-@np.deprecate(message=("scipy.stats.histogram is deprecated in scipy 0.17.0; "
-                       "use np.histogram instead"))
-def histogram(a, numbins=10, defaultlimits=None, weights=None, printextras=False):
-    # _histogram is used in relfreq/cumfreq, so need to keep it
-    res = _histogram(a, numbins=numbins, defaultlimits=defaultlimits,
-                     weights=weights, printextras=printextras)
-    return res
 
 
 def _histogram(a, numbins=10, defaultlimits=None, weights=None, printextras=False):
@@ -2173,37 +2131,6 @@ def obrientransform(*args):
         arrays.append(t)
 
     return np.array(arrays)
-
-
-@np.deprecate(message="scipy.stats.signaltonoise is deprecated in scipy 0.16.0")
-def signaltonoise(a, axis=0, ddof=0):
-    """
-    The signal-to-noise ratio of the input data.
-
-    Return the signal-to-noise ratio of `a`, here defined as the mean
-    divided by the standard deviation.
-
-    Parameters
-    ----------
-    a : array_like
-        An array_like object containing the sample data.
-    axis : int or None, optional
-        Axis along which to operate. Default is 0. If None, compute over
-        the whole array `a`.
-    ddof : int, optional
-        Degrees of freedom correction for standard deviation. Default is 0.
-
-    Returns
-    -------
-    s2n : ndarray
-        The mean to standard deviation ratio(s) along `axis`, or 0 where the
-        standard deviation is 0.
-
-    """
-    a = np.asanyarray(a)
-    m = a.mean(axis)
-    sd = a.std(axis=axis, ddof=ddof)
-    return np.where(sd == 0, 0, m/sd)
 
 
 def sem(a, axis=0, ddof=1, nan_policy='propagate'):
@@ -2649,50 +2576,6 @@ def _iqr_nanpercentile(x, q, axis=None, interpolation='linear', keepdims=False,
 #         TRIMMING FUNCTIONS        #
 #####################################
 
-@np.deprecate(message="stats.threshold is deprecated in scipy 0.17.0")
-def threshold(a, threshmin=None, threshmax=None, newval=0):
-    """
-    Clip array to a given value.
-
-    Similar to numpy.clip(), except that values less than `threshmin` or
-    greater than `threshmax` are replaced by `newval`, instead of by
-    `threshmin` and `threshmax` respectively.
-
-    Parameters
-    ----------
-    a : array_like
-        Data to threshold.
-    threshmin : float, int or None, optional
-        Minimum threshold, defaults to None.
-    threshmax : float, int or None, optional
-        Maximum threshold, defaults to None.
-    newval : float or int, optional
-        Value to put in place of values in `a` outside of bounds.
-        Defaults to 0.
-
-    Returns
-    -------
-    out : ndarray
-        The clipped input array, with values less than `threshmin` or
-        greater than `threshmax` replaced with `newval`.
-
-    Examples
-    --------
-    >>> a = np.array([9, 9, 6, 3, 1, 6, 1, 0, 0, 8])
-    >>> from scipy import stats
-    >>> stats.threshold(a, threshmin=2, threshmax=8, newval=-1)
-    array([-1, -1,  6,  3, -1,  6, -1, -1, -1,  8])
-
-    """
-    a = asarray(a).copy()
-    mask = zeros(a.shape, dtype=bool)
-    if threshmin is not None:
-        mask |= (a < threshmin)
-    if threshmax is not None:
-        mask |= (a > threshmax)
-    a[mask] = newval
-    return a
-
 SigmaclipResult = namedtuple('SigmaclipResult', ('clipped', 'lower', 'upper'))
 
 
@@ -2700,14 +2583,15 @@ def sigmaclip(a, low=4., high=4.):
     """
     Iterative sigma-clipping of array elements.
 
-    The output array contains only those elements of the input array `c`
-    that satisfy the conditions ::
-
-        mean(c) - std(c)*low < c < mean(c) + std(c)*high
-
     Starting from the full sample, all elements outside the critical range are
-    removed. The iteration continues with a new critical range until no
-    elements are outside the range.
+    removed, i.e. all elements of the input array `c` that satisfy either of
+    the following conditions ::
+
+        c < mean(c) - std(c)*low
+        c > mean(c) + std(c)*high
+
+    The iteration continues with the updated sample until no
+    elements are outside the (updated) range.
 
     Parameters
     ----------
@@ -2758,7 +2642,7 @@ def sigmaclip(a, low=4., high=4.):
         size = c.size
         critlower = c_mean - c_std * low
         critupper = c_mean + c_std * high
-        c = c[(c > critlower) & (c < critupper)]
+        c = c[(c >= critlower) & (c <= critupper)]
         delta = size - c.size
 
     return SigmaclipResult(c, critlower, critupper)
@@ -2948,6 +2832,7 @@ def trim_mean(a, proportiontocut, axis=0):
     sl[axis] = slice(lowercut, uppercut)
     return np.mean(atmp[sl], axis=axis)
 
+
 F_onewayResult = namedtuple('F_onewayResult', ('statistic', 'pvalue'))
 
 
@@ -3055,7 +2940,7 @@ def f_oneway(*args):
 
 
 def pearsonr(x, y):
-    """
+    r"""
     Calculate a Pearson correlation coefficient and the p-value for testing
     non-correlation.
 
@@ -3086,10 +2971,34 @@ def pearsonr(x, y):
     p-value : float
         2-tailed p-value
 
+    Notes
+    -----
+
+    The correlation coefficient is calculated as follows:
+
+    .. math::
+
+        r_{pb} = \frac{\sum (x - m_x) (y - m_y)
+                       }{\sqrt{\sum (x - m_x)^2 (y - m_y)^2}}
+
+    where :math:`m_x` is the mean of the vector :math:`x` and :math:`m_y` is
+    the mean of the vector :math:`y`.
+
+
     References
     ----------
     http://www.statsoft.com/textbook/glosp.html#Pearson%20Correlation
 
+    Examples
+    --------
+    >>> from scipy import stats
+    >>> a = np.array([0, 0, 0, 1, 1, 1, 1])
+    >>> b = np.arange(7)
+    >>> stats.pearsonr(a, b)
+    (0.8660254037844386, 0.011724811003954654)
+
+    >>> stats.pearsonr([1,2,3,4,5], [5,6,7,8,7])
+    (0.83205029433784372, 0.080509573298498519)
     """
     # x and y should have same length.
     x = np.asarray(x)
@@ -3102,8 +3011,8 @@ def pearsonr(x, y):
     r_den = np.sqrt(_sum_of_squares(xm) * _sum_of_squares(ym))
     r = r_num / r_den
 
-    # Presumably, if abs(r) > 1, then it is only some small artifact of floating
-    # point arithmetic.
+    # Presumably, if abs(r) > 1, then it is only some small artifact of
+    # floating point arithmetic.
     r = max(min(r, 1.0), -1.0)
     df = n - 2
     if abs(r) == 1.0:
@@ -3274,6 +3183,7 @@ def fisher_exact(table, alternative='two-sided'):
 
     return oddsratio, pvalue
 
+
 SpearmanrResult = namedtuple('SpearmanrResult', ('correlation', 'pvalue'))
 
 
@@ -3398,11 +3308,11 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate'):
             b = ma.masked_invalid(b)
 
             if nan_policy == 'propagate':
-                rho, pval = mstats_basic.spearmanr(a, b, axis)
+                rho, pval = mstats_basic.spearmanr(a, b, use_ties=True)
                 return SpearmanrResult(rho * np.nan, pval * np.nan)
 
             if nan_policy == 'omit':
-                return mstats_basic.spearmanr(a, b, axis)
+                return mstats_basic.spearmanr(a, b, use_ties=True)
 
         br = np.apply_along_axis(rankdata, axisout, b)
     n = a.shape[axisout]
@@ -3422,6 +3332,7 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate'):
         return SpearmanrResult(rs[1, 0], prob[1, 0])
     else:
         return SpearmanrResult(rs, prob)
+
 
 PointbiserialrResult = namedtuple('PointbiserialrResult',
                                   ('correlation', 'pvalue'))
@@ -3795,7 +3706,7 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
     >>> stats.weightedtau(x, y, rank=None)
     WeightedTauResult(correlation=-0.4157652301037516, pvalue=nan)
     >>> stats.weightedtau(y, x, rank=None)
-    WeightedTauResult(correlation=-0.71813413296990281, pvalue=nan)
+    WeightedTauResult(correlation=-0.7181341329699028, pvalue=nan)
 
     """
     x = np.asarray(x).ravel()
@@ -3808,10 +3719,10 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
         return WeightedTauResult(np.nan, np.nan)  # Return NaN if arrays are empty
 
     # If there are NaNs we apply _toint64()
-    if np.isnan(np.min(x)):
-            x = _toint64(x)
-    if np.isnan(np.min(y)):
-            y = _toint64(y)
+    if np.isnan(np.sum(x)):
+        x = _toint64(x)
+    if np.isnan(np.sum(x)):
+        y = _toint64(y)
 
     # Reduce to ranks unsupported types
     if x.dtype != y.dtype:
@@ -3861,7 +3772,7 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate'):
     a : array_like
         sample observation
     popmean : float or array_like
-        expected value in null hypothesis, if array_like than it must have the
+        expected value in null hypothesis. If array_like, then it must have the
         same shape as `a` excluding the axis dimension
     axis : int or None, optional
         Axis along which to compute test. If None, compute over the whole
@@ -3966,6 +3877,7 @@ def _equal_var_ttest_denom(v1, n1, v2, n2):
     denom = np.sqrt(svar * (1.0 / n1 + 1.0 / n2))
     return df, denom
 
+
 Ttest_indResult = namedtuple('Ttest_indResult', ('statistic', 'pvalue'))
 
 
@@ -4034,7 +3946,7 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     >>> from scipy.stats import ttest_ind_from_stats
     >>> ttest_ind_from_stats(mean1=15.0, std1=np.sqrt(87.5), nobs1=13,
     ...                      mean2=12.0, std2=np.sqrt(39.0), nobs2=11)
-    Ttest_indResult(statistic=0.90513580933102689, pvalue=0.37519967975814872)
+    Ttest_indResult(statistic=0.9051358093310269, pvalue=0.3751996797581487)
 
     For comparison, here is the data from which those summary statistics
     were taken.  With this data, we can compute the same result using
@@ -4044,7 +3956,7 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     >>> b = np.array([2, 4, 6, 9, 11, 13, 14, 15, 18, 19, 21])
     >>> from scipy.stats import ttest_ind
     >>> ttest_ind(a, b)
-    Ttest_indResult(statistic=0.905135809331027, pvalue=0.37519967975814861)
+    Ttest_indResult(statistic=0.905135809331027, pvalue=0.3751996797581486)
 
     """
     if equal_var:
@@ -4181,6 +4093,7 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate'):
 
     return Ttest_indResult(*res)
 
+
 Ttest_relResult = namedtuple('Ttest_relResult', ('statistic', 'pvalue'))
 
 
@@ -4224,7 +4137,7 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate'):
 
     References
     ----------
-    http://en.wikipedia.org/wiki/T-test#Dependent_t-test
+    https://en.wikipedia.org/wiki/T-test#Dependent_t-test_for_paired_samples
 
     Examples
     --------
@@ -4277,6 +4190,7 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate'):
     t, prob = _ttest_finish(df, t)
 
     return Ttest_relResult(t, prob)
+
 
 KstestResult = namedtuple('KstestResult', ('statistic', 'pvalue'))
 
@@ -4460,6 +4374,7 @@ def _count(a, axis=None):
         else:
             num = a.shape[axis]
     return num
+
 
 Power_divergenceResult = namedtuple('Power_divergenceResult',
                                     ('statistic', 'pvalue'))
@@ -4786,6 +4701,7 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
     return power_divergence(f_obs, f_exp=f_exp, ddof=ddof, axis=axis,
                             lambda_="pearson")
 
+
 Ks_2sampResult = namedtuple('Ks_2sampResult', ('statistic', 'pvalue'))
 
 
@@ -4957,6 +4873,14 @@ def mannwhitneyu(x, y, use_continuity=True, alternative=None):
 
     This test corrects for ties and by default uses a continuity correction.
 
+    References
+    ----------
+    .. [1] https://en.wikipedia.org/wiki/Mann-Whitney_U_test
+
+    .. [2] H.B. Mann and D.R. Whitney, "On a Test of Whether one of Two Random
+           Variables is Stochastically Larger than the Other," The Annals of
+           Mathematical Statistics, vol. 18, no. 1, pp. 50-60, 1947.
+
     """
     if alternative is None:
         warnings.warn("Calling `mannwhitneyu` without specifying "
@@ -5001,6 +4925,7 @@ def mannwhitneyu(x, y, use_continuity=True, alternative=None):
     if alternative is None:
         u = min(u1, u2)
     return MannwhitneyuResult(u, p)
+
 
 RanksumsResult = namedtuple('RanksumsResult', ('statistic', 'pvalue'))
 
@@ -5049,6 +4974,7 @@ def ranksums(x, y):
     prob = 2 * distributions.norm.sf(abs(z))
 
     return RanksumsResult(z, prob)
+
 
 KruskalResult = namedtuple('KruskalResult', ('statistic', 'pvalue'))
 
@@ -5107,13 +5033,13 @@ def kruskal(*args, **kwargs):
     >>> x = [1, 3, 5, 7, 9]
     >>> y = [2, 4, 6, 8, 10]
     >>> stats.kruskal(x, y)
-    KruskalResult(statistic=0.27272727272727337, pvalue=0.60150813444058948)
+    KruskalResult(statistic=0.2727272727272734, pvalue=0.6015081344405895)
 
     >>> x = [1, 1, 1]
     >>> y = [2, 2, 2]
     >>> z = [2, 2]
     >>> stats.kruskal(x, y, z)
-    KruskalResult(statistic=7.0, pvalue=0.030197383422318501)
+    KruskalResult(statistic=7.0, pvalue=0.0301973834223185)
 
     """
     args = list(map(np.asarray, args))
@@ -5239,6 +5165,143 @@ def friedmanchisquare(*args):
     return FriedmanchisquareResult(chisq, distributions.chi2.sf(chisq, k - 1))
 
 
+BrunnerMunzelResult = namedtuple('BrunnerMunzelResult',
+                                 ('statistic', 'pvalue'))
+
+
+def brunnermunzel(x, y, alternative="two-sided", distribution="t",
+                  nan_policy='propagate'):
+    """
+    Computes the Brunner-Munzel test on samples x and y
+
+    The Brunner-Munzel test is a nonparametric test of the null hypothesis that
+    when values are taken one by one from each group, the probabilities of
+    getting large values in both groups are equal.
+    Unlike the Wilcoxon-Mann-Whitney's U test, this does not require the
+    assumption of equivariance of two groups. Note that this does not assume
+    the distributions are same. This test works on two independent samples,
+    which may have different sizes.
+
+    Parameters
+    ----------
+    x, y : array_like
+        Array of samples, should be one-dimensional.
+    alternative :  'less', 'two-sided', or 'greater', optional
+        Whether to get the p-value for the one-sided hypothesis ('less'
+        or 'greater') or for the two-sided hypothesis ('two-sided').
+        Defaults value is 'two-sided' .
+    distribution: 't' or 'normal', optional
+        Whether to get the p-value by t-distribution or by standard normal
+        distribution.
+        Defaults value is 't' .
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan. 'propagate' returns nan,
+        'raise' throws an error, 'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.
+
+    Returns
+    -------
+    statistic : float
+        The Brunner-Munzer W statistic.
+    pvalue : float
+        p-value assuming an t distribution. One-sided or
+        two-sided, depending on the choice of `alternative` and `distribution`.
+
+    See Also
+    --------
+    mannwhitneyu : Mann-Whitney rank test on two samples.
+
+    Notes
+    -------
+    Brunner and Munzel recommended to estimate the p-value by t-distribution
+    when the size of data is 50 or less. If the size is lower than 10, it would
+    be better to use permuted Brunner Munzel test (see [2]_).
+
+    References
+    ----------
+    .. [1] Brunner, E. and Munzel, U. "The nonparametric Benhrens-Fisher
+           problem: Asymptotic theory and a small-sample approximation".
+           Biometrical Journal. Vol. 42(2000): 17-25.
+    .. [2] Neubert, K. and Brunner, E. "A studentized permutation test for the
+           non-parametric Behrens-Fisher problem". Computational Statistics and
+           Data Analysis. Vol. 51(2007): 5192-5204.
+
+    Examples
+    --------
+    >>> from scipy import stats
+    >>> x1 = [1,2,1,1,1,1,1,1,1,1,2,4,1,1]
+    >>> x2 = [3,3,4,3,1,2,3,1,1,5,4]
+    >>> w, p_value = stats.brunnermunzel(x1, x2)
+    >>> w
+    3.1374674823029505
+    >>> p_value
+    0.0057862086661515377
+
+    """
+    x = np.asarray(x)
+    y = np.asarray(y)
+
+    # check both x and y
+    cnx, npx = _contains_nan(x, nan_policy)
+    cny, npy = _contains_nan(y, nan_policy)
+    contains_nan = cnx or cny
+    if npx == "omit" or npy == "omit":
+        nan_policy = "omit"
+
+    if contains_nan and nan_policy == "propagate":
+        return BrunnerMunzelResult(np.nan, np.nan)
+    elif contains_nan and nan_policy == "omit":
+        x = ma.masked_invalid(x)
+        y = ma.masked_invalid(y)
+        return mstats_basic.brunnermunzel(x, y, alternative, distribution)
+
+    nx = len(x)
+    ny = len(y)
+    if nx == 0 or ny == 0:
+        return BrunnerMunzelResult(np.nan, np.nan)
+    rankc = rankdata(np.concatenate((x, y)))
+    rankcx = rankc[0:nx]
+    rankcy = rankc[nx:nx+ny]
+    rankcx_mean = np.mean(rankcx)
+    rankcy_mean = np.mean(rankcy)
+    rankx = rankdata(x)
+    ranky = rankdata(y)
+    rankx_mean = np.mean(rankx)
+    ranky_mean = np.mean(ranky)
+
+    Sx = np.sum(np.power(rankcx - rankx - rankcx_mean + rankx_mean, 2.0))
+    Sx /= nx - 1
+    Sy = np.sum(np.power(rankcy - ranky - rankcy_mean + ranky_mean, 2.0))
+    Sy /= ny - 1
+
+    wbfn = nx * ny * (rankcy_mean - rankcx_mean)
+    wbfn /= (nx + ny) * np.sqrt(nx * Sx + ny * Sy)
+
+    if distribution == "t":
+        df_numer = np.power(nx * Sx + ny * Sy, 2.0)
+        df_denom = np.power(nx * Sx, 2.0) / (nx - 1)
+        df_denom += np.power(ny * Sy, 2.0) / (ny - 1)
+        df = df_numer / df_denom
+        p = distributions.t.cdf(wbfn, df)
+    elif distribution == "normal":
+        p = distributions.norm.cdf(wbfn)
+    else:
+        raise ValueError(
+            "distribution should be 't' or 'normal'")
+
+    if alternative == "greater":
+        p = p
+    elif alternative == "less":
+        p = 1 - p
+    elif alternative == "two-sided":
+        p = 2 * np.min([p, 1-p])
+    else:
+        raise ValueError(
+            "alternative should be 'less', 'greater' or 'two-sided'")
+
+    return BrunnerMunzelResult(wbfn, p)
+
+
 def combine_pvalues(pvalues, method='fisher', weights=None):
     """
     Methods for combining the p-values of independent tests bearing upon the
@@ -5327,61 +5390,6 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
 #####################################
 
 
-@np.deprecate(message="stats.chisqprob is deprecated in scipy 0.17.0; "
-              "use stats.distributions.chi2.sf instead.")
-def chisqprob(chisq, df):
-    """
-    Probability value (1-tail) for the Chi^2 probability distribution.
-
-    Broadcasting rules apply.
-
-    Parameters
-    ----------
-    chisq : array_like or float > 0
-
-    df : array_like or float, probably int >= 1
-
-    Returns
-    -------
-    chisqprob : ndarray
-        The area from `chisq` to infinity under the Chi^2 probability
-        distribution with degrees of freedom `df`.
-
-    """
-    return distributions.chi2.sf(chisq, df)
-
-
-@np.deprecate(message="stats.betai is deprecated in scipy 0.17.0; "
-              "use special.betainc instead")
-def betai(a, b, x):
-    """
-    Return the incomplete beta function.
-
-    I_x(a,b) = 1/B(a,b)*(Integral(0,x) of t^(a-1)(1-t)^(b-1) dt)
-
-    where a,b>0 and B(a,b) = G(a)*G(b)/(G(a+b)) where G(a) is the gamma
-    function of a.
-
-    The standard broadcasting rules apply to a, b, and x.
-
-    Parameters
-    ----------
-    a : array_like or float > 0
-
-    b : array_like or float > 0
-
-    x : array_like or float
-        x will be clipped to be no greater than 1.0 .
-
-    Returns
-    -------
-    betai : ndarray
-        Incomplete beta function.
-
-    """
-    return _betai(a, b, x)
-
-
 def _betai(a, b, x):
     x = np.asarray(x)
     x = np.where(x < 1.0, x, 1.0)  # if x > 1 then return 1.0
@@ -5389,89 +5397,293 @@ def _betai(a, b, x):
 
 
 #####################################
-#         ANOVA CALCULATIONS        #
+#       STATISTICAL DISTANCES       #
 #####################################
 
-@np.deprecate(message="stats.f_value_wilks_lambda deprecated in scipy 0.17.0")
-def f_value_wilks_lambda(ER, EF, dfnum, dfden, a, b):
-    """Calculation of Wilks lambda F-statistic for multivarite data, per
-    Maxwell & Delaney p.657.
+def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
+    r"""
+    Compute the first Wasserstein distance between two 1D distributions.
+
+    This distance is also known as the earth mover's distance, since it can be
+    seen as the minimum amount of "work" required to transform :math:`u` into
+    :math:`v`, where "work" is measured as the amount of distribution weight
+    that must be moved, multiplied by the distance it has to be moved.
+
+    .. versionadded:: 1.0.0
+
+    Parameters
+    ----------
+    u_values, v_values : array_like
+        Values observed in the (empirical) distribution.
+    u_weights, v_weights : array_like, optional
+        Weight for each value. If unspecified, each value is assigned the same
+        weight.
+        `u_weights` (resp. `v_weights`) must have the same length as
+        `u_values` (resp. `v_values`). If the weight sum differs from 1, it
+        must still be positive and finite so that the weights can be normalized
+        to sum to 1.
+
+    Returns
+    -------
+    distance : float
+        The computed distance between the distributions.
+
+    Notes
+    -----
+    The first Wasserstein distance between the distributions :math:`u` and
+    :math:`v` is:
+
+    .. math::
+
+        l_1 (u, v) = \inf_{\pi \in \Gamma (u, v)} \int_{\mathbb{R} \times
+        \mathbb{R}} |x-y| \mathrm{d} \pi (x, y)
+
+    where :math:`\Gamma (u, v)` is the set of (probability) distributions on
+    :math:`\mathbb{R} \times \mathbb{R}` whose marginals are :math:`u` and
+    :math:`v` on the first and second factors respectively.
+
+    If :math:`U` and :math:`V` are the respective CDFs of :math:`u` and
+    :math:`v`, this distance also equals to:
+
+    .. math::
+
+        l_1(u, v) = \int_{-\infty}^{+\infty} |U-V|
+
+    See [2]_ for a proof of the equivalence of both definitions.
+
+    The input distributions can be empirical, therefore coming from samples
+    whose values are effectively inputs of the function, or they can be seen as
+    generalized functions, in which case they are weighted sums of Dirac delta
+    functions located at the specified values.
+
+    References
+    ----------
+    .. [1] "Wasserstein metric", http://en.wikipedia.org/wiki/Wasserstein_metric
+    .. [2] Ramdas, Garcia, Cuturi "On Wasserstein Two Sample Testing and Related
+           Families of Nonparametric Tests" (2015). :arXiv:`1509.02237`.
+
+    Examples
+    --------
+    >>> from scipy.stats import wasserstein_distance
+    >>> wasserstein_distance([0, 1, 3], [5, 6, 8])
+    5.0
+    >>> wasserstein_distance([0, 1], [0, 1], [3, 1], [2, 2])
+    0.25
+    >>> wasserstein_distance([3.4, 3.9, 7.5, 7.8], [4.5, 1.4],
+    ...                      [1.4, 0.9, 3.1, 7.2], [3.2, 3.5])
+    4.0781331438047861
     """
-    if isinstance(ER, (int, float)):
-        ER = array([[ER]])
-    if isinstance(EF, (int, float)):
-        EF = array([[EF]])
-    lmbda = linalg.det(EF) / linalg.det(ER)
-    if (a-1)**2 + (b-1)**2 == 5:
-        q = 1
+    return _cdf_distance(1, u_values, v_values, u_weights, v_weights)
+
+
+def energy_distance(u_values, v_values, u_weights=None, v_weights=None):
+    r"""
+    Compute the energy distance between two 1D distributions.
+
+    .. versionadded:: 1.0.0
+
+    Parameters
+    ----------
+    u_values, v_values : array_like
+        Values observed in the (empirical) distribution.
+    u_weights, v_weights : array_like, optional
+        Weight for each value. If unspecified, each value is assigned the same
+        weight.
+        `u_weights` (resp. `v_weights`) must have the same length as
+        `u_values` (resp. `v_values`). If the weight sum differs from 1, it
+        must still be positive and finite so that the weights can be normalized
+        to sum to 1.
+
+    Returns
+    -------
+    distance : float
+        The computed distance between the distributions.
+
+    Notes
+    -----
+    The energy distance between two distributions :math:`u` and :math:`v`, whose
+    respective CDFs are :math:`U` and :math:`V`, equals to:
+
+    .. math::
+
+        D(u, v) = \left( 2\mathbb E|X - Y| - \mathbb E|X - X'| -
+        \mathbb E|Y - Y'| \right)^{1/2}
+
+    where :math:`X` and :math:`X'` (resp. :math:`Y` and :math:`Y'`) are
+    independent random variables whose probability distribution is :math:`u`
+    (resp. :math:`v`).
+
+    As shown in [2]_, for one-dimensional real-valued variables, the energy
+    distance is linked to the non-distribution-free version of the Cramer-von
+    Mises distance:
+
+    .. math::
+
+        D(u, v) = \sqrt{2} l_2(u, v) = \left( 2 \int_{-\infty}^{+\infty} (U-V)^2
+        \right)^{1/2}
+
+    Note that the common Cramer-von Mises criterion uses the distribution-free
+    version of the distance. See [2]_ (section 2), for more details about both
+    versions of the distance.
+
+    The input distributions can be empirical, therefore coming from samples
+    whose values are effectively inputs of the function, or they can be seen as
+    generalized functions, in which case they are weighted sums of Dirac delta
+    functions located at the specified values.
+
+    References
+    ----------
+    .. [1] "Energy distance", https://en.wikipedia.org/wiki/Energy_distance
+    .. [2] Szekely "E-statistics: The energy of statistical samples." Bowling
+           Green State University, Department of Mathematics and Statistics,
+           Technical Report 02-16 (2002).
+    .. [3] Rizzo, Szekely "Energy distance." Wiley Interdisciplinary Reviews:
+           Computational Statistics, 8(1):27-38 (2015).
+    .. [4] Bellemare, Danihelka, Dabney, Mohamed, Lakshminarayanan, Hoyer,
+           Munos "The Cramer Distance as a Solution to Biased Wasserstein
+           Gradients" (2017). :arXiv:`1705.10743`.
+
+    Examples
+    --------
+    >>> from scipy.stats import energy_distance
+    >>> energy_distance([0], [2])
+    2.0000000000000004
+    >>> energy_distance([0, 8], [0, 8], [3, 1], [2, 2])
+    1.0000000000000002
+    >>> energy_distance([0.7, 7.4, 2.4, 6.8], [1.4, 8. ],
+    ...                 [2.1, 4.2, 7.4, 8. ], [7.6, 8.8])
+    0.88003340976158217
+    """
+    return np.sqrt(2) * _cdf_distance(2, u_values, v_values,
+                                      u_weights, v_weights)
+
+
+def _cdf_distance(p, u_values, v_values, u_weights=None, v_weights=None):
+    r"""
+    Compute, between two one-dimensional distributions :math:`u` and
+    :math:`v`, whose respective CDFs are :math:`U` and :math:`V`, the
+    statistical distance that is defined as:
+
+    .. math::
+
+        l_p(u, v) = \left( \int_{-\infty}^{+\infty} |U-V|^p \right)^{1/p}
+
+    p is a positive parameter; p = 1 gives the Wasserstein distance, p = 2
+    gives the energy distance.
+
+    Parameters
+    ----------
+    u_values, v_values : array_like
+        Values observed in the (empirical) distribution.
+    u_weights, v_weights : array_like, optional
+        Weight for each value. If unspecified, each value is assigned the same
+        weight.
+        `u_weights` (resp. `v_weights`) must have the same length as
+        `u_values` (resp. `v_values`). If the weight sum differs from 1, it
+        must still be positive and finite so that the weights can be normalized
+        to sum to 1.
+
+    Returns
+    -------
+    distance : float
+        The computed distance between the distributions.
+
+    Notes
+    -----
+    The input distributions can be empirical, therefore coming from samples
+    whose values are effectively inputs of the function, or they can be seen as
+    generalized functions, in which case they are weighted sums of Dirac delta
+    functions located at the specified values.
+
+    References
+    ----------
+    .. [1] Bellemare, Danihelka, Dabney, Mohamed, Lakshminarayanan, Hoyer,
+           Munos "The Cramer Distance as a Solution to Biased Wasserstein
+           Gradients" (2017). :arXiv:`1705.10743`.
+    """
+    u_values, u_weights = _validate_distribution(u_values, u_weights)
+    v_values, v_weights = _validate_distribution(v_values, v_weights)
+
+    u_sorter = np.argsort(u_values)
+    v_sorter = np.argsort(v_values)
+
+    all_values = np.concatenate((u_values, v_values))
+    all_values.sort(kind='mergesort')
+
+    # Compute the differences between pairs of successive values of u and v.
+    deltas = np.diff(all_values)
+
+    # Get the respective positions of the values of u and v among the values of
+    # both distributions.
+    u_cdf_indices = u_values[u_sorter].searchsorted(all_values[:-1], 'right')
+    v_cdf_indices = v_values[v_sorter].searchsorted(all_values[:-1], 'right')
+
+    # Calculate the CDFs of u and v using their weights, if specified.
+    if u_weights is None:
+        u_cdf = u_cdf_indices / u_values.size
     else:
-        q = np.sqrt(((a-1)**2*(b-1)**2 - 2) / ((a-1)**2 + (b-1)**2 - 5))
+        u_sorted_cumweights = np.concatenate(([0],
+                                              np.cumsum(u_weights[u_sorter])))
+        u_cdf = u_sorted_cumweights[u_cdf_indices] / u_sorted_cumweights[-1]
 
-    n_um = (1 - lmbda**(1.0/q))*(a-1)*(b-1)
-    d_en = lmbda**(1.0/q) / (n_um*q - 0.5*(a-1)*(b-1) + 1)
-    return n_um / d_en
+    if v_weights is None:
+        v_cdf = v_cdf_indices / v_values.size
+    else:
+        v_sorted_cumweights = np.concatenate(([0],
+                                              np.cumsum(v_weights[v_sorter])))
+        v_cdf = v_sorted_cumweights[v_cdf_indices] / v_sorted_cumweights[-1]
+
+    # Compute the value of the integral based on the CDFs.
+    # If p = 1 or p = 2, we avoid using np.power, which introduces an overhead
+    # of about 15%.
+    if p == 1:
+        return np.sum(np.multiply(np.abs(u_cdf - v_cdf), deltas))
+    if p == 2:
+        return np.sqrt(np.sum(np.multiply(np.square(u_cdf - v_cdf), deltas)))
+    return np.power(np.sum(np.multiply(np.power(np.abs(u_cdf - v_cdf), p),
+                                       deltas)), 1/p)
 
 
-@np.deprecate(message="stats.f_value deprecated in scipy 0.17.0")
-def f_value(ER, EF, dfR, dfF):
+def _validate_distribution(values, weights):
     """
-    Return an F-statistic for a restricted vs. unrestricted model.
+    Validate the values and weights from a distribution input of `cdf_distance`
+    and return them as ndarray objects.
 
     Parameters
     ----------
-    ER : float
-         `ER` is the sum of squared residuals for the restricted model
-          or null hypothesis
-
-    EF : float
-         `EF` is the sum of squared residuals for the unrestricted model
-          or alternate hypothesis
-
-    dfR : int
-          `dfR` is the degrees of freedom in the restricted model
-
-    dfF : int
-          `dfF` is the degrees of freedom in the unrestricted model
+    values : array_like
+        Values observed in the (empirical) distribution.
+    weights : array_like
+        Weight for each value.
 
     Returns
     -------
-    F-statistic : float
-
+    values : ndarray
+        Values as ndarray.
+    weights : ndarray
+        Weights as ndarray.
     """
-    return (ER - EF) / float(dfR - dfF) / (EF / float(dfF))
+    # Validate the value array.
+    values = np.asarray(values, dtype=float)
+    if len(values) == 0:
+        raise ValueError("Distribution can't be empty.")
 
+    # Validate the weight array, if specified.
+    if weights is not None:
+        weights = np.asarray(weights, dtype=float)
+        if len(weights) != len(values):
+            raise ValueError('Value and weight array-likes for the same '
+                             'empirical distribution must be of the same size.')
+        if np.any(weights < 0):
+            raise ValueError('All weights must be non-negative.')
+        if not 0 < np.sum(weights) < np.inf:
+            raise ValueError('Weight array-like sum must be positive and '
+                             'finite. Set as None for an equal distribution of '
+                             'weight.')
 
-@np.deprecate(message="stats.f_value_multivariate deprecated in scipy 0.17.0")
-def f_value_multivariate(ER, EF, dfnum, dfden):
-    """
-    Return a multivariate F-statistic.
+        return values, weights
 
-    Parameters
-    ----------
-    ER : ndarray
-        Error associated with the null hypothesis (the Restricted model).
-        From a multivariate F calculation.
-    EF : ndarray
-        Error associated with the alternate hypothesis (the Full model)
-        From a multivariate F calculation.
-    dfnum : int
-        Degrees of freedom the Restricted model.
-    dfden : int
-        Degrees of freedom associated with the Restricted model.
-
-    Returns
-    -------
-    fstat : float
-        The computed F-statistic.
-
-    """
-    if isinstance(ER, (int, float)):
-        ER = array([[ER]])
-    if isinstance(EF, (int, float)):
-        EF = array([[EF]])
-    n_um = (linalg.det(ER) - linalg.det(EF)) / float(dfnum)
-    d_en = linalg.det(EF) / float(dfden)
-    return n_um / d_en
+    return values, None
 
 
 #####################################
@@ -5507,19 +5719,14 @@ def find_repeats(arr):
     --------
     >>> from scipy import stats
     >>> stats.find_repeats([2, 1, 2, 3, 2, 2, 5])
-    RepeatedResults(values=array([ 2.]), counts=array([4]))
+    RepeatedResults(values=array([2.]), counts=array([4]))
 
     >>> stats.find_repeats([[10, 20, 1, 2], [5, 5, 4, 4]])
-    RepeatedResults(values=array([ 4.,  5.]), counts=array([2, 2]))
+    RepeatedResults(values=array([4.,  5.]), counts=array([2, 2]))
 
     """
     # Note: always copies.
     return RepeatedResults(*_find_repeats(np.array(arr, dtype=np.float64)))
-
-
-@np.deprecate(message="scipy.stats.ss is deprecated in scipy 0.17.0")
-def ss(a, axis=0):
-    return _sum_of_squares(a, axis)
 
 
 def _sum_of_squares(a, axis=0):
@@ -5546,12 +5753,6 @@ def _sum_of_squares(a, axis=0):
     """
     a, axis = _chk_asarray(a, axis)
     return np.sum(a*a, axis)
-
-
-@np.deprecate(message="scipy.stats.square_of_sums is deprecated "
-              "in scipy 0.17.0")
-def square_of_sums(a, axis=0):
-    return _square_of_sums(a, axis)
 
 
 def _square_of_sums(a, axis=0):
@@ -5581,28 +5782,6 @@ def _square_of_sums(a, axis=0):
         return s.astype(float) * s
     else:
         return float(s) * s
-
-
-@np.deprecate(message="scipy.stats.fastsort is deprecated in scipy 0.16.0")
-def fastsort(a):
-    """
-    Sort an array and provide the argsort.
-
-    Parameters
-    ----------
-    a : array_like
-        Input array.
-
-    Returns
-    -------
-    fastsort : ndarray of type int
-        sorted indices into the original array
-
-    """
-    # TODO: the wording in the docstring is nonsense.
-    it = np.argsort(a)
-    as_ = a[it]
-    return as_, it
 
 
 def rankdata(a, method='average'):

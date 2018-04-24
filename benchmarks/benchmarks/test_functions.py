@@ -1,6 +1,9 @@
 from __future__ import division
+import time
+
 import numpy as np
 from numpy import sin, cos, pi, exp, sqrt, abs
+from scipy.optimize import rosen
 
 
 class SimpleQuadratic(object):
@@ -27,6 +30,13 @@ class AsymmetricQuadratic(object):
 
     def hess(self, x):
         return 2. * np.eye(x.size)
+
+
+class SlowRosen(object):
+
+    def fun(self, x):
+        time.sleep(40e-6)
+        return rosen(x)
 
 
 class LJ(object):
@@ -153,6 +163,7 @@ class Beale(object):
                 2. * (2.25 - x + x * y**2) * (2. * y * x) +
                 2. * (2.625 - x + x * y**3) * (3. * x * y**2))
         return np.array([dfdx, dfdy])
+
 
 """
 Global Test functions for minimizers.

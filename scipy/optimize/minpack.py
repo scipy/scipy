@@ -1,5 +1,6 @@
 from __future__ import division, print_function, absolute_import
 
+import threading
 import warnings
 from . import _minpack
 
@@ -15,7 +16,7 @@ from ._lsq import least_squares
 from ._lsq.common import make_strictly_feasible
 from ._lsq.least_squares import prepare_bounds
 
-
+_MINPACK_LOCK = threading.RLock()
 error = _minpack.error
 
 __all__ = ['fsolve', 'leastsq', 'fixed_point', 'curve_fit']
@@ -57,7 +58,8 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
     Parameters
     ----------
     func : callable ``f(x, *args)``
-        A function that takes at least one (possibly vector) argument.
+        A function that takes at least one (possibly vector) argument,
+        and returns a value of the same length.
     x0 : ndarray
         The starting estimate for the roots of ``func(x) = 0``.
     args : tuple, optional
@@ -220,14 +222,16 @@ def _root_hybr(func, x0, args=(), jac=None,
             ml, mu = band[:2]
         if maxfev == 0:
             maxfev = 200 * (n + 1)
-        retval = _minpack._hybrd(func, x0, args, 1, xtol, maxfev,
-                                 ml, mu, epsfcn, factor, diag)
+        with _MINPACK_LOCK:
+            retval = _minpack._hybrd(func, x0, args, 1, xtol, maxfev,
+                                     ml, mu, epsfcn, factor, diag)
     else:
         _check_func('fsolve', 'fprime', Dfun, x0, args, n, (n, n))
         if (maxfev == 0):
             maxfev = 100 * (n + 1)
-        retval = _minpack._hybrj(func, Dfun, x0, args, 1,
-                                 col_deriv, xtol, maxfev, factor, diag)
+        with _MINPACK_LOCK:
+            retval = _minpack._hybrj(func, Dfun, x0, args, 1,
+                                     col_deriv, xtol, maxfev, factor, diag)
 
     x, status = retval[0], retval[-1]
 
@@ -253,7 +257,7 @@ def _root_hybr(func, x0, args=(), jac=None,
     try:
         sol['message'] = errors[status]
     except KeyError:
-        info['message'] = errors['unknown']
+        sol['message'] = errors['unknown']
 
     return sol
 
@@ -369,6 +373,8 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
            min   sum((ydata - f(xdata, params))**2, axis=0)
          params
 
+    The solution, `x`, is always a 1D array, regardless of the shape of `x0`,
+    or whether `x0` is a scalar.
     """
     x0 = asarray(x0).flatten()
     n = len(x0)
@@ -383,8 +389,9 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
     if Dfun is None:
         if maxfev == 0:
             maxfev = 200*(n + 1)
-        retval = _minpack._lmdif(func, x0, args, full_output, ftol, xtol,
-                                 gtol, maxfev, epsfcn, factor, diag)
+        with _MINPACK_LOCK:
+            retval = _minpack._lmdif(func, x0, args, full_output, ftol, xtol,
+                                     gtol, maxfev, epsfcn, factor, diag)
     else:
         if col_deriv:
             _check_func('leastsq', 'Dfun', Dfun, x0, args, n, (n, m))
@@ -392,8 +399,10 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
             _check_func('leastsq', 'Dfun', Dfun, x0, args, n, (m, n))
         if maxfev == 0:
             maxfev = 100 * (n + 1)
-        retval = _minpack._lmder(func, Dfun, x0, args, full_output, col_deriv,
-                                 ftol, xtol, gtol, maxfev, factor, diag)
+        with _MINPACK_LOCK:
+            retval = _minpack._lmder(func, Dfun, x0, args, full_output,
+                                     col_deriv, ftol, xtol, gtol, maxfev,
+                                     factor, diag)
 
     errors = {0: ["Improper input parameters.", TypeError],
               1: ["Both actual and predicted relative reductions "
@@ -556,7 +565,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         False may silently produce nonsensical results if the input arrays
         do contain nans. Default is True.
     bounds : 2-tuple of array_like, optional
-        Lower and upper bounds on independent variables. Defaults to no bounds.
+        Lower and upper bounds on parameters. Defaults to no bounds.
         Each element of the tuple must be either an array with the length equal
         to the number of parameters, or a scalar (in which case the bound is
         taken to be the same for all parameters.) Use ``np.inf`` with an
@@ -810,11 +819,13 @@ def check_gradient(fcn, Dfcn, x0, args=(), col_deriv=0):
     xp = zeros((n,), float)
     err = zeros((m,), float)
     fvecp = None
-    _minpack._chkder(m, n, x, fvec, fjac, ldfjac, xp, fvecp, 1, err)
+    with _MINPACK_LOCK:
+        _minpack._chkder(m, n, x, fvec, fjac, ldfjac, xp, fvecp, 1, err)
 
     fvecp = atleast_1d(fcn(xp, *args))
     fvecp = fvecp.reshape((m,))
-    _minpack._chkder(m, n, x, fvec, fjac, ldfjac, xp, fvecp, 2, err)
+    with _MINPACK_LOCK:
+        _minpack._chkder(m, n, x, fvec, fjac, ldfjac, xp, fvecp, 2, err)
 
     good = (product(greater(err, 0.5), axis=0))
 

@@ -15,7 +15,7 @@ common FORTRAN code in the packages MINPACK, ODEPACK, and QUADPACK plus
 some differential algebraic equation solvers.
 
 The wrappers are meant to be nearly direct translations between the
-FORTAN code and Python.  Some parameters like sizes do not need to be 
+FORTRAN code and Python.  Some parameters like sizes do not need to be 
 passed since they are available from the objects.  
 
 It is anticipated that a pure Python module be written to call these lower

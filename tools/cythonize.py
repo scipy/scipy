@@ -38,6 +38,7 @@ import sys
 import hashlib
 import subprocess
 from multiprocessing.dummy import Pool, Lock
+from os.path import dirname, join
 
 HASH_FILE = 'cythonize.dat'
 DEFAULT_ROOT = 'scipy'
@@ -55,8 +56,25 @@ def process_pyx(fromfile, tofile, cwd):
     try:
         from Cython.Compiler.Version import version as cython_version
         from distutils.version import LooseVersion
-        if LooseVersion(cython_version) < LooseVersion('0.23.4'):
-            raise Exception('Building SciPy requires Cython >= 0.23.4')
+
+        # Try to find pyproject.toml
+        pyproject_toml = join(dirname(__file__), '..', 'pyproject.toml')
+        if not os.path.exists(pyproject_toml):
+            raise ImportError()
+
+        # Try to find the minimum version from pyproject.toml
+        with open(pyproject_toml) as pt:
+            for line in pt:
+                if "cython" not in line.lower():
+                    continue
+                _, line = line.split('=')
+                required_version, _ = line.split('"')
+                break
+            else:
+                raise ImportError()
+
+        if LooseVersion(cython_version) < LooseVersion(required_version):
+            raise Exception('Building SciPy requires Cython >= ' + required_version)
 
     except ImportError:
         pass
@@ -101,6 +119,7 @@ def process_tempita_pyx(fromfile, tofile, cwd):
     with open(os.path.join(cwd, pyxfile), "w") as f:
         f.write(pyxcontent)
     process_pyx(pyxfile, tofile, cwd)
+
 
 rules = {
     # fromext : function
@@ -154,17 +173,28 @@ def get_hash(frompath, topath):
         to_hash = None
     return (from_hash, to_hash)
 
-def get_pxi_dependencies(fullfrompath):
+def get_cython_dependencies(fullfrompath):
     fullfromdir = os.path.dirname(fullfrompath)
-    dependencies = []
+    deps = set()
     with open(fullfrompath, 'r') as f:
-        for line in f:
-            line = [token.strip('\'\" \r\n') for token in line.split(' ')]
-            if line[0] == "include":
-                dependencies.append(os.path.join(fullfromdir, line[1]))
-    return dependencies
+        pxipattern = re.compile('include "([a-zA-Z0-9_]+\.pxi)"')
+        pxdpattern1 = re.compile('from \. cimport ([a-zA-Z0-9_]+)')
+        pxdpattern2 = re.compile('from \.([a-zA-Z0-9_]+) cimport')
 
-def process(path, fromfile, tofile, processor_function, hash_db, pxi_hashes, lock):
+        for line in f:
+            m = pxipattern.match(line)
+            if m:
+                deps.add(os.path.join(fullfromdir, m.group(1)))
+            m = pxdpattern1.match(line)
+            if m:
+                deps.add(os.path.join(fullfromdir, m.group(1) + '.pxd'))
+            m = pxdpattern2.match(line)
+            if m:
+                deps.add(os.path.join(fullfromdir, m.group(1) + '.pxd'))
+    return list(deps)
+
+def process(path, fromfile, tofile, processor_function, hash_db,
+            dep_hashes, lock):
     with lock:
         fullfrompath = os.path.join(path, fromfile)
         fulltopath = os.path.join(path, tofile)
@@ -174,17 +204,17 @@ def process(path, fromfile, tofile, processor_function, hash_db, pxi_hashes, loc
         else:
             file_changed = True
 
-        pxi_changed = False
-        pxi_dependencies = get_pxi_dependencies(fullfrompath)
-        for pxi in pxi_dependencies:
-            pxi_hash = get_hash(pxi, None)
-            if pxi_hash == hash_db.get(normpath(pxi), None):
+        deps_changed = False
+        deps = get_cython_dependencies(fullfrompath)
+        for dep in deps:
+            dep_hash = get_hash(dep, None)
+            if dep_hash == hash_db.get(normpath(dep), None):
                 continue
             else:
-                pxi_hashes[normpath(pxi)] = pxi_hash
-                pxi_changed = True
+                dep_hashes[normpath(dep)] = dep_hash
+                deps_changed = True
 
-        if not file_changed and not pxi_changed:
+        if not file_changed and not deps_changed:
             print('%s has not changed' % fullfrompath)
             sys.stdout.flush()
             return
@@ -200,18 +230,36 @@ def process(path, fromfile, tofile, processor_function, hash_db, pxi_hashes, loc
         # store hash in db
         hash_db[normpath(fullfrompath)] = current_hash
 
+def process_generate_pyx(path, lock):
+    with lock:
+        print('Running {}'.format(path))
+    ret = subprocess.call([sys.executable, path])
+    with lock:
+        if ret != 0:
+            raise RuntimeError("Running {} failed".format(path))
+
 def find_process_files(root_dir):
     lock = Lock()
     pool = Pool()
 
     hash_db = load_hashes(HASH_FILE)
-    # Keep changed .pxi hashes in a separate dict until the end
+    # Keep changed pxi/pxd hashes in a separate dict until the end
     # because if we update hash_db and multiple files include the same
     # .pxi file the changes won't be detected.
-    pxi_hashes = {}
+    dep_hashes = {}
 
+    # Run any _generate_pyx.py scripts
     jobs = []
+    for cur_dir, dirs, files in os.walk(root_dir):
+        generate_pyx = os.path.join(cur_dir, '_generate_pyx.py')
+        if os.path.exists(generate_pyx):
+            jobs.append(generate_pyx)
 
+    for result in pool.imap(lambda fn: process_generate_pyx(fn, lock), jobs):
+        pass
+
+    # Process pyx files
+    jobs = []
     for cur_dir, dirs, files in os.walk(root_dir):
         for filename in files:
             in_file = os.path.join(cur_dir, filename + ".in")
@@ -227,12 +275,13 @@ def find_process_files(root_dir):
                             toext = ".cxx"
                     fromfile = filename
                     tofile = filename[:-len(fromext)] + toext
-                    jobs.append((cur_dir, fromfile, tofile, function, hash_db, pxi_hashes, lock))
+                    jobs.append((cur_dir, fromfile, tofile, function,
+                                 hash_db, dep_hashes, lock))
 
     for result in pool.imap(lambda args: process(*args), jobs):
         pass
 
-    hash_db.update(pxi_hashes)
+    hash_db.update(dep_hashes)
     save_hashes(hash_db, HASH_FILE)
 
 def main():

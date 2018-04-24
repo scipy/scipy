@@ -26,6 +26,7 @@ import warnings
 # np.linalg.qr fails on some tests with LinAlgError: zgeqrf returns -7
 # use scipy's qr until this is solved
 
+import scipy._lib.six as six
 from scipy.linalg import qr as s_qr
 from scipy import integrate, interpolate, linalg
 from scipy.interpolate import interp1d
@@ -194,8 +195,8 @@ class lti(LinearTimeInvariant):
 
     >>> signal.lti([3, 4], [1, 2])
     TransferFunctionContinuous(
-    array([ 3.,  4.]),
-    array([ 1.,  2.]),
+    array([3., 4.]),
+    array([1., 2.]),
     dt: None
     )
 
@@ -371,8 +372,8 @@ class dlti(LinearTimeInvariant):
 
     >>> signal.dlti([3, 4], [1, 2], dt=0.1)
     TransferFunctionDiscrete(
-    array([ 3.,  4.]),
-    array([ 1.,  2.]),
+    array([3., 4.]),
+    array([1., 2.]),
     dt: 0.1
     )
 
@@ -538,19 +539,19 @@ class TransferFunction(LinearTimeInvariant):
 
     >>> signal.TransferFunction(num, den)
     TransferFunctionContinuous(
-    array([ 1.,  3.,  3.]),
-    array([ 1.,  2.,  1.]),
+    array([1., 3., 3.]),
+    array([1., 2., 1.]),
     dt: None
     )
 
-    Contruct the transfer function with a sampling time of 0.1 seconds:
+    Construct the transfer function with a sampling time of 0.1 seconds:
 
     .. math:: H(z) = \frac{z^2 + 3z + 3}{z^2 + 2z + 1}
 
     >>> signal.TransferFunction(num, den, dt=0.1)
     TransferFunctionDiscrete(
-    array([ 1.,  3.,  3.]),
-    array([ 1.,  2.,  1.]),
+    array([1., 3., 3.]),
+    array([1., 2., 1.]),
     dt: 0.1
     )
 
@@ -1268,10 +1269,10 @@ class StateSpace(LinearTimeInvariant):
 
     >>> sys.to_discrete(0.1)
     StateSpaceDiscrete(
-    array([[ 1. ,  0.1],
-           [ 0. ,  1. ]]),
-    array([[ 0.005],
-           [ 0.1  ]]),
+    array([[1. , 0.1],
+           [0. , 1. ]]),
+    array([[0.005],
+           [0.1  ]]),
     array([[1, 0]]),
     array([[0]]),
     dt: 0.1
@@ -1282,16 +1283,21 @@ class StateSpace(LinearTimeInvariant):
 
     >>> signal.StateSpace(a, b, c, d, dt=0.1)
     StateSpaceDiscrete(
-    array([[ 1. ,  0.1],
-           [ 0. ,  1. ]]),
-    array([[ 0.005],
-           [ 0.1  ]]),
+    array([[1. , 0.1],
+           [0. , 1. ]]),
+    array([[0.005],
+           [0.1  ]]),
     array([[1, 0]]),
     array([[0]]),
     dt: 0.1
     )
 
     """
+
+    # Override Numpy binary operations and ufuncs
+    __array_priority__ = 100.0
+    __array_ufunc__ = None
+
     def __new__(cls, *system, **kwargs):
         """Create new StateSpace object and settle inheritance."""
         # Handle object conversion if input is an instance of `lti`
@@ -1336,6 +1342,170 @@ class StateSpace(LinearTimeInvariant):
             repr(self.D),
             repr(self.dt),
             )
+
+    def _check_binop_other(self, other):
+        return isinstance(other, (StateSpace, np.ndarray, float, complex,
+                                  np.number) + six.integer_types)
+
+    def __mul__(self, other):
+        """
+        Post-multiply another system or a scalar
+
+        Handles multiplication of systems in the sense of a frequency domain
+        multiplication. That means, given two systems E1(s) and E2(s), their
+        multiplication, H(s) = E1(s) * E2(s), means that applying H(s) to U(s)
+        is equivalent to first applying E2(s), and then E1(s).
+
+        Notes
+        -----
+        For SISO systems the order of system application does not matter.
+        However, for MIMO systems, where the two systems are matrices, the
+        order above ensures standard Matrix multiplication rules apply.
+        """
+        if not self._check_binop_other(other):
+            return NotImplemented
+
+        if isinstance(other, StateSpace):
+            # Disallow mix of discrete and continuous systems.
+            if type(other) is not type(self):
+                return NotImplemented
+
+            if self.dt != other.dt:
+                raise TypeError('Cannot multiply systems with different `dt`.')
+
+            n1 = self.A.shape[0]
+            n2 = other.A.shape[0]
+
+            # Interconnection of systems
+            # x1' = A1 x1 + B1 u1
+            # y1  = C1 x1 + D1 u1
+            # x2' = A2 x2 + B2 y1
+            # y2  = C2 x2 + D2 y1
+            #
+            # Plugging in with u1 = y2 yields
+            # [x1']   [A1 B1*C2 ] [x1]   [B1*D2]
+            # [x2'] = [0  A2    ] [x2] + [B2   ] u2
+            #                    [x1]
+            #  y2   = [C1 D1*C2] [x2] + D1*D2 u2
+            a = np.vstack((np.hstack((self.A, np.dot(self.B, other.C))),
+                           np.hstack((zeros((n2, n1)), other.A))))
+            b = np.vstack((np.dot(self.B, other.D), other.B))
+            c = np.hstack((self.C, np.dot(self.D, other.C)))
+            d = np.dot(self.D, other.D)
+        else:
+            # Assume that other is a scalar / matrix
+            # For post multiplication the input gets scaled
+            a = self.A
+            b = np.dot(self.B, other)
+            c = self.C
+            d = np.dot(self.D, other)
+
+        common_dtype = np.find_common_type((a.dtype, b.dtype, c.dtype, d.dtype), ())
+        return StateSpace(np.asarray(a, dtype=common_dtype),
+                          np.asarray(b, dtype=common_dtype),
+                          np.asarray(c, dtype=common_dtype),
+                          np.asarray(d, dtype=common_dtype))
+
+    def __rmul__(self, other):
+        """Pre-multiply a scalar or matrix (but not StateSpace)"""
+        if not self._check_binop_other(other) or isinstance(other, StateSpace):
+            return NotImplemented
+
+        # For pre-multiplication only the output gets scaled
+        a = self.A
+        b = self.B
+        c = np.dot(other, self.C)
+        d = np.dot(other, self.D)
+
+        common_dtype = np.find_common_type((a.dtype, b.dtype, c.dtype, d.dtype), ())
+        return StateSpace(np.asarray(a, dtype=common_dtype),
+                          np.asarray(b, dtype=common_dtype),
+                          np.asarray(c, dtype=common_dtype),
+                          np.asarray(d, dtype=common_dtype))
+
+    def __neg__(self):
+        """Negate the system (equivalent to pre-multiplying by -1)."""
+        return StateSpace(self.A, self.B, -self.C, -self.D)
+
+    def __add__(self, other):
+        """
+        Adds two systems in the sense of frequency domain addition.
+        """
+        if not self._check_binop_other(other):
+            return NotImplemented
+
+        if isinstance(other, StateSpace):
+            # Disallow mix of discrete and continuous systems.
+            if type(other) is not type(self):
+                raise TypeError('Cannot add {} and {}'.format(type(self),
+                                                              type(other)))
+
+            if self.dt != other.dt:
+                raise TypeError('Cannot add systems with different `dt`.')
+            # Interconnection of systems
+            # x1' = A1 x1 + B1 u
+            # y1  = C1 x1 + D1 u
+            # x2' = A2 x2 + B2 u
+            # y2  = C2 x2 + D2 u
+            # y   = y1 + y2
+            #
+            # Plugging in yields
+            # [x1']   [A1 0 ] [x1]   [B1]
+            # [x2'] = [0  A2] [x2] + [B2] u
+            #                 [x1]
+            #  y    = [C1 C2] [x2] + [D1 + D2] u
+            a = linalg.block_diag(self.A, other.A)
+            b = np.vstack((self.B, other.B))
+            c = np.hstack((self.C, other.C))
+            d = self.D + other.D
+        else:
+            other = np.atleast_2d(other)
+            if self.D.shape == other.shape:
+                # A scalar/matrix is really just a static system (A=0, B=0, C=0)
+                a = self.A
+                b = self.B
+                c = self.C
+                d = self.D + other
+            else:
+                raise ValueError("Cannot add systems with incompatible dimensions")
+
+        common_dtype = np.find_common_type((a.dtype, b.dtype, c.dtype, d.dtype), ())
+        return StateSpace(np.asarray(a, dtype=common_dtype),
+                          np.asarray(b, dtype=common_dtype),
+                          np.asarray(c, dtype=common_dtype),
+                          np.asarray(d, dtype=common_dtype))
+
+    def __sub__(self, other):
+        if not self._check_binop_other(other):
+            return NotImplemented
+
+        return self.__add__(-other)
+
+    def __radd__(self, other):
+        if not self._check_binop_other(other):
+            return NotImplemented
+
+        return self.__add__(other)
+
+    def __rsub__(self, other):
+        if not self._check_binop_other(other):
+            return NotImplemented
+
+        return (-self).__add__(other)
+
+    def __truediv__(self, other):
+        """
+        Divide by a scalar
+        """
+        # Division by non-StateSpace scalars
+        if not self._check_binop_other(other) or isinstance(other, StateSpace):
+            return NotImplemented
+
+        if isinstance(other, np.ndarray) and other.ndim > 0:
+            # It's ambiguous what this means, so disallow it
+            raise ValueError("Cannot divide StateSpace by non-scalar numpy arrays")
+
+        return self.__mul__(1/other)
 
     @property
     def A(self):
@@ -2935,12 +3105,12 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
                 diag_poles[idx+1, idx] = np.imag(p)
                 idx += 1  # skip next one
             idx += 1
-        gain_matrix = np.linalg.lstsq(B, diag_poles-A)[0]
+        gain_matrix = np.linalg.lstsq(B, diag_poles-A, rcond=-1)[0]
         transfer_matrix = np.eye(A.shape[0])
         cur_rtol = np.nan
         nb_iter = np.nan
     else:
-        # step A (p1144 KNV) and begining of step F: decompose
+        # step A (p1144 KNV) and beginning of step F: decompose
         # dot(U1.T, A-P[i]*I).T and build our set of transfer_matrix vectors
         # in the same loop
         ker_pole = []
@@ -3490,5 +3660,5 @@ def dbode(system, w=None, n=100):
 
     mag = 20.0 * numpy.log10(abs(y))
     phase = numpy.rad2deg(numpy.unwrap(numpy.angle(y)))
-    
+
     return w / dt, mag, phase

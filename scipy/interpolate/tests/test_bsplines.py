@@ -1,9 +1,9 @@
 from __future__ import division, absolute_import, print_function
 
 import numpy as np
-from numpy.testing import (assert_equal,
-        assert_allclose, assert_raises, assert_)
-from scipy._lib._numpy_compat import assert_raises_regex, suppress_warnings
+from numpy.testing import assert_equal, assert_allclose, assert_
+from scipy._lib._numpy_compat import suppress_warnings
+from pytest import raises as assert_raises
 import pytest
 
 from scipy.interpolate import (BSpline, BPoly, PPoly, make_interp_spline,
@@ -39,7 +39,7 @@ class TestBSpline(object):
         assert_raises(ValueError, BSpline,
                 **dict(t=[0., 0., 1., 2., 3., 4.], c=[1., 1., 1.], k=2.5))
 
-        # basic inteval cannot have measure zero (here: [1..1])
+        # basic interval cannot have measure zero (here: [1..1])
         assert_raises(ValueError, BSpline,
                 **dict(t=[0., 0, 1, 1, 2, 3], c=[1., 1, 1], k=2))
 
@@ -624,12 +624,16 @@ class TestInterop(object):
         x, y = self.xx, self.yy
         y2 = np.c_[y, y]
         msg = "failed in converting 3rd argument `y' of dfitpack.curfit to C/Fortran array"
-        assert_raises_regex(Exception, msg, splrep, x, y2)
-        assert_raises_regex(Exception, msg, _impl.splrep, x, y2)
+        with assert_raises(Exception, message=msg):
+            splrep(x, y2)
+        with assert_raises(Exception, message=msg):
+            _impl.splrep(x, y2)
 
         # input below minimum size
-        assert_raises_regex(TypeError, "m > k must hold", splrep, x[:3], y[:3])
-        assert_raises_regex(TypeError, "m > k must hold", _impl.splrep, x[:3], y[:3])
+        with assert_raises(TypeError, message="m > k must hold"):
+            splrep(x[:3], y[:3])
+        with assert_raises(TypeError, message="m > k must hold"):
+            _impl.splrep(x[:3], y[:3])
 
     def test_splprep(self):
         x = np.arange(15).reshape((3, 5))
@@ -649,25 +653,31 @@ class TestInterop(object):
     def test_splprep_errors(self):
         # test that both "old" and "new" code paths raise for x.ndim > 2
         x = np.arange(3*4*5).reshape((3, 4, 5))
-        assert_raises_regex(ValueError, "too many values to unpack", splprep, x)
-        assert_raises_regex(ValueError, "too many values to unpack", _impl.splprep, x)
+        with assert_raises(ValueError, message="too many values to unpack"):
+            splprep(x)
+        with assert_raises(ValueError, message="too many values to unpack"):
+            _impl.splprep(x)
 
         # input below minimum size
         x = np.linspace(0, 40, num=3)
-        assert_raises_regex(TypeError, "m > k must hold", splprep, [x])
-        assert_raises_regex(TypeError, "m > k must hold", _impl.splprep, [x])
+        with assert_raises(TypeError, message="m > k must hold"):
+            splprep([x])
+        with assert_raises(TypeError, message="m > k must hold"):
+            _impl.splprep([x])
 
         # automatically calculated parameters are non-increasing
         # see gh-7589
         x = [-50.49072266, -50.49072266, -54.49072266, -54.49072266]
-        assert_raises_regex(ValueError, "Invalid inputs", splprep, [x])
-        assert_raises_regex(ValueError, "Invalid inputs", _impl.splprep, [x])
+        with assert_raises(ValueError, message="Invalid inputs"):
+            splprep([x])
+        with assert_raises(ValueError, message="Invalid inputs"):
+            _impl.splprep([x])
 
         # given non-increasing parameter values u
         x = [1, 3, 2, 4]
         u = [0, 0.3, 0.2, 1]
-        assert_raises_regex(ValueError, "Invalid inputs", splprep,
-                            *[[x], None, u])
+        with assert_raises(ValueError, message="Invalid inputs"):
+            splprep(*[[x], None, u])
 
     def test_sproot(self):
         b, b2 = self.b, self.b2
@@ -770,6 +780,7 @@ class TestInterop(object):
                         bn2(xx), atol=1e-15)
         assert_(isinstance(bn2, BSpline))
         assert_(isinstance(tck_n2, tuple))   # back-compat: tck in, tck out
+
 
 class TestInterp(object):
     #
@@ -925,6 +936,13 @@ class TestInterp(object):
             y[-1] = z
             assert_raises(ValueError, make_interp_spline, x, y)
 
+    @pytest.mark.parametrize('k', [1, 2, 3, 5])
+    def test_list_input(self, k):
+        # regression test for gh-8714: TypeError for x, y being lists and k=2
+        x = list(range(10))
+        y = [a**2 for a in x]
+        make_interp_spline(x, y, k=k)
+
     def test_multiple_rhs(self):
         yy = np.c_[np.sin(self.xx), np.cos(self.xx)]
         der_l = [(1, [1., 2.])]
@@ -949,6 +967,57 @@ class TestInterp(object):
         d_r = [(1, np.random.random((5, 6, 7)))]
         b = make_interp_spline(x, y, k, bc_type=(d_l, d_r))
         assert_equal(b.c.shape, (n + k - 1, 5, 6, 7))
+
+    def test_string_aliases(self):
+        yy = np.sin(self.xx)
+
+        # a single string is duplicated
+        b1 = make_interp_spline(self.xx, yy, k=3, bc_type='natural')
+        b2 = make_interp_spline(self.xx, yy, k=3, bc_type=([(2, 0)], [(2, 0)]))
+        assert_allclose(b1.c, b2.c, atol=1e-15)
+
+        # two strings are handled
+        b1 = make_interp_spline(self.xx, yy, k=3,
+                                bc_type=('natural', 'clamped'))
+        b2 = make_interp_spline(self.xx, yy, k=3,
+                                bc_type=([(2, 0)], [(1, 0)]))
+        assert_allclose(b1.c, b2.c, atol=1e-15)
+
+        # one-sided BCs are OK
+        b1 = make_interp_spline(self.xx, yy, k=2, bc_type=(None, 'clamped'))
+        b2 = make_interp_spline(self.xx, yy, k=2, bc_type=(None, [(1, 0.0)]))
+        assert_allclose(b1.c, b2.c, atol=1e-15)
+
+        # 'not-a-knot' is equivalent to None
+        b1 = make_interp_spline(self.xx, yy, k=3, bc_type='not-a-knot')
+        b2 = make_interp_spline(self.xx, yy, k=3, bc_type=None)
+        assert_allclose(b1.c, b2.c, atol=1e-15)
+
+        # unknown strings do not pass
+        with assert_raises(ValueError):
+            make_interp_spline(self.xx, yy, k=3, bc_type='typo')
+
+        # string aliases are handled for 2D values
+        yy = np.c_[np.sin(self.xx), np.cos(self.xx)]
+        der_l = [(1, [0., 0.])]
+        der_r = [(2, [0., 0.])]
+        b2 = make_interp_spline(self.xx, yy, k=3, bc_type=(der_l, der_r))
+        b1 = make_interp_spline(self.xx, yy, k=3,
+                                bc_type=('clamped', 'natural'))
+        assert_allclose(b1.c, b2.c, atol=1e-15)
+
+        # ... and for n-D values:
+        np.random.seed(1234)
+        k, n = 3, 22
+        x = np.sort(np.random.random(size=n))
+        y = np.random.random(size=(n, 5, 6, 7))
+
+        # now throw in some derivatives
+        d_l = [(1, np.zeros((5, 6, 7)))]
+        d_r = [(1, np.zeros((5, 6, 7)))]
+        b1 = make_interp_spline(x, y, k, bc_type=(d_l, d_r))
+        b2 = make_interp_spline(x, y, k, bc_type='clamped')
+        assert_allclose(b1.c, b2.c, atol=1e-15)
 
     def test_full_matrix(self):
         np.random.seed(1234)
@@ -1093,7 +1162,7 @@ class TestLSQ(object):
 
         # also check against numpy.lstsq
         aa, yy = AY
-        c1, _, _, _ = np.linalg.lstsq(aa, y)
+        c1, _, _, _ = np.linalg.lstsq(aa, y, rcond=-1)
         assert_allclose(b.c, c1)
 
     def test_weights(self):

@@ -20,11 +20,14 @@ from contextlib import contextmanager
 
 import numpy as np
 
-from numpy.testing import (assert_, assert_equal, assert_raises)
+from numpy.testing import assert_, assert_equal
+from pytest import raises as assert_raises
 
-from scipy.io.matlab.streams import make_stream, \
-    GenericStream, cStringStream, FileStream, ZlibInputStream, \
-    _read_into, _read_string
+from scipy.io.matlab.streams import (make_stream,
+    GenericStream, cStringStream, FileStream, ZlibInputStream,
+    _read_into, _read_string)
+
+IS_PYPY = ('__pypy__' in sys.modules)
 
 
 @contextmanager
@@ -45,7 +48,7 @@ def test_make_stream():
     with setup_test_file() as (fs, gs, cs):
         # test stream initialization
         assert_(isinstance(make_stream(gs), GenericStream))
-        if sys.version_info[0] < 3:
+        if sys.version_info[0] < 3 and not IS_PYPY:
             assert_(isinstance(make_stream(cs), cStringStream))
             assert_(isinstance(make_stream(fs), FileStream))
 

@@ -40,6 +40,7 @@ def f6(x):
     else:
         return 0
 
+
 description = """
 f2 is a symmetric parabola, x**2 - 1
 f3 is a quartic polynomial with large hump in interval

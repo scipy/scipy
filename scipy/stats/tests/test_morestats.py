@@ -10,9 +10,11 @@ import numpy as np
 from numpy.random import RandomState
 from numpy.testing import (assert_array_equal,
     assert_almost_equal, assert_array_less, assert_array_almost_equal,
-    assert_raises, assert_, assert_allclose, assert_equal, assert_warns)
+    assert_, assert_allclose, assert_equal, assert_warns)
 import pytest
+from pytest import raises as assert_raises
 from scipy._lib._numpy_compat import suppress_warnings
+
 from scipy import stats
 from .common_tests import check_named_results
 
@@ -388,6 +390,13 @@ class TestAndersonKSamp(object):
         attributes = ('statistic', 'critical_values', 'significance_level')
         check_named_results(res, attributes)
 
+    def test_overflow(self):
+        # when significance_level approximation overflows, should still return
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, message='approximate p-value')
+            res = stats.anderson_ksamp([[-20, -10] * 100, [-10, 40, 12] * 100])
+            assert_almost_equal(res[0], 272.796, 3)
+
 
 class TestAnsari(object):
 
@@ -564,10 +573,17 @@ class TestFligner(object):
                                   11)
 
     def test_trimmed1(self):
+        # Perturb input to break ties in the transformed data 
+        # See https://github.com/scipy/scipy/pull/8042 for more details
+        rs = np.random.RandomState(123)
+        _perturb = lambda g: (np.asarray(g) + 1e-10*rs.randn(len(g))).tolist()
+        g1_ = _perturb(g1)
+        g2_ = _perturb(g2)
+        g3_ = _perturb(g3)
         # Test that center='trimmed' gives the same result as center='mean'
         # when proportiontocut=0.
-        Xsq1, pval1 = stats.fligner(g1, g2, g3, center='mean')
-        Xsq2, pval2 = stats.fligner(g1, g2, g3, center='trimmed',
+        Xsq1, pval1 = stats.fligner(g1_, g2_, g3_, center='mean')
+        Xsq2, pval2 = stats.fligner(g1_, g2_, g3_, center='trimmed',
                                     proportiontocut=0.0)
         assert_almost_equal(Xsq1, Xsq2)
         assert_almost_equal(pval1, pval2)
@@ -912,12 +928,11 @@ class TestPpccPlot(object):
     def test_plot_kwarg(self):
         # Check with the matplotlib.pyplot module
         fig = plt.figure()
-        fig.add_subplot(111)
+        ax = fig.add_subplot(111)
         stats.ppcc_plot(self.x, -20, 20, plot=plt)
-        plt.close()
+        fig.delaxes(ax)
 
         # Check that a Matplotlib Axes object is accepted
-        fig.add_subplot(111)
         ax = fig.add_subplot(111)
         stats.ppcc_plot(self.x, -20, 20, plot=ax)
         plt.close()
@@ -1109,12 +1124,11 @@ class TestBoxcoxNormplot(object):
     def test_plot_kwarg(self):
         # Check with the matplotlib.pyplot module
         fig = plt.figure()
-        fig.add_subplot(111)
+        ax = fig.add_subplot(111)
         stats.boxcox_normplot(self.x, -20, 20, plot=plt)
-        plt.close()
+        fig.delaxes(ax)
 
         # Check that a Matplotlib Axes object is accepted
-        fig.add_subplot(111)
         ax = fig.add_subplot(111)
         stats.boxcox_normplot(self.x, -20, 20, plot=ax)
         plt.close()
@@ -1417,4 +1431,3 @@ class TestMedianTest(object):
         exp_stat, exp_p, dof, e = stats.chi2_contingency(tbl, correction=False)
         assert_allclose(stat, exp_stat)
         assert_allclose(p, exp_p)
-

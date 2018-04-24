@@ -103,7 +103,7 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
                            subproblem=None, initial_trust_radius=1.0,
                            max_trust_radius=1000.0, eta=0.15, gtol=1e-4,
                            maxiter=None, disp=False, return_all=False,
-                           callback=None, **unknown_options):
+                           callback=None, inexact=True, **unknown_options):
     """
     Minimization of scalar function of one or more variables using a
     trust-region algorithm.
@@ -122,6 +122,10 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
             Maximum number of iterations to perform.
         disp : bool
             If True, print convergence message.
+        inexact : bool
+            Accuracy to solve subproblems. If True requires less nonlinear
+            iterations, but more vector products. Only effective for method
+            trust-krylov.
 
     This function is called by the `minimize` function.
     It is not supposed to be called directly.
@@ -174,7 +178,8 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
     k = 0
 
     # search for the function min
-    while True:
+    # do not even start if the gradient is small enough
+    while m.jac_mag >= gtol:
 
         # Solve the sub-problem.
         # This gives us the proposed step relative to the current position
@@ -214,9 +219,9 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
 
         # append the best guess, call back, increment the iteration count
         if return_all:
-            allvecs.append(x)
+            allvecs.append(np.copy(x))
         if callback is not None:
-            callback(x)
+            callback(np.copy(x))
         k += 1
 
         # check if the gradient is small enough to stop

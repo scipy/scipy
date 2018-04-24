@@ -2,16 +2,18 @@ from __future__ import division, print_function, absolute_import
 
 import os
 import copy
+import pytest
 
 import numpy as np
 from numpy.testing import (assert_equal, assert_almost_equal,
-                           assert_, assert_allclose, assert_array_equal,
-                           assert_raises)
-from scipy._lib.six import xrange
+                           assert_, assert_allclose, assert_array_equal)
 import pytest
+from pytest import raises as assert_raises
+from scipy._lib.six import xrange
 
 import scipy.spatial.qhull as qhull
 from scipy.spatial import cKDTree as KDTree
+from scipy.spatial import Voronoi
 
 import itertools
 
@@ -33,6 +35,7 @@ def assert_unordered_tuple_list_equal(a, b, tpl=tuple):
     b = list(map(tpl, b))
     b.sort()
     assert_equal(a, b)
+
 
 np.random.seed(1234)
 
@@ -120,6 +123,7 @@ def _add_inc_data(name, chunksize):
     assert new_name not in INCREMENTAL_DATASETS
     INCREMENTAL_DATASETS[new_name] = (chunks, opts)
 
+
 for name in DATASETS:
     for chunksize in 1, 4, 16:
         _add_inc_data(name, chunksize)
@@ -163,6 +167,10 @@ class Test_Qhull(object):
         assert_raises(RuntimeError, x.get_voronoi_diagram)
         y.close()
         assert_raises(RuntimeError, y.get_voronoi_diagram)
+
+    def test_issue_8051(self):
+        points = np.array([[0, 0], [0, 1], [0, 2], [1, 0], [1, 1], [1, 2],[2, 0], [2, 1], [2, 2]])
+        Voronoi(points)
 
 
 class TestUtilities(object):
@@ -417,11 +425,11 @@ class TestVertexNeighborVertices(object):
                     if a != b:
                         expected[a].add(b)
 
-        indices, indptr = tri.vertex_neighbor_vertices
+        indptr, indices = tri.vertex_neighbor_vertices
 
         got = []
         for j in range(tri.points.shape[0]):
-            got.append(set(map(int, indptr[indices[j]:indices[j+1]])))
+            got.append(set(map(int, indices[indptr[j]:indptr[j+1]])))
 
         assert_equal(got, expected, err_msg="%r != %r" % (got, expected))
 

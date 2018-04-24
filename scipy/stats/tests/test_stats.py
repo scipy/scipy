@@ -16,9 +16,10 @@ from collections import namedtuple
 from numpy.testing import (assert_, assert_equal,
                            assert_almost_equal, assert_array_almost_equal,
                            assert_array_equal, assert_approx_equal,
-                           assert_raises, assert_allclose)
+                           assert_allclose)
 import pytest
-from scipy._lib._numpy_compat import assert_raises_regex, suppress_warnings
+from pytest import raises as assert_raises
+from scipy._lib._numpy_compat import suppress_warnings
 import numpy.ma.testutils as mat
 from numpy import array, arange, float32, float64, power
 import numpy as np
@@ -101,11 +102,9 @@ class TestTrimmedStats(object):
             assert_equal(stats.tmin(x, nan_policy='omit'), 0.)
             assert_raises(ValueError, stats.tmin, x, nan_policy='raise')
             assert_raises(ValueError, stats.tmin, x, nan_policy='foobar')
-            assert_raises_regex(ValueError,
-                            "'propagate', 'raise', 'omit'",
-                            stats.tmin,
-                            x,
-                            nan_policy='foo')
+            msg = "'propagate', 'raise', 'omit'"
+            with assert_raises(ValueError, message=msg):
+                stats.tmin(x, nan_policy='foo')
 
     def test_tmax(self):
         assert_equal(stats.tmax(4), 4)
@@ -143,9 +142,9 @@ class TestTrimmedStats(object):
 class TestCorrPearsonr(object):
     """ W.II.D. Compute a correlation matrix on all the variables.
 
-        All the correlations, except for ZERO and MISS, shoud be exactly 1.
+        All the correlations, except for ZERO and MISS, should be exactly 1.
         ZERO and MISS should have undefined or missing correlations with the
-        other variables.  The same should go for SPEARMAN corelations, if
+        other variables.  The same should go for SPEARMAN correlations, if
         your program has them.
     """
     def test_pXX(self):
@@ -410,7 +409,7 @@ class TestFisherExact(object):
 class TestCorrSpearmanr(object):
     """ W.II.D. Compute a correlation matrix on all the variables.
 
-        All the correlations, except for ZERO and MISS, shoud be exactly 1.
+        All the correlations, except for ZERO and MISS, should be exactly 1.
         ZERO and MISS should have undefined or missing correlations with the
         other variables.  The same should go for SPEARMAN corelations, if
         your program has them.
@@ -627,6 +626,20 @@ class TestCorrSpearmanrTies(object):
         sr = stats.spearmanr(x, y)
         pr = stats.pearsonr(xr, yr)
         assert_almost_equal(sr, pr)
+
+    def test_tie2(self):
+        # Test tie-handling if inputs contain nan's
+        # Data without nan's
+        x1 = [1, 2, 2.5, 2]
+        y1 = [1, 3, 2.5, 4]
+        # Same data with nan's
+        x2 = [1, 2, 2.5, 2, np.nan]
+        y2 = [1, 3, 2.5, 4, np.nan]
+
+        # Results for two data sets should be the same if nan's are ignored
+        sr1 = stats.spearmanr(x1, y1)
+        sr2 = stats.spearmanr(x2, y2, nan_policy='omit')
+        assert_almost_equal(sr1, sr2)
 
 
 #    W.II.E.  Tabulate X against X, using BIG as a case weight.  The values
@@ -1020,144 +1033,6 @@ def test_theilslopes():
     assert_almost_equal(lower, 3.71, decimal=2)
 
 
-class TestHistogram(object):
-    # Tests that histogram works as it should, and keeps old behaviour
-    #
-    # what is untested:
-    # - multidimensional arrays (since 'a' is ravel'd as the first line in the method)
-    # - very large arrays
-    # - Nans, Infs, empty and otherwise bad inputs
-
-    # sample arrays to test the histogram with
-    low_values = np.array([0.2, 0.3, 0.4, 0.5, 0.5, 0.6, 0.7, 0.8, 0.9, 1.1, 1.2],
-                          dtype=float)  # 11 values
-    high_range = np.array([2, 3, 4, 2, 21, 32, 78, 95, 65, 66, 66, 66, 66, 4],
-                          dtype=float)  # 14 values
-    low_range = np.array([2, 3, 3, 2, 3, 2.4, 2.1, 3.1, 2.9, 2.6, 2.7, 2.8, 2.2, 2.001],
-                         dtype=float)  # 14 values
-    few_values = np.array([2.0, 3.0, -1.0, 0.0], dtype=float)  # 4 values
-
-    def test_simple(self):
-        # Tests that each of the tests works as expected with default params
-        #
-        # basic tests, with expected results (no weighting)
-        # results taken from the previous (slower) version of histogram
-        basic_tests = ((self.low_values, (np.array([1., 1., 1., 2., 2.,
-                                                     1., 1., 0., 1., 1.]),
-                                          0.14444444444444446, 0.11111111111111112, 0)),
-                       (self.high_range, (np.array([5., 0., 1., 1., 0.,
-                                                     0., 5., 1., 0., 1.]),
-                                          -3.1666666666666661, 10.333333333333332, 0)),
-                       (self.low_range, (np.array([3., 1., 1., 1., 0., 1.,
-                                                    1., 2., 3., 1.]),
-                                         1.9388888888888889, 0.12222222222222223, 0)),
-                       (self.few_values, (np.array([1., 0., 1., 0., 0., 0.,
-                                                     0., 1., 0., 1.]),
-                                          -1.2222222222222223, 0.44444444444444448, 0)),
-                       )
-        for inputs, expected_results in basic_tests:
-            with suppress_warnings() as sup:
-                sup.filter(DeprecationWarning,
-                           message="`histogram` is deprecated")
-                given_results = stats.histogram(inputs)
-
-            assert_array_almost_equal(expected_results[0], given_results[0],
-                                      decimal=2)
-            for i in range(1, 4):
-                assert_almost_equal(expected_results[i], given_results[i],
-                                    decimal=2)
-
-    def test_empty(self):
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, message="`histogram` is deprecated")
-            res = stats.histogram([])
-
-        # expected values
-        e_count = [0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]
-        e_lowerlimit = 0
-        e_binsize = 0.1
-        e_extrapoints = 0
-
-        assert_allclose(res.count, e_count, rtol=1e-15)
-        assert_equal(res.lowerlimit, e_lowerlimit)
-        assert_almost_equal(res.binsize, e_binsize)
-        assert_equal(res.extrapoints, e_extrapoints)
-
-    def test_reduced_bins(self):
-        # Tests that reducing the number of bins produces expected results
-
-        # basic tests, with expected results (no weighting),
-        # except number of bins is halved to 5
-        # results taken from the previous (slower) version of histogram
-        basic_tests = ((self.low_values, (np.array([2., 3., 3., 1., 2.]),
-                                          0.075000000000000011, 0.25, 0)),
-                       (self.high_range, (np.array([5., 2., 0., 6., 1.]),
-                                          -9.625, 23.25, 0)),
-                       (self.low_range, (np.array([4., 2., 1., 3., 4.]),
-                                         1.8625, 0.27500000000000002, 0)),
-                       (self.few_values, (np.array([1., 1., 0., 1., 1.]),
-                                          -1.5, 1.0, 0)),
-                       )
-        for inputs, expected_results in basic_tests:
-            with suppress_warnings() as sup:
-                sup.filter(DeprecationWarning,
-                           message="`histogram` is deprecated")
-                given_results = stats.histogram(inputs, numbins=5)
-
-            assert_array_almost_equal(expected_results[0], given_results[0],
-                                      decimal=2)
-            for i in range(1, 4):
-                assert_almost_equal(expected_results[i], given_results[i],
-                                    decimal=2)
-
-    def test_increased_bins(self):
-        # Tests that increasing the number of bins produces expected results
-
-        # basic tests, with expected results (no weighting),
-        # except number of bins is double to 20
-        # results taken from the previous (slower) version of histogram
-        basic_tests = ((self.low_values, (np.array([1., 0., 1., 0., 1.,
-                                                     0., 2., 0., 1., 0.,
-                                                     1., 1., 0., 1., 0.,
-                                                     0., 0., 1., 0., 1.]),
-                                          0.1736842105263158, 0.052631578947368418, 0)),
-                       (self.high_range, (np.array([5., 0., 0., 0., 1.,
-                                                     0., 1., 0., 0., 0.,
-                                                     0., 0., 0., 5., 0.,
-                                                     0., 1., 0., 0., 1.]),
-                                          -0.44736842105263142, 4.8947368421052628, 0)),
-                       (self.low_range, (np.array([3., 0., 1., 1., 0., 0.,
-                                                    0., 1., 0., 0., 1., 0.,
-                                                    1., 0., 1., 0., 1., 3.,
-                                                    0., 1.]),
-                                         1.9710526315789474, 0.057894736842105263, 0)),
-                       (self.few_values, (np.array([1., 0., 0., 0., 0., 1.,
-                                                     0., 0., 0., 0., 0., 0.,
-                                                     0., 0., 1., 0., 0., 0.,
-                                                     0., 1.]),
-                                          -1.1052631578947367, 0.21052631578947367, 0)),
-                       )
-        for inputs, expected_results in basic_tests:
-            with suppress_warnings() as sup:
-                sup.filter(DeprecationWarning,
-                           message="`histogram` is deprecated")
-                given_results = stats.histogram(inputs, numbins=20)
-
-            assert_array_almost_equal(expected_results[0], given_results[0],
-                                      decimal=2)
-            for i in range(1, 4):
-                assert_almost_equal(expected_results[i], given_results[i],
-                                    decimal=2)
-
-    def test_histogram_result_attributes(self):
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, message="`histogram` is deprecated")
-            res = stats.histogram(self.low_range, numbins=20)
-
-        attributes = ('count', 'lowerlimit', 'binsize', 'extrapoints')
-        check_named_results(res, attributes)
-
-
 def test_cumfreq():
     x = [1, 4, 2, 1, 3, 1]
     cumfreqs, lowlim, binsize, extrapoints = stats.cumfreq(x, numbins=4)
@@ -1401,7 +1276,9 @@ class TestItemfreq(object):
         # Check itemfreq works for all dtypes (adapted from np.unique tests)
         def _check_itemfreq(dt):
             a = np.array(self.a, dt)
-            v = stats.itemfreq(a)
+            with suppress_warnings() as sup:
+                sup.filter(DeprecationWarning)
+                v = stats.itemfreq(a)
             assert_array_equal(v[:, 0], [1, 2, 5, 7])
             assert_array_equal(v[:, 1], np.array([20, 10, 20, 20], dtype=dt))
 
@@ -1417,7 +1294,9 @@ class TestItemfreq(object):
         aa[:] = a
         bb = np.empty(len(b), dt)
         bb[:] = b
-        v = stats.itemfreq(aa)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning)
+            v = stats.itemfreq(aa)
         assert_array_equal(v[:, 0], bb)
 
     def test_structured_arrays(self):
@@ -1425,7 +1304,9 @@ class TestItemfreq(object):
         dt = [('', 'i'), ('', 'i')]
         aa = np.array(list(zip(a, a)), dt)
         bb = np.array(list(zip(b, b)), dt)
-        v = stats.itemfreq(aa)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning)
+            v = stats.itemfreq(aa)
         # Arrays don't compare equal because v[:,0] is object array
         assert_equal(tuple(v[2, 0]), tuple(bb[2]))
 
@@ -1546,17 +1427,6 @@ class TestVariability(object):
 
     testcase = [1,2,3,4]
     scalar_testcase = 4.
-
-    def test_signaltonoise(self):
-        # This is not in R, so used:
-        #     mean(testcase, axis=0) / (sqrt(var(testcase) * 3/4))
-
-        # y = stats.signaltonoise(self.shoes[0])
-        # assert_approx_equal(y,4.5709967)
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, "`signaltonoise` is deprecated")
-            y = stats.signaltonoise(self.testcase)
-        assert_approx_equal(y, 2.236067977)
 
     def test_sem(self):
         # This is not in R, so used:
@@ -2170,7 +2040,7 @@ class TestMoments(object):
         #   sum((testcase-mean(testcase,axis=0))**4,axis=0)/((sqrt(var(testcase)*3/4))**4)/4
         #   sum((test2-mean(testmathworks,axis=0))**4,axis=0)/((sqrt(var(testmathworks)*4/5))**4)/5
         #   Set flags for axis = 0 and
-        #   fisher=0 (Pearson's defn of kurtosis for compatiability with Matlab)
+        #   fisher=0 (Pearson's defn of kurtosis for compatibility with Matlab)
         y = stats.kurtosis(self.testmathworks, 0, fisher=0, bias=1)
         assert_approx_equal(y, 2.1658856802973, 10)
 
@@ -2208,20 +2078,6 @@ class TestMoments(object):
                      np.mean(self.testcase_moment_accuracy)
         assert_allclose(np.power(tc_no_mean, 42).mean(),
                             stats.moment(self.testcase_moment_accuracy, 42))
-
-
-class TestThreshold(object):
-    def test_basic(self):
-        a = [-1, 2, 3, 4, 5, -1, -2]
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, "`threshold` is deprecated")
-            assert_array_equal(stats.threshold(a), a)
-            assert_array_equal(stats.threshold(a, 3, None, 0),
-                               [0, 0, 3, 4, 5, 0, 0])
-            assert_array_equal(stats.threshold(a, None, 3, 0),
-                               [-1, 2, 3, 0, 0, -1, -2])
-            assert_array_equal(stats.threshold(a, 2, 4, 0),
-                               [0, 2, 3, 4, 0, 0, 0])
 
 
 class TestStudentTest(object):
@@ -2731,7 +2587,7 @@ def test_friedmanchisquare():
           array([3,5,4,3,4,4,3,3,3,4,4,4])]
 
     # From Jerrorl H. Zar, "Biostatistical Analysis"(example 12.6), Xf=10.68, 0.005 < p < 0.01:
-    # Probability from this example is inexact using Chisquare aproximation of Friedman Chisquare.
+    # Probability from this example is inexact using Chisquare approximation of Friedman Chisquare.
     x3 = [array([7.0,9.9,8.5,5.1,10.3]),
           array([5.3,5.7,4.7,3.5,7.7]),
           array([4.9,7.6,5.5,2.8,8.4]),
@@ -2743,7 +2599,7 @@ def test_friedmanchisquare():
                               (18.9428571428571, 0.000280938375189499))
     assert_array_almost_equal(stats.friedmanchisquare(x3[0],x3[1],x3[2],x3[3]),
                               (10.68, 0.0135882729582176))
-    np.testing.assert_raises(ValueError, stats.friedmanchisquare,x3[0],x3[1])
+    assert_raises(ValueError, stats.friedmanchisquare,x3[0],x3[1])
 
     # test for namedtuple attribute results
     attributes = ('statistic', 'pvalue')
@@ -2760,7 +2616,7 @@ def test_friedmanchisquare():
     assert_array_almost_equal(mstats.friedmanchisquare(x3[0], x3[1],
                                                        x3[2], x3[3]),
                               (10.68, 0.0135882729582176))
-    np.testing.assert_raises(ValueError, mstats.friedmanchisquare,x3[0],x3[1])
+    assert_raises(ValueError, mstats.friedmanchisquare,x3[0],x3[1])
 
 
 def test_kstest():
@@ -4006,9 +3862,9 @@ class TestTrim(object):
         assert_equal(stats.trim_mean([], 0.6), np.nan)
 
 
-class TestSigamClip(object):
+class TestSigmaClip(object):
     def test_sigmaclip1(self):
-        a = np.concatenate((np.linspace(9.5,10.5,31),np.linspace(0,20,5)))
+        a = np.concatenate((np.linspace(9.5, 10.5, 31), np.linspace(0, 20, 5)))
         fact = 4  # default
         c, low, upp = stats.sigmaclip(a)
         assert_(c.min() > low)
@@ -4018,7 +3874,7 @@ class TestSigamClip(object):
         assert_equal(c.size, a.size)
 
     def test_sigmaclip2(self):
-        a = np.concatenate((np.linspace(9.5,10.5,31),np.linspace(0,20,5)))
+        a = np.concatenate((np.linspace(9.5, 10.5, 31), np.linspace(0, 20, 5)))
         fact = 1.5
         c, low, upp = stats.sigmaclip(a, fact, fact)
         assert_(c.min() > low)
@@ -4029,14 +3885,15 @@ class TestSigamClip(object):
         assert_equal(a.size, 36)  # check original array unchanged
 
     def test_sigmaclip3(self):
-        a = np.concatenate((np.linspace(9.5,10.5,11),np.linspace(-100,-50,3)))
+        a = np.concatenate((np.linspace(9.5, 10.5, 11),
+                            np.linspace(-100, -50, 3)))
         fact = 1.8
         c, low, upp = stats.sigmaclip(a, fact, fact)
         assert_(c.min() > low)
         assert_(c.max() < upp)
         assert_equal(low, c.mean() - fact*c.std())
         assert_equal(upp, c.mean() + fact*c.std())
-        assert_equal(c, np.linspace(9.5,10.5,11))
+        assert_equal(c, np.linspace(9.5, 10.5, 11))
 
     def test_sigmaclip_result_attributes(self):
         a = np.concatenate((np.linspace(9.5, 10.5, 11),
@@ -4045,6 +3902,12 @@ class TestSigamClip(object):
         res = stats.sigmaclip(a, fact, fact)
         attributes = ('clipped', 'lower', 'upper')
         check_named_results(res, attributes)
+
+    def test_std_zero(self):
+        # regression test #8632
+        x = np.ones(10)
+        assert_equal(stats.sigmaclip(x)[0], x)
+
 
 class TestFOneWay(object):
     def test_trivial(self):
@@ -4204,3 +4067,354 @@ class TestCombinePvalues(object):
         Z, p = stats.combine_pvalues([.01, .2, .3], method='stouffer',
                                      weights=np.array((1, 4, 9)))
         assert_approx_equal(p, 0.1464, significant=4)
+
+
+class TestCdfDistanceValidation(object):
+    """
+    Test that _cdf_distance() (via wasserstein_distance()) raises ValueErrors
+    for bad inputs.
+    """
+
+    def test_distinct_value_and_weight_lengths(self):
+        # When the number of weights does not match the number of values,
+        # a ValueError should be raised.
+        assert_raises(ValueError, stats.wasserstein_distance,
+                      [1], [2], [4], [3, 1])
+        assert_raises(ValueError, stats.wasserstein_distance, [1], [2], [1, 0])
+
+    def test_zero_weight(self):
+        # When a distribution is given zero weight, a ValueError should be
+        # raised.
+        assert_raises(ValueError, stats.wasserstein_distance,
+                      [0, 1], [2], [0, 0])
+        assert_raises(ValueError, stats.wasserstein_distance,
+                      [0, 1], [2], [3, 1], [0])
+
+    def test_negative_weights(self):
+        # A ValueError should be raised if there are any negative weights.
+        assert_raises(ValueError, stats.wasserstein_distance,
+                      [0, 1], [2, 2], [1, 1], [3, -1])
+
+    def test_empty_distribution(self):
+        # A ValueError should be raised when trying to measure the distance
+        # between something and nothing.
+        assert_raises(ValueError, stats.wasserstein_distance, [], [2, 2])
+        assert_raises(ValueError, stats.wasserstein_distance, [1], [])
+
+    def test_inf_weight(self):
+        # An inf weight is not valid.
+        assert_raises(ValueError, stats.wasserstein_distance,
+                      [1, 2, 1], [1, 1], [1, np.inf, 1], [1, 1])
+
+
+class TestWassersteinDistance(object):
+    """ Tests for wasserstein_distance() output values.
+    """
+
+    def test_simple(self):
+        # For basic distributions, the value of the Wasserstein distance is
+        # straightforward.
+        assert_almost_equal(
+            stats.wasserstein_distance([0, 1], [0], [1, 1], [1]),
+            .5)
+        assert_almost_equal(stats.wasserstein_distance(
+            [0, 1], [0], [3, 1], [1]),
+            .25)
+        assert_almost_equal(stats.wasserstein_distance(
+            [0, 2], [0], [1, 1], [1]),
+            1)
+        assert_almost_equal(stats.wasserstein_distance(
+            [0, 1, 2], [1, 2, 3]),
+            1)
+
+    def test_same_distribution(self):
+        # Any distribution moved to itself should have a Wasserstein distance of
+        # zero.
+        assert_equal(stats.wasserstein_distance([1, 2, 3], [2, 1, 3]), 0)
+        assert_equal(
+            stats.wasserstein_distance([1, 1, 1, 4], [4, 1],
+                                       [1, 1, 1, 1], [1, 3]),
+            0)
+
+    def test_shift(self):
+        # If the whole distribution is shifted by x, then the Wasserstein
+        # distance should be x.
+        assert_almost_equal(stats.wasserstein_distance([0], [1]), 1)
+        assert_almost_equal(stats.wasserstein_distance([-5], [5]), 10)
+        assert_almost_equal(
+            stats.wasserstein_distance([1, 2, 3, 4, 5], [11, 12, 13, 14, 15]),
+            10)
+        assert_almost_equal(
+            stats.wasserstein_distance([4.5, 6.7, 2.1], [4.6, 7, 9.2],
+                                       [3, 1, 1], [1, 3, 1]),
+            2.5)
+
+    def test_combine_weights(self):
+        # Assigning a weight w to a value is equivalent to including that value
+        # w times in the value array with weight of 1.
+        assert_almost_equal(
+            stats.wasserstein_distance(
+                [0, 0, 1, 1, 1, 1, 5], [0, 3, 3, 3, 3, 4, 4],
+                [1, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 1]),
+            stats.wasserstein_distance([5, 0, 1], [0, 4, 3],
+                                       [1, 2, 4], [1, 2, 4]))
+
+    def test_collapse(self):
+        # Collapsing a distribution to a point distribution at zero is
+        # equivalent to taking the average of the absolute values of the values.
+        u = np.arange(-10, 30, 0.3)
+        v = np.zeros_like(u)
+        assert_almost_equal(
+            stats.wasserstein_distance(u, v),
+            np.mean(np.abs(u)))
+
+        u_weights = np.arange(len(u))
+        v_weights = u_weights[::-1]
+        assert_almost_equal(
+            stats.wasserstein_distance(u, v, u_weights, v_weights),
+            np.average(np.abs(u), weights=u_weights))
+
+    def test_zero_weight(self):
+        # Values with zero weight have no impact on the Wasserstein distance.
+        assert_almost_equal(
+            stats.wasserstein_distance([1, 2, 100000], [1, 1],
+                                       [1, 1, 0], [1, 1]),
+            stats.wasserstein_distance([1, 2], [1, 1], [1, 1], [1, 1]))
+
+    def test_inf_values(self):
+        # Inf values can lead to an inf distance or trigger a RuntimeWarning
+        # (and return NaN) if the distance is undefined.
+        assert_equal(
+            stats.wasserstein_distance([1, 2, np.inf], [1, 1]),
+            np.inf)
+        assert_equal(
+            stats.wasserstein_distance([1, 2, np.inf], [-np.inf, 1]),
+            np.inf)
+        assert_equal(
+            stats.wasserstein_distance([1, -np.inf, np.inf], [1, 1]),
+            np.inf)
+        with suppress_warnings() as sup:
+            r = sup.record(RuntimeWarning, "invalid value*")
+            assert_equal(
+                stats.wasserstein_distance([1, 2, np.inf], [np.inf, 1]),
+                np.nan)
+
+
+class TestEnergyDistance(object):
+    """ Tests for energy_distance() output values.
+    """
+
+    def test_simple(self):
+        # For basic distributions, the value of the energy distance is
+        # straightforward.
+        assert_almost_equal(
+            stats.energy_distance([0, 1], [0], [1, 1], [1]),
+            np.sqrt(2) * .5)
+        assert_almost_equal(stats.energy_distance(
+            [0, 1], [0], [3, 1], [1]),
+            np.sqrt(2) * .25)
+        assert_almost_equal(stats.energy_distance(
+            [0, 2], [0], [1, 1], [1]),
+            2 * .5)
+        assert_almost_equal(
+            stats.energy_distance([0, 1, 2], [1, 2, 3]),
+            np.sqrt(2) * (3*(1./3**2))**.5)
+
+    def test_same_distribution(self):
+        # Any distribution moved to itself should have a energy distance of
+        # zero.
+        assert_equal(stats.energy_distance([1, 2, 3], [2, 1, 3]), 0)
+        assert_equal(
+            stats.energy_distance([1, 1, 1, 4], [4, 1], [1, 1, 1, 1], [1, 3]),
+            0)
+
+    def test_shift(self):
+        # If a single-point distribution is shifted by x, then the energy
+        # distance should be sqrt(2) * sqrt(x).
+        assert_almost_equal(stats.energy_distance([0], [1]), np.sqrt(2))
+        assert_almost_equal(
+            stats.energy_distance([-5], [5]),
+            np.sqrt(2) * 10**.5)
+
+    def test_combine_weights(self):
+        # Assigning a weight w to a value is equivalent to including that value
+        # w times in the value array with weight of 1.
+        assert_almost_equal(
+            stats.energy_distance([0, 0, 1, 1, 1, 1, 5], [0, 3, 3, 3, 3, 4, 4],
+                                  [1, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 1]),
+            stats.energy_distance([5, 0, 1], [0, 4, 3], [1, 2, 4], [1, 2, 4]))
+
+    def test_zero_weight(self):
+        # Values with zero weight have no impact on the energy distance.
+        assert_almost_equal(
+            stats.energy_distance([1, 2, 100000], [1, 1], [1, 1, 0], [1, 1]),
+            stats.energy_distance([1, 2], [1, 1], [1, 1], [1, 1]))
+
+    def test_inf_values(self):
+        # Inf values can lead to an inf distance or trigger a RuntimeWarning
+        # (and return NaN) if the distance is undefined.
+        assert_equal(stats.energy_distance([1, 2, np.inf], [1, 1]), np.inf)
+        assert_equal(
+            stats.energy_distance([1, 2, np.inf], [-np.inf, 1]),
+            np.inf)
+        assert_equal(
+            stats.energy_distance([1, -np.inf, np.inf], [1, 1]),
+            np.inf)
+        with suppress_warnings() as sup:
+            r = sup.record(RuntimeWarning, "invalid value*")
+            assert_equal(
+                stats.energy_distance([1, 2, np.inf], [np.inf, 1]),
+                np.nan)
+
+
+class TestBrunnerMunzel(object):
+    # Data from (Lumley, 1996)
+    X = [1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 4, 1, 1]
+    Y = [3, 3, 4, 3, 1, 2, 3, 1, 1, 5, 4]
+    significant = 13
+
+    def test_brunnermunzel_one_sided(self):
+        # Results are compared with R's lawstat package.
+        u1, p1 = stats.brunnermunzel(self.X, self.Y, alternative='less')
+        u2, p2 = stats.brunnermunzel(self.Y, self.X, alternative='greater')
+        u3, p3 = stats.brunnermunzel(self.X, self.Y, alternative='greater')
+        u4, p4 = stats.brunnermunzel(self.Y, self.X, alternative='less')
+
+        assert_approx_equal(p1, p2, significant=self.significant)
+        assert_approx_equal(p3, p4, significant=self.significant)
+        assert_(p1 != p3)
+        assert_approx_equal(u1, 3.1374674823029505,
+                            significant=self.significant)
+        assert_approx_equal(u2, -3.1374674823029505,
+                            significant=self.significant)
+        assert_approx_equal(u3, 3.1374674823029505,
+                            significant=self.significant)
+        assert_approx_equal(u4, -3.1374674823029505,
+                            significant=self.significant)
+        assert_approx_equal(p1, 0.0028931043330757342,
+                            significant=self.significant)
+        assert_approx_equal(p3, 0.99710689566692423,
+                            significant=self.significant)
+
+    def test_brunnermunzel_two_sided(self):
+        # Results are compared with R's lawstat package.
+        u1, p1 = stats.brunnermunzel(self.X, self.Y, alternative='two-sided')
+        u2, p2 = stats.brunnermunzel(self.Y, self.X, alternative='two-sided')
+
+        assert_approx_equal(p1, p2, significant=self.significant)
+        assert_approx_equal(u1, 3.1374674823029505,
+                            significant=self.significant)
+        assert_approx_equal(u2, -3.1374674823029505,
+                            significant=self.significant)
+        assert_approx_equal(p1, 0.0057862086661515377,
+                            significant=self.significant)
+
+    def test_brunnermunzel_default(self):
+        # The default value for alternative is two-sided
+        u1, p1 = stats.brunnermunzel(self.X, self.Y)
+        u2, p2 = stats.brunnermunzel(self.Y, self.X)
+
+        assert_approx_equal(p1, p2, significant=self.significant)
+        assert_approx_equal(u1, 3.1374674823029505,
+                            significant=self.significant)
+        assert_approx_equal(u2, -3.1374674823029505,
+                            significant=self.significant)
+        assert_approx_equal(p1, 0.0057862086661515377,
+                            significant=self.significant)
+
+    def test_brunnermunzel_alternative_error(self):
+        alternative = "error"
+        distribution = "t"
+        nan_policy = "propagate"
+        assert_(alternative not in ["two-sided", "greater", "less"])
+        assert_raises(ValueError,
+                      stats.brunnermunzel,
+                      self.X,
+                      self.Y,
+                      alternative,
+                      distribution,
+                      nan_policy)
+
+    def test_brunnermunzel_distribution_norm(self):
+        u1, p1 = stats.brunnermunzel(self.X, self.Y, distribution="normal")
+        u2, p2 = stats.brunnermunzel(self.Y, self.X, distribution="normal")
+        assert_approx_equal(p1, p2, significant=self.significant)
+        assert_approx_equal(u1, 3.1374674823029505,
+                            significant=self.significant)
+        assert_approx_equal(u2, -3.1374674823029505,
+                            significant=self.significant)
+        assert_approx_equal(p1, 0.0017041417600383024,
+                            significant=self.significant)
+
+    def test_brunnermunzel_distribution_error(self):
+        alternative = "two-sided"
+        distribution = "error"
+        nan_policy = "propagate"
+        assert_(alternative not in ["t", "normal"])
+        assert_raises(ValueError,
+                      stats.brunnermunzel,
+                      self.X,
+                      self.Y,
+                      alternative,
+                      distribution,
+                      nan_policy)
+
+    def test_brunnermunzel_empty_imput(self):
+        u1, p1 = stats.brunnermunzel(self.X, [])
+        u2, p2 = stats.brunnermunzel([], self.Y)
+        u3, p3 = stats.brunnermunzel([], [])
+
+        assert_equal(u1, np.nan)
+        assert_equal(p1, np.nan)
+        assert_equal(u2, np.nan)
+        assert_equal(p2, np.nan)
+        assert_equal(u3, np.nan)
+        assert_equal(p3, np.nan)
+
+    def test_brunnermunzel_nan_input_propagate(self):
+        X = [1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 4, 1, 1, np.nan]
+        Y = [3, 3, 4, 3, 1, 2, 3, 1, 1, 5, 4]
+        u1, p1 = stats.brunnermunzel(X, Y, nan_policy="propagate")
+        u2, p2 = stats.brunnermunzel(Y, X, nan_policy="propagate")
+
+        assert_equal(u1, np.nan)
+        assert_equal(p1, np.nan)
+        assert_equal(u2, np.nan)
+        assert_equal(p2, np.nan)
+
+    def test_brunnermunzel_nan_input_raise(self):
+        X = [1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 4, 1, 1, np.nan]
+        Y = [3, 3, 4, 3, 1, 2, 3, 1, 1, 5, 4]
+        alternative = "two-sided"
+        distribution = "t"
+        nan_policy = "raise"
+
+        assert_raises(ValueError,
+                      stats.brunnermunzel,
+                      X,
+                      Y,
+                      alternative,
+                      distribution,
+                      nan_policy)
+        assert_raises(ValueError,
+                      stats.brunnermunzel,
+                      Y,
+                      X,
+                      alternative,
+                      distribution,
+                      nan_policy)
+
+    def test_brunnermunzel_nan_input_omit(self):
+        X = [1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 4, 1, 1, np.nan]
+        Y = [3, 3, 4, 3, 1, 2, 3, 1, 1, 5, 4]
+        u1, p1 = stats.brunnermunzel(X, Y, nan_policy="omit")
+        u2, p2 = stats.brunnermunzel(Y, X, nan_policy="omit")
+
+        assert_approx_equal(p1, p2, significant=self.significant)
+        assert_approx_equal(u1, 3.1374674823029505,
+                            significant=self.significant)
+        assert_approx_equal(u2, -3.1374674823029505,
+                            significant=self.significant)
+        assert_approx_equal(p1, 0.0057862086661515377,
+                            significant=self.significant)
+

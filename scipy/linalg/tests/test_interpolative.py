@@ -32,7 +32,8 @@ from scipy.linalg import hilbert, svdvals, norm
 from scipy.sparse.linalg import aslinearoperator
 import time
 
-from numpy.testing import assert_, assert_allclose, assert_raises
+from numpy.testing import assert_, assert_allclose
+from pytest import raises as assert_raises
 
 
 def _debug_print(s):

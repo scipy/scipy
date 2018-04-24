@@ -86,6 +86,7 @@ PUBLIC_SUBMODULES = [
     'odr',
     'optimize',
     'signal',
+    'signal.windows',
     'sparse',
     'sparse.csgraph',
     'sparse.linalg',
@@ -126,10 +127,16 @@ REFGUIDE_ALL_SKIPLIST = [
 # these names are not required to be in an autosummary:: listing
 # despite being in ALL
 REFGUIDE_AUTOSUMMARY_SKIPLIST = [
-    r'scipy\.special\..*_roots', # old aliases for scipy.special.*_roots
-	r'scipy\.linalg\.solve_lyapunov' # deprecated name
+    r'scipy\.special\..*_roots',  # old aliases for scipy.special.*_roots
+    r'scipy\.special\.jn',  # alias for jv
+    r'scipy\.linalg\.solve_lyapunov',  # deprecated name
 ]
-
+# deprecated windows in scipy.signal namespace
+for name in ('barthann', 'bartlett', 'blackmanharris', 'blackman', 'bohman',
+             'boxcar', 'chebwin', 'cosine', 'exponential', 'flattop',
+             'gaussian', 'general_gaussian', 'hamming', 'hann', 'hanning',
+             'kaiser', 'nuttall', 'parzen', 'slepian', 'triang', 'tukey'):
+    REFGUIDE_AUTOSUMMARY_SKIPLIST.append(r'scipy\.signal\.' + name)
 
 HAVE_MATPLOTLIB = False
 
@@ -509,9 +516,10 @@ class Checker(doctest.OutputChecker):
     vanilla = doctest.OutputChecker()
     rndm_markers = {'# random', '# Random', '#random', '#Random', "# may vary"}
     stopwords = {'plt.', '.hist', '.show', '.ylim', '.subplot(',
-                 'set_title', 'imshow', 'plt.show', 'ax.axis', 'plt.plot(',
+                 'set_title', 'imshow', 'plt.show', '.axis(', '.plot(',
                  '.bar(', '.title', '.ylabel', '.xlabel', 'set_ylim', 'set_xlim',
-                 '# reformatted'}
+                 '# reformatted', '.set_xlabel(', '.set_ylabel(', '.set_zlabel(',
+                 '.set(xlim=', '.set(ylim=', '.set(xlabel=', '.set(ylabel='}
 
     def __init__(self, parse_namedtuples=True, ns=None, atol=1e-8, rtol=1e-2):
         self.parse_namedtuples = parse_namedtuples
@@ -591,7 +599,7 @@ class Checker(doctest.OutputChecker):
 
     def _do_check(self, want, got):
         # This should be done exactly as written to correctly handle all of
-        # numpy-comparable objects, strings, and heterogenous tuples
+        # numpy-comparable objects, strings, and heterogeneous tuples
         try:
             if want == got:
                 return True
@@ -747,7 +755,12 @@ def check_doctests_testfile(fname, verbose, ns=None,
         return results
 
     full_name = fname
-    text = open(fname).read()
+    if sys.version_info.major <= 2:
+        with open(fname) as f:
+            text = f.read()
+    else:
+        with open(fname, encoding='utf-8') as f:
+            text = f.read()
 
     PSEUDOCODE = set(['some_function', 'some_module', 'import example',
                       'ctypes.CDLL',     # likely need compiling, skip it

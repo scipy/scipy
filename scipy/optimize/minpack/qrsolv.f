@@ -138,7 +138,7 @@ c
             qtbpj = -sin*wa(k) + cos*qtbpj
             wa(k) = temp
 c
-c           accumulate the tranformation in the row of s.
+c           accumulate the transformation in the row of s.
 c
             kp1 = k + 1
             if (n .lt. kp1) go to 70

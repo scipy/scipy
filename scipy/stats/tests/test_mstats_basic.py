@@ -14,9 +14,10 @@ import scipy.stats.mstats as mstats
 from scipy import stats
 from .common_tests import check_named_results
 import pytest
+from pytest import raises as assert_raises
 from numpy.ma.testutils import (assert_equal, assert_almost_equal,
     assert_array_almost_equal, assert_array_almost_equal_nulp, assert_,
-    assert_allclose, assert_raises, assert_array_equal)
+    assert_allclose, assert_array_equal)
 from scipy._lib._numpy_compat import suppress_warnings
 
 
@@ -342,6 +343,9 @@ class TestTrimming(object):
                          296,299,306,376,428,515,666,1310,2611])
         assert_almost_equal(mstats.winsorize(data,(0.2,0.2)).var(ddof=1),
                             21551.4, 1)
+        assert_almost_equal(
+            mstats.winsorize(data, (0.2,0.2),(False,False)).var(ddof=1),
+            11887.3, 1)
         data[5] = masked
         winsorized = mstats.winsorize(data)
         assert_equal(winsorized.mask, data.mask)
@@ -497,14 +501,6 @@ class TestVariability(object):
          note that length(testcase) = 4
     """
     testcase = ma.fix_invalid([1,2,3,4,np.nan])
-
-    def test_signaltonoise(self):
-        # This is not in R, so used:
-        #     mean(testcase, axis=0) / (sqrt(var(testcase)*3/4))
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, "`signaltonoise` is deprecated!")
-            y = mstats.signaltonoise(self.testcase)
-        assert_almost_equal(y, 2.236067977)
 
     def test_sem(self):
         # This is not in R, so used: sqrt(var(testcase)*3/4) / sqrt(3)
@@ -1055,36 +1051,6 @@ class TestCompareWithStats(object):
             rm = stats.mstats.moment(ym)
             assert_almost_equal(r, rm, 10)
 
-    def test_signaltonoise(self):
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, "`signaltonoise` is deprecated!")
-            for n in self.get_n():
-                x, y, xm, ym = self.generate_xy_sample(n)
-
-                r = stats.signaltonoise(x)
-                rm = stats.mstats.signaltonoise(xm)
-                assert_almost_equal(r, rm, 10)
-
-                r = stats.signaltonoise(y)
-                rm = stats.mstats.signaltonoise(ym)
-                assert_almost_equal(r, rm, 10)
-
-    def test_betai(self):
-        np.random.seed(12345)
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, "`betai` is deprecated!")
-            for i in range(10):
-                a = np.random.rand() * 5.
-                b = np.random.rand() * 200.
-
-                assert_equal(stats.betai(a, b, 0.), 0.)
-                assert_equal(stats.betai(a, b, 1.), 1.)
-                assert_equal(stats.mstats.betai(a, b, 0.), 0.)
-                assert_equal(stats.mstats.betai(a, b, 1.), 1.)
-                x = np.random.rand()
-                assert_almost_equal(stats.betai(a, b, x),
-                                    stats.mstats.betai(a, b, x), decimal=13)
-
     def test_zscore(self):
         for n in self.get_n():
             x, y, xm, ym = self.generate_xy_sample(n)
@@ -1309,3 +1275,104 @@ class TestCompareWithStats(object):
             rm = stats.mstats.obrientransform(xm)
             assert_almost_equal(r.T, rm[0:len(x)])
 
+
+class TestBrunnerMunzel(object):
+    # Data from (Lumley, 1996)
+    X = np.ma.masked_invalid([1, 2, 1, 1, 1, np.nan, 1, 1,
+                              1, 1, 1, 2, 4, 1, 1, np.nan])
+    Y = np.ma.masked_invalid([3, 3, 4, 3, np.nan, 1, 2, 3, 1, 1, 5, 4])
+    significant = 14
+
+    def test_brunnermunzel_one_sided(self):
+        # Results are compared with R's lawstat package.
+        u1, p1 = mstats.brunnermunzel(self.X, self.Y, alternative='less')
+        u2, p2 = mstats.brunnermunzel(self.Y, self.X, alternative='greater')
+        u3, p3 = mstats.brunnermunzel(self.X, self.Y, alternative='greater')
+        u4, p4 = mstats.brunnermunzel(self.Y, self.X, alternative='less')
+
+        assert_almost_equal(p1, p2, decimal=self.significant)
+        assert_almost_equal(p3, p4, decimal=self.significant)
+        assert_(p1 != p3)
+        assert_almost_equal(u1, 3.1374674823029505,
+                            decimal=self.significant)
+        assert_almost_equal(u2, -3.1374674823029505,
+                            decimal=self.significant)
+        assert_almost_equal(u3, 3.1374674823029505,
+                            decimal=self.significant)
+        assert_almost_equal(u4, -3.1374674823029505,
+                            decimal=self.significant)
+        assert_almost_equal(p1, 0.0028931043330757342,
+                            decimal=self.significant)
+        assert_almost_equal(p3, 0.99710689566692423,
+                            decimal=self.significant)
+
+    def test_brunnermunzel_two_sided(self):
+        # Results are compared with R's lawstat package.
+        u1, p1 = mstats.brunnermunzel(self.X, self.Y, alternative='two-sided')
+        u2, p2 = mstats.brunnermunzel(self.Y, self.X, alternative='two-sided')
+
+        assert_almost_equal(p1, p2, decimal=self.significant)
+        assert_almost_equal(u1, 3.1374674823029505,
+                            decimal=self.significant)
+        assert_almost_equal(u2, -3.1374674823029505,
+                            decimal=self.significant)
+        assert_almost_equal(p1, 0.0057862086661515377,
+                            decimal=self.significant)
+
+    def test_brunnermunzel_default(self):
+        # The default value for alternative is two-sided
+        u1, p1 = mstats.brunnermunzel(self.X, self.Y)
+        u2, p2 = mstats.brunnermunzel(self.Y, self.X)
+
+        assert_almost_equal(p1, p2, decimal=self.significant)
+        assert_almost_equal(u1, 3.1374674823029505,
+                            decimal=self.significant)
+        assert_almost_equal(u2, -3.1374674823029505,
+                            decimal=self.significant)
+        assert_almost_equal(p1, 0.0057862086661515377,
+                            decimal=self.significant)
+
+    def test_brunnermunzel_alternative_error(self):
+        alternative = "error"
+        distribution = "t"
+        assert_(alternative not in ["two-sided", "greater", "less"])
+        assert_raises(ValueError,
+                      mstats.brunnermunzel,
+                      self.X,
+                      self.Y,
+                      alternative,
+                      distribution)
+
+    def test_brunnermunzel_distribution_norm(self):
+        u1, p1 = mstats.brunnermunzel(self.X, self.Y, distribution="normal")
+        u2, p2 = mstats.brunnermunzel(self.Y, self.X, distribution="normal")
+        assert_almost_equal(p1, p2, decimal=self.significant)
+        assert_almost_equal(u1, 3.1374674823029505,
+                            decimal=self.significant)
+        assert_almost_equal(u2, -3.1374674823029505,
+                            decimal=self.significant)
+        assert_almost_equal(p1, 0.0017041417600383024,
+                            decimal=self.significant)
+
+    def test_brunnermunzel_distribution_error(self):
+        alternative = "two-sided"
+        distribution = "error"
+        assert_(alternative not in ["t", "normal"])
+        assert_raises(ValueError,
+                      mstats.brunnermunzel,
+                      self.X,
+                      self.Y,
+                      alternative,
+                      distribution)
+
+    def test_brunnermunzel_empty_imput(self):
+        u1, p1 = mstats.brunnermunzel(self.X, [])
+        u2, p2 = mstats.brunnermunzel([], self.Y)
+        u3, p3 = mstats.brunnermunzel([], [])
+
+        assert_(np.isnan(u1))
+        assert_(np.isnan(p1))
+        assert_(np.isnan(u2))
+        assert_(np.isnan(p2))
+        assert_(np.isnan(u3))
+        assert_(np.isnan(p3))

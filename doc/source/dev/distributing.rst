@@ -45,7 +45,7 @@ are:
 
 Furthermore of course one needs C, C++ and Fortran compilers to build Scipy,
 but those we don't consider to be dependencies and are therefore not discussed
-here.  For details, see http://scipy.org/scipylib/building/index.html.
+here.  For details, see https://scipy.org/scipylib/building/index.html.
 
 When a package provides useful functionality and it's proposed as a new
 dependency, consider also if it makes sense to vendor (i.e. ship a copy of it with
@@ -131,6 +131,13 @@ and distributing them on PyPI or elsewhere.
 
 **Windows**
 
+- The currently most easily available toolchain for building
+  Python.org compatible binaries for Scipy is installing MSVC (see
+  https://wiki.python.org/moin/WindowsCompilers) and mingw64-gfortran.
+  Support for this configuration requires numpy.distutils from
+  Numpy >= 1.14.dev and a gcc/gfortran-compiled static ``openblas.a``.
+  This configuration is currently used in the Appveyor configuration for
+  https://github.com/MacPython/scipy-wheels
 - For 64-bit Windows installers built with a free toolchain, use the method
   documented at https://github.com/numpy/numpy/wiki/Mingw-static-toolchain.
   That method will likely be used for Scipy itself once it's clear that the
@@ -164,17 +171,18 @@ and distributing them on PyPI or elsewhere.
 
 **Linux**
 
-Besides PyPi not allowing Linux wheels (which is about to change with `PEP 513
-<https://www.python.org/dev/peps/pep-0513>`_), there are no specific issues with
-building binaries.  To build a set of wheels for a Linux distribution and
-providing them in a Wheelhouse_, look at the wheel_ and Wheelhouse_ docs.  A
-Wheelhouse for wheels compatible with TravisCI is http://wheels.scipy.org.
+- PyPi-compatible Linux wheels can be produced via the manylinux_ project.
+  The corresponding build setup for TravisCI for Scipy is set up in
+  https://github.com/MacPython/scipy-wheels.
 
+Other Linux build-setups result to PyPi incompatible wheels, which
+would need to be distributed via custom channels, e.g. in a
+Wheelhouse_, see at the wheel_ and Wheelhouse_ docs.
 
 
 .. _Numpy: http://numpy.org
-.. _Python: http://python.org
-.. _nose: http://nose.readthedocs.org
+.. _Python: https://python.org
+.. _nose: http://nose.readthedocs.io/en/latest/
 .. _asv: http://asv.readthedocs.org
 .. _matplotlib: http://matplotlib.org
 .. _Pillow: http://pillow.readthedocs.org
@@ -182,11 +190,12 @@ Wheelhouse for wheels compatible with TravisCI is http://wheels.scipy.org.
 .. _mpmath: http://mpmath.org
 .. _Cython: http://cython.org
 .. _setuptools: https://bitbucket.org/pypa/setuptools
-.. _wheel: wheel.readthedocs.org
-.. _pip: http://pip-installer.org
+.. _wheel: https://wheel.readthedocs.io/
+.. _pip: https://pip.pypa.io/en/stable/
 .. _Python Packaging User Guide: https://packaging.python.org
 .. _Wheelhouse: https://pypi.python.org/pypi/Wheelhouse
 .. _MingwPy: https://mingwpy.github.io
 .. _Sphinx: http://sphinx-doc.org/
 .. _six: https://pypi.python.org/pypi/six
 .. _decorator: https://github.com/micheles/decorator
+.. _manylinux: https://github.com/pypa/manylinux/

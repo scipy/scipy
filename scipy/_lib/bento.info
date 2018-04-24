@@ -7,3 +7,9 @@ Library:
     Extension: _test_ccallback
         Sources:
              src/_test_ccallback.c
+    Extension: _fpumode
+        Sources:
+             _fpumode.c
+    Extension: messagestream
+        Sources:
+             messagestream.c

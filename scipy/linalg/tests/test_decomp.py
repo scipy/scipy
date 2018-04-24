@@ -10,19 +10,22 @@ Run tests if scipy is installed:
   python -c 'import scipy;scipy.linalg.test()'
 """
 
+import itertools
 import numpy as np
 from numpy.testing import (assert_equal, assert_almost_equal,
                            assert_array_almost_equal, assert_array_equal,
-                           assert_raises, assert_, assert_allclose)
+                           assert_, assert_allclose)
 
 import pytest
+from pytest import raises as assert_raises
 
 from scipy._lib.six import xrange
 
 from scipy.linalg import (eig, eigvals, lu, svd, svdvals, cholesky, qr,
      schur, rsf2csf, lu_solve, lu_factor, solve, diagsvd, hessenberg, rq,
      eig_banded, eigvals_banded, eigh, eigvalsh, qr_multiply, qz, orth, ordqz,
-     subspace_angles, hadamard)
+     subspace_angles, hadamard, eigvalsh_tridiagonal, eigh_tridiagonal,
+     null_space, cdf2rdf)
 from scipy.linalg.lapack import dgbtrf, dgbtrs, zgbtrf, zgbtrs, \
      dsbev, dsbevd, dsbevx, zhbevd, zhbevx
 from scipy.linalg.misc import norm
@@ -40,6 +43,22 @@ from scipy.linalg._testutils import assert_no_overwrite
 
 # digit precision to use in asserts for different types
 DIGITS = {'d':11, 'D':11, 'f':4, 'F':4}
+
+def clear_fuss(ar, fuss_binary_bits=7):
+    """Clears trailing `fuss_binary_bits` of mantissa of a floating number"""
+    x = np.asanyarray(ar)
+    if np.iscomplexobj(x):
+        return clear_fuss(x.real) + 1j * clear_fuss(x.imag)
+
+    significant_binary_bits = np.finfo(x.dtype).nmant
+    x_mant, x_exp = np.frexp(x)
+    f = 2.0**(significant_binary_bits - fuss_binary_bits)
+    x_mant *= f
+    np.rint(x_mant, out=x_mant)
+    x_mant /= f
+
+    return np.ldexp(x_mant, x_exp)
+
 
 # XXX: This function should be available through numpy.testing
 
@@ -248,7 +267,11 @@ class TestEig(object):
             if all(isfinite(res[:,i])):
                 assert_allclose(res[:,i], 0, rtol=1e-13, atol=1e-13, err_msg=msg)
 
-        assert_allclose(sort(w[isfinite(w)]), sort(wt[isfinite(wt)]),
+        w_fin = w[isfinite(w)]
+        wt_fin = wt[isfinite(wt)]
+        perm = argsort(clear_fuss(w_fin))
+        permt = argsort(clear_fuss(wt_fin))
+        assert_allclose(w[perm], wt[permt],
                         atol=1e-7, rtol=1e-7, err_msg=msg)
 
         length = np.empty(len(vr))
@@ -280,9 +303,9 @@ class TestEig(object):
         K = array(([2,-1,-1],[-1,2,-1],[-1,-1,2]))
         D = array(([1,-1,0],[-1,1,0],[0,0,0]))
         Z = zeros((3,3))
-        I = identity(3)
-        A = bmat([[I,Z],[Z,-K]])
-        B = bmat([[Z,I],[M,D]])
+        I3 = identity(3)
+        A = bmat([[I3, Z], [Z, -K]])
+        B = bmat([[Z, I3], [M, D]])
 
         olderr = np.seterr(all='ignore')
         try:
@@ -497,7 +520,7 @@ class TestEigBanded(object):
 
         # extracting eigenvalues with respect to an index range
         ind1 = 2
-        ind2 = 6
+        ind2 = np.longlong(6)
         w_sym_ind = eigvals_banded(self.bandmat_sym,
                                     select='i', select_range=(ind1, ind2))
         assert_array_almost_equal(sort(w_sym_ind),
@@ -627,6 +650,117 @@ class TestEigBanded(object):
 
         y_lin = linalg.solve(self.comp_mat, self.bc)
         assert_array_almost_equal(y, y_lin)
+
+
+class TestEigTridiagonal(object):
+    def setup_method(self):
+        self.create_trimat()
+
+    def create_trimat(self):
+        """Create the full matrix `self.fullmat`, `self.d`, and `self.e`."""
+        N = 10
+
+        # symmetric band matrix
+        self.d = 1.0*ones(N)
+        self.e = -1.0*ones(N-1)
+        self.full_mat = (diag(self.d) + diag(self.e, -1) + diag(self.e, 1))
+
+        ew, ev = linalg.eig(self.full_mat)
+        ew = ew.real
+        args = argsort(ew)
+        self.w = ew[args]
+        self.evec = ev[:, args]
+
+    def test_degenerate(self):
+        """Test error conditions."""
+        # Wrong sizes
+        assert_raises(ValueError, eigvalsh_tridiagonal, self.d, self.e[:-1])
+        # Must be real
+        assert_raises(TypeError, eigvalsh_tridiagonal, self.d, self.e * 1j)
+        # Bad driver
+        assert_raises(TypeError, eigvalsh_tridiagonal, self.d, self.e,
+                      lapack_driver=1.)
+        assert_raises(ValueError, eigvalsh_tridiagonal, self.d, self.e,
+                      lapack_driver='foo')
+        # Bad bounds
+        assert_raises(ValueError, eigvalsh_tridiagonal, self.d, self.e,
+                      select='i', select_range=(0, -1))
+
+    def test_eigvalsh_tridiagonal(self):
+        """Compare eigenvalues of eigvalsh_tridiagonal with those of eig."""
+        # can't use ?STERF with subselection
+        for driver in ('sterf', 'stev', 'stebz', 'stemr', 'auto'):
+            w = eigvalsh_tridiagonal(self.d, self.e, lapack_driver=driver)
+            assert_array_almost_equal(sort(w), self.w)
+
+        for driver in ('sterf', 'stev'):
+            assert_raises(ValueError, eigvalsh_tridiagonal, self.d, self.e,
+                          lapack_driver='stev', select='i',
+                          select_range=(0, 1))
+        for driver in ('stebz', 'stemr', 'auto'):
+            # extracting eigenvalues with respect to the full index range
+            w_ind = eigvalsh_tridiagonal(
+                self.d, self.e, select='i', select_range=(0, len(self.d)-1),
+                lapack_driver=driver)
+            assert_array_almost_equal(sort(w_ind), self.w)
+
+            # extracting eigenvalues with respect to an index range
+            ind1 = 2
+            ind2 = 6
+            w_ind = eigvalsh_tridiagonal(
+                self.d, self.e, select='i', select_range=(ind1, ind2),
+                lapack_driver=driver)
+            assert_array_almost_equal(sort(w_ind), self.w[ind1:ind2+1])
+
+            # extracting eigenvalues with respect to a value range
+            v_lower = self.w[ind1] - 1.0e-5
+            v_upper = self.w[ind2] + 1.0e-5
+            w_val = eigvalsh_tridiagonal(
+                self.d, self.e, select='v', select_range=(v_lower, v_upper),
+                lapack_driver=driver)
+            assert_array_almost_equal(sort(w_val), self.w[ind1:ind2+1])
+
+    def test_eigh_tridiagonal(self):
+        """Compare eigenvalues and eigenvectors of eigh_tridiagonal
+           with those of eig. """
+        # can't use ?STERF when eigenvectors are requested
+        assert_raises(ValueError, eigh_tridiagonal, self.d, self.e,
+                      lapack_driver='sterf')
+        for driver in ('stebz', 'stev', 'stemr', 'auto'):
+            w, evec = eigh_tridiagonal(self.d, self.e, lapack_driver=driver)
+            evec_ = evec[:, argsort(w)]
+            assert_array_almost_equal(sort(w), self.w)
+            assert_array_almost_equal(abs(evec_), abs(self.evec))
+
+        assert_raises(ValueError, eigh_tridiagonal, self.d, self.e,
+                      lapack_driver='stev', select='i', select_range=(0, 1))
+        for driver in ('stebz', 'stemr', 'auto'):
+            # extracting eigenvalues with respect to an index range
+            ind1 = 0
+            ind2 = len(self.d)-1
+            w, evec = eigh_tridiagonal(
+                self.d, self.e, select='i', select_range=(ind1, ind2),
+                lapack_driver=driver)
+            assert_array_almost_equal(sort(w), self.w)
+            assert_array_almost_equal(abs(evec), abs(self.evec))
+            ind1 = 2
+            ind2 = 6
+            w, evec = eigh_tridiagonal(
+                self.d, self.e, select='i', select_range=(ind1, ind2),
+                lapack_driver=driver)
+            assert_array_almost_equal(sort(w), self.w[ind1:ind2+1])
+            assert_array_almost_equal(abs(evec),
+                                      abs(self.evec[:, ind1:ind2+1]))
+
+            # extracting eigenvalues with respect to a value range
+            v_lower = self.w[ind1] - 1.0e-5
+            v_upper = self.w[ind2] + 1.0e-5
+            w, evec = eigh_tridiagonal(
+                self.d, self.e, select='v', select_range=(v_lower, v_upper),
+                lapack_driver=driver)
+            assert_array_almost_equal(sort(w), self.w[ind1:ind2+1])
+            assert_array_almost_equal(abs(evec),
+                                      abs(self.evec[:, ind1:ind2+1]))
 
 
 def test_eigh():
@@ -1878,10 +2012,10 @@ class TestQZ(object):
         A = random([n,n]).astype(float32)
         B = random([n,n]).astype(float32)
         AA,BB,Q,Z = qz(A,B)
-        assert_array_almost_equal(dot(dot(Q,AA),Z.T), A)
-        assert_array_almost_equal(dot(dot(Q,BB),Z.T), B)
-        assert_array_almost_equal(dot(Q,Q.T), eye(n))
-        assert_array_almost_equal(dot(Z,Z.T), eye(n))
+        assert_array_almost_equal(dot(dot(Q,AA),Z.T), A, decimal=5)
+        assert_array_almost_equal(dot(dot(Q,BB),Z.T), B, decimal=5)
+        assert_array_almost_equal(dot(Q,Q.T), eye(n), decimal=5)
+        assert_array_almost_equal(dot(Z,Z.T), eye(n), decimal=5)
         assert_(all(diag(BB) >= 0))
 
     def test_qz_double(self):
@@ -2119,10 +2253,10 @@ class TestOrdQZ(object):
         return tuple(ret)
 
     def check(self, A, B, sort, AA, BB, alpha, beta, Q, Z):
-        I = np.eye(*A.shape)
+        Id = np.eye(*A.shape)
         # make sure Q and Z are orthogonal
-        assert_array_almost_equal(Q.dot(Q.T.conj()), I)
-        assert_array_almost_equal(Z.dot(Z.T.conj()), I)
+        assert_array_almost_equal(Q.dot(Q.T.conj()), Id)
+        assert_array_almost_equal(Z.dot(Z.T.conj()), Id)
         # check factorization
         assert_array_almost_equal(Q.dot(AA), A.dot(Z))
         assert_array_almost_equal(Q.dot(BB), B.dot(Z))
@@ -2467,14 +2601,31 @@ class TestOverwrite(object):
         assert_no_overwrite(svdvals, [(3,3)])
 
 
-def _check_orth(n):
-    X = np.ones((n, 2), dtype=float)
+def _check_orth(n, dtype, skip_big=False):
+    X = np.ones((n, 2), dtype=float).astype(dtype)
+
+    eps = np.finfo(dtype).eps
+    tol = 1000 * eps
+
     Y = orth(X)
     assert_equal(Y.shape, (n, 1))
-    assert_allclose(Y, Y.mean(), atol=1e-10)
+    assert_allclose(Y, Y.mean(), atol=tol)
+
     Y = orth(X.T)
     assert_equal(Y.shape, (2, 1))
-    assert_allclose(Y, Y.mean())
+    assert_allclose(Y, Y.mean(), atol=tol)
+
+    if n > 5 and not skip_big:
+        np.random.seed(1)
+        X = np.random.rand(n, 5).dot(np.random.rand(5, n))
+        X = X + 1e-4 * np.random.rand(n, 1).dot(np.random.rand(1, n))
+        X = X.astype(dtype)
+
+        Y = orth(X, rcond=1e-3)
+        assert_equal(Y.shape, (n, 5))
+
+        Y = orth(X, rcond=1e-6)
+        assert_equal(Y.shape, (n, 5 + 1))
 
 
 @pytest.mark.slow
@@ -2486,14 +2637,54 @@ def test_orth_memory_efficiency():
     # 32 bit overflow.
     n = 10*1000*1000
     try:
-        _check_orth(n)
+        _check_orth(n, np.float64, skip_big=True)
     except MemoryError:
         raise AssertionError('memory error perhaps caused by orth regression')
 
 
 def test_orth():
-    for n in 1, 2, 3, 10, 100:
-        _check_orth(n)
+    dtypes = [np.float32, np.float64, np.complex64, np.complex128]
+    sizes = [1, 2, 3, 10, 100]
+    for dt, n in itertools.product(dtypes, sizes):
+        _check_orth(n, dt)
+
+
+def test_null_space():
+    np.random.seed(1)
+
+    dtypes = [np.float32, np.float64, np.complex64, np.complex128]
+    sizes = [1, 2, 3, 10, 100]
+
+    for dt, n in itertools.product(dtypes, sizes):
+        X = np.ones((2, n), dtype=dt)
+
+        eps = np.finfo(dt).eps
+        tol = 1000 * eps
+
+        Y = null_space(X)
+        assert_equal(Y.shape, (n, n-1))
+        assert_allclose(X.dot(Y), 0, atol=tol)
+
+        Y = null_space(X.T)
+        assert_equal(Y.shape, (2, 1))
+        assert_allclose(X.T.dot(Y), 0, atol=tol)
+
+        X = np.random.randn(1 + n//2, n)
+        Y = null_space(X)
+        assert_equal(Y.shape, (n, n - 1 - n//2))
+        assert_allclose(X.dot(Y), 0, atol=tol)
+
+        if n > 5:
+            np.random.seed(1)
+            X = np.random.rand(n, 5).dot(np.random.rand(5, n))
+            X = X + 1e-4 * np.random.rand(n, 1).dot(np.random.rand(1, n))
+            X = X.astype(dt)
+
+            Y = null_space(X, rcond=1e-3)
+            assert_equal(Y.shape, (n, n - 5))
+
+            Y = null_space(X, rcond=1e-6)
+            assert_equal(Y.shape, (n, n - 6))
 
 
 def test_subspace_angles():
@@ -2530,3 +2721,96 @@ def test_subspace_angles():
     assert_raises(ValueError, subspace_angles, x[0], x)
     assert_raises(ValueError, subspace_angles, x, x[0])
     assert_raises(ValueError, subspace_angles, x[:-1], x)
+
+
+class TestCDF2RDF(object):
+
+    def matmul(self, a, b):
+        return np.einsum('...ij,...jk->...ik', a, b)
+
+    def assert_eig_valid(self, w, v, x):
+        assert_array_almost_equal(
+            self.matmul(v, w),
+            self.matmul(x, v)
+        )
+
+    def test_single_array0x0real(self):
+        # eig doesn't support 0x0 in old versions of numpy
+        X = np.empty((0, 0))
+        w, v = np.empty(0), np.empty((0, 0))
+        wr, vr = cdf2rdf(w, v)
+        self.assert_eig_valid(wr, vr, X)
+
+    def test_single_array2x2_real(self):
+        X = np.array([[1, 2], [3, -1]])
+        w, v = np.linalg.eig(X)
+        wr, vr = cdf2rdf(w, v)
+        self.assert_eig_valid(wr, vr, X)
+
+    def test_single_array2x2_complex(self):
+        X = np.array([[1, 2], [-2, 1]])
+        w, v = np.linalg.eig(X)
+        wr, vr = cdf2rdf(w, v)
+        self.assert_eig_valid(wr, vr, X)
+
+    def test_single_array3x3_real(self):
+        X = np.array([[1, 2, 3], [1, 2, 3], [2, 5, 6]])
+        w, v = np.linalg.eig(X)
+        wr, vr = cdf2rdf(w, v)
+        self.assert_eig_valid(wr, vr, X)
+
+    def test_single_array3x3_complex(self):
+        X = np.array([[1, 2, 3], [0, 4, 5], [0, -5, 4]])
+        w, v = np.linalg.eig(X)
+        wr, vr = cdf2rdf(w, v)
+        self.assert_eig_valid(wr, vr, X)
+
+    def test_random_1d_stacked_arrays(self):
+        # cannot test M == 0 due to bug in old numpy
+        for M in range(1, 7):
+            X = np.random.rand(100, M, M)
+            w, v = np.linalg.eig(X)
+            wr, vr = cdf2rdf(w, v)
+            self.assert_eig_valid(wr, vr, X)
+
+    def test_random_2d_stacked_arrays(self):
+        # cannot test M == 0 due to bug in old numpy
+        for M in range(1, 7):
+            X = np.random.rand(10, 10, M, M)
+            w, v = np.linalg.eig(X)
+            wr, vr = cdf2rdf(w, v)
+            self.assert_eig_valid(wr, vr, X)
+
+    def test_low_dimensionality_error(self):
+        w, v = np.empty(()), np.array((2,))
+        assert_raises(ValueError, cdf2rdf, w, v)
+
+    def test_not_square_error(self):
+        # Check that passing a non-square array raises a ValueError.
+        w, v = np.arange(3), np.arange(6).reshape(3,2)
+        assert_raises(ValueError, cdf2rdf, w, v)
+
+    def test_swapped_v_w_error(self):
+        # Check that exchanging places of w and v raises ValueError.
+        X = np.array([[1, 2, 3], [0, 4, 5], [0, -5, 4]])
+        w, v = np.linalg.eig(X)
+        assert_raises(ValueError, cdf2rdf, v, w)
+
+    def test_non_associated_error(self):
+        # Check that passing non-associated eigenvectors raises a ValueError.
+        w, v = np.arange(3), np.arange(16).reshape(4,4)
+        assert_raises(ValueError, cdf2rdf, w, v)
+
+    def test_not_conjugate_pairs(self):
+        # Check that passing non-conjugate pairs raises a ValueError.
+        X = np.array([[1, 2, 3], [1, 2, 3], [2, 5, 6+1j]])
+        w, v = np.linalg.eig(X)
+        assert_raises(ValueError, cdf2rdf, w, v)
+
+        # different arrays in the stack, so not conjugate
+        X = np.array([
+            [[1, 2, 3], [1, 2, 3], [2, 5, 6+1j]],
+            [[1, 2, 3], [1, 2, 3], [2, 5, 6-1j]],
+        ])
+        w, v = np.linalg.eig(X)
+        assert_raises(ValueError, cdf2rdf, w, v)
