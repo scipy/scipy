@@ -151,8 +151,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
     # Make sure that b has columns so we can iterate over them below. The
     # output array is eventually reshaped back to b.shape.
     bshape = b.shape
-    if len(bshape) == 1:
-        b = b[:, np.newaxis]
+    b = b.reshape(b.shape[0], -1)
 
     # b is a vector only if b has shape (n,) or (n, 1)
     b_is_sparse = isspmatrix(b)
