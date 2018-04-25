@@ -131,6 +131,10 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
     if (M != N):
         raise ValueError("matrix must be square (has shape %s)" % ((M, N),))
 
+    b_is_sparse = isspmatrix(b)
+    if not b_is_sparse:
+        b = asarray(b)
+
     if M != b.shape[0]:
         raise ValueError("matrix - rhs dimension mismatch (%s - %s)"
                          % (A.shape, b.shape))
@@ -154,9 +158,6 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
     b = b.reshape(b.shape[0], -1)
 
     # b is a vector only if b has shape (n,) or (n, 1)
-    b_is_sparse = isspmatrix(b)
-    if not b_is_sparse:
-        b = asarray(b)
     b_is_vector = ((b.ndim == 1) or (b.ndim == 2 and b.shape[1] == 1))
 
     # decide which solution method to use
