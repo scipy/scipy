@@ -14,13 +14,13 @@ from scipy import optimize
 from scipy import integrate
 import scipy.special as sc
 from scipy._lib._numpy_compat import broadcast_to
+from scipy._lib._util import _lazyselect, _lazywhere
 
 from . import _stats
 from ._tukeylambda_stats import (tukeylambda_variance as _tlvar,
                                  tukeylambda_kurtosis as _tlkurt)
 from ._distn_infrastructure import (get_distribution_names, _kurtosis,
-                                    _lazyselect, _lazywhere, _ncx2_cdf,
-                                    _ncx2_log_pdf, _ncx2_pdf,
+                                    _ncx2_cdf, _ncx2_log_pdf, _ncx2_pdf,
                                     rv_continuous, _skew, valarray)
 from ._constants import _XMIN, _EULER, _ZETA3, _XMAX, _LOGXMAX
 
@@ -3232,9 +3232,10 @@ class norminvgauss_gen(rv_continuous):
 
     %(after_notes)s
 
-    A normal inverse Gaussian random variable with parameters `a` and `b` can
-    be expressed  as `X = b * V + sqrt(V) * X` where `X` is `norm(0,1)`
-    and `V` is `invgauss(mu=1/sqrt(a**2 - b**2))`. This representation is used
+    A normal inverse Gaussian random variable `Y` with parameters `a` and `b`
+    can be expressed as a normal mean-variance mixture:
+    `Y = b * V + sqrt(V) * X` where `X` is `norm(0,1)` and `V` is
+    `invgauss(mu=1/sqrt(a**2 - b**2))`. This representation is used
     to generate random variates.
 
     References
@@ -3258,7 +3259,7 @@ class norminvgauss_gen(rv_continuous):
     def _pdf(self, x, a, b):
         gamma = np.sqrt(a**2 - b**2)
         fac1 = a / np.pi * np.exp(gamma)
-        sq = np.sqrt(1 + x**2)
+        sq = np.hypot(1, x)  # reduce overflows
         return fac1 * sc.k1e(a * sq) * np.exp(b*x - a*sq) / sq
 
     def _rvs(self, a, b):

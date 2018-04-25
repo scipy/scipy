@@ -749,6 +749,10 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
         c = np.ascontiguousarray(c, dtype=_get_dtype(c.dtype))
         return BSpline.construct_fast(t, c, k, axis=axis)
 
+    x = _as_float_array(x, check_finite)
+    y = _as_float_array(y, check_finite)
+    k = int(k)
+
     # come up with a sensible knot vector, if needed
     if t is None:
         if deriv_l is None and deriv_r is None:
@@ -764,10 +768,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
         else:
             t = _augknt(x, k)
 
-    x = _as_float_array(x, check_finite)
-    y = _as_float_array(y, check_finite)
     t = _as_float_array(t, check_finite)
-    k = int(k)
 
     axis = axis % y.ndim
     y = np.rollaxis(y, axis)    # now internally interp axis is zero

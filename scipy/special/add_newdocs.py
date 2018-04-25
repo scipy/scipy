@@ -6956,9 +6956,9 @@ add_newdoc("scipy.special", "loggamma",
     -----
     It is not generally true that :math:`\log\Gamma(z) =
     \log(\Gamma(z))`, though the real parts of the functions do
-    agree. The benefit of not defining ``loggamma`` as
+    agree. The benefit of not defining `loggamma` as
     :math:`\log(\Gamma(z))` is that the latter function has a
-    complicated branch cut structure whereas ``loggamma`` is analytic
+    complicated branch cut structure whereas `loggamma` is analytic
     except for on the negative real axis.
 
     The identities
@@ -6967,13 +6967,11 @@ add_newdoc("scipy.special", "loggamma",
       \exp(\log\Gamma(z)) &= \Gamma(z) \\
       \log\Gamma(z + 1) &= \log(z) + \log\Gamma(z)
 
-    make ``loggama`` useful for working in complex logspace. However,
-    ``loggamma`` necessarily returns complex outputs for real inputs,
-    so if you want to work only with real numbers use `gammaln`. On
-    the real line the two functions are related by ``exp(loggamma(x))
-    = gammasgn(x)*exp(gammaln(x))``, though in practice rounding
-    errors will introduce small spurious imaginary components in
-    ``exp(loggamma(x))``.
+    make `loggamma` useful for working in complex logspace.
+
+    On the real line `loggamma` is related to `gammaln` via
+    ``exp(loggamma(x + 0j)) = gammasgn(x)*exp(gammaln(x))``, up to
+    rounding error.
 
     The implementation here is based on [hare1997]_.
 

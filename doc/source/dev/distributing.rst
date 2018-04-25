@@ -45,7 +45,7 @@ are:
 
 Furthermore of course one needs C, C++ and Fortran compilers to build Scipy,
 but those we don't consider to be dependencies and are therefore not discussed
-here.  For details, see http://scipy.org/scipylib/building/index.html.
+here.  For details, see https://scipy.org/scipylib/building/index.html.
 
 When a package provides useful functionality and it's proposed as a new
 dependency, consider also if it makes sense to vendor (i.e. ship a copy of it with
@@ -181,8 +181,8 @@ Wheelhouse_, see at the wheel_ and Wheelhouse_ docs.
 
 
 .. _Numpy: http://numpy.org
-.. _Python: http://python.org
-.. _nose: http://nose.readthedocs.org
+.. _Python: https://python.org
+.. _nose: http://nose.readthedocs.io/en/latest/
 .. _asv: http://asv.readthedocs.org
 .. _matplotlib: http://matplotlib.org
 .. _Pillow: http://pillow.readthedocs.org
@@ -190,8 +190,8 @@ Wheelhouse_, see at the wheel_ and Wheelhouse_ docs.
 .. _mpmath: http://mpmath.org
 .. _Cython: http://cython.org
 .. _setuptools: https://bitbucket.org/pypa/setuptools
-.. _wheel: wheel.readthedocs.org
-.. _pip: http://pip-installer.org
+.. _wheel: https://wheel.readthedocs.io/
+.. _pip: https://pip.pypa.io/en/stable/
 .. _Python Packaging User Guide: https://packaging.python.org
 .. _Wheelhouse: https://pypi.python.org/pypi/Wheelhouse
 .. _MingwPy: https://mingwpy.github.io

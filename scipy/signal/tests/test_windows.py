@@ -1,5 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
+import pickle
+
 import numpy as np
 from numpy import array
 from numpy.testing import (assert_array_almost_equal, assert_array_equal,
@@ -631,3 +633,8 @@ def test_deprecation():
     if dep_hann.__doc__ is not None:  # can be None with `-OO` mode
         assert_('signal.hann is deprecated' in dep_hann.__doc__)
         assert_('deprecated' not in windows.hann.__doc__)
+
+
+def test_deprecated_pickleable():
+    dep_hann2 = pickle.loads(pickle.dumps(dep_hann))
+    assert_(dep_hann2 is dep_hann)

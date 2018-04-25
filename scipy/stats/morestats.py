@@ -9,7 +9,6 @@ from numpy import (isscalar, r_, log, around, unique, asarray,
                    zeros, arange, sort, amin, amax, any, atleast_1d,
                    sqrt, ceil, floor, array, compress,
                    pi, exp, ravel, count_nonzero, sin, cos, arctan2, hypot)
-from numpy.testing.decorators import setastest
 
 from scipy._lib.six import string_types
 from scipy import optimize
@@ -1972,7 +1971,6 @@ def levene(*args, **kwds):
     return LeveneResult(W, pval)
 
 
-@setastest(False)
 def binom_test(x, n=None, p=0.5, alternative='two-sided'):
     """
     Perform a test that the probability of success is p.
@@ -2418,7 +2416,6 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False):
     return WilcoxonResult(T, prob)
 
 
-@setastest(False)
 def median_test(*args, **kwds):
     """
     Mood's median test.
