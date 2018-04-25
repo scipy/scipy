@@ -158,9 +158,9 @@ def loadmat(file_name, mdict=None, appendmat=True, **kwargs):
     array([[0.        , 0.78539816, 1.57079633, 2.35619449, 3.14159265,
             3.92699082, 4.71238898, 5.49778714, 6.28318531]])
 
-    By default SciPy reads MATLAB structures as structured NumPy arrays of
-    dtype object. This can be disabled by setting the optional arguement
-    `struct_as_record=False`.
+    By default SciPy reads MATLAB structs as structured NumPy arrays where the
+    dtypes are objects named after the MATLAB struct fields. This can be
+    disabled by setting the optional argument `struct_as_record=False`.
 
     Get the filename for an example .mat file that contains a MATLAB struct
     called `teststruct` and load the contents.
@@ -168,36 +168,41 @@ def loadmat(file_name, mdict=None, appendmat=True, **kwargs):
     >>> matstruct_fname = pjoin(data_dir, 'teststruct_7.4_GLNX86.mat')
     >>> matstruct_contents = sio.loadmat(matstruct_fname)
     >>> teststruct = matstruct_contents['teststruct']
-    array(
-      [[(
-        ['Rats live on no evil star.'],
-        [[1.4142135623730951, 2.7182818284590455, 3.141592653589793]],
-        [[(1.4142135623730951+1.4142135623730951j),
-          (2.7182818284590455+2.7182818284590455j),
-          (3.141592653589793+3.141592653589793j)]]
-      )]],
-      dtype=[('stringfield', 'O'), ('doublefield', 'O'), ('complexfield', 'O')]
-    )
+    >>> teststruct.dtype
+    dtype([('stringfield', 'O'), ('doublefield', 'O'), ('complexfield', 'O')])
 
     The size of the structured array is the size of the MATLAB struct, not the
-    number elements in any particular field. The shape defaults to 2-D unless
-    the optional argument `squeeze_me=True`.
+    number of elements in any particular field. The shape defaults to 2-D
+    unless the optional argument `squeeze_me=True`, in which case all length 1
+    dimensions are removed.
 
     >>> teststruct.size
     1
     >>> teststruct.shape
     (1, 1)
 
-    Get the `stringfield` of the first element in the MATLAB struct.
+    Get the 'stringfield' of the first element in the MATLAB struct.
 
     >>> teststruct[0, 0]['stringfield']
     array(['Rats live on no evil star.'],
       dtype='<U26')
 
-    Get the first element of the `doublefield`.
+    Get the first element of the 'doublefield'.
 
     >>> teststruct['doublefield'][0, 0]
     array([[ 1.41421356,  2.71828183,  3.14159265]])
+
+    Load the MATLAB struct, squeezing out length 1 dimensions, and get the item
+    from the 'complexfield'.
+
+    >>> matstruct_squeezed = sio.loadmat(matstruct_fname, squeeze_me=True)
+    >>> matstruct_squeezed['teststruct'].shape
+    ()
+    >>> matstruct_squeezed['teststruct']['complexfield'].shape
+    ()
+    >>> matstruct_squeezed['teststruct']['complexfield'].item()
+    array([ 1.41421356+1.41421356j,  2.71828183+2.71828183j,
+        3.14159265+3.14159265j])
     """
     variable_names = kwargs.pop('variable_names', None)
     MR, file_opened = mat_reader_factory(file_name, appendmat, **kwargs)
