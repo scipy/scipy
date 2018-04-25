@@ -325,8 +325,8 @@ class Metropolis(object):
 
 def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
                  minimizer_kwargs=None, take_step=None, accept_test=None,
-                 callback=None, interval=50, disp=False, niter_success=None,
-                 seed=None):
+                 accept_rate=0.5, callback=None, interval=50, disp=False,
+                 niter_success=None, seed=None):
     """
     Find the global minimum of a function using the basin-hopping algorithm
 
@@ -383,6 +383,10 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
         other tests in order to accept the step. This can be used, for example,
         to forcefully escape from a local minimum that ``basinhopping`` is
         trapped in.
+    accept_rate : float, optional
+        Target acceptance rate that is used to adjust the stepsize. If the
+        current acceptance rate is greater than the target, then the stepsize
+        is increased. Otherwise, the stepsize is decreased.
     callback : callable, ``callback(x, f, accept)``, optional
         A callback function which will be called for all minima found.  ``x``
         and ``f`` are the coordinates and function value of the trial minimum,
@@ -642,14 +646,18 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
         # if take_step.stepsize exists then use AdaptiveStepsize to control
         # take_step.stepsize
         if hasattr(take_step, "stepsize"):
-            take_step_wrapped = AdaptiveStepsize(take_step, interval=interval,
+            take_step_wrapped = AdaptiveStepsize(take_step,
+                                                 interval=interval,
+                                                 accept_rate=accept_rate,
                                                  verbose=disp)
         else:
             take_step_wrapped = take_step
     else:
         # use default
         displace = RandomDisplacement(stepsize=stepsize, random_state=rng)
-        take_step_wrapped = AdaptiveStepsize(displace, interval=interval,
+        take_step_wrapped = AdaptiveStepsize(displace,
+                                             interval=interval,
+                                             accept_rate=accept_rate,
                                              verbose=disp)
 
     # set up accept tests
