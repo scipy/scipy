@@ -3757,7 +3757,7 @@ class levy_stable_gen(rv_continuous):
             tan_U = np.tan(U)
             if alpha==1:
                 return (2. / np.pi) * ((np.pi / 2. + beta * U) * tan_U -
-                    beta * np.log(E * cos_U) / (np.pi / 2. + b * U))
+                    beta * np.log(E * cos_U) / (np.pi / 2. + beta * U))
             else:
                 tan_betaB = beta * np.tan(np.pi * alpha / 2.)
                 b = np.arctan(tan_betaB) / alpha
@@ -3792,16 +3792,16 @@ class levy_stable_gen(rv_continuous):
         """
         K = lambda a: a - 1. + np.sign(1. - a)
         
-        def _a_to_b(alpha, beta, scale)):
+        def _a_to_b(alpha, beta, scale):
             beta = np.arctan(beta * np.tan(np.pi * alpha / 2.)) * 2. / (np.pi * K(alpha))
             scale = scale/cos(beta)
             return dict(alpha=alpha, beta=beta,scale=scale)
 
-        def _b_to_c(dict(alpha, beta, scale)):
+        def _b_to_c(alpha, beta, scale):
             delta = beta*K(alpha)/alpha
             return dict(alpha=alpha, beta=beta, scale=scale, delta=delta)
 
-        def _b_to_p(alpha, beta)
+        def _b_to_p(alpha, beta): 
             p_1 = 1/2 + beta*K(alpha)/(2*alpha)
 
         def _b_to_a(alpha, beta, scale):
@@ -3900,8 +3900,8 @@ class levy_stable_gen(rv_continuous):
         Results for the pdf at a single point calculated using expansions.
         Convergent solutions are available for |x| <= 1. Asymptotic solutions are
         available for larger |x| and are increasingly accurate as |x| increases.
-        TODO        Method remains experimental and needs improvement.
         """
+        #TODO: Method remains experimental and needs improvement.
 
         K = lambda a: a - 1 + np.sign(1-a)
         beta_B = cls._param_switch('A', 'B', beta=beta, alpha=alpha, scale=1)['beta']
@@ -3964,7 +3964,7 @@ class levy_stable_gen(rv_continuous):
                 lnf_element = lnf1_element
                 asymptotic = True
         
-        #TODO implement changing behaviour for asymptotic and convergent expansions.
+        #TODO: implement changing behaviour for asymptotic and convergent expansions.
         #Current implementation simply iterates 100 terms of each rather than 
         #measuring to a desired precision or awaiting for the asymptotic increase
 
