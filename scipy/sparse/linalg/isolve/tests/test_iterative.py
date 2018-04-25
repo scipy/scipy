@@ -3,14 +3,16 @@
 
 from __future__ import division, print_function, absolute_import
 
+import itertools
 import numpy as np
 
 from numpy.testing import (assert_equal, assert_array_equal,
      assert_, assert_allclose)
+import pytest
 from pytest import raises as assert_raises
 from scipy._lib._numpy_compat import suppress_warnings
 
-from numpy import zeros, arange, array, abs, max, ones, eye, iscomplexobj
+from numpy import zeros, arange, array, ones, eye, iscomplexobj
 from scipy.linalg import norm
 from scipy.sparse import spdiags, csr_matrix, SparseEfficiencyWarning
 
@@ -163,7 +165,9 @@ def test_maxiter():
     for solver in params.solvers:
         if solver in case.skip:
             continue
-        check_maxiter(solver, case)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, ".*called without specifying.*")
+            check_maxiter(solver, case)
 
 
 def assert_normclose(a, b, tol=1e-8):
@@ -196,7 +200,9 @@ def test_convergence():
         for case in params.cases:
             if solver in case.skip:
                 continue
-            check_convergence(solver, case)
+            with suppress_warnings() as sup:
+                sup.filter(DeprecationWarning, ".*called without specifying.*")
+                check_convergence(solver, case)
 
 
 def check_precond_dummy(solver, case):
@@ -237,7 +243,9 @@ def test_precond_dummy():
     for solver in params.solvers:
         if solver in case.skip:
             continue
-        check_precond_dummy(solver, case)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, ".*called without specifying.*")
+            check_precond_dummy(solver, case)
 
 
 def check_precond_inverse(solver, case):
@@ -291,7 +299,9 @@ def test_precond_inverse():
             continue
         if solver is qmr:
             continue
-        check_precond_inverse(solver, case)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, ".*called without specifying.*")
+            check_precond_inverse(solver, case)
 
 
 def test_gmres_basic():
@@ -300,7 +310,9 @@ def test_gmres_basic():
     b[0] = 1
     x = np.linalg.solve(A, b)
 
-    x_gm, err = gmres(A, b, restart=5, maxiter=1)
+    with suppress_warnings() as sup:
+        sup.filter(DeprecationWarning, ".*called without specifying.*")
+        x_gm, err = gmres(A, b, restart=5, maxiter=1)
 
     assert_allclose(x_gm[0], 0.359, rtol=1e-2)
 
@@ -309,7 +321,9 @@ def test_reentrancy():
     non_reentrant = [cg, cgs, bicg, bicgstab, gmres, qmr]
     reentrant = [lgmres, minres, gcrotmk]
     for solver in reentrant + non_reentrant:
-        _check_reentrancy(solver, solver in reentrant)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, ".*called without specifying.*")
+            _check_reentrancy(solver, solver in reentrant)
 
 
 def _check_reentrancy(solver, is_reentrant):
@@ -328,6 +342,80 @@ def _check_reentrancy(solver, is_reentrant):
         y, info = solver(op, b)
         assert_equal(info, 0)
         assert_allclose(y, [1, 1, 1])
+
+
+@pytest.mark.parametrize("solver", [cg, cgs, bicg, bicgstab, gmres, qmr, lgmres, gcrotmk])
+def test_atol(solver):
+    # TODO: minres. It didn't historically use absolute tolerances, so
+    # fixing it is less urgent.
+
+    np.random.seed(1234)
+    A = np.random.rand(10, 10)
+    A = A.dot(A.T) + 10 * np.eye(10)
+    b = 1e3 * np.random.rand(10)
+    b_norm = np.linalg.norm(b)
+
+    tols = np.r_[0, np.logspace(np.log10(1e-10), np.log10(1e2), 7), np.inf]
+
+    # Check effect of badly scaled preconditioners
+    M0 = np.random.randn(10, 10)
+    M0 = M0.dot(M0.T)
+    Ms = [None, 1e-6 * M0, 1e6 * M0]
+
+    for M, tol, atol in itertools.product(Ms, tols, tols):
+        if tol == 0 and atol == 0:
+            continue
+
+        if solver is qmr:
+            if M is not None:
+                M = aslinearoperator(M)
+                M2 = aslinearoperator(np.eye(10))
+            else:
+                M2 = None
+            x, info = solver(A, b, M1=M, M2=M2, tol=tol, atol=atol)
+        else:
+            x, info = solver(A, b, M=M, tol=tol, atol=atol)
+        assert_equal(info, 0)
+
+        residual = A.dot(x) - b
+        err = np.linalg.norm(residual)
+        atol2 = tol * b_norm
+        assert_(err <= max(atol, atol2))
+
+
+@pytest.mark.parametrize("solver", [cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres, gcrotmk])
+def test_zero_rhs(solver):
+    np.random.seed(1234)
+    A = np.random.rand(10, 10)
+    A = A.dot(A.T) + 10 * np.eye(10)
+
+    b = np.zeros(10)
+    tols = np.r_[np.logspace(np.log10(1e-10), np.log10(1e2), 7)]
+
+    for tol in tols:
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, ".*called without specifying.*")
+
+            x, info = solver(A, b, tol=tol)
+            assert_equal(info, 0)
+            assert_allclose(x, 0, atol=1e-15)
+
+            x, info = solver(A, b, tol=tol, x0=ones(10))
+            assert_equal(info, 0)
+            assert_allclose(x, 0, atol=tol)
+
+            if solver is not minres:
+                x, info = solver(A, b, tol=tol, atol=0, x0=ones(10))
+                if info == 0:
+                    assert_allclose(x, 0)
+
+                x, info = solver(A, b, tol=tol, atol=tol)
+                assert_equal(info, 0)
+                assert_allclose(x, 0, atol=1e-300)
+
+                x, info = solver(A, b, tol=tol, atol=0)
+                assert_equal(info, 0)
+                assert_allclose(x, 0, atol=1e-300)
 
 
 #------------------------------------------------------------------------------
@@ -368,7 +456,9 @@ class TestQMR(object):
         M1 = LinearOperator((n,n), matvec=L_solve, rmatvec=LT_solve)
         M2 = LinearOperator((n,n), matvec=U_solve, rmatvec=UT_solve)
 
-        x,info = qmr(A, b, tol=1e-8, maxiter=15, M1=M1, M2=M2)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, ".*called without specifying.*")
+            x,info = qmr(A, b, tol=1e-8, maxiter=15, M1=M1, M2=M2)
 
         assert_equal(info,0)
         assert_normclose(A*x, b, tol=1e-8)
@@ -387,20 +477,95 @@ class TestGMRES(object):
         rvec = zeros(maxiter+1)
         rvec[0] = 1.0
         callback = lambda r:store_residual(r, rvec)
-        x,flag = gmres(A, b, x0=zeros(A.shape[0]), tol=1e-16, maxiter=maxiter, callback=callback)
-        diff = max(abs((rvec - array([1.0, 0.81649658092772603]))))
-        assert_(diff < 1e-5)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, ".*called without specifying.*")
+            x,flag = gmres(A, b, x0=zeros(A.shape[0]), tol=1e-16, maxiter=maxiter, callback=callback)
+
+        # Expected output from Scipy 1.0.0
+        assert_allclose(rvec, array([1.0, 0.81649658092772603]), rtol=1e-10)
+
+        # Test preconditioned callback
+        M = 1e-3 * np.eye(A.shape[0])
+        rvec = zeros(maxiter+1)
+        rvec[0] = 1.0
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, ".*called without specifying.*")
+            x, flag = gmres(A, b, M=M, tol=1e-16, maxiter=maxiter, callback=callback)
+
+        # Expected output from Scipy 1.0.0 (callback has preconditioned residual!)
+        assert_allclose(rvec, array([1.0, 1e-3 * 0.81649658092772603]), rtol=1e-10)
 
     def test_abi(self):
         # Check we don't segfault on gmres with complex argument
         A = eye(2)
         b = ones(2)
-        r_x, r_info = gmres(A, b)
-        r_x = r_x.astype(complex)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, ".*called without specifying.*")
+            r_x, r_info = gmres(A, b)
+            r_x = r_x.astype(complex)
 
-        x, info = gmres(A.astype(complex), b.astype(complex))
+            x, info = gmres(A.astype(complex), b.astype(complex))
 
         assert_(iscomplexobj(x))
         assert_allclose(r_x, x)
         assert_(r_info == info)
 
+    def test_atol_legacy(self):
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, ".*called without specifying.*")
+
+            # Check the strange legacy behavior: the tolerance is interpreted
+            # as atol, but only for the initial residual
+            A = eye(2)
+            b = 1e-6 * ones(2)
+            x, info = gmres(A, b, tol=1e-5)
+            assert_array_equal(x, np.zeros(2))
+
+            A = eye(2)
+            b = ones(2)
+            x, info = gmres(A, b, tol=1e-5)
+            assert_(np.linalg.norm(A.dot(x) - b) <= 1e-5*np.linalg.norm(b))
+            assert_allclose(x, b, atol=0, rtol=1e-8)
+
+            A = np.random.rand(30, 30)
+            b = 1e-6 * ones(30)
+            x, info = gmres(A, b, tol=1e-7, restart=20)
+            assert_(np.linalg.norm(A.dot(x) - b) > 1e-7)
+
+        A = eye(2)
+        b = 1e-10 * ones(2)
+        x, info = gmres(A, b, tol=1e-8, atol=0)
+        assert_(np.linalg.norm(A.dot(x) - b) <= 1e-8*np.linalg.norm(b))
+
+    def test_defective_precond_breakdown(self):
+        # Breakdown due to defective preconditioner
+        M = np.eye(3)
+        M[2,2] = 0
+
+        b = np.array([0, 1, 1])
+        x = np.array([1, 0, 0])
+        A = np.diag([2, 3, 4])
+
+        x, info = gmres(A, b, x0=x, M=M, tol=1e-15, atol=0)
+
+        # Should not return nans, nor terminate with false success
+        assert_(not np.isnan(x).any())
+        if info == 0:
+            assert_(np.linalg.norm(A.dot(x) - b) <= 1e-15*np.linalg.norm(b))
+
+        # The solution should be OK outside null space of M
+        assert_allclose(M.dot(A.dot(x)), M.dot(b))
+
+    def test_defective_matrix_breakdown(self):
+        # Breakdown due to defective matrix
+        A = np.array([[0, 1, 0], [1, 0, 0], [0, 0, 0]])
+        b = np.array([1, 0, 1])
+        x, info = gmres(A, b, tol=1e-8, atol=0)
+
+        # Should not return nans, nor terminate with false success
+        assert_(not np.isnan(x).any())
+        if info == 0:
+            assert_(np.linalg.norm(A.dot(x) - b) <= 1e-8*np.linalg.norm(b))
+
+        # The solution should be OK outside null space of A
+        assert_allclose(A.dot(A.dot(x)), A.dot(b))

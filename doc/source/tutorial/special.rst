@@ -246,12 +246,7 @@ The `binary entropy function`_::
   def binary_entropy(x):
       return -(sc.xlogy(x, x) + sc.xlog1py(1 - x, -x))/np.log(2)
 
-The `Heaviside step function`_::
-
-  def heaviside(x):
-      return 0.5*(np.sign(x) + 1)
-
-A similar idea can also be used to get a step function on [0, 1]::
+A rectangular step function on [0, 1]::
 
   def step(x):
       return 0.5*(np.sign(x) + np.sign(1 - x))
@@ -269,7 +264,5 @@ The `ramp function`_::
 .. _here: http://docs.cython.org/en/latest/src/userguide/parallelism.html#compiling
 
 .. _`binary entropy function`: https://en.wikipedia.org/wiki/Binary_entropy_function
-
-.. _`Heaviside step function`: https://stackoverflow.com/questions/15121048/does-a-heaviside-step-function-exist
 
 .. _`ramp function`: https://en.wikipedia.org/wiki/Ramp_function

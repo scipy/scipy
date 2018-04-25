@@ -25,12 +25,23 @@ This release requires Python 2.7 or 3.4+ and NumPy 1.8.2 or greater.
 New features
 ============
 
+`scipy.integrate` improvements
+------------------------------
+
+The argument ``tfirst`` has been added to the function
+`scipy.integrate.odeint`.  This allows `odeint` to use the same
+user functions as `scipy.integrate.solve_ivp` and `scipy.integrate.ode`
+without the need for wrapping them in a function that swaps the first
+two arguments.
+
+
 `scipy.linalg` improvements
 ----------------------------
 
 The function `scipy.linalg.ldl` has been added for factorization of
 indefinite symmetric/hermitian matrices into triangular and block
 diagonal matrices.
+
 
 `scipy.optimize` improvements
 -----------------------------
@@ -43,6 +54,18 @@ below.
 The ``init`` keyword for the `scipy.optimize.differential_evolution` function
 can now accept an array. This array allows the user to specify the entire
 population.
+
+
+`scipy.signal` improvements
+---------------------------
+
+Three new functions for peak finding in one-dimensional arrays were added.
+`scipy.signal.find_peaks` searches for peaks (local maxima) based on simple value
+comparison of neighbouring samples and returns those peaks whose properties match
+optionally specified conditions for their height, prominence, width, threshold
+and distance to each other. `scipy.signal.peak_prominences` and
+`scipy.signal.peak_widths` can directly calculate the prominences or widths of
+known peaks.
 
 
 `scipy.sparse` improvements

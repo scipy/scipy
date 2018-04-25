@@ -49,30 +49,31 @@ typedef struct _odepack_globals {
     PyObject *extra_arguments;  /* a tuple */
     int jac_transpose;
     int jac_type;
+    int tfirst;
 } odepack_params;
 
-static odepack_params global_params = {NULL, NULL, NULL, 0, 0};
+static odepack_params global_params = {NULL, NULL, NULL, 0, 0, 0};
 
 static
-PyObject *call_python_function(PyObject *func, npy_intp n, double *x,
-                               PyObject *args, PyObject *error_obj)
+PyObject *call_odeint_user_function(PyObject *func, npy_intp n, double *x,
+                                    double t, int tfirst,
+                                    PyObject *args, PyObject *error_obj)
 {
     /*
-    This is a generic function to call a python function that takes a 1-D
-    sequence as a first argument and optional extra_arguments (should be a
-    zero-length tuple if none desired).  The result of the function is
-    returned in a multiarray object.
-        -- build sequence object from values in x.
-        -- add extra arguments (if any) to an argument list.
-        -- call Python callable object
-        -- check if error occurred:
-           if so return NULL
-        -- if no error, place result of Python code into multiarray object.
+    This function is the C wrapper of the user's Python functions that
+    define the differential equations (and also the Jacobian function).
+    The Fortran code calls ode_function() and ode_jacobian_function(),
+    and those functions call this function to call the Python functions
+    provided to odeint by the user.
+
+    If an error occurs, NULL is returned.  Otherwise, a numpy array
+    is returned.
     */
 
     PyArrayObject *sequence = NULL;
+    PyObject *tfloat = NULL;
+    PyObject *firstargs = NULL;
     PyObject *arglist = NULL;
-    PyObject *arg1 = NULL;
     PyObject *result = NULL;
     PyArrayObject *result_array = NULL;
 
@@ -83,43 +84,49 @@ PyObject *call_python_function(PyObject *func, npy_intp n, double *x,
         goto fail;
     }
 
-    /* Build argument list */
-    if ((arg1 = PyTuple_New(1)) == NULL) {
-        Py_DECREF(sequence);
-        return NULL;
-    }
-    PyTuple_SET_ITEM(arg1, 0, (PyObject *)sequence);
-    /* arg1 now owns sequence reference */
-    if ((arglist = PySequence_Concat(arg1, args)) == NULL) {
+    tfloat = PyFloat_FromDouble(t);
+    if (tfloat == NULL) {
         goto fail;
     }
 
-    Py_DECREF(arg1);    /* arglist has a reference to sequence, now. */
-    arg1 = NULL;
-
-    /*
-     * Call function object --- variable passed to routine.  Extra
-     * arguments are in another passed variable.
-     */
-    if ((result = PyEval_CallObject(func, arglist))==NULL) {
+    /* firstargs is a tuple that will hold the first two arguments. */
+    firstargs = PyTuple_New(2);
+    if (firstargs == NULL) {
         goto fail;
     }
 
-    result_array = (PyArrayObject *) PyArray_ContiguousFromObject(result,
-                                                        NPY_DOUBLE, 0, 0);
-    if (result_array == NULL) {
+    if (tfirst == 0) {
+        PyTuple_SET_ITEM(firstargs, 0, (PyObject *) sequence);
+        PyTuple_SET_ITEM(firstargs, 1, tfloat);
+    } else {
+        PyTuple_SET_ITEM(firstargs, 0, tfloat);
+        PyTuple_SET_ITEM(firstargs, 1, (PyObject *) sequence);
+    }
+    /* firstargs now owns the sequence and tfloat references. */
+    sequence = NULL;
+    tfloat = NULL;
+
+    arglist = PySequence_Concat(firstargs, args);
+    if (arglist == NULL) {
         goto fail;
     }
 
-    Py_DECREF(result);
-    Py_DECREF(arglist);
-    return (PyObject *) result_array;
+    /* Call the Python function. */
+    result = PyEval_CallObject(func, arglist);
+    if (result == NULL) {
+        goto fail;
+    }
+
+    result_array = (PyArrayObject *)
+                   PyArray_ContiguousFromObject(result, NPY_DOUBLE, 0, 0);
 
 fail:
+    Py_XDECREF(sequence);
+    Py_XDECREF(tfloat);
+    Py_XDECREF(firstargs);
     Py_XDECREF(arglist);
     Py_XDECREF(result);
-    Py_XDECREF(arg1);
-    return NULL;
+    return (PyObject *) result_array;
 }
 
 
@@ -155,34 +162,21 @@ void
 ode_function(int *n, double *t, double *y, double *ydot)
 {
     /*
-    This is the function called from the Fortran code it should
-        -- use call_python_function to get a multiarrayobject result
+    This is the function called from the Fortran code. It should
+        -- use call_odeint_user_function to get a multiarrayobject result
         -- check for errors and set *n to -1 if any
         -- otherwise place result of calculation in ydot
     */
 
     PyArrayObject *result_array = NULL;
-    PyObject *arg1, *arglist;
 
-    /* Append t to argument list */
-    if ((arg1 = PyTuple_New(1)) == NULL) {
-        *n = -1;
-        return;
-    }
-    PyTuple_SET_ITEM(arg1, 0, PyFloat_FromDouble(*t));
-    /* arg1 now owns newly created reference */
-    if ((arglist = PySequence_Concat(arg1, global_params.extra_arguments)) == NULL) {
-        *n = -1;
-        Py_DECREF(arg1);
-        return;
-    }
-    Py_DECREF(arg1);    /* arglist has reference */
-
-    result_array = (PyArrayObject *)call_python_function(global_params.python_function,
-                                                    *n, y, arglist, odepack_error);
+    result_array = (PyArrayObject *)
+                   call_odeint_user_function(global_params.python_function,
+                                             *n, y, *t, global_params.tfirst,
+                                             global_params.extra_arguments,
+                                             odepack_error);
     if (result_array == NULL) {
         *n = -1;
-        Py_DECREF(arglist);
         return;
     }
 
@@ -191,7 +185,6 @@ ode_function(int *n, double *t, double *y, double *ydot)
         PyErr_Format(PyExc_RuntimeError,
                 "The array return by func must be one-dimensional, but got ndim=%d.",
                 PyArray_NDIM(result_array));
-        Py_DECREF(arglist);
         Py_DECREF(result_array);
         return;
     }
@@ -202,14 +195,12 @@ ode_function(int *n, double *t, double *y, double *ydot)
             "the size of y0 (%d).",
             PyArray_Size((PyObject *)result_array), *n);
         *n = -1;
-        Py_DECREF(arglist);
         Py_DECREF(result_array);
         return;
     }
 
     memcpy(ydot, PyArray_DATA(result_array), (*n)*sizeof(double));
     Py_DECREF(result_array);
-    Py_DECREF(arglist);
     return;
 }
 
@@ -256,38 +247,24 @@ ode_jacobian_function(int *n, double *t, double *y, int *ml, int *mu,
                       double *pd, int *nrowpd)
 {
     /*
-        This is the function called from the Fortran code it should
-            -- use call_python_function to get a multiarrayobject result
+        This is the function called from the Fortran code. It should
+            -- use call_odeint_user_function to get a multiarrayobject result
             -- check for errors and return -1 if any (though this is ignored
                            by calling program).
             -- otherwise place result of calculation in pd
     */
 
     PyArrayObject *result_array;
-    PyObject *arglist, *arg1;
-
     int ndim, nrows, ncols, dim_error;
     npy_intp *dims;
 
-    /* Append t to argument list */
-    if ((arg1 = PyTuple_New(1)) == NULL) {
-        *n = -1;
-        return -1;
-    }
-    PyTuple_SET_ITEM(arg1, 0, PyFloat_FromDouble(*t));
-    /* arg1 now owns newly created reference */
-    if ((arglist = PySequence_Concat(arg1, global_params.extra_arguments)) == NULL) {
-        *n = -1;
-        Py_DECREF(arg1);
-        return -1;
-    }
-    Py_DECREF(arg1);    /* arglist has reference */
-
-    result_array = (PyArrayObject *)call_python_function(global_params.python_jacobian,
-                                                         *n, y, arglist, odepack_error);
+    result_array = (PyArrayObject *)
+                   call_odeint_user_function(global_params.python_jacobian,
+                                             *n, y, *t, global_params.tfirst,
+                                             global_params.extra_arguments,
+                                             odepack_error);
     if (result_array == NULL) {
         *n = -1;
-        Py_DECREF(arglist);
         return -1;
     }
 
@@ -312,7 +289,6 @@ ode_jacobian_function(int *n, double *t, double *y, int *ml, int *mu,
             "The Jacobian array must be two dimensional, but got ndim=%d.",
             ndim);
         *n = -1;
-        Py_DECREF(arglist);
         Py_DECREF(result_array);
         return -1;
     }
@@ -343,7 +319,6 @@ ode_jacobian_function(int *n, double *t, double *y, int *ml, int *mu,
             "Expected a %sJacobian array with shape (%d, %d)",
             b, nrows, ncols);
         *n = -1;
-        Py_DECREF(arglist);
         Py_DECREF(result_array);
         return -1;
     }
@@ -380,7 +355,6 @@ ode_jacobian_function(int *n, double *t, double *y, int *ml, int *mu,
             !global_params.jac_transpose);
     }
 
-    Py_DECREF(arglist);
     Py_DECREF(result_array);
     return 0;
 }
@@ -513,6 +487,7 @@ odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdict)
     double *y, t, *tout, *rtol, *atol, *rwork;
     double h0 = 0.0, hmax = 0.0, hmin = 0.0;
     int ixpr = 0, mxstep = 0, mxhnil = 0, mxordn = 12, mxords = 5, ml = -1, mu = -1;
+    int tfirst;
     PyObject *o_tcrit = NULL;
     PyArrayObject *ap_tcrit = NULL;
     PyArrayObject *ap_hu = NULL, *ap_tcur = NULL, *ap_tolsf = NULL, *ap_tsw = NULL;
@@ -527,14 +502,14 @@ odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdict)
     static char *kwlist[] = {"fun", "y0", "t", "args", "Dfun", "col_deriv",
                              "ml", "mu", "full_output", "rtol", "atol", "tcrit",
                              "h0", "hmax", "hmin", "ixpr", "mxstep", "mxhnil",
-                             "mxordn", "mxords", NULL};
+                             "mxordn", "mxords", "tfirst", NULL};
     odepack_params save_params;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwdict, "OOO|OOiiiiOOOdddiiiii", kwlist,
+    if (!PyArg_ParseTupleAndKeywords(args, kwdict, "OOO|OOiiiiOOOdddiiiiii", kwlist,
                                      &fcn, &y0, &p_tout, &extra_args, &Dfun,
                                      &col_deriv, &ml, &mu, &full_output, &o_rtol, &o_atol,
                                      &o_tcrit, &h0, &hmax, &hmin, &ixpr, &mxstep, &mxhnil,
-                                     &mxordn, &mxords)) {
+                                     &mxordn, &mxords, &tfirst)) {
         return NULL;
     }
 
@@ -589,6 +564,7 @@ odepack_odeint(PyObject *dummy, PyObject *args, PyObject *kwdict)
     global_params.python_jacobian = Dfun;
     global_params.jac_transpose = !(col_deriv);
     global_params.jac_type = jt;
+    global_params.tfirst = tfirst;
 
     /* Initial input vector */
     ap_y = (PyArrayObject *) PyArray_ContiguousFromObject(y0, NPY_DOUBLE, 0, 0);

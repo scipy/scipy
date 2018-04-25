@@ -7,13 +7,14 @@ from __future__ import division, print_function, absolute_import
 from scipy import special
 from scipy.special import entr, logsumexp, betaln, gammaln as gamln
 from scipy._lib._numpy_compat import broadcast_to
+from scipy._lib._util import _lazywhere
 
 from numpy import floor, ceil, log, exp, sqrt, log1p, expm1, tanh, cosh, sinh
 
 import numpy as np
 
 from ._distn_infrastructure import (
-        rv_discrete, _lazywhere, _ncx2_pdf, _ncx2_cdf, get_distribution_names)
+        rv_discrete, _ncx2_pdf, _ncx2_cdf, get_distribution_names)
 
 
 class binom_gen(rv_discrete):
@@ -351,9 +352,10 @@ class hypergeom_gen(rv_discrete):
     def _logpmf(self, k, M, n, N):
         tot, good = M, n
         bad = tot - good
-        return betaln(good+1, 1) + betaln(bad+1,1) + betaln(tot-N+1, N+1)\
-            - betaln(k+1, good-k+1) - betaln(N-k+1,bad-N+k+1)\
-            - betaln(tot+1, 1)
+        result = (betaln(good+1, 1) + betaln(bad+1, 1) + betaln(tot-N+1, N+1) -
+                  betaln(k+1, good-k+1) - betaln(N-k+1, bad-N+k+1) -
+                  betaln(tot+1, 1))
+        return result
 
     def _pmf(self, k, M, n, N):
         # same as the following but numerically more precise
@@ -605,17 +607,22 @@ class boltzmann_gen(rv_discrete):
 
     .. math::
 
-        f(k) = (1-\exp(-\lambda) \exp(-\lambda k)/(1-\exp(-\lambda N))
+        f(k) = (1-\exp(-\lambda)) \exp(-\lambda k) / (1-\exp(-\lambda N))
 
     for :math:`k = 0,..., N-1`.
 
-    `boltzmann` takes :math:`\lambda` and :math:`N` as shape parameters.
+    `boltzmann` takes :math:`\lambda > 0` and :math:`N > 0` as shape parameters.
 
     %(after_notes)s
 
     %(example)s
 
     """
+    def _argcheck(self, lambda_, N):
+        self.a = 0
+        self.b = N - 1
+        return (lambda_ > 0) & (N > 0)
+
     def _pmf(self, k, lambda_, N):
         # boltzmann.pmf(k) =
         #               (1-exp(-lambda_)*exp(-lambda_*k)/(1-exp(-lambda_*N))
@@ -648,7 +655,7 @@ class boltzmann_gen(rv_discrete):
 
 
 boltzmann = boltzmann_gen(name='boltzmann',
-        longname='A truncated discrete exponential ')
+                          longname='A truncated discrete exponential ')
 
 
 class randint_gen(rv_discrete):
@@ -800,8 +807,9 @@ class dlaplace_gen(rv_discrete):
 
     def _ppf(self, q, a):
         const = 1 + exp(a)
-        vals = ceil(np.where(q < 1.0 / (1 + exp(-a)), log(q*const) / a - 1,
-                                                      -log((1-q) * const) / a))
+        vals = ceil(np.where(q < 1.0 / (1 + exp(-a)),
+                             log(q*const) / a - 1,
+                             -log((1-q) * const) / a))
         vals1 = vals - 1
         return np.where(self._cdf(vals1, a) >= q, vals1, vals)
 
@@ -856,16 +864,16 @@ class skellam_gen(rv_discrete):
 
     def _pmf(self, x, mu1, mu2):
         px = np.where(x < 0,
-                _ncx2_pdf(2*mu2, 2*(1-x), 2*mu1)*2,
-                _ncx2_pdf(2*mu1, 2*(1+x), 2*mu2)*2)
+                      _ncx2_pdf(2*mu2, 2*(1-x), 2*mu1)*2,
+                      _ncx2_pdf(2*mu1, 2*(1+x), 2*mu2)*2)
         # ncx2.pdf() returns nan's for extremely low probabilities
         return px
 
     def _cdf(self, x, mu1, mu2):
         x = floor(x)
         px = np.where(x < 0,
-                _ncx2_cdf(2*mu2, -2*x, 2*mu1),
-                1-_ncx2_cdf(2*mu1, 2*(x+1), 2*mu2))
+                      _ncx2_cdf(2*mu2, -2*x, 2*mu1),
+                      1 - _ncx2_cdf(2*mu1, 2*(x+1), 2*mu2))
         return px
 
     def _stats(self, mu1, mu2):

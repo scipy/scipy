@@ -153,7 +153,7 @@ def binned_statistic(x, values, statistic='mean',
     >>> bin_centers = bin_edges[1:] - bin_width/2
 
     >>> plt.figure()
-    >>> plt.hist(samples, bins=50, normed=True, histtype='stepfilled',
+    >>> plt.hist(samples, bins=50, density=True, histtype='stepfilled',
     ...          alpha=0.2, label='histogram of data')
     >>> plt.plot(x, x_pdf, 'r-', label='analytical pdf')
     >>> plt.hlines(bin_means, bin_edges[:-1], bin_edges[1:], colors='g', lw=2,

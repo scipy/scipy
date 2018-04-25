@@ -5,7 +5,7 @@ from __future__ import division, print_function, absolute_import
 import sys
 
 import numpy as np
-from numpy.testing import assert_array_almost_equal, assert_
+from numpy.testing import assert_array_almost_equal, assert_equal, assert_
 import pytest
 
 from scipy import ndimage
@@ -52,12 +52,17 @@ def test_uint64_max():
     # Test interpolation respects uint64 max.  Reported to fail at least on
     # win32 (due to the 32 bit visual C compiler using signed int64 when
     # converting between uint64 to double) and Debian on s390x.
-    big = 2**64-1
+    # Interpolation is always done in double precision floating point, so we
+    # use the largest uint64 value for which int(float(big)) still fits in
+    # a uint64.
+    big = 2**64-1025
     arr = np.array([big, big, big], dtype=np.uint64)
     # Tests geometric transform (map_coordinates, affine_transform)
     inds = np.indices(arr.shape) - 0.1
     x = ndimage.map_coordinates(arr, inds)
-    assert_(x[1] > (2**63))
+    assert_equal(x[1], int(float(big)))
+    assert_equal(x[2], int(float(big)))
     # Tests zoom / shift
     x = ndimage.shift(arr, 0.1)
-    assert_(x[1] > (2**63))
+    assert_equal(x[1], int(float(big)))
+    assert_equal(x[2], int(float(big)))

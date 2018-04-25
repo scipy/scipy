@@ -1,5 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
+import pickle
+
 import numpy as np
 from numpy import array
 from numpy.testing import (assert_array_almost_equal, assert_array_equal,
@@ -282,6 +284,27 @@ class TestGaussian(object):
                         [0.6065306597126334, 0.8007374029168081,
                          0.9459594689067654, 1.0, 0.9459594689067654,
                          0.8007374029168081])
+
+
+class TestGeneralCosine(object):
+
+    def test_basic(self):
+        assert_allclose(windows.general_cosine(5, [0.5, 0.3, 0.2]),
+                        [0.4, 0.3, 1, 0.3, 0.4])
+        assert_allclose(windows.general_cosine(4, [0.5, 0.3, 0.2], sym=False),
+                        [0.4, 0.3, 1, 0.3])
+
+class TestGeneralHamming(object):
+
+    def test_basic(self):
+        assert_allclose(windows.general_hamming(5, 0.7),
+                        [0.4, 0.7, 1.0, 0.7, 0.4])
+        assert_allclose(windows.general_hamming(5, 0.75, sym=False),
+                        [0.5, 0.6727457514, 0.9522542486,
+                         0.9522542486, 0.6727457514])
+        assert_allclose(windows.general_hamming(6, 0.75, sym=True),
+                        [0.5, 0.6727457514, 0.9522542486,
+                        0.9522542486, 0.6727457514, 0.5])
 
 
 class TestHamming(object):
@@ -610,3 +633,8 @@ def test_deprecation():
     if dep_hann.__doc__ is not None:  # can be None with `-OO` mode
         assert_('signal.hann is deprecated' in dep_hann.__doc__)
         assert_('deprecated' not in windows.hann.__doc__)
+
+
+def test_deprecated_pickleable():
+    dep_hann2 = pickle.loads(pickle.dumps(dep_hann))
+    assert_(dep_hann2 is dep_hann)

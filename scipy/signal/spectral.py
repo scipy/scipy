@@ -835,8 +835,7 @@ def check_COLA(window, nperseg, noverlap, tol=1e-10):
             raise ValueError('window must have length of nperseg')
 
     step = nperseg - noverlap
-    binsums = np.sum((win[ii*step:(ii+1)*step] for ii in range(nperseg//step)),
-                     axis=0)
+    binsums = sum(win[ii*step:(ii+1)*step] for ii in range(nperseg//step))
 
     if nperseg % step != 0:
         binsums[:nperseg % step] += win[-(nperseg % step):]

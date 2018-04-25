@@ -154,10 +154,11 @@ class MMFile (object):
 
     # field values
     FIELD_INTEGER = 'integer'
+    FIELD_UNSIGNED = 'unsigned-integer'
     FIELD_REAL = 'real'
     FIELD_COMPLEX = 'complex'
     FIELD_PATTERN = 'pattern'
-    FIELD_VALUES = (FIELD_INTEGER, FIELD_REAL, FIELD_COMPLEX, FIELD_PATTERN)
+    FIELD_VALUES = (FIELD_INTEGER, FIELD_UNSIGNED, FIELD_REAL, FIELD_COMPLEX, FIELD_PATTERN)
 
     @classmethod
     def _validate_field(self, field):
@@ -180,6 +181,7 @@ class MMFile (object):
                              (symmetry, self.SYMMETRY_VALUES))
 
     DTYPES_BY_FIELD = {FIELD_INTEGER: 'intp',
+                       FIELD_UNSIGNED: 'uint64',
                        FIELD_REAL: 'd',
                        FIELD_COMPLEX: 'D',
                        FIELD_PATTERN: 'd'}
@@ -383,6 +385,7 @@ class MMFile (object):
     def _field_template(field, precision):
         return {MMFile.FIELD_REAL: '%%.%ie\n' % precision,
                 MMFile.FIELD_INTEGER: '%i\n',
+                MMFile.FIELD_UNSIGNED: '%u\n',
                 MMFile.FIELD_COMPLEX: '%%.%ie %%.%ie\n' %
                     (precision, precision)
                 }.get(field, None)
@@ -493,7 +496,8 @@ class MMFile (object):
         dtype = self.DTYPES_BY_FIELD.get(field, None)
 
         has_symmetry = self.has_symmetry
-        is_integer = field == self.FIELD_INTEGER
+        is_integer = field == self.FIELD_INTEGER 
+        is_unsigned_integer = field == self.FIELD_UNSIGNED
         is_complex = field == self.FIELD_COMPLEX
         is_skew = symm == self.SYMMETRY_SKEW_SYMMETRIC
         is_herm = symm == self.SYMMETRY_HERMITIAN
@@ -503,11 +507,17 @@ class MMFile (object):
             a = zeros((rows, cols), dtype=dtype)
             line = 1
             i, j = 0, 0
+            if is_skew:
+                a[i, j] = 0
+                if i < rows - 1:
+                    i += 1
             while line:
                 line = stream.readline()
                 if not line or line.startswith(b'%'):
                     continue
                 if is_integer:
+                    aij = int(line)
+                elif is_unsigned_integer:
                     aij = int(line)
                 elif is_complex:
                     aij = complex(*map(float, line.split()))
@@ -529,8 +539,17 @@ class MMFile (object):
                         i = 0
                     else:
                         i = j
-            if not (i in [0, j] and j == cols):
-                raise ValueError("Parse error, did not read all lines.")
+                        if is_skew:
+                            a[i, j] = 0
+                            if i < rows-1:
+                                i += 1     
+                                
+            if is_skew:
+                if not (i in [0, j] and j == cols - 1):
+                    raise ValueError("Parse error, did not read all lines.")
+            else:
+                if not (i in [0, j] and j == cols):
+                    raise ValueError("Parse error, did not read all lines.")
 
         elif format == self.FORMAT_COORDINATE and coo_matrix is None:
             # Read sparse matrix to dense when coo_matrix is not available.
@@ -545,6 +564,8 @@ class MMFile (object):
                 i, j = map(int, l[:2])
                 i, j = i-1, j-1
                 if is_integer:
+                    aij = int(l[2])
+                elif is_unsigned_integer:
                     aij = int(l[2])
                 elif is_complex:
                     aij = complex(*map(float, l[2:]))
@@ -575,6 +596,8 @@ class MMFile (object):
                 V = ones(entries, dtype='int8')
             elif is_integer:
                 V = zeros(entries, dtype='intp')
+            elif is_unsigned_integer:
+                V = zeros(entries, dtype='uint64')
             elif is_complex:
                 V = zeros(entries, dtype='complex')
             else:
@@ -593,6 +616,8 @@ class MMFile (object):
 
                 if not is_pattern:
                     if is_integer:
+                        V[entry_number] = int(l[2])
+                    elif is_unsigned_integer:
                         V[entry_number] = int(l[2])
                     elif is_complex:
                         V[entry_number] = complex(*map(float, l[2:]))
@@ -631,7 +656,6 @@ class MMFile (object):
     #  ------------------------------------------------------------------------
     def _write(self, stream, a, comment='', field=None, precision=None,
                symmetry=None):
-
         if isinstance(a, list) or isinstance(a, ndarray) or \
            isinstance(a, tuple) or hasattr(a, '__array__'):
             rep = self.FORMAT_ARRAY
@@ -657,6 +681,7 @@ class MMFile (object):
         else:
             if not isspmatrix(a):
                 raise ValueError('unknown matrix type: %s' % type(a))
+            
             rep = 'coordinate'
             rows, cols = a.shape
 
@@ -667,7 +692,6 @@ class MMFile (object):
                 precision = 8
             else:
                 precision = 16
-
         if field is None:
             kind = a.dtype.kind
             if kind == 'i':
@@ -679,6 +703,8 @@ class MMFile (object):
                 field = 'real'
             elif kind == 'c':
                 field = 'complex'
+            elif kind == 'u':
+                field = 'unsigned-integer'
             else:
                 raise TypeError('unexpected dtype kind ' + kind)
 
@@ -699,19 +725,22 @@ class MMFile (object):
             stream.write(asbytes('%%%s\n' % (line)))
 
         template = self._field_template(field, precision)
-
         # write dense format
         if rep == self.FORMAT_ARRAY:
-
             # write shape spec
             stream.write(asbytes('%i %i\n' % (rows, cols)))
 
-            if field in (self.FIELD_INTEGER, self.FIELD_REAL):
-
+            if field in (self.FIELD_INTEGER, self.FIELD_REAL, self.FIELD_UNSIGNED):
                 if symmetry == self.SYMMETRY_GENERAL:
                     for j in range(cols):
                         for i in range(rows):
                             stream.write(asbytes(template % a[i, j]))
+                            
+                elif symmetry == self.SYMMETRY_SKEW_SYMMETRIC:
+                    for j in range(cols):
+                        for i in range(j + 1, rows):
+                            stream.write(asbytes(template % a[i, j]))
+                            
                 else:
                     for j in range(cols):
                         for i in range(j, rows):
@@ -740,7 +769,6 @@ class MMFile (object):
 
         # write sparse format
         else:
-
             coo = a.tocoo()  # convert to COOrdinate format
 
             # if symmetry format used, remove values above main diagonal
@@ -759,7 +787,7 @@ class MMFile (object):
             if field == self.FIELD_PATTERN:
                 for r, c in zip(coo.row+1, coo.col+1):
                     stream.write(asbytes("%i %i\n" % (r, c)))
-            elif field in (self.FIELD_INTEGER, self.FIELD_REAL):
+            elif field in (self.FIELD_INTEGER, self.FIELD_REAL, self.FIELD_UNSIGNED):
                 for r, c, d in zip(coo.row+1, coo.col+1, coo.data):
                     stream.write(asbytes(("%i %i " % (r, c)) +
                                          (template % d)))

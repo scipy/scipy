@@ -558,6 +558,8 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, rr):
             return (c, c0, A_ub, b_ub, A_eq, b_eq, bounds,
                     x, undo, complete, status, message)
 
+    ub_mod = ub
+    lb_mod = lb
     if np.any(i_f):
         c0 += c[i_f].dot(lb[i_f])
         b_eq = b_eq - A_eq[:, i_f].dot(lb[i_f])
@@ -569,6 +571,9 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, rr):
         # record of variables to be added back in
         undo = [np.where(i_f)[0], lb[i_f]]
         # don't remove these entries from bounds; they'll be used later.
+        # but we _also_ need a version of the bounds with these removed
+        lb_mod = lb[i_nf]
+        ub_mod = ub[i_nf]
 
     # no constraints indicates that problem is trivial
     if A_eq.size == 0 and A_ub.size == 0:
@@ -593,8 +598,8 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, rr):
             message = ("The solution was determined in presolve as there are "
                        "no non-trivial constraints.")
         complete = True
-        x[c < 0] = ub[c < 0]
-        x[c > 0] = lb[c > 0]
+        x[c < 0] = ub_mod[c < 0]
+        x[c > 0] = lb_mod[c > 0]
         # if this is not the last step of presolve, should convert bounds back
         # to array and return here
 
@@ -850,7 +855,8 @@ def _postprocess(
         complete=False,
         undo=[],
         status=0,
-        message=""):
+        message="",
+        tol=1e-8):
     """
     Given solution x to presolved, standard form linear program x, add
     fixed variables back into the problem and undo the variable substitutions
@@ -890,6 +896,8 @@ def _postprocess(
 
     message : str
         A string descriptor of the exit status of the optimization.
+    tol : float
+        Termination tolerance; see [1]_ Section 4.5.
 
     Returns
     -------
@@ -962,8 +970,26 @@ def _postprocess(
     # report residuals of ORIGINAL EQ constraints
     con = b_eq - A_eq.dot(x)
 
-    if status == 0 and (np.isnan(x).any() or np.isnan(fun) or
-                        np.isnan(slack).any() or np.isnan(con).any()):
+    # Patch for bug #8664. Detecting this sort of issue earlier
+    # (via abnormalities in the indicators) would be better.
+    bounds = np.array(bounds)  # again, this should have been the standard form
+    lb = bounds[:, 0]
+    ub = bounds[:, 1]
+    lb[np.equal(lb, None)] = -np.inf
+    ub[np.equal(ub, None)] = np.inf
+    tol = np.sqrt(tol)  # Somewhat arbitrary, but status 5 is very unusual
+    if status == 0 and ((slack < -tol).any() or (np.abs(con) > tol).any() or
+                        (x < lb - tol).any() or (x > ub + tol).any()):
+        status = 4
+        message = ("The solution does not satisfy the constraints, yet "
+                   "no errors were raised and there is no certificate of "
+                   "infeasibility or unboundedness. This is known to occur "
+                   "if the `presolve` option is False and the problem is "
+                   "infeasible. If you uncounter this under different "
+                   "circumstances, please submit a bug report. Otherwise, "
+                   "please enable presolve.")
+    elif status == 0 and (np.isnan(x).any() or np.isnan(fun) or
+                          np.isnan(slack).any() or np.isnan(con).any()):
         status = 4
         message = ("Numerical difficulties were encountered but no errors "
                    "were raised. This is known to occur if the 'presolve' "
@@ -1243,7 +1269,9 @@ def _get_delta(
                             "approached. However, if you see this frequently, "
                             "your problem may be numerically challenging. "
                             "If you cannot improve the formulation, consider "
-                            "setting 'lstsq' to True.", OptimizeWarning)
+                            "setting 'lstsq' to True. Consider also setting "
+                            "`presolve` to True, if it is not already.",
+                            OptimizeWarning)
                         lstsq = True
                 else:
                     raise e
@@ -1674,9 +1702,11 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol,
                 x, y, z, tau, kappa = _do_step(
                     x, y, z, tau, kappa, d_x, d_y, d_z, d_tau, d_kappa, alpha)
 
-        except (LinAlgError, FloatingPointError):
+        except (LinAlgError, FloatingPointError,
+                ValueError, ZeroDivisionError):
             # this can happen when sparse solver is used and presolve
-            # is turned off. I've never seen it otherwise.
+            # is turned off. Also observed ValueError in AppVeyor Python 3.6
+            # Win32 build (PR #8676). I've never seen it otherwise.
             status = 4
             message = _get_message(status)
             break
@@ -2123,7 +2153,7 @@ def _linprog_ip(
     # need modified bounds here to translate variables appropriately
     x, fun, slack, con, status, message = _postprocess(
         x, c_o, A_ub_o, b_ub_o, A_eq_o, b_eq_o,
-        bounds, complete, undo, status, message)
+        bounds, complete, undo, status, message, tol)
 
     sol = {
         'x': x,

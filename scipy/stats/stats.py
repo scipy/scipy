@@ -123,6 +123,7 @@ Inferential Stats
    wilcoxon
    kruskal
    friedmanchisquare
+   brunnermunzel
    combine_pvalues
 
 Statistical Distances
@@ -166,11 +167,11 @@ from numpy import array, asarray, ma, zeros
 
 from scipy._lib.six import callable, string_types
 from scipy._lib._version import NumpyVersion
+from scipy._lib._util import _lazywhere
 import scipy.special as special
 import scipy.linalg as linalg
 from . import distributions
 from . import mstats_basic
-from ._distn_infrastructure import _lazywhere
 from ._stats_mstats_common import _find_repeats, linregress, theilslopes
 from ._stats import _kendall_dis, _toint64, _weightedrankedtau
 
@@ -190,7 +191,8 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'chisquare', 'power_divergence', 'ks_2samp', 'mannwhitneyu',
            'tiecorrect', 'ranksums', 'kruskal', 'friedmanchisquare',
            'rankdata',
-           'combine_pvalues', 'wasserstein_distance', 'energy_distance']
+           'combine_pvalues', 'wasserstein_distance', 'energy_distance',
+           'brunnermunzel']
 
 
 def _chk_asarray(a, axis):
@@ -1548,6 +1550,8 @@ def jarque_bera(x):
 #        FREQUENCY FUNCTIONS        #
 #####################################
 
+@np.deprecate(message="`itemfreq` is deprecated and will be removed in a "
+              "future version. Use instead `np.unique(..., return_counts=True)`")
 def itemfreq(a):
     """
     Return a 2-D array of item frequencies.
@@ -1782,27 +1786,25 @@ def percentileofscore(a, score, kind='rank'):
     60.0
 
     """
-    a = np.array(a)
+    if np.isnan(score):
+        return np.nan
+    a = np.asarray(a)
     n = len(a)
+    if n == 0:
+        return 100.0
 
     if kind == 'rank':
-        if not np.any(a == score):
-            a = np.append(a, score)
-            a_len = np.array(list(range(len(a))))
-        else:
-            a_len = np.array(list(range(len(a)))) + 1.0
-
-        a = np.sort(a)
-        idx = [a == score]
-        pct = (np.mean(a_len[idx]) / n) * 100.0
+        left = np.count_nonzero(a < score)
+        right = np.count_nonzero(a <= score)
+        pct = (right + left + (1 if right > left else 0)) * 50.0/n
         return pct
-
     elif kind == 'strict':
-        return np.sum(a < score) / float(n) * 100
+        return np.count_nonzero(a < score) / float(n) * 100
     elif kind == 'weak':
-        return np.sum(a <= score) / float(n) * 100
+        return np.count_nonzero(a <= score) / float(n) * 100
     elif kind == 'mean':
-        return (np.sum(a < score) + np.sum(a <= score)) * 50 / float(n)
+        pct = (np.count_nonzero(a < score) + np.count_nonzero(a <= score)) / float(n) * 50
+        return pct
     else:
         raise ValueError("kind can only be 'rank', 'strict', 'weak' or 'mean'")
 
@@ -2581,14 +2583,15 @@ def sigmaclip(a, low=4., high=4.):
     """
     Iterative sigma-clipping of array elements.
 
-    The output array contains only those elements of the input array `c`
-    that satisfy the conditions ::
-
-        mean(c) - std(c)*low < c < mean(c) + std(c)*high
-
     Starting from the full sample, all elements outside the critical range are
-    removed. The iteration continues with a new critical range until no
-    elements are outside the range.
+    removed, i.e. all elements of the input array `c` that satisfy either of
+    the following conditions ::
+
+        c < mean(c) - std(c)*low
+        c > mean(c) + std(c)*high
+
+    The iteration continues with the updated sample until no
+    elements are outside the (updated) range.
 
     Parameters
     ----------
@@ -2639,7 +2642,7 @@ def sigmaclip(a, low=4., high=4.):
         size = c.size
         critlower = c_mean - c_std * low
         critupper = c_mean + c_std * high
-        c = c[(c > critlower) & (c < critupper)]
+        c = c[(c >= critlower) & (c <= critupper)]
         delta = size - c.size
 
     return SigmaclipResult(c, critlower, critupper)
@@ -5160,6 +5163,143 @@ def friedmanchisquare(*args):
     chisq = (12.0 / (k*n*(k+1)) * ssbn - 3*n*(k+1)) / c
 
     return FriedmanchisquareResult(chisq, distributions.chi2.sf(chisq, k - 1))
+
+
+BrunnerMunzelResult = namedtuple('BrunnerMunzelResult',
+                                 ('statistic', 'pvalue'))
+
+
+def brunnermunzel(x, y, alternative="two-sided", distribution="t",
+                  nan_policy='propagate'):
+    """
+    Computes the Brunner-Munzel test on samples x and y
+
+    The Brunner-Munzel test is a nonparametric test of the null hypothesis that
+    when values are taken one by one from each group, the probabilities of
+    getting large values in both groups are equal.
+    Unlike the Wilcoxon-Mann-Whitney's U test, this does not require the
+    assumption of equivariance of two groups. Note that this does not assume
+    the distributions are same. This test works on two independent samples,
+    which may have different sizes.
+
+    Parameters
+    ----------
+    x, y : array_like
+        Array of samples, should be one-dimensional.
+    alternative :  'less', 'two-sided', or 'greater', optional
+        Whether to get the p-value for the one-sided hypothesis ('less'
+        or 'greater') or for the two-sided hypothesis ('two-sided').
+        Defaults value is 'two-sided' .
+    distribution: 't' or 'normal', optional
+        Whether to get the p-value by t-distribution or by standard normal
+        distribution.
+        Defaults value is 't' .
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan. 'propagate' returns nan,
+        'raise' throws an error, 'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.
+
+    Returns
+    -------
+    statistic : float
+        The Brunner-Munzer W statistic.
+    pvalue : float
+        p-value assuming an t distribution. One-sided or
+        two-sided, depending on the choice of `alternative` and `distribution`.
+
+    See Also
+    --------
+    mannwhitneyu : Mann-Whitney rank test on two samples.
+
+    Notes
+    -------
+    Brunner and Munzel recommended to estimate the p-value by t-distribution
+    when the size of data is 50 or less. If the size is lower than 10, it would
+    be better to use permuted Brunner Munzel test (see [2]_).
+
+    References
+    ----------
+    .. [1] Brunner, E. and Munzel, U. "The nonparametric Benhrens-Fisher
+           problem: Asymptotic theory and a small-sample approximation".
+           Biometrical Journal. Vol. 42(2000): 17-25.
+    .. [2] Neubert, K. and Brunner, E. "A studentized permutation test for the
+           non-parametric Behrens-Fisher problem". Computational Statistics and
+           Data Analysis. Vol. 51(2007): 5192-5204.
+
+    Examples
+    --------
+    >>> from scipy import stats
+    >>> x1 = [1,2,1,1,1,1,1,1,1,1,2,4,1,1]
+    >>> x2 = [3,3,4,3,1,2,3,1,1,5,4]
+    >>> w, p_value = stats.brunnermunzel(x1, x2)
+    >>> w
+    3.1374674823029505
+    >>> p_value
+    0.0057862086661515377
+
+    """
+    x = np.asarray(x)
+    y = np.asarray(y)
+
+    # check both x and y
+    cnx, npx = _contains_nan(x, nan_policy)
+    cny, npy = _contains_nan(y, nan_policy)
+    contains_nan = cnx or cny
+    if npx == "omit" or npy == "omit":
+        nan_policy = "omit"
+
+    if contains_nan and nan_policy == "propagate":
+        return BrunnerMunzelResult(np.nan, np.nan)
+    elif contains_nan and nan_policy == "omit":
+        x = ma.masked_invalid(x)
+        y = ma.masked_invalid(y)
+        return mstats_basic.brunnermunzel(x, y, alternative, distribution)
+
+    nx = len(x)
+    ny = len(y)
+    if nx == 0 or ny == 0:
+        return BrunnerMunzelResult(np.nan, np.nan)
+    rankc = rankdata(np.concatenate((x, y)))
+    rankcx = rankc[0:nx]
+    rankcy = rankc[nx:nx+ny]
+    rankcx_mean = np.mean(rankcx)
+    rankcy_mean = np.mean(rankcy)
+    rankx = rankdata(x)
+    ranky = rankdata(y)
+    rankx_mean = np.mean(rankx)
+    ranky_mean = np.mean(ranky)
+
+    Sx = np.sum(np.power(rankcx - rankx - rankcx_mean + rankx_mean, 2.0))
+    Sx /= nx - 1
+    Sy = np.sum(np.power(rankcy - ranky - rankcy_mean + ranky_mean, 2.0))
+    Sy /= ny - 1
+
+    wbfn = nx * ny * (rankcy_mean - rankcx_mean)
+    wbfn /= (nx + ny) * np.sqrt(nx * Sx + ny * Sy)
+
+    if distribution == "t":
+        df_numer = np.power(nx * Sx + ny * Sy, 2.0)
+        df_denom = np.power(nx * Sx, 2.0) / (nx - 1)
+        df_denom += np.power(ny * Sy, 2.0) / (ny - 1)
+        df = df_numer / df_denom
+        p = distributions.t.cdf(wbfn, df)
+    elif distribution == "normal":
+        p = distributions.norm.cdf(wbfn)
+    else:
+        raise ValueError(
+            "distribution should be 't' or 'normal'")
+
+    if alternative == "greater":
+        p = p
+    elif alternative == "less":
+        p = 1 - p
+    elif alternative == "two-sided":
+        p = 2 * np.min([p, 1-p])
+    else:
+        raise ValueError(
+            "alternative should be 'less', 'greater' or 'two-sided'")
+
+    return BrunnerMunzelResult(wbfn, p)
 
 
 def combine_pvalues(pvalues, method='fisher', weights=None):

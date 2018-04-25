@@ -229,8 +229,8 @@ def theilslopes(y, x=None, alpha=0.95):
     ny = len(y)            # n in Sen (1968)
     # Equation 2.6 in Sen (1968):
     sigsq = 1/18. * (ny * (ny-1) * (2*ny+5) -
-                     np.sum(k * (k-1) * (2*k + 5) for k in nxreps) -
-                     np.sum(k * (k-1) * (2*k + 5) for k in nyreps))
+                     sum(k * (k-1) * (2*k + 5) for k in nxreps) -
+                     sum(k * (k-1) * (2*k + 5) for k in nyreps))
     # Find the confidence interval indices in `slopes`
     sigma = np.sqrt(sigsq)
     Ru = min(int(np.round((nt - z*sigma)/2.)), len(slopes)-1)
