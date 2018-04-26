@@ -10,13 +10,13 @@ from scipy.linalg import LinAlgError
 
 from . import _superlu
 
-noScikit = False
 try:
     import scikits.umfpack as umfpack
+    has_scikit_umfpack = True
 except ImportError:
-    noScikit = True
+    has_scikit_umfpack = False
 
-useUmfpack = not noScikit
+useUmfpack = has_scikit_umfpack
 
 __all__ = ['use_solver', 'spsolve', 'splu', 'spilu', 'factorized',
            'MatrixRankWarning', 'spsolve_triangular']
@@ -163,7 +163,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
     # decide which solution method to use
     if b_is_vector:
         if use_umfpack and useUmfpack:
-            if noScikit:
+            if not has_scikit_umfpack:
                 raise RuntimeError('Scikits.umfpack not installed.')
             if A.dtype.char not in 'dD':
                 raise ValueError(
@@ -427,7 +427,7 @@ def factorized(A):
 
     """
     if useUmfpack:
-        if noScikit:
+        if not has_scikit_umfpack:
             raise RuntimeError('Scikits.umfpack not installed.')
 
         if not isspmatrix_csc(A):
