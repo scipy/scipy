@@ -296,8 +296,8 @@ class TestLinsolve(object):
                 x2 = spsolve(spmattype(A), b, use_umfpack=False)
 
                 # check output shape
-                assert_equal(x1.shape, b.shape)
-                assert_equal(x2.shape, b.shape)
+                assert_equal(x1.shape, x.shape)
+                assert_equal(x2.shape, x.shape)
 
                 assert_array_almost_equal(toarray(x1), x, err_msg=repr((b, spmattype, 1)))
                 assert_array_almost_equal(toarray(x2), x, err_msg=repr((b, spmattype, 2)))
