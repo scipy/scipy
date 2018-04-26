@@ -166,8 +166,10 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
             if noScikit:
                 raise RuntimeError('Scikits.umfpack not installed.')
             if A.dtype.char not in 'dD':
-                raise ValueError("convert matrix data to double, please, using"
-                      " .astype(), or set linsolve.useUmfpack = False")
+                raise ValueError(
+                    "umfpack can only handle matrix data of double type."
+                    "Convert with .astype() or set use_umfpack = False"
+                    )
 
             method = 'umfpack'
         else:
