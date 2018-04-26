@@ -303,7 +303,7 @@ class TestLinsolve(object):
                 assert_array_almost_equal(toarray(x2), x, err_msg=repr((b, spmattype, 2)))
 
                 # dense vs. sparse output  ("vectors" are always dense)
-                if isspmatrix(b) and x.ndim > 1:
+                if isspmatrix(b) and len(x.shape) > 1 and x.shape[1] > 1:
                     assert_(isspmatrix(x1), repr((b, spmattype, 1)))
                     assert_(isspmatrix(x2), repr((b, spmattype, 2)))
                 else:

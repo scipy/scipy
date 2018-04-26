@@ -161,16 +161,17 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
     b_is_vector = ((b.ndim == 1) or (b.ndim == 2 and b.shape[1] == 1))
 
     # decide which solution method to use
-    if b_is_vector and use_umfpack and useUmfpack:
-        if noScikit:
-            raise RuntimeError('Scikits.umfpack not installed.')
+    if b_is_vector:
+        if use_umfpack and useUmfpack:
+            if noScikit:
+                raise RuntimeError('Scikits.umfpack not installed.')
+            if A.dtype.char not in 'dD':
+                raise ValueError("convert matrix data to double, please, using"
+                      " .astype(), or set linsolve.useUmfpack = False")
 
-        # could be included in the conditional
-        if A.dtype.char not in 'dD':
-            raise ValueError("convert matrix data to double, please, using"
-                  " .astype(), or set linsolve.useUmfpack = False")
-
-        method = 'umfpack'
+            method = 'umfpack'
+        else:
+            method = 'superlu'
 
     else:
         if b_is_sparse:
