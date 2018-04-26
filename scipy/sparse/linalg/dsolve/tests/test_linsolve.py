@@ -295,10 +295,9 @@ class TestLinsolve(object):
                 x1 = spsolve(spmattype(A), b, use_umfpack=True)
                 x2 = spsolve(spmattype(A), b, use_umfpack=False)
 
-                # check solution
-                if x.ndim == 2 and x.shape[1] == 1:
-                    # interprets also these as "vectors"
-                    x = x.ravel()
+                # check output shape
+                assert_equal(x1.shape, b.shape)
+                assert_equal(x2.shape, b.shape)
 
                 assert_array_almost_equal(toarray(x1), x, err_msg=repr((b, spmattype, 1)))
                 assert_array_almost_equal(toarray(x2), x, err_msg=repr((b, spmattype, 2)))
@@ -310,16 +309,6 @@ class TestLinsolve(object):
                 else:
                     assert_(isinstance(x1, np.ndarray), repr((b, spmattype, 1)))
                     assert_(isinstance(x2, np.ndarray), repr((b, spmattype, 2)))
-
-                # check output shape
-                if x.ndim == 1:
-                    # "vector"
-                    assert_equal(x1.shape, (A.shape[1],))
-                    assert_equal(x2.shape, (A.shape[1],))
-                else:
-                    # "matrix"
-                    assert_equal(x1.shape, x.shape)
-                    assert_equal(x2.shape, x.shape)
 
         A = csc_matrix((3, 3))
         b = csc_matrix((1, 3))
