@@ -404,6 +404,11 @@ class TestPeakProminences(object):
         with raises(ValueError, match='wlen'):
             peak_prominences(np.arange(10), [3, 5], wlen=1)
 
+    def test_warning(self):
+        with pytest.warns(RuntimeWarning):
+            # Ensure that warning about nan value is raised
+            peak_prominences([0, 1, 0, np.nan], [1])
+
 
 class TestPeakWidths(object):
 
@@ -522,6 +527,12 @@ class TestPeakWidths(object):
         # width_height == x counts as intersection -> nearest 1 is chosen
         assert_allclose(peak_widths(x, peaks=[5], rel_height=2/3),
                         [(4.,), (1.,), (3.,), (7.,)])
+
+    def test_warnings(self):
+        data = peak_prominences([0, 1, 0], [1])
+        with pytest.warns(RuntimeWarning):
+            # Ensure that warning about nan value is raised
+            peak_widths([0, 1, np.nan], [1], prominence_data=data)
 
 
 def test_unpack_condition_args():
@@ -679,6 +690,11 @@ class TestFindPeaks(object):
             find_peaks(np.ones((2, 2)))
         with raises(ValueError, match="distance"):
             find_peaks(np.arange(10), distance=-1)
+
+    def test_warning(self):
+        with pytest.warns(RuntimeWarning):
+            # Ensure that warning about nan value is raised
+            find_peaks([0, 1, np.nan])
 
 
 class TestFindPeaksCwt(object):
