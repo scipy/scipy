@@ -3736,9 +3736,161 @@ class levy_stable_gen(rv_continuous):
     %(example)s
 
     """
+    suported_parameterizations = frozenset(["A", "B", "C", "P"])
+
+    def _argcheck(self, alpha, asymmetry, scale):
+        "
+        Checks if parameters have meaningful values:
+        Returns True if parameters are within the bounds.
+        Default setting is parameterization A.
+
+        Arguments: 
+        ----------
+            alpha : float
+                Stability parameter alpha takes values in (0,2].
+            asymmetry : float
+                Value of asymmetry parameter depends on the parameterization 
+                and value alpha.       
+            scale : float 
+                Positive real number. 
+           """
+        if scale <= 0:
+            return False
+        
+        if not ((alpha > 0) & (alpha <= 2)) : 
+            return False
+
+        K = lambda a: a - 1. + np.sign(1. - a)
+        
+        if par=="B":
+            if alpha==1:
+                return (asymmetry <= 1) & (asymmetry >= -1)
+            else:
+                return (asymmetry * K(alpha) < np.pi / 2.) & (asymmetry * K(alpha) > -np.pi / 2.)
+        elif par=="C":
+            if alpha==1:
+                return (asymmetry==alpha)
+            else:
+                return (asymmetry <= K(alpha) & (asymmetry >= -K(alpha)
+        elif param=="P":
+        #TODO: add param check for parameterization P    
+        if alpha==1:
+                return 
+            else :
+                return (asymmetry * K(alpha) < np.pi / 2.) & (asymmetry * K(alpha) > -np.pi / 2.)
+        else:
+            return (asymmetry <= 1) & (asymmetry >= -1)
+    
+
+    @staticmethod
+    def _param_switch(original_param_type, destination_param_type, **kwargs):
+        """
+        Helper function for transforming a set of parameters under original_parameterisation type
+        into a set of new parameters under destination_parameterisation_type: 
+        e.g.: input: (alpha, beta_A, scale_A) under parameterisation A
+              output: (alpha, p1, scale_P) under parameterisation P 
+
+        Supported parameterizations are A, B, C, P.
+    
+        Parameterisations A and B require different values for beta and scale. 
+        Parameterisations C and P require the values of delta and P_1 respectively.
+        Scale parameter remains unchanged under parameterisations B, C and P.
+        All alpha values are the same under all parameterisations.
+
+        Arguments:
+        ----------
+            original_param_type : str
+                Parameterization from which we are transforming: e.g. "A"
+            destination_param_type : str
+                Parameterization into which we want to express the parameters, e.g. "B"
+            kwargs:
+                alpha, beta, c, delta, p1, scale and loc (for location) as applicable
+
+        Example:
+        ---------
+        Switching from A to B:
+        >> _param_switch("A", "B", alpha=1.5, beta=0.5, scale=1, loc=0)
+        >> {'alpha': 1.5, 'beta': 0.59033447060173327, 'scale': 1.2037249805634576, 'loc': 0}
+
+        Switching from A to P 
+        >> _param_switch("A", "P", alpha=1.5, beta=0, scale=1, loc=0)
+        >> {'alpha': 1.5, 'p1': 0.40161092156637779, 'scale': 1.2037249805634576, 'loc': 0}
+
+        Switching from C to B:
+        >> _param_switch("C", "B", alpha=1.5, delta= -0.1, scale=1)
+        >> {'alpha': 1.5, 'beta': 0.30000000000000004, 'scale': 1, 'loc': 0}
+
+        """
+        #TODO: add transformation eqns for alpha==2!!!
+        if original_param_type not in supported_parameterizations:
+            raise ValueError("Supported parameterizations are A, B, C and P")
+        
+        K = lambda a: a - 1. + np.sign(1. - a)
+        
+        # transformation equations between parameterizations
+        def _a_to_b(alpha, beta, scale=1, loc=0):
+            if alpha==1: 
+                scale = scale * np.pi / 2.
+                loc = loc * np.pi / 2.
+            else: 
+                beta = np.arctan(beta * np.tan(np.pi * alpha / 2.)) * 2. / (np.pi * K(alpha))
+                scale = scale / np.cos(beta)          
+            return dict(alpha=alpha, beta=beta, scale=scale, loc=loc)
+        
+        def _b_to_a(alpha, beta, scale=1, loc=0):
+            if alpha==1:
+                scale = scale * 2. / np.pi
+                loc = loc * 2. / np.pi                
+            else:
+                beta = (np.tan((np.pi * K(alpha) * beta) / 2.)) / np.tan(np.pi * alpha / 2.)
+                scale = scale * np.cos(beta)
+            return dict(alpha=alpha, beta=beta, scale=scale)
+        
+        def _b_to_c(alpha, beta, scale=1, loc=0):
+            if alpha==1:
+                pass
+            else:
+                delta = beta * K(alpha) / alpha
+            return dict(alpha=alpha, delta=delta, scale=scale)
+        
+        def _b_to_p(alpha, beta, scale=1, loc=0): 
+            if alpha==1:
+                pass
+            else:
+                p1 = 1 / 2. + beta * K(alpha) / (2. * alpha)
+            return dict(alpha=alpha, p1=p1, scale=scale)
+        
+        def _c_to_b(alpha, delta, scale=1, loc=0):
+            if alpha==1:
+                pass
+            else:
+                beta = alpha * delta / K(alpha)
+            return dict(alpha=alpha, beta=beta, scale=scale)
+     
+        def _p_to_b(alpha, p1, scale):
+            if alpha==1:
+                pass
+            else
+                beta = (2 * p1 - 1) * alpha / K(alpha)
+            return dict(alpha=alpha, beta=beta, scale=scale)
+        
+        # original parameters are first converted to parameterization B 
+        # (the best choice due to transformation equations)
+        in_dict = dict(A = _a_to_b,
+                       B = lambda *args: args, # we are passing the params to the function
+                       C = _c_to_b,
+                       P = _p_to_b)
+
+        # parameters are converted from parameterization B into the final parameterization
+        out_dict = dict(A = _b_to_a,
+                        B = lambda **args: args, # we are returning the params under new param! 
+                        C = _b_to_c,
+                        P = _b_to_p)
+
+        return out_dict[destination_param_type](**in_dict[original_param_type](**kwargs))
 
 
-    def _rvs(self, alpha, beta, parameterisation='A'):
+    def _rvs(self, alpha, beta, parameterization='A'):
         """
         Generates a vector of random stable variables under parameterization A 
         using Weron's formulation [WE].
@@ -3768,67 +3920,6 @@ class levy_stable_gen(rv_continuous):
                 return scaler * factor1 * factor2
         
         return generate_stable_rvs(alpha, beta, U, E)
-
-
-    def _argcheck(self, alpha, beta, **par):
-        # TODO: add parameters checks for different paramterisations too 
-        return (alpha > 0) & (alpha <= 2) & (beta <= 1) & (beta >= -1)
-        
-
-
-    @staticmethod
-    def _param_switch(original_parameterisation_type, destination_parameterisation_type, **kwargs):
-        """
-        Function for transforming the values accepted for each parameterisation.
-        Parameterisations A and B require different values for beta. 
-        Parameterisations C and P require the values of delta and P_1 respectively.
-        All alpha values are the same.
-
-        Args:
-            original_parameterisation_type
-            destination_parameterisation_type
-            kwargs:
-                alpha, beta, c, delta, P_1 as applicable
-        """
-        K = lambda a: a - 1. + np.sign(1. - a)
-        
-        def _a_to_b(alpha, beta, scale):
-            beta = np.arctan(beta * np.tan(np.pi * alpha / 2.)) * 2. / (np.pi * K(alpha))
-            scale = scale/cos(beta)
-            return dict(alpha=alpha, beta=beta,scale=scale)
-
-        def _b_to_c(alpha, beta, scale):
-            delta = beta*K(alpha)/alpha
-            return dict(alpha=alpha, beta=beta, scale=scale, delta=delta)
-
-        def _b_to_p(alpha, beta): 
-            p_1 = 1/2 + beta*K(alpha)/(2*alpha)
-
-        def _b_to_a(alpha, beta, scale):
-            scale = scale*cos(beta)
-            beta = (np.tan((np.pi * K(alpha) * beta) / 2.)) / np.tan(np.pi * alpha / 2.)
-            return dict(alpha=alpha, beta=beta,scale=scale)
-        
-        def _p_to_b(alpha, scale, p_1):
-            beta = (2*p_1 - 1) * alpha/K(alpha)
-            return dict(alpha=alpha, beta=beta,scale=scale)
-        
-        def _c_to_b(alpha, scale, delta):
-            beta = alpha*delta/K(alpha)
-            return dict(alpha=alpha, beta=beta,scale=scale)
-
-
-        in_dict = dict(A = _a_to_b,
-                       B = lambda *args: args,
-                       C = _c_to_b,
-                       P = _p_to_b)
-
-        out_dict = dict(A = _b_to_a,
-                        B = lambda *args: args,
-                        C = _b_to_c,
-                        P = _b_to_p)
-
-        return out_dict[destination_parameterisation_type](**in_dict[origin_parameterisation_type](**kwargs))
 
 
     @staticmethod
@@ -3884,6 +3975,7 @@ class levy_stable_gen(rv_continuous):
         x = (n-1-N/2)*h
         return (x, density)
     
+
     @staticmethod
     def _pdf_single_value_cf_integrate(x, alpha, beta, **kwargs):
         if 'parameterisation_type' in kwargs:
@@ -3895,7 +3987,6 @@ class levy_stable_gen(rv_continuous):
 
     @classmethod
     def _pdf_single_value_expansion(cls, x, alpha, beta, asymptotic = False, iterations=100):
-
         """
         Results for the pdf at a single point calculated using expansions.
         Convergent solutions are available for |x| <= 1. Asymptotic solutions are
