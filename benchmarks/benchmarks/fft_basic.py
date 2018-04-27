@@ -8,23 +8,24 @@ import os
 
 import scipy.fftpack
 import numpy.fft
-try:
+from .common import Benchmark, safe_import
+
+with safe_import() as exc:
     import scipy.fft as scipy_fft
     has_scipy_fft = True
-except ImportError:
-    scipy_fft = {}
+if exc.error:
     has_scipy_fft = False
 
-from .common import Benchmark
 
-try:
+with safe_import() as exc:
     import pyfftw.interfaces.numpy_fft as pyfftw_fft
     import pyfftw
     pyfftw.interfaces.cache.enable()
     has_pyfftw = True
-except ImportError:
+if exc.error:
     pyfftw_fft = {}
     has_pyfftw = False
+
 
 class PyfftwBackend:
     """Backend for pyfftw"""
