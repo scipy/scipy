@@ -19,6 +19,7 @@ prune benchmarks/html
 prune benchmarks/scipy
 prune scipy/special/tests/data/boost
 prune scipy/special/tests/data/gsl
+prune scipy/special/tests/data/local
 prune doc/build
 prune doc/source/generated
 prune */__pycache__
