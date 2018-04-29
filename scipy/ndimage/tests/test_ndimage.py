@@ -4427,7 +4427,7 @@ class TestNdimage:
         array = numpy.eye(5, dtype=numpy.bool_)
         structure = numpy.ones((3, 3), dtype=numpy.bool_)
 
-        # Check that type missmatch is properly handled
+        # Check that type mismatch is properly handled
         output = numpy.empty_like(array, dtype=numpy.float)
         ndimage.white_tophat(array, structure=structure, output=output)
 
@@ -4482,7 +4482,7 @@ class TestNdimage:
         array = numpy.eye(5, dtype=numpy.bool_)
         structure = numpy.ones((3, 3), dtype=numpy.bool_)
 
-        # Check that type missmatch is properly handled
+        # Check that type mismatch is properly handled
         output = numpy.empty_like(array, dtype=numpy.float)
         ndimage.black_tophat(array, structure=structure, output=output)
 
