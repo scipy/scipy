@@ -218,8 +218,10 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
 
     Options
     -------
-    disp : bool
-       Set to True to print convergence messages.
+    disp : None or int
+        If `disp is None` (the default), then the supplied version of `iprint`
+        is used. If `disp is not None`, then it overrides the supplied version
+        of `iprint` with the behaviour you outlined.
     maxcor : int
         The maximum number of variable metric corrections used to
         define the limited memory matrix. (The limited memory BFGS
@@ -234,8 +236,6 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
         projected gradient.
     eps : float
         Step size used for numerical approximation of the jacobian.
-    disp : int
-        Set to True to print convergence messages.
     maxfun : int
         Maximum number of function evaluations.
     maxiter : int
