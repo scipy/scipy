@@ -3601,26 +3601,30 @@ class levy_stable_gen(rv_continuous):
     The class of probability distributions for `levy_stable` is well represented by the characteristic functions:
 
     .. math::
-        \varphi(k; \alpha, z, \mu) = e^{ ik\mu + zk^{\alpha} } 
+        \varphi(k; \alpha, z, \mu) = \begin{cases}
+                                    e^{ ik\mu + zk^{\alpha}} for k \geq 0\\ 
+                                    e^{ ik\mu + \bar{z}|k|^{\alpha}} for k < 0,
+                                    \end{cases}
 
     where 0 < ..math::\alpha  <=2  is the stability parameter, which describes the parameter of power law decay of the tails. 
-    Parameter z is a complex number. Depending on the parameterization of the complex number z, different parameterizations 
+    Parameter ..math::\mu is a location parameter and takes any finite real value. 
+    Parameter z is a complex number and ..math::\bar{z} is its complex conjugate. 
+    Depending on the parameterization of the complex number z, different parameterizations 
     are available. We will stick to the notation introduced in Zolotarev's [ZO2]. 
     First, we start by representing z in the algebraic form  "a(1 + ib)", in particular: 
 
     .. math::         
-        \varphi(k; \alpha, \beta_A, c_A, \mu) = e^{ ik\mu -|c_A k|^{\alpha }(1-i\beta_A \operatorname{sign}(k)\Phi(\alpha ,k ))}
+        \varphi(k; \alpha, \beta_A, c_A, \mu) = e^{c_A(ik\mu_A -|k|^{\alpha }(1-i\beta_A \operatorname{sign}(k)\Phi_A(\alpha ,k )))}
 
     where:
               
-    .. math::
-        
-        \Phi = \begin{cases}
+    .. math::  
+        \Phi_A(k, \alpha) = \begin{cases}
                 \tan \left({\frac {\pi \alpha }{2}}\right)&\alpha \neq 1\\
-                -{\frac {2}{\pi }}\log |k|&\alpha =1
+                -\frac{2}{\pi}\log |k|&\alpha = 1
                 \end{cases}
-    This is the commonly know parametrization, referred to by parameterization A. 
-    It is our default setting for returning the values.  
+    This is the commonly known parametrization, referred to as the parameterization A. 
+    It is the default setting for many routines.  
     
     This implementation supports also 3 more parameterizations, which 
     arise by representing complex number z in polar coordinates "r ..math::\exp{ i ..math::\theta }". 
@@ -3628,9 +3632,16 @@ class levy_stable_gen(rv_continuous):
     - Parameterization B: 
 
     .. math::         
-        \varphi(k; \alpha, \beta_B, c_B, \mu) = e^{ ik\mu -|c_B k|^{\alpha }{-i\beta_B K(\alpha) \operatorname{sign}(k)\pi/2}
+        \varphi(k; \alpha, \beta_B, c_B, \mu_B) = e^{c_B(ik\mu_B -|k|^{\alpha }\Phi_B(\alpha, k))}
 
-    where:
+        where:
+
+    .. math::
+        \Phi_B(k, \alpha) = \begin{cases}
+                    e^{-i\beta_B K(\alpha) \operatorname{sign}(k)\pi/2} &\alpha \neq 1\\
+                    \frac {2}{\pi}+i\beta_B\log|k|\operatorname{sign}(k) & \alpha = 1
+                    \end{cases}
+    and:
               
     .. math::
         K(\alpha) = \alpha -1 + sgn(1 - \alpha), 
@@ -3638,18 +3649,19 @@ class levy_stable_gen(rv_continuous):
         and the transformation relationship between parameterization A and B are given by: 
 
     ..math::
-        \beta_B K(alpha) = \frac{2}{\pi} atan(\beta_A \tan[\pi\alpha / 2])
-        c_B = \frac{c_A}{\cos \beta_B}
+        \beta_B K(\alpha) = \frac{2}{\pi} atan(\beta_A \tan[\pi\alpha / 2])
+        c_B = \frac{c_A}{\cos[\beta_B K(\alpha)\pi/2]}
+        mu_B = mu_A \cos[\beta_B K(\alpha)\pi/2]
 
     - Parameterization C:
     .. math::         
-        \varphi(k; \alpha, \delta, c_C, \mu) = e^{ ik\mu -|c_C k|^{\alpha }{-i\alpha \delta \operatorname{sign}(k)\pi/2}
+        \varphi(k; \alpha, \delta, c_C, \mu_C) = e^{ c_C(ik\mu_C -|k|^{\alpha}e^{-i\alpha \delta \operatorname{sign}(k)\pi/2}))
 
     where:
               
     ..math::
          \delta =\frac{\beta_B K(alpha)}{\alpha} = \frac{2}{\alpha \pi} atan(\beta_A \tan[\pi\alpha / 2])
-         c_C = c_B = \frac{c_A}{\cos \beta_B}
+         c_C = c_B = \frac{c_A}{\cos[\beta_B K(\alpha)\pi /2}
  
     - Parameterization P:
     .. math::         
@@ -3738,8 +3750,8 @@ class levy_stable_gen(rv_continuous):
     """
     suported_parameterizations = frozenset(["A", "B", "C", "P"])
 
-    def _argcheck(self, alpha, asymmetry, scale):
-        "
+    def _argcheck(self, alpha, asymmetry, scale, param=None):
+        """"
         Checks if parameters have meaningful values:
         Returns True if parameters are within the bounds.
         Default setting is parameterization A.
@@ -3753,32 +3765,39 @@ class levy_stable_gen(rv_continuous):
                 and value alpha.       
             scale : float 
                 Positive real number. 
-           """
+        """
+        # default setting is param A
+        param = "A" if param==None else param
+
+        # check scale 
         if scale <= 0:
             return False
         
+        # check alpha
         if not ((alpha > 0) & (alpha <= 2)) : 
             return False
 
+        # check asymmetry 
         K = lambda a: a - 1. + np.sign(1. - a)
         
-        if par=="B":
-            if alpha==1:
+        if param == "B":
+            if alpha == 1:
                 return (asymmetry <= 1) & (asymmetry >= -1)
             else:
-                return (asymmetry * K(alpha) < np.pi / 2.) & (asymmetry * K(alpha) > -np.pi / 2.)
-        elif par=="C":
-            if alpha==1:
-                return (asymmetry==alpha)
+                return (asymmetry * K(alpha) < 1) & (asymmetry * K(alpha) > -1)
+        elif param == "C":
+            if alpha == 1:
+                return (asymmetry == alpha)
             else:
-                return (asymmetry <= K(alpha) & (asymmetry >= -K(alpha)
-        elif param=="P":
-        #TODO: add param check for parameterization P    
-        if alpha==1:
-                return 
-            else :
-                return (asymmetry * K(alpha) < np.pi / 2.) & (asymmetry * K(alpha) > -np.pi / 2.)
-        else:
+                return (asymmetry <= min(1, 2./alpha - 1)) & (asymmetry >= -min(1, 2./alpha - 1))
+        elif param == "P":
+            if alpha < 1:
+                return (asymetry >= 0) & (asymmetry =< 1)
+            elif alpha > 1:
+                return (asymmetry =< 1 - 1. /alpha) & (asymmetry >= 1. / alpha)
+            else: 
+                return (asymmetry == alpha)
+        else: # param A
             return (asymmetry <= 1) & (asymmetry >= -1)
     
 
@@ -3821,58 +3840,83 @@ class levy_stable_gen(rv_continuous):
         >> {'alpha': 1.5, 'beta': 0.30000000000000004, 'scale': 1, 'loc': 0}
 
         """
-        #TODO: add transformation eqns for alpha==2!!!
         if original_param_type not in supported_parameterizations:
             raise ValueError("Supported parameterizations are A, B, C and P")
         
         K = lambda a: a - 1. + np.sign(1. - a)
         
         # transformation equations between parameterizations
-        def _a_to_b(alpha, beta, scale=1, loc=0):
-            if alpha==1: 
-                scale = scale * np.pi / 2.
-                loc = loc * np.pi / 2.
-            else: 
-                beta = np.arctan(beta * np.tan(np.pi * alpha / 2.)) * 2. / (np.pi * K(alpha))
-                scale = scale / np.cos(beta)          
-            return dict(alpha=alpha, beta=beta, scale=scale, loc=loc)
-        
-        def _b_to_a(alpha, beta, scale=1, loc=0):
-            if alpha==1:
-                scale = scale * 2. / np.pi
-                loc = loc * 2. / np.pi                
+        def _a_to_b(alpha, beta, scale, loc):
+            if _argcheck(alpha, beta, scale, loc):
+                if alpha==1: 
+                    scale = 2. * scale / np.pi
+                    loc = loc * np.pi / 2.
+                else:
+                    # first compute beta_B
+                    beta = np.arctan(beta * np.tan(np.pi * alpha / 2.)) * 2. / (np.pi * K(alpha))
+                    scale = scale / np.cos(beta * K(alpha) * pi / 2.)          
+                    loc = loc * np.cos(beta * K(alpha) * pi / 2.)          
+                return dict(alpha=alpha, beta=beta, scale=scale, loc=loc)
             else:
-                beta = (np.tan((np.pi * K(alpha) * beta) / 2.)) / np.tan(np.pi * alpha / 2.)
-                scale = scale * np.cos(beta)
-            return dict(alpha=alpha, beta=beta, scale=scale)
+                raise ValueError("Parameters out of the range.") 
         
-        def _b_to_c(alpha, beta, scale=1, loc=0):
-            if alpha==1:
-                pass
+        def _b_to_a(alpha, beta, scale, loc):
+            if _argcheck(alpha, beta, scale, loc, param="B"):
+                if alpha==1:
+                    scale = scale * np.pi / 2.
+                    loc = loc * 2./ np.pi                
+                else:
+                    scale = scale * np.cos(beta * K(alpha) * pi / 2.)          
+                    loc = loc / np.cos(beta * K(alpha) * pi / 2.)
+                    # last compute beta_A
+                    beta = np.tan((np.pi * K(alpha) * beta) / 2.) / np.tan(np.pi * alpha / 2.)
+                return dict(alpha=alpha, beta=beta, scale=scale, loc=loc)
             else:
-                delta = beta * K(alpha) / alpha
-            return dict(alpha=alpha, delta=delta, scale=scale)
+                raise ValueError("Parameters out of the range.") 
         
-        def _b_to_p(alpha, beta, scale=1, loc=0): 
-            if alpha==1:
-                pass
+        def _b_to_c(alpha, beta, scale, loc):
+            if _argcheck(alpha, beta, scale, loc, param="B"):
+                if alpha==1:
+                    delta = 2 * np.arctan(2 * loc / np.pi) / np.pi
+                    scale = scale * np.sqrt(np.pi**2 / 4. + loc**2)
+                else:
+                    delta = beta * K(alpha) / alpha
+                return dict(alpha=alpha, delta=delta, scale=scale, loc=loc)
             else:
-                p1 = 1 / 2. + beta * K(alpha) / (2. * alpha)
-            return dict(alpha=alpha, p1=p1, scale=scale)
+                raise ValueError("Parameters out of the range.") 
         
-        def _c_to_b(alpha, delta, scale=1, loc=0):
-            if alpha==1:
-                pass
+        def _b_to_p(alpha, beta, scale, loc, param="B"): 
+            if _argcheck(alpha, beta, scale, loc):
+                if alpha==1:
+                    p1 = 1 / 2. + np.arctan(2 * loc / np.pi) / np.pi
+                    scale = scale * np.sqrt(np.pi**2 / 4. + loc**2)
+                else:
+                    p1 = 1 / 2. + beta * K(alpha) / (2. * alpha)
+                return dict(alpha=alpha, p1=p1, scale=scale, loc=loc)
             else:
-                beta = alpha * delta / K(alpha)
-            return dict(alpha=alpha, beta=beta, scale=scale)
+                raise ValueError("Parameters out of the range.") 
+        
+        def _c_to_b(alpha, delta, scale, loc, param="C"):
+            if _argcheck(alpha, delta, scale, loc):
+                if alpha==1:
+                    scale = scale / np.sqrt(np.pi**2 / 4. + loc**2)
+                    loc = np.pi * np.tan(delta * np.pi / 2.) / 2.
+                else:
+                    beta = alpha * delta / K(alpha)
+                return dict(alpha=alpha, beta=beta, scale=scale, loc=loc)
+            else:
+                raise ValueError("Parameters out of the range.") 
      
         def _p_to_b(alpha, p1, scale):
-            if alpha==1:
-                pass
-            else
-                beta = (2 * p1 - 1) * alpha / K(alpha)
-            return dict(alpha=alpha, beta=beta, scale=scale)
+            if _argcheck(alpha, p1, scale, loc, param="P"):
+                if alpha==1:
+                    scale = scale / np.sqrt(np.pi**2 / 4. + loc**2)
+                    loc = np.pi * np.tan((2 * p1 - 1) * np.pi / 2.) / 2.
+                else
+                    beta = (2 * p1 - 1) * alpha / K(alpha)
+                return dict(alpha=alpha, beta=beta, scale=scale, loc=loc)
+            else:
+                raise ValueError("Parameters out of the range.") 
         
         # original parameters are first converted to parameterization B 
         # (the best choice due to transformation equations)
@@ -3890,12 +3934,21 @@ class levy_stable_gen(rv_continuous):
         return out_dict[destination_param_type](**in_dict[original_param_type](**kwargs))
 
 
-    def _rvs(self, alpha, beta, parameterization='A'):
+    def _rvs(self, alpha, asymmetry, scale, loc, param='A'):
         """
         Generates a vector of random stable variables under parameterization A 
         using Weron's formulation [WE].
         """
-        #TODO: add transformation into different parameterizations
+        if param not in supported_parameterizations:
+            raise ValueError("Supported parameterizations are A, B, C and P")
+       
+        # transform to parameterization A
+        if param=="B": 
+            alpha, beta, scale, loc = _param_switch("B", "A", alpha=alpha, beta=asymmetry, scale=scale, loc=loc)
+        if param=="C": 
+            alpha, beta, scale, loc = _param_switch("C", "A", alpha=alpha, delta=asymmetry, scale=scale, loc=loc)
+        if param=="P": 
+            alpha, beta, scale, loc = _param_switch("P", "A", alpha=alpha, p1=asymmetry, scale=scale, loc=loc)
         
         # generate the random vector of the given size self._size
         sz = self._size
@@ -3919,7 +3972,7 @@ class levy_stable_gen(rv_continuous):
                 scaler = (1. + tan_betaB**2.)**(1 / (2. * alpha))
                 return scaler * factor1 * factor2
         
-        return generate_stable_rvs(alpha, beta, U, E)
+        return loc + (generate_stable_rvs(alpha, beta, U, E) / scale**(1. / alpha)
 
 
     @staticmethod
