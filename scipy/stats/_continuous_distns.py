@@ -3792,9 +3792,9 @@ class levy_stable_gen(rv_continuous):
                 return (asymmetry <= min(1, 2./alpha - 1)) & (asymmetry >= -min(1, 2./alpha - 1))
         elif param == "P":
             if alpha < 1:
-                return (asymetry >= 0) & (asymmetry =< 1)
+                return (asymetry >= 0) & (asymmetry <= 1)
             elif alpha > 1:
-                return (asymmetry =< 1 - 1. /alpha) & (asymmetry >= 1. / alpha)
+                return (asymmetry >= 1 - 1. /alpha) & (asymmetry <= 1. / alpha)
             else: 
                 return (asymmetry == alpha)
         else: # param A
@@ -3943,12 +3943,12 @@ class levy_stable_gen(rv_continuous):
             raise ValueError("Supported parameterizations are A, B, C and P")
        
         # transform to parameterization A
-        if param=="B": 
-            alpha, beta, scale, loc = _param_switch("B", "A", alpha=alpha, beta=asymmetry, scale=scale, loc=loc)
-        if param=="C": 
-            alpha, beta, scale, loc = _param_switch("C", "A", alpha=alpha, delta=asymmetry, scale=scale, loc=loc)
-        if param=="P": 
-            alpha, beta, scale, loc = _param_switch("P", "A", alpha=alpha, p1=asymmetry, scale=scale, loc=loc)
+        if param == "B": 
+            alpha, beta, scale, loc = list(_param_switch("B", "A", alpha=alpha, beta=asymmetry, scale=scale, loc=loc).values())
+        if param == "C": 
+            alpha, beta, scale, loc = list(_param_switch("C", "A", alpha=alpha, delta=asymmetry, scale=scale, loc=loc).values()
+        if param == "P": 
+            alpha, beta, scale, loc = list(_param_switch("P", "A", alpha=alpha, p1=asymmetry, scale=scale, loc=loc).values())
         
         # generate the random vector of the given size self._size
         sz = self._size
