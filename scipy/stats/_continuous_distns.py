@@ -3748,7 +3748,7 @@ class levy_stable_gen(rv_continuous):
     %(example)s
 
     """
-    suported_parameterizations = frozenset(["A", "B", "C", "P"])
+    supported_parameterizations = frozenset(["A", "B", "C", "P"])
 
     def _argcheck(self, alpha, asymmetry, scale, param=None):
         """"
@@ -3847,27 +3847,27 @@ class levy_stable_gen(rv_continuous):
         
         # transformation equations between parameterizations
         def _a_to_b(alpha, beta, scale, loc):
-            if _argcheck(alpha, beta, scale, loc):
+            if _argcheck(alpha, beta, scale, "A"):
                 if alpha==1: 
                     scale = 2. * scale / np.pi
                     loc = loc * np.pi / 2.
                 else:
                     # first compute beta_B
                     beta = np.arctan(beta * np.tan(np.pi * alpha / 2.)) * 2. / (np.pi * K(alpha))
-                    scale = scale / np.cos(beta * K(alpha) * pi / 2.)          
-                    loc = loc * np.cos(beta * K(alpha) * pi / 2.)          
+                    scale = scale / np.cos(beta * K(alpha) * np.pi / 2.)          
+                    loc = loc * np.cos(beta * K(alpha) * np.pi / 2.)          
                 return dict(alpha=alpha, beta=beta, scale=scale, loc=loc)
             else:
                 raise ValueError("Parameters out of the range.") 
         
         def _b_to_a(alpha, beta, scale, loc):
-            if _argcheck(alpha, beta, scale, loc, param="B"):
+            if _argcheck(alpha, beta, scale, "B"):
                 if alpha==1:
                     scale = scale * np.pi / 2.
                     loc = loc * 2./ np.pi                
                 else:
-                    scale = scale * np.cos(beta * K(alpha) * pi / 2.)          
-                    loc = loc / np.cos(beta * K(alpha) * pi / 2.)
+                    scale = scale * np.cos(beta * K(alpha) * np.pi / 2.)          
+                    loc = loc / np.cos(beta * K(alpha) *np.pi / 2.)
                     # last compute beta_A
                     beta = np.tan((np.pi * K(alpha) * beta) / 2.) / np.tan(np.pi * alpha / 2.)
                 return dict(alpha=alpha, beta=beta, scale=scale, loc=loc)
@@ -3875,7 +3875,7 @@ class levy_stable_gen(rv_continuous):
                 raise ValueError("Parameters out of the range.") 
         
         def _b_to_c(alpha, beta, scale, loc):
-            if _argcheck(alpha, beta, scale, loc, param="B"):
+            if _argcheck(alpha, beta, scale, "B"):
                 if alpha==1:
                     delta = 2 * np.arctan(2 * loc / np.pi) / np.pi
                     scale = scale * np.sqrt(np.pi**2 / 4. + loc**2)
@@ -3885,8 +3885,8 @@ class levy_stable_gen(rv_continuous):
             else:
                 raise ValueError("Parameters out of the range.") 
         
-        def _b_to_p(alpha, beta, scale, loc, param="B"): 
-            if _argcheck(alpha, beta, scale, loc):
+        def _b_to_p(alpha, beta, scale, loc): 
+            if _argcheck(alpha, beta, scale, "B"):
                 if alpha==1:
                     p1 = 1 / 2. + np.arctan(2 * loc / np.pi) / np.pi
                     scale = scale * np.sqrt(np.pi**2 / 4. + loc**2)
@@ -3896,8 +3896,8 @@ class levy_stable_gen(rv_continuous):
             else:
                 raise ValueError("Parameters out of the range.") 
         
-        def _c_to_b(alpha, delta, scale, loc, param="C"):
-            if _argcheck(alpha, delta, scale, loc):
+        def _c_to_b(alpha, delta, scale, loc):
+            if _argcheck(alpha, delta, scale, "C"):
                 if alpha==1:
                     scale = scale / np.sqrt(np.pi**2 / 4. + loc**2)
                     loc = np.pi * np.tan(delta * np.pi / 2.) / 2.
@@ -3907,12 +3907,12 @@ class levy_stable_gen(rv_continuous):
             else:
                 raise ValueError("Parameters out of the range.") 
      
-        def _p_to_b(alpha, p1, scale):
-            if _argcheck(alpha, p1, scale, loc, param="P"):
+        def _p_to_b(alpha, p1, scale, loc):
+            if _argcheck(alpha, p1, scale, "P"):
                 if alpha==1:
                     scale = scale / np.sqrt(np.pi**2 / 4. + loc**2)
                     loc = np.pi * np.tan((2 * p1 - 1) * np.pi / 2.) / 2.
-                else
+                else:
                     beta = (2 * p1 - 1) * alpha / K(alpha)
                 return dict(alpha=alpha, beta=beta, scale=scale, loc=loc)
             else:
@@ -3944,11 +3944,11 @@ class levy_stable_gen(rv_continuous):
        
         # transform to parameterization A
         if param == "B": 
-            alpha, beta, scale, loc = list(_param_switch("B", "A", alpha=alpha, beta=asymmetry, scale=scale, loc=loc).values())
+            alpha, beta, scale, loc = _param_switch("B", "A", alpha=alpha, beta=asymmetry, scale=scale, loc=loc).values()
         if param == "C": 
-            alpha, beta, scale, loc = list(_param_switch("C", "A", alpha=alpha, delta=asymmetry, scale=scale, loc=loc).values()
+            alpha, beta, scale, loc = _param_switch("C", "A", alpha=alpha, delta=asymmetry, scale=scale, loc=loc).values()
         if param == "P": 
-            alpha, beta, scale, loc = list(_param_switch("P", "A", alpha=alpha, p1=asymmetry, scale=scale, loc=loc).values())
+            alpha, beta, scale, loc = _param_switch("P", "A", alpha=alpha, p1=asymmetry, scale=scale, loc=loc).values()
         
         # generate the random vector of the given size self._size
         sz = self._size
