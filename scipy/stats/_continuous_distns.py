@@ -3921,7 +3921,7 @@ class levy_stable_gen(rv_continuous):
         # original parameters are first converted to parameterization B 
         # (the best choice due to transformation equations)
         in_dict = dict(A = _a_to_b,
-                       B = lambda *args: args, # we are passing the params to the function
+                       B = lambda **args: args, # we are passing the params to the function
                        C = _c_to_b,
                        P = _p_to_b)
 
@@ -3972,7 +3972,7 @@ class levy_stable_gen(rv_continuous):
                 scaler = (1. + tan_betaB**2.)**(1 / (2. * alpha))
                 return scaler * factor1 * factor2
         
-        return loc + (generate_stable_rvs(alpha, beta, U, E) / scale**(1. / alpha)
+        return loc + (generate_stable_rvs(alpha, beta, U, E)) / scale**(1. / alpha)
 
 
     @staticmethod
