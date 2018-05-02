@@ -3769,29 +3769,32 @@ class levy_stable_gen(rv_continuous):
         param = "A" if param==None else param
 
         # check alpha
-        if not ((alpha > 0) & (alpha <= 2)) : 
+        if not np.all((alpha > 0) & (alpha <= 2)) : 
             return False
 
         # check asymmetry 
         K = lambda a: a - 1. + np.sign(1. - a)
         
         if param == "B":
-            if alpha == 1:
-                return (asymmetry <= 1) & (asymmetry >= -1)
-            else:
-                return (asymmetry * K(alpha) < 1) & (asymmetry * K(alpha) > -1)
+            alpha_1_condition = (asymmetry <= 1) & (asymmetry >= -1)
+            alpha_rest_condition = (asymmetry * K(alpha) < 1) & (asymmetry * K(alpha) > -1)
+            condition = np.where(alpha == 1, alpha_1_condition, alpha_rest_condition)
+            return np.all(condition)
         elif param == "C":
-            if alpha == 1:
-                return (asymmetry == alpha)
-            else:
-                return (asymmetry <= min(1, 2./alpha - 1)) & (asymmetry >= -min(1, 2./alpha - 1))
+            alpha_1_condition = asymmetry == alpha
+            alpha_rest_condition = ((asymmetry <= np.minimum(1, 2./alpha - 1)) &
+                                    (asymmetry >= -np.minimum(1, 2./alpha - 1)))
+            condition = np.where(alpha == 1, alpha_1_condition, 
+                                 alpha_rest_condition)
+            return np.all(condition)
         elif param == "P":
-            if alpha < 1:
-                return (asymmetry >= 0) & (asymmetry <= 1)
-            elif alpha > 1:
-                return (asymmetry >= 1 - 1. /alpha) & (asymmetry <= 1. / alpha)
-            else: 
-                return (asymmetry == alpha)
+            alpha_less_than_1_condition = (asymmetry >= 0) & (asymmetry <= 1)
+            alpha_more_than_1_condition = ((asymmetry >= 1 - 1. /alpha) & 
+                                           (asymmetry <= 1. / alpha))
+            alpha_1_condition = (asymmetry == alpha)
+            return (((alpha < 1) & alpha_less_than_1_condition) | 
+                    ((alpha > 1) & alpha_more_than_1_condition) | 
+                    ((alpha == 1) & alpha_1_condition))
         else: # param A
             return (asymmetry <= 1) & (asymmetry >= -1)
     
