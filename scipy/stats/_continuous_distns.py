@@ -3585,7 +3585,7 @@ class levy_stable_gen(rv_continuous):
     -----
     ..math:: \alpha-stable  distributions form a rich family of probability distributions 
     which arises in the central limit theorem problems. Stable distributions and their variants 
-    are also known under diferent names to different scientific communities, 
+    are also known under different names to different scientific communities, 
     e.g. physicicts like to call Symmetric Stable Laws as Levy Flights, whereas mathematicians 
     calls the distributions ..math:: \alpha-stable distributions. We will refer this class 
     of distributions as Levy Stable laws / distributions.
@@ -3795,7 +3795,7 @@ class levy_stable_gen(rv_continuous):
             return (asymmetry <= 1) & (asymmetry >= -1)
     
 
-    @staticmethod
+    @classmethod
     def _param_switch(original_param_type, destination_param_type, **kwargs):
         """
         Helper function for transforming a set of parameters under original_parameterisation type
@@ -3834,7 +3834,7 @@ class levy_stable_gen(rv_continuous):
         >> {'alpha': 1.5, 'beta': 0.30000000000000004, 'scale': 1, 'loc': 0}
 
         """
-        if original_param_type not in self.supported_parameterizations:
+        if original_param_type not in cls.supported_parameterizations:
             raise ValueError("Supported parameterizations are A, B, C and P")
         
         K = lambda a: a - 1. + np.sign(1. - a)
@@ -3933,13 +3933,26 @@ class levy_stable_gen(rv_continuous):
         Generates a vector of random stable variables under parameterization A 
         using Weron's formulation [WE].
         """
+        # TODO: currently the superclass's `rvs` method does not pass through
+        # the `param` kwarg. This needs to be addressed to work with different
+        # parameterizations.
+
         if param not in self.supported_parameterizations:
             raise ValueError("Supported parameterizations are A, B, C and P")
        
         scale = 1
         loc = 0
+        # We don't receive `scale` and `loc` args from the superclass's
+        # `rvs` method. It deals with them upstream, expecting this 
+        # method to assume scale=1 and loc=0. But these parameters take different 
+        # values under different parameterizations. We need 
+        # to transform `scale` and `loc` when we switch parameterizations. 
 
-        # transform to parameterization A
+        # So we assume `scale`=1 and `loc`=0 (as usual) are in the type of 
+        # parameterization specified by `param`, and convert these to 
+        # parameteriation A.
+
+        # Transform given parameters to parameterization A:
         if param == "B": 
             alpha, beta, scale, loc = _param_switch("B", "A", alpha=alpha, 
                     beta=asymmetry, scale=scale, loc=loc).values()
