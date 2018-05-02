@@ -3590,7 +3590,7 @@ class levy_stable_gen(rv_continuous):
     calls the distributions ..math:: \alpha-stable distributions. We will refer this class 
     of distributions as Levy Stable laws / distributions.
 
-    The densities of Levy Stable laws are well represented by Fox's H-fuctions [ZOL1].  
+    The densities of Levy Stable laws are well represented by Fox's H-functions [ZOL1].  
     The representations as compositions of elementary functions are available only for few specific cases.
     For ..math::\alpha = 2 the density reduces to Gaussian distributions. For symmetric case 
     of ..math::\alpha = 1 the Levy Stable law is known as a Cauchy distribution. For ..math::\alpha = 0.5
