@@ -42,7 +42,7 @@ A number of other functions and classes are provided, for which README documenta
 Introductions to interpolation and splines can be found online at:
 
 http://en.wikipedia.org/wiki/Interpolation
-	The Wikipedia article on interpolation.  Provides an accesible
+	The Wikipedia article on interpolation.  Provides an accessible
 	overview of major areas of the subject, including spline
 	interpolation.
 http://en.wikipedia.org/wiki/Spline_interpolation

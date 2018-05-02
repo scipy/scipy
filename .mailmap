@@ -10,12 +10,35 @@
 # This file is up-to-date if the command git log --format="%aN <%aE>" | sort -u
 # does not list the same person multiple times.
 #
+@awakenting <awakenting@users.noreply.github.com> awakenting <awakenting@users.noreply.github.com>
 @axiru <axiru@users.noreply.gihub.com> axiru <axiru@users.noreply.gihub.com>
 @cel4 <cel4@users.noreply.github.com> cel4 <cel4@users.noreply.github.com>
 @chemelnucfin <aw@sp3.com> aw <aw@sp3.com>
 @endolith <endolith@gmail.com> Endolith <endolith@gmail.com>
 @endolith <endolith@gmail.com> endolith <endolith@gmail.com>
+@FormerPhysicist <Former@physicist.net> FormerPhysicist <Former@physicist.net>
+@gaulinmp <gaulinmp+git@gmail.com> Mac <gaulinmp+git@gmail.com>
+@hugovk <hugovk@users.noreply.github.com> Hugo <hugovk@users.noreply.github.com>
+@ksemb <ksms@gmx.de> ksemb <ksms@gmx.de>
+@kshitij12345 <kshitijkalambarkar@gmail.com> kshitij12345 <kshitijkalambarkar@gmail.com>
+@luzpaz <luzpaz@users.noreply.github.com> Unknown <kunda@scribus.net>
+@luzpaz <luzpaz@users.noreply.github.com> luz.paz <luzpaz@users.noreply.github.com>
+@luzpaz <luzpaz@users.noreply.github.com> luzpaz <luzpaz@users.noreply.github.com>
 @mamrehn <mamrehn@users.noreply.github.com> mamrehn <mamrehn@users.noreply.github.com>
+@NKrvavica <35114994+NKrvavica@users.noreply.github.com> NKrvavica <35114994+NKrvavica@users.noreply.github.com>
+@rafalalgo <rafal.byczek@student.uj.edu.pl> rafalalgo <rafal.byczek@student.uj.edu.pl>
+@samyak0210 <30871632+samyak0210@users.noreply.github.com> samyak0210 <30871632+samyak0210@users.noreply.github.com>
+@soluwalana <soluwalana@gmail.com> Sam O <soluwalana@gmail.com>
+@sudheerachary <sudheerachary115@gmail.com> sudheer <sudheerachary115@gmail.com>
+@Tokixix <mateusztok@gmail.com> Mateusz <mateusztok@gmail.com>
+@Tokixix <mateusztok@gmail.com> Tokixix <mateusztok@gmail.com>
+@tttthomasssss <th0mas.ko6er@gmail.com> Thomas <th0mas.ko6er@gmail.com>
+@vkk800 <vkk800@users.noreply.github.com> vkk800 <vkk800@users.noreply.github.com>
+@wirew0rm <wirew0rm@users.noreply.github.com> wirew0rm <wirew0rm@users.noreply.github.com>
+@xoviat <xoviat@users.noreply.github.com> xoviat <xoviat@users.noreply.github.com>
+@yanxun827 <yanxun827@gmail.com> yanxun827 <yanxun827@gmail.com>
+@ybeltukov <ybeltukov@gmail.com> ybeltukov <ybeltukov@gmail.com>
+@ziejcow <jan.gwinner@gmail.com>ziejcow <jan.gwinner@gmail.com>
 Aditya Vijaykumar <vijaykumar.aditya@gmail.com> adivijaykumar <vijaykumar.aditya@gmail.com>
 Akash Goel <goelakas@amazon.com> Goel <goelakas@amazon.com>
 Aldrian Obaja <> ubuntu <>
@@ -31,6 +54,7 @@ Anders Bech Borchersen <anb@es.aau.dk> andbo <anb@es.aau.dk>
 Andreas Hilboll <andreas@hilboll.de> Andreas H <andreas@hilboll.de>
 Andreas Hilboll <andreas@hilboll.de> Andreas Hilboll <andreas-h@users.noreply.github.com>
 Andreea Georgescu <ageorgescu@ucla.edu> Andreea_G <ageorgescu@ucla.edu>
+Andriy Gelman <andriy.gelman@gmail.com> talih0 <andriy.gelman@gmail.com>
 Andrew Fowlie <andrew.j.fowlie@googlemail.com> andrew <andrew.j.fowlie@googlemail.com>
 Andrew Nelson <andyfaff@gmail.com> Andrew Nelson <andrew@Andrews-MacBook-Pro.local>
 Andrew Nelson <andyfaff@gmail.com> Andrew Nelson <anz@d121131.ncnr.nist.gov>
@@ -51,9 +75,12 @@ Callum Jacob Hays <callumjhays@gmail.com> callumJHays <callumjhays@gmail.com>
 Charles Masson <charles.masson@datadoghq.com> charlesmasson <charles.masson@datadoghq.com>
 Chris Burns <chris.burns@localhost> chris.burns <chris.burns@localhost>
 Chris Lasher <> gotgenes <>
+Christoph Baumgarten <christoph.baumgarten@gmail.com> chrisb83 <33071866+chrisb83@users.noreply.github.com>
+Christoph Baumgarten <christoph.baumgarten@gmail.com> chrisb83 <christoph.baumgarten@gmail.com>
 Christoph Gohlke <cgohlke@uci.edu> cgohlke <cgohlke@uci.edu>
 Christoph Gohlke <cgohlke@uci.edu> Christolph Gohlke <>
 Christoph Gohlke <cgohlke@uci.edu> cgholke <>
+Christoph Gohlke <cgohlke@uci.edu> cgohlke <cjgohlke@gmail.com>
 Christopher Kuster <ckuster@carrollu.edu> ckuster <ckuster@carrollu.edu>
 Clemens Novak <clemens@familie-novak.net> cnovak <clemens@familie-novak.net>
 Clemens Novak <clemens@familie-novak.net> Clemens <clemens@familie-novak.net>
@@ -76,12 +103,15 @@ David Menéndez Hurtado <davidmenhur@gmail.com> David Menéndez Hurtado <david.m
 David Menéndez Hurtado <davidmenhur@gmail.com> David Menendez Hurtado <davidmenhur@gmail.com>
 David Nicholson <nicholdav@gmail.com> NickleDave <nicholdav@gmail.com>
 David Warde-Farley <wardefar@iro.umontreal.ca> david.warde-farley <david.warde-farley@localhost>
+Deepak Kumar Gouda <deepakgouda1729@gmail.com> deepakgouda <deepakgouda1729@gmail.com>
 Denis Laxalde <denis@laxalde.org> Denis Laxalde <denis.laxalde@logilab.fr>
 Denis Laxalde <denis@laxalde.org> Denis Laxalde <denis.laxalde@mcgill.ca>
 Denis Laxalde <denis@laxalde.org> Denis Laxalde <denis@mail.laxalde.org>
 Derek Homeier <> Derek Homeir <>
 Derek Homeier <> Derek Homier <>
 Dezmond Goff <goff.dezmond@gmail.com> Dezmond <goff.dezmond@gmail.com>
+Dieter Werthmüller <prisae@users.noreply.github.com> Dieter Werthmüller <mail@werthmuller.org>
+Dieter Werthmüller <prisae@users.noreply.github.com> Dieter Werthmüller <prisae@users.noreply.github.com>
 Dmitrey Kroshko <dmitrey.kroshko@localhost> dmitrey.kroshko <dmitrey.kroshko@localhost>
 Dávid Bodnár <david.bodnar@st.ovgu.de> bdvd <david.bodnar@st.ovgu.de>
 Ed Schofield <edschofield@localhost> edschofield <edschofield@localhost>
@@ -131,6 +161,7 @@ Jaime Fernandez del Rio <jaimefrio@google.com> Jaime Fernandez <jaimefrio@google
 James T. Webber <jamestwebber@gmail.com> jamestwebber <jamestwebber@gmail.com>
 Janani Padmanabhan <jenny.stone125@gmail.com> janani <janani@janani-Vostro-3446.(none)>
 Janani Padmanabhan <jenny.stone125@gmail.com> Janani <jenny.stone125@gmail.com>
+Jean-François B. <jfbu@free.fr> jfbu <jfbu@free.fr>
 Jeff Armstrong <jeff@approximatrix.com> ArmstrongJ <approximatrix@gmail.com>
 Jeff Armstrong <jeff@approximatrix.com> Jeff Armstrong <jeff@approximatrix.com>
 Jesse Engel <jesse.engel@gmail.com> jesseengel <jesse.engel@gmail.com>
@@ -148,6 +179,7 @@ Joris Vankerschaver <joris.vankerschaver@gmail.com> Joris Vankerschaver <jvanker
 Joscha Reimer <jor@informatik.uni-kiel.de> jor <jor@informatik.uni-kiel.de>
 Josef Perktold <josef.pktd@gmail.com> josef-pktd <josef.pktd@gmail.com>
 Josef Perktold <josef.pktd@gmail.com> josef <josef@localhost>
+Joseph Albert <jxa357@psu.edu> jcalbert <jxa357@psu.edu>
 Joseph Fox-Rabinovitz <joseph.r.fox-rabinovitz@nasa.gov> Mad Physicist <madphysicist@users.noreply.github.com>
 Joseph Fox-Rabinovitz <joseph.r.fox-rabinovitz@nasa.gov> Joseph Fox-Rabinovitz <madphysicist@users.noreply.github.com>
 Josh Lawrence <josh.k.lawrence@gmail.com> wa03 <josh.k.lawrence@gmail.com>
@@ -163,6 +195,7 @@ Lars Buitinck <larsmans@gmail.com> Lars <larsmans@users.noreply.github.com>
 Lars Buitinck <larsmans@gmail.com> Lars Buitinck <larsmans@users.noreply.github.com>
 Lars Buitinck <larsmans@gmail.com> Lars Buitinck <l.buitinck@esciencecenter.nl>
 Lars Buitinck <larsmans@gmail.com> Lars Buitinck <L.J.Buitinck@uva.nl>
+Lars G <lagru@mailbox.org> Lars G <lagru@users.noreply.github.com>
 Lei Ma <emptymalei@qq.com> OctoMiao <emptymalei@qq.com>
 Liam Damewood <damewood@physics.ucdavis.edu> ldamewood <damewood@physics.ucdavis.edu>
 Liming Wang <lmwang@gmail.com> lmwang <lmwang@gmail.com>
@@ -195,9 +228,11 @@ Nikolai Nowaczyk <mail@nikno.de> Nikolai <mail@nikno.de>
 Nikolas Moya <nikolasmoya@gmail.com> nmoya <nikolasmoya@gmail.com>
 Nikolay Mayorov <nikolay.mayorov@zoho.com> Nikolay Mayorov <n59_ru@hotmail.com>
 Nikolay Mayorov <nikolay.mayorov@zoho.com> Nikolay Mayorov <nmayorov@users.noreply.github.com>
+Noel Kippers <n.kippers@catawiki.nl> RothNRK <n.kippers@catawiki.nl>
 Orestis Floros <orestisf1993@gmail.com> Orestis <orestisf1993@gmail.com>
 Pablo Winant <pablo.winant@gmail.com> pablo.winant@gmail.com <Pablo Winant>
 Patrick Snape <patricksnape@gmail.com> patricksnape <patricksnape@gmail.com>
+Paul van Mulbregt <pvanmulbregt@users.noreply.github.com> pvanmulbregt <pvanmulbregt@users.noreply.github.com>
 Peadar Coyle <peadarcoyle@googlemail.com> springcoil <peadarcoyle@googlemail.com>
 Pedro López-Adeva Fernández-Layos <plopezadeva@gmail.com> plafl <plopezadeva@gmail.com>
 Pedro López-Adeva Fernández-Layos <plopezadeva@gmail.com> Pedro López-Adeva Fernández-Layos <plafl@users.noreply.github.com>
@@ -222,11 +257,13 @@ Rupak Das <dr10ru@yahoo.co.in> Rupak <dr10ru@yahoo.co.in>
 Sam Lewis <sam.vr.lewis@gmail.com> Sam Lewis <samvrlewis@users.noreply.github.com>
 Sam Mason <sam@samason.uk> Sam Mason <sam.mason@warwick.ac.uk>
 Santi Villalba <sdvillal@gmail.com> santi <sdvillal@gmail.com>
+Saurabh Agarwal <shourabh.agarwal@gmail.com> saurabhkgpee <shourabh.agarwal@gmail.com>
 Scott Sievert <me@scottsievert.com> scottsievert <sieve121@umn.edu>
 Sebastian Haase <> sebhaase <>
 Sebastian Pucilowski <smopucilowski@gmail.com> Sebastian Pucilowski <smopucilowski@users.noreply.github.com>
 Sebastian Skoupý <sebastian.skoupy@gmail.com> Sebascn <sebastian.skoupy@gmail.com>
 Skipper Seabold <jsseabold@gmail.com> skip <skip@localhost>
+Shinya SUZUKI <sshinya@bio.titech.ac.jp> Shinya SUZUKI <minasitawakou@gmail.com>
 Srikiran <srikiran@dhcp-v233-179.pv.reshsg.uci.edu> sriki18 <sriki18@users.noreply.github.com>
 Stefan Peterson <stefan.peterson@rubico.com> sjpet <stefan.peterson@rubico.com>
 Stefan van der Walt <stefanv@berkeley.edu> Stefan van der Walt <sjvdwalt@gmail.com>
@@ -234,6 +271,7 @@ Stefan van der Walt <stefanv@berkeley.edu> Stefan van der Walt <stefan@sun.ac.za
 Steve Richardson <arichar6@gmail.com> arichar6 <arichar6@gmail.com>
 Sturla Molden <sturla@molden.no> sturlamolden <sturla@molden.no>
 Sturla Molden <sturla@molden.no> Sturla Molden <sturlamolden@users.noreply.github.com>
+Sturla Molden <sturla@molden.no> unknown <sturlamo@PK-FYS-1121C.uio.no>
 Sumit Binnani <sumitbinnani.developer@gmail.com> sumitbinnani <sumitbinnani.developer@gmail.com>
 Sylvain Bellemare <sbellem@gmail.com> Sylvain Bellemare <sylvain.bellemare@ezeep.com>
 Sytse Knypstra <S.Knypstra@rug.nl> SytseK <S.Knypstra@rug.nl>
@@ -246,11 +284,13 @@ Tim Leslie <tim.leslie@gmail.com> Tim Leslie <timl@breakawayconsulting.com.au>
 Tobias Schmidt <royalts@gmail.com> RoyalTS <royalts@gmail.com>
 Todd Goodall <beyondmetis@gmail.com> Todd <beyondmetis@gmail.com>
 Tom Waite <tom.waite@localhost> tom.waite <tom.waite@localhost>
+Tom Donoghue <tdonoghue@ucsd.edu> TomDonoghue <tdonoghue@ucsd.edu>
 Tony S. Yu <tsyu80@gmail.com> tonysyu <tsyu80@gmail.com>
 Tony S. Yu <tsyu80@gmail.com> Tony S Yu <tsyu80@gmail.com>
 Travis Oliphant <teoliphant@gmail.com> Travis E. Oliphant <teoliphant@gmail.com>
 Travis Oliphant <teoliphant@gmail.com> Travis Oliphant <oliphant@enthought.com>
 Uwe Schmitt <uwe.schmitt@localhost> uwe.schmitt <uwe.schmitt@localhost>
+Vicky Close <vicky.r.close@gmail.com> vickyclose <vicky.r.close@gmail.com>
 Warren Weckesser <warren.weckesser@gmail.com> warren.weckesser <warren.weckesser@localhost>
 Warren Weckesser <warren.weckesser@gmail.com> Warren Weckesser <warren.weckesser@enthought.com>
 Warren Weckesser <warren.weckesser@gmail.com> Warren Weckesser <warren.weckesser@localhost>
