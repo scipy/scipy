@@ -4015,19 +4015,29 @@ class levy_stable_gen(rv_continuous):
 
         common_exponent = 1j * k * location - (np.abs(scale * k) ** alpha)
         if parameterisation_type == "A":
-            Phi = lambda alpha, k: np.tan(np.pi * alpha / 2.) if alpha != 1 else -2.0*np.log(np.abs(k)) / np.pi
+            def Phi(alpha, k):
+                if alpha != 1:
+                    return np.tan(np.pi * alpha / 2.) 
+                else:
+                    return -2.0*np.log(np.abs(k)) / np.pi
             return np.exp(common_exponent * (1 - 1j * beta * np.sign(k) * Phi(alpha, k)))
     
         elif parameterisation_type == "B":
-            return np.exp(common_exponent * np.exp(-1j * beta * K(alpha) * np.sign(k) * np.pi / 2.))
+            inner_exponent = -1j * beta * K(alpha) * np.sign(k) * np.pi / 2.
+            return np.exp(common_exponent * np.exp(inner_exponent))
     
         elif parameterisation_type == "C":
-            Delta = lambda beta, k_alpha, alpha: beta * k_alpha / alpha
-            return np.exp(common_exponent * np.exp(-1j * Delta(beta, K(alpha), alpha) * alpha * np.sign(k) * np.pi / 2.))
-    
+            def Delta(beta, k_alpha, alpha): 
+                return beta * k_alpha / alpha
+            inner_exponent = (-1j * Delta(beta, K(alpha), alpha) *
+                              alpha * np.sign(k) * np.pi / 2.)
+            return np.exp(common_exponent * np.exp(inner_exponent))
         elif parameterisation_type == "P":
-            P1 = lambda beta, k_alpha, alpha: 0.5 + beta * k_alpha / (2. * alpha)
-            return np.exp(common_exponent * np.exp(-1j * alpha * (2 * P1(beta, K(alpha), alpha) - 1) * np.sign(k) * np.pi / 2.))
+            def P1(beta, k_alpha, alpha): 
+                return 0.5 + beta * k_alpha / (2. * alpha)
+            inner_exponent = (-1j * alpha * (2 * P1(beta, K(alpha), alpha) - 1)
+                              * np.sign(k) * np.pi / 2.)
+            return np.exp(common_exponent * np.exp(inner_exponent))
 
         else:
             raise ValueError("parameterisation_type must be a supported parameterisation: 'A', 'B', 'C', 'P'")
