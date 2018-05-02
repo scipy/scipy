@@ -3750,7 +3750,8 @@ class levy_stable_gen(rv_continuous):
     """
     supported_parameterizations = frozenset(["A", "B", "C", "P"])
 
-    def _argcheck(self, alpha, asymmetry, param=None):
+    @classmethod
+    def _argcheck(cls, alpha, asymmetry, param=None):
         """"
         Checks if parameters have meaningful values:
         Returns True if parameters are within the bounds.
@@ -3796,7 +3797,7 @@ class levy_stable_gen(rv_continuous):
     
 
     @classmethod
-    def _param_switch(original_param_type, destination_param_type, **kwargs):
+    def _param_switch(cls, original_param_type, target_param_type, **kwargs):
         """
         Helper function for transforming a set of parameters under original_parameterisation type
         into a set of new parameters under destination_parameterisation_type: 
@@ -3814,7 +3815,7 @@ class levy_stable_gen(rv_continuous):
         ----------
             original_param_type : str
                 Parameterization from which we are transforming: e.g. "A"
-            destination_param_type : str
+            target_param_type : str
                 Parameterization into which we want to express the parameters, e.g. "B"
             kwargs:
                 alpha, beta, c, delta, p1, scale and loc (for location) as applicable
@@ -3841,7 +3842,7 @@ class levy_stable_gen(rv_continuous):
         
         # transformation equations between parameterizations
         def _a_to_b(alpha, beta, scale, loc):
-            if _argcheck(alpha, beta, scale, "A"):
+            if cls._argcheck(alpha, beta, "A"):
                 if alpha==1: 
                     scale = 2. * scale / np.pi
                     loc = loc * np.pi / 2.
@@ -3855,7 +3856,7 @@ class levy_stable_gen(rv_continuous):
                 raise ValueError("Parameters out of the range.") 
         
         def _b_to_a(alpha, beta, scale, loc):
-            if _argcheck(alpha, beta, scale, "B"):
+            if cls._argcheck(alpha, beta, "B"):
                 if alpha==1:
                     scale = scale * np.pi / 2.
                     loc = loc * 2./ np.pi                
@@ -3869,7 +3870,7 @@ class levy_stable_gen(rv_continuous):
                 raise ValueError("Parameters out of the range.") 
         
         def _b_to_c(alpha, beta, scale, loc):
-            if _argcheck(alpha, beta, scale, "B"):
+            if cls._argcheck(alpha, beta, "B"):
                 if alpha==1:
                     delta = 2 * np.arctan(2 * loc / np.pi) / np.pi
                     scale = scale * np.sqrt(np.pi**2 / 4. + loc**2)
@@ -3880,7 +3881,7 @@ class levy_stable_gen(rv_continuous):
                 raise ValueError("Parameters out of the range.") 
         
         def _b_to_p(alpha, beta, scale, loc): 
-            if _argcheck(alpha, beta, scale, "B"):
+            if cls._argcheck(alpha, beta, "B"):
                 if alpha==1:
                     p1 = 1 / 2. + np.arctan(2 * loc / np.pi) / np.pi
                     scale = scale * np.sqrt(np.pi**2 / 4. + loc**2)
@@ -3891,7 +3892,7 @@ class levy_stable_gen(rv_continuous):
                 raise ValueError("Parameters out of the range.") 
         
         def _c_to_b(alpha, delta, scale, loc):
-            if _argcheck(alpha, delta, scale, "C"):
+            if cls._argcheck(alpha, delta, "C"):
                 if alpha==1:
                     scale = scale / np.sqrt(np.pi**2 / 4. + loc**2)
                     loc = np.pi * np.tan(delta * np.pi / 2.) / 2.
@@ -3902,7 +3903,7 @@ class levy_stable_gen(rv_continuous):
                 raise ValueError("Parameters out of the range.") 
      
         def _p_to_b(alpha, p1, scale, loc):
-            if _argcheck(alpha, p1, scale, "P"):
+            if cls._argcheck(alpha, p1, "P"):
                 if alpha==1:
                     scale = scale / np.sqrt(np.pi**2 / 4. + loc**2)
                     loc = np.pi * np.tan((2 * p1 - 1) * np.pi / 2.) / 2.
@@ -3925,7 +3926,7 @@ class levy_stable_gen(rv_continuous):
                         C = _b_to_c,
                         P = _b_to_p)
 
-        return out_dict[destination_param_type](**in_dict[original_param_type](**kwargs))
+        return out_dict[target_param_type](**in_dict[original_param_type](**kwargs))
 
 
     def _rvs(self, alpha, asymmetry, param='A'):
@@ -4063,7 +4064,7 @@ class levy_stable_gen(rv_continuous):
         #TODO: Method remains experimental and needs improvement.
 
         K = lambda a: a - 1 + np.sign(1-a)
-        beta_B = cls._param_switch('A', 'B', beta=beta, alpha=alpha, scale=1)['beta']
+        beta_B = cls._param_switch('A', 'B', beta=beta, alpha=alpha, scale=1, loc=0)['beta']
         # print('beta_B:', beta_B)
         P1 = 1/2 + beta_B * K(alpha)/(2 * alpha)
         # print('P1:', P1)
@@ -4108,7 +4109,9 @@ class levy_stable_gen(rv_continuous):
                 lnf_element = lnf2_element
 
         elif 1 < np.abs(x) <= 5:
-            warnings.warn("The value given for x is too large for a good approximation. Treat result with caution.", category=RuntimeWarning)
+            warnings.warn("The value given for x is too large for a good "
+                          "approximation. Treat result with caution.", 
+                          category=RuntimeWarning)
             if 0 < alpha < 1:
                 lnf_element = lnf1_element
                 asymptotic = True
@@ -4124,10 +4127,11 @@ class levy_stable_gen(rv_continuous):
                 asymptotic = True
         
         #TODO: implement changing behaviour for asymptotic and convergent expansions.
-        #Current implementation simply iterates 100 terms of each rather than 
-        #measuring to a desired precision or awaiting for the asymptotic increase
+        # Current implementation simply iterates 100 terms of each rather than 
+        # measuring to a desired precision or awaiting for the asymptotic increase.
 
         k = 1
+        f = 0.
         if asymptotic:
             while k <= iterations:
                 d = lnf_element(k, p)
