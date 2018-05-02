@@ -3757,45 +3757,48 @@ class levy_stable_gen(rv_continuous):
         Returns True if parameters are within the bounds.
         Default setting is parameterization A.
 
-        Arguments: 
+        Arguments:
         ----------
             alpha : float
                 Stability parameter alpha takes values in (0,2].
             asymmetry : float
-                Value of asymmetry parameter depends on the parameterization 
-                and value alpha.       
+                Value of asymmetry parameter depends on the parameterization
+                and value alpha.
         """
         # default setting is param A
-        param = "A" if param==None else param
+        param = "A" if param is None else param
 
         # check alpha
-        if not np.all((alpha > 0) & (alpha <= 2)) : 
+        if not np.all((alpha > 0) & (alpha <= 2)):
             return False
 
-        # check asymmetry 
+        # check asymmetry
         K = lambda a: a - 1. + np.sign(1. - a)
-        
+
         if param == "B":
             alpha_1_condition = (asymmetry <= 1) & (asymmetry >= -1)
-            alpha_rest_condition = (asymmetry * K(alpha) < 1) & (asymmetry * K(alpha) > -1)
-            condition = np.where(alpha == 1, alpha_1_condition, alpha_rest_condition)
+            alpha_rest_condition = ((asymmetry * K(alpha) < 1) &
+                                    (asymmetry * K(alpha) > -1))
+            condition = np.where(alpha == 1, alpha_1_condition,
+                                 alpha_rest_condition)
             return np.all(condition)
         elif param == "C":
             alpha_1_condition = asymmetry == alpha
-            alpha_rest_condition = ((asymmetry <= np.minimum(1, 2./alpha - 1)) &
-                                    (asymmetry >= -np.minimum(1, 2./alpha - 1)))
-            condition = np.where(alpha == 1, alpha_1_condition, 
+            alpha_rest_bound = np.minimum(1, 2./alpha - 1)
+            alpha_rest_condition = ((asymmetry <= alpha_rest_bound) &
+                                    (asymmetry >= -alpha_rest_bound))
+            condition = np.where(alpha == 1, alpha_1_condition,
                                  alpha_rest_condition)
             return np.all(condition)
         elif param == "P":
             alpha_less_than_1_condition = (asymmetry >= 0) & (asymmetry <= 1)
-            alpha_more_than_1_condition = ((asymmetry >= 1 - 1. /alpha) & 
+            alpha_more_than_1_condition = ((asymmetry >= 1 - 1. / alpha) &
                                            (asymmetry <= 1. / alpha))
             alpha_1_condition = (asymmetry == alpha)
-            return (((alpha < 1) & alpha_less_than_1_condition) | 
-                    ((alpha > 1) & alpha_more_than_1_condition) | 
+            return (((alpha < 1) & alpha_less_than_1_condition) |
+                    ((alpha > 1) & alpha_more_than_1_condition) |
                     ((alpha == 1) & alpha_1_condition))
-        else: # param A
+        else:  # param A
             return (asymmetry <= 1) & (asymmetry >= -1)
     
 
@@ -3840,38 +3843,39 @@ class levy_stable_gen(rv_continuous):
         """
         if original_param_type not in cls.supported_parameterizations:
             raise ValueError("Supported parameterizations are A, B, C and P")
-        
+
         K = lambda a: a - 1. + np.sign(1. - a)
-        
+
         # transformation equations between parameterizations
         def _a_to_b(alpha, beta, scale, loc):
             if cls._argcheck(alpha, beta, "A"):
-                if alpha==1: 
+                if alpha == 1:
                     scale = 2. * scale / np.pi
                     loc = loc * np.pi / 2.
                 else:
                     # first compute beta_B
-                    beta = np.arctan(beta * np.tan(np.pi * alpha / 2.)) * 2. / (np.pi * K(alpha))
-                    scale = scale / np.cos(beta * K(alpha) * np.pi / 2.)          
-                    loc = loc * np.cos(beta * K(alpha) * np.pi / 2.)          
+                    beta = np.arctan(beta * np.tan(np.pi * alpha / 2.)
+                                    ) * 2. / (np.pi * K(alpha))
+                    scale = scale / np.cos(beta * K(alpha) * np.pi / 2.)
+                    loc = loc * np.cos(beta * K(alpha) * np.pi / 2.)
                 return dict(alpha=alpha, beta=beta, scale=scale, loc=loc)
             else:
-                raise ValueError("Parameters out of the range.") 
-        
+                raise ValueError("Parameters out of the range.")
+
         def _b_to_a(alpha, beta, scale, loc):
             if cls._argcheck(alpha, beta, "B"):
                 if alpha==1:
                     scale = scale * np.pi / 2.
-                    loc = loc * 2./ np.pi                
+                    loc = loc * 2./ np.pi
                 else:
-                    scale = scale * np.cos(beta * K(alpha) * np.pi / 2.)          
+                    scale = scale * np.cos(beta * K(alpha) * np.pi / 2.)
                     loc = loc / np.cos(beta * K(alpha) *np.pi / 2.)
                     # last compute beta_A
                     beta = np.tan((np.pi * K(alpha) * beta) / 2.) / np.tan(np.pi * alpha / 2.)
                 return dict(alpha=alpha, beta=beta, scale=scale, loc=loc)
             else:
-                raise ValueError("Parameters out of the range.") 
-        
+                raise ValueError("Parameters out of the range.")
+
         def _b_to_c(alpha, beta, scale, loc):
             if cls._argcheck(alpha, beta, "B"):
                 if alpha==1:
@@ -3881,9 +3885,9 @@ class levy_stable_gen(rv_continuous):
                     delta = beta * K(alpha) / alpha
                 return dict(alpha=alpha, delta=delta, scale=scale, loc=loc)
             else:
-                raise ValueError("Parameters out of the range.") 
-        
-        def _b_to_p(alpha, beta, scale, loc): 
+                raise ValueError("Parameters out of the range.")
+
+        def _b_to_p(alpha, beta, scale, loc):
             if cls._argcheck(alpha, beta, "B"):
                 if alpha==1:
                     p1 = 1 / 2. + np.arctan(2 * loc / np.pi) / np.pi
@@ -3892,8 +3896,8 @@ class levy_stable_gen(rv_continuous):
                     p1 = 1 / 2. + beta * K(alpha) / (2. * alpha)
                 return dict(alpha=alpha, p1=p1, scale=scale, loc=loc)
             else:
-                raise ValueError("Parameters out of the range.") 
-        
+                raise ValueError("Parameters out of the range.")
+
         def _c_to_b(alpha, delta, scale, loc):
             if cls._argcheck(alpha, delta, "C"):
                 if alpha==1:
@@ -3903,8 +3907,8 @@ class levy_stable_gen(rv_continuous):
                     beta = alpha * delta / K(alpha)
                 return dict(alpha=alpha, beta=beta, scale=scale, loc=loc)
             else:
-                raise ValueError("Parameters out of the range.") 
-     
+                raise ValueError("Parameters out of the range.")
+
         def _p_to_b(alpha, p1, scale, loc):
             if cls._argcheck(alpha, p1, "P"):
                 if alpha==1:
@@ -3914,9 +3918,9 @@ class levy_stable_gen(rv_continuous):
                     beta = (2 * p1 - 1) * alpha / K(alpha)
                 return dict(alpha=alpha, beta=beta, scale=scale, loc=loc)
             else:
-                raise ValueError("Parameters out of the range.") 
-        
-        # original parameters are first converted to parameterization B 
+                raise ValueError("Parameters out of the range.")
+
+        # original parameters are first converted to parameterization B
         # (the best choice due to transformation equations)
         in_dict = dict(A = _a_to_b,
                        B = lambda **args: args, # we are passing the params to the function
@@ -3925,7 +3929,7 @@ class levy_stable_gen(rv_continuous):
 
         # parameters are converted from parameterization B into the final parameterization
         out_dict = dict(A = _b_to_a,
-                        B = lambda **args: args, # we are returning the params under new param! 
+                        B = lambda **args: args, # we are returning the params under new param!
                         C = _b_to_c,
                         P = _b_to_p)
 
@@ -3934,9 +3938,9 @@ class levy_stable_gen(rv_continuous):
 
     def _rvs(self, alpha, asymmetry, param='A'):
         """
-        Generates a vector of random stable variables under parameterization A 
+        Generates a vector of random stable variables under parameterization A
         using Weron's formulation [WE]. It is identical with the implementation
-        in GSL library. 
+        in GSL library.
         """
         # TODO: currently the superclass's `rvs` method does not pass through
         # the `param` kwarg. This needs to be addressed to work with different
@@ -3944,38 +3948,38 @@ class levy_stable_gen(rv_continuous):
 
         if param not in self.supported_parameterizations:
             raise ValueError("Supported parameterizations are A, B, C and P")
-       
+
         scale = 1
         loc = 0
         # We don't receive `scale` and `loc` args from the superclass's
-        # `rvs` method. It deals with them upstream, expecting this 
-        # method to assume scale=1 and loc=0. But these parameters take different 
-        # values under different parameterizations. We need 
-        # to transform `scale` and `loc` when we switch parameterizations. 
+        # `rvs` method. It deals with them upstream, expecting this
+        # method to assume scale=1 and loc=0. But these parameters take different
+        # values under different parameterizations. We need
+        # to transform `scale` and `loc` when we switch parameterizations.
 
-        # So we assume `scale`=1 and `loc`=0 (as usual) are in the type of 
-        # parameterization specified by `param`, and convert these to 
+        # So we assume `scale`=1 and `loc`=0 (as usual) are in the type of
+        # parameterization specified by `param`, and convert these to
         # parameteriation A.
 
         # Transform given parameters to parameterization A:
-        if param == "B": 
-            alpha, beta, scale, loc = _param_switch("B", "A", alpha=alpha, 
+        if param == "B":
+            alpha, beta, scale, loc = _param_switch("B", "A", alpha=alpha,
                     beta=asymmetry, scale=scale, loc=loc).values()
-        if param == "C": 
-            alpha, beta, scale, loc = _param_switch("C", "A", alpha=alpha, 
+        if param == "C":
+            alpha, beta, scale, loc = _param_switch("C", "A", alpha=alpha,
                     delta=asymmetry, scale=scale, loc=loc).values()
-        if param == "P": 
-            alpha, beta, scale, loc = _param_switch("P", "A", alpha=alpha, 
+        if param == "P":
+            alpha, beta, scale, loc = _param_switch("P", "A", alpha=alpha,
                     p1=asymmetry, scale=scale, loc=loc).values()
         else:
             beta = asymmetry
-        
+
         # generate the random vector of the given size self._size
         sz = self._size
         U = uniform.rvs(loc=-np.pi / 2.0, scale=np.pi, size=sz,
                          random_state=self._random_state)
         E = expon.rvs(size=sz, random_state=self._random_state)
-        
+
 
         def generate_stable_rvs(alpha, beta, U, E):
             cos_U = np.cos(U)
@@ -3991,9 +3995,9 @@ class levy_stable_gen(rv_continuous):
                 factor2 = (np.cos((1. - alpha) * U - alpha * b) / E)**((1. - alpha) / alpha)
                 scaler = (1. + tan_betaB**2.)**(1 / (2. * alpha))
                 return scaler * factor1 * factor2
-       
+
         if alpha==1:
-            return loc + scale * (generate_stable_rvs(alpha, beta, U ,E) + 2. * beta * np.log(scale) / np.pi)  
+            return loc + scale * (generate_stable_rvs(alpha, beta, U ,E) + 2. * beta * np.log(scale) / np.pi)
         else:
             return loc + scale * generate_stable_rvs(alpha, beta, U, E)
 
@@ -4002,20 +4006,20 @@ class levy_stable_gen(rv_continuous):
     def _cf(k, alpha, beta, location=0, scale=1, parameterisation_type="A"):
         """
         Characteristic functions under different parameterizations.
-        Default parameterization is "A". 
+        Default parameterization is "A".
 
         Args:
         ----------
         k :  float
         alpha : float
-            Stability parameter with values in (0,2]. 
+            Stability parameter with values in (0,2].
         beta : float
             Asymmetry parameter under parameterization A, takes values in [-1, 1].
         location: float
             Location parameter. Default setting: location=0.
         scale: float
             Scale parameter under parameterization A, takes positive real values.
-            Default setting: scale=1. 
+            Default setting: scale=1.
         """
 
         K = lambda a: a - 1. + np.sign(1. - a)
@@ -4024,23 +4028,23 @@ class levy_stable_gen(rv_continuous):
         if parameterisation_type == "A":
             def Phi(alpha, k):
                 if alpha != 1:
-                    return np.tan(np.pi * alpha / 2.) 
+                    return np.tan(np.pi * alpha / 2.)
                 else:
                     return -2.0*np.log(np.abs(k)) / np.pi
             return np.exp(common_exponent * (1 - 1j * beta * np.sign(k) * Phi(alpha, k)))
-    
+
         elif parameterisation_type == "B":
             inner_exponent = -1j * beta * K(alpha) * np.sign(k) * np.pi / 2.
             return np.exp(common_exponent * np.exp(inner_exponent))
-    
+
         elif parameterisation_type == "C":
-            def Delta(beta, k_alpha, alpha): 
+            def Delta(beta, k_alpha, alpha):
                 return beta * k_alpha / alpha
             inner_exponent = (-1j * Delta(beta, K(alpha), alpha) *
                               alpha * np.sign(k) * np.pi / 2.)
             return np.exp(common_exponent * np.exp(inner_exponent))
         elif parameterisation_type == "P":
-            def P1(beta, k_alpha, alpha): 
+            def P1(beta, k_alpha, alpha):
                 return 0.5 + beta * k_alpha / (2. * alpha)
             inner_exponent = (-1j * alpha * (2 * P1(beta, K(alpha), alpha) - 1)
                               * np.sign(k) * np.pi / 2.)
@@ -4060,7 +4064,7 @@ class levy_stable_gen(rv_continuous):
         density = ((-1)**(n-1-N/2))*np.fft.fft(((-1)**(n-1))*cf(2*np.pi*(n-1-N/2)/h/N))/h/N
         x = (n-1-N/2)*h
         return (x, density)
-    
+
 
     @staticmethod
     def _pdf_single_value_cf_integrate(x, alpha, beta, **kwargs):
@@ -4093,7 +4097,7 @@ class levy_stable_gen(rv_continuous):
         x = np.abs(x)
 
         """
-        logarithmic elements: potential performance improvement at the cost of accuracy if these are implemented then exponentiated 
+        logarithmic elements: potential performance improvement at the cost of accuracy if these are implemented then exponentiated
         rather than directly calculating gamma functions.
         ----------------------------------------------
 
@@ -4111,13 +4115,13 @@ class levy_stable_gen(rv_continuous):
             x_power = np.exp(-(alpha*i + 1) * np.log(x))
             return np.exp(gamma1-gamma2) * sin_term * x_power/np.pi
 
-        def lnf2_element(i, p): 
+        def lnf2_element(i, p):
             gamma1 = sc.gammaln(1+i/alpha)
-            gamma2 = sc.gammaln(i+1) 
+            gamma2 = sc.gammaln(i+1)
             sin_term = np.sin(i*np.pi*(1-p))
             x_power = np.exp((i-1) * np.log(x))
             return np.exp(gamma1-gamma2) * sin_term * x_power/np.pi
-        
+
 
         if np.abs(x) <= 1:
             if 0 < alpha < 1:
@@ -4127,7 +4131,7 @@ class levy_stable_gen(rv_continuous):
 
         elif 1 < np.abs(x) <= 5:
             warnings.warn("The value given for x is too large for a good "
-                          "approximation. Treat result with caution.", 
+                          "approximation. Treat result with caution.",
                           category=RuntimeWarning)
             if 0 < alpha < 1:
                 lnf_element = lnf1_element
@@ -4142,9 +4146,9 @@ class levy_stable_gen(rv_continuous):
             else:
                 lnf_element = lnf1_element
                 asymptotic = True
-        
+
         #TODO: implement changing behaviour for asymptotic and convergent expansions.
-        # Current implementation simply iterates 100 terms of each rather than 
+        # Current implementation simply iterates 100 terms of each rather than
         # measuring to a desired precision or awaiting for the asymptotic increase.
 
         k = 1
@@ -4165,12 +4169,12 @@ class levy_stable_gen(rv_continuous):
     @staticmethod
     def _pdf_single_value_zolotarev(x, alpha, beta):
         """
-        Calculate pdf using Nolan's version of Zolotarev's Integral representation 
+        Calculate pdf using Nolan's version of Zolotarev's Integral representation
         as detailed in [NO].
         """
 
         if alpha != 1:
-            zeta = -beta * np.tan(np.pi * alpha / 2.) 
+            zeta = -beta * np.tan(np.pi * alpha / 2.)
             x0 = x - zeta  # Zolotarev's M-parametrisation shift
             xi = np.arctan(-zeta) / alpha
 
@@ -4181,8 +4185,8 @@ class levy_stable_gen(rv_continuous):
             if x0 > 0:
                 def g(theta):
                     # !!! for |alpha-1|< eps the exponent starts to explode !!!
-                    return x0**(alpha / (alpha - 1)) * V(theta) 
-            
+                    return x0**(alpha / (alpha - 1)) * V(theta)
+
                 def f(theta):
                     return g(theta) * np.exp(-g(theta))
 
@@ -4196,18 +4200,18 @@ class levy_stable_gen(rv_continuous):
                 return levy_stable_gen._pdf_single_value_zolotarev(-x, alpha, -beta)
         else:
             xi = np.pi / 2.
-            if beta != 0:                
+            if beta != 0:
                 def V(theta):
                     expr_1 = np.pi / 2. + beta * theta
                     return (2. / np.pi) * (expr_1 / np.cos(theta)) * np.exp(expr_1 * np.tan(theta) / beta)
-                
+
                 def g(theta):
                     multiplier = np.exp(-(np.pi * x) / (2.* beta))
-                    return multiplier * V(theta) 
-                
+                    return multiplier * V(theta)
+
                 def f(theta):
                     return g(theta) * np.exp(-g(theta))
-            
+
                 with np.errstate(all="ignore"):
                     intg = integrate.fixed_quad(lambda theta: f(theta), -np.pi/2, np.pi/2)[0]
                     return intg / (2. * np.abs(beta))
@@ -4222,14 +4226,14 @@ class levy_stable_gen(rv_continuous):
             zeta = -beta*np.tan(np.pi*alpha/2.)
             x0 = x + zeta  # convert to S_0 parameterization
             xi = np.arctan(-zeta)/alpha
-            
+
             def V(theta):
                 return np.cos(alpha*xi)**(1/(alpha-1)) * \
                                 (np.cos(theta)/np.sin(alpha*(xi+theta)))**(alpha/(alpha-1)) * \
                                 (np.cos(alpha*xi+(alpha-1)*theta)/np.cos(theta))
             if x0 > zeta:
                 c_1 = 1 if alpha > 1 else .5 - xi/np.pi
-                
+
                 def f(theta):
                     return np.exp(-V(theta)*(x0-zeta)**(alpha/(alpha-1)))
 
@@ -4240,16 +4244,16 @@ class levy_stable_gen(rv_continuous):
                 return .5 - xi/np.pi
             else:
                 return 1 - levy_stable_gen._cdf_single_value_zolotarev(-x, alpha, -beta)
-                
+
         else:
             # since location zero, no need to reposition x for S_0 parameterization
             xi = np.pi/2
             if beta > 0:
-                
+
                 def V(theta):
                     expr_1 = np.pi/2+beta*theta
-                    return 2. * expr_1 * np.exp(expr_1*np.tan(theta)/beta) / np.cos(theta) / np.pi 
-                
+                    return 2. * expr_1 * np.exp(expr_1*np.tan(theta)/beta) / np.cos(theta) / np.pi
+
                 with np.errstate(all="ignore"):
                     expr_1 = np.exp(-np.pi*x/beta/2.)
                     int_1 = integrate.fixed_quad(lambda theta: np.exp(-expr_1 * V(theta)), -np.pi/2, np.pi/2)[0]
@@ -4258,16 +4262,16 @@ class levy_stable_gen(rv_continuous):
                 return .5 + np.arctan(x)/np.pi
             else:
                 return 1 - levy_stable_gen._cdf_single_value_zolotarev(x, alpha, -beta)
-        
+
     def _pdf(self, x, alpha, beta):
 
         x = np.asarray(x).reshape(1, -1)[0,:]
-        
+
         x, alpha, beta = np.broadcast_arrays(x, alpha, beta)
 
         data_in = np.dstack((x, alpha, beta))[0]
         data_out = np.empty(shape=(len(data_in),1))
-        
+
         pdf_default_method_name = getattr(self, 'pdf_default_method', 'zolotarev')
         if pdf_default_method_name == 'zolotarev':
             pdf_single_value_method = levy_stable_gen._pdf_single_value_zolotarev
@@ -4283,16 +4287,16 @@ class levy_stable_gen(rv_continuous):
         else:
             raise ValueError('pdf_default_method should have a value in '
                     '("zolotarev", "quadrature", "expansion", "fft").')
-        
+
         # group data in unique arrays of alpha, beta pairs
         uniq_param_pairs = np.vstack({tuple(row) for row in data_in[:,1:]})
         for pair in uniq_param_pairs:
             data_mask = np.all(data_in[:,1:] == pair, axis=-1)
             data_subset = data_in[data_mask]
             if pdf_single_value_method is not None:
-                data_out[data_mask] = np.array([pdf_single_value_method(_x, _alpha, _beta) 
+                data_out[data_mask] = np.array([pdf_single_value_method(_x, _alpha, _beta)
                             for _x, _alpha, _beta in data_subset]).reshape(len(data_subset), 1)
-            else: 
+            else:
                 # Use 'fft' method
                 if fft_min_points_threshold is None or fft_min_points_threshold < 0:
                     raise ValueError("To use the 'fft' pdf method, the value of "
@@ -4300,67 +4304,67 @@ class levy_stable_gen(rv_continuous):
                                      "Got %s instead." % fft_min_points_threshold)
                 elif len(data_subset) < fft_min_points_threshold:
                     raise ValueError("Cannot use 'fft' pdf method with fewer than "
-                                     "%s points to evaluate for alpha and beta = %s." 
+                                     "%s points to evaluate for alpha and beta = %s."
                                      % (fft_min_points_threshold, pair))
                 _alpha, _beta = pair
                 _x = data_subset[:,(0,)]
-                
+
                 # need enough points to "cover" _x for interpolation
                 h = fft_grid_spacing
-                q = (np.ceil(np.log(2*np.max(np.abs(_x))/h)/np.log(2)) + 2 
-                        if fft_n_points_two_power is None 
+                q = (np.ceil(np.log(2*np.max(np.abs(_x))/h)/np.log(2)) + 2
+                        if fft_n_points_two_power is None
                         else int(fft_n_points_two_power))
-                
+
                 density_x, density = levy_stable_gen._pdf_from_cf_with_fft(
                         lambda t: levy_stable_gen._cf(t, _alpha, _beta), h=h, q=q)
                 f = interpolate.interp1d(density_x, np.real(density))
                 data_out[data_mask] = f(_x)
-                
+
         return data_out.T[0]
 
     def _cdf(self, x, alpha, beta):
 
         x = np.asarray(x).reshape(1, -1)[0,:]
-        
+
         x, alpha, beta = np.broadcast_arrays(x, alpha, beta)
 
         data_in = np.dstack((x, alpha, beta))[0]
         data_out = np.empty(shape=(len(data_in),1))
-        
+
         fft_min_points_threshold = getattr(self, 'pdf_fft_min_points_threshold', None)
         fft_grid_spacing = getattr(self, 'pdf_fft_grid_spacing', 0.01)
         fft_n_points_two_power = getattr(self, 'pdf_fft_n_points_two_power', None)
-        
+
         # group data in unique arrays of alpha, beta pairs
         uniq_param_pairs = np.vstack({tuple(row) for row in data_in[:,1:]})
         for pair in uniq_param_pairs:
             data_mask = np.all(data_in[:,1:] == pair, axis=-1)
             data_subset = data_in[data_mask]
             if fft_min_points_threshold is None or len(data_subset) < fft_min_points_threshold:
-                data_out[data_mask] = np.array([levy_stable._cdf_single_value_zolotarev(_x, _alpha, _beta) 
+                data_out[data_mask] = np.array([levy_stable._cdf_single_value_zolotarev(_x, _alpha, _beta)
                             for _x, _alpha, _beta in data_subset]).reshape(len(data_subset), 1)
             else:
                 _alpha, _beta = pair
                 _x = data_subset[:,(0,)]
-                
+
                 # need enough points to "cover" _x for interpolation
                 h = fft_grid_spacing
                 q = 16 if fft_n_points_two_power is None else int(fft_n_points_two_power)
-                
+
                 density_x, density = levy_stable_gen._pdf_from_cf_with_fft(lambda t: levy_stable_gen._cf(t, _alpha, _beta), h=h, q=q)
                 f = interpolate.InterpolatedUnivariateSpline(density_x, np.real(density))
                 data_out[data_mask] = np.array([f.integral(self.a, x_1) for x_1 in _x]).reshape(data_out[data_mask].shape)
-                
+
         return data_out.T[0]
-    
+
     def _fitstart_quantile(self, data):
         # We follow McCullock 1986 method - Simple Consistent Estimators
         # of Stable Distribution Parameters
-        
+
         # Table III and IV
         nu_alpha_range = [2.439, 2.5, 2.6, 2.7, 2.8, 3, 3.2, 3.5, 4, 5, 6, 8, 10, 15, 25]
         nu_beta_range = [0, 0.1, 0.2, 0.3, 0.5, 0.7, 1]
-        
+
         # table III - alpha = psi_1(nu_alpha, nu_beta)
         alpha_table = [
             [2.000, 2.000, 2.000, 2.000, 2.000, 2.000, 2.000],
@@ -4378,9 +4382,9 @@ class levy_stable_gen(rv_continuous):
             [0.818, 0.812, 0.806, 0.801, 0.780, 0.756, 0.691],
             [0.698, 0.695, 0.692, 0.689, 0.676, 0.656, 0.597],
             [0.593, 0.590, 0.588, 0.586, 0.579, 0.563, 0.513]]
-    
+
         # table IV - beta = psi_2(nu_alpha, nu_beta)
-        beta_table = [ 
+        beta_table = [
             [0, 2.160, 1.000, 1.000, 1.000, 1.000, 1.000],
             [0, 1.592, 3.390, 1.000, 1.000, 1.000, 1.000],
             [0, 0.759, 1.800, 1.000, 1.000, 1.000, 1.000],
@@ -4396,11 +4400,11 @@ class levy_stable_gen(rv_continuous):
             [0, 0.074, 0.147, 0.220, 0.377, 0.546, 1.482],
             [0, 0.064, 0.128, 0.191, 0.330, 0.478, 1.362],
             [0, 0.056, 0.112, 0.167, 0.285, 0.428, 1.274]]
-    
+
         # Table V and VII
         alpha_range = [2, 1.9, 1.8, 1.7, 1.6, 1.5, 1.4, 1.3, 1.2, 1.1, 1, 0.9, 0.8, 0.7, 0.6, 0.5]
-        beta_range = [0, 0.25, 0.5, 0.75, 1]  
-        
+        beta_range = [0, 0.25, 0.5, 0.75, 1]
+
         # Table V - nu_c = psi_3(alpha, beta)
         nu_c_table = [
             [1.908, 1.908, 1.908, 1.908, 1.908],
@@ -4419,9 +4423,9 @@ class levy_stable_gen(rv_continuous):
             [2.189, 2.392, 3.004, 3.844, 4.775],
             [2.337, 2.634, 3.542, 4.808, 6.247],
             [2.588, 3.073, 4.534, 6.636, 9.144]]
-    
+
         # Table VII - nu_zeta = psi_5(alpha, beta)
-        nu_zeta_table = [ 
+        nu_zeta_table = [
             [0, 0.000, 0.000, 0.000, 0.000],
             [0, -0.017, -0.032, -0.049, -0.064],
             [0, -0.030, -0.061, -0.092, -0.123],
@@ -4438,35 +4442,35 @@ class levy_stable_gen(rv_continuous):
             [0, -0.089, -0.262, -0.520, -0.853],
             [0, -0.078, -0.272, -0.581, -0.997],
             [0, -0.061, -0.279, -0.659, -1.198]]
-    
+
         psi_1 = interpolate.interp2d(nu_beta_range, nu_alpha_range, alpha_table, kind='linear')
         psi_2 = interpolate.interp2d(nu_beta_range, nu_alpha_range, beta_table, kind='linear')
         psi_2_1 = lambda nu_beta, nu_alpha: psi_2(nu_beta, nu_alpha) if nu_beta > 0 else -psi_2(-nu_beta, nu_alpha)
-        
+
         phi_3 = interpolate.interp2d(beta_range, alpha_range, nu_c_table, kind='linear')
         phi_3_1 = lambda beta, alpha: phi_3(beta, alpha) if beta > 0 else phi_3(-beta, alpha)
         phi_5 = interpolate.interp2d(beta_range, alpha_range, nu_zeta_table, kind='linear')
         phi_5_1 = lambda beta, alpha: phi_5(beta, alpha) if beta > 0 else -phi_5(-beta, alpha)
-        
+
         # quantiles
         p05 = np.percentile(data, 5)
         p50 = np.percentile(data, 50)
         p95 = np.percentile(data, 95)
         p25 = np.percentile(data, 25)
         p75 = np.percentile(data, 75)
-        
+
         nu_alpha = (p95 - p05)/(p75 - p25)
         nu_beta = (p95 + p05 - 2*p50)/(p95 - p05)
-    
+
         if nu_alpha >= 2.439:
             alpha = np.clip(psi_1(nu_beta, nu_alpha)[0], np.finfo(float).eps, 2.)
             beta = np.clip(psi_2_1(nu_beta, nu_alpha)[0], -1., 1.)
         else:
             alpha = 2.0
             beta = np.sign(nu_beta)
-        scale = (p75 - p25) / phi_3_1(beta, alpha)[0] 
+        scale = (p75 - p25) / phi_3_1(beta, alpha)[0]
         zeta = p50 + scale * phi_5_1(beta, alpha)[0]
-        zeta = (zeta - beta * scale * np.tan(np.pi * alpha/2.) 
+        zeta = (zeta - beta * scale * np.tan(np.pi * alpha/2.)
                 if alpha == 1. else zeta)
         location = np.clip(zeta, np.finfo(float).eps, np.inf)
         return (alpha, beta, location, scale)
@@ -4509,7 +4513,7 @@ class levy_stable_gen(rv_continuous):
             return self._fitstart_quantile(data)
         else:
             return self._fitstart_empirical_characteristic_function(data)
-        
+
     def _stats(self, alpha, beta):
         mu = 0 if alpha > 1 else np.nan
         mu2 = 2 if alpha == 2 else np.inf
