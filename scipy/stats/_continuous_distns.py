@@ -3587,7 +3587,7 @@ class levy_stable_gen(rv_continuous):
     which arises in the central limit theorem problems. Stable distributions and their variants 
     are also known under different names to different scientific communities, 
     e.g. physicicts like to call Symmetric Stable Laws as Levy Flights, whereas mathematicians 
-    calls the distributions ..math:: \alpha-stable distributions. We will refer this class 
+    calls the distributions ..math:: \alpha-stable distributions. We will refer to this class 
     of distributions as Levy Stable laws / distributions.
 
     The densities of Levy Stable laws are well represented by Fox's H-functions [ZOL1].  
@@ -3601,9 +3601,9 @@ class levy_stable_gen(rv_continuous):
     The class of probability distributions for `levy_stable` is well represented by the characteristic functions:
 
     .. math::
-        \varphi(k; \alpha, z, \mu) = \begin{cases}
-                                    e^{ ik\mu + zk^{\alpha}} for k \geq 0\\ 
-                                    e^{ ik\mu + \bar{z}|k|^{\alpha}} for k < 0,
+        \varphi(t; \alpha, z, \mu) = \begin{cases}
+                                    e^{ it\mu + zt^{\alpha}} for t \geq 0\\ 
+                                    e^{ it\mu + \bar{z}|t|^{\alpha}} for t < 0,
                                     \end{cases}
 
     where 0 < ..math::\alpha  <=2  is the stability parameter, which describes the parameter of power law decay of the tails. 
@@ -3611,88 +3611,29 @@ class levy_stable_gen(rv_continuous):
     Parameter z is a complex number and ..math::\bar{z} is its complex conjugate. 
     Depending on the parameterization of the complex number z, different parameterizations 
     are available. We will stick to the notation introduced in Zolotarev's [ZO2]. 
-    First, we start by representing z in the algebraic form  "a(1 + ib)", in particular: 
+    We start by representing z in the algebraic form  "a(1 + ib)", in particular: 
 
     .. math::         
-        \varphi(k; \alpha, \beta_A, c_A, \mu) = e^{c_A(ik\mu_A -|k|^{\alpha }(1-i\beta_A \operatorname{sign}(k)\Phi_A(\alpha ,k )))}
+        \varphi(t; \alpha, \beta_A, c_A, \mu) = e^{c_A(it\mu_A -|t|^{\alpha}(1-i\beta_A \operatorname{sign}(t)\Phi_A(\alpha ,t )))}
 
     where:
               
     .. math::  
-        \Phi_A(k, \alpha) = \begin{cases}
+        \Phi_A(t, \alpha) = \begin{cases}
                 \tan \left({\frac {\pi \alpha }{2}}\right)&\alpha \neq 1\\
-                -\frac{2}{\pi}\log |k|&\alpha = 1
+                -\frac{2}{\pi}\log |t|&\alpha = 1
                 \end{cases}
     This is the commonly known parametrization, referred to as the parameterization A. 
     It is the default setting for many routines.  
     
-    This implementation supports also 3 more parameterizations, which 
-    arise by representing complex number z in polar coordinates "r ..math::\exp{ i ..math::\theta }". 
-    The characteristic functions take the following form: 
-    - Parameterization B: 
-
-    .. math::         
-        \varphi(k; \alpha, \beta_B, c_B, \mu_B) = e^{c_B(ik\mu_B -|k|^{\alpha }\Phi_B(\alpha, k))}
-
-        where:
-
-    .. math::
-        \Phi_B(k, \alpha) = \begin{cases}
-                    e^{-i\beta_B K(\alpha) \operatorname{sign}(k)\pi/2} &\alpha \neq 1\\
-                    \frac {2}{\pi}+i\beta_B\log|k|\operatorname{sign}(k) & \alpha = 1
-                    \end{cases}
-    and:
-              
-    .. math::
-        K(\alpha) = \alpha -1 + sgn(1 - \alpha), 
-        -1 < \beta_B K(\alpha) < 1, 
-        and the transformation relationship between parameterization A and B are given by: 
-
-    ..math::
-        \beta_B K(\alpha) = \frac{2}{\pi} atan(\beta_A \tan[\pi\alpha / 2])
-        c_B = \frac{c_A}{\cos[\beta_B K(\alpha)\pi/2]}
-        mu_B = mu_A \cos[\beta_B K(\alpha)\pi/2]
-
-    - Parameterization C:
-    .. math::         
-        \varphi(k; \alpha, \delta, c_C, \mu_C) = e^{ c_C(ik\mu_C -|k|^{\alpha}e^{-i\alpha \delta \operatorname{sign}(k)\pi/2}))
-
-    where:
-              
-    ..math::
-         \delta =\frac{\beta_B K(alpha)}{\alpha} = \frac{2}{\alpha \pi} atan(\beta_A \tan[\pi\alpha / 2])
-         c_C = c_B = \frac{c_A}{\cos[\beta_B K(\alpha)\pi /2}
- 
-    - Parameterization P:
-    .. math::         
-        \varphi(k; \alpha, p_1, c_C, \mu) = e^{ ik\mu -|c_P k|^{\alpha }{-i\alpha (p_1 - p_2) \operatorname{sign}(k)\pi/2}
-
-    where:
-              
-    ..math::
-        p_1 + p_2 = 1 and 
-        0 <= p_1, p_2 <= 1 for 0 < \alpha < 1, 
-        1 / \alpha <= p_1, p_2 <= 1 - 1 / \alpha for 1 < \alpha < 2. 
-
-        p_1 = \frac{1 + \delta}{2} = \frac{1}{2} + \frac{\beta_B K(alpha)}{2\alpha} = 
-            \frac{1}{2} + \frac{1}{\alpha \pi} atan(\beta_A \tan[\pi\alpha / 2])
-         c_P = c_C = c_B = \frac{c_A}{\cos \beta_B}
-
-    The parameterization P has rather intuitive relation to CDF of stable law. 
-    The parameter p_1 = 1 - CDF(0, \alpha, p_1, c), i.e. the parameter p_1 gives value 
-    of the size of the probability mass on the positive real line and therefore gives 
-    valuable information about the asymmetry of the distribution. 
-
-
-
     The probability density function for Levy Stable distribution is then well defined by inverse Fourier 
     transform of the characteristic function:
         
     .. math::
     
-        f(x) = \frac{1}{2\pi}\int_{-\infty}^\infty \varphi(k)e^{-ixk}\dk
+        f(x) = \frac{1}{2\pi}\int_{-\infty}^{\infty} \varphi(t)e^{-ixt}\d t
         
-    where :math:`-\infty < k < \infty`. 
+    where :math:`-\infty < t < \infty`. 
     
     For evaluation of PDF and CDF of this integral the different numerical methods are supported. 
     The default method is Nolan's numerical method based on Zolotarev's Integral representation [NO, ZOL2].
@@ -3723,6 +3664,65 @@ class levy_stable_gen(rv_continuous):
     so it's best that ``pdf_fft_min_points_threshold`` is left unset or set to default value of 100. 
 
     %(after_notes)s
+    This implementation supports also 3 more parameterizations, which 
+    arise by representing complex number z in polar coordinates "r ..math::\exp{ i ..math::\theta }". 
+    The characteristic functions take the following form: 
+    - Parameterization B: 
+
+    .. math::         
+        \varphi(t; \alpha, \beta_B, c_B, \mu_B) = e^{c_B(it\mu_B -|k|^{\alpha }\Phi_B(\alpha, k))}
+
+        where:
+
+    .. math::
+        \Phi_B(t, \alpha) = \begin{cases}
+                    e^{-i\beta_B K(\alpha) \operatorname{sign}(t)\pi/2} &\alpha \neq 1\\
+                    \frac {2}{\pi}+i\beta_B\log|t|\operatorname{sign}(t) & \alpha = 1
+                    \end{cases}
+    and:
+              
+    .. math::
+        K(\alpha) = \alpha -1 + sgn(1 - \alpha), 
+        -1 < \beta_B K(\alpha) < 1, 
+        and the transformation relationship between parameterization A and B are given by: 
+
+    ..math::
+        \beta_B K(\alpha) = \frac{2}{\pi} atan(\beta_A \tan[\pi\alpha / 2])
+        c_B = \frac{c_A}{\cos[\beta_B K(\alpha)\pi/2]}
+        mu_B = mu_A \cos[\beta_B K(\alpha)\pi/2]
+
+    - Parameterization C:
+    .. math::         
+        \varphi(t; \alpha, \delta, c_C, \mu_C) = e^{ c_C(it\mu_C -|t|^{\alpha}e^{-i\alpha \delta \operatorname{sign}(t)\pi/2}}
+
+    where:
+              
+    ..math::
+         \delta =\frac{\beta_B K(alpha)}{\alpha} = \frac{2}{\alpha \pi} atan(\beta_A \tan[\pi\alpha / 2])
+         c_C = c_B = \frac{c_A}{\cos[\beta_B K(\alpha)\pi /2}
+ 
+    - Parameterization P:
+    .. math::         
+        \varphi(t; \alpha, p_1, c_P, \mu_P) = e^{ c_P(it\mu_P -|t|^{\alpha}e^{ -i\alpha (p_1 - p_2) \operatorname{sign}(t)\pi/2}}
+
+    where:
+              
+    ..math::
+        p_1 + p_2 = 1 and 
+        0 <= p_1, p_2 <= 1 for 0 < \alpha < 1, 
+        1 / \alpha <= p_1, p_2 <= 1 - 1 / \alpha for 1 < \alpha < 2. 
+
+        p_1 = \frac{1 + \delta}{2} = \frac{1}{2} + \frac{\beta_B K(alpha)}{2\alpha} = 
+            \frac{1}{2} + \frac{1}{\alpha \pi} atan(\beta_A \tan[\pi\alpha / 2])
+         c_P = c_C = c_B = \frac{c_A}{\cos[\beta_B K(\alpha)\pi /2}
+
+    The parameterization P has rather intuitive relation to CDF of stable law. 
+    The parameter p_1 = 1 - CDF(0, \alpha, p_1, c), i.e. the parameter p_1 gives value 
+    of the size of the probability mass on the positive real line and therefore gives 
+    valuable information about the asymmetry of the distribution. 
+
+
+
     
     References
     ----------    
@@ -3932,7 +3932,8 @@ class levy_stable_gen(rv_continuous):
     def _rvs(self, alpha, asymmetry, param='A'):
         """
         Generates a vector of random stable variables under parameterization A 
-        using Weron's formulation [WE].
+        using Weron's formulation [WE]. It is identical with the implementation
+        in GSL library. 
         """
         # TODO: currently the superclass's `rvs` method does not pass through
         # the `param` kwarg. This needs to be addressed to work with different
@@ -3978,7 +3979,7 @@ class levy_stable_gen(rv_continuous):
             tan_U = np.tan(U)
             if alpha==1:
                 return (2. / np.pi) * ((np.pi / 2. + beta * U) * tan_U -
-                    beta * np.log(E * cos_U) / (np.pi / 2. + beta * U))
+                    beta * np.log(np.pi / 2. * E * cos_U) / (np.pi / 2. + beta * U))
             else:
                 tan_betaB = beta * np.tan(np.pi * alpha / 2.)
                 b = np.arctan(tan_betaB) / alpha
@@ -3987,8 +3988,11 @@ class levy_stable_gen(rv_continuous):
                 factor2 = (np.cos((1. - alpha) * U - alpha * b) / E)**((1. - alpha) / alpha)
                 scaler = (1. + tan_betaB**2.)**(1 / (2. * alpha))
                 return scaler * factor1 * factor2
-        
-        return loc + (generate_stable_rvs(alpha, beta, U, E)) / scale**(1. / alpha)
+       
+        if alpha==1:
+            return loc + scale * (generate_stable_rvs(alpha, beta, U ,E) + 2. * beta * np.log(scale) / np.pi)  
+        else:
+            return loc + scale * generate_stable_rvs(alpha, beta, U, E)
 
 
     @staticmethod
