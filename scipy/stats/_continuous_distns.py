@@ -3787,7 +3787,7 @@ class levy_stable_gen(rv_continuous):
                 return (asymmetry <= min(1, 2./alpha - 1)) & (asymmetry >= -min(1, 2./alpha - 1))
         elif param == "P":
             if alpha < 1:
-                return (asymetry >= 0) & (asymmetry <= 1)
+                return (asymmetry >= 0) & (asymmetry <= 1)
             elif alpha > 1:
                 return (asymmetry >= 1 - 1. /alpha) & (asymmetry <= 1. / alpha)
             else: 
