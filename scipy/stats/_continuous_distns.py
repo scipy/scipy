@@ -4462,10 +4462,10 @@ class levy_stable_gen(rv_continuous):
             return self._fitstart_empirical_characteristic_function(data)
         
     def _stats(self, alpha, beta):
-        mu = 0 
-        mu2 = 2
-        g1 = 0. if alpha == 2. else np.NaN
-        g2 = 0. if alpha == 2. else np.NaN 
+        mu = 0 if alpha > 1 else None
+        mu2 = 2 if alpha == 2 else np.inf
+        g1 = 0. if alpha == 2 else None
+        g2 = 0. if alpha == 2 else None
         return mu, mu2, g1, g2
 
 
