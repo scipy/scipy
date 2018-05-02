@@ -1454,6 +1454,45 @@ class TestGumbelL(object):
         
 class TestLevyStable(object):
 
+    @pytest.mark.parametrize(
+            'alpha,asymmetry,param,expected', [
+                (1, 1, 'B', True),
+                (1, 1 + 1e-6, 'B', False),
+                (1, -1 - 1e-6, 'B', False),
+                (1.5, 2, 'B', False),
+                (1.5, 1, 'B', True),
+                (1, 1, 'C', True),
+                (1, 1+1e-6, 'C', False),
+                (1, 1-1e-6, 'C', False),
+                (2, 0, 'C', True),
+                (0.5, 1, 'C', True),
+                (0.5, -1, 'C', True),
+                (0.5, 1+1e-6, 'C', False),
+                (0.5, -1-1e-6, 'C', False),
+                (0.5, 0, 'P', True),
+                (0.5, 1, 'P', True),
+                (0.5, -1e-6, 'P', False),
+                (0.5, 1+1e-6, 'P', False),
+                (2, 0.5, 'P', True),
+                (2, 0, 'P', False),
+                (2, 1, 'P', False),
+                (1.5, 0.5, 'P', True),
+                (1.5, 0.33, 'P', False),
+                (1.5, 0.67, 'P', False),
+                (1, 1, 'P', True),
+                (1, 1+1e-6, 'P', False),
+                (1, 1-1e-6, 'P', False),
+                (0, 1+1e-6, 'A', False),
+                (0, -1-1e-6, 'A', False),
+                (1, 1+1e-6, 'A', False),
+                (1, 1+1e-6, 'A', False),
+                (2, -1-1e-6, 'A', False),
+                (2, -1-1e-6, 'A', False),
+    ])
+    def test_asymmetry_argcheck(self, alpha, asymmetry, param, expected):
+       assert_equal(stats.levy_stable._argcheck(alpha, asymmetry, param),
+                    expected)
+
     def test_pdf_finite(self):
         for method in ('quadrature', 'zolotarev', 'expansion'):
             with suppress_warnings() as sup:
