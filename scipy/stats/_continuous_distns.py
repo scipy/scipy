@@ -3750,7 +3750,7 @@ class levy_stable_gen(rv_continuous):
     """
     supported_parameterizations = frozenset(["A", "B", "C", "P"])
 
-    def _argcheck(self, alpha, asymmetry, scale, param=None):
+    def _argcheck(self, alpha, asymmetry, param=None):
         """"
         Checks if parameters have meaningful values:
         Returns True if parameters are within the bounds.
@@ -3763,16 +3763,10 @@ class levy_stable_gen(rv_continuous):
             asymmetry : float
                 Value of asymmetry parameter depends on the parameterization 
                 and value alpha.       
-            scale : float 
-                Positive real number. 
         """
         # default setting is param A
         param = "A" if param==None else param
 
-        # check scale 
-        if scale <= 0:
-            return False
-        
         # check alpha
         if not ((alpha > 0) & (alpha <= 2)) : 
             return False
@@ -3840,7 +3834,7 @@ class levy_stable_gen(rv_continuous):
         >> {'alpha': 1.5, 'beta': 0.30000000000000004, 'scale': 1, 'loc': 0}
 
         """
-        if original_param_type not in supported_parameterizations:
+        if original_param_type not in self.supported_parameterizations:
             raise ValueError("Supported parameterizations are A, B, C and P")
         
         K = lambda a: a - 1. + np.sign(1. - a)
@@ -3934,21 +3928,29 @@ class levy_stable_gen(rv_continuous):
         return out_dict[destination_param_type](**in_dict[original_param_type](**kwargs))
 
 
-    def _rvs(self, alpha, asymmetry, scale, loc, param='A'):
+    def _rvs(self, alpha, asymmetry, param='A'):
         """
         Generates a vector of random stable variables under parameterization A 
         using Weron's formulation [WE].
         """
-        if param not in supported_parameterizations:
+        if param not in self.supported_parameterizations:
             raise ValueError("Supported parameterizations are A, B, C and P")
        
+        scale = 1
+        loc = 0
+
         # transform to parameterization A
         if param == "B": 
-            alpha, beta, scale, loc = _param_switch("B", "A", alpha=alpha, beta=asymmetry, scale=scale, loc=loc).values()
+            alpha, beta, scale, loc = _param_switch("B", "A", alpha=alpha, 
+                    beta=asymmetry, scale=scale, loc=loc).values()
         if param == "C": 
-            alpha, beta, scale, loc = _param_switch("C", "A", alpha=alpha, delta=asymmetry, scale=scale, loc=loc).values()
+            alpha, beta, scale, loc = _param_switch("C", "A", alpha=alpha, 
+                    delta=asymmetry, scale=scale, loc=loc).values()
         if param == "P": 
-            alpha, beta, scale, loc = _param_switch("P", "A", alpha=alpha, p1=asymmetry, scale=scale, loc=loc).values()
+            alpha, beta, scale, loc = _param_switch("P", "A", alpha=alpha, 
+                    p1=asymmetry, scale=scale, loc=loc).values()
+        else:
+            beta = asymmetry
         
         # generate the random vector of the given size self._size
         sz = self._size
@@ -4239,31 +4241,44 @@ class levy_stable_gen(rv_continuous):
             pdf_single_value_method = levy_stable_gen._pdf_single_value_expansion
         elif pdf_default_method_name == 'quadrature':
             pdf_single_value_method = levy_stable_gen._pdf_single_value_cf_integrate
+        elif pdf_default_method_name == 'fft':
+            pdf_single_value_method = None
+            fft_min_points_threshold = getattr(self, 'pdf_fft_min_points_threshold', 100)
+            fft_grid_spacing = getattr(self, 'pdf_fft_grid_spacing', 0.01)
+            fft_n_points_two_power = getattr(self, 'pdf_fft_n_points_two_power', None)
         else:
             raise ValueError('pdf_default_method should have a value in '
-                    '("zolotarev", "quadrature", "expansion").')
-        
-        fft_min_points_threshold = getattr(self, 'pdf_fft_min_points_threshold', 100)
-        fft_grid_spacing = getattr(self, 'pdf_fft_grid_spacing', 0.01)
-        fft_n_points_two_power = getattr(self, 'pdf_fft_n_points_two_power', None)
+                    '("zolotarev", "quadrature", "expansion", "fft").')
         
         # group data in unique arrays of alpha, beta pairs
         uniq_param_pairs = np.vstack({tuple(row) for row in data_in[:,1:]})
         for pair in uniq_param_pairs:
             data_mask = np.all(data_in[:,1:] == pair, axis=-1)
             data_subset = data_in[data_mask]
-            if fft_min_points_threshold is None or len(data_subset) < fft_min_points_threshold:
+            if pdf_single_value_method is not None:
                 data_out[data_mask] = np.array([pdf_single_value_method(_x, _alpha, _beta) 
                             for _x, _alpha, _beta in data_subset]).reshape(len(data_subset), 1)
-            else:
+            else: 
+                # Use 'fft' method
+                if fft_min_points_threshold is None or fft_min_points_threshold < 0:
+                    raise ValueError("To use the 'fft' pdf method, the value of "
+                                     "fft_min_points_threshold must be a positive int. "
+                                     "Got %s instead." % fft_min_points_threshold)
+                elif len(data_subset) < fft_min_points_threshold:
+                    raise ValueError("Cannot use 'fft' pdf method with fewer than "
+                                     "%s points to evaluate for alpha and beta = %s." 
+                                     % (fft_min_points_threshold, pair))
                 _alpha, _beta = pair
                 _x = data_subset[:,(0,)]
                 
                 # need enough points to "cover" _x for interpolation
                 h = fft_grid_spacing
-                q = np.ceil(np.log(2*np.max(np.abs(_x))/h)/np.log(2)) + 2 if fft_n_points_two_power is None else int(fft_n_points_two_power)
+                q = (np.ceil(np.log(2*np.max(np.abs(_x))/h)/np.log(2)) + 2 
+                        if fft_n_points_two_power is None 
+                        else int(fft_n_points_two_power))
                 
-                density_x, density = levy_stable_gen._pdf_from_cf_with_fft(lambda t: levy_stable_gen._cf(t, _alpha, _beta), h=h, q=q)
+                density_x, density = levy_stable_gen._pdf_from_cf_with_fft(
+                        lambda t: levy_stable_gen._cf(t, _alpha, _beta), h=h, q=q)
                 f = interpolate.interp1d(density_x, np.real(density))
                 data_out[data_mask] = f(_x)
                 
