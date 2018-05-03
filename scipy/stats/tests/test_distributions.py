@@ -1508,11 +1508,12 @@ class TestLevyStable(object):
     def test_fit(self):
         # contruct data to have percentiles that match
         # example in McCulloch 1986.
-        x = [-.05413,-.05413,
+        stats.levy_stable.fit_method = 'empirical_characteristic_function'
+        x = np.array([-.05413,-.05413,
                0.,0.,0.,0.,
                .00533,.00533,.00533,.00533,.00533,
                .03354,.03354,.03354,.03354,.03354,
-               .05309,.05309,.05309,.05309,.05309]
+               .05309,.05309,.05309,.05309,.05309])
         alpha1, beta1, loc1, scale1 = stats.levy_stable._fitstart(x)
         assert_allclose(alpha1, 1.48, rtol=0, atol=0.01)
         assert_almost_equal(beta1, -.22, 2)
@@ -1524,7 +1525,7 @@ class TestLevyStable(object):
             ]
 
         stats.levy_stable.pdf_fft_min_points_threshold = 100
-        stats.levy_stable.pdf_default_method = 'zolotarev'
+        stats.levy_stable.pdf_default_method = 'fft'
         
         for args, loc, scale in param_sets:
             x = stats.levy_stable.rvs(*args, loc=loc, scale=scale, size=10000)
@@ -1534,7 +1535,7 @@ class TestLevyStable(object):
             assert_allclose(loc1, loc, rtol=0, atol=0.01)
             assert_allclose(scale1, scale, rtol=.05, atol=0)
             
-    def test_pdf_quad(self):
+    def test_pdf_quadrature(self):
         # test values against Nolan's stable.exe output
         data = np.load(os.path.abspath(os.path.join(os.path.dirname(__file__),
                                                  'data/stable-pdf-sample-data.npy')))
@@ -1571,6 +1572,7 @@ class TestLevyStable(object):
             
         # test bulk data (uses fft)
         stats.levy_stable.pdf_fft_min_points_threshold = 0
+        stats.levy_stable.pdf_default_method = 'fft'
         xs = data[:,(0,)]
         density = data[:,(1,)]
         alphas = data[:,(2,)]
@@ -1608,11 +1610,13 @@ class TestLevyStable(object):
     
     def test_stats(self):
         param_sets = [
-            [(1.48,-.22, 0, 1), (0,2,np.NaN,np.NaN)],
-            [(2,.9, 10, 1.5), (10,4.5,0,0)]
+            [(1.48, -.22, 0, 1), (0, np.inf, np.nan, np.nan)],
+            [(2, .9, 10, 1.5), (10, 4.5, 0, 0)]
         ]
         for args, exp_stats in param_sets:
-            mean, var, skew, kurt = stats.levy_stable.stats(args[0], args[1], loc=args[2], scale=args[3], moments='mvsk')
+            mean, var, skew, kurt = stats.levy_stable.stats(
+                    args[0], args[1], loc=args[2], scale=args[3], 
+                    moments='mvsk')
             assert_almost_equal(mean, exp_stats[0])
             assert_almost_equal(var, exp_stats[1])
             assert_almost_equal(skew, exp_stats[2])
