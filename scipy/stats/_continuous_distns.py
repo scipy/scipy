@@ -4499,7 +4499,7 @@ class levy_stable_gen(rv_continuous):
         z_l = np.arctan(phi_imag_real) + np.pi * non_principal_int
         u_l_alpha = np.float_power(np.abs(u_l), alpha) * np.sign(u_l)
         x_l = np.vstack([u_l, u_l_alpha]).T
-        slope_1, slope_2 = np.linalg.lstsq(x_l, z_l)[0]
+        slope_1, slope_2 = np.linalg.lstsq(x_l, z_l, rcond=None)[0]
         location = slope_1
         slope_2_divisor = np.float_power(scale, alpha) * np.tan(
                 np.pi * alpha/2.)
@@ -4509,7 +4509,7 @@ class levy_stable_gen(rv_continuous):
 
     def _fitstart(self, data):
         method = getattr(self, 'fit_method', 'quantile')
-        if method == 'ephi_imag_real phi_imag_real mpirical_characteristic_function':
+        if method == 'empirical_characteristic_function':
             return self._fitstart_quantile(data)
         else:
             return self._fitstart_empirical_characteristic_function(data)
