@@ -159,8 +159,9 @@ def loadmat(file_name, mdict=None, appendmat=True, **kwargs):
             3.92699082, 4.71238898, 5.49778714, 6.28318531]])
 
     By default SciPy reads MATLAB structs as structured NumPy arrays where the
-    dtypes are objects named after the MATLAB struct fields. This can be
-    disabled by setting the optional argument `struct_as_record=False`.
+    dtype fields are of type `object` and the names correspond to the MATLAB
+    struct field names. This can be disabled by setting the optional argument
+    `struct_as_record=False`.
 
     Get the filename for an example .mat file that contains a MATLAB struct
     called `teststruct` and load the contents.
