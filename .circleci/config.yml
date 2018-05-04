@@ -1,6 +1,6 @@
 version: 2
 jobs:
-  build:
+  build_docs:
     docker:
       # CircleCI maintains a library of pre-built images
       # documented at https://circleci.com/docs/2.0/circleci-images/
@@ -33,7 +33,7 @@ jobs:
             pip install nose mpmath argparse Pillow codecov matplotlib Sphinx==1.7.2
 
       - run:
-          name: test
+          name: build docs
           command: |
             . venv/bin/activate
             export SHELL=$(which bash)
@@ -92,15 +92,64 @@ jobs:
             git push --set-upstream origin gh-pages --force
 
 
+  # Run test suite on pypy3
+  pypy3:
+    docker:
+      - image: pypy:3-6.0.0
+
+    steps:
+      - restore_cache:
+          keys:
+            - pypy3-ccache-{{ .Branch }}
+            - pypy3-ccache
+      - checkout
+      - run:
+          name: setup
+          command: |
+            apt-get -yq update
+            apt-get -yq install libatlas-dev libatlas-base-dev liblapack-dev gfortran ccache
+            ccache -M 512M
+            export CCACHE_COMPRESS=1
+            export NPY_NUM_BUILD_JOBS=`pypy3 -c 'import multiprocessing as mp; print(mp.cpu_count())'`
+            export PATH=/usr/lib/ccache:$PATH
+            # XXX: use "numpy>=1.15.0" when it's released
+            pypy3 -mpip install --upgrade pip setuptools wheel
+            pypy3 -mpip install --no-build-isolation --extra-index https://antocuni.github.io/pypy-wheels/ubuntu pytest pytest-xdist Tempita "Cython>=0.28.2" mpmath
+            pypy3 -mpip install --no-build-isolation git+https://github.com/numpy/numpy.git@db552b5b6b37f2ff085b304751d7a2ebed26adc9
+      - run:
+          name: build
+          command: |
+            export CCACHE_COMPRESS=1
+            export PATH=/usr/lib/ccache:$PATH
+            # Limit parallelism for Cythonization to 4 processes, to
+            # avoid exceeding CircleCI memory limits
+            export SCIPY_NUM_CYTHONIZE_JOBS=4
+            export NPY_NUM_BUILD_JOBS=`pypy3 -c 'import multiprocessing as mp; print(mp.cpu_count())'`
+            # Less aggressive optimization flags for faster compilation
+            OPT="-O1" FOPT="-O1" pypy3 setup.py build
+      - save_cache:
+          key: pypy3-ccache-{{ .Branch }}-{{ .BuildNum }}
+          paths:
+            - ~/.ccache
+            - ~/.cache/pip
+      - run:
+          name: test
+          command: |
+            # CircleCI has 4G memory limit, play it safe
+            export SCIPY_AVAILABLE_MEM=1G
+            pypy3 runtests.py -- -rfEX -n 3 --durations=30
+
+
 workflows:
   version: 2
-  build_and_deploy:
+  default:
     jobs:
-      - build
+      - build_docs
       - deploy:
           requires:
-            - build
+            - build_docs
 
           filters:
             branches:
               only: master
+      - pypy3
