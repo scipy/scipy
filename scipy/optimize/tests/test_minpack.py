@@ -148,6 +148,35 @@ class TestFSolve(object):
         p = optimize.fsolve(func, np.array([1, 1], np.float32))
         assert_allclose(func(p), [0, 0], atol=1e-3)
 
+    def test_reentrant_func(self):
+        def func(*args):
+            self.test_pressure_network_no_gradient()
+            return pressure_network(*args)
+
+        # fsolve without gradient, equal pipes -> equal flows.
+        k = np.ones(4) * 0.5
+        Qtot = 4
+        initial_guess = array([2., 0., 2., 0.])
+        final_flows, info, ier, mesg = optimize.fsolve(
+            func, initial_guess, args=(Qtot, k),
+            full_output=True)
+        assert_array_almost_equal(final_flows, np.ones(4))
+        assert_(ier == 1, mesg)
+
+    def test_reentrant_Dfunc(self):
+        def deriv_func(*args):
+            self.test_pressure_network_with_gradient()
+            return pressure_network_jacobian(*args)
+
+        # fsolve with gradient, equal pipes -> equal flows
+        k = np.ones(4) * 0.5
+        Qtot = 4
+        initial_guess = array([2., 0., 2., 0.])
+        final_flows = optimize.fsolve(
+            pressure_network, initial_guess, args=(Qtot, k),
+            fprime=deriv_func)
+        assert_array_almost_equal(final_flows, np.ones(4))
+
 
 class TestRootHybr(object):
     def test_pressure_network_no_gradient(self):
@@ -271,6 +300,31 @@ class TestLeastSq(object):
 
         assert_(success in [1,2,3,4])
         assert_((func(p1,x,y)**2).sum() < 1e-4 * (func(p0,x,y)**2).sum())
+
+    def test_reentrant_func(self):
+        def func(*args):
+            self.test_basic()
+            return self.residuals(*args)
+
+        p0 = array([0,0,0])
+        params_fit, ier = leastsq(func, p0,
+                                  args=(self.y_meas, self.x))
+        assert_(ier in (1,2,3,4), 'solution not found (ier=%d)' % ier)
+        # low precision due to random
+        assert_array_almost_equal(params_fit, self.abc, decimal=2)
+
+    def test_reentrant_Dfun(self):
+        def deriv_func(p, y, x):
+            self.test_basic()
+            return -np.vstack([x**2, x, np.ones_like(x)]).T
+
+        p0 = array([0,0,0])
+        params_fit, ier = leastsq(self.residuals, p0,
+                                  args=(self.y_meas, self.x),
+                                  Dfun=deriv_func)
+        assert_(ier in (1,2,3,4), 'solution not found (ier=%d)' % ier)
+        # low precision due to random
+        assert_array_almost_equal(params_fit, self.abc, decimal=2)
 
 
 class TestCurveFit(object):
