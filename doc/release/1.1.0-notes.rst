@@ -2,8 +2,6 @@
 SciPy 1.1.0 Release Notes
 =========================
 
-.. note:: Scipy 1.1.0 is not released yet!
-
 .. contents::
 
 
@@ -116,9 +114,13 @@ Added `scipy.signal.windows.dpss`,
 `scipy.sparse` improvements
 ---------------------------
 
-An in-place ``resize`` method has been added to all sparse matrix
-formats, which was only available for `scipy.sparse.dok_matrix` in
-previous releases.
+Previously, the ``reshape`` method only worked on
+`scipy.sparse.lil_matrix`, and in-place reshaping did not work on any
+matrices. Both operations are now implemented for all matrices. Handling
+of shapes has been made consistent with ``numpy.matrix`` throughout the
+`scipy.sparse` module (shape can be a tuple or splatted, negative
+number acts as placeholder, padding and unpadding dimensions of size 1
+to ensure length-2 shape).
 
 `scipy.special` improvements
 ----------------------------
@@ -194,6 +196,7 @@ files now hide all symbols except those required by Python, which can
 avoid problems when embedding the Python interpreter.
 
 
+
 Authors
 =======
 
@@ -201,7 +204,6 @@ Authors
 * Diogo Aguiam +
 * Joseph Albert +
 * Gerrit Ansmann +
-* Astrofysicus +
 * Jean-François B +
 * Vahan Babayan +
 * Alessandro Pietro Bardelli
@@ -299,6 +301,7 @@ Authors
 * Ted Ying +
 * Evgeny Zhurko
 * Zé Vinícius
+* @Astrofysicus +
 * @awakenting +
 * @endolith
 * @FormerPhysicist +
