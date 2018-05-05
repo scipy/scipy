@@ -1153,10 +1153,7 @@ def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
     if vals.ndim == 0:
         vals = vals.item()  # array scalar
 
-    if fisher:
-        return vals - 3
-    else:
-        return vals
+    return vals - 3 if fisher else vals
 
 
 DescribeResult = namedtuple('DescribeResult',
@@ -1679,7 +1676,7 @@ def _compute_qth_percentile(sorted, per, interpolation_method, axis):
                  for i in per]
         return np.array(score)
 
-    if (per < 0) or (per > 100):
+    if not (0 <= per <= 100):
         raise ValueError("percentile must be in the range [0, 100]")
 
     indexer = [slice(None)] * sorted.ndim
@@ -3019,7 +3016,9 @@ def pearsonr(x, y):
         prob = 0.0
     else:
         t_squared = r**2 * (df / ((1.0 - r) * (1.0 + r)))
-        prob = _betai(0.5*df, 0.5, df/(df+t_squared))
+        prob = special.betainc(
+            0.5*df, 0.5, np.fmin(np.asarray(df / (df + t_squared)), 1.0)
+        )
 
     return r, prob
 
@@ -3178,8 +3177,7 @@ def fisher_exact(table, alternative='two-sided'):
         msg = "`alternative` should be one of {'two-sided', 'less', 'greater'}"
         raise ValueError(msg)
 
-    if pvalue > 1.0:
-        pvalue = 1.0
+    pvalue = min(pvalue, 1.0)
 
     return oddsratio, pvalue
 
@@ -5381,16 +5379,6 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
     else:
         raise ValueError(
             "Invalid method '%s'. Options are 'fisher' or 'stouffer'", method)
-
-#####################################
-#      PROBABILITY CALCULATIONS     #
-#####################################
-
-
-def _betai(a, b, x):
-    x = np.asarray(x)
-    x = np.where(x < 1.0, x, 1.0)  # if x > 1 then return 1.0
-    return special.betainc(a, b, x)
 
 
 #####################################
