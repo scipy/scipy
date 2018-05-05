@@ -120,7 +120,7 @@ if os.path.isdir(themedir):
             "rootlinks": []
         }
         html_logo = '_static/scipyshiny_small.png'
-        html_sidebars = {'index': 'indexsidebar.html'}
+        html_sidebars = {'index': ['indexsidebar.html', 'searchbox.html']}
 else:
     # Build without scipy.org sphinx theme present
     if 'scipyorg' in tags:
@@ -129,7 +129,7 @@ else:
     else:
         html_style = 'scipy_fallback.css'
         html_logo = '_static/scipyshiny_small.png'
-        html_sidebars = {'index': 'indexsidebar.html'}
+        html_sidebars = {'index': ['indexsidebar.html', 'searchbox.html']}
 
 html_title = "%s v%s Reference Guide" % (project, version)
 html_static_path = ['_static']
