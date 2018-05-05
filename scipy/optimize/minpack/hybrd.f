@@ -1,7 +1,7 @@
-      recursive subroutine hybrd(fcn,n,x,fvec,xtol,maxfev,ml,mu,
-     *                           epsfcn,diag,mode,factor,nprint,
-     *                           info,nfev,fjac,ldfjac,r,lr,
-     *                           qtf,wa1,wa2,wa3,wa4)
+      recursive
+     *subroutine hybrd(fcn,n,x,fvec,xtol,maxfev,ml,mu,epsfcn,diag,
+     *                 mode,factor,nprint,info,nfev,fjac,ldfjac,r,lr,
+     *                 qtf,wa1,wa2,wa3,wa4)
       integer n,maxfev,ml,mu,mode,nprint,info,nfev,ldfjac,lr
       double precision xtol,epsfcn,factor
       double precision x(n),fvec(n),diag(n),fjac(ldfjac,n),r(lr),
