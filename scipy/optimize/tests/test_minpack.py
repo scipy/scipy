@@ -162,6 +162,7 @@ class TestFSolve(object):
 
     def test_Dfun_can_raise(self):
         func = lambda x: x - np.array([10])
+
         def deriv_func(*args):
             raise ValueError('I raised')
 
@@ -348,15 +349,16 @@ class TestLeastSq(object):
         def func(*args):
             raise ValueError('I raised')
 
-        with assert_raises(ValueError, matches='I raised'):
+        with assert_raises(ValueError, match='I raised'):
             optimize.leastsq(func, x0=[0])
 
     def test_Dfun_can_raise(self):
         func = lambda x: x - np.array([10])
+
         def deriv_func(*args):
             raise ValueError('I raised')
 
-        with assert_raises(ValueError, matches='I raised'):
+        with assert_raises(ValueError, match='I raised'):
             optimize.leastsq(func, x0=[0], Dfun=deriv_func)
 
     def test_reentrant_func(self):
