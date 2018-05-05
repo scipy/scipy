@@ -4777,11 +4777,8 @@ def ks_2samp(data1, data2):
     cdf2 = np.searchsorted(data2, data_all, side='right') / n2
     d = np.max(np.absolute(cdf1 - cdf2))
     # Note: d absolute not signed distance
-    en = np.sqrt(n1 * n2 / float(n1 + n2))
-    try:
-        prob = distributions.kstwobign.sf((en + 0.12 + 0.11 / en) * d)
-    except:
-        prob = 1.0
+    en = np.sqrt(n1 * n2 / (n1 + n2))
+    prob = distributions.kstwobign.sf((en + 0.12 + 0.11 / en) * d)
 
     return Ks_2sampResult(d, prob)
 
