@@ -1443,6 +1443,10 @@ class rv_continuous(rv_generic):
         frozen RV object with the same methods but holding the given shape,
         location, and scale fixed
 
+    This object obeys ``isinstance(rv, type(rv))``. This is especially useful if a
+    user supplies ``rv`` and a dummy value ``x`` is used. For example, with
+    ``isinstance(rv, type(uniform(0, 1))``
+
     **Statistics**
 
     Statistics are computed using numerical integration by default.
