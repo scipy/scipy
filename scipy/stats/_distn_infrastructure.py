@@ -1440,11 +1440,9 @@ class rv_continuous(rv_generic):
     location, and scale parameters returning a "frozen" continuous RV object:
 
     rv = generic(<shape(s)>, loc=0, scale=1)
-        frozen RV object with the same methods but holding the given shape,
+        stats.distributions.rv_frozen object with the same methods but holding the given shape,
         location, and scale fixed
         
-    This object is an instance of ``scipy.stats.distributions.rv_frozen``
-
     **Statistics**
 
     Statistics are computed using numerical integration by default.
