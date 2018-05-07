@@ -708,7 +708,7 @@ def _validate_sos(sos):
 
 
 def sosfreqz(sos, worN=512, whole=False, fs=2*pi):
-    """
+    r"""
     Compute the frequency response of a digital filter in SOS format.
 
     Given `sos`, an array with shape (n, 6) of second order sections of
@@ -789,7 +789,7 @@ def sosfreqz(sos, worN=512, whole=False, fs=2*pi):
     >>> plt.plot(w/np.pi, np.angle(h))
     >>> plt.grid(True)
     >>> plt.yticks([-np.pi, -0.5*np.pi, 0, 0.5*np.pi, np.pi],
-    ...            [r'$-\\pi$', r'$-\\pi/2$', '0', r'$\\pi/2$', r'$\\pi$'])
+    ...            [r'$-\pi$', r'$-\pi/2$', '0', r'$\pi/2$', r'$\pi$'])
     >>> plt.ylabel('Phase [rad]')
     >>> plt.xlabel('Normalized frequency (1.0 = Nyquist)')
     >>> plt.show()
@@ -803,8 +803,18 @@ def sosfreqz(sos, worN=512, whole=False, fs=2*pi):
     >>> plt.subplot(2, 1, 1)
     >>> db = 20*np.log10(np.abs(h))
     >>> plt.plot(w/np.pi, db)
+    >>> plt.ylim(-75, 5)
+    >>> plt.grid(True)
+    >>> plt.yticks([0, -20, -40, -60])
+    >>> plt.ylabel('Gain [dB]')
+    >>> plt.title('Frequency Response')
     >>> plt.subplot(2, 1, 2)
     >>> plt.plot(w/np.pi, np.angle(h))
+    >>> plt.grid(True)
+    >>> plt.yticks([-np.pi, -0.5*np.pi, 0, 0.5*np.pi, np.pi],
+    ...            [r'$-\pi$', r'$-\pi/2$', '0', r'$\pi/2$', r'$\pi$'])
+    >>> plt.ylabel('Phase [rad]')
+    >>> plt.xlabel('Normalized frequency (1.0 = Nyquist)')
     >>> plt.show()
 
     """
