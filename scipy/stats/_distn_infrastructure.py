@@ -1442,10 +1442,8 @@ class rv_continuous(rv_generic):
     rv = generic(<shape(s)>, loc=0, scale=1)
         frozen RV object with the same methods but holding the given shape,
         location, and scale fixed
-
-    This object obeys ``isinstance(rv, type(rv))``. This is especially useful if a
-    user supplies ``rv`` and a dummy value ``x`` is used. For example, with
-    ``isinstance(rv, type(uniform(0, 1))``
+        
+    This object is an instance of ``scipy.stats.distributions.rv_frozen``
 
     **Statistics**
 
