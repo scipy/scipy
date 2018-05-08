@@ -3035,7 +3035,6 @@ class multinomial_gen(multi_rv_generic):
         ----------
         x : array_like
             Quantiles, with the last axis of `x` denoting the components.
-            Each quantile must be a symmetric positive definite matrix.
         %(_doc_default_callparams)s
 
         Returns
@@ -3069,7 +3068,6 @@ class multinomial_gen(multi_rv_generic):
         ----------
         x : array_like
             Quantiles, with the last axis of `x` denoting the components.
-            Each quantile must be a symmetric positive definite matrix.
         %(_doc_default_callparams)s
 
         Returns
