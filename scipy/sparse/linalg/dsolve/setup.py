@@ -8,7 +8,7 @@ import glob
 
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
-    from numpy.distutils.system_info import get_info
+    from scipy._build_utils.system_info import get_info
     from scipy._build_utils import numpy_nodepr_api
 
     config = Configuration('dsolve',parent_package,top_path)

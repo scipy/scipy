@@ -6,30 +6,7 @@ from distutils.dep_util import newer
 
 
 __all__ = ['needs_g77_abi_wrapper', 'split_fortran_files',
-           'get_g77_abi_wrappers',
-           'uses_veclib', 'uses_accelerate']
-
-
-def uses_veclib(info):
-    if sys.platform != "darwin":
-        return False
-    r_accelerate = re.compile("vecLib")
-    extra_link_args = info.get('extra_link_args', '')
-    for arg in extra_link_args:
-        if r_accelerate.search(arg):
-            return True
-    return False
-
-
-def uses_accelerate(info):
-    if sys.platform != "darwin":
-        return False
-    r_accelerate = re.compile("Accelerate")
-    extra_link_args = info.get('extra_link_args', '')
-    for arg in extra_link_args:
-        if r_accelerate.search(arg):
-            return True
-    return False
+           'get_g77_abi_wrappers']
 
 
 def uses_mkl(info):

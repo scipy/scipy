@@ -441,6 +441,9 @@ def setup_package():
         # Raise errors for unsupported commands, improve help output, etc.
         run_build = parse_setuppy_commands()
 
+    # Disable OSX Accelerate, it has too old LAPACK
+    os.environ['ACCELERATE'] = 'None'
+
     # This import is here because it needs to be done before importing setup()
     # from numpy.distutils, but after the MANIFEST removing and sdist import
     # higher up in this file.

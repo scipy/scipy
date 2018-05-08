@@ -6,7 +6,7 @@ from os.path import join
 
 def configuration(parent_package='', top_path=None):
     from distutils.sysconfig import get_python_inc
-    from numpy.distutils.system_info import get_info, NotFoundError, numpy_info
+    from scipy._build_utils.system_info import get_info, NotFoundError, numpy_info
     from numpy.distutils.misc_util import Configuration, get_numpy_include_dirs
     from scipy._build_utils import (get_g77_abi_wrappers, split_fortran_files)
 
