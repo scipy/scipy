@@ -4652,7 +4652,7 @@ ncf = ncf_gen(a=0.0, name='ncf')
 
 
 class t_gen(rv_continuous):
-    r"""A Student's T continuous random variable.
+    r"""A Student's t continuous random variable.
 
     %(before_notes)s
 
@@ -4662,12 +4662,13 @@ class t_gen(rv_continuous):
 
     .. math::
 
-        f(x, df) = \frac{\gamma((df+1)/2)}
-                        {\sqrt{\pi*df} \gamma(df/2) (1+x^2/df)^{(df+1)/2}}
+        f(x; \text{df}) = \frac{\Gamma((\text{df}+1)/2)}
+                        {\sqrt{\pi*\text{df}} \Gamma(\text{df}/2)}
+                    (1+x^2/\text{df})^{-(\text{df}+1)/2}
 
-    for ``df > 0``.
-
-    `t` takes ``df`` as a shape parameter.
+    where ``x`` is a real number and the degrees of freedom parameter ``df``
+    satisfies ``df > 0``. :math:`\Gamma` is the gamma function
+    (`scipy.special.gamma`).
 
     %(after_notes)s
 
@@ -4705,14 +4706,16 @@ class t_gen(rv_continuous):
         return -sc.stdtrit(df, q)
 
     def _stats(self, df):
+        mu = np.where(df > 1, 0.0, np.inf)
         mu2 = _lazywhere(df > 2, (df,),
                          lambda df: df / (df-2.0),
                          np.inf)
+        mu2 = np.where(df <= 1, np.nan, mu2)
         g1 = np.where(df > 3, 0.0, np.nan)
         g2 = _lazywhere(df > 4, (df,),
                         lambda df: 6.0 / (df-4.0),
                         np.nan)
-        return 0, mu2, g1, g2
+        return mu, mu2, g1, g2
 
 
 t = t_gen(name='t')
