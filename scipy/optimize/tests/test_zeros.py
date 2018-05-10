@@ -2,9 +2,9 @@ from __future__ import division, print_function, absolute_import
 
 from math import sqrt, exp, sin, cos
 
-from numpy.testing import (assert_warns, assert_, 
+from numpy.testing import (assert_warns, assert_,
                            assert_allclose,
-                           assert_equal, assert_raises_regex)
+                           assert_equal)
 from numpy import finfo
 
 from scipy.optimize import zeros as cc
@@ -12,6 +12,15 @@ from scipy.optimize import zeros
 
 # Import testing parameters
 from scipy.optimize._tstutils import functions, fstrings
+
+try:
+    from numpy.testing import assert_raises_regex as _assert_raises_regex
+    # assert_raises_regex first appeared in NumPy 1.9
+except ImportError:
+    from numpy.testing import assert_raises
+
+    def _assert_raises_regex(exception_class, _, *args, **kwargs):
+        assert_raises(exception_class, *args, **kwargs)
 
 
 class TestBasic(object):
@@ -56,50 +65,62 @@ class TestBasic(object):
             x = zeros.newton(f, 3, fprime=f_1, fprime2=f_2, tol=1e-6)
             assert_allclose(f(x), 0, atol=1e-6)
 
+    def test_newton_full_output(self):
         # Test the full_output capability, both when converging and not.
         # Use the f2 family.
-        x0 = 3
+        f2 = lambda x: exp(x) - cos(x)
+        f2_1 = lambda x: exp(x) + sin(x)
+        f2_2 = lambda x: exp(x) + cos(x)
 
-        exp_iters, exp_funccalls = 11, 12
+        x0 = 3
+        expected_counts = [(11, 12), (8, 16), (5, 15)]
+
         x, r = zeros.newton(f2, x0, tol=1e-6, full_output=True, disp=False)
-        assert_equal((r.converged, r.iterations, r.function_calls),
-                     (True, exp_iters, exp_funccalls))
+        assert_(r.converged)
+        assert_equal(x, r.root)
+        assert_equal((r.iterations, r.function_calls), expected_counts[0])
         assert(r.function_calls <= r.iterations + 1)
 
         # Now repeat, allowing one fewer iteration
         iters = r.iterations - 1
-        x, r = zeros.newton(f, x0, tol=1e-6, maxiter=iters,
+        x, r = zeros.newton(f2, x0, tol=1e-6, maxiter=iters,
                             full_output=True, disp=False)
-        assert_equal((r.converged, r.iterations), (False, iters))
+        assert_(not r.converged)
+        assert_equal(x, r.root)
+        assert_equal(r.iterations, iters)
         # Check that the correct Exception is raised and
         # validate the start of the message.
-        assert_raises_regex(
+        _assert_raises_regex(
             RuntimeError,
             'Failed to converge after %d iterations, value is .*' % (iters),
             zeros.newton, f2, x0, tol=1e-6, maxiter=iters,
             full_output=True, disp=True)
 
-        exp_iters, exp_funccalls = 8, 16
         x, r = zeros.newton(f2, x0, fprime=f2_1, tol=1e-6,
                             full_output=True, disp=False)
-        assert_equal((r.converged, r.iterations, r.function_calls),
-                     (True, exp_iters, exp_funccalls))
+        assert_(r.converged)
+        assert_equal(x, r.root)
+        assert_equal((r.iterations, r.function_calls), expected_counts[1])
         assert_equal(r.function_calls, 2*r.iterations)
         iters = r.iterations - 1
         x, r = zeros.newton(f2, x0, fprime=f2_1, tol=1e-6,
                             maxiter=iters, full_output=True, disp=False)
-        assert_equal((r.converged, r.iterations), (False, iters))
+        assert_(not r.converged)
+        assert_equal(x, r.root)
+        assert_equal(r.iterations, iters)
 
-        exp_iters, exp_funccalls = 5, 15
         x, r = zeros.newton(f2, x0, fprime=f2_1, fprime2=f2_2, tol=1e-6,
                             full_output=True, disp=False)
-        assert_equal((r.converged, r.iterations, r.function_calls),
-                     (True, exp_iters, exp_funccalls))
+        assert_(r.converged)
+        assert_equal(x, r.root)
+        assert_equal((r.iterations, r.function_calls), expected_counts[2])
         assert_equal(r.function_calls, 3*r.iterations)
         iters = r.iterations - 1
         x, r = zeros.newton(f2, x0, fprime=f2_1, fprime2=f2_2, tol=1e-6,
                             maxiter=iters, full_output=True, disp=False)
-        assert_equal((r.converged, r.iterations), (False, iters))
+        assert_(not r.converged)
+        assert_equal(x, r.root)
+        assert_equal(r.iterations, iters)
 
     def test_deriv_zero_warning(self):
         func = lambda x: x**2
