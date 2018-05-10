@@ -4662,12 +4662,13 @@ class t_gen(rv_continuous):
 
     .. math::
 
-        f(x; \text{df}) = \frac{\Gamma((\text{df}+1)/2)}
-                        {\sqrt{\pi*\text{df}} \Gamma(\text{df}/2)}
-                    (1+x^2/\text{df})^{-(\text{df}+1)/2}
+        f(x; \nu) = \frac{\Gamma((\nu+1)/2)}
+                        {\sqrt{\pi*\nu} \Gamma(\nu)}
+                    (1+x^2/\nu)^{-(\nu+1)/2}
 
-    where ``x`` is a real number and the degrees of freedom parameter ``df``
-    satisfies ``df > 0``. :math:`\Gamma` is the gamma function
+    where ``x`` is a real number and the degrees of freedom parameter
+    :math:`\nu` (denoted ``df`` in the implementation) satisfies
+    :math:`\nu > 0``. :math:`\Gamma` is the gamma function
     (`scipy.special.gamma`).
 
     %(after_notes)s
@@ -4675,6 +4676,9 @@ class t_gen(rv_continuous):
     %(example)s
 
     """
+    def _argcheck(self, df):
+        return df > 0
+
     def _rvs(self, df):
         return self._random_state.standard_t(df, size=self._size)
 
@@ -4714,7 +4718,8 @@ class t_gen(rv_continuous):
         g1 = np.where(df > 3, 0.0, np.nan)
         g2 = _lazywhere(df > 4, (df,),
                         lambda df: 6.0 / (df-4.0),
-                        np.nan)
+                        np.inf)
+        g2 = np.where(df <= 2, np.nan, g2)
         return mu, mu2, g1, g2
 
 
