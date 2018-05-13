@@ -3489,12 +3489,12 @@ def leaders(Z, T):
     this function finds the lowest cluster node :math:`i` in the linkage
     tree Z such that:
 
-      * leaf descendents belong only to flat cluster j
+      * leaf descendants belong only to flat cluster j
         (i.e. ``T[p]==j`` for all :math:`p` in :math:`S(i)` where
-        :math:`S(i)` is the set of leaf ids of leaf nodes descendent
+        :math:`S(i)` is the set of leaf ids of descendant leaf nodes
         with cluster node :math:`i`)
 
-      * there does not exist a leaf that is not descendent with
+      * there does not exist a leaf that is not a descendant with
         :math:`i` that also belongs to cluster :math:`j`
         (i.e. ``T[q]!=j`` for all :math:`q` not in :math:`S(i)`).  If
         this condition is violated, ``T`` is not a valid cluster
@@ -3519,12 +3519,65 @@ def leaders(Z, T):
         corresponds to an original observation, otherwise it
         corresponds to a non-singleton cluster.
 
-        For example: if ``L[3]=2`` and ``M[3]=8``, the flat cluster with
-        id 8's leader is linkage node 2.
     M : ndarray
         The leader linkage node id's stored as a k-element 1-D array where
         ``k`` is the number of flat clusters found in ``T``. This allows the
         set of flat cluster ids to be any arbitrary set of ``k`` integers.
+
+        For example: if ``L[3]=2`` and ``M[3]=8``, the flat cluster with
+        id 8's leader is linkage node 2.
+
+    See Also
+    --------
+    fcluster: for the creation of flat cluster assignments.
+
+    Examples
+    --------
+    >>> from scipy.cluster.hierarchy import ward, fcluster, leaders
+    >>> from scipy.spatial.distance import pdist
+
+    Given a linkage matrix ``Z`` - obtained after apply a clustering method
+    to a dataset ``X`` - and a flat cluster assignment array ``T``:
+
+    >>> X = [[0, 0], [0, 1], [1, 0],
+    ...      [0, 4], [0, 3], [1, 4],
+    ...      [4, 0], [3, 0], [4, 1],
+    ...      [4, 4], [3, 4], [4, 3]]
+
+    >>> Z = ward(pdist(X))
+    >>> Z
+    array([[ 0.        ,  1.        ,  1.        ,  2.        ],
+           [ 3.        ,  4.        ,  1.        ,  2.        ],
+           [ 6.        ,  7.        ,  1.        ,  2.        ],
+           [ 9.        , 10.        ,  1.        ,  2.        ],
+           [ 2.        , 12.        ,  1.29099445,  3.        ],
+           [ 5.        , 13.        ,  1.29099445,  3.        ],
+           [ 8.        , 14.        ,  1.29099445,  3.        ],
+           [11.        , 15.        ,  1.29099445,  3.        ],
+           [16.        , 17.        ,  5.77350269,  6.        ],
+           [18.        , 19.        ,  5.77350269,  6.        ],
+           [20.        , 21.        ,  8.16496581, 12.        ]])
+
+
+    >>> T = fcluster(Z, 3, criterion='distance')
+    >>> T
+    array([1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4], dtype=int32)
+
+    :func:`scipy.cluster.hierarchy.leaders` returns the indexes of the nodes
+    in the dendrogram that are the leaders of each flat cluster:
+
+    >>> L, M = leaders(Z, T)
+    >>> L
+    array([16, 17, 18, 19], dtype=int32)
+
+    (remember that indexes 0-11 point to the 12 data points in ``X``
+    whereas indexes 12-22 point to the 11 rows of ``Z``)
+
+    :func:`scipy.cluster.hierarchy.leaders` also returns the indexes of
+    the flat clusters in ``T``:
+
+    >>> M
+    array([1, 2, 3, 4], dtype=int32)
 
     """
     Z = np.asarray(Z, order='c')
