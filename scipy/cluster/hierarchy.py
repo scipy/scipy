@@ -2176,10 +2176,18 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
 
     Examples
     --------
-    >>> from scipy.cluster.hierarchy import fcluster
+    >>> from scipy.cluster.hierarchy import ward, fcluster
+    >>> from scipy.spatial.distance import pdist
 
-    All cluster linkage methods - e.g. :func:`scipy.cluster.hierarchy.linkage`
+    All cluster linkage methods - e.g. :func:`scipy.cluster.hierarchy.ward`
     generate a linkage matrix ``Z`` as their output:
+
+    >>> X = [[0, 0], [0, 1], [1, 0],
+    ...      [0, 4], [0, 3], [1, 4],
+    ...      [4, 0], [3, 0], [4, 1],
+    ...      [4, 4], [3, 4], [4, 3]]
+
+    >>> Z = ward(pdist(X))
 
     >>> Z
     array([[ 0.        ,  1.        ,  1.        ,  2.        ],
