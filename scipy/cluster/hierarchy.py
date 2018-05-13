@@ -661,6 +661,63 @@ def median(y):
     linkage: for advanced creation of hierarchical clusterings.
     scipy.spatial.distance.pdist : pairwise distance metrics
 
+    Examples
+    --------
+    >>> from scipy.cluster.hierarchy import median, fcluster
+    >>> from scipy.spatial.distance import pdist
+
+    First we need a toy dataset to play with::
+
+        x x    x x
+        x        x
+
+        x        x
+        x x    x x
+
+    >>> X = [[0, 0], [0, 1], [1, 0],
+    ...      [0, 4], [0, 3], [1, 4],
+    ...      [4, 0], [3, 0], [4, 1],
+    ...      [4, 4], [3, 4], [4, 3]]
+
+    Then we get a condensed distance matrix from this dataset:
+
+    >>> y = pdist(X)
+
+    Finally, we can perform the clustering:
+
+    >>> Z = median(y)
+    >>> Z
+    array([[ 0.        ,  1.        ,  1.        ,  2.        ],
+           [ 3.        ,  4.        ,  1.        ,  2.        ],
+           [ 9.        , 10.        ,  1.        ,  2.        ],
+           [ 6.        ,  7.        ,  1.        ,  2.        ],
+           [ 2.        , 12.        ,  1.11803399,  3.        ],
+           [ 5.        , 13.        ,  1.11803399,  3.        ],
+           [ 8.        , 15.        ,  1.11803399,  3.        ],
+           [11.        , 14.        ,  1.11803399,  3.        ],
+           [18.        , 19.        ,  3.        ,  6.        ],
+           [16.        , 17.        ,  3.5       ,  6.        ],
+           [20.        , 21.        ,  3.25      , 12.        ]])
+
+    The linkage matrix ``Z`` represents a dendrogram - see
+    :func:`scipy.cluster.hierarchy.linkage` for a detailed explanation of its
+    contents.
+
+    We can use :func:`scipy.cluster.hierarchy.fcluster` to see to which cluster
+    each initial point would belong given a distance threshold:
+
+    >>> fcluster(Z, 0.9, criterion='distance')
+    array([ 7,  8,  9, 10, 11, 12,  1,  2,  3,  4,  5,  6], dtype=int32)
+    >>> fcluster(Z, 1.1, criterion='distance')
+    array([5, 5, 6, 7, 7, 8, 1, 1, 2, 3, 3, 4], dtype=int32)
+    >>> fcluster(Z, 2, criterion='distance')
+    array([3, 3, 3, 4, 4, 4, 1, 1, 1, 2, 2, 2], dtype=int32)
+    >>> fcluster(Z, 4, criterion='distance')
+    array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], dtype=int32)
+
+    Also :func:`scipy.cluster.hierarchy.dendrogram` can be used to generate a
+    plot of the dendrogram.
+
     """
     return linkage(y, method='median', metric='euclidean')
 
