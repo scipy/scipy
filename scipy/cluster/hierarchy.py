@@ -2170,9 +2170,67 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
         An array of length ``n``. ``T[i]`` is the flat cluster number to
         which original observation ``i`` belongs.
 
+    See Also
+    --------
+    linkage : for information about hierarchical clustering methods work.
+
     Examples
     --------
+    >>> from scipy.cluster.hierarchy import fcluster
 
+    All cluster linkage methods - e.g. :func:`scipy.cluster.hierarchy.linkage`
+    generate a linkage matrix ``Z`` as their output:
+
+    >>> Z
+    array([[ 0.        ,  1.        ,  1.        ,  2.        ],
+           [ 3.        ,  4.        ,  1.        ,  2.        ],
+           [ 6.        ,  7.        ,  1.        ,  2.        ],
+           [ 9.        , 10.        ,  1.        ,  2.        ],
+           [ 2.        , 12.        ,  1.29099445,  3.        ],
+           [ 5.        , 13.        ,  1.29099445,  3.        ],
+           [ 8.        , 14.        ,  1.29099445,  3.        ],
+           [11.        , 15.        ,  1.29099445,  3.        ],
+           [16.        , 17.        ,  5.77350269,  6.        ],
+           [18.        , 19.        ,  5.77350269,  6.        ],
+           [20.        , 21.        ,  8.16496581, 12.        ]])
+
+    This matrix represents a dendrogram, where the first and second elements
+    are the two clusters merged at each step, the third element is the
+    distance between these clusters, and the fourth element is the size of
+    the new cluster - the number of original data points included.
+
+    :func:`scipy.cluster.hierarchy.fcluster` can be used to flatten the
+    dendrogram, obtaining as a result an assignation of the original data
+    points to single clusters.
+
+    This assignation mostly depends on a distance threshold ``t`` - the maximum
+    inter-cluster distance allowed:
+
+    >>> fcluster(Z, t=0.9, criterion='distance')
+    array([ 1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12], dtype=int32)
+
+    >>> fcluster(Z, t=1.1, criterion='distance')
+    array([1, 1, 2, 3, 3, 4, 5, 5, 6, 7, 7, 8], dtype=int32)
+
+    >>> fcluster(Z, t=3, criterion='distance')
+    array([1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4], dtype=int32)
+
+    >>> fcluster(Z, t=9, criterion='distance')
+    array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], dtype=int32)
+
+    In the first case, the threshold ``t`` is too small to allow any two
+    samples in the data to form a cluster, so 12 different clusters are
+    returned.
+
+    In the second case, the threshold is large enough to allow the first
+    4 points to be merged with their nearest neighbors. So here only 8
+    clusters are returned.
+
+    The third case, with a much higher threhold, allows for up to 8 data
+    points to be connected - so 4 clusters are returned here.
+
+    Lastly, the threshold of the fourth case is large enough to allow for
+    all data points to be merged together - so a single cluster is returned.
 
     """
     Z = np.asarray(Z, order='c')
