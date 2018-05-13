@@ -162,6 +162,7 @@ Scalar functions
    ridder - Ridder's method
    bisect - Bisection method
    newton - Secant method or Newton's method
+   sidi   - Sidi's method, generalization of Secant
 
 Fixed point finding:
 

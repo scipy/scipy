@@ -1,6 +1,6 @@
 from __future__ import division, print_function, absolute_import
 
-from math import sqrt, exp, sin, cos
+from math import sqrt, exp, sin, cos, pi
 
 from numpy.testing import (assert_warns, assert_, 
                            assert_allclose,
@@ -15,17 +15,20 @@ from scipy.optimize._tstutils import functions, fstrings
 
 
 class TestBasic(object):
-    def run_check(self, method, name):
+    def run_check(self, method, name, nToCheck=None, **kwargs):
         a = .5
         b = sqrt(3)
         xtol = 4*finfo(float).eps
         rtol = 4*finfo(float).eps
-        for function, fname in zip(functions, fstrings):
+        for function, fname in zip(functions[:nToCheck], fstrings[:nToCheck]):
             zero, r = method(function, a, b, xtol=xtol, rtol=rtol,
-                             full_output=True)
+                             full_output=True, **kwargs)
             assert_(r.converged)
+            print('%.17e  %.17e' % (zero, zero-1))
+            print(r)
             assert_allclose(zero, 1.0, atol=xtol, rtol=rtol,
-                err_msg='method %s, function %s' % (name, fname))
+                err_msg='method %s, function %s %s' % (
+                    name, fname, (repr(kwargs) if kwargs else '')))
 
     def test_bisect(self):
         self.run_check(cc.bisect, 'bisect')
@@ -38,6 +41,39 @@ class TestBasic(object):
 
     def test_brenth(self):
         self.run_check(cc.brenth, 'brenth')
+
+    def test_sidi_k1(self):
+        self.run_check(cc.sidi, 'sidi', nToCheck=2, k=1)
+
+    def test_sidi_k2(self):
+        self.run_check(cc.sidi, 'sidi', nToCheck=2, k=2)
+
+    def test_sidi_k3(self):
+        self.run_check(cc.sidi, 'sidi', nToCheck=2, k=3)
+
+    def test_sidi(self):
+        f1 = lambda x: x**2 - 2*x - 1
+        f1p = lambda x: 2*x - 2
+        f2 = lambda x: exp(x) - cos(x)
+        f2p = lambda x: exp(x) + sin(x)
+
+        data = [[f1, f1p, 0, 3, sqrt(2)+1],
+                [f2, f2p, -2*pi, 3, -4.72129275884768607]
+                ]
+
+        xtol = 4 * finfo(float).eps
+        rtol = 4 * finfo(float).eps
+
+        for f, fp, a, b, r in data:
+            for k in [1, 2, 3]:
+                x, result = zeros.sidi(f, a, b, xtol=xtol, rtol=rtol,
+                                       k=k, full_output=True)
+                fpr = fp(r)
+                print('k=%d, x=%.17e f(x)=%g f(r)=%.17e fp(r)=%f, result=%s' % (
+                    k, x, f(x), f(r), fpr, result))
+                assert_(result.converged)
+                assert_allclose(x, r, atol=xtol, rtol=rtol)
+                assert_allclose(f(x), 0, atol=4*abs(fpr) * xtol, rtol=4*rtol)
 
     def test_newton(self):
         f1 = lambda x: x**2 - 2*x - 1
