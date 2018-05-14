@@ -24,13 +24,21 @@ from scipy.sparse.linalg.isolve import cg, cgs, bicg, bicgstab, gmres, qmr, minr
 
 
 class Case(object):
-    def __init__(self, name, A, skip=None):
+    def __init__(self, name, A, b=None, skip=None, nonconvergence=None):
         self.name = name
         self.A = A
+        if b is None:
+            self.b = arange(A.shape[0], dtype=float)
+        else:
+            self.b = b
         if skip is None:
             self.skip = []
         else:
             self.skip = skip
+        if nonconvergence is None:
+            self.nonconvergence = []
+        else:
+            self.nonconvergence = nonconvergence
 
     def __repr__(self):
         return "<%s>" % self.name
@@ -138,6 +146,24 @@ class IterativeParams(object):
         self.cases.append(Case("nonsymposdef", A.astype('F'),
                                skip=sym_solvers+[cgs, qmr, bicg]))
 
+        # Symmetric, non-pd, hitting cgs/bicg/bicgstab/qmr breakdown
+        A = np.array([[0, 0, 0, 0, 0, 1, -1, -0, -0, -0, -0],
+                      [0, 0, 0, 0, 0, 2, -0, -1, -0, -0, -0],
+                      [0, 0, 0, 0, 0, 2, -0, -0, -1, -0, -0],
+                      [0, 0, 0, 0, 0, 2, -0, -0, -0, -1, -0],
+                      [0, 0, 0, 0, 0, 1, -0, -0, -0, -0, -1],
+                      [1, 2, 2, 2, 1, 0, -0, -0, -0, -0, -0],
+                      [-1, 0, 0, 0, 0, 0, -1, -0, -0, -0, -0],
+                      [0, -1, 0, 0, 0, 0, -0, -1, -0, -0, -0],
+                      [0, 0, -1, 0, 0, 0, -0, -0, -1, -0, -0],
+                      [0, 0, 0, -1, 0, 0, -0, -0, -0, -1, -0],
+                      [0, 0, 0, 0, -1, 0, -0, -0, -0, -0, -1]], dtype=float)
+        b = np.array([0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0], dtype=float)
+        assert (A == A.T).all()
+        self.cases.append(Case("sym-nonpd", A, b,
+                               skip=posdef_solvers,
+                               nonconvergence=[cgs,bicg,bicgstab,qmr]))
+
 
 params = IterativeParams()
 
@@ -146,7 +172,7 @@ def check_maxiter(solver, case):
     A = case.A
     tol = 1e-12
 
-    b = arange(A.shape[0], dtype=float)
+    b = case.b
     x0 = 0*b
 
     residuals = []
@@ -185,14 +211,18 @@ def check_convergence(solver, case):
     else:
         tol = 1e-2
 
-    b = arange(A.shape[0], dtype=A.dtype)
+    b = case.b
     x0 = 0*b
 
     x, info = solver(A, b, x0=x0, tol=tol)
 
     assert_array_equal(x0, 0*b)  # ensure that x0 is not overwritten
-    assert_equal(info,0)
-    assert_normclose(A.dot(x), b, tol=tol)
+    if solver not in case.nonconvergence:
+        assert_equal(info,0)
+        assert_normclose(A.dot(x), b, tol=tol)
+    else:
+        assert_(info != 0)
+        assert_(np.linalg.norm(A.dot(x) - b) <= np.linalg.norm(b))
 
 
 def test_convergence():
@@ -217,7 +247,7 @@ def check_precond_dummy(solver, case):
     M,N = A.shape
     D = spdiags([1.0/A.diagonal()], [0], M, N)
 
-    b = arange(A.shape[0], dtype=float)
+    b = case.b
     x0 = 0*b
 
     precond = LinearOperator(A.shape, identity, rmatvec=identity)
@@ -275,7 +305,7 @@ def check_precond_inverse(solver, case):
         matvec_count[0] += 1
         return case.A.T.dot(b)
 
-    b = arange(case.A.shape[0], dtype=float)
+    b = case.b
     x0 = 0*b
 
     A = LinearOperator(case.A.shape, matvec, rmatvec=rmatvec)
