@@ -8,6 +8,21 @@ Spatial Transformations (:mod:`scipy.spatial.transform`)
 This package implements various spatial transformations. For now,
 only rotations are supported.
 
+Rotations in 3 dimensions
+-------------------------
+This package supports `Rotation` transforms with the following representations
+
+* Quaternions
+* Discrete Cosine Matrices
+* Euler angles
+* Axis angle representation
+
+It also implements some useful algorithms such as
+
+* Quaternion slerp
+* Quaternion spline
+* Rotation estimation (Wahba's problem)
+
 Class Reference
 ---------------
 
