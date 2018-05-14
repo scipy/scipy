@@ -1,6 +1,6 @@
 from __future__ import division, print_function, absolute_import
 
-from numpy import sqrt, inner, finfo, zeros
+from numpy import sqrt, inner, finfo, zeros, inf, finfo
 from numpy.linalg import norm
 
 from .utils import make_system
@@ -159,7 +159,8 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
     rhs1 = beta1
     rhs2 = 0
     tnorm2 = 0
-    ynorm2 = 0
+    gmax = 0
+    gmin = finfo(xtype).max
     cs = -1
     sn = 0
     w = zeros(n, dtype=xtype)
@@ -198,9 +199,6 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
         if itn == 1:
             if beta/beta1 <= 10*eps:
                 istop = -1  # Terminate later
-            # tnorm2 = alfa**2 ??
-            gmax = abs(alfa)
-            gmin = gmax
 
         # Apply previous rotation Qk-1 to get
         #   [deltak epslnk+1] = [cs  sn][dbark    0   ]
@@ -236,14 +234,13 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
         gmax = max(gmax, gamma)
         gmin = min(gmin, gamma)
         z = rhs1 / gamma
-        ynorm2 = z**2 + ynorm2
         rhs1 = rhs2 - delta*z
         rhs2 = - epsln*z
 
         # Estimate various norms and test for convergence.
 
         Anorm = sqrt(tnorm2)
-        ynorm = sqrt(ynorm2)
+        ynorm = norm(x)
         epsa = Anorm * eps
         epsx = Anorm * ynorm * eps
         epsr = Anorm * ynorm * tol
@@ -280,7 +277,7 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
                 istop = 6
             if Acond >= 0.1/eps:
                 istop = 4
-            if epsx >= beta:
+            if epsx >= beta1:
                 istop = 3
             # if rnorm <= epsx   : istop = 2
             # if rnorm <= epsr   : istop = 1
