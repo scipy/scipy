@@ -13,16 +13,25 @@ class Rotation(object):
 
     """
     def __init__(self, quaternions):
-        """Initialize class from normalized quaternions.
+        """Initialize class from possible normalized quaternions.
 
         Parameters
         ----------
         quaternions : (N, 4) numpy.array
-                      Each row is a unit-norm quaternion stored in scalar-last
+                      Each row is a quaternion stored in scalar-last
                       (x, y, z, w) format.
 
         """
-        self._quat = quaternions
+        # Each row should have 4 numbers
+        assert(quaternions.shape[1] == 4)
+
+        # L2 norm of each row
+        norms = scipy.linalg.norm(quaternions, axis=1)
+
+        # Divide each row by its norm.
+        # In case quat is [4 x 4], ensure norm is broadcasted along each column
+        normalised_quat = quaternions / norms[:, None]
+        self._quat = normalised_quat
 
     @classmethod
     def from_quaternion(cls, quat):
@@ -43,14 +52,4 @@ class Rotation(object):
         if quat.shape == (4,):
             quat = quat[None, :]
 
-        # Each row should have 4 numbers
-        assert(quat.shape[1] == 4)
-
-        # L2 norm of each row
-        norms = scipy.linalg.norm(quat, axis=1)
-
-        # Divide each row by its norm.
-        # In case quat is [4 x 4], ensure norm is broadcasted along each column
-        normalised_quat = quat / norms[:, None]
-
-        return cls(normalised_quat)
+        return cls(quat)
