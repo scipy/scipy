@@ -32,9 +32,9 @@ class Rotation(object):
             quat = quat[None, :]
             self._single = True
 
-        self._quat = quat
-
-        if not normalized:
+        if normalized:
+            self._quat = quat
+        else:
             self._quat = quat.copy()
             # L2 norm of each row
             norms = scipy.linalg.norm(quat, axis=1)
