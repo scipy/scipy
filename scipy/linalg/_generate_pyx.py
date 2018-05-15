@@ -563,9 +563,8 @@ def process_fortran_name(name, funcname):
 
 
 def called_name(name):
-    included = ['zladiv', 'zdotu', 'zdotc']
-    excluded = ['chla_transtype', 'clanhf', 'slansf']
-    if (name[0] in 'cs' and name not in excluded) or name in included:
+    included = ['cdotc', 'cdotu', 'zdotc', 'zdotu', 'cladiv', 'zladiv']
+    if name in included:
         return "w" + name
     return name
 
