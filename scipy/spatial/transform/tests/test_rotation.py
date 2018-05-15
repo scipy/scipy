@@ -53,11 +53,5 @@ def test_zero_norms_from_quaternion():
             [0, 0, 0, 0],
             [5, 0, 12, 0]
             ])
-    with pytest.raises(UserWarning):
+    with pytest.raises(ValueError):
         r = Rotation.from_quaternion(x)
-        expected_quat = np.array([
-            x[0] / 5,
-            [0, 0, 0, 1],
-            x[2] / 13
-            ])
-        assert_array_almost_equal(r, expected_quat)
