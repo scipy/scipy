@@ -107,11 +107,11 @@
 *     .. Local Scalars ..
       INTEGER             I, MAXIT, AV, GIV, H, R, S, V, W, Y,
      $                    NEED1, NEED2
-      <_t>  <xdot=wsdot,ddot,wcdotc,wzdotc>
+      <_t>  <xdot=sdot,ddot,wcdotc,wzdotc>
       <_t>  toz
       <_t>    TMPVAL
       <rt>    RNORM,
-     $     <rc=ws,d,wsc,dz>NRM2,
+     $     <rc=s,d,sc,dz>NRM2,
      $     <rc>APPROXRES
 
       LOGICAL BRKDWN
@@ -421,9 +421,9 @@
 *
       INTEGER            K
       <rt=real,double precision,real,double precision>    
-     $     <rc=ws,d,wsc,dz>NRM2, ONE
+     $     <rc=s,d,sc,dz>NRM2, ONE
       PARAMETER        ( ONE = 1.0D+0 )
-      <_t>    <xdot=wsdot,ddot,wcdotc,wzdotc>
+      <_t>    <xdot=sdot,ddot,wcdotc,wzdotc>
       <_t>    TMPVAL
       EXTERNAL         <_c>AXPY, <_c>COPY, <xdot>, <rc>NRM2, <_c>SCAL
 *
@@ -488,7 +488,7 @@
 *
 *     ===============================================================
       <rt=real,double precision,real,double precision>
-     $     FUNCTION <rc=ws,d,wsc,dz>APPROXRES( I, H, S, GIVENS, LDG )
+     $     FUNCTION <rc=s,d,sc,dz>APPROXRES( I, H, S, GIVENS, LDG )
 *
       IMPLICIT NONE
       INTEGER            I, LDG
