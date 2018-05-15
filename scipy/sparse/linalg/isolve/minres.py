@@ -251,8 +251,14 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
 
         qrnorm = phibar
         rnorm = qrnorm
-        test1 = rnorm / (Anorm*ynorm)    # ||r||  / (||A|| ||x||)
-        test2 = root / Anorm            # ||Ar|| / (||A|| ||r||)
+        if ynorm == 0 or Anorm == 0:
+            test1 = inf
+        else:
+            test1 = rnorm / (Anorm*ynorm)    # ||r||  / (||A|| ||x||)
+        if Anorm == 0:
+            test2 = inf
+        else:
+            test2 = root / Anorm            # ||Ar|| / (||A|| ||r||)
 
         # Estimate  cond(A).
         # In this version we look at the diagonals of  R  in the
