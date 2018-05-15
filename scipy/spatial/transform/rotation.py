@@ -25,8 +25,8 @@ class Rotation(object):
         quat = np.asarray(quat, dtype=float)
 
         if quat.ndim not in [1, 2] or quat.shape[-1] != 4:
-            raise ValueError(("Expected `quat` to have shape (4,) or (N x 4), "
-                    "got {}.".format(quat.shape)))
+            raise ValueError("Expected `quat` to have shape (4,) or (N x 4), "
+                             "got {}.".format(quat.shape))
 
         # If a single quaternion is given, convert it to a 2D 1 x 4 matrix but
         # set self._single to True so that we can return appropriate objects
@@ -42,13 +42,11 @@ class Rotation(object):
             # L2 norm of each row
             norms = scipy.linalg.norm(quat, axis=1)
 
-            # Warn user for zero (eps?) norm and set to identity quaternion,
-            # which (0,0,0,1) in (x,y,z,w) format
+            # Raise ValueError for zero (eps?) norm quaternions
             zero_norms = norms == 0
             if zero_norms.any():
-                warnings.warn("""Found zero norm quaternions in input,
-                        replacing with identity quaternions.""")
-                self._quat[zero_norms] = np.array([0, 0, 0, 1])
+                raise ValueError("Found zero norm quaternions in `quat`.")
+
             # Normalize each quaternion, ensuring norm is broadcasted along
             # each column.
             self._quat[~zero_norms] /= norms[~zero_norms][:, None]
