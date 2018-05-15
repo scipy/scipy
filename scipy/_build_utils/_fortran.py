@@ -37,16 +37,9 @@ def get_g77_abi_wrappers(info):
             os.path.join(path, 'src', 'wrap_g77_abi_f.f'),
             os.path.join(path, 'src', 'wrap_g77_abi_c.c'),
         ]
-        if uses_mkl(info):
-            wrapper_sources += [
-                    os.path.join(path, 'src', 'wrap_dummy_accelerate.f'),
-            ]
-        else:
-            raise NotImplementedError("Do not know how to handle LAPACK %s on mac os x" % (info,))
     else:
         wrapper_sources += [
             os.path.join(path, 'src', 'wrap_dummy_g77_abi.f'),
-            os.path.join(path, 'src', 'wrap_dummy_accelerate.f'),
         ]
     return wrapper_sources
 
