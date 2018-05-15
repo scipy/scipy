@@ -7,14 +7,18 @@ from numpy import finfo, sign, sqrt
 
 _iter = 100
 _xtol = 2e-12
-_rtol = 4*finfo(float).eps
+_rtol = 4 * finfo(float).eps
 
 __all__ = ['newton', 'bisect', 'ridder', 'brentq', 'brenth']
 
 CONVERGED = 'converged'
 SIGNERR = 'sign error'
 CONVERR = 'convergence error'
-flag_map = {0: CONVERGED, -1: SIGNERR, -2: CONVERR}
+_ECONVERGED = 0
+_ESIGNERR = -1
+_ECONVERR = -2
+
+flag_map = {_ECONVERGED: CONVERGED, _ESIGNERR: SIGNERR, _ECONVERR: CONVERR}
 
 
 class RootResults(object):
@@ -32,6 +36,7 @@ class RootResults(object):
     flag : str
         Description of the cause of termination.
     """
+
     def __init__(self, root, iterations, function_calls, flag):
         self.root = root
         self.iterations = iterations
@@ -62,9 +67,22 @@ def results_c(full_output, r):
         return r
 
 
+def _results_select(full_output, r):
+    r"""Select from a tuple of (root, funccalls, iterations, flag)"""
+    x, funcalls, iterations, flag = r
+    if full_output:
+        results = RootResults(root=x,
+                              iterations=iterations,
+                              function_calls=funcalls,
+                              flag=flag)
+        return x, results
+    return x
+
+
 # Newton-Raphson method
 def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
-           fprime2=None):
+           fprime2=None,
+           full_output=False, disp=True):
     """
     Find a zero using the Newton-Raphson or secant method.
 
@@ -96,11 +114,20 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
         convenient. If it is None (default), then the normal Newton-Raphson
         or the secant method is used. If it is not None, then Halley's method
         is used.
+    full_output : bool, optional
+        If `full_output` is False, the root is returned.  If `full_output` is
+        True, the return value is ``(x, r)``, where `x` is the root, and `r` is
+        a RootResults object.
+    disp : bool, optional
+        If True, display a RuntimeError if the algorithm didn't converge.
 
     Returns
     -------
     zero : float
         Estimated location where function is zero.
+    r : RootResults (present if ``full_output = True``)
+        Object containing information about the convergence.  In particular,
+        ``r.converged`` is True if the routine converged.
 
     See Also
     --------
@@ -160,50 +187,61 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
     # Multiply by 1.0 to convert to floating point.  We don't use float(x0)
     # so it still works if x0 is complex.
     p0 = 1.0 * x0
+    funcalls = 0
     if fprime is not None:
-        # Newton-Rapheson method
-        for iter in range(maxiter):
+        # Newton-Raphson method
+        for itr in range(maxiter):
             fder = fprime(p0, *args)
+            funcalls += 1
             if fder == 0:
                 msg = "derivative was zero."
                 warnings.warn(msg, RuntimeWarning)
-                return p0
+                return _results_select(full_output, (p0, funcalls, itr + 1, _ECONVERR))
             fval = func(p0, *args)
+            funcalls += 1
             newton_step = fval / fder
             if fprime2 is None:
                 # Newton step
                 p = p0 - newton_step
             else:
                 fder2 = fprime2(p0, *args)
+                funcalls += 1
                 # Halley's method
                 p = p0 - newton_step / (1.0 - 0.5 * newton_step * fder2 / fder)
             if abs(p - p0) < tol:
-                return p
+                return _results_select(full_output, (p, funcalls, itr + 1, _ECONVERGED))
             p0 = p
     else:
         # Secant method
         if x0 >= 0:
-            p1 = x0*(1 + 1e-4) + 1e-4
+            p1 = x0 * (1 + 1e-4) + 1e-4
         else:
-            p1 = x0*(1 + 1e-4) - 1e-4
+            p1 = x0 * (1 + 1e-4) - 1e-4
         q0 = func(p0, *args)
+        funcalls += 1
         q1 = func(p1, *args)
-        for iter in range(maxiter):
+        funcalls += 1
+        for itr in range(maxiter):
             if q1 == q0:
                 if p1 != p0:
                     msg = "Tolerance of %s reached" % (p1 - p0)
                     warnings.warn(msg, RuntimeWarning)
-                return (p1 + p0)/2.0
+                p = (p1 + p0) / 2.0
+                return _results_select(full_output, (p, funcalls, itr + 1, _ECONVERGED))
             else:
-                p = p1 - q1*(p1 - p0)/(q1 - q0)
+                p = p1 - q1 * (p1 - p0) / (q1 - q0)
             if abs(p - p1) < tol:
-                return p
+                return _results_select(full_output, (p, funcalls, itr + 1, _ECONVERGED))
             p0 = p1
             q0 = q1
             p1 = p
             q1 = func(p1, *args)
-    msg = "Failed to converge after %d iterations, value is %s" % (maxiter, p)
-    raise RuntimeError(msg)
+            funcalls += 1
+    if disp:
+        msg = "Failed to converge after %d iterations, value is %s" % (itr + 1, p)
+        raise RuntimeError(msg)
+
+    return _results_select(full_output, (p, funcalls, itr + 1, _ECONVERR))
 
 
 def bisect(f, a, b, args=(),
@@ -284,7 +322,7 @@ def bisect(f, a, b, args=(),
         raise ValueError("xtol too small (%g <= 0)" % xtol)
     if rtol < _rtol:
         raise ValueError("rtol too small (%g < %g)" % (rtol, _rtol))
-    r = _zeros._bisect(f,a,b,xtol,rtol,maxiter,args,full_output,disp)
+    r = _zeros._bisect(f, a, b, xtol, rtol, maxiter, args, full_output, disp)
     return results_c(full_output, r)
 
 
@@ -379,7 +417,7 @@ def ridder(f, a, b, args=(),
         raise ValueError("xtol too small (%g <= 0)" % xtol)
     if rtol < _rtol:
         raise ValueError("rtol too small (%g < %g)" % (rtol, _rtol))
-    r = _zeros._ridder(f,a,b,xtol,rtol,maxiter,args,full_output,disp)
+    r = _zeros._ridder(f, a, b, xtol, rtol, maxiter, args, full_output, disp)
     return results_c(full_output, r)
 
 
@@ -507,7 +545,7 @@ def brentq(f, a, b, args=(),
         raise ValueError("xtol too small (%g <= 0)" % xtol)
     if rtol < _rtol:
         raise ValueError("rtol too small (%g < %g)" % (rtol, _rtol))
-    r = _zeros._brentq(f,a,b,xtol,rtol,maxiter,args,full_output,disp)
+    r = _zeros._brentq(f, a, b, xtol, rtol, maxiter, args, full_output, disp)
     return results_c(full_output, r)
 
 
@@ -608,5 +646,5 @@ def brenth(f, a, b, args=(),
         raise ValueError("xtol too small (%g <= 0)" % xtol)
     if rtol < _rtol:
         raise ValueError("rtol too small (%g < %g)" % (rtol, _rtol))
-    r = _zeros._brenth(f,a, b, xtol, rtol, maxiter, args, full_output, disp)
+    r = _zeros._brenth(f, a, b, xtol, rtol, maxiter, args, full_output, disp)
     return results_c(full_output, r)
