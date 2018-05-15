@@ -7,7 +7,7 @@ Spatial algorithms and data structures (:mod:`scipy.spatial`)
 
 Spatial Transformations
 =======================
-Contained in the :mod:`scipy.spatial.transform` submodule.
+Contained in the `scipy.spatial.transform` submodule.
 
 Nearest-neighbor Queries
 ========================
