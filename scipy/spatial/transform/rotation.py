@@ -25,7 +25,8 @@ class Rotation(object):
         quat = np.asarray(quat, dtype=float)
 
         if quat.ndim not in [1, 2] or quat.shape[-1] != 4:
-            raise ValueError("`quat` should be of shape (4,) or (N x 4).")
+            raise ValueError(("Expected `quat` to have shape (4,) or (N x 4), "
+                    "got {}.".format(quat.shape)))
 
         # If a single quaternion is given, convert it to a 2D 1 x 4 matrix but
         # set self._single to True so that we can return appropriate objects
