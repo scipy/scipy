@@ -22,23 +22,20 @@ class Rotation(object):
         # Try to convert to numpy array
         quat = np.asarray(quat, dtype=float)
 
-        if quat.ndim not in [1, 2]:
-            raise ValueError("Input quat should be of shape (4,) or (N x 4).")
+        if quat.ndim not in [1, 2] or quat.shape[-1] != 4:
+            raise ValueError("`quat` should be of shape (4,) or (N x 4).")
 
         # If a single quaternion is given, convert it to a 2D 1 x 4 matrix but
         # set self._single to True so that we can return appropriate objects
         # in the `to_...` methods
-        if quat.ndim == 1:
+        if quat.shape == (4,):
             quat = quat[None, :]
             self._single = True
 
-        # Each row should have 4 numbers
-        if quat.shape[1] != 4:
-            raise ValueError("A quaternion should have 4 numbers.")
-
-        self._quat = quat
-
-        if not normalized:
+        if normalized:
+            self._quat = quat
+        else:
+            self._quat = quat.copy()
             # L2 norm of each row
             norms = scipy.linalg.norm(quat, axis=1)
 
@@ -66,7 +63,6 @@ class Rotation(object):
         quat : array_like, shape (N, 4) or (4,)
             Each row is a (possibly non-unit norm) quaternion in scalar-last
             (x, y, z, w) format.
-
         normalized : boolean, optional
             If this flag is `True`, then it is assumed that the input quaternions
             all have unit norm and are not normalized again. Default is False.
