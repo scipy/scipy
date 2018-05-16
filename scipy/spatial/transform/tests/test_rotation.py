@@ -11,14 +11,21 @@ def test_generic_quat_matrix():
     x = np.array([[3, 4, 0, 0], [5, 12, 0, 0]])
     r = Rotation.from_quaternion(x)
     expected_quat = x / np.array([[5], [13]])
-    assert_array_almost_equal(r._quat, expected_quat)
+    assert_array_almost_equal(r.as_quaternion(), expected_quat)
 
 
-def test_from_single_quaternion():
+def test_from_single_1d_quaternion():
     x = np.array([3, 4, 0, 0])
     r = Rotation.from_quaternion(x)
-    expected_quat = x[None, :] / 5
-    assert_array_almost_equal(r._quat, expected_quat)
+    expected_quat = x / 5
+    assert_array_almost_equal(r.as_quaternion(), expected_quat)
+
+
+def test_from_single_2d_quaternion():
+    x = np.array([[3, 4, 0, 0]])
+    r = Rotation.from_quaternion(x)
+    expected_quat = x / 5
+    assert_array_almost_equal(r.as_quaternion(), expected_quat)
 
 
 def test_from_square_quat_matrix():
@@ -31,7 +38,7 @@ def test_from_square_quat_matrix():
         ])
     r = Rotation.from_quaternion(x)
     expected_quat = x / np.array([[5], [13], [1], [1]])
-    assert_array_almost_equal(r._quat, expected_quat)
+    assert_array_almost_equal(r.as_quaternion(), expected_quat)
 
 
 def test_malformed_1d_from_quaternion():
