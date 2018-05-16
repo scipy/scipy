@@ -89,20 +89,19 @@ class Rotation(object):
     def as_dcm(self):
         """Return the direction cosine matrix representation of the Rotation.
 
-        This function returns a numpy.ndarray of shape (3 x 3) or (N x 3 x 3)
+        This function returns a numpy.ndarray of shape (3, 3) or (N, 3, 3)
         depending on the input that was used to initialize the object.
         """
-        quat = self._quat.copy()
 
-        x = quat[:, 0].reshape(-1, 1)
-        y = quat[:, 1].reshape(-1, 1)
-        z = quat[:, 2].reshape(-1, 1)
-        w = quat[:, 3].reshape(-1, 1)
+        x = self._quat[:, 0]
+        y = self._quat[:, 1]
+        z = self._quat[:, 2]
+        w = self._quat[:, 3]
 
-        x2 = np.power(x, 2)
-        y2 = np.power(y, 2)
-        z2 = np.power(z, 2)
-        w2 = np.power(w, 2)
+        x2 = x * x
+        y2 = y * y
+        z2 = z * z
+        w2 = w * w
 
         xy = x * y
         zw = z * w
@@ -111,13 +110,20 @@ class Rotation(object):
         yz = y * z
         xw = x * w
 
-        d1 = np.concatenate(
-                (x2 - y2 - z2 + w2, 2 * (xy + zw), 2 * (xz - yw)), axis=1)
-        d2 = np.concatenate(
-                (2 * (xy - zw), - x2 + y2 - z2 + w2, 2 * (yz + xw)), axis=1)
-        d3 = np.concatenate(
-                (2 * (xz + yw), 2 * (yz - xw), - x2 - y2 + z2 + w2), axis=1)
-        dcm = np.dstack((d1, d2, d3))
+        num_rotations = self._quat.shape[0]
+        dcm = np.empty((num_rotations, 3, 3))
+
+        dcm[:, 0, 0] = x2 - y2 - z2 + w2
+        dcm[:, 1, 0] = 2 * (xy + zw)
+        dcm[:, 2, 0] = 2 * (xz - yw)
+
+        dcm[:, 0, 1] = 2 * (xy - zw)
+        dcm[:, 1, 1] = - x2 + y2 - z2 + w2
+        dcm[:, 2, 1] = 2 * (yz + xw)
+
+        dcm[:, 0, 2] = 2 * (xz + yw)
+        dcm[:, 1, 2] = 2 * (yz - xw)
+        dcm[:, 2, 2] = - x2 - y2 + z2 + w2
 
         if self._single:
             return dcm[0]
