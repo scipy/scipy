@@ -18,6 +18,7 @@ class Rotation(object):
     Methods
     -------
     from_quaternion
+    as_quaternion
     """
     def __init__(self, quat, normalized=False):
         self._single = False
