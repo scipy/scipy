@@ -72,3 +72,14 @@ class Rotation(object):
         """
 
         return cls(quat, normalized)
+
+    def as_quaternion(self):
+        """Return the quaternion representation of the Rotation.
+
+        This function returns a numpy array of shape (4,) or (N x 4) depending
+        on the input that was used to initialize the object.
+        """
+        if self._single:
+            return self._quat[0]
+        else:
+            return self._quat
