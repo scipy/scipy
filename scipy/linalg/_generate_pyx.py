@@ -5,8 +5,9 @@ from the files "cython_blas_signatures.txt" and
 all the BLAS/LAPACK routines that should be included in the wrappers.
 """
 
-import os
+from collections import defaultdict
 from operator import itemgetter
+import os
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
@@ -546,20 +547,23 @@ dims = {'work': '(*)', 'ab': '(ldab,*)', 'a': '(lda,*)', 'dl': '(*)',
 
 xy_specialized_dims = {'x': '', 'y': ''}
 a_specialized_dims = {'a': '(*)'}
-special_cases = {'ladiv': xy_specialized_dims,
-                 'lanhf': a_specialized_dims,
-                 'lansf': a_specialized_dims,
-                 'lapy2': xy_specialized_dims,
-                 'lapy3': xy_specialized_dims}
+special_cases = defaultdict(dict,
+                            ladiv = xy_specialized_dims,
+                            lanhf = a_specialized_dims,
+                            lansf = a_specialized_dims,
+                            lapy2 = xy_specialized_dims,
+                            lapy3 = xy_specialized_dims)
 
 
 def process_fortran_name(name, funcname):
     if 'inc' in name:
         return name
-    if ('x' in name or 'y' in name):
-        return name + special_cases.get(funcname[1:], dict()).get(name, '(n)')
-    name += special_cases.get(funcname[1:], dims).get(name, dims.get(name, ''))
-    return name
+    special = special_cases[funcname[1:]]
+    if 'x' in name or 'y' in name:
+        suffix = special.get(name, '(n)')
+    else:
+        suffix = special.get(name, '')
+    return name + suffix
 
 
 def called_name(name):
@@ -567,6 +571,7 @@ def called_name(name):
     if name in included:
         return "w" + name
     return name
+
 
 def fort_subroutine_wrapper(name, ret_type, args):
     wrapper = called_name(name)
@@ -659,9 +664,8 @@ def split_signature(sig):
 
 
 def filter_lines(lines):
-    lines = [line.strip() for line in lines
-                              if line not in ['\n', '\r\n']
-                              and line[0] != '#']
+    lines = [line for line in map(str.strip, lines)
+                      if line and not line.startswith('#')]
     func_sigs = [split_signature(line) for line in lines
                                            if line.split(' ')[0] != 'void']
     sub_sigs = [split_signature(line) for line in lines

@@ -62,7 +62,7 @@ def sigs_from_dir(directory, outfile, manual_wrappers=None, exclusions=None):
         exclusions += [get_sig_name(l) for l in manual_wrappers.split('\n')]
     signatures = []
     for filename in files:
-        name = os.path.basename(filename)[:-2]
+        name = os.path.splitext(os.path.basename(filename))[0]
         if name in exclusions:
             continue
         signatures.append(make_signature(filename))
