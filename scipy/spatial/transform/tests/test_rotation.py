@@ -3,7 +3,7 @@ from __future__ import division, print_function, absolute_import
 import pytest
 
 import numpy as np
-from numpy.testing import assert_array_almost_equal
+from numpy.testing import assert_equal, assert_array_almost_equal
 from scipy.spatial.transform import Rotation
 
 
@@ -74,7 +74,7 @@ def test_as_dcm_single_1d_quaternion():
 def test_as_dcm_single_2d_quaternion():
     quat = [[0, 0, 1, 1]]
     mat = Rotation.from_quaternion(quat).as_dcm()
-    assert(mat.shape == (1, 3, 3))
+    assert_equal(mat.shape, (1, 3, 3))
     expected_mat = np.array([
         [0, -1, 0],
         [1, 0, 0],
@@ -91,7 +91,7 @@ def test_as_dcm_from_square_input():
             [0, 0, 0, -1]
             ]
     mat = Rotation.from_quaternion(quats).as_dcm()
-    assert(mat.shape == (4, 3, 3))
+    assert_equal(mat.shape, (4, 3, 3))
 
     expected0 = np.array([
         [0, -1, 0],
@@ -118,7 +118,7 @@ def test_as_dcm_from_generic_input():
             [1, 2, 3, 4]
             ]
     mat = Rotation.from_quaternion(quats).as_dcm()
-    assert(mat.shape == (3, 3, 3))
+    assert_equal(mat.shape, (3, 3, 3))
 
     expected0 = np.array([
         [0, -1, 0],
