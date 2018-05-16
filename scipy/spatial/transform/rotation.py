@@ -89,7 +89,7 @@ class Rotation(object):
     def as_dcm(self):
         """Return the direction cosine matrix representation of the Rotation.
 
-        This function returns a numpy.ndarray of shape (3 x 3) or (N x 3 x 3)
+        This function returns a numpy.ndarray of shape (3, 3) or (N, 3, 3)
         depending on the input that was used to initialize the object.
         """
 
