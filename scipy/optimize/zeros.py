@@ -209,7 +209,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
             newton_step = fval / fder1_1
             if fprime2 is None:
                 # The second first-derivative evaluation
-                fder1_2= fprime(p0 - fval/(2.0 * fder1_1), *args)
+                fder1_2= fprime(p0 - fval / (2.0 * fder1_1), *args)
                 funcalls += 1
                 if fder1_2 == 0:
                     msg = "derivative was zero."
