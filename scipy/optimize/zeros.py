@@ -198,13 +198,20 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
             # Homeier's method requires two derivative evaluations. This is the first.
             fder1_1 = fprime(p0, *args)
             fval = func(p0, *args)
+            funcalls += 2
+            if fder1_1 == 0:
+                msg = "derivative at first point was zero."
+                warnings.warn(msg, RuntimeWarning)
+                return _results_select(full_output, (p0, funcalls, itr + 1, _ECONVERR))
             # The second derivative evaluation
+            
             fder1_2= fprime(p0 - fval/(2.0 * fder1_1), *args)
-            funcalls += 3
-            if fder1_1 == 0 or fder1_2 == 0:
+            funcalls += 1
+            if fder1_2 == 0:
                 msg = "derivative was zero."
                 warnings.warn(msg, RuntimeWarning)
                 return _results_select(full_output, (p0, funcalls, itr + 1, _ECONVERR))
+                
             newton_step = fval / fder1_2
             if fprime2 is None:
                 # Newton step
