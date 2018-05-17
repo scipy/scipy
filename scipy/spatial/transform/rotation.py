@@ -142,19 +142,18 @@ class Rotation(object):
                 choice = np.argmax(np.array([A[0, 0], A[1, 1], A[2, 2], trA]))
 
                 if choice in [0, 1, 2]:
-                    quat[rot_num, choice] = 1 - trA + 2 * A[choice, choice]
-                    next_ind = (choice + 1) % 3
-                    next_next = (next_ind + 1) % 3
-
-                    quat[rot_num, next_ind] = A[choice, next_ind] + A[next_ind, choice]
-                    quat[rot_num, next_next] = A[choice, next_next] + A[next_next, choice]
-
-                    quat[rot_num, 3] = A[next_ind, next_next] - A[next_next, next_ind]
+                    i = choice
+                    j = (i + 1) % 3
+                    k = (j + 1) % 3
+                    quat[rot_num, i] = 1 - trA + 2 * A[i, i]
+                    quat[rot_num, j] = A[j, i] + A[i, j]
+                    quat[rot_num, k] = A[k, i] + A[i, k]
+                    quat[rot_num, 3] = A[k, j] - A[j, k]
                 else:
                     quat[rot_num] = np.array([
-                        A[1, 2] - A[2, 1],
-                        A[2, 0] - A[0, 2],
-                        A[0, 1] - A[1, 0],
+                        A[2, 1] - A[1, 2],
+                        A[0, 2] - A[2, 0],
+                        A[1, 0] - A[0, 1],
                         1 + trA])
         else:
             decision_matrix = np.zeros((num_rotations, 4))
@@ -164,24 +163,17 @@ class Rotation(object):
 
             all_quat = np.empty((num_rotations, 4, 4))
 
-            all_quat[:, 0, 0] = 1 - decision_matrix[:, -1] + 2 * mat[:, 0, 0]
-            all_quat[:, 0, 1] = mat[:, 0, 1] + mat[:, 1, 0]
-            all_quat[:, 0, 2] = mat[:, 0, 2] + mat[:, 2, 0]
-            all_quat[:, 0, 3] = mat[:, 1, 2] - mat[:, 2, 1]
+            for i in [0, 1, 2]:
+                j = (i + 1) % 3
+                k = (j + 1) % 3
+                all_quat[:, i, 0] = 1 - decision_matrix[:, -1] + 2 * mat[:, i, i]
+                all_quat[:, i, 1] = mat[:, j, i] + mat[:, i, j]
+                all_quat[:, i, 2] = mat[:, k, i] + mat[:, i, k]
+                all_quat[:, i, 3] = mat[:, k, j] - mat[:, j, k]
 
-            all_quat[:, 1, 0] = mat[:, 1, 0] + mat[:, 0, 1]
-            all_quat[:, 1, 1] = 1 - decision_matrix[:, -1] + 2 * mat[:, 1, 1]
-            all_quat[:, 1, 2] = mat[:, 1, 2] + mat[:, 2, 1]
-            all_quat[:, 1, 3] = mat[:, 2, 0] - mat[:, 0, 2]
-
-            all_quat[:, 2, 0] = mat[:, 2, 0] + mat[:, 0, 2]
-            all_quat[:, 2, 1] = mat[:, 2, 1] + mat[:, 1, 2]
-            all_quat[:, 2, 2] = 1 - decision_matrix[:, -1] + 2 * mat[:, 2, 2]
-            all_quat[:, 2, 3] = mat[:, 0, 1] - mat[:, 1, 0]
-
-            all_quat[:, 3, 0] = mat[:, 1, 2] - mat[:, 2, 1]
-            all_quat[:, 3, 1] = mat[:, 2, 0] - mat[:, 0, 2]
-            all_quat[:, 3, 2] = mat[:, 0, 1] - mat[:, 1, 0]
+            all_quat[:, 3, 0] = mat[:, 2, 1] - mat[:, 1, 2]
+            all_quat[:, 3, 1] = mat[:, 0, 2] - mat[:, 2, 0]
+            all_quat[:, 3, 2] = mat[:, 1, 0] - mat[:, 0, 1]
             all_quat[:, 3, 3] = 1 + decision_matrix[:, -1]
 
             quat = np.array([np.take(all_quat[i], choices[i], axis=0) for i in range(num_rotations)])
