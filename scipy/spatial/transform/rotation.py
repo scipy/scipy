@@ -134,11 +134,11 @@ class Rotation(object):
     def from_dcm(cls, mat, scalar=True):
         # For now, mat must be a 3D matrix
         num_rotations = mat.shape[0]
-        quat = np.empty(num_rotations, 4)
+        quat = np.empty((num_rotations, 4))
         if scalar:
-            for rot_num in xrange(num_rotations):
+            for rot_num in range(num_rotations):
                 A = mat[rot_num]
-                trA = cur_dcm.trace()
+                trA = A.trace()
                 choice = np.argmax(np.array([A[0, 0], A[1, 1], A[2, 2], trA]))
 
                 if choice in [0, 1, 2]:
@@ -146,13 +146,10 @@ class Rotation(object):
                     next_ind = (choice + 1) % 3
                     next_next = (next_ind + 1) % 3
 
-                    quat[rot_num, next_ind] =
-                        A[choice, next_ind] + A[next_ind, choice]
-                    quat[rot_num, next_next] =
-                        A[choice, next_next] + A[next_next, choice]
+                    quat[rot_num, next_ind] = A[choice, next_ind] + A[next_ind, choice]
+                    quat[rot_num, next_next] = A[choice, next_next] + A[next_next, choice]
 
-                    quat[rot_num, 3] =
-                        A[next_ind, next_next] - A[next_next, next_ind]
+                    quat[rot_num, 3] = A[next_ind, next_next] - A[next_next, next_ind]
                 else:
                     quat[rot_num] = np.array([
                         A[1, 2] - A[2, 1],
