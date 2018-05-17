@@ -195,7 +195,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
         # 2003, Pages 227-230, ISSN 0377-0427, 
         # https://doi.org/10.1016/S0377-0427(03)00391-1.
         for itr in range(maxiter):
-            # Homeier's method requires two derivative evaluations. This is the first.
+            # Homeier's method requires two first-derivative evaluations. This is the first.
             fder1_1 = fprime(p0, *args)
             fval = func(p0, *args)
             funcalls += 2
@@ -203,16 +203,19 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
                 msg = "derivative at first point was zero."
                 warnings.warn(msg, RuntimeWarning)
                 return _results_select(full_output, (p0, funcalls, itr + 1, _ECONVERR))
-            # The second derivative evaluation
-            fder1_2= fprime(p0 - fval/(2.0 * fder1_1), *args)
-            funcalls += 1
-            if fder1_2 == 0:
-                msg = "derivative was zero."
-                warnings.warn(msg, RuntimeWarning)
-                return _results_select(full_output, (p0, funcalls, itr + 1, _ECONVERR))
 
-            newton_step = fval / fder1_2
+            # The conventional quadratic newton update.
+            # If the second derivative is supplied, Halley's Method is used.
+            newton_step = fval / fder1_1
             if fprime2 is None:
+                # The second first-derivative evaluation
+                fder1_2= fprime(p0 - fval/(2.0 * fder1_1), *args)
+                funcalls += 1
+                if fder1_2 == 0:
+                    msg = "derivative was zero."
+                    warnings.warn(msg, RuntimeWarning)
+                    return _results_select(full_output, (p0, funcalls, itr + 1, _ECONVERR))
+                newton_step = fval / fder1_2
                 # Newton step
                 p = p0 - newton_step
             else:

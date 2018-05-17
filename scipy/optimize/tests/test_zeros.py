@@ -65,7 +65,7 @@ class TestBasic(object):
         f1_2 = lambda x: 2.0 + 0*x
 
         x0 = 3
-        expected_counts = [(6, 7), (5, 10), (3, 9)]
+        expected_counts = [(6, 7), (3, 9), (3, 9)]
 
         for derivs in range(3):
             kwargs = {'tol': 1e-6, 'full_output': True, }
@@ -78,6 +78,8 @@ class TestBasic(object):
             assert_equal((r.iterations, r.function_calls), expected_counts[derivs])
             if derivs == 0:
                 assert(r.function_calls <= r.iterations + 1)
+            elif derivs == 1:
+                assert_equal(r.function_calls, (derivs + 2) * r.iterations)
             else:
                 assert_equal(r.function_calls, (derivs + 1) * r.iterations)
 
