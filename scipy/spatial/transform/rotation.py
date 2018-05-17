@@ -134,8 +134,8 @@ class Rotation(object):
     def from_dcm(cls, mat, scalar=True):
         # For now, mat must be a 3D matrix
         num_rotations = mat.shape[0]
-        quat = np.empty((num_rotations, 4))
         if scalar:
+            quat = np.empty((num_rotations, 4))
             for rot_num in range(num_rotations):
                 A = mat[rot_num]
                 trA = A.trace()
@@ -156,6 +156,35 @@ class Rotation(object):
                         A[2, 0] - A[0, 2],
                         A[0, 1] - A[1, 0],
                         1 + trA])
+        else:
+            decision_matrix = np.zeros((num_rotations, 4))
+            decision_matrix[:, :3] = mat.diagonal(axis1=1, axis2=2)
+            decision_matrix[:, -1] = decision_matrix.sum(axis=1)
+            choices = decision_matrix.argmax(axis=1)
+
+            all_quat = np.empty((num_rotations, 4, 4))
+
+            all_quat[:, 0, 0] = 1 - decision_matrix[:, -1] + 2 * mat[:, 0, 0]
+            all_quat[:, 0, 1] = mat[:, 0, 1] + mat[:, 1, 0]
+            all_quat[:, 0, 2] = mat[:, 0, 2] + mat[:, 2, 0]
+            all_quat[:, 0, 3] = mat[:, 1, 2] - mat[:, 2, 1]
+
+            all_quat[:, 1, 0] = mat[:, 1, 0] + mat[:, 0, 1]
+            all_quat[:, 1, 1] = 1 - decision_matrix[:, -1] + 2 * mat[:, 1, 1]
+            all_quat[:, 1, 2] = mat[:, 1, 2] + mat[:, 2, 1]
+            all_quat[:, 1, 3] = mat[:, 2, 0] - mat[:, 0, 2]
+
+            all_quat[:, 2, 0] = mat[:, 2, 0] + mat[:, 0, 2]
+            all_quat[:, 2, 1] = mat[:, 2, 1] + mat[:, 1, 2]
+            all_quat[:, 2, 2] = 1 - decision_matrix[:, -1] + 2 * mat[:, 2, 2]
+            all_quat[:, 2, 3] = mat[:, 0, 1] - mat[:, 1, 0]
+
+            all_quat[:, 3, 0] = mat[:, 1, 2] - mat[:, 2, 1]
+            all_quat[:, 3, 1] = mat[:, 2, 0] - mat[:, 0, 2]
+            all_quat[:, 3, 2] = mat[:, 0, 1] - mat[:, 1, 0]
+            all_quat[:, 3, 3] = 1 + decision_matrix[:, -1]
+
+            quat = np.array([np.take(all_quat[i], choices[i], axis=0) for i in range(num_rotations)])
 
         # For testing purposes only. Return cls(quat) in final implementation.
         # Creating new objects in python is time consuming. We do not want to
