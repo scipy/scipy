@@ -189,17 +189,22 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
     p0 = 1.0 * x0
     funcalls = 0
     if fprime is not None:
-        # Newton-Raphson method
+        # Homeier's modified Newton-Raphson method. As seen in:
+        # H.H.H Homeier, Journal of Computational and Applied Mathematics,
+        # 2003, Pages 227-230, ISSN 0377-0427, 
+        # https://doi.org/10.1016/S0377-0427(03)00391-1.
         for itr in range(maxiter):
-            fder = fprime(p0, *args)
-            funcalls += 1
-            if fder == 0:
+            # Homeier's method requires two derivative evaluations. This is the first.
+            fder1_1 = fprime(p0, *args)
+            fval = func(p0, *args)
+            # The second derivative evaluation
+            fder1_2= fprime(p0 - fval/(2.0 * fder1_1), *args)
+            funcalls += 3
+            if fder1_1 == 0 or fder1_2 == 0:
                 msg = "derivative was zero."
                 warnings.warn(msg, RuntimeWarning)
                 return _results_select(full_output, (p0, funcalls, itr + 1, _ECONVERR))
-            fval = func(p0, *args)
-            funcalls += 1
-            newton_step = fval / fder
+            newton_step = fval / fder1_2
             if fprime2 is None:
                 # Newton step
                 p = p0 - newton_step
