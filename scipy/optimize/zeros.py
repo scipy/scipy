@@ -210,7 +210,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
                 msg = "derivative was zero."
                 warnings.warn(msg, RuntimeWarning)
                 return _results_select(full_output, (p0, funcalls, itr + 1, _ECONVERR))
-                
+
             newton_step = fval / fder1_2
             if fprime2 is None:
                 # Newton step
