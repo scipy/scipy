@@ -136,7 +136,8 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
 
     Notes
     -----
-    The convergence rate of the Homeier's modified Newton-Raphson method is cubic with two first derivative evaluations,
+    The convergence rate of the Homeier's modified Newton-Raphson 
+    method is cubic with two first derivative evaluations,
     the Halley method is cubic, and the secant method is
     sub-quadratic.  This means that if the function is well behaved
     the actual error in the estimated zero is approximately the square
