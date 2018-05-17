@@ -969,6 +969,8 @@ class chi2_gen(rv_continuous):
 
         f(x, df) = \frac{1}{(2 \gamma(df/2)} (x/2)^{df/2-1} \exp(-x/2)
 
+    for x > 0.
+
     `chi2` takes ``df`` as a shape parameter.
 
     %(after_notes)s
@@ -4650,7 +4652,7 @@ ncf = ncf_gen(a=0.0, name='ncf')
 
 
 class t_gen(rv_continuous):
-    r"""A Student's T continuous random variable.
+    r"""A Student's t continuous random variable.
 
     %(before_notes)s
 
@@ -4660,18 +4662,23 @@ class t_gen(rv_continuous):
 
     .. math::
 
-        f(x, df) = \frac{\gamma((df+1)/2)}
-                        {\sqrt{\pi*df} \gamma(df/2) (1+x^2/df)^{(df+1)/2}}
+        f(x; \nu) = \frac{\Gamma((\nu+1)/2)}
+                        {\sqrt{\pi*\nu} \Gamma(\nu)}
+                    (1+x^2/\nu)^{-(\nu+1)/2}
 
-    for ``df > 0``.
-
-    `t` takes ``df`` as a shape parameter.
+    where ``x`` is a real number and the degrees of freedom parameter
+    :math:`\nu` (denoted ``df`` in the implementation) satisfies
+    :math:`\nu > 0``. :math:`\Gamma` is the gamma function
+    (`scipy.special.gamma`).
 
     %(after_notes)s
 
     %(example)s
 
     """
+    def _argcheck(self, df):
+        return df > 0
+
     def _rvs(self, df):
         return self._random_state.standard_t(df, size=self._size)
 
@@ -4703,14 +4710,17 @@ class t_gen(rv_continuous):
         return -sc.stdtrit(df, q)
 
     def _stats(self, df):
+        mu = np.where(df > 1, 0.0, np.inf)
         mu2 = _lazywhere(df > 2, (df,),
                          lambda df: df / (df-2.0),
                          np.inf)
+        mu2 = np.where(df <= 1, np.nan, mu2)
         g1 = np.where(df > 3, 0.0, np.nan)
         g2 = _lazywhere(df > 4, (df,),
                         lambda df: 6.0 / (df-4.0),
-                        np.nan)
-        return 0, mu2, g1, g2
+                        np.inf)
+        g2 = np.where(df <= 2, np.nan, g2)
+        return mu, mu2, g1, g2
 
 
 t = t_gen(name='t')
@@ -5457,7 +5467,8 @@ class recipinvgauss_gen(rv_continuous):
 
     .. math::
 
-        f(x, \mu) = \frac{1}{\sqrt{2\pi x}} \frac{\exp(-(1-\mu x)^2}{2x\mu^2)}
+        f(x, \mu) = \frac{1}{\sqrt{2\pi x}}
+                    \exp\left(\frac{-(1-\mu x)^2}{2\mu^2x}\right)
 
     for :math:`x \ge 0`.
 
@@ -6497,9 +6508,9 @@ class argus_gen(rv_continuous):
     .. math::
 
         f(x, \chi) = \frac{\chi^3}{\sqrt{2\pi} \Psi(\chi)} x \sqrt{1-x^2}
-                     \exp(- 0.5 \chi^2 (1 - x^2))
+                     \exp(-\chi^2 (1 - x^2)/2)
 
-        where:
+    for 0 < x < 1, where
 
     .. math::
 

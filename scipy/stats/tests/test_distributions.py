@@ -1091,6 +1091,22 @@ def test_rvgeneric_std():
     assert_array_almost_equal(stats.t.std([5, 6]), [1.29099445, 1.22474487])
 
 
+def test_moments_t():
+    # regression test for #8786
+    assert_equal(stats.t.stats(df=1, moments='mvsk'),
+                 (np.inf, np.nan, np.nan, np.nan))
+    assert_equal(stats.t.stats(df=1.01, moments='mvsk'),
+                 (0.0, np.inf, np.nan, np.nan))
+    assert_equal(stats.t.stats(df=2, moments='mvsk'),
+                 (0.0, np.inf, np.nan, np.nan))
+    assert_equal(stats.t.stats(df=2.01, moments='mvsk'),
+                 (0.0, 2.01/(2.01-2.0), np.nan, np.inf))
+    assert_equal(stats.t.stats(df=3, moments='sk'), (np.nan, np.inf))
+    assert_equal(stats.t.stats(df=3.01, moments='sk'), (0.0, np.inf))
+    assert_equal(stats.t.stats(df=4, moments='sk'), (0.0, np.inf))
+    assert_equal(stats.t.stats(df=4.01, moments='sk'), (0.0, 6.0/(4.01 - 4.0)))
+
+
 class TestRvDiscrete(object):
     def setup_method(self):
         np.random.seed(1234)

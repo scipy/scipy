@@ -1,4 +1,5 @@
-      subroutine qrfac(m,n,a,lda,pivot,ipvt,lipvt,rdiag,acnorm,wa)
+      recursive
+     *subroutine qrfac(m,n,a,lda,pivot,ipvt,lipvt,rdiag,acnorm,wa)
       integer m,n,lda,lipvt
       integer ipvt(lipvt)
       logical pivot
