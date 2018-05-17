@@ -219,7 +219,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
                 fder2 = fprime2(p0, *args)
                 funcalls += 1
                 # Halley's method
-                p = p0 - newton_step / (1.0 - 0.5 * newton_step * fder2 / fder)
+                p = p0 - newton_step / (1.0 - 0.5 * newton_step * fder2 / fder1_1)
             if abs(p - p0) < tol:
                 return _results_select(full_output, (p, funcalls, itr + 1, _ECONVERGED))
             p0 = p
