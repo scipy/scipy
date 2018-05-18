@@ -5,6 +5,7 @@ import pytest
 import numpy as np
 from numpy.testing import assert_equal, assert_array_almost_equal
 from scipy.spatial.transform import Rotation
+from scipy.stats import special_ortho_group
 
 
 def test_generic_quat_matrix():
@@ -140,3 +141,57 @@ def test_as_dcm_from_generic_input():
         [-1, 2, 2]
         ]) / 3
     assert_array_almost_equal(mat[2], expected2)
+
+
+def test_from_single_2d_dcm():
+    dcm = [
+            [0, 0, 1],
+            [1, 0, 0],
+            [0, 1, 0]
+            ]
+    expected_quat = [0.5, 0.5, 0.5, 0.5]
+    assert_array_almost_equal(
+            Rotation.from_dcm(dcm).as_quaternion(),
+            expected_quat)
+
+
+def test_from_single_3d_dcm():
+    dcm = np.array([
+        [0, 0, 1],
+        [1, 0, 0],
+        [0, 1, 0]
+        ]).reshape((1, 3, 3))
+    expected_quat = np.array([0.5, 0.5, 0.5, 0.5]).reshape((1, 4))
+    assert_array_almost_equal(
+            Rotation.from_dcm(dcm).as_quaternion(),
+            expected_quat)
+
+
+def test_from_dcm_calculation():
+    expected_quat = np.array([1, 1, 6, 1]) / np.sqrt(39)
+    dcm = np.array([
+            [-0.8974359, -0.2564103, 0.3589744],
+            [0.3589744, -0.8974359, 0.2564103],
+            [0.2564103, 0.3589744, 0.8974359]
+            ])
+    assert_array_almost_equal(
+            Rotation.from_dcm(dcm).as_quaternion(),
+            expected_quat)
+    assert_array_almost_equal(
+            Rotation.from_dcm(dcm.reshape((1, 3, 3))).as_quaternion(),
+            expected_quat.reshape((1, 4)))
+
+
+def test_dcm_calculation_pipeline():
+    dcm = np.array([special_ortho_group.rvs(3) for _ in range(10)])
+    assert_array_almost_equal(Rotation.from_dcm(dcm).as_dcm(), dcm)
+
+
+def test_from_dcm_ortho_output():
+    dcm = np.random.random((100, 3, 3))
+    ortho_dcm = Rotation.from_dcm(dcm).as_dcm()
+
+    # numpy.__matmul__ was not present in numpy v1.8.2. Avoid use
+    assert_array_almost_equal(
+            np.linalg.inv(ortho_dcm),
+            ortho_dcm.transpose((0, 2, 1)))
