@@ -190,11 +190,8 @@ def test_dcm_calculation_pipeline():
 def test_from_dcm_ortho_output():
     dcm = np.random.random((100, 3, 3))
     ortho_dcm = Rotation.from_dcm(dcm).as_dcm()
-    result = np.matmul(ortho_dcm, ortho_dcm.transpose((0, 2, 1)))
 
-    eye3d = np.zeros((100, 3, 3))
-    idx = np.arange(100)
-    for i in [0, 1, 2]:
-        eye3d[:, i, i] = 1.0
-
-    assert_array_almost_equal(result, eye3d)
+    # numpy.__matmul__ was not present in numpy v1.8.2. Avoid use
+    assert_array_almost_equal(
+            np.linalg.inv(ortho_dcm),
+            ortho_dcm.transpose((0, 2, 1)))
