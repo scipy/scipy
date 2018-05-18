@@ -160,9 +160,9 @@ class Rotation(object):
 
         num_rotations = dcm.shape[0]
 
-        decision_matrix = np.zeros((num_rotations, 4))
+        decision_matrix = np.empty((num_rotations, 4))
         decision_matrix[:, :3] = dcm.diagonal(axis1=1, axis2=2)
-        decision_matrix[:, -1] = decision_matrix.sum(axis=1)
+        decision_matrix[:, -1] = decision_matrix[:, :3].sum(axis=1)
         choices = decision_matrix.argmax(axis=1)
 
         quat = np.empty((num_rotations, 4))
@@ -184,6 +184,7 @@ class Rotation(object):
         quat[ind, 3] = 1 + decision_matrix[ind, -1]
 
         if is_single:
-            return cls(quat[0])
+            return cls(quat[0] / np.linalg.norm(quat[0]), normalized=True)
         else:
-            return cls(quat)
+            return cls(quat / np.linalg.norm(quat, axis=1)[:, None],
+                    normalized=True)
