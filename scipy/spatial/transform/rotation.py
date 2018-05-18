@@ -19,6 +19,7 @@ class Rotation(object):
     -------
     from_quaternion
     as_quaternion
+    from_dcm
     as_dcm
     """
     def __init__(self, quat, normalized=False):
@@ -131,54 +132,58 @@ class Rotation(object):
             return dcm
 
     @classmethod
-    def from_dcm(cls, mat, scalar=True):
-        # For now, mat must be a 3D matrix
-        num_rotations = mat.shape[0]
-        if scalar:
-            quat = np.empty((num_rotations, 4))
-            for rot_num in range(num_rotations):
-                A = mat[rot_num]
-                trA = A.trace()
-                choice = np.argmax(np.array([A[0, 0], A[1, 1], A[2, 2], trA]))
+    def from_dcm(cls, dcm):
+        """Initialize rotation from direction cosine matrix.
 
-                if choice in [0, 1, 2]:
-                    i = choice
-                    j = (i + 1) % 3
-                    k = (j + 1) % 3
-                    quat[rot_num, i] = 1 - trA + 2 * A[i, i]
-                    quat[rot_num, j] = A[j, i] + A[i, j]
-                    quat[rot_num, k] = A[k, i] + A[i, k]
-                    quat[rot_num, 3] = A[k, j] - A[j, k]
-                else:
-                    quat[rot_num] = np.array([
-                        A[2, 1] - A[1, 2],
-                        A[0, 2] - A[2, 0],
-                        A[1, 0] - A[0, 1],
-                        1 + trA])
+        This classmethod return a `Rotation` object from the input direction
+        cosine matrices. If the input matrix is not orthogonal, this method
+        creates the best approximation of the rotation.
+
+        Parameters
+        ----------
+        dcm : array_like, shape (N, 3, 3) or (3, 3)
+            Each `dcm[i]` corresponds to a `(3, 3)` direction cosine matrix.
+        """
+        is_single = False
+        dcm = np.asarray(dcm, dtype=float)
+
+        if dcm.ndim not in [2, 3] or (dcm.shape[-2], dcm.shape[-1]) != (3, 3):
+            raise ValueError("Expected `dcm` to have shape (3, 3) or "
+                             "(N, 3, 3), got {}".format(dcm.shape))
+
+        # If a single dcm is given, convert it to 3D 1 x 3 x 3 matrix but set
+        # self._single to True so that we can return appropriate objects in
+        # the `to_...` methods
+        if dcm.shape == (3, 3):
+            dcm = dcm.reshape((1, 3, 3))
+            is_single = True
+
+        num_rotations = dcm.shape[0]
+
+        decision_matrix = np.zeros((num_rotations, 4))
+        decision_matrix[:, :3] = dcm.diagonal(axis1=1, axis2=2)
+        decision_matrix[:, -1] = decision_matrix.sum(axis=1)
+        choices = decision_matrix.argmax(axis=1)
+
+        quat = np.empty((num_rotations, 4))
+
+        ind = np.nonzero(choices != 3)[0]
+        i = choices[ind]
+        j = (i + 1) % 3
+        k = (j + 1) % 3
+
+        quat[ind, i] = 1 - decision_matrix[ind, -1] + 2 * dcm[ind, i, i]
+        quat[ind, j] = dcm[ind, j, i] + dcm[ind, i, j]
+        quat[ind, k] = dcm[ind, k, i] + dcm[ind, i, k]
+        quat[ind, 3] = dcm[ind, k, j] - dcm[ind, j, k]
+
+        ind = np.nonzero(choices == 3)[0]
+        quat[ind, 0] = dcm[ind, 2, 1] - dcm[ind, 1, 2]
+        quat[ind, 1] = dcm[ind, 0, 2] - dcm[ind, 2, 0]
+        quat[ind, 2] = dcm[ind, 1, 0] - dcm[ind, 0, 1]
+        quat[ind, 3] = 1 + decision_matrix[ind, -1]
+
+        if is_single:
+            return cls(quat[0])
         else:
-            decision_matrix = np.zeros((num_rotations, 4))
-            decision_matrix[:, :3] = mat.diagonal(axis1=1, axis2=2)
-            decision_matrix[:, -1] = decision_matrix.sum(axis=1)
-            choices = decision_matrix.argmax(axis=1)
-
-            quat = np.empty((num_rotations, 4))
-
-            ind = np.nonzero(choices != 3)[0]
-            i = choices[ind]
-            j = (i + 1) % 3
-            k = (j + 1) % 3
-
-            quat[ind, i] = 1 - decision_matrix[ind, -1] + 2 * mat[ind, i, i]
-            quat[ind, j] = mat[ind, j, i] + mat[ind, i, j]
-            quat[ind, k] = mat[ind, k, i] + mat[ind, i, k]
-            quat[ind, 3] = mat[ind, k, j] - mat[ind, j, k]
-
-            ind = np.nonzero(choices == 3)[0]
-            quat[ind, 0] = mat[ind, 2, 1] - mat[ind, 1, 2]
-            quat[ind, 1] = mat[ind, 0, 2] - mat[ind, 2, 0]
-            quat[ind, 2] = mat[ind, 1, 0] - mat[ind, 0, 1]
-            quat[ind, 3] = 1 + decision_matrix[ind, -1]
-        # For testing purposes only. Return cls(quat) in final implementation.
-        # Creating new objects in python is time consuming. We do not want to
-        # count that time in the benchmarks.
-        return quat
+            return cls(quat)
