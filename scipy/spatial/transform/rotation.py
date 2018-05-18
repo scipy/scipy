@@ -161,23 +161,23 @@ class Rotation(object):
             decision_matrix[:, -1] = decision_matrix.sum(axis=1)
             choices = decision_matrix.argmax(axis=1)
 
-            all_quat = np.empty((num_rotations, 4, 4))
+            quat = np.empty((num_rotations, 4))
 
-            for i in [0, 1, 2]:
-                j = (i + 1) % 3
-                k = (j + 1) % 3
-                all_quat[:, i, 0] = 1 - decision_matrix[:, -1] + 2 * mat[:, i, i]
-                all_quat[:, i, 1] = mat[:, j, i] + mat[:, i, j]
-                all_quat[:, i, 2] = mat[:, k, i] + mat[:, i, k]
-                all_quat[:, i, 3] = mat[:, k, j] - mat[:, j, k]
+            ind = np.nonzero(choices != 3)[0]
+            i = choices[ind]
+            j = (i + 1) % 3
+            k = (j + 1) % 3
 
-            all_quat[:, 3, 0] = mat[:, 2, 1] - mat[:, 1, 2]
-            all_quat[:, 3, 1] = mat[:, 0, 2] - mat[:, 2, 0]
-            all_quat[:, 3, 2] = mat[:, 1, 0] - mat[:, 0, 1]
-            all_quat[:, 3, 3] = 1 + decision_matrix[:, -1]
+            quat[ind, i] = 1 - decision_matrix[ind, -1] + 2 * mat[ind, i, i]
+            quat[ind, j] = mat[ind, j, i] + mat[ind, i, j]
+            quat[ind, k] = mat[ind, k, i] + mat[ind, i, k]
+            quat[ind, 3] = mat[ind, k, j] - mat[ind, j, k]
 
-            quat = np.array([np.take(all_quat[i], choices[i], axis=0) for i in range(num_rotations)])
-
+            ind = np.nonzero(choices == 3)[0]
+            quat[ind, 0] = mat[ind, 2, 1] - mat[ind, 1, 2]
+            quat[ind, 1] = mat[ind, 0, 2] - mat[ind, 2, 0]
+            quat[ind, 2] = mat[ind, 1, 0] - mat[ind, 0, 1]
+            quat[ind, 3] = 1 + decision_matrix[ind, -1]
         # For testing purposes only. Return cls(quat) in final implementation.
         # Creating new objects in python is time consuming. We do not want to
         # count that time in the benchmarks.
