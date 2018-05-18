@@ -137,12 +137,18 @@ class Rotation(object):
 
         This classmethod return a `Rotation` object from the input direction
         cosine matrices. If the input matrix is not orthogonal, this method
-        creates the best approximation of the rotation.
+        creates an approximation using the algorithm described in [1]_.
 
         Parameters
         ----------
         dcm : array_like, shape (N, 3, 3) or (3, 3)
-            Each `dcm[i]` corresponds to a `(3, 3)` direction cosine matrix.
+            A single matrix or a stack of matrices, where `dcm[i]` is the i-th
+            matrix.
+
+        References
+        ----------
+        .. [1] F. Landis Markley, `Unit Quaternion from Rotation Matrix
+               <https://arc.aiaa.org/doi/abs/10.2514/1.31730>`_
         """
         is_single = False
         dcm = np.asarray(dcm, dtype=float)
