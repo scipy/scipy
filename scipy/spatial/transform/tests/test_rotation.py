@@ -192,7 +192,11 @@ def test_from_dcm_ortho_output():
     dcm = np.random.random((100, 3, 3))
     ortho_dcm = Rotation.from_dcm(dcm).as_dcm()
 
-    # numpy.__matmul__ was not present in numpy v1.8.2. Avoid use
-    assert_array_almost_equal(
-            np.linalg.inv(ortho_dcm),
+    mult_result = np.einsum('...ij,...jk->...ik', ortho_dcm,
             ortho_dcm.transpose((0, 2, 1)))
+
+    eye3d = np.zeros((100, 3, 3))
+    for i in range(3):
+        eye3d[:, i, i] = 1.0
+
+    assert_array_almost_equal(mult_result, eye3d)
