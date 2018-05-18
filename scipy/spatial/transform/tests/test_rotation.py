@@ -183,11 +183,12 @@ def test_from_dcm_calculation():
 
 
 def test_dcm_calculation_pipeline():
-    dcm = np.array([special_ortho_group.rvs(3) for _ in range(10)])
+    dcm = special_ortho_group.rvs(3, size=10, random_state=0)
     assert_array_almost_equal(Rotation.from_dcm(dcm).as_dcm(), dcm)
 
 
 def test_from_dcm_ortho_output():
+    np.random.seed(0)
     dcm = np.random.random((100, 3, 3))
     ortho_dcm = Rotation.from_dcm(dcm).as_dcm()
 
