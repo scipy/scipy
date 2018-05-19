@@ -189,8 +189,9 @@ class Rotation(object):
         quat[ind, 2] = dcm[ind, 1, 0] - dcm[ind, 0, 1]
         quat[ind, 3] = 1 + decision_matrix[ind, -1]
 
+        quat /= np.linalg.norm(quat, axis=1)[:, None]
+
         if is_single:
-            return cls(quat[0] / np.linalg.norm(quat[0]), normalized=True)
+            return cls(quat[0], normalized=True)
         else:
-            return cls(quat / np.linalg.norm(quat, axis=1)[:, None],
-                    normalized=True)
+            return cls(quat, normalized=True)
