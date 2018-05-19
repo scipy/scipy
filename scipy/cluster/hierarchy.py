@@ -3435,6 +3435,49 @@ def is_isomorphic(T1, T2):
         Whether the flat cluster assignments `T1` and `T2` are
         equivalent.
 
+    See Also
+    --------
+    linkage: for a description of what a linkage matrix is.
+    fcluster: for the creation of flat cluster assignments.
+
+    Examples
+    --------
+    >>> from scipy.cluster.hierarchy import fcluster, is_isomorphic
+    >>> from scipy.cluster.hierarchy import single, complete
+    >>> from scipy.spatial.distance import pdist
+
+    Two flat cluster assignments can be isomorphic if they represent the same
+    cluster assignment, with different labels.
+
+    For example, we can use the :func:`scipy.cluster.hierarchy.single`: method
+    and flatten the output to four clusters:
+
+    >>> X = [[0, 0], [0, 1], [1, 0],
+    ...      [0, 4], [0, 3], [1, 4],
+    ...      [4, 0], [3, 0], [4, 1],
+    ...      [4, 4], [3, 4], [4, 3]]
+
+    >>> Z = single(pdist(X))
+    >>> T = fcluster(Z, 1, criterion='distance')
+    >>> T
+    array([3, 3, 3, 4, 4, 4, 2, 2, 2, 1, 1, 1], dtype=int32)
+
+    We can then do the same using the
+    :func:`scipy.cluster.hierarchy.complete`: method:
+
+    >>> Z = complete(pdist(X))
+    >>> T_ = fcluster(Z, 1.5, criterion='distance')
+    >>> T_
+    array([1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4], dtype=int32)
+
+    As we can see, in both cases we obtain four clusters and all the data
+    points are distributed in the same way - the only thing that changes
+    are the flat cluster labels (3 => 1, 4 =>2, 2 =>3 and 4 =>1), so both
+    cluster assignments are isomorphic:
+
+    >>> is_isomorphic(T, T_)
+    True
+
     """
     T1 = np.asarray(T1, order='c')
     T2 = np.asarray(T2, order='c')
