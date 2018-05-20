@@ -198,7 +198,7 @@ class Rotation(object):
             return cls(quat, normalized=True)
 
     @classmethod
-    def from_rotvec(cls, rot_vecs):
+    def from_rotvec(cls, rotvec):
         """Initialize class from rotation vector.
 
         A rotation vector is a 3 dimensional vector which is co-directional to
@@ -207,44 +207,43 @@ class Rotation(object):
 
         Parameters
         ----------
-        rot_vecs : array_like, shape (N, 3) or (3,)
+        rotvec : array_like, shape (N, 3) or (3,)
             A single vector or a stack of vectors, where `rot_vec[i]` gives
             the ith rotation vector.
         """
         is_single = False
-        rot_vecs = np.asarray(rot_vecs, dtype=float)
+        rotvec = np.asarray(rotvec, dtype=float)
 
-        if rot_vecs.ndim not in [1, 2] or rot_vecs.shape[-1] != 3:
+        if rotvec.ndim not in [1, 2] or rotvec.shape[-1] != 3:
             raise ValueError("Expected `rot_vec` to have shape (3,) "
-                             "or (N, 3), got {}".format(rot_vec.shape))
+                             "or (N, 3), got {}".format(rotvec.shape))
 
         # If a single vector is given, convert it to a 2D 1 x 3 matrix but
         # set self._single to True so that we can return appropriate objects
         # in the `as_...` methods
-        if rot_vecs.shape == (3,):
-            rot_vecs = rot_vecs[None, :]
+        if rotvec.shape == (3,):
+            rotvec = rotvec[None, :]
             is_single = True
 
-        num_rotations = rot_vecs.shape[0]
+        num_rotations = rotvec.shape[0]
 
-        norms = np.linalg.norm(rot_vecs, axis=1)[:, None]
+        norms = np.linalg.norm(rotvec, axis=1)
         small_angle = norms <= 1e-3
 
         quat = np.empty((num_rotations, 4))
 
-        zero_norms = np.nonzero(norms == 0)[0]
-        quat[zero_norms, :3] = np.array([0, 0, 0])
+        scale = np.empty(num_rotations)
 
         small_angle = np.nonzero(np.logical_and(
             norms <= 1e-3, norms != 0))[0]
-        quat[small_angle, :3] = (0.5 - np.power(norms[small_angle], 2) /
-                                 48 + np.power(norms[small_angle], 4) /
-                                 3840) * rot_vecs[small_angle]
+        scale[small_angle] = (0.5 - norms[small_angle] ** 2 / 48 +
+                              norms[small_angle] ** 4 / 3840)
 
         large_angle = np.nonzero(norms > 1e-3)[0]
-        quat[large_angle, :3] = (np.sin(norms[large_angle] / 2) /
-                                 norms[large_angle]) * rot_vecs[large_angle]
+        scale[large_angle] = (np.sin(norms[large_angle] / 2) /
+                              norms[large_angle])
 
+        quat[:, :3] = scale[:, None] * rotvec
         quat[:, 3] = np.cos(norms / 2).flatten()
 
         if is_single:
