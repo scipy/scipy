@@ -2276,6 +2276,30 @@ def correspond(Z, Y):
         A boolean indicating whether the linkage matrix and distance
         matrix could possibly correspond to one another.
 
+    See Also
+    --------
+    linkage: for a description of what a linkage matrix is.
+
+    Examples
+    --------
+    >>> from scipy.cluster.hierarchy import ward, correspond
+    >>> from scipy.spatial.distance import pdist
+
+    This method can be used to check if a given linkage matrix ``Z`` has been
+    obtained from the application of a cluster method over a dataset ``X``:
+
+    >>> X = [[0, 0], [0, 1], [1, 0],
+    ...      [0, 4], [0, 3], [1, 4],
+    ...      [4, 0], [3, 0], [4, 1],
+    ...      [4, 4], [3, 4], [4, 3]]
+    >>> X_condensed = pdist(X)
+    >>> Z = ward(X_condensed)
+
+    Here we can compare ``Z`` and ``X`` (in condensed form):
+
+    >>> correspond(Z, X_condensed)
+    True
+
     """
     is_valid_linkage(Z, throw=True)
     distance.is_valid_y(Y, throw=True)
