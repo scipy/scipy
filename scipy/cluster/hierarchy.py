@@ -1696,7 +1696,7 @@ def cophenet(Z, Y=None):
 
     The output of the :func:`scipy.cluster.hierarchy.cophenet` method is
     represented in condensed form. We can use
-    :func:`scipy.cluster.hierarchy.squareform` to see the output as a
+    :func:`scipy.spatial.distance.squareform` to see the output as a
     regular matrix (where each element ``ij`` denotes the cophenetic distance
     between each ``i``, ``j`` pair of points in ``X``):
 
@@ -1715,9 +1715,9 @@ def cophenet(Z, Y=None):
            [2., 2., 2., 2., 2., 2., 2., 2., 2., 1., 1., 0.]])
 
     In this example, the cophenetic distance between points on ``X`` that are
-    very close (i.e. in the same corner) is 1. For other pairs of points
-    is 2, because the points will be located in clusters locate in different
-    corners - so the distance between this clusters is larger.
+    very close (i.e. in the same corner) is 1. For other pairs of points is 2,
+    because the points will be located in clusters at different
+    corners - thus the distance between these clusters will be larger.
 
     """
     Z = np.asarray(Z, order='c')
@@ -2547,6 +2547,30 @@ def fclusterdata(X, t, criterion='inconsistent',
     Notes
     -----
     This function is similar to the MATLAB function ``clusterdata``.
+
+    Examples
+    --------
+    >>> from scipy.cluster.hierarchy import fclusterdata
+
+    This is a convenience method that abstracts all the steps to perform in a
+    typical Scipy's hierarchical clustering workflow.
+
+    * Transform the input data into a condensed matrix with :func:`scipy.spatial.distance.pdist`.
+
+    * Apply a clustering method.
+
+    * Obtain flat clusters at a user defined distance threshold ``t`` using :func:`scipy.cluster.hierarchy.fcluster`.
+
+    >>> X = [[0, 0], [0, 1], [1, 0],
+    ...      [0, 4], [0, 3], [1, 4],
+    ...      [4, 0], [3, 0], [4, 1],
+    ...      [4, 4], [3, 4], [4, 3]]
+
+    >>> fclusterdata(X, t=1)
+    array([3, 3, 3, 4, 4, 4, 2, 2, 2, 1, 1, 1], dtype=int32)
+
+    The output here (for the dataset ``X``, distance threshold ``t``, and the
+    default settings) is four clusters with three data points each.
 
     """
     X = np.asarray(X, order='c', dtype=np.double)
