@@ -216,7 +216,7 @@ class Rotation(object):
 
         if rot_vecs.ndim not in [1, 2] or rot_vecs.shape[-1] != 3:
             raise ValueError("Expected `rot_vec` to have shape (3,) "
-                             "or (N, 3), got {}".format(rot_vec.shape))
+                             "or (N, 3), got {}".format(rot_vecs.shape))
 
         # If a single vector is given, convert it to a 2D 1 x 3 matrix but
         # set self._single to True so that we can return appropriate objects
