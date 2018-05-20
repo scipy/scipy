@@ -1648,6 +1648,77 @@ def cophenet(Z, Y=None):
         :math:`ij` th entry is the cophenetic distance between
         original observations :math:`i` and :math:`j`.
 
+    See Also
+    --------
+    linkage: for a description of what a linkage matrix is.
+    squareform: transforming condensed matrices into square ones.
+
+    Examples
+    --------
+    >>> from scipy.cluster.hierarchy import single, cophenet
+    >>> from scipy.spatial.distance import pdist, squareform
+
+    Given a dataset ``X`` and a linkage matrix ``Z``, the cophenetic distance
+    between two points of ``X`` is the distance between the largest two
+    distinct clusters that each of the points:
+
+    >>> X = [[0, 0], [0, 1], [1, 0],
+    ...      [0, 4], [0, 3], [1, 4],
+    ...      [4, 0], [3, 0], [4, 1],
+    ...      [4, 4], [3, 4], [4, 3]]
+
+    ``X`` corresponds to this dataset ::
+
+        x x    x x
+        x        x
+
+        x        x
+        x x    x x
+
+    >>> Z = single(pdist(X))
+    >>> Z
+    array([[ 0.,  1.,  1.,  2.],
+           [ 2., 12.,  1.,  3.],
+           [ 3.,  4.,  1.,  2.],
+           [ 5., 14.,  1.,  3.],
+           [ 6.,  7.,  1.,  2.],
+           [ 8., 16.,  1.,  3.],
+           [ 9., 10.,  1.,  2.],
+           [11., 18.,  1.,  3.],
+           [13., 15.,  2.,  6.],
+           [17., 20.,  2.,  9.],
+           [19., 21.,  2., 12.]])
+    >>> cophenet(Z)
+    array([1., 1., 2., 2., 2., 2., 2., 2., 2., 2., 2., 1., 2., 2., 2., 2., 2.,
+           2., 2., 2., 2., 2., 2., 2., 2., 2., 2., 2., 2., 2., 1., 1., 2., 2.,
+           2., 2., 2., 2., 1., 2., 2., 2., 2., 2., 2., 2., 2., 2., 2., 2., 2.,
+           1., 1., 2., 2., 2., 1., 2., 2., 2., 2., 2., 2., 1., 1., 1.])
+
+    The output of the :func:`scipy.cluster.hierarchy.cophenet` method is
+    represented in condensed form. We can use
+    :func:`scipy.cluster.hierarchy.squareform` to see the output as a
+    regular matrix (where each element ``ij`` denotes the cophenetic distance
+    between each ``i``, ``j`` pair of points in ``X``):
+
+    >>> squareform(cophenet(Z))
+    array([[0., 1., 1., 2., 2., 2., 2., 2., 2., 2., 2., 2.],
+           [1., 0., 1., 2., 2., 2., 2., 2., 2., 2., 2., 2.],
+           [1., 1., 0., 2., 2., 2., 2., 2., 2., 2., 2., 2.],
+           [2., 2., 2., 0., 1., 1., 2., 2., 2., 2., 2., 2.],
+           [2., 2., 2., 1., 0., 1., 2., 2., 2., 2., 2., 2.],
+           [2., 2., 2., 1., 1., 0., 2., 2., 2., 2., 2., 2.],
+           [2., 2., 2., 2., 2., 2., 0., 1., 1., 2., 2., 2.],
+           [2., 2., 2., 2., 2., 2., 1., 0., 1., 2., 2., 2.],
+           [2., 2., 2., 2., 2., 2., 1., 1., 0., 2., 2., 2.],
+           [2., 2., 2., 2., 2., 2., 2., 2., 2., 0., 1., 1.],
+           [2., 2., 2., 2., 2., 2., 2., 2., 2., 1., 0., 1.],
+           [2., 2., 2., 2., 2., 2., 2., 2., 2., 1., 1., 0.]])
+
+    In this example, the cophenetic distance between points on ``X`` that are
+    very close (i.e. in the same corner) is 1. For other pairs of points
+    is 2, because the points will be located in clusters locate in different
+    corners - so the distance between this clusters is larger.
+
     """
     Z = np.asarray(Z, order='c')
     is_valid_linkage(Z, throw=True, name='Z')
