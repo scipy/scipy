@@ -21,6 +21,7 @@ class Rotation(object):
     as_quaternion
     from_dcm
     as_dcm
+    from_rotvec
     """
     def __init__(self, quat, normalized=False):
         self._single = False
