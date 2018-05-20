@@ -221,11 +221,13 @@ def test_from_2d_single_rotvec():
 def test_from_generic_rotvec():
     rotvec = [
             [1, 2, 2],
-            [1, -1, 0.5]
+            [1, -1, 0.5],
+            [0, 0, 0]
             ]
     expected_quat = np.array([
         [0.3324983, 0.6649967, 0.6649967, 0.0707372],
-        [0.4544258, -0.4544258, 0.2272129, 0.7316889]
+        [0.4544258, -0.4544258, 0.2272129, 0.7316889],
+        [0, 0, 0, 1]
         ])
     assert_array_almost_equal(
             Rotation.from_rotvec(rotvec)._quat,
