@@ -200,3 +200,33 @@ def test_from_dcm_ortho_output():
         eye3d[:, i, i] = 1.0
 
     assert_array_almost_equal(mult_result, eye3d)
+
+
+def test_from_1d_single_rotvec():
+    rotvec = [1, 0, 0]
+    expected_quat = np.array([0.4794255, 0, 0, 0.8775826])
+    result = Rotation.from_rotvec(rotvec)
+    assert_equal(result._single, True)
+    assert_array_almost_equal(result._quat[0], expected_quat)
+
+
+def test_from_2d_single_rotvec():
+    rotvec = [[1, 0, 0]]
+    expected_quat = np.array([[0.4794255, 0, 0, 0.8775826]])
+    result = Rotation.from_rotvec(rotvec)
+    assert_equal(result._single, False)
+    assert_array_almost_equal(result._quat, expected_quat)
+
+
+def test_from_generic_rotvec():
+    rotvec = [
+            [1, 2, 2],
+            [1, -1, 0.5]
+            ]
+    expected_quat = np.array([
+        [0.3324983, 0.6649967, 0.6649967, 0.0707372],
+        [0.4544258, -0.4544258, 0.2272129, 0.7316889]
+        ])
+    assert_array_almost_equal(
+            Rotation.from_rotvec(rotvec)._quat,
+            expected_quat)
