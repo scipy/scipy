@@ -226,24 +226,25 @@ class Rotation(object):
 
         num_rotations = rot_vecs.shape[0]
 
-        norms = np.linalg.norm(rot_vecs, axis=1)
+        norms = np.linalg.norm(rot_vecs, axis=1)[:, None]
         small_angle = norms <= 1e-3
 
         quat = np.empty((num_rotations, 4))
 
-        # Ensure array is broadcasted across columns
-        if np.any(~small_angle):
-            quat[~small_angle, :3] = ((np.sin(norms[~small_angle] / 2) /
-                                      norms[~small_angle])[None, :] *
-                                      rot_vecs[~small_angle])
-        elif np.any(small_angle):
-            # Taylor series expansion for small angles
-            quat[small_angle, :3] = ((0.5 - np.power(norms[small_angle], 2) /
-                                     48 + np.power(norms[small_angle], 4) /
-                                     3840)[None, :] *
-                                     rot_vecs[small_angle])
+        zero_norms = np.nonzero(norms == 0)[0]
+        quat[zero_norms, :3] = np.array([0, 0, 0])
 
-        quat[:, 3] = np.cos(norms / 2)
+        small_angle = np.nonzero(np.logical_and(
+            norms <= 1e-3, norms != 0))[0]
+        quat[small_angle, :3] = (0.5 - np.power(norms[small_angle], 2) /
+                                 48 + np.power(norms[small_angle], 4) /
+                                 3840) * rot_vecs[small_angle]
+
+        large_angle = np.nonzero(norms > 1e-3)[0]
+        quat[large_angle, :3] = (np.sin(norms[large_angle] / 2) /
+                                 norms[large_angle]) * rot_vecs[large_angle]
+
+        quat[:, 3] = np.cos(norms / 2).flatten()
 
         if is_single:
             return cls(quat[0], normalized=True)
