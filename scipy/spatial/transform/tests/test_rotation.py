@@ -193,7 +193,7 @@ def test_from_dcm_ortho_output():
     ortho_dcm = Rotation.from_dcm(dcm).as_dcm()
 
     mult_result = np.einsum('...ij,...jk->...ik', ortho_dcm,
-            ortho_dcm.transpose((0, 2, 1)))
+                            ortho_dcm.transpose((0, 2, 1)))
 
     eye3d = np.zeros((100, 3, 3))
     for i in range(3):
