@@ -3414,7 +3414,7 @@ def dimpulse(system, x0=None, t=None, n=None):
             yout = yout + (one_output[1],)
 
         tout = one_output[0]
-
+        yout = np.reshape(yout,(n,1))
     return tout, yout
 
 
