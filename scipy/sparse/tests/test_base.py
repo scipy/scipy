@@ -302,7 +302,8 @@ class _TestCommon(object):
             # sparse/scalar
             assert_array_equal_dtype(dat == 0, (datsp == 0).todense())
             assert_array_equal_dtype(dat == 1, (datsp == 1).todense())
-            assert_array_equal_dtype(dat == np.nan, (datsp == np.nan).todense())
+            assert_array_equal_dtype(dat == np.nan,
+                                     (datsp == np.nan).todense())
 
         if not isinstance(self, (TestBSR, TestCSC, TestCSR)):
             pytest.skip("Bool comparisons only implemented for BSR, CSC, and CSR.")
@@ -340,7 +341,8 @@ class _TestCommon(object):
             assert_array_equal_dtype(dat != 1, (datsp != 1).todense())
             assert_array_equal_dtype(0 != dat, (0 != datsp).todense())
             assert_array_equal_dtype(1 != dat, (1 != datsp).todense())
-            assert_array_equal_dtype(dat != np.nan, (datsp != np.nan).todense())
+            assert_array_equal_dtype(dat != np.nan,
+                                     (datsp != np.nan).todense())
 
         if not isinstance(self, (TestBSR, TestCSC, TestCSR)):
             pytest.skip("Bool comparisons only implemented for BSR, CSC, and CSR.")
@@ -370,7 +372,8 @@ class _TestCommon(object):
 
             # sparse/sparse
             assert_array_equal_dtype(dat < dat2, (datsp < datsp2).todense())
-            assert_array_equal_dtype(datcomplex < dat2, (datspcomplex < datsp2).todense())
+            assert_array_equal_dtype(datcomplex < dat2,
+                                     (datspcomplex < datsp2).todense())
             # mix sparse types
             assert_array_equal_dtype(dat < dat2, (datbsr < datsp2).todense())
             assert_array_equal_dtype(dat < dat2, (datcsc < datsp2).todense())
@@ -391,7 +394,8 @@ class _TestCommon(object):
             assert_array_equal_dtype((datsp < -1).todense(), dat < -1)
             assert_array_equal_dtype((datsp < -2).todense(), dat < -2)
             with np.errstate(invalid='ignore'):
-                assert_array_equal_dtype((datsp < np.nan).todense(), dat < np.nan)
+                assert_array_equal_dtype((datsp < np.nan).todense(),
+                                         dat < np.nan)
 
             assert_array_equal_dtype((2 < datsp).todense(), 2 < dat)
             assert_array_equal_dtype((1 < datsp).todense(), 1 < dat)
@@ -436,7 +440,8 @@ class _TestCommon(object):
 
             # sparse/sparse
             assert_array_equal_dtype(dat > dat2, (datsp > datsp2).todense())
-            assert_array_equal_dtype(datcomplex > dat2, (datspcomplex > datsp2).todense())
+            assert_array_equal_dtype(datcomplex > dat2,
+                                     (datspcomplex > datsp2).todense())
             # mix sparse types
             assert_array_equal_dtype(dat > dat2, (datbsr > datsp2).todense())
             assert_array_equal_dtype(dat > dat2, (datcsc > datsp2).todense())
@@ -457,7 +462,8 @@ class _TestCommon(object):
             assert_array_equal_dtype((datsp > -1).todense(), dat > -1)
             assert_array_equal_dtype((datsp > -2).todense(), dat > -2)
             with np.errstate(invalid='ignore'):
-                assert_array_equal_dtype((datsp > np.nan).todense(), dat > np.nan)
+                assert_array_equal_dtype((datsp > np.nan).todense(),
+                                         dat > np.nan)
 
             assert_array_equal_dtype((2 > datsp).todense(), 2 > dat)
             assert_array_equal_dtype((1 > datsp).todense(), 1 > dat)
@@ -502,7 +508,8 @@ class _TestCommon(object):
 
             # sparse/sparse
             assert_array_equal_dtype(dat <= dat2, (datsp <= datsp2).todense())
-            assert_array_equal_dtype(datcomplex <= dat2, (datspcomplex <= datsp2).todense())
+            assert_array_equal_dtype(datcomplex <= dat2,
+                                     (datspcomplex <= datsp2).todense())
             # mix sparse types
             assert_array_equal_dtype((datbsr <= datsp2).todense(), dat <= dat2)
             assert_array_equal_dtype((datcsc <= datsp2).todense(), dat <= dat2)
@@ -564,8 +571,8 @@ class _TestCommon(object):
 
             # sparse/sparse
             assert_array_equal_dtype(dat >= dat2, (datsp >= datsp2).todense())
-            assert_array_equal_dtype(datcomplex >= dat2, (datspcomplex >= datsp2).todense())
-            # mix sparse types
+            assert_array_equal_dtype(datcomplex >= dat2,
+                                     (datspcomplex >= datsp2).todense())
             # mix sparse types
             assert_array_equal_dtype((datbsr >= datsp2).todense(), dat >= dat2)
             assert_array_equal_dtype((datcsc >= datsp2).todense(), dat >= dat2)
@@ -4623,4 +4630,3 @@ class Test64Bit(object):
 
         check_limited()
         check_unlimited()
-
