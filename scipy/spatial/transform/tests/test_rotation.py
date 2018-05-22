@@ -4,6 +4,7 @@ import pytest
 
 import numpy as np
 from numpy.testing import assert_equal, assert_array_almost_equal
+from numpy.testing import assert_allclose
 from scipy.spatial.transform import Rotation
 from scipy.stats import special_ortho_group
 
@@ -206,16 +207,14 @@ def test_from_1d_single_rotvec():
     rotvec = [1, 0, 0]
     expected_quat = np.array([0.4794255, 0, 0, 0.8775826])
     result = Rotation.from_rotvec(rotvec)
-    assert_equal(result._single, True)
-    assert_array_almost_equal(result._quat[0], expected_quat)
+    assert_array_almost_equal(result.as_quaternion(), expected_quat)
 
 
 def test_from_2d_single_rotvec():
     rotvec = [[1, 0, 0]]
     expected_quat = np.array([[0.4794255, 0, 0, 0.8775826]])
     result = Rotation.from_rotvec(rotvec)
-    assert_equal(result._single, False)
-    assert_array_almost_equal(result._quat, expected_quat)
+    assert_array_almost_equal(result.as_quaternion(), expected_quat)
 
 
 def test_from_generic_rotvec():
@@ -230,5 +229,29 @@ def test_from_generic_rotvec():
         [0, 0, 0, 1]
         ])
     assert_array_almost_equal(
-            Rotation.from_rotvec(rotvec)._quat,
+            Rotation.from_rotvec(rotvec).as_quaternion(),
             expected_quat)
+
+
+def test_from_rotvec_small_angle():
+    # Small theta
+    rotvec = np.array([1, 0.00001, 0.00001]) * 5e-6
+    quat = Rotation.from_rotvec(rotvec).as_quaternion()
+    # cos(theta/2) ~~ 1
+    assert_allclose(quat[3], 1)
+    # sin(theta/2) / theta ~~ 0.5
+    assert_allclose(quat[:3], rotvec * 0.5)
+    assert_equal(np.linalg.norm(quat), 1)
+
+
+def test_malformed_1d_from_rotvec():
+    with pytest.raises(ValueError):
+        Rotation.from_rotvec([1, 2])
+
+
+def test_malformed_2d_from_rotvec():
+    with pytest.raises(ValueError):
+        Rotation.from_rotvec([
+            [1, 2, 3, 4],
+            [5, 6, 7, 8]
+            ])
