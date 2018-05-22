@@ -227,24 +227,21 @@ class Rotation(object):
 
         num_rotations = rotvec.shape[0]
 
-        norms = np.linalg.norm(rotvec, axis=1)
-        small_angle = norms <= 1e-3
-
-        quat = np.empty((num_rotations, 4))
 
         scale = np.empty(num_rotations)
 
-        small_angle = np.nonzero(np.logical_and(
-            norms <= 1e-3, norms != 0))[0]
+        norms = np.linalg.norm(rotvec, axis=1)
+        small_angle = np.nonzero(norms <= 1e-3)[0]
+        large_angle = np.nonzero(norms > 1e-3)[0]
+
         scale[small_angle] = (0.5 - norms[small_angle] ** 2 / 48 +
                               norms[small_angle] ** 4 / 3840)
-
-        large_angle = np.nonzero(norms > 1e-3)[0]
         scale[large_angle] = (np.sin(norms[large_angle] / 2) /
                               norms[large_angle])
 
+        quat = np.empty((num_rotations, 4))
         quat[:, :3] = scale[:, None] * rotvec
-        quat[:, 3] = np.cos(norms / 2).flatten()
+        quat[:, 3] = np.cos(norms / 2)
 
         if is_single:
             return cls(quat[0], normalized=True)
