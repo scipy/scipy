@@ -228,7 +228,6 @@ class Rotation(object):
         num_rotations = rotvec.shape[0]
 
         norms = np.linalg.norm(rotvec, axis=1)
-        small_angle = norms <= 1e-3
 
         quat = np.empty((num_rotations, 4))
 
