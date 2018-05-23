@@ -270,7 +270,7 @@ class Rotation(object):
         num_rotations = quat.shape[0]
         scale = np.empty(num_rotations)
         # Use the Taylor expansion of x / sin(x/2) for small angles
-        scale[small_angle] = (2 + angle[small_angle] ** 2  / 12 +
+        scale[small_angle] = (2 + angle[small_angle] ** 2 / 12 +
                               7 * angle[small_angle] ** 4 / 2880)
         scale[large_angle] = (angle[large_angle] /
                               np.sin(angle[large_angle] / 2))
