@@ -234,14 +234,28 @@ def test_from_generic_rotvec():
 
 
 def test_from_rotvec_small_angle():
-    # Small theta
-    rotvec = np.array([1, 0.00001, 0.00001]) * 5e-6
+    rotvec = np.array([
+        [5e-4 / np.sqrt(3), -5e-4 / np.sqrt(3), 5e-4 / np.sqrt(3)],
+        [0.2, 0.3, 0.4],
+        [0, 0, 0]
+        ])
+
     quat = Rotation.from_rotvec(rotvec).as_quaternion()
-    # cos(theta/2) ~~ 1
-    assert_allclose(quat[3], 1)
-    # sin(theta/2) / theta ~~ 0.5
-    assert_allclose(quat[:3], rotvec * 0.5)
-    assert_equal(np.linalg.norm(quat), 1)
+    # cos(theta/2) ~~ 1 for small theta
+    assert_allclose(quat[0, 3], 1)
+    # sin(theta/2) / theta ~~ 0.5 for small theta
+    assert_allclose(quat[0, :3], rotvec[0] * 0.5)
+
+    assert_allclose(quat[1, 3], 0.9639685)
+    assert_allclose(
+            quat[1, :3],
+            np.array([
+                0.09879603932153465,
+                0.14819405898230198,
+                0.19759207864306931
+                ]))
+
+    assert_equal(quat[2], np.array([0, 0, 0, 1]))
 
 
 def test_malformed_1d_from_rotvec():
