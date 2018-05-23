@@ -3445,7 +3445,7 @@ def dstep(system, x0=None, t=None, n=None):
     -------
     tout : ndarray
         Output time points, as a 1-D array.
-    yout : tuple
+    yout : tuple of ndarray
         Step response of system.  Each element of the tuple represents
         the output of the system based on a step response to each input.
 
