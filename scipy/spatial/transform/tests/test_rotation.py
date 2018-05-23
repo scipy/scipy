@@ -259,12 +259,12 @@ def test_from_rotvec_small_angle():
 
 
 def test_malformed_1d_from_rotvec():
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='Expected `rot_vec` to have shape'):
         Rotation.from_rotvec([1, 2])
 
 
 def test_malformed_2d_from_rotvec():
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='Expected `rot_vec` to have shape'):
         Rotation.from_rotvec([
             [1, 2, 3, 4],
             [5, 6, 7, 8]
