@@ -228,10 +228,11 @@ class Rotation(object):
         num_rotations = rotvec.shape[0]
 
         norms = np.linalg.norm(rotvec, axis=1)
-        small_angle = np.nonzero(norms <= 1e-3)[0]
-        large_angle = np.nonzero(norms > 1e-3)[0]
+        small_angle = (norms <= 1e-3)
+        large_angle = ~small_angle
 
         scale = np.empty(num_rotations)
+        # Use the Taylor expansion of sin(x/2) / x for small angles
         scale[small_angle] = (0.5 - norms[small_angle] ** 2 / 48 +
                               norms[small_angle] ** 4 / 3840)
         scale[large_angle] = (np.sin(norms[large_angle] / 2) /
