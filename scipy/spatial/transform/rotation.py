@@ -22,6 +22,7 @@ class Rotation(object):
     from_dcm
     as_dcm
     from_rotvec
+    as_rotvec
     """
     def __init__(self, quat, normalized=False):
         self._single = False
@@ -246,3 +247,37 @@ class Rotation(object):
             return cls(quat[0], normalized=True)
         else:
             return cls(quat, normalized=True)
+
+    def as_rotvec(self):
+        """Return the rotation vector representation of the Rotation.
+
+        This function returns a numpy.ndarray of shape (3,) or (N, 3)
+        depending on the input that was used to initialize the object.
+
+        A rotation vector is a 3 dimensional vector which is co-directional to
+        the axis of rotation and whose norm gives the angle of rotation (in
+        radians).
+        """
+        quat = self._quat.copy()
+        # w > 0 to ensure 0 <= angle <= pi
+        quat[quat[:, 3] < 0] *= -1
+
+        angle = 2 * np.arctan2(np.linalg.norm(quat[:, :3], axis=1), quat[:, 3])
+
+        small_angle = (angle <= 1e-3)
+        large_angle = ~small_angle
+
+        num_rotations = quat.shape[0]
+        scale = np.empty(num_rotations)
+        # Use the Taylor expansion of x / sin(x/2) for small angles
+        scale[small_angle] = (2 + angle[small_angle] ** 2 / 12 +
+                              7 * angle[small_angle] ** 4 / 2880)
+        scale[large_angle] = (angle[large_angle] /
+                              np.sin(angle[large_angle] / 2))
+
+        rotvec = scale[:, None] * quat[:, :3]
+
+        if self._single:
+            return rotvec[0]
+        else:
+            return rotvec

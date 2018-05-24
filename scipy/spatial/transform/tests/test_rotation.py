@@ -269,3 +269,48 @@ def test_malformed_2d_from_rotvec():
             [1, 2, 3, 4],
             [5, 6, 7, 8]
             ])
+
+
+def test_as_generic_rotvec():
+    quat = np.array([
+            [1, 2, -1, 0.5],
+            [1, -1, 1, 0.0003],
+            [0, 0, 0, 1]
+            ])
+    quat /= np.linalg.norm(quat, axis=1)[:, None]
+
+    rotvec = Rotation.from_quaternion(quat).as_rotvec()
+    angle = np.linalg.norm(rotvec, axis=1)
+
+    assert_allclose(quat[:, 3], np.cos(angle/2))
+    assert_allclose(np.cross(rotvec, quat[:, :3]), np.zeros((3, 3)))
+
+
+def test_as_rotvec_single_1d_input():
+    quat = np.array([1, 2, -3, 2])
+    expected_rotvec = np.array([0.5772381, 1.1544763, -1.7317144])
+
+    actual_rotvec = Rotation.from_quaternion(quat).as_rotvec()
+
+    assert_equal(actual_rotvec.shape, (3,))
+    assert_allclose(actual_rotvec, expected_rotvec)
+
+
+def test_as_rotvec_single_2d_input():
+    quat = np.array([[1, 2, -3, 2]])
+    expected_rotvec = np.array([[0.5772381, 1.1544763, -1.7317144]])
+
+    actual_rotvec = Rotation.from_quaternion(quat).as_rotvec()
+
+    assert_equal(actual_rotvec.shape, (1, 3))
+    assert_allclose(actual_rotvec, expected_rotvec)
+
+
+def test_rotvec_calc_pipeline():
+    # Include small angles
+    rotvec = np.array([
+        [0, 0, 0],
+        [1, -1, 2],
+        [-3e-4, 3.5e-4, 7.5e-5]
+        ])
+    assert_allclose(Rotation.from_rotvec(rotvec).as_rotvec(), rotvec)
