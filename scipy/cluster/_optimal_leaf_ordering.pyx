@@ -148,8 +148,7 @@ cdef int[:] identify_swaps(int[:, ::1] sorted_Z,
     Implements the Optimal Leaf Ordering algorithm described in 
     "Fast Optimal leaf ordering for hierarchical clustering"
         Ziv Bar-Joseph, David K. Gifford, Tommi S. Jaakkola
-        Bioinformatics, 2001, doi: 10.1093/bioinformatics/17.suppl_1.S22
-        https://doi.org/10.1093/bioinformatics/17.suppl_1.S22
+        Bioinformatics, 2001, :doi:`10.1093/bioinformatics/17.suppl_1.S22`
 
     `sorted_Z` : Linkage list, with 'height' column removed. 
 

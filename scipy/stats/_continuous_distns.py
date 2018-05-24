@@ -4413,7 +4413,7 @@ class moyal_gen(rv_continuous):
     .. [1] J.E. Moyal, "XXX. Theory of ionization fluctuations",
            The London, Edinburgh, and Dublin Philosophical Magazine
            and Journal of Science, vol 46, 263-280, (1955).
-           https://doi.org/10.1080/14786440308521076 (gated)
+           :doi:`10.1080/14786440308521076` (gated)
     .. [2] G. Cordeiro et al., "The beta Moyal: a useful skew distribution",
            International Journal of Research and Reviews in Applied Sciences,
            vol 10, 171-192, (2012).

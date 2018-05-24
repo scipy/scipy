@@ -671,7 +671,7 @@ def linkage(y, method='single', metric='euclidean', optimal_ordering=False):
            algorithms", :arXiv:`1109.2378v1`.
     .. [2] Ziv Bar-Joseph, David K. Gifford, Tommi S. Jaakkola, "Fast optimal
            leaf ordering for hierarchical clustering", 2001. Bioinformatics
-           https://doi.org/10.1093/bioinformatics/17.suppl_1.S22
+           :doi:`10.1093/bioinformatics/17.suppl_1.S22`
 
     Examples
     --------
