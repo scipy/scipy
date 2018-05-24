@@ -216,7 +216,7 @@ class alpha_gen(rv_continuous):
         f(x, a) = \frac{1}{x^2 \Phi(a) \sqrt{2\pi}} *
                   \exp(-\frac{1}{2} (a-1/x)^2)
 
-    where ``Phi(alpha)`` is the normal CDF, ``x > 0``, and ``a > 0``.
+    where :math:`\Phi(a)` is the normal CDF, :math:`x > 0`, and :math:`a > 0`.
 
     `alpha` takes ``a`` as a shape parameter.
 
@@ -555,7 +555,7 @@ class betaprime_gen(rv_continuous):
 
         f(x, a, b) = \frac{x^{a-1} (1+x)^{-a-b}}{\beta(a, b)}
 
-    for ``x > 0``, ``a > 0``, ``b > 0``, where ``beta(a, b)`` is the beta
+    for :math:`x > 0`, :math:`a > 0`, :math:`b > 0`, where :math:`\beta(a, b)` is the beta
     function (see `scipy.special.beta`).
 
     `betaprime` takes ``a`` and ``b`` as shape parameters.
@@ -905,7 +905,8 @@ class chi_gen(rv_continuous):
 
     .. math::
 
-        f(x, df) = \frac{x^{df-1} \exp(-x^2/2)}{2^{df/2-1} \Gamma(df/2)}
+        f(x, df) = \frac{1}{2^{df/2-1} \Gamma \left( df/2 \right)}
+                   x^{df-1} \exp \left( -x^2/2 \right)
 
     for :math:`x > 0`. :math:`\Gamma` is the gamma function
     (`scipy.special.gamma`).
@@ -968,9 +969,10 @@ class chi2_gen(rv_continuous):
 
     .. math::
 
-        f(x, df) = \frac{1}{(2 \Gamma(df/2)} (x/2)^{df/2-1} \exp(-x/2)
+        f(x, df) = \frac{1}{2^{df/2} \Gamma \left( df/2 \right)}
+                   x^{df/2-1} \exp \left( -x/2 \right)
 
-    for x > 0. :math:`\Gamma` is the gamma function (`scipy.special.gamma`).
+    for :math:`x > 0`.
 
     `chi2` takes ``df`` as a shape parameter.
 
@@ -1408,7 +1410,7 @@ class exponpow_gen(rv_continuous):
 
         f(x, b) = b x^{b-1} \exp(1 + x^b - \exp(x^b))
 
-    for :math:`x \ge 0`, :math:`b > 0``.  Note that this is a different
+    for :math:`x \ge 0`, :math:`b > 0`.  Note that this is a different
     distribution from the exponential power distribution that is also known
     under the names "generalized normal" or "generalized Gaussian".
 
@@ -1531,7 +1533,7 @@ class foldcauchy_gen(rv_continuous):
 
         f(x, c) = \frac{1}{\pi (1+(x-c)^2)} + \frac{1}{\pi (1+(x+c)^2)}
 
-    for :math:`x \ge 0``.
+    for :math:`x \ge 0`.
 
     `foldcauchy` takes :math:`c` as a shape parameter.
 
@@ -3305,9 +3307,9 @@ class invweibull_gen(rv_continuous):
 
         f(x, c) = c x^{-c-1} \exp(-x^{-c})
 
-    for :math:`x > 0``, :math:`c > 0``.
+    for :math:`x > 0`, :math:`c > 0`.
 
-    `invweibull` takes :math:`c`` as a shape parameter.
+    `invweibull` takes ``c`` as a shape parameter.
 
     %(after_notes)s
 
@@ -3763,7 +3765,7 @@ class loglaplace_gen(rv_continuous):
                                \frac{c}{2} x^{-c-1}  &\text{for } x \ge 1
                   \end{cases}
 
-    for ``c > 0``.
+    for :math:`c > 0`.
 
     `loglaplace` takes ``c`` as a shape parameter.
 
@@ -3820,7 +3822,7 @@ class lognorm_gen(rv_continuous):
         f(x, s) = \frac{1}{s x \sqrt{2\pi}}
                   \exp(-\frac{1}{2} (\frac{\log(x)}{s})^2)
 
-    for ``x > 0``, ``s > 0``.
+    for :math:`x > 0`, :math:`s > 0`.
 
     `lognorm` takes ``s`` as a shape parameter.
 
@@ -4009,7 +4011,7 @@ class maxwell_gen(rv_continuous):
 
         f(x) = \sqrt{2/\pi}x^2 \exp(-x^2/2)
 
-    for ``x > 0``.
+    for :math:`x > 0`.
 
     %(after_notes)s
 
@@ -4059,7 +4061,7 @@ class mielke_gen(rv_continuous):
 
         f(x, k, s) = \frac{k x^{k-1}}{(1+x^s)^{1+k/s}}
 
-    for ``x > 0``.
+    for :math:`x > 0`.
 
     `mielke` takes ``k`` and ``s`` as shape parameters.
 
@@ -4496,7 +4498,7 @@ class nakagami_gen(rv_continuous):
 
         f(x, nu) = \frac{2 \nu^\nu}{\Gamma(\nu)} x^{2\nu-1} \exp(-\nu x^2)
 
-    for ``x > 0``, ``nu > 0``.
+    for :math:`x > 0`, :math:`\nu > 0`.
 
     `nakagami` takes ``nu`` as a shape parameter.
 
@@ -4672,9 +4674,9 @@ class t_gen(rv_continuous):
                         {\sqrt{\pi \nu} \Gamma(\nu)}
                     (1+x^2/\nu)^{-(\nu+1)/2}
 
-    where ``x`` is a real number and the degrees of freedom parameter
+    where :math:`x` is a real number and the degrees of freedom parameter
     :math:`\nu` (denoted ``df`` in the implementation) satisfies
-    :math:`\nu > 0``. :math:`\Gamma` is the gamma function
+    :math:`\nu > 0`. :math:`\Gamma` is the gamma function
     (`scipy.special.gamma`).
 
     %(after_notes)s
@@ -4746,7 +4748,7 @@ class nct_gen(rv_continuous):
         f(x, df, nc) = \frac{df^{df/2} \Gamma(df+1)}{2^{df}
                        \exp(nc^2 / 2) (df+x^2)^{df/2} \Gamma(df/2)}
 
-    for ``df > 0``.
+    for :math:`df > 0`.
 
     `nct` takes ``df`` and ``nc`` as shape parameters. :math:`\Gamma` is the 
     gamma function (`scipy.special.gamma`).
@@ -4914,7 +4916,7 @@ class lomax_gen(rv_continuous):
 
         f(x, c) = \frac{c}{(1+x)^{c+1}}
 
-    for :math:`x \ge 0`, ``c > 0``.
+    for :math:`x \ge 0`, :math:`c > 0`.
 
     `lomax` takes :math:`c` as a shape parameter.
 
@@ -6285,7 +6287,7 @@ class gennorm_gen(rv_continuous):
 
     `gennorm` takes :math:`\beta` as a shape parameter.
     For :math:`\beta = 1`, it is identical to a Laplace distribution.
-    For ``\beta = 2``, it is identical to a normal distribution
+    For :math:`\beta = 2`, it is identical to a normal distribution
     (with :math:`scale=1/\sqrt{2}`).
 
     See Also
