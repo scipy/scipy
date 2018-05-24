@@ -293,7 +293,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
             warn("Comparing sparse matrices using >= and <= is inefficient, "
                  "using <, >, or !=, instead.", SparseEfficiencyWarning)
-            all_true = self.__class__(np.ones(self.shape))
+            all_true = self.__class__(np.ones(self.shape, dtype=np.bool_))
             res = self._binopt(other, '_gt_' if op_name == '_le_' else '_lt_')
             return all_true - res
         else:
