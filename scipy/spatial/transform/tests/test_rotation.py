@@ -63,7 +63,7 @@ def test_zero_norms_from_quaternion():
             [5, 0, 12, 0]
             ])
     with pytest.raises(ValueError):
-        r = Rotation.from_quaternion(x)
+        Rotation.from_quaternion(x)
 
 
 def test_as_dcm_single_1d_quaternion():
@@ -314,3 +314,15 @@ def test_rotvec_calc_pipeline():
         [-3e-4, 3.5e-4, 7.5e-5]
         ])
     assert_allclose(Rotation.from_rotvec(rotvec).as_rotvec(), rotvec)
+
+
+def test_from_euler_single_rotation():
+    quat = Rotation.from_euler('z', 90, degrees=True).as_quaternion()
+    expected_quat = np.array([0, 0, 1, 1]) / np.sqrt(2)
+    assert_allclose(quat, expected_quat)
+
+
+def test_single_intrinsic_extrinsic_rotation():
+    ext = Rotation.from_euler('z', 90, degrees=True).as_dcm()
+    int = Rotation.from_euler('Z', 90, degrees=True).as_dcm()
+    assert_allclose(ext, int)
