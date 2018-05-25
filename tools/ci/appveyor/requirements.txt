@@ -1,5 +1,6 @@
 numpy
 cython
+pytest<3.6
 pytest-timeout
 pytest-xdist
 pytest-env
