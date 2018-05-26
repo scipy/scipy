@@ -102,7 +102,8 @@ before_install:
   - travis_retry pip install --upgrade pip setuptools wheel
   - travis_retry pip install cython==0.25.2
   - if [ -n "$NUMPYSPEC" ]; then travis_retry pip install $NUMPYSPEC; fi
-  - travis_retry pip install --upgrade pytest pytest-xdist pytest-faulthandler mpmath argparse Pillow codecov
+  # For now (2018/05/25) we prevent using pytest 3.6 for all CIs as it has a bug, See gh-8866
+  - travis_retry pip install --upgrade "pytest>=3.5,!=3.6.0" pytest-xdist pytest-faulthandler mpmath argparse Pillow codecov
   - travis_retry pip install gmpy2  # speeds up mpmath (scipy.special tests)
   - |
     if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
