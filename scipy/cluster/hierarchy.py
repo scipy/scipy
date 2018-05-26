@@ -1858,6 +1858,7 @@ def from_mlab_linkage(Z):
     --------
     >>> import numpy as np
     >>> from scipy.cluster.hierarchy import ward, from_mlab_linkage
+
     Given a linkage matrix in MATLAB format ``mZ``, we can use
     :func:`scipy.cluster.hierarchy.from_mlab_linkage` to import
     it into Scipy format:
@@ -2169,7 +2170,7 @@ def is_valid_im(R, warning=False, throw=False, name=None):
     However, if ``R`` is wrongly constructed (e.g one of the standard
     deviations is set to a negative value) then the check will fail:
 
-    >>> R[-1:1] = R[-1:1] * -1
+    >>> R[-1,1] = R[-1,1] * -1
     >>> is_valid_im(R)
     False
 
@@ -3933,8 +3934,8 @@ def maxinconsts(Z, R):
            [3.25      , 0.25      , 3.        , 0.        ]])
 
     Here :func:`scipy.cluster.hierarchy.maxinconsts` can be used to compute
-    the maximum value of the insconsistency statistic (the last column of
-    ``R``) at each non-singleton cluster:
+    the maximum value of the inconsistency statistic (the last column of
+    ``R``) for each non-singleton cluster and its children:
 
     >>> maxinconsts(Z, R)
     array([0.        , 0.        , 0.        , 0.        , 0.70710678,
@@ -3960,7 +3961,7 @@ def maxinconsts(Z, R):
 def maxRstat(Z, R, i):
     """
     Return the maximum statistic for each non-singleton cluster and its
-    descendents.
+    children.
 
     Parameters
     ----------
@@ -3980,6 +3981,58 @@ def maxRstat(Z, R, i):
         node. ``MR[j]`` is the maximum over ``R[Q(j)-n, i]`` where
         ``Q(j)`` the set of all node ids corresponding to nodes below
         and including ``j``.
+
+    See Also
+    --------
+    linkage: for a description of what a linkage matrix is.
+    inconsistent: for the creation of a inconsistency matrix.
+
+    Examples
+    --------
+    >>> from scipy.cluster.hierarchy import median, inconsistent, maxRstat
+    >>> from scipy.spatial.distance import pdist
+
+    Given a data set ``X``, we can apply a clustering method to obtain a
+    linkage matrix ``Z``. :func:`scipy.cluster.hierarchy.inconsistent` can
+    be also used to obtain the inconsistency matrix ``R`` associated to
+    this clustering process:
+
+    >>> X = [[0, 0], [0, 1], [1, 0],
+    ...      [0, 4], [0, 3], [1, 4],
+    ...      [4, 0], [3, 0], [4, 1],
+    ...      [4, 4], [3, 4], [4, 3]]
+
+    >>> Z = median(pdist(X))
+    >>> R = inconsistent(Z)
+    >>> R
+    array([[1.        , 0.        , 1.        , 0.        ],
+           [1.        , 0.        , 1.        , 0.        ],
+           [1.        , 0.        , 1.        , 0.        ],
+           [1.        , 0.        , 1.        , 0.        ],
+           [1.05901699, 0.08346263, 2.        , 0.70710678],
+           [1.05901699, 0.08346263, 2.        , 0.70710678],
+           [1.05901699, 0.08346263, 2.        , 0.70710678],
+           [1.05901699, 0.08346263, 2.        , 0.70710678],
+           [1.74535599, 1.08655358, 3.        , 1.15470054],
+           [1.91202266, 1.37522872, 3.        , 1.15470054],
+           [3.25      , 0.25      , 3.        , 0.        ]])
+
+    :func:`scipy.cluster.hierarchy.maxRstat` can be used to compute
+    the maximum value of each column of ``R``, for each non-singleton
+    cluster and its children:
+
+    >>> maxRstat(Z, R, 0)
+    array([1.        , 1.        , 1.        , 1.        , 1.05901699,
+           1.05901699, 1.05901699, 1.05901699, 1.74535599, 1.91202266,
+           3.25      ])
+    >>> maxRstat(Z, R, 1)
+    array([0.        , 0.        , 0.        , 0.        , 0.08346263,
+           0.08346263, 0.08346263, 0.08346263, 1.08655358, 1.37522872,
+           1.37522872])
+    >>> maxRstat(Z, R, 3)
+    array([0.        , 0.        , 0.        , 0.        , 0.70710678,
+           0.70710678, 0.70710678, 0.70710678, 1.15470054, 1.15470054,
+           1.15470054])
 
     """
     Z = np.asarray(Z, order='c')
