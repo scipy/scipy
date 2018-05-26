@@ -2116,6 +2116,66 @@ def is_valid_im(R, warning=False, throw=False, name=None):
     b : bool
         True if the inconsistency matrix is valid.
 
+    See Also
+    --------
+    linkage: for a description of what a linkage matrix is.
+    inconsistent: for the creation of a inconsistency matrix.
+
+    Examples
+    --------
+    >>> from scipy.cluster.hierarchy import ward, inconsistent, is_valid_im
+    >>> from scipy.spatial.distance import pdist
+
+    Given a data set ``X``, we can apply a clustering method to obtain a
+    linkage matrix ``Z``. :func:`scipy.cluster.hierarchy.inconsistent` can
+    be also used to obtain the inconsistency matrix ``R`` associated to
+    this clustering process:
+
+    >>> X = [[0, 0], [0, 1], [1, 0],
+    ...      [0, 4], [0, 3], [1, 4],
+    ...      [4, 0], [3, 0], [4, 1],
+    ...      [4, 4], [3, 4], [4, 3]]
+
+    >>> Z = ward(pdist(X))
+    >>> R = inconsistent(Z)
+    >>> Z
+    array([[ 0.        ,  1.        ,  1.        ,  2.        ],
+           [ 3.        ,  4.        ,  1.        ,  2.        ],
+           [ 6.        ,  7.        ,  1.        ,  2.        ],
+           [ 9.        , 10.        ,  1.        ,  2.        ],
+           [ 2.        , 12.        ,  1.29099445,  3.        ],
+           [ 5.        , 13.        ,  1.29099445,  3.        ],
+           [ 8.        , 14.        ,  1.29099445,  3.        ],
+           [11.        , 15.        ,  1.29099445,  3.        ],
+           [16.        , 17.        ,  5.77350269,  6.        ],
+           [18.        , 19.        ,  5.77350269,  6.        ],
+           [20.        , 21.        ,  8.16496581, 12.        ]])
+    >>> R
+    array([[1.        , 0.        , 1.        , 0.        ],
+           [1.        , 0.        , 1.        , 0.        ],
+           [1.        , 0.        , 1.        , 0.        ],
+           [1.        , 0.        , 1.        , 0.        ],
+           [1.14549722, 0.20576415, 2.        , 0.70710678],
+           [1.14549722, 0.20576415, 2.        , 0.70710678],
+           [1.14549722, 0.20576415, 2.        , 0.70710678],
+           [1.14549722, 0.20576415, 2.        , 0.70710678],
+           [2.78516386, 2.58797734, 3.        , 1.15470054],
+           [2.78516386, 2.58797734, 3.        , 1.15470054],
+           [6.57065706, 1.38071187, 3.        , 1.15470054]])
+
+    Now we can use :func:`scipy.cluster.hierarchy.is_valid_im` to verify that
+    ``R`` is correct:
+
+    >>> is_valid_im(R)
+    True
+
+    However, if ``R`` is wrongly constructed (e.g one of the standard
+    deviations is set to a negative value) then the check will fail:
+
+    >>> R[-1:1] = R[-1:1] * -1
+    >>> is_valid_im(R)
+    False
+
     """
     R = np.asarray(R, order='c')
     valid = True
