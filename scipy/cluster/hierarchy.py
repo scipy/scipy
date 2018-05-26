@@ -1849,6 +1849,50 @@ def from_mlab_linkage(Z):
     ZS : ndarray
         A linkage matrix compatible with ``scipy.cluster.hierarchy``.
 
+    See Also
+    --------
+    linkage: for a description of what a linkage matrix is.
+    to_mlab_linkage: transform from Scipy to MATLAB format.
+
+    Examples
+    --------
+
+    Given a linkage matrix in MATLAB format ``mZ``, we can use
+    :func:`scipy.cluster.hierarchy.from_mlab_linkage` to import
+    it into Scipy format:
+
+    >>> mZ
+    array([[  1.        ,   2.        ,   1.        ],
+           [  4.        ,   5.        ,   1.        ],
+           [  7.        ,   8.        ,   1.        ],
+           [ 10.        ,  11.        ,   1.        ],
+           [  3.        ,  13.        ,   1.29099445],
+           [  6.        ,  14.        ,   1.29099445],
+           [  9.        ,  15.        ,   1.29099445],
+           [ 12.        ,  16.        ,   1.29099445],
+           [ 17.        ,  18.        ,   5.77350269],
+           [ 19.        ,  20.        ,   5.77350269],
+           [ 21.        ,  22.        ,   8.16496581]])
+
+    >>> Z = from_mlab_linkage(mZ)
+    >>> Z
+    array([[  0.        ,   1.        ,   1.        ,   2.        ],
+           [  3.        ,   4.        ,   1.        ,   2.        ],
+           [  6.        ,   7.        ,   1.        ,   2.        ],
+           [  9.        ,  10.        ,   1.        ,   2.        ],
+           [  2.        ,  12.        ,   1.29099445,   3.        ],
+           [  5.        ,  13.        ,   1.29099445,   3.        ],
+           [  8.        ,  14.        ,   1.29099445,   3.        ],
+           [ 11.        ,  15.        ,   1.29099445,   3.        ],
+           [ 16.        ,  17.        ,   5.77350269,   6.        ],
+           [ 18.        ,  19.        ,   5.77350269,   6.        ],
+           [ 20.        ,  21.        ,   8.16496581,  12.        ]])
+
+    As expected, the linkage matrix ``Z`` returned includes an
+    additional column counting the number of original samples in
+    each cluster. Also, all cluster indexes are reduced by 1
+    (MATLAB format uses 1-indexing, whereas Scipy uses 0-indexing).
+
     """
     Z = np.asarray(Z, dtype=np.double, order='c')
     Zs = Z.shape
@@ -1896,6 +1940,57 @@ def to_mlab_linkage(Z):
 
         The return linkage matrix has the last column removed
         and the cluster indices are converted to ``1..N`` indexing.
+
+    See Also
+    --------
+    linkage: for a description of what a linkage matrix is.
+    from_mlab_linkage: transform from Matlab to Scipy format.
+
+    Examples
+    --------
+    >>> from scipy.cluster.hierarchy import ward, to_mlab_linkage
+    >>> from scipy.spatial.distance import pdist
+
+    >>> X = [[0, 0], [0, 1], [1, 0],
+    ...      [0, 4], [0, 3], [1, 4],
+    ...      [4, 0], [3, 0], [4, 1],
+    ...      [4, 4], [3, 4], [4, 3]]
+
+    >>> Z = ward(pdist(X))
+    >>> Z
+    array([[ 0.        ,  1.        ,  1.        ,  2.        ],
+           [ 3.        ,  4.        ,  1.        ,  2.        ],
+           [ 6.        ,  7.        ,  1.        ,  2.        ],
+           [ 9.        , 10.        ,  1.        ,  2.        ],
+           [ 2.        , 12.        ,  1.29099445,  3.        ],
+           [ 5.        , 13.        ,  1.29099445,  3.        ],
+           [ 8.        , 14.        ,  1.29099445,  3.        ],
+           [11.        , 15.        ,  1.29099445,  3.        ],
+           [16.        , 17.        ,  5.77350269,  6.        ],
+           [18.        , 19.        ,  5.77350269,  6.        ],
+           [20.        , 21.        ,  8.16496581, 12.        ]])
+
+    After a linkage matrix ``Z`` has been created, we can use
+    :func:`scipy.cluster.hierarchy.to_mlab_linkage` to convert it
+    into MATLAB format:
+
+    >>> mZ = to_mlab_linkage()
+    >>> mZ
+    array([[  1.        ,   2.        ,   1.        ],
+           [  4.        ,   5.        ,   1.        ],
+           [  7.        ,   8.        ,   1.        ],
+           [ 10.        ,  11.        ,   1.        ],
+           [  3.        ,  13.        ,   1.29099445],
+           [  6.        ,  14.        ,   1.29099445],
+           [  9.        ,  15.        ,   1.29099445],
+           [ 12.        ,  16.        ,   1.29099445],
+           [ 17.        ,  18.        ,   5.77350269],
+           [ 19.        ,  20.        ,   5.77350269],
+           [ 21.        ,  22.        ,   8.16496581]])
+
+    The new linkage matrix ``mZ`` uses 1-indexing for all the
+    clusters (instead of 0-indexing). Also, the last column of
+    the original linkage matrix has been dropped.
 
     """
     Z = np.asarray(Z, order='c', dtype=np.double)
