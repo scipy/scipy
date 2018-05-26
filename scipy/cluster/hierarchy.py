@@ -1856,23 +1856,20 @@ def from_mlab_linkage(Z):
 
     Examples
     --------
-
+    >>> import numpy as np
+    >>> from scipy.cluster.hierarchy import ward, from_mlab_linkage
     Given a linkage matrix in MATLAB format ``mZ``, we can use
     :func:`scipy.cluster.hierarchy.from_mlab_linkage` to import
     it into Scipy format:
 
-    >>> mZ
-    array([[  1.        ,   2.        ,   1.        ],
-           [  4.        ,   5.        ,   1.        ],
-           [  7.        ,   8.        ,   1.        ],
-           [ 10.        ,  11.        ,   1.        ],
-           [  3.        ,  13.        ,   1.29099445],
-           [  6.        ,  14.        ,   1.29099445],
-           [  9.        ,  15.        ,   1.29099445],
-           [ 12.        ,  16.        ,   1.29099445],
-           [ 17.        ,  18.        ,   5.77350269],
-           [ 19.        ,  20.        ,   5.77350269],
-           [ 21.        ,  22.        ,   8.16496581]])
+    >>> mZ = np.array([[1, 2, 1], [4, 5, 1], [7, 8, 1],
+    ...                [10, 11, 1], [3, 13, 1.29099445],
+    ...                [6, 14, 1.29099445],
+    ...                [9, 15, 1.29099445],
+    ...                [12, 16, 1.29099445],
+    ...                [17, 18, 5.77350269],
+    ...                [19, 20, 5.77350269],
+    ...                [21, 22,  8.16496581]])
 
     >>> Z = from_mlab_linkage(mZ)
     >>> Z
@@ -1974,7 +1971,7 @@ def to_mlab_linkage(Z):
     :func:`scipy.cluster.hierarchy.to_mlab_linkage` to convert it
     into MATLAB format:
 
-    >>> mZ = to_mlab_linkage()
+    >>> mZ = to_mlab_linkage(Z)
     >>> mZ
     array([[  1.        ,   2.        ,   1.        ],
            [  4.        ,   5.        ,   1.        ],
