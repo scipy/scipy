@@ -10,9 +10,6 @@ def configuration(parent_package='', top_path=None):
     lapack_opt = get_info('lapack_opt')
     lib_inc = join(dirname(dirname(dirname(__file__))), '_lib')
 
-    if not lapack_opt:
-        raise NotFoundError('no lapack/blas resources found')
-
     config = Configuration('_trlib', parent_package, top_path)
     config.add_extension('_trlib',
                          sources=['_trlib.c', 'trlib_krylov.c',
