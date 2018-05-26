@@ -326,3 +326,12 @@ def test_single_intrinsic_extrinsic_rotation():
     ext = Rotation.from_euler('z', 90, degrees=True).as_dcm()
     int = Rotation.from_euler('Z', 90, degrees=True).as_dcm()
     assert_allclose(ext, int)
+
+
+def test_from_euler_rotation_order():
+    np.random.seed(0)
+    a = np.random.randint(low=0, high=180, size=(6, 3))
+    b = a[:, np.argsort([2, 1, 0])]
+    x = Rotation.from_euler('xyz', a, degrees=True).as_quaternion()
+    y = Rotation.from_euler('ZYX', b, degrees=True).as_quaternion()
+    assert_allclose(x, y)
