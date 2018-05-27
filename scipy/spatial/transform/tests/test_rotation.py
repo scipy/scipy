@@ -329,9 +329,21 @@ def test_single_intrinsic_extrinsic_rotation():
 
 
 def test_from_euler_rotation_order():
+    # Intrinsic rotation is same as extrinsic with order reversed
     np.random.seed(0)
     a = np.random.randint(low=0, high=180, size=(6, 3))
     b = a[:, np.argsort([2, 1, 0])]
     x = Rotation.from_euler('xyz', a, degrees=True).as_quaternion()
     y = Rotation.from_euler('ZYX', b, degrees=True).as_quaternion()
     assert_allclose(x, y)
+
+
+def test_from_euler_elementary_extrinsic_rotation():
+    # Simple test to check if extrinsic rotations are implemented correctly
+    dcm = Rotation.from_euler('zx', [90, 90], degrees=True).as_dcm()
+    expected_dcm = np.array([
+        [0, -1, 0],
+        [0, 0, -1],
+        [1, 0, 0]
+    ])
+    assert_array_almost_equal(dcm, expected_dcm)
