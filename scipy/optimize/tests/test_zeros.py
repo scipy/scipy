@@ -13,7 +13,7 @@ from scipy.optimize import zeros as cc
 from scipy.optimize import zeros, newton
 
 # Import testing parameters
-from scipy.optimize._tstutils import functions, fstrings
+from scipy.optimize._tstutils import functions, fstrings, get_tests
 from scipy._lib._numpy_compat import suppress_warnings
 
 TOL = 4*np.finfo(float).eps  # tolerance
@@ -29,19 +29,133 @@ class TestBasic(object):
                              full_output=True)
             assert_(r.converged)
             assert_allclose(zero, 1.0, atol=xtol, rtol=rtol,
-                err_msg='method %s, function %s' % (name, fname))
+                            err_msg='method %s, function %s' % (name, fname))
+
+    def _run_one_test(self, tc, method,
+                      sig_args_keys=[], sig_kwargs_keys=[], **kwargs):
+
+        mykwargs = {'full_output': True, 'disp': False}
+        mykwargs.update(kwargs)
+        myargs = []
+        for k in sig_args_keys:
+            if k not in tc:
+                k = {'a': 'x0', 'b': 'x1'}.get(k, k)
+            myargs.append(tc[k])
+        for k in sig_kwargs_keys:
+            mykwargs[k] = tc[k]
+        root = tc.get('root')
+        args = tc.get('args', ())
+
+        try:
+            r, rr = method(*myargs, args=args, **mykwargs)
+            return root, rr, tc
+        except Exception:
+            return root, zeros.RootResults(nan, -1, -1, zeros._EVALUEERR), tc
+
+    def run_tests(self, tests, method,
+                  sig_args_keys=[], sig_kwargs_keys=[],
+                  known_fail=[], **kwargs):
+        r"""Run test-cases using the specified method and the supplied signature.
+
+        Extract the arguments for the method call from the test case
+        dictionary using the supplied keys for the method's signature."""
+        results = [self._run_one_test(
+            tc, method, sig_args_keys=sig_args_keys,
+            sig_kwargs_keys=sig_kwargs_keys, **kwargs) for tc in tests]
+        # results= [[true root, full output, tc], ...]
+
+        # The usable xtol and rtol depend on the test
+        xtol = 4*finfo(float).eps
+        rtol = 4*finfo(float).eps
+        tols = {'xtol': xtol, 'rtol': rtol}
+        tols.update(dict(**kwargs))
+        rtol = tols['rtol']
+        atol = tols.get('tol', tols['xtol'])
+
+        results = [list(_) for _ in results]
+
+        notcvgd = [elt for elt in results if not elt[1].converged]
+        notcvgd = [elt for elt in notcvgd if elt[-1]['ID'] not in known_fail]
+        assert_equal([len(notcvgd), notcvgd], [0, []])
+
+        cvgd = [elt for elt in results if elt[1].converged]
+        approx = [elt[1].root for elt in cvgd]
+        correct = [elt[0] for elt in cvgd]
+        notclose = [[a] + elt for a, c, elt in zip(approx, correct, cvgd) if
+                    not isclose(a, c, rtol=rtol, atol=atol)
+                    and elt[-1]['ID'] not in known_fail]
+        # Evaluate the function and see if is 0 at the purported root
+        fvs = [tc['f'](aroot, *(tc['args'])) for aroot, c, fullout, tc in notclose]
+        notclose = [[fv] + elt for fv, elt in zip(fvs, notclose) if fv != 0]
+        assert_equal([len(notclose), notclose], [0, []])
+
+    def run_collection(self, collection, method, name, smoothness=None, known_fail=[], **kwargs):
+        xtol = 4*finfo(float).eps
+        rtol = 4*finfo(float).eps
+        tests = get_tests(collection, smoothness=smoothness)
+
+        sig_kwargs_keys = []
+        if name in ['secant', 'newton', 'halley']:
+            sig_args_keys = ['f', 'x0']
+            if name in ['newton', 'halley']:
+                sig_kwargs_keys.append('fprime')
+                if name in ['halley']:
+                    sig_kwargs_keys.append("fprime2")
+        else:
+            sig_args_keys = ['f', 'a', 'b']
+
+        if name in ['secant', 'newton', 'halley']:
+            if 'rtol' in kwargs:
+                kwargs.pop('rtol')
+            if 'xtol' in kwargs:
+                kwargs['tol'] = kwargs.pop('xtol')
+            else:
+                kwargs['tol'] = xtol
+        else:
+            if 'xtol' not in kwargs:
+                kwargs['xtol'] = xtol
+            if 'rtol' not in kwargs:
+                kwargs['rtol'] = rtol
+
+        self.run_tests(tests, method,
+                       sig_args_keys=sig_args_keys,
+                       sig_kwargs_keys=sig_kwargs_keys,
+                       known_fail=known_fail, **kwargs)
 
     def test_bisect(self):
         self.run_check(cc.bisect, 'bisect')
+        self.run_collection('aps', cc.bisect, 'bisect', smoothness=1)
 
     def test_ridder(self):
         self.run_check(cc.ridder, 'ridder')
+        self.run_collection('aps', cc.ridder, 'ridder', smoothness=1)
 
     def test_brentq(self):
         self.run_check(cc.brentq, 'brentq')
+        # Brentq/h needs a lower tolerance to be specified
+        self.run_collection('aps', cc.brentq, 'brentq', smoothness=1,
+                            xtol=1e-14, rtol=1e-14)
 
     def test_brenth(self):
         self.run_check(cc.brenth, 'brenth')
+        self.run_collection('aps', cc.brenth, 'brenth', smoothness=1,
+                            xtol=1e-14, rtol=1e-14)
+
+    def test_toms748(self):
+        self.run_check(cc.toms748, 'toms748')
+        self.run_collection('aps', cc.toms748, 'toms748', smoothness=1)
+
+    def test_newton_collections(self):
+        for collection in ['aps', 'complex']:
+            self.run_collection(collection, cc.newton, 'newton', smoothness=2, known_fail=['aps.13.00'])
+
+    def test_halley_collections(self):
+        known_fail = ['aps.12.06', 'aps.12.07', 'aps.12.08', 'aps.12.09',
+                      'aps.12.10', 'aps.12.11', 'aps.12.12', 'aps.12.13',
+                      'aps.12.14', 'aps.12.15', 'aps.12.16', 'aps.12.17',
+                      'aps.12.18', 'aps.13.00']
+        for collection in ['aps', 'complex']:
+            self.run_collection(collection, cc.newton, 'halley', smoothness=2, known_fail=known_fail)
 
     def test_newton(self):
         f1 = lambda x: x**2 - 2*x - 1

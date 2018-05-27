@@ -142,12 +142,34 @@ Scalar functions
 .. autosummary::
    :toctree: generated/
 
-   brentq - quadratic interpolation Brent method.
-   brenth - Brent method, modified by Harris with hyperbolic extrapolation.
-   ridder - Ridder's method.
-   bisect - Bisection method.
-   newton - Secant method or Newton's method.
    RootResults - The root finding result returned by some root finders.
+   brentq - quadratic interpolation Brent method
+   brenth - Brent method, modified by Harris with hyperbolic extrapolation
+   ridder - Ridder's method
+   bisect - Bisection method
+   newton - Secant method or Newton's method
+   toms748 - Alefeld, Potra & Shi Algorithm 748
+
+The table below lists situations and appropriate methods, along with *asymptotic* convergence rates
+per iteration (and per function evaluation) for successful convergence to a simple root(*).
+
++-------------+-------------+--------------+---------------+---------------------+-------------+----------------------+
+| Domain of f | Has Bracket | Has `fprime` | Has `fprime2` | Available Functions | Convergence                        |
++             +             +              +               +                     +-------------+----------------------+
+|             |             |              |               |                     | Guaranteed? |  Rate(s)(*)          |
++=============+=============+==============+===============+=====================+=============+======================+
+| `R`         | Yes         | N/A          | N/A           | - bisection         | - Yes       | - 1 "Linear"         |
+|             |             |              |               | - brentq            | - Yes       | - >=1, <= 1.62       |
+|             |             |              |               | - brenth            | - Yes       | - >=1, <= 1.62       |
+|             |             |              |               | - ridder            | - Yes       | - 2.0 (1.41)         |
+|             |             |              |               | - toms748           | - Yes       | - 2.7 (1.65)         |
++-------------+-------------+--------------+---------------+---------------------+-------------+----------------------+
+| `R` or `C`  | No          | No           | No            | newton              | No          | 1.62 (1.62)          |
++-------------+-------------+--------------+---------------+---------------------+-------------+----------------------+
+| `R` or `C`  | No          | Yes          | No            | newton              | No          | 2.00 (1.41)          |
++-------------+-------------+--------------+---------------+---------------------+-------------+----------------------+
+| `R` or `C`  | No          | Yes          | Yes           | newton              | No          | 3.00 (1.44)          |
++-------------+-------------+--------------+---------------+---------------------+-------------+----------------------+
 
 
 Fixed point finding:
