@@ -4498,9 +4498,11 @@ def cases_64bit():
                 msg = SKIP_TESTS.get(method_name)
                 if bool(msg):
                     marks += [pytest.mark.skip(reason=msg)]
-                for mname in ['skipif', 'skip', 'xfail', 'xslow']:
-                    if hasattr(method, mname):
-                        marks += [getattr(method, mname)]
+
+                markers = getattr(method, 'pytestmark', [])
+                for mark in markers:
+                    if mark.name in ('skipif', 'skip', 'xfail', 'xslow'):
+                        marks.append(mark)
                 yield pytest.param(cls, method_name, marks=marks)
 
 

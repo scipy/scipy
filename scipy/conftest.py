@@ -10,7 +10,7 @@ from scipy._lib._testutils import FPUModeChangeWarning
 
 
 def pytest_runtest_setup(item):
-    mark = item.get_marker("xslow")
+    mark = item.get_closest_marker("xslow")
     if mark is not None:
         try:
             v = int(os.environ.get('SCIPY_XSLOW', '0'))
