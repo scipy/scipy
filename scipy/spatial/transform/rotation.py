@@ -5,28 +5,43 @@ import scipy.linalg
 import re
 
 
+_axis_to_ind = {'x': 0, 'y': 1, 'z': 2}
+
+
 def _make_elementary_quat(axis, angles):
     num_rotations = angles.shape[0]
     quat = np.zeros((num_rotations, 4))
 
-    axis_to_ind = {'x': 0, 'y': 1, 'z': 2}
     quat[:, 3] = np.cos(angles / 2)
-    quat[:, axis_to_ind[axis]] = np.sin(angles / 2)
+    quat[:, _axis_to_ind[axis]] = np.sin(angles / 2)
     return quat
 
 
 def _compose_quat(p, q):
     # p and q should have same shape (N, 4)
-    num_quat = p.shape[0]
-    product = np.empty((num_quat, 4))
+    product = np.empty_like(p)
     # Scalar part of result
-    # Einsum calculates row wise dot product
     product[:, 3] = p[:, 3] * q[:, 3] - np.sum(p[:, :3] * q[:, :3], axis=1)
     # Vector part of result
-    product[:, :3] = (p[:, 3][:, None] * q[:, :3] +
-                      q[:, 3][:, None] * p[:, :3] +
+    product[:, :3] = (p[:, None, 3] * q[:, :3] + q[:, None, 3] * p[:, :3] +
                       np.cross(p[:, :3], q[:, :3]))
     return product
+
+
+def _elementary_quat_compose(seq, angles, intrinsic=False):
+    # Initialize result to first axis
+    result = _make_elementary_quat(seq[0], angles[:, 0])
+
+    for idx, axis in enumerate(seq[1:], start=1):
+        if intrinsic:
+            result = _compose_quat(
+                result,
+                _make_elementary_quat(axis, angles[:, idx]))
+        else:
+            result = _compose_quat(
+                _make_elementary_quat(axis, angles[:, idx]),
+                result)
+    return result
 
 
 class Rotation(object):
@@ -308,54 +323,47 @@ class Rotation(object):
             return rotvec
 
     @classmethod
-    def _elementary_quat_compose(cls, seq, angles, intrinsic=False):
-        # Initialize result to first axis
-        result = _make_elementary_quat(seq[0], angles[:, 0])
-
-        for idx, axis in enumerate(seq[1:], start=1):
-            if intrinsic:
-                result = _compose_quat(
-                    result,
-                    _make_elementary_quat(axis, angles[:, idx]))
-            else:
-                result = _compose_quat(
-                    _make_elementary_quat(axis, angles[:, idx]),
-                    result)
-        return result
-
-    @classmethod
     def from_euler(cls, seq, angles, degrees=False):
         """Initialize rotation from Euler angles.
 
         Parameters
         ----------
-        seq : str
-            `seq` must be a string of upto 3 characters belonging to the set
-            {'x', 'y', 'z'} or {'X', 'Y', 'Z'}. Each lowercase character
-            represents an extrinsic rotation around the corresponding axis and
-            an uppercase character represents an intrinsic rotation. Extrinsic
-            and intrinsic rotations cannot be mixed in one function call.
+        seq : string
+            Up to 3 characters belonging to the set {'X', 'Y', 'Z'} for
+            intrinsic rotations [1]_, or {'x', 'y', 'z'} for extrinsic
+            rotations [2]_. Extrinsic and intrinsic rotations cannot be mixed
+            in one function call.
         angles : float or array_like, shape (N, ) or (N, [1 or 2 or 3])
             Euler angles specified in radians (`degrees` is False) or degrees
-            if parameter `degrees` is True.
+            (`degrees` is True).
             For a single character `seq`, `angles` can be:
 
                 - a single value
-                - array_like, 1D with shape (N, ), where each `angle[i]`
+                - array_like with shape (N, ), where each `angle[i]`
                   corresponds to a single rotation
-                - array_like, 2D with shape (N, 1), where each `angle[i, 0]`
+                - array_like with shape (N, 1), where each `angle[i, 0]`
                   corresponds to a single rotation
 
             For 2- and 3-character wide `seq`, `angles` can be:
 
-                - array_like, 1D with shape (W, ) where `W` is the width of
+                - array_like with shape (W, ) where `W` is the width of
                   `seq`, which corresponds to a single rotation with `W` axes
-                - array_like, 2D with shape (N, W) with each `angle[i]`
-                  corresponding to a sequence of Euler angles describing a
-                  single rotation
+                - array_like with shape (N, W) where each `angle[i]`
+                  corresponds to a sequence of Euler angles describing a single
+                  rotation
 
-        degrees : boolean
-            If True, then the given angles are taken to be in degrees
+        degrees : boolean, optional
+            If True, then the given angles are taken to be in degrees. Default
+            is False.
+
+        References
+        ----------
+        .. [1] `Intrinsic rotations
+                <https://en.wikipedia.org/wiki/Euler_angles
+                #Definition_by_intrinsic_rotations>`
+        .. [2] `Extrinsic rotations
+                <https://en.wikipedia.org/wiki/Euler_angles
+                #Definition_by_extrinsic_rotations>`
         """
         num_axes = len(seq)
         if num_axes < 1 or num_axes > 3:
@@ -397,16 +405,15 @@ class Rotation(object):
                                  "got shape {}.".format(angles.shape))
         else:  # 2 or 3 axes
             if angles.ndim not in [1, 2] or angles.shape[-1] != num_axes:
-                raise ValueError("Expected each angle sequence to have width "
-                                 "{0}, got {1}".format(num_axes,
-                                                       angles.shape[-1]))
+                raise ValueError("Expected `angles` to be at most "
+                                 "2-dimensional with width equal to number "
+                                 "of axes specified, got {} for shape").format(
+                                 angles.shape)
+
             if angles.ndim == 1:
                 # (1, num_axes)
                 angles = angles[None, :]
                 is_single = True
-            elif angles.ndim > 2:
-                raise ValueError("Expected `angles` parameter to a a 1D or "
-                                 "2D array, got {}.".format(angles))
 
         # By now angles should have shape (num_rot, num_axes)
         # sanity check
@@ -414,5 +421,5 @@ class Rotation(object):
             raise ValueError("Expected angles to have shape (num_rotations, "
                              "num_axes), got {}.".format(angles.shape))
 
-        quat = cls._elementary_quat_compose(seq, angles, intrinsic)
+        quat = _elementary_quat_compose(seq, angles, intrinsic)
         return cls(quat[0] if is_single else quat, normalized=True)
