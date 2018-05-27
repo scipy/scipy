@@ -113,7 +113,8 @@
       <rt>   TOL, RHOTOL, 
      $       <sdsd=s,d,s,d>GETBREAK,  
      $       <rc=ws,d,wsc,dz>NRM2
-      <_t>  ALPHA, BETA, RHO, RHO1, <xdot=wsdot,ddot,wcdotc,wzdotc>
+      <_t>  ALPHA, BETA, RHO, RHO1, <xdot=wsdot,ddot,wcdotc,wzdotc>,
+     $     TMPVAL
 *
 *     indicates where to resume from. Only valid when IJOB = 2!
       INTEGER RLBL
@@ -319,7 +320,13 @@
 *****************
  6       CONTINUE
 *****************
-         ALPHA = RHO / <xdot>( N, WORK(1,PTLD), 1, WORK(1,Q), 1 )
+         TMPVAL = <xdot>( N, WORK(1,PTLD), 1, WORK(1,Q), 1 )
+         IF (TMPVAL.EQ.0) THEN
+*           Breakdown
+            INFO = -11
+            GO TO 20
+         ENDIF
+         ALPHA = RHO / TMPVAL
 *
 *        Compute current solution vector x.
 *

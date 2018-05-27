@@ -308,7 +308,13 @@
  4    CONTINUE
 *****************
 *
-      ALPHA = RHO / <xdot>( N, WORK(1,RTLD), 1, WORK(1,V), 1 )
+      TMPVAL = <xdot>( N, WORK(1,RTLD), 1, WORK(1,V), 1 )
+      IF (TMPVAL.EQ.0) THEN
+*        Breakdown
+         INFO = -11
+         GO TO 20
+      ENDIF
+      ALPHA = RHO / TMPVAL
 *
 *        Early check for tolerance.
 *

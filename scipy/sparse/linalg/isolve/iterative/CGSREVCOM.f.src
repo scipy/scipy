@@ -328,7 +328,13 @@
  4       CONTINUE
 *****************
 *
-         ALPHA = RHO / <xdot>( N, WORK(1,RTLD), 1, WORK(1,VHAT), 1 )
+         TMPVAL = <xdot>( N, WORK(1,RTLD), 1, WORK(1,VHAT), 1 )
+         IF (TMPVAL.EQ.0) THEN
+*           Breakdown
+            INFO = -11
+            GO TO 20
+         ENDIF
+         ALPHA = RHO / TMPVAL
 *
          CALL <_c>COPY( N, WORK(1,U), 1, WORK(1,Q), 1 )
          CALL <_c>AXPY( N, -ALPHA, WORK(1,VHAT), 1, WORK(1,Q), 1 )
