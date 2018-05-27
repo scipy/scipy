@@ -21,8 +21,7 @@ def _compose_quat(p, q):
     product = np.empty((num_quat, 4))
     # Scalar part of result
     # Einsum calculates row wise dot product
-    product[:, 3] = (p[:, 3] * q[:, 3] -
-                     np.einsum('ij,ij->i', p[:, :3], q[:, :3]))
+    product[:, 3] = p[:, 3] * q[:, 3] - np.sum(p[:, :3] * q[:, :3], axis=1)
     # Vector part of result
     product[:, :3] = (p[:, 3][:, None] * q[:, :3] +
                       q[:, 3][:, None] * p[:, :3] +
@@ -312,19 +311,16 @@ class Rotation(object):
     def _elementary_quat_compose(cls, seq, angles, intrinsic=False):
         # Initialize result to first axis
         result = _make_elementary_quat(seq[0], angles[:, 0])
-        if len(seq) == 1:
-            # For single axis, we're done
-            return result
 
         for idx, axis in enumerate(seq[1:], start=1):
             if intrinsic:
                 result = _compose_quat(
-                    _make_elementary_quat(axis, angles[:, idx]),
-                    result)
-            else:
-                result = _compose_quat(
                     result,
                     _make_elementary_quat(axis, angles[:, idx]))
+            else:
+                result = _compose_quat(
+                    _make_elementary_quat(axis, angles[:, idx]),
+                    result)
         return result
 
     @classmethod
@@ -392,12 +388,15 @@ class Rotation(object):
             elif angles.ndim == 1:
                 # (N, 1)
                 angles = angles[:, None]
-            else:
-                raise ValueError("Expected float or 1D array for parameter "
-                                 "`angles` corresponding to `seq` "
-                                 "got shape {}".format(angles.shape))
+            elif angles.ndim == 2 and angles.shape[-1] != 1:
+                raise ValueError("Expected `angles` parameter to have shape "
+                                 "(N, 1), got {}.".format(angles.shape))
+            elif angles.ndim > 2:
+                raise ValueError("Expected float, 1D array, or 2D array for "
+                                 "parameter `angles` corresponding to `seq`, "
+                                 "got shape {}.".format(angles.shape))
         else:  # 2 or 3 axes
-            if num_axes != angles.shape[-1]:
+            if angles.ndim not in [1, 2] or angles.shape[-1] != num_axes:
                 raise ValueError("Expected each angle sequence to have width "
                                  "{0}, got {1}".format(num_axes,
                                                        angles.shape[-1]))
@@ -416,4 +415,4 @@ class Rotation(object):
                              "num_axes), got {}.".format(angles.shape))
 
         quat = cls._elementary_quat_compose(seq, angles, intrinsic)
-        return cls(quat[0] if is_single else quat)
+        return cls(quat[0] if is_single else quat, normalized=True)
