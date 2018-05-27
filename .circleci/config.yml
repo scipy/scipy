@@ -114,7 +114,7 @@ jobs:
             export PATH=/usr/lib/ccache:$PATH
             # XXX: use "numpy>=1.15.0" when it's released
             pypy3 -mpip install --upgrade pip setuptools wheel
-            pypy3 -mpip install --no-build-isolation --extra-index https://antocuni.github.io/pypy-wheels/ubuntu "pytest>=3.6" pytest-xdist Tempita "Cython>=0.28.2" mpmath
+            pypy3 -mpip install --no-build-isolation --extra-index https://antocuni.github.io/pypy-wheels/ubuntu pytest pytest-xdist Tempita "Cython>=0.28.2" mpmath
             pypy3 -mpip install --no-build-isolation git+https://github.com/numpy/numpy.git@db552b5b6b37f2ff085b304751d7a2ebed26adc9
       - run:
           name: build

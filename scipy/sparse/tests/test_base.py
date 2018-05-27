@@ -22,6 +22,7 @@ Run tests if sparse is not installed:
 import operator
 import contextlib
 import functools
+from distutils.version import LooseVersion
 
 import numpy as np
 from scipy._lib.six import xrange, zip as izip
@@ -4499,10 +4500,16 @@ def cases_64bit():
                 if bool(msg):
                     marks += [pytest.mark.skip(reason=msg)]
 
-                markers = getattr(method, 'pytestmark', [])
-                for mark in markers:
-                    if mark.name in ('skipif', 'skip', 'xfail', 'xslow'):
-                        marks.append(mark)
+                if LooseVersion(pytest.__version__) >= LooseVersion("3.6.0"):
+                    markers = getattr(method, 'pytestmark', [])
+                    for mark in markers:
+                        if mark.name in ('skipif', 'skip', 'xfail', 'xslow'):
+                            marks.append(mark)
+                else:
+                    for mname in ['skipif', 'skip', 'xfail', 'xslow']:
+                        if hasattr(method, mname):
+                            marks += [getattr(method, mname)]
+
                 yield pytest.param(cls, method_name, marks=marks)
 
 
