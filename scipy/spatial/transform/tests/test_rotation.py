@@ -323,16 +323,16 @@ def test_from_euler_single_rotation():
 
 
 def test_single_intrinsic_extrinsic_rotation():
-    ext = Rotation.from_euler('z', 90, degrees=True).as_dcm()
-    int = Rotation.from_euler('Z', 90, degrees=True).as_dcm()
-    assert_allclose(ext, int)
+    extrinsic = Rotation.from_euler('z', 90, degrees=True).as_dcm()
+    intrinsic = Rotation.from_euler('Z', 90, degrees=True).as_dcm()
+    assert_allclose(extrinsic, intrinsic)
 
 
 def test_from_euler_rotation_order():
     # Intrinsic rotation is same as extrinsic with order reversed
     np.random.seed(0)
     a = np.random.randint(low=0, high=180, size=(6, 3))
-    b = a[:, np.argsort([2, 1, 0])]
+    b = a[:, ::-1]
     x = Rotation.from_euler('xyz', a, degrees=True).as_quaternion()
     y = Rotation.from_euler('ZYX', b, degrees=True).as_quaternion()
     assert_allclose(x, y)
@@ -347,3 +347,111 @@ def test_from_euler_elementary_extrinsic_rotation():
         [1, 0, 0]
     ])
     assert_array_almost_equal(dcm, expected_dcm)
+
+
+def test_from_euler_intrinsic_rotation_312():
+    angles = [
+        [30, 60, 45],
+        [30, 60, 30],
+        [45, 30, 60]
+        ]
+    dcm = Rotation.from_euler('ZXY', angles, degrees=True).as_dcm()
+
+    assert_array_almost_equal(dcm[0], np.array([
+        [0.3061862, -0.2500000, 0.9185587],
+        [0.8838835, 0.4330127, -0.1767767],
+        [-0.3535534, 0.8660254, 0.3535534]
+    ]))
+
+    assert_array_almost_equal(dcm[1], np.array([
+        [0.5334936, -0.2500000, 0.8080127],
+        [0.8080127, 0.4330127, -0.3995191],
+        [-0.2500000, 0.8660254, 0.4330127]
+    ]))
+
+    assert_array_almost_equal(dcm[2], np.array([
+        [0.0473672, -0.6123725, 0.7891491],
+        [0.6597396, 0.6123725, 0.4355958],
+        [-0.7500000, 0.5000000, 0.4330127]
+    ]))
+
+
+def test_from_euler_intrinsic_rotation_313():
+    angles = [
+        [30, 60, 45],
+        [30, 60, 30],
+        [45, 30, 60]
+        ]
+    dcm = Rotation.from_euler('ZXZ', angles, degrees=True).as_dcm()
+
+    assert_array_almost_equal(dcm[0], np.array([
+        [0.43559574, -0.78914913, 0.4330127],
+        [0.65973961, -0.04736717, -0.750000],
+        [0.61237244, 0.61237244, 0.500000]
+    ]))
+
+    assert_array_almost_equal(dcm[1], np.array([
+        [0.6250000, -0.64951905, 0.4330127],
+        [0.64951905, 0.1250000, -0.750000],
+        [0.4330127, 0.750000, 0.500000]
+    ]))
+
+    assert_array_almost_equal(dcm[2], np.array([
+        [-0.1767767, -0.91855865, 0.35355339],
+        [0.88388348, -0.30618622, -0.35355339],
+        [0.4330127, 0.25000000, 0.8660254]
+    ]))
+
+
+def test_from_euler_extrinsic_rotation_312():
+    angles = [
+        [30, 60, 45],
+        [30, 60, 30],
+        [45, 30, 60]
+        ]
+    dcm = Rotation.from_euler('zxy', angles, degrees=True).as_dcm()
+
+    assert_array_almost_equal(dcm[0], np.array([
+        [0.91855865, 0.1767767, 0.35355339],
+        [0.25000000, 0.4330127, -0.8660254],
+        [-0.30618622, 0.88388348, 0.35355339]
+    ]))
+
+    assert_array_almost_equal(dcm[1], np.array([
+        [0.96650635, -0.0580127, 0.2500000],
+        [0.25000000, 0.4330127, -0.8660254],
+        [-0.0580127, 0.89951905, 0.4330127]
+    ]))
+
+    assert_array_almost_equal(dcm[2], np.array([
+        [0.65973961, -0.04736717, 0.7500000],
+        [0.61237244, 0.61237244, -0.5000000],
+        [-0.43559574, 0.78914913, 0.4330127]
+    ]))
+
+
+def test_from_euler_extrinsic_rotation_313():
+    angles = [
+        [30, 60, 45],
+        [30, 60, 30],
+        [45, 30, 60]
+        ]
+    dcm = Rotation.from_euler('zxz', angles, degrees=True).as_dcm()
+
+    assert_array_almost_equal(dcm[0], np.array([
+        [0.43559574, -0.65973961, 0.61237244],
+        [0.78914913, -0.04736717, -0.61237244],
+        [0.4330127, 0.75000000, 0.500000]
+    ]))
+
+    assert_array_almost_equal(dcm[1], np.array([
+        [0.62500000, -0.64951905, 0.4330127],
+        [0.64951905, 0.12500000, -0.750000],
+        [0.4330127, 0.75000000, 0.500000]
+    ]))
+
+    assert_array_almost_equal(dcm[2], np.array([
+        [-0.1767767, -0.88388348, 0.4330127],
+        [0.91855865, -0.30618622, -0.250000],
+        [0.35355339, 0.35355339, 0.8660254]
+    ]))
