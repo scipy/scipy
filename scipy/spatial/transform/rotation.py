@@ -5,7 +5,7 @@ import scipy.linalg
 import re
 
 
-_axis_to_ind = {'x': 0, 'y': 1, 'z': 2}
+AXIS_TO_IND = {'x': 0, 'y': 1, 'z': 2}
 
 
 def _make_elementary_quat(axis, angles):
@@ -13,7 +13,7 @@ def _make_elementary_quat(axis, angles):
     quat = np.zeros((num_rotations, 4))
 
     quat[:, 3] = np.cos(angles / 2)
-    quat[:, _axis_to_ind[axis]] = np.sin(angles / 2)
+    quat[:, AXIS_TO_IND[axis]] = np.sin(angles / 2)
     return quat
 
 
@@ -330,23 +330,23 @@ class Rotation(object):
         ----------
         seq : string
             Up to 3 characters belonging to the set {'X', 'Y', 'Z'} for
-            intrinsic rotations [1]_, or {'x', 'y', 'z'} for extrinsic
-            rotations [2]_. Extrinsic and intrinsic rotations cannot be mixed
+            intrinsic rotations, or {'x', 'y', 'z'} for extrinsic
+            rotations [1]_. Extrinsic and intrinsic rotations cannot be mixed
             in one function call.
-        angles : float or array_like, shape (N, ) or (N, [1 or 2 or 3])
+        angles : float or array_like, shape (N,) or (N, [1 or 2 or 3])
             Euler angles specified in radians (`degrees` is False) or degrees
             (`degrees` is True).
             For a single character `seq`, `angles` can be:
 
                 - a single value
-                - array_like with shape (N, ), where each `angle[i]`
+                - array_like with shape (N,), where each `angle[i]`
                   corresponds to a single rotation
                 - array_like with shape (N, 1), where each `angle[i, 0]`
                   corresponds to a single rotation
 
             For 2- and 3-character wide `seq`, `angles` can be:
 
-                - array_like with shape (W, ) where `W` is the width of
+                - array_like with shape (W,) where `W` is the width of
                   `seq`, which corresponds to a single rotation with `W` axes
                 - array_like with shape (N, W) where each `angle[i]`
                   corresponds to a sequence of Euler angles describing a single
@@ -358,12 +358,8 @@ class Rotation(object):
 
         References
         ----------
-        .. [1] `Intrinsic rotations
-                <https://en.wikipedia.org/wiki/Euler_angles
-                #Definition_by_intrinsic_rotations>`
-        .. [2] `Extrinsic rotations
-                <https://en.wikipedia.org/wiki/Euler_angles
-                #Definition_by_extrinsic_rotations>`
+        .. [1] `Euler angle definitions
+                <https://en.wikipedia.org/wiki/Euler_angles#Definition_by_intrinsic_rotations>`_
         """
         num_axes = len(seq)
         if num_axes < 1 or num_axes > 3:
