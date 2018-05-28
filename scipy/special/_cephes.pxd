@@ -102,6 +102,6 @@ cdef extern from "cephes.h" nogil:
     double kolmogi(double p)
     double kolmogc(double x)
     double kolmogci(double p)
-    double kolmogP(double x)
+    double kolmogp(double x)
     double lanczos_sum_expg_scaled(double x)
     double owens_t(double h, double a)
