@@ -9,8 +9,11 @@ from numpy.testing import (assert_warns, assert_,
 import numpy as np
 from numpy import finfo, power
 
+
 from scipy.optimize import zeros as cc
 from scipy.optimize import zeros, newton
+
+from scipy._lib._util import getargspec_no_self as _getargspec
 
 # Import testing parameters
 from scipy.optimize._tstutils import functions, fstrings, get_tests
@@ -18,12 +21,14 @@ from scipy._lib._numpy_compat import suppress_warnings
 
 TOL = 4*np.finfo(float).eps  # tolerance
 
+_FLOAT_EPS = finfo(float).eps
 
 class TestBasic(object):
     def run_check(self, method, name):
         a = .5
         b = sqrt(3)
-        xtol = rtol = TOL
+        xtol = 4 * _FLOAT_EPS
+        rtol = 4 * _FLOAT_EPS
         for function, fname in zip(functions, fstrings):
             zero, r = method(function, a, b, xtol=xtol, rtol=rtol,
                              full_output=True)
@@ -31,52 +36,70 @@ class TestBasic(object):
             assert_allclose(zero, 1.0, atol=xtol, rtol=rtol,
                             err_msg='method %s, function %s' % (name, fname))
 
-    def _run_one_test(self, tc, method,
-                      sig_args_keys=[], sig_kwargs_keys=[], **kwargs):
-
-        mykwargs = {'full_output': True, 'disp': False}
-        mykwargs.update(kwargs)
-        myargs = []
-        for k in sig_args_keys:
+    def _run_one_test(self, tc, method, sig_args_keys=None,
+                      sig_kwargs_keys=None, **kwargs):
+        method_args = []
+        for k in sig_args_keys or []:
             if k not in tc:
-                k = {'a': 'x0', 'b': 'x1'}.get(k, k)
-            myargs.append(tc[k])
-        for k in sig_kwargs_keys:
-            mykwargs[k] = tc[k]
+                # If a,b not present use x0, x1. Similarly for f and func
+                k = {'a': 'x0', 'b': 'x1', 'func': 'f'}.get(k, k)
+            method_args.append(tc[k])
+
+        method_kwargs = dict(**kwargs)
+        method_kwargs.update({'full_output': True, 'disp': False})
+        for k in sig_kwargs_keys or []:
+            method_kwargs[k] = tc[k]
+
         root = tc.get('root')
-        args = tc.get('args', ())
+        func_args = tc.get('args', ())
 
         try:
-            r, rr = method(*myargs, args=args, **mykwargs)
+            r, rr = method(*method_args, args=func_args, **method_kwargs)
             return root, rr, tc
         except Exception:
             return root, zeros.RootResults(nan, -1, -1, zeros._EVALUEERR), tc
 
-    def run_tests(self, tests, method,
-                  sig_args_keys=[], sig_kwargs_keys=[],
-                  known_fail=[], **kwargs):
+    def run_tests(self, tests, method, name,
+                  xtol=4 * _FLOAT_EPS, rtol=4 * _FLOAT_EPS,
+                  known_fail=None, **kwargs):
         r"""Run test-cases using the specified method and the supplied signature.
 
         Extract the arguments for the method call from the test case
         dictionary using the supplied keys for the method's signature."""
-        results = [self._run_one_test(
+        # The methods have one of two base signatures:
+        # (f, a, b, **kwargs)  # newton
+        # (func, x0, **kwargs)  # bisect/brentq/...
+        sig = _getargspec(method)  # ArgSpec with args, varargs, varkw, defaults
+        nDefaults = len(sig[3])
+        nRequired = len(sig[0]) - nDefaults
+        sig_args_keys = sig[0][:nRequired]
+        sig_kwargs_keys = []
+        if name in ['secant', 'newton', 'halley']:
+            if name in ['newton', 'halley']:
+                sig_kwargs_keys.append('fprime')
+                if name in ['halley']:
+                    sig_kwargs_keys.append('fprime2')
+            kwargs['tol'] = xtol
+        else:
+            kwargs['xtol'] = xtol
+            kwargs['rtol'] = rtol
+
+        results = [list(self._run_one_test(
             tc, method, sig_args_keys=sig_args_keys,
-            sig_kwargs_keys=sig_kwargs_keys, **kwargs) for tc in tests]
+            sig_kwargs_keys=sig_kwargs_keys, **kwargs)) for tc in tests]
         # results= [[true root, full output, tc], ...]
 
-        # The usable xtol and rtol depend on the test
-        xtol = 4*finfo(float).eps
-        rtol = 4*finfo(float).eps
-        tols = {'xtol': xtol, 'rtol': rtol}
-        tols.update(dict(**kwargs))
-        rtol = tols['rtol']
-        atol = tols.get('tol', tols['xtol'])
-
-        results = [list(_) for _ in results]
-
+        known_fail = known_fail or []
         notcvgd = [elt for elt in results if not elt[1].converged]
         notcvgd = [elt for elt in notcvgd if elt[-1]['ID'] not in known_fail]
-        assert_equal([len(notcvgd), notcvgd], [0, []])
+        notcvged_IDS = [elt[-1]['ID'] for elt in notcvgd]
+        assert_equal([len(notcvged_IDS), notcvged_IDS], [0, []])
+
+        # The usable xtol and rtol depend on the test
+        tols = {'xtol': 4 * _FLOAT_EPS, 'rtol': 4 * _FLOAT_EPS}
+        tols.update(**kwargs)
+        rtol = tols['rtol']
+        atol = tols.get('tol', tols['xtol'])
 
         cvgd = [elt for elt in results if elt[1].converged]
         approx = [elt[1].root for elt in cvgd]
@@ -87,39 +110,17 @@ class TestBasic(object):
         # Evaluate the function and see if is 0 at the purported root
         fvs = [tc['f'](aroot, *(tc['args'])) for aroot, c, fullout, tc in notclose]
         notclose = [[fv] + elt for fv, elt in zip(fvs, notclose) if fv != 0]
-        assert_equal([len(notclose), notclose], [0, []])
+        assert_equal([notclose, len(notclose)], [[], 0])
 
-    def run_collection(self, collection, method, name, smoothness=None, known_fail=[], **kwargs):
-        xtol = 4*finfo(float).eps
-        rtol = 4*finfo(float).eps
+    def run_collection(self, collection, method, name, smoothness=None,
+                       known_fail=None,
+                       xtol=4 * _FLOAT_EPS, rtol =4 * _FLOAT_EPS,
+                       **kwargs):
+        r"""Run a collection of tests using the specified method.
+
+        The name is used to determine some optional arguments."""
         tests = get_tests(collection, smoothness=smoothness)
-
-        sig_kwargs_keys = []
-        if name in ['secant', 'newton', 'halley']:
-            sig_args_keys = ['f', 'x0']
-            if name in ['newton', 'halley']:
-                sig_kwargs_keys.append('fprime')
-                if name in ['halley']:
-                    sig_kwargs_keys.append("fprime2")
-        else:
-            sig_args_keys = ['f', 'a', 'b']
-
-        if name in ['secant', 'newton', 'halley']:
-            if 'rtol' in kwargs:
-                kwargs.pop('rtol')
-            if 'xtol' in kwargs:
-                kwargs['tol'] = kwargs.pop('xtol')
-            else:
-                kwargs['tol'] = xtol
-        else:
-            if 'xtol' not in kwargs:
-                kwargs['xtol'] = xtol
-            if 'rtol' not in kwargs:
-                kwargs['rtol'] = rtol
-
-        self.run_tests(tests, method,
-                       sig_args_keys=sig_args_keys,
-                       sig_kwargs_keys=sig_kwargs_keys,
+        self.run_tests(tests, method, name, xtol=xtol, rtol=rtol,
                        known_fail=known_fail, **kwargs)
 
     def test_bisect(self):
@@ -146,8 +147,10 @@ class TestBasic(object):
         self.run_collection('aps', cc.toms748, 'toms748', smoothness=1)
 
     def test_newton_collections(self):
+        known_fail = ['aps.13.00']
+        known_fail += ['aps.12.05', 'aps.12.17']  # fails under Windows Py27
         for collection in ['aps', 'complex']:
-            self.run_collection(collection, cc.newton, 'newton', smoothness=2, known_fail=['aps.13.00'])
+            self.run_collection(collection, cc.newton, 'newton', smoothness=2, known_fail=known_fail)
 
     def test_halley_collections(self):
         known_fail = ['aps.12.06', 'aps.12.07', 'aps.12.08', 'aps.12.09',
@@ -157,16 +160,32 @@ class TestBasic(object):
         for collection in ['aps', 'complex']:
             self.run_collection(collection, cc.newton, 'halley', smoothness=2, known_fail=known_fail)
 
+    @staticmethod
+    def f1(x):
+        return x**2 - 2*x - 1  # == (x-1)**2 - 2
+
+    @staticmethod
+    def f1_1(x):
+        return 2*x - 2
+
+    @staticmethod
+    def f1_2(x):
+        return 2.0 + 0*x
+
+    @staticmethod
+    def f2(x):
+        return exp(x) - cos(x)
+
+    @staticmethod
+    def f2_1(x):
+        return exp(x) + sin(x)
+
+    @staticmethod
+    def f2_2(x):
+        return exp(x) + cos(x)
+
     def test_newton(self):
-        f1 = lambda x: x**2 - 2*x - 1
-        f1_1 = lambda x: 2*x - 2
-        f1_2 = lambda x: 2.0 + 0*x
-
-        f2 = lambda x: exp(x) - cos(x)
-        f2_1 = lambda x: exp(x) + sin(x)
-        f2_2 = lambda x: exp(x) + cos(x)
-
-        for f, f_1, f_2 in [(f1, f1_1, f1_2), (f2, f2_1, f2_2)]:
+        for f, f_1, f_2 in [(self.f1, self.f1_1, self.f1_2), (self.f2, self.f2_1, self.f2_2)]:
             x = zeros.newton(f, 3, tol=1e-6)
             assert_allclose(f(x), 0, atol=1e-6)
             x = zeros.newton(f, 3, fprime=f_1, tol=1e-6)
@@ -244,19 +263,16 @@ class TestBasic(object):
         # Test the full_output capability, both when converging and not.
         # Use simple polynomials, to avoid hitting platform dependencies
         # (e.g. exp & trig) in number of iterations
-        f1 = lambda x: x**2 - 2*x - 1  # == (x-1)**2 - 2
-        f1_1 = lambda x: 2*x - 2
-        f1_2 = lambda x: 2.0 + 0*x
 
         x0 = 3
         expected_counts = [(6, 7), (5, 10), (3, 9)]
 
         for derivs in range(3):
             kwargs = {'tol': 1e-6, 'full_output': True, }
-            for k, v in [['fprime', f1_1], ['fprime2', f1_2]][:derivs]:
+            for k, v in [['fprime', self.f1_1], ['fprime2', self.f1_2]][:derivs]:
                 kwargs[k] = v
 
-            x, r = zeros.newton(f1, x0, disp=False, **kwargs)
+            x, r = zeros.newton(self.f1, x0, disp=False, **kwargs)
             assert_(r.converged)
             assert_equal(x, r.root)
             assert_equal((r.iterations, r.function_calls), expected_counts[derivs])
@@ -267,7 +283,7 @@ class TestBasic(object):
 
             # Now repeat, allowing one fewer iteration to force convergence failure
             iters = r.iterations - 1
-            x, r = zeros.newton(f1, x0, maxiter=iters, disp=False, **kwargs)
+            x, r = zeros.newton(self.f1, x0, maxiter=iters, disp=False, **kwargs)
             assert_(not r.converged)
             assert_equal(x, r.root)
             assert_equal(r.iterations, iters)
@@ -278,7 +294,7 @@ class TestBasic(object):
                 with pytest.raises(
                         RuntimeError,
                         match='Failed to converge after %d iterations, value is .*' % (iters)):
-                    x, r = zeros.newton(f1, x0, maxiter=iters, disp=True, **kwargs)
+                    x, r = zeros.newton(self.f1, x0, maxiter=iters, disp=True, **kwargs)
 
     def test_deriv_zero_warning(self):
         func = lambda x: x**2 - 2.0
@@ -293,7 +309,8 @@ def test_gh_5555():
         return x - root
 
     methods = [cc.bisect, cc.ridder]
-    xtol = rtol = TOL
+    xtol = 4 * _FLOAT_EPS
+    rtol = 4 * _FLOAT_EPS
     for method in methods:
         res = method(f, -1e8, 1e7, xtol=xtol, rtol=rtol)
         assert_allclose(root, res, atol=xtol, rtol=rtol,
@@ -317,7 +334,7 @@ def test_gh_5557():
             return x - 0.6
 
     atol = 0.51
-    rtol = TOL
+    rtol = 4 * _FLOAT_EPS
     methods = [cc.brentq, cc.brenth]
     for method in methods:
         res = method(f, 0, 1, xtol=atol, rtol=rtol)

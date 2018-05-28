@@ -1,6 +1,8 @@
 from __future__ import division, print_function, absolute_import
 
 r"""
+Parameters used in test and benchmark methods.
+
 Collections of test cases suitable for testing 1-dimensional root-finders
   'original': The original benchmarking functions.
      Real-valued functions of real-valued inputs on an interval
@@ -27,50 +29,23 @@ Collections of test cases suitable for testing 1-dimensional root-finders
   The test cases are provided as a list of dictionaries. The dictionary
   keys will be a subset of:
   ["f", "fprime", "fprime2", "args", "bracket", "smoothness",
-   "x0", "x1", "root", "ID"]
+  "a", "b", "x0", "x1", "root", "ID"]
 """
 
-''' Parameters used in test and benchmark methods '''
+# Sources:
+#  [1] Alefeld, G. E. and Potra, F. A. and Shi, Yixun,
+#      "Algorithm 748: Enclosing Zeros of Continuous Functions",
+#      ACM Trans. Math. Softw. Volume 221(1995)
+#       doi = {10.1145/210089.210111},
 
-import collections
-import functools
 from random import random
 
 import numpy as np
 
 from scipy.optimize import zeros as cc
 
+# "description" refers to the original functions
 description = """
-Collections of test cases suitable for testing 1-dimensional root-finders
-  'original': The original benchmarking functions.
-     Real-valued functions of real-valued inputs on an interval
-     with a zero.
-     f1, .., f3 are continuous and infinitely differentiable
-     f4 has a left- and right- discontinuity at the root
-     f5 has a root at 1 replacing a 1st order pole
-     f6 is randomly positive on one side of the root,
-     randomly negative on the other.
-     f4 - f6 are not continuous at the root.
-
-  'aps': The test problems in the 1995 paper
-     TOMS "Algorithm 748: Enclosing Zeros of Continuous Functions"
-     by Alefeld, Potra and Shi.  Real-valued functions of
-     real-valued inputs on an interval with a zero.
-     Suitable for methods which start with an enclosing interval, and
-     derivatives up to 2nd order.
-
-  'complex': Some complex-valued functions of complex-valued inputs.
-     No enclosing bracket is provided.
-     Suitable for methods which use one or more starting values, and
-     derivatives up to 2nd order.
-
-    The test cases are provided as a list of dictionaries. The dictionary
-    keys will be a subset of:
-    ["f", "fprime", "fprime2", "args", "bracket", "smoothness",
-     "a", "b", "x0", "x1", "root", "ID"]
-"""
-
-_old_description = """
 f2 is a symmetric parabola, x**2 - 1
 f3 is a quartic polynomial with large hump in interval
 f4 is step function with a discontinuity at 1
@@ -83,18 +58,6 @@ really the best. A good solver should not be much worse than
 bisection in such circumstance, while being faster for smooth
 monotone sorts of functions.
 """
-
-
-# Sources:
-#  [1] Alefeld, G. E. and Potra, F. A. and Shi, Yixun,
-#      "Algorithm 748: Enclosing Zeros of Continuous Functions", ACM Trans. Math. Softw. Volume 221(1995)
-#       doi = {10.1145/210089.210111},
-
-# Sources:
-#  [1] Alefeld, G. E. and Potra, F. A. and Shi, Yixun,
-#      "Algorithm 748: Enclosing Zeros of Continuous Functions",
-#      ACM Trans. Math. Softw. Volume 221(1995)
-#       doi = {10.1145/210089.210111},
 
 
 def f1(x):
@@ -152,67 +115,40 @@ def f5(x):
     return 0
 
 
-# https://wiki.python.org/moin/PythonDecoratorLibrary#Memoize
-class memoized(object):
-    '''Decorator. Caches a function's return value each time it is called.
-   If called later with the same arguments, the cached value is returned
-   (not reevaluated).
-   '''
-
-    def __init__(self, func):
-        self.func = func
-        self.cache = {}
-
-    def __call__(self, *args):
-        if not isinstance(args, collections.Hashable):
-            # uncacheable. a list, for instance.
-            # better to not cache than blow up.
-            return self.func(*args)
-        if args in self.cache:
-            return self.cache[args]
-        else:
-            value = self.func(*args)
-            self.cache[args] = value
-            return value
-
-    def __repr__(self):
-        '''Return the function's docstring.'''
-        return self.func.__doc__
-
-    def __get__(self, obj, objtype):
-        '''Support instance methods.'''
-        return functools.partial(self.__call__, obj)
-
-
-# Without memoization, f6 is random, but also calling twice with the
-# same x returns different values
-@memoized
+# f6(x) returns random value. Without memoization, calling twice with the
+# same x returns different values, hence a "random value", not a
+# "function with random values"
+_f6_cache = {}
 def f6(x):
-    if x > 1:
-        return random()
-    elif x < 1:
-        return -random()
-    else:
-        return 0
+    v = _f6_cache.get(x, None)
+    if v is None:
+        if x > 1:
+            v = random()
+        elif x < 1:
+            v = -random()
+        else:
+            v = 0
+        _f6_cache[x] = v
+    return v
 
 
 # Each Original test case has
 # - a function and its two derivatives,
 # - additional arguments,
 # - a bracket enclosing a root,
-# - the order of differentiability of the the function on this interval
+# - the order of differentiability (smoothness) on this interval
 # - a starting value for methods which don't require a bracket
 # - the root (inside the bracket)
 # - an Identifier of the test case
 
 _ORIGINAL_TESTS_KEYS = ["f", "fprime", "fprime2", "args", "bracket", "smoothness", "x0", "root", "ID"]
 _ORIGINAL_TESTS = [
-    [f1, f1_fp, f1_fpp, (), [0.5, np.sqrt(3)], np.inf, 0.6, 1.0, "orig.01.00"],
-    [f2, f2_fp, f2_fpp, (), [0.5, np.sqrt(3)], np.inf, 0.6, 1.0, "orig.02.00"],
-    [f3, f3_fp, f3_fpp, (), [0.5, np.sqrt(3)], np.inf, 0.6, 1.0, "orig.03.00"],
-    [f4, None, None, (), [0.5, np.sqrt(3)], -1, 0.6, 1.0, "orig.04.00"],
-    [f5, None, None, (), [0.5, np.sqrt(3)], -1, 0.6, 1.0, "orig.05.00"],
-    [f6, None, None, (), [0.5, np.sqrt(3)], -np.inf, 0.6, 1.0, "orig.05.00"]
+    [f1, f1_fp, f1_fpp, (), [0.5, np.sqrt(3)], np.inf, 0.6, 1.0, "original.01.00"],
+    [f2, f2_fp, f2_fpp, (), [0.5, np.sqrt(3)], np.inf, 0.6, 1.0, "original.02.00"],
+    [f3, f3_fp, f3_fpp, (), [0.5, np.sqrt(3)], np.inf, 0.6, 1.0, "original.03.00"],
+    [f4, None, None, (), [0.5, np.sqrt(3)], -1, 0.6, 1.0, "original.04.00"],
+    [f5, None, None, (), [0.5, np.sqrt(3)], -1, 0.6, 1.0, "original.05.00"],
+    [f6, None, None, (), [0.5, np.sqrt(3)], -np.inf, 0.6, 1.0, "original.05.00"]
 ]
 
 _ORIGINAL_TESTS_DICTS = [dict(zip(_ORIGINAL_TESTS_KEYS, testcase)) for testcase in _ORIGINAL_TESTS]
@@ -220,8 +156,6 @@ _ORIGINAL_TESTS_DICTS = [dict(zip(_ORIGINAL_TESTS_KEYS, testcase)) for testcase 
 #   ##################
 #   "APS" test cases
 #   Functions and test cases that appear in [1]
-
-_MAX_EXPABLE = np.log(np.finfo(float).max)
 
 
 def aps01_f(x):
@@ -381,6 +315,9 @@ def aps12_fp(x, n):
 
 def aps12_fpp(x, n):
     return np.power(x, (1.0 - 2 * n) / n) * (1.0 / n) * (1.0 - n) / n
+
+
+_MAX_EXPABLE = np.log(np.finfo(float).max)
 
 
 def aps13_f(x):
@@ -627,9 +564,6 @@ _APS_TESTS = [
 ]
 
 _APS_TESTS_DICTS = [dict(zip(_APS_TESTS_KEYS, testcase)) for testcase in _APS_TESTS]
-for d in _APS_TESTS_DICTS:
-    d['a'] = d['bracket'][0]
-    d['b'] = d['bracket'][0]
 
 
 #   ##################
@@ -672,33 +606,31 @@ def cplx02_fpp(z, a):
 # - an Identifier of the test case
 #
 # Algorithm 748 is a bracketing algorithm so a bracketing interval was provided
-#  in [1] for each test case.   Newton and Halley need a single starting point
-#  x0, which was chosen to be near the middle of the interval, unless that
+# in [1] for each test case.   Newton and Halley need a single starting point
+# x0, which was chosen to be near the middle of the interval, unless that
 # would make the problem too easy.
 
 
 _COMPLEX_TESTS_KEYS = ["f", "fprime", "fprime2", "args", "smoothness", "x0", "x1", "root", "ID"]
 _COMPLEX_TESTS = [
-    [cplx01_f, cplx01_fp, cplx01_fpp, (2, -1), np.inf, (1 + 1j), (0.5 + 0.5j), 1j, "cplx.01.00"],
+    [cplx01_f, cplx01_fp, cplx01_fpp, (2, -1), np.inf, (1 + 1j), (0.5 + 0.5j), 1j, "complex.01.00"],
     [cplx01_f, cplx01_fp, cplx01_fpp, (3, 1), np.inf, (-1 + 1j), (-0.5 + 2.0j), (-0.5 + np.sqrt(3) / 2 * 1.0j),
-     "cplx.01.01"],
-    [cplx01_f, cplx01_fp, cplx01_fpp, (3, -1), np.inf, 1j, (0.5 + 0.5j), (0.5 + np.sqrt(3) / 2 * 1.0j), "cplx.01.02"],
-    [cplx01_f, cplx01_fp, cplx01_fpp, (3, 8), np.inf, 5, 4, 2, "cplx.01.03"],
-    [cplx02_f, cplx02_fp, cplx02_fpp, (-1,), np.inf, (1 + 2j), (0.5 + 0.5j), np.pi * 1.0j, "cplx.02.00"],
-    [cplx02_f, cplx02_fp, cplx02_fpp, (1j,), np.inf, (1 + 2j), (0.5 + 0.5j), np.pi * 0.5j, "cplx.02.01"],
+     "complex.01.01"],
+    [cplx01_f, cplx01_fp, cplx01_fpp, (3, -1), np.inf, 1j, (0.5 + 0.5j), (0.5 + np.sqrt(3) / 2 * 1.0j),
+     "complex.01.02"],
+    [cplx01_f, cplx01_fp, cplx01_fpp, (3, 8), np.inf, 5, 4, 2, "complex.01.03"],
+    [cplx02_f, cplx02_fp, cplx02_fpp, (-1,), np.inf, (1 + 2j), (0.5 + 0.5j), np.pi * 1.0j, "complex.02.00"],
+    [cplx02_f, cplx02_fp, cplx02_fpp, (1j,), np.inf, (1 + 2j), (0.5 + 0.5j), np.pi * 0.5j, "complex.02.01"],
 ]
 
 _COMPLEX_TESTS_DICTS = [dict(zip(_COMPLEX_TESTS_KEYS, testcase)) for testcase in _COMPLEX_TESTS]
 
 
 def _add_a_b(tests):
-    r"""Add "a" and "b" keys ot each test from the "bracket" value"""
+    r"""Add "a" and "b" keys to each test from the "bracket" value"""
     for d in tests:
         for k, v in zip(['a', 'b'], d.get('bracket', [])):
             d[k] = v
-        # if 'bracket' in d:
-        #     d['a'] = d['bracket'][0]
-        #     d['b'] = d['bracket'][1]
 
 
 _add_a_b(_ORIGINAL_TESTS_DICTS)
@@ -733,10 +665,10 @@ def get_tests(collection='original', smoothness=None):
     subsets = {"aps": _APS_TESTS_DICTS,
                "complex": _COMPLEX_TESTS_DICTS,
                "original": _ORIGINAL_TESTS_DICTS}
-    testCases = subsets.get(collection, [])
+    tests = subsets.get(collection, [])
     if smoothness is not None:
-        testCases = [tc for tc in testCases if tc['smoothness'] >= smoothness]
-    return testCases
+        tests = [tc for tc in tests if tc['smoothness'] >= smoothness]
+    return tests
 
 
 # Backwards compatibility
