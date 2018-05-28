@@ -23,6 +23,7 @@ TOL = 4*np.finfo(float).eps  # tolerance
 
 _FLOAT_EPS = finfo(float).eps
 
+
 class TestBasic(object):
     def run_check(self, method, name):
         a = .5
@@ -114,7 +115,7 @@ class TestBasic(object):
 
     def run_collection(self, collection, method, name, smoothness=None,
                        known_fail=None,
-                       xtol=4 * _FLOAT_EPS, rtol =4 * _FLOAT_EPS,
+                       xtol=4 * _FLOAT_EPS, rtol=4 * _FLOAT_EPS,
                        **kwargs):
         r"""Run a collection of tests using the specified method.
 
