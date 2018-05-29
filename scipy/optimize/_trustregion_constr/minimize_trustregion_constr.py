@@ -5,6 +5,7 @@ from scipy.sparse.linalg import LinearOperator
 from .._differentiable_functions import VectorFunction
 from .._constraints import (
     NonlinearConstraint, LinearConstraint, PreparedConstraint, strict_bounds)
+from .._hessian_update_strategy import BFGS
 from ..optimize import OptimizeResult
 from .._differentiable_functions import ScalarFunction
 from .equality_constrained_sqp import equality_constrained_sqp
@@ -307,8 +308,11 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
     """
     x0 = np.atleast_1d(x0).astype(float)
     n_vars = np.size(x0)
-    if callable(hessp) and hess is None:
-        hess = HessianLinearOperator(hessp, n_vars)
+    if hess is None:
+        if callable(hessp):
+            hess = HessianLinearOperator(hessp, n_vars)
+        else:
+            hess = BFGS()
     if disp and verbose == 0:
         verbose = 1
 
