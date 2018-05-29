@@ -61,7 +61,7 @@ monotone sorts of functions.
 
 
 def f1(x):
-    r"""f1 is a with roots at 0 and 1"""
+    r"""f1 is a quadratic with roots at 0 and 1"""
     return x * (x - 1.)
 
 
@@ -87,7 +87,7 @@ def f2_fpp(x):
 
 
 def f3(x):
-    r"""A quartic with roots at 0,1, 2 and 3"""
+    r"""A quartic with roots at 0, 1, 2 and 3"""
     return x * (x - 1.) * (x - 2.) * (x - 3.)  # x**4 - 6x**3 + 11x**2 - 6x
 
 
