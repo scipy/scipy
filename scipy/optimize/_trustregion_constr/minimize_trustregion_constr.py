@@ -346,6 +346,8 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
         sparse_jacobian = n_sparse > 0
 
     if bounds is not None:
+        if sparse_jacobian is None:
+            sparse_jacobian = True
         prepared_constraints.append(PreparedConstraint(bounds, x0,
                                                        sparse_jacobian))
 
