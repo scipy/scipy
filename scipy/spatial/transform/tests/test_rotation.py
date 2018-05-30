@@ -455,3 +455,25 @@ def test_from_euler_extrinsic_rotation_313():
         [0.91855865, -0.30618622, -0.250000],
         [0.35355339, 0.35355339, 0.8660254]
     ]))
+
+
+def test_as_euler_extrinsic_rotation():
+    np.random.seed(0)
+    angles = np.random.uniform(low=-np.pi, high=np.pi, size=(6, 3))
+    rot_obj = Rotation.from_euler('zxy', angles)
+
+    estimates = rot_obj.as_euler('zxy')
+    est_obj = Rotation.from_euler('zxy', estimates)
+
+    assert_array_almost_equal(rot_obj.as_dcm(), est_obj.as_dcm())
+
+
+def test_as_euler_intrinsic_rotation():
+    np.random.seed(0)
+    angles = np.random.uniform(low=-np.pi, high=np.pi, size=(6, 3))
+    rot_obj = Rotation.from_euler('ZXY', angles)
+
+    estimates = rot_obj.as_euler('ZXY')
+    est_obj = Rotation.from_euler('ZXY', estimates)
+
+    assert_array_almost_equal(rot_obj.as_dcm(), est_obj.as_dcm())
