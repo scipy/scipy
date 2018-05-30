@@ -1651,7 +1651,7 @@ def cophenet(Z, Y=None):
     See Also
     --------
     linkage: for a description of what a linkage matrix is.
-    squareform: transforming condensed matrices into square ones.
+    scipy.spatial.distance.squareform: transforming condensed matrices into square ones.
 
     Examples
     --------
