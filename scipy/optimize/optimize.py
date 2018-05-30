@@ -2983,6 +2983,13 @@ def show_options(solver=None, method=None, disp=True):
             ('krylov', 'scipy.optimize._root._root_krylov_doc'),
             ('df-sane', 'scipy.optimize._spectral._root_df_sane'),
         ),
+        'root_scalar': (
+            ('bisect', 'scipy.optimize.zeros.bisect'),
+            ('brentq', 'scipy.optimize.zeros.brentq'),
+            ('brenth', 'scipy.optimize.zeros.brenth'),
+            ('ridder', 'scipy.optimize.zeros.ridder'),
+            ('newton', 'scipy.optimize.zeros.newton'),
+        ),
         'linprog': (
             ('simplex', 'scipy.optimize._linprog._linprog_simplex'),
             ('interior-point', 'scipy.optimize._linprog._linprog_ip'),

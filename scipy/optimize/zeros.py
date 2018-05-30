@@ -4,6 +4,7 @@ import warnings
 from collections import namedtuple
 from . import _zeros
 import numpy as np
+from numpy import isclose
 
 _iter = 100
 _xtol = 2e-12
@@ -87,7 +88,8 @@ def _results_select(full_output, r):
 
 
 def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
-           fprime2=None, full_output=False, disp=True):
+           fprime2=None, x1=None, rtol=0.0,
+           full_output=False, disp=True):
     """
     Find a zero of a real or complex function using the Newton-Raphson
     (or secant or Halley's) method.
@@ -128,6 +130,9 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
         convenient. If it is None (default), then the normal Newton-Raphson
         or the secant method is used. If it is not None, then Halley's method
         is used.
+    x1 : float, optional
+        Another estimate of the zero that should be somewhere near the
+        actual zero.  Used if `fprime` is not provided.
     full_output : bool, optional
         If `full_output` is False (default), the root is returned.
         If True and `x0` is scalar, the return value is ``(x, r)``, where ``x``
@@ -288,17 +293,25 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
                 if np.abs(adj) < 1:
                     newton_step /= 1.0 - adj
             p = p0 - newton_step
-            if np.abs(p - p0) < tol:
+            if isclose(p, p0, rtol=rtol, atol=tol):
                 return _results_select(full_output, (p, funcalls, itr + 1, _ECONVERGED))
             p0 = p
     else:
         # Secant method
-        eps = (-1e-4 if x0 < 0 else 1e-4)
-        p1 = x0 * (1 + eps) + eps
+        if x1 is not None:
+            if x1 == x0:
+                raise ValueError("x1 and x0 must be different")
+            p1 = x1
+        else:
+            eps = 1e-4
+            p1 = x0 * (1 + eps)
+            p1 += (eps if p1 >= 0 else -eps)
         q0 = func(p0, *args)
         funcalls += 1
         q1 = func(p1, *args)
         funcalls += 1
+        if abs(q1) < abs(q0):
+            p0, p1, q0, q1 = p1, p0, q1, q0
         for itr in range(maxiter):
             if q1 == q0:
                 if p1 != p0:
@@ -307,11 +320,13 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
                 p = (p1 + p0) / 2.0
                 return _results_select(full_output, (p, funcalls, itr + 1, _ECONVERGED))
             else:
-                p = p1 - q1 * (p1 - p0) / (q1 - q0)
-            if np.abs(p - p1) < tol:
+                if abs(q1) > abs(q0):
+                    p = (-q0 / q1 * p1 + p0) / (1 - q0 / q1)
+                else:
+                    p = (-q1 / q0 * p0 + p1) / (1 - q1 / q0)
+            if isclose(p, p1, rtol=rtol, atol=tol):
                 return _results_select(full_output, (p, funcalls, itr + 1, _ECONVERGED))
-            p0 = p1
-            q0 = q1
+            p0, q0 = p1, q1
             p1 = p
             q1 = func(p1, *args)
             funcalls += 1
