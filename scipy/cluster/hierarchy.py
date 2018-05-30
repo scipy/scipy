@@ -307,10 +307,10 @@ def single(y):
            [19., 21.,  2., 12.]])
 
     The linkage matrix ``Z`` represents a dendrogram - see
-    :func:`scipy.cluster.hierarchy.linkage` for a detailed explanation of its
+    `scipy.cluster.hierarchy.linkage` for a detailed explanation of its
     contents.
 
-    We can use :func:`scipy.cluster.hierarchy.fcluster` to see to which cluster
+    We can use `scipy.cluster.hierarchy.fcluster` to see to which cluster
     each initial point would belong given a distance threshold:
 
     >>> fcluster(Z, 0.9, criterion='distance')
@@ -320,7 +320,7 @@ def single(y):
     >>> fcluster(Z, 2, criterion='distance')
     array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], dtype=int32)
 
-    Also :func:`scipy.cluster.hierarchy.dendrogram` can be used to generate a
+    Also `scipy.cluster.hierarchy.dendrogram` can be used to generate a
     plot of the dendrogram.
     """
     return linkage(y, method='single', metric='euclidean')
@@ -387,10 +387,10 @@ def complete(y):
            [20.        , 21.        ,  5.65685425, 12.        ]])
 
     The linkage matrix ``Z`` represents a dendrogram - see
-    :func:`scipy.cluster.hierarchy.linkage` for a detailed explanation of its
+    `scipy.cluster.hierarchy.linkage` for a detailed explanation of its
     contents.
 
-    We can use :func:`scipy.cluster.hierarchy.fcluster` to see to which cluster
+    We can use `scipy.cluster.hierarchy.fcluster` to see to which cluster
     each initial point would belong given a distance threshold:
 
     >>> fcluster(Z, 0.9, criterion='distance')
@@ -402,7 +402,7 @@ def complete(y):
     >>> fcluster(Z, 6, criterion='distance')
     array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], dtype=int32)
 
-    Also :func:`scipy.cluster.hierarchy.dendrogram` can be used to generate a
+    Also `scipy.cluster.hierarchy.dendrogram` can be used to generate a
     plot of the dendrogram.
     """
     return linkage(y, method='complete', metric='euclidean')
@@ -468,10 +468,10 @@ def average(y):
            [20.        , 21.        ,  4.09206523, 12.        ]])
 
     The linkage matrix ``Z`` represents a dendrogram - see
-    :func:`scipy.cluster.hierarchy.linkage` for a detailed explanation of its
+    `scipy.cluster.hierarchy.linkage` for a detailed explanation of its
     contents.
 
-    We can use :func:`scipy.cluster.hierarchy.fcluster` to see to which cluster
+    We can use `scipy.cluster.hierarchy.fcluster` to see to which cluster
     each initial point would belong given a distance threshold:
 
     >>> fcluster(Z, 0.9, criterion='distance')
@@ -483,7 +483,7 @@ def average(y):
     >>> fcluster(Z, 6, criterion='distance')
     array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], dtype=int32)
 
-    Also :func:`scipy.cluster.hierarchy.dendrogram` can be used to generate a
+    Also `scipy.cluster.hierarchy.dendrogram` can be used to generate a
     plot of the dendrogram.
 
     """
@@ -553,10 +553,10 @@ def weighted(y):
            [20.        , 21.        ,  4.06357713, 12.        ]])
 
     The linkage matrix ``Z`` represents a dendrogram - see
-    :func:`scipy.cluster.hierarchy.linkage` for a detailed explanation of its
+    `scipy.cluster.hierarchy.linkage` for a detailed explanation of its
     contents.
 
-    We can use :func:`scipy.cluster.hierarchy.fcluster` to see to which cluster
+    We can use `scipy.cluster.hierarchy.fcluster` to see to which cluster
     each initial point would belong given a distance threshold:
 
     >>> fcluster(Z, 0.9, criterion='distance')
@@ -568,7 +568,7 @@ def weighted(y):
     >>> fcluster(Z, 6, criterion='distance')
     array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], dtype=int32)
 
-    Also :func:`scipy.cluster.hierarchy.dendrogram` can be used to generate a
+    Also `scipy.cluster.hierarchy.dendrogram` can be used to generate a
     plot of the dendrogram.
 
     """
@@ -655,10 +655,10 @@ def centroid(y):
            [20.        , 21.        ,  3.33333333, 12.        ]])
 
     The linkage matrix ``Z`` represents a dendrogram - see
-    :func:`scipy.cluster.hierarchy.linkage` for a detailed explanation of its
+    `scipy.cluster.hierarchy.linkage` for a detailed explanation of its
     contents.
 
-    We can use :func:`scipy.cluster.hierarchy.fcluster` to see to which cluster
+    We can use `scipy.cluster.hierarchy.fcluster` to see to which cluster
     each initial point would belong given a distance threshold:
 
     >>> fcluster(Z, 0.9, criterion='distance')
@@ -670,7 +670,7 @@ def centroid(y):
     >>> fcluster(Z, 4, criterion='distance')
     array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], dtype=int32)
 
-    Also :func:`scipy.cluster.hierarchy.dendrogram` can be used to generate a
+    Also `scipy.cluster.hierarchy.dendrogram` can be used to generate a
     plot of the dendrogram.
 
     """
@@ -757,10 +757,10 @@ def median(y):
            [20.        , 21.        ,  3.25      , 12.        ]])
 
     The linkage matrix ``Z`` represents a dendrogram - see
-    :func:`scipy.cluster.hierarchy.linkage` for a detailed explanation of its
+    `scipy.cluster.hierarchy.linkage` for a detailed explanation of its
     contents.
 
-    We can use :func:`scipy.cluster.hierarchy.fcluster` to see to which cluster
+    We can use `scipy.cluster.hierarchy.fcluster` to see to which cluster
     each initial point would belong given a distance threshold:
 
     >>> fcluster(Z, 0.9, criterion='distance')
@@ -772,7 +772,7 @@ def median(y):
     >>> fcluster(Z, 4, criterion='distance')
     array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], dtype=int32)
 
-    Also :func:`scipy.cluster.hierarchy.dendrogram` can be used to generate a
+    Also `scipy.cluster.hierarchy.dendrogram` can be used to generate a
     plot of the dendrogram.
 
     """
@@ -856,10 +856,10 @@ def ward(y):
            [20.        , 21.        ,  8.16496581, 12.        ]])
 
     The linkage matrix ``Z`` represents a dendrogram - see
-    :func:`scipy.cluster.hierarchy.linkage` for a detailed explanation of its
+    `scipy.cluster.hierarchy.linkage` for a detailed explanation of its
     contents.
 
-    We can use :func:`scipy.cluster.hierarchy.fcluster` to see to which cluster
+    We can use `scipy.cluster.hierarchy.fcluster` to see to which cluster
     each initial point would belong given a distance threshold:
 
     >>> fcluster(Z, 0.9, criterion='distance')
@@ -871,7 +871,7 @@ def ward(y):
     >>> fcluster(Z, 9, criterion='distance')
     array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], dtype=int32)
 
-    Also :func:`scipy.cluster.hierarchy.dendrogram` can be used to generate a
+    Also `scipy.cluster.hierarchy.dendrogram` can be used to generate a
     plot of the dendrogram.
 
     """
@@ -1694,9 +1694,9 @@ def cophenet(Z, Y=None):
            2., 2., 2., 2., 1., 2., 2., 2., 2., 2., 2., 2., 2., 2., 2., 2., 2.,
            1., 1., 2., 2., 2., 1., 2., 2., 2., 2., 2., 2., 1., 1., 1.])
 
-    The output of the :func:`scipy.cluster.hierarchy.cophenet` method is
+    The output of the `scipy.cluster.hierarchy.cophenet` method is
     represented in condensed form. We can use
-    :func:`scipy.spatial.distance.squareform` to see the output as a
+    `scipy.spatial.distance.squareform` to see the output as a
     regular matrix (where each element ``ij`` denotes the cophenetic distance
     between each ``i``, ``j`` pair of points in ``X``):
 
@@ -1860,7 +1860,7 @@ def from_mlab_linkage(Z):
     >>> from scipy.cluster.hierarchy import ward, from_mlab_linkage
 
     Given a linkage matrix in MATLAB format ``mZ``, we can use
-    :func:`scipy.cluster.hierarchy.from_mlab_linkage` to import
+    `scipy.cluster.hierarchy.from_mlab_linkage` to import
     it into Scipy format:
 
     >>> mZ = np.array([[1, 2, 1], [4, 5, 1], [7, 8, 1],
@@ -1969,7 +1969,7 @@ def to_mlab_linkage(Z):
            [20.        , 21.        ,  8.16496581, 12.        ]])
 
     After a linkage matrix ``Z`` has been created, we can use
-    :func:`scipy.cluster.hierarchy.to_mlab_linkage` to convert it
+    `scipy.cluster.hierarchy.to_mlab_linkage` to convert it
     into MATLAB format:
 
     >>> mZ = to_mlab_linkage(Z)
@@ -2031,13 +2031,13 @@ def is_monotonic(Z):
     >>> from scipy.spatial.distance import pdist
 
     By definition, some hierarchical clustering algorithms - such as
-    :func:`scipy.cluster.hierarchy.ward` - produce monotonic assignments of
+    `scipy.cluster.hierarchy.ward` - produce monotonic assignments of
     samples to clusters; however, this is not always true for other
-    hierarchical methods - e.g. :func:`scipy.cluster.hierarchy.median`.
+    hierarchical methods - e.g. `scipy.cluster.hierarchy.median`.
 
     Given a linkage matrix ``Z`` (as the result of a hierarchical clustering
     method) we can test programmatically whether if is has the monotonicity
-    property or not, using :func:`scipy.cluster.hierarchy.is_monotonic`:
+    property or not, using `scipy.cluster.hierarchy.is_monotonic`:
 
     >>> X = [[0, 0], [0, 1], [1, 0],
     ...      [0, 4], [0, 3], [1, 4],
@@ -2125,7 +2125,7 @@ def is_valid_im(R, warning=False, throw=False, name=None):
     >>> from scipy.spatial.distance import pdist
 
     Given a data set ``X``, we can apply a clustering method to obtain a
-    linkage matrix ``Z``. :func:`scipy.cluster.hierarchy.inconsistent` can
+    linkage matrix ``Z``. `scipy.cluster.hierarchy.inconsistent` can
     be also used to obtain the inconsistency matrix ``R`` associated to
     this clustering process:
 
@@ -2161,7 +2161,7 @@ def is_valid_im(R, warning=False, throw=False, name=None):
            [2.78516386, 2.58797734, 3.        , 1.15470054],
            [6.57065706, 1.38071187, 3.        , 1.15470054]])
 
-    Now we can use :func:`scipy.cluster.hierarchy.is_valid_im` to verify that
+    Now we can use `scipy.cluster.hierarchy.is_valid_im` to verify that
     ``R`` is correct:
 
     >>> is_valid_im(R)
@@ -2262,7 +2262,7 @@ def is_valid_linkage(Z, warning=False, throw=False, name=None):
     will be valid (i.e. they will have the appropriate dimensions and the two
     required expressions will hold for all the rows).
 
-    We can check this using :func:`scipy.cluster.hierarchy.is_valid_linkage`:
+    We can check this using `scipy.cluster.hierarchy.is_valid_linkage`:
 
     >>> X = [[0, 0], [0, 1], [1, 0],
     ...      [0, 4], [0, 3], [1, 4],
@@ -2548,7 +2548,7 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
     >>> from scipy.cluster.hierarchy import ward, fcluster
     >>> from scipy.spatial.distance import pdist
 
-    All cluster linkage methods - e.g. :func:`scipy.cluster.hierarchy.ward`
+    All cluster linkage methods - e.g. `scipy.cluster.hierarchy.ward`
     generate a linkage matrix ``Z`` as their output:
 
     >>> X = [[0, 0], [0, 1], [1, 0],
@@ -2576,7 +2576,7 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
     distance between these clusters, and the fourth element is the size of
     the new cluster - the number of original data points included.
 
-    :func:`scipy.cluster.hierarchy.fcluster` can be used to flatten the
+    `scipy.cluster.hierarchy.fcluster` can be used to flatten the
     dendrogram, obtaining as a result an assignation of the original data
     points to single clusters.
 
@@ -2708,11 +2708,11 @@ def fclusterdata(X, t, criterion='inconsistent',
     This is a convenience method that abstracts all the steps to perform in a
     typical Scipy's hierarchical clustering workflow.
 
-    * Transform the input data into a condensed matrix with :func:`scipy.spatial.distance.pdist`.
+    * Transform the input data into a condensed matrix with `scipy.spatial.distance.pdist`.
 
     * Apply a clustering method.
 
-    * Obtain flat clusters at a user defined distance threshold ``t`` using :func:`scipy.cluster.hierarchy.fcluster`.
+    * Obtain flat clusters at a user defined distance threshold ``t`` using `scipy.cluster.hierarchy.fcluster`.
 
     >>> X = [[0, 0], [0, 1], [1, 0],
     ...      [0, 4], [0, 3], [1, 4],
@@ -2779,7 +2779,7 @@ def leaves_list(Z):
 
     The linkage matrix ``Z`` represents a dendrogram, that is, a tree that
     encodes the structure of the clustering perfomed.
-    :func:`scipy.cluster.hierarchy.leaves_list` shows the mapping between
+    `scipy.cluster.hierarchy.leaves_list` shows the mapping between
     indexes in the ``X`` dataset and leaves in the dendrogram:
 
     >>> leaves_list(Z)
@@ -3721,7 +3721,7 @@ def is_isomorphic(T1, T2):
     Two flat cluster assignments can be isomorphic if they represent the same
     cluster assignment, with different labels.
 
-    For example, we can use the :func:`scipy.cluster.hierarchy.single`: method
+    For example, we can use the `scipy.cluster.hierarchy.single`: method
     and flatten the output to four clusters:
 
     >>> X = [[0, 0], [0, 1], [1, 0],
@@ -3735,7 +3735,7 @@ def is_isomorphic(T1, T2):
     array([3, 3, 3, 4, 4, 4, 2, 2, 2, 1, 1, 1], dtype=int32)
 
     We can then do the same using the
-    :func:`scipy.cluster.hierarchy.complete`: method:
+    `scipy.cluster.hierarchy.complete`: method:
 
     >>> Z = complete(pdist(X))
     >>> T_ = fcluster(Z, 1.5, criterion='distance')
@@ -3814,7 +3814,7 @@ def maxdists(Z):
     >>> from scipy.cluster.hierarchy import median, maxdists
     >>> from scipy.spatial.distance import pdist
 
-    Given a linkage matrix ``Z``, :func:`scipy.cluster.hierarchy.maxdists`
+    Given a linkage matrix ``Z``, `scipy.cluster.hierarchy.maxdists`
     computes for each new cluster generated (i.e. for each row of the linkage
     matrix) what is the maximum distance between any two child clusters.
 
@@ -3823,7 +3823,7 @@ def maxdists(Z):
     to form the current one - that is, Z[:,2].
 
     However, for non-monotonic cluster assignments such as
-    :func:`scipy.cluster.hierarchy.median` clustering this is not always the
+    `scipy.cluster.hierarchy.median` clustering this is not always the
     case: There may be cluster formations were the distance between the two
     clusters merged is smaller than the distance between their children.
 
@@ -3854,7 +3854,7 @@ def maxdists(Z):
 
     Note that while the distance between the two clusters merged when creating the
     last cluster is 3.25, there are two children (clusters 16 and 17) whose distance
-    is larger (3.5). Thus, :func:`scipy.cluster.hierarchy.maxdists` returns 3.5 in
+    is larger (3.5). Thus, `scipy.cluster.hierarchy.maxdists` returns 3.5 in
     this case.
 
     """
@@ -3897,7 +3897,7 @@ def maxinconsts(Z, R):
     >>> from scipy.spatial.distance import pdist
 
     Given a data set ``X``, we can apply a clustering method to obtain a
-    linkage matrix ``Z``. :func:`scipy.cluster.hierarchy.inconsistent` can
+    linkage matrix ``Z``. `scipy.cluster.hierarchy.inconsistent` can
     be also used to obtain the inconsistency matrix ``R`` associated to
     this clustering process:
 
@@ -3933,7 +3933,7 @@ def maxinconsts(Z, R):
            [1.91202266, 1.37522872, 3.        , 1.15470054],
            [3.25      , 0.25      , 3.        , 0.        ]])
 
-    Here :func:`scipy.cluster.hierarchy.maxinconsts` can be used to compute
+    Here `scipy.cluster.hierarchy.maxinconsts` can be used to compute
     the maximum value of the inconsistency statistic (the last column of
     ``R``) for each non-singleton cluster and its children:
 
@@ -3993,7 +3993,7 @@ def maxRstat(Z, R, i):
     >>> from scipy.spatial.distance import pdist
 
     Given a data set ``X``, we can apply a clustering method to obtain a
-    linkage matrix ``Z``. :func:`scipy.cluster.hierarchy.inconsistent` can
+    linkage matrix ``Z``. `scipy.cluster.hierarchy.inconsistent` can
     be also used to obtain the inconsistency matrix ``R`` associated to
     this clustering process:
 
@@ -4017,7 +4017,7 @@ def maxRstat(Z, R, i):
            [1.91202266, 1.37522872, 3.        , 1.15470054],
            [3.25      , 0.25      , 3.        , 0.        ]])
 
-    :func:`scipy.cluster.hierarchy.maxRstat` can be used to compute
+    `scipy.cluster.hierarchy.maxRstat` can be used to compute
     the maximum value of each column of ``R``, for each non-singleton
     cluster and its children:
 
@@ -4142,7 +4142,7 @@ def leaders(Z, T):
     >>> T
     array([1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4], dtype=int32)
 
-    :func:`scipy.cluster.hierarchy.leaders` returns the indexes of the nodes
+    `scipy.cluster.hierarchy.leaders` returns the indexes of the nodes
     in the dendrogram that are the leaders of each flat cluster:
 
     >>> L, M = leaders(Z, T)
@@ -4152,7 +4152,7 @@ def leaders(Z, T):
     (remember that indexes 0-11 point to the 12 data points in ``X``
     whereas indexes 12-22 point to the 11 rows of ``Z``)
 
-    :func:`scipy.cluster.hierarchy.leaders` also returns the indexes of
+    `scipy.cluster.hierarchy.leaders` also returns the indexes of
     the flat clusters in ``T``:
 
     >>> M
