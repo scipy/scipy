@@ -5,16 +5,21 @@ Optimization and Root Finding (:mod:`scipy.optimize`)
 
 .. currentmodule:: scipy.optimize
 
-Common Structure
-================
+SciPy ``optimize`` provides functions for minimizing (or maximizing)
+objective functions, possibly subject to constraints. It includes
+solvers for nonlinear problems (with support for both local and global
+optimization algorithms), linear programing,  constrained
+and nonlinear least-squares, root finding and curve fitting.
+
+Common functions and objects, shared across different solvers, are:
 
 .. autosummary::
    :toctree: generated/
 
+   show_options - Show specific options optimization solvers.
    OptimizeResult - The optimization result returned by some optimizers.
    OptimizeWarning - The optimization encountered problems.
 
-   show_options - Show specific options optimization solvers.
 
 Optimization
 ============
@@ -231,7 +236,6 @@ Hessian Approximation
    :toctree: generated/
 
    LbfgsInvHessProduct - Linear operator for L-BFGS approximate inverse Hessian.
-   HessianUpdateStrategy - Interface for implementing Hessian update strategies.
 
 Benchmark Problems
 ------------------
@@ -244,12 +248,12 @@ Benchmark Problems
    rosen_hess - The Hessian matrix of the Rosenbrock function.
    rosen_hess_prod - Product of the Rosenbrock Hessian with a vector.
 
-Deprecated Interfaces
-=====================
+Legacy Functions
+================
 
-The interfaces below are not recommended for use in new scripts;
+The functions below are not recommended for use in new scripts;
 all of these methods are accessible via a newer, more consistent
-interfaces, provided by the functions above.
+interfaces, provided by the interfaces above.
 
 Optimization
 ------------
