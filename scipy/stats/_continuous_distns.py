@@ -905,7 +905,7 @@ class chi_gen(rv_continuous):
 
     .. math::
 
-        f(x; df) = \frac{x^{df-1} \exp(-x^2/2)}{2^{df/2-1} \Gamma(df/2)}
+        f(x, df) = \frac{x^{df-1} \exp(-x^2/2)}{2^{df/2-1} \Gamma(df/2)}
 
     for :math:`x > 0`. :math:`\Gamma` is the gamma function
     (`scipy.special.gamma`).
@@ -3230,11 +3230,12 @@ class norminvgauss_gen(rv_continuous):
     .. math::
 
         f(x; a, b) = (a \exp(\sqrt{a^2 - b^2} + b x)) /
-                     (\pi \sqrt{1 + x^2} \, K_1(a * \sqrt{1 + x^2}))
+                     (\pi \sqrt{1 + x^2} \, K_1(a \sqrt{1 + x^2}))
 
     where `x` is a real number, the parameter `a` is the tail heaviness
     and `b` is the asymmetry parameter satisfying `a > 0` and `abs(b) <= a`.
-    `K_1` is the modified Bessel function of second kind (`scipy.special.k1`).
+    :math:`K_1` is the modified Bessel function of second kind
+    (`scipy.special.k1`).
 
     %(after_notes)s
 
@@ -3655,7 +3656,7 @@ class logistic_gen(rv_continuous):
     .. math::
 
         f(x) = \frac{\exp(-x)}
-                    {(1+exp(-x))^2}
+                    {(1+\exp(-x))^2}
 
     `logistic` is a special case of `genlogistic` with ``c == 1``.
 
@@ -5296,7 +5297,7 @@ class rayleigh_gen(rv_continuous):
 
     .. math::
 
-        f(r) = r \exp(-r^2/2)
+        f(x) = x \exp(-x^2/2)
 
     for :math:`x \ge 0`.
 
