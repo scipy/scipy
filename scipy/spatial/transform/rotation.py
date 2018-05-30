@@ -8,20 +8,22 @@ import re
 AXIS_TO_IND = {'x': 0, 'y': 1, 'z': 2}
 
 
-def _elementary_basis_vector(char):
+def elementary_basis_vector(axis):
     b = np.zeros(3)
-    b[AXIS_TO_IND[char]] = 1
+    b[AXIS_TO_IND[axis]] = 1
     return b
 
 
-def _make_euler_from_dcm(dcm, seq, extrinsic=False):
-    # The algorithm assumes intrinsic frame transformations. Their
-    # ELEMENTARY dcms are transpose of what we return.
+def compute_euler_from_dcm(dcm, seq, extrinsic=False):
+    # The algorithm assumes intrinsic frame transformations. For representation
+    # the paper uses transformation matrices, which are transpose of the
+    # direction cosine matrices used by our Rotation class.
     # Adapt the algorithm for our case by
     # 1. Transposing our dcm representation
     # 2. Reversing both axis sequence and angles for extrinsic rotations
 
-    seq = seq[::-1] if extrinsic else seq
+    if extrinsic:
+        seq = seq[::-1]
 
     if dcm.ndim == 2:
         dcm = dcm[None, :, :]
@@ -31,20 +33,25 @@ def _make_euler_from_dcm(dcm, seq, extrinsic=False):
     # Algorithms dcms are transpose of ours
     dcm = np.transpose(dcm, (0, 2, 1))
     # Algorithm assumes axes as column vectors, here we use 1D vectors
-    n1 = _elementary_basis_vector(seq[0])
-    n2 = _elementary_basis_vector(seq[1])
-    n3 = _elementary_basis_vector(seq[2])
+    n1 = elementary_basis_vector(seq[0])
+    n2 = elementary_basis_vector(seq[1])
+    n3 = elementary_basis_vector(seq[2])
 
     # Step 2
-    lamb = np.arctan2(np.dot(np.cross(n1, n2), n3), np.dot(n1, n3))
+    sl = np.dot(np.cross(n1, n2), n3)
+    cl = np.dot(n1, n3)
+
+    norm = sl**2 + cl**2
+    sl /= norm
+    cl /= norm
+
+    lamb = np.arctan2(sl, cl)
     c = np.empty((3, 3))
     c[0] = n2
     c[1] = np.cross(n1, n2)
     c[2] = n1
 
     # Step 3
-    cl = np.cos(lamb)
-    sl = np.sin(lamb)
     rt = np.array([
         [1, 0, 0],
         [0, cl, -sl],
@@ -96,7 +103,7 @@ def _make_euler_from_dcm(dcm, seq, extrinsic=False):
                            (angle1, angle2, angle3))
 
 
-def _make_elementary_quat(axis, angles):
+def make_elementary_quat(axis, angles):
     num_rotations = angles.shape[0]
     quat = np.zeros((num_rotations, 4))
 
@@ -105,7 +112,7 @@ def _make_elementary_quat(axis, angles):
     return quat
 
 
-def _compose_quat(p, q):
+def compose_quat(p, q):
     # p and q should have same shape (N, 4)
     product = np.empty_like(p)
     # Scalar part of result
@@ -116,18 +123,18 @@ def _compose_quat(p, q):
     return product
 
 
-def _elementary_quat_compose(seq, angles, intrinsic=False):
+def elementary_quat_compose(seq, angles, intrinsic=False):
     # Initialize result to first axis
-    result = _make_elementary_quat(seq[0], angles[:, 0])
+    result = make_elementary_quat(seq[0], angles[:, 0])
 
     for idx, axis in enumerate(seq[1:], start=1):
         if intrinsic:
-            result = _compose_quat(
+            result = compose_quat(
                 result,
-                _make_elementary_quat(axis, angles[:, idx]))
+                make_elementary_quat(axis, angles[:, idx]))
         else:
-            result = _compose_quat(
-                _make_elementary_quat(axis, angles[:, idx]),
+            result = compose_quat(
+                make_elementary_quat(axis, angles[:, idx]),
                 result)
     return result
 
@@ -505,14 +512,16 @@ class Rotation(object):
             raise ValueError("Expected angles to have shape (num_rotations, "
                              "num_axes), got {}.".format(angles.shape))
 
-        quat = _elementary_quat_compose(seq, angles, intrinsic)
+        quat = elementary_quat_compose(seq, angles, intrinsic)
         return cls(quat[0] if is_single else quat, normalized=True)
 
     def as_euler(self, seq, degrees=False):
         """Return the Euler angles representation of the Rotation.
 
         This function returns a numpy.ndarray of shape (N, 3) or (3,) depending
-        on how the object was initialized.
+        on how the object was initialized. The algorithm presented in [2]_ has
+        been adapted for our use to extract Euler angles, keeping in mind the
+        conventions presented in [3]_.
 
         Parameters
         ----------
@@ -522,7 +531,6 @@ class Rotation(object):
             Adjacent axes cannot be the same.
             Extrinsic and intrinsic rotations cannot be mixed in one function
             call.
-
         degrees : boolean, optional
             Returned angles are in degrees if this flag is True, else they are
             in radians. Default is False.
@@ -531,6 +539,11 @@ class Rotation(object):
         ----------
         .. [1] `Euler angle definitions
                 <https://en.wikipedia.org/wiki/Euler_angles#Definition_by_intrinsic_rotations>`_
+        .. [2] Malcolm D. Shuster, F. Landis Markley
+                `General Formula for Euler Angles
+                <https://arc.aiaa.org/doi/abs/10.2514/1.16622>`_
+        .. [3] Malcolm D. Shuster `A Survey of Attitude Representations
+                <https://www.researchgate.net/publication/253512057_A_Survey_of_Attitude_Representations>`_
         """
         if len(seq) != 3:
             raise ValueError("Expected 3 axes, got {}.".format(seq))
@@ -547,7 +560,7 @@ class Rotation(object):
 
         seq = seq.lower()
 
-        angles = _make_euler_from_dcm(self.as_dcm(), seq, extrinsic)
+        angles = compute_euler_from_dcm(self.as_dcm(), seq, extrinsic)
         if degrees:
             angles = np.rad2deg(angles)
 
