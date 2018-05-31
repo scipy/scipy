@@ -29,6 +29,8 @@ Deprecated features
 Backwards incompatible changes
 ==============================
 
+LAPACK version 3.4.0 or later is now required. Building with
+Apple Accelerate is no longer supported.
 
 Other changes
 =============
