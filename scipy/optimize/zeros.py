@@ -28,7 +28,7 @@ flag_map = {_ECONVERGED: CONVERGED, _ESIGNERR: SIGNERR, _ECONVERR: CONVERR,
 
 
 class RootResults(object):
-    """ Represents the root finding result.
+    """Represents the root finding result.
 
     Attributes
     ----------
@@ -44,6 +44,7 @@ class RootResults(object):
         Description of the cause of termination.
 
     """
+
     def __init__(self, root, iterations, function_calls, flag):
         self.root = root
         self.iterations = iterations

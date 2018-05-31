@@ -143,13 +143,24 @@ Scalar functions
 .. autosummary::
    :toctree: generated/
 
-   brentq - quadratic interpolation Brent method
-   brenth - Brent method, modified by Harris with hyperbolic extrapolation
-   ridder - Ridder's method
-   bisect - Bisection method
-   newton - Secant method or Newton's method
+   root_scalar - Unified interface for nonlinear solvers of scalar functions.
+   brentq - quadratic interpolation Brent method.
+   brenth - Brent method, modified by Harris with hyperbolic extrapolation.
+   ridder - Ridder's method.
+   bisect - Bisection method.
+   newton - Newton's method (also Secant and Halley's methods).
    toms748 - Alefeld, Potra & Shi Algorithm 748
    RootResults - The root finding result returned by some root finders.
+
+The `root_scalar` function supports the following methods:
+
+.. toctree::
+
+   optimize.root_scalar-brentq
+   optimize.root_scalar-brenth
+   optimize.root_scalar-bisect
+   optimize.root_scalar-ridder
+   optimize.root_scalar-newton
 
 
 The table below lists situations and appropriate methods, along with

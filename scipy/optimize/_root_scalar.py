@@ -1,5 +1,6 @@
 """
-Unified interfaces to root finding algorithms for scalar functions, real or complex .
+Unified interfaces to root finding algorithms for real or complex
+scalar functions.
 
 Functions
 ---------
@@ -7,11 +8,12 @@ Functions
 """
 from __future__ import division, print_function, absolute_import
 
-__all__ = ['root_scalar']
-
 from scipy._lib.six import callable
 
 from . import zeros as optzeros
+
+__all__ = ['root_scalar']
+
 
 class MemoizeDer(object):
     """ Decorator that caches the value and derivative(s) of function each
@@ -23,7 +25,7 @@ class MemoizeDer(object):
         self.nCalls = 0
 
     def __call__(self, x, *args):
-        # Derivative may be requested before the function itself, so always check
+        # Derivative may be requested before the function itself, always check
         if self.vals is None or x != self.x:
             fg = self.fun(x, *args)
             self.x = x
@@ -62,11 +64,11 @@ def root_scalar(f, args=(), method=None, bracket=None,
     method : str, optional
         Type of solver.  Should be one of
 
-            - 'bisect'           :ref:`(see here) <optimize.root_scalar-bisect>`
-            - 'brentq'           :ref:`(see here) <optimize.root_scalar-brentq>`
-            - 'brenth'           :ref:`(see here) <optimize.root_scalar-brenth>`
-            - 'ridder'           :ref:`(see here) <optimize.root_scalar-ridder>`
-            - 'newton'           :ref:`(see here) <optimize.root_scalar-newton>`
+            - 'bisect'    :ref:`(see here) <optimize.root_scalar-bisect>`
+            - 'brentq'    :ref:`(see here) <optimize.root_scalar-brentq>`
+            - 'brenth'    :ref:`(see here) <optimize.root_scalar-brenth>`
+            - 'ridder'    :ref:`(see here) <optimize.root_scalar-ridder>`
+            - 'newton'    :ref:`(see here) <optimize.root_scalar-newton>`
 
     bracket: An Iterable of 2 floats, optional
         An interval bracketing a root.  `f(x, *args)` must have different
@@ -83,8 +85,8 @@ def root_scalar(f, args=(), method=None, bracket=None,
     fprime2 : bool or callable, optional
         If `fprime2` is a Boolean and is True, `f` is assumed to return the
         value of 1st and 2nd derivatives along with the objective function.
-        `fprime2` can also be a callable returning the 2nd derivative of `f`. In
-        this case, it must accept the same arguments as `f`.
+        `fprime2` can also be a callable returning the 2nd derivative of `f`.
+        In this case, it must accept the same arguments as `f`.
     xtol : float, optional
         Tolerance (absolute) for termination.
     rtol : float, optional
@@ -126,21 +128,40 @@ def root_scalar(f, args=(), method=None, bracket=None,
 
     Examples
     --------
-    The following functions define a system of nonlinear equations and its
-    jacobian.
 
+    Find the root of a simple cubic
+
+    >>> from scipy import optimize
     >>> def f(x):
     ...     return (x**3 - 1)  # only one real root at x = 1
 
     >>> def fprime(x):
     ...     return 3*x**2
 
-    A solution can be obtained as follows.
+    brentq takes as input a bracket
 
-    >>> from scipy import optimize
+    >>> sol = optimize.root_scalar(f, bracket=[0, 3], method='brentq')
+    >>> sol.root, sol.iterations, sol.function_calls
+    (1.0, 10, 11)
+
+    newton starts takes as input a single point and uses the derivative(s)
+
     >>> sol = optimize.root_scalar(f, x0=0.2, fprime=fprime, method='newton')
-    >>> sol.x
-    array([ 0.8411639,  0.1588361])
+    >>> sol.root, sol.iterations, sol.function_calls
+    (1.0, 11, 22)
+
+    The function can provide the value and derivative in a single call.
+    >>> def f_p_pp(x):
+    ...     return (x**3 - 1), 3*x**2, 6*x
+
+    >>> sol = optimize.root_scalar(f_p_pp, x0=0.2, fprime=True, method='newton')
+    >>> sol.root, sol.iterations, sol.function_calls
+    (1.0, 11, 11)
+
+    >>> sol = optimize.root_scalar(f_p_pp, x0=0.2, fprime=True, fprime2=True, method='newton')
+    >>> sol.root, sol.iterations, sol.function_calls
+    (1.0, 6, 6)
+
 
     """
     if not isinstance(args, tuple):
@@ -156,15 +177,15 @@ def root_scalar(f, args=(), method=None, bracket=None,
         if bool(fprime2):
             f = MemoizeDer(f)
             isMemoized = True
-            fprime2  = f.fprime2
-            fprime  = f.fprime
+            fprime2 = f.fprime2
+            fprime = f.fprime
         else:
             fprime2 = None
     if fprime is not None and not callable(fprime):
         if bool(fprime):
             f = MemoizeDer(f)
             isMemoized = True
-            fprime  = f.fprime
+            fprime = f.fprime
         else:
             fprime = None
 
@@ -188,7 +209,8 @@ def root_scalar(f, args=(), method=None, bracket=None,
         elif x0 is not None:
             meth = 'newton'
         else:
-            raise ValueError('Unable to select a solver as neither bracket nor starting point privided.')
+            raise ValueError('Unable to select a solver as neither bracket '
+                             'nor starting point privided.')
 
     try:
         methodc = getattr(optzeros, meth)
@@ -201,7 +223,8 @@ def root_scalar(f, args=(), method=None, bracket=None,
     elif meth == 'newton':
         if 'xtol' in kwargs:
             kwargs['tol'] = kwargs.pop('xtol')
-        r, sol = methodc(f, x0,  args=args, fprime=fprime, fprime2=fprime2, x1=x1, **kwargs)
+        r, sol = methodc(f, x0, args=args, fprime=fprime, fprime2=fprime2,
+                         x1=x1, **kwargs)
     else:
         raise ValueError('Unknown solver %s' % method)
 
