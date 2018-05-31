@@ -60,8 +60,8 @@ def compute_euler_from_dcm(dcm, seq, extrinsic=False):
     rtc = rt.dot(c)
     ct = c.T
     o = np.empty_like(dcm)
-    for ind in range(num_rotations):
-        o[ind] = rtc.dot(dcm[ind]).dot(ct)
+    res = np.einsum('ij,...jk->...ik', rtc, dcm)
+    o = np.einsum('...ij,jk->...ik', res, ct)
 
     # Step 4
     angle2 = lamb + np.arccos(o[:, 2, 2])
