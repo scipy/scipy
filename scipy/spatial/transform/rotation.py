@@ -60,8 +60,8 @@ def compute_euler_from_dcm(dcm, seq, extrinsic=False):
     rtc = rt.dot(c)
     ct = c.T
     o = np.empty_like(dcm)
-    res = np.einsum('ij,...jk->...ik', rtc, dcm)
-    o = np.einsum('...ij,jk->...ik', res, ct)
+    res = np.einsum('...ij,...jk->...ik', rtc, dcm)
+    o = np.einsum('...ij,...jk->...ik', res, ct)
 
     # Step 4
     angle2 = lamb + np.arccos(o[:, 2, 2])
@@ -158,6 +158,7 @@ class Rotation(object):
     from_rotvec
     as_rotvec
     from_euler
+    as_euler
     """
     def __init__(self, quat, normalized=False):
         self._single = False
@@ -520,8 +521,11 @@ class Rotation(object):
 
         This function returns a numpy.ndarray of shape (N, 3) or (3,) depending
         on how the object was initialized. The algorithm presented in [2]_ has
-        been adapted for our use to extract Euler angles, keeping in mind the
-        conventions presented in [3]_.
+        been adapted for our use to extract Euler angles. The paper presents an
+        algorithm for extracting Euler angles from transformation matrices, as
+        opposed to rotation matrices. Thus, the matrix representation used in
+        the paper is a transpose of the direction cosine matrix representation
+        returned by the `as_dcm` function.
 
         Parameters
         ----------
@@ -542,8 +546,6 @@ class Rotation(object):
         .. [2] Malcolm D. Shuster, F. Landis Markley
                 `General Formula for Euler Angles
                 <https://arc.aiaa.org/doi/abs/10.2514/1.16622>`_
-        .. [3] Malcolm D. Shuster `A Survey of Attitude Representations
-                <https://www.researchgate.net/publication/253512057_A_Survey_of_Attitude_Representations>`_
         """
         if len(seq) != 3:
             raise ValueError("Expected 3 axes, got {}.".format(seq))
