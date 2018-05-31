@@ -477,3 +477,35 @@ def test_as_euler_intrinsic_rotation():
     est_obj = Rotation.from_euler('ZXY', estimates)
 
     assert_array_almost_equal(rot.as_dcm(), est_obj.as_dcm())
+
+
+def test_as_euler_extrinsic_rotation_312():
+    angles = [
+        [45, 30, 60],
+        [30, 60, 15],
+        [35, 20, 65],
+        [25, 45, 20],
+        [45, 30, 20],
+        # [25, 135, 35] -> [-155.,   45., -145.]
+        # In this last case, these are the angles returned by the algorithm
+        # without any adjustment. It looks like we cannot always expect to get
+        # back the original angles. However, the rotation that is represented
+        # is the same.
+        ]
+    estimates = Rotation.from_euler(
+        'zxy', angles, degrees=True).as_euler('zxy', degrees=True)
+    assert_allclose(angles, estimates)
+
+
+def test_as_euler_extrinsic_rotation_313():
+    angles = [
+        [45, 30, 60],
+        [30, 60, 15],
+        [35, 20, 65],
+        [25, 45, 20],
+        [45, 30, 20],
+        [25, 135, 35],
+        ]
+    estimates = Rotation.from_euler(
+        'zxz', angles, degrees=True).as_euler('zxz', degrees=True)
+    assert_allclose(angles, estimates)
