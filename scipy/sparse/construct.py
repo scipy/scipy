@@ -779,9 +779,9 @@ greater than %d - this is not supported on this machine
         ind = np.empty(k, dtype=tp)
         selected = set()
         for i in xrange(k):
-            j = random_state.randint(mn)
+            j = random_state.randint(mn, dtype=tp)
             while j in selected:
-                j = random_state.randint(mn)
+                j = random_state.randint(mn, dtype=tp)
             selected.add(j)
             ind[i] = j
 
