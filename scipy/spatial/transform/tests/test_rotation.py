@@ -7,6 +7,7 @@ from numpy.testing import assert_equal, assert_array_almost_equal
 from numpy.testing import assert_allclose
 from scipy.spatial.transform import Rotation
 from scipy.stats import special_ortho_group
+from itertools import permutations
 
 
 def test_generic_quat_matrix():
@@ -457,55 +458,40 @@ def test_from_euler_extrinsic_rotation_313():
     ]))
 
 
-def test_as_euler_extrinsic_rotation():
+def test_as_euler_asymmetric_axes():
     np.random.seed(0)
-    angles = np.random.uniform(low=-np.pi, high=np.pi, size=(6, 3))
-    rotation = Rotation.from_euler('zxy', angles)
+    n = 10
+    angles = np.empty((n, 3))
+    angles[:, 0] = np.random.uniform(low=-np.pi, high=np.pi, size=(n,))
+    angles[:, 1] = np.random.uniform(low=-np.pi / 2, high=np.pi / 2, size=(n,))
+    angles[:, 2] = np.random.uniform(low=-np.pi, high=np.pi, size=(n,))
 
-    angle_estimates = rotation.as_euler('zxy')
-    estimated = Rotation.from_euler('zxy', angle_estimates)
+    for seq_tuple in permutations('xyz'):
+        # Extrinsic rotations
+        seq = ''.join(seq_tuple)
+        assert_allclose(angles, Rotation.from_euler(seq, angles).as_euler(seq))
+        # Intrinsic rotations
+        seq = seq.upper()
+        assert_allclose(angles, Rotation.from_euler(seq, angles).as_euler(seq))
 
-    assert_array_almost_equal(rotation.as_dcm(), estimated.as_dcm())
 
-
-def test_as_euler_intrinsic_rotation():
+def test_as_euler_symmetric_axes():
     np.random.seed(0)
-    angles = np.random.uniform(low=-np.pi, high=np.pi, size=(6, 3))
-    rot = Rotation.from_euler('ZXY', angles)
+    n = 10
+    angles = np.empty((n, 3))
+    angles[:, 0] = np.random.uniform(low=-np.pi, high=np.pi, size=(n,))
+    angles[:, 1] = np.random.uniform(low=0, high=np.pi, size=(n,))
+    angles[:, 2] = np.random.uniform(low=-np.pi, high=np.pi, size=(n,))
 
-    estimates = rot.as_euler('ZXY')
-    est_obj = Rotation.from_euler('ZXY', estimates)
-
-    assert_array_almost_equal(rot.as_dcm(), est_obj.as_dcm())
-
-
-def test_as_euler_extrinsic_rotation_312():
-    angles = [
-        [45, 30, 60],
-        [30, 60, 15],
-        [35, 20, 65],
-        [25, 45, 20],
-        [45, 30, 20],
-        # [25, 135, 35] -> [-155.,   45., -145.]
-        # In this last case, these are the angles returned by the algorithm
-        # without any adjustment. It looks like we cannot always expect to get
-        # back the original angles. However, the rotation that is represented
-        # is the same.
-        ]
-    estimates = Rotation.from_euler(
-        'zxy', angles, degrees=True).as_euler('zxy', degrees=True)
-    assert_allclose(angles, estimates)
-
-
-def test_as_euler_extrinsic_rotation_313():
-    angles = [
-        [45, 30, 60],
-        [30, 60, 15],
-        [35, 20, 65],
-        [25, 45, 20],
-        [45, 30, 20],
-        [25, 135, 35],
-        ]
-    estimates = Rotation.from_euler(
-        'zxz', angles, degrees=True).as_euler('zxz', degrees=True)
-    assert_allclose(angles, estimates)
+    for axis1 in ['x', 'y', 'z']:
+        for axis2 in ['x', 'y', 'z']:
+            if axis1 == axis2:
+                continue
+            # Extrinsic rotations
+            seq = axis1 + axis2 + axis1
+            assert_allclose(
+                angles, Rotation.from_euler(seq, angles).as_euler(seq))
+            # Intrinsic rotations
+            seq = seq.upper()
+            assert_allclose(
+                angles, Rotation.from_euler(seq, angles).as_euler(seq))
