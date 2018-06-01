@@ -44,6 +44,10 @@ You will also need to install a library providing the BLAS and LAPACK
 interfaces. ATLAS, OpenBLAS, and MKL all work. OpenBLAS can be installed
 via `Homebrew <https://brew.sh/>`.
 
+As of Scipy version 1.2.0, we do not support compiling against the system
+Accelerate library for BLAS and LAPACK. It does not support a sufficiently
+recent LAPACK interface.
+
 Version-specific notes
 ----------------------
 
