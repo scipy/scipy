@@ -3,16 +3,6 @@ import sys
 
 from bento.commands import hooks
 
-from scipy._build_utils import get_sgemv_fix
-
-
-def append_sgemv_fix(sources):
-    def make_relpath(f):
-        return os.path.relpath(f, os.path.abspath(os.path.dirname(__file__)))
-
-    info = {'extra_link_args': ['Accelerate']}
-    sources += [make_relpath(f) for f in get_sgemv_fix(info)]
-
 
 @hooks.pre_build
 def pre_build(context):
@@ -20,10 +10,6 @@ def pre_build(context):
     default_builder = context.default_builder
 
     def superlu_builder(extension):
-        #FIXME: (Accelerate not detected now, should be:
-        #if "Accelerate" in env.FRAMEWORK_CBLAS:
-        if sys.platform == 'darwin':
-            append_sgemv_fix(extension.sources)
         return default_builder(extension, use="superlu_src LAPACK")
     context.register_builder("_superlu", superlu_builder)
 
