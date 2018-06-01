@@ -66,12 +66,8 @@ There are two ways to build Scipy on Windows:
 2. Use MSVC + gfortran with OpenBLAS.  This is how the SciPy Windows wheels are
    built.
 
-
 Mac OS X
 --------
-
-Compilers
-~~~~~~~~~
 
 It is recommended to use gcc or clang, both work fine. Gcc is available for
 free when installing Xcode, the developer toolsuite on Mac OS X. You also
@@ -81,12 +77,12 @@ recent gfortran from an OS X package manager (like Homebrew).
 Please do NOT use gfortran from `hpc.sourceforge.net <http://hpc.sourceforge.net>`_,
 it is known to generate buggy scipy binaries.
 
+You should also use a BLAS/LAPACK library from an OS X package manager.
+ATLAS, OpenBLAS, and MKL all work.
 
-Blas/Lapack
-~~~~~~~~~~~
-
-Mac OS X includes the Accelerate framework: it should be detected without any
-intervention when building SciPy.
+As of Scipy version 1.2.0, we do not support compiling against the system
+Accelerate library for BLAS and LAPACK. It does not support a sufficiently
+recent LAPACK interface.
 
 Linux
 -----

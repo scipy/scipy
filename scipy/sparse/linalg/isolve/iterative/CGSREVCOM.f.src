@@ -115,10 +115,10 @@
      $                   MAXIT, NEED1, NEED2
       <rt>   TOL,  BNRM2, RHOTOL, 
      $       <sdsd=s,d,s,d>GETBREAK, 
-     $       <rc=ws,d,wsc,dz>NRM2
+     $       <rc=s,d,sc,dz>NRM2
 
       <_t>   ALPHA, BETA, RHO, RHO1, TMPVAL,
-     $     <xdot=wsdot,ddot,wcdotc,wzdotc>
+     $     <xdot=sdot,ddot,wcdotc,wzdotc>
 *     ..
 *     indicates where to resume from. Only valid when IJOB = 2!
       INTEGER RLBL

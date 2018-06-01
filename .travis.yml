@@ -76,7 +76,19 @@ before_install:
       export PATH=/usr/lib/ccache:$PATH
     elif [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
       brew cask uninstall oclint
-      brew install gcc ccache libmpc
+      brew install ccache libmpc gcc@6
+      # The openblas binary used here was built using a gfortran older than 7,
+      # so it needs the older abi libgfortran.
+      export FC=gfortran-6
+      export CC=gcc-6
+      export CXX=g++-6
+      mkdir gcc_aliases
+      pushd gcc_aliases
+      ln -s `which gcc-6` gcc
+      ln -s `which g++-6` g++
+      ln -s `which gfortran-6` gfortran
+      export PATH=$TRAVIS_BUILD_DIR/gcc_aliases:$PATH
+      popd
       touch config.sh
       git clone --depth=1 https://github.com/matthew-brett/multibuild.git
       source multibuild/common_utils.sh
@@ -90,6 +102,22 @@ before_install:
       export CFLAGS="-arch x86_64"
       export CXXFLAGS="-arch x86_64"
       printenv
+      wget https://3f23b170c54c2533c070-1c8a9b3114517dc5fe17b7c3f8c63a43.ssl.cf2.rackcdn.com/openblas-0.2.20-345-g6a6ffaff-Darwin-x86_64-1becaaa.tar.gz -O openblas.tar.gz
+      mkdir openblas
+      tar -xzf openblas.tar.gz -C openblas
+      # Modify the openblas dylib so it can be used in its current location
+      # Also make it use the current install location for libgfortran, libquadmath, and libgcc_s.
+      pushd openblas/usr/local/lib
+      install_name_tool -id $TRAVIS_BUILD_DIR/openblas/usr/local/lib/libopenblasp-r0.3.0.dev.dylib libopenblas.dylib
+      install_name_tool -change /usr/local/gfortran/lib/libgfortran.3.dylib `$FC -v 2>&1 | perl -nle 'print $1 if m{--libdir=([^\s]+)}'`/libgfortran.3.dylib libopenblas.dylib
+      install_name_tool -change /usr/local/gfortran/lib/libquadmath.0.dylib `$FC -v 2>&1 | perl -nle 'print $1 if m{--libdir=([^\s]+)}'`/libquadmath.0.dylib libopenblas.dylib
+      install_name_tool -change /usr/local/gfortran/lib/libgcc_s.1.dylib `$FC -v 2>&1 | perl -nle 'print $1 if m{--libdir=([^\s]+)}'`/libgcc_s.1.dylib libopenblas.dylib
+      popd
+      echo "[openblas]" > site.cfg
+      echo "libraries = openblas" >> site.cfg
+      echo "library_dirs = $TRAVIS_BUILD_DIR/openblas/usr/local/lib" >> site.cfg
+      echo "include_dirs = $TRAVIS_BUILD_DIR/openblas/usr/local/include" >> site.cfg
+      echo "runtime_library_dirs = $TRAVIS_BUILD_DIR/openblas/usr/local/lib" >> site.cfg
     fi
   - export CCACHE_COMPRESS=1
   - python --version # just to check
