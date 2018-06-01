@@ -41,11 +41,9 @@ def compute_euler_from_dcm(dcm, seq, extrinsic=False):
     sl = np.dot(np.cross(n1, n2), n3)
     cl = np.dot(n1, n3)
 
-    norm = sl**2 + cl**2
-    sl /= norm
-    cl /= norm
-
-    lamb = np.arctan2(sl, cl)
+    # angle phi is lambda from the paper referenced in [2] from docstring of
+    # `as_euler` function
+    phi = np.arctan2(sl, cl)
     c = np.empty((3, 3))
     c[0] = n2
     c[1] = np.cross(n1, n2)
@@ -59,17 +57,17 @@ def compute_euler_from_dcm(dcm, seq, extrinsic=False):
     ])
     rtc = rt.dot(c)
     ct = c.T
-    o = np.empty_like(dcm)
     res = np.einsum('...ij,...jk->...ik', rtc, dcm)
     o = np.einsum('...ij,...jk->...ik', res, ct)
 
     # Step 4
-    angle2 = lamb + np.arccos(o[:, 2, 2])
+    offset = np.arccos(o[:, 2, 2])
+    angle2 = phi + offset
 
     # Steps 5, 6
     eps = np.finfo(float).resolution  # ~1e-15
-    safe1 = (np.abs(angle2 - lamb) >= eps)
-    safe2 = (np.abs(angle2 - lamb - np.pi) >= eps)
+    safe1 = (np.abs(offset) >= eps)
+    safe2 = (np.abs(offset - np.pi) >= eps)
 
     angle1 = np.empty(num_rotations)
     angle3 = np.empty(num_rotations)
@@ -90,17 +88,24 @@ def compute_euler_from_dcm(dcm, seq, extrinsic=False):
 
     # Step 7
     # python modulo operator works correctly for negative numbers
-    adjust_mask = np.logical_or(angle2 < 0, angle2 > np.pi)
-    angle1[adjust_mask] = (angle1[adjust_mask] + np.pi) % (2 * np.pi)
-    angle2[adjust_mask] = (2 * lamb - angle2[adjust_mask]) % (2 * np.pi)
-    angle3[adjust_mask] = (angle3[adjust_mask] - np.pi) % (2 * np.pi)
+    if seq[0] == seq[2]:
+        # lambda = 0, so we can only ensure angle2 -> [0, pi]
+        adjust_mask = np.logical_or(angle2 < 0, angle2 > np.pi)
+    else:
+        adjust_mask = np.logical_or(angle2 < -np.pi / 2, angle2 > np.pi / 2)
+    angle1[adjust_mask] = angle1[adjust_mask] + np.pi
+    angle2[adjust_mask] = 2 * phi - angle2[adjust_mask]
+    angle3[adjust_mask] = angle3[adjust_mask] - np.pi
+
+    angles = np.column_stack((angle1, angle2, angle3))
+    angles[angles < -np.pi] += 2 * np.pi
+    angles[angles > np.pi] -= 2 * np.pi
 
     # Step 8
     # TODO: if any observability flags are poor, possibly raise a UserWarning?
 
     # Reverse role of extrinsic and intrinsic rotations
-    return np.column_stack((angle3, angle2, angle1) if extrinsic else
-                           (angle1, angle2, angle3))
+    return angles[:, ::-1] if extrinsic else angles
 
 
 def make_elementary_quat(axis, angles):
@@ -553,8 +558,9 @@ class Rotation(object):
         intrinsic = (re.compile('^[XYZ]{1,3}$').match(seq) is not None)
         extrinsic = (re.compile('^[xyz]{1,3}$').match(seq) is not None)
         if not (intrinsic or extrinsic):
-            raise ValueError("Expected axes from `seq` to be from ['x', 'y', "
-                             "'z'] or ['X', 'Y', 'Z'], got {}".format(seq))
+            raise ValueError("Expected axes from `seq` to be from "
+                             "['x', 'y', 'z'] or "
+                             "['X', 'Y', 'Z'], got {}".format(seq))
 
         if any(seq[i] == seq[i+1] for i in range(2)):
             raise ValueError("Expected consecutive axes to be different, "
