@@ -21,6 +21,10 @@ This release requires Python 2.7 or 3.4+ and NumPy 1.8.1 or greater.
 New features
 ============
 
+`scipy.special` improvements
+----------------------------
+
+The function `softmax` was added to `scipy.special`.
 
 Deprecated features
 ===================
