@@ -57,32 +57,39 @@ def compute_euler_from_dcm(dcm, seq, extrinsic=False):
         [0, sl, cl]
     ])
     rtc = rt.dot(c)
-    ct = c.T
     res = np.einsum('...ij,...jk->...ik', rtc, dcm)
-    o = np.einsum('...ij,...jk->...ik', res, ct)
+    dcm_transformed = np.einsum('...ij,...jk->...ik', res, c.T)
 
     # Step 4
-    phi = np.arccos(o[:, 2, 2])
-    angles[:, 1] = offset + phi
+    angles[:, 1] = np.arccos(dcm_transformed[:, 2, 2])
 
     # Steps 5, 6
     eps = np.finfo(float).resolution  # ~1e-15
-    safe1 = (np.abs(phi) >= eps)
-    safe2 = (np.abs(phi - np.pi) >= eps)
+    safe1 = (np.abs(angles[:, 1]) >= eps)
+    safe2 = (np.abs(angles[:, 1] - np.pi) >= eps)
+
+    # Step 4 (Completion)
+    angles[:, 1] += offset
 
     # 5b
     safe_mask = np.logical_and(safe1, safe2)
-    angles[safe_mask, 0] = np.arctan2(o[safe_mask, 2, 0], -o[safe_mask, 2, 1])
-    angles[safe_mask, 2] = np.arctan2(o[safe_mask, 0, 2], o[safe_mask, 1, 2])
+    angles[safe_mask, 0] = np.arctan2(dcm_transformed[safe_mask, 2, 0],
+                                      -dcm_transformed[safe_mask, 2, 1])
+    angles[safe_mask, 2] = np.arctan2(dcm_transformed[safe_mask, 0, 2],
+                                      dcm_transformed[safe_mask, 1, 2])
 
     # 6a
     angles[~safe_mask, 2] = 0
     # 6b
-    angles[~safe1, 0] = np.arctan2(o[~safe1, 0, 1] - o[~safe1, 1, 0],
-                                   o[~safe1, 0, 0] + o[~safe1, 1, 1])
+    angles[~safe1, 0] = np.arctan2(
+        dcm_transformed[~safe1, 0, 1] - dcm_transformed[~safe1, 1, 0],
+        dcm_transformed[~safe1, 0, 0] + dcm_transformed[~safe1, 1, 1]
+    )
     # 6c
-    angles[~safe2, 0] = np.arctan2(o[~safe2, 0, 1] + o[~safe2, 1, 0],
-                                   o[~safe2, 0, 0] - o[~safe2, 1, 1])
+    angles[~safe2, 0] = np.arctan2(
+        dcm_transformed[~safe2, 0, 1] + dcm_transformed[~safe2, 1, 0],
+        dcm_transformed[~safe2, 0, 0] - dcm_transformed[~safe2, 1, 1]
+    )
 
     # Step 7
     # python modulo operator works correctly for negative numbers
@@ -531,6 +538,15 @@ class Rotation(object):
         the paper is a transpose of the direction cosine matrix representation
         returned by the `as_dcm` function.
 
+        The returned angles are in the range:
+
+            - First angle belongs to [-180, 180] degrees (both inclusive)
+            - Third angle belongs to [-180, 180] degrees (both inclusive)
+            - Second angle belongs to:
+
+                - [-90, 90] degrees if all axes are unique (like xyz)
+                - [0, 180] degrees if all axes are not unique (like zxz)
+
         Parameters
         ----------
         seq : string, length 3
@@ -558,8 +574,8 @@ class Rotation(object):
         extrinsic = (re.compile('^[xyz]{1,3}$').match(seq) is not None)
         if not (intrinsic or extrinsic):
             raise ValueError("Expected axes from `seq` to be from "
-                             "['x', 'y', 'z'] or "
-                             "['X', 'Y', 'Z'], got {}".format(seq))
+                             "['x', 'y', 'z'] or ['X', 'Y', 'Z'], "
+                             "got {}".format(seq))
 
         if any(seq[i] == seq[i+1] for i in range(2)):
             raise ValueError("Expected consecutive axes to be different, "
