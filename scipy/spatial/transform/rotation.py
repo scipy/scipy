@@ -32,6 +32,7 @@ def compute_euler_from_dcm(dcm, seq, extrinsic=False):
     # Step 0
     # Algorithms dcms are transpose of ours
     dcm = np.transpose(dcm, (0, 2, 1))
+    angles = np.empty((num_rotations, 3))
     # Algorithm assumes axes as column vectors, here we use 1D vectors
     n1 = elementary_basis_vector(seq[0])
     n2 = elementary_basis_vector(seq[1])
@@ -41,9 +42,9 @@ def compute_euler_from_dcm(dcm, seq, extrinsic=False):
     sl = np.dot(np.cross(n1, n2), n3)
     cl = np.dot(n1, n3)
 
-    # angle phi is lambda from the paper referenced in [2] from docstring of
+    # angle offset is lambda from the paper referenced in [2] from docstring of
     # `as_euler` function
-    phi = np.arctan2(sl, cl)
+    offset = np.arctan2(sl, cl)
     c = np.empty((3, 3))
     c[0] = n2
     c[1] = np.cross(n1, n2)
@@ -61,43 +62,41 @@ def compute_euler_from_dcm(dcm, seq, extrinsic=False):
     o = np.einsum('...ij,...jk->...ik', res, ct)
 
     # Step 4
-    offset = np.arccos(o[:, 2, 2])
-    angle2 = phi + offset
+    phi = np.arccos(o[:, 2, 2])
+    angles[:, 1] = offset + phi
 
     # Steps 5, 6
     eps = np.finfo(float).resolution  # ~1e-15
-    safe1 = (np.abs(offset) >= eps)
-    safe2 = (np.abs(offset - np.pi) >= eps)
-
-    angle1 = np.empty(num_rotations)
-    angle3 = np.empty(num_rotations)
+    safe1 = (np.abs(phi) >= eps)
+    safe2 = (np.abs(phi - np.pi) >= eps)
 
     # 5b
     safe_mask = np.logical_and(safe1, safe2)
-    angle1[safe_mask] = np.arctan2(o[safe_mask, 2, 0], -o[safe_mask, 2, 1])
-    angle3[safe_mask] = np.arctan2(o[safe_mask, 0, 2], o[safe_mask, 1, 2])
+    angles[safe_mask, 0] = np.arctan2(o[safe_mask, 2, 0], -o[safe_mask, 2, 1])
+    angles[safe_mask, 2] = np.arctan2(o[safe_mask, 0, 2], o[safe_mask, 1, 2])
 
     # 6a
-    angle3[~safe_mask] = 0
+    angles[~safe_mask, 2] = 0
     # 6b
-    angle1[~safe1] = np.arctan2(o[~safe1, 0, 1] - o[~safe1, 1, 0],
-                                o[~safe1, 0, 0] + o[~safe1, 1, 1])
+    angles[~safe1, 0] = np.arctan2(o[~safe1, 0, 1] - o[~safe1, 1, 0],
+                                   o[~safe1, 0, 0] + o[~safe1, 1, 1])
     # 6c
-    angle1[~safe2] = np.arctan2(o[~safe2, 0, 1] + o[~safe2, 1, 0],
-                                o[~safe2, 0, 0] - o[~safe2, 1, 1])
+    angles[~safe2, 0] = np.arctan2(o[~safe2, 0, 1] + o[~safe2, 1, 0],
+                                   o[~safe2, 0, 0] - o[~safe2, 1, 1])
 
     # Step 7
     # python modulo operator works correctly for negative numbers
     if seq[0] == seq[2]:
         # lambda = 0, so we can only ensure angle2 -> [0, pi]
-        adjust_mask = np.logical_or(angle2 < 0, angle2 > np.pi)
+        adjust_mask = np.logical_or(angles[:, 1] < 0, angles[:, 1] > np.pi)
     else:
-        adjust_mask = np.logical_or(angle2 < -np.pi / 2, angle2 > np.pi / 2)
-    angle1[adjust_mask] = angle1[adjust_mask] + np.pi
-    angle2[adjust_mask] = 2 * phi - angle2[adjust_mask]
-    angle3[adjust_mask] = angle3[adjust_mask] - np.pi
+        # lambda = + or - pi/2, so we can ensure angle2 -> [-pi/2, pi/2]
+        adjust_mask = np.logical_or(angles[:, 1] < -np.pi / 2,
+                                    angles[:, 1] > np.pi / 2)
+    angles[adjust_mask, 0] += np.pi
+    angles[adjust_mask, 1] = 2 * offset - angles[adjust_mask, 1]
+    angles[adjust_mask, 2] -= np.pi
 
-    angles = np.column_stack((angle1, angle2, angle3))
     angles[angles < -np.pi] += 2 * np.pi
     angles[angles > np.pi] -= 2 * np.pi
 
