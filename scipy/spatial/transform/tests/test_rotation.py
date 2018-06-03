@@ -495,3 +495,75 @@ def test_as_euler_symmetric_axes():
             seq = seq.upper()
             assert_allclose(
                 angles, Rotation.from_euler(seq, angles).as_euler(seq))
+
+
+def test_as_euler_degenerate_asymmetric_axes():
+    # Since we cannot check for angle equality, we check for dcm equality
+    angles = np.array([
+        [45, 90, 35],
+        [90, 35, 20],
+        [35, 60, 90]
+        ])
+
+    for seq_tuple in permutations('xyz'):
+        # Extrinsic rotations
+        seq = ''.join(seq_tuple)
+        rotation = Rotation.from_euler(seq, angles, degrees=True)
+        dcm_expected = rotation.as_dcm()
+
+        angle_estimates = rotation.as_euler(seq, degrees=True)
+        dcm_estimated = Rotation.from_euler(
+            seq, angle_estimates, degrees=True
+            ).as_dcm()
+
+        assert_array_almost_equal(dcm_expected, dcm_estimated)
+
+        # Intrinsic rotations
+        seq = seq.upper()
+        rotation = Rotation.from_euler(seq, angles, degrees=True)
+        dcm_expected = rotation.as_dcm()
+
+        angle_estimates = rotation.as_euler(seq, degrees=True)
+        dcm_estimated = Rotation.from_euler(
+            seq, angle_estimates, degrees=True
+            ).as_dcm()
+
+        assert_array_almost_equal(dcm_expected, dcm_estimated)
+
+
+def test_as_euler_degenerate_symmetric_axes():
+    # Since we cannot check for angle equality, we check for dcm equality
+    angles = np.array([
+        [45, 90, 35],
+        [90, 35, 20],
+        [35, 60, 90]
+        ])
+
+    for axis1 in ['x', 'y', 'z']:
+        for axis2 in ['x', 'y', 'z']:
+            if axis1 == axis2:
+                continue
+
+            # Extrinsic rotations
+            seq = axis1 + axis2 + axis1
+            rotation = Rotation.from_euler(seq, angles, degrees=True)
+            dcm_expected = rotation.as_dcm()
+
+            angle_estimates = rotation.as_euler(seq, degrees=True)
+            dcm_estimated = Rotation.from_euler(
+                seq, angle_estimates, degrees=True
+                ).as_dcm()
+
+            assert_array_almost_equal(dcm_expected, dcm_estimated)
+
+            # Intrinsic rotations
+            seq = seq.upper()
+            rotation = Rotation.from_euler(seq, angles, degrees=True)
+            dcm_expected = rotation.as_dcm()
+
+            angle_estimates = rotation.as_euler(seq, degrees=True)
+            dcm_estimated = Rotation.from_euler(
+                seq, angle_estimates, degrees=True
+                ).as_dcm()
+
+            assert_array_almost_equal(dcm_expected, dcm_estimated)
