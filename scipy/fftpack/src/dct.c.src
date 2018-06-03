@@ -48,31 +48,35 @@ void @pref@dct1(@type@ * inout, int n, int howmany, int normalize)
 
     wsave = caches_@pref@dct1[get_cache_id_@pref@dct1(n)].wsave;
 
+
     for (i = 0; i < howmany; ++i, ptr += n) {
+        if (normalize==DCT_NORMALIZE_ORTHONORMAL) {
+            const @type@ m0 = sqrt(2.0);
+            ptr[0]   *= m0;
+            ptr[n-1] *= m0;
+        }
+
         F_FUNC(@pref@cost, @PREF@COST)(&n, ptr, wsave);
     }
 
     switch (normalize) {
         case DCT_NORMALIZE_NO:
             break;
-#if 0
         case DCT_NORMALIZE_ORTHONORMAL:
-        {
-            @type@ n1, n2;
-
-            ptr = inout;
-            n1 = sqrt(0.5 / (n-1));
-            n2 = sqrt(1. / (n-1));
-            for (i = 0; i < howmany; ++i, ptr+=n) {
+            {
+                const @type@ m0 = 1.0/sqrt(2.0);
+                @type@ m = 0.5*sqrt(2. / (n-1));
                 int j;
-                ptr[0] *= n1;
-                for (j = 1; j < n-1; ++j) {
-                    ptr[j] *= n2;
+                ptr = inout;
+                for (i = 0; i < howmany; ++i, ptr += n) {
+                    ptr[0] *= m0;
+                    for (j=0; j<n; j++) {
+                        ptr[j] *= m;
+                    }
+                    ptr[n-1] *= m0;
                 }
             }
             break;
-        }
-#endif
         default:
             fprintf(stderr, "dct1: normalize not yet supported=%d\n",
                     normalize);

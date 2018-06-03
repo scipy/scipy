@@ -55,24 +55,18 @@ void @pref@dst1(@type@ * inout, int n, int howmany, int normalize)
     switch (normalize) {
         case DST_NORMALIZE_NO:
             break;
-#if 0
         case DST_NORMALIZE_ORTHONORMAL:
-        {
-            @type@ n1, n2;
-
-            ptr = inout;
-            n1 = sqrt(0.5 / (n+1));
-            n2 = sqrt(1. / (n+1));
-            for (i = 0; i < howmany; ++i, ptr+=n) {
+            {
+                @type@ m = 1.0 / sqrt(2 * (n+1));
                 int j;
-                ptr[0] *= n1;
-                for (j = 1; j < n-1; ++j) {
-                    ptr[j] *= n2;
+                ptr = inout;
+                for (i = 0; i < howmany; ++i, ptr += n) {
+                    for (j=0; j<n; j++) {
+                        ptr[j] *= m;
+                    }
                 }
             }
             break;
-        }
-#endif
         default:
             fprintf(stderr, "dst1: normalize not yet supported=%d\n",
                     normalize);
