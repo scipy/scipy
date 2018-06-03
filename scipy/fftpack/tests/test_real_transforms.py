@@ -588,7 +588,7 @@ class Test_DCTN_IDCTN(object):
                     tmp = fforward(self.data, type=dct_type, axes=axes,
                                    norm=norm)
                     tmp = finverse(tmp, type=dct_type, axes=axes, norm=norm)
-                    assert_array_almost_equal(self.data, tmp, decimal=self.dec)
+                    assert_array_almost_equal(self.data, tmp, decimal=12)
 
     def test_dctn_vs_2d_reference(self):
         for function_set in self.function_sets:
