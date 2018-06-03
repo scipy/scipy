@@ -552,6 +552,13 @@ class Rotation(object):
                 - [-90, 90] degrees if all axes are unique (like xyz)
                 - [0, 180] degrees if first and third axes are same (like zxz)
 
+        Euler angles suffer from the problem of gimbal lock. It occurs when,
+        during the course of the rotation, the initial axis of rotation
+        coincides with the final axis of rotation. As a result, two of the
+        three Euler angles cannot be determined uniquely. In those cases, this
+        function raises a warning. However, the rotation represented by the
+        object is still guaranteed to be correct.
+
         Parameters
         ----------
         seq : string, length 3
