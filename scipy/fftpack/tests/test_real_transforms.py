@@ -524,9 +524,6 @@ class TestOverwrite(object):
         for type in [1, 2, 3]:
             for overwrite_x in [True, False]:
                 for norm in [None, 'ortho']:
-                    if type == 1 and norm == 'ortho':
-                        continue
-
                     should_overwrite = (overwrite_x
                                         and dtype in overwritable_dtypes
                                         and (len(shape) == 1 or
@@ -588,8 +585,6 @@ class Test_DCTN_IDCTN(object):
             finverse = function_set['inverse']
             for axes in [None, (1, ), (0, ), (0, 1), (-2, -1)]:
                 for dct_type in self.types:
-                    if norm == 'ortho' and dct_type == 1:
-                        continue  # 'ortho' not supported by DCT-I
                     tmp = fforward(self.data, type=dct_type, axes=axes,
                                    norm=norm)
                     tmp = finverse(tmp, type=dct_type, axes=axes, norm=norm)
@@ -601,8 +596,6 @@ class Test_DCTN_IDCTN(object):
             fforward_ref = function_set['forward_ref']
             for dct_type in self.types:
                 for norm in self.norms:
-                    if norm == 'ortho' and dct_type == 1:
-                        continue  # 'ortho' not supported by DCT-I
                     y1 = fforward(self.data, type=dct_type, axes=None,
                                   norm=norm)
                     y2 = fforward_ref(self.data, type=dct_type, norm=norm)
@@ -615,8 +608,6 @@ class Test_DCTN_IDCTN(object):
             for dct_type in self.types:
                 for norm in self.norms:
                     print(function_set, dct_type, norm)
-                    if norm == 'ortho' and dct_type == 1:
-                        continue  # 'ortho' not supported by DCT-I
                     fdata = dctn(self.data, type=dct_type, norm=norm)
                     y1 = finverse(fdata, type=dct_type, norm=norm)
                     y2 = finverse_ref(fdata, type=dct_type, norm=norm)

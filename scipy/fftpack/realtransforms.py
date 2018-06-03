@@ -371,9 +371,6 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     array([ 30.,  -8.,   6.,  -2.])
 
     """
-    #if type == 1 and norm is not None:
-    #    raise NotImplementedError(
-    #          "Orthonormalization not yet supported for DCT-I")
     return _dct(x, type, n, axis, normalize=norm, overwrite_x=overwrite_x)
 
 
@@ -432,9 +429,6 @@ def idct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     array([  4.,   3.,   5.,  10.])
 
     """
-    #if type == 1 and norm is not None:
-    #    raise NotImplementedError(
-    #          "Orthonormalization not yet supported for IDCT-I")
     # Inverse/forward type table
     _TP = {1:1, 2:3, 3:2}
     return _dct(x, _TP[type], n, axis, normalize=norm, overwrite_x=overwrite_x)
@@ -617,9 +611,6 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
            http://en.wikipedia.org/wiki/Discrete_sine_transform
 
     """
-    #if type == 1 and norm is not None:
-    #    raise NotImplementedError(
-    #          "Orthonormalization not yet supported for IDCT-I")
     return _dst(x, type, n, axis, normalize=norm, overwrite_x=overwrite_x)
 
 
@@ -665,9 +656,6 @@ def idst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     .. versionadded:: 0.11.0
 
     """
-    #if type == 1 and norm is not None:
-    #    raise NotImplementedError(
-    #          "Orthonormalization not yet supported for IDCT-I")
     # Inverse/forward type table
     _TP = {1:1, 2:3, 3:2}
     return _dst(x, _TP[type], n, axis, normalize=norm, overwrite_x=overwrite_x)
