@@ -3,6 +3,7 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 import scipy.linalg
 import re
+import warnings
 
 
 AXIS_TO_IND = {'x': 0, 'y': 1, 'z': 2}
@@ -32,7 +33,6 @@ def compute_euler_from_dcm(dcm, seq, extrinsic=False):
     # Step 0
     # Algorithms dcms are transpose of ours
     dcm = np.transpose(dcm, (0, 2, 1))
-    angles = np.empty((num_rotations, 3))
     # Algorithm assumes axes as column vectors, here we use 1D vectors
     n1 = elementary_basis_vector(seq[0])
     n2 = elementary_basis_vector(seq[1])
@@ -61,10 +61,11 @@ def compute_euler_from_dcm(dcm, seq, extrinsic=False):
     dcm_transformed = np.einsum('...ij,...jk->...ik', res, c.T)
 
     # Step 4
+    angles = np.empty((num_rotations, 3))
     angles[:, 1] = np.arccos(dcm_transformed[:, 2, 2])
 
     # Steps 5, 6
-    eps = np.finfo(float).resolution  # ~1e-15
+    eps = 1e-7
     safe1 = (np.abs(angles[:, 1]) >= eps)
     safe2 = (np.abs(angles[:, 1] - np.pi) >= eps)
 
@@ -109,6 +110,10 @@ def compute_euler_from_dcm(dcm, seq, extrinsic=False):
 
     # Step 8
     # TODO: if any observability flags are poor, possibly raise a UserWarning?
+    if not np.all(safe_mask):
+        warnings.warn("Some angle sequences suffer from gimbal lock. In those "
+                      "cases, it is not possible to determine the angles "
+                      "uniquely.", UserWarning, stacklevel=1)
 
     # Reverse role of extrinsic and intrinsic rotations
     return angles[:, ::-1] if extrinsic else angles
@@ -545,7 +550,7 @@ class Rotation(object):
             - Second angle belongs to:
 
                 - [-90, 90] degrees if all axes are unique (like xyz)
-                - [0, 180] degrees if all axes are not unique (like zxz)
+                - [0, 180] degrees if first and third axes are same (like zxz)
 
         Parameters
         ----------
