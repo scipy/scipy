@@ -501,14 +501,14 @@ def test_as_euler_degenerate_asymmetric_axes():
     # Since we cannot check for angle equality, we check for dcm equality
     angles = np.array([
         [45, 90, 35],
-        [90, 35, 20],
-        [35, 60, 90],
-        [0, 15, 60],
+        [35, -90, 20],
+        [35, 90, 25],
+        [15, 0, 60],
         [35, 0, 75],
-        [65, 85, 0]
+        [25, -90, 15]
         ])
 
-    with pytest.warns(UserWarning, match="gimbal lock"):
+    with pytest.warns(UserWarning, match="Gimbal lock"):
         for seq_tuple in permutations('xyz'):
             # Extrinsic rotations
             seq = ''.join(seq_tuple)
@@ -539,14 +539,14 @@ def test_as_euler_degenerate_symmetric_axes():
     # Since we cannot check for angle equality, we check for dcm equality
     angles = np.array([
         [45, 90, 35],
-        [90, 35, 20],
-        [35, 60, 90],
-        [0, 15, 60],
+        [35, -90, 20],
+        [35, 90, 25],
+        [15, 0, 60],
         [35, 0, 75],
-        [65, 85, 0]
+        [25, -90, 15]
         ])
 
-    with pytest.warns(UserWarning, match="gimbal lock"):
+    with pytest.warns(UserWarning, match="Gimbal lock"):
         for axis1 in ['x', 'y', 'z']:
             for axis2 in ['x', 'y', 'z']:
                 if axis1 == axis2:
