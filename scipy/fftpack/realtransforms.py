@@ -309,8 +309,16 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
       y[k] = x[0] + (-1)**k x[N-1] + 2 * sum x[n]*cos(pi*k*n/(N-1))
                                          n=1
 
-    Only None is supported as normalization mode for DCT-I. Note also that the
-    DCT-I is only supported for input size > 1
+    If ``norm='ortho'``, ``x[0]`` and ``x[N-1]`` are multiplied by
+    a scaling factor of ``sqrt(2)``, and ``y[k]`` is multiplied by a
+    scaling factor `f`::
+
+      f = 0.5*sqrt(1/(N-1)) if k = 0 or N-1,
+      f = 0.5*sqrt(2/(N-1)) otherwise.
+
+      .. versionadded:: 1.2.0
+
+    Note that the DCT-I is only supported for input size > 1
 
     **Type II**
 
@@ -570,9 +578,9 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
       y[k] = 2 * sum x[n]*sin(pi*(k+1)*(n+1)/(N+1))
                  n=0
 
-    Only None is supported as normalization mode for DCT-I. Note also that the
-    DCT-I is only supported for input size > 1
-    The (unnormalized) DCT-I is its own inverse, up to a factor `2(N+1)`.
+    Note that the DST-I is only supported for input size > 1
+    The (unnormalized) DST-I is its own inverse, up to a factor `2(N+1)`.
+    The orthonormalized DST-I is exactly its own inverse.
 
     **Type II**
 
