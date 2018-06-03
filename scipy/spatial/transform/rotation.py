@@ -101,6 +101,10 @@ def compute_euler_from_dcm(dcm, seq, extrinsic=False):
         # lambda = + or - pi/2, so we can ensure angle2 -> [-pi/2, pi/2]
         adjust_mask = np.logical_or(angles[:, 1] < -np.pi / 2,
                                     angles[:, 1] > np.pi / 2)
+
+    # Dont adjust gimbal locked angle sequences
+    adjust_mask = np.logical_and(adjust_mask, safe_mask)
+
     angles[adjust_mask, 0] += np.pi
     angles[adjust_mask, 1] = 2 * offset - angles[adjust_mask, 1]
     angles[adjust_mask, 2] -= np.pi
