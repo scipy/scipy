@@ -75,18 +75,35 @@ def compute_euler_from_dcm(dcm, seq, extrinsic=False):
     angles[safe_mask, 2] = np.arctan2(dcm_transformed[safe_mask, 0, 2],
                                       dcm_transformed[safe_mask, 1, 2])
 
-    # 6a
-    angles[~safe_mask, 2] = 0
-    # 6b
-    angles[~safe1, 0] = np.arctan2(
-        dcm_transformed[~safe1, 0, 1] - dcm_transformed[~safe1, 1, 0],
-        dcm_transformed[~safe1, 0, 0] + dcm_transformed[~safe1, 1, 1]
-    )
-    # 6c
-    angles[~safe2, 0] = np.arctan2(
-        dcm_transformed[~safe2, 0, 1] + dcm_transformed[~safe2, 1, 0],
-        dcm_transformed[~safe2, 0, 0] - dcm_transformed[~safe2, 1, 1]
-    )
+    if extrinsic:
+        # For extrinsic, set first angle to zero so that after reversal we
+        # ensure that third angle is zero
+        # 6a
+        angles[~safe_mask, 0] = 0
+        # 6b
+        angles[~safe1, 2] = np.arctan2(
+            dcm_transformed[~safe1, 0, 1] - dcm_transformed[~safe1, 1, 0],
+            dcm_transformed[~safe1, 0, 0] + dcm_transformed[~safe1, 1, 1]
+        )
+        # 6c
+        angles[~safe2, 2] = -np.arctan2(
+            dcm_transformed[~safe2, 0, 1] + dcm_transformed[~safe2, 1, 0],
+            dcm_transformed[~safe2, 0, 0] - dcm_transformed[~safe2, 1, 1]
+        )
+    else:
+        # For instrinsic, set third angle to zero
+        # 6a
+        angles[~safe_mask, 2] = 0
+        # 6b
+        angles[~safe1, 0] = np.arctan2(
+            dcm_transformed[~safe1, 0, 1] - dcm_transformed[~safe1, 1, 0],
+            dcm_transformed[~safe1, 0, 0] + dcm_transformed[~safe1, 1, 1]
+        )
+        # 6c
+        angles[~safe2, 0] = np.arctan2(
+            dcm_transformed[~safe2, 0, 1] + dcm_transformed[~safe2, 1, 0],
+            dcm_transformed[~safe2, 0, 0] - dcm_transformed[~safe2, 1, 1]
+        )
 
     # Step 7
     if seq[0] == seq[2]:
@@ -108,14 +125,15 @@ def compute_euler_from_dcm(dcm, seq, extrinsic=False):
     angles[angles > np.pi] -= 2 * np.pi
 
     # Step 8
-    # TODO: if any observability flags are poor, possibly raise a UserWarning?
     if not np.all(safe_mask):
-        warnings.warn("Some angle sequences suffer from gimbal lock. In those "
-                      "cases, it is not possible to determine the angles "
-                      "uniquely.", UserWarning, stacklevel=1)
+        warnings.warn("Gimbal lock detected. Setting third angle to zero since"
+                      " it is not possible to uniquely determine all angles.")
 
-    # Reverse role of extrinsic and intrinsic rotations
-    return angles[:, ::-1] if extrinsic else angles
+    # Reverse role of extrinsic and intrinsic rotations, but let third angle be
+    # zero for gimbal locked cases
+    if extrinsic:
+        angles = angles[:, ::-1]
+    return angles
 
 
 def make_elementary_quat(axis, angles):
