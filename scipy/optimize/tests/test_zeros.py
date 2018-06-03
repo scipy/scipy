@@ -246,3 +246,58 @@ def test_complex_halley():
     coeffs = (2.0, 3.0, 4.0)
     y = zeros.newton(f, z, args=coeffs, fprime=f_1, fprime2=f_2, tol=1e-6)
     assert_allclose(f(y, *coeffs), 0, atol=1e-6)
+
+
+def test_zero_der_nz_dp():
+    """Test secant method with a non-zero dp, but an infinite newton step"""
+    # pick a symmetrical functions and choose a point on the side that with dx
+    # makes a secant that is a flat line with zero slope, EG: f = (x - 100)**2,
+    # which has a root at x = 100 and is symmetrical around the line x = 100
+    # we have to pick a really big number so that it is consistently true
+    # now find a point on each side so that the secant has a zero slope
+    dx = np.finfo(float).eps ** 0.33
+    # 100 - p0 = p1 - 100 = p0 * (1 + dx) + dx - 100
+    # -> 200 = p0 * (2 + dx) + dx
+    p0 = (200.0 - dx) / (2.0 + dx)
+    x = zeros.newton(lambda y: (y - 100.0)**2, x0=[p0] * 10)
+    assert_allclose(x, [100] * 10)
+    # test scalar cases too
+    p0 = (2.0 - 1e-4) / (2.0 + 1e-4)
+    x = zeros.newton(lambda y: (y - 1.0) ** 2, x0=p0)
+    assert_allclose(x, 1)
+    p0 = (-2.0 + 1e-4) / (2.0 + 1e-4)
+    x = zeros.newton(lambda y: (y + 1.0) ** 2, x0=p0)
+    assert_allclose(x, -1)
+
+
+def test_array_newton_failures():
+    """Test that array newton fails as expected"""
+    # p = 0.68  # [MPa]
+    # dp = -0.068 * 1e6  # [Pa]
+    # T = 323  # [K]
+    diameter = 0.10  # [m]
+    # L = 100  # [m]
+    roughness = 0.00015  # [m]
+    rho = 988.1  # [kg/m**3]
+    mu = 5.4790e-04  # [Pa*s]
+    u = 2.488  # [m/s]
+    reynolds_number = rho * u * diameter / mu  # Reynolds number
+
+    def colebrook_eqn(darcy_friction, re, dia):
+        return (1 / np.sqrt(darcy_friction) +
+                2 * np.log10(roughness / 3.7 / dia +
+                             2.51 / re / np.sqrt(darcy_friction)))
+
+    # only some failures
+    with pytest.warns(RuntimeWarning):
+        result = zeros.newton(
+            colebrook_eqn, x0=[0.01, 0.2, 0.02223, 0.3], maxiter=2,
+            args=[reynolds_number, diameter], failure_idx_flag=True
+        )
+        assert result.failures.any()
+    # they all fail
+    with pytest.raises(RuntimeError):
+        result = zeros.newton(
+            colebrook_eqn, x0=[0.01] * 2, maxiter=2,
+            args=[reynolds_number, diameter], failure_idx_flag=True
+        )
