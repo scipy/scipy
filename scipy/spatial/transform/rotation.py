@@ -567,7 +567,7 @@ class Rotation(object):
 
                 - [-90, 90] degrees if all axes are different (like xyz)
                 - [0, 180] degrees if first and third axes are the same
-                (like zxz)
+                  (like zxz)
 
         Euler angles suffer from the problem of gimbal lock [3]_. In this case,
         a warning is raised, and the third angle is set to zero. Note however
@@ -592,7 +592,7 @@ class Rotation(object):
         .. [2] Malcolm D. Shuster, F. Landis Markley
                 `General Formula for Euler Angles
                 <https://arc.aiaa.org/doi/abs/10.2514/1.16622>`_
-        -- [3] `Gimbal lock
+        .. [3] `Gimbal lock
                 <https://en.wikipedia.org/wiki/Gimbal_lock#In_applied_mathematics>`_
         """
         if len(seq) != 3:
