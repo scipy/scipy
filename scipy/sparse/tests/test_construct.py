@@ -31,7 +31,8 @@ def _sprandn(m, n, density=0.01, format="coo", dtype=None, random_state=None):
                             random_state, data_rvs)
 
 
-class TestConstructUtils(object):
+class TestConstructUtils(object):      
+        
     def test_spdiags(self):
         diags1 = array([[1, 2, 3, 4, 5]])
         diags2 = array([[1, 2, 3, 4, 5],
@@ -477,4 +478,7 @@ class TestConstructUtils(object):
         # anything that np.dtype can convert to a dtype should be accepted
         # for the dtype
         a = construct.random(10, 10, dtype='d')
-
+    
+    def test_random_large(self):
+        n = 100000
+        x = construct.random(n,n, density=100/n/n);
