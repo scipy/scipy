@@ -3371,7 +3371,7 @@ def dimpulse(system, x0=None, t=None, n=None):
     -------
     tout : ndarray
         Time values for the output, as a 1-D array.
-    yout : ndarray
+    yout : tuple of ndarray
         Impulse response of system.  Each element of the tuple represents
         the output of the system based on an impulse in each input.
 
@@ -3445,7 +3445,7 @@ def dstep(system, x0=None, t=None, n=None):
     -------
     tout : ndarray
         Output time points, as a 1-D array.
-    yout : ndarray
+    yout : tuple of ndarray
         Step response of system.  Each element of the tuple represents
         the output of the system based on a step response to each input.
 
