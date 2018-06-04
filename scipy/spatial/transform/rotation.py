@@ -20,7 +20,8 @@ def compute_euler_from_dcm(dcm, seq, extrinsic=False):
     # the paper uses transformation matrices, which are transpose of the
     # direction cosine matrices used by our Rotation class.
     # Adapt the algorithm for our case by
-    # 1. Transposing our dcm representation
+    # 1. Instead of transposing our representation, use the transpose of the
+    #    O matrix as defined in the paper, and be careful to swap indices
     # 2. Reversing both axis sequence and angles for extrinsic rotations
 
     if extrinsic:
@@ -31,8 +32,6 @@ def compute_euler_from_dcm(dcm, seq, extrinsic=False):
     num_rotations = dcm.shape[0]
 
     # Step 0
-    # Algorithms dcms are transpose of ours
-    dcm = np.transpose(dcm, (0, 2, 1))
     # Algorithm assumes axes as column vectors, here we use 1D vectors
     n1 = elementary_basis_vector(seq[0])
     n2 = elementary_basis_vector(seq[1])
@@ -48,13 +47,13 @@ def compute_euler_from_dcm(dcm, seq, extrinsic=False):
     c = np.vstack((n2, np.cross(n1, n2), n1))
 
     # Step 3
-    rt = np.array([
+    rot = np.array([
         [1, 0, 0],
-        [0, cl, -sl],
-        [0, sl, cl]
+        [0, cl, sl],
+        [0, -sl, cl],
     ])
-    res = np.einsum('...ij,...jk->...ik', rt.dot(c), dcm)
-    dcm_transformed = np.einsum('...ij,...jk->...ik', res, c.T)
+    res = np.einsum('...ij,...jk->...ik', c, dcm)
+    dcm_transformed = np.einsum('...ij,...jk->...ik', res, c.T.dot(rot))
 
     # Step 4
     angles = np.empty((num_rotations, 3))
@@ -70,10 +69,10 @@ def compute_euler_from_dcm(dcm, seq, extrinsic=False):
 
     # 5b
     safe_mask = np.logical_and(safe1, safe2)
-    angles[safe_mask, 0] = np.arctan2(dcm_transformed[safe_mask, 2, 0],
-                                      -dcm_transformed[safe_mask, 2, 1])
-    angles[safe_mask, 2] = np.arctan2(dcm_transformed[safe_mask, 0, 2],
-                                      dcm_transformed[safe_mask, 1, 2])
+    angles[safe_mask, 0] = np.arctan2(dcm_transformed[safe_mask, 0, 2],
+                                      -dcm_transformed[safe_mask, 1, 2])
+    angles[safe_mask, 2] = np.arctan2(dcm_transformed[safe_mask, 2, 0],
+                                      dcm_transformed[safe_mask, 2, 1])
 
     if extrinsic:
         # For extrinsic, set first angle to zero so that after reversal we
@@ -82,12 +81,12 @@ def compute_euler_from_dcm(dcm, seq, extrinsic=False):
         angles[~safe_mask, 0] = 0
         # 6b
         angles[~safe1, 2] = np.arctan2(
-            dcm_transformed[~safe1, 0, 1] - dcm_transformed[~safe1, 1, 0],
+            dcm_transformed[~safe1, 1, 0] - dcm_transformed[~safe1, 0, 1],
             dcm_transformed[~safe1, 0, 0] + dcm_transformed[~safe1, 1, 1]
         )
         # 6c
         angles[~safe2, 2] = -np.arctan2(
-            dcm_transformed[~safe2, 0, 1] + dcm_transformed[~safe2, 1, 0],
+            dcm_transformed[~safe2, 1, 0] + dcm_transformed[~safe2, 0, 1],
             dcm_transformed[~safe2, 0, 0] - dcm_transformed[~safe2, 1, 1]
         )
     else:
@@ -96,12 +95,12 @@ def compute_euler_from_dcm(dcm, seq, extrinsic=False):
         angles[~safe_mask, 2] = 0
         # 6b
         angles[~safe1, 0] = np.arctan2(
-            dcm_transformed[~safe1, 0, 1] - dcm_transformed[~safe1, 1, 0],
+            dcm_transformed[~safe1, 1, 0] - dcm_transformed[~safe1, 0, 1],
             dcm_transformed[~safe1, 0, 0] + dcm_transformed[~safe1, 1, 1]
         )
         # 6c
         angles[~safe2, 0] = np.arctan2(
-            dcm_transformed[~safe2, 0, 1] + dcm_transformed[~safe2, 1, 0],
+            dcm_transformed[~safe2, 1, 0] + dcm_transformed[~safe2, 0, 1],
             dcm_transformed[~safe2, 0, 0] - dcm_transformed[~safe2, 1, 1]
         )
 
