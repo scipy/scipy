@@ -425,10 +425,10 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
                   ValueError],
               8: ["gtol=%f is too small, func(x) is orthogonal to the "
                   "columns of\n  the Jacobian to machine "
-                  "precision." % gtol, ValueError],
-              'unknown': ["Unknown error.", TypeError]}
+                  "precision." % gtol, ValueError]}
 
-    info = retval[-1]    # The FORTRAN return value
+    # The FORTRAN return value (possible return values are >= 0 and <= 8)
+    info = retval[-1]
 
     if full_output:
         cov_x = None
@@ -443,13 +443,10 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
                 pass
         return (retval[0], cov_x) + retval[1:-1] + (errors[info][0], info)
     else:
-        if info not in LEASTSQ_SUCCESS:
-            if info in LEASTSQ_FAILURE:
-                warnings.warn(errors[info][0], RuntimeWarning)
-            elif info == 0:
-                raise errors[info][1](errors[info][0])
-            else:
-                raise errors['unknown'][1](errors['unknown'][0])
+        if info in LEASTSQ_FAILURE:
+            warnings.warn(errors[info][0], RuntimeWarning)
+        elif info == 0:
+            raise errors[info][1](errors[info][0])
         return retval[0], info
 
 
