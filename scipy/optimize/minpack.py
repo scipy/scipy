@@ -260,6 +260,7 @@ def _root_hybr(func, x0, args=(), jac=None,
 
 
 LEASTSQ_SUCCESS = [1, 2, 3, 4]
+LEASTSQ_FAILURE = [5, 6, 7, 8]
 
 
 def leastsq(func, x0, args=(), Dfun=None, full_output=0,
@@ -443,7 +444,7 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
         return (retval[0], cov_x) + retval[1:-1] + (errors[info][0], info)
     else:
         if info not in LEASTSQ_SUCCESS:
-            if info > 0:
+            if info in LEASTSQ_FAILURE:
                 warnings.warn(errors[info][0], RuntimeWarning)
             elif info == 0:
                 raise errors[info][1](errors[info][0])
