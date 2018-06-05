@@ -301,3 +301,27 @@ def test_array_newton_failures():
             colebrook_eqn, x0=[0.01] * 2, maxiter=2,
             args=[reynolds_number, diameter], failure_idx_flag=True
         )
+
+
+def test_gh8904_zeroder_at_root_fails():
+    """Test that Newton or Halley don't fail if zero derivative at root"""
+
+    # a function that has a zero derivative at it's root
+    def f_zeroder_root(x):
+        return x ** 3 - x ** 2
+
+    # should work with secant
+    r = zeros.newton(f_zeroder_root, x0=0)
+    assert_allclose(r, 0, atol=1e-16)
+
+    # 1st derivative
+    def fder(x):
+        return 3 * x ** 2 - 2 * x
+
+    # should work with newton and halley
+    r = zeros.newton(f_zeroder_root, x0=0, fprime=fder)
+    assert_allclose(r, 0, atol=1e-16)
+    r = zeros.newton(f_zeroder_root, x0=0, fprime=fder,
+                     fprime2=lambda x: 6 * x - 2)
+    assert_allclose(r, 0, atol=1e-16)
+
