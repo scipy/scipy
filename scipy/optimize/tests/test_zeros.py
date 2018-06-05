@@ -171,8 +171,9 @@ def test_complex_halley():
     assert_allclose(f(y, *coeffs), 0, atol=1e-6)
 
 
+@pytest.mark.filterwarnings("error")
 def test_gh8904_zeroder_at_root_fails():
-    """Test that Newton or Halley don't fail if zero derivative at root"""
+    """Test that Newton or Halley don't warn if zero derivative at root"""
 
     # a function that has a zero derivative at it's root
     def f_zeroder_root(x):
