@@ -1330,3 +1330,28 @@ def test_short_knn():
             [0., 0.01, np.inf, np.inf],
             [0., 0.01, np.inf, np.inf],
             [0., np.inf, np.inf, np.inf]])
+
+class Test_sorted_query_ball_point:
+
+    def setup_method(self):
+        np.random.seed(1234)
+        self.x = np.random.randn(100, 1)
+        self.ckdt = cKDTree(self.x)
+
+    def test_return_sorted_True(self):
+        idxs_list = self.ckdt.query_ball_point(self.x, 1., return_sorted=True)
+        for idxs in idxs_list:
+            assert_array_equal(idxs, sorted(idxs))
+
+    def test_return_sorted_None(self):
+        """Previous behavior was to sort the returned indices if there were
+        multiple points per query but not sort them if there was a single point
+        per query."""
+        idxs_list = self.ckdt.query_ball_point(self.x, 1.)
+        for idxs in idxs_list:
+            assert_array_equal(idxs, sorted(idxs))
+
+        idxs_list_single = [self.ckdt.query_ball_point(xi, 1.) for xi in self.x]
+        idxs_list_False = self.ckdt.query_ball_point(self.x, 1., return_sorted=False)
+        for idxs0, idxs1 in zip(idxs_list_False, idxs_list_single):
+            assert_array_equal(idxs0, idxs1)
