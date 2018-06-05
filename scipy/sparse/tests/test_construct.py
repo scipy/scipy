@@ -481,4 +481,4 @@ class TestConstructUtils(object):
     
     def test_random_large(self):
         n = 100000
-        x = construct.random(n,n, density=100/n/n);
+        x = construct.random(n,n, density=100/n/n)
