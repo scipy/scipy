@@ -166,7 +166,6 @@ class BinopTester(object):
     def __radd__(self, mat):
         return "matrix on the left"
 
-
     def __rmul__(self, mat):
         return "matrix on the left"
 
