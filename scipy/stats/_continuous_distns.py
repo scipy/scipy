@@ -387,11 +387,11 @@ class beta_gen(rv_continuous):
 
     .. math::
 
-        f(x, a, b) = \frac{\gamma(a+b) x^{a-1} (1-x)^{b-1}}
-                          {\gamma(a) \gamma(b)}
+        f(x, a, b) = \frac{\Gamma(a+b) x^{a-1} (1-x)^{b-1}}
+                          {\Gamma(a) \Gamma(b)}
 
     for :math:`0 < x < 1`, :math:`a > 0`, :math:`b > 0`, where
-    :math:`\gamma(z)` is the gamma function (`scipy.special.gamma`).
+    :math:`\Gamma` is the gamma function (`scipy.special.gamma`).
 
     `beta` takes :math:`a` and :math:`b` as shape parameters.
 
@@ -905,9 +905,10 @@ class chi_gen(rv_continuous):
 
     .. math::
 
-        f(x, df) = \frac{x^{df-1} \exp(-x^2/2)}{2^{df/2-1} \gamma(df/2)}
+        f(x, df) = \frac{x^{df-1} \exp(-x^2/2)}{2^{df/2-1} \Gamma(df/2)}
 
-    for :math:`x > 0`.
+    for :math:`x > 0`. :math:`\Gamma` is the gamma function
+    (`scipy.special.gamma`).
 
     Special cases of `chi` are:
 
@@ -967,9 +968,9 @@ class chi2_gen(rv_continuous):
 
     .. math::
 
-        f(x, df) = \frac{1}{(2 \gamma(df/2)} (x/2)^{df/2-1} \exp(-x/2)
+        f(x, df) = \frac{1}{(2 \Gamma(df/2)} (x/2)^{df/2-1} \exp(-x/2)
 
-    for x > 0.
+    for x > 0. :math:`\Gamma` is the gamma function (`scipy.special.gamma`).
 
     `chi2` takes ``df`` as a shape parameter.
 
@@ -1060,9 +1061,10 @@ class dgamma_gen(rv_continuous):
 
     .. math::
 
-        f(x, a) = \frac{1}{2\gamma(a)} |x|^{a-1} \exp(-|x|)
+        f(x, a) = \frac{1}{2\Gamma(a)} |x|^{a-1} \exp(-|x|)
 
-    for :math:`a > 0`.
+    for :math:`a > 0`. :math:`\Gamma` is the gamma function
+    (`scipy.special.gamma`).
 
     `dgamma` takes :math:`a` as a shape parameter.
 
@@ -1457,7 +1459,7 @@ class fatiguelife_gen(rv_continuous):
 
     .. math::
 
-        f(x, c) = \frac{x+1}{ 2c\sqrt{2\pi x^3} \exp(-\frac{(x-1)^2}{2x c^2}}
+        f(x, c) = \frac{x+1}{ 2c\sqrt{2\pi x^3} \exp(-\frac{(x-1)^2}{2x c^2})}
 
     for :math:`x > 0`.
 
@@ -2604,9 +2606,10 @@ class gengamma_gen(rv_continuous):
 
     .. math::
 
-        f(x, a, c) = \frac{|c| x^{c a-1} \exp(-x^c)}{\gamma(a)}
+        f(x, a, c) = \frac{|c| x^{c a-1} \exp(-x^c)}{\Gamma(a)}
 
     for :math:`x \ge 0`, :math:`a > 0`, and :math:`c \ne 0`.
+    :math:`\Gamma` is the gamma function (`scipy.special.gamma`).
 
     `gengamma` takes :math:`a` and :math:`c` as shape parameters.
 
@@ -3102,9 +3105,10 @@ class invgamma_gen(rv_continuous):
 
     .. math::
 
-        f(x, a) = \frac{x^{-a-1}}{\gamma(a)} \exp(-\frac{1}{x})
+        f(x, a) = \frac{x^{-a-1}}{\Gamma(a)} \exp(-\frac{1}{x})
 
-    for :math:`x > 0`, :math:`a > 0`.
+    for :math:`x > 0`, :math:`a > 0`. :math:`\Gamma` is the gamma function
+    (`scipy.special.gamma`).
 
     `invgamma` takes :math:`a` as a shape parameter.
 
@@ -3226,11 +3230,12 @@ class norminvgauss_gen(rv_continuous):
     .. math::
 
         f(x; a, b) = (a \exp(\sqrt{a^2 - b^2} + b x)) /
-                     (\pi \sqrt{1 + x^2} \, K_1(a * \sqrt{1 + x^2}))
+                     (\pi \sqrt{1 + x^2} \, K_1(a \sqrt{1 + x^2}))
 
     where `x` is a real number, the parameter `a` is the tail heaviness
     and `b` is the asymmetry parameter satisfying `a > 0` and `abs(b) <= a`.
-    `K_1` is the modified Bessel function of second kind (`scipy.special.k1`).
+    :math:`K_1` is the modified Bessel function of second kind
+    (`scipy.special.k1`).
 
     %(after_notes)s
 
@@ -3651,7 +3656,7 @@ class logistic_gen(rv_continuous):
     .. math::
 
         f(x) = \frac{\exp(-x)}
-                    {(1+exp(-x))^2}
+                    {(1+\exp(-x))^2}
 
     `logistic` is a special case of `genlogistic` with ``c == 1``.
 
@@ -3705,11 +3710,12 @@ class loggamma_gen(rv_continuous):
     .. math::
 
         f(x, c) = \frac{\exp(c x - \exp(x))}
-                       {\gamma(c)}
+                       {\Gamma(c)}
 
     for all :math:`x, c > 0`.
 
-    `loggamma` takes :math:`c` as a shape parameter.
+    `loggamma` takes :math:`c` as a shape parameter. :math:`\Gamma` is the
+    gamma function (`scipy.special.gamma`).
 
     %(after_notes)s
 
@@ -4663,7 +4669,7 @@ class t_gen(rv_continuous):
     .. math::
 
         f(x; \nu) = \frac{\Gamma((\nu+1)/2)}
-                        {\sqrt{\pi*\nu} \Gamma(\nu)}
+                        {\sqrt{\pi \nu} \Gamma(\nu)}
                     (1+x^2/\nu)^{-(\nu+1)/2}
 
     where ``x`` is a real number and the degrees of freedom parameter
@@ -4727,7 +4733,7 @@ t = t_gen(name='t')
 
 
 class nct_gen(rv_continuous):
-    r"""A non-central Student's T continuous random variable.
+    r"""A non-central Student's t continuous random variable.
 
     %(before_notes)s
 
@@ -4737,12 +4743,13 @@ class nct_gen(rv_continuous):
 
     .. math::
 
-        f(x, df, nc) = \frac{df^{df/2} \gamma(df+1)}{2^{df}
-                       \exp(nc^2 / 2) (df+x^2)^{df/2} \gamma(df/2)}
+        f(x, df, nc) = \frac{df^{df/2} \Gamma(df+1)}{2^{df}
+                       \exp(nc^2 / 2) (df+x^2)^{df/2} \Gamma(df/2)}
 
     for ``df > 0``.
 
-    `nct` takes ``df`` and ``nc`` as shape parameters.
+    `nct` takes ``df`` and ``nc`` as shape parameters. :math:`\Gamma` is the 
+    gamma function (`scipy.special.gamma`).
 
     %(after_notes)s
 
@@ -4957,8 +4964,8 @@ class pearson3_gen(rv_continuous):
 
     .. math::
 
-        f(x, skew) = \frac{|\beta|}{\gamma(\alpha)}
-                     (\beta (x - \zeta))^{alpha - 1} \exp(-\beta (x - \zeta))
+        f(x, skew) = \frac{|\beta|}{\Gamma(\alpha)}
+                     (\beta (x - \zeta))^{\alpha - 1} \exp(-\beta (x - \zeta))
 
     where:
 
@@ -4968,6 +4975,7 @@ class pearson3_gen(rv_continuous):
             \alpha = (stddev \beta)^2
             \zeta = loc - \frac{\alpha}{\beta}
 
+    :math:`\Gamma` is the gamma function (`scipy.special.gamma`).
     `pearson3` takes ``skew`` as a shape parameter.
 
     %(after_notes)s
@@ -5289,7 +5297,7 @@ class rayleigh_gen(rv_continuous):
 
     .. math::
 
-        f(r) = r \exp(-r^2/2)
+        f(x) = x \exp(-x^2/2)
 
     for :math:`x \ge 0`.
 
@@ -6339,7 +6347,9 @@ class halfgennorm_gen(rv_continuous):
 
     .. math::
 
-        f(x, \beta) = \frac{\beta}{\gamma(1/\beta)} \exp(-|x|^\beta)
+        f(x, \beta) = \frac{\beta}{\Gamma(1/\beta)} \exp(-|x|^\beta)
+
+    :math:`\Gamma` is the gamma function (`scipy.special.gamma`).
 
     `gennorm` takes :math:`\beta` as a shape parameter.
     For :math:`\beta = 1`, it is identical to an exponential distribution.
