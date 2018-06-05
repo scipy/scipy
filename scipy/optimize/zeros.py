@@ -79,7 +79,7 @@ def _results_select(full_output, r):
 
 
 def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
-           fprime2=None, full_output=False, disp=True, failure_idx_flag=None):
+           fprime2=None, full_output=False, disp=True, converged=None):
     """
     Find a zero using the Newton-Raphson or secant method.
 
@@ -91,11 +91,11 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
 
     If `x0` is a sequence, then `newton` returns an array, and `func` must be
     vectorized and return a sequence or array of the same shape as it's first
-    argument. If an optional argument, `failure_idx_flag`, is `True`, then the
-    return is a named tuple `(root, failures, zero_der)` in which `root` is an
-    array of the locations where `func` is zero, `failures` is an array, same
-    size as `root`, of booleans that are `True` where `func` failed to converge,
-    and `zero_der` is another boolean array of the same size where `func` had a
+    argument. If an optional argument, `converged`, is `True`, then the
+    return is a named tuple `(root, converged, zero_der)` in which `root` is an
+    array of the locations where `func` is zero, `converged` is an array, same
+    size as `root`, of booleans that are `True` where `func` converged, and
+    `zero_der` is another boolean array of the same size where `func` had a
     zero derivative.
 
     If `x0` is a sequence, then arguments `full_output` and `disp` are ignored.
@@ -130,9 +130,9 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
         a RootResults object.
     disp : bool, optional
         If True, display a RuntimeError if the algorithm didn't converge.
-    failure_idx_flag : boolean, optional
+    converged : boolean, optional
         Only used if `x0` is a sequence. If `True` then two extras boolean
-        arrays of failures and zero derivatives are appended to the return.
+        arrays of converged and zero derivatives are appended to the return.
 
     Returns
     -------
@@ -141,8 +141,8 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
     r : RootResults (present if ``full_output = True``)
         Object containing information about the convergence.  In particular,
         ``r.converged`` is True if the routine converged.
-    failures : boolean array, optional
-        For vector functions, indicates which elements failed to converge.
+    converged : boolean array, optional
+        For vector functions, indicates which elements converged successfully.
     zero_der : boolean array, optional
         For vector functions, indicates which elements had a zero derivative.
 
@@ -203,7 +203,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
         raise ValueError("maxiter must be greater than 0")
     if not np.isscalar(x0):
         return _array_newton(func, x0, fprime, args, tol, maxiter, fprime2,
-                             failure_idx_flag)
+                             converged)
     # Multiply by 1.0 to convert to floating point.  We don't use float(x0)
     # so it still works if x0 is complex.
     p0 = 1.0 * x0
@@ -265,7 +265,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
 
 
 def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2,
-                  failure_idx_flag=False):
+                  converged=False):
     """
     A vectorized version of Newton, Halley, and secant methods for arrays. Do
     not use this method directly. This method is called from :func:`newton`
@@ -348,9 +348,9 @@ def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2,
         if failures.all():
             raise RuntimeError(msg)
         warnings.warn(msg, RuntimeWarning)
-    if failure_idx_flag:
-        result = namedtuple('result', ('root', 'failures', 'zero_der'))
-        p = result(p, failures, zero_der)
+    if converged:
+        result = namedtuple('result', ('root', 'converged', 'zero_der'))
+        p = result(p, ~failures, zero_der)
     return p
 
 
