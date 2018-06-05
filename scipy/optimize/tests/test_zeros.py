@@ -314,6 +314,9 @@ def test_gh8904_zeroder_at_root_fails():
     r = zeros.newton(f_zeroder_root, x0=0)
     assert_allclose(r, 0, atol=1e-16)
 
+    r = zeros.newton(f_zeroder_root, x0=[0]*10)
+    assert_allclose(r, 0, atol=1e-16)
+
     # 1st derivative
     def fder(x):
         return 3 * x ** 2 - 2 * x
@@ -325,3 +328,8 @@ def test_gh8904_zeroder_at_root_fails():
                      fprime2=lambda x: 6 * x - 2)
     assert_allclose(r, 0, atol=1e-16)
 
+    r = zeros.newton(f_zeroder_root, x0=[0]*10, fprime=fder, failure_idx_flag=True)
+    assert_allclose(r.root, 0, atol=1e-16)
+    r = zeros.newton(f_zeroder_root, x0=[0]*10, fprime=fder,
+                     fprime2=lambda x: 6 * x - 2)
+    assert_allclose(r, 0, atol=1e-16)
