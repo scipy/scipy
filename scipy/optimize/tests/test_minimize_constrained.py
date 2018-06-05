@@ -505,6 +505,20 @@ class TestTrustRegionConstr(TestCase):
                     if result.status in (0, 3):
                         raise RuntimeError("Invalid termination condition.")
 
+    def test_default_jac_and_hess(self):
+        def fun(x):
+            return (x - 1) ** 2
+        bounds = [(-2, 2)]
+        res = minimize(fun, x0=[-1.5], bounds=bounds, method='trust-constr')
+        assert_array_almost_equal(res.x, 1, decimal=5)
+
+    def test_default_hess(self):
+        def fun(x):
+            return (x - 1) ** 2
+        bounds = [(-2, 2)]
+        res = minimize(fun, x0=[-1.5], bounds=bounds, method='trust-constr', jac='2-point')
+        assert_array_almost_equal(res.x, 1, decimal=5)
+
     def test_no_constraints(self):
         prob = Rosenbrock()
         result = minimize(prob.fun, prob.x0,
