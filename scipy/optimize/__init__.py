@@ -236,6 +236,7 @@ Hessian Approximation
    :toctree: generated/
 
    LbfgsInvHessProduct - Linear operator for L-BFGS approximate inverse Hessian.
+   HessianUpdateStrategy - Interface for implementing Hessian update strategies
 
 Benchmark Problems
 ------------------
