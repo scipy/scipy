@@ -175,13 +175,15 @@ def test_complex_halley():
 def test_gh8904_zeroder_at_root_fails():
     """Test that Newton or Halley don't warn if zero derivative at root"""
 
+    xtol = finfo(float).eps
+
     # a function that has a zero derivative at it's root
     def f_zeroder_root(x):
         return x ** 3 - x ** 2
 
     # should work with secant
     r = zeros.newton(f_zeroder_root, x0=0)
-    assert_allclose(r, 0, atol=1e-16)
+    assert_allclose(r, 0, atol=xtol)
 
     # 1st derivative
     def fder(x):
@@ -189,10 +191,10 @@ def test_gh8904_zeroder_at_root_fails():
 
     # should work with newton and halley
     r = zeros.newton(f_zeroder_root, x0=0, fprime=fder)
-    assert_allclose(r, 0, atol=1e-16)
+    assert_allclose(r, 0, atol=xtol)
     r = zeros.newton(f_zeroder_root, x0=0, fprime=fder,
                      fprime2=lambda x: 6 * x - 2)
-    assert_allclose(r, 0, atol=1e-16)
+    assert_allclose(r, 0, atol=xtol)
 
     # also test that if a root is found we do not raise RuntimeWarning even if
     # the derivative is zero, EG: at x = 0.5, then fval = -0.125 and
@@ -200,7 +202,7 @@ def test_gh8904_zeroder_at_root_fails():
     # root, but if the solver continued with that guess, then it will calculate
     # a zero derivative, so it should return the root w/o RuntimeWarning
     r = zeros.newton(f_zeroder_root, x0=0.5, fprime=fder)
-    assert_allclose(r, 0, atol=1e-16)
+    assert_allclose(r, 0, atol=xtol)
     r = zeros.newton(f_zeroder_root, x0=0.5, fprime=fder,
                      fprime2=lambda x: 6 * x - 2)
-    assert_allclose(r, 0, atol=1e-16)
+    assert_allclose(r, 0, atol=xtol)

@@ -3,7 +3,7 @@ from __future__ import division, print_function, absolute_import
 import warnings
 
 from . import _zeros
-from numpy import finfo, sign, sqrt
+from numpy import finfo
 
 _iter = 100
 _xtol = 2e-12
@@ -195,7 +195,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
             fval = func(p0, *args)
             funcalls += 1
             # If a root has been found within some tolerance, then terminate
-            if fval == 0 or abs(fval) < _xtol + _rtol * abs(fval):
+            if fval == 0 or abs(fval) < finfo(float).eps:
                 return _results_select(full_output, (p0, funcalls, itr, _ECONVERGED))
             fder = fprime(p0, *args)
             funcalls += 1
