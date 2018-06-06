@@ -398,6 +398,25 @@ def dijkstra(csgraph, directed=True, indices=None,
     distances.  Negative distances can lead to infinite cycles that must
     be handled by specialized algorithms such as Bellman-Ford's algorithm
     or Johnson's algorithm.
+
+    Examples
+    --------
+    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse.csgraph import dijkstra
+
+    >>> graph = [
+    ... [0, 1 , 2, 0],
+    ... [0, 0, 0, 1],
+    ... [0, 0, 0, 3],
+    ... [0, 0, 0, 0]
+    ... ]
+    >>> graph = csr_matrix(graph)
+    >>> print(graph)
+      (0, 1)	1
+      (0, 2)	2
+      (1, 3)	1
+      (2, 3)	3
+
     """
     #------------------------------
     # validate csgraph and convert to csr matrix
