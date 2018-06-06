@@ -97,7 +97,7 @@ class TestBasic(object):
                     x, r = zeros.newton(f1, x0, maxiter=iters, disp=True, **kwargs)
 
     def test_deriv_zero_warning(self):
-        func = lambda x: x**2
+        func = lambda x: x**2 - 2.0
         dfunc = lambda x: 2*x
         assert_warns(RuntimeWarning, cc.newton, func, 0.0, dfunc)
 
