@@ -417,6 +417,12 @@ def dijkstra(csgraph, directed=True, indices=None,
       (1, 3)	1
       (2, 3)	3
 
+    >>> dist_matrix, predecessors = dijkstra(csgraph=graph, directed=False, indices=0, return_predecessors=True)
+    >>> dist_matrix
+    array([ 0.,  1.,  2.,  2.])
+    >>> predecessors
+    array([-9999,     0,     0,     1], dtype=int32)
+
     """
     #------------------------------
     # validate csgraph and convert to csr matrix
