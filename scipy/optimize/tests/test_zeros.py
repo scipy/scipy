@@ -203,4 +203,4 @@ def test_gh8904_zeroder_at_root_fails():
     assert_allclose(r, 0, atol=zeros._xtol, rtol=zeros._rtol)
     r = zeros.newton(f_zeroder_root, x0=0.5, fprime=fder,
                      fprime2=lambda x: 6 * x - 2)
-    assert_allclose(r, 0, atol=zeros._xtol, rtol=zeros._rtol)
+    assert_allclose(r, 0, atol=1e-6)
