@@ -194,3 +194,13 @@ def test_gh8904_zeroder_at_root_fails():
                      fprime2=lambda x: 6 * x - 2)
     assert_allclose(r, 0, atol=1e-16)
 
+    # also test that if a root is found we do not raise RuntimeWarning even if
+    # the derivative is zero, EG: at x = 0.5, then fval = -0.125 and
+    # fder = -0.25 so the next guess is 0.5 - (-0.125/-0.5) = 0 which is the
+    # root, but if the solver continued with that guess, then it will calculate
+    # a zero derivative, so it should return the root w/o RuntimeWarning
+    r = zeros.newton(f_zeroder_root, x0=0.5, fprime=fder)
+    assert_allclose(r, 0, atol=1e-16)
+    r = zeros.newton(f_zeroder_root, x0=0.5, fprime=fder,
+                     fprime2=lambda x: 6 * x - 2)
+    assert_allclose(r, 0, atol=1e-16)

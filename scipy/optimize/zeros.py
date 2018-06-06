@@ -187,21 +187,22 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
     # Multiply by 1.0 to convert to floating point.  We don't use float(x0)
     # so it still works if x0 is complex.
     p0 = 1.0 * x0
-    # check if initial guess is the solution
-    if func(p0, *args) == 0:
-        return _results_select(full_output, (p0, 0, 0, _ECONVERGED))
     funcalls = 0
     if fprime is not None:
         # Newton-Raphson method
         for itr in range(maxiter):
+            # first evaluate fval
+            fval = func(p0, *args)
+            funcalls += 1
+            # If a root has been found within some tolerance, then terminate
+            if fval == 0 or abs(fval) < _xtol + _rtol * abs(fval):
+                return _results_select(full_output, (p0, funcalls, itr, _ECONVERGED))
             fder = fprime(p0, *args)
             funcalls += 1
             if fder == 0:
                 msg = "derivative was zero."
                 warnings.warn(msg, RuntimeWarning)
                 return _results_select(full_output, (p0, funcalls, itr + 1, _ECONVERR))
-            fval = func(p0, *args)
-            funcalls += 1
             newton_step = fval / fder
             if fprime2 is None:
                 # Newton step
