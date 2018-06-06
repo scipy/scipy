@@ -62,6 +62,32 @@ def connected_components(csgraph, directed=True, connection='weak',
     .. [1] D. J. Pearce, "An Improved Algorithm for Finding the Strongly
            Connected Components of a Directed Graph", Technical Report, 2005
 
+    Examples
+    --------
+    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse.csgraph import connected_components
+
+    >>> graph = [
+    ... [ 0, 1 , 1, 0 , 0 ],
+    ... [ 0, 0 , 1 , 0 ,0 ],
+    ... [ 0, 0, 0, 0, 0],
+    ... [0, 0 , 0, 0, 1],
+    ... [0, 0, 0, 0, 0]
+    ... ]
+    >>> graph = csr_matrix(graph)
+    >>> print(graph)
+      (0, 1)	1
+      (0, 2)	1
+      (1, 2)	1
+      (3, 4)	1
+
+
+    >>> n_components, labels = connected_components(csgraph=graph, directed=False, return_labels=True)
+    >>> n_components
+    2
+    >>> labels
+    array([0, 0, 0, 1, 1], dtype=int32)
+
     """
     if connection.lower() not in ['weak', 'strong']:
         raise ValueError("connection must be 'weak' or 'strong'")
