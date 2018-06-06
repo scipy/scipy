@@ -45,6 +45,28 @@ def reverse_cuthill_mckee(graph, symmetric_mode=False):
     ----------
     E. Cuthill and J. McKee, "Reducing the Bandwidth of Sparse Symmetric Matrices",
     ACM '69 Proceedings of the 1969 24th national conference, (1969).
+
+    Examples
+    --------
+    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse.csgraph import reverse_cuthill_mckee
+
+    >>> graph = [
+    ... [0, 1 , 2, 0],
+    ... [0, 0, 0, 1],
+    ... [2, 0, 0, 3],
+    ... [0, 0, 0, 0]
+    ... ]
+    >>> graph = csr_matrix(graph)
+    >>> print(graph)
+      (0, 1)	1
+      (0, 2)	2
+      (1, 3)	1
+      (2, 0)	2
+      (2, 3)	3
+
+    >>> reverse_cuthill_mckee(graph)
+    array([3, 2, 1, 0], dtype=int32)
     
     """
     if not (isspmatrix_csc(graph) or isspmatrix_csr(graph)):
