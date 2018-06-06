@@ -194,8 +194,8 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
             # first evaluate fval
             fval = func(p0, *args)
             funcalls += 1
-            # If a root has been found within some tolerance, then terminate
-            if fval == 0 or abs(fval) < _xtol + _rtol * abs(fval):
+            # If fval is 0, a root has been found, then terminate
+            if fval == 0:
                 return _results_select(full_output, (p0, funcalls, itr, _ECONVERGED))
             fder = fprime(p0, *args)
             funcalls += 1
