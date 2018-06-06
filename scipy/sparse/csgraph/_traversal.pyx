@@ -304,6 +304,29 @@ cpdef breadth_first_order(csgraph, i_start,
         tree.  If node i is in the tree, then its parent is given by
         predecessors[i]. If node i is not in the tree (and for the parent
         node) then predecessors[i] = -9999.
+
+    Examples
+    --------
+    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse.csgraph import breadth_first_order
+
+    >>> graph = [
+    ... [0, 1 , 2, 0],
+    ... [0, 0, 0, 1],
+    ... [2, 0, 0, 3],
+    ... [0, 0, 0, 0]
+    ... ]
+    >>> graph = csr_matrix(graph)
+    >>> print(graph)
+      (0, 1)    1
+      (0, 2)    2
+      (1, 3)    1
+      (2, 0)    2
+      (2, 3)    3
+
+    >>> breadth_first_order(graph,0)
+    (array([0, 1, 2, 3], dtype=int32), array([-9999,     0,     0,     1], dtype=int32))
+
     """
     csgraph = validate_graph(csgraph, directed, dense_output=False)
     cdef int N = csgraph.shape[0]
