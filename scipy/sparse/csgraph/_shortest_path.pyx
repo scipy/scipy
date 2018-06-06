@@ -125,6 +125,32 @@ def shortest_path(csgraph, method='auto',
     do not work for graphs with direction-dependent distances when
     directed == False.  i.e., if csgraph[i,j] and csgraph[j,i] are non-equal
     edges, method='D' may yield an incorrect result.
+
+    Examples
+    --------
+    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse.csgraph import shortest_path
+
+    >>> graph = [
+    ... [0, 1 , 2, 0],
+    ... [0, 0, 0, 1],
+    ... [2, 0, 0, 3],
+    ... [0, 0, 0, 0]
+    ... ]
+    >>> graph = csr_matrix(graph)
+    >>> print(graph)
+      (0, 1)	1
+      (0, 2)	2
+      (1, 3)	1
+      (2, 0)	2
+      (2, 3)	3
+
+    >>> dist_matrix, predecessors = shortest_path(csgraph=graph, directed=False, indices=0, return_predecessors=True)
+    >>> dist_matrix
+    array([[ 0.,  1.,  2.,  2.])
+    >>> predecessors
+    array([-9999,     0,     0,     1], dtype=int32)
+
     """
     # validate here to catch errors early but don't store the result;
     # we'll validate again later
