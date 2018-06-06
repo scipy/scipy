@@ -9,13 +9,13 @@ import warnings
 AXIS_TO_IND = {'x': 0, 'y': 1, 'z': 2}
 
 
-def elementary_basis_vector(axis):
+def _elementary_basis_vector(axis):
     b = np.zeros(3)
     b[AXIS_TO_IND[axis]] = 1
     return b
 
 
-def compute_euler_from_dcm(dcm, seq, extrinsic=False):
+def _compute_euler_from_dcm(dcm, seq, extrinsic=False):
     # The algorithm assumes intrinsic frame transformations. For representation
     # the paper uses transformation matrices, which are transpose of the
     # direction cosine matrices used by our Rotation class.
@@ -33,9 +33,9 @@ def compute_euler_from_dcm(dcm, seq, extrinsic=False):
 
     # Step 0
     # Algorithm assumes axes as column vectors, here we use 1D vectors
-    n1 = elementary_basis_vector(seq[0])
-    n2 = elementary_basis_vector(seq[1])
-    n3 = elementary_basis_vector(seq[2])
+    n1 = _elementary_basis_vector(seq[0])
+    n2 = _elementary_basis_vector(seq[1])
+    n3 = _elementary_basis_vector(seq[2])
 
     # Step 2
     sl = np.dot(np.cross(n1, n2), n3)
@@ -135,7 +135,7 @@ def compute_euler_from_dcm(dcm, seq, extrinsic=False):
     return angles
 
 
-def make_elementary_quat(axis, angles):
+def _make_elementary_quat(axis, angles):
     num_rotations = angles.shape[0]
     quat = np.zeros((num_rotations, 4))
 
@@ -144,7 +144,7 @@ def make_elementary_quat(axis, angles):
     return quat
 
 
-def compose_quat(p, q):
+def _compose_quat(p, q):
     # p and q should have same shape (N, 4)
     product = np.empty_like(p)
     # Scalar part of result
@@ -155,18 +155,18 @@ def compose_quat(p, q):
     return product
 
 
-def elementary_quat_compose(seq, angles, intrinsic=False):
+def _elementary_quat_compose(seq, angles, intrinsic=False):
     # Initialize result to first axis
-    result = make_elementary_quat(seq[0], angles[:, 0])
+    result = _make_elementary_quat(seq[0], angles[:, 0])
 
     for idx, axis in enumerate(seq[1:], start=1):
         if intrinsic:
-            result = compose_quat(
+            result = _compose_quat(
                 result,
-                make_elementary_quat(axis, angles[:, idx]))
+                _make_elementary_quat(axis, angles[:, idx]))
         else:
-            result = compose_quat(
-                make_elementary_quat(axis, angles[:, idx]),
+            result = _compose_quat(
+                _make_elementary_quat(axis, angles[:, idx]),
                 result)
     return result
 
@@ -545,7 +545,7 @@ class Rotation(object):
             raise ValueError("Expected angles to have shape (num_rotations, "
                              "num_axes), got {}.".format(angles.shape))
 
-        quat = elementary_quat_compose(seq, angles, intrinsic)
+        quat = _elementary_quat_compose(seq, angles, intrinsic)
         return cls(quat[0] if is_single else quat, normalized=True)
 
     def as_euler(self, seq, degrees=False):
@@ -611,7 +611,7 @@ class Rotation(object):
 
         seq = seq.lower()
 
-        angles = compute_euler_from_dcm(self.as_dcm(), seq, extrinsic)
+        angles = _compute_euler_from_dcm(self.as_dcm(), seq, extrinsic)
         if degrees:
             angles = np.rad2deg(angles)
 
