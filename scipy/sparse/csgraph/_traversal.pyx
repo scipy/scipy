@@ -81,7 +81,6 @@ def connected_components(csgraph, directed=True, connection='weak',
       (1, 2)	1
       (3, 4)	1
 
-
     >>> n_components, labels = connected_components(csgraph=graph, directed=False, return_labels=True)
     >>> n_components
     2

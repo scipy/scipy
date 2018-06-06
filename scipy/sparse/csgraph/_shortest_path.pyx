@@ -965,6 +965,32 @@ def johnson(csgraph, directed=True, indices=None,
     This routine is specially designed for graphs with negative edge weights.
     If all edge weights are positive, then Dijkstra's algorithm is a better
     choice.
+
+    Examples
+    --------
+    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse.csgraph import johnson
+
+    >>> graph = [
+    ... [0, 1 , 2, 0],
+    ... [0, 0, 0, 1],
+    ... [2, 0, 0, 3],
+    ... [0, 0, 0, 0]
+    ... ]
+    >>> graph = csr_matrix(graph)
+    >>> print(graph)
+      (0, 1)	1
+      (0, 2)	2
+      (1, 3)	1
+      (2, 0)	2
+      (2, 3)	3
+
+    >>> dist_matrix, predecessors = johnson(csgraph=graph, directed=False, indices=0, return_predecessors=True)
+    >>> dist_matrix
+    array([[ 0.,  1.,  2.,  2.])
+    >>> predecessors
+    array([-9999,     0,     0,     1], dtype=int32)
+
     """
     #------------------------------
     # if unweighted, there are no negative weights: we just use dijkstra
