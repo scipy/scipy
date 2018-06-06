@@ -231,6 +231,39 @@ def floyd_warshall(csgraph, directed=True,
     ------
     NegativeCycleError:
         if there are negative cycles in the graph
+
+    Examples
+    --------
+    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse.csgraph import floyd_warshall
+
+    >>> graph = [
+    ... [0, 1 , 2, 0],
+    ... [0, 0, 0, 1],
+    ... [2, 0, 0, 3],
+    ... [0, 0, 0, 0]
+    ... ]
+    >>> graph = csr_matrix(graph)
+    >>> print(graph)
+      (0, 1)	1
+      (0, 2)	2
+      (1, 3)	1
+      (2, 0)	2
+      (2, 3)	3
+
+
+    >>> dist_matrix, predecessors = floyd_warshall(csgraph=graph, directed=False, return_predecessors=True)
+    >>> dist_matrix
+    array([[ 0.,  1.,  2.,  2.],
+           [ 1.,  0.,  3.,  1.],
+           [ 2.,  3.,  0.,  3.],
+           [ 2.,  1.,  3.,  0.]])
+    >>> predecessors
+    array([[-9999,     0,     0,     1],
+           [    1, -9999,     0,     1],
+           [    2,     0, -9999,     2],
+           [    1,     3,     3, -9999]], dtype=int32)
+
     """
     dist_matrix = validate_graph(csgraph, directed, DTYPE,
                                  csr_output=False,
