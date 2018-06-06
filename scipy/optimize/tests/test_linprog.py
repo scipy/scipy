@@ -687,6 +687,32 @@ class TestLinprogSimplex(LinprogCommonTests):
         assert_(callback_complete[0])
         assert_allclose(last_xk[0], res.x)
 
+    def test_bug_8662(self):
+        # scipy.linprog returns incorrect optimal result for constraints using
+        # default bounds, but, correct if boundary condition as constraint.
+        # https://github.com/scipy/scipy/issues/8662
+        c = [-10, 10, 6, 3]
+        A= [
+            [8, -8, -4, 6],
+            [-8, 8, 4, -6],
+            [-4, 4, 8, -4],
+            [3, -3, -3, -10]
+        ]
+        b = [9, -9, -9, -4]
+        bounds = [(0, None), (0, None), (0, None), (0, None)]
+
+        res1 = linprog(c, A, b, bounds=bounds)
+        _assert_success(res1, 36.0000000000)
+
+        # Set boundary condition as a constraint
+        A.append([0, 0, -1, 0])
+        b.append(0)
+        bounds[2] = (None, None)
+
+        res2 = linprog(c, A, b, bounds=bounds)
+        _assert_success(res2, 36.0000000000)
+        assert_allclose(res1.x, res2.x)
+
 
 class BaseTestLinprogIP(LinprogCommonTests):
     method = "interior-point"
