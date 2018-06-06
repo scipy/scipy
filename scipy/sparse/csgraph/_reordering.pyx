@@ -115,6 +115,31 @@ def maximum_bipartite_matching(graph, perm_type='row'):
     Analysis of Maximum Transversal Algorithms", ACM Trans. Math. Softw.
     38, no. 2, (2011).
 
+    Examples
+    --------
+    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse.csgraph import maximum_bipartite_matching
+
+    >>> graph = [
+    ... [0, 1 , 2, 0],
+    ... [1, 0, 0, 1],
+    ... [2, 0, 0, 3],
+    ... [0, 1, 3, 0]
+    ... ]
+    >>> graph = csr_matrix(graph)
+    >>> print(graph)
+      (0, 1)	1
+      (0, 2)	2
+      (1, 0)	1
+      (1, 3)	1
+      (2, 0)	2
+      (2, 3)	3
+      (3, 1)	1
+      (3, 2)	3
+
+    >>> maximum_bipartite_matching(graph, perm_type='row')
+    array([1, 0, 3, 2], dtype=int32)
+
     """
     cdef np.npy_intp nrows = graph.shape[0]
     if nrows != graph.shape[1]:
