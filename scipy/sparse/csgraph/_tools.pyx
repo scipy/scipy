@@ -398,6 +398,37 @@ def construct_dist_matrix(graph,
     predecessors[i, j] gives the index of the previous node in the path from
     point i to point j.  If no path exists between point i and j, then
     predecessors[i, j] = -9999
+
+    Examples
+    --------
+    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse.csgraph import construct_dist_matrix
+
+    >>> graph = [
+    ... [0, 1 , 2, 0],
+    ... [0, 0, 0, 1],
+    ... [0, 0, 0, 3],
+    ... [0, 0, 0, 0]
+    ... ]
+    >>> graph = csr_matrix(graph)
+    >>> print(graph)
+      (0, 1)	1
+      (0, 2)	2
+      (1, 3)	1
+      (2, 3)	3
+
+    >>> pred = np.array([[-9999, 0, 0, 2],
+    ... [1, -9999, 0, 1],
+    ... [2, 0, -9999, 2],
+    ... [1, 3, 3, -9999]], dtype=np.int32)
+    )
+
+    >>> construct_dist_matrix(graph=graph, predecessors=pred, directed=False)
+    array([[ 0.,  1.,  2.,  5.],
+           [ 1.,  0.,  3.,  1.],
+           [ 2.,  3.,  0.,  3.],
+           [ 2.,  1.,  3.,  0.]])
+
     """
     from ._validation import validate_graph
     graph = validate_graph(graph, directed, dtype=DTYPE,
