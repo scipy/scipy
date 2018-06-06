@@ -334,6 +334,32 @@ def structural_rank(graph):
             Meth., Vol. 7, 594 (1986).
     
     .. [2] http://www.cise.ufl.edu/research/sparse/matrices/legend.html
+
+    Examples
+    --------
+    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse.csgraph import structural_rank
+
+    >>> graph = [
+    ... [0, 1 , 2, 0],
+    ... [1, 0, 0, 1],
+    ... [2, 0, 0, 3],
+    ... [0, 1, 3, 0]
+    ... ]
+    >>> graph = csr_matrix(graph)
+    >>> print(graph)
+      (0, 1)	1
+      (0, 2)	2
+      (1, 0)	1
+      (1, 3)	1
+      (2, 0)	2
+      (2, 3)	3
+      (3, 1)	1
+      (3, 2)	3
+
+    >>> structural_rank(graph)
+    4
+
     """
     if not isspmatrix:
         raise TypeError('Input must be a sparse matrix')
