@@ -87,6 +87,31 @@ def csgraph_masked_from_dense(graph,
     -------
     csgraph : MaskedArray
         masked array representation of graph
+
+    Examples
+    --------
+    >>> from scipy.sparse.csgraph import csgraph_masked_from_dense
+
+    >>> graph = [
+    ... [0, 1 , 2, 0],
+    ... [0, 0, 0, 1],
+    ... [0, 0, 0, 3],
+    ... [0, 0, 0, 0]
+    ... ]
+
+    >>> csgraph_masked_from_dense(graph)
+    masked_array(data =
+     [[-- 1 2 --]
+     [-- -- -- 1]
+     [-- -- -- 3]
+     [-- -- -- --]],
+                 mask =
+     [[ True False False  True]
+     [ True  True  True False]
+     [ True  True  True False]
+     [ True  True  True  True]],
+           fill_value = 0)
+
     """
     graph = np.array(graph, copy=copy)
 
@@ -350,8 +375,8 @@ def reconstruct_path(csgraph, predecessors, directed=True):
     matrix([[ 0.,  1.,  2.,  0.],
             [ 0.,  0.,  0.,  1.],
             [ 0.,  0.,  0.,  0.],
-
             [ 0.,  0.,  0.,  0.]])
+
     """
     from ._validation import validate_graph
     csgraph = validate_graph(csgraph, directed, dense_output=False)
