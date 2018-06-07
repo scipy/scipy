@@ -564,7 +564,6 @@ def construct_dist_matrix(graph,
     ... [1, -9999, 0, 1],
     ... [2, 0, -9999, 2],
     ... [1, 3, 3, -9999]], dtype=np.int32)
-    )
 
     >>> construct_dist_matrix(graph=graph, predecessors=pred, directed=False)
     array([[ 0.,  1.,  2.,  5.],

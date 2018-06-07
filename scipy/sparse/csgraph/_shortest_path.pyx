@@ -147,7 +147,7 @@ def shortest_path(csgraph, method='auto',
 
     >>> dist_matrix, predecessors = shortest_path(csgraph=graph, directed=False, indices=0, return_predecessors=True)
     >>> dist_matrix
-    array([[ 0.,  1.,  2.,  2.])
+    array([ 0.,  1.,  2.,  2.])
     >>> predecessors
     array([-9999,     0,     0,     1], dtype=int32)
 
@@ -1013,7 +1013,7 @@ def johnson(csgraph, directed=True, indices=None,
 
     >>> dist_matrix, predecessors = johnson(csgraph=graph, directed=False, indices=0, return_predecessors=True)
     >>> dist_matrix
-    array([[ 0.,  1.,  2.,  2.])
+    array([ 0.,  1.,  2.,  2.])
     >>> predecessors
     array([-9999,     0,     0,     1], dtype=int32)
 
