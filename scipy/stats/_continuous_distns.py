@@ -218,7 +218,7 @@ class alpha_gen(rv_continuous):
 
     where :math:`\Phi(a)` is the normal CDF, :math:`x > 0`, and :math:`a > 0`.
 
-    `alpha` takes ``a`` as a shape parameter.
+    `alpha` takes ``a`` as a shape parameter for :math:`a`.
 
     %(after_notes)s
 
@@ -623,7 +623,7 @@ class bradford_gen(rv_continuous):
 
     for :math:`0 < x < 1`, :math:`c > 0` and :math:`k = \log(1+c)`.
 
-    `bradford` takes :math:`c` as a shape parameter.
+    `bradford` takes ``c`` as a shape parameter for :math:`c`.
 
     %(after_notes)s
 
@@ -670,7 +670,7 @@ class burr_gen(rv_continuous):
 
     See Also
     --------
-    fisk : a special case of either `burr` or ``burr12`` with ``d = 1``
+    fisk : a special case of either `burr` or `burr12` with ``d=1``
     burr12 : Burr Type XII distribution
 
     Notes
@@ -725,7 +725,7 @@ class burr12_gen(rv_continuous):
 
     See Also
     --------
-    fisk : a special case of either `burr` or ``burr12`` with ``d = 1``
+    fisk : a special case of either `burr` or `burr12` with ``d=1``
     burr : Burr Type III distribution
 
     Notes
@@ -738,7 +738,8 @@ class burr12_gen(rv_continuous):
 
     for :math:`x > 0`.
 
-    `burr12` takes :math:`c` and :math:`d` as shape parameters.
+    `burr12` takes ``c`` and ``d`` as shape parameters for :math:`c`
+    and :math:`d`.
 
     This is the PDF corresponding to the twelfth CDF given in Burr's list;
     specifically, it is equation (20) in Burr's paper [1]_.
@@ -796,10 +797,7 @@ burr12 = burr12_gen(a=0.0, name='burr12')
 class fisk_gen(burr_gen):
     r"""A Fisk continuous random variable.
 
-    The Fisk distribution is also known as the log-logistic distribution, and
-    equals the Burr distribution with ``d == 1``.
-
-    `fisk` takes :math:`c` as a shape parameter.
+    The Fisk distribution is also known as the log-logistic distribution.
 
     %(before_notes)s
 
@@ -813,7 +811,9 @@ class fisk_gen(burr_gen):
 
     for :math:`x > 0`.
 
-    `fisk` takes :math:`c` as a shape parameters.
+    `fisk` takes ``c`` as a shape parameter for :math:`c`.
+
+    `fisk` is a special case of `burr` or `burr12` with ``d=1``.
 
     %(after_notes)s
 
@@ -917,7 +917,7 @@ class chi_gen(rv_continuous):
         - ``chi(2, 0, scale)`` is equivalent to `rayleigh`
         - ``chi(3, 0, scale)`` is equivalent to `maxwell`
 
-    `chi` takes ``df`` as a shape parameter.
+    `chi` takes ``df`` as a shape parameter for :math:`df`.
 
     %(after_notes)s
 
@@ -974,7 +974,7 @@ class chi2_gen(rv_continuous):
 
     for :math:`x > 0`.
 
-    `chi2` takes ``df`` as a shape parameter.
+    `chi2` takes ``df`` as a shape parameter for :math:`df`.
 
     %(after_notes)s
 
@@ -1068,7 +1068,7 @@ class dgamma_gen(rv_continuous):
     for :math:`a > 0`. :math:`\Gamma` is the gamma function
     (`scipy.special.gamma`).
 
-    `dgamma` takes :math:`a` as a shape parameter.
+    `dgamma` takes ``a`` as a shape parameter for :math:`a`.
 
     %(after_notes)s
 
@@ -1123,7 +1123,7 @@ class dweibull_gen(rv_continuous):
 
         f(x, c) = c / 2 |x|^{c-1} \exp(-|x|^c)
 
-    `dweibull` takes :math:`d` as a shape parameter.
+    `dweibull` takes ``c`` as a shape parameter for :math:`c`.
 
     %(after_notes)s
 
@@ -1414,7 +1414,7 @@ class exponpow_gen(rv_continuous):
     distribution from the exponential power distribution that is also known
     under the names "generalized normal" or "generalized Gaussian".
 
-    `exponpow` takes :math:`b` as a shape parameter.
+    `exponpow` takes ``b`` as a shape parameter for :math:`b`.
 
     %(after_notes)s
 
@@ -1465,7 +1465,7 @@ class fatiguelife_gen(rv_continuous):
 
     for :math:`x > 0`.
 
-    `fatiguelife` takes :math:`c` as a shape parameter.
+    `fatiguelife` takes ``c`` as a shape parameter for :math:`c`.
 
     %(after_notes)s
 
@@ -1535,7 +1535,7 @@ class foldcauchy_gen(rv_continuous):
 
     for :math:`x \ge 0`.
 
-    `foldcauchy` takes :math:`c` as a shape parameter.
+    `foldcauchy` takes ``c`` as a shape parameter for :math:`c`.
 
     %(example)s
 
@@ -1664,7 +1664,7 @@ class foldnorm_gen(rv_continuous):
 
     for :math:`c \ge 0`.
 
-    `foldnorm` takes :math:`c` as a shape parameter.
+    `foldnorm` takes ``c`` as a shape parameter for :math:`c`.
 
     %(after_notes)s
 
@@ -1726,7 +1726,7 @@ class weibull_min_gen(rv_continuous):
 
     for :math:`x > 0`, :math:`c > 0`.
 
-    `weibull_min` takes ``c`` as a shape parameter.
+    `weibull_min` takes ``c`` as a shape parameter for :math:`c`.
 
     %(after_notes)s
 
@@ -1782,7 +1782,7 @@ class weibull_max_gen(rv_continuous):
 
     for :math:`x < 0`, :math:`c > 0`.
 
-    `weibull_max` takes ``c`` as a shape parameter.
+    `weibull_max` takes ``c`` as a shape parameter for :math:`c`.
 
     %(after_notes)s
 
@@ -2053,7 +2053,7 @@ class genlogistic_gen(rv_continuous):
 
     for :math:`x > 0`, :math:`c > 0`.
 
-    `genlogistic` takes :math:`c` as a shape parameter.
+    `genlogistic` takes ``c`` as a shape parameter for :math:`c`.
 
     %(after_notes)s
 
@@ -2104,16 +2104,16 @@ class genpareto_gen(rv_continuous):
     defined for :math:`x \ge 0` if :math:`c \ge 0`, and for
     :math:`0 \le x \le -1/c` if :math:`c < 0`.
 
-    `genpareto` takes :math:`c` as a shape parameter.
+    `genpareto` takes ``c`` as a shape parameter for :math:`c`.
 
-    For ``c == 0``, `genpareto` reduces to the exponential
+    For :math:`c=0`, `genpareto` reduces to the exponential
     distribution, `expon`:
 
     .. math::
 
         f(x, c=0) = \exp(-x)
 
-    For ``c == -1``, `genpareto` is uniform on ``[0, 1]``:
+    For :math:`c=-1`, `genpareto` is uniform on ``[0, 1]``:
 
     .. math::
 
@@ -2248,7 +2248,7 @@ class genextreme_gen(rv_continuous):
     Note that several sources and software packages use the opposite
     convention for the sign of the shape parameter :math:`c`.
 
-    `genextreme` takes :math:`c` as a shape parameter.
+    `genextreme` takes ``c`` as a shape parameter for :math:`c`.
 
     %(after_notes)s
 
@@ -2419,7 +2419,7 @@ class gamma_gen(rv_continuous):
     for :math:`x \ge 0`, :math:`a > 0`. Here :math:`\Gamma(a)` refers to the
     gamma function.
 
-    `gamma` has a shape parameter `a` which needs to be set explicitly.
+    `gamma` takes ``a`` as a shape parameter for :math:`a`.
 
     When :math:`a` is an integer, `gamma` reduces to the Erlang
     distribution, and when :math:`a=1` to the exponential distribution.
@@ -2679,7 +2679,7 @@ class genhalflogistic_gen(rv_continuous):
 
     for :math:`0 \le x \le 1/c`, and :math:`c > 0`.
 
-    `genhalflogistic` takes :math:`c` as a shape parameter.
+    `genhalflogistic` takes ``c`` as a shape parameter for :math:`c`.
 
     %(after_notes)s
 
@@ -2730,7 +2730,7 @@ class gompertz_gen(rv_continuous):
 
     for :math:`x \ge 0`, :math:`c > 0`.
 
-    `gompertz` takes :math:`c` as a shape parameter.
+    `gompertz` takes ``c`` as a shape parameter for :math:`c`.
 
     %(after_notes)s
 
@@ -2979,7 +2979,7 @@ class halfnorm_gen(rv_continuous):
 
     for :math:`x > 0`.
 
-    `halfnorm` is a special case of :math`\chi` with ``df == 1``.
+    `halfnorm` is a special case of `chi` with ``df=1``.
 
     %(after_notes)s
 
@@ -3112,9 +3112,9 @@ class invgamma_gen(rv_continuous):
     for :math:`x > 0`, :math:`a > 0`. :math:`\Gamma` is the gamma function
     (`scipy.special.gamma`).
 
-    `invgamma` takes :math:`a` as a shape parameter.
+    `invgamma` takes ``a`` as a shape parameter for :math:`a`.
 
-    `invgamma` is a special case of `gengamma` with ``c == -1``.
+    `invgamma` is a special case of `gengamma` with ``a=-1``.
 
     %(after_notes)s
 
@@ -3182,7 +3182,7 @@ class invgauss_gen(rv_continuous):
 
     for :math:`x > 0`.
 
-    `invgauss` takes :math:`\mu` as a shape parameter.
+    `invgauss` takes ``mu`` as a shape parameter for :math:`\mu`.
 
     %(after_notes)s
 
@@ -3309,7 +3309,7 @@ class invweibull_gen(rv_continuous):
 
     for :math:`x > 0`, :math:`c > 0`.
 
-    `invweibull` takes ``c`` as a shape parameter.
+    `invweibull` takes ``c`` as a shape parameter for :math:`c`.
 
     %(after_notes)s
 
@@ -3660,7 +3660,7 @@ class logistic_gen(rv_continuous):
         f(x) = \frac{\exp(-x)}
                     {(1+\exp(-x))^2}
 
-    `logistic` is a special case of `genlogistic` with ``c == 1``.
+    `logistic` is a special case of `genlogistic` with ``c=1``.
 
     %(after_notes)s
 
@@ -3714,10 +3714,10 @@ class loggamma_gen(rv_continuous):
         f(x, c) = \frac{\exp(c x - \exp(x))}
                        {\Gamma(c)}
 
-    for all :math:`x, c > 0`.
-
-    `loggamma` takes :math:`c` as a shape parameter. :math:`\Gamma` is the
+    for all :math:`x, c > 0`. Here, :math:`\Gamma` is the
     gamma function (`scipy.special.gamma`).
+
+    `loggamma` takes ``c`` as a shape parameter for :math:`c`.
 
     %(after_notes)s
 
@@ -3767,7 +3767,7 @@ class loglaplace_gen(rv_continuous):
 
     for :math:`c > 0`.
 
-    `loglaplace` takes ``c`` as a shape parameter.
+    `loglaplace` takes ``c`` as a shape parameter for :math:`c`.
 
     %(after_notes)s
 
@@ -3824,7 +3824,7 @@ class lognorm_gen(rv_continuous):
 
     for :math:`x > 0`, :math:`s > 0`.
 
-    `lognorm` takes ``s`` as a shape parameter.
+    `lognorm` takes ``s`` as a shape parameter for :math:`s`.
 
     %(after_notes)s
 
@@ -3954,7 +3954,7 @@ class gilbrat_gen(rv_continuous):
 
         f(x) = \frac{1}{x \sqrt{2\pi}} \exp(-\frac{1}{2} (\log(x))^2)
 
-    `gilbrat` is a special case of `lognorm` with ``s = 1``.
+    `gilbrat` is a special case of `lognorm` with ``s=1``.
 
     %(after_notes)s
 
@@ -4001,7 +4001,7 @@ class maxwell_gen(rv_continuous):
 
     Notes
     -----
-    A special case of a `chi` distribution,  with ``df = 3``, ``loc = 0.0``,
+    A special case of a `chi` distribution,  with ``df=3``, ``loc=0.0``,
     and given ``scale = a``, where ``a`` is the parameter used in the
     Mathworld description [1]_.
 
@@ -4354,7 +4354,9 @@ class kappa3_gen(rv_continuous):
                     0.0,                          &\text{for } x \le 0
                   \end{cases}
 
-    `kappa3` takes :math:`a` as a shape parameter and :math:`a > 0`.
+    for :math:`a > 0`.
+
+    `kappa3` takes ``a`` as a shape parameter for :math:`a`.
 
     References
     ----------
@@ -4496,11 +4498,11 @@ class nakagami_gen(rv_continuous):
 
     .. math::
 
-        f(x, nu) = \frac{2 \nu^\nu}{\Gamma(\nu)} x^{2\nu-1} \exp(-\nu x^2)
+        f(x, \nu) = \frac{2 \nu^\nu}{\Gamma(\nu)} x^{2\nu-1} \exp(-\nu x^2)
 
     for :math:`x > 0`, :math:`\nu > 0`.
 
-    `nakagami` takes ``nu`` as a shape parameter.
+    `nakagami` takes ``nu`` as a shape parameter for :math:`\nu`.
 
     %(after_notes)s
 
@@ -4846,7 +4848,7 @@ class pareto_gen(rv_continuous):
 
     for :math:`x \ge 1`, :math:`b > 0`.
 
-    `pareto` takes :math:`b` as a shape parameter.
+    `pareto` takes ``b`` as a shape parameter for :math:`b`.
 
     %(after_notes)s
 
@@ -4907,9 +4909,6 @@ class lomax_gen(rv_continuous):
 
     Notes
     -----
-    The Lomax distribution is a special case of the Pareto distribution, with
-    (loc=-1.0).
-
     The probability density function for `lomax` is:
 
     .. math::
@@ -4918,7 +4917,9 @@ class lomax_gen(rv_continuous):
 
     for :math:`x \ge 0`, :math:`c > 0`.
 
-    `lomax` takes :math:`c` as a shape parameter.
+    `lomax` takes ``c`` as a shape parameter for :math:`c`.
+
+    `lomax` is a special case of `pareto` with ``loc=-1.0``.
 
     %(after_notes)s
 
@@ -4967,7 +4968,8 @@ class pearson3_gen(rv_continuous):
     .. math::
 
         f(x, skew) = \frac{|\beta|}{\Gamma(\alpha)}
-                     (\beta (x - \zeta))^{\alpha - 1} \exp(-\beta (x - \zeta))
+                     (\beta (x - \zeta))^{\alpha - 1}
+                     \exp(-\beta (x - \zeta))
 
     where:
 
@@ -4978,7 +4980,7 @@ class pearson3_gen(rv_continuous):
             \zeta = loc - \frac{\alpha}{\beta}
 
     :math:`\Gamma` is the gamma function (`scipy.special.gamma`).
-    `pearson3` takes ``skew`` as a shape parameter.
+    `pearson3` takes ``skew`` as a shape parameter for :math:`skew`.
 
     %(after_notes)s
 
@@ -5116,11 +5118,11 @@ class powerlaw_gen(rv_continuous):
 
     for :math:`0 \le x \le 1`, :math:`a > 0`.
 
-    `powerlaw` takes :math:`a` as a shape parameter.
+    `powerlaw` takes ``a`` as a shape parameter for :math:`a`.
 
     %(after_notes)s
 
-    `powerlaw` is a special case of `beta` with ``b == 1``.
+    `powerlaw` is a special case of `beta` with ``b=1``.
 
     %(example)s
 
@@ -5212,7 +5214,7 @@ class powernorm_gen(rv_continuous):
     where :math:`\phi` is the normal pdf, and :math:`\Phi` is the normal cdf,
     and :math:`x > 0`, :math:`c > 0`.
 
-    `powernorm` takes :math:`c` as a shape parameter.
+    `powernorm` takes ``c`` as a shape parameter for :math:`c`.
 
     %(after_notes)s
 
@@ -5251,7 +5253,7 @@ class rdist_gen(rv_continuous):
 
     for :math:`-1 \le x \le 1`, :math:`c > 0`.
 
-    `rdist` takes :math:`c` as a shape parameter.
+    `rdist` takes ``c`` as a shape parameter for :math:`c`.
 
     This distribution includes the following distribution kernels as
     special cases::
@@ -5303,7 +5305,7 @@ class rayleigh_gen(rv_continuous):
 
     for :math:`x \ge 0`.
 
-    `rayleigh` is a special case of `chi` with ``df == 2``.
+    `rayleigh` is a special case of `chi` with ``df=2``.
 
     %(after_notes)s
 
@@ -5417,7 +5419,7 @@ class rice_gen(rv_continuous):
 
     for :math:`x > 0`, :math:`b > 0`.
 
-    `rice` takes :math:`b` as a shape parameter.
+    `rice` takes ``b`` as a shape parameter for :math:`b`.
 
     %(after_notes)s
 
@@ -5482,7 +5484,7 @@ class recipinvgauss_gen(rv_continuous):
 
     for :math:`x \ge 0`.
 
-    `recipinvgauss` takes :math:`\mu` as a shape parameter.
+    `recipinvgauss` takes ``mu`` as a shape parameter for :math:`\mu`.
 
     %(after_notes)s
 
@@ -5690,7 +5692,7 @@ class triang_gen(rv_continuous):
     ``loc`` to ``(loc + c*scale)`` and then downsloping for ``(loc + c*scale)``
     to ``(loc+scale)``.
 
-    `triang` takes :math:`c` as a shape parameter.
+    `triang` takes ``c`` as a shape parameter for :math:`c`.
 
     %(after_notes)s
 
@@ -5767,7 +5769,7 @@ class truncexpon_gen(rv_continuous):
 
     for :math:`0 < x < b`.
 
-    `truncexpon` takes :math:`b` as a shape parameter.
+    `truncexpon` takes ``b`` as a shape parameter for :math:`b`.
 
     %(after_notes)s
 
@@ -6133,7 +6135,7 @@ class vonmises_gen(rv_continuous):
 
     for :math:`-\pi \le x \le \pi`, :math:`\kappa > 0`.
 
-    `vonmises` takes :math:`\kappa` as a shape parameter.
+    `vonmises` takes ``kappa`` as a shape parameter for :math:`\kappa`.
 
     %(after_notes)s
 
@@ -6182,7 +6184,7 @@ class wald_gen(invgauss_gen):
 
     for :math:`x > 0`.
 
-    `wald` is a special case of `invgauss` with ``mu == 1``.
+    `wald` is a special case of `invgauss` with ``mu=1``.
 
     %(after_notes)s
 
@@ -6225,7 +6227,7 @@ class wrapcauchy_gen(rv_continuous):
 
     for :math:`0 \le x \le 2\pi`, :math:`0 < c < 1`.
 
-    `wrapcauchy` takes :math:`c` as a shape parameter.
+    `wrapcauchy` takes ``c`` as a shape parameter for :math:`c`.
 
     %(after_notes)s
 
@@ -6285,7 +6287,7 @@ class gennorm_gen(rv_continuous):
         gennorm.pdf(x, beta) =  ---------------  exp(-|x|**beta)
                                 2 gamma(1/beta)
 
-    `gennorm` takes :math:`\beta` as a shape parameter.
+    `gennorm` takes ``beta`` as a shape parameter for :math:`\beta`.
     For :math:`\beta = 1`, it is identical to a Laplace distribution.
     For :math:`\beta = 2`, it is identical to a normal distribution
     (with :math:`scale=1/\sqrt{2}`).
@@ -6353,7 +6355,7 @@ class halfgennorm_gen(rv_continuous):
 
     :math:`\Gamma` is the gamma function (`scipy.special.gamma`).
 
-    `gennorm` takes :math:`\beta` as a shape parameter.
+    `gennorm` takes ``beta`` as a shape parameter for :math:`\beta`.
     For :math:`\beta = 1`, it is identical to an exponential distribution.
     For :math:`\beta = 2`, it is identical to a half normal distribution
     (with :math:`scale=1/\sqrt{2}`).
