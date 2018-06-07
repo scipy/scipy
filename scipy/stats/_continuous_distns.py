@@ -3114,7 +3114,7 @@ class invgamma_gen(rv_continuous):
 
     `invgamma` takes ``a`` as a shape parameter for :math:`a`.
 
-    `invgamma` is a special case of `gengamma` with ``a=-1``.
+    `invgamma` is a special case of `gengamma` with ``c=-1``.
 
     %(after_notes)s
 
@@ -6283,9 +6283,11 @@ class gennorm_gen(rv_continuous):
     -----
     The probability density function for `gennorm` is [1]_::
 
-                                     beta
-        gennorm.pdf(x, beta) =  ---------------  exp(-|x|**beta)
-                                2 gamma(1/beta)
+    .. math::
+
+        f(x, \beta) = \frac{\beta}{2 \Gamma(1/\beta)} \exp(-|x|^\beta)
+
+    :math:`\Gamma` is the gamma function (`scipy.special.gamma`).
 
     `gennorm` takes ``beta`` as a shape parameter for :math:`\beta`.
     For :math:`\beta = 1`, it is identical to a Laplace distribution.
