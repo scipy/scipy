@@ -324,6 +324,34 @@ def reconstruct_path(csgraph, predecessors, directed=True):
     cstree : csr matrix
         The N x N directed compressed-sparse representation of the tree drawn
         from csgraph which is encoded by the predecessor list.
+
+    Examples
+    --------
+    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse.csgraph import reconstruct_path
+
+    >>> graph = [
+    ... [0, 1 , 2, 0],
+    ... [0, 0, 0, 1],
+    ... [0, 0, 0, 3],
+    ... [0, 0, 0, 0]
+    ... ]
+    >>> graph = csr_matrix(graph)
+    >>> print(graph)
+      (0, 1)	1
+      (0, 2)	2
+      (1, 3)	1
+      (2, 3)	3
+
+    >>> pred = np.array([-9999, 0, 0, 1], dtype=np.int32)
+
+    >>> cstree = reconstruct_path(csgraph=graph, predecessors=pred, directed=False)
+    >>> cstree.todense()
+    matrix([[ 0.,  1.,  2.,  0.],
+            [ 0.,  0.,  0.,  1.],
+            [ 0.,  0.,  0.,  0.],
+
+            [ 0.,  0.,  0.,  0.]])
     """
     from ._validation import validate_graph
     csgraph = validate_graph(csgraph, directed, dense_output=False)
