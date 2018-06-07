@@ -32,6 +32,29 @@ def csgraph_from_masked(graph):
     -------
     csgraph : csr_matrix
         Compressed sparse representation of graph,
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.sparse.csgraph import csgraph_from_masked
+
+
+    >>> graph_masked = np.ma.masked_array(data =[
+    ... [0, 1 , 2, 0],
+    ... [0, 0, 0, 1],
+    ... [0, 0, 0, 3],
+    ... [0, 0, 0, 0]
+    ...  ],
+    ... mask=[[ True, False, False , True],
+    ... [ True,  True , True, False],
+    ... [ True , True,  True ,False],
+    ... [ True ,True , True , True]],
+    ... fill_value = 0)
+
+    >>> csgraph_from_masked(graph_masked)
+    <4x4 sparse matrix of type '<class 'numpy.float64'>'
+        with 4 stored elements in Compressed Sparse Row format>
+
     """
     # check that graph is a square matrix
     graph = np.ma.asarray(graph)
