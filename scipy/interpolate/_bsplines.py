@@ -635,9 +635,9 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
         Alternatively, the following string aliases are recognized:
 
         * ``"clamped"``: The first derivatives at the ends are zero. This is
-           equivalent to ``bc_type=((1, 0.0), (1, 0.0))``.
+           equivalent to ``bc_type=([(1, 0.0)], [(1, 0.0)])``.
         * ``"natural"``: The second derivatives at ends are zero. This is
-          equivalent to ``bc_type=((2, 0.0), (2, 0.0))``.
+          equivalent to ``bc_type=([(2, 0.0)], [(2, 0.0)])``.
         * ``"not-a-knot"`` (default): The first and second segments are the same
           polynomial. This is equivalent to having ``bc_type=None``.
 
