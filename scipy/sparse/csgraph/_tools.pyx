@@ -291,6 +291,28 @@ def csgraph_to_dense(csgraph, null_value=0):
     In the first case, the zero-weight edge gets lost in the dense
     representation.  In the second case, we can choose a different null value
     and see the true form of the graph.
+
+    Examples
+    --------
+    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse.csgraph import csgraph_to_dense
+
+    >>> graph = csr_matrix( [
+    ... [0, 1 , 2, 0],
+    ... [0, 0, 0, 1],
+    ... [0, 0, 0, 3],
+    ... [0, 0, 0, 0]
+    ... ])
+    >>> graph
+    <4x4 sparse matrix of type '<class 'numpy.int64'>'
+        with 4 stored elements in Compressed Sparse Row format>
+
+    >>> csgraph_to_dense(graph)
+    array([[ 0.,  1.,  2.,  0.],
+           [ 0.,  0.,  0.,  1.],
+           [ 0.,  0.,  0.,  3.],
+           [ 0.,  0.,  0.,  0.]])
+
     """
     # Allow only csr, lil and csc matrices: other formats when converted to csr
     # combine duplicated edges: we don't want this to happen in the background.
