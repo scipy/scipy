@@ -1,4 +1,4 @@
-﻿#
+#
 # Author:  Travis Oliphant  2002-2011 with contributions from
 #          SciPy Developers 2004-2011
 #
@@ -6281,7 +6281,7 @@ class gennorm_gen(rv_continuous):
 
     Notes
     -----
-    The probability density function for `gennorm` is [1]_::
+    The probability density function for `gennorm` is [1]_:
 
     .. math::
 
