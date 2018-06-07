@@ -175,6 +175,22 @@ def csgraph_from_dense(graph,
     -------
     csgraph : csr_matrix
         Compressed sparse representation of graph,
+
+    Examples
+    --------
+    >>> from scipy.sparse.csgraph import csgraph_from_dense
+
+    >>> graph = [
+    ... [0, 1 , 2, 0],
+    ... [0, 0, 0, 1],
+    ... [0, 0, 0, 3],
+    ... [0, 0, 0, 0]
+    ... ]
+
+    >>> csgraph_from_dense(graph)
+    <4x4 sparse matrix of type '<class 'numpy.float64'>'
+        with 4 stored elements in Compressed Sparse Row format>
+
     """
     return csgraph_from_masked(csgraph_masked_from_dense(graph,
                                                          null_value,
