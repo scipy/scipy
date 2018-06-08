@@ -626,5 +626,8 @@ class Rotation(object):
         """
         quat = self._quat.copy()
         # (x,y,z,w) -> (x,y,z,-w)
-        quat[:, -1] *= -1
+        if self._single:
+            quat[-1] *= -1
+        else:
+            quat[:, -1] *= -1
         return self.__class__(quat, normalized=True)
