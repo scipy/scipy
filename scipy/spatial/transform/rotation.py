@@ -191,6 +191,7 @@ class Rotation(object):
     as_rotvec
     from_euler
     as_euler
+    inv
     """
     def __init__(self, quat, normalized=False):
         self._single = False
@@ -616,3 +617,14 @@ class Rotation(object):
             angles = np.rad2deg(angles)
 
         return angles[0] if self._single else angles
+
+    def inv(self):
+        """Returns the inverse of the current rotation
+
+        This function returns a new `Rotation` instance containing the inverse
+        of all the rotations in the current instance.
+        """
+        quat = self._quat.copy()
+        # (x,y,z,w) -> (x,y,z,-w)
+        quat[:, -1] *= -1
+        return self.__class__(quat, normalized=True)
