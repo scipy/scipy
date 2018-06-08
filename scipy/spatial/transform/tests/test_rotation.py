@@ -571,3 +571,23 @@ def test_as_euler_degenerate_symmetric_axes():
                     ).as_dcm()
 
                 assert_array_almost_equal(dcm_expected, dcm_estimated)
+
+
+def test_inv():
+    np.random.seed(0)
+    n = 10
+    quat = np.random.normal(size=(n, 4))
+    p = Rotation.from_quaternion(quat)
+    q = p.inv()
+
+    p_dcm = p.as_dcm()
+    q_dcm = q.as_dcm()
+    result1 = np.einsum('...ij,...jk->...ik', p_dcm, q_dcm)
+    result2 = np.einsum('...ij,...jk->...ik', q_dcm, p_dcm)
+
+    eye3d = np.zeros((n, 3, 3))
+    for i in range(3):
+        eye3d[:, i, i] = 1
+
+    assert_array_almost_equal(result1, eye3d)
+    assert_array_almost_equal(result2, eye3d)
