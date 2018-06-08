@@ -619,15 +619,13 @@ class Rotation(object):
         return angles[0] if self._single else angles
 
     def inv(self):
-        """Returns the inverse of the current rotation
+        """Returns the inverse of the current rotation.
 
         This function returns a new `Rotation` instance containing the inverse
         of all the rotations in the current instance.
         """
         quat = self._quat.copy()
-        # (x,y,z,w) -> (x,y,z,-w)
+        quat[:, -1] *= -1
         if self._single:
-            quat[-1] *= -1
-        else:
-            quat[:, -1] *= -1
+            quat = quat[0]
         return self.__class__(quat, normalized=True)
