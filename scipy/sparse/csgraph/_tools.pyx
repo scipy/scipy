@@ -38,7 +38,6 @@ def csgraph_from_masked(graph):
     >>> import numpy as np
     >>> from scipy.sparse.csgraph import csgraph_from_masked
 
-
     >>> graph_masked = np.ma.masked_array(data =[
     ... [0, 1 , 2, 0],
     ... [0, 0, 0, 1],
@@ -123,17 +122,16 @@ def csgraph_masked_from_dense(graph,
     ... ]
 
     >>> csgraph_masked_from_dense(graph)
-    masked_array(data =
-     [[-- 1 2 --]
-     [-- -- -- 1]
-     [-- -- -- 3]
-     [-- -- -- --]],
-                 mask =
-     [[ True False False  True]
-     [ True  True  True False]
-     [ True  True  True False]
-     [ True  True  True  True]],
-           fill_value = 0)
+    masked_array(
+      data=[[--, 1, 2, --],
+            [--, --, --, 1],
+            [--, --, --, 3],
+            [--, --, --, --]],
+      mask=[[ True, False, False,  True],
+            [ True,  True,  True, False],
+            [ True,  True,  True, False],
+            [ True,  True,  True,  True]],
+      fill_value=0)
 
     """
     graph = np.array(graph, copy=copy)
@@ -371,17 +369,16 @@ def csgraph_to_masked(csgraph):
         with 4 stored elements in Compressed Sparse Row format>
 
     >>> csgraph_to_masked(graph)
-    masked_array(data =
-     [[-- 1.0 2.0 --]
-     [-- -- -- 1.0]
-     [-- -- -- 3.0]
-     [-- -- -- --]],
-                 mask =
-     [[ True False False  True]
-     [ True  True  True False]
-     [ True  True  True False]
-     [ True  True  True  True]],
-           fill_value = 1e+20)
+    masked_array(
+      data=[[--, 1.0, 2.0, --],
+            [--, --, --, 1.0],
+            [--, --, --, 3.0],
+            [--, --, --, --]],
+      mask=[[ True, False, False,  True],
+            [ True,  True,  True, False],
+            [ True,  True,  True, False],
+            [ True,  True,  True,  True]],
+      fill_value=1e+20)
 
     """
     return np.ma.masked_invalid(csgraph_to_dense(csgraph, np.nan))
