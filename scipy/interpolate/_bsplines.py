@@ -606,6 +606,19 @@ def _convert_string_aliases(deriv, target_shape):
     return deriv
 
 
+def _process_deriv_spec(deriv):
+    if deriv is not None:
+        try:
+            ords, vals = zip(*deriv)
+        except TypeError:
+            msg = ("Derivatives, `bc_type`, should be specified as a pair of "
+                   "iterables of pairs of (order, value).")
+            raise ValueError(msg)
+    else:
+        ords, vals = [], []
+    return np.atleast_1d(ords, vals)
+
+
 def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
                        check_finite=True):
     """Compute the (coefficients of) interpolating B-spline.
@@ -726,7 +739,10 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     elif isinstance(bc_type, string_types):
         deriv_l, deriv_r = bc_type, bc_type
     else:
-        deriv_l, deriv_r = bc_type
+        try:
+            deriv_l, deriv_r = bc_type
+        except TypeError:
+            raise ValueError("Unknown boundary condition: %s" % bc_type)
 
     # special-case k=0 right away
     if k == 0:
@@ -788,19 +804,11 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
 
     # Here : deriv_l, r = [(nu, value), ...]
     deriv_l = _convert_string_aliases(deriv_l, y.shape[1:])
-    if deriv_l is not None:
-        deriv_l_ords, deriv_l_vals = zip(*deriv_l)
-    else:
-        deriv_l_ords, deriv_l_vals = [], []
-    deriv_l_ords, deriv_l_vals = np.atleast_1d(deriv_l_ords, deriv_l_vals)
+    deriv_l_ords, deriv_l_vals = _process_deriv_spec(deriv_l)
     nleft = deriv_l_ords.shape[0]
 
     deriv_r = _convert_string_aliases(deriv_r, y.shape[1:])
-    if deriv_r is not None:
-        deriv_r_ords, deriv_r_vals = zip(*deriv_r)
-    else:
-        deriv_r_ords, deriv_r_vals = [], []
-    deriv_r_ords, deriv_r_vals = np.atleast_1d(deriv_r_ords, deriv_r_vals)
+    deriv_r_ords, deriv_r_vals = _process_deriv_spec(deriv_r)
     nright = deriv_r_ords.shape[0]
 
     # have `n` conditions for `nt` coefficients; need nt-n derivatives
@@ -808,7 +816,8 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     nt = t.size - k - 1
 
     if nt - n != nleft + nright:
-        raise ValueError("number of derivatives at boundaries.")
+        raise ValueError("The number of derivatives at boundaries does not "
+                         "match: expected %s, got %s+%s" % (nt-n, nleft, nright))
 
     # set up the LHS: the collocation matrix + derivatives at boundaries
     kl = ku = k
