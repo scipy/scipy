@@ -17,10 +17,10 @@ MAX_FACTOR = 10
 
 def compute_R(order, factor):
     """Compute the matrix for changing the differences array."""
-    I = np.arange(1, order + 1)[:, None]
+    K = np.arange(1, order + 1)[:, None]
     J = np.arange(1, order + 1)
     M = np.zeros((order + 1, order + 1))
-    M[1:, 1:] = (I - 1 - factor * J) / I
+    M[1:, 1:] = (K - 1 - factor * J) / K
     M[0] = 1
     return np.cumprod(M, axis=0)
 
@@ -205,7 +205,7 @@ class BDF(OdeSolver):
             def solve_lu(LU, b):
                 return LU.solve(b)
 
-            I = eye(self.n, format='csc', dtype=self.y.dtype)
+            Identity = eye(self.n, format='csc', dtype=self.y.dtype)
         else:
             def lu(A):
                 self.nlu += 1
@@ -214,11 +214,11 @@ class BDF(OdeSolver):
             def solve_lu(LU, b):
                 return lu_solve(LU, b, overwrite_b=True)
 
-            I = np.identity(self.n, dtype=self.y.dtype)
+            Identity = np.identity(self.n, dtype=self.y.dtype)
 
         self.lu = lu
         self.solve_lu = solve_lu
-        self.I = I
+        self.I = Identity
 
         kappa = np.array([0, -0.1850, -1/9, -0.0823, -0.0415, 0])
         self.gamma = np.hstack((0, np.cumsum(1 / np.arange(1, MAX_ORDER + 1))))

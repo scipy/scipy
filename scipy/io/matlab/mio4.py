@@ -116,8 +116,8 @@ class VarReader4(object):
             warnings.warn("We do not support byte ordering '%s'; returned "
                           "data may be corrupt" % order_codes[M],
                           UserWarning)
-        O, rest = divmod(rest, 100)  # unused, should be 0
-        if O != 0:
+        quot, rest = divmod(rest, 100)  # unused, should be 0
+        if quot != 0:
             raise ValueError('O in MOPT integer should be 0, wrong format?')
         P, rest = divmod(rest, 10)  # data type code e.g miDOUBLE (see above)
         T = rest  # matrix type code e.g. mxFULL_CLASS (see above)
@@ -477,9 +477,9 @@ class VarWriter4(object):
         '''
         header = np.empty((), mdtypes_template['header'])
         M = not SYS_LITTLE_ENDIAN
-        O = 0
+        A = 0
         header['mopt'] = (M * 1000 +
-                          O * 100 +
+                          A * 100 +
                           P * 10 +
                           T)
         header['mrows'] = shape[0]

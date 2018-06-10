@@ -203,9 +203,9 @@ def quadrature(func, a, b, args=(), tol=1.49e-8, rtol=1.49e-8, maxiter=50,
 
 
 def tupleset(t, i, value):
-    l = list(t)
-    l[i] = value
-    return tuple(l)
+    p = list(t)
+    p[i] = value
+    return tuple(p)
 
 
 def cumtrapz(y, x=None, dx=1.0, axis=-1, initial=None):
