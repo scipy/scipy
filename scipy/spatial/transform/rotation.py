@@ -145,8 +145,7 @@ def _make_elementary_quat(axis, angles):
 
 
 def _compose_quat(p, q):
-    # p and q should have same shape (N, 4)
-    product = np.empty_like(p)
+    product = np.empty((max(p.shape[0], q.shape[0]), 4))
     # Scalar part of result
     product[:, 3] = p[:, 3] * q[:, 3] - np.sum(p[:, :3] * q[:, :3], axis=1)
     # Vector part of result
@@ -192,6 +191,7 @@ class Rotation(object):
     from_euler
     as_euler
     inv
+    __mul__
     """
     def __init__(self, quat, normalized=False):
         self._single = False
@@ -629,3 +629,31 @@ class Rotation(object):
         if self._single:
             quat = quat[0]
         return self.__class__(quat, normalized=True)
+
+    def __mul__(self, other):
+        """Returns the composition of the rotations.
+
+        If `p` and `q` are two rotations, then the composition of 'q followed
+        by p' is equivalent to `p * q`, which is the same as
+        `p.as_dcm().dot(q.as_dcm())`.
+
+        This function supports composition of multiple rotations at a time:
+
+            - Either `p` or `q` contains a single rotation. In this case the
+              returned object contains the result of composing each rotation in
+              the other object with the single rotation
+            - Both `p` and `q` contain `N` rotations. In this case each
+              rotation `p[i]` is composed with each rotation `q[i]` and the
+              returned object contains `N` rotations.
+        """
+        if not(self._quat.shape[0] == 1 or other._quat.shape[0] == 1 or
+               self._quat.shape[0] == other._quat.shape[0]):
+            raise ValueError("Expected equal number of rotations in both "
+                             "or a single rotation in either object, "
+                             "got {} rotations in first and {} rotations in "
+                             "second object.".format(
+                                self._quat.shape[0], other._quat.shape[0]))
+        result = _compose_quat(self._quat, other._quat)
+        if self._single and other._single:
+            result = result[0]
+        return self.__class__(result, normalized=True)
