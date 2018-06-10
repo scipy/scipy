@@ -120,8 +120,8 @@ Contributing by helping maintain existing code
 
 The previous section talked specifically about adding new functionality to
 SciPy.  A large part of that discussion also applies to maintenance of existing
-code.  Maintenance means fixing bugs, improving code quality or style,
-documenting existing functionality better, adding missing unit tests, keeping
+code.  Maintenance means fixing bugs, improving code quality, documenting
+existing functionality better, adding missing unit tests, keeping
 build scripts up-to-date, etc.  The SciPy `issue list`_ contains all
 reported bugs, build/documentation issues, etc.  Fixing issues
 helps improve the overall quality of SciPy, and is also a good way
@@ -137,6 +137,14 @@ not be necessary - if the old behavior of the code is clearly incorrect, no one
 will object to having it fixed.  It may be necessary to add some warning or
 deprecation message for the changed behavior.  This should be part of the
 review process.
+
+.. note::
+
+  Pull requests that *only* change code style, e.g. fixing some PEP8 issues in
+  a file, are discouraged. Such PRs are often not worth cluttering the git
+  annotate history, and take reviewer time that may be better spent in other ways.
+  Code style cleanups of code that is touched as part of a functional change
+  are fine however.
 
 
 Reviewing pull requests
