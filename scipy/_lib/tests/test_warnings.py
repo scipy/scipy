@@ -7,6 +7,7 @@ from numpy.
 
 from __future__ import division, absolute_import, print_function
 
+import os
 import sys
 import scipy
 
@@ -88,10 +89,12 @@ def warning_calls():
 def test_warning_calls_filters(warning_calls):
     bad_filters, bad_stacklevels = warning_calls
 
-    # There is still one missing occurrence in optimize.py,
-    # this is one that should be fixed and this removed then.
+    # There is still one simplefilter occurrence in optimize.py that could be removed.
     bad_filters = [item for item in bad_filters
                    if 'optimize.py' not in item]
+    # The filterwarnings call in sparse/__init__.py is needed.
+    bad_filters = [item for item in bad_filters
+                   if os.path.join('sparse', '__init__.py') not in item]
 
     if bad_filters:
         raise AssertionError(

@@ -291,6 +291,16 @@ def mode(a, axis=0):
     Notes
     -----
     For more details, see `stats.mode`.
+    
+    Examples
+    --------
+    >>> from scipy import stats
+    >>> from scipy.stats import mstats
+    >>> m_arr = np.ma.array([1, 1, 0, 0, 0, 0], mask=[0, 0, 1, 1, 1, 0])
+    >>> stats.mode(m_arr)
+    ModeResult(mode=array([0]), count=array([4]))
+    >>> mstats.mode(m_arr)
+    ModeResult(mode=array([1.]), count=array([2.]))
 
     """
     a, axis = _chk_asarray(a, axis)
@@ -1570,6 +1580,23 @@ def tmean(a, limits=None, inclusive=(True, True), axis=None):
     Notes
     -----
     For more details on `tmean`, see `stats.tmean`.
+    
+    Examples
+    --------
+    >>> from scipy.stats import mstats
+    >>> a = np.array([[6, 8, 3, 0],
+    ...               [3, 9, 1, 2],
+    ...               [8, 7, 8, 2],
+    ...               [5, 6, 0, 2],
+    ...               [4, 5, 5, 2]])
+    ...               
+    ...               
+    >>> mstats.tmean(a, (2,5))
+    3.3
+    >>> mstats.tmean(a, (2,5), axis=0)
+    masked_array(data=[4.0, 5.0, 4.0, 2.0],
+                 mask=[False, False, False, False],
+           fill_value=1e+20)
 
     """
     return trima(a, limits=limits, inclusive=inclusive).mean(axis=axis)
@@ -1646,6 +1673,20 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True):
     Notes
     -----
     For more details on `tmin`, see `stats.tmin`.
+    
+    Examples
+    --------
+    >>> from scipy.stats import mstats
+    >>> a = np.array([[6, 8, 3, 0],
+    ...               [3, 2, 1, 2],
+    ...               [8, 1, 8, 2],
+    ...               [5, 3, 0, 2],
+    ...               [4, 7, 5, 2]])
+    ...               
+    >>> mstats.tmin(a, 5)
+    masked_array(data=[5, 7, 5, --],
+                 mask=[False, False, False,  True],
+           fill_value=999999)
 
     """
     a, axis = _chk_asarray(a, axis)
@@ -1682,6 +1723,21 @@ def tmax(a, upperlimit=None, axis=0, inclusive=True):
     Notes
     -----
     For more details on `tmax`, see `stats.tmax`.
+    
+    Examples
+    --------
+    >>> from scipy.stats import mstats
+    >>> a = np.array([[6, 8, 3, 0],
+    ...               [3, 9, 1, 2],
+    ...               [8, 7, 8, 2],
+    ...               [5, 6, 0, 2],
+    ...               [4, 5, 5, 2]])
+    ...               
+    ...               
+    >>> mstats.tmax(a, 4)
+    masked_array(data=[4, --, 3, 2],
+                 mask=[False,  True, False, False],
+           fill_value=999999)
 
     """
     a, axis = _chk_asarray(a, axis)

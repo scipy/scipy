@@ -23,8 +23,6 @@
 ! <ctype2c=complex_float,complex_double>
 ! <ctypereal=float,double,float,double>
 ! <ctypecomplex=complex_float,complex_double,\0,\1>
-! <wrap2=ws,d>
-! <wrap2c=wc,z>
 !
 
 python module _flapack
@@ -3306,8 +3304,7 @@ end function dlamch
 
 function slamch(cmach)
     character :: cmach
-    fortranname wslamch
-    real intent(out):: wslamch
+    real intent(out):: slamch
 end function slamch
 
 
@@ -3852,7 +3849,6 @@ function <prefix2>lange(norm,m,n,a,lda,work) result(n2)
     ! the one norm, or the Frobenius norm, or the  infinity norm, or the
     ! element of largest absolute value of a real matrix A.
     <ftype2> <prefix2>lange, n2
-    fortranname <wrap2>lange
     callstatement (*f2py_func)(&<prefix2>lange,norm,&m,&n,a,&lda,work)
     callprotoargument <ctype2>*,char*,int*,int*,<ctype2>*,int*,<ctype2>*
 
@@ -3868,7 +3864,6 @@ function <prefix2c>lange(norm,m,n,a,lda,work) result(n2)
     ! the one norm, or the Frobenius norm, or the  infinity norm, or the
     ! element of largest absolute value of a complex matrix A.
     <ftype2> <prefix2c>lange, n2
-    fortranname <wrap2c>lange
     callstatement (*f2py_func)(&<prefix2c>lange,norm,&m,&n,a,&lda,work)
     callprotoargument <ctype2>*,char*,int*,int*,<ctype2c>*,int*,<ctype2>*
 

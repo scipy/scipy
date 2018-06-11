@@ -106,7 +106,7 @@ def general_cosine(M, a, sym=True):
     >>> plt.ylabel("Normalized magnitude [dB]")
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
     >>> plt.axhline(-90.2, color='red')
-
+    >>> plt.show()
     """
     if _len_guards(M):
         return np.ones(M)

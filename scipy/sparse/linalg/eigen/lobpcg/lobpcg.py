@@ -254,7 +254,7 @@ def lobpcg(A, X,
            Toward the Optimal Preconditioned Eigensolver: Locally Optimal
            Block Preconditioned Conjugate Gradient Method.
            SIAM Journal on Scientific Computing 23, no. 2,
-           pp. 517-541. http://dx.doi.org/10.1137/S1064827500366124
+           pp. 517-541. :doi:`10.1137/S1064827500366124`
 
     .. [2] A. V. Knyazev, I. Lashuk, M. E. Argentati, and E. Ovchinnikov (2007),
            Block Locally Optimal Preconditioned Eigenvalue Xolvers (BLOPEX)

@@ -1,9 +1,10 @@
-"""
-Utility functions for finding peaks in signals.
-"""
+#cython: wraparound=False
+#cython: boundscheck=False
+#cython: nonecheck=False
+
+"""Utility functions for finding peaks in signals."""
 
 import numpy as np
-import cython
 
 cimport numpy as np
 from libc.math cimport ceil
@@ -13,9 +14,7 @@ __all__ = ['_argmaxima1d', '_select_by_peak_distance', '_peak_prominences',
            '_peak_widths']
 
 
-@cython.wraparound(False)
-@cython.boundscheck(False)
-def _argmaxima1d(np.float64_t[:] x not None):
+def _argmaxima1d(np.float64_t[::1] x not None):
     """
     Find indices of local maxima in a 1D array.
 
@@ -43,46 +42,45 @@ def _argmaxima1d(np.float64_t[:] x not None):
       detect maxima that are more than one sample wide. However this comes at
       the cost of being only applicable to 1D arrays.
     - A maxima is defined as one or more samples of equal value that are
-      surrounded on both sides by atleast one smaller sample.
+      surrounded on both sides by at least one smaller sample.
 
     .. versionadded:: 1.1.0
     """
+    cdef:
+        np.intp_t[::1] maxima
+        np.intp_t m, i, i_ahead, i_max
+
     # Preallocate, there can't be more maxima than half the size of `x`
-    cdef np.ndarray[np.intp_t, ndim=1] maxima
     maxima = np.empty(x.shape[0] // 2, dtype=np.intp)
-    cdef Py_ssize_t m = 0  # Pointer to the end of valid area in `maxima`
+    m = 0  # Pointer to the end of valid area in `maxima`
 
-    # Variables to loop over `x`
-    cdef Py_ssize_t i = 1  # Pointer to current sample, first one can't be maxima
-    cdef Py_ssize_t i_max = x.shape[0] - 1  # Last sample can't be maxima
-    cdef Py_ssize_t i_ahead  # Pointer to look ahead of current sample
+    with nogil:
+        i = 1  # Pointer to current sample, first one can't be maxima
+        i_max = x.shape[0] - 1  # Last sample can't be maxima
+        while i < i_max:
+            # Test if previous sample is smaller
+            if x[i - 1] < x[i]:
+                i_ahead = i + 1  # Index to look ahead of current sample
 
-    while i < i_max:
-        # Test if previous sample is smaller
-        if x[i - 1] < x[i]:
-            i_ahead = i + 1
+                # Find next sample that is unequal to x[i]
+                while i_ahead < i_max and x[i_ahead] == x[i]:
+                    i_ahead += 1
 
-            # Find next sample that is unequal to x[i]
-            while i_ahead < i_max and x[i_ahead] == x[i]:
-                i_ahead += 1
+                # Maxima is found if next unequal sample is smaller than x[i]
+                if x[i_ahead] < x[i]:
+                    # Store sample in the center of flat area (round down)
+                    maxima[m] = (i + i_ahead - 1) // 2
+                    m += 1
+                    # Skip samples that can't be maximum
+                    i = i_ahead
+            i += 1
 
-            # Maxima is found if next unequal sample is smaller than x[i]
-            if x[i_ahead] < x[i]:
-                # Store sample in the center of flat area (round down)
-                maxima[m] = (i + i_ahead - 1) // 2
-                m += 1
-                # Skip samples that can't be maxima
-                i = i_ahead
-        i += 1
-
-    maxima.resize(m, refcheck=False)  # Keep only valid part of array memory.
-    return maxima
+    maxima.base.resize(m, refcheck=False)  # Keep only valid part of array memory.
+    return maxima.base
 
 
-@cython.wraparound(False)
-@cython.boundscheck(False)
-def _select_by_peak_distance(np.intp_t[:] peaks not None,
-                             np.float64_t[:] priority not None,
+def _select_by_peak_distance(np.intp_t[::1] peaks not None,
+                             np.float64_t[::1] priority not None,
                              np.float64_t distance):
     """
     Evaluate which peaks fulfill the distance condition.
@@ -111,14 +109,14 @@ def _select_by_peak_distance(np.intp_t[:] peaks not None,
     .. versionadded:: 1.1.0
     """
     cdef:
+        np.uint8_t[::1] keep
         np.intp_t[::1] priority_to_position
-        np.int8_t[::1] keep
         np.intp_t i, j, k, peaks_size, distance_
 
     peaks_size = peaks.shape[0]
     # Round up because actual peak distance can only be natural number
     distance_ = <np.intp_t>ceil(distance)
-    keep = np.ones(peaks_size, dtype=np.int8)  # Prepare array of flags
+    keep = np.ones(peaks_size, dtype=np.uint8)  # Prepare array of flags
 
     # Create map from `i` (index for `peaks` sorted by `priority`) to `j` (index
     # for `peaks` sorted by position). This allows to iterate `peaks` and `keep`
@@ -151,8 +149,6 @@ def _select_by_peak_distance(np.intp_t[:] peaks not None,
     return keep.base.view(dtype=np.bool)  # Return as boolean array
 
 
-@cython.wraparound(False)
-@cython.boundscheck(False)
 def _peak_prominences(np.float64_t[::1] x not None,
                       np.intp_t[::1] peaks not None,
                       np.intp_t wlen):
@@ -193,7 +189,7 @@ def _peak_prominences(np.float64_t[::1] x not None,
         np.intp_t[::1] left_bases, right_bases
         np.float64_t left_min, right_min
         np.intp_t peak_nr, peak, i_min, i_max, i
-        bint raise_error
+        np.uint8_t raise_error
 
     raise_error = False
     prominences = np.empty(peaks.shape[0], dtype=np.float64)
@@ -246,8 +242,6 @@ def _peak_prominences(np.float64_t[::1] x not None,
     return prominences.base, left_bases.base, right_bases.base
 
 
-@cython.wraparound(False)
-@cython.boundscheck(False)
 def _peak_widths(np.float64_t[::1] x not None,
                  np.intp_t[::1] peaks not None,
                  np.float64_t rel_height,
@@ -299,7 +293,7 @@ def _peak_widths(np.float64_t[::1] x not None,
         np.float64_t[::1] widths, width_heights, left_ips, right_ips
         np.float64_t height, left_ip, right_ip
         np.intp_t p, peak, i, i_max, i_min
-        bint raise_error
+        np.uint8_t raise_error
 
     if not (peaks.shape[0] == prominences.shape[0] == left_bases.shape[0] ==
             right_bases.shape[0]):

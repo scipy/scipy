@@ -884,11 +884,29 @@ class TestInterp(object):
         xx = np.linspace(0., 1.)
         yy = xx**3
         assert_allclose(b(xx), yy, atol=1e-14, rtol=1e-14)
-        
+
+    def test_deriv_spec(self):
         # If one of the derivatives is omitted, the spline definition is 
-        # incomplete:
-        assert_raises(ValueError, make_interp_spline, x, y, k, 
-                **dict(bc_type=([(1, 0.)], None)))
+        # incomplete.
+        x = y = [1.0, 2, 3, 4, 5, 6]
+
+        with assert_raises(ValueError):
+            make_interp_spline(x, y, bc_type=([(1, 0.)], None))
+
+        with assert_raises(ValueError):
+            make_interp_spline(x, y, bc_type=(1, 0.))
+
+        with assert_raises(ValueError):
+            make_interp_spline(x, y, bc_type=[(1, 0.)])
+
+        with assert_raises(ValueError):
+            make_interp_spline(x, y, bc_type=42)
+
+        # CubicSpline expects`bc_type=(left_pair, right_pair)`, while
+        # here we expect `bc_type=(iterable, iterable)`.
+        l, r = (1, 0.0), (1, 0.0)
+        with assert_raises(ValueError):
+            make_interp_spline(x, y, bc_type=(l, r))
 
     def test_complex(self):
         k = 3

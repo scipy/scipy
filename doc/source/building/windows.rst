@@ -260,7 +260,7 @@ Building Against an Older Numpy Version
 
 If you want to build SciPy to work with an older numpy version, then you will need 
 to replace the Numpy "distutils" folder with the folder from the latest numpy.
-The following powershell snipped can upgrade Numpy distutils while retaining an older
+The following powershell snippet can upgrade Numpy distutils while retaining an older
 Numpy ABI_.
 
 .. code:: shell

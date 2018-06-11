@@ -379,6 +379,19 @@ def parse_setuppy_commands():
 
 def configuration(parent_package='', top_path=None):
     from numpy.distutils.misc_util import Configuration
+    from scipy._build_utils.system_info import get_info, NotFoundError, numpy_info
+    from numpy.distutils.misc_util import Configuration, get_numpy_include_dirs
+    from scipy._build_utils import (get_g77_abi_wrappers, split_fortran_files)
+
+    lapack_opt = get_info('lapack_opt')
+
+    if not lapack_opt:
+        msg = 'No lapack/blas resources found.'
+        if sys.platform == "darwin":
+            msg = ('No lapack/blas resources found. '
+                   'Note: Accelerate is no longer supported.')
+        raise NotFoundError(msg)
+
     config = Configuration(None, parent_package, top_path)
     config.set_options(ignore_setup_xxx_py=True,
                        assume_default_configuration=True,
@@ -440,6 +453,9 @@ def setup_package():
     else:
         # Raise errors for unsupported commands, improve help output, etc.
         run_build = parse_setuppy_commands()
+
+    # Disable OSX Accelerate, it has too old LAPACK
+    os.environ['ACCELERATE'] = 'None'
 
     # This import is here because it needs to be done before importing setup()
     # from numpy.distutils, but after the MANIFEST removing and sdist import

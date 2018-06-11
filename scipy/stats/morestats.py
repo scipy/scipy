@@ -2340,7 +2340,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False):
         "wilcox":
             Wilcox treatment: discards all zero-differences
         "zsplit":
-            Zero rank split: just like Pratt, but spliting the zero rank
+            Zero rank split: just like Pratt, but splitting the zero rank
             between positive and negative ones
     correction : bool, optional
         If True, apply continuity correction by adjusting the Wilcoxon rank

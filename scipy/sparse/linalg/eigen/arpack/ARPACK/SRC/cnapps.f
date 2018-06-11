@@ -96,13 +96,13 @@ c     arscnd  ARPACK utility routine for timing.
 c     cmout   ARPACK utility routine that prints matrices
 c     cvout   ARPACK utility routine that prints vectors.
 c     clacpy  LAPACK matrix copy routine.
-c     wclanhs  LAPACK routine that computes various norms of a matrix.
+c     clanhs  LAPACK routine that computes various norms of a matrix.
 c     clartg  LAPACK Givens rotation construction routine.
 c     claset  LAPACK matrix initialization routine.
 c     slabad  LAPACK routine for defining the underflow and overflow
 c             limits.
-c     wslamch  LAPACK routine that determines machine constants.
-c     wslapy2  LAPACK routine to compute sqrt(x**2+y**2) carefully.
+c     slamch  LAPACK routine that determines machine constants.
+c     slapy2  LAPACK routine to compute sqrt(x**2+y**2) carefully.
 c     cgemv   Level 2 BLAS routine for matrix vector multiplication.
 c     caxpy   Level 1 BLAS that computes a vector triad.
 c     ccopy   Level 1 BLAS that copies one vector to another.
@@ -191,8 +191,8 @@ c     | External Functions |
 c     %--------------------%
 c
       Real                 
-     &           wclanhs, wslamch, wslapy2
-      external   wclanhs, wslamch, wslapy2
+     &           clanhs, slamch, slapy2
+      external   clanhs, slamch, slapy2
 c
 c     %----------------------%
 c     | Intrinsics Functions |
@@ -227,10 +227,10 @@ c        | overflow should not occur.                    |
 c        | REFERENCE: LAPACK subroutine clahqr           |
 c        %-----------------------------------------------%
 c
-         unfl = wslamch( 'safe minimum' )
+         unfl = slamch( 'safe minimum' )
          ovfl = real(one / unfl)
          call slabad( unfl, ovfl )
-         ulp = wslamch( 'precision' )
+         ulp = slamch( 'precision' )
          smlnum = unfl*( n / ulp )
          first = .false.
       end if
@@ -287,7 +287,7 @@ c           %----------------------------------------%
 c
             tst1 = cabs1( h( i, i ) ) + cabs1( h( i+1, i+1 ) )
             if( tst1.eq.rzero )
-     &         tst1 = wclanhs( '1', kplusp-jj+1, h, ldh, workl )
+     &         tst1 = clanhs( '1', kplusp-jj+1, h, ldh, workl )
             if ( abs(real(h(i+1,i))) 
      &           .le. max(ulp*tst1, smlnum) )  then
                if (msglvl .gt. 0) then
@@ -406,7 +406,7 @@ c
       do 120 j=1,kev
          if ( real( h(j+1,j) ) .lt. rzero .or.
      &        aimag( h(j+1,j) ) .ne. rzero ) then
-            t = h(j+1,j) / wslapy2(real(h(j+1,j)),aimag(h(j+1,j)))
+            t = h(j+1,j) / slapy2(real(h(j+1,j)),aimag(h(j+1,j)))
             call cscal( kplusp-j+1, conjg(t), h(j+1,j), ldh )
             call cscal( min(j+2, kplusp), t, h(1,j+1), 1 )
             call cscal( min(j+np+1,kplusp), t, q(1,j+1), 1 )
@@ -427,7 +427,7 @@ c        %--------------------------------------------%
 c
          tst1 = cabs1( h( i, i ) ) + cabs1( h( i+1, i+1 ) )
          if( tst1 .eq. rzero )
-     &       tst1 = wclanhs( '1', kev, h, ldh, workl )
+     &       tst1 = clanhs( '1', kev, h, ldh, workl )
          if( real( h( i+1,i ) ) .le. max( ulp*tst1, smlnum ) ) 
      &       h(i+1,i) = zero
  130  continue

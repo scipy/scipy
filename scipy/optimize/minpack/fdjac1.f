@@ -1,4 +1,5 @@
-      subroutine fdjac1(fcn,n,x,fvec,fjac,ldfjac,iflag,ml,mu,epsfcn,
+      recursive
+     *subroutine fdjac1(fcn,n,x,fvec,fjac,ldfjac,iflag,ml,mu,epsfcn,
      *                  wa1,wa2)
       integer n,ldfjac,iflag,ml,mu
       double precision epsfcn

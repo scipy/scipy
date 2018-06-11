@@ -498,7 +498,7 @@ References
 
 .. [Mak] J. Makhoul, 1980, 'A Fast Cosine Transform in One and Two Dimensions',
        `IEEE Transactions on acoustics, speech and signal processing`
-       vol. 28(1), pp. 27-34, http://dx.doi.org/10.1109/TASSP.1980.1163351
+       vol. 28(1), pp. 27-34, :doi:`10.1109/TASSP.1980.1163351`
 
 .. [WPW] http://en.wikipedia.org/wiki/Window_function
 
