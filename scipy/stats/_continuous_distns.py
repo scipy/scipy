@@ -3617,6 +3617,9 @@ class levy_stable_gen(rv_continuous):
     (defaults to a value that covers the input range * 4). Setting ``pdf_fft_n_points_two_power`` 
     to 16 should be sufficiently accurate in most cases at the expense of CPU time.
     
+    This implementation of Zolatarev is unstable for some values where alpha = 1 and beta != 0 or for 
+    very small values of alpha. In this case the quadrature method is recommended.
+    
     For evaluation of cdf we use Zolatarev :math:`S_0` parameterization with integration or integral of
     the pdf FFT interpolated spline. The settings affecting FFT calculation are the same as
     for pdf calculation. Setting the threshold to ``None`` (default) will disable FFT. For cdf 
@@ -3734,15 +3737,23 @@ class levy_stable_gen(rv_continuous):
         else:
             # since location zero, no need to reposition x for S_0 parameterization
             xi = np.pi/2
-            if beta != 0:                
+            if beta != 0:
+                warnings.warn('Density calculation unstable for alpha=1 and beta!=0. Use quadrature method instead.', RuntimeWarning)
+                                        
                 def V(theta):
                     expr_1 = np.pi/2+beta*theta
                     return 2. * expr_1 * np.exp(expr_1*np.tan(theta)/beta) / np.cos(theta) / np.pi 
             
+                def g(theta):
+                    return np.exp(-np.pi * x / 2. / beta) * V(theta)
+                
+                def f(theta):
+                    return g(theta) * np.exp(-g(theta))
+            
                 with np.errstate(all="ignore"):
-                    expr_1 = np.exp(-np.pi*x/beta/2.)
-                    int_1 = integrate.fixed_quad(lambda theta: V(theta)*np.exp(-expr_1 * V(theta)), -np.pi/2, np.pi/2)[0]
-                    return expr_1 * int_1 / np.abs(beta) / 2.
+                    intg_max = optimize.minimize_scalar(lambda theta: -f(theta), bounds=[-np.pi/2, np.pi/2])
+                    intg = integrate.fixed_quad(f, -np.pi/2, intg_max.x)[0] + integrate.fixed_quad(f, intg_max.x, np.pi/2)[0]
+                    return intg / np.abs(beta) / 2.                   
             else:
                 return 1/(1+x**2)/np.pi
 
@@ -3985,8 +3996,8 @@ class levy_stable_gen(rv_continuous):
         return (alpha, beta, delta, c)
         
     def _stats(self, alpha, beta):
-        mu = 0 
-        mu2 = 2
+        mu = 0  if alpha > 1 else np.nan
+        mu2 = 2 if alpha == 2 else np.inf
         g1 = 0. if alpha == 2. else np.NaN
         g2 = 0. if alpha == 2. else np.NaN 
         return mu, mu2, g1, g2

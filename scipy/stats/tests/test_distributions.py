@@ -1453,7 +1453,7 @@ class TestGumbelL(object):
         assert_allclose(x, xx)
         
 class TestLevyStable(object):
-    
+
     def test_fit(self):
         # contruct data to have percentiles that match
         # example in McCulloch 1986.
@@ -1482,90 +1482,116 @@ class TestLevyStable(object):
             assert_allclose(beta1, args[1], rtol=.1, atol=.1)
             assert_allclose(loc1, loc, rtol=0, atol=0.01)
             assert_allclose(scale1, scale, rtol=.05, atol=0)
-            
-    def test_pdf_quad(self):
-        # test values against Nolan's stable.exe output
-        data = np.load(os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                                 'data/stable-pdf-sample-data.npy')))
-        
-        # test single data points (uses cf def integral)
-        stats.levy_stable.pdf_default_method = 'quadrature'
-        stats.levy_stable.pdf_fft_min_points_threshold = None
-        xs = data[:,(0,)]
-        density = data[:,(1,)]
-        alphas = data[:,(2,)]
-        betas = data[:,(3,)]
-        pdf = stats.levy_stable.pdf(xs, alphas, betas, scale=1, loc=0)
-        assert_almost_equal(pdf, density, 4)    
-
-    def test_pdf_zolatarev(self):
-        # test values against Nolan's stable.exe output
-        data = np.load(os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                                 'data/stable-pdf-sample-data.npy')))
-        
-        # test single data points (uses zolotarev parameterization) 
-        stats.levy_stable.pdf_fft_min_points_threshold = None
-        stats.levy_stable.pdf_default_method = 'zolotarev'
-        xs = data[:,(0,)]
-        density = data[:,(1,)]
-        alphas = data[:,(2,)]
-        betas = data[:,(3,)]
-        pdf = stats.levy_stable.pdf(xs, alphas, betas, scale=1, loc=0)
-        assert_almost_equal(pdf, density, 4)    
-
-    def test_pdf_fft(self):
-        # test values against Nolan's stable.exe output
-        data = np.load(os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                                 'data/stable-pdf-sample-data.npy')))
-            
-        # test bulk data (uses fft)
-        stats.levy_stable.pdf_fft_min_points_threshold = 0
-        xs = data[:,(0,)]
-        density = data[:,(1,)]
-        alphas = data[:,(2,)]
-        betas = data[:,(3,)]
-        pdf = stats.levy_stable.pdf(xs, alphas, betas, scale=1, loc=0)
-        assert_almost_equal(pdf, density, 4)
-
-    def test_cdf_fft(self):
-        # test values against Nolan's stable.exe output
-        data = np.load(os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                                 'data/stable-cdf-sample-data.npy')))
-            
-        # test bulk data (uses fft)
-        stats.levy_stable.pdf_fft_min_points_threshold = 0
-        xs = data[:,(0,)]
-        cdf_test = data[:,(1,)]
-        alphas = data[:,(2,)]
-        betas = data[:,(3,)]
-        cdf = stats.levy_stable.cdf(xs, alphas, betas, scale=1, loc=0)
-        assert_almost_equal(cdf, cdf_test, 2)
-        
-    def test_cdf_zolotarev(self):
-        # test values against Nolan's stable.exe output
-        data = np.load(os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                                 'data/stable-cdf-sample-data.npy')))
-            
-        # test bulk data (uses zolotarev)
-        stats.levy_stable.pdf_fft_min_points_threshold = None
-        xs = data[:,(0,)]
-        cdf_test = data[:,(1,)]
-        alphas = data[:,(2,)]
-        betas = data[:,(3,)]
-        cdf = stats.levy_stable.cdf(xs, alphas, betas, scale=1, loc=0)
-        assert_almost_equal(cdf, cdf_test)
     
+    def test_pdf_nolan_samples(self):
+        """ test pdf/cdf values against Nolan's stablec.exe output
+            see - http://fs2.american.edu/jpnolan/www/stable/stable.html
+            
+            stablec <<
+            1 # pdf
+            1 # Nolan S equivalent to S0 in scipy
+            1.25,1.75,.25 # alpha
+            -1,1,.5 # beta
+            -10,10,1 # x
+            1,0 # gamma, delta
+            2 # output file
+            
+        """        
+        data = np.load(os.path.abspath(os.path.join(os.path.dirname(__file__),
+                                                 'data/stable-pdf-sample-data.npy')))
+        xs = data[:,(0,)]
+        density = data[:,(1,)]
+        alphas = data[:,(2,)]
+        betas = data[:,(3,)]
+        
+        tests = [
+            ['quadrature', None, 8],
+            ['zolotarev', None, 8],
+            ['fft', 0, 4]
+        ]
+        for default_method, fft_min_points, decimal_places in tests:
+            stats.levy_stable.pdf_default_method = default_method
+            stats.levy_stable.pdf_fft_min_points_threshold = fft_min_points        
+            pdf = stats.levy_stable.pdf(xs, alphas, betas, scale=1, loc=0)
+            assert_almost_equal(pdf, density, decimal_places, default_method)           
+            
+    def test_cdf_nolan_samples(self):
+        """ test pdf/cdf values against Nolan's stablec.exe output
+            see - http://fs2.american.edu/jpnolan/www/stable/stable.html
+            
+            stablec <<
+            2 # cdf
+            1 # Nolan S equivalent to S0 in scipy
+            1.25,1.75,.25 # alpha
+            -1,1,.5 # beta
+            -10,10,1 # x
+            1,0 # gamma, delta
+            2 # output file            
+        """        
+        data = np.load(os.path.abspath(os.path.join(os.path.dirname(__file__),
+                                                 'data/stable-cdf-sample-data.npy')))
+        xs = data[:,(0,)]
+        cdf_test = data[:,(1,)]
+        alphas = data[:,(2,)]
+        betas = data[:,(3,)]
+        
+        tests = [
+            ['zolotarev', None, 8],
+            ['fft', 0, 2]
+        ]
+        for default_method, fft_min_points, decimal_places in tests:
+            stats.levy_stable.pdf_default_method = default_method
+            stats.levy_stable.pdf_fft_min_points_threshold = fft_min_points        
+            pdf = stats.levy_stable.cdf(xs, alphas, betas, scale=1, loc=0)
+            assert_almost_equal(pdf, cdf_test, decimal_places, default_method)  
+
+
+    def test_pdf_alpha_equals_one_beta_non_zero(self):
+        """ sample points extracted from Tables and Graphs of Stable Probability
+            Density Functions - Donald R Holt - 1973 - p 187. 
+        """
+        xs = np.array([0, 0, 0, 0, 
+                       1, 1, 1, 1, 
+                       2, 2, 2, 2, 
+                       3, 3, 3, 3, 
+                       4, 4, 4, 4,
+                       ])
+        density = np.array([.3183, .3096, .2925, .2622,
+                            .1591, .1587, .1599, .1635,
+                            .0637, .0729, .0812, .0955,
+                            .0318, .0390, .0458, .0586,
+                            .0187, .0236, .0285, .0384,
+            ])
+        betas = np.array([0, .25, .5, 1, 
+                          0, .25, .5, 1, 
+                          0, .25, .5, 1, 
+                          0, .25, .5, 1, 
+                          0, .25, .5, 1,
+                          ])
+        
+        tests = [
+            ['quadrature', None, 4],
+            ['zolotarev', None, 1],
+        ]
+        
+        with np.warnings.catch_warnings():
+            np.warnings.filterwarnings('ignore', r'Density calculation unstable') 
+                   
+            for default_method, fft_min_points, decimal_places in tests:
+                stats.levy_stable.pdf_default_method = default_method
+                stats.levy_stable.pdf_fft_min_points_threshold = fft_min_points        
+                pdf = stats.levy_stable.pdf(xs, 1, betas, scale=1, loc=0)
+                assert_almost_equal(pdf, density, decimal_places, default_method) 
+
+
     def test_stats(self):
         param_sets = [
-            [(1.48,-.22, 0, 1), (0,2,np.NaN,np.NaN)],
+            [(1.48,-.22, 0, 1), (0,np.inf,np.NaN,np.NaN)],
             [(2,.9, 10, 1.5), (10,4.5,0,0)]
         ]
         for args, exp_stats in param_sets:
-            mean, var, skew, kurt = stats.levy_stable.stats(args[0], args[1], loc=args[2], scale=args[3], moments='mvsk')
-            assert_almost_equal(mean, exp_stats[0])
-            assert_almost_equal(var, exp_stats[1])
-            assert_almost_equal(skew, exp_stats[2])
-            assert_almost_equal(kurt, exp_stats[3])
+            calc_stats = stats.levy_stable.stats(args[0], args[1], loc=args[2], scale=args[3], moments='mvsk')
+            assert_almost_equal(calc_stats, exp_stats)
 
 class TestArrayArgument(object):  # test for ticket:992
     def setup_method(self):
