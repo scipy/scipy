@@ -4005,7 +4005,7 @@ class levy_stable_gen(rv_continuous):
         return (alpha, beta, delta, c)
         
     def _stats(self, alpha, beta):
-        mu = 0  if alpha > 1 else np.nan
+        mu = 0 if alpha > 1 else np.nan
         mu2 = 2 if alpha == 2 else np.inf
         g1 = 0. if alpha == 2. else np.NaN
         g2 = 0. if alpha == 2. else np.NaN 

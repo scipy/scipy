@@ -1561,7 +1561,6 @@ class TestLevyStable(object):
             pdf = stats.levy_stable.cdf(xs, alphas, betas, scale=1, loc=0)
             assert_almost_equal(pdf, cdf_test, decimal_places, default_method)  
 
-
     def test_pdf_alpha_equals_one_beta_non_zero(self):
         """ sample points extracted from Tables and Graphs of Stable Probability
             Density Functions - Donald R Holt - 1973 - p 187. 
@@ -1570,20 +1569,17 @@ class TestLevyStable(object):
                        1, 1, 1, 1, 
                        2, 2, 2, 2, 
                        3, 3, 3, 3, 
-                       4, 4, 4, 4,
-                       ])
+                       4, 4, 4, 4])
         density = np.array([.3183, .3096, .2925, .2622,
                             .1591, .1587, .1599, .1635,
                             .0637, .0729, .0812, .0955,
                             .0318, .0390, .0458, .0586,
-                            .0187, .0236, .0285, .0384,
-            ])
+                            .0187, .0236, .0285, .0384])
         betas = np.array([0, .25, .5, 1, 
                           0, .25, .5, 1, 
                           0, .25, .5, 1, 
                           0, .25, .5, 1, 
-                          0, .25, .5, 1,
-                          ])
+                          0, .25, .5, 1])
         
         tests = [
             ['quadrature', None, 4],
@@ -1598,7 +1594,6 @@ class TestLevyStable(object):
                 stats.levy_stable.pdf_fft_min_points_threshold = fft_min_points        
                 pdf = stats.levy_stable.pdf(xs, 1, betas, scale=1, loc=0)
                 assert_almost_equal(pdf, density, decimal_places, default_method) 
-
 
     def test_stats(self):
         param_sets = [
