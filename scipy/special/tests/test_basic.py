@@ -474,17 +474,8 @@ class TestCephes(object):
         assert_approx_equal(cephes.hyp1f1(3,4,-6), 0.026056422099537251095)
         cephes.hyp1f1(1,1,1)
 
-    def test_hyp1f2(self):
-        cephes.hyp1f2(1,1,1,1)
-
-    def test_hyp2f0(self):
-        cephes.hyp2f0(1,1,1,1)
-
     def test_hyp2f1(self):
         assert_equal(cephes.hyp2f1(1,1,1,0),1.0)
-
-    def test_hyp3f0(self):
-        assert_equal(cephes.hyp3f0(1,1,1,0),(1.0,0.0))
 
     def test_hyperu(self):
         assert_equal(cephes.hyperu(0,1,1),1.0)
@@ -2172,12 +2163,6 @@ class TestHyper(object):
         hyp = special.hyp1f1(0.5, 1.5, -1000)
         assert_almost_equal(hyp, 0.028024956081989643, 12)
 
-    def test_hyp1f2(self):
-        pass
-
-    def test_hyp2f0(self):
-        pass
-
     def test_hyp2f1(self):
         # a collection of special cases taken from AMS 55
         values = [[0.5, 1, 1.5, 0.2**2, 0.5/0.2*log((1+0.2)/(1-0.2))],
@@ -2208,9 +2193,6 @@ class TestHyper(object):
         for i, (a, b, c, x, v) in enumerate(values):
             cv = special.hyp2f1(a, b, c, x)
             assert_almost_equal(cv, v, 8, err_msg='test #%d' % i)
-
-    def test_hyp3f0(self):
-        pass
 
     def test_hyperu(self):
         val1 = special.hyperu(1,0.1,100)
@@ -3317,7 +3299,6 @@ def test_legacy():
         assert_equal(special.bdtr(1, 2, 0.3), special.bdtr(1.8, 2.8, 0.3))
         assert_equal(special.bdtri(1, 2, 0.3), special.bdtri(1.8, 2.8, 0.3))
         assert_equal(special.expn(1, 0.3), special.expn(1.8, 0.3))
-        assert_equal(special.hyp2f0(1, 2, 0.3, 1), special.hyp2f0(1, 2, 0.3, 1.8))
         assert_equal(special.nbdtrc(1, 2, 0.3), special.nbdtrc(1.8, 2.8, 0.3))
         assert_equal(special.nbdtr(1, 2, 0.3), special.nbdtr(1.8, 2.8, 0.3))
         assert_equal(special.nbdtri(1, 2, 0.3), special.nbdtri(1.8, 2.8, 0.3))
