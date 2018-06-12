@@ -631,17 +631,17 @@ class Rotation(object):
         return self.__class__(quat, normalized=True)
 
     def __mul__(self, other):
-        """Returns the composition of the rotations.
+        """Compose this rotation with the other.
 
         If `p` and `q` are two rotations, then the composition of 'q followed
-        by p' is equivalent to `p * q`, which is the same as
-        `p.as_dcm().dot(q.as_dcm())`.
+        by p' is equivalent to `p * q`. In terms of DCMs, the composition can
+        be expressed as `p.as_dcm().dot(q.as_dcm())`.
 
         This function supports composition of multiple rotations at a time:
 
             - Either `p` or `q` contains a single rotation. In this case the
               returned object contains the result of composing each rotation in
-              the other object with the single rotation
+              the other object with the single rotation.
             - Both `p` and `q` contain `N` rotations. In this case each
               rotation `p[i]` is composed with each rotation `q[i]` and the
               returned object contains `N` rotations.

@@ -6,7 +6,7 @@
       .. autosummary::
          :toctree:
       {% for item in all_methods %}
-         {%- if not item.startswith('_') or item in ['__call__'] %}
+         {%- if not item.startswith('_') or item in ['__call__', '__mul__'] %}
          {{ name }}.{{ item }}
          {%- endif -%}
       {%- endfor %}
