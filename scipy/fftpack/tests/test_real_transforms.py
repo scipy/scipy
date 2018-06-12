@@ -89,6 +89,20 @@ def idst_2d_ref(x, **kwargs):
         x[:, col] = idst(x[:, col], **kwargs)
     return x
 
+def naive_dct4(x, norm=None):
+    """ textbook definition of DCT-IV """
+    x = np.array(x, copy=True)
+    N = len(x)
+    y = np.zeros(N)
+    for k in range(N):
+        for n in range(N):
+            y[k] += x[n]*np.cos(np.pi*(n+0.5)*(k+0.5)/(N))
+    if norm=='ortho':
+        y *= np.sqrt(2.0/N)
+    else:
+        y *= 2
+    return y
+
 
 class TestComplex(object):
     def test_dct_complex64(self):
@@ -180,6 +194,32 @@ class _TestDCTIIIBase(_TestDCTBase):
             assert_equal(xi.dtype, dt)
             assert_array_almost_equal(xi, x, decimal=self.dec)
 
+class _TestDCTIVBase(_TestDCTBase):
+    def test_definition_ortho(self):
+        # Test orthornomal mode.
+        for i in range(len(X)):
+            x = np.array(X[i], dtype=self.rdt)
+            dt = np.result_type(np.float32, self.rdt)
+            y = dct(x, norm='ortho', type=4)
+            xi = dct(y, norm="ortho", type=4)
+            y2 = naive_dct4(x, norm='ortho')
+            xi2 = naive_dct4(y2, norm='ortho')
+            assert_equal(xi.dtype, dt)
+            assert_array_almost_equal(xi, x, decimal=self.dec)
+            assert_array_almost_equal(y, y2, decimal=self.dec)
+            assert_array_almost_equal(xi, xi2, decimal=self.dec)
+    def test_definition_naive(self):
+        # Test against naive implementation
+        for i in range(len(X)):
+            x = np.array(X[i], dtype=self.rdt)
+            dt = np.result_type(np.float32, self.rdt)
+            y = dct(x, type=4)
+            xi = dct(y, type=4)
+            y2 = naive_dct4(x)
+            xi2 = naive_dct4(y2)
+            assert_equal(xi.dtype, dt)
+            assert_array_almost_equal(y / np.max(y), y2 / np.max(y), decimal=self.dec)
+            assert_array_almost_equal(xi / np.max(xi), xi2 / np.max(xi), decimal=self.dec)
 
 class TestDCTIDouble(_TestDCTBase):
     def setup_method(self):
@@ -238,6 +278,27 @@ class TestDCTIIIFloat(_TestDCTIIIBase):
 
 
 class TestDCTIIIInt(_TestDCTIIIBase):
+    def setup_method(self):
+        self.rdt = int
+        self.dec = 5
+        self.type = 3
+
+
+class TestDCTIVDouble(_TestDCTIVBase):
+    def setup_method(self):
+        self.rdt = np.double
+        self.dec = 12
+        self.type = 3
+
+
+class TestDCTIVFloat(_TestDCTIVBase):
+    def setup_method(self):
+        self.rdt = np.float32
+        self.dec = 5
+        self.type = 3
+
+
+class TestDCTIVInt(_TestDCTIVBase):
     def setup_method(self):
         self.rdt = int
         self.dec = 5
@@ -329,6 +390,25 @@ class TestIDCTIIIInt(_TestIDCTBase):
         self.dec = 5
         self.type = 3
 
+class TestIDCTIVDouble(_TestIDCTBase):
+    def setup_method(self):
+        self.rdt = np.double
+        self.dec = 12
+        self.type = 4
+
+
+class TestIDCTIVFloat(_TestIDCTBase):
+    def setup_method(self):
+        self.rdt = np.float32
+        self.dec = 5
+        self.type = 4
+
+
+class TestIDCTIVInt(_TestIDCTBase):
+    def setup_method(self):
+        self.rdt = int
+        self.dec = 5
+        self.type = 4
 
 class _TestDSTBase(object):
     def setup_method(self):
@@ -410,6 +490,27 @@ class TestDSTIIIInt(_TestDSTBase):
         self.rdt = int
         self.dec = 7
         self.type = 3
+
+
+class TestDSTIVDouble(_TestDSTBase):
+    def setup_method(self):
+        self.rdt = np.double
+        self.dec = 12
+        self.type = 4
+
+
+class TestDSTIVFloat(_TestDSTBase):
+    def setup_method(self):
+        self.rdt = np.float32
+        self.dec = 5
+        self.type = 4
+
+
+class TestDSTIVInt(_TestDSTBase):
+    def setup_method(self):
+        self.rdt = int
+        self.dec = 5
+        self.type = 4
 
 
 class _TestIDSTBase(object):
@@ -498,6 +599,27 @@ class TestIDSTIIIInt(_TestIDSTBase):
         self.type = 3
 
 
+class TestIDSTIVDouble(_TestIDSTBase):
+    def setup_method(self):
+        self.rdt = np.double
+        self.dec = 12
+        self.type = 4
+
+
+class TestIDSTIVFloat(_TestIDSTBase):
+    def setup_method(self):
+        self.rdt = np.float32
+        self.dec = 6
+        self.type = 4
+
+
+class TestIDSTIVnt(_TestIDSTBase):
+    def setup_method(self):
+        self.rdt = int
+        self.dec = 6
+        self.type = 4
+
+
 class TestOverwrite(object):
     """Check input overwrite behavior """
 
@@ -521,7 +643,7 @@ class TestOverwrite(object):
             data = np.random.randn(*shape)
         data = data.astype(dtype)
 
-        for type in [1, 2, 3]:
+        for type in [1, 2, 3, 4]:
             for overwrite_x in [True, False]:
                 for norm in [None, 'ortho']:
                     should_overwrite = (overwrite_x
@@ -563,7 +685,7 @@ class TestOverwrite(object):
 
 class Test_DCTN_IDCTN(object):
     dec = 14
-    types = [1, 2, 3]
+    types = [1, 2, 3, 4]
     norms = [None, 'ortho']
     rstate = np.random.RandomState(1234)
     shape = (32, 16)

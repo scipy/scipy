@@ -440,7 +440,7 @@ def idct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
 
     """
     # Inverse/forward type table
-    _TP = {1:1, 2:3, 3:2}
+    _TP = {1:1, 2:3, 3:2, 4:4}
     return _dct(x, _TP[type], n, axis, normalize=norm, overwrite_x=overwrite_x)
 
 
@@ -667,7 +667,7 @@ def idst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
 
     """
     # Inverse/forward type table
-    _TP = {1:1, 2:3, 3:2}
+    _TP = {1:1, 2:3, 3:2, 4:4}
     return _dst(x, _TP[type], n, axis, normalize=norm, overwrite_x=overwrite_x)
 
 

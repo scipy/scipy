@@ -190,7 +190,7 @@ void @pref@dct3(@type@ * inout, int n, int howmany, int normalize)
 /*
 DCT-IV from DCT-II, based on:
 S.C. Chan, K.L. Ho, Direct methods for computing discrete sinusoidal transforms,
-IEE Procedings F, Volume 137, Issue 6, 1990
+IEE Proceedings F, Volume 137, Issue 6, 1990
 */
 void @pref@dct4(@type@ * inout, int n, int howmany, int normalize)
 {
@@ -217,7 +217,7 @@ void @pref@dct4(@type@ * inout, int n, int howmany, int normalize)
         case DCT_NORMALIZE_NO:
             ptr = inout;
             for (i = 0; i < n * howmany; ++i) {
-                ptr[i] *= 0.5;
+                //ptr[i] *= 0.5;
             }
             break;
         case DCT_NORMALIZE_ORTHONORMAL:
