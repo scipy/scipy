@@ -13,8 +13,10 @@ from scipy.fftpack.basic import _datacopied, _fix_shape, _asfarray
 import atexit
 atexit.register(_fftpack.destroy_ddct1_cache)
 atexit.register(_fftpack.destroy_ddct2_cache)
+atexit.register(_fftpack.destroy_ddct4_cache)
 atexit.register(_fftpack.destroy_dct1_cache)
 atexit.register(_fftpack.destroy_dct2_cache)
+atexit.register(_fftpack.destroy_dct4_cache)
 
 atexit.register(_fftpack.destroy_ddst1_cache)
 atexit.register(_fftpack.destroy_ddst2_cache)

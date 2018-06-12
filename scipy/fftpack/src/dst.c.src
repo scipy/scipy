@@ -23,6 +23,7 @@ extern void F_FUNC(@pref@sint, @PREF@SINT)(int*, @type@*, @type@*);
 extern void F_FUNC(@pref@sinqi, @PREF@SINQI)(int*, @type@*);
 extern void F_FUNC(@pref@sinqb, @PREF@SINQB)(int*, @type@*, @type@*);
 extern void F_FUNC(@pref@sinqf, @PREF@SINQF)(int*, @type@*, @type@*);
+extern void @pref@dct4(@type@ * inout, int n, int howmany, int normalize);
 
 GEN_CACHE(@pref@dst1,(int n)
       ,@type@* wsave;
@@ -39,6 +40,7 @@ GEN_CACHE(@pref@dst2,(int n)
        F_FUNC(@pref@sinqi,@PREF@SINQI)(&n,caches_@pref@dst2[id].wsave);
       ,free(caches_@pref@dst2[id].wsave);
       ,10)
+
 
 void @pref@dst1(@type@ * inout, int n, int howmany, int normalize)
 {
@@ -154,4 +156,32 @@ void @pref@dst3(@type@ * inout, int n, int howmany, int normalize)
     }
 
 }
+
+void @pref@dst4(@type@ * inout, int n, int howmany, int normalize)
+{
+    int i, j, n2=n/2;
+    @type@ *ptr = inout;
+    @type@ tmp;
+
+    /* reverse order of inputs */
+    for (i = 0; i < howmany; ++i, ptr += n) {
+        for (j=0; j<n2; j++) {
+            tmp = ptr[j];
+            ptr[j] = ptr[n-j-1];
+            ptr[n-j-1] = tmp;
+        }
+    }
+
+    /* apply DCT-IV, we can use it's normalization */
+    @pref@dct4(inout, n, howmany, normalize);
+
+    /* flip sign of odd indices */
+    ptr = inout;
+    for (i = 0; i < howmany; ++i, ptr += n) {
+        for (j=1; j<n; j+=2) {
+            ptr[j] = -ptr[j];
+        }
+    }
+}
+
 /**end repeat**/
