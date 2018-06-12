@@ -192,6 +192,7 @@ class Rotation(object):
     as_euler
     inv
     __mul__
+    apply
     """
     def __init__(self, quat, normalized=False):
         self._single = False
@@ -657,3 +658,32 @@ class Rotation(object):
         if self._single and other._single:
             result = result[0]
         return self.__class__(result, normalized=True)
+
+    def apply(self, points):
+        """Apply this rotation on a set of points.
+
+        Rotates `points` by the rotation(s) represented in the object. In terms
+        of DCMs, this application is the same as `self.as_dcm().dot(points)`.
+        For an object containing `N` rotations applied on `P` points, returns
+        a `numpy.ndarray` of shape `(N, P, 3)`.
+
+        Parameters
+        ----------
+        points : array_like, shape (3,) or (P, 3)
+            Each `points[i]` represents a point in 3D space. A single point can
+            either be specified with shape `(3, )` or `(1, 3)`.
+        """
+        points = np.asarray(points)
+        if points.ndim > 2 or points.shape[-1] != 3:
+            raise ValueError("Expected input of shape (3,) or (N, 3), "
+                             "got {}.".format(points.shape))
+
+        if points.shape == (3,):
+            points = points[None, :]
+
+        # The dcm convention assumes column vectors of points, so here we
+        # transpose the points matrix and transpose the outuput
+        result = np.einsum('...ij,...kj->...ki', self.as_dcm(), points)
+
+        # For single rotation, the output is 2D, so add another axis
+        return result[None, :] if self._single else result
