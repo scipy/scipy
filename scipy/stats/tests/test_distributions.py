@@ -1503,7 +1503,7 @@ class TestLevyStable(object):
                 stablec.exe <<
                 1 # pdf
                 1 # Nolan S equivalent to S0 in scipy
-                1.25,1.75,.25 # alpha
+                .25,2,.25 # alpha
                 -1,-1,0 # beta
                 -10,10,1 # x
                 1,0 # gamma, delta
@@ -1549,7 +1549,7 @@ class TestLevyStable(object):
                 stablec.exe <<
                 2 # cdf
                 1 # Nolan S equivalent to S0 in scipy
-                1.25,1.75,.25 # alpha
+                .25,2,.25 # alpha
                 -1,-1,0 # beta
                 -10,10,1 # x
                 1,0 # gamma, delta
