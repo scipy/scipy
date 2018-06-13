@@ -89,6 +89,26 @@ def idst_2d_ref(x, **kwargs):
         x[:, col] = idst(x[:, col], **kwargs)
     return x
 
+def naive_dct1(x, norm=None):
+    """ textbook definition of DCT-I """
+    x = np.array(x, copy=True)
+    N = len(x)
+    M = N-1
+    y = np.zeros(N)
+    m0,m = 1,2
+    if norm=='ortho':
+        m0 = np.sqrt(1.0/M)
+        m = np.sqrt(2.0/M)
+    for k in range(N):
+        for n in range(1,N-1):
+            y[k] += m*x[n]*np.cos(np.pi*n*k/M)
+        y[k] += m0 * x[0]
+        y[k] += m0 * x[N-1] * (1 if k%2==0 else -1)
+    if norm=='ortho':
+        y[0] *= 1/np.sqrt(2)
+        y[N-1] *= 1/np.sqrt(2)
+    return y
+
 def naive_dct4(x, norm=None):
     """ textbook definition of DCT-IV """
     x = np.array(x, copy=True)
@@ -103,6 +123,19 @@ def naive_dct4(x, norm=None):
         y *= 2
     return y
 
+def naive_dst4(x, norm=None):
+    """ textbook definition of DST-IV """
+    x = np.array(x, copy=True)
+    N = len(x)
+    y = np.zeros(N)
+    for k in range(N):
+        for n in range(N):
+            y[k] += x[n]*np.sin(np.pi*(n+0.5)*(k+0.5)/(N))
+    if norm=='ortho':
+        y *= np.sqrt(2.0/N)
+    else:
+        y *= 2
+    return y
 
 class TestComplex(object):
     def test_dct_complex64(self):
@@ -170,6 +203,33 @@ class _TestDCTBase(object):
                         decimal=self.dec)
 
 
+class _TestDCTIBase(_TestDCTBase):
+    def test_definition_ortho(self):
+        # Test orthornomal mode.
+        for i in range(len(X)):
+            x = np.array(X[i], dtype=self.rdt)
+            dt = np.result_type(np.float32, self.rdt)
+            y = dct(x, norm='ortho', type=1)
+            xi = dct(y, norm="ortho", type=1)
+            y2 = naive_dct1(x, norm='ortho')
+            xi2 = naive_dct1(y2, norm='ortho')
+            assert_equal(xi.dtype, dt)
+            assert_array_almost_equal(xi, x, decimal=self.dec)
+            assert_array_almost_equal(y, y2, decimal=self.dec)
+            assert_array_almost_equal(xi, xi2, decimal=self.dec)
+    def test_definition_naive(self):
+        # Test against naive implementation
+        for i in range(len(X)):
+            x = np.array(X[i], dtype=self.rdt)
+            dt = np.result_type(np.float32, self.rdt)
+            y = dct(x, type=1)
+            xi = dct(y, type=1)
+            y2 = naive_dct1(x)
+            xi2 = naive_dct1(y2)
+            assert_equal(xi.dtype, dt)
+            assert_array_almost_equal(y / np.max(y), y2 / np.max(y), decimal=self.dec)
+            assert_array_almost_equal(xi / np.max(xi), xi2 / np.max(xi), decimal=self.dec)
+
 class _TestDCTIIBase(_TestDCTBase):
     def test_definition_matlab(self):
         # Test correspondence with matlab (orthornomal mode).
@@ -221,21 +281,21 @@ class _TestDCTIVBase(_TestDCTBase):
             assert_array_almost_equal(y / np.max(y), y2 / np.max(y), decimal=self.dec)
             assert_array_almost_equal(xi / np.max(xi), xi2 / np.max(xi), decimal=self.dec)
 
-class TestDCTIDouble(_TestDCTBase):
+class TestDCTIDouble(_TestDCTIBase):
     def setup_method(self):
         self.rdt = np.double
         self.dec = 10
         self.type = 1
 
 
-class TestDCTIFloat(_TestDCTBase):
+class TestDCTIFloat(_TestDCTIBase):
     def setup_method(self):
         self.rdt = np.float32
-        self.dec = 5
+        self.dec = 4
         self.type = 1
 
 
-class TestDCTIInt(_TestDCTBase):
+class TestDCTIInt(_TestDCTIBase):
     def setup_method(self):
         self.rdt = int
         self.dec = 5
@@ -429,6 +489,33 @@ class _TestDSTBase(object):
                     err_msg="Size %d failed" % i)
 
 
+class _TestDSTIVBase(_TestDSTBase):
+    def test_definition_ortho(self):
+        # Test orthornomal mode.
+        for i in range(len(X)):
+            x = np.array(X[i], dtype=self.rdt)
+            dt = np.result_type(np.float32, self.rdt)
+            y = dst(x, norm='ortho', type=4)
+            xi = dst(y, norm="ortho", type=4)
+            y2 = naive_dst4(x, norm='ortho')
+            xi2 = naive_dst4(y2, norm='ortho')
+            assert_equal(xi.dtype, dt)
+            assert_array_almost_equal(xi, x, decimal=self.dec)
+            assert_array_almost_equal(y, y2, decimal=self.dec)
+            assert_array_almost_equal(xi, xi2, decimal=self.dec)
+    def test_definition_naive(self):
+        # Test against naive implementation
+        for i in range(len(X)):
+            x = np.array(X[i], dtype=self.rdt)
+            dt = np.result_type(np.float32, self.rdt)
+            y = dst(x, type=4)
+            xi = dst(y, type=4)
+            y2 = naive_dst4(x)
+            xi2 = naive_dst4(y2)
+            assert_equal(xi.dtype, dt)
+            assert_array_almost_equal(y / np.max(y), y2 / np.max(y), decimal=self.dec)
+            assert_array_almost_equal(xi / np.max(xi), xi2 / np.max(xi), decimal=self.dec)
+
 class TestDSTIDouble(_TestDSTBase):
     def setup_method(self):
         self.rdt = np.double
@@ -492,21 +579,21 @@ class TestDSTIIIInt(_TestDSTBase):
         self.type = 3
 
 
-class TestDSTIVDouble(_TestDSTBase):
+class TestDSTIVDouble(_TestDSTIVBase):
     def setup_method(self):
         self.rdt = np.double
         self.dec = 12
         self.type = 4
 
 
-class TestDSTIVFloat(_TestDSTBase):
+class TestDSTIVFloat(_TestDSTIVBase):
     def setup_method(self):
         self.rdt = np.float32
-        self.dec = 5
+        self.dec = 4
         self.type = 4
 
 
-class TestDSTIVInt(_TestDSTBase):
+class TestDSTIVInt(_TestDSTIVBase):
     def setup_method(self):
         self.rdt = int
         self.dec = 5
