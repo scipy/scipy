@@ -215,10 +215,6 @@ void @pref@dct4(@type@ * inout, int n, int howmany, int normalize)
 
     switch (normalize) {
         case DCT_NORMALIZE_NO:
-            ptr = inout;
-            for (i = 0; i < n * howmany; ++i) {
-                //ptr[i] *= 0.5;
-            }
             break;
         case DCT_NORMALIZE_ORTHONORMAL:
             ptr = inout;

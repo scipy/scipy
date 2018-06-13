@@ -58,7 +58,7 @@ def dctn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
     ----------
     x : array_like
         The input array.
-    type : {1, 2, 3}, optional
+    type : {1, 2, 3, 4}, optional
         Type of the DCT (see Notes). Default type is 2.
     shape : tuple of ints, optional
         The shape of the result.  If both `shape` and `axes` (see below) are
@@ -111,7 +111,7 @@ def idctn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
     ----------
     x : array_like
         The input array.
-    type : {1, 2, 3}, optional
+    type : {1, 2, 3, 4}, optional
         Type of the DCT (see Notes). Default type is 2.
     shape : tuple of ints, optional
         The shape of the result.  If both `shape` and `axes` (see below) are
@@ -164,7 +164,7 @@ def dstn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
     ----------
     x : array_like
         The input array.
-    type : {1, 2, 3}, optional
+    type : {1, 2, 3, 4}, optional
         Type of the DCT (see Notes). Default type is 2.
     shape : tuple of ints, optional
         The shape of the result.  If both `shape` and `axes` (see below) are
@@ -217,7 +217,7 @@ def idstn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
     ----------
     x : array_like
         The input array.
-    type : {1, 2, 3}, optional
+    type : {1, 2, 3, 4}, optional
         Type of the DCT (see Notes). Default type is 2.
     shape : tuple of ints, optional
         The shape of the result.  If both `shape` and `axes` (see below) are
@@ -270,7 +270,7 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     ----------
     x : array_like
         The input array.
-    type : {1, 2, 3}, optional
+    type : {1, 2, 3, 4}, optional
         Type of the DCT (see Notes). Default type is 2.
     n : int, optional
         Length of the transform.  If ``n < x.shape[axis]``, `x` is
@@ -298,7 +298,7 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     For a single dimension array ``x``, ``dct(x, norm='ortho')`` is equal to
     MATLAB ``dct(x)``.
 
-    There are theoretically 8 types of the DCT, only the first 3 types are
+    There are theoretically 8 types of the DCT, only the first 4 types are
     implemented in scipy. 'The' DCT generally refers to DCT type 2, and 'the'
     Inverse DCT generally refers to DCT type 3.
 
@@ -359,6 +359,22 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     to a factor `2N`. The orthonormalized DCT-III is exactly the inverse of
     the orthonormalized DCT-II.
 
+    **Type IV**
+
+    There are several definitions of the DCT-IV; we use the following
+    (for ``norm=None``)::
+
+
+                N-1
+      y[k] = 2* sum x[n]*cos(pi*(2k+1)*(2n+1)/(4*N)), 0 <= k < N.
+                n=0
+
+    If ``norm='ortho'``, ``y[k]`` is multiplied by a scaling factor `f`::
+
+      f = 0.5*sqrt(2/N)
+
+      .. versionadded:: 1.2.0
+
     References
     ----------
     .. [1] 'A Fast Cosine Transform in One and Two Dimensions', by J.
@@ -392,7 +408,7 @@ def idct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     ----------
     x : array_like
         The input array.
-    type : {1, 2, 3}, optional
+    type : {1, 2, 3, 4}, optional
         Type of the DCT (see Notes). Default type is 2.
     n : int, optional
         Length of the transform.  If ``n < x.shape[axis]``, `x` is
@@ -423,8 +439,8 @@ def idct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     'The' IDCT is the IDCT of type 2, which is the same as DCT of type 3.
 
     IDCT of type 1 is the DCT of type 1, IDCT of type 2 is the DCT of type
-    3, and IDCT of type 3 is the DCT of type 2. For the definition of these
-    types, see `dct`.
+    3, and IDCT of type 3 is the DCT of type 2. IDCT of type 4 is the DCT
+    of type 4. For the definition of these types, see `dct`.
 
     Examples
     --------
@@ -540,7 +556,7 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     ----------
     x : array_like
         The input array.
-    type : {1, 2, 3}, optional
+    type : {1, 2, 3, 4}, optional
         Type of the DST (see Notes). Default type is 2.
     n : int, optional
         Length of the transform.  If ``n < x.shape[axis]``, `x` is
@@ -615,6 +631,21 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
 
     .. versionadded:: 0.11.0
 
+    **Type IV**
+
+    There are several definitions of the DST-IV, we use the following
+    (for ``norm=None``).  DST-IV assumes the input is odd around n=-0.5
+    and even around n=N-0.5 ::
+
+                N-1
+      y[k] = 2* sum x[n]*sin(pi*(k+0.5)*(n+0.5)/N), 0 <= k < N.
+                n=0
+
+    The (unnormalized) DCT-IV is its own inverse, up
+    to a factor `2N`.  The orthonormalized DST-IV is exactly its own inverse.
+
+    .. versionadded:: 1.2.0
+
     References
     ----------
     .. [1] Wikipedia, "Discrete sine transform",
@@ -632,7 +663,7 @@ def idst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     ----------
     x : array_like
         The input array.
-    type : {1, 2, 3}, optional
+    type : {1, 2, 3, 4}, optional
         Type of the DST (see Notes). Default type is 2.
     n : int, optional
         Length of the transform.  If ``n < x.shape[axis]``, `x` is
