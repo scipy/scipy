@@ -1514,7 +1514,7 @@ class TestLevyStable(object):
         data = np.core.records.fromarrays(data.T, names='x,p,alpha,beta')
         
         # support numpy 1.8.2 for travis
-        npisin = np.isin if hasattr(np, "isin") else np.is1d
+        npisin = np.isin if hasattr(np, "isin") else np.in1d
         
         tests = [
             # best selects
