@@ -713,6 +713,49 @@ class TestLinprogSimplex(LinprogCommonTests):
         _assert_success(res2, 36.0000000000)
         assert_allclose(res1.x, res2.x)
 
+    def test_bug_6690_with_simplex(self):
+        # SciPy violates bound constraint despite result status being success
+        # when the simplex method is used.
+        # https://github.com/scipy/scipy/issues/6690
+
+        A_eq = np.array([[0, 0, 0, 0.93, 0, 0.65, 0, 0, 0.83, 0]])
+        b_eq = np.array([0.9626])
+        A_ub = np.array([
+            [0, 0, 0, 1.18, 0, 0, 0, -0.2, 0, -0.22],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0.43, 0, 0, 0, 0, 0, 0],
+            [0, -1.22, -0.25, 0, 0, 0, -2.06, 0, 0, 1.37],
+            [0, 0, 0, 0, 0, 0, 0, -0.25, 0, 0]
+        ])
+        b_ub = np.array([0.615, 0, 0.172, -0.869, -0.022])
+        bounds =  np.array([
+            [-0.84, -0.97, 0.34, 0.4 , -0.33, -0.74, 0.47, 0.09, -1.45, -0.73],
+            [0.37, 0.02, 2.86, 0.86, 1.18, 0.5 , 1.76, 0.17, 0.32, -0.15]
+        ]).T
+        c = np.array(
+            [-1.64, 0.7, 1.8 , -1.06, -1.16,0.26, 2.13, 1.53, 0.66, 0.28]
+        )
+
+        res = linprog(
+            c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
+            bounds=bounds, method='simplex'
+        )
+        _assert_success(res, -1.19099999999)
+        assert np.less_equal(bounds[:, 0], res.x).all()
+        assert np.greater_equal(bounds[:, 1] + 1e-12, res.x).all()
+
+    def test_bug_7044_simplex(self):
+        # Linporg fails to identify correct constraints with simplex method
+        # leading to a non-optimal solution if A is rank-deficient.
+        # https://github.com/scipy/scipy/issues/7044
+
+        A, b, c, N = magic_square(3)
+        res = linprog(c, A_eq = A, b_eq = b, method=self.method)
+
+        _assert_success(res, 1.730550597)
+        assert_allclose(A.dot(res.x), b)
+        assert np.all(res.x >= 0)
+
 
 class BaseTestLinprogIP(LinprogCommonTests):
     method = "interior-point"
