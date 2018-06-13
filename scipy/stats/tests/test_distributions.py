@@ -1492,7 +1492,6 @@ class TestLevyStable(object):
         assert_almost_equal(scale2, .02503, 4)
         assert_almost_equal(loc2, .03354, 4)
         
-    
     def test_pdf_nolan_samples(self):
         """ Test pdf values against Nolan's stablec.exe output
             see - http://fs2.american.edu/jpnolan/www/stable/stable.html
@@ -1514,31 +1513,33 @@ class TestLevyStable(object):
         
         data = np.core.records.fromarrays(data.T, names='x,p,alpha,beta')
         
+        # support numpy 1.8.2 for travis
+        npisin = np.isin if hasattr(np, "isin") else np.is1d
+        
         tests = [
             # best selects
-            ['best', None, 8, None ],
+            ['best', None, 8, None],
             
             # quadrature is accurate for most alpha except 0.25; perhaps limitation of Nolan stablec?
             # we reduce size of x to speed up computation as numerical integration slow.
-            ['quadrature', None, 8, lambda r: (r['alpha'] > 0.25)&(np.isin(r['x'], [-10,-5,0,5,10])) ],
+            ['quadrature', None, 8, lambda r: (r['alpha'] > 0.25) & (npisin(r['x'], [-10,-5,0,5,10]))],
             
             # zolatarev is accurate except at alpha==1
-            ['zolotarev', None, 8, lambda r: r['alpha'] != 1 ],
-            ['zolotarev', None, 1, lambda r: r['alpha'] == 1 ],
+            ['zolotarev', None, 8, lambda r: r['alpha'] != 1],
+            ['zolotarev', None, 1, lambda r: r['alpha'] == 1],
             
             # fft accuracy reduces as alpha decreases, fails at low values of alpha and x=0
-            ['fft', 0, 4, lambda r: r['alpha'] > 1 ],
-            ['fft', 0, 3, lambda r: (r['alpha'] < 1)&(r['alpha'] > 0.25) ],
-            ['fft', 0, 1, lambda r: (r['alpha'] == 0.25) & (r['x'] != 0) ], # not useful here
+            ['fft', 0, 4, lambda r: r['alpha'] > 1],
+            ['fft', 0, 3, lambda r: (r['alpha'] < 1) & (r['alpha'] > 0.25)],
+            ['fft', 0, 1, lambda r: (r['alpha'] == 0.25) & (r['x'] != 0)],  # not useful here
         ]
-        for default_method, fft_min_points, decimal_places, filter_func in tests:
+        for ix, (default_method, fft_min_points, decimal_places, filter_func) in enumerate(tests):
             stats.levy_stable.pdf_default_method = default_method
             stats.levy_stable.pdf_fft_min_points_threshold = fft_min_points
             subdata = data[filter_func(data)] if filter_func is not None else data 
             p = stats.levy_stable.pdf(subdata['x'], subdata['alpha'], subdata['beta'], scale=1, loc=0)
-            assert_almost_equal(p, subdata['p'], decimal_places, default_method)           
+            assert_almost_equal(p, subdata['p'], decimal_places, "test %s failed with method '%s'" % (ix, default_method))           
              
-            
     def test_cdf_nolan_samples(self):
         """ Test cdf values against Nolan's stablec.exe output
             see - http://fs2.american.edu/jpnolan/www/stable/stable.html
@@ -1562,17 +1563,17 @@ class TestLevyStable(object):
         
         tests = [
             # zolatarev is accurate for all values
-            ['zolotarev', None, 8, None ],
+            ['zolotarev', None, 8, None],
             
             # fft accuracy poor, very poor alpha < 1
-            ['fft', 0, 2, lambda r: r['alpha'] > 1 ],
+            ['fft', 0, 2, lambda r: r['alpha'] > 1],
         ]
-        for default_method, fft_min_points, decimal_places, filter_func in tests:
+        for ix, (default_method, fft_min_points, decimal_places, filter_func) in enumerate(tests):
             stats.levy_stable.pdf_default_method = default_method
             stats.levy_stable.pdf_fft_min_points_threshold = fft_min_points
             subdata = data[filter_func(data)] if filter_func is not None else data     
             p = stats.levy_stable.cdf(subdata['x'], subdata['alpha'], subdata['beta'], scale=1, loc=0)
-            assert_almost_equal(p, subdata['p'], decimal_places, default_method)            
+            assert_almost_equal(p, subdata['p'], decimal_places, "test %s failed with method '%s'" % (ix, default_method))            
 
     def test_pdf_alpha_equals_one_beta_non_zero(self):
         """ sample points extracted from Tables and Graphs of Stable Probability

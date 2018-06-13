@@ -3763,7 +3763,7 @@ class levy_stable_gen(rv_continuous):
             # since location zero, no need to reposition x for S_0 parameterization
             xi = np.pi/2
             if beta != 0:
-                warnings.warn('Density calculation unstable for alpha=1 and beta!=0.'+
+                warnings.warn('Density calculation unstable for alpha=1 and beta!=0.' +
                               ' Use quadrature method instead.', RuntimeWarning)
                                         
                 def V(theta):
@@ -3895,7 +3895,7 @@ class levy_stable_gen(rv_continuous):
                 data_out[data_mask] = np.array([levy_stable._cdf_single_value_zolotarev(_x, _alpha, _beta) 
                             for _x, _alpha, _beta in data_subset]).reshape(len(data_subset), 1)
             else:
-                warnings.warn('Cumulative density calculations experimental for FFT method.'+
+                warnings.warn('Cumulative density calculations experimental for FFT method.' +
                               ' Use zolatarev method instead.', RuntimeWarning)
                 _alpha, _beta = pair
                 _x = data_subset[:,(0,)]
