@@ -692,7 +692,7 @@ class TestLinprogSimplex(LinprogCommonTests):
         # default bounds, but, correct if boundary condition as constraint.
         # https://github.com/scipy/scipy/issues/8662
         c = [-10, 10, 6, 3]
-        A= [
+        A = [
             [8, -8, -4, 6],
             [-8, 8, 4, -6],
             [-4, 4, 8, -4],
@@ -728,12 +728,12 @@ class TestLinprogSimplex(LinprogCommonTests):
             [0, 0, 0, 0, 0, 0, 0, -0.25, 0, 0]
         ])
         b_ub = np.array([0.615, 0, 0.172, -0.869, -0.022])
-        bounds =  np.array([
-            [-0.84, -0.97, 0.34, 0.4 , -0.33, -0.74, 0.47, 0.09, -1.45, -0.73],
-            [0.37, 0.02, 2.86, 0.86, 1.18, 0.5 , 1.76, 0.17, 0.32, -0.15]
+        bounds = np.array([
+            [-0.84, -0.97, 0.34, 0.4, -0.33, -0.74, 0.47, 0.09, -1.45, -0.73],
+            [0.37, 0.02, 2.86, 0.86, 1.18, 0.5, 1.76, 0.17, 0.32, -0.15]
         ]).T
         c = np.array(
-            [-1.64, 0.7, 1.8 , -1.06, -1.16,0.26, 2.13, 1.53, 0.66, 0.28]
+            [-1.64, 0.7, 1.8, -1.06, -1.16,0.26, 2.13, 1.53, 0.66, 0.28]
         )
 
         res = linprog(
