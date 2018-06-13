@@ -1484,82 +1484,95 @@ class TestLevyStable(object):
         assert_almost_equal(scale1, 0.01717, 4)
         assert_almost_equal(loc1, 0.00233, 2)  # to 2 dps due to rounding error in McCulloch86
         
-        param_sets = [
-            [(1.48,-.22), 0.00233, 0.01717]
-            ]
-
-        stats.levy_stable.pdf_fft_min_points_threshold = 100
-        stats.levy_stable.pdf_default_method = 'zolotarev'
+        # cover alpha=2 scenario
+        x2 = x + [.05309,.05309,.05309,.05309,.05309]
+        alpha2, beta2, loc2, scale2 = stats.levy_stable._fitstart(x2)
+        assert_equal(alpha2, 2)
+        assert_equal(beta2, -1)
+        assert_almost_equal(scale2, .02503, 4)
+        assert_almost_equal(loc2, .03354, 4)
         
-        for args, loc, scale in param_sets:
-            x = stats.levy_stable.rvs(*args, loc=loc, scale=scale, size=10000)
-            alpha1, beta1, loc1, scale1 = stats.levy_stable.fit(x)
-            assert_allclose(alpha1, args[0], rtol=.05, atol=0)
-            assert_allclose(beta1, args[1], rtol=.1, atol=.1)
-            assert_allclose(loc1, loc, rtol=0, atol=0.01)
-            assert_allclose(scale1, scale, rtol=.05, atol=0)
     
     def test_pdf_nolan_samples(self):
-        """ test pdf/cdf values against Nolan's stablec.exe output
+        """ Test pdf values against Nolan's stablec.exe output
             see - http://fs2.american.edu/jpnolan/www/stable/stable.html
             
-            stablec <<
-            1 # pdf
-            1 # Nolan S equivalent to S0 in scipy
-            1.25,1.75,.25 # alpha
-            -1,1,.5 # beta
-            -10,10,1 # x
-            1,0 # gamma, delta
-            2 # output file
+            There's a known limitation of Nolan's executable for alpha < 0.2.
             
+            Repeat following with beta = -1, -.5, 0, .5 and 1
+                stablec.exe <<
+                1 # pdf
+                1 # Nolan S equivalent to S0 in scipy
+                1.25,1.75,.25 # alpha
+                -1,-1,0 # beta
+                -10,10,1 # x
+                1,0 # gamma, delta
+                2 # output file
         """        
         data = np.load(os.path.abspath(os.path.join(os.path.dirname(__file__),
                                                  'data/stable-pdf-sample-data.npy')))
-        xs = data[:,(0,)]
-        density = data[:,(1,)]
-        alphas = data[:,(2,)]
-        betas = data[:,(3,)]
+        
+        data = np.core.records.fromarrays(data.T, names='x,p,alpha,beta')
         
         tests = [
-            ['quadrature', None, 8],
-            ['zolotarev', None, 8],
-            ['fft', 0, 4]
+            # best selects
+            ['best', None, 8, None ],
+            
+            # quadrature is accurate for most alpha except 0.25; perhaps limitation of Nolan stablec?
+            # we reduce size of x to speed up computation as numerical integration slow.
+            ['quadrature', None, 8, lambda r: (r['alpha'] > 0.25)&(np.isin(r['x'], [-10,-5,0,5,10])) ],
+            
+            # zolatarev is accurate except at alpha==1
+            ['zolotarev', None, 8, lambda r: r['alpha'] != 1 ],
+            ['zolotarev', None, 1, lambda r: r['alpha'] == 1 ],
+            
+            # fft accuracy reduces as alpha decreases, fails at low values of alpha and x=0
+            ['fft', 0, 4, lambda r: r['alpha'] > 1 ],
+            ['fft', 0, 3, lambda r: (r['alpha'] < 1)&(r['alpha'] > 0.25) ],
+            ['fft', 0, 1, lambda r: (r['alpha'] == 0.25) & (r['x'] != 0) ], # not useful here
         ]
-        for default_method, fft_min_points, decimal_places in tests:
+        for default_method, fft_min_points, decimal_places, filter_func in tests:
             stats.levy_stable.pdf_default_method = default_method
-            stats.levy_stable.pdf_fft_min_points_threshold = fft_min_points        
-            pdf = stats.levy_stable.pdf(xs, alphas, betas, scale=1, loc=0)
-            assert_almost_equal(pdf, density, decimal_places, default_method)           
+            stats.levy_stable.pdf_fft_min_points_threshold = fft_min_points
+            subdata = data[filter_func(data)] if filter_func is not None else data 
+            p = stats.levy_stable.pdf(subdata['x'], subdata['alpha'], subdata['beta'], scale=1, loc=0)
+            assert_almost_equal(p, subdata['p'], decimal_places, default_method)           
+             
             
     def test_cdf_nolan_samples(self):
-        """ test pdf/cdf values against Nolan's stablec.exe output
+        """ Test cdf values against Nolan's stablec.exe output
             see - http://fs2.american.edu/jpnolan/www/stable/stable.html
             
-            stablec <<
-            2 # cdf
-            1 # Nolan S equivalent to S0 in scipy
-            1.25,1.75,.25 # alpha
-            -1,1,.5 # beta
-            -10,10,1 # x
-            1,0 # gamma, delta
-            2 # output file            
+            There's a known limitation of Nolan's executable for alpha < 0.2.
+            
+            Repeat following with beta = -1, -.5, 0, .5 and 1
+                stablec.exe <<
+                2 # cdf
+                1 # Nolan S equivalent to S0 in scipy
+                1.25,1.75,.25 # alpha
+                -1,-1,0 # beta
+                -10,10,1 # x
+                1,0 # gamma, delta
+                2 # output file
         """        
         data = np.load(os.path.abspath(os.path.join(os.path.dirname(__file__),
                                                  'data/stable-cdf-sample-data.npy')))
-        xs = data[:,(0,)]
-        cdf_test = data[:,(1,)]
-        alphas = data[:,(2,)]
-        betas = data[:,(3,)]
+        
+        data = np.core.records.fromarrays(data.T, names='x,p,alpha,beta')
         
         tests = [
-            ['zolotarev', None, 8],
-            ['fft', 0, 2]
+            # zolatarev is accurate for all values
+            ['zolotarev', None, 8, None ],
+            
+            # fft accuracy poor, very poor alpha < 1
+            ['fft', 0, 2, lambda r: r['alpha'] > 1 ],
         ]
-        for default_method, fft_min_points, decimal_places in tests:
+        for default_method, fft_min_points, decimal_places, filter_func in tests:
             stats.levy_stable.pdf_default_method = default_method
-            stats.levy_stable.pdf_fft_min_points_threshold = fft_min_points        
-            pdf = stats.levy_stable.cdf(xs, alphas, betas, scale=1, loc=0)
-            assert_almost_equal(pdf, cdf_test, decimal_places, default_method)  
+            stats.levy_stable.pdf_fft_min_points_threshold = fft_min_points
+            subdata = data[filter_func(data)] if filter_func is not None else data     
+            p = stats.levy_stable.cdf(subdata['x'], subdata['alpha'], subdata['beta'], scale=1, loc=0)
+            assert_almost_equal(p, subdata['p'], decimal_places, default_method)            
 
     def test_pdf_alpha_equals_one_beta_non_zero(self):
         """ sample points extracted from Tables and Graphs of Stable Probability
@@ -1583,15 +1596,16 @@ class TestLevyStable(object):
         
         tests = [
             ['quadrature', None, 4],
+            #['fft', 0, 4],
             ['zolotarev', None, 1],
         ]
         
-        with np.warnings.catch_warnings():
-            np.warnings.filterwarnings('ignore', r'Density calculation unstable') 
-                   
+        with np.errstate(all='ignore'), suppress_warnings() as sup:
+            sup.filter(category=RuntimeWarning, message="Density calculation unstable.*")           
             for default_method, fft_min_points, decimal_places in tests:
                 stats.levy_stable.pdf_default_method = default_method
-                stats.levy_stable.pdf_fft_min_points_threshold = fft_min_points        
+                stats.levy_stable.pdf_fft_min_points_threshold = fft_min_points
+                #stats.levy_stable.fft_grid_spacing = 0.0001   
                 pdf = stats.levy_stable.pdf(xs, 1, betas, scale=1, loc=0)
                 assert_almost_equal(pdf, density, decimal_places, default_method) 
 

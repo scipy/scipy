@@ -3617,17 +3617,18 @@ class levy_stable_gen(rv_continuous):
     
     For evaluation of pdf we use either Zolotarev :math:`S_0` parameterization with integration, 
     direct integration of standard parameterization of characteristic function or FFT of 
-    characteristic function. FFT is used if number of points is greater than 
-    ``levy_stable.pdf_fft_min_points_threshold`` (defaults to 100) otherwise we use one of the 
-    other methods. Setting the threshold to ``None`` will disable FFT. The default method is 
-    Zolotarev's but can be changed by setting ``levy_stable.pdf_default_method`` to any string 
-    other than 'zolotarev'. To increase accuracy of FFT calculation one can specify 
-    ``levy_stable.pdf_fft_grid_spacing`` (defaults to 0.01) and ``pdf_fft_n_points_two_power`` 
-    (defaults to a value that covers the input range * 4). Setting ``pdf_fft_n_points_two_power`` 
-    to 16 should be sufficiently accurate in most cases at the expense of CPU time.
+    characteristic function. If set to other than None and if number of points is greater than 
+    ``levy_stable.pdf_fft_min_points_threshold`` (defaults to None) we use FFT otherwise we use one 
+    of the other methods. 
     
-    This implementation of Zolatarev is unstable for some values where alpha = 1 and beta != 0 or for 
-    very small values of alpha. In this case the quadrature method is recommended.
+    The default method is 'best' which uses Zolotarev's method if alpha = 1 and integration of
+    characteristic function otherwise. The default method can be changed by setting 
+    ``levy_stable.pdf_default_method`` to either 'zolotarev', 'quadrature' or 'best'. 
+    
+    To increase accuracy of FFT calculation one can specify ``levy_stable.pdf_fft_grid_spacing`` 
+    (defaults to 0.001) and ``pdf_fft_n_points_two_power`` (defaults to a value that covers the 
+    input range * 4). Setting ``pdf_fft_n_points_two_power`` to 16 should be sufficiently accurate 
+    in most cases at the expense of CPU time.
     
     For evaluation of cdf we use Zolatarev :math:`S_0` parameterization with integration or integral of
     the pdf FFT interpolated spline. The settings affecting FFT calculation are the same as
@@ -3636,8 +3637,16 @@ class levy_stable_gen(rv_continuous):
     
     Fitting estimate uses quantile estimation method in [MC]. MLE estimation of parameters in
     fit method uses this quantile estimate initially. Note that MLE doesn't always converge if 
-    using FFT for pdf calculations; so it's best that ``pdf_fft_min_points_threshold`` is left unset
-    or set to default value of 100. 
+    using FFT for pdf calculations; so it's best that ``pdf_fft_min_points_threshold`` is left unset. 
+    
+    .. warning::
+    
+        For pdf calculations implementation of Zolatarev is unstable for values where alpha = 1 and 
+        beta != 0. In this case the quadrature method is recommended. FFT calculation is also 
+        considered experimental.
+        
+        For cdf calculations FFT calculation is considered experimental. Use Zolatarev's method 
+        instead (default).
 
     %(after_notes)s
     
@@ -3714,6 +3723,13 @@ class levy_stable_gen(rv_continuous):
         return (x, density)
     
     @staticmethod
+    def _pdf_single_value_best(x, alpha, beta):
+        if alpha == 1.:
+            return levy_stable_gen._pdf_single_value_cf_integrate(x, alpha, beta)
+        else:
+            return levy_stable_gen._pdf_single_value_zolotarev(x, alpha, beta)
+    
+    @staticmethod
     def _pdf_single_value_cf_integrate(x, alpha, beta):
         cf = lambda t: levy_stable_gen._cf(t, alpha, beta)
         return integrate.quad(lambda t: np.real(np.exp(-1j*t*x)*cf(t)), -np.inf, np.inf, limit=1000)[0]/np.pi/2
@@ -3747,7 +3763,8 @@ class levy_stable_gen(rv_continuous):
             # since location zero, no need to reposition x for S_0 parameterization
             xi = np.pi/2
             if beta != 0:
-                warnings.warn('Density calculation unstable for alpha=1 and beta!=0. Use quadrature method instead.', RuntimeWarning)
+                warnings.warn('Density calculation unstable for alpha=1 and beta!=0.'+
+                              ' Use quadrature method instead.', RuntimeWarning)
                                         
                 def V(theta):
                     expr_1 = np.pi/2+beta*theta
@@ -3804,12 +3821,12 @@ class levy_stable_gen(rv_continuous):
                 
                 with np.errstate(all="ignore"):
                     expr_1 = np.exp(-np.pi*x/beta/2.)
-                    int_1 = integrate.fixed_quad(lambda theta: np.exp(-expr_1 * V(theta)), -np.pi/2, np.pi/2)[0]
+                    int_1 = integrate.quad(lambda theta: np.exp(-expr_1 * V(theta)), -np.pi/2, np.pi/2)[0]
                     return int_1 / np.pi
-            elif beta == 1:
+            elif beta == 0:
                 return .5 + np.arctan(x)/np.pi
             else:
-                return 1 - levy_stable_gen._cdf_single_value_zolotarev(x, alpha, -beta)
+                return 1 - levy_stable_gen._cdf_single_value_zolotarev(-x, 1, -beta)
         
     def _pdf(self, x, alpha, beta):
 
@@ -3820,14 +3837,16 @@ class levy_stable_gen(rv_continuous):
         data_in = np.dstack((x, alpha, beta))[0]
         data_out = np.empty(shape=(len(data_in),1))
         
-        pdf_default_method_name = getattr(self, 'pdf_default_method', 'zolotarev')
-        if pdf_default_method_name == 'zolotarev':
+        pdf_default_method_name = getattr(self, 'pdf_default_method', 'best')
+        if pdf_default_method_name == 'best':
+            pdf_single_value_method = levy_stable_gen._pdf_single_value_best
+        elif pdf_default_method_name == 'zolotarev':
             pdf_single_value_method = levy_stable_gen._pdf_single_value_zolotarev
         else:
             pdf_single_value_method = levy_stable_gen._pdf_single_value_cf_integrate
         
-        fft_min_points_threshold = getattr(self, 'pdf_fft_min_points_threshold', 100)
-        fft_grid_spacing = getattr(self, 'pdf_fft_grid_spacing', 0.01)
+        fft_min_points_threshold = getattr(self, 'pdf_fft_min_points_threshold', None)
+        fft_grid_spacing = getattr(self, 'pdf_fft_grid_spacing', 0.001)
         fft_n_points_two_power = getattr(self, 'pdf_fft_n_points_two_power', None)
         
         # group data in unique arrays of alpha, beta pairs
@@ -3839,6 +3858,8 @@ class levy_stable_gen(rv_continuous):
                 data_out[data_mask] = np.array([pdf_single_value_method(_x, _alpha, _beta) 
                             for _x, _alpha, _beta in data_subset]).reshape(len(data_subset), 1)
             else:
+                warnings.warn('Density calculations experimental for FFT method.' +
+                              ' Use combination of zolatarev and quadrature methods instead.', RuntimeWarning)
                 _alpha, _beta = pair
                 _x = data_subset[:,(0,)]
                 
@@ -3862,7 +3883,7 @@ class levy_stable_gen(rv_continuous):
         data_out = np.empty(shape=(len(data_in),1))
         
         fft_min_points_threshold = getattr(self, 'pdf_fft_min_points_threshold', None)
-        fft_grid_spacing = getattr(self, 'pdf_fft_grid_spacing', 0.01)
+        fft_grid_spacing = getattr(self, 'pdf_fft_grid_spacing', 0.001)
         fft_n_points_two_power = getattr(self, 'pdf_fft_n_points_two_power', None)
         
         # group data in unique arrays of alpha, beta pairs
@@ -3874,6 +3895,8 @@ class levy_stable_gen(rv_continuous):
                 data_out[data_mask] = np.array([levy_stable._cdf_single_value_zolotarev(_x, _alpha, _beta) 
                             for _x, _alpha, _beta in data_subset]).reshape(len(data_subset), 1)
             else:
+                warnings.warn('Cumulative density calculations experimental for FFT method.'+
+                              ' Use zolatarev method instead.', RuntimeWarning)
                 _alpha, _beta = pair
                 _x = data_subset[:,(0,)]
                 
