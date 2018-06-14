@@ -559,8 +559,6 @@ def kendalltau(x, y, use_ties=True, use_missing=False, method='auto'):
     xties = count_tied_groups(x)
     yties = count_tied_groups(y)
     if use_ties:
-        #xties = count_tied_groups(x)
-        #yties = count_tied_groups(y)
         corr_x = np.sum([v*k*(k-1) for (k,v) in iteritems(xties)], dtype=float)
         corr_y = np.sum([v*k*(k-1) for (k,v) in iteritems(yties)], dtype=float)
         denom = ma.sqrt((n*(n-1)-corr_x)/2. * (n*(n-1)-corr_y)/2.)
