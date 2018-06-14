@@ -659,31 +659,47 @@ class Rotation(object):
             result = result[0]
         return self.__class__(result, normalized=True)
 
-    def apply(self, points):
-        """Apply this rotation on a set of points.
+    def apply(self, vectors, inverse=False):
+        """Apply this rotation on a set of vectors.
 
-        Rotates `points` by the rotation(s) represented in the object. In terms
-        of DCMs, this application is the same as `self.as_dcm().dot(points)`.
-        For an object containing `N` rotations applied on `P` points, returns
-        a `numpy.ndarray` of shape `(N, P, 3)`.
+        Rotates `vectors` by the rotation(s) represented in the object. In
+        terms of DCMs, this application is the same as
+        `self.as_dcm().dot(vectors)`. For an object containing `N` rotations
+        applied on `P` vectors, returns a `numpy.ndarray` of shape `(N, P, 3)`.
+
+        If the original frame rotates to the final frame by this rotation, then
+        its application to a vector can be seen in two ways:
+
+            - As a projection of vector components expressed in the final frame
+              to the original frame.
+            - As the physical rotation of a vector being glued to the original
+              frame as it rotates. In this case the vector components are
+              expressed in the original frame before and after rotation.
 
         Parameters
         ----------
-        points : array_like, shape (3,) or (P, 3)
-            Each `points[i]` represents a point in 3D space. A single point can
-            either be specified with shape `(3, )` or `(1, 3)`.
+        vectors : array_like, shape (3,) or (P, 3)
+            Each `vectors[i]` represents a vector in 3D space. A single vector
+            can either be specified with shape `(3, )` or `(1, 3)`.
+        inverse : boolean, optional
+            If `inverse` is `True` then the inverse of the rotation(s) is
+            applied to the input vectors. Default is `False`.
         """
-        points = np.asarray(points)
-        if points.ndim > 2 or points.shape[-1] != 3:
-            raise ValueError("Expected input of shape (3,) or (N, 3), "
-                             "got {}.".format(points.shape))
+        vectors = np.asarray(vectors)
+        if vectors.ndim > 2 or vectors.shape[-1] != 3:
+            raise ValueError("Expected input of shape (3,) or (P, 3), "
+                             "got {}.".format(vectors.shape))
 
-        if points.shape == (3,):
-            points = points[None, :]
+        if vectors.shape == (3,):
+            vectors = vectors[None, :]
 
-        # The dcm convention assumes column vectors of points, so here we
-        # transpose the points matrix and transpose the outuput
-        result = np.einsum('...ij,...kj->...ki', self.as_dcm(), points)
+        # The dcm convention assumes column vectors of vectors, so here we
+        # transpose the vectors matrix and transpose the outuput
+        if inverse:
+            # For inverting the rotation, we also transpose the dcm
+            result = np.einsum('...ji,...kj->...ki', self.as_dcm(), vectors)
+        else:
+            result = np.einsum('...ij,...kj->...ki', self.as_dcm(), vectors)
 
         # For single rotation, the output is 2D, so add another axis
         return result[None, :] if self._single else result
