@@ -3451,7 +3451,7 @@ def pointbiserialr(x, y):
 KendalltauResult = namedtuple('KendalltauResult', ('correlation', 'pvalue'))
 
 
-def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='automatic'):
+def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='auto'):
     """
     Calculate Kendall's tau, a correlation measure for ordinal data.
 
@@ -3474,11 +3474,11 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='autom
         values. Default is 'propagate'. Note that if the input contains nan
         'omit' delegates to mstats_basic.kendalltau(), which has a different
         implementation.
-    method: {'automatic', 'asymptotic', 'exact'}, optional
+    method: {'auto', 'asymptotic', 'exact'}, optional
         Defines which method is used to calculate the p-value [5]_. 
         'asymptotic' uses a normal approximation valid for large samples. 
         'exact' computes the exact p-value, but can only be used if no ties 
-        are present. 'automatic' is the default and selects the appropriate 
+        are present. 'auto' is the default and selects the appropriate 
         method based on a trade-off between speed and accuracy.
 
     Returns
@@ -3554,7 +3554,7 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='autom
     elif contains_nan and nan_policy == 'omit':
         x = ma.masked_invalid(x)
         y = ma.masked_invalid(y)
-        return mstats_basic.kendalltau(x, y)
+        return mstats_basic.kendalltau(x, y, method=method)
 
     if initial_lexsort is not None:  # deprecate to drop!
         warnings.warn('"initial_lexsort" is gone!')
@@ -3600,7 +3600,7 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='autom
     if method == 'exact' and (xtie != 0 or ytie != 0):
         raise ValueError("Ties found, exact method cannot be used.")
         
-    if method == 'automatic':
+    if method == 'auto':
         if (xtie == 0 and ytie == 0) and (size <= 33 or min(dis, tot-dis) <= 1):
             method = 'exact'
         else:

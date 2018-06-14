@@ -277,6 +277,8 @@ class TestCorr(object):
         z = ma.fix_invalid([1.65, 2.64, 2.64, 6.95, np.nan])
         assert_almost_equal(np.asarray(mstats.kendalltau(x,y)),
                             [+0.3333333,0.75])
+        assert_almost_equal(np.asarray(mstats.kendalltau(x,y, method='asymptotic')),
+                            [+0.3333333,0.4969059])
         assert_almost_equal(np.asarray(mstats.kendalltau(x,z)),
                             [-0.5477226,0.2785987])
         #

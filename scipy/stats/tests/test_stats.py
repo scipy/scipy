@@ -765,6 +765,8 @@ def test_kendalltau():
     assert_array_equal(stats.kendalltau(x, x), (np.nan, np.nan))
     assert_allclose(stats.kendalltau(x, x, nan_policy='omit'),
                     (1.0, 5.5114638e-6), rtol=1e-06)
+    assert_allclose(stats.kendalltau(x, x, nan_policy='omit', method='asymptotic'),
+                    (1.0, 0.00017455009626808976), rtol=1e-06)
     assert_raises(ValueError, stats.kendalltau, x, x, nan_policy='raise')
     assert_raises(ValueError, stats.kendalltau, x, x, nan_policy='foobar')
 

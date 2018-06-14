@@ -499,7 +499,7 @@ def spearmanr(x, y, use_ties=True):
 KendalltauResult = namedtuple('KendalltauResult', ('correlation', 'pvalue'))
 
 
-def kendalltau(x, y, use_ties=True, use_missing=False, method='automatic'):
+def kendalltau(x, y, use_ties=True, use_missing=False, method='auto'):
     """
     Computes Kendall's rank correlation tau on two variables *x* and *y*.
 
@@ -514,11 +514,11 @@ def kendalltau(x, y, use_ties=True, use_missing=False, method='automatic'):
     use_missing : {False, True}, optional
         Whether missing data should be allocated a rank of 0 (False) or the
         average rank (True)
-    method: {'automatic', 'asymptotic', 'exact'}, optional
+    method: {'auto', 'asymptotic', 'exact'}, optional
         Defines which method is used to calculate the p-value [1]_. 
         'asymptotic' uses a normal approximation valid for large samples. 
         'exact' computes the exact p-value, but can only be used if no ties 
-        are present. 'automatic' is the default and selects the appropriate 
+        are present. 'auto' is the default and selects the appropriate 
         method based on a trade-off between speed and accuracy.
 
     Returns
@@ -571,7 +571,7 @@ def kendalltau(x, y, use_ties=True, use_missing=False, method='automatic'):
     if method == 'exact' and (xties or yties):
         raise ValueError("Ties found, exact method cannot be used.")
     
-    if method == 'automatic':
+    if method == 'auto':
         if (not xties and not yties) and (n <= 33 or min(C, n*(n-1)/2.0-C) <= 1):
             method = 'exact'
         else:
