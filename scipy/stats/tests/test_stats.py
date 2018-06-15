@@ -721,6 +721,9 @@ def test_kendalltau():
     y[2] = y[1]
     assert_raises(ValueError, stats.kendalltau, x, y, method='exact')
 
+    # check exception in case of invalid method keyword
+    assert_raises(ValueError, stats.kendalltau, x, y, method='banana')
+
     # with some ties
     # Cross-check with R:
     # cor.test(c(12,2,1,12,2),c(1,4,7,1,0),method="kendall",exact=FALSE)

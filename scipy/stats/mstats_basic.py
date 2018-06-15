@@ -602,7 +602,7 @@ def kendalltau(x, y, use_ties=True, use_missing=False, method='auto'):
                 for k in range(j,c+1):
                     new[k] += new[k-1] - old[k-j]
             prob = 2.0*sum(new)/np.math.factorial(n)
-    else:
+    elif method == 'asymptotic':
         var_s = n*(n-1)*(2*n+5)
         if use_ties:
             var_s -= np.sum(v*k*(k-1)*(2*k+5)*1. for (k,v) in iteritems(xties))
@@ -625,6 +625,8 @@ def kendalltau(x, y, use_ties=True, use_missing=False, method='auto'):
         var_s += (v1 + v2)
         z = (C-D)/np.sqrt(var_s)
         prob = special.erfc(abs(z)/np.sqrt(2))
+    else:
+        raise ValueError("Unknown method "+str(method)+" specified, please use auto, exact or asymptotic.")
     
     return KendalltauResult(tau, prob)
 

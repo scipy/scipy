@@ -3634,12 +3634,14 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='auto'
                     new[k] += new[k-1] - old[k-j]
             pvalue = 2.0*sum(new)/np.math.factorial(size)
 
-    else:
+    elif method == 'asymptotic':
         # con_minus_dis is approx normally distributed with this variance [3]_
         var = (size * (size - 1) * (2.*size + 5) - x1 - y1) / 18. + (
             2. * xtie * ytie) / (size * (size - 1)) + x0 * y0 / (9. *
             size * (size - 1) * (size - 2))
         pvalue = special.erfc(np.abs(con_minus_dis) / np.sqrt(var) / np.sqrt(2))
+    else:
+        raise ValueError("Unknown method "+str(method)+" specified, please use auto, exact or asymptotic.")
 
     return KendalltauResult(tau, pvalue)
 
