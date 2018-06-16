@@ -142,10 +142,7 @@ PARAMS = [
     (special.huber, cython_special.huber, ('dd',), None),
     (special.hyp0f1, cython_special.hyp0f1, ('dd', 'dD'), None),
     (special.hyp1f1, cython_special.hyp1f1, ('ddd', 'ddD'), None),
-    (special.hyp1f2, cython_special._hyp1f2_pywrap, ('dddd',), None),
-    (special.hyp2f0, cython_special._hyp2f0_pywrap, ('dddl', 'dddd'), None),
     (special.hyp2f1, cython_special.hyp2f1, ('dddd', 'dddD'), None),
-    (special.hyp3f0, cython_special._hyp3f0_pywrap, ('dddd',), None),
     (special.hyperu, cython_special.hyperu, ('ddd',), None),
     (special.i0, cython_special.i0, ('d',), None),
     (special.i0e, cython_special.i0e, ('d',), None),
@@ -282,10 +279,10 @@ def _generate_test_points(typecodes):
 
 def test_cython_api_completeness():
     # Check that everything is tested
-    skip = []
+    skip = {'hyp2f0', 'hyp1f2', 'hyp3f0'}
     for name in dir(cython_special):
         func = getattr(cython_special, name)
-        if callable(func) and not (name.startswith('_bench') or name in skip):
+        if callable(func) and not (name.startswith('_') or name in skip):
             for _, cyfun, _, _ in PARAMS:
                 if cyfun is func:
                     break

@@ -1381,36 +1381,6 @@ class TestSystematic(object):
                             [Arg(-1e3, 1e3), Arg(-1e3, 1e3), ComplexArg()],
                             n=2000)
 
-    @pytest.mark.xfail(run=False)
-    def test_hyp1f2(self):
-        def hyp1f2(a, b, c, x):
-            v, err = sc.hyp1f2(a, b, c, x)
-            if abs(err) > max(1, abs(v)) * 1e-7:
-                return np.nan
-            return v
-        assert_mpmath_equal(hyp1f2,
-                            exception_to_nan(lambda a, b, c, x: mpmath.hyp1f2(a, b, c, x, **HYPERKW)),
-                            [Arg(), Arg(), Arg(), Arg()],
-                            n=20000)
-
-    @pytest.mark.xfail(run=False)
-    def test_hyp2f0(self):
-        def hyp2f0(a, b, x):
-            v, err = sc.hyp2f0(a, b, x, 1)
-            if abs(err) > max(1, abs(v)) * 1e-7:
-                return np.nan
-            return v
-        assert_mpmath_equal(hyp2f0,
-                            lambda a, b, x: time_limited(0.1)(exception_to_nan(trace_args(mpmath.hyp2f0)))(
-                                a, b, x, **HYPERKW),
-                            [Arg(), Arg(), Arg()])
-
-    @pytest.mark.xfail(run=False, reason="spurious inf (or inf with wrong sign) for some argument values")
-    def test_hyp2f1(self):
-        assert_mpmath_equal(sc.hyp2f1,
-                            exception_to_nan(lambda a, b, c, x: mpmath.hyp2f1(a, b, c, x, **HYPERKW)),
-                            [Arg(), Arg(), Arg(), Arg()])
-
     @nonfunctional_tooslow
     def test_hyp2f1_complex(self):
         # Scipy's hyp2f1 seems to have performance and accuracy problems

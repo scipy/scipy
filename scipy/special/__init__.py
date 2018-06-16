@@ -650,6 +650,12 @@ from .lambertw import lambertw
 from ._spherical_bessel import (spherical_jn, spherical_yn, spherical_in,
                                 spherical_kn)
 
+from numpy import deprecate
+hyp2f0 = deprecate(hyp2f0, message="hyp2f0 is deprecated in SciPy 1.2")
+hyp1f2 = deprecate(hyp1f2, message="hyp1f2 is deprecated in SciPy 1.2")
+hyp3f0 = deprecate(hyp3f0, message="hyp3f0 is deprecated in SciPy 1.2")
+del deprecate
+
 __all__ = [s for s in dir() if not s.startswith('_')]
 
 from numpy.dual import register_func
