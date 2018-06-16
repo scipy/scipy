@@ -3724,10 +3724,10 @@ class levy_stable_gen(rv_continuous):
     
     @staticmethod
     def _pdf_single_value_best(x, alpha, beta):
-        if alpha == 1.:
-            return levy_stable_gen._pdf_single_value_cf_integrate(x, alpha, beta)
-        else:
+        if alpha != 1. or (alpha == 1. and beta == 0.):
             return levy_stable_gen._pdf_single_value_zolotarev(x, alpha, beta)
+        else:
+            return levy_stable_gen._pdf_single_value_cf_integrate(x, alpha, beta)
     
     @staticmethod
     def _pdf_single_value_cf_integrate(x, alpha, beta):
@@ -3748,18 +3748,26 @@ class levy_stable_gen(rv_continuous):
                                 (np.cos(theta)/np.sin(alpha*(xi+theta)))**(alpha/(alpha-1)) * \
                                 (np.cos(alpha*xi+(alpha-1)*theta)/np.cos(theta))
             if x0 > zeta:
+                def g(theta):
+                    return V(theta)*np.real(np.complex(x0-zeta)**(alpha/(alpha-1)))
+                
                 def f(theta):
-                    return V(theta)*(x0-zeta)**(alpha/(alpha-1))*np.exp(-V(theta)*(x0-zeta)**(alpha/(alpha-1)))
+                    return g(theta) * np.exp(-g(theta))
 
+                # spare calculating integral on null set
+                # use isclose as macos has fp differences
+                if np.isclose(-xi, np.pi/2):
+                    return 0.
+                
                 with np.errstate(all="ignore"):
                     intg_max = optimize.minimize_scalar(lambda theta: -f(theta), bounds=[-xi, np.pi/2])
-                    if intg_max.success:
-                        intg = integrate.quad(f, -xi, np.pi/2, points=[intg_max.x])[0]
-                        return alpha * intg / np.pi / np.abs(alpha-1) / (x0-zeta)
-                    else:
-                        warnings.warn("Failed to find integration maximum in zolotarev calculation " +
-                                      "for x=%s; alpha=%s; beta=%s" % (x, alpha, beta))
-                        return np.nan
+                    intg_kwargs = {} 
+                    # windows quadpack less forgiving with points out of bounds
+                    if intg_max.success and not np.isnan(intg_max.fun)\
+                            and intg_max.x > -xi and intg_max.x < np.pi/2:
+                        intg_kwargs["points"] = [intg_max.x]                     
+                    intg = integrate.quad(f, -xi, np.pi/2, **intg_kwargs)[0]
+                    return alpha * intg / np.pi / np.abs(alpha-1) / (x0-zeta)
             elif x0 == zeta:
                 return sc.gamma(1+1/alpha)*np.cos(xi)/np.pi/((1+zeta**2)**(1/alpha/2))
             else:
@@ -3805,10 +3813,15 @@ class levy_stable_gen(rv_continuous):
                 c_1 = 1 if alpha > 1 else .5 - xi/np.pi
                 
                 def f(theta):
-                    return np.exp(-V(theta)*(x0-zeta)**(alpha/(alpha-1)))
+                    return np.exp(-V(theta)*np.real(np.complex(x0-zeta)**(alpha/(alpha-1))))
 
                 with np.errstate(all="ignore"):
-                    intg = integrate.quad(f, -xi, np.pi/2)[0]
+                    # spare calculating integral on null set
+                    # use isclose as macos has fp differences
+                    if np.isclose(-xi, np.pi/2):
+                        intg = 0
+                    else:
+                        intg = integrate.quad(f, -xi, np.pi/2)[0]
                     return c_1 + np.sign(1-alpha) * intg / np.pi
             elif x0 == zeta:
                 return .5 - xi/np.pi
