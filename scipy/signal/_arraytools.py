@@ -42,7 +42,7 @@ def axis_slice(a, start=None, stop=None, step=None, axis=-1):
     """
     a_slice = [slice(None)] * a.ndim
     a_slice[axis] = slice(start, stop, step)
-    b = a[a_slice]
+    b = a[tuple(a_slice)]
     return b
 
 
