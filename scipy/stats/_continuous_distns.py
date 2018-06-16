@@ -3756,7 +3756,7 @@ class levy_stable_gen(rv_continuous):
 
                 # spare calculating integral on null set
                 # use isclose as macos has fp differences
-                if np.isclose(-xi, np.pi/2):
+                if np.isclose(-xi, np.pi/2, rtol=1e-014, atol=1e-014):
                     return 0.
                 
                 with np.errstate(all="ignore"):
@@ -3818,7 +3818,7 @@ class levy_stable_gen(rv_continuous):
                 with np.errstate(all="ignore"):
                     # spare calculating integral on null set
                     # use isclose as macos has fp differences
-                    if np.isclose(-xi, np.pi/2):
+                    if np.isclose(-xi, np.pi/2, rtol=1e-014, atol=1e-014):
                         intg = 0
                     else:
                         intg = integrate.quad(f, -xi, np.pi/2)[0]

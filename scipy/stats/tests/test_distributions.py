@@ -1539,10 +1539,13 @@ class TestLevyStable(object):
             stats.levy_stable.pdf_default_method = default_method
             stats.levy_stable.pdf_fft_min_points_threshold = fft_min_points
             subdata = data[filter_func(data)] if filter_func is not None else data 
-            p = stats.levy_stable.pdf(subdata['x'], subdata['alpha'], subdata['beta'], scale=1, loc=0)
-            subdata2 = rec_append_fields(subdata, 'calc', p)
-            failures = subdata2[(np.abs(p-subdata['p']) >= 1.5*10.**(-decimal_places)) | np.isnan(p)]
-            assert_almost_equal(p, subdata['p'], decimal_places, "test %s failed with method '%s'\n%s" % (ix, default_method, failures), verbose=False)           
+            with suppress_warnings() as sup:
+                sup.record(RuntimeWarning, "Density calculation unstable for alpha=1 and beta!=0.*")
+                sup.record(RuntimeWarning, "Density calculations experimental for FFT method.*")
+                p = stats.levy_stable.pdf(subdata['x'], subdata['alpha'], subdata['beta'], scale=1, loc=0)
+                subdata2 = rec_append_fields(subdata, 'calc', p)
+                failures = subdata2[(np.abs(p-subdata['p']) >= 1.5*10.**(-decimal_places)) | np.isnan(p)]
+                assert_almost_equal(p, subdata['p'], decimal_places, "pdf test %s failed with method '%s'\n%s" % (ix, default_method, failures), verbose=False)           
              
     def test_cdf_nolan_samples(self):
         """ Test cdf values against Nolan's stablec.exe output
@@ -1575,11 +1578,13 @@ class TestLevyStable(object):
         for ix, (default_method, fft_min_points, decimal_places, filter_func) in enumerate(tests):
             stats.levy_stable.pdf_default_method = default_method
             stats.levy_stable.pdf_fft_min_points_threshold = fft_min_points
-            subdata = data[filter_func(data)] if filter_func is not None else data     
-            p = stats.levy_stable.cdf(subdata['x'], subdata['alpha'], subdata['beta'], scale=1, loc=0)
-            subdata2 = rec_append_fields(subdata, 'calc', p)
-            failures = subdata2[(np.abs(p-subdata['p']) >= 1.5*10.**(-decimal_places)) | np.isnan(p)]            
-            assert_almost_equal(p, subdata['p'], decimal_places, "test %s failed with method '%s'\n%s" % (ix, default_method, failures), verbose=False)           
+            subdata = data[filter_func(data)] if filter_func is not None else data
+            with suppress_warnings() as sup:
+                sup.record(RuntimeWarning, "Cumulative density calculations experimental for FFT method.*")           
+                p = stats.levy_stable.cdf(subdata['x'], subdata['alpha'], subdata['beta'], scale=1, loc=0)
+                subdata2 = rec_append_fields(subdata, 'calc', p)
+                failures = subdata2[(np.abs(p-subdata['p']) >= 1.5*10.**(-decimal_places)) | np.isnan(p)]            
+                assert_almost_equal(p, subdata['p'], decimal_places, "cdf test %s failed with method '%s'\n%s" % (ix, default_method, failures), verbose=False)           
 
     def test_pdf_alpha_equals_one_beta_non_zero(self):
         """ sample points extracted from Tables and Graphs of Stable Probability
