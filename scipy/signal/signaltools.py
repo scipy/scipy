@@ -487,7 +487,7 @@ def _reverse_and_conj(x):
     """
     Reverse array `x` in all dimensions and perform the complex conjugate
     """
-    reverse = [slice(None, None, -1)] * x.ndim
+    reverse = (slice(None, None, -1),) * x.ndim
     return x[reverse].conj()
 
 
@@ -1341,7 +1341,7 @@ def lfilter(b, a, x, axis=-1, zi=None):
             out_full[ind] += zi
 
         ind[axis] = slice(out_full.shape[axis] - len(b) + 1)
-        out = out_full[ind]
+        out = out_full[tuple(ind)]
 
         if zi is None:
             return out
@@ -1590,7 +1590,7 @@ def hilbert(x, N=None, axis=-1):
     if x.ndim > 1:
         ind = [newaxis] * x.ndim
         ind[axis] = slice(None)
-        h = h[ind]
+        h = h[tuple(ind)]
     x = fftpack.ifft(Xf * h, axis=axis)
     return x
 
@@ -2380,7 +2380,7 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0)):
     y = upfirdn(h, x, up, down, axis=axis)
     keep = [slice(None), ]*x.ndim
     keep[axis] = slice(n_pre_remove, n_pre_remove_end)
-    return y[keep]
+    return y[tuple(keep)]
 
 
 def vectorstrength(events, period):
@@ -3460,4 +3460,4 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
             y = lfilter(b, a, x, axis=axis)
         sl[axis] = slice(None, None, q)
 
-    return y[sl]
+    return y[tuple(sl)]

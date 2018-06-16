@@ -275,7 +275,7 @@ def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',
     elif nfft < x.shape[axis]:
         s = [np.s_[:]]*len(x.shape)
         s[axis] = np.s_[:nfft]
-        x = x[s]
+        x = x[tuple(s)]
         nperseg = nfft
         nfft = None
 
