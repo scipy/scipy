@@ -689,7 +689,7 @@ class LinprogCommonTests(object):
         desired_fun = 1.730550597
         _assert_success(res, desired_fun=desired_fun)
         assert_allclose(A.dot(res.x), b)
-        assert_array_less(np.zeros(res.x) - 1e-5, res.x)
+        assert_array_less(np.zeros(res.x.size) - 1e-5, res.x)
 
     def test_bug_8662(self):
         # scipy.linprog returns incorrect optimal result for constraints using
