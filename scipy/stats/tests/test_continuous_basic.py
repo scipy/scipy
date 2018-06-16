@@ -12,7 +12,7 @@ from scipy.special import betainc
 from. common_tests import (check_normalization, check_moment, check_mean_expect,
                            check_var_expect, check_skew_expect,
                            check_kurt_expect, check_entropy,
-                           check_private_entropy,
+                           check_private_entropy, check_entropy_vect_scale,
                            check_edge_support, check_named_args,
                            check_random_state_property,
                            check_meth_dtype, check_ppf_dtype, check_cmplx_deriv,
@@ -144,6 +144,8 @@ def test_cont_basic(distname, arg):
         if (distfn.__class__._entropy != stats.rv_continuous._entropy
                 and distname != 'vonmises'):
             check_private_entropy(distfn, arg, stats.rv_continuous)
+
+        check_entropy_vect_scale(distfn, arg)
 
         check_edge_support(distfn, arg)
 
