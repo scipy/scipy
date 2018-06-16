@@ -12,6 +12,7 @@ from scipy.misc.doccer import (extend_notes_in_docstring,
                                replace_notes_in_docstring)
 from scipy import optimize
 from scipy import integrate
+from scipy import interpolate
 import scipy.special as sc
 from scipy._lib._numpy_compat import broadcast_to
 from scipy._lib._util import _lazyselect, _lazywhere
@@ -3591,8 +3592,74 @@ class levy_stable_gen(rv_continuous):
 
     Notes
     -----
-    Levy-stable distribution (only random variates available -- ignore other
-    docs)
+    The distribution for `levy_stable` has characteristic function:
+
+    .. math::
+            
+        \varphi(t; \alpha, \beta, c, \mu) = e^{ it\mu -|ct|^{\alpha }(1-i\beta \operatorname{sign}(t)\Phi(\alpha ,t )) }
+
+    where:
+              
+    .. math::
+        
+        \Phi = \begin{cases}
+                \tan \left({\frac {\pi \alpha }{2}}\right)&\alpha \neq 1\\
+                -{\frac {2}{\pi }}\log |t|&\alpha =1
+                \end{cases}
+           
+    The probability density function for `levy_stable` is:
+        
+    .. math::
+    
+        f(x) = \frac{1}{2\pi}\int_{-\infty}^\infty \varphi(t)e^{-ixt}\,dt
+        
+    where :math:`-\infty < t < \infty`. This integral does not have a known closed form.
+    
+    For evaluation of pdf we use either Zolotarev :math:`S_0` parameterization with integration, 
+    direct integration of standard parameterization of characteristic function or FFT of 
+    characteristic function. If set to other than None and if number of points is greater than 
+    ``levy_stable.pdf_fft_min_points_threshold`` (defaults to None) we use FFT otherwise we use one 
+    of the other methods. 
+    
+    The default method is 'best' which uses Zolotarev's method if alpha = 1 and integration of
+    characteristic function otherwise. The default method can be changed by setting 
+    ``levy_stable.pdf_default_method`` to either 'zolotarev', 'quadrature' or 'best'. 
+    
+    To increase accuracy of FFT calculation one can specify ``levy_stable.pdf_fft_grid_spacing`` 
+    (defaults to 0.001) and ``pdf_fft_n_points_two_power`` (defaults to a value that covers the 
+    input range * 4). Setting ``pdf_fft_n_points_two_power`` to 16 should be sufficiently accurate 
+    in most cases at the expense of CPU time.
+    
+    For evaluation of cdf we use Zolatarev :math:`S_0` parameterization with integration or integral of
+    the pdf FFT interpolated spline. The settings affecting FFT calculation are the same as
+    for pdf calculation. Setting the threshold to ``None`` (default) will disable FFT. For cdf 
+    calculations the Zolatarev method is superior in accuracy, so FFT is disabled by default.
+    
+    Fitting estimate uses quantile estimation method in [MC]. MLE estimation of parameters in
+    fit method uses this quantile estimate initially. Note that MLE doesn't always converge if 
+    using FFT for pdf calculations; so it's best that ``pdf_fft_min_points_threshold`` is left unset. 
+    
+    .. warning::
+    
+        For pdf calculations implementation of Zolatarev is unstable for values where alpha = 1 and 
+        beta != 0. In this case the quadrature method is recommended. FFT calculation is also 
+        considered experimental.
+        
+        For cdf calculations FFT calculation is considered experimental. Use Zolatarev's method 
+        instead (default).
+
+    %(after_notes)s
+    
+    References
+    ----------    
+    .. [MC] McCulloch, J., 1986. Simple consistent estimators of stable distribution parameters.
+       Communications in Statistics - Simulation and Computation 15, 11091136.
+    .. [MS] Mittnik, S.T. Rachev, T. Doganoglu, D. Chenyao, 1999. Maximum likelihood estimation 
+       of stable Paretian models, Mathematical and Computer Modelling, Volume 29, Issue 10, 
+       1999, Pages 275-293.
+    .. [BS] Borak, S., Hardle, W., Rafal, W. 2005. Stable distributions, Economic Risk. 
+
+    %(example)s
 
     """
 
@@ -3639,8 +3706,351 @@ class levy_stable_gen(rv_continuous):
     def _argcheck(self, alpha, beta):
         return (alpha > 0) & (alpha <= 2) & (beta <= 1) & (beta >= -1)
 
+    @staticmethod
+    def _cf(t, alpha, beta):
+        Phi = lambda alpha, t: np.tan(np.pi*alpha/2) if alpha != 1 else -2.0*np.log(np.abs(t))/np.pi
+        return np.exp(-(np.abs(t)**alpha)*(1-1j*beta*np.sign(t)*Phi(alpha, t)))
+        
+    @staticmethod
+    def _pdf_from_cf_with_fft(cf, h=0.01, q=9):
+        """Calculates pdf from cf using fft. Using region around 0 with N=2**q points
+        separated by distance h. As suggested by [MS].
+        """
+        N = 2**q
+        n = np.arange(1,N+1)
+        density = ((-1)**(n-1-N/2))*np.fft.fft(((-1)**(n-1))*cf(2*np.pi*(n-1-N/2)/h/N))/h/N
+        x = (n-1-N/2)*h
+        return (x, density)
+    
+    @staticmethod
+    def _pdf_single_value_best(x, alpha, beta):
+        if alpha != 1. or (alpha == 1. and beta == 0.):
+            return levy_stable_gen._pdf_single_value_zolotarev(x, alpha, beta)
+        else:
+            return levy_stable_gen._pdf_single_value_cf_integrate(x, alpha, beta)
+    
+    @staticmethod
+    def _pdf_single_value_cf_integrate(x, alpha, beta):
+        cf = lambda t: levy_stable_gen._cf(t, alpha, beta)
+        return integrate.quad(lambda t: np.real(np.exp(-1j*t*x)*cf(t)), -np.inf, np.inf, limit=1000)[0]/np.pi/2
+    
+    @staticmethod
+    def _pdf_single_value_zolotarev(x, alpha, beta):
+        """Calculate pdf using Zolotarev's methods as detailed in [BS].
+        """
+        zeta = -beta*np.tan(np.pi*alpha/2.)
+        if alpha != 1:
+            x0 = x + zeta  # convert to S_0 parameterization
+            xi = np.arctan(-zeta)/alpha
+            
+            def V(theta):
+                return np.cos(alpha*xi)**(1/(alpha-1)) * \
+                                (np.cos(theta)/np.sin(alpha*(xi+theta)))**(alpha/(alpha-1)) * \
+                                (np.cos(alpha*xi+(alpha-1)*theta)/np.cos(theta))
+            if x0 > zeta:
+                def g(theta):
+                    return V(theta)*np.real(np.complex(x0-zeta)**(alpha/(alpha-1)))
+                
+                def f(theta):
+                    return g(theta) * np.exp(-g(theta))
+
+                # spare calculating integral on null set
+                # use isclose as macos has fp differences
+                if np.isclose(-xi, np.pi/2, rtol=1e-014, atol=1e-014):
+                    return 0.
+                
+                with np.errstate(all="ignore"):
+                    intg_max = optimize.minimize_scalar(lambda theta: -f(theta), bounds=[-xi, np.pi/2])
+                    intg_kwargs = {} 
+                    # windows quadpack less forgiving with points out of bounds
+                    if intg_max.success and not np.isnan(intg_max.fun)\
+                            and intg_max.x > -xi and intg_max.x < np.pi/2:
+                        intg_kwargs["points"] = [intg_max.x]                     
+                    intg = integrate.quad(f, -xi, np.pi/2, **intg_kwargs)[0]
+                    return alpha * intg / np.pi / np.abs(alpha-1) / (x0-zeta)
+            elif x0 == zeta:
+                return sc.gamma(1+1/alpha)*np.cos(xi)/np.pi/((1+zeta**2)**(1/alpha/2))
+            else:
+                return levy_stable_gen._pdf_single_value_zolotarev(-x, alpha, -beta)
+        else:
+            # since location zero, no need to reposition x for S_0 parameterization
+            xi = np.pi/2
+            if beta != 0:
+                warnings.warn('Density calculation unstable for alpha=1 and beta!=0.' +
+                              ' Use quadrature method instead.', RuntimeWarning)
+                                        
+                def V(theta):
+                    expr_1 = np.pi/2+beta*theta
+                    return 2. * expr_1 * np.exp(expr_1*np.tan(theta)/beta) / np.cos(theta) / np.pi 
+            
+                def g(theta):
+                    return np.exp(-np.pi * x / 2. / beta) * V(theta)
+                
+                def f(theta):
+                    return g(theta) * np.exp(-g(theta))
+            
+                with np.errstate(all="ignore"):
+                    intg_max = optimize.minimize_scalar(lambda theta: -f(theta), bounds=[-np.pi/2, np.pi/2])
+                    intg = integrate.fixed_quad(f, -np.pi/2, intg_max.x)[0] + integrate.fixed_quad(f, intg_max.x, np.pi/2)[0]
+                    return intg / np.abs(beta) / 2.                   
+            else:
+                return 1/(1+x**2)/np.pi
+
+    @staticmethod
+    def _cdf_single_value_zolotarev(x, alpha, beta):
+        """Calculate cdf using Zolotarev's methods as detailed in [BS].
+        """
+        zeta = -beta*np.tan(np.pi*alpha/2.)
+        if alpha != 1:
+            x0 = x + zeta  # convert to S_0 parameterization
+            xi = np.arctan(-zeta)/alpha
+            
+            def V(theta):
+                return np.cos(alpha*xi)**(1/(alpha-1)) * \
+                                (np.cos(theta)/np.sin(alpha*(xi+theta)))**(alpha/(alpha-1)) * \
+                                (np.cos(alpha*xi+(alpha-1)*theta)/np.cos(theta))
+            if x0 > zeta:
+                c_1 = 1 if alpha > 1 else .5 - xi/np.pi
+                
+                def f(theta):
+                    return np.exp(-V(theta)*np.real(np.complex(x0-zeta)**(alpha/(alpha-1))))
+
+                with np.errstate(all="ignore"):
+                    # spare calculating integral on null set
+                    # use isclose as macos has fp differences
+                    if np.isclose(-xi, np.pi/2, rtol=1e-014, atol=1e-014):
+                        intg = 0
+                    else:
+                        intg = integrate.quad(f, -xi, np.pi/2)[0]
+                    return c_1 + np.sign(1-alpha) * intg / np.pi
+            elif x0 == zeta:
+                return .5 - xi/np.pi
+            else:
+                return 1 - levy_stable_gen._cdf_single_value_zolotarev(-x, alpha, -beta)
+                
+        else:
+            # since location zero, no need to reposition x for S_0 parameterization
+            xi = np.pi/2
+            if beta > 0:
+                
+                def V(theta):
+                    expr_1 = np.pi/2+beta*theta
+                    return 2. * expr_1 * np.exp(expr_1*np.tan(theta)/beta) / np.cos(theta) / np.pi 
+                
+                with np.errstate(all="ignore"):
+                    expr_1 = np.exp(-np.pi*x/beta/2.)
+                    int_1 = integrate.quad(lambda theta: np.exp(-expr_1 * V(theta)), -np.pi/2, np.pi/2)[0]
+                    return int_1 / np.pi
+            elif beta == 0:
+                return .5 + np.arctan(x)/np.pi
+            else:
+                return 1 - levy_stable_gen._cdf_single_value_zolotarev(-x, 1, -beta)
+        
     def _pdf(self, x, alpha, beta):
-        raise NotImplementedError
+
+        x = np.asarray(x).reshape(1, -1)[0,:]
+        
+        x, alpha, beta = np.broadcast_arrays(x, alpha, beta)
+
+        data_in = np.dstack((x, alpha, beta))[0]
+        data_out = np.empty(shape=(len(data_in),1))
+        
+        pdf_default_method_name = getattr(self, 'pdf_default_method', 'best')
+        if pdf_default_method_name == 'best':
+            pdf_single_value_method = levy_stable_gen._pdf_single_value_best
+        elif pdf_default_method_name == 'zolotarev':
+            pdf_single_value_method = levy_stable_gen._pdf_single_value_zolotarev
+        else:
+            pdf_single_value_method = levy_stable_gen._pdf_single_value_cf_integrate
+        
+        fft_min_points_threshold = getattr(self, 'pdf_fft_min_points_threshold', None)
+        fft_grid_spacing = getattr(self, 'pdf_fft_grid_spacing', 0.001)
+        fft_n_points_two_power = getattr(self, 'pdf_fft_n_points_two_power', None)
+        
+        # group data in unique arrays of alpha, beta pairs
+        uniq_param_pairs = np.vstack({tuple(row) for row in data_in[:,1:]})
+        for pair in uniq_param_pairs:
+            data_mask = np.all(data_in[:,1:] == pair, axis=-1)
+            data_subset = data_in[data_mask]
+            if fft_min_points_threshold is None or len(data_subset) < fft_min_points_threshold:
+                data_out[data_mask] = np.array([pdf_single_value_method(_x, _alpha, _beta) 
+                            for _x, _alpha, _beta in data_subset]).reshape(len(data_subset), 1)
+            else:
+                warnings.warn('Density calculations experimental for FFT method.' +
+                              ' Use combination of zolatarev and quadrature methods instead.', RuntimeWarning)
+                _alpha, _beta = pair
+                _x = data_subset[:,(0,)]
+                
+                # need enough points to "cover" _x for interpolation
+                h = fft_grid_spacing
+                q = np.ceil(np.log(2*np.max(np.abs(_x))/h)/np.log(2)) + 2 if fft_n_points_two_power is None else int(fft_n_points_two_power)
+                
+                density_x, density = levy_stable_gen._pdf_from_cf_with_fft(lambda t: levy_stable_gen._cf(t, _alpha, _beta), h=h, q=q)
+                f = interpolate.interp1d(density_x, np.real(density))
+                data_out[data_mask] = f(_x)
+                
+        return data_out.T[0]
+
+    def _cdf(self, x, alpha, beta):
+
+        x = np.asarray(x).reshape(1, -1)[0,:]
+        
+        x, alpha, beta = np.broadcast_arrays(x, alpha, beta)
+
+        data_in = np.dstack((x, alpha, beta))[0]
+        data_out = np.empty(shape=(len(data_in),1))
+        
+        fft_min_points_threshold = getattr(self, 'pdf_fft_min_points_threshold', None)
+        fft_grid_spacing = getattr(self, 'pdf_fft_grid_spacing', 0.001)
+        fft_n_points_two_power = getattr(self, 'pdf_fft_n_points_two_power', None)
+        
+        # group data in unique arrays of alpha, beta pairs
+        uniq_param_pairs = np.vstack({tuple(row) for row in data_in[:,1:]})
+        for pair in uniq_param_pairs:
+            data_mask = np.all(data_in[:,1:] == pair, axis=-1)
+            data_subset = data_in[data_mask]
+            if fft_min_points_threshold is None or len(data_subset) < fft_min_points_threshold:
+                data_out[data_mask] = np.array([levy_stable._cdf_single_value_zolotarev(_x, _alpha, _beta) 
+                            for _x, _alpha, _beta in data_subset]).reshape(len(data_subset), 1)
+            else:
+                warnings.warn('Cumulative density calculations experimental for FFT method.' +
+                              ' Use zolatarev method instead.', RuntimeWarning)
+                _alpha, _beta = pair
+                _x = data_subset[:,(0,)]
+                
+                # need enough points to "cover" _x for interpolation
+                h = fft_grid_spacing
+                q = 16 if fft_n_points_two_power is None else int(fft_n_points_two_power)
+                
+                density_x, density = levy_stable_gen._pdf_from_cf_with_fft(lambda t: levy_stable_gen._cf(t, _alpha, _beta), h=h, q=q)
+                f = interpolate.InterpolatedUnivariateSpline(density_x, np.real(density))
+                data_out[data_mask] = np.array([f.integral(self.a, x_1) for x_1 in _x]).reshape(data_out[data_mask].shape)
+                
+        return data_out.T[0]
+    
+    def _fitstart(self, data):
+        # We follow McCullock 1986 method - Simple Consistent Estimators
+        # of Stable Distribution Parameters
+        
+        # Table III and IV
+        nu_alpha_range = [2.439, 2.5, 2.6, 2.7, 2.8, 3, 3.2, 3.5, 4, 5, 6, 8, 10, 15, 25]
+        nu_beta_range = [0, 0.1, 0.2, 0.3, 0.5, 0.7, 1]
+        
+        # table III - alpha = psi_1(nu_alpha, nu_beta)
+        alpha_table = [
+            [2.000, 2.000, 2.000, 2.000, 2.000, 2.000, 2.000],
+            [1.916, 1.924, 1.924, 1.924, 1.924, 1.924, 1.924],
+            [1.808, 1.813, 1.829, 1.829, 1.829, 1.829, 1.829],
+            [1.729, 1.730, 1.737, 1.745, 1.745, 1.745, 1.745],
+            [1.664, 1.663, 1.663, 1.668, 1.676, 1.676, 1.676],
+            [1.563, 1.560, 1.553, 1.548, 1.547, 1.547, 1.547],
+            [1.484, 1.480, 1.471, 1.460, 1.448, 1.438, 1.438],
+            [1.391, 1.386, 1.378, 1.364, 1.337, 1.318, 1.318],
+            [1.279, 1.273, 1.266, 1.250, 1.210, 1.184, 1.150],
+            [1.128, 1.121, 1.114, 1.101, 1.067, 1.027, 0.973],
+            [1.029, 1.021, 1.014, 1.004, 0.974, 0.935, 0.874],
+            [0.896, 0.892, 0.884, 0.883, 0.855, 0.823, 0.769],
+            [0.818, 0.812, 0.806, 0.801, 0.780, 0.756, 0.691],
+            [0.698, 0.695, 0.692, 0.689, 0.676, 0.656, 0.597],
+            [0.593, 0.590, 0.588, 0.586, 0.579, 0.563, 0.513]]
+    
+        # table IV - beta = psi_2(nu_alpha, nu_beta)
+        beta_table = [ 
+            [0, 2.160, 1.000, 1.000, 1.000, 1.000, 1.000],
+            [0, 1.592, 3.390, 1.000, 1.000, 1.000, 1.000],
+            [0, 0.759, 1.800, 1.000, 1.000, 1.000, 1.000],
+            [0, 0.482, 1.048, 1.694, 1.000, 1.000, 1.000],
+            [0, 0.360, 0.760, 1.232, 2.229, 1.000, 1.000],
+            [0, 0.253, 0.518, 0.823, 1.575, 1.000, 1.000],
+            [0, 0.203, 0.410, 0.632, 1.244, 1.906, 1.000],
+            [0, 0.165, 0.332, 0.499, 0.943, 1.560, 1.000],
+            [0, 0.136, 0.271, 0.404, 0.689, 1.230, 2.195],
+            [0, 0.109, 0.216, 0.323, 0.539, 0.827, 1.917],
+            [0, 0.096, 0.190, 0.284, 0.472, 0.693, 1.759],
+            [0, 0.082, 0.163, 0.243, 0.412, 0.601, 1.596],
+            [0, 0.074, 0.147, 0.220, 0.377, 0.546, 1.482],
+            [0, 0.064, 0.128, 0.191, 0.330, 0.478, 1.362],
+            [0, 0.056, 0.112, 0.167, 0.285, 0.428, 1.274]]
+    
+        # Table V and VII
+        alpha_range = [2, 1.9, 1.8, 1.7, 1.6, 1.5, 1.4, 1.3, 1.2, 1.1, 1, 0.9, 0.8, 0.7, 0.6, 0.5]
+        beta_range = [0, 0.25, 0.5, 0.75, 1]  
+        
+        # Table V - nu_c = psi_3(alpha, beta)
+        nu_c_table = [
+            [1.908, 1.908, 1.908, 1.908, 1.908],
+            [1.914, 1.915, 1.916, 1.918, 1.921],
+            [1.921, 1.922, 1.927, 1.936, 1.947],
+            [1.927, 1.930, 1.943, 1.961, 1.987],
+            [1.933, 1.940, 1.962, 1.997, 2.043],
+            [1.939, 1.952, 1.988, 2.045, 2.116],
+            [1.946, 1.967, 2.022, 2.106, 2.211],
+            [1.955, 1.984, 2.067, 2.188, 2.333],
+            [1.965, 2.007, 2.125, 2.294, 2.491],
+            [1.980, 2.040, 2.205, 2.435, 2.696],
+            [2.000, 2.085, 2.311, 2.624, 2.973],
+            [2.040, 2.149, 2.461, 2.886, 3.356],
+            [2.098, 2.244, 2.676, 3.265, 3.912],
+            [2.189, 2.392, 3.004, 3.844, 4.775],
+            [2.337, 2.634, 3.542, 4.808, 6.247],
+            [2.588, 3.073, 4.534, 6.636, 9.144]]
+    
+        # Table VII - nu_zeta = psi_5(alpha, beta)
+        nu_zeta_table = [ 
+            [0, 0.000, 0.000, 0.000, 0.000],
+            [0, -0.017, -0.032, -0.049, -0.064],
+            [0, -0.030, -0.061, -0.092, -0.123],
+            [0, -0.043, -0.088, -0.132, -0.179],
+            [0, -0.056, -0.111, -0.170, -0.232],
+            [0, -0.066, -0.134, -0.206, -0.283],
+            [0, -0.075, -0.154, -0.241, -0.335],
+            [0, -0.084, -0.173, -0.276, -0.390],
+            [0, -0.090, -0.192, -0.310, -0.447],
+            [0, -0.095, -0.208, -0.346, -0.508],
+            [0, -0.098, -0.223, -0.380, -0.576],
+            [0, -0.099, -0.237, -0.424, -0.652],
+            [0, -0.096, -0.250, -0.469, -0.742],
+            [0, -0.089, -0.262, -0.520, -0.853],
+            [0, -0.078, -0.272, -0.581, -0.997],
+            [0, -0.061, -0.279, -0.659, -1.198]]
+    
+        psi_1 = interpolate.interp2d(nu_beta_range, nu_alpha_range, alpha_table, kind='linear')
+        psi_2 = interpolate.interp2d(nu_beta_range, nu_alpha_range, beta_table, kind='linear')
+        psi_2_1 = lambda nu_beta, nu_alpha: psi_2(nu_beta, nu_alpha) if nu_beta > 0 else -psi_2(-nu_beta, nu_alpha)
+        
+        phi_3 = interpolate.interp2d(beta_range, alpha_range, nu_c_table, kind='linear')
+        phi_3_1 = lambda beta, alpha: phi_3(beta, alpha) if beta > 0 else phi_3(-beta, alpha)
+        phi_5 = interpolate.interp2d(beta_range, alpha_range, nu_zeta_table, kind='linear')
+        phi_5_1 = lambda beta, alpha: phi_5(beta, alpha) if beta > 0 else -phi_5(-beta, alpha)
+        
+        # quantiles
+        p05 = np.percentile(data, 5)
+        p50 = np.percentile(data, 50)
+        p95 = np.percentile(data, 95)
+        p25 = np.percentile(data, 25)
+        p75 = np.percentile(data, 75)
+        
+        nu_alpha = (p95 - p05)/(p75 - p25)
+        nu_beta = (p95 + p05 - 2*p50)/(p95 - p05)
+    
+        if nu_alpha >= 2.439:
+            alpha = np.clip(psi_1(nu_beta, nu_alpha)[0], np.finfo(float).eps, 2.)
+            beta = np.clip(psi_2_1(nu_beta, nu_alpha)[0], -1., 1.)
+        else:
+            alpha = 2.0
+            beta = np.sign(nu_beta)
+        c = (p75 - p25) / phi_3_1(beta, alpha)[0] 
+        zeta = p50 + c*phi_5_1(beta, alpha)[0]
+        delta = np.clip(zeta-beta*c*np.tan(np.pi*alpha/2.) if alpha == 1. else zeta, np.finfo(float).eps, np.inf) 
+    
+        return (alpha, beta, delta, c)
+        
+    def _stats(self, alpha, beta):
+        mu = 0 if alpha > 1 else np.nan
+        mu2 = 2 if alpha == 2 else np.inf
+        g1 = 0. if alpha == 2. else np.NaN
+        g2 = 0. if alpha == 2. else np.NaN 
+        return mu, mu2, g1, g2
 
 
 levy_stable = levy_stable_gen(name='levy_stable')
