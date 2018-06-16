@@ -603,7 +603,7 @@ def binned_statistic_dd(sample, values, statistic='mean',
     result = result.reshape(np.append(Vdim, nbin))
 
     # Remove outliers (indices 0 and -1 for each bin-dimension).
-    core = [slice(None)] + Ndim * [slice(1, -1)]
+    core = tuple([slice(None)] + Ndim * [slice(1, -1)])
     result = result[core]
 
     # Unravel binnumbers into an ndarray, each row the bins for each dimension

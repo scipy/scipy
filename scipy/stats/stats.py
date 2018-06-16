@@ -2707,7 +2707,7 @@ def trimboth(a, proportiontocut, axis=0):
 
     sl = [slice(None)] * atmp.ndim
     sl[axis] = slice(lowercut, uppercut)
-    return atmp[sl]
+    return atmp[tuple(sl)]
 
 
 def trim1(a, proportiontocut, tail='right', axis=0):
@@ -2830,7 +2830,7 @@ def trim_mean(a, proportiontocut, axis=0):
 
     sl = [slice(None)] * atmp.ndim
     sl[axis] = slice(lowercut, uppercut)
-    return np.mean(atmp[sl], axis=axis)
+    return np.mean(atmp[tuple(sl)], axis=axis)
 
 
 F_onewayResult = namedtuple('F_onewayResult', ('statistic', 'pvalue'))
