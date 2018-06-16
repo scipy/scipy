@@ -2070,7 +2070,7 @@ class NdPPoly(object):
         else:
             sl = [slice(None)]*ndim
             sl[axis] = slice(None, -nu, None)
-            c2 = self.c[sl]
+            c2 = self.c[tuple(sl)]
 
         if c2.shape[axis] == 0:
             # derivative of order 0 is zero
@@ -2082,7 +2082,7 @@ class NdPPoly(object):
         factor = spec.poch(np.arange(c2.shape[axis], 0, -1), nu)
         sl = [None]*c2.ndim
         sl[axis] = slice(None)
-        c2 *= factor[sl]
+        c2 *= factor[tuple(sl)]
 
         self.c = c2
 
@@ -2511,7 +2511,7 @@ class RegularGridInterpolator(object):
         idx_res = []
         for i, yi in zip(indices, norm_distances):
             idx_res.append(np.where(yi <= .5, i, i + 1))
-        return self.values[idx_res]
+        return self.values[tuple(idx_res)]
 
     def _find_indices(self, xi):
         # find relevant edges between which xi are situated
