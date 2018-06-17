@@ -115,11 +115,11 @@ class TestBasic(object):
     def test_array_newton_zero_der_failures(self):
         # test derivative zero warning
         assert_warns(RuntimeWarning, zeros.newton,
-                     lambda y: y ** 2, [0., 0.], lambda y: 2 * y)
+                     lambda y: y**2 - 2, [0., 0.], lambda y: 2 * y)
         # test failures and zero_der
         with pytest.warns(RuntimeWarning):
-            results = zeros.newton(lambda y: y ** 2, [0., 0.], lambda y: 2 * y,
-                                   converged=True)
+            results = zeros.newton(lambda y: y**2 - 2, [0., 0.],
+                                   lambda y: 2*y, converged=True)
             assert_allclose(results.root, 0)
             assert results.zero_der.all()
             assert not results.converged.any()
