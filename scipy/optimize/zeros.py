@@ -287,7 +287,7 @@ def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2,
             fval = np.asarray(func(p, *args))
             # If all fval are 0, all roots have been found, then terminate
             if not fval.any():
-                return
+                break
             fder = np.asarray(fprime(p, *args))
             nz_der = (fder != 0)
             # stop iterating if all derivatives are zero
