@@ -283,12 +283,16 @@ def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2,
     if fprime is not None:
         # Newton-Raphson method
         for iteration in range(maxiter):
+            # first evaluate fval
+            fval = np.asarray(func(p, *args))
+            # If all fval are 0, all roots have been found, then terminate
+            if not fval.any():
+                return
             fder = np.asarray(fprime(p, *args))
             nz_der = (fder != 0)
             # stop iterating if all derivatives are zero
             if not nz_der.any():
                 break
-            fval = np.asarray(func(p, *args))
             # Newton step
             dp = fval[nz_der] / fder[nz_der]
             if fprime2 is not None:

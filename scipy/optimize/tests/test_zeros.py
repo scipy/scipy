@@ -314,7 +314,7 @@ def test_gh8904_zeroder_at_root_fails():
     # should work with secant
     r = zeros.newton(f_zeroder_root, x0=0)
     assert_allclose(r, 0, atol=zeros._xtol, rtol=zeros._rtol)
-
+    # test again with array
     r = zeros.newton(f_zeroder_root, x0=[0]*10)
     assert_allclose(r, 0, atol=zeros._xtol, rtol=zeros._rtol)
 
@@ -332,9 +332,9 @@ def test_gh8904_zeroder_at_root_fails():
     r = zeros.newton(f_zeroder_root, x0=0, fprime=fder,
                      fprime2=fder2)
     assert_allclose(r, 0, atol=zeros._xtol, rtol=zeros._rtol)
-
-    r = zeros.newton(f_zeroder_root, x0=[0]*10, fprime=fder, failure_idx_flag=True)
-    assert_allclose(r.root, 0, atol=zeros._xtol, rtol=zeros._rtol)
+    # test again with array
+    r = zeros.newton(f_zeroder_root, x0=[0]*10, fprime=fder)
+    assert_allclose(r, 0, atol=zeros._xtol, rtol=zeros._rtol)
     r = zeros.newton(f_zeroder_root, x0=[0]*10, fprime=fder,
                      fprime2=fder2)
     assert_allclose(r, 0, atol=zeros._xtol, rtol=zeros._rtol)
@@ -346,6 +346,7 @@ def test_gh8904_zeroder_at_root_fails():
     # a zero derivative, so it should return the root w/o RuntimeWarning
     r = zeros.newton(f_zeroder_root, x0=0.5, fprime=fder)
     assert_allclose(r, 0, atol=zeros._xtol, rtol=zeros._rtol)
+    # test again with array
     r = zeros.newton(f_zeroder_root, x0=[0.5]*10, fprime=fder)
     assert_allclose(r, 0, atol=zeros._xtol, rtol=zeros._rtol)
     # doesn't apply to halley
