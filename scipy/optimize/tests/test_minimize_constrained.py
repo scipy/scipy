@@ -275,6 +275,23 @@ class IneqRosenbrock(Rosenbrock):
         return LinearConstraint(A, -np.inf, b)
 
 
+class BoundedRosenbrock(Rosenbrock):
+    """Rosenbrock subject to inequality constraints.
+
+    The following optimization problem:
+        minimize sum(100.0*(x[1] - x[0]**2)**2.0 + (1 - x[0])**2)
+        subject to:  -2 <= x[0] <= 0
+                      0 <= x[1] <= 2
+
+    Taken from matlab ``fmincon`` documentation.
+    """
+    def __init__(self, random_state=0):
+        Rosenbrock.__init__(self, 2, random_state)
+        self.x0 = [-0.2, 0.2]
+        self.x_opt = None
+        self.bounds = Bounds([-2, 0], [0, 2])
+
+
 class EqIneqRosenbrock(Rosenbrock):
     """Rosenbrock subject to equality and inequality constraints.
 
@@ -444,6 +461,7 @@ class TestTrustRegionConstr(TestCase):
                             Rosenbrock(),
                             IneqRosenbrock(),
                             EqIneqRosenbrock(),
+                            BoundedRosenbrock(),
                             Elec(n_electrons=2),
                             Elec(n_electrons=2, constr_hess='2-point'),
                             Elec(n_electrons=2, constr_hess=SR1()),
@@ -486,6 +504,20 @@ class TestTrustRegionConstr(TestCase):
                     # max iter
                     if result.status in (0, 3):
                         raise RuntimeError("Invalid termination condition.")
+
+    def test_default_jac_and_hess(self):
+        def fun(x):
+            return (x - 1) ** 2
+        bounds = [(-2, 2)]
+        res = minimize(fun, x0=[-1.5], bounds=bounds, method='trust-constr')
+        assert_array_almost_equal(res.x, 1, decimal=5)
+
+    def test_default_hess(self):
+        def fun(x):
+            return (x - 1) ** 2
+        bounds = [(-2, 2)]
+        res = minimize(fun, x0=[-1.5], bounds=bounds, method='trust-constr', jac='2-point')
+        assert_array_almost_equal(res.x, 1, decimal=5)
 
     def test_no_constraints(self):
         prob = Rosenbrock()

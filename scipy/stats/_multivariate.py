@@ -2297,8 +2297,7 @@ def _cho_inv_batch(a, check_finite=True):
 
     potrf, potri = get_lapack_funcs(('potrf', 'potri'), (a1,))
 
-    tril_idx = np.tril_indices(a.shape[-2], k=-1)
-    triu_idx = np.triu_indices(a.shape[-2], k=1)
+    triu_rows, triu_cols = np.triu_indices(a.shape[-2], k=1)
     for index in np.ndindex(a1.shape[:-2]):
 
         # Cholesky decomposition
@@ -2319,7 +2318,7 @@ def _cho_inv_batch(a, check_finite=True):
                              ' potrf' % -info)
 
         # Make symmetric (dpotri only fills in the lower triangle)
-        a1[index][triu_idx] = a1[index][tril_idx]
+        a1[index][triu_rows, triu_cols] = a1[index][triu_cols, triu_rows]
 
     return a1
 

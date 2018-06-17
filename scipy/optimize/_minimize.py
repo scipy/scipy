@@ -539,6 +539,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
                 jac = fun.derivative
             else:
                 jac = '2-point'
+        elif jac is None:
+            jac = '2-point'
         elif not callable(jac) and jac not in ('2-point', '3-point', 'cs'):
             raise ValueError("Unsupported jac definition.")
     else:
