@@ -17,7 +17,8 @@ from .sputils import (isshape, getdtype, to_native, upcast, get_index_dtype,
                       check_shape)
 from . import _sparsetools
 from ._sparsetools import (bsr_matvec, bsr_matvecs, csr_matmat_pass1,
-                           bsr_matmat_pass2, bsr_transpose, bsr_sort_indices)
+                           bsr_matmat_pass2, bsr_transpose, bsr_sort_indices,
+                           bsr_tocsr)
 
 
 class bsr_matrix(_cs_matrix, _minmax_mixin):
@@ -440,8 +441,25 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
             return self
 
     def tocsr(self, copy=False):
-        return self.tocoo(copy=False).tocsr(copy=copy)
-        # TODO make this more efficient
+        M, N = self.shape
+        R, C = self.blocksize
+        idx_dtype = get_index_dtype((self.indptr, self.indices),
+                                    maxval=max(self.nnz, N))
+        indptr = np.empty(M + 1, dtype=idx_dtype)
+        indices = np.empty(self.nnz, dtype=idx_dtype)
+        data = np.empty(self.nnz, dtype=upcast(self.dtype))
+
+        bsr_tocsr(M // R,  # n_brow
+                  N // C,  # n_bcol
+                  R, C,
+                  self.indptr.astype(idx_dtype),
+                  self.indices.astype(idx_dtype),
+                  self.data,
+                  indptr,
+                  indices,
+                  data)
+        from .csr import csr_matrix
+        return csr_matrix((data, indices, indptr), shape=self.shape)
 
     tocsr.__doc__ = spmatrix.tocsr.__doc__
 
