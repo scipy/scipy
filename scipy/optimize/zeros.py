@@ -36,6 +36,7 @@ class RootResults(object):
     flag : str
         Description of the cause of termination.
     """
+
     def __init__(self, root, iterations, function_calls, flag):
         self.root = root
         self.iterations = iterations
@@ -211,14 +212,18 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
     if fprime is not None:
         # Newton-Raphson method
         for itr in range(maxiter):
+            # first evaluate fval
+            fval = func(p0, *args)
+            funcalls += 1
+            # If fval is 0, a root has been found, then terminate
+            if fval == 0:
+                return _results_select(full_output, (p0, funcalls, itr, _ECONVERGED))
             fder = fprime(p0, *args)
             funcalls += 1
             if fder == 0:
                 msg = "derivative was zero."
                 warnings.warn(msg, RuntimeWarning)
                 return _results_select(full_output, (p0, funcalls, itr + 1, _ECONVERR))
-            fval = func(p0, *args)
-            funcalls += 1
             newton_step = fval / fder
             if fprime2 is None:
                 # Newton step
