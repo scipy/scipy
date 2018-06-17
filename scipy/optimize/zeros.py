@@ -36,7 +36,6 @@ class RootResults(object):
     flag : str
         Description of the cause of termination.
     """
-
     def __init__(self, root, iterations, function_calls, flag):
         self.root = root
         self.iterations = iterations
