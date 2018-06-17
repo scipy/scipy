@@ -96,15 +96,15 @@ def naive_dct1(x, norm=None):
     M = N-1
     y = np.zeros(N)
     m0,m = 1,2
-    if norm=='ortho':
+    if norm == 'ortho':
         m0 = np.sqrt(1.0/M)
         m = np.sqrt(2.0/M)
     for k in range(N):
         for n in range(1,N-1):
             y[k] += m*x[n]*np.cos(np.pi*n*k/M)
         y[k] += m0 * x[0]
-        y[k] += m0 * x[N-1] * (1 if k%2==0 else -1)
-    if norm=='ortho':
+        y[k] += m0 * x[N-1] * (1 if k % 2 == 0 else -1)
+    if norm == 'ortho':
         y[0] *= 1/np.sqrt(2)
         y[N-1] *= 1/np.sqrt(2)
     return y
@@ -118,7 +118,7 @@ def naive_dst1(x, norm=None):
     for k in range(N):
         for n in range(N):
             y[k] += 2*x[n]*np.sin(np.pi*(n+1.0)*(k+1.0)/M)
-    if norm=='ortho':
+    if norm == 'ortho':
         y *= np.sqrt(0.5/M)
     return y
 
@@ -130,7 +130,7 @@ def naive_dct4(x, norm=None):
     for k in range(N):
         for n in range(N):
             y[k] += x[n]*np.cos(np.pi*(n+0.5)*(k+0.5)/(N))
-    if norm=='ortho':
+    if norm == 'ortho':
         y *= np.sqrt(2.0/N)
     else:
         y *= 2
@@ -144,7 +144,7 @@ def naive_dst4(x, norm=None):
     for k in range(N):
         for n in range(N):
             y[k] += x[n]*np.sin(np.pi*(n+0.5)*(k+0.5)/(N))
-    if norm=='ortho':
+    if norm == 'ortho':
         y *= np.sqrt(2.0/N)
     else:
         y *= 2
@@ -226,6 +226,7 @@ class _TestDCTIBase(_TestDCTBase):
             y2 = naive_dct1(x, norm='ortho')
             assert_equal(y.dtype, dt)
             assert_array_almost_equal(y / np.max(y), y2 / np.max(y), decimal=self.dec)
+
     def test_definition_naive(self):
         # Test against naive implementation
         for i in range(len(X)):
@@ -270,6 +271,7 @@ class _TestDCTIVBase(_TestDCTBase):
             y2 = naive_dct4(x, norm='ortho')
             assert_equal(y.dtype, dt)
             assert_array_almost_equal(y / np.max(y), y2 / np.max(y), decimal=self.dec)
+
     def test_definition_naive(self):
         # Test against naive implementation
         for i in range(len(X)):
@@ -498,6 +500,7 @@ class _TestDSTIBase(_TestDSTBase):
             y2 = naive_dst1(x, norm='ortho')
             assert_equal(y.dtype, dt)
             assert_array_almost_equal(y / np.max(y), y2 / np.max(y), decimal=self.dec)
+
     def test_definition_naive(self):
         # Test against naive implementation
         for i in range(len(X)):
@@ -518,6 +521,7 @@ class _TestDSTIVBase(_TestDSTBase):
             y2 = naive_dst4(x, norm='ortho')
             assert_equal(y.dtype, dt)
             assert_array_almost_equal(y, y2, decimal=self.dec)
+            
     def test_definition_naive(self):
         # Test against naive implementation
         for i in range(len(X)):
