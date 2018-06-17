@@ -1109,6 +1109,7 @@ class rv_generic(object):
         """
         args, loc, scale = self._parse_args(*args, **kwds)
         # NB: for discrete distributions scale=1 by construction in _parse_args
+        loc, scale = map(asarray, (loc, scale))
         args = tuple(map(asarray, args))
         cond0 = self._argcheck(*args) & (scale > 0) & (loc == loc)
         output = zeros(shape(cond0), 'd')
