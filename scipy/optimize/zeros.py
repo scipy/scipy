@@ -280,6 +280,7 @@ def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2,
     except TypeError:  # can't convert complex to float
         p = np.asarray(x0)
     failures = np.ones_like(p, dtype=bool)  # at start, nothing converged
+    nz_der = np.copy(failures)
     if fprime is not None:
         # Newton-Raphson method
         for iteration in range(maxiter):
@@ -287,6 +288,7 @@ def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2,
             fval = np.asarray(func(p, *args))
             # If all fval are 0, all roots have been found, then terminate
             if not fval.any():
+                failures = fval.astype(bool)
                 break
             fder = np.asarray(fprime(p, *args))
             nz_der = (fder != 0)
