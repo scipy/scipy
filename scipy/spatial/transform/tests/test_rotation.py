@@ -619,3 +619,86 @@ def test_inv_single_rotation():
 
     assert_array_almost_equal(result1, eye3d)
     assert_array_almost_equal(result2, eye3d)
+
+
+def test_apply_single_rotation_single_point():
+    r_1d = Rotation.from_dcm([
+        [0, -1, 0],
+        [1, 0, 0],
+        [0, 0, 1]
+    ])
+    r_2d = Rotation.from_dcm([[
+        [0, -1, 0],
+        [1, 0, 0],
+        [0, 0, 1]
+    ]])
+
+    v_1d = np.array([1, 2, 3])
+    v_2d = np.array([[1, 2, 3]])
+
+    assert_allclose(r_1d.apply(v_1d), np.array([-2, 1, 3]))
+    assert_allclose(r_1d.apply(v_2d), np.array([[-2, 1, 3]]))
+    assert_allclose(r_2d.apply(v_1d), np.array([[-2, 1, 3]]))
+    assert_allclose(r_2d.apply(v_2d), np.array([[-2, 1, 3]]))
+
+
+def test_apply_single_rotation_multiple_points():
+    r1 = Rotation.from_dcm([
+        [0, -1, 0],
+        [1, 0, 0],
+        [0, 0, 1]
+    ])
+    r2 = Rotation.from_dcm([[
+            [0, -1, 0],
+            [1, 0, 0],
+            [0, 0, 1]
+        ]])
+
+    v = np.array([[1, 2, 3], [4, 5, 6]])
+    v_rotated = np.array([[-2, 1, 3], [-5, 4, 6]])
+
+    assert_allclose(r1.apply(v), v_rotated)
+    assert_allclose(r2.apply(v), v_rotated)
+
+
+def test_apply_multiple_rotations_single_point():
+    dcm = np.empty((2, 3, 3))
+    dcm[0] = np.array([
+        [0, -1, 0],
+        [1, 0, 0],
+        [0, 0, 1]
+    ])
+    dcm[1] = np.array([
+        [1, 0, 0],
+        [0, 0, -1],
+        [0, 1, 0]
+    ])
+    r = Rotation.from_dcm(dcm)
+
+    v1 = np.array([1, 2, 3])
+    v2 = np.array([[1, 2, 3]])
+
+    v_rotated = np.array([[-2, 1, 3], [1, -3, 2]])
+
+    assert_allclose(r.apply(v1), v_rotated)
+    assert_allclose(r.apply(v2), v_rotated)
+
+
+def test_apply_multiple_rotations_multiple_points():
+    dcm = np.empty((2, 3, 3))
+    dcm[0] = np.array([
+        [0, -1, 0],
+        [1, 0, 0],
+        [0, 0, 1]
+    ])
+    dcm[1] = np.array([
+        [1, 0, 0],
+        [0, 0, -1],
+        [0, 1, 0]
+    ])
+    r = Rotation.from_dcm(dcm)
+
+    v = np.array([[1, 2, 3], [4, 5, 6]])
+    v_rotated = np.array([[-2, 1, 3], [4, -6, 5]])
+
+    assert_allclose(r.apply(v), v_rotated)
