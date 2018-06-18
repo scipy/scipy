@@ -662,22 +662,7 @@ class Rotation(object):
     def apply(self, vectors, inverse=False):
         """Apply this rotation on a set of vectors.
 
-        Rotates `vectors` by the rotation(s) represented in the object. In
-        terms of DCMs, this application is the same as
-        `self.as_dcm().dot(vectors)`. Returns a `numpy.ndarray` whose shape
-        depends on the following cases:
-
-            - a single rotation applied on a single vector specified with shape
-              `(3,)`:
-                - output vector has shape `(3,)`.
-            - a single rotation applied on a `P` vectors:
-                - output vectors have shape `(P, 3)`, same as input vectors.
-            - `N` rotations applied on a single vector:
-                - output vectors have shape `(N, 3)`.
-            - `N` rotation applied on `P` vectors:
-                - output has shape `(N, 3)`, where the `ith` rotation is
-                  applied on the `ith` point.
-
+        Rotates `vectors` by the rotation(s) represented in the object.
         If the original frame rotates to the final frame by this rotation, then
         its application to a vector can be seen in two ways:
 
@@ -686,6 +671,18 @@ class Rotation(object):
             - As the physical rotation of a vector being glued to the original
               frame as it rotates. In this case the vector components are
               expressed in the original frame before and after rotation.
+
+        In terms of DCMs, this application is the same as
+        `self.as_dcm().dot(vectors)`.
+
+        The number of rotations and number of vectors given must follow
+        standard numpy broadcasting rules: either one of them equals unity or
+        they both equal each other.
+
+        Returns a `numpy.ndarray` of shape `(3,)` if object contains a single
+        rotation (as opposed to a stack with a single rotation) and a single
+        vector is specified with shape `(3,)`. In all other cases, the returned
+        array has shape `(N, 3)`.
 
         Parameters
         ----------
