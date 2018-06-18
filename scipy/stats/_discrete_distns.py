@@ -478,7 +478,7 @@ class poisson_gen(rv_discrete):
 
     .. math::
 
-        f(k) = \exp(-\mu) \frac{mu^k}{k!}
+        f(k) = \exp(-\mu) \frac{\mu^k}{k!}
 
     for :math:`k \ge 0`.
 
