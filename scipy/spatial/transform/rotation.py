@@ -228,7 +228,7 @@ class Rotation(object):
             self._quat[~zero_norms] /= norms[~zero_norms][:, None]
 
     @classmethod
-    def from_quaternion(cls, quat, normalized=False):
+    def from_quaternion(cls, quat, normalized=False, copy=True):
         """Initialize Rotation from quaternions.
 
         This classmethod returns a `Rotation` object from the input quaternions
@@ -245,9 +245,13 @@ class Rotation(object):
             If this flag is `True`, then it is assumed that the input
             quaternions all have unit norm and are not normalized again.
             Default is False.
+        copy : boolean, optional
+            Specifies behaviour when `normalized = True`. If `copy = True`, a
+            copy of the input quaternions is stored in the object. If
+            `copy = False`, then the input itself is stored. Default is `True`.
         """
 
-        return cls(quat, normalized)
+        return cls(quat, normalized, copy)
 
     def as_quaternion(self):
         """Return the quaternion representation of the Rotation.
@@ -365,9 +369,9 @@ class Rotation(object):
         quat /= np.linalg.norm(quat, axis=1)[:, None]
 
         if is_single:
-            return cls(quat[0], normalized=True)
+            return cls(quat[0], normalized=True, copy=False)
         else:
-            return cls(quat, normalized=True)
+            return cls(quat, normalized=True, copy=False)
 
     @classmethod
     def from_rotvec(cls, rotvec):
@@ -415,9 +419,9 @@ class Rotation(object):
         quat[:, 3] = np.cos(norms / 2)
 
         if is_single:
-            return cls(quat[0], normalized=True)
+            return cls(quat[0], normalized=True, copy=False)
         else:
-            return cls(quat, normalized=True)
+            return cls(quat, normalized=True, copy=False)
 
     def as_rotvec(self):
         """Return the rotation vector representation of the Rotation.
@@ -549,7 +553,7 @@ class Rotation(object):
                              "num_axes), got {}.".format(angles.shape))
 
         quat = _elementary_quat_compose(seq, angles, intrinsic)
-        return cls(quat[0] if is_single else quat, normalized=True)
+        return cls(quat[0] if is_single else quat, normalized=True, copy=False)
 
     def as_euler(self, seq, degrees=False):
         """Return the Euler angles representation of the Rotation.
@@ -630,7 +634,7 @@ class Rotation(object):
         quat[:, -1] *= -1
         if self._single:
             quat = quat[0]
-        return self.__class__(quat, normalized=True)
+        return self.__class__(quat, normalized=True, copy=False)
 
     def __mul__(self, other):
         """Compose this rotation with the other.
@@ -658,7 +662,7 @@ class Rotation(object):
         result = _compose_quat(self._quat, other._quat)
         if self._single and other._single:
             result = result[0]
-        return self.__class__(result, normalized=True)
+        return self.__class__(result, normalized=True, copy=False)
 
     def apply(self, vectors, inverse=False):
         """Apply this rotation on a set of vectors.
