@@ -195,7 +195,7 @@ class Rotation(object):
     apply
     __getitem__
     """
-    def __init__(self, quat, normalized=False):
+    def __init__(self, quat, normalized=False, copy=True):
         self._single = False
         # Try to convert to numpy array
         quat = np.asarray(quat, dtype=float)
@@ -212,8 +212,8 @@ class Rotation(object):
             self._single = True
 
         if normalized:
-            self._quat = quat
-        else:
+            self._quat = quat.copy() if copy else quat
+        if not normalized:
             self._quat = quat.copy()
             # L2 norm of each row
             norms = scipy.linalg.norm(quat, axis=1)
