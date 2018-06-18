@@ -227,6 +227,11 @@ class Rotation(object):
             # each column.
             self._quat[~zero_norms] /= norms[~zero_norms][:, None]
 
+    @property
+    def n(self):
+        """Number of rotations contained in object."""
+        return self._quat.shape[0]
+
     @classmethod
     def from_quaternion(cls, quat, normalized=False, copy=True):
         """Initialize Rotation from quaternions.
