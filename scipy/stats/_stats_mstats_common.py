@@ -47,6 +47,7 @@ def linregress(x, y=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy import stats
 
@@ -179,6 +180,7 @@ def theilslopes(y, x=None, alpha=0.95):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
 
