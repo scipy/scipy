@@ -227,16 +227,6 @@ class _TestDCTIBase(_TestDCTBase):
             assert_equal(y.dtype, dt)
             assert_array_almost_equal(y / np.max(y), y2 / np.max(y), decimal=self.dec)
 
-    def test_definition_naive(self):
-        # Test against naive implementation
-        for i in range(len(X)):
-            x = np.array(X[i], dtype=self.rdt)
-            dt = np.result_type(np.float32, self.rdt)
-            y = dct(x, type=1)
-            y2 = naive_dct1(x)
-            assert_equal(y.dtype, dt)
-            assert_array_almost_equal(y / np.max(y), y2 / np.max(y), decimal=self.dec)
-
 class _TestDCTIIBase(_TestDCTBase):
     def test_definition_matlab(self):
         # Test correspondence with matlab (orthornomal mode).
@@ -272,15 +262,6 @@ class _TestDCTIVBase(_TestDCTBase):
             assert_equal(y.dtype, dt)
             assert_array_almost_equal(y / np.max(y), y2 / np.max(y), decimal=self.dec)
 
-    def test_definition_naive(self):
-        # Test against naive implementation
-        for i in range(len(X)):
-            x = np.array(X[i], dtype=self.rdt)
-            dt = np.result_type(np.float32, self.rdt)
-            y = dct(x, type=4)
-            y2 = naive_dct4(x)
-            assert_equal(y.dtype, dt)
-            assert_array_almost_equal(y / np.max(y), y2 / np.max(y), decimal=self.dec)
 
 class TestDCTIDouble(_TestDCTIBase):
     def setup_method(self):
@@ -501,16 +482,6 @@ class _TestDSTIBase(_TestDSTBase):
             assert_equal(y.dtype, dt)
             assert_array_almost_equal(y / np.max(y), y2 / np.max(y), decimal=self.dec)
 
-    def test_definition_naive(self):
-        # Test against naive implementation
-        for i in range(len(X)):
-            x = np.array(X[i], dtype=self.rdt)
-            dt = np.result_type(np.float32, self.rdt)
-            y = dst(x, type=1)
-            y2 = naive_dst1(x)
-            assert_equal(y.dtype, dt)
-            assert_array_almost_equal(y / np.max(y), y2 / np.max(y), decimal=self.dec)
-
 class _TestDSTIVBase(_TestDSTBase):
     def test_definition_ortho(self):
         # Test orthornomal mode.
@@ -521,16 +492,6 @@ class _TestDSTIVBase(_TestDSTBase):
             y2 = naive_dst4(x, norm='ortho')
             assert_equal(y.dtype, dt)
             assert_array_almost_equal(y, y2, decimal=self.dec)
-            
-    def test_definition_naive(self):
-        # Test against naive implementation
-        for i in range(len(X)):
-            x = np.array(X[i], dtype=self.rdt)
-            dt = np.result_type(np.float32, self.rdt)
-            y = dst(x, type=4)
-            y2 = naive_dst4(x)
-            assert_equal(y.dtype, dt)
-            assert_array_almost_equal(y / np.max(y), y2 / np.max(y), decimal=self.dec)
 
 class TestDSTIDouble(_TestDSTIBase):
     def setup_method(self):
