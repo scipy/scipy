@@ -318,9 +318,11 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
       f = 0.5*sqrt(1/(N-1)) if k = 0 or N-1,
       f = 0.5*sqrt(2/(N-1)) otherwise.
 
-      .. versionadded:: 1.2.0
+    .. versionadded:: 1.2.0
+       Orthonormalization in DCT-I.
 
-    Note that the DCT-I is only supported for input size > 1
+    .. note::
+       The DCT-I is only supported for input size > 1.
 
     **Type II**
 
@@ -373,7 +375,8 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
 
       f = 0.5*sqrt(2/N)
 
-      .. versionadded:: 1.2.0
+    .. versionadded:: 1.2.0
+       Support for DCT-IV.
 
     References
     ----------
@@ -625,7 +628,7 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
       y[k] = x[N-1]*(-1)**k + 2* sum x[n]*sin(pi*(k+0.5)*(n+1)/N), 0 <= k < N.
                                  n=0
 
-    The (unnormalized) DCT-III is the inverse of the (unnormalized) DCT-II, up
+    The (unnormalized) DST-III is the inverse of the (unnormalized) DST-II, up
     to a factor `2N`.  The orthonormalized DST-III is exactly the inverse of
     the orthonormalized DST-II.
 
@@ -641,10 +644,11 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
       y[k] = 2* sum x[n]*sin(pi*(k+0.5)*(n+0.5)/N), 0 <= k < N.
                 n=0
 
-    The (unnormalized) DCT-IV is its own inverse, up
+    The (unnormalized) DST-IV is its own inverse, up
     to a factor `2N`.  The orthonormalized DST-IV is exactly its own inverse.
 
     .. versionadded:: 1.2.0
+       Support for DST-IV.
 
     References
     ----------
