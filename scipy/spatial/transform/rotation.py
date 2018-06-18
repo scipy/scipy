@@ -664,8 +664,19 @@ class Rotation(object):
 
         Rotates `vectors` by the rotation(s) represented in the object. In
         terms of DCMs, this application is the same as
-        `self.as_dcm().dot(vectors)`. For an object containing `N` rotations
-        applied on `P` vectors, returns a `numpy.ndarray` of shape `(N, P, 3)`.
+        `self.as_dcm().dot(vectors)`. Returns a `numpy.ndarray` whose shape
+        depends on the following cases:
+
+            - a single rotation applied on a single vector specified with shape
+              `(3,)`:
+                - output vector has shape `(3,)`.
+            - a single rotation applied on a `P` vectors:
+                - output vectors have shape `(P, 3)`, same as input vectors.
+            - `N` rotations applied on a single vector:
+                - output vectors have shape `(N, 3)`.
+            - `N` rotation applied on `P` vectors:
+                - output has shape `(N, 3)`, where the `ith` rotation is
+                  applied on the `ith` point.
 
         If the original frame rotates to the final frame by this rotation, then
         its application to a vector can be seen in two ways:
@@ -690,16 +701,30 @@ class Rotation(object):
             raise ValueError("Expected input of shape (3,) or (P, 3), "
                              "got {}.".format(vectors.shape))
 
+        single_vector = False
         if vectors.shape == (3,):
+            single_vector = True
             vectors = vectors[None, :]
 
-        # The dcm convention assumes column vectors of vectors, so here we
-        # transpose the vectors matrix and transpose the outuput
-        if inverse:
-            # For inverting the rotation, we also transpose the dcm
-            result = np.einsum('...ji,...kj->...ki', self.as_dcm(), vectors)
-        else:
-            result = np.einsum('...ij,...kj->...ki', self.as_dcm(), vectors)
+        dcm = self.as_dcm()
+        if self._single:
+            dcm = dcm[None, :, :]
 
-        # For single rotation, the output is 2D, so add another axis
-        return result[None, :] if self._single else result
+        n_vectors = vectors.shape[0]
+        n_rotations = self._quat.shape[0]
+
+        if n_vectors != 1 and n_rotations != 1 and n_vectors != n_rotations:
+            raise ValueError("Expected equal numbers of rotations and vectors "
+                             ", or a single rotation, or a single vector, got "
+                             "{} rotations and {} vectors.".format(
+                                n_rotations, n_vectors))
+
+        if inverse:
+            result = np.einsum('ikj,ik->ij', dcm, vectors)
+        else:
+            result = np.einsum('ijk,ik->ij', dcm, vectors)
+
+        if self._single and single_vector:
+            return result[0]
+        else:
+            return result
