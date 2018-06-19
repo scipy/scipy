@@ -680,7 +680,7 @@ class Rotation(object):
               to the original frame.
             - As the physical rotation of a vector being glued to the original
               frame as it rotates. In this case the vector components are
-              expressed in the original frame before and after rotation.
+              expressed in the original frame before and after the rotation.
 
         In terms of DCMs, this application is the same as
         `self.as_dcm().dot(vectors)`.
@@ -692,11 +692,12 @@ class Rotation(object):
         Returns a `numpy.ndarray` of shape `(3,)` if object contains a single
         rotation (as opposed to a stack with a single rotation) and a single
         vector is specified with shape `(3,)`. In all other cases, the returned
-        array has shape `(N, 3)`.
+        array has shape `(N, 3)`, where `N` is either the number of rotations
+        or vectors.
 
         Parameters
         ----------
-        vectors : array_like, shape (3,) or (P, 3)
+        vectors : array_like, shape (3,) or (N, 3)
             Each `vectors[i]` represents a vector in 3D space. A single vector
             can either be specified with shape `(3, )` or `(1, 3)`.
         inverse : boolean, optional
