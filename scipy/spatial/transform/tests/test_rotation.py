@@ -622,43 +622,52 @@ def test_inv_single_rotation():
 
 
 def test_apply_single_rotation_single_point():
-    r_1d = Rotation.from_dcm([
+    dcm = np.array([
         [0, -1, 0],
         [1, 0, 0],
         [0, 0, 1]
     ])
-    r_2d = Rotation.from_dcm([[
-        [0, -1, 0],
-        [1, 0, 0],
-        [0, 0, 1]
-    ]])
+    r_1d = Rotation.from_dcm(dcm)
+    r_2d = Rotation.from_dcm(np.expand_dims(dcm, axis=0))
 
     v_1d = np.array([1, 2, 3])
-    v_2d = np.array([[1, 2, 3]])
+    v_2d = np.expand_dims(v_1d, axis=0)
+    v1d_rotated = np.array([-2, 1, 3])
+    v2d_rotated = np.expand_dims(v1d_rotated, axis=0)
 
-    assert_allclose(r_1d.apply(v_1d), np.array([-2, 1, 3]))
-    assert_allclose(r_1d.apply(v_2d), np.array([[-2, 1, 3]]))
-    assert_allclose(r_2d.apply(v_1d), np.array([[-2, 1, 3]]))
-    assert_allclose(r_2d.apply(v_2d), np.array([[-2, 1, 3]]))
+    assert_allclose(r_1d.apply(v_1d), v1d_rotated)
+    assert_allclose(r_1d.apply(v_2d), v2d_rotated)
+    assert_allclose(r_2d.apply(v_1d), v2d_rotated)
+    assert_allclose(r_2d.apply(v_2d), v2d_rotated)
+
+    v1d_inverse = np.array([2, -1, 3])
+    v2d_inverse = np.expand_dims(v1d_inverse, axis=0)
+
+    assert_allclose(r_1d.apply(v_1d, inverse=True), v1d_inverse)
+    assert_allclose(r_1d.apply(v_2d, inverse=True), v2d_inverse)
+    assert_allclose(r_2d.apply(v_1d, inverse=True), v2d_inverse)
+    assert_allclose(r_2d.apply(v_2d, inverse=True), v2d_inverse)
 
 
 def test_apply_single_rotation_multiple_points():
-    r1 = Rotation.from_dcm([
+    dcm = np.array([
         [0, -1, 0],
         [1, 0, 0],
         [0, 0, 1]
     ])
-    r2 = Rotation.from_dcm([[
-            [0, -1, 0],
-            [1, 0, 0],
-            [0, 0, 1]
-        ]])
+    r1 = Rotation.from_dcm(dcm)
+    r2 = Rotation.from_dcm(np.expand_dims(dcm, axis=0))
 
     v = np.array([[1, 2, 3], [4, 5, 6]])
     v_rotated = np.array([[-2, 1, 3], [-5, 4, 6]])
 
     assert_allclose(r1.apply(v), v_rotated)
     assert_allclose(r2.apply(v), v_rotated)
+
+    v_inverse = np.array([[2, -1, 3], [5, -4, 6]])
+
+    assert_allclose(r1.apply(v, inverse=True), v_inverse)
+    assert_allclose(r2.apply(v, inverse=True), v_inverse)
 
 
 def test_apply_multiple_rotations_single_point():
@@ -676,12 +685,17 @@ def test_apply_multiple_rotations_single_point():
     r = Rotation.from_dcm(dcm)
 
     v1 = np.array([1, 2, 3])
-    v2 = np.array([[1, 2, 3]])
+    v2 = np.expand_dims(v1, axis=0)
 
     v_rotated = np.array([[-2, 1, 3], [1, -3, 2]])
 
     assert_allclose(r.apply(v1), v_rotated)
     assert_allclose(r.apply(v2), v_rotated)
+
+    v_inverse = np.array([[2, -1, 3], [1, 3, -2]])
+
+    assert_allclose(r.apply(v1, inverse=True), v_inverse)
+    assert_allclose(r.apply(v2, inverse=True), v_inverse)
 
 
 def test_apply_multiple_rotations_multiple_points():
@@ -700,5 +714,53 @@ def test_apply_multiple_rotations_multiple_points():
 
     v = np.array([[1, 2, 3], [4, 5, 6]])
     v_rotated = np.array([[-2, 1, 3], [4, -6, 5]])
-
     assert_allclose(r.apply(v), v_rotated)
+    v_inverse = np.array([[2, -1, 3], [4, 6, -5]])
+    assert_allclose(r.apply(v, inverse=True), v_inverse)
+
+    v_inverse = np.array([[2, -1, 3], [4, 6, -5]])
+
+    assert_allclose(r.apply(v, inverse=True), v_inverse)
+
+    v_inverse = np.array([[2, -1, 3], [4, 6, -5]])
+
+    assert_allclose(r.apply(v, inverse=True), v_inverse)
+
+
+def test_getitem():
+    dcm = np.empty((2, 3, 3))
+    dcm[0] = np.array([
+        [0, -1, 0],
+        [1, 0, 0],
+        [0, 0, 1]
+    ])
+    dcm[1] = np.array([
+        [1, 0, 0],
+        [0, 0, -1],
+        [0, 1, 0]
+    ])
+    r = Rotation.from_dcm(dcm)
+
+    assert_allclose(r[0].as_dcm(), dcm[0])
+    assert_allclose(r[1].as_dcm(), dcm[1])
+    assert_allclose(r[:-1].as_dcm(), np.expand_dims(dcm[0], axis=0))
+
+
+def test_n_rotations():
+    dcm = np.empty((2, 3, 3))
+    dcm[0] = np.array([
+        [0, -1, 0],
+        [1, 0, 0],
+        [0, 0, 1]
+    ])
+    dcm[1] = np.array([
+        [1, 0, 0],
+        [0, 0, -1],
+        [0, 1, 0]
+    ])
+    r = Rotation.from_dcm(dcm)
+
+    assert_equal(r.n, 2)
+    assert_equal(r[0].n, 1)
+    assert_equal(r[1].n, 1)
+    assert_equal(r[:-1].n, 1)
