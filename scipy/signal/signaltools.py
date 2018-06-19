@@ -247,7 +247,7 @@ def correlate(in1, in2, mode='full', method='auto'):
 
             # zero pad input
             in1zpadded = np.zeros(ps, in1.dtype)
-            sc = [slice(0, i) for i in in1.shape]
+            sc = tuple(slice(0, i) for i in in1.shape)
             in1zpadded[sc] = in1.copy()
 
             if mode == 'full':
@@ -1338,7 +1338,7 @@ def lfilter(b, a, x, axis=-1, zi=None):
         ind = out_full.ndim * [slice(None)]
         if zi is not None:
             ind[axis] = slice(zi.shape[axis])
-            out_full[ind] += zi
+            out_full[tuple(ind)] += zi
 
         ind[axis] = slice(out_full.shape[axis] - len(b) + 1)
         out = out_full[tuple(ind)]
@@ -1347,7 +1347,7 @@ def lfilter(b, a, x, axis=-1, zi=None):
             return out
         else:
             ind[axis] = slice(out_full.shape[axis] - len(b) + 1, None)
-            zf = out_full[ind]
+            zf = out_full[tuple(ind)]
             return out, zf
     else:
         if zi is None:
@@ -2220,20 +2220,20 @@ def resample(x, num, t=None, axis=0, window=None):
     N = int(np.minimum(num, Nx))
     Y = zeros(newshape, 'D')
     sl[axis] = slice(0, (N + 1) // 2)
-    Y[sl] = X[sl]
+    Y[tuple(sl)] = X[tuple(sl)]
     sl[axis] = slice(-(N - 1) // 2, None)
-    Y[sl] = X[sl]
+    Y[tuple(sl)] = X[tuple(sl)]
 
     if N % 2 == 0:  # special treatment if low number of points is even. So far we have set Y[-N/2]=X[-N/2]
         if N < Nx:  # if downsampling
             sl[axis] = slice(N//2,N//2+1,None)  # select the component at frequency N/2
-            Y[sl] += X[sl]  # add the component of X at N/2
+            Y[tuple(sl)] += X[tuple(sl)]  # add the component of X at N/2
         elif N < num:  # if upsampling
             sl[axis] = slice(num-N//2,num-N//2+1,None)  # select the component at frequency -N/2
-            Y[sl] /= 2  # halve the component at -N/2
-            temp = Y[sl]
+            Y[tuple(sl)] /= 2  # halve the component at -N/2
+            temp = Y[tuple(sl)]
             sl[axis] = slice(N//2,N//2+1,None)  # select the component at +N/2
-            Y[sl] = temp  # set that equal to the component at -N/2
+            Y[tuple(sl)] = temp  # set that equal to the component at -N/2
 
     y = fftpack.ifft(Y, axis=axis) * (float(num) / float(Nx))
 
