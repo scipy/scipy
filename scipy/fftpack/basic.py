@@ -147,14 +147,17 @@ def _asfarray(x):
 def _fix_shape(x, n, axis):
     """ Internal auxiliary function for _raw_fft, _raw_fftnd."""
     s = list(x.shape)
+    if axis >= len(s) or axis < - len(s):
+        raise IndexError("Input array does not have specified axis.")
+    axis = axis % len(s)
     if s[axis] > n:
-        index = [slice(None)]*len(s)
-        index[axis] = slice(0,n)
+        index = tuple(slice(None) if i != axis else slice(0, n)
+                      for i in range(len(s)))
         x = x[index]
         return x, False
     else:
-        index = [slice(None)]*len(s)
-        index[axis] = slice(0,s[axis])
+        index = tuple(slice(None) if i != axis else slice(0, s[axis])
+                      for i in range(len(s)))
         s[axis] = n
         z = zeros(s,x.dtype.char)
         z[index] = x
