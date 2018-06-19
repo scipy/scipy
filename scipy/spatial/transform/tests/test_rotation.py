@@ -715,15 +715,8 @@ def test_apply_multiple_rotations_multiple_points():
     v = np.array([[1, 2, 3], [4, 5, 6]])
     v_rotated = np.array([[-2, 1, 3], [4, -6, 5]])
     assert_allclose(r.apply(v), v_rotated)
-    v_inverse = np.array([[2, -1, 3], [4, 6, -5]])
-    assert_allclose(r.apply(v, inverse=True), v_inverse)
 
     v_inverse = np.array([[2, -1, 3], [4, 6, -5]])
-
-    assert_allclose(r.apply(v, inverse=True), v_inverse)
-
-    v_inverse = np.array([[2, -1, 3], [4, 6, -5]])
-
     assert_allclose(r.apply(v, inverse=True), v_inverse)
 
 
@@ -764,3 +757,5 @@ def test_n_rotations():
     assert_equal(r[0].n, 1)
     assert_equal(r[1].n, 1)
     assert_equal(r[:-1].n, 1)
+=======
+>>>>>>> 18e780c25... TST: Add test with inverse=True
