@@ -682,7 +682,7 @@ def convolve(input, weights, output=None, mode='reflect', cval=0.0,
     --------
     Perhaps the simplest case to understand is ``mode='constant', cval=0.0``,
     because in this case borders (i.e. where the `weights` kernel, centered
-    on any one value, extends beyond an edge of `input`.
+    on any one value, extends beyond an edge of `input`) are treated as zeros.
 
     >>> a = np.array([[1, 2, 0, 0],
     ...               [5, 3, 0, 4],
