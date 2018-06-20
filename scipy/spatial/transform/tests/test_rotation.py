@@ -757,3 +757,17 @@ def test_n_rotations():
     assert_equal(len(r[0]), 1)
     assert_equal(len(r[1]), 1)
     assert_equal(len(r[:-1]), 1)
+
+
+def test_quat_ownership():
+    # Ensure that users cannot accidentally corrupt object
+    quat = np.array([
+        [1, 0, 0, 0],
+        [0, 1, 0, 0],
+        [0, 0, 1, 0]
+    ])
+    r = Rotation.from_quaternion(quat, normalized=True)
+    s = r[0:2]
+
+    r._quat[0] = np.array([0, -1, 0, 0])
+    assert_allclose(s._quat[0], np.array([1, 0, 0, 0]))
