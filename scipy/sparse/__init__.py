@@ -84,8 +84,8 @@ Submodules
 .. autosummary::
    :toctree: generated/
 
-   csgraph - Compressed sparse graph routines
-   linalg - sparse linear algebra routines
+   csgraph
+   linalg
 
 Exceptions
 ----------
