@@ -257,13 +257,14 @@ class Rotation(object):
     def as_quaternion(self):
         """Return the quaternion representation of the Rotation.
 
-        This function returns a numpy array of shape (4,) or (N x 4) depending
-        on the input that was used to initialize the object.
+        Returns a copy of the quaternions stored internally in a numpy array of
+        shape (4,) or (N x 4) depending on the input that was used to
+        initialize the object.
         """
         if self._single:
-            return self._quat[0]
+            return self._quat[0].copy()
         else:
-            return self._quat
+            return self._quat.copy()
 
     def as_dcm(self):
         """Return the direction cosine matrix representation of the Rotation.
