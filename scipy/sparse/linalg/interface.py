@@ -428,6 +428,12 @@ class LinearOperator(object):
         return self._adjoint()
 
     H = property(adjoint)
+    
+    def _transpose(self):
+        N,M = self.shape
+        I = np.eye(M, M)
+        X = self.matmat(I)
+        return MatrixLinearOperator(np.transpose(X))
 
     def transpose(self):
         """Transpose this linear operator.
