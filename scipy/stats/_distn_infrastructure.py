@@ -1109,12 +1109,15 @@ class rv_generic(object):
         """
         args, loc, scale = self._parse_args(*args, **kwds)
         # NB: for discrete distributions scale=1 by construction in _parse_args
+        loc, scale = map(asarray, (loc, scale))
         args = tuple(map(asarray, args))
         cond0 = self._argcheck(*args) & (scale > 0) & (loc == loc)
         output = zeros(shape(cond0), 'd')
         place(output, (1-cond0), self.badvalue)
-        goodargs = argsreduce(cond0, *args)
-        place(output, cond0, self.vecentropy(*goodargs) + log(scale))
+        goodargs = argsreduce(cond0, scale, *args)
+        goodscale = goodargs[0]
+        goodargs = goodargs[1:]
+        place(output, cond0, self.vecentropy(*goodargs) + log(goodscale))
         return output
 
     def moment(self, n, *args, **kwds):
