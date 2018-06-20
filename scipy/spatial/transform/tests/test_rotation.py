@@ -753,9 +753,7 @@ def test_n_rotations():
     ])
     r = Rotation.from_dcm(dcm)
 
-    assert_equal(r.n, 2)
-    assert_equal(r[0].n, 1)
-    assert_equal(r[1].n, 1)
-    assert_equal(r[:-1].n, 1)
-=======
->>>>>>> 18e780c25... TST: Add test with inverse=True
+    assert_equal(len(r), 2)
+    assert_equal(len(r[0]), 1)
+    assert_equal(len(r[1]), 1)
+    assert_equal(len(r[:-1]), 1)

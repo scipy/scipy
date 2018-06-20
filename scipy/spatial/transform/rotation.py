@@ -227,8 +227,7 @@ class Rotation(object):
             # each column.
             self._quat[~zero_norms] /= norms[~zero_norms][:, None]
 
-    @property
-    def n(self):
+    def __len__(self):
         """Number of rotations contained in object."""
         return self._quat.shape[0]
 
@@ -716,7 +715,7 @@ class Rotation(object):
             dcm = dcm[None, :, :]
 
         n_vectors = vectors.shape[0]
-        n_rotations = self.n
+        n_rotations = len(self)
 
         if n_vectors != 1 and n_rotations != 1 and n_vectors != n_rotations:
             raise ValueError("Expected equal numbers of rotations and vectors "
