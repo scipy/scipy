@@ -34,9 +34,9 @@ Class Reference
 """
 from __future__ import division, print_function, absolute_import
 
-from .rotation import *
+from .rotation import Rotation
 
-__all__ = [s for s in dir() if not s.startswith('_')]
+__all__ = ['Rotation']
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)
