@@ -17,6 +17,7 @@ from scipy.fftpack import fftshift,ifftshift,fftfreq,rfftfreq
 from scipy.fftpack.helper import next_fast_len
 
 from numpy import pi, random
+import numpy as np
 
 
 class TestFFTShift(object):
@@ -158,4 +159,13 @@ class TestNextOptLen(object):
         }
         for x, y in hams.items():
             assert_equal(next_fast_len(x), y)
+
+    def test_np_integers(self):
+        # regression test for gh-8947: next_fast_len(np.int64(27000)) raises
+        # because np.int64 does not have a .bit_length() method
+        ITYPES = [np.int16, np.int32, np.int64, np.uint16, np.uint32, np.uint64]
+        for ityp in ITYPES:
+            x = ityp(27000)
+            nfl = next_fast_len(x)
+            assert_equal(nfl, next_fast_len(int(x)))
 
