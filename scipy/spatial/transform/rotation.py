@@ -1,9 +1,9 @@
 from __future__ import division, print_function, absolute_import
 
-import numpy as np
-import scipy.linalg
 import re
 import warnings
+import numpy as np
+import scipy.linalg
 
 
 AXIS_TO_IND = {'x': 0, 'y': 1, 'z': 2}
@@ -146,16 +146,13 @@ def _make_elementary_quat(axis, angles):
 
 def _compose_quat(p, q):
     product = np.empty((max(p.shape[0], q.shape[0]), 4))
-    # Scalar part of result
     product[:, 3] = p[:, 3] * q[:, 3] - np.sum(p[:, :3] * q[:, :3], axis=1)
-    # Vector part of result
     product[:, :3] = (p[:, None, 3] * q[:, :3] + q[:, None, 3] * p[:, :3] +
                       np.cross(p[:, :3], q[:, :3]))
     return product
 
 
 def _elementary_quat_compose(seq, angles, intrinsic=False):
-    # Initialize result to first axis
     result = _make_elementary_quat(seq[0], angles[:, 0])
 
     for idx, axis in enumerate(seq[1:], start=1):
@@ -191,17 +188,17 @@ class Rotation(object):
     Indexing within a rotation is supported since multiple rotation transforms
     can be stored within a single `Rotation` instance.
 
-    Initialization using the `from_...` classmethods such as `from_quaternion`
-    is recommended over using `__init__`.
+    Initialization using the `from_...` classmethods such as `from_quat` is
+    recommended over using `__init__`.
 
     Methods
     -------
     __len__
-    from_quaternion
+    from_quat
     from_dcm
     from_rotvec
     from_euler
-    as_quaternion
+    as_quat
     as_dcm
     as_rotvec
     as_euler
@@ -212,7 +209,6 @@ class Rotation(object):
     """
     def __init__(self, quat, normalized=False, copy=True):
         self._single = False
-        # Try to convert to numpy array
         quat = np.asarray(quat, dtype=float)
 
         if quat.ndim not in [1, 2] or quat.shape[-1] != 4:
@@ -230,16 +226,13 @@ class Rotation(object):
             self._quat = quat.copy() if copy else quat
         else:
             self._quat = quat.copy()
-            # L2 norm of each row
             norms = scipy.linalg.norm(quat, axis=1)
 
-            # Raise ValueError for zero (eps?) norm quaternions
             zero_norms = norms == 0
             if zero_norms.any():
                 raise ValueError("Found zero norm quaternions in `quat`.")
 
-            # Normalize each quaternion, ensuring norm is broadcasted along
-            # each column.
+            # Ensure norm is broadcasted along each column.
             self._quat[~zero_norms] /= norms[~zero_norms][:, None]
 
     def __len__(self):
@@ -255,7 +248,7 @@ class Rotation(object):
         return self._quat.shape[0]
 
     @classmethod
-    def from_quaternion(cls, quat, normalized=False):
+    def from_quat(cls, quat, normalized=False):
         """Initialize Rotation from quaternions.
 
         3D rotations can be represented using unit-norm quaternions [1]_.
@@ -282,78 +275,6 @@ class Rotation(object):
         """
 
         return cls(quat, normalized)
-
-    def as_quaternion(self):
-        """Represent rotations as quaternions.
-
-        Rotations in 3 dimensions can be represented using unit norm
-        quaternions [1]_. The mapping from quaternions to rotations is
-        two-to-one, i.e. a quaternion and its additive inverse represent the
-        same spatial rotation.
-
-        Returns
-        -------
-        output : `numpy.ndarray`, shape (4,) or (N, 4)
-            Shape depends on shape of inputs used for initialization.
-
-        References
-        ----------
-        .. [1] `Quaternions and Spatial Rotation
-               <https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation>`_
-        """
-        if self._single:
-            return self._quat[0].copy()
-        else:
-            return self._quat.copy()
-
-    def as_dcm(self):
-        """Represent rotations as direction cosine matrices.
-
-        3D rotations can be represented using direction cosine matrices, which
-        are 3 x 3 real orthogonal matrices with eigenvalue equal to +1.
-
-        Returns
-        -------
-        output : `numpy.ndarray`, shape (3, 3) or (N, 3, 3)
-            Shape depends on shape of inputs used for initialization.
-        """
-
-        x = self._quat[:, 0]
-        y = self._quat[:, 1]
-        z = self._quat[:, 2]
-        w = self._quat[:, 3]
-
-        x2 = x * x
-        y2 = y * y
-        z2 = z * z
-        w2 = w * w
-
-        xy = x * y
-        zw = z * w
-        xz = x * z
-        yw = y * w
-        yz = y * z
-        xw = x * w
-
-        num_rotations = self._quat.shape[0]
-        dcm = np.empty((num_rotations, 3, 3))
-
-        dcm[:, 0, 0] = x2 - y2 - z2 + w2
-        dcm[:, 1, 0] = 2 * (xy + zw)
-        dcm[:, 2, 0] = 2 * (xz - yw)
-
-        dcm[:, 0, 1] = 2 * (xy - zw)
-        dcm[:, 1, 1] = - x2 + y2 - z2 + w2
-        dcm[:, 2, 1] = 2 * (yz + xw)
-
-        dcm[:, 0, 2] = 2 * (xz + yw)
-        dcm[:, 1, 2] = 2 * (yz - xw)
-        dcm[:, 2, 2] = - x2 - y2 + z2 + w2
-
-        if self._single:
-            return dcm[0]
-        else:
-            return dcm
 
     @classmethod
     def from_dcm(cls, dcm):
@@ -467,7 +388,6 @@ class Rotation(object):
         large_angle = ~small_angle
 
         scale = np.empty(num_rotations)
-        # Use the Taylor expansion of sin(x/2) / x for small angles
         scale[small_angle] = (0.5 - norms[small_angle] ** 2 / 48 +
                               norms[small_angle] ** 4 / 3840)
         scale[large_angle] = (np.sin(norms[large_angle] / 2) /
@@ -481,42 +401,6 @@ class Rotation(object):
             return cls(quat[0], normalized=True, copy=False)
         else:
             return cls(quat, normalized=True, copy=False)
-
-    def as_rotvec(self):
-        """Represent rotations as rotation vectors.
-
-        A rotation vector is a 3 dimensional vector which is co-directional to
-        the axis of rotation and whose norm gives the angle of rotation (in
-        radians).
-
-        Returns
-        -------
-        output : `numpy.ndarray`, shape (3,) or (N, 3)
-            Shape depends on shape of inputs used for initialization.
-        """
-        quat = self._quat.copy()
-        # w > 0 to ensure 0 <= angle <= pi
-        quat[quat[:, 3] < 0] *= -1
-
-        angle = 2 * np.arctan2(np.linalg.norm(quat[:, :3], axis=1), quat[:, 3])
-
-        small_angle = (angle <= 1e-3)
-        large_angle = ~small_angle
-
-        num_rotations = quat.shape[0]
-        scale = np.empty(num_rotations)
-        # Use the Taylor expansion of x / sin(x/2) for small angles
-        scale[small_angle] = (2 + angle[small_angle] ** 2 / 12 +
-                              7 * angle[small_angle] ** 4 / 2880)
-        scale[large_angle] = (angle[large_angle] /
-                              np.sin(angle[large_angle] / 2))
-
-        rotvec = scale[:, None] * quat[:, :3]
-
-        if self._single:
-            return rotvec[0]
-        else:
-            return rotvec
 
     @classmethod
     def from_euler(cls, seq, angles, degrees=False):
@@ -631,6 +515,113 @@ class Rotation(object):
         quat = _elementary_quat_compose(seq, angles, intrinsic)
         return cls(quat[0] if is_single else quat, normalized=True, copy=False)
 
+    def as_quat(self):
+        """Represent rotations as quaternions.
+
+        Rotations in 3 dimensions can be represented using unit norm
+        quaternions [1]_. The mapping from quaternions to rotations is
+        two-to-one, i.e. a quaternion and its additive inverse represent the
+        same spatial rotation.
+
+        Returns
+        -------
+        output : `numpy.ndarray`, shape (4,) or (N, 4)
+            Shape depends on shape of inputs used for initialization.
+
+        References
+        ----------
+        .. [1] `Quaternions and Spatial Rotation
+               <https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation>`_
+        """
+        if self._single:
+            return self._quat[0].copy()
+        else:
+            return self._quat.copy()
+
+    def as_dcm(self):
+        """Represent rotations as direction cosine matrices.
+
+        3D rotations can be represented using direction cosine matrices, which
+        are 3 x 3 real orthogonal matrices with eigenvalue equal to +1.
+
+        Returns
+        -------
+        output : `numpy.ndarray`, shape (3, 3) or (N, 3, 3)
+            Shape depends on shape of inputs used for initialization.
+        """
+
+        x = self._quat[:, 0]
+        y = self._quat[:, 1]
+        z = self._quat[:, 2]
+        w = self._quat[:, 3]
+
+        x2 = x * x
+        y2 = y * y
+        z2 = z * z
+        w2 = w * w
+
+        xy = x * y
+        zw = z * w
+        xz = x * z
+        yw = y * w
+        yz = y * z
+        xw = x * w
+
+        num_rotations = self._quat.shape[0]
+        dcm = np.empty((num_rotations, 3, 3))
+
+        dcm[:, 0, 0] = x2 - y2 - z2 + w2
+        dcm[:, 1, 0] = 2 * (xy + zw)
+        dcm[:, 2, 0] = 2 * (xz - yw)
+
+        dcm[:, 0, 1] = 2 * (xy - zw)
+        dcm[:, 1, 1] = - x2 + y2 - z2 + w2
+        dcm[:, 2, 1] = 2 * (yz + xw)
+
+        dcm[:, 0, 2] = 2 * (xz + yw)
+        dcm[:, 1, 2] = 2 * (yz - xw)
+        dcm[:, 2, 2] = - x2 - y2 + z2 + w2
+
+        if self._single:
+            return dcm[0]
+        else:
+            return dcm
+
+    def as_rotvec(self):
+        """Represent rotations as rotation vectors.
+
+        A rotation vector is a 3 dimensional vector which is co-directional to
+        the axis of rotation and whose norm gives the angle of rotation (in
+        radians).
+
+        Returns
+        -------
+        output : `numpy.ndarray`, shape (3,) or (N, 3)
+            Shape depends on shape of inputs used for initialization.
+        """
+        quat = self._quat.copy()
+        # w > 0 to ensure 0 <= angle <= pi
+        quat[quat[:, 3] < 0] *= -1
+
+        angle = 2 * np.arctan2(np.linalg.norm(quat[:, :3], axis=1), quat[:, 3])
+
+        small_angle = (angle <= 1e-3)
+        large_angle = ~small_angle
+
+        num_rotations = quat.shape[0]
+        scale = np.empty(num_rotations)
+        scale[small_angle] = (2 + angle[small_angle] ** 2 / 12 +
+                              7 * angle[small_angle] ** 4 / 2880)
+        scale[large_angle] = (angle[large_angle] /
+                              np.sin(angle[large_angle] / 2))
+
+        rotvec = scale[:, None] * quat[:, :3]
+
+        if self._single:
+            return rotvec[0]
+        else:
+            return rotvec
+
     def as_euler(self, seq, degrees=False):
         """Compute Euler angles for rotations with specified axis sequence.
 
@@ -709,62 +700,6 @@ class Rotation(object):
 
         return angles[0] if self._single else angles
 
-    def inv(self):
-        """Invert this rotation.
-
-        Composition of a rotation with its inverse results in an identity
-        rotation, or no rotation.
-
-        Returns
-        -------
-        output : `Rotation` instance
-            Object containing inverse of the rotations in the current instance.
-        """
-        quat = self._quat.copy()
-        quat[:, -1] *= -1
-        if self._single:
-            quat = quat[0]
-        return self.__class__(quat, normalized=True, copy=False)
-
-    def __mul__(self, other):
-        """Compose this rotation with the other.
-
-        If `p` and `q` are two rotations, then the composition of 'q followed
-        by p' is equivalent to `p * q`. In terms of DCMs, the composition can
-        be expressed as `p.as_dcm().dot(q.as_dcm())`.
-
-        Parameters
-        ----------
-        other : `Rotation` instance
-            Object containing the rotaions to be composed with this one. Note
-            that rotation compositions are not commutative, so `p * q` is
-            different from `q * p`.
-
-        Returns
-        -------
-        output : `Rotation` instance
-            This function supports composition of multiple rotations at a time.
-            The following cases are possible:
-
-            - Either `p` or `q` contains a single rotation. In this case
-              `output` contains the result of composing each rotation in the
-              other object with the single rotation.
-            - Both `p` and `q` contain `N` rotations. In this case each
-              rotation `p[i]` is composed with the corresponding rotation
-              `q[i]` and `output` contains `N` rotations.
-        """
-        if not(self._quat.shape[0] == 1 or other._quat.shape[0] == 1 or
-               self._quat.shape[0] == other._quat.shape[0]):
-            raise ValueError("Expected equal number of rotations in both "
-                             "or a single rotation in either object, "
-                             "got {} rotations in first and {} rotations in "
-                             "second object.".format(
-                                self._quat.shape[0], other._quat.shape[0]))
-        result = _compose_quat(self._quat, other._quat)
-        if self._single and other._single:
-            result = result[0]
-        return self.__class__(result, normalized=True, copy=False)
-
     def apply(self, vectors, inverse=False):
         """Apply this rotation on a set of vectors.
 
@@ -838,6 +773,62 @@ class Rotation(object):
         else:
             return result
 
+    def __mul__(self, other):
+        """Compose this rotation with the other.
+
+        If `p` and `q` are two rotations, then the composition of 'q followed
+        by p' is equivalent to `p * q`. In terms of DCMs, the composition can
+        be expressed as `p.as_dcm().dot(q.as_dcm())`.
+
+        Parameters
+        ----------
+        other : `Rotation` instance
+            Object containing the rotaions to be composed with this one. Note
+            that rotation compositions are not commutative, so `p * q` is
+            different from `q * p`.
+
+        Returns
+        -------
+        output : `Rotation` instance
+            This function supports composition of multiple rotations at a time.
+            The following cases are possible:
+
+            - Either `p` or `q` contains a single rotation. In this case
+              `output` contains the result of composing each rotation in the
+              other object with the single rotation.
+            - Both `p` and `q` contain `N` rotations. In this case each
+              rotation `p[i]` is composed with the corresponding rotation
+              `q[i]` and `output` contains `N` rotations.
+        """
+        if not(self._quat.shape[0] == 1 or other._quat.shape[0] == 1 or
+               self._quat.shape[0] == other._quat.shape[0]):
+            raise ValueError("Expected equal number of rotations in both "
+                             "or a single rotation in either object, "
+                             "got {} rotations in first and {} rotations in "
+                             "second object.".format(
+                                self._quat.shape[0], other._quat.shape[0]))
+        result = _compose_quat(self._quat, other._quat)
+        if self._single and other._single:
+            result = result[0]
+        return self.__class__(result, normalized=True, copy=False)
+
+    def inv(self):
+        """Invert this rotation.
+
+        Composition of a rotation with its inverse results in an identity
+        rotation, or no rotation.
+
+        Returns
+        -------
+        output : `Rotation` instance
+            Object containing inverse of the rotations in the current instance.
+        """
+        quat = self._quat.copy()
+        quat[:, -1] *= -1
+        if self._single:
+            quat = quat[0]
+        return self.__class__(quat, normalized=True, copy=False)
+
     def __getitem__(self, indexer):
         """Extract rotation(s) at given index(es) from object.
 
@@ -858,5 +849,4 @@ class Rotation(object):
                 - a stack of rotation(s), if `indexer` is a slice, or and index
                   array.
         """
-        # __init__ now copies by default
         return self.__class__(self._quat[indexer], normalized=True)

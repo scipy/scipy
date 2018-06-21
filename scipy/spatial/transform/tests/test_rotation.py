@@ -12,23 +12,23 @@ from itertools import permutations
 
 def test_generic_quat_matrix():
     x = np.array([[3, 4, 0, 0], [5, 12, 0, 0]])
-    r = Rotation.from_quaternion(x)
+    r = Rotation.from_quat(x)
     expected_quat = x / np.array([[5], [13]])
-    assert_array_almost_equal(r.as_quaternion(), expected_quat)
+    assert_array_almost_equal(r.as_quat(), expected_quat)
 
 
 def test_from_single_1d_quaternion():
     x = np.array([3, 4, 0, 0])
-    r = Rotation.from_quaternion(x)
+    r = Rotation.from_quat(x)
     expected_quat = x / 5
-    assert_array_almost_equal(r.as_quaternion(), expected_quat)
+    assert_array_almost_equal(r.as_quat(), expected_quat)
 
 
 def test_from_single_2d_quaternion():
     x = np.array([[3, 4, 0, 0]])
-    r = Rotation.from_quaternion(x)
+    r = Rotation.from_quat(x)
     expected_quat = x / 5
-    assert_array_almost_equal(r.as_quaternion(), expected_quat)
+    assert_array_almost_equal(r.as_quat(), expected_quat)
 
 
 def test_from_square_quat_matrix():
@@ -39,44 +39,44 @@ def test_from_square_quat_matrix():
         [0, 0, 0, 1],
         [0, 0, 0, -1]
         ])
-    r = Rotation.from_quaternion(x)
+    r = Rotation.from_quat(x)
     expected_quat = x / np.array([[5], [13], [1], [1]])
-    assert_array_almost_equal(r.as_quaternion(), expected_quat)
+    assert_array_almost_equal(r.as_quat(), expected_quat)
 
 
-def test_malformed_1d_from_quaternion():
+def test_malformed_1d_from_quat():
     with pytest.raises(ValueError):
-        Rotation.from_quaternion(np.array([1, 2, 3]))
+        Rotation.from_quat(np.array([1, 2, 3]))
 
 
-def test_malformed_2d_from_quaternion():
+def test_malformed_2d_from_quat():
     with pytest.raises(ValueError):
-        Rotation.from_quaternion(np.array([
+        Rotation.from_quat(np.array([
             [1, 2, 3, 4, 5],
             [4, 5, 6, 7, 8]
             ]))
 
 
-def test_zero_norms_from_quaternion():
+def test_zero_norms_from_quat():
     x = np.array([
             [3, 4, 0, 0],
             [0, 0, 0, 0],
             [5, 0, 12, 0]
             ])
     with pytest.raises(ValueError):
-        Rotation.from_quaternion(x)
+        Rotation.from_quat(x)
 
 
 def test_as_dcm_single_1d_quaternion():
     quat = [0, 0, 0, 1]
-    mat = Rotation.from_quaternion(quat).as_dcm()
+    mat = Rotation.from_quat(quat).as_dcm()
     # mat.shape == (3,3) due to 1d input
     assert_array_almost_equal(mat, np.eye(3))
 
 
 def test_as_dcm_single_2d_quaternion():
     quat = [[0, 0, 1, 1]]
-    mat = Rotation.from_quaternion(quat).as_dcm()
+    mat = Rotation.from_quat(quat).as_dcm()
     assert_equal(mat.shape, (1, 3, 3))
     expected_mat = np.array([
         [0, -1, 0],
@@ -93,7 +93,7 @@ def test_as_dcm_from_square_input():
             [0, 0, 0, 1],
             [0, 0, 0, -1]
             ]
-    mat = Rotation.from_quaternion(quats).as_dcm()
+    mat = Rotation.from_quat(quats).as_dcm()
     assert_equal(mat.shape, (4, 3, 3))
 
     expected0 = np.array([
@@ -120,7 +120,7 @@ def test_as_dcm_from_generic_input():
             [0, 1, 0, 1],
             [1, 2, 3, 4]
             ]
-    mat = Rotation.from_quaternion(quats).as_dcm()
+    mat = Rotation.from_quat(quats).as_dcm()
     assert_equal(mat.shape, (3, 3, 3))
 
     expected0 = np.array([
@@ -153,7 +153,7 @@ def test_from_single_2d_dcm():
             ]
     expected_quat = [0.5, 0.5, 0.5, 0.5]
     assert_array_almost_equal(
-            Rotation.from_dcm(dcm).as_quaternion(),
+            Rotation.from_dcm(dcm).as_quat(),
             expected_quat)
 
 
@@ -165,7 +165,7 @@ def test_from_single_3d_dcm():
         ]).reshape((1, 3, 3))
     expected_quat = np.array([0.5, 0.5, 0.5, 0.5]).reshape((1, 4))
     assert_array_almost_equal(
-            Rotation.from_dcm(dcm).as_quaternion(),
+            Rotation.from_dcm(dcm).as_quat(),
             expected_quat)
 
 
@@ -177,10 +177,10 @@ def test_from_dcm_calculation():
             [0.2564103, 0.3589744, 0.8974359]
             ])
     assert_array_almost_equal(
-            Rotation.from_dcm(dcm).as_quaternion(),
+            Rotation.from_dcm(dcm).as_quat(),
             expected_quat)
     assert_array_almost_equal(
-            Rotation.from_dcm(dcm.reshape((1, 3, 3))).as_quaternion(),
+            Rotation.from_dcm(dcm.reshape((1, 3, 3))).as_quat(),
             expected_quat.reshape((1, 4)))
 
 
@@ -208,14 +208,14 @@ def test_from_1d_single_rotvec():
     rotvec = [1, 0, 0]
     expected_quat = np.array([0.4794255, 0, 0, 0.8775826])
     result = Rotation.from_rotvec(rotvec)
-    assert_array_almost_equal(result.as_quaternion(), expected_quat)
+    assert_array_almost_equal(result.as_quat(), expected_quat)
 
 
 def test_from_2d_single_rotvec():
     rotvec = [[1, 0, 0]]
     expected_quat = np.array([[0.4794255, 0, 0, 0.8775826]])
     result = Rotation.from_rotvec(rotvec)
-    assert_array_almost_equal(result.as_quaternion(), expected_quat)
+    assert_array_almost_equal(result.as_quat(), expected_quat)
 
 
 def test_from_generic_rotvec():
@@ -230,7 +230,7 @@ def test_from_generic_rotvec():
         [0, 0, 0, 1]
         ])
     assert_array_almost_equal(
-            Rotation.from_rotvec(rotvec).as_quaternion(),
+            Rotation.from_rotvec(rotvec).as_quat(),
             expected_quat)
 
 
@@ -241,7 +241,7 @@ def test_from_rotvec_small_angle():
         [0, 0, 0]
         ])
 
-    quat = Rotation.from_rotvec(rotvec).as_quaternion()
+    quat = Rotation.from_rotvec(rotvec).as_quat()
     # cos(theta/2) ~~ 1 for small theta
     assert_allclose(quat[0, 3], 1)
     # sin(theta/2) / theta ~~ 0.5 for small theta
@@ -280,7 +280,7 @@ def test_as_generic_rotvec():
             ])
     quat /= np.linalg.norm(quat, axis=1)[:, None]
 
-    rotvec = Rotation.from_quaternion(quat).as_rotvec()
+    rotvec = Rotation.from_quat(quat).as_rotvec()
     angle = np.linalg.norm(rotvec, axis=1)
 
     assert_allclose(quat[:, 3], np.cos(angle/2))
@@ -291,7 +291,7 @@ def test_as_rotvec_single_1d_input():
     quat = np.array([1, 2, -3, 2])
     expected_rotvec = np.array([0.5772381, 1.1544763, -1.7317144])
 
-    actual_rotvec = Rotation.from_quaternion(quat).as_rotvec()
+    actual_rotvec = Rotation.from_quat(quat).as_rotvec()
 
     assert_equal(actual_rotvec.shape, (3,))
     assert_allclose(actual_rotvec, expected_rotvec)
@@ -301,7 +301,7 @@ def test_as_rotvec_single_2d_input():
     quat = np.array([[1, 2, -3, 2]])
     expected_rotvec = np.array([[0.5772381, 1.1544763, -1.7317144]])
 
-    actual_rotvec = Rotation.from_quaternion(quat).as_rotvec()
+    actual_rotvec = Rotation.from_quat(quat).as_rotvec()
 
     assert_equal(actual_rotvec.shape, (1, 3))
     assert_allclose(actual_rotvec, expected_rotvec)
@@ -318,7 +318,7 @@ def test_rotvec_calc_pipeline():
 
 
 def test_from_euler_single_rotation():
-    quat = Rotation.from_euler('z', 90, degrees=True).as_quaternion()
+    quat = Rotation.from_euler('z', 90, degrees=True).as_quat()
     expected_quat = np.array([0, 0, 1, 1]) / np.sqrt(2)
     assert_allclose(quat, expected_quat)
 
@@ -334,8 +334,8 @@ def test_from_euler_rotation_order():
     np.random.seed(0)
     a = np.random.randint(low=0, high=180, size=(6, 3))
     b = a[:, ::-1]
-    x = Rotation.from_euler('xyz', a, degrees=True).as_quaternion()
-    y = Rotation.from_euler('ZYX', b, degrees=True).as_quaternion()
+    x = Rotation.from_euler('xyz', a, degrees=True).as_quat()
+    y = Rotation.from_euler('ZYX', b, degrees=True).as_quat()
     assert_allclose(x, y)
 
 
@@ -576,7 +576,7 @@ def test_as_euler_degenerate_symmetric_axes():
 def test_inv():
     np.random.seed(0)
     n = 10
-    p = Rotation.from_quaternion(np.random.normal(size=(n, 4)))
+    p = Rotation.from_quat(np.random.normal(size=(n, 4)))
     q = p.inv()
 
     p_dcm = p.as_dcm()
@@ -593,7 +593,7 @@ def test_inv():
 
 def test_inv_single_rotation():
     np.random.seed(0)
-    p = Rotation.from_quaternion(np.random.normal(size=(4,)))
+    p = Rotation.from_quat(np.random.normal(size=(4,)))
     q = p.inv()
 
     p_dcm = p.as_dcm()
@@ -606,7 +606,7 @@ def test_inv_single_rotation():
     assert_array_almost_equal(res1, eye)
     assert_array_almost_equal(res2, eye)
 
-    x = Rotation.from_quaternion(np.random.normal(size=(1, 4)))
+    x = Rotation.from_quat(np.random.normal(size=(1, 4)))
     y = x.inv()
 
     x_dcm = x.as_dcm()
@@ -766,7 +766,7 @@ def test_quat_ownership():
         [0, 1, 0, 0],
         [0, 0, 1, 0]
     ])
-    r = Rotation.from_quaternion(quat, normalized=True)
+    r = Rotation.from_quat(quat, normalized=True)
     s = r[0:2]
 
     r._quat[0] = np.array([0, -1, 0, 0])
