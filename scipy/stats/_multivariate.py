@@ -3277,7 +3277,7 @@ class special_ortho_group_gen(multi_rv_generic):
     matrices with an application to condition estimators", SIAM Journal
     on Numerical Analysis, 17(3), pp. 403-409, 1980.
     For more information see
-    http://en.wikipedia.org/wiki/Orthogonal_matrix#Randomization
+    https://en.wikipedia.org/wiki/Orthogonal_matrix#Randomization
 
     See also the similar `ortho_group`.
 

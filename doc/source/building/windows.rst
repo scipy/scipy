@@ -21,7 +21,7 @@ sure to check up on any of the open source projects mentioned for the most up-to
 information. For more information on all of these projects, the Mingwpy_ website
 is an excellent source of in-depth information than this document will provide.
 
-.. _Mingwpy: http://mingwpy.github.io/
+.. _Mingwpy: https://mingwpy.github.io/
 .. _ATLAS: http://math-atlas.sourceforge.net/
 .. _OpenBLAS: https://github.com/xianyi/OpenBLAS
 .. _LAPACK: http://www.netlib.org/lapack/
@@ -280,7 +280,7 @@ As discussed in the overview, this document is not meant to provide extremely de
 NumPy and SciPy on Windows. This is largely because currently, there is no single superior way to do so
 and because the process for building these libraries on Windows is under development. It is likely that any
 information will go out of date relatively soon. If you wish to receive more assistance, please reach out to the NumPy
-and SciPy mailing lists, which can be found `here <http://www.scipy.org/scipylib/mailing-lists.html>`__.  There are many
+and SciPy mailing lists, which can be found `here <https://www.scipy.org/scipylib/mailing-lists.html>`__.  There are many
 developers out there, working on this issue right now, and they would certainly be happy to help you out!  Google is also
 a good resource, as there are many people out there who use NumPy and SciPy on Windows, so it would not be surprising if
 your question or problem has already been addressed.

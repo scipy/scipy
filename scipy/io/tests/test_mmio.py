@@ -542,7 +542,7 @@ class TestMMIOCoordinate(object):
                         (5, 5, 7, 'coordinate', 'pattern', 'symmetric'))
 
     def test_empty_write_read(self):
-        # http://projects.scipy.org/scipy/ticket/883
+        # https://github.com/scipy/scipy/issues/1410 (Trac #883)
 
         b = scipy.sparse.coo_matrix((10, 10))
         mmwrite(self.fn, b)

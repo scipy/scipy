@@ -455,7 +455,7 @@ def jvp(v, z, n=1):
            Functions", John Wiley and Sons, 1996, chapter 5.
            https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
     .. [2] NIST Digital Library of Mathematical Functions.
-           http://dlmf.nist.gov/10.6.E7
+           https://dlmf.nist.gov/10.6.E7
 
     """
     n = _nonneg_int_or_fail(n, 'n')
@@ -487,7 +487,7 @@ def yvp(v, z, n=1):
            Functions", John Wiley and Sons, 1996, chapter 5.
            https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
     .. [2] NIST Digital Library of Mathematical Functions.
-           http://dlmf.nist.gov/10.6.E7
+           https://dlmf.nist.gov/10.6.E7
 
     """
     n = _nonneg_int_or_fail(n, 'n')
@@ -542,7 +542,7 @@ def kvp(v, z, n=1):
            Functions", John Wiley and Sons, 1996, chapter 6.
            https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
     .. [2] NIST Digital Library of Mathematical Functions.
-           http://dlmf.nist.gov/10.29.E5
+           https://dlmf.nist.gov/10.29.E5
 
     """
     n = _nonneg_int_or_fail(n, 'n')
@@ -575,7 +575,7 @@ def ivp(v, z, n=1):
            Functions", John Wiley and Sons, 1996, chapter 6.
            https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
     .. [2] NIST Digital Library of Mathematical Functions.
-           http://dlmf.nist.gov/10.29.E5
+           https://dlmf.nist.gov/10.29.E5
 
     """
     n = _nonneg_int_or_fail(n, 'n')
@@ -607,7 +607,7 @@ def h1vp(v, z, n=1):
            Functions", John Wiley and Sons, 1996, chapter 5.
            https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
     .. [2] NIST Digital Library of Mathematical Functions.
-           http://dlmf.nist.gov/10.6.E7
+           https://dlmf.nist.gov/10.6.E7
 
     """
     n = _nonneg_int_or_fail(n, 'n')
@@ -639,7 +639,7 @@ def h2vp(v, z, n=1):
            Functions", John Wiley and Sons, 1996, chapter 5.
            https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
     .. [2] NIST Digital Library of Mathematical Functions.
-           http://dlmf.nist.gov/10.6.E7
+           https://dlmf.nist.gov/10.6.E7
 
     """
     n = _nonneg_int_or_fail(n, 'n')
@@ -687,7 +687,7 @@ def riccati_jn(n, x):
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
     .. [2] NIST Digital Library of Mathematical Functions.
-           http://dlmf.nist.gov/10.51.E1
+           https://dlmf.nist.gov/10.51.E1
 
     """
     if not (isscalar(n) and isscalar(x)):
@@ -739,7 +739,7 @@ def riccati_yn(n, x):
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
     .. [2] NIST Digital Library of Mathematical Functions.
-           http://dlmf.nist.gov/10.51.E1
+           https://dlmf.nist.gov/10.51.E1
 
     """
     if not (isscalar(n) and isscalar(x)):
@@ -907,7 +907,7 @@ def mathieu_even_coef(m, q):
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
     .. [2] NIST Digital Library of Mathematical Functions
-           http://dlmf.nist.gov/28.4#i
+           https://dlmf.nist.gov/28.4#i
 
     """
     if not (isscalar(m) and isscalar(q)):
@@ -1036,7 +1036,7 @@ def lpmn(m, n, z):
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
     .. [2] NIST Digital Library of Mathematical Functions
-           http://dlmf.nist.gov/14.3
+           https://dlmf.nist.gov/14.3
 
     """
     if not isscalar(m) or (abs(m) > n):
@@ -1119,7 +1119,7 @@ def clpmn(m, n, z, type=3):
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
     .. [2] NIST Digital Library of Mathematical Functions
-           http://dlmf.nist.gov/14.21
+           https://dlmf.nist.gov/14.21
 
     """
     if not isscalar(m) or (abs(m) > n):
@@ -1909,7 +1909,7 @@ def perm(N, k, exact=False):
         return vals
 
 
-# http://stackoverflow.com/a/16327037/125507
+# https://stackoverflow.com/a/16327037
 def _range_prod(lo, hi):
     """
     Product of a range of numbers.

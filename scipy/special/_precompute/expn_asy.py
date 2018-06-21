@@ -4,7 +4,7 @@ generalized exponential integral.
 Sources
 -------
 [1] NIST, Digital Library of Mathematical Functions,
-    http://dlmf.nist.gov/8.20#ii
+    https://dlmf.nist.gov/8.20#ii
 
 """
 from __future__ import division, print_function, absolute_import

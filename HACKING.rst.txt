@@ -470,27 +470,27 @@ suite.
 
 .. _scikit-image: http://scikit-image.org/
 
-.. _statsmodels: http://statsmodels.sourceforge.net/
+.. _statsmodels: https://www.statsmodels.org/
 
 .. _testing guidelines: https://github.com/numpy/numpy/blob/master/doc/TESTS.rst.txt
 
-.. _formatted correctly: http://docs.scipy.org/doc/numpy/dev/gitwash/development_workflow.html#writing-the-commit-message
+.. _formatted correctly: https://docs.scipy.org/doc/numpy/dev/gitwash/development_workflow.html#writing-the-commit-message
 
 .. _how to document: https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt
 
-.. _bug report: http://scipy.org/bug-report.html
+.. _bug report: https://scipy.org/bug-report.html
 
-.. _PEP8: http://www.python.org/dev/peps/pep-0008/
+.. _PEP8: https://www.python.org/dev/peps/pep-0008/
 
-.. _pep8 package: http://pypi.python.org/pypi/pep8
+.. _pep8 package: https://pypi.python.org/pypi/pep8
 
-.. _pyflakes: http://pypi.python.org/pypi/pyflakes
+.. _pyflakes: https://pypi.python.org/pypi/pyflakes
 
 .. _SciPy API: https://docs.scipy.org/doc/scipy/reference/api.html
 
 .. _SciPy Roadmap: https://scipy.github.io/devdocs/roadmap.html
 
-.. _git workflow: http://docs.scipy.org/doc/numpy/dev/gitwash/index.html
+.. _git workflow: https://docs.scipy.org/doc/numpy/dev/gitwash/
 
 .. _Github help pages: https://help.github.com/articles/set-up-git/
 
@@ -500,19 +500,19 @@ suite.
 
 .. _scipy.org: https://scipy.org/
 
-.. _scipy.github.com: http://scipy.github.com/
+.. _scipy.github.com: https://scipy.github.com/
 
 .. _scipy.org-new: https://github.com/scipy/scipy.org-new
 
 .. _documentation wiki: https://docs.scipy.org/scipy/Front%20Page/
 
-.. _SciPy Central: http://scipy-central.org/
+.. _SciPy Central: https://web.archive.org/web/20170520065729/http://central.scipy.org/
 
-.. _doctest: http://www.doughellmann.com/PyMOTW/doctest/
+.. _doctest: https://pymotw.com/3/doctest/
 
-.. _virtualenv: http://www.virtualenv.org/
+.. _virtualenv: https://virtualenv.pypa.io/
 
-.. _virtualenvwrapper: http://www.doughellmann.com/projects/virtualenvwrapper/
+.. _virtualenvwrapper: https://bitbucket.org/dhellmann/virtualenvwrapper/
 
 .. _bsd pitch: http://nipy.sourceforge.net/nipy/stable/faq/johns_bsd_pitch.html
 

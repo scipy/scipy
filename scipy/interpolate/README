@@ -41,11 +41,11 @@ A number of other functions and classes are provided, for which README documenta
 
 Introductions to interpolation and splines can be found online at:
 
-http://en.wikipedia.org/wiki/Interpolation
+https://en.wikipedia.org/wiki/Interpolation
 	The Wikipedia article on interpolation.  Provides an accessible
 	overview of major areas of the subject, including spline
 	interpolation.
-http://en.wikipedia.org/wiki/Spline_interpolation
+https://en.wikipedia.org/wiki/Spline_interpolation
 	The Wikipedia article on spline interpolation.  It is accessible
 	as a conceptual introduction, and contains links to various
 	algorithms, but discussion is limited to 1D interpolation.

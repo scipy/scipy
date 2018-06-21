@@ -86,7 +86,7 @@
 /* Sources
  * [1] "The Digital Library of Mathematical Functions", dlmf.nist.gov
  * [2] Maddock et. al., "Incomplete Gamma Functions",
- *     http://www.boost.org/doc/libs/1_61_0/libs/math/doc/html/math_toolkit/sf_gamma/igamma.html
+ *     https://www.boost.org/doc/libs/1_61_0/libs/math/doc/html/math_toolkit/sf_gamma/igamma.html
  */
 
 /* Scipy changes:

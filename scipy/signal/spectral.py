@@ -1704,7 +1704,7 @@ def _fft_helper(x, win, detrend_func, nperseg, noverlap, nfft, sides):
     if nperseg == 1 and noverlap == 0:
         result = x[..., np.newaxis]
     else:
-        # http://stackoverflow.com/a/5568169
+        # https://stackoverflow.com/a/5568169
         step = nperseg - noverlap
         shape = x.shape[:-1]+((x.shape[-1]-noverlap)//step, nperseg)
         strides = x.strides[:-1]+(step*x.strides[-1], x.strides[-1])

@@ -9,7 +9,7 @@ Compressed Sparse Graph Routines (`scipy.sparse.csgraph`)
 Example: Word Ladders
 ---------------------
 
-A `Word Ladder <http://en.wikipedia.org/wiki/Word_ladder>`_ is a word game
+A `Word Ladder <https://en.wikipedia.org/wiki/Word_ladder>`_ is a word game
 invented by Lewis Carroll in which players find paths between words by
 switching one letter at a time.  For example, one can link "ape" and "man"
 in the following way:
@@ -80,7 +80,7 @@ converting each word to a three-dimensional vector:
     (586, 3)    # may vary
 
 Now we'll use the
-`Hamming distance <http://en.wikipedia.org/wiki/Hamming_distance>`_
+`Hamming distance <https://en.wikipedia.org/wiki/Hamming_distance>`_
 between each point to determine which pairs of words are connected.
 The Hamming distance measures the fraction of entries between two vectors
 which differ: any two words with a hamming distance equal to :math:`1/N`,

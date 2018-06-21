@@ -187,9 +187,10 @@ def chi2_contingency(observed, correction=True, lambda_=None):
 
     References
     ----------
-    .. [1] "Contingency table", http://en.wikipedia.org/wiki/Contingency_table
+    .. [1] "Contingency table",
+           https://en.wikipedia.org/wiki/Contingency_table
     .. [2] "Pearson's chi-squared test",
-           http://en.wikipedia.org/wiki/Pearson%27s_chi-squared_test
+           https://en.wikipedia.org/wiki/Pearson%27s_chi-squared_test
     .. [3] Cressie, N. and Read, T. R. C., "Multinomial Goodness-of-Fit
            Tests", J. Royal Stat. Soc. Series B, Vol. 46, No. 3 (1984),
            pp. 440-464.

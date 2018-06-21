@@ -261,7 +261,7 @@ def nonlin_solve(F, x0, jacobian='krylov', iter=None, verbose=False,
     ----------
     .. [KIM] C. T. Kelley, \"Iterative Methods for Linear and Nonlinear
        Equations\". Society for Industrial and Applied Mathematics. (1995)
-       http://www.siam.org/books/kelley/fr16/index.php
+       https://archive.siam.org/books/kelley/fr16/
 
     """
 
@@ -845,7 +845,7 @@ class LowRankMatrix(object):
            systems of nonlinear equations\". Mathematisch Instituut,
            Universiteit Leiden, The Netherlands (2003).
 
-           http://www.math.leidenuniv.nl/scripties/Rotten.pdf
+           https://web.archive.org/web/20161022015821/http://www.math.leidenuniv.nl/scripties/Rotten.pdf
 
         """
         if self.collapsed is not None:
@@ -939,7 +939,7 @@ class BroydenFirst(GenericBroyden):
        systems of nonlinear equations\". Mathematisch Instituut,
        Universiteit Leiden, The Netherlands (2003).
 
-       http://www.math.leidenuniv.nl/scripties/Rotten.pdf
+       https://web.archive.org/web/20161022015821/http://www.math.leidenuniv.nl/scripties/Rotten.pdf
 
     """
 
@@ -1029,7 +1029,7 @@ class BroydenSecond(BroydenFirst):
        systems of nonlinear equations\". Mathematisch Instituut,
        Universiteit Leiden, The Netherlands (2003).
 
-       http://www.math.leidenuniv.nl/scripties/Rotten.pdf
+       https://web.archive.org/web/20161022015821/http://www.math.leidenuniv.nl/scripties/Rotten.pdf
 
     """
 

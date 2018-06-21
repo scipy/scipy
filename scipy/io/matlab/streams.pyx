@@ -23,7 +23,7 @@ cdef extern from "Python.h":
 
 cdef extern from "py3k.h":
     # From:
-    # http://svn.pyamf.org/pyamf/tags/release-0.4rc2/cpyamf/util.pyx
+    # https://github.com/hydralabs/pyamf/blob/release-0.4rc2/cpyamf/util.pyx
     # (MIT license) - with thanks
     void PycString_IMPORT()
     int StringIO_cread "PycStringIO->cread" (object, char **, Py_ssize_t)
@@ -116,7 +116,7 @@ cdef class ZlibInputStream(GenericStream):
     Some matlab files contain zlib streams without valid Z_STREAM_END
     termination.  To get round this, we use the decompressobj object, that
     allows you to decode an incomplete stream.  See discussion at
-    http://bugs.python.org/issue8672
+    https://bugs.python.org/issue8672
 
     """
 

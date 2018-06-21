@@ -2035,7 +2035,7 @@ class TestHyper(object):
         assert_almost_equal(hyp1, 1.3498588075760032,7)
 
         # test contributed by Moritz Deger (2008-05-29)
-        # http://projects.scipy.org/scipy/scipy/ticket/659
+        # https://github.com/scipy/scipy/issues/1186 (Trac #659)
 
         # reference data obtained from mathematica [ a, b, x, m(a,b,x)]:
         # produced with test_hyp1f1.nb
@@ -3131,7 +3131,7 @@ class TestRound(object):
 
 def test_sph_harm():
     # Tests derived from tables in
-    # http://en.wikipedia.org/wiki/Table_of_spherical_harmonics
+    # https://en.wikipedia.org/wiki/Table_of_spherical_harmonics
     sh = special.sph_harm
     pi = np.pi
     exp = np.exp

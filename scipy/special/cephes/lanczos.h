@@ -1,7 +1,7 @@
 /*  (C) Copyright John Maddock 2006.
  *  Use, modification and distribution are subject to the
  *  Boost Software License, Version 1.0. (See accompanying file
- *  LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+ *  LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
  */
 
 /* Both lanczos.h and lanczos.c were formed from Boost's lanczos.hpp
@@ -14,12 +14,12 @@
 
 /*
  * Optimal values for G for each N are taken from
- * http://web.mala.bc.ca/pughg/phdThesis/phdThesis.pdf,
+ * https://web.viu.ca/pughg/phdThesis/phdThesis.pdf,
  * as are the theoretical error bounds.
  *
  * Constants calculated using the method described by Godfrey
- * http://my.fit.edu/~gabdo/gamma.txt and elaborated by Toth at
- * http://www.rskey.org/gamma.htm using NTL::RR at 1000 bit precision.
+ * https://my.fit.edu/~gabdo/gamma.txt and elaborated by Toth at
+ * https://www.rskey.org/gamma.htm using NTL::RR at 1000 bit precision.
  */
 
 /*

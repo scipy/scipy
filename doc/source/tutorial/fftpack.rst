@@ -500,13 +500,13 @@ References
        `IEEE Transactions on acoustics, speech and signal processing`
        vol. 28(1), pp. 27-34, :doi:`10.1109/TASSP.1980.1163351`
 
-.. [WPW] http://en.wikipedia.org/wiki/Window_function
+.. [WPW] https://en.wikipedia.org/wiki/Window_function
 
-.. [WPC] http://en.wikipedia.org/wiki/Discrete_cosine_transform
+.. [WPC] https://en.wikipedia.org/wiki/Discrete_cosine_transform
 
-.. [WPS] http://en.wikipedia.org/wiki/Discrete_sine_transform
+.. [WPS] https://en.wikipedia.org/wiki/Discrete_sine_transform
 
 
 .. _FFTW: http://www.fftw.org/
-.. _PyFFTW: http://hgomersall.github.io/pyFFTW/index.html
-.. _pyfftw.interfaces: http://hgomersall.github.io/pyFFTW/pyfftw/interfaces/interfaces.html
+.. _PyFFTW: https://hgomersall.github.io/pyFFTW/
+.. _pyfftw.interfaces: https://hgomersall.github.io/pyFFTW/pyfftw/interfaces/interfaces.html

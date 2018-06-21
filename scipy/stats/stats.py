@@ -872,7 +872,7 @@ def moment(a, moment=1, axis=0, nan_policy='propagate'):
 
     References
     ----------
-    .. [1] http://eli.thegreenplace.net/2009/03/21/efficient-integer-exponentiation-algorithms
+    .. [1] https://eli.thegreenplace.net/2009/03/21/efficient-integer-exponentiation-algorithms
 
     Examples
     --------
@@ -1745,7 +1745,7 @@ def percentileofscore(a, score, kind='rank'):
         - "mean": The average of the "weak" and "strict" scores, often used in
                   testing.  See
 
-                  http://en.wikipedia.org/wiki/Percentile_rank
+                  https://en.wikipedia.org/wiki/Percentile_rank
 
     Returns
     -------
@@ -2877,7 +2877,7 @@ def f_oneway(*args):
     ----------
     .. [1] Lowry, Richard.  "Concepts and Applications of Inferential
            Statistics". Chapter 14.
-           http://faculty.vassar.edu/lowry/ch14pt1.html
+           https://web.archive.org/web/20171027235250/http://vassarstats.net:80/textbook/ch14pt1.html
 
     .. [2] Heiman, G.W.  Research Methods in Statistics. 2002.
 
@@ -3403,7 +3403,9 @@ def pointbiserialr(x, y):
            Variable. Point-Biserial Correlation.", Ann. Math. Statist., Vol. 25,
            np. 3, pp. 603-607, 1954.
 
-    .. [3] http://onlinelibrary.wiley.com/doi/10.1002/9781118445112.stat06227/full
+    .. [3] D. Kornbrot "Point Biserial Correlation", In Wiley StatsRef:
+           Statistics Reference Online (eds N. Balakrishnan, et al.), 2014.
+           https://doi.org/10.1002/9781118445112.stat06227
 
     Examples
     --------
@@ -3927,9 +3929,9 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
 
     References
     ----------
-    .. [1] http://en.wikipedia.org/wiki/T-test#Independent_two-sample_t-test
+    .. [1] https://en.wikipedia.org/wiki/T-test#Independent_two-sample_t-test
 
-    .. [2] http://en.wikipedia.org/wiki/Welch%27s_t_test
+    .. [2] https://en.wikipedia.org/wiki/Welch%27s_t-test
 
     Examples
     --------
@@ -4018,9 +4020,9 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate'):
 
     References
     ----------
-    .. [1] http://en.wikipedia.org/wiki/T-test#Independent_two-sample_t-test
+    .. [1] https://en.wikipedia.org/wiki/T-test#Independent_two-sample_t-test
 
-    .. [2] http://en.wikipedia.org/wiki/Welch%27s_t_test
+    .. [2] https://en.wikipedia.org/wiki/Welch%27s_t-test
 
     Examples
     --------
@@ -4464,9 +4466,10 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
     References
     ----------
     .. [1] Lowry, Richard.  "Concepts and Applications of Inferential
-           Statistics". Chapter 8. http://faculty.vassar.edu/lowry/ch8pt1.html
-    .. [2] "Chi-squared test", http://en.wikipedia.org/wiki/Chi-squared_test
-    .. [3] "G-test", http://en.wikipedia.org/wiki/G-test
+           Statistics". Chapter 8.
+           https://web.archive.org/web/20171015035606/http://faculty.vassar.edu/lowry/ch8pt1.html
+    .. [2] "Chi-squared test", https://en.wikipedia.org/wiki/Chi-squared_test
+    .. [3] "G-test", https://en.wikipedia.org/wiki/G-test
     .. [4] Sokal, R. R. and Rohlf, F. J. "Biometry: the principles and
            practice of statistics in biological research", New York: Freeman
            (1981)
@@ -4643,8 +4646,9 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
     References
     ----------
     .. [1] Lowry, Richard.  "Concepts and Applications of Inferential
-           Statistics". Chapter 8. http://faculty.vassar.edu/lowry/ch8pt1.html
-    .. [2] "Chi-squared test", http://en.wikipedia.org/wiki/Chi-squared_test
+           Statistics". Chapter 8.
+           https://web.archive.org/web/20171022032306/http://vassarstats.net:80/textbook/ch8pt1.html
+    .. [2] "Chi-squared test", https://en.wikipedia.org/wiki/Chi-squared_test
 
     Examples
     --------
@@ -4959,7 +4963,7 @@ def ranksums(x, y):
 
     References
     ----------
-    .. [1] http://en.wikipedia.org/wiki/Wilcoxon_rank-sum_test
+    .. [1] https://en.wikipedia.org/wiki/Wilcoxon_rank-sum_test
 
     """
     x, y = map(np.asarray, (x, y))
@@ -5025,7 +5029,7 @@ def kruskal(*args, **kwargs):
     .. [1] W. H. Kruskal & W. W. Wallis, "Use of Ranks in
        One-Criterion Variance Analysis", Journal of the American Statistical
        Association, Vol. 47, Issue 260, pp. 583-621, 1952.
-    .. [2] http://en.wikipedia.org/wiki/Kruskal-Wallis_one-way_analysis_of_variance
+    .. [2] https://en.wikipedia.org/wiki/Kruskal-Wallis_one-way_analysis_of_variance
 
     Examples
     --------
@@ -5133,7 +5137,7 @@ def friedmanchisquare(*args):
 
     References
     ----------
-    .. [1] http://en.wikipedia.org/wiki/Friedman_test
+    .. [1] https://en.wikipedia.org/wiki/Friedman_test
 
     """
     k = len(args)
@@ -5348,7 +5352,7 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
     References
     ----------
     .. [1] https://en.wikipedia.org/wiki/Fisher%27s_method
-    .. [2] http://en.wikipedia.org/wiki/Fisher's_method#Relation_to_Stouffer.27s_Z-score_method
+    .. [2] https://en.wikipedia.org/wiki/Fisher%27s_method#Relation_to_Stouffer.27s_Z-score_method
     .. [3] Whitlock, M. C. "Combining probability from independent tests: the
            weighted Z-method is superior to Fisher's approach." Journal of
            Evolutionary Biology 18, no. 5 (2005): 1368-1373.
@@ -5458,7 +5462,7 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
 
     References
     ----------
-    .. [1] "Wasserstein metric", http://en.wikipedia.org/wiki/Wasserstein_metric
+    .. [1] "Wasserstein metric", https://en.wikipedia.org/wiki/Wasserstein_metric
     .. [2] Ramdas, Garcia, Cuturi "On Wasserstein Two Sample Testing and Related
            Families of Nonparametric Tests" (2015). :arXiv:`1509.02237`.
 
@@ -5826,7 +5830,7 @@ def rankdata(a, method='average'):
 
     References
     ----------
-    .. [1] "Ranking", http://en.wikipedia.org/wiki/Ranking
+    .. [1] "Ranking", https://en.wikipedia.org/wiki/Ranking
 
     Examples
     --------

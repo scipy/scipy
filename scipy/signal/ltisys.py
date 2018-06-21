@@ -2488,7 +2488,7 @@ def freqresp(system, w=None, n=10000):
 
 
 # This class will be used by place_poles to return its results
-# see http://code.activestate.com/recipes/52308/
+# see https://code.activestate.com/recipes/52308/
 class Bunch:
     def __init__(self, **kwds):
         self.__dict__.update(kwds)
@@ -2570,7 +2570,7 @@ def _KNV0(B, ker_pole, transfer_matrix, j, poles):
     Algorithm "KNV0" Kautsky et Al. Robust pole
     assignment in linear state feedback, Int journal of Control
     1985, vol 41 p 1129->1155
-    http://la.epfl.ch/files/content/sites/la/files/
+    https://la.epfl.ch/files/content/sites/la/files/
         users/105941/public/KautskyNicholsDooren
 
     """
@@ -2732,7 +2732,7 @@ def _YT_loop(ker_pole, transfer_matrix, poles, B, maxiter, rtol):
     """
     Algorithm "YT" Tits, Yang. Globally Convergent
     Algorithms for Robust Pole Assignment by State Feedback
-    http://drum.lib.umd.edu/handle/1903/5598
+    https://hdl.handle.net/1903/5598
     The poles P have to be sorted accordingly to section 6.2 page 20
 
     """
@@ -2970,7 +2970,7 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
     when ``abs(det(X))`` is used as a robustness indicator.
 
     [2]_ is available as a technical report on the following URL:
-    http://drum.lib.umd.edu/handle/1903/5598
+    https://hdl.handle.net/1903/5598
 
     References
     ----------

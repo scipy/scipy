@@ -356,8 +356,8 @@ class TestMoments(object):
     # note that length(testcase) = 4
     # testmathworks comes from documentation for the
     # Statistics Toolbox for Matlab and can be found at both
-    # http://www.mathworks.com/access/helpdesk/help/toolbox/stats/kurtosis.shtml
-    # http://www.mathworks.com/access/helpdesk/help/toolbox/stats/skewness.shtml
+    # https://www.mathworks.com/help/stats/kurtosis.html
+    # https://www.mathworks.com/help/stats/skewness.html
     # Note that both test cases came from here.
     testcase = [1,2,3,4]
     testmathworks = ma.fix_invalid([1.165, 0.6268, 0.0751, 0.3516, -0.6965,

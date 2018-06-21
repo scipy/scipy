@@ -19,7 +19,7 @@ integration, linear algebra, Fourier transforms, signal and image processing,
 ODE solvers, and more.
 
 - **Website (including documentation):** https://www.scipy.org/
-- **Mailing list:** http://scipy.org/scipylib/mailing-lists.html
+- **Mailing list:** https://scipy.org/scipylib/mailing-lists.html
 - **Source:** https://github.com/scipy/scipy
 - **Bug reports:** https://github.com/scipy/scipy/issues
 

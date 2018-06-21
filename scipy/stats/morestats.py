@@ -80,7 +80,7 @@ def bayes_mvs(data, alpha=0.90):
     References
     ----------
     T.E. Oliphant, "A Bayesian perspective on estimating mean, variance, and
-    standard-deviation from data", http://scholarsarchive.byu.edu/facpub/278,
+    standard-deviation from data", https://scholarsarchive.byu.edu/facpub/278,
     2006.
 
     Examples
@@ -169,7 +169,7 @@ def mvsdist(data):
     References
     ----------
     T.E. Oliphant, "A Bayesian perspective on estimating mean, variance, and
-    standard-deviation from data", http://scholarsarchive.byu.edu/facpub/278,
+    standard-deviation from data", https://scholarsarchive.byu.edu/facpub/278,
     2006.
 
     Examples
@@ -669,7 +669,7 @@ def ppcc_max(x, brack=(0.0, 1.0), dist='tukeylambda'):
     .. [1] J.J. Filliben, "The Probability Plot Correlation Coefficient Test for
            Normality", Technometrics, Vol. 17, pp. 111-117, 1975.
 
-    .. [2] http://www.itl.nist.gov/div898/handbook/eda/section3/ppccplot.htm
+    .. [2] https://www.itl.nist.gov/div898/handbook/eda/section3/ppccplot.htm
 
     Examples
     --------
@@ -1274,7 +1274,7 @@ def shapiro(x):
 
     References
     ----------
-    .. [1] http://www.itl.nist.gov/div898/handbook/prc/section2/prc213.htm
+    .. [1] https://www.itl.nist.gov/div898/handbook/prc/section2/prc213.htm
     .. [2] Shapiro, S. S. & Wilk, M.B (1965). An analysis of variance test for
            normality (complete samples), Biometrika, Vol. 52, pp. 591-611.
     .. [3] Razali, N. M. & Wah, Y. B. (2011) Power comparisons of Shapiro-Wilk,
@@ -1384,7 +1384,7 @@ def anderson(x, dist='norm'):
 
     References
     ----------
-    .. [1] http://www.itl.nist.gov/div898/handbook/prc/section2/prc213.htm
+    .. [1] https://www.itl.nist.gov/div898/handbook/prc/section2/prc213.htm
     .. [2] Stephens, M. A. (1974). EDF Statistics for Goodness of Fit and
            Some Comparisons, Journal of the American Statistical Association,
            Vol. 69, pp. 730-737.
@@ -1819,7 +1819,7 @@ def bartlett(*args):
 
     References
     ----------
-    .. [1]  http://www.itl.nist.gov/div898/handbook/eda/section3/eda357.htm
+    .. [1]  https://www.itl.nist.gov/div898/handbook/eda/section3/eda357.htm
 
     .. [2]  Snedecor, George W. and Cochran, William G. (1989), Statistical
               Methods, Eighth Edition, Iowa State University Press.
@@ -1900,7 +1900,7 @@ def levene(*args, **kwds):
 
     References
     ----------
-    .. [1]  http://www.itl.nist.gov/div898/handbook/eda/section3/eda35a.htm
+    .. [1]  https://www.itl.nist.gov/div898/handbook/eda/section3/eda35a.htm
     .. [2]   Levene, H. (1960). In Contributions to Probability and Statistics:
                Essays in Honor of Harold Hotelling, I. Olkin et al. eds.,
                Stanford University Press, pp. 278-292.
@@ -2001,7 +2001,7 @@ def binom_test(x, n=None, p=0.5, alternative='two-sided'):
 
     References
     ----------
-    .. [1] http://en.wikipedia.org/wiki/Binomial_test
+    .. [1] https://en.wikipedia.org/wiki/Binomial_test
 
     """
     x = atleast_1d(x).astype(np.integer)
@@ -2115,7 +2115,7 @@ def fligner(*args, **kwds):
            Hypothesis Testing based on Quadratic Inference Function. Technical
            Report #99-03, Center for Likelihood Studies, Pennsylvania State
            University.
-           http://cecas.clemson.edu/~cspark/cv/paper/qif/draftqif2.pdf
+           https://cecas.clemson.edu/~cspark/cv/paper/qif/draftqif2.pdf
 
     .. [2] Fligner, M.A. and Killeen, T.J. (1976). Distribution-free two-sample
            tests for scale. 'Journal of the American Statistical Association.'
@@ -2363,7 +2363,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False):
 
     References
     ----------
-    .. [1] http://en.wikipedia.org/wiki/Wilcoxon_signed-rank_test
+    .. [1] https://en.wikipedia.org/wiki/Wilcoxon_signed-rank_test
 
     """
 
