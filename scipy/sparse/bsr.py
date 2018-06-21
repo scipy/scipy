@@ -443,17 +443,18 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
     def tocsr(self, copy=False):
         M, N = self.shape
         R, C = self.blocksize
+        nnz = self.nnz
         idx_dtype = get_index_dtype((self.indptr, self.indices),
-                                    maxval=max(self.nnz, N))
+                                    maxval=max(nnz, N))
         indptr = np.empty(M + 1, dtype=idx_dtype)
-        indices = np.empty(self.nnz, dtype=idx_dtype)
-        data = np.empty(self.nnz, dtype=upcast(self.dtype))
+        indices = np.empty(nnz, dtype=idx_dtype)
+        data = np.empty(nnz, dtype=upcast(self.dtype))
 
         bsr_tocsr(M // R,  # n_brow
                   N // C,  # n_bcol
                   R, C,
-                  self.indptr.astype(idx_dtype),
-                  self.indices.astype(idx_dtype),
+                  self.indptr.astype(idx_dtype, copy=False),
+                  self.indices.astype(idx_dtype, copy=False),
                   self.data,
                   indptr,
                   indices,
