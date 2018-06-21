@@ -867,7 +867,6 @@ subroutine <prefix2>stebz(d,e,range,vl,vu,il,iu,tol,order,n,work,iwork,m,nsplit,
 
 end subroutine <prefix2>stebz
 
-
 subroutine <prefix2>sterf(d,e,n,info)
     ! computes all eigenvalues of a real, symmetric tridiagonal matrix.
 
@@ -982,6 +981,33 @@ subroutine <prefix2>stev(d,e,compute_v,n,z,ldz,work,info)
 
 end subroutine <prefix2>stev
 
+subroutine <prefix><s,s,h,h>frk(transr,uplo,trans,n,k,nt,ka,alpha,a,lda,beta,c)
+    !
+    ! (S/D)SFRK - (C/Z)HFRK performs one of the Sym/Hermitian rank--k operations
+    !
+    !    C := alpha*A*A**H + beta*C,  or C := alpha*A**H*A + beta*C
+    ! 
+    ! where alpha and beta are real scalars, C is an n--by--n Sym/Hermitian
+    ! matrix and A is an n--by--k matrix in the first case and a k--by--n
+    ! matrix in the second case.
+
+    callstatement (*f2py_func)(transr,uplo,trans,&n,&k,&alpha,a,&lda,&beta,c)
+    callprotoargument char*,char*,char*,int*,int*,<ctypereal>*,<ctype>*,int*,<ctypereal>*,<ctype>*
+
+    character optional,intent(in),check(*transr=='N'||*transr==<'T','T','C','C'>):: transr = 'N'
+    character optional,intent(in),check(*uplo=='U'||*uplo=='L'):: uplo = 'U'
+    character optional,intent(in),check(*trans=='N'||*trans==<'T','T','C','C'>):: trans = 'N'
+    integer intent(in), check(n>=0):: n
+    integer intent(in), check(k>=0):: k
+    <ftypereal> intent(in):: alpha
+    <ftypereal> intent(in):: beta
+    <ftype> dimension(lda,ka),intent(in):: a
+    integer intent(hide),depend(a,trans,n,k),check(ka==(*trans=='N'?k:n)):: ka=shape(a,1)
+    integer intent(hide),depend(trans,a,n,k):: lda = MAX((*trans=='N'?n:k),1)
+    <ftype> dimension(nt),intent(in,out,copy,out=cout):: c
+    integer intent(hide),depend(c),check(nt==(n*(n+1)/2)):: nt=shape(c,0)
+
+end subroutine <prefix><s,s,h,h>frk
 
 subroutine <prefix2>lasd4( n, i, d, z, delta, rho, sigma, work, info )
 	! sigma, delta, work, info = lasd4(d,z,i,rho=1.0)
