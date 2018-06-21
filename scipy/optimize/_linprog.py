@@ -334,7 +334,7 @@ def _solve_simplex(T, n, basis, maxiter=1000, phase=2, callback=None,
         for pivrow in [row for row in range(basis.size)
                        if basis[row] > T.shape[1] - 2]:
             non_zero_row = [col for col in range(T.shape[1] - 1)
-                            if T[pivrow, col] != 0]
+                            if abs(T[pivrow, col]) > tol]
             if len(non_zero_row) > 0:
                 pivcol = non_zero_row[0]
                 # variable represented by pivcol enters
