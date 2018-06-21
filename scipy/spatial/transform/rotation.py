@@ -168,10 +168,10 @@ def _elementary_quat_compose(seq, angles, intrinsic=False):
 
 
 class Rotation(object):
-    """Rotation transform in 3 dimensions.
+    """Rotation in 3 dimensions.
 
     This class provides an interface to initialize from and represent rotations
-    using the following:
+    with:
 
         - Quaternions
         - Direction Cosine Matrices
@@ -265,7 +265,7 @@ class Rotation(object):
 
         Returns
         -------
-        output : `Rotation` instance
+        rotation : `Rotation` instance
             Object containing the rotations represented by input quaternions.
 
         References
@@ -281,7 +281,7 @@ class Rotation(object):
         """Initialize Rotation from direction cosine matrix.
 
         Rotations in 3 dimensions can be represented using 3 x 3 proper
-        orthogonal matrices. If the input is not proper orthogonal,
+        orthogonal matrices [2]_. If the input is not proper orthogonal,
         an approximation is created using the method described in [1]_.
 
         Parameters
@@ -292,7 +292,7 @@ class Rotation(object):
 
         Returns
         -------
-        output : `Rotation` instance
+        rotation : `Rotation` instance
             Object containing the rotations represented by the input direction
             cosine matrices.
 
@@ -300,6 +300,8 @@ class Rotation(object):
         ----------
         .. [1] F. Landis Markley, `Unit Quaternion from Rotation Matrix
                <https://arc.aiaa.org/doi/abs/10.2514/1.31730>`_
+        .. [2] `Direction Cosine Matrix
+                <https://en.wikipedia.org/wiki/Rotation_matrix#In_three_dimensions>`_
         """
         is_single = False
         dcm = np.asarray(dcm, dtype=float)
@@ -353,7 +355,7 @@ class Rotation(object):
 
         A rotation vector is a 3 dimensional vector which is co-directional to
         the axis of rotation and whose norm gives the angle of rotation (in
-        radians).
+        radians) [1]_.
 
         Parameters
         ----------
@@ -363,9 +365,14 @@ class Rotation(object):
 
         Returns
         -------
-        output : `Rotation` instance
+        rotation : `Rotation` instance
             Object containing the rotations represented by input rotation
             vectors.
+
+        References
+        ----------
+        .. [1] `Rotation Vectors
+                <https://en.wikipedia.org/wiki/Axis%E2%80%93angle_representation#Rotation_vector>`_
         """
         is_single = False
         rotvec = np.asarray(rotvec, dtype=float)
@@ -447,7 +454,7 @@ class Rotation(object):
 
         Returns
         -------
-        output : `Rotation` instance
+        rotation : `Rotation` instance
             Object containing the rotation represented by the sequence of
             rotations around given axes with given angles.
 
@@ -520,12 +527,12 @@ class Rotation(object):
 
         Rotations in 3 dimensions can be represented using unit norm
         quaternions [1]_. The mapping from quaternions to rotations is
-        two-to-one, i.e. a quaternion and its additive inverse represent the
-        same spatial rotation.
+        two-to-one, i.e. quaternions `q` and `-q`, where `-q` simply reverses
+        the sign of each component, represent the same spatial rotation.
 
         Returns
         -------
-        output : `numpy.ndarray`, shape (4,) or (N, 4)
+        quat : `numpy.ndarray`, shape (4,) or (N, 4)
             Shape depends on shape of inputs used for initialization.
 
         References
@@ -542,12 +549,17 @@ class Rotation(object):
         """Represent rotations as direction cosine matrices.
 
         3D rotations can be represented using direction cosine matrices, which
-        are 3 x 3 real orthogonal matrices with eigenvalue equal to +1.
+        are 3 x 3 real orthogonal matrices with eigenvalue equal to +1 [1]_.
 
         Returns
         -------
-        output : `numpy.ndarray`, shape (3, 3) or (N, 3, 3)
+        dcm : `numpy.ndarray`, shape (3, 3) or (N, 3, 3)
             Shape depends on shape of inputs used for initialization.
+
+        References
+        ----------
+        .. [1] `Direction Cosine Matrix
+                <https://en.wikipedia.org/wiki/Rotation_matrix#In_three_dimensions>`_
         """
 
         x = self._quat[:, 0]
@@ -592,12 +604,17 @@ class Rotation(object):
 
         A rotation vector is a 3 dimensional vector which is co-directional to
         the axis of rotation and whose norm gives the angle of rotation (in
-        radians).
+        radians) [1]_.
 
         Returns
         -------
-        output : `numpy.ndarray`, shape (3,) or (N, 3)
+        rotvec : `numpy.ndarray`, shape (3,) or (N, 3)
             Shape depends on shape of inputs used for initialization.
+
+        References
+        ----------
+        .. [1] `Rotation Vectors
+                <https://en.wikipedia.org/wiki/Axis%E2%80%93angle_representation#Rotation_vector>`_
         """
         quat = self._quat.copy()
         # w > 0 to ensure 0 <= angle <= pi
@@ -731,7 +748,8 @@ class Rotation(object):
 
         Returns
         -------
-        output : `numpy.ndarray`, shape (3,) or (N, 3)
+        outvecs : `numpy.ndarray`, shape (3,) or (N, 3)
+            Result of applying rotation on input vectors.
             Shape depends on the following cases:
 
                 - If object contains a single rotation (as opposed to a stack
@@ -789,7 +807,7 @@ class Rotation(object):
 
         Returns
         -------
-        output : `Rotation` instance
+        rotation : `Rotation` instance
             This function supports composition of multiple rotations at a time.
             The following cases are possible:
 
@@ -820,7 +838,7 @@ class Rotation(object):
 
         Returns
         -------
-        output : `Rotation` instance
+        rotation : `Rotation` instance
             Object containing inverse of the rotations in the current instance.
         """
         quat = self._quat.copy()
@@ -843,7 +861,7 @@ class Rotation(object):
 
         Returns
         -------
-        output : `Rotation` instance
+        rotation : `Rotation` instance
             `output` contains
                 - a single rotation, if `indexer` is a single index
                 - a stack of rotation(s), if `indexer` is a slice, or and index
