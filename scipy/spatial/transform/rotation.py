@@ -57,6 +57,11 @@ def _compute_euler_from_dcm(dcm, seq, extrinsic=False):
 
     # Step 4
     angles = np.empty((num_rotations, 3))
+    # Ensure less than unit norm
+    positive_unity = dcm_transformed[:, 2, 2] > 1
+    negative_unity = dcm_transformed[:, 2, 2] < -1
+    dcm_transformed[positive_unity, 2, 2] = 1.0
+    dcm_transformed[negative_unity, 2, 2] = -1.0
     angles[:, 1] = np.arccos(dcm_transformed[:, 2, 2])
 
     # Steps 5, 6
