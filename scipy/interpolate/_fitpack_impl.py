@@ -4,9 +4,9 @@ fitpack (dierckx in netlib) --- A Python-C wrapper to FITPACK (by P. Dierckx).
         fitting with splines and tensor product splines.
 
 See
- http://www.cs.kuleuven.ac.be/cwis/research/nalag/research/topics/fitpack.html
+ https://web.archive.org/web/20010524124604/http://www.cs.kuleuven.ac.be:80/cwis/research/nalag/research/topics/fitpack.html
 or
- http://www.netlib.org/dierckx/index.html
+ http://www.netlib.org/dierckx/
 
 Copyright 2002 Pearu Peterson all rights reserved,
 Pearu Peterson <pearu@cens.ioc.ee>

@@ -87,7 +87,7 @@ References
 ----------
 
 .. [1] "Statistics toolbox." API Reference Documentation. The MathWorks.
-   http://www.mathworks.com/access/helpdesk/help/toolbox/stats/.
+   https://www.mathworks.com/access/helpdesk/help/toolbox/stats/.
    Accessed October 1, 2007.
 
 .. [2] "Hierarchical clustering." API Reference Documentation.

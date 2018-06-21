@@ -2,7 +2,7 @@
 
     WRITTEN BY LOUIS LUANGKESORN <lluang@yahoo.com> FOR THE STATS MODULE
     BASED ON WILKINSON'S STATISTICS QUIZ
-    http://www.stanford.edu/~clint/bench/wilk.txt
+    https://www.stanford.edu/~clint/bench/wilk.txt
 
     Additional tests by a host of SciPy developers.
 """
@@ -1921,8 +1921,8 @@ class TestMoments(object):
         note that length(testcase) = 4
         testmathworks comes from documentation for the
         Statistics Toolbox for Matlab and can be found at both
-        http://www.mathworks.com/access/helpdesk/help/toolbox/stats/kurtosis.shtml
-        http://www.mathworks.com/access/helpdesk/help/toolbox/stats/skewness.shtml
+        https://www.mathworks.com/help/stats/kurtosis.html
+        https://www.mathworks.com/help/stats/skewness.html
         Note that both test cases came from here.
     """
     testcase = [1,2,3,4]
@@ -3407,7 +3407,7 @@ class TestMannWhitneyU(object):
 
 def test_pointbiserial():
     # same as mstats test except for the nan
-    # Test data: http://support.sas.com/ctx/samples/index.jsp?sid=490&tab=output
+    # Test data: https://web.archive.org/web/20060504220742/https://support.sas.com/ctx/samples/index.jsp?sid=490&tab=output
     x = [1,0,1,1,1,1,0,1,0,0,0,1,1,0,0,0,1,1,1,0,0,0,0,0,0,0,0,1,0,
          0,0,0,0,1]
     y = [14.8,13.8,12.4,10.1,7.1,6.1,5.8,4.6,4.3,3.5,3.3,3.2,3.0,
@@ -3936,7 +3936,7 @@ class TestFOneWay(object):
 
     def test_nist(self):
         # These are the nist ANOVA files. They can be found at:
-        # http://www.itl.nist.gov/div898/strd/anova/anova.html
+        # https://www.itl.nist.gov/div898/strd/anova/anova.html
         filenames = ['SiRstv.dat', 'SmLs01.dat', 'SmLs02.dat', 'SmLs03.dat',
                      'AtmWtAg.dat', 'SmLs04.dat', 'SmLs05.dat', 'SmLs06.dat',
                      'SmLs07.dat', 'SmLs08.dat', 'SmLs09.dat']
@@ -4046,7 +4046,7 @@ class TestKruskal(object):
 class TestCombinePvalues(object):
 
     def test_fisher(self):
-        # Example taken from http://en.wikipedia.org/wiki/Fisher's_exact_test#Example
+        # Example taken from https://en.wikipedia.org/wiki/Fisher%27s_exact_test#Example
         xsq, p = stats.combine_pvalues([.01, .2, .3], method='fisher')
         assert_approx_equal(p, 0.02156, significant=4)
 

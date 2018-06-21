@@ -1563,7 +1563,7 @@ def hilbert(x, N=None, axis=-1):
     References
     ----------
     .. [1] Wikipedia, "Analytic signal".
-           http://en.wikipedia.org/wiki/Analytic_signal
+           https://en.wikipedia.org/wiki/Analytic_signal
     .. [2] Leon Cohen, "Time-Frequency Analysis", 1995. Chapter 2.
     .. [3] Alan V. Oppenheim, Ronald W. Schafer. Discrete-Time Signal
            Processing, Third Edition, 2009. Chapter 12.
@@ -1614,7 +1614,7 @@ def hilbert2(x, N=None):
     References
     ----------
     .. [1] Wikipedia, "Analytic signal",
-        http://en.wikipedia.org/wiki/Analytic_signal
+        https://en.wikipedia.org/wiki/Analytic_signal
 
     """
     x = atleast_2d(x)

@@ -190,7 +190,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     (array([1., 1., 1., 1., 1.]), 1.9216496320061384e-19)
 
     Next find the minimum of the Ackley function
-    (http://en.wikipedia.org/wiki/Test_functions_for_optimization).
+    (https://en.wikipedia.org/wiki/Test_functions_for_optimization).
 
     >>> from scipy.optimize import differential_evolution
     >>> import numpy as np
@@ -208,8 +208,8 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     .. [1] Storn, R and Price, K, Differential Evolution - a Simple and
            Efficient Heuristic for Global Optimization over Continuous Spaces,
            Journal of Global Optimization, 1997, 11, 341 - 359.
-    .. [2] http://www1.icsi.berkeley.edu/~storn/code.html
-    .. [3] http://en.wikipedia.org/wiki/Differential_evolution
+    .. [2] https://www1.icsi.berkeley.edu/~storn/code.html
+    .. [3] https://en.wikipedia.org/wiki/Differential_evolution
     """
 
     solver = DifferentialEvolutionSolver(func, bounds, args=args,

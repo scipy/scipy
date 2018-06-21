@@ -117,7 +117,7 @@ def random_rot(dim):
     matrices with an application to condition estimators', SIAM Journal
     on Numerical Analysis, 17(3), pp. 403-409, 1980.
     For more information see
-    http://en.wikipedia.org/wiki/Orthogonal_matrix#Randomization"""
+    https://en.wikipedia.org/wiki/Orthogonal_matrix#Randomization"""
     H = eye(dim)
     D = ones((dim,))
     for n in range(1, dim):
@@ -285,7 +285,7 @@ class TestEig(object):
     @pytest.mark.xfail(reason="See gh-2254.")
     def test_singular(self):
         # Example taken from
-        # http://www.cs.umu.se/research/nla/singular_pairs/guptri/matlab.html
+        # https://web.archive.org/web/20040903121217/http://www.cs.umu.se/research/nla/singular_pairs/guptri/matlab.html
         A = array(([22,34,31,31,17], [45,45,42,19,29], [39,47,49,26,34],
             [27,31,26,21,15], [38,44,44,24,30]))
         B = array(([13,26,25,17,24], [31,46,40,26,37], [26,40,19,25,25],
@@ -2069,7 +2069,7 @@ class TestQZ(object):
         assert_(all(diag(BB) >= 0))
 
     def test_qz_double_sort(self):
-        # from http://www.nag.com/lapack-ex/node119.html
+        # from https://www.nag.com/lapack-ex/node119.html
         # NOTE: These matrices may be ill-conditioned and lead to a
         # seg fault on certain python versions when compiled with
         # sse2 or sse3 older ATLAS/LAPACK binaries for windows
@@ -2189,7 +2189,7 @@ def _make_pos(X):
 class TestOrdQZ(object):
     @classmethod
     def setup_class(cls):
-        # http://www.nag.com/lapack-ex/node119.html
+        # https://www.nag.com/lapack-ex/node119.html
         A1 = np.array([[-21.10 - 22.50j, 53.5 - 50.5j, -34.5 + 127.5j,
                         7.5 + 0.5j],
                        [-0.46 - 7.78j, -3.5 - 37.5j, -15.5 + 58.5j,
@@ -2204,7 +2204,7 @@ class TestOrdQZ(object):
                        [1.0 + 0.0j, 2.4 + 1.8j, -4 - 5j, 0.0 - 3.0j],
                        [0.0 + 1.0j, -1.8 + 2.4j, 0 - 4j, 4.0 - 5.0j]])
 
-        # http://www.nag.com/numeric/fl/nagdoc_fl23/xhtml/F08/f08yuf.xml
+        # https://www.nag.com/numeric/fl/nagdoc_fl23/xhtml/F08/f08yuf.xml
         A2 = np.array([[3.9, 12.5, -34.5, -0.5],
                        [4.3, 21.5, -47.5, 7.5],
                        [4.3, 21.5, -43.5, 3.5],

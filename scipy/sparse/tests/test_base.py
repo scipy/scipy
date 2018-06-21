@@ -717,7 +717,7 @@ class _TestCommon(object):
                                    x.todense().reshape(s, order=order))
 
         # This example is taken from the stackoverflow answer at
-        # http://stackoverflow.com/questions/16511879
+        # https://stackoverflow.com/q/16511879
         x = self.spmatrix([[0, 10, 0, 0], [0, 0, 0, 0], [0, 20, 30, 40]])
         y = x.reshape((2, 6))  # Default order is 'C'
         desired = [[0, 10, 0, 0, 0, 0], [0, 0, 0, 20, 30, 40]]
@@ -2351,7 +2351,7 @@ class _TestSlicing(object):
         assert_equal(A[1:-2].todense(),B[1:-2])
 
         # Check bug reported by Robert Cimrman:
-        # http://thread.gmane.org/gmane.comp.python.scientific.devel/7986
+        # http://thread.gmane.org/gmane.comp.python.scientific.devel/7986 (dead link)
         s = slice(int8(2),int8(4),None)
         assert_equal(A[s,:].todense(), B[2:4,:])
         assert_equal(A[:,s].todense(), B[:,2:4])
@@ -2651,7 +2651,7 @@ class _TestFancyIndexing(object):
         assert_equal(A[:,array([-1,-3])][array([2,-4]),:].todense(), B[:,[-1,-3]][[2,-4],:])
 
         # Check bug reported by Robert Cimrman:
-        # http://thread.gmane.org/gmane.comp.python.scientific.devel/7986
+        # http://thread.gmane.org/gmane.comp.python.scientific.devel/7986 (dead link)
         s = slice(int8(2),int8(4),None)
         assert_equal(A[s,:].todense(), B[2:4,:])
         assert_equal(A[:,s].todense(), B[:,2:4])

@@ -56,7 +56,7 @@ class Thurber(Benchmark):
     r"""
     Thurber [1]_ objective function.
 
-    .. [1] http://www.itl.nist.gov/div898/strd/nls/data/thurber.shtml
+    .. [1] https://www.itl.nist.gov/div898/strd/nls/data/thurber.shtml
     """
 
     def __init__(self, dimensions=7):

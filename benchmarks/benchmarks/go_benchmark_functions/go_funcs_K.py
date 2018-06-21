@@ -128,7 +128,7 @@ class Kowalik(Benchmark):
     *Global optimum*: :math:`f(x) = 0.00030748610` for :math:`x = 
     [0.192833, 0.190836, 0.123117, 0.135766]`.
 
-    ..[1] http://www.itl.nist.gov/div898/strd/nls/data/mgh09.shtml
+    ..[1] https://www.itl.nist.gov/div898/strd/nls/data/mgh09.shtml
     """
 
     def __init__(self, dimensions=4):

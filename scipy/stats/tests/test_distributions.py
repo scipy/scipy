@@ -2660,7 +2660,7 @@ def test_powerlaw_stats():
     variance:
         sigma**2 = a / ((a + 2) * (a + 1) ** 2)
     skewness:
-        One formula (see http://en.wikipedia.org/wiki/Skewness) is
+        One formula (see https://en.wikipedia.org/wiki/Skewness) is
             gamma_1 = (E[X**3] - 3*mu*E[X**2] + 2*mu**3) / sigma**3
         A short calculation shows that E[X**k] is a / (a + k), so gamma_1
         can be implemented as
@@ -2670,7 +2670,7 @@ def test_powerlaw_stats():
         Either by simplifying, or by a direct calculation of mu_3 / sigma**3,
         one gets the more concise formula:
             gamma_1 = -2.0 * ((a - 1) / (a + 3)) * sqrt((a + 2) / a)
-    kurtosis: (See http://en.wikipedia.org/wiki/Kurtosis)
+    kurtosis: (See https://en.wikipedia.org/wiki/Kurtosis)
         The excess kurtosis is
             gamma_2 = mu_4 / sigma**4 - 3
         A bit of calculus and algebra (sympy helps) shows that

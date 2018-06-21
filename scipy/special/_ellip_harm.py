@@ -61,7 +61,7 @@ def ellip_harm(h2, k2, n, p, s, signm=1, signn=1):
     References
     ----------
     .. [1] Digital Library of Mathematical Functions 29.12
-       http://dlmf.nist.gov/29.12
+       https://dlmf.nist.gov/29.12
     .. [2] Bardhan and Knepley, "Computational science and
        re-discovery: open-source implementations of
        ellipsoidal harmonics for problems in potential theory",

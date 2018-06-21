@@ -11,7 +11,7 @@ Convex hull, Delaunay triangulation, Voronoi diagrams, Halfspace intersection
       Available from:
         <http://www.qhull.org>
         <http://www.qhull.org/download>
-        <http://github.com/qhull/qhull> (git@github.com:qhull/qhull.git)
+        <https://github.com/qhull/qhull> (git@github.com:qhull/qhull.git)
  
       News and a paper:
         <http://www.qhull.org/news>
@@ -57,7 +57,7 @@ To cite Qhull, please use
 To modify Qhull, particularly the C++ interface
 
   Qhull is on GitHub 
-     (http://github.com/qhull/qhull, git@github.com:qhull/qhull.git)
+     (https://github.com/qhull/qhull, git@github.com:qhull/qhull.git)
   
   For internal documentation, see html/qh-code.htm
 
@@ -177,7 +177,7 @@ Working with Qhull's C++ interface
 
   Qhull's C++ interface is likely to change.  Stay current with GitHub.
 
-  To clone Qhull's next branch from http://github.com/qhull/qhull
+  To clone Qhull's next branch from https://github.com/qhull/qhull
     git init
     git clone git@github.com:qhull/qhull.git
     cd qhull
@@ -216,7 +216,7 @@ Compiling Qhull with Microsoft Visual C++
   - Download and extract Qhull (either GitHub, .tgz file, or .zip file)
   - Load solution build/qhull-32.sln 
   - Build target 'Win32'
-  - Project qhulltest requires Qt for DevStudio (http://www.qt.io)
+  - Project qhulltest requires Qt for DevStudio (https://www.qt.io)
     Set the QTDIR environment variable to your Qt directory (e.g., c:/qt/5.2.0/5.2.0/msvc2012)
     If QTDIR is incorrect, precompile will fail with 'Can not locate the file specified'
 
@@ -225,7 +225,7 @@ Compiling Qhull with Microsoft Visual C++
   - Download and extract Qhull (either GitHub, .tgz file, or .zip file)
   - Load solution build/qhull-64.sln 
   - Build target 'Win32'
-  - Project qhulltest requires Qt for DevStudio (http://www.qt.io)
+  - Project qhulltest requires Qt for DevStudio (https://www.qt.io)
     Set the QTDIR environment variable to your Qt directory (e.g., c:/qt/5.2.0/5.2.0/msvc2012_64)
     If QTDIR is incorrect, precompile will fail with 'Can not locate the file specified'
   
@@ -233,14 +233,14 @@ Compiling Qhull with Microsoft Visual C++
   - Download and extract Qhull (either GitHub, .tgz file, or .zip file)
   - Load solution build/qhull.sln 
   - Build target 'win32' (not 'x64')
-  - Project qhulltest requires Qt for DevStudio (http://www.qt.io)
+  - Project qhulltest requires Qt for DevStudio (https://www.qt.io)
     Set the QTDIR environment variable to your Qt directory (e.g., c:/qt/4.7.4)
     If QTDIR is incorrect, precompile will fail with 'Can not locate the file specified'
   
 -----------------
 Compiling Qhull with Qt Creator
 
-  Qt (http://www.qt.io) is a C++ framework for Windows, Linux, and Macintosh
+  Qt (https://www.qt.io) is a C++ framework for Windows, Linux, and Macintosh
 
   Qhull uses QTestLib to test qhull's C++ interface (see src/qhulltest/)
   
@@ -267,7 +267,7 @@ Compiling Qhull with cygwin on Windows
 
   To compile Qhull with cygwin
   - Download and extract Qhull (either GitHub, .tgz file, or .zip file)
-  - Install cygwin (http://www.cygwin.com)
+  - Install cygwin (https://www.cygwin.com)
   - Include packages for gcc, make, ar, and ln
   - make
 

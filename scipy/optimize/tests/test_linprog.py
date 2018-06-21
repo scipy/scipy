@@ -201,7 +201,7 @@ class LinprogCommonTests(object):
 
     def test_linprog_mixed_constraints(self):
         # Minimize linear function subject to non-negative variables.
-        #  http://www.statslab.cam.ac.uk/~ff271/teaching/opt/notes/notes8.pdf
+        #  http://www.statslab.cam.ac.uk/~ff271/teaching/opt/notes/notes8.pdf (dead link)
         c = [6, 3]
         A_ub = [[0, 3],
                 [-1, -1],
@@ -213,7 +213,7 @@ class LinprogCommonTests(object):
 
     def test_linprog_cyclic_recovery(self):
         # Test linprogs recovery from cycling using the Klee-Minty problem
-        #  Klee-Minty  http://www.math.ubc.ca/~israel/m340/kleemin3.pdf
+        #  Klee-Minty  https://www.math.ubc.ca/~israel/m340/kleemin3.pdf
         c = np.array([100, 10, 1]) * -1  # maximize
         A_ub = [[1, 0, 0],
                 [20, 1, 0],
@@ -378,7 +378,7 @@ class LinprogCommonTests(object):
         _assert_success(res, desired_fun=14)
 
     def test_simplex_algorithm_wikipedia_example(self):
-        # http://en.wikipedia.org/wiki/Simplex_algorithm#Example
+        # https://en.wikipedia.org/wiki/Simplex_algorithm#Example
         Z = [-2, -3, -4]
         A_ub = [
             [3, 2, 1],
@@ -389,7 +389,7 @@ class LinprogCommonTests(object):
         _assert_success(res, desired_fun=-20)
 
     def test_enzo_example(self):
-        # http://projects.scipy.org/scipy/attachment/ticket/1252/lp2.py
+        # https://github.com/scipy/scipy/issues/1779 lp2.py
         #
         # Translated from Octave code at:
         # http://www.ecs.shimane-u.ac.jp/~kyoshida/lpeng.htm

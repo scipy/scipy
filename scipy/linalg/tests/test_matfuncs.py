@@ -260,7 +260,7 @@ class TestSqrtM(object):
                 assert_allclose(M_sqrtm_round_trip, M)
 
     def test_bad(self):
-        # See http://www.maths.man.ac.uk/~nareports/narep336.ps.gz
+        # See https://web.archive.org/web/20051220232650/http://www.maths.man.ac.uk/~nareports/narep336.ps.gz
         e = 2**-5
         se = sqrt(e)
         a = array([[1.0,0,0,1],

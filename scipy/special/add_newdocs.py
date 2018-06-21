@@ -85,7 +85,7 @@ add_newdoc("scipy.special", "sph_harm",
     References
     ----------
     .. [1] Digital Library of Mathematical Functions, 14.30.
-           http://dlmf.nist.gov/14.30
+           https://dlmf.nist.gov/14.30
     .. [2] https://en.wikipedia.org/wiki/Spherical_harmonics#Condon.E2.80.93Shortley_phase
     """)
 
@@ -260,7 +260,7 @@ add_newdoc("scipy.special", "airy",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     .. [2] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
            of a Complex Argument and Nonnegative Order",
            http://netlib.org/amos/
@@ -362,7 +362,7 @@ add_newdoc("scipy.special", "bdtr",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
 
     """)
 
@@ -410,7 +410,7 @@ add_newdoc("scipy.special", "bdtrc",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
 
     """)
 
@@ -456,7 +456,7 @@ add_newdoc("scipy.special", "bdtri",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
 add_newdoc("scipy.special", "bdtrik",
@@ -964,7 +964,7 @@ add_newdoc("scipy.special", "btdtr",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
 
     """)
 
@@ -1009,7 +1009,7 @@ add_newdoc("scipy.special", "btdtri",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
 
     """)
 
@@ -1215,7 +1215,7 @@ add_newdoc("scipy.special", "ellipe",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     .. [2] Milton Abramowitz and Irene A. Stegun, eds.
            Handbook of Mathematical Functions with Formulas,
            Graphs, and Mathematical Tables. New York: Dover, 1972.
@@ -1266,7 +1266,7 @@ add_newdoc("scipy.special", "ellipeinc",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     .. [2] Milton Abramowitz and Irene A. Stegun, eds.
            Handbook of Mathematical Functions with Formulas,
            Graphs, and Mathematical Tables. New York: Dover, 1972.
@@ -1320,7 +1320,7 @@ add_newdoc("scipy.special", "ellipj",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
 add_newdoc("scipy.special", "ellipkm1",
@@ -1372,7 +1372,7 @@ add_newdoc("scipy.special", "ellipkm1",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
 add_newdoc("scipy.special", "ellipkinc",
@@ -1421,7 +1421,7 @@ add_newdoc("scipy.special", "ellipkinc",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     .. [2] Milton Abramowitz and Irene A. Stegun, eds.
            Handbook of Mathematical Functions with Formulas,
            Graphs, and Mathematical Tables. New York: Dover, 1972.
@@ -1486,7 +1486,7 @@ add_newdoc("scipy.special", "erf",
 
     References
     ----------
-    .. [1] http://en.wikipedia.org/wiki/Error_function
+    .. [1] https://en.wikipedia.org/wiki/Error_function
     .. [2] Milton Abramowitz and Irene A. Stegun, eds.
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover,
@@ -2471,7 +2471,7 @@ add_newdoc("scipy.special", "fdtr",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
 
     """)
 
@@ -2516,7 +2516,7 @@ add_newdoc("scipy.special", "fdtrc",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
 add_newdoc("scipy.special", "fdtri",
@@ -2563,7 +2563,7 @@ add_newdoc("scipy.special", "fdtri",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
 
     """)
 
@@ -2696,7 +2696,7 @@ add_newdoc("scipy.special", "gammainc",
     References
     ----------
     .. [1] Maddock et. al., "Incomplete Gamma Functions",
-       http://www.boost.org/doc/libs/1_61_0/libs/math/doc/html/math_toolkit/sf_gamma/igamma.html
+       https://www.boost.org/doc/libs/1_61_0/libs/math/doc/html/math_toolkit/sf_gamma/igamma.html
     """)
 
 add_newdoc("scipy.special", "gammaincc",
@@ -2728,7 +2728,7 @@ add_newdoc("scipy.special", "gammaincc",
     References
     ----------
     .. [1] Maddock et. al., "Incomplete Gamma Functions",
-       http://www.boost.org/doc/libs/1_61_0/libs/math/doc/html/math_toolkit/sf_gamma/igamma.html
+       https://www.boost.org/doc/libs/1_61_0/libs/math/doc/html/math_toolkit/sf_gamma/igamma.html
     """)
 
 add_newdoc("scipy.special", "gammainccinv",
@@ -2836,7 +2836,7 @@ add_newdoc("scipy.special", "gdtr",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
 
     """)
 
@@ -2886,7 +2886,7 @@ add_newdoc("scipy.special", "gdtrc",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
 
     """)
 
@@ -3401,9 +3401,9 @@ add_newdoc("scipy.special", "hyp2f1",
     ----------
     .. [1] S. Zhang and J.M. Jin, "Computation of Special Functions", Wiley 1996
     .. [2] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     .. [3] NIST Digital Library of Mathematical Functions
-           http://dlmf.nist.gov/
+           https://dlmf.nist.gov/
 
     """)
 
@@ -3466,7 +3466,7 @@ add_newdoc("scipy.special", "i0",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
 add_newdoc("scipy.special", "i0e",
@@ -3507,7 +3507,7 @@ add_newdoc("scipy.special", "i0e",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
 add_newdoc("scipy.special", "i1",
@@ -3549,7 +3549,7 @@ add_newdoc("scipy.special", "i1",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
 add_newdoc("scipy.special", "i1e",
@@ -3590,7 +3590,7 @@ add_newdoc("scipy.special", "i1e",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
 add_newdoc("scipy.special", "_igam_fac",
@@ -3954,7 +3954,7 @@ add_newdoc("scipy.special", "j0",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
 add_newdoc("scipy.special", "j1",
@@ -3992,7 +3992,7 @@ add_newdoc("scipy.special", "j1",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
 
     """)
 
@@ -4149,7 +4149,7 @@ add_newdoc("scipy.special", "k0",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
 add_newdoc("scipy.special", "k0e",
@@ -4188,7 +4188,7 @@ add_newdoc("scipy.special", "k0e",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
 add_newdoc("scipy.special", "k1",
@@ -4222,7 +4222,7 @@ add_newdoc("scipy.special", "k1",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
 add_newdoc("scipy.special", "k1e",
@@ -4261,7 +4261,7 @@ add_newdoc("scipy.special", "k1e",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
 add_newdoc("scipy.special", "kei",
@@ -4475,7 +4475,7 @@ add_newdoc("scipy.special", "kv",
            functions of a complex argument and nonnegative order", ACM
            TOMS Vol. 12 Issue 3, Sept. 1986, p. 265
     .. [3] NIST Digital Library of Mathematical Functions,
-           Eq. 10.25.E3. http://dlmf.nist.gov/10.25.E3
+           Eq. 10.25.E3. https://dlmf.nist.gov/10.25.E3
 
     Examples
     --------
@@ -4892,7 +4892,7 @@ add_newdoc("scipy.special", "modstruve",
     References
     ----------
     .. [1] NIST Digital Library of Mathematical Functions
-           http://dlmf.nist.gov/11
+           https://dlmf.nist.gov/11
     """)
 
 add_newdoc("scipy.special", "nbdtr",
@@ -4947,7 +4947,7 @@ add_newdoc("scipy.special", "nbdtr",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
 
     """)
 
@@ -4999,7 +4999,7 @@ add_newdoc("scipy.special", "nbdtrc",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
 add_newdoc("scipy.special", "nbdtri",
@@ -5040,7 +5040,7 @@ add_newdoc("scipy.special", "nbdtri",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
 
     """)
 
@@ -5887,7 +5887,7 @@ add_newdoc("scipy.special", "pbwa",
     References
     ----------
     .. [1] Digital Library of Mathematical Functions, 14.30.
-           http://dlmf.nist.gov/14.30
+           https://dlmf.nist.gov/14.30
     .. [2] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
@@ -6155,7 +6155,7 @@ add_newdoc("scipy.special", "psi",
     References
     ----------
     .. [1] NIST Digital Library of Mathematical Functions
-           http://dlmf.nist.gov/5
+           https://dlmf.nist.gov/5
     .. [2] Fredrik Johansson and others.
            "mpmath: a Python library for arbitrary-precision floating-point arithmetic"
            (Version 0.19) http://mpmath.org/
@@ -6271,7 +6271,7 @@ add_newdoc("scipy.special", "shichi",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     .. [2] Fredrik Johansson and others.
            "mpmath: a Python library for arbitrary-precision floating-point arithmetic"
            (Version 0.19) http://mpmath.org/
@@ -6324,7 +6324,7 @@ add_newdoc("scipy.special", "sici",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     .. [2] Fredrik Johansson and others.
            "mpmath: a Python library for arbitrary-precision floating-point arithmetic"
            (Version 0.19) http://mpmath.org/
@@ -6474,7 +6474,7 @@ add_newdoc("scipy.special", "struve",
     References
     ----------
     .. [1] NIST Digital Library of Mathematical Functions
-           http://dlmf.nist.gov/11
+           https://dlmf.nist.gov/11
 
     """)
 
@@ -6621,7 +6621,7 @@ add_newdoc("scipy.special", "y0",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
 add_newdoc("scipy.special", "y1",
@@ -6660,7 +6660,7 @@ add_newdoc("scipy.special", "y1",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
 add_newdoc("scipy.special", "yn",
@@ -6696,7 +6696,7 @@ add_newdoc("scipy.special", "yn",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
 add_newdoc("scipy.special", "yv",

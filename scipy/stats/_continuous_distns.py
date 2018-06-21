@@ -754,7 +754,7 @@ class burr12_gen(rv_continuous):
     .. [1] Burr, I. W. "Cumulative frequency functions", Annals of
        Mathematical Statistics, 13(2), pp 215-232 (1942).
 
-    .. [2] http://www.itl.nist.gov/div898/software/dataplot/refman2/auxillar/b12pdf.htm
+    .. [2] https://www.itl.nist.gov/div898/software/dataplot/refman2/auxillar/b12pdf.htm
 
     %(example)s
 
@@ -1299,7 +1299,7 @@ class exponnorm_gen(rv_continuous):
     %(after_notes)s
 
     An alternative parameterization of this distribution (for example, in
-    `Wikipedia <http://en.wikipedia.org/wiki/Exponentially_modified_Gaussian_distribution>`_)
+    `Wikipedia <https://en.wikipedia.org/wiki/Exponentially_modified_Gaussian_distribution>`_)
     involves three parameters, :math:`\mu`, :math:`\lambda` and
     :math:`\sigma`.
     In the present parameterization this corresponds to having ``loc`` and
@@ -1472,7 +1472,7 @@ class fatiguelife_gen(rv_continuous):
     References
     ----------
     .. [1] "Birnbaum-Saunders distribution",
-           http://en.wikipedia.org/wiki/Birnbaum-Saunders_distribution
+           https://en.wikipedia.org/wiki/Birnbaum-Saunders_distribution
 
     %(example)s
 
@@ -1686,7 +1686,7 @@ class foldnorm_gen(rv_continuous):
 
     def _stats(self, c):
         # Regina C. Elandt, Technometrics 3, 551 (1961)
-        # http://www.jstor.org/stable/1266561
+        # https://www.jstor.org/stable/1266561
         #
         c2 = c*c
         expfac = np.exp(-0.5*c2) / np.sqrt(2.*np.pi)
@@ -2803,7 +2803,7 @@ class gumbel_r_gen(rv_continuous):
         return _EULER, np.pi*np.pi/6.0, 12*np.sqrt(6)/np.pi**3 * _ZETA3, 12.0/5
 
     def _entropy(self):
-        # http://en.wikipedia.org/wiki/Gumbel_distribution
+        # https://en.wikipedia.org/wiki/Gumbel_distribution
         return _EULER + 1.
 
 
@@ -3693,7 +3693,7 @@ class logistic_gen(rv_continuous):
         return 0, np.pi*np.pi/3.0, 0, 6.0/5.0
 
     def _entropy(self):
-        # http://en.wikipedia.org/wiki/Logistic_distribution
+        # https://en.wikipedia.org/wiki/Logistic_distribution
         return 2.0
 
 
@@ -4145,7 +4145,7 @@ class kappa4_gen(rv_continuous):
         The "fifth" one is the one kappa4 should match which currently
         isn't implemented in scipy:
         https://en.wikipedia.org/wiki/Talk:Generalized_logistic_distribution
-        http://www.mathwave.com/help/easyfit/html/analyses/distributions/gen_logistic.html
+        https://www.mathwave.com/help/easyfit/html/analyses/distributions/gen_logistic.html
     (2) This distribution is currently not in scipy.
 
     References
@@ -4154,7 +4154,7 @@ class kappa4_gen(rv_continuous):
     to the Kolmogorov-Smirnov Test", A Dissertation Submitted to the Graduate
     Faculty of the Louisiana State University and Agricultural and Mechanical
     College, (August, 2004),
-    http://digitalcommons.lsu.edu/cgi/viewcontent.cgi?article=4671&context=gradschool_dissertations
+    https://digitalcommons.lsu.edu/gradschool_dissertations/3672
 
     J.R.M. Hosking, "The four-parameter kappa distribution". IBM J. Res.
     Develop. 38 (3), 25 1-258 (1994).
@@ -4162,7 +4162,7 @@ class kappa4_gen(rv_continuous):
     B. Kumphon, A. Kaew-Man, P. Seenoi, "A Rainfall Distribution for the Lampao
     Site in the Chi River Basin, Thailand", Journal of Water Resource and
     Protection, vol. 4, 866-869, (2012).
-    http://file.scirp.org/pdf/JWARP20121000009_14676002.pdf
+    https://doi.org/10.4236/jwarp.2012.410101
 
     C. Winchester, "On Estimation of the Four-Parameter Kappa Distribution", A
     Thesis Submitted to Dalhousie University, Halifax, Nova Scotia, (March
@@ -4363,12 +4363,11 @@ class kappa3_gen(rv_continuous):
     P.W. Mielke and E.S. Johnson, "Three-Parameter Kappa Distribution Maximum
     Likelihood and Likelihood Ratio Tests", Methods in Weather Research,
     701-707, (September, 1973),
-    http://docs.lib.noaa.gov/rescue/mwr/101/mwr-101-09-0701.pdf
+    https://doi.org/10.1175/1520-0493(1973)101<0701:TKDMLE>2.3.CO;2
 
     B. Kumphon, "Maximum Entropy and Maximum Likelihood Estimation for the
     Three-Parameter Kappa Distribution", Open Journal of Statistics, vol 2,
-    415-419 (2012)
-    http://file.scirp.org/pdf/OJS20120400011_95789012.pdf
+    415-419 (2012), https://doi.org/10.4236/ojs.2012.24050
 
     %(after_notes)s
 
@@ -4431,7 +4430,7 @@ class moyal_gen(rv_continuous):
     .. [3] C. Walck, "Handbook on Statistical Distributions for
            Experimentalists; International Report SUF-PFY/96-01", Chapter 26,
            University of Stockholm: Stockholm, Sweden, (2007).
-           www.stat.rice.edu/~dobelman/textfiles/DistributionsHandbook.pdf
+           http://www.stat.rice.edu/~dobelman/textfiles/DistributionsHandbook.pdf
 
     .. versionadded:: 1.1.0
 
@@ -4801,7 +4800,7 @@ class nct_gen(rv_continuous):
         # See D. Hogben, R.S. Pinkham, and M.B. Wilk,
         # 'The moments of the non-central t-distribution'
         # Biometrika 48, p. 465 (2961).
-        # e.g. http://www.jstor.org/stable/2332772 (gated)
+        # e.g. https://www.jstor.org/stable/2332772 (gated)
         #
         mu, mu2, g1, g2 = None, None, None, None
 
@@ -5436,7 +5435,7 @@ class rice_gen(rv_continuous):
         return b >= 0
 
     def _rvs(self, b):
-        # http://en.wikipedia.org/wiki/Rice_distribution
+        # https://en.wikipedia.org/wiki/Rice_distribution
         t = b/np.sqrt(2) + self._random_state.standard_normal(size=(2,) +
                                                               self._size)
         return np.sqrt((t*t).sum(axis=0))

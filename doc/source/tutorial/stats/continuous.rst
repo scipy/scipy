@@ -171,10 +171,10 @@ References
 
 -  Documentation to Regress+ by Michael McLaughlin item Engineering and
    Statistics Handbook (NIST),
-   http://www.itl.nist.gov/div898/handbook/index.htm
+   https://www.itl.nist.gov/div898/handbook/
 
 -  Documentation for DATAPLOT from NIST,
-   http://www.itl.nist.gov/div898/software/dataplot/distribu.htm
+   https://www.itl.nist.gov/div898/software/dataplot/distribu.htm
 
 -  Norman Johnson, Samuel Kotz, and N. Balakrishnan Continuous
    Univariate Distributions, second edition, Volumes I and II, Wiley &

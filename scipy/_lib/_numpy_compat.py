@@ -284,7 +284,7 @@ except ImportError:
         ``warnings.catch_warnings``.
 
         However, it also provides a filter mechanism to work around
-        http://bugs.python.org/issue4180.
+        https://bugs.python.org/issue4180.
 
         This bug causes Python before 3.4 to not reliably show warnings again
         after they have been ignored once (even within catch_warnings). It

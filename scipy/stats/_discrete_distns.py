@@ -848,7 +848,7 @@ class skellam_gen(rv_discrete):
 
     Parameters :math:`\mu_1` and :math:`\mu_2` must be strictly positive.
 
-    For details see: http://en.wikipedia.org/wiki/Skellam_distribution
+    For details see: https://en.wikipedia.org/wiki/Skellam_distribution
 
     `skellam` takes :math:`\mu_1` and :math:`\mu_2` as shape parameters.
 
