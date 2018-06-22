@@ -6,12 +6,12 @@ import numpy as np
 import scipy.linalg
 
 
-AXIS_TO_IND = {'x': 0, 'y': 1, 'z': 2}
+_AXIS_TO_IND = {'x': 0, 'y': 1, 'z': 2}
 
 
 def _elementary_basis_vector(axis):
     b = np.zeros(3)
-    b[AXIS_TO_IND[axis]] = 1
+    b[_AXIS_TO_IND[axis]] = 1
     return b
 
 
@@ -60,8 +60,8 @@ def _compute_euler_from_dcm(dcm, seq, extrinsic=False):
     # Ensure less than unit norm
     positive_unity = dcm_transformed[:, 2, 2] > 1
     negative_unity = dcm_transformed[:, 2, 2] < -1
-    dcm_transformed[positive_unity, 2, 2] = 1.0
-    dcm_transformed[negative_unity, 2, 2] = -1.0
+    dcm_transformed[positive_unity, 2, 2] = 1
+    dcm_transformed[negative_unity, 2, 2] = -1
     angles[:, 1] = np.arccos(dcm_transformed[:, 2, 2])
 
     # Steps 5, 6
@@ -141,11 +141,10 @@ def _compute_euler_from_dcm(dcm, seq, extrinsic=False):
 
 
 def _make_elementary_quat(axis, angles):
-    num_rotations = angles.shape[0]
-    quat = np.zeros((num_rotations, 4))
+    quat = np.zeros((angles.shape[0], 4))
 
     quat[:, 3] = np.cos(angles / 2)
-    quat[:, AXIS_TO_IND[axis]] = np.sin(angles / 2)
+    quat[:, _AXIS_TO_IND[axis]] = np.sin(angles / 2)
     return quat
 
 
