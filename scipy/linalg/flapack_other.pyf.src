@@ -1047,6 +1047,43 @@ subroutine <prefix>tfttp(transr,uplo,n,nt,ap,arf,info)
 
 end subroutine <prefix>tfttp
 
+subroutine <prefix>tfttr(transr,uplo,n,nt,arf,a,lda,info)
+    !
+    ! TFTTR copies a triangular matrix from the rectangular full packed
+    ! format (TF) to the standard full format (TR). 
+    !
+    callstatement (*f2py_func)(transr,uplo,&n,arf,a,&lda,&info)
+    callprotoargument char*,char*,int*,<ctype>*,<ctype>*,int*,int*
+
+    character optional,intent(in),check(*transr=='N'||*transr==<'T','T','C','C'>):: transr = 'N'
+    character optional,intent(in),check(*uplo=='U'||*uplo=='L'):: uplo = 'U'
+    integer intent(in), check(n>=0):: n
+    <ftype> dimension(nt),intent(in):: arf
+    integer intent(hide),depend(arf,n),check(nt==(n*(n+1)/2)):: nt=shape(arf,0)
+    <ftype> dimension(lda,n),depend(lda,n),intent(out):: a
+    integer intent(hide),depend(n):: lda = MAX(n,1)
+    integer intent(out):: info
+
+end subroutine <prefix>tfttr
+
+subroutine <prefix>trttf(transr,uplo,n,a,lda,arf,info)
+    !
+    ! TRTTF copies a triangular matrix A from standard full format (TR)
+    ! to rectangular full packed format (TF).
+    !
+    callstatement (*f2py_func)(transr,uplo,&n,a,&lda,arf,&info)
+    callprotoargument char*,char*,int*,<ctype>*,int*,<ctype>*,int*
+    
+    character optional,intent(in),check(*transr=='N'||*transr==<'T','T','C','C'>):: transr = 'N'
+    character optional,intent(in),check(*uplo=='U'||*uplo=='L'):: uplo = 'U'
+    integer intent(hide),depend(a):: n = shape(a,1)
+    integer intent(hide),depend(a):: lda = MAX(shape(a,0),1)
+    <ftype> dimension(lda,n),intent(in),check(shape(a,0)==shape(a,1)):: a
+    <ftype> dimension(n*(n+1)/2),intent(out),depend(n):: arf
+    integer intent(out):: info
+
+end subroutine <prefix>trttf
+
 subroutine <prefix>tfsm(transr,side,uplo,trans,diag,m,n,nt,alpha,a,b,ldb)
     !
     ! Level 3 BLAS like routine for A in RFP Format.
@@ -1142,6 +1179,48 @@ subroutine <prefix>pftrs(transr,uplo,n,nhrs,nt,a,b,ldb,info)
     integer intent(out):: info
 
 end subroutine<prefix>pftrs
+
+subroutine <prefix>tzrzf(m,n,a,lda,tau,work,lwork,info)
+    ! TZRZF reduces the M-by-N ( M<=N ) complex upper trapezoidal matrix A
+    ! to upper triangular form by means of unitary transformations.
+    !
+    ! The upper trapezoidal matrix A is factored as
+    !
+    !    A = ( R  0 ) * Z,
+    !
+    ! where Z is an N-by-N unitary matrix and R is an M-by-M upper
+    ! triangular matrix.
+    !
+    callstatement (*f2py_func)(&m,&n,a,&lda,tau,work,&lwork,&info)
+    callprotoargument int*,int*,<ctype>*,int*,<ctype>*,<ctype>*,int*,int*
+    
+    integer intent(hide),depend(a):: m=shape(a,0)
+    integer intent(hide),depend(a):: n=shape(a,1)
+    integer intent(hide),depend(a):: lda=MAX(shape(a,0),1)
+    <ftype> dimension(m,n),intent(in,out,copy,out=rz),check(shape(a,1)>=shape(a,0)):: a
+    <ftype> dimension(m),intent(out),depend(m):: tau
+    <ftype> dimension(MAX(lwork,1)),depend(lwork),intent(hide,cache):: work
+    integer optional, intent(in),depend(m),check(lwork>=m):: lwork = MAX(m,1)
+    integer intent(out):: info
+    
+end subroutine<prefix>tzrzf
+
+subroutine <prefix>tzrzf_lwork(m,n,a,lda,tau,work,lwork,info)
+    ! lwork computation for tzrzf
+    fortranname <prefix>tzrzf
+    callstatement (*f2py_func)(&m,&n,&a,&lda,&tau,&work,&lwork,&info)
+    callprotoargument int*,int*,<ctype>*,int*,<ctype>*,<ctype>*,int*,int*
+
+    integer intent(in):: m
+    integer intent(in):: n
+    integer intent(hide),depend(m):: lda=MAX(m,1)
+    <ftype> intent(hide) :: a
+    <ftype> intent(hide) :: tau
+    integer intent(hide) :: lwork = -1
+    <ftype> intent(out) :: work
+    integer intent(out) :: info
+
+end subroutine<prefix>tzrzf_lwork
 
 subroutine <prefix2>lasd4( n, i, d, z, delta, rho, sigma, work, info )
 	! sigma, delta, work, info = lasd4(d,z,i,rho=1.0)
