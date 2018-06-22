@@ -1081,6 +1081,68 @@ subroutine <prefix>tfsm(transr,side,uplo,trans,diag,m,n,nt,alpha,a,b,ldb)
 
 end subroutine <prefix>tfsm
 
+subroutine <prefix>pftrf(transr,uplo,n,nt,a,info)
+    !
+    ! Computes the Cholesky factorization of a complex Hermitian positive definite matrix A.
+    ! The factorization has the form
+    !
+    !    A = U**H * U,  if UPLO = 'U', or   A = L  * L**H,  if UPLO = 'L',
+    !
+    ! where U is an upper triangular matrix and L is lower triangular.
+    ! This is the block version of the algorithm, calling Level 3 BLAS.
+    !
+    callstatement (*f2py_func)(transr,uplo,&n,a,&info)
+    callprotoargument char*,char*,int*,<ctype>*,int*
+
+    character optional,intent(in),check(*transr=='N'||*transr==<'T','T','C','C'>):: transr = 'N'
+    character optional,intent(in),check(*uplo=='U'||*uplo=='L'):: uplo = 'U'
+    integer intent(in), check(n>=0):: n
+    <ftype> dimension(nt),intent(in,out,copy,out=achol):: a
+    integer intent(hide),depend(a,n),check(nt==(n*(n+1)/2)):: nt=shape(a,0)    
+    integer intent(out):: info
+
+end subroutine <prefix>pftrf
+
+subroutine <prefix>pftri(transr,uplo,n,nt,a,info)
+    !
+    ! Computes the inverse of a real/complex Sym/Hermitian positive definite
+    ! matrix A using the Cholesky factorization A = U**H*U or A = L*L**H
+    ! computed by ?PFTRF.
+    !
+
+    callstatement (*f2py_func)(transr,uplo,&n,a,&info)
+    callprotoargument char*,char*,int*,<ctype>*,int*
+
+    character optional,intent(in),check(*transr=='N'||*transr==<'T','T','C','C'>):: transr = 'N'
+    character optional,intent(in),check(*uplo=='U'||*uplo=='L'):: uplo = 'U'
+    integer intent(in), check(n>=0):: n
+    <ftype> dimension(nt),intent(in,out,copy,out=ainv):: a
+    integer intent(hide),depend(a,n),check(nt==(n*(n+1)/2)):: nt=shape(a,0)  
+    integer intent(out):: info
+
+end subroutine <prefix>pftri
+
+subroutine <prefix>pftrs(transr,uplo,n,nhrs,nt,a,b,ldb,info)
+    !
+    ! ?PFTRS solves a system of linear equations A*X = B with a Sym/Hermitian
+    ! positive definite matrix A using the Cholesky factorization
+    ! A = U**H*U or A = L*L**H computed by ?PFTRF.
+    !
+    callstatement (*f2py_func)(transr,uplo,&n,&nhrs,a,b,&ldb,&info)
+    callprotoargument char*,char*,int*,int*,<ctype>*,<ctype>*,int*,int*
+
+    character optional,intent(in),check(*transr=='N'||*transr==<'T','T','C','C'>):: transr = 'N'
+    character optional,intent(in),check(*uplo=='U'||*uplo=='L'):: uplo = 'U'
+    integer intent(in), check(n>=0):: n
+    <ftype> dimension(nt),intent(in):: a
+    integer intent(hide),depend(a,n),check(nt==(n*(n+1)/2)):: nt=shape(a,0)
+    <ftype> dimension(ldb, nhrs),intent(in,out,copy,out=x):: b
+    integer intent(hide),depend(b):: nhrs = shape(b,1)
+    integer intent(hide),depend(b):: ldb = MAX(shape(b,0),1)
+    integer intent(out):: info
+
+end subroutine<prefix>pftrs
+
 subroutine <prefix2>lasd4( n, i, d, z, delta, rho, sigma, work, info )
 	! sigma, delta, work, info = lasd4(d,z,i,rho=1.0)
    	! Computes i-th square root of eigenvalue of rank one augmented diagonal matrix. Needed by SVD update procedure
