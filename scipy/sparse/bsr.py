@@ -465,7 +465,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
     tocsr.__doc__ = spmatrix.tocsr.__doc__
 
     def tocsc(self, copy=False):
-        return self.tocoo(copy=False).tocsc(copy=copy)
+        return self.tocsr(copy=False).tocsc(copy=copy)
 
     tocsc.__doc__ = spmatrix.tocsc.__doc__
 
