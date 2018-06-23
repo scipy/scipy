@@ -352,3 +352,15 @@ def test_no_double_init():
     # operator dtype)
     A = interface.LinearOperator((2, 2), matvec=matvec)
     assert_equal(call_count[0], 1)
+
+def test_adjoint_conjugate():
+    X = np.array([[1j]])
+    A = interface.aslinearoperator(X)
+
+    B = 1j * A
+    Y = 1j * X
+
+    v = np.array([1])
+
+    assert_equal(B.dot(v), Y.dot(v))
+    assert_equal(B.H.dot(v), Y.T.conj().dot(v))
