@@ -310,7 +310,7 @@ class Rotation(object):
         is_single = False
         dcm = np.asarray(dcm, dtype=float)
 
-        if dcm.ndim not in [2, 3] or (dcm.shape[-2], dcm.shape[-1]) != (3, 3):
+        if dcm.ndim not in [2, 3] or dcm.shape[-2:] != (3, 3):
             raise ValueError("Expected `dcm` to have shape (3, 3) or "
                              "(N, 3, 3), got {}".format(dcm.shape))
 
@@ -472,8 +472,8 @@ class Rotation(object):
             raise ValueError("Expected axis specification to be a non-empty "
                              "string of upto 3 characters, got {}".format(seq))
 
-        intrinsic = (re.compile('^[XYZ]{1,3}$').match(seq) is not None)
-        extrinsic = (re.compile('^[xyz]{1,3}$').match(seq) is not None)
+        intrinsic = (re.match(r'^[XYZ]{1,3}$', seq) is not None)
+        extrinsic = (re.match(r'^[xyz]{1,3}$', seq) is not None)
         if not (intrinsic or extrinsic):
             raise ValueError("Expected axes from `seq` to be from ['x', 'y', "
                              "'z'] or ['X', 'Y', 'Z'], got {}".format(seq))
@@ -583,7 +583,7 @@ class Rotation(object):
         yz = y * z
         xw = x * w
 
-        num_rotations = self._quat.shape[0]
+        num_rotations = len(self)
         dcm = np.empty((num_rotations, 3, 3))
 
         dcm[:, 0, 0] = x2 - y2 - z2 + w2
@@ -629,7 +629,7 @@ class Rotation(object):
         small_angle = (angle <= 1e-3)
         large_angle = ~small_angle
 
-        num_rotations = quat.shape[0]
+        num_rotations = len(self)
         scale = np.empty(num_rotations)
         scale[small_angle] = (2 + angle[small_angle] ** 2 / 12 +
                               7 * angle[small_angle] ** 4 / 2880)
@@ -699,8 +699,8 @@ class Rotation(object):
         if len(seq) != 3:
             raise ValueError("Expected 3 axes, got {}.".format(seq))
 
-        intrinsic = (re.compile('^[XYZ]{1,3}$').match(seq) is not None)
-        extrinsic = (re.compile('^[xyz]{1,3}$').match(seq) is not None)
+        intrinsic = (re.match(r'^[XYZ]{1,3}$', seq) is not None)
+        extrinsic = (re.match(r'^[xyz]{1,3}$', seq) is not None)
         if not (intrinsic or extrinsic):
             raise ValueError("Expected axes from `seq` to be from "
                              "['x', 'y', 'z'] or ['X', 'Y', 'Z'], "
@@ -817,13 +817,12 @@ class Rotation(object):
               rotation `p[i]` is composed with the corresponding rotation
               `q[i]` and `output` contains `N` rotations.
         """
-        if not(self._quat.shape[0] == 1 or other._quat.shape[0] == 1 or
-               self._quat.shape[0] == other._quat.shape[0]):
+        if not(len(self) == 1 or len(other) == 1 or len(self) == len(other)):
             raise ValueError("Expected equal number of rotations in both "
                              "or a single rotation in either object, "
                              "got {} rotations in first and {} rotations in "
                              "second object.".format(
-                                self._quat.shape[0], other._quat.shape[0]))
+                                len(self), len(other)))
         result = _compose_quat(self._quat, other._quat)
         if self._single and other._single:
             result = result[0]
