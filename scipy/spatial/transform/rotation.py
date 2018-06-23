@@ -192,8 +192,8 @@ class Rotation(object):
     Indexing within a rotation is supported since multiple rotation transforms
     can be stored within a single `Rotation` instance.
 
-    Initialization using the `from_...` classmethods such as `from_quat` is
-    recommended over using `__init__`.
+    To create `Rotation` objects use `from_...` classmethods, `__init__` is not
+    supposed to be used directly.
 
     Methods
     -------
@@ -282,11 +282,11 @@ class Rotation(object):
 
     @classmethod
     def from_dcm(cls, dcm):
-        """Initialize Rotation from direction cosine matrix.
+        """Initialize Rotation from direction cosine matrices.
 
         Rotations in 3 dimensions can be represented using 3 x 3 proper
-        orthogonal matrices [2]_. If the input is not proper orthogonal,
-        an approximation is created using the method described in [1]_.
+        orthogonal matrices [1]_. If the input is not proper orthogonal,
+        an approximation is created using the method described in [2]_.
 
         Parameters
         ----------
@@ -302,10 +302,10 @@ class Rotation(object):
 
         References
         ----------
-        .. [1] F. Landis Markley, `Unit Quaternion from Rotation Matrix
-               <https://arc.aiaa.org/doi/abs/10.2514/1.31730>`_
-        .. [2] `Direction Cosine Matrix
+        .. [1] `Direction Cosine Matrix
                 <https://en.wikipedia.org/wiki/Rotation_matrix#In_three_dimensions>`_
+        .. [2] F. Landis Markley, `Unit Quaternion from Rotation Matrix
+               <https://arc.aiaa.org/doi/abs/10.2514/1.31730>`_
         """
         is_single = False
         dcm = np.asarray(dcm, dtype=float)
@@ -355,7 +355,7 @@ class Rotation(object):
 
     @classmethod
     def from_rotvec(cls, rotvec):
-        """Initialize class from rotation vector.
+        """Initialize Rotation from rotation vectors.
 
         A rotation vector is a 3 dimensional vector which is co-directional to
         the axis of rotation and whose norm gives the angle of rotation (in
@@ -415,7 +415,7 @@ class Rotation(object):
 
     @classmethod
     def from_euler(cls, seq, angles, degrees=False):
-        """Initialize rotation from Euler angles.
+        """Initialize Rotation from Euler angles.
 
         Rotations in 3 dimensions can be represented by a sequece of 3
         rotations around a sequence of axes. In theory, any three axes spanning
@@ -553,7 +553,7 @@ class Rotation(object):
         """Represent rotations as direction cosine matrices.
 
         3D rotations can be represented using direction cosine matrices, which
-        are 3 x 3 real orthogonal matrices with eigenvalue equal to +1 [1]_.
+        are 3 x 3 real orthogonal matrices with determinant equal to +1 [1]_.
 
         Returns
         -------
@@ -646,19 +646,16 @@ class Rotation(object):
     def as_euler(self, seq, degrees=False):
         """Compute Euler angles for rotations with specified axis sequence.
 
-        Euler angles can be extracted for any set of 3 mutually perpendicular
-        axes. This paper [2]_ presents such a general algorithm for extracting
-        Euler angles from transformation matrices, as opposed to rotation
-        matrices. Thus, the matrix representation used in the paper is a
-        transpose of the direction cosine matrix representation given by the
-        `as_dcm` function.
+        Any orientation can be expressed as a composition of 3 elementary
+        rotations. Once the axis sequence has been chosen, Euler angles define
+        the angle of rotation around each respective axis [1]_.
 
-        The algorithm has been adapted to use rotation matrices and extended
-        to calculate Euler angles for intrinsic as well as extrinsic rotations.
+        The algorithm from [2]_ has been used to calculate Euler angles for the
+        rotation about a given sequence of axes.
 
         Euler angles suffer from the problem of gimbal lock [3]_, where the
         representation loses a degree of freedom and it is not possible to
-        represent the first and third angles uniquely. In this case,
+        determine the first and third angles uniquely. In this case,
         a warning is raised, and the third angle is set to zero. Note however
         that the returned angles still represent the correct rotation.
 
@@ -722,9 +719,7 @@ class Rotation(object):
         return angles[0] if self._single else angles
 
     def apply(self, vectors, inverse=False):
-        """Apply this rotation on a set of vectors.
-
-        Rotates `vectors` by the rotation(s) represented in the object.
+        """Apply this rotation to a set of vectors.
 
         If the original frame rotates to the final frame by this rotation, then
         its application to a vector can be seen in two ways:
@@ -752,7 +747,7 @@ class Rotation(object):
 
         Returns
         -------
-        outvecs : `numpy.ndarray`, shape (3,) or (N, 3)
+        rotated_vectors : `numpy.ndarray`, shape (3,) or (N, 3)
             Result of applying rotation on input vectors.
             Shape depends on the following cases:
 
@@ -811,7 +806,7 @@ class Rotation(object):
 
         Returns
         -------
-        rotation : `Rotation` instance
+        composition : `Rotation` instance
             This function supports composition of multiple rotations at a time.
             The following cases are possible:
 
@@ -838,11 +833,11 @@ class Rotation(object):
         """Invert this rotation.
 
         Composition of a rotation with its inverse results in an identity
-        rotation, or no rotation.
+        transformation.
 
         Returns
         -------
-        rotation : `Rotation` instance
+        inverse : `Rotation` instance
             Object containing inverse of the rotations in the current instance.
         """
         quat = self._quat.copy()
@@ -866,7 +861,7 @@ class Rotation(object):
         Returns
         -------
         rotation : `Rotation` instance
-            `output` contains
+            Contains
                 - a single rotation, if `indexer` is a single index
                 - a stack of rotation(s), if `indexer` is a slice, or and index
                   array.
