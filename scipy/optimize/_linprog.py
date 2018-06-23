@@ -800,7 +800,6 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
             "infeasible.".format(abs(T[-1, -1]), tol)
         )
 
-
     if status != 0:
         if not message:
             message = messages[status]
