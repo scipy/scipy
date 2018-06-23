@@ -190,6 +190,7 @@ Lars Grüter for contributions to peak finding in scipy.signal
 Jordan Heemskerk for exposing additional windowing functions in scipy.signal.
 Michael Tartre (Two Sigma Investments) for contributions to weighted distance functions.
 Shinya Suzuki for scipy.stats.brunnermunzel
+Graham Clenaghan for bug fixes and optimizations in scipy.stats.
 
 Institutions
 ------------
