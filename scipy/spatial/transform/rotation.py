@@ -253,7 +253,7 @@ class Rotation(object):
 
     @classmethod
     def from_quat(cls, quat, normalized=False):
-        """Initialize Rotation from quaternions.
+        """Initialize from quaternions.
 
         3D rotations can be represented using unit-norm quaternions [1]_.
 
@@ -282,7 +282,7 @@ class Rotation(object):
 
     @classmethod
     def from_dcm(cls, dcm):
-        """Initialize Rotation from direction cosine matrices.
+        """Initialize from direction cosine matrices.
 
         Rotations in 3 dimensions can be represented using 3 x 3 proper
         orthogonal matrices [1]_. If the input is not proper orthogonal,
@@ -355,7 +355,7 @@ class Rotation(object):
 
     @classmethod
     def from_rotvec(cls, rotvec):
-        """Initialize Rotation from rotation vectors.
+        """Initialize from rotation vectors.
 
         A rotation vector is a 3 dimensional vector which is co-directional to
         the axis of rotation and whose norm gives the angle of rotation (in
@@ -415,7 +415,7 @@ class Rotation(object):
 
     @classmethod
     def from_euler(cls, seq, angles, degrees=False):
-        """Initialize Rotation from Euler angles.
+        """Initialize from Euler angles.
 
         Rotations in 3 dimensions can be represented by a sequece of 3
         rotations around a sequence of axes. In theory, any three axes spanning
@@ -527,7 +527,7 @@ class Rotation(object):
         return cls(quat[0] if is_single else quat, normalized=True, copy=False)
 
     def as_quat(self):
-        """Represent rotations as quaternions.
+        """Represent as quaternions.
 
         Rotations in 3 dimensions can be represented using unit norm
         quaternions [1]_. The mapping from quaternions to rotations is
@@ -550,7 +550,7 @@ class Rotation(object):
             return self._quat.copy()
 
     def as_dcm(self):
-        """Represent rotations as direction cosine matrices.
+        """Represent as direction cosine matrices.
 
         3D rotations can be represented using direction cosine matrices, which
         are 3 x 3 real orthogonal matrices with determinant equal to +1 [1]_.
@@ -604,7 +604,7 @@ class Rotation(object):
             return dcm
 
     def as_rotvec(self):
-        """Represent rotations as rotation vectors.
+        """Represent as rotation vectors.
 
         A rotation vector is a 3 dimensional vector which is co-directional to
         the axis of rotation and whose norm gives the angle of rotation (in
@@ -644,7 +644,7 @@ class Rotation(object):
             return rotvec
 
     def as_euler(self, seq, degrees=False):
-        """Compute Euler angles for rotations with specified axis sequence.
+        """Represent as Euler angles.
 
         Any orientation can be expressed as a composition of 3 elementary
         rotations. Once the axis sequence has been chosen, Euler angles define
