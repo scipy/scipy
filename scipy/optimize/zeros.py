@@ -166,13 +166,22 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
     sign. The brentq algorithm is recommended for general use in one
     dimensional problems when such an interval has been found.
 
+    When `newton` is used with arrays, it is best suited for the following
+    types of problems:
+    * the initial guesses, `x0`, are all relatively the same distance from the
+    roots
+    * some or all of the extra arguments, `args`, are also arrays so that a
+    class of similar problems can be solved together
+    * the size of the initial guesses, `x0`, is larger than 100 elements
+    Otherwise, a naive loop may perform better than a vector.
+
     Examples
     --------
 
+    >>> from scipy import optimize
+
     >>> def f(x):
     ...     return (x**3 - 1)  # only one real root at x = 1
-
-    >>> from scipy import optimize
 
     ``fprime`` not provided, use secant method
 
@@ -195,6 +204,19 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
     ...                        fprime2=lambda x: 6 * x)
     >>> root
     1.0
+
+    A sequence of initial guesses and arguments is provided, use vectorized
+
+    >>> import numpy as np
+
+    >>> f = lambda x, a: x**3 - a
+    >>> fder = lambda x, a: 3 * x**2
+    >>> x = np.random.randn(100)
+    >>> a = range(-50, 50)
+    >>> vec_res = optimize.newton(f, x, fprime=fder, args=(a, ))
+
+    >>> loop_res = [optimize.newton(f, x0, fprime=fder, args=(a0,))
+    ...             for x0, a0 in zip(x, a)]
 
     """
     if tol <= 0:
