@@ -564,7 +564,7 @@ class _ScaledLinearOperator(LinearOperator):
 
     def _adjoint(self):
         A, alpha = self.args
-        return A.H * alpha
+        return A.H * np.conj(alpha)
 
 
 class _PowerLinearOperator(LinearOperator):
