@@ -1584,7 +1584,7 @@ def anderson_ksamp(samples, midrank=True):
 
     Notes
     -----
-    [1]_ Defines three versions of the k-sample Anderson-Darling test:
+    [1]_ defines three versions of the k-sample Anderson-Darling test:
     one for continuous distributions and two for discrete
     distributions, in which ties between samples may occur. The
     default of this routine is to compute the version based on the
@@ -1594,6 +1594,11 @@ def anderson_ksamp(samples, midrank=True):
     data. According to [1]_, the two discrete test statistics differ
     only slightly if a few collisions due to round-off errors occur in
     the test not adjusted for ties between samples.
+
+    The critical values are taken from [1]_. p-values are floored / capped
+    at 1% / 25%. Since the range of criticl values might be extended in
+    future releases, it is recommended not to test ``p == 0.01``, but rather
+    ``p <= 0.01`` (analogously for the upper bound).
 
     .. versionadded:: 0.14.0
 
