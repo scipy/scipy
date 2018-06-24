@@ -401,6 +401,83 @@ subroutine <prefix2c>unmqr(side,trans,m,n,k,a,lda,tau,c,ldc,work,lwork,info)
 
 end subroutine <prefix2c>unmqr
 
+subroutine <prefix><or,or,un,un>mrz(side,trans,m,n,k,l,ncol,a,lda,tau,ntau,c,ldc,work,lwork,info)
+    !
+    ! ?OR/UNMRZ overwrites the general complex M-by-N matrix C with
+    !
+    !                 SIDE = 'L'     SIDE = 'R'
+    ! TRANS = 'N':      Q * C          C * Q
+    ! TRANS = 'C':      Q**H * C       C * Q**H
+    !
+    ! where Q is a complex unitary matrix defined as the product of k
+    ! elementary reflectors
+    !
+    !       Q = H(1) H(2) . . . H(k)
+    !
+    ! as returned by ?TZRZF. Q is of order M if SIDE = 'L' and of order N
+    ! if SIDE = 'R'.
+    !
+    callstatement (*f2py_func)(side,trans,&m,&n,&k,&l,a,&lda,tau,c,&ldc,work,&lwork,&info)
+    callprotoargument char*,char*,int*,int*,int*,int*,<ctype>*,int*,<ctype>*,<ctype>*,int*,<ctype>*,int*,int*
+    
+    character optional,intent(in),check(*side=='L'||*side=='R'):: side = 'L'
+    character optional,intent(in),check(*trans=='N'||*trans==<'T','T','C','C'>):: trans = 'N'
+    integer intent(hide),depend(c):: m=shape(c,0)
+    integer intent(hide),depend(c):: n=shape(c,1)
+    integer intent(hide),depend(a):: k=shape(a,0)
+    integer intent(hide),depend(a):: l=shape(a,1)-shape(a,0)
+    <ftype> dimension(k,ncol),intent(in):: a
+    integer intent(hide),depend(a,side,m,n),check(ncol==(*side=='L',m,n)):: ncol=shape(a,1)
+    integer intent(hide),depend(a):: lda=MAX(shape(a,0),1)
+    <ftype> dimension(m,n),intent(in,out,copy,out=cq):: c
+    integer intent(hide),depend(c):: ldc = MAX(shape(c,0),1)
+    <ftype> dimension(ntau),intent(in):: tau
+    integer intent(hide),depend(tau,k),check(ntau==k):: ntau=shape(tau,0)
+    <ftype> dimension(MAX(lwork,1)),intent(hide,cache):: work
+    integer intent(in),depend(side,m,n),check((lwork>=(*side=='L'?n:m))||lwork==-1):: lwork=MAX((*side=='L'?n:m),1)
+    integer intent(out):: info    
+    
+end subroutine <prefix><or,or,un,un>mrz
+
+subroutine <prefix><or,or,un,un>mrz_lwork(side,trans,m,n,k,l,ncol,a,lda,tau,ntau,c,ldc,work,lwork,info)
+    !
+    ! ?OR/UNMRZ overwrites the general complex M-by-N matrix C with
+    !
+    !                 SIDE = 'L'     SIDE = 'R'
+    ! TRANS = 'N':      Q * C          C * Q
+    ! TRANS = 'C':      Q**H * C       C * Q**H
+    !
+    ! where Q is a complex unitary matrix defined as the product of k
+    ! elementary reflectors
+    !
+    !       Q = H(1) H(2) . . . H(k)
+    !
+    ! as returned by ?TZRZF. Q is of order M if SIDE = 'L' and of order N
+    ! if SIDE = 'R'.
+    !
+    fortranname <prefix><or,or,un,un>mrz
+    callstatement (*f2py_func)(side,trans,&m,&n,&k,&l,&a,&lda,&tau,&c,&ldc,&work,&lwork,&info)
+    callprotoargument char*,char*,int*,int*,int*,int*,<ctype>*,int*,<ctype>*,<ctype>*,int*,<ctype>*,int*,int*
+    
+    character optional,intent(in),check(*side=='L'||*side=='R'):: side = 'L'
+    character optional,intent(in),check(*trans=='N'||*trans==<'T','T','C','C'>):: trans = 'N'
+    integer intent(in):: m
+    integer intent(in):: n
+    integer intent(in):: k
+    integer intent(hide):: l
+    <ftype> intent(hide):: a
+    integer intent(hide):: ncol
+    integer intent(hide),depend(k):: lda=k
+    <ftype> intent(hide):: c
+    integer intent(hide),depend(m):: ldc=m
+    <ftype> intent(hide):: tau
+    integer intent(hide):: ntau
+    <ftype> intent(out):: work
+    integer intent(hide):: lwork=-1
+    integer intent(out):: info
+    
+end subroutine <prefix><or,or,un,un>mrz_lwork
+
 subroutine <prefix2>orgrq(m,n,k,a,tau,work,lwork,info)
     ! q,work,info = orgrq(a,lwork=3*n,overwrite_a=0)
     ! Generates an M-by-N real matrix Q with orthonormal columns,
