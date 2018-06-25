@@ -1688,25 +1688,26 @@ def scoreatpercentile(a, per, limit=(), interpolation_method='fraction',
     if limit:
         a = a[(limit[0] <= a) & (a <= limit[1])]
 
-    sorted = np.sort(a, axis=axis)
+    sorted_ = np.sort(a, axis=axis)
     if axis is None:
         axis = 0
 
-    return _compute_qth_percentile(sorted, per, interpolation_method, axis)
+    return _compute_qth_percentile(sorted_, per, interpolation_method, axis)
 
 
 # handle sequence of per's without calling sort multiple times
-def _compute_qth_percentile(sorted, per, interpolation_method, axis):
+def _compute_qth_percentile(sorted_, per, interpolation_method, axis):
     if not np.isscalar(per):
-        score = [_compute_qth_percentile(sorted, i, interpolation_method, axis)
+        score = [_compute_qth_percentile(sorted_, i,
+                                         interpolation_method, axis)
                  for i in per]
         return np.array(score)
 
     if (per < 0) or (per > 100):
         raise ValueError("percentile must be in the range [0, 100]")
 
-    indexer = [slice(None)] * sorted.ndim
-    idx = per / 100. * (sorted.shape[axis] - 1)
+    indexer = [slice(None)] * sorted_.ndim
+    idx = per / 100. * (sorted_.shape[axis] - 1)
 
     if int(idx) != idx:
         # round fractional indices according to interpolation method
@@ -1729,13 +1730,13 @@ def _compute_qth_percentile(sorted, per, interpolation_method, axis):
         indexer[axis] = slice(i, i + 2)
         j = i + 1
         weights = array([(j - idx), (idx - i)], float)
-        wshape = [1] * sorted.ndim
+        wshape = [1] * sorted_.ndim
         wshape[axis] = 2
         weights.shape = wshape
         sumval = weights.sum()
 
     # Use np.add.reduce (== np.sum but a little faster) to coerce data type
-    return np.add.reduce(sorted[indexer] * weights, axis=axis) / sumval
+    return np.add.reduce(sorted_[tuple(indexer)] * weights, axis=axis) / sumval
 
 
 def percentileofscore(a, score, kind='rank'):
