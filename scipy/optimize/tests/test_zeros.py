@@ -120,7 +120,7 @@ class TestBasic(object):
         # test failures and zero_der
         with pytest.warns(RuntimeWarning):
             results = zeros.newton(lambda y: y**2 - 2, [0., 0.],
-                                   lambda y: 2*y, converged=True)
+                                   lambda y: 2*y, full_output=True)
             assert_allclose(results.root, 0)
             assert results.zero_der.all()
             assert not results.converged.any()
@@ -299,14 +299,14 @@ def test_array_newton_failures():
     with pytest.warns(RuntimeWarning):
         result = zeros.newton(
             colebrook_eqn, x0=[0.01, 0.2, 0.02223, 0.3], maxiter=2,
-            args=[reynolds_number, diameter], converged=True
+            args=[reynolds_number, diameter], full_output=True
         )
         assert not result.converged.all()
     # they all fail
     with pytest.raises(RuntimeError):
         result = zeros.newton(
             colebrook_eqn, x0=[0.01] * 2, maxiter=2,
-            args=[reynolds_number, diameter], converged=True
+            args=[reynolds_number, diameter], full_output=True
         )
 
 
