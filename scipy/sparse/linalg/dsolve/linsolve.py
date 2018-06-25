@@ -10,13 +10,13 @@ from scipy.linalg import LinAlgError
 
 from . import _superlu
 
-noScikit = False
 try:
     import scikits.umfpack as umfpack
+    has_scikit_umfpack = True
 except ImportError:
-    noScikit = True
+    has_scikit_umfpack = False
 
-useUmfpack = not noScikit
+useUmfpack = has_scikit_umfpack
 
 __all__ = ['use_solver', 'spsolve', 'splu', 'spilu', 'factorized',
            'MatrixRankWarning', 'spsolve_triangular']
@@ -89,7 +89,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
         The square matrix A will be converted into CSC or CSR form
     b : ndarray or sparse matrix
         The matrix or vector representing the right hand side of the equation.
-        If a vector, b.shape must be (n,) or (n, 1).
+
     permc_spec : str, optional
         How to permute the columns of the matrix for sparsity preservation.
         (default: 'COLAMD')
@@ -106,8 +106,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
     -------
     x : ndarray or sparse matrix
         the solution of the sparse linear equation.
-        If b is a vector, then x is a vector of size A.shape[1]
-        If b is a matrix, then x is a matrix of size (A.shape[1], b.shape[1])
+        x has the same shape as the input right-hand side b.
 
     Notes
     -----
@@ -127,16 +126,23 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
     >>> np.allclose(A.dot(x).todense(), B.todense())
     True
     """
+    # validate input shapes
+    M, N = A.shape
+    if (M != N):
+        raise ValueError("matrix must be square (has shape %s)" % ((M, N),))
+
+    b_is_sparse = isspmatrix(b)
+    if not b_is_sparse:
+        b = asarray(b)
+
+    if M != b.shape[0]:
+        raise ValueError("matrix - rhs dimension mismatch (%s - %s)"
+                         % (A.shape, b.shape))
+
     if not (isspmatrix_csc(A) or isspmatrix_csr(A)):
         A = csc_matrix(A)
         warn('spsolve requires A be CSC or CSR matrix format',
                 SparseEfficiencyWarning)
-
-    # b is a vector only if b have shape (n,) or (n, 1)
-    b_is_sparse = isspmatrix(b)
-    if not b_is_sparse:
-        b = asarray(b)
-    b_is_vector = ((b.ndim == 1) or (b.ndim == 2 and b.shape[1] == 1))
 
     A.sort_indices()
     A = A.asfptype()  # upcast to a floating point format
@@ -146,80 +152,87 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
     if b.dtype != result_dtype:
         b = b.astype(result_dtype)
 
-    # validate input shapes
-    M, N = A.shape
-    if (M != N):
-        raise ValueError("matrix must be square (has shape %s)" % ((M, N),))
+    # Make sure that b has columns so we can iterate over them below. The
+    # output array is eventually reshaped back to b.shape.
+    bshape = b.shape
+    b = b.reshape(b.shape[0], -1)
 
-    if M != b.shape[0]:
-        raise ValueError("matrix - rhs dimension mismatch (%s - %s)"
-                         % (A.shape, b.shape[0]))
+    # b is a vector only if b has shape (n,) or (n, 1)
+    b_is_vector = ((b.ndim == 1) or (b.ndim == 2 and b.shape[1] == 1))
 
-    use_umfpack = use_umfpack and useUmfpack
+    # decide which solution method to use
+    if b_is_vector:
+        if use_umfpack and useUmfpack:
+            if not has_scikit_umfpack:
+                raise RuntimeError('Scikits.umfpack not installed.')
+            if A.dtype.char not in 'dD':
+                raise ValueError(
+                    "umfpack can only handle matrix data of double type."
+                    "Convert with .astype() or set use_umfpack = False"
+                    )
 
-    if b_is_vector and use_umfpack:
-        if b_is_sparse:
-            b_vec = b.toarray()
+            method = 'umfpack'
         else:
-            b_vec = b
-        b_vec = asarray(b_vec, dtype=A.dtype).ravel()
+            method = 'superlu'
 
-        if noScikit:
-            raise RuntimeError('Scikits.umfpack not installed.')
-
-        if A.dtype.char not in 'dD':
-            raise ValueError("convert matrix data to double, please, using"
-                  " .astype(), or set linsolve.useUmfpack = False")
-
-        umf = umfpack.UmfpackContext(_get_umf_family(A))
-        x = umf.linsolve(umfpack.UMFPACK_A, A, b_vec,
-                         autoTranspose=True)
     else:
-        if b_is_vector and b_is_sparse:
-            b = b.toarray()
-            b_is_sparse = False
+        if b_is_sparse:
+            method = 'factorized'
+        else:
+            method = 'superlu'
 
-        if not b_is_sparse:
-            if isspmatrix_csc(A):
-                flag = 1  # CSC format
-            else:
-                flag = 0  # CSR format
+    if b_is_sparse and not isspmatrix_csc(b):
+        warn('spsolve is more efficient when sparse b '
+             'is in the CSC matrix format', SparseEfficiencyWarning)
+        b = csc_matrix(b)
 
+    # Solve the system
+    if method == 'umfpack':
+        x = []
+        for j in range(b.shape[1]):
+            bj = b[:, j].toarray() if b_is_sparse else b[:, j]
+            bj = asarray(bj, dtype=A.dtype).ravel()
+            umf = umfpack.UmfpackContext(_get_umf_family(A))
+            x.append(umf.linsolve(umfpack.UMFPACK_A, A, bj, autoTranspose=True))
+        x = np.column_stack(x).reshape(bshape)
+
+    elif method == 'superlu':
+        flag = 1 if isspmatrix_csc(A) else 0
+        x = []
+        for j in range(b.shape[1]):
+            bj = b[:, j].toarray() if b_is_sparse else b[:, j]
             options = dict(ColPerm=permc_spec)
-            x, info = _superlu.gssv(N, A.nnz, A.data, A.indices, A.indptr,
-                                    b, flag, options=options)
+            xx, info = _superlu.gssv(N, A.nnz, A.data, A.indices, A.indptr,
+                                     bj, flag, options=options)
             if info != 0:
                 warn("Matrix is exactly singular", MatrixRankWarning)
-                x.fill(np.nan)
-            if b_is_vector:
-                x = x.ravel()
-        else:
-            # b is sparse
-            Afactsolve = factorized(A)
+                xx.fill(np.nan)
+            x.append(xx)
+        x = np.column_stack(x).reshape(bshape)
 
-            if not isspmatrix_csc(b):
-                warn('spsolve is more efficient when sparse b '
-                     'is in the CSC matrix format', SparseEfficiencyWarning)
-                b = csc_matrix(b)
+    else:
+        assert method == 'factorized'
+        Afactsolve = factorized(A)
 
-            # Create a sparse output matrix by repeatedly applying
-            # the sparse factorization to solve columns of b.
-            data_segs = []
-            row_segs = []
-            col_segs = []
-            for j in range(b.shape[1]):
-                bj = b[:, j].A.ravel()
-                xj = Afactsolve(bj)
-                w = np.flatnonzero(xj)
-                segment_length = w.shape[0]
-                row_segs.append(w)
-                col_segs.append(np.ones(segment_length, dtype=int)*j)
-                data_segs.append(np.asarray(xj[w], dtype=A.dtype))
-            sparse_data = np.concatenate(data_segs)
-            sparse_row = np.concatenate(row_segs)
-            sparse_col = np.concatenate(col_segs)
-            x = A.__class__((sparse_data, (sparse_row, sparse_col)),
-                           shape=b.shape, dtype=A.dtype)
+        # Create a sparse output matrix by repeatedly applying
+        # the sparse factorization to solve columns of b.
+        data_segs = []
+        row_segs = []
+        col_segs = []
+        for j in range(b.shape[1]):
+            bj = b[:, j]
+            bj = bj.A.ravel() if b_is_sparse else bj
+            xj = Afactsolve(bj)
+            w = np.flatnonzero(xj)
+            segment_length = w.shape[0]
+            row_segs.append(w)
+            col_segs.append(np.ones(segment_length, dtype=int)*j)
+            data_segs.append(np.asarray(xj[w], dtype=A.dtype))
+        sparse_data = np.concatenate(data_segs)
+        sparse_row = np.concatenate(row_segs)
+        sparse_col = np.concatenate(col_segs)
+        x = A.__class__((sparse_data, (sparse_row, sparse_col)),
+                       shape=b.shape, dtype=A.dtype)
 
     return x
 
@@ -414,7 +427,7 @@ def factorized(A):
 
     """
     if useUmfpack:
-        if noScikit:
+        if not has_scikit_umfpack:
             raise RuntimeError('Scikits.umfpack not installed.')
 
         if not isspmatrix_csc(A):
