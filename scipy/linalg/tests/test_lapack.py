@@ -15,11 +15,12 @@ import pytest
 from pytest import raises as assert_raises
 
 import numpy as np
+from numpy import zeros_like, triu
+from numpy.linalg import multi_dot
 from numpy.random import rand, seed
 
 from scipy.linalg import _flapack as flapack
-from scipy.linalg import inv
-from scipy.linalg import svd
+from scipy.linalg import inv, svd
 from scipy.linalg.lapack import _compute_lwork
 
 try:
@@ -557,7 +558,7 @@ def test_larfg_larf():
         a[1:, :] = larf(v, tau.conjugate(), a[1:, :], np.zeros(a.shape[1]))
 
         # apply transform from the right
-        a[:, 1:] = larf(v, tau, a[:,1:], np.zeros(a.shape[0]), side='R')
+        a[:, 1:] = larf(v, tau, a[:, 1:], np.zeros(a.shape[0]), side='R')
 
         assert_allclose(a[:, 0], expected, atol=1e-5)
         assert_allclose(a[0, :], expected, atol=1e-5)
@@ -831,7 +832,9 @@ def test_sygst():
         # DTYPES = <s,d> sygst
         n = 10
 
-        potrf, sygst, syevd, sygvd = get_lapack_funcs(('potrf', 'sygst', 'syevd', 'sygvd'), dtype=dtype)
+        potrf, sygst, syevd, sygvd = get_lapack_funcs(('potrf', 'sygst',
+                                                       'syevd', 'sygvd'),
+                                                      dtype=dtype)
 
         A = rand(n, n).astype(dtype)
         A = (A + A.T)/2
@@ -860,7 +863,9 @@ def test_hegst():
         # DTYPES = <c,z> hegst
         n = 10
 
-        potrf, hegst, heevd, hegvd = get_lapack_funcs(('potrf', 'hegst', 'heevd', 'hegvd'), dtype=dtype)
+        potrf, hegst, heevd, hegvd = get_lapack_funcs(('potrf', 'hegst',
+                                                       'heevd', 'hegvd'),
+                                                      dtype=dtype)
 
         A = rand(n, n).astype(dtype) + 1j * rand(n, n).astype(dtype)
         A = (A + A.conj().T)/2
@@ -881,3 +886,95 @@ def test_hegst():
         eig, _, info = heevd(a)
         assert_(info == 0)
         assert_allclose(eig, eig_gvd, rtol=1e-4)
+
+
+def test_tzrzf():
+    """
+    This test performs an RZ decomposition in which an m x n upper trapezoidal
+    array M (m <= n) is factorized as M = [R 0] * Z where R is upper triangular
+    and Z is unitary.
+    """
+    seed(1234)
+    m, n = 10, 15
+    for ind, dtype in enumerate(DTYPES):
+        tzrzf, tzrzf_lw = get_lapack_funcs(('tzrzf', 'tzrzf_lwork'),
+                                           dtype=dtype)
+        lwork = _compute_lwork(tzrzf_lw, m, n)
+
+        if ind < 2:
+            A = triu(rand(m, n).astype(dtype))
+        else:
+            A = triu((rand(m, n) + rand(m, n)*1j).astype(dtype))
+
+        # assert wrong shape arg, f2py returns generic error
+        assert_raises(Exception, tzrzf, A.T)
+        rz, tau, info = tzrzf(A, lwork=lwork)
+        # Check success
+        assert_(info == 0)
+
+        # Get Z manually for comparison
+        R = np.block([rz[:, :m], np.zeros((m, n-m), dtype=dtype)])
+        V = np.block([np.eye(m, dtype=dtype), rz[:, m:]])
+        Id = np.eye(n, dtype=dtype)
+        ref = [Id-tau[x]*V[[x], :].T.dot(V[[x], :].conj()) for x in range(m)]
+        Z = multi_dot(ref)
+        assert_allclose(R.dot(Z) - A, zeros_like(A, dtype=dtype),
+                        atol=10*np.spacing(dtype(1.0).real), rtol=0.)
+
+
+def test_ormrz_unmrz():
+    """
+    This test performs a matrix multiplication with an arbitrary m x n matric C
+    and a unitary matrix Q without explicitly forming the array. The array data
+    is encoded in the rectangular part of A which is obtained from ?TZRZF. Q
+    size is inferred by m, n, side keywords.
+    """
+    seed(1234)
+    qm, qn, cn = 10, 15, 15
+    for ind, dtype in enumerate(DTYPES):
+        tzrzf, tzrzf_lw = get_lapack_funcs(('tzrzf', 'tzrzf_lwork'),
+                                           dtype=dtype)
+        lwork_rz = _compute_lwork(tzrzf_lw, qm, qn)
+
+        if ind < 2:
+            A = triu(rand(qm, qn).astype(dtype))
+            C = rand(cn, cn).astype(dtype)
+            orun_mrz, orun_mrz_lw = get_lapack_funcs(('ormrz', 'ormrz_lwork'),
+                                                     dtype=dtype)
+        else:
+            A = triu((rand(qm, qn) + rand(qm, qn)*1j).astype(dtype))
+            C = (rand(cn, cn) + rand(cn, cn)*1j).astype(dtype)
+            orun_mrz, orun_mrz_lw = get_lapack_funcs(('unmrz', 'unmrz_lwork'),
+                                                     dtype=dtype)
+
+        lwork_mrz = _compute_lwork(orun_mrz_lw, cn, cn, qn)
+        rz, tau, info = tzrzf(A, lwork=lwork_rz)
+
+        # Get Q manually for comparison
+        V = np.block([np.eye(qm, dtype=dtype), rz[:, qm:]])
+        Id = np.eye(qn, dtype=dtype)
+        ref = [Id-tau[x]*V[[x], :].T.dot(V[[x], :].conj()) for x in range(qm)]
+        Q = multi_dot(ref)
+
+        # Now that we have Q, we can test whether lapack results agree with
+        # each case of CQ, CQ^H, QC, and QC^H
+        trans = 'T' if ind < 2 else 'C'
+        tol = 10*np.spacing(dtype(1.0).real)
+
+        cq, info = orun_mrz(rz, tau, C, lwork=lwork_mrz)
+        assert_(info == 0)
+        assert_allclose(cq - Q.dot(C), zeros_like(C), atol=tol, rtol=0.)
+
+        cq, info = orun_mrz(rz, tau, C, trans=trans, lwork=lwork_mrz)
+        assert_(info == 0)
+        assert_allclose(cq - Q.conj().T.dot(C), zeros_like(C), atol=tol,
+                        rtol=0.)
+
+        cq, info = orun_mrz(rz, tau, C, side='R', lwork=lwork_mrz)
+        assert_(info == 0)
+        assert_allclose(cq - C.dot(Q), zeros_like(C), atol=tol, rtol=0.)
+
+        cq, info = orun_mrz(rz, tau, C, side='R', trans=trans, lwork=lwork_mrz)
+        assert_(info == 0)
+        assert_allclose(cq - C.dot(Q.conj().T), zeros_like(C), atol=tol,
+                        rtol=0.)

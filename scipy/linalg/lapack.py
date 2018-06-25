@@ -373,6 +373,21 @@ All functions
    ctrtrs
    ztrtrs
 
+   spftrf
+   dpftrf
+   cpftrf
+   zpftrf
+
+   spftri
+   dpftri
+   cpftri
+   zpftri
+
+   spftrs
+   dpftrs
+   cpftrs
+   zpftrs
+
    cunghr
    zunghr
 
@@ -384,6 +399,12 @@ All functions
 
    cunmqr
    zunmqr
+
+   cunmrz
+   zunmrz
+
+   cunmrz_lwork
+   zunmrz_lwork
 
    sgtsv
    dgtsv
@@ -408,6 +429,12 @@ All functions
 
    sormqr
    dormqr
+
+   sormrz
+   dormrz
+
+   sormrz_lwork
+   dormrz_lwork
 
    ssbev
    dsbev
@@ -450,6 +477,47 @@ All functions
 
    ssygvx
    dsygvx
+
+   ssfrk
+   dsfrk
+
+   chfrk
+   zhfrk
+
+   stpttf
+   dtpttf
+   ctpttf
+   ztpttf
+
+   stfttp
+   dtfttp
+   ctfttp
+   ztfttp
+
+   stfttr
+   dtfttr
+   ctfttr
+   ztfttr
+
+   strttf
+   dtrttf
+   ctrttf
+   ztrttf
+
+   stfsm
+   dtfsm
+   ctfsm
+   dtfsm
+
+   stzrzf
+   dtzrzf
+   ctzrzf
+   ztzrzf
+
+   stzrzf_lwork
+   dtzrzf_lwork
+   ctzrzf_lwork
+   ztzrzf_lwork
 
    slange
    dlange
