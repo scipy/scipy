@@ -280,8 +280,9 @@ def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',
         nperseg = nfft
         nfft = None
 
-    return welch(x, fs, window, nperseg, 0, nfft, detrend, return_onesided,
-                 scaling, axis)
+    return welch(x, fs=fs, window=window, nperseg=nperseg, noverlap=0,
+                 nfft=nfft, detrend=detrend, return_onesided=return_onesided,
+                 scaling=scaling, axis=axis)
 
 
 def welch(x, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
@@ -1384,10 +1385,13 @@ def coherence(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
     >>> plt.show()
     """
 
-    freqs, Pxx = welch(x, fs, window, nperseg, noverlap, nfft, detrend,
+    freqs, Pxx = welch(x, fs=fs, window=window, nperseg=nperseg,
+                       noverlap=noverlap, nfft=nfft, detrend=detrend,
                        axis=axis)
-    _, Pyy = welch(y, fs, window, nperseg, noverlap, nfft, detrend, axis=axis)
-    _, Pxy = csd(x, y, fs, window, nperseg, noverlap, nfft, detrend, axis=axis)
+    _, Pyy = welch(y, fs=fs, window=window, nperseg=nperseg, noverlap=noverlap,
+                   nfft=nfft, detrend=detrend, axis=axis)
+    _, Pxy = csd(x, y, fs=fs, window=window, nperseg=nperseg,
+                 noverlap=noverlap, nfft=nfft, detrend=detrend, axis=axis)
 
     Cxy = np.abs(Pxy)**2 / Pxx / Pyy
 
