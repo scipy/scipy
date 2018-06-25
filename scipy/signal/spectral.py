@@ -3,6 +3,7 @@
 
 from __future__ import division, print_function, absolute_import
 
+from math import log
 import numpy as np
 from scipy import fftpack
 from . import signaltools
@@ -11,7 +12,7 @@ from ._spectral import _lombscargle
 from ._arraytools import const_ext, even_ext, odd_ext, zero_ext
 import warnings
 
-from scipy._lib.six import string_types
+from scipy._lib.six import (string_types, xrange)
 
 __all__ = ['periodogram', 'welch', 'lombscargle', 'csd', 'coherence',
            'spectrogram', 'stft', 'istft', 'check_COLA']
@@ -285,7 +286,7 @@ def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',
 
 def welch(x, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
           detrend='constant', return_onesided=True, scaling='density',
-          axis=-1):
+          average='mean', axis=-1):
     r"""
     Estimate power spectral density using Welch's method.
 
@@ -333,6 +334,8 @@ def welch(x, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
         spectrum ('spectrum') where `Pxx` has units of V**2, if `x`
         is measured in V and `fs` is measured in Hz. Defaults to
         'density'
+    average : { 'mean', 'median' }, optional
+        Method to use when averaging periodograms. Defaults to 'mean'.
     axis : int, optional
         Axis along which the periodogram is computed; the default is
         over the last axis (i.e. ``axis=-1``).
@@ -421,14 +424,17 @@ def welch(x, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
 
     """
 
-    freqs, Pxx = csd(x, x, fs, window, nperseg, noverlap, nfft, detrend,
-                     return_onesided, scaling, axis)
+    freqs, Pxx = csd(x, x, fs=fs, window=window, nperseg=nperseg,
+                     noverlap=noverlap, nfft=nfft, detrend=detrend,
+                     return_onesided=return_onesided, scaling=scaling,
+                     average=average, axis=axis)
 
     return freqs, Pxx.real
 
 
 def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
-        detrend='constant', return_onesided=True, scaling='density', axis=-1):
+        detrend='constant', return_onesided=True, scaling='density',
+        average='mean', axis=-1):
     r"""
     Estimate the cross power spectral density, Pxy, using Welch's
     method.
@@ -474,6 +480,8 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
         where `Pxy` has units of V**2/Hz and computing the cross spectrum
         ('spectrum') where `Pxy` has units of V**2, if `x` and `y` are
         measured in V and `fs` is measured in Hz. Defaults to 'density'
+    average : { 'mean', 'median' }, optional
+        Method to use when averaging periodograms. Defaults to 'mean'.
     axis : int, optional
         Axis along which the CSD is computed for both inputs; the
         default is over the last axis (i.e. ``axis=-1``).
@@ -552,7 +560,9 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
 
     # Average over windows.
     if len(Pxy.shape) >= 2 and Pxy.size > 0:
-        if Pxy.shape[-1] > 1:
+        if Pxy.shape[-1] > 1 and average == 'median':
+            Pxy = np.median(Pxy, axis=-1) / _median_bias(Pxy.shape[-1])
+        elif Pxy.shape[-1] > 1:
             Pxy = Pxy.mean(axis=-1)
         else:
             Pxy = np.reshape(Pxy, Pxy.shape[:-1])
@@ -1787,3 +1797,27 @@ def _triage_segments(window, nperseg,input_length):
                                  " length of window")
     return win, nperseg
 
+
+def _median_bias(n):
+    """
+    Returns the bias of the median of a set of periodograms relative to
+    the mean.
+
+    See arXiv:gr-qc/0509116 Appendix B for details.
+
+    Parameters
+    ----------
+    n : int
+        Numbers of periodograms being averaged.
+
+    Returns
+    -------
+    bias : float
+        Calculated bias.
+    """
+    if n >= 1000:  # large n limit
+        return log(2)
+    bias = 1
+    for i in xrange(1, int((n-1)/2) + 1):
+        bias += 1. / (2 * i + 1) - 1. / (2 * i)
+    return bias
