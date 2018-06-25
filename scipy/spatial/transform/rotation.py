@@ -210,6 +210,143 @@ class Rotation(object):
     __mul__
     inv
     __getitem__
+
+    Examples
+    --------
+    >>> from scipy.spatial.transform import Rotation as R
+
+    A `Rotation` instance can be initialized in any of the above formats and
+    converted to any of the others. The underlying object is independent of the
+    representation used for initialization.
+
+    Consider a counter-clockwise rotation of 90 degrees about the z-axis. This
+    corresponds to the following quaternion (in scalar-last format):
+
+    >>> r = R.from_quat([0, 0, np.sin(np.pi/4), np.cos(np.pi/4)])
+
+    The rotation can be expressed in any of the other formats:
+
+    >>> r.as_dcm()
+    array([[ 2.22044605e-16, -1.00000000e+00,  0.00000000e+00],
+    [ 1.00000000e+00,  2.22044605e-16,  0.00000000e+00],
+    [ 0.00000000e+00,  0.00000000e+00,  1.00000000e+00]])
+    >>> r.as_rotvec()
+    array([0.        , 0.        , 1.57079633])
+    >>> r.as_euler('zyx', degrees=True)
+    array([90.,  0.,  0.])
+
+    The same rotation can be initialized using a direction cosine matrix:
+
+    >>> r = R.from_dcm(np.array([
+    ... [0, -1, 0],
+    ... [1, 0, 0],
+    ... [0, 0, 1]]))
+
+    Representation in other formats:
+
+    >>> r.as_quat()
+    array([0.        , 0.        , 0.70710678, 0.70710678])
+    >>> r.as_rotvec()
+    array([0.        , 0.        , 1.57079633])
+    >>> r.as_euler('zyx', degrees=True)
+    array([90.,  0.,  0.])
+
+    The rotation vector corresponding to this rotation is given by:
+
+    >>> r = R.from_rotvec(np.pi/2 * np.array([0, 0, 1]))
+
+    Representation in other formats:
+
+    >>> r.as_quat()
+    array([0.        , 0.        , 0.70710678, 0.70710678])
+    >>> r.as_dcm()
+    array([[ 2.22044605e-16, -1.00000000e+00,  0.00000000e+00],
+           [ 1.00000000e+00,  2.22044605e-16,  0.00000000e+00],
+           [ 0.00000000e+00,  0.00000000e+00,  1.00000000e+00]])
+    >>> r.as_euler('zyx', degrees=True)
+    array([90.,  0.,  0.])
+
+    The `from_euler` function is quite flexible in the range of input formats
+    it supports. Here we initialize a single rotation about a single axis:
+
+    >>> r = R.from_euler('z', 90, degrees=True)
+
+    Again, the object is representation independent and can be converted to any
+    other format:
+
+    >>> r.as_quat()
+    array([0.        , 0.        , 0.70710678, 0.70710678])
+    >>> r.as_dcm()
+    array([[ 2.22044605e-16, -1.00000000e+00,  0.00000000e+00],
+           [ 1.00000000e+00,  2.22044605e-16,  0.00000000e+00],
+           [ 0.00000000e+00,  0.00000000e+00,  1.00000000e+00]])
+    >>> r.as_rotvec()
+    array([0.        , 0.        , 1.57079633])
+
+    It is also possible to initialize multiple rotations in a single instance
+    using any of the `from_...` functions. Here we initialize a stack of 3
+    rotations using the `from_euler` function:
+
+    >>> r = R.from_euler('zyx', [
+    ... [90, 0, 0],
+    ... [0, 45, 0],
+    ... [45, 60, 30]], degrees=True)
+
+    The other representations also now return a stack of 3 rotations. For
+    example:
+
+    >>> r.as_quat()
+    array([[0.        , 0.        , 0.70710678, 0.70710678],
+           [0.        , 0.38268343, 0.        , 0.92387953],
+           [0.39190384, 0.36042341, 0.43967974, 0.72331741]])
+
+    Applying the above rotations onto a vector:
+
+    >>> v = [1, 2, 3]
+    >>> r.apply(v)
+    array([[-2.        ,  1.        ,  3.        ],
+           [ 2.82842712,  2.        ,  1.41421356],
+           [ 2.24452282,  0.78093109,  2.89002836]])
+
+    A `Rotation` instance can be indexed and sliced as if it were a single
+    1D array or list:
+
+    >>> r.as_quat()
+    array([[0.        , 0.        , 0.70710678, 0.70710678],
+           [0.        , 0.38268343, 0.        , 0.92387953],
+           [0.39190384, 0.36042341, 0.43967974, 0.72331741]])
+    >>> p = r[0]
+    >>> p.as_dcm()
+    array([[ 2.22044605e-16, -1.00000000e+00,  0.00000000e+00],
+           [ 1.00000000e+00,  2.22044605e-16,  0.00000000e+00],
+           [ 0.00000000e+00,  0.00000000e+00,  1.00000000e+00]])
+    >>> q = r[1:3]
+    >>> q.as_quat()
+    array([[0.        , 0.38268343, 0.        , 0.92387953],
+           [0.39190384, 0.36042341, 0.43967974, 0.72331741]])
+
+    Multiple rotations can be composed using the `*` operator:
+
+    >>> r1 = R.from_euler('z', 90, degrees=True)
+    >>> r2 = R.from_rotvec([np.pi/4, 0, 0])
+    >>> v = [1, 2, 3]
+    >>> r2.apply(r1.apply(v))
+    array([-2.        , -1.41421356,  2.82842712])
+    >>> r3 = r2 * r1 # Note the order
+    >>> r3.apply(v)
+    array([-2.        , -1.41421356,  2.82842712])
+
+    Finally, it is also possible to invert rotations:
+
+    >>> r1 = R.from_euler('z', [90, 45], degrees=True)
+    >>> r2 = r.inv()
+    >>> r2.as_euler('zyx', degrees=True)
+    array([[-90.,   0.,   0.],
+           [-45.,   0.,   0.]])
+
+    These examples serve as an overview into the `Rotation` class and highlight
+    major functionalities. For more thorough examples of the range of input and
+    output formats supported, consult the individual method's examples.
     """
     def __init__(self, quat, normalized=False, copy=True):
         self._single = False
@@ -276,6 +413,50 @@ class Rotation(object):
         ----------
         .. [1] `Quaternions and Spatial Rotation
                <https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation>`_
+
+        Examples
+        --------
+        >>> from scipy.spatial.transform import Rotation as R
+
+        Initialize a single rotation:
+
+        >>> r = R.from_quat([1, 0, 0, 0])
+        >>> r.as_quat()
+        array([1., 0., 0., 0.])
+        >>> r.as_quat().shape
+        (4,)
+
+        Initialize multiple rotations in a single object:
+
+        >>> r = R.from_quat([
+        ... [1, 0, 0, 0],
+        ... [0, 0, 0, 1]
+        ... ])
+        >>> r.as_quat()
+        array([[1., 0., 0., 0.],
+               [0., 0., 0., 1.]])
+        >>> r.as_quat().shape
+        (2, 4)
+
+        It is also possible to have a stack of a single rotation:
+
+        >>> r = R.from_quat([[0, 0, 0, 1]])
+        >>> r.as_quat()
+        array([[0., 0., 0., 1.]])
+        >>> r.as_quat().shape
+        (1, 4)
+
+        By default, quaternions are normalized before initialization.
+
+        >>> r = R.from_quat([0, 0, 1, 1])
+        >>> r.as_quat()
+        array([0.        , 0.        , 0.70710678, 0.70710678])
+
+        If unit norms are ensured, skip the normalization step.
+
+        >>> r = R.from_quat([0, 0, 1, 0], normalized=True)
+        >>> r.as_quat()
+        array([0., 0., 1., 0.])
         """
 
         return cls(quat, normalized)
@@ -306,6 +487,65 @@ class Rotation(object):
                 <https://en.wikipedia.org/wiki/Rotation_matrix#In_three_dimensions>`_
         .. [2] F. Landis Markley, `Unit Quaternion from Rotation Matrix
                <https://arc.aiaa.org/doi/abs/10.2514/1.31730>`_
+
+        Examples
+        --------
+        >>> from scipy.spatial.transform import Rotation as R
+
+        Initialize a single rotation:
+
+        >>> r = R.from_dcm([
+        ... [0, -1, 0],
+        ... [1, 0, 0],
+        ... [0, 0, 1]])
+        >>> r.as_dcm().shape
+        (3, 3)
+
+        Initialize multiple rotations in a single object:
+
+        >>> r = R.from_dcm([
+        ... [
+        ...     [0, -1, 0],
+        ...     [1, 0, 0],
+        ...     [0, 0, 1],
+        ... ],
+        ... [
+        ...     [1, 0, 0],
+        ...     [0, 0, -1],
+        ...     [0, 1, 0],
+        ... ]])
+        >>> r.as_dcm().shape
+        (2, 3, 3)
+
+        If input matrices are not special orthogonal (orthogonal with
+        determinant equal to +1), then a special orthogonal estimate is stored:
+
+        >>> a = np.array([
+        ... [0, -0.5, 0],
+        ... [0.5, 0, 0],
+        ... [0, 0, 0.5]])
+        >>> np.linalg.det(a)
+        0.12500000000000003
+        >>> dcm = r.as_dcm()
+        >>> dcm
+        array([[-0.38461538, -0.92307692,  0.        ],
+               [ 0.92307692, -0.38461538,  0.        ],
+               [ 0.        ,  0.        ,  1.        ]])
+        >>> np.linalg.det(dcm)
+        1.0000000000000002
+
+        It is also possible to have a stack containing a single rotation:
+
+        >>> r = R.from_dcm([[
+        ... [0, -1, 0],
+        ... [1, 0, 0],
+        ... [0, 0, 1]]])
+        >>> r.as_dcm()
+        array([[[ 0., -1.,  0.],
+                [ 1.,  0.,  0.],
+                [ 0.,  0.,  1.]]])
+        >>> r.as_dcm().shape
+        (1, 3, 3)
         """
         is_single = False
         dcm = np.asarray(dcm, dtype=float)
@@ -377,6 +617,35 @@ class Rotation(object):
         ----------
         .. [1] `Rotation Vectors
                 <https://en.wikipedia.org/wiki/Axis%E2%80%93angle_representation#Rotation_vector>`_
+
+        Examples
+        --------
+        >>> from scipy.spatial.transform import Rotation as R
+
+        Initialize a single rotation:
+
+        >>> r = R.from_rotvec(np.pi/2 * np.array([0, 0, 1]))
+        >>> r.as_rotvec()
+        array([0.        , 0.        , 1.57079633])
+        >>> r.as_rotvec().shape
+        (3,)
+
+        Initialize multiple rotations in one object:
+
+        >>> r = R.from_rotvec([
+        ... [0, 0, np.pi/2],
+        ... [np.pi/2, 0, 0]])
+        >>> r.as_rotvec()
+        array([[0.        , 0.        , 1.57079633],
+               [1.57079633, 0.        , 0.        ]])
+        >>> r.as_rotvec().shape
+        (2, 3)
+
+        It is also possible to have a stack of a single rotaton:
+
+        >>> r = R.from_rotvec([[0, 0, np.pi/2]])
+        >>> r.as_rotvec().shape
+        (1, 3)
         """
         is_single = False
         rotvec = np.asarray(rotvec, dtype=float)
@@ -466,6 +735,46 @@ class Rotation(object):
         ----------
         .. [1] `Euler angle definitions
                 <https://en.wikipedia.org/wiki/Euler_angles#Definition_by_intrinsic_rotations>`_
+
+        Examples
+        --------
+        >>> from scipy.spatial.transform import Rotation as R
+
+        Initialize a single rotation along a single axis:
+
+        >>> r = R.from_euler('x', 90, degrees=True)
+        >>> r.as_quat().shape
+        (4,)
+
+        Initialize a single rotation with a given axis sequence:
+
+        >>> r = R.from_euler('zyx', [90, 45, 30], degrees=True)
+        >>> r.as_quat().shape
+        (4,)
+
+        Initialize a stack with a single rotation around a single axis:
+
+        >>> r = R.from_euler('x', [90], degrees=True)
+        >>> r.as_quat().shape
+        (1, 4)
+
+        Initialize a stack with a single rotation with an axis sequence:
+
+        >>> r = R.from_euler('zyx', [[90, 45, 30]], degrees=True)
+        >>> r.as_quat().shape
+        (1, 4)
+
+        Initialize multiple elementary rotations in one object:
+
+        >>> r = R.from_euler('x', [90, 45, 30], degrees=True)
+        >>> r.as_quat().shape
+        (3, 4)
+
+        Initialize multiple rotations in one object:
+
+        >>> r = R.from_euler('zyx', [[90, 45, 30], [35, 45, 90]], degrees=True)
+        >>> r.as_quat().shape
+        (2, 4)
         """
         num_axes = len(seq)
         if num_axes < 1 or num_axes > 3:
@@ -543,6 +852,33 @@ class Rotation(object):
         ----------
         .. [1] `Quaternions and Spatial Rotation
                <https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation>`_
+
+        Examples
+        --------
+        >>> from scipy.spatial.transform import Rotation as R
+
+        Represent a single rotation:
+
+        >>> r = R.from_dcm([
+        ... [0, -1, 0],
+        ... [1, 0, 0],
+        ... [0, 0, 1]])
+        >>> r.as_quat()
+        array([0.        , 0.        , 0.70710678, 0.70710678])
+        >>> r.as_quat().shape
+        (4,)
+
+        Represent a stack with a single rotation:
+
+        >>> r = R.from_quat([[0, 0, 0, 1]])
+        >>> r.as_quat().shape
+        (1, 4)
+
+        Represent multiple rotaions in a single object:
+
+        >>> r = R.from_rotvec([[np.pi, 0, 0], [0, 0, np.pi/2]])
+        >>> r.as_quat().shape
+        (2, 4)
         """
         if self._single:
             return self._quat[0].copy()
@@ -564,6 +900,43 @@ class Rotation(object):
         ----------
         .. [1] `Direction Cosine Matrix
                 <https://en.wikipedia.org/wiki/Rotation_matrix#In_three_dimensions>`_
+
+        Examples
+        --------
+        >>> from scipy.spatial.transform import Rotation as R
+
+        Represent a single rotation:
+
+        >>> r = R.from_rotvec([0, 0, np.pi/2])
+        >>> r.as_dcm()
+        array([[ 2.22044605e-16, -1.00000000e+00,  0.00000000e+00],
+               [ 1.00000000e+00,  2.22044605e-16,  0.00000000e+00],
+               [ 0.00000000e+00,  0.00000000e+00,  1.00000000e+00]])
+        >>> r.as_dcm().shape
+        (3, 3)
+
+        Represent a stack with a single rotation:
+
+        >>> r = R.from_quat([[1, 1, 0, 0]])
+        >>> r.as_dcm()
+        array([[[ 0.,  1.,  0.],
+                [ 1.,  0.,  0.],
+                [ 0.,  0., -1.]]])
+        >>> r.as_dcm().shape
+        (1, 3, 3)
+
+        Represent multiple rotations:
+
+        >>> r = R.from_rotvec([[np.pi/2, 0, 0], [0, 0, np.pi/2]])
+        >>> r.as_dcm()
+        array([[[ 1.00000000e+00,  0.00000000e+00,  0.00000000e+00],
+                [ 0.00000000e+00,  2.22044605e-16, -1.00000000e+00],
+                [ 0.00000000e+00,  1.00000000e+00,  2.22044605e-16]],
+               [[ 2.22044605e-16, -1.00000000e+00,  0.00000000e+00],
+                [ 1.00000000e+00,  2.22044605e-16,  0.00000000e+00],
+                [ 0.00000000e+00,  0.00000000e+00,  1.00000000e+00]]])
+        >>> r.as_dcm().shape
+        (2, 3, 3)
         """
 
         x = self._quat[:, 0]
@@ -619,6 +992,35 @@ class Rotation(object):
         ----------
         .. [1] `Rotation Vectors
                 <https://en.wikipedia.org/wiki/Axis%E2%80%93angle_representation#Rotation_vector>`_
+
+        Examples
+        --------
+        >>> from scipy.spatial.transform import Rotation as R
+
+        Represent a single rotation:
+
+        >>> r = R.from_euler('z', 90, degrees=True)
+        >>> r.as_rotvec()
+        array([0.        , 0.        , 1.57079633])
+        >>> r.as_rotvec().shape
+        (3,)
+
+        Represent a stack with a single rotation:
+
+        >>> r = R.from_quat([[0, 0, 1, 1]])
+        >>> r.as_rotvec()
+        array([[0.        , 0.        , 1.57079633]])
+        >>> r.as_rotvec().shape
+        (1, 3)
+
+        Represent multiple rotations in a single object:
+
+        >>> r = R.from_quat([[0, 0, 1, 1], [1, 1, 0, 1]])
+        >>> r.as_rotvec()
+        array([[0.        , 0.        , 1.57079633],
+               [1.35102172, 1.35102172, 0.        ]])
+        >>> r.as_rotvec().shape
+        (2, 3)
         """
         quat = self._quat.copy()
         # w > 0 to ensure 0 <= angle <= pi
@@ -695,6 +1097,39 @@ class Rotation(object):
                 <https://arc.aiaa.org/doi/abs/10.2514/1.16622>`_
         .. [3] `Gimbal lock
                 <https://en.wikipedia.org/wiki/Gimbal_lock#In_applied_mathematics>`_
+
+        Examples
+        --------
+        >>> from scipy.spatial.transform import Rotation as R
+
+        Represent a single rotation:
+
+        >>> r = R.from_rotvec([0, 0, np.pi/2])
+        >>> r.as_euler('zxy', degrees=True)
+        array([90.,  0.,  0.])
+        >>> r.as_euler('zxy', degrees=True).shape
+        (3,)
+
+        Represent a stack of single rotation:
+
+        >>> r = R.from_rotvec([[0, 0, np.pi/2]])
+        >>> r.as_euler('zxy', degrees=True)
+        array([[90.,  0.,  0.]])
+        >>> r.as_euler('zxy', degrees=True).shape
+        (1, 3)
+
+        Represent multiple rotations in a single object:
+
+        >>> r = R.from_rotvec([
+        ... [0, 0, np.pi/2],
+        ... [0, -np.pi/3, 0],
+        ... [np.pi/4, 0, 0]])
+        >>> r.as_euler('zxy', degrees=True)
+        array([[ 90.,   0.,   0.],
+               [  0.,   0., -60.],
+               [  0.,  45.,   0.]])
+        >>> r.as_euler('zxy', degrees=True).shape
+        (3, 3)
         """
         if len(seq) != 3:
             raise ValueError("Expected 3 axes, got {}.".format(seq))
@@ -756,6 +1191,84 @@ class Rotation(object):
                   shape `(3,)`, then `output` has shape `(3,)`.
                 - In all other cases, `output` has shape `(N, 3)`, where `N` is
                   either the number of rotations or vectors.
+
+        Examples
+        --------
+        >>> from scipy.spatial.transform import Rotation as R
+
+        Single rotation applied on a single vector:
+
+        >>> vector = np.array([1, 0, 0])
+        >>> r = R.from_rotvec([0, 0, np.pi/2])
+        >>> r.as_dcm()
+        array([[ 2.22044605e-16, -1.00000000e+00,  0.00000000e+00],
+               [ 1.00000000e+00,  2.22044605e-16,  0.00000000e+00],
+               [ 0.00000000e+00,  0.00000000e+00,  1.00000000e+00]])
+        >>> r.apply(vector)
+        array([2.22044605e-16, 1.00000000e+00, 0.00000000e+00])
+        >>> r.apply(vector).shape
+        (3,)
+
+        Single rotation applied on multiple vectors:
+
+        >>> vectors = np.array([
+        ... [1, 0, 0],
+        ... [1, 2, 3]])
+        >>> r = R.from_rotvec([0, 0, np.pi/4])
+        >>> r.as_dcm()
+        array([[ 0.70710678, -0.70710678,  0.        ],
+               [ 0.70710678,  0.70710678,  0.        ],
+               [ 0.        ,  0.        ,  1.        ]])
+        >>> r.apply(vectors)
+        array([[ 0.70710678,  0.70710678,  0.        ],
+               [-0.70710678,  2.12132034,  3.        ]])
+        >>> r.apply(vectors).shape
+        (2, 3)
+
+        Multiple rotations on a single vector:
+
+        >>> r = R.from_rotvec([[0, 0, np.pi/4], [np.pi/2, 0, 0]])
+        >>> vector = np.array([1,2,3])
+        >>> r.as_dcm()
+        array([[[ 7.07106781e-01, -7.07106781e-01,  0.00000000e+00],
+                [ 7.07106781e-01,  7.07106781e-01,  0.00000000e+00],
+                [ 0.00000000e+00,  0.00000000e+00,  1.00000000e+00]],
+
+               [[ 1.00000000e+00,  0.00000000e+00,  0.00000000e+00],
+                [ 0.00000000e+00,  2.22044605e-16, -1.00000000e+00],
+                [ 0.00000000e+00,  1.00000000e+00,  2.22044605e-16]]])
+        >>> r.apply(vector)
+        array([[-0.70710678,  2.12132034,  3.        ],
+               [ 1.        , -3.        ,  2.        ]])
+        >>> r.apply(vector).shape
+        (2, 3)
+
+        Multiple rotations on multiple vectors. Each rotation is applied on the
+        corresponding vector:
+
+        >>> r = R.from_euler('zxy', [
+        ... [0, 0, 90],
+        ... [45, 30, 60]], degrees=True)
+        >>> vectors = [
+        ... [1, 2, 3],
+        ... [1, 0, -1]]
+        >>> r.apply(vectors)
+        array([[ 3.        ,  2.        , -1.        ],
+               [-0.09026039,  1.11237244, -0.86860844]])
+        >>> r.apply(vectors).shape
+        (2, 3)
+
+        It is also possible to apply the inverse rotation:
+
+        >>> r = R.from_euler('zxy', [
+        ... [0, 0, 90],
+        ... [45, 30, 60]], degrees=True)
+        >>> vectors = [
+        ... [1, 2, 3],
+        ... [1, 0, -1]]
+        >>> r.apply(vectors, inverse=True)
+        array([[-3.        ,  2.        ,  1.        ],
+               [ 1.09533535, -0.8365163 ,  0.3169873 ]])
         """
         vectors = np.asarray(vectors)
         if vectors.ndim > 2 or vectors.shape[-1] != 3:
@@ -816,6 +1329,43 @@ class Rotation(object):
             - Both `p` and `q` contain `N` rotations. In this case each
               rotation `p[i]` is composed with the corresponding rotation
               `q[i]` and `output` contains `N` rotations.
+
+        Examples
+        --------
+        >>> from scipy.spatial.transform import Rotation as R
+
+        Composition of two single rotations:
+
+        >>> p = R.from_quat([0, 0, 1, 1])
+        >>> q = R.from_quat([1, 0, 0, 1])
+        >>> p.as_dcm()
+        array([[ 0., -1.,  0.],
+               [ 1.,  0.,  0.],
+               [ 0.,  0.,  1.]])
+        >>> q.as_dcm()
+        array([[ 1.,  0.,  0.],
+               [ 0.,  0., -1.],
+               [ 0.,  1.,  0.]])
+        >>> r = p * q
+        >>> r.as_dcm()
+        array([[0., 0., 1.],
+               [1., 0., 0.],
+               [0., 1., 0.]])
+
+        Composition of two objects containing equal number of rotations:
+
+        >>> p = R.from_quat([[0, 0, 1, 1], [1, 0, 0, 1]])
+        >>> q = R.from_rotvec([[np.pi/4, 0, 0], [-np.pi/4, 0, np.pi/4]])
+        >>> p.as_quat()
+        array([[0.        , 0.        , 0.70710678, 0.70710678],
+               [0.70710678, 0.        , 0.        , 0.70710678]])
+        >>> q.as_quat()
+        array([[ 0.38268343,  0.        ,  0.        ,  0.92387953],
+               [-0.37282173,  0.        ,  0.37282173,  0.84971049]])
+        >>> r = p * q
+        >>> r.as_quat()
+        array([[ 0.27059805,  0.27059805,  0.65328148,  0.65328148],
+               [ 0.33721128, -0.26362477,  0.26362477,  0.86446082]])
         """
         if not(len(self) == 1 or len(other) == 1 or len(self) == len(other)):
             raise ValueError("Expected equal number of rotations in both "
@@ -838,6 +1388,25 @@ class Rotation(object):
         -------
         inverse : `Rotation` instance
             Object containing inverse of the rotations in the current instance.
+
+        Examples
+        --------
+        >>> from scipy.spatial.transform import Rotation as R
+
+        Inverting a single rotation:
+
+        >>> p = R.from_euler('z', 45, degrees=True)
+        >>> q = p.inv()
+        >>> q.as_euler('zyx', degrees=True)
+        array([-45.,   0.,   0.])
+
+        Inverting multiple rotations:
+
+        >>> p = R.from_rotvec([[0, 0, np.pi/3], [-np.pi/4, 0, 0]])
+        >>> q = p.inv()
+        >>> q.as_rotvec()
+        array([[-0.        , -0.        , -1.04719755],
+               [ 0.78539816, -0.        , -0.        ]])
         """
         quat = self._quat.copy()
         quat[:, -1] *= -1
@@ -864,5 +1433,30 @@ class Rotation(object):
                 - a single rotation, if `indexer` is a single index
                 - a stack of rotation(s), if `indexer` is a slice, or and index
                   array.
+
+        Examples
+        --------
+        >>> from scipy.spatial.transform import Rotation as R
+        >>> r = R.from_quat([
+        ... [1, 1, 0, 0],
+        ... [0, 1, 0, 1],
+        ... [1, 1, -1, 0]])
+        >>> r.as_quat()
+        array([[ 0.70710678,  0.70710678,  0.        ,  0.        ],
+               [ 0.        ,  0.70710678,  0.        ,  0.70710678],
+               [ 0.57735027,  0.57735027, -0.57735027,  0.        ]])
+
+        Indexing using a single index:
+
+        >>> p = r[0]
+        >>> p.as_quat()
+        array([0.70710678, 0.70710678, 0.        , 0.        ])
+
+        Array slicing:
+
+        >>> q = r[1:3]
+        >>> q.as_quat()
+        array([[ 0.        ,  0.70710678,  0.        ,  0.70710678],
+               [ 0.57735027,  0.57735027, -0.57735027,  0.        ]])
         """
         return self.__class__(self._quat[indexer], normalized=True)
