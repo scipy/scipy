@@ -177,7 +177,7 @@ def _chk_weights(arrays, weights=None, axis=None,
         raise ValueError("weights cannot be negative")
 
     if pos_only:
-        pos_weights = np.where(weights > 0)[0]
+        pos_weights = np.nonzero(weights > 0)[0]
         if pos_weights.size < weights.size:
             arrays = tuple(np.take(a, pos_weights, axis=axis) for a in arrays)
             weights = weights[pos_weights]

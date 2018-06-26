@@ -167,8 +167,8 @@ def _pivot_col(T, tol=1.0E-12, bland=False):
     if ma.count() == 0:
         return False, np.nan
     if bland:
-        return True, np.where(ma.mask == False)[0][0]
-    return True, np.ma.where(ma == ma.min())[0][0]
+        return True, np.nonzero(ma.mask == False)[0][0]
+    return True, np.ma.nonzero(ma == ma.min())[0][0]
 
 
 def _pivot_row(T, basis, pivcol, phase, tol=1.0E-12, bland=False):
@@ -212,7 +212,7 @@ def _pivot_row(T, basis, pivcol, phase, tol=1.0E-12, bland=False):
         return False, np.nan
     mb = np.ma.masked_where(T[:-k, pivcol] <= tol, T[:-k, -1], copy=False)
     q = mb / ma
-    min_rows = np.ma.where(q == q.min())[0]
+    min_rows = np.ma.nonzero(q == q.min())[0]
     if bland:
         return True, min_rows[np.argmin(np.take(basis, min_rows))]
     return True, min_rows[0]

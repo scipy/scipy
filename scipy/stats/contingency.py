@@ -249,7 +249,7 @@ def chi2_contingency(observed, correction=True, lambda_=None):
     if np.any(expected == 0):
         # Include one of the positions where expected is zero in
         # the exception message.
-        zeropos = list(zip(*np.where(expected == 0)))[0]
+        zeropos = list(zip(*np.nonzero(expected == 0)))[0]
         raise ValueError("The internally computed table of expected "
                          "frequencies has a zero element at %s." % (zeropos,))
 
