@@ -145,7 +145,10 @@ def test_cont_basic(distname, arg):
                 and distname != 'vonmises'):
             check_private_entropy(distfn, arg, stats.rv_continuous)
 
-        check_entropy_vect_scale(distfn, arg)
+        with suppress_warnings() as sup:
+            sup.filter(IntegrationWarning, "The occurrence of roundoff error")
+            sup.filter(IntegrationWarning, "Extremely bad integrand")
+            check_entropy_vect_scale(distfn, arg)
 
         check_edge_support(distfn, arg)
 
