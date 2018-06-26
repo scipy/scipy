@@ -684,7 +684,9 @@ class LinprogCommonTests(object):
         # https://github.com/scipy/scipy/issues/7044
 
         A, b, c, N = magic_square(3)
-        res = linprog(c, A_eq = A, b_eq = b, method=self.method)
+        with suppress_warnings() as sup:
+            sup.filter(OptimizeWarning, "A_eq does not appear...")
+            res = linprog(c, A_eq = A, b_eq = b, method=self.method)
 
         desired_fun = 1.730550597
         _assert_success(res, desired_fun=desired_fun)
@@ -707,13 +709,14 @@ class LinprogCommonTests(object):
         desired_fun = 36.0000000000
 
         res1 = linprog(c, A, b, bounds=bounds,
-            method=self.method, options=self.options)
-        
+                       method=self.method, options=self.options)
+
         # Set boundary condition as a constraint
         A.append([0, 0, -1, 0])
         b.append(0)
         bounds[2] = (None, None)
-        res2 = linprog(c, A, b, bounds=bounds, options=self.options)
+        res2 = linprog(c, A, b, bounds=bounds, method=self.method,
+                       options=self.options)
 
         rtol = 1e-5
         _assert_success(res1, desired_fun=desired_fun, rtol=rtol)
@@ -729,7 +732,7 @@ class LinprogCommonTests(object):
         _assert_success(res,
                         desired_x=[0, 6./7],
                         desired_fun=5*6./7)
-           
+
 
 class TestLinprogSimplex(LinprogCommonTests):
     method = "simplex"

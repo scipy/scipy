@@ -7,7 +7,7 @@ from functools import partial
 from itertools import product
 import operator
 import pytest
-from pytest import raises as assert_raises
+from pytest import raises as assert_raises, warns
 from numpy.testing import assert_, assert_equal
 
 import numpy as np
@@ -302,7 +302,8 @@ def test_inheritance():
     class Empty(interface.LinearOperator):
         pass
 
-    assert_raises(TypeError, Empty)
+    with warns(RuntimeWarning, match="should implement at least"):
+        assert_raises(TypeError, Empty)
 
     class Identity(interface.LinearOperator):
         def __init__(self, n):

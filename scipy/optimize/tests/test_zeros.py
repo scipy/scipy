@@ -13,6 +13,7 @@ from scipy.optimize import zeros
 
 # Import testing parameters
 from scipy.optimize._tstutils import functions, fstrings
+from scipy._lib._numpy_compat import suppress_warnings
 
 TOL = 4*np.finfo(float).eps  # tolerance
 
@@ -259,14 +260,20 @@ def test_zero_der_nz_dp():
     # 100 - p0 = p1 - 100 = p0 * (1 + dx) + dx - 100
     # -> 200 = p0 * (2 + dx) + dx
     p0 = (200.0 - dx) / (2.0 + dx)
-    x = zeros.newton(lambda y: (y - 100.0)**2, x0=[p0] * 10)
+    with suppress_warnings() as sup:
+        sup.filter(RuntimeWarning, "RMS of")
+        x = zeros.newton(lambda y: (y - 100.0)**2, x0=[p0] * 10)
     assert_allclose(x, [100] * 10)
     # test scalar cases too
     p0 = (2.0 - 1e-4) / (2.0 + 1e-4)
-    x = zeros.newton(lambda y: (y - 1.0) ** 2, x0=p0)
+    with suppress_warnings() as sup:
+        sup.filter(RuntimeWarning, "Tolerance of")
+        x = zeros.newton(lambda y: (y - 1.0) ** 2, x0=p0)
     assert_allclose(x, 1)
     p0 = (-2.0 + 1e-4) / (2.0 + 1e-4)
-    x = zeros.newton(lambda y: (y + 1.0) ** 2, x0=p0)
+    with suppress_warnings() as sup:
+        sup.filter(RuntimeWarning, "Tolerance of")
+        x = zeros.newton(lambda y: (y + 1.0) ** 2, x0=p0)
     assert_allclose(x, -1)
 
 
