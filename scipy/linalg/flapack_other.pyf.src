@@ -1105,6 +1105,25 @@ subroutine <prefix>tpttf(transr,uplo,n,nt,ap,arf,info)
 
 end subroutine <prefix>tpttf
 
+subroutine <prefix>tpttr(uplo,n,nt,ap,a,lda,info)
+    !
+    ! TPTTR copies a triangular matrix from the standard packed format (TP)
+    ! to the standard full format (TR).
+    !
+    
+    callstatement (*f2py_func)(uplo,&n,ap,a,&lda,&info)
+    callprotoargument char*,int*,<ctype>*,<ctype>*,int*,int*
+
+    character optional,intent(in),check(*uplo=='U'||*uplo=='L'):: uplo = 'U'
+    integer intent(in), check(n>=0):: n
+    <ftype> dimension(nt),intent(in):: ap
+    integer intent(hide),depend(ap,n),check(nt==(n*(n+1)/2)):: nt=shape(ap,0)
+    <ftype> dimension(n,n),intent(out),depend(n):: a
+    integer intent(hide),depend(n):: lda=MAX(n,1)
+    integer intent(out):: info
+
+end subroutine <prefix>tpttr
+
 subroutine <prefix>tfttp(transr,uplo,n,nt,ap,arf,info)
     !
     ! copies a triangular matrix from the standard packed format (TP) to the
@@ -1160,6 +1179,23 @@ subroutine <prefix>trttf(transr,uplo,n,a,lda,arf,info)
     integer intent(out):: info
 
 end subroutine <prefix>trttf
+
+subroutine <prefix>trttp(uplo,n,a,lda,ap,info)
+    !
+    ! TRTTP copies a triangular matrix from the standard full format (TR) to
+    ! the standard packed format (TP). 
+    !
+    callstatement (*f2py_func)(uplo,&n,a,&lda,ap,&info)
+    callprotoargument char*,int*,<ctype>*,int*,<ctype>*,int*
+    
+    character optional, intent(int),check(*uplo=='U'||*uplo=='L'):: uplo = 'U'
+    integer intent(hide),depend(a):: n = shape(a,1)
+    integer intent(hide),depend(a):: lda = MAX(shape(a,0),1)
+    <ftype> dimension(lda,n),intent(in),check(shape(a,0)==shape(a,1)):: a
+    <ftype> dimension(n*(n+1)/2),intent(out),depend(n):: ap
+    integer intent(out):: info
+
+end subroutine <prefix>trttp
 
 subroutine <prefix>tfsm(transr,side,uplo,trans,diag,m,n,nt,alpha,a,b,ldb)
     !
