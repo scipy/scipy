@@ -655,13 +655,15 @@ class LinprogCommonTests(object):
             [0.37, 0.02, 2.86, 0.86, 1.18, 0.5, 1.76, 0.17, 0.32, -0.15]
         ]).T
         c = np.array([
-            -1.64, 0.7, 1.8, -1.06, -1.16,0.26, 2.13, 1.53, 0.66, 0.28
+            -1.64, 0.7, 1.8, -1.06, -1.16, 0.26, 2.13, 1.53, 0.66, 0.28
             ])
 
-        res = linprog(
-            c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
-            bounds=bounds, method=self.method
-        )
+        with suppress_warnings() as sup:
+            sup.filter(OptimizeWarning, "Solving system with option 'sym_pos'")
+            res = linprog(
+                c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
+                bounds=bounds, method=self.method
+            )
         desired_fun = -1.19099999999
         desired_x = np.array([
             0.3700, -0.9700, 0.3400, 0.4000, 1.1800,
@@ -684,7 +686,9 @@ class LinprogCommonTests(object):
         # https://github.com/scipy/scipy/issues/7044
 
         A, b, c, N = magic_square(3)
-        res = linprog(c, A_eq = A, b_eq = b, method=self.method)
+        with suppress_warnings() as sup:
+            sup.filter(OptimizeWarning, "A_eq does not appear...")
+            res = linprog(c, A_eq=A, b_eq=b, method=self.method)
 
         desired_fun = 1.730550597
         _assert_success(res, desired_fun=desired_fun)
@@ -707,13 +711,14 @@ class LinprogCommonTests(object):
         desired_fun = 36.0000000000
 
         res1 = linprog(c, A, b, bounds=bounds,
-            method=self.method, options=self.options)
-        
+                       method=self.method, options=self.options)
+
         # Set boundary condition as a constraint
         A.append([0, 0, -1, 0])
         b.append(0)
         bounds[2] = (None, None)
-        res2 = linprog(c, A, b, bounds=bounds, options=self.options)
+        res2 = linprog(c, A, b, bounds=bounds, method=self.method,
+                       options=self.options)
 
         rtol = 1e-5
         _assert_success(res1, desired_fun=desired_fun, rtol=rtol)
@@ -729,7 +734,7 @@ class LinprogCommonTests(object):
         _assert_success(res,
                         desired_x=[0, 6./7],
                         desired_fun=5*6./7)
-           
+
 
 class TestLinprogSimplex(LinprogCommonTests):
     method = "simplex"

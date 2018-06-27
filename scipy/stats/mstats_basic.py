@@ -291,7 +291,7 @@ def mode(a, axis=0):
     Notes
     -----
     For more details, see `stats.mode`.
-    
+
     Examples
     --------
     >>> from scipy import stats
@@ -515,10 +515,10 @@ def kendalltau(x, y, use_ties=True, use_missing=False, method='auto'):
         Whether missing data should be allocated a rank of 0 (False) or the
         average rank (True)
     method: {'auto', 'asymptotic', 'exact'}, optional
-        Defines which method is used to calculate the p-value [1]_. 
-        'asymptotic' uses a normal approximation valid for large samples. 
-        'exact' computes the exact p-value, but can only be used if no ties 
-        are present. 'auto' is the default and selects the appropriate 
+        Defines which method is used to calculate the p-value [1]_.
+        'asymptotic' uses a normal approximation valid for large samples.
+        'exact' computes the exact p-value, but can only be used if no ties
+        are present. 'auto' is the default and selects the appropriate
         method based on a trade-off between speed and accuracy.
 
     Returns
@@ -530,7 +530,7 @@ def kendalltau(x, y, use_ties=True, use_missing=False, method='auto'):
 
     References
     ----------
-    .. [1] Maurice G. Kendall, "Rank Correlation Methods" (4th Edition), 
+    .. [1] Maurice G. Kendall, "Rank Correlation Methods" (4th Edition),
            Charles Griffin & Co., 1970.
 
     """
@@ -568,13 +568,13 @@ def kendalltau(x, y, use_ties=True, use_missing=False, method='auto'):
 
     if method == 'exact' and (xties or yties):
         raise ValueError("Ties found, exact method cannot be used.")
-    
+
     if method == 'auto':
         if (not xties and not yties) and (n <= 33 or min(C, n*(n-1)/2.0-C) <= 1):
             method = 'exact'
         else:
             method = 'asymptotic'
-    
+
     if not xties and not yties and method == 'exact':
         # Exact p-value, see Maurice G. Kendall, "Rank Correlation Methods" (4th Edition), Charles Griffin & Co., 1970.
         c = int(min(C, (n*(n-1))/2-C))
@@ -605,8 +605,8 @@ def kendalltau(x, y, use_ties=True, use_missing=False, method='auto'):
     elif method == 'asymptotic':
         var_s = n*(n-1)*(2*n+5)
         if use_ties:
-            var_s -= np.sum(v*k*(k-1)*(2*k+5)*1. for (k,v) in iteritems(xties))
-            var_s -= np.sum(v*k*(k-1)*(2*k+5)*1. for (k,v) in iteritems(yties))
+            var_s -= np.sum([v*k*(k-1)*(2*k+5)*1. for (k,v) in iteritems(xties)])
+            var_s -= np.sum([v*k*(k-1)*(2*k+5)*1. for (k,v) in iteritems(yties)])
             v1 = np.sum([v*k*(k-1) for (k, v) in iteritems(xties)], dtype=float) *\
                  np.sum([v*k*(k-1) for (k, v) in iteritems(yties)], dtype=float)
             v1 /= 2.*n*(n-1)
@@ -627,7 +627,7 @@ def kendalltau(x, y, use_ties=True, use_missing=False, method='auto'):
         prob = special.erfc(abs(z)/np.sqrt(2))
     else:
         raise ValueError("Unknown method "+str(method)+" specified, please use auto, exact or asymptotic.")
-    
+
     return KendalltauResult(tau, prob)
 
 
@@ -1629,7 +1629,7 @@ def tmean(a, limits=None, inclusive=(True, True), axis=None):
     Notes
     -----
     For more details on `tmean`, see `stats.tmean`.
-    
+
     Examples
     --------
     >>> from scipy.stats import mstats
@@ -1638,8 +1638,8 @@ def tmean(a, limits=None, inclusive=(True, True), axis=None):
     ...               [8, 7, 8, 2],
     ...               [5, 6, 0, 2],
     ...               [4, 5, 5, 2]])
-    ...               
-    ...               
+    ...
+    ...
     >>> mstats.tmean(a, (2,5))
     3.3
     >>> mstats.tmean(a, (2,5), axis=0)
@@ -1722,7 +1722,7 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True):
     Notes
     -----
     For more details on `tmin`, see `stats.tmin`.
-    
+
     Examples
     --------
     >>> from scipy.stats import mstats
@@ -1731,7 +1731,7 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True):
     ...               [8, 1, 8, 2],
     ...               [5, 3, 0, 2],
     ...               [4, 7, 5, 2]])
-    ...               
+    ...
     >>> mstats.tmin(a, 5)
     masked_array(data=[5, 7, 5, --],
                  mask=[False, False, False,  True],
@@ -1772,7 +1772,7 @@ def tmax(a, upperlimit=None, axis=0, inclusive=True):
     Notes
     -----
     For more details on `tmax`, see `stats.tmax`.
-    
+
     Examples
     --------
     >>> from scipy.stats import mstats
@@ -1781,8 +1781,8 @@ def tmax(a, upperlimit=None, axis=0, inclusive=True):
     ...               [8, 7, 8, 2],
     ...               [5, 6, 0, 2],
     ...               [4, 5, 5, 2]])
-    ...               
-    ...               
+    ...
+    ...
     >>> mstats.tmax(a, 4)
     masked_array(data=[4, --, 3, 2],
                  mask=[False,  True, False, False],
@@ -2812,4 +2812,4 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t"):
         raise ValueError(
             "alternative should be 'less', 'greater' or 'two-sided'")
 
-    return BrunnerMunzelResult(wbfn, p) 
+    return BrunnerMunzelResult(wbfn, p)
