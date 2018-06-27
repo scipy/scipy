@@ -1286,7 +1286,7 @@ subroutine <prefix>pftrs(transr,uplo,n,nhrs,nt,a,b,ldb,info)
     integer intent(in), check(n>=0):: n
     <ftype> dimension(nt),intent(in):: a
     integer intent(hide),depend(a,n),check(nt==(n*(n+1)/2)):: nt=shape(a,0)
-    <ftype> dimension(ldb, nhrs),intent(in,out,copy,out=x):: b
+    <ftype> dimension(ldb, nhrs),intent(in,out,copy,out=x),depend(n),check(shape(b,0)>=n):: b
     integer intent(hide),depend(b):: nhrs = shape(b,1)
     integer intent(hide),depend(b):: ldb = MAX(shape(b,0),1)
     integer intent(out):: info

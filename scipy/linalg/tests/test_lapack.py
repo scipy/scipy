@@ -7,6 +7,7 @@ from __future__ import division, print_function, absolute_import
 import sys
 import subprocess
 import time
+from functools import reduce
 
 from numpy.testing import (assert_equal, assert_array_almost_equal, assert_,
                            assert_allclose, assert_almost_equal,
@@ -15,12 +16,13 @@ import pytest
 from pytest import raises as assert_raises
 
 import numpy as np
-from numpy import zeros, zeros_like, triu, tril, tril_indices, triu_indices
-from numpy.linalg import multi_dot
+from numpy import (eye, ones, zeros, zeros_like, triu, tril, tril_indices,
+                   triu_indices)
+
 from numpy.random import rand, seed
 
 from scipy.linalg import _flapack as flapack
-from scipy.linalg import inv, svd
+from scipy.linalg import inv, svd, cholesky, solve
 from scipy.linalg.lapack import _compute_lwork
 
 try:
@@ -917,7 +919,7 @@ def test_tzrzf():
         V = np.block([np.eye(m, dtype=dtype), rz[:, m:]])
         Id = np.eye(n, dtype=dtype)
         ref = [Id-tau[x]*V[[x], :].T.dot(V[[x], :].conj()) for x in range(m)]
-        Z = multi_dot(ref)
+        Z = reduce(np.dot, ref)
         assert_allclose(R.dot(Z) - A, zeros_like(A, dtype=dtype),
                         atol=10*np.spacing(dtype(1.0).real), rtol=0.)
 
@@ -954,7 +956,7 @@ def test_ormrz_unmrz():
         V = np.block([np.eye(qm, dtype=dtype), rz[:, qm:]])
         Id = np.eye(qn, dtype=dtype)
         ref = [Id-tau[x]*V[[x], :].T.dot(V[[x], :].conj()) for x in range(qm)]
-        Q = multi_dot(ref)
+        Q = reduce(np.dot, ref)
 
         # Now that we have Q, we can test whether lapack results agree with
         # each case of CQ, CQ^H, QC, and QC^H
@@ -1077,3 +1079,127 @@ def test_tpttr_trttp():
 
         assert_array_almost_equal(A_tr_U, triu(A_full))
         assert_array_almost_equal(A_tr_L, tril(A_full))
+
+
+def test_pftrf():
+    """
+    Test Cholesky factorization of a positive definite Rectengular Full
+    Packed (RFP) format array
+    """
+    seed(1234)
+    for ind, dtype in enumerate(DTYPES):
+        n = 20
+        if ind > 1:
+            A = (rand(n, n) + rand(n, n)*1j).astype(dtype)
+            A = A + A.conj().T + n*eye(n)
+        else:
+            A = (rand(n, n)).astype(dtype)
+            A = A + A.T + n*eye(n)
+
+        pftrf, trttf, tfttr = get_lapack_funcs(('pftrf', 'trttf', 'tfttr'),
+                                               dtype=dtype)
+
+        # Get the original array from TP
+        Afp, info = trttf(A)
+        Achol_rfp, info = pftrf(n, Afp)
+        assert_(info == 0)
+        A_chol_r, _ = tfttr(n, Achol_rfp)
+        Achol = cholesky(A)
+        assert_array_almost_equal(A_chol_r, Achol)
+
+
+def test_pftri():
+    """
+    Test Cholesky factorization of a positive definite Rectengular Full
+    Packed (RFP) format array
+    """
+    seed(1234)
+    for ind, dtype in enumerate(DTYPES):
+        n = 20
+        if ind > 1:
+            A = (rand(n, n) + rand(n, n)*1j).astype(dtype)
+            A = A + A.conj().T + n*eye(n)
+        else:
+            A = (rand(n, n)).astype(dtype)
+            A = A + A.T + n*eye(n)
+
+        pftri, pftrf, trttf, tfttr = get_lapack_funcs(('pftri',
+                                                       'pftrf',
+                                                       'trttf',
+                                                       'tfttr'),
+                                                      dtype=dtype)
+
+        # Get the original array from TP
+        Afp, info = trttf(A)
+        A_chol_rfp, info = pftrf(n, Afp)
+        A_inv_rfp, info = pftri(n, A_chol_rfp)
+        assert_(info == 0)
+        A_inv_r, _ = tfttr(n, A_inv_rfp)
+        Ainv = inv(A)
+        assert_array_almost_equal(A_inv_r, triu(Ainv),
+                                  decimal=4 if ind % 2 == 0 else 6)
+
+
+def test_pftrs():
+    """
+    Test Cholesky factorization of a positive definite Rectengular Full
+    Packed (RFP) format array
+    """
+    seed(1234)
+    for ind, dtype in enumerate(DTYPES):
+        n = 20
+        if ind > 1:
+            A = (rand(n, n) + rand(n, n)*1j).astype(dtype)
+            A = A + A.conj().T + n*eye(n)
+        else:
+            A = (rand(n, n)).astype(dtype)
+            A = A + A.T + n*eye(n)
+
+        B = ones((n, 3), dtype=dtype)
+        Bf1 = ones((n+2, 3), dtype=dtype)
+        Bf2 = ones((n-2, 3), dtype=dtype)
+        pftrs, pftrf, trttf, tfttr = get_lapack_funcs(('pftrs',
+                                                       'pftrf',
+                                                       'trttf',
+                                                       'tfttr'),
+                                                      dtype=dtype)
+
+        # Get the original array from TP
+        Afp, info = trttf(A)
+        A_chol_rfp, info = pftrf(n, Afp)
+        # larger B arrays shouldn't segfault
+        soln, info = pftrs(n, A_chol_rfp, Bf1)
+        assert_(info == 0)
+        assert_raises(Exception, pftrs, n, A_chol_rfp, Bf2)
+        soln, info = pftrs(n, A_chol_rfp, B)
+        assert_(info == 0)
+        assert_array_almost_equal(solve(A, B), soln,
+                                  decimal=4 if ind % 2 == 0 else 6)
+
+
+def test_sfrk_hfrk():
+    """
+    Test Cholesky factorization of a positive definite Rectengular Full
+    Packed (RFP) format array
+    """
+    seed(1234)
+    for ind, dtype in enumerate(DTYPES):
+        n = 20
+        if ind > 1:
+            A = (rand(n, n) + rand(n, n)*1j).astype(dtype)
+            A = A + A.conj().T + n*eye(n)
+        else:
+            A = (rand(n, n)).astype(dtype)
+            A = A + A.T + n*eye(n)
+
+        prefix = 's'if ind < 2 else 'h'
+        trttf, tfttr, shfrk = get_lapack_funcs(('trttf', 'tfttr', '{}frk'
+                                                ''.format(prefix)),
+                                               dtype=dtype)
+
+        Afp, _ = trttf(A)
+        C = np.random.rand(n, 2).astype(dtype)
+        Afp_out = shfrk(n, 2, -1, C, 2, Afp)
+        A_out, _ = tfttr(n, Afp_out)
+        assert_array_almost_equal(A_out, triu(-C.dot(C.conj().T) + 2*A),
+                                  decimal=4 if ind % 2 == 0 else 6)
