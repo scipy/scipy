@@ -802,14 +802,14 @@ class TestLinprogSimplex(LinprogCommonTests):
 
         low_tol = 1e-20
         res = linprog(
-            c, A_ub, b_ub, A_eq, b_eq,
+            c, A_ub, b_ub, A_eq, b_eq, method=self.method,
             bounds=bounds, options={'tol': low_tol}
             )
         _assert_unable_to_find_basic_feasible_sol(res)
 
         high_tol = 1e-9
         res2 = linprog(
-            c, A_ub, b_ub, A_eq, b_eq,
+            c, A_ub, b_ub, A_eq, b_eq, method=self.method,
             bounds=bounds, options={'tol': high_tol}
             )
 
