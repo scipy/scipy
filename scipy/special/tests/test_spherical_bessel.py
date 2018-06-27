@@ -12,6 +12,8 @@ from numpy import sin, cos, sinh, cosh, exp, inf, nan, r_, pi
 from scipy.special import spherical_jn, spherical_yn, spherical_in, spherical_kn
 from scipy.integrate import quad
 
+from scipy._lib._numpy_compat import suppress_warnings
+
 
 class TestSphericalJn:
     def test_spherical_jn_exact(self):
@@ -46,7 +48,9 @@ class TestSphericalJn:
         # https://dlmf.nist.gov/10.52.E3
         n = 7
         x = np.array([-inf + 0j, inf + 0j, inf*(1+1j)])
-        assert_allclose(spherical_jn(n, x), np.array([0, 0, inf*(1+1j)]))
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, "invalid value encountered in multiply")
+            assert_allclose(spherical_jn(n, x), np.array([0, 0, inf*(1+1j)]))
 
     def test_spherical_jn_large_arg_1(self):
         # https://github.com/scipy/scipy/issues/2165
@@ -101,7 +105,9 @@ class TestSphericalYn:
         # https://dlmf.nist.gov/10.52.E3
         n = 7
         x = np.array([-inf + 0j, inf + 0j, inf*(1+1j)])
-        assert_allclose(spherical_yn(n, x), np.array([0, 0, inf*(1+1j)]))
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, "invalid value encountered in multiply")
+            assert_allclose(spherical_yn(n, x), np.array([0, 0, inf*(1+1j)]))
 
     def test_spherical_yn_at_zero(self):
         # https://dlmf.nist.gov/10.52.E2

@@ -150,14 +150,14 @@ def _fix_shape(x, n, axis):
     if s[axis] > n:
         index = [slice(None)]*len(s)
         index[axis] = slice(0,n)
-        x = x[index]
+        x = x[tuple(index)]
         return x, False
     else:
         index = [slice(None)]*len(s)
         index[axis] = slice(0,s[axis])
         s[axis] = n
         z = zeros(s,x.dtype.char)
-        z[index] = x
+        z[tuple(index)] = x
         return z, True
 
 

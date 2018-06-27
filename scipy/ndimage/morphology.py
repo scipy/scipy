@@ -108,8 +108,8 @@ def iterate_structure(structure, iterations, origin=None):
     ni = iterations - 1
     shape = [ii + ni * (ii - 1) for ii in structure.shape]
     pos = [ni * (structure.shape[ii] // 2) for ii in range(len(shape))]
-    slc = [slice(pos[ii], pos[ii] + structure.shape[ii], None)
-           for ii in range(len(shape))]
+    slc = tuple(slice(pos[ii], pos[ii] + structure.shape[ii], None)
+                for ii in range(len(shape)))
     out = numpy.zeros(shape, bool)
     out[slc] = structure != 0
     out = binary_dilation(out, structure, iterations=ni)

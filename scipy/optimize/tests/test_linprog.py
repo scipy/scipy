@@ -661,14 +661,14 @@ class LinprogCommonTests(object):
             [0.37, 0.02, 2.86, 0.86, 1.18, 0.5, 1.76, 0.17, 0.32, -0.15]
         ]).T
         c = np.array([
-            -1.64, 0.7, 1.8, -1.06, -1.16,0.26, 2.13, 1.53, 0.66, 0.28
+            -1.64, 0.7, 1.8, -1.06, -1.16, 0.26, 2.13, 1.53, 0.66, 0.28
             ])
 
         with suppress_warnings() as sup:
-            sup.filter(OptimizeWarning, "Solving system with option...")
+            sup.filter(OptimizeWarning, "Solving system with option 'sym_pos'")
             res = linprog(
                 c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
-                bounds=bounds, method=self.method, options=self.options
+                bounds=bounds, method=self.method
             )
 
         desired_fun = -1.19099999999
@@ -695,11 +695,7 @@ class LinprogCommonTests(object):
         A, b, c, N = magic_square(3)
         with suppress_warnings() as sup:
             sup.filter(OptimizeWarning, "A_eq does not appear...")
-            sup.filter(OptimizeWarning, "Solving system with option...")
-            res = linprog(
-                c, A_eq = A, b_eq = b,
-                method=self.method, options=self.options
-            )
+            res = linprog(c, A_eq=A, b_eq=b, method=self.method)
 
         desired_fun = 1.730550597
         _assert_success(res, desired_fun=desired_fun)
@@ -721,20 +717,16 @@ class LinprogCommonTests(object):
         bounds = [(0, None), (0, None), (0, None), (0, None)]
         desired_fun = 36.0000000000
 
-        res1 = linprog(
-            c, A, b, bounds=bounds,
-            method=self.method, options=self.options
-        )
+        res1 = linprog(c, A, b, bounds=bounds,
+                       method=self.method, options=self.options)
 
         # Set boundary condition as a constraint
         A.append([0, 0, -1, 0])
         b.append(0)
         bounds[2] = (None, None)
-        res2 = linprog(
-            c, A, b, bounds=bounds,
-            method=self.method, options=self.options
-        )
 
+        res2 = linprog(c, A, b, bounds=bounds, method=self.method,
+                       options=self.options)
         rtol = 1e-5
         _assert_success(res1, desired_fun=desired_fun, rtol=rtol)
         _assert_success(res2, desired_fun=desired_fun, rtol=rtol)

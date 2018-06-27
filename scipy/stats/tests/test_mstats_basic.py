@@ -219,11 +219,69 @@ class TestCorr(object):
         check_named_results(res, attributes, ma=True)
 
     def test_kendalltau(self):
+        
+        # simple case without ties
+        x = ma.array(np.arange(10))
+        y = ma.array(np.arange(10))
+        # Cross-check with exact result from R:
+        # cor.test(x,y,method="kendall",exact=1)
+        expected = [1.0, 5.511463844797e-07]
+        assert_almost_equal(np.asarray(mstats.kendalltau(x,y)), expected)
+
+        # check exception in case of invalid method keyword
+        assert_raises(ValueError, mstats.kendalltau, x, y, method='banana')
+
+        # swap a couple of values
+        b = y[1]
+        y[1] = y[2]
+        y[2] = b
+        # Cross-check with exact result from R:
+        # cor.test(x,y,method="kendall",exact=1)
+        expected = [0.9555555555555556, 5.511463844797e-06]
+        assert_almost_equal(np.asarray(mstats.kendalltau(x,y)), expected)
+
+        # swap a couple more
+        b = y[5]
+        y[5] = y[6]
+        y[6] = b
+        # Cross-check with exact result from R:
+        # cor.test(x,y,method="kendall",exact=1)
+        expected = [0.9111111111111111, 2.976190476190e-05]
+        assert_almost_equal(np.asarray(mstats.kendalltau(x,y)), expected)
+
+        # same in opposite direction
+        x = ma.array(np.arange(10))
+        y = ma.array(np.arange(10)[::-1])
+        # Cross-check with exact result from R:
+        # cor.test(x,y,method="kendall",exact=1)
+        expected = [-1.0, 5.511463844797e-07]
+        assert_almost_equal(np.asarray(mstats.kendalltau(x,y)), expected)
+
+        # swap a couple of values
+        b = y[1]
+        y[1] = y[2]
+        y[2] = b
+        # Cross-check with exact result from R:
+        # cor.test(x,y,method="kendall",exact=1)
+        expected = [-0.9555555555555556, 5.511463844797e-06]
+        assert_almost_equal(np.asarray(mstats.kendalltau(x,y)), expected)
+
+        # swap a couple more
+        b = y[5]
+        y[5] = y[6]
+        y[6] = b
+        # Cross-check with exact result from R:
+        # cor.test(x,y,method="kendall",exact=1)
+        expected = [-0.9111111111111111, 2.976190476190e-05]
+        assert_almost_equal(np.asarray(mstats.kendalltau(x,y)), expected)
+
         # Tests some computations of Kendall's tau
         x = ma.fix_invalid([5.05, 6.75, 3.21, 2.66,np.nan])
         y = ma.fix_invalid([1.65, 26.5, -5.93, 7.96, np.nan])
         z = ma.fix_invalid([1.65, 2.64, 2.64, 6.95, np.nan])
         assert_almost_equal(np.asarray(mstats.kendalltau(x,y)),
+                            [+0.3333333,0.75])
+        assert_almost_equal(np.asarray(mstats.kendalltau(x,y, method='asymptotic')),
                             [+0.3333333,0.4969059])
         assert_almost_equal(np.asarray(mstats.kendalltau(x,z)),
                             [-0.5477226,0.2785987])
