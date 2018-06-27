@@ -504,6 +504,16 @@ All functions
    ctrttf
    ztrttf
 
+   stpttr
+   dtpttr
+   ctpttr
+   ztpttr
+
+   strttp
+   dtrttp
+   ctrttp
+   ztrttp
+
    stfsm
    dtfsm
    ctfsm
