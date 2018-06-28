@@ -286,7 +286,7 @@ def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',
 
 def welch(x, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
           detrend='constant', return_onesided=True, scaling='density',
-          average='mean', axis=-1):
+          axis=-1, average='mean'):
     r"""
     Estimate power spectral density using Welch's method.
 
@@ -334,11 +334,13 @@ def welch(x, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
         spectrum ('spectrum') where `Pxx` has units of V**2, if `x`
         is measured in V and `fs` is measured in Hz. Defaults to
         'density'
-    average : { 'mean', 'median' }, optional
-        Method to use when averaging periodograms. Defaults to 'mean'.
     axis : int, optional
         Axis along which the periodogram is computed; the default is
         over the last axis (i.e. ``axis=-1``).
+    average : { 'mean', 'median' }, optional
+        Method to use when averaging periodograms. Defaults to 'mean'.
+
+        .. versionadded:: 1.2.0
 
     Returns
     -------
@@ -427,14 +429,14 @@ def welch(x, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     freqs, Pxx = csd(x, x, fs=fs, window=window, nperseg=nperseg,
                      noverlap=noverlap, nfft=nfft, detrend=detrend,
                      return_onesided=return_onesided, scaling=scaling,
-                     average=average, axis=axis)
+                     axis=axis, average=average)
 
     return freqs, Pxx.real
 
 
 def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
         detrend='constant', return_onesided=True, scaling='density',
-        average='mean', axis=-1):
+        axis=-1, average='mean'):
     r"""
     Estimate the cross power spectral density, Pxy, using Welch's
     method.
@@ -480,11 +482,13 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
         where `Pxy` has units of V**2/Hz and computing the cross spectrum
         ('spectrum') where `Pxy` has units of V**2, if `x` and `y` are
         measured in V and `fs` is measured in Hz. Defaults to 'density'
-    average : { 'mean', 'median' }, optional
-        Method to use when averaging periodograms. Defaults to 'mean'.
     axis : int, optional
         Axis along which the CSD is computed for both inputs; the
         default is over the last axis (i.e. ``axis=-1``).
+    average : { 'mean', 'median' }, optional
+        Method to use when averaging periodograms. Defaults to 'mean'.
+
+        .. versionadded:: 1.2.0
 
     Returns
     -------
