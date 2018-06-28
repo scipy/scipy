@@ -127,6 +127,10 @@ class Radius(LimitedParamBenchmark):
     def time_query_ball_point(self, mnr, p, probe_radius, boxsize, leafsize):
         self.T.query_ball_point(self.queries, probe_radius, p=p)
 
+    def time_query_ball_point_nosort(self, mnr, p, probe_radius, boxsize, leafsize):
+        self.T.query_ball_point(self.queries, probe_radius, p=p,
+                                return_sorted=False)
+
     def time_query_pairs(self, mnr, p, probe_radius, boxsize, leafsize):
         self.T.query_pairs(probe_radius, p=p)
 
