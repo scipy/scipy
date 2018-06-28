@@ -409,10 +409,11 @@ def dijkstra(csgraph, directed=True, indices=None,
         The N x N array of non-negative distances representing the input graph.
     directed : bool, optional
         If True (default), then find the shortest path on a directed graph:
-        only move from point i to point j along paths csgraph[i, j].
+        only move from point i to point j along paths csgraph[i, j] and from 
+        point j to i along paths csgraph[j, i].
         If False, then find the shortest path on an undirected graph: the
-        algorithm can progress from point i to j along csgraph[i, j] or
-        csgraph[j, i]
+        algorithm can progress from point i to j or j to i along either 
+        csgraph[i, j] or csgraph[j, i].
     indices : array_like or int, optional
         if specified, only compute the paths for the points at the given
         indices.
