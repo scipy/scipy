@@ -113,6 +113,12 @@ def _assert_unbounded(res):
     assert_equal(res.status, 3, "failed to report unbounded status")
 
 
+def _assert_unable_to_find_basic_feasible_sol(res):
+    # res: linprog result object
+    assert_(not res.success, "incorrectly reported success")
+    assert_equal(res.status, 2, "failed to report optimization failure")
+
+
 def _assert_success(res, desired_fun=None, desired_x=None,
                     rtol=1e-8, atol=1e-8):
     # res: linprog result object
@@ -664,6 +670,7 @@ class LinprogCommonTests(object):
                 c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
                 bounds=bounds, method=self.method
             )
+
         desired_fun = -1.19099999999
         desired_x = np.array([
             0.3700, -0.9700, 0.3400, 0.4000, 1.1800,
@@ -717,9 +724,9 @@ class LinprogCommonTests(object):
         A.append([0, 0, -1, 0])
         b.append(0)
         bounds[2] = (None, None)
+
         res2 = linprog(c, A, b, bounds=bounds, method=self.method,
                        options=self.options)
-
         rtol = 1e-5
         _assert_success(res1, desired_fun=desired_fun, rtol=rtol)
         _assert_success(res2, desired_fun=desired_fun, rtol=rtol)
@@ -776,6 +783,40 @@ class TestLinprogSimplex(LinprogCommonTests):
 
         assert_(callback_complete[0])
         assert_allclose(last_xk[0], res.x)
+
+    def test_issue_6139(self):
+        # Linprog(method='simplex') fails to find a basic feasible solution
+        # if phase 1 pseudo-objective function is outside the provided tol.
+        # https://github.com/scipy/scipy/issues/6139
+
+        # Note: This is not strictly a bug as the default tolerance determines
+        # if a result is "close enough" to zero and should not be expected
+        # to work for all cases.
+
+        c = np.array([1, 1, 1])
+        A_eq = np.array([[1., 0., 0.], [-1000., 0., - 1000.]])
+        b_eq = np.array([5.00000000e+00, -1.00000000e+04])
+        A_ub = -np.array([[0., 1000000., 1010000.]])
+        b_ub = -np.array([10000000.])
+        bounds = (None, None)
+
+        low_tol = 1e-20
+        res = linprog(
+            c, A_ub, b_ub, A_eq, b_eq, method=self.method,
+            bounds=bounds, options={'tol': low_tol}
+            )
+        _assert_unable_to_find_basic_feasible_sol(res)
+
+        high_tol = 1e-9
+        res2 = linprog(
+            c, A_ub, b_ub, A_eq, b_eq, method=self.method,
+            bounds=bounds, options={'tol': high_tol}
+            )
+
+        # The result should be valid given a higher tolerance.
+        _assert_success(
+            res2, desired_fun=14.95, desired_x=np.array([5, 4.95, 5])
+        )
 
 
 class BaseTestLinprogIP(LinprogCommonTests):

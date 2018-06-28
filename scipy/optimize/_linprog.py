@@ -789,6 +789,15 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     else:
         # Failure to find a feasible starting point
         status = 2
+        messages[status] = (
+            "Phase 1 of the simplex method failed to find a feasible "
+            "solution. The pseudo-objective function evaluates to {0:.1e} "
+            "which exceeds the required tolerance of {1} for a solution to be "
+            "considered 'close enough' to zero to be a basic solution. "
+            "Consider increasing the tolerance to be greater than {0:.1e}. "
+            "If this tolerance is unacceptably  large the problem may be "
+            "infeasible.".format(abs(T[-1, -1]), tol)
+        )
 
     if status != 0:
         message = messages[status]
