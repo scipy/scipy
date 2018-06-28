@@ -1176,10 +1176,7 @@ def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
     if vals.ndim == 0:
         vals = vals.item()  # array scalar
 
-    if fisher:
-        return vals - 3
-    else:
-        return vals
+    return vals - 3 if fisher else vals
 
 
 DescribeResult = namedtuple('DescribeResult',
@@ -1333,7 +1330,7 @@ def skewtest(a, axis=0, nan_policy='propagate'):
         a = np.ravel(a)
         axis = 0
     b2 = skew(a, axis)
-    n = float(a.shape[axis])
+    n = a.shape[axis]
     if n < 8:
         raise ValueError(
             "skewtest is not valid with less than 8 samples; %i samples"
@@ -1409,7 +1406,7 @@ def kurtosistest(a, axis=0, nan_policy='propagate'):
         a = ma.masked_invalid(a)
         return mstats_basic.kurtosistest(a, axis)
 
-    n = float(a.shape[axis])
+    n = a.shape[axis]
     if n < 5:
         raise ValueError(
             "kurtosistest requires at least 5 observations; %i observations"
@@ -1555,7 +1552,7 @@ def jarque_bera(x):
 
     """
     x = np.asarray(x)
-    n = float(x.size)
+    n = x.size
     if n == 0:
         raise ValueError('At least one observation is required.')
 
@@ -1703,7 +1700,7 @@ def _compute_qth_percentile(sorted_, per, interpolation_method, axis):
                  for i in per]
         return np.array(score)
 
-    if (per < 0) or (per > 100):
+    if not (0 <= per <= 100):
         raise ValueError("percentile must be in the range [0, 100]")
 
     indexer = [slice(None)] * sorted_.ndim
@@ -1823,11 +1820,11 @@ def percentileofscore(a, score, kind='rank'):
         pct = (right + left + (1 if right > left else 0)) * 50.0/n
         return pct
     elif kind == 'strict':
-        return np.count_nonzero(a < score) / float(n) * 100
+        return np.count_nonzero(a < score) / n * 100
     elif kind == 'weak':
-        return np.count_nonzero(a <= score) / float(n) * 100
+        return np.count_nonzero(a <= score) / n * 100
     elif kind == 'mean':
-        pct = (np.count_nonzero(a < score) + np.count_nonzero(a <= score)) / float(n) * 50
+        pct = (np.count_nonzero(a < score) + np.count_nonzero(a <= score)) / n * 50
         return pct
     else:
         raise ValueError("kind can only be 'rank', 'strict', 'weak' or 'mean'")
@@ -2071,7 +2068,7 @@ def relfreq(a, numbins=10, defaultreallimits=None, weights=None):
     """
     a = np.asanyarray(a)
     h, l, b, e = _histogram(a, numbins, defaultreallimits, weights=weights)
-    h = h / float(a.shape[0])
+    h = h / a.shape[0]
 
     return RelfreqResult(h, l, b, e)
 
@@ -2943,19 +2940,19 @@ def f_oneway(*args):
     offset = alldata.mean()
     alldata -= offset
 
-    sstot = _sum_of_squares(alldata) - (_square_of_sums(alldata) / float(bign))
+    sstot = _sum_of_squares(alldata) - (_square_of_sums(alldata) / bign)
     ssbn = 0
     for a in args:
-        ssbn += _square_of_sums(a - offset) / float(len(a))
+        ssbn += _square_of_sums(a - offset) / len(a)
 
     # Naming: variables ending in bn/b are for "between treatments", wn/w are
     # for "within treatments"
-    ssbn -= (_square_of_sums(alldata) / float(bign))
+    ssbn -= _square_of_sums(alldata) / bign
     sswn = sstot - ssbn
     dfbn = num_groups - 1
     dfwn = bign - num_groups
-    msb = ssbn / float(dfbn)
-    msw = sswn / float(dfwn)
+    msb = ssbn / dfbn
+    msw = sswn / dfwn
     f = msb / msw
 
     prob = special.fdtrc(dfbn, dfwn, f)   # equivalent to stats.f.sf
@@ -3043,7 +3040,9 @@ def pearsonr(x, y):
         prob = 0.0
     else:
         t_squared = r**2 * (df / ((1.0 - r) * (1.0 + r)))
-        prob = _betai(0.5*df, 0.5, df/(df+t_squared))
+        prob = special.betainc(
+            0.5*df, 0.5, np.fmin(np.asarray(df / (df + t_squared)), 1.0)
+        )
 
     return r, prob
 
@@ -3121,7 +3120,7 @@ def fisher_exact(table, alternative='two-sided'):
         return np.nan, 1.0
 
     if c[1, 0] > 0 and c[0, 1] > 0:
-        oddsratio = c[0, 0] * c[1, 1] / float(c[1, 0] * c[0, 1])
+        oddsratio = c[0, 0] * c[1, 1] / (c[1, 0] * c[0, 1])
     else:
         oddsratio = np.inf
 
@@ -3176,7 +3175,7 @@ def fisher_exact(table, alternative='two-sided'):
         # Same formula as the 'less' case, but with the second column.
         pvalue = hypergeom.cdf(c[0, 1], n1 + n2, n1, c[0, 1] + c[1, 1])
     elif alternative == 'two-sided':
-        mode = int(float((n + 1) * (n1 + 1)) / (n1 + n2 + 2))
+        mode = int((n + 1) * (n1 + 1) / (n1 + n2 + 2))
         pexact = hypergeom.pmf(c[0, 0], n1 + n2, n1, n)
         pmode = hypergeom.pmf(mode, n1 + n2, n1, n)
 
@@ -3202,8 +3201,7 @@ def fisher_exact(table, alternative='two-sided'):
         msg = "`alternative` should be one of {'two-sided', 'less', 'greater'}"
         raise ValueError(msg)
 
-    if pvalue > 1.0:
-        pvalue = 1.0
+    pvalue = min(pvalue, 1.0)
 
     return oddsratio, pvalue
 
@@ -3903,7 +3901,7 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate'):
 
     d = np.mean(a, axis) - popmean
     v = np.var(a, axis, ddof=1)
-    denom = np.sqrt(v / float(n))
+    denom = np.sqrt(v / n)
 
     with np.errstate(divide='ignore', invalid='ignore'):
         t = np.divide(d, denom)
@@ -4251,12 +4249,12 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate'):
         return np.nan, np.nan
 
     n = a.shape[axis]
-    df = float(n - 1)
+    df = n - 1
 
     d = (a - b).astype(np.float64)
     v = np.var(d, axis, ddof=1)
     dm = np.mean(d, axis)
-    denom = np.sqrt(v / float(n))
+    denom = np.sqrt(v / n)
 
     with np.errstate(divide='ignore', invalid='ignore'):
         t = np.divide(dm, denom)
@@ -4848,14 +4846,17 @@ def ks_2samp(data1, data2):
     n1 = data1.shape[0]
     n2 = data2.shape[0]
     data_all = np.concatenate([data1, data2])
-    cdf1 = np.searchsorted(data1, data_all, side='right') / (1.0*n1)
-    cdf2 = np.searchsorted(data2, data_all, side='right') / (1.0*n2)
+    cdf1 = np.searchsorted(data1, data_all, side='right') / n1
+    cdf2 = np.searchsorted(data2, data_all, side='right') / n2
     d = np.max(np.absolute(cdf1 - cdf2))
     # Note: d absolute not signed distance
-    en = np.sqrt(n1 * n2 / float(n1 + n2))
+    en = np.sqrt(n1 * n2 / (n1 + n2))
     try:
         prob = distributions.kstwobign.sf((en + 0.12 + 0.11 / en) * d)
-    except:
+    except Exception:
+        warnings.warn('This should not happen! Please open an issue at '
+                    'https://github.com/scipy/scipy/issues and provide the code '
+                    'you used to trigger this warning.\n')
         prob = 1.0
 
     return Ks_2sampResult(d, prob)
@@ -5161,7 +5162,7 @@ def kruskal(*args, **kwargs):
     j = np.insert(np.cumsum(n), 0, 0)
     ssbn = 0
     for i in range(num_groups):
-        ssbn += _square_of_sums(ranked[j[i]:j[i+1]]) / float(n[i])
+        ssbn += _square_of_sums(ranked[j[i]:j[i+1]]) / n[i]
 
     totaln = np.sum(n)
     h = 12.0 / (totaln * (totaln + 1)) * ssbn - 3 * (totaln + 1)
@@ -5232,7 +5233,7 @@ def friedmanchisquare(*args):
         replist, repnum = find_repeats(array(data[i]))
         for t in repnum:
             ties += t * (t*t - 1)
-    c = 1 - ties / float(k*(k*k - 1)*n)
+    c = 1 - ties / (k*(k*k - 1)*n)
 
     ssbn = np.sum(data.sum(axis=0)**2)
     chisq = (12.0 / (k*n*(k+1)) * ssbn - 3*n*(k+1)) / c
@@ -5459,16 +5460,6 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
     else:
         raise ValueError(
             "Invalid method '%s'. Options are 'fisher' or 'stouffer'", method)
-
-#####################################
-#      PROBABILITY CALCULATIONS     #
-#####################################
-
-
-def _betai(a, b, x):
-    x = np.asarray(x)
-    x = np.where(x < 1.0, x, 1.0)  # if x > 1 then return 1.0
-    return special.betainc(a, b, x)
 
 
 #####################################
