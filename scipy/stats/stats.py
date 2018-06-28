@@ -4776,7 +4776,13 @@ def ks_2samp(data1, data2):
     d = np.max(np.absolute(cdf1 - cdf2))
     # Note: d absolute not signed distance
     en = np.sqrt(n1 * n2 / (n1 + n2))
-    prob = distributions.kstwobign.sf((en + 0.12 + 0.11 / en) * d)
+    try:
+        prob = distributions.kstwobign.sf((en + 0.12 + 0.11 / en) * d)
+    except Exception:
+        warnings.warn('This should not happen! Please open an issue at '
+                    'https://github.com/scipy/scipy/issues and provide the code '
+                    'you used to trigger this warning.\n')
+        prob = 1.0
 
     return Ks_2sampResult(d, prob)
 
