@@ -152,7 +152,7 @@ the list of components::
 There is one large connected set, and 14 smaller ones.  Let's look at the
 words in the smaller ones::
 
-    >>> [list(word_list[np.where(component_list == i)]) for i in range(1, N_components)]
+    >>> [list(word_list[np.nonzero(component_list == i)]) for i in range(1, N_components)]
     [['aha'],    # may vary
      ['chi'],
      ['ebb'],
@@ -185,7 +185,7 @@ we'll need to remove these before finding the maximum::
 So there is at least one pair of words which takes 13 steps to get from one
 to the other!  Let's determine which these are::
 
-    >>> i1, i2 = np.where(distances == max_distance)
+    >>> i1, i2 = np.nonzero(distances == max_distance)
     >>> list(zip(word_list[i1], word_list[i2]))
     [('imp', 'ohm'),    # may vary
      ('imp', 'ohs'),

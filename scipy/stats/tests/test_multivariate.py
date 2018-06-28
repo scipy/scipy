@@ -1438,8 +1438,8 @@ class TestOrthoGroup(object):
         # Test that we get both positive and negative determinants
         # Check that we have at least one and less than 10 negative dets in a sample of 10. The rest are positive by the previous test.
         # Test each dimension separately
-        assert_array_less([0]*10, [np.where(d < 0)[0].shape[0] for d in dets])
-        assert_array_less([np.where(d < 0)[0].shape[0] for d in dets], [10]*10)
+        assert_array_less([0]*10, [np.nonzero(d < 0)[0].shape[0] for d in dets])
+        assert_array_less([np.nonzero(d < 0)[0].shape[0] for d in dets], [10]*10)
 
         # Test that these are orthogonal matrices
         for xx in xs:

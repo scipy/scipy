@@ -634,7 +634,7 @@ class TestFindPeaks(object):
         x[peaks_true] += offset
         prominences = x[peaks_true] - x[peaks_true + 1]
         interval = (3, 9)
-        keep = np.where(
+        keep = np.nonzero(
             (interval[0] <= prominences) & (prominences <= interval[1]))
 
         peaks_calc, properties = find_peaks(x, prominence=interval)

@@ -569,7 +569,7 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, rr):
         A_eq = A_eq[:, i_nf]
         A_ub = A_ub[:, i_nf]
         # record of variables to be added back in
-        undo = [np.where(i_f)[0], lb[i_f]]
+        undo = [np.nonzero(i_f)[0], lb[i_f]]
         # don't remove these entries from bounds; they'll be used later.
         # but we _also_ need a version of the bounds with these removed
         lb_mod = lb[i_nf]
@@ -788,7 +788,7 @@ def _get_Abc(
 
     # unbounded below: substitute xi = -xi' (unbounded above)
     l_nolb_someub = np.logical_and(lb_none, ub_some)
-    i_nolb = np.where(l_nolb_someub)[0]
+    i_nolb = np.nonzero(l_nolb_someub)[0]
     lbs[l_nolb_someub], ubs[l_nolb_someub] = (
         -ubs[l_nolb_someub], lbs[l_nolb_someub])
     lb_none = np.equal(lbs, None)
@@ -803,7 +803,7 @@ def _get_Abc(
             A_eq[:, i_nolb] *= -1
 
     # upper bound: add inequality constraint
-    i_newub = np.where(ub_some)[0]
+    i_newub = np.nonzero(ub_some)[0]
     ub_newub = ubs[ub_some]
     n_bounds = np.count_nonzero(ub_some)
     A_ub = vstack((A_ub, zeros((n_bounds, A_ub.shape[1]))))
@@ -817,7 +817,7 @@ def _get_Abc(
 
     # unbounded: substitute xi = xi+ + xi-
     l_free = np.logical_and(lb_none, ub_none)
-    i_free = np.where(l_free)[0]
+    i_free = np.nonzero(l_free)[0]
     n_free = len(i_free)
     A1 = hstack((A1, zeros((A1.shape[0], n_free))))
     c = np.concatenate((c, np.zeros(n_free)))
@@ -830,7 +830,7 @@ def _get_Abc(
 
     # lower bound: substitute xi = xi' + lb
     # now there is a constant term in objective
-    i_shift = np.where(lb_some)[0]
+    i_shift = np.nonzero(lb_some)[0]
     lb_shift = lbs[lb_some].astype(float)
     c0 += np.sum(lb_shift * c[i_shift])
     if sparse:

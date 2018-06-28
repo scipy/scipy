@@ -3580,7 +3580,7 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='auto'
     dis = _kendall_dis(x, y)  # discordant pairs
 
     obs = np.r_[True, (x[1:] != x[:-1]) | (y[1:] != y[:-1]), True]
-    cnt = np.diff(np.where(obs)[0]).astype('int64', copy=False)
+    cnt = np.diff(np.nonzero(obs)[0]).astype('int64', copy=False)
 
     ntie = (cnt * (cnt - 1) // 2).sum()  # joint ties
     xtie, x0, x1 = count_rank_tie(x)     # ties in x, stats

@@ -2628,7 +2628,7 @@ def median_test(*args, **kwds):
         # is possible that all those values equal the grand median.  If `ties`
         # is "ignore", that would result in a column of zeros in `table`.  We
         # check for that case here.
-        zero_cols = np.where((table == 0).all(axis=0))[0]
+        zero_cols = np.nonzero((table == 0).all(axis=0))[0]
         if len(zero_cols) > 0:
             msg = ("All values in sample %d are equal to the grand "
                    "median (%r), so they are ignored, resulting in an "

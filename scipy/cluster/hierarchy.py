@@ -1433,7 +1433,7 @@ def cut_tree(Z, n_clusters=None, height=None):
         this_group[idx] = last_group[idx].min()
         this_group[this_group > last_group[idx].max()] -= 1
         if i + 1 in cols_idx:
-            groups[np.where(i + 1 == cols_idx)[0]] = this_group
+            groups[np.nonzero(i + 1 == cols_idx)[0]] = this_group
         last_group = this_group
 
     return groups.T

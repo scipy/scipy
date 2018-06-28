@@ -32,7 +32,7 @@ def bvls(A, b, x_lsq, lb, ub, tol, max_iter, verbose):
 
     free_set = on_bound == 0
     active_set = ~free_set
-    free_set, = np.where(free_set)
+    free_set, = np.nonzero(free_set)
 
     r = A.dot(x) - b
     cost = 0.5 * np.dot(r, r)

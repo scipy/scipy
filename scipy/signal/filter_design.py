@@ -843,8 +843,8 @@ def _cplxreal(z, tol=None):
     # Find runs of (approximately) the same real part
     same_real = np.diff(zp.real) <= tol * abs(zp[:-1])
     diffs = numpy.diff(concatenate(([0], same_real, [0])))
-    run_starts = numpy.where(diffs > 0)[0]
-    run_stops = numpy.where(diffs < 0)[0]
+    run_starts = numpy.nonzero(diffs > 0)[0]
+    run_stops = numpy.nonzero(diffs < 0)[0]
 
     # Sort each run by their imaginary parts
     for i in range(len(run_starts)):
@@ -1176,7 +1176,7 @@ def _nearest_real_complex_idx(fro, to, which):
     mask = np.isreal(fro[order])
     if which == 'complex':
         mask = ~mask
-    return order[np.where(mask)[0][0]]
+    return order[np.nonzero(mask)[0][0]]
 
 
 def zpk2sos(z, p, k, pairing='nearest'):
@@ -1417,7 +1417,7 @@ def zpk2sos(z, p, k, pairing='nearest'):
                     assert np.isreal(p2)
                 else:  # real pole, real zero
                     # pick the next "worst" pole to use
-                    idx = np.where(np.isreal(p))[0]
+                    idx = np.nonzero(np.isreal(p))[0]
                     assert len(idx) > 0
                     p2_idx = idx[np.argmin(np.abs(np.abs(p[idx]) - 1))]
                     p2 = p[p2_idx]

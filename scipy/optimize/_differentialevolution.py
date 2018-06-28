@@ -753,7 +753,7 @@ class DifferentialEvolutionSolver(object):
         """
         make sure the parameters lie between the limits
         """
-        for index in np.where((trial < 0) | (trial > 1))[0]:
+        for index in np.nonzero((trial < 0) | (trial > 1))[0]:
             trial[index] = self.random_number_generator.rand()
 
     def _mutate(self, candidate):

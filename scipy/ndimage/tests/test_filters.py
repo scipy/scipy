@@ -309,13 +309,13 @@ def test_gaussian_truncate():
 
     # Test gaussian_laplace
     y = sndi.gaussian_laplace(x, sigma=2, truncate=3.5)
-    nonzero_indices = np.where(y != 0)[0]
+    nonzero_indices = np.nonzero(y != 0)[0]
     n = nonzero_indices.ptp() + 1
     assert_equal(n, 15)
 
     # Test gaussian_gradient_magnitude
     y = sndi.gaussian_gradient_magnitude(x, sigma=2, truncate=3.5)
-    nonzero_indices = np.where(y != 0)[0]
+    nonzero_indices = np.nonzero(y != 0)[0]
     n = nonzero_indices.ptp() + 1
     assert_equal(n, 15)
 
