@@ -532,7 +532,8 @@ class TestWelch(object):
         q = np.array([.1, .05, 0., 1.54074396e-33, 0.])
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
 
-        assert_raises(ValueError, welch, x, average='unrecognised-average')
+        assert_raises(ValueError, welch, x, nperseg=8,
+                      average='unrecognised-average')
 
 
 class TestCSD:
