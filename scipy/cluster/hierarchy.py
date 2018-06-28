@@ -3151,7 +3151,7 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
           The child with the minimum number of original objects in its cluster
           is plotted first.
 
-        ``'descendent'``
+        ``'descending'``
           The child with the maximum number of original objects in its cluster
           is plotted first.
 
