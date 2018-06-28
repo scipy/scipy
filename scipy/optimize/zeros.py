@@ -23,6 +23,7 @@ flag_map = {_ECONVERGED: CONVERGED, _ESIGNERR: SIGNERR, _ECONVERR: CONVERR}
 
 class RootResults(object):
     """ Represents the root finding result.
+
     Attributes
     ----------
     root : float
@@ -35,6 +36,7 @@ class RootResults(object):
         True if the routine converged.
     flag : str
         Description of the cause of termination.
+
     """
     def __init__(self, root, iterations, function_calls, flag):
         self.root = root
@@ -79,7 +81,7 @@ def _results_select(full_output, r):
 
 
 def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
-           fprime2=None, full_output=False, disp=True, converged=None):
+           fprime2=None, full_output=False, disp=True):
     """
     Find a zero using the Newton-Raphson or secant method.
 
@@ -90,27 +92,20 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
     used.
 
     If `x0` is a sequence, then `newton` returns an array, and `func` must be
-    vectorized and return a sequence or array of the same shape as it's first
-    argument. If an optional argument, `converged`, is `True`, then the
-    return is a named tuple `(root, converged, zero_der)` in which `root` is an
-    array of the locations where `func` is zero, `converged` is an array, same
-    size as `root`, of booleans that are `True` where `func` converged, and
-    `zero_der` is another boolean array of the same size where `func` had a
-    zero derivative.
-
-    If `x0` is a sequence, then arguments `full_output` and `disp` are ignored.
+    vectorized and return a sequence or array of the same shape as its first
+    argument.
 
     Parameters
     ----------
-    func : function
+    func : callable
         The function whose zero is wanted. It must be a function of a
         single variable of the form f(x,a,b,c...), where a,b,c... are extra
         arguments that can be passed in the `args` parameter.
-    x0 : float, sequence, or array
+    x0 : float, sequence, or ndarray
         An initial estimate of the zero that should be somewhere near the
         actual zero. If not scalar, then `func` must be vectorized and return
-        a sequence or array of the same shape as it's first argument.
-    fprime : function, optional
+        a sequence or array of the same shape as its first argument.
+    fprime : callable, optional
         The derivative of the function when available and convenient. If it
         is None (default), then the secant method is used.
     args : tuple, optional
@@ -119,37 +114,44 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
         The allowable error of the zero value.
     maxiter : int, optional
         Maximum number of iterations.
-    fprime2 : function, optional
+    fprime2 : callable, optional
         The second order derivative of the function when available and
         convenient. If it is None (default), then the normal Newton-Raphson
         or the secant method is used. If it is not None, then Halley's method
         is used.
     full_output : bool, optional
-        If `full_output` is False, the root is returned.  If `full_output` is
-        True, the return value is ``(x, r)``, where `x` is the root, and `r` is
-        a RootResults object.
+        If `full_output` is False (default), the root is returned.
+        If True and `x0` is scalar, the return value is ``(x, r)``, where ``x``
+        is the root and ``r`` is a `RootResults` object.
+        If True and `x0` is non-scalar, the return value is ``(x, converged,
+        zero_der)`` (see Returns section for details).
     disp : bool, optional
-        If True, display a RuntimeError if the algorithm didn't converge.
-    converged : boolean, optional
-        Only used if `x0` is a sequence. If `True` then two extras boolean
-        arrays of converged and zero derivatives are appended to the return.
+        If True, raise a RuntimeError if the algorithm didn't converge, with
+        the error message containing the number of iterations and current
+        function value.  Ignored if `x0` is not scalar.
+        *Note: this has little to do with displaying, however
+        the `disp` keyword cannot be renamed for backwards compatibility.*
+
 
     Returns
     -------
-    root : float, sequence, or array
+    root : float, sequence, or ndarray
         Estimated location where function is zero.
-    r : RootResults (present if ``full_output = True``)
+    r : RootResults, optional
+        Present if ``full_output=True`` and `x0` is scalar.
         Object containing information about the convergence.  In particular,
         ``r.converged`` is True if the routine converged.
-    converged : boolean array, optional
+    converged : ndarray of bool, optional
+        Present if ``full_output=True`` and `x0` is non-scalar.
         For vector functions, indicates which elements converged successfully.
-    zero_der : boolean array, optional
+    zero_der : ndarray of bool, optional
+        Present if ``full_output=True`` and `x0` is non-scalar.
         For vector functions, indicates which elements had a zero derivative.
 
     See Also
     --------
     brentq, brenth, ridder, bisect
-    fsolve : find zeroes in n dimensions.
+    fsolve : find zeros in n dimensions.
 
     Notes
     -----
@@ -168,22 +170,23 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
 
     When `newton` is used with arrays, it is best suited for the following
     types of problems:
-    * the initial guesses, `x0`, are all relatively the same distance from the
-    roots
-    * some or all of the extra arguments, `args`, are also arrays so that a
-    class of similar problems can be solved together
-    * the size of the initial guesses, `x0`, is larger than 100 elements
-    Otherwise, a naive loop may perform better than a vector.
+
+    * The initial guesses, `x0`, are all relatively the same distance from
+      the roots.
+    * Some or all of the extra arguments, `args`, are also arrays so that a
+      class of similar problems can be solved together.
+    * The size of the initial guesses, `x0`, is larger than O(100) elements.
+      Otherwise, a naive loop may perform as well or better than a vector.
 
     Examples
     --------
-
     >>> from scipy import optimize
+    >>> import matplotlib.pyplot as plt
 
     >>> def f(x):
     ...     return (x**3 - 1)  # only one real root at x = 1
 
-    ``fprime`` not provided, use secant method
+    ``fprime`` is not provided, use the secant method:
 
     >>> root = optimize.newton(f, 1.5)
     >>> root
@@ -192,31 +195,46 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
     >>> root
     1.0000000000000016
 
-    Only ``fprime`` provided, use Newton Raphson method
+    Only ``fprime`` is provided, use the Newton-Raphson method:
 
     >>> root = optimize.newton(f, 1.5, fprime=lambda x: 3 * x**2)
     >>> root
     1.0
 
-    Both ``fprime2`` and ``fprime`` provided, use Halley's method
+    Both ``fprime2`` and ``fprime`` are provided, use Halley's method:
 
     >>> root = optimize.newton(f, 1.5, fprime=lambda x: 3 * x**2,
     ...                        fprime2=lambda x: 6 * x)
     >>> root
     1.0
 
-    A sequence of initial guesses and arguments is provided, use vectorized
-
-    >>> import numpy as np
+    When we want to find zeros for a set of related starting values and/or
+    function parameters, we can provide both of those as an array of inputs:
 
     >>> f = lambda x, a: x**3 - a
     >>> fder = lambda x, a: 3 * x**2
     >>> x = np.random.randn(100)
-    >>> a = range(-50, 50)
+    >>> a = np.arange(-50, 50)
     >>> vec_res = optimize.newton(f, x, fprime=fder, args=(a, ))
+
+    The above is the equivalent of solving for each value in ``(x, a)``
+    separately in a for-loop, just faster:
 
     >>> loop_res = [optimize.newton(f, x0, fprime=fder, args=(a0,))
     ...             for x0, a0 in zip(x, a)]
+    >>> np.allclose(vec_res, loop_res)
+    True
+
+    Plot the results found for all values of ``a``:
+
+    >>> analytical_result = np.sign(a) * np.abs(a)**(1/3)
+    >>> fig = plt.figure()
+    >>> ax = fig.add_subplot(111)
+    >>> ax.plot(a, analytical_result, 'o')
+    >>> ax.plot(a, vec_res, '.')
+    >>> ax.set_xlabel('$a$')
+    >>> ax.set_ylabel('$x$ where $f(x, a)=0$')
+    >>> plt.show()
 
     """
     if tol <= 0:
@@ -225,9 +243,9 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
         raise ValueError("maxiter must be greater than 0")
     if not np.isscalar(x0):
         return _array_newton(func, x0, fprime, args, tol, maxiter, fprime2,
-                             converged)
-    # Multiply by 1.0 to convert to floating point.  We don't use float(x0)
-    # so it still works if x0 is complex.
+                             full_output)
+
+    # Convert to float (don't use float(x0); this works also for complex x0)
     p0 = 1.0 * x0
     funcalls = 0
     if fprime is not None:
@@ -283,6 +301,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
             p1 = p
             q1 = func(p1, *args)
             funcalls += 1
+
     if disp:
         msg = "Failed to converge after %d iterations, value is %s" % (itr + 1, p)
         raise RuntimeError(msg)
@@ -290,19 +309,21 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
     return _results_select(full_output, (p, funcalls, itr + 1, _ECONVERR))
 
 
-def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2,
-                  converged=False):
+def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2, full_output):
     """
-    A vectorized version of Newton, Halley, and secant methods for arrays. Do
-    not use this method directly. This method is called from :func:`newton`
-    when ``np.isscalar(x0)`` is true. For docstring, see :func:`newton`.
+    A vectorized version of Newton, Halley, and secant methods for arrays.
+
+    Do not use this method directly. This method is called from `newton`
+    when ``np.isscalar(x0)`` is True. For docstring, see `newton`.
     """
     try:
         p = np.asarray(x0, dtype=float)
-    except TypeError:  # can't convert complex to float
+    except TypeError:
+        # can't convert complex to float
         p = np.asarray(x0)
-    failures = np.ones_like(p, dtype=bool)  # at start, nothing converged
-    nz_der = np.copy(failures)
+
+    failures = np.ones_like(p, dtype=bool)
+    nz_der = np.ones_like(failures)
     if fprime is not None:
         # Newton-Raphson method
         for iteration in range(maxiter):
@@ -355,9 +376,10 @@ def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2,
             p1, p = p, p1
             q0 = q1
             q1 = np.asarray(func(p1, *args))
+
     zero_der = ~nz_der & failures  # don't include converged with zero-ders
     if zero_der.any():
-        # secant warnings
+        # Secant warnings
         if fprime is None:
             nonzero_dp = (p1 != p)
             # non-zero dp, but infinite newton step
@@ -367,7 +389,7 @@ def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2,
                     sum((p1[zero_der_nz_dp] - p[zero_der_nz_dp]) ** 2)
                 )
                 warnings.warn('RMS of {:g} reached'.format(rms), RuntimeWarning)
-        # netwon or halley warnings
+        # Newton or Halley warnings
         else:
             all_or_some = 'all' if zero_der.all() else 'some'
             msg = '{:s} derivatives were zero'.format(all_or_some)
@@ -380,9 +402,11 @@ def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2,
         if failures.all():
             raise RuntimeError(msg)
         warnings.warn(msg, RuntimeWarning)
-    if converged:
+
+    if full_output:
         result = namedtuple('result', ('root', 'converged', 'zero_der'))
         p = result(p, ~failures, zero_der)
+
     return p
 
 
