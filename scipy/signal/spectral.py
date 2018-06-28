@@ -424,6 +424,22 @@ def welch(x, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     >>> np.sqrt(Pxx_spec.max())
     2.0077340678640727
 
+    If we now introduce a discontinuity in the signal, by increasing the
+    amplitude of a small portion of the signal by 50, we can see the
+    corruption of the mean average power spectral density, but using a
+    median average better estimates the normal behaviour.
+
+    >>> x[int(N//2):int(N//2)+10] *= 50.
+    >>> f, Pxx_den = signal.welch(x, fs, nperseg=1024)
+    >>> f_med, Pxx_den_med = signal.welch(x, fs, nperseg=1024, average='median')
+    >>> plt.semilogy(f, Pxx_den, label='mean')
+    >>> plt.semilogy(f_med, Pxx_den_med, label='median')
+    >>> plt.ylim([0.5e-3, 1])
+    >>> plt.xlabel('frequency [Hz]')
+    >>> plt.ylabel('PSD [V**2/Hz]')
+    >>> plt.legend()
+    >>> plt.show()
+
     """
 
     freqs, Pxx = csd(x, x, fs=fs, window=window, nperseg=nperseg,
