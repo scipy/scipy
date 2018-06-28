@@ -3,7 +3,6 @@
 
 from __future__ import division, print_function, absolute_import
 
-from math import log
 import numpy as np
 from scipy import fftpack
 from . import signaltools
@@ -12,7 +11,7 @@ from ._spectral import _lombscargle
 from ._arraytools import const_ext, even_ext, odd_ext, zero_ext
 import warnings
 
-from scipy._lib.six import (string_types, xrange)
+from scipy._lib.six import string_types
 
 __all__ = ['periodogram', 'welch', 'lombscargle', 'csd', 'coherence',
            'spectrogram', 'stft', 'istft', 'check_COLA']
@@ -1819,9 +1818,5 @@ def _median_bias(n):
     bias : float
         Calculated bias.
     """
-    if n >= 1000:  # large n limit
-        return log(2)
-    bias = 1
-    for i in xrange(1, int((n-1)/2) + 1):
-        bias += 1. / (2 * i + 1) - 1. / (2 * i)
-    return bias
+    ii_2 = 2 * np.arange(1., (n-1) // 2 + 1)
+    return 1 + np.sum(1. / (ii_2 + 1) - 1. / ii_2)
