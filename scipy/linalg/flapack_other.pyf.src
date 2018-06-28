@@ -1201,7 +1201,7 @@ subroutine <prefix>tfsm(transr,side,uplo,trans,diag,m,n,nt,alpha,a,b,ldb)
     !
     ! Level 3 BLAS like routine for A in RFP Format.
     !
-    ! ZTFSM  solves the matrix equation
+    ! TFSM  solves the matrix equation
     !
     !        op( A )*X = alpha*B  or  X*op( A ) = alpha*B
     !
@@ -1225,7 +1225,7 @@ subroutine <prefix>tfsm(transr,side,uplo,trans,diag,m,n,nt,alpha,a,b,ldb)
     integer intent(hide),depend(b):: n=shape(b,1)
     <ftype> intent(in):: alpha
     <ftype> dimension(nt),intent(in):: a
-    integer intent(hide),depend(a,n),check(nt==(n*(n+1)/2)):: nt=shape(a,0)
+    integer intent(hide),depend(a,m,n,side),check(*side=='L'?nt==(m*(m+1)/2):nt==(n*(n+1)/2)):: nt=shape(a,0)
     <ftype> dimension(m,n),intent(in,out,copy,out=x):: b
     integer intent(hide),depend(b):: ldb=MAX(shape(b,0),1)
 

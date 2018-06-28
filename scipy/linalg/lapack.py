@@ -484,6 +484,11 @@ All functions
    chfrk
    zhfrk
 
+   stfsm
+   dtfsm
+   ctfsm
+   ztfsm
+
    stpttf
    dtpttf
    ctpttf

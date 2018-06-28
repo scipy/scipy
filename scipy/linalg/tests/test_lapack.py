@@ -915,13 +915,54 @@ def test_tzrzf():
         assert_(info == 0)
 
         # Get Z manually for comparison
-        R = np.block([rz[:, :m], np.zeros((m, n-m), dtype=dtype)])
-        V = np.block([np.eye(m, dtype=dtype), rz[:, m:]])
+        R = np.hstack((rz[:, :m], np.zeros((m, n-m), dtype=dtype)))
+        V = np.hstack((np.eye(m, dtype=dtype), rz[:, m:]))
         Id = np.eye(n, dtype=dtype)
         ref = [Id-tau[x]*V[[x], :].T.dot(V[[x], :].conj()) for x in range(m)]
         Z = reduce(np.dot, ref)
         assert_allclose(R.dot(Z) - A, zeros_like(A, dtype=dtype),
                         atol=10*np.spacing(dtype(1.0).real), rtol=0.)
+
+
+def test_tfsm():
+    """
+    Test for solving a linear system with the coefficient matrix is a
+    triangular array stored in Full Packed (RFP) format.
+    """
+    seed(1234)
+    for ind, dtype in enumerate(DTYPES):
+        n = 20
+        if ind > 1:
+            A = triu(rand(n, n) + rand(n, n)*1j + eye(n)).astype(dtype)
+            trans = 'C'
+        else:
+            A = triu(rand(n, n) + eye(n)).astype(dtype)
+            trans = 'T'
+
+        trttf, tfttr, tfsm = get_lapack_funcs(('trttf', 'tfttr', 'tfsm'),
+                                              dtype=dtype)
+
+        Afp, _ = trttf(A)
+        B = rand(n, 2).astype(dtype)
+        soln = tfsm(-1, Afp, B)
+        assert_array_almost_equal(soln, solve(-A, B),
+                                  decimal=4 if ind % 2 == 0 else 6)
+
+        soln = tfsm(-1, Afp, B, trans=trans)
+        assert_array_almost_equal(soln, solve(-A.conj().T, B),
+                                  decimal=4 if ind % 2 == 0 else 6)
+
+        # Make A, unit diagonal
+        A[np.arange(n), np.arange(n)] = dtype(1.)
+        soln = tfsm(-1, Afp, B, trans=trans, diag='U')
+        assert_array_almost_equal(soln, solve(-A.conj().T, B),
+                                  decimal=4 if ind % 2 == 0 else 6)
+
+        # Change side
+        B2 = rand(3, n).astype(dtype)
+        soln = tfsm(-1, Afp, B2, trans=trans, diag='U', side='R')
+        assert_array_almost_equal(soln, solve(-A, B2.T).conj().T,
+                                  decimal=4 if ind % 2 == 0 else 6)
 
 
 def test_ormrz_unmrz():
@@ -953,7 +994,7 @@ def test_ormrz_unmrz():
         rz, tau, info = tzrzf(A, lwork=lwork_rz)
 
         # Get Q manually for comparison
-        V = np.block([np.eye(qm, dtype=dtype), rz[:, qm:]])
+        V = np.hstack((np.eye(qm, dtype=dtype), rz[:, qm:]))
         Id = np.eye(qn, dtype=dtype)
         ref = [Id-tau[x]*V[[x], :].T.dot(V[[x], :].conj()) for x in range(qm)]
         Q = reduce(np.dot, ref)
@@ -1111,7 +1152,7 @@ def test_pftrf():
 def test_pftri():
     """
     Test Cholesky factorization of a positive definite Rectengular Full
-    Packed (RFP) format array
+    Packed (RFP) format array to find its inverse
     """
     seed(1234)
     for ind, dtype in enumerate(DTYPES):
@@ -1143,7 +1184,7 @@ def test_pftri():
 def test_pftrs():
     """
     Test Cholesky factorization of a positive definite Rectengular Full
-    Packed (RFP) format array
+    Packed (RFP) format array and solve a linear system
     """
     seed(1234)
     for ind, dtype in enumerate(DTYPES):
@@ -1179,8 +1220,7 @@ def test_pftrs():
 
 def test_sfrk_hfrk():
     """
-    Test Cholesky factorization of a positive definite Rectengular Full
-    Packed (RFP) format array
+    Test for performing a symmetric rank-k operation for matrix in RFP format.
     """
     seed(1234)
     for ind, dtype in enumerate(DTYPES):
