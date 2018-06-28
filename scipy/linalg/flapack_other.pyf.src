@@ -401,7 +401,7 @@ subroutine <prefix2c>unmqr(side,trans,m,n,k,a,lda,tau,c,ldc,work,lwork,info)
 
 end subroutine <prefix2c>unmqr
 
-subroutine <prefix><or,or,un,un>mrz(side,trans,m,n,k,l,ncol,a,lda,tau,ntau,c,ldc,work,lwork,info)
+subroutine <prefix><or,or,un,un>mrz(side,trans,m,n,k,l,a,lda,nt,tau,c,ldc,work,lwork,info)
     !
     ! ?OR/UNMRZ overwrites the general complex M-by-N matrix C with
     !
@@ -422,24 +422,23 @@ subroutine <prefix><or,or,un,un>mrz(side,trans,m,n,k,l,ncol,a,lda,tau,ntau,c,ldc
     
     character optional,intent(in),check(*side=='L'||*side=='R'):: side = 'L'
     character optional,intent(in),check(*trans=='N'||*trans==<'T','T','C','C'>):: trans = 'N'
-    integer intent(hide),depend(c):: m=shape(c,0)
-    integer intent(hide),depend(c):: n=shape(c,1)
+    integer intent(hide),depend(c),check(m>=0):: m=shape(c,0)
+    integer intent(hide),depend(c),check(n>=0):: n=shape(c,1)
     integer intent(hide),depend(a):: k=shape(a,0)
     integer intent(hide),depend(a):: l=shape(a,1)-shape(a,0)
-    <ftype> dimension(k,ncol),intent(in):: a
-    integer intent(hide),depend(a,side,m,n),check(ncol==(*side=='L',m,n)):: ncol=shape(a,1)
+    <ftype> dimension(k,nt),intent(in),check(shape(a,1)>=shape(a,0)):: a
+    integer intent(hide),depend(a,side,n,m),check((*side=='L'?m:n)==nt):: nt=shape(a,1)
     integer intent(hide),depend(a):: lda=MAX(shape(a,0),1)
+    <ftype> dimension(k),depend(k),check(rank(tau)==1),intent(in):: tau
     <ftype> dimension(m,n),intent(in,out,copy,out=cq):: c
     integer intent(hide),depend(c):: ldc = MAX(shape(c,0),1)
-    <ftype> dimension(ntau),intent(in):: tau
-    integer intent(hide),depend(tau,k),check(ntau==k):: ntau=shape(tau,0)
-    <ftype> dimension(MAX(lwork,1)),intent(hide,cache):: work
-    integer intent(in),depend(side,m,n),check((lwork>=(*side=='L'?n:m))||lwork==-1):: lwork=MAX((*side=='L'?n:m),1)
-    integer intent(out):: info    
-    
+    <ftype> dimension(lwork),depend(lwork),intent(hide,cache):: work
+    integer optional,intent(in),depend(side,m,n),check(lwork>=(*side=='L'?n:m)||lwork==-1):: lwork=MAX((side[0]=='L'?n:m),1)
+    integer intent(out):: info
+
 end subroutine <prefix><or,or,un,un>mrz
 
-subroutine <prefix><or,or,un,un>mrz_lwork(side,trans,m,n,k,l,ncol,a,lda,tau,ntau,c,ldc,work,lwork,info)
+subroutine <prefix><or,or,un,un>mrz_lwork(side,trans,m,n,k,l,a,lda,tau,c,ldc,work,lwork,info)
     !
     ! ?OR/UNMRZ overwrites the general complex M-by-N matrix C with
     !
@@ -463,15 +462,13 @@ subroutine <prefix><or,or,un,un>mrz_lwork(side,trans,m,n,k,l,ncol,a,lda,tau,ntau
     character optional,intent(in),check(*trans=='N'||*trans==<'T','T','C','C'>):: trans = 'N'
     integer intent(in):: m
     integer intent(in):: n
-    integer intent(in):: k
+    integer intent(hide),depend(side,m,n):: k=(*side=='L'?m:n)
     integer intent(hide):: l
     <ftype> intent(hide):: a
-    integer intent(hide):: ncol
     integer intent(hide),depend(k):: lda=k
     <ftype> intent(hide):: c
     integer intent(hide),depend(m):: ldc=m
     <ftype> intent(hide):: tau
-    integer intent(hide):: ntau
     <ftype> intent(out):: work
     integer intent(hide):: lwork=-1
     integer intent(out):: info

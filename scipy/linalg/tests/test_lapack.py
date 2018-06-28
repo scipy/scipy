@@ -990,7 +990,7 @@ def test_ormrz_unmrz():
             orun_mrz, orun_mrz_lw = get_lapack_funcs(('unmrz', 'unmrz_lwork'),
                                                      dtype=dtype)
 
-        lwork_mrz = _compute_lwork(orun_mrz_lw, cn, cn, qn)
+        lwork_mrz = _compute_lwork(orun_mrz_lw, cn, cn)
         rz, tau, info = tzrzf(A, lwork=lwork_rz)
 
         # Get Q manually for comparison
