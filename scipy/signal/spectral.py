@@ -580,10 +580,14 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
 
     # Average over windows.
     if len(Pxy.shape) >= 2 and Pxy.size > 0:
-        if Pxy.shape[-1] > 1 and average == 'median':
-            Pxy = np.median(Pxy, axis=-1) / _median_bias(Pxy.shape[-1])
-        elif Pxy.shape[-1] > 1:
-            Pxy = Pxy.mean(axis=-1)
+        if Pxy.shape[-1] > 1:
+            if average == 'median':
+                Pxy = np.median(Pxy, axis=-1) / _median_bias(Pxy.shape[-1])
+            elif average == 'mean':
+                Pxy = Pxy.mean(axis=-1)
+            else:
+                raise ValueError('average must be "median" or "mean", got %s'
+                                 % (average,))
         else:
             Pxy = np.reshape(Pxy, Pxy.shape[:-1])
 
