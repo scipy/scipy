@@ -203,13 +203,38 @@ class coo_matrix(_data_matrix, _minmax_mixin):
                 return self
 
         nrows, ncols = self.shape
+        new_nrows, new_ncols = shape
 
-        if order == 'C':
-            flat_indices = ncols * self.row + self.col
-            new_row, new_col = divmod(flat_indices, shape[1])
+        if self.size == 0:
+            # Special case an empty matrix to avoid divide by zero error
+            new_row = []
+            new_col = []
+        elif order == 'C':
+            # The naive calculation is:
+            #   new_row, new_col = divmod(ncols * self.row + self.col , new_ncols)
+            # However, the intermediate value `ncols * self.row + self.col` can
+            # overflow the range of the integer used to store the indices. By
+            # using these three divmods, the overflow in the intermediate step
+            # can be avoided.
+            ncols_quot, ncols_rem = divmod(ncols, new_ncols)
+            row_quot, row_rem = divmod(self.row, new_ncols)
+            col_quot, col_rem = divmod(self.col, new_ncols)
+
+            rem_quot, rem_rem = divmod(ncols_rem * row_rem + col_rem, new_ncols)
+
+            new_row = (ncols_quot * row_quot * new_ncols + ncols_quot * row_rem +
+                       ncols_rem * row_quot + col_quot) + rem_quot
+            new_col = rem_rem
         elif order == 'F':
-            flat_indices = self.row + nrows * self.col
-            new_col, new_row = divmod(flat_indices, shape[0])
+            nrows_quot, nrows_rem = divmod(nrows, new_nrows)
+            col_quot, col_rem = divmod(self.col, new_nrows)
+            row_quot, row_rem = divmod(self.row, new_nrows)
+
+            rem_quot, rem_rem = divmod(nrows_rem * col_rem + row_rem, new_nrows)
+
+            new_col = (nrows_quot * col_quot * new_nrows + nrows_quot * col_rem +
+                       nrows_rem * col_quot + row_quot) + rem_quot
+            new_row = rem_rem
         else:
             raise ValueError("'order' must be 'C' or 'F'")
 
