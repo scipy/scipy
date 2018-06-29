@@ -16,35 +16,45 @@ __all__ = ['root_scalar']
 
 
 class MemoizeDer(object):
-    """ Decorator that caches the value and derivative(s) of function each
-    time it is called. """
+    """Decorator that caches the value and derivative(s) of function each
+    time it is called.
+
+    This is a simplistic memoizer that calls and caches a single value
+    of `f(x, *args)`.
+    It assumes that `args` does not change between invocations.
+    It supports the use case of a root-finder where `args` is fixed,
+    `x` changes, and only rarely, if at all, does x assume the same value
+    more than once."""
     def __init__(self, fun):
         self.fun = fun
         self.vals = None
         self.x = None
-        self.nCalls = 0
+        self.n_calls = 0
 
     def __call__(self, x, *args):
+        r"""Calculate f or used cached value if available"""
         # Derivative may be requested before the function itself, always check
         if self.vals is None or x != self.x:
             fg = self.fun(x, *args)
             self.x = x
-            self.nCalls += 1
+            self.n_calls += 1
             self.vals = fg[:]
         return self.vals[0]
 
     def fprime(self, x, *args):
+        r"""Calculate f' or used a cached value if available"""
         if self.vals is None or x != self.x:
             self(x, *args)
         return self.vals[1]
 
     def fprime2(self, x, *args):
+        r"""Calculate f'' or used a cached value if available"""
         if self.vals is None or x != self.x:
             self(x, *args)
         return self.vals[2]
 
     def ncalls(self):
-        return self.nCalls
+        return self.n_calls
 
 
 def root_scalar(f, args=(), method=None, bracket=None,
@@ -70,7 +80,7 @@ def root_scalar(f, args=(), method=None, bracket=None,
             - 'ridder'    :ref:`(see here) <optimize.root_scalar-ridder>`
             - 'newton'    :ref:`(see here) <optimize.root_scalar-newton>`
 
-    bracket: An Iterable of 2 floats, optional
+    bracket: A sequence of 2 floats, optional
         An interval bracketing a root.  `f(x, *args)` must have different
         signs at the two endpoints.
     x0 : float, optional
@@ -78,12 +88,12 @@ def root_scalar(f, args=(), method=None, bracket=None,
     x1 : float, optional
         A second guess.
     fprime : bool or callable, optional
-        If `fprime` is a Boolean and is True, `f` is assumed to return the
+        If `fprime` is a boolean and is True, `f` is assumed to return the
         value of derivative along with the objective function.
         `fprime` can also be a callable returning the derivative of `f`. In
         this case, it must accept the same arguments as `f`.
     fprime2 : bool or callable, optional
-        If `fprime2` is a Boolean and is True, `f` is assumed to return the
+        If `fprime2` is a boolean and is True, `f` is assumed to return the
         value of 1st and 2nd derivatives along with the objective function.
         `fprime2` can also be a callable returning the 2nd derivative of `f`.
         In this case, it must accept the same arguments as `f`.
@@ -100,31 +110,13 @@ def root_scalar(f, args=(), method=None, bracket=None,
     sol : RootResults
         The solution represented as a ``RootResults`` object.
         Important attributes are: ``root`` the solution , ``converged`` a
-        Boolean flag indicating if the algorithm exited successfully and
+        boolean flag indicating if the algorithm exited successfully and
         ``flag`` which describes the cause of the termination. See
         `RootResults` for a description of other attributes.
 
     See also
     --------
     show_options : Additional options accepted by the solvers
-
-    Notes
-    -----
-    This section describes the available solvers that can be selected by the
-    'method' parameter. The default method is *hybr*.
-
-
-    .. warning::
-
-        The algorithms implemented for methods *diagbroyden*,
-        *linearmixing* and *excitingmixing* may be useful for specific
-        problems, but whether they will work may depend strongly on the
-        problem.
-
-    .. versionadded:: 0.11.0
-
-    References
-    ----------
 
     Examples
     --------
@@ -151,6 +143,7 @@ def root_scalar(f, args=(), method=None, bracket=None,
     (1.0, 11, 22)
 
     The function can provide the value and derivative in a single call.
+
     >>> def f_p_pp(x):
     ...     return (x**3 - 1), 3*x**2, 6*x
 
@@ -172,11 +165,11 @@ def root_scalar(f, args=(), method=None, bracket=None,
         options = {}
 
     # fun also returns the derivative(s)
-    isMemoized = False
+    is_memoized = False
     if fprime2 is not None and not callable(fprime2):
         if bool(fprime2):
             f = MemoizeDer(f)
-            isMemoized = True
+            is_memoized = True
             fprime2 = f.fprime2
             fprime = f.fprime
         else:
@@ -184,7 +177,7 @@ def root_scalar(f, args=(), method=None, bracket=None,
     if fprime is not None and not callable(fprime):
         if bool(fprime):
             f = MemoizeDer(f)
-            isMemoized = True
+            is_memoized = True
             fprime = f.fprime
         else:
             fprime = None
@@ -228,9 +221,9 @@ def root_scalar(f, args=(), method=None, bracket=None,
     else:
         raise ValueError('Unknown solver %s' % method)
 
-    if isMemoized:
+    if is_memoized:
         # Replace the function_calls count with the memoized count.
-        nCalls = f.nCalls
-        sol.function_calls = nCalls
+        n_calls = f.n_calls
+        sol.function_calls = n_calls
 
     return sol
