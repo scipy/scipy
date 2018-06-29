@@ -6,37 +6,24 @@ To run tests locally:
 
 """
 
-import warnings
+import threading
 
 import numpy as np
 
-from numpy.testing import assert_allclose, \
-        assert_array_almost_equal_nulp, run_module_suite, \
-        assert_raises, assert_equal, assert_array_equal
+from numpy.testing import (assert_allclose, assert_array_almost_equal_nulp,
+                           assert_equal, assert_array_equal)
+from pytest import raises as assert_raises
+import pytest
 
 from numpy import dot, conj, random
-from scipy.linalg import eig, eigh
-from scipy.sparse import csc_matrix, csr_matrix, isspmatrix
+from scipy.linalg import eig, eigh, hilbert, svd
+from scipy.sparse import csc_matrix, csr_matrix, isspmatrix, diags
 from scipy.sparse.linalg import LinearOperator, aslinearoperator
 from scipy.sparse.linalg.eigen.arpack import eigs, eigsh, svds, \
      ArpackNoConvergence, arpack
 
-from scipy.linalg import svd, hilbert
-
-from scipy._lib._gcutils import assert_deallocated
-
-
-# eigs() and eigsh() are called many times, so apply a filter for the warnings
-# they generate here.
-_eigs_warn_msg = "Single-precision types in `eigs` and `eighs`"
-
-
-def setup_module():
-    warnings.filterwarnings("ignore", message=_eigs_warn_msg)
-
-
-def teardown_module():
-    warnings.filterwarnings("default", message=_eigs_warn_msg)
+from scipy._lib._gcutils import assert_deallocated, IS_PYPY
+from scipy._lib._numpy_compat import suppress_warnings
 
 
 # precision for tests
@@ -104,7 +91,7 @@ def generate_matrix(N, complex=False, hermitian=False,
             if sparse:
                 i = np.random.randint(N, size=N * N // 4)
                 j = np.random.randint(N, size=N * N // 4)
-                ind = np.where(i == j)
+                ind = np.nonzero(i == j)
                 j[ind] = (j[ind] + 1) % N
                 M[i,j] = 0
                 M[j,i] = 0
@@ -113,6 +100,23 @@ def generate_matrix(N, complex=False, hermitian=False,
             i = np.random.randint(N, size=N * N // 2)
             j = np.random.randint(N, size=N * N // 2)
             M[i,j] = 0
+    return M
+
+
+def generate_matrix_symmetric(N, pos_definite=False, sparse=False):
+    M = np.random.random((N, N))
+
+    M = 0.5 * (M + M.T)  # Make M symmetric
+
+    if pos_definite:
+        Id = N * np.eye(N)
+        if sparse:
+            M = csr_matrix(M)
+        M += Id
+    else:
+        if sparse:
+            M = csr_matrix(M)
+
     return M
 
 
@@ -389,8 +393,8 @@ def test_symmetric_modes():
                 for mattype in params.mattypes:
                     for (sigma, modes) in params.sigmas_modes.items():
                         for mode in modes:
-                            yield (eval_evec, symmetric, D, typ, k, which,
-                                    None, sigma, mattype, None, mode)
+                            eval_evec(symmetric, D, typ, k, which,
+                                      None, sigma, mattype, None, mode)
 
 
 def test_hermitian_modes():
@@ -404,8 +408,8 @@ def test_hermitian_modes():
                     continue  # BE invalid for complex
                 for mattype in params.mattypes:
                     for sigma in params.sigmas_modes:
-                        yield (eval_evec, symmetric, D, typ, k, which,
-                                None, sigma, mattype)
+                        eval_evec(symmetric, D, typ, k, which,
+                                  None, sigma, mattype)
 
 
 def test_symmetric_starting_vector():
@@ -415,7 +419,7 @@ def test_symmetric_starting_vector():
         for D in params.real_test_cases:
             for typ in 'fd':
                 v0 = random.rand(len(D['v0'])).astype(typ)
-                yield (eval_evec, symmetric, D, typ, k, 'LM', v0)
+                eval_evec(symmetric, D, typ, k, 'LM', v0)
 
 
 def test_symmetric_no_convergence():
@@ -423,7 +427,7 @@ def test_symmetric_no_convergence():
     m = generate_matrix(30, hermitian=True, pos_definite=True)
     tol, rtol, atol = _get_test_tolerance('d')
     try:
-        w, v = eigsh(m, 4, which='LM', v0=m[:, 0], maxiter=5, tol=tol)
+        w, v = eigsh(m, 4, which='LM', v0=m[:, 0], maxiter=5, tol=tol, ncv=9)
         raise AssertionError("Spurious no-error exit")
     except ArpackNoConvergence as err:
         k = len(err.eigenvalues)
@@ -443,8 +447,8 @@ def test_real_nonsymmetric_modes():
                 for mattype in params.mattypes:
                     for sigma, OPparts in params.sigmas_OPparts.items():
                         for OPpart in OPparts:
-                            yield (eval_evec, symmetric, D, typ, k, which,
-                                   None, sigma, mattype, OPpart)
+                            eval_evec(symmetric, D, typ, k, which,
+                                      None, sigma, mattype, OPpart)
 
 
 def test_complex_nonsymmetric_modes():
@@ -456,8 +460,8 @@ def test_complex_nonsymmetric_modes():
             for which in params.which:
                 for mattype in params.mattypes:
                     for sigma in params.sigmas_OPparts:
-                        yield (eval_evec, symmetric, D, typ, k, which,
-                               None, sigma, mattype)
+                        eval_evec(symmetric, D, typ, k, which,
+                                  None, sigma, mattype)
 
 
 def test_standard_nonsymmetric_starting_vector():
@@ -470,7 +474,7 @@ def test_standard_nonsymmetric_starting_vector():
                 A = d['mat']
                 n = A.shape[0]
                 v0 = random.rand(n).astype(typ)
-                yield (eval_evec, symmetric, d, typ, k, "LM", v0, sigma)
+                eval_evec(symmetric, d, typ, k, "LM", v0, sigma)
 
 
 def test_general_nonsymmetric_starting_vector():
@@ -483,7 +487,7 @@ def test_general_nonsymmetric_starting_vector():
                 A = d['mat']
                 n = A.shape[0]
                 v0 = random.rand(n).astype(typ)
-                yield (eval_evec, symmetric, d, typ, k, "LM", v0, sigma)
+                eval_evec(symmetric, d, typ, k, "LM", v0, sigma)
 
 
 def test_standard_nonsymmetric_no_convergence():
@@ -510,7 +514,7 @@ def test_eigen_bad_shapes():
 
 def test_eigen_bad_kwargs():
     # Test eigen on wrong keyword argument
-    A = csc_matrix(np.zeros((2, 2)))
+    A = csc_matrix(np.zeros((8, 8)))
     assert_raises(ValueError, eigs, A, which='XX')
 
 
@@ -554,6 +558,21 @@ def sorted_svd(m, k, which='LM'):
 
 def svd_estimate(u, s, vh):
     return np.dot(u, np.dot(np.diag(s), vh))
+
+
+def svd_test_input_check():
+    x = np.array([[1, 2, 3],
+                  [3, 4, 3],
+                  [1, 0, 2],
+                  [0, 0, 1]], float)
+
+    assert_raises(ValueError, svds, x, k=-1)
+    assert_raises(ValueError, svds, x, k=0)
+    assert_raises(ValueError, svds, x, k=10)
+    assert_raises(ValueError, svds, x, k=x.shape[0])
+    assert_raises(ValueError, svds, x, k=x.shape[1])
+    assert_raises(ValueError, svds, x.T, k=x.shape[0])
+    assert_raises(ValueError, svds, x.T, k=x.shape[1])
 
 
 def test_svd_simple_real():
@@ -605,9 +624,9 @@ def test_svd_maxiter():
     x = hilbert(6)
     # ARPACK shouldn't converge on such an ill-conditioned matrix with just
     # one iteration
-    assert_raises(ArpackNoConvergence, svds, x, 1, maxiter=1)
+    assert_raises(ArpackNoConvergence, svds, x, 1, maxiter=1, ncv=3)
     # but 100 iterations should be more than enough
-    u, s, vt = svds(x, 1, maxiter=100)
+    u, s, vt = svds(x, 1, maxiter=100, ncv=3)
     assert_allclose(s, [1.7], atol=0.5)
 
 
@@ -781,6 +800,7 @@ def test_svd_linop():
                                 np.dot(U2, np.dot(np.diag(s2), VH2)), rtol=eps)
 
 
+@pytest.mark.skipif(IS_PYPY, reason="Test not meaningful on PyPy")
 def test_linearoperator_deallocation():
     # Check that the linear operators used by the Arpack wrappers are
     # deallocatable by reference counting -- they are big objects, so
@@ -839,5 +859,107 @@ def test_svds_wrong_eigen_type():
     assert_raises(ValueError, svds, x, 1, which='LA')
 
 
-if __name__ == "__main__":
-    run_module_suite()
+def test_parallel_threads():
+    results = []
+    v0 = np.random.rand(50)
+
+    def worker():
+        x = diags([1, -2, 1], [-1, 0, 1], shape=(50, 50))
+        w, v = eigs(x, k=3, v0=v0)
+        results.append(w)
+
+        w, v = eigsh(x, k=3, v0=v0)
+        results.append(w)
+
+    threads = [threading.Thread(target=worker) for k in range(10)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+
+    worker()
+
+    for r in results:
+        assert_allclose(r, results[-1])
+
+
+def test_reentering():
+    # Just some linear operator that calls eigs recursively
+    def A_matvec(x):
+        x = diags([1, -2, 1], [-1, 0, 1], shape=(50, 50))
+        w, v = eigs(x, k=1)
+        return v / w[0]
+    A = LinearOperator(matvec=A_matvec, dtype=float, shape=(50, 50))
+
+    # The Fortran code is not reentrant, so this fails (gracefully, not crashing)
+    assert_raises(RuntimeError, eigs, A, k=1)
+    assert_raises(RuntimeError, eigsh, A, k=1)
+
+
+def test_regression_arpackng_1315():
+    # Check that issue arpack-ng/#1315 is not present.
+    # Adapted from arpack-ng/TESTS/bug_1315_single.c
+    # If this fails, then the installed ARPACK library is faulty.
+
+    for dtype in [np.float32, np.float64]:
+        np.random.seed(1234)
+
+        w0 = np.arange(1, 1000+1).astype(dtype)
+        A = diags([w0], [0], shape=(1000, 1000))
+
+        v0 = np.random.rand(1000).astype(dtype)
+        w, v = eigs(A, k=9, ncv=2*9+1, which="LM", v0=v0)
+
+        assert_allclose(np.sort(w), np.sort(w0[-9:]),
+                        rtol=1e-4)
+
+
+def test_eigs_for_k_greater():
+    # Test eigs() for k beyond limits.
+    A_sparse = diags([1, -2, 1], [-1, 0, 1], shape=(4, 4))  # sparse
+    A = generate_matrix(4, sparse=False)
+    M_dense = np.random.random((4, 4))
+    M_sparse = generate_matrix(4, sparse=True)
+    M_linop = aslinearoperator(M_dense)
+    eig_tuple1 = eig(A, b=M_dense)
+    eig_tuple2 = eig(A, b=M_sparse)
+
+    with suppress_warnings() as sup:
+        sup.filter(RuntimeWarning)
+
+        assert_equal(eigs(A, M=M_dense, k=3), eig_tuple1)
+        assert_equal(eigs(A, M=M_dense, k=4), eig_tuple1)
+        assert_equal(eigs(A, M=M_dense, k=5), eig_tuple1)
+        assert_equal(eigs(A, M=M_sparse, k=5), eig_tuple2)
+
+        # M as LinearOperator
+        assert_raises(TypeError, eigs, A, M=M_linop, k=3)
+
+        # Test 'A' for different types
+        assert_raises(TypeError, eigs, aslinearoperator(A), k=3)
+        assert_raises(TypeError, eigs, A_sparse, k=3)
+
+
+def test_eigsh_for_k_greater():
+    # Test eigsh() for k beyond limits.
+    A_sparse = diags([1, -2, 1], [-1, 0, 1], shape=(4, 4))  # sparse
+    A = generate_matrix(4, sparse=False)
+    M_dense = generate_matrix_symmetric(4, pos_definite=True)
+    M_sparse = generate_matrix_symmetric(4, pos_definite=True, sparse=True)
+    M_linop = aslinearoperator(M_dense)
+    eig_tuple1 = eigh(A, b=M_dense)
+    eig_tuple2 = eigh(A, b=M_sparse)
+
+    with suppress_warnings() as sup:
+        sup.filter(RuntimeWarning)
+
+        assert_equal(eigsh(A, M=M_dense, k=4), eig_tuple1)
+        assert_equal(eigsh(A, M=M_dense, k=5), eig_tuple1)
+        assert_equal(eigsh(A, M=M_sparse, k=5), eig_tuple2)
+
+        # M as LinearOperator
+        assert_raises(TypeError, eigsh, A, M=M_linop, k=4)
+
+        # Test 'A' for different types
+        assert_raises(TypeError, eigsh, aslinearoperator(A), k=4)
+        assert_raises(TypeError, eigsh, A_sparse, M=M_dense, k=4)

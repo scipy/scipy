@@ -5,7 +5,7 @@ Half-Logistic Distribution
 ==========================
 
 In the limit as :math:`c\rightarrow\infty` for the generalized half-logistic we have the half-logistic defined
-over :math:`x\geq0.` Also, the distribution of :math:`\left|X\right|` where :math:`X` has logistic distribtution.
+over :math:`x\geq0.` Also, the distribution of :math:`\left|X\right|` where :math:`X` has logistic distribution.
 
 .. math::
    :nowrap:

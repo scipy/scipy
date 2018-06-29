@@ -1,8 +1,7 @@
 r"""
 
-=================
 Nonlinear solvers
-=================
+-----------------
 
 .. currentmodule:: scipy.optimize
 
@@ -11,7 +10,7 @@ solvers.  These solvers find *x* for which *F(x) = 0*. Both *x*
 and *F* can be multidimensional.
 
 Routines
-========
+~~~~~~~~
 
 Large-scale nonlinear solvers:
 
@@ -37,10 +36,9 @@ Simple iterations:
 
 
 Examples
-========
+~~~~~~~~
 
-Small problem
--------------
+**Small problem**
 
 >>> def F(x):
 ...    return np.cos(x) + x[::-1] - [1, 2, 3, 4]
@@ -52,8 +50,7 @@ array([ 4.04674914,  3.91158389,  2.71791677,  1.61756251])
 array([ 1.,  2.,  3.,  4.])
 
 
-Large problem
--------------
+**Large problem**
 
 Suppose that we needed to solve the following integrodifferential
 equation on the square :math:`[0,1]\times[0,1]`:
@@ -114,14 +111,14 @@ from __future__ import division, print_function, absolute_import
 
 import sys
 import numpy as np
-from scipy._lib.six import callable, exec_
-from scipy._lib.six import xrange
+from scipy._lib.six import callable, exec_, xrange
 from scipy.linalg import norm, solve, inv, qr, svd, LinAlgError
 from numpy import asarray, dot, vdot
 import scipy.sparse.linalg
 import scipy.sparse
 from scipy.linalg import get_blas_funcs
 import inspect
+from scipy._lib._util import getargspec_no_self as _getargspec
 from .linesearch import scalar_search_wolfe1, scalar_search_armijo
 
 
@@ -166,12 +163,13 @@ def _safe_norm(v):
 # Generic nonlinear solver machinery
 #------------------------------------------------------------------------------
 
+
 _doc_parts = dict(
     params_basic="""
     F : function(x) -> f
         Function whose root to find; should take and return an array-like
         object.
-    x0 : array_like
+    xin : array_like
         Initial guess for the solution
     """.strip(),
     params_extra="""
@@ -263,7 +261,7 @@ def nonlin_solve(F, x0, jacobian='krylov', iter=None, verbose=False,
     ----------
     .. [KIM] C. T. Kelley, \"Iterative Methods for Linear and Nonlinear
        Equations\". Society for Industrial and Applied Mathematics. (1995)
-       http://www.siam.org/books/kelley/
+       https://archive.siam.org/books/kelley/fr16/
 
     """
 
@@ -365,6 +363,7 @@ def nonlin_solve(F, x0, jacobian='krylov', iter=None, verbose=False,
         return _array_like(x, x0), info
     else:
         return _array_like(x, x0)
+
 
 _set_doc(nonlin_solve)
 
@@ -546,7 +545,7 @@ class Jacobian(object):
         self.dtype = F.dtype
         if self.__class__.setup is Jacobian.setup:
             # Call on the first point unless overridden
-            self.update(self, x, F)
+            self.update(x, F)
 
 
 class InverseJacobian(object):
@@ -846,7 +845,7 @@ class LowRankMatrix(object):
            systems of nonlinear equations\". Mathematisch Instituut,
            Universiteit Leiden, The Netherlands (2003).
 
-           http://www.math.leidenuniv.nl/scripties/Rotten.pdf
+           https://web.archive.org/web/20161022015821/http://www.math.leidenuniv.nl/scripties/Rotten.pdf
 
         """
         if self.collapsed is not None:
@@ -884,6 +883,7 @@ class LowRankMatrix(object):
 
         del self.cs[q:]
         del self.ds[q:]
+
 
 _doc_parts['broyden_params'] = """
     alpha : float, optional
@@ -939,7 +939,7 @@ class BroydenFirst(GenericBroyden):
        systems of nonlinear equations\". Mathematisch Instituut,
        Universiteit Leiden, The Netherlands (2003).
 
-       http://www.math.leidenuniv.nl/scripties/Rotten.pdf
+       https://web.archive.org/web/20161022015821/http://www.math.leidenuniv.nl/scripties/Rotten.pdf
 
     """
 
@@ -1018,7 +1018,7 @@ class BroydenSecond(BroydenFirst):
     -----
     This algorithm implements the inverse Jacobian Quasi-Newton update
 
-    .. math:: H_+ = H + (dx - H df) df^\dagger / ( df^\dagger df)
+    .. math:: H_+ = H + (dx - H df) df^\\dagger / ( df^\\dagger df)
 
     corresponding to Broyden's second method.
 
@@ -1029,7 +1029,7 @@ class BroydenSecond(BroydenFirst):
        systems of nonlinear equations\". Mathematisch Instituut,
        Universiteit Leiden, The Netherlands (2003).
 
-       http://www.math.leidenuniv.nl/scripties/Rotten.pdf
+       https://web.archive.org/web/20161022015821/http://www.math.leidenuniv.nl/scripties/Rotten.pdf
 
     """
 
@@ -1394,10 +1394,10 @@ class KrylovJacobian(Jacobian):
     References
     ----------
     .. [1] D.A. Knoll and D.E. Keyes, J. Comp. Phys. 193, 357 (2004).
-           doi:10.1016/j.jcp.2003.08.010
+           :doi:`10.1016/j.jcp.2003.08.010`
     .. [2] A.H. Baker and E.R. Jessup and T. Manteuffel,
            SIAM J. Matrix Anal. Appl. 26, 962 (2005).
-           doi:10.1137/S0895479803422014
+           :doi:`10.1137/S0895479803422014`
 
     """
 
@@ -1419,12 +1419,16 @@ class KrylovJacobian(Jacobian):
             # Replace GMRES's outer iteration with Newton steps
             self.method_kw['restrt'] = inner_maxiter
             self.method_kw['maxiter'] = 1
+            self.method_kw.setdefault('atol', 0)
+        elif self.method is scipy.sparse.linalg.gcrotmk:
+            self.method_kw.setdefault('atol', 0)
         elif self.method is scipy.sparse.linalg.lgmres:
             self.method_kw['outer_k'] = outer_k
             # Replace LGMRES's outer iteration with Newton steps
             self.method_kw['maxiter'] = 1
             # Carry LGMRES's `outer_v` vectors across nonlinear iterations
             self.method_kw.setdefault('outer_v', [])
+            self.method_kw.setdefault('prepend_outer_v', True)
             # But don't carry the corresponding Jacobian*v products, in case
             # the Jacobian changes a lot in the nonlinear step
             #
@@ -1432,6 +1436,7 @@ class KrylovJacobian(Jacobian):
             #      See eg. Brown & Saad. But needs to be implemented separately
             #      since it's not an inexact Newton method.
             self.method_kw.setdefault('store_outer_Av', False)
+            self.method_kw.setdefault('atol', 0)
 
         for key, value in kw.items():
             if not key.startswith('inner_'):
@@ -1500,8 +1505,7 @@ def _nonlin_wrapper(name, jac):
     keyword arguments of `nonlin_solve`
 
     """
-    import inspect
-    args, varargs, varkw, defaults = inspect.getargspec(jac.__init__)
+    args, varargs, varkw, defaults = _getargspec(jac.__init__)
     kwargs = list(zip(args[-len(defaults):], defaults))
     kw_str = ", ".join(["%s=%r" % (k, v) for k, v in kwargs])
     if kw_str:
@@ -1531,6 +1535,7 @@ def %(name)s(F, xin, iter=None %(kw)s, verbose=False, maxiter=None,
     func.__doc__ = jac.__doc__
     _set_doc(func)
     return func
+
 
 broyden1 = _nonlin_wrapper('broyden1', BroydenFirst)
 broyden2 = _nonlin_wrapper('broyden2', BroydenSecond)

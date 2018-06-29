@@ -12,10 +12,9 @@ from __future__ import division, print_function, absolute_import
 
 
 __all__ = ['argstoarray',
-           'betai',
            'count_tied_groups',
            'describe',
-           'f_oneway','f_value_wilks_lambda','find_repeats','friedmanchisquare',
+           'f_oneway', 'find_repeats','friedmanchisquare',
            'kendalltau','kendalltau_seasonal','kruskal','kruskalwallis',
            'ks_twosamp','ks_2samp','kurtosis','kurtosistest',
            'linregress',
@@ -25,13 +24,14 @@ __all__ = ['argstoarray',
            'pearsonr','plotting_positions','pointbiserialr',
            'rankdata',
            'scoreatpercentile','sem',
-           'sen_seasonal_slopes','signaltonoise','skew','skewtest','spearmanr',
-           'theilslopes','threshold','tmax','tmean','tmin','trim','trimboth',
+           'sen_seasonal_slopes','skew','skewtest','spearmanr',
+           'theilslopes','tmax','tmean','tmin','trim','trimboth',
            'trimtail','trima','trimr','trimmed_mean','trimmed_std',
            'trimmed_stde','trimmed_var','tsem','ttest_1samp','ttest_onesamp',
            'ttest_ind','ttest_rel','tvar',
            'variation',
            'winsorize',
+           'brunnermunzel',
            ]
 
 import numpy as np
@@ -47,8 +47,8 @@ from collections import namedtuple
 
 from . import distributions
 import scipy.special as special
-from . import futil
 from ._stats_mstats_common import (
+        _find_repeats,
         linregress as stats_linregress,
         theilslopes as stats_theilslopes
         )
@@ -137,7 +137,8 @@ def argstoarray(*args):
 
 def find_repeats(arr):
     """Find repeats in arr and return a tuple (repeats, repeat_count).
-    Masked values are discarded.
+
+    The input is cast to float64. Masked values are discarded.
 
     Parameters
     ----------
@@ -152,12 +153,18 @@ def find_repeats(arr):
         Array of counts.
 
     """
-    marr = ma.compressed(arr)
-    if not marr.size:
-        return (np.array(0), np.array(0))
-
-    (v1, v2, n) = futil.dfreps(ma.array(ma.compressed(arr), copy=True))
-    return (v1[:n], v2[:n])
+    # Make sure we get a copy. ma.compressed promises a "new array", but can
+    # actually return a reference.
+    compr = np.asarray(ma.compressed(arr), dtype=np.float64)
+    try:
+        need_copy = np.may_share_memory(compr, arr)
+    except AttributeError:
+        # numpy < 1.8.2 bug: np.may_share_memory([], []) raises,
+        # while in numpy 1.8.2 and above it just (correctly) returns False.
+        need_copy = False
+    if need_copy:
+        compr = compr.copy()
+    return _find_repeats(compr)
 
 
 def count_tied_groups(x, use_missing=False):
@@ -259,6 +266,9 @@ def rankdata(data, axis=None, use_missing=False):
         return ma.apply_along_axis(_rank1d,axis,data,use_missing).view(ndarray)
 
 
+ModeResult = namedtuple('ModeResult', ('mode', 'count'))
+
+
 def mode(a, axis=0):
     """
     Returns an array of the modal (most common) value in the passed array.
@@ -282,6 +292,16 @@ def mode(a, axis=0):
     -----
     For more details, see `stats.mode`.
 
+    Examples
+    --------
+    >>> from scipy import stats
+    >>> from scipy.stats import mstats
+    >>> m_arr = np.ma.array([1, 1, 0, 0, 0, 0], mask=[0, 0, 1, 1, 1, 0])
+    >>> stats.mode(m_arr)
+    ModeResult(mode=array([0]), count=array([4]))
+    >>> mstats.mode(m_arr)
+    ModeResult(mode=array([1.]), count=array([2.]))
+
     """
     a, axis = _chk_asarray(a, axis)
 
@@ -292,9 +312,7 @@ def mode(a, axis=0):
         elif cnt.size:
             return (rep[cnt.argmax()], cnt.max())
         else:
-            not_masked_indices = ma.flatnotmasked_edges(a)
-            first_not_masked_index = not_masked_indices[0]
-            return (a[first_not_masked_index], 1)
+            return (a.min(), 1)
 
     if axis is None:
         output = _mode1D(ma.ravel(a))
@@ -310,19 +328,7 @@ def mode(a, axis=0):
         counts = output[tuple(slices)].reshape(newshape)
         output = (modes, counts)
 
-    ModeResult = namedtuple('ModeResult', ('mode', 'count'))
     return ModeResult(*output)
-
-
-@np.deprecate(message="mstats.betai is deprecated in scipy 0.17.0; "
-              "use special.betainc instead.")
-def betai(a, b, x):
-    """
-    betai() is deprecated in scipy 0.17.0.
-
-    For details about this function, see `stats.betai`.
-    """
-    return _betai(a, b, x)
 
 
 def _betai(a, b, x):
@@ -390,7 +396,6 @@ def pearsonr(x,y):
     # point arithmetic.
     r = min(r, 1.0)
     r = max(r, -1.0)
-    df = n - 2
 
     if r is masked or abs(r) == 1.0:
         prob = 0.
@@ -399,6 +404,9 @@ def pearsonr(x,y):
         prob = _betai(0.5*df, 0.5, df/(df + t_squared))
 
     return r, prob
+
+
+SpearmanrResult = namedtuple('SpearmanrResult', ('correlation', 'pvalue'))
 
 
 def spearmanr(x, y, use_ties=True):
@@ -411,7 +419,7 @@ def spearmanr(x, y, use_ties=True):
     Spearman correlation does not assume that both datasets are normally
     distributed. Like other correlation coefficients, this one varies
     between -1 and +1 with 0 implying no correlation. Correlations of -1 or
-    +1 imply an exact linear relationship. Positive correlations imply that
+    +1 imply a monotonic relationship. Positive correlations imply that
     as `x` increases, so does `y`. Negative correlations imply that as `x`
     increases, `y` decreases.
 
@@ -448,7 +456,10 @@ def spearmanr(x, y, use_ties=True):
     (x, y) = (x.ravel(), y.ravel())
 
     m = ma.mask_or(ma.getmask(x), ma.getmask(y))
-    n -= m.sum()
+    # need int() here, otherwise numpy defaults to 32 bit
+    # integer on all Windows architectures, causing overflow.
+    # int() will keep it infinite precision.
+    n -= int(m.sum())
     if m is not nomask:
         x = ma.array(x, mask=m, copy=True)
         y = ma.array(y, mask=m, copy=True)
@@ -464,8 +475,8 @@ def spearmanr(x, y, use_ties=True):
     if use_ties:
         xties = count_tied_groups(x)
         yties = count_tied_groups(y)
-        corr_x = np.sum(v*k*(k**2-1) for (k,v) in iteritems(xties))/12.
-        corr_y = np.sum(v*k*(k**2-1) for (k,v) in iteritems(yties))/12.
+        corr_x = sum(v*k*(k**2-1) for (k,v) in iteritems(xties))/12.
+        corr_y = sum(v*k*(k**2-1) for (k,v) in iteritems(yties))/12.
     else:
         corr_x = corr_y = 0
 
@@ -482,11 +493,13 @@ def spearmanr(x, y, use_ties=True):
     else:
         prob = _betai(0.5*df, 0.5, df/(df + t * t))
 
-    SpearmanrResult = namedtuple('SpearmanrResult', ('correlation', 'pvalue'))
     return SpearmanrResult(rho, prob)
 
 
-def kendalltau(x, y, use_ties=True, use_missing=False):
+KendalltauResult = namedtuple('KendalltauResult', ('correlation', 'pvalue'))
+
+
+def kendalltau(x, y, use_ties=True, use_missing=False, method='auto'):
     """
     Computes Kendall's rank correlation tau on two variables *x* and *y*.
 
@@ -501,6 +514,12 @@ def kendalltau(x, y, use_ties=True, use_missing=False):
     use_missing : {False, True}, optional
         Whether missing data should be allocated a rank of 0 (False) or the
         average rank (True)
+    method: {'auto', 'asymptotic', 'exact'}, optional
+        Defines which method is used to calculate the p-value [1]_.
+        'asymptotic' uses a normal approximation valid for large samples.
+        'exact' computes the exact p-value, but can only be used if no ties
+        are present. 'auto' is the default and selects the appropriate
+        method based on a trade-off between speed and accuracy.
 
     Returns
     -------
@@ -509,6 +528,11 @@ def kendalltau(x, y, use_ties=True, use_missing=False):
     pvalue : float
         Approximate 2-side p-value.
 
+    References
+    ----------
+    .. [1] Maurice G. Kendall, "Rank Correlation Methods" (4th Edition),
+           Charles Griffin & Co., 1970.
+
     """
     (x, y, n) = _chk_size(x, y)
     (x, y) = (x.flatten(), y.flatten())
@@ -516,9 +540,10 @@ def kendalltau(x, y, use_ties=True, use_missing=False):
     if m is not nomask:
         x = ma.array(x, mask=m, copy=True)
         y = ma.array(y, mask=m, copy=True)
-        n -= m.sum()
-
-    KendalltauResult = namedtuple('KendalltauResult', ('correlation', 'pvalue'))
+        # need int() here, otherwise numpy defaults to 32 bit
+        # integer on all Windows architectures, causing overflow.
+        # int() will keep it infinite precision.
+        n -= int(m.sum())
 
     if n < 2:
         return KendalltauResult(np.nan, np.nan)
@@ -531,9 +556,9 @@ def kendalltau(x, y, use_ties=True, use_missing=False):
                 for i in range(len(ry)-1)], dtype=float)
     D = np.sum([((ry[i+1:] < ry[i])*(rx[i+1:] > rx[i])).filled(0).sum()
                 for i in range(len(ry)-1)], dtype=float)
+    xties = count_tied_groups(x)
+    yties = count_tied_groups(y)
     if use_ties:
-        xties = count_tied_groups(x)
-        yties = count_tied_groups(y)
         corr_x = np.sum([v*k*(k-1) for (k,v) in iteritems(xties)], dtype=float)
         corr_y = np.sum([v*k*(k-1) for (k,v) in iteritems(yties)], dtype=float)
         denom = ma.sqrt((n*(n-1)-corr_x)/2. * (n*(n-1)-corr_y)/2.)
@@ -541,28 +566,68 @@ def kendalltau(x, y, use_ties=True, use_missing=False):
         denom = n*(n-1)/2.
     tau = (C-D) / denom
 
-    var_s = n*(n-1)*(2*n+5)
-    if use_ties:
-        var_s -= np.sum(v*k*(k-1)*(2*k+5)*1. for (k,v) in iteritems(xties))
-        var_s -= np.sum(v*k*(k-1)*(2*k+5)*1. for (k,v) in iteritems(yties))
-        v1 = np.sum([v*k*(k-1) for (k, v) in iteritems(xties)], dtype=float) *\
-             np.sum([v*k*(k-1) for (k, v) in iteritems(yties)], dtype=float)
-        v1 /= 2.*n*(n-1)
-        if n > 2:
-            v2 = np.sum([v*k*(k-1)*(k-2) for (k,v) in iteritems(xties)],
-                        dtype=float) * \
-                 np.sum([v*k*(k-1)*(k-2) for (k,v) in iteritems(yties)],
-                        dtype=float)
-            v2 /= 9.*n*(n-1)*(n-2)
-        else:
-            v2 = 0
-    else:
-        v1 = v2 = 0
+    if method == 'exact' and (xties or yties):
+        raise ValueError("Ties found, exact method cannot be used.")
 
-    var_s /= 18.
-    var_s += (v1 + v2)
-    z = (C-D)/np.sqrt(var_s)
-    prob = special.erfc(abs(z)/np.sqrt(2))
+    if method == 'auto':
+        if (not xties and not yties) and (n <= 33 or min(C, n*(n-1)/2.0-C) <= 1):
+            method = 'exact'
+        else:
+            method = 'asymptotic'
+
+    if not xties and not yties and method == 'exact':
+        # Exact p-value, see Maurice G. Kendall, "Rank Correlation Methods" (4th Edition), Charles Griffin & Co., 1970.
+        c = int(min(C, (n*(n-1))/2-C))
+        if n <= 0:
+            raise ValueError
+        elif c < 0 or 2*c > n*(n-1):
+            raise ValueError
+        elif n == 1:
+            prob = 1.0
+        elif n == 2:
+            prob = 1.0
+        elif c == 0:
+            prob = 2.0/np.math.factorial(n)
+        elif c == 1:
+            prob = 2.0/np.math.factorial(n-1)
+        else:
+            old = [0.0]*(c+1)
+            new = [0.0]*(c+1)
+            new[0] = 1.0
+            new[1] = 1.0
+            for j in range(3,n+1):
+                old = new[:]
+                for k in range(1,min(j,c+1)):
+                    new[k] += new[k-1]
+                for k in range(j,c+1):
+                    new[k] += new[k-1] - old[k-j]
+            prob = 2.0*sum(new)/np.math.factorial(n)
+    elif method == 'asymptotic':
+        var_s = n*(n-1)*(2*n+5)
+        if use_ties:
+            var_s -= np.sum([v*k*(k-1)*(2*k+5)*1. for (k,v) in iteritems(xties)])
+            var_s -= np.sum([v*k*(k-1)*(2*k+5)*1. for (k,v) in iteritems(yties)])
+            v1 = np.sum([v*k*(k-1) for (k, v) in iteritems(xties)], dtype=float) *\
+                 np.sum([v*k*(k-1) for (k, v) in iteritems(yties)], dtype=float)
+            v1 /= 2.*n*(n-1)
+            if n > 2:
+                v2 = np.sum([v*k*(k-1)*(k-2) for (k,v) in iteritems(xties)],
+                            dtype=float) * \
+                     np.sum([v*k*(k-1)*(k-2) for (k,v) in iteritems(yties)],
+                            dtype=float)
+                v2 /= 9.*n*(n-1)*(n-2)
+            else:
+                v2 = 0
+        else:
+            v1 = v2 = 0
+
+        var_s /= 18.
+        var_s += (v1 + v2)
+        z = (C-D)/np.sqrt(var_s)
+        prob = special.erfc(abs(z)/np.sqrt(2))
+    else:
+        raise ValueError("Unknown method "+str(method)+" specified, please use auto, exact or asymptotic.")
+
     return KendalltauResult(tau, prob)
 
 
@@ -580,12 +645,12 @@ def kendalltau_seasonal(x):
     (n,m) = x.shape
     n_p = x.count(0)
 
-    S_szn = np.sum(msign(x[i:]-x[i]).sum(0) for i in range(n))
+    S_szn = sum(msign(x[i:]-x[i]).sum(0) for i in range(n))
     S_tot = S_szn.sum()
 
     n_tot = x.count()
     ties = count_tied_groups(x.compressed())
-    corr_ties = np.sum(v*k*(k-1) for (k,v) in iteritems(ties))
+    corr_ties = sum(v*k*(k-1) for (k,v) in iteritems(ties))
     denom_tot = ma.sqrt(1.*n_tot*(n_tot-1)*(n_tot*(n_tot-1)-corr_ties))/2.
 
     R = rankdata(x, axis=0, use_missing=True)
@@ -594,10 +659,10 @@ def kendalltau_seasonal(x):
     denom_szn = ma.empty(m, dtype=float)
     for j in range(m):
         ties_j = count_tied_groups(x[:,j].compressed())
-        corr_j = np.sum(v*k*(k-1) for (k,v) in iteritems(ties_j))
+        corr_j = sum(v*k*(k-1) for (k,v) in iteritems(ties_j))
         cmb = n_p[j]*(n_p[j]-1)
         for k in range(j,m,1):
-            K[j,k] = np.sum(msign((x[i:,j]-x[i,j])*(x[i:,k]-x[i,k])).sum()
+            K[j,k] = sum(msign((x[i:,j]-x[i,j])*(x[i:,k]-x[i,k])).sum()
                                for i in range(n))
             covmat[j,k] = (K[j,k] + 4*(R[:,j]*R[:,k]).sum() -
                            n*(n_p[j]+1)*(n_p[k]+1))/3.
@@ -628,6 +693,10 @@ def kendalltau_seasonal(x):
               'chi2 trend': chi2_trd,
               }
     return output
+
+
+PointbiserialrResult = namedtuple('PointbiserialrResult', ('correlation',
+                                                           'pvalue'))
 
 
 def pointbiserialr(x, y):
@@ -678,12 +747,15 @@ def pointbiserialr(x, y):
     t = rpb*ma.sqrt(df/(1.0-rpb**2))
     prob = _betai(0.5*df, 0.5, df/(df+t*t))
 
-    PointbiserialrResult = namedtuple('PointbiserialrResult', ('correlation',
-                                                               'pvalue'))
     return PointbiserialrResult(rpb, prob)
 
 
-def linregress(*args):
+LinregressResult = namedtuple('LinregressResult', ('slope', 'intercept',
+                                                   'rvalue', 'pvalue',
+                                                   'stderr'))
+
+
+def linregress(x, y=None):
     """
     Linear regression calculation
 
@@ -691,19 +763,22 @@ def linregress(*args):
     replaced by the non-masked docstring + some info on missing data.
 
     """
-    if len(args) == 1:
-        # Input is a single 2-D array containing x and y
-        args = ma.array(args[0], copy=True)
-        if len(args) == 2:
-            x = args[0]
-            y = args[1]
+    if y is None:
+        x = ma.array(x)
+        if x.shape[0] == 2:
+            x, y = x
+        elif x.shape[1] == 2:
+            x, y = x.T
         else:
-            x = args[:, 0]
-            y = args[:, 1]
+            msg = ("If only `x` is given as input, it has to be of shape "
+                   "(2, N) or (N, 2), provided shape was %s" % str(x.shape))
+            raise ValueError(msg)
     else:
-        # Input is two 1-D arrays
-        x = ma.array(args[0]).flatten()
-        y = ma.array(args[1]).flatten()
+        x = ma.array(x)
+        y = ma.array(y)
+
+    x = x.flatten()
+    y = y.flatten()
 
     m = ma.mask_or(ma.getmask(x), ma.getmask(y), shrink=False)
     if m is not nomask:
@@ -718,10 +793,8 @@ def linregress(*args):
     else:
         slope, intercept, r, prob, sterrest = stats_linregress(x.data, y.data)
 
-    LinregressResult = namedtuple('LinregressResult', ('slope', 'intercept',
-                                                       'rvalue', 'pvalue',
-                                                       'stderr'))
     return LinregressResult(slope, intercept, r, prob, sterrest)
+
 
 if stats_linregress.__doc__:
     linregress.__doc__ = stats_linregress.__doc__ + genmissingvaldoc
@@ -789,6 +862,9 @@ def sen_seasonal_slopes(x):
     return szn_medslopes, medslope
 
 
+Ttest_1sampResult = namedtuple('Ttest_1sampResult', ('statistic', 'pvalue'))
+
+
 def ttest_1samp(a, popmean, axis=0):
     """
     Calculates the T-test for the mean of ONE group of scores.
@@ -823,14 +899,20 @@ def ttest_1samp(a, popmean, axis=0):
     x = a.mean(axis=axis)
     v = a.var(axis=axis, ddof=1)
     n = a.count(axis=axis)
-    df = n - 1.
-    svar = ((n - 1) * v) / df
-    t = (x - popmean) / ma.sqrt(svar / n)
-    prob = _betai(0.5*df, 0.5, df/(df + t*t))
+    # force df to be an array for masked division not to throw a warning
+    df = ma.asanyarray(n - 1.0)
+    svar = ((n - 1.0) * v) / df
+    with np.errstate(divide='ignore', invalid='ignore'):
+        t = (x - popmean) / ma.sqrt(svar / n)
+    prob = special.betainc(0.5*df, 0.5, df/(df + t*t))
 
-    Ttest_1sampResult = namedtuple('Ttest_1sampResult', ('statistic', 'pvalue'))
     return Ttest_1sampResult(t, prob)
+
+
 ttest_onesamp = ttest_1samp
+
+
+Ttest_indResult = namedtuple('Ttest_indResult', ('statistic', 'pvalue'))
 
 
 def ttest_ind(a, b, axis=0, equal_var=True):
@@ -866,7 +948,6 @@ def ttest_ind(a, b, axis=0, equal_var=True):
     """
     a, b, axis = _chk2_asarray(a, b, axis)
 
-    Ttest_indResult = namedtuple('Ttest_indResult', ('statistic', 'pvalue'))
     if a.size == 0 or b.size == 0:
         return Ttest_indResult(np.nan, np.nan)
 
@@ -875,24 +956,29 @@ def ttest_ind(a, b, axis=0, equal_var=True):
     (n1, n2) = (a.count(axis), b.count(axis))
 
     if equal_var:
-        df = n1 + n2 - 2.
+        # force df to be an array for masked division not to throw a warning
+        df = ma.asanyarray(n1 + n2 - 2.0)
         svar = ((n1-1)*v1+(n2-1)*v2) / df
         denom = ma.sqrt(svar*(1.0/n1 + 1.0/n2))  # n-D computation here!
     else:
         vn1 = v1/n1
         vn2 = v2/n2
-        df = ((vn1 + vn2)**2) / ((vn1**2) / (n1 - 1) + (vn2**2) / (n2 - 1))
+        with np.errstate(divide='ignore', invalid='ignore'):
+            df = (vn1 + vn2)**2 / (vn1**2 / (n1 - 1) + vn2**2 / (n2 - 1))
 
         # If df is undefined, variances are zero.
         # It doesn't matter what df is as long as it is not NaN.
         df = np.where(np.isnan(df), 1, df)
         denom = ma.sqrt(vn1 + vn2)
 
-    t = (x1-x2) / denom
-    t = ma.filled(t, 1)           # replace NaN t-values with 1.0
-    probs = _betai(0.5*df, 0.5, df/(df + t*t)).reshape(t.shape)
+    with np.errstate(divide='ignore', invalid='ignore'):
+        t = (x1-x2) / denom
+    probs = special.betainc(0.5*df, 0.5, df/(df + t*t)).reshape(t.shape)
 
     return Ttest_indResult(t, probs.squeeze())
+
+
+Ttest_relResult = namedtuple('Ttest_relResult', ('statistic', 'pvalue'))
 
 
 def ttest_rel(a, b, axis=0):
@@ -923,19 +1009,25 @@ def ttest_rel(a, b, axis=0):
     if len(a) != len(b):
         raise ValueError('unequal length arrays')
 
-    Ttest_relResult = namedtuple('Ttest_relResult', ('statistic', 'pvalue'))
     if a.size == 0 or b.size == 0:
         return Ttest_relResult(np.nan, np.nan)
 
     n = a.count(axis)
-    df = (n-1.0)
+    df = ma.asanyarray(n-1.0)
     d = (a-b).astype('d')
-    denom = ma.sqrt((n*ma.add.reduce(d*d,axis) - ma.add.reduce(d,axis)**2) / df)
-    t = ma.add.reduce(d, axis) / denom
-    t = ma.filled(t, 1)
-    probs = _betai(0.5*df, 0.5, df/(df + t*t)).reshape(t.shape).squeeze()
+    dm = d.mean(axis)
+    v = d.var(axis=axis, ddof=1)
+    denom = ma.sqrt(v / n)
+    with np.errstate(divide='ignore', invalid='ignore'):
+        t = dm / denom
+
+    probs = special.betainc(0.5*df, 0.5, df/(df + t*t)).reshape(t.shape).squeeze()
 
     return Ttest_relResult(t, probs)
+
+
+MannwhitneyuResult = namedtuple('MannwhitneyuResult', ('statistic',
+                                                       'pvalue'))
 
 
 def mannwhitneyu(x,y, use_continuity=True):
@@ -973,7 +1065,7 @@ def mannwhitneyu(x,y, use_continuity=True):
     mu = (nx*ny)/2.
     sigsq = (nt**3 - nt)/12.
     ties = count_tied_groups(ranks)
-    sigsq -= np.sum(v*(k**3-k) for (k,v) in iteritems(ties))/12.
+    sigsq -= sum(v*(k**3-k) for (k,v) in iteritems(ties))/12.
     sigsq *= nx*ny/float(nt*(nt-1))
 
     if use_continuity:
@@ -982,10 +1074,10 @@ def mannwhitneyu(x,y, use_continuity=True):
         z = (U - mu) / ma.sqrt(sigsq)
 
     prob = special.erfc(abs(z)/np.sqrt(2))
-
-    MannwhitneyuResult = namedtuple('MannwhitneyuResult', ('statistic',
-                                                           'pvalue'))
     return MannwhitneyuResult(u, prob)
+
+
+KruskalResult = namedtuple('KruskalResult', ('statistic', 'pvalue'))
 
 
 def kruskal(*args):
@@ -1019,16 +1111,16 @@ def kruskal(*args):
     H = 12./(ntot*(ntot+1)) * (sumrk**2/ngrp).sum() - 3*(ntot+1)
     # Tie correction
     ties = count_tied_groups(ranks)
-    T = 1. - np.sum(v*(k**3-k) for (k,v) in iteritems(ties))/float(ntot**3-ntot)
+    T = 1. - sum(v*(k**3-k) for (k,v) in iteritems(ties))/float(ntot**3-ntot)
     if T == 0:
         raise ValueError('All numbers are identical in kruskal')
 
     H /= T
     df = len(output) - 1
     prob = distributions.chi2.sf(H, df)
-
-    KruskalResult = namedtuple('KruskalResult', ('statistic', 'pvalue'))
     return KruskalResult(H, prob)
+
+
 kruskalwallis = kruskal
 
 
@@ -1080,46 +1172,9 @@ def ks_twosamp(data1, data2, alternative="two-sided"):
                          "should be in 'two-sided', 'less' or 'greater'")
 
     return (d, prob)
+
+
 ks_2samp = ks_twosamp
-
-
-@np.deprecate(message="mstats.threshold is deprecated in scipy 0.17.0")
-def threshold(a, threshmin=None, threshmax=None, newval=0):
-    """
-    Clip array to a given value.
-
-    Similar to numpy.clip(), except that values less than `threshmin` or
-    greater than `threshmax` are replaced by `newval`, instead of by
-    `threshmin` and `threshmax` respectively.
-
-    Parameters
-    ----------
-    a : ndarray
-        Input data
-    threshmin : {None, float}, optional
-        Lower threshold. If None, set to the minimum value.
-    threshmax : {None, float}, optional
-        Upper threshold. If None, set to the maximum value.
-    newval : {0, float}, optional
-        Value outside the thresholds.
-
-    Returns
-    -------
-    threshold : ndarray
-        Returns `a`, with values less then `threshmin` and values greater
-        `threshmax` replaced with `newval`.
-
-    """
-    a = ma.array(a, copy=True)
-    mask = np.zeros(a.shape, dtype=bool)
-    if threshmin is not None:
-        mask |= (a < threshmin).filled(False)
-
-    if threshmax is not None:
-        mask |= (a > threshmax).filled(False)
-
-    a[mask] = newval
-    return a
 
 
 def trima(a, limits=None, inclusive=(True,True)):
@@ -1231,6 +1286,7 @@ def trimr(a, limits=None, inclusive=(True, True), axis=None):
     else:
         return ma.apply_along_axis(_trimr1D, axis, a, lolim,uplim,loinc,upinc)
 
+
 trimdoc = """
     Parameters
     ----------
@@ -1287,6 +1343,7 @@ def trim(a, limits=None, inclusive=(True,True), relative=False, axis=None):
         return trimr(a, limits=limits, inclusive=inclusive, axis=axis)
     else:
         return trima(a, limits=limits, inclusive=inclusive)
+
 
 if trim.__doc__ is not None:
     trim.__doc__ = trim.__doc__ % trimdoc
@@ -1361,6 +1418,7 @@ def trimtail(data, proportiontocut=0.2, tail='left', inclusive=(True,True),
         raise TypeError("The tail argument should be in ('left','right')")
 
     return trimr(data, limits=limits, axis=axis, inclusive=inclusive)
+
 
 trim1 = trimtail
 
@@ -1498,7 +1556,52 @@ def trimmed_stde(a, limits=(0.1,0.1), inclusive=(1,1), axis=None):
                                    lolim,uplim,loinc,upinc)
 
 
-def tmean(a, limits=None, inclusive=(True,True)):
+def _mask_to_limits(a, limits, inclusive):
+    """Mask an array for values outside of given limits.
+
+    This is primarily a utility function.
+
+    Parameters
+    ----------
+    a : array
+    limits : (float or None, float or None)
+    A tuple consisting of the (lower limit, upper limit).  Values in the
+    input array less than the lower limit or greater than the upper limit
+    will be masked out. None implies no limit.
+    inclusive : (bool, bool)
+    A tuple consisting of the (lower flag, upper flag).  These flags
+    determine whether values exactly equal to lower or upper are allowed.
+
+    Returns
+    -------
+    A MaskedArray.
+
+    Raises
+    ------
+    A ValueError if there are no values within the given limits.
+    """
+    lower_limit, upper_limit = limits
+    lower_include, upper_include = inclusive
+    am = ma.MaskedArray(a)
+    if lower_limit is not None:
+        if lower_include:
+            am = ma.masked_less(am, lower_limit)
+        else:
+            am = ma.masked_less_equal(am, lower_limit)
+
+    if upper_limit is not None:
+        if upper_include:
+            am = ma.masked_greater(am, upper_limit)
+        else:
+            am = ma.masked_greater_equal(am, upper_limit)
+
+    if am.count() == 0:
+        raise ValueError("No array values within given limits")
+
+    return am
+
+
+def tmean(a, limits=None, inclusive=(True, True), axis=None):
     """
     Compute the trimmed mean.
 
@@ -1515,6 +1618,9 @@ def tmean(a, limits=None, inclusive=(True,True)):
         A tuple consisting of the (lower flag, upper flag).  These flags
         determine whether values exactly equal to the lower or upper limits
         are included.  The default value is (True, True).
+    axis : int or None, optional
+        Axis along which to operate. If None, compute over the
+        whole array. Default is None.
 
     Returns
     -------
@@ -1524,11 +1630,28 @@ def tmean(a, limits=None, inclusive=(True,True)):
     -----
     For more details on `tmean`, see `stats.tmean`.
 
+    Examples
+    --------
+    >>> from scipy.stats import mstats
+    >>> a = np.array([[6, 8, 3, 0],
+    ...               [3, 9, 1, 2],
+    ...               [8, 7, 8, 2],
+    ...               [5, 6, 0, 2],
+    ...               [4, 5, 5, 2]])
+    ...
+    ...
+    >>> mstats.tmean(a, (2,5))
+    3.3
+    >>> mstats.tmean(a, (2,5), axis=0)
+    masked_array(data=[4.0, 5.0, 4.0, 2.0],
+                 mask=[False, False, False, False],
+           fill_value=1e+20)
+
     """
-    return trima(a, limits=limits, inclusive=inclusive).mean()
+    return trima(a, limits=limits, inclusive=inclusive).mean(axis=axis)
 
 
-def tvar(a, limits=None, inclusive=(True,True)):
+def tvar(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     """
     Compute the trimmed variance
 
@@ -1548,6 +1671,11 @@ def tvar(a, limits=None, inclusive=(True,True)):
         A tuple consisting of the (lower flag, upper flag).  These flags
         determine whether values exactly equal to the lower or upper limits
         are included.  The default value is (True, True).
+    axis : int or None, optional
+        Axis along which to operate. If None, compute over the
+        whole array. Default is zero.
+    ddof : int, optional
+        Delta degrees of freedom. Default is 1.
 
     Returns
     -------
@@ -1562,11 +1690,10 @@ def tvar(a, limits=None, inclusive=(True,True)):
     a = a.astype(float).ravel()
     if limits is None:
         n = (~a.mask).sum()  # todo: better way to do that?
-        r = trima(a, limits=limits, inclusive=inclusive).var() * (n/(n-1.))
-    else:
-        raise ValueError('mstats.tvar() with limits not implemented yet so far')
+        return np.ma.var(a) * n/(n-1.)
+    am = _mask_to_limits(a, limits=limits, inclusive=inclusive)
 
-    return r
+    return np.ma.var(am, axis=axis, ddof=ddof)
 
 
 def tmin(a, lowerlimit=None, axis=0, inclusive=True):
@@ -1596,13 +1723,27 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True):
     -----
     For more details on `tmin`, see `stats.tmin`.
 
+    Examples
+    --------
+    >>> from scipy.stats import mstats
+    >>> a = np.array([[6, 8, 3, 0],
+    ...               [3, 2, 1, 2],
+    ...               [8, 1, 8, 2],
+    ...               [5, 3, 0, 2],
+    ...               [4, 7, 5, 2]])
+    ...
+    >>> mstats.tmin(a, 5)
+    masked_array(data=[5, 7, 5, --],
+                 mask=[False, False, False,  True],
+           fill_value=999999)
+
     """
     a, axis = _chk_asarray(a, axis)
     am = trima(a, (lowerlimit, None), (inclusive, False))
     return ma.minimum.reduce(am, axis)
 
 
-def tmax(a, upperlimit, axis=0, inclusive=True):
+def tmax(a, upperlimit=None, axis=0, inclusive=True):
     """
     Compute the trimmed maximum
 
@@ -1632,13 +1773,28 @@ def tmax(a, upperlimit, axis=0, inclusive=True):
     -----
     For more details on `tmax`, see `stats.tmax`.
 
+    Examples
+    --------
+    >>> from scipy.stats import mstats
+    >>> a = np.array([[6, 8, 3, 0],
+    ...               [3, 9, 1, 2],
+    ...               [8, 7, 8, 2],
+    ...               [5, 6, 0, 2],
+    ...               [4, 5, 5, 2]])
+    ...
+    ...
+    >>> mstats.tmax(a, 4)
+    masked_array(data=[4, --, 3, 2],
+                 mask=[False,  True, False, False],
+           fill_value=999999)
+
     """
     a, axis = _chk_asarray(a, axis)
     am = trima(a, (None, upperlimit), (False, inclusive))
     return ma.maximum.reduce(am, axis)
 
 
-def tsem(a, limits=None, inclusive=(True,True)):
+def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     """
     Compute the trimmed standard error of the mean.
 
@@ -1658,6 +1814,11 @@ def tsem(a, limits=None, inclusive=(True,True)):
         A tuple consisting of the (lower flag, upper flag).  These flags
         determine whether values exactly equal to the lower or upper limits
         are included.  The default value is (True, True).
+    axis : int or None, optional
+        Axis along which to operate. If None, compute over the
+        whole array. Default is zero.
+    ddof : int, optional
+        Delta degrees of freedom. Default is 1.
 
     Returns
     -------
@@ -1671,10 +1832,10 @@ def tsem(a, limits=None, inclusive=(True,True)):
     a = ma.asarray(a).ravel()
     if limits is None:
         n = float(a.count())
-        return a.std(ddof=1)/ma.sqrt(n)
+        return a.std(axis=axis, ddof=ddof)/ma.sqrt(n)
 
     am = trima(a.ravel(), limits, inclusive)
-    sd = np.sqrt(am.var(ddof=1))
+    sd = np.sqrt(am.var(axis=axis, ddof=ddof))
     return sd / np.sqrt(am.count())
 
 
@@ -1702,7 +1863,7 @@ def winsorize(a, limits=None, inclusive=(True, True), inplace=False,
         indicate an open interval.
     inclusive : {(True, True) tuple}, optional
         Tuple indicating whether the number of data being masked on each side
-        should be rounded (True) or truncated (False).
+        should be truncated (True) or rounded (False).
     inplace : {False, True}, optional
         Whether to winsorize in place (True) or to use a copy (False)
     axis : {None, int}, optional
@@ -1722,13 +1883,13 @@ def winsorize(a, limits=None, inclusive=(True, True), inplace=False,
             if low_include:
                 lowidx = int(low_limit * n)
             else:
-                lowidx = np.round(low_limit * n)
+                lowidx = np.round(low_limit * n).astype(int)
             a[idx[:lowidx]] = a[idx[lowidx]]
         if up_limit is not None:
             if up_include:
                 upidx = n - int(n * up_limit)
             else:
-                upidx = n - np.round(n * up_limit)
+                upidx = n - np.round(n * up_limit).astype(int)
             a[idx[upidx:]] = a[idx[upidx - 1]]
         return a
 
@@ -1956,6 +2117,11 @@ def kurtosis(a, axis=0, fisher=True, bias=True):
         return vals
 
 
+DescribeResult = namedtuple('DescribeResult', ('nobs', 'minmax', 'mean',
+                                               'variance', 'skewness',
+                                               'kurtosis'))
+
+
 def describe(a, axis=0, ddof=0, bias=True):
     """
     Computes several descriptive statistics of the passed array.
@@ -1999,16 +2165,13 @@ def describe(a, axis=0, ddof=0, bias=True):
     >>> from scipy.stats.mstats import describe
     >>> ma = np.ma.array(range(6), mask=[0, 0, 0, 1, 1, 1])
     >>> describe(ma)
-    DescribeResult(nobs=array(3), minmax=(masked_array(data = 0,
-                 mask = False,
-           fill_value = 999999)
-    , masked_array(data = 2,
-                 mask = False,
-           fill_value = 999999)
-    ), mean=1.0, variance=0.66666666666666663, skewness=masked_array(data = 0.0,
-                 mask = False,
-           fill_value = 1e+20)
-    , kurtosis=-1.5)
+    DescribeResult(nobs=3, minmax=(masked_array(data=0,
+                 mask=False,
+           fill_value=999999), masked_array(data=2,
+                 mask=False,
+           fill_value=999999)), mean=1.0, variance=0.6666666666666666,
+           skewness=masked_array(data=0., mask=False, fill_value=1e+20),
+            kurtosis=-1.5)
 
     """
     a, axis = _chk_asarray(a, axis)
@@ -2018,10 +2181,6 @@ def describe(a, axis=0, ddof=0, bias=True):
     v = a.var(axis, ddof=ddof)
     sk = skew(a, axis, bias=bias)
     kurt = kurtosis(a, axis, bias=bias)
-
-    DescribeResult = namedtuple('DescribeResult', ('nobs', 'minmax', 'mean',
-                                                   'variance', 'skewness',
-                                                   'kurtosis'))
 
     return DescribeResult(n, mm, m, v, sk, kurt)
 
@@ -2054,6 +2213,9 @@ def stde_median(data, axis=None):
             raise ValueError("Array 'data' must be at most two dimensional, "
                              "but got data.ndim = %d" % data.ndim)
         return ma.apply_along_axis(_stdemed_1D, axis, data)
+
+
+SkewtestResult = namedtuple('SkewtestResult', ('statistic', 'pvalue'))
 
 
 def skewtest(a, axis=0):
@@ -2099,8 +2261,11 @@ def skewtest(a, axis=0):
     y = ma.where(y == 0, 1, y)
     Z = delta*ma.log(y/alpha + ma.sqrt((y/alpha)**2+1))
 
-    SkewtestResult = namedtuple('SkewtestResult', ('statistic', 'pvalue'))
     return SkewtestResult(Z, 2 * distributions.norm.sf(np.abs(Z)))
+
+
+KurtosistestResult = namedtuple('KurtosistestResult', ('statistic',
+                                                       'pvalue'))
 
 
 def kurtosistest(a, axis=0):
@@ -2156,9 +2321,10 @@ def kurtosistest(a, axis=0):
     term2 = ma.power((1-2.0/A)/denom,1/3.0)
     Z = (term1 - term2) / np.sqrt(2/(9.0*A))
 
-    KurtosistestResult = namedtuple('KurtosistestResult', ('statistic',
-                                                           'pvalue'))
     return KurtosistestResult(Z, 2 * distributions.norm.sf(np.abs(Z)))
+
+
+NormaltestResult = namedtuple('NormaltestResult', ('statistic', 'pvalue'))
 
 
 def normaltest(a, axis=0):
@@ -2191,7 +2357,6 @@ def normaltest(a, axis=0):
     k, _ = kurtosistest(a, axis)
     k2 = s*s + k*k
 
-    NormaltestResult = namedtuple('NormaltestResult', ('statistic', 'pvalue'))
     return NormaltestResult(k2, distributions.chi2.sf(k2, 2))
 
 
@@ -2283,9 +2448,9 @@ def mquantiles(a, prob=list([.25,.5,.75]), alphap=.4, betap=.4, axis=None,
     ...                  [  40., -999., -999.],
     ...                  [  36., -999., -999.]])
     >>> print(mquantiles(data, axis=0, limit=(0, 50)))
-    [[ 19.2   14.6    1.45]
-     [ 40.    37.5    2.5 ]
-     [ 42.8   40.05   3.55]]
+    [[19.2  14.6   1.45]
+     [40.   37.5   2.5 ]
+     [42.8  40.05  3.55]]
 
     >>> data[:, 2] = -999.
     >>> print(mquantiles(data, axis=0, limit=(0, 50)))
@@ -2384,9 +2549,10 @@ def plotting_positions(data, alpha=0.4, beta=0.4):
     n = data.count()
     plpos = np.empty(data.size, dtype=float)
     plpos[n:] = 0
-    plpos[data.argsort()[:n]] = ((np.arange(1, n+1) - alpha) /
-                                 (n + 1.0 - alpha - beta))
+    plpos[data.argsort(axis=None)[:n]] = ((np.arange(1, n+1) - alpha) /
+                                          (n + 1.0 - alpha - beta))
     return ma.array(plpos, mask=data._mask)
+
 
 meppf = plotting_positions
 
@@ -2415,25 +2581,6 @@ def obrientransform(*args):
         raise ValueError("Lack of convergence in obrientransform.")
 
     return data
-
-
-@np.deprecate(message="mstats.signaltonoise is deprecated in scipy 0.16.0")
-def signaltonoise(data, axis=0):
-    """Calculates the signal-to-noise ratio, as the ratio of the mean over
-    standard deviation along the given axis.
-
-    Parameters
-    ----------
-    data : sequence
-        Input data
-    axis : {0, int}, optional
-        Axis along which to compute. If None, the computation is performed
-        on a flat version of the array.
-    """
-    data = ma.array(data, copy=False)
-    m = data.mean(axis)
-    sd = data.std(axis, ddof=0)
-    return m/sd
 
 
 def sem(a, axis=0, ddof=1):
@@ -2488,6 +2635,9 @@ def sem(a, axis=0, ddof=1):
     return s
 
 
+F_onewayResult = namedtuple('F_onewayResult', ('statistic', 'pvalue'))
+
+
 def f_oneway(*args):
     """
     Performs a 1-way ANOVA, returning an F-value and probability given
@@ -2518,27 +2668,11 @@ def f_oneway(*args):
     f = msb/msw
     prob = special.fdtrc(dfbg, dfwg, f)  # equivalent to stats.f.sf
 
-    F_onewayResult = namedtuple('F_onewayResult', ('statistic', 'pvalue'))
     return F_onewayResult(f, prob)
 
 
-@np.deprecate(message="mstats.f_value_wilks_lambda deprecated in scipy 0.17.0")
-def f_value_wilks_lambda(ER, EF, dfnum, dfden, a, b):
-    """Calculation of Wilks lambda F-statistic for multivariate data, per
-    Maxwell & Delaney p.657.
-    """
-    ER = ma.array(ER, copy=False, ndmin=2)
-    EF = ma.array(EF, copy=False, ndmin=2)
-    if ma.getmask(ER).any() or ma.getmask(EF).any():
-        raise NotImplementedError("Not implemented when the inputs "
-                                  "have missing data")
-
-    lmbda = np.linalg.det(EF) / np.linalg.det(ER)
-    q = ma.sqrt(((a-1)**2*(b-1)**2 - 2) / ((a-1)**2 + (b-1)**2 - 5))
-    q = ma.filled(q, 1)
-    n_um = (1 - lmbda**(1.0/q))*(a-1)*(b-1)
-    d_en = lmbda**(1.0/q) / (n_um*q - 0.5*(a-1)*(b-1) + 1)
-    return n_um / d_en
+FriedmanchisquareResult = namedtuple('FriedmanchisquareResult',
+                                     ('statistic', 'pvalue'))
 
 
 def friedmanchisquare(*args):
@@ -2578,14 +2712,104 @@ def friedmanchisquare(*args):
         ranked = ranked._data
     (k,n) = ranked.shape
     # Ties correction
-    repeats = np.array([find_repeats(_) for _ in ranked.T], dtype=object)
-    ties = repeats[repeats.nonzero()].reshape(-1,2)[:,-1].astype(int)
+    repeats = [find_repeats(row) for row in ranked.T]
+    ties = np.array([y for x, y in repeats if x.size > 0])
     tie_correction = 1 - (ties**3-ties).sum()/float(n*(k**3-k))
 
     ssbg = np.sum((ranked.sum(-1) - n*(k+1)/2.)**2)
     chisq = ssbg * 12./(n*k*(k+1)) * 1./tie_correction
 
-    FriedmanchisquareResult = namedtuple('FriedmanchisquareResult',
-                                         ('statistic', 'pvalue'))
     return FriedmanchisquareResult(chisq,
                                    distributions.chi2.sf(chisq, k-1))
+
+
+BrunnerMunzelResult = namedtuple('BrunnerMunzelResult', ('statistic', 'pvalue'))
+
+
+def brunnermunzel(x, y, alternative="two-sided", distribution="t"):
+    """
+    Computes the Brunner-Munzel test on samples x and y
+
+    Missing values in `x` and/or `y` are discarded.
+
+    Parameters
+    ----------
+    x, y : array_like
+        Array of samples, should be one-dimensional.
+    alternative :  'less', 'two-sided', or 'greater', optional
+        Whether to get the p-value for the one-sided hypothesis ('less'
+        or 'greater') or for the two-sided hypothesis ('two-sided').
+        Defaults value is 'two-sided' .
+    distribution: 't' or 'normal', optional
+        Whether to get the p-value by t-distribution or by standard normal
+        distribution.
+        Defaults value is 't' .
+
+    Returns
+    -------
+    statistic : float
+        The Brunner-Munzer W statistic.
+    pvalue : float
+        p-value assuming an t distribution. One-sided or
+        two-sided, depending on the choice of `alternative` and `distribution`.
+
+    See Also
+    --------
+    mannwhitneyu : Mann-Whitney rank test on two samples.
+
+    Notes
+    -------
+    For more details on `brunnermunzel`, see `stats.brunnermunzel`.
+
+    """
+    x = ma.asarray(x).compressed().view(ndarray)
+    y = ma.asarray(y).compressed().view(ndarray)
+    nx = len(x)
+    ny = len(y)
+    if nx == 0 or ny == 0:
+        return BrunnerMunzelResult(np.nan, np.nan)
+    nc = nx + ny
+    rankc = rankdata(np.concatenate((x,y)))
+    rankcx = rankc[0:nx]
+    rankcy = rankc[nx:nx+ny]
+    rankcx_mean = np.mean(rankcx)
+    rankcy_mean = np.mean(rankcy)
+    rankx = rankdata(x)
+    ranky = rankdata(y)
+    rankx_mean = np.mean(rankx)
+    ranky_mean = np.mean(ranky)
+
+    Sx = np.sum(np.power(rankcx - rankx - rankcx_mean + rankx_mean, 2.0))
+    Sx /= nx - 1
+    Sy = np.sum(np.power(rankcy - ranky - rankcy_mean + ranky_mean, 2.0))
+    Sy /= ny - 1
+
+    sigmax = Sx / np.power(nc - nx, 2.0)
+    sigmay = Sx / np.power(nc - ny, 2.0)
+
+    wbfn = nx * ny * (rankcy_mean - rankcx_mean)
+    wbfn /= (nx + ny) * np.sqrt(nx * Sx + ny * Sy)
+
+    if distribution == "t":
+        df_numer = np.power(nx * Sx + ny * Sy, 2.0)
+        df_denom = np.power(nx * Sx, 2.0) / (nx - 1)
+        df_denom += np.power(ny * Sy, 2.0) / (ny - 1)
+        df = df_numer / df_denom
+        p = distributions.t.cdf(wbfn, df)
+    elif distribution == "normal":
+        p = distributions.norm.cdf(wbfn)
+    else:
+        raise ValueError(
+            "distribution should be 't' or 'normal'")
+
+    if alternative == "greater":
+        p = p
+    elif alternative == "less":
+        p = 1 - p
+    elif alternative == "two-sided":
+        p = 2 * np.min([p, 1-p])
+    else:
+        raise ValueError(
+            "alternative should be 'less', 'greater' or 'two-sided'")
+
+    return BrunnerMunzelResult(wbfn, p)

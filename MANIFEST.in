@@ -1,13 +1,13 @@
 include MANIFEST.in
 include *.txt
 # Top-level build scripts
-include setup.py setupegg.py bscript bento.info
+include setup.py bscript bento.info
 # All source files
 recursive-include scipy *
 # All documentation
 recursive-include doc *
 # Add build and testing tools
-include tox.ini
+include tox.ini pytest.ini
 recursive-include tools *
 # Cached Cython signatures
 include cythonize.dat
@@ -19,6 +19,7 @@ prune benchmarks/html
 prune benchmarks/scipy
 prune scipy/special/tests/data/boost
 prune scipy/special/tests/data/gsl
+prune scipy/special/tests/data/local
 prune doc/build
 prune doc/source/generated
 prune */__pycache__

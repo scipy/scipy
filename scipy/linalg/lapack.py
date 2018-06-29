@@ -1,10 +1,32 @@
 """
-Low-level LAPACK functions
-==========================
+Low-level LAPACK functions (:mod:`scipy.linalg.lapack`)
+=======================================================
 
 This module contains low-level functions from the LAPACK library.
 
+The `*gegv` family of routines have been removed from LAPACK 3.6.0
+and have been deprecated in SciPy 0.17.0. They will be removed in
+a future release.
+
 .. versionadded:: 0.12.0
+
+.. note::
+
+    The common ``overwrite_<>`` option in many routines, allows the
+    input arrays to be overwritten to avoid extra memory allocation.
+    However this requires the array to satisfy two conditions
+    which are memory order and the data type to match exactly the
+    order and the type expected by the routine.
+
+    As an example, if you pass a double precision float array to any
+    ``S....`` routine which expects single precision arguments, f2py
+    will create an intermediate array to match the argument types and
+    overwriting will be performed on that intermediate array.
+
+    Similarly, if a C-contiguous array is passed, f2py will pass a
+    FORTRAN-contiguous array internally. Please make sure that these
+    details are satisfied. More information can be found in the f2py
+    documentation.
 
 .. warning::
 
@@ -13,14 +35,14 @@ This module contains low-level functions from the LAPACK library.
    so prefer using the higher-level routines in `scipy.linalg`.
 
 Finding functions
-=================
+-----------------
 
 .. autosummary::
 
    get_lapack_funcs
 
 All functions
-=============
+-------------
 
 .. autosummary::
    :toctree: generated/
@@ -80,22 +102,22 @@ All functions
    dgelss
    cgelss
    zgelss
-   
+
    sgelss_lwork
    dgelss_lwork
    cgelss_lwork
    zgelss_lwork
-   
+
    sgelsd
    dgelsd
    cgelsd
    zgelsd
-   
+
    sgelsd_lwork
    dgelsd_lwork
    cgelsd_lwork
    zgelsd_lwork
-   
+
    sgelsy
    dgelsy
    cgelsy
@@ -105,7 +127,7 @@ All functions
    dgelsy_lwork
    cgelsy_lwork
    zgelsy_lwork
-   
+
    sgeqp3
    dgeqp3
    cgeqp3
@@ -131,10 +153,80 @@ All functions
    cgesdd_lwork
    zgesdd_lwork
 
+   sgesvd
+   dgesvd
+   cgesvd
+   zgesvd
+
+   sgesvd_lwork
+   dgesvd_lwork
+   cgesvd_lwork
+   zgesvd_lwork
+
    sgesv
    dgesv
    cgesv
    zgesv
+
+   sgesvx
+   dgesvx
+   cgesvx
+   zgesvx
+
+   sgecon
+   dgecon
+   cgecon
+   zgecon
+
+   ssysv
+   dsysv
+   csysv
+   zsysv
+
+   ssysv_lwork
+   dsysv_lwork
+   csysv_lwork
+   zsysv_lwork
+
+   ssysvx
+   dsysvx
+   csysvx
+   zsysvx
+
+   ssysvx_lwork
+   dsysvx_lwork
+   csysvx_lwork
+   zsysvx_lwork
+
+   ssygst
+   dsygst
+
+   ssytrd
+   dsytrd
+
+   ssytrd_lwork
+   dsytrd_lwork
+
+   chetrd
+   zhetrd
+
+   chetrd_lwork
+   zhetrd_lwork
+
+   chesv
+   zhesv
+
+   chesv_lwork
+   zhesv_lwork
+
+   chesvx
+   zhesvx
+
+   chesvx_lwork
+   zhesvx_lwork
+
+   chegst
+   zhegst
 
    sgetrf
    dgetrf
@@ -189,7 +281,7 @@ All functions
 
    chegvx
    zhegvx
-   
+
    slarf
    dlarf
    clarf
@@ -205,8 +297,8 @@ All functions
    clartg
    zlartg
 
-   dlasd4
    slasd4
+   dlasd4
 
    slaswp
    dlaswp
@@ -237,6 +329,16 @@ All functions
    dposv
    cposv
    zposv
+
+   sposvx
+   dposvx
+   cposvx
+   zposvx
+
+   spocon
+   dpocon
+   cpocon
+   zpocon
 
    spotrf
    dpotrf
@@ -316,6 +418,21 @@ All functions
    ssbevx
    dsbevx
 
+   sstebz
+   dstebz
+
+   sstemr
+   dstemr
+
+   ssterf
+   dsterf
+
+   sstein
+   dstein
+
+   sstev
+   dstev
+
    ssyev
    dsyev
 
@@ -339,6 +456,8 @@ All functions
    clange
    zlange
 
+   ilaver
+
 """
 #
 # Author: Pearu Peterson, March 2002
@@ -347,6 +466,8 @@ All functions
 from __future__ import division, print_function, absolute_import
 
 __all__ = ['get_lapack_funcs']
+
+import numpy as _np
 
 from .blas import _get_funcs
 
@@ -368,6 +489,23 @@ flapack = _DeprecatedImport("scipy.linalg.blas.flapack", "scipy.linalg.lapack")
 empty_module = None
 from scipy.linalg._flapack import *
 del empty_module
+
+_dep_message = """The `*gegv` family of routines has been deprecated in
+LAPACK 3.6.0 in favor of the `*ggev` family of routines.
+The corresponding wrappers will be removed from SciPy in
+a future release."""
+
+cgegv = _np.deprecate(cgegv, old_name='cgegv', message=_dep_message)
+dgegv = _np.deprecate(dgegv, old_name='dgegv', message=_dep_message)
+sgegv = _np.deprecate(sgegv, old_name='sgegv', message=_dep_message)
+zgegv = _np.deprecate(zgegv, old_name='zgegv', message=_dep_message)
+
+# Modyfy _flapack in this scope so the deprecation warnings apply to
+# functions returned by get_lapack_funcs.
+_flapack.cgegv = cgegv
+_flapack.dgegv = dgegv
+_flapack.sgegv = sgegv
+_flapack.zgegv = zgegv
 
 # some convenience alias for complex functions
 _lapack_alias = {
@@ -397,12 +535,10 @@ def get_lapack_funcs(names, arrays=(), dtype=None):
     dtype : str or dtype, optional
         Data-type specifier. Not used if `arrays` is non-empty.
 
-
     Returns
     -------
     funcs : list
         List containing the found function(s).
-
 
     Notes
     -----
@@ -413,9 +549,86 @@ def get_lapack_funcs(names, arrays=(), dtype=None):
     In LAPACK, the naming convention is that all functions start with a
     type prefix, which depends on the type of the principal
     matrix. These can be one of {'s', 'd', 'c', 'z'} for the numpy
-    types {float32, float64, complex64, complex128} respectevely, and
-    are stored in attribute `typecode` of the returned functions.
+    types {float32, float64, complex64, complex128} respectively, and
+    are stored in attribute ``typecode`` of the returned functions.
+
+    Examples
+    --------
+    Suppose we would like to use '?lange' routine which computes the selected
+    norm of an array. We pass our array in order to get the correct 'lange'
+    flavor.
+
+    >>> import scipy.linalg as LA
+    >>> a = np.random.rand(3,2)
+    >>> x_lange = LA.get_lapack_funcs('lange', (a,))
+    >>> x_lange.typecode
+    'd'
+    >>> x_lange = LA.get_lapack_funcs('lange',(a*1j,))
+    >>> x_lange.typecode
+    'z'
+
+    Several LAPACK routines work best when its internal WORK array has
+    the optimal size (big enough for fast computation and small enough to
+    avoid waste of memory). This size is determined also by a dedicated query
+    to the function which is often wrapped as a standalone function and
+    commonly denoted as ``###_lwork``. Below is an example for ``?sysv``
+
+    >>> import scipy.linalg as LA
+    >>> a = np.random.rand(1000,1000)
+    >>> b = np.random.rand(1000,1)*1j
+    >>> # We pick up zsysv and zsysv_lwork due to b array
+    ... xsysv, xlwork = LA.get_lapack_funcs(('sysv', 'sysv_lwork'), (a, b))
+    >>> opt_lwork, _ = xlwork(a.shape[0])  # returns a complex for 'z' prefix
+    >>> udut, ipiv, x, info = xsysv(a, b, lwork=int(opt_lwork.real))
+
     """
     return _get_funcs(names, arrays, dtype,
                       "LAPACK", _flapack, _clapack,
                       "flapack", "clapack", _lapack_alias)
+
+
+def _compute_lwork(routine, *args, **kwargs):
+    """
+    Round floating-point lwork returned by lapack to integer.
+
+    Several LAPACK routines compute optimal values for LWORK, which
+    they return in a floating-point variable. However, for large
+    values of LWORK, single-precision floating point is not sufficient
+    to hold the exact value --- some LAPACK versions (<= 3.5.0 at
+    least) truncate the returned integer to single precision and in
+    some cases this can be smaller than the required value.
+
+    Examples
+    --------
+    >>> from scipy.linalg import lapack
+    >>> n = 5000
+    >>> s_r, s_lw = lapack.get_lapack_funcs(('sysvx', 'sysvx_lwork'))
+    >>> lwork = lapack._compute_lwork(s_lw, n)
+    >>> lwork
+    32000
+
+    """
+    wi = routine(*args, **kwargs)
+    if len(wi) < 2:
+        raise ValueError('')
+    info = wi[-1]
+    if info != 0:
+        raise ValueError("Internal work array size computation failed: "
+                         "%d" % (info,))
+
+    lwork = [w.real for w in wi[:-1]]
+
+    dtype = getattr(routine, 'dtype', None)
+    if dtype == _np.float32 or dtype == _np.complex64:
+        # Single-precision routine -- take next fp value to work
+        # around possible truncation in LAPACK code
+        lwork = _np.nextafter(lwork, _np.inf, dtype=_np.float32)
+
+    lwork = _np.array(lwork, _np.int64)
+    if _np.any(_np.logical_or(lwork < 0, lwork > _np.iinfo(_np.int32).max)):
+        raise ValueError("Too large work array required -- computation cannot "
+                         "be performed with standard 32-bit LAPACK.")
+    lwork = lwork.astype(_np.int32)
+    if lwork.size == 1:
+        return lwork[0]
+    return lwork

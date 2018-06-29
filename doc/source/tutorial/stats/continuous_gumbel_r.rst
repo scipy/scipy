@@ -4,7 +4,7 @@
 Gumbel (LogWeibull, Fisher-Tippetts, Type I Extreme Value) Distribution
 =======================================================================
 
-One of a clase of extreme value distributions (right-skewed).
+One of a class of extreme value distributions (right-skewed).
 
 .. math::
    :nowrap:

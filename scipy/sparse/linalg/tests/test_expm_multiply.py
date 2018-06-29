@@ -3,11 +3,9 @@
 
 from __future__ import division, print_function, absolute_import
 
-import warnings
-
 import numpy as np
-from numpy.testing import (TestCase, run_module_suite, assert_allclose,
-        assert_, assert_equal)
+from numpy.testing import assert_allclose, assert_, assert_equal
+from scipy._lib._numpy_compat import suppress_warnings
 
 from scipy.sparse import SparseEfficiencyWarning
 import scipy.linalg
@@ -20,7 +18,7 @@ def less_than_or_close(a, b):
     return np.allclose(a, b) or (a < b)
 
 
-class TestExpmActionSimple(TestCase):
+class TestExpmActionSimple(object):
     """
     These tests do not consider the case of multiple time steps in one call.
     """
@@ -108,18 +106,21 @@ class TestExpmActionSimple(TestCase):
         assert_allclose(observed, expected)
 
     def test_sparse_expm_multiply(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
-            np.random.seed(1234)
-            n = 40
-            k = 3
-            nsamples = 10
-            for i in range(nsamples):
-                A = scipy.sparse.rand(n, n, density=0.05)
-                B = np.random.randn(n, k)
-                observed = expm_multiply(A, B)
+        np.random.seed(1234)
+        n = 40
+        k = 3
+        nsamples = 10
+        for i in range(nsamples):
+            A = scipy.sparse.rand(n, n, density=0.05)
+            B = np.random.randn(n, k)
+            observed = expm_multiply(A, B)
+            with suppress_warnings() as sup:
+                sup.filter(SparseEfficiencyWarning,
+                           "splu requires CSC matrix format")
+                sup.filter(SparseEfficiencyWarning,
+                           "spsolve is more efficient when sparse b is in the CSC matrix format")
                 expected = scipy.linalg.expm(A).dot(B)
-                assert_allclose(observed, expected)
+            assert_allclose(observed, expected)
 
     def test_complex(self):
         A = np.array([
@@ -133,26 +134,29 @@ class TestExpmActionSimple(TestCase):
         assert_allclose(observed, expected)
 
 
-class TestExpmActionInterval(TestCase):
+class TestExpmActionInterval(object):
 
     def test_sparse_expm_multiply_interval(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
-            np.random.seed(1234)
-            start = 0.1
-            stop = 3.2
-            n = 40
-            k = 3
-            endpoint = True
-            for num in (14, 13, 2):
-                A = scipy.sparse.rand(n, n, density=0.05)
-                B = np.random.randn(n, k)
-                v = np.random.randn(n)
-                for target in (B, v):
-                    X = expm_multiply(A, target,
-                            start=start, stop=stop, num=num, endpoint=endpoint)
-                    samples = np.linspace(start=start, stop=stop,
-                            num=num, endpoint=endpoint)
+        np.random.seed(1234)
+        start = 0.1
+        stop = 3.2
+        n = 40
+        k = 3
+        endpoint = True
+        for num in (14, 13, 2):
+            A = scipy.sparse.rand(n, n, density=0.05)
+            B = np.random.randn(n, k)
+            v = np.random.randn(n)
+            for target in (B, v):
+                X = expm_multiply(A, target,
+                        start=start, stop=stop, num=num, endpoint=endpoint)
+                samples = np.linspace(start=start, stop=stop,
+                        num=num, endpoint=endpoint)
+                with suppress_warnings() as sup:
+                    sup.filter(SparseEfficiencyWarning,
+                               "splu requires CSC matrix format")
+                    sup.filter(SparseEfficiencyWarning,
+                               "spsolve is more efficient when sparse b is in the CSC matrix format")
                     for solution, t in zip(X, samples):
                         assert_allclose(solution,
                                 scipy.linalg.expm(t*A).dot(target))
@@ -189,6 +193,25 @@ class TestExpmActionInterval(TestCase):
                             num=num, endpoint=endpoint)
                     for solution, t in zip(X, samples):
                         assert_allclose(solution, scipy.linalg.expm(t*A).dot(B))
+
+    def test_sparse_expm_multiply_interval_dtypes(self):
+        # Test A & B int
+        A = scipy.sparse.diags(np.arange(5),format='csr', dtype=int)
+        B = np.ones(5, dtype=int)
+        Aexpm = scipy.sparse.diags(np.exp(np.arange(5)),format='csr')
+        assert_allclose(expm_multiply(A,B,0,1)[-1], Aexpm.dot(B))
+    
+        # Test A complex, B int
+        A = scipy.sparse.diags(-1j*np.arange(5),format='csr', dtype=complex)
+        B = np.ones(5, dtype=int)
+        Aexpm = scipy.sparse.diags(np.exp(-1j*np.arange(5)),format='csr')
+        assert_allclose(expm_multiply(A,B,0,1)[-1], Aexpm.dot(B))
+    
+        # Test A int, B complex
+        A = scipy.sparse.diags(np.arange(5),format='csr', dtype=int)
+        B = 1j*np.ones(5, dtype=complex)
+        Aexpm = scipy.sparse.diags(np.exp(np.arange(5)),format='csr')
+        assert_allclose(expm_multiply(A,B,0,1)[-1], Aexpm.dot(B))
 
     def test_expm_multiply_interval_status_0(self):
         self._help_test_specific_expm_interval_status(0)
@@ -229,6 +252,3 @@ class TestExpmActionInterval(TestCase):
             msg = 'failed to find a status-' + str(target_status) + ' interval'
             raise Exception(msg)
 
-
-if __name__ == '__main__':
-    run_module_suite()

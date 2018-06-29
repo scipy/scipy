@@ -67,6 +67,19 @@ def onenormest(A, t=2, itmax=5, compute_v=False, compute_w=False):
            "A new scaling and squaring algorithm for the matrix exponential."
            SIAM J. Matrix Anal. Appl. Vol. 31, No. 3, pp. 970-989.
 
+    Examples
+    --------
+    >>> from scipy.sparse import csc_matrix
+    >>> from scipy.sparse.linalg import onenormest
+    >>> A = csc_matrix([[1., 0., 0.], [5., 8., 2.], [0., -1., 0.]], dtype=float)
+    >>> A.todense()
+    matrix([[ 1.,  0.,  0.],
+            [ 5.,  8.,  2.],
+            [ 0., -1.,  0.]])
+    >>> onenormest(A)
+    9.0
+    >>> np.linalg.norm(A.todense(), ord=1)
+    9.0
     """
 
     # Check the input.

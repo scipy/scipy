@@ -42,7 +42,7 @@ gives the corresponding weighted sum of squared residuals (fp>s).
 """,
                     2:"""
 A theoretically impossible result was found during the iteration
-proces for finding a smoothing spline with fp = s: s too small.
+process for finding a smoothing spline with fp = s: s too small.
 There is an approximation returned but the corresponding weighted sum
 of squared residuals does not satisfy the condition abs(fp-s)/s < tol.""",
                     3:"""
@@ -168,8 +168,12 @@ class UnivariateSpline(object):
                  ext=0, check_finite=False):
 
         if check_finite:
-            if not np.isfinite(x).all() or not np.isfinite(y).all():
+            w_finite = np.isfinite(w).all() if w is not None else True
+            if (not np.isfinite(x).all() or not np.isfinite(y).all() or
+                    not w_finite):
                 raise ValueError("x and y array must not contain NaNs or infs.")
+        if not all(diff(x) > 0.0):
+            raise ValueError('x must be strictly increasing')
 
         # _data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
         try:
@@ -354,7 +358,7 @@ class UnivariateSpline(object):
         >>> spl.integral(0, 3)
         9.0
 
-        which agrees with :math:`\int x^2 dx = x^3 / 3` between the limits
+        which agrees with :math:`\\int x^2 dx = x^3 / 3` between the limits
         of 0 and 3.
 
         A caveat is that this routine assumes the spline to be zero outside of
@@ -450,7 +454,8 @@ class UnivariateSpline(object):
         >>> spl.derivative().roots() / np.pi
         array([ 0.50000001,  1.5       ,  2.49999998])
 
-        This agrees well with roots :math:`\pi/2 + n\pi` of `cos(x) = sin'(x)`.
+        This agrees well with roots :math:`\\pi/2 + n\\pi` of
+        :math:`\\cos(x) = \\sin'(x)`.
 
         """
         tck = fitpack.splder(self._eval_args, n)
@@ -586,9 +591,12 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
                  ext=0, check_finite=False):
 
         if check_finite:
+            w_finite = np.isfinite(w).all() if w is not None else True
             if (not np.isfinite(x).all() or not np.isfinite(y).all() or
-                    not np.isfinite(w).all()):
+                    not w_finite):
                 raise ValueError("Input must not contain NaNs or infs.")
+        if not all(diff(x) > 0.0):
+            raise ValueError('x must be strictly increasing')
 
         # _data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
         self._data = dfitpack.fpcurf0(x,y,k,w=w,
@@ -685,7 +693,7 @@ class LSQUnivariateSpline(UnivariateSpline):
 
     Examples
     --------
-    >>> from scipy.interpolate import LSQUnivariateSpline
+    >>> from scipy.interpolate import LSQUnivariateSpline, UnivariateSpline
     >>> import matplotlib.pyplot as plt
     >>> x = np.linspace(-3, 3, 50)
     >>> y = np.exp(-x**2) + 0.1 * np.random.randn(50)
@@ -705,15 +713,29 @@ class LSQUnivariateSpline(UnivariateSpline):
     >>> spl.get_knots()
     array([-3., -1., 0., 1., 3.])
 
+    Constructing lsq spline using the knots from another spline:
+
+    >>> x = np.arange(10)
+    >>> s = UnivariateSpline(x, x, s=0)
+    >>> s.get_knots()
+    array([ 0.,  2.,  3.,  4.,  5.,  6.,  7.,  9.])
+    >>> knt = s.get_knots()
+    >>> s1 = LSQUnivariateSpline(x, x, knt[1:-1])    # Chop 1st and last knot
+    >>> s1.get_knots()
+    array([ 0.,  2.,  3.,  4.,  5.,  6.,  7.,  9.])
+
     """
 
     def __init__(self, x, y, t, w=None, bbox=[None]*2, k=3,
                  ext=0, check_finite=False):
 
         if check_finite:
+            w_finite = np.isfinite(w).all() if w is not None else True
             if (not np.isfinite(x).all() or not np.isfinite(y).all() or
-                    not np.isfinite(w).all() or not np.isfinite(t).all()):
+                    not w_finite or not np.isfinite(t).all()):
                 raise ValueError("Input(s) must not contain NaNs or infs.")
+        if not all(diff(x) > 0.0):
+            raise ValueError('x must be strictly increasing')
 
         # _data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
         xb = bbox[0]
@@ -773,7 +795,7 @@ class _BivariateSplineBase(object):
         """ Return spline coefficients."""
         return self.tck[2]
 
-    def __call__(self, x, y, mth=None, dx=0, dy=0, grid=True):
+    def __call__(self, x, y, dx=0, dy=0, grid=True):
         """
         Evaluate the spline or its derivatives at given positions.
 
@@ -789,6 +811,9 @@ class _BivariateSplineBase(object):
             If `grid` is True: evaluate spline at the grid points
             defined by the coordinate arrays x, y. The arrays must be
             sorted to increasing order.
+            
+            Note that the axis ordering is inverted relative to
+            the output of meshgrid.
         dx : int
             Order of x-derivative
 
@@ -803,16 +828,9 @@ class _BivariateSplineBase(object):
 
             .. versionadded:: 0.14.0
 
-        mth : str
-            Deprecated argument. Has no effect.
-
         """
         x = np.asarray(x)
         y = np.asarray(y)
-
-        if mth is not None:
-            warnings.warn("The `mth` argument is deprecated and will be removed",
-                          FutureWarning)
 
         tx, ty, c = self.tck[:3]
         kx, ky = self.degrees
@@ -1139,19 +1157,19 @@ class RectBivariateSpline(BivariateSpline):
     def __init__(self, x, y, z, bbox=[None] * 4, kx=3, ky=3, s=0):
         x, y = ravel(x), ravel(y)
         if not all(diff(x) > 0.0):
-            raise TypeError('x must be strictly increasing')
+            raise ValueError('x must be strictly increasing')
         if not all(diff(y) > 0.0):
-            raise TypeError('y must be strictly increasing')
+            raise ValueError('y must be strictly increasing')
         if not ((x.min() == x[0]) and (x.max() == x[-1])):
-            raise TypeError('x must be strictly ascending')
+            raise ValueError('x must be strictly ascending')
         if not ((y.min() == y[0]) and (y.max() == y[-1])):
-            raise TypeError('y must be strictly ascending')
+            raise ValueError('y must be strictly ascending')
         if not x.size == z.shape[0]:
-            raise TypeError('x dimension of z must have same number of '
+            raise ValueError('x dimension of z must have same number of '
                             'elements as x')
         if not y.size == z.shape[1]:
-            raise TypeError('y dimension of z must have same number of '
-                            'elements as y')
+            raise ValueError('y dimension of z must have same number of '
+                             'elements as y')
         z = ravel(z)
         xb, xe, yb, ye = bbox
         nx, tx, ny, ty, c, fp, ier = dfitpack.regrid_smth(x, y, z, xb, xe, yb,
@@ -1514,7 +1532,9 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
         (0, pi).
     v : array_like
         1-D array of longitude coordinates in strictly ascending order.
-        Coordinates must be given in radians, and must lie within (0, 2pi).
+        Coordinates must be given in radians. First element (v[0]) must lie
+        within the interval [-pi, pi). Last element (v[-1]) must satisfy
+        v[-1] <= v[0] + 2*pi.
     r : array_like
         2-D array of data with shape ``(u.size, v.size)``.
     s : float, optional
@@ -1593,7 +1613,7 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
     >>> ax2.imshow(data_interp, interpolation='nearest')
     >>> plt.show()
 
-    Chosing the optimal value of ``s`` can be a delicate task. Recommended
+    Choosing the optimal value of ``s`` can be a delicate task. Recommended
     values for ``s`` depend on the accuracy of the data values.  If the user
     has an idea of the statistical errors on the data, she can also find a
     proper estimate for ``s``. By assuming that, if she specifies the
@@ -1617,7 +1637,7 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
 
     >>> fig2 = plt.figure()
     >>> s = [3e9, 2e9, 1e9, 1e8]
-    >>> for ii in xrange(len(s)):
+    >>> for ii in range(len(s)):
     ...     lut = RectSphereBivariateSpline(lats, lons, data, s=s[ii])
     ...     data_interp = lut.ev(new_lats.ravel(),
     ...                          new_lons.ravel()).reshape((360, 180)).T
@@ -1659,23 +1679,23 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
 
         u, v = np.ravel(u), np.ravel(v)
         if not np.all(np.diff(u) > 0.0):
-            raise TypeError('u must be strictly increasing')
+            raise ValueError('u must be strictly increasing')
         if not np.all(np.diff(v) > 0.0):
-            raise TypeError('v must be strictly increasing')
+            raise ValueError('v must be strictly increasing')
 
         if not u.size == r.shape[0]:
-            raise TypeError('u dimension of r must have same number of '
-                            'elements as u')
+            raise ValueError('u dimension of r must have same number of '
+                             'elements as u')
         if not v.size == r.shape[1]:
-            raise TypeError('v dimension of r must have same number of '
-                            'elements as v')
+            raise ValueError('v dimension of r must have same number of '
+                             'elements as v')
 
         if pole_continuity[1] is False and pole_flat[1] is True:
-            raise TypeError('if pole_continuity is False, so must be '
-                            'pole_flat')
+            raise ValueError('if pole_continuity is False, so must be '
+                             'pole_flat')
         if pole_continuity[0] is False and pole_flat[0] is True:
-            raise TypeError('if pole_continuity is False, so must be '
-                            'pole_flat')
+            raise ValueError('if pole_continuity is False, so must be '
+                             'pole_flat')
 
         r = np.ravel(r)
         nu, tu, nv, tv, c, fp, ier = dfitpack.regrid_smth_spher(iopt, ider,

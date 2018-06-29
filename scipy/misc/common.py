@@ -5,181 +5,10 @@ Functions which are common and require SciPy Base and Level 1 SciPy
 
 from __future__ import division, print_function, absolute_import
 
-import numpy
-import numpy as np
-from numpy import (exp, log, asarray, arange, newaxis, hstack, product, array,
-                   zeros, eye, poly1d, r_, sum, fromstring, isfinite,
-                   squeeze, amax, reshape, sign, broadcast_arrays)
+from numpy import arange, newaxis, hstack, product, array, frombuffer, load
 
-from scipy._lib._version import NumpyVersion
-
-__all__ = ['logsumexp', 'central_diff_weights', 'derivative', 'pade', 'lena',
-           'ascent', 'face']
-
-
-_NUMPY_170 = (NumpyVersion(numpy.__version__) >= NumpyVersion('1.7.0'))
-
-
-def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
-    """Compute the log of the sum of exponentials of input elements.
-
-    Parameters
-    ----------
-    a : array_like
-        Input array.
-    axis : None or int or tuple of ints, optional
-        Axis or axes over which the sum is taken. By default `axis` is None,
-        and all elements are summed. Tuple of ints is not accepted if NumPy
-        version is lower than 1.7.0.
-
-        .. versionadded:: 0.11.0
-    keepdims : bool, optional
-        If this is set to True, the axes which are reduced are left in the
-        result as dimensions with size one. With this option, the result
-        will broadcast correctly against the original array.
-
-        .. versionadded:: 0.15.0
-    b : array-like, optional
-        Scaling factor for exp(`a`) must be of the same shape as `a` or
-        broadcastable to `a`. These values may be negative in order to
-        implement subtraction.
-
-        .. versionadded:: 0.12.0
-    return_sign : bool, optional
-        If this is set to True, the result will be a pair containing sign
-        information; if False, results that are negative will be returned
-        as NaN. Default is False (no sign information).
-
-        .. versionadded:: 0.16.0
-    Returns
-    -------
-    res : ndarray
-        The result, ``np.log(np.sum(np.exp(a)))`` calculated in a numerically
-        more stable way. If `b` is given then ``np.log(np.sum(b*np.exp(a)))``
-        is returned.
-    sgn : ndarray
-        If return_sign is True, this will be an array of floating-point
-        numbers matching res and +1, 0, or -1 depending on the sign
-        of the result. If False, only one result is returned.
-        
-    See Also
-    --------
-    numpy.logaddexp, numpy.logaddexp2
-
-    Notes
-    -----
-    Numpy has a logaddexp function which is very similar to `logsumexp`, but
-    only handles two arguments. `logaddexp.reduce` is similar to this
-    function, but may be less stable.
-
-    Examples
-    --------
-    >>> from scipy.misc import logsumexp
-    >>> a = np.arange(10)
-    >>> np.log(np.sum(np.exp(a)))
-    9.4586297444267107
-    >>> logsumexp(a)
-    9.4586297444267107
-
-    With weights
-
-    >>> a = np.arange(10)
-    >>> b = np.arange(10, 0, -1)
-    >>> logsumexp(a, b=b)
-    9.9170178533034665
-    >>> np.log(np.sum(b*np.exp(a)))
-    9.9170178533034647
-
-    Returning a sign flag
-
-    >>> logsumexp([1,2],b=[1,-1],return_sign=True)
-    (1.5413248546129181, -1.0)
-
-    """
-    a = asarray(a)
-    if b is not None:
-        a, b = broadcast_arrays(a,b)
-        if np.any(b == 0):
-            a = a + 0.  # promote to at least float
-            a[b == 0] = -np.inf
-    
-    # keepdims is available in numpy.sum and numpy.amax since NumPy 1.7.0
-    #
-    # Because SciPy supports versions earlier than 1.7.0, we have to handle
-    # those old versions differently
-
-    if not _NUMPY_170:
-        # When support for Numpy < 1.7.0 is dropped, this implementation can be
-        # removed. This implementation is a bit hacky. Similarly to old NumPy's
-        # sum and amax functions, 'axis' must be an integer or None, tuples and
-        # lists are not supported. Although 'keepdims' is not supported by these
-        # old NumPy's functions, this function supports it.
-
-        # Solve the shape of the reduced array
-        if axis is None:
-            sh_keepdims = (1,) * a.ndim
-        else:
-            sh_keepdims = list(a.shape)
-            sh_keepdims[axis] = 1
-
-        a_max = amax(a, axis=axis)
-
-        if a_max.ndim > 0:
-            a_max[~isfinite(a_max)] = 0
-        elif not isfinite(a_max):
-            a_max = 0
-
-        if b is not None:
-            tmp = b * exp(a - reshape(a_max, sh_keepdims))
-        else:
-            tmp = exp(a - reshape(a_max, sh_keepdims))
-
-        # suppress warnings about log of zero
-        with np.errstate(divide='ignore'):
-            s = sum(tmp, axis=axis)
-            if return_sign:
-                sgn = sign(s)
-                s *= sgn  # /= makes more sense but we need zero -> zero
-            out = log(s)
-
-        out += a_max
-
-        if keepdims:
-            # Put back the reduced axes with size one
-            out = reshape(out, sh_keepdims)
-            if return_sign:
-                sgn = reshape(sgn, sh_keepdims)
-    else:
-        # This is a more elegant implementation, requiring NumPy >= 1.7.0
-        a_max = amax(a, axis=axis, keepdims=True)
-
-        if a_max.ndim > 0:
-            a_max[~isfinite(a_max)] = 0
-        elif not isfinite(a_max):
-            a_max = 0
-
-        if b is not None:
-            b = asarray(b)
-            tmp = b * exp(a - a_max)
-        else:
-            tmp = exp(a - a_max)
-
-        # suppress warnings about log of zero
-        with np.errstate(divide='ignore'):
-            s = sum(tmp, axis=axis, keepdims=keepdims)
-            if return_sign:
-                sgn = sign(s)
-                s *= sgn  # /= makes more sense but we need zero -> zero
-            out = log(s)
-
-        if not keepdims:
-            a_max = squeeze(a_max, axis=axis)
-        out += a_max
-
-    if return_sign:
-        return out, sgn
-    else:
-        return out
+__all__ = ['central_diff_weights', 'derivative', 'ascent', 'face',
+           'electrocardiogram']
 
 
 def central_diff_weights(Np, ndiv=1):
@@ -231,7 +60,7 @@ def derivative(func, x0, dx=1.0, n=1, args=(), order=3):
         Input function.
     x0 : float
         The point at which `n`-th derivative is found.
-    dx : int, optional
+    dx : float, optional
         Spacing.
     n : int, optional
         Order of the derivative. Default is 1.
@@ -291,92 +120,6 @@ def derivative(func, x0, dx=1.0, n=1, args=(), order=3):
     return val / product((dx,)*n,axis=0)
 
 
-def pade(an, m):
-    """
-    Return Pade approximation to a polynomial as the ratio of two polynomials.
-
-    Parameters
-    ----------
-    an : (N,) array_like
-        Taylor series coefficients.
-    m : int
-        The order of the returned approximating polynomials.
-
-    Returns
-    -------
-    p, q : Polynomial class
-        The pade approximation of the polynomial defined by `an` is
-        `p(x)/q(x)`.
-
-    Examples
-    --------
-    >>> from scipy import misc
-    >>> e_exp = [1.0, 1.0, 1.0/2.0, 1.0/6.0, 1.0/24.0, 1.0/120.0]
-    >>> p, q = misc.pade(e_exp, 2)
-
-    >>> e_exp.reverse()
-    >>> e_poly = np.poly1d(e_exp)
-
-    Compare ``e_poly(x)`` and the pade approximation ``p(x)/q(x)``
-
-    >>> e_poly(1)
-    2.7166666666666668
-
-    >>> p(1)/q(1)
-    2.7179487179487181
-
-    """
-    from scipy import linalg
-    an = asarray(an)
-    N = len(an) - 1
-    n = N - m
-    if n < 0:
-        raise ValueError("Order of q <m> must be smaller than len(an)-1.")
-    Akj = eye(N+1, n+1)
-    Bkj = zeros((N+1, m), 'd')
-    for row in range(1, m+1):
-        Bkj[row,:row] = -(an[:row])[::-1]
-    for row in range(m+1, N+1):
-        Bkj[row,:] = -(an[row-m:row])[::-1]
-    C = hstack((Akj, Bkj))
-    pq = linalg.solve(C, an)
-    p = pq[:n+1]
-    q = r_[1.0, pq[n+1:]]
-    return poly1d(p[::-1]), poly1d(q[::-1])
-
-
-def lena():
-    """
-    Function that previously returned an example image
-
-    .. note:: Removed in 0.17
-
-    Parameters
-    ----------
-    None
-
-    Returns
-    -------
-    None
-
-    Raises
-    ------
-    RuntimeError
-        This functionality has been removed due to licensing reasons.
-
-    Notes
-    -----
-    The image previously returned by this function has an incompatible license
-    and has been removed from SciPy. Please use `face` or `ascent` instead.
-
-    See Also
-    --------
-    face, ascent
-    """
-    raise RuntimeError('lena() is no longer included in SciPy, please use '
-                       'ascent() or face() instead')
-
-
 def ascent():
     """
     Get an 8-bit grayscale bit-depth, 512 x 512 derived image for easy use in demos
@@ -425,7 +168,7 @@ def face(gray=False):
     Parameters
     ----------
     gray : bool, optional
-        If True then return color image, otherwise return an 8-bit gray-scale
+        If True return 8-bit grey-scale image, otherwise return a color image
 
     Returns
     -------
@@ -454,8 +197,107 @@ def face(gray=False):
     with open(os.path.join(os.path.dirname(__file__), 'face.dat'), 'rb') as f:
         rawdata = f.read()
     data = bz2.decompress(rawdata)
-    face = fromstring(data, dtype='uint8')
+    face = frombuffer(data, dtype='uint8')
     face.shape = (768, 1024, 3)
     if gray is True:
         face = (0.21 * face[:,:,0] + 0.71 * face[:,:,1] + 0.07 * face[:,:,2]).astype('uint8')
     return face
+
+
+def electrocardiogram():
+    """
+    Load an electrocardiogram as an example for a one-dimensional signal.
+
+    The returned signal is a 5 minute long electrocardiogram (ECG), a medical
+    recording of the heart's electrical activity, sampled at 360 Hz.
+
+    Returns
+    -------
+    ecg : ndarray
+        The electrocardiogram in millivolt (mV) sampled at 360 Hz.
+
+    Notes
+    -----
+    The provided signal is an excerpt (19:35 to 24:35) from the `record 208`_
+    (lead MLII) provided by the MIT-BIH Arrhythmia Database [1]_ on
+    PhysioNet [2]_. The excerpt includes noise induced artifacts, typical
+    heartbeats as well as pathological changes.
+
+    .. _record 208: https://physionet.org/physiobank/database/html/mitdbdir/records.htm#208
+
+    .. versionadded:: 1.1.0
+
+    References
+    ----------
+    .. [1] Moody GB, Mark RG. The impact of the MIT-BIH Arrhythmia Database.
+           IEEE Eng in Med and Biol 20(3):45-50 (May-June 2001).
+           (PMID: 11446209); :doi:`10.13026/C2F305`
+    .. [2] Goldberger AL, Amaral LAN, Glass L, Hausdorff JM, Ivanov PCh,
+           Mark RG, Mietus JE, Moody GB, Peng C-K, Stanley HE. PhysioBank,
+           PhysioToolkit, and PhysioNet: Components of a New Research Resource
+           for Complex Physiologic Signals. Circulation 101(23):e215-e220;
+           :doi:`10.1161/01.CIR.101.23.e215`
+
+    Examples
+    --------
+    >>> from scipy.misc import electrocardiogram
+    >>> ecg = electrocardiogram()
+    >>> ecg
+    array([-0.245, -0.215, -0.185, ..., -0.405, -0.395, -0.385])
+    >>> ecg.shape, ecg.mean(), ecg.std()
+    ((108000,), -0.16510875, 0.5992473991177294)
+
+    As stated the signal features several areas with a different morphology.
+    E.g. the first few seconds show the electrical activity of a heart in
+    normal sinus rhythm as seen below.
+
+    >>> import matplotlib.pyplot as plt
+    >>> fs = 360
+    >>> time = np.arange(ecg.size) / fs
+    >>> plt.plot(time, ecg)
+    >>> plt.xlabel("time in s")
+    >>> plt.ylabel("ECG in mV")
+    >>> plt.xlim(9, 10.2)
+    >>> plt.ylim(-1, 1.5)
+    >>> plt.show()
+
+    After second 16 however, the first premature ventricular contractions, also
+    called extrasystoles, appear. These have a different morphology compared to
+    typical heartbeats. The difference can easily be observed in the following
+    plot.
+
+    >>> plt.plot(time, ecg)
+    >>> plt.xlabel("time in s")
+    >>> plt.ylabel("ECG in mV")
+    >>> plt.xlim(46.5, 50)
+    >>> plt.ylim(-2, 1.5)
+    >>> plt.show()
+
+    At several points large artifacts disturb the recording, e.g.:
+
+    >>> plt.plot(time, ecg)
+    >>> plt.xlabel("time in s")
+    >>> plt.ylabel("ECG in mV")
+    >>> plt.xlim(207, 215)
+    >>> plt.ylim(-2, 3.5)
+    >>> plt.show()
+
+    Finally, examining the power spectrum reveals that most of the biosignal is
+    made up of lower frequencies. At 60 Hz the noise induced by the mains
+    electricity can be clearly observed.
+
+    >>> from scipy.signal import welch
+    >>> f, Pxx = welch(ecg, fs=fs, nperseg=2048, scaling="spectrum")
+    >>> plt.semilogy(f, Pxx)
+    >>> plt.xlabel("Frequency in Hz")
+    >>> plt.ylabel("Power spectrum of the ECG in mV**2")
+    >>> plt.xlim(f[[0, -1]])
+    >>> plt.show()
+    """
+    import os
+    file_path = os.path.join(os.path.dirname(__file__), "ecg.dat")
+    with load(file_path) as file:
+        ecg = file["ecg"].astype(int)  # np.uint16 -> int
+    # Convert raw output of ADC to mV: (ecg - adc_zero) / adc_gain
+    ecg = (ecg - 1024) / 200.0
+    return ecg

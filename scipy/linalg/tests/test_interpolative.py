@@ -32,7 +32,8 @@ from scipy.linalg import hilbert, svdvals, norm
 from scipy.sparse.linalg import aslinearoperator
 import time
 
-from numpy.testing import assert_, assert_allclose, assert_raises
+from numpy.testing import assert_, assert_allclose
+from pytest import raises as assert_raises
 
 
 def _debug_print(s):
@@ -43,7 +44,7 @@ def _debug_print(s):
 class TestInterpolativeDecomposition(object):
     def test_id(self):
         for dtype in [np.float64, np.complex128]:
-            yield self.check_id, dtype
+            self.check_id(dtype)
 
     def check_id(self, dtype):
         # Test ID routines on a Hilbert matrix.
@@ -249,3 +250,9 @@ class TestInterpolativeDecomposition(object):
     def test_badcall(self):
         A = hilbert(5).astype(np.float32)
         assert_raises(ValueError, pymatrixid.interp_decomp, A, 1e-6, rand=False)
+
+    def test_rank_too_large(self):
+        # svd(array, k) should not segfault
+        a = np.ones((4, 3))
+        with assert_raises(ValueError):
+            pymatrixid.svd(a, 4)

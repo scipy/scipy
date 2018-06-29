@@ -1,4 +1,3 @@
-#! /usr/bin/env python
 #
 # Author: Damian Eads
 # Date: April 17, 2008
@@ -35,21 +34,25 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import (TestCase, run_module_suite, dec, assert_raises,
-                           assert_allclose, assert_equal, assert_)
+from numpy.testing import assert_allclose, assert_equal, assert_, assert_warns
+import pytest
+from pytest import raises as assert_raises
 
 from scipy._lib.six import xrange, u
 
 import scipy.cluster.hierarchy
 from scipy.cluster.hierarchy import (
-    linkage, from_mlab_linkage, to_mlab_linkage, num_obs_linkage, inconsistent,
-    cophenet, fclusterdata, fcluster, is_isomorphic, single, leaders,
+    ClusterWarning, linkage, from_mlab_linkage, to_mlab_linkage,
+    num_obs_linkage, inconsistent, cophenet, fclusterdata, fcluster,
+    is_isomorphic, single, leaders, complete, weighted, centroid,
     correspond, is_monotonic, maxdists, maxinconsts, maxRstat,
     is_valid_linkage, is_valid_im, to_tree, leaves_list, dendrogram,
-    set_link_color_palette)
+    set_link_color_palette, cut_tree, optimal_leaf_ordering,
+    _order_cluster_tree, _hierarchy, _LINKAGE_METHODS)
 from scipy.spatial.distance import pdist
+from scipy.cluster._hierarchy import Heap
 
-import hierarchy_test_data
+from . import hierarchy_test_data
 
 
 # Matplotlib is not a scipy dependency but is optionally used in dendrogram, so
@@ -66,6 +69,13 @@ except:
 
 
 class TestLinkage(object):
+    def test_linkage_non_finite_elements_in_distance_matrix(self):
+        # Tests linkage(Y) where Y contains a non-finite element (e.g. NaN or Inf).
+        # Exception expected.
+        y = np.zeros((6,))
+        y[0] = np.nan
+        assert_raises(ValueError, linkage, y)
+
     def test_linkage_empty_distance_matrix(self):
         # Tests linkage(Y) where Y is a 0x4 linkage matrix. Exception expected.
         y = np.zeros((0,))
@@ -73,7 +83,7 @@ class TestLinkage(object):
 
     def test_linkage_tdist(self):
         for method in ['single', 'complete', 'average', 'weighted', u('single')]:
-            yield self.check_linkage_tdist, method
+            self.check_linkage_tdist(method)
 
     def check_linkage_tdist(self, method):
         # Tests linkage(Y, method) on the tdist data set.
@@ -83,7 +93,7 @@ class TestLinkage(object):
 
     def test_linkage_X(self):
         for method in ['centroid', 'median', 'ward']:
-            yield self.check_linkage_q, method
+            self.check_linkage_q(method)
 
     def check_linkage_q(self, method):
         # Tests linkage(Y, method) on the Q data set.
@@ -91,11 +101,61 @@ class TestLinkage(object):
         expectedZ = getattr(hierarchy_test_data, 'linkage_X_' + method)
         assert_allclose(Z, expectedZ, atol=1e-06)
 
+        y = scipy.spatial.distance.pdist(hierarchy_test_data.X,
+                                         metric="euclidean")
+        Z = linkage(y, method)
+        assert_allclose(Z, expectedZ, atol=1e-06)
+
+    def test_compare_with_trivial(self):
+        rng = np.random.RandomState(0)
+        n = 20
+        X = rng.rand(n, 2)
+        d = pdist(X)
+
+        for method, code in _LINKAGE_METHODS.items():
+            Z_trivial = _hierarchy.linkage(d, n, code)
+            Z = linkage(d, method)
+            assert_allclose(Z_trivial, Z, rtol=1e-14, atol=1e-15)
+
+    def test_optimal_leaf_ordering(self):
+        Z = linkage(hierarchy_test_data.ytdist, optimal_ordering=True)
+        expectedZ = getattr(hierarchy_test_data, 'linkage_ytdist_single_olo')
+        assert_allclose(Z, expectedZ, atol=1e-10)
+
+
+class TestLinkageTies(object):
+    _expectations = {
+        'single': np.array([[0, 1, 1.41421356, 2],
+                            [2, 3, 1.41421356, 3]]),
+        'complete': np.array([[0, 1, 1.41421356, 2],
+                              [2, 3, 2.82842712, 3]]),
+        'average': np.array([[0, 1, 1.41421356, 2],
+                             [2, 3, 2.12132034, 3]]),
+        'weighted': np.array([[0, 1, 1.41421356, 2],
+                              [2, 3, 2.12132034, 3]]),
+        'centroid': np.array([[0, 1, 1.41421356, 2],
+                              [2, 3, 2.12132034, 3]]),
+        'median': np.array([[0, 1, 1.41421356, 2],
+                            [2, 3, 2.12132034, 3]]),
+        'ward': np.array([[0, 1, 1.41421356, 2],
+                          [2, 3, 2.44948974, 3]]),
+    }
+
+    def test_linkage_ties(self):
+        for method in ['single', 'complete', 'average', 'weighted', 'centroid', 'median', 'ward']:
+            self.check_linkage_ties(method)
+
+    def check_linkage_ties(self, method):
+        X = np.array([[-1, -1], [0, 0], [1, 1]])
+        Z = linkage(X, method=method)
+        expectedZ = self._expectations[method]
+        assert_allclose(Z, expectedZ, atol=1e-06)
+
 
 class TestInconsistent(object):
     def test_inconsistent_tdist(self):
         for depth in hierarchy_test_data.inconsistent_ytdist:
-            yield self.check_inconsistent_tdist, depth
+            self.check_inconsistent_tdist(depth)
 
     def check_inconsistent_tdist(self, depth):
         Z = hierarchy_test_data.linkage_ytdist_single
@@ -154,11 +214,11 @@ class TestMLabLinkageConversion(object):
 class TestFcluster(object):
     def test_fclusterdata(self):
         for t in hierarchy_test_data.fcluster_inconsistent:
-            yield self.check_fclusterdata, t, 'inconsistent'
+            self.check_fclusterdata(t, 'inconsistent')
         for t in hierarchy_test_data.fcluster_distance:
-            yield self.check_fclusterdata, t, 'distance'
+            self.check_fclusterdata(t, 'distance')
         for t in hierarchy_test_data.fcluster_maxclust:
-            yield self.check_fclusterdata, t, 'maxclust'
+            self.check_fclusterdata(t, 'maxclust')
 
     def check_fclusterdata(self, t, criterion):
         # Tests fclusterdata(X, criterion=criterion, t=t) on a random 3-cluster data set.
@@ -169,11 +229,11 @@ class TestFcluster(object):
 
     def test_fcluster(self):
         for t in hierarchy_test_data.fcluster_inconsistent:
-            yield self.check_fcluster, t, 'inconsistent'
+            self.check_fcluster(t, 'inconsistent')
         for t in hierarchy_test_data.fcluster_distance:
-            yield self.check_fcluster, t, 'distance'
+            self.check_fcluster(t, 'distance')
         for t in hierarchy_test_data.fcluster_maxclust:
-            yield self.check_fcluster, t, 'maxclust'
+            self.check_fcluster(t, 'maxclust')
 
     def check_fcluster(self, t, criterion):
         # Tests fcluster(Z, criterion=criterion, t=t) on a random 3-cluster data set.
@@ -184,9 +244,9 @@ class TestFcluster(object):
 
     def test_fcluster_monocrit(self):
         for t in hierarchy_test_data.fcluster_distance:
-            yield self.check_fcluster_monocrit, t
+            self.check_fcluster_monocrit(t)
         for t in hierarchy_test_data.fcluster_maxclust:
-            yield self.check_fcluster_maxclust_monocrit, t
+            self.check_fcluster_maxclust_monocrit(t)
 
     def check_fcluster_monocrit(self, t):
         expectedT = hierarchy_test_data.fcluster_distance[t]
@@ -259,15 +319,19 @@ class TestIsIsomorphic(object):
         # Tests is_isomorphic on test case #5 (1000 observations, 2/3/5 random
         # clusters, random permutation of the labeling).
         for nc in [2, 3, 5]:
-            yield self.help_is_isomorphic_randperm, 1000, nc
+            self.help_is_isomorphic_randperm(1000, nc)
 
     def test_is_isomorphic_6(self):
         # Tests is_isomorphic on test case #5A (1000 observations, 2/3/5 random
         # clusters, random permutation of the labeling, slightly
         # nonisomorphic.)
         for nc in [2, 3, 5]:
-            yield self.help_is_isomorphic_randperm, 1000, nc, True, 5
-
+            self.help_is_isomorphic_randperm(1000, nc, True, 5)
+            
+    def test_is_isomorphic_7(self):
+        # Regression test for gh-6271
+        assert_(not is_isomorphic([1, 2, 3], [1, 1, 1]))
+    
     def help_is_isomorphic_randperm(self, nobs, nclusters, noniso=False, nerrors=0):
         for k in range(3):
             a = np.int_(np.random.rand(nobs) * nclusters)
@@ -287,7 +351,7 @@ class TestIsValidLinkage(object):
     def test_is_valid_linkage_various_size(self):
         for nrow, ncol, valid in [(2, 5, False), (2, 3, False),
                                   (1, 4, True), (2, 4, True)]:
-            yield self.check_is_valid_linkage_various_size, nrow, ncol, valid
+            self.check_is_valid_linkage_various_size(nrow, ncol, valid)
 
     def check_is_valid_linkage_various_size(self, nrow, ncol, valid):
         # Tests is_valid_linkage(Z) with linkage matrics of various sizes
@@ -371,7 +435,7 @@ class TestIsValidInconsistent(object):
     def test_is_valid_im_various_size(self):
         for nrow, ncol, valid in [(2, 5, False), (2, 3, False),
                                   (1, 4, True), (2, 4, True)]:
-            yield self.check_is_valid_im_various_size, nrow, ncol, valid
+            self.check_is_valid_im_various_size(nrow, ncol, valid)
 
     def check_is_valid_im_various_size(self, nrow, ncol, valid):
         # Tests is_valid_im(R) with linkage matrics of various sizes
@@ -431,7 +495,7 @@ class TestIsValidInconsistent(object):
             assert_raises(ValueError, is_valid_im, R, throw=True)
 
 
-class TestNumObsLinkage(TestCase):
+class TestNumObsLinkage(object):
     def test_num_obs_linkage_empty(self):
         # Tests num_obs_linkage(Z) with empty linkage.
         Z = np.zeros((0, 4), dtype=np.double)
@@ -474,7 +538,7 @@ class TestLeavesList(object):
     def test_leaves_list_Q(self):
         for method in ['single', 'complete', 'average', 'weighted', 'centroid',
                        'median', 'ward']:
-            yield self.check_leaves_list_Q, method
+            self.check_leaves_list_Q(method)
 
     def check_leaves_list_Q(self, method):
         # Tests leaves_list(Z) on the Q data set
@@ -492,7 +556,7 @@ class TestLeavesList(object):
                                         + node.get_right().pre_order()))
 
 
-class TestCorrespond(TestCase):
+class TestCorrespond(object):
     def test_correspond_empty(self):
         # Tests correspond(Z, y) with empty linkage and condensed distance matrix.
         y = np.zeros((0,))
@@ -513,7 +577,7 @@ class TestCorrespond(TestCase):
 
     def test_correspond_4_and_up(self):
         # Tests correspond(Z, y) on linkage and CDMs over observation sets of
-        # different sizes. Correspondance should be false.
+        # different sizes. Correspondence should be false.
         for (i, j) in (list(zip(list(range(2, 4)), list(range(3, 5)))) +
                        list(zip(list(range(3, 5)), list(range(2, 4))))):
             y = np.random.rand(i*(i-1)//2)
@@ -525,7 +589,7 @@ class TestCorrespond(TestCase):
 
     def test_correspond_4_and_up_2(self):
         # Tests correspond(Z, y) on linkage and CDMs over observation sets of
-        # different sizes. Correspondance should be false.
+        # different sizes. Correspondence should be false.
         for (i, j) in (list(zip(list(range(2, 7)), list(range(16, 21)))) +
                        list(zip(list(range(2, 7)), list(range(16, 21))))):
             y = np.random.rand(i*(i-1)//2)
@@ -544,7 +608,7 @@ class TestCorrespond(TestCase):
             assert_equal(num_obs_linkage(Z), n)
 
 
-class TestIsMonotonic(TestCase):
+class TestIsMonotonic(object):
     def test_is_monotonic_empty(self):
         # Tests is_monotonic(Z) on an empty linkage.
         Z = np.zeros((0, 4))
@@ -631,7 +695,7 @@ class TestMaxDists(object):
 
     def test_maxdists_Q_linkage(self):
         for method in ['single', 'complete', 'ward', 'centroid', 'median']:
-            yield self.check_maxdists_Q_linkage, method
+            self.check_maxdists_Q_linkage(method)
 
     def check_maxdists_Q_linkage(self, method):
         # Tests maxdists(Z) on the Q data set
@@ -666,7 +730,7 @@ class TestMaxInconsts(object):
 
     def test_maxinconsts_Q_linkage(self):
         for method in ['single', 'complete', 'ward', 'centroid', 'median']:
-            yield self.check_maxinconsts_Q_linkage, method
+            self.check_maxinconsts_Q_linkage(method)
 
     def check_maxinconsts_Q_linkage(self, method):
         # Tests maxinconsts(Z, R) on the Q data set
@@ -681,7 +745,7 @@ class TestMaxInconsts(object):
 class TestMaxRStat(object):
     def test_maxRstat_invalid_index(self):
         for i in [3.3, -1, 4]:
-            yield self.check_maxRstat_invalid_index, i
+            self.check_maxRstat_invalid_index(i)
 
     def check_maxRstat_invalid_index(self, i):
         # Tests maxRstat(Z, R, i). Expecting exception.
@@ -694,7 +758,7 @@ class TestMaxRStat(object):
 
     def test_maxRstat_empty_linkage(self):
         for i in range(4):
-            yield self.check_maxRstat_empty_linkage, i
+            self.check_maxRstat_empty_linkage(i)
 
     def check_maxRstat_empty_linkage(self, i):
         # Tests maxRstat(Z, R, i) on empty linkage. Expecting exception.
@@ -704,7 +768,7 @@ class TestMaxRStat(object):
 
     def test_maxRstat_difrow_linkage(self):
         for i in range(4):
-            yield self.check_maxRstat_difrow_linkage, i
+            self.check_maxRstat_difrow_linkage(i)
 
     def check_maxRstat_difrow_linkage(self, i):
         # Tests maxRstat(Z, R, i) on linkage and inconsistency matrices with
@@ -715,7 +779,7 @@ class TestMaxRStat(object):
 
     def test_maxRstat_one_cluster_linkage(self):
         for i in range(4):
-            yield self.check_maxRstat_one_cluster_linkage, i
+            self.check_maxRstat_one_cluster_linkage(i)
 
     def check_maxRstat_one_cluster_linkage(self, i):
         # Tests maxRstat(Z, R, i) on linkage with one cluster.
@@ -728,7 +792,7 @@ class TestMaxRStat(object):
     def test_maxRstat_Q_linkage(self):
         for method in ['single', 'complete', 'ward', 'centroid', 'median']:
             for i in range(4):
-                yield self.check_maxRstat_Q_linkage, method, i
+                self.check_maxRstat_Q_linkage(method, i)
 
     def check_maxRstat_Q_linkage(self, method, i):
         # Tests maxRstat(Z, R, i) on the Q data set
@@ -752,10 +816,10 @@ class TestDendrogram(object):
         Z = linkage(hierarchy_test_data.ytdist, 'single')
         assert_raises(ValueError, dendrogram, Z, orientation="foo")
 
-    @dec.skipif(not have_matplotlib)
+    @pytest.mark.skipif(not have_matplotlib, reason="no matplotlib")
     def test_dendrogram_plot(self):
         for orientation in ['top', 'bottom', 'left', 'right']:
-            yield self.check_dendrogram_plot, orientation
+            self.check_dendrogram_plot(orientation)
 
     def check_dendrogram_plot(self, orientation):
         # Tests dendrogram plotting.
@@ -775,19 +839,47 @@ class TestDendrogram(object):
                     'leaves': [2, 5, 1, 0, 3, 4]}
 
         fig = plt.figure()
-        ax = fig.add_subplot(111)
+        ax = fig.add_subplot(221)
 
         # test that dendrogram accepts ax keyword
         R1 = dendrogram(Z, ax=ax, orientation=orientation)
-        plt.close()
         assert_equal(R1, expected)
+
+        # test that dendrogram accepts and handle the leaf_font_size and
+        # leaf_rotation keywords
+        R1a = dendrogram(Z, ax=ax, orientation=orientation,
+                         leaf_font_size=20, leaf_rotation=90)
+        testlabel = (
+            ax.get_xticklabels()[0]
+            if orientation in ['top', 'bottom']
+            else ax.get_yticklabels()[0]
+        )
+        assert_equal(testlabel.get_rotation(), 90)
+        assert_equal(testlabel.get_size(), 20)
+        R1a = dendrogram(Z, ax=ax, orientation=orientation,
+                         leaf_rotation=90)
+        testlabel = (
+            ax.get_xticklabels()[0]
+            if orientation in ['top', 'bottom']
+            else ax.get_yticklabels()[0]
+        )
+        assert_equal(testlabel.get_rotation(), 90)
+        R1a = dendrogram(Z, ax=ax, orientation=orientation,
+                         leaf_font_size=20)
+        testlabel = (
+            ax.get_xticklabels()[0]
+            if orientation in ['top', 'bottom']
+            else ax.get_yticklabels()[0]
+        )
+        assert_equal(testlabel.get_size(), 20)
+        plt.close()
 
         # test plotting to gca (will import pylab)
         R2 = dendrogram(Z, orientation=orientation)
         plt.close()
         assert_equal(R2, expected)
 
-    @dec.skipif(not have_matplotlib)
+    @pytest.mark.skipif(not have_matplotlib, reason="no matplotlib")
     def test_dendrogram_truncate_mode(self):
         Z = linkage(hierarchy_test_data.ytdist, 'single')
 
@@ -824,6 +916,9 @@ class TestDendrogram(object):
 
         color_list = R['color_list']
         assert_equal(color_list, ['c', 'm', 'g', 'g', 'g'])
+
+        # reset color palette (global list)
+        set_link_color_palette(None)
 
 
 def calculate_maximum_distances(Z):
@@ -862,10 +957,18 @@ def calculate_maximum_inconsistencies(Z, R, k=3):
     return B
 
 
+def within_tol(a, b, tol):
+    return np.abs(a - b).max() < tol
+
+
+def test_unsupported_uncondensed_distance_matrix_linkage_warning():
+    assert_warns(ClusterWarning, linkage, [[0, 1], [1, 0]])
+
+
 def test_euclidean_linkage_value_error():
-    for method in scipy.cluster.hierarchy._cpy_euclid_methods:
-        assert_raises(ValueError,
-                linkage, [[1, 1], [1, 1]], method=method, metric='cityblock')
+    for method in scipy.cluster.hierarchy._EUCLIDEAN_METHODS:
+        assert_raises(ValueError, linkage, [[1, 1], [1, 1]],
+                      method=method, metric='cityblock')
 
 
 def test_2x2_linkage():
@@ -874,5 +977,86 @@ def test_2x2_linkage():
     assert_allclose(Z1, Z2)
 
 
-if __name__ == "__main__":
-    run_module_suite()
+def test_node_compare():
+    np.random.seed(23)
+    nobs = 50
+    X = np.random.randn(nobs, 4)
+    Z = scipy.cluster.hierarchy.ward(X)
+    tree = to_tree(Z)
+    assert_(tree > tree.get_left())
+    assert_(tree.get_right() > tree.get_left())
+    assert_(tree.get_right() == tree.get_right())
+    assert_(tree.get_right() != tree.get_left())
+
+
+def test_cut_tree():
+    np.random.seed(23)
+    nobs = 50
+    X = np.random.randn(nobs, 4)
+    Z = scipy.cluster.hierarchy.ward(X)
+    cutree = cut_tree(Z)
+
+    assert_equal(cutree[:, 0], np.arange(nobs))
+    assert_equal(cutree[:, -1], np.zeros(nobs))
+    assert_equal(cutree.max(0), np.arange(nobs - 1, -1, -1))
+
+    assert_equal(cutree[:, [-5]], cut_tree(Z, n_clusters=5))
+    assert_equal(cutree[:, [-5, -10]], cut_tree(Z, n_clusters=[5, 10]))
+    assert_equal(cutree[:, [-10, -5]], cut_tree(Z, n_clusters=[10, 5]))
+
+    nodes = _order_cluster_tree(Z)
+    heights = np.array([node.dist for node in nodes])
+
+    assert_equal(cutree[:, np.searchsorted(heights, [5])],
+                 cut_tree(Z, height=5))
+    assert_equal(cutree[:, np.searchsorted(heights, [5, 10])],
+                 cut_tree(Z, height=[5, 10]))
+    assert_equal(cutree[:, np.searchsorted(heights, [10, 5])],
+                 cut_tree(Z, height=[10, 5]))
+
+
+def test_optimal_leaf_ordering():
+    # test with the distance vector y
+    Z = optimal_leaf_ordering(linkage(hierarchy_test_data.ytdist),
+                              hierarchy_test_data.ytdist)
+    expectedZ = hierarchy_test_data.linkage_ytdist_single_olo
+    assert_allclose(Z, expectedZ, atol=1e-10)
+
+    # test with the observation matrix X
+    Z = optimal_leaf_ordering(linkage(hierarchy_test_data.X, 'ward'),
+                              hierarchy_test_data.X)
+    expectedZ = hierarchy_test_data.linkage_X_ward_olo
+    assert_allclose(Z, expectedZ, atol=1e-06)
+
+
+def test_Heap():
+    values = np.array([2, -1, 0, -1.5, 3])
+    heap = Heap(values)
+
+    pair = heap.get_min()
+    assert_equal(pair['key'], 3)
+    assert_equal(pair['value'], -1.5)
+
+    heap.remove_min()
+    pair = heap.get_min()
+    assert_equal(pair['key'], 1)
+    assert_equal(pair['value'], -1)
+
+    heap.change_value(1, 2.5)
+    pair = heap.get_min()
+    assert_equal(pair['key'], 2)
+    assert_equal(pair['value'], 0)
+
+    heap.remove_min()
+    heap.remove_min()
+
+    heap.change_value(1, 10)
+    pair = heap.get_min()
+    assert_equal(pair['key'], 4)
+    assert_equal(pair['value'], 3)
+
+    heap.remove_min()
+    pair = heap.get_min()
+    assert_equal(pair['key'], 1)
+    assert_equal(pair['value'], 10)
+

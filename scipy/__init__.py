@@ -3,7 +3,7 @@ SciPy: A scientific computing package for Python
 ================================================
 
 Documentation is available in the docstrings and
-online at http://docs.scipy.org.
+online at https://docs.scipy.org.
 
 Contents
 --------
@@ -31,6 +31,7 @@ Using any of these subpackages requires an explicit import.  For example,
  odr                          --- Orthogonal Distance Regression
  optimize                     --- Optimization Tools
  signal                       --- Signal Processing Tools
+ signal.windows               --- Window functions
  sparse                       --- Sparse Matrices
  sparse.linalg                --- Sparse Linear Algebra
  sparse.linalg.dsolve         --- Linear Solvers
@@ -60,7 +61,8 @@ __all__ = ['test']
 
 from numpy import show_config as show_numpy_config
 if show_numpy_config is None:
-    raise ImportError("Cannot import scipy when running from numpy source directory.")
+    raise ImportError(
+        "Cannot import scipy when running from numpy source directory.")
 from numpy import __version__ as __numpy_version__
 
 # Import numpy symbols to scipy name space
@@ -71,6 +73,8 @@ from numpy.random import rand, randn
 from numpy.fft import fft, ifft
 from numpy.lib.scimath import *
 
+# Allow distributors to run custom init code
+from . import _distributor_init
 
 __all__ += _num.__all__
 __all__ += ['randn', 'rand', 'fft', 'ifft']
@@ -99,19 +103,21 @@ else:
     except ImportError:
         msg = """Error importing scipy: you cannot import scipy while
         being in scipy source directory; please exit the scipy source
-        tree first, and relaunch your python intepreter."""
+        tree first, and relaunch your python interpreter."""
         raise ImportError(msg)
 
     from scipy.version import version as __version__
     from scipy._lib._version import NumpyVersion as _NumpyVersion
-    if _NumpyVersion(__numpy_version__) < '1.6.2':
+    if _NumpyVersion(__numpy_version__) < '1.8.2':
         import warnings
-        warnings.warn("Numpy 1.6.2 or above is recommended for this version of "
+        warnings.warn("Numpy 1.8.2 or above is recommended for this version of "
                       "scipy (detected version %s)" % __numpy_version__,
                       UserWarning)
 
     del _NumpyVersion
 
-    from numpy.testing import Tester
-    test = Tester().test
-    bench = Tester().bench
+    from scipy._lib._ccallback import LowLevelCallable
+
+    from scipy._lib._testutils import PytestTester
+    test = PytestTester(__name__)
+    del PytestTester

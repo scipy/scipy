@@ -38,8 +38,6 @@
  *                  a or b <0 integer        0.0
  *
  */
-
-/*                                                     beta.c  */
 
 
 /*
@@ -53,22 +51,17 @@
 #define MAXGAM 171.624376956302725
 
 extern double MAXLOG;
-extern int sgngam;
 
 #define ASYMP_FACTOR 1e6
 
 static double lbeta_asymp(double a, double b, int *sgn);
 static double lbeta_negint(int a, double b);
 static double beta_negint(int a, double b);
-double gammasgn(double x);
 
-double beta(a, b)
-double a, b;
+double beta(double a, double b)
 {
     double y;
-    int sign;
-
-    sign = 1;
+    int sign = 1;
 
     if (a <= 0.0) {
 	if (a == floor(a)) {
@@ -76,7 +69,7 @@ double a, b;
                 return beta_negint((int)a, b);
             }
             else {
-                goto over;
+                goto overflow;
             }
         }
     }
@@ -87,7 +80,7 @@ double a, b;
                 return beta_negint((int)b, a);
             }
             else {
-                goto over;
+                goto overflow;
             }
         }
     }
@@ -104,16 +97,15 @@ double a, b;
 
     y = a + b;
     if (fabs(y) > MAXGAM || fabs(a) > MAXGAM || fabs(b) > MAXGAM) {
-	y = lgam(y);
+	int sgngam;
+	y = lgam_sgn(y, &sgngam);
 	sign *= sgngam;		/* keep track of the sign */
-	y = lgam(b) - y;
+	y = lgam_sgn(b, &sgngam) - y;
 	sign *= sgngam;
-	y = lgam(a) + y;
+	y = lgam_sgn(a, &sgngam) + y;
 	sign *= sgngam;
 	if (y > MAXLOG) {
-	  over:
-	    mtherr("beta", OVERFLOW);
-	    return (sign * NPY_INFINITY);
+	    goto overflow;
 	}
 	return (sign * exp(y));
     }
@@ -122,7 +114,7 @@ double a, b;
     a = Gamma(a);
     b = Gamma(b);
     if (y == 0.0)
-	goto over;
+	goto overflow;
 
     if (fabs(fabs(a) - fabs(y)) > fabs(fabs(b) - fabs(y))) {
         y = b / y;
@@ -134,13 +126,16 @@ double a, b;
     }
 
     return (y);
+
+overflow:
+    mtherr("beta", OVERFLOW);
+    return (sign * NPY_INFINITY);
 }
 
 
-/* Natural log of |beta|.  Return the sign of beta in sgngam.  */
+/* Natural log of |beta|. */
 
-double lbeta(a, b)
-double a, b;
+double lbeta(double a, double b)
 {
     double y;
     int sign;
@@ -176,19 +171,18 @@ double a, b;
     if (fabs(a) > ASYMP_FACTOR * fabs(b) && a > ASYMP_FACTOR) {
         /* Avoid loss of precision in lgam(a + b) - lgam(a) */
         y = lbeta_asymp(a, b, &sign);
-        sgngam = sign;
         return y;
     }
 
     y = a + b;
     if (fabs(y) > MAXGAM || fabs(a) > MAXGAM || fabs(b) > MAXGAM) {
-	y = lgam(y);
+	int sgngam;
+	y = lgam_sgn(y, &sgngam);
 	sign *= sgngam;		/* keep track of the sign */
-	y = lgam(b) - y;
+	y = lgam_sgn(b, &sgngam) - y;
 	sign *= sgngam;
-	y = lgam(a) + y;
+	y = lgam_sgn(a, &sgngam) + y;
 	sign *= sgngam;
-	sgngam = sign;
 	return (y);
     }
 
@@ -211,11 +205,8 @@ double a, b;
     }
 
     if (y < 0) {
-	sgngam = -1;
 	y = -y;
     }
-    else
-	sgngam = 1;
 
     return (log(y));
 }
@@ -225,8 +216,7 @@ double a, b;
  */
 static double lbeta_asymp(double a, double b, int *sgn)
 {
-    double r = lgam(b);
-    *sgn = sgngam;
+    double r = lgam_sgn(b, sgn);
     r -= b * log(a);
 
     r += b*(1-b)/(2*a);
@@ -257,11 +247,8 @@ static double beta_negint(int a, double b)
 static double lbeta_negint(int a, double b)
 {
     double r;
-    int sgn;
     if (b == (int)b && 1 - a - b > 0) {
-        sgn = ((int)b % 2 == 0) ? 1 : -1;
         r = lbeta(1 - a - b, b);
-        sgngam *= sgn;
         return r;
     }
     else {

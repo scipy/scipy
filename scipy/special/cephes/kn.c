@@ -43,36 +43,36 @@
 
 /*
  * Algorithm for Kn.
- * n-1 
- * -n   -  (n-k-1)!    2   k
+ *                        n-1 
+ *                    -n   -  (n-k-1)!    2   k
  * K (x)  =  0.5 (x/2)     >  -------- (-x /4)
- * n                      -     k!
- * k=0
+ *  n                      -     k!
+ *                        k=0
  * 
- * inf.                                   2   k
- * n         n   -                                   (x /4)
- * + (-1)  0.5(x/2)    >  {p(k+1) + p(n+k+1) - 2log(x/2)} ---------
- * -                                  k! (n+k)!
- * k=0
+ *                     inf.                                   2   k
+ *        n         n   -                                   (x /4)
+ *  + (-1)  0.5(x/2)    >  {p(k+1) + p(n+k+1) - 2log(x/2)} ---------
+ *                      -                                  k! (n+k)!
+ *                     k=0
  * 
  * where  p(m) is the psi function: p(1) = -EUL and
  * 
- * m-1
- * -
- * p(m)  =  -EUL +  >  1/k
- * -
- * k=1
+ *                       m-1
+ *                        -
+ *       p(m)  =  -EUL +  >  1/k
+ *                        -
+ *                       k=1
  * 
  * For large x,
- * 2        2     2
- * u-1     (u-1 )(u-3 )
+ *                                          2        2     2
+ *                                       u-1     (u-1 )(u-3 )
  * K (z)  =  sqrt(pi/2z) exp(-z) { 1 + ------- + ------------ + ...}
- * v                                        1            2
- * 1! (8z)     2! (8z)
+ *  v                                        1            2
+ *                                     1! (8z)     2! (8z)
  * asymptotically, where
  * 
- * 2
- * u = 4 v .
+ *            2
+ *     u = 4 v .
  * 
  */
 

@@ -1,15 +1,16 @@
-#!/usr/bin/env python
 from __future__ import division, print_function, absolute_import
 
+import os.path
 from os.path import join
 
 from scipy._build_utils import numpy_nodepr_api
 
-
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
-    from numpy.distutils.system_info import get_info
+    from scipy._build_utils.system_info import get_info
     config = Configuration('optimize',parent_package, top_path)
+    
+    include_dirs = [join(os.path.dirname(__file__), '..', '_lib', 'src')]
 
     minpack_src = [join('minpack','*f')]
     config.add_library('minpack',sources=minpack_src)
@@ -18,6 +19,7 @@ def configuration(parent_package='',top_path=None):
                          libraries=['minpack'],
                          depends=(["minpack.h","__minpack.h"]
                                   + minpack_src),
+                         include_dirs=include_dirs,
                          **numpy_nodepr_api)
 
     rootfind_src = [join('Zeros','*.c')]
@@ -70,7 +72,19 @@ def configuration(parent_package='',top_path=None):
                                           for x in ["nnls.f","nnls.pyf"]],
                          **numpy_nodepr_api)
 
+    config.add_extension('_group_columns', sources=['_group_columns.c'],)
+
+    config.add_subpackage('_lsq')
+    
+    config.add_subpackage('_trlib')
+
+    config.add_subpackage('_trustregion_constr')
+
     config.add_data_dir('tests')
+
+    # Add license files
+    config.add_data_files('lbfgsb/README')
+
     return config
 
 

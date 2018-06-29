@@ -12,15 +12,16 @@ from numpy.ma import masked, nomask
 
 import scipy.stats.mstats as mstats
 from scipy import stats
-from common_tests import check_named_results
-from numpy.testing import TestCase, run_module_suite
-from numpy.testing.decorators import skipif
+from .common_tests import check_named_results
+import pytest
+from pytest import raises as assert_raises
 from numpy.ma.testutils import (assert_equal, assert_almost_equal,
     assert_array_almost_equal, assert_array_almost_equal_nulp, assert_,
-    assert_allclose, assert_raises)
+    assert_allclose, assert_array_equal)
+from scipy._lib._numpy_compat import suppress_warnings
 
 
-class TestMquantiles(TestCase):
+class TestMquantiles(object):
     def test_mquantiles_limit_keyword(self):
         # Regression test for Trac ticket #867
         data = np.array([[6., 7., 1.],
@@ -41,7 +42,7 @@ class TestMquantiles(TestCase):
         assert_almost_equal(quants, desired)
 
 
-class TestGMean(TestCase):
+class TestGMean(object):
     def test_1D(self):
         a = (1,2,3,4)
         actual = mstats.gmean(a)
@@ -60,7 +61,7 @@ class TestGMean(TestCase):
         desired1 = mstats.gmean(a,axis=-1)
         assert_almost_equal(actual, desired1, decimal=14)
 
-    @skipif(not hasattr(np, 'float96'), 'cannot find float96 so skipping')
+    @pytest.mark.skipif(not hasattr(np, 'float96'), reason='cannot find float96 so skipping')
     def test_1D_float96(self):
         a = ma.array((1,2,3,4), mask=(0,0,0,1))
         actual_dt = mstats.gmean(a, dtype=np.float96)
@@ -85,7 +86,7 @@ class TestGMean(TestCase):
         assert_array_almost_equal(actual, desired, decimal=14)
 
 
-class TestHMean(TestCase):
+class TestHMean(object):
     def test_1D(self):
         a = (1,2,3,4)
         actual = mstats.hmean(a)
@@ -101,7 +102,7 @@ class TestHMean(TestCase):
         desired1 = mstats.hmean(a,axis=-1)
         assert_almost_equal(actual, desired1, decimal=14)
 
-    @skipif(not hasattr(np, 'float96'), 'cannot find float96 so skipping')
+    @pytest.mark.skipif(not hasattr(np, 'float96'), reason='cannot find float96 so skipping')
     def test_1D_float96(self):
         a = ma.array((1,2,3,4), mask=(0,0,0,1))
         actual_dt = mstats.hmean(a, dtype=np.float96)
@@ -125,10 +126,7 @@ class TestHMean(TestCase):
         assert_array_almost_equal(actual1, desired, decimal=14)
 
 
-class TestRanking(TestCase):
-    def __init__(self, *args, **kwargs):
-        TestCase.__init__(self, *args, **kwargs)
-
+class TestRanking(object):
     def test_ranking(self):
         x = ma.array([0,1,1,1,2,3,4,5,5,6,])
         assert_almost_equal(mstats.rankdata(x),
@@ -150,7 +148,7 @@ class TestRanking(TestCase):
                            [[1,1,1,1,1], [2,2,2,2,2,]])
 
 
-class TestCorr(TestCase):
+class TestCorr(object):
     def test_pearsonr(self):
         # Tests some computations of Pearson's r
         x = ma.arange(10)
@@ -201,6 +199,19 @@ class TestCorr(TestCase):
               0.0, 0.6, 6.7, 3.8, 1.0, 1.2, 1.4, np.nan]
         (x, y) = (ma.fix_invalid(x), ma.fix_invalid(y))
         assert_almost_equal(mstats.spearmanr(x,y)[0], 0.6887299)
+        # Next test is to make sure calculation uses sufficient precision.
+        # The denominator's value is ~n^3 and used to be represented as an
+        # int. 2000**3 > 2**32 so these arrays would cause overflow on
+        # some machines.
+        x = list(range(2000))
+        y = list(range(2000))
+        y[0], y[9] = y[9], y[0]
+        y[10], y[434] = y[434], y[10]
+        y[435], y[1509] = y[1509], y[435]
+        # rho = 1 - 6 * (2 * (9^2 + 424^2 + 1074^2))/(2000 * (2000^2 - 1))
+        #     = 1 - (1 / 500)
+        #     = 0.998
+        assert_almost_equal(mstats.spearmanr(x,y)[0], 0.998)
 
         # test for namedtuple attributes
         res = mstats.spearmanr(x, y)
@@ -208,11 +219,69 @@ class TestCorr(TestCase):
         check_named_results(res, attributes, ma=True)
 
     def test_kendalltau(self):
+        
+        # simple case without ties
+        x = ma.array(np.arange(10))
+        y = ma.array(np.arange(10))
+        # Cross-check with exact result from R:
+        # cor.test(x,y,method="kendall",exact=1)
+        expected = [1.0, 5.511463844797e-07]
+        assert_almost_equal(np.asarray(mstats.kendalltau(x,y)), expected)
+
+        # check exception in case of invalid method keyword
+        assert_raises(ValueError, mstats.kendalltau, x, y, method='banana')
+
+        # swap a couple of values
+        b = y[1]
+        y[1] = y[2]
+        y[2] = b
+        # Cross-check with exact result from R:
+        # cor.test(x,y,method="kendall",exact=1)
+        expected = [0.9555555555555556, 5.511463844797e-06]
+        assert_almost_equal(np.asarray(mstats.kendalltau(x,y)), expected)
+
+        # swap a couple more
+        b = y[5]
+        y[5] = y[6]
+        y[6] = b
+        # Cross-check with exact result from R:
+        # cor.test(x,y,method="kendall",exact=1)
+        expected = [0.9111111111111111, 2.976190476190e-05]
+        assert_almost_equal(np.asarray(mstats.kendalltau(x,y)), expected)
+
+        # same in opposite direction
+        x = ma.array(np.arange(10))
+        y = ma.array(np.arange(10)[::-1])
+        # Cross-check with exact result from R:
+        # cor.test(x,y,method="kendall",exact=1)
+        expected = [-1.0, 5.511463844797e-07]
+        assert_almost_equal(np.asarray(mstats.kendalltau(x,y)), expected)
+
+        # swap a couple of values
+        b = y[1]
+        y[1] = y[2]
+        y[2] = b
+        # Cross-check with exact result from R:
+        # cor.test(x,y,method="kendall",exact=1)
+        expected = [-0.9555555555555556, 5.511463844797e-06]
+        assert_almost_equal(np.asarray(mstats.kendalltau(x,y)), expected)
+
+        # swap a couple more
+        b = y[5]
+        y[5] = y[6]
+        y[6] = b
+        # Cross-check with exact result from R:
+        # cor.test(x,y,method="kendall",exact=1)
+        expected = [-0.9111111111111111, 2.976190476190e-05]
+        assert_almost_equal(np.asarray(mstats.kendalltau(x,y)), expected)
+
         # Tests some computations of Kendall's tau
         x = ma.fix_invalid([5.05, 6.75, 3.21, 2.66,np.nan])
         y = ma.fix_invalid([1.65, 26.5, -5.93, 7.96, np.nan])
         z = ma.fix_invalid([1.65, 2.64, 2.64, 6.95, np.nan])
         assert_almost_equal(np.asarray(mstats.kendalltau(x,y)),
+                            [+0.3333333,0.75])
+        assert_almost_equal(np.asarray(mstats.kendalltau(x,y, method='asymptotic')),
                             [+0.3333333,0.4969059])
         assert_almost_equal(np.asarray(mstats.kendalltau(x,z)),
                             [-0.5477226,0.2785987])
@@ -223,6 +292,13 @@ class TestCorr(TestCase):
                             25,80,80,80,80,80,80, 0,10,45, np.nan, 0])
         result = mstats.kendalltau(x,y)
         assert_almost_equal(np.asarray(result), [-0.1585188, 0.4128009])
+        # make sure internal variable use correct precision with
+        # larger arrays
+        x = np.arange(2000, dtype=float)
+        x = ma.masked_greater(x, 1995)
+        y = np.arange(2000, dtype=float)
+        y = np.concatenate((y[1000:], y[:1000]))
+        assert_(np.isfinite(mstats.kendalltau(x,y)[1]))
 
         # test for namedtuple attributes
         res = mstats.kendalltau(x, y)
@@ -255,7 +331,7 @@ class TestCorr(TestCase):
         check_named_results(res, attributes, ma=True)
 
 
-class TestTrimming(TestCase):
+class TestTrimming(object):
 
     def test_trim(self):
         a = ma.arange(10)
@@ -325,18 +401,21 @@ class TestTrimming(TestCase):
                          296,299,306,376,428,515,666,1310,2611])
         assert_almost_equal(mstats.winsorize(data,(0.2,0.2)).var(ddof=1),
                             21551.4, 1)
+        assert_almost_equal(
+            mstats.winsorize(data, (0.2,0.2),(False,False)).var(ddof=1),
+            11887.3, 1)
         data[5] = masked
         winsorized = mstats.winsorize(data)
         assert_equal(winsorized.mask, data.mask)
 
 
-class TestMoments(TestCase):
+class TestMoments(object):
     # Comparison numbers are found using R v.1.5.1
     # note that length(testcase) = 4
     # testmathworks comes from documentation for the
     # Statistics Toolbox for Matlab and can be found at both
-    # http://www.mathworks.com/access/helpdesk/help/toolbox/stats/kurtosis.shtml
-    # http://www.mathworks.com/access/helpdesk/help/toolbox/stats/skewness.shtml
+    # https://www.mathworks.com/help/stats/kurtosis.html
+    # https://www.mathworks.com/help/stats/skewness.html
     # Note that both test cases came from here.
     testcase = [1,2,3,4]
     testmathworks = ma.fix_invalid([1.165, 0.6268, 0.0751, 0.3516, -0.6965,
@@ -411,7 +490,8 @@ class TestMoments(TestCase):
 
         # Check consistency between stats and mstats implementations
         assert_array_almost_equal_nulp(mstats.kurtosis(self.testcase_2d[2, :]),
-                                       stats.kurtosis(self.testcase_2d[2, :]))
+                                       stats.kurtosis(self.testcase_2d[2, :]),
+                                       nulp=4)
 
     def test_mode(self):
         a1 = [0,0,0,1,1,1,2,3,3,3,3,4,5,6,7]
@@ -442,8 +522,19 @@ class TestMoments(TestCase):
         attributes = ('mode', 'count')
         check_named_results(a1_res, attributes, ma=True)
 
-class TestPercentile(TestCase):
-    def setUp(self):
+    def test_mode_modifies_input(self):
+        # regression test for gh-6428: mode(..., axis=None) may not modify
+        # the input array
+        im = np.zeros((100, 100))
+        im[:50, :] += 1
+        im[:, :50] += 1
+        cp = im.copy()
+        a = mstats.mode(im, None)
+        assert_equal(im, cp)
+
+
+class TestPercentile(object):
+    def setup_method(self):
         self.a1 = [3,4,5,10,-3,-5,6]
         self.a2 = [3,-6,-2,8,7,4,2,1]
         self.a3 = [3.,4,5,10,-3,-5,-6,7.0]
@@ -463,19 +554,11 @@ class TestPercentile(TestCase):
         assert_equal(mstats.scoreatpercentile(x,50), [1,1,1])
 
 
-class TestVariability(TestCase):
+class TestVariability(object):
     """  Comparison numbers are found using R v.1.5.1
          note that length(testcase) = 4
     """
     testcase = ma.fix_invalid([1,2,3,4,np.nan])
-
-    def test_signaltonoise(self):
-        # This is not in R, so used:
-        #     mean(testcase, axis=0) / (sqrt(var(testcase)*3/4))
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            y = mstats.signaltonoise(self.testcase)
-        assert_almost_equal(y, 2.236067977)
 
     def test_sem(self):
         # This is not in R, so used: sqrt(var(testcase)*3/4) / sqrt(3)
@@ -503,7 +586,7 @@ class TestVariability(TestCase):
         assert_almost_equal(desired, y, decimal=12)
 
 
-class TestMisc(TestCase):
+class TestMisc(object):
 
     def test_obrientransform(self):
         args = [[5]*5+[6]*11+[7]*9+[8]*3+[9]*2+[10]*2,
@@ -732,6 +815,17 @@ class TestTtest_rel():
         res3 = mstats.ttest_rel(outcome[:, :2], outcome[:, 2:])
         assert_allclose(res2, res3)
 
+    def test_fully_masked(self):
+        np.random.seed(1234567)
+        outcome = ma.masked_array(np.random.randn(3, 2),
+                                  mask=[[1, 1, 1], [0, 0, 0]])
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, "invalid value encountered in absolute")
+            for pair in [(outcome[:, 0], outcome[:, 1]), ([np.nan, np.nan], [1.0, 2.0])]:
+                t, p = mstats.ttest_rel(*pair)
+                assert_array_equal(t, (np.nan, np.nan))
+                assert_array_equal(p, (np.nan, np.nan))
+
     def test_result_attributes(self):
         np.random.seed(1234567)
         outcome = np.random.randn(20, 4) + [0, 0, 1, 2]
@@ -753,6 +847,15 @@ class TestTtest_rel():
         res1 = mstats.ttest_rel([], [])
         assert_(np.all(np.isnan(res1)))
 
+    def test_zero_division(self):
+        t, p = mstats.ttest_ind([0, 0, 0], [1, 1, 1])
+        assert_equal((np.abs(t), p), (np.inf, 0))
+
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, "invalid value encountered in absolute")
+            t, p = mstats.ttest_ind([0, 0, 0], [0, 0, 0])
+            assert_array_equal(t, np.array([np.nan, np.nan]))
+            assert_array_equal(p, np.array([np.nan, np.nan]))
 
 class TestTtest_ind():
     def test_vs_nonmasked(self):
@@ -784,6 +887,16 @@ class TestTtest_ind():
         res5 = mstats.ttest_ind(outcome[:, 0], outcome[:, 1], equal_var=False)
         assert_allclose(res4, res5)
 
+    def test_fully_masked(self):
+        np.random.seed(1234567)
+        outcome = ma.masked_array(np.random.randn(3, 2), mask=[[1, 1, 1], [0, 0, 0]])
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, "invalid value encountered in absolute")
+            for pair in [(outcome[:, 0], outcome[:, 1]), ([np.nan, np.nan], [1.0, 2.0])]:
+                t, p = mstats.ttest_ind(*pair)
+                assert_array_equal(t, (np.nan, np.nan))
+                assert_array_equal(p, (np.nan, np.nan))
+
     def test_result_attributes(self):
         np.random.seed(1234567)
         outcome = np.random.randn(20, 4) + [0, 0, 1, 2]
@@ -795,6 +908,21 @@ class TestTtest_ind():
     def test_empty(self):
         res1 = mstats.ttest_ind([], [])
         assert_(np.all(np.isnan(res1)))
+
+    def test_zero_division(self):
+        t, p = mstats.ttest_ind([0, 0, 0], [1, 1, 1])
+        assert_equal((np.abs(t), p), (np.inf, 0))
+
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, "invalid value encountered in absolute")
+            t, p = mstats.ttest_ind([0, 0, 0], [0, 0, 0])
+            assert_array_equal(t, (np.nan, np.nan))
+            assert_array_equal(p, (np.nan, np.nan))
+
+        t, p = mstats.ttest_ind([0, 0, 0], [1, 1, 1], equal_var=False)
+        assert_equal((np.abs(t), p), (np.inf, 0))
+        assert_array_equal(mstats.ttest_ind([0, 0, 0], [0, 0, 0],
+                                            equal_var=False), (np.nan, np.nan))
 
 
 class TestTtest_1samp():
@@ -819,6 +947,17 @@ class TestTtest_1samp():
         res3 = mstats.ttest_1samp(outcome[:, :2], outcome[:, 2:])
         assert_allclose(res2, res3)
 
+    def test_fully_masked(self):
+        np.random.seed(1234567)
+        outcome = ma.masked_array(np.random.randn(3), mask=[1, 1, 1])
+        expected = (np.nan, np.nan)
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, "invalid value encountered in absolute")
+            for pair in [((np.nan, np.nan), 0.0), (outcome, 0.0)]:
+                t, p = mstats.ttest_1samp(*pair)
+                assert_array_equal(p, expected)
+                assert_array_equal(t, expected)
+
     def test_result_attributes(self):
         np.random.seed(1234567)
         outcome = np.random.randn(20, 4) + [0, 0, 1, 2]
@@ -831,8 +970,18 @@ class TestTtest_1samp():
         res1 = mstats.ttest_1samp([], 1)
         assert_(np.all(np.isnan(res1)))
 
+    def test_zero_division(self):
+        t, p = mstats.ttest_1samp([0, 0, 0], 1)
+        assert_equal((np.abs(t), p), (np.inf, 0))
 
-class TestCompareWithStats(TestCase):
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, "invalid value encountered in absolute")
+            t, p = mstats.ttest_1samp([0, 0, 0], 0)
+            assert_(np.isnan(t))
+            assert_array_equal(p, (np.nan, np.nan))
+
+
+class TestCompareWithStats(object):
     """
     Class to compare mstats results with stats results.
 
@@ -960,36 +1109,6 @@ class TestCompareWithStats(TestCase):
             rm = stats.mstats.moment(ym)
             assert_almost_equal(r, rm, 10)
 
-    def test_signaltonoise(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            for n in self.get_n():
-                x, y, xm, ym = self.generate_xy_sample(n)
-
-                r = stats.signaltonoise(x)
-                rm = stats.mstats.signaltonoise(xm)
-                assert_almost_equal(r, rm, 10)
-
-                r = stats.signaltonoise(y)
-                rm = stats.mstats.signaltonoise(ym)
-                assert_almost_equal(r, rm, 10)
-
-    def test_betai(self):
-        np.random.seed(12345)
-        for i in range(10):
-            a = np.random.rand() * 5.
-            b = np.random.rand() * 200.
-
-            with warnings.catch_warnings():
-                warnings.filterwarnings('ignore', category=DeprecationWarning)
-                assert_equal(stats.betai(a, b, 0.), 0.)
-                assert_equal(stats.betai(a, b, 1.), 1.)
-                assert_equal(stats.mstats.betai(a, b, 0.), 0.)
-                assert_equal(stats.mstats.betai(a, b, 1.), 1.)
-                x = np.random.rand()
-                assert_almost_equal(stats.betai(a, b, x),
-                                    stats.mstats.betai(a, b, x), decimal=13)
-
     def test_zscore(self):
         for n in self.get_n():
             x, y, xm, ym = self.generate_xy_sample(n)
@@ -1076,6 +1195,11 @@ class TestCompareWithStats(TestCase):
                                 stats.mstats.tmax(xm,2.), 10)
             assert_almost_equal(stats.tmax(y,2.),
                                 stats.mstats.tmax(ym,2.), 10)
+
+            assert_almost_equal(stats.tmax(x, upperlimit=3.),
+                                stats.mstats.tmax(xm, upperlimit=3.), 10)
+            assert_almost_equal(stats.tmax(y, upperlimit=3.),
+                                stats.mstats.tmax(ym, upperlimit=3.), 10)
 
     def test_tmin(self):
         for n in self.get_n():
@@ -1166,10 +1290,10 @@ class TestCompareWithStats(TestCase):
 
     def test_normaltest(self):
         np.seterr(over='raise')
-        for n in self.get_n():
-            if n > 8:
-                with warnings.catch_warnings():
-                    warnings.filterwarnings('ignore', category=UserWarning)
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, "kurtosistest only valid for n>=20")
+            for n in self.get_n():
+                if n > 8:
                     x, y, xm, ym = self.generate_xy_sample(n)
                     r = stats.normaltest(x)
                     rm = stats.mstats.normaltest(xm)
@@ -1180,11 +1304,19 @@ class TestCompareWithStats(TestCase):
         tmp = np.asarray([1,1,2,2,3,3,3,4,4,4,4,5,5,5,5]).astype('float')
         mask = (tmp == 5.)
         xm = np.ma.array(tmp, mask=mask)
+        x_orig, xm_orig = x.copy(), xm.copy()
 
         r = stats.find_repeats(x)
         rm = stats.mstats.find_repeats(xm)
 
-        assert_equal(r,rm)
+        assert_equal(r, rm)
+        assert_equal(x, x_orig)
+        assert_equal(xm, xm_orig)
+
+        # This crazy behavior is expected by count_tied_groups, but is not
+        # in the docstring...
+        _, counts = stats.mstats.find_repeats([])
+        assert_equal(counts, np.array(0, dtype=np.intp))
 
     def test_kendalltau(self):
         for n in self.get_n():
@@ -1202,5 +1334,103 @@ class TestCompareWithStats(TestCase):
             assert_almost_equal(r.T, rm[0:len(x)])
 
 
-if __name__ == "__main__":
-    run_module_suite()
+class TestBrunnerMunzel(object):
+    # Data from (Lumley, 1996)
+    X = np.ma.masked_invalid([1, 2, 1, 1, 1, np.nan, 1, 1,
+                              1, 1, 1, 2, 4, 1, 1, np.nan])
+    Y = np.ma.masked_invalid([3, 3, 4, 3, np.nan, 1, 2, 3, 1, 1, 5, 4])
+    significant = 14
+
+    def test_brunnermunzel_one_sided(self):
+        # Results are compared with R's lawstat package.
+        u1, p1 = mstats.brunnermunzel(self.X, self.Y, alternative='less')
+        u2, p2 = mstats.brunnermunzel(self.Y, self.X, alternative='greater')
+        u3, p3 = mstats.brunnermunzel(self.X, self.Y, alternative='greater')
+        u4, p4 = mstats.brunnermunzel(self.Y, self.X, alternative='less')
+
+        assert_almost_equal(p1, p2, decimal=self.significant)
+        assert_almost_equal(p3, p4, decimal=self.significant)
+        assert_(p1 != p3)
+        assert_almost_equal(u1, 3.1374674823029505,
+                            decimal=self.significant)
+        assert_almost_equal(u2, -3.1374674823029505,
+                            decimal=self.significant)
+        assert_almost_equal(u3, 3.1374674823029505,
+                            decimal=self.significant)
+        assert_almost_equal(u4, -3.1374674823029505,
+                            decimal=self.significant)
+        assert_almost_equal(p1, 0.0028931043330757342,
+                            decimal=self.significant)
+        assert_almost_equal(p3, 0.99710689566692423,
+                            decimal=self.significant)
+
+    def test_brunnermunzel_two_sided(self):
+        # Results are compared with R's lawstat package.
+        u1, p1 = mstats.brunnermunzel(self.X, self.Y, alternative='two-sided')
+        u2, p2 = mstats.brunnermunzel(self.Y, self.X, alternative='two-sided')
+
+        assert_almost_equal(p1, p2, decimal=self.significant)
+        assert_almost_equal(u1, 3.1374674823029505,
+                            decimal=self.significant)
+        assert_almost_equal(u2, -3.1374674823029505,
+                            decimal=self.significant)
+        assert_almost_equal(p1, 0.0057862086661515377,
+                            decimal=self.significant)
+
+    def test_brunnermunzel_default(self):
+        # The default value for alternative is two-sided
+        u1, p1 = mstats.brunnermunzel(self.X, self.Y)
+        u2, p2 = mstats.brunnermunzel(self.Y, self.X)
+
+        assert_almost_equal(p1, p2, decimal=self.significant)
+        assert_almost_equal(u1, 3.1374674823029505,
+                            decimal=self.significant)
+        assert_almost_equal(u2, -3.1374674823029505,
+                            decimal=self.significant)
+        assert_almost_equal(p1, 0.0057862086661515377,
+                            decimal=self.significant)
+
+    def test_brunnermunzel_alternative_error(self):
+        alternative = "error"
+        distribution = "t"
+        assert_(alternative not in ["two-sided", "greater", "less"])
+        assert_raises(ValueError,
+                      mstats.brunnermunzel,
+                      self.X,
+                      self.Y,
+                      alternative,
+                      distribution)
+
+    def test_brunnermunzel_distribution_norm(self):
+        u1, p1 = mstats.brunnermunzel(self.X, self.Y, distribution="normal")
+        u2, p2 = mstats.brunnermunzel(self.Y, self.X, distribution="normal")
+        assert_almost_equal(p1, p2, decimal=self.significant)
+        assert_almost_equal(u1, 3.1374674823029505,
+                            decimal=self.significant)
+        assert_almost_equal(u2, -3.1374674823029505,
+                            decimal=self.significant)
+        assert_almost_equal(p1, 0.0017041417600383024,
+                            decimal=self.significant)
+
+    def test_brunnermunzel_distribution_error(self):
+        alternative = "two-sided"
+        distribution = "error"
+        assert_(alternative not in ["t", "normal"])
+        assert_raises(ValueError,
+                      mstats.brunnermunzel,
+                      self.X,
+                      self.Y,
+                      alternative,
+                      distribution)
+
+    def test_brunnermunzel_empty_imput(self):
+        u1, p1 = mstats.brunnermunzel(self.X, [])
+        u2, p2 = mstats.brunnermunzel([], self.Y)
+        u3, p3 = mstats.brunnermunzel([], [])
+
+        assert_(np.isnan(u1))
+        assert_(np.isnan(p1))
+        assert_(np.isnan(u2))
+        assert_(np.isnan(p2))
+        assert_(np.isnan(u3))
+        assert_(np.isnan(p3))

@@ -5,9 +5,10 @@ from __future__ import division, print_function, absolute_import
 
 from functools import partial
 from itertools import product
-
-from numpy.testing import TestCase, assert_, assert_equal, \
-        assert_raises
+import operator
+import pytest
+from pytest import raises as assert_raises, warns
+from numpy.testing import assert_, assert_equal
 
 import numpy as np
 import scipy.sparse as sparse
@@ -15,8 +16,12 @@ import scipy.sparse as sparse
 from scipy.sparse.linalg import interface
 
 
-class TestLinearOperator(TestCase):
-    def setUp(self):
+# Only test matmul operator (A @ B) when available (Python 3.5+)
+TEST_MATMUL = hasattr(operator, 'matmul')
+
+
+class TestLinearOperator(object):
+    def setup_method(self):
         self.A = np.array([[1,2,3],
                            [4,5,6]])
         self.B = np.array([[1,2],
@@ -136,9 +141,29 @@ class TestLinearOperator(TestCase):
 
             assert_(isinstance(C**2, interface._PowerLinearOperator))
 
+    def test_matmul(self):
+        if not TEST_MATMUL:
+            pytest.skip("matmul is only tested in Python 3.5+")
 
-class TestAsLinearOperator(TestCase):
-    def setUp(self):
+        D = {'shape': self.A.shape,
+             'matvec': lambda x: np.dot(self.A, x).reshape(self.A.shape[0]),
+             'rmatvec': lambda x: np.dot(self.A.T.conj(),
+                                         x).reshape(self.A.shape[1]),
+             'matmat': lambda x: np.dot(self.A, x)}
+        A = interface.LinearOperator(**D)
+        B = np.array([[1, 2, 3],
+                      [4, 5, 6],
+                      [7, 8, 9]])
+        b = B[0]
+
+        assert_equal(operator.matmul(A, b), A * b)
+        assert_equal(operator.matmul(A, B), A * B)
+        assert_raises(ValueError, operator.matmul, A, 2)
+        assert_raises(ValueError, operator.matmul, 2, A)
+
+
+class TestAsLinearOperator(object):
+    def setup_method(self):
         self.cases = []
 
         def make_cases(dtype):
@@ -258,12 +283,27 @@ def test_attributes():
         assert_(hasattr(op, "shape"))
         assert_(hasattr(op, "_matvec"))
 
+def matvec(x):
+    """ Needed for test_pickle as local functions are not pickleable """
+    return np.zeros(3)
+
+def test_pickle():
+    import pickle
+
+    for protocol in range(pickle.HIGHEST_PROTOCOL + 1):
+        A = interface.LinearOperator((3, 3), matvec)
+        s = pickle.dumps(A, protocol=protocol)
+        B = pickle.loads(s)
+
+        for k in A.__dict__:
+            assert_equal(getattr(A, k), getattr(B, k))
 
 def test_inheritance():
     class Empty(interface.LinearOperator):
         pass
 
-    assert_raises(TypeError, Empty)
+    with warns(RuntimeWarning, match="should implement at least"):
+        assert_raises(TypeError, Empty)
 
     class Identity(interface.LinearOperator):
         def __init__(self, n):
@@ -286,3 +326,42 @@ def test_inheritance():
 
     mm = MatmatOnly(np.random.randn(5, 3))
     assert_equal(mm.matvec(np.random.randn(3)).shape, (5,))
+
+def test_dtypes_of_operator_sum():
+    # gh-6078
+
+    mat_complex = np.random.rand(2,2) + 1j * np.random.rand(2,2)
+    mat_real = np.random.rand(2,2)
+
+    complex_operator = interface.aslinearoperator(mat_complex)
+    real_operator = interface.aslinearoperator(mat_real)
+
+    sum_complex = complex_operator + complex_operator
+    sum_real = real_operator + real_operator
+
+    assert_equal(sum_real.dtype, np.float64)
+    assert_equal(sum_complex.dtype, np.complex128)
+
+def test_no_double_init():
+    call_count = [0]
+
+    def matvec(v):
+        call_count[0] += 1
+        return v
+
+    # It should call matvec exactly once (in order to determine the
+    # operator dtype)
+    A = interface.LinearOperator((2, 2), matvec=matvec)
+    assert_equal(call_count[0], 1)
+
+def test_adjoint_conjugate():
+    X = np.array([[1j]])
+    A = interface.aslinearoperator(X)
+
+    B = 1j * A
+    Y = 1j * X
+
+    v = np.array([1])
+
+    assert_equal(B.dot(v), Y.dot(v))
+    assert_equal(B.H.dot(v), Y.T.conj().dot(v))

@@ -1,3 +1,13 @@
+/*! \file
+Copyright (c) 2003, The Regents of the University of California, through
+Lawrence Berkeley National Laboratory (subject to receipt of any required 
+approvals from U.S. Dept. of Energy) 
+
+All rights reserved. 
+
+The source code is distributed under BSD license, see the file License.txt
+at the top-level directory.
+*/
 /*! @file colamd.c
  *\brief A sparse matrix column ordering algorithm
  
@@ -25,7 +35,7 @@
 	conventional partial pivoting with row interchanges.  Colamd is the
 	column ordering method used in SuperLU, part of the ScaLAPACK library.
 	It is also available as built-in function in MATLAB Version 6,
-	available from MathWorks, Inc. (http://www.mathworks.com).  This
+	available from MathWorks, Inc. (https://www.mathworks.com).  This
 	routine can be used in place of colmmd in MATLAB.
 
     	Symamd computes a permutation P of a symmetric matrix A such that the
@@ -69,9 +79,9 @@
 
 	The colamd/symamd library is available at
 
-	    http://www.cise.ufl.edu/research/sparse/colamd/
+	    https://web.archive.org/web/20141010162709/http://www.cise.ufl.edu/research/sparse/colamd/
 
-	This is the http://www.cise.ufl.edu/research/sparse/colamd/colamd.c
+	This is the https://web.archive.org/web/20040113022019/http://www.cise.ufl.edu:80/research/sparse/colamd/colamd.c
 	file.  It requires the colamd.h file.  It is required by the colamdmex.c
 	and symamdmex.c files, for the MATLAB interface to colamd and symamd.
 
@@ -339,7 +349,7 @@
 
 	Example:
 	
-	    See http://www.cise.ufl.edu/research/sparse/colamd/example.c
+	    See http://www.cise.ufl.edu/research/sparse/colamd/example.c (dead link)
 	    for a complete example.
 
 	    To order the columns of a 5-by-4 matrix with 11 nonzero entries in

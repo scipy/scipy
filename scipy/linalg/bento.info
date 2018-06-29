@@ -9,7 +9,8 @@ Library:
             cblas.pyf.src
     Extension: _flapack
         Sources:
-            flapack.pyf.src
+            flapack.pyf.src,
+            src/lapack_deprecations/*.f
     Extension: _clapack
         Sources:
             clapack.pyf.src
@@ -20,9 +21,6 @@ Library:
         Sources:
              interpolative.pyf,
              src/id_dist/src/*.f
-    Extension: _calc_lwork
-        Sources:
-             src/calc_lwork.f
     Extension: _solve_toeplitz
         Sources:
              _solve_toeplitz.c

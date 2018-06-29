@@ -6,6 +6,7 @@ python module _arpack ! in
     <_cd=complex,double complex>
     interface  ! in :_arpack
         subroutine <s,d>saupd(ido,bmat,n,which,nev,tol,resid,ncv,v,ldv,iparam,ipntr,workd,workl,lworkl,info) ! in :_arpack:src/ssaupd.f
+            threadsafe   ! it's not really threadsafe, but we use a lock on the Python side, so keeping GIL is not needed
             integer intent(in,out):: ido
             character*1 :: bmat
             integer optional,check(len(resid)>=n),depend(resid) :: n=len(resid)
@@ -25,6 +26,7 @@ python module _arpack ! in
         end subroutine <s,d>saupd
 
         subroutine <s,d>seupd(rvec,howmny,select,d,z,ldz,sigma,bmat,n,which,nev,tol,resid,ncv,v,ldv,iparam,ipntr,workd,workl,lworkl,info) ! in :_arpack:src/sseupd.f
+            threadsafe   ! it's not really threadsafe, but we use a lock on the Python side, so keeping GIL is not needed
             logical :: rvec
             character :: howmny
             logical dimension(ncv) :: select
@@ -50,6 +52,7 @@ python module _arpack ! in
         end subroutine <s,d>seupd
 
         subroutine <s,d>naupd(ido,bmat,n,which,nev,tol,resid,ncv,v,ldv,iparam,ipntr,workd,workl,lworkl,info) ! in :_arpack:src/snaupd.f
+            threadsafe   ! it's not really threadsafe, but we use a lock on the Python side, so keeping GIL is not needed
             integer intent(in,out):: ido
             character*1 :: bmat
             integer optional,check(len(resid)>=n),depend(resid) :: n=len(resid)
@@ -69,6 +72,7 @@ python module _arpack ! in
         end subroutine <s,d>naupd
 
         subroutine <s,d>neupd(rvec,howmny,select,dr,di,z,ldz,sigmar,sigmai,workev,bmat,n,which,nev,tol,resid,ncv,v,ldv,iparam,ipntr,workd,workl,lworkl,info) ! in ARPACK/SRC/sneupd.f
+            threadsafe   ! it's not really threadsafe, but we use a lock on the Python side, so keeping GIL is not needed
             logical :: rvec
             character :: howmny
             logical dimension(ncv) :: select
@@ -97,6 +101,7 @@ python module _arpack ! in
         end subroutine <s,d>neupd
 
         subroutine <c,z>naupd(ido,bmat,n,which,nev,tol,resid,ncv,v,ldv,iparam,ipntr,workd,workl,lworkl,rwork,info) ! in :_arpack:src/snaupd.f
+            threadsafe   ! it's not really threadsafe, but we use a lock on the Python side, so keeping GIL is not needed
             integer intent(in,out):: ido
             character*1 :: bmat
             integer optional,check(len(resid)>=n),depend(resid) :: n=len(resid)
@@ -117,6 +122,7 @@ python module _arpack ! in
         end subroutine <c,z>naupd
 
         subroutine <c,z>neupd(rvec,howmny,select,d,z,ldz,sigma,workev,bmat,n,which,nev,tol,resid,ncv,v,ldv,iparam,ipntr,workd,workl,lworkl,rwork,info) ! in :_arpack:src/sneupd.f
+            threadsafe   ! it's not really threadsafe, but we use a lock on the Python side, so keeping GIL is not needed
             logical :: rvec
             character :: howmny
             logical dimension(ncv) :: select

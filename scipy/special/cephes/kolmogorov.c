@@ -8,16 +8,16 @@
  * theoretical distribution function P(x) and an empirical one Sn(x)
  * from n samples.
  * 
- * +
- * D  =         sup        [ P(x) - Sn(x) ]
- * n     -inf < x < inf
- * 
- * 
- * [n(1-e)]
- * +            -                    v-1              n-v
- * Pr{D   > e} =    >    C    e (e + v/n)    (1 - e - v/n)
- * n            -   n v
- * v=0
+ *     +
+ *    D  =         sup     [P(x) - S (x)]
+ *     n     -inf < x < inf         n
+ *
+ *
+ *                  [n(1-e)]
+ *        +            -                    v-1              n-v
+ *    Pr{D   > e} =    >    C    e (e + v/n)    (1 - e - v/n)
+ *        n            -   n v
+ *                    v=0
  * 
  * [n(1-e)] is the largest integer not exceeding n(1-e).
  * nCv is the number of combinations of n things taken v at a time.  */

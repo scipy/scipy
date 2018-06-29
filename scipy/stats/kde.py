@@ -25,6 +25,7 @@ import warnings
 # Scipy imports.
 from scipy._lib.six import callable, string_types
 from scipy import linalg, special
+from scipy.special import logsumexp
 
 from numpy import atleast_2d, reshape, zeros, newaxis, dot, exp, pi, sqrt, \
      ravel, power, atleast_1d, squeeze, sum, transpose
@@ -245,7 +246,7 @@ class gaussian_kde(object):
 
         Raises
         ------
-        ValueError :
+        ValueError
             If the mean or covariance of the input Gaussian differs from
             the KDE's dimensionality.
 
@@ -263,12 +264,19 @@ class gaussian_kde(object):
 
         sum_cov = self.covariance + cov
 
+        # This will raise LinAlgError if the new cov matrix is not s.p.d
+        # cho_factor returns (ndarray, bool) where bool is a flag for whether
+        # or not ndarray is upper or lower triangular
+        sum_cov_chol = linalg.cho_factor(sum_cov)
+
         diff = self.dataset - mean
-        tdiff = dot(linalg.inv(sum_cov), diff)
+        tdiff = linalg.cho_solve(sum_cov_chol, diff)
+
+        sqrt_det = np.prod(np.diagonal(sum_cov_chol[0]))
+        norm_const = power(2 * pi, sum_cov.shape[0] / 2.0) * sqrt_det
 
         energies = sum(diff * tdiff, axis=0) / 2.0
-        result = sum(exp(-energies), axis=0) / sqrt(linalg.det(2 * pi *
-                                                        sum_cov)) / self.n
+        result = sum(exp(-energies), axis=0) / norm_const / self.n
 
         return result
 
@@ -381,7 +389,10 @@ class gaussian_kde(object):
             energies = sum(diff * tdiff, axis=0) / 2.0
             result += sum(exp(-energies), axis=0)
 
-        result /= sqrt(linalg.det(2 * pi * sum_cov)) * large.n * small.n
+        sqrt_det = np.prod(np.diagonal(sum_cov_chol[0]))
+        norm_const = power(2 * pi, sum_cov.shape[0] / 2.0) * sqrt_det
+
+        result /= norm_const * large.n * small.n
 
         return result
 
@@ -517,11 +528,37 @@ class gaussian_kde(object):
     def logpdf(self, x):
         """
         Evaluate the log of the estimated pdf on a provided set of points.
-
-        Notes
-        -----
-        See `gaussian_kde.evaluate` for more details; this method simply
-        returns ``np.log(gaussian_kde.evaluate(x))``.
-
         """
-        return np.log(self.evaluate(x))
+
+        points = atleast_2d(x)
+
+        d, m = points.shape
+        if d != self.d:
+            if d == 1 and m == self.d:
+                # points was passed in as a row vector
+                points = reshape(points, (self.d, 1))
+                m = 1
+            else:
+                msg = "points have dimension %s, dataset has dimension %s" % (d,
+                    self.d)
+                raise ValueError(msg)
+
+        result = zeros((m,), dtype=float)
+
+        if m >= self.n:
+            # there are more points than data, so loop over data
+            energy = zeros((self.n, m), dtype=float)
+            for i in range(self.n):
+                diff = self.dataset[:, i, newaxis] - points
+                tdiff = dot(self.inv_cov, diff)
+                energy[i] = sum(diff*tdiff,axis=0) / 2.0
+            result = logsumexp(-energy, b=1/self._norm_factor, axis=0)
+        else:
+            # loop over points
+            for i in range(m):
+                diff = self.dataset - points[:, i, newaxis]
+                tdiff = dot(self.inv_cov, diff)
+                energy = sum(diff * tdiff, axis=0) / 2.0
+                result[i] = logsumexp(-energy, b=1/self._norm_factor)
+
+        return result

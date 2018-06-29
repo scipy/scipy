@@ -17,18 +17,18 @@ from .common import Benchmark
 def random_sparse_csr(m, n, nnz_per_row):
     # Copied from the scipy.sparse benchmark.
     rows = np.arange(m).repeat(nnz_per_row)
-    cols = np.random.random_integers(low=0, high=n-1, size=nnz_per_row*m)
+    cols = np.random.randint(0, n, size=nnz_per_row*m)
     vals = np.random.random_sample(m*nnz_per_row)
-    M = scipy.sparse.coo_matrix((vals,(rows,cols)), (m,n), dtype=float)
+    M = scipy.sparse.coo_matrix((vals, (rows, cols)), (m, n), dtype=float)
     return M.tocsr()
 
 
 def random_sparse_csc(m, n, nnz_per_row):
     # Copied from the scipy.sparse benchmark.
     rows = np.arange(m).repeat(nnz_per_row)
-    cols = np.random.random_integers(low=0, high=n-1, size=nnz_per_row*m)
+    cols = np.random.randint(0, n, size=nnz_per_row*m)
     vals = np.random.random_sample(m*nnz_per_row)
-    M = scipy.sparse.coo_matrix((vals,(rows,cols)), (m,n), dtype=float)
+    M = scipy.sparse.coo_matrix((vals, (rows, cols)), (m, n), dtype=float)
     # Use csc instead of csr, because sparse LU decomposition
     # raises a warning when I use csr.
     return M.tocsc()

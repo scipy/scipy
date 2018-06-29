@@ -10,7 +10,7 @@ significant power to the interactive Python session by providing the
 user with high-level commands and classes for manipulating and
 visualizing data. With SciPy an interactive Python session
 becomes a data-processing and system-prototyping environment rivaling
-sytems such as MATLAB, IDL, Octave, R-Lab, and SciLab.
+systems such as MATLAB, IDL, Octave, R-Lab, and SciLab.
 
 The additional benefit of basing SciPy on Python is that this also makes a
 powerful programming language available for use in developing
@@ -67,7 +67,6 @@ Subpackage          Description
 :mod:`spatial`      Spatial data structures and algorithms
 :mod:`special`      Special functions
 :mod:`stats`        Statistical distributions and functions
-:mod:`weave`        C/C++ integration
 ==================  ======================================================
 
 Scipy sub-packages need to be imported separately, for example::
@@ -86,7 +85,7 @@ Finding Documentation
 ---------------------
 
 SciPy and NumPy have documentation versions in both HTML and PDF format
-available at http://docs.scipy.org/, that cover nearly
+available at https://docs.scipy.org/, that cover nearly
 all available functionality. However, this documentation is still
 work-in-progress and some parts may be incomplete or sparse. As
 we are a volunteer organization and depend on the community for
@@ -111,7 +110,7 @@ documentation string for the object passed to the ``help`` command are
 printed to standard output (or to a writeable object passed as the
 third argument). The second keyword argument of ``numpy.info`` defines
 the maximum width of the line for printing. If a module is passed as
-the argument to help than a list of the functions and classes defined
+the argument to ``help`` then a list of the functions and classes defined
 in that module is printed. For example:
 
 .. literalinclude:: examples/1-1

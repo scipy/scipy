@@ -2,7 +2,7 @@ import sys
 import os
 
 from bento.commands import hooks
-from scipy._build_utils import get_g77_abi_wrappers, get_sgemv_fix
+from scipy._build_utils import get_g77_abi_wrappers
 
 
 def make_relpath(f):
@@ -36,7 +36,6 @@ def pre_build(context):
         #if "Accelerate" in env.FRAMEWORK_CBLAS:
         if sys.platform == 'darwin':
             info = {'extra_link_args': ['Accelerate']}
-            sources += [make_relpath(f) for f in get_sgemv_fix(info)]
         return default_builder(extension,
                                source=sources,
                                features="c fc pyext cshlib f2py bento",

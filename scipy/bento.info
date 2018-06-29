@@ -1,4 +1,5 @@
 Recurse:
+    _lib,
     cluster,
     fftpack,
     integrate,
@@ -33,5 +34,4 @@ Library:
         spatial,
         special,
         stats,
-        ndimage,
-        weave
+        ndimage

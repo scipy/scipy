@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 from __future__ import division, print_function, absolute_import
 
 from os.path import join
@@ -6,7 +5,7 @@ from os.path import join
 
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
-    from numpy.distutils.system_info import get_info
+    from scipy._build_utils.system_info import get_info
 
     lapack_opt = get_info('lapack_opt', notfound_action=2)
 
@@ -21,6 +20,11 @@ def configuration(parent_package='',top_path=None):
     config.add_extension('_ppoly',
                          sources=['_ppoly.c'],
                          **lapack_opt)
+
+    config.add_extension('_bspl',
+                         sources=['_bspl.c'],
+                         libraries=['fitpack'],
+                         depends=['src/__fitpack.h'] + fitpack_src)
 
     config.add_extension('_fitpack',
                          sources=['src/_fitpackmodule.c'],
@@ -43,6 +47,7 @@ def configuration(parent_package='',top_path=None):
     config.add_data_dir('tests')
 
     return config
+
 
 if __name__ == '__main__':
     from numpy.distutils.core import setup

@@ -11,10 +11,14 @@ Module for testing automatic garbage collection of objects
 """
 import weakref
 import gc
+import sys
 
 from contextlib import contextmanager
 
 __all__ = ['set_gc_state', 'gc_state', 'assert_deallocated']
+
+
+IS_PYPY = '__pypy__' in sys.modules
 
 
 class ReferenceError(AssertionError):
@@ -61,13 +65,15 @@ def assert_deallocated(func, *args, **kwargs):
     reference counting, without requiring gc to break reference cycles.
     GC is disabled inside the context manager.
 
+    This check is not available on PyPy.
+
     Parameters
     ----------
     func : callable
         Callable to create object to check
-    \*args : sequence
+    \\*args : sequence
         positional arguments to `func` in order to create object to check
-    \*\*kwargs : dict
+    \\*\\*kwargs : dict
         keyword arguments to `func` in order to create object to check
 
     Examples
@@ -87,6 +93,9 @@ def assert_deallocated(func, *args, **kwargs):
         ...
     ReferenceError: Remaining reference(s) to object
     """
+    if IS_PYPY:
+        raise RuntimeError("assert_deallocated is unavailable on PyPy")
+
     with gc_state(False):
         obj = func(*args, **kwargs)
         ref = weakref.ref(obj)

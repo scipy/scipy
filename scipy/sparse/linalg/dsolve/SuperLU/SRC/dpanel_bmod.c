@@ -1,3 +1,13 @@
+/*! \file
+Copyright (c) 2003, The Regents of the University of California, through
+Lawrence Berkeley National Laboratory (subject to receipt of any required 
+approvals from U.S. Dept. of Energy) 
+
+All rights reserved. 
+
+The source code is distributed under BSD license, see the file License.txt
+at the top-level directory.
+*/
 
 /*! @file dpanel_bmod.c
  * \brief Performs numeric block updates
@@ -103,23 +113,20 @@ dpanel_bmod (
     double      one = 1.0;
     register int ldaTmp;
     register int r_ind, r_hi;
-    static   int first = 1, maxsuper, rowblk, colblk;
+    int  maxsuper, rowblk, colblk;
     flops_t  *ops = stat->ops;
     
     xsup    = Glu->xsup;
     supno   = Glu->supno;
     lsub    = Glu->lsub;
     xlsub   = Glu->xlsub;
-    lusup   = Glu->lusup;
+    lusup   = (double *) Glu->lusup;
     xlusup  = Glu->xlusup;
     
-    if ( first ) {
-	maxsuper = SUPERLU_MAX( sp_ienv(3), sp_ienv(7) );
-	rowblk   = sp_ienv(4);
-	colblk   = sp_ienv(5);
-	first = 0;
-    }
-    ldaTmp = maxsuper + rowblk;
+    maxsuper = SUPERLU_MAX( sp_ienv(3), sp_ienv(7) );
+    rowblk   = sp_ienv(4);
+    colblk   = sp_ienv(5);
+    ldaTmp   = maxsuper + rowblk;
 
     /* 
      * For each nonz supernode segment of U[*,j] in topological order 
@@ -221,7 +228,7 @@ dpanel_bmod (
 		    STRSV( ftcs1, ftcs2, ftcs3, &segsze, &lusup[luptr], 
 			   &nsupr, TriTmp, &incx );
 #else
-		    dtrsv_( "L", "N", "U", &segsze, &lusup[luptr], 
+ 		    dtrsv_( "L", "N", "U", &segsze, &lusup[luptr], 
 			   &nsupr, TriTmp, &incx );
 #endif
 #else		
@@ -400,6 +407,12 @@ dpanel_bmod (
 		    STRSV( ftcs1, ftcs2, ftcs3, &segsze, &lusup[luptr], 
 			   &nsupr, tempv, &incx );
 #else
+#if SCIPY_FIX
+		    if (nsupr < segsze) {
+			/* Fail early rather than passing in invalid parameters to TRSV. */
+			ABORT("failed to factorize matrix");
+		    }
+#endif
 		    dtrsv_( "L", "N", "U", &segsze, &lusup[luptr], 
 			   &nsupr, tempv, &incx );
 #endif

@@ -394,12 +394,10 @@ static double recur(double *n, double x, double *newn, int cancel)
  * AMS55 #9.1.10.
  */
 
-extern int sgngam;
-
 static double jvs(double n, double x)
 {
     double t, u, y, z, k;
-    int ex;
+    int ex, sgngam;
 
     z = -x * x / 4.0;
     u = 1.0;
@@ -436,7 +434,7 @@ static double jvs(double n, double x)
 	t = z - k;
 	printf("log pow=%.5e, lgam(%.4e)=%.5e\n", z, n + 1.0, k);
 #else
-	t = n * log(0.5 * x) - lgam(n + 1.0);
+	t = n * log(0.5 * x) - lgam_sgn(n + 1.0, &sgngam);
 #endif
 	if (y < 0) {
 	    sgngam = -sgngam;

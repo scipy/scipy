@@ -3,17 +3,17 @@ from collections import namedtuple
 import numpy as np
 
 from . import distributions
-from . import futil
 
 
-__all__ = ['find_repeats', 'linregress', 'theilslopes']
+__all__ = ['_find_repeats', 'linregress', 'theilslopes']
 
+LinregressResult = namedtuple('LinregressResult', ('slope', 'intercept',
+                                                   'rvalue', 'pvalue',
+                                                   'stderr'))
 
 def linregress(x, y=None):
     """
-    Calculate a regression line
-
-    This computes a least-squares regression for two sets of measurements.
+    Calculate a linear least-squares regression for two sets of measurements.
 
     Parameters
     ----------
@@ -33,22 +33,46 @@ def linregress(x, y=None):
         correlation coefficient
     pvalue : float
         two-sided p-value for a hypothesis test whose null hypothesis is
-        that the slope is zero.
+        that the slope is zero, using Wald Test with t-distribution of
+        the test statistic.
     stderr : float
-        Standard error of the estimate
+        Standard error of the estimated gradient.
+
+    See also
+    --------
+    :func:`scipy.optimize.curve_fit` : Use non-linear
+     least squares to fit a function to data.
+    :func:`scipy.optimize.leastsq` : Minimize the sum of
+     squares of a set of equations.
 
     Examples
     --------
+    >>> import matplotlib.pyplot as plt
     >>> from scipy import stats
+
+    Generate some data:
+
     >>> np.random.seed(12345678)
     >>> x = np.random.random(10)
-    >>> y = np.random.random(10)
-    >>> slope, intercept, r_value, p_value, std_err = stats.linregress(x,y)
+    >>> y = 1.6*x + np.random.random(10)
 
-    # To get coefficient of determination (r_squared)
+    Perform the linear regression:
 
-    >>> print("r-squared:", r_value**2)
-    ('r-squared:', 0.080402268539028335)
+    >>> slope, intercept, r_value, p_value, std_err = stats.linregress(x, y)
+    >>> print("slope: %f    intercept: %f" % (slope, intercept))
+    slope: 1.944864    intercept: 0.268578
+
+    To get coefficient of determination (r_squared):
+
+    >>> print("r-squared: %f" % r_value**2)
+    r-squared: 0.735498
+
+    Plot the data along with the fitted line:
+
+    >>> plt.plot(x, y, 'o', label='original data')
+    >>> plt.plot(x, intercept + slope*x, 'r', label='fitted line')
+    >>> plt.legend()
+    >>> plt.show()
 
     """
     TINY = 1.0e-20
@@ -65,6 +89,10 @@ def linregress(x, y=None):
     else:
         x = np.asarray(x)
         y = np.asarray(y)
+
+    if x.size == 0 or y.size == 0:
+        raise ValueError("Inputs must not be empty.")
+
     n = len(x)
     xmean = np.mean(x, None)
     ymean = np.mean(y, None)
@@ -84,15 +112,20 @@ def linregress(x, y=None):
             r = -1.0
 
     df = n - 2
-    t = r * np.sqrt(df / ((1.0 - r + TINY)*(1.0 + r + TINY)))
-    prob = 2 * distributions.t.sf(np.abs(t), df)
     slope = r_num / ssxm
     intercept = ymean - slope*xmean
-    sterrest = np.sqrt((1 - r**2) * ssym / ssxm / df)
+    if n == 2:
+        # handle case when only two points are passed in
+        if y[0] == y[1]:
+            prob = 1.0
+        else:
+            prob = 0.0
+        sterrest = 0.0
+    else:
+        t = r * np.sqrt(df / ((1.0 - r + TINY)*(1.0 + r + TINY)))
+        prob = 2 * distributions.t.sf(np.abs(t), df)
+        sterrest = np.sqrt((1 - r**2) * ssym / ssxm / df)
 
-    LinregressResult = namedtuple('LinregressResult', ('slope', 'intercept',
-                                                       'rvalue', 'pvalue',
-                                                       'stderr'))
     return LinregressResult(slope, intercept, r, prob, sterrest)
 
 
@@ -176,11 +209,12 @@ def theilslopes(y, x=None, alpha=0.95):
     >>> plt.show()
 
     """
-    y = np.asarray(y).flatten()
+    # We copy both x and y so we can use _find_repeats.
+    y = np.array(y).flatten()
     if x is None:
         x = np.arange(len(y), dtype=float)
     else:
-        x = np.asarray(x, dtype=float).flatten()
+        x = np.array(x, dtype=float).flatten()
         if len(x) != len(y):
             raise ValueError("Incompatible lengths ! (%s<>%s)" % (len(y), len(x)))
 
@@ -197,14 +231,14 @@ def theilslopes(y, x=None, alpha=0.95):
 
     z = distributions.norm.ppf(alpha / 2.)
     # This implements (2.6) from Sen (1968)
-    _, nxreps = find_repeats(x)
-    _, nyreps = find_repeats(y)
+    _, nxreps = _find_repeats(x)
+    _, nyreps = _find_repeats(y)
     nt = len(slopes)       # N in Sen (1968)
     ny = len(y)            # n in Sen (1968)
     # Equation 2.6 in Sen (1968):
     sigsq = 1/18. * (ny * (ny-1) * (2*ny+5) -
-                     np.sum(k * (k-1) * (2*k + 5) for k in nxreps) -
-                     np.sum(k * (k-1) * (2*k + 5) for k in nyreps))
+                     sum(k * (k-1) * (2*k + 5) for k in nxreps) -
+                     sum(k * (k-1) * (2*k + 5) for k in nyreps))
     # Find the confidence interval indices in `slopes`
     sigma = np.sqrt(sigsq)
     Ru = min(int(np.round((nt - z*sigma)/2.)), len(slopes)-1)
@@ -213,42 +247,20 @@ def theilslopes(y, x=None, alpha=0.95):
     return medslope, medinter, delta[0], delta[1]
 
 
-def find_repeats(arr):
-    """
-    Find repeats and repeat counts.
+def _find_repeats(arr):
+    # This function assumes it may clobber its input.
+    if len(arr) == 0:
+        return np.array(0, np.float64), np.array(0, np.intp)
 
-    Parameters
-    ----------
-    arr : array_like
-        Input array
+    # XXX This cast was previously needed for the Fortran implementation,
+    # should we ditch it?
+    arr = np.asarray(arr, np.float64).ravel()
+    arr.sort()
 
-    Returns
-    -------
-    values : ndarray
-        The unique values from the (flattened) input that are repeated.
-
-    counts : ndarray
-        Number of times the corresponding 'value' is repeated.
-
-    Notes
-    -----
-    In numpy >= 1.9 `numpy.unique` provides similar functionality. The main
-    difference is that `find_repeats` only returns repeated values.
-
-    Examples
-    --------
-    >>> from scipy import stats
-    >>> stats.find_repeats([2, 1, 2, 3, 2, 2, 5])
-    RepeatedResults(values=array([ 2.]), counts=array([4], dtype=int32))
-
-    >>> stats.find_repeats([[10, 20, 1, 2], [5, 5, 4, 4]])
-    RepeatedResults(values=array([ 4.,  5.]), counts=array([2, 2], dtype=int32))
-
-    """
-    RepeatedResults = namedtuple('RepeatedResults', ('values', 'counts'))
-
-    if np.asarray(arr).size == 0:
-        return RepeatedResults([], [])
-
-    v1, v2, n = futil.dfreps(arr)
-    return RepeatedResults(v1[:n], v2[:n])
+    # Taken from NumPy 1.9's np.unique.
+    change = np.concatenate(([True], arr[1:] != arr[:-1]))
+    unique = arr[change]
+    change_idx = np.concatenate(np.nonzero(change) + ([arr.size],))
+    freq = np.diff(change_idx)
+    atleast2 = freq > 1
+    return unique[atleast2], freq[atleast2]

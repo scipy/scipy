@@ -1,3 +1,13 @@
+/*! \file
+Copyright (c) 2003, The Regents of the University of California, through
+Lawrence Berkeley National Laboratory (subject to receipt of any required 
+approvals from U.S. Dept. of Energy) 
+
+All rights reserved. 
+
+The source code is distributed under BSD license, see the file License.txt
+at the top-level directory.
+*/
 /*! @file scsum1.c
  * \brief Takes sum of the absolute values of a complex vector and returns a single precision result
  *
@@ -40,7 +50,7 @@
     ===================================================================== 
 </pre>
 */
-double scsum1_(int *n, complex *cx, int *incx)
+double scsum1_slu(int *n, complex *cx, int *incx)
 {
     /* System generated locals */
     int i__1, i__2;
@@ -95,5 +105,5 @@ L20:
 
 /*     End of SCSUM1 */
 
-} /* scsum1_ */
+} /* scsum1_slu */
 

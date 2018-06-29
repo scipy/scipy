@@ -199,6 +199,10 @@ class KDTree(object):
             >>> import sys
             >>> sys.setrecursionlimit(10000)
 
+    See Also
+    --------
+    cKDTree : Implementation of `KDTree` in Cython
+
     Notes
     -----
     The algorithm used is described in Maneewongvatana and Mount 1999.
@@ -591,11 +595,22 @@ class KDTree(object):
         Examples
         --------
         >>> from scipy import spatial
-        >>> x, y = np.mgrid[0:4, 0:4]
-        >>> points = zip(x.ravel(), y.ravel())
+        >>> x, y = np.mgrid[0:5, 0:5]
+        >>> points = np.c_[x.ravel(), y.ravel()]
         >>> tree = spatial.KDTree(points)
         >>> tree.query_ball_point([2, 0], 1)
-        [4, 8, 9, 12]
+        [5, 10, 11, 15]
+
+        Query multiple points and plot the results:
+
+        >>> import matplotlib.pyplot as plt
+        >>> points = np.asarray(points)
+        >>> plt.plot(points[:,0], points[:,1], '.')
+        >>> for results in tree.query_ball_point(([2, 0], [3, 3]), 1):
+        ...     nearby_points = points[results]
+        ...     plt.plot(nearby_points[:,0], nearby_points[:,1], 'o')
+        >>> plt.margins(0.1, 0.1)
+        >>> plt.show()
 
         """
         x = np.asarray(x)
@@ -927,9 +942,9 @@ def distance_matrix(x, y, p=2, threshold=1000000):
     Parameters
     ----------
     x : (M, K) array_like
-        TODO: description needed
+        Matrix of M vectors in K dimensions.
     y : (N, K) array_like
-        TODO: description needed
+        Matrix of N vectors in K dimensions.
     p : float, 1 <= p <= infinity
         Which Minkowski p-norm to use.
     threshold : positive int
@@ -939,7 +954,8 @@ def distance_matrix(x, y, p=2, threshold=1000000):
     Returns
     -------
     result : (M, N) ndarray
-        Distance matrix.
+        Matrix containing the distance from every vector in `x` to every vector
+        in `y`.
 
     Examples
     --------

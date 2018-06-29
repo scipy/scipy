@@ -1,16 +1,22 @@
-# Author: Paul Nation  -- <pnation@korea.ac.kr>
+# Author: Paul Nation  -- <nonhermitian@gmail.com>
 # Original Source: QuTiP: Quantum Toolbox in Python (qutip.org)
 # License: New BSD, (C) 2014
 
+from __future__ import absolute_import
+
 import numpy as np
 cimport numpy as np
-
-from scipy.sparse import isspmatrix_csr, isspmatrix_csc, isspmatrix_coo
+from warnings import warn
+from scipy.sparse import (csc_matrix, isspmatrix, isspmatrix_coo, 
+                        isspmatrix_csc, isspmatrix_csr,
+                        SparseEfficiencyWarning)
 
 include 'parameters.pxi'
 
 def reverse_cuthill_mckee(graph, symmetric_mode=False):
     """
+    reverse_cuthill_mckee(graph, symmetric_mode=False)
+    
     Returns the permutation array that orders a sparse CSR or CSC matrix
     in Reverse-Cuthill McKee ordering.  
     
@@ -39,6 +45,28 @@ def reverse_cuthill_mckee(graph, symmetric_mode=False):
     ----------
     E. Cuthill and J. McKee, "Reducing the Bandwidth of Sparse Symmetric Matrices",
     ACM '69 Proceedings of the 1969 24th national conference, (1969).
+
+    Examples
+    --------
+    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse.csgraph import reverse_cuthill_mckee
+
+    >>> graph = [
+    ... [0, 1 , 2, 0],
+    ... [0, 0, 0, 1],
+    ... [2, 0, 0, 3],
+    ... [0, 0, 0, 0]
+    ... ]
+    >>> graph = csr_matrix(graph)
+    >>> print(graph)
+      (0, 1)	1
+      (0, 2)	2
+      (1, 3)	1
+      (2, 0)	2
+      (2, 3)	3
+
+    >>> reverse_cuthill_mckee(graph)
+    array([3, 2, 1, 0], dtype=int32)
     
     """
     if not (isspmatrix_csc(graph) or isspmatrix_csr(graph)):
@@ -51,6 +79,8 @@ def reverse_cuthill_mckee(graph, symmetric_mode=False):
 
 def maximum_bipartite_matching(graph, perm_type='row'):
     """
+    maximum_bipartite_matching(graph, perm_type='row')
+    
     Returns an array of row or column permutations that makes
     the diagonal of a nonsingular square CSC sparse matrix zero free.  
     
@@ -84,6 +114,31 @@ def maximum_bipartite_matching(graph, perm_type='row'):
     I. S. Duff, K. Kaya, and B. Ucar, "Design, Implementation, and 
     Analysis of Maximum Transversal Algorithms", ACM Trans. Math. Softw.
     38, no. 2, (2011).
+
+    Examples
+    --------
+    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse.csgraph import maximum_bipartite_matching
+
+    >>> graph = [
+    ... [0, 1 , 2, 0],
+    ... [1, 0, 0, 1],
+    ... [2, 0, 0, 3],
+    ... [0, 1, 3, 0]
+    ... ]
+    >>> graph = csr_matrix(graph)
+    >>> print(graph)
+      (0, 1)	1
+      (0, 2)	2
+      (1, 0)	1
+      (1, 3)	1
+      (2, 0)	2
+      (2, 3)	3
+      (3, 1)	1
+      (3, 2)	3
+
+    >>> maximum_bipartite_matching(graph, perm_type='row')
+    array([1, 0, 3, 2], dtype=int32)
 
     """
     cdef np.npy_intp nrows = graph.shape[0]
@@ -247,3 +302,77 @@ def _maximum_bipartite_matching(
                     visited[match[queue[j]]] = -1
 
     return match
+
+
+def structural_rank(graph):
+    """
+    structural_rank(graph)
+    
+    Compute the structural rank of a graph (matrix) with a given 
+    sparsity pattern.
+
+    The structural rank of a matrix is the number of entries in the maximum 
+    transversal of the corresponding bipartite graph, and is an upper bound 
+    on the numerical rank of the matrix. A graph has full structural rank 
+    if it is possible to permute the elements to make the diagonal zero-free.
+
+    Parameters
+    ----------
+    graph : sparse matrix
+        Input sparse matrix.
+
+    Returns
+    -------
+    rank : int
+        The structural rank of the sparse graph.
+
+    .. versionadded:: 0.19.0
+    
+    References
+    ----------
+    .. [1] I. S. Duff, "Computing the Structural Index", SIAM J. Alg. Disc. 
+            Meth., Vol. 7, 594 (1986).
+    
+    .. [2] http://www.cise.ufl.edu/research/sparse/matrices/legend.html
+
+    Examples
+    --------
+    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse.csgraph import structural_rank
+
+    >>> graph = [
+    ... [0, 1 , 2, 0],
+    ... [1, 0, 0, 1],
+    ... [2, 0, 0, 3],
+    ... [0, 1, 3, 0]
+    ... ]
+    >>> graph = csr_matrix(graph)
+    >>> print(graph)
+      (0, 1)	1
+      (0, 2)	2
+      (1, 0)	1
+      (1, 3)	1
+      (2, 0)	2
+      (2, 3)	3
+      (3, 1)	1
+      (3, 2)	3
+
+    >>> structural_rank(graph)
+    4
+
+    """
+    if not isspmatrix:
+        raise TypeError('Input must be a sparse matrix')
+    if not isspmatrix_csc(graph):
+        if not (isspmatrix_csr(graph) or isspmatrix_coo(graph)):
+            warn('Input matrix should be in CSC, CSR, or COO matrix format',
+                    SparseEfficiencyWarning)
+        graph = csc_matrix(graph)
+    # If A is a tall matrix, then transpose.
+    if graph.shape[0] > graph.shape[1]:
+        graph = graph.T.tocsc()
+    rank = np.sum(_maximum_bipartite_matching(graph.indices, 
+                    graph.indptr, graph.shape[1]) >= 0)
+    return rank
+
+

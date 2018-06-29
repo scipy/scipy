@@ -79,7 +79,7 @@ Unified interface to root finding algorithms
 ````````````````````````````````````````````
 
 The new function ``scipy.optimize.root`` provides a common interface to
-root finding algorithms for multivariate functions, embeding `fsolve`,
+root finding algorithms for multivariate functions, embedding `fsolve`,
 `leastsq` and `nonlin` solvers.
 
 

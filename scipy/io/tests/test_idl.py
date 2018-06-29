@@ -1,13 +1,14 @@
 from __future__ import division, print_function, absolute_import
 
 from os import path
-from warnings import catch_warnings
+import warnings
 
 DATA_PATH = path.join(path.dirname(__file__), 'data')
 
 import numpy as np
-from numpy.testing import (assert_equal, assert_array_equal, run_module_suite,
+from numpy.testing import (assert_equal, assert_array_equal,
     assert_)
+from scipy._lib._numpy_compat import suppress_warnings
 
 from scipy.io.idl import readsav
 
@@ -266,6 +267,15 @@ class TestStructures:
         assert_identical(s.fc.r, np.array([0], dtype=np.int16))
         assert_identical(s.fc.c, np.array([4], dtype=np.int16))
 
+    def test_arrays_corrupt_idl80(self):
+        # test byte arrays with missing nbyte information from IDL 8.0 .sav file
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, "Not able to verify number of bytes from header")
+            s = readsav(path.join(DATA_PATH,'struct_arrays_byte_idl80.sav'),
+                        verbose=False)
+
+        assert_identical(s.y.x[0], np.array([55,66], dtype=np.uint8))
+
 
 class TestPointers:
     # Check that pointers in .sav files produce references to the same object in Python
@@ -422,13 +432,11 @@ def test_invalid_pointer():
     # that variable and replace the variable with None and emit a warning.
     # Since it's difficult to artificially produce such files, the file used
     # here has been edited to force the pointer reference to be invalid.
-    with catch_warnings(record=True) as w:
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
         s = readsav(path.join(DATA_PATH, 'invalid_pointer.sav'), verbose=False)
     assert_(len(w) == 1)
     assert_(str(w[0].message) == ("Variable referenced by pointer not found in "
                                   "heap: variable will be set to None"))
     assert_identical(s['a'], np.array([None, None]))
 
-
-if __name__ == "__main__":
-    run_module_suite()

@@ -95,7 +95,7 @@ c     clarnv  LAPACK routine for generating a random vector.
 c     cgemv   Level 2 BLAS routine for matrix vector multiplication.
 c     ccopy   Level 1 BLAS that copies one vector to another.
 c     wcdotc   Level 1 BLAS that computes the scalar product of two vectors.
-c     wscnrm2  Level 1 BLAS that computes the norm of a vector. 
+c     scnrm2  Level 1 BLAS that computes the norm of a vector. 
 c
 c\Author
 c     Danny Sorensen               Phuong Vu
@@ -175,10 +175,10 @@ c     | External Functions |
 c     %--------------------%
 c
       Real 
-     &           wscnrm2, wslapy2
+     &           scnrm2, slapy2
       Complex
      &           wcdotc
-      external   wcdotc, wscnrm2, wslapy2
+      external   wcdotc, scnrm2, slapy2
 c
 c     %-----------------%
 c     | Data Statements |
@@ -292,9 +292,9 @@ c
       first = .FALSE.
       if (bmat .eq. 'G') then
           cnorm  = wcdotc (n, resid, 1, workd, 1)
-          rnorm0 = sqrt(wslapy2(real(cnorm),aimag(cnorm)))
+          rnorm0 = sqrt(slapy2(real(cnorm),aimag(cnorm)))
       else if (bmat .eq. 'I') then
-           rnorm0 = wscnrm2(n, resid, 1)
+           rnorm0 = scnrm2(n, resid, 1)
       end if
       rnorm  = rnorm0
 c
@@ -349,9 +349,9 @@ c
 c 
       if (bmat .eq. 'G') then
          cnorm = wcdotc (n, resid, 1, workd, 1)
-         rnorm = sqrt(wslapy2(real(cnorm),aimag(cnorm)))
+         rnorm = sqrt(slapy2(real(cnorm),aimag(cnorm)))
       else if (bmat .eq. 'I') then
-         rnorm = wscnrm2(n, resid, 1)
+         rnorm = scnrm2(n, resid, 1)
       end if
 c
 c     %--------------------------------------%

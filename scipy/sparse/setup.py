@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 from __future__ import division, print_function, absolute_import
 
 import os
@@ -58,6 +57,7 @@ def configuration(parent_package='',top_path=None):
                          )
 
     return config
+
 
 if __name__ == '__main__':
     from numpy.distutils.core import setup

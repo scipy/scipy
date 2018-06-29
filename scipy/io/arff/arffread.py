@@ -1,4 +1,3 @@
-#! /usr/bin/env python
 # Last Change: Mon Aug 20 08:00 PM 2007 J
 from __future__ import division, print_function, absolute_import
 
@@ -23,14 +22,15 @@ __all__ = ['MetaData', 'loadarff', 'ArffError', 'ParseArffError']
 # the keyword (attribute of relation, for now).
 
 # TODO:
-#   - both integer and reals are treated as numeric -> the integer info is lost !
+#   - both integer and reals are treated as numeric -> the integer info
+#    is lost!
 #   - Replace ValueError by ParseError or something
 
 # We know can handle the following:
 #   - numeric and nominal attributes
 #   - missing values for numeric attributes
 
-r_meta = re.compile('^\s*@')
+r_meta = re.compile(r'^\s*@')
 # Match a comment
 r_comment = re.compile(r'^%')
 # Match an empty line
@@ -43,8 +43,6 @@ r_attribute = re.compile(r'^@[Aa][Tt][Tt][Rr][Ii][Bb][Uu][Tt][Ee]\s*(..*$)')
 
 # To get attributes name enclosed with ''
 r_comattrval = re.compile(r"'(..+)'\s+(..+$)")
-# To get attributes name enclosed with '', possibly spread across multilines
-r_mcomattrval = re.compile(r"'([..\n]+)'\s+(..+$)")
 # To get normal attributes
 r_wcomattrval = re.compile(r"(\S+)\s+(..+$)")
 
@@ -201,7 +199,8 @@ def get_date_format(atrv):
             pattern = pattern.replace("ss", "%S")
             datetime_unit = "s"
         if "z" in pattern or "Z" in pattern:
-            raise ValueError("Date type attributes with time zone not supported, yet")
+            raise ValueError("Date type attributes with time zone not "
+                             "supported, yet")
 
         if datetime_unit is None:
             raise ValueError("Invalid or unsupported date format")
@@ -398,41 +397,8 @@ def safe_date(value, date_format, datetime_unit):
         return np.datetime64(dt).astype("datetime64[%s]" % datetime_unit)
 
 
-def get_delim(line):
-    """Given a string representing a line of data, check whether the
-    delimiter is ',' or space.
-
-    Parameters
-    ----------
-    line : str
-       line of data
-
-    Returns
-    -------
-    delim : {',', ' '}
-
-    Examples
-    --------
-    >>> get_delim(',')
-    ','
-    >>> get_delim(' ')
-    ' '
-    >>> get_delim(', ')
-    ','
-    >>> get_delim('x')
-    Traceback (most recent call last):
-       ...
-    ValueError: delimiter not understood: x
-    """
-    if ',' in line:
-        return ','
-    if ' ' in line:
-        return ' '
-    raise ValueError("delimiter not understood: " + line)
-
-
 class MetaData(object):
-    """Small container to keep useful informations on a ARFF dataset.
+    """Small container to keep useful information on a ARFF dataset.
 
     Knows about attributes names and types.
 
@@ -443,7 +409,7 @@ class MetaData(object):
         data, meta = loadarff('iris.arff')
         # This will print the attributes names of the iris.arff dataset
         for i in meta:
-            print i
+            print(i)
         # This works too
         meta.names()
         # Getting attribute type
@@ -544,7 +510,7 @@ def loadarff(f):
     Examples
     --------
     >>> from scipy.io import arff
-    >>> from cStringIO import StringIO
+    >>> from io import StringIO
     >>> content = \"\"\"
     ... @relation foo
     ... @attribute width  numeric
@@ -603,7 +569,9 @@ def _loadarff(ofile):
     # This can be used once we want to support integer as integer values and
     # not as numeric anymore (using masked arrays ?).
     acls2dtype = {'real': float, 'integer': float, 'numeric': float}
-    acls2conv = {'real': safe_float, 'integer': safe_float, 'numeric': safe_float}
+    acls2conv = {'real': safe_float,
+                 'integer': safe_float,
+                 'numeric': safe_float}
     descr = []
     convertors = []
     if not hasstr:
@@ -612,7 +580,8 @@ def _loadarff(ofile):
             if type == 'date':
                 date_format, datetime_unit = get_date_format(value)
                 descr.append((name, "datetime64[%s]" % datetime_unit))
-                convertors.append(partial(safe_date, date_format=date_format, datetime_unit=datetime_unit))
+                convertors.append(partial(safe_date, date_format=date_format,
+                                          datetime_unit=datetime_unit))
             elif type == 'nominal':
                 n = maxnomlen(value)
                 descr.append((name, 'S%d' % n))
@@ -630,26 +599,6 @@ def _loadarff(ofile):
 
     ni = len(convertors)
 
-    # Get the delimiter from the first line of data:
-    def next_data_line(row_iter):
-        """Assumes we are already in the data part (eg after @data)."""
-        raw = next(row_iter)
-        while r_empty.match(raw) or r_comment.match(raw):
-            raw = next(row_iter)
-        return raw
-
-    try:
-        try:
-            dtline = next_data_line(ofile)
-            delim = get_delim(dtline)
-        except ValueError as e:
-            raise ParseArffError("Error while parsing delimiter: " + str(e))
-    finally:
-        ofile.seek(0, 0)
-        ofile = go_data(ofile)
-        # skip the @data line
-        next(ofile)
-
     def generator(row_iter, delim=','):
         # TODO: this is where we are spending times (~80%). I think things
         # could be made more efficiently:
@@ -662,26 +611,20 @@ def _loadarff(ofile):
         #   by % should be enough and faster, and for empty lines, same thing
         #   --> this does not seem to change anything.
 
-        # We do not abstract skipping comments and empty lines for performances
-        # reason.
-        raw = next(row_iter)
-        while r_empty.match(raw) or r_comment.match(raw):
-            raw = next(row_iter)
-
         # 'compiling' the range since it does not change
         # Note, I have already tried zipping the converters and
         # row elements and got slightly worse performance.
         elems = list(range(ni))
 
-        row = raw.split(delim)
-        yield tuple([convertors[i](row[i]) for i in elems])
         for raw in row_iter:
-            while r_comment.match(raw) or r_empty.match(raw):
-                raw = next(row_iter)
+            # We do not abstract skipping comments and empty lines for
+            # performance reasons.
+            if r_comment.match(raw) or r_empty.match(raw):
+                continue
             row = raw.split(delim)
             yield tuple([convertors[i](row[i]) for i in elems])
 
-    a = generator(ofile, delim=delim)
+    a = generator(ofile)
     # No error should happen here: it is a bug otherwise
     data = np.fromiter(a, descr)
     return data, meta
@@ -714,7 +657,8 @@ def test_weka(filename):
     print(len(data.dtype))
     print(data.size)
     for i in meta:
-        print_attribute(i,meta[i],data[i])
+        print_attribute(i, meta[i], data[i])
+
 
 # make sure nose does not find this as a test
 test_weka.__test__ = False

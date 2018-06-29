@@ -39,7 +39,9 @@ brenth(callback_type f, double xa, double xb, double xtol, double rtol,
        int iter, default_parameters *params)
 {
     double xpre = xa, xcur = xb;
-    double xblk = 0., fpre, fcur, fblk = 0., spre = 0., scur = 0., sbis, tol;
+    double xblk = 0., fpre, fcur, fblk = 0., spre = 0., scur = 0., sbis;
+    /* the tolerance is 2*delta */
+    double delta;
     double stry, dpre, dblk;
     int i;
 
@@ -74,13 +76,13 @@ brenth(callback_type f, double xa, double xb, double xtol, double rtol,
             fblk = fpre;
         }
 
-        tol = xtol + rtol*fabs(xcur);
+        delta = (xtol + rtol*fabs(xcur))/2;
         sbis = (xblk - xcur)/2;
-        if (fcur == 0 || fabs(sbis) < tol) {
+        if (fcur == 0 || fabs(sbis) < delta) {
             return xcur;
         }
 
-        if (fabs(spre) > tol && fabs(fcur) < fabs(fpre)) {
+        if (fabs(spre) > delta && fabs(fcur) < fabs(fpre)) {
             if (xpre == xblk) {
                 /* interpolate */
                 stry = -fcur*(xcur - xpre)/(fcur - fpre);
@@ -92,7 +94,7 @@ brenth(callback_type f, double xa, double xb, double xtol, double rtol,
                 stry = -fcur*(fblk - fpre)/(fblk*dpre - fpre*dblk);
             }
 
-            if (2*fabs(stry) < MIN(fabs(spre), 3*fabs(sbis) - tol)) {
+            if (2*fabs(stry) < MIN(fabs(spre), 3*fabs(sbis) - delta)) {
                 /* accept step */
                 spre = scur;
                 scur = stry;
@@ -111,11 +113,11 @@ brenth(callback_type f, double xa, double xb, double xtol, double rtol,
 
         xpre = xcur;
         fpre = fcur;
-        if (fabs(scur) > tol) {
+        if (fabs(scur) > delta) {
             xcur += scur;
         }
         else {
-            xcur += (sbis > 0 ? tol : -tol);
+            xcur += (sbis > 0 ? delta : -delta);
         }
 
         fcur = (*f)(xcur, params);

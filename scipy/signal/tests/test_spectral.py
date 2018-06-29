@@ -1,18 +1,20 @@
 from __future__ import division, print_function, absolute_import
 
-import warnings
 import numpy as np
-from numpy.testing import assert_raises, assert_approx_equal, \
-                          assert_, run_module_suite, TestCase,\
-                          assert_allclose, assert_array_equal,\
-                          assert_array_almost_equal_nulp, dec
+from numpy.testing import (assert_, assert_approx_equal,
+                           assert_allclose, assert_array_equal, assert_equal,
+                           assert_array_almost_equal_nulp)
+import pytest
+from pytest import raises as assert_raises
+
+from scipy._lib._numpy_compat import suppress_warnings
 from scipy import signal, fftpack
-from scipy._lib._version import NumpyVersion
 from scipy.signal import (periodogram, welch, lombscargle, csd, coherence,
-                          spectrogram)
+                          spectrogram, stft, istft, check_COLA)
+from scipy.signal.spectral import _spectral_helper
 
 
-class TestPeriodogram(TestCase):
+class TestPeriodogram(object):
     def test_real_onesided_even(self):
         x = np.zeros(16)
         x[0] = 1
@@ -84,7 +86,7 @@ class TestPeriodogram(TestCase):
     def test_complex(self):
         x = np.zeros(16, np.complex128)
         x[0] = 1.0 + 2.0j
-        f, p = periodogram(x)
+        f, p = periodogram(x, return_onesided=False)
         assert_allclose(f, fftpack.fftfreq(16, 1.0))
         q = 5.0*np.ones(16)/16.0
         q[0] = 0
@@ -117,11 +119,14 @@ class TestPeriodogram(TestCase):
     def test_window_external(self):
         x = np.zeros(16)
         x[0] = 1
-        f, p = periodogram(x, 10, 'hanning')
-        win = signal.get_window('hanning', 16)
+        f, p = periodogram(x, 10, 'hann')
+        win = signal.get_window('hann', 16)
         fe, pe = periodogram(x, 10, win)
         assert_array_almost_equal_nulp(p, pe)
         assert_array_almost_equal_nulp(f, fe)
+        win_err = signal.get_window('hann', 32)
+        assert_raises(ValueError, periodogram, x,
+                      10, win_err)  # win longer than signal
 
     def test_padded_fft(self):
         x = np.zeros(16)
@@ -192,7 +197,6 @@ class TestPeriodogram(TestCase):
         assert_allclose(p, q, atol=1e-7)
         assert_(p.dtype == q.dtype)
 
-    @dec.skipif(NumpyVersion(np.__version__) < '1.8.0')
     def test_real_twosided_32(self):
         x = np.zeros(16, 'f')
         x[0] = 1
@@ -203,11 +207,10 @@ class TestPeriodogram(TestCase):
         assert_allclose(p, q)
         assert_(p.dtype == q.dtype)
 
-    @dec.skipif(NumpyVersion(np.__version__) < '1.8.0')
     def test_complex_32(self):
         x = np.zeros(16, 'F')
         x[0] = 1.0 + 2.0j
-        f, p = periodogram(x)
+        f, p = periodogram(x, return_onesided=False)
         assert_allclose(f, fftpack.fftfreq(16, 1.0))
         q = 5.0*np.ones(16, 'f')/16.0
         q[0] = 0
@@ -215,7 +218,7 @@ class TestPeriodogram(TestCase):
         assert_(p.dtype == q.dtype)
 
 
-class TestWelch(TestCase):
+class TestWelch(object):
     def test_real_onesided_even(self):
         x = np.zeros(16)
         x[0] = 1
@@ -232,8 +235,8 @@ class TestWelch(TestCase):
         x[8] = 1
         f, p = welch(x, nperseg=9)
         assert_allclose(f, np.arange(5.0)/9.0)
-        q = np.array([0.15958227, 0.24193957, 0.24145224, 0.24100919,
-                      0.24377353])
+        q = np.array([0.12477455, 0.23430933, 0.17072113, 0.17072113,
+                      0.17072113])
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
 
     def test_real_twosided(self):
@@ -272,8 +275,8 @@ class TestWelch(TestCase):
         x[8] = 1
         f, p = welch(x, nperseg=9)
         assert_allclose(f, np.arange(5.0)/9.0)
-        q = np.array([0.15958227, 0.24193957, 0.24145224, 0.24100919,
-                      0.24377353])
+        q = np.array([0.12477455, 0.23430933, 0.17072113, 0.17072113,
+                      0.17072113])
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
 
     def test_integer_twosided(self):
@@ -290,7 +293,7 @@ class TestWelch(TestCase):
         x = np.zeros(16, np.complex128)
         x[0] = 1.0 + 2.0j
         x[8] = 1.0 + 2.0j
-        f, p = welch(x, nperseg=8)
+        f, p = welch(x, nperseg=8, return_onesided=False)
         assert_allclose(f, fftpack.fftfreq(8, 1.0))
         q = np.array([0.41666667, 0.38194444, 0.55555556, 0.55555556,
                       0.55555556, 0.55555556, 0.55555556, 0.38194444])
@@ -355,11 +358,18 @@ class TestWelch(TestCase):
         x = np.zeros(16)
         x[0] = 1
         x[8] = 1
-        f, p = welch(x, 10, 'hanning', 8)
-        win = signal.get_window('hanning', 8)
-        fe, pe = welch(x, 10, win, 8)
+        f, p = welch(x, 10, 'hann', nperseg=8)
+        win = signal.get_window('hann', 8)
+        fe, pe = welch(x, 10, win, nperseg=None)
         assert_array_almost_equal_nulp(p, pe)
         assert_array_almost_equal_nulp(f, fe)
+        assert_array_equal(fe.shape, (5,))  # because win length used as nperseg
+        assert_array_equal(pe.shape, (5,))
+        assert_raises(ValueError, welch, x,
+                      10, win, nperseg=4)  # because nperseg != win.shape[-1]
+        win_err = signal.get_window('hann', 32)
+        assert_raises(ValueError, welch, x,
+                      10, win_err, nperseg=None)  # win longer than signal
 
     def test_empty_input(self):
         f, p = welch([])
@@ -379,21 +389,22 @@ class TestWelch(TestCase):
     def test_short_data(self):
         x = np.zeros(8)
         x[0] = 1
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', UserWarning)
-            f, p = welch(x)
-
-        f1, p1 = welch(x, nperseg=8)
-        assert_allclose(f, f1)
-        assert_allclose(p, p1)
+        #for string-like window, input signal length < nperseg value gives
+        #UserWarning, sets nperseg to x.shape[-1]
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, "nperseg = 256 is greater than input length  = 8, using nperseg = 8")
+            f, p = welch(x,window='hann')  # default nperseg
+            f1, p1 = welch(x,window='hann', nperseg=256)  # user-specified nperseg
+        f2, p2 = welch(x, nperseg=8)  # valid nperseg, doesn't give warning
+        assert_allclose(f, f2)
+        assert_allclose(p, p2)
+        assert_allclose(f1, f2)
+        assert_allclose(p1, p2)
 
     def test_window_long_or_nd(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', UserWarning)
-            assert_raises(ValueError, welch, np.zeros(4), 1,
-                          np.array([1,1,1,1,1]))
-            assert_raises(ValueError, welch, np.zeros(4), 1,
-                          np.arange(6).reshape((2,3)))
+        assert_raises(ValueError, welch, np.zeros(4), 1, np.array([1,1,1,1,1]))
+        assert_raises(ValueError, welch, np.zeros(4), 1,
+                      np.arange(6).reshape((2,3)))
 
     def test_nondefault_noverlap(self):
         x = np.zeros(64)
@@ -404,7 +415,7 @@ class TestWelch(TestCase):
         assert_allclose(p, q, atol=1e-12)
 
     def test_bad_noverlap(self):
-        assert_raises(ValueError, welch, np.zeros(4), 1, 'hanning', 2, 7)
+        assert_raises(ValueError, welch, np.zeros(4), 1, 'hann', 2, 7)
 
     def test_nfft_too_short(self):
         assert_raises(ValueError, welch, np.ones(12), nfft=3, nperseg=4)
@@ -426,12 +437,11 @@ class TestWelch(TestCase):
         x[8] = 1
         f, p = welch(x, nperseg=9)
         assert_allclose(f, np.arange(5.0)/9.0)
-        q = np.array([0.15958227, 0.24193957, 0.24145224, 0.24100919,
-                      0.24377353], 'f')
+        q = np.array([0.12477458, 0.23430935, 0.17072113, 0.17072116,
+                      0.17072113], 'f')
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
         assert_(p.dtype == q.dtype)
 
-    @dec.skipif(NumpyVersion(np.__version__) < '1.8.0')
     def test_real_twosided_32(self):
         x = np.zeros(16, 'f')
         x[0] = 1
@@ -444,12 +454,11 @@ class TestWelch(TestCase):
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
         assert_(p.dtype == q.dtype)
 
-    @dec.skipif(NumpyVersion(np.__version__) < '1.8.0')
     def test_complex_32(self):
         x = np.zeros(16, 'F')
         x[0] = 1.0 + 2.0j
         x[8] = 1.0 + 2.0j
-        f, p = welch(x, nperseg=8)
+        f, p = welch(x, nperseg=8, return_onesided=False)
         assert_allclose(f, fftpack.fftfreq(8, 1.0))
         q = np.array([0.41666666, 0.38194442, 0.55555552, 0.55555552,
                       0.55555558, 0.55555552, 0.55555552, 0.38194442], 'f')
@@ -474,6 +483,45 @@ class TestWelch(TestCase):
         feven, _ = welch(x, nperseg=6, nfft=nfft)
         assert_allclose(f, fodd)
         assert_allclose(f, feven)
+
+    def test_window_correction(self):
+        A = 20
+        fs = 1e4
+        nperseg = int(fs//10)
+        fsig = 300
+        ii = int(fsig*nperseg//fs)  # Freq index of fsig
+
+        tt = np.arange(fs)/fs
+        x = A*np.sin(2*np.pi*fsig*tt)
+
+        for window in ['hann', 'bartlett', ('tukey', 0.1), 'flattop']:
+            _, p_spec = welch(x, fs=fs, nperseg=nperseg, window=window,
+                              scaling='spectrum')
+            freq, p_dens = welch(x, fs=fs, nperseg=nperseg, window=window,
+                                 scaling='density')
+
+            # Check peak height at signal frequency for 'spectrum'
+            assert_allclose(p_spec[ii], A**2/2.0)
+            # Check integrated spectrum RMS for 'density'
+            assert_allclose(np.sqrt(np.trapz(p_dens, freq)), A*np.sqrt(2)/2,
+                            rtol=1e-3)
+
+    def test_axis_rolling(self):
+        np.random.seed(1234)
+
+        x_flat = np.random.randn(1024)
+        _, p_flat = welch(x_flat)
+
+        for a in range(3):
+            newshape = [1,]*3
+            newshape[a] = -1
+            x = x_flat.reshape(newshape)
+
+            _, p_plus = welch(x, axis=a)  # Positive axis index
+            _, p_minus = welch(x, axis=a-x.ndim)  # Negative axis index
+
+            assert_equal(p_flat, p_plus.squeeze(), err_msg=a)
+            assert_equal(p_flat, p_minus.squeeze(), err_msg=a-x.ndim)
 
 class TestCSD:
     def test_pad_shorter_x(self):
@@ -514,8 +562,8 @@ class TestCSD:
         x[8] = 1
         f, p = csd(x, x, nperseg=9)
         assert_allclose(f, np.arange(5.0)/9.0)
-        q = np.array([0.15958227, 0.24193957, 0.24145224, 0.24100919,
-                      0.24377353])
+        q = np.array([0.12477455, 0.23430933, 0.17072113, 0.17072113,
+                      0.17072113])
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
 
     def test_real_twosided(self):
@@ -554,8 +602,8 @@ class TestCSD:
         x[8] = 1
         f, p = csd(x, x, nperseg=9)
         assert_allclose(f, np.arange(5.0)/9.0)
-        q = np.array([0.15958227, 0.24193957, 0.24145224, 0.24100919,
-                      0.24377353])
+        q = np.array([0.12477455, 0.23430933, 0.17072113, 0.17072113,
+                      0.17072113])
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
 
     def test_integer_twosided(self):
@@ -572,7 +620,7 @@ class TestCSD:
         x = np.zeros(16, np.complex128)
         x[0] = 1.0 + 2.0j
         x[8] = 1.0 + 2.0j
-        f, p = csd(x, x, nperseg=8)
+        f, p = csd(x, x, nperseg=8, return_onesided=False)
         assert_allclose(f, fftpack.fftfreq(8, 1.0))
         q = np.array([0.41666667, 0.38194444, 0.55555556, 0.55555556,
                       0.55555556, 0.55555556, 0.55555556, 0.38194444])
@@ -637,11 +685,18 @@ class TestCSD:
         x = np.zeros(16)
         x[0] = 1
         x[8] = 1
-        f, p = csd(x, x, 10, 'hanning', 8)
-        win = signal.get_window('hanning', 8)
-        fe, pe = csd(x, x, 10, win, 8)
+        f, p = csd(x, x, 10, 'hann', 8)
+        win = signal.get_window('hann', 8)
+        fe, pe = csd(x, x, 10, win, nperseg=None)
         assert_array_almost_equal_nulp(p, pe)
         assert_array_almost_equal_nulp(f, fe)
+        assert_array_equal(fe.shape, (5,))  # because win length used as nperseg
+        assert_array_equal(pe.shape, (5,))
+        assert_raises(ValueError, csd, x, x,
+                      10, win, nperseg=256)  # because nperseg != win.shape[-1]
+        win_err = signal.get_window('hann', 32)
+        assert_raises(ValueError, csd, x, x,
+              10, win_err, nperseg=None)  # because win longer than signal
 
     def test_empty_input(self):
         f, p = csd([],np.zeros(10))
@@ -682,21 +737,24 @@ class TestCSD:
     def test_short_data(self):
         x = np.zeros(8)
         x[0] = 1
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', UserWarning)
-            f, p = csd(x, x)
 
-        f1, p1 = csd(x, x, nperseg=8)
-        assert_allclose(f, f1)
-        assert_allclose(p, p1)
+        #for string-like window, input signal length < nperseg value gives
+        #UserWarning, sets nperseg to x.shape[-1]
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, "nperseg = 256 is greater than input length  = 8, using nperseg = 8")
+            f, p = csd(x, x, window='hann')  # default nperseg
+            f1, p1 = csd(x, x, window='hann', nperseg=256)  # user-specified nperseg
+        f2, p2 = csd(x, x, nperseg=8)  # valid nperseg, doesn't give warning
+        assert_allclose(f, f2)
+        assert_allclose(p, p2)
+        assert_allclose(f1, f2)
+        assert_allclose(p1, p2)
 
     def test_window_long_or_nd(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', UserWarning)
-            assert_raises(ValueError, csd, np.zeros(4), np.ones(4), 1,
-                          np.array([1,1,1,1,1]))
-            assert_raises(ValueError, csd, np.zeros(4), np.ones(4), 1,
-                          np.arange(6).reshape((2,3)))
+        assert_raises(ValueError, csd, np.zeros(4), np.ones(4), 1,
+                      np.array([1,1,1,1,1]))
+        assert_raises(ValueError, csd, np.zeros(4), np.ones(4), 1,
+                      np.arange(6).reshape((2,3)))
 
     def test_nondefault_noverlap(self):
         x = np.zeros(64)
@@ -707,7 +765,7 @@ class TestCSD:
         assert_allclose(p, q, atol=1e-12)
 
     def test_bad_noverlap(self):
-        assert_raises(ValueError, csd, np.zeros(4), np.ones(4), 1, 'hanning',
+        assert_raises(ValueError, csd, np.zeros(4), np.ones(4), 1, 'hann',
                       2, 7)
 
     def test_nfft_too_short(self):
@@ -731,12 +789,11 @@ class TestCSD:
         x[8] = 1
         f, p = csd(x, x, nperseg=9)
         assert_allclose(f, np.arange(5.0)/9.0)
-        q = np.array([0.15958227, 0.24193957, 0.24145224, 0.24100919,
-                      0.24377353], 'f')
+        q = np.array([0.12477458, 0.23430935, 0.17072113, 0.17072116,
+                      0.17072113], 'f')
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
         assert_(p.dtype == q.dtype)
 
-    @dec.skipif(NumpyVersion(np.__version__) < '1.8.0')
     def test_real_twosided_32(self):
         x = np.zeros(16, 'f')
         x[0] = 1
@@ -749,12 +806,11 @@ class TestCSD:
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
         assert_(p.dtype == q.dtype)
 
-    @dec.skipif(NumpyVersion(np.__version__) < '1.8.0')
     def test_complex_32(self):
         x = np.zeros(16, 'F')
         x[0] = 1.0 + 2.0j
         x[8] = 1.0 + 2.0j
-        f, p = csd(x, x, nperseg=8)
+        f, p = csd(x, x, nperseg=8, return_onesided=False)
         assert_allclose(f, fftpack.fftfreq(8, 1.0))
         q = np.array([0.41666666, 0.38194442, 0.55555552, 0.55555552,
                       0.55555558, 0.55555552, 0.55555552, 0.38194442], 'f')
@@ -781,7 +837,7 @@ class TestCSD:
         assert_allclose(f, fodd)
         assert_allclose(f, feven)
 
-class TestCoherence:
+class TestCoherence(object):
     def test_identical_input(self):
         x = np.random.randn(20)
         y = np.copy(x)  # So `y is x` -> False
@@ -805,7 +861,7 @@ class TestCoherence:
         assert_allclose(C, C1)
 
 
-class TestSpectrogram:
+class TestSpectrogram(object):
     def test_average_all_segments(self):
         x = np.random.randn(1024)
 
@@ -819,7 +875,45 @@ class TestSpectrogram:
         assert_allclose(f, fw)
         assert_allclose(np.mean(P, axis=-1), Pw)
 
-class TestLombscargle:
+    def test_window_external(self):
+        x = np.random.randn(1024)
+
+        fs = 1.0
+        window = ('tukey', 0.25)
+        nperseg = 16
+        noverlap = 2
+        f, _, P = spectrogram(x, fs, window, nperseg, noverlap)
+
+        win = signal.get_window(('tukey', 0.25), 16)
+        fe, _, Pe = spectrogram(x, fs, win, nperseg=None, noverlap=2)
+        assert_array_equal(fe.shape, (9,))  # because win length used as nperseg
+        assert_array_equal(Pe.shape, (9,73))
+        assert_raises(ValueError, spectrogram, x,
+                      fs, win, nperseg=8)  # because nperseg != win.shape[-1]
+        win_err = signal.get_window(('tukey', 0.25), 2048)
+        assert_raises(ValueError, spectrogram, x,
+                      fs, win_err, nperseg=None)  # win longer than signal
+
+    def test_short_data(self):
+        x = np.random.randn(1024)
+        fs = 1.0
+
+        #for string-like window, input signal length < nperseg value gives
+        #UserWarning, sets nperseg to x.shape[-1]
+        f, _, p = spectrogram(x, fs, window=('tukey',0.25))  # default nperseg
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning,
+                       "nperseg = 1025 is greater than input length  = 1024, using nperseg = 1024")
+            f1, _, p1 = spectrogram(x, fs, window=('tukey',0.25),
+                                    nperseg=1025)  # user-specified nperseg
+        f2, _, p2 = spectrogram(x, fs, nperseg=256)  # to compare w/default
+        f3, _, p3 = spectrogram(x, fs, nperseg=1024)  # compare w/user-spec'd
+        assert_allclose(f, f2)
+        assert_allclose(p, p2)
+        assert_allclose(f1, f3)
+        assert_allclose(p1, p3)
+
+class TestLombscargle(object):
     def test_frequency(self):
         """Test if frequency location of peak corresponds to frequency of
         generated input signal.
@@ -853,9 +947,8 @@ class TestLombscargle:
         assert_(w - f[np.argmax(P)] < (delta/2.))
 
     def test_amplitude(self):
-        """Test if height of peak in normalized Lomb-Scargle periodogram
-        corresponds to amplitude of the generated input signal.
-        """
+        # Test if height of peak in normalized Lomb-Scargle periodogram
+        # corresponds to amplitude of the generated input signal.
 
         # Input parameters
         ampl = 2.
@@ -886,6 +979,66 @@ class TestLombscargle:
         # frequency is less than accuracy
         assert_approx_equal(np.max(pgram), ampl, significant=2)
 
+    def test_precenter(self):
+        # Test if precenter gives the same result as manually precentering.
+
+        # Input parameters
+        ampl = 2.
+        w = 1.
+        phi = 0.5 * np.pi
+        nin = 100
+        nout = 1000
+        p = 0.7  # Fraction of points to select
+        offset = 0.15  # Offset to be subtracted in pre-centering
+
+        # Randomly select a fraction of an array with timesteps
+        np.random.seed(2353425)
+        r = np.random.rand(nin)
+        t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
+
+        # Plot a sine wave for the selected times
+        x = ampl * np.sin(w*t + phi) + offset
+
+        # Define the array of frequencies for which to compute the periodogram
+        f = np.linspace(0.01, 10., nout)
+
+        # Calculate Lomb-Scargle periodogram
+        pgram = lombscargle(t, x, f, precenter=True)
+        pgram2 = lombscargle(t, x - x.mean(), f, precenter=False)
+
+        # check if centering worked
+        assert_allclose(pgram, pgram2)
+
+    def test_normalize(self):
+        # Test normalize option of Lomb-Scarge.
+
+        # Input parameters
+        ampl = 2.
+        w = 1.
+        phi = 0.5 * np.pi
+        nin = 100
+        nout = 1000
+        p = 0.7  # Fraction of points to select
+
+        # Randomly select a fraction of an array with timesteps
+        np.random.seed(2353425)
+        r = np.random.rand(nin)
+        t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
+
+        # Plot a sine wave for the selected times
+        x = ampl * np.sin(w*t + phi)
+
+        # Define the array of frequencies for which to compute the periodogram
+        f = np.linspace(0.01, 10., nout)
+
+        # Calculate Lomb-Scargle periodogram
+        pgram = lombscargle(t, x, f)
+        pgram2 = lombscargle(t, x, f, normalize=True)
+
+        # check if normalization works as expected
+        assert_allclose(pgram * 2 / np.dot(x, x), pgram2)
+        assert_approx_equal(np.max(pgram2), 1.0, significant=2)
+
     def test_wrong_shape(self):
         t = np.linspace(0, 1, 1)
         x = np.linspace(0, 1, 2)
@@ -907,5 +1060,298 @@ class TestLombscargle:
         q = lombscargle(t, x, f*2*np.pi)
 
 
-if __name__ == "__main__":
-    run_module_suite()
+class TestSTFT(object):
+    def test_input_validation(self):
+        assert_raises(ValueError, check_COLA, 'hann', -10, 0)
+        assert_raises(ValueError, check_COLA, 'hann', 10, 20)
+        assert_raises(ValueError, check_COLA, np.ones((2,2)), 10, 0)
+        assert_raises(ValueError, check_COLA, np.ones(20), 10, 0)
+
+        x = np.empty(1024)
+        z = stft(x)
+
+        assert_raises(ValueError, stft, x, window=np.ones((2,2)))
+        assert_raises(ValueError, stft, x, window=np.ones(10), nperseg=256)
+        assert_raises(ValueError, stft, x, nperseg=-256)
+        assert_raises(ValueError, stft, x, nperseg=256, noverlap=1024)
+        assert_raises(ValueError, stft, x, nperseg=256, nfft=8)
+
+        assert_raises(ValueError, istft, x)  # Not 2d
+        assert_raises(ValueError, istft, z, window=np.ones((2,2)))
+        assert_raises(ValueError, istft, z, window=np.ones(10), nperseg=256)
+        assert_raises(ValueError, istft, z, nperseg=-256)
+        assert_raises(ValueError, istft, z, nperseg=256, noverlap=1024)
+        assert_raises(ValueError, istft, z, nperseg=256, nfft=8)
+        assert_raises(ValueError, istft, z, nperseg=256, noverlap=0,
+                      window='hann')  # Doesn't meet COLA
+        assert_raises(ValueError, istft, z, time_axis=0, freq_axis=0)
+
+        assert_raises(ValueError, _spectral_helper, x, x, mode='foo')
+        assert_raises(ValueError, _spectral_helper, x[:512], x[512:],
+                      mode='stft')
+        assert_raises(ValueError, _spectral_helper, x, x, boundary='foo')
+
+    def test_check_COLA(self):
+        settings = [
+                    ('boxcar', 10, 0),
+                    ('boxcar', 10, 9),
+                    ('bartlett', 51, 26),
+                    ('hann', 256, 128),
+                    ('hann', 256, 192),
+                    ('blackman', 300, 200),
+                    (('tukey', 0.5), 256, 64),
+                    ('hann', 256, 255),
+                    ]
+
+        for set in settings:
+            msg = '{0}, {1}, {2}'.format(*set)
+            assert_equal(True, check_COLA(*set), err_msg=msg)
+
+    def test_average_all_segments(self):
+        np.random.seed(1234)
+        x = np.random.randn(1024)
+
+        fs = 1.0
+        window = 'hann'
+        nperseg = 16
+        noverlap = 8
+
+        # Compare twosided, because onesided welch doubles non-DC terms to
+        # account for power at negative frequencies. stft doesn't do this,
+        # because it breaks invertibility.
+        f, _, Z = stft(x, fs, window, nperseg, noverlap, padded=False,
+                       return_onesided=False, boundary=None)
+        fw, Pw = welch(x, fs, window, nperseg, noverlap, return_onesided=False,
+                       scaling='spectrum', detrend=False)
+
+        assert_allclose(f, fw)
+        assert_allclose(np.mean(np.abs(Z)**2, axis=-1), Pw)
+
+    def test_permute_axes(self):
+        np.random.seed(1234)
+        x = np.random.randn(1024)
+
+        fs = 1.0
+        window = 'hann'
+        nperseg = 16
+        noverlap = 8
+
+        f1, t1, Z1 = stft(x, fs, window, nperseg, noverlap)
+        f2, t2, Z2 = stft(x.reshape((-1, 1, 1)), fs, window, nperseg, noverlap,
+                          axis=0)
+
+        t3, x1 = istft(Z1, fs, window, nperseg, noverlap)
+        t4, x2 = istft(Z2.T, fs, window, nperseg, noverlap, time_axis=0,
+                       freq_axis=-1)
+
+        assert_allclose(f1, f2)
+        assert_allclose(t1, t2)
+        assert_allclose(t3, t4)
+        assert_allclose(Z1, Z2[:, 0, 0, :])
+        assert_allclose(x1, x2[:, 0, 0])
+
+    def test_roundtrip_real(self):
+        np.random.seed(1234)
+
+        settings = [
+                    ('boxcar', 100, 10, 0),           # Test no overlap
+                    ('boxcar', 100, 10, 9),           # Test high overlap
+                    ('bartlett', 101, 51, 26),        # Test odd nperseg
+                    ('hann', 1024, 256, 128),         # Test defaults
+                    (('tukey', 0.5), 1152, 256, 64),  # Test Tukey
+                    ('hann', 1024, 256, 255),         # Test overlapped hann
+                    ]
+
+        for window, N, nperseg, noverlap in settings:
+            t = np.arange(N)
+            x = 10*np.random.randn(t.size)
+
+            _, _, zz = stft(x, nperseg=nperseg, noverlap=noverlap,
+                            window=window, detrend=None, padded=False)
+
+            tr, xr = istft(zz, nperseg=nperseg, noverlap=noverlap,
+                           window=window)
+
+            msg = '{0}, {1}'.format(window, noverlap)
+            assert_allclose(t, tr, err_msg=msg)
+            assert_allclose(x, xr, err_msg=msg)
+
+    @pytest.mark.xfail(reason="Needs complex rfft from fftpack, see gh-2487 + gh-6058")
+    def test_roundtrip_float32(self):
+        np.random.seed(1234)
+
+        settings = [('hann', 1024, 256, 128)]
+
+        for window, N, nperseg, noverlap in settings:
+            t = np.arange(N)
+            x = 10*np.random.randn(t.size)
+            x = x.astype(np.float32)
+
+            _, _, zz = stft(x, nperseg=nperseg, noverlap=noverlap,
+                            window=window, detrend=None, padded=False)
+
+            tr, xr = istft(zz, nperseg=nperseg, noverlap=noverlap,
+                           window=window)
+
+            msg = '{0}, {1}'.format(window, noverlap)
+            assert_allclose(t, t, err_msg=msg)
+            assert_allclose(x, xr, err_msg=msg, rtol=1e-4)
+            assert_(x.dtype == xr.dtype)
+
+    def test_roundtrip_complex(self):
+        np.random.seed(1234)
+
+        settings = [
+                    ('boxcar', 100, 10, 0),           # Test no overlap
+                    ('boxcar', 100, 10, 9),           # Test high overlap
+                    ('bartlett', 101, 51, 26),        # Test odd nperseg
+                    ('hann', 1024, 256, 128),         # Test defaults
+                    (('tukey', 0.5), 1152, 256, 64),  # Test Tukey
+                    ('hann', 1024, 256, 255),         # Test overlapped hann
+                    ]
+
+        for window, N, nperseg, noverlap in settings:
+            t = np.arange(N)
+            x = 10*np.random.randn(t.size) + 10j*np.random.randn(t.size)
+
+            _, _, zz = stft(x, nperseg=nperseg, noverlap=noverlap,
+                            window=window, detrend=None, padded=False,
+                            return_onesided=False)
+
+            tr, xr = istft(zz, nperseg=nperseg, noverlap=noverlap,
+                           window=window, input_onesided=False)
+
+            msg = '{0}, {1}, {2}'.format(window, nperseg, noverlap)
+            assert_allclose(t, tr, err_msg=msg)
+            assert_allclose(x, xr, err_msg=msg)
+
+        # Check that asking for onesided switches to twosided
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning,
+                       "Input data is complex, switching to return_onesided=False")
+            _, _, zz = stft(x, nperseg=nperseg, noverlap=noverlap,
+                            window=window, detrend=None, padded=False,
+                            return_onesided=True)
+
+        tr, xr = istft(zz, nperseg=nperseg, noverlap=noverlap,
+                       window=window, input_onesided=False)
+
+        msg = '{0}, {1}, {2}'.format(window, nperseg, noverlap)
+        assert_allclose(t, tr, err_msg=msg)
+        assert_allclose(x, xr, err_msg=msg)
+
+    def test_roundtrip_boundary_extension(self):
+        np.random.seed(1234)
+
+        # Test against boxcar, since window is all ones, and thus can be fully
+        # recovered with no boundary extension
+
+        settings = [
+                    ('boxcar', 100, 10, 0),           # Test no overlap
+                    ('boxcar', 100, 10, 9),           # Test high overlap
+                    ]
+
+        for window, N, nperseg, noverlap in settings:
+            t = np.arange(N)
+            x = 10*np.random.randn(t.size)
+
+            _, _, zz = stft(x, nperseg=nperseg, noverlap=noverlap,
+                           window=window, detrend=None, padded=True,
+                           boundary=None)
+
+            _, xr = istft(zz, noverlap=noverlap, window=window, boundary=False)
+
+            for boundary in ['even', 'odd', 'constant', 'zeros']:
+                _, _, zz_ext = stft(x, nperseg=nperseg, noverlap=noverlap,
+                                window=window, detrend=None, padded=True,
+                                boundary=boundary)
+
+                _, xr_ext = istft(zz_ext, noverlap=noverlap, window=window,
+                                boundary=True)
+
+                msg = '{0}, {1}, {2}'.format(window, noverlap, boundary)
+                assert_allclose(x, xr, err_msg=msg)
+                assert_allclose(x, xr_ext, err_msg=msg)
+
+    def test_roundtrip_padded_signal(self):
+        np.random.seed(1234)
+
+        settings = [
+                    ('boxcar', 101, 10, 0),
+                    ('hann', 1000, 256, 128),
+                    ]
+
+        for window, N, nperseg, noverlap in settings:
+            t = np.arange(N)
+            x = 10*np.random.randn(t.size)
+
+            _, _, zz = stft(x, nperseg=nperseg, noverlap=noverlap,
+                            window=window, detrend=None, padded=True)
+
+            tr, xr = istft(zz, noverlap=noverlap, window=window)
+
+            msg = '{0}, {1}'.format(window, noverlap)
+            # Account for possible zero-padding at the end
+            assert_allclose(t, tr[:t.size], err_msg=msg)
+            assert_allclose(x, xr[:x.size], err_msg=msg)
+
+    def test_roundtrip_padded_FFT(self):
+        np.random.seed(1234)
+
+        settings = [
+                    ('hann', 1024, 256, 128, 512),
+                    ('hann', 1024, 256, 128, 501),
+                    ('boxcar', 100, 10, 0, 33),
+                    (('tukey', 0.5), 1152, 256, 64, 1024),
+                    ]
+
+        for window, N, nperseg, noverlap, nfft in settings:
+            t = np.arange(N)
+            x = 10*np.random.randn(t.size)
+            xc = x*np.exp(1j*np.pi/4)
+
+            # real signal
+            _, _, z = stft(x, nperseg=nperseg, noverlap=noverlap, nfft=nfft,
+                            window=window, detrend=None, padded=True)
+
+            # complex signal
+            _, _, zc = stft(xc, nperseg=nperseg, noverlap=noverlap, nfft=nfft,
+                            window=window, detrend=None, padded=True,
+                            return_onesided=False)
+
+            tr, xr = istft(z, nperseg=nperseg, noverlap=noverlap, nfft=nfft,
+                           window=window)
+
+            tr, xcr = istft(zc, nperseg=nperseg, noverlap=noverlap, nfft=nfft,
+                            window=window, input_onesided=False)
+
+            msg = '{0}, {1}'.format(window, noverlap)
+            assert_allclose(t, tr, err_msg=msg)
+            assert_allclose(x, xr, err_msg=msg)
+            assert_allclose(xc, xcr, err_msg=msg)
+
+    def test_axis_rolling(self):
+        np.random.seed(1234)
+
+        x_flat = np.random.randn(1024)
+        _, _, z_flat = stft(x_flat)
+
+        for a in range(3):
+            newshape = [1,]*3
+            newshape[a] = -1
+            x = x_flat.reshape(newshape)
+
+            _, _, z_plus = stft(x, axis=a)  # Positive axis index
+            _, _, z_minus = stft(x, axis=a-x.ndim)  # Negative axis index
+
+            assert_equal(z_flat, z_plus.squeeze(), err_msg=a)
+            assert_equal(z_flat, z_minus.squeeze(), err_msg=a-x.ndim)
+
+        # z_flat has shape [n_freq, n_time]
+
+        # Test vs. transpose
+        _, x_transpose_m = istft(z_flat.T, time_axis=-2, freq_axis=-1)
+        _, x_transpose_p = istft(z_flat.T, time_axis=0, freq_axis=1)
+
+        assert_allclose(x_flat, x_transpose_m, err_msg='istft transpose minus')
+        assert_allclose(x_flat, x_transpose_p, err_msg='istft transpose plus')

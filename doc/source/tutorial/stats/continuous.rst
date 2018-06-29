@@ -22,7 +22,7 @@ Probability Density Function (PDF)      :math:`f\left(x\right)=F^{\prime}\left(x
 Percent Point Function (PPF)            :math:`G\left(q\right)=F^{-1}\left(q\right)`                                                                                    :math:`G\left(q;L,S\right)=L+SG\left(q\right)`
 Probability Sparsity Function (PSF)     :math:`g\left(q\right)=G^{\prime}\left(q\right)`                                                                                :math:`g\left(q;L,S\right)=Sg\left(q\right)`
 Hazard Function (HF)                    :math:`h_{a}\left(x\right)=\frac{f\left(x\right)}{1-F\left(x\right)}`                                                           :math:`h_{a}\left(x;L,S\right)=\frac{1}{S}h_{a}\left(\frac{\left(x-L\right)}{S}\right)`
-Cumulative Hazard Functon (CHF)         :math:`H_{a}\left(x\right)=` :math:`\log\frac{1}{1-F\left(x\right)}`                                                            :math:`H_{a}\left(x;L,S\right)=H_{a}\left(\frac{\left(x-L\right)}{S}\right)`
+Cumulative Hazard Function (CHF)        :math:`H_{a}\left(x\right)=` :math:`\log\frac{1}{1-F\left(x\right)}`                                                            :math:`H_{a}\left(x;L,S\right)=H_{a}\left(\frac{\left(x-L\right)}{S}\right)`
 Survival Function (SF)                  :math:`S\left(x\right)=1-F\left(x\right)`                                                                                       :math:`S\left(x;L,S\right)=S\left(\frac{\left(x-L\right)}{S}\right)`
 Inverse Survival Function (ISF)         :math:`Z\left(\alpha\right)=S^{-1}\left(\alpha\right)=G\left(1-\alpha\right)`                                                   :math:`Z\left(\alpha;L,S\right)=L+SZ\left(\alpha\right)`
 Moment Generating Function (MGF)        :math:`M_{Y}\left(t\right)=E\left[e^{Yt}\right]`                                                                                :math:`M_{X}\left(t\right)=e^{Lt}M_{Y}\left(St\right)`
@@ -166,15 +166,15 @@ References
 
 -  Documentation for ranlib, rv2, cdflib
 
--  Eric Weisstein~s world of mathematics http://mathworld.wolfram.com/,
+-  Eric Weisstein's world of mathematics http://mathworld.wolfram.com/,
    http://mathworld.wolfram.com/topics/StatisticalDistributions.html
 
 -  Documentation to Regress+ by Michael McLaughlin item Engineering and
    Statistics Handbook (NIST),
-   http://www.itl.nist.gov/div898/handbook/index.htm
+   https://www.itl.nist.gov/div898/handbook/
 
 -  Documentation for DATAPLOT from NIST,
-   http://www.itl.nist.gov/div898/software/dataplot/distribu.htm
+   https://www.itl.nist.gov/div898/software/dataplot/distribu.htm
 
 -  Norman Johnson, Samuel Kotz, and N. Balakrishnan Continuous
    Univariate Distributions, second edition, Volumes I and II, Wiley &
@@ -209,8 +209,6 @@ Continuous Distributions in `scipy.stats`
    continuous_foldcauchy
    continuous_foldnorm
    continuous_f
-   continuous_frechet_r
-   continuous_frechet_l
    continuous_gamma
    continuous_genlogistic
    continuous_genpareto
@@ -218,6 +216,7 @@ Continuous Distributions in `scipy.stats`
    continuous_genextreme
    continuous_gengamma
    continuous_genhalflogistic
+   continuous_gennorm
    continuous_gilbrat
    continuous_gompertz
    continuous_gumbel_r
@@ -267,4 +266,6 @@ Continuous Distributions in `scipy.stats`
    continuous_uniform
    continuous_vonmises
    continuous_wald
+   continuous_weibull_max
+   continuous_weibull_min
    continuous_wrapcauchy

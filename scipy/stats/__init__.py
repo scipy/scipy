@@ -16,6 +16,7 @@ Each univariate distribution is an instance of a subclass of `rv_continuous`
 
    rv_continuous
    rv_discrete
+   rv_histogram
 
 Continuous distributions
 ========================
@@ -26,14 +27,17 @@ Continuous distributions
    alpha             -- Alpha
    anglit            -- Anglit
    arcsine           -- Arcsine
+   argus             -- Argus
    beta              -- Beta
    betaprime         -- Beta Prime
    bradford          -- Bradford
-   burr              -- Burr
+   burr              -- Burr (Type III)
+   burr12            -- Burr (Type XII)
    cauchy            -- Cauchy
    chi               -- Chi
    chi2              -- Chi-squared
    cosine            -- Cosine
+   crystalball       -- Crystalball
    dgamma            -- Double Gamma
    dweibull          -- Double Weibull
    erlang            -- Erlang
@@ -46,8 +50,8 @@ Continuous distributions
    fisk              -- Fisk
    foldcauchy        -- Folded Cauchy
    foldnorm          -- Folded Normal
-   frechet_r         -- Frechet Right Sided, Extreme Value Type II (Extreme LB) or weibull_min
-   frechet_l         -- Frechet Left Sided, Weibull_max
+   frechet_r         -- Deprecated. Alias for weibull_min
+   frechet_l         -- Deprecated. Alias for weibull_max
    genlogistic       -- Generalized Logistic
    gennorm           -- Generalized normal
    genpareto         -- Generalized Pareto
@@ -71,6 +75,8 @@ Continuous distributions
    invweibull        -- Inverse Weibull
    johnsonsb         -- Johnson SB
    johnsonsu         -- Johnson SU
+   kappa4            -- Kappa 4 parameter
+   kappa3            -- Kappa 3 parameter
    ksone             -- Kolmogorov-Smirnov one-sided (no stats)
    kstwobign         -- Kolmogorov-Smirnov two-sided test for Large N (no stats)
    laplace           -- Laplace
@@ -84,11 +90,13 @@ Continuous distributions
    lomax             -- Lomax (Pareto of the second kind)
    maxwell           -- Maxwell
    mielke            -- Mielke's Beta-Kappa
+   moyal             -- Moyal
    nakagami          -- Nakagami
    ncx2              -- Non-central chi-squared
    ncf               -- Non-central F
    nct               -- Non-central Student's T
    norm              -- Normal (Gaussian)
+   norminvgauss      -- Normal Inverse Gaussian
    pareto            -- Pareto
    pearson3          -- Pearson type III
    powerlaw          -- Power-function
@@ -100,7 +108,9 @@ Continuous distributions
    rice              -- Rice
    recipinvgauss     -- Reciprocal Inverse Gaussian
    semicircular      -- Semicircular
+   skewnorm          -- Skew normal
    t                 -- Student's T
+   trapz              -- Trapezoidal
    triang            -- Triangular
    truncexpon        -- Truncated Exponential
    truncnorm         -- Truncated Normal
@@ -120,9 +130,15 @@ Multivariate distributions
    :toctree: generated/
 
    multivariate_normal   -- Multivariate normal distribution
+   matrix_normal         -- Matrix normal distribution
    dirichlet             -- Dirichlet
    wishart               -- Wishart
    invwishart            -- Inverse Wishart
+   multinomial           -- Multinomial distribution
+   special_ortho_group   -- SO(N) group
+   ortho_group           -- O(N) group
+   unitary_group         -- U(N) group
+   random_correlation    -- random correlation matrices
 
 Discrete distributions
 ======================
@@ -171,9 +187,6 @@ which work for masked arrays.
    tmax              --
    tstd              --
    tsem              --
-   nanmean           -- Mean, ignoring NaN values
-   nanstd            -- Standard deviation, ignoring NaN values
-   nanmedian         -- Median, ignoring NaN values
    variation         -- Coefficient of variation
    find_repeats
    trim_mean
@@ -182,8 +195,6 @@ which work for masked arrays.
    :toctree: generated/
 
    cumfreq
-   histogram2
-   histogram
    itemfreq
    percentileofscore
    scoreatpercentile
@@ -200,18 +211,17 @@ which work for masked arrays.
    :toctree: generated/
 
    obrientransform
-   signaltonoise
    bayes_mvs
    mvsdist
    sem
    zmap
    zscore
+   iqr
 
 .. autosummary::
    :toctree: generated/
 
    sigmaclip
-   threshold
    trimboth
    trim1
 
@@ -223,9 +233,9 @@ which work for masked arrays.
    spearmanr
    pointbiserialr
    kendalltau
+   weightedtau
    linregress
    theilslopes
-   f_value
 
 .. autosummary::
    :toctree: generated/
@@ -245,9 +255,8 @@ which work for masked arrays.
    wilcoxon
    kruskal
    friedmanchisquare
+   brunnermunzel
    combine_pvalues
-   ss
-   square_of_sums
    jarque_bera
 
 .. autosummary::
@@ -276,8 +285,8 @@ which work for masked arrays.
 .. autosummary::
    :toctree: generated/
 
-   chisqprob
-   betai
+   wasserstein_distance
+   energy_distance
 
 Circular statistical functions
 ==============================
@@ -288,7 +297,7 @@ Circular statistical functions
    circmean
    circvar
    circstd
-   
+
 Contingency table functions
 ===========================
 
@@ -343,8 +352,8 @@ from . import mstats
 from .contingency import chi2_contingency
 from ._multivariate import *
 
-#remove vonmises_cython from __all__, I don't know why it is included
-__all__ = [s for s in dir() if not (s.startswith('_') or s.endswith('cython'))]
+__all__ = [s for s in dir() if not s.startswith("_")]  # Remove dunders.
 
-from numpy.testing import Tester
-test = Tester().test
+from scipy._lib._testutils import PytestTester
+test = PytestTester(__name__)
+del PytestTester

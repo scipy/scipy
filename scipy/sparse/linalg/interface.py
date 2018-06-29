@@ -42,6 +42,8 @@ Several algorithms in the ``scipy.sparse`` library are able to operate on
 
 from __future__ import division, print_function, absolute_import
 
+import warnings
+
 import numpy as np
 
 from scipy.sparse import isspmatrix
@@ -130,16 +132,16 @@ class LinearOperator(object):
     def __new__(cls, *args, **kwargs):
         if cls is LinearOperator:
             # Operate as _CustomLinearOperator factory.
-            return _CustomLinearOperator(*args, **kwargs)
+            return super(LinearOperator, cls).__new__(_CustomLinearOperator)
         else:
             obj = super(LinearOperator, cls).__new__(cls)
 
             if (type(obj)._matvec == LinearOperator._matvec
                     and type(obj)._matmat == LinearOperator._matmat):
-                raise TypeError("LinearOperator subclass should implement"
-                                " at least one of _matvec and _matmat.")
+                warnings.warn("LinearOperator subclass should implement"
+                              " at least one of _matvec and _matmat.",
+                              category=RuntimeWarning, stacklevel=2)
 
-            obj.__init__(*args, **kwargs)
             return obj
 
     def __init__(self, dtype, shape):
@@ -153,7 +155,7 @@ class LinearOperator(object):
 
         shape = tuple(shape)
         if not isshape(shape):
-            raise ValueError("invalid shape %r (must be 2-d)" % shape)
+            raise ValueError("invalid shape %r (must be 2-d)" % (shape,))
 
         self.dtype = dtype
         self.shape = shape
@@ -367,6 +369,18 @@ class LinearOperator(object):
                 raise ValueError('expected 1-d or 2-d array or matrix, got %r'
                                  % x)
 
+    def __matmul__(self, other):
+        if np.isscalar(other):
+            raise ValueError("Scalar operands are not allowed, "
+                             "use '*' instead")
+        return self.__mul__(other)
+
+    def __rmatmul__(self, other):
+        if np.isscalar(other):
+            raise ValueError("Scalar operands are not allowed, "
+                             "use '*' instead")
+        return self.__rmul__(other)
+
     def __rmul__(self, x):
         if np.isscalar(x):
             return _ScaledLinearOperator(self, x)
@@ -462,7 +476,7 @@ class _CustomLinearOperator(LinearOperator):
     def _rmatvec(self, x):
         func = self.__rmatvec_impl
         if func is None:
-            raise NotImplemented("rmatvec is not defined")
+            raise NotImplementedError("rmatvec is not defined")
         return self.__rmatvec_impl(x)
 
     def _adjoint(self):
@@ -472,7 +486,9 @@ class _CustomLinearOperator(LinearOperator):
                                      dtype=self.dtype)
 
 
-def _get_dtype(operators, dtypes=[]):
+def _get_dtype(operators, dtypes=None):
+    if dtypes is None:
+        dtypes = []
     for obj in operators:
         if obj is not None and hasattr(obj, 'dtype'):
             dtypes.append(obj.dtype)
@@ -551,7 +567,7 @@ class _ScaledLinearOperator(LinearOperator):
 
     def _adjoint(self):
         A, alpha = self.args
-        return A.H * alpha
+        return A.H * np.conj(alpha)
 
 
 class _PowerLinearOperator(LinearOperator):
@@ -560,8 +576,8 @@ class _PowerLinearOperator(LinearOperator):
             raise ValueError('LinearOperator expected as A')
         if A.shape[0] != A.shape[1]:
             raise ValueError('square LinearOperator expected, got %r' % A)
-        if not isintlike(p):
-            raise ValueError('integer expected as p')
+        if not isintlike(p) or p < 0:
+            raise ValueError('non-negative integer expected as p')
 
         super(_PowerLinearOperator, self).__init__(_get_dtype([A]), A.shape)
         self.args = (A, p)
@@ -646,13 +662,18 @@ def aslinearoperator(A):
 
     See the LinearOperator documentation for additional information.
 
+    Notes
+    -----
+    If 'A' has no .dtype attribute, the data type is determined by calling
+    :func:`LinearOperator.matvec()` - set the .dtype attribute to prevent this
+    call upon the linear operator creation.
+
     Examples
     --------
     >>> from scipy.sparse.linalg import aslinearoperator
     >>> M = np.array([[1,2,3],[4,5,6]], dtype=np.int32)
     >>> aslinearoperator(M)
     <2x3 MatrixLinearOperator with dtype=int32>
-
     """
     if isinstance(A, LinearOperator):
         return A

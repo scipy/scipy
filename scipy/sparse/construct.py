@@ -12,7 +12,7 @@ import numpy as np
 
 from scipy._lib.six import xrange
 
-from .sputils import upcast, get_index_dtype
+from .sputils import upcast, get_index_dtype, isscalarlike
 
 from .csr import csr_matrix
 from .csc import csc_matrix
@@ -134,18 +134,15 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
            [ 0.,  0.,  0.,  0.]])
     """
     # if offsets is not a sequence, assume that there's only one diagonal
-    try:
-        iter(offsets)
-    except TypeError:
+    if isscalarlike(offsets):
         # now check that there's actually only one diagonal
-        try:
-            iter(diagonals[0])
-        except TypeError:
+        if len(diagonals) == 0 or isscalarlike(diagonals[0]):
             diagonals = [np.atleast_1d(diagonals)]
         else:
             raise ValueError("Different number of diagonals and offsets.")
     else:
         diagonals = list(map(np.atleast_1d, diagonals))
+
     offsets = np.atleast_1d(offsets)
 
     # Basic check
@@ -169,14 +166,16 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
     M = max(0, M)
     data_arr = np.zeros((len(offsets), M), dtype=dtype)
 
+    K = min(m, n)
+
     for j, diagonal in enumerate(diagonals):
         offset = offsets[j]
         k = max(0, offset)
-        length = min(m + offset, n - offset)
-        if length <= 0:
+        length = min(m + offset, n - offset, K)
+        if length < 0:
             raise ValueError("Offset %d (index %d) out of bounds" % (offset, j))
         try:
-            data_arr[j, k:k+length] = diagonal
+            data_arr[j, k:k+length] = diagonal[...,:length]
         except ValueError:
             if len(diagonal) != length and len(diagonal) != 1:
                 raise ValueError(
@@ -211,7 +210,7 @@ def identity(n, dtype='d', format=None):
            [ 0.,  1.,  0.],
            [ 0.,  0.,  1.]])
     >>> identity(3, dtype='int8', format='dia')
-    <3x3 sparse matrix of type '<type 'numpy.int8'>'
+    <3x3 sparse matrix of type '<class 'numpy.int8'>'
             with 3 stored elements (1 diagonals) in DIAgonal format>
 
     """
@@ -245,7 +244,7 @@ def eye(m, n=None, k=0, dtype=float, format=None):
            [ 0.,  1.,  0.],
            [ 0.,  0.,  1.]])
     >>> sparse.eye(3, dtype=np.int8)
-    <3x3 sparse matrix of type '<type 'numpy.int8'>'
+    <3x3 sparse matrix of type '<class 'numpy.int8'>'
         with 3 stored elements (1 diagonals) in DIAgonal format>
 
     """
@@ -405,19 +404,25 @@ def _compressed_sparse_stack(blocks, axis):
     """
     other_axis = 1 if axis == 0 else 0
     data = np.concatenate([b.data for b in blocks])
-    indices = np.concatenate([b.indices for b in blocks])
-    indptr = []
-    last_indptr = 0
     constant_dim = blocks[0].shape[other_axis]
+    idx_dtype = get_index_dtype(arrays=[b.indptr for b in blocks],
+                                maxval=max(data.size, constant_dim))
+    indices = np.empty(data.size, dtype=idx_dtype)
+    indptr = np.empty(sum(b.shape[axis] for b in blocks) + 1, dtype=idx_dtype)
+    last_indptr = idx_dtype(0)
     sum_dim = 0
+    sum_indices = 0
     for b in blocks:
         if b.shape[other_axis] != constant_dim:
             raise ValueError('incompatible dimensions for axis %d' % other_axis)
+        indices[sum_indices:sum_indices+b.indices.size] = b.indices
+        sum_indices += b.indices.size
+        idxs = slice(sum_dim, sum_dim + b.shape[axis])
+        indptr[idxs] = b.indptr[:-1]
+        indptr[idxs] += last_indptr
         sum_dim += b.shape[axis]
-        indptr.append(b.indptr[:-1] + last_indptr)
         last_indptr += b.indptr[-1]
-    indptr.append([last_indptr])
-    indptr = np.concatenate(indptr)
+    indptr[-1] = last_indptr
     if axis == 0:
         return csr_matrix((data, indices, indptr),
                           shape=(sum_dim, constant_dim))
@@ -571,30 +576,33 @@ def bmat(blocks, format=None, dtype=None):
 
                 if brow_lengths[i] == 0:
                     brow_lengths[i] = A.shape[0]
-                else:
-                    if brow_lengths[i] != A.shape[0]:
-                        raise ValueError('blocks[%d,:] has incompatible row dimensions' % i)
+                elif brow_lengths[i] != A.shape[0]:
+                    msg = ('blocks[{i},:] has incompatible row dimensions. '
+                           'Got blocks[{i},{j}].shape[0] == {got}, '
+                           'expected {exp}.'.format(i=i, j=j,
+                                                    exp=brow_lengths[i],
+                                                    got=A.shape[0]))
+                    raise ValueError(msg)
 
                 if bcol_lengths[j] == 0:
                     bcol_lengths[j] = A.shape[1]
-                else:
-                    if bcol_lengths[j] != A.shape[1]:
-                        raise ValueError('blocks[:,%d] has incompatible column dimensions' % j)
+                elif bcol_lengths[j] != A.shape[1]:
+                    msg = ('blocks[:,{j}] has incompatible row dimensions. '
+                           'Got blocks[{i},{j}].shape[1] == {got}, '
+                           'expected {exp}.'.format(i=i, j=j,
+                                                    exp=bcol_lengths[j],
+                                                    got=A.shape[1]))
+                    raise ValueError(msg)
 
-    # ensure that at least one value in each row and col is not None
-    if brow_lengths.min() == 0:
-        raise ValueError('blocks[%d,:] is all None' % brow_lengths.argmin())
-    if bcol_lengths.min() == 0:
-        raise ValueError('blocks[:,%d] is all None' % bcol_lengths.argmin())
-
-    nnz = sum([block.nnz for block in blocks[block_mask]])
+    nnz = sum(block.nnz for block in blocks[block_mask])
     if dtype is None:
-        dtype = upcast(*tuple([blk.dtype for blk in blocks[block_mask]]))
+        all_dtypes = [blk.dtype for blk in blocks[block_mask]]
+        dtype = upcast(*all_dtypes) if all_dtypes else None
 
-    row_offsets = np.concatenate(([0], np.cumsum(brow_lengths)))
-    col_offsets = np.concatenate(([0], np.cumsum(bcol_lengths)))
+    row_offsets = np.append(0, np.cumsum(brow_lengths))
+    col_offsets = np.append(0, np.cumsum(bcol_lengths))
 
-    shape = (np.sum(brow_lengths), np.sum(bcol_lengths))
+    shape = (row_offsets[-1], col_offsets[-1])
 
     data = np.empty(nnz, dtype=dtype)
     idx_dtype = get_index_dtype(maxval=max(shape))
@@ -602,18 +610,14 @@ def bmat(blocks, format=None, dtype=None):
     col = np.empty(nnz, dtype=idx_dtype)
 
     nnz = 0
-    for i in range(M):
-        for j in range(N):
-            if blocks[i,j] is not None:
-                B = blocks[i,j]
-                data[nnz:nnz + B.nnz] = B.data
-                row[nnz:nnz + B.nnz] = B.row
-                col[nnz:nnz + B.nnz] = B.col
-
-                row[nnz:nnz + B.nnz] += row_offsets[i]
-                col[nnz:nnz + B.nnz] += col_offsets[j]
-
-                nnz += B.nnz
+    ii, jj = np.nonzero(block_mask)
+    for i, j in zip(ii, jj):
+        B = blocks[i, j]
+        idx = slice(nnz, nnz + B.nnz)
+        data[idx] = B.data
+        row[idx] = B.row + row_offsets[i]
+        col[idx] = B.col + col_offsets[j]
+        nnz += B.nnz
 
     return coo_matrix((data, (row, col)), shape=shape).asformat(format)
 
@@ -702,6 +706,10 @@ def random(m, n, density=0.01, format='coo', dtype=None,
         sampled using the same random state as is used for sampling
         the sparsity structure.
 
+    Returns
+    -------
+    res : sparse matrix
+
     Examples
     --------
     >>> from scipy.sparse import random
@@ -718,13 +726,27 @@ def random(m, n, density=0.01, format='coo', dtype=None,
            [  0.,   0.,   0.,   0.],
            [  0.,   0.,  36.,   0.]])
 
+    >>> from scipy.sparse import random
+    >>> from scipy.stats import rv_continuous
+    >>> class CustomDistribution(rv_continuous):
+    ...     def _rvs(self, *args, **kwargs):
+    ...         return self._random_state.randn(*self._size)
+    >>> X = CustomDistribution(seed=2906)
+    >>> Y = X()  # get a frozen version of the distribution
+    >>> S = random(3, 4, density=0.25, random_state=2906, data_rvs=Y.rvs)
+    >>> S.A
+    array([[ 0.        ,  1.9467163 ,  0.13569738, -0.81205367],
+           [ 0.        ,  0.        ,  0.        ,  0.        ],
+           [ 0.        ,  0.        ,  0.        ,  0.        ]])
+
     Notes
     -----
     Only float types are supported for now.
     """
     if density < 0 or density > 1:
         raise ValueError("density expected to be 0 <= density <= 1")
-    if dtype and (dtype not in [np.float32, np.float64, np.longdouble]):
+    dtype = np.dtype(dtype)
+    if dtype.char not in 'fdg':
         raise NotImplementedError("type %s not supported" % dtype)
 
     mn = m * n
@@ -752,9 +774,7 @@ greater than %d - this is not supported on this machine
 
     # Use the algorithm from python's random.sample for k < mn/3.
     if mn < 3*k:
-        # We should use this line, but choice is only available in numpy >= 1.7
-        # ind = random_state.choice(mn, size=k, replace=False)
-        ind = random_state.permutation(mn)[:k]
+        ind = random_state.choice(mn, size=k, replace=False)
     else:
         ind = np.empty(k, dtype=tp)
         selected = set()
@@ -790,9 +810,29 @@ def rand(m, n, density=0.01, format="coo", dtype=None, random_state=None):
         Random number generator or random seed. If not given, the singleton
         numpy.random will be used.
 
+    Returns
+    -------
+    res : sparse matrix
+
     Notes
     -----
     Only float types are supported for now.
 
+    See Also
+    --------
+    scipy.sparse.random : Similar function that allows a user-specified random
+        data source.
+
+    Examples
+    --------
+    >>> from scipy.sparse import rand
+    >>> matrix = rand(3, 4, density=0.25, format="csr", random_state=42)
+    >>> matrix
+    <3x4 sparse matrix of type '<class 'numpy.float64'>'
+       with 3 stored elements in Compressed Sparse Row format>
+    >>> matrix.todense()
+    matrix([[ 0.        ,  0.59685016,  0.779691  ,  0.        ],
+            [ 0.        ,  0.        ,  0.        ,  0.44583275],
+            [ 0.        ,  0.        ,  0.        ,  0.        ]])
     """
     return random(m, n, density, format, dtype, random_state)

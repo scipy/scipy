@@ -20,7 +20,7 @@ ridder(callback_type f, double xa, double xb, double xtol, double rtol,
     int i;
     double dm,dn,xm,xn=0.0,fn,fm,fa,fb,tol;
 
-    tol = xtol + rtol*(fabs(xa) + fabs(xb));
+    tol = xtol + rtol*MIN(fabs(xa), fabs(xb));
     fa = (*f)(xa,params);
     fb = (*f)(xb,params);
     params->funcalls = 2;
@@ -54,6 +54,7 @@ ridder(callback_type f, double xa, double xb, double xtol, double rtol,
         else {
             xa = xn; fa = fn;
         }
+        tol = xtol + rtol*xn;
         if (fn == 0.0 || fabs(xb - xa) < tol) {
             return xn;
         }

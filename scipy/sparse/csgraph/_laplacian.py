@@ -34,8 +34,9 @@ def laplacian(csgraph, normed=False, return_diag=False, use_out_degree=False):
 
     Returns
     -------
-    lap : ndarray
-        The N x N laplacian matrix of graph.
+    lap : ndarray or sparse matrix
+        The N x N laplacian matrix of csgraph. It will be a numpy array (dense)
+        if the input was dense, or a sparse matrix otherwise.
     diag : ndarray, optional
         The length-N diagonal of the Laplacian matrix.
         For the normalized Laplacian, this is the array of square roots
@@ -68,7 +69,7 @@ def laplacian(csgraph, normed=False, return_diag=False, use_out_degree=False):
     if csgraph.ndim != 2 or csgraph.shape[0] != csgraph.shape[1]:
         raise ValueError('csgraph must be a square matrix or array')
 
-    if normed and (np.issubdtype(csgraph.dtype, int)
+    if normed and (np.issubdtype(csgraph.dtype, np.signedinteger)
                    or np.issubdtype(csgraph.dtype, np.uint)):
         csgraph = csgraph.astype(float)
 
@@ -85,20 +86,26 @@ def _setdiag_dense(A, d):
 
 
 def _laplacian_sparse(graph, normed=False, axis=0):
-    if graph.format == 'coo':
-        m = graph.copy()
-    else:
+    if graph.format in ('lil', 'dok'):
         m = graph.tocoo()
+        needs_copy = False
+    else:
+        m = graph
+        needs_copy = True
     w = m.sum(axis=axis).getA1() - m.diagonal()
     if normed:
-        w = np.sqrt(w)
+        m = m.tocoo(copy=needs_copy)
         isolated_node_mask = (w == 0)
-        w[isolated_node_mask] = 1
+        w = np.where(isolated_node_mask, 1, np.sqrt(w))
         m.data /= w[m.row]
         m.data /= w[m.col]
         m.data *= -1
         m.setdiag(1 - isolated_node_mask)
     else:
+        if m.format == 'dia':
+            m = m.copy()
+        else:
+            m = m.tocoo(copy=needs_copy)
         m.data *= -1
         m.setdiag(w)
     return m, w
@@ -109,9 +116,8 @@ def _laplacian_dense(graph, normed=False, axis=0):
     np.fill_diagonal(m, 0)
     w = m.sum(axis=axis)
     if normed:
-        w = np.sqrt(w)
         isolated_node_mask = (w == 0)
-        w[isolated_node_mask] = 1
+        w = np.where(isolated_node_mask, 1, np.sqrt(w))
         m /= w
         m /= w[:, np.newaxis]
         m *= -1

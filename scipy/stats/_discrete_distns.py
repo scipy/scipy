@@ -5,27 +5,30 @@
 from __future__ import division, print_function, absolute_import
 
 from scipy import special
-from scipy.special import entr, gammaln as gamln
-from scipy.misc import logsumexp
+from scipy.special import entr, logsumexp, betaln, gammaln as gamln
+from scipy._lib._numpy_compat import broadcast_to
+from scipy._lib._util import _lazywhere
 
 from numpy import floor, ceil, log, exp, sqrt, log1p, expm1, tanh, cosh, sinh
 
 import numpy as np
 
 from ._distn_infrastructure import (
-        rv_discrete, _lazywhere, _ncx2_pdf, _ncx2_cdf, get_distribution_names)
+        rv_discrete, _ncx2_pdf, _ncx2_cdf, get_distribution_names)
 
 
 class binom_gen(rv_discrete):
-    """A binomial discrete random variable.
+    r"""A binomial discrete random variable.
 
     %(before_notes)s
 
     Notes
     -----
-    The probability mass function for `binom` is::
+    The probability mass function for `binom` is:
 
-       binom.pmf(k) = choose(n, k) * p**k * (1-p)**(n-k)
+    .. math::
+
+       f(k) = \binom{n}{k} p^k (1-p)^{n-k}
 
     for ``k`` in ``{0, 1,..., n}``.
 
@@ -49,6 +52,7 @@ class binom_gen(rv_discrete):
         return combiln + special.xlogy(k, p) + special.xlog1py(n-k, -p)
 
     def _pmf(self, x, n, p):
+        # binom.pmf(k) = choose(n, k) * p**k * (1-p)**(n-k)
         return exp(self._logpmf(x, n, p))
 
     def _cdf(self, x, n, p):
@@ -81,24 +85,28 @@ class binom_gen(rv_discrete):
         k = np.r_[0:n + 1]
         vals = self._pmf(k, n, p)
         return np.sum(entr(vals), axis=0)
+
+
 binom = binom_gen(name='binom')
 
 
 class bernoulli_gen(binom_gen):
-    """A Bernoulli discrete random variable.
+    r"""A Bernoulli discrete random variable.
 
     %(before_notes)s
 
     Notes
     -----
-    The probability mass function for `bernoulli` is::
+    The probability mass function for `bernoulli` is:
 
-       bernoulli.pmf(k) = 1-p  if k = 0
-                        = p    if k = 1
+    .. math::
 
-    for ``k`` in ``{0, 1}``.
+       f(k) = \begin{cases}1-p  &\text{if } k = 0\\
+                           p    &\text{if } k = 1\end{cases}
 
-    `bernoulli` takes ``p`` as shape parameter.
+    for :math:`k` in :math:`\{0, 1\}`.
+
+    `bernoulli` takes :math:`p` as shape parameter.
 
     %(after_notes)s
 
@@ -115,6 +123,8 @@ class bernoulli_gen(binom_gen):
         return binom._logpmf(x, 1, p)
 
     def _pmf(self, x, p):
+        # bernoulli.pmf(k) = 1-p  if k = 0
+        #                  = p    if k = 1
         return binom._pmf(x, 1, p)
 
     def _cdf(self, x, p):
@@ -131,23 +141,31 @@ class bernoulli_gen(binom_gen):
 
     def _entropy(self, p):
         return entr(p) + entr(1-p)
+
+
 bernoulli = bernoulli_gen(b=1, name='bernoulli')
 
 
 class nbinom_gen(rv_discrete):
-    """A negative binomial discrete random variable.
+    r"""A negative binomial discrete random variable.
 
     %(before_notes)s
 
     Notes
     -----
-    The probability mass function for `nbinom` is::
+    Negative binomial distribution describes a sequence of i.i.d. Bernoulli
+    trials, repeated until a predefined, non-random number of successes occurs.
 
-         nbinom.pmf(k) = choose(k+n-1, n-1) * p**n * (1-p)**k
+    The probability mass function of the number of failures for `nbinom` is:
 
-    for ``k >= 0``.
+    .. math::
 
-    `nbinom` takes ``n`` and ``p`` as shape parameters.
+       f(k) = \binom{k+n-1}{n-1} p^n (1-p)^k
+
+    for :math:`k \ge 0`.
+
+    `nbinom` takes :math:`n` and :math:`p` as shape parameters where n is the
+    number of successes, whereas p is the probability of a single success.
 
     %(after_notes)s
 
@@ -161,6 +179,7 @@ class nbinom_gen(rv_discrete):
         return (n > 0) & (p >= 0) & (p <= 1)
 
     def _pmf(self, x, n, p):
+        # nbinom.pmf(k) = choose(k+n-1, n-1) * p**n * (1-p)**k
         return exp(self._logpmf(x, n, p))
 
     def _logpmf(self, x, n, p):
@@ -190,23 +209,27 @@ class nbinom_gen(rv_discrete):
         g1 = (Q+P)/sqrt(n*P*Q)
         g2 = (1.0 + 6*P*Q) / (n*P*Q)
         return mu, var, g1, g2
+
+
 nbinom = nbinom_gen(name='nbinom')
 
 
 class geom_gen(rv_discrete):
-    """A geometric discrete random variable.
+    r"""A geometric discrete random variable.
 
     %(before_notes)s
 
     Notes
     -----
-    The probability mass function for `geom` is::
+    The probability mass function for `geom` is:
 
-        geom.pmf(k) = (1-p)**(k-1)*p
+    .. math::
 
-    for ``k >= 1``.
+        f(k) = (1-p)^{k-1} p
 
-    `geom` takes ``p`` as shape parameter.
+    for :math:`k \ge 1`.
+
+    `geom` takes :math:`p` as shape parameter.
 
     %(after_notes)s
 
@@ -220,6 +243,7 @@ class geom_gen(rv_discrete):
         return (p <= 1) & (p >= 0)
 
     def _pmf(self, k, p):
+        # geom.pmf(k) = (1-p)**(k-1)*p
         return np.power(1-p, k-1) * p
 
     def _logpmf(self, k, p):
@@ -248,25 +272,36 @@ class geom_gen(rv_discrete):
         g1 = (2.0-p) / sqrt(qr)
         g2 = np.polyval([1, -6, 6], p)/(1.0-p)
         return mu, var, g1, g2
+
+
 geom = geom_gen(a=1, name='geom', longname="A geometric")
 
 
 class hypergeom_gen(rv_discrete):
-    """A hypergeometric discrete random variable.
+    r"""A hypergeometric discrete random variable.
 
     The hypergeometric distribution models drawing objects from a bin.
-    M is the total number of objects, n is total number of Type I objects.
-    The random variate represents the number of Type I objects in N drawn
+    `M` is the total number of objects, `n` is total number of Type I objects.
+    The random variate represents the number of Type I objects in `N` drawn
     without replacement from the total population.
 
     %(before_notes)s
 
     Notes
     -----
-    The probability mass function is defined as::
+    The symbols used to denote the shape parameters (`M`, `n`, and `N`) are not
+    universally accepted.  See the Examples for a clarification of the
+    definitions used here.
 
-        pmf(k, M, n, N) = choose(n, k) * choose(M - n, N - k) / choose(M, N),
-                                       for max(0, N - (M-n)) <= k <= min(n, N)
+    The probability mass function is defined as,
+
+    .. math:: p(k, M, n, N) = \frac{\binom{n}{k} \binom{M - n}{N - k}}
+                                   {\binom{M}{N}}
+
+    for :math:`k \in [\max(0, N - M + n), \min(n, N)]`, where the binomial
+    coefficients are defined as,
+
+    .. math:: \binom{n}{k} \equiv \frac{n!}{k! (n - k)!}.
 
     %(after_notes)s
 
@@ -310,16 +345,17 @@ class hypergeom_gen(rv_discrete):
     def _argcheck(self, M, n, N):
         cond = (M > 0) & (n >= 0) & (N >= 0)
         cond &= (n <= M) & (N <= M)
-        self.a = max(N-(M-n), 0)
-        self.b = min(n, N)
+        self.a = np.maximum(N-(M-n), 0)
+        self.b = np.minimum(n, N)
         return cond
 
     def _logpmf(self, k, M, n, N):
         tot, good = M, n
         bad = tot - good
-        return gamln(good+1) - gamln(good-k+1) - gamln(k+1) + gamln(bad+1) \
-            - gamln(bad-N+k+1) - gamln(N-k+1) - gamln(tot+1) + gamln(tot-N+1) \
-            + gamln(N+1)
+        result = (betaln(good+1, 1) + betaln(bad+1, 1) + betaln(tot-N+1, N+1) -
+                  betaln(k+1, good-k+1) - betaln(N-k+1, bad-N+k+1) -
+                  betaln(tot+1, 1))
+        return result
 
     def _pmf(self, k, M, n, N):
         # same as the following but numerically more precise
@@ -361,7 +397,7 @@ class hypergeom_gen(rv_discrete):
             k2 = np.arange(quant + 1, draw + 1)
             res.append(np.sum(self._pmf(k2, tot, good, draw)))
         return np.asarray(res)
-        
+
     def _logsf(self, k, M, n, N):
         """
         More precise calculation than log(sf)
@@ -372,24 +408,28 @@ class hypergeom_gen(rv_discrete):
             k2 = np.arange(quant + 1, draw + 1)
             res.append(logsumexp(self._logpmf(k2, tot, good, draw)))
         return np.asarray(res)
+
+
 hypergeom = hypergeom_gen(name='hypergeom')
 
 
 # FIXME: Fails _cdfvec
 class logser_gen(rv_discrete):
-    """A Logarithmic (Log-Series, Series) discrete random variable.
+    r"""A Logarithmic (Log-Series, Series) discrete random variable.
 
     %(before_notes)s
 
     Notes
     -----
-    The probability mass function for `logser` is::
+    The probability mass function for `logser` is:
 
-        logser.pmf(k) = - p**k / (k*log(1-p))
+    .. math::
 
-    for ``k >= 1``.
+        f(k) = - \frac{p^k}{k \log(1-p)}
 
-    `logser` takes ``p`` as shape parameter.
+    for :math:`k \ge 1`.
+
+    `logser` takes :math:`p` as shape parameter.
 
     %(after_notes)s
 
@@ -405,10 +445,11 @@ class logser_gen(rv_discrete):
         return (p > 0) & (p < 1)
 
     def _pmf(self, k, p):
-        return -np.power(p, k) * 1.0 / k / log(1 - p)
+        # logser.pmf(k) = - p**k / (k*log(1-p))
+        return -np.power(p, k) * 1.0 / k / special.log1p(-p)
 
     def _stats(self, p):
-        r = log(1 - p)
+        r = special.log1p(-p)
         mu = p / (p - 1.0) / r
         mu2p = -p / r / (p - 1.0)**2
         var = mu2p - mu*mu
@@ -421,37 +462,47 @@ class logser_gen(rv_discrete):
         mu4 = mu4p - 4*mu3p*mu + 6*mu2p*mu*mu - 3*mu**4
         g2 = mu4 / var**2 - 3.0
         return mu, var, g1, g2
+
+
 logser = logser_gen(a=1, name='logser', longname='A logarithmic')
 
 
 class poisson_gen(rv_discrete):
-    """A Poisson discrete random variable.
+    r"""A Poisson discrete random variable.
 
     %(before_notes)s
 
     Notes
     -----
-    The probability mass function for `poisson` is::
+    The probability mass function for `poisson` is:
 
-        poisson.pmf(k) = exp(-mu) * mu**k / k!
+    .. math::
 
-    for ``k >= 0``.
+        f(k) = \exp(-\mu) \frac{\mu^k}{k!}
 
-    `poisson` takes ``mu`` as shape parameter.
+    for :math:`k \ge 0`.
+
+    `poisson` takes :math:`\mu` as shape parameter.
 
     %(after_notes)s
 
     %(example)s
 
     """
+
+    # Override rv_discrete._argcheck to allow mu=0.
+    def _argcheck(self, mu):
+        return mu >= 0
+
     def _rvs(self, mu):
         return self._random_state.poisson(mu, self._size)
 
     def _logpmf(self, k, mu):
-        Pk = k*log(mu)-gamln(k+1) - mu
+        Pk = special.xlogy(k, mu) - gamln(k + 1) - mu
         return Pk
 
     def _pmf(self, k, mu):
+        # poisson.pmf(k) = exp(-mu) * mu**k / k!
         return exp(self._logpmf(k, mu))
 
     def _cdf(self, x, mu):
@@ -471,26 +522,31 @@ class poisson_gen(rv_discrete):
     def _stats(self, mu):
         var = mu
         tmp = np.asarray(mu)
-        g1 = sqrt(1.0 / tmp)
-        g2 = 1.0 / tmp
+        mu_nonzero = tmp > 0
+        g1 = _lazywhere(mu_nonzero, (tmp,), lambda x: sqrt(1.0/x), np.inf)
+        g2 = _lazywhere(mu_nonzero, (tmp,), lambda x: 1.0/x, np.inf)
         return mu, var, g1, g2
+
+
 poisson = poisson_gen(name="poisson", longname='A Poisson')
 
 
 class planck_gen(rv_discrete):
-    """A Planck discrete exponential random variable.
+    r"""A Planck discrete exponential random variable.
 
     %(before_notes)s
 
     Notes
     -----
-    The probability mass function for `planck` is::
+    The probability mass function for `planck` is:
 
-        planck.pmf(k) = (1-exp(-lambda_))*exp(-lambda_*k)
+    .. math::
 
-    for ``k*lambda_ >= 0``.
+        f(k) = (1-\exp(-\lambda)) \exp(-\lambda k)
 
-    `planck` takes ``lambda_`` as shape parameter.
+    for :math:`k \lambda \ge 0`.
+
+    `planck` takes :math:`\lambda` as shape parameter.
 
     %(after_notes)s
 
@@ -498,24 +554,25 @@ class planck_gen(rv_discrete):
 
     """
     def _argcheck(self, lambda_):
-        if (lambda_ > 0):
-            self.a = 0
-            self.b = np.inf
-            return 1
-        elif (lambda_ < 0):
-            self.a = -np.inf
-            self.b = 0
-            return 1
-        else:
-            return 0
+        self.a = np.where(lambda_ > 0, 0, -np.inf)
+        self.b = np.where(lambda_ > 0, np.inf, 0)
+        return lambda_ != 0
 
     def _pmf(self, k, lambda_):
+        # planck.pmf(k) = (1-exp(-lambda_))*exp(-lambda_*k)
         fact = (1-exp(-lambda_))
         return fact*exp(-lambda_*k)
 
     def _cdf(self, x, lambda_):
         k = floor(x)
         return 1-exp(-lambda_*(k+1))
+
+    def _sf(self, x, lambda_):
+        return np.exp(self._logsf(x, lambda_))
+
+    def _logsf(self, x, lambda_):
+        k = floor(x)
+        return -lambda_*(k+1)
 
     def _ppf(self, q, lambda_):
         vals = ceil(-1.0/lambda_ * log1p(-q)-1)
@@ -534,30 +591,41 @@ class planck_gen(rv_discrete):
         l = lambda_
         C = (1-exp(-l))
         return l*exp(-l)/C - log(C)
+
+
 planck = planck_gen(name='planck', longname='A discrete exponential ')
 
 
 class boltzmann_gen(rv_discrete):
-    """A Boltzmann (Truncated Discrete Exponential) random variable.
+    r"""A Boltzmann (Truncated Discrete Exponential) random variable.
 
     %(before_notes)s
 
     Notes
     -----
-    The probability mass function for `boltzmann` is::
+    The probability mass function for `boltzmann` is:
 
-        boltzmann.pmf(k) = (1-exp(-lambda_)*exp(-lambda_*k)/(1-exp(-lambda_*N))
+    .. math::
 
-    for ``k = 0,..., N-1``.
+        f(k) = (1-\exp(-\lambda)) \exp(-\lambda k) / (1-\exp(-\lambda N))
 
-    `boltzmann` takes ``lambda_`` and ``N`` as shape parameters.
+    for :math:`k = 0,..., N-1`.
+
+    `boltzmann` takes :math:`\lambda > 0` and :math:`N > 0` as shape parameters.
 
     %(after_notes)s
 
     %(example)s
 
     """
+    def _argcheck(self, lambda_, N):
+        self.a = 0
+        self.b = N - 1
+        return (lambda_ > 0) & (N > 0)
+
     def _pmf(self, k, lambda_, N):
+        # boltzmann.pmf(k) =
+        #               (1-exp(-lambda_)*exp(-lambda_*k)/(1-exp(-lambda_*N))
         fact = (1-exp(-lambda_))/(1-exp(-lambda_*N))
         return fact*exp(-lambda_*k)
 
@@ -584,27 +652,28 @@ class boltzmann_gen(rv_discrete):
         g2 = z*(1+4*z+z*z)*trm**4 - N**4 * zN*(1+4*zN+zN*zN)
         g2 = g2 / trm2 / trm2
         return mu, var, g1, g2
+
+
 boltzmann = boltzmann_gen(name='boltzmann',
-        longname='A truncated discrete exponential ')
+                          longname='A truncated discrete exponential ')
 
 
 class randint_gen(rv_discrete):
-    """A uniform discrete random variable.
+    r"""A uniform discrete random variable.
 
     %(before_notes)s
 
     Notes
     -----
-    The probability mass function for `randint` is::
+    The probability mass function for `randint` is:
 
-        randint.pmf(k) = 1./(high - low)
+    .. math::
+
+        f(k) = \frac{1}{high - low}
 
     for ``k = low, ..., high - 1``.
 
     `randint` takes ``low`` and ``high`` as shape parameters.
-
-    Note the difference to the numpy ``random_integers`` which
-    returns integers on a *closed* interval ``[low, high]``.
 
     %(after_notes)s
 
@@ -617,6 +686,7 @@ class randint_gen(rv_discrete):
         return (high > low)
 
     def _pmf(self, k, low, high):
+        # randint.pmf(k) = 1./(high - low)
         p = np.ones_like(k) / (high - low)
         return np.where((k >= low) & (k < high), p, 0.)
 
@@ -639,34 +709,43 @@ class randint_gen(rv_discrete):
         g2 = -6.0/5.0 * (d*d + 1.0) / (d*d - 1.0)
         return mu, var, g1, g2
 
-    def _rvs(self, low, high=None):
-        """An array of *size* random integers >= ``low`` and < ``high``.
-
-        If ``high`` is ``None``, then range is >=0  and < low
-        """
-        return self._random_state.randint(low, high, self._size)
+    def _rvs(self, low, high):
+        """An array of *size* random integers >= ``low`` and < ``high``."""
+        if self._size is not None:
+            # Numpy's RandomState.randint() doesn't broadcast its arguments.
+            # Use `broadcast_to()` to extend the shapes of low and high
+            # up to self._size.  Then we can use the numpy.vectorize'd
+            # randint without needing to pass it a `size` argument.
+            low = broadcast_to(low, self._size)
+            high = broadcast_to(high, self._size)
+        randint = np.vectorize(self._random_state.randint, otypes=[np.int_])
+        return randint(low, high)
 
     def _entropy(self, low, high):
         return log(high - low)
+
+
 randint = randint_gen(name='randint', longname='A discrete uniform '
                       '(random integer)')
 
 
 # FIXME: problems sampling.
 class zipf_gen(rv_discrete):
-    """A Zipf discrete random variable.
+    r"""A Zipf discrete random variable.
 
     %(before_notes)s
 
     Notes
     -----
-    The probability mass function for `zipf` is::
+    The probability mass function for `zipf` is:
 
-        zipf.pmf(k, a) = 1/(zeta(a) * k**a)
+    .. math::
 
-    for ``k >= 1``.
+        f(k, a) = \frac{1}{\zeta(a) k^a}
 
-    `zipf` takes ``a`` as shape parameter.
+    for :math:`k \ge 1`.
+
+    `zipf` takes :math:`a` as shape parameter.
 
     %(after_notes)s
 
@@ -680,6 +759,7 @@ class zipf_gen(rv_discrete):
         return a > 1
 
     def _pmf(self, k, a):
+        # zipf.pmf(k, a) = 1/(zeta(a) * k**a)
         Pk = 1.0 / special.zeta(a, 1) / k**a
         return Pk
 
@@ -688,23 +768,27 @@ class zipf_gen(rv_discrete):
             a > n + 1, (a, n),
             lambda a, n: special.zeta(a - n, 1) / special.zeta(a, 1),
             np.inf)
+
+
 zipf = zipf_gen(a=1, name='zipf', longname='A Zipf')
 
 
 class dlaplace_gen(rv_discrete):
-    """A  Laplacian discrete random variable.
+    r"""A  Laplacian discrete random variable.
 
     %(before_notes)s
 
     Notes
     -----
-    The probability mass function for `dlaplace` is::
+    The probability mass function for `dlaplace` is:
 
-        dlaplace.pmf(k) = tanh(a/2) * exp(-a*abs(k))
+    .. math::
 
-    for ``a > 0``.
+        f(k) = \tanh(a/2) \exp(-a |k|)
 
-    `dlaplace` takes ``a`` as shape parameter.
+    for :math:`a > 0`.
+
+    `dlaplace` takes :math:`a` as shape parameter.
 
     %(after_notes)s
 
@@ -712,6 +796,7 @@ class dlaplace_gen(rv_discrete):
 
     """
     def _pmf(self, k, a):
+        # dlaplace.pmf(k) = tanh(a/2) * exp(-a*abs(k))
         return tanh(a/2.0) * exp(-a * abs(k))
 
     def _cdf(self, x, a):
@@ -722,8 +807,9 @@ class dlaplace_gen(rv_discrete):
 
     def _ppf(self, q, a):
         const = 1 + exp(a)
-        vals = ceil(np.where(q < 1.0 / (1 + exp(-a)), log(q*const) / a - 1,
-                                                      -log((1-q) * const) / a))
+        vals = ceil(np.where(q < 1.0 / (1 + exp(-a)),
+                             log(q*const) / a - 1,
+                             -log((1-q) * const) / a))
         vals1 = vals - 1
         return np.where(self._cdf(vals1, a) >= q, vals1, vals)
 
@@ -735,12 +821,14 @@ class dlaplace_gen(rv_discrete):
 
     def _entropy(self, a):
         return a / sinh(a) - log(tanh(a/2.0))
+
+
 dlaplace = dlaplace_gen(a=-np.inf,
                         name='dlaplace', longname='A discrete Laplacian')
 
 
 class skellam_gen(rv_discrete):
-    """A  Skellam discrete random variable.
+    r"""A  Skellam discrete random variable.
 
     %(before_notes)s
 
@@ -749,18 +837,20 @@ class skellam_gen(rv_discrete):
     Probability distribution of the difference of two correlated or
     uncorrelated Poisson random variables.
 
-    Let k1 and k2 be two Poisson-distributed r.v. with expected values
-    lam1 and lam2. Then, ``k1 - k2`` follows a Skellam distribution with
-    parameters ``mu1 = lam1 - rho*sqrt(lam1*lam2)`` and
-    ``mu2 = lam2 - rho*sqrt(lam1*lam2)``, where rho is the correlation
-    coefficient between k1 and k2. If the two Poisson-distributed r.v.
-    are independent then ``rho = 0``.
+    Let :math:`k_1` and :math:`k_2` be two Poisson-distributed r.v. with
+    expected values lam1 and lam2. Then, :math:`k_1 - k_2` follows a Skellam
+    distribution with parameters
+    :math:`\mu_1 = \lambda_1 - \rho \sqrt{\lambda_1 \lambda_2}` and
+    :math:`\mu_2 = \lambda_2 - \rho \sqrt{\lambda_1 \lambda_2}`, where
+    :math:`\rho` is the correlation coefficient between :math:`k_1` and
+    :math:`k_2`. If the two Poisson-distributed r.v. are independent then
+    :math:`\rho = 0`.
 
-    Parameters mu1 and mu2 must be strictly positive.
+    Parameters :math:`\mu_1` and :math:`\mu_2` must be strictly positive.
 
-    For details see: http://en.wikipedia.org/wiki/Skellam_distribution
+    For details see: https://en.wikipedia.org/wiki/Skellam_distribution
 
-    `skellam` takes ``mu1`` and ``mu2`` as shape parameters.
+    `skellam` takes :math:`\mu_1` and :math:`\mu_2` as shape parameters.
 
     %(after_notes)s
 
@@ -774,16 +864,16 @@ class skellam_gen(rv_discrete):
 
     def _pmf(self, x, mu1, mu2):
         px = np.where(x < 0,
-                _ncx2_pdf(2*mu2, 2*(1-x), 2*mu1)*2,
-                _ncx2_pdf(2*mu1, 2*(1+x), 2*mu2)*2)
+                      _ncx2_pdf(2*mu2, 2*(1-x), 2*mu1)*2,
+                      _ncx2_pdf(2*mu1, 2*(1+x), 2*mu2)*2)
         # ncx2.pdf() returns nan's for extremely low probabilities
         return px
 
     def _cdf(self, x, mu1, mu2):
         x = floor(x)
         px = np.where(x < 0,
-                _ncx2_cdf(2*mu2, -2*x, 2*mu1),
-                1-_ncx2_cdf(2*mu1, 2*(x+1), 2*mu2))
+                      _ncx2_cdf(2*mu2, -2*x, 2*mu1),
+                      1 - _ncx2_cdf(2*mu1, 2*(x+1), 2*mu2))
         return px
 
     def _stats(self, mu1, mu2):
@@ -792,6 +882,8 @@ class skellam_gen(rv_discrete):
         g1 = mean / sqrt((var)**3)
         g2 = 1 / var
         return mean, var, g1, g2
+
+
 skellam = skellam_gen(a=-np.inf, name="skellam", longname='A Skellam')
 
 

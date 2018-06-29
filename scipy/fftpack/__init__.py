@@ -19,8 +19,12 @@ Fast Fourier Transforms (FFTs)
    irfft - Inverse of rfft
    dct - Discrete cosine transform
    idct - Inverse discrete cosine transform
+   dctn - n-dimensional Discrete cosine transform
+   idctn - n-dimensional Inverse discrete cosine transform
    dst - Discrete sine transform
    idst - Inverse discrete sine transform
+   dstn - n-dimensional Discrete sine transform
+   idstn - n-dimensional Inverse discrete sine transform
 
 Differential and pseudo-differential operators
 ==============================================
@@ -49,6 +53,7 @@ Helper functions
    ifftshift - The inverse of `fftshift`
    fftfreq - Return the Discrete Fourier Transform sample frequencies
    rfftfreq - DFT sample frequencies (for usage with rfft, irfft)
+   next_fast_len - Find the optimal length to zero-pad an FFT for speed
 
 Note that ``fftshift``, ``ifftshift`` and ``fftfreq`` are numpy functions
 exposed by ``fftpack``; importing them from ``numpy`` should be preferred.
@@ -86,11 +91,10 @@ __all__ = ['fft','ifft','fftn','ifftn','rfft','irfft',
            'tilbert','itilbert','hilbert','ihilbert',
            'sc_diff','cs_diff','cc_diff','ss_diff',
            'shift',
-           'rfftfreq',
-           'fftfreq', 'fftshift', 'ifftshift'
+           'fftfreq', 'rfftfreq',
+           'fftshift', 'ifftshift',
+           'next_fast_len',
            ]
-
-from .fftpack_version import fftpack_version as __version__
 
 from .basic import *
 from .pseudo_diffs import *
@@ -102,8 +106,9 @@ for k in ['fft', 'ifft', 'fftn', 'ifftn', 'fft2', 'ifft2']:
 del k, register_func
 
 from .realtransforms import *
-__all__.extend(['dct', 'idct', 'dst', 'idst'])
+__all__.extend(['dct', 'idct', 'dst', 'idst', 'dctn', 'idctn', 'dstn',
+                'idstn'])
 
-from numpy.testing import Tester
-test = Tester().test
-bench = Tester().bench
+from scipy._lib._testutils import PytestTester
+test = PytestTester(__name__)
+del PytestTester

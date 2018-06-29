@@ -1,7 +1,3 @@
-# Author:  Travis Oliphant, 2002
-#
-# Further updates and enhancements by many SciPy developers.
-#
 from __future__ import division, print_function, absolute_import
 
 import math
@@ -11,16 +7,15 @@ from collections import namedtuple
 import numpy as np
 from numpy import (isscalar, r_, log, around, unique, asarray,
                    zeros, arange, sort, amin, amax, any, atleast_1d,
-                   sqrt, ceil, floor, array, poly1d, compress,
-                   pi, exp, ravel, angle, count_nonzero)
-from numpy.testing.decorators import setastest
+                   sqrt, ceil, floor, array, compress,
+                   pi, exp, ravel, count_nonzero, sin, cos, arctan2, hypot)
 
 from scipy._lib.six import string_types
 from scipy import optimize
 from scipy import special
 from . import statlib
 from . import stats
-from .stats import find_repeats
+from .stats import find_repeats, _contains_nan
 from .contingency import chi2_contingency
 from . import distributions
 from ._distn_infrastructure import rv_generic
@@ -31,8 +26,13 @@ __all__ = ['mvsdist',
            'boxcox_llf', 'boxcox', 'boxcox_normmax', 'boxcox_normplot',
            'shapiro', 'anderson', 'ansari', 'bartlett', 'levene', 'binom_test',
            'fligner', 'mood', 'wilcoxon', 'median_test',
-           'pdf_fromgamma', 'circmean', 'circvar', 'circstd', 'anderson_ksamp'
+           'circmean', 'circvar', 'circstd', 'anderson_ksamp'
            ]
+
+
+Mean = namedtuple('Mean', ('statistic', 'minmax'))
+Variance = namedtuple('Variance', ('statistic', 'minmax'))
+Std_dev = namedtuple('Std_dev', ('statistic', 'minmax'))
 
 
 def bayes_mvs(data, alpha=0.90):
@@ -80,7 +80,7 @@ def bayes_mvs(data, alpha=0.90):
     References
     ----------
     T.E. Oliphant, "A Bayesian perspective on estimating mean, variance, and
-    standard-deviation from data", http://scholarsarchive.byu.edu/facpub/278,
+    standard-deviation from data", https://scholarsarchive.byu.edu/facpub/278,
     2006.
 
     Examples
@@ -91,24 +91,24 @@ def bayes_mvs(data, alpha=0.90):
     >>> data = [6, 9, 12, 7, 8, 8, 13]
     >>> mean, var, std = stats.bayes_mvs(data)
     >>> mean
-    Mean(statistic=9.0, minmax=(7.1036502226125329, 10.896349777387467))
+    Mean(statistic=9.0, minmax=(7.103650222612533, 10.896349777387467))
     >>> var
-    Variance(statistic=10.0, minmax=(3.1767242068607087, 24.459103821334018))
+    Variance(statistic=10.0, minmax=(3.176724206..., 24.45910382...))
     >>> std
-    Std_dev(statistic=2.9724954732045084, minmax=(1.7823367265645143, 4.9456146050146295))
+    Std_dev(statistic=2.9724954732045084, minmax=(1.7823367265645143, 4.945614605014631))
 
     Now we generate some normally distributed random data, and get estimates of
     mean and standard deviation with 95% confidence intervals for those
     estimates:
 
-    >>> n_samples = 1e5
+    >>> n_samples = 100000
     >>> data = stats.norm.rvs(size=n_samples)
     >>> res_mean, res_var, res_std = stats.bayes_mvs(data, alpha=0.95)
 
     >>> import matplotlib.pyplot as plt
     >>> fig = plt.figure()
     >>> ax = fig.add_subplot(111)
-    >>> ax.hist(data, bins=100, normed=True, label='Histogram of data')
+    >>> ax.hist(data, bins=100, density=True, label='Histogram of data')
     >>> ax.vlines(res_mean.statistic, 0, 0.5, colors='r', label='Estimated mean')
     >>> ax.axvspan(res_mean.minmax[0],res_mean.minmax[1], facecolor='r',
     ...            alpha=0.2, label=r'Estimated mean (95% limits)')
@@ -126,10 +126,6 @@ def bayes_mvs(data, alpha=0.90):
     if alpha >= 1 or alpha <= 0:
         raise ValueError("0 < alpha < 1 is required, but alpha=%s was given."
                          % alpha)
-
-    Mean = namedtuple('Mean', ('statistic', 'minmax'))
-    Variance = namedtuple('Variance', ('statistic', 'minmax'))
-    Std_dev = namedtuple('Std_dev', ('statistic', 'minmax'))
 
     m_res = Mean(m.mean(), m.interval(alpha))
     v_res = Variance(v.mean(), v.interval(alpha))
@@ -173,7 +169,7 @@ def mvsdist(data):
     References
     ----------
     T.E. Oliphant, "A Bayesian perspective on estimating mean, variance, and
-    standard-deviation from data", http://scholarsarchive.byu.edu/facpub/278,
+    standard-deviation from data", https://scholarsarchive.byu.edu/facpub/278,
     2006.
 
     Examples
@@ -214,7 +210,7 @@ def mvsdist(data):
 
 
 def kstat(data, n=2):
-    """
+    r"""
     Return the nth k-statistic (1<=n<=4 so far).
 
     The nth k-statistic k_n is the unique symmetric unbiased estimator of the
@@ -248,8 +244,8 @@ def kstat(data, n=2):
         k_{3} = \frac{ n^{2} } {(n-1) (n-2)} m_{3}
         k_{4} = \frac{ n^{2} [(n + 1)m_{4} - 3(n - 1) m^2_{2}]} {(n-1) (n-2) (n-3)}
 
-    where ``:math:\mu`` is the sample mean, ``:math:m_2`` is the sample
-    variance, and ``:math:m_i`` is the i-th sample central moment.
+    where :math:`\mu` is the sample mean, :math:`m_2` is the sample
+    variance, and :math:`m_i` is the i-th sample central moment.
 
     References
     ----------
@@ -309,7 +305,7 @@ def kstat(data, n=2):
 
 
 def kstatvar(data, n=2):
-    """
+    r"""
     Returns an unbiased estimator of the variance of the k-statistic.
 
     See `kstat` for more details of the k-statistic.
@@ -360,15 +356,67 @@ def kstatvar(data, n=2):
         raise ValueError("Only n=1 or n=2 supported.")
 
 
-def _calc_uniform_order_statistic_medians(x):
-    """See Notes section of `probplot` for details."""
-    N = len(x)
-    osm_uniform = np.zeros(N, dtype=np.float64)
-    osm_uniform[-1] = 0.5**(1.0 / N)
-    osm_uniform[0] = 1 - osm_uniform[-1]
-    i = np.arange(2, N)
-    osm_uniform[1:-1] = (i - 0.3175) / (N + 0.365)
-    return osm_uniform
+def _calc_uniform_order_statistic_medians(n):
+    """
+    Approximations of uniform order statistic medians.
+
+    Parameters
+    ----------
+    n : int
+        Sample size.
+
+    Returns
+    -------
+    v : 1d float array
+        Approximations of the order statistic medians.
+
+    References
+    ----------
+    .. [1] James J. Filliben, "The Probability Plot Correlation Coefficient
+           Test for Normality", Technometrics, Vol. 17, pp. 111-117, 1975.
+
+    Examples
+    --------
+    Order statistics of the uniform distribution on the unit interval
+    are marginally distributed according to beta distributions.
+    The expectations of these order statistic are evenly spaced across
+    the interval, but the distributions are skewed in a way that
+    pushes the medians slightly towards the endpoints of the unit interval:
+
+    >>> n = 4
+    >>> k = np.arange(1, n+1)
+    >>> from scipy.stats import beta
+    >>> a = k
+    >>> b = n-k+1
+    >>> beta.mean(a, b)
+    array([ 0.2,  0.4,  0.6,  0.8])
+    >>> beta.median(a, b)
+    array([ 0.15910358,  0.38572757,  0.61427243,  0.84089642])
+
+    The Filliben approximation uses the exact medians of the smallest
+    and greatest order statistics, and the remaining medians are approximated
+    by points spread evenly across a sub-interval of the unit interval:
+
+    >>> from scipy.morestats import _calc_uniform_order_statistic_medians
+    >>> _calc_uniform_order_statistic_medians(n)
+    array([ 0.15910358,  0.38545246,  0.61454754,  0.84089642])
+
+    This plot shows the skewed distributions of the order statistics
+    of a sample of size four from a uniform distribution on the unit interval:
+
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(0.0, 1.0, num=50, endpoint=True)
+    >>> pdfs = [beta.pdf(x, a[i], b[i]) for i in range(n)]
+    >>> plt.figure()
+    >>> plt.plot(x, pdfs[0], x, pdfs[1], x, pdfs[2], x, pdfs[3])
+
+    """
+    v = np.zeros(n, dtype=np.float64)
+    v[-1] = 0.5**(1.0 / n)
+    v[0] = 1 - v[-1]
+    i = np.arange(2, n)
+    v[1:-1] = (i - 0.3175) / (n + 0.365)
+    return v
 
 
 def _parse_dist_kw(dist, enforce_subclass=True):
@@ -421,7 +469,7 @@ def _add_axis_labels_title(plot, xlabel, ylabel, title):
         pass
 
 
-def probplot(x, sparams=(), dist='norm', fit=True, plot=None):
+def probplot(x, sparams=(), dist='norm', fit=True, plot=None, rvalue=False):
     """
     Calculate quantiles for a probability plot, and optionally show the plot.
 
@@ -509,7 +557,7 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None):
 
     >>> ax3 = plt.subplot(223)
     >>> x = stats.norm.rvs(loc=[0,5], scale=[1,1.5],
-    ...                    size=(nsample/2.,2)).ravel()
+    ...                    size=(nsample//2,2)).ravel()
     >>> res = stats.probplot(x, plot=plt)
 
     A standard normal distribution:
@@ -540,7 +588,7 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None):
         else:
             return x, x
 
-    osm_uniform = _calc_uniform_order_statistic_medians(x)
+    osm_uniform = _calc_uniform_order_statistic_medians(len(x))
     dist = _parse_dist_kw(dist, enforce_subclass=False)
     if sparams is None:
         sparams = ()
@@ -557,18 +605,19 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None):
 
     if plot is not None:
         plot.plot(osm, osr, 'bo', osm, slope*osm + intercept, 'r-')
-        _add_axis_labels_title(plot, xlabel='Quantiles',
+        _add_axis_labels_title(plot, xlabel='Theoretical quantiles',
                                ylabel='Ordered Values',
                                title='Probability Plot')
 
         # Add R^2 value to the plot as text
-        xmin = amin(osm)
-        xmax = amax(osm)
-        ymin = amin(x)
-        ymax = amax(x)
-        posx = xmin + 0.70 * (xmax - xmin)
-        posy = ymin + 0.01 * (ymax - ymin)
-        plot.text(posx, posy, "$R^2=%1.4f$" % r**2)
+        if rvalue:
+            xmin = amin(osm)
+            xmax = amax(osm)
+            ymin = amin(x)
+            ymax = amax(x)
+            posx = xmin + 0.70 * (xmax - xmin)
+            posy = ymin + 0.01 * (ymax - ymin)
+            plot.text(posx, posy, "$R^2=%1.4f$" % r**2)
 
     if fit:
         return (osm, osr), (slope, intercept, r)
@@ -620,7 +669,7 @@ def ppcc_max(x, brack=(0.0, 1.0), dist='tukeylambda'):
     .. [1] J.J. Filliben, "The Probability Plot Correlation Coefficient Test for
            Normality", Technometrics, Vol. 17, pp. 111-117, 1975.
 
-    .. [2] http://www.itl.nist.gov/div898/handbook/eda/section3/ppccplot.htm
+    .. [2] https://www.itl.nist.gov/div898/handbook/eda/section3/ppccplot.htm
 
     Examples
     --------
@@ -652,7 +701,7 @@ def ppcc_max(x, brack=(0.0, 1.0), dist='tukeylambda'):
 
     """
     dist = _parse_dist_kw(dist)
-    osm_uniform = _calc_uniform_order_statistic_medians(x)
+    osm_uniform = _calc_uniform_order_statistic_medians(len(x))
     osr = sort(x)
 
     # this function computes the x-axis values of the probability plot
@@ -1063,7 +1112,7 @@ def boxcox_normmax(x, brack=(-2.0, 2.0), method='pearsonr'):
     """
 
     def _pearsonr(x, brack):
-        osm_uniform = _calc_uniform_order_statistic_medians(x)
+        osm_uniform = _calc_uniform_order_statistic_medians(len(x))
         xvals = distributions.norm.ppf(osm_uniform)
 
         def _eval_pearsonr(lmbda, xvals, samps):
@@ -1183,14 +1232,14 @@ def boxcox_normplot(x, la, lb, plot=None, N=80):
 
     if plot is not None:
         plot.plot(lmbdas, ppcc, 'x')
-        _add_axis_labels_title(plot, xlabel='$\lambda$',
+        _add_axis_labels_title(plot, xlabel='$\\lambda$',
                                ylabel='Prob Plot Corr. Coef.',
                                title='Box-Cox Normality Plot')
 
     return lmbdas, ppcc
 
 
-def shapiro(x, a=None, reta=False):
+def shapiro(x):
     """
     Perform the Shapiro-Wilk test for normality.
 
@@ -1201,13 +1250,6 @@ def shapiro(x, a=None, reta=False):
     ----------
     x : array_like
         Array of sample data.
-    a : array_like, optional
-        Array of internal parameters used in the calculation.  If these
-        are not given, they will be computed internally.  If x has length
-        n, then a must have length n/2.
-    reta : bool, optional
-        Whether or not to return the internally computed a values.  The
-        default is False.
 
     Returns
     -------
@@ -1215,9 +1257,6 @@ def shapiro(x, a=None, reta=False):
         The test statistic.
     p-value : float
         The p-value for the hypothesis test.
-    a : array_like, optional
-        If `reta` is True, then these are the internally computed "a"
-        values that may be passed into this function on future calls.
 
     See Also
     --------
@@ -1235,7 +1274,7 @@ def shapiro(x, a=None, reta=False):
 
     References
     ----------
-    .. [1] http://www.itl.nist.gov/div898/handbook/prc/section2/prc213.htm
+    .. [1] https://www.itl.nist.gov/div898/handbook/prc/section2/prc213.htm
     .. [2] Shapiro, S. S. & Wilk, M.B (1965). An analysis of variance test for
            normality (complete samples), Biometrika, Vol. 52, pp. 591-611.
     .. [3] Razali, N. M. & Wah, Y. B. (2011) Power comparisons of Shapiro-Wilk,
@@ -1252,21 +1291,15 @@ def shapiro(x, a=None, reta=False):
     (0.9772805571556091, 0.08144091814756393)
 
     """
-    if a is not None or reta:
-        warnings.warn("input parameters 'a' and 'reta' are scheduled to be "
-                      "removed in version 0.18.0", FutureWarning)
     x = np.ravel(x)
 
     N = len(x)
     if N < 3:
         raise ValueError("Data must be at least length 3.")
-    if a is None:
-        a = zeros(N, 'f')
-        init = 0
-    else:
-        if len(a) != N // 2:
-            raise ValueError("len(a) must equal len(x)/2")
-        init = 1
+
+    a = zeros(N, 'f')
+    init = 0
+
     y = sort(x)
     a, w, pw, ifault = statlib.swilk(y, a[:N//2], init)
     if ifault not in [0, 2]:
@@ -1274,10 +1307,9 @@ def shapiro(x, a=None, reta=False):
                       "may not be accurate.")
     if N > 5000:
         warnings.warn("p-value may not be accurate for N > 5000.")
-    if reta:
-        return w, pw, a
-    else:
-        return w, pw
+
+    return w, pw
+
 
 # Values from Stephens, M A, "EDF Statistics for Goodness of Fit and
 #             Some Comparisons", Journal of he American Statistical
@@ -1293,12 +1325,16 @@ _Avals_gumbel = array([0.474, 0.637, 0.757, 0.877, 1.038])
 _Avals_logistic = array([0.426, 0.563, 0.660, 0.769, 0.906, 1.010])
 
 
+AndersonResult = namedtuple('AndersonResult', ('statistic',
+                                               'critical_values',
+                                               'significance_level'))
+
+
 def anderson(x, dist='norm'):
     """
     Anderson-Darling test for data coming from a particular distribution
 
-    The Anderson-Darling test is a modification of the Kolmogorov-
-    Smirnov test `kstest` for the null hypothesis that a sample is
+    The Anderson-Darling tests the null hypothesis that a sample is
     drawn from a population that follows a particular distribution.
     For the Anderson-Darling test, the critical values depend on
     which distribution is being tested against.  This function works
@@ -1309,9 +1345,10 @@ def anderson(x, dist='norm'):
     ----------
     x : array_like
         array of sample data
-    dist : {'norm','expon','logistic','gumbel','extreme1'}, optional
+    dist : {'norm','expon','logistic','gumbel','gumbel_l', gumbel_r',
+        'extreme1'}, optional
         the type of distribution to test against.  The default is 'norm'
-        and 'extreme1' is a synonym for 'gumbel'
+        and 'extreme1', 'gumbel_l' and 'gumbel' are synonyms.
 
     Returns
     -------
@@ -1325,6 +1362,10 @@ def anderson(x, dist='norm'):
         differing set of significance levels depending on the
         distribution that is being tested against.
 
+    See Also
+    --------
+    kstest : The Kolmogorov-Smirnov test for goodness-of-fit.
+
     Notes
     -----
     Critical values provided are for the following significance levels:
@@ -1336,13 +1377,14 @@ def anderson(x, dist='norm'):
     Gumbel
         25%, 10%, 5%, 2.5%, 1%
 
-    If A2 is larger than these critical values then for the corresponding
-    significance level, the null hypothesis that the data come from the
-    chosen distribution can be rejected.
+    If the returned statistic is larger than these critical values then
+    for the corresponding significance level, the null hypothesis that
+    the data come from the chosen distribution can be rejected.
+    The returned statistic is referred to as 'A2' in the references.
 
     References
     ----------
-    .. [1] http://www.itl.nist.gov/div898/handbook/prc/section2/prc213.htm
+    .. [1] https://www.itl.nist.gov/div898/handbook/prc/section2/prc213.htm
     .. [2] Stephens, M. A. (1974). EDF Statistics for Goodness of Fit and
            Some Comparisons, Journal of the American Statistical Association,
            Vol. 69, pp. 730-737.
@@ -1359,7 +1401,8 @@ def anderson(x, dist='norm'):
            pp. 591-595.
 
     """
-    if dist not in ['norm', 'expon', 'gumbel', 'extreme1', 'logistic']:
+    if dist not in ['norm', 'expon', 'gumbel', 'gumbel_l',
+                    'gumbel_r', 'extreme1', 'logistic']:
         raise ValueError("Invalid distribution; dist must be 'norm', "
                          "'expon', 'gumbel', 'extreme1' or 'logistic'.")
     y = sort(x)
@@ -1368,12 +1411,14 @@ def anderson(x, dist='norm'):
     if dist == 'norm':
         s = np.std(x, ddof=1, axis=0)
         w = (y - xbar) / s
-        z = distributions.norm.cdf(w)
+        logcdf = distributions.norm.logcdf(w)
+        logsf = distributions.norm.logsf(w)
         sig = array([15, 10, 5, 2.5, 1])
         critical = around(_Avals_norm / (1.0 + 4.0/N - 25.0/N/N), 3)
     elif dist == 'expon':
         w = y / xbar
-        z = distributions.expon.cdf(w)
+        logcdf = distributions.expon.logcdf(w)
+        logsf = distributions.expon.logsf(w)
         sig = array([15, 10, 5, 2.5, 1])
         critical = around(_Avals_expon / (1.0 + 0.6/N), 3)
     elif dist == 'logistic':
@@ -1388,22 +1433,28 @@ def anderson(x, dist='norm'):
         sol0 = array([xbar, np.std(x, ddof=1, axis=0)])
         sol = optimize.fsolve(rootfunc, sol0, args=(x, N), xtol=1e-5)
         w = (y - sol[0]) / sol[1]
-        z = distributions.logistic.cdf(w)
+        logcdf = distributions.logistic.logcdf(w)
+        logsf = distributions.logistic.logsf(w)
         sig = array([25, 10, 5, 2.5, 1, 0.5])
         critical = around(_Avals_logistic / (1.0 + 0.25/N), 3)
-    else:  # (dist == 'gumbel') or (dist == 'extreme1'):
+    elif dist == 'gumbel_r':
+        xbar, s = distributions.gumbel_r.fit(x)
+        w = (y - xbar) / s
+        logcdf = distributions.gumbel_r.logcdf(w)
+        logsf = distributions.gumbel_r.logsf(w)
+        sig = array([25, 10, 5, 2.5, 1])
+        critical = around(_Avals_gumbel / (1.0 + 0.2/sqrt(N)), 3)
+    else:  # (dist == 'gumbel') or (dist == 'gumbel_l') or (dist == 'extreme1')
         xbar, s = distributions.gumbel_l.fit(x)
         w = (y - xbar) / s
-        z = distributions.gumbel_l.cdf(w)
+        logcdf = distributions.gumbel_l.logcdf(w)
+        logsf = distributions.gumbel_l.logsf(w)
         sig = array([25, 10, 5, 2.5, 1])
         critical = around(_Avals_gumbel / (1.0 + 0.2/sqrt(N)), 3)
 
     i = arange(1, N + 1)
-    A2 = -N - np.sum((2*i - 1.0) / N * (log(z) + log(1 - z[::-1])), axis=0)
+    A2 = -N - np.sum((2*i - 1.0) / N * (logcdf + logsf[::-1]), axis=0)
 
-    AndersonResult = namedtuple('AndersonResult', ('statistic',
-                                                   'critical_values',
-                                                   'significance_level'))
     return AndersonResult(A2, critical, sig)
 
 
@@ -1488,6 +1539,11 @@ def _anderson_ksamp_right(samples, Z, Zstar, k, n, N):
     return A2kN
 
 
+Anderson_ksampResult = namedtuple('Anderson_ksampResult',
+                                  ('statistic', 'critical_values',
+                                   'significance_level'))
+
+
 def anderson_ksamp(samples, midrank=True):
     """The Anderson-Darling test for k-samples.
 
@@ -1515,7 +1571,8 @@ def anderson_ksamp(samples, midrank=True):
         The critical values for significance levels 25%, 10%, 5%, 2.5%, 1%.
     significance_level : float
         An approximate significance level at which the null hypothesis for the
-        provided samples can be rejected.
+        provided samples can be rejected. The value is floored / capped at
+        1% / 25%.
 
     Raises
     ------
@@ -1530,7 +1587,7 @@ def anderson_ksamp(samples, midrank=True):
 
     Notes
     -----
-    [1]_ Defines three versions of the k-sample Anderson-Darling test:
+    [1]_ defines three versions of the k-sample Anderson-Darling test:
     one for continuous distributions and two for discrete
     distributions, in which ties between samples may occur. The
     default of this routine is to compute the version based on the
@@ -1540,6 +1597,11 @@ def anderson_ksamp(samples, midrank=True):
     data. According to [1]_, the two discrete test statistics differ
     only slightly if a few collisions due to round-off errors occur in
     the test not adjusted for ties between samples.
+
+    The critical values are taken from [1]_. p-values are floored / capped
+    at 1% / 25%. Since the range of criticl values might be extended in
+    future releases, it is recommended not to test ``p == 0.01``, but rather
+    ``p <= 0.01`` (analogously for the upper bound).
 
     .. versionadded:: 0.14.0
 
@@ -1568,14 +1630,15 @@ def anderson_ksamp(samples, midrank=True):
 
 
     The null hypothesis cannot be rejected for three samples from an
-    identical distribution. The approximate p-value (87%) has to be
-    computed by extrapolation and may not be very accurate:
+    identical distribution. The reported p-value (25%) has been capped and
+    may not be very accurate (since it corresponds to the value 0.449
+    whereas the statistic is -0.731):
 
     >>> stats.anderson_ksamp([np.random.normal(size=50),
     ... np.random.normal(size=30), np.random.normal(size=20)])
     (-0.73091722665244196,
       array([ 0.44925884,  1.3052767 ,  1.9434184 ,  2.57696569,  3.41634856]),
-      0.8789283903979661)
+      0.25)
 
     """
     k = len(samples)
@@ -1619,16 +1682,25 @@ def anderson_ksamp(samples, midrank=True):
     b1 = np.array([-0.245, 0.25, 0.678, 1.149, 1.822])
     b2 = np.array([-0.105, -0.305, -0.362, -0.391, -0.396])
     critical = b0 + b1 / math.sqrt(m) + b2 / m
-    pf = np.polyfit(critical, log(np.array([0.25, 0.1, 0.05, 0.025, 0.01])), 2)
-    if A2 < critical.min() or A2 > critical.max():
-        warnings.warn("approximate p-value will be computed by extrapolation")
 
-    p = math.exp(np.polyval(pf, A2))
+    sig = np.array([0.25, 0.1, 0.05, 0.025, 0.01])
+    if A2 < critical.min():
+        p = sig.max()
+        warnings.warn("p-value capped: true value larger than {}".format(p),
+                      stacklevel=2)
+    elif A2 > critical.max():
+        p = sig.min()
+        warnings.warn("p-value floored: true value smaller than {}".format(p),
+                      stacklevel=2)
+    else:
+        # interpolation of probit of significance level
+        pf = np.polyfit(critical, log(sig), 2)
+        p = math.exp(np.polyval(pf, A2))
 
-    Anderson_ksampResult = namedtuple('Anderson_ksampResult',
-                                      ('statistic', 'critical_values',
-                                       'significance_level'))
     return Anderson_ksampResult(A2, critical, p)
+
+
+AnsariResult = namedtuple('AnsariResult', ('statistic', 'pvalue'))
 
 
 def ansari(x, y):
@@ -1675,8 +1747,6 @@ def ansari(x, y):
         raise ValueError("Not enough other observations.")
     if n < 1:
         raise ValueError("Not enough test observations.")
-
-    AnsariResult = namedtuple('AnsariResult', ('statistic', 'pvalue'))
 
     N = m + n
     xy = r_[x, y]  # combine
@@ -1726,6 +1796,9 @@ def ansari(x, y):
     return AnsariResult(AB, pval)
 
 
+BartlettResult = namedtuple('BartlettResult', ('statistic', 'pvalue'))
+
+
 def bartlett(*args):
     """
     Perform Bartlett's test for equal variances
@@ -1761,7 +1834,7 @@ def bartlett(*args):
 
     References
     ----------
-    .. [1]  http://www.itl.nist.gov/div898/handbook/eda/section3/eda357.htm
+    .. [1]  https://www.itl.nist.gov/div898/handbook/eda/section3/eda357.htm
 
     .. [2]  Snedecor, George W. and Cochran, William G. (1989), Statistical
               Methods, Eighth Edition, Iowa State University Press.
@@ -1776,8 +1849,6 @@ def bartlett(*args):
            Mathematical and Physical Sciences, Vol. 160, No.901, pp. 268-282.
 
     """
-    BartlettResult = namedtuple('BartlettResult', ('statistic', 'pvalue'))
-
     # Handle empty input
     for a in args:
         if np.asanyarray(a).size == 0:
@@ -1800,6 +1871,9 @@ def bartlett(*args):
     pval = distributions.chi2.sf(T, k - 1)  # 1 - cdf
 
     return BartlettResult(T, pval)
+
+
+LeveneResult = namedtuple('LeveneResult', ('statistic', 'pvalue'))
 
 
 def levene(*args, **kwds):
@@ -1841,7 +1915,7 @@ def levene(*args, **kwds):
 
     References
     ----------
-    .. [1]  http://www.itl.nist.gov/div898/handbook/eda/section3/eda35a.htm
+    .. [1]  https://www.itl.nist.gov/div898/handbook/eda/section3/eda35a.htm
     .. [2]   Levene, H. (1960). In Contributions to Probability and Statistics:
                Essays in Honor of Harold Hotelling, I. Olkin et al. eds.,
                Stanford University Press, pp. 278-292.
@@ -1869,7 +1943,7 @@ def levene(*args, **kwds):
 
     if center not in ['mean', 'median', 'trimmed']:
         raise ValueError("Keyword argument <center> must be 'mean', 'median'"
-                         + "or 'trimmed'.")
+                        " or 'trimmed'.")
 
     if center == 'median':
         func = lambda x: np.median(x, axis=0)
@@ -1909,12 +1983,9 @@ def levene(*args, **kwds):
 
     W = numer / denom
     pval = distributions.f.sf(W, k-1, Ntot-k)  # 1 - cdf
-
-    LeveneResult = namedtuple('LeveneResult', ('statistic', 'pvalue'))
     return LeveneResult(W, pval)
 
 
-@setastest(False)
 def binom_test(x, n=None, p=0.5, alternative='two-sided'):
     """
     Perform a test that the probability of success is p.
@@ -1934,6 +2005,9 @@ def binom_test(x, n=None, p=0.5, alternative='two-sided'):
     p : float, optional
         The hypothesized probability of success.  0 <= p <= 1. The
         default value is p = 0.5
+    alternative : {'two-sided', 'greater', 'less'}, optional
+        Indicates the alternative hypothesis. The default value is
+        'two-sided'.
 
     Returns
     -------
@@ -1942,7 +2016,7 @@ def binom_test(x, n=None, p=0.5, alternative='two-sided'):
 
     References
     ----------
-    .. [1] http://en.wikipedia.org/wiki/Binomial_test
+    .. [1] https://en.wikipedia.org/wiki/Binomial_test
 
     """
     x = atleast_1d(x).astype(np.integer)
@@ -2004,6 +2078,9 @@ def _apply_func(x, g, func):
     return asarray(output)
 
 
+FlignerResult = namedtuple('FlignerResult', ('statistic', 'pvalue'))
+
+
 def fligner(*args, **kwds):
     """
     Perform Fligner-Killeen test for equality of variance.
@@ -2049,7 +2126,11 @@ def fligner(*args, **kwds):
 
     References
     ----------
-    .. [1] http://www.stat.psu.edu/~bgl/center/tr/TR993.ps
+    .. [1] Park, C. and Lindsay, B. G. (1999). Robust Scale Estimation and
+           Hypothesis Testing based on Quadratic Inference Function. Technical
+           Report #99-03, Center for Likelihood Studies, Pennsylvania State
+           University.
+           https://cecas.clemson.edu/~cspark/cv/paper/qif/draftqif2.pdf
 
     .. [2] Fligner, M.A. and Killeen, T.J. (1976). Distribution-free two-sample
            tests for scale. 'Journal of the American Statistical Association.'
@@ -2066,8 +2147,6 @@ def fligner(*args, **kwds):
            Technometrics, 23(4), 351-361.
 
     """
-    FlignerResult = namedtuple('FlignerResult', ('statistic', 'pvalue'))
-
     # Handle empty input
     for a in args:
         if np.asanyarray(a).size == 0:
@@ -2091,7 +2170,7 @@ def fligner(*args, **kwds):
 
     if center not in ['mean', 'median', 'trimmed']:
         raise ValueError("Keyword argument <center> must be 'mean', 'median'"
-                         + "or 'trimmed'.")
+                        " or 'trimmed'.")
 
     if center == 'median':
         func = lambda x: np.median(x, axis=0)
@@ -2249,6 +2328,9 @@ def mood(x, y, axis=0):
     return z, pval
 
 
+WilcoxonResult = namedtuple('WilcoxonResult', ('statistic', 'pvalue'))
+
+
 def wilcoxon(x, y=None, zero_method="wilcox", correction=False):
     """
     Calculate the Wilcoxon signed-rank test.
@@ -2273,7 +2355,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False):
         "wilcox":
             Wilcox treatment: discards all zero-differences
         "zsplit":
-            Zero rank split: just like Pratt, but spliting the zero rank
+            Zero rank split: just like Pratt, but splitting the zero rank
             between positive and negative ones
     correction : bool, optional
         If True, apply continuity correction by adjusting the Wilcoxon rank
@@ -2296,7 +2378,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False):
 
     References
     ----------
-    .. [1] http://en.wikipedia.org/wiki/Wilcoxon_signed-rank_test
+    .. [1] https://en.wikipedia.org/wiki/Wilcoxon_signed-rank_test
 
     """
 
@@ -2305,7 +2387,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False):
                          "or 'pratt' or 'zsplit'")
 
     if y is None:
-        d = x
+        d = asarray(x)
     else:
         x, y = map(asarray, (x, y))
         if len(x) != len(y):
@@ -2319,6 +2401,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False):
     count = len(d)
     if count < 10:
         warnings.warn("Warning: sample size too small for normal approximation.")
+
     r = stats.rankdata(abs(d))
     r_plus = np.sum((d > 0) * r, axis=0)
     r_minus = np.sum((d < 0) * r, axis=0)
@@ -2345,11 +2428,9 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False):
     z = (T - mn - correction) / se
     prob = 2. * distributions.norm.sf(abs(z))
 
-    WilcoxonResult = namedtuple('WilcoxonResult', ('statistic', 'pvalue'))
     return WilcoxonResult(T, prob)
 
 
-@setastest(False)
 def median_test(*args, **kwds):
     """
     Mood's median test.
@@ -2391,6 +2472,10 @@ def median_test(*args, **kwds):
         Cressie-Read power divergence family to be used instead.  See
         `power_divergence` for details.
         Default is 1 (Pearson's chi-squared statistic).
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan. 'propagate' returns nan,
+        'raise' throws an error, 'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.
 
     Returns
     -------
@@ -2408,7 +2493,8 @@ def median_test(*args, **kwds):
         of the values below the grand median.  The table allows further
         analysis with, for example, `scipy.stats.chi2_contingency`, or with
         `scipy.stats.fisher_exact` if there are two samples, without having
-        to recompute the table.
+        to recompute the table.  If ``nan_policy`` is "propagate" and there
+        are nans in the input, the return value for ``table`` is ``None``.
 
     See Also
     --------
@@ -2487,6 +2573,7 @@ def median_test(*args, **kwds):
     ties = kwds.pop('ties', 'below')
     correction = kwds.pop('correction', True)
     lambda_ = kwds.pop('lambda_', None)
+    nan_policy = kwds.pop('nan_policy', 'propagate')
 
     if len(kwds) > 0:
         bad_kwd = kwds.keys()[0]
@@ -2513,11 +2600,24 @@ def median_test(*args, **kwds):
                              "samples must be one-dimensional sequences." %
                              (k + 1, d.ndim))
 
-    grand_median = np.median(np.concatenate(data))
+    cdata = np.concatenate(data)
+    contains_nan, nan_policy = _contains_nan(cdata, nan_policy)
+    if contains_nan and nan_policy == 'propagate':
+        return np.nan, np.nan, np.nan, None
+
+    if contains_nan:
+        grand_median = np.median(cdata[~np.isnan(cdata)])
+    else:
+        grand_median = np.median(cdata)
+    # When the minimum version of numpy supported by scipy is 1.9.0,
+    # the above if/else statement can be replaced by the single line:
+    #     grand_median = np.nanmedian(cdata)
 
     # Create the contingency table.
     table = np.zeros((2, len(data)), dtype=np.int64)
     for k, sample in enumerate(data):
+        sample = sample[~np.isnan(sample)]
+
         nabove = count_nonzero(sample > grand_median)
         nbelow = count_nonzero(sample < grand_median)
         nequal = sample.size - (nabove + nbelow)
@@ -2543,7 +2643,7 @@ def median_test(*args, **kwds):
         # is possible that all those values equal the grand median.  If `ties`
         # is "ignore", that would result in a column of zeros in `table`.  We
         # check for that case here.
-        zero_cols = np.where((table == 0).all(axis=0))[0]
+        zero_cols = np.nonzero((table == 0).all(axis=0))[0]
         if len(zero_cols) > 0:
             msg = ("All values in sample %d are equal to the grand "
                    "median (%r), so they are ignored, resulting in an "
@@ -2555,55 +2655,12 @@ def median_test(*args, **kwds):
     return stat, p, grand_median, table
 
 
-def _hermnorm(N):
-    # return the negatively normalized hermite polynomials up to order N-1
-    #  (inclusive)
-    #  using the recursive relationship
-    #  p_n+1 = p_n(x)' - x*p_n(x)
-    #   and p_0(x) = 1
-    plist = [None] * N
-    plist[0] = poly1d(1)
-    for n in range(1, N):
-        plist[n] = plist[n-1].deriv() - poly1d([1, 0]) * plist[n-1]
-
-    return plist
-
-
-# Note: when removing pdf_fromgamma, also remove the _hermnorm support function
-@np.deprecate(message="scipy.stats.pdf_fromgamma is deprecated in scipy 0.16.0 "
-                      "in favour of statsmodels.distributions.ExpandedNormal.")
-def pdf_fromgamma(g1, g2, g3=0.0, g4=None):
-    if g4 is None:
-        g4 = 3 * g2**2
-    sigsq = 1.0 / g2
-    sig = sqrt(sigsq)
-    mu = g1 * sig**3.0
-    p12 = _hermnorm(13)
-    for k in range(13):
-        p12[k] /= sig**k
-
-    # Add all of the terms to polynomial
-    totp = (p12[0] - g1/6.0*p12[3] +
-            g2/24.0*p12[4] + g1**2/72.0 * p12[6] -
-            g3/120.0*p12[5] - g1*g2/144.0*p12[7] - g1**3.0/1296.0*p12[9] +
-            g4/720*p12[6] + (g2**2/1152.0 + g1*g3/720)*p12[8] +
-            g1**2 * g2/1728.0*p12[10] + g1**4.0 / 31104.0*p12[12])
-    # Final normalization
-    totp = totp / sqrt(2*pi) / sig
-
-    def thefunc(x):
-        xn = (x - mu) / sig
-        return totp(xn) * exp(-xn**2 / 2.)
-
-    return thefunc
-
-
 def _circfuncs_common(samples, high, low):
     samples = np.asarray(samples)
     if samples.size == 0:
         return np.nan, np.nan
 
-    ang = (samples - low)*2*pi / (high - low)
+    ang = (samples - low)*2.*pi / (high - low)
     return samples, ang
 
 
@@ -2628,15 +2685,26 @@ def circmean(samples, high=2*pi, low=0, axis=None):
     circmean : float
         Circular mean.
 
+    Examples
+    --------
+    >>> from scipy.stats import circmean
+    >>> circmean([0.1, 2*np.pi+0.2, 6*np.pi+0.3])
+    0.2
+
+    >>> from scipy.stats import circmean
+    >>> circmean([0.2, 1.4, 2.6], high = 1, low = 0)
+    0.4
+
     """
     samples, ang = _circfuncs_common(samples, high, low)
-    res = angle(np.mean(exp(1j * ang), axis=axis))
+    S = sin(ang).sum(axis=axis)
+    C = cos(ang).sum(axis=axis)
+    res = arctan2(S, C)
     mask = res < 0
     if mask.ndim > 0:
         res[mask] += 2*pi
     elif mask:
         res += 2*pi
-
     return res*(high - low)/2.0/pi + low
 
 
@@ -2666,10 +2734,17 @@ def circvar(samples, high=2*pi, low=0, axis=None):
     This uses a definition of circular variance that in the limit of small
     angles returns a number close to the 'linear' variance.
 
+    Examples
+    --------
+    >>> from scipy.stats import circvar
+    >>> circvar([0, 2*np.pi/3, 5*np.pi/3])
+    2.19722457734
+
     """
     samples, ang = _circfuncs_common(samples, high, low)
-    res = np.mean(exp(1j * ang), axis=axis)
-    R = abs(res)
+    S = sin(ang).mean(axis=axis)
+    C = cos(ang).mean(axis=axis)
+    R = hypot(S, C)
     return ((high - low)/2.0/pi)**2 * 2 * log(1/R)
 
 
@@ -2701,39 +2776,15 @@ def circstd(samples, high=2*pi, low=0, axis=None):
     This uses a definition of circular standard deviation that in the limit of
     small angles returns a number close to the 'linear' standard deviation.
 
+    Examples
+    --------
+    >>> from scipy.stats import circstd
+    >>> circstd([0, 0.1*np.pi/2, 0.001*np.pi, 0.03*np.pi/2])
+    0.063564063306
+
     """
     samples, ang = _circfuncs_common(samples, high, low)
-    res = np.mean(exp(1j * ang), axis=axis)
-    R = abs(res)
+    S = sin(ang).mean(axis=axis)
+    C = cos(ang).mean(axis=axis)
+    R = hypot(S, C)
     return ((high - low)/2.0/pi) * sqrt(-2*log(R))
-
-
-# Tests to include (from R) -- some of these already in stats.
-########
-# X Ansari-Bradley
-# X Bartlett (and Levene)
-# X Binomial
-# Y Pearson's Chi-squared (stats.chisquare)
-# Y Association Between Paired samples (stats.pearsonr, stats.spearmanr)
-#                       stats.kendalltau) -- these need work though
-# Fisher's exact test
-# X Fligner-Killeen Test
-# Y Friedman Rank Sum (stats.friedmanchisquare?)
-# Y Kruskal-Wallis
-# Y Kolmogorov-Smirnov
-# Cochran-Mantel-Haenszel Chi-Squared for Count
-# McNemar's Chi-squared for Count
-# X Mood Two-Sample
-# X Test For Equal Means in One-Way Layout (see stats.ttest also)
-# Pairwise Comparisons of proportions
-# Pairwise t tests
-# Tabulate p values for pairwise comparisons
-# Pairwise Wilcoxon rank sum tests
-# Power calculations two sample test of prop.
-# Power calculations for one and two sample t tests
-# Equal or Given Proportions
-# Trend in Proportions
-# Quade Test
-# Y Student's T Test
-# Y F Test to compare two variances
-# XY Wilcoxon Rank Sum and Signed Rank Tests
