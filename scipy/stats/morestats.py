@@ -1571,7 +1571,8 @@ def anderson_ksamp(samples, midrank=True):
         The critical values for significance levels 25%, 10%, 5%, 2.5%, 1%.
     significance_level : float
         An approximate significance level at which the null hypothesis for the
-        provided samples can be rejected.
+        provided samples can be rejected. The value is floored / capped at
+        1% / 25%.
 
     Raises
     ------
@@ -1586,7 +1587,7 @@ def anderson_ksamp(samples, midrank=True):
 
     Notes
     -----
-    [1]_ Defines three versions of the k-sample Anderson-Darling test:
+    [1]_ defines three versions of the k-sample Anderson-Darling test:
     one for continuous distributions and two for discrete
     distributions, in which ties between samples may occur. The
     default of this routine is to compute the version based on the
@@ -1596,6 +1597,11 @@ def anderson_ksamp(samples, midrank=True):
     data. According to [1]_, the two discrete test statistics differ
     only slightly if a few collisions due to round-off errors occur in
     the test not adjusted for ties between samples.
+
+    The critical values are taken from [1]_. p-values are floored / capped
+    at 1% / 25%. Since the range of criticl values might be extended in
+    future releases, it is recommended not to test ``p == 0.01``, but rather
+    ``p <= 0.01`` (analogously for the upper bound).
 
     .. versionadded:: 0.14.0
 
@@ -1624,14 +1630,15 @@ def anderson_ksamp(samples, midrank=True):
 
 
     The null hypothesis cannot be rejected for three samples from an
-    identical distribution. The approximate p-value (87%) has to be
-    computed by extrapolation and may not be very accurate:
+    identical distribution. The reported p-value (25%) has been capped and
+    may not be very accurate (since it corresponds to the value 0.449
+    whereas the statistic is -0.731):
 
     >>> stats.anderson_ksamp([np.random.normal(size=50),
     ... np.random.normal(size=30), np.random.normal(size=20)])
     (-0.73091722665244196,
       array([ 0.44925884,  1.3052767 ,  1.9434184 ,  2.57696569,  3.41634856]),
-      0.8789283903979661)
+      0.25)
 
     """
     k = len(samples)
@@ -1675,13 +1682,21 @@ def anderson_ksamp(samples, midrank=True):
     b1 = np.array([-0.245, 0.25, 0.678, 1.149, 1.822])
     b2 = np.array([-0.105, -0.305, -0.362, -0.391, -0.396])
     critical = b0 + b1 / math.sqrt(m) + b2 / m
-    pf = np.polyfit(critical, log(np.array([0.25, 0.1, 0.05, 0.025, 0.01])), 2)
-    if A2 < critical.min() or A2 > critical.max():
-        warnings.warn("approximate p-value will be computed by extrapolation")
-    try:
+
+    sig = np.array([0.25, 0.1, 0.05, 0.025, 0.01])
+    if A2 < critical.min():
+        p = sig.max()
+        warnings.warn("p-value capped: true value larger than {}".format(p),
+                      stacklevel=2)
+    elif A2 > critical.max():
+        p = sig.min()
+        warnings.warn("p-value floored: true value smaller than {}".format(p),
+                      stacklevel=2)
+    else:
+        # interpolation of probit of significance level
+        pf = np.polyfit(critical, log(sig), 2)
         p = math.exp(np.polyval(pf, A2))
-    except (OverflowError,):
-        p = float("inf")
+
     return Anderson_ksampResult(A2, critical, p)
 
 
