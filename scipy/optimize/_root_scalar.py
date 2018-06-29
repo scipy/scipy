@@ -8,6 +8,7 @@ Functions
 """
 from __future__ import division, print_function, absolute_import
 
+import numpy as np
 from scipy._lib.six import callable
 
 from . import zeros as optzeros
@@ -101,6 +102,8 @@ def root_scalar(f, args=(), method=None, bracket=None,
         Tolerance (absolute) for termination.
     rtol : float, optional
         Tolerance (relative) for termination.
+    maxiter : int, optional
+        Maximum number of iterations.
     options : dict, optional
         A dictionary of solver options. E.g. `k` or `maxiter`, see
         :obj:`show_options()` for details.
@@ -160,7 +163,6 @@ def root_scalar(f, args=(), method=None, bracket=None,
     if not isinstance(args, tuple):
         args = (args,)
 
-    meth = method.lower()
     if options is None:
         options = {}
 
@@ -196,14 +198,15 @@ def root_scalar(f, args=(), method=None, bracket=None,
     kwargs.update(full_output=True, disp=False)
 
     # Pick a method if not specified
-    if not meth:
+    if not method:
         if bracket:
-            meth = 'brentq'
+            method = 'brentq'
         elif x0 is not None:
-            meth = 'newton'
+            method = 'newton'
         else:
             raise ValueError('Unable to select a solver as neither bracket '
-                             'nor starting point privided.')
+                             'nor starting point provided.')
+    meth = method.lower()
 
     try:
         methodc = getattr(optzeros, meth)
@@ -211,9 +214,14 @@ def root_scalar(f, args=(), method=None, bracket=None,
         raise ValueError('Unknown solver %s' % meth)
 
     if meth in ['bisect', 'ridder', 'brentq', 'brenth']:
+        if not isinstance(bracket, (list, tuple, np.ndarray)):
+            raise ValueError('Bracket needed for %s' % method)
+
         a, b = bracket[:2]
         r, sol = methodc(f, a, b, args=args, **kwargs)
     elif meth == 'newton':
+        if x0 is None:
+            raise ValueError('x0 musxt not be None for %s' % method)
         if 'xtol' in kwargs:
             kwargs['tol'] = kwargs.pop('xtol')
         r, sol = methodc(f, x0, args=args, fprime=fprime, fprime2=fprime2,
