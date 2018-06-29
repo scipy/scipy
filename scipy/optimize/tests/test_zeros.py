@@ -23,7 +23,6 @@ TOL = 4*np.finfo(float).eps  # tolerance
 
 _FLOAT_EPS = finfo(float).eps
 
-
 class TestBasic(object):
     def run_check_by_name(self, name, smoothness=0):
         a = .5
