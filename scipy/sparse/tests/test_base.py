@@ -4186,6 +4186,29 @@ class TestBSR(sparse_test_class(getset=False,
         indices = np.arange(n, dtype=np.int32)
         bsr_matrix((data, indices, indptr), blocksize=(n, 1), copy=False)
 
+    def test_bsr_tocsr(self):
+        # check native conversion from BSR to CSR
+        indptr = array([0, 2, 2, 4])
+        indices = array([0, 2, 2, 3])
+        data = zeros((4, 2, 3))
+
+        data[0] = array([[0, 1, 2],
+                         [3, 0, 5]])
+        data[1] = array([[0, 2, 4],
+                         [6, 0, 10]])
+        data[2] = array([[0, 4, 8],
+                         [12, 0, 20]])
+        data[3] = array([[0, 5, 10],
+                         [15, 0, 25]])
+
+        A = kron([[1, 0, 2, 0], [0, 0, 0, 0], [0, 0, 4, 5]],
+                 [[0, 1, 2], [3, 0, 5]])
+        Absr = bsr_matrix((data, indices, indptr), shape=(6, 12))
+        Acsr = Absr.tocsr()
+        Acsr_via_coo = Absr.tocoo().tocsr()
+        assert_equal(Acsr.todense(), A)
+        assert_equal(Acsr.todense(), Acsr_via_coo.todense())
+
     def test_eliminate_zeros(self):
         data = kron([1, 0, 0, 0, 2, 0, 3, 0], [[1,1],[1,1]]).T
         data = data.reshape(-1,2,2)
