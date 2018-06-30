@@ -4074,6 +4074,15 @@ class TestCOO(sparse_test_class(getset=False,
         y = x.reshape(new_shape, copy=True)
         assert_(not np.may_share_memory(y.data, x.data))
 
+    def test_large_dimensions(self):
+        # Test that reshape is immune to integer overflow when number of elements
+        # exceeds 2^31-1
+        mat1 = coo_matrix(([1], ([3000000], [1000])), (3000001, 1001))
+        mat2 = coo_matrix(([1], ([1000], [3000000])), (1001, 3000001))
+
+        assert_array_equal(mat1.reshape((1001, 3000001), order='C'), mat2)
+        assert_array_equal(mat2.reshape((3000001, 1001), order='F'), mat1)
+
 
 TestCOO.init_class()
 
