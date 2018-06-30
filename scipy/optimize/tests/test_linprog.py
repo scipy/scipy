@@ -473,11 +473,13 @@ class LinprogCommonTests(object):
             res = linprog(c=c, A_eq=A_eq, b_eq=b_eq,
                           method=self.method, options=self.options)
         else:
+            o = {key: self.options[key] for key in self.options}
+            o["presolve"] = False
             res = linprog(c=c, A_eq=A_eq, b_eq=b_eq, method=self.method,
-                          options={"presolve": False})
+                          options=o)
         _assert_infeasible(res)
 
-    def test_unknown_options_or_solver(self):
+    def test_unknown_options(self):
         c = np.array([-3, -2])
         A_ub = [[2, 1], [1, 1], [1, 0]]
         b_ub = [10, 8, 4]
@@ -487,11 +489,10 @@ class LinprogCommonTests(object):
             linprog(c, A_ub, b_ub, A_eq, b_eq, bounds, method=self.method,
                     options=options)
 
+        o = {key: self.options[key] for key in self.options}
+        o['spam'] = 42
         _assert_warns(OptimizeWarning, f,
-                      c, A_ub=A_ub, b_ub=b_ub, options=dict(spam='42'))
-
-        assert_raises(ValueError, linprog,
-                      c, A_ub=A_ub, b_ub=b_ub, method='ekki-ekki-ekki')
+                      c, A_ub=A_ub, b_ub=b_ub, options=o)
 
     def test_no_constraints(self):
         res = linprog([-1, -2], method=self.method, options=self.options)
@@ -1112,7 +1113,21 @@ class TestLinprogIPDense(BaseTestLinprogIP):
 class TestLinprogIPSparsePresolve(BaseTestLinprogIP):
     options = {"sparse": True, "_sparse_presolve": True}
 
+    @pytest.mark.skip(reason='_sparse_presolve=True incompatible '
+                      'with presolve=False')
+    def test_enzo_example_c_with_infeasibility(self):
+        super(TestLinprogIPSparsePresolve, self).test_enzo_example_c_with_infeasibility()
+
     @pytest.mark.xfail(reason='Fails with ATLAS, see gh-7877')
     def test_bug_6690(self):
         # Test defined in base class, but can't mark as xfail there
         super(TestLinprogIPSparsePresolve, self).test_bug_6690()
+
+
+def test_unknown_solver():
+    c = np.array([-3, -2])
+    A_ub = [[2, 1], [1, 1], [1, 0]]
+    b_ub = [10, 8, 4]
+
+    assert_raises(ValueError, linprog,
+                  c, A_ub=A_ub, b_ub=b_ub, method='ekki-ekki-ekki')
