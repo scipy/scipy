@@ -584,8 +584,8 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, rr):
             status = 0
             message = ("The solution was determined in presolve as there are "
                        "no non-trivial constraints.")
-        elif (np.any(np.logical_and(c < 0, ub == np.inf)) or
-                np.any(np.logical_and(c > 0, lb == -np.inf))):
+        elif (np.any(np.logical_and(c < 0, ub_mod == np.inf)) or
+                np.any(np.logical_and(c > 0, lb_mod == -np.inf))):
                 # test_no_constraints()
             status = 3
             message = ("If feasible, the problem is (trivially) unbounded "
@@ -600,6 +600,11 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, rr):
         complete = True
         x[c < 0] = ub_mod[c < 0]
         x[c > 0] = lb_mod[c > 0]
+        # where c is zero, set x to a finite bound or zero
+        x_zero_c = ub_mod[c == 0]
+        x_zero_c[np.isinf(x_zero_c)] = ub_mod[c == 0][np.isinf(x_zero_c)]
+        x_zero_c[np.isinf(x_zero_c)] = 0
+        x[c == 0] = x_zero_c
         # if this is not the last step of presolve, should convert bounds back
         # to array and return here
 

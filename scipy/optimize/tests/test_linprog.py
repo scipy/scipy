@@ -1001,6 +1001,17 @@ class BaseTestLinprogIP(LinprogCommonTests):
                           method=self.method)
         assert_(not res.success, "incorrectly reported success")
 
+    def test_bug_8973(self):
+        c = np.array([0, 0, 0, 1, -1])
+        A = np.array([[1, 0, 0, 0, 0], [0, 1, 0, 0, 0]])
+        b = np.array([2, -2])
+        bounds = [(None, None), (None, None), (None, None), (-1, 1), (-1, 1)]
+        res = linprog(c, A, b, None, None, bounds, method=self.method,
+                      options=self.options)
+        _assert_success(res,
+                        desired_x=[2, -2, 0, -1, 1],
+                        desired_fun=-2)
+
 
 class TestLinprogIPSpecific:
     method = "interior-point"
