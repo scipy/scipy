@@ -28,9 +28,9 @@ from scipy import linalg, special
 from scipy.special import logsumexp
 
 from numpy import atleast_2d, reshape, zeros, newaxis, dot, exp, pi, sqrt, \
-     ravel, power, atleast_1d, squeeze, sum, transpose
+     ravel, power, atleast_1d, squeeze, sum, transpose, ones_like
 import numpy as np
-from numpy.random import randint, multivariate_normal
+from numpy.random import randint, multivariate_normal, choice
 
 # Local imports.
 from . import mvn
@@ -54,6 +54,9 @@ class gaussian_kde(object):
     dataset : array_like
         Datapoints to estimate from. In case of univariate data this is a 1-D
         array, otherwise a 2-D array with shape (# of dims, # of data).
+    weights : array_like, optional
+        weights of datapoints. This must be the same shape as dataset.
+        If None (default), the samples are assumed to be equally weighted
     bw_method : str, scalar or callable, optional
         The method used to calculate the estimator bandwidth.  This can be
         'scott', 'silverman', a scalar constant or a callable.  If a scalar,
@@ -69,6 +72,8 @@ class gaussian_kde(object):
         Number of dimensions.
     n : int
         Number of datapoints.
+    n : int
+        Effective number of datapoints.
     factor : float
         The bandwidth factor, obtained from `kde.covariance_factor`, with which
         the covariance matrix is multiplied.
@@ -113,6 +118,12 @@ class gaussian_kde(object):
     and [2]_, the mathematics for this multi-dimensional implementation can be
     found in [1]_.
 
+    With a set of weighted samples, the n above should be replaced by `neff`:
+
+        neff = sum(weights)^2 / sum(weights^2)
+
+    as detailed in [5]_.
+
     References
     ----------
     .. [1] D.W. Scott, "Multivariate Density Estimation: Theory, Practice, and
@@ -125,6 +136,8 @@ class gaussian_kde(object):
     .. [4] D.M. Bashtannyk and R.J. Hyndman, "Bandwidth selection for kernel
            conditional density estimation", Computational Statistics & Data
            Analysis, Vol. 36, pp. 279-298, 2001.
+    .. [5] Gray P. G., 1969, Journal of the Royal Statistical Society.
+           Series A (General), 132, 272
 
     Examples
     --------
@@ -163,10 +176,21 @@ class gaussian_kde(object):
     >>> plt.show()
 
     """
-    def __init__(self, dataset, bw_method=None):
+    def __init__(self, dataset, weights=None bw_method=None):
         self.dataset = atleast_2d(dataset)
         if not self.dataset.size > 1:
             raise ValueError("`dataset` input should have multiple elements.")
+
+        if weights is not None:
+            self.weights = atleast_1d(weights)
+            if self.weights.ndim != 1:
+                raise ValueError("`weights` input should be one-dimensional.")
+            if self.dataset.shape[1] != len(self.weights):
+                raise ValueError("`weights` input should same length as dataset.")
+        else:
+            self.weights = ones_like(self.dataset)
+        self.weights /= sum(self.weights)
+        self.neff = 1/sum(weights**2)
 
         self.d, self.n = self.dataset.shape
         self.set_bandwidth(bw_method=bw_method)
@@ -212,14 +236,14 @@ class gaussian_kde(object):
                 diff = self.dataset[:, i, newaxis] - points
                 tdiff = dot(self.inv_cov, diff)
                 energy = sum(diff*tdiff,axis=0) / 2.0
-                result = result + exp(-energy)
+                result = result + self.weights[i]*exp(-energy)
         else:
             # loop over points
             for i in range(m):
                 diff = self.dataset - points[:, i, newaxis]
                 tdiff = dot(self.inv_cov, diff)
                 energy = sum(diff * tdiff, axis=0) / 2.0
-                result[i] = sum(exp(-energy), axis=0)
+                result[i] = sum(exp(-energy)*self.weights, axis=0)
 
         result = result / self._norm_factor
 
@@ -273,10 +297,10 @@ class gaussian_kde(object):
         tdiff = linalg.cho_solve(sum_cov_chol, diff)
 
         sqrt_det = np.prod(np.diagonal(sum_cov_chol[0]))
-        norm_const = power(2 * pi, sum_cov.shape[0] / 2.0) * sqrt_det
+        norm_factor = power(2 * pi, sum_cov.shape[0] / 2.0)
 
         energies = sum(diff * tdiff, axis=0) / 2.0
-        result = sum(exp(-energies), axis=0) / norm_const / self.n
+        result = sum(exp(-energies)*self.weights, axis=0) / norm_factor
 
         return result
 
@@ -310,8 +334,8 @@ class gaussian_kde(object):
         normalized_low = ravel((low - self.dataset) / stdev)
         normalized_high = ravel((high - self.dataset) / stdev)
 
-        value = np.mean(special.ndtr(normalized_high) -
-                        special.ndtr(normalized_low))
+        value = np.sum(self.weights*(special.ndtr(normalized_high) -
+                        special.ndtr(normalized_low)))
         return value
 
     def integrate_box(self, low_bounds, high_bounds, maxpts=None):
@@ -338,7 +362,8 @@ class gaussian_kde(object):
             extra_kwds = {}
 
         value, inform = mvn.mvnun(low_bounds, high_bounds, self.dataset,
-                                  self.covariance, **extra_kwds)
+                                  self.weights, self.covariance, 
+                                  **extra_kwds)
         if inform:
             msg = ('An integral in mvn.mvnun requires more points than %s' %
                    (self.d * 1000))
@@ -387,12 +412,12 @@ class gaussian_kde(object):
             tdiff = linalg.cho_solve(sum_cov_chol, diff)
 
             energies = sum(diff * tdiff, axis=0) / 2.0
-            result += sum(exp(-energies), axis=0)
+            result += sum(exp(-energies)*large.weights, axis=0)*small.weights[i]
 
         sqrt_det = np.prod(np.diagonal(sum_cov_chol[0]))
         norm_const = power(2 * pi, sum_cov.shape[0] / 2.0) * sqrt_det
 
-        result /= norm_const * large.n * small.n
+        result /= norm_const
 
         return result
 
@@ -404,7 +429,8 @@ class gaussian_kde(object):
         ----------
         size : int, optional
             The number of samples to draw.  If not provided, then the size is
-            the same as the underlying dataset.
+            the same as the effective number of samples in the underlying 
+            dataset.
 
         Returns
         -------
@@ -413,20 +439,20 @@ class gaussian_kde(object):
 
         """
         if size is None:
-            size = self.n
+            size = int(self.neff)
 
         norm = transpose(multivariate_normal(zeros((self.d,), float),
                          self.covariance, size=size))
-        indices = randint(0, self.n, size=size)
+        indices = choice(self.n, size=size, p=self.weights)
         means = self.dataset[:, indices]
 
         return means + norm
 
     def scotts_factor(self):
-        return power(self.n, -1./(self.d+4))
+        return power(self.neff, -1./(self.d+4))
 
     def silverman_factor(self):
-        return power(self.n*(self.d+2.0)/4.0, -1./(self.d+4))
+        return power(self.neff*(self.d+2.0)/4.0, -1./(self.d+4))
 
     #  Default method to calculate bandwidth, can be overwritten by subclass
     covariance_factor = scotts_factor
@@ -506,12 +532,13 @@ class gaussian_kde(object):
         # Cache covariance and inverse covariance of the data
         if not hasattr(self, '_data_inv_cov'):
             self._data_covariance = atleast_2d(np.cov(self.dataset, rowvar=1,
-                                               bias=False))
+                                               bias=False,
+                                               aweights=self.weights))
             self._data_inv_cov = linalg.inv(self._data_covariance)
 
         self.covariance = self._data_covariance * self.factor**2
         self.inv_cov = self._data_inv_cov / self.factor**2
-        self._norm_factor = sqrt(linalg.det(2*pi*self.covariance)) * self.n
+        self._norm_factor = sqrt(linalg.det(2*pi*self.covariance))
 
     def pdf(self, x):
         """
@@ -552,13 +579,13 @@ class gaussian_kde(object):
                 diff = self.dataset[:, i, newaxis] - points
                 tdiff = dot(self.inv_cov, diff)
                 energy[i] = sum(diff*tdiff,axis=0) / 2.0
-            result = logsumexp(-energy, b=1/self._norm_factor, axis=0)
+            result = logsumexp(-energy, b=self.weights[i]/self._norm_factor, axis=0)
         else:
             # loop over points
             for i in range(m):
                 diff = self.dataset - points[:, i, newaxis]
                 tdiff = dot(self.inv_cov, diff)
                 energy = sum(diff * tdiff, axis=0) / 2.0
-                result[i] = logsumexp(-energy, b=1/self._norm_factor)
+                result[i] = logsumexp(-energy, b=self.weights/self._norm_factor)
 
         return result

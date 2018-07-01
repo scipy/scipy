@@ -21,8 +21,8 @@
 *          Pullman, WA 99164-3113
 *          Email : alangenz@wsu.edu
 *
-      SUBROUTINE mvnun(d, n, lower, upper, means, covar, maxpts, 
-     &                   abseps, releps, value, inform)
+      SUBROUTINE mvnun(d, n, lower, upper, means, weights, covar,
+     &                    maxpts, abseps, releps, value, inform)
 *  Parameters
 *
 *   d       integer, dimensionality of the data
@@ -30,6 +30,7 @@
 *   lower   double(2), the lower integration limits
 *   upper   double(2), the upper integration limits
 *   means   double(n), the mean of each kernel
+*   weights double(n), the weight of each kernel
 *   covar   double(2,2), the covariance matrix
 *   maxpts  integer, the maximum number of points to evaluate at
 *   abseps  double, absolute error tolerance
@@ -43,7 +44,7 @@
      &                 error, value, stdev(d), rho(d*(d-1)/2), 
      &                 covar(d,d),
      &                 nlower(d), nupper(d), means(d,n), tmpval,
-     &                 inf
+     &                 inf, weights(n)
       integer i, j
 
       inf = 0d0
@@ -77,13 +78,13 @@
         end do
         call mvndst(d,nlower,nupper,infin,rho,maxpts,abseps,releps,
      &              error,tmpval,tmpinf)
-        value = value + tmpval
+        value = value + tmpval * weights(i)
         if (tmpinf .eq. 1) then
             inform = 1
         end if
       end do
 
-      value = value / n
+      value = value
       
       END 
 
