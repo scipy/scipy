@@ -177,7 +177,7 @@ class gaussian_kde(object):
     >>> plt.show()
 
     """
-    def __init__(self, dataset, weights=None bw_method=None):
+    def __init__(self, dataset, weights=None, bw_method=None):
         self.dataset = atleast_2d(dataset)
         if not self.dataset.size > 1:
             raise ValueError("`dataset` input should have multiple elements.")
@@ -187,7 +187,8 @@ class gaussian_kde(object):
             if self.weights.ndim != 1:
                 raise ValueError("`weights` input should be one-dimensional.")
             if self.dataset.shape[1] != len(self.weights):
-                raise ValueError("`weights` input should same length as dataset.")
+                raise ValueError("`weights` input should be the"
+                                 "same length as dataset.")
         else:
             self.weights = ones_like(self.dataset)
 
@@ -365,7 +366,7 @@ class gaussian_kde(object):
             extra_kwds = {}
 
         value, inform = mvn.mvnun(low_bounds, high_bounds, self.dataset,
-                                  self.weights, self.covariance, 
+                                  self.weights, self.covariance,
                                   **extra_kwds)
         if inform:
             msg = ('An integral in mvn.mvnun requires more points than %s' %
@@ -432,7 +433,7 @@ class gaussian_kde(object):
         ----------
         size : int, optional
             The number of samples to draw.  If not provided, then the size is
-            the same as the effective number of samples in the underlying 
+            the same as the effective number of samples in the underlying
             dataset.
 
         Returns
@@ -582,7 +583,8 @@ class gaussian_kde(object):
                 diff = self.dataset[:, i, newaxis] - points
                 tdiff = dot(self.inv_cov, diff)
                 energy[i] = sum(diff*tdiff,axis=0) / 2.0
-            result = logsumexp(-energy, b=self.weights[i]/self._norm_factor, axis=0)
+            result = logsumexp(-energy, b=self.weights[i]/self._norm_factor,
+                               axis=0)
         else:
             # loop over points
             for i in range(m):
