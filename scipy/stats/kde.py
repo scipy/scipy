@@ -28,7 +28,7 @@ from scipy import linalg, special
 from scipy.special import logsumexp
 
 from numpy import atleast_2d, reshape, zeros, newaxis, dot, exp, pi, sqrt, \
-     ravel, power, atleast_1d, squeeze, sum, transpose, ones_like
+     ravel, power, atleast_1d, squeeze, sum, transpose, ones
 import numpy as np
 from numpy.random import choice, multivariate_normal
 
@@ -182,20 +182,20 @@ class gaussian_kde(object):
         if not self.dataset.size > 1:
             raise ValueError("`dataset` input should have multiple elements.")
 
+        self.d, self.n = self.dataset.shape
+
         if weights is not None:
             self.weights = atleast_1d(weights)
             if self.weights.ndim != 1:
                 raise ValueError("`weights` input should be one-dimensional.")
-            if self.dataset.shape[1] != len(self.weights):
-                raise ValueError("`weights` input should be the"
-                                 "same length as dataset.")
+            if len(self.weights) != self.n:
+                raise ValueError("`weights` input should be of length n")
         else:
-            self.weights = ones_like(self.dataset)
+            self.weights = ones(self.n)
 
         self.weights /= sum(self.weights)
-        self.neff = 1/sum(weights**2)
+        self.neff = 1/sum(self.weights**2)
 
-        self.d, self.n = self.dataset.shape
         self.set_bandwidth(bw_method=bw_method)
 
     def evaluate(self, points):

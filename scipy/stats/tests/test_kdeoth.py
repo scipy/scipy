@@ -12,11 +12,12 @@ def test_kde_1d():
     np.random.seed(8765678)
     n_basesample = 500
     xn = np.random.randn(n_basesample)
-    xnmean = xn.mean()
-    xnstd = xn.std(ddof=1)
+    wn = np.random.rand(n_basesample)
+    xnmean = np.average(xn, weights=wn)
+    xnstd = np.sqrt(np.average((xn-xnmean)**2, weights=wn))
 
     # get kde for original sample
-    gkde = stats.gaussian_kde(xn)
+    gkde = stats.gaussian_kde(xn, wn)
 
     # evaluate the density function for the kde for some points
     xs = np.linspace(-7,7,501)
@@ -79,7 +80,7 @@ def test_kde_2d():
 def test_kde_bandwidth_method():
     def scotts_factor(kde_obj):
         """Same as default, just check that it works."""
-        return np.power(kde_obj.n, -1./(kde_obj.d+4))
+        return np.power(kde_obj.neff, -1./(kde_obj.d+4))
 
     np.random.seed(8765678)
     n_basesample = 50
@@ -110,6 +111,8 @@ class _kde_subclass1(stats.gaussian_kde):
     def __init__(self, dataset):
         self.dataset = np.atleast_2d(dataset)
         self.d, self.n = self.dataset.shape
+        self.weights = np.ones(self.n)/self.n
+        self.neff = self.n
         self.covariance_factor = self.scotts_factor
         self._compute_covariance()
 
@@ -127,8 +130,7 @@ class _kde_subclass3(stats.gaussian_kde):
 
     def _compute_covariance(self):
         self.inv_cov = np.linalg.inv(self.covariance)
-        self._norm_factor = np.sqrt(np.linalg.det(2*np.pi * self.covariance)) \
-                                   * self.n
+        self._norm_factor = np.sqrt(np.linalg.det(2*np.pi * self.covariance))
 
 
 class _kde_subclass4(stats.gaussian_kde):
