@@ -1082,7 +1082,7 @@ class sine_gen(rv_continuous):
         return np.sin(x/2)**2
 
     def _stats(self):
-        return np.pi/2, np.sqrt(np.pi**2-8)/2, 0, (np.pi**4-48*np.pi**2+384)/(np.pi**2-8)**2
+        return np.pi/2, np.pi**2/4-2, 0, -2*(np.pi**4-96)/(np.pi**2-8)**2
 
     def _entropy(self):
         return 1.0
