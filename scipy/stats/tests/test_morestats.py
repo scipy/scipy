@@ -275,8 +275,8 @@ class TestAndersonKSamp(object):
 
         assert_almost_equal(Tk, 4.449, 3)
         assert_array_almost_equal([0.4985, 1.3237, 1.9158, 2.4930, 3.2459],
-                                  tm, 4)
-        assert_equal(p, 0.01)  # floor at 0.01; in technical report p = 0.0021
+                                  tm[0:5], 4)
+        assert_allclose(p, 0.0021, atol=0.00025)
 
     def test_example1b(self):
         # Example data from Scholz & Stephens (1987), originally
@@ -287,14 +287,12 @@ class TestAndersonKSamp(object):
         t2 = np.array([39.2, 39.3, 39.7, 41.4, 41.8, 42.9, 43.3, 45.8])
         t3 = np.array([34.0, 35.0, 39.0, 40.0, 43.0, 43.0, 44.0, 45.0])
         t4 = np.array([34.0, 34.8, 34.8, 35.4, 37.2, 37.8, 41.2, 42.8])
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning, message='p-value floored')
-            Tk, tm, p = stats.anderson_ksamp((t1, t2, t3, t4), midrank=True)
+        Tk, tm, p = stats.anderson_ksamp((t1, t2, t3, t4), midrank=True)
 
         assert_almost_equal(Tk, 4.480, 3)
         assert_array_almost_equal([0.4985, 1.3237, 1.9158, 2.4930, 3.2459],
-                                  tm, 4)
-        assert_equal(p, 0.01)  # floor at 0.01; in technical report p = 0.0020
+                                  tm[0:5], 4)
+        assert_allclose(p, 0.0020, atol=0.00025)
 
     def test_example2a(self):
         # Example data taken from an earlier technical report of
@@ -319,16 +317,14 @@ class TestAndersonKSamp(object):
         t13 = [487, 18, 100, 7, 98, 5, 85, 91, 43, 230, 3, 130]
         t14 = [102, 209, 14, 57, 54, 32, 67, 59, 134, 152, 27, 14, 230, 66,
                61, 34]
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning, message='p-value floored')
-            Tk, tm, p = stats.anderson_ksamp((t1, t2, t3, t4, t5, t6, t7, t8,
-                                              t9, t10, t11, t12, t13, t14),
-                                             midrank=False)
 
+        Tk, tm, p = stats.anderson_ksamp((t1, t2, t3, t4, t5, t6, t7, t8,
+                                          t9, t10, t11, t12, t13, t14),
+                                         midrank=False)
         assert_almost_equal(Tk, 3.288, 3)
         assert_array_almost_equal([0.5990, 1.3269, 1.8052, 2.2486, 2.8009],
-                                  tm, 4)
-        assert_equal(p, 0.01)  # floor at 0.01; in technical report p = 0.0041
+                                  tm[0:5], 4)
+        assert_allclose(p, 0.0041, atol=0.00025)
 
     def test_example2b(self):
         # Example data taken from an earlier technical report of
@@ -352,16 +348,15 @@ class TestAndersonKSamp(object):
         t13 = [487, 18, 100, 7, 98, 5, 85, 91, 43, 230, 3, 130]
         t14 = [102, 209, 14, 57, 54, 32, 67, 59, 134, 152, 27, 14, 230, 66,
                61, 34]
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning, message='p-value floored')
-            Tk, tm, p = stats.anderson_ksamp((t1, t2, t3, t4, t5, t6, t7, t8,
-                                              t9, t10, t11, t12, t13, t14),
-                                             midrank=True)
+
+        Tk, tm, p = stats.anderson_ksamp((t1, t2, t3, t4, t5, t6, t7, t8,
+                                          t9, t10, t11, t12, t13, t14),
+                                         midrank=True)
 
         assert_almost_equal(Tk, 3.294, 3)
         assert_array_almost_equal([0.5990, 1.3269, 1.8052, 2.2486, 2.8009],
-                                  tm, 4)
-        assert_equal(p, 0.01)  # floor at 0.01; in technical report p = 0.0041
+                                  tm[0:5], 4)
+        assert_allclose(p, 0.0041, atol=0.00025)
 
     def test_R_kSamples(self):
         # test values generates with R package kSamples
@@ -387,21 +382,29 @@ class TestAndersonKSamp(object):
         # res <- kSamples::ad.test(r1, r1 + 6)
         # res$ad[2, "T.AD"] # 0.63892
         # res$ad[2, " asympt. P-value"] # 0.17981
+        #
+        # res <- kSamples::ad.test(r1, r1 + 11.5)
+        # res$ad[1, "T.AD"] # 4.5042
+        # res$ad[1, " asympt. P-value"] # 0.00545
+        #
+        # res <- kSamples::ad.test(r1, r1 + 13.5)
+        # res$ad[1, "T.AD"] # 6.2982
+        # res$ad[1, " asympt. P-value"] # 0.00118
 
         x1 = np.linspace(1, 100, 100)
-        # test case: different distributions;p-value floored at 0.01
+        # test case: different distributions;p-value floored at 0.001
         # test case for issue #5493 / #8536
         with suppress_warnings() as sup:
             sup.filter(UserWarning, message='p-value floored')
             s, _, p = stats.anderson_ksamp([x1, x1 + 40.5], midrank=False)
         assert_almost_equal(s, 41.105, 3)
-        assert_equal(p, 0.01)
+        assert_equal(p, 0.001)
 
         with suppress_warnings() as sup:
             sup.filter(UserWarning, message='p-value floored')
             s, _, p = stats.anderson_ksamp([x1, x1 + 40.5])
         assert_almost_equal(s, 41.235, 3)
-        assert_equal(p, 0.01)
+        assert_equal(p, 0.001)
 
         # test case: similar distributions --> p-value capped at 0.25
         with suppress_warnings() as sup:
@@ -416,15 +419,24 @@ class TestAndersonKSamp(object):
         assert_almost_equal(s, -1.2944, 4)
         assert_equal(p, 0.25)
 
-        # test case: check interpolated p-value in range [0.01, 0.25] (no ties)
+        # test case: check interpolated p-value in [0.01, 0.25] (no ties)
         s, _, p = stats.anderson_ksamp([x1, x1 + 7.5], midrank=False)
         assert_almost_equal(s, 1.4923, 4)
         assert_allclose(p, 0.0775, atol=0.005, rtol=0)
 
-        # test case: check interpolated p-value in range [0.01, 0.25] (w/ ties)
+        # test case: check interpolated p-value in [0.01, 0.25] (w/ ties)
         s, _, p = stats.anderson_ksamp([x1, x1 + 6])
         assert_almost_equal(s, 0.6389, 4)
         assert_allclose(p, 0.1798, atol=0.005, rtol=0)
+
+        # test extended critical values for p=0.001 and p=0.005
+        s, _, p = stats.anderson_ksamp([x1, x1 + 11.5], midrank=False)
+        assert_almost_equal(s, 4.5042, 4)
+        assert_allclose(p, 0.00545, atol=0.0005, rtol=0)
+
+        s, _, p = stats.anderson_ksamp([x1, x1 + 13.5], midrank=False)
+        assert_almost_equal(s, 6.2982, 4)
+        assert_allclose(p, 0.00118, atol=0.0001, rtol=0)
 
     def test_not_enough_samples(self):
         assert_raises(ValueError, stats.anderson_ksamp, np.ones(5))
@@ -437,18 +449,10 @@ class TestAndersonKSamp(object):
         assert_raises(ValueError, stats.anderson_ksamp, (np.ones(5), []))
 
     def test_result_attributes(self):
-        # Example data from Scholz & Stephens (1987), originally
-        # published in Lehmann (1995, Nonparametrics, Statistical
-        # Methods Based on Ranks, p. 309)
         # Pass a mixture of lists and arrays
         t1 = [38.7, 41.5, 43.8, 44.5, 45.5, 46.0, 47.7, 58.0]
         t2 = np.array([39.2, 39.3, 39.7, 41.4, 41.8, 42.9, 43.3, 45.8])
-        t3 = np.array([34.0, 35.0, 39.0, 40.0, 43.0, 43.0, 44.0, 45.0])
-        t4 = np.array([34.0, 34.8, 34.8, 35.4, 37.2, 37.8, 41.2, 42.8])
-
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning, message='p-value floored')
-            res = stats.anderson_ksamp((t1, t2, t3, t4), midrank=False)
+        res = stats.anderson_ksamp((t1, t2), midrank=False)
 
         attributes = ('statistic', 'critical_values', 'significance_level')
         check_named_results(res, attributes)
