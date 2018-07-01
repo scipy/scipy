@@ -30,7 +30,7 @@ from scipy.special import logsumexp
 from numpy import atleast_2d, reshape, zeros, newaxis, dot, exp, pi, sqrt, \
      ravel, power, atleast_1d, squeeze, sum, transpose, ones_like
 import numpy as np
-from numpy.random import randint, multivariate_normal, choice
+from numpy.random import choice, multivariate_normal
 
 # Local imports.
 from . import mvn
@@ -72,7 +72,7 @@ class gaussian_kde(object):
         Number of dimensions.
     n : int
         Number of datapoints.
-    n : int
+    neff : int
         Effective number of datapoints.
     factor : float
         The bandwidth factor, obtained from `kde.covariance_factor`, with which
@@ -107,18 +107,19 @@ class gaussian_kde(object):
 
     Scott's Rule [1]_, implemented as `scotts_factor`, is::
 
-        n**(-1./(d+4)),
+        neff**(-1./(d+4)),
 
-    with ``n`` the number of data points and ``d`` the number of dimensions.
-    Silverman's Rule [2]_, implemented as `silverman_factor`, is::
+    with ``neff`` the effective number of data points and ``d`` the number of
+    dimensions.  Silverman's Rule [2]_, implemented as `silverman_factor`, is::
 
-        (n * (d + 2) / 4.)**(-1. / (d + 4)).
+        (neff * (d + 2) / 4.)**(-1. / (d + 4)).
 
     Good general descriptions of kernel density estimation can be found in [1]_
     and [2]_, the mathematics for this multi-dimensional implementation can be
     found in [1]_.
 
-    With a set of weighted samples, the n above should be replaced by `neff`:
+    With a set of weighted samples, the effective number of datapoints ``neff``
+    is defined by:
 
         neff = sum(weights)^2 / sum(weights^2)
 
@@ -189,6 +190,7 @@ class gaussian_kde(object):
                 raise ValueError("`weights` input should same length as dataset.")
         else:
             self.weights = ones_like(self.dataset)
+
         self.weights /= sum(self.weights)
         self.neff = 1/sum(weights**2)
 
@@ -297,10 +299,10 @@ class gaussian_kde(object):
         tdiff = linalg.cho_solve(sum_cov_chol, diff)
 
         sqrt_det = np.prod(np.diagonal(sum_cov_chol[0]))
-        norm_factor = power(2 * pi, sum_cov.shape[0] / 2.0)
+        norm_const = power(2 * pi, sum_cov.shape[0] / 2.0) * sqrt_det
 
         energies = sum(diff * tdiff, axis=0) / 2.0
-        result = sum(exp(-energies)*self.weights, axis=0) / norm_factor
+        result = sum(exp(-energies)*self.weights, axis=0) / norm_const
 
         return result
 
@@ -334,7 +336,8 @@ class gaussian_kde(object):
         normalized_low = ravel((low - self.dataset) / stdev)
         normalized_high = ravel((high - self.dataset) / stdev)
 
-        value = np.sum(self.weights*(special.ndtr(normalized_high) -
+        value = np.sum(self.weights*(
+                        special.ndtr(normalized_high) -
                         special.ndtr(normalized_low)))
         return value
 
