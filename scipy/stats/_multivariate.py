@@ -548,9 +548,10 @@ class multivariate_normal_gen(multi_rv_generic):
 
         """
         lower = np.full(mean.shape, -np.inf)
+        weights = np.ones(1)
         # mvnun expects 1-d arguments, so process points sequentially
-        func1d = lambda x_slice: mvn.mvnun(lower, x_slice, mean, cov,
-                                           maxpts, abseps, releps)[0]
+        func1d = lambda x_slice: mvn.mvnun(lower, x_slice, mean, weights,
+                                           cov, maxpts, abseps, releps)[0]
         out = np.apply_along_axis(func1d, -1, x)
         return _squeeze_output(out)
 
