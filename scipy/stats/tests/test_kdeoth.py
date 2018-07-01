@@ -49,6 +49,7 @@ def test_kde_2d():
 
     # Need transpose (shape (2, 500)) for kde
     xn = np.random.multivariate_normal(mean, covariance, size=n_basesample).T
+    wn = np.random.rand(n_basesample)
 
     # get kde for original sample
     gkde = stats.gaussian_kde(xn)
