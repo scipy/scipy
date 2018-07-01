@@ -26,18 +26,20 @@ matrix:
         - TESTMODE=fast
         - COVERAGE=
         - NUMPYSPEC="--pre --upgrade --timeout=60 -f $PRE_WHEELS numpy"
-    - python: 3.6
+    - python: 3.7
+      dist: xenial # travis-ci/travis-ci/issues/9815
+      sudo: true
       env:
         - TESTMODE=full
         - COVERAGE="--coverage --gcov"
         - NUMPYSPEC=numpy
-    - python: 3.5
+    - python: 3.6
       env:
         - TESTMODE=fast
         - COVERAGE=
         - USE_WHEEL=1
         - REFGUIDE_CHECK=1
-    - python: 3.4
+    - python: 3.5
       env:
         - TESTMODE=fast
         - COVERAGE=
@@ -50,7 +52,7 @@ matrix:
         - TESTMODE=fast
         - COVERAGE=
         - NUMPYSPEC=numpy
-        - MB_PYTHON_VERSION=3.6
+        - MB_PYTHON_VERSION=3.7
 addons:
   apt:
     packages:
@@ -130,7 +132,7 @@ before_install:
   - mkdir builds
   - cd builds
   - travis_retry pip install --upgrade pip setuptools wheel
-  - travis_retry pip install cython==0.25.2
+  - travis_retry pip install cython
   - if [ -n "$NUMPYSPEC" ]; then travis_retry pip install $NUMPYSPEC; fi
   - travis_retry pip install --upgrade pytest pytest-xdist pytest-faulthandler mpmath argparse Pillow codecov
   - travis_retry pip install gmpy2  # speeds up mpmath (scipy.special tests)
