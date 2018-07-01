@@ -1061,7 +1061,7 @@ class sine_gen(rv_continuous):
     Notes
     -----
     The sine distribution is useful for polar angles.
-    The probability density function for `cosine` is:
+    The probability density function for `sine` is:
 
     .. math::
 
