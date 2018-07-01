@@ -1088,7 +1088,7 @@ class sine_gen(rv_continuous):
         return 1.0
 
 
-sine = sine_gen(a=0, b=np.pi, name='sin')
+sine = sine_gen(a=0, b=np.pi, name='sine')
 
 
 class dgamma_gen(rv_continuous):
