@@ -16,34 +16,66 @@ from scipy.optimize import zeros, newton, root_scalar
 from scipy._lib._util import getargspec_no_self as _getargspec
 
 # Import testing parameters
-from scipy.optimize._tstutils import functions, fstrings, get_tests
+from scipy.optimize._tstutils import functions, fstrings, get_tests, functions as tstutils_functions, fstrings as tstutils_fstrings
 from scipy._lib._numpy_compat import suppress_warnings
 
 TOL = 4*np.finfo(float).eps  # tolerance
 
 _FLOAT_EPS = finfo(float).eps
 
+# A few test functions used frequently:
+# # A simple quadratic, (x-1)^2 - 1
+def f1(x):
+    return x ** 2 - 2 * x - 1
+
+
+def f1_1(x):
+    return 2 * x - 2
+
+
+def f1_2(x):
+    return 2.0 + 0 * x
+
+
+def f1_and_p_and_pp(x):
+    return f1(x), f1_1(x), f1_2(x)
+
+
+# Simple transcendental function
+def f2(x):
+    return exp(x) - cos(x)
+
+
+def f2_1(x):
+    return exp(x) + sin(x)
+
+
+def f2_2(x):
+    return exp(x) + cos(x)
+
+
 class TestBasic(object):
-    def run_check_by_name(self, name, smoothness=0):
+
+    def run_check_by_name(self, name, smoothness=0, **kwargs):
         a = .5
         b = sqrt(3)
         xtol = 4*np.finfo(float).eps
         rtol = 4*np.finfo(float).eps
-        for function, fname in zip(functions, fstrings):
+        for function, fname in zip(tstutils_functions, tstutils_fstrings):
             if smoothness > 0 and fname in ['f4', 'f5', 'f6']:
                 continue
-            r = root_scalar(function, method=name, bracket=[a, b], x0=a, xtol=xtol, rtol=rtol)
+            r = root_scalar(function, method=name, bracket=[a, b], x0=a, xtol=xtol, rtol=rtol, **kwargs)
             zero = r.root
             assert_(r.converged)
             assert_allclose(zero, 1.0, atol=xtol, rtol=rtol,
-                err_msg='method %s, function %s' % (name, fname))
+                            err_msg='method %s, function %s' % (name, fname))
 
     def run_check(self, method, name):
         a = .5
         b = sqrt(3)
         xtol = 4 * _FLOAT_EPS
         rtol = 4 * _FLOAT_EPS
-        for function, fname in zip(functions, fstrings):
+        for function, fname in zip(tstutils_functions, tstutils_fstrings):
             zero, r = method(function, a, b, xtol=xtol, rtol=rtol,
                              full_output=True)
             assert_(r.converged)
@@ -206,16 +238,32 @@ class TestBasic(object):
         for f, f_1, f_2 in [(self.f1, self.f1_1, self.f1_2), (self.f2, self.f2_1, self.f2_2)]:
             x = zeros.newton(f, 3, tol=1e-6)
             assert_allclose(f(x), 0, atol=1e-6)
-            x = zeros.newton(f, 3, x1=2, tol=1e-6)
+            x = zeros.newton(f, 3, x1=5, tol=1e-6)  # secant, x0 and x1
             assert_allclose(f(x), 0, atol=1e-6)
-            x = zeros.newton(f, 3, x1=5, tol=1e-6)
+            x = zeros.newton(f, 3, fprime=f_1, tol=1e-6)   # newton
             assert_allclose(f(x), 0, atol=1e-6)
-            x = zeros.newton(f, 3, fprime=f_1, tol=1e-6)
-            assert_allclose(f(x), 0, atol=1e-6)
-            x = zeros.newton(f, 3, fprime=f_1, fprime2=f_2, tol=1e-6)
+            x = zeros.newton(f, 3, fprime=f_1, fprime2=f_2, tol=1e-6)  # halley
             assert_allclose(f(x), 0, atol=1e-6)
 
-        self.run_check_by_name('newton', smoothness=2)
+    def test_newton_by_name(self):
+        r"""Invoke newton through root_scalar()"""
+        for f, f_1, f_2 in [(f1, f1_1, f1_2), (f2, f2_1, f2_2)]:
+            r = root_scalar(f, method='newton', x0=3, fprime=f_1, xtol=1e-6)
+            assert_allclose(f(r.root), 0, atol=1e-6)
+
+    def test_secant_by_name(self):
+        r"""Invoke secant through root_scalar()"""
+        for f, f_1, f_2 in [(f1, f1_1, f1_2), (f2, f2_1, f2_2)]:
+            r = root_scalar(f, method='secant', x0=3, x1=2, xtol=1e-6)
+            assert_allclose(f(r.root), 0, atol=1e-6)
+            r = root_scalar(f, method='secant', x0=3, x1=5, xtol=1e-6)
+            assert_allclose(f(r.root), 0, atol=1e-6)
+
+    def test_halley_by_name(self):
+        r"""Invoke halley through root_scalar()"""
+        for f, f_1, f_2 in [(f1, f1_1, f1_2), (f2, f2_1, f2_2)]:
+            r = root_scalar(f, method='halley', x0=3, fprime=f_1, fprime2=f_2, xtol=1e-6)
+            assert_allclose(f(r.root), 0, atol=1e-6)
 
     def test_array_newton(self):
         """test newton with array"""
@@ -295,8 +343,8 @@ class TestBasic(object):
         assert_allclose(sol0.root, sol.root, atol=1e-8)
         assert_equal(2*sol.function_calls, sol0.function_calls)
 
-        sol0 = root_scalar(f1, method='newton', x0=3, fprime=f1_1, fprime2=f1_2)
-        sol = root_scalar(f1_and_p_and_pp, method='newton', x0=3, fprime2=True)
+        sol0 = root_scalar(f1, method='halley', x0=3, fprime=f1_1, fprime2=f1_2)
+        sol = root_scalar(f1_and_p_and_pp, method='halley', x0=3, fprime2=True)
         assert_allclose(sol0.root, sol.root, atol=1e-8)
         assert_equal(3*sol.function_calls, sol0.function_calls)
 

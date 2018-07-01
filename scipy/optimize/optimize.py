@@ -2984,11 +2984,13 @@ def show_options(solver=None, method=None, disp=True):
             ('df-sane', 'scipy.optimize._spectral._root_df_sane'),
         ),
         'root_scalar': (
-            ('bisect', 'scipy.optimize.zeros.bisect'),
-            ('brentq', 'scipy.optimize.zeros.brentq'),
-            ('brenth', 'scipy.optimize.zeros.brenth'),
-            ('ridder', 'scipy.optimize.zeros.ridder'),
-            ('newton', 'scipy.optimize.zeros.newton'),
+            ('bisect', 'scipy.optimize._root_scalar._root_scalar_bisect_doc'),
+            ('brentq', 'scipy.optimize._root_scalar._root_scalar_brentq_doc'),
+            ('brenth', 'scipy.optimize._root_scalar._root_scalar_brenth_doc'),
+            ('ridder', 'scipy.optimize._root_scalar._root_scalar_ridder_doc'),
+            ('secant', 'scipy.optimize._root_scalar._root_scalar_secant_doc'),
+            ('newton', 'scipy.optimize._root_scalar._root_scalar_newton_doc'),
+            ('halley', 'scipy.optimize._root_scalar._root_scalar_halley_doc'),
         ),
         'linprog': (
             ('simplex', 'scipy.optimize._linprog._linprog_simplex'),

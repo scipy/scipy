@@ -161,6 +161,9 @@ The `root_scalar` function supports the following methods:
    optimize.root_scalar-bisect
    optimize.root_scalar-ridder
    optimize.root_scalar-newton
+   optimize.root_scalar-secant
+   optimize.root_scalar-halley
+
 
 
 The table below lists situations and appropriate methods, along with
