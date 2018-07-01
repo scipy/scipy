@@ -267,11 +267,8 @@ class TestAndersonKSamp(object):
         t2 = np.array([39.2, 39.3, 39.7, 41.4, 41.8, 42.9, 43.3, 45.8])
         t3 = np.array([34.0, 35.0, 39.0, 40.0, 43.0, 43.0, 44.0, 45.0])
         t4 = np.array([34.0, 34.8, 34.8, 35.4, 37.2, 37.8, 41.2, 42.8])
-        assert_warns(UserWarning, stats.anderson_ksamp, (t1, t2, t3, t4),
-                     midrank=False)
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning, message='p-value floored')
-            Tk, tm, p = stats.anderson_ksamp((t1, t2, t3, t4), midrank=False)
+
+        Tk, tm, p = stats.anderson_ksamp((t1, t2, t3, t4), midrank=False)
 
         assert_almost_equal(Tk, 4.449, 3)
         assert_array_almost_equal([0.4985, 1.3237, 1.9158, 2.4930, 3.2459],
