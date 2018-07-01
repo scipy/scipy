@@ -238,7 +238,9 @@ class LinprogCommonTests(object):
                          [1, 0, 0, 0]])
         b_ub = [0, 0, 1]
         # "interior-point" will succeed, "simplex" will fail
-        res = linprog(c, A_ub=A_ub, b_ub=b_ub, options=dict(maxiter=100),
+        o = {key: self.options[key] for key in self.options}
+        o["maxiter"] = 100
+        res = linprog(c, A_ub=A_ub, b_ub=b_ub, options=o,
                       method=self.method)
         if self.method == "simplex":
             assert_(not res.success)
@@ -262,7 +264,7 @@ class LinprogCommonTests(object):
                           options=dict(maxiter=100, bland=True),
                           method=self.method)
         else:
-            res = linprog(c, A_ub=A_ub, b_ub=b_ub, options=dict(maxiter=100),
+            res = linprog(c, A_ub=A_ub, b_ub=b_ub, options=self.options,
                           method=self.method)
         _assert_success(res, desired_x=[0, 0, 19, 16/3, 29/3])
 
@@ -471,11 +473,13 @@ class LinprogCommonTests(object):
             res = linprog(c=c, A_eq=A_eq, b_eq=b_eq,
                           method=self.method, options=self.options)
         else:
+            o = {key: self.options[key] for key in self.options}
+            o["presolve"] = False
             res = linprog(c=c, A_eq=A_eq, b_eq=b_eq, method=self.method,
-                          options={"presolve": False})
+                          options=o)
         _assert_infeasible(res)
 
-    def test_unknown_options_or_solver(self):
+    def test_unknown_options(self):
         c = np.array([-3, -2])
         A_ub = [[2, 1], [1, 1], [1, 0]]
         b_ub = [10, 8, 4]
@@ -485,11 +489,10 @@ class LinprogCommonTests(object):
             linprog(c, A_ub, b_ub, A_eq, b_eq, bounds, method=self.method,
                     options=options)
 
+        o = {key: self.options[key] for key in self.options}
+        o['spam'] = 42
         _assert_warns(OptimizeWarning, f,
-                      c, A_ub=A_ub, b_ub=b_ub, options=dict(spam='42'))
-
-        assert_raises(ValueError, linprog,
-                      c, A_ub=A_ub, b_ub=b_ub, method='ekki-ekki-ekki')
+                      c, A_ub=A_ub, b_ub=b_ub, options=o)
 
     def test_no_constraints(self):
         res = linprog([-1, -2], method=self.method, options=self.options)
@@ -668,7 +671,7 @@ class LinprogCommonTests(object):
             sup.filter(OptimizeWarning, "Solving system with option 'sym_pos'")
             res = linprog(
                 c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
-                bounds=bounds, method=self.method
+                bounds=bounds, method=self.method, options=self.options
             )
 
         desired_fun = -1.19099999999
@@ -695,7 +698,8 @@ class LinprogCommonTests(object):
         A, b, c, N = magic_square(3)
         with suppress_warnings() as sup:
             sup.filter(OptimizeWarning, "A_eq does not appear...")
-            res = linprog(c, A_eq=A, b_eq=b, method=self.method)
+            res = linprog(c, A_eq=A, b_eq=b,
+                          method=self.method, options=self.options)
 
         desired_fun = 1.730550597
         _assert_success(res, desired_fun=desired_fun)
@@ -828,7 +832,7 @@ class BaseTestLinprogIP(LinprogCommonTests):
         b_ub = [14, 0, 3]
         bounds = [(2, 2), (0, None)]
         res = linprog(c=c, A_ub=A_ub, b_ub=b_ub, bounds=bounds,
-                      method=self.method)
+                      method=self.method, options=self.options)
         _assert_infeasible(res)
 
     def test_bounds_equal_but_infeasible2(self):
@@ -837,7 +841,7 @@ class BaseTestLinprogIP(LinprogCommonTests):
         b_eq = [14, 0, 3]
         bounds = [(2, 2), (0, None)]
         res = linprog(c=c, A_eq=A_eq, b_eq=b_eq, bounds=bounds,
-                      method=self.method)
+                      method=self.method, options=self.options)
         _assert_infeasible(res)
 
     def test_bug_5400(self):
@@ -1109,7 +1113,19 @@ class TestLinprogIPDense(BaseTestLinprogIP):
 class TestLinprogIPSparsePresolve(BaseTestLinprogIP):
     options = {"sparse": True, "_sparse_presolve": True}
 
+    def test_enzo_example_c_with_infeasibility(self):
+        pytest.skip('_sparse_presolve=True incompatible with presolve=False')
+
     @pytest.mark.xfail(reason='Fails with ATLAS, see gh-7877')
     def test_bug_6690(self):
         # Test defined in base class, but can't mark as xfail there
         super(TestLinprogIPSparsePresolve, self).test_bug_6690()
+
+
+def test_unknown_solver():
+    c = np.array([-3, -2])
+    A_ub = [[2, 1], [1, 1], [1, 0]]
+    b_ub = [10, 8, 4]
+
+    assert_raises(ValueError, linprog,
+                  c, A_ub=A_ub, b_ub=b_ub, method='ekki-ekki-ekki')
