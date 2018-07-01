@@ -1113,10 +1113,8 @@ class TestLinprogIPDense(BaseTestLinprogIP):
 class TestLinprogIPSparsePresolve(BaseTestLinprogIP):
     options = {"sparse": True, "_sparse_presolve": True}
 
-    @pytest.mark.skip(reason='_sparse_presolve=True incompatible '
-                      'with presolve=False')
     def test_enzo_example_c_with_infeasibility(self):
-        super(TestLinprogIPSparsePresolve, self).test_enzo_example_c_with_infeasibility()
+        pytest.skip('_sparse_presolve=True incompatible with presolve=False')
 
     @pytest.mark.xfail(reason='Fails with ATLAS, see gh-7877')
     def test_bug_6690(self):
