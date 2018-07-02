@@ -4,6 +4,7 @@ import re
 import warnings
 import numpy as np
 import scipy.linalg
+from scipy._lib._util import check_random_state
 
 
 _AXIS_TO_IND = {'x': 0, 'y': 1, 'z': 2}
@@ -1471,8 +1472,10 @@ class Rotation(object):
         num : None or int
             Number of random rotations to generate. If None, then a single
             rotation is generated. Default is None.
-        random_state : None or `numpy.random.RandomState` object
-            Object for manually setting the generator state.
+        random_state : None, int or `numpy.random.RandomState` object
+            If RadomState object, used for generator state. If integer, used
+            to seed the random generator. If None, uses global `np.random`
+            random state. Default is None.
 
         Returns
         -------
@@ -1501,12 +1504,9 @@ class Rotation(object):
                [-0.31340545,  0.55852902, -0.13422706,  0.75617819],
                [ 0.25086769, -0.37389821, -0.53738335,  0.71308111],
                [ 0.78349346, -0.03642139, -0.53405077,  0.31559667]])
-       """
-        if random_state is None:
-            random_state = np.random.RandomState(seed=None)
-        if not isinstance(random_state, np.random.RandomState):
-            raise ValueError("Expected None or numpy.random.RandomState"
-                             "instance, got %r.".format(random_state))
+        """
+        random_state = check_random_state(random_state)
+
         if num is None:
             sample = random_state.normal(size=4)
         else:
