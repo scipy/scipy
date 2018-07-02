@@ -1460,3 +1460,127 @@ class Rotation(object):
                [ 0.57735027,  0.57735027, -0.57735027,  0.        ]])
         """
         return self.__class__(self._quat[indexer], normalized=True)
+
+
+class Slerp(object):
+    """Spherical Linear Interpolation of Rotations.
+
+    The interpolation between consecutive rotations is performed as a rotation
+    around a fixed axis with a constant angular velocity [1]_. This ensures
+    that the interpolated rotations follow the shortest path between initial
+    and final orientations.
+
+    Parameters
+    ----------
+    times : array_like, shape (N,)
+        Times of the known rotations. At least 2 times must be specified.
+    rotations : `Rotation` instance
+        Rotations to perform the interpolation between. Must contain N
+        rotations.
+
+    Methods
+    -------
+    __call__
+
+    References
+    ----------
+    .. [1] `Quaternion Slerp
+            <https://en.wikipedia.org/wiki/Slerp#Quaternion_Slerp>`_
+
+    Examples
+    --------
+    >>> from scipy.spatial.transform import Rotation as R
+    >>> from scipy.spatial.transform import Slerp as S
+
+    Setup the fixed keyframe rotations and times:
+
+    >>> key_rots = R.from_quat(np.random.uniform(size=(5, 4)))
+    >>> key_times = [0, 1, 2, 3, 4]
+
+    Create the interpolator object:
+
+    >>> interpolator = S(key_times, key_rots)
+
+    Interpolate the rotations at the given times:
+
+    >>> times = [0, 0.5, 0.25, 1, 1.5, 2, 2.75, 3, 3.25, 3.60, 4]
+    >>> interp_rots = interpolator(times)
+
+    The interpolator returns the same rotations at the keyframe times:
+
+    >>> key_rots.as_quat()
+    array([[0.33546361, 0.32248502, 0.6144695 , 0.63709875],
+           [0.32914502, 0.13316173, 0.69664424, 0.62339258],
+           [0.71951125, 0.09194507, 0.28850306, 0.62499252],
+           [0.2432484 , 0.7620946 , 0.5988079 , 0.03835539],
+           [0.47888381, 0.47046693, 0.71809073, 0.18351259]])
+    >>> interp_rots.as_quat()
+    array([[0.33546361, 0.32248502, 0.6144695 , 0.63709875],
+           [0.33409754, 0.22905279, 0.65909448, 0.63364669],
+           [0.33523071, 0.27613969, 0.63763817, 0.63622701],
+           [0.32914502, 0.13316173, 0.69664424, 0.62339258],
+           [0.54669937, 0.11735566, 0.51359003, 0.65082465],
+           [0.71951125, 0.09194507, 0.28850306, 0.62499252],
+           [0.42131035, 0.65782128, 0.58309954, 0.22307772],
+           [0.2432484 , 0.7620946 , 0.5988079 , 0.03835539],
+           [0.30797834, 0.70009544, 0.63967903, 0.07633122],
+           [0.39267851, 0.60035814, 0.68483292, 0.12797487],
+           [0.47888381, 0.47046693, 0.71809073, 0.18351259]])
+    """
+    def __init__(self, times, rotations):
+        if len(rotations) == 1:
+            raise ValueError("`rotations` must contain at least 2 rotations.")
+
+        times = np.asarray(times)
+        if times.ndim != 1:
+            raise ValueError("Expected times to be specified in a 1 "
+                             "dimensional array, got {} "
+                             "dimensions.".format(times.ndim))
+
+        if times.shape[0] != len(rotations):
+            raise ValueError("Expected number of rotations to be equal to "
+                             "number of timestamps given, got {} rotations "
+                             "and {} timestamps.".format(
+                                len(rotations), times.shape[0]))
+        self.times = times
+        self.timedelta = np.diff(times)
+
+        if np.any(self.timedelta <= 0):
+            raise ValueError("Times must be in strictly increasing order.")
+
+        # inv() and __getitem__ return new objects anyway
+        self.rotations = rotations[:-1]
+        self.rotvecs = (self.rotations.inv() * rotations[1:]).as_rotvec()
+
+    def __call__(self, times):
+        """Compute interpolated rotations at given times.
+
+        Returns a `Rotation` instance with the interpolated rotations.
+
+        Parameters
+        ----------
+        times : array_like, 1D
+            Times to compute the interpolations at.
+        """
+        # Clearly differentiate from self.times property
+        compute_times = np.asarray(times)
+        if compute_times.ndim != 1:
+            raise ValueError("Expected times to be specified in a 1 "
+                             "dimensional array, got {} "
+                             "dimensions.".format(compute_times.ndim))
+
+        # side = 'left' (default) excludes t_min.
+        ind = np.searchsorted(self.times, compute_times) - 1
+        # Include t_min. Without this step, index for t_min equals -1
+        ind[compute_times == self.times[0]] = 0
+        # self.num_rots = number of rotations in self.rots, not number of
+        # rotations in original object
+        if np.any(np.logical_or(ind < 0, ind > len(self.rotations) - 1)):
+            raise ValueError("Interpolation times must be within the range "
+                             "[{}, {}], both inclusive.".format(
+                                self.times[0], self.times[-1]))
+
+        alpha = (compute_times - self.times[ind]) / self.timedelta[ind]
+
+        return (self.rotations[ind] *
+                Rotation.from_rotvec(self.rotvecs[ind] * alpha[:, None]))
