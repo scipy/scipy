@@ -37,7 +37,6 @@ Continuous distributions
    chi               -- Chi
    chi2              -- Chi-squared
    cosine            -- Cosine
-   sine              -- Sine
    crystalball       -- Crystalball
    dgamma            -- Double Gamma
    dweibull          -- Double Weibull
@@ -109,6 +108,7 @@ Continuous distributions
    rice              -- Rice
    recipinvgauss     -- Reciprocal Inverse Gaussian
    semicircular      -- Semicircular
+   sine              -- Sine
    skewnorm          -- Skew normal
    t                 -- Student's T
    trapz              -- Trapezoidal

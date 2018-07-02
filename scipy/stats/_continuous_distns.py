@@ -1053,48 +1053,6 @@ class cosine_gen(rv_continuous):
 cosine = cosine_gen(a=-np.pi, b=np.pi, name='cosine')
 
 
-class sine_gen(rv_continuous):
-    r"""A sine continuous random variable.
-
-    %(before_notes)s
-
-    Notes
-    -----
-    The sine distribution is useful for polar angles.
-    The probability density function for `sine` is:
-
-    .. math::
-
-        f(x) = \frac{1}{2} \sin(x)
-
-    for :math:`0 \le x \le \pi`.
-
-    %(after_notes)s
-
-    %(example)s
-
-    """
-    def _pdf(self, x):
-        # sin.pdf(x) = 1/2 * sin(x)
-        return 1.0/2*(np.sin(x))
-
-    def _rvs(self):
-        z = self._random_state.uniform(size=self._size)
-        return 2*np.arcsin(np.sqrt(z))
-
-    def _cdf(self, x):
-        return 0.5 - 0.5*np.cos(x)
-
-    def _stats(self):
-        return np.pi/2, np.pi**2/4-2, 0, -2*(np.pi**4-96)/(np.pi**2-8)**2
-
-    def _entropy(self):
-        return 1.0
-
-
-sine = sine_gen(a=0.0, b=np.pi, name='sine')
-
-
 class dgamma_gen(rv_continuous):
     r"""A double gamma continuous random variable.
 
@@ -5999,6 +5957,48 @@ class semicircular_gen(rv_continuous):
 
 
 semicircular = semicircular_gen(a=-1.0, b=1.0, name="semicircular")
+
+
+class sine_gen(rv_continuous):
+    r"""A sine continuous random variable.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The sine distribution is useful for polar angles.
+    The probability density function for `sine` is:
+
+    .. math::
+
+        f(x) = \frac{1}{2} \sin(x)
+
+    for :math:`0 \le x \le \pi`.
+
+    %(after_notes)s
+
+    %(example)s
+
+    """
+    def _pdf(self, x):
+        # sin.pdf(x) = 1/2 * sin(x)
+        return 1.0/2*(np.sin(x))
+
+    def _rvs(self):
+        z = self._random_state.uniform(size=self._size)
+        return 2*np.arcsin(np.sqrt(z))
+
+    def _cdf(self, x):
+        return 0.5 - 0.5*np.cos(x)
+
+    def _stats(self):
+        return np.pi/2, np.pi**2/4-2, 0, -2*(np.pi**4-96)/(np.pi**2-8)**2
+
+    def _entropy(self):
+        return 1.0
+
+
+sine = sine_gen(a=0.0, b=np.pi, name='sine')
 
 
 class skew_norm_gen(rv_continuous):

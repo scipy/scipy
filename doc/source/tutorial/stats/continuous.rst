@@ -198,7 +198,6 @@ Continuous Distributions in `scipy.stats`
    continuous_chi
    continuous_chi2
    continuous_cosine
-   continuous_sine
    continuous_dgamma
    continuous_dweibull
    continuous_erlang
@@ -259,6 +258,7 @@ Continuous Distributions in `scipy.stats`
    continuous_reciprocal
    continuous_recipinvgauss
    continuous_semicircular
+   continuous_sine
    continuous_t
    continuous_triang
    continuous_truncexpon
