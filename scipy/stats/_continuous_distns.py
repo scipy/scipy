@@ -1065,7 +1065,7 @@ class sine_gen(rv_continuous):
 
     .. math::
 
-        f(x) = \frac{1}{2} (\sin(x))
+        f(x) = \frac{1}{2} \sin(x)
 
     for :math:`0 \le x \le \pi`.
 
@@ -1078,8 +1078,12 @@ class sine_gen(rv_continuous):
         # sin.pdf(x) = 1/2 * sin(x)
         return 1.0/2*(np.sin(x))
 
+    def _rvs(self):
+        z = self._random_state.uniform(size=self._size)
+        return 2*np.arcsin(np.sqrt(z))
+
     def _cdf(self, x):
-        return np.sin(x/2)**2
+        return 0.5 - 0.5*np.cos(x)
 
     def _stats(self):
         return np.pi/2, np.pi**2/4-2, 0, -2*(np.pi**4-96)/(np.pi**2-8)**2
@@ -1088,7 +1092,7 @@ class sine_gen(rv_continuous):
         return 1.0
 
 
-sine = sine_gen(a=0, b=np.pi, name='sine')
+sine = sine_gen(a=0.0, b=np.pi, name='sine')
 
 
 class dgamma_gen(rv_continuous):
