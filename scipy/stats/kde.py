@@ -38,7 +38,6 @@ from . import mvn
 
 __all__ = ['gaussian_kde']
 
-
 class gaussian_kde(object):
     """Representation of a kernel-density estimate using Gaussian kernels.
 
@@ -535,9 +534,15 @@ class gaussian_kde(object):
         self.factor = self.covariance_factor()
         # Cache covariance and inverse covariance of the data
         if not hasattr(self, '_data_inv_cov'):
-            self._data_covariance = atleast_2d(np.cov(self.dataset, rowvar=1,
-                                               bias=False,
-                                               aweights=self.weights))
+            try:
+                self._data_covariance = atleast_2d(np.cov(self.dataset, rowvar=1,
+                                                   bias=False,
+                                                   aweights=self.weights))
+            except TypeError:
+                from scipy.stats._future_cov import cov
+                self._data_covariance = atleast_2d(cov(self.dataset, rowvar=1,
+                                                   bias=False,
+                                                   aweights=self.weights))
             self._data_inv_cov = linalg.inv(self._data_covariance)
 
         self.covariance = self._data_covariance * self.factor**2
