@@ -1491,7 +1491,7 @@ class Rotation(object):
         >>> R.random(None).as_quat()
         array([-0.24475285,  0.58126954, -0.54600616,  0.55145176])
 
-        Initialize a stack of rotations:
+        Sample a stack of rotations:
 
         >>> R.random(1).as_quat()
         array([[ 0.43748455,  0.23734269, -0.80606684,  0.32020612]])
