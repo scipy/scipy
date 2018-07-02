@@ -210,6 +210,7 @@ class Rotation(object):
     __mul__
     inv
     __getitem__
+    random
 
     Examples
     --------
@@ -1460,6 +1461,58 @@ class Rotation(object):
                [ 0.57735027,  0.57735027, -0.57735027,  0.        ]])
         """
         return self.__class__(self._quat[indexer], normalized=True)
+
+    @classmethod
+    def random(cls, num=None, random_state=None):
+        """Generate uniformly distributed rotations.
+
+        Parameters
+        ----------
+        num : None or int
+            Number of random rotations to generate. If None, then a single
+            rotation is generated. Default is None.
+        random_state : None or `numpy.random.RandomState` object
+            Object for manually setting the generator state.
+
+        Returns
+        -------
+        random_rotation : `Rotation` instance
+            Contains a single rotation if `num` is None. Otherwise contains a
+            stack of `num` rotations.
+
+        Examples
+        --------
+        >>> from scipy.spatial.transform import Rotation as R
+
+        Sample a single rotation:
+
+        >>> R.random().as_quat()
+        array([-0.07838344, -0.25840318, -0.24463331, -0.93125634])
+        >>> R.random(None).as_quat()
+        array([-0.24475285,  0.58126954, -0.54600616,  0.55145176])
+
+        Initialize a stack of rotations:
+
+        >>> R.random(1).as_quat()
+        array([[ 0.43748455,  0.23734269, -0.80606684,  0.32020612]])
+        >>> R.random(5).as_quat()
+        array([[ 0.35598949,  0.62048719, -0.69368101, -0.08410586],
+               [-0.62061285, -0.75545239,  0.15646323, -0.14018072],
+               [-0.31340545,  0.55852902, -0.13422706,  0.75617819],
+               [ 0.25086769, -0.37389821, -0.53738335,  0.71308111],
+               [ 0.78349346, -0.03642139, -0.53405077,  0.31559667]])
+       """
+        if random_state is None:
+            random_state = np.random.RandomState(seed=None)
+        if not isinstance(random_state, np.random.RandomState):
+            raise ValueError("Expected None or numpy.random.RandomState"
+                             "instance, got %r.".format(random_state))
+        if num is None:
+            sample = random_state.normal(size=4)
+        else:
+            sample = random_state.normal(size=(num, 4))
+
+        return Rotation.from_quat(sample)
 
 
 class Slerp(object):
