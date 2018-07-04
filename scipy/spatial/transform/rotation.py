@@ -1592,7 +1592,7 @@ class Rotation(object):
                                  "equal to number of input vectors, got "
                                  "{} values and {} vectors.".format(
                                     weights.shape[0], vectors.shape[0]))
-        weights = weights / scipy.linalg.norm(weights)
+        weights = weights / np.sum(weights)
 
         if not normalized:
             outvecs = outvecs / scipy.linalg.norm(outvecs, axis=1)[:, None]
@@ -1600,6 +1600,7 @@ class Rotation(object):
 
         B = np.einsum('ji,jk->ik', weights[:, None] * outvecs, vectors)
         u, s, vh = np.linalg.svd(B)
+        C = np.dot(u, vh)
 
         zeta = (s[0]+s[1]) * (s[1]+s[2]) * (s[2]+s[0])
         # TODO: Maybe change to close to zero?
@@ -1608,7 +1609,6 @@ class Rotation(object):
                              "covariance. It is impossible to determine the "
                              "rotation uniquely.")
 
-        C = np.dot(u, vh)
         kappa = s[0]*s[1] + s[1]*s[2] + s[2]*s[0]
         # For normalized weights with sum(w_i) = 1, the constant factor
         # lambda_0 * sigma_{tot}^2 equals unity. So we normalize the weights
