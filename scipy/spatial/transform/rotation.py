@@ -1512,7 +1512,7 @@ class Rotation(object):
 
     @classmethod
     def match_vectors(cls, a, b, weights=None, normalized=False):
-        """Estimate the rotation to match two sets of vectors.
+        """Estimate a rotation to match two sets of vectors.
 
         Find a rotation between frames A and B which best matches a set of unit
         vectors `a` and `b` observed in these frames. The following loss
@@ -1530,18 +1530,15 @@ class Rotation(object):
 
         Parameters
         ----------
-        a : array_like, shape (N, 3)
-            Vectors expressed in initial frame A. Result of applying an
-            arbitrary rotation to `b`. Each `a[i]` corresponds to a vector.
-        b : array_like, shape (N, 3)
-            Vectors expressed in another frame B. Shape must match `a`. Each
-            `b[i]` corresponds to a vector.
-        weights : None or array_like, 1D
-            Coefficients describing the relative importance of the vectors in
-            `a`. Number of values in `weights` must match number of vectors
-            specified in `a` and `b`. `weights` are normalized before matching
-            vectors. If None, then all values in `weights` are assumed to be
-            equal. Default is None.
+        a : (N, 3) array_like
+            Vectors in initial frame A. Each row of `a` denotes a vector.
+        b : (N, 3) array_like
+            Vectors in another frame B. Each row of `b` denotes a vector.
+        weights : None or (N,) array_like, optional
+            Weights describing the relative importance of the vectors in
+            `a`. `weights` are normalized to unit sum before matching vectors.
+            If None (default), then all values in `weights` are assumed to be
+            equal.
         normalized : boolean, optional
             If True, assume input vectors `a` and `b` to have unit norm. If
             False, normalize `a` and `b` before estimating rotation. Default
