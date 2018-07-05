@@ -170,7 +170,7 @@ def root_scalar(f, args=(), method=None, bracket=None,
     >>> sol.root, sol.iterations, sol.function_calls
     (1.0, 11, 11)
 
-    >>> sol = optimize.root_scalar(f_p_pp, x0=0.2, fprime=True, fprime2=True, method='newton')
+    >>> sol = optimize.root_scalar(f_p_pp, x0=0.2, fprime=True, fprime2=True, method='halley')
     >>> sol.root, sol.iterations, sol.function_calls
     (1.0, 6, 6)
 
