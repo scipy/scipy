@@ -1,7 +1,6 @@
 """ The module has the functions necessary to perform derivation on noisy discrete data.
 
 It follows gaussian estimation to estimate the noise an reduce the noise in the derived data.
-
 """
 
 import numpy as np
