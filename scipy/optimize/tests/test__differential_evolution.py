@@ -39,6 +39,12 @@ class TestDifferentialEvolutionSolver(object):
     def quadratic(self, x):
         return x[0]**2
 
+    def batch_quadradic(self, arr):
+        return [x[0]**2 for x in arr]
+
+    def batch_rosen(self, arr):
+        return [rosen(x) for x in arr]
+
     def test__strategy_resolves(self):
         # test that the correct mutation function is resolved by
         # different requested strategy arguments
@@ -475,3 +481,77 @@ class TestDifferentialEvolutionSolver(object):
                       DifferentialEvolutionSolver,
                       *(rosen, self.bounds),
                       **{'init': population})
+
+    def test_differential_evolution_with_batchfunc(self):
+        # test that the Jmin of DifferentialEvolutionSolver
+        # is still the same as the function evaluation with a batchfunc
+        solver = DifferentialEvolutionSolver(None, [(-2, 2)], batchfunc=self.batch_quadradic)
+        result = solver.solve()
+        assert_almost_equal(result.fun, self.quadratic(result.x))
+
+    def test_args_tuple_is_passed_with_batchfunc(self):
+        # test that the args tuple is passed to a batched cost function properly.
+        bounds = [(-10, 10)]
+        args = (1., 2., 3.)
+
+        def batch_quadratic(arr, *args):
+            if type(args) != tuple:
+                raise ValueError('args should be a tuple')
+            return [args[0] + args[1] * x + args[2] * x**2. for x in arr]
+
+        result = differential_evolution(None,
+                                        bounds,
+                                        args=args,
+                                        polish=True,
+                                        batchfunc=batch_quadratic)
+        assert_almost_equal(result.fun, 2 / 3.)
+
+    def test_maxfun_stops_solve_with_batchfunc(self):
+        # this is a particularly important test for batchfunc since
+        # maintaining maxfun was the biggest implementation challenge
+
+
+        # test that if the maximum number of function evaluations is exceeded
+        # during initialisation the still solver stops with a batchfunc
+        solver = DifferentialEvolutionSolver(None, self.bounds, maxfun=1,
+                                             polish=False, batchfunc=self.batch_rosen)
+        result = solver.solve()
+
+        assert_equal(result.nfev, 2)
+        assert_equal(result.success, False)
+        assert_equal(result.message,
+                     'Maximum number of function evaluations has '
+                     'been exceeded.')
+
+        # test that if the maximum number of function evaluations is exceeded
+        # during the actual minimisation, the solver still stops with a batchfunc.
+        # Have to turn polishing off, as this will still occur even if maxfun
+        # is reached. For popsize=5 and len(bounds)=2, then there are only 10
+        # function evaluations during initialisation.
+        solver = DifferentialEvolutionSolver(None,
+                                             self.bounds,
+                                             popsize=5,
+                                             polish=False,
+                                             maxfun=40,
+                                             batchfunc=self.batch_rosen)
+        result = solver.solve()
+
+        assert_equal(result.nfev, 41)
+        assert_equal(result.success, False)
+        assert_equal(result.message,
+                         'Maximum number of function evaluations has '
+                              'been exceeded.')
+
+    def test_calculate_population_energies_with_batchfunc(self):
+        # if popsize is 3 then the overall generation has size (6,)
+        solver = DifferentialEvolutionSolver(None,
+                                             self.bounds,
+                                             popsize=3,
+                                             batchfunc=self.batch_rosen)
+                                             
+        solver._calculate_population_energies()
+
+        assert_equal(np.argmin(solver.population_energies), 0)
+
+        # initial calculation of the energies should require 6 nfev.
+        assert_equal(solver._nfev, 6)

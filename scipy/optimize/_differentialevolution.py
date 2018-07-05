@@ -132,6 +132,13 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         ``np.std(pop) <= atol + tol * np.abs(np.mean(population_energies))``,
         where and `atol` and `tol` are the absolute and relative tolerance
         respectively.
+    batchfunc : callable, optional
+        A batched version of the objective function to be minimized. Must
+        be in the form ``f([x], *args)``, where ``[x]`` is an array of
+        arguments in the form of 1-D arrays and ``args`` is a  tuple of
+        any additional fixed parameters needed to completely specify the
+        function. The purpose of this parameter is to enable parallel
+        evaluation of the objective function within a generation.
 
     Returns
     -------
@@ -336,6 +343,13 @@ class DifferentialEvolutionSolver(object):
         ``np.std(pop) <= atol + tol * np.abs(np.mean(population_energies))``,
         where and `atol` and `tol` are the absolute and relative tolerance
         respectively.
+    batchfunc : callable, optional
+        A batched version of the objective function to be minimized. Must
+        be in the form ``f([x], *args)``, where ``[x]`` is an array of
+        arguments in the form of 1-D arrays and ``args`` is a  tuple of
+        any additional fixed parameters needed to completely specify the
+        function. The purpose of this parameter is to enable parallel
+        evaluation of the objective function within a generation.
     """
 
     # Dispatch of mutation strategy method (binomial or exponential).
@@ -394,10 +408,14 @@ class DifferentialEvolutionSolver(object):
         self.cross_over_probability = recombination
 
         self.args = args
+        # if a batchfunc is provided and None is explicitly passed create a func from the batchfunc
+        # func is still needed for polishing
         if func is None:
             self.func = lambda parameters, *passed_args: batchfunc([parameters], *passed_args)[0]
         else:
             self.func = func
+
+        # to unify implementation create a batchfunc that evaluates in sequence if none is provided
         if batchfunc is None:
             self.batchfunc = lambda parameter_array, *passed_args: [func(parameter, *passed_args) for parameter in parameter_array]
         else:
@@ -634,7 +652,6 @@ class DifferentialEvolutionSolver(object):
             success=(warning_flag is not True))
 
         if self.polish:
-            # good
             result = minimize(self.func,
                               np.copy(DE_result.x),
                               method='L-BFGS-B',
@@ -660,6 +677,8 @@ class DifferentialEvolutionSolver(object):
         Puts the best member in first place. Useful if the population has just
         been initialised.
         """
+
+        # determine which parameters will be evaluated
         parameters_to_evaluate = []
         for candidate in self.population:
             if self._nfev > self.maxfun:
@@ -669,6 +688,7 @@ class DifferentialEvolutionSolver(object):
             parameters_to_evaluate.append(parameters)
             self._nfev += 1
 
+        # do the evaluation in batch
         evaluated_energies = self.batchfunc(parameters_to_evaluate, *self.args)
         for index, energy in enumerate(evaluated_energies):
             self.population_energies[index] = energy
@@ -723,11 +743,15 @@ class DifferentialEvolutionSolver(object):
 
             # determine the energy of the objective function
             parameters_to_evaluate.append(parameters)
+            # preserve the trial at the same index
+            # this is needed to decide whether or not to replace it
+            # after the energy is computed
             candidate_trial_solutions.append(trial)
             self._nfev += 1
 
         evaluated_energies = self.batchfunc(parameters_to_evaluate, *self.args)
-        for candidate, energy, trial in zip(range(self.num_population_members), evaluated_energies, candidate_trial_solutions):
+        energies_with_trials = zip(evaluated_energies, candidate_trial_solutions)
+        for candidate, (energy, trial) in enumerate(energies_with_trials):
             # if the energy of the trial candidate is lower than the
             # original population member then replace it
             if energy < self.population_energies[candidate]:
