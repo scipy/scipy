@@ -124,7 +124,7 @@ Several improvements to the `chirp` function in `scipy.signal` were made:
 
 * The waveform generated when `method="logarithmic"` was corrected; it
   now generates a waveform that is also known as an "exponential" or
-  "geometric" chirp. (See http://en.wikipedia.org/wiki/Chirp.)
+  "geometric" chirp. (See https://en.wikipedia.org/wiki/Chirp.)
 * A new `chirp` method, "hyperbolic", was added.
 * Instead of the keyword `qshape`, `chirp` now uses the keyword
   `vertex_zero`, a boolean.
@@ -155,7 +155,7 @@ New sparse least squares solver
 -------------------------------
 
 The `lsqr` function was added to `scipy.sparse`.  `This routine
-<http://web.stanford.edu/group/SOL/software/lsqr/>`_ finds a
+<https://web.stanford.edu/group/SOL/software/lsqr/>`_ finds a
 least-squares solution to a large, sparse, linear system of equations.
 
 ARPACK-based sparse SVD

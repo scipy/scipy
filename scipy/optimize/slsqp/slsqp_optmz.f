@@ -2,10 +2,10 @@ C
 C      ALGORITHM 733, COLLECTED ALGORITHMS FROM ACM.
 C      TRANSACTIONS ON MATHEMATICAL SOFTWARE,
 C      VOL. 20, NO. 3, SEPTEMBER, 1994, PP. 262-281.
-C      http://doi.acm.org/10.1145/192115.192124
+C      https://doi.org/10.1145/192115.192124
 C
 C
-C      http://permalink.gmane.org/gmane.comp.python.scientific.devel/6725
+C      https://web.archive.org/web/20170106155705/http://permalink.gmane.org/gmane.comp.python.scientific.devel/6725
 C      ------
 C      From: Deborah Cotton <cotton@hq.acm.org>
 C      Date: Fri, 14 Sep 2007 12:35:55 -0500

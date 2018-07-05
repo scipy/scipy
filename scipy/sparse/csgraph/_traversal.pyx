@@ -62,6 +62,31 @@ def connected_components(csgraph, directed=True, connection='weak',
     .. [1] D. J. Pearce, "An Improved Algorithm for Finding the Strongly
            Connected Components of a Directed Graph", Technical Report, 2005
 
+    Examples
+    --------
+    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse.csgraph import connected_components
+
+    >>> graph = [
+    ... [ 0, 1 , 1, 0 , 0 ],
+    ... [ 0, 0 , 1 , 0 ,0 ],
+    ... [ 0, 0, 0, 0, 0],
+    ... [0, 0 , 0, 0, 1],
+    ... [0, 0, 0, 0, 0]
+    ... ]
+    >>> graph = csr_matrix(graph)
+    >>> print(graph)
+      (0, 1)	1
+      (0, 2)	1
+      (1, 2)	1
+      (3, 4)	1
+
+    >>> n_components, labels = connected_components(csgraph=graph, directed=False, return_labels=True)
+    >>> n_components
+    2
+    >>> labels
+    array([0, 0, 0, 1, 1], dtype=int32)
+
     """
     if connection.lower() not in ['weak', 'strong']:
         raise ValueError("connection must be 'weak' or 'strong'")
@@ -279,6 +304,29 @@ cpdef breadth_first_order(csgraph, i_start,
         tree.  If node i is in the tree, then its parent is given by
         predecessors[i]. If node i is not in the tree (and for the parent
         node) then predecessors[i] = -9999.
+
+    Examples
+    --------
+    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse.csgraph import breadth_first_order
+
+    >>> graph = [
+    ... [0, 1 , 2, 0],
+    ... [0, 0, 0, 1],
+    ... [2, 0, 0, 3],
+    ... [0, 0, 0, 0]
+    ... ]
+    >>> graph = csr_matrix(graph)
+    >>> print(graph)
+      (0, 1)    1
+      (0, 2)    2
+      (1, 3)    1
+      (2, 0)    2
+      (2, 3)    3
+
+    >>> breadth_first_order(graph,0)
+    (array([0, 1, 2, 3], dtype=int32), array([-9999,     0,     0,     1], dtype=int32))
+
     """
     csgraph = validate_graph(csgraph, directed, dense_output=False)
     cdef int N = csgraph.shape[0]
@@ -439,6 +487,29 @@ cpdef depth_first_order(csgraph, i_start,
         tree.  If node i is in the tree, then its parent is given by
         predecessors[i]. If node i is not in the tree (and for the parent
         node) then predecessors[i] = -9999.
+
+    Examples
+    --------
+    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse.csgraph import depth_first_order
+
+    >>> graph = [
+    ... [0, 1 , 2, 0],
+    ... [0, 0, 0, 1],
+    ... [2, 0, 0, 3],
+    ... [0, 0, 0, 0]
+    ... ]
+    >>> graph = csr_matrix(graph)
+    >>> print(graph)
+      (0, 1)	1
+      (0, 2)	2
+      (1, 3)	1
+      (2, 0)	2
+      (2, 3)	3
+
+    >>> depth_first_order(graph,0)
+    (array([0, 1, 3, 2], dtype=int32), array([-9999,     0,     0,     1], dtype=int32))
+
     """
     csgraph = validate_graph(csgraph, directed, dense_output=False)
     cdef int N = csgraph.shape[0]

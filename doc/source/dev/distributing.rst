@@ -45,7 +45,7 @@ are:
 
 Furthermore of course one needs C, C++ and Fortran compilers to build Scipy,
 but those we don't consider to be dependencies and are therefore not discussed
-here.  For details, see https://scipy.org/scipylib/building/index.html.
+here.  For details, see https://scipy.github.io/devdocs/building/.
 
 When a package provides useful functionality and it's proposed as a new
 dependency, consider also if it makes sense to vendor (i.e. ship a copy of it with
@@ -70,7 +70,7 @@ either 32-bit and 64-bit Windows wheels for Numpy on PyPI or when
 ``pip upgrade`` becomes available (with sane behavior, unlike ``pip install
 -U``, see `this PR
 <https://github.com/pypa/pip/pull/3194>`_).  For more details, see
-`this summary <http://article.gmane.org/gmane.comp.python.distutils.devel/24218>`_.
+`this summary <https://mail.python.org/pipermail/distutils-sig/2015-October/027161.html>`_.
 
 The situation with ``setup_requires`` is even worse; pip_ doesn't handle that
 keyword at all, while ``setuptools`` has issues (here's a `current one
@@ -116,7 +116,7 @@ Building binary installers
 
    This section is only about building Scipy binary installers to *distribute*.
    For info on building Scipy on the same machine as where it will be used, see
-   `this scipy.org page <http://scipy.org/scipylib/building/index.html>`_.
+   `this scipy.org page <https://scipy.github.io/devdocs/building/>`_.
 
 There are a number of things to take into consideration when building binaries
 and distributing them on PyPI or elsewhere.
@@ -143,7 +143,7 @@ and distributing them on PyPI or elsewhere.
   That method will likely be used for Scipy itself once it's clear that the
   maintenance of that toolchain is sustainable long-term.  See the MingwPy_
   project and `this thread
-  <http://article.gmane.org/gmane.comp.python.numeric.general/61727>`_ for
+  <https://mail.scipy.org/pipermail/numpy-discussion/2015-October/074056.html>`_ for
   details.
 - The other way to produce 64-bit Windows installers is with ``icc``, ``ifort``
   plus ``MKL`` (or ``MSVC`` instead of ``icc``).  For Intel toolchain
@@ -180,12 +180,12 @@ would need to be distributed via custom channels, e.g. in a
 Wheelhouse_, see at the wheel_ and Wheelhouse_ docs.
 
 
-.. _Numpy: http://numpy.org
+.. _Numpy: https://numpy.org
 .. _Python: https://python.org
-.. _nose: http://nose.readthedocs.io/en/latest/
-.. _asv: http://asv.readthedocs.org
-.. _matplotlib: http://matplotlib.org
-.. _Pillow: http://pillow.readthedocs.org
+.. _nose: https://nose.readthedocs.io
+.. _asv: https://asv.readthedocs.org
+.. _matplotlib: https://matplotlib.org
+.. _Pillow: https://pillow.readthedocs.org
 .. _scikits.umfpack: https://pypi.python.org/pypi/scikit-umfpack
 .. _mpmath: http://mpmath.org
 .. _Cython: http://cython.org
@@ -195,7 +195,7 @@ Wheelhouse_, see at the wheel_ and Wheelhouse_ docs.
 .. _Python Packaging User Guide: https://packaging.python.org
 .. _Wheelhouse: https://pypi.python.org/pypi/Wheelhouse
 .. _MingwPy: https://mingwpy.github.io
-.. _Sphinx: http://sphinx-doc.org/
+.. _Sphinx: http://www.sphinx-doc.org/
 .. _six: https://pypi.python.org/pypi/six
 .. _decorator: https://github.com/micheles/decorator
 .. _manylinux: https://github.com/pypa/manylinux/

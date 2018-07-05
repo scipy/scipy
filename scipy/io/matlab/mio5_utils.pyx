@@ -797,7 +797,7 @@ cdef class VarReader5:
         else:
             data = self.read_numeric()
         ''' From the matlab (TM) API documentation, last found here:
-        http://www.mathworks.com/access/helpdesk/help/techdoc/matlab_external/
+        https://www.mathworks.com/help/pdf_doc/matlab/apiext.pdf
         rowind are simply the row indices for all the (nnz) non-zero
         entries in the sparse array.  rowind has nzmax entries, so
         may well have more entries than nnz, the actual number of

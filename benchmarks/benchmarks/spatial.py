@@ -192,8 +192,8 @@ class CNeighbors(Benchmark):
         self.T1s.count_neighbors(self.T2s, self.r)
 
 def generate_spherical_points(num_points):
-        # generate uniform points on sphere (see:
-        # http://stackoverflow.com/a/23785326/2942522)
+        # generate uniform points on sphere
+        # see: https://stackoverflow.com/a/23785326
         np.random.seed(123)
         points = np.random.normal(size=(num_points, 3))
         points /= np.linalg.norm(points, axis=1)[:, np.newaxis]

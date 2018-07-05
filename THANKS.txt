@@ -132,7 +132,7 @@ Andrew Nelson for scipy.optimize.differential_evolution.
 Brian Newsom for work on ctypes multivariate integration.
 Nathan Woods for work on multivariate integration.
 Brianna Laugher for bug fixes.
-Johannes Kulick for the Dirichlet distribution.
+Johannes Kulick for the Dirichlet distribution and the softmax function.
 Bastian Venthur for bug fixes.
 Alex Rothberg for stats.combine_pvalues.
 Brandon Liu for stats.combine_pvalues.
@@ -190,6 +190,9 @@ Lars Grüter for contributions to peak finding in scipy.signal
 Jordan Heemskerk for exposing additional windowing functions in scipy.signal.
 Michael Tartre (Two Sigma Investments) for contributions to weighted distance functions.
 Shinya Suzuki for scipy.stats.brunnermunzel
+Graham Clenaghan for bug fixes and optimizations in scipy.stats.
+Konrad Griessinger for the small sample Kendall test
+Tony Xiang for improvements in scipy.sparse
 Roy Zywina for contributions to scipy.fftpack.
 
 Institutions

@@ -91,7 +91,7 @@ def generate_matrix(N, complex=False, hermitian=False,
             if sparse:
                 i = np.random.randint(N, size=N * N // 4)
                 j = np.random.randint(N, size=N * N // 4)
-                ind = np.where(i == j)
+                ind = np.nonzero(i == j)
                 j[ind] = (j[ind] + 1) % N
                 M[i,j] = 0
                 M[j,i] = 0

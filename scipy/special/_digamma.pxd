@@ -81,7 +81,7 @@ cdef inline double complex cdigamma(double complex z) nogil:
     if z.real < 0 and fabs(z.imag) < smallabsz:
         # Reflection formula for digamma. See
         #
-        # http://dlmf.nist.gov/5.5#E4
+        # https://dlmf.nist.gov/5.5#E4
         #
         res -= M_PI*cospi(z)/sinpi(z)
         z = 1 - z
@@ -120,7 +120,7 @@ cdef inline double complex forward_recurrence(double complex z,
 
     digamma(z + 1) = digamma(z) + 1/z.
 
-    See http://dlmf.nist.gov/5.5#E2
+    See https://dlmf.nist.gov/5.5#E2
 
     """
     cdef:
@@ -155,7 +155,7 @@ cdef inline double complex asymptotic_series(double complex z) nogil:
     """
     Evaluate digamma using an asymptotic series. See
 
-    http://dlmf.nist.gov/5.11#E2
+    https://dlmf.nist.gov/5.11#E2
 
     """
     cdef:

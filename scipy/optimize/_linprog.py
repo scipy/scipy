@@ -167,8 +167,8 @@ def _pivot_col(T, tol=1.0E-12, bland=False):
     if ma.count() == 0:
         return False, np.nan
     if bland:
-        return True, np.where(ma.mask == False)[0][0]
-    return True, np.ma.where(ma == ma.min())[0][0]
+        return True, np.nonzero(ma.mask == False)[0][0]
+    return True, np.ma.nonzero(ma == ma.min())[0][0]
 
 
 def _pivot_row(T, basis, pivcol, phase, tol=1.0E-12, bland=False):
@@ -212,7 +212,7 @@ def _pivot_row(T, basis, pivcol, phase, tol=1.0E-12, bland=False):
         return False, np.nan
     mb = np.ma.masked_where(T[:-k, pivcol] <= tol, T[:-k, -1], copy=False)
     q = mb / ma
-    min_rows = np.ma.where(q == q.min())[0]
+    min_rows = np.ma.nonzero(q == q.min())[0]
     if bland:
         return True, min_rows[np.argmin(np.take(basis, min_rows))]
     return True, min_rows[0]
@@ -334,7 +334,7 @@ def _solve_simplex(T, n, basis, maxiter=1000, phase=2, callback=None,
         for pivrow in [row for row in range(basis.size)
                        if basis[row] > T.shape[1] - 2]:
             non_zero_row = [col for col in range(T.shape[1] - 1)
-                            if T[pivrow, col] != 0]
+                            if abs(T[pivrow, col]) > tol]
             if len(non_zero_row) > 0:
                 pivcol = non_zero_row[0]
                 # variable represented by pivcol enters
@@ -789,6 +789,15 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     else:
         # Failure to find a feasible starting point
         status = 2
+        messages[status] = (
+            "Phase 1 of the simplex method failed to find a feasible "
+            "solution. The pseudo-objective function evaluates to {0:.1e} "
+            "which exceeds the required tolerance of {1} for a solution to be "
+            "considered 'close enough' to zero to be a basic solution. "
+            "Consider increasing the tolerance to be greater than {0:.1e}. "
+            "If this tolerance is unacceptably  large the problem may be "
+            "infeasible.".format(abs(T[-1, -1]), tol)
+        )
 
     if status != 0:
         message = messages[status]

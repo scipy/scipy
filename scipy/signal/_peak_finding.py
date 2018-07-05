@@ -243,7 +243,7 @@ def argrelextrema(data, comparator, axis=0, order=1, mode='clip'):
     """
     results = _boolrelextrema(data, comparator,
                               axis, order, mode)
-    return np.where(results)
+    return np.nonzero(results)
 
 
 def peak_prominences(x, peaks, wlen=None):
@@ -986,7 +986,7 @@ def _identify_ridge_lines(matr, max_distances, gap_thresh):
 
     all_max_cols = _boolrelextrema(matr, np.greater, axis=1, order=1)
     # Highest row for which there are any relative maxima
-    has_relmax = np.where(all_max_cols.any(axis=1))[0]
+    has_relmax = np.nonzero(all_max_cols.any(axis=1))[0]
     if(len(has_relmax) == 0):
         return []
     start_row = has_relmax[-1]
@@ -994,7 +994,7 @@ def _identify_ridge_lines(matr, max_distances, gap_thresh):
     # rows, cols,Gap number
     ridge_lines = [[[start_row],
                    [col],
-                   0] for col in np.where(all_max_cols[start_row])[0]]
+                   0] for col in np.nonzero(all_max_cols[start_row])[0]]
     final_lines = []
     rows = np.arange(start_row - 1, -1, -1)
     cols = np.arange(0, matr.shape[1])

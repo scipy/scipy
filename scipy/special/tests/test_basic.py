@@ -19,8 +19,6 @@
 
 from __future__ import division, print_function, absolute_import
 
-import sys
-import platform
 import itertools
 
 import numpy as np
@@ -474,17 +472,8 @@ class TestCephes(object):
         assert_approx_equal(cephes.hyp1f1(3,4,-6), 0.026056422099537251095)
         cephes.hyp1f1(1,1,1)
 
-    def test_hyp1f2(self):
-        cephes.hyp1f2(1,1,1,1)
-
-    def test_hyp2f0(self):
-        cephes.hyp2f0(1,1,1,1)
-
     def test_hyp2f1(self):
         assert_equal(cephes.hyp2f1(1,1,1,0),1.0)
-
-    def test_hyp3f0(self):
-        assert_equal(cephes.hyp3f0(1,1,1,0),(1.0,0.0))
 
     def test_hyperu(self):
         assert_equal(cephes.hyperu(0,1,1),1.0)
@@ -603,17 +592,19 @@ class TestCephes(object):
         c = complex
         assert_equal(log1p(0 + 0j), 0 + 0j)
         assert_equal(log1p(c(-1, 0)), c(-np.inf, 0))
-        assert_allclose(log1p(c(1, np.inf)), c(np.inf, np.pi/2))
-        assert_equal(log1p(c(1, np.nan)), c(np.nan, np.nan))
-        assert_allclose(log1p(c(-np.inf, 1)), c(np.inf, np.pi))
-        assert_equal(log1p(c(np.inf, 1)), c(np.inf, 0))
-        assert_allclose(log1p(c(-np.inf, np.inf)), c(np.inf, 3*np.pi/4))
-        assert_allclose(log1p(c(np.inf, np.inf)), c(np.inf, np.pi/4))
-        assert_equal(log1p(c(np.inf, np.nan)), c(np.inf, np.nan))
-        assert_equal(log1p(c(-np.inf, np.nan)), c(np.inf, np.nan))
-        assert_equal(log1p(c(np.nan, np.inf)), c(np.inf, np.nan))
-        assert_equal(log1p(c(np.nan, 1)), c(np.nan, np.nan))
-        assert_equal(log1p(c(np.nan, np.nan)), c(np.nan, np.nan))
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, "invalid value encountered in multiply")
+            assert_allclose(log1p(c(1, np.inf)), c(np.inf, np.pi/2))
+            assert_equal(log1p(c(1, np.nan)), c(np.nan, np.nan))
+            assert_allclose(log1p(c(-np.inf, 1)), c(np.inf, np.pi))
+            assert_equal(log1p(c(np.inf, 1)), c(np.inf, 0))
+            assert_allclose(log1p(c(-np.inf, np.inf)), c(np.inf, 3*np.pi/4))
+            assert_allclose(log1p(c(np.inf, np.inf)), c(np.inf, np.pi/4))
+            assert_equal(log1p(c(np.inf, np.nan)), c(np.inf, np.nan))
+            assert_equal(log1p(c(-np.inf, np.nan)), c(np.inf, np.nan))
+            assert_equal(log1p(c(np.nan, np.inf)), c(np.inf, np.nan))
+            assert_equal(log1p(c(np.nan, 1)), c(np.nan, np.nan))
+            assert_equal(log1p(c(np.nan, np.nan)), c(np.nan, np.nan))
 
     def test_lpmv(self):
         assert_equal(cephes.lpmv(0,0,1),1.0)
@@ -1675,16 +1666,6 @@ class TestErf(object):
         i = special.erfinv(0)
         assert_equal(i,0)
 
-    def test_errprint(self):
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, "`errprint` is deprecated!")
-            a = special.errprint()
-            b = 1-a  # a is the state 1-a inverts state
-            c = special.errprint(b)  # returns last state 'a'
-            d = special.errprint(a)  # returns to original state
-        assert_equal(a,c)
-        assert_equal(d,b)  # makes sure state was returned
-
     def test_erf_nan_inf(self):
         vals = [np.nan, -np.inf, np.inf]
         expected = [np.nan, -1, 1]
@@ -2054,7 +2035,7 @@ class TestHyper(object):
         assert_almost_equal(hyp1, 1.3498588075760032,7)
 
         # test contributed by Moritz Deger (2008-05-29)
-        # http://projects.scipy.org/scipy/scipy/ticket/659
+        # https://github.com/scipy/scipy/issues/1186 (Trac #659)
 
         # reference data obtained from mathematica [ a, b, x, m(a,b,x)]:
         # produced with test_hyp1f1.nb
@@ -2172,12 +2153,6 @@ class TestHyper(object):
         hyp = special.hyp1f1(0.5, 1.5, -1000)
         assert_almost_equal(hyp, 0.028024956081989643, 12)
 
-    def test_hyp1f2(self):
-        pass
-
-    def test_hyp2f0(self):
-        pass
-
     def test_hyp2f1(self):
         # a collection of special cases taken from AMS 55
         values = [[0.5, 1, 1.5, 0.2**2, 0.5/0.2*log((1+0.2)/(1-0.2))],
@@ -2208,9 +2183,6 @@ class TestHyper(object):
         for i, (a, b, c, x, v) in enumerate(values):
             cv = special.hyp2f1(a, b, c, x)
             assert_almost_equal(cv, v, 8, err_msg='test #%d' % i)
-
-    def test_hyp3f0(self):
-        pass
 
     def test_hyperu(self):
         val1 = special.hyperu(1,0.1,100)
@@ -3159,7 +3131,7 @@ class TestRound(object):
 
 def test_sph_harm():
     # Tests derived from tables in
-    # http://en.wikipedia.org/wiki/Table_of_spherical_harmonics
+    # https://en.wikipedia.org/wiki/Table_of_spherical_harmonics
     sh = special.sph_harm
     pi = np.pi
     exp = np.exp
@@ -3317,7 +3289,6 @@ def test_legacy():
         assert_equal(special.bdtr(1, 2, 0.3), special.bdtr(1.8, 2.8, 0.3))
         assert_equal(special.bdtri(1, 2, 0.3), special.bdtri(1.8, 2.8, 0.3))
         assert_equal(special.expn(1, 0.3), special.expn(1.8, 0.3))
-        assert_equal(special.hyp2f0(1, 2, 0.3, 1), special.hyp2f0(1, 2, 0.3, 1.8))
         assert_equal(special.nbdtrc(1, 2, 0.3), special.nbdtrc(1.8, 2.8, 0.3))
         assert_equal(special.nbdtr(1, 2, 0.3), special.nbdtr(1.8, 2.8, 0.3))
         assert_equal(special.nbdtri(1, 2, 0.3), special.nbdtri(1.8, 2.8, 0.3))

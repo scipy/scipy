@@ -385,7 +385,7 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
            processing` vol. 28(1), pp. 27-34,
            :doi:`10.1109/TASSP.1980.1163351` (1980).
     .. [2] Wikipedia, "Discrete cosine transform",
-           http://en.wikipedia.org/wiki/Discrete_cosine_transform
+           https://en.wikipedia.org/wiki/Discrete_cosine_transform
 
     Examples
     --------
@@ -653,7 +653,7 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     References
     ----------
     .. [1] Wikipedia, "Discrete sine transform",
-           http://en.wikipedia.org/wiki/Discrete_sine_transform
+           https://en.wikipedia.org/wiki/Discrete_sine_transform
 
     """
     return _dst(x, type, n, axis, normalize=norm, overwrite_x=overwrite_x)

@@ -17,7 +17,7 @@ from scipy.fftpack import fftshift,ifftshift,fftfreq,rfftfreq
 from scipy.fftpack.helper import next_fast_len
 
 from numpy import pi, random
-
+import numpy as np
 
 class TestFFTShift(object):
 
@@ -85,6 +85,13 @@ class TestNextOptLen(object):
                     else:
                         break
             assert_equal(k, 1, err_msg=msg)
+
+    def test_np_integers(self):
+        ITYPES = [np.int16, np.int32, np.int64, np.uint16, np.uint32, np.uint64]
+        for ityp in ITYPES:
+            x = ityp(12345)
+            testN = next_fast_len(x)
+            assert_equal(testN, next_fast_len(int(x)))
 
     def test_next_opt_len_strict(self):
         hams = {

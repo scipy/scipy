@@ -80,7 +80,7 @@ def bayes_mvs(data, alpha=0.90):
     References
     ----------
     T.E. Oliphant, "A Bayesian perspective on estimating mean, variance, and
-    standard-deviation from data", http://scholarsarchive.byu.edu/facpub/278,
+    standard-deviation from data", https://scholarsarchive.byu.edu/facpub/278,
     2006.
 
     Examples
@@ -169,7 +169,7 @@ def mvsdist(data):
     References
     ----------
     T.E. Oliphant, "A Bayesian perspective on estimating mean, variance, and
-    standard-deviation from data", http://scholarsarchive.byu.edu/facpub/278,
+    standard-deviation from data", https://scholarsarchive.byu.edu/facpub/278,
     2006.
 
     Examples
@@ -669,7 +669,7 @@ def ppcc_max(x, brack=(0.0, 1.0), dist='tukeylambda'):
     .. [1] J.J. Filliben, "The Probability Plot Correlation Coefficient Test for
            Normality", Technometrics, Vol. 17, pp. 111-117, 1975.
 
-    .. [2] http://www.itl.nist.gov/div898/handbook/eda/section3/ppccplot.htm
+    .. [2] https://www.itl.nist.gov/div898/handbook/eda/section3/ppccplot.htm
 
     Examples
     --------
@@ -1274,7 +1274,7 @@ def shapiro(x):
 
     References
     ----------
-    .. [1] http://www.itl.nist.gov/div898/handbook/prc/section2/prc213.htm
+    .. [1] https://www.itl.nist.gov/div898/handbook/prc/section2/prc213.htm
     .. [2] Shapiro, S. S. & Wilk, M.B (1965). An analysis of variance test for
            normality (complete samples), Biometrika, Vol. 52, pp. 591-611.
     .. [3] Razali, N. M. & Wah, Y. B. (2011) Power comparisons of Shapiro-Wilk,
@@ -1384,7 +1384,7 @@ def anderson(x, dist='norm'):
 
     References
     ----------
-    .. [1] http://www.itl.nist.gov/div898/handbook/prc/section2/prc213.htm
+    .. [1] https://www.itl.nist.gov/div898/handbook/prc/section2/prc213.htm
     .. [2] Stephens, M. A. (1974). EDF Statistics for Goodness of Fit and
            Some Comparisons, Journal of the American Statistical Association,
            Vol. 69, pp. 730-737.
@@ -1571,7 +1571,8 @@ def anderson_ksamp(samples, midrank=True):
         The critical values for significance levels 25%, 10%, 5%, 2.5%, 1%.
     significance_level : float
         An approximate significance level at which the null hypothesis for the
-        provided samples can be rejected.
+        provided samples can be rejected. The value is floored / capped at
+        1% / 25%.
 
     Raises
     ------
@@ -1586,7 +1587,7 @@ def anderson_ksamp(samples, midrank=True):
 
     Notes
     -----
-    [1]_ Defines three versions of the k-sample Anderson-Darling test:
+    [1]_ defines three versions of the k-sample Anderson-Darling test:
     one for continuous distributions and two for discrete
     distributions, in which ties between samples may occur. The
     default of this routine is to compute the version based on the
@@ -1596,6 +1597,11 @@ def anderson_ksamp(samples, midrank=True):
     data. According to [1]_, the two discrete test statistics differ
     only slightly if a few collisions due to round-off errors occur in
     the test not adjusted for ties between samples.
+
+    The critical values are taken from [1]_. p-values are floored / capped
+    at 1% / 25%. Since the range of criticl values might be extended in
+    future releases, it is recommended not to test ``p == 0.01``, but rather
+    ``p <= 0.01`` (analogously for the upper bound).
 
     .. versionadded:: 0.14.0
 
@@ -1624,14 +1630,15 @@ def anderson_ksamp(samples, midrank=True):
 
 
     The null hypothesis cannot be rejected for three samples from an
-    identical distribution. The approximate p-value (87%) has to be
-    computed by extrapolation and may not be very accurate:
+    identical distribution. The reported p-value (25%) has been capped and
+    may not be very accurate (since it corresponds to the value 0.449
+    whereas the statistic is -0.731):
 
     >>> stats.anderson_ksamp([np.random.normal(size=50),
     ... np.random.normal(size=30), np.random.normal(size=20)])
     (-0.73091722665244196,
       array([ 0.44925884,  1.3052767 ,  1.9434184 ,  2.57696569,  3.41634856]),
-      0.8789283903979661)
+      0.25)
 
     """
     k = len(samples)
@@ -1675,13 +1682,21 @@ def anderson_ksamp(samples, midrank=True):
     b1 = np.array([-0.245, 0.25, 0.678, 1.149, 1.822])
     b2 = np.array([-0.105, -0.305, -0.362, -0.391, -0.396])
     critical = b0 + b1 / math.sqrt(m) + b2 / m
-    pf = np.polyfit(critical, log(np.array([0.25, 0.1, 0.05, 0.025, 0.01])), 2)
-    if A2 < critical.min() or A2 > critical.max():
-        warnings.warn("approximate p-value will be computed by extrapolation")
-    try:
+
+    sig = np.array([0.25, 0.1, 0.05, 0.025, 0.01])
+    if A2 < critical.min():
+        p = sig.max()
+        warnings.warn("p-value capped: true value larger than {}".format(p),
+                      stacklevel=2)
+    elif A2 > critical.max():
+        p = sig.min()
+        warnings.warn("p-value floored: true value smaller than {}".format(p),
+                      stacklevel=2)
+    else:
+        # interpolation of probit of significance level
+        pf = np.polyfit(critical, log(sig), 2)
         p = math.exp(np.polyval(pf, A2))
-    except (OverflowError,):
-        p = float("inf")
+
     return Anderson_ksampResult(A2, critical, p)
 
 
@@ -1819,7 +1834,7 @@ def bartlett(*args):
 
     References
     ----------
-    .. [1]  http://www.itl.nist.gov/div898/handbook/eda/section3/eda357.htm
+    .. [1]  https://www.itl.nist.gov/div898/handbook/eda/section3/eda357.htm
 
     .. [2]  Snedecor, George W. and Cochran, William G. (1989), Statistical
               Methods, Eighth Edition, Iowa State University Press.
@@ -1900,7 +1915,7 @@ def levene(*args, **kwds):
 
     References
     ----------
-    .. [1]  http://www.itl.nist.gov/div898/handbook/eda/section3/eda35a.htm
+    .. [1]  https://www.itl.nist.gov/div898/handbook/eda/section3/eda35a.htm
     .. [2]   Levene, H. (1960). In Contributions to Probability and Statistics:
                Essays in Honor of Harold Hotelling, I. Olkin et al. eds.,
                Stanford University Press, pp. 278-292.
@@ -2001,7 +2016,7 @@ def binom_test(x, n=None, p=0.5, alternative='two-sided'):
 
     References
     ----------
-    .. [1] http://en.wikipedia.org/wiki/Binomial_test
+    .. [1] https://en.wikipedia.org/wiki/Binomial_test
 
     """
     x = atleast_1d(x).astype(np.integer)
@@ -2115,7 +2130,7 @@ def fligner(*args, **kwds):
            Hypothesis Testing based on Quadratic Inference Function. Technical
            Report #99-03, Center for Likelihood Studies, Pennsylvania State
            University.
-           http://cecas.clemson.edu/~cspark/cv/paper/qif/draftqif2.pdf
+           https://cecas.clemson.edu/~cspark/cv/paper/qif/draftqif2.pdf
 
     .. [2] Fligner, M.A. and Killeen, T.J. (1976). Distribution-free two-sample
            tests for scale. 'Journal of the American Statistical Association.'
@@ -2363,7 +2378,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False):
 
     References
     ----------
-    .. [1] http://en.wikipedia.org/wiki/Wilcoxon_signed-rank_test
+    .. [1] https://en.wikipedia.org/wiki/Wilcoxon_signed-rank_test
 
     """
 
@@ -2628,7 +2643,7 @@ def median_test(*args, **kwds):
         # is possible that all those values equal the grand median.  If `ties`
         # is "ignore", that would result in a column of zeros in `table`.  We
         # check for that case here.
-        zero_cols = np.where((table == 0).all(axis=0))[0]
+        zero_cols = np.nonzero((table == 0).all(axis=0))[0]
         if len(zero_cols) > 0:
             msg = ("All values in sample %d are equal to the grand "
                    "median (%r), so they are ignored, resulting in an "

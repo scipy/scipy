@@ -664,7 +664,7 @@ def bartlett(M, sym=True):
     .. [3] A.V. Oppenheim and R.W. Schafer, "Discrete-Time Signal
            Processing", Prentice-Hall, 1999, pp. 468-471.
     .. [4] Wikipedia, "Window function",
-           http://en.wikipedia.org/wiki/Window_function
+           https://en.wikipedia.org/wiki/Window_function
     .. [5] W.H. Press,  B.P. Flannery, S.A. Teukolsky, and W.T. Vetterling,
            "Numerical Recipes", Cambridge University Press, 1986, page 429.
 
@@ -753,7 +753,7 @@ def hann(M, sym=True):
     .. [2] E.R. Kanasewich, "Time Sequence Analysis in Geophysics",
            The University of Alberta Press, 1975, pp. 106-108.
     .. [3] Wikipedia, "Window function",
-           http://en.wikipedia.org/wiki/Window_function
+           https://en.wikipedia.org/wiki/Window_function
     .. [4] W.H. Press,  B.P. Flannery, S.A. Teukolsky, and W.T. Vetterling,
            "Numerical Recipes", Cambridge University Press, 1986, page 425.
 
@@ -820,7 +820,7 @@ def tukey(M, alpha=0.5, sym=True):
            Analysis with the Discrete Fourier Transform". Proceedings of the
            IEEE 66 (1): 51-83. :doi:`10.1109/PROC.1978.10837`
     .. [2] Wikipedia, "Window function",
-           http://en.wikipedia.org/wiki/Window_function#Tukey_window
+           https://en.wikipedia.org/wiki/Window_function#Tukey_window
 
     Examples
     --------
@@ -1006,7 +1006,7 @@ def general_hamming(M, alpha, sym=True):
     .. [1] DSPRelated, "Generalized Hamming Window Family",
            https://www.dsprelated.com/freebooks/sasp/Generalized_Hamming_Window_Family.html
     .. [2] Wikipedia, "Window function",
-           http://en.wikipedia.org/wiki/Window_function
+           https://en.wikipedia.org/wiki/Window_function
     .. [3] Riccardo Piantanida ESA, "Sentinel-1 Level 1 Detailed Algorithm
            Definition",
            https://sentinel.esa.int/documents/247904/1877131/Sentinel-1-Level-1-Detailed-Algorithm-Definition
@@ -1061,7 +1061,7 @@ def hamming(M, sym=True):
     .. [2] E.R. Kanasewich, "Time Sequence Analysis in Geophysics", The
            University of Alberta Press, 1975, pp. 109-110.
     .. [3] Wikipedia, "Window function",
-           http://en.wikipedia.org/wiki/Window_function
+           https://en.wikipedia.org/wiki/Window_function
     .. [4] W.H. Press,  B.P. Flannery, S.A. Teukolsky, and W.T. Vetterling,
            "Numerical Recipes", Cambridge University Press, 1986, page 425.
 
@@ -1168,7 +1168,7 @@ def kaiser(M, beta, sym=True):
     .. [2] E.R. Kanasewich, "Time Sequence Analysis in Geophysics", The
            University of Alberta Press, 1975, pp. 177-178.
     .. [3] Wikipedia, "Window function",
-           http://en.wikipedia.org/wiki/Window_function
+           https://en.wikipedia.org/wiki/Window_function
     .. [4] F. J. Harris, "On the use of windows for harmonic analysis with the
            discrete Fourier transform," Proceedings of the IEEE, vol. 66,
            no. 1, pp. 51-83, Jan. 1978. :doi:`10.1109/PROC.1978.10837`.
@@ -1902,7 +1902,7 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False):
     # sequences, or discrete prolate spheroidal sequences (DPSS). Only the
     # first K, K = 2NW/dt orders of DPSS will exhibit good spectral
     # concentration
-    # [see http://en.wikipedia.org/wiki/Spectral_concentration_problem]
+    # [see https://en.wikipedia.org/wiki/Spectral_concentration_problem]
 
     # Here we set up an alternative symmetric tri-diagonal eigenvalue
     # problem such that

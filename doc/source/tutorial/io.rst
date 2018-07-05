@@ -350,6 +350,6 @@ Netcdf (:mod:`scipy.io.netcdf`)
 
 Allows reading of  NetCDF files (version of pupynere_ package)
 
-.. _pupynere: http://pypi.python.org/pypi/pupynere/
-.. _octave: http://www.gnu.org/software/octave
-.. _matlab: http://www.mathworks.com/
+.. _pupynere: https://pypi.python.org/pypi/pupynere/
+.. _octave: https://www.gnu.org/software/octave
+.. _matlab: https://www.mathworks.com/

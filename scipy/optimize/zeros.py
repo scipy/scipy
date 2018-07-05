@@ -1,13 +1,13 @@
 from __future__ import division, print_function, absolute_import
 
 import warnings
-
+from collections import namedtuple
 from . import _zeros
-from numpy import finfo, sign, sqrt
+import numpy as np
 
 _iter = 100
 _xtol = 2e-12
-_rtol = 4 * finfo(float).eps
+_rtol = 4 * np.finfo(float).eps
 
 __all__ = ['newton', 'bisect', 'ridder', 'brentq', 'brenth']
 
@@ -23,6 +23,7 @@ flag_map = {_ECONVERGED: CONVERGED, _ESIGNERR: SIGNERR, _ECONVERR: CONVERR}
 
 class RootResults(object):
     """ Represents the root finding result.
+
     Attributes
     ----------
     root : float
@@ -35,8 +36,8 @@ class RootResults(object):
         True if the routine converged.
     flag : str
         Description of the cause of termination.
-    """
 
+    """
     def __init__(self, root, iterations, function_calls, flag):
         self.root = root
         self.iterations = iterations
@@ -79,28 +80,32 @@ def _results_select(full_output, r):
     return x
 
 
-# Newton-Raphson method
 def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
-           fprime2=None,
-           full_output=False, disp=True):
+           fprime2=None, full_output=False, disp=True):
     """
     Find a zero using the Newton-Raphson or secant method.
 
     Find a zero of the function `func` given a nearby starting point `x0`.
     The Newton-Raphson method is used if the derivative `fprime` of `func`
     is provided, otherwise the secant method is used.  If the second order
-    derivative `fprime2` of `func` is provided, then Halley's method is used.
+    derivative `fprime2` of `func` is also provided, then Halley's method is
+    used.
+
+    If `x0` is a sequence, then `newton` returns an array, and `func` must be
+    vectorized and return a sequence or array of the same shape as its first
+    argument.
 
     Parameters
     ----------
-    func : function
+    func : callable
         The function whose zero is wanted. It must be a function of a
         single variable of the form f(x,a,b,c...), where a,b,c... are extra
         arguments that can be passed in the `args` parameter.
-    x0 : float
+    x0 : float, sequence, or ndarray
         An initial estimate of the zero that should be somewhere near the
-        actual zero.
-    fprime : function, optional
+        actual zero. If not scalar, then `func` must be vectorized and return
+        a sequence or array of the same shape as its first argument.
+    fprime : callable, optional
         The derivative of the function when available and convenient. If it
         is None (default), then the secant method is used.
     args : tuple, optional
@@ -109,30 +114,44 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
         The allowable error of the zero value.
     maxiter : int, optional
         Maximum number of iterations.
-    fprime2 : function, optional
+    fprime2 : callable, optional
         The second order derivative of the function when available and
         convenient. If it is None (default), then the normal Newton-Raphson
         or the secant method is used. If it is not None, then Halley's method
         is used.
     full_output : bool, optional
-        If `full_output` is False, the root is returned.  If `full_output` is
-        True, the return value is ``(x, r)``, where `x` is the root, and `r` is
-        a RootResults object.
+        If `full_output` is False (default), the root is returned.
+        If True and `x0` is scalar, the return value is ``(x, r)``, where ``x``
+        is the root and ``r`` is a `RootResults` object.
+        If True and `x0` is non-scalar, the return value is ``(x, converged,
+        zero_der)`` (see Returns section for details).
     disp : bool, optional
-        If True, display a RuntimeError if the algorithm didn't converge.
+        If True, raise a RuntimeError if the algorithm didn't converge, with
+        the error message containing the number of iterations and current
+        function value.  Ignored if `x0` is not scalar.
+        *Note: this has little to do with displaying, however
+        the `disp` keyword cannot be renamed for backwards compatibility.*
+
 
     Returns
     -------
-    zero : float
+    root : float, sequence, or ndarray
         Estimated location where function is zero.
-    r : RootResults (present if ``full_output = True``)
+    r : RootResults, optional
+        Present if ``full_output=True`` and `x0` is scalar.
         Object containing information about the convergence.  In particular,
         ``r.converged`` is True if the routine converged.
+    converged : ndarray of bool, optional
+        Present if ``full_output=True`` and `x0` is non-scalar.
+        For vector functions, indicates which elements converged successfully.
+    zero_der : ndarray of bool, optional
+        Present if ``full_output=True`` and `x0` is non-scalar.
+        For vector functions, indicates which elements had a zero derivative.
 
     See Also
     --------
     brentq, brenth, ridder, bisect
-    fsolve : find zeroes in n dimensions.
+    fsolve : find zeros in n dimensions.
 
     Notes
     -----
@@ -149,16 +168,26 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
     sign. The brentq algorithm is recommended for general use in one
     dimensional problems when such an interval has been found.
 
+    When `newton` is used with arrays, it is best suited for the following
+    types of problems:
+
+    * The initial guesses, `x0`, are all relatively the same distance from
+      the roots.
+    * Some or all of the extra arguments, `args`, are also arrays so that a
+      class of similar problems can be solved together.
+    * The size of the initial guesses, `x0`, is larger than O(100) elements.
+      Otherwise, a naive loop may perform as well or better than a vector.
+
     Examples
     --------
+    >>> from scipy import optimize
+    >>> import matplotlib.pyplot as plt
 
     >>> def f(x):
     ...     return (x**3 - 1)  # only one real root at x = 1
-    
-    >>> from scipy import optimize
 
-    ``fprime`` not provided, use secant method
-    
+    ``fprime`` is not provided, use the secant method:
+
     >>> root = optimize.newton(f, 1.5)
     >>> root
     1.0000000000000016
@@ -166,39 +195,74 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
     >>> root
     1.0000000000000016
 
-    Only ``fprime`` provided, use Newton Raphson method
-    
+    Only ``fprime`` is provided, use the Newton-Raphson method:
+
     >>> root = optimize.newton(f, 1.5, fprime=lambda x: 3 * x**2)
     >>> root
     1.0
-    
-    Both ``fprime2`` and ``fprime`` provided, use Halley's method
+
+    Both ``fprime2`` and ``fprime`` are provided, use Halley's method:
 
     >>> root = optimize.newton(f, 1.5, fprime=lambda x: 3 * x**2,
     ...                        fprime2=lambda x: 6 * x)
     >>> root
     1.0
 
+    When we want to find zeros for a set of related starting values and/or
+    function parameters, we can provide both of those as an array of inputs:
+
+    >>> f = lambda x, a: x**3 - a
+    >>> fder = lambda x, a: 3 * x**2
+    >>> x = np.random.randn(100)
+    >>> a = np.arange(-50, 50)
+    >>> vec_res = optimize.newton(f, x, fprime=fder, args=(a, ))
+
+    The above is the equivalent of solving for each value in ``(x, a)``
+    separately in a for-loop, just faster:
+
+    >>> loop_res = [optimize.newton(f, x0, fprime=fder, args=(a0,))
+    ...             for x0, a0 in zip(x, a)]
+    >>> np.allclose(vec_res, loop_res)
+    True
+
+    Plot the results found for all values of ``a``:
+
+    >>> analytical_result = np.sign(a) * np.abs(a)**(1/3)
+    >>> fig = plt.figure()
+    >>> ax = fig.add_subplot(111)
+    >>> ax.plot(a, analytical_result, 'o')
+    >>> ax.plot(a, vec_res, '.')
+    >>> ax.set_xlabel('$a$')
+    >>> ax.set_ylabel('$x$ where $f(x, a)=0$')
+    >>> plt.show()
+
     """
     if tol <= 0:
         raise ValueError("tol too small (%g <= 0)" % tol)
     if maxiter < 1:
         raise ValueError("maxiter must be greater than 0")
-    # Multiply by 1.0 to convert to floating point.  We don't use float(x0)
-    # so it still works if x0 is complex.
+    if not np.isscalar(x0):
+        return _array_newton(func, x0, fprime, args, tol, maxiter, fprime2,
+                             full_output)
+
+    # Convert to float (don't use float(x0); this works also for complex x0)
     p0 = 1.0 * x0
     funcalls = 0
     if fprime is not None:
         # Newton-Raphson method
         for itr in range(maxiter):
+            # first evaluate fval
+            fval = func(p0, *args)
+            funcalls += 1
+            # If fval is 0, a root has been found, then terminate
+            if fval == 0:
+                return _results_select(full_output, (p0, funcalls, itr, _ECONVERGED))
             fder = fprime(p0, *args)
             funcalls += 1
             if fder == 0:
                 msg = "derivative was zero."
                 warnings.warn(msg, RuntimeWarning)
                 return _results_select(full_output, (p0, funcalls, itr + 1, _ECONVERR))
-            fval = func(p0, *args)
-            funcalls += 1
             newton_step = fval / fder
             if fprime2 is None:
                 # Newton step
@@ -237,11 +301,113 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
             p1 = p
             q1 = func(p1, *args)
             funcalls += 1
+
     if disp:
         msg = "Failed to converge after %d iterations, value is %s" % (itr + 1, p)
         raise RuntimeError(msg)
 
     return _results_select(full_output, (p, funcalls, itr + 1, _ECONVERR))
+
+
+def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2, full_output):
+    """
+    A vectorized version of Newton, Halley, and secant methods for arrays.
+
+    Do not use this method directly. This method is called from `newton`
+    when ``np.isscalar(x0)`` is True. For docstring, see `newton`.
+    """
+    try:
+        p = np.asarray(x0, dtype=float)
+    except TypeError:
+        # can't convert complex to float
+        p = np.asarray(x0)
+
+    failures = np.ones_like(p, dtype=bool)
+    nz_der = np.ones_like(failures)
+    if fprime is not None:
+        # Newton-Raphson method
+        for iteration in range(maxiter):
+            # first evaluate fval
+            fval = np.asarray(func(p, *args))
+            # If all fval are 0, all roots have been found, then terminate
+            if not fval.any():
+                failures = fval.astype(bool)
+                break
+            fder = np.asarray(fprime(p, *args))
+            nz_der = (fder != 0)
+            # stop iterating if all derivatives are zero
+            if not nz_der.any():
+                break
+            # Newton step
+            dp = fval[nz_der] / fder[nz_der]
+            if fprime2 is not None:
+                fder2 = np.asarray(fprime2(p, *args))
+                dp = dp / (1.0 - 0.5 * dp * fder2[nz_der] / fder[nz_der])
+            # only update nonzero derivatives
+            p[nz_der] -= dp
+            failures[nz_der] = np.abs(dp) >= tol  # items not yet converged
+            # stop iterating if there aren't any failures, not incl zero der
+            if not failures[nz_der].any():
+                break
+    else:
+        # Secant method
+        dx = np.finfo(float).eps**0.33
+        p1 = p * (1 + dx) + np.where(p >= 0, dx, -dx)
+        q0 = np.asarray(func(p, *args))
+        q1 = np.asarray(func(p1, *args))
+        active = np.ones_like(p, dtype=bool)
+        for iteration in range(maxiter):
+            nz_der = (q1 != q0)
+            # stop iterating if all derivatives are zero
+            if not nz_der.any():
+                p = (p1 + p) / 2.0
+                break
+            # Secant Step
+            dp = (q1 * (p1 - p))[nz_der] / (q1 - q0)[nz_der]
+            # only update nonzero derivatives
+            p[nz_der] = p1[nz_der] - dp
+            active_zero_der = ~nz_der & active
+            p[active_zero_der] = (p1 + p)[active_zero_der] / 2.0
+            active &= nz_der  # don't assign zero derivatives again
+            failures[nz_der] = np.abs(dp) >= tol  # not yet converged
+            # stop iterating if there aren't any failures, not incl zero der
+            if not failures[nz_der].any():
+                break
+            p1, p = p, p1
+            q0 = q1
+            q1 = np.asarray(func(p1, *args))
+
+    zero_der = ~nz_der & failures  # don't include converged with zero-ders
+    if zero_der.any():
+        # Secant warnings
+        if fprime is None:
+            nonzero_dp = (p1 != p)
+            # non-zero dp, but infinite newton step
+            zero_der_nz_dp = (zero_der & nonzero_dp)
+            if zero_der_nz_dp.any():
+                rms = np.sqrt(
+                    sum((p1[zero_der_nz_dp] - p[zero_der_nz_dp]) ** 2)
+                )
+                warnings.warn('RMS of {:g} reached'.format(rms), RuntimeWarning)
+        # Newton or Halley warnings
+        else:
+            all_or_some = 'all' if zero_der.all() else 'some'
+            msg = '{:s} derivatives were zero'.format(all_or_some)
+            warnings.warn(msg, RuntimeWarning)
+    elif failures.any():
+        all_or_some = 'all' if failures.all() else 'some'
+        msg = '{0:s} failed to converge after {1:d} iterations'.format(
+            all_or_some, maxiter
+        )
+        if failures.all():
+            raise RuntimeError(msg)
+        warnings.warn(msg, RuntimeWarning)
+
+    if full_output:
+        result = namedtuple('result', ('root', 'converged', 'zero_der'))
+        p = result(p, ~failures, zero_der)
+
+    return p
 
 
 def bisect(f, a, b, args=(),

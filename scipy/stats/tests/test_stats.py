@@ -2,7 +2,7 @@
 
     WRITTEN BY LOUIS LUANGKESORN <lluang@yahoo.com> FOR THE STATS MODULE
     BASED ON WILKINSON'S STATISTICS QUIZ
-    http://www.stanford.edu/~clint/bench/wilk.txt
+    https://www.stanford.edu/~clint/bench/wilk.txt
 
     Additional tests by a host of SciPy developers.
 """
@@ -653,6 +653,77 @@ class TestCorrSpearmanrTies(object):
 
 
 def test_kendalltau():
+    # simple case without ties
+    x = np.arange(10)
+    y = np.arange(10)
+    # Cross-check with exact result from R:
+    # cor.test(x,y,method="kendall",exact=1)
+    expected = (1.0, 5.511463844797e-07)
+    res = stats.kendalltau(x, y)
+    assert_approx_equal(res[0], expected[0])
+    assert_approx_equal(res[1], expected[1])
+
+    # swap a couple of values
+    b = y[1]
+    y[1] = y[2]
+    y[2] = b
+    # Cross-check with exact result from R:
+    # cor.test(x,y,method="kendall",exact=1)
+    expected = (0.9555555555555556, 5.511463844797e-06)
+    res = stats.kendalltau(x, y)
+    assert_approx_equal(res[0], expected[0])
+    assert_approx_equal(res[1], expected[1])
+
+    # swap a couple more
+    b = y[5]
+    y[5] = y[6]
+    y[6] = b
+    # Cross-check with exact result from R:
+    # cor.test(x,y,method="kendall",exact=1)
+    expected = (0.9111111111111111, 2.976190476190e-05)
+    res = stats.kendalltau(x, y)
+    assert_approx_equal(res[0], expected[0])
+    assert_approx_equal(res[1], expected[1])
+
+    # same in opposite direction
+    x = np.arange(10)
+    y = np.arange(10)[::-1]
+    # Cross-check with exact result from R:
+    # cor.test(x,y,method="kendall",exact=1)
+    expected = (-1.0, 5.511463844797e-07)
+    res = stats.kendalltau(x, y)
+    assert_approx_equal(res[0], expected[0])
+    assert_approx_equal(res[1], expected[1])
+
+    # swap a couple of values
+    b = y[1]
+    y[1] = y[2]
+    y[2] = b
+    # Cross-check with exact result from R:
+    # cor.test(x,y,method="kendall",exact=1)
+    expected = (-0.9555555555555556, 5.511463844797e-06)
+    res = stats.kendalltau(x, y)
+    assert_approx_equal(res[0], expected[0])
+    assert_approx_equal(res[1], expected[1])
+
+    # swap a couple more
+    b = y[5]
+    y[5] = y[6]
+    y[6] = b
+    # Cross-check with exact result from R:
+    # cor.test(x,y,method="kendall",exact=1)
+    expected = (-0.9111111111111111, 2.976190476190e-05)
+    res = stats.kendalltau(x, y)
+    assert_approx_equal(res[0], expected[0])
+    assert_approx_equal(res[1], expected[1])
+
+    # check exception in case of ties
+    y[2] = y[1]
+    assert_raises(ValueError, stats.kendalltau, x, y, method='exact')
+
+    # check exception in case of invalid method keyword
+    assert_raises(ValueError, stats.kendalltau, x, y, method='banana')
+
     # with some ties
     # Cross-check with R:
     # cor.test(c(12,2,1,12,2),c(1,4,7,1,0),method="kendall",exact=FALSE)
@@ -696,6 +767,8 @@ def test_kendalltau():
     x[9] = np.nan
     assert_array_equal(stats.kendalltau(x, x), (np.nan, np.nan))
     assert_allclose(stats.kendalltau(x, x, nan_policy='omit'),
+                    (1.0, 5.5114638e-6), rtol=1e-06)
+    assert_allclose(stats.kendalltau(x, x, nan_policy='omit', method='asymptotic'),
                     (1.0, 0.00017455009626808976), rtol=1e-06)
     assert_raises(ValueError, stats.kendalltau, x, x, nan_policy='raise')
     assert_raises(ValueError, stats.kendalltau, x, x, nan_policy='foobar')
@@ -1359,7 +1432,6 @@ class TestMode(object):
         assert_equal(vals[0][0], 'showers')
         assert_equal(vals[1][0], 2)
 
-    @pytest.mark.xfail(sys.version_info > (3,), reason='numpy github issue 641')
     def test_mixed_objects(self):
         objects = [10, True, np.nan, 'hello', 10]
         arr = np.empty((5,), dtype=object)
@@ -1421,6 +1493,16 @@ class TestMode(object):
         assert_equal(actual, (6, 3))
         assert_raises(ValueError, stats.mode, data1, nan_policy='raise')
         assert_raises(ValueError, stats.mode, data1, nan_policy='foobar')
+
+    @pytest.mark.parametrize("data", [
+        [3, 5, 1, 1, 3],
+        [3, np.nan, 5, 1, 1, 3],
+        [3, 5, 1],
+        [3, np.nan, 5, 1],
+    ])
+    def test_smallest_equal(self, data):
+        result = stats.mode(data, nan_policy='omit')
+        assert_equal(result[0][0], 1)
 
 
 class TestVariability(object):
@@ -1921,8 +2003,8 @@ class TestMoments(object):
         note that length(testcase) = 4
         testmathworks comes from documentation for the
         Statistics Toolbox for Matlab and can be found at both
-        http://www.mathworks.com/access/helpdesk/help/toolbox/stats/kurtosis.shtml
-        http://www.mathworks.com/access/helpdesk/help/toolbox/stats/skewness.shtml
+        https://www.mathworks.com/help/stats/kurtosis.html
+        https://www.mathworks.com/help/stats/skewness.html
         Note that both test cases came from here.
     """
     testcase = [1,2,3,4]
@@ -3407,7 +3489,7 @@ class TestMannWhitneyU(object):
 
 def test_pointbiserial():
     # same as mstats test except for the nan
-    # Test data: http://support.sas.com/ctx/samples/index.jsp?sid=490&tab=output
+    # Test data: https://web.archive.org/web/20060504220742/https://support.sas.com/ctx/samples/index.jsp?sid=490&tab=output
     x = [1,0,1,1,1,1,0,1,0,0,0,1,1,0,0,0,1,1,1,0,0,0,0,0,0,0,0,1,0,
          0,0,0,0,1]
     y = [14.8,13.8,12.4,10.1,7.1,6.1,5.8,4.6,4.3,3.5,3.3,3.2,3.0,
@@ -3936,7 +4018,7 @@ class TestFOneWay(object):
 
     def test_nist(self):
         # These are the nist ANOVA files. They can be found at:
-        # http://www.itl.nist.gov/div898/strd/anova/anova.html
+        # https://www.itl.nist.gov/div898/strd/anova/anova.html
         filenames = ['SiRstv.dat', 'SmLs01.dat', 'SmLs02.dat', 'SmLs03.dat',
                      'AtmWtAg.dat', 'SmLs04.dat', 'SmLs05.dat', 'SmLs06.dat',
                      'SmLs07.dat', 'SmLs08.dat', 'SmLs09.dat']
@@ -4046,7 +4128,7 @@ class TestKruskal(object):
 class TestCombinePvalues(object):
 
     def test_fisher(self):
-        # Example taken from http://en.wikipedia.org/wiki/Fisher's_exact_test#Example
+        # Example taken from https://en.wikipedia.org/wiki/Fisher%27s_exact_test#Example
         xsq, p = stats.combine_pvalues([.01, .2, .3], method='fisher')
         assert_approx_equal(p, 0.02156, significant=4)
 

@@ -314,20 +314,20 @@ class TestUtilities(object):
         finally:
             np.seterr(**olderr)
 
-        assert_(ok.all(), "%s %s" % (err_msg, np.where(~ok)))
+        assert_(ok.all(), "%s %s" % (err_msg, np.nonzero(~ok)))
 
         # Invalid simplices must be (nearly) zero volume
         q = vertices[:,:-1,:] - vertices[:,-1,None,:]
         volume = np.array([np.linalg.det(q[k,:,:])
                            for k in range(tri.nsimplex)])
         ok = np.isfinite(tri.transform[:,0,0]) | (volume < np.sqrt(eps))
-        assert_(ok.all(), "%s %s" % (err_msg, np.where(~ok)))
+        assert_(ok.all(), "%s %s" % (err_msg, np.nonzero(~ok)))
 
         # Also, find_simplex for the centroid should end up in some
         # simplex for the non-degenerate cases
         j = tri.find_simplex(centroids)
         ok = (j != -1) | np.isnan(tri.transform[:,0,0])
-        assert_(ok.all(), "%s %s" % (err_msg, np.where(~ok)))
+        assert_(ok.all(), "%s %s" % (err_msg, np.nonzero(~ok)))
 
         if unit_cube:
             # If in unit cube, no interior point should be marked out of hull
@@ -335,7 +335,7 @@ class TestUtilities(object):
             at_boundary |= (centroids >= 1 - unit_cube_tol).any(axis=1)
 
             ok = (j != -1) | at_boundary
-            assert_(ok.all(), "%s %s" % (err_msg, np.where(~ok)))
+            assert_(ok.all(), "%s %s" % (err_msg, np.nonzero(~ok)))
 
     def test_degenerate_barycentric_transforms(self):
         # The triangulation should not produce invalid barycentric
@@ -905,7 +905,7 @@ class Test_HalfspaceIntersection(object):
 
         truths = np.zeros((arr1.shape[0],), dtype=bool)
         for l1 in arr1:
-            indexes = np.where((abs(arr2 - l1) < rtol).all(axis=1))[0]
+            indexes = np.nonzero((abs(arr2 - l1) < rtol).all(axis=1))[0]
             assert_equal(indexes.shape, (1,))
             truths[indexes[0]] = True
         assert_(truths.all())

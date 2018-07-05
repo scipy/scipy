@@ -4,7 +4,8 @@ Unit test for Linear Programming
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import assert_, assert_allclose, assert_equal
+from numpy.testing import (assert_, assert_allclose, assert_equal,
+                           assert_array_less)
 from pytest import raises as assert_raises
 from scipy.optimize import linprog, OptimizeWarning
 from scipy._lib._numpy_compat import _assert_warns, suppress_warnings
@@ -112,6 +113,12 @@ def _assert_unbounded(res):
     assert_equal(res.status, 3, "failed to report unbounded status")
 
 
+def _assert_unable_to_find_basic_feasible_sol(res):
+    # res: linprog result object
+    assert_(not res.success, "incorrectly reported success")
+    assert_equal(res.status, 2, "failed to report optimization failure")
+
+
 def _assert_success(res, desired_fun=None, desired_x=None,
                     rtol=1e-8, atol=1e-8):
     # res: linprog result object
@@ -201,7 +208,7 @@ class LinprogCommonTests(object):
 
     def test_linprog_mixed_constraints(self):
         # Minimize linear function subject to non-negative variables.
-        #  http://www.statslab.cam.ac.uk/~ff271/teaching/opt/notes/notes8.pdf
+        #  http://www.statslab.cam.ac.uk/~ff271/teaching/opt/notes/notes8.pdf (dead link)
         c = [6, 3]
         A_ub = [[0, 3],
                 [-1, -1],
@@ -213,7 +220,7 @@ class LinprogCommonTests(object):
 
     def test_linprog_cyclic_recovery(self):
         # Test linprogs recovery from cycling using the Klee-Minty problem
-        #  Klee-Minty  http://www.math.ubc.ca/~israel/m340/kleemin3.pdf
+        #  Klee-Minty  https://www.math.ubc.ca/~israel/m340/kleemin3.pdf
         c = np.array([100, 10, 1]) * -1  # maximize
         A_ub = [[1, 0, 0],
                 [20, 1, 0],
@@ -231,7 +238,9 @@ class LinprogCommonTests(object):
                          [1, 0, 0, 0]])
         b_ub = [0, 0, 1]
         # "interior-point" will succeed, "simplex" will fail
-        res = linprog(c, A_ub=A_ub, b_ub=b_ub, options=dict(maxiter=100),
+        o = {key: self.options[key] for key in self.options}
+        o["maxiter"] = 100
+        res = linprog(c, A_ub=A_ub, b_ub=b_ub, options=o,
                       method=self.method)
         if self.method == "simplex":
             assert_(not res.success)
@@ -255,7 +264,7 @@ class LinprogCommonTests(object):
                           options=dict(maxiter=100, bland=True),
                           method=self.method)
         else:
-            res = linprog(c, A_ub=A_ub, b_ub=b_ub, options=dict(maxiter=100),
+            res = linprog(c, A_ub=A_ub, b_ub=b_ub, options=self.options,
                           method=self.method)
         _assert_success(res, desired_x=[0, 0, 19, 16/3, 29/3])
 
@@ -378,7 +387,7 @@ class LinprogCommonTests(object):
         _assert_success(res, desired_fun=14)
 
     def test_simplex_algorithm_wikipedia_example(self):
-        # http://en.wikipedia.org/wiki/Simplex_algorithm#Example
+        # https://en.wikipedia.org/wiki/Simplex_algorithm#Example
         Z = [-2, -3, -4]
         A_ub = [
             [3, 2, 1],
@@ -389,7 +398,7 @@ class LinprogCommonTests(object):
         _assert_success(res, desired_fun=-20)
 
     def test_enzo_example(self):
-        # http://projects.scipy.org/scipy/attachment/ticket/1252/lp2.py
+        # https://github.com/scipy/scipy/issues/1779 lp2.py
         #
         # Translated from Octave code at:
         # http://www.ecs.shimane-u.ac.jp/~kyoshida/lpeng.htm
@@ -464,11 +473,13 @@ class LinprogCommonTests(object):
             res = linprog(c=c, A_eq=A_eq, b_eq=b_eq,
                           method=self.method, options=self.options)
         else:
+            o = {key: self.options[key] for key in self.options}
+            o["presolve"] = False
             res = linprog(c=c, A_eq=A_eq, b_eq=b_eq, method=self.method,
-                          options={"presolve": False})
+                          options=o)
         _assert_infeasible(res)
 
-    def test_unknown_options_or_solver(self):
+    def test_unknown_options(self):
         c = np.array([-3, -2])
         A_ub = [[2, 1], [1, 1], [1, 0]]
         b_ub = [10, 8, 4]
@@ -478,11 +489,10 @@ class LinprogCommonTests(object):
             linprog(c, A_ub, b_ub, A_eq, b_eq, bounds, method=self.method,
                     options=options)
 
+        o = {key: self.options[key] for key in self.options}
+        o['spam'] = 42
         _assert_warns(OptimizeWarning, f,
-                      c, A_ub=A_ub, b_ub=b_ub, options=dict(spam='42'))
-
-        assert_raises(ValueError, linprog,
-                      c, A_ub=A_ub, b_ub=b_ub, method='ekki-ekki-ekki')
+                      c, A_ub=A_ub, b_ub=b_ub, options=o)
 
     def test_no_constraints(self):
         res = linprog([-1, -2], method=self.method, options=self.options)
@@ -634,6 +644,97 @@ class LinprogCommonTests(object):
                       method=self.method, options=self.options)
         _assert_success(res, desired_x=b, desired_fun=np.sum(b))
 
+    def test_bug_6690(self):
+        # SciPy violates bound constraint despite result status being success
+        # when the simplex method is used.
+        # https://github.com/scipy/scipy/issues/6690
+
+        A_eq = np.array([[0, 0, 0, 0.93, 0, 0.65, 0, 0, 0.83, 0]])
+        b_eq = np.array([0.9626])
+        A_ub = np.array([
+            [0, 0, 0, 1.18, 0, 0, 0, -0.2, 0, -0.22],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0.43, 0, 0, 0, 0, 0, 0],
+            [0, -1.22, -0.25, 0, 0, 0, -2.06, 0, 0, 1.37],
+            [0, 0, 0, 0, 0, 0, 0, -0.25, 0, 0]
+        ])
+        b_ub = np.array([0.615, 0, 0.172, -0.869, -0.022])
+        bounds = np.array([
+            [-0.84, -0.97, 0.34, 0.4, -0.33, -0.74, 0.47, 0.09, -1.45, -0.73],
+            [0.37, 0.02, 2.86, 0.86, 1.18, 0.5, 1.76, 0.17, 0.32, -0.15]
+        ]).T
+        c = np.array([
+            -1.64, 0.7, 1.8, -1.06, -1.16, 0.26, 2.13, 1.53, 0.66, 0.28
+            ])
+
+        with suppress_warnings() as sup:
+            sup.filter(OptimizeWarning, "Solving system with option 'sym_pos'")
+            res = linprog(
+                c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
+                bounds=bounds, method=self.method, options=self.options
+            )
+
+        desired_fun = -1.19099999999
+        desired_x = np.array([
+            0.3700, -0.9700, 0.3400, 0.4000, 1.1800,
+            0.5000, 0.4700, 0.0900, 0.3200, -0.7300
+        ])
+        _assert_success(
+            res,
+            desired_fun=desired_fun,
+            desired_x=desired_x
+        )
+
+        # Add small tol value to ensure arrays are less than or equal.
+        atol = 1e-6
+        assert_array_less(bounds[:, 0] - atol, res.x)
+        assert_array_less(res.x, bounds[:, 1] + atol)
+
+    def test_bug_7044(self):
+        # linprog fails to identify correct constraints with simplex method
+        # leading to a non-optimal solution if A is rank-deficient.
+        # https://github.com/scipy/scipy/issues/7044
+
+        A, b, c, N = magic_square(3)
+        with suppress_warnings() as sup:
+            sup.filter(OptimizeWarning, "A_eq does not appear...")
+            res = linprog(c, A_eq=A, b_eq=b,
+                          method=self.method, options=self.options)
+
+        desired_fun = 1.730550597
+        _assert_success(res, desired_fun=desired_fun)
+        assert_allclose(A.dot(res.x), b)
+        assert_array_less(np.zeros(res.x.size) - 1e-5, res.x)
+
+    def test_bug_8662(self):
+        # scipy.linprog returns incorrect optimal result for constraints using
+        # default bounds, but, correct if boundary condition as constraint.
+        # https://github.com/scipy/scipy/issues/8662
+        c = [-10, 10, 6, 3]
+        A = [
+            [8, -8, -4, 6],
+            [-8, 8, 4, -6],
+            [-4, 4, 8, -4],
+            [3, -3, -3, -10]
+        ]
+        b = [9, -9, -9, -4]
+        bounds = [(0, None), (0, None), (0, None), (0, None)]
+        desired_fun = 36.0000000000
+
+        res1 = linprog(c, A, b, bounds=bounds,
+                       method=self.method, options=self.options)
+
+        # Set boundary condition as a constraint
+        A.append([0, 0, -1, 0])
+        b.append(0)
+        bounds[2] = (None, None)
+
+        res2 = linprog(c, A, b, bounds=bounds, method=self.method,
+                       options=self.options)
+        rtol = 1e-5
+        _assert_success(res1, desired_fun=desired_fun, rtol=rtol)
+        _assert_success(res2, desired_fun=desired_fun, rtol=rtol)
+
     def test_bug_8663(self):
         A = [[0, -7]]
         b = [-6]
@@ -687,6 +788,40 @@ class TestLinprogSimplex(LinprogCommonTests):
         assert_(callback_complete[0])
         assert_allclose(last_xk[0], res.x)
 
+    def test_issue_6139(self):
+        # Linprog(method='simplex') fails to find a basic feasible solution
+        # if phase 1 pseudo-objective function is outside the provided tol.
+        # https://github.com/scipy/scipy/issues/6139
+
+        # Note: This is not strictly a bug as the default tolerance determines
+        # if a result is "close enough" to zero and should not be expected
+        # to work for all cases.
+
+        c = np.array([1, 1, 1])
+        A_eq = np.array([[1., 0., 0.], [-1000., 0., - 1000.]])
+        b_eq = np.array([5.00000000e+00, -1.00000000e+04])
+        A_ub = -np.array([[0., 1000000., 1010000.]])
+        b_ub = -np.array([10000000.])
+        bounds = (None, None)
+
+        low_tol = 1e-20
+        res = linprog(
+            c, A_ub, b_ub, A_eq, b_eq, method=self.method,
+            bounds=bounds, options={'tol': low_tol}
+            )
+        _assert_unable_to_find_basic_feasible_sol(res)
+
+        high_tol = 1e-9
+        res2 = linprog(
+            c, A_ub, b_ub, A_eq, b_eq, method=self.method,
+            bounds=bounds, options={'tol': high_tol}
+            )
+
+        # The result should be valid given a higher tolerance.
+        _assert_success(
+            res2, desired_fun=14.95, desired_x=np.array([5, 4.95, 5])
+        )
+
 
 class BaseTestLinprogIP(LinprogCommonTests):
     method = "interior-point"
@@ -697,7 +832,7 @@ class BaseTestLinprogIP(LinprogCommonTests):
         b_ub = [14, 0, 3]
         bounds = [(2, 2), (0, None)]
         res = linprog(c=c, A_ub=A_ub, b_ub=b_ub, bounds=bounds,
-                      method=self.method)
+                      method=self.method, options=self.options)
         _assert_infeasible(res)
 
     def test_bounds_equal_but_infeasible2(self):
@@ -706,43 +841,8 @@ class BaseTestLinprogIP(LinprogCommonTests):
         b_eq = [14, 0, 3]
         bounds = [(2, 2), (0, None)]
         res = linprog(c=c, A_eq=A_eq, b_eq=b_eq, bounds=bounds,
-                      method=self.method)
+                      method=self.method, options=self.options)
         _assert_infeasible(res)
-
-    def test_magic_square_bug_7044(self):
-        # test linprog with a problem with a rank-deficient A_eq matrix
-        A, b, c, N = magic_square(3)
-        with suppress_warnings() as sup:
-            sup.filter(OptimizeWarning, "A_eq does not appear...")
-            res = linprog(c, A_eq=A, b_eq=b, bounds=(0, 1),
-                          method=self.method, options=self.options)
-        _assert_success(res, desired_fun=1.730550597)
-
-    def test_bug_6690(self):
-        # https://github.com/scipy/scipy/issues/6690
-        A_eq = np.array([[0., 0., 0., 0.93, 0., 0.65, 0., 0., 0.83, 0.]])
-        b_eq = np.array([0.9626])
-        A_ub = np.array([[0., 0., 0., 1.18, 0., 0., 0., -0.2, 0.,
-                          -0.22],
-                         [0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
-                         [0., 0., 0., 0.43, 0., 0., 0., 0., 0., 0.],
-                         [0., -1.22, -0.25, 0., 0., 0., -2.06, 0., 0.,
-                          1.37],
-                         [0., 0., 0., 0., 0., 0., 0., -0.25, 0., 0.]])
-        b_ub = np.array([0.615, 0., 0.172, -0.869, -0.022])
-        bounds = np.array(
-            [[-0.84, -0.97, 0.34, 0.4, -0.33, -0.74, 0.47, 0.09, -1.45, -0.73],
-             [0.37, 0.02, 2.86, 0.86, 1.18, 0.5, 1.76, 0.17, 0.32, -0.15]]).T
-        c = np.array([-1.64, 0.7, 1.8, -1.06, -1.16,
-                      0.26, 2.13, 1.53, 0.66, 0.28])
-
-        with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, "scipy.linalg.solve\nIll...")
-            sup.filter(OptimizeWarning, "Solving system with option...")
-            sol = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
-                          bounds=bounds, method=self.method,
-                          options=self.options)
-        _assert_success(sol, desired_fun=-1.191, rtol=1e-6)
 
     def test_bug_5400(self):
         # https://github.com/scipy/scipy/issues/5400
@@ -1013,7 +1113,19 @@ class TestLinprogIPDense(BaseTestLinprogIP):
 class TestLinprogIPSparsePresolve(BaseTestLinprogIP):
     options = {"sparse": True, "_sparse_presolve": True}
 
+    def test_enzo_example_c_with_infeasibility(self):
+        pytest.skip('_sparse_presolve=True incompatible with presolve=False')
+
     @pytest.mark.xfail(reason='Fails with ATLAS, see gh-7877')
     def test_bug_6690(self):
         # Test defined in base class, but can't mark as xfail there
         super(TestLinprogIPSparsePresolve, self).test_bug_6690()
+
+
+def test_unknown_solver():
+    c = np.array([-3, -2])
+    A_ub = [[2, 1], [1, 1], [1, 0]]
+    b_ub = [10, 8, 4]
+
+    assert_raises(ValueError, linprog,
+                  c, A_ub=A_ub, b_ub=b_ub, method='ekki-ekki-ekki')

@@ -45,6 +45,28 @@ def reverse_cuthill_mckee(graph, symmetric_mode=False):
     ----------
     E. Cuthill and J. McKee, "Reducing the Bandwidth of Sparse Symmetric Matrices",
     ACM '69 Proceedings of the 1969 24th national conference, (1969).
+
+    Examples
+    --------
+    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse.csgraph import reverse_cuthill_mckee
+
+    >>> graph = [
+    ... [0, 1 , 2, 0],
+    ... [0, 0, 0, 1],
+    ... [2, 0, 0, 3],
+    ... [0, 0, 0, 0]
+    ... ]
+    >>> graph = csr_matrix(graph)
+    >>> print(graph)
+      (0, 1)	1
+      (0, 2)	2
+      (1, 3)	1
+      (2, 0)	2
+      (2, 3)	3
+
+    >>> reverse_cuthill_mckee(graph)
+    array([3, 2, 1, 0], dtype=int32)
     
     """
     if not (isspmatrix_csc(graph) or isspmatrix_csr(graph)):
@@ -92,6 +114,31 @@ def maximum_bipartite_matching(graph, perm_type='row'):
     I. S. Duff, K. Kaya, and B. Ucar, "Design, Implementation, and 
     Analysis of Maximum Transversal Algorithms", ACM Trans. Math. Softw.
     38, no. 2, (2011).
+
+    Examples
+    --------
+    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse.csgraph import maximum_bipartite_matching
+
+    >>> graph = [
+    ... [0, 1 , 2, 0],
+    ... [1, 0, 0, 1],
+    ... [2, 0, 0, 3],
+    ... [0, 1, 3, 0]
+    ... ]
+    >>> graph = csr_matrix(graph)
+    >>> print(graph)
+      (0, 1)	1
+      (0, 2)	2
+      (1, 0)	1
+      (1, 3)	1
+      (2, 0)	2
+      (2, 3)	3
+      (3, 1)	1
+      (3, 2)	3
+
+    >>> maximum_bipartite_matching(graph, perm_type='row')
+    array([1, 0, 3, 2], dtype=int32)
 
     """
     cdef np.npy_intp nrows = graph.shape[0]
@@ -287,6 +334,32 @@ def structural_rank(graph):
             Meth., Vol. 7, 594 (1986).
     
     .. [2] http://www.cise.ufl.edu/research/sparse/matrices/legend.html
+
+    Examples
+    --------
+    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse.csgraph import structural_rank
+
+    >>> graph = [
+    ... [0, 1 , 2, 0],
+    ... [1, 0, 0, 1],
+    ... [2, 0, 0, 3],
+    ... [0, 1, 3, 0]
+    ... ]
+    >>> graph = csr_matrix(graph)
+    >>> print(graph)
+      (0, 1)	1
+      (0, 2)	2
+      (1, 0)	1
+      (1, 3)	1
+      (2, 0)	2
+      (2, 3)	3
+      (3, 1)	1
+      (3, 2)	3
+
+    >>> structural_rank(graph)
+    4
+
     """
     if not isspmatrix:
         raise TypeError('Input must be a sparse matrix')

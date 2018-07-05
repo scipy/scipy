@@ -227,7 +227,7 @@ def lobpcg(A, X,
     ratio ``n``/``m`` should be large. It you call the LOBPCG code with ``m``=1
     and ``n``=10, it should work, though ``n`` is small. The method is intended
     for extremely large ``n``/``m``, see e.g., reference [28] in
-    http://arxiv.org/abs/0705.2626
+    https://arxiv.org/abs/0705.2626
 
     The convergence speed depends basically on two factors:
 
@@ -258,7 +258,7 @@ def lobpcg(A, X,
 
     .. [2] A. V. Knyazev, I. Lashuk, M. E. Argentati, and E. Ovchinnikov (2007),
            Block Locally Optimal Preconditioned Eigenvalue Xolvers (BLOPEX)
-           in hypre and PETSc.  http://arxiv.org/abs/0705.2626
+           in hypre and PETSc.  https://arxiv.org/abs/0705.2626
 
     .. [3] A. V. Knyazev's C and MATLAB implementations:
            https://bitbucket.org/joseroman/blopex

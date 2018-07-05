@@ -259,6 +259,10 @@ def _root_hybr(func, x0, args=(), jac=None,
     return sol
 
 
+LEASTSQ_SUCCESS = [1, 2, 3, 4]
+LEASTSQ_FAILURE = [5, 6, 7, 8]
+
+
 def leastsq(func, x0, args=(), Dfun=None, full_output=0,
             col_deriv=0, ftol=1.49012e-8, xtol=1.49012e-8,
             gtol=0.0, maxfev=0, epsfcn=None, factor=100, diag=None):
@@ -421,24 +425,14 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
                   ValueError],
               8: ["gtol=%f is too small, func(x) is orthogonal to the "
                   "columns of\n  the Jacobian to machine "
-                  "precision." % gtol, ValueError],
-              'unknown': ["Unknown error.", TypeError]}
+                  "precision." % gtol, ValueError]}
 
-    info = retval[-1]    # The FORTRAN return value
+    # The FORTRAN return value (possible return values are >= 0 and <= 8)
+    info = retval[-1]
 
-    if info not in [1, 2, 3, 4] and not full_output:
-        if info in [5, 6, 7, 8]:
-            warnings.warn(errors[info][0], RuntimeWarning)
-        else:
-            try:
-                raise errors[info][1](errors[info][0])
-            except KeyError:
-                raise errors['unknown'][1](errors['unknown'][0])
-
-    mesg = errors[info][0]
     if full_output:
         cov_x = None
-        if info in [1, 2, 3, 4]:
+        if info in LEASTSQ_SUCCESS:
             from numpy.dual import inv
             perm = take(eye(n), retval[1]['ipvt'] - 1, 0)
             r = triu(transpose(retval[1]['fjac'])[:n, :])
@@ -447,9 +441,13 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
                 cov_x = inv(dot(transpose(R), R))
             except (LinAlgError, ValueError):
                 pass
-        return (retval[0], cov_x) + retval[1:-1] + (mesg, info)
+        return (retval[0], cov_x) + retval[1:-1] + (errors[info][0], info)
     else:
-        return (retval[0], info)
+        if info in LEASTSQ_FAILURE:
+            warnings.warn(errors[info][0], RuntimeWarning)
+        elif info == 0:
+            raise errors[info][1](errors[info][0])
+        return retval[0], info
 
 
 def _wrap_func(func, xdata, ydata, transform):

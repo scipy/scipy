@@ -385,14 +385,14 @@ def cont2discrete(system, dt, method="zoh", alpha=None):
 
     References
     ----------
-    .. [1] http://en.wikipedia.org/wiki/Discretization#Discretization_of_linear_state_space_models
+    .. [1] https://en.wikipedia.org/wiki/Discretization#Discretization_of_linear_state_space_models
 
     .. [2] http://techteach.no/publications/discretetime_signals_systems/discrete.pdf
 
     .. [3] G. Zhang, X. Chen, and T. Chen, Digital redesign via the generalized
         bilinear transformation, Int. J. Control, vol. 82, no. 4, pp. 741-754,
         2009.
-        (http://www.mypolyuweb.hk/~magzhang/Research/ZCC09_IJC.pdf)
+        (https://www.mypolyuweb.hk/~magzhang/Research/ZCC09_IJC.pdf)
 
     """
     if len(system) == 1:
