@@ -210,6 +210,26 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     >>> result.x, result.fun
     (array([ 0.,  0.]), 4.4408920985006262e-16)
 
+    When minimizing an objective cost that is very time consuming to
+    evaluate it may be advantageous to run evaluations in parallel within
+    each generation. The ``batchfunc`` parameter allows for arbitrary
+    implementations of parallel computations of batches of function
+    evaluations. Let us consider the problem of minimizing the
+    Rosenbrock again but this time with parallel evaluation
+    using multiprocessing. Note, the objective function must be
+    sufficiently time consuming to evaluate to overcome the
+    overhead of multiprocessing.
+
+    >>> multiprocessing import Pool
+    >>> from scipy.optimize import rosen, differential_evolution
+    >>> p = Pool(5)
+    >>> def batch_rosen(arr):
+    ...     return p.map(rosen, arr)
+    >>> bounds = [(0,2), (0, 2), (0, 2), (0, 2), (0, 2)]
+    >>> result = differential_evolution(None, bounds, batchfunc=batch_rosen)
+    >>> result.x, result.fun
+    (array([1., 1., 1., 1., 1.]), 1.9216496320061384e-19)
+
     References
     ----------
     .. [1] Storn, R and Price, K, Differential Evolution - a Simple and
@@ -408,14 +428,15 @@ class DifferentialEvolutionSolver(object):
         self.cross_over_probability = recombination
 
         self.args = args
-        # if a batchfunc is provided and None is explicitly passed create a func from the batchfunc
-        # func is still needed for polishing
+        # if a batchfunc is provided and None is explicitly passed,
+        # create a func from the batchfunc as is still needed for polishing
         if func is None:
             self.func = lambda parameters, *passed_args: batchfunc([parameters], *passed_args)[0]
         else:
             self.func = func
 
-        # to unify implementation create a batchfunc that evaluates in sequence if none is provided
+        # if no batchfunc is provided
+        # then create one that evaluates in sequence to unify implementation
         if batchfunc is None:
             self.batchfunc = lambda parameter_array, *passed_args: [func(parameter, *passed_args) for parameter in parameter_array]
         else:
