@@ -222,8 +222,8 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
 
     >>> from multiprocessing import Pool
     >>> from scipy.optimize import rosen, differential_evolution
-    >>> p = Pool(5)
     >>> def batch_rosen(arr):
+    ...     p = Pool(5)
     ...     return p.map(rosen, arr)
     >>> bounds = [(0,2), (0, 2), (0, 2), (0, 2), (0, 2)]
     >>> result = differential_evolution(None, bounds, batchfunc=batch_rosen)
