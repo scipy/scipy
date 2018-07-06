@@ -1530,15 +1530,16 @@ class Rotation(object):
 
         Parameters
         ----------
-        a : (N, 3) array_like
-            Vectors in initial frame A. Each row of `a` denotes a vector.
-        b : (N, 3) array_like
-            Vectors in another frame B. Each row of `b` denotes a vector.
+        a : array_like, shape (N, 3)
+            Vector components observed in initial frame A. Each row of `a`
+            denotes a vector.
+        b : array_like, shape (N, 3)
+            Vector components observed in another frame B. Each row of `b`
+            denotes a vector.
         weights : None or (N,) array_like, optional
             Weights describing the relative importance of the vectors in
-            `a`. `weights` are normalized to unit sum before matching vectors.
-            If None (default), then all values in `weights` are assumed to be
-            equal.
+            `a`. If None (default), then all values in `weights` are assumed to
+            be equal.
         normalized : boolean, optional
             If True, assume input vectors `a` and `b` to have unit norm. If
             False, normalize `a` and `b` before estimating rotation. Default
@@ -1559,43 +1560,43 @@ class Rotation(object):
                 optimal matrix algorithm,” Journal of Astronautical Sciences,
                 Vol. 41, No.2, 1993, pp. 261-280.
         """
-        outvecs = np.asarray(a)
-        if outvecs.ndim != 2 or outvecs.shape[-1] != 3:
+        a = np.asarray(a)
+        if a.ndim != 2 or a.shape[-1] != 3:
             raise ValueError("Expected input `a` to have shape (N, 3), "
-                             "got {}".format(outvecs.shape))
-        vectors = np.asarray(b)
-        if vectors.ndim != 2 or vectors.shape[-1] != 3:
+                             "got {}".format(a.shape))
+        b = np.asarray(b)
+        if b.ndim != 2 or b.shape[-1] != 3:
             raise ValueError("Expected input `b` to have shape (N, 3), "
-                             "got {}.".format(vectors.shape))
+                             "got {}.".format(b.shape))
 
-        if outvecs.shape != vectors.shape:
+        if a.shape != b.shape:
             raise ValueError("Expected inputs `a` and `b` to have same shapes"
                              ", got {} and {} respectively.".format(
-                                outvecs.shape, vectors.shape))
+                                a.shape, b.shape))
 
-        if vectors.shape[0] == 1:
+        if b.shape[0] == 1:
             raise ValueError("Rotation cannot be estimated using a single "
                              "vector.")
 
         if weights is None:
-            weights = np.ones(vectors.shape[0])
+            weights = np.ones(b.shape[0])
         else:
             weights = np.asarray(weights)
             if weights.ndim != 1:
                 raise ValueError("Expected `weights` to be 1 dimensional, got "
                                  "shape {}.".format(weights.shape))
-            if weights.shape[0] != vectors.shape[0]:
+            if weights.shape[0] != b.shape[0]:
                 raise ValueError("Expected `weights` to have number of values "
                                  "equal to number of input vectors, got "
                                  "{} values and {} vectors.".format(
-                                    weights.shape[0], vectors.shape[0]))
+                                    weights.shape[0], b.shape[0]))
         weights = weights / np.sum(weights)
 
         if not normalized:
-            outvecs = outvecs / scipy.linalg.norm(outvecs, axis=1)[:, None]
-            vectors = vectors / scipy.linalg.norm(vectors, axis=1)[:, None]
+            a = a / scipy.linalg.norm(a, axis=1)[:, None]
+            b = b / scipy.linalg.norm(b, axis=1)[:, None]
 
-        B = np.einsum('ji,jk->ik', weights[:, None] * outvecs, vectors)
+        B = np.einsum('ji,jk->ik', weights[:, None] * a, b)
         u, s, vh = np.linalg.svd(B)
         C = np.dot(u, vh)
 
