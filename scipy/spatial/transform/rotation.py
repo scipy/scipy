@@ -1469,13 +1469,13 @@ class Rotation(object):
 
         Parameters
         ----------
-        num : None or int
-            Number of random rotations to generate. If None, then a single
-            rotation is generated. Default is None.
-        random_state : None, int or `numpy.random.RandomState` object
-            If RadomState object, used for generator state. If integer, used
-            to seed the random generator. If None, uses global `np.random`
-            random state. Default is None.
+        num : int or None, optional
+            Number of random rotations to generate. If None (default), then a
+            single rotation is generated.
+        random_state : int, RandomState instance or None, optional
+            Accepts an `int` as a seed for the random generator or a
+            RandomState object. If None (default), uses global `np.random`
+            random state.
 
         Returns
         -------
@@ -1489,22 +1489,18 @@ class Rotation(object):
 
         Sample a single rotation:
 
-        >>> R.random().as_quat()
-        array([-0.07838344, -0.25840318, -0.24463331, -0.93125634])
-        >>> R.random(None).as_quat()
-        array([-0.24475285,  0.58126954, -0.54600616,  0.55145176])
+        >>> R.random().as_euler('zxy', degrees=True)
+        array([ 94.9508862 ,  35.38168732, 148.80576945])
 
         Sample a stack of rotations:
 
-        >>> R.random(1).as_quat()
-        array([[ 0.43748455,  0.23734269, -0.80606684,  0.32020612]])
-        >>> R.random(5).as_quat()
-        array([[ 0.35598949,  0.62048719, -0.69368101, -0.08410586],
-               [-0.62061285, -0.75545239,  0.15646323, -0.14018072],
-               [-0.31340545,  0.55852902, -0.13422706,  0.75617819],
-               [ 0.25086769, -0.37389821, -0.53738335,  0.71308111],
-               [ 0.78349346, -0.03642139, -0.53405077,  0.31559667]])
-        """
+        >>> R.random(5).as_euler('zxy', degrees=True)
+        array([[  97.65185987,  -30.18238967,   48.56690829],
+               [  27.39232994,  -58.77440039, -137.96008356],
+               [ 139.4463782 ,   16.19756587,  -48.6823144 ],
+               [ -25.35339309,    8.00660013,  -39.14435328],
+               [  63.83774224,  -34.47187095,  -47.75580405]])
+       """
         random_state = check_random_state(random_state)
 
         if num is None:
