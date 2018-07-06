@@ -1536,7 +1536,7 @@ class Rotation(object):
         b : array_like, shape (N, 3)
             Vector components observed in another frame B. Each row of `b`
             denotes a vector.
-        weights : None or (N,) array_like, optional
+        weights : array_like shape (N,), optional
             Weights describing the relative importance of the vectors in
             `a`. If None (default), then all values in `weights` are assumed to
             be equal.
@@ -1549,9 +1549,11 @@ class Rotation(object):
         -------
         estimated_rotation : `Rotation` instance
             Best estimate of the rotation that transforms `b` to `a`.
-        covariance_matrix : `numpy.ndarray`, shape (3, 3)
-            Covariance matrix of the three component error vector of the Euler
-            angles describing the `estimated_rotation`.
+        sensitivity_matrix : `numpy.ndarray`, shape (3, 3)
+            Scaled covariance of the attitude errors expressed as the small
+            rotation vector of frame A. Multiply with harmonic mean [2]_ of
+            variance in each observation to get true covariance matrix. The
+            error model is detailed in [3]_.
 
         References
         ----------
@@ -1559,6 +1561,11 @@ class Rotation(object):
                 “Attitude determination using vector observations: a fast
                 optimal matrix algorithm,” Journal of Astronautical Sciences,
                 Vol. 41, No.2, 1993, pp. 261-280.
+        .. [2] `Harmonic Mean <https://en.wikipedia.org/wiki/Harmonic_mean>`_
+        .. [3] F. Landis Markley,
+                "Attitude determination using vector observations and the
+                Singular Value Decomposition, " Journal of Astronautical
+                Sciences, Vol. 38, No.3, 1988, pp. 245-258.
         """
         a = np.asarray(a)
         if a.ndim != 2 or a.shape[-1] != 3:
@@ -1608,10 +1615,7 @@ class Rotation(object):
                              "rotation uniquely.")
 
         kappa = s[0]*s[1] + s[1]*s[2] + s[2]*s[0]
-        # For normalized weights with sum(w_i) = 1, the constant factor
-        # lambda_0 * sigma_{tot}^2 equals unity. So we normalize the weights
-        # and return the matrix as is.
-        cov = (kappa * np.eye(3) + np.dot(B, B.T)) / zeta
+        cov = (kappa * np.eye(3) + np.dot(B, B.T)) / (zeta * a.shape[0])
         return cls.from_dcm(C), cov
 
 

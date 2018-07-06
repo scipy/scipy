@@ -818,7 +818,7 @@ def test_match_vectors_noise():
 
     est, cov = Rotation.match_vectors(noisy_result, vectors)
     # Use rotation compositions to find out closeness
-    error_vector = (est * rot.inv()).as_euler('xyz')
+    error_vector = (rot * est.inv()).as_rotvec()
 
     # The diagonal of this matrix is the variance of the angles.
     # atol must be scalar, hence three checks.
