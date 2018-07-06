@@ -1490,7 +1490,7 @@ class Slerp(object):
     Examples
     --------
     >>> from scipy.spatial.transform import Rotation as R
-    >>> from scipy.spatial.transform import Slerp as S
+    >>> from scipy.spatial.transform import Slerp
 
     Setup the fixed keyframe rotations and times:
 
@@ -1499,33 +1499,37 @@ class Slerp(object):
 
     Create the interpolator object:
 
-    >>> interpolator = S(key_times, key_rots)
+    >>> slerp = Slerp(key_times, key_rots)
 
     Interpolate the rotations at the given times:
 
     >>> times = [0, 0.5, 0.25, 1, 1.5, 2, 2.75, 3, 3.25, 3.60, 4]
-    >>> interp_rots = interpolator(times)
+    >>> interp_rots = slerp(times)
 
-    The interpolator returns the same rotations at the keyframe times:
+    The keyframe rotations expressed as Euler angles:
 
-    >>> key_rots.as_quat()
-    array([[0.33546361, 0.32248502, 0.6144695 , 0.63709875],
-           [0.32914502, 0.13316173, 0.69664424, 0.62339258],
-           [0.71951125, 0.09194507, 0.28850306, 0.62499252],
-           [0.2432484 , 0.7620946 , 0.5988079 , 0.03835539],
-           [0.47888381, 0.47046693, 0.71809073, 0.18351259]])
-    >>> interp_rots.as_quat()
-    array([[0.33546361, 0.32248502, 0.6144695 , 0.63709875],
-           [0.33409754, 0.22905279, 0.65909448, 0.63364669],
-           [0.33523071, 0.27613969, 0.63763817, 0.63622701],
-           [0.32914502, 0.13316173, 0.69664424, 0.62339258],
-           [0.54669937, 0.11735566, 0.51359003, 0.65082465],
-           [0.71951125, 0.09194507, 0.28850306, 0.62499252],
-           [0.42131035, 0.65782128, 0.58309954, 0.22307772],
-           [0.2432484 , 0.7620946 , 0.5988079 , 0.03835539],
-           [0.30797834, 0.70009544, 0.63967903, 0.07633122],
-           [0.39267851, 0.60035814, 0.68483292, 0.12797487],
-           [0.47888381, 0.47046693, 0.71809073, 0.18351259]])
+    >>> key_rots.as_euler('xyz', degrees=True)
+    array([[154.88487585, -10.37207323, 116.95075648],
+           [ 68.5886485 ,  34.23557992,  28.64650139],
+           [ 95.2872057 , -18.74934318, 125.606599  ],
+           [142.26836558,  17.4416704 , 121.67989988],
+           [141.86531587, -15.10753215, 102.01807079]])
+
+    The interpolated rotations expressed as Euler angles. These agree with the
+    keyframe rotations at both endpoints of the range of keyframe times.
+
+    >>> interp_rots.as_euler('xyz', degrees=True)
+    array([[154.88487585, -10.37207323, 116.95075648],
+           [124.8757228 ,  27.88355379,  85.77711413],
+           [142.99736719,  10.71021057, 104.39685307],
+           [ 68.5886485 ,  34.23557992,  28.64650139],
+           [ 94.83106037,  13.07930201,  82.57369554],
+           [ 95.2872057 , -18.74934318, 125.606599  ],
+           [130.49684909,   8.28607205, 119.80428161],
+           [142.26836558,  17.4416704 , 121.67989988],
+           [141.096957  ,   9.34664151, 116.61979789],
+           [140.67373323,  -2.08694364, 109.87862761],
+           [141.86531587, -15.10753215, 102.01807079]])
     """
     def __init__(self, times, rotations):
         if len(rotations) == 1:
@@ -1548,19 +1552,23 @@ class Slerp(object):
         if np.any(self.timedelta <= 0):
             raise ValueError("Times must be in strictly increasing order.")
 
-        # inv() and __getitem__ return new objects anyway
         self.rotations = rotations[:-1]
         self.rotvecs = (self.rotations.inv() * rotations[1:]).as_rotvec()
 
     def __call__(self, times):
-        """Compute interpolated rotations at given times.
+        """Interpolate rotations.
 
-        Returns a `Rotation` instance with the interpolated rotations.
+        Compute the interpolated rotations at the given `times`.
 
         Parameters
         ----------
         times : array_like, 1D
             Times to compute the interpolations at.
+
+        Returns
+        -------
+        interpolated_rotation : `Rotation` instance
+            Object containing the rotations computed at given `times`.
         """
         # Clearly differentiate from self.times property
         compute_times = np.asarray(times)
@@ -1573,8 +1581,6 @@ class Slerp(object):
         ind = np.searchsorted(self.times, compute_times) - 1
         # Include t_min. Without this step, index for t_min equals -1
         ind[compute_times == self.times[0]] = 0
-        # self.num_rots = number of rotations in self.rots, not number of
-        # rotations in original object
         if np.any(np.logical_or(ind < 0, ind > len(self.rotations) - 1)):
             raise ValueError("Interpolation times must be within the range "
                              "[{}, {}], both inclusive.".format(
