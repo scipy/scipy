@@ -210,26 +210,6 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     >>> result.x, result.fun
     (array([ 0.,  0.]), 4.4408920985006262e-16)
 
-    When minimizing an objective cost that is very time consuming to
-    evaluate it may be advantageous to run evaluations in parallel within
-    each generation. The ``batchfunc`` parameter allows for arbitrary
-    implementations of parallel computations of batches of function
-    evaluations. Let us consider the problem of minimizing the
-    Rosenbrock again but this time with parallel evaluation
-    using multiprocessing. Note, the objective function must be
-    sufficiently time consuming to evaluate to overcome the
-    overhead of multiprocessing.
-
-    >>> from multiprocessing import Pool
-    >>> from scipy.optimize import rosen, differential_evolution
-    >>> def batch_rosen(arr):
-    ...     p = Pool(5)
-    ...     return p.map(rosen, arr)
-    >>> bounds = [(0,2), (0, 2), (0, 2), (0, 2), (0, 2)]
-    >>> result = differential_evolution(None, bounds, batchfunc=batch_rosen)
-    >>> result.x, result.fun
-    (array([1., 1., 1., 1., 1.]), 1.9216496320061384e-19)
-
     References
     ----------
     .. [1] Storn, R and Price, K, Differential Evolution - a Simple and
