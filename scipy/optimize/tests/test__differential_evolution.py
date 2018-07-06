@@ -555,7 +555,7 @@ class TestDifferentialEvolutionSolver(object):
                                              self.bounds,
                                              batchfunc=self.batch_quadradic)
 
-        param_arr = np.random.random((2, 10))
+        param_arr = np.random.random((10, 2))
         func_results = [solver.func(x) for x in param_arr]
         assert_equal(func_results, self.batch_quadradic(param_arr))
 
