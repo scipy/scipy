@@ -749,7 +749,6 @@ class DifferentialEvolutionSolver(object):
             self.scale = (self.random_number_generator.rand()
                           * (self.dither[1] - self.dither[0]) + self.dither[0])
 
-
         parameters_to_evaluate = []
         candidate_trial_solutions = []
         for candidate in range(self.num_population_members):
