@@ -431,14 +431,17 @@ class DifferentialEvolutionSolver(object):
         # if a batchfunc is provided and None is explicitly passed,
         # create a func from the batchfunc as is still needed for polishing
         if func is None:
-            self.func = lambda parameters, *passed_args: batchfunc([parameters], *passed_args)[0]
+            self.func = lambda parameters, *passed_args: batchfunc([parameters],
+                                                                   *passed_args)[0]
         else:
             self.func = func
 
         # if no batchfunc is provided
         # then create one that evaluates in sequence to unify implementation
         if batchfunc is None:
-            self.batchfunc = lambda parameter_array, *passed_args: [func(parameter, *passed_args) for parameter in parameter_array]
+            self.batchfunc = lambda parameter_array, *passed_args: [
+                func(parameter, *passed_args) for parameter in parameter_array
+            ]
         else:
             self.batchfunc = batchfunc
 
