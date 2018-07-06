@@ -227,14 +227,15 @@ def root_scalar(f, args=(), method=None, bracket=None,
                     method = 'newton'
             else:
                 method = 'secant'
-        else:
-            raise ValueError('Unable to select a solver as neither bracket '
-                             'nor starting point provided.')
+    if not method:
+        raise ValueError('Unable to select a solver as neither bracket '
+                         'nor starting point provided.')
+
     meth = method.lower()
-    map2 = {'halley': 'newton', 'secant': 'newton'}
+    map2underlying = {'halley': 'newton', 'secant': 'newton'}
 
     try:
-        methodc = getattr(optzeros, map2.get(meth, meth))
+        methodc = getattr(optzeros, map2underlying.get(meth, meth))
     except AttributeError:
         raise ValueError('Unknown solver %s' % meth)
 
@@ -286,8 +287,8 @@ def root_scalar(f, args=(), method=None, bracket=None,
 
 def _root_scalar_brentq_doc():
     r"""
-    Top-level Arguments
-    -------------------
+    Options
+    -------
     args : tuple, optional
         Extra arguments passed to the objective function.
     xtol : float, optional
@@ -296,18 +297,17 @@ def _root_scalar_brentq_doc():
         Tolerance (relative) for termination.
     maxiter : int, optional
         Maximum number of iterations.
+    options: dict, optional
+        Specifies any method-specific options not covered above
 
-    Additional Options specified by `options` keyword
-    -------------------------------------------------
-    None
     """
     pass
 
 
 def _root_scalar_brenth_doc():
     r"""
-    Top-level Arguments
-    -----------------
+    Options
+    -------
     args : tuple, optional
         Extra arguments passed to the objective function.
     xtol : float, optional
@@ -316,18 +316,17 @@ def _root_scalar_brenth_doc():
         Tolerance (relative) for termination.
     maxiter : int, optional
         Maximum number of iterations.
+    options: dict, optional
+        Specifies any method-specific options not covered above
 
-    Additional Options specified by `options` keyword
-    -------------------------------------------------
-    None
     """
     pass
 
 
 def _root_scalar_secant_doc():
     r"""
-    Top-level Arguments
-    -------------------
+    Options
+    -------
     args : tuple, optional
         Extra arguments passed to the objective function.
     xtol : float, optional
@@ -340,18 +339,17 @@ def _root_scalar_secant_doc():
         Initial guess.
     x1 : float, required
         A second guess.
+    options: dict, optional
+        Specifies any method-specific options not covered above
 
-    Additional Options specified by `options` keyword
-    -------------------------------------------------
-    None
     """
     pass
 
 
 def _root_scalar_newton_doc():
     r"""
-    Top-level Arguments
-    -------------------
+    Options
+    -------
     args : tuple, optional
         Extra arguments passed to the objective function and its derivative.
     xtol : float, optional
@@ -367,14 +365,17 @@ def _root_scalar_newton_doc():
         value of derivative along with the objective function.
         `fprime` can also be a callable returning the derivative of `f`. In
         this case, it must accept the same arguments as `f`.
+    options: dict, optional
+        Specifies any method-specific options not covered above
+
     """
     pass
 
 
 def _root_scalar_halley_doc():
     r"""
-    Top-level Arguments
-    -------------------
+    Options
+    -------
     args : tuple, optional
         Extra arguments passed to the objective function and its derivatives.
     xtol : float, optional
@@ -395,18 +396,17 @@ def _root_scalar_halley_doc():
         value of 1st and 2nd derivatives along with the objective function.
         `fprime2` can also be a callable returning the 2nd derivative of `f`.
         In this case, it must accept the same arguments as `f`.
+    options: dict, optional
+        Specifies any method-specific options not covered above
 
-    Additional Options specified by `options` keyword
-    -------------------------------------------------
-    None
     """
     pass
 
 
 def _root_scalar_ridder_doc():
     r"""
-    Top-level Arguments
-    -------------------
+    Options
+    -------
     args : tuple, optional
         Extra arguments passed to the objective function.
     xtol : float, optional
@@ -415,18 +415,17 @@ def _root_scalar_ridder_doc():
         Tolerance (relative) for termination.
     maxiter : int, optional
         Maximum number of iterations.
+    options: dict, optional
+        Specifies any method-specific options not covered above
 
-    Additional Options specified by `options` keyword
-    -------------------------------------------------
-    None
     """
     pass
 
 
 def _root_scalar_bisect_doc():
     r"""
-    Top-level Arguments
-    -------------------
+    Options
+    -------
     args : tuple, optional
         Extra arguments passed to the objective function.
     xtol : float, optional
@@ -435,9 +434,8 @@ def _root_scalar_bisect_doc():
         Tolerance (relative) for termination.
     maxiter : int, optional
         Maximum number of iterations.
+    options: dict, optional
+        Specifies any method-specific options not covered above
 
-    Additional Options specified by `options` keyword
-    -------------------------------------------------
-    None
     """
     pass

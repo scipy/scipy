@@ -265,6 +265,14 @@ class TestBasic(object):
             r = root_scalar(f, method='halley', x0=3, fprime=f_1, fprime2=f_2, xtol=1e-6)
             assert_allclose(f(r.root), 0, atol=1e-6)
 
+    def test_root_scalar_fail(self):
+        with pytest.raises(ValueError):
+            root_scalar(f1, method='secant', x0=3, xtol=1e-6)  # no x1
+        with pytest.raises(ValueError):
+            root_scalar(f1, method='newton', x0=3, xtol=1e-6)  # no fprime
+        with pytest.raises(ValueError):
+            root_scalar(f1, method='halley', fprime=f1_1, x0=3, xtol=1e-6)  # no fprime2
+
     def test_array_newton(self):
         """test newton with array"""
 
