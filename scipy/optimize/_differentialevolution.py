@@ -551,6 +551,8 @@ class DifferentialEvolutionSolver(object):
         The standard deviation of the population energies divided by their
         mean.
         """
+        if np.any(np.isinf(self.population_energies)):
+            return np.inf
         return (np.std(self.population_energies) /
                 np.abs(np.mean(self.population_energies) + _MACHEPS))
 
@@ -607,9 +609,12 @@ class DifferentialEvolutionSolver(object):
                                   'by returning True')
                 break
 
-            intol = (np.std(self.population_energies) <=
-                     self.atol +
-                     self.tol * np.abs(np.mean(self.population_energies)))
+            if np.any(np.isinf(self.population_energies)):
+                intol = False
+            else:
+                intol = (np.std(self.population_energies) <=
+                         self.atol +
+                         self.tol * np.abs(np.mean(self.population_energies)))
             if warning_flag or intol:
                 break
 
