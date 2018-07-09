@@ -275,6 +275,16 @@ class TestCorrPearsonr(object):
         assert_approx_equal(r, np.sqrt(3)/2)
         assert_approx_equal(prob, 1.0/3)
 
+    def test_pearsonr_overflow(self):
+        # A test for
+        # issue  #8980 : scipy.stats.pearsonr overflows with high values of x and y
+        a = np.array([0, 0, 0, 1, 1, 1, 1])
+        b = np.arange(7)
+        pearson1 = stats.pearsonr(a, b)
+        # also compute pearsonr with a large coefficient. same pearsonr expected.
+        pearson2 = stats.pearsonr(a * 1e90, b * 1e90)
+        assert_allclose(pearson1[0] , pearson2[0])
+        assert_allclose(pearson1[1] , pearson2[1])
 
 class TestFisherExact(object):
     """Some tests to show that fisher_exact() works correctly.

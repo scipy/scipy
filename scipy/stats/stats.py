@@ -3028,9 +3028,14 @@ def pearsonr(x, y):
     mx = x.mean()
     my = y.mean()
     xm, ym = x - mx, y - my
-    r_num = np.add.reduce(xm * ym)
-    r_den = np.sqrt(_sum_of_squares(xm) * _sum_of_squares(ym))
-    r = r_num / r_den
+    # issue  #8980 : scipy.stats.pearsonr overflows with high values of x and y
+    # rewrite this computation to avoid overflow
+    sum_sqr_x , sum_sqr_y = _sum_of_squares(xm) , _sum_of_squares(ym)
+    if((sum_sqr_x == 0.0) or (sum_sqr_y == 0.0)):
+        return (0.0 , 0.0)
+    xm1 = xm / np.sqrt(sum_sqr_x)
+    ym1 = ym / np.sqrt(sum_sqr_y)
+    r = np.add.reduce(xm1 * ym1)
 
     # Presumably, if abs(r) > 1, then it is only some small artifact of
     # floating point arithmetic.
