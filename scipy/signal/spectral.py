@@ -718,7 +718,7 @@ def spectrogram(x, fs=1.0, window=('tukey',.25), nperseg=None, noverlap=None,
     Note, if using output that is not one sided, then use the following:
 
     >>> f, t, Sxx = signal.spectrogram(x, fs, return_onesided=False)
-    >>> plt.pcolormesh(t, numpy.fft.fftshift(f), numpy.fft.fftshift(Sxx))
+    >>> plt.pcolormesh(t, np.fft.fftshift(f), np.fft.fftshift(Sxx))
     >>> plt.ylabel('Frequency [Hz]')
     >>> plt.xlabel('Time [sec]')
     >>> plt.show()
