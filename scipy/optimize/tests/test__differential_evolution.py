@@ -36,8 +36,17 @@ class TestDifferentialEvolutionSolver(object):
     def teardown_method(self):
         np.seterr(**self.old_seterr)
 
-    def quadratic(self, x):
-        return x[0]**2
+    def quadratic(self, x, *args):
+        a = args[0] if args else 1.
+        b = args[1] if len(args) > 1 else 1.
+        c = args[2] if len(args) > 2 else 0.
+        return (a * x**2.) + (b * x) + c
+
+    def batch_quadradic(self, arr, *args):
+        return [self.quadratic(x, *args) for x in arr]
+
+    def batch_rosen(self, arr):
+        return [rosen(x) for x in arr]
 
     def test__strategy_resolves(self):
         # test that the correct mutation function is resolved by
@@ -238,14 +247,9 @@ class TestDifferentialEvolutionSolver(object):
     def test_args_tuple_is_passed(self):
         # test that the args tuple is passed to the cost function properly.
         bounds = [(-10, 10)]
-        args = (1., 2., 3.)
+        args = (3., 2., 1.)
 
-        def quadratic(x, *args):
-            if type(args) != tuple:
-                raise ValueError('args should be a tuple')
-            return args[0] + args[1] * x + args[2] * x**2.
-
-        result = differential_evolution(quadratic,
+        result = differential_evolution(self.quadratic,
                                         bounds,
                                         args=args,
                                         polish=True)
@@ -475,3 +479,110 @@ class TestDifferentialEvolutionSolver(object):
                       DifferentialEvolutionSolver,
                       *(rosen, self.bounds),
                       **{'init': population})
+
+    def test_differential_evolution_with_batchfunc(self):
+        # test that the Jmin of DifferentialEvolutionSolver
+        # is still the same as the function evaluation with a batchfunc
+        solver = DifferentialEvolutionSolver(None, [(-2, 2)], batchfunc=self.batch_quadradic)
+        result = solver.solve()
+        assert_almost_equal(result.fun, self.quadratic(result.x))
+
+    def test_args_tuple_is_passed_with_batchfunc(self):
+        # test that the args tuple is passed to a batched cost function properly.
+        bounds = [(-10, 10)]
+        args = (3., 2., 1.)
+
+        result = differential_evolution(None,
+                                        bounds,
+                                        args=args,
+                                        polish=True,
+                                        batchfunc=self.batch_quadradic)
+        assert_almost_equal(result.fun, 2 / 3.)
+
+    def test_maxfun_stops_solve_with_batchfunc(self):
+        # this is a particularly important test for batchfunc since
+        # maintaining maxfun was the biggest implementation challenge
+
+        # test that if the maximum number of function evaluations is exceeded
+        # during initialisation the still solver stops with a batchfunc
+        solver = DifferentialEvolutionSolver(None, self.bounds, maxfun=1,
+                                             polish=False, batchfunc=self.batch_rosen)
+        result = solver.solve()
+
+        assert_equal(result.nfev, 2)
+        assert_equal(result.success, False)
+        assert_equal(result.message,
+                     'Maximum number of function evaluations has '
+                     'been exceeded.')
+
+        # test that if the maximum number of function evaluations is exceeded
+        # during the actual minimisation, the solver still stops with a batchfunc.
+        # Have to turn polishing off, as this will still occur even if maxfun
+        # is reached. For popsize=5 and len(bounds)=2, then there are only 10
+        # function evaluations during initialisation.
+        solver = DifferentialEvolutionSolver(None,
+                                             self.bounds,
+                                             popsize=5,
+                                             polish=False,
+                                             maxfun=40,
+                                             batchfunc=self.batch_rosen)
+        result = solver.solve()
+
+        assert_equal(result.nfev, 41)
+        assert_equal(result.success, False)
+        assert_equal(result.message,
+                         'Maximum number of function evaluations has '
+                              'been exceeded.')
+
+    def test_calculate_population_energies_with_batchfunc(self):
+        # if popsize is 3 then the overall generation has size (6,)
+        solver = DifferentialEvolutionSolver(None,
+                                             self.bounds,
+                                             popsize=3,
+                                             batchfunc=self.batch_rosen)
+
+        solver._calculate_population_energies()
+
+        assert_equal(np.argmin(solver.population_energies), 0)
+
+        # initial calculation of the energies should require 6 nfev.
+        assert_equal(solver._nfev, 6)
+
+    def test_create_func_from_batchfunc(self):
+        # test generating an objective function given a
+        # batch objective function
+        solver = DifferentialEvolutionSolver(None,
+                                             self.bounds,
+                                             batchfunc=self.batch_quadradic)
+
+        param_arr = np.random.random((10, 2))
+        func_results = [solver.func(x) for x in param_arr]
+        assert_equal(func_results, self.batch_quadradic(param_arr))
+
+        # same test with additional args
+        solver = DifferentialEvolutionSolver(None,
+                                             self.bounds,
+                                             batchfunc=self.batch_quadradic,
+                                             args=(1))
+
+        param_arr = np.random.random((10, 2))
+        func_results = [solver.func(x, 1) for x in param_arr]
+        assert_equal(func_results, self.batch_quadradic(param_arr, 1))
+
+    def test_create_batchfunc_from_func(self):
+        # test generating a sequential batch objective function
+        # given an objective function
+        solver = DifferentialEvolutionSolver(self.quadratic,
+                                             self.bounds)
+
+        param_arr = np.random.random((2, 10))
+        func_results = [self.quadratic(x) for x in param_arr]
+        assert_equal(func_results, solver.batchfunc(param_arr))
+
+        # same test with additional args
+        solver = DifferentialEvolutionSolver(self.quadratic,
+                                             self.bounds)
+
+        param_arr = np.random.random((10, 2))
+        func_results = [self.quadratic(x, 1) for x in param_arr]
+        assert_equal(func_results, solver.batchfunc(param_arr, 1))

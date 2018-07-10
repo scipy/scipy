@@ -20,7 +20,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
                            maxiter=1000, popsize=15, tol=0.01,
                            mutation=(0.5, 1), recombination=0.7, seed=None,
                            callback=None, disp=False, polish=True,
-                           init='latinhypercube', atol=0):
+                           init='latinhypercube', atol=0, batchfunc=None):
     """Finds the global minimum of a multivariate function.
     Differential Evolution is stochastic in nature (does not use gradient
     methods) to find the minimium, and can search large areas of candidate
@@ -132,6 +132,13 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         ``np.std(pop) <= atol + tol * np.abs(np.mean(population_energies))``,
         where and `atol` and `tol` are the absolute and relative tolerance
         respectively.
+    batchfunc : callable, optional
+        A batched version of the objective function to be minimized. Must
+        be in the form ``f([x], *args)``, where ``[x]`` is an array of
+        arguments in the form of 1-D arrays and ``args`` is a  tuple of
+        any additional fixed parameters needed to completely specify the
+        function. The purpose of this parameter is to enable parallel
+        evaluation of the objective function within a generation.
 
     Returns
     -------
@@ -219,7 +226,8 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
                                          recombination=recombination,
                                          seed=seed, polish=polish,
                                          callback=callback,
-                                         disp=disp, init=init, atol=atol)
+                                         disp=disp, init=init, atol=atol,
+                                         batchfunc=batchfunc)
     return solver.solve()
 
 
@@ -335,6 +343,13 @@ class DifferentialEvolutionSolver(object):
         ``np.std(pop) <= atol + tol * np.abs(np.mean(population_energies))``,
         where and `atol` and `tol` are the absolute and relative tolerance
         respectively.
+    batchfunc : callable, optional
+        A batched version of the objective function to be minimized. Must
+        be in the form ``f([x], *args)``, where ``[x]`` is an array of
+        arguments in the form of 1-D arrays and ``args`` is a  tuple of
+        any additional fixed parameters needed to completely specify the
+        function. The purpose of this parameter is to enable parallel
+        evaluation of the objective function within a generation.
     """
 
     # Dispatch of mutation strategy method (binomial or exponential).
@@ -359,7 +374,7 @@ class DifferentialEvolutionSolver(object):
                  strategy='best1bin', maxiter=1000, popsize=15,
                  tol=0.01, mutation=(0.5, 1), recombination=0.7, seed=None,
                  maxfun=np.inf, callback=None, disp=False, polish=True,
-                 init='latinhypercube', atol=0):
+                 init='latinhypercube', atol=0, batchfunc=None):
 
         if strategy in self._binomial:
             self.mutation_func = getattr(self, self._binomial[strategy])
@@ -392,8 +407,23 @@ class DifferentialEvolutionSolver(object):
 
         self.cross_over_probability = recombination
 
-        self.func = func
         self.args = args
+        # if a batchfunc is provided and None is explicitly passed,
+        # create a func from the batchfunc as is still needed for polishing
+        if func is None:
+            self.func = lambda parameters, *passed_args: batchfunc([parameters],
+                                                                   *passed_args)[0]
+        else:
+            self.func = func
+
+        # if no batchfunc is provided
+        # then create one that evaluates in sequence to unify implementation
+        if batchfunc is None:
+            self.batchfunc = lambda parameter_array, *passed_args: [
+                func(parameter, *passed_args) for parameter in parameter_array
+            ]
+        else:
+            self.batchfunc = batchfunc
 
         # convert tuple of lower and upper bounds to limits
         # [(low_0, high_0), ..., (low_n, high_n]
@@ -651,14 +681,21 @@ class DifferentialEvolutionSolver(object):
         Puts the best member in first place. Useful if the population has just
         been initialised.
         """
-        for index, candidate in enumerate(self.population):
+
+        # determine which parameters will be evaluated
+        parameters_to_evaluate = []
+        for candidate in self.population:
             if self._nfev > self.maxfun:
                 break
 
             parameters = self._scale_parameters(candidate)
-            self.population_energies[index] = self.func(parameters,
-                                                        *self.args)
+            parameters_to_evaluate.append(parameters)
             self._nfev += 1
+
+        # do the evaluation in batch
+        evaluated_energies = self.batchfunc(parameters_to_evaluate, *self.args)
+        for index, energy in enumerate(evaluated_energies):
+            self.population_energies[index] = energy
 
         minval = np.argmin(self.population_energies)
 
@@ -692,9 +729,11 @@ class DifferentialEvolutionSolver(object):
             self.scale = (self.random_number_generator.rand()
                           * (self.dither[1] - self.dither[0]) + self.dither[0])
 
+        parameters_to_evaluate = []
+        candidate_trial_solutions = []
         for candidate in range(self.num_population_members):
             if self._nfev > self.maxfun:
-                raise StopIteration
+                break
 
             # create a trial solution
             trial = self._mutate(candidate)
@@ -706,9 +745,16 @@ class DifferentialEvolutionSolver(object):
             parameters = self._scale_parameters(trial)
 
             # determine the energy of the objective function
-            energy = self.func(parameters, *self.args)
+            parameters_to_evaluate.append(parameters)
+            # preserve the trial at the same index
+            # this is needed to decide whether or not to replace it
+            # after the energy is computed
+            candidate_trial_solutions.append(trial)
             self._nfev += 1
 
+        evaluated_energies = self.batchfunc(parameters_to_evaluate, *self.args)
+        energies_with_trials = zip(evaluated_energies, candidate_trial_solutions)
+        for candidate, (energy, trial) in enumerate(energies_with_trials):
             # if the energy of the trial candidate is lower than the
             # original population member then replace it
             if energy < self.population_energies[candidate]:
@@ -721,6 +767,8 @@ class DifferentialEvolutionSolver(object):
                     self.population_energies[0] = energy
                     self.population[0] = trial
 
+        if self._nfev > self.maxfun:
+            raise StopIteration
         return self.x, self.population_energies[0]
 
     def next(self):
@@ -826,7 +874,7 @@ class DifferentialEvolutionSolver(object):
         currenttobest1bin, currenttobest1exp
         """
         r0, r1 = samples[:2]
-        bprime = (self.population[candidate] + self.scale * 
+        bprime = (self.population[candidate] + self.scale *
                   (self.population[0] - self.population[candidate] +
                    self.population[r0] - self.population[r1]))
         return bprime
@@ -863,4 +911,3 @@ class DifferentialEvolutionSolver(object):
         self.random_number_generator.shuffle(idxs)
         idxs = idxs[:number_samples]
         return idxs
-
