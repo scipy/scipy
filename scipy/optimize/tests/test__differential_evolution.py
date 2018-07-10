@@ -475,6 +475,7 @@ class TestDifferentialEvolutionSolver(object):
                       DifferentialEvolutionSolver,
                       *(rosen, self.bounds),
                       **{'init': population})
+
     def test_infinite_objective_function(self):
         # Test that there are no problems if the objective function
         # returns inf on some runs
