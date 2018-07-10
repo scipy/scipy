@@ -323,6 +323,8 @@ class spmatrix(object):
             except AttributeError:
                 raise ValueError('Format {} is unknown.'.format(format))
             else:
+                if format in ['array', 'dense']:
+                    return convert_method()
                 return convert_method(copy=copy)
 
     ###################################################################
