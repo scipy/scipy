@@ -10,7 +10,7 @@ import numpy as np
 from numpy import finfo, power
 
 from scipy.optimize import zeros as cc
-from scipy.optimize import zeros, root_scalar
+from scipy.optimize import zeros, newton
 
 # Import testing parameters
 from scipy.optimize._tstutils import functions, fstrings
@@ -378,9 +378,9 @@ def test_gh_8881():
     # The root is at x=9.
     # The function has positive slope, x0 < root.
     # Newton succeeds in 8 iterations
-    r = root_scalar(f, method='newton', x0=x0, fprime=fp)
+    rt, r = newton(f, x0, fprime=fp, full_output=True)
     assert(r.converged)
     # Before the Issue 8881/PR 8882, halley would send x in the wrong direction.
     # Check that it now succeeds.
-    r = root_scalar(f, method='halley', x0=x0, fprime=fp, fprime2=fpp)
+    rt, r = newton(f, x0, fprime=fp, fprime2=fpp, full_output=True)
     assert(r.converged)
