@@ -684,7 +684,7 @@ def scalar_search_armijo(phi, phi0, derphi0, c1=1e-4, alpha0=1, amin=0):
 
     # Otherwise compute the minimizer of a quadratic interpolant:
 
-    alpha1 = -(derphi0) * alpha0**2 / 2.0 / (phi_a0 - phi0 - derphi0 * alpha0)
+    alpha1 = quadmin(0, phi0, derphi0, alpha0, phi_a0)
     phi_a1 = phi(alpha1)
 
     if (phi_a1 <= phi0 + c1*alpha1*derphi0):
@@ -696,15 +696,7 @@ def scalar_search_armijo(phi, phi0, derphi0, c1=1e-4, alpha0=1, amin=0):
     # condition.
 
     while alpha1 > amin:       # we are assuming alpha>0 is a descent direction
-        factor = alpha0**2 * alpha1**2 * (alpha1-alpha0)
-        a = alpha0**2 * (phi_a1 - phi0 - derphi0*alpha1) - \
-            alpha1**2 * (phi_a0 - phi0 - derphi0*alpha0)
-        a = a / factor
-        b = -alpha0**3 * (phi_a1 - phi0 - derphi0*alpha1) + \
-            alpha1**3 * (phi_a0 - phi0 - derphi0*alpha0)
-        b = b / factor
-
-        alpha2 = (-b + np.sqrt(abs(b**2 - 3 * a * derphi0))) / (3.0*a)
+        alpha2 = cubicmin(0, phi0, derphi0, alpha0, phi_a0, alpha1, phi_a1)
         phi_a2 = phi(alpha2)
 
         if (phi_a2 <= phi0 + c1*alpha2*derphi0):
