@@ -297,20 +297,19 @@ class spmatrix(object):
                         " or shape[0]")
 
     def asformat(self, format, copy=False):
-        """Return this matrix in the passed sparse format.
+        """Return this matrix in the passed format.
 
         Parameters
         ----------
         format : {str, None}
-            The desired sparse matrix format ("csr", "csc", "lil", "dok", ...)
+            The desired matrix format ("csr", "csc", "lil", "dok", "array", ...)
             or None for no conversion.
         copy : bool, optional
             If True, the result is guaranteed to not share data with self.
 
         Returns
         -------
-        A : This matrix in the passed sparse format.
-
+        A : This matrix in the passed format.
         """
         if format is None or format == self.format:
             if copy:
@@ -322,10 +321,12 @@ class spmatrix(object):
                 convert_method = getattr(self, 'to' + format)
             except AttributeError:
                 raise ValueError('Format {} is unknown.'.format(format))
-            else:
-                if format in ['array', 'dense']:
-                    return convert_method()
+
+            # Forward the copy kwarg, if it's accepted.
+            try:
                 return convert_method(copy=copy)
+            except TypeError:
+                return convert_method()
 
     ###################################################################
     #  NOTE: All arithmetic operations use csr_matrix by default.
