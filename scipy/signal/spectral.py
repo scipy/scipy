@@ -26,7 +26,7 @@ def lombscargle(x,
     lombscargle(x, y, freqs)
 
     Computes the Lomb-Scargle periodogram.
-    
+
     The Lomb-Scargle periodogram was developed by Lomb [1]_ and further
     extended by Scargle [2]_ to find, and test the significance of weak
     periodic signals with uneven temporal sampling.
@@ -35,7 +35,7 @@ def lombscargle(x,
     is unnormalized, it takes the value ``(A**2) * N/4`` for a harmonic
     signal with amplitude A for sufficiently large N.
 
-    When *normalize* is True the computed periodogram is is normalized by
+    When *normalize* is True the computed periodogram is normalized by
     the residuals of the data around a constant reference model (at zero).
 
     Input arrays should be one-dimensional and will be cast to float64.
@@ -78,7 +78,7 @@ def lombscargle(x,
     .. [1] N.R. Lomb "Least-squares frequency analysis of unequally spaced
            data", Astrophysics and Space Science, vol 39, pp. 447-462, 1976
 
-    .. [2] J.D. Scargle "Studies in astronomical time series analysis. II - 
+    .. [2] J.D. Scargle "Studies in astronomical time series analysis. II -
            Statistical aspects of spectral analysis of unevenly spaced data",
            The Astrophysical Journal, vol 263, pp. 835-853, 1982
 
@@ -86,9 +86,16 @@ def lombscargle(x,
            periodogram using graphics processing units.", The Astrophysical
            Journal Supplement Series, vol 191, pp. 247-253, 2010
 
+    See Also
+    --------
+    istft: Inverse Short Time Fourier Transform
+    check_COLA: Check whether the Constant OverLap Add (COLA) constraint is met
+    welch: Power spectral density by Welch's method
+    spectrogram: Spectrogram by Welch's method
+    csd: Cross spectral density by Welch's method
+
     Examples
     --------
-    >>> import scipy.signal
     >>> import matplotlib.pyplot as plt
 
     First define some input parameters for the signal:
@@ -99,21 +106,21 @@ def lombscargle(x,
     >>> nin = 1000
     >>> nout = 100000
     >>> frac_points = 0.9 # Fraction of points to select
-     
+
     Randomly select a fraction of an array with timesteps:
 
     >>> r = np.random.rand(nin)
     >>> x = np.linspace(0.01, 10*np.pi, nin)
     >>> x = x[r >= frac_points]
-     
+
     Plot a sine wave for the selected times:
 
     >>> y = A * np.sin(w*x+phi)
 
     Define the array of frequencies for which to compute the periodogram:
-    
+
     >>> f = np.linspace(0.01, 10, nout)
-     
+
     Calculate Lomb-Scargle periodogram:
 
     >>> import scipy.signal as signal
@@ -594,7 +601,7 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     return freqs, Pxy
 
 
-def spectrogram(x, fs=1.0, window=('tukey',.25), nperseg=None, noverlap=None,
+def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=None, noverlap=None,
                 nfft=None, detrend='constant', return_onesided=True,
                 scaling='density', axis=-1, mode='psd'):
     """
@@ -1523,7 +1530,7 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
 
     if boundary not in boundary_funcs:
         raise ValueError("Unknown boundary option '{0}', must be one of: {1}"
-                          .format(boundary, list(boundary_funcs.keys())))
+                         .format(boundary, list(boundary_funcs.keys())))
 
     # If x and y are the same object we can save ourselves some computation.
     same_data = y is x
@@ -1585,7 +1592,7 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
             raise ValueError('nperseg must be a positive integer')
 
     # parse window; if array like, then set nperseg = win.shape
-    win, nperseg = _triage_segments(window, nperseg,input_length=x.shape[-1])
+    win, nperseg = _triage_segments(window, nperseg, input_length=x.shape[-1])
 
     if nfft is None:
         nfft = nperseg
@@ -1641,7 +1648,7 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
     else:
         detrend_func = detrend
 
-    if np.result_type(win,np.complex64) != outdtype:
+    if np.result_type(win, np.complex64) != outdtype:
         win = win.astype(outdtype)
 
     if scaling == 'density':
@@ -1764,13 +1771,14 @@ def _fft_helper(x, win, detrend_func, nperseg, noverlap, nfft, sides):
 
     return result
 
-def _triage_segments(window, nperseg,input_length):
+
+def _triage_segments(window, nperseg, input_length):
     """
     Parses window and nperseg arguments for spectrogram and _spectral_helper.
     This is a helper function, not meant to be called externally.
 
     Parameters
-    ---------
+    ----------
     window : string, tuple, or ndarray
         If window is specified by a string or tuple and nperseg is not
         specified, nperseg is set to the default of 256 and returns a window of
@@ -1799,15 +1807,15 @@ def _triage_segments(window, nperseg,input_length):
         window.
     """
 
-    #parse window; if array like, then set nperseg = win.shape
+    # parse window; if array like, then set nperseg = win.shape
     if isinstance(window, string_types) or isinstance(window, tuple):
         # if nperseg not specified
         if nperseg is None:
             nperseg = 256  # then change to default
         if nperseg > input_length:
             warnings.warn('nperseg = {0:d} is greater than input length '
-                              ' = {1:d}, using nperseg = {1:d}'
-                              .format(nperseg, input_length))
+                          ' = {1:d}, using nperseg = {1:d}'
+                          .format(nperseg, input_length))
             nperseg = input_length
         win = get_window(window, nperseg)
     else:
@@ -1820,8 +1828,8 @@ def _triage_segments(window, nperseg,input_length):
             nperseg = win.shape[0]
         elif nperseg is not None:
             if nperseg != win.shape[0]:
-                raise ValueError("value specified for nperseg is different from"
-                                 " length of window")
+                raise ValueError("value specified for nperseg is different"
+                                 " from length of window")
     return win, nperseg
 
 
