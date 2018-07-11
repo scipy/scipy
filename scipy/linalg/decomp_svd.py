@@ -405,7 +405,7 @@ def subspace_angles(A, B):
     Returns
     -------
     angles : ndarray, shape (min(N, K),)
-        The subspace angles between the column spaces of `A` and `B`.
+        The subspace angles between the column spaces of `A` and `B` in ascending order.
 
     See Also
     --------
@@ -416,7 +416,7 @@ def subspace_angles(A, B):
     -----
     This computes the subspace angles according to the formula
     provided in [1]_. For equivalence with MATLAB and Octave behavior,
-    use ``angles[0]``.
+    use ``angles[-1]``.
 
     .. versionadded:: 1.0
 
@@ -485,6 +485,8 @@ def subspace_angles(A, B):
     mask = sigma ** 2 >= 0.5
     if mask.any():
         mu_arcsin = arcsin(clip(svdvals(B, overwrite_a=True), -1., 1.))
+        # Reverse ordering because largest cos value belongs to smallest sin value
+        mu_arcsin = mu_arcsin[::-1]
     else:
         mu_arcsin = 0.
 

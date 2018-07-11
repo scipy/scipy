@@ -2704,9 +2704,9 @@ def test_subspace_angles():
          [-2.258846861003648, -0.433592022305684, -1.349886940156521, 0.714742903826096],  # noqa: E501
          [0.862173320368121, 0.342624466538650, 3.034923466331855, -0.204966058299775]])  # noqa: E501
     expected = 1.481454682101605
-    assert_allclose(subspace_angles(x[:, :2], x[:, 2:])[0], expected,
+    assert_allclose(subspace_angles(x[:, :2], x[:, 2:])[1], expected,
                     rtol=1e-12)
-    assert_allclose(subspace_angles(x[:, 2:], x[:, :2])[0], expected,
+    assert_allclose(subspace_angles(x[:, 2:], x[:, :2])[1], expected,
                     rtol=1e-12)
     expected = 0.746361174247302
     assert_allclose(subspace_angles(x[:, :2], x[:, [2]]), expected, rtol=1e-12)
@@ -2715,12 +2715,26 @@ def test_subspace_angles():
     assert_allclose(subspace_angles(x[:, :3], x[:, [3]]), expected, rtol=1e-12)
     assert_allclose(subspace_angles(x[:, [3]], x[:, :3]), expected, rtol=1e-12)
     expected = 0.328950515907756
-    assert_allclose(subspace_angles(x[:, :2], x[:, 1:]), [expected, 0],
+    assert_allclose(subspace_angles(x[:, :2], x[:, 1:]), [0, expected],
                     atol=1e-12)
     # Degenerate conditions
     assert_raises(ValueError, subspace_angles, x[0], x)
     assert_raises(ValueError, subspace_angles, x, x[0])
     assert_raises(ValueError, subspace_angles, x[:-1], x)
+
+    # Test branch if mask.any is True:
+    A = np.array([[1, 0, 0],
+                  [0, 1, 0],
+                  [0, 0, 1],
+                  [0, 0, 0],
+                  [0, 0, 0]])
+    B = np.array([[1, 0, 0],
+                  [0, 1, 0],
+                  [0, 0, 0],
+                  [0, 0, 0],
+                  [0, 0, 1]])
+    expected = np.array([0, 0, np.pi/2])
+    assert_allclose(subspace_angles(A, B), expected, rtol=1e-12)
 
 
 class TestCDF2RDF(object):
