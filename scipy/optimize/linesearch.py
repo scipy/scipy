@@ -480,8 +480,11 @@ def _cubicmin(a, fa, fpa, b, fb, c, fc):
             db = b - a
             dc = c - a
             denom = (db * dc) ** 2 * (db - dc)
-            [A, B] = np.dot(np.array([[dc ** 2,-db ** 2], [-dc ** 3, db ** 3]], dtype=np.float64), 
-                            np.asarray([fb - fa - C * db,fc - fa - C * dc]))
+            [A, B] = np.dot(
+                             np.array([[dc ** 2, -db ** 2], 
+                                       [-dc ** 3, db ** 3]], dtype=np.float64), 
+                             np.array([fb - fa - C * db, fc - fa - C * dc], dtype=np.float64)
+                           )
             A /= denom
             B /= denom
             radical = B * B - 3 * A * C
@@ -491,7 +494,6 @@ def _cubicmin(a, fa, fpa, b, fb, c, fc):
     if not np.isfinite(xmin):
         return None
     return xmin
-
 
 def _quadmin(a, fa, fpa, b, fb):
     """
@@ -598,7 +600,7 @@ def _zoom(a_lo, a_hi, phi_lo, phi_hi, derphi_lo,
 # Armijo line and scalar searches
 #------------------------------------------------------------------------------
 
-def line_search_armijo(f, xk, pk, gfk, old_fval, args=(), c1=1e-4, alpha0=1):
+def line_search_armijo(f, xk, pk, gfk, old_fval=None, args=(), c1=1e-4, alpha0=1):
     """Minimize over alpha, the function ``f(xk+alpha pk)``.
 
     Parameters
@@ -650,7 +652,7 @@ def line_search_armijo(f, xk, pk, gfk, old_fval, args=(), c1=1e-4, alpha0=1):
     return alpha, fc[0], phi1
 
 
-def line_search_BFGS(f, xk, pk, gfk, old_fval, args=(), c1=1e-4, alpha0=1):
+def line_search_BFGS(f, xk, pk, gfk, old_fval=None, args=(), c1=1e-4, alpha0=1):
     """
     Compatibility wrapper for `line_search_armijo`
     """
@@ -679,7 +681,7 @@ def scalar_search_armijo(phi, phi0, derphi0, c1=1e-4, alpha0=1, amin=0):
 
     # Otherwise compute the minimizer of a quadratic interpolant:
 
-    alpha1 = quadmin(0, phi0, derphi0, alpha0, phi_a0)
+    alpha1 = _quadmin(0, phi0, derphi0, alpha0, phi_a0)
     phi_a1 = phi(alpha1)
 
     if (phi_a1 <= phi0 + c1*alpha1*derphi0):
@@ -691,7 +693,7 @@ def scalar_search_armijo(phi, phi0, derphi0, c1=1e-4, alpha0=1, amin=0):
     # condition.
 
     while alpha1 > amin:       # we are assuming alpha>0 is a descent direction
-        alpha2 = cubicmin(0, phi0, derphi0, alpha0, phi_a0, alpha1, phi_a1)
+        alpha2 = _cubicmin(0, phi0, derphi0, alpha0, phi_a0, alpha1, phi_a1)
         phi_a2 = phi(alpha2)
 
         if (phi_a2 <= phi0 + c1*alpha2*derphi0):
