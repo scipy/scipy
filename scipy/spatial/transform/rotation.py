@@ -1639,3 +1639,202 @@ class Slerp(object):
 
         return (self.rotations[ind] *
                 Rotation.from_rotvec(self.rotvecs[ind] * alpha[:, None]))
+
+
+def _Rfunc(rotvec, omega):
+    # R function formulation from eqn 34.
+    # Half angle formulae used to simplify calculations
+
+    # rotvec and omega should have same shape
+    dtheta = np.linalg.norm(rotvec, axis=1)
+    non_zero = (dtheta != 0)
+
+    e = np.zeros(rotvec.shape)
+    e[non_zero] = rotvec[non_zero] / dtheta[non_zero][:, None]
+
+    # All vectors are column vectors
+    small_theta = (dtheta <= 1e-6)
+    small_angle = dtheta[small_theta, None]
+    large_angle = dtheta[~small_theta, None]
+
+    # Define cot(t/2) only for large angles, define r0 and r1 for all angles
+    cot_theta_2 = 1 / np.tan(large_angle * 0.5)
+
+    r0 = np.empty((dtheta.shape[0], 1))
+    r0[~small_theta] = (large_angle / (4 * (np.sin(large_angle * 0.5) ** 2)) -
+                        0.5 * cot_theta_2)
+    r0[small_theta] = small_angle / 6 + (small_angle ** 3) / 180
+
+    r1 = np.empty((dtheta.shape[0], 1))
+    r1[~small_theta] = cot_theta_2 - 2 / large_angle
+    r1[small_theta] = -small_angle / 6 - (small_angle ** 3) / 360
+
+    # row wise dot product not performed by np.dot or np.tensordot
+    dot_prod = np.einsum('ij,ij->i', e, omega)[:, None]
+    cross_prod = np.cross(e, omega)[:, None]
+
+    norms = np.linalg.norm(omega, axis=1)[:, None]
+
+    return (r0 * (norms ** 2 - dot_prod ** 2) * e +
+            r1 * e * dot_prod * np.cross(cross_prod, e))
+
+
+def _Bfunc(rotvec, omega):
+    # B function formulation from eqn 24
+    # rotvec and omega should have same shape
+    dtheta = np.linalg.norm(rotvec, axis=1)
+    non_zero = (dtheta != 0)
+
+    e = np.zeros(rotvec.shape)
+    e[non_zero] = rotvec[non_zero] / dtheta[non_zero][:, None]
+
+    dot_prod = np.einsum('ij,ij->i', omega, e)[:, None]
+    cross_prod = np.cross(e, omega)
+
+    small_theta = (dtheta <= 1e-6)
+    small_angle = dtheta[small_theta, None]
+    large_angle = dtheta[~small_theta, None]
+
+    c1 = np.empty((dtheta.shape[0], 1))
+    c1[~small_theta] = np.sin(large_angle) / large_angle
+    c1[small_theta] = 1 - (small_angle ** 2) / 6 + (small_angle ** 4) / 120
+
+    c2 = np.empty_like(c1)
+    c2[~small_theta] = (1 - np.cos(large_angle)) / large_angle
+    c2[small_theta] = small_angle / 2 - (small_angle ** 3) / 24
+
+    return dot_prod * e + c1 * np.cross(cross_prod, e) - c2 * cross_prod
+
+
+def _Bfunc_inv(rotvec, omega):
+    # B inverse function formulation from eqn 26
+    # rotvec and omega should have same shape
+    dtheta = np.linalg.norm(rotvec, axis=1)
+    non_zero = (dtheta != 0)
+
+    e = np.zeros(rotvec.shape)
+    e[non_zero] = rotvec[non_zero] / dtheta[non_zero][:, None]
+
+    dot_prod = np.einsum('ij,ij->i', e, omega)[:, None]
+    cross_prod = np.cross(e, omega)
+
+    small_theta = (dtheta <= 1e-6)
+    small_angle = dtheta[small_theta, None]
+    large_angle = dtheta[~small_theta, None]
+
+    c1 = np.empty((dtheta.shape[0], 1))
+    c1[~small_theta] = large_angle / (2 * np.tan(large_angle))
+    c1[small_theta] = 1 - (small_angle ** 2) / 12 - (small_angle ** 4) / 720
+
+    c2 = np.empty_like(c1)
+    c2[~small_theta] = (1 - np.cos(large_angle)) / large_angle
+    c2[small_theta] = small_angle / 2 - (small_angle ** 3) / 24
+
+    return (dot_prod * e + c1 * np.cross(cross_prod, e) +
+            dtheta[:, None] * cross_prod / 2)
+
+
+def _intermediate_step(w_prev, rotvecs, dt_inv, w_i, w_f):
+    # Page 7 of reference. Convection on delta time has changes from here.
+    # only the first a value is required
+    a2 = -2 * dt_inv[0]
+    b = -4 * (dt_inv[:-1] + dt_inv[1:])
+    c = -2 * dt_inv[1:]
+
+    d = (6 * rotvecs[:-1] * (dt_inv[:-1] ** 2) +
+         6 * rotvecs[1:] * (dt_inv[1:] ** 2) -
+         _Rfunc(rotvecs[:-1], w_prev))
+    d[0] -= a2 * _Bfunc(rotvecs[0, None], w_i[None, :])
+    d[-1] -= c[-1] * _Bfunc_inv(rotvecs[-1, None], w_f[None, :])
+
+    w = np.empty_like(w_prev)
+    w[-1] = d[-1] / b[-1]
+    # TODO: maybe elementwise update of w_i using just computed value of w_i+1?
+    w[:-1] = (d[:-1] - c[:-1] * _Bfunc_inv(rotvecs[2:-1], w_prev[1:]))
+
+    diff = np.sum(np.dot(w, w_prev.T))
+
+    return w, diff
+
+
+class Spline(object):
+    """Interpolate rotations using cubic splines.
+
+    The interpolation between consecutive rotations is done using cubic splines
+    [1]_ to ensure that the angular velocity and accleration at the end of a
+    current interval are equal to the velocity and accleration at the start of
+    the next interval. This leads to smooth overall change in orientation.
+
+    Parameters
+    ----------
+    times : array_like, shape (N,)
+        Times of the known rotations. At least 2 times must be specified.
+    rotations : `Rotation` instance
+        Rotations to perform the interpolation between. Must contain N
+        rotations.
+    omega_i : array_like, shape (3,), optional
+        Initial angular velocity in radians at the time of the first
+        orientation. Default is `[0, 0, 0]`.
+    omega_f : array_like, shape (3,), optional
+        Final angular velocity in radians at the time of the last orientation.
+        Default is `[0, 0, 0]`.
+
+    References
+    ----------
+    .. [1] `Quaternion Spline
+            <http://qspline.sourceforge.net/qspline.pdf>`_
+    """
+    def __init__(self, times, rotations, omega_i=[0, 0, 0], omega_f=[0, 0, 0]):
+        if len(rotations) == 1:
+            raise ValueError("`rotations` must contain at least 2 rotations.")
+
+        times = np.asarray(times)
+        if times.ndim != 1:
+            raise ValueError("Expected times to be specified in a 1 "
+                             "dimensional array, got {} "
+                             "dimensions.".format(times.ndim))
+
+        if times.shape[0] != len(rotations):
+            raise ValueError("Expected number of rotations to be equal to "
+                             "number of timestamps given, got {} rotations "
+                             "and {} timestamps.".format(
+                                len(rotations), times.shape[0]))
+
+        omega_i = np.asarray(omega_i)
+        if omega_i.shape != (3,):
+            raise ValueError("Expected initial angular velocity `omega_i` to "
+                             "be specified as a 1 dimensional 3-vector, got "
+                             "shape {}.".format(omega_i.shape))
+
+        omega_f = np.asarray(omega_f)
+        if omega_f.shape != (3,):
+            raise ValueError("Expected final angular velocity `omega_f` to "
+                             "be specified as a 1 dimensional 3-vector, got "
+                             "shape {}.".format(omega_f.shape))
+        self.t = times
+        self.dt = np.diff(times)
+        if np.any(self.dt <= 0):
+            raise ValueError("Times must be in strictly increasing order.")
+
+        # Calculate intermediate angular velocities
+        dt_inv = 1 / self.dt
+        rotvecs = (rotations[:-1].inv() * rotations[1:]).as_rotvec()
+        w_int, diff = _intermediate_step(np.zeros(len(rotations) - 2, 3),
+                                         rotvecs, dt_inv)
+
+        while diff >= 1e-6:
+            w_int, diff = _intermediate_step(w_int, rotvecs, dt_inv,
+                                             omega_i, omega_f)
+
+        self.omega = np.empty((len(rotations), 3))
+        self.omega[0] = omega_i
+        self.omega[-1] = omega_f
+        self.omega[1:-1] = w_int
+
+        # Formula for theta(t) from eqn 16, coefficients from page 5 of ref
+        self.c2 = self.omega[:-1] * self.dt[:, None]
+        self.c3 = (_Bfunc_inv(rotvecs, self.omega[1:]) * self.dt[:, None] -
+                   3 * rotvecs)
+        self.c4 = rotvecs
+
+        self.rotations = rotations
