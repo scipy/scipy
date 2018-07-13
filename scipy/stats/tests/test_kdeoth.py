@@ -17,7 +17,7 @@ def test_kde_1d():
     xnstd = np.sqrt(np.average((xn-xnmean)**2, weights=wn))
 
     # get kde for original sample
-    gkde = stats.gaussian_kde(xn, wn)
+    gkde = stats.gaussian_kde(xn, weights=wn)
 
     # evaluate the density function for the kde for some points
     xs = np.linspace(-7,7,501)
@@ -52,7 +52,7 @@ def test_kde_2d():
     wn = np.random.rand(n_basesample)
 
     # get kde for original sample
-    gkde = stats.gaussian_kde(xn)
+    gkde = stats.gaussian_kde(xn, weights=wn)
 
     # evaluate the density function for the kde for some points
     x, y = np.mgrid[-7:7:500j, -7:7:500j]
@@ -226,9 +226,10 @@ def test_pdf_logpdf():
     np.random.seed(1)
     n_basesample = 50
     xn = np.random.randn(n_basesample)
+    wn = np.random.rand(n_basesample)
 
     # Default
-    gkde = stats.gaussian_kde(xn)
+    gkde = stats.gaussian_kde(xn, weights=wn)
 
     xs = np.linspace(-15, 12, 25)
     pdf = gkde.evaluate(xs)
