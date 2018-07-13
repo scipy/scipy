@@ -106,10 +106,19 @@ class gaussian_kde(object):
 
     Scott's Rule [1]_, implemented as `scotts_factor`, is::
 
+        n**(-1./(d+4)),
+
+    with ``n`` the number of data points and ``d`` the number of dimensions. 
+    In the case of unequally weighted points, `scotts_factor` becomes::
+    
         neff**(-1./(d+4)),
 
-    with ``neff`` the effective number of data points and ``d`` the number of
-    dimensions.  Silverman's Rule [2]_, implemented as `silverman_factor`, is::
+    with ``neff`` the effective number of datapoints. 
+    Silverman's Rule [2]_, implemented as `silverman_factor`, is::
+
+        (n * (d + 2) / 4.)**(-1. / (d + 4)).
+
+    or in the case of unequally weighted points::
 
         (neff * (d + 2) / 4.)**(-1. / (d + 4)).
 
@@ -118,7 +127,7 @@ class gaussian_kde(object):
     found in [1]_.
 
     With a set of weighted samples, the effective number of datapoints ``neff``
-    is defined by:
+    is defined by::
 
         neff = sum(weights)^2 / sum(weights^2)
 
