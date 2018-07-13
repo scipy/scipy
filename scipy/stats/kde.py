@@ -26,6 +26,7 @@ import warnings
 from scipy._lib.six import callable, string_types
 from scipy import linalg, special
 from scipy.special import logsumexp
+from scipy._lib._numpy_compat import cov
 
 from numpy import atleast_2d, reshape, zeros, newaxis, dot, exp, pi, sqrt, \
      ravel, power, atleast_1d, squeeze, sum, transpose, ones
@@ -543,7 +544,7 @@ class gaussian_kde(object):
         self.factor = self.covariance_factor()
         # Cache covariance and inverse covariance of the data
         if not hasattr(self, '_data_inv_cov'):
-            self._data_covariance = atleast_2d(np.cov(self.dataset, rowvar=1,
+            self._data_covariance = atleast_2d(cov(self.dataset, rowvar=1,
                                                bias=False,
                                                aweights=self.weights))
             self._data_inv_cov = linalg.inv(self._data_covariance)
