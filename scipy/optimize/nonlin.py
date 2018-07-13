@@ -269,6 +269,11 @@ def nonlin_solve(F, x0, jacobian='krylov', iter=None, verbose=False,
                                      x_tol=x_tol, x_rtol=x_rtol,
                                      iter=iter, norm=tol_norm)
 
+    if tol_norm:
+        norm = tol_norm
+    else:
+        norm = maxnorm
+
     x0 = _as_inexact(x0)
     func = lambda z: _as_inexact(F(_array_like(z, x0))).flatten()
     x = x0.flatten()
