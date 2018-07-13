@@ -7,9 +7,10 @@ from numpy.testing import (assert_warns, assert_,
                            assert_allclose,
                            assert_equal)
 import numpy as np
+from numpy import finfo, power
 
 from scipy.optimize import zeros as cc
-from scipy.optimize import zeros
+from scipy.optimize import zeros, newton
 
 # Import testing parameters
 from scipy.optimize._tstutils import functions, fstrings
@@ -357,3 +358,29 @@ def test_gh8904_zeroder_at_root_fails():
     r = zeros.newton(f_zeroder_root, x0=[0.5]*10, fprime=fder)
     assert_allclose(r, 0, atol=zeros._xtol, rtol=zeros._rtol)
     # doesn't apply to halley
+
+
+def test_gh_8881():
+    r"""Test that Halley's method realizes that the 2nd order adjustment
+    is too big and drops off to the 1st order adjustment."""
+    n = 9
+
+    def f(x):
+        return power(x, 1.0/n) - power(n, 1.0/n)
+
+    def fp(x):
+        return power(x, (1.0-n)/n)/n
+
+    def fpp(x):
+        return power(x, (1.0-2*n)/n) * (1.0/n) * (1.0-n)/n
+
+    x0 = 0.1
+    # The root is at x=9.
+    # The function has positive slope, x0 < root.
+    # Newton succeeds in 8 iterations
+    rt, r = newton(f, x0, fprime=fp, full_output=True)
+    assert(r.converged)
+    # Before the Issue 8881/PR 8882, halley would send x in the wrong direction.
+    # Check that it now succeeds.
+    rt, r = newton(f, x0, fprime=fp, fprime2=fpp, full_output=True)
+    assert(r.converged)

@@ -264,14 +264,19 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
                 warnings.warn(msg, RuntimeWarning)
                 return _results_select(full_output, (p0, funcalls, itr + 1, _ECONVERR))
             newton_step = fval / fder
-            if fprime2 is None:
-                # Newton step
-                p = p0 - newton_step
-            else:
+            if fprime2:
                 fder2 = fprime2(p0, *args)
                 funcalls += 1
-                # Halley's method
-                p = p0 - newton_step / (1.0 - 0.5 * newton_step * fder2 / fder)
+                # Halley's method:
+                #   newton_step /= (1.0 - 0.5 * newton_step * fder2 / fder)
+                # Only do it if denominator stays close enough to 1
+                # Rationale:  If 1-adj < 0, then Halley sends x in the
+                # opposite direction to Newton.  Doesn't happen if x is close
+                # enough to root.
+                adj = newton_step * fder2 / fder / 2
+                if abs(adj) < 1:
+                    newton_step /= 1.0 - adj
+            p = p0 - newton_step
             if abs(p - p0) < tol:
                 return _results_select(full_output, (p, funcalls, itr + 1, _ECONVERGED))
             p0 = p
