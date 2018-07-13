@@ -304,6 +304,7 @@ Spectral Analysis
    stft           -- Compute the Short Time Fourier Transform
    istft          -- Compute the Inverse Short Time Fourier Transform
    check_COLA     -- Check the COLA constraint for iSTFT reconstruction
+   check_NOLA     -- Check the NOLA constraint for iSTFT reconstruction
 
 """
 from __future__ import division, print_function, absolute_import

@@ -14,7 +14,7 @@ import warnings
 from scipy._lib.six import string_types
 
 __all__ = ['periodogram', 'welch', 'lombscargle', 'csd', 'coherence',
-           'spectrogram', 'stft', 'istft', 'check_COLA']
+           'spectrogram', 'stft', 'istft', 'check_COLA', 'check_NOLA']
 
 
 def lombscargle(x,
@@ -790,15 +790,16 @@ def check_COLA(window, nperseg, noverlap, tol=1e-10):
 
     See Also
     --------
+    check_NOLA: Check whether the Nonzero Overlap Add (NOLA) constraint is met
     stft: Short Time Fourier Transform
     istft: Inverse Short Time Fourier Transform
 
     Notes
     -----
     In order to enable inversion of an STFT via the inverse STFT in
-    `istft`, the signal windowing must obey the constraint of "Constant
-    OverLap Add" (COLA). This ensures that every point in the input data
-    is equally weighted, thereby avoiding aliasing and allowing full
+    `istft`, it is sufficient that the signal windowing obeys the constraint of
+    "Constant OverLap Add" (COLA). This ensures that every point in the input
+    data is equally weighted, thereby avoiding aliasing and allowing full
     reconstruction.
 
     Some examples of windows that satisfy COLA:
@@ -885,6 +886,133 @@ def check_COLA(window, nperseg, noverlap, tol=1e-10):
     return np.max(np.abs(deviation)) < tol
 
 
+def check_NOLA(window, nperseg, noverlap, tol=1e-10):
+    r"""
+    Check whether the Nonzero Overlap Add (NOLA) constraint is met
+
+    Parameters
+    ----------
+    window : str or tuple or array_like
+        Desired window to use. If `window` is a string or tuple, it is
+        passed to `get_window` to generate the window values, which are
+        DFT-even by default. See `get_window` for a list of windows and
+        required parameters. If `window` is array_like it will be used
+        directly as the window and its length must be nperseg.
+    nperseg : int
+        Length of each segment.
+    noverlap : int
+        Number of points to overlap between segments.
+    tol : float, optional
+        The allowed variance of a bin's weighted sum from the median bin
+        sum.
+
+    Returns
+    -------
+    verdict : bool
+        `True` if chosen combination satisfies the NOLA constraint within
+        `tol`, `False` otherwise
+
+    See Also
+    --------
+    check_COLA: Check whether the Constant OverLap Add (COLA) constraint is met
+    stft: Short Time Fourier Transform
+    istft: Inverse Short Time Fourier Transform
+
+    Notes
+    -----
+    In order to enable inversion of an STFT via the inverse STFT in
+    `istft`, the signal windowing must obey the constraint of "nonzero
+    overlap add" (NOLA):
+
+    .. math:: \sum_{t}w^{2}[n-tH] \ne 0
+
+    for all :math:`n`, where :math:`w` is the window function, :math:`t` is the
+    frame index, and :math:`H` is the hop size (:math:`H` = `nperseg` -
+    `noverlap`).
+
+    This ensures that the normalization factors in the denominator of the
+    overlap-add inversion equation are not zero. Only very pathological windows
+    will fail the NOLA constraint.
+
+    .. versionadded:: 1.2.0
+
+    References
+    ----------
+    .. [1] Julius O. Smith III, "Spectral Audio Signal Processing", W3K
+           Publishing, 2011,ISBN 978-0-9745607-3-1.
+    .. [2] G. Heinzel, A. Ruediger and R. Schilling, "Spectrum and
+           spectral density estimation by the Discrete Fourier transform
+           (DFT), including a comprehensive list of window functions and
+           some new at-top windows", 2002,
+           http://hdl.handle.net/11858/00-001M-0000-0013-557A-5
+
+    Examples
+    --------
+    >>> from scipy import signal
+
+    Confirm NOLA condition for rectangular window of 75% (3/4) overlap:
+
+    >>> signal.check_NOLA(signal.boxcar(100), 100, 75)
+    True
+
+    NOLA is also true for 25% (1/4) overlap:
+
+    >>> signal.check_NOLA(signal.boxcar(100), 100, 25)
+    True
+
+    "Symmetrical" Hann window (for filter design) is also NOLA:
+
+    >>> signal.check_NOLA(signal.hann(120, sym=True), 120, 60)
+    True
+
+    As long as there is overlap, it takes quite a pathological window to fail
+    NOLA:
+
+    >>> w = np.ones(64, dtype="float")
+    >>> w[::2] = 0
+    >>> signal.check_NOLA(w, 64, 32)
+    False
+
+    If there is not enough overlap, a window with zeros at the ends will not
+    work:
+
+    >>> signal.check_NOLA(signal.hann(64), 64, 0)
+    False
+    >>> signal.check_NOLA(signal.hann(64), 64, 1)
+    False
+    >>> signal.check_NOLA(signal.hann(64), 64, 2)
+    True
+    """
+
+    nperseg = int(nperseg)
+
+    if nperseg < 1:
+        raise ValueError('nperseg must be a positive integer')
+
+    if noverlap >= nperseg:
+        raise ValueError('noverlap must be less than nperseg')
+    if noverlap < 0:
+        raise ValueError('noverlap must be a nonnegative integer')
+    noverlap = int(noverlap)
+
+    if isinstance(window, string_types) or type(window) is tuple:
+        win = get_window(window, nperseg)
+    else:
+        win = np.asarray(window)
+        if len(win.shape) != 1:
+            raise ValueError('window must be 1-D')
+        if win.shape[0] != nperseg:
+            raise ValueError('window must have length of nperseg')
+
+    step = nperseg - noverlap
+    binsums = sum(win[ii*step:(ii+1)*step]**2 for ii in range(nperseg//step))
+
+    if nperseg % step != 0:
+        binsums[:nperseg % step] += win[-(nperseg % step):]**2
+
+    return np.min(binsums) > tol
+
+
 def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
          detrend=False, return_onesided=True, boundary='zeros', padded=True,
          axis=-1):
@@ -962,6 +1090,7 @@ def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
     istft: Inverse Short Time Fourier Transform
     check_COLA: Check whether the Constant OverLap Add (COLA) constraint
                 is met
+    check_NOLA: Check whether the Nonzero Overlap Add (NOLA) constraint is met
     welch: Power spectral density by Welch's method.
     spectrogram: Spectrogram by Welch's method.
     csd: Cross spectral density by Welch's method.
@@ -970,17 +1099,26 @@ def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
     Notes
     -----
     In order to enable inversion of an STFT via the inverse STFT in
-    `istft`, the signal windowing must obey the constraint of "Constant
-    OverLap Add" (COLA), and the input signal must have complete
+    `istft`, the signal windowing must obey the constraint of "Nonzero
+    OverLap Add" (NOLA), and the input signal must have complete
     windowing coverage (i.e. ``(x.shape[axis] - nperseg) %
     (nperseg-noverlap) == 0``). The `padded` argument may be used to
     accomplish this.
 
-    The COLA constraint ensures that every point in the input data is
-    equally weighted, thereby avoiding aliasing and allowing full
-    reconstruction. Whether a choice of `window`, `nperseg`, and
-    `noverlap` satisfy this constraint can be tested with
-    `check_COLA`.
+    Given a time-domain signal :math:`x[n]`, a window :math:`w[n]`, and a hop
+    size :math:`H` = `nperseg - noverlap`, the windowed frame at time index
+    :math:`t` is given by
+
+    .. math:: x_{t}[n]=x[n]w[n-tH]
+
+    The overlap-add (OLA) reconstruction equation is given by
+
+    .. math:: x[n]=\frac{\sum_{t}x_{t}[n]w[n-tH]}{\sum_{t}w^{2}[n-tH]}
+
+    The NOLA constraint ensures that every normalization term that appears
+    in the denomimator of the OLA reconstruction equation is nonzero. Whether a
+    choice of `window`, `nperseg`, and `noverlap` satisfy this constraint can
+    be tested with `check_NOLA`.
 
     .. versionadded:: 0.19.0
 
@@ -988,7 +1126,7 @@ def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
     ----------
     .. [1] Oppenheim, Alan V., Ronald W. Schafer, John R. Buck
            "Discrete-Time Signal Processing", Prentice Hall, 1999.
-    .. [2] Daniel W. Griffin, Jae S. Limdt "Signal Estimation from
+    .. [2] Daniel W. Griffin, Jae S. Lim "Signal Estimation from
            Modified Short Fourier Transform", IEEE 1984,
            10.1109/TASSP.1984.1164317
 
@@ -1103,20 +1241,27 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     stft: Short Time Fourier Transform
     check_COLA: Check whether the Constant OverLap Add (COLA) constraint
                 is met
+    check_NOLA: Check whether the Nonzero Overlap Add (NOLA) constraint is met
 
     Notes
     -----
     In order to enable inversion of an STFT via the inverse STFT with
-    `istft`, the signal windowing must obey the constraint of "Constant
-    OverLap Add" (COLA). This ensures that every point in the input data
-    is equally weighted, thereby avoiding aliasing and allowing full
-    reconstruction. Whether a choice of `window`, `nperseg`, and
-    `noverlap` satisfy this constraint can be tested with
-    `check_COLA`, by using ``nperseg = Zxx.shape[freq_axis]``.
+    `istft`, the signal windowing must obey the constraint of "nonzero
+    overlap add" (NOLA):
+
+    .. math:: \sum_{t}w^{2}[n-tH] \ne 0
+
+    This ensures that the normalization factors that appear in the denominator
+    of the overlap-add reconstruction equation
+
+    .. math:: x[n]=\frac{\sum_{t}x_{t}[n]w[n-tH]}{\sum_{t}w^{2}[n-tH]}
+
+    are not zero. The NOLA constraint can be checked with the `check_NOLA`
+    function.
 
     An STFT which has been modified (via masking or otherwise) is not
     guaranteed to correspond to a exactly realizible signal. This
-    function implements the iSTFT via the least-squares esimation
+    function implements the iSTFT via the least-squares estimation
     algorithm detailed in [2]_, which produces a signal that minimizes
     the mean squared error between the STFT of the returned signal and
     the modified STFT.
@@ -1237,10 +1382,6 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
         raise ValueError('noverlap must be less than nperseg.')
     nstep = nperseg - noverlap
 
-    if not check_COLA(window, nperseg, noverlap):
-        raise ValueError('Window, STFT shape and noverlap do not satisfy the '
-                         'COLA constraint.')
-
     # Rearrange axes if necessary
     if time_axis != Zxx.ndim-1 or freq_axis != Zxx.ndim-2:
         # Turn negative indices to positive for the call to transpose
@@ -1287,12 +1428,15 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
         x[..., ii*nstep:ii*nstep+nperseg] += xsubs[..., ii] * win
         norm[..., ii*nstep:ii*nstep+nperseg] += win**2
 
-    # Divide out normalization where non-tiny
-    x /= np.where(norm > 1e-10, norm, 1.0)
-
     # Remove extension points
     if boundary:
         x = x[..., nperseg//2:-(nperseg//2)]
+        norm = norm[..., nperseg//2:-(nperseg//2)]
+
+    # Divide out normalization where non-tiny
+    if np.sum(norm > 1e-10) != len(norm):
+        warnings.warn("NOLA condition failed, STFT may not be invertible")
+    x /= np.where(norm > 1e-10, norm, 1.0)
 
     if input_onesided:
         x = x.real

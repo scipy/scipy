@@ -10,7 +10,7 @@ from pytest import raises as assert_raises
 from scipy._lib._numpy_compat import suppress_warnings
 from scipy import signal, fftpack
 from scipy.signal import (periodogram, welch, lombscargle, csd, coherence,
-                          spectrogram, stft, istft, check_COLA)
+                          spectrogram, stft, istft, check_COLA, check_NOLA)
 from scipy.signal.spectral import _spectral_helper
 
 
@@ -1080,6 +1080,12 @@ class TestSTFT(object):
         assert_raises(ValueError, check_COLA, np.ones((2,2)), 10, 0)
         assert_raises(ValueError, check_COLA, np.ones(20), 10, 0)
 
+        assert_raises(ValueError, check_NOLA, 'hann', -10, 0)
+        assert_raises(ValueError, check_NOLA, 'hann', 10, 20)
+        assert_raises(ValueError, check_NOLA, np.ones((2,2)), 10, 0)
+        assert_raises(ValueError, check_NOLA, np.ones(20), 10, 0)
+        assert_raises(ValueError, check_NOLA, 'hann', 64, -32)
+
         x = np.empty(1024)
         z = stft(x)
 
@@ -1116,9 +1122,40 @@ class TestSTFT(object):
                     ('hann', 256, 255),
                     ]
 
-        for set in settings:
-            msg = '{0}, {1}, {2}'.format(*set)
-            assert_equal(True, check_COLA(*set), err_msg=msg)
+        for setting in settings:
+            msg = '{0}, {1}, {2}'.format(*setting)
+            assert_equal(True, check_COLA(*setting), err_msg=msg)
+
+    def test_check_NOLA(self):
+        settings_pass = [
+                    ('boxcar', 10, 0),
+                    ('boxcar', 10, 9),
+                    ('boxcar', 10, 7),
+                    ('bartlett', 51, 26),
+                    ('bartlett', 51, 10),
+                    ('hann', 256, 128),
+                    ('hann', 256, 192),
+                    ('hann', 256, 37),
+                    ('blackman', 300, 200),
+                    ('blackman', 300, 123),
+                    (('tukey', 0.5), 256, 64),
+                    (('tukey', 0.5), 256, 38),
+                    ('hann', 256, 255),
+                    ('hann', 256, 39),
+                    ]
+        for setting in settings_pass:
+            msg = '{0}, {1}, {2}'.format(*setting)
+            assert_equal(True, check_NOLA(*setting), err_msg=msg)
+
+        w_fail = np.ones(16)
+        w_fail[::2] = 0
+        settings_fail = [
+                    (w_fail, len(w_fail), len(w_fail) // 2),
+                    ('hann', 64, 0),
+        ]
+        for setting in settings_fail:
+            msg = '{0}, {1}, {2}'.format(*setting)
+            assert_equal(False, check_NOLA(*setting), err_msg=msg)
 
     def test_average_all_segments(self):
         np.random.seed(1234)
@@ -1188,6 +1225,63 @@ class TestSTFT(object):
             msg = '{0}, {1}'.format(window, noverlap)
             assert_allclose(t, tr, err_msg=msg)
             assert_allclose(x, xr, err_msg=msg)
+
+    def test_roundtrip_not_nola(self):
+        np.random.seed(1234)
+
+        w_fail = np.ones(16)
+        w_fail[::2] = 0
+        settings = [
+                    (w_fail, 256, len(w_fail), len(w_fail) // 2),
+                    ('hann', 256, 64, 0),
+        ]
+
+        for window, N, nperseg, noverlap in settings:
+            msg = '{0}, {1}, {2}, {3}'.format(window, N, nperseg, noverlap)
+            assert not check_NOLA(window, nperseg, noverlap), msg
+
+            t = np.arange(N)
+            x = 10 * np.random.randn(t.size)
+
+            _, _, zz = stft(x, nperseg=nperseg, noverlap=noverlap,
+                            window=window, detrend=None, padded=True,
+                            boundary='zeros')
+            with pytest.warns(UserWarning, match='NOLA'):
+                tr, xr = istft(zz, nperseg=nperseg, noverlap=noverlap,
+                               window=window, boundary=True)
+
+            assert np.allclose(t, tr[:len(t)]), msg
+            assert not np.allclose(x, xr[:len(x)]), msg
+
+    def test_roundtrip_nola_not_cola(self):
+        np.random.seed(1234)
+
+        settings = [
+                    ('boxcar', 100, 10, 3),           # NOLA True, COLA False
+                    ('bartlett', 101, 51, 37),        # NOLA True, COLA False
+                    ('hann', 1024, 256, 127),         # NOLA True, COLA False
+                    (('tukey', 0.5), 1152, 256, 14),  # NOLA True, COLA False
+                    ('hann', 1024, 256, 5),           # NOLA True, COLA False
+                    ]
+
+        for window, N, nperseg, noverlap in settings:
+            msg = '{0}, {1}, {2}'.format(window, nperseg, noverlap)
+            assert check_NOLA(window, nperseg, noverlap), msg
+            assert not check_COLA(window, nperseg, noverlap), msg
+
+            t = np.arange(N)
+            x = 10 * np.random.randn(t.size)
+
+            _, _, zz = stft(x, nperseg=nperseg, noverlap=noverlap,
+                            window=window, detrend=None, padded=True,
+                            boundary='zeros')
+
+            tr, xr = istft(zz, nperseg=nperseg, noverlap=noverlap,
+                           window=window, boundary=True)
+
+            msg = '{0}, {1}'.format(window, noverlap)
+            assert_allclose(t, tr[:len(t)], err_msg=msg)
+            assert_allclose(x, xr[:len(x)], err_msg=msg)
 
     @pytest.mark.xfail(reason="Needs complex rfft from fftpack, see gh-2487 + gh-6058")
     def test_roundtrip_float32(self):
