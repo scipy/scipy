@@ -684,18 +684,24 @@ def scalar_search_armijo(phi, phi0, derphi0, c1=1e-4, alpha0=1, amin=0):
     # Otherwise compute the minimizer of a quadratic interpolant:
 
     alpha1 = _quadmin(0, phi0, derphi0, alpha0, phi_a0)
+   
+    if alpha1 is None:
+         alpha1 = alpha0 / 2.0
+    
     phi_a1 = phi(alpha1)
-
+   
     if (phi_a1 <= phi0 + c1*alpha1*derphi0):
-        return alpha1, phi_a1
-
+         return alpha1, phi_a1
+    
     # Otherwise loop with cubic interpolation until we find an alpha which
-    # satisfies the first Wolfe condition (since we are backtracking, we will
-    # assume that the value of alpha is not too small and satisfies the second
-    # condition.
+    # satisfies the Armijo condition
 
     while alpha1 > amin:       # we are assuming alpha>0 is a descent direction
         alpha2 = _cubicmin(0, phi0, derphi0, alpha0, phi_a0, alpha1, phi_a1)
+        
+        if alpha2 is None:
+            alpha2 = alpha1 / 2.0
+        
         phi_a2 = phi(alpha2)
 
         if (phi_a2 <= phi0 + c1*alpha2*derphi0):
