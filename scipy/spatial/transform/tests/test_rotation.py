@@ -5,7 +5,7 @@ import pytest
 import numpy as np
 from numpy.testing import assert_equal, assert_array_almost_equal
 from numpy.testing import assert_allclose
-from scipy.spatial.transform import Rotation, Slerp
+from scipy.spatial.transform import Rotation, Slerp, Spline
 from scipy.stats import special_ortho_group
 from itertools import permutations
 
@@ -884,6 +884,83 @@ def test_slerp_call_time_out_of_range():
     r = Rotation.from_quat(np.random.uniform(size=(5, 4)))
     t = np.arange(5) + 1
     s = Slerp(t, r)
+
+    with pytest.raises(ValueError, match="times must be within the range"):
+        s([0, 1, 2])
+    with pytest.raises(ValueError, match="times must be within the range"):
+        s([1, 2, 6])
+
+
+def test_spline_trivial():
+    np.random.seed(0)
+
+    key_rots = Rotation.from_quat(np.random.uniform(size=(10, 4)))
+    key_times = np.arange(10)
+
+    interpolator = Spline(key_times, key_rots)
+
+    assert_allclose(interpolator(key_times).as_rotvec(), key_rots.as_rotvec())
+
+
+def test_spline_single_rot():
+    with pytest.raises(ValueError, match="at least 2 rotations"):
+        r = Rotation.from_quat([1, 2, 3, 4])
+        Spline([1], r)
+
+
+def test_spline_time_dim_mismatch():
+    with pytest.raises(ValueError,
+                       match="times to be specified in a 1 dimensional array"):
+        np.random.seed(0)
+        r = Rotation.from_quat(np.random.uniform(size=(2, 4)))
+        t = np.array([[1],
+                      [2]])
+        Spline(t, r)
+
+
+def test_spline_num_rotations_mismatch():
+    with pytest.raises(ValueError, match="number of rotations to be equal to "
+                                         "number of timestamps"):
+        np.random.seed(0)
+        r = Rotation.from_quat(np.random.uniform(size=(5, 4)))
+        t = np.arange(7)
+        Spline(t, r)
+
+
+def test_spline_equal_times():
+    with pytest.raises(ValueError, match="strictly increasing order"):
+        np.random.seed(0)
+        r = Rotation.from_quat(np.random.uniform(size=(5, 4)))
+        t = [0, 1, 2, 2, 4]
+        Spline(t, r)
+
+
+def test_spline_decreasing_times():
+    with pytest.raises(ValueError, match="strictly increasing order"):
+        np.random.seed(0)
+        r = Rotation.from_quat(np.random.uniform(size=(5, 4)))
+        t = [0, 1, 3, 2, 4]
+        Spline(t, r)
+
+
+def test_spline_call_time_dim_mismatch():
+    np.random.seed(0)
+    r = Rotation.from_quat(np.random.uniform(size=(5, 4)))
+    t = np.arange(5)
+    s = Spline(t, r)
+
+    with pytest.raises(ValueError,
+                       match="times to be specified in a 1 dimensional array"):
+        interp_times = np.array([[3.5],
+                                 [4.2]])
+        s(interp_times)
+
+
+def test_spline_call_time_out_of_range():
+    np.random.seed(0)
+    r = Rotation.from_quat(np.random.uniform(size=(5, 4)))
+    t = np.arange(5) + 1
+    s = Spline(t, r)
 
     with pytest.raises(ValueError, match="times must be within the range"):
         s([0, 1, 2])
