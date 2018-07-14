@@ -2,14 +2,17 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy import array, nan
+from numpy import array
 from numpy.testing import (TestCase, assert_raises, run_module_suite,
                            assert_allclose, assert_array_equal,
                            assert_equal, assert_almost_equal)
 
 import scipy.signal.bsplines as bsp
 
+
 class TestBSplines(TestCase):
+    """Test behaviors of bsplines. The values tested against were returned as of
+    scipy 1.1.0 and are included for regression testing purposes"""
 
     def test_factorial(self):
         # can't all be zero state
@@ -96,22 +99,22 @@ class TestBSplines(TestCase):
              [9.86326886, 1.05134482, -7.75950607, -3.64429655,
               7.81848957, -9.02270373, 3.73399754, -4.71962549,
               -7.71144306, 3.78263161, 6.46034818, -4.43444731]])
-        assert_allclose(bsp.spline_filter(data_array_real, 0), result_array_real)
+        assert_allclose(bsp.spline_filter(data_array_real, 0),
+                        result_array_real)
 
     def test_bspline(self):
         np.random.seed(12458)
-        assert_allclose(bsp.bspline(np.random.rand(1, 1), 2), array([[0.73694695]]))
+        assert_allclose(bsp.bspline(np.random.rand(1, 1), 2),
+                        array([[0.73694695]]))
         data_array_complex = np.random.rand(4, 4) + np.random.rand(4, 4)*1j
-        # scaling the magnitude by 10 makes the results close enough to zero,
-        # that the assertion fails, so just make the elements have a mix of
-        # positive and negative imaginary components...
-        data_array_complex = 0.1*(1+1j-data_array_complex)
+        data_array_complex = 0.1*data_array_complex
         result_array_complex = array(
-            [[0.41034756, 0.40914378, 0.4102342, 0.40903417],
-             [0.41070756, 0.40949093, 0.4101206, 0.41028154],
-             [0.40915718, 0.41039493, 0.41002027, 0.41059155],
-             [0.40929673, 0.40983209, 0.40928983, 0.4085849]]) 
-        assert_allclose(bsp.bspline(data_array_complex, 10), result_array_complex)
+            [[0.40882362, 0.41021151, 0.40886708, 0.40905103],
+             [0.40829477, 0.4102123,  0.40966097, 0.40939871],
+             [0.41036803, 0.40901724, 0.40965331, 0.40879513],
+             [0.41032862, 0.40925287, 0.41037754, 0.41027477]])
+        assert_allclose(bsp.bspline(data_array_complex, 10),
+                        result_array_complex)
 
     def test_gauss_spline(self):
         np.random.seed(12459)
@@ -147,17 +150,19 @@ class TestBSplines(TestCase):
              [0.14701256, 0.13277773, 0.29428615, 0.09814697],
              [0.52873842, 0.06484157, 0.09517566, 0.46420389],
              [0.09286829, 0.09371954, 0.1422526, 0.16007024]])
-        assert_allclose(bsp.quadratic(data_array_complex), result_array_complex)
+        assert_allclose(bsp.quadratic(data_array_complex),
+                        result_array_complex)
 
     def test_cspline1d(self):
         np.random.seed(12462)
         assert_array_equal(bsp.cspline1d(array([0])), [0.])
-        c1d = array([1.21037185, 1.86293902, 2.98834059, 4.11660378, 4.78893826])
+        c1d = array([1.21037185, 1.86293902, 2.98834059, 4.11660378,
+                     4.78893826])
         # test lamda != 0
         assert_allclose(bsp.cspline1d(array([1., 2, 3, 4, 5]), 1), c1d)
-        c1d0 = array([0.78683946, 2.05333735, 2.99981113, 3.94741812, 5.21051638])
+        c1d0 = array([0.78683946, 2.05333735, 2.99981113, 3.94741812,
+                      5.21051638])
         assert_allclose(bsp.cspline1d(array([1., 2, 3, 4, 5])), c1d0)
-        assert_equal(bsp.cspline1d(array([1., 2, 3, 4, 5]), -0.1), array([nan, nan, nan, nan, nan]))
 
     def test_qspline1d(self):
         np.random.seed(12463)
@@ -165,18 +170,21 @@ class TestBSplines(TestCase):
         # test lamda != 0
         assert_raises(ValueError, bsp.qspline1d, array([1., 2, 3, 4, 5]), 1.)
         assert_raises(ValueError, bsp.qspline1d, array([1., 2, 3, 4, 5]), -1.)
-        q1d0 = array([0.85350007, 2.02441743, 2.99999534, 3.97561055, 5.14634135])
+        q1d0 = array([0.85350007, 2.02441743, 2.99999534, 3.97561055,
+                      5.14634135])
         assert_allclose(bsp.qspline1d(array([1., 2, 3, 4, 5])), q1d0)
 
     def test_cspline1d_eval(self):
         np.random.seed(12464)
         assert_allclose(bsp.cspline1d_eval(array([0., 0]), [0.]), array([0.]))
-        assert_array_equal(bsp.cspline1d_eval(array([1., 0, 1]), []), array([]))
+        assert_array_equal(bsp.cspline1d_eval(array([1., 0, 1]), []),
+                           array([]))
         x = [-3, -2, -1, 0, 1, 2, 3, 4, 5, 6]
         dx = x[1]-x[0]
         newx = [-6., -5.5, -5., -4.5, -4., -3.5, -3., -2.5, -2., -1.5, -1.,
                 -0.5, 0., 0.5, 1., 1.5, 2., 2.5, 3., 3.5, 4., 4.5, 5., 5.5, 6.,
-                6.5, 7., 7.5, 8., 8.5, 9., 9.5, 10., 10.5, 11., 11.5, 12., 12.5]
+                6.5, 7., 7.5, 8., 8.5, 9., 9.5, 10., 10.5, 11., 11.5, 12.,
+                12.5]
         y = array([4.216, 6.864, 3.514, 6.203, 6.759, 7.433, 7.874, 5.879,
                    1.396, 4.094])
         cj = bsp.cspline1d(y)
@@ -192,12 +200,14 @@ class TestBSplines(TestCase):
     def test_qspline1d_eval(self):
         np.random.seed(12465)
         assert_allclose(bsp.qspline1d_eval(array([0., 0]), [0.]), array([0.]))
-        assert_array_equal(bsp.qspline1d_eval(array([1., 0, 1]), []), array([]))
+        assert_array_equal(bsp.qspline1d_eval(array([1., 0, 1]), []),
+                           array([]))
         x = [-3, -2, -1, 0, 1, 2, 3, 4, 5, 6]
         dx = x[1]-x[0]
         newx = [-6., -5.5, -5., -4.5, -4., -3.5, -3., -2.5, -2., -1.5, -1.,
                 -0.5, 0., 0.5, 1., 1.5, 2., 2.5, 3., 3.5, 4., 4.5, 5., 5.5, 6.,
-                6.5, 7., 7.5, 8., 8.5, 9., 9.5, 10., 10.5, 11., 11.5, 12., 12.5]
+                6.5, 7., 7.5, 8., 8.5, 9., 9.5, 10., 10.5, 11., 11.5, 12.,
+                12.5]
         y = array([4.216, 6.864, 3.514, 6.203, 6.759, 7.433, 7.874, 5.879,
                    1.396, 4.094])
         cj = bsp.qspline1d(y)
@@ -209,6 +219,7 @@ class TestBSplines(TestCase):
                       7.32718426, 7.874, 7.81016848, 7.433, 7.03980488, 6.759,
                       6.71900226, 6.203, 4.49418159])
         assert_allclose(bsp.qspline1d_eval(cj, newx, dx=dx, x0=x[0]), newy)
+
 
 if __name__ == "__main__":
     run_module_suite()
