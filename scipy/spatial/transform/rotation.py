@@ -1671,7 +1671,7 @@ def _Rfunc(rotvec, omega):
 
     # row wise dot product not performed by np.dot or np.tensordot
     dot_prod = np.einsum('ij,ij->i', e, omega)[:, None]
-    cross_prod = np.cross(e, omega)[:, None]
+    cross_prod = np.cross(e, omega)
 
     norms = np.linalg.norm(omega, axis=1)[:, None]
 
@@ -1744,13 +1744,13 @@ def _intermediate_step(w_prev, rotvecs, dt_inv, w_i, w_f):
     d = (6 * rotvecs[:-1] * (dt_inv[:-1] ** 2) +
          6 * rotvecs[1:] * (dt_inv[1:] ** 2) -
          _Rfunc(rotvecs[:-1], w_prev))
-    d[0] -= a2 * _Bfunc(rotvecs[0, None], w_i[None, :])
-    d[-1] -= c[-1] * _Bfunc_inv(rotvecs[-1, None], w_f[None, :])
+    d[0] -= a2 * (_Bfunc(rotvecs[0, None], w_i[None, :]))[0]
+    d[-1] -= c[-1] * (_Bfunc_inv(rotvecs[-1, None], w_f[None, :]))[0]
 
     w = np.empty_like(w_prev)
     w[-1] = d[-1] / b[-1]
     # TODO: maybe elementwise update of w_i using just computed value of w_i+1?
-    w[:-1] = (d[:-1] - c[:-1] * _Bfunc_inv(rotvecs[2:-1], w_prev[1:]))
+    w[:-1] = (d[:-1] - c[:-1, None] * _Bfunc_inv(rotvecs[2:-1], w_prev[1:]))
 
     diff = np.sum(np.dot(w, w_prev.T))
 
@@ -1778,6 +1778,10 @@ class Spline(object):
     omega_f : array_like, shape (3,), optional
         Final angular velocity in radians at the time of the last orientation.
         Default is `[0, 0, 0]`.
+
+    Methods
+    -------
+    __call__
 
     References
     ----------
@@ -1811,16 +1815,17 @@ class Spline(object):
             raise ValueError("Expected final angular velocity `omega_f` to "
                              "be specified as a 1 dimensional 3-vector, got "
                              "shape {}.".format(omega_f.shape))
-        self.t = times
-        self.dt = np.diff(times)
-        if np.any(self.dt <= 0):
+        self.times = times
+        self.timedelta = np.diff(times)
+        if np.any(self.timedelta <= 0):
             raise ValueError("Times must be in strictly increasing order.")
 
         # Calculate intermediate angular velocities
-        dt_inv = 1 / self.dt
+        dt_inv = 1 / self.timedelta
         rotvecs = (rotations[:-1].inv() * rotations[1:]).as_rotvec()
-        w_int, diff = _intermediate_step(np.zeros(len(rotations) - 2, 3),
-                                         rotvecs, dt_inv)
+        w_int, diff = _intermediate_step(
+            np.zeros((len(rotations) - 2, 3)), rotvecs, dt_inv,
+            omega_i, omega_f)
 
         while diff >= 1e-6:
             w_int, diff = _intermediate_step(w_int, rotvecs, dt_inv,
@@ -1832,9 +1837,51 @@ class Spline(object):
         self.omega[1:-1] = w_int
 
         # Formula for theta(t) from eqn 16, coefficients from page 5 of ref
-        self.c2 = self.omega[:-1] * self.dt[:, None]
-        self.c3 = (_Bfunc_inv(rotvecs, self.omega[1:]) * self.dt[:, None] -
-                   3 * rotvecs)
+        self.c2 = self.omega[:-1] * self.timedelta[:, None]
+        self.c3 = (
+            _Bfunc_inv(rotvecs, self.omega[1:]) * self.timedelta[:, None] -
+            3 * rotvecs)
         self.c4 = rotvecs
 
         self.rotations = rotations
+
+    def __call__(self, times):
+        """Interpolate rotations.
+
+        Compute the interpolated rotations at the given `times`.
+
+        Parameters
+        ----------
+        times : array_like, 1D
+            Times to compute the interpolated rotations at.
+
+        Returns
+        -------
+        interpolated_rotation : `Rotation` instance
+            Object containing the rotations computed at the given `times`
+        """
+        compute_times = np.asarray(times)
+        if compute_times.ndim != 1:
+            raise ValueError("Expected times to be specified in a 1 "
+                             "dimensional array, got {} "
+                             "dimensions.".format(compute_times.ndim))
+        # side = 'left' (default) excludes t_min
+        ind = np.searchsorted(self.times, compute_times) - 1
+        # Include t_min. Without this step, index for t_min equals -1.
+        ind[compute_times == self.times[0]] = 0
+        if np.any(np.logical_or(ind < 0, ind > len(self.rotations) - 2)):
+            raise ValueError("Interpolation times must be within the range "
+                             "[{}, {}], both inclusive.".format(
+                                self.times[0], self.times[-1]))
+
+        alpha = (compute_times - self.times[ind]) / self.timedelta[ind]
+        alpha = alpha[:, None]
+        beta = alpha - 1
+
+        interpolating_theta = (self.c2[ind] * alpha * (beta ** 2) +
+                               self.c3[ind] * (alpha ** 2) * beta +
+                               self.c4[ind] * (alpha ** 3))
+        interpolating_quat = Rotation.from_rotvec(interpolating_theta)
+        initial_rot = self.rotations[ind]
+
+        return initial_rot * interpolating_quat
