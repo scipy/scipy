@@ -6,13 +6,13 @@ import sys
 
 import numpy as np
 from numpy.testing import (assert_array_equal, assert_array_almost_equal,
-    assert_allclose, assert_equal, assert_)
+                           assert_allclose, assert_equal, assert_)
 from scipy._lib._numpy_compat import suppress_warnings
 import pytest
 from pytest import raises as assert_raises
 
 from scipy.cluster.vq import (kmeans, kmeans2, py_vq, vq, whiten,
-    ClusterError, _krandinit)
+                              ClusterError, _krandinit)
 from scipy.cluster import _vq
 
 
@@ -58,8 +58,8 @@ TESTDATA_2D = np.array([
 
 # Global data
 X = np.array([[3.0, 3], [4, 3], [4, 2],
-               [9, 2], [5, 1], [6, 2], [9, 4],
-               [5, 2], [5, 4], [7, 4], [6, 5]])
+              [9, 2], [5, 1], [6, 2], [9, 4],
+              [5, 2], [5, 4], [7, 4], [6, 5]])
 
 CODET1 = np.array([[3.0000, 3.0000],
                    [6.2000, 4.0000],
@@ -201,7 +201,7 @@ class TestKMean(object):
         data = TESTDATA_2D
         initk = np.array([[-1.8127404, -0.67128041],
                          [2.04621601, 0.07401111],
-                         [-2.31149087,-0.05160469]])
+                         [-2.31149087, -0.05160469]])
 
         kmeans(data, initk)
         with suppress_warnings() as sup:
@@ -255,12 +255,14 @@ class TestKMean(object):
 
         # minit='random' can give warnings, filter those
         with warnings.catch_warnings():
-            warnings.filterwarnings('ignore',
-                        message="One of the clusters is empty. Re-run")
+            warnings.filterwarnings(
+                    'ignore',
+                    message="At least one cluster is empty. Re-run")
             kmeans2(data, 3, minit='random')
             kmeans2(data[:, :1], 3, minit='random')  # special case (1-D)
 
-    @pytest.mark.skipif(sys.platform == 'win32', reason='Fails with MemoryError in Wine.')
+    @pytest.mark.skipif(sys.platform == 'win32',
+                        reason='Fails with MemoryError in Wine.')
     def test_krandinit(self):
         data = TESTDATA_2D
         datas = [data.reshape((200, 2)), data.reshape((20, 20))[:10]]
@@ -284,8 +286,7 @@ class TestKMean(object):
 
     def test_kmeans_large_thres(self):
         # Regression test for gh-1774
-        x = np.array([1,2,3,4,10], dtype=float)
+        x = np.array([1, 2, 3, 4, 10], dtype=float)
         res = kmeans(x, 1, thresh=1e16)
         assert_allclose(res[0], np.array([4.]))
         assert_allclose(res[1], 2.3999999999999999)
-
