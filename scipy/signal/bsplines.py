@@ -134,7 +134,7 @@ def gauss_spline(x, n):
     """
     signsq = (n + 1) / 12.0
     if signsq == 0:
-        raise ZeroDivisionError("Divide by zero in gauss_spline")
+        raise ValueError("Negative argument invalid for gauss_spline")
     return 1 / sqrt(2 * pi * signsq) * exp(-x ** 2 / 2 / signsq)
 
 
