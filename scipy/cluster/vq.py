@@ -323,10 +323,10 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True):
 
     The k-means algorithm adjusts the classification of the observations
     into clusters and updates the cluster centroids until the position of
-    the centroids is stable over successive iterations. In this 
-    implementation of the algorithm, the stability of the centroids is 
-    determined by comparing the absolute value of the change in the average 
-    Euclidean distance between the observations and their corresponding 
+    the centroids is stable over successive iterations. In this
+    implementation of the algorithm, the stability of the centroids is
+    determined by comparing the absolute value of the change in the average
+    Euclidean distance between the observations and their corresponding
     centroids against a threshold. This yields
     a code book mapping centroids to codes and vice versa.
 
@@ -373,9 +373,9 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True):
        not necessarily the globally minimal distortion.
 
     distortion : float
-       The mean (non-squared) Euclidean distance between the observations 
+       The mean (non-squared) Euclidean distance between the observations
        passed and the centroids generated. Note the difference to the standard
-       definition of distortion in the context of the K-means algorithm, which 
+       definition of distortion in the context of the K-means algorithm, which
        is the sum of the squared distances.
 
     See Also
@@ -473,7 +473,7 @@ def _kpoints(data, k):
         row is one observation.
     k : int
         Number of samples to generate.
-   
+
    Returns
     -------
     x : ndarray
@@ -498,7 +498,7 @@ def _krandinit(data, k):
         row is one observation.
     k : int
         Number of samples to generate.
-   
+
     Returns
     -------
     x : ndarray
@@ -531,7 +531,7 @@ def _krandinit(data, k):
 
 def _kpp(data, k):
     """ Picks k points in data based on the kmeans++ method
-    
+
     Parameters
     ----------
     data : ndarray
@@ -540,34 +540,37 @@ def _kpp(data, k):
         row is one observation.
     k : int
         Number of samples to generate.
-   
+
     Returns
     -------
     init : ndarray
         A 'k' by 'N' containing the initial centroids
-   
+
     References
     ----------
     D. Arthur and S. Vassilvitskii, "k-means++: the advantages of careful seeding",
       Proceedings of the Eighteenth Annual ACM-SIAM Symposium on Discrete Algorithms, 2007.
-    
+
     """
 
-    init = np.ndarray((k, data.shape[1]))
-    
+    dims = data.shape[1] if len(data.shape) > 1 else 1
+    init = np.ndarray((k, dims))
+
     for i in range(k):
         if i == 0:
-            init[i, :] = data[randint(data.shape[1])]
-               
+            init[i, :] = data[np.random.randint(dims)]
+
         else:
-            D2 = np.array([min([np.inner(init[j]-x, init[j]-x) for j in range(i)]) for x in data])
+            D2 = np.array([min(
+                            [np.inner(init[j]-x, init[j]-x) for j in range(i)]
+                            ) for x in data])
             probs = D2/D2.sum()
             cumprobs = probs.cumsum()
             r = np.random.rand()
             init[i, :] = data[np.searchsorted(cumprobs, r)]
 
     return init
-    
+
 _valid_init_meth = {'random': _krandinit, 'points': _kpoints, '++': _kpp}
 
 
