@@ -548,8 +548,9 @@ def _kpp(data, k):
 
     References
     ----------
-    D. Arthur and S. Vassilvitskii, "k-means++: the advantages of careful seeding",
-      Proceedings of the Eighteenth Annual ACM-SIAM Symposium on Discrete Algorithms, 2007.
+    .. [1] D. Arthur and S. Vassilvitskii, "k-means++: the advantages of
+       careful seeding", Proceedings of the Eighteenth Annual ACM-SIAM Symposium
+       on Discrete Algorithms, 2007.
     """
 
     dims = data.shape[1] if len(data.shape) > 1 else 1
