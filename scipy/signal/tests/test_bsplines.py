@@ -3,9 +3,10 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from numpy import array
-from numpy.testing import (TestCase, assert_raises, run_module_suite,
+from numpy.testing import (TestCase, assert_equal, run_module_suite,
                            assert_allclose, assert_array_equal,
-                           assert_equal, assert_almost_equal)
+                           assert_almost_equal)
+from pytest import raises
 
 import scipy.signal.bsplines as bsp
 
@@ -21,7 +22,7 @@ class TestBSplines(TestCase):
     def test_spline_filter(self):
         np.random.seed(12457)
         # Test the type-error branch
-        assert_raises(TypeError, bsp.spline_filter, array([0]), 0)
+        raises(TypeError, bsp.spline_filter, array([0]), 0)
         # Test the complex branch
         data_array_complex = np.random.rand(7, 7) + np.random.rand(7, 7)*1j
         # make the magnitude exceed 1, and make some negative
@@ -119,7 +120,7 @@ class TestBSplines(TestCase):
     def test_gauss_spline(self):
         np.random.seed(12459)
         assert_almost_equal(bsp.gauss_spline(0, 0), 1.381976597885342)
-        assert_raises(ValueError, bsp.gauss_spline, 0, -1)
+        raises(ValueError, bsp.gauss_spline, 0, -1)
         assert_allclose(bsp.gauss_spline(array([1.]), 1), array([0.04865217]))
 
     def test_cubic(self):
@@ -168,8 +169,8 @@ class TestBSplines(TestCase):
         np.random.seed(12463)
         assert_array_equal(bsp.qspline1d(array([0])), [0.])
         # test lamda != 0
-        assert_raises(ValueError, bsp.qspline1d, array([1., 2, 3, 4, 5]), 1.)
-        assert_raises(ValueError, bsp.qspline1d, array([1., 2, 3, 4, 5]), -1.)
+        raises(ValueError, bsp.qspline1d, array([1., 2, 3, 4, 5]), 1.)
+        raises(ValueError, bsp.qspline1d, array([1., 2, 3, 4, 5]), -1.)
         q1d0 = array([0.85350007, 2.02441743, 2.99999534, 3.97561055,
                       5.14634135])
         assert_allclose(bsp.qspline1d(array([1., 2, 3, 4, 5])), q1d0)
