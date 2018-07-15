@@ -617,7 +617,6 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
         (not used yet)
     minit : str, optional
         Method for initialization. Available methods are 'random',
-        'points', and 'matrix':
         'points', '++' and 'matrix':
 
         'random': generate k centroids from a Gaussian with mean and
