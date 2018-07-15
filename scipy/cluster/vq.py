@@ -550,7 +550,6 @@ def _kpp(data, k):
     ----------
     D. Arthur and S. Vassilvitskii, "k-means++: the advantages of careful seeding",
       Proceedings of the Eighteenth Annual ACM-SIAM Symposium on Discrete Algorithms, 2007.
-
     """
 
     dims = data.shape[1] if len(data.shape) > 1 else 1
@@ -570,6 +569,7 @@ def _kpp(data, k):
             init[i, :] = data[np.searchsorted(cumprobs, r)]
 
     return init
+
 
 _valid_init_meth = {'random': _krandinit, 'points': _kpoints, '++': _kpp}
 
