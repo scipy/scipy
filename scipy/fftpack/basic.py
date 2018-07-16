@@ -498,6 +498,16 @@ def irfft(x, n=None, axis=-1, overwrite_x=False):
 
     To process (conjugate-symmetric) frequency-domain data with a complex
     datatype, consider using the related function `numpy.fft.irfft`.
+
+    Examples
+    --------
+    >>> from scipy.fftpack import rfft, irfft
+    >>> a = [1.0, 2.0, 3.0, 4.0, 5.0]
+    >>> irfft(a)
+    array([ 2.6       , -3.16405192,  1.24398433, -1.14955713,  1.46962473])
+    >>> irfft(rfft(a))
+    array([1., 2., 3., 4., 5.])
+
     """
     tmp = _asfarray(x)
     if not numpy.isrealobj(tmp):

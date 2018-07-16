@@ -5,7 +5,7 @@ import pytest
 import numpy as np
 from numpy.testing import assert_equal, assert_array_almost_equal
 from numpy.testing import assert_allclose
-from scipy.spatial.transform import Rotation
+from scipy.spatial.transform import Rotation, Slerp
 from scipy.stats import special_ortho_group
 from itertools import permutations
 
@@ -771,3 +771,113 @@ def test_quat_ownership():
 
     r._quat[0] = np.array([0, -1, 0, 0])
     assert_allclose(s._quat[0], np.array([1, 0, 0, 0]))
+
+
+def test_slerp():
+    np.random.seed(0)
+
+    key_rots = Rotation.from_quat(np.random.uniform(size=(5, 4)))
+    key_quats = key_rots.as_quat()
+
+    key_times = [0, 1, 2, 3, 4]
+    interpolator = Slerp(key_times, key_rots)
+
+    times = [0, 0.5, 0.25, 1, 1.5, 2, 2.75, 3, 3.25, 3.60, 4]
+    interp_rots = interpolator(times)
+    interp_quats = interp_rots.as_quat()
+
+    # Dot products are affected by sign of quaternions
+    interp_quats[interp_quats[:, -1] < 0] *= -1
+    # Checking for quaternion equality, perform same operation
+    key_quats[key_quats[:, -1] < 0] *= -1
+
+    # Equality at keyframes, including both endpoints
+    assert_allclose(interp_quats[0], key_quats[0])
+    assert_allclose(interp_quats[3], key_quats[1])
+    assert_allclose(interp_quats[5], key_quats[2])
+    assert_allclose(interp_quats[7], key_quats[3])
+    assert_allclose(interp_quats[10], key_quats[4])
+
+    # Constant angular velocity between keyframes. Check by equating
+    # cos(theta) between quaternion pairs with equal time difference.
+    cos_theta1 = np.sum(interp_quats[0] * interp_quats[2])
+    cos_theta2 = np.sum(interp_quats[2] * interp_quats[1])
+    assert_allclose(cos_theta1, cos_theta2)
+
+    cos_theta4 = np.sum(interp_quats[3] * interp_quats[4])
+    cos_theta5 = np.sum(interp_quats[4] * interp_quats[5])
+    assert_allclose(cos_theta4, cos_theta5)
+
+    # theta1: 0 -> 0.25, theta3 : 0.5 -> 1
+    # Use double angle formula for double the time difference
+    cos_theta3 = np.sum(interp_quats[1] * interp_quats[3])
+    assert_allclose(cos_theta3, 2 * (cos_theta1**2) - 1)
+
+    # Miscellaneous checks
+    assert_equal(len(interp_rots), len(times))
+
+
+def test_slerp_single_rot():
+    with pytest.raises(ValueError, match="at least 2 rotations"):
+        r = Rotation.from_quat([1, 2, 3, 4])
+        Slerp([1], r)
+
+
+def test_slerp_time_dim_mismatch():
+    with pytest.raises(ValueError,
+                       match="times to be specified in a 1 dimensional array"):
+        np.random.seed(0)
+        r = Rotation.from_quat(np.random.uniform(size=(2, 4)))
+        t = np.array([[1],
+                      [2]])
+        Slerp(t, r)
+
+
+def test_slerp_num_rotations_mismatch():
+    with pytest.raises(ValueError, match="number of rotations to be equal to "
+                                         "number of timestamps"):
+        np.random.seed(0)
+        r = Rotation.from_quat(np.random.uniform(size=(5, 4)))
+        t = np.arange(7)
+        Slerp(t, r)
+
+
+def test_slerp_equal_times():
+    with pytest.raises(ValueError, match="strictly increasing order"):
+        np.random.seed(0)
+        r = Rotation.from_quat(np.random.uniform(size=(5, 4)))
+        t = [0, 1, 2, 2, 4]
+        Slerp(t, r)
+
+
+def test_slerp_decreasing_times():
+    with pytest.raises(ValueError, match="strictly increasing order"):
+        np.random.seed(0)
+        r = Rotation.from_quat(np.random.uniform(size=(5, 4)))
+        t = [0, 1, 3, 2, 4]
+        Slerp(t, r)
+
+
+def test_slerp_call_time_dim_mismatch():
+    np.random.seed(0)
+    r = Rotation.from_quat(np.random.uniform(size=(5, 4)))
+    t = np.arange(5)
+    s = Slerp(t, r)
+
+    with pytest.raises(ValueError,
+                       match="times to be specified in a 1 dimensional array"):
+        interp_times = np.array([[3.5],
+                                 [4.2]])
+        s(interp_times)
+
+
+def test_slerp_call_time_out_of_range():
+    np.random.seed(0)
+    r = Rotation.from_quat(np.random.uniform(size=(5, 4)))
+    t = np.arange(5) + 1
+    s = Slerp(t, r)
+
+    with pytest.raises(ValueError, match="times must be within the range"):
+        s([0, 1, 2])
+    with pytest.raises(ValueError, match="times must be within the range"):
+        s([1, 2, 6])

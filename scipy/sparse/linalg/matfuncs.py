@@ -627,6 +627,11 @@ def _expm(A, use_exact_onenorm):
 
         return np.array(out)
 
+    # Ensure input is of float type, to avoid integer overflows etc.
+    if ((isinstance(A, np.ndarray) or isspmatrix(A))
+            and not np.issubdtype(A.dtype, np.inexact)):
+        A = A.astype(float)
+
     # Detect upper triangularity.
     structure = UPPER_TRIANGULAR if _is_upper_triangular(A) else None
 
