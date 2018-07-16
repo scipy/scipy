@@ -150,8 +150,16 @@ Scalar functions
    newton - Secant method or Newton's method
    toms748 - Alefeld, Potra & Shi Algorithm 748
 
-The table below lists situations and appropriate methods, along with *asymptotic* convergence rates
-per iteration (and per function evaluation) for successful convergence to a simple root(*).
+The table below lists situations and appropriate methods, along with
+*asymptotic* convergence rates per iteration (and per function evaluation)
+for successful convergence to a simple root(*).
+Bisection is the slowest of them all, adding one bit of accuracy for each f
+unction evaluation, but is guaranteed to converge.
+The other bracketing methods all (eventually) increase the number of accurate
+bits by about 50% for every function evaluation.
+The derivative-based methods, all built on newton, can converge quite quickly
+if the initial value is close to the root.  They can also be applied to
+functions defined on (a subset of) the complex plane.
 
 +-------------+-------------+--------------+---------------+---------------------+-------------+----------------------+
 | Domain of f | Has Bracket | Has `fprime` | Has `fprime2` | Available Functions | Convergence                        |
