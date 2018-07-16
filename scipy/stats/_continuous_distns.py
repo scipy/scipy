@@ -5981,15 +5981,13 @@ class sine_gen(rv_continuous):
 
     """
     def _pdf(self, x):
-        # sin.pdf(x) = 1/2 * sin(x)
-        return 1.0/2*(np.sin(x))
-
-    def _rvs(self):
-        z = self._random_state.uniform(size=self._size)
-        return 2*np.arcsin(np.sqrt(z))
+        return 0.5*np.sin(x)
 
     def _cdf(self, x):
         return 0.5 - 0.5*np.cos(x)
+
+    def _ppf(self, q):
+        return np.arccos(1-2*q)
 
     def _stats(self):
         return np.pi/2, np.pi**2/4-2, 0, -2*(np.pi**4-96)/(np.pi**2-8)**2
