@@ -7,7 +7,7 @@ from numpy.testing import (assert_warns, assert_,
                            assert_allclose,
                            assert_equal)
 import numpy as np
-from numpy import finfo, power
+from numpy import finfo, power, nan, isclose
 
 
 from scipy.optimize import zeros as cc
