@@ -5987,10 +5987,10 @@ class sine_gen(rv_continuous):
         return 0.5 - 0.5*np.cos(x)
 
     def _ppf(self, q):
-        return np.arccos(1-2*q)
+        return np.arccos(1.-2.*q)
 
     def _stats(self):
-        return np.pi/2, np.pi**2/4-2, 0, -2*(np.pi**4-96)/(np.pi**2-8)**2
+        return np.pi/2, np.pi**2/4-2, 0., -2*(np.pi**4-96)/(np.pi**2-8)**2
 
     def _entropy(self):
         return 1.0
