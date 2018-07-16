@@ -405,7 +405,8 @@ def subspace_angles(A, B):
     Returns
     -------
     angles : ndarray, shape (min(N, K),)
-        The subspace angles between the column spaces of `A` and `B` in descending order.
+        The subspace angles between the column spaces of `A` and `B` in
+        descending order.
 
     See Also
     --------
