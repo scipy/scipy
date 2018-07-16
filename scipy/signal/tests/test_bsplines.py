@@ -11,7 +11,7 @@ from pytest import raises
 import scipy.signal.bsplines as bsp
 
 
-class TestBSplines(TestCase):
+class TestBSplines(object):
     """Test behaviors of bsplines. The values tested against were returned as of
     scipy 1.1.0 and are included for regression testing purposes"""
 
@@ -220,7 +220,3 @@ class TestBSplines(TestCase):
                       7.32718426, 7.874, 7.81016848, 7.433, 7.03980488, 6.759,
                       6.71900226, 6.203, 4.49418159])
         assert_allclose(bsp.qspline1d_eval(cj, newx, dx=dx, x0=x[0]), newy)
-
-
-if __name__ == "__main__":
-    run_module_suite()
