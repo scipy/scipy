@@ -781,18 +781,7 @@ greater than %d - this is not supported on this machine
         else:
             data_rvs = random_state.rand
 
-    # Use the algorithm from python's random.sample for k < mn/3.
-    if mn < 3 * k:
-        ind = random_state.choice(mn, size=k, replace=False)
-    else:
-        ind = np.empty(k, dtype=tp)
-        selected = set()
-        for i in xrange(k):
-            j = random_state.randint(mn)
-            while j in selected:
-                j = random_state.randint(mn)
-            selected.add(j)
-            ind[i] = j
+    ind = random_state.choice(mn, size=k, replace=False)
 
     j = np.floor(ind * 1. / m).astype(tp, copy=False)
     i = (ind - j * m).astype(tp, copy=False)
