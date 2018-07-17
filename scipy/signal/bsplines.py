@@ -139,7 +139,7 @@ def gauss_spline(x, n):
 
     References
     ----------
-    .. [1] Bouma H., Vilanova A., Bescós J.O., ter Haar Romeny B.M., Gerritsen
+    .. [1] Bouma H., Vilanova A., Bescos J.O., ter Haar Romeny B.M., Gerritsen
        F.A. (2007) Fast and Accurate Gaussian Derivatives Based on B-Splines. In:
        Sgallari F., Murli A., Paragios N. (eds) Scale Space and Variational
        Methods in Computer Vision. SSVM 2007. Lecture Notes in Computer
