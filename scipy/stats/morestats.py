@@ -2328,7 +2328,7 @@ def mood(x, y, axis=0):
     return z, pval
 
 
-WilcoxonResult = namedtuple('WilcoxonResult', ('statistic', 'pvalue'))
+WilcoxonResult = namedtuple('WilcoxonResult', ('statistic', 'pvalue', 'rejection_direction'))
 
 
 def wilcoxon(x, y=None, zero_method="wilcox", correction=False):
@@ -2369,6 +2369,8 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False):
         is smaller.
     pvalue : float
         The two-sided p-value for the test.
+    rejection_direction : string
+        The difference (or rejection) direction of x-y in case of a one-sided test.
 
     Notes
     -----
@@ -2411,7 +2413,9 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False):
         r_plus += r_zero / 2.
         r_minus += r_zero / 2.
 
-    T = min(r_plus, r_minus)
+    rs = [r_plus, r_minus]
+    T = min(rs)
+    rejection_direction = "-" if np.argmin([rs]) == 0 else "+"
     mn = count * (count + 1.) * 0.25
     se = count * (count + 1.) * (2. * count + 1.)
 
@@ -2428,7 +2432,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False):
     z = (T - mn - correction) / se
     prob = 2. * distributions.norm.sf(abs(z))
 
-    return WilcoxonResult(T, prob)
+    return WilcoxonResult(T, prob, rejection_direction)
 
 
 def median_test(*args, **kwds):
