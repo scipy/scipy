@@ -170,24 +170,24 @@ class TestBasic(object):
                        known_fail=known_fail, **kwargs)
 
     def test_bisect(self):
-        self.run_check(cc.bisect, 'bisect')
+        self.run_check(zeros.bisect, 'bisect')
         self.run_check_by_name('bisect')
         self.run_collection('aps', cc.bisect, 'bisect', smoothness=1)
 
     def test_ridder(self):
-        self.run_check(cc.ridder, 'ridder')
+        self.run_check(zeros.ridder, 'ridder')
         self.run_check_by_name('ridder')
         self.run_collection('aps', cc.ridder, 'ridder', smoothness=1)
 
     def test_brentq(self):
-        self.run_check(cc.brentq, 'brentq')
+        self.run_check(zeros.brentq, 'brentq')
         self.run_check_by_name('brentq')
         # Brentq/h needs a lower tolerance to be specified
         self.run_collection('aps', cc.brentq, 'brentq', smoothness=1,
                             xtol=1e-14, rtol=1e-14)
 
     def test_brenth(self):
-        self.run_check(cc.brenth, 'brenth')
+        self.run_check(zeros.brenth, 'brenth')
         self.run_check_by_name('brenth')
         self.run_collection('aps', cc.brenth, 'brenth', smoothness=1,
                             xtol=1e-14, rtol=1e-14)
@@ -396,7 +396,7 @@ class TestBasic(object):
     def test_deriv_zero_warning(self):
         func = lambda x: x**2 - 2.0
         dfunc = lambda x: 2*x
-        assert_warns(RuntimeWarning, cc.newton, func, 0.0, dfunc)
+        assert_warns(RuntimeWarning, zeros.newton, func, 0.0, dfunc)
 
 
 def test_gh_5555():
@@ -405,9 +405,8 @@ def test_gh_5555():
     def f(x):
         return x - root
 
-    methods = [cc.bisect, cc.ridder]
-    xtol = 4 * _FLOAT_EPS
-    rtol = 4 * _FLOAT_EPS
+    methods = [zeros.bisect, zeros.ridder]
+    xtol = rtol = TOL
     for method in methods:
         res = method(f, -1e8, 1e7, xtol=xtol, rtol=rtol)
         assert_allclose(root, res, atol=xtol, rtol=rtol,
@@ -432,7 +431,7 @@ def test_gh_5557():
 
     atol = 0.51
     rtol = 4 * _FLOAT_EPS
-    methods = [cc.brentq, cc.brenth]
+    methods = [zeros.brentq, zeros.brenth]
     for method in methods:
         res = method(f, 0, 1, xtol=atol, rtol=rtol)
         assert_allclose(0.6, res, atol=atol, rtol=rtol)
