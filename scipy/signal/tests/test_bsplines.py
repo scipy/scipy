@@ -120,7 +120,6 @@ class TestBSplines(object):
     def test_gauss_spline(self):
         np.random.seed(12459)
         assert_almost_equal(bsp.gauss_spline(0, 0), 1.381976597885342)
-        raises(ValueError, bsp.gauss_spline, 0, -1)
         assert_allclose(bsp.gauss_spline(array([1.]), 1), array([0.04865217]))
 
     def test_cubic(self):
