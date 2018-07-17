@@ -4424,7 +4424,7 @@ add_newdoc("scipy.special", "kolmogi",
 
     See Also
     --------
-    kolmogorov : The Surival Function for the distribution
+    kolmogorov : The Survival Function for the distribution
     kolmogci : The Inverse CDF for the distribution
     scipy.stats.kstwobign : Provides the functionality as a continuous distribution
     smirnov, smirnovi, smirnovc, smirnovci, smirnovp : Functions for the one-sided distribution
@@ -4442,18 +4442,20 @@ add_newdoc("scipy.special", "kolmogorov",
     r"""
     kolmogorov(y)
 
-    Complementary cumulative distribution (Survival Function) function of Kolmogorov distribution
+    Complementary cumulative distribution (Survival Function) function of
+    Kolmogorov distribution.
 
     Returns the complementary cumulative distribution function of
-    Kolmogorov's limiting distribution (``D_n*\sqrt(n)`` for large n) of a
-    two-sided test for equality between an empirical and a theoretical
+    Kolmogorov's limiting distribution (``D_n*\sqrt(n)`` as n goes to infinity)
+    of a two-sided test for equality between an empirical and a theoretical
     distribution. It is equal to the (limit as n->infinity of the)
-    probability that sqrt(n) * max absolute deviation > y.
+    probability that ``sqrt(n) * max absolute deviation > y``.
 
     Parameters
     ----------
     y : float array_like
-      Absolute deviation between the ECDF and the CDF, multiplied by sqrt(n)
+      Absolute deviation between the Empirical CDF (ECDF) and the target CDF,
+      multiplied by sqrt(n).
 
     Returns
     -------
@@ -4497,14 +4499,14 @@ add_newdoc("scipy.special", "kolmogorov",
     >>> Kn = np.sqrt(n) * Dn
     >>> print('Dn=%f, sqrt(n)*Dn=%f' % (Dn, Kn))
     Dn=0.058286, sqrt(n)*Dn=1.843153
-    >>> print(chr(10).join(['For a sample of size n drawn from a Normal(0, 1) distribution:',
+    >>> print(chr(10).join(['For a sample of size n drawn from a N(0, 1) distribution:',
     ...   ' the approximate Kolmogorov probability that sqrt(n)*Dn>=%f is %f' %  (Kn, kolmogorov(Kn)),
     ...   ' the approximate Kolmogorov probability that sqrt(n)*Dn<=%f is %f' %  (Kn, kolmogc(Kn))]))
-    For a sample of size n drawn from a Normal(0, 1) distribution:
+    For a sample of size n drawn from a N(0, 1) distribution:
      the approximate Kolmogorov probability that sqrt(n)*Dn>=1.843153 is 0.002240
      the approximate Kolmogorov probability that sqrt(n)*Dn<=1.843153 is 0.997760
 
-    Plot the Empirical CDF against the target Normal(0, 1) CDF.
+    Plot the Empirical CDF against the target N(0, 1) CDF.
 
     >>> import matplotlib.pyplot as plt
     >>> plt.step(np.concatenate([[-3], x]), ecdfs, where='post', label='Empirical CDF')
@@ -4533,7 +4535,8 @@ add_newdoc("scipy.special", "kolmogc",
     Parameters
     ----------
     y : float array_like
-      Absolute deviation between the ECDF and the CDF, multiplied by sqrt(n)
+      Absolute deviation between the Empirical CDF (ECDF) and the target CDF,
+      multiplied by sqrt(n).
 
     Returns
     -------
@@ -4542,7 +4545,7 @@ add_newdoc("scipy.special", "kolmogc",
 
     See Also
     --------
-    kolmogorov : The Surival Function for the distribution
+    kolmogorov : The Survival Function for the distribution
     kolmogci : The Inverse CDF for the distribution
     scipy.stats.kstwobign : Provides the functionality as a continuous distribution
     smirnov, smirnovi, smirnovc, smirnovci, smirnovp : Functions for the one-sided distribution
@@ -4558,14 +4561,15 @@ add_newdoc("scipy.special", "kolmogp",
     """
     kolmogp(y)
 
-    Derivative of kolmogorov.
+    Derivative of `kolmogorov`.
 
     Also the negative of the PDF of the Kolmogorov distribution.
 
     Parameters
     ----------
     y : float array_like
-      Absolute deviation between the ECDF and the CDF, multiplied by sqrt(n)
+      Absolute deviation between the Empirical CDF (ECDF) and the target CDF,
+      multiplied by sqrt(n).
 
     Returns
     -------
@@ -4574,7 +4578,7 @@ add_newdoc("scipy.special", "kolmogp",
 
     See Also
     --------
-    kolmogorov : The Surival Function for the distribution
+    kolmogorov : The Survival Function for the distribution
     scipy.stats.kstwobign : Provides the functionality as a continuous distribution
     smirnov, smirnovi, smirnovc, smirnovci, smirnovp : Functions for the one-sided distribution
 
@@ -6551,12 +6555,12 @@ add_newdoc("scipy.special", "smirnov",
     n : int
       Number of samples
     d : float array_like
-      Deviation between the ECDF and the CDF
+      Deviation between the Empirical CDF (ECDF) and the target CDF.
 
     Returns
     -------
     float
-        The value(s) of smirnov(n, d), Prob(Dn >= d)
+        The value(s) of smirnov(n, d), Prob(Dn+ >= d) (Also Prob(Dn- >= d))
 
     See Also
     --------
@@ -6575,12 +6579,12 @@ add_newdoc("scipy.special", "smirnov",
     >>> smirnov(5, [0, 0.5, 1.0])
     array([ 1.   ,  0.056,  0.   ])
 
-    Compare a sample of size 5 drawn from a Normal(0.5, 1) distribution against
-    a target Normal(0, 1) CDF.
+    Compare a sample of size 5 drawn from a source N(0.5, 1) distribution against
+    a target N(0, 1) CDF.
 
     >>> from scipy.stats import norm
     >>> n = 5
-    >>> gendist = norm(0.5,1)        # Normal distribution, mean 0.5, stddev 1
+    >>> gendist = norm(0.5, 1)       # Normal distribution, mean 0.5, stddev 1
     >>> np.random.seed(seed=233423)  # Set the seed for reproducibility
     >>> x = np.sort(gendist.rvs(size=n))
     >>> x
@@ -6611,7 +6615,7 @@ add_newdoc("scipy.special", "smirnov",
      Smirnov n=5: Prob(Dn- >= 0.563278) = 0.0250
      Smirnov n=5: Prob(Dn+ >= 0.001005) = 0.9990
 
-    Plot the Empirical CDF against the target Normal(0, 1) CDF
+    Plot the Empirical CDF against the target N(0, 1) CDF
 
     >>> import matplotlib.pyplot as plt
     >>> plt.step(np.concatenate([[-3], x]), ecdfs, where='post', label='Empirical CDF')
@@ -6643,16 +6647,16 @@ add_newdoc("scipy.special", "smirnovc",
     n : int
       Number of samples
     d : float array_like
-      Deviation between the ECDF and the CDF
+      Deviation between the Empirical CDF (ECDF) and the target CDF.
 
     Returns
     -------
     float
-        The value(s) of smirnovc(n, d), Prob(Dn <= d)
+        The value(s) of smirnovc(n, d), Prob(Dn <= d)  (Also Prob(Dn- <= d))
 
     See Also
     --------
-    smirnov  : The SF for the distribution
+    smirnov  : The Survival Function (SF) for the distribution
     smirnovci : The Inverse CDF for the distribution
     smirnovp : The derivative of the Survival Function for the distribution.
     scipy.stats.ksone : Provides the functionality as a continuous distribution
@@ -6665,8 +6669,8 @@ add_newdoc("scipy.special", "smirnovi",
 
     Inverse to `smirnov`
 
-    Returns `d` such that ``smirnov(n, d) = p``, the critical value.
-    corresponding to `p`
+    Returns `d` such that ``smirnov(n, d) == p``, the critical value
+    corresponding to `p`.
 
     Parameters
     ----------
@@ -6682,7 +6686,7 @@ add_newdoc("scipy.special", "smirnovi",
 
     See Also
     --------
-    smirnov  : The SF for the distribution
+    smirnov  : The Survival Function (SF) for the distribution
     smirnovci : The Inverse CDF for the distribution
     scipy.stats.ksone : Provides the functionality as a continuous distribution
     kolmogorov, kolmogi, kolmogc, kolmogci, kolmogp : Functions for the two-sided distribution
@@ -6694,7 +6698,7 @@ add_newdoc("scipy.special", "smirnovci",
 
     Inverse to `smirnovc`
 
-    Returns `d` such that ``smirnovc(n, d) = p``.
+    Returns `d` such that ``smirnovc(n, d) == p``.
 
     Parameters
     ----------
@@ -6710,9 +6714,9 @@ add_newdoc("scipy.special", "smirnovci",
 
     See Also
     --------
-    smirnov  : The SF for the distribution
+    smirnov  : The Survival Function (SF) for the distribution
     smirnovc : The CDF for the distribution
-    smirnovi : The Inverse SF for the distribution
+    smirnovi : The Inverse Survival Function for the distribution
     scipy.stats.ksone : Provides the functionality as a continuous distribution
     kolmogorov, kolmogi, kolmogc, kolmogci, kolmogp : Functions for the two-sided distribution
     """)
@@ -6723,7 +6727,7 @@ add_newdoc("scipy.special", "smirnovp",
 
     Derivative of `smirnov`.
 
-    As ``smirnov(n, d)`` is the Survivor Function, ``smirnovp(n, d)`` is the negative of
+    As ``smirnov(n, d)`` is the Survival Function, ``smirnovp(n, d)`` is the negative of
     the PDF at that value of `d`.
 
     Parameters
@@ -6731,7 +6735,7 @@ add_newdoc("scipy.special", "smirnovp",
     n : int
       Number of samples
     d : float array_like
-      Deviation between the ECDF and the CDF
+      Deviation between the Empirical CDF (ECDF) and the target CDF.
 
     Returns
     -------
@@ -6740,8 +6744,8 @@ add_newdoc("scipy.special", "smirnovp",
 
     See Also
     --------
-    smirnov  : The SF for the distribution
-    smirnovi : The Inverse SF for the distribution
+    smirnov  : The Survival Function (SF) for the distribution
+    smirnovi : The Inverse Survival Function for the distribution
     scipy.stats.ksone : Provides the functionality as a continuous distribution
     kolmogorov, kolmogi, kolmogc, kolmogci, kolmogp : Functions for the two-sided distribution
     """)
