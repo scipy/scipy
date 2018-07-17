@@ -785,10 +785,11 @@ greater than %d - this is not supported on this machine
             selected.add(j)
             ind[i] = j
 
-    j = np.floor(ind * 1. / m).astype(tp)
-    i = (ind - j * m).astype(tp)
-    vals = data_rvs(k).astype(dtype)
-    return coo_matrix((vals, (i, j)), shape=(m, n)).asformat(format)
+    j = np.floor(ind * 1. / m).astype(tp, copy=False)
+    i = (ind - j * m).astype(tp, copy=False)
+    vals = data_rvs(k).astype(dtype, copy=False)
+    return coo_matrix((vals, (i, j)), shape=(m, n)).asformat(format,
+                                                             copy=False)
 
 
 def rand(m, n, density=0.01, format="coo", dtype=None, random_state=None):
