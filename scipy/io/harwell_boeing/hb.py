@@ -69,6 +69,8 @@ class HBInfo(object):
         -------
         hb_info : HBInfo instance
         """
+        m = m.tocsc(copy=False)
+
         pointer = m.indptr
         indices = m.indices
         values = m.data
@@ -333,6 +335,8 @@ def _read_hb_data(content, header):
 
 
 def _write_data(m, fid, header):
+    m = m.tocsc(copy=False)
+
     def write_array(f, ar, nlines, fmt):
         # ar_nlines is the number of full lines, n is the number of items per
         # line, ffmt the fortran format
@@ -529,6 +533,8 @@ def hb_write(path_or_open_file, m, hb_info=None):
         - exponential format for float values, and int format
 
     """
+    m = m.tocsc(copy=False)
+
     if hb_info is None:
         hb_info = HBInfo.from_data(m)
 
