@@ -2722,6 +2722,20 @@ def test_subspace_angles():
     assert_raises(ValueError, subspace_angles, x, x[0])
     assert_raises(ValueError, subspace_angles, x[:-1], x)
 
+    # Test branch if mask.any is True:
+    A = np.array([[1, 0, 0],
+                  [0, 1, 0],
+                  [0, 0, 1],
+                  [0, 0, 0],
+                  [0, 0, 0]])
+    B = np.array([[1, 0, 0],
+                  [0, 1, 0],
+                  [0, 0, 0],
+                  [0, 0, 0],
+                  [0, 0, 1]])
+    expected = np.array([np.pi/2, 0, 0])
+    assert_allclose(subspace_angles(A, B), expected, rtol=1e-12)
+
 
 class TestCDF2RDF(object):
 

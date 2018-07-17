@@ -194,6 +194,7 @@ Graham Clenaghan for bug fixes and optimizations in scipy.stats.
 Konrad Griessinger for the small sample Kendall test
 Tony Xiang for improvements in scipy.sparse
 Roy Zywina for contributions to scipy.fftpack.
+Christian H. Meyer for bug fixes in subspace_angles.
 
 Institutions
 ------------
