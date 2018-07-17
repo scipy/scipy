@@ -754,19 +754,96 @@ def riccati_yn(n, x):
 
 
 def erfinv(y):
-    """Inverse function for erf.
+    """Inverse error function.
+    This function compute the inverse error function.
+    Inverse error function is satisfying :math:`erf(erf^{-1}(x))=x`.
+
+    Parameters
+    ----------
+    y : ndarray
+        Argument at which to evaluate for (-1, 1)
+
+    Returns
+    -------
+    erfinv : ndarray
+        Value of erfinv(y0), ..., erfinv(yn)
+
+    Examples
+    --------
+    1) evaluating a float number for
+    >>> from scipy import special
+    >>> special.erfinv(0.5)
+    0.4769362762044698
+    OEIS A069286 result is 0.4769362762044698733814183536431305598089697490594706447...
+
+    2) evaluating a ndarray
+    >>> from scipy import special
+    >>> import numpy as np
+    >>> y = np.linspace(-1.0, 1.0, num=10)
+    >>> special.erfinv(y)
+    array([       -inf, -0.86312307, -0.5407314 , -0.30457019, -0.0987901 ,
+            0.0987901 ,  0.30457019,  0.5407314 ,  0.86312307,         inf])
+
     """
     return ndtri((y+1)/2.0)/sqrt(2)
 
 
 def erfcinv(y):
-    """Inverse function for erfc.
+    """Inverse complementary error function.
+    This function compute the inverse error function.
+    It is related to inverse error function by :math:`erfc^{-1}(1-x)=erf^{-1}(x)
+
+    Parameters
+    ----------
+    y : ndarray
+        Argument at which to evaluate for (0, 2)
+
+    Returns
+    -------
+    erfcinv : ndarray
+        Value of erfcinv(y0), ..., erfcinv(yn)
+
+    Examples
+    --------
+    1) evaluating a float number for
+    >>> from scipy import special
+    >>> special.erfcinv(0.5)
+    0.4769362762044698
+    OEIS A069286 result is 0.4769362762044698733814183536431305598089697490594706447...
+
+    2) evaluating a ndarray
+    >>> from scipy import special
+    >>> import numpy as np
+    >>> y = np.linspace(0.0, 2.0, num=11)
+    >>> special.erfcinv(y)
+    array([        inf,  0.9061938 ,  0.59511608,  0.37080716,  0.17914345,
+            -0.        , -0.17914345, -0.37080716, -0.59511608, -0.9061938 ,
+                  -inf])
+
     """
     return -ndtri(0.5*y)/sqrt(2)
 
 
 def erf_zeros(nt):
     """Compute nt complex zeros of error function erf(z).
+
+    Parameters
+    ----------
+    nt : int
+        Argument at which to evaluate
+
+    Returns
+    -------
+    zeros of erf(nt) : ndarray (complex)
+        Complex value of zeros of erf(nt)
+
+    Examples
+    --------
+    >>> from scipy import special
+    >>> special.erf_zeros(1)
+    array([1.45061616+1.880943j])
+    From Ref[1] shows that nt=1 is X(real) : 1.4506161632E+00 Y(img) : 1.8809430002E+00
+
 
     References
     ----------
