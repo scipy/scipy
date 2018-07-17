@@ -773,7 +773,7 @@ greater than %d - this is not supported on this machine
         data_rvs = random_state.rand
 
     # Use the algorithm from python's random.sample for k < mn/3.
-    if mn < 3*k:
+    if mn < 3 * k:
         ind = random_state.choice(mn, size=k, replace=False)
     else:
         ind = np.empty(k, dtype=tp)
