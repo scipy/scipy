@@ -131,10 +131,21 @@ def bspline(x, n):
 
 def gauss_spline(x, n):
     """Gaussian approximation to B-spline basis function of order n.
-    """
+
+    Parameters
+    ----------
+    n : int
+        The order of the spline. Must be nonnegative, i.e. n >= 0
+
+    References
+    ----------
+    .. [1] Bouma H., Vilanova A., Bescós J.O., ter Haar Romeny B.M., Gerritsen
+       F.A. (2007) Fast and Accurate Gaussian Derivatives Based on B-Splines. In:
+       Sgallari F., Murli A., Paragios N. (eds) Scale Space and Variational
+       Methods in Computer Vision. SSVM 2007. Lecture Notes in Computer
+       Science, vol 4485. Springer, Berlin, Heidelberg
+   """
     signsq = (n + 1) / 12.0
-    if signsq == 0:
-        raise ValueError("Negative argument invalid for gauss_spline")
     return 1 / sqrt(2 * pi * signsq) * exp(-x ** 2 / 2 / signsq)
 
 
