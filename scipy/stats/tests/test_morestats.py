@@ -1316,15 +1316,15 @@ def test_accuracy_wilcoxon():
     x = np.concatenate([[u] * v for u, v in zip(nums, freq)])
     y = np.zeros(x.size)
 
-    T, p = stats.wilcoxon(x, y, "pratt")
+    T, p, _ = stats.wilcoxon(x, y, "pratt")
     assert_allclose(T, 423)
     assert_allclose(p, 0.00197547303533107)
 
-    T, p = stats.wilcoxon(x, y, "zsplit")
+    T, p, _ = stats.wilcoxon(x, y, "zsplit")
     assert_allclose(T, 441)
     assert_allclose(p, 0.0032145343172473055)
 
-    T, p = stats.wilcoxon(x, y, "wilcox")
+    T, p, _ = stats.wilcoxon(x, y, "wilcox")
     assert_allclose(T, 327)
     assert_allclose(p, 0.00641346115861)
 
@@ -1332,10 +1332,10 @@ def test_accuracy_wilcoxon():
     # > wilcox.test(x, y, paired=TRUE, exact=FALSE, correct={FALSE,TRUE})
     x = np.array([120, 114, 181, 188, 180, 146, 121, 191, 132, 113, 127, 112])
     y = np.array([133, 143, 119, 189, 112, 199, 198, 113, 115, 121, 142, 187])
-    T, p = stats.wilcoxon(x, y, correction=False)
+    T, p, _ = stats.wilcoxon(x, y, correction=False)
     assert_equal(T, 34)
     assert_allclose(p, 0.6948866, rtol=1e-6)
-    T, p = stats.wilcoxon(x, y, correction=True)
+    T, p, _ = stats.wilcoxon(x, y, correction=True)
     assert_equal(T, 34)
     assert_allclose(p, 0.7240817, rtol=1e-6)
 
@@ -1362,20 +1362,20 @@ def test_wilcoxon_tie():
     assert_equal(stat, 0)
     assert_allclose(p, expected_p, rtol=1e-6)
 
-    stat, p = stats.wilcoxon([0.1] * 10, correction=True)
+    stat, p, _ = stats.wilcoxon([0.1] * 10, correction=True)
     expected_p = 0.001904195
     assert_equal(stat, 0)
     assert_allclose(p, expected_p, rtol=1e-6)
 
 def test_wilcoxon_rejection_direction_x_less():
-    x = np.array([110, 115, 110, 111, 112, 113, 114])
-    y = x + 200
+    x = np.array([120, 114, 181, 188, 180, 146, 121, 191, 132, 113, 127, 112])
+    y = x + 400
     res = stats.wilcoxon(x, y, correction=False)
     assert(res.rejection_direction == "-")
 
 def test_wilcoxon_rejection_direction_y_less():
-    x = np.array([110, 115, 110, 111, 112, 113, 114])
-    y = x - 200
+    x = np.array([120, 114, 181, 188, 180, 146, 121, 191, 132, 113, 127, 112])
+    y = x - 400
     res = stats.wilcoxon(x, y, correction=False)
     assert(res.rejection_direction == "+")
 
