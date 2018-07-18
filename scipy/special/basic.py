@@ -771,12 +771,13 @@ def erfinv(y):
     Examples
     --------
     1) evaluating a float number for
+
     >>> from scipy import special
     >>> special.erfinv(0.5)
     0.4769362762044698
-    OEIS A069286 result is 0.4769362762044698733814183536431305598089697490594706447...
 
     2) evaluating a ndarray
+
     >>> from scipy import special
     >>> import numpy as np
     >>> y = np.linspace(-1.0, 1.0, num=10)
@@ -806,12 +807,13 @@ def erfcinv(y):
     Examples
     --------
     1) evaluating a float number for
+
     >>> from scipy import special
     >>> special.erfcinv(0.5)
     0.4769362762044698
-    OEIS A069286 result is 0.4769362762044698733814183536431305598089697490594706447...
 
     2) evaluating a ndarray
+
     >>> from scipy import special
     >>> import numpy as np
     >>> y = np.linspace(0.0, 2.0, num=11)
@@ -842,8 +844,6 @@ def erf_zeros(nt):
     >>> from scipy import special
     >>> special.erf_zeros(1)
     array([1.45061616+1.880943j])
-    From Ref[1] shows that nt=1 is X(real) : 1.4506161632E+00 Y(img) : 1.8809430002E+00
-
 
     References
     ----------
