@@ -19,6 +19,7 @@ environment:
       APPVEYOR_SAVE_CACHE_ON_ERROR: true
       APPVEYOR_SKIP_FINALIZE_ON_EXIT: true
       TEST_TIMEOUT: 1000
+      OPENBLAS_NUM_THREADS: 1
 
   matrix:
     - PYTHON: C:\Python36

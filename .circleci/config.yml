@@ -31,6 +31,7 @@ jobs:
             pip install --install-option="--no-cython-compile" Cython==0.25
             pip install numpy
             pip install nose mpmath argparse Pillow codecov matplotlib Sphinx==1.7.2
+            echo "export OPENBLAS_NUM_THREADS=1" >> $BASH_ENV
 
       - run:
           name: build docs
