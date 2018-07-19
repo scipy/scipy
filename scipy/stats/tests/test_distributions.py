@@ -45,7 +45,7 @@ dists = ['uniform', 'norm', 'lognorm', 'expon', 'beta',
          'halflogistic', 'fatiguelife', 'foldnorm', 'ncx2', 't', 'nct',
          'weibull_min', 'weibull_max', 'dweibull', 'maxwell', 'rayleigh',
          'genlogistic', 'logistic', 'gumbel_l', 'gumbel_r', 'gompertz',
-         'hypsecant', 'laplace', 'reciprocal', 'trapz', 'triang',
+         'hypsecant', 'laplace', 'reciprocal', 'sine', 'trapz', 'triang',
          'tukeylambda', 'vonmises', 'vonmises_line', 'pearson3', 'gennorm',
          'halfgennorm', 'rice', 'kappa4', 'kappa3', 'truncnorm', 'argus',
          'crystalball']
