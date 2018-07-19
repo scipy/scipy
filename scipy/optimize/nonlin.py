@@ -264,7 +264,9 @@ def nonlin_solve(F, x0, jacobian='krylov', iter=None, verbose=False,
        https://archive.siam.org/books/kelley/fr16/
 
     """
-
+    # Can't use default parameters because it's being explicitly passed as None
+    # from the calling function, so we need to set it here.
+    tol_norm = maxnorm if tol_norm is None else tol_norm
     condition = TerminationCondition(f_tol=f_tol, f_rtol=f_rtol,
                                      x_tol=x_tol, x_rtol=x_rtol,
                                      iter=iter, norm=tol_norm)
@@ -340,8 +342,8 @@ def nonlin_solve(F, x0, jacobian='krylov', iter=None, verbose=False,
 
         # Print status
         if verbose:
-            sys.stdout.write("%d:  |F(x)| = %g; step %g; tol %g\n" % (
-                n, norm(Fx), s, eta))
+            sys.stdout.write("%d:  |F(x)| = %g; step %g\n" % (
+                n, tol_norm(Fx), s))
             sys.stdout.flush()
     else:
         if raise_exception:
@@ -443,10 +445,7 @@ class TerminationCondition(object):
         self.f_tol = f_tol
         self.f_rtol = f_rtol
 
-        if norm is None:
-            self.norm = maxnorm
-        else:
-            self.norm = norm
+        self.norm = norm
 
         self.iter = iter
 
