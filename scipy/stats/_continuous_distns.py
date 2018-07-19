@@ -5971,7 +5971,7 @@ class sine_gen(rv_continuous):
 
     .. math::
 
-        f(x) = \frac{1}{2} \sin(x)
+        f(x) = 0.5 \sin(x)
 
     for :math:`0 \le x \le \pi`.
 
@@ -5979,6 +5979,13 @@ class sine_gen(rv_continuous):
 
     %(example)s
 
+    References
+    ----------
+
+    JIANG-MING WU, "Properties of Two Newly-Defined Distributions and Their
+    Relationships to Other Distributions ", Proceedings of the Survey Research
+    Methods Section, American Statistical Association (1987) Vol VIII, 356-361.
+    http://ww2.amstat.org/sections/srms/proceedings/papers/1987_060.pdf
     """
     def _pdf(self, x):
         return 0.5*np.sin(x)
