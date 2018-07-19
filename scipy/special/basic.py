@@ -770,7 +770,7 @@ def erfinv(y):
 
     Examples
     --------
-    1) evaluating a float number for
+    1) evaluating a float number
 
     >>> from scipy import special
     >>> special.erfinv(0.5)
@@ -792,7 +792,7 @@ def erfinv(y):
 def erfcinv(y):
     """Inverse complementary error function.
     This function compute the inverse error function.
-    It is related to inverse error function by :math:`erfc^{-1}(1-x)=erf^{-1}(x)
+    It is related to inverse error function by :math:`erfc^{-1}(1-x)=erf^{-1}(x)`
 
     Parameters
     ----------
@@ -806,7 +806,7 @@ def erfcinv(y):
 
     Examples
     --------
-    1) evaluating a float number for
+    1) evaluating a float number
 
     >>> from scipy import special
     >>> special.erfcinv(0.5)
