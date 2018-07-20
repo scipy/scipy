@@ -1608,7 +1608,6 @@ class Rotation(object):
         C = np.dot(u, vh)
 
         zeta = (s[0]+s[1]) * (s[1]+s[2]) * (s[2]+s[0])
-        # TODO: Maybe change to close to zero?
         if zeta == 0:
             raise ValueError("Three component error vector has infinite "
                              "covariance. It is impossible to determine the "

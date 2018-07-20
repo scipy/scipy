@@ -799,16 +799,12 @@ def test_match_vectors_noise():
     result = rot.apply(vectors)
 
     # The paper adds noise as indepedently distributed angular errors
-    xvar = np.pi / 20
-    yvar = np.pi / 200
-    zvar = np.pi / 2000
-
-    noise = Rotation.from_euler(
-        'xyz',
+    sigma = 1 * np.pi / 180
+    tolerance = 1.5 * sigma
+    noise = Rotation.from_rotvec(
         np.random.normal(
-            loc=0,
-            scale=(xvar, yvar, zvar),
-            size=(n_vectors, 3)
+            size=(n_vectors, 3),
+            scale=sigma
         )
     )
 
@@ -820,11 +816,9 @@ def test_match_vectors_noise():
     # Use rotation compositions to find out closeness
     error_vector = (rot * est.inv()).as_rotvec()
 
-    # The diagonal of this matrix is the variance of the angles.
-    # atol must be scalar, hence three checks.
-    assert_allclose(error_vector[0], 0, atol=1.5 * cov[0, 0])
-    assert_allclose(error_vector[1], 0, atol=1.5 * cov[1, 1])
-    assert_allclose(error_vector[2], 0, atol=1.5 * cov[2, 2])
+    assert_allclose(error_vector[0], 0, atol=tolerance)
+    assert_allclose(error_vector[1], 0, atol=tolerance)
+    assert_allclose(error_vector[2], 0, atol=tolerance)
 
 
 def test_random_rotation_shape():
