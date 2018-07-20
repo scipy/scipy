@@ -6652,7 +6652,7 @@ add_newdoc("scipy.special", "smirnovc",
     Returns
     -------
     float
-        The value(s) of smirnovc(n, d), Prob(Dn <= d)  (Also Prob(Dn- <= d))
+        The value(s) of smirnovc(n, d), Prob(Dn+ <= d)  (Also Prob(Dn- <= d))
 
     See Also
     --------
