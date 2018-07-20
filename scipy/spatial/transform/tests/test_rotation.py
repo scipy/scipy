@@ -894,7 +894,7 @@ def test_slerp_call_time_out_of_range():
 def test_spline_trivial():
     np.random.seed(0)
 
-    key_rots = Rotation.from_quat(np.random.uniform(size=(10, 4)))
+    key_rots = Rotation.random(10)
     key_times = np.arange(10)
 
     interpolator = Spline(key_times, key_rots)
@@ -912,7 +912,7 @@ def test_spline_time_dim_mismatch():
     with pytest.raises(ValueError,
                        match="times to be specified in a 1 dimensional array"):
         np.random.seed(0)
-        r = Rotation.from_quat(np.random.uniform(size=(2, 4)))
+        r = Rotation.random(10)
         t = np.array([[1],
                       [2]])
         Spline(t, r)
@@ -922,7 +922,7 @@ def test_spline_num_rotations_mismatch():
     with pytest.raises(ValueError, match="number of rotations to be equal to "
                                          "number of timestamps"):
         np.random.seed(0)
-        r = Rotation.from_quat(np.random.uniform(size=(5, 4)))
+        r = Rotation.random(5)
         t = np.arange(7)
         Spline(t, r)
 
@@ -930,7 +930,7 @@ def test_spline_num_rotations_mismatch():
 def test_spline_equal_times():
     with pytest.raises(ValueError, match="strictly increasing order"):
         np.random.seed(0)
-        r = Rotation.from_quat(np.random.uniform(size=(5, 4)))
+        r = Rotation.random(5)
         t = [0, 1, 2, 2, 4]
         Spline(t, r)
 
@@ -938,14 +938,14 @@ def test_spline_equal_times():
 def test_spline_decreasing_times():
     with pytest.raises(ValueError, match="strictly increasing order"):
         np.random.seed(0)
-        r = Rotation.from_quat(np.random.uniform(size=(5, 4)))
+        r = Rotation.random(5)
         t = [0, 1, 3, 2, 4]
         Spline(t, r)
 
 
 def test_spline_call_time_dim_mismatch():
     np.random.seed(0)
-    r = Rotation.from_quat(np.random.uniform(size=(5, 4)))
+    r = Rotation.random(5)
     t = np.arange(5)
     s = Spline(t, r)
 
@@ -958,7 +958,7 @@ def test_spline_call_time_dim_mismatch():
 
 def test_spline_call_time_out_of_range():
     np.random.seed(0)
-    r = Rotation.from_quat(np.random.uniform(size=(5, 4)))
+    r = Rotation.random(5)
     t = np.arange(5) + 1
     s = Spline(t, r)
 
