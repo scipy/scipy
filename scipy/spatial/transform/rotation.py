@@ -1741,8 +1741,8 @@ def _intermediate_step(w_prev, rotvecs, dt_inv, w_i, w_f):
     b = -4 * (dt_inv[:-1] + dt_inv[1:])
     c = -2 * dt_inv[1:]
 
-    d = (6 * rotvecs[:-1] * (dt_inv[:-1] ** 2) +
-         6 * rotvecs[1:] * (dt_inv[1:] ** 2) -
+    d = (6 * rotvecs[:-1] * (dt_inv[:-1, None] ** 2) +
+         6 * rotvecs[1:] * (dt_inv[1:, None] ** 2) -
          _Rfunc(rotvecs[:-1], w_prev))
     d[0] -= a2 * (_Bfunc(rotvecs[0, None], w_i[None, :]))[0]
     d[-1] -= c[-1] * (_Bfunc_inv(rotvecs[-1, None], w_f[None, :]))[0]
@@ -1750,9 +1750,11 @@ def _intermediate_step(w_prev, rotvecs, dt_inv, w_i, w_f):
     w = np.empty_like(w_prev)
     w[-1] = d[-1] / b[-1]
     # TODO: maybe elementwise update of w_i using just computed value of w_i+1?
-    w[:-1] = (d[:-1] - c[:-1, None] * _Bfunc_inv(rotvecs[2:-1], w_prev[1:]))
+    w[:-1] = ((d[:-1] - c[:-1, None] * _Bfunc_inv(rotvecs[1:-1], w_prev[:-1]))
+              / b[:-1, None])
 
-    diff = np.sum(np.dot(w, w_prev.T))
+    error = w - w_prev
+    diff = np.sum(np.dot(error, error.T))
 
     return w, diff
 
@@ -1827,6 +1829,10 @@ class Spline(object):
             np.zeros((len(rotations) - 2, 3)), rotvecs, dt_inv,
             omega_i, omega_f)
 
+        # Tolerance for iterative computation. Reference conatins 1e-6 but only
+        # as an estimate for number of iterations. In practice, one iteration
+        # is enough for convergence and 1e-6 has been chosen by plotting diff
+        # vs iteration number and observing when graph starts to flatten out.
         while diff >= 1e-6:
             w_int, diff = _intermediate_step(w_int, rotvecs, dt_inv,
                                              omega_i, omega_f)
