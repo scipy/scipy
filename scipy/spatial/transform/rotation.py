@@ -1767,6 +1767,9 @@ class Spline(object):
     current interval are equal to the velocity and accleration at the start of
     the next interval. This leads to smooth overall change in orientation.
 
+    Given intial and final angular velocity, the velocities at the intermediate
+    times are computed using iterative numerical method.
+
     Parameters
     ----------
     times : array_like, shape (N,)
@@ -1780,6 +1783,10 @@ class Spline(object):
     omega_f : array_like, shape (3,), optional
         Final angular velocity in radians at the time of the last orientation.
         Default is `[0, 0, 0]`.
+    tol : float, optional
+        Tolerance with which to calculate intermediate angular velocities.
+        Iterations are stopped when further steps change and magnitude of the
+        velocities by less than this amount. Default is 1e-15.
 
     Methods
     -------
@@ -1790,7 +1797,8 @@ class Spline(object):
     .. [1] `Quaternion Spline
             <http://qspline.sourceforge.net/qspline.pdf>`_
     """
-    def __init__(self, times, rotations, omega_i=[0, 0, 0], omega_f=[0, 0, 0]):
+    def __init__(self, times, rotations, omega_i=[0, 0, 0], omega_f=[0, 0, 0],
+                 tol=1e-12):
         if len(rotations) == 1:
             raise ValueError("`rotations` must contain at least 2 rotations.")
 
@@ -1830,10 +1838,10 @@ class Spline(object):
             omega_i, omega_f)
 
         # Tolerance for iterative computation. Reference conatins 1e-6 but only
-        # as an estimate for number of iterations. In practice, one iteration
-        # is enough for convergence and 1e-6 has been chosen by plotting diff
-        # vs iteration number and observing when graph starts to flatten out.
-        while diff >= 1e-6:
+        # as an estimate for number of iterations. The number of iterations
+        # depends on the 'non-linearity' or lack of 'smoothness' of the curve.
+        # Default of 1e-12 is achieved in ~200 iterations.
+        while diff >= tol:
             w_int, diff = _intermediate_step(w_int, rotvecs, dt_inv,
                                              omega_i, omega_f)
 
