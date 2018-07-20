@@ -300,7 +300,6 @@ Checklist before submitting a PR
   - In case of larger additions, is there a tutorial or more extensive
     module-level description?
   - In case compiled code is added, is it integrated correctly via setup.py
-    (and preferably also Bento configuration files - bento.info and bscript)?
   - If you are a first-time contributor, did you add yourself to THANKS.txt?
     Please note that this is perfectly normal and desirable - the aim is to
     give every single contributor credit, and if you don't add yourself it's
