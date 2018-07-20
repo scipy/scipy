@@ -4,6 +4,7 @@ import re
 import warnings
 import numpy as np
 import scipy.linalg
+from scipy._lib._util import check_random_state
 
 
 _AXIS_TO_IND = {'x': 0, 'y': 1, 'z': 2}
@@ -210,6 +211,7 @@ class Rotation(object):
     __mul__
     inv
     __getitem__
+    random
 
     Examples
     --------
@@ -1460,6 +1462,53 @@ class Rotation(object):
                [ 0.57735027,  0.57735027, -0.57735027,  0.        ]])
         """
         return self.__class__(self._quat[indexer], normalized=True)
+
+    @classmethod
+    def random(cls, num=None, random_state=None):
+        """Generate uniformly distributed rotations.
+
+        Parameters
+        ----------
+        num : int or None, optional
+            Number of random rotations to generate. If None (default), then a
+            single rotation is generated.
+        random_state : int, RandomState instance or None, optional
+            Accepts an `int` as a seed for the random generator or a
+            RandomState object. If None (default), uses global `np.random`
+            random state.
+
+        Returns
+        -------
+        random_rotation : `Rotation` instance
+            Contains a single rotation if `num` is None. Otherwise contains a
+            stack of `num` rotations.
+
+        Examples
+        --------
+        >>> from scipy.spatial.transform import Rotation as R
+
+        Sample a single rotation:
+
+        >>> R.random().as_euler('zxy', degrees=True)
+        array([ 94.9508862 ,  35.38168732, 148.80576945])
+
+        Sample a stack of rotations:
+
+        >>> R.random(5).as_euler('zxy', degrees=True)
+        array([[  97.65185987,  -30.18238967,   48.56690829],
+               [  27.39232994,  -58.77440039, -137.96008356],
+               [ 139.4463782 ,   16.19756587,  -48.6823144 ],
+               [ -25.35339309,    8.00660013,  -39.14435328],
+               [  63.83774224,  -34.47187095,  -47.75580405]])
+       """
+        random_state = check_random_state(random_state)
+
+        if num is None:
+            sample = random_state.normal(size=4)
+        else:
+            sample = random_state.normal(size=(num, 4))
+
+        return Rotation.from_quat(sample)
 
 
 class Slerp(object):
