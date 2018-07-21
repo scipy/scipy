@@ -1239,17 +1239,11 @@
         }
     },
     "smirnov": {
-        "_legacy.pxd": {
-            "smirnov_unsafe": "dd->d"
-        },
         "cephes.h": {
             "smirnov": "id->d"
         }
     },
     "smirnovi": {
-        "_legacy.pxd": {
-            "smirnovi_unsafe": "dd->d"
-        },
         "cephes.h": {
             "smirnovi": "id->d"
         }

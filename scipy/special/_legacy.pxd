@@ -129,14 +129,14 @@ cdef inline double yn_unsafe(double n, double x) nogil:
     _legacy_cast_check("yn", n, 0)
     return yn(<int>n, x)
 
-cdef inline double smirnov_unsafe(double n, double e) nogil:
-    if npy_isnan(n):
-        return n
-    _legacy_cast_check("smirnov", n, 0)
-    return smirnov(<int>n, e)
-
-cdef inline double smirnovi_unsafe(double n, double p) nogil:
-    if npy_isnan(n):
-        return n
-    _legacy_cast_check("smirnovi", n, 0)
-    return smirnovi(<int>n, p)
+# cdef inline double smirnov_unsafe(double n, double e) nogil:
+#     if npy_isnan(n):
+#         return n
+#     _legacy_cast_check("smirnov", n, 0)
+#     return smirnov(<int>n, e)
+#
+# cdef inline double smirnovi_unsafe(double n, double p) nogil:
+#     if npy_isnan(n):
+#         return n
+#     _legacy_cast_check("smirnovi", n, 0)
+#     return smirnovi(<int>n, p)

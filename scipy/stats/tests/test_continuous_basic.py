@@ -249,7 +249,7 @@ def test_rvs_broadcast(dist, shape_args):
     # Generate shape parameter arguments...
     for k in range(nargs):
         shp = (k + 4,) + (1,)*(k + 2)
-        allargs.append(shape_args[k]*np.ones(shp))
+        allargs.append(shape_args[k]*np.ones(shp, dtype=type(shape_args[k])))
         bshape.insert(0, k + 4)
     allargs.extend([loc, scale])
     # bshape holds the expected shape when loc, scale, and the shape
