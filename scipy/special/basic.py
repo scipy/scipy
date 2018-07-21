@@ -754,19 +754,21 @@ def riccati_yn(n, x):
 
 
 def erfinv(y):
-    """Inverse error function.
-    This function compute the inverse error function.
-    Inverse error function is satisfying :math:`erf(erf^{-1}(x))=x`.
+    """Inverse of the error function erf.
+
+    Computes the inverse of the error function.
+
+    Inverse of the error function satisfies erf(erfinv(x)) = x.
 
     Parameters
     ----------
     y : ndarray
-        Argument at which to evaluate for (-1, 1)
+        Argument at which to evaluate. Domain: (-1, 1)
 
     Returns
     -------
     erfinv : ndarray
-        Value of erfinv(y0), ..., erfinv(yn)
+        The inverse of erf of y, element-wise
 
     Examples
     --------
@@ -779,7 +781,6 @@ def erfinv(y):
     2) evaluating a ndarray
 
     >>> from scipy import special
-    >>> import numpy as np
     >>> y = np.linspace(-1.0, 1.0, num=10)
     >>> special.erfinv(y)
     array([       -inf, -0.86312307, -0.5407314 , -0.30457019, -0.0987901 ,
@@ -790,19 +791,21 @@ def erfinv(y):
 
 
 def erfcinv(y):
-    """Inverse complementary error function.
-    This function compute the inverse error function.
-    It is related to inverse error function by :math:`erfc^{-1}(1-x)=erf^{-1}(x)`
+    """Inverse of the complementary error function erfc.
+
+    Computes the inverse of the complementary error function erfc.
+
+    It is related to inverse of the error function by erfcinv(1-x) = erfinv(x)
 
     Parameters
     ----------
     y : ndarray
-        Argument at which to evaluate for (0, 2)
+        Argument at which to evaluate. Domain: (0, 2)
 
     Returns
     -------
     erfcinv : ndarray
-        Value of erfcinv(y0), ..., erfcinv(yn)
+        The inverse of erfc of y, element-wise
 
     Examples
     --------
@@ -815,7 +818,6 @@ def erfcinv(y):
     2) evaluating a ndarray
 
     >>> from scipy import special
-    >>> import numpy as np
     >>> y = np.linspace(0.0, 2.0, num=11)
     >>> special.erfcinv(y)
     array([        inf,  0.9061938 ,  0.59511608,  0.37080716,  0.17914345,
@@ -832,18 +834,20 @@ def erf_zeros(nt):
     Parameters
     ----------
     nt : int
-        Argument at which to evaluate
+        The number of zeros to compute
 
     Returns
     -------
-    zeros of erf(nt) : ndarray (complex)
-        Complex value of zeros of erf(nt)
+    Complex zeros of erf(nt) : ndarray (complex)
+        Complex value at which zeros of erf(nt)
 
     Examples
     --------
     >>> from scipy import special
     >>> special.erf_zeros(1)
     array([1.45061616+1.880943j])
+    >>> special.erf(special.erf_zeros(1))
+    array([4.95159469e-14-1.16407394e-16j])
 
     References
     ----------
@@ -2258,3 +2262,4 @@ def zeta(x, q=None, out=None):
     if q is None:
         q = 1
     return _zeta(x, q, out)
+
