@@ -457,9 +457,9 @@ class LinearOperator(object):
         """ Default implementation of _transpose; relies on adjoint. """
         shape = (self.shape[1], self.shape[0])
         return _CustomLinearOperator(shape,
-                                     matvec = lambda x: np.conj(self.rmatvec(x)),
-                                     rmatvec = lambda x: np.conj(self.matvec(x)),
-                                     dtype = self.dtype)
+                                     matvec=lambda x: np.conj(self.rmatvec(x)),
+                                     rmatvec=lambda x: np.conj(self.matvec(x)),
+                                     dtype=self.dtype)
 
 class _CustomLinearOperator(LinearOperator):
     """Linear operator defined in terms of user-specified operations."""
