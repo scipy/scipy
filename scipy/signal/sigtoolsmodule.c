@@ -216,7 +216,7 @@ static double freq_eval(int k, int n, double *grid, double *x, double *y, double
  */
 static int remez(double *dev, double des[], double grid[], double edge[],  
 	   double wt[], int ngrid, int nbands, int iext[], double alpha[],
-	   int nfcns, int itrmax, double *work, int dimsize)
+	   int nfcns, int itrmax, double *work, int dimsize, int *niter_out)
 		/* dev, iext, alpha                         are output types */
 		/* des, grid, edge, wt, ngrid, nbands, nfcns are input types */
 {
@@ -281,6 +281,7 @@ static int remez(double *dev, double des[], double grid[], double edge[],
 	}
 	if ( (*dev) <= devl ) {
 	    /* finished */
+	    *niter_out = niter;
 	    return -1;
 	}
 	devl = (*dev);
@@ -563,7 +564,7 @@ static double wate(double freq, double *fx, double *wtx, int lband, int jtype)
 
 static int pre_remez(double *h2, int numtaps, int numbands, double *bands,
                      double *response, double *weight, int type, int maxiter,
-                     int grid_density) {
+                     int grid_density, int *niter_out) {
   
   int jtype, nbands, nfilt, lgrid, nz;
   int neg, nodd, nm1;
@@ -698,7 +699,7 @@ static int pre_remez(double *h2, int numtaps, int numbands, double *bands,
     nz  = nfcns + 1;
 
     if (remez(&dev, des, grid, edge, wt, ngrid, numbands, iext, alpha, nfcns,
-              maxiter, work, dimsize) < 0) {
+              maxiter, work, dimsize, niter_out) < 0) {
         free(tempstor);
         return -1;
     }
@@ -1268,14 +1269,15 @@ static PyObject *sigtools_remez(PyObject *NPY_UNUSED(dummy), PyObject *args)
     h = (PyArrayObject *)PyArray_SimpleNew(1, &ret_dimens, NPY_DOUBLE);
     if (h == NULL) goto fail;
 
+    int niter = -1;
     err = pre_remez((double *)PyArray_DATA(h), numtaps, numbands, 
                     (double *)PyArray_DATA(a_bands),
                     (double *)PyArray_DATA(a_des),
                     (double *)PyArray_DATA(a_weight),
-                    type, maxiter, grid_density);
+                    type, maxiter, grid_density, &niter);
     if (err < 0) {
         if (err == -1) {
-            sprintf(mystr, "Failure to converge after %d iterations.\n", maxiter);
+            sprintf(mystr, "Failure to converge at iteration %d, try reducing transition band width.\n", niter);
 	        PyErr_SetString(PyExc_ValueError, mystr);
 	        goto fail;
         }
