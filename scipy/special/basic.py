@@ -758,12 +758,14 @@ def erfinv(y):
 
     Computes the inverse of the error function.
 
-    Inverse of the error function satisfies erf(erfinv(x)) = x.
+    In complex domain, there is no unique complex number w satisfying erf(w)=z.
+    This indicates a true inverse function would have multi-value. When the domain restricts to the real, -1 < x < 1,
+    there is a unique real number satisfying erf(erfinv(x)) = x.
 
     Parameters
     ----------
     y : ndarray
-        Argument at which to evaluate. Domain: (-1, 1)
+        Argument at which to evaluate. Domain: [-1, 1]
 
     Returns
     -------
@@ -795,12 +797,16 @@ def erfcinv(y):
 
     Computes the inverse of the complementary error function erfc.
 
+    In complex domain, there is no unique complex number w satisfying erfc(w)=z.
+    This indicates a true inverse function would have multi-value. When the domain restricts to the real, 0 < x < 2,
+    there is a unique real number satisfying erfc(erfcinv(x)) = erfcinv(erfc(x)).
+
     It is related to inverse of the error function by erfcinv(1-x) = erfinv(x)
 
     Parameters
     ----------
     y : ndarray
-        Argument at which to evaluate. Domain: (0, 2)
+        Argument at which to evaluate. Domain: [0, 2]
 
     Returns
     -------
@@ -838,14 +844,17 @@ def erf_zeros(nt):
 
     Returns
     -------
-    Complex zeros of erf(nt) : ndarray (complex)
-        Complex value at which zeros of erf(nt)
+    The locations of the zeros of erf : ndarray (complex)
+        Complex values at which zeros of erf(z)
 
     Examples
     --------
     >>> from scipy import special
     >>> special.erf_zeros(1)
     array([1.45061616+1.880943j])
+
+    Check that erf is (close to) zero for the value returned by erf_zeros
+    
     >>> special.erf(special.erf_zeros(1))
     array([4.95159469e-14-1.16407394e-16j])
 
