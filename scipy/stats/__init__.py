@@ -160,9 +160,9 @@ Discrete distributions
    skellam           -- Skellam
    zipf              -- Zipf
 
-In the sequel, an overview of statistical functions is given.
+An overview of statistical functions is given below.
 Several of these functions have a similar version in
-scipy.stats.mstats which work for masked arrays.
+`scipy.stats.mstats` which work for masked arrays.
 
 Summary statistics
 ==================
@@ -265,7 +265,7 @@ Statistical tests
    binom_test
    fligner
    median_test
-   mood   
+   mood
    skewtest
    kurtosistest
    normaltest
@@ -282,7 +282,7 @@ Transformations
    obrientransform
    sigmaclip
    trimboth
-   trim1   
+   trim1
    zmap
    zscore
 
