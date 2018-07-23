@@ -1783,10 +1783,6 @@ class Spline(object):
     omega_f : array_like, shape (3,), optional
         Final angular velocity in radians at the time of the last orientation.
         Default is `[0, 0, 0]`.
-    tol : float, optional
-        Tolerance with which to calculate intermediate angular velocities.
-        Iterations are stopped when further steps change and magnitude of the
-        velocities by less than this amount. Default is 1e-15.
 
     Methods
     -------
@@ -1797,8 +1793,7 @@ class Spline(object):
     .. [1] `Quaternion Spline
             <http://qspline.sourceforge.net/qspline.pdf>`_
     """
-    def __init__(self, times, rotations, omega_i=[0, 0, 0], omega_f=[0, 0, 0],
-                 tol=1e-12):
+    def __init__(self, times, rotations, omega_i=[0, 0, 0], omega_f=[0, 0, 0]):
         if len(rotations) == 1:
             raise ValueError("`rotations` must contain at least 2 rotations.")
 
@@ -1837,11 +1832,7 @@ class Spline(object):
             np.zeros((len(rotations) - 2, 3)), rotvecs, dt_inv,
             omega_i, omega_f)
 
-        # Tolerance for iterative computation. Reference conatins 1e-6 but only
-        # as an estimate for number of iterations. The number of iterations
-        # depends on the 'non-linearity' or lack of 'smoothness' of the curve.
-        # Default of 1e-12 is achieved in ~200 iterations.
-        while diff >= tol:
+        while diff >= 1e-16:
             w_int, diff = _intermediate_step(w_int, rotvecs, dt_inv,
                                              omega_i, omega_f)
 
