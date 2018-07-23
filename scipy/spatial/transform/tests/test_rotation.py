@@ -902,6 +902,31 @@ def test_spline_trivial():
     assert_allclose(interpolator(key_times).as_rotvec(), key_rots.as_rotvec())
 
 
+def test_spline_continuous_velocity():
+    # Angular velocity continuity check using finite difference approximation
+    # at the keyframe times.
+    np.random.seed(0)
+
+    key_rots = Rotation.random(12)
+    key_times = np.arange(12)
+
+    spline = Spline(key_times, key_rots)
+
+    t = np.arange(10) + 1
+    dt = 1e-12
+    rots = spline(t)
+    left_rots = spline(t - dt)
+    right_rots = spline(t + dt)
+
+    # q_f = q_i * del_q
+    left_vel = (left_rots.inv() * rots).as_rotvec() / dt
+    right_vel = (rots.inv() * right_rots).as_rotvec() / dt
+
+    val = spline.omega[1:-1]
+    # assert_allclose(left_vel, val, atol=1e-3)
+    assert_allclose(right_vel, val, atol=1e-3)
+
+
 def test_spline_single_rot():
     with pytest.raises(ValueError, match="at least 2 rotations"):
         r = Rotation.from_quat([1, 2, 3, 4])
