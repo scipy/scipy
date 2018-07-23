@@ -1749,8 +1749,7 @@ def _intermediate_step(w_prev, rotvecs, dt_inv, w_i, w_f):
 
     w = np.empty_like(w_prev)
     w[-1] = d[-1] / b[-1]
-    # TODO: maybe elementwise update of w_i using just computed value of w_i+1?
-    w[:-1] = ((d[:-1] - c[:-1, None] * _Bfunc_inv(rotvecs[1:-1], w_prev[:-1]))
+    w[:-1] = ((d[:-1] - c[:-1, None] * _Bfunc_inv(rotvecs[1:-1], w_prev[1:]))
               / b[:-1, None])
 
     error = w - w_prev
