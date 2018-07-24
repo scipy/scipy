@@ -423,11 +423,12 @@ class TestConstructUtils(object):
     def test_random_sampling(self):
         # Simple sanity checks for sparse random sampling.
         for f in sprand, _sprandn:
-            for t in [np.float32, np.float64, np.longdouble]:
+            for t in [np.float32, np.float64, np.longdouble,
+                      np.int32, np.int64, np.complex64, np.complex128]:
                 x = f(5, 10, density=0.1, dtype=t)
                 assert_equal(x.dtype, t)
                 assert_equal(x.shape, (5, 10))
-                assert_equal(x.nonzero()[0].size, 5)
+                assert_equal(x.nnz, 5)
 
             x1 = f(5, 10, density=0.1, random_state=4321)
             assert_equal(x1.dtype, np.double)
