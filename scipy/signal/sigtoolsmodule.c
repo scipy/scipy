@@ -1209,6 +1209,7 @@ static PyObject *sigtools_remez(PyObject *NPY_UNUSED(dummy), PyObject *args)
     intp ret_dimens; int maxiter = 25, grid_density = 16;
     double oldvalue, *dptr, fs = 1.0;
     char mystr[255];
+    int niter = -1;
 
     if (!PyArg_ParseTuple(args, "iOOO|idii", &numtaps, &bands, &des, &weight, 
                           &type, &fs, &maxiter, &grid_density)) {
@@ -1269,7 +1270,6 @@ static PyObject *sigtools_remez(PyObject *NPY_UNUSED(dummy), PyObject *args)
     h = (PyArrayObject *)PyArray_SimpleNew(1, &ret_dimens, NPY_DOUBLE);
     if (h == NULL) goto fail;
 
-    int niter = -1;
     err = pre_remez((double *)PyArray_DATA(h), numtaps, numbands, 
                     (double *)PyArray_DATA(a_bands),
                     (double *)PyArray_DATA(a_des),
