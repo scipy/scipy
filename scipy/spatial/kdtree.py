@@ -695,6 +695,70 @@ class KDTree(object):
                           other.tree, Rectangle(other.maxes, other.mins))
         return results
 
+    def __query_range(self,rng):
+        mins = rng[:len(rng)//2]
+        maxes = rng[len(rng)//2:]
+
+        def _check_containment(idx):
+            if np.all((mins <= self.data[idx]) & (self.data[idx] <= maxes)):
+                return True
+            else:
+                return False
+
+        output = []
+        stack = [self.tree]
+        while stack:
+            node = stack.pop()
+            if isinstance(node,KDTree.leafnode):
+                output.extend([idx for idx in node.idx.tolist() if _check_containment(idx)])
+            else:
+                if node.split >= mins[node.split_dim]:
+                    stack.append(node.less)
+                if node.split <= maxes[node.split_dim]:
+                    stack.append(node.greater)
+        return np.asarray(output)
+
+    def query_range(self,rng):
+        """Find all points within a given range rng.
+        
+        Parameters
+        ----------
+        rng : array_like, shape tuple + (self.m*2)
+            A range or ranges to search for points within. Should be
+            in form [min_i,min_j...max_i,maxj].
+        
+        Returns
+        -------
+        results : array or array of arrays
+            If `rng` is a single range reuturns an array of the indices 
+            of points within `rng`. If `rng` is an array of ranges, returns 
+            an object array of shape tuple containing arrays of contained points.
+        
+        Examples
+        --------
+        >>> from scipy import spatial
+        >>> x, y = np.mgrid[0:5, 0:5]
+        >>> points = np.c_[x.ravel(), y.ravel()]
+        >>> tree = spatial.KDTree(points)
+        >>> tree.query_range([0,0,2,2])
+        array([ 0,  1,  2,  5,  6,  7, 10, 11, 12]) 
+        """
+
+        rng = np.asarray(rng, dtype='float64')
+        if rng.shape[-1]//2 != self.m:
+            raise ValueError("Searching for a %d-dimensional rectangle in a "
+                             "%d-dimensional KDTree" % (rng.shape[-1]//2, self.m))
+        if rng.ndim == 1:
+            return self.__query_range(rng)
+        elif rng.ndim == 2:
+            retshape = rng.shape[:-1]
+            result = np.empty(retshape, dtype=object)
+            for c in np.ndindex(retshape):
+                result[c] = self.__query_range(rng[c])
+            return result
+        else:
+            raise ValueError("rng must be either 1 or 2dim array, %d dimensional array found." % rng.ndim)
+
     def query_pairs(self, r, p=2., eps=0):
         """
         Find all pairs of points within a distance.
