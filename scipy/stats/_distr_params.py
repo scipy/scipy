@@ -66,9 +66,7 @@ distcont = [
     ['laplace', ()],
     ['levy', ()],
     ['levy_l', ()],
-    ['levy_stable', (0.35667405469844993,
-                     -0.67450531578494011)],  # NotImplementedError
-    #           rvs not tested
+    ['levy_stable', (1.8, -0.5)],
     ['loggamma', (0.41411931826052117,)],
     ['logistic', ()],
     ['loglaplace', (3.2505926592051435,)],

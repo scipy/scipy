@@ -92,5 +92,18 @@ class Distribution(Benchmark):
                 stats.beta.rvs(size=1000, a=5, b=3, loc=4, scale=10)
             elif properties == 'fit':
                 stats.beta.fit(self.x, a=5, b=3, loc=4, scale=10)
-        
+
+
+class DescriptiveStats(Benchmark):
+    param_names = ['n_levels']
+    params = [
+        [10, 1000]
+    ]
+
+    def setup(self, n_levels):
+        np.random.seed(12345678)
+        self.levels = np.random.randint(n_levels, size=(1000, 10))
+
+    def time_mode(self, n_levels):
+        stats.mode(self.levels, axis=0)
 

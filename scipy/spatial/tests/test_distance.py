@@ -177,7 +177,7 @@ def _chk_weights(arrays, weights=None, axis=None,
         raise ValueError("weights cannot be negative")
 
     if pos_only:
-        pos_weights = np.where(weights > 0)[0]
+        pos_weights = np.nonzero(weights > 0)[0]
         if pos_weights.size < weights.size:
             arrays = tuple(np.take(a, pos_weights, axis=axis) for a in arrays)
             weights = weights[pos_weights]
@@ -308,6 +308,7 @@ def _weight_checked(fn, n_args=2, default_axis=None, key=lambda x: x, weight_arg
                 for a in dud_arrays:
                     indexer = [slice(None)] * a.ndim
                     indexer[axis] = slice(weights.size, None)
+                    indexer = tuple(indexer)
                     a[indexer] = a[indexer] * 101
                 dud_args = tuple(dud_arrays) + rest
                 _rough_check(result, fn(*dud_args, **kwargs), key=key)
@@ -315,6 +316,7 @@ def _weight_checked(fn, n_args=2, default_axis=None, key=lambda x: x, weight_arg
                 for a in dud_arrays:
                     indexer = [slice(None)] * a.ndim
                     indexer[axis] = slice(weights.size, None)
+                    indexer = tuple(indexer)
                     a[indexer] = a[indexer] * np.nan
                 if kwargs.get("nan_policy", None) == "omit" and nan_safe:
                     dud_args = tuple(dud_arrays) + rest

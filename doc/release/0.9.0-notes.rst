@@ -45,7 +45,7 @@ Soon after this release, Scipy will stop using SVN as the version control
 system, and move to Git. The development source code for Scipy can from then on
 be found at
 
-    http://github.com/scipy/scipy
+    https://github.com/scipy/scipy
 
 
 New features

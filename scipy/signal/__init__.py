@@ -248,7 +248,9 @@ but we list them here for convenience:
    windows.exponential       -- Exponential window
    windows.flattop           -- Flat top window
    windows.gaussian          -- Gaussian window
+   windows.general_cosine    -- Generalized Cosine window
    windows.general_gaussian  -- Generalized Gaussian window
+   windows.general_hamming   -- Generalized Hamming window
    windows.hamming           -- Hamming window
    windows.hann              -- Hann window
    windows.hanning           -- Hann window
@@ -302,6 +304,7 @@ Spectral Analysis
    stft           -- Compute the Short Time Fourier Transform
    istft          -- Compute the Inverse Short Time Fourier Transform
    check_COLA     -- Check the COLA constraint for iSTFT reconstruction
+   check_NOLA     -- Check the NOLA constraint for iSTFT reconstruction
 
 """
 from __future__ import division, print_function, absolute_import
@@ -328,12 +331,16 @@ from ._peak_finding import *
 from .windows import get_window  # keep this one in signal namespace
 
 
-# deal with * -> windows.* deprecation
+# deal with * -> windows.* doc-only soft-deprecation
 deprecated_windows = ('boxcar', 'triang', 'parzen', 'bohman', 'blackman',
                       'nuttall', 'blackmanharris', 'flattop', 'bartlett',
                       'barthann', 'hamming', 'kaiser', 'gaussian',
                       'general_gaussian', 'chebwin', 'slepian', 'cosine',
                       'hann', 'exponential', 'tukey')
+
+# backward compatibility imports for actually deprecated windows not
+# in the above list
+from .windows import hanning
 
 
 def deco(name):
@@ -344,6 +351,9 @@ def deco(name):
         return f(*args, **kwargs)
 
     wrapped.__name__ = name
+    wrapped.__module__ = 'scipy.signal'
+    if hasattr(f, '__qualname__'):
+        wrapped.__qualname__ = f.__qualname__
 
     if f.__doc__ is not None:
         lines = f.__doc__.splitlines()

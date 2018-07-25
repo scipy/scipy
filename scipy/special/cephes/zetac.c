@@ -51,11 +51,12 @@
  */
 
 #include "mconf.h"
+#include "lanczos.h"
 
 /* Riemann zeta(x) - 1
  * for integer arguments between 0 and 30.
  */
-static double azetac[] = {
+static const double azetac[] = {
     -1.50000000000000000000E0,
     0.0,  /* Not used; zetac(1.0) is infinity. */
     6.44934066848226436472E-1,
@@ -162,37 +163,67 @@ static double S[5] = {
     7.43853965136767874343E4,
 };
 
+static double TAYLOR0[10] = {
+    -1.0000000009110164892,
+    -1.0000000057646759799,
+    -9.9999983138417361078e-1,
+    -1.0000013011460139596,
+    -1.000001940896320456,
+    -9.9987929950057116496e-1,
+    -1.000785194477042408,
+    -1.0031782279542924256,
+    -9.1893853320467274178e-1,
+    -1.5,
+};
+
 #define MAXL2 127
+#define SQRT_2_PI 0.79788456080286535587989
+
+extern double MACHEP;
+
+static double zetac_reflection(double);
+static double zetac_smallneg(double);
+static double zetac_positive(double);
+
 
 /*
  * Riemann zeta function, minus one
  */
-extern double MACHEP;
+double zetac(double x)
+{
+    if (npy_isnan(x)) {
+	return x;
+    }
+    else if (x == -NPY_INFINITY) {
+	return NPY_NAN;
+    }
+    else if (x < 0.0 && x > -0.01) {
+	return zetac_smallneg(x);
+    }
+    else if (x < 0.0) {
+	return zetac_reflection(-x);
+    }
+    else {
+	return zetac_positive(x);
+    }
+}
 
-double zetac(x)
-double x;
+
+/*
+ * Compute zetac for positive arguments
+ */
+static NPY_INLINE double zetac_positive(double x)
 {
     int i;
     double a, b, s, w;
-
-    if (x < 0.0) {
-        if (x < -30.8148) {
-            mtherr("zetac", OVERFLOW);
-            return (NPY_NAN);
-        }
-        s = 1.0 - x;
-        w = zetac(s);
-        b = sin(0.5 * NPY_PI * x) * pow(2.0 * NPY_PI, x) *
-            Gamma(s) * (1.0 + w) / NPY_PI;
-        return (b - 1.0);
-    }
 
     if (x == 1.0) {
         return NPY_INFINITY;
     }
 
     if (x >= MAXL2) {
-        return (0.0);       /* because first term is 2**-x */
+	/* because first term is 2**-x */
+        return 0.0;
     }
 
     /* Tabulated values for integer argument */
@@ -208,31 +239,27 @@ double x;
         }
     }
 
-
     if (x < 1.0) {
         w = 1.0 - x;
         a = polevl(x, R, 5) / (w * p1evl(x, S, 5));
-        return (a);
+        return a;
     }
 
     if (x <= 10.0) {
         b = pow(2.0, x) * (x - 1.0);
         w = 1.0 / x;
         s = (x * polevl(w, P, 8)) / (b * p1evl(w, Q, 8));
-        return (s);
+        return s;
     }
 
     if (x <= 50.0) {
         b = pow(2.0, -x);
         w = polevl(x, A, 10) / p1evl(x, B, 10);
         w = exp(w) + b;
-        return (w);
+        return w;
     }
 
-
     /* Basic sum of inverse powers */
-
-
     s = 0.0;
     a = 1.0;
     do {
@@ -244,5 +271,39 @@ double x;
 
     b = pow(2.0, -x);
     s = (s + b) / (1.0 - b);
-    return (s);
+    return s;
+}
+
+
+/*
+ * Compute zetac for small negative x. We can't use the reflection
+ * formula because to double precision 1 - x = 1 and zetac(1) = inf.
+ */
+static NPY_INLINE double zetac_smallneg(double x)
+{
+    return polevl(x, TAYLOR0, 9);
+}
+
+
+/*
+ * Compute zetac using the reflection formula (see DLMF 25.4.2) plus
+ * the Lanczos approximation for Gamma to avoid overflow.
+ */
+static NPY_INLINE double zetac_reflection(double x)
+{
+    double s, hx, x_shift;
+
+    hx = x / 2;
+    if (hx == floor(hx)) {
+	/* Hit a zero of the sine factor */
+	return -1.0;
+    }
+
+    /* Group large terms together to prevent overflow */
+    s = pow((x + lanczos_g + 0.5) / (2 * NPY_PI * NPY_E), x + 0.5);
+    /* Reduce the argument to sine */
+    x_shift = fmod(x, 4);
+    s *= -SQRT_2_PI * sin(0.5 * NPY_PI * x_shift);
+    s *= lanczos_sum_expg_scaled(x + 1) * zeta(x + 1, 1);
+    return s - 1.0;
 }

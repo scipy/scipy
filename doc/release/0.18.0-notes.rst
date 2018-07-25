@@ -95,7 +95,7 @@ and functionality so as to improve compatibility with analogously defined
 functions in `numpy`.
 
 Sparse matrices now have a `count_nonzero` method, which counts the number of
-nonzero elements in the matrix. Unlike `getnnz()` and ``nnz`` propety,
+nonzero elements in the matrix. Unlike `getnnz()` and ``nnz`` property,
 which return the number of stored entries (the length of the data attribute),
 this method counts the actual number of non-zero entries in data.
 

@@ -1523,11 +1523,8 @@ C Then Y is loaded from YH, and T is set to TN.
 C The optional output is loaded into the work arrays before returning.
 C-----------------------------------------------------------------------
 C The maximum number of steps was taken before reaching TOUT. ----------
- 500  MSG = 'ZVODE--  At current T (=R1), MXSTEP (=I1) steps   '
-      CALL XERRWD (MSG, 50, 201, 1, 0, 0, 0, 0, ZERO, ZERO)
-      MSG = '      taken on this call before reaching TOUT     '
-      CALL XERRWD (MSG, 50, 201, 1, 1, MXSTEP, 0, 1, TN, ZERO)
-      ISTATE = -1
+C Error message removed, see gh-7888
+ 500  ISTATE = -1
       GO TO 580
 C EWT(i) .le. 0.0 for some i (not at start of problem). ----------------
  510  EWTI = RWORK(LEWT+I-1)

@@ -826,29 +826,16 @@ class TestSystematic(object):
                             [Arg(), ComplexArg()])
 
     def test_besselk(self):
-        def mpbesselk(v, x):
-            r = float(mpmath.besselk(v, x, **HYPERKW))
-            if abs(r) > 1e305:
-                # overflowing to inf a bit earlier is OK
-                r = np.inf * np.sign(r)
-            if abs(v) == abs(x) and abs(r) == np.inf and abs(x) > 1:
-                # wrong result (kv(x,x) -> 0 for x > 1),
-                # try with higher dps
-                old_dps = mpmath.mp.dps
-                mpmath.mp.dps = 200
-                try:
-                    r = float(mpmath.besselk(v, x, **HYPERKW))
-                finally:
-                    mpmath.mp.dps = old_dps
-            return r
         assert_mpmath_equal(sc.kv,
-                            exception_to_nan(mpbesselk),
-                            [Arg(-1e100, 1e100), Arg()])
+                            mpmath.besselk,
+                            [Arg(-200, 200), Arg(0, np.inf)],
+                            nan_ok=False, rtol=1e-12)
 
     def test_besselk_int(self):
         assert_mpmath_equal(sc.kn,
-                            exception_to_nan(lambda v, z: mpmath.besselk(v, z, **HYPERKW)),
-                            [IntArg(-1000, 1000), Arg()])
+                            mpmath.besselk,
+                            [IntArg(-200, 200), Arg(0, np.inf)],
+                            nan_ok=False, rtol=1e-12)
 
     def test_besselk_complex(self):
         assert_mpmath_equal(lambda v, z: sc.kv(v.real, z),
@@ -1018,14 +1005,10 @@ class TestSystematic(object):
                             rtol=1e-8)
 
     def test_cospi(self):
-        # Without the extra factor of 2 in the relative tolerance as
-        # compared to sinpi there will be one failure at ~0.318 with
-        # an rdiff of ~6e-16. Neither the Taylor series nor the system
-        # cosine are accurate enough here.
         eps = np.finfo(float).eps
         assert_mpmath_equal(_cospi,
                             mpmath.cospi,
-                            [Arg()], nan_ok=False, rtol=4*eps)
+                            [Arg()], nan_ok=False, rtol=eps)
 
     def test_cospi_complex(self):
         assert_mpmath_equal(_cospi,
@@ -1418,36 +1401,6 @@ class TestSystematic(object):
                             [Arg(-1e3, 1e3), Arg(-1e3, 1e3), ComplexArg()],
                             n=2000)
 
-    @pytest.mark.xfail(run=False)
-    def test_hyp1f2(self):
-        def hyp1f2(a, b, c, x):
-            v, err = sc.hyp1f2(a, b, c, x)
-            if abs(err) > max(1, abs(v)) * 1e-7:
-                return np.nan
-            return v
-        assert_mpmath_equal(hyp1f2,
-                            exception_to_nan(lambda a, b, c, x: mpmath.hyp1f2(a, b, c, x, **HYPERKW)),
-                            [Arg(), Arg(), Arg(), Arg()],
-                            n=20000)
-
-    @pytest.mark.xfail(run=False)
-    def test_hyp2f0(self):
-        def hyp2f0(a, b, x):
-            v, err = sc.hyp2f0(a, b, x, 1)
-            if abs(err) > max(1, abs(v)) * 1e-7:
-                return np.nan
-            return v
-        assert_mpmath_equal(hyp2f0,
-                            lambda a, b, x: time_limited(0.1)(exception_to_nan(trace_args(mpmath.hyp2f0)))(
-                                a, b, x, **HYPERKW),
-                            [Arg(), Arg(), Arg()])
-
-    @pytest.mark.xfail(run=False, reason="spurious inf (or inf with wrong sign) for some argument values")
-    def test_hyp2f1(self):
-        assert_mpmath_equal(sc.hyp2f1,
-                            exception_to_nan(lambda a, b, c, x: mpmath.hyp2f1(a, b, c, x, **HYPERKW)),
-                            [Arg(), Arg(), Arg(), Arg()])
-
     @nonfunctional_tooslow
     def test_hyp2f1_complex(self):
         # Scipy's hyp2f1 seems to have performance and accuracy problems
@@ -1832,7 +1785,7 @@ class TestSystematic(object):
     def test_sinpi(self):
         eps = np.finfo(float).eps
         assert_mpmath_equal(_sinpi, mpmath.sinpi,
-                            [Arg()], nan_ok=False, rtol=2*eps)
+                            [Arg()], nan_ok=False, rtol=eps)
 
     def test_sinpi_complex(self):
         assert_mpmath_equal(_sinpi, mpmath.sinpi,
@@ -1930,6 +1883,12 @@ class TestSystematic(object):
                             exception_to_nan(mpmath.zeta),
                             [Arg(a=1, b=1e10, inclusive_a=False),
                              Arg(a=0, inclusive_a=False)])
+
+    def test_zetac(self):
+        assert_mpmath_equal(sc.zetac,
+                            lambda x: mpmath.zeta(x) - 1,
+                            [Arg(-100, 100)],
+                            nan_ok=False, dps=45, rtol=1e-13)
 
     def test_boxcox(self):
 

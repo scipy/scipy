@@ -475,3 +475,15 @@ class TestDifferentialEvolutionSolver(object):
                       DifferentialEvolutionSolver,
                       *(rosen, self.bounds),
                       **{'init': population})
+
+    def test_infinite_objective_function(self):
+        # Test that there are no problems if the objective function
+        # returns inf on some runs
+        def sometimes_inf(x):
+            if x[0] < .5:
+                return np.inf
+            return x[1]
+        bounds = [(0, 1), (0, 1)]
+        x_fit = differential_evolution(sometimes_inf,
+                                       bounds=[(0, 1), (0, 1)],
+                                       disp=False)

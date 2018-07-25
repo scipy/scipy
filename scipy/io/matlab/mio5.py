@@ -2,7 +2,7 @@
 
 The matfile specification last found here:
 
-http://www.mathworks.com/access/helpdesk/help/pdf_doc/matlab/matfile_format.pdf
+https://www.mathworks.com/access/helpdesk/help/pdf_doc/matlab/matfile_format.pdf
 
 (as of December 5 2008)
 '''

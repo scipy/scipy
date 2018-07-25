@@ -1,4 +1,5 @@
-      subroutine rwupdt(n,r,ldr,w,b,alpha,cos,sin)
+      recursive
+     *subroutine rwupdt(n,r,ldr,w,b,alpha,cos,sin)
       integer n,ldr
       double precision alpha
       double precision r(ldr,n),w(n),b(n),cos(n),sin(n)

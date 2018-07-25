@@ -660,7 +660,7 @@ def solve_toeplitz(c_or_cr, b, check_finite=True):
     """
     # If numerical stability of this algorithm is a problem, a future
     # developer might consider implementing other O(N^2) Toeplitz solvers,
-    # such as GKO (http://www.jstor.org/stable/2153371) or Bareiss.
+    # such as GKO (https://www.jstor.org/stable/2153371) or Bareiss.
     if isinstance(c_or_cr, tuple):
         c, r = c_or_cr
         c = _asarray_validated(c, check_finite=check_finite).ravel()
@@ -1566,7 +1566,7 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
 
     .. [2] : R. James, J. Langou, B.R. Lowery, "On matrix balancing and
        eigenvector computation", 2014, Available online:
-       http://arxiv.org/abs/1401.5766
+       https://arxiv.org/abs/1401.5766
 
     .. [3] :  D.S. Watkins. A case where balancing is harmful.
        Electron. Trans. Numer. Anal, Vol.23, 2006.

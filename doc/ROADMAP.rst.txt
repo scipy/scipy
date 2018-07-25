@@ -71,9 +71,6 @@ Regarding build environments:
   - Support for Accelerate will be dropped, likely in SciPy 1.1.0.  If there is
     enough interest, we may want to write wrappers so the BLAS part of Accelerate
     can still be used.
-  - Bento development has stopped, so will remain having an experimental,
-    use-at-your-own-risk status.  Only the people that use it will be
-    responsible for keeping the Bento build updated.
 
 Continuous integration is in good shape, it covers Windows, macOS and Linux, as well
 as a range of versions of our dependencies and building release quality wheels.

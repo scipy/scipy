@@ -276,7 +276,7 @@ def firwin(numtaps, cutoff, width=None, window='hamming', pass_zero=True,
     ----------
     numtaps : int
         Length of the filter (number of coefficients, i.e. the filter
-        order + 1).  `numtaps` must be even if a passband includes the
+        order + 1).  `numtaps` must be odd if a passband includes the
         Nyquist frequency.
     cutoff : float or 1D array_like
         Cutoff frequency of filter (expressed in the same units as `nyq`)

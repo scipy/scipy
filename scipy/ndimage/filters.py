@@ -29,6 +29,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from __future__ import division, print_function, absolute_import
+import warnings
 
 import math
 import numpy
@@ -46,6 +47,10 @@ __all__ = ['correlate1d', 'convolve1d', 'gaussian_filter1d', 'gaussian_filter',
            'maximum_filter1d', 'minimum_filter', 'maximum_filter',
            'rank_filter', 'median_filter', 'percentile_filter',
            'generic_filter1d', 'generic_filter']
+
+
+def _invalid_origin(origin, lenw):
+    return (origin < -(lenw // 2)) or (origin > (lenw - 1) // 2)
 
 
 @_ni_docstrings.docfiller
@@ -83,9 +88,10 @@ def correlate1d(input, weights, axis=-1, output=None, mode="reflect",
     if not weights.flags.contiguous:
         weights = weights.copy()
     axis = _ni_support._check_axis(axis, input.ndim)
-    if (len(weights) // 2 + origin < 0) or (len(weights) // 2 +
-                                            origin > len(weights)):
-        raise ValueError('invalid origin')
+    if _invalid_origin(origin, len(weights)):
+        raise ValueError('Invalid origin; origin must satisfy '
+                         '-(len(weights) // 2) <= origin <= '
+                         '(len(weights)-1) // 2')
     mode = _ni_support._extend_mode_to_code(mode)
     _nd_image.correlate1d(input, weights, axis, output, mode, cval,
                           origin)
@@ -596,8 +602,11 @@ def _correlate_or_convolve(input, weights, output, mode, cval, origin,
             if not weights.shape[ii] & 1:
                 origins[ii] -= 1
     for origin, lenw in zip(origins, wshape):
-        if (lenw // 2 + origin < 0) or (lenw // 2 + origin > lenw):
-            raise ValueError('invalid origin')
+        if _invalid_origin(origin, lenw):
+            raise ValueError('Invalid origin; origin must satisfy '
+                             '-(weights.shape[k] // 2) <= origin[k] <= '
+                             '(weights.shape[k]-1) // 2')
+
     if not weights.flags.contiguous:
         weights = weights.copy()
     output = _ni_support._get_output(output, input)
@@ -673,7 +682,7 @@ def convolve(input, weights, output=None, mode='reflect', cval=0.0,
     --------
     Perhaps the simplest case to understand is ``mode='constant', cval=0.0``,
     because in this case borders (i.e. where the `weights` kernel, centered
-    on any one value, extends beyond an edge of `input`.
+    on any one value, extends beyond an edge of `input`) are treated as zeros.
 
     >>> a = np.array([[1, 2, 0, 0],
     ...               [5, 3, 0, 4],
@@ -951,6 +960,8 @@ def maximum_filter1d(input, size, axis=-1, output=None,
 
 def _min_or_max_filter(input, size, footprint, structure, output, mode,
                        cval, origin, minimum):
+    if (size is not None) and (footprint is not None):
+        warnings.warn("ignoring size because footprint is set", UserWarning, stacklevel=3)
     if structure is None:
         if footprint is None:
             if size is None:
@@ -1091,6 +1102,8 @@ def maximum_filter(input, size=None, footprint=None, output=None,
 @_ni_docstrings.docfiller
 def _rank_filter(input, rank, size=None, footprint=None, output=None,
                  mode="reflect", cval=0.0, origin=0, operation='rank'):
+    if (size is not None) and (footprint is not None):
+        warnings.warn("ignoring size because footprint is set", UserWarning, stacklevel=3)
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
         raise TypeError('Complex type not supported')
@@ -1396,6 +1409,8 @@ def generic_filter(input, function, size=None, footprint=None,
     not be used in new code.
 
     """
+    if (size is not None) and (footprint is not None):
+        warnings.warn("ignoring size because footprint is set", UserWarning, stacklevel=2)
     if extra_keywords is None:
         extra_keywords = {}
     input = numpy.asarray(input)

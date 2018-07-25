@@ -6,6 +6,8 @@ Post-processes HTML and Latex files output by Sphinx.
 MODE is either 'html' or 'tex'.
 
 """
+import sys
+import io
 import re, optparse
 
 def main():
@@ -20,40 +22,41 @@ def main():
     if mode not in ('html', 'tex'):
         p.error('unknown mode %s' % mode)
 
+    def _open(fn, *args, **kwargs):
+        r"""Handle UTF-8 encoding when loading under Py3"""
+        # Issue is that default encoding under Py3 is
+        # locale dependent (might even be ASCII),
+        # so need to specify the encoding.  Py2 doesn't care.
+        if sys.version_info.major < 3:
+            return open(fn, *args, **kwargs)
+        return io.open(fn, *args, encoding='utf-8', **kwargs)
+
     for fn in args:
-        f = open(fn, 'r')
-        try:
+        with _open(fn, 'r') as f:
             if mode == 'html':
                 lines = process_html(fn, f.readlines())
             elif mode == 'tex':
                 lines = process_tex(f.readlines())
-        finally:
-            f.close()
 
-        f = open(fn, 'w')
-        f.write("".join(lines))
-        f.close()
+        with _open(fn, 'w') as f:
+            f.write("".join(lines))
+
 
 def process_html(fn, lines):
     return lines
 
+
 def process_tex(lines):
     """
-    Remove unnecessary section titles from the LaTeX file.
+    Fix autosummary LaTeX bug in Sphinx < 1.7.3
+    (cf https://github.com/sphinx-doc/sphinx/issues/4790)
+
     """
     new_lines = []
     for line in lines:
-        line = re.sub(r'^\s*\\strong{See Also:}\s*$', r'\paragraph{See Also}', line)
+        line = line.replace(r'p{0.5\linewidth}', r'\X{1}{2}')
 
-        if (line.startswith(r'\section{scipy.')
-            or line.startswith(r'\subsection{scipy.')
-            or line.startswith(r'\subsubsection{scipy.')
-            or line.startswith(r'\paragraph{scipy.')
-            or line.startswith(r'\subparagraph{scipy.')
-            ):
-            pass # skip!
-        else:
-            new_lines.append(line)
+        new_lines.append(line)
     return new_lines
 
 

@@ -12,8 +12,7 @@ import pytest
 
 import scipy.special as sc
 
-__all__ = ['with_special_errors', 'assert_tol_equal', 'assert_func_equal',
-           'FuncData']
+__all__ = ['with_special_errors', 'assert_func_equal', 'FuncData']
 
 
 #------------------------------------------------------------------------------
@@ -47,20 +46,6 @@ def with_special_errors(func):
             res = func(*a, **kw)
         return res
     return wrapper
-
-
-#------------------------------------------------------------------------------
-# Comparing function values at many data points at once, with helpful
-#------------------------------------------------------------------------------
-
-def assert_tol_equal(a, b, rtol=1e-7, atol=0, err_msg='', verbose=True):
-    """Assert that `a` and `b` are equal to tolerance ``atol + rtol*abs(b)``"""
-    def compare(x, y):
-        return np.allclose(x, y, rtol=rtol, atol=atol)
-    a, b = np.asanyarray(a), np.asanyarray(b)
-    header = 'Not equal to tolerance rtol=%g, atol=%g' % (rtol, atol)
-    np.testing.utils.assert_array_compare(compare, a, b, err_msg=str(err_msg),
-                                          verbose=verbose, header=header)
 
 
 #------------------------------------------------------------------------------
@@ -309,7 +294,7 @@ class FuncData(object):
                 msg.append("Max |rdiff|: %g" % rdiff.max())
                 msg.append("Bad results (%d out of %d) for the following points (in output %d):"
                            % (np.sum(bad_j), point_count, output_num,))
-                for j in np.where(bad_j)[0]:
+                for j in np.nonzero(bad_j)[0]:
                     j = int(j)
                     fmt = lambda x: "%30s" % np.array2string(x[j], precision=18)
                     a = "  ".join(map(fmt, params))

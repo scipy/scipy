@@ -973,7 +973,6 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
     xk = x0
     if retall:
         allvecs = [x0]
-    sk = [2 * gtol]
     warnflag = 0
     gnorm = vecnorm(gfk, ord=norm)
     while (gnorm > gtol) and (k < maxiter):
@@ -1033,30 +1032,18 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
 
     if warnflag == 2:
         msg = _status_message['pr_loss']
-        if disp:
-            print("Warning: " + msg)
-            print("         Current function value: %f" % fval)
-            print("         Iterations: %d" % k)
-            print("         Function evaluations: %d" % func_calls[0])
-            print("         Gradient evaluations: %d" % grad_calls[0])
-
     elif k >= maxiter:
         warnflag = 1
         msg = _status_message['maxiter']
-        if disp:
-            print("Warning: " + msg)
-            print("         Current function value: %f" % fval)
-            print("         Iterations: %d" % k)
-            print("         Function evaluations: %d" % func_calls[0])
-            print("         Gradient evaluations: %d" % grad_calls[0])
     else:
         msg = _status_message['success']
-        if disp:
-            print(msg)
-            print("         Current function value: %f" % fval)
-            print("         Iterations: %d" % k)
-            print("         Function evaluations: %d" % func_calls[0])
-            print("         Gradient evaluations: %d" % grad_calls[0])
+
+    if disp:
+        print("%s%s" % ("Warning: " if warnflag != 0 else "", msg))
+        print("         Current function value: %f" % fval)
+        print("         Iterations: %d" % k)
+        print("         Function evaluations: %d" % func_calls[0])
+        print("         Gradient evaluations: %d" % grad_calls[0])
 
     result = OptimizeResult(fun=fval, jac=gfk, hess_inv=Hk, nfev=func_calls[0],
                             njev=grad_calls[0], status=warnflag,
@@ -1348,30 +1335,18 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
     fval = old_fval
     if warnflag == 2:
         msg = _status_message['pr_loss']
-        if disp:
-            print("Warning: " + msg)
-            print("         Current function value: %f" % fval)
-            print("         Iterations: %d" % k)
-            print("         Function evaluations: %d" % func_calls[0])
-            print("         Gradient evaluations: %d" % grad_calls[0])
-
     elif k >= maxiter:
         warnflag = 1
         msg = _status_message['maxiter']
-        if disp:
-            print("Warning: " + msg)
-            print("         Current function value: %f" % fval)
-            print("         Iterations: %d" % k)
-            print("         Function evaluations: %d" % func_calls[0])
-            print("         Gradient evaluations: %d" % grad_calls[0])
     else:
         msg = _status_message['success']
-        if disp:
-            print(msg)
-            print("         Current function value: %f" % fval)
-            print("         Iterations: %d" % k)
-            print("         Function evaluations: %d" % func_calls[0])
-            print("         Gradient evaluations: %d" % grad_calls[0])
+
+    if disp:
+        print("%s%s" % ("Warning: " if warnflag != 0 else "", msg))
+        print("         Current function value: %f" % fval)
+        print("         Iterations: %d" % k)
+        print("         Function evaluations: %d" % func_calls[0])
+        print("         Gradient evaluations: %d" % grad_calls[0])
 
     result = OptimizeResult(fun=fval, jac=gfk, nfev=func_calls[0],
                             njev=grad_calls[0], status=warnflag,
@@ -2983,7 +2958,7 @@ def show_options(solver=None, method=None, disp=True):
             ('dogleg', 'scipy.optimize._trustregion_dogleg._minimize_dogleg'),
             ('l-bfgs-b', 'scipy.optimize.lbfgsb._minimize_lbfgsb'),
             ('nelder-mead', 'scipy.optimize.optimize._minimize_neldermead'),
-            ('newtoncg', 'scipy.optimize.optimize._minimize_newtoncg'),
+            ('newton-cg', 'scipy.optimize.optimize._minimize_newtoncg'),
             ('powell', 'scipy.optimize.optimize._minimize_powell'),
             ('slsqp', 'scipy.optimize.slsqp._minimize_slsqp'),
             ('tnc', 'scipy.optimize.tnc._minimize_tnc'),
@@ -3037,6 +3012,7 @@ def show_options(solver=None, method=None, disp=True):
                 text.append(show_options(solver, name, disp=False))
             text = "".join(text)
         else:
+            method = method.lower()
             methods = dict(doc_routines[solver])
             if method not in methods:
                 raise ValueError("Unknown method %r" % (method,))

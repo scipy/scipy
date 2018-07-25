@@ -4,6 +4,7 @@
 
 
 #ifdef _MSC_VER
+#pragma float_control(precise, on)
 #pragma fenv_access (on)
 #endif
 

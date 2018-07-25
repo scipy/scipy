@@ -38,4 +38,4 @@ An installed Scipy version contains these version identifiers::
 
 
 .. _PEP 440: https://www.python.org/dev/peps/pep-0440
-.. _PyPI: http://pypi.python.org/
+.. _PyPI: https://pypi.python.org/

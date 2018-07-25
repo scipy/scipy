@@ -25,7 +25,7 @@ from scipy.linalg import (eig, eigvals, lu, svd, svdvals, cholesky, qr,
      schur, rsf2csf, lu_solve, lu_factor, solve, diagsvd, hessenberg, rq,
      eig_banded, eigvals_banded, eigh, eigvalsh, qr_multiply, qz, orth, ordqz,
      subspace_angles, hadamard, eigvalsh_tridiagonal, eigh_tridiagonal,
-     null_space)
+     null_space, cdf2rdf)
 from scipy.linalg.lapack import dgbtrf, dgbtrs, zgbtrf, zgbtrs, \
      dsbev, dsbevd, dsbevx, zhbevd, zhbevx
 from scipy.linalg.misc import norm
@@ -117,7 +117,7 @@ def random_rot(dim):
     matrices with an application to condition estimators', SIAM Journal
     on Numerical Analysis, 17(3), pp. 403-409, 1980.
     For more information see
-    http://en.wikipedia.org/wiki/Orthogonal_matrix#Randomization"""
+    https://en.wikipedia.org/wiki/Orthogonal_matrix#Randomization"""
     H = eye(dim)
     D = ones((dim,))
     for n in range(1, dim):
@@ -285,7 +285,7 @@ class TestEig(object):
     @pytest.mark.xfail(reason="See gh-2254.")
     def test_singular(self):
         # Example taken from
-        # http://www.cs.umu.se/research/nla/singular_pairs/guptri/matlab.html
+        # https://web.archive.org/web/20040903121217/http://www.cs.umu.se/research/nla/singular_pairs/guptri/matlab.html
         A = array(([22,34,31,31,17], [45,45,42,19,29], [39,47,49,26,34],
             [27,31,26,21,15], [38,44,44,24,30]))
         B = array(([13,26,25,17,24], [31,46,40,26,37], [26,40,19,25,25],
@@ -520,7 +520,7 @@ class TestEigBanded(object):
 
         # extracting eigenvalues with respect to an index range
         ind1 = 2
-        ind2 = 6
+        ind2 = np.longlong(6)
         w_sym_ind = eigvals_banded(self.bandmat_sym,
                                     select='i', select_range=(ind1, ind2))
         assert_array_almost_equal(sort(w_sym_ind),
@@ -2012,10 +2012,10 @@ class TestQZ(object):
         A = random([n,n]).astype(float32)
         B = random([n,n]).astype(float32)
         AA,BB,Q,Z = qz(A,B)
-        assert_array_almost_equal(dot(dot(Q,AA),Z.T), A)
-        assert_array_almost_equal(dot(dot(Q,BB),Z.T), B)
-        assert_array_almost_equal(dot(Q,Q.T), eye(n))
-        assert_array_almost_equal(dot(Z,Z.T), eye(n))
+        assert_array_almost_equal(dot(dot(Q,AA),Z.T), A, decimal=5)
+        assert_array_almost_equal(dot(dot(Q,BB),Z.T), B, decimal=5)
+        assert_array_almost_equal(dot(Q,Q.T), eye(n), decimal=5)
+        assert_array_almost_equal(dot(Z,Z.T), eye(n), decimal=5)
         assert_(all(diag(BB) >= 0))
 
     def test_qz_double(self):
@@ -2069,7 +2069,7 @@ class TestQZ(object):
         assert_(all(diag(BB) >= 0))
 
     def test_qz_double_sort(self):
-        # from http://www.nag.com/lapack-ex/node119.html
+        # from https://www.nag.com/lapack-ex/node119.html
         # NOTE: These matrices may be ill-conditioned and lead to a
         # seg fault on certain python versions when compiled with
         # sse2 or sse3 older ATLAS/LAPACK binaries for windows
@@ -2189,7 +2189,7 @@ def _make_pos(X):
 class TestOrdQZ(object):
     @classmethod
     def setup_class(cls):
-        # http://www.nag.com/lapack-ex/node119.html
+        # https://www.nag.com/lapack-ex/node119.html
         A1 = np.array([[-21.10 - 22.50j, 53.5 - 50.5j, -34.5 + 127.5j,
                         7.5 + 0.5j],
                        [-0.46 - 7.78j, -3.5 - 37.5j, -15.5 + 58.5j,
@@ -2204,7 +2204,7 @@ class TestOrdQZ(object):
                        [1.0 + 0.0j, 2.4 + 1.8j, -4 - 5j, 0.0 - 3.0j],
                        [0.0 + 1.0j, -1.8 + 2.4j, 0 - 4j, 4.0 - 5.0j]])
 
-        # http://www.nag.com/numeric/fl/nagdoc_fl23/xhtml/F08/f08yuf.xml
+        # https://www.nag.com/numeric/fl/nagdoc_fl23/xhtml/F08/f08yuf.xml
         A2 = np.array([[3.9, 12.5, -34.5, -0.5],
                        [4.3, 21.5, -47.5, 7.5],
                        [4.3, 21.5, -43.5, 3.5],
@@ -2721,3 +2721,110 @@ def test_subspace_angles():
     assert_raises(ValueError, subspace_angles, x[0], x)
     assert_raises(ValueError, subspace_angles, x, x[0])
     assert_raises(ValueError, subspace_angles, x[:-1], x)
+
+    # Test branch if mask.any is True:
+    A = np.array([[1, 0, 0],
+                  [0, 1, 0],
+                  [0, 0, 1],
+                  [0, 0, 0],
+                  [0, 0, 0]])
+    B = np.array([[1, 0, 0],
+                  [0, 1, 0],
+                  [0, 0, 0],
+                  [0, 0, 0],
+                  [0, 0, 1]])
+    expected = np.array([np.pi/2, 0, 0])
+    assert_allclose(subspace_angles(A, B), expected, rtol=1e-12)
+
+
+class TestCDF2RDF(object):
+
+    def matmul(self, a, b):
+        return np.einsum('...ij,...jk->...ik', a, b)
+
+    def assert_eig_valid(self, w, v, x):
+        assert_array_almost_equal(
+            self.matmul(v, w),
+            self.matmul(x, v)
+        )
+
+    def test_single_array0x0real(self):
+        # eig doesn't support 0x0 in old versions of numpy
+        X = np.empty((0, 0))
+        w, v = np.empty(0), np.empty((0, 0))
+        wr, vr = cdf2rdf(w, v)
+        self.assert_eig_valid(wr, vr, X)
+
+    def test_single_array2x2_real(self):
+        X = np.array([[1, 2], [3, -1]])
+        w, v = np.linalg.eig(X)
+        wr, vr = cdf2rdf(w, v)
+        self.assert_eig_valid(wr, vr, X)
+
+    def test_single_array2x2_complex(self):
+        X = np.array([[1, 2], [-2, 1]])
+        w, v = np.linalg.eig(X)
+        wr, vr = cdf2rdf(w, v)
+        self.assert_eig_valid(wr, vr, X)
+
+    def test_single_array3x3_real(self):
+        X = np.array([[1, 2, 3], [1, 2, 3], [2, 5, 6]])
+        w, v = np.linalg.eig(X)
+        wr, vr = cdf2rdf(w, v)
+        self.assert_eig_valid(wr, vr, X)
+
+    def test_single_array3x3_complex(self):
+        X = np.array([[1, 2, 3], [0, 4, 5], [0, -5, 4]])
+        w, v = np.linalg.eig(X)
+        wr, vr = cdf2rdf(w, v)
+        self.assert_eig_valid(wr, vr, X)
+
+    def test_random_1d_stacked_arrays(self):
+        # cannot test M == 0 due to bug in old numpy
+        for M in range(1, 7):
+            X = np.random.rand(100, M, M)
+            w, v = np.linalg.eig(X)
+            wr, vr = cdf2rdf(w, v)
+            self.assert_eig_valid(wr, vr, X)
+
+    def test_random_2d_stacked_arrays(self):
+        # cannot test M == 0 due to bug in old numpy
+        for M in range(1, 7):
+            X = np.random.rand(10, 10, M, M)
+            w, v = np.linalg.eig(X)
+            wr, vr = cdf2rdf(w, v)
+            self.assert_eig_valid(wr, vr, X)
+
+    def test_low_dimensionality_error(self):
+        w, v = np.empty(()), np.array((2,))
+        assert_raises(ValueError, cdf2rdf, w, v)
+
+    def test_not_square_error(self):
+        # Check that passing a non-square array raises a ValueError.
+        w, v = np.arange(3), np.arange(6).reshape(3,2)
+        assert_raises(ValueError, cdf2rdf, w, v)
+
+    def test_swapped_v_w_error(self):
+        # Check that exchanging places of w and v raises ValueError.
+        X = np.array([[1, 2, 3], [0, 4, 5], [0, -5, 4]])
+        w, v = np.linalg.eig(X)
+        assert_raises(ValueError, cdf2rdf, v, w)
+
+    def test_non_associated_error(self):
+        # Check that passing non-associated eigenvectors raises a ValueError.
+        w, v = np.arange(3), np.arange(16).reshape(4,4)
+        assert_raises(ValueError, cdf2rdf, w, v)
+
+    def test_not_conjugate_pairs(self):
+        # Check that passing non-conjugate pairs raises a ValueError.
+        X = np.array([[1, 2, 3], [1, 2, 3], [2, 5, 6+1j]])
+        w, v = np.linalg.eig(X)
+        assert_raises(ValueError, cdf2rdf, w, v)
+
+        # different arrays in the stack, so not conjugate
+        X = np.array([
+            [[1, 2, 3], [1, 2, 3], [2, 5, 6+1j]],
+            [[1, 2, 3], [1, 2, 3], [2, 5, 6-1j]],
+        ])
+        w, v = np.linalg.eig(X)
+        assert_raises(ValueError, cdf2rdf, w, v)

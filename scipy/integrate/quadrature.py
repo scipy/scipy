@@ -692,7 +692,7 @@ def romberg(function, a, b, args=(), tol=1.48e-8, rtol=1.48e-8, show=False,
 
     References
     ----------
-    .. [1] 'Romberg's method' http://en.wikipedia.org/wiki/Romberg%27s_method
+    .. [1] 'Romberg's method' https://en.wikipedia.org/wiki/Romberg%27s_method
 
     Examples
     --------

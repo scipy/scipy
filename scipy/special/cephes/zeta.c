@@ -112,7 +112,7 @@ double x, q;
     }
 
     /* Asymptotic expansion
-     * http://dlmf.nist.gov/25.11#E43
+     * https://dlmf.nist.gov/25.11#E43
      */
     if (q > 1e8) {
         return (1/(x - 1) + 1/(2*q)) * pow(q, 1 - x);

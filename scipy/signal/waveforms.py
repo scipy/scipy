@@ -242,7 +242,8 @@ def gausspulse(t, fc=1000, bw=0.5, bwr=-6, tpr=-60, retquad=False,
             #  Solve exp(-a tc**2) = tref  for tc
             #   tc = sqrt(-log(tref) / a) where tref = 10^(tpr/20)
             if tpr >= 0:
-                raise ValueError("Reference level for time cutoff must be < 0 dB")
+                raise ValueError("Reference level for time cutoff must "
+                                 "be < 0 dB")
             tref = pow(10.0, tpr / 20.0)
             return sqrt(-log(tref) / a)
         else:
@@ -390,7 +391,7 @@ def chirp(t, f0, t1, f1, method='linear', phi=0, vertex_zero=True):
     >>> ff, tt, Sxx = spectrogram(w, fs=fs, noverlap=256, nperseg=512,
     ...                           nfft=2048)
     >>> plt.pcolormesh(tt, ff[:513], Sxx[:513], cmap='gray_r')
-    >>> plt.title('Quadratic Chirp, f(0)=2500, f(10)=250\\n' +
+    >>> plt.title('Quadratic Chirp, f(0)=1500, f(10)=250\\n' +
     ...           '(vertex_zero=False)')
     >>> plt.xlabel('t (sec)')
     >>> plt.ylabel('Frequency (Hz)')
@@ -431,7 +432,7 @@ def chirp(t, f0, t1, f1, method='linear', phi=0, vertex_zero=True):
 
 def _chirp_phase(t, f0, t1, f1, method='linear', vertex_zero=True):
     """
-    Calculate the phase used by chirp_phase to generate its output.
+    Calculate the phase used by `chirp` to generate its output.
 
     See `chirp` for a description of the arguments.
 

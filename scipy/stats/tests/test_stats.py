@@ -2,7 +2,7 @@
 
     WRITTEN BY LOUIS LUANGKESORN <lluang@yahoo.com> FOR THE STATS MODULE
     BASED ON WILKINSON'S STATISTICS QUIZ
-    http://www.stanford.edu/~clint/bench/wilk.txt
+    https://www.stanford.edu/~clint/bench/wilk.txt
 
     Additional tests by a host of SciPy developers.
 """
@@ -653,6 +653,77 @@ class TestCorrSpearmanrTies(object):
 
 
 def test_kendalltau():
+    # simple case without ties
+    x = np.arange(10)
+    y = np.arange(10)
+    # Cross-check with exact result from R:
+    # cor.test(x,y,method="kendall",exact=1)
+    expected = (1.0, 5.511463844797e-07)
+    res = stats.kendalltau(x, y)
+    assert_approx_equal(res[0], expected[0])
+    assert_approx_equal(res[1], expected[1])
+
+    # swap a couple of values
+    b = y[1]
+    y[1] = y[2]
+    y[2] = b
+    # Cross-check with exact result from R:
+    # cor.test(x,y,method="kendall",exact=1)
+    expected = (0.9555555555555556, 5.511463844797e-06)
+    res = stats.kendalltau(x, y)
+    assert_approx_equal(res[0], expected[0])
+    assert_approx_equal(res[1], expected[1])
+
+    # swap a couple more
+    b = y[5]
+    y[5] = y[6]
+    y[6] = b
+    # Cross-check with exact result from R:
+    # cor.test(x,y,method="kendall",exact=1)
+    expected = (0.9111111111111111, 2.976190476190e-05)
+    res = stats.kendalltau(x, y)
+    assert_approx_equal(res[0], expected[0])
+    assert_approx_equal(res[1], expected[1])
+
+    # same in opposite direction
+    x = np.arange(10)
+    y = np.arange(10)[::-1]
+    # Cross-check with exact result from R:
+    # cor.test(x,y,method="kendall",exact=1)
+    expected = (-1.0, 5.511463844797e-07)
+    res = stats.kendalltau(x, y)
+    assert_approx_equal(res[0], expected[0])
+    assert_approx_equal(res[1], expected[1])
+
+    # swap a couple of values
+    b = y[1]
+    y[1] = y[2]
+    y[2] = b
+    # Cross-check with exact result from R:
+    # cor.test(x,y,method="kendall",exact=1)
+    expected = (-0.9555555555555556, 5.511463844797e-06)
+    res = stats.kendalltau(x, y)
+    assert_approx_equal(res[0], expected[0])
+    assert_approx_equal(res[1], expected[1])
+
+    # swap a couple more
+    b = y[5]
+    y[5] = y[6]
+    y[6] = b
+    # Cross-check with exact result from R:
+    # cor.test(x,y,method="kendall",exact=1)
+    expected = (-0.9111111111111111, 2.976190476190e-05)
+    res = stats.kendalltau(x, y)
+    assert_approx_equal(res[0], expected[0])
+    assert_approx_equal(res[1], expected[1])
+
+    # check exception in case of ties
+    y[2] = y[1]
+    assert_raises(ValueError, stats.kendalltau, x, y, method='exact')
+
+    # check exception in case of invalid method keyword
+    assert_raises(ValueError, stats.kendalltau, x, y, method='banana')
+
     # with some ties
     # Cross-check with R:
     # cor.test(c(12,2,1,12,2),c(1,4,7,1,0),method="kendall",exact=FALSE)
@@ -696,6 +767,8 @@ def test_kendalltau():
     x[9] = np.nan
     assert_array_equal(stats.kendalltau(x, x), (np.nan, np.nan))
     assert_allclose(stats.kendalltau(x, x, nan_policy='omit'),
+                    (1.0, 5.5114638e-6), rtol=1e-06)
+    assert_allclose(stats.kendalltau(x, x, nan_policy='omit', method='asymptotic'),
                     (1.0, 0.00017455009626808976), rtol=1e-06)
     assert_raises(ValueError, stats.kendalltau, x, x, nan_policy='raise')
     assert_raises(ValueError, stats.kendalltau, x, x, nan_policy='foobar')
@@ -1276,7 +1349,9 @@ class TestItemfreq(object):
         # Check itemfreq works for all dtypes (adapted from np.unique tests)
         def _check_itemfreq(dt):
             a = np.array(self.a, dt)
-            v = stats.itemfreq(a)
+            with suppress_warnings() as sup:
+                sup.filter(DeprecationWarning)
+                v = stats.itemfreq(a)
             assert_array_equal(v[:, 0], [1, 2, 5, 7])
             assert_array_equal(v[:, 1], np.array([20, 10, 20, 20], dtype=dt))
 
@@ -1292,7 +1367,9 @@ class TestItemfreq(object):
         aa[:] = a
         bb = np.empty(len(b), dt)
         bb[:] = b
-        v = stats.itemfreq(aa)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning)
+            v = stats.itemfreq(aa)
         assert_array_equal(v[:, 0], bb)
 
     def test_structured_arrays(self):
@@ -1300,7 +1377,9 @@ class TestItemfreq(object):
         dt = [('', 'i'), ('', 'i')]
         aa = np.array(list(zip(a, a)), dt)
         bb = np.array(list(zip(b, b)), dt)
-        v = stats.itemfreq(aa)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning)
+            v = stats.itemfreq(aa)
         # Arrays don't compare equal because v[:,0] is object array
         assert_equal(tuple(v[2, 0]), tuple(bb[2]))
 
@@ -1353,7 +1432,6 @@ class TestMode(object):
         assert_equal(vals[0][0], 'showers')
         assert_equal(vals[1][0], 2)
 
-    @pytest.mark.xfail(sys.version_info > (3,), reason='numpy github issue 641')
     def test_mixed_objects(self):
         objects = [10, True, np.nan, 'hello', 10]
         arr = np.empty((5,), dtype=object)
@@ -1415,6 +1493,16 @@ class TestMode(object):
         assert_equal(actual, (6, 3))
         assert_raises(ValueError, stats.mode, data1, nan_policy='raise')
         assert_raises(ValueError, stats.mode, data1, nan_policy='foobar')
+
+    @pytest.mark.parametrize("data", [
+        [3, 5, 1, 1, 3],
+        [3, np.nan, 5, 1, 1, 3],
+        [3, 5, 1],
+        [3, np.nan, 5, 1],
+    ])
+    def test_smallest_equal(self, data):
+        result = stats.mode(data, nan_policy='omit')
+        assert_equal(result[0][0], 1)
 
 
 class TestVariability(object):
@@ -1915,8 +2003,8 @@ class TestMoments(object):
         note that length(testcase) = 4
         testmathworks comes from documentation for the
         Statistics Toolbox for Matlab and can be found at both
-        http://www.mathworks.com/access/helpdesk/help/toolbox/stats/kurtosis.shtml
-        http://www.mathworks.com/access/helpdesk/help/toolbox/stats/skewness.shtml
+        https://www.mathworks.com/help/stats/kurtosis.html
+        https://www.mathworks.com/help/stats/skewness.html
         Note that both test cases came from here.
     """
     testcase = [1,2,3,4]
@@ -3401,7 +3489,7 @@ class TestMannWhitneyU(object):
 
 def test_pointbiserial():
     # same as mstats test except for the nan
-    # Test data: http://support.sas.com/ctx/samples/index.jsp?sid=490&tab=output
+    # Test data: https://web.archive.org/web/20060504220742/https://support.sas.com/ctx/samples/index.jsp?sid=490&tab=output
     x = [1,0,1,1,1,1,0,1,0,0,0,1,1,0,0,0,1,1,1,0,0,0,0,0,0,0,0,1,0,
          0,0,0,0,1]
     y = [14.8,13.8,12.4,10.1,7.1,6.1,5.8,4.6,4.3,3.5,3.3,3.2,3.0,
@@ -3856,9 +3944,9 @@ class TestTrim(object):
         assert_equal(stats.trim_mean([], 0.6), np.nan)
 
 
-class TestSigamClip(object):
+class TestSigmaClip(object):
     def test_sigmaclip1(self):
-        a = np.concatenate((np.linspace(9.5,10.5,31),np.linspace(0,20,5)))
+        a = np.concatenate((np.linspace(9.5, 10.5, 31), np.linspace(0, 20, 5)))
         fact = 4  # default
         c, low, upp = stats.sigmaclip(a)
         assert_(c.min() > low)
@@ -3868,7 +3956,7 @@ class TestSigamClip(object):
         assert_equal(c.size, a.size)
 
     def test_sigmaclip2(self):
-        a = np.concatenate((np.linspace(9.5,10.5,31),np.linspace(0,20,5)))
+        a = np.concatenate((np.linspace(9.5, 10.5, 31), np.linspace(0, 20, 5)))
         fact = 1.5
         c, low, upp = stats.sigmaclip(a, fact, fact)
         assert_(c.min() > low)
@@ -3879,14 +3967,15 @@ class TestSigamClip(object):
         assert_equal(a.size, 36)  # check original array unchanged
 
     def test_sigmaclip3(self):
-        a = np.concatenate((np.linspace(9.5,10.5,11),np.linspace(-100,-50,3)))
+        a = np.concatenate((np.linspace(9.5, 10.5, 11),
+                            np.linspace(-100, -50, 3)))
         fact = 1.8
         c, low, upp = stats.sigmaclip(a, fact, fact)
         assert_(c.min() > low)
         assert_(c.max() < upp)
         assert_equal(low, c.mean() - fact*c.std())
         assert_equal(upp, c.mean() + fact*c.std())
-        assert_equal(c, np.linspace(9.5,10.5,11))
+        assert_equal(c, np.linspace(9.5, 10.5, 11))
 
     def test_sigmaclip_result_attributes(self):
         a = np.concatenate((np.linspace(9.5, 10.5, 11),
@@ -3895,6 +3984,12 @@ class TestSigamClip(object):
         res = stats.sigmaclip(a, fact, fact)
         attributes = ('clipped', 'lower', 'upper')
         check_named_results(res, attributes)
+
+    def test_std_zero(self):
+        # regression test #8632
+        x = np.ones(10)
+        assert_equal(stats.sigmaclip(x)[0], x)
+
 
 class TestFOneWay(object):
     def test_trivial(self):
@@ -3923,7 +4018,7 @@ class TestFOneWay(object):
 
     def test_nist(self):
         # These are the nist ANOVA files. They can be found at:
-        # http://www.itl.nist.gov/div898/strd/anova/anova.html
+        # https://www.itl.nist.gov/div898/strd/anova/anova.html
         filenames = ['SiRstv.dat', 'SmLs01.dat', 'SmLs02.dat', 'SmLs03.dat',
                      'AtmWtAg.dat', 'SmLs04.dat', 'SmLs05.dat', 'SmLs06.dat',
                      'SmLs07.dat', 'SmLs08.dat', 'SmLs09.dat']
@@ -4033,7 +4128,7 @@ class TestKruskal(object):
 class TestCombinePvalues(object):
 
     def test_fisher(self):
-        # Example taken from http://en.wikipedia.org/wiki/Fisher's_exact_test#Example
+        # Example taken from https://en.wikipedia.org/wiki/Fisher%27s_exact_test#Example
         xsq, p = stats.combine_pvalues([.01, .2, .3], method='fisher')
         assert_approx_equal(p, 0.02156, significant=4)
 
@@ -4252,3 +4347,156 @@ class TestEnergyDistance(object):
             assert_equal(
                 stats.energy_distance([1, 2, np.inf], [np.inf, 1]),
                 np.nan)
+
+
+class TestBrunnerMunzel(object):
+    # Data from (Lumley, 1996)
+    X = [1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 4, 1, 1]
+    Y = [3, 3, 4, 3, 1, 2, 3, 1, 1, 5, 4]
+    significant = 13
+
+    def test_brunnermunzel_one_sided(self):
+        # Results are compared with R's lawstat package.
+        u1, p1 = stats.brunnermunzel(self.X, self.Y, alternative='less')
+        u2, p2 = stats.brunnermunzel(self.Y, self.X, alternative='greater')
+        u3, p3 = stats.brunnermunzel(self.X, self.Y, alternative='greater')
+        u4, p4 = stats.brunnermunzel(self.Y, self.X, alternative='less')
+
+        assert_approx_equal(p1, p2, significant=self.significant)
+        assert_approx_equal(p3, p4, significant=self.significant)
+        assert_(p1 != p3)
+        assert_approx_equal(u1, 3.1374674823029505,
+                            significant=self.significant)
+        assert_approx_equal(u2, -3.1374674823029505,
+                            significant=self.significant)
+        assert_approx_equal(u3, 3.1374674823029505,
+                            significant=self.significant)
+        assert_approx_equal(u4, -3.1374674823029505,
+                            significant=self.significant)
+        assert_approx_equal(p1, 0.0028931043330757342,
+                            significant=self.significant)
+        assert_approx_equal(p3, 0.99710689566692423,
+                            significant=self.significant)
+
+    def test_brunnermunzel_two_sided(self):
+        # Results are compared with R's lawstat package.
+        u1, p1 = stats.brunnermunzel(self.X, self.Y, alternative='two-sided')
+        u2, p2 = stats.brunnermunzel(self.Y, self.X, alternative='two-sided')
+
+        assert_approx_equal(p1, p2, significant=self.significant)
+        assert_approx_equal(u1, 3.1374674823029505,
+                            significant=self.significant)
+        assert_approx_equal(u2, -3.1374674823029505,
+                            significant=self.significant)
+        assert_approx_equal(p1, 0.0057862086661515377,
+                            significant=self.significant)
+
+    def test_brunnermunzel_default(self):
+        # The default value for alternative is two-sided
+        u1, p1 = stats.brunnermunzel(self.X, self.Y)
+        u2, p2 = stats.brunnermunzel(self.Y, self.X)
+
+        assert_approx_equal(p1, p2, significant=self.significant)
+        assert_approx_equal(u1, 3.1374674823029505,
+                            significant=self.significant)
+        assert_approx_equal(u2, -3.1374674823029505,
+                            significant=self.significant)
+        assert_approx_equal(p1, 0.0057862086661515377,
+                            significant=self.significant)
+
+    def test_brunnermunzel_alternative_error(self):
+        alternative = "error"
+        distribution = "t"
+        nan_policy = "propagate"
+        assert_(alternative not in ["two-sided", "greater", "less"])
+        assert_raises(ValueError,
+                      stats.brunnermunzel,
+                      self.X,
+                      self.Y,
+                      alternative,
+                      distribution,
+                      nan_policy)
+
+    def test_brunnermunzel_distribution_norm(self):
+        u1, p1 = stats.brunnermunzel(self.X, self.Y, distribution="normal")
+        u2, p2 = stats.brunnermunzel(self.Y, self.X, distribution="normal")
+        assert_approx_equal(p1, p2, significant=self.significant)
+        assert_approx_equal(u1, 3.1374674823029505,
+                            significant=self.significant)
+        assert_approx_equal(u2, -3.1374674823029505,
+                            significant=self.significant)
+        assert_approx_equal(p1, 0.0017041417600383024,
+                            significant=self.significant)
+
+    def test_brunnermunzel_distribution_error(self):
+        alternative = "two-sided"
+        distribution = "error"
+        nan_policy = "propagate"
+        assert_(alternative not in ["t", "normal"])
+        assert_raises(ValueError,
+                      stats.brunnermunzel,
+                      self.X,
+                      self.Y,
+                      alternative,
+                      distribution,
+                      nan_policy)
+
+    def test_brunnermunzel_empty_imput(self):
+        u1, p1 = stats.brunnermunzel(self.X, [])
+        u2, p2 = stats.brunnermunzel([], self.Y)
+        u3, p3 = stats.brunnermunzel([], [])
+
+        assert_equal(u1, np.nan)
+        assert_equal(p1, np.nan)
+        assert_equal(u2, np.nan)
+        assert_equal(p2, np.nan)
+        assert_equal(u3, np.nan)
+        assert_equal(p3, np.nan)
+
+    def test_brunnermunzel_nan_input_propagate(self):
+        X = [1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 4, 1, 1, np.nan]
+        Y = [3, 3, 4, 3, 1, 2, 3, 1, 1, 5, 4]
+        u1, p1 = stats.brunnermunzel(X, Y, nan_policy="propagate")
+        u2, p2 = stats.brunnermunzel(Y, X, nan_policy="propagate")
+
+        assert_equal(u1, np.nan)
+        assert_equal(p1, np.nan)
+        assert_equal(u2, np.nan)
+        assert_equal(p2, np.nan)
+
+    def test_brunnermunzel_nan_input_raise(self):
+        X = [1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 4, 1, 1, np.nan]
+        Y = [3, 3, 4, 3, 1, 2, 3, 1, 1, 5, 4]
+        alternative = "two-sided"
+        distribution = "t"
+        nan_policy = "raise"
+
+        assert_raises(ValueError,
+                      stats.brunnermunzel,
+                      X,
+                      Y,
+                      alternative,
+                      distribution,
+                      nan_policy)
+        assert_raises(ValueError,
+                      stats.brunnermunzel,
+                      Y,
+                      X,
+                      alternative,
+                      distribution,
+                      nan_policy)
+
+    def test_brunnermunzel_nan_input_omit(self):
+        X = [1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 4, 1, 1, np.nan]
+        Y = [3, 3, 4, 3, 1, 2, 3, 1, 1, 5, 4]
+        u1, p1 = stats.brunnermunzel(X, Y, nan_policy="omit")
+        u2, p2 = stats.brunnermunzel(Y, X, nan_policy="omit")
+
+        assert_approx_equal(p1, p2, significant=self.significant)
+        assert_approx_equal(u1, 3.1374674823029505,
+                            significant=self.significant)
+        assert_approx_equal(u2, -3.1374674823029505,
+                            significant=self.significant)
+        assert_approx_equal(p1, 0.0057862086661515377,
+                            significant=self.significant)
+

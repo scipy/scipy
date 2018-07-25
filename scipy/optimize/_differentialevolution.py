@@ -190,7 +190,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     (array([1., 1., 1., 1., 1.]), 1.9216496320061384e-19)
 
     Next find the minimum of the Ackley function
-    (http://en.wikipedia.org/wiki/Test_functions_for_optimization).
+    (https://en.wikipedia.org/wiki/Test_functions_for_optimization).
 
     >>> from scipy.optimize import differential_evolution
     >>> import numpy as np
@@ -208,8 +208,8 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     .. [1] Storn, R and Price, K, Differential Evolution - a Simple and
            Efficient Heuristic for Global Optimization over Continuous Spaces,
            Journal of Global Optimization, 1997, 11, 341 - 359.
-    .. [2] http://www1.icsi.berkeley.edu/~storn/code.html
-    .. [3] http://en.wikipedia.org/wiki/Differential_evolution
+    .. [2] https://www1.icsi.berkeley.edu/~storn/code.html
+    .. [3] https://en.wikipedia.org/wiki/Differential_evolution
     """
 
     solver = DifferentialEvolutionSolver(func, bounds, args=args,
@@ -551,6 +551,8 @@ class DifferentialEvolutionSolver(object):
         The standard deviation of the population energies divided by their
         mean.
         """
+        if np.any(np.isinf(self.population_energies)):
+            return np.inf
         return (np.std(self.population_energies) /
                 np.abs(np.mean(self.population_energies) + _MACHEPS))
 
@@ -607,9 +609,12 @@ class DifferentialEvolutionSolver(object):
                                   'by returning True')
                 break
 
-            intol = (np.std(self.population_energies) <=
-                     self.atol +
-                     self.tol * np.abs(np.mean(self.population_energies)))
+            if np.any(np.isinf(self.population_energies)):
+                intol = False
+            else:
+                intol = (np.std(self.population_energies) <=
+                         self.atol +
+                         self.tol * np.abs(np.mean(self.population_energies)))
             if warning_flag or intol:
                 break
 
@@ -753,7 +758,7 @@ class DifferentialEvolutionSolver(object):
         """
         make sure the parameters lie between the limits
         """
-        for index in np.where((trial < 0) | (trial > 1))[0]:
+        for index in np.nonzero((trial < 0) | (trial > 1))[0]:
             trial[index] = self.random_number_generator.rand()
 
     def _mutate(self, candidate):

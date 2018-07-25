@@ -3,13 +3,15 @@ Functions for identifying peaks in signals.
 """
 from __future__ import division, print_function, absolute_import
 
+import math
 import numpy as np
 
 from scipy._lib.six import xrange
 from scipy.signal.wavelets import cwt, ricker
 from scipy.stats import scoreatpercentile
 
-from ._peak_finding_utils import _argmaxima1d
+from ._peak_finding_utils import (_argmaxima1d, _select_by_peak_distance,
+                                  _peak_prominences, _peak_widths)
 
 
 __all__ = ['argrelmin', 'argrelmax', 'argrelextrema', 'peak_prominences',
@@ -241,7 +243,7 @@ def argrelextrema(data, comparator, axis=0, order=1, mode='clip'):
     """
     results = _boolrelextrema(data, comparator,
                               axis, order, mode)
-    return np.where(results)
+    return np.nonzero(results)
 
 
 def peak_prominences(x, peaks, wlen=None):
@@ -249,8 +251,8 @@ def peak_prominences(x, peaks, wlen=None):
     Calculate the prominence of each peak in a signal.
 
     The prominence of a peak measures how much a peak stands out from the
-    surrounding baseline of the signal and is defined as the vertical
-    distance between the peak and its lowest contour line.
+    surrounding baseline of the signal and is defined as the vertical distance
+    between the peak and its lowest contour line.
 
     Parameters
     ----------
@@ -258,11 +260,11 @@ def peak_prominences(x, peaks, wlen=None):
         A signal with peaks.
     peaks : sequence
         Indices of peaks in `x`.
-    wlen : number, optional
-        A window length in samples that limits the search for the lowest
-        contour line to a symmetric interval around the evaluated peak. If not
-        given the entire signal `x` is used. Use this parameter to speed up the
-        calculation significantly for large vectors (see Notes).
+    wlen : int or float, optional
+        A window length in samples that optionally limits the evaluated area for
+        each peak to a subset of `x`. The peak is always placed in the middle of
+        the window therefore the given length is rounded up to the next odd
+        integer. This parameter can speed up the calculation (see Notes).
 
     Returns
     -------
@@ -270,8 +272,12 @@ def peak_prominences(x, peaks, wlen=None):
         The calculated prominences for each peak in `peaks`.
     left_bases, right_bases : ndarray
         The peaks' bases as indices in `x` to the left and right of each peak.
-        The higher base of each pair is a peak's lowest contour line (see Notes
-        for a more details).
+        The higher base of each pair is a peak's lowest contour line.
+
+    Raises
+    ------
+    ValueError
+        If an index in `peaks` does not point to a local maximum in `x`.
 
     See Also
     --------
@@ -284,25 +290,33 @@ def peak_prominences(x, peaks, wlen=None):
     -----
     Strategy to compute a peak's prominence:
 
-    * Extend a horizontal line from the current peak to the left and right until
-      the line either reaches the window end (see `wlen`) or intersects the
-      signal again at the slope of a higher peak.
-    * On each side find the minimal signal value within the interval defined
-      above. These points are the peak's bases.
-    * The higher one of the two bases marks the peak's lowest contour line. The
-      prominence can then be calculated as the vertical difference between the
-      peaks height itself and its lowest contour line.
+    1. Extend a horizontal line from the current peak to the left and right
+       until the line either reaches the window border (see `wlen`) or
+       intersects the signal again at the slope of a higher peak. An
+       intersection with a peak of the same height is ignored.
+    2. On each side find the minimal signal value within the interval defined
+       above. These points are the peak's bases.
+    3. The higher one of the two bases marks the peak's lowest contour line. The
+       prominence can then be calculated as the vertical difference between the
+       peaks height itself and its lowest contour line.
 
-    Searching for the peak's bases can be slow for large `x` because the full
-    signal needs to be evaluated for each peak. This evaluation area can be
-    limited with the parameter `wlen` which restricts the algorithm to a window
-    around the current peak and can shorten the calculation time significantly.
+    Searching for the peak's bases can be slow for large `x` with periodic
+    behavior because large chunks or even the full signal need to be evaluated
+    for the first algorithmic step. This evaluation area can be limited with the
+    parameter `wlen` which restricts the algorithm to a window around the
+    current peak and can shorten the calculation time if the window length is
+    short in relation to `x`.
     However this may stop the algorithm from finding the true global contour
-    line if the peak's bases are outside this window. Instead a higher contour
-    line is found within the restricted window leading to a smaller calculated
-    prominence. In practice this is only relevant for the largest set of peaks
-    in vector. This behavior may even be used intentionally to calculate "local"
-    prominences.
+    line if the peak's true bases are outside this window. Instead a higher
+    contour line is found within the restricted window leading to a smaller
+    calculated prominence. In practice this is only relevant for the highest set
+    of peaks in `x`. This behavior may even be used intentionally to calculate
+    "local" prominences.
+
+    .. warning::
+
+       This function may return unexpected results for data containing NaNs. To
+       avoid this, NaNs should either be removed or replaced.
 
     .. versionadded:: 1.1.0
 
@@ -326,8 +340,8 @@ def peak_prominences(x, peaks, wlen=None):
     >>> peaks, _ = find_peaks(x)
     >>> prominences = peak_prominences(x, peaks)[0]
     >>> prominences
-    array([ 1.24159486,  0.47840168,  0.28470524,  3.10716793,  0.284603  ,
-            0.47822491,  2.48340261,  0.47822491])
+    array([1.24159486, 0.47840168, 0.28470524, 3.10716793, 0.284603  ,
+           0.47822491, 2.48340261, 0.47822491])
 
     Calculate the height of each peak's contour line and plot the results
 
@@ -336,83 +350,66 @@ def peak_prominences(x, peaks, wlen=None):
     >>> plt.plot(peaks, x[peaks], "x")
     >>> plt.vlines(x=peaks, ymin=contour_heights, ymax=x[peaks])
     >>> plt.show()
-    """
-    x = np.asarray(x)
-    peaks = np.asarray(peaks)
-    if peaks.size == 0:
-        # Handle empty peaks
-        return np.array([]), np.array([], dtype=int), np.array([], dtype=int)
 
+    Let's evaluate a second example that demonstrates several edge cases for
+    one peak at index 5.
+
+    >>> x = np.array([0, 1, 0, 3, 1, 3, 0, 4, 0])
+    >>> peaks = np.array([5])
+    >>> plt.plot(x)
+    >>> plt.plot(peaks, x[peaks], "x")
+    >>> plt.show()
+    >>> peak_prominences(x, peaks)  # -> (prominences, left_bases, right_bases)
+    (array([3.]), array([2]), array([6]))
+
+    Note how the peak at index 3 of the same height is not considered as a
+    border while searching for the left base. Instead two minima at 0 and 2
+    are found in which case the one closer to the evaluated peak is always
+    chosen. On the right side however the base must be placed at 6 because the
+    higher peak represents the right border to the evaluated area.
+
+    >>> peak_prominences(x, peaks, wlen=3.1)
+    (array([2.]), array([4]), array([6]))
+
+    Here we restricted the algorithm to a window from 3 to 7 (the length is 5
+    samples because `wlen` was rounded up to the next odd integer). Thus the
+    only two candidates in the evaluated area are the two neighbouring samples
+    and a smaller prominence is calculated.
+    """
+    # Inner function expects `x` to be C-contiguous
+    x = np.asarray(x, order='C', dtype=np.float64)
     if x.ndim != 1:
         raise ValueError('`x` must have exactly one dimension')
+
+    peaks = np.asarray(peaks)
+    if peaks.size == 0:
+        # Empty arrays default to np.float64 but are valid input
+        peaks = np.array([], dtype=np.intp)
+    try:
+        # Safely convert to C-contiguous array of type np.intp
+        peaks = peaks.astype(np.intp, order='C', casting='safe',
+                             subok=False, copy=False)
+    except TypeError:
+        raise TypeError("Cannot safely cast `peaks` to dtype('intp')")
     if peaks.ndim != 1:
         raise ValueError('`peaks` must have exactly one dimension')
-    if x.size <= peaks.max():
-        raise ValueError('an index in `peaks` exceeds the size of `x`')
-    if not np.issubdtype(peaks.dtype, np.integer):
-        raise ValueError('`peaks` must be an array of integers')
-    if wlen is not None and wlen < 3:
-        raise ValueError('`wlen` must be at least 3')
 
-    # Prepare return arguments
-    prominences = np.zeros(peaks.size)
-    left_bases = np.zeros(peaks.size, dtype=int)
-    right_bases = np.zeros(peaks.size, dtype=int)
+    if wlen is None:
+        wlen = -1  # Inner function expects int -> None == -1
+    elif 1 < wlen:
+        # Round up to next positive integer; rounding up to next odd integer
+        # happens implicitly inside the inner function
+        wlen = int(math.ceil(wlen))
+    else:
+        # Give feedback if wlen has unexpected value
+        raise ValueError('`wlen` must be at larger than 1, was ' + str(wlen))
 
-    for i, peak in enumerate(peaks):
-        # If wlen is twice the size of x the symmetric window always covers
-        # the full x
-        if wlen is not None and wlen < x.size * 2:
-            wlen = int(wlen)
-            # Calculate window borders around the evaluated peak
-            wleft = peak - wlen // 2
-            wright = peak + wlen // 2
-            # Handle border cases
-            wleft = 0 if wleft < 0 else wleft
-            wright = x.size if x.size < wright else wright
-            # Use slice for prominence calculation
-            window = x[wleft:wright]
-            # Correct peak position in x
-            peak -= wleft
-        else:
-            # Use full x for prominence calculation
-            window = x
-            wleft = 0
-
-        # Positions where window is larger than current peak height
-        greater_peak = np.where(window > window[peak])[0]
-
-        try:
-            # Nearest position to the left of peak with
-            # window[left] > window[peak]
-            left = greater_peak[greater_peak < peak].max()
-        except ValueError:
-            left = 0
-        try:
-            # Nearest position to right of peak with
-            # window[right] > window[peak]
-            right = greater_peak[greater_peak > peak].min()
-        except ValueError:
-            right = None
-
-        # Base indices to the left and right of peak in window
-        left_bases[i] = window[left:peak].argmin() + left
-        right_bases[i] = window[peak:right].argmin() + peak
-
-        # Calculate lowest contour and its vertical distance to peak
-        lowest_contour = max(window[left_bases[i]], window[right_bases[i]])
-        prominences[i] = window[peak] - lowest_contour
-
-        # Correct window offset
-        left_bases[i] += wleft
-        right_bases[i] += wleft
-
-    return prominences, left_bases, right_bases
+    return _peak_prominences(x, peaks, wlen)
 
 
 def peak_widths(x, peaks, rel_height=0.5, prominence_data=None, wlen=None):
     """
-    Calculate the width of each each peak in a signal.
+    Calculate the width of each peak in a signal.
 
     This function calculates the width of a peak in samples at a relative
     distance to the peak's height and prominence.
@@ -425,17 +422,17 @@ def peak_widths(x, peaks, rel_height=0.5, prominence_data=None, wlen=None):
         Indices of peaks in `x`.
     rel_height : float, optional
         Chooses the relative height at which the peak width is measured as a
-        percentage of its prominence. 1.0 calculates the width of the peak at its
-        lowest contour line while 0.5 evaluates at half the prominence height.
-        Must be a number greater 0. See notes for further explanation.
+        percentage of its prominence. 1.0 calculates the width of the peak at
+        its lowest contour line while 0.5 evaluates at half the prominence
+        height. Must be at least 0. See notes for further explanation.
     prominence_data : tuple, optional
         A tuple of three arrays matching the output of `peak_prominences` when
-        called with the same arguments for `x` and `peaks`. This data is
-        calculated internally if not provided (see `wlen`).
+        called with the same arguments `x` and `peaks`. This data is calculated
+        internally if not provided.
     wlen : int, optional
-        A window length in samples (see `peak_prominences`). This argument is
-        only used if `prominence_data` is not given in which case the missing
-        data is calculated using `wlen`.
+        A window length in samples passed to `peak_prominences` as an optional
+        argument for internal calculation of `prominence_data`. This argument
+        is ignored if `prominence_data` is given.
 
     Returns
     -------
@@ -446,6 +443,14 @@ def peak_widths(x, peaks, rel_height=0.5, prominence_data=None, wlen=None):
     left_ips, right_ips : ndarray
         Interpolated positions of left and right intersection points of a
         horizontal line at the respective evaluation height.
+
+    Raises
+    ------
+    ValueError
+        If `prominence_data` is supplied but doesn't satisfy the condition
+        ``0 <= left_base <= peak <= right_base < x.shape[0]`` for each peak,
+        has the wrong dtype, is not C-contiguous or does not have the same
+        shape.
 
     See Also
     --------
@@ -460,21 +465,26 @@ def peak_widths(x, peaks, rel_height=0.5, prominence_data=None, wlen=None):
 
     * Calculate the evaluation height :math:`h_{eval}` with the formula
       :math:`h_{eval} = h_{Peak} - P \\cdot R`, where :math:`h_{Peak}` is the
-      height of the peak itself, :math:`P` is the peak's prominence and :math:`R`
-      a positive ratio specified with the argument `rel_height`.
+      height of the peak itself, :math:`P` is the peak's prominence and
+      :math:`R` a positive ratio specified with the argument `rel_height`.
     * Draw a horizontal line at the evaluation height to both sides, starting at
       the peak's current vertical position until the lines either intersect a
       slope, the signal border or cross the vertical position of the peak's
       base (see `peak_prominences` for an definition). For the first case,
-      intersection with the signal, the true intersection point is estimated with
-      linear interpolation.
-    * Calculate the width as the horizontal distance between the intersection
-      points on both sides.
+      intersection with the signal, the true intersection point is estimated
+      with linear interpolation.
+    * Calculate the width as the horizontal distance between the chosen
+      endpoints on both sides. As a consequence of this the maximal possible
+      width for each peak is the horizontal distance between its bases.
 
-    As shown above to calculate a peaks width its prominence must be known. You
-    can supply these data yourself with the arguments `prominences`, `left_bases`
-    and `right_bases`. Otherwise they are internally calculated using `wlen` if
-    supplied (see `peak_prominences`).
+    As shown above to calculate a peak's width its prominence and bases must be
+    known. You can supply these yourself with the argument `prominence_data`.
+    Otherwise they are internally calculated (see `peak_prominences`).
+
+    .. warning::
+
+       This function may return unexpected results for data containing NaNs. To
+       avoid this, NaNs should either be removed or replaced.
 
     .. versionadded:: 1.1.0
 
@@ -483,97 +493,59 @@ def peak_widths(x, peaks, rel_height=0.5, prominence_data=None, wlen=None):
     >>> from scipy.signal import chirp, find_peaks, peak_widths
     >>> import matplotlib.pyplot as plt
 
-    Create a test signal with growing peak widths
+    Create a test signal with two overlayed harmonics
 
-    >>> x = np.linspace(0, 500, 500)
-    >>> x = abs(chirp(x, 1e-4, x.max(), 1.1e-2)) + 2.0 * x / x.max()
+    >>> x = np.linspace(0, 6 * np.pi, 1000)
+    >>> x = np.sin(x) + 0.6 * np.sin(2.6 * x)
 
     Find all peaks and calculate their widths at the relative height of 0.5
+    (contour line at half the prominence height) and 1 (at the lowest contour
+    line at full prominence height).
 
     >>> peaks, _ = find_peaks(x)
-    >>> widths, heights, lpos, rpos = peak_widths(x, peaks, rel_height=0.5)
-    >>> widths
-    array([77.7462348 , 62.19574776, 45.57709222, 37.902356  , 33.33210357,
-           29.81097122])
+    >>> results_half = peak_widths(x, peaks, rel_height=0.5)
+    >>> results_half[0]  # widths
+    array([ 64.25172825,  41.29465463,  35.46943289, 104.71586081,
+            35.46729324,  41.30429622, 181.93835853,  45.37078546])
+    >>> results_full = peak_widths(x, peaks, rel_height=1)
+    >>> results_full[0]  # widths
+    array([181.9396084 ,  72.99284945,  61.28657872, 373.84622694,
+        61.78404617,  72.48822812, 253.09161876,  79.36860878])
 
     Plot signal, peaks and contour lines at which the widths where calculated
 
     >>> plt.plot(x)
-    >>> plt.plot(peaks, x[peaks], "x", color="C1")
-    >>> plt.hlines(y=heights, xmin=lpos, xmax=rpos, color="C1")
+    >>> plt.plot(peaks, x[peaks], "x")
+    >>> plt.hlines(*results_half[1:], color="C2")
+    >>> plt.hlines(*results_full[1:], color="C3")
     >>> plt.show()
     """
-    x = np.asarray(x)
-    peaks = np.asarray(peaks)
-
-    if peaks.size == 0:
-        # Handle empty peaks
-        return tuple(np.array([]) for _ in range(4))
-
+    # Inner function expects `x` to be C-contiguous
+    x = np.asarray(x, order='C', dtype=np.float64)
     if x.ndim != 1:
         raise ValueError('`x` must have exactly one dimension')
+
+    peaks = np.asarray(peaks)
+    if peaks.size == 0:
+        # Empty arrays default to np.float64 but are valid input
+        peaks = np.array([], dtype=np.intp)
+    try:
+        # Safely convert to C-contiguous array of type np.intp
+        peaks = peaks.astype(np.intp, order='C', casting='safe',
+                             subok=False, copy=False)
+    except TypeError:
+        raise TypeError("Cannot safely cast `peaks` to dtype('intp')")
     if peaks.ndim != 1:
         raise ValueError('`peaks` must have exactly one dimension')
-    if x.size <= peaks.max():
-        raise ValueError('an index in `peaks` exceeds the size of `x`')
-    if not np.issubdtype(peaks.dtype, np.integer):
-        raise ValueError('`peaks` must be an array of integers')
+
     if rel_height < 0.0:
-        raise ValueError('`rel_height` must be greater or equal 0.0')
+        raise ValueError('`rel_height` must be greater or equal to 0.0')
 
     if prominence_data is None:
-        # Calculate prominence if not supplied and use wlen if supplied
-        prominences, left_bases, right_bases = peak_prominences(x, peaks, wlen)
-    else:
-        prominences, left_bases, right_bases = prominence_data
+        # Calculate prominence if not supplied and use wlen if supplied.
+        prominence_data = peak_prominences(x, peaks, wlen)
 
-    # Calculate evaluation height for each peak
-    width_heights = x[peaks] - np.asarray(prominences) * rel_height
-
-    widths = np.zeros(peaks.size)
-    left_ips = np.zeros(peaks.size)
-    right_ips = np.zeros(peaks.size)
-    for i, (peak, height) in enumerate(zip(peaks, width_heights)):
-
-        # Maximal peak width is from base to base
-        window = x[left_bases[i]:right_bases[i] + 1]
-        peak -= left_bases[i]
-        # Positions where `window` is smaller reference height
-        is_smaller = np.where(window < height)[0]
-
-        try:
-            # Nearest position to the left of peak with
-            # x[left] > x[peak]
-            left_ip = is_smaller[is_smaller < peak].max()
-        except ValueError:
-            left_ip = None
-        try:
-            # Nearest position to right of peak with
-            # x[right] > x[peak]
-            right_ip = is_smaller[is_smaller > peak].min()
-        except ValueError:
-            right_ip = None
-
-        # If not at window border (ip is None), interpolate sub-sample position
-        # to get reasonable precision for steep slopes, do for both sides
-        if left_ip is None:
-            left_ip = 0
-        else:
-            y1, y2 = window[left_ip], window[left_ip + 1]
-            left_ip += (height - y1) / (y2 - y1)
-        if right_ip is None:
-            right_ip = window.size - 1
-        else:
-            y1, y2 = window[right_ip], window[right_ip - 1]
-            right_ip -= (height - y1) / (y2 - y1)
-
-        widths[i] = right_ip - left_ip
-
-        # Correct window offset
-        left_ips[i] = left_ip + left_bases[i]
-        right_ips[i] = right_ip + left_bases[i]
-
-    return widths, width_heights, left_ips, right_ips
+    return _peak_widths(x, peaks, rel_height, *prominence_data)
 
 
 def _unpack_condition_args(interval, x, peaks):
@@ -709,85 +681,14 @@ def _select_by_peak_threshold(x, peaks, tmin, tmax):
     return keep, stacked_thresholds[0], stacked_thresholds[1]
 
 
-# Code for _select_by_peak_distance was adapted from
-# https://github.com/demotu/BMC/blob/master/functions/detect_peaks.py
-# by Marcos Duarte under the MIT license:
-#
-#     Copyright (c) 2013 Marcos Duarte
-#
-#     Permission is hereby granted, free of charge, to any person
-#     obtaining a copy of this software and associated documentation
-#     files (the "Software"), to deal in the Software without
-#     restriction, including without limitation the rights to use,
-#     copy, modify, merge, publish, distribute, sublicense, and/or sell
-#     copies of the Software, and to permit persons to whom the
-#     Software is furnished to do so, subject to the following
-#     conditions:
-#
-#     The above copyright notice and this permission notice shall be
-#     included in all copies or substantial portions of the Software.
-#
-#     THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-#     EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
-#     OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-#     NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
-#     HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
-#     WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-#     FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
-#     OTHER DEALINGS IN THE SOFTWARE.
-
-def _select_by_peak_distance(peaks, priority, dmin):
-    """
-    Evaluate which peaks fulfill the distance condition.
-
-    Parameters
-    ----------
-    peaks : ndarray
-        Indices of peaks in `vector`.
-    priority : ndarray
-        An array with priorities matching `peaks` used to determine priority of
-        peaks. A peak with a higher priority value is kept over one with a lower
-        one.
-    dmin : number
-        Minimal distance that peaks must be spaced.
-
-    Returns
-    -------
-    keep : ndarray[bool]
-        A boolean mask evaluating to true where `peaks` fulfill the distance
-        condition.
-
-    Notes
-    -----
-
-    .. versionadded:: 1.1.0
-    """
-    # Peaks are evaluated by priority (larger first)
-    eval_peaks = peaks[np.argsort(priority)][::-1]
-
-    # Flag peaks for deletion
-    del_flag = np.zeros(eval_peaks.size, dtype=bool)
-    for i in range(eval_peaks.size):
-        if not del_flag[i]:
-            # Flag peaks in intervall +-distance around current peak
-            del_flag |= (eval_peaks > eval_peaks[i] - dmin) \
-                        & (eval_peaks < eval_peaks[i] + dmin)
-            # Keep current peak
-            del_flag[i] = False
-
-    keep = ~del_flag[np.argsort(eval_peaks)]
-
-    return keep
-
-
 def find_peaks(x, height=None, threshold=None, distance=None,
                prominence=None, width=None, wlen=None, rel_height=0.5):
     """
     Find peaks inside a signal based on peak properties.
 
     This function takes a one-dimensional array and finds all local maxima by
-    simple comparison of neighbouring values. Optionally, a subset of these peaks
-    can be selected by specifying conditions for a peak's properties.
+    simple comparison of neighbouring values. Optionally, a subset of these
+    peaks can be selected by specifying conditions for a peak's properties.
 
     Parameters
     ----------
@@ -796,13 +697,13 @@ def find_peaks(x, height=None, threshold=None, distance=None,
     height : number or ndarray or sequence, optional
         Required height of peaks. Either a number, ``None``, an array matching
         `x` or a 2-element sequence of the former. The first element is
-        always interpreted as the  minimum and the second, if supplied, as the
-        maximum required height.
+        always interpreted as the  minimal and the second, if supplied, as the
+        maximal required height.
     threshold : number or ndarray or sequence, optional
         Required threshold of peaks, the vertical distance to its neighbouring
         samples. Either a number, ``None``, an array matching `x` or a
         2-element sequence of the former. The first element is always
-        interpreted as the  minimum and the second, if supplied, as the maximum
+        interpreted as the  minimal and the second, if supplied, as the maximal
         required threshold.
     distance : number, optional
         Required minimal horizontal distance (>= 1) in samples between
@@ -810,13 +711,13 @@ def find_peaks(x, height=None, threshold=None, distance=None,
     prominence : number or ndarray or sequence, optional
         Required prominence of peaks. Either a number, ``None``, an array
         matching `x` or a 2-element sequence of the former. The first
-        element is always interpreted as the  minimum and the second, if
-        supplied, as the maximum required prominence.
+        element is always interpreted as the  minimal and the second, if
+        supplied, as the maximal required prominence.
     width : number or ndarray or sequence, optional
         Required width of peaks in samples. Either a number, ``None``, an array
         matching `x` or a 2-element sequence of the former. The first
-        element is always interpreted as the  minimum and the second, if
-        supplied, as the maximum required prominence.
+        element is always interpreted as the  minimal and the second, if
+        supplied, as the maximal required prominence.
     wlen : number, optional
         Used for calculation of the peaks prominences, thus it is only used if
         one of the arguments `prominence` or `width` is given. See argument
@@ -862,17 +763,20 @@ def find_peaks(x, height=None, threshold=None, distance=None,
 
     Notes
     -----
-    Because this function searches for local maxima by direct sample comparison,
-    the determined peak locations can be off for noisy signals if the noise
-    changes the position of a local maximum. In those cases consider smoothing
-    the signal before searching for peaks or using other peak finding and fitting
+    In the context of this function, a peak or local maximum is defined as any
+    sample whose two direct neighbours have a smaller amplitude. For flat peaks
+    (more than one sample of equal amplitude wide) the index of the middle
+    sample is returned (rounded down in case the number of samples is even).
+    For noisy signals the peak locations can be off because the noise might
+    change the position of local maxima. In those cases consider smoothing the
+    signal before searching for peaks or use other peak finding and fitting
     methods (like `find_peaks_cwt`).
 
     Some additional comments on specifying conditions:
 
     * Almost all conditions (excluding `distance`) can be given as half-open or
-      closed intervals, e.g ``1`` or ``(1, None)`` defines the half-open interval
-      :math:`[1, \\infty]` while ``(None, 1)`` defines the interval
+      closed intervals, e.g ``1`` or ``(1, None)`` defines the half-open
+      interval :math:`[1, \\infty]` while ``(None, 1)`` defines the interval
       :math:`[-\\infty, 1]`. The open interval ``(None, None)`` can be specified
       as well, which returns the matching properties without exclusion of peaks.
     * The border is always included in the interval used to select valid peaks.
@@ -880,70 +784,93 @@ def find_peaks(x, height=None, threshold=None, distance=None,
       arrays matching `x` in shape which enables dynamic constrains based on
       the sample position.
     * The order of arguments given in the function definition above mirrors the
-      actual order in which conditions are evaluated. In most cases this order is
-      the fastest one because faster operations are applied first to reduce the
-      number of peaks that need to be evaluated later.
+      actual order in which conditions are evaluated. In most cases this order
+      is the fastest one because faster operations are applied first to reduce
+      the number of peaks that need to be evaluated later.
     * Satisfying the distance condition is accomplished by iterating over all
       peaks in descending order based on their height and removing all lower
-      peaks that are too close. This option can be quite slow if many peaks need
-      to be evaluated. Try to reduce the number of peaks beforehand by
-      specifying conditions that are evaluated before this one (`height` and
-      `threshold`).
+      peaks that are too close.
     * Use `wlen` to reduce the time it takes to evaluate the conditions for
       `prominence` or `width` if `x` is large or has many local maxima
       (see `peak_prominences`).
+
+    .. warning::
+
+       This function may return unexpected results for data containing NaNs. To
+       avoid this, NaNs should either be removed or replaced.
 
     .. versionadded:: 1.1.0
 
     Examples
     --------
-    >>> from scipy.signal import find_peaks
+    To demonstrate this function's usage we use a signal `x` supplied with
+    SciPy (see `scipy.misc.electrocardiogram`). Let's find all peaks (local
+    maxima) in `x` whose amplitude lies above 0.
+
     >>> import matplotlib.pyplot as plt
-
-    Create test signal `x` using 7 harmonics:
-
-    >>> gains = [1, -1, 0.6, 0.5, 0.4, 0.3, 0.1]
-    >>> freqs = [2, 3.5, 6, 7.1, 11.1, 12, 20]
-    >>> t = np.linspace(0, 6, 1000)
-    >>> x = sum(g * np.sin(f * t) for g, f in zip(gains, freqs))
-
-    Find all peaks (local maxima) in `x`
-
-    >>> peaks, _ = find_peaks(x)
-    >>> peaks
-    array([ 25, 119, 205, 275, 381, 495, 586, 782, 892, 952])
-
-    and plot the results
-
-    >>> plt.figure()
+    >>> from scipy.misc import electrocardiogram
+    >>> from scipy.signal import find_peaks
+    >>> x = electrocardiogram()[2000:4000]
+    >>> peaks, _ = find_peaks(x, height=0)
     >>> plt.plot(x)
-    >>> plt.plot(peaks, x[peaks], 'x')
+    >>> plt.plot(peaks, x[peaks], "x")
+    >>> plt.plot(np.zeros_like(x), "--", color="gray")
     >>> plt.show()
 
-    This time, find peaks that have a minimal prominence of 0.5 and whose peak
-    base is not more than 150 samples wide (``width=(None, 150)``). For this we
-    need to use the option ``rel_height=1.0`` which will evaluate the width at
-    the peak's base.
+    We can select peaks below 0 with ``height=(None, 0)`` or use arrays matching
+    `x` in size to reflect a changing condition for different parts of the
+    signal.
 
-    >>> peaks, prop = find_peaks(
-    ...     x, prominence=0.5, width=(None, 150), rel_height=1.0)
-    >>> peaks, prop['prominences'], prop['widths']
-    (array([ 25, 381, 892]),
-     array([1.40613266, 0.50503469, 1.23546031]),
-     array([59.57018554, 57.9368999 , 86.11729375]))
-
-    and plot the results including the calculated peak properties
-
-    >>> plt.figure()
+    >>> border = np.sin(np.linspace(0, 3 * np.pi, x.size))
+    >>> peaks, _ = find_peaks(x, height=(-border, border))
     >>> plt.plot(x)
-    >>> plt.plot(peaks, x[peaks], 'x')
-    >>> plt.vlines(x=peaks, ymin=prop['width_heights'], ymax=x[peaks])
-    >>> plt.hlines(y=prop['width_heights'], xmin=prop['left_ips'],
-    ...            xmax=prop['right_ips'])
+    >>> plt.plot(-border, "--", color="gray")
+    >>> plt.plot(border, ":", color="gray")
+    >>> plt.plot(peaks, x[peaks], "x")
+    >>> plt.show()
+
+    Another useful condition for periodic signals can be given with the
+    `distance` argument. In this case we can easily select the positions of
+    QRS complexes within the electrocardiogram (ECG) by demanding a distance of
+    at least 150 samples.
+
+    >>> peaks, _ = find_peaks(x, distance=150)
+    >>> np.diff(peaks)
+    array([186, 180, 177, 171, 177, 169, 167, 164, 158, 162, 172])
+    >>> plt.plot(x)
+    >>> plt.plot(peaks, x[peaks], "x")
+    >>> plt.show()
+
+    Especially for noisy signals peaks can be easily grouped by their
+    prominence (see `peak_prominences`). E.g. we can select all peaks except
+    for the mentioned QRS complexes by limiting the allowed prominenence to 0.6.
+
+    >>> peaks, properties = find_peaks(x, prominence=(None, 0.6))
+    >>> properties["prominences"].max()
+    0.5049999999999999
+    >>> plt.plot(x)
+    >>> plt.plot(peaks, x[peaks], "x")
+    >>> plt.show()
+
+    And finally let's examine a different section of the ECG which contains
+    beat forms of different shape. To select only the atypical heart beats we
+    combine two conditions: a minimal prominence of 1 and width of at least 20
+    samples.
+
+    >>> x = electrocardiogram()[17000:18000]
+    >>> peaks, properties = find_peaks(x, prominence=1, width=20)
+    >>> properties["prominences"], properties["widths"]
+    (array([1.495, 2.3  ]), array([36.93773946, 39.32723577]))
+    >>> plt.plot(x)
+    >>> plt.plot(peaks, x[peaks], "x")
+    >>> plt.vlines(x=peaks, ymin=x[peaks] - properties["prominences"],
+    ...            ymax = x[peaks], color = "C1")
+    >>> plt.hlines(y=properties["width_heights"], xmin=properties["left_ips"],
+    ...            xmax=properties["right_ips"], color = "C1")
     >>> plt.show()
     """
     # _argmaxima1d expects array of dtype 'float64'
-    x = np.asarray(x, dtype=np.float64)
+    x = np.asarray(x, dtype=np.float64, order='C')
     if x.ndim != 1:
         raise ValueError('`x` must have exactly one dimension')
     if distance is not None and distance < 1:
@@ -1059,7 +986,7 @@ def _identify_ridge_lines(matr, max_distances, gap_thresh):
 
     all_max_cols = _boolrelextrema(matr, np.greater, axis=1, order=1)
     # Highest row for which there are any relative maxima
-    has_relmax = np.where(all_max_cols.any(axis=1))[0]
+    has_relmax = np.nonzero(all_max_cols.any(axis=1))[0]
     if(len(has_relmax) == 0):
         return []
     start_row = has_relmax[-1]
@@ -1067,7 +994,7 @@ def _identify_ridge_lines(matr, max_distances, gap_thresh):
     # rows, cols,Gap number
     ridge_lines = [[[start_row],
                    [col],
-                   0] for col in np.where(all_max_cols[start_row])[0]]
+                   0] for col in np.nonzero(all_max_cols[start_row])[0]]
     final_lines = []
     rows = np.arange(start_row - 1, -1, -1)
     cols = np.arange(0, matr.shape[1])

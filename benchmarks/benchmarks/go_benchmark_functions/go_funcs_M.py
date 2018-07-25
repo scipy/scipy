@@ -91,7 +91,7 @@ class Meyer(Benchmark):
     r"""
     Meyer [1]_ objective function.
 
-    ..[1] http://www.itl.nist.gov/div898/strd/nls/data/mgh10.shtml
+    ..[1] https://www.itl.nist.gov/div898/strd/nls/data/mgh10.shtml
 
     TODO NIST regression standard
     """

@@ -31,6 +31,7 @@ __all__ = ['argstoarray',
            'ttest_ind','ttest_rel','tvar',
            'variation',
            'winsorize',
+           'brunnermunzel',
            ]
 
 import numpy as np
@@ -291,6 +292,16 @@ def mode(a, axis=0):
     -----
     For more details, see `stats.mode`.
 
+    Examples
+    --------
+    >>> from scipy import stats
+    >>> from scipy.stats import mstats
+    >>> m_arr = np.ma.array([1, 1, 0, 0, 0, 0], mask=[0, 0, 1, 1, 1, 0])
+    >>> stats.mode(m_arr)
+    ModeResult(mode=array([0]), count=array([4]))
+    >>> mstats.mode(m_arr)
+    ModeResult(mode=array([1.]), count=array([2.]))
+
     """
     a, axis = _chk_asarray(a, axis)
 
@@ -301,9 +312,7 @@ def mode(a, axis=0):
         elif cnt.size:
             return (rep[cnt.argmax()], cnt.max())
         else:
-            not_masked_indices = ma.flatnotmasked_edges(a)
-            first_not_masked_index = not_masked_indices[0]
-            return (a[first_not_masked_index], 1)
+            return (a.min(), 1)
 
     if axis is None:
         output = _mode1D(ma.ravel(a))
@@ -466,8 +475,8 @@ def spearmanr(x, y, use_ties=True):
     if use_ties:
         xties = count_tied_groups(x)
         yties = count_tied_groups(y)
-        corr_x = np.sum(v*k*(k**2-1) for (k,v) in iteritems(xties))/12.
-        corr_y = np.sum(v*k*(k**2-1) for (k,v) in iteritems(yties))/12.
+        corr_x = sum(v*k*(k**2-1) for (k,v) in iteritems(xties))/12.
+        corr_y = sum(v*k*(k**2-1) for (k,v) in iteritems(yties))/12.
     else:
         corr_x = corr_y = 0
 
@@ -490,7 +499,7 @@ def spearmanr(x, y, use_ties=True):
 KendalltauResult = namedtuple('KendalltauResult', ('correlation', 'pvalue'))
 
 
-def kendalltau(x, y, use_ties=True, use_missing=False):
+def kendalltau(x, y, use_ties=True, use_missing=False, method='auto'):
     """
     Computes Kendall's rank correlation tau on two variables *x* and *y*.
 
@@ -505,6 +514,12 @@ def kendalltau(x, y, use_ties=True, use_missing=False):
     use_missing : {False, True}, optional
         Whether missing data should be allocated a rank of 0 (False) or the
         average rank (True)
+    method: {'auto', 'asymptotic', 'exact'}, optional
+        Defines which method is used to calculate the p-value [1]_.
+        'asymptotic' uses a normal approximation valid for large samples.
+        'exact' computes the exact p-value, but can only be used if no ties
+        are present. 'auto' is the default and selects the appropriate
+        method based on a trade-off between speed and accuracy.
 
     Returns
     -------
@@ -512,6 +527,11 @@ def kendalltau(x, y, use_ties=True, use_missing=False):
         Kendall tau
     pvalue : float
         Approximate 2-side p-value.
+
+    References
+    ----------
+    .. [1] Maurice G. Kendall, "Rank Correlation Methods" (4th Edition),
+           Charles Griffin & Co., 1970.
 
     """
     (x, y, n) = _chk_size(x, y)
@@ -536,9 +556,9 @@ def kendalltau(x, y, use_ties=True, use_missing=False):
                 for i in range(len(ry)-1)], dtype=float)
     D = np.sum([((ry[i+1:] < ry[i])*(rx[i+1:] > rx[i])).filled(0).sum()
                 for i in range(len(ry)-1)], dtype=float)
+    xties = count_tied_groups(x)
+    yties = count_tied_groups(y)
     if use_ties:
-        xties = count_tied_groups(x)
-        yties = count_tied_groups(y)
         corr_x = np.sum([v*k*(k-1) for (k,v) in iteritems(xties)], dtype=float)
         corr_y = np.sum([v*k*(k-1) for (k,v) in iteritems(yties)], dtype=float)
         denom = ma.sqrt((n*(n-1)-corr_x)/2. * (n*(n-1)-corr_y)/2.)
@@ -546,28 +566,68 @@ def kendalltau(x, y, use_ties=True, use_missing=False):
         denom = n*(n-1)/2.
     tau = (C-D) / denom
 
-    var_s = n*(n-1)*(2*n+5)
-    if use_ties:
-        var_s -= np.sum(v*k*(k-1)*(2*k+5)*1. for (k,v) in iteritems(xties))
-        var_s -= np.sum(v*k*(k-1)*(2*k+5)*1. for (k,v) in iteritems(yties))
-        v1 = np.sum([v*k*(k-1) for (k, v) in iteritems(xties)], dtype=float) *\
-             np.sum([v*k*(k-1) for (k, v) in iteritems(yties)], dtype=float)
-        v1 /= 2.*n*(n-1)
-        if n > 2:
-            v2 = np.sum([v*k*(k-1)*(k-2) for (k,v) in iteritems(xties)],
-                        dtype=float) * \
-                 np.sum([v*k*(k-1)*(k-2) for (k,v) in iteritems(yties)],
-                        dtype=float)
-            v2 /= 9.*n*(n-1)*(n-2)
-        else:
-            v2 = 0
-    else:
-        v1 = v2 = 0
+    if method == 'exact' and (xties or yties):
+        raise ValueError("Ties found, exact method cannot be used.")
 
-    var_s /= 18.
-    var_s += (v1 + v2)
-    z = (C-D)/np.sqrt(var_s)
-    prob = special.erfc(abs(z)/np.sqrt(2))
+    if method == 'auto':
+        if (not xties and not yties) and (n <= 33 or min(C, n*(n-1)/2.0-C) <= 1):
+            method = 'exact'
+        else:
+            method = 'asymptotic'
+
+    if not xties and not yties and method == 'exact':
+        # Exact p-value, see Maurice G. Kendall, "Rank Correlation Methods" (4th Edition), Charles Griffin & Co., 1970.
+        c = int(min(C, (n*(n-1))/2-C))
+        if n <= 0:
+            raise ValueError
+        elif c < 0 or 2*c > n*(n-1):
+            raise ValueError
+        elif n == 1:
+            prob = 1.0
+        elif n == 2:
+            prob = 1.0
+        elif c == 0:
+            prob = 2.0/np.math.factorial(n)
+        elif c == 1:
+            prob = 2.0/np.math.factorial(n-1)
+        else:
+            old = [0.0]*(c+1)
+            new = [0.0]*(c+1)
+            new[0] = 1.0
+            new[1] = 1.0
+            for j in range(3,n+1):
+                old = new[:]
+                for k in range(1,min(j,c+1)):
+                    new[k] += new[k-1]
+                for k in range(j,c+1):
+                    new[k] += new[k-1] - old[k-j]
+            prob = 2.0*sum(new)/np.math.factorial(n)
+    elif method == 'asymptotic':
+        var_s = n*(n-1)*(2*n+5)
+        if use_ties:
+            var_s -= np.sum([v*k*(k-1)*(2*k+5)*1. for (k,v) in iteritems(xties)])
+            var_s -= np.sum([v*k*(k-1)*(2*k+5)*1. for (k,v) in iteritems(yties)])
+            v1 = np.sum([v*k*(k-1) for (k, v) in iteritems(xties)], dtype=float) *\
+                 np.sum([v*k*(k-1) for (k, v) in iteritems(yties)], dtype=float)
+            v1 /= 2.*n*(n-1)
+            if n > 2:
+                v2 = np.sum([v*k*(k-1)*(k-2) for (k,v) in iteritems(xties)],
+                            dtype=float) * \
+                     np.sum([v*k*(k-1)*(k-2) for (k,v) in iteritems(yties)],
+                            dtype=float)
+                v2 /= 9.*n*(n-1)*(n-2)
+            else:
+                v2 = 0
+        else:
+            v1 = v2 = 0
+
+        var_s /= 18.
+        var_s += (v1 + v2)
+        z = (C-D)/np.sqrt(var_s)
+        prob = special.erfc(abs(z)/np.sqrt(2))
+    else:
+        raise ValueError("Unknown method "+str(method)+" specified, please use auto, exact or asymptotic.")
+
     return KendalltauResult(tau, prob)
 
 
@@ -585,12 +645,12 @@ def kendalltau_seasonal(x):
     (n,m) = x.shape
     n_p = x.count(0)
 
-    S_szn = np.sum(msign(x[i:]-x[i]).sum(0) for i in range(n))
+    S_szn = sum(msign(x[i:]-x[i]).sum(0) for i in range(n))
     S_tot = S_szn.sum()
 
     n_tot = x.count()
     ties = count_tied_groups(x.compressed())
-    corr_ties = np.sum(v*k*(k-1) for (k,v) in iteritems(ties))
+    corr_ties = sum(v*k*(k-1) for (k,v) in iteritems(ties))
     denom_tot = ma.sqrt(1.*n_tot*(n_tot-1)*(n_tot*(n_tot-1)-corr_ties))/2.
 
     R = rankdata(x, axis=0, use_missing=True)
@@ -599,10 +659,10 @@ def kendalltau_seasonal(x):
     denom_szn = ma.empty(m, dtype=float)
     for j in range(m):
         ties_j = count_tied_groups(x[:,j].compressed())
-        corr_j = np.sum(v*k*(k-1) for (k,v) in iteritems(ties_j))
+        corr_j = sum(v*k*(k-1) for (k,v) in iteritems(ties_j))
         cmb = n_p[j]*(n_p[j]-1)
         for k in range(j,m,1):
-            K[j,k] = np.sum(msign((x[i:,j]-x[i,j])*(x[i:,k]-x[i,k])).sum()
+            K[j,k] = sum(msign((x[i:,j]-x[i,j])*(x[i:,k]-x[i,k])).sum()
                                for i in range(n))
             covmat[j,k] = (K[j,k] + 4*(R[:,j]*R[:,k]).sum() -
                            n*(n_p[j]+1)*(n_p[k]+1))/3.
@@ -1005,7 +1065,7 @@ def mannwhitneyu(x,y, use_continuity=True):
     mu = (nx*ny)/2.
     sigsq = (nt**3 - nt)/12.
     ties = count_tied_groups(ranks)
-    sigsq -= np.sum(v*(k**3-k) for (k,v) in iteritems(ties))/12.
+    sigsq -= sum(v*(k**3-k) for (k,v) in iteritems(ties))/12.
     sigsq *= nx*ny/float(nt*(nt-1))
 
     if use_continuity:
@@ -1051,7 +1111,7 @@ def kruskal(*args):
     H = 12./(ntot*(ntot+1)) * (sumrk**2/ngrp).sum() - 3*(ntot+1)
     # Tie correction
     ties = count_tied_groups(ranks)
-    T = 1. - np.sum(v*(k**3-k) for (k,v) in iteritems(ties))/float(ntot**3-ntot)
+    T = 1. - sum(v*(k**3-k) for (k,v) in iteritems(ties))/float(ntot**3-ntot)
     if T == 0:
         raise ValueError('All numbers are identical in kruskal')
 
@@ -1570,6 +1630,23 @@ def tmean(a, limits=None, inclusive=(True, True), axis=None):
     -----
     For more details on `tmean`, see `stats.tmean`.
 
+    Examples
+    --------
+    >>> from scipy.stats import mstats
+    >>> a = np.array([[6, 8, 3, 0],
+    ...               [3, 9, 1, 2],
+    ...               [8, 7, 8, 2],
+    ...               [5, 6, 0, 2],
+    ...               [4, 5, 5, 2]])
+    ...
+    ...
+    >>> mstats.tmean(a, (2,5))
+    3.3
+    >>> mstats.tmean(a, (2,5), axis=0)
+    masked_array(data=[4.0, 5.0, 4.0, 2.0],
+                 mask=[False, False, False, False],
+           fill_value=1e+20)
+
     """
     return trima(a, limits=limits, inclusive=inclusive).mean(axis=axis)
 
@@ -1646,6 +1723,20 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True):
     -----
     For more details on `tmin`, see `stats.tmin`.
 
+    Examples
+    --------
+    >>> from scipy.stats import mstats
+    >>> a = np.array([[6, 8, 3, 0],
+    ...               [3, 2, 1, 2],
+    ...               [8, 1, 8, 2],
+    ...               [5, 3, 0, 2],
+    ...               [4, 7, 5, 2]])
+    ...
+    >>> mstats.tmin(a, 5)
+    masked_array(data=[5, 7, 5, --],
+                 mask=[False, False, False,  True],
+           fill_value=999999)
+
     """
     a, axis = _chk_asarray(a, axis)
     am = trima(a, (lowerlimit, None), (inclusive, False))
@@ -1681,6 +1772,21 @@ def tmax(a, upperlimit=None, axis=0, inclusive=True):
     Notes
     -----
     For more details on `tmax`, see `stats.tmax`.
+
+    Examples
+    --------
+    >>> from scipy.stats import mstats
+    >>> a = np.array([[6, 8, 3, 0],
+    ...               [3, 9, 1, 2],
+    ...               [8, 7, 8, 2],
+    ...               [5, 6, 0, 2],
+    ...               [4, 5, 5, 2]])
+    ...
+    ...
+    >>> mstats.tmax(a, 4)
+    masked_array(data=[4, --, 3, 2],
+                 mask=[False,  True, False, False],
+           fill_value=999999)
 
     """
     a, axis = _chk_asarray(a, axis)
@@ -1757,7 +1863,7 @@ def winsorize(a, limits=None, inclusive=(True, True), inplace=False,
         indicate an open interval.
     inclusive : {(True, True) tuple}, optional
         Tuple indicating whether the number of data being masked on each side
-        should be rounded (True) or truncated (False).
+        should be truncated (True) or rounded (False).
     inplace : {False, True}, optional
         Whether to winsorize in place (True) or to use a copy (False)
     axis : {None, int}, optional
@@ -2615,3 +2721,95 @@ def friedmanchisquare(*args):
 
     return FriedmanchisquareResult(chisq,
                                    distributions.chi2.sf(chisq, k-1))
+
+
+BrunnerMunzelResult = namedtuple('BrunnerMunzelResult', ('statistic', 'pvalue'))
+
+
+def brunnermunzel(x, y, alternative="two-sided", distribution="t"):
+    """
+    Computes the Brunner-Munzel test on samples x and y
+
+    Missing values in `x` and/or `y` are discarded.
+
+    Parameters
+    ----------
+    x, y : array_like
+        Array of samples, should be one-dimensional.
+    alternative :  'less', 'two-sided', or 'greater', optional
+        Whether to get the p-value for the one-sided hypothesis ('less'
+        or 'greater') or for the two-sided hypothesis ('two-sided').
+        Defaults value is 'two-sided' .
+    distribution: 't' or 'normal', optional
+        Whether to get the p-value by t-distribution or by standard normal
+        distribution.
+        Defaults value is 't' .
+
+    Returns
+    -------
+    statistic : float
+        The Brunner-Munzer W statistic.
+    pvalue : float
+        p-value assuming an t distribution. One-sided or
+        two-sided, depending on the choice of `alternative` and `distribution`.
+
+    See Also
+    --------
+    mannwhitneyu : Mann-Whitney rank test on two samples.
+
+    Notes
+    -------
+    For more details on `brunnermunzel`, see `stats.brunnermunzel`.
+
+    """
+    x = ma.asarray(x).compressed().view(ndarray)
+    y = ma.asarray(y).compressed().view(ndarray)
+    nx = len(x)
+    ny = len(y)
+    if nx == 0 or ny == 0:
+        return BrunnerMunzelResult(np.nan, np.nan)
+    nc = nx + ny
+    rankc = rankdata(np.concatenate((x,y)))
+    rankcx = rankc[0:nx]
+    rankcy = rankc[nx:nx+ny]
+    rankcx_mean = np.mean(rankcx)
+    rankcy_mean = np.mean(rankcy)
+    rankx = rankdata(x)
+    ranky = rankdata(y)
+    rankx_mean = np.mean(rankx)
+    ranky_mean = np.mean(ranky)
+
+    Sx = np.sum(np.power(rankcx - rankx - rankcx_mean + rankx_mean, 2.0))
+    Sx /= nx - 1
+    Sy = np.sum(np.power(rankcy - ranky - rankcy_mean + ranky_mean, 2.0))
+    Sy /= ny - 1
+
+    sigmax = Sx / np.power(nc - nx, 2.0)
+    sigmay = Sx / np.power(nc - ny, 2.0)
+
+    wbfn = nx * ny * (rankcy_mean - rankcx_mean)
+    wbfn /= (nx + ny) * np.sqrt(nx * Sx + ny * Sy)
+
+    if distribution == "t":
+        df_numer = np.power(nx * Sx + ny * Sy, 2.0)
+        df_denom = np.power(nx * Sx, 2.0) / (nx - 1)
+        df_denom += np.power(ny * Sy, 2.0) / (ny - 1)
+        df = df_numer / df_denom
+        p = distributions.t.cdf(wbfn, df)
+    elif distribution == "normal":
+        p = distributions.norm.cdf(wbfn)
+    else:
+        raise ValueError(
+            "distribution should be 't' or 'normal'")
+
+    if alternative == "greater":
+        p = p
+    elif alternative == "less":
+        p = 1 - p
+    elif alternative == "two-sided":
+        p = 2 * np.min([p, 1-p])
+    else:
+        raise ValueError(
+            "alternative should be 'less', 'greater' or 'two-sided'")
+
+    return BrunnerMunzelResult(wbfn, p)
