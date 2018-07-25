@@ -757,7 +757,7 @@ class KDTree(object):
                 result[c] = self.__query_range(rng[c])
             return result
         else:
-            raise ValueError("rng must be either 1 or 2dim array, %d dimensional array found." % rng.ndim)
+            raise ValueError("rng must be either 1 or 2 dim array, %d dimensional array found." % rng.ndim)
 
     def query_pairs(self, r, p=2., eps=0):
         """
