@@ -5,6 +5,7 @@ import warnings
 import numpy as np
 import scipy.linalg
 from scipy._lib._util import check_random_state
+from scipy.interpolate import PPoly
 
 
 _AXIS_TO_IND = {'x': 0, 'y': 1, 'z': 2}
@@ -1793,8 +1794,9 @@ class Spline(object):
             <http://qspline.sourceforge.net/qspline.pdf>`_
     """
     def __init__(self, times, rotations, omega_i=[0, 0, 0], omega_f=[0, 0, 0]):
-        if len(rotations) == 1:
-            raise ValueError("`rotations` must contain at least 2 rotations.")
+        num_rotations = len(rotations)
+        if num_rotations == 1:
+            raise ValueError("`rotations` must contain at least 3 rotations.")
 
         times = np.asarray(times)
         if times.ndim != 1:
@@ -1802,11 +1804,11 @@ class Spline(object):
                              "dimensional array, got {} "
                              "dimensions.".format(times.ndim))
 
-        if times.shape[0] != len(rotations):
+        if times.shape[0] != num_rotations:
             raise ValueError("Expected number of rotations to be equal to "
                              "number of timestamps given, got {} rotations "
                              "and {} timestamps.".format(
-                                len(rotations), times.shape[0]))
+                                num_rotations, times.shape[0]))
 
         omega_i = np.asarray(omega_i)
         if omega_i.shape != (3,):
@@ -1828,24 +1830,74 @@ class Spline(object):
         dt_inv = 1 / self.timedelta
         rotvecs = (rotations[:-1].inv() * rotations[1:]).as_rotvec()
         w_int, diff = _intermediate_step(
-            np.zeros((len(rotations) - 2, 3)), rotvecs, dt_inv,
+            np.zeros((num_rotations - 2, 3)), rotvecs, dt_inv,
             omega_i, omega_f)
 
         while diff >= 1e-16:
             w_int, diff = _intermediate_step(w_int, rotvecs, dt_inv,
                                              omega_i, omega_f)
 
-        self.omega = np.empty((len(rotations), 3))
-        self.omega[0] = omega_i
-        self.omega[-1] = omega_f
-        self.omega[1:-1] = w_int
+        w = np.empty((num_rotations, 3))
+        w[0] = omega_i
+        w[-1] = omega_f
+        w[1:-1] = w_int
 
         # Formula for theta(t) from eqn 16, coefficients from page 5 of ref
-        self.c2 = self.omega[:-1] * self.timedelta[:, None]
-        self.c3 = (
-            _Bfunc_inv(rotvecs, self.omega[1:]) * self.timedelta[:, None] -
-            3 * rotvecs)
-        self.c4 = rotvecs
+        initial_omega_term = w[:-1]
+        final_omega_term = _Bfunc_inv(rotvecs, w[1:])
+        delta_rotation = rotvecs
+        # Will need column vector format in multiple places
+        dt_inv_col = dt_inv[:, None]
+
+        theta_coeff = np.zeros((4, num_rotations - 1, 3))
+        theta_coeff[0] = (
+            initial_omega_term * (dt_inv_col ** 2) +
+            final_omega_term * (dt_inv_col ** 2) -
+            2 * delta_rotation * (dt_inv_col ** 3)
+        )
+        theta_coeff[1] = (
+            -2 * initial_omega_term * dt_inv_col -
+            final_omega_term * dt_inv_col +
+            3 * delta_rotation * (dt_inv_col ** 2)
+        )
+        theta_coeff[2] = initial_omega_term
+        self.theta = PPoly(theta_coeff, self.times)
+
+        # Clarification: rate of change of angle represented by interpolating
+        # quaternion, NOT angular velocity. Do NOT check for continuity.
+        theta_dot_coeff = np.empty((3, num_rotations - 1, 3))
+        theta_dot_coeff[0] = (
+            3 * initial_omega_term * (dt_inv_col ** 2) +
+            3 * final_omega_term * (dt_inv_col ** 2) -
+            6 * delta_rotation * (dt_inv_col ** 3)
+        )
+        theta_dot_coeff[1] = (
+            -4 * initial_omega_term * dt_inv_col -
+            2 * final_omega_term * dt_inv_col +
+            6 * delta_rotation * (dt_inv_col ** 2)
+        )
+        theta_dot_coeff[2] = initial_omega_term
+        self.theta_dot = PPoly(theta_dot_coeff, self.times)
+
+        # Similar clarification as above
+        theta_dot2_coeff = np.empty((2, num_rotations - 1, 3))
+        theta_dot2_coeff[0] = (
+            6 * initial_omega_term * (dt_inv_col ** 2) +
+            6 * final_omega_term * (dt_inv_col ** 2) -
+            12 * delta_rotation * (dt_inv_col ** 3)
+        )
+        theta_dot2_coeff[1] = (
+            -4 * initial_omega_term * dt_inv_col -
+            2 * final_omega_term * dt_inv_col +
+            6 * delta_rotation * (dt_inv_col ** 2)
+        )
+        self.theta_dot2 = PPoly(theta_dot2_coeff, self.times)
+
+        # Let PPoly (of order 0) find initial rotations for each time. Removes
+        # the need for fancy indexing (to include both endpoints) in __call__.
+        initial_rot_coeff = np.zeros((1, num_rotations - 1, 3))
+        initial_rot_coeff[0] = rotations[:-1].as_rotvec()
+        self.initial_rotation = PPoly(initial_rot_coeff, self.times)
 
         self.rotations = rotations
 
@@ -1869,23 +1921,15 @@ class Spline(object):
             raise ValueError("Expected times to be specified in a 1 "
                              "dimensional array, got {} "
                              "dimensions.".format(compute_times.ndim))
-        # side = 'left' (default) excludes t_min
-        ind = np.searchsorted(self.times, compute_times) - 1
-        # Include t_min. Without this step, index for t_min equals -1.
-        ind[compute_times == self.times[0]] = 0
-        if np.any(np.logical_or(ind < 0, ind > len(self.rotations) - 2)):
+
+        if (np.any(compute_times < self.times[0]) or
+                np.any(compute_times > self.times[-1])):
             raise ValueError("Interpolation times must be within the range "
                              "[{}, {}], both inclusive.".format(
                                 self.times[0], self.times[-1]))
 
-        alpha = (compute_times - self.times[ind]) / self.timedelta[ind]
-        alpha = alpha[:, None]
-        beta = alpha - 1
-
-        interpolating_theta = (self.c2[ind] * alpha * (beta ** 2) +
-                               self.c3[ind] * (alpha ** 2) * beta +
-                               self.c4[ind] * (alpha ** 3))
-        interpolating_quat = Rotation.from_rotvec(interpolating_theta)
-        initial_rot = self.rotations[ind]
+        interpolating_quat = Rotation.from_rotvec(self.theta(compute_times))
+        initial_rot = Rotation.from_rotvec(
+            self.initial_rotation(compute_times))
 
         return initial_rot * interpolating_quat
