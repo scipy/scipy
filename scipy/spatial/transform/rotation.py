@@ -1738,9 +1738,9 @@ def _Bfunc_inv(rotvec, omega):
 def _intermediate_step(w_prev, rotvecs, dt_inv, w_i, w_f):
     # Page 7 of reference. Convection on delta time has changes from here.
     # only the first a value is required
-    a2 = -2 * dt_inv[0]
-    b = -4 * (dt_inv[:-1] + dt_inv[1:])
-    c = -2 * dt_inv[1:]
+    a2 = 2 * dt_inv[0]
+    b = 4 * (dt_inv[:-1] + dt_inv[1:])
+    c = 2 * dt_inv[1:]
 
     d = (6 * rotvecs[:-1] * (dt_inv[:-1, None] ** 2) +
          6 * rotvecs[1:] * (dt_inv[1:, None] ** 2) -
