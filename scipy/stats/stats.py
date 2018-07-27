@@ -1429,7 +1429,7 @@ def kurtosistest(a, axis=0, nan_policy='propagate'):
             denom < 0, -np.power(-(1-2.0/A)/denom, 1/3.0),
             np.where(denom > 0, np.power((1-2.0/A)/denom, 1/3.0), np.nan)
             )
-    if np.isnan(term2).any():
+    if np.any(denom == 0):
         msg = "Test statistic not defined in some cases due to division by " \
               "zero. Return nan in that case..."
         warnings.warn(msg, RuntimeWarning)
