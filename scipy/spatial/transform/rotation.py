@@ -1642,7 +1642,7 @@ class Slerp(object):
                 Rotation.from_rotvec(self.rotvecs[ind] * alpha[:, None]))
 
 
-def _Rfunc(rotvec, omega):
+def _spline_non_linear_term(rotvec, omega):
     # R function formulation from eqn 34.
     # Half angle formulae used to simplify calculations
 
@@ -1676,11 +1676,13 @@ def _Rfunc(rotvec, omega):
 
     norms = np.linalg.norm(omega, axis=1)[:, None]
 
-    return (r0 * (norms ** 2 - dot_prod ** 2) * e +
-            r1 * e * dot_prod * np.cross(cross_prod, e))
+    result = (r0 * (norms ** 2 - dot_prod ** 2) * e +
+              r1 * e * dot_prod * np.cross(cross_prod, e))
+    result[~non_zero] = [0, 0, 0]
+    return result
 
 
-def _Bfunc(rotvec, omega):
+def _spline_w_i_modifier(rotvec, omega):
     # B function formulation from eqn 24
     # rotvec and omega should have same shape
     dtheta = np.linalg.norm(rotvec, axis=1)
@@ -1704,10 +1706,13 @@ def _Bfunc(rotvec, omega):
     c2[~small_theta] = (1 - np.cos(large_angle)) / large_angle
     c2[small_theta] = small_angle / 2 - (small_angle ** 3) / 24
 
-    return dot_prod * e + c1 * np.cross(cross_prod, e) - c2 * cross_prod
+    result = dot_prod * e + c1 * np.cross(cross_prod, e) - c2 * cross_prod
+    result[~non_zero] = omega[~non_zero]
+
+    return result
 
 
-def _Bfunc_inv(rotvec, omega):
+def _spline_w_f_modifier(rotvec, omega):
     # B inverse function formulation from eqn 26
     # rotvec and omega should have same shape
     dtheta = np.linalg.norm(rotvec, axis=1)
@@ -1744,14 +1749,15 @@ def _intermediate_step(w_prev, rotvecs, dt_inv, w_i, w_f):
 
     d = (6 * rotvecs[:-1] * (dt_inv[:-1, None] ** 2) +
          6 * rotvecs[1:] * (dt_inv[1:, None] ** 2) -
-         _Rfunc(rotvecs[:-1], w_prev))
-    d[0] -= a2 * (_Bfunc(rotvecs[0, None], w_i[None, :]))[0]
-    d[-1] -= c[-1] * (_Bfunc_inv(rotvecs[-1, None], w_f[None, :]))[0]
+         _spline_non_linear_term(rotvecs[:-1], w_prev))
+    d[0] -= a2 * (_spline_w_i_modifier(rotvecs[0, None], w_i[None, :]))[0]
+    d[-1] -= c[-1] * (_spline_w_f_modifier(rotvecs[-1, None], w_f[None, :]))[0]
 
     w = np.empty_like(w_prev)
     w[-1] = d[-1] / b[-1]
-    w[:-1] = ((d[:-1] - c[:-1, None] * _Bfunc_inv(rotvecs[1:-1], w_prev[1:]))
-              / b[:-1, None])
+    w[:-1] = ((d[:-1] -
+              c[:-1, None] * _spline_w_f_modifier(rotvecs[1:-1], w_prev[1:])) /
+              b[:-1, None])
 
     error = w - w_prev
     diff = np.sum(np.dot(error, error.T))
@@ -1773,7 +1779,7 @@ class Spline(object):
     Parameters
     ----------
     times : array_like, shape (N,)
-        Times of the known rotations. At least 2 times must be specified.
+        Times of the known rotations. At least 3 times must be specified.
     rotations : `Rotation` instance
         Rotations to perform the interpolation between. Must contain N
         rotations.
@@ -1841,10 +1847,11 @@ class Spline(object):
         w[0] = omega_i
         w[-1] = omega_f
         w[1:-1] = w_int
+        self.omega = w
 
         # Formula for theta(t) from eqn 16, coefficients from page 5 of ref
         initial_omega_term = w[:-1]
-        final_omega_term = _Bfunc_inv(rotvecs, w[1:])
+        final_omega_term = _spline_w_f_modifier(rotvecs, w[1:])
         delta_rotation = rotvecs
         # Will need column vector format in multiple places
         dt_inv_col = dt_inv[:, None]
@@ -1861,37 +1868,9 @@ class Spline(object):
             3 * delta_rotation * (dt_inv_col ** 2)
         )
         theta_coeff[2] = initial_omega_term
+        # Clarification: angle represented by interpolating quaternion
+        # NOT final orientation. Do NOT check derivatives for continuity.
         self.theta = PPoly(theta_coeff, self.times)
-
-        # Clarification: rate of change of angle represented by interpolating
-        # quaternion, NOT angular velocity. Do NOT check for continuity.
-        theta_dot_coeff = np.empty((3, num_rotations - 1, 3))
-        theta_dot_coeff[0] = (
-            3 * initial_omega_term * (dt_inv_col ** 2) +
-            3 * final_omega_term * (dt_inv_col ** 2) -
-            6 * delta_rotation * (dt_inv_col ** 3)
-        )
-        theta_dot_coeff[1] = (
-            -4 * initial_omega_term * dt_inv_col -
-            2 * final_omega_term * dt_inv_col +
-            6 * delta_rotation * (dt_inv_col ** 2)
-        )
-        theta_dot_coeff[2] = initial_omega_term
-        self.theta_dot = PPoly(theta_dot_coeff, self.times)
-
-        # Similar clarification as above
-        theta_dot2_coeff = np.empty((2, num_rotations - 1, 3))
-        theta_dot2_coeff[0] = (
-            6 * initial_omega_term * (dt_inv_col ** 2) +
-            6 * final_omega_term * (dt_inv_col ** 2) -
-            12 * delta_rotation * (dt_inv_col ** 3)
-        )
-        theta_dot2_coeff[1] = (
-            -4 * initial_omega_term * dt_inv_col -
-            2 * final_omega_term * dt_inv_col +
-            6 * delta_rotation * (dt_inv_col ** 2)
-        )
-        self.theta_dot2 = PPoly(theta_dot2_coeff, self.times)
 
         # Let PPoly (of order 0) find initial rotations for each time. Removes
         # the need for fancy indexing (to include both endpoints) in __call__.
@@ -1933,3 +1912,36 @@ class Spline(object):
             self.initial_rotation(compute_times))
 
         return initial_rot * interpolating_quat
+
+    def angular_velocity(self, times):
+        """Compute angular velocity.
+
+        Compute the angular velocity of the interpolated rotations at the given
+        `times`.
+
+        Parameters
+        ----------
+        times : array_like, 1D
+            Times to compute the interpolated rotations at.
+
+        Returns
+        -------
+        omega : `numpy.ndarray` object, shape (N, 3)
+            3 dimensional vector containing the angular velocities.
+        """
+        compute_times = np.asarray(times)
+        if compute_times.ndim != 1:
+            raise ValueError("Expected times to be specified in a 1 "
+                             "dimensional array, got {} "
+                             "dimensions.".format(compute_times.ndim))
+
+        if (np.any(compute_times < self.times[0]) or
+                np.any(compute_times > self.times[-1])):
+            raise ValueError("Interpolation times must be within the range "
+                             "[{}, {}], both inclusive.".format(
+                                self.times[0], self.times[-1]))
+
+        return _spline_w_i_modifier(
+            self.theta(compute_times),
+            self.theta(compute_times, nu=1)
+        )
