@@ -901,6 +901,29 @@ def test_spline_trivial():
     assert_allclose(spline(key_times).as_rotvec(), key_rots.as_rotvec())
 
 
+def test_spline_c1_continuity():
+    # Angular velocity continuity satisfied for smooth changes in orientation
+    np.random.seed(0)
+
+    key_rots = Rotation.from_euler('z', [0, 10, 20, 30, 20, 10, 0],
+                                   degrees=True)
+    key_times = np.arange(7)
+
+    spline = Spline(key_times, key_rots,)
+    test_times = key_times[1:-1]
+    dt = 1e-7
+
+    assert_allclose(
+        spline.angular_velocity(test_times + dt),
+        spline.omega[1:-1], atol=1e-6, rtol=1e-6
+    )
+
+    assert_allclose(
+        spline.angular_velocity(test_times - dt),
+        spline.omega[1:-1], atol=1e-6, rtol=1e-6
+    )
+
+
 def test_spline_single_rot():
     with pytest.raises(ValueError, match="at least 3 rotations"):
         r = Rotation.from_quat([1, 2, 3, 4])
