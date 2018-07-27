@@ -2264,8 +2264,7 @@ def skewtest(a, axis=0):
     return SkewtestResult(Z, 2 * distributions.norm.sf(np.abs(Z)))
 
 
-KurtosistestResult = namedtuple('KurtosistestResult', ('statistic',
-                                                       'pvalue'))
+KurtosistestResult = namedtuple('KurtosistestResult', ('statistic', 'pvalue'))
 
 
 def kurtosistest(a, axis=0):
@@ -2314,11 +2313,12 @@ def kurtosistest(a, axis=0):
     denom = 1 + x*ma.sqrt(2/(A-4.0))
     if np.ma.isMaskedArray(denom):
         # For multi-dimensional array input
-        denom[denom < 0] = masked
-    elif denom < 0:
+        denom[denom == 0.0] = masked
+    elif denom == 0.0:
         denom = masked
 
-    term2 = ma.power((1-2.0/A)/denom,1/3.0)
+    term2 = np.ma.where(denom > 0, ma.power((1-2.0/A)/denom, 1/3.0),
+                        -ma.power(-(1-2.0/A)/denom, 1/3.0))
     Z = (term1 - term2) / np.sqrt(2/(9.0*A))
 
     return KurtosistestResult(Z, 2 * distributions.norm.sf(np.abs(Z)))

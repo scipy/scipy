@@ -1379,8 +1379,7 @@ def kurtosistest(a, axis=0, nan_policy='propagate'):
 
     Notes
     -----
-    Valid only for n>20.  The Z-score is set to 0 for bad entries.
-    This function uses the method described in [1]_.
+    Valid only for n>20. This function uses the method described in [1]_.
 
     References
     ----------
@@ -1426,10 +1425,16 @@ def kurtosistest(a, axis=0, nan_policy='propagate'):
     A = 6.0 + 8.0/sqrtbeta1 * (2.0/sqrtbeta1 + np.sqrt(1+4.0/(sqrtbeta1**2)))
     term1 = 1 - 2/(9.0*A)
     denom = 1 + x*np.sqrt(2/(A-4.0))
-    denom = np.where(denom < 0, 99, denom)
-    term2 = np.where(denom < 0, term1, np.power((1-2.0/A)/denom, 1/3.0))
+    term2 = np.where(
+            denom < 0, -np.power(-(1-2.0/A)/denom, 1/3.0),
+            np.where(denom > 0, np.power((1-2.0/A)/denom, 1/3.0), np.nan)
+            )
+    if np.isnan(term2).any():
+        msg = "Test statistic not defined in some cases due to division by " \
+              "zero. Return nan in that case..."
+        warnings.warn(msg, RuntimeWarning)
+
     Z = (term1 - term2) / np.sqrt(2/(9.0*A))  # [1]_ Eq. 5
-    Z = np.where(denom == 99, 0, Z)
     if Z.ndim == 0:
         Z = Z[()]
 
@@ -1438,6 +1443,7 @@ def kurtosistest(a, axis=0, nan_policy='propagate'):
 
 
 NormaltestResult = namedtuple('NormaltestResult', ('statistic', 'pvalue'))
+
 
 def normaltest(a, axis=0, nan_policy='propagate'):
     """
