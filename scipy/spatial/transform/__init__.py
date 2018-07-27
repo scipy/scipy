@@ -15,14 +15,14 @@ Rotations in 3 dimensions
 
     Rotation
     Slerp
-    Spline
+    QSpline
 
 """
 from __future__ import division, print_function, absolute_import
 
-from .rotation import Rotation, Slerp, Spline
+from .rotation import Rotation, Slerp, QSpline
 
-__all__ = ['Rotation', 'Slerp', 'Spline']
+__all__ = ['Rotation', 'Slerp', 'QSpline']
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)

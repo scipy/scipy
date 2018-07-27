@@ -1765,7 +1765,7 @@ def _intermediate_step(w_prev, rotvecs, dt_inv, w_i, w_f):
     return w, diff
 
 
-class Spline(object):
+class QSpline(object):
     """Interpolate rotations using cubic splines.
 
     The interpolation between consecutive rotations is done using cubic splines

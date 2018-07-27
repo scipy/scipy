@@ -5,7 +5,7 @@ import pytest
 import numpy as np
 from numpy.testing import assert_equal, assert_array_almost_equal
 from numpy.testing import assert_allclose
-from scipy.spatial.transform import Rotation, Slerp, Spline
+from scipy.spatial.transform import Rotation, Slerp, QSpline
 from scipy.stats import special_ortho_group
 from itertools import permutations
 
@@ -897,7 +897,7 @@ def test_spline_trivial():
     key_rots = Rotation.random(10)
     key_times = np.arange(10)
 
-    spline = Spline(key_times, key_rots)
+    spline = QSpline(key_times, key_rots)
     assert_allclose(spline(key_times).as_rotvec(), key_rots.as_rotvec())
 
 
@@ -909,7 +909,7 @@ def test_spline_c1_continuity():
                                    degrees=True)
     key_times = np.arange(7)
 
-    spline = Spline(key_times, key_rots,)
+    spline = QSpline(key_times, key_rots,)
     test_times = key_times[1:-1]
     dt = 1e-7
 
@@ -927,7 +927,7 @@ def test_spline_c1_continuity():
 def test_spline_single_rot():
     with pytest.raises(ValueError, match="at least 3 rotations"):
         r = Rotation.from_quat([1, 2, 3, 4])
-        Spline([1], r)
+        QSpline([1], r)
 
 
 def test_spline_time_dim_mismatch():
@@ -937,7 +937,7 @@ def test_spline_time_dim_mismatch():
         r = Rotation.random(10)
         t = np.array([[1],
                       [2]])
-        Spline(t, r)
+        QSpline(t, r)
 
 
 def test_spline_num_rotations_mismatch():
@@ -946,7 +946,7 @@ def test_spline_num_rotations_mismatch():
         np.random.seed(0)
         r = Rotation.random(5)
         t = np.arange(7)
-        Spline(t, r)
+        QSpline(t, r)
 
 
 def test_spline_equal_times():
@@ -954,7 +954,7 @@ def test_spline_equal_times():
         np.random.seed(0)
         r = Rotation.random(5)
         t = [0, 1, 2, 2, 4]
-        Spline(t, r)
+        QSpline(t, r)
 
 
 def test_spline_decreasing_times():
@@ -962,14 +962,14 @@ def test_spline_decreasing_times():
         np.random.seed(0)
         r = Rotation.random(5)
         t = [0, 1, 3, 2, 4]
-        Spline(t, r)
+        QSpline(t, r)
 
 
 def test_spline_call_time_dim_mismatch():
     np.random.seed(0)
     r = Rotation.random(5)
     t = np.arange(5)
-    s = Spline(t, r)
+    s = QSpline(t, r)
 
     with pytest.raises(ValueError,
                        match="times to be specified in a 1 dimensional array"):
@@ -982,7 +982,7 @@ def test_spline_call_time_out_of_range():
     np.random.seed(0)
     r = Rotation.random(5)
     t = np.arange(5) + 1
-    s = Spline(t, r)
+    s = QSpline(t, r)
 
     with pytest.raises(ValueError, match="times must be within the range"):
         s([0, 1, 2])
