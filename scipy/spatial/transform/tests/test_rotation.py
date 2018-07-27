@@ -903,8 +903,6 @@ def test_spline_trivial():
 
 def test_spline_c1_continuity():
     # Angular velocity continuity satisfied for smooth changes in orientation
-    np.random.seed(0)
-
     key_rots = Rotation.from_euler('z', [0, 10, 20, 30, 20, 10, 0],
                                    degrees=True)
     key_times = np.arange(7)
@@ -922,6 +920,23 @@ def test_spline_c1_continuity():
         spline.angular_velocity(test_times - dt),
         spline.omega[1:-1], atol=1e-6, rtol=1e-6
     )
+
+
+def test_spline_constant_angular_velocity():
+    key_rots = Rotation.from_euler('z', [10, 20, 30], degrees=True)
+    key_times = [0, 1, 2]
+
+    omega_i = [0, 0, 10 * np.pi/180]
+    omega_f = [0, 0, 10 * np.pi/180]
+    spline = QSpline(key_times, key_rots, omega_i=omega_i, omega_f=omega_f)
+
+    vel = spline.omega[1]
+    assert_allclose(vel, omega_i)
+    assert_allclose(vel, omega_f)
+
+    test_times = np.linspace(0, 2, 21)
+    for row in spline.angular_velocity(test_times):
+        assert_allclose(row, vel)
 
 
 def test_spline_single_rot():
