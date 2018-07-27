@@ -18,7 +18,8 @@ Functions
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from .optimize import OptimizeResult, _check_unknown_options
+from warnings import warn
+from .optimize import OptimizeResult, OptimizeWarning, _check_unknown_options
 from ._linprog_ip import _linprog_ip
 
 __all__ = ['linprog', 'linprog_verbose_callback', 'linprog_terse_callback']
@@ -128,7 +129,6 @@ def linprog_terse_callback(xk, **kwargs):
             (and this is the final call to callback), otherwise False.
     """
     nit = kwargs["nit"]
-
     if nit == 0:
         print("Iter:   X:")
     print("{0: <5d}   ".format(nit), end="")
@@ -218,7 +218,7 @@ def _pivot_row(T, basis, pivcol, phase, tol=1.0E-12, bland=False):
     return True, min_rows[0]
 
 
-def _apply_pivot(T, basis, pivrow, pivcol):
+def _apply_pivot(T, basis, pivrow, pivcol, tol=1e-12):
     """
     Pivot the simplex tableau inplace on the element given by (pivrow, pivol).
     The entering variable corresponds to the column given by pivcol forcing
@@ -227,31 +227,8 @@ def _apply_pivot(T, basis, pivrow, pivcol):
     Parameters
     ----------
     T : 2-D array
-        A 2-D array representing the simplex T corresponding to the
-        maximization problem.  It should have the form:
-
-        [[A[0, 0], A[0, 1], ..., A[0, n_total], b[0]],
-         [A[1, 0], A[1, 1], ..., A[1, n_total], b[1]],
-         .
-         .
-         .
-         [A[m, 0], A[m, 1], ..., A[m, n_total], b[m]],
-         [c[0],   c[1], ...,   c[n_total],    0]]
-
-        for a Phase 2 problem, or the form:
-
-        [[A[0, 0], A[0, 1], ..., A[0, n_total], b[0]],
-         [A[1, 0], A[1, 1], ..., A[1, n_total], b[1]],
-         .
-         .
-         .
-         [A[m, 0], A[m, 1], ..., A[m, n_total], b[m]],
-         [c[0],   c[1], ...,   c[n_total],   0],
-         [c'[0],  c'[1], ...,  c'[n_total],  0]]
-
-         for a Phase 1 problem (a Problem in which a basic feasible solution is
-         sought prior to maximizing the actual objective.  T is modified in
-         place by _apply_pivot.
+        A 2-D array representing the simplex T to the corresponding
+        maximization problem.
     basis : 1-D array
         An array of the indices of the basic variables, such that basis[i]
         contains the column corresponding to the basic variable for row i.
@@ -267,6 +244,16 @@ def _apply_pivot(T, basis, pivrow, pivcol):
     for irow in range(T.shape[0]):
         if irow != pivrow:
             T[irow] = T[irow] - T[pivrow] * T[irow, pivcol]
+
+    # The selected pivot should never lead to a pivot value less than the tol.
+    if np.isclose(pivval, tol, atol=0, rtol=1e4):
+        message = ("The pivot operation in requires a pivot value of:{0: .1e}."
+        " Being only slightly greater than the set tolerance{1: .1e}. This"
+        " may lead to issues regarding the numerical stability of the simplex"
+        " method. Increasing the tolerance, changing the pivot strategy via "
+        " Bland's rule or removing redundant constraints may help reduce"
+        " the issue.".format(pivval, tol))
+        warn(message, OptimizeWarning)
 
 
 def _solve_simplex(T, n, basis, maxiter=1000, phase=2, callback=None,
