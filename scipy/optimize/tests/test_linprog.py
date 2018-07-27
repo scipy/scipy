@@ -916,7 +916,7 @@ class TestLinprogSimplex(LinprogCommonTests):
         b_eq = np.array([[ 1.]])
         bounds = [(None, None)] * 9
 
-        # Should fail if Bland's rule is not used.
+        # Should warn if Bland's rule is not used.
         with pytest.warns(OptimizeWarning):
             res = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
                 bounds=bounds, method=self.method, options=self.options)
