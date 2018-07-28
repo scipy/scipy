@@ -248,11 +248,12 @@ def _apply_pivot(T, basis, pivrow, pivcol, tol=1e-12):
     # The selected pivot should never lead to a pivot value less than the tol.
     if np.isclose(pivval, tol, atol=0, rtol=1e4):
         message = (
-            "The pivot operation produces a pivot value of:{0: .1e}. "
-            "Being only slightly greater than the set tolerance{1: .1e}. "
-            "This may lead to issues regarding the numerical stability of "
-            "the simplex method. Increasing the tolerance, changing the pivot "
-            "strategy via Bland's rule or removing redundant constraints may "
+            "The pivot operation produces a pivot value of:{0: .1e}, "
+            "which is only slightly greater than the specified "
+            "tolerance{1: .1e}. This may lead to issues regarding the "
+            "numerical stability of the simplex method. "
+            "Removing redundant constraints, changing the pivot strategy "
+            "via Bland's rule or increasing the tolerance may "
             "help reduce the issue.".format(pivval, tol))
         warn(message, OptimizeWarning)
 
