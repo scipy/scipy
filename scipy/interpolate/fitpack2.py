@@ -172,8 +172,8 @@ class UnivariateSpline(object):
             if (not np.isfinite(x).all() or not np.isfinite(y).all() or
                     not w_finite):
                 raise ValueError("x and y array must not contain NaNs or infs.")
-        if not all(diff(x) > 0.0):
-            raise ValueError('x must be strictly increasing')
+        if not all(diff(x) >= 0.0):
+            raise ValueError("x must be increasing")
 
         # _data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
         try:
@@ -543,7 +543,8 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
         not in the interval defined by the knot sequence.
 
         * if ext=0 or 'extrapolate', return the extrapolated value.
-        * if ext=1 or 'zeros', return 0
+        * if ext=1 all(diff(x) > 0.0):
++            raise ValueEror 'zeros', return 0
         * if ext=2 or 'raise', raise a ValueError
         * if ext=3 of 'const', return the boundary value.
 
@@ -595,8 +596,8 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
             if (not np.isfinite(x).all() or not np.isfinite(y).all() or
                     not w_finite):
                 raise ValueError("Input must not contain NaNs or infs.")
-        if not all(diff(x) > 0.0):
-            raise ValueError('x must be strictly increasing')
+        if not all(diff(x) >= 0.0):
+            raise ValueError('x must be increasing')
 
         # _data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
         self._data = dfitpack.fpcurf0(x,y,k,w=w,
@@ -734,8 +735,8 @@ class LSQUnivariateSpline(UnivariateSpline):
             if (not np.isfinite(x).all() or not np.isfinite(y).all() or
                     not w_finite or not np.isfinite(t).all()):
                 raise ValueError("Input(s) must not contain NaNs or infs.")
-        if not all(diff(x) > 0.0):
-            raise ValueError('x must be strictly increasing')
+        if not all(diff(x) >= 0.0):
+            raise ValueError('x must be increasing')
 
         # _data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
         xb = bbox[0]
