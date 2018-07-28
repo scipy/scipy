@@ -320,7 +320,7 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi):
         The sampling frequency of the digital system.  Defaults to 2*pi
         radians/sample (so w is from 0 to pi).
 
-        .. versionadded:: 1.1.0
+        .. versionadded:: 1.2.0
 
     Returns
     -------
@@ -512,7 +512,7 @@ def freqz_zpk(z, p, k, worN=512, whole=False, fs=2*pi):
         The sampling frequency of the digital system.  Defaults to 2*pi
         radians/sample (so w is from 0 to pi).
 
-        .. versionadded:: 1.1.0
+        .. versionadded:: 1.2.0
 
     Returns
     -------
@@ -613,7 +613,7 @@ def group_delay(system, w=512, whole=False, fs=2*pi):
         The sampling frequency of the digital system.  Defaults to 2*pi
         radians/sample (so w is from 0 to pi).
 
-        .. versionadded:: 1.1.0
+        .. versionadded:: 1.2.0
 
     Returns
     -------
@@ -744,7 +744,7 @@ def sosfreqz(sos, worN=512, whole=False, fs=2*pi):
         The sampling frequency of the digital system.  Defaults to 2*pi
         radians/sample (so w is from 0 to pi).
 
-        .. versionadded:: 1.1.0
+        .. versionadded:: 1.2.0
 
     Returns
     -------
@@ -1873,7 +1873,7 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
     fs : float, optional
         The sampling frequency of the digital system.
 
-        .. versionadded:: 1.1.0
+        .. versionadded:: 1.2.0
 
     Returns
     -------
@@ -1970,7 +1970,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
     fs : float, optional
         The sampling frequency of the digital system.
 
-        .. versionadded:: 1.1.0
+        .. versionadded:: 1.2.0
 
     Returns
     -------
@@ -2521,7 +2521,7 @@ def butter(N, Wn, btype='low', analog=False, output='ba', fs=None):
     fs : float, optional
         The sampling frequency of the digital system.
 
-        .. versionadded:: 1.1.0
+        .. versionadded:: 1.2.0
 
     Returns
     -------
@@ -2628,7 +2628,7 @@ def cheby1(N, rp, Wn, btype='low', analog=False, output='ba', fs=None):
     fs : float, optional
         The sampling frequency of the digital system.
 
-        .. versionadded:: 1.1.0
+        .. versionadded:: 1.2.0
 
     Returns
     -------
@@ -2744,7 +2744,7 @@ def cheby2(N, rs, Wn, btype='low', analog=False, output='ba', fs=None):
     fs : float, optional
         The sampling frequency of the digital system.
 
-        .. versionadded:: 1.1.0
+        .. versionadded:: 1.2.0
 
     Returns
     -------
@@ -2857,7 +2857,7 @@ def ellip(N, rp, rs, Wn, btype='low', analog=False, output='ba', fs=None):
     fs : float, optional
         The sampling frequency of the digital system.
 
-        .. versionadded:: 1.1.0
+        .. versionadded:: 1.2.0
 
     Returns
     -------
@@ -2997,7 +2997,7 @@ def bessel(N, Wn, btype='low', analog=False, output='ba', norm='phase',
     fs : float, optional
         The sampling frequency of the digital system.
 
-        .. versionadded:: 1.1.0
+        .. versionadded:: 1.2.0
 
     Returns
     -------
@@ -3200,7 +3200,7 @@ def buttord(wp, ws, gpass, gstop, analog=False, fs=None):
     fs : float, optional
         The sampling frequency of the digital system.
 
-        .. versionadded:: 1.1.0
+        .. versionadded:: 1.2.0
 
     Returns
     -------
@@ -3370,7 +3370,7 @@ def cheb1ord(wp, ws, gpass, gstop, analog=False, fs=None):
     fs : float, optional
         The sampling frequency of the digital system.
 
-        .. versionadded:: 1.1.0
+        .. versionadded:: 1.2.0
 
     Returns
     -------
@@ -3508,7 +3508,7 @@ def cheb2ord(wp, ws, gpass, gstop, analog=False, fs=None):
     fs : float, optional
         The sampling frequency of the digital system.
 
-        .. versionadded:: 1.1.0
+        .. versionadded:: 1.2.0
 
     Returns
     -------
@@ -3670,7 +3670,7 @@ def ellipord(wp, ws, gpass, gstop, analog=False, fs=None):
     fs : float, optional
         The sampling frequency of the digital system.
 
-        .. versionadded:: 1.1.0
+        .. versionadded:: 1.2.0
 
     Returns
     -------
@@ -4312,7 +4312,7 @@ def iirnotch(w0, Q, fs=2.0):
     fs : float, optional
         The sampling frequency of the digital system.
 
-        .. versionadded:: 1.1.0
+        .. versionadded:: 1.2.0
 
     Returns
     -------
@@ -4393,7 +4393,7 @@ def iirpeak(w0, Q, fs=2.0):
     fs : float, optional
         The sampling frequency of the digital system.
 
-        .. versionadded:: 1.1.0
+        .. versionadded:: 1.2.0
 
     Returns
     -------
@@ -4475,7 +4475,7 @@ def _design_notch_peak_filter(w0, Q, ftype, fs=2.0):
     fs : float, optional
         The sampling frequency of the digital system.
 
-        .. versionadded:: 1.1.0:
+        .. versionadded:: 1.2.0:
 
     Returns
     -------
