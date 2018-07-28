@@ -39,6 +39,23 @@ class BadCoefficients(UserWarning):
 abs = absolute
 
 
+def _is_int_type(x):
+    """
+    Check if input is of a scalar integer type (so ``5`` and ``array(5)`` will
+    pass, while ``5.0`` and ``array([5])`` will fail.
+    """
+    if np.ndim(x) != 0:
+        # Older versions of numpy did not raise for np.array([1]).__index__()
+        # This is safe to remove when support for those versions is dropped
+        return False
+    try:
+        operator.index(x)
+    except TypeError:
+        return False
+    else:
+        return True
+
+
 def findfreqs(num, den, N, kind='ba'):
     """
     Find array of frequencies for computing the response of an analog filter.
@@ -161,13 +178,13 @@ def freqs(b, a, worN=200, plot=None):
 
     """
     if worN is None:
+        # For backwards compatibility
         w = findfreqs(b, a, 200)
-    elif isinstance(worN, int):
-        N = worN
-        w = findfreqs(b, a, N)
+    elif _is_int_type(worN):
+        w = findfreqs(b, a, worN)
     else:
-        w = worN
-    w = atleast_1d(w)
+        w = atleast_1d(worN)
+
     s = 1j * w
     h = polyval(b, s) / polyval(a, s)
     if plot is not None:
@@ -240,10 +257,10 @@ def freqs_zpk(z, p, k, worN=200):
         raise ValueError('k must be a single scalar gain')
 
     if worN is None:
+        # For backwards compatibility
         w = findfreqs(z, p, 200, kind='zp')
-    elif isinstance(worN, int):
-        N = worN
-        w = findfreqs(z, p, N, kind='zp')
+    elif _is_int_type(worN):
+        w = findfreqs(z, p, worN, kind='zp')
     else:
         w = worN
 
@@ -255,7 +272,7 @@ def freqs_zpk(z, p, k, worN=200):
     return w, h
 
 
-def freqz(b, a=1, worN=512, whole=False, plot=None):
+def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi):
     """
     Compute the frequency response of a digital filter.
 
@@ -281,30 +298,35 @@ def freqz(b, a=1, worN=512, whole=False, plot=None):
         and ``b.shape[1:]``, ``a.shape[1:]``, and the shape of the frequencies
         array must be compatible for broadcasting.
     worN : {None, int, array_like}, optional
-        If None, then compute at 512 equally spaced frequencies.
-        If a single integer, then compute at that many frequencies.  This is
-        a convenient alternative to::
+        If a single integer, then compute at that many frequencies (default is
+        N=512).  This is a convenient alternative to::
 
-            np.linspace(0, 2*pi if whole else pi, N, endpoint=False)
+            np.linspace(0, fs if whole else fs/2, N, endpoint=False)
 
         Using a number that is fast for FFT computations can result in
         faster computations (see Notes).
-        If an array_like, compute the response at the frequencies given (in
-        radians/sample).
+
+        If an array_like, compute the response at the frequencies given.
+        These are in the same units as `fs`.
     whole : bool, optional
         Normally, frequencies are computed from 0 to the Nyquist frequency,
-        pi radians/sample (upper-half of unit-circle).  If `whole` is True,
-        compute frequencies from 0 to 2*pi radians/sample.
+        fs/2 (upper-half of unit-circle).  If `whole` is True, compute
+        frequencies from 0 to fs.  Ignored if w is array_like.
     plot : callable
         A callable that takes two arguments. If given, the return parameters
         `w` and `h` are passed to plot. Useful for plotting the frequency
         response inside `freqz`.
+    fs : float, optional
+        The sampling frequency of the digital system.  Defaults to 2*pi
+        radians/sample (so w is from 0 to pi).
+
+        .. versionadded:: 1.2.0
 
     Returns
     -------
     w : ndarray
-        The normalized frequencies at which `h` was computed, in
-        radians/sample.
+        The frequencies at which `h` was computed, in the same units as `fs`.
+        By default, `w` is normalized to the range [0, pi) (radians/sample).
     h : ndarray
         The frequency response, as complex numbers.
 
@@ -343,7 +365,7 @@ def freqz(b, a=1, worN=512, whole=False, plot=None):
     >>> import matplotlib.pyplot as plt
     >>> fig = plt.figure()
     >>> plt.title('Digital filter frequency response')
-    >>> ax1 = fig.add_subplot(111)
+    >>> ax1 = fig.add_subplot(1, 1, 1)
 
     >>> plt.plot(w, 20 * np.log10(abs(h)), 'b')
     >>> plt.ylabel('Amplitude [dB]', color='b')
@@ -404,28 +426,28 @@ def freqz(b, a=1, worN=512, whole=False, plot=None):
     a = atleast_1d(a)
 
     if worN is None:
+        # For backwards compatibility
         worN = 512
 
     h = None
-    try:
-        worN = operator.index(worN)
-    except TypeError:  # not int-like
-        w = atleast_1d(worN)
-    else:
-        if worN < 0:
-            raise ValueError('worN must be nonnegative, got %s' % (worN,))
+
+    if _is_int_type(worN):
+        N = operator.index(worN)
+        del worN
+        if N < 0:
+            raise ValueError('worN must be nonnegative, got %s' % (N,))
         lastpoint = 2 * pi if whole else pi
-        w = np.linspace(0, lastpoint, worN, endpoint=False)
-        if (a.size == 1 and worN >= b.shape[0] and
-                fftpack.next_fast_len(worN) == worN and
+        w = np.linspace(0, lastpoint, N, endpoint=False)
+        if (a.size == 1 and N >= b.shape[0] and
+                fftpack.next_fast_len(N) == N and
                 (b.ndim == 1 or (b.shape[-1] == 1))):
-            # if worN is fast, 2 * worN will be fast, too, so no need to check
-            n_fft = worN if whole else worN * 2
+            # if N is fast, 2 * N will be fast, too, so no need to check
+            n_fft = N if whole else N * 2
             if np.isrealobj(b) and np.isrealobj(a):
                 fft_func = np.fft.rfft
             else:
                 fft_func = fftpack.fft
-            h = fft_func(b, n=n_fft, axis=0)[:worN]
+            h = fft_func(b, n=n_fft, axis=0)[:N]
             h /= a
             if fft_func is np.fft.rfft and whole:
                 # exclude DC and maybe Nyquist (no need to use axis_reverse
@@ -438,24 +460,30 @@ def freqz(b, a=1, worN=512, whole=False, plot=None):
                 h = h[..., 0]
                 # Rotate the first axis of h to the end.
                 h = np.rollaxis(h, 0, h.ndim)
-    del worN
+    else:
+        w = atleast_1d(worN)
+        del worN
+        w = 2*pi*w/fs
 
     if h is None:  # still need to compute using freqs w
         zm1 = exp(-1j * w)
         h = (npp_polyval(zm1, b, tensor=False) /
              npp_polyval(zm1, a, tensor=False))
+
+    w = w*fs/(2*pi)
+
     if plot is not None:
         plot(w, h)
 
     return w, h
 
 
-def freqz_zpk(z, p, k, worN=512, whole=False):
+def freqz_zpk(z, p, k, worN=512, whole=False, fs=2*pi):
     r"""
     Compute the frequency response of a digital filter in ZPK form.
 
     Given the Zeros, Poles and Gain of a digital filter, compute its frequency
-    response::
+    response:
 
     :math:`H(z)=k \prod_i (z - Z[i]) / \prod_j (z - P[j])`
 
@@ -471,21 +499,28 @@ def freqz_zpk(z, p, k, worN=512, whole=False):
     k : scalar
         Gain of a linear filter
     worN : {None, int, array_like}, optional
-        If single integer (default 512, same as None), then compute at `worN`
-        frequencies equally spaced around the unit circle. If an array_like,
-        compute the response at the frequencies given (in radians/sample).
+        If a single integer, then compute at that many frequencies (default is
+        N=512).
+
+        If an array_like, compute the response at the frequencies given.
+        These are in the same units as `fs`.
     whole : bool, optional
         Normally, frequencies are computed from 0 to the Nyquist frequency,
-        pi radians/sample (upper-half of unit-circle).  If `whole` is True,
-        compute frequencies from 0 to 2*pi radians/sample.
+        fs/2 (upper-half of unit-circle).  If `whole` is True, compute
+        frequencies from 0 to fs.  Ignored if w is array_like.
+    fs : float, optional
+        The sampling frequency of the digital system.  Defaults to 2*pi
+        radians/sample (so w is from 0 to pi).
+
+        .. versionadded:: 1.2.0
 
     Returns
     -------
     w : ndarray
-        The normalized frequencies at which `h` was computed, in
-        radians/sample.
+        The frequencies at which `h` was computed, in the same units as `fs`.
+        By default, `w` is normalized to the range [0, pi) (radians/sample).
     h : ndarray
-        The frequency response.
+        The frequency response, as complex numbers.
 
     See Also
     --------
@@ -499,48 +534,57 @@ def freqz_zpk(z, p, k, worN=512, whole=False):
 
     Examples
     --------
+    Design a 4th-order digital Butterworth filter with cut-off of 100 Hz in a
+    system with sample rate of 1000 Hz, and plot the frequency response:
+
     >>> from scipy import signal
-    >>> z, p, k = signal.butter(4, 0.2, output='zpk')
-    >>> w, h = signal.freqz_zpk(z, p, k)
+    >>> z, p, k = signal.butter(4, 100, output='zpk', fs=1000)
+    >>> w, h = signal.freqz_zpk(z, p, k, fs=1000)
 
     >>> import matplotlib.pyplot as plt
     >>> fig = plt.figure()
-    >>> plt.title('Digital filter frequency response')
-    >>> ax1 = fig.add_subplot(111)
+    >>> ax1 = fig.add_subplot(1, 1, 1)
+    >>> ax1.set_title('Digital filter frequency response')
 
-    >>> plt.plot(w, 20 * np.log10(abs(h)), 'b')
-    >>> plt.ylabel('Amplitude [dB]', color='b')
-    >>> plt.xlabel('Frequency [rad/sample]')
+    >>> ax1.plot(w, 20 * np.log10(abs(h)), 'b')
+    >>> ax1.set_ylabel('Amplitude [dB]', color='b')
+    >>> ax1.set_xlabel('Frequency [Hz]')
+    >>> ax1.grid()
 
     >>> ax2 = ax1.twinx()
     >>> angles = np.unwrap(np.angle(h))
-    >>> plt.plot(w, angles, 'g')
-    >>> plt.ylabel('Angle (radians)', color='g')
-    >>> plt.grid()
+    >>> ax2.plot(w, angles, 'g')
+    >>> ax2.set_ylabel('Angle [radians]', color='g')
+
     >>> plt.axis('tight')
     >>> plt.show()
 
     """
     z, p = map(atleast_1d, (z, p))
+
     if whole:
         lastpoint = 2 * pi
     else:
         lastpoint = pi
+
     if worN is None:
+        # For backwards compatibility
         w = numpy.linspace(0, lastpoint, 512, endpoint=False)
-    elif isinstance(worN, int):
-        N = worN
-        w = numpy.linspace(0, lastpoint, N, endpoint=False)
+    elif _is_int_type(worN):
+        w = numpy.linspace(0, lastpoint, worN, endpoint=False)
     else:
-        w = worN
-    w = atleast_1d(w)
+        w = atleast_1d(worN)
+        w = 2*pi*w/fs
+
     zm1 = exp(1j * w)
     h = k * polyvalfromroots(zm1, z) / polyvalfromroots(zm1, p)
+
+    w = w*fs/(2*pi)
 
     return w, h
 
 
-def group_delay(system, w=512, whole=False):
+def group_delay(system, w=512, whole=False, fs=2*pi):
     r"""Compute the group delay of a digital filter.
 
     The group delay measures by how many samples amplitude envelopes of
@@ -555,22 +599,28 @@ def group_delay(system, w=512, whole=False):
     ----------
     system : tuple of array_like (b, a)
         Numerator and denominator coefficients of a filter transfer function.
-    w : {None, int, array-like}, optional
-        If None, then compute at 512 frequencies equally spaced
-        around the unit circle.
-        If a single integer, then compute at that many frequencies.
-        If array, compute the delay at the frequencies given
-        (in radians/sample).
+    w : {None, int, array_like}, optional
+        If a single integer, then compute at that many frequencies (default is
+        N=512).
+
+        If an array_like, compute the delay at the frequencies given.  These
+        are in the same units as `fs`.
     whole : bool, optional
         Normally, frequencies are computed from 0 to the Nyquist frequency,
-        pi radians/sample (upper-half of unit-circle).  If `whole` is True,
-        compute frequencies from 0 to ``2*pi`` radians/sample.
+        fs/2 (upper-half of unit-circle).  If `whole` is True, compute
+        frequencies from 0 to fs.  Ignored if w is array_like.
+    fs : float, optional
+        The sampling frequency of the digital system.  Defaults to 2*pi
+        radians/sample (so w is from 0 to pi).
+
+        .. versionadded:: 1.2.0
 
     Returns
     -------
     w : ndarray
-        The normalized frequencies at which the group delay was computed,
-        in radians/sample.
+        The frequencies at which group delay was computed, in the same units
+        as `fs`.  By default, `w` is normalized to the range [0, pi)
+        (radians/sample).
     gd : ndarray
         The group delay.
 
@@ -611,15 +661,18 @@ def group_delay(system, w=512, whole=False):
 
     """
     if w is None:
+        # For backwards compatibility
         w = 512
 
-    if isinstance(w, int):
+    if _is_int_type(w):
         if whole:
             w = np.linspace(0, 2 * pi, w, endpoint=False)
         else:
             w = np.linspace(0, pi, w, endpoint=False)
+    else:
+        w = np.atleast_1d(w)
+        w = 2*pi*w/fs
 
-    w = np.atleast_1d(w)
     b, a = map(np.atleast_1d, system)
     c = np.convolve(b, a[::-1])
     cr = c * np.arange(c.size)
@@ -635,6 +688,9 @@ def group_delay(system, w=512, whole=False):
 
     gd = np.zeros_like(w)
     gd[~singular] = np.real(num[~singular] / den[~singular]) - a.size + 1
+
+    w = w*fs/(2*pi)
+
     return w, gd
 
 
@@ -651,8 +707,8 @@ def _validate_sos(sos):
     return sos, n_sections
 
 
-def sosfreqz(sos, worN=None, whole=False):
-    """
+def sosfreqz(sos, worN=512, whole=False, fs=2*pi):
+    r"""
     Compute the frequency response of a digital filter in SOS format.
 
     Given `sos`, an array with shape (n, 6) of second order sections of
@@ -674,23 +730,27 @@ def sosfreqz(sos, worN=None, whole=False):
         coefficients and the last three providing the denominator
         coefficients.
     worN : {None, int, array_like}, optional
-        If None (default), then compute at 512 frequencies equally spaced
-        around the unit circle.
-        If a single integer, then compute at that many frequencies.
-        Using a number that is fast for FFT computations can result in
-        faster computations (see Notes of `freqz`).
-        If an array_like, compute the response at the frequencies given (in
-        radians/sample; must be 1D).
+        If a single integer, then compute at that many frequencies (default is
+        N=512).  Using a number that is fast for FFT computations can result
+        in faster computations (see Notes of `freqz`).
+
+        If an array_like, compute the response at the frequencies given (must
+        be 1D).  These are in the same units as `fs`.
     whole : bool, optional
         Normally, frequencies are computed from 0 to the Nyquist frequency,
-        pi radians/sample (upper-half of unit-circle).  If `whole` is True,
-        compute frequencies from 0 to 2*pi radians/sample.
+        fs/2 (upper-half of unit-circle).  If `whole` is True, compute
+        frequencies from 0 to fs.
+    fs : float, optional
+        The sampling frequency of the digital system.  Defaults to 2*pi
+        radians/sample (so w is from 0 to pi).
+
+        .. versionadded:: 1.2.0
 
     Returns
     -------
     w : ndarray
-        The normalized frequencies at which `h` was computed, in
-        radians/sample.
+        The frequencies at which `h` was computed, in the same units as `fs`.
+        By default, `w` is normalized to the range [0, pi) (radians/sample).
     h : ndarray
         The frequency response, as complex numbers.
 
@@ -700,7 +760,6 @@ def sosfreqz(sos, worN=None, whole=False):
 
     Notes
     -----
-
     .. versionadded:: 0.19.0
 
     Examples
@@ -730,7 +789,7 @@ def sosfreqz(sos, worN=None, whole=False):
     >>> plt.plot(w/np.pi, np.angle(h))
     >>> plt.grid(True)
     >>> plt.yticks([-np.pi, -0.5*np.pi, 0, 0.5*np.pi, np.pi],
-    ...            [r'$-\\pi$', r'$-\\pi/2$', '0', r'$\\pi/2$', r'$\\pi$'])
+    ...            [r'$-\pi$', r'$-\pi/2$', '0', r'$\pi/2$', r'$\pi$'])
     >>> plt.ylabel('Phase [rad]')
     >>> plt.xlabel('Normalized frequency (1.0 = Nyquist)')
     >>> plt.show()
@@ -744,8 +803,18 @@ def sosfreqz(sos, worN=None, whole=False):
     >>> plt.subplot(2, 1, 1)
     >>> db = 20*np.log10(np.abs(h))
     >>> plt.plot(w/np.pi, db)
+    >>> plt.ylim(-75, 5)
+    >>> plt.grid(True)
+    >>> plt.yticks([0, -20, -40, -60])
+    >>> plt.ylabel('Gain [dB]')
+    >>> plt.title('Frequency Response')
     >>> plt.subplot(2, 1, 2)
     >>> plt.plot(w/np.pi, np.angle(h))
+    >>> plt.grid(True)
+    >>> plt.yticks([-np.pi, -0.5*np.pi, 0, 0.5*np.pi, np.pi],
+    ...            [r'$-\pi$', r'$-\pi/2$', '0', r'$\pi/2$', r'$\pi$'])
+    >>> plt.ylabel('Phase [rad]')
+    >>> plt.xlabel('Normalized frequency (1.0 = Nyquist)')
     >>> plt.show()
 
     """
@@ -755,7 +824,7 @@ def sosfreqz(sos, worN=None, whole=False):
         raise ValueError('Cannot compute frequencies with no sections')
     h = 1.
     for row in sos:
-        w, rowh = freqz(row[:3], row[3:], worN=worN, whole=whole)
+        w, rowh = freqz(row[:3], row[3:], worN=worN, whole=whole, fs=fs)
         h *= rowh
     return w, h
 
@@ -1759,7 +1828,8 @@ def bilinear(b, a, fs=1.0):
     return normalize(bprime, aprime)
 
 
-def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba'):
+def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
+              fs=None):
     """Complete IIR digital and analog filter design.
 
     Given passband and stopband frequencies and gains, construct an analog or
@@ -1771,9 +1841,9 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba'):
     ----------
     wp, ws : float
         Passband and stopband edge frequencies.
-        For digital filters, these are normalized from 0 to 1, where 1 is the
-        Nyquist frequency, pi radians/sample.  (`wp` and `ws` are thus in
-        half-cycles / sample.)  For example:
+        For digital filters, these are in the same units as `fs`.  By default,
+        `fs` is 2 half-cycles/sample, so these are normalized from 0 to 1,
+        where 1 is the Nyquist frequency.  For example:
 
             - Lowpass:   wp = 0.2,          ws = 0.3
             - Highpass:  wp = 0.3,          ws = 0.2
@@ -1781,7 +1851,6 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba'):
             - Bandstop:  wp = [0.1, 0.6],   ws = [0.2, 0.5]
 
         For analog filters, `wp` and `ws` are angular frequencies (e.g. rad/s).
-
     gpass : float
         The maximum loss in the passband (dB).
     gstop : float
@@ -1801,6 +1870,10 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba'):
     output : {'ba', 'zpk', 'sos'}, optional
         Type of output:  numerator/denominator ('ba'), pole-zero ('zpk'), or
         second-order sections ('sos'). Default is 'ba'.
+    fs : float, optional
+        The sampling frequency of the digital system.
+
+        .. versionadded:: 1.2.0
 
     Returns
     -------
@@ -1836,6 +1909,7 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba'):
 
     wp = atleast_1d(wp)
     ws = atleast_1d(ws)
+
     band_type = 2 * (len(wp) - 1)
     band_type += 1
     if wp[0] >= ws[0]:
@@ -1844,13 +1918,13 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba'):
     btype = {1: 'lowpass', 2: 'highpass',
              3: 'bandstop', 4: 'bandpass'}[band_type]
 
-    N, Wn = ordfunc(wp, ws, gpass, gstop, analog=analog)
+    N, Wn = ordfunc(wp, ws, gpass, gstop, analog=analog, fs=fs)
     return iirfilter(N, Wn, rp=gpass, rs=gstop, analog=analog, btype=btype,
-                     ftype=ftype, output=output)
+                     ftype=ftype, output=output, fs=fs)
 
 
 def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
-              ftype='butter', output='ba'):
+              ftype='butter', output='ba', fs=None):
     """
     IIR digital and analog filter design given order and critical points.
 
@@ -1863,9 +1937,12 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
         The order of the filter.
     Wn : array_like
         A scalar or length-2 sequence giving the critical frequencies.
-        For digital filters, `Wn` is normalized from 0 to 1, where 1 is the
-        Nyquist frequency, pi radians/sample.  (`Wn` is thus in
+
+        For digital filters, `Wn` are in the same units as `fs`.  By default,
+        `fs` is 2 half-cycles/sample, so these are normalized from 0 to 1,
+        where 1 is the Nyquist frequency.  (`Wn` is thus in
         half-cycles / sample.)
+
         For analog filters, `Wn` is an angular frequency (e.g. rad/s).
     rp : float, optional
         For Chebyshev and elliptic filters, provides the maximum ripple
@@ -1890,6 +1967,10 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
     output : {'ba', 'zpk', 'sos'}, optional
         Type of output:  numerator/denominator ('ba'), pole-zero ('zpk'), or
         second-order sections ('sos'). Default is 'ba'.
+    fs : float, optional
+        The sampling frequency of the digital system.
+
+        .. versionadded:: 1.2.0
 
     Returns
     -------
@@ -1917,20 +1998,39 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
 
     Examples
     --------
-    Generate a 17th-order Chebyshev II bandpass filter and plot the frequency
-    response:
+    Generate a 17th-order Chebyshev II analog bandpass filter from 50 Hz to
+    200 Hz and plot the frequency response:
 
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
 
-    >>> b, a = signal.iirfilter(17, [50, 200], rs=60, btype='band',
-    ...                         analog=True, ftype='cheby2')
+    >>> b, a = signal.iirfilter(17, [2*np.pi*50, 2*np.pi*200], rs=60,
+    ...                         btype='band', analog=True, ftype='cheby2')
     >>> w, h = signal.freqs(b, a, 1000)
     >>> fig = plt.figure()
-    >>> ax = fig.add_subplot(111)
+    >>> ax = fig.add_subplot(1, 1, 1)
+    >>> ax.semilogx(w / (2*np.pi), 20 * np.log10(abs(h)))
+    >>> ax.set_title('Chebyshev Type II bandpass frequency response')
+    >>> ax.set_xlabel('Frequency [Hz]')
+    >>> ax.set_ylabel('Amplitude [dB]')
+    >>> ax.axis((10, 1000, -100, 10))
+    >>> ax.grid(which='both', axis='both')
+    >>> plt.show()
+
+    Create a digital filter with the same properties, in a system with
+    sampling rate of 2000 Hz, and plot the frequency response.  (Second-order
+    sections implementation is required to ensure stability of a filter of
+    this order):
+
+    >>> sos = signal.iirfilter(17, [50, 200], rs=60, btype='band',
+    ...                        analog=False, ftype='cheby2', fs=2000,
+    ...                        output='sos')
+    >>> w, h = signal.sosfreqz(sos, 2000, fs=2000)
+    >>> fig = plt.figure()
+    >>> ax = fig.add_subplot(1, 1, 1)
     >>> ax.semilogx(w, 20 * np.log10(abs(h)))
     >>> ax.set_title('Chebyshev Type II bandpass frequency response')
-    >>> ax.set_xlabel('Frequency [radians / second]')
+    >>> ax.set_xlabel('Frequency [Hz]')
     >>> ax.set_ylabel('Amplitude [dB]')
     >>> ax.axis((10, 1000, -100, 10))
     >>> ax.grid(which='both', axis='both')
@@ -1939,6 +2039,11 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
     """
     ftype, btype, output = [x.lower() for x in (ftype, btype, output)]
     Wn = asarray(Wn)
+    if fs is not None:
+        if analog:
+            raise ValueError("fs cannot be specified for an analog filter")
+        Wn = 2*Wn/fs
+
     try:
         btype = band_dict[btype]
     except KeyError:
@@ -2383,7 +2488,7 @@ def lp2bs_zpk(z, p, k, wo=1.0, bw=1.0):
     return z_bs, p_bs, k_bs
 
 
-def butter(N, Wn, btype='low', analog=False, output='ba'):
+def butter(N, Wn, btype='low', analog=False, output='ba', fs=None):
     """
     Butterworth digital and analog filter design.
 
@@ -2398,9 +2503,12 @@ def butter(N, Wn, btype='low', analog=False, output='ba'):
         A scalar or length-2 sequence giving the critical frequencies.
         For a Butterworth filter, this is the point at which the gain
         drops to 1/sqrt(2) that of the passband (the "-3 dB point").
-        For digital filters, `Wn` is normalized from 0 to 1, where 1 is the
-        Nyquist frequency, pi radians/sample.  (`Wn` is thus in
+
+        For digital filters, `Wn` are in the same units as `fs`.  By default,
+        `fs` is 2 half-cycles/sample, so these are normalized from 0 to 1,
+        where 1 is the Nyquist frequency.  (`Wn` is thus in
         half-cycles / sample.)
+
         For analog filters, `Wn` is an angular frequency (e.g. rad/s).
     btype : {'lowpass', 'highpass', 'bandpass', 'bandstop'}, optional
         The type of filter.  Default is 'lowpass'.
@@ -2410,6 +2518,10 @@ def butter(N, Wn, btype='low', analog=False, output='ba'):
     output : {'ba', 'zpk', 'sos'}, optional
         Type of output:  numerator/denominator ('ba'), pole-zero ('zpk'), or
         second-order sections ('sos'). Default is 'ba'.
+    fs : float, optional
+        The sampling frequency of the digital system.
+
+        .. versionadded:: 1.2.0
 
     Returns
     -------
@@ -2436,7 +2548,8 @@ def butter(N, Wn, btype='low', analog=False, output='ba'):
 
     Examples
     --------
-    Plot the filter's frequency response, showing the critical points:
+    Design an analog filter and plot its frequency response, showing the
+    critical points:
 
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
@@ -2452,12 +2565,34 @@ def butter(N, Wn, btype='low', analog=False, output='ba'):
     >>> plt.axvline(100, color='green') # cutoff frequency
     >>> plt.show()
 
+    Generate a signal made up of 10 Hz and 20 Hz, sampled at 1 kHz
+
+    >>> t = np.linspace(0, 1, 1000, False)  # 1 second
+    >>> sig = np.sin(2*np.pi*10*t) + np.sin(2*np.pi*20*t)
+    >>> fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
+    >>> ax1.plot(t, sig)
+    >>> ax1.set_title('10 Hz and 20 Hz sinusoids')
+    >>> ax1.axis([0, 1, -2, 2])
+
+    Design a digital high-pass filter at 15 Hz to remove the 10 Hz tone, and
+    apply it to the signal.  (It's recommended to use second-order sections
+    format when filtering, to avoid numerical error with transfer function
+    (``ba``) format):
+
+    >>> sos = signal.butter(10, 15, 'hp', fs=1000, output='sos')
+    >>> filtered = signal.sosfilt(sos, sig)
+    >>> ax2.plot(t, filtered)
+    >>> ax2.set_title('After 15 Hz high-pass filter')
+    >>> ax2.axis([0, 1, -2, 2])
+    >>> ax2.set_xlabel('Time [seconds]')
+    >>> plt.tight_layout()
+    >>> plt.show()
     """
     return iirfilter(N, Wn, btype=btype, analog=analog,
-                     output=output, ftype='butter')
+                     output=output, ftype='butter', fs=fs)
 
 
-def cheby1(N, rp, Wn, btype='low', analog=False, output='ba'):
+def cheby1(N, rp, Wn, btype='low', analog=False, output='ba', fs=None):
     """
     Chebyshev type I digital and analog filter design.
 
@@ -2475,9 +2610,12 @@ def cheby1(N, rp, Wn, btype='low', analog=False, output='ba'):
         A scalar or length-2 sequence giving the critical frequencies.
         For Type I filters, this is the point in the transition band at which
         the gain first drops below -`rp`.
-        For digital filters, `Wn` is normalized from 0 to 1, where 1 is the
-        Nyquist frequency, pi radians/sample.  (`Wn` is thus in
+
+        For digital filters, `Wn` are in the same units as `fs`.  By default,
+        `fs` is 2 half-cycles/sample, so these are normalized from 0 to 1,
+        where 1 is the Nyquist frequency.  (`Wn` is thus in
         half-cycles / sample.)
+
         For analog filters, `Wn` is an angular frequency (e.g. rad/s).
     btype : {'lowpass', 'highpass', 'bandpass', 'bandstop'}, optional
         The type of filter.  Default is 'lowpass'.
@@ -2487,6 +2625,10 @@ def cheby1(N, rp, Wn, btype='low', analog=False, output='ba'):
     output : {'ba', 'zpk', 'sos'}, optional
         Type of output:  numerator/denominator ('ba'), pole-zero ('zpk'), or
         second-order sections ('sos'). Default is 'ba'.
+    fs : float, optional
+        The sampling frequency of the digital system.
+
+        .. versionadded:: 1.2.0
 
     Returns
     -------
@@ -2521,7 +2663,8 @@ def cheby1(N, rp, Wn, btype='low', analog=False, output='ba'):
 
     Examples
     --------
-    Plot the filter's frequency response, showing the critical points:
+    Design an analog filter and plot its frequency response, showing the
+    critical points:
 
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
@@ -2538,12 +2681,34 @@ def cheby1(N, rp, Wn, btype='low', analog=False, output='ba'):
     >>> plt.axhline(-5, color='green') # rp
     >>> plt.show()
 
+    Generate a signal made up of 10 Hz and 20 Hz, sampled at 1 kHz
+
+    >>> t = np.linspace(0, 1, 1000, False)  # 1 second
+    >>> sig = np.sin(2*np.pi*10*t) + np.sin(2*np.pi*20*t)
+    >>> fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
+    >>> ax1.plot(t, sig)
+    >>> ax1.set_title('10 Hz and 20 Hz sinusoids')
+    >>> ax1.axis([0, 1, -2, 2])
+
+    Design a digital high-pass filter at 15 Hz to remove the 10 Hz tone, and
+    apply it to the signal.  (It's recommended to use second-order sections
+    format when filtering, to avoid numerical error with transfer function
+    (``ba``) format):
+
+    >>> sos = signal.cheby1(10, 1, 15, 'hp', fs=1000, output='sos')
+    >>> filtered = signal.sosfilt(sos, sig)
+    >>> ax2.plot(t, filtered)
+    >>> ax2.set_title('After 15 Hz high-pass filter')
+    >>> ax2.axis([0, 1, -2, 2])
+    >>> ax2.set_xlabel('Time [seconds]')
+    >>> plt.tight_layout()
+    >>> plt.show()
     """
     return iirfilter(N, Wn, rp=rp, btype=btype, analog=analog,
-                     output=output, ftype='cheby1')
+                     output=output, ftype='cheby1', fs=fs)
 
 
-def cheby2(N, rs, Wn, btype='low', analog=False, output='ba'):
+def cheby2(N, rs, Wn, btype='low', analog=False, output='ba', fs=None):
     """
     Chebyshev type II digital and analog filter design.
 
@@ -2561,9 +2726,12 @@ def cheby2(N, rs, Wn, btype='low', analog=False, output='ba'):
         A scalar or length-2 sequence giving the critical frequencies.
         For Type II filters, this is the point in the transition band at which
         the gain first reaches -`rs`.
-        For digital filters, `Wn` is normalized from 0 to 1, where 1 is the
-        Nyquist frequency, pi radians/sample.  (`Wn` is thus in
+
+        For digital filters, `Wn` are in the same units as `fs`.  By default,
+        `fs` is 2 half-cycles/sample, so these are normalized from 0 to 1,
+        where 1 is the Nyquist frequency.  (`Wn` is thus in
         half-cycles / sample.)
+
         For analog filters, `Wn` is an angular frequency (e.g. rad/s).
     btype : {'lowpass', 'highpass', 'bandpass', 'bandstop'}, optional
         The type of filter.  Default is 'lowpass'.
@@ -2573,6 +2741,10 @@ def cheby2(N, rs, Wn, btype='low', analog=False, output='ba'):
     output : {'ba', 'zpk', 'sos'}, optional
         Type of output:  numerator/denominator ('ba'), pole-zero ('zpk'), or
         second-order sections ('sos'). Default is 'ba'.
+    fs : float, optional
+        The sampling frequency of the digital system.
+
+        .. versionadded:: 1.2.0
 
     Returns
     -------
@@ -2602,7 +2774,8 @@ def cheby2(N, rs, Wn, btype='low', analog=False, output='ba'):
 
     Examples
     --------
-    Plot the filter's frequency response, showing the critical points:
+    Design an analog filter and plot its frequency response, showing the
+    critical points:
 
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
@@ -2619,12 +2792,33 @@ def cheby2(N, rs, Wn, btype='low', analog=False, output='ba'):
     >>> plt.axhline(-40, color='green') # rs
     >>> plt.show()
 
+    Generate a signal made up of 10 Hz and 20 Hz, sampled at 1 kHz
+
+    >>> t = np.linspace(0, 1, 1000, False)  # 1 second
+    >>> sig = np.sin(2*np.pi*10*t) + np.sin(2*np.pi*20*t)
+    >>> fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
+    >>> ax1.plot(t, sig)
+    >>> ax1.set_title('10 Hz and 20 Hz sinusoids')
+    >>> ax1.axis([0, 1, -2, 2])
+
+    Design a digital high-pass filter at 17 Hz to remove the 10 Hz tone, and
+    apply it to the signal.  (It's recommended to use second-order sections
+    format when filtering, to avoid numerical error with transfer function
+    (``ba``) format):
+
+    >>> sos = signal.cheby2(12, 20, 17, 'hp', fs=1000, output='sos')
+    >>> filtered = signal.sosfilt(sos, sig)
+    >>> ax2.plot(t, filtered)
+    >>> ax2.set_title('After 17 Hz high-pass filter')
+    >>> ax2.axis([0, 1, -2, 2])
+    >>> ax2.set_xlabel('Time [seconds]')
+    >>> plt.show()
     """
     return iirfilter(N, Wn, rs=rs, btype=btype, analog=analog,
-                     output=output, ftype='cheby2')
+                     output=output, ftype='cheby2', fs=fs)
 
 
-def ellip(N, rp, rs, Wn, btype='low', analog=False, output='ba'):
+def ellip(N, rp, rs, Wn, btype='low', analog=False, output='ba', fs=None):
     """
     Elliptic (Cauer) digital and analog filter design.
 
@@ -2645,9 +2839,12 @@ def ellip(N, rp, rs, Wn, btype='low', analog=False, output='ba'):
         A scalar or length-2 sequence giving the critical frequencies.
         For elliptic filters, this is the point in the transition band at
         which the gain first drops below -`rp`.
-        For digital filters, `Wn` is normalized from 0 to 1, where 1 is the
-        Nyquist frequency, pi radians/sample.  (`Wn` is thus in
+
+        For digital filters, `Wn` are in the same units as `fs`.  By default,
+        `fs` is 2 half-cycles/sample, so these are normalized from 0 to 1,
+        where 1 is the Nyquist frequency.  (`Wn` is thus in
         half-cycles / sample.)
+
         For analog filters, `Wn` is an angular frequency (e.g. rad/s).
     btype : {'lowpass', 'highpass', 'bandpass', 'bandstop'}, optional
         The type of filter.  Default is 'lowpass'.
@@ -2657,6 +2854,10 @@ def ellip(N, rp, rs, Wn, btype='low', analog=False, output='ba'):
     output : {'ba', 'zpk', 'sos'}, optional
         Type of output:  numerator/denominator ('ba'), pole-zero ('zpk'), or
         second-order sections ('sos'). Default is 'ba'.
+    fs : float, optional
+        The sampling frequency of the digital system.
+
+        .. versionadded:: 1.2.0
 
     Returns
     -------
@@ -2694,7 +2895,8 @@ def ellip(N, rp, rs, Wn, btype='low', analog=False, output='ba'):
 
     Examples
     --------
-    Plot the filter's frequency response, showing the critical points:
+    Design an analog filter and plot its frequency response, showing the
+    critical points:
 
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
@@ -2712,12 +2914,35 @@ def ellip(N, rp, rs, Wn, btype='low', analog=False, output='ba'):
     >>> plt.axhline(-5, color='green') # rp
     >>> plt.show()
 
+    Generate a signal made up of 10 Hz and 20 Hz, sampled at 1 kHz
+
+    >>> t = np.linspace(0, 1, 1000, False)  # 1 second
+    >>> sig = np.sin(2*np.pi*10*t) + np.sin(2*np.pi*20*t)
+    >>> fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
+    >>> ax1.plot(t, sig)
+    >>> ax1.set_title('10 Hz and 20 Hz sinusoids')
+    >>> ax1.axis([0, 1, -2, 2])
+
+    Design a digital high-pass filter at 17 Hz to remove the 10 Hz tone, and
+    apply it to the signal.  (It's recommended to use second-order sections
+    format when filtering, to avoid numerical error with transfer function
+    (``ba``) format):
+
+    >>> sos = signal.ellip(8, 1, 100, 17, 'hp', fs=1000, output='sos')
+    >>> filtered = signal.sosfilt(sos, sig)
+    >>> ax2.plot(t, filtered)
+    >>> ax2.set_title('After 17 Hz high-pass filter')
+    >>> ax2.axis([0, 1, -2, 2])
+    >>> ax2.set_xlabel('Time [seconds]')
+    >>> plt.tight_layout()
+    >>> plt.show()
     """
     return iirfilter(N, Wn, rs=rs, rp=rp, btype=btype, analog=analog,
-                     output=output, ftype='elliptic')
+                     output=output, ftype='elliptic', fs=fs)
 
 
-def bessel(N, Wn, btype='low', analog=False, output='ba', norm='phase'):
+def bessel(N, Wn, btype='low', analog=False, output='ba', norm='phase',
+           fs=None):
     """
     Bessel/Thomson digital and analog filter design.
 
@@ -2732,8 +2957,10 @@ def bessel(N, Wn, btype='low', analog=False, output='ba', norm='phase'):
         A scalar or length-2 sequence giving the critical frequencies (defined
         by the `norm` parameter).
         For analog filters, `Wn` is an angular frequency (e.g. rad/s).
-        For digital filters, `Wn` is normalized from 0 to 1, where 1 is the
-        Nyquist frequency, pi radians/sample.  (`Wn` is thus in
+
+        For digital filters, `Wn` are in the same units as `fs`.  By default,
+        `fs` is 2 half-cycles/sample, so these are normalized from 0 to 1,
+        where 1 is the Nyquist frequency.  (`Wn` is thus in
         half-cycles / sample.)
     btype : {'lowpass', 'highpass', 'bandpass', 'bandstop'}, optional
         The type of filter.  Default is 'lowpass'.
@@ -2767,6 +2994,10 @@ def bessel(N, Wn, btype='low', analog=False, output='ba', norm='phase'):
             angular frequency `Wn`.
 
         .. versionadded:: 0.18.0
+    fs : float, optional
+        The sampling frequency of the digital system.
+
+        .. versionadded:: 1.2.0
 
     Returns
     -------
@@ -2869,7 +3100,7 @@ def bessel(N, Wn, btype='low', analog=False, output='ba', norm='phase'):
 
     """
     return iirfilter(N, Wn, btype=btype, analog=analog,
-                     output=output, ftype='bessel_'+norm)
+                     output=output, ftype='bessel_'+norm, fs=fs)
 
 
 def maxflat():
@@ -2936,7 +3167,7 @@ def band_stop_obj(wp, ind, passb, stopb, gpass, gstop, type):
     return n
 
 
-def buttord(wp, ws, gpass, gstop, analog=False):
+def buttord(wp, ws, gpass, gstop, analog=False, fs=None):
     """Butterworth filter order selection.
 
     Return the order of the lowest order digital or analog Butterworth filter
@@ -2947,8 +3178,10 @@ def buttord(wp, ws, gpass, gstop, analog=False):
     ----------
     wp, ws : float
         Passband and stopband edge frequencies.
-        For digital filters, these are normalized from 0 to 1, where 1 is the
-        Nyquist frequency, pi radians/sample.  (`wp` and `ws` are thus in
+
+        For digital filters, these are in the same units as `fs`.  By default,
+        `fs` is 2 half-cycles/sample, so these are normalized from 0 to 1,
+        where 1 is the Nyquist frequency.  (`wp` and `ws` are thus in
         half-cycles / sample.)  For example:
 
             - Lowpass:   wp = 0.2,          ws = 0.3
@@ -2957,7 +3190,6 @@ def buttord(wp, ws, gpass, gstop, analog=False):
             - Bandstop:  wp = [0.1, 0.6],   ws = [0.2, 0.5]
 
         For analog filters, `wp` and `ws` are angular frequencies (e.g. rad/s).
-
     gpass : float
         The maximum loss in the passband (dB).
     gstop : float
@@ -2965,6 +3197,10 @@ def buttord(wp, ws, gpass, gstop, analog=False):
     analog : bool, optional
         When True, return an analog filter, otherwise a digital filter is
         returned.
+    fs : float, optional
+        The sampling frequency of the digital system.
+
+        .. versionadded:: 1.2.0
 
     Returns
     -------
@@ -2972,7 +3208,8 @@ def buttord(wp, ws, gpass, gstop, analog=False):
         The lowest order for a Butterworth filter which meets specs.
     wn : ndarray or float
         The Butterworth natural frequency (i.e. the "3dB frequency").  Should
-        be used with `butter` to give filter results.
+        be used with `butter` to give filter results. If `fs` is specified,
+        this is in the same units, and `fs` must also be passed to `butter`.
 
     See Also
     --------
@@ -3009,6 +3246,12 @@ def buttord(wp, ws, gpass, gstop, analog=False):
     """
     wp = atleast_1d(wp)
     ws = atleast_1d(ws)
+    if fs is not None:
+        if analog:
+            raise ValueError("fs cannot be specified for an analog filter")
+        wp = 2*wp/fs
+        ws = 2*ws/fs
+
     filter_type = 2 * (len(wp) - 1)
     filter_type += 1
     if wp[0] >= ws[0]:
@@ -3087,10 +3330,14 @@ def buttord(wp, ws, gpass, gstop, analog=False):
 
     if len(wn) == 1:
         wn = wn[0]
+
+    if fs is not None:
+        wn = wn*fs/2
+
     return ord, wn
 
 
-def cheb1ord(wp, ws, gpass, gstop, analog=False):
+def cheb1ord(wp, ws, gpass, gstop, analog=False, fs=None):
     """Chebyshev type I filter order selection.
 
     Return the order of the lowest order digital or analog Chebyshev Type I
@@ -3101,8 +3348,10 @@ def cheb1ord(wp, ws, gpass, gstop, analog=False):
     ----------
     wp, ws : float
         Passband and stopband edge frequencies.
-        For digital filters, these are normalized from 0 to 1, where 1 is the
-        Nyquist frequency, pi radians/sample.  (`wp` and `ws` are thus in
+
+        For digital filters, these are in the same units as `fs`.  By default,
+        `fs` is 2 half-cycles/sample, so these are normalized from 0 to 1,
+        where 1 is the Nyquist frequency.  (`wp` and `ws` are thus in
         half-cycles / sample.)  For example:
 
             - Lowpass:   wp = 0.2,          ws = 0.3
@@ -3111,7 +3360,6 @@ def cheb1ord(wp, ws, gpass, gstop, analog=False):
             - Bandstop:  wp = [0.1, 0.6],   ws = [0.2, 0.5]
 
         For analog filters, `wp` and `ws` are angular frequencies (e.g. rad/s).
-
     gpass : float
         The maximum loss in the passband (dB).
     gstop : float
@@ -3119,6 +3367,10 @@ def cheb1ord(wp, ws, gpass, gstop, analog=False):
     analog : bool, optional
         When True, return an analog filter, otherwise a digital filter is
         returned.
+    fs : float, optional
+        The sampling frequency of the digital system.
+
+        .. versionadded:: 1.2.0
 
     Returns
     -------
@@ -3126,7 +3378,8 @@ def cheb1ord(wp, ws, gpass, gstop, analog=False):
         The lowest order for a Chebyshev type I filter that meets specs.
     wn : ndarray or float
         The Chebyshev natural frequency (the "3dB frequency") for use with
-        `cheby1` to give filter results.
+        `cheby1` to give filter results. If `fs` is specified,
+        this is in the same units, and `fs` must also be passed to `cheby1`.
 
     See Also
     --------
@@ -3161,6 +3414,12 @@ def cheb1ord(wp, ws, gpass, gstop, analog=False):
     """
     wp = atleast_1d(wp)
     ws = atleast_1d(ws)
+    if fs is not None:
+        if analog:
+            raise ValueError("fs cannot be specified for an analog filter")
+        wp = 2*wp/fs
+        ws = 2*ws/fs
+
     filter_type = 2 * (len(wp) - 1)
     if wp[0] < ws[0]:
         filter_type += 1
@@ -3209,10 +3468,14 @@ def cheb1ord(wp, ws, gpass, gstop, analog=False):
 
     if len(wn) == 1:
         wn = wn[0]
+
+    if fs is not None:
+        wn = wn*fs/2
+
     return ord, wn
 
 
-def cheb2ord(wp, ws, gpass, gstop, analog=False):
+def cheb2ord(wp, ws, gpass, gstop, analog=False, fs=None):
     """Chebyshev type II filter order selection.
 
     Return the order of the lowest order digital or analog Chebyshev Type II
@@ -3223,8 +3486,10 @@ def cheb2ord(wp, ws, gpass, gstop, analog=False):
     ----------
     wp, ws : float
         Passband and stopband edge frequencies.
-        For digital filters, these are normalized from 0 to 1, where 1 is the
-        Nyquist frequency, pi radians/sample.  (`wp` and `ws` are thus in
+
+        For digital filters, these are in the same units as `fs`.  By default,
+        `fs` is 2 half-cycles/sample, so these are normalized from 0 to 1,
+        where 1 is the Nyquist frequency.  (`wp` and `ws` are thus in
         half-cycles / sample.)  For example:
 
             - Lowpass:   wp = 0.2,          ws = 0.3
@@ -3233,7 +3498,6 @@ def cheb2ord(wp, ws, gpass, gstop, analog=False):
             - Bandstop:  wp = [0.1, 0.6],   ws = [0.2, 0.5]
 
         For analog filters, `wp` and `ws` are angular frequencies (e.g. rad/s).
-
     gpass : float
         The maximum loss in the passband (dB).
     gstop : float
@@ -3241,6 +3505,10 @@ def cheb2ord(wp, ws, gpass, gstop, analog=False):
     analog : bool, optional
         When True, return an analog filter, otherwise a digital filter is
         returned.
+    fs : float, optional
+        The sampling frequency of the digital system.
+
+        .. versionadded:: 1.2.0
 
     Returns
     -------
@@ -3248,7 +3516,8 @@ def cheb2ord(wp, ws, gpass, gstop, analog=False):
         The lowest order for a Chebyshev type II filter that meets specs.
     wn : ndarray or float
         The Chebyshev natural frequency (the "3dB frequency") for use with
-        `cheby2` to give filter results.
+        `cheby2` to give filter results. If `fs` is specified,
+        this is in the same units, and `fs` must also be passed to `cheby2`.
 
     See Also
     --------
@@ -3285,6 +3554,12 @@ def cheb2ord(wp, ws, gpass, gstop, analog=False):
     """
     wp = atleast_1d(wp)
     ws = atleast_1d(ws)
+    if fs is not None:
+        if analog:
+            raise ValueError("fs cannot be specified for an analog filter")
+        wp = 2*wp/fs
+        ws = 2*ws/fs
+
     filter_type = 2 * (len(wp) - 1)
     if wp[0] < ws[0]:
         filter_type += 1
@@ -3355,10 +3630,14 @@ def cheb2ord(wp, ws, gpass, gstop, analog=False):
 
     if len(wn) == 1:
         wn = wn[0]
+
+    if fs is not None:
+        wn = wn*fs/2
+
     return ord, wn
 
 
-def ellipord(wp, ws, gpass, gstop, analog=False):
+def ellipord(wp, ws, gpass, gstop, analog=False, fs=None):
     """Elliptic (Cauer) filter order selection.
 
     Return the order of the lowest order digital or analog elliptic filter
@@ -3369,8 +3648,10 @@ def ellipord(wp, ws, gpass, gstop, analog=False):
     ----------
     wp, ws : float
         Passband and stopband edge frequencies.
-        For digital filters, these are normalized from 0 to 1, where 1 is the
-        Nyquist frequency, pi radians/sample.  (`wp` and `ws` are thus in
+
+        For digital filters, these are in the same units as `fs`.  By default,
+        `fs` is 2 half-cycles/sample, so these are normalized from 0 to 1,
+        where 1 is the Nyquist frequency.  (`wp` and `ws` are thus in
         half-cycles / sample.)  For example:
 
             - Lowpass:   wp = 0.2,          ws = 0.3
@@ -3379,7 +3660,6 @@ def ellipord(wp, ws, gpass, gstop, analog=False):
             - Bandstop:  wp = [0.1, 0.6],   ws = [0.2, 0.5]
 
         For analog filters, `wp` and `ws` are angular frequencies (e.g. rad/s).
-
     gpass : float
         The maximum loss in the passband (dB).
     gstop : float
@@ -3387,6 +3667,10 @@ def ellipord(wp, ws, gpass, gstop, analog=False):
     analog : bool, optional
         When True, return an analog filter, otherwise a digital filter is
         returned.
+    fs : float, optional
+        The sampling frequency of the digital system.
+
+        .. versionadded:: 1.2.0
 
     Returns
     -------
@@ -3394,7 +3678,8 @@ def ellipord(wp, ws, gpass, gstop, analog=False):
         The lowest order for an Elliptic (Cauer) filter that meets specs.
     wn : ndarray or float
         The Chebyshev natural frequency (the "3dB frequency") for use with
-        `ellip` to give filter results.
+        `ellip` to give filter results. If `fs` is specified,
+        this is in the same units, and `fs` must also be passed to `ellip`.
 
     See Also
     --------
@@ -3429,6 +3714,12 @@ def ellipord(wp, ws, gpass, gstop, analog=False):
     """
     wp = atleast_1d(wp)
     ws = atleast_1d(ws)
+    if fs is not None:
+        if analog:
+            raise ValueError("fs cannot be specified for an analog filter")
+        wp = 2*wp/fs
+        ws = 2*ws/fs
+
     filter_type = 2 * (len(wp) - 1)
     filter_type += 1
     if wp[0] >= ws[0]:
@@ -3478,6 +3769,10 @@ def ellipord(wp, ws, gpass, gstop, analog=False):
 
     if len(wn) == 1:
         wn = wn[0]
+
+    if fs is not None:
+        wn = wn*fs/2
+
     return ord, wn
 
 
@@ -3995,7 +4290,7 @@ def besselap(N, norm='phase'):
     return asarray([]), asarray(p, dtype=complex), float(k)
 
 
-def iirnotch(w0, Q):
+def iirnotch(w0, Q, fs=2.0):
     """
     Design second-order IIR notch digital filter.
 
@@ -4006,13 +4301,18 @@ def iirnotch(w0, Q):
     Parameters
     ----------
     w0 : float
-        Normalized frequency to remove from a signal. It is a
-        scalar that must satisfy  ``0 < w0 < 1``, with ``w0 = 1``
-        corresponding to half of the sampling frequency.
+        Frequency to remove from a signal. If `fs` is specified, this is in
+        the same units as `fs`. By default, it is a normalized scalar that must
+        satisfy  ``0 < w0 < 1``, with ``w0 = 1`` corresponding to half of the
+        sampling frequency.
     Q : float
         Quality factor. Dimensionless parameter that characterizes
         notch filter -3 dB bandwidth ``bw`` relative to its center
         frequency, ``Q = w0/bw``.
+    fs : float, optional
+        The sampling frequency of the digital system.
+
+        .. versionadded:: 1.2.0
 
     Returns
     -------
@@ -4035,8 +4335,8 @@ def iirnotch(w0, Q):
 
     Examples
     --------
-    Design and plot filter to remove the 60Hz component from a
-    signal sampled at 200Hz, using a quality factor Q = 30
+    Design and plot filter to remove the 60 Hz component from a
+    signal sampled at 200 Hz, using a quality factor Q = 30
 
     >>> from scipy import signal
     >>> import numpy as np
@@ -4045,14 +4345,11 @@ def iirnotch(w0, Q):
     >>> fs = 200.0  # Sample frequency (Hz)
     >>> f0 = 60.0  # Frequency to be removed from signal (Hz)
     >>> Q = 30.0  # Quality factor
-    >>> w0 = f0/(fs/2)  # Normalized Frequency
     >>> # Design notch filter
-    >>> b, a = signal.iirnotch(w0, Q)
+    >>> b, a = signal.iirnotch(f0, Q, fs)
 
     >>> # Frequency response
-    >>> w, h = signal.freqz(b, a)
-    >>> # Generate frequency axis
-    >>> freq = w*fs/(2*np.pi)
+    >>> freq, h = signal.freqz(b, a, fs=fs)
     >>> # Plot
     >>> fig, ax = plt.subplots(2, 1, figsize=(8, 6))
     >>> ax[0].plot(freq, 20*np.log10(abs(h)), color='blue')
@@ -4071,10 +4368,10 @@ def iirnotch(w0, Q):
     >>> plt.show()
     """
 
-    return _design_notch_peak_filter(w0, Q, "notch")
+    return _design_notch_peak_filter(w0, Q, "notch", fs)
 
 
-def iirpeak(w0, Q):
+def iirpeak(w0, Q, fs=2.0):
     """
     Design second-order IIR peak (resonant) digital filter.
 
@@ -4085,13 +4382,18 @@ def iirpeak(w0, Q):
     Parameters
     ----------
     w0 : float
-        Normalized frequency to be retained in a signal. It is a
-        scalar that must satisfy  ``0 < w0 < 1``, with ``w0 = 1`` corresponding
-        to half of the sampling frequency.
+        Frequency to be retained in a signal. If `fs` is specified, this is in
+        the same units as `fs`. By default, it is a normalized scalar that must
+        satisfy  ``0 < w0 < 1``, with ``w0 = 1`` corresponding to half of the
+        sampling frequency.
     Q : float
         Quality factor. Dimensionless parameter that characterizes
         peak filter -3 dB bandwidth ``bw`` relative to its center
         frequency, ``Q = w0/bw``.
+    fs : float, optional
+        The sampling frequency of the digital system.
+
+        .. versionadded:: 1.2.0
 
     Returns
     -------
@@ -4114,8 +4416,8 @@ def iirpeak(w0, Q):
 
     Examples
     --------
-    Design and plot filter to remove the frequencies other than the 300Hz
-    component from a signal sampled at 1000Hz, using a quality factor Q = 30
+    Design and plot filter to remove the frequencies other than the 300 Hz
+    component from a signal sampled at 1000 Hz, using a quality factor Q = 30
 
     >>> from scipy import signal
     >>> import numpy as np
@@ -4124,14 +4426,11 @@ def iirpeak(w0, Q):
     >>> fs = 1000.0  # Sample frequency (Hz)
     >>> f0 = 300.0  # Frequency to be retained (Hz)
     >>> Q = 30.0  # Quality factor
-    >>> w0 = f0/(fs/2)  # Normalized Frequency
     >>> # Design peak filter
-    >>> b, a = signal.iirpeak(w0, Q)
+    >>> b, a = signal.iirpeak(f0, Q, fs)
 
     >>> # Frequency response
-    >>> w, h = signal.freqz(b, a)
-    >>> # Generate frequency axis
-    >>> freq = w*fs/(2*np.pi)
+    >>> freq, h = signal.freqz(b, a, fs=fs)
     >>> # Plot
     >>> fig, ax = plt.subplots(2, 1, figsize=(8, 6))
     >>> ax[0].plot(freq, 20*np.log10(abs(h)), color='blue')
@@ -4150,17 +4449,18 @@ def iirpeak(w0, Q):
     >>> plt.show()
     """
 
-    return _design_notch_peak_filter(w0, Q, "peak")
+    return _design_notch_peak_filter(w0, Q, "peak", fs)
 
 
-def _design_notch_peak_filter(w0, Q, ftype):
+def _design_notch_peak_filter(w0, Q, ftype, fs=2.0):
     """
     Design notch or peak digital filter.
 
     Parameters
     ----------
     w0 : float
-        Normalized frequency to remove from a signal. It is a
+        Normalized frequency to remove from a signal. If `fs` is specified,
+        this is in the same units as `fs`. By default, it is a normalized
         scalar that must satisfy  ``0 < w0 < 1``, with ``w0 = 1``
         corresponding to half of the sampling frequency.
     Q : float
@@ -4172,6 +4472,10 @@ def _design_notch_peak_filter(w0, Q, ftype):
 
             - notch filter : ``notch``
             - peak filter  : ``peak``
+    fs : float, optional
+        The sampling frequency of the digital system.
+
+        .. versionadded:: 1.2.0:
 
     Returns
     -------
@@ -4183,6 +4487,7 @@ def _design_notch_peak_filter(w0, Q, ftype):
     # Guarantee that the inputs are floats
     w0 = float(w0)
     Q = float(Q)
+    w0 = 2*w0/fs
 
     # Checks if w0 is within the range
     if w0 > 1.0 or w0 < 0.0:
