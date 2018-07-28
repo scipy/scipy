@@ -1425,10 +1425,8 @@ def kurtosistest(a, axis=0, nan_policy='propagate'):
     A = 6.0 + 8.0/sqrtbeta1 * (2.0/sqrtbeta1 + np.sqrt(1+4.0/(sqrtbeta1**2)))
     term1 = 1 - 2/(9.0*A)
     denom = 1 + x*np.sqrt(2/(A-4.0))
-    term2 = np.where(
-            denom < 0, -np.power(-(1-2.0/A)/denom, 1/3.0),
-            np.where(denom > 0, np.power((1-2.0/A)/denom, 1/3.0), np.nan)
-            )
+    term2 = np.sign(denom) * np.where(denom == 0.0, np.nan,
+                                      np.power((1-2.0/A)/np.abs(denom), 1/3.0))
     if np.any(denom == 0):
         msg = "Test statistic not defined in some cases due to division by " \
               "zero. Return nan in that case..."

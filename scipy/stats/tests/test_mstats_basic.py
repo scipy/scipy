@@ -680,7 +680,7 @@ def test_plotting_positions():
 class TestNormalitytests():
 
     def test_vs_nonmasked(self):
-        x = np.array((-2,-1,0,1,2,3)*4)**2
+        x = np.array((-2, -1, 0, 1, 2, 3)*4)**2
         assert_array_almost_equal(mstats.normaltest(x),
                                   stats.normaltest(x))
         assert_array_almost_equal(mstats.skewtest(x),
@@ -705,7 +705,7 @@ class TestNormalitytests():
 
     def test_maskedarray_input(self):
         # Add some masked values, test result doesn't change
-        x = np.array((-2,-1,0,1,2,3)*4)**2
+        x = np.array((-2, -1, 0, 1, 2, 3)*4)**2
         xm = np.ma.array(np.r_[np.inf, x, 10],
                          mask=np.r_[True, [False] * x.size, True])
         assert_allclose(mstats.normaltest(xm), stats.normaltest(x))
@@ -713,7 +713,7 @@ class TestNormalitytests():
         assert_allclose(mstats.kurtosistest(xm), stats.kurtosistest(x))
 
     def test_nd_input(self):
-        x = np.array((-2,-1,0,1,2,3)*4)**2
+        x = np.array((-2, -1, 0, 1, 2, 3)*4)**2
         x_2d = np.vstack([x] * 2).T
         for func in [mstats.normaltest, mstats.skewtest, mstats.kurtosistest]:
             res_1d = func(x)
@@ -732,6 +732,13 @@ class TestNormalitytests():
         res = mstats.kurtosistest(x)
         attributes = ('statistic', 'pvalue')
         check_named_results(res, attributes, ma=True)
+
+    def regression_test_9033(self):
+        # x cleary non-normal but power of negtative denom needs
+        # to be handled correctly to reject normality
+        counts = [128, 0, 58, 7, 0, 41, 16, 0, 0, 167]
+        x = np.hstack([np.full(c, i) for i, c in enumerate(counts)])
+        assert_equal(mstats.kurtosistest(x)[1] < 0.01, True)
 
 
 class TestFOneway():
