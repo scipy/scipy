@@ -746,6 +746,62 @@ class LinprogCommonTests(object):
                         desired_x=[0, 6./7],
                         desired_fun=5*6./7)
 
+    def test_bug_5400(self):
+        # https://github.com/scipy/scipy/issues/5400
+        bounds = [
+            (0, None),
+            (0, 100), (0, 100), (0, 100), (0, 100), (0, 100), (0, 100),
+            (0, 900), (0, 900), (0, 900), (0, 900), (0, 900), (0, 900),
+            (0, None), (0, None), (0, None), (0, None), (0, None), (0, None)]
+
+        f = 1 / 9
+        g = -1e4
+        h = -3.1
+        A_ub = np.array([
+            [1, -2.99, 0, 0, -3, 0, 0, 0, -1, -1, 0, -1, -1, 1, 1, 0, 0, 0, 0],
+            [1, 0, -2.9, h, 0, -3, 0, -1, 0, 0, -1, 0, -1, 0, 0, 1, 1, 0, 0],
+            [1, 0, 0, h, 0, 0, -3, -1, -1, 0, -1, -1, 0, 0, 0, 0, 0, 1, 1],
+            [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1],
+            [0, 1.99, -1, -1, 0, 0, 0, -1, f, f, 0, 0, 0, g, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 2, -1, -1, 0, 0, 0, -1, f, f, 0, g, 0, 0, 0, 0],
+            [0, -1, 1.9, 2.1, 0, 0, 0, f, -1, -1, 0, 0, 0, 0, 0, g, 0, 0, 0],
+            [0, 0, 0, 0, -1, 2, -1, 0, 0, 0, f, -1, f, 0, 0, 0, g, 0, 0],
+            [0, -1, -1, 2.1, 0, 0, 0, f, f, -1, 0, 0, 0, 0, 0, 0, 0, g, 0],
+            [0, 0, 0, 0, -1, -1, 2, 0, 0, 0, f, f, -1, 0, 0, 0, 0, 0, g]])
+
+        b_ub = np.array([
+            0.0, 0, 0, 100, 100, 100, 100, 100, 100, 900, 900, 900, 900, 900,
+            900, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+
+        c = np.array([-1.0, 1, 1, 1, 1, 1, 1, 1, 1,
+                      1, 1, 1, 1, 0, 0, 0, 0, 0, 0])
+
+        if self.method == 'simplex':
+            with pytest.warns(OptimizeWarning):
+                res = linprog(c, A_ub, b_ub, bounds=bounds,
+                    method=self.method, options=self.options)
+        elif self.method == 'interior-point':
+            res = linprog(c, A_ub, b_ub, bounds=bounds,
+                    method=self.method, options=self.options)
+            _assert_success(res, desired_fun=-106.63507541835018)
+
 
 class TestLinprogSimplex(LinprogCommonTests):
     method = "simplex"
@@ -822,6 +878,72 @@ class TestLinprogSimplex(LinprogCommonTests):
             res2, desired_fun=14.95, desired_x=np.array([5, 4.95, 5])
         )
 
+    def test_issue_7237_passes_with_bland(self):
+        # https://github.com/scipy/scipy/issues/7237
+        # The simplex method sometimes "explodes" if the pivot value is very
+        # close to zero. Bland's rule provides an alternative pivot selection
+        # and produces a valid result.
+
+        c = np.array([-1, 0, 0, 0, 0, 0, 0, 0, 0])
+        A_ub = np.array([
+            [1., -724., 911., -551., -555., -896., 478., -80., -293.],
+            [1., 566., 42., 937.,233., 883., 392., -909., 57.],
+            [1., -208., -894., 539., 321., 532., -924., 942., 55.],
+            [1., 857., -859., 83., 462., -265., -971., 826., 482.],
+            [1., 314., -424., 245., -424., 194., -443., -104., -429.],
+            [1., 540., 679., 361., 149., -827., 876., 633., 302.],
+            [0., -1., -0., -0., -0., -0., -0., -0., -0.],
+            [0., -0., -1., -0., -0., -0., -0., -0., -0.],
+            [0., -0., -0., -1., -0., -0., -0., -0., -0.],
+            [0., -0., -0., -0., -1., -0., -0., -0., -0.],
+            [0., -0., -0., -0., -0., -1., -0., -0., -0.],
+            [0., -0., -0., -0., -0., -0., -1., -0., -0.],
+            [0., -0., -0., -0., -0., -0., -0., -1., -0.],
+            [0., -0., -0., -0., -0., -0., -0., -0., -1.],
+            [0., 1., 0., 0., 0., 0., 0., 0., 0.],
+            [0., 0., 1., 0., 0., 0., 0., 0., 0.],
+            [0., 0., 0., 1., 0., 0., 0., 0., 0.],
+            [0., 0., 0., 0., 1., 0., 0., 0., 0.],
+            [0., 0., 0., 0., 0., 1., 0., 0., 0.],
+            [0., 0., 0., 0., 0., 0., 1., 0., 0.],
+            [0., 0., 0., 0., 0., 0., 0., 1., 0.],
+            [0., 0., 0., 0., 0., 0., 0., 0., 1.]
+            ])
+        b_ub = np.array([
+            0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+            0., 0., 0., 1., 1., 1., 1., 1., 1., 1., 1.])
+        A_eq = np.array([[0., 1., 1., 1., 1., 1., 1., 1., 1.]])
+        b_eq = np.array([[1.]])
+        bounds = [(None, None)] * 9
+
+        # Should warn if Bland's rule is not used.
+        with pytest.warns(OptimizeWarning):
+            res = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
+                bounds=bounds, method=self.method, options=self.options)
+
+        o = self.options.copy()
+        o['bland'] = True
+        res_bland = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
+                bounds=bounds, method=self.method, options=o)
+        _assert_success(res_bland, desired_fun=108.568535)
+
+    def test_issue_8174_warns_if_pivval_near_tol(self):
+        # https://github.com/scipy/scipy/issues/8174
+        # The simplex method sometimes "explodes" if the pivot value is very
+        # close to zero.
+        A_ub = np.array([
+            [22714, 1008, 13380, -2713.5, -1116],
+            [-4986, -1092, -31220, 17386.5, 684],
+            [-4986, 0, 0, -2713.5, 0],
+            [22714, 0, 0, 17386.5, 0]])
+        b_ub = np.zeros(A_ub.shape[0])
+        c = -np.ones(A_ub.shape[1])
+        bounds = [(0,1)] * A_ub.shape[1]
+
+        with pytest.warns(OptimizeWarning):
+            linprog(c=c, A_ub=A_ub, b_ub=b_ub, bounds=bounds,
+                options=self.options, method=self.method)
+
 
 class BaseTestLinprogIP(LinprogCommonTests):
     method = "interior-point"
@@ -843,36 +965,6 @@ class BaseTestLinprogIP(LinprogCommonTests):
         res = linprog(c=c, A_eq=A_eq, b_eq=b_eq, bounds=bounds,
                       method=self.method, options=self.options)
         _assert_infeasible(res)
-
-    def test_bug_5400(self):
-        # https://github.com/scipy/scipy/issues/5400
-        bounds = [
-            (0, None),
-            (0, 100), (0, 100), (0, 100), (0, 100), (0, 100), (0, 100),
-            (0, 900), (0, 900), (0, 900), (0, 900), (0, 900), (0, 900),
-            (0, None), (0, None), (0, None), (0, None), (0, None), (0, None)]
-
-        f = 1 / 9
-        g = -1e4
-        h = -3.1
-        A_ub = np.array([
-            [1, -2.99, 0, 0, -3, 0, 0, 0, -1, -1, 0, -1, -1, 1, 1, 0, 0, 0, 0],
-            [1, 0, -2.9, h, 0, -3, 0, -1, 0, 0, -1, 0, -1, 0, 0, 1, 1, 0, 0],
-            [1, 0, 0, h, 0, 0, -3, -1, -1, 0, -1, -1, 0, 0, 0, 0, 0, 1, 1],
-            [0, 1.99, -1, -1, 0, 0, 0, -1, f, f, 0, 0, 0, g, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 2, -1, -1, 0, 0, 0, -1, f, f, 0, g, 0, 0, 0, 0],
-            [0, -1, 1.9, 2.1, 0, 0, 0, f, -1, -1, 0, 0, 0, 0, 0, g, 0, 0, 0],
-            [0, 0, 0, 0, -1, 2, -1, 0, 0, 0, f, -1, f, 0, 0, 0, g, 0, 0],
-            [0, -1, -1, 2.1, 0, 0, 0, f, f, -1, 0, 0, 0, 0, 0, 0, 0, g, 0],
-            [0, 0, 0, 0, -1, -1, 2, 0, 0, 0, f, f, -1, 0, 0, 0, 0, 0, g]])
-
-        b_ub = np.array([0.0, 0, 0, 0, 0, 0, 0, 0, 0])
-        c = np.array([-1.0, 1, 1, 1, 1, 1, 1, 1, 1,
-                      1, 1, 1, 1, 0, 0, 0, 0, 0, 0])
-
-        res = linprog(c, A_ub, b_ub, bounds=bounds,
-                      method=self.method, options=self.options)
-        _assert_success(res, desired_fun=-106.63507541835018)
 
     def test_empty_constraint_1(self):
         # detected in presolve?
