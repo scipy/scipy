@@ -4080,9 +4080,10 @@ class TestCOO(sparse_test_class(getset=False,
         mat1 = coo_matrix(([1], ([3000000], [1000])), (3000001, 1001))
         mat2 = coo_matrix(([1], ([1000], [3000000])), (1001, 3000001))
 
-        assert_array_equal(mat1.reshape((1001, 3000001), order='C'), mat2)
-        assert_array_equal(mat2.reshape((3000001, 1001), order='F'), mat1)
-
+        # assert_array_equal is slow for big matrices because it expects dense
+        # Using __ne__ and nnz instead
+        assert_((mat1.reshape((1001, 3000001), order='C') != mat2).nnz == 0)
+        assert_((mat2.reshape((3000001, 1001), order='F') != mat1).nnz == 0)
 
 TestCOO.init_class()
 
