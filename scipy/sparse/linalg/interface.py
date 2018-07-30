@@ -500,12 +500,12 @@ class _CustomLinearOperator(LinearOperator):
 class _TransposedLinearOperator(_CustomLinearOperator):
     """Transposition of arbitrary Linear Operator"""
 
-    def __init__(self, src):
-        shape = (src.shape[1], src.shape[0])
+    def __init__(self, A):
+        shape = (A.shape[1], A.shape[0])
         super(_TransposedLinearOperator, self).__init__(shape,
-                                     matvec=lambda x: np.conj(src.rmatvec(np.conj(x))),
-                                     rmatvec=lambda x: np.conj(src.matvec(np.conj(x))),
-                                     dtype=src.dtype)
+                                     matvec=lambda x: np.conj(A.rmatvec(np.conj(x))),
+                                     rmatvec=lambda x: np.conj(A.matvec(np.conj(x))),
+                                     dtype=A.dtype)
 
 
 def _get_dtype(operators, dtypes=None):
@@ -638,7 +638,6 @@ class MatrixLinearOperator(LinearOperator):
         if self.__adj is None:
             self.__adj = _AdjointMatrixOperator(self)
         return self.__adj
-
 
 class _AdjointMatrixOperator(MatrixLinearOperator):
     def __init__(self, adjoint):

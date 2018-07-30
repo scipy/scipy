@@ -231,6 +231,8 @@ class TestAsLinearOperator(object):
             assert_equal(A.rmatvec(np.array([[1],[2]])), [[9],[12],[15]])
             assert_equal(A.H.matvec(np.array([1,2])), [9,12,15])
             assert_equal(A.H.matvec(np.array([[1],[2]])), [[9],[12],[15]])
+            assert_equal(A.T.matvec(np.array([1,2])), [9, 12, 15])
+            assert_equal(A.T.matvec(np.array([[1], [2]])), [9, 12, 15])
 
             assert_equal(
                     A.matmat(np.array([[1,4],[2,5],[3,6]])),
