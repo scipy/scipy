@@ -813,12 +813,18 @@ def test_match_vectors_noise():
     noisy_result = noise.apply(result)
 
     est, cov = Rotation.match_vectors(noisy_result, vectors)
+
     # Use rotation compositions to find out closeness
     error_vector = (rot * est.inv()).as_rotvec()
-
     assert_allclose(error_vector[0], 0, atol=tolerance)
     assert_allclose(error_vector[1], 0, atol=tolerance)
     assert_allclose(error_vector[2], 0, atol=tolerance)
+
+    # Check error bounds using covariance matrix
+    cov *= sigma
+    assert_allclose(cov[0, 0], 0, atol=tolerance)
+    assert_allclose(cov[1, 1], 0, atol=tolerance)
+    assert_allclose(cov[2, 2], 0, atol=tolerance)
 
 
 def test_random_rotation_shape():
