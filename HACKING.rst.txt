@@ -373,7 +373,7 @@ For development, you can set up an in-place build so that changes made to
     $ python setup.py build_ext -i
 
 Then you need to point your PYTHONPATH environment variable to this directory.
-Some IDEs (Spyder for example) have utilities to manage PYTHONPATH.  On Linux
+Some IDEs (`Spyder`_ for example) have utilities to manage PYTHONPATH.  On Linux
 and OSX, you can run the command::
 
     $ export PYTHONPATH=$PWD
@@ -387,14 +387,14 @@ test and use your changes (in ``.py`` files), by simply restarting the
 interpreter.
 
 
-*Are there any video examples for installing from source, setting up a 
+*Are there any video examples for installing from source, setting up a
 development environment, etc...?*
 
 Currently, there are two video demonstrations for Anaconda Python on macOS:
 
 `Anaconda SciPy Dev Part I (macOS)`_ is a four-minute
 overview of installing Anaconda, building SciPy from source, and testing
-changes made to SciPy from the Spyder IDE.
+changes made to SciPy from the `Spyder`_ IDE.
 
 `Anaconda SciPy Dev Part II (macOS)`_ shows how to use
 a virtual environment to easily switch between the "pre-built version" of SciPy
@@ -404,7 +404,7 @@ according to Part I.
 
 *Are there any video examples of the basic development workflow?*
 
-`SciPy Development Workflow`_ is a five-minute example of fixing a bug and 
+`SciPy Development Workflow`_ is a five-minute example of fixing a bug and
 submitting a pull request. While it's intended as a followup to
 `Anaconda SciPy Dev Part I (macOS)`_ and `Anaconda SciPy Dev Part II (macOS)`_,
 the process is similar for other development setups.
@@ -518,6 +518,8 @@ suite.
 .. _Pytest: https://pytest.org/
 
 .. _mailing lists: https://www.scipy.org/scipylib/mailing-lists.html
+
+.. _Spyder: https://www.spyder-ide.org/
 
 .. _Anaconda SciPy Dev Part I (macOS): https://youtu.be/1rPOSNd0ULI
 
