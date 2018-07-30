@@ -799,7 +799,7 @@ def test_match_vectors_noise():
     result = rot.apply(vectors)
 
     # The paper adds noise as indepedently distributed angular errors
-    sigma = 1 * np.pi / 180
+    sigma = np.deg2rad(1)
     tolerance = 1.5 * sigma
     noise = Rotation.from_rotvec(
         np.random.normal(

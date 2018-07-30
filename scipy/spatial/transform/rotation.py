@@ -1551,21 +1551,21 @@ class Rotation(object):
             Best estimate of the rotation that transforms `b` to `a`.
         sensitivity_matrix : `numpy.ndarray`, shape (3, 3)
             Scaled covariance of the attitude errors expressed as the small
-            rotation vector of frame A. Multiply with harmonic mean [2]_ of
+            rotation vector of frame A. Multiply with harmonic mean [3]_ of
             variance in each observation to get true covariance matrix. The
-            error model is detailed in [3]_.
+            error model is detailed in [2]_.
 
         References
         ----------
         .. [1] F. Landis Markley,
                 “Attitude determination using vector observations: a fast
-                optimal matrix algorithm,” Journal of Astronautical Sciences,
+                optimal matrix algorithm”, Journal of Astronautical Sciences,
                 Vol. 41, No.2, 1993, pp. 261-280.
-        .. [2] `Harmonic Mean <https://en.wikipedia.org/wiki/Harmonic_mean>`_
-        .. [3] F. Landis Markley,
+        .. [2] F. Landis Markley,
                 "Attitude determination using vector observations and the
-                Singular Value Decomposition, " Journal of Astronautical
+                Singular Value Decomposition", Journal of Astronautical
                 Sciences, Vol. 38, No.3, 1988, pp. 245-258.
+        .. [3] `Harmonic Mean <https://en.wikipedia.org/wiki/Harmonic_mean>`_
         """
         a = np.asarray(a)
         if a.ndim != 2 or a.shape[-1] != 3:
@@ -1614,8 +1614,9 @@ class Rotation(object):
                              "rotation uniquely.")
 
         kappa = s[0]*s[1] + s[1]*s[2] + s[2]*s[0]
-        cov = (kappa * np.eye(3) + np.dot(B, B.T)) / (zeta * a.shape[0])
-        return cls.from_dcm(C), cov
+        sensitivity = ((kappa * np.eye(3) + np.dot(B, B.T)) /
+                       (zeta * a.shape[0]))
+        return cls.from_dcm(C), sensitivity
 
 
 class Slerp(object):
