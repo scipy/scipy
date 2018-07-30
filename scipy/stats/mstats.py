@@ -8,85 +8,118 @@ Statistical functions for masked arrays (:mod:`scipy.stats.mstats`)
 This module contains a large number of statistical functions that can
 be used with masked arrays.
 
-Most of these functions are similar to those in scipy.stats but might
+Most of these functions are similar to those in `scipy.stats` but might
 have small differences in the API or in the algorithm used. Since this
 is a relatively new package, some API changes are still possible.
+
+Summary statistics
+==================
+
+.. autosummary::
+   :toctree: generated/
+
+   describe
+   gmean
+   hmean
+   kurtosis
+   mode
+   mquantiles
+   hdmedian
+   hdquantiles
+   hdquantiles_sd
+   idealfourths
+   plotting_positions
+   meppf
+   moment
+   skew
+   tmean
+   tvar
+   tmin
+   tmax
+   tsem
+   variation
+   find_repeats
+   sem
+   trimmed_mean
+   trimmed_mean_ci
+   trimmed_std
+   trimmed_var
+
+Frequency statistics
+====================
+
+.. autosummary::
+   :toctree: generated/
+
+   scoreatpercentile
+
+Correlation functions
+=====================
+
+.. autosummary::
+   :toctree: generated/
+
+   f_oneway
+   pearsonr
+   spearmanr
+   pointbiserialr
+   kendalltau
+   kendalltau_seasonal # ---> no doc
+   linregress
+   theilslopes
+   sen_seasonal_slopes
+
+Statistical tests
+=================
+
+.. autosummary::
+   :toctree: generated/
+
+   ttest_onesamp
+   chisquare
+   ks_2samp
+   ks_twosamp
+   mannwhitneyu
+   rankdata
+   kruskal
+   kruskalwallis
+   friedmanchisquare
+   brunnermunzel
+   skewtest
+   kurtosistest
+   normaltest
+
+Transformations
+===============
+
+.. autosummary::
+   :toctree: generated/
+
+   obrientransform
+   trim
+   trima
+   trimmed_stde
+   trimr
+   trimtail
+   trimboth
+   winsorize
+   zmap
+   zscore
+
+Other
+=====
 
 .. autosummary::
    :toctree: generated/
 
    argstoarray
-   chisquare
    count_tied_groups
-   describe
-   f_oneway
-   find_repeats
-   friedmanchisquare
-   kendalltau
-   kendalltau_seasonal
-   kruskalwallis
-   ks_twosamp
-   kurtosis
-   kurtosistest
-   linregress
-   mannwhitneyu
-   plotting_positions
-   mode
-   moment
-   mquantiles
    msign
-   normaltest
-   obrientransform
-   pearsonr
-   plotting_positions
-   pointbiserialr
-   rankdata
-   scoreatpercentile
-   sem
-   skew
-   skewtest
-   spearmanr
-   theilslopes
-   tmax
-   tmean
-   tmin
-   trim
-   trima
-   trimboth
-   trimmed_stde
-   trimr
-   trimtail
-   tsem
-   ttest_onesamp
-   ttest_ind
-   ttest_onesamp
-   ttest_rel
-   tvar
-   variation
-   winsorize
-   zmap
-   zscore
    compare_medians_ms
-   gmean
-   hdmedian
-   hdquantiles
-   hdquantiles_sd
-   hmean
-   idealfourths
-   kruskal
-   ks_2samp
    median_cihs
-   meppf
    mjci
    mquantiles_cimj
    rsh
-   sen_seasonal_slopes
-   trimmed_mean
-   trimmed_mean_ci
-   trimmed_std
-   trimmed_var
-   ttest_1samp
-   brunnermunzel
 
 """
 from __future__ import division, print_function, absolute_import
