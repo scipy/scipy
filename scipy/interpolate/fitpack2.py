@@ -547,8 +547,7 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
         not in the interval defined by the knot sequence.
 
         * if ext=0 or 'extrapolate', return the extrapolated value.
-        * if ext=1 all(diff(x) > 0.0):
-+            raise ValueEror 'zeros', return 0
+        * if ext=1 or 'zeros', return 0
         * if ext=2 or 'raise', raise a ValueError
         * if ext=3 of 'const', return the boundary value.
 
