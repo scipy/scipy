@@ -453,13 +453,12 @@ class LinearOperator(object):
         return _CustomLinearOperator(shape, matvec=self.rmatvec,
                                      rmatvec=self.matvec,
                                      dtype=self.dtype)
+
     def _transpose(self):
-        """ Default implementation of _transpose; relies on adjoint. """
-        shape = (self.shape[1], self.shape[0])
-        return _CustomLinearOperator(shape,
-                                     matvec=lambda x: np.conj(self.rmatvec(np.conj(x))),
-                                     rmatvec=lambda x: np.conj(self.matvec(np.conj(x))),
-                                     dtype=self.dtype)
+        """ Default implementation of _transpose """
+        return _TransposedLinearOperator(self)
+
+
 
 class _CustomLinearOperator(LinearOperator):
     """Linear operator defined in terms of user-specified operations."""
@@ -495,6 +494,18 @@ class _CustomLinearOperator(LinearOperator):
                                      matvec=self.__rmatvec_impl,
                                      rmatvec=self.__matvec_impl,
                                      dtype=self.dtype)
+
+
+
+class _TransposedLinearOperator(_CustomLinearOperator):
+    """Transposition of arbitrary Linear Operator"""
+
+    def __init__(self, src):
+        shape = (src.shape[1], src.shape[0])
+        super(_TransposedLinearOperator, self).__init__(shape,
+                                     matvec=lambda x: np.conj(src.rmatvec(np.conj(x))),
+                                     rmatvec=lambda x: np.conj(src.matvec(np.conj(x))),
+                                     dtype=src.dtype)
 
 
 def _get_dtype(operators, dtypes=None):
