@@ -459,7 +459,6 @@ class LinearOperator(object):
         return _TransposedLinearOperator(self)
 
 
-
 class _CustomLinearOperator(LinearOperator):
     """Linear operator defined in terms of user-specified operations."""
 
@@ -496,10 +495,8 @@ class _CustomLinearOperator(LinearOperator):
                                      dtype=self.dtype)
 
 
-
 class _TransposedLinearOperator(_CustomLinearOperator):
     """Transposition of arbitrary Linear Operator"""
-
     def __init__(self, A):
         shape = (A.shape[1], A.shape[0])
         super(_TransposedLinearOperator, self).__init__(shape,
