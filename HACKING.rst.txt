@@ -387,7 +387,7 @@ test and use your changes (in ``.py`` files), by simply restarting the
 interpreter.
 
 
-*Are there any video examples for installing from source, setting up a 
+*Are there any video examples for installing from source, setting up a
 development environment, etc...?*
 
 Currently, there are two video demonstrations for Anaconda Python on macOS:
@@ -404,7 +404,7 @@ according to Part I.
 
 *Are there any video examples of the basic development workflow?*
 
-`SciPy Development Workflow`_ is a five-minute example of fixing a bug and 
+`SciPy Development Workflow`_ is a five-minute example of fixing a bug and
 submitting a pull request. While it's intended as a followup to
 `Anaconda SciPy Dev Part I (macOS)`_ and `Anaconda SciPy Dev Part II (macOS)`_,
 the process is similar for other development setups.
