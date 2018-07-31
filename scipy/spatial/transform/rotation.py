@@ -5,7 +5,6 @@ import warnings
 import numpy as np
 import scipy.linalg
 from scipy._lib._util import check_random_state
-from scipy.interpolate import PPoly
 
 
 _AXIS_TO_IND = {'x': 0, 'y': 1, 'z': 2}
@@ -1799,6 +1798,8 @@ class QSpline(object):
     .. [1] `Quaternion Spline
             <http://qspline.sourceforge.net/qspline.pdf>`_
     """
+    from scipy.interpolate import PPoly
+
     def __init__(self, times, rotations, omega_i=[0, 0, 0], omega_f=[0, 0, 0]):
         num_rotations = len(rotations)
         if num_rotations == 1:
@@ -1870,13 +1871,13 @@ class QSpline(object):
         theta_coeff[2] = initial_omega_term
         # Clarification: angle represented by interpolating quaternion
         # NOT final orientation. Do NOT check derivatives for continuity.
-        self.theta = PPoly(theta_coeff, self.times)
+        self.theta = self.PPoly(theta_coeff, self.times)
 
         # Let PPoly (of order 0) find initial rotations for each time. Removes
         # the need for fancy indexing (to include both endpoints) in __call__.
         initial_rot_coeff = np.zeros((1, num_rotations - 1, 3))
         initial_rot_coeff[0] = rotations[:-1].as_rotvec()
-        self.initial_rotation = PPoly(initial_rot_coeff, self.times)
+        self.initial_rotation = self.PPoly(initial_rot_coeff, self.times)
 
         self.rotations = rotations
 
