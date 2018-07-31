@@ -997,9 +997,8 @@ class spmatrix(object):
 
         if axis is None:
             # sum over rows and columns
-            return (self * np.asmatrix(np.ones(
-                (n, 1), dtype=res_dtype))).sum(
-                dtype=dtype, out=out)
+            row_sums = self.__mul__(np.ones((n, 1), dtype=res_dtype))
+            return row_sums.sum(dtype=dtype, out=out)
 
         if axis < 0:
             axis += 2
@@ -1007,12 +1006,10 @@ class spmatrix(object):
         # axis = 0 or 1 now
         if axis == 0:
             # sum over columns
-            ret = np.asmatrix(np.ones(
-                (1, m), dtype=res_dtype)) * self
+            ret = self.__rmul__(np.ones((1, m), dtype=res_dtype))
         else:
             # sum over rows
-            ret = self * np.asmatrix(
-                np.ones((n, 1), dtype=res_dtype))
+            ret = self.__mul__(np.ones((n, 1), dtype=res_dtype))
 
         if out is not None and out.shape != ret.shape:
             raise ValueError("dimensions do not match")
