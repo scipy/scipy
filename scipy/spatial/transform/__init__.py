@@ -14,15 +14,15 @@ Rotations in 3 dimensions
     :toctree: generated/
 
     Rotation
-    Slerp
-    QSpline
+    RotationSlerp
+    RotationSpline
 
 """
 from __future__ import division, print_function, absolute_import
 
-from .rotation import Rotation, Slerp, QSpline
+from .rotation import Rotation, RotationSlerp, RotationSpline
 
-__all__ = ['Rotation', 'Slerp', 'QSpline']
+__all__ = ['Rotation', 'RotationSlerp', 'RotationSpline']
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)

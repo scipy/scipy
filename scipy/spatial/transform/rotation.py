@@ -1511,7 +1511,7 @@ class Rotation(object):
         return Rotation.from_quat(sample)
 
 
-class Slerp(object):
+class RotationSlerp(object):
     """Spherical Linear Interpolation of Rotations.
 
     The interpolation between consecutive rotations is performed as a rotation
@@ -1539,7 +1539,7 @@ class Slerp(object):
     Examples
     --------
     >>> from scipy.spatial.transform import Rotation as R
-    >>> from scipy.spatial.transform import Slerp
+    >>> from scipy.spatial.transform import RotationSlerp as Slerp
 
     Setup the fixed keyframe rotations and times:
 
@@ -1764,7 +1764,7 @@ def _intermediate_step(w_prev, rotvecs, dt_inv, w_i, w_f):
     return w, diff
 
 
-class QSpline(object):
+class RotationSpline(object):
     """Interpolate rotations using cubic splines.
 
     The interpolation between consecutive rotations is done using cubic splines
