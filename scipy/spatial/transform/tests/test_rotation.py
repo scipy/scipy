@@ -932,7 +932,6 @@ def test_spline_constant_angular_velocity():
 
     vel = spline.omega[1]
     assert_allclose(vel, omega_i)
-    assert_allclose(vel, omega_f)
 
     test_times = np.linspace(0, 2, 21)
     for row in spline.angular_velocity(test_times):
@@ -993,13 +992,12 @@ def test_spline_call_time_dim_mismatch():
         s(interp_times)
 
 
-def test_spline_call_time_out_of_range():
+@pytest.mark.parametrize("times", [[0, 1, 2], [1, 2, 6]])
+def test_spline_call_time_out_of_range(times):
     np.random.seed(0)
     r = Rotation.random(5)
     t = np.arange(5) + 1
     s = QSpline(t, r)
 
     with pytest.raises(ValueError, match="times must be within the range"):
-        s([0, 1, 2])
-    with pytest.raises(ValueError, match="times must be within the range"):
-        s([1, 2, 6])
+        s(times)
