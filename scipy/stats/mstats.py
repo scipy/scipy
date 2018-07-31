@@ -64,7 +64,7 @@ Correlation functions
    spearmanr
    pointbiserialr
    kendalltau
-   kendalltau_seasonal # ---> no doc
+   kendalltau_seasonal
    linregress
    theilslopes
    sen_seasonal_slopes
@@ -75,7 +75,10 @@ Statistical tests
 .. autosummary::
    :toctree: generated/
 
+   ttest_1samp
    ttest_onesamp
+   ttest_ind
+   ttest_rel
    chisquare
    ks_2samp
    ks_twosamp
