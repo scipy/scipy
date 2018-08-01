@@ -657,6 +657,13 @@ class TestResample(object):
         signal.resample_poly(impulse, 5, 1, window=window)
         assert_array_equal(window, window_orig)
 
+    def test_output_float32(self):
+        # Test that float32 inputs yield a float32 output
+        x = np.arange(10, dtype=np.float32)
+        h = np.array([1,1,1], dtype=np.float32)
+        y = signal.resample_poly(x, 1, 2, window=h)
+        assert_(y.dtype == np.float32)
+
     def _test_data(self, method, ext=False):
         # Test resampling of sinusoids and random noise (1-sec)
         rate = 100
