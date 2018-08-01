@@ -4520,6 +4520,7 @@ def cases_64bit():
         'test_inv': 'linsolve for 64-bit indices not available',
         'test_solve': 'linsolve for 64-bit indices not available',
         'test_scalar_idx_dtype': 'test implemented in base class',
+        'test_large_dimensions': 'test actually requires 64-bit to work',
     }
 
     for cls in TEST_CLASSES:
