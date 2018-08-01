@@ -4085,6 +4085,7 @@ class TestCOO(sparse_test_class(getset=False,
         assert_((mat1.reshape((1001, 3000001), order='C') != mat2).nnz == 0)
         assert_((mat2.reshape((3000001, 1001), order='F') != mat1).nnz == 0)
 
+
 TestCOO.init_class()
 
 
