@@ -1792,12 +1792,72 @@ class RotationSpline(object):
     Methods
     -------
     __call__
+    angular_velocity
 
     References
     ----------
     .. [1] `Quaternion Spline
             <http://qspline.sourceforge.net/qspline.pdf>`_
-    """
+
+    Examples
+    --------
+    >>> from scipy.spatial.transform import Rotation as R
+    >>> from scipy.spatial.transform import RotationSpline as Spline
+
+    Setup the fixed keyframe rotations and times:
+
+    >>> key_rots = R.random(num=5, random_state=0)
+    >>> key_times = np.arange(5)
+
+    Create the interpolator object:
+
+    >>> spline = Spline(key_times, key_rots)
+
+    Interpolate the rotations at the given times:
+
+    >>> times = [0, 0.5, 0.25, 1, 1.5, 2, 2.75, 3, 3.25, 3.60, 4]
+    >>> interp_rots = spline(times)
+
+    The keyframe rotation expressed as Euler angles:
+
+    >>> key_rots.as_euler('xyz', degrees=True)
+    array([[  72.693533  ,  -10.33446868,   39.57392028],
+           [-145.44486942,  -37.29534349,  -67.22941827],
+           [  -5.3127068 ,   31.92030494,    9.79282216],
+           [ 114.88030559,  -41.20288834,   45.16187123],
+           [-118.35797547,  -10.87178353,  -22.13609957]])
+
+    The interpolated rotations expressed as Euler angles. The agree with the
+    keyframe rotations at both endpoints of the range of the keyframe times.
+
+    >>> interp_rots.as_euler('xyz', degrees=True)
+    array([[  72.693533  ,  -10.33446868,   39.57392028],
+           [ 102.57757743,  -40.06658385,   22.1383229 ],
+           [  79.65746895,  -19.2538834 ,   36.45516717],
+           [-145.44486942,  -37.29534349,  -67.22941827],
+           [ -88.8453454 ,   18.2365642 ,  -64.25258708],
+           [  -5.3127068 ,   31.92030494,    9.79282216],
+           [  78.55885044,  -19.60493165,   50.90418467],
+           [ 114.88030559,  -41.20288834,   45.16187123],
+           [ 175.71584945,  -49.17092174,    6.21680082],
+           [-133.63229131,  -25.93432397,  -20.33702857],
+           [-118.35797547,  -10.87178353,  -22.13609957]])
+
+    It is also possible to compute the interpolated angular velocity vectors:
+
+    >>> spline.angular_velocity(times)
+    array([[ 0.00000000e+00,  0.00000000e+00,  0.00000000e+00],
+           [ 1.31161179e+00, -9.81833997e-01,  1.81633487e+00],
+           [ 8.06479338e-01, -6.53564434e-01,  1.05954710e+00],
+           [ 1.77675493e+00, -1.00996703e+00,  2.02353236e+00],
+           [ 1.69158437e+00, -1.20601533e+00,  1.67202314e+00],
+           [ 1.98966948e+00, -1.27043296e+00,  1.96076702e+00],
+           [ 2.01288285e+00, -9.57332866e-02,  1.34182517e+00],
+           [ 2.37973011e+00, -5.58161150e-01,  2.07859372e+00],
+           [ 2.01944452e+00, -7.20879045e-01,  1.71746730e+00],
+           [ 1.22166601e+00, -5.84947232e-01,  1.08369240e+00],
+           [ 3.44451009e-16, -2.34239135e-16,  1.25943096e-17]])
+       """
     from scipy.interpolate import PPoly
 
     def __init__(self, times, rotations, omega_i=[0, 0, 0], omega_f=[0, 0, 0]):
