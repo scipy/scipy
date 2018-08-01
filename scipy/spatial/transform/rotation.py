@@ -1608,7 +1608,7 @@ class Rotation(object):
         C = np.dot(u, vh)
 
         zeta = (s[0]+s[1]) * (s[1]+s[2]) * (s[2]+s[0])
-        if zeta == 0:
+        if np.abs(zeta) <= 1e-16:
             raise ValueError("Three component error vector has infinite "
                              "covariance. It is impossible to determine the "
                              "rotation uniquely.")
