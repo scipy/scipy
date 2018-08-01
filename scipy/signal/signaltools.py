@@ -2373,7 +2373,8 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0)):
     while _output_len(len(h) + n_pre_pad + n_post_pad, x.shape[axis],
                       up, down) < n_out + n_pre_remove:
         n_post_pad += 1
-    h = np.concatenate((np.zeros(n_pre_pad), h, np.zeros(n_post_pad)))
+    h = np.concatenate((np.zeros(n_pre_pad, dtype=h.dtype), h,
+                        np.zeros(n_post_pad, dtype=h.dtype)))
     n_pre_remove_end = n_pre_remove + n_out
 
     # filter then remove excess
