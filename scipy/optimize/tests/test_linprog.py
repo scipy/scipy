@@ -818,12 +818,12 @@ class LinprogCommonTests(object):
         ])
         b_eq = np.array([[100],[0],[0],[0],[0]])
 
-        shoud_warn_A_not_full_rank = (
+        should_warn_A_not_full_rank = (
             self.options.get('presolve', True)
             and self.method == 'interior-point'
             )
 
-        if shoud_warn_A_not_full_rank:
+        if should_warn_A_not_full_rank:
             # A is not of full row rank. The expected behaviour is for
             # the presolve function to warn the user. Currently only
             # the interior-point method implements presolve.
