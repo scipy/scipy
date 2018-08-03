@@ -5991,7 +5991,10 @@ class sine_gen(rv_continuous):
         return 0.5*np.sin(x)
 
     def _cdf(self, x):
-        return 0.5 - 0.5*np.cos(x)
+        return np.sin(x/2.)**2
+
+    def _sf(self, x):
+        return np.cos(x/2.)**2
 
     def _ppf(self, q):
         return np.arccos(1.-2.*q)
