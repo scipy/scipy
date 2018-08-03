@@ -818,27 +818,22 @@ class LinprogCommonTests(object):
         ])
         b_eq = np.array([[100],[0],[0],[0],[0]])
 
-        should_warn_A_not_full_rank = (
-            self.options.get('presolve', True)
-            and self.method == 'interior-point'
-            )
-
-        if should_warn_A_not_full_rank:
-            # A is not of full row rank. The expected behaviour is for
-            # the presolve function to warn the user. Currently only
-            # the interior-point method implements presolve.
+        if self.method == 'interior-point':
+            # Warning is raised in presolve method,
+            # which is not yet implemented in the simplex method.
             with pytest.warns(OptimizeWarning):
                 res = linprog(
                     c=c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
                     method=self.method, options=self.options
                 )
-        else:
+            _assert_success(res, desired_fun=43.3333333331385)
+
+        elif self.method == 'interior-point':
             res = linprog(
                 c=c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
                 method=self.method, options=self.options
             )
-
-        _assert_success(res, desired_fun=43.3333333331385)
+            _assert_success(res, desired_fun=43.3333333331385)
 
 
 class TestLinprogSimplex(LinprogCommonTests):
