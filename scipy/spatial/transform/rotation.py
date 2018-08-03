@@ -1510,6 +1510,114 @@ class Rotation(object):
 
         return Rotation.from_quat(sample)
 
+    @classmethod
+    def match_vectors(cls, a, b, weights=None, normalized=False):
+        """Estimate a rotation to match two sets of vectors.
+
+        Find a rotation between frames A and B which best matches a set of unit
+        vectors `a` and `b` observed in these frames. The following loss
+        function is minimized to solve for the direction cosine matrix
+        :math:`C`:
+
+        .. math::
+
+            L(C) = \\frac{1}{2} \\sum_{i = 1}^{n} w_i \\lVert \\mathbf{a}_i -
+            C \\mathbf{b}_i \\rVert^2 ,
+
+        where :math:`w_i`'s are the `weights` corresponding to each vector.
+
+        The rotation is estimated using Markley's SVD method [1]_.
+
+        Parameters
+        ----------
+        a : array_like, shape (N, 3)
+            Vector components observed in initial frame A. Each row of `a`
+            denotes a vector.
+        b : array_like, shape (N, 3)
+            Vector components observed in another frame B. Each row of `b`
+            denotes a vector.
+        weights : array_like shape (N,), optional
+            Weights describing the relative importance of the vectors in
+            `a`. If None (default), then all values in `weights` are assumed to
+            be equal.
+        normalized : boolean, optional
+            If True, assume input vectors `a` and `b` to have unit norm. If
+            False, normalize `a` and `b` before estimating rotation. Default
+            is False.
+
+        Returns
+        -------
+        estimated_rotation : `Rotation` instance
+            Best estimate of the rotation that transforms `b` to `a`.
+        sensitivity_matrix : `numpy.ndarray`, shape (3, 3)
+            Scaled covariance of the attitude errors expressed as the small
+            rotation vector of frame A. Multiply with harmonic mean [3]_ of
+            variance in each observation to get true covariance matrix. The
+            error model is detailed in [2]_.
+
+        References
+        ----------
+        .. [1] F. Landis Markley,
+                “Attitude determination using vector observations: a fast
+                optimal matrix algorithm”, Journal of Astronautical Sciences,
+                Vol. 41, No.2, 1993, pp. 261-280.
+        .. [2] F. Landis Markley,
+                "Attitude determination using vector observations and the
+                Singular Value Decomposition", Journal of Astronautical
+                Sciences, Vol. 38, No.3, 1988, pp. 245-258.
+        .. [3] `Harmonic Mean <https://en.wikipedia.org/wiki/Harmonic_mean>`_
+        """
+        a = np.asarray(a)
+        if a.ndim != 2 or a.shape[-1] != 3:
+            raise ValueError("Expected input `a` to have shape (N, 3), "
+                             "got {}".format(a.shape))
+        b = np.asarray(b)
+        if b.ndim != 2 or b.shape[-1] != 3:
+            raise ValueError("Expected input `b` to have shape (N, 3), "
+                             "got {}.".format(b.shape))
+
+        if a.shape != b.shape:
+            raise ValueError("Expected inputs `a` and `b` to have same shapes"
+                             ", got {} and {} respectively.".format(
+                                a.shape, b.shape))
+
+        if b.shape[0] == 1:
+            raise ValueError("Rotation cannot be estimated using a single "
+                             "vector.")
+
+        if weights is None:
+            weights = np.ones(b.shape[0])
+        else:
+            weights = np.asarray(weights)
+            if weights.ndim != 1:
+                raise ValueError("Expected `weights` to be 1 dimensional, got "
+                                 "shape {}.".format(weights.shape))
+            if weights.shape[0] != b.shape[0]:
+                raise ValueError("Expected `weights` to have number of values "
+                                 "equal to number of input vectors, got "
+                                 "{} values and {} vectors.".format(
+                                    weights.shape[0], b.shape[0]))
+        weights = weights / np.sum(weights)
+
+        if not normalized:
+            a = a / scipy.linalg.norm(a, axis=1)[:, None]
+            b = b / scipy.linalg.norm(b, axis=1)[:, None]
+
+        B = np.einsum('ji,jk->ik', weights[:, None] * a, b)
+        u, s, vh = np.linalg.svd(B)
+        C = np.dot(u, vh)
+
+        zeta = (s[0]+s[1]) * (s[1]+s[2]) * (s[2]+s[0])
+        if np.abs(zeta) <= 1e-16:
+            raise ValueError("Three component error vector has infinite "
+                             "covariance. It is impossible to determine the "
+                             "rotation uniquely.")
+
+        kappa = s[0]*s[1] + s[1]*s[2] + s[2]*s[0]
+        sensitivity = ((kappa * np.eye(3) + np.dot(B, B.T)) /
+                       (zeta * a.shape[0]))
+        return cls.from_dcm(C), sensitivity
+
 
 class Slerp(object):
     """Spherical Linear Interpolation of Rotations.
