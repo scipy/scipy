@@ -208,7 +208,8 @@ class LinprogCommonTests(object):
 
     def test_linprog_mixed_constraints(self):
         # Minimize linear function subject to non-negative variables.
-        #  http://www.statslab.cam.ac.uk/~ff271/teaching/opt/notes/notes8.pdf (dead link)
+        # http://www.statslab.cam.ac.uk/~ff271/teaching/opt/notes/notes8.pdf
+        # (dead link)
         c = [6, 3]
         A_ub = [[0, 3],
                 [-1, -1],
@@ -1002,6 +1003,11 @@ class BaseTestLinprogIP(LinprogCommonTests):
         assert_(not res.success, "incorrectly reported success")
 
     def test_bug_8973(self):
+        """
+        Test whether bug described at:
+        https://github.com/scipy/scipy/issues/8973
+        was fixed.
+        """
         c = np.array([0, 0, 0, 1, -1])
         A = np.array([[1, 0, 0, 0, 0], [0, 1, 0, 0, 0]])
         b = np.array([2, -2])
@@ -1011,6 +1017,58 @@ class BaseTestLinprogIP(LinprogCommonTests):
         _assert_success(res,
                         desired_x=[2, -2, 0, -1, 1],
                         desired_fun=-2)
+
+    def test_bug_8973_2(self):
+        """
+        Additional test for:
+        https://github.com/scipy/scipy/issues/8973
+        suggested in
+        https://github.com/scipy/scipy/pull/8985
+        review by @antonior92
+        """
+        c = np.zeros(1)
+        A = np.array([[1]])
+        b = np.array([-2])
+        bounds = (None, None)
+        res = linprog(c, A, b, None, None, bounds, method=self.method,
+                      options=self.options)
+        _assert_success(res)  # would not pass if solution is infeasible
+
+    def test_unbounded_no_nontrivial_constraints_1(self):
+        """
+        Test whether presolve pathway for detecting unboundedness after
+        constraint elimination is working.
+        """
+        c = np.array([0, 0, 0, 1, -1, -1])
+        A = np.array([[1, 0, 0, 0, 0, 0],
+                      [0, 1, 0, 0, 0, 0],
+                      [0, 0, 0, 0, 0, -1]])
+        b = np.array([2, -2, 0])
+        bounds = [(None, None), (None, None), (None, None),
+                  (-1, 1), (-1, 1), (0, None)]
+        res = linprog(c, A, b, None, None, bounds, method=self.method,
+                      options=self.options)
+        _assert_unbounded(res)
+        assert_equal(res.x[-1], np.inf)
+        assert_equal(res.message[:36], "The problem is (trivially) unbounded")
+
+    def test_unbounded_no_nontrivial_constraints_2(self):
+        """
+        Test whether presolve pathway for detecting unboundedness after
+        constraint elimination is working.
+        """
+        c = np.array([0, 0, 0, 1, -1, 1])
+        A = np.array([[1, 0, 0, 0, 0, 0],
+                      [0, 1, 0, 0, 0, 0],
+                      [0, 0, 0, 0, 0, 1]])
+        b = np.array([2, -2, 0])
+        bounds = [(None, None), (None, None), (None, None),
+                  (-1, 1), (-1, 1), (None, 0)]
+        res = linprog(c, A, b, None, None, bounds, method=self.method,
+                      options=self.options)
+        _assert_unbounded(res)
+        assert_equal(res.x[-1], -np.inf)
+        assert_equal(res.message[:36], "The problem is (trivially) unbounded")
 
 
 class TestLinprogIPSpecific:
