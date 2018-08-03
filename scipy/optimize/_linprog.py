@@ -1,6 +1,6 @@
 """
-A top-level linear programming interface. Currently this interface only
-solves linear programming problems via the Simplex Method.
+A top-level linear programming interface. Currently this interface solves
+linear programming problems via the Simplex and Interior-Point methods.
 
 .. versionadded:: 0.15.0
 
@@ -18,7 +18,8 @@ Functions
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from .optimize import OptimizeResult, _check_unknown_options
+from warnings import warn
+from .optimize import OptimizeResult, OptimizeWarning, _check_unknown_options
 from ._linprog_ip import _linprog_ip
 
 __all__ = ['linprog', 'linprog_verbose_callback', 'linprog_terse_callback']
@@ -128,7 +129,6 @@ def linprog_terse_callback(xk, **kwargs):
             (and this is the final call to callback), otherwise False.
     """
     nit = kwargs["nit"]
-
     if nit == 0:
         print("Iter:   X:")
     print("{0: <5d}   ".format(nit), end="")
@@ -216,6 +216,46 @@ def _pivot_row(T, basis, pivcol, phase, tol=1.0E-12, bland=False):
     if bland:
         return True, min_rows[np.argmin(np.take(basis, min_rows))]
     return True, min_rows[0]
+
+
+def _apply_pivot(T, basis, pivrow, pivcol, tol=1e-12):
+    """
+    Pivot the simplex tableau inplace on the element given by (pivrow, pivol).
+    The entering variable corresponds to the column given by pivcol forcing
+    the variable basis[pivrow] to leave the basis.
+
+    Parameters
+    ----------
+    T : 2-D array
+        A 2-D array representing the simplex T to the corresponding
+        maximization problem.
+    basis : 1-D array
+        An array of the indices of the basic variables, such that basis[i]
+        contains the column corresponding to the basic variable for row i.
+        Basis is modified in place by _apply_pivot.
+    pivrow : int
+        Row index of the pivot.
+    pivcol : int
+        Column index of the pivot.
+    """
+    basis[pivrow] = pivcol
+    pivval = T[pivrow, pivcol]
+    T[pivrow] = T[pivrow] / pivval
+    for irow in range(T.shape[0]):
+        if irow != pivrow:
+            T[irow] = T[irow] - T[pivrow] * T[irow, pivcol]
+
+    # The selected pivot should never lead to a pivot value less than the tol.
+    if np.isclose(pivval, tol, atol=0, rtol=1e4):
+        message = (
+            "The pivot operation produces a pivot value of:{0: .1e}, "
+            "which is only slightly greater than the specified "
+            "tolerance{1: .1e}. This may lead to issues regarding the "
+            "numerical stability of the simplex method. "
+            "Removing redundant constraints, changing the pivot strategy "
+            "via Bland's rule or increasing the tolerance may "
+            "help reduce the issue.".format(pivval, tol))
+        warn(message, OptimizeWarning)
 
 
 def _solve_simplex(T, n, basis, maxiter=1000, phase=2, callback=None,
@@ -337,14 +377,7 @@ def _solve_simplex(T, n, basis, maxiter=1000, phase=2, callback=None,
                             if abs(T[pivrow, col]) > tol]
             if len(non_zero_row) > 0:
                 pivcol = non_zero_row[0]
-                # variable represented by pivcol enters
-                # variable in basis[pivrow] leaves
-                basis[pivrow] = pivcol
-                pivval = T[pivrow][pivcol]
-                T[pivrow, :] = T[pivrow, :] / pivval
-                for irow in range(T.shape[0]):
-                    if irow != pivrow:
-                        T[irow, :] = T[irow, :] - T[pivrow, :]*T[irow, pivcol]
+                _apply_pivot(T, basis, pivrow, pivcol)
                 nit += 1
 
     if len(basis[:m]) == 0:
@@ -384,14 +417,7 @@ def _solve_simplex(T, n, basis, maxiter=1000, phase=2, callback=None,
                 status = 1
                 complete = True
             else:
-                # variable represented by pivcol enters
-                # variable in basis[pivrow] leaves
-                basis[pivrow] = pivcol
-                pivval = T[pivrow][pivcol]
-                T[pivrow, :] = T[pivrow, :] / pivval
-                for irow in range(T.shape[0]):
-                    if irow != pivrow:
-                        T[irow, :] = T[irow, :] - T[pivrow, :]*T[irow, pivcol]
+                _apply_pivot(T, basis, pivrow, pivcol)
                 nit += 1
 
     return nit, status

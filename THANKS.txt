@@ -195,6 +195,7 @@ Konrad Griessinger for the small sample Kendall test
 Tony Xiang for improvements in scipy.sparse
 Roy Zywina for contributions to scipy.fftpack.
 Christian H. Meyer for bug fixes in subspace_angles.
+Kai Striega for improvements to the scipy.optimize.linprog simplex method.
 
 Institutions
 ------------

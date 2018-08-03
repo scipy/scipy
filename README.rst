@@ -22,6 +22,7 @@ ODE solvers, and more.
 - **Mailing list:** https://scipy.org/scipylib/mailing-lists.html
 - **Source:** https://github.com/scipy/scipy
 - **Bug reports:** https://github.com/scipy/scipy/issues
+- **Code of Conduct:** https://scipy.github.io/devdocs/dev/conduct/code_of_conduct.html
 
 SciPy depends on NumPy, which provides convenient and fast
 N-dimensional array manipulation. SciPy is built to work with
