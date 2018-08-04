@@ -491,7 +491,8 @@ class TestTrustRegionConstr(TestCase):
                                           constraints=prob.constr)
 
                     if prob.x_opt is not None:
-                        assert_array_almost_equal(result.x, prob.x_opt, decimal=5)
+                        assert_array_almost_equal(result.x, prob.x_opt,
+                                                  decimal=5)
                         # gtol
                         if result.status == 1:
                             assert_array_less(result.optimality, 1e-8)
@@ -516,7 +517,8 @@ class TestTrustRegionConstr(TestCase):
         def fun(x):
             return (x - 1) ** 2
         bounds = [(-2, 2)]
-        res = minimize(fun, x0=[-1.5], bounds=bounds, method='trust-constr', jac='2-point')
+        res = minimize(fun, x0=[-1.5], bounds=bounds, method='trust-constr',
+                       jac='2-point')
         assert_array_almost_equal(res.x, 1, decimal=5)
 
     def test_no_constraints(self):
@@ -529,8 +531,8 @@ class TestTrustRegionConstr(TestCase):
                            jac='2-point')
         with pytest.warns(UserWarning):
             result2 = minimize(prob.fun, prob.x0,
-                                method='L-BFGS-B',
-                                jac='3-point')
+                               method='L-BFGS-B',
+                               jac='3-point')
         assert_array_almost_equal(result.x, prob.x_opt, decimal=5)
         assert_array_almost_equal(result1.x, prob.x_opt, decimal=5)
         assert_array_almost_equal(result2.x, prob.x_opt, decimal=5)
