@@ -5996,8 +5996,11 @@ class sine_gen(rv_continuous):
     def _sf(self, x):
         return np.cos(x/2.)**2
 
-    def _ppf(self, q):
-        return np.arccos(1.-2.*q)
+    def _ppf(self, x):
+        return 2*np.arcsin(np.sqrt(x))
+
+    def _isf(self, x):
+        return 2*np.arccos(np.sqrt(x))
 
     def _stats(self):
         return np.pi/2, np.pi**2/4-2, 0., -2*(np.pi**4-96)/(np.pi**2-8)**2
