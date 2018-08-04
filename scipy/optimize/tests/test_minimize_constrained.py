@@ -598,36 +598,44 @@ class TestTrustRegionConstr(TestCase):
 
 class TestOldStyleConstraints:
     x0 = (2, 0)
-    fun = lambda x: (x[0] - 1)**2 + (x[1] - 2.5)**2
     bnds = ((0, None), (0, None))
     method = "trust-constr"
+    fun = lambda x: (x[0] - 1)**2 + (x[1] - 2.5)**2
 
     def test_constraint_dictionary_1(self):
+        fun = TestOldStyleConstraints.fun
         cons = ({'type': 'ineq', 'fun': lambda x:  x[0] - 2 * x[1] + 2},
                 {'type': 'ineq', 'fun': lambda x: -x[0] - 2 * x[1] + 6},
                 {'type': 'ineq', 'fun': lambda x: -x[0] + 2 * x[1] + 2})
 
-        res = minimize(self.fun, self.x0, method=self.method,
-                       bounds=self.bnds, constraints=cons)
-        assert_allclose(res.x, [1.4, 1.7])
-        assert_allclose(res.fun, 0.8)
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, "delta_grad == 0.0")
+            res = minimize(fun, self.x0, method=self.method,
+                           bounds=self.bnds, constraints=cons)
+        assert_allclose(res.x, [1.4, 1.7], rtol=1e-4)
+        assert_allclose(res.fun, 0.8, rtol=1e-4)
 
     def test_constraint_dictionary_2(self):
+        fun = TestOldStyleConstraints.fun
         cons = {'type': 'eq',
                 'fun': lambda x, p1, p2: p1*x[0] - p2*x[1],
                 'args': (1, 1.1),
                 'jac': lambda x, p1, p2: np.array([[p1, -p2]])}
-
-        res = minimize(self.fun, self.x0, method=self.method,
-                       bounds=self.bnds, constraints=cons)
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, "delta_grad == 0.0")
+            res = minimize(fun, self.x0, method=self.method,
+                           bounds=self.bnds, constraints=cons)
         assert_allclose(res.x, [1.7918552, 1.62895927])
         assert_allclose(res.fun, 1.3857466063348418)
 
     def test_constraint_dictionary_3(self):
+        fun = TestOldStyleConstraints.fun
         cons = [{'type': 'ineq', 'fun': lambda x:  x[0] - 2 * x[1] + 2},
                 NonlinearConstraint(lambda x: x[0] - x[1], 0, 0)]
 
-        res = minimize(self.fun, self.x0, method=self.method,
-                       bounds=self.bnds, constraints=cons)
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, "delta_grad == 0.0")
+            res = minimize(fun, self.x0, method=self.method,
+                           bounds=self.bnds, constraints=cons)
         assert_allclose(res.x, [1.75, 1.75])
         assert_allclose(res.fun, 1.125)
