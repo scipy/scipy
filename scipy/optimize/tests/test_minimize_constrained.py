@@ -4,7 +4,7 @@ import pytest
 from scipy.linalg import block_diag
 from scipy.sparse import csc_matrix
 from numpy.testing import (TestCase, assert_array_almost_equal,
-                           assert_array_less)
+                           assert_array_less, assert_allclose)
 from pytest import raises
 from scipy.optimize import (NonlinearConstraint,
                             LinearConstraint,
@@ -594,3 +594,40 @@ class TestTrustRegionConstr(TestCase):
 
         raises(ValueError, minimize, prob.fun, prob.x0, method='trust-constr',
                jac='2-point', hess='2-point', constraints=prob.constr)
+
+
+class TestOldStyleConstraints:
+    x0 = (2, 0)
+    fun = lambda x: (x[0] - 1)**2 + (x[1] - 2.5)**2
+    bnds = ((0, None), (0, None))
+    method = "trust-constr"
+
+    def test_constraint_dictionary_1(self):
+        cons = ({'type': 'ineq', 'fun': lambda x:  x[0] - 2 * x[1] + 2},
+                {'type': 'ineq', 'fun': lambda x: -x[0] - 2 * x[1] + 6},
+                {'type': 'ineq', 'fun': lambda x: -x[0] + 2 * x[1] + 2})
+
+        res = minimize(self.fun, self.x0, method=self.method,
+                       bounds=self.bnds, constraints=cons)
+        assert_allclose(res.x, [1.4, 1.7])
+        assert_allclose(res.fun, 0.8)
+
+    def test_constraint_dictionary_2(self):
+        cons = {'type': 'eq',
+                'fun': lambda x, p1, p2: p1*x[0] - p2*x[1],
+                'args': (1, 1.1),
+                'jac': lambda x, p1, p2: np.array([[p1, -p2]])}
+
+        res = minimize(self.fun, self.x0, method=self.method,
+                       bounds=self.bnds, constraints=cons)
+        assert_allclose(res.x, [1.7918552, 1.62895927])
+        assert_allclose(res.fun, 1.3857466063348418)
+
+    def test_constraint_dictionary_3(self):
+        cons = [{'type': 'ineq', 'fun': lambda x:  x[0] - 2 * x[1] + 2},
+                NonlinearConstraint(lambda x: x[0] - x[1], 0, 0)]
+
+        res = minimize(self.fun, self.x0, method=self.method,
+                       bounds=self.bnds, constraints=cons)
+        assert_allclose(res.x, [1.75, 1.75])
+        assert_allclose(res.fun, 1.125)

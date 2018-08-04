@@ -283,3 +283,40 @@ def strict_bounds(lb, ub, keep_feasible, n_vars):
     strict_lb[~keep_feasible] = -np.inf
     strict_ub[~keep_feasible] = np.inf
     return strict_lb, strict_ub
+
+
+def old_constraint_to_new(ic, con):
+
+    # check type
+    try:
+        ctype = con['type'].lower()
+    except KeyError:
+        raise KeyError('Constraint %d has no type defined.' % ic)
+    except TypeError:
+        raise TypeError('Constraints must be a sequence of dictionaries.')
+    except AttributeError:
+        raise TypeError("Constraint's type must be a string.")
+    else:
+        if ctype not in ['eq', 'ineq']:
+            raise ValueError("Unknown constraint type '%s'." % con['type'])
+    if 'fun' not in con:
+        raise ValueError('Constraint %d has no function defined.' % ic)
+
+    lb = 0
+    if ctype == 'eq':
+        ub = 0
+    else:
+        ub = np.inf
+
+    jac = '2-point'
+    if 'args' in con:
+        args = con['args']
+        fun = lambda x: con['fun'](x, *args)
+        if 'jac' in con:
+            jac = lambda x: con['jac'](x, *args)
+    else:
+        fun = con['fun']
+        if 'jac' in con:
+            jac = con['jac']
+
+    return NonlinearConstraint(fun, lb, ub, jac)

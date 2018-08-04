@@ -9,7 +9,7 @@ from numpy.testing import (assert_, assert_array_almost_equal,
 from pytest import raises as assert_raises
 import numpy as np
 
-from scipy.optimize import fmin_slsqp, minimize
+from scipy.optimize import fmin_slsqp, minimize, NonlinearConstraint
 
 
 class MyCallBack(object):
@@ -476,3 +476,9 @@ class TestSLSQP(object):
         res = minimize(cost, x0, method='SLSQP', bounds=bounds, constraints=cons)
 
         assert_(not res.success)
+
+    def test_new_constraint_type(self):
+        cons = [{'type': 'ineq', 'fun': lambda x:  x[0] - 2 * x[1] + 2},
+                NonlinearConstraint(lambda x: x[0] - x[1], 0, 0)]
+        with assert_raises(TypeError):
+            minimize(self.fun, [-1.0, 1.0], method='SLSQP', constraints=cons)
