@@ -826,14 +826,12 @@ class LinprogCommonTests(object):
                     c=c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
                     method=self.method, options=self.options
                 )
-            _assert_success(res, desired_fun=43.3333333331385)
-
         else:
             res = linprog(
                 c=c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
                 method=self.method, options=self.options
             )
-            _assert_success(res, desired_fun=43.3333333331385)
+        _assert_success(res, desired_fun=43.3333333331385)
 
 
 class TestLinprogSimplex(LinprogCommonTests):
