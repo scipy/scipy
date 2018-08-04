@@ -320,3 +320,33 @@ def old_constraint_to_new(ic, con):
             jac = con['jac']
 
     return NonlinearConstraint(fun, lb, ub, jac)
+
+
+def standardize_bounds(bounds, n_bounds, meth):
+    if meth == 'trust-constr':
+        if not isinstance(bounds, Bounds):
+            lb, ub = old_bound_to_new(bounds)
+            bounds = Bounds(lb, ub)
+    elif meth in ('l-bfgs-b', 'tnc', 'slsqp'):
+        if isinstance(bounds, Bounds):
+            bounds = new_bounds_to_old(bounds.lb, bounds.ub, n_bounds)
+    return bounds
+
+
+def standardize_constraints(constraints, meth):
+    all_constraint_types = (NonlinearConstraint, LinearConstraint, dict)
+    new_constraint_types = all_constraint_types[:-1]
+    if isinstance(constraints, all_constraint_types):
+        constraints = [constraints]
+
+    for i, con in enumerate(constraints):
+        constraints = list(constraints)
+        if (meth == 'trust-constr' and not
+           isinstance(con, new_constraint_types)):
+            constraints[i] = old_constraint_to_new(i, con)
+        elif (meth != 'trust-constr' and
+              isinstance(con, new_constraint_types)):
+            raise TypeError("Only method `trust-constr` supports "
+                            "constraints of type `LinearConstraint` "
+                            "and `NonlinearConstraint`")
+    return constraints

@@ -32,7 +32,8 @@ from ._trustregion_exact import _minimize_trustregion_exact
 from ._trustregion_constr import _minimize_trustregion_constr
 from ._constraints import (Bounds, new_bounds_to_old, old_bound_to_new,
                            LinearConstraint, NonlinearConstraint,
-                           old_constraint_to_new)
+                           old_constraint_to_new, standardize_constraints,
+                           standardize_bounds)
 
 
 # constrained minimization
@@ -579,30 +580,11 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
             options.setdefault('barrier_tol', tol)
 
     if bounds is not None:
-        if meth == 'trust-constr':
-            if not isinstance(bounds, Bounds):
-                lb, ub = old_bound_to_new(bounds)
-                bounds = Bounds(lb, ub)
-        elif meth in ('l-bfgs-b', 'tnc', 'slsqp'):
-            if isinstance(bounds, Bounds):
-                bounds = new_bounds_to_old(bounds.lb, bounds.ub, x0.shape[0])
+        n_bounds = x0.shape[0]
+        bounds = standardize_bounds(bounds, n_bounds, meth)
 
-    all_constraint_types = (NonlinearConstraint, LinearConstraint, dict)
-    new_constraint_types = all_constraint_types[:-1]
     if constraints is not None:
-        if isinstance(constraints, all_constraint_types):
-            constraints = [constraints]
-
-        for i, con in enumerate(constraints):
-            constraints = list(constraints)
-            if (meth == 'trust-constr' and not
-               isinstance(con, new_constraint_types)):
-                constraints[i] = old_constraint_to_new(i, con)
-            elif (meth != 'trust-constr' and
-                  isinstance(con, new_constraint_types)):
-                raise TypeError("Only method `trust-constr` supports "
-                                "constraints of type `LinearConstraint` "
-                                "and `NonlinearConstraint`")
+        constraints = standardize_constraints(constraints, meth)
 
     if meth == '_custom':
         return method(fun, x0, args=args, jac=jac, hess=hess, hessp=hessp,
