@@ -797,7 +797,7 @@ class LinprogCommonTests(object):
             with pytest.warns(OptimizeWarning):
                 res = linprog(c, A_ub, b_ub, bounds=bounds,
                     method=self.method, options=self.options)
-        elif self.method == 'interior-point':
+        else:
             res = linprog(c, A_ub, b_ub, bounds=bounds,
                     method=self.method, options=self.options)
             _assert_success(res, desired_fun=-106.63507541835018)
@@ -828,7 +828,7 @@ class LinprogCommonTests(object):
                 )
             _assert_success(res, desired_fun=43.3333333331385)
 
-        elif self.method == 'interior-point':
+        else:
             res = linprog(
                 c=c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
                 method=self.method, options=self.options
