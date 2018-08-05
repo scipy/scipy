@@ -4,6 +4,8 @@ import numpy as np
 from ._hessian_update_strategy import BFGS
 from ._differentiable_functions import (
     VectorFunction, LinearVectorFunction, IdentityVectorFunction)
+from .optimize import OptimizeWarning
+from warnings import warn
 
 
 class NonlinearConstraint(object):
@@ -285,6 +287,55 @@ def strict_bounds(lb, ub, keep_feasible, n_vars):
     return strict_lb, strict_ub
 
 
+def new_constraint_to_old(con, x0):
+    # I hate to do this, but figuring out the dimensions returned by the
+    # constraint function greatly simplifies things
+    fun, lb, ub = con.fun, np.array(con.lb).flatten(), np.array(con.ub).flatten()
+    y0 = np.array(fun(x0))
+
+    try:
+        m = len(y0)
+    except TypeError:
+        m = 1
+
+    lb = lb * np.ones(m)
+    ub = ub * np.ones(m)  # phew, now everything is an array of the right size
+
+    i_eq = lb == ub
+    i_unbounded_below = lb == -np.inf
+    i_unbounded_above = ub == np.inf
+    i_unbounded = np.logical_and(i_unbounded_below, i_unbounded_above)
+
+    i_unbounded_below[i_unbounded] = False
+    i_unbounded_above[i_unbounded] = False
+
+    if np.any(i_unbounded):
+        warn("At least one constraint is unbounded above and below. Such "
+             "constraints are ignored.", OptimizeWarning)
+
+    ceq = []
+    if np.any(i_eq):
+        def f_eq(x):
+            y = np.array(fun(x)).flatten()
+            return y[i_eq] - lb[i_eq]
+        ceq = [{"type": "eq", "fun": f_eq}]
+
+    cineq = []
+    n_unbounded_below = np.sum(i_unbounded_below)
+    n_unbounded_above = np.sum(i_unbounded_above)
+    if n_unbounded_below + n_unbounded_above:
+        def f_ineq(x):
+            y = np.zeros(n_unbounded_below + n_unbounded_above)
+            y_all = np.array(fun(x)).flatten()
+            y[:n_unbounded_above] = y_all[i_unbounded_above] - lb[i_unbounded_above]
+            y[n_unbounded_above:] = -(y_all[i_unbounded_below] - ub[i_unbounded_below])
+            return y
+        cineq = [{"type": "ineq", "fun": f_ineq}]
+
+    old_constraints = ceq + cineq
+    return old_constraints
+
+
 def old_constraint_to_new(ic, con):
 
     # check type
@@ -322,23 +373,24 @@ def old_constraint_to_new(ic, con):
     return NonlinearConstraint(fun, lb, ub, jac)
 
 
-def standardize_bounds(bounds, n_bounds, meth):
+def standardize_bounds(bounds, x0, meth):
     if meth == 'trust-constr':
         if not isinstance(bounds, Bounds):
             lb, ub = old_bound_to_new(bounds)
             bounds = Bounds(lb, ub)
     elif meth in ('l-bfgs-b', 'tnc', 'slsqp'):
         if isinstance(bounds, Bounds):
-            bounds = new_bounds_to_old(bounds.lb, bounds.ub, n_bounds)
+            bounds = new_bounds_to_old(bounds.lb, bounds.ub, x0.shape[0])
     return bounds
 
 
-def standardize_constraints(constraints, meth):
+def standardize_constraints(constraints, x0, meth):
     all_constraint_types = (NonlinearConstraint, LinearConstraint, dict)
     new_constraint_types = all_constraint_types[:-1]
     if isinstance(constraints, all_constraint_types):
         constraints = [constraints]
 
+    additional_constraints = []
     for i, con in enumerate(constraints):
         constraints = list(constraints)
         if (meth == 'trust-constr' and not
@@ -346,7 +398,11 @@ def standardize_constraints(constraints, meth):
             constraints[i] = old_constraint_to_new(i, con)
         elif (meth != 'trust-constr' and
               isinstance(con, new_constraint_types)):
-            raise TypeError("Only method `trust-constr` supports "
-                            "constraints of type `LinearConstraint` "
-                            "and `NonlinearConstraint`")
+            old_constraints = new_constraint_to_old(con, x0)
+            constraints[i] = old_constraints[0]
+            additional_constraints = old_constraints[1:]
+#            raise TypeError("Only method `trust-constr` supports "
+#                            "constraints of type `LinearConstraint` "
+#                            "and `NonlinearConstraint`")
+    constraints += additional_constraints
     return constraints
