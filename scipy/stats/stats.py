@@ -147,7 +147,7 @@ Support Functions
    :toctree: generated/
 
    rankdata
-   rvs_ratio_unif
+   rvs_ratio_uniforms
 
 References
 ----------
@@ -193,7 +193,7 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'ttest_ind', 'ttest_ind_from_stats', 'ttest_rel', 'kstest',
            'chisquare', 'power_divergence', 'ks_2samp', 'mannwhitneyu',
            'tiecorrect', 'ranksums', 'kruskal', 'friedmanchisquare',
-           'rankdata', 'rvs_ratio_unif',
+           'rankdata', 'rvs_ratio_uniforms',
            'combine_pvalues', 'wasserstein_distance', 'energy_distance',
            'brunnermunzel']
 
@@ -5944,8 +5944,8 @@ def rankdata(a, method='average'):
     return .5 * (count[dense] + count[dense - 1] + 1)
 
 
-def rvs_ratio_unif(pdf, size=1, x1=None, x2=None, y2=None, shift=0,
-                   maxiter=None, bounds=None, random_state=None):
+def rvs_ratio_uniforms(pdf, size=1, x1=None, x2=None, y2=None, shift=0,
+                       maxiter=None, bounds=None, random_state=None):
     """
     Generate random samples from a probability density function using the
     ratio-of-uniforms method.
@@ -5976,46 +5976,49 @@ def rvs_ratio_unif(pdf, size=1, x1=None, x2=None, y2=None, shift=0,
         specified (i.e. equal to None), attempt to find the value numerically
         over the interval from a to b.
     random_state : None or int or np.random.RandomState instance, optional
-        If int or RandomState, use it for drawing the random variates.
+        If already a RandomState instance, use it.
+        If seed is an int, return a new RandomState instance seeded with seed.
         If None, use np.random.RandomState. Default is None.
 
     Returns
     -------
-    rvs : array
+    rvs : ndarray
         the random variates distributed according to the probability
         distrubtion, pdf
 
     Notes
     -----
     Given a univariate probability density function (pdf) f and a constant c,
-    define the set A(c) = {(x, y) : 0 < y <= sqrt(f(x/y + c)) }.
-    If (U, V) is a random vector uniformly distributed over A(c), then U/V + c
-    follows a distribution with pdf f.
+    define the set ``A = {(x, y) : 0 < y <= sqrt(f(x/y + c))}``.
+    If ``(U, V)`` is a random vector uniformly distributed over ``A``,
+    then ``U/V + c`` follows a distribution with pdf ``f``.
 
     The above result (see [1]_, [2]_) can be used to sample random variables
     using only the pdf, i.e. no inversion of the cdf is required. Typical
-    choices of c are zero or the mode of f. The set A(c) is a subset of the
-    rectangle R = [-x1, x2] x [0, y2] where
-    - x1 = inf (x - c) sqrt(f(x))
-    - x2 = sup (x - c) sqrt(f(x))
-    - y2 = sup sqrt(f(x))
+    choices of c are zero or the mode of f. The set ``A`` is a subset of the
+    rectangle ``R = [-x1, x2] x [0, y2]`` where
 
-    In particular, these values are finite if f is bounded and x**2 * f(x) is
-    bounded (i.e. subquadratic tails). One can generate (U, V) uniformly on
-    R and return U/V + c if (U, V) are also in A(c) which can be directly
+    - ``x1 = inf (x - c) sqrt(f(x))``
+    - ``x2 = sup (x - c) sqrt(f(x))``
+    - ``y2 = sup sqrt(f(x))``
+
+    In particular, these values are finite if `f` is bounded and
+    ``x**2 * f(x)`` is bounded (i.e. subquadratic tails).
+    One can generate ``(U, V)`` uniformly on ``R`` and return
+    ``U/V + c`` if ``(U, V)`` are also in ``A`` which can be directly
     verified.
 
-    Intuitively, the method works well if A(c) fills up most of the
-    enclosing rectangle such that the probability is high that (U, V) lies in
-    A(c) whenever it lies in R(c) as the number of required iterations
-    becomes too large otherwise. To be more precise, note that the expected
-    number of iterations to draw (U, V) uniformly distributed on R(c) such that
-    (U, V) is also in A(c) is given by the ratio
-    area(R(c)) / area(A(c)) = 2 * y2 * (x2 - x1), using the fact that
-    the area of A(c) is equal to 1/2 (Theorem 7.1 in [1]_).
+    Intuitively, the method works well if ``A`` fills up most of the
+    enclosing rectangle such that the probability is high that ``(U, V)``
+    lies in ``A`` whenever it lies in ``R`` as the number of required
+    iterations becomes too large otherwise. To be more precise, note that
+    the expected number of iterations to draw ``(U, V)`` uniformly
+    distributed on ``R`` such that ``(U, V)`` is also in ``A`` is given by
+    the ratio ``area(R) / area(A) = 2 * y2 * (x2 - x1)``, using the fact that
+    the area of ``A`` is equal to 1/2 (Theorem 7.1 in [1]_).
 
     If the bounding rectangle is not correctly specified (i.e. if it does not
-    contain A(c)), the algorithm samples from a distribution different from
+    contain ``A``, the algorithm samples from a distribution different from
     the one given by the pdf. It is therefore recommended to perform a
     test such as `stats.kstest` as a check.
 
@@ -6027,20 +6030,26 @@ def rvs_ratio_unif(pdf, size=1, x1=None, x2=None, y2=None, shift=0,
     .. [2] W. Hoermann and J. Leydold, "Generating generalized inverse Gaussian
        random variates", Statistics and Computing, 24(4), p. 547--557, 2014.
 
+    .. [3] A.J. Kindermn and J.F. Monahan, "Computer Generation of Random
+       Variables Using the Ratio of Uniform Deviates",
+       ACM Transactions on Mathematical Software, 3(3), p. 257--260, 1977.
+
     Examples
     --------
     >>> from scipy import stats
 
     Simulate normally distributed random variables. It is easy to compute the
     bounding rectangle explicitly in that case.
+
     >>> f = stats.norm.pdf
     >>> x_bound = np.sqrt(f(np.sqrt(2))) * np.sqrt(2)
     >>> x1, x2, y2 = -x_bound, x_bound, np.sqrt(f(0))
     >>> np.random.seed(12345)
-    >>> rvs = stats.rvs_ratio_unif(f, x1=x1, x2=x2, y2=y2, size=2500)
+    >>> rvs = stats.rvs_ratio_uniforms(f, x1=x1, x2=x2, y2=y2, size=2500)
 
     The K-S test confirms that the random variates are indeed normally
     distributed (p-value does not reject normality):
+
     >>> stats.kstest(rvs, 'norm')[1]
     0.373298699196806752
 
@@ -6048,15 +6057,16 @@ def rvs_ratio_unif(pdf, size=1, x1=None, x2=None, y2=None, shift=0,
     numerically over the region specified by `bounds`.
 
     >>> np.random.seed(12345)
-    >>> rvs = stats.rvs_ratio_unif(f, size=2500, bounds=(-100, 100))
+    >>> rvs = stats.rvs_ratio_uniforms(f, size=2500, bounds=(-100, 100))
     >>> stats.kstest(rvs, 'norm')[1]
     0.3732986992033126
 
     The exponential distribution provides another example where the bounding
     rectangle can be determined explicitly.
+
     >>> np.random.seed(12345)
-    >>> rvs = stats.rvs_ratio_unif(lambda x: np.exp(-x), x1=0, x2=2*np.exp(-1),
-    ...                            y2=1, size=1000)
+    >>> rvs = stats.rvs_ratio_uniforms(lambda x: np.exp(-x), x1=0,
+    ...                                x2=2*np.exp(-1), y2=1, size=1000)
     >>> stats.kstest(rvs, 'expon')[1]
     0.52369231518316373
 
@@ -6067,15 +6077,15 @@ def rvs_ratio_unif(pdf, size=1, x1=None, x2=None, y2=None, shift=0,
 
     def find_rect_bounds(g, bounds, var):
         if bounds is None:
-            raise Exception("The parameter bounds needs to be specified if " +
-                            var + " is None.")
+            raise ValueError("The parameter bounds needs to be specified if " +
+                             var + " is None.")
         opt_res = optimize.minimize_scalar(g, bounds=bounds, method='Bounded')
         if not opt_res.success:
-            raise Exception("Optimization failed when attempting to find " +
-                            var + ": " + opt_res.message)
+            raise RuntimeError("Optimization failed when attempting to find " +
+                               var + ": " + opt_res.message)
         if np.isnan(opt_res.fun):
-            raise Exception("Optimization returned " + var + "= nan " +
-                            "at x=".format(opt_res.x))
+            raise RuntimeError("Optimization returned " + var + "= nan " +
+                               "at x=".format(opt_res.x))
         return opt_res.fun
 
     # in case bounding rectangle is not given, attempt to find it numerically
@@ -6085,6 +6095,7 @@ def rvs_ratio_unif(pdf, size=1, x1=None, x2=None, y2=None, shift=0,
     if x1 is None:
         x1 = find_rect_bounds(f_opt, bounds, "x1")
     if x2 is None:
+        # need to find max(f) as -min(-f), same for y2 below
         x2 = -find_rect_bounds(lambda x: -f_opt(x), bounds, "x2")
 
     if x1 >= x2:
@@ -6123,7 +6134,7 @@ def rvs_ratio_unif(pdf, size=1, x1=None, x2=None, y2=None, shift=0,
         # apply rejection method
         rvs = u1 / v1 + shift
         accept = (v1**2 <= pdf(rvs))
-        num_accept = sum(accept)
+        num_accept = np.sum(accept)
         if num_accept > 0:
             take = min(num_accept, N - simulated)
             x[simulated:(simulated + take)] = rvs[accept][0:take]
@@ -6131,6 +6142,6 @@ def rvs_ratio_unif(pdf, size=1, x1=None, x2=None, y2=None, shift=0,
         if simulated >= N:
             return np.reshape(x, size1d)
 
-    raise Exception("Only {} of {} random variables".format(simulated, N) +
-                    " could generated after {}".format(round(maxiter, 0)) +
-                    " iterations. Consider increasing maxiter.")
+    raise RuntimeError("Only {} of {} random variables".format(simulated, N) +
+                       " could generated after {}".format(round(maxiter, 0)) +
+                       " iterations. Consider increasing maxiter.")

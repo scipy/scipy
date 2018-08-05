@@ -294,7 +294,14 @@ Statistical distances
 
    wasserstein_distance
    energy_distance
-   rvs_ratio_unif
+
+Random variate generation
+=========================
+
+.. autosummary::
+   :toctree: generated/
+
+   rvs_ratio_uniforms
 
 Circular statistical functions
 ==============================
