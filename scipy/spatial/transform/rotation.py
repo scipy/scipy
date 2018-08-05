@@ -1955,11 +1955,18 @@ class RotationSpline(object):
         ----------
         times : array_like, 1D
             Times to compute the interpolated rotations at.
+        nu : {0, 1, 2},  optional
+            The `nu`th derivative of the rotations is calculated at the given
+            `times`. Default is `0`.
 
         Returns
         -------
-        interpolated_rotation : `Rotation` instance
-            Object containing the rotations computed at the given `times`
+        result : `Rotation` instance or `numpy.ndarray`, shape `(N, 3)`
+            Return value depends on parameter `nu` as follows:
+
+                - `nu = 0`: Interpolated rotations at given `times`
+                - `nu = 1`: First derivative, i.e. angular velocity
+                - `nu = 2`: Second derivative, i.e. angular acceleration
         """
         compute_times = np.asarray(times)
         if compute_times.ndim != 1:
