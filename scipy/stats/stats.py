@@ -172,7 +172,7 @@ import scipy.special as special
 import scipy.linalg as linalg
 from . import distributions
 from . import mstats_basic
-from ._stats_mstats_common import _find_repeats, linregress, theilslopes
+from ._stats_mstats_common import _find_repeats, linregress, theilslopes, siegelslopes
 from ._stats import _kendall_dis, _toint64, _weightedrankedtau
 
 
@@ -186,7 +186,7 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'sigmaclip', 'trimboth', 'trim1', 'trim_mean', 'f_oneway',
            'pearsonr', 'fisher_exact', 'spearmanr', 'pointbiserialr',
            'kendalltau', 'weightedtau',
-           'linregress', 'theilslopes', 'ttest_1samp',
+           'linregress', 'siegelslopes', 'theilslopes', 'ttest_1samp',
            'ttest_ind', 'ttest_ind_from_stats', 'ttest_rel', 'kstest',
            'chisquare', 'power_divergence', 'ks_2samp', 'mannwhitneyu',
            'tiecorrect', 'ranksums', 'kruskal', 'friedmanchisquare',

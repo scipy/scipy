@@ -25,7 +25,8 @@ __all__ = ['argstoarray',
            'rankdata',
            'scoreatpercentile','sem',
            'sen_seasonal_slopes','skew','skewtest','spearmanr',
-           'theilslopes','tmax','tmean','tmin','trim','trimboth',
+           'siegelslopes', 'theilslopes',
+           'tmax','tmean','tmin','trim','trimboth',
            'trimtail','trima','trimr','trimmed_mean','trimmed_std',
            'trimmed_stde','trimmed_var','tsem','ttest_1samp','ttest_onesamp',
            'ttest_ind','ttest_rel','tvar',
@@ -891,7 +892,7 @@ def siegelslopes(y, x=None, method="hierarchical"):
 
     Notes
     -----
-    For more details on `siegelslopes`, see `stats.siegelslopes`.
+    For more details on `siegelslopes`, see `scipy.stats.siegelslopes`.
 
     """
     y = ma.asarray(y).ravel()
