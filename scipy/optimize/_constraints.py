@@ -288,26 +288,45 @@ def strict_bounds(lb, ub, keep_feasible, n_vars):
 
 
 def new_constraint_to_old(con, x0):
-    # I hate to do this, but figuring out the dimensions returned by the
-    # constraint function greatly simplifies things
-    fun, lb, ub = con.fun, np.array(con.lb).flatten(), np.array(con.ub).flatten()
-    y0 = np.array(fun(x0))
 
-    try:
-        m = len(y0)
-    except TypeError:
-        m = 1
+    if isinstance(con, NonlinearConstraint):
+        if (con.finite_diff_jac_sparsity is not None or
+                con.finite_diff_rel_step is not None or
+                not isinstance(con.hess, BFGS) or  # misses user specified BFGS
+                con.keep_feasible):
+            warn("Constraint options `finite_diff_jac_sparsity`, "
+                 "`finite_diff_rel_step`, `keep_feasible`, and `hess`"
+                 "are ignored by this method.", OptimizeWarning)
+
+        # Knowing the shape of the value returned by the
+        # constraint function greatly simplifies things
+        lb, ub, fun = (np.array(con.lb).flatten(), np.array(con.ub).flatten(),
+                       con.fun)
+        y0 = np.array(fun(x0))
+
+        try:
+            m = len(y0)
+        except TypeError:
+            m = 1
+    else:  # LinearConstraint
+        if con.keep_feasible:
+            warn("Constraint option `keep_feasible` is ignored by this "
+                 "method.", OptimizeWarning)
+
+        lb, ub, A = (np.array(con.lb).flatten(), np.array(con.ub).flatten(),
+                     con.A)
+
+        lvf = LinearVectorFunction(A, x0, sparse_jacobian=False)
+        fun = lvf.fun
+        m = lvf.m
 
     lb = lb * np.ones(m)
     ub = ub * np.ones(m)  # phew, now everything is an array of the right size
 
     i_eq = lb == ub
-    i_unbounded_below = lb == -np.inf
-    i_unbounded_above = ub == np.inf
-    i_unbounded = np.logical_and(i_unbounded_below, i_unbounded_above)
-
-    i_unbounded_below[i_unbounded] = False
-    i_unbounded_above[i_unbounded] = False
+    i_bound_below = np.logical_xor(lb != -np.inf, i_eq)
+    i_bound_above = np.logical_xor(ub != np.inf, i_eq)
+    i_unbounded = np.logical_and(lb == -np.inf, ub == np.inf)
 
     if np.any(i_unbounded):
         warn("At least one constraint is unbounded above and below. Such "
@@ -321,18 +340,24 @@ def new_constraint_to_old(con, x0):
         ceq = [{"type": "eq", "fun": f_eq}]
 
     cineq = []
-    n_unbounded_below = np.sum(i_unbounded_below)
-    n_unbounded_above = np.sum(i_unbounded_above)
-    if n_unbounded_below + n_unbounded_above:
+    n_bound_below = np.sum(i_bound_below)
+    n_bound_above = np.sum(i_bound_above)
+    if n_bound_below + n_bound_above:
         def f_ineq(x):
-            y = np.zeros(n_unbounded_below + n_unbounded_above)
+            y = np.zeros(n_bound_below + n_bound_above)
             y_all = np.array(fun(x)).flatten()
-            y[:n_unbounded_above] = y_all[i_unbounded_above] - lb[i_unbounded_above]
-            y[n_unbounded_above:] = -(y_all[i_unbounded_below] - ub[i_unbounded_below])
+            y[:n_bound_below] = y_all[i_bound_below] - lb[i_bound_below]
+            y[n_bound_below:] = -(y_all[i_bound_above] - ub[i_bound_above])
             return y
         cineq = [{"type": "ineq", "fun": f_ineq}]
 
     old_constraints = ceq + cineq
+
+    if len(old_constraints) > 1:
+        warn("Equality and inequality constraints are specified in the same "
+             "element of the constraint list. For efficient use with this "
+             "method, equality and inequality constraints should be specified "
+             "in separate elements of the constraint list. ", OptimizeWarning)
     return old_constraints
 
 
@@ -389,20 +414,19 @@ def standardize_constraints(constraints, x0, meth):
     new_constraint_types = all_constraint_types[:-1]
     if isinstance(constraints, all_constraint_types):
         constraints = [constraints]
+    constraints = list(constraints)
 
     additional_constraints = []
     for i, con in enumerate(constraints):
         constraints = list(constraints)
         if (meth == 'trust-constr' and not
-           isinstance(con, new_constraint_types)):
+                isinstance(con, new_constraint_types)):
             constraints[i] = old_constraint_to_new(i, con)
         elif (meth != 'trust-constr' and
               isinstance(con, new_constraint_types)):
             old_constraints = new_constraint_to_old(con, x0)
             constraints[i] = old_constraints[0]
             additional_constraints = old_constraints[1:]
-#            raise TypeError("Only method `trust-constr` supports "
-#                            "constraints of type `LinearConstraint` "
-#                            "and `NonlinearConstraint`")
+
     constraints += additional_constraints
     return constraints
