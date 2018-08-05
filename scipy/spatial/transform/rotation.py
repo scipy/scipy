@@ -1946,7 +1946,7 @@ class RotationSpline(object):
 
         self.rotations = rotations
 
-    def __call__(self, times, nu=0):
+    def __call__(self, times, order=0):
         """Interpolate rotations.
 
         Compute the interpolated rotations at the given `times`.
@@ -1955,18 +1955,18 @@ class RotationSpline(object):
         ----------
         times : array_like, 1D
             Times to compute the interpolated rotations at.
-        nu : {0, 1, 2},  optional
-            The `nu`th derivative of the rotations is calculated at the given
+        order : {0, 1, 2},  optional
+            The `order`th derivative of the rotations is calculated at the given
             `times`. Default is `0`.
 
         Returns
         -------
         result : `Rotation` instance or `numpy.ndarray`, shape `(N, 3)`
-            Return value depends on parameter `nu` as follows:
+            Return value depends on parameter `order` as follows:
 
-                - `nu = 0`: Interpolated rotations at given `times`
-                - `nu = 1`: First derivative, i.e. angular velocity
-                - `nu = 2`: Second derivative, i.e. angular acceleration
+                - `order = 0`: Interpolated rotations at given `times`
+                - `order = 1`: First derivative, i.e. angular velocity
+                - `order = 2`: Second derivative, i.e. angular acceleration
         """
         compute_times = np.asarray(times)
         if compute_times.ndim != 1:
@@ -1980,12 +1980,12 @@ class RotationSpline(object):
                              "[{}, {}], both inclusive.".format(
                                 self.times[0], self.times[-1]))
 
-        if nu == 1:
+        if order == 1:
             return self._omega(compute_times)
-        elif nu == 2:
+        elif order == 2:
             return self._alpha(compute_times)
 
-        # otherwise nu == 0 (default)
+        # otherwise order == 0 (default)
         interpolating_quat = Rotation.from_rotvec(self.theta(compute_times))
         initial_rot = Rotation.from_rotvec(
             self.initial_rotation(compute_times))

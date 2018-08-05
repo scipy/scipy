@@ -912,12 +912,12 @@ def test_spline_c1_continuity():
     dt = 1e-7
 
     assert_allclose(
-        spline(test_times + dt, nu=1),
+        spline(test_times + dt, order=1),
         spline._key_omega[1:-1], atol=1e-6, rtol=1e-6
     )
 
     assert_allclose(
-        spline(test_times - dt, nu=1),
+        spline(test_times - dt, order=1),
         spline._key_omega[1:-1], atol=1e-6, rtol=1e-6
     )
 
@@ -933,8 +933,8 @@ def test_spline_c2_continuity():
     dt = 1e-7
 
     assert_allclose(
-        spline(test_times + dt, nu=2),
-        spline(test_times, nu=2),
+        spline(test_times + dt, order=2),
+        spline(test_times, order=2),
         atol=1e-6, rtol=1e-6
     )
 
@@ -952,7 +952,7 @@ def test_spline_constant_angular_velocity():
     assert_allclose(vel, omega_i)
 
     test_times = np.linspace(0, 2, 21)
-    for row in spline(test_times, nu=1):
+    for row in spline(test_times, order=1):
         assert_allclose(row, vel)
 
 
