@@ -605,7 +605,7 @@ class TestOldStyleConstraints:
 
     def test_constraint_dictionary_1(self):
         fun = lambda x: (x[0] - 1)**2 + (x[1] - 2.5)**2
-        cons = ({'type': 'ineq', 'fun': lambda x:  x[0] - 2 * x[1] + 2},
+        cons = ({'type': 'ineq', 'fun': lambda x: x[0] - 2 * x[1] + 2},
                 {'type': 'ineq', 'fun': lambda x: -x[0] - 2 * x[1] + 6},
                 {'type': 'ineq', 'fun': lambda x: -x[0] + 2 * x[1] + 2})
 
@@ -631,7 +631,7 @@ class TestOldStyleConstraints:
 
     def test_constraint_dictionary_3(self):
         fun = lambda x: (x[0] - 1)**2 + (x[1] - 2.5)**2
-        cons = [{'type': 'ineq', 'fun': lambda x:  x[0] - 2 * x[1] + 2},
+        cons = [{'type': 'ineq', 'fun': lambda x: x[0] - 2 * x[1] + 2},
                 NonlinearConstraint(lambda x: x[0] - x[1], 0, 0)]
 
         with suppress_warnings() as sup:
