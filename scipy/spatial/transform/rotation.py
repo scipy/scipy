@@ -5,7 +5,7 @@ import warnings
 import numpy as np
 import scipy.linalg
 from scipy._lib._util import check_random_state
-
+import scipy.special
 
 _AXIS_TO_IND = {'x': 0, 'y': 1, 'z': 2}
 
@@ -14,6 +14,11 @@ def _elementary_basis_vector(axis):
     b = np.zeros(3)
     b[_AXIS_TO_IND[axis]] = 1
     return b
+
+
+def _sinc(x):
+    # scipy.special.sinc(x) = sin(pi * x) / (pi * x)
+    return scipy.special.sinc(x / np.pi)
 
 
 def _compute_euler_from_dcm(dcm, seq, extrinsic=False):
@@ -1908,7 +1913,7 @@ class RotationSpline(object):
         w[0] = omega_i
         w[-1] = omega_f
         w[1:-1] = w_int
-        self.omega = w
+        self._key_omega = w
 
         # Formula for theta(t) from eqn 16, coefficients from page 5 of ref
         initial_omega_term = w[:-1]
@@ -1941,7 +1946,7 @@ class RotationSpline(object):
 
         self.rotations = rotations
 
-    def __call__(self, times):
+    def __call__(self, times, nu=0):
         """Interpolate rotations.
 
         Compute the interpolated rotations at the given `times`.
@@ -1968,41 +1973,66 @@ class RotationSpline(object):
                              "[{}, {}], both inclusive.".format(
                                 self.times[0], self.times[-1]))
 
+        if nu == 1:
+            return self._omega(compute_times)
+        elif nu == 2:
+            return self._alpha(compute_times)
+
+        # otherwise nu == 0 (default)
         interpolating_quat = Rotation.from_rotvec(self.theta(compute_times))
         initial_rot = Rotation.from_rotvec(
             self.initial_rotation(compute_times))
 
         return initial_rot * interpolating_quat
 
-    def angular_velocity(self, times):
-        """Compute angular velocity.
-
-        Compute the angular velocity of the interpolated rotations at the given
-        `times`.
-
-        Parameters
-        ----------
-        times : array_like, 1D
-            Times to compute the interpolated rotations at.
-
-        Returns
-        -------
-        omega : `numpy.ndarray` object, shape (N, 3)
-            3 dimensional vector containing the angular velocities.
-        """
-        compute_times = np.asarray(times)
-        if compute_times.ndim != 1:
-            raise ValueError("Expected times to be specified in a 1 "
-                             "dimensional array, got {} "
-                             "dimensions.".format(compute_times.ndim))
-
-        if (np.any(compute_times < self.times[0]) or
-                np.any(compute_times > self.times[-1])):
-            raise ValueError("Interpolation times must be within the range "
-                             "[{}, {}], both inclusive.".format(
-                                self.times[0], self.times[-1]))
-
+    def _omega(self, compute_times):
         return _spline_w_i_modifier(
             self.theta(compute_times),
             self.theta(compute_times, nu=1)
         )
+
+    def _alpha(self, compute_times):
+        theta = self.theta(compute_times)
+        theta_dot = self.theta(compute_times, nu=1)
+        theta_dot2 = self.theta(compute_times, nu=2)
+
+        mag = np.linalg.norm(theta, axis=1)
+
+        term1 = np.cross(np.cross(theta, theta_dot), theta)
+        term1 = np.einsum('ij,ij->i', term1, theta)[:, None]
+        term1 = theta * term1
+        # TODO: divide by mag^4
+
+        term2 = theta * np.einsum('ij,ij->i', theta, theta_dot2)[:, None]
+        term2 = term2 * (mag[:, None] ** 2)
+        # TODO: divide by mag^4
+
+        quant1 = np.cross(theta, theta_dot2) * (mag[:, None] ** 2)
+        quant2 = (2 * np.einsum('ij,ij->i', theta, theta_dot)[:, None] *
+                  np.cross(theta, theta_dot))
+        quant = quant1 - quant2
+
+        term3 = _sinc(mag)[:, None] * np.cross(quant, theta)
+        # TODO: divide by mag^4
+
+        term4 = -0.5 * (_sinc(0.5 * mag) ** 2)[:, None]
+        term4 = term4 * quant * (mag[:, None] ** 2)
+        # TODO: divide by mag^4
+
+        term5 = np.einsum('ij,ij->i', theta, theta_dot)[:, None]
+        term5 = term5 * np.cross(theta, np.cross(theta_dot, theta))
+        # TODO: divide by mag^4
+
+        term6 = (theta * np.einsum('ij,ij->i', theta, theta_dot)[:, None] -
+                 np.cross(theta, theta_dot))
+        term6 = np.cross(self._omega(compute_times), term6)
+        term6 = term6 * (mag[:, None] ** 2)
+        # TODO: divide by mag^4
+
+        acc = term1 + term2 + term3 + term4 + term5 + term6
+
+        zero = (mag == 0)
+        acc[~zero] = acc[~zero] / (mag[~zero, None] ** 4)
+        acc[zero] = theta_dot2[zero]
+
+        return acc
