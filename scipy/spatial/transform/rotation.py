@@ -1984,6 +1984,9 @@ class RotationSpline(object):
             return self._omega(compute_times)
         elif order == 2:
             return self._alpha(compute_times)
+        elif order != 0:
+            raise ValueError("Expected `order` to be int from {0, 1, 2}, "
+                             "got {}.".format(order))
 
         # otherwise order == 0 (default)
         interpolating_quat = Rotation.from_rotvec(self.theta(compute_times))
