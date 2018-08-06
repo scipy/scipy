@@ -584,15 +584,18 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, rr):
             status = 0
             message = ("The solution was determined in presolve as there are "
                        "no non-trivial constraints.")
-        elif (np.any(np.logical_and(c < 0, ub == np.inf)) or
-                np.any(np.logical_and(c > 0, lb == -np.inf))):
-                # test_no_constraints()
+        elif (np.any(np.logical_and(c < 0, ub_mod == np.inf)) or
+              np.any(np.logical_and(c > 0, lb_mod == -np.inf))):
+            # test_no_constraints()
+            # test_unbounded_no_nontrivial_constraints_1
+            # test_unbounded_no_nontrivial_constraints_2
             status = 3
-            message = ("If feasible, the problem is (trivially) unbounded "
-                       "because there are no constraints and at least one "
-                       "element of c is negative. If you wish to check "
-                       "whether the problem is infeasible, turn presolve "
-                       "off.")
+            message = ("The problem is (trivially) unbounded "
+                       "because there are no non-trivial constraints and "
+                       "a) at least one decision variable is unbounded "
+                       "above and its corresponding cost is negative, or "
+                       "b) at least one decision variable is unbounded below "
+                       "and its corresponding cost is positive. ")
         else:  # test_empty_constraint_2
             status = 0
             message = ("The solution was determined in presolve as there are "
@@ -600,6 +603,11 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, rr):
         complete = True
         x[c < 0] = ub_mod[c < 0]
         x[c > 0] = lb_mod[c > 0]
+        # where c is zero, set x to a finite bound or zero
+        x_zero_c = ub_mod[c == 0]
+        x_zero_c[np.isinf(x_zero_c)] = ub_mod[c == 0][np.isinf(x_zero_c)]
+        x_zero_c[np.isinf(x_zero_c)] = 0
+        x[c == 0] = x_zero_c
         # if this is not the last step of presolve, should convert bounds back
         # to array and return here
 
