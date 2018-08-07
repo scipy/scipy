@@ -160,7 +160,7 @@ def theilslopes(y, x=None, alpha=0.95):
 
     See also
     --------
-    `siegelslopes` : a similar technique using repeated medians
+    siegelslopes : a similar technique using repeated medians
 
     Notes
     -----
@@ -300,7 +300,7 @@ def siegelslopes(y, x=None, method="hierarchical"):
 
     See also
     --------
-    `theilslopes` : a similar technique without repeated medians
+    theilslopes : a similar technique without repeated medians
 
     Notes
     -----
