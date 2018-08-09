@@ -10,8 +10,12 @@ from scipy._lib.six import xrange
 from scipy.signal.wavelets import cwt, ricker
 from scipy.stats import scoreatpercentile
 
-from ._peak_finding_utils import (_argmaxima1d, _select_by_peak_distance,
-                                  _peak_prominences, _peak_widths)
+from ._peak_finding_utils import (
+    _argmaxima1d,
+    _select_by_peak_distance,
+    _peak_prominences,
+    _peak_widths
+)
 
 
 __all__ = ['argrelmin', 'argrelmax', 'argrelextrema', 'peak_prominences',
@@ -277,7 +281,7 @@ def peak_prominences(x, peaks, wlen=None):
     Raises
     ------
     ValueError
-        If an index in `peaks` does not point to a local maximum in `x`.
+        If a value in `peaks` is an invalid index for `x`.
 
     See Also
     --------
@@ -312,6 +316,10 @@ def peak_prominences(x, peaks, wlen=None):
     calculated prominence. In practice this is only relevant for the highest set
     of peaks in `x`. This behavior may even be used intentionally to calculate
     "local" prominences.
+
+    For indices in `peaks` that don't point to valid local maxima in `x` the
+    returned prominence will be 0 and a warning is raised. This also happens
+    if `wlen` is smaller than the plateau size of a peak.
 
     .. warning::
 
@@ -480,6 +488,9 @@ def peak_widths(x, peaks, rel_height=0.5, prominence_data=None, wlen=None):
     As shown above to calculate a peak's width its prominence and bases must be
     known. You can supply these yourself with the argument `prominence_data`.
     Otherwise they are internally calculated (see `peak_prominences`).
+
+    A warning is raised if any calculated width is 0. This may stem from the
+    supplied `prominence_data` or if `rel_height` is set to 0.
 
     .. warning::
 

@@ -3,16 +3,30 @@ from __future__ import division, print_function, absolute_import
 import copy
 
 import numpy as np
-from numpy.testing import (assert_, assert_equal, assert_allclose,
-    assert_array_equal)
+from numpy.testing import (
+    assert_,
+    assert_equal,
+    assert_allclose,
+    assert_array_equal
+)
 import pytest
-from pytest import raises
+from pytest import raises, warns
 
 from scipy._lib.six import xrange
-from scipy.signal._peak_finding import (argrelmax, argrelmin,
-    peak_prominences, peak_widths, _unpack_condition_args, find_peaks,
-    find_peaks_cwt, _identify_ridge_lines)
-from scipy.signal._peak_finding_utils import _argmaxima1d
+from scipy.signal._peak_finding import (
+    argrelmax,
+    argrelmin,
+    peak_prominences,
+    peak_widths,
+    _unpack_condition_args,
+    find_peaks,
+    find_peaks_cwt,
+    _identify_ridge_lines
+)
+from scipy.signal._peak_finding_utils import (
+    _argmaxima1d,
+    PeakPropertyWarning
+)
 
 
 def _gen_gaussians(center_locs, sigmas, total_length):
@@ -377,9 +391,9 @@ class TestPeakProminences(object):
         for wlen, i in [(8, 0), (7, 0), (6, 0), (5, 1), (3.2, 1), (3, 2), (1.1, 2)]:
             assert_equal(peak_prominences(x, peak, wlen), [3. - i, 0 + i, 6 - i])
 
-    def test_raises(self):
+    def test_exceptions(self):
         """
-        Verfiy that argument validation works as intended.
+        Verfiy that exceptions and warnings are raised.
         """
         # x with dimension > 1
         with raises(ValueError, match='dimension'):
@@ -390,19 +404,28 @@ class TestPeakProminences(object):
         # x with dimension < 1
         with raises(ValueError, match='dimension'):
             peak_prominences(3, [0,])
-        # empty x with peaks supplied
-        with raises(ValueError, match='not a valid peak'):
-            peak_prominences([], [1, 2])
-        # invalid peaks
-        for p in [-1, 0, 1, 2, 3]:
-            with raises(ValueError, match=str(p) + ' is not a valid peak'):
-                peak_prominences([1, 0, 2], [p,])
+
+        # empty x with supplied
+        with raises(ValueError, match='not a valid index'):
+            peak_prominences([], [0])
+        # invalid indices with non-empty x
+        for p in [-100, -1, 3, 1000]:
+            with raises(ValueError, match='not a valid index'):
+                peak_prominences([1, 0, 2], [p])
+
         # peaks is not cast-able to np.intp
         with raises(TypeError, match='Cannot safely cast'):
             peak_prominences([0, 1, 1, 0], [1.1, 2.3])
+
         # wlen < 3
         with raises(ValueError, match='wlen'):
             peak_prominences(np.arange(10), [3, 5], wlen=1)
+
+        # peaks with prominence of 0
+        msg = "some peaks have a prominence of 0"
+        for p in [0, 1, 2]:
+            with warns(PeakPropertyWarning, match=msg):
+                peak_prominences([1, 0, 2], [p,])
 
 
 class TestPeakWidths(object):
@@ -422,6 +445,7 @@ class TestPeakWidths(object):
             assert_(isinstance(arr, np.ndarray))
             assert_equal(arr.size, 0)
 
+    @pytest.mark.filterwarnings("ignore:some peaks have a width of 0")
     def test_basic(self):
         """
         Test a simple use case with easy to verify results at different relative
@@ -430,7 +454,7 @@ class TestPeakWidths(object):
         x = np.array([1, 0, 1, 2, 1, 0, -1])
         prominence = 2
         for rel_height, width_true, lip_true, rip_true in [
-            (0., 0., 3., 3.),
+            (0., 0., 3., 3.),  # raises warning
             (0.25, 1., 2.5, 3.5),
             (0.5, 2., 2., 4.),
             (0.75, 3., 1.5, 4.5),
@@ -470,10 +494,10 @@ class TestPeakWidths(object):
         with raises(ValueError, match='dimension'):
             # peaks with dimension < 1
             peak_widths(np.arange(10), 3)
-        with raises(ValueError, match='not a valid peak'):
+        with raises(ValueError, match='not a valid index'):
             # peak pos exceeds x.size
             peak_widths(np.arange(10), [8, 11])
-        with raises(ValueError, match='not a valid peak'):
+        with raises(ValueError, match='not a valid index'):
             # empty x with peaks supplied
             peak_widths([], [1, 2])
         with raises(TypeError, match='Cannot safely cast'):
@@ -490,33 +514,33 @@ class TestPeakWidths(object):
         """Test with mismatching peak and / or prominence data."""
         x = [0, 1, 0]
         peak = [1]
-        for i, (peaks, left_bases, right_bases) in enumerate([
+        for i, (prominences, left_bases, right_bases) in enumerate([
             ((1.,), (-1,), (2,)),  # left base not in x
             ((1.,), (0,), (3,)),  # right base not in x
-            ((1.,), (1,), (2,)),  # left base same as peak
-            ((1.,), (0,), (1,)),  # right base same as peak
+            ((1.,), (2,), (0,)),  # swapped bases same as peak
             ((1., 1.), (0, 0), (2, 2)),  # array shapes don't match peaks
             ((1., 1.), (0,), (2,)),  # arrays with different shapes
             ((1.,), (0, 0), (2,)),  # arrays with different shapes
             ((1.,), (0,), (2, 2))  # arrays with different shapes
         ]):
-            # Make sure input is matches output of signal.prominences
-            prominence_data = (np.array(peaks, dtype=np.float64),
+            # Make sure input is matches output of signal.peak_prominences
+            prominence_data = (np.array(prominences, dtype=np.float64),
                                np.array(left_bases, dtype=np.intp),
                                np.array(right_bases, dtype=np.intp))
             # Test for correct exception
-            if i < 4:
+            if i < 3:
                 match = "prominence data is invalid for peak"
             else:
                 match = "arrays in `prominence_data` must have the same shape"
             with raises(ValueError, match=match):
                 peak_widths(x, peak, prominence_data=prominence_data)
 
+    @pytest.mark.filterwarnings("ignore:some peaks have a width of 0")
     def test_intersection_rules(self):
         """Test if x == eval_height counts as an intersection."""
         # Flatt peak with two possible intersection points if evaluated at 1
         x = [0, 1, 2, 1, 3, 3, 3, 1, 2, 1, 0]
-        # relative height is 0 -> width is 0 as well
+        # relative height is 0 -> width is 0 as well, raises warning
         assert_allclose(peak_widths(x, peaks=[5], rel_height=0),
                         [(0.,), (3.,), (5.,), (5.,)])
         # width_height == x counts as intersection -> nearest 1 is chosen
@@ -680,6 +704,23 @@ class TestFindPeaks(object):
         with raises(ValueError, match="distance"):
             find_peaks(np.arange(10), distance=-1)
 
+    @pytest.mark.filterwarnings("ignore:::scipy.signal._peak_finding")
+    def test_wlen_smaller_plateau(self):
+        """
+        Test behavior of prominence and width calculation if the given window
+        length is smaller than a peak's plateau size.
+
+        Regression test for gh-9110.
+        """
+        peaks, props = find_peaks([0, 1, 1, 1, 0], prominence=(None, None),
+                                  width=(None, None), wlen=2)
+        assert_equal(peaks, 2)
+        assert_equal(props["prominences"], 0)
+        assert_equal(props["widths"], 0)
+        assert_equal(props["width_heights"], 1)
+        for key in ("left_bases", "right_bases", "left_ips", "right_ips"):
+            assert_equal(props[key], peaks)
+
 
 class TestFindPeaksCwt(object):
 
@@ -730,4 +771,3 @@ class TestFindPeaksCwt(object):
         widths = np.arange(10, 50)
         found_locs = find_peaks_cwt(test_data, widths, min_snr=5, noise_perc=30)
         np.testing.assert_equal(len(found_locs), 0)
-

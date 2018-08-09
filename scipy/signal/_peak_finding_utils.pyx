@@ -4,6 +4,8 @@
 
 """Utility functions for finding peaks in signals."""
 
+import warnings
+
 import numpy as np
 
 cimport numpy as np
@@ -149,6 +151,11 @@ def _select_by_peak_distance(np.intp_t[::1] peaks not None,
     return keep.base.view(dtype=np.bool)  # Return as boolean array
 
 
+class PeakPropertyWarning(Warning):
+    """Calculated property of a peak has unexpected value."""
+    pass
+
+
 def _peak_prominences(np.float64_t[::1] x not None,
                       np.intp_t[::1] peaks not None,
                       np.intp_t wlen):
@@ -176,7 +183,12 @@ def _peak_prominences(np.float64_t[::1] x not None,
     Raises
     ------
     ValueError
-        If an index in `peaks` doesn't point to a local maximum in `x`.
+        If a value in `peaks` is an invalid index for `x`.
+
+    Warnings
+    --------
+    PeakPropertyWarning
+        If a prominence of 0 was calculated for any peak.
 
     Notes
     -----
@@ -189,9 +201,9 @@ def _peak_prominences(np.float64_t[::1] x not None,
         np.intp_t[::1] left_bases, right_bases
         np.float64_t left_min, right_min
         np.intp_t peak_nr, peak, i_min, i_max, i
-        np.uint8_t raise_error
+        np.uint8_t show_warning
 
-    raise_error = False
+    show_warning = False
     prominences = np.empty(peaks.shape[0], dtype=np.float64)
     left_bases = np.empty(peaks.shape[0], dtype=np.intp)
     right_bases = np.empty(peaks.shape[0], dtype=np.intp)
@@ -201,6 +213,10 @@ def _peak_prominences(np.float64_t[::1] x not None,
             peak = peaks[peak_nr]
             i_min = 0
             i_max = x.shape[0] - 1
+            if not i_min <= peak <= i_max:
+                with gil:
+                    raise ValueError("peak {} is not a valid index for `x`"
+                                     .format(peak))
 
             if 2 <= wlen:
                 # Adjust window around the evaluated peak (within bounds);
@@ -210,34 +226,30 @@ def _peak_prominences(np.float64_t[::1] x not None,
                 i_max = min(peak + wlen // 2, i_max)
 
             # Find the left base in interval [i_min, peak]
-            i = peak
+            i = left_bases[peak_nr] = peak
             left_min = x[peak]
             while i_min <= i and x[i] <= x[peak]:
                 if x[i] < left_min:
                     left_min = x[i]
                     left_bases[peak_nr] = i
                 i -= 1
-            if not left_min < x[peak]:
-                raise_error = True  # Raise error outside nogil statement
-                break
 
             # Find the right base in interval [peak, i_max]
-            i = peak
+            i = right_bases[peak_nr] = peak
             right_min = x[peak]
             while i <= i_max and x[i] <= x[peak]:
                 if x[i] < right_min:
                     right_min = x[i]
                     right_bases[peak_nr] = i
                 i += 1
-            if not right_min < x[peak]:
-                raise_error = True  # Raise error outside nogil statement
-                break
 
             prominences[peak_nr] = x[peak] - max(left_min, right_min)
+            if prominences[peak_nr] == 0:
+                show_warning = True
 
-    if raise_error:
-        raise ValueError('{} is not a valid peak'.format(peak))
-
+    if show_warning:
+        warnings.warn("some peaks have a prominence of 0",
+                      PeakPropertyWarning)
     # Return memoryviews as ndarrays
     return prominences.base, left_bases.base, right_bases.base
 
@@ -283,6 +295,11 @@ def _peak_widths(np.float64_t[::1] x not None,
         ``0 <= left_base <= peak <= right_base < x.shape[0]`` for each peak or
         if `peaks`, `left_bases` and `right_bases` don't share the same shape.
 
+    Warnings
+    --------
+    PeakPropertyWarning
+        If a width of 0 was calculated for any peak.
+
     Notes
     -----
     This is the inner function to `peak_widths`.
@@ -293,14 +310,14 @@ def _peak_widths(np.float64_t[::1] x not None,
         np.float64_t[::1] widths, width_heights, left_ips, right_ips
         np.float64_t height, left_ip, right_ip
         np.intp_t p, peak, i, i_max, i_min
-        np.uint8_t raise_error
+        np.uint8_t show_warning
 
     if not (peaks.shape[0] == prominences.shape[0] == left_bases.shape[0] ==
             right_bases.shape[0]):
         raise ValueError("arrays in `prominence_data` must have the same shape "
                          "as `peaks`")
 
-    raise_error = False
+    show_warning = False
     widths = np.empty(peaks.shape[0], dtype=np.float64)
     width_heights = np.empty(peaks.shape[0], dtype=np.float64)
     left_ips = np.empty(peaks.shape[0], dtype=np.float64)
@@ -312,9 +329,10 @@ def _peak_widths(np.float64_t[::1] x not None,
             i_max = right_bases[p]
             peak = peaks[p]
             # Validate bounds and order
-            if not 0 <= i_min < peak < i_max < x.shape[0]:
-                raise_error = True
-                break
+            if not 0 <= i_min <= peak <= i_max < x.shape[0]:
+                with gil:
+                    raise ValueError("prominence data is invalid for peak {}"
+                                     .format(peak))
             height = width_heights[p] = x[peak] - prominences[p] * rel_height
 
             # Find intersection point on left side
@@ -336,10 +354,11 @@ def _peak_widths(np.float64_t[::1] x not None,
                 right_ip -= (height - x[i]) / (x[i - 1] - x[i])
 
             widths[p] = right_ip - left_ip
+            if widths[p] == 0:
+                show_warning = True
             left_ips[p] = left_ip
             right_ips[p] = right_ip
 
-    if raise_error:
-        raise ValueError("prominence data is invalid for peak {}".format(peak))
-
+    if show_warning:
+        warnings.warn("some peaks have a width of 0", PeakPropertyWarning)
     return widths.base, width_heights.base, left_ips.base, right_ips.base
