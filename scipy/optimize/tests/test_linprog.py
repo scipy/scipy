@@ -798,10 +798,41 @@ class LinprogCommonTests(object):
             with pytest.warns(OptimizeWarning):
                 res = linprog(c, A_ub, b_ub, bounds=bounds,
                     method=self.method, options=self.options)
-        elif self.method == 'interior-point':
+        else:
             res = linprog(c, A_ub, b_ub, bounds=bounds,
                     method=self.method, options=self.options)
             _assert_success(res, desired_fun=-106.63507541835018)
+
+    def test_issue_8174_stackoverflow(self):
+        # Test supplementary example from issue 8174.
+        # https://github.com/scipy/scipy/issues/8174
+        # https://stackoverflow.com/questions/47717012/linprog-in-scipy-optimize-checking-solution
+        c = np.array([1, 0, 0, 0, 0, 0, 0])
+        A_ub = -np.identity(7)
+        b_ub = np.array([[-2],[-2],[-2],[-2],[-2],[-2],[-2]])
+        A_eq = np.array([
+            [1, 1, 1, 1, 1, 1, 0],
+            [0.3, 1.3, 0.9, 0, 0, 0, -1],
+            [0.3, 0, 0, 0, 0, 0, -2/3],
+            [0, 0.65, 0, 0, 0, 0, -1/15],
+            [0, 0, 0.3, 0, 0, 0, -1/15]
+        ])
+        b_eq = np.array([[100],[0],[0],[0],[0]])
+
+        if self.method == 'interior-point':
+            # Warning is raised in presolve method,
+            # which is not yet implemented in the simplex method.
+            with pytest.warns(OptimizeWarning):
+                res = linprog(
+                    c=c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
+                    method=self.method, options=self.options
+                )
+        else:
+            res = linprog(
+                c=c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
+                method=self.method, options=self.options
+            )
+        _assert_success(res, desired_fun=43.3333333331385)
 
 
 class TestLinprogSimplex(LinprogCommonTests):
