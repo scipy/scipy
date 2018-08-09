@@ -5944,8 +5944,8 @@ def rankdata(a, method='average'):
     return .5 * (count[dense] + count[dense - 1] + 1)
 
 
-def rvs_ratio_uniforms(pdf, size=1, x1=None, x2=None, y2=None, shift=0,
-                       maxiter=None, bounds=None, random_state=None):
+def rvs_ratio_uniforms(pdf, size=1, x1=None, x2=None, y2=None, c=0,
+                       bounds=None, random_state=None):
     """
     Generate random samples from a probability density function using the
     ratio-of-uniforms method.
@@ -5965,12 +5965,8 @@ def rvs_ratio_uniforms(pdf, size=1, x1=None, x2=None, y2=None, shift=0,
     y2 : float, optional
         The upper bound of the bounding rectangle in the y-direction.
         Default is None. In that case, attempt to find bound numerically.
-    shift : float, optional.
+    c : float, optional.
         Shift parameter of ratio-of-uniforms method, see Notes. Default is 0.
-    maxiter : int, optional
-        Maximum number of iterations to generate the random variables.
-        Default is None. In that case, maxiter is set to a value that
-        ensures successful simulation with a high probability.
     bounds : tuple of floats (a, b), optional
         Default is None. In case any of the values x1, x2, y2 are not
         specified (i.e. equal to None), attempt to find the value numerically
@@ -5996,7 +5992,7 @@ def rvs_ratio_uniforms(pdf, size=1, x1=None, x2=None, y2=None, shift=0,
     The above result (see [1]_, [2]_) can be used to sample random variables
     using only the pdf, i.e. no inversion of the cdf is required. Typical
     choices of c are zero or the mode of f. The set ``A`` is a subset of the
-    rectangle ``R = [-x1, x2] x [0, y2]`` where
+    rectangle ``R = [x1, x2] x [0, y2]`` where
 
     - ``x1 = inf (x - c) sqrt(f(x))``
     - ``x2 = sup (x - c) sqrt(f(x))``
@@ -6015,7 +6011,8 @@ def rvs_ratio_uniforms(pdf, size=1, x1=None, x2=None, y2=None, shift=0,
     the expected number of iterations to draw ``(U, V)`` uniformly
     distributed on ``R`` such that ``(U, V)`` is also in ``A`` is given by
     the ratio ``area(R) / area(A) = 2 * y2 * (x2 - x1)``, using the fact that
-    the area of ``A`` is equal to 1/2 (Theorem 7.1 in [1]_).
+    the area of ``A`` is equal to 1/2 (Theorem 7.1 in [1]_). A warning
+    is displayed if this ratio is larger than 20.
 
     If the bounding rectangle is not correctly specified (i.e. if it does not
     contain ``A``, the algorithm samples from a distribution different from
@@ -6030,7 +6027,7 @@ def rvs_ratio_uniforms(pdf, size=1, x1=None, x2=None, y2=None, shift=0,
     .. [2] W. Hoermann and J. Leydold, "Generating generalized inverse Gaussian
        random variates", Statistics and Computing, 24(4), p. 547--557, 2014.
 
-    .. [3] A.J. Kindermn and J.F. Monahan, "Computer Generation of Random
+    .. [3] A.J. Kinderman and J.F. Monahan, "Computer Generation of Random
        Variables Using the Ratio of Uniform Deviates",
        ACM Transactions on Mathematical Software, 3(3), p. 257--260, 1977.
 
@@ -6070,7 +6067,7 @@ def rvs_ratio_uniforms(pdf, size=1, x1=None, x2=None, y2=None, shift=0,
     >>> stats.kstest(rvs, 'expon')[1]
     0.52369231518316373
 
-    Sometimes it can be helpful to use a non-zero shift parameter, see e.g.
+    Sometimes it can be helpful to use a non-zero shift parameter `c`, see e.g.
     [2]_ above in the case of the generalized inverse Gaussian distribution.
 
     """
@@ -6090,7 +6087,7 @@ def rvs_ratio_uniforms(pdf, size=1, x1=None, x2=None, y2=None, shift=0,
 
     # in case bounding rectangle is not given, attempt to find it numerically
     def f_opt(x):
-        return (x - shift) * np.sqrt(pdf(x))
+        return (x - c) * np.sqrt(pdf(x))
 
     if x1 is None:
         x1 = find_rect_bounds(f_opt, bounds, "x1")
@@ -6107,7 +6104,7 @@ def rvs_ratio_uniforms(pdf, size=1, x1=None, x2=None, y2=None, shift=0,
         raise ValueError("y2 must be positive.")
 
     exp_iter = 2 * (x2 - x1) * y2  # rejection constant (see [1])
-    if exp_iter > 30:
+    if exp_iter > 20:
         msg = "The expected number of iterations to generate a single random" \
               " number from the desired distribution is larger than " \
               "{}, potentially causing bad performance.".format(int(exp_iter))
@@ -6116,23 +6113,19 @@ def rvs_ratio_uniforms(pdf, size=1, x1=None, x2=None, y2=None, shift=0,
     size1d = tuple(np.atleast_1d(size))
     N = np.prod(size1d)  # number of rvs needed, reshape upon return
 
-    if maxiter is None:
-        # set no of iterations to ensure that method fails with proba. p_fail
-        # in case point in [x1, x2] x [0, y2] is accepted with prob. p_accept
-        p_fail, p_accept = 0.001, 0.25
-        maxiter = 10 + N * np.log(1 / p_fail) / np.log(1 / (1 - p_accept))
-
     # start sampling using ratio of uniforms method
     rng = check_random_state(random_state)
     x = np.zeros(N)
-    j, simulated = 1, 0
-    for j in range(int(maxiter)):
+    simulated = 0
+
+    # loop until N rvs have been generated: expected runtime is finite
+    while True:
         k = N - simulated
         # simulate uniform rvs on [x1, x2] and [0, y2]
         u1 = x1 + (x2 - x1) * rng.random_sample(size=k)
         v1 = y2 * rng.random_sample(size=k)
         # apply rejection method
-        rvs = u1 / v1 + shift
+        rvs = u1 / v1 + c
         accept = (v1**2 <= pdf(rvs))
         num_accept = np.sum(accept)
         if num_accept > 0:
@@ -6141,7 +6134,3 @@ def rvs_ratio_uniforms(pdf, size=1, x1=None, x2=None, y2=None, shift=0,
             simulated += take
         if simulated >= N:
             return np.reshape(x, size1d)
-
-    raise RuntimeError("Only {} of {} random variables".format(simulated, N) +
-                       " could generated after {}".format(round(maxiter, 0)) +
-                       " iterations. Consider increasing maxiter.")
