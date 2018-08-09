@@ -256,3 +256,23 @@ class TestInterpolativeDecomposition(object):
         a = np.ones((4, 3))
         with assert_raises(ValueError):
             pymatrixid.svd(a, 4)
+
+    def test_full_rank(self):
+        eps = 1.0e-12
+
+        # fixed precision
+        A = np.random.rand(16, 8)
+        k, idx, proj = pymatrixid.interp_decomp(A, eps)
+        assert_(k == A.shape[1])
+
+        P = pymatrixid.reconstruct_interp_matrix(idx, proj)
+        B = pymatrixid.reconstruct_skel_matrix(A, k, idx)
+        assert_allclose(A, B.dot(P))
+
+        # fixed rank
+        idx, proj = pymatrixid.interp_decomp(A, k)
+
+        P = pymatrixid.reconstruct_interp_matrix(idx, proj)
+        B = pymatrixid.reconstruct_skel_matrix(A, k, idx)
+        assert_allclose(A, B.dot(P))
+
