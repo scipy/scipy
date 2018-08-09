@@ -863,7 +863,7 @@ def siegelslopes(y, x=None, method="hierarchical"):
     Computes the Siegel estimator for a set of points (x, y).
 
     `siegelslopes` implements a method for robust linear regression
-    using repeated medians (see [1]_) to fit a line to the points (x, y).
+    using repeated medians to fit a line to the points (x, y).
     The method is robust to outliers with an asymptotic breakdown point
     of 50%.
 
