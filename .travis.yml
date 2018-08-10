@@ -163,7 +163,7 @@ script:
   # Make sure that relaxed strides checking is actually in effect; otherwise fail loudly
   - if [ "$NPY_RELAXED_STRIDES_CHECKING" == "1" ]; then python -c'import numpy as np; assert np.ones((10,1),order="C").flags.f_contiguous'; fi
   # Test that mpmath actually uses gmpy2
-  #- python -c 'import mpmath.libmp; assert mpmath.libmp.BACKEND == "gmpy"'
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then python -c 'import mpmath.libmp; assert mpmath.libmp.BACKEND == "gmpy"'; fi
   - |
     if [ "${USE_WHEEL}" == "1" ]; then
         # Run setup.py build before pip wheel, to build in current directory
