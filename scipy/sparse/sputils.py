@@ -138,36 +138,7 @@ def get_index_dtype(arrays=(), maxval=None, check_contents=False):
         Suitable index data type (int32 or int64)
 
     """
-
-    int32min = np.iinfo(np.int32).min
-    int32max = np.iinfo(np.int32).max
-
-    dtype = np.intc
-    if maxval is not None:
-        if maxval > int32max:
-            dtype = np.int64
-
-    if isinstance(arrays, np.ndarray):
-        arrays = (arrays,)
-
-    for arr in arrays:
-        arr = np.asarray(arr)
-        if not np.can_cast(arr.dtype, np.int32):
-            if check_contents:
-                if arr.size == 0:
-                    # a bigger type not needed
-                    continue
-                elif np.issubdtype(arr.dtype, np.integer):
-                    maxval = arr.max()
-                    minval = arr.min()
-                    if minval >= int32min and maxval <= int32max:
-                        # a bigger type not needed
-                        continue
-
-            dtype = np.int64
-            break
-
-    return dtype
+    return np.intp
 
 
 def get_sum_dtype(dtype):
