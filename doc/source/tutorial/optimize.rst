@@ -676,7 +676,7 @@ Both linear and nonlinear constraints are defined as dictionaries with keys ``ty
     ...              'fun' : lambda x: np.array([1 - x[0] - 2*x[1],
     ...                                          1 - x[0]**2 - x[1],
     ...                                          1 - x[0]**2 + x[1]]),
-    ...              'jac' : lambda x: np.array([[1.0, 2.0],
+    ...              'jac' : lambda x: np.array([[-1.0, -2.0],
     ...                                          [-2*x[0], -1.0],
     ...                                          [-2*x[0], 1.0]])}
     >>> eq_cons = {'type': 'eq',
