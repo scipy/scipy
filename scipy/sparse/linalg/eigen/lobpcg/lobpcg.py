@@ -344,7 +344,7 @@ def lobpcg(A, X,
         try:
             # gramYBY is a Cholesky factor from now on...
             gramYBY = cho_factor(gramYBY)
-        except:
+        except Exception:
             raise ValueError('cannot handle linearly dependent constraints')
 
         _applyConstraints(blockVectorX, gramYBY, blockVectorBY, blockVectorY)

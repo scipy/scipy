@@ -645,7 +645,7 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, rr):
     if rr and A_eq.size > 0:
         try:  # TODO: instead use results of first SVD in _remove_redundancy
             rank = np.linalg.matrix_rank(A_eq)
-        except:  # oh well, we'll have to go with _remove_redundancy_dense
+        except Exception:  # oh well, we'll have to go with _remove_redundancy_dense
             rank = 0
     if rr and A_eq.size > 0 and rank < A_eq.shape[0]:
         warn(redundancy_warning, OptimizeWarning)
@@ -1172,7 +1172,7 @@ def _get_delta(
             #       umfpack and therefore cannot test its performance
             solve = sps.linalg.splu(M, permc_spec=permc_spec).solve
             splu = True
-        except:
+        except Exception:
             lstsq = True
             solve = _get_solver(sparse, lstsq, sym_pos, cholesky)
     else:
@@ -1186,7 +1186,7 @@ def _get_delta(
     if cholesky:
         try:
             L = sp.linalg.cho_factor(M)
-        except:
+        except Exception:
             cholesky = False
             solve = _get_solver(sparse, lstsq, sym_pos, cholesky)
 

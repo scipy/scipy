@@ -1992,7 +1992,7 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
     else:
         try:
             metric = numpy.asarray(metric)
-        except:
+        except Exception:
             raise RuntimeError('invalid metric provided')
         for s in metric.shape:
             if s != 3:

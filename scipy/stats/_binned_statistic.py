@@ -592,7 +592,7 @@ def binned_statistic_dd(sample, values, statistic='mean',
             sup.filter(RuntimeWarning)
             try:
                 null = statistic([])
-            except:
+            except Exception:
                 null = np.nan
         result.fill(null)
         for i in np.unique(binnumbers):

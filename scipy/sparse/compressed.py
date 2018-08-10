@@ -72,7 +72,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             # must be dense
             try:
                 arg1 = np.asarray(arg1)
-            except:
+            except Exception:
                 raise ValueError("unrecognized %s_matrix constructor usage" %
                         self.format)
             from .coo import coo_matrix
@@ -87,7 +87,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 try:
                     major_dim = len(self.indptr) - 1
                     minor_dim = self.indices.max() + 1
-                except:
+                except Exception:
                     raise ValueError('unable to infer matrix dimensions')
                 else:
                     self._shape = check_shape(self._swap((major_dim,minor_dim)))
