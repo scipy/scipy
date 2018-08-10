@@ -153,7 +153,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
                     M, N = shape
                     self._shape = check_shape((M, N))
 
-                idx_dtype = get_index_dtype(maxval=max(self.shape))
+                idx_dtype = get_index_dtype(maxval=self.shape[0] * self.shape[1])
                 self.row = np.array(row, copy=copy, dtype=idx_dtype)
                 self.col = np.array(col, copy=copy, dtype=idx_dtype)
                 self.data = np.array(obj, copy=copy)
@@ -262,7 +262,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
             warn("col index array has non-integer dtype (%s) "
                     % self.col.dtype.name)
 
-        idx_dtype = get_index_dtype(maxval=max(self.shape))
+        idx_dtype = get_index_dtype(maxval=self.shape[0] * self.shape[1])
         self.row = np.asarray(self.row, dtype=idx_dtype)
         self.col = np.asarray(self.col, dtype=idx_dtype)
         self.data = to_native(self.data)
