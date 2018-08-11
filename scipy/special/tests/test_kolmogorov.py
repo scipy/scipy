@@ -91,17 +91,6 @@ class TestSmirnov(object):
         dfs = np.diff(pvals)
         assert_(np.all(dfs <= 0), msg='Not all diffs negative %s' % dfs)
 
-        # dataset = np.array([(1000, 1 - 1.0/2000, np.power(2000.0, -1000))])
-        # FuncData(smirnov, dataset, (0, 1), 2, rtol=_rtol).check(dtypes=[int, float, float])
-        # dataset[:, -1] = 1 - dataset[:, -1]
-        # FuncData(_smirnovc, dataset, (0, 1), 2, rtol=_rtol).check(dtypes=[int, float, float])
-
-        # # Check asymptotic behaviour
-        # dataset = np.array([(n, 1.0 / np.sqrt(n), np.exp(-2)) for n in range(1000, 5000, 1000)])
-        # FuncData(smirnov, dataset, (0, 1), 2, rtol=.05).check(dtypes=[int, float, float])
-        # dataset[:, -1] = 1 - dataset[:, -1]
-        # FuncData(_smirnovc, dataset, (0, 1), 2, rtol=.05).check(dtypes=[int, float, float])
-
 
 class TestSmirnovi(object):
     def test_nan(self):
