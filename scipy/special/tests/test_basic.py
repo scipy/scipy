@@ -35,6 +35,7 @@ from numpy.testing import (assert_equal, assert_almost_equal,
 from scipy import special
 import scipy.special._ufuncs as cephes
 from scipy.special import ellipk, zeta
+from scipy.special._ufuncs import _smirnovc, _smirnovci, _smirnovp
 
 from scipy.special._testutils import with_special_errors, \
      assert_func_equal, FuncData
@@ -921,18 +922,18 @@ class TestCephes(object):
         assert_(np.isnan(cephes.smirnov(1,np.nan)))
 
     def test_smirnovp(self):
-        assert_equal(cephes.smirnovp(1, .1), -1)
-        assert_equal(cephes.smirnovp(2, 0.75), -2*(0.25)**(2-1))
-        assert_equal(cephes.smirnovp(3, 0.75), -3*(0.25)**(3-1))
-        assert_(np.isnan(cephes.smirnovp(1, np.nan)))
+        assert_equal(_smirnovp(1, .1), -1)
+        assert_equal(_smirnovp(2, 0.75), -2*(0.25)**(2-1))
+        assert_equal(_smirnovp(3, 0.75), -3*(0.25)**(3-1))
+        assert_(np.isnan(_smirnovp(1, np.nan)))
 
     def test_smirnovc(self):
-        assert_equal(cephes.smirnovc(1,.1),0.1)
-        assert_(np.isnan(cephes.smirnovc(1,np.nan)))
+        assert_equal(_smirnovc(1,.1),0.1)
+        assert_(np.isnan(_smirnovc(1,np.nan)))
         x10 = np.linspace(0, 1, 11, endpoint=True)
-        assert_almost_equal(cephes.smirnovc(3, x10), 1-cephes.smirnov(3, x10))
+        assert_almost_equal(_smirnovc(3, x10), 1-cephes.smirnov(3, x10))
         x4 = np.linspace(0, 1, 5, endpoint=True)
-        assert_almost_equal(cephes.smirnovc(4, x4), 1-cephes.smirnov(4, x4))
+        assert_almost_equal(_smirnovc(4, x4), 1-cephes.smirnov(4, x4))
 
     def test_smirnovi(self):
         assert_almost_equal(cephes.smirnov(1,cephes.smirnovi(1,0.4)),0.4)
@@ -940,9 +941,9 @@ class TestCephes(object):
         assert_(np.isnan(cephes.smirnovi(1,np.nan)))
 
     def test_smirnovci(self):
-        assert_almost_equal(cephes.smirnovc(1,cephes.smirnovci(1,0.4)),0.4)
-        assert_almost_equal(cephes.smirnovc(1,cephes.smirnovci(1,0.6)),0.6)
-        assert_(np.isnan(cephes.smirnovci(1,np.nan)))
+        assert_almost_equal(_smirnovc(1,_smirnovci(1,0.4)),0.4)
+        assert_almost_equal(_smirnovc(1,_smirnovci(1,0.6)),0.6)
+        assert_(np.isnan(_smirnovci(1,np.nan)))
 
     def test_spence(self):
         assert_equal(cephes.spence(1),0.0)

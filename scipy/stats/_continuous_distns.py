@@ -14,6 +14,7 @@ from scipy import optimize
 from scipy import integrate
 from scipy import interpolate
 import scipy.special as sc
+from scipy.special._ufuncs import _smirnovc, _smirnovp, _smirnovci
 from scipy._lib._numpy_compat import broadcast_to
 from scipy._lib._util import _lazyselect, _lazywhere
 
@@ -42,16 +43,16 @@ class ksone_gen(rv_continuous):
 
     """
     def _pdf(self, x, n):
-        return -sc.smirnovp(n, x)
+        return -_smirnovp(n, x)
 
     def _cdf(self, x, n):
-        return sc.smirnovc(n, x)
+        return _smirnovc(n, x)
 
     def _sf(self, x, n):
         return sc.smirnov(n, x)
 
     def _ppf(self, q, n):
-        return sc.smirnovci(n, q)
+        return _smirnovci(n, q)
 
     def _isf(self, q, n):
         return sc.smirnovi(n, q)

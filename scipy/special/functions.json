@@ -1261,7 +1261,7 @@
             "smirnov": "id->d"
         }
     },
-    "smirnovc": {
+    "_smirnovc": {
         "_legacy.pxd": {
             "smirnovc_unsafe": "dd->d"
         },
@@ -1269,7 +1269,7 @@
             "smirnovc": "id->d"
         }
     },
-    "smirnovci": {
+    "_smirnovci": {
         "_legacy.pxd": {
             "smirnovci_unsafe": "dd->d"
         },
@@ -1285,7 +1285,7 @@
             "smirnovi": "id->d"
         }
     },
-    "smirnovp": {
+    "_smirnovp": {
         "_legacy.pxd": {
             "smirnovp_unsafe": "dd->d"
         },
