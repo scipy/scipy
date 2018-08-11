@@ -15,6 +15,7 @@ def configuration(parent_package='', top_path=None):
     config.add_extension('examples.zeros_struct_examples',
                          sources=['examples/zeros_struct_examples.c'],
                          include_dirs=[get_numpy_include_dirs()])
+    config.add_subpackage('examples')
     return config
 
 
