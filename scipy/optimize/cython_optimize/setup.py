@@ -6,15 +6,23 @@ def configuration(parent_package='', top_path=None):
     config = Configuration('cython_optimize', parent_package, top_path)
     config.add_data_dir('tests')
     config.add_extension('zeros', sources=['zeros.c'],
-                         include_dirs=[get_numpy_include_dirs()])
+                         include_dirs=[get_numpy_include_dirs()],
+                         extra_compile_args=["-g"],
+                         extra_link_args=["-g"],)
     config.add_extension('zeros_struct', sources=['zeros_struct.c'],
-                         include_dirs=[get_numpy_include_dirs()])
+                         include_dirs=[get_numpy_include_dirs()],
+                         extra_compile_args=["-g"],
+                         extra_link_args=["-g"],)
     config.add_extension('examples.zeros_examples',
                          sources=['examples/zeros_examples.c'],
-                         include_dirs=[get_numpy_include_dirs()])
+                         include_dirs=[get_numpy_include_dirs()],
+                         extra_compile_args=["-g"],
+                         extra_link_args=["-g"],)
     config.add_extension('examples.zeros_struct_examples',
                          sources=['examples/zeros_struct_examples.c'],
-                         include_dirs=[get_numpy_include_dirs()])
+                         include_dirs=[get_numpy_include_dirs()],
+                         extra_compile_args=["-g"],
+                         extra_link_args=["-g"],)
     config.add_subpackage('examples')
     return config
 
