@@ -19,7 +19,7 @@ cdef extern from "numpy/npy_math.h" nogil:
 
 from ._cephes cimport (bdtrc, bdtr, bdtri, expn, hyp2f0, nbdtrc,
                        nbdtr, nbdtri, pdtrc, pdtr, pdtri, kn, yn,
-                       smirnov, smirnovi, smirnovc, smirnovci, smirnovp, )
+                       smirnov, smirnovi, smirnovc, smirnovci, smirnovp)
 
 cdef extern from "amos_wrappers.h":
     double cbesk_wrap_real_int(int n, double z) nogil

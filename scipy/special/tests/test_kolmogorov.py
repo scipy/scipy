@@ -6,9 +6,9 @@ import numpy as np
 from numpy.testing import assert_
 from scipy.special._testutils import FuncData
 
-from scipy.special import smirnov, smirnovi
-from scipy.special._ufuncs import _smirnovc, _smirnovci, _smirnovp
-from scipy.special import kolmogorov, kolmogi, kolmogc, kolmogci, kolmogp
+from scipy.special import kolmogorov, kolmogi, smirnov, smirnovi
+from scipy.special._ufuncs import (_kolmogc, _kolmogci, _kolmogp,
+                                   _smirnovc, _smirnovci, _smirnovp)
 
 _rtol = 1e-10
 
@@ -289,7 +289,7 @@ class TestKolmogorov(object):
         dataset = np.column_stack([x, dataset])
         FuncData(kolmogorov, dataset, (0,), 1, rtol=_rtol).check()
         dataset_c = np.column_stack([x, dataset_c])
-        FuncData(kolmogc, dataset_c, (0,), 1, rtol=_rtol).check()
+        FuncData(_kolmogc, dataset_c, (0,), 1, rtol=_rtol).check()
 
     def test_linspacei(self):
         p = np.linspace(0, 1.0, 21, endpoint=True)
@@ -312,7 +312,7 @@ class TestKolmogorov(object):
         dataset = np.column_stack([p[1:], dataset[1:]])
         FuncData(kolmogi, dataset, (0,), 1, rtol=_rtol).check()
         dataset_c = np.column_stack([p[:-1], dataset_c[:-1]])
-        FuncData(kolmogci, dataset_c, (0,), 1, rtol=_rtol).check()
+        FuncData(_kolmogci, dataset_c, (0,), 1, rtol=_rtol).check()
 
     def test_smallx(self):
         epsilon = 0.1 ** np.arange(1, 14)
@@ -329,7 +329,7 @@ class TestKolmogorov(object):
             return kolmogi(kolmogorov(_x))
 
         def _kci_kc(_x):
-            return kolmogci(kolmogc(_x))
+            return _kolmogci(_kolmogc(_x))
 
         x = np.linspace(0.0, 2.0, 21, endpoint=True)
         x02 = x[(x == 0) | (x > 0.21)]  # Exclude 0.1, 0.2.  0.2 almost makes succeeds, but 0.1 has no chance.
@@ -357,7 +357,7 @@ class TestKolmogi(object):
 
     def test_smallpcdf(self):
         epsilon = 0.5 ** np.arange(1, 55, 3)
-        # kolmogi(1-p) == kolmogci(p) if  1-(1-p) == p, but not necessarily otherwise
+        # kolmogi(1-p) == _kolmogci(p) if  1-(1-p) == p, but not necessarily otherwise
         # Use epsilon s.t. 1-(1-epsilon)) == epsilon, so can use same x-array for both results
 
         x = np.array([0.8275735551899077, 0.5345255069097583, 0.4320114038786941,
@@ -371,11 +371,11 @@ class TestKolmogi(object):
         FuncData(kolmogi, dataset, (0,), 1, rtol=_rtol).check()
 
         dataset = np.column_stack([epsilon, x])
-        FuncData(kolmogci, dataset, (0,), 1, rtol=_rtol).check()
+        FuncData(_kolmogci, dataset, (0,), 1, rtol=_rtol).check()
 
     def test_smallpsf(self):
         epsilon = 0.5 ** np.arange(1, 55, 3)
-        # kolmogi(p) == kolmogci(1-p) if  1-(1-p) == p, but not necessarily otherwise
+        # kolmogi(p) == _kolmogci(1-p) if  1-(1-p) == p, but not necessarily otherwise
         # Use epsilon s.t. 1-(1-epsilon)) == epsilon, so can use same x-array for both results
 
         x = np.array([0.8275735551899077, 1.3163786275161036, 1.6651092133663343,
@@ -389,7 +389,7 @@ class TestKolmogi(object):
         FuncData(kolmogi, dataset, (0,), 1, rtol=_rtol).check()
 
         dataset = np.column_stack([1-epsilon, x])
-        FuncData(kolmogci, dataset, (0,), 1, rtol=_rtol).check()
+        FuncData(_kolmogci, dataset, (0,), 1, rtol=_rtol).check()
 
     def test_round_trip(self):
         def _k_ki(_p):
@@ -402,7 +402,7 @@ class TestKolmogi(object):
 
 class TestKolmogp(object):
     def test_nan(self):
-        assert_(np.isnan(kolmogp(np.nan)))
+        assert_(np.isnan(_kolmogp(np.nan)))
 
     def test_basic(self):
         dataset = [(0.000000, -0.0),
@@ -418,4 +418,4 @@ class TestKolmogp(object):
                    (2.000000, -0.005367402045629683)]
 
         dataset = np.asarray(dataset)
-        FuncData(kolmogp, dataset, (0,), 1, rtol=_rtol).check()
+        FuncData(_kolmogp, dataset, (0,), 1, rtol=_rtol).check()

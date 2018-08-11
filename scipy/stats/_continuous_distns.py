@@ -14,7 +14,9 @@ from scipy import optimize
 from scipy import integrate
 from scipy import interpolate
 import scipy.special as sc
-from scipy.special._ufuncs import _smirnovc, _smirnovp, _smirnovci
+import scipy.special._ufuncs as scu
+# from scipy.special._ufuncs import (_kolmogc, _kolmogp, _kolmogci, _smirnovc,
+#                                    _smirnovp, _smirnovci)
 from scipy._lib._numpy_compat import broadcast_to
 from scipy._lib._util import _lazyselect, _lazywhere
 
@@ -43,16 +45,16 @@ class ksone_gen(rv_continuous):
 
     """
     def _pdf(self, x, n):
-        return -_smirnovp(n, x)
+        return -scu._smirnovp(n, x)
 
     def _cdf(self, x, n):
-        return _smirnovc(n, x)
+        return scu._smirnovc(n, x)
 
     def _sf(self, x, n):
         return sc.smirnov(n, x)
 
     def _ppf(self, q, n):
-        return _smirnovci(n, q)
+        return scu._smirnovci(n, q)
 
     def _isf(self, q, n):
         return sc.smirnovi(n, q)
@@ -68,16 +70,16 @@ class kstwobign_gen(rv_continuous):
 
     """
     def _pdf(self, x):
-        return -sc.kolmogp(x)
+        return -scu._kolmogp(x)
 
     def _cdf(self, x):
-        return sc.kolmogc(x)
+        return scu._kolmogc(x)
 
     def _sf(self, x):
         return sc.kolmogorov(x)
 
     def _ppf(self, q):
-        return sc.kolmogci(q)
+        return scu._kolmogci(q)
 
     def _isf(self, q):
         return sc.kolmogi(q)

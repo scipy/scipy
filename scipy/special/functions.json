@@ -846,12 +846,12 @@
             "cbesk_wrap_real_int": "id->d"
         }
     },
-    "kolmogc": {
+    "_kolmogc": {
         "cephes.h": {
             "kolmogc": "d->d"
         }
     },
-    "kolmogci": {
+    "_kolmogci": {
         "cephes.h": {
             "kolmogci": "d->d"
         }
@@ -861,7 +861,7 @@
             "kolmogi": "d->d"
         }
     },
-    "kolmogp": {
+    "_kolmogp": {
         "cephes.h": {
             "kolmogp": "d->d"
         }
