@@ -31,7 +31,7 @@ cdef double f_solarcell(double i, void *args):
     il = myargs.light_current
     io = myargs.dark_current
     rs = myargs.series_resistance
-    #rsh = myargs.shunt_resistsance
+    rsh = myargs.shunt_resistance
     vt = myargs.thermal_voltage
     vd = v + i * rs
     return il - io * (exp(vd / vt) - 1.0) - vd / rsh - i
@@ -46,7 +46,7 @@ cdef double fprime(double i, void *args):
     il = myargs.light_current
     io = myargs.dark_current
     rs = myargs.series_resistance
-    #rsh = myargs.shunt_resistsance
+    rsh = myargs.shunt_resistance
     vt = myargs.thermal_voltage
     return -io * exp((v + i * rs) / vt) * rs / vt - rs / rsh - 1
 
@@ -59,7 +59,7 @@ cdef double solarcell_newton(tuple args):
     myargs.light_current = args[1]
     myargs.dark_current = args[2]
     myargs.series_resistance = args[3]
-    #myargs.shunt_resistsance = args[4]
+    myargs.shunt_resistance = args[4]
     myargs.thermal_voltage = args[5]
     return zeros_struct.newton(f_solarcell, 6.0, fprime, myargs)
 
@@ -78,7 +78,7 @@ cdef double solarcell_bisect(tuple args):
     myargs.light_current = args[1]
     myargs.dark_current = args[2]
     myargs.series_resistance = args[3]
-    #myargs.shunt_resistsance = args[4]
+    myargs.shunt_resistance = args[4]
     myargs.thermal_voltage = args[5]
     return zeros_struct.bisect(f_solarcell, 7.0, 0.0, myargs, 0.001, 0.001, 10)
 
