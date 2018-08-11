@@ -25,11 +25,13 @@ EXPECTED_NEWTON = [
 
 
 def test_zeros_cython_newton():
-    assert np.allclose(EXPECTED_NEWTON, zeros_examples.test_cython_newton())
+    assert np.allclose(EXPECTED_NEWTON,
+                       list(zeros_examples.test_cython_newton()))
 
 
 def test_zeros_struct_cython_newton():
-    assert np.allclose(EXPECTED_NEWTON, zeros_struct_examples.test_cython_newton())
+    assert np.allclose(EXPECTED_NEWTON,
+                       list(zeros_struct_examples.test_cython_newton()))
 
 
 EXPECTED_BISECT = [
@@ -46,8 +48,10 @@ EXPECTED_BISECT = [
 ]
 
 def test_zeros_cython_bisect():
-    assert np.allclose(EXPECTED_BISECT, zeros_examples.test_cython_bisect())
+    assert np.allclose(EXPECTED_BISECT,
+                       list(zeros_examples.test_cython_bisect()))
 
 
 def test_zeros_struct_cython_bisect():
-    assert np.allclose(EXPECTED_BISECT, zeros_struct_examples.test_cython_bisect())
+    assert np.allclose(EXPECTED_BISECT,
+                       list(zeros_struct_examples.test_cython_bisect()))

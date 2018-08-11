@@ -93,3 +93,13 @@ The solver continues iterating and ultimately returns the zero to the Python
 module, which either copies it to the ``RootResults`` object, or copies it to a Python
 float, and returns.
 """
+
+from __future__ import division, print_function, absolute_import
+
+__all__ = ['zeros', 'zeros_struct']
+
+from . import zeros, zeros_struct
+
+from scipy._lib._testutils import PytestTester
+test = PytestTester(__name__)
+del PytestTester
