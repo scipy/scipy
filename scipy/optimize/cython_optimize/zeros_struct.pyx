@@ -45,6 +45,6 @@ cdef double newton(callback_type func, double p0, callback_type fprime, void *ar
 cdef double bisect(callback_type f, double xa, double xb, void *args, double xtol, double rtol, int iter):
     cdef c_zeros.scipy_zeros_parameters myparams
     # create params struct
-    myparams.args = void* args
+    myparams.args = args
     myparams.function = f
     return c_zeros.bisect(scipy_zeros_functions_func, xa, xb, xtol, rtol, iter, <c_zeros.default_parameters *> &myparams)

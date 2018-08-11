@@ -54,7 +54,14 @@ cdef double fprime(double i, test_params *args):
 #solver
 cdef double solarcell_newton(tuple args):
     """test newton with array"""
-    return zeros.newton(f_solarcell, 6.0, fprime, args)
+    cdef test_params *myargs
+    myargs.voltage = args[0]
+    myargs.light_current = args[1]
+    myargs.dark_current = args[2]
+    myargs.series_resistance = args[3]
+    myargs.shunt_resistsance = args[4]
+    myargs.thermal_voltage = args[5]
+    return zeros_struct.newton(f_solarcell, 6.0, fprime, myargs)
 
 
 # cython
@@ -66,7 +73,14 @@ def test_cython_newton(v=5.25, il=IL, args=(1e-09, 0.004, 10, 0.27456)):
 #solver
 cdef double solarcell_bisect(tuple args):
     """test newton with array"""
-    return zeros.bisect(f_solarcell, 7, 0, args, 0.001, 0.001, 10)
+    cdef test_params *myargs
+    myargs.voltage = args[0]
+    myargs.light_current = args[1]
+    myargs.dark_current = args[2]
+    myargs.series_resistance = args[3]
+    myargs.shunt_resistsance = args[4]
+    myargs.thermal_voltage = args[5]
+    return zeros_struct.bisect(f_solarcell, 7, 0, myargs, 0.001, 0.001, 10)
 
 
 # cython
