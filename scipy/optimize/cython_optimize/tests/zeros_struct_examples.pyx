@@ -6,7 +6,7 @@ free the global interpreter lock.
 from __future__ import division, print_function, absolute_import
 from math import exp, sin
 
-from scipy.optimize.cython_optimize cimport zeros
+from scipy.optimize.cython_optimize cimport zeros_struct
 
 # test parameter structure
 ctypedef struct test_params:
