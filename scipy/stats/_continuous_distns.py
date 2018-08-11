@@ -15,8 +15,6 @@ from scipy import integrate
 from scipy import interpolate
 import scipy.special as sc
 import scipy.special._ufuncs as scu
-# from scipy.special._ufuncs import (_kolmogc, _kolmogp, _kolmogci, _smirnovc,
-#                                    _smirnovp, _smirnovci)
 from scipy._lib._numpy_compat import broadcast_to
 from scipy._lib._util import _lazyselect, _lazywhere
 
@@ -41,6 +39,7 @@ except AttributeError:
 class ksone_gen(rv_continuous):
     """General Kolmogorov-Smirnov one-sided test.
 
+    %(default)s
     %(default)s
 
     """
