@@ -242,7 +242,7 @@ class csr_matrix(_cs_matrix, IndexMixin):
                 idx_dtype = get_index_dtype((x,), check_contents=True)
                 if idx_dtype != x.dtype:
                     x = x.astype(idx_dtype)
-            except:
+            except Exception:
                 raise IndexError('invalid index')
             else:
                 return x

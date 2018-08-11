@@ -216,7 +216,7 @@ def isshape(x, nonneg=False):
     try:
         # Assume it's a tuple of matrix dimensions (M, N)
         (M, N) = x
-    except:
+    except Exception:
         return False
     else:
         if isintlike(M) and isintlike(N):

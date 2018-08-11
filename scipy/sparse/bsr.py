@@ -180,7 +180,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
             # must be dense
             try:
                 arg1 = np.asarray(arg1)
-            except:
+            except Exception:
                 raise ValueError("unrecognized form for"
                         " %s_matrix constructor" % self.format)
             from .coo import coo_matrix
@@ -195,7 +195,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
                 try:
                     M = len(self.indptr) - 1
                     N = self.indices.max() + 1
-                except:
+                except Exception:
                     raise ValueError('unable to infer matrix dimensions')
                 else:
                     R,C = self.blocksize

@@ -463,7 +463,7 @@ def _add_axis_labels_title(plot, xlabel, ylabel, title):
             plot.title(title)
             plot.xlabel(xlabel)
             plot.ylabel(ylabel)
-    except:
+    except Exception:
         # Not an MPL object or something that looks (enough) like it.
         # Don't crash on adding labels or title
         pass

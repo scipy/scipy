@@ -2819,7 +2819,7 @@ def splmake(xk, yk, order=3, kind='smoothest', conds=None):
 
     try:
         func = eval('_find_%s' % kind)
-    except:
+    except Exception:
         raise NotImplementedError
 
     # the constraint matrix
