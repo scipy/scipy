@@ -24,7 +24,7 @@ EXTENSIONS.append(
               include_dirs=[np.get_include()])
 )
 EXTENSIONS.append(
-    Extension("test.zeros_struct_examples", ["tests/zeros_struct_examples.pyx"],
+    Extension("tests.zeros_struct_examples", ["tests/zeros_struct_examples.pyx"],
               include_dirs=[np.get_include()])
 )
 
