@@ -82,6 +82,8 @@ def configuration(parent_package='',top_path=None):
 
     config.add_subpackage('_trustregion_constr')
 
+    config.add_subpackage('cython_optimize')
+
     config.add_subpackage('_shgo_lib')
     config.add_data_dir('_shgo_lib')
 

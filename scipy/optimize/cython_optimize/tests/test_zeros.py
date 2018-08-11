@@ -6,7 +6,7 @@ Tests for Cython Optimize API
 """
 
 import numpy as np
-from scipy.optimize.cython_optimize.tests import (
+from scipy.optimize.cython_optimize.examples import (
     zeros_examples, zeros_struct_examples)
 
 

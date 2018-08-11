@@ -9,11 +9,11 @@ def configuration(parent_package='', top_path=None):
                          include_dirs=[get_numpy_include_dirs()])
     config.add_extension('zeros_struct', sources=['zeros_struct.c'],
                          include_dirs=[get_numpy_include_dirs()])
-    config.add_extension('tests.zeros_examples',
-                         sources=['tests/zeros_examples.c'],
+    config.add_extension('examples.zeros_examples',
+                         sources=['examples/zeros_examples.c'],
                          include_dirs=[get_numpy_include_dirs()])
-    config.add_extension('tests.zeros_struct_examples',
-                         sources=['tests/zeros_struct_examples.c'],
+    config.add_extension('examples.zeros_struct_examples',
+                         sources=['examples/zeros_struct_examples.c'],
                          include_dirs=[get_numpy_include_dirs()])
     return config
 
