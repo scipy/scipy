@@ -1,35 +1,23 @@
-from distutils.core import setup
-from distutils.extension import Extension
-from Cython.Build import cythonize
+from __future__ import division, print_function, absolute_import
 
-import numpy as np
 
-EXTENSIONS = []
+def configuration(parent_package='', top_path=None):
+    from numpy.distutils.misc_util import Configuration, get_numpy_include_dirs
+    config = Configuration('cython_optimize', parent_package, top_path)
+    config.add_data_dir('tests')
+    config.add_extension('zeros', sources=['zeros.c'],
+                         include_dirs=[get_numpy_include_dirs()])
+    config.add_extension('zeros_struct', sources=['zeros_struct.c'],
+                         include_dirs=[get_numpy_include_dirs()])
+    config.add_extension('tests.zeros_examples',
+                         sources=['tests/zeros_examples.c'],
+                         include_dirs=[get_numpy_include_dirs()])
+    config.add_extension('tests.zeros_struct_examples',
+                         sources=['tests/zeros_struct_examples.c'],
+                         include_dirs=[get_numpy_include_dirs()])
+    return config
 
-# newton_zero
-EXTENSIONS.append(
-    Extension("zeros", ["zeros.pyx"],
-              include_dirs=[np.get_include()])
-)
 
-# ivexample
-EXTENSIONS.append(
-    Extension("tests.zeros_examples", ["tests/zeros_examples.pyx"],
-              include_dirs=[np.get_include()])
-)
-
-# zeros structs
-EXTENSIONS.append(
-    Extension("zeros_struct", ["zeros_struct.pyx"],
-              include_dirs=[np.get_include()])
-)
-EXTENSIONS.append(
-    Extension("tests.zeros_struct_examples", ["tests/zeros_struct_examples.pyx"],
-              include_dirs=[np.get_include()])
-)
-
-setup(
-    name='cython optimize api',
-    ext_modules=cythonize(EXTENSIONS),
-    include_dirs=[np.get_include()]
-)
+if __name__ == '__main__':
+    from numpy.distutils.core import setup
+    setup(**configuration(top_path='').todict())
