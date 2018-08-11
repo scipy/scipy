@@ -40,7 +40,6 @@ class ksone_gen(rv_continuous):
     """General Kolmogorov-Smirnov one-sided test.
 
     %(default)s
-    %(default)s
 
     """
     def _pdf(self, x, n):
