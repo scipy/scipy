@@ -9,12 +9,12 @@ cdef int MAXITER = 50
 
 # the new standard callback function that uses the params struct instead of tuple
 @staticmethod
-cdef double scipy_zeros_functions_func(double x, c_zeros.scipy_zeros_parameters *params):
+cdef double scipy_zeros_functions_func(double x, void *params):
     cdef c_zeros_struct.scipy_zeros_parameters *myparams
     cdef void* args
     cdef callback_type f
 
-    myparams = params
+    myparams = <c_zeros_struct.scipy_zeros_parameters *> params
     args = myparams.args
     f = myparams.function
 
@@ -43,8 +43,8 @@ cdef double newton(callback_type func, double p0, callback_type fprime, void *ar
 
 # cythonized way to call scalar bisect
 cdef double bisect(callback_type f, double xa, double xb, void *args, double xtol, double rtol, int iter):
-    cdef c_zeros.scipy_zeros_parameters myparams
+    cdef c_zeros_struct.scipy_zeros_parameters myparams
     # create params struct
     myparams.args = args
     myparams.function = f
-    return c_zeros.bisect(scipy_zeros_functions_func, xa, xb, xtol, rtol, iter, <c_zeros.default_parameters *> &myparams)
+    return c_zeros_struct.bisect(scipy_zeros_functions_func, xa, xb, xtol, rtol, iter, <c_zeros_struct.default_parameters *> &myparams)
