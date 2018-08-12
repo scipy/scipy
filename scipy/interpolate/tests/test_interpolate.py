@@ -778,14 +778,9 @@ class TestAkima1DInterpolator(object):
         x = np.arange(0., 11.)
         y = np.array([0., 2., 1., 3., 2., 6., 5.5, 5.5, 2.7, 5.1, 3.])
         ak = Akima1DInterpolator(x, y)
-        try:
+        match = "Extending a 1D Akima interpolator is not yet implemented"
+        with pytest.raises(NotImplementedError, match=match):
             ak.extend(None, None)
-        except NotImplementedError as e:
-            if str(e) != ("Extending a 1D Akima interpolator is not "
-                          "yet implemented"):
-                raise
-        except:
-            raise
 
 
 class TestPPolyCommon(object):

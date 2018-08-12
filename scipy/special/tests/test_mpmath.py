@@ -189,7 +189,7 @@ def test_hyp2f1_real_some():
                 for z in [-10, -1.01, -0.99, 0, 0.6, 0.95, 1.5, 10]:
                     try:
                         v = float(mpmath.hyp2f1(a, b, c, z))
-                    except:
+                    except Exception:
                         continue
                     dataset.append((a, b, c, z, v))
     dataset = np.array(dataset, dtype=np.float_)

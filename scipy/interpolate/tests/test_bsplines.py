@@ -62,12 +62,8 @@ class TestBSpline(object):
         assert_equal(b.k, tck[2])
 
         # b.tck is read-only
-        try:
+        with pytest.raises(AttributeError):
             b.tck = 'foo'
-        except AttributeError:
-            pass
-        except:
-            raise AssertionError("AttributeError not raised.")
 
     def test_degree_0(self):
         xx = np.linspace(0, 1, 10)
@@ -705,7 +701,7 @@ class TestInterop(object):
     def test_splint(self):
         # test that splint accepts BSpline objects
         b, b2 = self.b, self.b2
-        assert_allclose(splint(0, 1, b), 
+        assert_allclose(splint(0, 1, b),
                         splint(0, 1, b.tck), atol=1e-14)
         assert_allclose(splint(0, 1, b),
                         b.integrate(0, 1), atol=1e-14)
@@ -874,13 +870,13 @@ class TestInterp(object):
                 atol=1e-14)
 
     def test_minimum_points_and_deriv(self):
-        # interpolation of f(x) = x**3 between 0 and 1. f'(x) = 3 * xx**2 and 
+        # interpolation of f(x) = x**3 between 0 and 1. f'(x) = 3 * xx**2 and
         # f'(0) = 0, f'(1) = 3.
         k = 3
         x = [0., 1.]
         y = [0., 1.]
         b = make_interp_spline(x, y, k, bc_type=([(1, 0.)], [(1, 3.)]))
-        
+
         xx = np.linspace(0., 1.)
         yy = xx**3
         assert_allclose(b(xx), yy, atol=1e-14, rtol=1e-14)

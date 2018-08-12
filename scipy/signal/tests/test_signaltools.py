@@ -573,10 +573,8 @@ class TestMedFilt(object):
 
     def test_none(self):
         # Ticket #1124. Ensure this does not segfault.
-        try:
+        with pytest.raises(ValueError, match='foo'):
             signal.medfilt(None)
-        except:
-            pass
         # Expand on this test to avoid a regression with possible contiguous
         # numpy arrays that have odd strides. The stride value below gets
         # us into wrong memory if used (but it does not need to be used)

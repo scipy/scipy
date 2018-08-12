@@ -23,7 +23,7 @@ from .common_tests import check_named_results
 try:
     import matplotlib.pyplot as plt
     have_matplotlib = True
-except:
+except Exception:
     have_matplotlib = False
 
 
@@ -629,7 +629,7 @@ class TestFligner(object):
                                   11)
 
     def test_trimmed1(self):
-        # Perturb input to break ties in the transformed data 
+        # Perturb input to break ties in the transformed data
         # See https://github.com/scipy/scipy/pull/8042 for more details
         rs = np.random.RandomState(123)
         _perturb = lambda g: (np.asarray(g) + 1e-10*rs.randn(len(g))).tolist()

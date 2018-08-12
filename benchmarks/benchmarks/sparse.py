@@ -198,7 +198,7 @@ class Conversion(Benchmark):
 
         try:
             self.fn = getattr(base, 'to' + tofmt)
-        except:
+        except Exception:
             def fn():
                 raise RuntimeError()
             self.fn = fn

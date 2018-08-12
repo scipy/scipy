@@ -71,7 +71,7 @@ def main():
                         last_log_size = log_size
 
             ret = p.wait()
-        except:
+        except:  # noqa: E722
             p.terminate()
             raise
 
@@ -104,7 +104,7 @@ def elapsed(t):
         sgn = ''
 
     if t < 60:
-        return "{0}{1:.0f} s".format(sgn, round(t)) 
+        return "{0}{1:.0f} s".format(sgn, round(t))
     elif t < 3600:
         mins, secs = divmod(t, 60)
         return "{0}{1:.0f} min {2:.0f} s".format(sgn, mins, secs)

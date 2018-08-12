@@ -141,16 +141,14 @@ class TestConstructUtils(object):
                                                     [0, 1, -2]]))
 
         for d, o, shape, result in cases:
-            try:
-                assert_equal(construct.diags(d, o, shape=shape).todense(),
-                             result)
+            err_msg = "%r %r %r %r" % (d, o, shape, result)
+            assert_equal(construct.diags(d, o, shape=shape).todense(),
+                         result, err_msg=err_msg)
 
-                if shape[0] == shape[1] and hasattr(d[0], '__len__') and len(d[0]) <= max(shape):
-                    # should be able to find the shape automatically
-                    assert_equal(construct.diags(d, o).todense(), result)
-            except:
-                print("%r %r %r %r" % (d, o, shape, result))
-                raise
+            if shape[0] == shape[1] and hasattr(d[0], '__len__') and len(d[0]) <= max(shape):
+                # should be able to find the shape automatically
+                assert_equal(construct.diags(d, o).todense(), result,
+                             err_msg=err_msg)
 
     def test_diags_default(self):
         a = array([1, 2, 3, 4, 5])
@@ -175,11 +173,8 @@ class TestConstructUtils(object):
         cases.append(([a], 0, None))
 
         for d, o, shape in cases:
-            try:
-                assert_raises(ValueError, construct.diags, d, o, shape)
-            except:
-                print("%r %r %r" % (d, o, shape))
-                raise
+            assert_raises(ValueError, construct.diags, d, o, shape,
+                          err_msg="%r %r %r" % (d, o, shape))
 
         assert_raises(TypeError, construct.diags, [[None]], [0])
 
@@ -384,12 +379,12 @@ class TestConstructUtils(object):
     def test_concatenate_int32_overflow(self):
         """ test for indptr overflow when concatenating matrices """
         check_free_memory(30000)
-        
+
         n = 33000
         A = csr_matrix(np.ones((n, n), dtype=bool))
         B = A.copy()
         C = construct._compressed_sparse_stack((A,B), 0)
-        
+
         assert_(np.all(np.equal(np.diff(C.indptr), n)))
         assert_equal(C.indices.dtype, np.int64)
         assert_equal(C.indptr.dtype, np.int64)
