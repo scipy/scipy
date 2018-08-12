@@ -696,8 +696,8 @@ And the optimization problem is solved with:
                 Iterations: 5
                 Function evaluations: 6
                 Gradient evaluations: 5
-    >>> print(res.x)
-    [0.41494418 0.17011164]
+    >>> res.x
+    np.array([0.41494418 0.17011164])
 
 Most of the options available for the method ``'trust-constr'`` are not available
 for ``'SLSQP'``.
