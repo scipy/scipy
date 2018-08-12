@@ -604,6 +604,7 @@ The optimization problem is solved using:
     `gtol` termination condition is satisfied.
     Number of iterations: 12, function evaluations: 8, CG iterations: 7, optimality: 2.99e-09, constraint violation: 1.11e-16, execution time: 0.016 s.
     >>> print(res.x)
+    # may vary
     [0.41494531 0.17010937]
 
 When needed, the objective function Hessian can be defined using a :func:`LinearOperator` object,
