@@ -173,8 +173,7 @@ class TestConstructUtils(object):
         cases.append(([a], 0, None))
 
         for d, o, shape in cases:
-            assert_raises(ValueError, construct.diags, d, o, shape,
-                          err_msg="%r %r %r" % (d, o, shape))
+            assert_raises(ValueError, construct.diags, d, o, shape)
 
         assert_raises(TypeError, construct.diags, [[None]], [0])
 
