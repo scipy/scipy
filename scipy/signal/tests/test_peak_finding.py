@@ -704,7 +704,8 @@ class TestFindPeaks(object):
         with raises(ValueError, match="distance"):
             find_peaks(np.arange(10), distance=-1)
 
-    @pytest.mark.filterwarnings("ignore:::scipy.signal._peak_finding")
+    @pytest.mark.filterwarnings("ignore:some peaks have a prominence of 0",
+                                "ignore:some peaks have a width of 0")
     def test_wlen_smaller_plateau(self):
         """
         Test behavior of prominence and width calculation if the given window

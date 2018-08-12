@@ -250,6 +250,107 @@ def argrelextrema(data, comparator, axis=0, order=1, mode='clip'):
     return np.nonzero(results)
 
 
+def _handle_arg_x(value):
+    """Check and normalize argument `x`.
+
+    See descriptions in functions `find_peaks`, `peak_prominences` and
+    `peak_widths`.
+
+    Parameters
+    ----------
+    value : array_like
+        A one-dimensional array.
+
+    Returns
+    -------
+    value : ndarray
+        A one-dimensional C-contiguous array with dtype('float64').
+    """
+    value = np.asarray(value, order='C', dtype=np.float64)
+    if value.ndim != 1:
+        raise ValueError('`x` must have exactly one dimension')
+    return value
+
+
+def _handle_arg_peaks(value):
+    """Check and normalize argument `peaks`.
+
+    See descriptions in functions `peak_prominences` and `peak_widths`.
+
+    Parameters
+    ----------
+    value : array_like
+        A one-dimensional array.
+
+    Returns
+    -------
+    value : ndarray
+        A one-dimensional C-contiguous array with dtype('intp').
+    """
+    value = np.asarray(value)
+    if value.size == 0:
+        # Empty arrays default to np.float64 but are valid input
+        value = np.array([], dtype=np.intp)
+    try:
+        # Safely convert to C-contiguous array of type np.intp
+        value = value.astype(np.intp, order='C', casting='safe',
+                             subok=False, copy=False)
+    except TypeError:
+        raise TypeError("Cannot safely cast `peaks` to dtype('intp')")
+    if value.ndim != 1:
+        raise ValueError('`peaks` must have exactly one dimension')
+    return value
+
+
+def _handle_arg_wlen(value):
+    """Check and normalize argument `wlen`.
+
+    See descriptions in functions `peak_prominences` and `peak_widths`.
+
+    Parameters
+    ----------
+    value : number or None
+        None or a number which must be larger than 1.
+
+    Returns
+    -------
+    value : int
+        The original `value` rounded up to the next integer or -1 if `value`
+        was None.
+    """
+    if value is None:
+        value = -1  # _peak_prominences expects int -> None == -1
+    elif 1 < value:
+        # Round up to next positive integer; rounding up to next odd integer
+        # happens implicitly inside the inner function
+        value = int(math.ceil(value))
+    else:
+        # Give feedback if wlen has unexpected value
+        raise ValueError('`wlen` must be at larger than 1, was ' + str(value))
+    return value
+
+
+def _handle_arg_rel_height(value):
+    """Check and normalize argument `rel_height`.
+
+    See descriptions in functions `find_peaks` and `peak_widths`.
+
+    Parameters
+    ----------
+    value : float or None
+        None or a float which must be equal to or larger than 0.
+
+    Returns
+    -------
+    value : int
+        The original `value` rounded up to the next integer or -1 if `value`
+        was None.
+    """
+    if value < 0.0:
+        raise ValueError('`rel_height` must be greater or equal to 0.0')
+    return value
+
+
 def peak_prominences(x, peaks, wlen=None):
     """
     Calculate the prominence of each peak in a signal.
@@ -264,7 +365,7 @@ def peak_prominences(x, peaks, wlen=None):
         A signal with peaks.
     peaks : sequence
         Indices of peaks in `x`.
-    wlen : int or float, optional
+    wlen : number, optional
         A window length in samples that optionally limits the evaluated area for
         each peak to a subset of `x`. The peak is always placed in the middle of
         the window therefore the given length is rounded up to the next odd
@@ -384,34 +485,9 @@ def peak_prominences(x, peaks, wlen=None):
     only two candidates in the evaluated area are the two neighbouring samples
     and a smaller prominence is calculated.
     """
-    # Inner function expects `x` to be C-contiguous
-    x = np.asarray(x, order='C', dtype=np.float64)
-    if x.ndim != 1:
-        raise ValueError('`x` must have exactly one dimension')
-
-    peaks = np.asarray(peaks)
-    if peaks.size == 0:
-        # Empty arrays default to np.float64 but are valid input
-        peaks = np.array([], dtype=np.intp)
-    try:
-        # Safely convert to C-contiguous array of type np.intp
-        peaks = peaks.astype(np.intp, order='C', casting='safe',
-                             subok=False, copy=False)
-    except TypeError:
-        raise TypeError("Cannot safely cast `peaks` to dtype('intp')")
-    if peaks.ndim != 1:
-        raise ValueError('`peaks` must have exactly one dimension')
-
-    if wlen is None:
-        wlen = -1  # Inner function expects int -> None == -1
-    elif 1 < wlen:
-        # Round up to next positive integer; rounding up to next odd integer
-        # happens implicitly inside the inner function
-        wlen = int(math.ceil(wlen))
-    else:
-        # Give feedback if wlen has unexpected value
-        raise ValueError('`wlen` must be at larger than 1, was ' + str(wlen))
-
+    x = _handle_arg_x(x)
+    peaks = _handle_arg_peaks(peaks)
+    wlen = _handle_arg_wlen(wlen)
     return _peak_prominences(x, peaks, wlen)
 
 
@@ -437,7 +513,7 @@ def peak_widths(x, peaks, rel_height=0.5, prominence_data=None, wlen=None):
         A tuple of three arrays matching the output of `peak_prominences` when
         called with the same arguments `x` and `peaks`. This data is calculated
         internally if not provided.
-    wlen : int, optional
+    wlen : number, optional
         A window length in samples passed to `peak_prominences` as an optional
         argument for internal calculation of `prominence_data`. This argument
         is ignored if `prominence_data` is given.
@@ -531,31 +607,13 @@ def peak_widths(x, peaks, rel_height=0.5, prominence_data=None, wlen=None):
     >>> plt.hlines(*results_full[1:], color="C3")
     >>> plt.show()
     """
-    # Inner function expects `x` to be C-contiguous
-    x = np.asarray(x, order='C', dtype=np.float64)
-    if x.ndim != 1:
-        raise ValueError('`x` must have exactly one dimension')
-
-    peaks = np.asarray(peaks)
-    if peaks.size == 0:
-        # Empty arrays default to np.float64 but are valid input
-        peaks = np.array([], dtype=np.intp)
-    try:
-        # Safely convert to C-contiguous array of type np.intp
-        peaks = peaks.astype(np.intp, order='C', casting='safe',
-                             subok=False, copy=False)
-    except TypeError:
-        raise TypeError("Cannot safely cast `peaks` to dtype('intp')")
-    if peaks.ndim != 1:
-        raise ValueError('`peaks` must have exactly one dimension')
-
-    if rel_height < 0.0:
-        raise ValueError('`rel_height` must be greater or equal to 0.0')
-
+    x = _handle_arg_x(x)
+    peaks = _handle_arg_peaks(peaks)
+    rel_height = _handle_arg_rel_height(rel_height)
     if prominence_data is None:
         # Calculate prominence if not supplied and use wlen if supplied.
-        prominence_data = peak_prominences(x, peaks, wlen)
-
+        wlen = _handle_arg_wlen(wlen)
+        prominence_data = _peak_prominences(x, peaks, wlen)
     return _peak_widths(x, peaks, rel_height, *prominence_data)
 
 
@@ -881,9 +939,7 @@ def find_peaks(x, height=None, threshold=None, distance=None,
     >>> plt.show()
     """
     # _argmaxima1d expects array of dtype 'float64'
-    x = np.asarray(x, dtype=np.float64, order='C')
-    if x.ndim != 1:
-        raise ValueError('`x` must have exactly one dimension')
+    x = _handle_arg_x(x)
     if distance is not None and distance < 1:
         raise ValueError('`distance` must be greater or equal to 1')
 
@@ -916,9 +972,10 @@ def find_peaks(x, height=None, threshold=None, distance=None,
 
     if prominence is not None or width is not None:
         # Calculate prominence (required for both conditions)
+        wlen = _handle_arg_wlen(wlen)
         properties.update(zip(
             ['prominences', 'left_bases', 'right_bases'],
-            peak_prominences(x, peaks, wlen=wlen)
+            _peak_prominences(x, peaks, wlen=wlen)
         ))
 
     if prominence is not None:
@@ -930,11 +987,11 @@ def find_peaks(x, height=None, threshold=None, distance=None,
 
     if width is not None:
         # Calculate widths
+        rel_height = _handle_arg_rel_height(rel_height)
         properties.update(zip(
             ['widths', 'width_heights', 'left_ips', 'right_ips'],
-            peak_widths(x, peaks, rel_height, (properties['prominences'],
-                                               properties['left_bases'],
-                                               properties['right_bases']))
+            _peak_widths(x, peaks, rel_height, properties['prominences'],
+                         properties['left_bases'], properties['right_bases'])
         ))
         # Evaluate width condition
         wmin, wmax = _unpack_condition_args(width, x, peaks)

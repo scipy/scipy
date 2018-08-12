@@ -249,7 +249,7 @@ def _peak_prominences(np.float64_t[::1] x not None,
 
     if show_warning:
         warnings.warn("some peaks have a prominence of 0",
-                      PeakPropertyWarning)
+                      PeakPropertyWarning, stacklevel=2)
     # Return memoryviews as ndarrays
     return prominences.base, left_bases.base, right_bases.base
 
@@ -360,5 +360,6 @@ def _peak_widths(np.float64_t[::1] x not None,
             right_ips[p] = right_ip
 
     if show_warning:
-        warnings.warn("some peaks have a width of 0", PeakPropertyWarning)
+        warnings.warn("some peaks have a width of 0",
+                      PeakPropertyWarning, stacklevel=2)
     return widths.base, width_heights.base, left_ips.base, right_ips.base
