@@ -76,8 +76,8 @@ parameter):
              Iterations: 339
              Function evaluations: 571
 
-    >>> print(res.x)
-    [1. 1. 1. 1. 1.]
+    >>> res.x
+    array([1., 1., 1., 1., 1.])
 
 The simplex algorithm is probably the simplest way to minimize a fairly
 well-behaved function. It requires only function evaluations and is a good
@@ -603,8 +603,8 @@ The optimization problem is solved using:
     # may vary
     `gtol` termination condition is satisfied.
     Number of iterations: 12, function evaluations: 8, CG iterations: 7, optimality: 2.99e-09, constraint violation: 1.11e-16, execution time: 0.016 s.
-    >>> print(res.x)
-    [0.41494531 0.17010937]
+    >>> res.x
+    array([0.41494531, 0.17010937])
 
 When needed, the objective function Hessian can be defined using a :func:`LinearOperator` object,
 
@@ -618,8 +618,8 @@ When needed, the objective function Hessian can be defined using a :func:`Linear
     # may vary
     `gtol` termination condition is satisfied.
     Number of iterations: 12, function evaluations: 8, CG iterations: 7, optimality: 2.99e-09, constraint violation: 1.11e-16, execution time: 0.018 s.
-    >>> print(res.x)
-    [0.41494531 0.17010937]
+    >>> res.x
+    array([0.41494531, 0.17010937])
   
 or a Hessian-vector product through the parameter ``hessp``.
 
@@ -629,8 +629,8 @@ or a Hessian-vector product through the parameter ``hessp``.
     # may vary
     `gtol` termination condition is satisfied.
     Number of iterations: 12, function evaluations: 8, CG iterations: 7, optimality: 2.99e-09, constraint violation: 1.11e-16, execution time: 0.018 s.
-    >>> print(res.x)
-    [0.41494531 0.17010937]
+    >>> res.x
+    array([0.41494531, 0.17010937])
 
 
 Alternatively, the first and second derivatives of the objective function can be approximated.
@@ -644,8 +644,8 @@ and the gradient with finite differences.
     # may vary
     `gtol` termination condition is satisfied.
     Number of iterations: 12, function evaluations: 24, CG iterations: 7, optimality: 4.48e-09, constraint violation: 0.00e+00, execution time: 0.016 s.
-    >>> print(res.x)
-    [0.41494531 0.17010937]
+    >>> res.x
+    array([0.41494531, 0.17010937])
 
 
 .. [TRIP] Byrd, Richard H., Mary E. Hribar, and Jorge Nocedal. 1999.
@@ -696,8 +696,8 @@ And the optimization problem is solved with:
                 Iterations: 5
                 Function evaluations: 6
                 Gradient evaluations: 5
-    >>> print(res.x)
-    [0.41494418 0.17011164]
+    >>> res.x
+    array([0.41494418, 0.17011164])
 
 Most of the options available for the method ``'trust-constr'`` are not available
 for ``'SLSQP'``.
