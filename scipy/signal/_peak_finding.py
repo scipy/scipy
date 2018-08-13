@@ -250,16 +250,11 @@ def argrelextrema(data, comparator, axis=0, order=1, mode='clip'):
     return np.nonzero(results)
 
 
-def _handle_arg_x(value):
-    """Check and normalize argument `x`.
+def _arg_x_as_expected(value):
+    """Ensure argument `x` is a 1D C-contiguous array of dtype('float64').
 
-    See descriptions in functions `find_peaks`, `peak_prominences` and
-    `peak_widths`.
-
-    Parameters
-    ----------
-    value : array_like
-        A one-dimensional array.
+    Used in `find_peaks`, `peak_prominences` and `peak_widths` to make `x`
+    compatible with the signature of the wrapped Cython functions.
 
     Returns
     -------
@@ -272,15 +267,11 @@ def _handle_arg_x(value):
     return value
 
 
-def _handle_arg_peaks(value):
-    """Check and normalize argument `peaks`.
+def _arg_peaks_as_expected(value):
+    """Ensure argument `peaks` is a 1D C-contiguous array of dtype('intp').
 
-    See descriptions in functions `peak_prominences` and `peak_widths`.
-
-    Parameters
-    ----------
-    value : array_like
-        A one-dimensional array.
+    Used in `peak_prominences` and `peak_widths` to make `peaks` compatible
+    with the signature of the wrapped Cython functions.
 
     Returns
     -------
@@ -302,52 +293,29 @@ def _handle_arg_peaks(value):
     return value
 
 
-def _handle_arg_wlen(value):
-    """Check and normalize argument `wlen`.
+def _arg_wlen_as_expected(value):
+    """Ensure argument `wlen` is of type `np.intp` and larger than 1.
 
-    See descriptions in functions `peak_prominences` and `peak_widths`.
-
-    Parameters
-    ----------
-    value : number or None
-        None or a number which must be larger than 1.
+    Used in `peak_prominences` and `peak_widths`.
 
     Returns
     -------
-    value : int
-        The original `value` rounded up to the next integer or -1 if `value`
-        was None.
+    value : np.intp
+        The original `value` rounded up to an integer or -1 if `value` was
+        None.
     """
     if value is None:
-        value = -1  # _peak_prominences expects int -> None == -1
+        # _peak_prominences expects an intp; -1 signals that no value was
+        # supplied by the user
+        value = -1
     elif 1 < value:
-        # Round up to next positive integer; rounding up to next odd integer
-        # happens implicitly inside the inner function
-        value = int(math.ceil(value))
+        # Round up to a positive integer
+        if not np.can_cast(value, np.intp, "safe"):
+            value = math.ceil(value)
+        value = np.intp(value)
     else:
-        # Give feedback if wlen has unexpected value
-        raise ValueError('`wlen` must be at larger than 1, was ' + str(value))
-    return value
-
-
-def _handle_arg_rel_height(value):
-    """Check and normalize argument `rel_height`.
-
-    See descriptions in functions `find_peaks` and `peak_widths`.
-
-    Parameters
-    ----------
-    value : float or None
-        None or a float which must be equal to or larger than 0.
-
-    Returns
-    -------
-    value : int
-        The original `value` rounded up to the next integer or -1 if `value`
-        was None.
-    """
-    if value < 0.0:
-        raise ValueError('`rel_height` must be greater or equal to 0.0')
+        raise ValueError('`wlen` must be at larger than 1, was {}'
+                         .format(value))
     return value
 
 
@@ -488,9 +456,9 @@ def peak_prominences(x, peaks, wlen=None):
     only two candidates in the evaluated area are the two neighbouring samples
     and a smaller prominence is calculated.
     """
-    x = _handle_arg_x(x)
-    peaks = _handle_arg_peaks(peaks)
-    wlen = _handle_arg_wlen(wlen)
+    x = _arg_x_as_expected(x)
+    peaks = _arg_peaks_as_expected(peaks)
+    wlen = _arg_wlen_as_expected(wlen)
     return _peak_prominences(x, peaks, wlen)
 
 
@@ -613,12 +581,11 @@ def peak_widths(x, peaks, rel_height=0.5, prominence_data=None, wlen=None):
     >>> plt.hlines(*results_full[1:], color="C3")
     >>> plt.show()
     """
-    x = _handle_arg_x(x)
-    peaks = _handle_arg_peaks(peaks)
-    rel_height = _handle_arg_rel_height(rel_height)
+    x = _arg_x_as_expected(x)
+    peaks = _arg_peaks_as_expected(peaks)
     if prominence_data is None:
         # Calculate prominence if not supplied and use wlen if supplied.
-        wlen = _handle_arg_wlen(wlen)
+        wlen = _arg_wlen_as_expected(wlen)
         prominence_data = _peak_prominences(x, peaks, wlen)
     return _peak_widths(x, peaks, rel_height, *prominence_data)
 
@@ -951,7 +918,7 @@ def find_peaks(x, height=None, threshold=None, distance=None,
     >>> plt.show()
     """
     # _argmaxima1d expects array of dtype 'float64'
-    x = _handle_arg_x(x)
+    x = _arg_x_as_expected(x)
     if distance is not None and distance < 1:
         raise ValueError('`distance` must be greater or equal to 1')
 
@@ -984,7 +951,7 @@ def find_peaks(x, height=None, threshold=None, distance=None,
 
     if prominence is not None or width is not None:
         # Calculate prominence (required for both conditions)
-        wlen = _handle_arg_wlen(wlen)
+        wlen = _arg_wlen_as_expected(wlen)
         properties.update(zip(
             ['prominences', 'left_bases', 'right_bases'],
             _peak_prominences(x, peaks, wlen=wlen)
@@ -999,7 +966,6 @@ def find_peaks(x, height=None, threshold=None, distance=None,
 
     if width is not None:
         # Calculate widths
-        rel_height = _handle_arg_rel_height(rel_height)
         properties.update(zip(
             ['widths', 'width_heights', 'left_ips', 'right_ips'],
             _peak_widths(x, peaks, rel_height, properties['prominences'],

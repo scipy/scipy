@@ -294,6 +294,7 @@ def _peak_widths(np.float64_t[::1] x not None,
         If the supplied prominence data doesn't satisfy the condition
         ``0 <= left_base <= peak <= right_base < x.shape[0]`` for each peak or
         if `peaks`, `left_bases` and `right_bases` don't share the same shape.
+        Or if `rel_height` is not at least 0.
 
     Warnings
     --------
@@ -312,8 +313,10 @@ def _peak_widths(np.float64_t[::1] x not None,
         np.intp_t p, peak, i, i_max, i_min
         np.uint8_t show_warning
 
-    if not (peaks.shape[0] == prominences.shape[0] == left_bases.shape[0] ==
-            right_bases.shape[0]):
+    if rel_height < 0:
+        raise ValueError('`rel_height` must be greater or equal to 0.0')
+    if not (peaks.shape[0] == prominences.shape[0] == left_bases.shape[0]
+            == right_bases.shape[0]):
         raise ValueError("arrays in `prominence_data` must have the same shape "
                          "as `peaks`")
 

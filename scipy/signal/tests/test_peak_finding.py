@@ -502,7 +502,7 @@ class TestPeakWidths(object):
             peak_widths(np.arange(10), [1.1, 2.3])
         with raises(ValueError, match='rel_height'):
             # rel_height is < 0
-            peak_widths(np.arange(10), [1, 2], rel_height=-1)
+            peak_widths([0, 1, 0, 1, 0], [1, 3], rel_height=-1)
         with raises(TypeError, match='None'):
             # prominence data contains None
             peak_widths([1, 2, 1], [1], prominence_data=(None, None, None))
