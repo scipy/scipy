@@ -1361,7 +1361,8 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
     Returns
     -------
     w : array
-        Array of k eigenvalues
+        Array of k eigenvalues.
+
     v : array
         An array representing the `k` eigenvectors.  The column ``v[:, i]`` is
         the eigenvector corresponding to the eigenvalue ``w[i]``.
@@ -1446,7 +1447,13 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
     OPinv : N x N matrix, array, sparse matrix, or LinearOperator
         See notes in sigma, above.
     return_eigenvectors : bool
-        Return eigenvectors (True) in addition to eigenvalues
+        Return eigenvectors (True) in addition to eigenvalues. This value determines
+        the order in which eigenvalues are sorted.
+
+            If `return_eigenvectors` is True, eigenvalues are sorted by algebraic value
+
+            If `return_eigenvectors` is False, eigenvalues are sorted by magnitude value
+
     mode : string ['normal' | 'buckling' | 'cayley']
         Specify strategy to use for shift-invert mode.  This argument applies
         only for real-valued A and sigma != None.  For shift-invert mode,
