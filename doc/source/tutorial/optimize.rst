@@ -697,7 +697,7 @@ And the optimization problem is solved with:
                 Function evaluations: 6
                 Gradient evaluations: 5
     >>> res.x
-    array([0.41494418 0.17011164])
+    array([0.41494418 0.17011164])  # may vary
 
 Most of the options available for the method ``'trust-constr'`` are not available
 for ``'SLSQP'``.
