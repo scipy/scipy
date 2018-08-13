@@ -365,7 +365,7 @@ def peak_prominences(x, peaks, wlen=None):
         A signal with peaks.
     peaks : sequence
         Indices of peaks in `x`.
-    wlen : number, optional
+    wlen : int, optional
         A window length in samples that optionally limits the evaluated area for
         each peak to a subset of `x`. The peak is always placed in the middle of
         the window therefore the given length is rounded up to the next odd
@@ -383,6 +383,18 @@ def peak_prominences(x, peaks, wlen=None):
     ------
     ValueError
         If a value in `peaks` is an invalid index for `x`.
+
+    Warns
+    -----
+    PeakPropertyWarning
+        For indices in `peaks` that don't point to valid local maxima in `x`
+        the returned prominence will be 0 and this warning is raised. This
+        also happens if `wlen` is smaller than the plateau size of a peak.
+
+    Warnings
+    --------
+    This function may return unexpected results for data containing NaNs. To
+    avoid this, NaNs should either be removed or replaced.
 
     See Also
     --------
@@ -417,15 +429,6 @@ def peak_prominences(x, peaks, wlen=None):
     calculated prominence. In practice this is only relevant for the highest set
     of peaks in `x`. This behavior may even be used intentionally to calculate
     "local" prominences.
-
-    For indices in `peaks` that don't point to valid local maxima in `x` the
-    returned prominence will be 0 and a warning is raised. This also happens
-    if `wlen` is smaller than the plateau size of a peak.
-
-    .. warning::
-
-       This function may return unexpected results for data containing NaNs. To
-       avoid this, NaNs should either be removed or replaced.
 
     .. versionadded:: 1.1.0
 
@@ -513,7 +516,7 @@ def peak_widths(x, peaks, rel_height=0.5, prominence_data=None, wlen=None):
         A tuple of three arrays matching the output of `peak_prominences` when
         called with the same arguments `x` and `peaks`. This data is calculated
         internally if not provided.
-    wlen : number, optional
+    wlen : int, optional
         A window length in samples passed to `peak_prominences` as an optional
         argument for internal calculation of `prominence_data`. This argument
         is ignored if `prominence_data` is given.
@@ -535,6 +538,17 @@ def peak_widths(x, peaks, rel_height=0.5, prominence_data=None, wlen=None):
         ``0 <= left_base <= peak <= right_base < x.shape[0]`` for each peak,
         has the wrong dtype, is not C-contiguous or does not have the same
         shape.
+
+    Warns
+    -----
+    PeakPropertyWarning
+        Raised if any calculated width is 0. This may stem from the supplied
+        `prominence_data` or if `rel_height` is set to 0.
+
+    Warnings
+    --------
+    This function may return unexpected results for data containing NaNs. To
+    avoid this, NaNs should either be removed or replaced.
 
     See Also
     --------
@@ -564,14 +578,6 @@ def peak_widths(x, peaks, rel_height=0.5, prominence_data=None, wlen=None):
     As shown above to calculate a peak's width its prominence and bases must be
     known. You can supply these yourself with the argument `prominence_data`.
     Otherwise they are internally calculated (see `peak_prominences`).
-
-    A warning is raised if any calculated width is 0. This may stem from the
-    supplied `prominence_data` or if `rel_height` is set to 0.
-
-    .. warning::
-
-       This function may return unexpected results for data containing NaNs. To
-       avoid this, NaNs should either be removed or replaced.
 
     .. versionadded:: 1.1.0
 
@@ -787,7 +793,7 @@ def find_peaks(x, height=None, threshold=None, distance=None,
         matching `x` or a 2-element sequence of the former. The first
         element is always interpreted as the  minimal and the second, if
         supplied, as the maximal required prominence.
-    wlen : number, optional
+    wlen : int, optional
         Used for calculation of the peaks prominences, thus it is only used if
         one of the arguments `prominence` or `width` is given. See argument
         `wlen` in `peak_prominences` for a full description of its effects.
@@ -820,6 +826,17 @@ def find_peaks(x, height=None, threshold=None, distance=None,
         To calculate and return properties without excluding peaks, provide the
         open interval ``(None, None)`` as a value to the appropriate argument
         (excluding `distance`).
+
+    Warns
+    -----
+    PeakPropertyWarning
+        Raised if a peak's properties have unexpected values (see
+        `peak_prominences` and `peak_widths`).
+
+    Warnings
+    --------
+    This function may return unexpected results for data containing NaNs. To
+    avoid this, NaNs should either be removed or replaced.
 
     See Also
     --------
@@ -862,11 +879,6 @@ def find_peaks(x, height=None, threshold=None, distance=None,
     * Use `wlen` to reduce the time it takes to evaluate the conditions for
       `prominence` or `width` if `x` is large or has many local maxima
       (see `peak_prominences`).
-
-    .. warning::
-
-       This function may return unexpected results for data containing NaNs. To
-       avoid this, NaNs should either be removed or replaced.
 
     .. versionadded:: 1.1.0
 

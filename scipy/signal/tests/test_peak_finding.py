@@ -23,10 +23,7 @@ from scipy.signal._peak_finding import (
     find_peaks_cwt,
     _identify_ridge_lines
 )
-from scipy.signal._peak_finding_utils import (
-    _argmaxima1d,
-    PeakPropertyWarning
-)
+from scipy.signal._peak_finding_utils import _argmaxima1d, PeakPropertyWarning
 
 
 def _gen_gaussians(center_locs, sigmas, total_length):

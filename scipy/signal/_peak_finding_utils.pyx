@@ -185,8 +185,8 @@ def _peak_prominences(np.float64_t[::1] x not None,
     ValueError
         If a value in `peaks` is an invalid index for `x`.
 
-    Warnings
-    --------
+    Warns
+    -----
     PeakPropertyWarning
         If a prominence of 0 was calculated for any peak.
 
