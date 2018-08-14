@@ -1398,14 +1398,18 @@ def _postprocess(
     lb[np.equal(lb, None)] = -np.inf
     ub[np.equal(ub, None)] = np.inf
     tol = np.sqrt(tol)  # Somewhat arbitrary, but status 5 is very unusual
-    if status == 0 and ((slack < -tol).any() or (np.abs(con) > tol).any() or
-                        (x < lb - tol).any() or (x > ub + tol).any()):
+
+    def _is_infeasible(con, lb, slack, tol, ub, x):
+        return ((slack < -tol).any() or (np.abs(con) > tol).any()
+                or (x < lb - tol).any() or (x > ub + tol).any())
+
+    if status == 0 and _is_infeasible(con, lb, slack, tol, ub, x):
         status = 4
         message = ("The solution does not satisfy the constraints, yet "
                    "no errors were raised and there is no certificate of "
                    "infeasibility or unboundedness. This is known to occur "
                    "if the `presolve` option is False and the problem is "
-                   "infeasible. If you uncounter this under different "
+                   "infeasible. If you encounter this under different "
                    "circumstances, please submit a bug report. Otherwise, "
                    "please enable presolve.")
     elif status == 0 and (np.isnan(x).any() or np.isnan(fun) or
@@ -1418,6 +1422,12 @@ def _postprocess(
                    "circumstances, please submit a bug report. Otherwise, "
                    "remove linearly dependent equations from your equality "
                    "constraints or enable presolve.")
+    elif status  == 2 and not _is_infeasible(con, lb, slack, tol, ub, x):
+        # Occurs if the simplex method exits after phase one with a very
+        # nearly basic feasible solution. Postsolving can then make the
+        # solution basic.
+        # However this solution is NOT optimal
+        raise ValueError(message)
 
     return x, fun, slack, con, status, message
 

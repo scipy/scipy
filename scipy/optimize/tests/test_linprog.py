@@ -369,22 +369,12 @@ class LinprogCommonTests(object):
             [0, 0, 0, p, p]]
         b_eq = [-4, 0, 0, 4]
 
-        if self.method == "simplex":
-            # Including the callback here ensures the solution can be
-            # calculated correctly, even when phase 1 terminated
-            # with some of the artificial variables as pivots
-            # (i.e. basis[:m] contains elements corresponding to
-            # the artificial variables)
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, "scipy.linalg.solve\nIll...")
+            sup.filter(OptimizeWarning, "A_eq does not appear...")
+            sup.filter(OptimizeWarning, "Solving system with option...")
             res = linprog(c=cost, A_eq=A_eq, b_eq=b_eq, bounds=bounds,
-                          method=self.method, options=self.options,
-                          callback=lambda x, **kwargs: None)
-        else:
-            with suppress_warnings() as sup:
-                sup.filter(RuntimeWarning, "scipy.linalg.solve\nIll...")
-                sup.filter(OptimizeWarning, "A_eq does not appear...")
-                sup.filter(OptimizeWarning, "Solving system with option...")
-                res = linprog(c=cost, A_eq=A_eq, b_eq=b_eq, bounds=bounds,
-                              method=self.method, options=self.options)
+                            method=self.method, options=self.options)
         _assert_success(res, desired_fun=14)
 
     def test_simplex_algorithm_wikipedia_example(self):
@@ -427,16 +417,10 @@ class LinprogCommonTests(object):
                 [0, 1, 0, 0, 1, 0],
                 [0, 0, 1, 0, 0, 1]]
         b_eq = [-0.5, 0.4, 0.3, 0.3, 0.3]
-        if self.method == "simplex":
-            # Including the callback here ensures the solution can be
-            # calculated correctly.
+
+        with suppress_warnings() as sup:
+            sup.filter(OptimizeWarning, "A_eq does not appear...")
             res = linprog(c=c, A_eq=A_eq, b_eq=b_eq,
-                          method=self.method, options=self.options,
-                          callback=lambda x, **kwargs: None)
-        else:
-            with suppress_warnings() as sup:
-                sup.filter(OptimizeWarning, "A_eq does not appear...")
-                res = linprog(c=c, A_eq=A_eq, b_eq=b_eq,
                               method=self.method, options=self.options)
         _assert_success(res, desired_fun=-1.77,
                         desired_x=[0.3, 0.2, 0.0, 0.0, 0.1, 0.3])
@@ -470,14 +454,11 @@ class LinprogCommonTests(object):
         tmp = 2 * np.pi * np.arange(m) / (m + 1)
         A_eq = np.vstack((np.cos(tmp) - 1, np.sin(tmp)))
         b_eq = [1, 1]
-        if self.method == "simplex":
-            res = linprog(c=c, A_eq=A_eq, b_eq=b_eq,
-                          method=self.method, options=self.options)
-        else:
-            o = {key: self.options[key] for key in self.options}
-            o["presolve"] = False
-            res = linprog(c=c, A_eq=A_eq, b_eq=b_eq, method=self.method,
-                          options=o)
+        o = {key: self.options[key] for key in self.options}
+        o["presolve"] = False
+
+        res = linprog(c=c, A_eq=A_eq, b_eq=b_eq, method=self.method,
+                      options=o)
         _assert_infeasible(res)
 
     def test_unknown_options(self):
@@ -497,9 +478,6 @@ class LinprogCommonTests(object):
 
     def test_no_constraints(self):
         res = linprog([-1, -2], method=self.method, options=self.options)
-        if self.method == "simplex":
-            # Why should x be 0,0? inf,inf is more correct, IMO
-            assert_equal(res.x, [0, 0])
         _assert_unbounded(res)
 
     def test_simple_bounds(self):
@@ -707,6 +685,47 @@ class LinprogCommonTests(object):
         assert_allclose(A.dot(res.x), b)
         assert_array_less(np.zeros(res.x.size) - 1e-5, res.x)
 
+    def test_issue_7237(self):
+        # https://github.com/scipy/scipy/issues/7237
+        # The simplex method sometimes "explodes" if the pivot value is very
+        # close to zero.
+
+        c = np.array([-1, 0, 0, 0, 0, 0, 0, 0, 0])
+        A_ub = np.array([
+            [1., -724., 911., -551., -555., -896., 478., -80., -293.],
+            [1., 566., 42., 937.,233., 883., 392., -909., 57.],
+            [1., -208., -894., 539., 321., 532., -924., 942., 55.],
+            [1., 857., -859., 83., 462., -265., -971., 826., 482.],
+            [1., 314., -424., 245., -424., 194., -443., -104., -429.],
+            [1., 540., 679., 361., 149., -827., 876., 633., 302.],
+            [0., -1., -0., -0., -0., -0., -0., -0., -0.],
+            [0., -0., -1., -0., -0., -0., -0., -0., -0.],
+            [0., -0., -0., -1., -0., -0., -0., -0., -0.],
+            [0., -0., -0., -0., -1., -0., -0., -0., -0.],
+            [0., -0., -0., -0., -0., -1., -0., -0., -0.],
+            [0., -0., -0., -0., -0., -0., -1., -0., -0.],
+            [0., -0., -0., -0., -0., -0., -0., -1., -0.],
+            [0., -0., -0., -0., -0., -0., -0., -0., -1.],
+            [0., 1., 0., 0., 0., 0., 0., 0., 0.],
+            [0., 0., 1., 0., 0., 0., 0., 0., 0.],
+            [0., 0., 0., 1., 0., 0., 0., 0., 0.],
+            [0., 0., 0., 0., 1., 0., 0., 0., 0.],
+            [0., 0., 0., 0., 0., 1., 0., 0., 0.],
+            [0., 0., 0., 0., 0., 0., 1., 0., 0.],
+            [0., 0., 0., 0., 0., 0., 0., 1., 0.],
+            [0., 0., 0., 0., 0., 0., 0., 0., 1.]
+            ])
+        b_ub = np.array([
+            0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+            0., 0., 0., 1., 1., 1., 1., 1., 1., 1., 1.])
+        A_eq = np.array([[0., 1., 1., 1., 1., 1., 1., 1., 1.]])
+        b_eq = np.array([[1.]])
+        bounds = [(None, None)] * 9
+
+        res = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
+                bounds=bounds, method=self.method, options=self.options)
+        _assert_success(res, desired_fun=108.568535, atol=1e-6)
+
     def test_bug_8662(self):
         # scipy.linprog returns incorrect optimal result for constraints using
         # default bounds, but, correct if boundary condition as constraint.
@@ -819,15 +838,7 @@ class LinprogCommonTests(object):
         ])
         b_eq = np.array([[100],[0],[0],[0],[0]])
 
-        if self.method == 'interior-point':
-            # Warning is raised in presolve method,
-            # which is not yet implemented in the simplex method.
-            with pytest.warns(OptimizeWarning):
-                res = linprog(
-                    c=c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
-                    method=self.method, options=self.options
-                )
-        else:
+        with pytest.warns(OptimizeWarning):
             res = linprog(
                 c=c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
                 method=self.method, options=self.options
@@ -874,7 +885,7 @@ class TestLinprogSimplex(LinprogCommonTests):
         res = linprog(c, A_ub=A_ub, b_ub=b_ub, callback=cb, method=self.method)
 
         assert_(callback_complete[0])
-        assert_allclose(last_xk[0], res.x)
+        assert_allclose(last_xk[0][:res.x.size], res.x)
 
     def test_issue_6139(self):
         # Linprog(method='simplex') fails to find a basic feasible solution
@@ -892,23 +903,18 @@ class TestLinprogSimplex(LinprogCommonTests):
         b_ub = -np.array([10000000.])
         bounds = (None, None)
 
-        low_tol = 1e-20
         res = linprog(
             c, A_ub, b_ub, A_eq, b_eq, method=self.method,
-            bounds=bounds, options={'tol': low_tol}
-            )
-        _assert_unable_to_find_basic_feasible_sol(res)
-
-        high_tol = 1e-9
-        res2 = linprog(
-            c, A_ub, b_ub, A_eq, b_eq, method=self.method,
-            bounds=bounds, options={'tol': high_tol}
+            bounds=bounds, options=self.options
             )
 
-        # The result should be valid given a higher tolerance.
         _assert_success(
-            res2, desired_fun=14.95, desired_x=np.array([5, 4.95, 5])
+            res, desired_fun=14.95, desired_x=np.array([5, 4.95, 5])
         )
+
+    def test_issue_7237(self):
+        with pytest.raises(ValueError):
+            super().test_issue_7237()
 
     def test_issue_7237_passes_with_bland(self):
         # https://github.com/scipy/scipy/issues/7237
@@ -916,49 +922,9 @@ class TestLinprogSimplex(LinprogCommonTests):
         # close to zero. Bland's rule provides an alternative pivot selection
         # and produces a valid result.
 
-        c = np.array([-1, 0, 0, 0, 0, 0, 0, 0, 0])
-        A_ub = np.array([
-            [1., -724., 911., -551., -555., -896., 478., -80., -293.],
-            [1., 566., 42., 937.,233., 883., 392., -909., 57.],
-            [1., -208., -894., 539., 321., 532., -924., 942., 55.],
-            [1., 857., -859., 83., 462., -265., -971., 826., 482.],
-            [1., 314., -424., 245., -424., 194., -443., -104., -429.],
-            [1., 540., 679., 361., 149., -827., 876., 633., 302.],
-            [0., -1., -0., -0., -0., -0., -0., -0., -0.],
-            [0., -0., -1., -0., -0., -0., -0., -0., -0.],
-            [0., -0., -0., -1., -0., -0., -0., -0., -0.],
-            [0., -0., -0., -0., -1., -0., -0., -0., -0.],
-            [0., -0., -0., -0., -0., -1., -0., -0., -0.],
-            [0., -0., -0., -0., -0., -0., -1., -0., -0.],
-            [0., -0., -0., -0., -0., -0., -0., -1., -0.],
-            [0., -0., -0., -0., -0., -0., -0., -0., -1.],
-            [0., 1., 0., 0., 0., 0., 0., 0., 0.],
-            [0., 0., 1., 0., 0., 0., 0., 0., 0.],
-            [0., 0., 0., 1., 0., 0., 0., 0., 0.],
-            [0., 0., 0., 0., 1., 0., 0., 0., 0.],
-            [0., 0., 0., 0., 0., 1., 0., 0., 0.],
-            [0., 0., 0., 0., 0., 0., 1., 0., 0.],
-            [0., 0., 0., 0., 0., 0., 0., 1., 0.],
-            [0., 0., 0., 0., 0., 0., 0., 0., 1.]
-            ])
-        b_ub = np.array([
-            0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-            0., 0., 0., 1., 1., 1., 1., 1., 1., 1., 1.])
-        A_eq = np.array([[0., 1., 1., 1., 1., 1., 1., 1., 1.]])
-        b_eq = np.array([[1.]])
-        bounds = [(None, None)] * 9
-
-        # Should warn if Bland's rule is not used.
-        with pytest.warns(OptimizeWarning):
-            res = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
-                bounds=bounds, method=self.method, options=self.options)
-
-        o = self.options.copy()
-        o['bland'] = True
-        res_bland = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
-                bounds=bounds, method=self.method, options=o)
-        _assert_success(res_bland, desired_fun=108.568535)
-
+        self.options['bland'] = True
+        super().test_issue_7237()
+        
     def test_issue_8174_warns_if_pivval_near_tol(self):
         # https://github.com/scipy/scipy/issues/8174
         # The simplex method sometimes "explodes" if the pivot value is very
