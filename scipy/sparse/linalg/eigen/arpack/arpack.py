@@ -1442,16 +1442,25 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         Relative accuracy for eigenvalues (stopping criterion).
         The default value of 0 implies machine precision.
     Minv : N x N matrix, array, sparse matrix, or LinearOperator
-        See notes in M, above
+        See notes in M, above.
     OPinv : N x N matrix, array, sparse matrix, or LinearOperator
         See notes in sigma, above.
     return_eigenvectors : bool
         Return eigenvectors (True) in addition to eigenvalues. This value determines
-        the order in which eigenvalues are sorted.
+        the order in which eigenvalues are sorted. The sort order is also dependent on the which variable.
 
-            If `return_eigenvectors` is True, eigenvalues are sorted by algebraic value
+            For which = 'LM' or 'SA':
+                If `return_eigenvectors` is True, eigenvalues are sorted by algebraic value
 
-            If `return_eigenvectors` is False, eigenvalues are sorted by absolute value
+                If `return_eigenvectors` is False, eigenvalues are sorted by absolute value
+
+            For which = 'BE' or 'LA':
+                eigenvalues are always sorted by algebraic value
+
+            For which = 'SM':
+                If `return_eigenvectors` is True, eigenvalues are sorted by algebraic value
+
+                If `return_eigenvectors` is False, eigenvalues are sorted by decreasing absolute value.
 
     mode : string ['normal' | 'buckling' | 'cayley']
         Specify strategy to use for shift-invert mode.  This argument applies
