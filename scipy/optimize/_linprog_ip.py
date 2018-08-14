@@ -762,7 +762,6 @@ def _linprog_ip(
         c0=0,
         A=None,
         b=None,
-        bounds=None,
         callback=None,
         alpha0=.99995,
         beta=0.1,
@@ -786,27 +785,22 @@ def _linprog_ip(
 
         Minimize:     c^T * x
 
-        Subject to:   A_ub * x <= b_ub
-                      A_eq * x == b_eq
-                      bounds[i][0] < x_i < bounds[i][1]
+        Subject to:      A * x == b
+                         0 <= x < oo
 
     Parameters
     ----------
     c : array_like
         Coefficients of the linear objective function to be minimized.
-    A : array_like, optional
+    c0 : float
+        Constant term in objective function due to fixed (and eliminated)
+        variables. (Purely for display.)
+    A : array_like
         2-D array which, when matrix-multiplied by ``x``, gives the values of
         the equality constraints at ``x``.
-    b : array_like, optional
+    b : array_like
         1-D array of values representing the right hand side of each equality
         constraint (row) in ``A``.
-    bounds : sequence, optional
-        ``(min, max)`` pairs for each element in ``x``, defining
-        the bounds on that parameter. Use ``None`` for one of ``min`` or
-        ``max`` when there is no bound in that direction. By default
-        bounds are ``(0, None)`` (non-negative).
-        If a sequence containing a single tuple is provided, then ``min`` and
-        ``max`` will be applied to all variables in the problem.
 
     Options
     -------
@@ -872,35 +866,21 @@ def _linprog_ip(
 
     Returns
     -------
-    A ``scipy.optimize.OptimizeResult`` consisting of the following fields:
+    x : array_like
+        Solution vector.
+    status : int
+        An integer representing the exit status of the optimization::
 
-        x : ndarray
-            The independent variable vector which optimizes the linear
-            programming problem.
-        fun : float
-            The optimal value of the objective function
-        con : float
-            The residuals of the equality constraints (nominally zero).
-        slack : ndarray
-            The values of the slack variables.  Each slack variable corresponds
-            to an inequality constraint.  If the slack is zero, then the
-            corresponding constraint is active.
-        success : bool
-            Returns True if the algorithm succeeded in finding an optimal
-            solution.
-        status : int
-            An integer representing the exit status of the optimization::
+         0 : Optimization terminated successfully
+         1 : Iteration limit reached
+         2 : Problem appears to be infeasible
+         3 : Problem appears to be unbounded
+         4 : Serious numerical difficulties encountered.
 
-                 0 : Optimization terminated successfully
-                 1 : Iteration limit reached
-                 2 : Problem appears to be infeasible
-                 3 : Problem appears to be unbounded
-                 4 : Serious numerical difficulties encountered
-
-        nit : int
-            The number of iterations performed.
-        message : str
-            A string descriptor of the exit status of the optimization.
+    message : str
+        A string descriptor of the exit status of the optimization.
+    iteration : int
+        The number of iterations taken to solve the problem.
 
     Notes
     -----
