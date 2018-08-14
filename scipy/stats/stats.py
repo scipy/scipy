@@ -2999,8 +2999,8 @@ def pearsonr(x, y):
 
     .. math::
 
-        r_{pb} = \frac{\sum (x - m_x) (y - m_y)
-                       }{\sqrt{\sum (x - m_x)^2 (y - m_y)^2}}
+        r_{pb} = \frac{\sum (x - m_x) (y - m_y)}
+                      {\sqrt{\sum (x - m_x)^2 \sum (y - m_y)^2}}
 
     where :math:`m_x` is the mean of the vector :math:`x` and :math:`m_y` is
     the mean of the vector :math:`y`.
