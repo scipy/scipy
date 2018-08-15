@@ -475,7 +475,6 @@ def _linprog_simplex(c, c0, A, b, maxiter=1000, disp=False, callback=None,
                                       phase=2, callback=callback, tol=tol,
                                       nit0=nit1, bland=bland)
 
-
     solution = np.zeros(n + m)
     solution[basis[:n]] = T[:n, -1]
     x = solution[:m]

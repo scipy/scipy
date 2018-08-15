@@ -920,7 +920,7 @@ class TestLinprogSimplex(LinprogCommonTests):
         # https://github.com/scipy/scipy/issues/7237
         # The simplex method sometimes "explodes" if the pivot value is very
         # close to zero. Bland's rule provides an alternative pivot selection
-        # and produces a valid result.
+        # and produces a correct result.
 
         self.options['bland'] = True
         super().test_issue_7237()
@@ -939,8 +939,12 @@ class TestLinprogSimplex(LinprogCommonTests):
         bounds = [(0,1)] * A_ub.shape[1]
 
         with pytest.warns(OptimizeWarning):
-            linprog(c=c, A_ub=A_ub, b_ub=b_ub, bounds=bounds,
+            res = linprog(c=c, A_ub=A_ub, b_ub=b_ub, bounds=bounds,
                 options=self.options, method=self.method)
+            
+
+class TestLinprogSimplexNoPresolve(TestLinprogSimplex):
+    options = {'presolve': False}
 
 
 class BaseTestLinprogIP(LinprogCommonTests):

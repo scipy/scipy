@@ -1080,7 +1080,6 @@ def _linprog_ip(
 
     cholesky = cholesky is None and sym_pos and not sparse and not lstsq
 
-
     x, status, message, iteration = _ip_hsd(A, b, c, c0, alpha0, beta,
                                             maxiter, disp, tol, sparse,
                                             lstsq, sym_pos, cholesky,

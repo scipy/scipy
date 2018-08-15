@@ -510,8 +510,6 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, rr, tol=1e-9):
     #  * loop presolve until no additional changes are made
     #  * implement additional efficiency improvements in redundancy removal [2]
 
-        # tolerance for equality. should this be exposed to user?
-
     undo = []               # record of variables eliminated from problem
     # constant term in cost function may be added if variables are eliminated
     c0 = 0
@@ -1114,8 +1112,11 @@ def _postprocess(
     tol = np.sqrt(tol)  # Somewhat arbitrary, but status 5 is very unusual
 
     def _is_infeasible(con, lb, slack, tol, ub, x):
-        return ((slack < -tol).any() or (np.abs(con) > tol).any()
-                or (x < lb - tol).any() or (x > ub + tol).any())
+        invalid_slack = (slack < -tol).any()
+        invalid_con = (np.abs(con) > tol).any()
+        invalid_lb = (x < lb - tol).any()
+        invalid_ub = (x > ub + tol).any()
+        return invalid_slack or invalid_con or invalid_lb or invalid_ub
 
     if status == 0 and _is_infeasible(con, lb, slack, tol, ub, x):
         status = 4
@@ -1136,11 +1137,10 @@ def _postprocess(
                    "circumstances, please submit a bug report. Otherwise, "
                    "remove linearly dependent equations from your equality "
                    "constraints or enable presolve.")
-    elif status  == 2 and not _is_infeasible(con, lb, slack, tol, ub, x):
+    elif status == 2 and not _is_infeasible(con, lb, slack, tol, ub, x):
         # Occurs if the simplex method exits after phase one with a very
         # nearly basic feasible solution. Postsolving can then make the
-        # solution basic.
-        # However this solution is NOT optimal
+        # solution basic. The solution is NOT optimal
         raise ValueError(message)
 
     return x, fun, slack, con, status, message
