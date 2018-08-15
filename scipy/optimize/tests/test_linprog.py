@@ -914,7 +914,7 @@ class TestLinprogSimplex(LinprogCommonTests):
 
     def test_issue_7237(self):
         with pytest.raises(ValueError):
-            super().test_issue_7237()
+            super(TestLinprogSimplex, self).test_issue_7237()
 
     def test_issue_7237_passes_with_bland(self):
         # https://github.com/scipy/scipy/issues/7237
@@ -923,7 +923,7 @@ class TestLinprogSimplex(LinprogCommonTests):
         # and produces a correct result.
 
         self.options['bland'] = True
-        super().test_issue_7237()
+        super(TestLinprogSimplex, self).test_issue_7237()
         
     def test_issue_8174_warns_if_pivval_near_tol(self):
         # https://github.com/scipy/scipy/issues/8174
