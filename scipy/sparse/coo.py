@@ -153,7 +153,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
                     M, N = shape
                     self._shape = check_shape((M, N))
 
-                idx_dtype = get_index_dtype(maxval=self.shape[0] * self.shape[1])
+                idx_dtype = get_index_dtype(maxval=max(self.shape))
                 self.row = np.array(row, copy=copy, dtype=idx_dtype)
                 self.col = np.array(col, copy=copy, dtype=idx_dtype)
                 self.data = np.array(obj, copy=copy)
@@ -205,10 +205,17 @@ class coo_matrix(_data_matrix, _minmax_mixin):
         nrows, ncols = self.shape
 
         if order == 'C':
-            flat_indices = ncols * self.row + self.col
+            # Upcast to avoid overflows: the coo_matrix constructor
+            # below will downcast the results to a smaller dtype, if
+            # possible.
+            dtype = get_index_dtype(maxval=(ncols * max(0, nrows - 1) + max(0, ncols - 1)))
+
+            flat_indices = np.multiply(ncols, self.row, dtype=dtype) + self.col
             new_row, new_col = divmod(flat_indices, shape[1])
         elif order == 'F':
-            flat_indices = self.row + nrows * self.col
+            dtype = get_index_dtype(maxval=(nrows * max(0, ncols - 1) + max(0, nrows - 1)))
+
+            flat_indices = np.multiply(nrows, self.col, dtype=dtype) + self.row
             new_col, new_row = divmod(flat_indices, shape[0])
         else:
             raise ValueError("'order' must be 'C' or 'F'")
@@ -262,7 +269,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
             warn("col index array has non-integer dtype (%s) "
                     % self.col.dtype.name)
 
-        idx_dtype = get_index_dtype(maxval=self.shape[0] * self.shape[1])
+        idx_dtype = get_index_dtype(maxval=max(self.shape))
         self.row = np.asarray(self.row, dtype=idx_dtype)
         self.col = np.asarray(self.col, dtype=idx_dtype)
         self.data = to_native(self.data)

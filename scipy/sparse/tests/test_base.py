@@ -4074,7 +4074,7 @@ class TestCOO(sparse_test_class(getset=False,
         y = x.reshape(new_shape, copy=True)
         assert_(not np.may_share_memory(y.data, x.data))
 
-    def test_large_dimensions(self):
+    def test_large_dimensions_reshape(self):
         # Test that reshape is immune to integer overflow when number of elements
         # exceeds 2^31-1
         mat1 = coo_matrix(([1], ([3000000], [1000])), (3000001, 1001))
@@ -4521,7 +4521,7 @@ def cases_64bit():
         'test_inv': 'linsolve for 64-bit indices not available',
         'test_solve': 'linsolve for 64-bit indices not available',
         'test_scalar_idx_dtype': 'test implemented in base class',
-        'test_large_dimensions': 'test actually requires 64-bit to work',
+        'test_large_dimensions_reshape': 'test actually requires 64-bit to work',
     }
 
     for cls in TEST_CLASSES:
