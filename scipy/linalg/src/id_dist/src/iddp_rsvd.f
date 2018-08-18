@@ -77,7 +77,7 @@ c       is -- index in w of the first entry of the array
 c             of singular values of a
 c       w -- array containing the singular values and singular vectors
 c            of a; w doubles as a work array, and so must be at least
-c            (krank+1)*(3*m+5*n+1)+25*krank**2 real*8 elements long,
+c            (krank+1)*(3*m+5*n+1)+25*krank*krank real*8 elements long,
 c            where krank is the rank returned by the present routine
 c       ier -- 0 when the routine terminates successfully;
 c              -1000 when lw is too small;
@@ -198,7 +198,7 @@ c
         integer m,n,krank,list(n),ier
         real*8 p1t,p2t,p3t,p4t,p1,p2,p3,p4,u(m,krank),v(n,krank),
      1         s(krank),proj(krank,n-krank),col(m*krank),
-     2         work((krank+1)*(m+3*n)+26*krank**2)
+     2         work((krank+1)*(m+3*n)+26*krank*krank)
         external matvect,matvec
 c
 c

@@ -225,11 +225,11 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
     extra_condition : callable, optional
         A callable of the form ``extra_condition(alpha, x, f, g)``
         returning a boolean. Arguments are the proposed step ``alpha``
-        and the corresponding ``x``, ``f`` and ``g`` values. The line search 
-        accepts the value of ``alpha`` only if this 
-        callable returns ``True``. If the callable returns ``False`` 
-        for the step length, the algorithm will continue with 
-        new iterates. The callable is only called for iterates 
+        and the corresponding ``x``, ``f`` and ``g`` values. The line search
+        accepts the value of ``alpha`` only if this
+        callable returns ``True``. If the callable returns ``False``
+        for the step length, the algorithm will continue with
+        new iterates. The callable is only called for iterates
         satisfying the strong Wolfe conditions.
     maxiter : int, optional
         Maximum number of iterations to perform
@@ -684,7 +684,7 @@ def scalar_search_armijo(phi, phi0, derphi0, c1=1e-4, alpha0=1, amin=0):
 
     # Otherwise compute the minimizer of a quadratic interpolant:
 
-    alpha1 = -(derphi0) * alpha0**2 / 2.0 / (phi_a0 - phi0 - derphi0 * alpha0)
+    alpha1 = -(derphi0) * alpha0*alpha0 / 2.0 / (phi_a0 - phi0 - derphi0 * alpha0)
     phi_a1 = phi(alpha1)
 
     if (phi_a1 <= phi0 + c1*alpha1*derphi0):
@@ -696,15 +696,15 @@ def scalar_search_armijo(phi, phi0, derphi0, c1=1e-4, alpha0=1, amin=0):
     # condition.
 
     while alpha1 > amin:       # we are assuming alpha>0 is a descent direction
-        factor = alpha0**2 * alpha1**2 * (alpha1-alpha0)
-        a = alpha0**2 * (phi_a1 - phi0 - derphi0*alpha1) - \
-            alpha1**2 * (phi_a0 - phi0 - derphi0*alpha0)
+        factor = alpha0*alpha0 * alpha1*alpha1 * (alpha1-alpha0)
+        a = alpha0*alpha0 * (phi_a1 - phi0 - derphi0*alpha1) - \
+            alpha1*alpha1 * (phi_a0 - phi0 - derphi0*alpha0)
         a = a / factor
-        b = -alpha0**3 * (phi_a1 - phi0 - derphi0*alpha1) + \
-            alpha1**3 * (phi_a0 - phi0 - derphi0*alpha0)
+        b = -alpha0*alpha0*alpha0 * (phi_a1 - phi0 - derphi0*alpha1) + \
+            alpha1*alpha1*alpha1 * (phi_a0 - phi0 - derphi0*alpha0)
         b = b / factor
 
-        alpha2 = (-b + np.sqrt(abs(b**2 - 3 * a * derphi0))) / (3.0*a)
+        alpha2 = (-b + np.sqrt(abs(b*b - 3 * a * derphi0))) / (3.0*a)
         phi_a2 = phi(alpha2)
 
         if (phi_a2 <= phi0 + c1*alpha2*derphi0):
@@ -777,20 +777,20 @@ def _nonmonotone_line_search_cruz(f, x_k, d, prev_fs, eta,
         xp = x_k + alpha_p * d
         fp, Fp = f(xp)
 
-        if fp <= f_bar + eta - gamma * alpha_p**2 * f_k:
+        if fp <= f_bar + eta - gamma * alpha_p*alpha_p * f_k:
             alpha = alpha_p
             break
 
-        alpha_tp = alpha_p**2 * f_k / (fp + (2*alpha_p - 1)*f_k)
+        alpha_tp = alpha_p*alpha_p * f_k / (fp + (2*alpha_p - 1)*f_k)
 
         xp = x_k - alpha_m * d
         fp, Fp = f(xp)
 
-        if fp <= f_bar + eta - gamma * alpha_m**2 * f_k:
+        if fp <= f_bar + eta - gamma * alpha_m*alpha_m * f_k:
             alpha = -alpha_m
             break
 
-        alpha_tm = alpha_m**2 * f_k / (fp + (2*alpha_m - 1)*f_k)
+        alpha_tm = alpha_m*alpha_m * f_k / (fp + (2*alpha_m - 1)*f_k)
 
         alpha_p = np.clip(alpha_tp, tau_min * alpha_p, tau_max * alpha_p)
         alpha_m = np.clip(alpha_tm, tau_min * alpha_m, tau_max * alpha_m)
@@ -853,20 +853,20 @@ def _nonmonotone_line_search_cheng(f, x_k, d, f_k, C, Q, eta,
         xp = x_k + alpha_p * d
         fp, Fp = f(xp)
 
-        if fp <= C + eta - gamma * alpha_p**2 * f_k:
+        if fp <= C + eta - gamma * alpha_p*alpha_p * f_k:
             alpha = alpha_p
             break
 
-        alpha_tp = alpha_p**2 * f_k / (fp + (2*alpha_p - 1)*f_k)
+        alpha_tp = alpha_p*alpha_p * f_k / (fp + (2*alpha_p - 1)*f_k)
 
         xp = x_k - alpha_m * d
         fp, Fp = f(xp)
 
-        if fp <= C + eta - gamma * alpha_m**2 * f_k:
+        if fp <= C + eta - gamma * alpha_m*alpha_m * f_k:
             alpha = -alpha_m
             break
 
-        alpha_tm = alpha_m**2 * f_k / (fp + (2*alpha_m - 1)*f_k)
+        alpha_tm = alpha_m*alpha_m * f_k / (fp + (2*alpha_m - 1)*f_k)
 
         alpha_p = np.clip(alpha_tp, tau_min * alpha_p, tau_max * alpha_p)
         alpha_m = np.clip(alpha_tm, tau_min * alpha_m, tau_max * alpha_m)

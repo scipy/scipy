@@ -2188,7 +2188,7 @@ def resample(x, num, t=None, axis=0, window=None):
     >>> from scipy import signal
 
     >>> x = np.linspace(0, 10, 20, endpoint=False)
-    >>> y = np.cos(-x**2/6.0)
+    >>> y = np.cos(-x*x/6.0)
     >>> f = signal.resample(y, 100)
     >>> xnew = np.linspace(0, 10, 100, endpoint=False)
 
@@ -2318,7 +2318,7 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0)):
     >>> from scipy import signal
 
     >>> x = np.linspace(0, 10, 20, endpoint=False)
-    >>> y = np.cos(-x**2/6.0)
+    >>> y = np.cos(-x*x/6.0)
     >>> f_fft = signal.resample(y, 100)
     >>> f_poly = signal.resample_poly(y, 100, 20)
     >>> xnew = np.linspace(0, 10, 100, endpoint=False)
@@ -3320,7 +3320,7 @@ def sosfiltfilt(sos, x, axis=-1, padtype='odd', padlen=None):
     >>> n = 201
     >>> t = np.linspace(0, 1, n)
     >>> np.random.seed(123)
-    >>> x = 1 + (t < 0.5) - 0.25*t**2 + 0.05*np.random.randn(n)
+    >>> x = 1 + (t < 0.5) - 0.25*t*t + 0.05*np.random.randn(n)
 
     Create a lowpass Butterworth filter, and use it to filter `x`.
 

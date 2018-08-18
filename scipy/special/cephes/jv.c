@@ -205,7 +205,7 @@ double jv(double n, double x)
 
     else {
 	/* For large n, use the uniform expansion or the transitional expansion.
-	 * But if x is of the order of n**2, these may blow up, whereas the
+	 * But if x is of the order of n*n, these may blow up, whereas the
 	 * Hankel expansion will then work.
 	 */
 	if (n < 0.0) {
@@ -734,7 +734,7 @@ static double jnx(double n, double x)
 	np /= n * n;
     }
 
-    /* normalizing factor ( 4*zeta/(1 - z**2) )**1/4    */
+    /* normalizing factor ( 4*zeta/(1 - z*z) )**1/4    */
     t = 4.0 * zeta / zz;
     t = sqrt(sqrt(t));
 

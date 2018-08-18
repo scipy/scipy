@@ -215,8 +215,8 @@ def rosen_der(x):
     xm_m1 = x[:-2]
     xm_p1 = x[2:]
     der = numpy.zeros_like(x)
-    der[1:-1] = (200 * (xm - xm_m1**2) -
-                 400 * (xm_p1 - xm**2) * xm - 2 * (1 - xm))
+    der[1:-1] = (200 * (xm - xm_m1*xm_m1) -
+                 400 * (xm_p1 - xm*xm) * xm - 2 * (1 - xm))
     der[0] = -400 * x[0] * (x[1] - x[0]**2) - 2 * (1 - x[0])
     der[-1] = 200 * (x[-1] - x[-2]**2)
     return der
@@ -1158,14 +1158,14 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
     Examples
     --------
     Example 1: seek the minimum value of the expression
-    ``a*u**2 + b*u*v + c*v**2 + d*u + e*v + f`` for given values
+    ``a*u*u + b*u*v + c*v*v + d*u + e*v + f`` for given values
     of the parameters and an initial guess ``(u, v) = (0, 0)``.
 
     >>> args = (2, 3, 7, 8, 9, 10)  # parameter values
     >>> def f(x, *args):
     ...     u, v = x
     ...     a, b, c, d, e, f = args
-    ...     return a*u**2 + b*u*v + c*v**2 + d*u + e*v + f
+    ...     return a*u*u + b*u*v + c*v*v + d*u + e*v + f
     >>> def gradf(x, *args):
     ...     u, v = x
     ...     a, b, c, d, e, f = args
@@ -2774,7 +2774,7 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
     >>> def f1(z, *params):
     ...     x, y = z
     ...     a, b, c, d, e, f, g, h, i, j, k, l, scale = params
-    ...     return (a * x**2 + b * x * y + c * y**2 + d*x + e*y + f)
+    ...     return (a * x*x + b * x * y + c * y*y + d*x + e*y + f)
 
     >>> def f2(z, *params):
     ...     x, y = z

@@ -10,9 +10,9 @@
 *
 * This file contains a short test program and MVNDST, a subroutine
 * for computing multivariate normal distribution function values.
-* The file is self contained and should compile without errors on (77) 
+* The file is self contained and should compile without errors on (77)
 * standard Fortran compilers. The test program demonstrates the use of
-* MVNDST for computing MVN distribution values for a five dimensional 
+* MVNDST for computing MVN distribution values for a five dimensional
 * example problem, with three different integration limit combinations.
 *
 *          Alan Genz
@@ -21,7 +21,7 @@
 *          Pullman, WA 99164-3113
 *          Email : alangenz@wsu.edu
 *
-      SUBROUTINE mvnun(d, n, lower, upper, means, covar, maxpts, 
+      SUBROUTINE mvnun(d, n, lower, upper, means, covar, maxpts,
      &                   abseps, releps, value, inform)
 *  Parameters
 *
@@ -35,12 +35,12 @@
 *   abseps  double, absolute error tolerance
 *   releps  double, relative error tolerance
 *   value   double intent(out), integral value
-*   inform  integer intent(out), 
+*   inform  integer intent(out),
 *               if inform == 0: error < eps
 *               elif inform == 1: error > eps, all maxpts used
       integer n, d, infin(d), maxpts, inform, tmpinf
       double precision lower(d), upper(d), releps, abseps,
-     &                 error, value, stdev(d), rho(d*(d-1)/2), 
+     &                 error, value, stdev(d), rho(d*(d-1)/2),
      &                 covar(d,d),
      &                 nlower(d), nupper(d), means(d,n), tmpval,
      &                 inf
@@ -84,8 +84,8 @@
       end do
 
       value = value / n
-      
-      END 
+
+      END
 
       SUBROUTINE MVNDST( N, LOWER, UPPER, INFIN, CORREL, MAXPTS,
      &                   ABSEPS, RELEPS, ERROR, VALUE, INFORM )
@@ -94,9 +94,9 @@
 *     This subroutine uses an algorithm given in the paper
 *     "Numerical Computation of Multivariate Normal Probabilities", in
 *     J. of Computational and Graphical Stat., 1(1992), pp. 141-149, by
-*          Alan Genz 
+*          Alan Genz
 *          Department of Mathematics
-*          Washington State University 
+*          Washington State University
 *          Pullman, WA 99164-3113
 *          Email : AlanGenz@wsu.edu
 *
@@ -114,8 +114,8 @@
 *            coefficient in row I column J of the correlation matrix
 *            should be stored in CORREL( J + ((I-2)*(I-1))/2 ), for J < I.
 *            THe correlation matrix must be positive semidefinite.
-*     MAXPTS INTEGER, maximum number of function values allowed. This 
-*            parameter can be used to limit the time. A sensible 
+*     MAXPTS INTEGER, maximum number of function values allowed. This
+*            parameter can be used to limit the time. A sensible
 *            strategy is to start with MAXPTS = 1000*N, and then
 *            increase MAXPTS if ERROR is too large.
 *     ABSEPS REAL absolute error tolerance.
@@ -124,8 +124,8 @@
 *     VALUE  REAL estimated value for the integral
 *     INFORM INTEGER, termination status parameter:
 *            if INFORM = 0, normal completion with ERROR < EPS;
-*            if INFORM = 1, completion with ERROR > EPS and MAXPTS 
-*                           function values used; increase MAXPTS to 
+*            if INFORM = 1, completion with ERROR > EPS and MAXPTS
+*                           function values used; increase MAXPTS to
 *                           decrease ERROR;
 *            if INFORM = 2, N > 500 or N < 1.
 *
@@ -151,13 +151,13 @@
 *        Call the lattice rule integration subroutine
 *
             IVLS = 0
-            CALL DKBVRC( N-INFIS-1, IVLS, MAXPTS, MVNDFN, 
+            CALL DKBVRC( N-INFIS-1, IVLS, MAXPTS, MVNDFN,
      &                   ABSEPS, RELEPS, ERROR, VALUE, INFORM )
          ENDIF
       ENDIF
       END
       DOUBLE PRECISION FUNCTION MVNDFN( N, W )
-*     
+*
 *     Integrand subroutine
 *
       INTEGER N, INFIN(*), INFIS, NL
@@ -182,7 +182,7 @@
             IF ( INFA .EQ. 1 ) THEN
                AI = MAX( AI, A(I) - SUM )
             ELSE
-               AI = A(I) - SUM 
+               AI = A(I) - SUM
                INFA = 1
             END IF
          END IF
@@ -190,12 +190,12 @@
             IF ( INFB .EQ. 1 ) THEN
                BI = MIN( BI, B(I) - SUM )
             ELSE
-               BI = B(I) - SUM 
+               BI = B(I) - SUM
                INFB = 1
             END IF
          END IF
          IJ = IJ + 1
-         IF ( I .EQ. N+1 .OR. COV(IJ+IK+1) .GT. 0 ) THEN 
+         IF ( I .EQ. N+1 .OR. COV(IJ+IK+1) .GT. 0 ) THEN
             CALL MVNLMS( AI, BI, 2*INFA+INFB-1, DI, EI )
             IF ( DI .GE. EI ) THEN
                MVNDFN = 0
@@ -220,7 +220,7 @@
 *
       CALL COVSRT( N, LOWER,UPPER,CORREL,INFIN,Y, INFIS,A,B,COV,INFI )
       IF ( N - INFIS .EQ. 1 ) THEN
-         CALL MVNLMS( A(1), B(1), INFI(1), D, E ) 
+         CALL MVNLMS( A(1), B(1), INFI(1), D, E )
       ELSE IF ( N - INFIS .EQ. 2 ) THEN
          IF ( ABS( COV(3) ) .GT. 0 ) THEN
             D = SQRT( 1 + COV(2)**2 )
@@ -232,17 +232,17 @@
             IF ( INFI(1) .NE. 0 ) THEN
                IF ( INFI(2) .NE. 0 ) A(1) = MAX( A(1), A(2) )
             ELSE
-               IF ( INFI(2) .NE. 0 ) A(1) = A(2) 
+               IF ( INFI(2) .NE. 0 ) A(1) = A(2)
             END IF
             IF ( INFI(1) .NE. 1 ) THEN
-               IF ( INFI(2) .NE. 1 ) B(1) = MIN( B(1), B(2) ) 
+               IF ( INFI(2) .NE. 1 ) B(1) = MIN( B(1), B(2) )
             ELSE
                IF ( INFI(2) .NE. 1 ) B(1) = B(2)
             END IF
             IF ( INFI(1) .NE. INFI(2) ) INFI(1) = 2
-            CALL MVNLMS( A(1), B(1), INFI(1), D, E ) 
+            CALL MVNLMS( A(1), B(1), INFI(1), D, E )
          END IF
-         INFIS = INFIS + 1 
+         INFIS = INFIS + 1
       END IF
       END
       SUBROUTINE MVNLMS( A, B, INFIN, LOWER, UPPER )
@@ -255,14 +255,14 @@
          IF ( INFIN .NE. 1 ) UPPER = MVNPHI(B)
       ENDIF
       UPPER = MAX( UPPER, LOWER )
-      END      
-      SUBROUTINE COVSRT( N, LOWER, UPPER, CORREL, INFIN, Y, 
+      END
+      SUBROUTINE COVSRT( N, LOWER, UPPER, CORREL, INFIN, Y,
      &               INFIS,     A,     B,    COV,  INFI )
 *
 *     Subroutine to sort integration limits and determine Cholesky factor.
 *
       INTEGER N, INFI(*), INFIN(*), INFIS
-      DOUBLE PRECISION 
+      DOUBLE PRECISION
      &     A(*), B(*), COV(*), LOWER(*), UPPER(*), CORREL(*), Y(*)
       INTEGER I, J, K, L, M, II, IJ, IL, JMIN
       DOUBLE PRECISION SUMSQ, AJ, BJ, SUM, SQTWPI, EPS, D, E
@@ -274,10 +274,10 @@
       DO I = 1, N
          A(I) = 0
          B(I) = 0
-         INFI(I) = INFIN(I) 
+         INFI(I) = INFIN(I)
          IF ( INFI(I) .LT. 0 ) THEN
             INFIS = INFIS + 1
-         ELSE 
+         ELSE
             IF ( INFI(I) .NE. 0 ) A(I) = LOWER(I)
             IF ( INFI(I) .NE. 1 ) B(I) = UPPER(I)
          ENDIF
@@ -294,7 +294,7 @@
 *
       IF ( INFIS .LT. N ) THEN
          DO I = N, N-INFIS+1, -1
-            IF ( INFI(I) .GE. 0 ) THEN 
+            IF ( INFI(I) .GE. 0 ) THEN
                DO J = 1,I-1
                   IF ( INFI(J) .LT. 0 ) THEN
                      CALL RCSWP( J, I, A, B, INFI, N, COV )
@@ -336,7 +336,7 @@
                      CVDIAG = SUMSQ
                   ENDIF
                ENDIF
-               IJ = IJ + J 
+               IJ = IJ + J
             END DO
             IF ( JMIN .GT. I ) CALL RCSWP( I, JMIN, A,B, INFI, N, COV )
             COV(II+I) = CVDIAG
@@ -347,7 +347,7 @@
 *
             IF ( CVDIAG .GT. 0 ) THEN
                IL = II + I
-               DO L = I+1, N-INFIS               
+               DO L = I+1, N-INFIS
                   COV(IL+I) = COV(IL+I)/CVDIAG
                   IJ = II + I
                   DO J = I+1, L
@@ -359,8 +359,8 @@
                IF ( EMIN .GT. DMIN + EPS ) THEN
                   YL = 0
                   YU = 0
-                  IF ( INFI(I) .NE. 0 ) YL = -EXP( -AMIN**2/2 )/SQTWPI
-                  IF ( INFI(I) .NE. 1 ) YU = -EXP( -BMIN**2/2 )/SQTWPI
+                  IF ( INFI(I) .NE. 0 ) YL = -EXP( -AMIN*AMIN/2 )/SQTWPI
+                  IF ( INFI(I) .NE. 1 ) YU = -EXP( -BMIN*BMIN/2 )/SQTWPI
                   Y(I) = ( YU - YL )/( EMIN - DMIN )
                ELSE
                   IF ( INFI(I) .EQ. 0 ) Y(I) = BMIN
@@ -375,12 +375,12 @@
                B(I) = B(I)/CVDIAG
             ELSE
                IL = II + I
-               DO L = I+1, N-INFIS                
+               DO L = I+1, N-INFIS
                   COV(IL+I) = 0
                   IL = IL + L
                END DO
 *
-*        If the covariance matrix diagonal entry is zero, 
+*        If the covariance matrix diagonal entry is zero,
 *         permute limits and/or rows, if necessary.
 *
 *
@@ -389,25 +389,25 @@
                      A(I) = A(I)/COV(II+J)
                      B(I) = B(I)/COV(II+J)
                      IF ( COV(II+J) .LT. 0 ) THEN
-                        CALL DKSWAP( A(I), B(I) ) 
+                        CALL DKSWAP( A(I), B(I) )
                         IF ( INFI(I) .NE. 2 ) INFI(I) = 1 - INFI(I)
                      END IF
                      DO L = 1, J
                         COV(II+L) = COV(II+L)/COV(II+J)
                      END DO
-                     DO L = J+1, I-1 
+                     DO L = J+1, I-1
                         IF( COV((L-1)*L/2+J+1) .GT. 0 ) THEN
                            IJ = II
-                           DO K = I-1, L, -1 
+                           DO K = I-1, L, -1
                               DO M = 1, K
                                  CALL DKSWAP( COV(IJ-K+M), COV(IJ+M) )
                               END DO
-                              CALL DKSWAP( A(K), A(K+1) ) 
-                              CALL DKSWAP( B(K), B(K+1) ) 
+                              CALL DKSWAP( A(K), A(K+1) )
+                              CALL DKSWAP( B(K), B(K+1) )
                               M = INFI(K)
                               INFI(K) = INFI(K+1)
                               INFI(K+1) = M
-                              IJ = IJ - K 
+                              IJ = IJ - K
                            END DO
                            GO TO 20
                         END IF
@@ -463,7 +463,7 @@
      &                   ABSERR, FINEST, INFORM )
 *
 *  Automatic Multidimensional Integration Subroutine
-*               
+*
 *         AUTHOR: Alan Genz
 *                 Department of Mathematics
 *                 Washington State University
@@ -479,50 +479,50 @@
 *      0  0     0
 *
 *
-*  DKBVRC uses randomized Korobov rules for the first 100 variables. 
+*  DKBVRC uses randomized Korobov rules for the first 100 variables.
 *  The primary references are
 *   "Randomization of Number Theoretic Methods for Multiple Integration"
 *    R. Cranley and T.N.L. Patterson, SIAM J Numer Anal, 13, pp. 904-14,
-*  and 
-*   "Optimal Parameters for Multidimensional Integration", 
+*  and
+*   "Optimal Parameters for Multidimensional Integration",
 *    P. Keast, SIAM J Numer Anal, 10, pp.831-838.
 *  If there are more than 100 variables, the remaining variables are
 *  integrated using the rules described in the reference
 *   "On a Number-Theoretical Integration Method"
 *   H. Niederreiter, Aequationes Mathematicae, 8(1972), pp. 304-11.
-*   
+*
 ***************  Parameters ********************************************
 ****** Input parameters
 *  NDIM    Number of variables, must exceed 1, but not exceed 40
 *  MINVLS  Integer minimum number of function evaluations allowed.
 *          MINVLS must not exceed MAXVLS.  If MINVLS < 0 then the
-*          routine assumes a previous call has been made with 
+*          routine assumes a previous call has been made with
 *          the same integrand and continues that calculation.
 *  MAXVLS  Integer maximum number of function evaluations allowed.
 *  FUNCTN  EXTERNALly declared user defined function to be integrated.
 *          It must have parameters (NDIM,Z), where Z is a real array
 *          of dimension NDIM.
-*                                     
+*
 *  ABSEPS  Required absolute accuracy.
 *  RELEPS  Required relative accuracy.
 ****** Output parameters
 *  MINVLS  Actual number of function evaluations used.
 *  ABSERR  Estimated absolute accuracy of FINEST.
 *  FINEST  Estimated value of integral.
-*  INFORM  INFORM = 0 for normal exit, when 
+*  INFORM  INFORM = 0 for normal exit, when
 *                     ABSERR <= MAX(ABSEPS, RELEPS*ABS(FINEST))
-*                  and 
+*                  and
 *                     INTVLS <= MAXCLS.
-*          INFORM = 1 If MAXVLS was too small to obtain the required 
-*          accuracy. In this case a value FINEST is returned with 
+*          INFORM = 1 If MAXVLS was too small to obtain the required
+*          accuracy. In this case a value FINEST is returned with
 *          estimated absolute accuracy ABSERR.
 ************************************************************************
       EXTERNAL FUNCTN
       INTEGER NDIM, MINVLS, MAXVLS, INFORM, NP, PLIM, NLIM, KLIM, KLIMI,
      &        SAMPLS, I, INTVLS, MINSMP
       PARAMETER ( PLIM = 28, NLIM = 1000, KLIM = 100, MINSMP = 8 )
-      INTEGER P(PLIM), C(PLIM,KLIM-1) 
-      DOUBLE PRECISION FUNCTN, ABSEPS, RELEPS, FINEST, ABSERR, DIFINT, 
+      INTEGER P(PLIM), C(PLIM,KLIM-1)
+      DOUBLE PRECISION FUNCTN, ABSEPS, RELEPS, FINEST, ABSERR, DIFINT,
      &                 FINVAL, VARSQR, VAREST, VARPRD, VALUE
       DOUBLE PRECISION X(2*NLIM), VK(NLIM), ONE
       PARAMETER ( ONE = 1 )
@@ -533,7 +533,7 @@
       IF ( MINVLS .GE. 0 ) THEN
          FINEST = 0
          VAREST = 0
-         SAMPLS = MINSMP 
+         SAMPLS = MINSMP
          DO I = MIN( NDIM, 10), PLIM
             NP = I
             IF ( MINVLS .LT. 2*SAMPLS*P(I) ) GO TO 10
@@ -545,8 +545,8 @@
          IF ( I .LE. KLIM ) THEN
             VK(I) = MOD( C(NP, MIN(NDIM-1,KLIM-1))*VK(I-1), ONE )
          ELSE
-            VK(I) = INT( P(NP)*2**(DBLE(I-KLIM)/(NDIM-KLIM+1)) ) 
-            VK(I) = MOD( VK(I)/P(NP), ONE ) 
+            VK(I) = INT( P(NP)*2**(DBLE(I-KLIM)/(NDIM-KLIM+1)) )
+            VK(I) = MOD( VK(I)/P(NP), ONE )
          END IF
       END DO
       FINVAL = 0
@@ -566,7 +566,7 @@
          IF ( NP .LT. PLIM ) THEN
             NP = NP + 1
          ELSE
-            SAMPLS = MIN( 3*SAMPLS/2, ( MAXVLS - INTVLS )/( 2*P(NP) ) ) 
+            SAMPLS = MIN( 3*SAMPLS/2, ( MAXVLS - INTVLS )/( 2*P(NP) ) )
             SAMPLS = MAX( MINSMP, SAMPLS )
          ENDIF
          IF ( INTVLS + 2*SAMPLS*P(NP) .LE. MAXVLS ) GO TO 10
@@ -614,7 +614,7 @@
      & 2*247, 338, 366, 847, 2*753, 236, 2*334, 461, 711, 652,
      & 3*381, 652, 7*381, 226, 7*326, 126, 10*326, 2*195, 19*55,
      & 7*195, 11*132, 13*387/
-      DATA P(12),(C(12,I),I = 1,99)/  3079, 1189, 888, 259, 1082, 725,      
+      DATA P(12),(C(12,I),I = 1,99)/  3079, 1189, 888, 259, 1082, 725,
      & 811, 636, 965, 2*497, 2*1490, 392, 1291, 2*508, 2*1291, 508,
      & 1291, 2*508, 4*867, 934, 7*867, 9*1284, 4*563, 3*1010, 208,
      & 838, 3*563, 2*759, 564, 2*759, 4*801, 5*759, 8*563, 22*226/
@@ -651,19 +651,19 @@
      & 2*4037, 15808, 11401, 19398, 2*25950, 4454, 24987, 11719,
      & 8697, 5*1452, 2*8697, 6436, 21475, 6436, 22913, 6434, 18497,
      & 4*11089, 2*3036, 4*14208, 8*12906, 4*7614, 6*5021, 24*10145,
-     & 6*4544, 4*8394/    
+     & 6*4544, 4*8394/
       DATA P(20),(C(20,I),I = 1,99)/ 79259, 34566, 9579, 12654,
      & 26856, 37873, 38806, 29501, 17271, 3663, 10763, 18955,
      & 1298, 26560, 2*17132, 2*4753, 8713, 18624, 13082, 6791,
      & 1122, 19363, 34695, 4*18770, 15628, 4*18770, 33766, 6*20837,
      & 5*6545, 14*12138, 5*30483, 19*12138, 9305, 13*11107, 2*9305/
       DATA P(21),(C(21,I),I = 1,99)/118891, 31929, 49367, 10982, 3527,
-     & 27066, 13226, 56010, 18911, 40574, 2*20767, 9686, 2*47603, 
-     & 2*11736, 41601, 12888, 32948, 30801, 44243, 2*53351, 16016, 
-     & 2*35086, 32581, 2*2464, 49554, 2*2464, 2*49554, 2464, 81, 27260, 
-     & 10681, 7*2185, 5*18086, 2*17631, 3*18086, 37335, 3*37774, 
+     & 27066, 13226, 56010, 18911, 40574, 2*20767, 9686, 2*47603,
+     & 2*11736, 41601, 12888, 32948, 30801, 44243, 2*53351, 16016,
+     & 2*35086, 32581, 2*2464, 49554, 2*2464, 2*49554, 2464, 81, 27260,
+     & 10681, 7*2185, 5*18086, 2*17631, 3*18086, 37335, 3*37774,
      & 13*26401, 12982, 6*40398, 3*3518, 9*37799, 4*4721, 4*7067/
-      DATA P(22),(C(22,I),I = 1,99)/178349, 40701, 69087, 77576, 64590, 
+      DATA P(22),(C(22,I),I = 1,99)/178349, 40701, 69087, 77576, 64590,
      & 39397, 33179, 10858, 38935, 43129, 2*35468, 5279, 2*61518, 27945,
      & 2*70975, 2*86478, 2*20514, 2*73178, 2*43098, 4701,
      & 2*59979, 58556, 69916, 2*15170, 2*4832, 43064, 71685, 4832,
@@ -690,28 +690,28 @@
      & 2*282859, 211587, 242821, 3*256865, 122203, 291915, 122203,
      & 2*291915, 122203, 2*25639, 291803, 245397, 284047,
      & 7*245397, 94241, 2*66575, 19*217673, 10*210249, 15*94453/
-      DATA P(26),(C(26,I),I = 1,99)/902933, 333459, 375354, 102417,            
-     & 383544, 292630, 41147, 374614, 48032, 435453, 281493, 358168, 
-     & 114121, 346892, 238990, 317313, 164158, 35497, 2*70530, 434839,  
-     & 3*24754, 393656, 2*118711, 148227, 271087, 355831, 91034, 
-     & 2*417029, 2*91034, 417029, 91034, 2*299843, 2*413548, 308300,  
-     & 3*413548, 3*308300, 413548, 5*308300, 4*15311, 2*176255, 6*23613, 
-     & 172210, 4* 204328, 5*121626, 5*200187, 2*121551, 12*248492, 
+      DATA P(26),(C(26,I),I = 1,99)/902933, 333459, 375354, 102417,
+     & 383544, 292630, 41147, 374614, 48032, 435453, 281493, 358168,
+     & 114121, 346892, 238990, 317313, 164158, 35497, 2*70530, 434839,
+     & 3*24754, 393656, 2*118711, 148227, 271087, 355831, 91034,
+     & 2*417029, 2*91034, 417029, 91034, 2*299843, 2*413548, 308300,
+     & 3*413548, 3*308300, 413548, 5*308300, 4*15311, 2*176255, 6*23613,
+     & 172210, 4* 204328, 5*121626, 5*200187, 2*121551, 12*248492,
      & 5*13942/
       DATA P(27), (C(27,I), I = 1,99)/ 1354471, 500884, 566009, 399251,
-     & 652979, 355008, 430235, 328722, 670680, 2*405585, 424646, 
-     & 2*670180, 641587, 215580, 59048, 633320, 81010, 20789, 2*389250,  
-     & 2*638764, 2*389250, 398094, 80846, 2*147776, 296177, 2*398094,  
-     & 2*147776, 396313, 3*578233, 19482, 620706, 187095, 620706, 
-     & 187095, 126467, 12*241663, 321632, 2*23210, 3*394484, 3*78101, 
+     & 652979, 355008, 430235, 328722, 670680, 2*405585, 424646,
+     & 2*670180, 641587, 215580, 59048, 633320, 81010, 20789, 2*389250,
+     & 2*638764, 2*389250, 398094, 80846, 2*147776, 296177, 2*398094,
+     & 2*147776, 396313, 3*578233, 19482, 620706, 187095, 620706,
+     & 187095, 126467, 12*241663, 321632, 2*23210, 3*394484, 3*78101,
      & 19*542095, 3*277743, 12*457259/
-      DATA P(28), (C(28,I), I = 1, 99)/ 2031713, 858339, 918142, 501970, 
-     & 234813, 460565, 31996, 753018, 256150, 199809, 993599, 245149,      
-     & 794183, 121349, 150619, 376952, 2*809123, 804319, 67352, 969594, 
+      DATA P(28), (C(28,I), I = 1, 99)/ 2031713, 858339, 918142, 501970,
+     & 234813, 460565, 31996, 753018, 256150, 199809, 993599, 245149,
+     & 794183, 121349, 150619, 376952, 2*809123, 804319, 67352, 969594,
      & 434796, 969594, 804319, 391368, 761041, 754049, 466264, 2*754049,
-     & 466264, 2*754049, 282852, 429907, 390017, 276645, 994856, 250142, 
-     & 144595, 907454, 689648, 4*687580, 978368, 687580, 552742, 105195, 
-     & 942843, 768249, 4*307142, 7*880619, 11*117185, 11*60731,  
+     & 466264, 2*754049, 282852, 429907, 390017, 276645, 994856, 250142,
+     & 144595, 907454, 689648, 4*687580, 978368, 687580, 552742, 105195,
+     & 942843, 768249, 4*307142, 7*880619, 11*117185, 11*60731,
      & 4*178309, 8*74373, 3*214965/
 *
       END
@@ -724,7 +724,7 @@
       SUMKRO = 0
       NK = MIN( NDIM, KLIM )
       DO J = 1, NK - 1
-         JP = J + MVNUNI()*( NK + 1 - J ) 
+         JP = J + MVNUNI()*( NK + 1 - J )
          XT = VK(J)
          VK(J) = VK(JP)
          VK(JP) = XT
@@ -745,64 +745,64 @@
       END
 *
       DOUBLE PRECISION FUNCTION MVNPHI( Z )
-*     
+*
 *     Normal distribution probabilities accurate to 1.e-15.
 *     Z = no. of standard deviations from the mean.
-*     
+*
 *     Based upon algorithm 5666 for the error function, from:
 *     Hart, J.F. et al, 'Computer Approximations', Wiley 1968
-*     
+*
 *     Programmer: Alan Miller
-*     
+*
 *     Latest revision - 30 March 1986
-*     
-      DOUBLE PRECISION P0, P1, P2, P3, P4, P5, P6, 
+*
+      DOUBLE PRECISION P0, P1, P2, P3, P4, P5, P6,
      *     Q0, Q1, Q2, Q3, Q4, Q5, Q6, Q7,
      *     Z, P, EXPNTL, CUTOFF, ROOTPI, ZABS
       PARAMETER(
      *     P0 = 220.20 68679 12376 1D0,
-     *     P1 = 221.21 35961 69931 1D0, 
+     *     P1 = 221.21 35961 69931 1D0,
      *     P2 = 112.07 92914 97870 9D0,
      *     P3 = 33.912 86607 83830 0D0,
      *     P4 = 6.3739 62203 53165 0D0,
-     *     P5 = .70038 30644 43688 1D0, 
+     *     P5 = .70038 30644 43688 1D0,
      *     P6 = .035262 49659 98910 9D0 )
       PARAMETER(
      *     Q0 = 440.41 37358 24752 2D0,
-     *     Q1 = 793.82 65125 19948 4D0, 
+     *     Q1 = 793.82 65125 19948 4D0,
      *     Q2 = 637.33 36333 78831 1D0,
-     *     Q3 = 296.56 42487 79673 7D0, 
+     *     Q3 = 296.56 42487 79673 7D0,
      *     Q4 = 86.780 73220 29460 8D0,
-     *     Q5 = 16.064 17757 92069 5D0, 
+     *     Q5 = 16.064 17757 92069 5D0,
      *     Q6 = 1.7556 67163 18264 2D0,
      *     Q7 = .088388 34764 83184 4D0 )
       PARAMETER( ROOTPI = 2.5066 28274 63100 1D0 )
       PARAMETER( CUTOFF = 7.0710 67811 86547 5D0 )
-*     
+*
       ZABS = ABS(Z)
-*     
+*
 *     |Z| > 37
-*     
+*
       IF ( ZABS .GT. 37 ) THEN
          P = 0
       ELSE
-*     
+*
 *     |Z| <= 37
-*     
-         EXPNTL = EXP( -ZABS**2/2 )
-*     
+*
+         EXPNTL = EXP( -ZABS*ZABS/2 )
+*
 *     |Z| < CUTOFF = 10/SQRT(2)
-*     
+*
          IF ( ZABS .LT. CUTOFF ) THEN
             P = EXPNTL*( (((((P6*ZABS + P5)*ZABS + P4)*ZABS + P3)*ZABS
      *           + P2)*ZABS + P1)*ZABS + P0)/(((((((Q7*ZABS + Q6)*ZABS
      *           + Q5)*ZABS + Q4)*ZABS + Q3)*ZABS + Q2)*ZABS + Q1)*ZABS
      *           + Q0 )
-*     
+*
 *     |Z| >= CUTOFF.
-*     
+*
          ELSE
-            P = EXPNTL/( ZABS + 1/( ZABS + 2/( ZABS + 3/( ZABS 
+            P = EXPNTL/( ZABS + 1/( ZABS + 2/( ZABS + 3/( ZABS
      *                        + 4/( ZABS + 0.65D0 ) ) ) ) )/ROOTPI
          END IF
       END IF
@@ -820,16 +820,16 @@
 *	coefficients.   They are included for use in checking
 *	transcription.
 *
-      DOUBLE PRECISION SPLIT1, SPLIT2, CONST1, CONST2, 
-     *     A0, A1, A2, A3, A4, A5, A6, A7, B1, B2, B3, B4, B5, B6, B7, 
-     *     C0, C1, C2, C3, C4, C5, C6, C7, D1, D2, D3, D4, D5, D6, D7, 
-     *     E0, E1, E2, E3, E4, E5, E6, E7, F1, F2, F3, F4, F5, F6, F7, 
+      DOUBLE PRECISION SPLIT1, SPLIT2, CONST1, CONST2,
+     *     A0, A1, A2, A3, A4, A5, A6, A7, B1, B2, B3, B4, B5, B6, B7,
+     *     C0, C1, C2, C3, C4, C5, C6, C7, D1, D2, D3, D4, D5, D6, D7,
+     *     E0, E1, E2, E3, E4, E5, E6, E7, F1, F2, F3, F4, F5, F6, F7,
      *     P, Q, R
       PARAMETER ( SPLIT1 = 0.425, SPLIT2 = 5,
      *            CONST1 = 0.180625D0, CONST2 = 1.6D0 )
-*     
+*
 *     Coefficients for P close to 0.5
-*     
+*
       PARAMETER (
      *     A0 = 3.38713 28727 96366 6080D0,
      *     A1 = 1.33141 66789 17843 7745D+2,
@@ -847,9 +847,9 @@
      *     B6 = 2.87290 85735 72194 2674D+4,
      *     B7 = 5.22649 52788 52854 5610D+3 )
 *     HASH SUM AB    55.88319 28806 14901 4439
-*     
+*
 *     Coefficients for P not close to 0, 0.5 or 1.
-*     
+*
       PARAMETER (
      *     C0 = 1.42343 71107 49683 57734D0,
      *     C1 = 4.63033 78461 56545 29590D0,
@@ -887,7 +887,7 @@
      *     F6 = 1.42151 17583 16445 88870D-7,
      *     F7 = 2.04426 31033 89939 78564D-15 )
 *     HASH SUM EF    47.52583 31754 92896 71629
-*     
+*
       Q = ( 2*P - 1 )/2
       IF ( ABS(Q) .LE. SPLIT1 ) THEN
          R = CONST1 - Q*Q
@@ -902,7 +902,7 @@
             IF ( R .LE. SPLIT2 ) THEN
                R = R - CONST2
                PHINVS = ( ( ( ((((C7*R + C6)*R + C5)*R + C4)*R + C3)
-     *                      *R + C2 )*R + C1 )*R + C0 ) 
+     *                      *R + C2 )*R + C1 )*R + C0 )
      *                /( ( ( ((((D7*R + D6)*R + D5)*R + D4)*R + D3)
      *                      *R + D2 )*R + D1 )*R + 1 )
             ELSE
@@ -960,7 +960,7 @@
       ELSE IF ( INFIN(1) .EQ. 0  .AND. INFIN(2) .EQ. 0 ) THEN
          BVNMVN =  BVU ( -UPPER(1), -UPPER(2), CORREL )
       END IF
-      END 
+      END
       DOUBLE PRECISION FUNCTION BVU( SH, SK, R )
 *
 *     A function for computing bivariate normal probabilities.
@@ -986,9 +986,9 @@
 *   R   REAL, correlation coefficient
 *   LG  INTEGER, number of Gauss Rule Points and Weights
 *
-      DOUBLE PRECISION BVN, SH, SK, R, ZERO, TWOPI 
+      DOUBLE PRECISION BVN, SH, SK, R, ZERO, TWOPI
       INTEGER I, LG, NG
-      PARAMETER ( ZERO = 0, TWOPI = 6.283185307179586D0 ) 
+      PARAMETER ( ZERO = 0, TWOPI = 6.283185307179586D0 )
       DOUBLE PRECISION X(10,3), W(10,3), AS, A, B, C, D, RS, XS
       DOUBLE PRECISION MVNPHI, SN, ASR, H, K, BS, HS, HK
       SAVE X, W
@@ -1023,12 +1023,12 @@
       ELSE IF ( ABS(R) .LT. 0.75 ) THEN
          NG = 2
          LG = 6
-      ELSE 
+      ELSE
          NG = 3
          LG = 10
       ENDIF
       H = SH
-      K = SK 
+      K = SK
       HK = H*K
       BVN = 0
       IF ( ABS(R) .LT. 0.925 ) THEN
@@ -1040,7 +1040,7 @@
             SN = SIN(ASR*(-X(I,NG)+1 )/2)
             BVN = BVN + W(I,NG)*EXP( ( SN*HK - HS )/( 1 - SN*SN ) )
          END DO
-         BVN = BVN*ASR/(2*TWOPI) + MVNPHI(-H)*MVNPHI(-K) 
+         BVN = BVN*ASR/(2*TWOPI) + MVNPHI(-H)*MVNPHI(-K)
       ELSE
          IF ( R .LT. 0 ) THEN
             K = -K
@@ -1050,26 +1050,26 @@
             AS = ( 1 - R )*( 1 + R )
             A = SQRT(AS)
             BS = ( H - K )**2
-            C = ( 4 - HK )/8 
+            C = ( 4 - HK )/8
             D = ( 12 - HK )/16
             BVN = A*EXP( -(BS/AS + HK)/2 )
      +             *( 1 - C*(BS - AS)*(1 - D*BS/5)/3 + C*D*AS*AS/5 )
             IF ( HK .GT. -160 ) THEN
                B = SQRT(BS)
                BVN = BVN - EXP(-HK/2)*SQRT(TWOPI)*MVNPHI(-B/A)*B
-     +                    *( 1 - C*BS*( 1 - D*BS/5 )/3 ) 
+     +                    *( 1 - C*BS*( 1 - D*BS/5 )/3 )
             ENDIF
             A = A/2
             DO I = 1, LG
                XS = ( A*(X(I,NG)+1) )**2
                RS = SQRT( 1 - XS )
                BVN = BVN + A*W(I,NG)*
-     +              ( EXP( -BS/(2*XS) - HK/(1+RS) )/RS 
+     +              ( EXP( -BS/(2*XS) - HK/(1+RS) )/RS
      +              - EXP( -(BS/XS+HK)/2 )*( 1 + C*XS*( 1 + D*XS ) ) )
                XS = AS*(-X(I,NG)+1)**2/4
                RS = SQRT( 1 - XS )
                BVN = BVN + A*W(I,NG)*EXP( -(BS/XS + HK)/2 )
-     +                    *( EXP( -HK*(1-RS)/(2*(1+RS)) )/RS 
+     +                    *( EXP( -HK*(1-RS)/(2*(1+RS)) )/RS
      +                       - ( 1 + C*XS*( 1 + D*XS ) ) )
             END DO
             BVN = -BVN/TWOPI
@@ -1084,21 +1084,21 @@
 *     Uniform (0,1) random number generator
 *
 *     Reference:
-*     L'Ecuyer, Pierre (1996), 
+*     L'Ecuyer, Pierre (1996),
 *     "Combined Multiple Recursive Random Number Generators"
 *     Operations Research 44, pp. 816-822.
 *
 *
       INTEGER A12, A13, A21, A23, P12, P13, P21, P23
       INTEGER Q12, Q13, Q21, Q23, R12, R13, R21, R23
-      INTEGER X10, X11, X12, X20, X21, X22, Z, M1, M2, H 
+      INTEGER X10, X11, X12, X20, X21, X22, Z, M1, M2, H
       DOUBLE PRECISION INVMP1
       PARAMETER ( M1 = 2147483647, M2 = 2145483479 )
       PARAMETER ( A12 =   63308, Q12 = 33921, R12 = 12979 )
       PARAMETER ( A13 = -183326, Q13 = 11714, R13 =  2883 )
       PARAMETER ( A21 =   86098, Q21 = 24919, R21 =  7417 )
       PARAMETER ( A23 = -539608, Q23 =  3976, R23 =  2071 )
-      PARAMETER ( INVMP1 = 4.656612873077392578125D-10 ) 
+      PARAMETER ( INVMP1 = 4.656612873077392578125D-10 )
 *                 INVMP1 = 1/(M1+1)
       SAVE X10, X11, X12, X20, X21, X22
       DATA       X10,      X11,      X12,      X20,      X21,      X22
@@ -1112,7 +1112,7 @@
       P12 =  A12*( X11 - H*Q12 ) - H*R12
       IF ( P13 .LT. 0 ) P13 = P13 + M1
       IF ( P12 .LT. 0 ) P12 = P12 + M1
-      X10 = X11 
+      X10 = X11
       X11 = X12
       X12 = P12 - P13
       IF ( X12 .LT. 0 ) X12 = X12 + M1
@@ -1125,7 +1125,7 @@
       P21 =  A21*( X22 - H*Q21 ) - H*R21
       IF ( P23 .LT. 0 ) P23 = P23 + M2
       IF ( P21 .LT. 0 ) P21 = P21 + M2
-      X20 = X21 
+      X20 = X21
       X21 = X22
       X22 = P21 - P23
       IF ( X22 .LT. 0 ) X22 = X22 + M2

@@ -1,6 +1,6 @@
       subroutine fpcuro(a,b,c,d,x,n)
 c  subroutine fpcuro finds the real zeros of a cubic polynomial
-c  p(x) = a*x**3+b*x**2+c*x+d.
+c  p(x) = a*x*x*x+b*x*x+c*x+d.
 c
 c  calling sequence:
 c     call fpcuro(a,b,c,d,x,n)

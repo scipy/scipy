@@ -62,9 +62,9 @@ c
       do 20 nmj = 1, nm1
          j = n - nmj
          if (dabs(v(j)) .gt. one) cos = one/v(j)
-         if (dabs(v(j)) .gt. one) sin = dsqrt(one-cos**2)
+         if (dabs(v(j)) .gt. one) sin = dsqrt(one-cos*cos)
          if (dabs(v(j)) .le. one) sin = v(j)
-         if (dabs(v(j)) .le. one) cos = dsqrt(one-sin**2)
+         if (dabs(v(j)) .le. one) cos = dsqrt(one-sin*sin)
          do 10 i = 1, m
             temp = cos*a(i,j) - sin*a(i,n)
             a(i,n) = sin*a(i,j) + cos*a(i,n)
@@ -76,9 +76,9 @@ c     apply the second set of givens rotations to a.
 c
       do 40 j = 1, nm1
          if (dabs(w(j)) .gt. one) cos = one/w(j)
-         if (dabs(w(j)) .gt. one) sin = dsqrt(one-cos**2)
+         if (dabs(w(j)) .gt. one) sin = dsqrt(one-cos*cos)
          if (dabs(w(j)) .le. one) sin = w(j)
-         if (dabs(w(j)) .le. one) cos = dsqrt(one-sin**2)
+         if (dabs(w(j)) .le. one) cos = dsqrt(one-sin*sin)
          do 30 i = 1, m
             temp = cos*a(i,j) + sin*a(i,n)
             a(i,n) = -sin*a(i,j) + cos*a(i,n)

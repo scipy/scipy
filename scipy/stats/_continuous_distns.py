@@ -80,11 +80,11 @@ _norm_pdf_logC = np.log(_norm_pdf_C)
 
 
 def _norm_pdf(x):
-    return np.exp(-x**2/2.0) / _norm_pdf_C
+    return np.exp(-x*x/2.0) / _norm_pdf_C
 
 
 def _norm_logpdf(x):
-    return -x**2 / 2.0 - _norm_pdf_logC
+    return -x*x / 2.0 - _norm_pdf_logC
 
 
 def _norm_cdf(x):
@@ -140,7 +140,7 @@ class norm_gen(rv_continuous):
         return self._random_state.standard_normal(self._size)
 
     def _pdf(self, x):
-        # norm.pdf(x) = exp(-x**2/2)/sqrt(2*pi)
+        # norm.pdf(x) = exp(-x*x/2)/sqrt(2*pi)
         return _norm_pdf(x)
 
     def _logpdf(self, x):
@@ -229,8 +229,8 @@ class alpha_gen(rv_continuous):
     _support_mask = rv_continuous._open_support_mask
 
     def _pdf(self, x, a):
-        # alpha.pdf(x, a) = 1/(x**2*Phi(a)*sqrt(2*pi)) * exp(-1/2 * (a-1/x)**2)
-        return 1.0/(x**2)/_norm_cdf(a)*_norm_pdf(a-1.0/x)
+        # alpha.pdf(x, a) = 1/(x*x*Phi(a)*sqrt(2*pi)) * exp(-1/2 * (a-1/x)**2)
+        return 1.0/(x*x)/_norm_cdf(a)*_norm_pdf(a-1.0/x)
 
     def _logpdf(self, x, a):
         return -2*np.log(x) + _norm_logpdf(a-1.0/x) - np.log(_norm_cdf(a))
@@ -279,7 +279,7 @@ class anglit_gen(rv_continuous):
         return np.arcsin(np.sqrt(q))-np.pi/4
 
     def _stats(self):
-        return 0.0, np.pi*np.pi/16-0.5, 0.0, -2*(np.pi**4 - 96)/(np.pi*np.pi-8)**2
+        return 0.0, np.pi*np.pi/16-0.5, 0.0, -2*(np.pi*pi*pi*pi - 96)/(np.pi*np.pi-8)**2
 
     def _entropy(self):
         return 1-np.log(2)
@@ -425,7 +425,7 @@ class beta_gen(rv_continuous):
         mn = a*1.0 / (a + b)
         var = (a*b*1.0)/(a+b+1.0)/(a+b)**2.0
         g1 = 2.0*(b-a)*np.sqrt((1.0+a+b)/(a*b)) / (2+a+b)
-        g2 = 6.0*(a**3 + a**2*(1-2*b) + b**2*(1+b) - 2*a*b*(2+b))
+        g2 = 6.0*(a*a*a + a*a*(1-2*b) + b*b*(1+b) - 2*a*b*(2+b))
         g2 /= a*b*(a+b+2)*(a+b+3)
         return mn, var, g1, g2
 
@@ -436,7 +436,7 @@ class beta_gen(rv_continuous):
         def func(x):
             a, b = x
             sk = 2*(b-a)*np.sqrt(a + b + 1) / (a + b + 2) / np.sqrt(a*b)
-            ku = a**3 - a**2*(2*b-1) + b**2*(b+1) - 2*a*b*(b+2)
+            ku = a*a*a - a*a*(2*b-1) + b*b*(b+1) - 2*a*b*(b+2)
             ku /= a*b*(a+b+2)*(a+b+3)
             ku *= 6
             return [sk-g1, ku-g2]
@@ -651,8 +651,8 @@ class bradford_gen(rv_continuous):
             g1 = np.sqrt(2)*(12*c*c-9*c*k*(c+2)+2*k*k*(c*(c+3)+3))
             g1 /= np.sqrt(c*(c*(k-2)+2*k))*(3*c*(k-2)+6*k)
         if 'k' in moments:
-            g2 = (c**3*(k-3)*(k*(3*k-16)+24)+12*k*c*c*(k-4)*(k-3) +
-                  6*c*k*k*(3*k-14) + 12*k**3)
+            g2 = (c*c*c*(k-3)*(k*(3*k-16)+24)+12*k*c*c*(k-4)*(k-3) +
+                  6*c*k*k*(3*k-14) + 12*k*k*k)
             g2 /= 3*c*(c*(k-2)+2*k)**2
         return mu, mu2, g1, g2
 
@@ -865,7 +865,7 @@ class cauchy_gen(rv_continuous):
 
     """
     def _pdf(self, x):
-        # cauchy.pdf(x) = 1 / (pi * (1 + x**2))
+        # cauchy.pdf(x) = 1 / (pi * (1 + x*x))
         return 1.0/np.pi/(1.0+x*x)
 
     def _cdf(self, x):
@@ -931,7 +931,7 @@ class chi_gen(rv_continuous):
         return np.sqrt(chi2.rvs(df, size=sz, random_state=rndm))
 
     def _pdf(self, x, df):
-        #                   x**(df-1) * exp(-x**2/2)
+        #                   x**(df-1) * exp(-x*x/2)
         # chi.pdf(x, df) =  -------------------------
         #                   2**(df/2-1) * gamma(df/2)
         return np.exp(self._logpdf(x, df))
@@ -941,7 +941,7 @@ class chi_gen(rv_continuous):
         return l + sc.xlogy(df - 1., x) - .5*x**2
 
     def _cdf(self, x, df):
-        return sc.gammainc(.5*df, .5*x**2)
+        return sc.gammainc(.5*df, .5*x*x)
 
     def _ppf(self, q, df):
         return np.sqrt(2*sc.gammaincinv(.5*df, q))
@@ -949,9 +949,9 @@ class chi_gen(rv_continuous):
     def _stats(self, df):
         mu = np.sqrt(2)*sc.gamma(df/2.0+0.5)/sc.gamma(df/2.0)
         mu2 = df - mu*mu
-        g1 = (2*mu**3.0 + mu*(1-2*df))/np.asarray(np.power(mu2, 1.5))
-        g2 = 2*df*(1.0-df)-6*mu**4 + 4*mu**2 * (2*df-1)
-        g2 /= np.asarray(mu2**2.0)
+        g1 = (2*mu*mu*mu.0 + mu*(1-2*df))/np.asarray(np.power(mu2, 1.5))
+        g2 = 2*df*(1.0-df)-6*mu*mu*mu*mu + 4*mu*mu * (2*df-1)
+        g2 /= np.asarray(mu2*mu2.0)
         return mu, mu2, g1, g2
 
 
@@ -1044,7 +1044,7 @@ class cosine_gen(rv_continuous):
         return 1.0/2/np.pi*(np.pi + x + np.sin(x))
 
     def _stats(self):
-        return 0.0, np.pi*np.pi/3.0-2.0, 0.0, -6.0*(np.pi**4-90)/(5.0*(np.pi*np.pi-6)**2)
+        return 0.0, np.pi*np.pi/3.0-2.0, 0.0, -6.0*(np.pi*pi*pi*pi-90)/(5.0*(np.pi*np.pi-6)**2)
 
     def _entropy(self):
         return np.log(4*np.pi)-1.0
@@ -1319,9 +1319,9 @@ class exponnorm_gen(rv_continuous):
 
     def _pdf(self, x, K):
         # exponnorm.pdf(x, K) =
-        #     1/(2*K) exp(1/(2 * K**2)) exp(-x / K) * erfc-(x - 1/K) / sqrt(2))
+        #     1/(2*K) exp(1/(2 * K*K)) exp(-x / K) * erfc-(x - 1/K) / sqrt(2))
         invK = 1.0 / K
-        exparg = 0.5 * invK**2 - invK * x
+        exparg = 0.5 * invK*invK - invK * x
         # Avoid overflows; setting np.exp(exparg) to the max float works
         #  all right here
         expval = _lazywhere(exparg < _LOGXMAX, (exparg,), np.exp, _XMAX)
@@ -1329,7 +1329,7 @@ class exponnorm_gen(rv_continuous):
 
     def _logpdf(self, x, K):
         invK = 1.0 / K
-        exparg = 0.5 * invK**2 - invK * x
+        exparg = 0.5 * invK*invK - invK * x
         return exparg + np.log(0.5 * invK * sc.erfc(-(x - invK) / np.sqrt(2)))
 
     def _cdf(self, x, K):
@@ -1345,7 +1345,7 @@ class exponnorm_gen(rv_continuous):
     def _stats(self, K):
         K2 = K * K
         opK2 = 1.0 + K2
-        skw = 2 * K**3 * opK2**(-1.5)
+        skw = 2 * K*K*K * opK2**(-1.5)
         krt = 6.0 * K2 * K2 * opK2**(-2)
         return K, opK2, skw, krt
 
@@ -1489,11 +1489,11 @@ class fatiguelife_gen(rv_continuous):
 
     def _pdf(self, x, c):
         # fatiguelife.pdf(x, c) =
-        #     (x+1) / (2*c*sqrt(2*pi*x**3)) * exp(-(x-1)**2/(2*x*c**2))
+        #     (x+1) / (2*c*sqrt(2*pi*x*x*x)) * exp(-(x-1)**2/(2*x*c*c))
         return np.exp(self._logpdf(x, c))
 
     def _logpdf(self, x, c):
-        return (np.log(x+1) - (x-1)**2 / (2.0*x*c**2) - np.log(2*c) -
+        return (np.log(x+1) - (x-1)**2 / (2.0*x*c*c) - np.log(2*c) -
                 0.5*(np.log(2*np.pi) + 3*np.log(x)))
 
     def _cdf(self, x, c):
@@ -1501,7 +1501,7 @@ class fatiguelife_gen(rv_continuous):
 
     def _ppf(self, q, c):
         tmp = c*sc.ndtri(q)
-        return 0.25 * (tmp + np.sqrt(tmp**2 + 4))**2
+        return 0.25 * (tmp + np.sqrt(tmp*tmp + 4))**2
 
     def _stats(self, c):
         # NB: the formula for kurtosis in wikipedia seems to have an error:
@@ -1514,7 +1514,7 @@ class fatiguelife_gen(rv_continuous):
         den = 5.0 * c2 + 4.0
         mu2 = c2*den / 4.0
         g1 = 4 * c * (11*c2 + 6.0) / np.power(den, 1.5)
-        g2 = 6 * c2 * (93*c2 + 40.0) / den**2.0
+        g2 = 6 * c2 * (93*c2 + 40.0) / den*den.0
         return mu, mu2, g1, g2
 
 
@@ -1620,7 +1620,7 @@ class f_gen(rv_continuous):
         mu2 = _lazywhere(
             v2 > 4, (v1, v2, v2_2, v2_4),
             lambda v1, v2, v2_2, v2_4:
-            2 * v2 * v2 * (v1 + v2_2) / (v1 * v2_2**2 * v2_4),
+            2 * v2 * v2 * (v1 + v2_2) / (v1 * v2_2*v2_2 * v2_4),
             np.inf)
 
         g1 = _lazywhere(
@@ -1679,7 +1679,7 @@ class foldnorm_gen(rv_continuous):
         return abs(self._random_state.standard_normal(self._size) + c)
 
     def _pdf(self, x, c):
-        # foldnormal.pdf(x, c) = sqrt(2/pi) * cosh(c*x) * exp(-(x**2+c**2)/2)
+        # foldnormal.pdf(x, c) = sqrt(2/pi) * cosh(c*x) * exp(-(x*x+c*c)/2)
         return _norm_pdf(x + c) + _norm_pdf(x-c)
 
     def _cdf(self, x, c):
@@ -1699,8 +1699,8 @@ class foldnorm_gen(rv_continuous):
         g1 /= np.power(mu2, 1.5)
 
         g2 = c2 * (c2 + 6.) + 3 + 8.*expfac*mu
-        g2 += (2. * (c2 - 3.) - 3. * mu**2) * mu**2
-        g2 = g2 / mu2**2.0 - 3.
+        g2 += (2. * (c2 - 3.) - 3. * mu*mu) * mu**2
+        g2 = g2 / mu2*mu2.0 - 3.
 
         return mu, mu2, g1, g2
 
@@ -2081,8 +2081,8 @@ class genlogistic_gen(rv_continuous):
         mu2 = np.pi*np.pi/6.0 + sc.zeta(2, c)
         g1 = -2*sc.zeta(3, c) + 2*_ZETA3
         g1 /= np.power(mu2, 1.5)
-        g2 = np.pi**4/15.0 + 6*sc.zeta(4, c)
-        g2 /= mu2**2.0
+        g2 = np.pi*pi*pi*pi/15.0 + 6*sc.zeta(4, c)
+        g2 /= mu2*mu2.0
         return mu, mu2, g1, g2
 
 
@@ -2309,14 +2309,14 @@ class genextreme_gen(rv_continuous):
         g2 = g(2)
         g3 = g(3)
         g4 = g(4)
-        g2mg12 = np.where(abs(c) < 1e-7, (c*np.pi)**2.0/6.0, g2-g1**2.0)
-        gam2k = np.where(abs(c) < 1e-7, np.pi**2.0/6.0,
-                         sc.expm1(sc.gammaln(2.0*c+1.0)-2*sc.gammaln(c + 1.0))/c**2.0)
+        g2mg12 = np.where(abs(c) < 1e-7, (c*np.pi)**2.0/6.0, g2-g1*g1.0)
+        gam2k = np.where(abs(c) < 1e-7, np.pi*pi.0/6.0,
+                         sc.expm1(sc.gammaln(2.0*c+1.0)-2*sc.gammaln(c + 1.0))/c*c.0)
         eps = 1e-14
         gamk = np.where(abs(c) < eps, -_EULER, sc.expm1(sc.gammaln(c + 1))/c)
 
         m = np.where(c < -1.0, np.nan, -gamk)
-        v = np.where(c < -0.5, np.nan, g1**2.0*gam2k)
+        v = np.where(c < -0.5, np.nan, g1*g1.0*gam2k)
 
         # skewness
         sk1 = _lazywhere(c >= -1./3,
@@ -2324,13 +2324,13 @@ class genextreme_gen(rv_continuous):
                          lambda c, g1, g2, g3, g2gm12:
                              np.sign(c)*(-g3 + (g2 + 2*g2mg12)*g1)/g2mg12**1.5,
                          fillvalue=np.nan)
-        sk = np.where(abs(c) <= eps**0.29, 12*np.sqrt(6)*_ZETA3/np.pi**3, sk1)
+        sk = np.where(abs(c) <= eps**0.29, 12*np.sqrt(6)*_ZETA3/np.pi*pi*pi, sk1)
 
         # kurtosis
         ku1 = _lazywhere(c >= -1./4,
                          (g1, g2, g3, g4, g2mg12),
                          lambda g1, g2, g3, g4, g2mg12:
-                             (g4 + (-4*g3 + 3*(g2 + g2mg12)*g1)*g1)/g2mg12**2,
+                             (g4 + (-4*g3 + 3*(g2 + g2mg12)*g1)*g1)/g2mg12*g2mg12,
                          fillvalue=np.nan)
         ku = np.where(abs(c) <= (eps)**0.23, 12.0/5.0, ku1-3.0)
         return m, v, sk, ku
@@ -2801,7 +2801,7 @@ class gumbel_r_gen(rv_continuous):
         return -np.log(-np.log(q))
 
     def _stats(self):
-        return _EULER, np.pi*np.pi/6.0, 12*np.sqrt(6)/np.pi**3 * _ZETA3, 12.0/5
+        return _EULER, np.pi*np.pi/6.0, 12*np.sqrt(6)/np.pi*pi*pi * _ZETA3, 12.0/5
 
     def _entropy(self):
         # https://en.wikipedia.org/wiki/Gumbel_distribution
@@ -2861,7 +2861,7 @@ class gumbel_l_gen(rv_continuous):
 
     def _stats(self):
         return -_EULER, np.pi*np.pi/6.0, \
-               -12*np.sqrt(6)/np.pi**3 * _ZETA3, 12.0/5
+               -12*np.sqrt(6)/np.pi*pi*pi * _ZETA3, 12.0/5
 
     def _entropy(self):
         return _EULER + 1.
@@ -2891,7 +2891,7 @@ class halfcauchy_gen(rv_continuous):
 
     """
     def _pdf(self, x):
-        # halfcauchy.pdf(x) = 2 / (pi * (1 + x**2))
+        # halfcauchy.pdf(x) = 2 / (pi * (1 + x*x))
         return 2.0/np.pi/(1.0+x*x)
 
     def _logpdf(self, x):
@@ -2955,7 +2955,7 @@ class halflogistic_gen(rv_continuous):
         if n == 3:
             return 9*_ZETA3
         if n == 4:
-            return 7*np.pi**4 / 15.0
+            return 7*np.pi*pi*pi*pi / 15.0
         return 2*(1-pow(2.0, 1-n))*sc.gamma(n+1)*sc.zeta(n, 1)
 
     def _entropy(self):
@@ -2991,7 +2991,7 @@ class halfnorm_gen(rv_continuous):
         return abs(self._random_state.standard_normal(size=self._size))
 
     def _pdf(self, x):
-        # halfnorm.pdf(x) = sqrt(2/pi) * exp(-x**2/2)
+        # halfnorm.pdf(x) = sqrt(2/pi) * exp(-x*x/2)
         return np.sqrt(2.0/np.pi)*np.exp(-x*x/2.0)
 
     def _logpdf(self, x):
@@ -3201,8 +3201,8 @@ class invgauss_gen(rv_continuous):
 
     def _pdf(self, x, mu):
         # invgauss.pdf(x, mu) =
-        #                  1 / sqrt(2*pi*x**3) * exp(-(x-mu)**2/(2*x*mu**2))
-        return 1.0/np.sqrt(2*np.pi*x**3.0)*np.exp(-1.0/(2*x)*((x-mu)/mu)**2)
+        #                  1 / sqrt(2*pi*x*x*x) * exp(-(x-mu)**2/(2*x*mu*mu))
+        return 1.0/np.sqrt(2*np.pi*x*x*x.0)*np.exp(-1.0/(2*x)*((x-mu)/mu)**2)
 
     def _logpdf(self, x, mu):
         return -0.5*np.log(2*np.pi) - 1.5*np.log(x) - ((x-mu)/mu)**2/(2*x)
@@ -3215,7 +3215,7 @@ class invgauss_gen(rv_continuous):
         return C1
 
     def _stats(self, mu):
-        return mu, mu**3.0, 3*np.sqrt(mu), 15*mu
+        return mu, mu*mu*mu.0, 3*np.sqrt(mu), 15*mu
 
 
 invgauss = invgauss_gen(a=0.0, name='invgauss')
@@ -3245,7 +3245,7 @@ class norminvgauss_gen(rv_continuous):
     A normal inverse Gaussian random variable `Y` with parameters `a` and `b`
     can be expressed as a normal mean-variance mixture:
     `Y = b * V + sqrt(V) * X` where `X` is `norm(0,1)` and `V` is
-    `invgauss(mu=1/sqrt(a**2 - b**2))`. This representation is used
+    `invgauss(mu=1/sqrt(a*a - b*b))`. This representation is used
     to generate random variates.
 
     References
@@ -3267,25 +3267,25 @@ class norminvgauss_gen(rv_continuous):
         return (a > 0) & (np.absolute(b) < a)
 
     def _pdf(self, x, a, b):
-        gamma = np.sqrt(a**2 - b**2)
+        gamma = np.sqrt(a*a - b*b)
         fac1 = a / np.pi * np.exp(gamma)
         sq = np.hypot(1, x)  # reduce overflows
         return fac1 * sc.k1e(a * sq) * np.exp(b*x - a*sq) / sq
 
     def _rvs(self, a, b):
         # note: X = b * V + sqrt(V) * X is norminvgaus(a,b) if X is standard
-        # normal and V is invgauss(mu=1/sqrt(a**2 - b**2))
-        gamma = np.sqrt(a**2 - b**2)
+        # normal and V is invgauss(mu=1/sqrt(a*a - b*b))
+        gamma = np.sqrt(a*a - b*b)
         sz, rndm = self._size, self._random_state
         ig = invgauss.rvs(mu=1/gamma, size=sz, random_state=rndm)
         return b * ig + np.sqrt(ig) * norm.rvs(size=sz, random_state=rndm)
 
     def _stats(self, a, b):
-        gamma = np.sqrt(a**2 - b**2)
+        gamma = np.sqrt(a*a - b*b)
         mean = b / gamma
-        variance = a**2 / gamma**3
+        variance = a*a / gamma**3
         skewness = 3.0 * b / (a * np.sqrt(gamma))
-        kurtosis = 3.0 * (1 + 4 * b**2 / a**2) / gamma
+        kurtosis = 3.0 * (1 + 4 * b*b / a*a) / gamma
         return mean, variance, skewness, kurtosis
 
 
@@ -3426,8 +3426,8 @@ class johnsonsu_gen(rv_continuous):
         return (b > 0) & (a == a)
 
     def _pdf(self, x, a, b):
-        # johnsonsu.pdf(x, a, b) = b / sqrt(x**2 + 1) *
-        #                          phi(a + b * log(x + sqrt(x**2 + 1)))
+        # johnsonsu.pdf(x, a, b) = b / sqrt(x*x + 1) *
+        #                          phi(a + b * log(x + sqrt(x*x + 1)))
         x2 = x*x
         trm = _norm_pdf(a + b * np.log(x + np.sqrt(x2+1)))
         return b*1.0/np.sqrt(x2+1.0)*trm
@@ -3595,69 +3595,69 @@ class levy_stable_gen(rv_continuous):
     The distribution for `levy_stable` has characteristic function:
 
     .. math::
-            
+
         \varphi(t; \alpha, \beta, c, \mu) = e^{ it\mu -|ct|^{\alpha }(1-i\beta \operatorname{sign}(t)\Phi(\alpha ,t )) }
 
     where:
-              
+
     .. math::
-        
+
         \Phi = \begin{cases}
                 \tan \left({\frac {\pi \alpha }{2}}\right)&\alpha \neq 1\\
                 -{\frac {2}{\pi }}\log |t|&\alpha =1
                 \end{cases}
-           
+
     The probability density function for `levy_stable` is:
-        
+
     .. math::
-    
+
         f(x) = \frac{1}{2\pi}\int_{-\infty}^\infty \varphi(t)e^{-ixt}\,dt
-        
+
     where :math:`-\infty < t < \infty`. This integral does not have a known closed form.
-    
-    For evaluation of pdf we use either Zolotarev :math:`S_0` parameterization with integration, 
-    direct integration of standard parameterization of characteristic function or FFT of 
-    characteristic function. If set to other than None and if number of points is greater than 
-    ``levy_stable.pdf_fft_min_points_threshold`` (defaults to None) we use FFT otherwise we use one 
-    of the other methods. 
-    
+
+    For evaluation of pdf we use either Zolotarev :math:`S_0` parameterization with integration,
+    direct integration of standard parameterization of characteristic function or FFT of
+    characteristic function. If set to other than None and if number of points is greater than
+    ``levy_stable.pdf_fft_min_points_threshold`` (defaults to None) we use FFT otherwise we use one
+    of the other methods.
+
     The default method is 'best' which uses Zolotarev's method if alpha = 1 and integration of
-    characteristic function otherwise. The default method can be changed by setting 
-    ``levy_stable.pdf_default_method`` to either 'zolotarev', 'quadrature' or 'best'. 
-    
-    To increase accuracy of FFT calculation one can specify ``levy_stable.pdf_fft_grid_spacing`` 
-    (defaults to 0.001) and ``pdf_fft_n_points_two_power`` (defaults to a value that covers the 
-    input range * 4). Setting ``pdf_fft_n_points_two_power`` to 16 should be sufficiently accurate 
+    characteristic function otherwise. The default method can be changed by setting
+    ``levy_stable.pdf_default_method`` to either 'zolotarev', 'quadrature' or 'best'.
+
+    To increase accuracy of FFT calculation one can specify ``levy_stable.pdf_fft_grid_spacing``
+    (defaults to 0.001) and ``pdf_fft_n_points_two_power`` (defaults to a value that covers the
+    input range * 4). Setting ``pdf_fft_n_points_two_power`` to 16 should be sufficiently accurate
     in most cases at the expense of CPU time.
-    
+
     For evaluation of cdf we use Zolatarev :math:`S_0` parameterization with integration or integral of
     the pdf FFT interpolated spline. The settings affecting FFT calculation are the same as
-    for pdf calculation. Setting the threshold to ``None`` (default) will disable FFT. For cdf 
+    for pdf calculation. Setting the threshold to ``None`` (default) will disable FFT. For cdf
     calculations the Zolatarev method is superior in accuracy, so FFT is disabled by default.
-    
+
     Fitting estimate uses quantile estimation method in [MC]. MLE estimation of parameters in
-    fit method uses this quantile estimate initially. Note that MLE doesn't always converge if 
-    using FFT for pdf calculations; so it's best that ``pdf_fft_min_points_threshold`` is left unset. 
-    
+    fit method uses this quantile estimate initially. Note that MLE doesn't always converge if
+    using FFT for pdf calculations; so it's best that ``pdf_fft_min_points_threshold`` is left unset.
+
     .. warning::
-    
-        For pdf calculations implementation of Zolatarev is unstable for values where alpha = 1 and 
-        beta != 0. In this case the quadrature method is recommended. FFT calculation is also 
+
+        For pdf calculations implementation of Zolatarev is unstable for values where alpha = 1 and
+        beta != 0. In this case the quadrature method is recommended. FFT calculation is also
         considered experimental.
-        
-        For cdf calculations FFT calculation is considered experimental. Use Zolatarev's method 
+
+        For cdf calculations FFT calculation is considered experimental. Use Zolatarev's method
         instead (default).
 
     %(after_notes)s
-    
+
     References
-    ----------    
+    ----------
     .. [MC] McCulloch, J., 1986. Simple consistent estimators of stable distribution parameters.
        Communications in Statistics - Simulation and Computation 15, 11091136.
-    .. [MS] Mittnik, S.T. Rachev, T. Doganoglu, D. Chenyao, 1999. Maximum likelihood estimation 
-       of stable Paretian models, Mathematical and Computer Modelling, Volume 29, Issue 10, 
+    .. [MS] Mittnik, S.T. Rachev, T. Doganoglu, D. Chenyao, 1999. Maximum likelihood estimation
+       of stable Paretian models, Mathematical and Computer Modelling, Volume 29, Issue 10,
        1999, Pages 275-293.
-    .. [BS] Borak, S., Hardle, W., Rafal, W. 2005. Stable distributions, Economic Risk. 
+    .. [BS] Borak, S., Hardle, W., Rafal, W. 2005. Stable distributions, Economic Risk.
 
     %(example)s
 
@@ -3710,7 +3710,7 @@ class levy_stable_gen(rv_continuous):
     def _cf(t, alpha, beta):
         Phi = lambda alpha, t: np.tan(np.pi*alpha/2) if alpha != 1 else -2.0*np.log(np.abs(t))/np.pi
         return np.exp(-(np.abs(t)**alpha)*(1-1j*beta*np.sign(t)*Phi(alpha, t)))
-        
+
     @staticmethod
     def _pdf_from_cf_with_fft(cf, h=0.01, q=9):
         """Calculates pdf from cf using fft. Using region around 0 with N=2**q points
@@ -3721,19 +3721,19 @@ class levy_stable_gen(rv_continuous):
         density = ((-1)**(n-1-N/2))*np.fft.fft(((-1)**(n-1))*cf(2*np.pi*(n-1-N/2)/h/N))/h/N
         x = (n-1-N/2)*h
         return (x, density)
-    
+
     @staticmethod
     def _pdf_single_value_best(x, alpha, beta):
         if alpha != 1. or (alpha == 1. and beta == 0.):
             return levy_stable_gen._pdf_single_value_zolotarev(x, alpha, beta)
         else:
             return levy_stable_gen._pdf_single_value_cf_integrate(x, alpha, beta)
-    
+
     @staticmethod
     def _pdf_single_value_cf_integrate(x, alpha, beta):
         cf = lambda t: levy_stable_gen._cf(t, alpha, beta)
         return integrate.quad(lambda t: np.real(np.exp(-1j*t*x)*cf(t)), -np.inf, np.inf, limit=1000)[0]/np.pi/2
-    
+
     @staticmethod
     def _pdf_single_value_zolotarev(x, alpha, beta):
         """Calculate pdf using Zolotarev's methods as detailed in [BS].
@@ -3742,7 +3742,7 @@ class levy_stable_gen(rv_continuous):
         if alpha != 1:
             x0 = x + zeta  # convert to S_0 parameterization
             xi = np.arctan(-zeta)/alpha
-            
+
             def V(theta):
                 return np.cos(alpha*xi)**(1/(alpha-1)) * \
                                 (np.cos(theta)/np.sin(alpha*(xi+theta)))**(alpha/(alpha-1)) * \
@@ -3750,7 +3750,7 @@ class levy_stable_gen(rv_continuous):
             if x0 > zeta:
                 def g(theta):
                     return V(theta)*np.real(np.complex(x0-zeta)**(alpha/(alpha-1)))
-                
+
                 def f(theta):
                     return g(theta) * np.exp(-g(theta))
 
@@ -3758,18 +3758,18 @@ class levy_stable_gen(rv_continuous):
                 # use isclose as macos has fp differences
                 if np.isclose(-xi, np.pi/2, rtol=1e-014, atol=1e-014):
                     return 0.
-                
+
                 with np.errstate(all="ignore"):
                     intg_max = optimize.minimize_scalar(lambda theta: -f(theta), bounds=[-xi, np.pi/2])
-                    intg_kwargs = {} 
+                    intg_kwargs = {}
                     # windows quadpack less forgiving with points out of bounds
                     if intg_max.success and not np.isnan(intg_max.fun)\
                             and intg_max.x > -xi and intg_max.x < np.pi/2:
-                        intg_kwargs["points"] = [intg_max.x]                     
+                        intg_kwargs["points"] = [intg_max.x]
                     intg = integrate.quad(f, -xi, np.pi/2, **intg_kwargs)[0]
                     return alpha * intg / np.pi / np.abs(alpha-1) / (x0-zeta)
             elif x0 == zeta:
-                return sc.gamma(1+1/alpha)*np.cos(xi)/np.pi/((1+zeta**2)**(1/alpha/2))
+                return sc.gamma(1+1/alpha)*np.cos(xi)/np.pi/((1+zeta*zeta)**(1/alpha/2))
             else:
                 return levy_stable_gen._pdf_single_value_zolotarev(-x, alpha, -beta)
         else:
@@ -3778,23 +3778,23 @@ class levy_stable_gen(rv_continuous):
             if beta != 0:
                 warnings.warn('Density calculation unstable for alpha=1 and beta!=0.' +
                               ' Use quadrature method instead.', RuntimeWarning)
-                                        
+
                 def V(theta):
                     expr_1 = np.pi/2+beta*theta
-                    return 2. * expr_1 * np.exp(expr_1*np.tan(theta)/beta) / np.cos(theta) / np.pi 
-            
+                    return 2. * expr_1 * np.exp(expr_1*np.tan(theta)/beta) / np.cos(theta) / np.pi
+
                 def g(theta):
                     return np.exp(-np.pi * x / 2. / beta) * V(theta)
-                
+
                 def f(theta):
                     return g(theta) * np.exp(-g(theta))
-            
+
                 with np.errstate(all="ignore"):
                     intg_max = optimize.minimize_scalar(lambda theta: -f(theta), bounds=[-np.pi/2, np.pi/2])
                     intg = integrate.fixed_quad(f, -np.pi/2, intg_max.x)[0] + integrate.fixed_quad(f, intg_max.x, np.pi/2)[0]
-                    return intg / np.abs(beta) / 2.                   
+                    return intg / np.abs(beta) / 2.
             else:
-                return 1/(1+x**2)/np.pi
+                return 1/(1+x*x)/np.pi
 
     @staticmethod
     def _cdf_single_value_zolotarev(x, alpha, beta):
@@ -3804,14 +3804,14 @@ class levy_stable_gen(rv_continuous):
         if alpha != 1:
             x0 = x + zeta  # convert to S_0 parameterization
             xi = np.arctan(-zeta)/alpha
-            
+
             def V(theta):
                 return np.cos(alpha*xi)**(1/(alpha-1)) * \
                                 (np.cos(theta)/np.sin(alpha*(xi+theta)))**(alpha/(alpha-1)) * \
                                 (np.cos(alpha*xi+(alpha-1)*theta)/np.cos(theta))
             if x0 > zeta:
                 c_1 = 1 if alpha > 1 else .5 - xi/np.pi
-                
+
                 def f(theta):
                     return np.exp(-V(theta)*np.real(np.complex(x0-zeta)**(alpha/(alpha-1))))
 
@@ -3827,16 +3827,16 @@ class levy_stable_gen(rv_continuous):
                 return .5 - xi/np.pi
             else:
                 return 1 - levy_stable_gen._cdf_single_value_zolotarev(-x, alpha, -beta)
-                
+
         else:
             # since location zero, no need to reposition x for S_0 parameterization
             xi = np.pi/2
             if beta > 0:
-                
+
                 def V(theta):
                     expr_1 = np.pi/2+beta*theta
-                    return 2. * expr_1 * np.exp(expr_1*np.tan(theta)/beta) / np.cos(theta) / np.pi 
-                
+                    return 2. * expr_1 * np.exp(expr_1*np.tan(theta)/beta) / np.cos(theta) / np.pi
+
                 with np.errstate(all="ignore"):
                     expr_1 = np.exp(-np.pi*x/beta/2.)
                     int_1 = integrate.quad(lambda theta: np.exp(-expr_1 * V(theta)), -np.pi/2, np.pi/2)[0]
@@ -3845,16 +3845,16 @@ class levy_stable_gen(rv_continuous):
                 return .5 + np.arctan(x)/np.pi
             else:
                 return 1 - levy_stable_gen._cdf_single_value_zolotarev(-x, 1, -beta)
-        
+
     def _pdf(self, x, alpha, beta):
 
         x = np.asarray(x).reshape(1, -1)[0,:]
-        
+
         x, alpha, beta = np.broadcast_arrays(x, alpha, beta)
 
         data_in = np.dstack((x, alpha, beta))[0]
         data_out = np.empty(shape=(len(data_in),1))
-        
+
         pdf_default_method_name = getattr(self, 'pdf_default_method', 'best')
         if pdf_default_method_name == 'best':
             pdf_single_value_method = levy_stable_gen._pdf_single_value_best
@@ -3862,80 +3862,80 @@ class levy_stable_gen(rv_continuous):
             pdf_single_value_method = levy_stable_gen._pdf_single_value_zolotarev
         else:
             pdf_single_value_method = levy_stable_gen._pdf_single_value_cf_integrate
-        
+
         fft_min_points_threshold = getattr(self, 'pdf_fft_min_points_threshold', None)
         fft_grid_spacing = getattr(self, 'pdf_fft_grid_spacing', 0.001)
         fft_n_points_two_power = getattr(self, 'pdf_fft_n_points_two_power', None)
-        
+
         # group data in unique arrays of alpha, beta pairs
         uniq_param_pairs = np.vstack({tuple(row) for row in data_in[:,1:]})
         for pair in uniq_param_pairs:
             data_mask = np.all(data_in[:,1:] == pair, axis=-1)
             data_subset = data_in[data_mask]
             if fft_min_points_threshold is None or len(data_subset) < fft_min_points_threshold:
-                data_out[data_mask] = np.array([pdf_single_value_method(_x, _alpha, _beta) 
+                data_out[data_mask] = np.array([pdf_single_value_method(_x, _alpha, _beta)
                             for _x, _alpha, _beta in data_subset]).reshape(len(data_subset), 1)
             else:
                 warnings.warn('Density calculations experimental for FFT method.' +
                               ' Use combination of zolatarev and quadrature methods instead.', RuntimeWarning)
                 _alpha, _beta = pair
                 _x = data_subset[:,(0,)]
-                
+
                 # need enough points to "cover" _x for interpolation
                 h = fft_grid_spacing
                 q = np.ceil(np.log(2*np.max(np.abs(_x))/h)/np.log(2)) + 2 if fft_n_points_two_power is None else int(fft_n_points_two_power)
-                
+
                 density_x, density = levy_stable_gen._pdf_from_cf_with_fft(lambda t: levy_stable_gen._cf(t, _alpha, _beta), h=h, q=q)
                 f = interpolate.interp1d(density_x, np.real(density))
                 data_out[data_mask] = f(_x)
-                
+
         return data_out.T[0]
 
     def _cdf(self, x, alpha, beta):
 
         x = np.asarray(x).reshape(1, -1)[0,:]
-        
+
         x, alpha, beta = np.broadcast_arrays(x, alpha, beta)
 
         data_in = np.dstack((x, alpha, beta))[0]
         data_out = np.empty(shape=(len(data_in),1))
-        
+
         fft_min_points_threshold = getattr(self, 'pdf_fft_min_points_threshold', None)
         fft_grid_spacing = getattr(self, 'pdf_fft_grid_spacing', 0.001)
         fft_n_points_two_power = getattr(self, 'pdf_fft_n_points_two_power', None)
-        
+
         # group data in unique arrays of alpha, beta pairs
         uniq_param_pairs = np.vstack({tuple(row) for row in data_in[:,1:]})
         for pair in uniq_param_pairs:
             data_mask = np.all(data_in[:,1:] == pair, axis=-1)
             data_subset = data_in[data_mask]
             if fft_min_points_threshold is None or len(data_subset) < fft_min_points_threshold:
-                data_out[data_mask] = np.array([levy_stable._cdf_single_value_zolotarev(_x, _alpha, _beta) 
+                data_out[data_mask] = np.array([levy_stable._cdf_single_value_zolotarev(_x, _alpha, _beta)
                             for _x, _alpha, _beta in data_subset]).reshape(len(data_subset), 1)
             else:
                 warnings.warn('Cumulative density calculations experimental for FFT method.' +
                               ' Use zolatarev method instead.', RuntimeWarning)
                 _alpha, _beta = pair
                 _x = data_subset[:,(0,)]
-                
+
                 # need enough points to "cover" _x for interpolation
                 h = fft_grid_spacing
                 q = 16 if fft_n_points_two_power is None else int(fft_n_points_two_power)
-                
+
                 density_x, density = levy_stable_gen._pdf_from_cf_with_fft(lambda t: levy_stable_gen._cf(t, _alpha, _beta), h=h, q=q)
                 f = interpolate.InterpolatedUnivariateSpline(density_x, np.real(density))
                 data_out[data_mask] = np.array([f.integral(self.a, x_1) for x_1 in _x]).reshape(data_out[data_mask].shape)
-                
+
         return data_out.T[0]
-    
+
     def _fitstart(self, data):
         # We follow McCullock 1986 method - Simple Consistent Estimators
         # of Stable Distribution Parameters
-        
+
         # Table III and IV
         nu_alpha_range = [2.439, 2.5, 2.6, 2.7, 2.8, 3, 3.2, 3.5, 4, 5, 6, 8, 10, 15, 25]
         nu_beta_range = [0, 0.1, 0.2, 0.3, 0.5, 0.7, 1]
-        
+
         # table III - alpha = psi_1(nu_alpha, nu_beta)
         alpha_table = [
             [2.000, 2.000, 2.000, 2.000, 2.000, 2.000, 2.000],
@@ -3953,9 +3953,9 @@ class levy_stable_gen(rv_continuous):
             [0.818, 0.812, 0.806, 0.801, 0.780, 0.756, 0.691],
             [0.698, 0.695, 0.692, 0.689, 0.676, 0.656, 0.597],
             [0.593, 0.590, 0.588, 0.586, 0.579, 0.563, 0.513]]
-    
+
         # table IV - beta = psi_2(nu_alpha, nu_beta)
-        beta_table = [ 
+        beta_table = [
             [0, 2.160, 1.000, 1.000, 1.000, 1.000, 1.000],
             [0, 1.592, 3.390, 1.000, 1.000, 1.000, 1.000],
             [0, 0.759, 1.800, 1.000, 1.000, 1.000, 1.000],
@@ -3971,11 +3971,11 @@ class levy_stable_gen(rv_continuous):
             [0, 0.074, 0.147, 0.220, 0.377, 0.546, 1.482],
             [0, 0.064, 0.128, 0.191, 0.330, 0.478, 1.362],
             [0, 0.056, 0.112, 0.167, 0.285, 0.428, 1.274]]
-    
+
         # Table V and VII
         alpha_range = [2, 1.9, 1.8, 1.7, 1.6, 1.5, 1.4, 1.3, 1.2, 1.1, 1, 0.9, 0.8, 0.7, 0.6, 0.5]
-        beta_range = [0, 0.25, 0.5, 0.75, 1]  
-        
+        beta_range = [0, 0.25, 0.5, 0.75, 1]
+
         # Table V - nu_c = psi_3(alpha, beta)
         nu_c_table = [
             [1.908, 1.908, 1.908, 1.908, 1.908],
@@ -3994,9 +3994,9 @@ class levy_stable_gen(rv_continuous):
             [2.189, 2.392, 3.004, 3.844, 4.775],
             [2.337, 2.634, 3.542, 4.808, 6.247],
             [2.588, 3.073, 4.534, 6.636, 9.144]]
-    
+
         # Table VII - nu_zeta = psi_5(alpha, beta)
-        nu_zeta_table = [ 
+        nu_zeta_table = [
             [0, 0.000, 0.000, 0.000, 0.000],
             [0, -0.017, -0.032, -0.049, -0.064],
             [0, -0.030, -0.061, -0.092, -0.123],
@@ -4013,43 +4013,43 @@ class levy_stable_gen(rv_continuous):
             [0, -0.089, -0.262, -0.520, -0.853],
             [0, -0.078, -0.272, -0.581, -0.997],
             [0, -0.061, -0.279, -0.659, -1.198]]
-    
+
         psi_1 = interpolate.interp2d(nu_beta_range, nu_alpha_range, alpha_table, kind='linear')
         psi_2 = interpolate.interp2d(nu_beta_range, nu_alpha_range, beta_table, kind='linear')
         psi_2_1 = lambda nu_beta, nu_alpha: psi_2(nu_beta, nu_alpha) if nu_beta > 0 else -psi_2(-nu_beta, nu_alpha)
-        
+
         phi_3 = interpolate.interp2d(beta_range, alpha_range, nu_c_table, kind='linear')
         phi_3_1 = lambda beta, alpha: phi_3(beta, alpha) if beta > 0 else phi_3(-beta, alpha)
         phi_5 = interpolate.interp2d(beta_range, alpha_range, nu_zeta_table, kind='linear')
         phi_5_1 = lambda beta, alpha: phi_5(beta, alpha) if beta > 0 else -phi_5(-beta, alpha)
-        
+
         # quantiles
         p05 = np.percentile(data, 5)
         p50 = np.percentile(data, 50)
         p95 = np.percentile(data, 95)
         p25 = np.percentile(data, 25)
         p75 = np.percentile(data, 75)
-        
+
         nu_alpha = (p95 - p05)/(p75 - p25)
         nu_beta = (p95 + p05 - 2*p50)/(p95 - p05)
-    
+
         if nu_alpha >= 2.439:
             alpha = np.clip(psi_1(nu_beta, nu_alpha)[0], np.finfo(float).eps, 2.)
             beta = np.clip(psi_2_1(nu_beta, nu_alpha)[0], -1., 1.)
         else:
             alpha = 2.0
             beta = np.sign(nu_beta)
-        c = (p75 - p25) / phi_3_1(beta, alpha)[0] 
+        c = (p75 - p25) / phi_3_1(beta, alpha)[0]
         zeta = p50 + c*phi_5_1(beta, alpha)[0]
-        delta = np.clip(zeta-beta*c*np.tan(np.pi*alpha/2.) if alpha == 1. else zeta, np.finfo(float).eps, np.inf) 
-    
+        delta = np.clip(zeta-beta*c*np.tan(np.pi*alpha/2.) if alpha == 1. else zeta, np.finfo(float).eps, np.inf)
+
         return (alpha, beta, delta, c)
-        
+
     def _stats(self, alpha, beta):
         mu = 0 if alpha > 1 else np.nan
         mu2 = 2 if alpha == 2 else np.inf
         g1 = 0. if alpha == 2. else np.NaN
-        g2 = 0. if alpha == 2. else np.NaN 
+        g2 = 0. if alpha == 2. else np.NaN
         return mu, mu2, g1, g2
 
 
@@ -4203,7 +4203,7 @@ class loglaplace_gen(rv_continuous):
         return np.where(q < 0.5, (2.0*q)**(1.0/c), (2*(1.0-q))**(-1.0/c))
 
     def _munp(self, n, c):
-        return c**2 / (c**2 - n**2)
+        return c*c / (c*c - n*n)
 
     def _entropy(self, c):
         return np.log(2.0/c) + 1.0
@@ -4214,7 +4214,7 @@ loglaplace = loglaplace_gen(a=0.0, name='loglaplace')
 
 def _lognorm_logpdf(x, s):
     return _lazywhere(x != 0, (x, s),
-                      lambda x, s: -np.log(x)**2 / (2*s**2) - np.log(s*x*np.sqrt(2*np.pi)),
+                      lambda x, s: -np.log(x)**2 / (2*s*s) - np.log(s*x*np.sqrt(2*np.pi)),
                       -np.inf)
 
 
@@ -4435,7 +4435,7 @@ class maxwell_gen(rv_continuous):
         return chi.rvs(3.0, size=self._size, random_state=self._random_state)
 
     def _pdf(self, x):
-        # maxwell.pdf(x) = sqrt(2/pi)x**2 * exp(-x**2/2)
+        # maxwell.pdf(x) = sqrt(2/pi)x*x * exp(-x*x/2)
         return np.sqrt(2.0/np.pi)*x*x*np.exp(-x*x/2.0)
 
     def _cdf(self, x):
@@ -4449,7 +4449,7 @@ class maxwell_gen(rv_continuous):
         return (2*np.sqrt(2.0/np.pi),
                 3-8/np.pi,
                 np.sqrt(2)*(32-10*np.pi)/val**1.5,
-                (-12*np.pi*np.pi + 160*np.pi - 384) / val**2.0)
+                (-12*np.pi*np.pi + 160*np.pi - 384) / val*val.0)
 
     def _entropy(self):
         return _EULER + 0.5*np.log(2*np.pi)-0.5
@@ -4866,7 +4866,7 @@ class moyal_gen(rv_continuous):
 
     def _stats(self):
         mu = np.log(2) + np.euler_gamma
-        mu2 = np.pi**2 / 2
+        mu2 = np.pi*pi / 2
         g1 = 28 * np.sqrt(2) * sc.zeta(3) / np.pi**3
         g2 = 4.
         return mu, mu2, g1, g2
@@ -4875,17 +4875,17 @@ class moyal_gen(rv_continuous):
         if n == 1.0:
             return np.log(2) + np.euler_gamma
         elif n == 2.0:
-            return np.pi**2 / 2 + (np.log(2) + np.euler_gamma)**2
+            return np.pi*pi / 2 + (np.log(2) + np.euler_gamma)**2
         elif n == 3.0:
-            tmp1 = 1.5 * np.pi**2 * (np.log(2)+np.euler_gamma)
+            tmp1 = 1.5 * np.pi*pi * (np.log(2)+np.euler_gamma)
             tmp2 = (np.log(2)+np.euler_gamma)**3
             tmp3 = 14 * sc.zeta(3)
             return tmp1 + tmp2 + tmp3
         elif n == 4.0:
             tmp1 = 4 * 14 * sc.zeta(3) * (np.log(2) + np.euler_gamma)
-            tmp2 = 3 * np.pi**2 * (np.log(2) + np.euler_gamma)**2
+            tmp2 = 3 * np.pi*pi * (np.log(2) + np.euler_gamma)**2
             tmp3 = (np.log(2) + np.euler_gamma)**4
-            tmp4 = 7 * np.pi**4 / 4
+            tmp4 = 7 * np.pi*pi*pi*pi / 4
             return tmp1 + tmp2 + tmp3 + tmp4
         else:
             # return generic for higher moments
@@ -4920,7 +4920,7 @@ class nakagami_gen(rv_continuous):
     """
     def _pdf(self, x, nu):
         # nakagami.pdf(x, nu) = 2 * nu**nu / gamma(nu) *
-        #                       x**(2*nu-1) * exp(-nu*x**2)
+        #                       x**(2*nu-1) * exp(-nu*x*x)
         return 2*nu**nu/sc.gamma(nu)*(x**(2*nu-1.0))*np.exp(-nu*x*x)
 
     def _cdf(self, x, nu):
@@ -4933,8 +4933,8 @@ class nakagami_gen(rv_continuous):
         mu = sc.gamma(nu+0.5)/sc.gamma(nu)/np.sqrt(nu)
         mu2 = 1.0-mu*mu
         g1 = mu * (1 - 4*nu*mu2) / 2.0 / nu / np.power(mu2, 1.5)
-        g2 = -6*mu**4*nu + (8*nu-2)*mu**2-2*nu + 1
-        g2 /= nu*mu2**2.0
+        g2 = -6*mu*mu*mu*mu*nu + (8*nu-2)*mu*mu-2*nu + 1
+        g2 /= nu*mu2*mu2.0
         return mu, mu2, g1, g2
 
 
@@ -4986,7 +4986,7 @@ class ncx2_gen(rv_continuous):
         return (df + nc,
                 2*val,
                 np.sqrt(8)*(val+nc)/val**1.5,
-                12.0*(val+2*nc)/val**2.0)
+                12.0*(val+2*nc)/val*val.0)
 
 
 ncx2 = ncx2_gen(a=0.0, name='ncx2')
@@ -5104,16 +5104,16 @@ class t_gen(rv_continuous):
     def _pdf(self, x, df):
         #                                gamma((df+1)/2)
         # t.pdf(x, df) = ---------------------------------------------------
-        #                sqrt(pi*df) * gamma(df/2) * (1+x**2/df)**((df+1)/2)
+        #                sqrt(pi*df) * gamma(df/2) * (1+x*x/df)**((df+1)/2)
         r = np.asarray(df*1.0)
         Px = np.exp(sc.gammaln((r+1)/2)-sc.gammaln(r/2))
-        Px /= np.sqrt(r*np.pi)*(1+(x**2)/r)**((r+1)/2)
+        Px /= np.sqrt(r*np.pi)*(1+(x*x)/r)**((r+1)/2)
         return Px
 
     def _logpdf(self, x, df):
         r = df*1.0
         lPx = sc.gammaln((r+1)/2)-sc.gammaln(r/2)
-        lPx -= 0.5*np.log(r*np.pi) + (r+1)/2*np.log(1+(x**2)/r)
+        lPx -= 0.5*np.log(r*np.pi) + (r+1)/2*np.log(1+(x*x)/r)
         return lPx
 
     def _cdf(self, x, df):
@@ -5161,7 +5161,7 @@ class nct_gen(rv_continuous):
 
     for :math:`df > 0`.
 
-    `nct` takes ``df`` and ``nc`` as shape parameters. :math:`\Gamma` is the 
+    `nct` takes ``df`` and ``nc`` as shape parameters. :math:`\Gamma` is the
     gamma function (`scipy.special.gamma`).
 
     %(after_notes)s
@@ -5182,7 +5182,7 @@ class nct_gen(rv_continuous):
         # nct.pdf(x, df, nc) =
         #                               df**(df/2) * gamma(df+1)
         #                ----------------------------------------------------
-        #                2**df*exp(nc**2/2) * (df+x**2)**(df/2) * gamma(df/2)
+        #                2**df*exp(nc*nc/2) * (df+x*x)**(df/2) * gamma(df/2)
         n = df*1.0
         nc = nc*1.0
         x2 = x*x
@@ -5234,8 +5234,8 @@ class nct_gen(rv_continuous):
             c42 *= 6.*df / (df-2.)
             c40 = 3.*df*df / (df-2.) / (df-4.)
 
-            mu4 = c44 * nc**4 + c42*nc**2 + c40
-            g2 = np.where(df > 4, mu4/mu2**2 - 3., np.nan)
+            mu4 = c44 * nc*nc*nc*nc + c42*nc*nc + c40
+            g2 = np.where(df > 4, mu4/mu2*mu2 - 3., np.nan)
         return mu, mu2, g1, g2
 
 
@@ -5447,7 +5447,7 @@ class pearson3_gen(rv_continuous):
         _, _, _, _, _, beta, alpha, zeta = (
             self._preprocess([1], skew))
         m = zeta + alpha / beta
-        v = alpha / (beta**2)
+        v = alpha / (beta*beta)
         s = 2.0 / (alpha**0.5) * np.sign(beta)
         k = 6.0 / alpha
         return m, v, s, k
@@ -5678,12 +5678,12 @@ class rdist_gen(rv_continuous):
 
     """
     def _pdf(self, x, c):
-        # rdist.pdf(x, c) = (1-x**2)**(c/2-1) / B(1/2, c/2)
-        return np.power((1.0 - x**2), c / 2.0 - 1) / sc.beta(0.5, c / 2.0)
+        # rdist.pdf(x, c) = (1-x*x)**(c/2-1) / B(1/2, c/2)
+        return np.power((1.0 - x*x), c / 2.0 - 1) / sc.beta(0.5, c / 2.0)
 
     def _cdf(self, x, c):
         term1 = x / sc.beta(0.5, c / 2.0)
-        res = 0.5 + term1 * sc.hyp2f1(0.5, 1 - c / 2.0, 1.5, x**2)
+        res = 0.5 + term1 * sc.hyp2f1(0.5, 1 - c / 2.0, 1.5, x*x)
         # There's an issue with hyp2f1, it returns nans near x = +-1, c > 100.
         # Use the generic implementation in that case.  See gh-1285 for
         # background.
@@ -5727,14 +5727,14 @@ class rayleigh_gen(rv_continuous):
         return chi.rvs(2, size=self._size, random_state=self._random_state)
 
     def _pdf(self, r):
-        # rayleigh.pdf(r) = r * exp(-r**2/2)
+        # rayleigh.pdf(r) = r * exp(-r*r/2)
         return np.exp(self._logpdf(r))
 
     def _logpdf(self, r):
         return np.log(r) - 0.5 * r * r
 
     def _cdf(self, r):
-        return -sc.expm1(-0.5 * r**2)
+        return -sc.expm1(-0.5 * r*r)
 
     def _ppf(self, q):
         return np.sqrt(-2 * sc.log1p(-q))
@@ -5753,7 +5753,7 @@ class rayleigh_gen(rv_continuous):
         return (np.sqrt(np.pi/2),
                 val/2,
                 2*(np.pi-3)*np.sqrt(np.pi)/val**1.5,
-                6*np.pi/val-16/val**2)
+                6*np.pi/val-16/val*val)
 
     def _entropy(self):
         return _EULER/2.0 + 1 - 0.5*np.log(2)
@@ -5857,9 +5857,9 @@ class rice_gen(rv_continuous):
         return np.sqrt(sc.chndtrix(q, 2, np.square(b)))
 
     def _pdf(self, x, b):
-        # rice.pdf(x, b) = x * exp(-(x**2+b**2)/2) * I[0](x*b)
+        # rice.pdf(x, b) = x * exp(-(x*x+b*b)/2) * I[0](x*b)
         #
-        # We use (x**2 + b**2)/2 = ((x-b)**2)/2 + xb.
+        # We use (x*x + b*b)/2 = ((x-b)**2)/2 + xb.
         # The factor of np.exp(-xb) is then included in the i0e function
         # in place of the modified Bessel function, i0, improving
         # numerical stability for large values of xb.
@@ -5903,11 +5903,11 @@ class recipinvgauss_gen(rv_continuous):
 
     def _pdf(self, x, mu):
         # recipinvgauss.pdf(x, mu) =
-        #                     1/sqrt(2*pi*x) * exp(-(1-mu*x)**2/(2*x*mu**2))
-        return 1.0/np.sqrt(2*np.pi*x)*np.exp(-(1-mu*x)**2.0 / (2*x*mu**2.0))
+        #                     1/sqrt(2*pi*x) * exp(-(1-mu*x)**2/(2*x*mu*mu))
+        return 1.0/np.sqrt(2*np.pi*x)*np.exp(-(1-mu*x)**2.0 / (2*x*mu*mu.0))
 
     def _logpdf(self, x, mu):
-        return -(1-mu*x)**2.0 / (2*x*mu**2.0) - 0.5*np.log(2*np.pi*x)
+        return -(1-mu*x)**2.0 / (2*x*mu*mu.0) - 0.5*np.log(2*np.pi*x)
 
     def _cdf(self, x, mu):
         trm1 = 1.0/mu - x
@@ -5943,7 +5943,7 @@ class semicircular_gen(rv_continuous):
 
     """
     def _pdf(self, x):
-        # semicircular.pdf(x) = 2/pi * sqrt(1-x**2)
+        # semicircular.pdf(x) = 2/pi * sqrt(1-x*x)
         return 2.0/np.pi*np.sqrt(1-x*x)
 
     def _cdf(self, x):
@@ -6009,22 +6009,22 @@ class skew_norm_gen(rv_continuous):
     def _rvs(self, a):
         u0 = self._random_state.normal(size=self._size)
         v = self._random_state.normal(size=self._size)
-        d = a/np.sqrt(1 + a**2)
-        u1 = d*u0 + v*np.sqrt(1 - d**2)
+        d = a/np.sqrt(1 + a*a)
+        u1 = d*u0 + v*np.sqrt(1 - d*d)
         return np.where(u0 >= 0, u1, -u1)
 
     def _stats(self, a, moments='mvsk'):
         output = [None, None, None, None]
-        const = np.sqrt(2/np.pi) * a/np.sqrt(1 + a**2)
+        const = np.sqrt(2/np.pi) * a/np.sqrt(1 + a*a)
 
         if 'm' in moments:
             output[0] = const
         if 'v' in moments:
             output[1] = 1 - const**2
         if 's' in moments:
-            output[2] = ((4 - np.pi)/2) * (const/np.sqrt(1 - const**2))**3
+            output[2] = ((4 - np.pi)/2) * (const/np.sqrt(1 - const*const))**3
         if 'k' in moments:
-            output[3] = (2*(np.pi - 3)) * (const**4/(1 - const**2)**2)
+            output[3] = (2*(np.pi - 3)) * (const*const*const*const/(1 - const*const)**2)
 
         return output
 
@@ -6072,7 +6072,7 @@ class trapz_gen(rv_continuous):
         return _lazyselect([x < c,
                             (c <= x) & (x <= d),
                             x > d],
-                           [lambda x, c, d: x**2 / c / (d-c+1),
+                           [lambda x, c, d: x*x / c / (d-c+1),
                             lambda x, c, d: (c + 2 * (x-c)) / (d-c+1),
                             lambda x, c, d: 1-((1-x) ** 2
                                                / (d-c+1) / (1-d))],
@@ -6605,7 +6605,7 @@ class wald_gen(invgauss_gen):
         return self._random_state.wald(1.0, 1.0, size=self._size)
 
     def _pdf(self, x):
-        # wald.pdf(x) = 1/sqrt(2*pi*x**3) * exp(-(x-1)**2/(2*x))
+        # wald.pdf(x) = 1/sqrt(2*pi*x*x*x) * exp(-(x-1)**2/(2*x))
         return invgauss._pdf(x, 1.0)
 
     def _logpdf(self, x):
@@ -6647,7 +6647,7 @@ class wrapcauchy_gen(rv_continuous):
         return (c > 0) & (c < 1)
 
     def _pdf(self, x, c):
-        # wrapcauchy.pdf(x, c) = (1-c**2) / (2*pi*(1+c**2-2*c*cos(x)))
+        # wrapcauchy.pdf(x, c) = (1-c*c) / (2*pi*(1+c*c-2*c*cos(x)))
         return (1.0-c*c)/(2*np.pi*(1+c*c-2*c*np.cos(x)))
 
     def _cdf(self, x, c):
@@ -6832,7 +6832,7 @@ class crystalball_gen(rv_continuous):
                             N A (B - x)^{-m}  &\text{for } x \le -\beta
                           \end{cases}
 
-    where :math:`A = (m / |beta|)**n * exp(-beta**2 / 2)`,
+    where :math:`A = (m / |beta|)**n * exp(-beta*beta / 2)`,
     :math:`B = m/|beta| - |beta|` and :math:`N` is a normalisation constant.
 
     `crystalball` takes :math:`\beta` and :math:`m` as shape parameters.
@@ -6855,39 +6855,39 @@ class crystalball_gen(rv_continuous):
         Return PDF of the crystalball function.
 
                                             --
-                                           | exp(-x**2 / 2),  for x > -beta
+                                           | exp(-x*x / 2),  for x > -beta
         crystalball.pdf(x, beta, m) =  N * |
                                            | A * (B - x)**(-m), for x <= -beta
                                             --
         """
-        N = 1.0 / (m/beta / (m-1) * np.exp(-beta**2 / 2.0) + _norm_pdf_C * _norm_cdf(beta))
-        rhs = lambda x, beta, m: np.exp(-x**2 / 2)
-        lhs = lambda x, beta, m: (m/beta)**m * np.exp(-beta**2 / 2.0) * (m/beta - beta - x)**(-m)
+        N = 1.0 / (m/beta / (m-1) * np.exp(-beta*beta / 2.0) + _norm_pdf_C * _norm_cdf(beta))
+        rhs = lambda x, beta, m: np.exp(-x*x / 2)
+        lhs = lambda x, beta, m: (m/beta)**m * np.exp(-beta*beta / 2.0) * (m/beta - beta - x)**(-m)
         return N * _lazywhere(np.atleast_1d(x > -beta), (x, beta, m), f=rhs, f2=lhs)
 
     def _cdf(self, x, beta, m):
         """
         Return CDF of the crystalball function
         """
-        N = 1.0 / (m/beta / (m-1) * np.exp(-beta**2 / 2.0) + _norm_pdf_C * _norm_cdf(beta))
-        rhs = lambda x, beta, m: (m/beta) * np.exp(-beta**2 / 2.0) / (m-1) + _norm_pdf_C * (_norm_cdf(x) - _norm_cdf(-beta))
-        lhs = lambda x, beta, m: (m/beta)**m * np.exp(-beta**2 / 2.0) * (m/beta - beta - x)**(-m+1) / (m-1)
+        N = 1.0 / (m/beta / (m-1) * np.exp(-beta*beta / 2.0) + _norm_pdf_C * _norm_cdf(beta))
+        rhs = lambda x, beta, m: (m/beta) * np.exp(-beta*beta / 2.0) / (m-1) + _norm_pdf_C * (_norm_cdf(x) - _norm_cdf(-beta))
+        lhs = lambda x, beta, m: (m/beta)**m * np.exp(-beta*beta / 2.0) * (m/beta - beta - x)**(-m+1) / (m-1)
         return N * _lazywhere(np.atleast_1d(x > -beta), (x, beta, m), f=rhs, f2=lhs)
 
     def _munp(self, n, beta, m):
         """
         Returns the n-th non-central moment of the crystalball function.
         """
-        N = 1.0 / (m/beta / (m-1) * np.exp(-beta**2 / 2.0) + _norm_pdf_C * _norm_cdf(beta))
+        N = 1.0 / (m/beta / (m-1) * np.exp(-beta*beta / 2.0) + _norm_pdf_C * _norm_cdf(beta))
 
         def n_th_moment(n, beta, m):
             """
             Returns n-th moment. Defined only if n+1 < m
             Function cannot broadcast due to the loop over n
             """
-            A = (m/beta)**m * np.exp(-beta**2 / 2.0)
+            A = (m/beta)**m * np.exp(-beta*beta / 2.0)
             B = m/beta - beta
-            rhs = 2**((n-1)/2.0) * sc.gamma((n+1)/2) * (1.0 + (-1)**n * sc.gammainc((n+1)/2, beta**2 / 2))
+            rhs = 2**((n-1)/2.0) * sc.gamma((n+1)/2) * (1.0 + (-1)**n * sc.gammainc((n+1)/2, beta*beta / 2))
             lhs = np.zeros(rhs.shape)
             for k in range(n + 1):
                 lhs += sc.binom(n, k) * B**(n-k) * (-1)**k / (m - k - 1) * (m/beta)**(-m + k + 1)
@@ -6962,11 +6962,11 @@ class argus_gen(rv_continuous):
         """
         Return PDF of the argus function
 
-        argus.pdf(x, chi) = chi**3 / (sqrt(2*pi) * Psi(chi)) * x *
-                            sqrt(1-x**2) * exp(- 0.5 * chi**2 * (1 - x**2))
+        argus.pdf(x, chi) = chi*chi*chi / (sqrt(2*pi) * Psi(chi)) * x *
+                            sqrt(1-x*x) * exp(- 0.5 * chi*chi * (1 - x*x))
         """
         y = 1.0 - x**2
-        return chi**3 / (_norm_pdf_C * _argus_phi(chi)) * x * np.sqrt(y) * np.exp(-chi**2 * y / 2)
+        return chi*chi*chi / (_norm_pdf_C * _argus_phi(chi)) * x * np.sqrt(y) * np.exp(-chi*chi * y / 2)
 
     def _cdf(self, x, chi):
         """
@@ -6978,7 +6978,7 @@ class argus_gen(rv_continuous):
         """
         Return survival function of the argus function
         """
-        return _argus_phi(chi * np.sqrt(1 - x**2)) / _argus_phi(chi)
+        return _argus_phi(chi * np.sqrt(1 - x*x)) / _argus_phi(chi)
 
 
 argus = argus_gen(name='argus', longname="An Argus Function", a=0.0, b=1.0)

@@ -19,7 +19,7 @@ def test_generate_A():
     Astd = [Poly(1, x),
             Poly(1, x),
             Poly(1 - 2*x),
-            Poly(1 - 8*x + 6*x**2)]
+            Poly(1 - 8*x + 6*x*x)]
     Ares = generate_A(len(Astd))
 
     for p, q in zip(Astd, Ares):

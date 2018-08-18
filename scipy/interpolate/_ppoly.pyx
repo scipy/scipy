@@ -871,7 +871,7 @@ cdef int croots_poly1(double[:,:,::1] c, double y, int ci, int cj,
         wi[0] = 0
         return 1
     elif order == 2:
-        # Low-order polynomial: a0*x**2 + a1*x + a2
+        # Low-order polynomial: a0*x*x + a1*x + a2
         a0 = c[n-1-order,ci,cj]
         a1 = c[n-1-order+1,ci,cj]
         a2 = c[n-1-order+2,ci,cj] - y
@@ -1047,7 +1047,7 @@ cdef double_or_complex evaluate_bpoly1(double_or_complex s,
     # special-case lowest orders
     if k == 0:
         res = c[0, ci, cj]
-    elif k == 1: 
+    elif k == 1:
         res = c[0, ci, cj] * s1 + c[1, ci, cj] * s
     elif k == 2:
         res = c[0, ci, cj] * s1*s1 + c[1, ci, cj] * 2.*s1*s + c[2, ci, cj] * s*s
@@ -1073,7 +1073,7 @@ cdef double_or_complex evaluate_bpoly1_deriv(double_or_complex s,
                                              int nu,
                                              double_or_complex[:,:,::1] wrk) nogil:
     """
-    Evaluate the derivative of a polynomial in the Bernstein basis 
+    Evaluate the derivative of a polynomial in the Bernstein basis
     in a single interval.
 
     A Bernstein polynomial is defined as
@@ -1182,7 +1182,7 @@ def evaluate_bernstein(double_or_complex[:,:,::1] c,
             wrk = np.empty((c.shape[0]-nu, 1, 1), dtype=np.complex_)
         else:
             wrk = np.empty((c.shape[0]-nu, 1, 1), dtype=np.float_)
-        
+
 
     interval = 0
     cdef bint ascending = x[x.shape[0] - 1] >= x[0]

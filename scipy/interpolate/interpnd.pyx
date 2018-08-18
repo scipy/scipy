@@ -394,8 +394,8 @@ cdef int _estimate_gradients_2d_global(qhull.DelaunayInfo_t *d, double *data,
     #
     #     w(x) = (1 - x)**3   * f1
     #          + x*(1 - x)**2 * (df1 + 3*f1)
-    #          + x**2*(1 - x) * (df2 + 3*f2)
-    #          + x**3         * f2
+    #          + x*x*(1 - x) * (df2 + 3*f2)
+    #          + x*x*x         * f2
     #
     # where f1, f2 are values at the vertices, and df1 and df2 are
     # derivatives along the edge (away from the vertices).
@@ -445,7 +445,7 @@ cdef int _estimate_gradients_2d_global(qhull.DelaunayInfo_t *d, double *data,
                 # edge
                 ex = d.points[2*ipoint2 + 0] - d.points[2*ipoint + 0]
                 ey = d.points[2*ipoint2 + 1] - d.points[2*ipoint + 1]
-                L = sqrt(ex**2 + ey**2)
+                L = sqrt(ex*ex + ey*ey)
                 L3 = L*L*L
 
                 # data at vertices
@@ -669,9 +669,9 @@ cdef double_or_complex _clough_tocher_2d_single(qhull.DelaunayInfo_t *d,
     #    w_23 = E_34 + g2 * E_31
     #    w_31 = E_14 + g3 * E_12
     #
-    #    g1 = -(e24x*e23x + e24y*e23y) / (e23x**2 + e23y**2)
-    #    g2 = -(e34x*e31x + e34y*e31y) / (e31x**2 + e31y**2)
-    #    g3 = -(e14x*e12x + e14y*e12y) / (e12x**2 + e12y**2)
+    #    g1 = -(e24x*e23x + e24y*e23y) / (e23x*e23x + e23y*e23y)
+    #    g2 = -(e34x*e31x + e34y*e31y) / (e31x*e31x + e31y*e31y)
+    #    g3 = -(e14x*e12x + e14y*e12y) / (e12x*e12x + e12y*e12y)
     #
     # However, this choice gives an interpolant that is *not*
     # invariant under affine transforms. This has some bad
@@ -767,13 +767,13 @@ cdef double_or_complex _clough_tocher_2d_single(qhull.DelaunayInfo_t *d,
 
     # evaluate the polynomial -- the stupid and ugly way to do it,
     # one of the 4 coordinates is in fact zero
-    w = (b1**3*c3000 + 3*b1**2*b2*c2100 + 3*b1**2*b3*c2010 +
-         3*b1**2*b4*c2001 + 3*b1*b2**2*c1200 +
-         6*b1*b2*b4*c1101 + 3*b1*b3**2*c1020 + 6*b1*b3*b4*c1011 +
-         3*b1*b4**2*c1002 + b2**3*c0300 + 3*b2**2*b3*c0210 +
-         3*b2**2*b4*c0201 + 3*b2*b3**2*c0120 + 6*b2*b3*b4*c0111 +
-         3*b2*b4**2*c0102 + b3**3*c0030 + 3*b3**2*b4*c0021 +
-         3*b3*b4**2*c0012 + b4**3*c0003)
+    w = (b1*b1*b1*c3000 + 3*b1*b1*b2*c2100 + 3*b1*b1*b3*c2010 +
+         3*b1*b1*b4*c2001 + 3*b1*b2*b2*c1200 +
+         6*b1*b2*b4*c1101 + 3*b1*b3*b3*c1020 + 6*b1*b3*b4*c1011 +
+         3*b1*b4*b4*c1002 + b2*b2*b2*c0300 + 3*b2*b2*b3*c0210 +
+         3*b2*b2*b4*c0201 + 3*b2*b3*b3*c0120 + 6*b2*b3*b4*c0111 +
+         3*b2*b4*b4*c0102 + b3*b3*b3*c0030 + 3*b3*b3*b4*c0021 +
+         3*b3*b4*b4*c0012 + b4*b4*b4*c0003)
 
     return w
 

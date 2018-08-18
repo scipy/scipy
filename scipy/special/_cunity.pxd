@@ -23,14 +23,14 @@ from ._cephes cimport log1p, expm1, cosm1
 
 
 # log(z + 1) = log(x + 1 + 1j*y)
-#             = log(sqrt((x+1)**2 + y**2)) + 1j*atan2(y, x+1)
+#             = log(sqrt((x+1)**2 + y*y)) + 1j*atan2(y, x+1)
 #
 # Using atan2(y, x+1) for the imaginary part is always okay.  The real part
 # needs to be calculated more carefully.  For |z| large, the naive formula
 # log(z + 1) can be used.  When |z| is small, rewrite as
 #
-# log(sqrt((x+1)**2 + y**2)) = 0.5*log(x**2 + 2*x +1 + y**2)
-#       = 0.5 * log1p(x**2 + y**2 + 2*x)
+# log(sqrt((x+1)**2 + y*y)) = 0.5*log(x*x + 2*x +1 + y*y)
+#       = 0.5 * log1p(x*x + y*y + 2*x)
 #       = 0.5 * log1p(hypot(x,y) * (hypot(x, y) + 2*x/hypot(x,y)))
 #
 # This expression suffers from cancellation when x < 0 and

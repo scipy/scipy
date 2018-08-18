@@ -31,7 +31,7 @@ class Leaks(Benchmark):
             from scipy.interpolate import griddata
 
             def func(x, y):
-                return x*(1-x)*np.cos(4*np.pi*x) * np.sin(4*np.pi*y**2)**2
+                return x*(1-x)*np.cos(4*np.pi*x) * np.sin(4*np.pi*y*y)**2
 
             grid_x, grid_y = np.mgrid[0:1:100j, 0:1:200j]
             points = np.random.rand(1000, 2)
@@ -79,9 +79,9 @@ class GridData(Benchmark):
         [10j, 100j, 1000j],
         ['nearest', 'linear', 'cubic']
     ]
-    
+
     def setup(self, n_grids, method):
-        self.func = lambda x, y: x*(1-x)*np.cos(4*np.pi*x) * np.sin(4*np.pi*y**2)**2
+        self.func = lambda x, y: x*(1-x)*np.cos(4*np.pi*x) * np.sin(4*np.pi*y*y)**2
         self.grid_x, self.grid_y = np.mgrid[0:1:n_grids, 0:1:n_grids]
         self.points = np.random.rand(1000, 2)
         self.values = self.func(self.points[:, 0], self.points[:, 1])
@@ -124,7 +124,7 @@ class Interpolate2d(Benchmark):
         self.x = np.arange(-r_samples, r_samples, 0.25)
         self.y = np.arange(-r_samples, r_samples, 0.25)
         self.xx, self.yy = np.meshgrid(self.x, self.y)
-        self.z = np.sin(self.xx**2+self.yy**2)
+        self.z = np.sin(self.xx*xx+self.yy*yy)
 
     def time_interpolate(self, n_samples, method):
         interpolate.interp2d(self.x, self.y, self.z, kind=method)
@@ -143,7 +143,7 @@ class Rbf(Benchmark):
         r_samples = n_samples / 2.
         self.X = np.arange(-r_samples, r_samples, 0.25)
         self.Y = np.arange(-r_samples, r_samples, 0.25)
-        self.z = np.exp(-self.X**2-self.Y**2)
+        self.z = np.exp(-self.X*X-self.Y*Y)
 
     def time_rbf_1d(self, n_samples, function):
         interpolate.Rbf(self.x, self.y, function=function)
@@ -162,7 +162,7 @@ class UnivariateSpline(Benchmark):
     def setup(self, n_samples, degree):
         r_samples = n_samples / 2.
         self.x = np.arange(-r_samples, r_samples, 0.25)
-        self.y = np.exp(-self.x**2) + 0.1 * np.random.randn(*self.x.shape)
+        self.y = np.exp(-self.x*x) + 0.1 * np.random.randn(*self.x.shape)
 
     def time_univariate_spline(self, n_samples, degree):
         interpolate.UnivariateSpline(self.x, self.y, k=degree)

@@ -491,9 +491,9 @@ class TestCubicSpline(object):
         dxi = dx[:-1]
 
         # Check C2 continuity.
-        assert_allclose(c[3, 1:], c[0, :-1] * dxi**3 + c[1, :-1] * dxi**2 +
+        assert_allclose(c[3, 1:], c[0, :-1] * dxi*dxi*dxi + c[1, :-1] * dxi*dxi +
                         c[2, :-1] * dxi + c[3, :-1], rtol=tol, atol=tol)
-        assert_allclose(c[2, 1:], 3 * c[0, :-1] * dxi**2 +
+        assert_allclose(c[2, 1:], 3 * c[0, :-1] * dxi*dxi +
                         2 * c[1, :-1] * dxi + c[2, :-1], rtol=tol, atol=tol)
         assert_allclose(c[1, 1:], 3 * c[0, :-1] * dxi + c[1, :-1],
                         rtol=tol, atol=tol)

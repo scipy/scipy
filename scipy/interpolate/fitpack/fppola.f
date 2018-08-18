@@ -57,7 +57,7 @@ c  calculation of acc, the absolute tolerance for the root of f(p)=s.
       endif
 c  if iopt1 = 0 we begin by computing the weighted least-squares
 c  polymomial of the form
-c     s(u,v) = f(1)*(1-u**3)+f(2)*u**3+f(3)*(u**2-u**3)+f(4)*(u-u**3)
+c     s(u,v) = f(1)*(1-u*u*u)+f(2)*u*u*u+f(3)*(u*u-u*u*u)+f(4)*(u-u*u*u)
 c  where f(4) = 0 if iopt2> 0 , f(3) = 0 if iopt2 > 1 and
 c        f(2) = 0 if iopt3> 0.
 c  the corresponding weighted sum of squared residuals gives the upper

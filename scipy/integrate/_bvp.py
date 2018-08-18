@@ -123,7 +123,7 @@ def compute_jac_indices(n, m, k):
     """
     i_col = np.repeat(np.arange((m - 1) * n), n)
     j_col = (np.tile(np.arange(n), n * (m - 1)) +
-             np.repeat(np.arange(m - 1) * n, n**2))
+             np.repeat(np.arange(m - 1) * n, n*n))
 
     i_bc = np.repeat(np.arange((m - 1) * n, m * n + k), n)
     j_bc = np.tile(np.arange(n), n + k)
@@ -252,14 +252,14 @@ def construct_global_jac(n, m, k, i_jac, j_jac, h, df_dy, df_dy_middle, df_dp,
     dPhi_dy_0[:] = -np.identity(n)
     dPhi_dy_0 -= h / 6 * (df_dy[:-1] + 2 * df_dy_middle)
     T = stacked_matmul(df_dy_middle, df_dy[:-1])
-    dPhi_dy_0 -= h**2 / 12 * T
+    dPhi_dy_0 -= h*h / 12 * T
 
     # Computing off-diagonal n x n blocks.
     dPhi_dy_1 = np.empty((m - 1, n, n), dtype=dtype)
     dPhi_dy_1[:] = np.identity(n)
     dPhi_dy_1 -= h / 6 * (df_dy[1:] + 2 * df_dy_middle)
     T = stacked_matmul(df_dy_middle, df_dy[1:])
-    dPhi_dy_1 += h**2 / 12 * T
+    dPhi_dy_1 += h*h / 12 * T
 
     values = np.hstack((dPhi_dy_0.ravel(), dPhi_dy_1.ravel(), dbc_dya.ravel(),
                         dbc_dyb.ravel()))
@@ -939,7 +939,7 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
 
     In the second example we solve a simple Sturm-Liouville problem::
 
-        y'' + k**2 * y = 0
+        y'' + k*k * y = 0
         y(0) = y(1) = 0
 
     It is known that a non-trivial solution y = A * sin(k * x) is possible for
@@ -952,11 +952,11 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
     right-hand side evaluation::
 
         y1' = y2
-        y2' = -k**2 * y1
+        y2' = -k*k * y1
 
     >>> def fun(x, y, p):
     ...     k = p[0]
-    ...     return np.vstack((y[1], -k**2 * y[0]))
+    ...     return np.vstack((y[1], -k*k * y[0]))
 
     Note that parameters p are passed as a vector (with one element in our
     case).

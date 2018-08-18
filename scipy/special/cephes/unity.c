@@ -22,7 +22,7 @@ extern double MACHEP;
 
 /* log1p(x) = log(1 + x)  */
 
-/* Coefficients for log(1+x) = x - x**2/2 + x**3 P(x)/Q(x)
+/* Coefficients for log(1+x) = x - x*x/2 + x*x*x P(x)/Q(x)
  * 1/sqrt(2) <= x < sqrt(2)
  * Theoretical peak relative error = 2.32e-20
  */
@@ -172,7 +172,7 @@ static double lgam1p_taylor(double x)
             break;
 	}
     }
-    
+
     return res;
 }
 

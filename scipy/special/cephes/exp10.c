@@ -21,7 +21,7 @@
  * as 10**x = 2**n 10**f, with |f| < 0.5 log10(2).
  * The Pade' form
  *
- *    1 + 2x P(x**2)/( Q(x**2) - P(x**2) )
+ *    1 + 2x P(x*x)/( Q(x*x) - P(x*x) )
  *
  * is used to approximate 10**f.
  *
@@ -101,7 +101,7 @@ double exp10(double x)
 
     /* rational approximation for exponential
      * of the fractional part:
-     * 10**x = 1 + 2x P(x**2)/( Q(x**2) - P(x**2) )
+     * 10**x = 1 + 2x P(x*x)/( Q(x*x) - P(x*x) )
      */
     xx = x * x;
     px = x * polevl(xx, P, 3);

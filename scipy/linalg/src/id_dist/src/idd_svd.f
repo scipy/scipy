@@ -44,7 +44,7 @@ c              nonzero when the routine encounters an error
 c
 c       work:
 c       r -- must be at least
-c            (krank+2)*n+8*min(m,n)+15*krank**2+8*krank
+c            (krank+2)*n+8*min(m,n)+15*krank*krank+8*krank
 c            real*8 elements long
 c
 c       _N.B._: This routine destroys a. Also, please beware that
@@ -84,7 +84,7 @@ c       in r(io+krank*n+1 : io+krank*n+krank*krank).
 c
         jobz = 'S'
         ldr = krank
-        lwork = 2*(3*krank**2+n+4*krank**2+4*krank)
+        lwork = 2*(3*krank*krank+n+4*krank*krank+4*krank)
         ldu = krank
         ldvt = krank
 c
@@ -174,7 +174,7 @@ c              other nonzero values when dgesdd bombs
 c
 c       _N.B._: This routine destroys a. Also, please beware that
 c               the source code for this routine could be clearer.
-c               w must be at least 
+c               w must be at least
 c               (krank+1)*(m+2*n+9)+8*min(m,n)+15*krank**2
 c               real*8 elements long, where krank is the rank
 c               output by the present routine.
@@ -216,7 +216,7 @@ c         in w(io+krank*n+1 : io+krank*n+krank*krank).
 c
           jobz = 'S'
           ldr = krank
-          lwork = 2*(3*krank**2+n+4*krank**2+4*krank)
+          lwork = 2*(3*krank*krank+n+4*krank*krank+4*krank)
           ldu = krank
           ldvt = krank
 c

@@ -1211,7 +1211,7 @@ def _get_delta(
             if ip:  # if the correction is to get "initial point"
                 # Reference [1] Eq. 8.23
                 rhatxs = ((1 - alpha) * gamma * mu -
-                          x * z - alpha**2 * d_x * d_z)
+                          x * z - alpha*alpha * d_x * d_z)
                 rhattk = np.array(
                     (1 -
                      alpha) *
@@ -1219,7 +1219,7 @@ def _get_delta(
                     mu -
                     tau *
                     kappa -
-                    alpha**2 *
+                    alpha*alpha *
                     d_tau *
                     d_kappa).reshape(
                     (1,

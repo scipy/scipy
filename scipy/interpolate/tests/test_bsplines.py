@@ -705,7 +705,7 @@ class TestInterop(object):
     def test_splint(self):
         # test that splint accepts BSpline objects
         b, b2 = self.b, self.b2
-        assert_allclose(splint(0, 1, b), 
+        assert_allclose(splint(0, 1, b),
                         splint(0, 1, b.tck), atol=1e-14)
         assert_allclose(splint(0, 1, b),
                         b.integrate(0, 1), atol=1e-14)
@@ -874,19 +874,19 @@ class TestInterp(object):
                 atol=1e-14)
 
     def test_minimum_points_and_deriv(self):
-        # interpolation of f(x) = x**3 between 0 and 1. f'(x) = 3 * xx**2 and 
+        # interpolation of f(x) = x*x*x between 0 and 1. f'(x) = 3 * xx*xx and
         # f'(0) = 0, f'(1) = 3.
         k = 3
         x = [0., 1.]
         y = [0., 1.]
         b = make_interp_spline(x, y, k, bc_type=([(1, 0.)], [(1, 3.)]))
-        
+
         xx = np.linspace(0., 1.)
         yy = xx**3
         assert_allclose(b(xx), yy, atol=1e-14, rtol=1e-14)
 
     def test_deriv_spec(self):
-        # If one of the derivatives is omitted, the spline definition is 
+        # If one of the derivatives is omitted, the spline definition is
         # incomplete.
         x = y = [1.0, 2, 3, 4, 5, 6]
 
@@ -958,7 +958,7 @@ class TestInterp(object):
     def test_list_input(self, k):
         # regression test for gh-8714: TypeError for x, y being lists and k=2
         x = list(range(10))
-        y = [a**2 for a in x]
+        y = [a*a for a in x]
         make_interp_spline(x, y, k=k)
 
     def test_multiple_rhs(self):

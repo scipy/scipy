@@ -122,12 +122,12 @@ c
             if (sdiag(k) .eq. zero) go to 70
             if (dabs(r(k,k)) .ge. dabs(sdiag(k))) go to 40
                cotan = r(k,k)/sdiag(k)
-               sin = p5/dsqrt(p25+p25*cotan**2)
+               sin = p5/dsqrt(p25+p25*cotan*cotan)
                cos = sin*cotan
                go to 50
    40       continue
                tan = sdiag(k)/r(k,k)
-               cos = p5/dsqrt(p25+p25*tan**2)
+               cos = p5/dsqrt(p25+p25*tan*tan)
                sin = cos*tan
    50       continue
 c

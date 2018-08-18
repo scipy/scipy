@@ -17,7 +17,7 @@
  * Returns the circular tangent of the argument x in degrees.
  *
  * Range reduction is modulo pi/4.  A rational function
- *       x + x**3 P(x**2)/Q(x**2)
+ *       x + x*x*x P(x*x)/Q(x*x)
  * is employed in the basic interval [0, pi/4].
  *
  *
@@ -53,7 +53,7 @@
  * Returns the circular cotangent of the argument x in degrees.
  *
  * Range reduction is modulo pi/4.  A rational function
- *       x + x**3 P(x**2)/Q(x**2)
+ *       x + x*x*x P(x*x)/Q(x*x)
  * is employed in the basic interval [0, pi/4].
  *
  *

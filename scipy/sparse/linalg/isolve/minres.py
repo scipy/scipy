@@ -194,7 +194,7 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
         if beta < 0:
             raise ValueError('non-symmetric matrix')
         beta = sqrt(beta)
-        tnorm2 += alfa**2 + oldb**2 + beta**2
+        tnorm2 += alfa*alfa + oldb*oldb + beta**2
 
         if itn == 1:
             if beta/beta1 <= 10*eps:

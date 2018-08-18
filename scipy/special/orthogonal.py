@@ -827,10 +827,10 @@ def _initial_nodes_b(n, k):
     # Initial approximation of Hermite roots (square)
     xksq = (nu +
             2.0**(2.0/3.0) * ak * nu**(1.0/3.0) +
-            1.0/5.0 * 2.0**(4.0/3.0) * ak**2 * nu**(-1.0/3.0) +
-            (9.0/140.0 - 12.0/175.0 * ak**3) * nu**(-1.0) +
-            (16.0/1575.0 * ak + 92.0/7875.0 * ak**4) * 2.0**(2.0/3.0) * nu**(-5.0/3.0) -
-            (15152.0/3031875.0 * ak**5 + 1088.0/121275.0 * ak**2) * 2.0**(1.0/3.0) * nu**(-7.0/3.0))
+            1.0/5.0 * 2.0**(4.0/3.0) * ak*ak * nu**(-1.0/3.0) +
+            (9.0/140.0 - 12.0/175.0 * ak*ak*ak) * nu**(-1.0) +
+            (16.0/1575.0 * ak + 92.0/7875.0 * ak*ak*ak*ak) * 2.0**(2.0/3.0) * nu**(-5.0/3.0) -
+            (15152.0/3031875.0 * ak*ak*ak*ak*ak + 1088.0/121275.0 * ak*ak) * 2.0**(1.0/3.0) * nu**(-7.0/3.0))
     return xksq
 
 
@@ -916,7 +916,7 @@ def _pbcf(n, theta):
     # https://dlmf.nist.gov/12.10#E39
     zeta = -(3.0*eta/2.0) ** (2.0/3.0)
     # https://dlmf.nist.gov/12.10#E40
-    phi = (-zeta / st**2) ** (0.25)
+    phi = (-zeta / st*st) ** (0.25)
     # Coefficients
     # https://dlmf.nist.gov/12.10#E43
     a0 = 1.0
@@ -964,8 +964,8 @@ def _pbcf(n, theta):
     B2 = -(a5*u0 + phip[0,:]*a4*u1 + phip[1,:]*a3*u2 + phip[2,:]*a2*u3 + phip[3,:]*a1*u4 + phip[4,:]*a0*u5) / zeta**8
     # U
     # https://dlmf.nist.gov/12.10#E35
-    U = P * (Ai * (A0 + A1/mu**2.0 + A2/mu**4.0) +
-             Aip * (B0 + B1/mu**2.0 + B2/mu**4.0) / mu**(8.0/6.0))
+    U = P * (Ai * (A0 + A1/mu*mu.0 + A2/mu*mu*mu*mu.0) +
+             Aip * (B0 + B1/mu*mu.0 + B2/mu*mu*mu*mu.0) / mu**(8.0/6.0))
     # Prefactor for derivative of U
     Pd = sqrt(2.0*pi) * mu**(2.0/6.0) / phi
     # Terms for derivative of U
@@ -978,8 +978,8 @@ def _pbcf(n, theta):
     D2 = (a4*v0 + phip[0,:]*a3*v1 + phip[1,:]*a2*v2 + phip[2,:]*a1*v3 + phip[3,:]*a0*v4) / zeta**6
     # Derivative of U
     # https://dlmf.nist.gov/12.10#E36
-    Ud = Pd * (Ai * (C0 + C1/mu**2.0 + C2/mu**4.0) / mu**(4.0/6.0) +
-               Aip * (D0 + D1/mu**2.0 + D2/mu**4.0))
+    Ud = Pd * (Ai * (C0 + C1/mu*mu.0 + C2/mu*mu*mu*mu.0) / mu**(4.0/6.0) +
+               Aip * (D0 + D1/mu*mu.0 + D2/mu*mu*mu*mu.0))
     return U, Ud
 
 
@@ -1026,7 +1026,7 @@ def _newton(n, x_initial, maxit=5):
     if n % 2 == 1:
         x[0] = 0.0
     # Compute weights
-    w = exp(-x**2) / (2.0*ud**2)
+    w = exp(-x*x) / (2.0*ud*ud)
     return x, w
 
 
@@ -1306,7 +1306,7 @@ def roots_gegenbauer(n, alpha, mu=False):
                         / (4 * (k + alpha) * (k + alpha - 1)))
     f = lambda n, x: cephes.eval_gegenbauer(n, alpha, x)
     df = lambda n, x: (-n*x*cephes.eval_gegenbauer(n, alpha, x)
-         + (n + 2*alpha - 1)*cephes.eval_gegenbauer(n-1, alpha, x))/(1-x**2)
+         + (n + 2*alpha - 1)*cephes.eval_gegenbauer(n-1, alpha, x))/(1-x*x)
     return _gen_roots_and_weights(m, mu0, an_func, bn_func, f, df, True, mu)
 
 
@@ -1921,7 +1921,7 @@ def roots_legendre(n, mu=False):
     bn_func = lambda k: k * np.sqrt(1.0 / (4 * k * k - 1))
     f = cephes.eval_legendre
     df = lambda n, x: (-n*x*cephes.eval_legendre(n, x)
-                     + n*cephes.eval_legendre(n-1, x))/(1-x**2)
+                     + n*cephes.eval_legendre(n-1, x))/(1-x*x)
     return _gen_roots_and_weights(m, mu0, an_func, bn_func, f, df, True, mu)
 
 

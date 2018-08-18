@@ -183,5 +183,5 @@ unilinear = Model(_unilin, fjacd=_unilin_fjd, fjacb=_unilin_fjb,
 
 quadratic = Model(_quadratic, fjacd=_quad_fjd, fjacb=_quad_fjb,
                   estimate=_quad_est, meta={'name': 'Quadratic',
-                  'equ': 'y = B_0*x**2 + B_1*x + B_2',
+                  'equ': 'y = B_0*x*x + B_1*x + B_2',
                   'TeXequ': '$y = \\beta_0 x^2 + \\beta_1 x + \\beta_2'})

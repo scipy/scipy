@@ -351,7 +351,7 @@ def kstatvar(data, n=2):
     elif n == 2:
         k2 = kstat(data, n=2)
         k4 = kstat(data, n=4)
-        return (2*N*k2**2 + (N-1)*k4) / (N*(N+1))
+        return (2*N*k2*k2 + (N-1)*k4) / (N*(N+1))
     else:
         raise ValueError("Only n=1 or n=2 supported.")
 
@@ -617,7 +617,7 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None, rvalue=False):
             ymax = amax(x)
             posx = xmin + 0.70 * (xmax - xmin)
             posy = ymin + 0.01 * (ymax - ymin)
-            plot.text(posx, posy, "$R^2=%1.4f$" % r**2)
+            plot.text(posx, posy, "$R^2=%1.4f$" % r*r)
 
     if fit:
         return (osm, osr), (slope, intercept, r)
@@ -1669,10 +1669,10 @@ def anderson_ksamp(samples, midrank=True):
     g = (hs_cs / arange(2, N)).sum()
 
     a = (4*g - 6) * (k - 1) + (10 - 6*g)*H
-    b = (2*g - 4)*k**2 + 8*h*k + (2*g - 14*h - 4)*H - 8*h + 4*g - 6
-    c = (6*h + 2*g - 2)*k**2 + (4*h - 4*g + 6)*k + (2*h - 6)*H + 4*h
-    d = (2*h + 6)*k**2 - 4*h*k
-    sigmasq = (a*N**3 + b*N**2 + c*N + d) / ((N - 1.) * (N - 2.) * (N - 3.))
+    b = (2*g - 4)*k*k + 8*h*k + (2*g - 14*h - 4)*H - 8*h + 4*g - 6
+    c = (6*h + 2*g - 2)*k*k + (4*h - 4*g + 6)*k + (2*h - 6)*H + 4*h
+    d = (2*h + 6)*k*k - 4*h*k
+    sigmasq = (a*N*N*N + b*N*N + c*N + d) / ((N - 1.) * (N - 2.) * (N - 3.))
     m = k - 1
     A2 = (A2kN - m) / math.sqrt(sigmasq)
 
@@ -1779,15 +1779,15 @@ def ansari(x, y):
     # otherwise compute normal approximation
     if N % 2:  # N odd
         mnAB = n * (N+1.0)**2 / 4.0 / N
-        varAB = n * m * (N+1.0) * (3+N**2) / (48.0 * N**2)
+        varAB = n * m * (N+1.0) * (3+N*N) / (48.0 * N*N)
     else:
         mnAB = n * (N+2.0) / 4.0
         varAB = m * n * (N+2) * (N-2.0) / 48 / (N-1.0)
     if repeats:   # adjust variance estimates
-        # compute np.sum(tj * rj**2,axis=0)
-        fac = np.sum(symrank**2, axis=0)
+        # compute np.sum(tj * rj*rj,axis=0)
+        fac = np.sum(symrank*symrank, axis=0)
         if N % 2:  # N odd
-            varAB = m * n * (16*N*fac - (N+1)**4) / (16.0 * N**2 * (N-1))
+            varAB = m * n * (16*N*fac - (N+1)**4) / (16.0 * N*N * (N-1))
         else:  # N even
             varAB = m * n * (16*fac - N*(N+2)**2) / (16.0 * N * (N-1))
 

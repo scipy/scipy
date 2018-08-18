@@ -67,7 +67,7 @@ class TestNextOptLen(object):
         def nums():
             for j in range(1, 1000):
                 yield j
-            yield 2**5 * 3**5 * 4**5 + 1
+            yield 2*2*2*2*2 * 3*3*3*3*3 * 4*4*4*4*4 + 1
 
         for n in nums():
             m = next_fast_len(n)

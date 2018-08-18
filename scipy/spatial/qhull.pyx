@@ -1723,7 +1723,7 @@ class Delaunay(_QhullUser):
 
     Notes
     -----
-    The tessellation is computed using the Qhull library 
+    The tessellation is computed using the Qhull library
     `Qhull library <http://www.qhull.org/>`__.
 
     .. note::
@@ -1780,17 +1780,17 @@ class Delaunay(_QhullUser):
     >>> tri.find_simplex(p)
     array([ 1, -1, 1], dtype=int32)
 
-    The returned integers in the array are the indices of the simplex the 
+    The returned integers in the array are the indices of the simplex the
     corresponding point is in. If -1 is returned, the point is in no simplex.
-    Be aware that the shortcut in the following example only works corretcly 
+    Be aware that the shortcut in the following example only works corretcly
     for valid points as invalid points result in -1 which is itself a valid
     index for the last simplex in the list.
-    
+
     >>> p_valids = np.array([(0.1, 0.2), (0.5, 1.05)])
     >>> tri.simplices[tri.find_simplex(p_valids)]
     array([[3, 1, 0],                 # may vary
            [3, 1, 0]], dtype=int32)
-    
+
     We can also compute barycentric coordinates in triangle 1 for
     these points:
 
@@ -2137,7 +2137,7 @@ class Delaunay(_QhullUser):
         """
         z = np.zeros(x.shape[:-1] + (x.shape[-1]+1,), dtype=np.double)
         z[...,:-1] = x
-        z[...,-1] = (x**2).sum(axis=-1)
+        z[...,-1] = (x*x).sum(axis=-1)
         z[...,-1] *= self.paraboloid_scale
         z[...,-1] += self.paraboloid_shift
         return z
@@ -2270,11 +2270,11 @@ class ConvexHull(_QhullUser):
         If option "Qc" is not specified, this list is not computed.
     area : float
         Area of the convex hull.
-        
+
         .. versionadded:: 0.17.0
     volume : float
         Volume of the convex hull.
-        
+
         .. versionadded:: 0.17.0
 
     Raises
@@ -2287,7 +2287,7 @@ class ConvexHull(_QhullUser):
 
     Notes
     -----
-    The convex hull is computed using the 
+    The convex hull is computed using the
     `Qhull library <http://www.qhull.org/>`__.
 
     Examples
@@ -2422,7 +2422,7 @@ class Voronoi(_QhullUser):
 
     Notes
     -----
-    The Voronoi diagram is computed using the 
+    The Voronoi diagram is computed using the
     `Qhull library <http://www.qhull.org/>`__.
 
     Examples

@@ -103,12 +103,12 @@ set_initial_causal_coefficient(double *coefficients, npy_intp len,
  *
  *   c+[i] = s[i] + z * c+[i-1]
  *   c-[i] = s[i] + z * c-[i+1]
- *   c[i] = z / (1 - z**2) * (c+[i] + c-[i] - s[i])
+ *   c[i] = z / (1 - z*z) * (c+[i] + c-[i] - s[i])
  *
  * For the anticausal filter, if the extension mode is NI_EXTEND_MIRROR,
  * we also know that c+[n-1] = c-[n-1], so:
  *
- *   c[n-1] = z / (1 - z**2) * (z * c+[n-2] + c+[n-1])
+ *   c[n-1] = z / (1 - z*z) * (z * c+[n-2] + c+[n-1])
  *
  */
 void

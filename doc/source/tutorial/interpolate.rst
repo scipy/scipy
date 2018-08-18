@@ -47,7 +47,7 @@ its use, for linear and cubic spline interpolation:
    >>> from scipy.interpolate import interp1d
 
    >>> x = np.linspace(0, 10, num=11, endpoint=True)
-   >>> y = np.cos(-x**2/9.0)
+   >>> y = np.cos(-x*x/9.0)
    >>> f = interp1d(x, y)
    >>> f2 = interp1d(x, y, kind='cubic')
 
@@ -73,7 +73,7 @@ same data as in the previous example:
    >>> from scipy.interpolate import interp1d
 
    >>> x = np.linspace(0, 10, num=11, endpoint=True)
-   >>> y = np.cos(-x**2/9.0)
+   >>> y = np.cos(-x*x/9.0)
    >>> f1 = interp1d(x, y, kind='nearest')
    >>> f2 = interp1d(x, y, kind='previous')
    >>> f3 = interp1d(x, y, kind='next')
@@ -103,7 +103,7 @@ that do not form a regular grid.
     Suppose we want to interpolate the 2-D function
 
     >>> def func(x, y):
-    ...     return x*(1-x)*np.cos(4*np.pi*x) * np.sin(4*np.pi*y**2)**2
+    ...     return x*(1-x)*np.cos(4*np.pi*x) * np.sin(4*np.pi*y*y)**2
 
     on a grid in [0, 1]x[0, 1]
 
@@ -490,7 +490,7 @@ This example shows how to interpolate scattered 2d data.
     >>> # 2-d tests - setup scattered data
     >>> x = np.random.rand(100)*4.0-2.0
     >>> y = np.random.rand(100)*4.0-2.0
-    >>> z = x*np.exp(-x**2-y**2)
+    >>> z = x*np.exp(-x*x-y*y)
     >>> ti = np.linspace(-2.0, 2.0, 100)
     >>> XI, YI = np.meshgrid(ti, ti)
 

@@ -156,20 +156,20 @@ class TestQuadraticFunction(object):
 
         t, y = minimize_quadratic_1d(a, b, 1, 2)
         assert_equal(t, 1)
-        assert_equal(y, a * t**2 + b * t)
+        assert_equal(y, a * t*t + b * t)
 
         t, y = minimize_quadratic_1d(a, b, -2, -1)
         assert_equal(t, -1)
-        assert_equal(y, a * t**2 + b * t)
+        assert_equal(y, a * t*t + b * t)
 
         t, y = minimize_quadratic_1d(a, b, -1, 1)
         assert_equal(t, 0.1)
-        assert_equal(y, a * t**2 + b * t)
+        assert_equal(y, a * t*t + b * t)
 
         c = 10
         t, y = minimize_quadratic_1d(a, b, -1, 1, c=c)
         assert_equal(t, 0.1)
-        assert_equal(y, a * t**2 + b * t + c)
+        assert_equal(y, a * t*t + b * t + c)
 
     def test_evaluate_quadratic(self):
         s = np.array([1.0, -1.0])

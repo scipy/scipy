@@ -109,14 +109,14 @@ c        j-th element of v.
 c
          if (dabs(v(n)) .ge. dabs(v(j))) go to 20
             cotan = v(n)/v(j)
-            sin = p5/dsqrt(p25+p25*cotan**2)
+            sin = p5/dsqrt(p25+p25*cotan*cotan)
             cos = sin*cotan
             tau = one
             if (dabs(cos)*giant .gt. one) tau = one/cos
             go to 30
    20    continue
             tan = v(j)/v(n)
-            cos = p5/dsqrt(p25+p25*tan**2)
+            cos = p5/dsqrt(p25+p25*tan*tan)
             sin = cos*tan
             tau = sin
    30    continue
@@ -158,14 +158,14 @@ c        j-th element of the spike.
 c
          if (dabs(s(jj)) .ge. dabs(w(j))) go to 90
             cotan = s(jj)/w(j)
-            sin = p5/dsqrt(p25+p25*cotan**2)
+            sin = p5/dsqrt(p25+p25*cotan*cotan)
             cos = sin*cotan
             tau = one
             if (dabs(cos)*giant .gt. one) tau = one/cos
             go to 100
    90    continue
             tan = w(j)/s(jj)
-            cos = p5/dsqrt(p25+p25*tan**2)
+            cos = p5/dsqrt(p25+p25*tan*tan)
             sin = cos*tan
             tau = sin
   100    continue

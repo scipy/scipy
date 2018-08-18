@@ -319,7 +319,7 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, f0=None,
     In the example below we compute left and right derivative at point 1.0.
 
     >>> def g(x):
-    ...     return x**2 if x >= 1 else x
+    ...     return x*x if x >= 1 else x
     ...
     >>> x0 = 1.0
     >>> approx_derivative(g, x0, bounds=(-np.inf, 1.0))

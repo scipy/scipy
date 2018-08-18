@@ -78,8 +78,8 @@ gram = 1e-3
 metric_ton = 1e3
 grain = 64.79891e-6
 lb = pound = 7000 * grain  # avoirdupois
-blob = slinch = pound * g / 0.0254  # lbf*s**2/in (added in 1.0.0)
-slug = blob / 12  # lbf*s**2/foot (added in 1.0.0)
+blob = slinch = pound * g / 0.0254  # lbf*s*s/in (added in 1.0.0)
+slug = blob / 12  # lbf*s*s/foot (added in 1.0.0)
 oz = ounce = pound / 16
 stone = 14 * pound
 long_ton = 2240 * pound
@@ -136,7 +136,7 @@ acre = 43560 * foot**2
 
 # volume in meter**3
 litre = liter = 1e-3
-gallon = gallon_US = 231 * inch**3  # US
+gallon = gallon_US = 231 * inch*inch*inch  # US
 # pint = gallon_US / 8
 fluid_ounce = fluid_ounce_US = gallon_US / 128
 bbl = barrel = 42 * gallon_US  # for oil

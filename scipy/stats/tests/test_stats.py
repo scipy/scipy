@@ -4073,7 +4073,7 @@ class TestKruskal(object):
     def test_simple_tie(self):
         x = [1]
         y = [1, 2]
-        h_uncorr = 1.5**2 + 2*2.25**2 - 12
+        h_uncorr = 1.5*5 + 2*2.25*25 - 12
         corr = 0.75
         expected = h_uncorr / corr   # 0.5
         h, p = stats.kruskal(x, y)
@@ -4084,8 +4084,8 @@ class TestKruskal(object):
     def test_another_tie(self):
         x = [1, 1, 1, 2]
         y = [2, 2, 2, 2]
-        h_uncorr = (12. / 8. / 9.) * 4 * (3**2 + 6**2) - 3 * 9
-        corr = 1 - float(3**3 - 3 + 5**3 - 5) / (8**3 - 8)
+        h_uncorr = (12. / 8. / 9.) * 4 * (3*3 + 6*6) - 3 * 9
+        corr = 1 - float(3*3*3 - 3 + 5*5*5 - 5) / (8*8*8 - 8)
         expected = h_uncorr / corr
         h, p = stats.kruskal(x, y)
         assert_approx_equal(h, expected)
@@ -4095,8 +4095,8 @@ class TestKruskal(object):
         x = [1, 1, 1]
         y = [2, 2, 2]
         z = [2, 2]
-        h_uncorr = (12. / 8. / 9.) * (3*2**2 + 3*6**2 + 2*6**2) - 3 * 9  # 5.0
-        corr = 1 - float(3**3 - 3 + 5**3 - 5) / (8**3 - 8)
+        h_uncorr = (12. / 8. / 9.) * (3*2*2 + 3*6*6 + 2*6*6) - 3 * 9  # 5.0
+        corr = 1 - float(3*3*3 - 3 + 5*5*5 - 5) / (8*8*8 - 8)
         expected = h_uncorr / corr  # 7.0
         h, p = stats.kruskal(x, y, z)
         assert_approx_equal(h, expected)
@@ -4300,7 +4300,7 @@ class TestEnergyDistance(object):
             2 * .5)
         assert_almost_equal(
             stats.energy_distance([0, 1, 2], [1, 2, 3]),
-            np.sqrt(2) * (3*(1./3**2))**.5)
+            np.sqrt(2) * (3*(1./3*3))**.5)
 
     def test_same_distribution(self):
         # Any distribution moved to itself should have a energy distance of

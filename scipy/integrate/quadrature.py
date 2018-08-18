@@ -258,7 +258,7 @@ def cumtrapz(y, x=None, dx=1.0, axis=-1, initial=None):
     >>> x = np.linspace(-2, 2, num=20)
     >>> y = x
     >>> y_int = integrate.cumtrapz(y, x, initial=0)
-    >>> plt.plot(x, y_int, 'ro', x, y[0] + 0.5 * x**2, 'b-')
+    >>> plt.plot(x, y_int, 'ro', x, y[0] + 0.5 * x*x, 'b-')
     >>> plt.show()
 
     """
@@ -394,7 +394,7 @@ def simps(y, x=None, dx=1, axis=-1, even='avg'):
     >>> y = np.power(x, 3)
     >>> integrate.simps(y, x)
     1642.5
-    >>> integrate.quad(lambda x: x**3, 0, 9)[0]
+    >>> integrate.quad(lambda x: x*x*x, 0, 9)[0]
     1640.25
 
     >>> integrate.simps(y, x, even='first')
@@ -505,13 +505,13 @@ def romb(y, dx=1.0, axis=-1, show=False):
     -0.742561336672229
 
     >>> integrate.romb(y, show=True)
-    Richardson Extrapolation Table for Romberg Integration       
+    Richardson Extrapolation Table for Romberg Integration
     ====================================================================
-    -0.81576 
-    4.63862  6.45674 
-    -1.10581 -3.02062 -3.65245 
-    -2.57379 -3.06311 -3.06595 -3.05664 
-    -1.34093 -0.92997 -0.78776 -0.75160 -0.74256 
+    -0.81576
+    4.63862  6.45674
+    -1.10581 -3.02062 -3.65245
+    -2.57379 -3.06311 -3.06595 -3.05664
+    -1.34093 -0.92997 -0.78776 -0.75160 -0.74256
     ====================================================================
     -0.742561336672229
     """
@@ -700,7 +700,7 @@ def romberg(function, a, b, args=(), tol=1.48e-8, rtol=1.48e-8, show=False,
 
     >>> from scipy import integrate
     >>> from scipy.special import erf
-    >>> gaussian = lambda x: 1/np.sqrt(np.pi) * np.exp(-x**2)
+    >>> gaussian = lambda x: 1/np.sqrt(np.pi) * np.exp(-x*x)
     >>> result = integrate.romberg(gaussian, 0, 1, show=True)
     Romberg integration of <function vfunc at ...> from [0, 1]
 

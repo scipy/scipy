@@ -1141,7 +1141,7 @@ add_newdoc("scipy.special", "dawsn",
 
     Computes::
 
-        exp(-x**2) * integral(exp(t**2), t=0..x).
+        exp(-x*x) * integral(exp(t*t), t=0..x).
 
     See Also
     --------
@@ -1463,7 +1463,7 @@ add_newdoc("scipy.special", "erf",
 
     Returns the error function of complex argument.
 
-    It is defined as ``2/sqrt(pi)*integral(exp(-t**2), t=0..z)``.
+    It is defined as ``2/sqrt(pi)*integral(exp(-t*t), t=0..z)``.
 
     Parameters
     ----------
@@ -1569,7 +1569,7 @@ add_newdoc("scipy.special", "erfcx",
     """
     erfcx(x)
 
-    Scaled complementary error function, ``exp(x**2) * erfc(x)``.
+    Scaled complementary error function, ``exp(x*x) * erfc(x)``.
 
     See Also
     --------
@@ -2593,8 +2593,8 @@ add_newdoc("scipy.special", "fresnel",
 
     Defined as::
 
-        ssa = integral(sin(pi/2 * t**2), t=0..z)
-        csa = integral(cos(pi/2 * t**2), t=0..z)
+        ssa = integral(sin(pi/2 * t*t), t=0..z)
+        csa = integral(cos(pi/2 * t*t), t=0..z)
 
     Parameters
     ----------
@@ -5663,7 +5663,7 @@ add_newdoc("scipy.special", "log_ndtr",
     Returns the log of the area under the standard Gaussian probability
     density function, integrated from minus infinity to `x`::
 
-        log(1/sqrt(2*pi) * integral(exp(-t**2 / 2), t=-inf..x))
+        log(1/sqrt(2*pi) * integral(exp(-t*t / 2), t=-inf..x))
 
     Parameters
     ----------
@@ -6407,7 +6407,7 @@ add_newdoc("scipy.special", "stdtr",
     distribution with df > 0 degrees of freedom::
 
        gamma((df+1)/2)/(sqrt(df*pi)*gamma(df/2)) *
-       integral((1+x**2/df)**(-df/2-1/2), x=-inf..t)
+       integral((1+x*x/df)**(-df/2-1/2), x=-inf..t)
 
     """)
 
@@ -6501,7 +6501,7 @@ add_newdoc("scipy.special", "wofz",
 
     Returns the value of the Faddeeva function for complex argument::
 
-        exp(-z**2) * erfc(-i*z)
+        exp(-z*z) * erfc(-i*z)
 
     See Also
     --------
@@ -6836,7 +6836,7 @@ add_newdoc("scipy.special", "zetac",
 
     Some special values:
 
-    >>> zetac(2), np.pi**2/6 - 1
+    >>> zetac(2), np.pi*pi/6 - 1
     (0.64493406684822641, 0.6449340668482264)
 
     >>> zetac(-1), -1.0/12 - 1

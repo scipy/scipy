@@ -91,7 +91,7 @@ def F6(x):
     x1, x2 = x
     J0 = np.array([[-4.256, 14.7],
                 [0.8394989, 0.59964207]])
-    v = np.array([(x1 + 3) * (x2**5 - 7) + 3*6,
+    v = np.array([(x1 + 3) * (x2*x2*x2*x2*x2 - 7) + 3*6,
                   np.sin(x2 * np.exp(x1) - 1)])
     return -np.linalg.solve(J0, v)
 
@@ -171,7 +171,7 @@ class TestSecant(object):
           np.array([0,1,9,1,3], float),
           np.array([5,5,7,1,1], float),
           np.array([1,2,7,5,1], float),]
-    fs = [x**2 - 1 for x in xs]
+    fs = [x*x - 1 for x in xs]
 
     def _check_secant(self, jac_cls, npoints=1, **kw):
         """
@@ -282,7 +282,7 @@ class TestJacobianDotSolve(object):
     """Check that solve/dot methods in Jacobian approximations are consistent"""
 
     def _func(self, x):
-        return x**2 - 1 + np.dot(self.A, x)
+        return x*x - 1 + np.dot(self.A, x)
 
     def _check_dot(self, jac_cls, complex=False, tol=1e-6, **kw):
         np.random.seed(123)

@@ -484,7 +484,7 @@ def trf_no_bounds(fun, jac, x0, f0, J0, ftol, xtol, gtol, max_nfev,
                 ag_value = minimize_quadratic_1d(a, b, 0, to_tr)[1]
                 reg_term = -ag_value / Delta**2
 
-            damp_full = (damp**2 + reg_term)**0.5
+            damp_full = (damp*damp + reg_term)**0.5
             gn_h = lsmr(J_h, f, damp=damp_full, **tr_options)[0]
             S = np.vstack((g_h, gn_h)).T
             S, _ = qr(S, mode='economic')

@@ -23,7 +23,7 @@
  *
  * A Pade' form
  *
- *   1 + 2x P(x**2) / (Q(x**2) - x P(x**2) )
+ *   1 + 2x P(x*x) / (Q(x*x) - x P(x*x) )
  *
  * approximates 2**x in the basic range [-0.5, 0.5].
  *

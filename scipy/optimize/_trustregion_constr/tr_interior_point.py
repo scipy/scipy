@@ -208,7 +208,7 @@ class BarrierSubproblem:
         """Returns scaled Lagrangian Hessian (in relation to`s`) -> S Hs S"""
         s = self.get_slack(z)
         # Using the primal formulation:
-        #     S Hs S = diag(s)*diag(barrier_parameter/s**2)*diag(s).
+        #     S Hs S = diag(s)*diag(barrier_parameter/s*s)*diag(s).
         # Reference [1]_ p. 882, formula (3.1)
         primal = self.barrier_parameter
         # Using the primal-dual formulation
@@ -250,7 +250,7 @@ class BarrierSubproblem:
         """
         x = self.get_variables(z)
         if self.global_stop_criteria(state, x,
-                                     last_iteration_failed, 
+                                     last_iteration_failed,
                                      trust_radius, penalty,
                                      cg_info,
                                      self.barrier_parameter,

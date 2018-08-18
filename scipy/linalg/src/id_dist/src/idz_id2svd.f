@@ -42,7 +42,7 @@ c
      1          ir2,lr2,ir3,lr3,iind,lind,iindt,lindt,lw,ier
         real*8 s(krank)
         complex*16 b(m,krank),proj(krank,n-krank),u(m,krank),
-     1             v(n,krank),w((krank+1)*(m+3*n+10)+9*krank**2)
+     1             v(n,krank),w((krank+1)*(m+3*n+10)+9*krank*krank)
 c
 c
 c       Allocate memory for idz_id2svd0.
@@ -50,7 +50,7 @@ c
         lw = 0
 c
         iwork = lw+1
-        lwork = 8*krank**2+10*krank
+        lwork = 8*krank*krank+10*krank
         lw = lw+lwork
 c
         ip = lw+1
@@ -104,15 +104,16 @@ c
 c
         character*1 jobz
         integer m,n,krank,list(n),ind(n),indt(m),ifadjoint,
-     1          lwork,ldu,ldvt,ldr,info,j,k,ier
+     1          lwork,ldu,ldvt,ldr,info,j,k,ier,krank2
         real*8 s(krank)
         complex*16 b(m,krank),proj(krank,n-krank),p(krank,n),
      1             r(krank,n),r2(krank,m),t(n,krank),r3(krank,krank),
-     2             u(m,krank),v(n,krank),work(8*krank**2+10*krank)
+     2             u(m,krank),v(n,krank),work(8*krank*krank+10*krank)
 c
 c
 c
         ier = 0
+        krank2 = krank2
 c
 c
 c
@@ -169,14 +170,14 @@ c       Use LAPACK to SVD r3.
 c
         jobz = 'S'
         ldr = krank
-        lwork = 8*krank**2+10*krank
-     1        - (krank**2+2*krank+3*krank**2+4*krank)
+        lwork = 8*krank2+10*krank
+     1        - (krank2+2*krank+3*krank2+4*krank)
         ldu = krank
         ldvt = krank
 c
         call zgesdd(jobz,krank,krank,r3,ldr,s,work,ldu,r,ldvt,
-     1              work(krank**2+2*krank+3*krank**2+4*krank+1),lwork,
-     2              work(krank**2+2*krank+1),work(krank**2+1),info)
+     1              work(krank2+2*krank+3*krank2+4*krank+1),lwork,
+     2              work(krank2+2*krank+1),work(krank2+1),info)
 c
         if(info .ne. 0) then
           ier = info

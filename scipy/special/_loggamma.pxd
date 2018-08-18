@@ -124,7 +124,7 @@ cdef inline double complex loggamma_taylor(double complex z) nogil:
 
     It is
 
-    loggamma(z + 1) = -gamma*z + zeta(2)*z**2/2 - zeta(3)*z**3/3 ...
+    loggamma(z + 1) = -gamma*z + zeta(2)*z*z/2 - zeta(3)*z*z*z/3 ...
 
     where gamma is the Euler-Mascheroni constant.
 

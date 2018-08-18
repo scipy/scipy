@@ -66,7 +66,7 @@ def test_performance():
 
 def test_complex():
     def func(z):
-        return z**2 - 1 + 2j
+        return z*z - 1 + 2j
     x0 = 2.0j
 
     ftol = 1e-4
@@ -148,7 +148,7 @@ def F_2(x, n):
 
 def x0_2(n):
     x0 = np.empty([n])
-    x0.fill(1/n**2)
+    x0.fill(1/n*n)
     return x0
 
 def F_4(x, n):
@@ -179,7 +179,7 @@ def F_7(x, n):
 
     def phi(t):
         v = 0.5*t - 2
-        v[t > -1] = ((-592*t**3 + 888*t**2 + 4551*t - 1924)/1998)[t > -1]
+        v[t > -1] = ((-592*t*t*t + 888*t*t + 4551*t - 1924)/1998)[t > -1]
         v[t >= 2] = (0.5*t + 2)[t >= 2]
         return v
     g = np.zeros([n])

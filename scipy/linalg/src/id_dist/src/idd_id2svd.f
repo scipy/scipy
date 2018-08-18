@@ -32,7 +32,7 @@ c       ier -- 0 when the routine terminates successfully;
 c              nonzero otherwise
 c
 c       work:
-c       w -- must be at least (krank+1)*(m+3*n)+26*krank**2 real*8
+c       w -- must be at least (krank+1)*(m+3*n)+26*krank*krank real*8
 c            elements long
 c
 c       _N.B._: This routine destroys b.
@@ -41,7 +41,7 @@ c
         integer m,krank,n,list(n),iwork,lwork,ip,lp,it,lt,ir,lr,
      1          ir2,lr2,ir3,lr3,iind,lind,iindt,lindt,lw,ier
         real*8 b(m,krank),proj(krank,n-krank),u(m,krank),v(n,krank),
-     1         w((krank+1)*(m+3*n)+26*krank**2),s(krank)
+     1         w((krank+1)*(m+3*n)+26*krank*krank),s(krank)
 c
 c
         lw = 0
@@ -104,7 +104,7 @@ c
      1          lwork,ldu,ldvt,ldr,info,j,k,ier
         real*8 b(m,krank),proj(krank,n-krank),p(krank,n),
      1         r(krank,n),r2(krank,m),t(n,krank),r3(krank,krank),
-     2         u(m,krank),v(n,krank),s(krank),work(25*krank**2)
+     2         u(m,krank),v(n,krank),s(krank),work(25*krank*krank)
 c
 c
 c
@@ -165,13 +165,13 @@ c       Use LAPACK to SVD r3.
 c
         jobz = 'S'
         ldr = krank
-        lwork = 25*krank**2-krank**2-4*krank
+        lwork = 25*krank*krank-krank*krank-4*krank
         ldu = krank
         ldvt = krank
 c
         call dgesdd(jobz,krank,krank,r3,ldr,s,work,ldu,r,ldvt,
-     1              work(krank**2+4*krank+1),lwork,
-     2              work(krank**2+1),info)
+     1              work(krank*krank+4*krank+1),lwork,
+     2              work(krank*krank+1),info)
 c
         if(info .ne. 0) then
           ier = info

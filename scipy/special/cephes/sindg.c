@@ -18,9 +18,9 @@
  *
  * Two polynomial approximating functions are employed.
  * Between 0 and pi/4 the sine is approximated by
- *      x  +  x**3 P(x**2).
+ *      x  +  x*x*x P(x*x).
  * Between pi/4 and pi/2 the cosine is represented as
- *      1  -  x**2 P(x**2).
+ *      1  -  x*x P(x*x).
  *
  *
  *
@@ -29,7 +29,7 @@
  *                      Relative error:
  * arithmetic   domain      # trials      peak         rms
  *    IEEE      +-1000       30000      2.3e-16      5.6e-17
- * 
+ *
  * ERROR MESSAGES:
  *
  *   message           condition        value returned
@@ -56,9 +56,9 @@
  *
  * Two polynomial approximating functions are employed.
  * Between 0 and pi/4 the cosine is approximated by
- *      1  -  x**2 P(x**2).
+ *      1  -  x*x P(x*x).
  * Between pi/4 and pi/2 the sine is represented as
- *      x  +  x**3 P(x**2).
+ *      x  +  x*x*x P(x*x).
  *
  *
  * ACCURACY:

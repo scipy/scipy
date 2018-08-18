@@ -57,7 +57,7 @@ def pressure_network(flow_rates, Qtot, k):
         f_0 = sum(Q_i) - Qtot
 
     Where Q_i is the flow rate in pipe i and P_i the pressure in that pipe.
-    Pressure is modeled as a P=kQ**2 where k is a valve coefficient and
+    Pressure is modeled as a P=kQ*kQ where k is a valve coefficient and
     Q is the flow rate.
 
     Parameters
@@ -259,17 +259,17 @@ class TestLeastSq(object):
         a,b,c = 3.1, 42, -304.2
         self.x = x
         self.abc = a,b,c
-        y_true = a*x**2 + b*x + c
+        y_true = a*x*x + b*x + c
         np.random.seed(0)
         self.y_meas = y_true + 0.01*np.random.standard_normal(y_true.shape)
 
     def residuals(self, p, y, x):
         a,b,c = p
-        err = y-(a*x**2 + b*x + c)
+        err = y-(a*x*x + b*x + c)
         return err
 
     def residuals_jacobian(self, _p, _y, x):
-        return -np.vstack([x**2, x, np.ones_like(x)]).T
+        return -np.vstack([x*x, x, np.ones_like(x)]).T
 
     def test_basic(self):
         p0 = array([0,0,0])
@@ -451,8 +451,8 @@ class TestCurveFit(object):
                 1.0068462e-02, 8.57450661e+02]
 
         def f_double_gauss(x, x0, x1, A0, A1, sigma, c):
-            return (A0*np.exp(-(x-x0)**2/(2.*sigma**2))
-                    + A1*np.exp(-(x-x1)**2/(2.*sigma**2)) + c)
+            return (A0*np.exp(-(x-x0)**2/(2.*sigma*sigma))
+                    + A1*np.exp(-(x-x1)**2/(2.*sigma*sigma)) + c)
         popt, pcov = curve_fit(f_double_gauss, x, y, guess, maxfev=10000)
         assert_allclose(popt, good, rtol=1e-5)
 
@@ -651,7 +651,7 @@ class TestCurveFit(object):
         ydata = y + 0.2 * np.random.normal(size=len(xdata))
 
         sigma = np.zeros(len(xdata)) + 0.2
-        covar = np.diag(sigma**2)
+        covar = np.diag(sigma*sigma)
 
         for jac1, jac2 in [(jac, jac), (None, None)]:
             for absolute_sigma in [False, True]:
@@ -686,7 +686,7 @@ class TestCurveFit(object):
         y = func(xdata, 2.5, 1.0)
         ydata = y + 0.2 * np.random.normal(size=len(xdata))
         sigma = np.zeros(len(xdata)) + 0.2
-        covar = np.diag(sigma**2)
+        covar = np.diag(sigma*sigma)
         # Get a rotation matrix, and obtain ydatap = R ydata
         # Chisq = ydata^T C^{-1} ydata
         #       = ydata^T R^T R C^{-1} R^T R ydata
@@ -719,7 +719,7 @@ class TestFixedPoint(object):
         assert_almost_equal(x, 0.0)
 
     def test_scalar_basic1(self):
-        # f(x) = x**2; x0=1.05; fixed point should be x=1
+        # f(x) = x*x; x0=1.05; fixed point should be x=1
         def func(x):
             return x**2
         x0 = 1.05
@@ -746,7 +746,7 @@ class TestFixedPoint(object):
         assert_almost_equal(x, [0.0, 0.0])
 
     def test_array_basic1(self):
-        # f(x) = c * x**2; fixed point should be x=1/c
+        # f(x) = c * x*x; fixed point should be x=1/c
         def func(x, c):
             return c * x**2
         c = array([0.75, 1.0, 1.25])
@@ -765,7 +765,7 @@ class TestFixedPoint(object):
         c = array([0.75, 1.0, 1.25])
         x0 = [0.8, 1.1, 1.1]
         x = fixed_point(func, x0, args=(c,))
-        assert_almost_equal(x, c**2)
+        assert_almost_equal(x, c*c)
 
     def test_lambertw(self):
         # python-list/2010-December/594592.html

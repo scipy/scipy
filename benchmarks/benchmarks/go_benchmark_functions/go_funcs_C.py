@@ -350,7 +350,7 @@ class CosineMixture(Benchmark):
     and Numerical Optimisation, 2013, 4, 150-194.
 
     TODO, Jamil #38 has wrong minimum and wrong fglob. I plotted it.
-    -(x**2) term is always negative if x is negative.
+    -(x*x) term is always negative if x is negative.
      cos(5 * pi * x) is equal to -1 for x=-1.
     """
 
@@ -386,7 +386,7 @@ class CrossInTray(Benchmark):
 
     with :math:`x_i \in [-15, 15]` for :math:`i = 1, 2`.
 
-    *Global optimum*: :math:`f(x) = -2.062611870822739` for :math:`x_i = 
+    *Global optimum*: :math:`f(x) = -2.062611870822739` for :math:`x_i =
     \pm 1.349406608602084` for :math:`i = 1, 2`
 
     .. [1] Jamil, M. & Yang, X.-S. A Literature Survey of Benchmark Functions
@@ -424,7 +424,7 @@ class CrossLegTable(Benchmark):
     .. math::
 
         f_{\text{CrossLegTable}}(x) = - \frac{1}{\left(\left|{e^{\left|{100
-        - \frac{\sqrt{x_{1}^{2} + x_{2}^{2}}}{\pi}}\right|} 
+        - \frac{\sqrt{x_{1}^{2} + x_{2}^{2}}}{\pi}}\right|}
         \sin\left(x_{1}\right) \sin\left(x_{2}\right)}\right| + 1\right)^{0.1}}
 
 

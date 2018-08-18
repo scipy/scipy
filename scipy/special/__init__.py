@@ -307,7 +307,7 @@ Error Function and Fresnel Integrals
 
    erf           -- Returns the error function of complex argument.
    erfc          -- Complementary error function, ``1 - erf(x)``.
-   erfcx         -- Scaled complementary error function, ``exp(x**2) * erfc(x)``.
+   erfcx         -- Scaled complementary error function, ``exp(x*x) * erfc(x)``.
    erfi          -- Imaginary error function, ``-i erf(i z)``.
    erfinv        -- Inverse function for erf.
    erfcinv       -- Inverse function for erfc.

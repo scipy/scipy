@@ -52,7 +52,7 @@ def main():
     # Compare two terms of the series around the branch point to the
     # true result
     p = np.sqrt(2*(np.exp(1)*z + 1))
-    series_approx = -1 + p - p**2/3
+    series_approx = -1 + p - p*p/3
     series_err = abs(series_approx - lambertw_std)
     im = axes[2].pcolormesh(x, y, series_err)
 

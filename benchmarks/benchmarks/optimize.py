@@ -321,7 +321,7 @@ class BenchSmoothUnbounded(Benchmark):
     def run_asymmetric_quadratic(self, methods=None):
         s = funcs.AsymmetricQuadratic()
         #    print "checking gradient", scipy.optimize.check_grad(s.fun, s.der, np.array([1.1, -2.3]))
-        b = _BenchOptimizers("function sum(x**2) + x[0]",
+        b = _BenchOptimizers("function sum(x*x) + x[0]",
                              fun=s.fun, der=s.der, hess=s.hess)
         for i in range(10):
             b.bench_run(np.random.uniform(-2, 2, 3), methods=methods)

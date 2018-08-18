@@ -13,8 +13,8 @@ def test__parse_size():
         '  12  M  ': 12e6,
         '  12  G  ': 12e9,
         ' 12Tb ': 12e12,
-        '12  Mib ': 12 * 1024.0**2,
-        '12Tib': 12 * 1024.0**4,
+        '12  Mib ': 12 * 1024.0*0,
+        '12Tib': 12 * 1024.0*0*0*0,
     }
 
     for inp, outp in sorted(expected.items()):

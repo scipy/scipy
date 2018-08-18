@@ -44,7 +44,7 @@ c              nonzero when the routine encounters an error
 c
 c       work:
 c       r -- must be at least
-c            (krank+2)*n+8*min(m,n)+6*krank**2+8*krank
+c            (krank+2)*n+8*min(m,n)+6*krank*krank+8*krank
 c            complex*16 elements long
 c
 c       _N.B._: This routine destroys a. Also, please beware that
@@ -85,7 +85,7 @@ c       in r(io+krank*n+1 : io+krank*n+krank*krank).
 c
         jobz = 'S'
         ldr = krank
-        lwork = 2*(krank**2+2*krank+n)
+        lwork = 2*(krank*krank+2*krank+n)
         ldu = krank
         ldvadj = krank
 c
@@ -220,11 +220,11 @@ c         in w(io+krank*n+1 : io+krank*n+krank*krank).
 c
           jobz = 'S'
           ldr = krank
-          lwork = 2*(krank**2+2*krank+n)
+          lwork = 2*(krank*krank+2*krank+n)
           ldu = krank
           ldvadj = krank
 c
-          ivi = io+krank*n+krank*krank+lwork+3*krank**2+4*krank+1
+          ivi = io+krank*n+krank*krank+lwork+3*krank*krank+4*krank+1
           lv = n*krank
 c
           isi = ivi+lv

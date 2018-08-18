@@ -118,7 +118,7 @@ c  find a0 = s(t(l)), ah = s'(t(l)), b0 = s(t(l+1)) and bh = s'(t(l+1)).
         b0 = (h2*d4+h1*d5)/t2
         bh = three*(h2*c4+h1*c5)/t2
 c  calculate the coefficients a0,a1,a2 and a3 of the cubic polynomial
-c  pl(x) = ql(y) = a0+a1*y+a2*y**2+a3*y**3 ; y = (x-t(l))/(t(l+1)-t(l)).
+c  pl(x) = ql(y) = a0+a1*y+a2*y*y+a3*y*y*y ; y = (x-t(l))/(t(l+1)-t(l)).
         a1 = ah*h1
         b1 = bh*h1
         a2 = three*(b0-a0)-b1-two*a1

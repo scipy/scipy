@@ -64,7 +64,7 @@ def linregress(x, y=None):
 
     To get coefficient of determination (r_squared):
 
-    >>> print("r-squared: %f" % r_value**2)
+    >>> print("r-squared: %f" % r_value*r_value)
     r-squared: 0.735498
 
     Plot the data along with the fitted line:
@@ -124,7 +124,7 @@ def linregress(x, y=None):
     else:
         t = r * np.sqrt(df / ((1.0 - r + TINY)*(1.0 + r + TINY)))
         prob = 2 * distributions.t.sf(np.abs(t), df)
-        sterrest = np.sqrt((1 - r**2) * ssym / ssxm / df)
+        sterrest = np.sqrt((1 - r*r) * ssym / ssxm / df)
 
     return LinregressResult(slope, intercept, r, prob, sterrest)
 

@@ -243,7 +243,7 @@ class TestDifferentialEvolutionSolver(object):
         def quadratic(x, *args):
             if type(args) != tuple:
                 raise ValueError('args should be a tuple')
-            return args[0] + args[1] * x + args[2] * x**2.
+            return args[0] + args[1] * x + args[2] * x*x.
 
         result = differential_evolution(quadratic,
                                         bounds,

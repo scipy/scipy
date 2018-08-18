@@ -16,7 +16,7 @@ C         OR 2, REAL, NONNEGATIVE ORDERS FNU+J-1, J=1,...,N, AND COMPLEX
 C         Z.NE.CMPLX(0.0,0.0) IN THE CUT PLANE -PI.LT.ARG(Z).LE.PI.
 C         ON KODE=2, ZBESH RETURNS THE SCALED HANKEL FUNCTIONS
 C
-C         CY(I)=EXP(-MM*Z*I)*H(M,FNU+J-1,Z)       MM=3-2*M,   I**2=-1.
+C         CY(I)=EXP(-MM*Z*I)*H(M,FNU+J-1,Z)       MM=3-2*M,   I*I=-1.
 C
 C         WHICH REMOVES THE EXPONENTIAL BEHAVIOR IN BOTH THE UPPER AND
 C         LOWER HALF PLANES. DEFINITIONS AND NOTATION ARE FOUND IN THE
@@ -31,7 +31,7 @@ C                    KODE= 1  RETURNS
 C                             CY(J)=H(M,FNU+J-1,Z),   J=1,...,N
 C                        = 2  RETURNS
 C                             CY(J)=H(M,FNU+J-1,Z)*EXP(-I*Z*(3-2M))
-C                                  J=1,...,N  ,  I**2=-1
+C                                  J=1,...,N  ,  I*I=-1
 C           M      - KIND OF HANKEL FUNCTION, M=1 OR 2
 C           N      - NUMBER OF MEMBERS IN THE SEQUENCE, N.GE.1
 C
@@ -40,7 +40,7 @@ C           CYR,CYI- DOUBLE PRECISION VECTORS WHOSE FIRST N COMPONENTS
 C                    CONTAIN REAL AND IMAGINARY PARTS FOR THE SEQUENCE
 C                    CY(J)=H(M,FNU+J-1,Z)  OR
 C                    CY(J)=H(M,FNU+J-1,Z)*EXP(-I*Z*(3-2M))  J=1,...,N
-C                    DEPENDING ON KODE, I**2=-1.
+C                    DEPENDING ON KODE, I*I=-1.
 C           NZ     - NUMBER OF COMPONENTS SET TO ZERO DUE TO UNDERFLOW,
 C                    NZ= 0   , NORMAL RETURN
 C                    NZ.GT.0 , FIRST NZ COMPONENTS OF CY SET TO ZERO DUE
@@ -69,14 +69,14 @@ C
 C         THE COMPUTATION IS CARRIED OUT BY THE RELATION
 C
 C         H(M,FNU,Z)=(1/MP)*EXP(-MP*FNU)*K(FNU,Z*EXP(-MP))
-C             MP=MM*HPI*I,  MM=3-2*M,  HPI=PI/2,  I**2=-1
+C             MP=MM*HPI*I,  MM=3-2*M,  HPI=PI/2,  I*I=-1
 C
 C         FOR M=1 OR 2 WHERE THE K BESSEL FUNCTION IS COMPUTED FOR THE
 C         RIGHT HALF PLANE RE(Z).GE.0.0. THE K FUNCTION IS CONTINUED
 C         TO THE LEFT HALF PLANE BY THE RELATION
 C
 C         K(FNU,Z*EXP(MP)) = EXP(-MP*FNU)*K(FNU,Z)-MP*I(FNU,Z)
-C         MP=MR*PI*I, MR=+1 OR -1, RE(Z).GT.0, I**2=-1
+C         MP=MR*PI*I, MR=+1 OR -1, RE(Z).GT.0, I*I=-1
 C
 C         WHERE I(FNU,Z) IS THE I BESSEL FUNCTION.
 C
@@ -90,7 +90,7 @@ C         FOR NEGATIVE ORDERS,THE FORMULAE
 C
 C               H(1,-FNU,Z) = H(1,FNU,Z)*CEXP( PI*FNU*I)
 C               H(2,-FNU,Z) = H(2,FNU,Z)*CEXP(-PI*FNU*I)
-C                         I**2=-1
+C                         I*I=-1
 C
 C         CAN BE USED.
 C

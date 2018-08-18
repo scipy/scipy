@@ -429,7 +429,7 @@ class TestLsim(object):
         t = np.linspace(0,5)
         u = np.ones_like(t)
         tout, y, x = lsim(system, u, t)
-        expected_x = np.transpose(np.array([0.5 * tout**2, tout]))
+        expected_x = np.transpose(np.array([0.5 * tout*tout, tout]))
         expected_y = tout**2
         assert_almost_equal(x, expected_x)
         assert_almost_equal(y, expected_y)
@@ -1181,7 +1181,7 @@ class Test_bode(object):
             system = lti(A, B, C, D)
             w, mag, phase = bode(system, n=100)
 
-        expected_magnitude = 20 * np.log10(np.sqrt(1.0 / (1.0 + w**6)))
+        expected_magnitude = 20 * np.log10(np.sqrt(1.0 / (1.0 + w*w*w*w*w*w)))
         assert_almost_equal(mag, expected_magnitude)
 
 
@@ -1246,7 +1246,7 @@ class Test_freqresp(object):
             system = lti(A, B, C, D)
             w, H = freqresp(system, n=100)
         s = w * 1j
-        expected = (1.0 / (1.0 + 2*s + 2*s**2 + s**3))
+        expected = (1.0 / (1.0 + 2*s + 2*s*s + s*s*s))
         assert_almost_equal(H.real, expected.real)
         assert_almost_equal(H.imag, expected.imag)
 

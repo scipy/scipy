@@ -76,7 +76,7 @@ class Rbf(object):
             'linear': r
             'cubic': r**3
             'quintic': r**5
-            'thin_plate': r**2 * log(r)
+            'thin_plate': r*r * log(r)
 
         If callable, then it must take 2 arguments (self, r).  The epsilon
         parameter will be available as self.epsilon.  Other keyword
@@ -136,7 +136,7 @@ class Rbf(object):
         return r**5
 
     def _h_thin_plate(self, r):
-        return xlogy(r**2, r)
+        return xlogy(r*r, r)
 
     # Setup self._function and do smoke test on initial r
     def _init_function(self, r):

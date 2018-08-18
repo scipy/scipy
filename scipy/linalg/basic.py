@@ -1116,9 +1116,9 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
     >>> x = np.array([1, 2.5, 3.5, 4, 5, 7, 8.5])
     >>> y = np.array([0.3, 1.1, 1.5, 2.0, 3.2, 6.6, 8.6])
 
-    We want to fit a quadratic polynomial of the form ``y = a + b*x**2``
+    We want to fit a quadratic polynomial of the form ``y = a + b*x*x``
     to this data.  We first form the "design matrix" M, with a constant
-    column of 1s and a column containing ``x**2``:
+    column of 1s and a column containing ``x*x``:
 
     >>> M = x[:, np.newaxis]**[0, 2]
     >>> M

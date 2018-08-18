@@ -121,7 +121,7 @@ C ISTATE = Integer flag (input and output).  Set ISTATE = 1.
 C IOPT   = 0 to indicate no optional input used.
 C ZWORK  = Double precision complex work array of length at least:
 C             15*NEQ                      for MF = 10,
-C             8*NEQ + 2*NEQ**2            for MF = 21 or 22,
+C             8*NEQ + 2*NEQ*NEQ            for MF = 21 or 22,
 C             10*NEQ + (3*ML + 2*MU)*NEQ  for MF = 24 or 25.
 C LZW    = Declared length of ZWORK (in user's DIMENSION statement).
 C RWORK  = Real work array of length at least 20 + NEQ.
@@ -551,8 +551,8 @@ C          MAXORD = 12 (if METH = 1) or 5 (if METH = 2) (unless a
 C                   smaller value is given as an optional input),
 C          LWM = length of work space for matrix-related data:
 C          LWM = 0             if MITER = 0,
-C          LWM = 2*NEQ**2      if MITER = 1 or 2, and MF.gt.0,
-C          LWM = NEQ**2        if MITER = 1 or 2, and MF.lt.0,
+C          LWM = 2*NEQ*NEQ      if MITER = 1 or 2, and MF.gt.0,
+C          LWM = NEQ*NEQ        if MITER = 1 or 2, and MF.lt.0,
 C          LWM = NEQ           if MITER = 3,
 C          LWM = (3*ML+2*MU+2)*NEQ     if MITER = 4 or 5, and MF.gt.0,
 C          LWM = (2*ML+MU+1)*NEQ       if MITER = 4 or 5, and MF.lt.0.
@@ -560,14 +560,14 @@ C          (See the MF description for METH and MITER.)
 C          Thus if MAXORD has its default value and NEQ is constant,
 C          this length is:
 C             15*NEQ                    for MF = 10,
-C             15*NEQ + 2*NEQ**2         for MF = 11 or 12,
-C             15*NEQ + NEQ**2           for MF = -11 or -12,
+C             15*NEQ + 2*NEQ*NEQ         for MF = 11 or 12,
+C             15*NEQ + NEQ*NEQ           for MF = -11 or -12,
 C             16*NEQ                    for MF = 13,
 C             17*NEQ + (3*ML+2*MU)*NEQ  for MF = 14 or 15,
 C             16*NEQ + (2*ML+MU)*NEQ    for MF = -14 or -15,
 C              8*NEQ                    for MF = 20,
-C              8*NEQ + 2*NEQ**2         for MF = 21 or 22,
-C              8*NEQ + NEQ**2           for MF = -21 or -22,
+C              8*NEQ + 2*NEQ*NEQ         for MF = 21 or 22,
+C              8*NEQ + NEQ*NEQ           for MF = -21 or -22,
 C              9*NEQ                    for MF = 23,
 C             10*NEQ + (3*ML+2*MU)*NEQ  for MF = 24 or 25.
 C              9*NEQ + (2*ML+MU)*NEQ    for MF = -24 or -25.
@@ -1719,7 +1719,7 @@ C first step, when the user has not supplied a value for this.
 C
 C First we check that TOUT - T0 differs significantly from zero.  Then
 C an iteration is done to approximate the initial second derivative
-C and this is used to define h from w.r.m.s.norm(h**2 * yddot / 2) = 1.
+C and this is used to define h from w.r.m.s.norm(h*h * yddot / 2) = 1.
 C A bias factor of 1/2 is applied to the resulting h.
 C The sign of H0 is inferred from the initial values of TOUT and T0.
 C

@@ -92,7 +92,7 @@ def _parse_size(size_str):
                 'b': 1.0,
                 'k': 1e3, 'M': 1e6, 'G': 1e9, 'T': 1e12,
                 'kb': 1e3, 'Mb': 1e6, 'Gb': 1e9, 'Tb': 1e12,
-                'kib': 1024.0, 'Mib': 1024.0**2, 'Gib': 1024.0**3, 'Tib': 1024.0**4}
+                'kib': 1024.0, 'Mib': 1024.0*0, 'Gib': 1024.0*0*0, 'Tib': 1024.0*0*0*0}
     m = re.match(r'^\s*(\d+)\s*({0})\s*$'.format('|'.join(suffixes.keys())),
                  size_str,
                  re.I)

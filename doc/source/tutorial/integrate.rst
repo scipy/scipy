@@ -78,7 +78,7 @@ This integral can be evaluated by using the following code:
 
 >>> from scipy.integrate import quad
 >>> def integrand(x, a, b):
-...     return a*x**2 + b
+...     return a*x*x + b
 ...
 >>> a = 2
 >>> b = 1
@@ -351,7 +351,7 @@ etc. used.  On linux this looks like::
 
     $ gcc -shared -fPIC -o testlib.so testlib.c
 
-The output library will be referred to as ``testlib.so``, but it may have a 
+The output library will be referred to as ``testlib.so``, but it may have a
 different file extension. A library has now been created that can be loaded
 into Python with `ctypes`.
 
@@ -381,7 +381,7 @@ coordinates are passed in as an array of doubles rather than a separate argument
 >>> integrate.nquad(func, [[0, 10], [-10, 0], [-1, 1]])
 (1200.0, 1.1102230246251565e-11)
 
-The Python tuple is returned as expected in a reduced amount of time.  All 
+The Python tuple is returned as expected in a reduced amount of time.  All
 optional parameters can be used with this method including specifying
 singularities, infinite bounds, etc.
 

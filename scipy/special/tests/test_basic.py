@@ -2155,16 +2155,16 @@ class TestHyper(object):
 
     def test_hyp2f1(self):
         # a collection of special cases taken from AMS 55
-        values = [[0.5, 1, 1.5, 0.2**2, 0.5/0.2*log((1+0.2)/(1-0.2))],
-                  [0.5, 1, 1.5, -0.2**2, 1./0.2*arctan(0.2)],
+        values = [[0.5, 1, 1.5, 0.2*2, 0.5/0.2*log((1+0.2)/(1-0.2))],
+                  [0.5, 1, 1.5, -0.2*2, 1./0.2*arctan(0.2)],
                   [1, 1, 2, 0.2, -1/0.2*log(1-0.2)],
-                  [3, 3.5, 1.5, 0.2**2,
+                  [3, 3.5, 1.5, 0.2*2,
                       0.5/0.2/(-5)*((1+0.2)**(-5)-(1-0.2)**(-5))],
                   [-3, 3, 0.5, sin(0.2)**2, cos(2*3*0.2)],
                   [3, 4, 8, 1, special.gamma(8)*special.gamma(8-4-3)/special.gamma(8-3)/special.gamma(8-4)],
-                  [3, 2, 3-2+1, -1, 1./2**3*sqrt(pi) *
+                  [3, 2, 3-2+1, -1, 1./2*2*2*sqrt(pi) *
                       special.gamma(1+3-2)/special.gamma(1+0.5*3-2)/special.gamma(0.5+0.5*3)],
-                  [5, 2, 5-2+1, -1, 1./2**5*sqrt(pi) *
+                  [5, 2, 5-2+1, -1, 1./2*2*2*2*2*sqrt(pi) *
                       special.gamma(1+5-2)/special.gamma(1+0.5*5-2)/special.gamma(0.5+0.5*5)],
                   [4, 0.5+4, 1.5-2*4, -1./3, (8./9)**(-2*4)*special.gamma(4./3) *
                       special.gamma(1.5-2*4)/special.gamma(3./2)/special.gamma(4./3-2*4)],
@@ -2441,7 +2441,7 @@ class TestBessel(object):
     def test_kvp_n2(self):
         v = 3.
         z = 2.2
-        xc = (z**2+v**2-v)/z**2 * special.kv(v,z) + special.kv(v+1,z)/z
+        xc = (z*z+v*v-v)/z*z * special.kv(v,z) + special.kv(v+1,z)/z
         x = special.kvp(v, z, n=2)
         assert_almost_equal(xc, x, 10)
 
@@ -3418,7 +3418,7 @@ def test_pseudo_huber():
         elif (not delta) or (not r):
             return 0
         else:
-            return delta**2 * (np.sqrt(1 + (r/delta)**2) - 1)
+            return delta*delta * (np.sqrt(1 + (r/delta)**2) - 1)
 
     z = np.array(np.random.randn(10, 2).tolist() + [[0, 0.5], [0.5, 0]])
     w = np.vectorize(xfunc, otypes=[np.float64])(z[:,0], z[:,1])

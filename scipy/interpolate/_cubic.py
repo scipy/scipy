@@ -494,15 +494,15 @@ class CubicSpline(PPoly):
     >>> plt.legend(loc='center')
     >>> plt.show()
 
-    The third example is the interpolation of a polynomial y = x**3 on the
+    The third example is the interpolation of a polynomial y = x*x*x on the
     interval 0 <= x<= 1. A cubic spline can represent this function exactly.
     To achieve that we need to specify values and first derivatives at
-    endpoints of the interval. Note that y' = 3 * x**2 and thus y'(0) = 0 and
+    endpoints of the interval. Note that y' = 3 * x*x and thus y'(0) = 0 and
     y'(1) = 3.
 
     >>> cs = CubicSpline([0, 1], [0, 1], bc_type=((1, 0), (1, 3)))
     >>> x = np.linspace(0, 1)
-    >>> np.allclose(x**3, cs(x))
+    >>> np.allclose(x*x*x, cs(x))
     True
 
     References

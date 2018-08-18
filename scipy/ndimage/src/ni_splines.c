@@ -65,7 +65,7 @@ get_spline_interpolation_weights(double x, int order, double *weights)
              *
              *   y += 1.0  # y = 2.0 + x, 1.5 <= y < 2.5
              *   yy = 2.5 - y  # yy = 0.5 - x
-             *  weights[0] = yy**4 / 24.0
+             *  weights[0] = yy*yy*yy*yy / 24.0
              *
              * So we set y = 0.5 - x directly instead.
              */
@@ -92,7 +92,7 @@ get_spline_interpolation_weights(double x, int order, double *weights)
              *
              *   y += 1.0  # y = 2.0 + x, 2 <= y < 3
              *   yy = 3.0 - y  # yy = 1.0 - x
-             *   weights[0] = yy**5 / 120.0
+             *   weights[0] = yy*yy*yy*yy*yy / 120.0
              *
              * So we set y = 2.0 - y = 1.0 - x directly instead.
              */

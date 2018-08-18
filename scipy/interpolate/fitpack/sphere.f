@@ -135,13 +135,13 @@ c  lwrk1 : integer. on entry lwrk1 must specify the actual dimension of
 c          the array wrk1 as declared in the calling (sub)program.
 c          lwrk1 must not be too small. let
 c            u = ntest-7, v = npest-7, then
-c          lwrk1 >= 185+52*v+10*u+14*u*v+8*(u-1)*v**2+8*m
+c          lwrk1 >= 185+52*v+10*u+14*u*v+8*(u-1)*v*v+8*m
 c  wrk2  : real array of dimension (lwrk2). used as workspace, but
 c          only in the case a rank deficient system is encountered.
 c  lwrk2 : integer. on entry lwrk2 must specify the actual dimension of
 c          the array wrk2 as declared in the calling (sub)program.
 c          lwrk2 > 0 . a save upper bound  for lwrk2 = 48+21*v+7*u*v+
-c          4*(u-1)*v**2 where u,v are as above. if there are enough data
+c          4*(u-1)*v*v where u,v are as above. if there are enough data
 c          points, scattered uniformly over the approximation domain
 c          and if the smoothing factor s is not too small, there is a
 c          good chance that this extra workspace is not needed. a lot
@@ -209,7 +209,7 @@ c   ier=10 : error. on entry, the input data are controlled on validity
 c            the following restrictions must be satisfied.
 c            -1<=iopt<=1,  m>=2, ntest>=8 ,npest >=8, 0<eps<1,
 c            0<=teta(i)<=pi, 0<=phi(i)<=2*pi, w(i)>0, i=1,...,m
-c            lwrk1 >= 185+52*v+10*u+14*u*v+8*(u-1)*v**2+8*m
+c            lwrk1 >= 185+52*v+10*u+14*u*v+8*(u-1)*v*v+8*m
 c            kwrk >= m+(ntest-7)*(npest-7)
 c            if iopt=-1: 8<=nt<=ntest , 9<=np<=npest
 c                        0<tt(5)<tt(6)<...<tt(nt-4)<pi
@@ -348,7 +348,7 @@ c  are invalid,control is immediately repassed to the calling program.
       ib3 = ib1+3
       if(ncof.gt.ib1) ib1 = ncof
       if(ncof.gt.ib3) ib3 = ncof
-      lwest = 185+52*npp+10*ntt+14*ntt*npp+8*(m+(ntt-1)*npp**2)
+      lwest = 185+52*npp+10*ntt+14*ntt*npp+8*(m+(ntt-1)*npp*npp)
       kwest = m+nreg
       if(lwrk1.lt.lwest .or. kwrk.lt.kwest) go to 80
       if(iopt.gt.0) go to 60

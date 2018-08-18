@@ -269,8 +269,8 @@ def mjci(data, prob=[0.25,0.5,0.75], axis=None):
         for (i,m) in enumerate(prob):
             W = betacdf(x,m-1,n-m) - betacdf(y,m-1,n-m)
             C1 = np.dot(W,data)
-            C2 = np.dot(W,data**2)
-            mj[i] = np.sqrt(C2 - C1**2)
+            C2 = np.dot(W,data*data)
+            mj[i] = np.sqrt(C2 - C1*C1)
         return mj
 
     data = ma.array(data, copy=False)
@@ -400,7 +400,7 @@ def compare_medians_ms(group_1, group_2, axis=None):
     (med_1, med_2) = (ma.median(group_1,axis=axis), ma.median(group_2,axis=axis))
     (std_1, std_2) = (mstats.stde_median(group_1, axis=axis),
                       mstats.stde_median(group_2, axis=axis))
-    W = np.abs(med_1 - med_2) / ma.sqrt(std_1**2 + std_2**2)
+    W = np.abs(med_1 - med_2) / ma.sqrt(std_1*std_1 + std_2*std_2)
     return 1 - norm.cdf(W)
 
 

@@ -11,7 +11,7 @@ def f1(x):
 
 
 def f2(x):
-    return x**2 - 1
+    return x*x - 1
 
 
 def f3(x):
@@ -42,7 +42,7 @@ def f6(x):
 
 
 description = """
-f2 is a symmetric parabola, x**2 - 1
+f2 is a symmetric parabola, x*x - 1
 f3 is a quartic polynomial with large hump in interval
 f4 is step function with a discontinuity at 1
 f5 is a hyperbola with vertical asymptote at 1

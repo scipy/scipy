@@ -45,7 +45,7 @@ def _minimize_trustregion_exact(fun, x0, args=(), jac=None, hess=None,
 
 def estimate_smallest_singular_value(U):
     """Given upper triangular matrix ``U`` estimate the smallest singular
-    value and the correspondent right singular vector in O(n**2) operations.
+    value and the correspondent right singular vector in O(n*n) operations.
 
     Parameters
     ----------
@@ -346,14 +346,14 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
                     quadratic_term = np.dot(p, np.dot(H, p))
 
                     # Check stop criteria
-                    relative_error = (step_len**2 * s_min**2) / (quadratic_term + lambda_current*tr_radius**2)
+                    relative_error = (step_len*step_len * s_min*s_min) / (quadratic_term + lambda_current*tr_radius*tr_radius)
                     if relative_error <= self.k_hard:
                         p += step_len * z_min
                         break
 
                     # Update uncertanty bounds
                     lambda_ub = lambda_current
-                    lambda_lb = max(lambda_lb, lambda_current - s_min**2)
+                    lambda_lb = max(lambda_lb, lambda_current - s_min*s_min)
 
                     # Compute Cholesky factorization
                     H = self.hess + lambda_new*np.eye(n)
@@ -400,13 +400,13 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
                 step_len = tr_radius
 
                 # Check stop criteria
-                if step_len**2 * s_min**2 <= self.k_hard * lambda_current * tr_radius**2:
+                if step_len*step_len * s_min*s_min <= self.k_hard * lambda_current * tr_radius*tr_radius:
                     p = step_len * z_min
                     break
 
                 # Update uncertanty bounds
                 lambda_ub = lambda_current
-                lambda_lb = max(lambda_lb, lambda_current - s_min**2)
+                lambda_lb = max(lambda_lb, lambda_current - s_min*s_min)
 
                 # Update damping factor
                 lambda_current = max(np.sqrt(lambda_lb * lambda_ub),
@@ -419,7 +419,7 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
                 v_norm = norm(v)
 
                 # Update uncertanty interval
-                lambda_lb = max(lambda_lb, lambda_current + delta/v_norm**2)
+                lambda_lb = max(lambda_lb, lambda_current + delta/v_norm*v_norm)
 
                 # Update damping factor
                 lambda_current = max(np.sqrt(lambda_lb * lambda_ub),

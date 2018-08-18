@@ -347,14 +347,14 @@ def least_squares(
             * 'arctan' : ``rho(z) = arctan(z)``. Limits a maximum loss on
               a single residual, has properties similar to 'cauchy'.
 
-        If callable, it must take a 1-d ndarray ``z=f**2`` and return an
+        If callable, it must take a 1-d ndarray ``z=f*f`` and return an
         array_like with shape (3, m) where row 0 contains function values,
         row 1 contains first derivatives and row 2 contains second
         derivatives. Method 'lm' supports only 'linear' loss.
     f_scale : float, optional
         Value of soft margin between inlier and outlier residuals, default
         is 1.0. The loss function is evaluated as follows
-        ``rho_(f**2) = C**2 * rho(f**2 / C**2)``, where ``C`` is `f_scale`,
+        ``rho_(f*f) = C*C * rho(f*f / C*C)``, where ``C`` is `f_scale`,
         and ``rho`` is determined by `loss` parameter. This parameter has
         no effect with ``loss='linear'``, but for other `loss` values it is
         of crucial importance.

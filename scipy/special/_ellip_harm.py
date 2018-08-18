@@ -22,9 +22,9 @@ def ellip_harm(h2, k2, n, p, s, signm=1, signn=1):
     Parameters
     ----------
     h2 : float
-        ``h**2``
+        ``h*h``
     k2 : float
-        ``k**2``; should be larger than ``h**2``
+        ``k*k``; should be larger than ``h*h``
     n : int
         Degree
     s : float
@@ -84,11 +84,11 @@ def ellip_harm(h2, k2, n, p, s, signm=1, signn=1):
 
     >>> from scipy.interpolate import UnivariateSpline
     >>> def eigenvalue(f, df, ddf):
-    ...     r = ((s**2 - h**2)*(s**2 - k**2)*ddf + s*(2*s**2 - h**2 - k**2)*df - n*(n+1)*s**2*f)/f
+    ...     r = ((s*s - h*h)*(s*s - k*k)*ddf + s*(2*s*s - h*h - k*k)*df - n*(n+1)*s*s*f)/f
     ...     return -r.mean(), r.std()
     >>> s = np.linspace(0.1, 10, 200)
     >>> k, h, n, p = 8.0, 2.2, 3, 2
-    >>> E = ellip_harm(h**2, k**2, n, p, s)
+    >>> E = ellip_harm(h*h, k*k, n, p, s)
     >>> E_spl = UnivariateSpline(s, E)
     >>> a, a_err = eigenvalue(E_spl(s), E_spl(s,1), E_spl(s,2))
     >>> a, a_err
@@ -116,9 +116,9 @@ def ellip_harm_2(h2, k2, n, p, s):
     Parameters
     ----------
     h2 : float
-        ``h**2``
+        ``h*h``
     k2 : float
-        ``k**2``; should be larger than ``h**2``
+        ``k*k``; should be larger than ``h*h``
     n : int
         Degree.
     p : int
@@ -177,9 +177,9 @@ def ellip_normal(h2, k2, n, p):
     Parameters
     ----------
     h2 : float
-        ``h**2``
+        ``h*h``
     k2 : float
-        ``k**2``; should be larger than ``h**2``
+        ``k*k``; should be larger than ``h*h``
     n : int
         Degree.
     p : int

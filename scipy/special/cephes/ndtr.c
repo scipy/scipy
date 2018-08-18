@@ -63,7 +63,7 @@
  *
  * The integral is
  *
- *                           x 
+ *                           x
  *                            -
  *                 2         | |          2
  *   erf(x)  =  --------     |    exp( - t  ) dt.
@@ -71,7 +71,7 @@
  *                          -
  *                           0
  *
- * For 0 <= |x| < 1, erf(x) = x * P4(x**2)/Q5(x**2); otherwise
+ * For 0 <= |x| < 1, erf(x) = x * P4(x*x)/Q5(x*x); otherwise
  * erf(x) = 1 - erfc(x).
  *
  *
@@ -102,7 +102,7 @@
  *
  *  1 - erf(x) =
  *
- *                           inf. 
+ *                           inf.
  *                             -
  *                  2         | |          2
  *   erfc(x)  =  --------     |    exp( - t  ) dt
@@ -293,20 +293,20 @@ double erf(double x)
 
 }
 
-/* 
+/*
  * double log_ndtr(double a)
- * 
+ *
  * For a > -20, use the existing ndtr technique and take a log.
- * for a <= -20, we use the Taylor series approximation of erf to compute 
+ * for a <= -20, we use the Taylor series approximation of erf to compute
  * the log CDF directly. The Taylor series consists of two parts which we will name "left"
  * and "right" accordingly.  The right part involves a summation which we compute until the
  * difference in terms falls below the machine-specific EPSILON.
- * 
- * \Phi(z) &=& 
- *   \frac{e^{-z^2/2}}{-z\sqrt{2\pi}}  * [1 +  \sum_{n=1}^{N-1}  (-1)^n \frac{(2n-1)!!}{(z^2)^n}] 
+ *
+ * \Phi(z) &=&
+ *   \frac{e^{-z^2/2}}{-z\sqrt{2\pi}}  * [1 +  \sum_{n=1}^{N-1}  (-1)^n \frac{(2n-1)!!}{(z^2)^n}]
  *   + O(z^{-2N+2})
  *   = [\mbox{LHS}] * [\mbox{RHS}] + \mbox{error}.
- *   
+ *
  */
 
 double log_ndtr(double a)

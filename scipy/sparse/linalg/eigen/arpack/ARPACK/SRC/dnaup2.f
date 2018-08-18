@@ -218,12 +218,12 @@ c
       character  wprime*2
       logical    cnorm , getv0, initv, update, ushift
       integer    ierr  , iter , j    , kplusp, msglvl, nconv,
-     &           nevbef, nev0 , np0  , nptemp, numcnv
+     &           nevbef, nev0 , np0  , nptemp, numcnv, kplusp2
       Double precision
      &           rnorm , temp , eps23
       save       cnorm , getv0, initv, update, ushift,
      &           rnorm , iter , eps23, kplusp, msglvl, nconv ,
-     &           nevbef, nev0 , np0  , numcnv
+     &           nevbef, nev0 , np0  , numcnv, kplusp2
 c
 c     %-----------------------%
 c     | Local array arguments |
@@ -281,9 +281,10 @@ c        | iter is the counter on the current  |
 c        |      iteration step.                |
 c        %-------------------------------------%
 c
-         kplusp = nev + np
-         nconv  = 0
-         iter   = 0
+         kplusp  = nev + np
+         kplusp2 = kplusp*kplusp
+         nconv   = 0
+         iter    = 0
 c
 c        %---------------------------------------%
 c        | Set flags for computing the first NEV |
@@ -457,9 +458,9 @@ c        | Make a copy of eigenvalues and corresponding error |
 c        | bounds obtained from dneigh .                       |
 c        %----------------------------------------------------%
 c
-         call dcopy (kplusp, ritzr, 1, workl(kplusp**2+1), 1)
-         call dcopy (kplusp, ritzi, 1, workl(kplusp**2+kplusp+1), 1)
-         call dcopy (kplusp, bounds, 1, workl(kplusp**2+2*kplusp+1), 1)
+         call dcopy (kplusp, ritzr, 1, workl(kplusp2+1), 1)
+         call dcopy (kplusp, ritzi, 1, workl(kplusp2+kplusp+1), 1)
+         call dcopy (kplusp, bounds, 1, workl(kplusp2+2*kplusp+1), 1)
 c
 c        %---------------------------------------------------%
 c        | Select the wanted Ritz values and their bounds    |
@@ -527,12 +528,12 @@ c
      &        (np .eq. 0) ) then
 c
             if (msglvl .gt. 4) then
-               call dvout (logfil, kplusp, workl(kplusp**2+1), ndigit,
+               call dvout (logfil, kplusp, workl(kplusp2+1), ndigit,
      &             '_naup2: Real part of the eig computed by _neigh:')
-               call dvout (logfil, kplusp, workl(kplusp**2+kplusp+1),
+               call dvout (logfil, kplusp, workl(kplusp2+kplusp+1),
      &                     ndigit,
      &             '_naup2: Imag part of the eig computed by _neigh:')
-               call dvout (logfil, kplusp, workl(kplusp**2+kplusp*2+1),
+               call dvout (logfil, kplusp, workl(kplusp2+kplusp*2+1),
      &                     ndigit,
      &             '_naup2: Ritz eistmates computed by _neigh:')
             end if

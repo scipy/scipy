@@ -17,8 +17,8 @@ c     and overflows do not occur in the computation of the unscaled
 c     sum of squares for the intermediate components.
 c     the definitions of small, intermediate and large components
 c     depend on two constants, rdwarf and rgiant. the main
-c     restrictions on these constants are that rdwarf**2 not
-c     underflow and rgiant**2 not overflow. the constants
+c     restrictions on these constants are that rdwarf*rdwarf not
+c     underflow and rgiant*rgiant not overflow. the constants
 c     given here are suitable for every known computer.
 c
 c     the function statement is

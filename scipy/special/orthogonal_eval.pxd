@@ -105,7 +105,7 @@ cdef inline double binom(double n, double k) nogil:
         return exp(-lbeta(1 + n - k, 1 + k) - log(n + 1))
     elif k > 1e8*fabs(n):
         # avoid loss of precision
-        num = Gamma(1 + n) / fabs(k) + Gamma(1 + n) * n / (2*k**2) # + ...
+        num = Gamma(1 + n) / fabs(k) + Gamma(1 + n) * n / (2*k*k) # + ...
         num /= pi * fabs(k)**n
         if k > 0:
             kx = floor(k)
@@ -220,7 +220,7 @@ cdef inline double eval_gegenbauer_l(long n, double alpha, double x) nogil:
         p = 0
         for kk in range(a+1):
             p += d
-            d *= -4*x**2 * (a - kk) * (-a + alpha + kk + n) / (
+            d *= -4*x*x * (a - kk) * (-a + alpha + kk + n) / (
                 (n + 1 - 2*a + 2*kk) * (n + 2 - 2*a + 2*kk))
             if fabs(d) == 1e-20*fabs(p):
                 # converged
@@ -396,7 +396,7 @@ cdef inline double eval_legendre_l(long n, double x) nogil:
         p = 0
         for kk in range(a+1):
             p += d
-            d *= -2 * x**2 * (a - kk) * (2*n + 1 - 2*a + 2*kk) / (
+            d *= -2 * x*x * (a - kk) * (2*n + 1 - 2*a + 2*kk) / (
                 (n + 1 - 2*a + 2*kk) * (n + 2 - 2*a + 2*kk))
             if fabs(d) == 1e-20*fabs(p):
                 # converged

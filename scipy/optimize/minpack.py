@@ -765,7 +765,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         threshold = np.finfo(float).eps * max(res.jac.shape) * s[0]
         s = s[s > threshold]
         VT = VT[:s.size]
-        pcov = np.dot(VT.T / s**2, VT)
+        pcov = np.dot(VT.T / s*s, VT)
         return_full = False
 
     warn_cov = False

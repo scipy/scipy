@@ -20,14 +20,14 @@ c       are all nonnegative. This routine uses a randomized algorithm.
 c
 c       input:
 c       m -- number of rows in a
-c       n -- number of columns in a 
+c       n -- number of columns in a
 c       a -- matrix to be decomposed; the present routine does not
 c            alter a
 c       krank -- rank of the SVD being constructed
 c       w -- initialization array that routine idzr_aidi
 c            has constructed (for use in the present routine,
 c            w must be at least
-c            (2*krank+22)*m+(6*krank+21)*n+8*krank**2+10*krank+90
+c            (2*krank+22)*m+(6*krank+21)*n+8*krank*krank+10*krank+90
 c            complex*16 elements long)
 c
 c       output:
@@ -96,7 +96,7 @@ c
         complex*16 a(m,n),u(m,krank),v(n,krank),
      1             proj(krank,n-krank),col(m*krank),
      2             winit((2*krank+17)*n+21*m+80),
-     3             work((krank+1)*(m+3*n+10)+9*krank**2)
+     3             work((krank+1)*(m+3*n+10)+9*krank*krank)
 c
 c
 c       ID a.

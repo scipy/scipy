@@ -27,7 +27,7 @@ c       lw -- maximum usable length (in complex*16 elements)
 c             of the array w
 c       eps -- precision of the desired approximation
 c       m -- number of rows in a
-c       n -- number of columns in a 
+c       n -- number of columns in a
 c       a -- matrix to be approximated; the present routine does not
 c            alter a
 c       winit -- initialization array that has been constructed
@@ -43,7 +43,7 @@ c       is -- index in w of the first entry of the array
 c             of singular values of a
 c       w -- array containing the singular values and singular vectors
 c            of a; w doubles as a work array, and so must be at least
-c            max( (krank+1)*(3*m+5*n+11)+8*krank**2, (2*n+1)*(n2+1) )
+c            max( (krank+1)*(3*m+5*n+11)+8*krank*krank, (2*n+1)*(n2+1) )
 c            complex*16 elements long, where n2 is the greatest integer
 c            less than or equal to m, such that n2 is
 c            a positive integer power of two; krank is the rank output
@@ -163,7 +163,7 @@ c
         real*8 s(krank)
         complex*16 a(m,n),u(m,krank),v(n,krank),
      1             proj(krank,n-krank),col(m,krank),
-     2             work((krank+1)*(m+3*n+10)+9*krank**2)
+     2             work((krank+1)*(m+3*n+10)+9*krank*krank)
 c
 c
 c       Collect together the columns of a indexed by list into col.

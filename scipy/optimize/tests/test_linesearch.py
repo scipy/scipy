@@ -57,8 +57,8 @@ class TestLineSearch(object):
     # -- scalar functions; must have dphi(0.) < 0
     def _scalar_func_1(self, s):
         self.fcount += 1
-        p = -s - s**3 + s**4
-        dp = -1 - 3*s**2 + 4*s**3
+        p = -s - s*s*s + s**4
+        dp = -1 - 3*s*s + 4*s**3
         return p, dp
 
     def _scalar_func_2(self, s):
