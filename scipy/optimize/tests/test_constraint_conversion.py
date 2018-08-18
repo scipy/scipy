@@ -62,8 +62,8 @@ class TestOldToNew(object):
 class TestNewToOld(object):
     method = 'slsqp'
     elec = Elec(n_electrons=2)
-    elec.x_opt = np.array([-0.58438468,  0.58438466,  0.73597047,
-                           -0.73597044,  0.34180668, -0.34180667])
+    elec.x_opt = np.array([-0.58438468, 0.58438466, 0.73597047,
+                           -0.73597044, 0.34180668, -0.34180667])
     brock = BoundedRosenbrock()
     brock.x_opt = [0, 0]
     list_of_problems = [Maratos(),

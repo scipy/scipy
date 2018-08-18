@@ -323,6 +323,11 @@ def new_constraint_to_old(con, x0):
     lb = lb * np.ones(m)
     ub = ub * np.ones(m)  # phew, now everything is an array of the right size
 
+    # yes, I know I can get rid of some of the stuff above if I use
+    # PreparedConstraint. I will use it to get lb, ub etc... once its fun
+    # is working
+    pcon = PreparedConstraint(con, x0)
+
     i_eq = lb == ub
     i_bound_below = np.logical_xor(lb != -np.inf, i_eq)
     i_bound_above = np.logical_xor(ub != np.inf, i_eq)
@@ -336,6 +341,8 @@ def new_constraint_to_old(con, x0):
     if np.any(i_eq):
         def f_eq(x):
             y = np.array(fun(x)).flatten()
+            y2 = pcon.fun.fun(x).flatten()
+            print(np.equal(y, y2))
             return y[i_eq] - lb[i_eq]
         ceq = [{"type": "eq", "fun": f_eq}]
 
