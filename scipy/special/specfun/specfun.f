@@ -6230,7 +6230,7 @@ C
            CALL GAMMA2(1.0D0+A/2.0D0-B,G2)
            CALL GAMMA2(0.5D0+0.5D0*A,G3)
            ZHF=G0*G1/(G2*G3)
-        ELSE IF (L7.AND.((A.EQ.C).OR.(B.EQ.C))) THEN
+        ELSE IF ((L3.AND.(A.EQ.C)).OR.(L4.AND.(B.EQ.C))) THEN
            IF (A.EQ.C) A=BB
            NM=-INT(C+EPS*DSIGN(1.0D0,C))
            ZHF=(1.0D0,0.0D0)
