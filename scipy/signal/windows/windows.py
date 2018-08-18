@@ -1732,7 +1732,7 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False):
     norm : {2, 'approximate', 'subsample'} | None, optional
         If 'approximate' or 'subsample', then the windows are normalized by the
         maximum, and a correction scale-factor for even-length windows
-        is applied either using ``M**2/(M**2+NW)`` ("approximate") or
+        is applied either using ``M*M/(M*M+NW)`` ("approximate") or
         a FFT-based subsample shift ("subsample"), see Notes for details.
         If None, then "approximate" is used when ``Kmax=None`` and 2 otherwise
         (which uses the l2 norm).
@@ -1756,7 +1756,7 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False):
     The default normalization for ``Kmax=None``, i.e. window-generation mode,
     simply using the l-infinity norm would create a window with two unity
     values, which creates slight normalization differences between even and odd
-    orders. The approximate correction of ``M**2/float(M**2+NW)`` for even
+    orders. The approximate correction of ``M*M/float(M*M+NW)`` for even
     sample numbers is used to counteract this effect (see Examples below).
 
     For very long signals (e.g., 1e6 elements), it can be useful to compute
@@ -1827,7 +1827,7 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False):
     Using a standard :math:`l_{\\infty}` norm would produce two unity values
     for even `M`, but only one unity value for odd `M`. This produces uneven
     window power that can be counteracted by the approximate correction
-    ``M**2/float(M**2+NW)``, which can be selected by using
+    ``M*M/float(M*M+NW)``, which can be selected by using
     ``norm='approximate'`` (which is the same as ``norm=None`` when
     ``Kmax=None``, as is the case here). Alternatively, the slower
     ``norm='subsample'`` can be used, which uses subsample shifting in the
@@ -1950,7 +1950,7 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False):
         windows /= windows.max()
         if M % 2 == 0:
             if norm == 'approximate':
-                correction = M**2 / float(M**2 + NW)
+                correction = M*M / float(M*M + NW)
             else:
                 s = np.fft.rfft(windows[0])
                 shift = -(1 - 1./M) * np.arange(1, M//2 + 1)

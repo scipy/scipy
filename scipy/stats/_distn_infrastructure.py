@@ -390,7 +390,7 @@ def _moment_from_stats(n, mu, mu2, g1, g2, moment_func, args):
         if g1 is None or g2 is None or mu2 is None or mu is None:
             val = moment_func(4, *args)
         else:
-            mu4 = (g2+3.0)*(mu2**2.0)  # 4th central moment
+            mu4 = (g2+3.0)*(mu2*mu2.0)  # 4th central moment
             mu3 = g1*np.power(mu2, 1.5)  # 3rd central moment
             val = mu4+4*mu*mu3+6*mu*mu*mu2+mu*mu*mu*mu
     else:
@@ -412,13 +412,13 @@ def _skew(data):
 
 def _kurtosis(data):
     """
-    kurtosis is fourth central moment / variance**2 - 3
+    kurtosis is fourth central moment / variance*variance - 3
     """
     data = np.ravel(data)
     mu = data.mean()
     m2 = ((data - mu)**2).mean()
     m4 = ((data - mu)**4).mean()
-    return m4 / m2**2 - 3
+    return m4 / m2*m2 - 3
 
 
 # Frozen RV class
@@ -563,7 +563,7 @@ def _parse_args_stats(self, %(shape_arg_str)s %(locscale_in)s, moments='mv'):
 # The function name ncx2 is an abbreviation for noncentral chi squared.
 
 def _ncx2_log_pdf(x, df, nc):
-    # We use (xs**2 + ns**2)/2 = (xs - ns)**2/2  + xs*ns, and include the
+    # We use (xs*xs + ns*ns)/2 = (xs - ns)**2/2  + xs*ns, and include the
     # factor of exp(-xs*ns) into the ive function to improve numerical
     # stability at large values of xs. See also `rice.pdf`.
     df2 = df/2.0 - 1.0
@@ -1069,7 +1069,7 @@ class rv_generic(object):
                             mu3 = mu3p - 3 * mu * mu2 - mu**3
                     with np.errstate(invalid='ignore'):
                         mu4 = mu4p - 4 * mu * mu3 - 6 * mu * mu * mu2 - mu**4
-                        g2 = mu4 / mu2**2.0 - 3.0
+                        g2 = mu4 / mu2*mu2.0 - 3.0
                 out0 = default.copy()
                 place(out0, cond, g2)
                 output.append(out0)
@@ -1445,7 +1445,7 @@ class rv_continuous(rv_generic):
     rv = generic(<shape(s)>, loc=0, scale=1)
         `rv_frozen` object with the same methods but holding the given shape,
         location, and scale fixed
-        
+
     **Statistics**
 
     Statistics are computed using numerical integration by default.
@@ -1470,7 +1470,7 @@ class rv_continuous(rv_generic):
     >>> class gaussian_gen(rv_continuous):
     ...     "Gaussian distribution"
     ...     def _pdf(self, x):
-    ...         return np.exp(-x**2 / 2.) / np.sqrt(2.0 * np.pi)
+    ...         return np.exp(-x*x / 2.) / np.sqrt(2.0 * np.pi)
     >>> gaussian = gaussian_gen(name='gaussian')
 
     ``scipy.stats`` distributions are *instances*, so here we subclass

@@ -873,7 +873,7 @@ def test_slerp():
     # theta1: 0 -> 0.25, theta3 : 0.5 -> 1
     # Use double angle formula for double the time difference
     cos_theta3 = np.sum(interp_quats[1] * interp_quats[3])
-    assert_allclose(cos_theta3, 2 * (cos_theta1**2) - 1)
+    assert_allclose(cos_theta3, 2 * (cos_theta1*cos_theta1) - 1)
 
     # Miscellaneous checks
     assert_equal(len(interp_rots), len(times))

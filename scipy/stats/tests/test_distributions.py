@@ -327,9 +327,9 @@ class TestNormInvGauss(object):
 
     def test_stats(self):
         a, b = 1, 0.5
-        gamma = np.sqrt(a**2 - b**2)
-        v_stats = (b / gamma, a**2 / gamma**3, 3.0 * b / (a * np.sqrt(gamma)),
-                   3.0 * (1 + 4 * b**2 / a**2) / gamma)
+        gamma = np.sqrt(a*a - b*b)
+        v_stats = (b / gamma, a*a / gamma*gamma*gamma, 3.0 * b / (a * np.sqrt(gamma)),
+                   3.0 * (1 + 4 * b*b / a*a) / gamma)
         assert_equal(v_stats, stats.norminvgauss.stats(a, b, moments='mvsk'))
 
     def test_ppf(self):
@@ -712,7 +712,7 @@ class TestPareto(object):
             assert_allclose(m, 4.5 / 3.5)
             assert_allclose(v, 4.5 / (3.5*3.5*2.5))
             assert_allclose(s, (2*5.5/1.5) * np.sqrt(2.5/4.5))
-            assert_allclose(k, 6*(4.5**3 + 4.5**2 - 6*4.5 - 2)/(4.5*1.5*0.5))
+            assert_allclose(k, 6*(4.5*5*5 + 4.5*5 - 6*4.5 - 2)/(4.5*1.5*0.5))
 
     def test_sf(self):
         x = 1e9
@@ -931,7 +931,7 @@ class TestPoisson(object):
         # Basic case
         ln2 = np.log(2)
         vals = stats.poisson.pmf([0, 1, 2], ln2)
-        expected = [0.5, ln2/2, ln2**2/4]
+        expected = [0.5, ln2/2, ln2*ln2/4]
         assert_allclose(vals, expected)
 
     def test_mu0(self):
@@ -1014,9 +1014,9 @@ class TestDLaplace(object):
         N = 37
         xx = np.arange(-N, N+1)
         pp = dl.pmf(xx)
-        m2, m4 = np.sum(pp*xx**2), np.sum(pp*xx**4)
+        m2, m4 = np.sum(pp*xx*xx), np.sum(pp*xx*xx*xx*xx)
         assert_equal((m, s), (0, 0))
-        assert_allclose((v, k), (m2, m4/m2**2 - 3.), atol=1e-14, rtol=1e-8)
+        assert_allclose((v, k), (m2, m4/m2*m2 - 3.), atol=1e-14, rtol=1e-8)
 
     def test_stats2(self):
         a = np.log(2.)
@@ -1468,7 +1468,7 @@ class TestGumbelL(object):
         y = stats.gumbel_l.sf(x)
         xx = stats.gumbel_l.isf(y)
         assert_allclose(x, xx)
-        
+
 class TestLevyStable(object):
 
     def test_fit(self):
@@ -1484,7 +1484,7 @@ class TestLevyStable(object):
         assert_almost_equal(beta1, -.22, 2)
         assert_almost_equal(scale1, 0.01717, 4)
         assert_almost_equal(loc1, 0.00233, 2)  # to 2 dps due to rounding error in McCulloch86
-        
+
         # cover alpha=2 scenario
         x2 = x + [.05309,.05309,.05309,.05309,.05309]
         alpha2, beta2, loc2, scale2 = stats.levy_stable._fitstart(x2)
@@ -1492,13 +1492,13 @@ class TestLevyStable(object):
         assert_equal(beta2, -1)
         assert_almost_equal(scale2, .02503, 4)
         assert_almost_equal(loc2, .03354, 4)
-        
+
     def test_pdf_nolan_samples(self):
         """ Test pdf values against Nolan's stablec.exe output
             see - http://fs2.american.edu/jpnolan/www/stable/stable.html
-            
+
             There's a known limitation of Nolan's executable for alpha < 0.2.
-            
+
             Repeat following with beta = -1, -.5, 0, .5 and 1
                 stablec.exe <<
                 1 # pdf
@@ -1508,28 +1508,28 @@ class TestLevyStable(object):
                 -10,10,1 # x
                 1,0 # gamma, delta
                 2 # output file
-        """        
+        """
         data = np.load(os.path.abspath(os.path.join(os.path.dirname(__file__),
                                                  'data/stable-pdf-sample-data.npy')))
-        
+
         data = np.core.records.fromarrays(data.T, names='x,p,alpha,beta')
-        
+
         # support numpy 1.8.2 for travis
         npisin = np.isin if hasattr(np, "isin") else np.in1d
-        
+
         tests = [
             # best selects
             ['best', None, 8, None],
-            
+
             # quadrature is accurate for most alpha except 0.25; perhaps limitation of Nolan stablec?
             # we reduce size of x to speed up computation as numerical integration slow.
             ['quadrature', None, 8, lambda r: (r['alpha'] > 0.25) & (npisin(r['x'], [-10,-5,0,5,10]))],
-            
+
             # zolatarev is accurate except at alpha==1, beta != 0
             ['zolotarev', None, 8, lambda r: r['alpha'] != 1],
             ['zolotarev', None, 8, lambda r: (r['alpha'] == 1) & (r['beta'] == 0)],
             ['zolotarev', None, 1, lambda r: (r['alpha'] == 1) & (r['beta'] != 0)],
-            
+
             # fft accuracy reduces as alpha decreases, fails at low values of alpha and x=0
             ['fft', 0, 4, lambda r: r['alpha'] > 1],
             ['fft', 0, 3, lambda r: (r['alpha'] < 1) & (r['alpha'] > 0.25)],
@@ -1538,21 +1538,21 @@ class TestLevyStable(object):
         for ix, (default_method, fft_min_points, decimal_places, filter_func) in enumerate(tests):
             stats.levy_stable.pdf_default_method = default_method
             stats.levy_stable.pdf_fft_min_points_threshold = fft_min_points
-            subdata = data[filter_func(data)] if filter_func is not None else data 
+            subdata = data[filter_func(data)] if filter_func is not None else data
             with suppress_warnings() as sup:
                 sup.record(RuntimeWarning, "Density calculation unstable for alpha=1 and beta!=0.*")
                 sup.record(RuntimeWarning, "Density calculations experimental for FFT method.*")
                 p = stats.levy_stable.pdf(subdata['x'], subdata['alpha'], subdata['beta'], scale=1, loc=0)
                 subdata2 = rec_append_fields(subdata, 'calc', p)
                 failures = subdata2[(np.abs(p-subdata['p']) >= 1.5*10.**(-decimal_places)) | np.isnan(p)]
-                assert_almost_equal(p, subdata['p'], decimal_places, "pdf test %s failed with method '%s'\n%s" % (ix, default_method, failures), verbose=False)           
-             
+                assert_almost_equal(p, subdata['p'], decimal_places, "pdf test %s failed with method '%s'\n%s" % (ix, default_method, failures), verbose=False)
+
     def test_cdf_nolan_samples(self):
         """ Test cdf values against Nolan's stablec.exe output
             see - http://fs2.american.edu/jpnolan/www/stable/stable.html
-            
+
             There's a known limitation of Nolan's executable for alpha < 0.2.
-            
+
             Repeat following with beta = -1, -.5, 0, .5 and 1
                 stablec.exe <<
                 2 # cdf
@@ -1562,16 +1562,16 @@ class TestLevyStable(object):
                 -10,10,1 # x
                 1,0 # gamma, delta
                 2 # output file
-        """        
+        """
         data = np.load(os.path.abspath(os.path.join(os.path.dirname(__file__),
                                                  'data/stable-cdf-sample-data.npy')))
-        
+
         data = np.core.records.fromarrays(data.T, names='x,p,alpha,beta')
-        
+
         tests = [
             # zolatarev is accurate for all values
             ['zolotarev', None, 8, None],
-            
+
             # fft accuracy poor, very poor alpha < 1
             ['fft', 0, 2, lambda r: r['alpha'] > 1],
         ]
@@ -1580,46 +1580,46 @@ class TestLevyStable(object):
             stats.levy_stable.pdf_fft_min_points_threshold = fft_min_points
             subdata = data[filter_func(data)] if filter_func is not None else data
             with suppress_warnings() as sup:
-                sup.record(RuntimeWarning, "Cumulative density calculations experimental for FFT method.*")           
+                sup.record(RuntimeWarning, "Cumulative density calculations experimental for FFT method.*")
                 p = stats.levy_stable.cdf(subdata['x'], subdata['alpha'], subdata['beta'], scale=1, loc=0)
                 subdata2 = rec_append_fields(subdata, 'calc', p)
-                failures = subdata2[(np.abs(p-subdata['p']) >= 1.5*10.**(-decimal_places)) | np.isnan(p)]            
-                assert_almost_equal(p, subdata['p'], decimal_places, "cdf test %s failed with method '%s'\n%s" % (ix, default_method, failures), verbose=False)           
+                failures = subdata2[(np.abs(p-subdata['p']) >= 1.5*10.**(-decimal_places)) | np.isnan(p)]
+                assert_almost_equal(p, subdata['p'], decimal_places, "cdf test %s failed with method '%s'\n%s" % (ix, default_method, failures), verbose=False)
 
     def test_pdf_alpha_equals_one_beta_non_zero(self):
         """ sample points extracted from Tables and Graphs of Stable Probability
-            Density Functions - Donald R Holt - 1973 - p 187. 
+            Density Functions - Donald R Holt - 1973 - p 187.
         """
-        xs = np.array([0, 0, 0, 0, 
-                       1, 1, 1, 1, 
-                       2, 2, 2, 2, 
-                       3, 3, 3, 3, 
+        xs = np.array([0, 0, 0, 0,
+                       1, 1, 1, 1,
+                       2, 2, 2, 2,
+                       3, 3, 3, 3,
                        4, 4, 4, 4])
         density = np.array([.3183, .3096, .2925, .2622,
                             .1591, .1587, .1599, .1635,
                             .0637, .0729, .0812, .0955,
                             .0318, .0390, .0458, .0586,
                             .0187, .0236, .0285, .0384])
-        betas = np.array([0, .25, .5, 1, 
-                          0, .25, .5, 1, 
-                          0, .25, .5, 1, 
-                          0, .25, .5, 1, 
+        betas = np.array([0, .25, .5, 1,
+                          0, .25, .5, 1,
+                          0, .25, .5, 1,
+                          0, .25, .5, 1,
                           0, .25, .5, 1])
-        
+
         tests = [
             ['quadrature', None, 4],
             #['fft', 0, 4],
             ['zolotarev', None, 1],
         ]
-        
+
         with np.errstate(all='ignore'), suppress_warnings() as sup:
-            sup.filter(category=RuntimeWarning, message="Density calculation unstable.*")           
+            sup.filter(category=RuntimeWarning, message="Density calculation unstable.*")
             for default_method, fft_min_points, decimal_places in tests:
                 stats.levy_stable.pdf_default_method = default_method
                 stats.levy_stable.pdf_fft_min_points_threshold = fft_min_points
-                #stats.levy_stable.fft_grid_spacing = 0.0001   
+                #stats.levy_stable.fft_grid_spacing = 0.0001
                 pdf = stats.levy_stable.pdf(xs, 1, betas, scale=1, loc=0)
-                assert_almost_equal(pdf, density, decimal_places, default_method) 
+                assert_almost_equal(pdf, density, decimal_places, default_method)
 
     def test_stats(self):
         param_sets = [
@@ -2311,9 +2311,9 @@ class TestExpect(object):
         # moments and compare to known values (cf skellam.stats)
         p1, p2 = 18, 22
         m1 = stats.skellam.expect(lambda x: x, args=(p1, p2))
-        m2 = stats.skellam.expect(lambda x: x**2, args=(p1, p2))
+        m2 = stats.skellam.expect(lambda x: x*x, args=(p1, p2))
         assert_allclose(m1, p1 - p2, atol=1e-12)
-        assert_allclose(m2 - m1**2, p1 + p2, atol=1e-12)
+        assert_allclose(m2 - m1*m1, p1 + p2, atol=1e-12)
 
     def test_randint(self):
         # Use a discrete distribution w/ parameter-dependent support, which
@@ -2326,7 +2326,7 @@ class TestExpect(object):
     def test_zipf(self):
         # Test that there is no infinite loop even if the sum diverges
         assert_warns(RuntimeWarning, stats.zipf.expect,
-                     lambda x: x**2, (2,))
+                     lambda x: x*x, (2,))
 
     def test_discrete_kwds(self):
         # check that discrete expect accepts keywords to control the summation
@@ -2339,7 +2339,7 @@ class TestExpect(object):
         # test the .moment() method: compute a higher moment and compare to
         # a known value
         def poiss_moment5(mu):
-            return mu**5 + 10*mu**4 + 25*mu**3 + 15*mu**2 + mu
+            return mu*mu*mu*mu*mu + 10*mu*mu*mu*mu + 25*mu*mu*mu + 15*mu*mu + mu
 
         for mu in [5, 7]:
             m5 = stats.poisson.moment(5, mu)
@@ -2793,7 +2793,7 @@ def test_tukeylambda_stats_ticket_1545():
 
     mv = stats.tukeylambda.stats(0, moments='mvsk')
     # Known exact values:
-    expected = [0, np.pi**2/3, 0, 1.2]
+    expected = [0, np.pi*pi/3, 0, 1.2]
     assert_almost_equal(mv, expected, decimal=10)
 
     mv = stats.tukeylambda.stats(3.13, moments='mvsk')
@@ -2820,27 +2820,27 @@ def test_powerlaw_stats():
     mean:
         mu = a / (a + 1)
     variance:
-        sigma**2 = a / ((a + 2) * (a + 1) ** 2)
+        sigma*sigma = a / ((a + 2) * (a + 1) ** 2)
     skewness:
         One formula (see https://en.wikipedia.org/wiki/Skewness) is
-            gamma_1 = (E[X**3] - 3*mu*E[X**2] + 2*mu**3) / sigma**3
+            gamma_1 = (E[X*X*X] - 3*mu*E[X*X] + 2*mu*mu*mu) / sigma**3
         A short calculation shows that E[X**k] is a / (a + k), so gamma_1
         can be implemented as
             n = a/(a+3) - 3*(a/(a+1))*a/(a+2) + 2*(a/(a+1))**3
             d = sqrt(a/((a+2)*(a+1)**2)) ** 3
             gamma_1 = n/d
-        Either by simplifying, or by a direct calculation of mu_3 / sigma**3,
+        Either by simplifying, or by a direct calculation of mu_3 / sigma*sigma*sigma,
         one gets the more concise formula:
             gamma_1 = -2.0 * ((a - 1) / (a + 3)) * sqrt((a + 2) / a)
     kurtosis: (See https://en.wikipedia.org/wiki/Kurtosis)
         The excess kurtosis is
-            gamma_2 = mu_4 / sigma**4 - 3
+            gamma_2 = mu_4 / sigma*sigma*sigma*sigma - 3
         A bit of calculus and algebra (sympy helps) shows that
-            mu_4 = 3*a*(3*a**2 - a + 2) / ((a+1)**4 * (a+2) * (a+3) * (a+4))
+            mu_4 = 3*a*(3*a*a - a + 2) / ((a+1)**4 * (a+2) * (a+3) * (a+4))
         so
-            gamma_2 = 3*(3*a**2 - a + 2) * (a+2) / (a*(a+3)*(a+4)) - 3
+            gamma_2 = 3*(3*a*a - a + 2) * (a+2) / (a*(a+3)*(a+4)) - 3
         which can be rearranged to
-            gamma_2 = 6 * (a**3 - a**2 - 6*a + 2) / (a*(a+3)*(a+4))
+            gamma_2 = 6 * (a*a*a - a*a - 6*a + 2) / (a*(a+3)*(a+4))
     """
     cases = [(1.0, (0.5, 1./12, 0.0, -1.2)),
              (2.0, (2./3, 2./36, -0.56568542494924734, -0.6))]

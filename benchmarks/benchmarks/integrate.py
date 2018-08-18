@@ -53,7 +53,7 @@ class SolveBVP(Benchmark):
         eps = 1e-3
         return np.vstack((
             y[1],
-            -(4 * x * y[1] + 2 * y[0]) / (eps + x**2)
+            -(4 * x * y[1] + 2 * y[0]) / (eps + x*x)
         ))
 
     def bc_peak(self, ya, yb):

@@ -116,7 +116,7 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0,
     Examples
     --------
     Minimize the objective function f(x,y) = x*y subject
-    to the constraints x**2 + y**2 < 1 and y > 0::
+    to the constraints x*x + y*y < 1 and y > 0::
 
         >>> def objective(x):
         ...     return x[0]*x[1]

@@ -927,7 +927,7 @@ def firls(numtaps, bands, desired, weight=None, nyq=None, fs=None):
     # Using our normalization ω=πf and with a constant weight W over each
     # interval and a linear term for D(ω) we get (over each f1->f2 interval):
     #     b(n) = W ∫ (mf+c)cos(πnf)df
-    #          = f(mf+c)sin(πnf)/πnf + mf**2 cos(nπf)/(πnf)**2
+    #          = f(mf+c)sin(πnf)/πnf + mf*mf cos(nπf)/(πnf)**2
     # integrated over each f1->f2 pair (i.e., value at f2 - value at f1).
     n = n[:M + 1]  # only need this many coefficients here
     # Choose m and c such that we are at the start and end weights

@@ -2394,10 +2394,10 @@ def lp2bp_zpk(z, p, k, wo=1.0, bw=1.0):
     p_lp = p_lp.astype(complex)
 
     # Duplicate poles and zeros and shift from baseband to +wo and -wo
-    z_bp = concatenate((z_lp + sqrt(z_lp**2 - wo**2),
-                        z_lp - sqrt(z_lp**2 - wo**2)))
-    p_bp = concatenate((p_lp + sqrt(p_lp**2 - wo**2),
-                        p_lp - sqrt(p_lp**2 - wo**2)))
+    z_bp = concatenate((z_lp + sqrt(z_lp*z_lp - wo*wo),
+                        z_lp - sqrt(z_lp*z_lp - wo*wo)))
+    p_bp = concatenate((p_lp + sqrt(p_lp*p_lp - wo*wo),
+                        p_lp - sqrt(p_lp*p_lp - wo*wo)))
 
     # Move degree zeros to origin, leaving degree zeros at infinity for BPF
     z_bp = append(z_bp, zeros(degree))
@@ -2473,10 +2473,10 @@ def lp2bs_zpk(z, p, k, wo=1.0, bw=1.0):
     p_hp = p_hp.astype(complex)
 
     # Duplicate poles and zeros and shift from baseband to +wo and -wo
-    z_bs = concatenate((z_hp + sqrt(z_hp**2 - wo**2),
-                        z_hp - sqrt(z_hp**2 - wo**2)))
-    p_bs = concatenate((p_hp + sqrt(p_hp**2 - wo**2),
-                        p_hp - sqrt(p_hp**2 - wo**2)))
+    z_bs = concatenate((z_hp + sqrt(z_hp*z_hp - wo*wo),
+                        z_hp - sqrt(z_hp*z_hp - wo*wo)))
+    p_bs = concatenate((p_hp + sqrt(p_hp*p_hp - wo*wo),
+                        p_hp - sqrt(p_hp*p_hp - wo*wo)))
 
     # Move any zeros that were at infinity to the center of the stopband
     z_bs = append(z_bs, +1j*wo * ones(degree))
@@ -4136,9 +4136,9 @@ def _bessel_zeros(N):
 
     # First derivative of above
     def fp(x):
-        return (special.kve(N-0.5, 1/x)/(2*x**2) -
-                special.kve(N+0.5, 1/x)/(x**2) +
-                special.kve(N+1.5, 1/x)/(2*x**2))
+        return (special.kve(N-0.5, 1/x)/(2*x*x) -
+                special.kve(N+0.5, 1/x)/(x*x) +
+                special.kve(N+1.5, 1/x)/(2*x*x))
 
     # Starting points converge to true zeros
     x = _aberth(f, fp, x0)
@@ -4505,10 +4505,10 @@ def _design_notch_peak_filter(w0, Q, ftype, fs=2.0):
 
     if ftype == "notch":
         # Compute beta: formula 11.3.4 (p.575) from reference [1]
-        beta = (np.sqrt(1.0-gb**2.0)/gb)*np.tan(bw/2.0)
+        beta = (np.sqrt(1.0-gb*gb.0)/gb)*np.tan(bw/2.0)
     elif ftype == "peak":
         # Compute beta: formula 11.3.19 (p.579) from reference [1]
-        beta = (gb/np.sqrt(1.0-gb**2.0))*np.tan(bw/2.0)
+        beta = (gb/np.sqrt(1.0-gb*gb.0))*np.tan(bw/2.0)
     else:
         raise ValueError("Unknown ftype.")
 

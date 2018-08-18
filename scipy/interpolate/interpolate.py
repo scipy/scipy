@@ -189,7 +189,7 @@ class interp2d(object):
     >>> x = np.arange(-5.01, 5.01, 0.25)
     >>> y = np.arange(-5.01, 5.01, 0.25)
     >>> xx, yy = np.meshgrid(x, y)
-    >>> z = np.sin(xx**2+yy**2)
+    >>> z = np.sin(xx*xx+yy*yy)
     >>> f = interpolate.interp2d(x, y, z, kind='cubic')
 
     Now use the obtained interpolation function and plot the result:
@@ -1207,7 +1207,7 @@ class PPoly(_PPolyBase):
         Examples
         --------
 
-        Finding roots of ``[x**2 - 1, (x - 1)**2]`` defined on intervals
+        Finding roots of ``[x*x - 1, (x - 1)**2]`` defined on intervals
         ``[-2, 1], [1, 2]``:
 
         >>> from scipy.interpolate import PPoly
@@ -2357,7 +2357,7 @@ class RegularGridInterpolator(object):
 
     >>> from scipy.interpolate import RegularGridInterpolator
     >>> def f(x, y, z):
-    ...     return 2 * x**3 + 3 * y**2 - z
+    ...     return 2 * x*x*x + 3 * y*y - z
     >>> x = np.linspace(1, 4, 11)
     >>> y = np.linspace(4, 7, 22)
     >>> z = np.linspace(7, 9, 33)

@@ -940,10 +940,10 @@ C       =====================================================
 C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
         HM1=.5*Q/(M*M-1.0)
-        HM3=.25*HM1**3/(M*M-4.0)
+        HM3=.25*HM1*HM1*HM1/(M*M-4.0)
         HM5=HM1*HM3*Q/((M*M-1.0)*(M*M-9.0))
         A0=M*M+Q*(HM1+(5.0*M*M+7.0)*HM3
-     &     +(9.0*M**4+58.0*M*M+29.0)*HM5)
+     &     +(9.0*M*M*M*M+58.0*M*M+29.0)*HM5)
         RETURN
         END
 
@@ -1320,7 +1320,7 @@ C
            ID=10
            RETURN
         ENDIF
-        B0=KD*M/X**3.0D0/(1.0-KD/(X*X))*R2F
+        B0=KD*M/X*X*XD0/(1.0-KD/(X*X))*R2F
         SUD=0.0D0
         EPS2=0.0D0
         DO 60 K=1,NM
@@ -7281,7 +7281,7 @@ C
         DO 35 NR=1,NT
            IF (KF.EQ.1) PSQ=DSQRT(4.0D0*NR-1.0D0)
            IF (KF.EQ.2) PSQ=2.0D0*NR**(0.5)
-           PX=PSQ-DLOG(PI*PSQ)/(PI*PI*PSQ**3.0)
+           PX=PSQ-DLOG(PI*PSQ)/(PI*PI*PSQ*PSQ*PSQ)
            PY=DLOG(PI*PSQ)/(PI*PSQ)
            Z = DCMPLX(PX, PY)
            IF (KF.EQ.2) THEN
@@ -8653,7 +8653,7 @@ C
            IF (K.GT.NM1.AND.DABS(R1F-SW).LT.DABS(R1F)*EPS) GO TO 55
 50         SW=R1F
 55      R1F=R1F*A0
-        B0=KD*M/X**3.0D0/(1.0-KD/(X*X))*R1F
+        B0=KD*M/X*X*XD0/(1.0-KD/(X*X))*R1F
         SUD=0.0D0
         SW=0.0D0
         DO 60 K=1,NM
@@ -10027,7 +10027,7 @@ C       3) initial guess for j_{N,L+1}
         L=L+1
         RJ0(L)=X
 C       XXX: should have a better initial guess for large N ~> 100 here
-        X=X+PI+MAX((0.0972d0+0.0679*N-0.000354*N**2)/L, 0d0)
+        X=X+PI+MAX((0.0972d0+0.0679*N-0.000354*N*N)/L, 0d0)
         IF (L.LT.NT) GO TO 10
 C       -- Newton method for j_{N,L}'
         IF (N.LE.20) THEN
@@ -10054,7 +10054,7 @@ C       -- Newton method for j_{N,L}'
         L=L+1
         RJ1(L)=X
 C       XXX: should have a better initial guess for large N ~> 100 here
-        X=X+PI+MAX((0.4955d0+0.0915*N-0.000435*N**2)/L, 0d0)
+        X=X+PI+MAX((0.4955d0+0.0915*N-0.000435*N*N)/L, 0d0)
         IF (L.LT.NT) GO TO 15
 C       -- Newton method for y_{N,L}
         IF (N.LE.20) THEN
@@ -10080,7 +10080,7 @@ C       -- Newton method for y_{N,L}
         L=L+1
         RY0(L)=X
 C       XXX: should have a better initial guess for large N ~> 100 here
-        X=X+PI+MAX((0.312d0+0.0852*N-0.000403*N**2)/L,0d0)
+        X=X+PI+MAX((0.312d0+0.0852*N-0.000403*N*N)/L,0d0)
         IF (L.LT.NT) GO TO 20
 C       -- Newton method for y_{N,L}'
         IF (N.LE.20) THEN
@@ -10104,7 +10104,7 @@ C       -- Newton method for y_{N,L}'
         L=L+1
         RY1(L)=X
 C       XXX: should have a better initial guess for large N ~> 100 here
-        X=X+PI+MAX((0.197d0+0.0643*N-0.000286*N**2)/L,0d0)
+        X=X+PI+MAX((0.197d0+0.0643*N-0.000286*N*N)/L,0d0)
         IF (L.LT.NT) GO TO 25
         RETURN
         END

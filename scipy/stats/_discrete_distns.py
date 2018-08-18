@@ -460,7 +460,7 @@ class logser_gen(rv_discrete):
         mu4p = -p / r * (
             1.0 / (p-1)**2 - 6*p / (p - 1)**3 + 6*p*p / (p-1)**4)
         mu4 = mu4p - 4*mu3p*mu + 6*mu2p*mu*mu - 3*mu**4
-        g2 = mu4 / var**2 - 3.0
+        g2 = mu4 / var*var - 3.0
         return mu, var, g1, g2
 
 
@@ -646,10 +646,10 @@ class boltzmann_gen(rv_discrete):
         mu = z/(1.0-z)-N*zN/(1-zN)
         var = z/(1.0-z)**2 - N*N*zN/(1-zN)**2
         trm = (1-zN)/(1-z)
-        trm2 = (z*trm**2 - N*N*zN)
-        g1 = z*(1+z)*trm**3 - N**3*zN*(1+zN)
+        trm2 = (z*trm*trm - N*N*zN)
+        g1 = z*(1+z)*trm*trm*trm - N*N*N*zN*(1+zN)
         g1 = g1 / trm2**(1.5)
-        g2 = z*(1+4*z+z*z)*trm**4 - N**4 * zN*(1+4*zN+zN*zN)
+        g2 = z*(1+4*z+z*z)*trm*trm*trm*trm - N*N*N*N * zN*(1+4*zN+zN*zN)
         g2 = g2 / trm2 / trm2
         return mu, var, g1, g2
 
@@ -816,8 +816,8 @@ class dlaplace_gen(rv_discrete):
     def _stats(self, a):
         ea = exp(a)
         mu2 = 2.*ea/(ea-1.)**2
-        mu4 = 2.*ea*(ea**2+10.*ea+1.) / (ea-1.)**4
-        return 0., mu2, 0., mu4/mu2**2 - 3.
+        mu4 = 2.*ea*(ea*ea+10.*ea+1.) / (ea-1.)**4
+        return 0., mu2, 0., mu4/mu2*mu2 - 3.
 
     def _entropy(self, a):
         return a / sinh(a) - log(tanh(a/2.0))

@@ -44,7 +44,7 @@ class TestBasic(object):
         self.run_check(cc.brenth, 'brenth')
 
     def test_newton(self):
-        f1 = lambda x: x**2 - 2*x - 1
+        f1 = lambda x: x*x - 2*x - 1
         f1_1 = lambda x: 2*x - 2
         f1_2 = lambda x: 2.0 + 0*x
 
@@ -117,10 +117,10 @@ class TestBasic(object):
     def test_array_newton_zero_der_failures(self):
         # test derivative zero warning
         assert_warns(RuntimeWarning, zeros.newton,
-                     lambda y: y**2 - 2, [0., 0.], lambda y: 2 * y)
+                     lambda y: y*y - 2, [0., 0.], lambda y: 2 * y)
         # test failures and zero_der
         with pytest.warns(RuntimeWarning):
-            results = zeros.newton(lambda y: y**2 - 2, [0., 0.],
+            results = zeros.newton(lambda y: y*y - 2, [0., 0.],
                                    lambda y: 2*y, full_output=True)
             assert_allclose(results.root, 0)
             assert results.zero_der.all()
@@ -130,7 +130,7 @@ class TestBasic(object):
         # Test the full_output capability, both when converging and not.
         # Use simple polynomials, to avoid hitting platform dependencies
         # (e.g. exp & trig) in number of iterations
-        f1 = lambda x: x**2 - 2*x - 1  # == (x-1)**2 - 2
+        f1 = lambda x: x*x - 2*x - 1  # == (x-1)**2 - 2
         f1_1 = lambda x: 2*x - 2
         f1_2 = lambda x: 2.0 + 0*x
 
@@ -167,7 +167,7 @@ class TestBasic(object):
                     x, r = zeros.newton(f1, x0, maxiter=iters, disp=True, **kwargs)
 
     def test_deriv_zero_warning(self):
-        func = lambda x: x**2 - 2.0
+        func = lambda x: x*x - 2.0
         dfunc = lambda x: 2*x
         assert_warns(RuntimeWarning, cc.newton, func, 0.0, dfunc)
 
@@ -225,7 +225,7 @@ class TestRootResults:
 def test_complex_halley():
     """Test Halley's works with complex roots"""
     def f(x, *a):
-        return a[0] * x**2 + a[1] * x + a[2]
+        return a[0] * x*x + a[1] * x + a[2]
 
     def f_1(x, *a):
         return 2 * a[0] * x + a[1]
@@ -286,7 +286,7 @@ def test_array_newton_failures():
     diameter = 0.10  # [m]
     # L = 100  # [m]
     roughness = 0.00015  # [m]
-    rho = 988.1  # [kg/m**3]
+    rho = 988.1  # [kg/m*m*m]
     mu = 5.4790e-04  # [Pa*s]
     u = 2.488  # [m/s]
     reynolds_number = rho * u * diameter / mu  # Reynolds number
@@ -317,7 +317,7 @@ def test_gh8904_zeroder_at_root_fails():
 
     # a function that has a zero derivative at it's root
     def f_zeroder_root(x):
-        return x**3 - x**2
+        return x*x*x - x**2
 
     # should work with secant
     r = zeros.newton(f_zeroder_root, x0=0)
@@ -328,7 +328,7 @@ def test_gh8904_zeroder_at_root_fails():
 
     # 1st derivative
     def fder(x):
-        return 3 * x**2 - 2 * x
+        return 3 * x*x - 2 * x
 
     # 2nd derivative
     def fder2(x):

@@ -41,7 +41,7 @@ def poisson2d(N, dtype='d', format=None):
 
     offsets = array([0, -N, N, -1, 1])
 
-    diags = empty((5, N**2), dtype=dtype)
+    diags = empty((5, N*N), dtype=dtype)
 
     diags[0] = 4  # main diagonal
     diags[1:] = -1  # all offdiagonals
@@ -49,7 +49,7 @@ def poisson2d(N, dtype='d', format=None):
     diags[3, N-1::N] = 0  # first lower diagonal
     diags[4, N::N] = 0  # first upper diagonal
 
-    return dia_matrix((diags, offsets), shape=(N**2, N**2)).asformat(format)
+    return dia_matrix((diags, offsets), shape=(N*N, N*N)).asformat(format)
 
 
 class Arithmetic(Benchmark):

@@ -184,7 +184,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
     >>> import matplotlib.pyplot as plt
 
     >>> def f(x):
-    ...     return (x**3 - 1)  # only one real root at x = 1
+    ...     return (x*x*x - 1)  # only one real root at x = 1
 
     ``fprime`` is not provided, use the secant method:
 
@@ -197,13 +197,13 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
 
     Only ``fprime`` is provided, use the Newton-Raphson method:
 
-    >>> root = optimize.newton(f, 1.5, fprime=lambda x: 3 * x**2)
+    >>> root = optimize.newton(f, 1.5, fprime=lambda x: 3 * x*x)
     >>> root
     1.0
 
     Both ``fprime2`` and ``fprime`` are provided, use Halley's method:
 
-    >>> root = optimize.newton(f, 1.5, fprime=lambda x: 3 * x**2,
+    >>> root = optimize.newton(f, 1.5, fprime=lambda x: 3 * x*x,
     ...                        fprime2=lambda x: 6 * x)
     >>> root
     1.0
@@ -211,7 +211,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
     When we want to find zeros for a set of related starting values and/or
     function parameters, we can provide both of those as an array of inputs:
 
-    >>> f = lambda x, a: x**3 - a
+    >>> f = lambda x, a: x*x*x - a
     >>> fder = lambda x, a: 3 * x**2
     >>> x = np.random.randn(100)
     >>> a = np.arange(-50, 50)
@@ -468,7 +468,7 @@ def bisect(f, a, b, args=(),
     --------
 
     >>> def f(x):
-    ...     return (x**2 - 1)
+    ...     return (x*x - 1)
 
     >>> from scipy import optimize
 
@@ -562,7 +562,7 @@ def ridder(f, a, b, args=(),
     --------
 
     >>> def f(x):
-    ...     return (x**2 - 1)
+    ...     return (x*x - 1)
 
     >>> from scipy import optimize
 
@@ -684,7 +684,7 @@ def brentq(f, a, b, args=(),
     Examples
     --------
     >>> def f(x):
-    ...     return (x**2 - 1)
+    ...     return (x*x - 1)
 
     >>> from scipy import optimize
 
@@ -779,7 +779,7 @@ def brenth(f, a, b, args=(),
     Examples
     --------
     >>> def f(x):
-    ...     return (x**2 - 1)
+    ...     return (x*x - 1)
 
     >>> from scipy import optimize
 

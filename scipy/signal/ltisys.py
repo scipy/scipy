@@ -685,7 +685,7 @@ class TransferFunction(LinearTimeInvariant):
         num, den: 1d array_like
             Sequences representing the coefficients of the numerator and
             denominator polynomials, in order of descending degree of 'z'.
-            That is, ``5z**2 + 3z + 2`` is presented as ``[5, 3, 2]``.
+            That is, ``5z*5z + 3z + 2`` is presented as ``[5, 3, 2]``.
 
         Returns
         -------
@@ -717,7 +717,7 @@ class TransferFunction(LinearTimeInvariant):
         num, den: 1d array_like
             Sequences representing the coefficients of the numerator and
             denominator polynomials, in order of descending degree of 'z'.
-            That is, ``5z**2 + 3z + 2`` is presented as ``[5, 3, 2]``.
+            That is, ``5z*5z + 3z + 2`` is presented as ``[5, 3, 2]``.
         """
         diff = len(num) - len(den)
         if diff > 0:

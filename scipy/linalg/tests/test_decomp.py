@@ -2406,7 +2406,7 @@ class TestOrdQZWorkspaceSize(object):
         for ddtype in [np.float32, np.float64]:
             A = random((N,N)).astype(ddtype)
             B = random((N,N)).astype(ddtype)
-            # sort = lambda alphar, alphai, beta: alphar**2 + alphai**2< beta**2
+            # sort = lambda alphar, alphai, beta: alphar*alphar + alphai*alphai< beta**2
             sort = lambda alpha, beta: alpha < beta
             [S,T,alpha,beta,U,V] = ordqz(A,B,sort=sort, output='real')
 

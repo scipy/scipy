@@ -443,14 +443,14 @@ def test_neldermead_xatol_fatol():
                  func, [1, 1], xtol=1e-3, ftol=1e-3, maxiter=2)
 
 def test_neldermead_adaptive():
-    func = lambda x: np.sum(x**2)
+    func = lambda x: np.sum(x*x)
     p0 = [0.15746215, 0.48087031, 0.44519198, 0.4223638, 0.61505159, 0.32308456,
       0.9692297, 0.4471682, 0.77411992, 0.80441652, 0.35994957, 0.75487856,
       0.99973421, 0.65063887, 0.09626474]
-   
+
     res = optimize.minimize(func, p0, method='Nelder-Mead')
     assert_equal(res.success, False)
- 
+
     res = optimize.minimize(func, p0, method='Nelder-Mead',
                     options={'adaptive':True})
     assert_equal(res.success, True)
@@ -706,11 +706,11 @@ class TestOptimizeSimple(CheckOptimize):
         # Check that the minimize() tol= argument does something
         def func(z):
             x, y = z
-            return x**2*y**2 + x**4 + 1
+            return x*x*y*y + x*x*x*x + 1
 
         def dfunc(z):
             x, y = z
-            return np.array([2*x*y**2 + 4*x**3, 2*x**2*y])
+            return np.array([2*x*y*y + 4*x*x*x, 2*x*x*y])
 
         for method in ['nelder-mead', 'powell', 'cg', 'bfgs',
                        'newton-cg', 'l-bfgs-b', 'tnc',
@@ -1167,14 +1167,14 @@ def himmelblau(p):
 
 def himmelblau_grad(p):
     x, y = p
-    return np.array([4*x**3 + 4*x*y - 42*x + 2*y**2 - 14,
-                     2*x**2 + 4*x*y + 4*y**3 - 26*y - 22])
+    return np.array([4*x*x*x + 4*x*y - 42*x + 2*y*y - 14,
+                     2*x*x + 4*x*y + 4*y*y*y - 26*y - 22])
 
 
 def himmelblau_hess(p):
     x, y = p
-    return np.array([[12*x**2 + 4*y - 42, 4*x + 4*y],
-                     [4*x + 4*y, 4*x + 12*y**2 - 26]])
+    return np.array([[12*x*x + 4*y - 42, 4*x + 4*y],
+                     [4*x + 4*y, 4*x + 12*y*y - 26]])
 
 
 himmelblau_x0 = [-0.27, -0.9]
@@ -1246,7 +1246,7 @@ class TestBrute:
     def f1(self, z, *params):
         x, y = z
         a, b, c, d, e, f, g, h, i, j, k, l, scale = params
-        return (a * x**2 + b * x * y + c * y**2 + d*x + e*y + f)
+        return (a * x*x + b * x * y + c * y*y + d*x + e*y + f)
 
     def f2(self, z, *params):
         x, y = z

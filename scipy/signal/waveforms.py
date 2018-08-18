@@ -239,7 +239,7 @@ def gausspulse(t, fc=1000, bw=0.5, bwr=-6, tpr=-60, retquad=False,
 
     if isinstance(t, string_types):
         if t == 'cutoff':  # compute cut_off point
-            #  Solve exp(-a tc**2) = tref  for tc
+            #  Solve exp(-a tc*tc) = tref  for tc
             #   tc = sqrt(-log(tref) / a) where tref = 10^(tpr/20)
             if tpr >= 0:
                 raise ValueError("Reference level for time cutoff must "
@@ -322,11 +322,11 @@ def chirp(t, f0, t1, f1, method='linear', phi=0, vertex_zero=True):
 
         if vertex_zero is True:
 
-            ``f(t) = f0 + (f1 - f0) * t**2 / t1**2``
+            ``f(t) = f0 + (f1 - f0) * t*t / t1*t1``
 
         else:
 
-            ``f(t) = f1 - (f1 - f0) * (t1 - t)**2 / t1**2``
+            ``f(t) = f1 - (f1 - f0) * (t1 - t)**2 / t1*t1``
 
         To use a more general quadratic function, or an arbitrary
         polynomial, use the function `scipy.signal.waveforms.sweep_poly`.
@@ -549,7 +549,7 @@ def sweep_poly(t, poly, phi=0):
     --------
     Compute the waveform with instantaneous frequency::
 
-        f(t) = 0.025*t**3 - 0.36*t**2 + 1.25*t + 2
+        f(t) = 0.025*t*t*t - 0.36*t*t + 1.25*t + 2
 
     over the interval 0 <= t <= 10.
 

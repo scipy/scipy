@@ -150,18 +150,18 @@ class Beale(object):
     def fun(self, coords):
         x, y = coords
         p1 = (1.5 - x + x * y)**2
-        p2 = (2.25 - x + x * y**2)**2
-        p3 = (2.625 - x + x * y**3)**2
+        p2 = (2.25 - x + x * y*y)**2
+        p3 = (2.625 - x + x * y*y*y)**2
         return p1 + p2 + p3
 
     def der(self, coords):
         x, y = coords
         dfdx = (2. * (1.5 - x + x * y) * (-1. + y) +
-                2. * (2.25 - x + x * y**2) * (-1. + y**2) +
-                2. * (2.625 - x + x * y**3) * (-1. + y**3))
+                2. * (2.25 - x + x * y*y) * (-1. + y*y) +
+                2. * (2.625 - x + x * y*y*y) * (-1. + y*y*y))
         dfdy = (2. * (1.5 - x + x * y) * (x) +
-                2. * (2.25 - x + x * y**2) * (2. * y * x) +
-                2. * (2.625 - x + x * y**3) * (3. * x * y**2))
+                2. * (2.25 - x + x * y*y) * (2. * y * x) +
+                2. * (2.625 - x + x * y*y*y) * (3. * x * y*y))
         return np.array([dfdx, dfdy])
 
 

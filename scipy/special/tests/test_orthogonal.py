@@ -300,7 +300,7 @@ def verify_gauss_quad(root_func, eval_func, weight_func, a, b, N,
         assert_allclose(w.sum(), mu, rtol, atol)
 
         # compare the results of integrating a function with quad.
-        f = lambda x: x**3 - 3*x**2 + x - 2
+        f = lambda x: x*x*x - 3*x*x + x - 2
         resI = integrate.quad(lambda x: f(x)*weight_func(x), a, b)
         resG = np.vdot(f(x), w)
         rtol = 1e-6 if 1e-6 < resI[1] else resI[1] * 10
@@ -455,7 +455,7 @@ def test_roots_hermite_asy():
     # Recursion for Hermite functions
     def hermite_recursion(n, nodes):
         H = np.zeros((n, nodes.size))
-        H[0,:] = np.pi**(-0.25) * np.exp(-0.5*nodes**2)
+        H[0,:] = np.pi**(-0.25) * np.exp(-0.5*nodes*nodes)
         if n > 1:
             H[1,:] = sqrt(2.0) * nodes * H[0,:]
             for k in xrange(2, n):
@@ -503,7 +503,7 @@ def test_roots_hermitenorm():
 def test_roots_gegenbauer():
     rootf = lambda a: lambda n, mu: sc.roots_gegenbauer(n, a, mu)
     evalf = lambda a: lambda n, x: orth.eval_gegenbauer(n, a, x)
-    weightf = lambda a: lambda x: (1 - x**2)**(a - 0.5)
+    weightf = lambda a: lambda x: (1 - x*x)**(a - 0.5)
 
     vgq = verify_gauss_quad
     vgq(rootf(-0.25), evalf(-0.25), weightf(-0.25), -1., 1., 5)

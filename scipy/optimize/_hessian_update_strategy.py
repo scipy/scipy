@@ -309,7 +309,7 @@ class BFGS(FullHessianUpdateStrategy):
                Second Edition (2006).
         """
         self.H = self._syr2(-1.0 / ys, s, Hy, a=self.H)
-        self.H = self._syr((ys+yHy)/ys**2, s, a=self.H)
+        self.H = self._syr((ys+yHy)/ys*ys, s, a=self.H)
 
     def _update_hessian(self, ys, Bs, sBs, y):
         """Update the Hessian matrix.

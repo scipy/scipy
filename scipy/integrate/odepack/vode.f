@@ -35,7 +35,7 @@ C   920722  Minor revisions to prologue (ACH).
 C   920831  Conversion to double precision done (ACH).
 C   921106  Fixed minor bug: ETAQ,ETAQM1 in DVSTEP SAVE statement (ACH).
 C   921118  Changed LUNSAV/MFLGSV to IXSAV (ACH).
-C   941222  Removed MF overwrite; attached sign to H in estimated second 
+C   941222  Removed MF overwrite; attached sign to H in estimated second
 C           derivative in DVHIN; misc. comment corrections throughout.
 C   970515  Minor corrections to comments in prologue, DVJAC.
 C-----------------------------------------------------------------------
@@ -153,7 +153,7 @@ C ISTATE = Integer flag (input and output).  Set ISTATE = 1.
 C IOPT   = 0 to indicate no optional input used.
 C RWORK  = Real work array of length at least..
 C             20 + 16*NEQ                      for MF = 10,
-C             22 +  9*NEQ + 2*NEQ**2           for MF = 21 or 22,
+C             22 +  9*NEQ + 2*NEQ*NEQ           for MF = 21 or 22,
 C             22 + 11*NEQ + (3*ML + 2*MU)*NEQ  for MF = 24 or 25.
 C LRW    = Declared length of RWORK (in user's DIMENSION statement).
 C IWORK  = Integer work array of length at least..
@@ -558,8 +558,8 @@ C          MAXORD = 12 (if METH = 1) or 5 (if METH = 2) (unless a
 C                   smaller value is given as an optional input),
 C          LWM = length of work space for matrix-related data..
 C          LWM = 0             if MITER = 0,
-C          LWM = 2*NEQ**2 + 2  if MITER = 1 or 2, and MF.gt.0,
-C          LWM = NEQ**2 + 2    if MITER = 1 or 2, and MF.lt.0,
+C          LWM = 2*NEQ*NEQ + 2  if MITER = 1 or 2, and MF.gt.0,
+C          LWM = NEQ*NEQ + 2    if MITER = 1 or 2, and MF.lt.0,
 C          LWM = NEQ + 2       if MITER = 3,
 C          LWM = (3*ML+2*MU+2)*NEQ + 2 if MITER = 4 or 5, and MF.gt.0,
 C          LWM = (2*ML+MU+1)*NEQ + 2   if MITER = 4 or 5, and MF.lt.0.
@@ -567,14 +567,14 @@ C          (See the MF description for METH and MITER.)
 C          Thus if MAXORD has its default value and NEQ is constant,
 C          this length is..
 C             20 + 16*NEQ                    for MF = 10,
-C             22 + 16*NEQ + 2*NEQ**2         for MF = 11 or 12,
-C             22 + 16*NEQ + NEQ**2           for MF = -11 or -12,
+C             22 + 16*NEQ + 2*NEQ*NEQ         for MF = 11 or 12,
+C             22 + 16*NEQ + NEQ*NEQ           for MF = -11 or -12,
 C             22 + 17*NEQ                    for MF = 13,
 C             22 + 18*NEQ + (3*ML+2*MU)*NEQ  for MF = 14 or 15,
 C             22 + 17*NEQ + (2*ML+MU)*NEQ    for MF = -14 or -15,
 C             20 +  9*NEQ                    for MF = 20,
-C             22 +  9*NEQ + 2*NEQ**2         for MF = 21 or 22,
-C             22 +  9*NEQ + NEQ**2           for MF = -21 or -22,
+C             22 +  9*NEQ + 2*NEQ*NEQ         for MF = 21 or 22,
+C             22 +  9*NEQ + NEQ*NEQ           for MF = -21 or -22,
 C             22 + 10*NEQ                    for MF = 23,
 C             22 + 11*NEQ + (3*ML+2*MU)*NEQ  for MF = 24 or 25.
 C             22 + 10*NEQ + (2*ML+MU)*NEQ    for MF = -24 or -25.
@@ -1056,7 +1056,7 @@ C
       DOUBLE PRECISION ATOLI, BIG, EWTI, FOUR, H0, HMAX, HMX, HUN, ONE,
      1   PT2, RH, RTOLI, SIZE, TCRIT, TNEXT, TOLSF, TP, TWO, ZERO
       INTEGER I, IER, IFLAG, IMXER, JCO, KGO, LENIW, LENJ, LENP, LENRW,
-     1   LENWM, LF0, MBAND, MFA, ML, MORD, MU, MXHNL0, MXSTP0, NITER, 
+     1   LENWM, LF0, MBAND, MFA, ML, MORD, MU, MXHNL0, MXSTP0, NITER,
      2   NSLAST
       CHARACTER*80 MSG
 C
@@ -1700,7 +1700,7 @@ C first step, when the user has not supplied a value for this.
 C
 C First we check that TOUT - T0 differs significantly from zero.  Then
 C an iteration is done to approximate the initial second derivative
-C and this is used to define h from w.r.m.s.norm(h**2 * yddot / 2) = 1.
+C and this is used to define h from w.r.m.s.norm(h*h * yddot / 2) = 1.
 C A bias factor of 1/2 is applied to the resulting h.
 C The sign of H0 is inferred from the initial values of TOUT and T0.
 C
@@ -3522,7 +3522,7 @@ C----------------------- End of Function D1MACH ------------------------
       CHARACTER*1 MSG(NMES)
 C-----------------------------------------------------------------------
 C Subroutines XERRWD, XSETF, XSETUN, and the function routine IXSAV,
-C as given here, constitute a simplified version of the SLATEC error 
+C as given here, constitute a simplified version of the SLATEC error
 C handling package.
 C Written by A. C. Hindmarsh and P. N. Brown at LLNL.
 C Version of 18 November, 1992.

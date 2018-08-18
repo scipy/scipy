@@ -81,7 +81,7 @@ def odd_ext(x, n, axis=-1):
     array:
 
     >>> t = np.linspace(0, 1.5, 100)
-    >>> a = 0.9 * np.sin(2 * np.pi * t**2)
+    >>> a = 0.9 * np.sin(2 * np.pi * t*t)
     >>> b = odd_ext(a, 40)
     >>> import matplotlib.pyplot as plt
     >>> plt.plot(arange(-40, 140), b, 'b', lw=1, label='odd extension')
@@ -132,7 +132,7 @@ def even_ext(x, n, axis=-1):
     Even extension is a "mirror image" at the boundaries of the original array:
 
     >>> t = np.linspace(0, 1.5, 100)
-    >>> a = 0.9 * np.sin(2 * np.pi * t**2)
+    >>> a = 0.9 * np.sin(2 * np.pi * t*t)
     >>> b = even_ext(a, 40)
     >>> import matplotlib.pyplot as plt
     >>> plt.plot(arange(-40, 140), b, 'b', lw=1, label='even extension')
@@ -185,7 +185,7 @@ def const_ext(x, n, axis=-1):
     array:
 
     >>> t = np.linspace(0, 1.5, 100)
-    >>> a = 0.9 * np.sin(2 * np.pi * t**2)
+    >>> a = 0.9 * np.sin(2 * np.pi * t*t)
     >>> b = const_ext(a, 40)
     >>> import matplotlib.pyplot as plt
     >>> plt.plot(arange(-40, 140), b, 'b', lw=1, label='constant extension')

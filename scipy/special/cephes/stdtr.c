@@ -28,19 +28,19 @@
  *                                   | |
  *                                    -
  *                                   -inf.
- * 
+ *
  * Relation to incomplete beta integral:
  *
  *        1 - stdtr(k,t) = 0.5 * incbet( k/2, 1/2, z )
  * where
- *        z = k/(k + t**2).
+ *        z = k/(k + t*t).
  *
  * For t < -2, this is the method of computation.  For higher t,
  * a direct method is derived from integration by parts.
  * Since the function is symmetric about t=0, the area under the
  * right tail of the density is found by calling the function
  * with -t instead of t.
- * 
+ *
  * ACCURACY:
  *
  * Tested at random 1 <= k <= 25.  The "domain" refers to t.
@@ -68,7 +68,7 @@
  *
  * Given probability p, finds the argument t such that stdtr(k,t)
  * is equal to p.
- * 
+ *
  * ACCURACY:
  *
  * Tested at random 1 <= k <= 100.  The "domain" refers to p:

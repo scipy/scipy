@@ -22,7 +22,7 @@ class TestSphericalJn:
         # n or z >> n.
         x = np.array([0.12, 1.23, 12.34, 123.45, 1234.5])
         assert_allclose(spherical_jn(2, x),
-                        (-1/x + 3/x**3)*sin(x) - 3/x**2*cos(x))
+                        (-1/x + 3/x*x*x)*sin(x) - 3/x*x*cos(x))
 
     def test_spherical_jn_recurrence_complex(self):
         # https://dlmf.nist.gov/10.51.E1
@@ -79,7 +79,7 @@ class TestSphericalYn:
         # n or z >> n.
         x = np.array([0.12, 1.23, 12.34, 123.45, 1234.5])
         assert_allclose(spherical_yn(2, x),
-                        (1/x - 3/x**3)*cos(x) - 3/x**2*sin(x))
+                        (1/x - 3/x*x*x)*cos(x) - 3/x*x*sin(x))
 
     def test_spherical_yn_recurrence_real(self):
         # https://dlmf.nist.gov/10.51.E1
@@ -151,7 +151,7 @@ class TestSphericalIn:
         # https://dlmf.nist.gov/10.49.E9
         x = np.array([0.12, 1.23, 12.34, 123.45])
         assert_allclose(spherical_in(2, x),
-                        (1/x + 3/x**3)*sinh(x) - 3/x**2*cosh(x))
+                        (1/x + 3/x*x*x)*sinh(x) - 3/x*x*cosh(x))
 
     def test_spherical_in_recurrence_real(self):
         # https://dlmf.nist.gov/10.51.E4
@@ -197,7 +197,7 @@ class TestSphericalKn:
         # https://dlmf.nist.gov/10.49.E13
         x = np.array([0.12, 1.23, 12.34, 123.45])
         assert_allclose(spherical_kn(2, x),
-                        pi/2*exp(-x)*(1/x + 3/x**2 + 3/x**3))
+                        pi/2*exp(-x)*(1/x + 3/x*x + 3/x*x*x))
 
     def test_spherical_kn_recurrence_real(self):
         # https://dlmf.nist.gov/10.51.E4
@@ -325,14 +325,14 @@ class TestSphericalOld:
         sph_i0[0] = spherical_in(0, x)
         sph_i0[1] = spherical_in(0, x, derivative=True)
         sph_i0_expected = np.array([np.sinh(x)/x,
-                                    np.cosh(x)/x-np.sinh(x)/x**2])
+                                    np.cosh(x)/x-np.sinh(x)/x*x])
         assert_array_almost_equal(r_[sph_i0], sph_i0_expected)
 
         sph_k0 = np.empty((2,))
         sph_k0[0] = spherical_kn(0, x)
         sph_k0[1] = spherical_kn(0, x, derivative=True)
         sph_k0_expected = np.array([0.5*pi*exp(-x)/x,
-                                    -0.5*pi*exp(-x)*(1/x+1/x**2)])
+                                    -0.5*pi*exp(-x)*(1/x+1/x*x)])
         assert_array_almost_equal(r_[sph_k0], sph_k0_expected)
 
     def test_sph_jn(self):

@@ -1838,7 +1838,7 @@ def test_euclideans():
     y = rs.rand(10)
     d1 = weuclidean(x, y)
     d2 = wsqeuclidean(x, y)
-    assert_almost_equal(d1**2, d2, decimal=14)
+    assert_almost_equal(d1*d1, d2, decimal=14)
 
 
 def test_hamming_unequal_length():

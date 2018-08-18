@@ -62,7 +62,7 @@ def jac_rosenbrock_cropped(x):
 
 # When x is 1-d array, return is 2-d array.
 def fun_wrong_dimensions(x):
-    return np.array([x, x**2, x**3])
+    return np.array([x, x*x, x*x*x])
 
 
 def jac_wrong_dimensions(x, a=0.0):
@@ -356,7 +356,7 @@ class BaseMixin(object):
         # could block its progress and create an infinite loop. And this
         # discrete boundary value problem is the one which triggers it.
         n = 10
-        x0 = np.ones(n**2)
+        x0 = np.ones(n*n)
         if self.method == 'lm':
             max_nfev = 5000  # To account for Jacobian estimation.
         else:
@@ -568,7 +568,7 @@ class LossFunctionMixin(object):
 
         res = least_squares(fun_trivial, x, jac_trivial, loss='linear',
                             max_nfev=1, method=self.method)
-        assert_equal(res.grad, 2 * x * (x**2 + 5))
+        assert_equal(res.grad, 2 * x * (x*x + 5))
 
         res = least_squares(fun_trivial, x, jac_trivial, loss='huber',
                             max_nfev=1, method=self.method)
@@ -577,32 +577,32 @@ class LossFunctionMixin(object):
         res = least_squares(fun_trivial, x, jac_trivial, loss='soft_l1',
                             max_nfev=1, method=self.method)
         assert_allclose(res.grad,
-                        2 * x * (x**2 + 5) / (1 + (x**2 + 5)**2)**0.5)
+                        2 * x * (x*x + 5) / (1 + (x*x + 5)**2)**0.5)
 
         res = least_squares(fun_trivial, x, jac_trivial, loss='cauchy',
                             max_nfev=1, method=self.method)
-        assert_allclose(res.grad, 2 * x * (x**2 + 5) / (1 + (x**2 + 5)**2))
+        assert_allclose(res.grad, 2 * x * (x*x + 5) / (1 + (x*x + 5)**2))
 
         res = least_squares(fun_trivial, x, jac_trivial, loss='arctan',
                             max_nfev=1, method=self.method)
-        assert_allclose(res.grad, 2 * x * (x**2 + 5) / (1 + (x**2 + 5)**4))
+        assert_allclose(res.grad, 2 * x * (x*x + 5) / (1 + (x*x + 5)**4))
 
         res = least_squares(fun_trivial, x, jac_trivial, loss=cubic_soft_l1,
                             max_nfev=1, method=self.method)
         assert_allclose(res.grad,
-                        2 * x * (x**2 + 5) / (1 + (x**2 + 5)**2)**(2/3))
+                        2 * x * (x*x + 5) / (1 + (x*x + 5)**2)**(2/3))
 
     def test_jac(self):
         # Test that res.jac.T.dot(res.jac) gives Gauss-Newton approximation
         # of Hessian. This approximation is computed by doubly differentiating
         # the cost function and dropping the part containing second derivative
         # of f. For a scalar function it is computed as
-        # H = (rho' + 2 * rho'' * f**2) * f'**2, if the expression inside the
+        # H = (rho' + 2 * rho'' * f*f) * f'**2, if the expression inside the
         # brackets is less than EPS it is replaced by EPS. Here we check
         # against the root of H.
 
         x = 2.0  # res.x will be this.
-        f = x**2 + 5  # res.fun will be this.
+        f = x*x + 5  # res.fun will be this.
 
         res = least_squares(fun_trivial, x, jac_trivial, loss='linear',
                             max_nfev=1, method=self.method)
@@ -623,7 +623,7 @@ class LossFunctionMixin(object):
         # 'soft_l1' always gives a positive scaling.
         res = least_squares(fun_trivial, x, jac_trivial, loss='soft_l1',
                             max_nfev=1, method=self.method)
-        assert_allclose(res.jac, 2 * x * (1 + f**2)**-0.75)
+        assert_allclose(res.jac, 2 * x * (1 + f*f)**-0.75)
 
         # For 'cauchy' the correction term turns out to be negative, and it
         # replaced by EPS**0.5.
@@ -635,7 +635,7 @@ class LossFunctionMixin(object):
         res = least_squares(fun_trivial, x, jac_trivial, loss='cauchy',
                             f_scale=10, max_nfev=1, method=self.method)
         fs = f / 10
-        assert_allclose(res.jac, 2 * x * (1 - fs**2)**0.5 / (1 + fs**2))
+        assert_allclose(res.jac, 2 * x * (1 - fs*fs)**0.5 / (1 + fs*fs))
 
         # 'arctan' gives an outlier.
         res = least_squares(fun_trivial, x, jac_trivial, loss='arctan',
@@ -646,7 +646,7 @@ class LossFunctionMixin(object):
         res = least_squares(fun_trivial, x, jac_trivial, loss='arctan',
                             f_scale=20.0, max_nfev=1, method=self.method)
         fs = f / 20
-        assert_allclose(res.jac, 2 * x * (1 - 3 * fs**4)**0.5 / (1 + fs**4))
+        assert_allclose(res.jac, 2 * x * (1 - 3 * fs*fs*fs*fs)**0.5 / (1 + fs*fs*fs*fs))
 
         # cubic_soft_l1 will give an outlier.
         res = least_squares(fun_trivial, x, jac_trivial, loss=cubic_soft_l1,
@@ -658,7 +658,7 @@ class LossFunctionMixin(object):
                             loss=cubic_soft_l1, f_scale=6, max_nfev=1)
         fs = f / 6
         assert_allclose(res.jac,
-                        2 * x * (1 - fs**2 / 3)**0.5 * (1 + fs**2)**(-5/6))
+                        2 * x * (1 - fs*fs / 3)**0.5 * (1 + fs*fs)**(-5/6))
 
     def test_robustness(self):
         for noise in [0.1, 1.0]:

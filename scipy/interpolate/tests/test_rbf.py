@@ -27,7 +27,7 @@ def check_rbf2d_interpolation(function):
     # Check that the Rbf function interpolates through the nodes (2D).
     x = random.rand(50,1)*4-2
     y = random.rand(50,1)*4-2
-    z = x*exp(-x**2-1j*y**2)
+    z = x*exp(-x*x-1j*y*y)
     rbf = Rbf(x, y, z, epsilon=2, function=function)
     zi = rbf(x, y)
     zi.shape = x.shape
@@ -39,7 +39,7 @@ def check_rbf3d_interpolation(function):
     x = random.rand(50, 1)*4 - 2
     y = random.rand(50, 1)*4 - 2
     z = random.rand(50, 1)*4 - 2
-    d = x*exp(-x**2 - y**2)
+    d = x*exp(-x*x - y*y)
     rbf = Rbf(x, y, z, d, epsilon=2, function=function)
     di = rbf(x, y, z)
     di.shape = x.shape
@@ -86,10 +86,10 @@ def test_rbf_regularity():
 
 
 def check_rbf1d_stability(function):
-    # Check that the Rbf function with default epsilon is not subject 
+    # Check that the Rbf function with default epsilon is not subject
     # to overshoot.  Regression for issue #4523.
     #
-    # Generate some data (fixed random seed hence deterministic) 
+    # Generate some data (fixed random seed hence deterministic)
     np.random.seed(1234)
     x = np.linspace(0, 10, 50)
     z = x + 4.0 * np.random.randn(len(x))

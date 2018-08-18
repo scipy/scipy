@@ -232,8 +232,8 @@ class Rosenbrock:
         xm_m1 = x[:-2]
         xm_p1 = x[2:]
         der = np.zeros_like(x)
-        der[1:-1] = (200 * (xm - xm_m1**2) -
-                     400 * (xm_p1 - xm**2) * xm - 2 * (1 - xm))
+        der[1:-1] = (200 * (xm - xm_m1*xm_m1) -
+                     400 * (xm_p1 - xm*xm) * xm - 2 * (1 - xm))
         der[0] = -400 * x[0] * (x[1] - x[0]**2) - 2 * (1 - x[0])
         der[-1] = 200 * (x[-1] - x[-2]**2)
         return der
@@ -364,7 +364,7 @@ class Elec:
     def fun(self, x):
         dx, dy, dz = self._compute_coordinate_deltas(x)
         with np.errstate(divide='ignore'):
-            dm1 = (dx**2 + dy**2 + dz**2) ** -0.5
+            dm1 = (dx*dx + dy*dy + dz*dz) ** -0.5
         dm1[np.diag_indices_from(dm1)] = 0
         return 0.5 * np.sum(dm1)
 
@@ -372,7 +372,7 @@ class Elec:
         dx, dy, dz = self._compute_coordinate_deltas(x)
 
         with np.errstate(divide='ignore'):
-            dm3 = (dx**2 + dy**2 + dz**2) ** -1.5
+            dm3 = (dx*dx + dy*dy + dz*dz) ** -1.5
         dm3[np.diag_indices_from(dm3)] = 0
 
         grad_x = -np.sum(dx * dm3, axis=1)
@@ -383,7 +383,7 @@ class Elec:
 
     def hess(self, x):
         dx, dy, dz = self._compute_coordinate_deltas(x)
-        d = (dx**2 + dy**2 + dz**2) ** 0.5
+        d = (dx*dx + dy*dy + dz*dz) ** 0.5
 
         with np.errstate(divide='ignore'):
             dm3 = d ** -3
@@ -393,7 +393,7 @@ class Elec:
         dm3[i, i] = 0
         dm5[i, i] = 0
 
-        Hxx = dm3 - 3 * dx**2 * dm5
+        Hxx = dm3 - 3 * dx*dx * dm5
         Hxx[i, i] = -np.sum(Hxx, axis=1)
 
         Hxy = -3 * dx * dy * dm5
@@ -402,13 +402,13 @@ class Elec:
         Hxz = -3 * dx * dz * dm5
         Hxz[i, i] = -np.sum(Hxz, axis=1)
 
-        Hyy = dm3 - 3 * dy**2 * dm5
+        Hyy = dm3 - 3 * dy*dy * dm5
         Hyy[i, i] = -np.sum(Hyy, axis=1)
 
         Hyz = -3 * dy * dz * dm5
         Hyz[i, i] = -np.sum(Hyz, axis=1)
 
-        Hzz = dm3 - 3 * dz**2 * dm5
+        Hzz = dm3 - 3 * dz*dz * dm5
         Hzz[i, i] = -np.sum(Hzz, axis=1)
 
         H = np.vstack((
@@ -423,7 +423,7 @@ class Elec:
     def constr(self):
         def fun(x):
             x_coord, y_coord, z_coord = self._get_cordinates(x)
-            return x_coord**2 + y_coord**2 + z_coord**2 - 1
+            return x_coord*x_coord + y_coord*y_coord + z_coord*z_coord - 1
 
         if self.constr_jac is None:
             def jac(x):

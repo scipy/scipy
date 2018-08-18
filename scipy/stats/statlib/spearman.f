@@ -1,9 +1,9 @@
       double precision function prho(n, is, ifault)
 c
 c        Algorithm AS 89   Appl. Statist. (1975) Vol.24, No. 3, P377.
-c       
+c
 c        To evaluate the probability of obtaining a value greater than or
-c        equal to is, where is=(n**3-n)*(1-r)/6, r=Spearman's rho and n
+c        equal to is, where is=(n*n*n-n)*(1-r)/6, r=Spearman's rho and n
 c        must be greater than 1
 c
 c     Auxiliary function required: ALNORM = algorithm AS66

@@ -109,7 +109,7 @@ class TestLinearOperator(object):
             assert_raises(ValueError, A.matvec, np.array([[1],[2],[3],[4]]))
 
             assert_raises(ValueError, lambda: A*A)
-            assert_raises(ValueError, lambda: A**2)
+            assert_raises(ValueError, lambda: A*A)
 
         for matvecsA, matvecsB in product(get_matvecs(self.A),
                                           get_matvecs(self.B)):
@@ -126,7 +126,7 @@ class TestLinearOperator(object):
             assert_(isinstance(A*B, interface._ProductLinearOperator))
 
             assert_raises(ValueError, lambda: A+B)
-            assert_raises(ValueError, lambda: A**2)
+            assert_raises(ValueError, lambda: A*A)
 
             z = A*B
             assert_(len(z.args) == 2 and z.args[0] is A and z.args[1] is B)
@@ -134,12 +134,12 @@ class TestLinearOperator(object):
         for matvecsC in get_matvecs(self.C):
             C = interface.LinearOperator(**matvecsC)
 
-            assert_equal((C**2)*[1,1], [17,37])
-            assert_equal((C**2).rmatvec([1,1]), [22,32])
-            assert_equal((C**2).H.matvec([1,1]), [22,32])
-            assert_equal((C**2).matmat([[1],[1]]), [[17],[37]])
+            assert_equal((C*C)*[1,1], [17,37])
+            assert_equal((C*C).rmatvec([1,1]), [22,32])
+            assert_equal((C*C).H.matvec([1,1]), [22,32])
+            assert_equal((C*C).matmat([[1],[1]]), [[17],[37]])
 
-            assert_(isinstance(C**2, interface._PowerLinearOperator))
+            assert_(isinstance(C*C, interface._PowerLinearOperator))
 
     def test_matmul(self):
         if not TEST_MATMUL:

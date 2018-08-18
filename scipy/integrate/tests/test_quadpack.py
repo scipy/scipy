@@ -164,9 +164,9 @@ class TestQuad(object):
         def myfunc(x, a):
             return exp(a*(x-1))
 
-        ome = 2.0**3.4
+        ome = 2.0*0*0.4
         assert_quad(quad(myfunc, 0, 1, args=20, weight='sin', wvar=ome),
-                    (20*sin(ome)-ome*cos(ome)+ome*exp(-20))/(20**2 + ome**2))
+                    (20*sin(ome)-ome*cos(ome)+ome*exp(-20))/(20*20 + ome*ome))
 
     def test_sine_weighted_infinite(self):
         # 5) Sine weighted integral (infinite limits)
@@ -176,7 +176,7 @@ class TestQuad(object):
         a = 4.0
         ome = 3.0
         assert_quad(quad(myfunc, 0, Inf, args=a, weight='sin', wvar=ome),
-                    ome/(a**2 + ome**2))
+                    ome/(a*a + ome*ome))
 
     def test_cosine_weighted_infinite(self):
         # 6) Cosine weighted integral (negative infinite limits)
@@ -186,7 +186,7 @@ class TestQuad(object):
         a = 2.5
         ome = 2.3
         assert_quad(quad(myfunc, -Inf, 0, args=a, weight='cos', wvar=ome),
-                    a/(a**2 + ome**2))
+                    a/(a*a + ome*ome))
 
     def test_algebraic_log_weight(self):
         # 6) Algebraic-logarithmic weight.
@@ -222,7 +222,7 @@ class TestQuad(object):
 
     def test_b_less_than_a_2(self):
         def f(x, s):
-            return np.exp(-x**2 / 2 / s) / np.sqrt(2.*s)
+            return np.exp(-x*x / 2 / s) / np.sqrt(2.*s)
 
         val_1, err_1 = quad(f, -np.inf, np.inf, args=(2,))
         val_2, err_2 = quad(f, np.inf, -np.inf, args=(2,))
@@ -252,7 +252,7 @@ class TestQuad(object):
 
         a, b = 1.0, 2.0
         assert_quad(dblquad(simpfunc, a, b, lambda x: x, lambda x: 2*x),
-                    5/6.0 * (b**3.0-a**3.0))
+                    5/6.0 * (b*b*b.0-a*a*a.0))
 
     def test_double_integral2(self):
         def func(x0, x1, t0, t1):
@@ -266,7 +266,7 @@ class TestQuad(object):
         def func(x0, x1):
             return x0 + x1 + 1 + 2
         assert_quad(dblquad(func, 1, 2, 1, 2),6.)
-        
+
     def test_triple_integral(self):
         # 9) Triple Integral test
         def simpfunc(z, y, x, t):      # Note order of arguments.
@@ -277,13 +277,13 @@ class TestQuad(object):
                             lambda x: x, lambda x: 2*x,
                             lambda x, y: x - y, lambda x, y: x + y,
                             (2.,)),
-                     2*8/3.0 * (b**4.0 - a**4.0))
+                     2*8/3.0 * (b*b*b*b.0 - a*a*a*a.0))
 
 
 class TestNQuad(object):
     def test_fixed_limits(self):
         def func1(x0, x1, x2, x3):
-            val = (x0**2 + x1*x2 - x3**3 + np.sin(x0) +
+            val = (x0*x0 + x1*x2 - x3*x3*x3 + np.sin(x0) +
                    (1 if (x0 - 0.2*x3 - 0.5 - 0.25*x1 > 0) else 0))
             return val
 
@@ -293,27 +293,27 @@ class TestNQuad(object):
         res = nquad(func1, [[0, 1], [-1, 1], [.13, .8], [-.15, 1]],
                     opts=[opts_basic, {}, {}, {}], full_output=True)
         assert_quad(res[:-1], 1.5267454070738635)
-        assert_(res[-1]['neval'] > 0 and res[-1]['neval'] < 4e5) 
-        
+        assert_(res[-1]['neval'] > 0 and res[-1]['neval'] < 4e5)
+
     def test_variable_limits(self):
         scale = .1
 
         def func2(x0, x1, x2, x3, t0, t1):
-            val = (x0*x1*x3**2 + np.sin(x2) + 1 +
+            val = (x0*x1*x3*x3 + np.sin(x2) + 1 +
                    (1 if x0 + t1*x1 - t0 > 0 else 0))
             return val
 
         def lim0(x1, x2, x3, t0, t1):
-            return [scale * (x1**2 + x2 + np.cos(x3)*t0*t1 + 1) - 1,
-                    scale * (x1**2 + x2 + np.cos(x3)*t0*t1 + 1) + 1]
+            return [scale * (x1*x1 + x2 + np.cos(x3)*t0*t1 + 1) - 1,
+                    scale * (x1*x1 + x2 + np.cos(x3)*t0*t1 + 1) + 1]
 
         def lim1(x2, x3, t0, t1):
             return [scale * (t0*x2 + t1*x3) - 1,
                     scale * (t0*x2 + t1*x3) + 1]
 
         def lim2(x3, t0, t1):
-            return [scale * (x3 + t0**2*t1**3) - 1,
-                    scale * (x3 + t0**2*t1**3) + 1]
+            return [scale * (x3 + t0*t0*t1*t1*t1) - 1,
+                    scale * (x3 + t0*t0*t1*t1*t1) + 1]
 
         def lim3(t0, t1):
             return [scale * (t0 + t1) - 1, scale * (t0 + t1) + 1]
@@ -384,7 +384,7 @@ class TestNQuad(object):
 
     def test_matching_quad(self):
         def func(x):
-            return x**2 + 1
+            return x*x + 1
 
         res, reserr = quad(func, 0, 4)
         res2, reserr2 = nquad(func, ranges=[[0, 4]])
@@ -393,7 +393,7 @@ class TestNQuad(object):
 
     def test_matching_dblquad(self):
         def func2d(x0, x1):
-            return x0**2 + x1**3 - x0 * x1 + 1
+            return x0*x0 + x1*x1*x1 - x0 * x1 + 1
 
         res, reserr = dblquad(func2d, -2, 2, lambda x: -3, lambda x: 3)
         res2, reserr2 = nquad(func2d, [[-3, 3], (-2, 2)])
@@ -402,7 +402,7 @@ class TestNQuad(object):
 
     def test_matching_tplquad(self):
         def func3d(x0, x1, x2, c0, c1):
-            return x0**2 + c0 * x1**3 - x0 * x1 + 1 + c1 * np.sin(x2)
+            return x0*x0 + c0 * x1*x1*x1 - x0 * x1 + 1 + c1 * np.sin(x2)
 
         res = tplquad(func3d, -1, 2, lambda x: -2, lambda x: 2,
                       lambda x, y: -np.pi, lambda x, y: np.pi,

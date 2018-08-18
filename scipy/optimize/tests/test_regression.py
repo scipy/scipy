@@ -20,7 +20,7 @@ class TestRegression(object):
 
     def test_newton_integers(self):
         # Regression test for gh-1741
-        root = scipy.optimize.newton(lambda x: x**2 - 1, x0=2,
+        root = scipy.optimize.newton(lambda x: x*x - 1, x0=2,
                                     fprime=lambda x: 2*x)
         assert_almost_equal(root, 1.0)
 
@@ -33,7 +33,7 @@ class TestRegression(object):
         def func(x):
             counter[0] += 1
             if counter[0] < 3:
-                return x**2 - np.array([9, 10, 11])
+                return x*x - np.array([9, 10, 11])
             else:
                 raise SomeError()
         assert_raises(SomeError,

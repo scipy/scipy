@@ -278,7 +278,7 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
     >>> x2 = lambda x: x**2
     >>> integrate.quad(x2, 0, 4)
     (21.333333333333332, 2.3684757858670003e-13)
-    >>> print(4**3 / 3.)  # analytical result
+    >>> print(4*4*4 / 3.)  # analytical result
     21.3333333333
 
     Calculate :math:`\\int^\\infty_0 e^{-x} dx`
@@ -312,7 +312,7 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
        lib.func.argtypes = (ctypes.c_int,ctypes.c_double)
        integrate.quad(lib.func,0,1,(1))
        #(1.3333333333333333, 1.4802973661668752e-14)
-       print((1.0**3/3.0 + 1.0) - (0.0**3/3.0 + 0.0)) #Analytic result
+       print((1.0*0*0/3.0 + 1.0) - (0.0*0*0/3.0 + 0.0)) #Analytic result
        # 1.3333333333333333
 
     Be aware that pulse shapes and other sharp features as compared to the
@@ -563,7 +563,7 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
     Examples
     --------
 
-    Compute the double integral of ``x * y**2`` over the box
+    Compute the double integral of ``x * y*y`` over the box
     ``x`` ranging from 0 to 2 and ``y`` ranging from 0 to 1.
 
     >>> from scipy import integrate
@@ -572,11 +572,11 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
         (0.6666666666666667, 7.401486830834377e-15)
 
     """
-    
+
     def temp_ranges(*args):
         return [gfun(args[0]) if callable(gfun) else gfun,
                 hfun(args[0]) if callable(hfun) else hfun]
-        
+
     return nquad(func, [temp_ranges, [a, b]], args=args,
             opts={"epsabs": epsabs, "epsrel": epsrel})
 
@@ -639,7 +639,7 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
     Examples
     --------
 
-    Compute the triple integral of ``x * y * z``, over ``x`` ranging 
+    Compute the triple integral of ``x * y * z``, over ``x`` ranging
     from 1 to 2, ``y`` ranging from 2 to 3, ``z`` ranging from 0 to 1.
 
     >>> from scipy import integrate
@@ -755,7 +755,7 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
     Examples
     --------
     >>> from scipy import integrate
-    >>> func = lambda x0,x1,x2,x3 : x0**2 + x1*x2 - x3**3 + np.sin(x0) + (
+    >>> func = lambda x0,x1,x2,x3 : x0*x0 + x1*x2 - x3*x3*x3 + np.sin(x0) + (
     ...                                 1 if (x0-.2*x3-.5-.25*x1>0) else 0)
     >>> points = [[lambda x1,x2,x3 : 0.2*x3 + 0.5 + 0.25*x1], [], [], []]
     >>> def opts0(*args, **kwargs):
@@ -766,16 +766,16 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
 
     >>> scale = .1
     >>> def func2(x0, x1, x2, x3, t0, t1):
-    ...     return x0*x1*x3**2 + np.sin(x2) + 1 + (1 if x0+t1*x1-t0>0 else 0)
+    ...     return x0*x1*x3*x3 + np.sin(x2) + 1 + (1 if x0+t1*x1-t0>0 else 0)
     >>> def lim0(x1, x2, x3, t0, t1):
-    ...     return [scale * (x1**2 + x2 + np.cos(x3)*t0*t1 + 1) - 1,
-    ...             scale * (x1**2 + x2 + np.cos(x3)*t0*t1 + 1) + 1]
+    ...     return [scale * (x1*x1 + x2 + np.cos(x3)*t0*t1 + 1) - 1,
+    ...             scale * (x1*x1 + x2 + np.cos(x3)*t0*t1 + 1) + 1]
     >>> def lim1(x2, x3, t0, t1):
     ...     return [scale * (t0*x2 + t1*x3) - 1,
     ...             scale * (t0*x2 + t1*x3) + 1]
     >>> def lim2(x3, t0, t1):
-    ...     return [scale * (x3 + t0**2*t1**3) - 1,
-    ...             scale * (x3 + t0**2*t1**3) + 1]
+    ...     return [scale * (x3 + t0*t0*t1*t1*t1) - 1,
+    ...             scale * (x3 + t0*t0*t1*t1*t1) + 1]
     >>> def lim3(t0, t1):
     ...     return [scale * (t0+t1) - 1, scale * (t0+t1) + 1]
     >>> def opts0(x1, x2, x3, t0, t1):

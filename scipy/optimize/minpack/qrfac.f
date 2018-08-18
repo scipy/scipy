@@ -149,7 +149,7 @@ c
    70          continue
             if (.not.pivot .or. rdiag(k) .eq. zero) go to 80
             temp = a(j,k)/rdiag(k)
-            rdiag(k) = rdiag(k)*dsqrt(dmax1(zero,one-temp**2))
+            rdiag(k) = rdiag(k)*dsqrt(dmax1(zero,one-temp*temp))
             if (p05*(rdiag(k)/wa(k))**2 .gt. epsmch) go to 80
             rdiag(k) = enorm(m-j,a(jp1,k))
             wa(k) = rdiag(k)

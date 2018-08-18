@@ -3,7 +3,7 @@
       implicit none
 c  subroutine polar fits a smooth function f(x,y) to a set of data
 c  points (x(i),y(i),z(i)) scattered arbitrarily over an approximation
-c  domain  x**2+y**2 <= rad(atan(y/x))**2. through the transformation
+c  domain  x*x+y*y <= rad(atan(y/x))**2. through the transformation
 c    x = u*rad(v)*cos(v) , y = u*rad(v)*sin(v)
 c  the approximation problem is reduced to the determination of a bi-
 c  cubic spline s(u,v) fitting a corresponding set of data points

@@ -32,7 +32,7 @@ def lombscargle(x,
     periodic signals with uneven temporal sampling.
 
     When *normalize* is False (default) the computed periodogram
-    is unnormalized, it takes the value ``(A**2) * N/4`` for a harmonic
+    is unnormalized, it takes the value ``(A*A) * N/4`` for a harmonic
     signal with amplitude A for sufficiently large N.
 
     When *normalize* is True the computed periodogram is normalized by
@@ -191,8 +191,8 @@ def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',
         data, a two-sided spectrum is always returned.
     scaling : { 'density', 'spectrum' }, optional
         Selects between computing the power spectral density ('density')
-        where `Pxx` has units of V**2/Hz and computing the power
-        spectrum ('spectrum') where `Pxx` has units of V**2, if `x`
+        where `Pxx` has units of V*V/Hz and computing the power
+        spectrum ('spectrum') where `Pxx` has units of V*V, if `x`
         is measured in V and `fs` is measured in Hz. Defaults to
         'density'
     axis : int, optional
@@ -222,7 +222,7 @@ def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',
     >>> np.random.seed(1234)
 
     Generate a test signal, a 2 Vrms sine wave at 1234 Hz, corrupted by
-    0.001 V**2/Hz of white noise sampled at 10 kHz.
+    0.001 V*V/Hz of white noise sampled at 10 kHz.
 
     >>> fs = 10e3
     >>> N = 1e5
@@ -239,7 +239,7 @@ def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',
     >>> plt.semilogy(f, Pxx_den)
     >>> plt.ylim([1e-7, 1e2])
     >>> plt.xlabel('frequency [Hz]')
-    >>> plt.ylabel('PSD [V**2/Hz]')
+    >>> plt.ylabel('PSD [V*V/Hz]')
     >>> plt.show()
 
     If we average the last half of the spectral density, to exclude the
@@ -337,8 +337,8 @@ def welch(x, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
         data, a two-sided spectrum is always returned.
     scaling : { 'density', 'spectrum' }, optional
         Selects between computing the power spectral density ('density')
-        where `Pxx` has units of V**2/Hz and computing the power
-        spectrum ('spectrum') where `Pxx` has units of V**2, if `x`
+        where `Pxx` has units of V*V/Hz and computing the power
+        spectrum ('spectrum') where `Pxx` has units of V*V, if `x`
         is measured in V and `fs` is measured in Hz. Defaults to
         'density'
     axis : int, optional
@@ -390,7 +390,7 @@ def welch(x, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     >>> np.random.seed(1234)
 
     Generate a test signal, a 2 Vrms sine wave at 1234 Hz, corrupted by
-    0.001 V**2/Hz of white noise sampled at 10 kHz.
+    0.001 V*V/Hz of white noise sampled at 10 kHz.
 
     >>> fs = 10e3
     >>> N = 1e5
@@ -407,7 +407,7 @@ def welch(x, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     >>> plt.semilogy(f, Pxx_den)
     >>> plt.ylim([0.5e-3, 1])
     >>> plt.xlabel('frequency [Hz]')
-    >>> plt.ylabel('PSD [V**2/Hz]')
+    >>> plt.ylabel('PSD [V*V/Hz]')
     >>> plt.show()
 
     If we average the last half of the spectral density, to exclude the
@@ -443,7 +443,7 @@ def welch(x, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     >>> plt.semilogy(f_med, Pxx_den_med, label='median')
     >>> plt.ylim([0.5e-3, 1])
     >>> plt.xlabel('frequency [Hz]')
-    >>> plt.ylabel('PSD [V**2/Hz]')
+    >>> plt.ylabel('PSD [V*V/Hz]')
     >>> plt.legend()
     >>> plt.show()
 
@@ -502,8 +502,8 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
         data, a two-sided spectrum is always returned.
     scaling : { 'density', 'spectrum' }, optional
         Selects between computing the cross spectral density ('density')
-        where `Pxy` has units of V**2/Hz and computing the cross spectrum
-        ('spectrum') where `Pxy` has units of V**2, if `x` and `y` are
+        where `Pxy` has units of V*V/Hz and computing the cross spectrum
+        ('spectrum') where `Pxy` has units of V*V, if `x` and `y` are
         measured in V and `fs` is measured in Hz. Defaults to 'density'
     axis : int, optional
         Axis along which the CSD is computed for both inputs; the
@@ -577,7 +577,7 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     >>> f, Pxy = signal.csd(x, y, fs, nperseg=1024)
     >>> plt.semilogy(f, np.abs(Pxy))
     >>> plt.xlabel('frequency [Hz]')
-    >>> plt.ylabel('CSD [V**2/Hz]')
+    >>> plt.ylabel('CSD [V*V/Hz]')
     >>> plt.show()
     """
 
@@ -645,8 +645,8 @@ def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=None, noverlap=None,
         data, a two-sided spectrum is always returned.
     scaling : { 'density', 'spectrum' }, optional
         Selects between computing the power spectral density ('density')
-        where `Sxx` has units of V**2/Hz and computing the power
-        spectrum ('spectrum') where `Sxx` has units of V**2, if `x`
+        where `Sxx` has units of V*V/Hz and computing the power
+        spectrum ('spectrum') where `Sxx` has units of V*V, if `x`
         is measured in V and `fs` is measured in Hz. Defaults to
         'density'.
     axis : int, optional
@@ -1282,7 +1282,7 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     >>> import matplotlib.pyplot as plt
 
     Generate a test signal, a 2 Vrms sine wave at 50Hz corrupted by
-    0.001 V**2/Hz of white noise sampled at 1024 Hz.
+    0.001 V*V/Hz of white noise sampled at 1024 Hz.
 
     >>> fs = 1024
     >>> N = 10*fs
@@ -1623,8 +1623,8 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
         data, a two-sided spectrum is always returned.
     scaling : { 'density', 'spectrum' }, optional
         Selects between computing the cross spectral density ('density')
-        where `Pxy` has units of V**2/Hz and computing the cross
-        spectrum ('spectrum') where `Pxy` has units of V**2, if `x`
+        where `Pxy` has units of V*V/Hz and computing the cross
+        spectrum ('spectrum') where `Pxy` has units of V*V, if `x`
         and `y` are measured in V and `fs` is measured in Hz.
         Defaults to 'density'
     axis : int, optional

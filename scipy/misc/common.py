@@ -77,7 +77,7 @@ def derivative(func, x0, dx=1.0, n=1, args=(), order=3):
     --------
     >>> from scipy.misc import derivative
     >>> def f(x):
-    ...     return x**3 + x**2
+    ...     return x*x*x + x**2
     >>> derivative(f, 1.0, dx=1e-6)
     4.9999999999217337
 
@@ -290,7 +290,7 @@ def electrocardiogram():
     >>> f, Pxx = welch(ecg, fs=fs, nperseg=2048, scaling="spectrum")
     >>> plt.semilogy(f, Pxx)
     >>> plt.xlabel("Frequency in Hz")
-    >>> plt.ylabel("Power spectrum of the ECG in mV**2")
+    >>> plt.ylabel("Power spectrum of the ECG in mV*mV")
     >>> plt.xlim(f[[0, -1]])
     >>> plt.show()
     """

@@ -24,7 +24,7 @@
  * x = z - log(z)/z  - (1/z) P(1/z) / Q(1/z).
  * There are two rational functions P/Q, one for 0 < y < exp(-32)
  * and the other for y up to exp(-2).  For larger arguments,
- * w = y - 0.5, and  x/sqrt(2pi) = w + w**3 R(w**2)/S(w**2)).
+ * w = y - 0.5, and  x/sqrt(2pi) = w + w*w*w R(w*w)/S(w*w)).
  *
  *
  * ACCURACY:

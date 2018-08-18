@@ -20,15 +20,15 @@ def test_special_points():
 
     phi = (1 + sqrt(5))/2
     dataset = [(1, 0),
-               (2, -pi**2/12),
-               (0.5, pi**2/12 - log(2)**2/2),
-               (0, pi**2/6),
-               (-1, pi**2/4 - 1j*pi*log(2)),
-               ((-1 + sqrt(5))/2, pi**2/15 - log(phi)**2),
-               ((3 - sqrt(5))/2, pi**2/10 - log(phi)**2),
-               (phi, -pi**2/15 + log(phi)**2/2),
+               (2, -pi*pi/12),
+               (0.5, pi*pi/12 - log(2)**2/2),
+               (0, pi*pi/6),
+               (-1, pi*pi/4 - 1j*pi*log(2)),
+               ((-1 + sqrt(5))/2, pi*pi/15 - log(phi)**2),
+               ((3 - sqrt(5))/2, pi*pi/10 - log(phi)**2),
+               (phi, -pi*pi/15 + log(phi)**2/2),
                # Corrected from Zagier, "The Dilogarithm Function"
-               ((3 + sqrt(5))/2, -pi**2/10 - log(phi)**2)]
+               ((3 + sqrt(5))/2, -pi*pi/10 - log(phi)**2)]
 
     dataset = np.asarray(dataset)
     FuncData(spence, dataset, 0, 1, rtol=1e-14).check()

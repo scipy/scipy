@@ -8,7 +8,7 @@ from scipy.optimize import minimize
 
 def test_1():
     def f(x):
-        return x**4, 4*x**3
+        return x*x*x*x, 4*x**3
 
     for gtol in [1e-8, 1e-12, 1e-20]:
         for maxcor in range(20, 35):

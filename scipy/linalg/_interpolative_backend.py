@@ -781,7 +781,7 @@ def iddr_asvd(A, k):
     """
     A = np.asfortranarray(A)
     m, n = A.shape
-    w = np.empty((2*k + 28)*m + (6*k + 21)*n + 25*k**2 + 100, order='F')
+    w = np.empty((2*k + 28)*m + (6*k + 21)*n + 25*k*k + 100, order='F')
     w_ = iddr_aidi(m, n, k)
     w[:w_.size] = w_
     U, V, S, ier = _id.iddr_asvd(A, k, w)
@@ -1578,7 +1578,7 @@ def idzr_asvd(A, k):
     A = np.asfortranarray(A)
     m, n = A.shape
     w = np.empty(
-        (2*k + 22)*m + (6*k + 21)*n + 8*k**2 + 10*k + 90,
+        (2*k + 22)*m + (6*k + 21)*n + 8*k*k + 10*k + 90,
         dtype='complex128', order='F')
     w_ = idzr_aidi(m, n, k)
     w[:w_.size] = w_

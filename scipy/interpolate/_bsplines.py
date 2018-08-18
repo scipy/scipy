@@ -510,7 +510,7 @@ class BSpline(object):
                 # (cf _fitpack_impl.splint).
                 t, c, k = self.tck
                 integral, wrk = _dierckx._splint(t, c, k, a, b)
-                return integral * sign 
+                return integral * sign
 
         out = np.empty((2, prod(self.c.shape[1:])), dtype=self.c.dtype)
 
@@ -677,7 +677,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     ...     return x
 
     >>> x = cheb_nodes(20)
-    >>> y = np.sqrt(1 - x**2)
+    >>> y = np.sqrt(1 - x*x)
 
     >>> from scipy.interpolate import BSpline, make_interp_spline
     >>> b = make_interp_spline(x, y)
@@ -911,7 +911,7 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
     Generate some noisy data:
 
     >>> x = np.linspace(-3, 3, 50)
-    >>> y = np.exp(-x**2) + 0.1 * np.random.randn(50)
+    >>> y = np.exp(-x*x) + 0.1 * np.random.randn(50)
 
     Now fit a smoothing cubic spline with a pre-defined internal knots.
     Here we make the knot vector (k+1)-regular by adding boundary knots:

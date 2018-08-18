@@ -496,7 +496,7 @@ c          as follows..
 c          if neq is constant and the maximum method orders have
 c          their default values, then
 c             lrn = 20 + 16*neq,
-c             lrs = 22 + 9*neq + neq**2           if jt = 1 or 2,
+c             lrs = 22 + 9*neq + neq*neq           if jt = 1 or 2,
 c             lrs = 22 + 10*neq + (2*ml+mu)*neq   if jt = 4 or 5.
 c          under any other conditions, lrn and lrs are given by..
 c             lrn = 20 + nyh*(mxordn+1) + 3*neq,
@@ -508,7 +508,7 @@ c                      optional input,
 c             mxords = 5, unless a smaller value is given as an
 c                      optional input,
 c             lmat   = length of matrix work space..
-c             lmat   = neq**2 + 2              if jt = 1 or 2,
+c             lmat   = neq*neq + 2              if jt = 1 or 2,
 c             lmat   = (2*ml + mu + 1)*neq + 2 if jt = 4 or 5.
 c
 c                       --- dynamic length case ---
@@ -544,7 +544,7 @@ c          only be at least lin = 20.
 c
 c          the first few words of iwork are used for conditional and
 c          optional inputs and optional outputs.
-c 
+c
 c          the following 2 words in iwork are conditional inputs..
 c            iwork(1) = ml     these are the lower and upper
 c            iwork(2) = mu     half-bandwidths, respectively, of the
@@ -1233,7 +1233,7 @@ c if this is positive, or max(atol(i)/abs(y(i))) otherwise, adjusted
 c so as to be between 100*uround and 1.0e-3.
 c then the computed value h0 is given by..
 c
-c   h0**(-2)  =  1./(tol * w0**2)  +  tol * (norm(f))**2
+c   h0**(-2)  =  1./(tol * w0*w0)  +  tol * (norm(f))**2
 c
 c where   w0     = max ( abs(t), abs(tout) ),
 c         f      = the initial value of the vector f(t,y), and

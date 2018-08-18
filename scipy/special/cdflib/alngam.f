@@ -122,7 +122,7 @@ C
 C     COMPUTE POWER SERIES
 C
 C
-  100 alngam = devlpl(coef,5,1.0D0/ (xx**2))/xx
+  100 alngam = devlpl(coef,5,1.0D0/ (xx*xx))/xx
       alngam = alngam + offset + (xx-0.5D0)*log(xx) - xx
   110 RETURN
 

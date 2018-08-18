@@ -90,12 +90,12 @@ c
          if (rowj .eq. zero) go to 50
          if (dabs(r(j,j)) .ge. dabs(rowj)) go to 30
             cotan = r(j,j)/rowj
-            sin(j) = p5/dsqrt(p25+p25*cotan**2)
+            sin(j) = p5/dsqrt(p25+p25*cotan*cotan)
             cos(j) = sin(j)*cotan
             go to 40
    30    continue
             tan = rowj/r(j,j)
-            cos(j) = p5/dsqrt(p25+p25*tan**2)
+            cos(j) = p5/dsqrt(p25+p25*tan*tan)
             sin(j) = cos(j)*tan
    40    continue
 c

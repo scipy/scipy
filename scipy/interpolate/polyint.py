@@ -268,7 +268,7 @@ class KroghInterpolator(_Interpolator1DWithDerivatives):
     >>> from scipy.interpolate import KroghInterpolator
     >>> KroghInterpolator([0,0,1],[0,2,0])
 
-    This constructs the quadratic 2*X**2-2*X. The derivative condition
+    This constructs the quadratic 2*X*X-2*X. The derivative condition
     is indicated by the repeated zero in the xi array; the corresponding
     yi values are 0, the function value, and 2, the derivative value.
 

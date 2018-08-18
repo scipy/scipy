@@ -109,11 +109,11 @@ def equality_constrained_sqp(fun_and_constr, grad_and_jac, lagr_hess,
         # minimize 1/2 dt.T H dt + dt.T (H dn + c)
         # subject to:
         # A dt = 0
-        # ||dt|| <= sqrt(trust_radius**2 - ||dn||**2)
+        # ||dt|| <= sqrt(trust_radius*trust_radius - ||dn||**2)
         # lb - dn <= dt <= ub - dn
         c_t = H.dot(dn) + c
         b_t = np.zeros_like(b)
-        trust_radius_t = np.sqrt(trust_radius**2 - np.linalg.norm(dn)**2)
+        trust_radius_t = np.sqrt(trust_radius*trust_radius - np.linalg.norm(dn)**2)
         lb_t = trust_lb - dn
         ub_t = trust_ub - dn
         dt, cg_info = projected_cg(H, c_t, Z, Y, b_t,

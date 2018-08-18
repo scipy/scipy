@@ -153,11 +153,11 @@
 0       Timing.  The time required by HYBRD1 to solve a given problem
           depends on N, the behavior of the functions, the accuracy
           requested, and the starting point.  The number of arithmetic
-          operations needed by HYBRD1 is about 11.5*(N**2) to process
+          operations needed by HYBRD1 is about 11.5*(N*N) to process
           each call to FCN.  Unless FCN can be evaluated quickly, the
           timing of HYBRD1 will be strongly influenced by the time spen
           in FCN.
-0       Storage.  HYBRD1 requires (3*N**2 + 17*N)/2 double precision
+0       Storage.  HYBRD1 requires (3*N*N + 17*N)/2 double precision
           storage locations, in addition to the storage required by the
           program.  There are no internally declared storage arrays.
 0
@@ -461,11 +461,11 @@
 0       Timing.  The time required by HYBRD to solve a given problem
           depends on N, the behavior of the functions, the accuracy
           requested, and the starting point.  The number of arithmetic
-          operations needed by HYBRD is about 11.5*(N**2) to process
+          operations needed by HYBRD is about 11.5*(N*N) to process
           each call to FCN.  Unless FCN can be evaluated quickly, the
           timing of HYBRD will be strongly influenced by the time spent
           in FCN.
-0       Storage.  HYBRD requires (3*N**2 + 17*N)/2 double precision
+0       Storage.  HYBRD requires (3*N*N + 17*N)/2 double precision
           storage locations, in addition to the storage required by the
           program.  There are no internally declared storage arrays.
 0
@@ -748,13 +748,13 @@
 0       Timing.  The time required by HYBRJ1 to solve a given problem
           depends on N, the behavior of the functions, the accuracy
           requested, and the starting point.  The number of arithmetic
-          operations needed by HYBRJ1 is about 11.5*(N**2) to process
+          operations needed by HYBRJ1 is about 11.5*(N*N) to process
           each evaluation of the functions (call to FCN with IFLAG = 1)
-          and 1.3*(N**3) to process each evaluation of the Jacobian
+          and 1.3*(N*N*N) to process each evaluation of the Jacobian
           (call to FCN with IFLAG = 2).  Unless FCN can be evaluated
           quickly, the timing of HYBRJ1 will be strongly influenced by
           the time spent in FCN.
-0       Storage.  HYBRJ1 requires (3*N**2 + 17*N)/2 double precision
+0       Storage.  HYBRJ1 requires (3*N*N + 17*N)/2 double precision
           storage locations, in addition to the storage required by the
           program.  There are no internally declared storage arrays.
 0
@@ -1064,13 +1064,13 @@
 0       Timing.  The time required by HYBRJ to solve a given problem
           depends on N, the behavior of the functions, the accuracy
           requested, and the starting point.  The number of arithmetic
-          operations needed by HYBRJ is about 11.5*(N**2) to process
+          operations needed by HYBRJ is about 11.5*(N*N) to process
           each evaluation of the functions (call to FCN with IFLAG = 1)
-          and 1.3*(N**3) to process each evaluation of the Jacobian
+          and 1.3*(N*N*N) to process each evaluation of the Jacobian
           (call to FCN with IFLAG = 2).  Unless FCN can be evaluated
           quickly, the timing of HYBRJ will be strongly influenced by
           the time spent in FCN.
-0       Storage.  HYBRJ requires (3*N**2 + 17*N)/2 double precision
+0       Storage.  HYBRJ requires (3*N*N + 17*N)/2 double precision
           storage locations, in addition to the storage required by the
           program.  There are no internally declared storage arrays.
 0
@@ -1398,9 +1398,9 @@
 0       Timing.  The time required by LMDER1 to solve a given problem
           depends on M and N, the behavior of the functions, the accu-
           racy requested, and the starting point.  The number of arith-
-          metic operations needed by LMDER1 is about N**3 to process
+          metic operations needed by LMDER1 is about N*N*N to process
           each evaluation of the functions (call to FCN with IFLAG = 1)
-          and M*(N**2) to process each evaluation of the Jacobian (call
+          and M*(N*N) to process each evaluation of the Jacobian (call
           to FCN with IFLAG = 2).  Unless FCN can be evaluated quickly,
           the timing of LMDER1 will be strongly influenced by the time
           spent in FCN.
@@ -1763,9 +1763,9 @@
 0       Timing.  The time required by LMDER to solve a given problem
           depends on M and N, the behavior of the functions, the accu-
           racy requested, and the starting point.  The number of arith-
-          metic operations needed by LMDER is about N**3 to process eac
+          metic operations needed by LMDER is about N*N*N to process eac
           evaluation of the functions (call to FCN with IFLAG = 1) and
-          M*(N**2) to process each evaluation of the Jacobian (call to
+          M*(N*N) to process each evaluation of the Jacobian (call to
           FCN with IFLAG = 2).  Unless FCN can be evaluated quickly, th
           timing of LMDER will be strongly influenced by the time spent
           in FCN.
@@ -2103,13 +2103,13 @@
 0       Timing.  The time required by LMSTR1 to solve a given problem
           depends on M and N, the behavior of the functions, the accu-
           racy requested, and the starting point.  The number of arith-
-          metic operations needed by LMSTR1 is about N**3 to process
+          metic operations needed by LMSTR1 is about N*N*N to process
           each evaluation of the functions (call to FCN with IFLAG = 1)
-          and 1.5*(N**2) to process each row of the Jacobian (call to
+          and 1.5*(N*N) to process each row of the Jacobian (call to
           FCN with IFLAG .GE. 2).  Unless FCN can be evaluated quickly,
           the timing of LMSTR1 will be strongly influenced by the time
           spent in FCN.
-0       Storage.  LMSTR1 requires N**2 + 2*M + 6*N double precision sto
+0       Storage.  LMSTR1 requires N*N + 2*M + 6*N double precision sto
           rage locations and N integer storage locations, in addition t
           the storage required by the program.  There are no internally
           declared storage arrays.
@@ -2468,13 +2468,13 @@
 0       Timing.  The time required by LMSTR to solve a given problem
           depends on M and N, the behavior of the functions, the accu-
           racy requested, and the starting point.  The number of arith-
-          metic operations needed by LMSTR is about N**3 to process eac
+          metic operations needed by LMSTR is about N*N*N to process eac
           evaluation of the functions (call to FCN with IFLAG = 1) and
-          1.5*(N**2) to process each row of the Jacobian (call to FCN
+          1.5*(N*N) to process each row of the Jacobian (call to FCN
           with IFLAG .GE. 2).  Unless FCN can be evaluated quickly, the
           timing of LMSTR will be strongly influenced by the time spent
           in FCN.
-0       Storage.  LMSTR requires N**2 + 2*M + 6*N double precision sto-
+0       Storage.  LMSTR requires N*N + 2*M + 6*N double precision sto-
           rage locations and N integer storage locations, in addition t
           the storage required by the program.  There are no internally
           declared storage arrays.
@@ -2796,9 +2796,9 @@
 0                                                                 Page
 0         depends on M and N, the behavior of the functions, the accu-
           racy requested, and the starting point.  The number of arith-
-          metic operations needed by LMDIF1 is about N**3 to process
+          metic operations needed by LMDIF1 is about N*N*N to process
           each evaluation of the functions (one call to FCN) and
-          M*(N**2) to process each approximation to the Jacobian (N
+          M*(N*N) to process each approximation to the Jacobian (N
           calls to FCN).  Unless FCN can be evaluated quickly, the tim-
           ing of LMDIF1 will be strongly influenced by the time spent i
           FCN.
@@ -3146,8 +3146,8 @@
 0       Timing.  The time required by LMDIF to solve a given problem
           depends on M and N, the behavior of the functions, the accu-
           racy requested, and the starting point.  The number of arith-
-          metic operations needed by LMDIF is about N**3 to process eac
-          evaluation of the functions (one call to FCN) and M*(N**2) to
+          metic operations needed by LMDIF is about N*N*N to process eac
+          evaluation of the functions (one call to FCN) and M*(N*N) to
           process each approximation to the Jacobian (N calls to FCN).
           Unless FCN can be evaluated quickly, the timing of LMDIF will
           be strongly influenced by the time spent in FCN.

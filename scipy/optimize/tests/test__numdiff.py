@@ -134,7 +134,7 @@ class TestApproxDerivativesDense(object):
         return np.sin(x[0] * x[1]) * np.log(x[0])
 
     def wrong_dimensions_fun(self, x):
-        return np.array([x**2, np.tan(x), np.exp(x)])
+        return np.array([x*x, np.tan(x), np.exp(x)])
 
     def jac_vector_scalar(self, x):
         return np.array([

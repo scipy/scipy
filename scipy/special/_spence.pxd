@@ -26,7 +26,7 @@ cdef inline double complex cspence(double complex z) nogil:
     - If z is close to 0, use a series centered at 0.
     - If z is far away from 1, use the reflection formula
 
-    spence(z) = -spence(z/(z - 1)) - pi**2/6 - ln(z - 1)**2/2
+    spence(z) = -spence(z/(z - 1)) - pi*pi/6 - ln(z - 1)**2/2
 
     to move close to 1. See [1].
     - If z is close to 1, use a series centered at 1.
@@ -92,7 +92,7 @@ cdef inline double complex cspence_series1(double complex z) nogil:
     for n in range(1, 500):
         zfac *= z
         # Do the divisions one at a time to guard against overflow
-        term = ((zfac/n**2)/(n + 1)**2)/(n + 2)**2
+        term = ((zfac/n*n)/(n + 1)**2)/(n + 2)**2
         res += term
         if zabs(term) <= TOL*zabs(res):
             break

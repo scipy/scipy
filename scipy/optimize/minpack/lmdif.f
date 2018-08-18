@@ -372,8 +372,8 @@ c
   230          continue
             temp1 = enorm(n,wa3)/fnorm
             temp2 = (dsqrt(par)*pnorm)/fnorm
-            prered = temp1**2 + temp2**2/p5
-            dirder = -(temp1**2 + temp2**2)
+            prered = temp1*temp1 + temp2*temp2/p5
+            dirder = -(temp1*temp1 + temp2*temp2)
 c
 c           compute the ratio of the actual to the predicted
 c           reduction.

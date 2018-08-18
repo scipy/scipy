@@ -26,7 +26,7 @@ c       are all nonnegative. This routine uses a randomized algorithm.
 c
 c       input:
 c       m -- number of rows in a
-c       n -- number of columns in a 
+c       n -- number of columns in a
 c       matveca -- routine which applies the adjoint
 c                  of the matrix to be SVD'd
 c                  to an arbitrary vector; this routine must have
@@ -80,7 +80,7 @@ c
      1          iwork,lwork,ier
         real*8 s(krank)
         complex*16 p1t,p2t,p3t,p4t,p1,p2,p3,p4,u(m,krank),v(n,krank),
-     1             w((krank+1)*(2*m+4*n+10)+8*krank**2)
+     1             w((krank+1)*(2*m+4*n+10)+8*krank*krank)
         external matveca,matvec
 c
 c
@@ -129,7 +129,7 @@ c
         real*8 s(krank)
         complex*16 p1t,p2t,p3t,p4t,p1,p2,p3,p4,u(m,krank),v(n,krank),
      1             proj(krank*(n-krank)),col(m*krank),
-     2             work((krank+1)*(m+3*n+10)+9*krank**2)
+     2             work((krank+1)*(m+3*n+10)+9*krank*krank)
         external matveca,matvec
 c
 c

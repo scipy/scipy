@@ -67,7 +67,7 @@ c  calculate the (u,v)-coordinates of the given point.
       one = 1
       u = 0.
       v = 0.
-      dist = x**2+y**2
+      dist = x*x+y**2
       if(dist.le.0.) go to 10
       v = atan2(y,x)
       r = rad(v)

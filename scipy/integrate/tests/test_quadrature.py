@@ -86,7 +86,7 @@ class TestQuadrature(object):
 
     def test_romb_gh_3731(self):
         # Check that romb makes maximal use of data points
-        x = np.arange(2**4+1)
+        x = np.arange(2*2*2*2+1)
         y = np.cos(0.2*x)
         val = romb(y)
         val2, err = quad(lambda x: np.cos(0.2*x), x.min(), x.max())
@@ -110,22 +110,22 @@ class TestQuadrature(object):
         n = 1
         wts, errcoff = newton_cotes(n, 1)
         assert_equal(wts, n*np.array([0.5, 0.5]))
-        assert_almost_equal(errcoff, -n**3/12.0)
+        assert_almost_equal(errcoff, -n*n*n/12.0)
 
         n = 2
         wts, errcoff = newton_cotes(n, 1)
         assert_almost_equal(wts, n*np.array([1.0, 4.0, 1.0])/6.0)
-        assert_almost_equal(errcoff, -n**5/2880.0)
+        assert_almost_equal(errcoff, -n*n*n*n*n/2880.0)
 
         n = 3
         wts, errcoff = newton_cotes(n, 1)
         assert_almost_equal(wts, n*np.array([1.0, 3.0, 3.0, 1.0])/8.0)
-        assert_almost_equal(errcoff, -n**5/6480.0)
+        assert_almost_equal(errcoff, -n*n*n*n*n/6480.0)
 
         n = 4
         wts, errcoff = newton_cotes(n, 1)
         assert_almost_equal(wts, n*np.array([7.0, 32.0, 12.0, 32.0, 7.0])/90.0)
-        assert_almost_equal(errcoff, -n**7/1935360.0)
+        assert_almost_equal(errcoff, -n*n*n*n*n*n*n/1935360.0)
 
     def test_newton_cotes2(self):
         """Test newton_cotes with points that are not evenly spaced."""

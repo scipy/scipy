@@ -768,11 +768,11 @@ class TestAkima1DInterpolator(object):
     def test_degenerate_case_multidimensional(self):
         # This test is for issue #5683.
         x = np.array([0, 1, 2])
-        y = np.vstack((x, x**2)).T
+        y = np.vstack((x, x*x)).T
         ak = Akima1DInterpolator(x, y)
         x_eval = np.array([0.5, 1.5])
         y_eval = ak(x_eval)
-        assert_allclose(y_eval, np.vstack((x_eval, x_eval**2)).T)
+        assert_allclose(y_eval, np.vstack((x_eval, x_eval*x_eval)).T)
 
     def test_extend(self):
         x = np.arange(0., 11.)
@@ -983,7 +983,7 @@ class TestPPoly(object):
         c = np.array([[1, 4], [2, 5], [3, 6]])
         x = np.array([0, 0.5, 1])
         p = PPoly(c, x)
-        assert_allclose(p(0.3), 1*0.3**2 + 2*0.3 + 3)
+        assert_allclose(p(0.3), 1*0.3*3 + 2*0.3 + 3)
         assert_allclose(p(0.7), 4*(0.7-0.5)**2 + 5*(0.7-0.5) + 6)
 
     def test_periodic(self):
@@ -1066,7 +1066,7 @@ class TestPPoly(object):
         c = np.array([[1, 4], [2, 5], [3, 6]], dtype=float)
         x = np.array([0, 0.5, 1])
         p = PPoly.construct_fast(c, x)
-        assert_allclose(p(0.3), 1*0.3**2 + 2*0.3 + 3)
+        assert_allclose(p(0.3), 1*0.3*3 + 2*0.3 + 3)
         assert_allclose(p(0.7), 4*(0.7-0.5)**2 + 5*(0.7-0.5) + 6)
 
     def test_vs_alternative_implementations(self):
@@ -1162,13 +1162,13 @@ class TestPPoly(object):
 
     def test_antiderivative_simple(self):
         np.random.seed(1234)
-        # [ p1(x) = 3*x**2 + 2*x + 1,
+        # [ p1(x) = 3*x*x + 2*x + 1,
         #   p2(x) = 1.6875]
         c = np.array([[3, 2, 1], [0, 0, 1.6875]]).T
-        # [ pp1(x) = x**3 + x**2 + x,
+        # [ pp1(x) = x*x*x + x*x + x,
         #   pp2(x) = 1.6875*(x - 0.25) + pp1(0.25)]
         ic = np.array([[1, 1, 1, 0], [0, 0, 1.6875, 0.328125]]).T
-        # [ ppp1(x) = (1/4)*x**4 + (1/3)*x**3 + (1/2)*x**2,
+        # [ ppp1(x) = (1/4)*x*x*x*x + (1/3)*x*x*x + (1/2)*x*x,
         #   ppp2(x) = (1.6875/2)*(x - 0.25)**2 + pp1(0.25)*x + ppp1(0.25)]
         iic = np.array([[1/4, 1/3, 1/2, 0, 0],
                         [0, 0, 1.6875/2, 0.328125, 0.037434895833333336]]).T
@@ -1333,7 +1333,7 @@ class TestPPoly(object):
         # Check roots repeated in multiple sections are reported only
         # once.
 
-        # [(x + 1)**2 - 1, -x**2] ; x == 0 is a repeated root
+        # [(x + 1)**2 - 1, -x*x] ; x == 0 is a repeated root
         c = np.array([[1, 0, -1], [-1, 0, 0]]).T
         x = np.array([-1, 0, 1])
 
@@ -1418,7 +1418,7 @@ class TestPPoly(object):
                 assert_allclose(res, 0, atol=1e-10)
 
     def test_extrapolate_attr(self):
-        # [ 1 - x**2 ]
+        # [ 1 - x*x ]
         c = np.array([[-1, 0, 1]]).T
         x = np.array([0, 1])
 
@@ -1433,7 +1433,7 @@ class TestPPoly(object):
                 assert_(np.isnan(pp_d([-0.1, 1.1])).all())
                 assert_equal(pp.roots(), [1])
             else:
-                assert_allclose(pp([-0.1, 1.1]), [1-0.1**2, 1-1.1**2])
+                assert_allclose(pp([-0.1, 1.1]), [1-0.1*1, 1-1.1*1])
                 assert_(not np.isnan(pp_i([-0.1, 1.1])).any())
                 assert_(not np.isnan(pp_d([-0.1, 1.1])).any())
                 assert_allclose(pp.roots(), [1, -1])
@@ -1463,20 +1463,20 @@ class TestBPoly(object):
         x = [0, 1]
         c = [[1], [1], [1], [2]]
         bp = BPoly(c, x)
-        assert_allclose(bp(0.3), 0.7**3 +
-                                 3 * 0.7**2 * 0.3 +
-                                 3 * 0.7 * 0.3**2 +
-                             2 * 0.3**3)
+        assert_allclose(bp(0.3), 0.7*7*7 +
+                                 3 * 0.7*7 * 0.3 +
+                                 3 * 0.7 * 0.3*3 +
+                             2 * 0.3*3*3)
 
     def test_simple5(self):
         x = [0, 1]
         c = [[1], [1], [8], [2], [1]]
         bp = BPoly(c, x)
-        assert_allclose(bp(0.3), 0.7**4 +
-                                 4 * 0.7**3 * 0.3 +
-                             8 * 6 * 0.7**2 * 0.3**2 +
-                             2 * 4 * 0.7 * 0.3**3 +
-                                 0.3**4)
+        assert_allclose(bp(0.3), 0.7*7*7*7 +
+                                 4 * 0.7*7*7 * 0.3 +
+                             8 * 6 * 0.7*7 * 0.3*3 +
+                             2 * 4 * 0.7 * 0.3*3*3 +
+                                 0.3*3*3*3)
 
     def test_periodic(self):
         x = [0, 1, 3]
@@ -1484,7 +1484,7 @@ class TestBPoly(object):
         # [3*(1-x)**2, 2*((x-1)/2)**2]
         bp = BPoly(c, x, extrapolate='periodic')
 
-        assert_allclose(bp(3.4), 3 * 0.6**2)
+        assert_allclose(bp(3.4), 3 * 0.6*6)
         assert_allclose(bp(-1.3), 2 * (0.7/2)**2)
 
         assert_allclose(bp(3.4, 1), -6 * 0.6)
@@ -1617,7 +1617,7 @@ class TestBPolyCalculus(object):
         #        (x-1)/2  for x \in [1, 3]
         #
         # antiderivative is then
-        # F(x) = x**2 / 2            for x \in [0, 1),
+        # F(x) = x*x / 2            for x \in [0, 1),
         #        0.5*x*(x/2 - 1) + A  for x \in [1, 3]
         # where A = 3/4 for continuity at x = 1.
         x = [0, 1, 3]
@@ -1628,7 +1628,7 @@ class TestBPolyCalculus(object):
 
         xx = np.linspace(0, 3, 11)
         assert_allclose(bi(xx),
-                        np.where(xx < 1, xx**2 / 2.,
+                        np.where(xx < 1, xx*xx / 2.,
                                          0.5 * xx * (xx/2. - 1) + 3./4),
                         atol=1e-12, rtol=1e-12)
 
@@ -1836,7 +1836,7 @@ class TestBPolyFromDerivatives(object):
     def _make_random_mk(self, m, k):
         # k derivatives at each breakpoint
         np.random.seed(1234)
-        xi = np.asarray([1. * j**2 for j in range(m+1)])
+        xi = np.asarray([1. * j*j for j in range(m+1)])
         yi = [np.random.random(k) for j in range(m+1)]
         return xi, yi
 
@@ -2060,7 +2060,7 @@ class TestNdPPoly(object):
                         dp1.c.transpose(2, 3, 0, 4, 5, 1))
 
     def test_deriv_3d_simple(self):
-        # Integrate to obtain function x y**2 z**4 / (2! 4!)
+        # Integrate to obtain function x y*y z*z*z*z / (2! 4!)
 
         c = np.ones((1, 1, 1, 3, 4, 5))
         x = np.linspace(0, 1, 3+1)**1
@@ -2076,7 +2076,7 @@ class TestNdPPoly(object):
         zi = np.random.rand(20)
 
         assert_allclose(ip((xi, yi, zi)),
-                        xi * yi**2 * zi**4 / (gamma(3)*gamma(5)))
+                        xi * yi*yi * zi*zi*zi*zi / (gamma(3)*gamma(5)))
 
     def test_integrate_2d(self):
         np.random.seed(1234)

@@ -16,19 +16,19 @@ import pytest
 
 def magic_square(n):
     np.random.seed(0)
-    M = n * (n**2 + 1) / 2
+    M = n * (n*n + 1) / 2
 
-    numbers = np.arange(n**4) // n**2 + 1
+    numbers = np.arange(n*n*n*n) // n*n + 1
 
-    numbers = numbers.reshape(n**2, n, n)
+    numbers = numbers.reshape(n*n, n, n)
 
-    zeros = np.zeros((n**2, n, n))
+    zeros = np.zeros((n*n, n, n))
 
     A_list = []
     b_list = []
 
     # Rule 1: use every number exactly once
-    for i in range(n**2):
+    for i in range(n*n):
         A_row = zeros.copy()
         A_row[i, :, :] = 1
         A_list.append(A_row.flatten())

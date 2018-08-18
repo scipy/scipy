@@ -94,7 +94,7 @@ class TestInt32Overflow(object):
     n = 50000
 
     def setup_method(self):
-        assert self.n**2 > np.iinfo(np.int32).max
+        assert self.n*n > np.iinfo(np.int32).max
 
         # check there's enough memory even if everything is run at the
         # same time
@@ -264,7 +264,7 @@ class TestInt32Overflow(object):
 @pytest.mark.skip(reason="64-bit indices in sparse matrices not available")
 def test_csr_matmat_int64_overflow():
     n = 3037000500
-    assert n**2 > np.iinfo(np.int64).max
+    assert n*n > np.iinfo(np.int64).max
 
     # the test would take crazy amounts of memory
     check_free_memory(n * (8*2 + 1) * 3 / 1e6)

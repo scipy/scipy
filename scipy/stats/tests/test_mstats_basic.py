@@ -201,7 +201,7 @@ class TestCorr(object):
         assert_almost_equal(mstats.spearmanr(x,y)[0], 0.6887299)
         # Next test is to make sure calculation uses sufficient precision.
         # The denominator's value is ~n^3 and used to be represented as an
-        # int. 2000**3 > 2**32 so these arrays would cause overflow on
+        # int. 2000*2000*2000 > 2**32 so these arrays would cause overflow on
         # some machines.
         x = list(range(2000))
         y = list(range(2000))
@@ -219,7 +219,7 @@ class TestCorr(object):
         check_named_results(res, attributes, ma=True)
 
     def test_kendalltau(self):
-        
+
         # simple case without ties
         x = ma.array(np.arange(10))
         y = ma.array(np.arange(10))

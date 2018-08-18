@@ -475,12 +475,12 @@ def spearmanr(x, y, use_ties=True):
     if use_ties:
         xties = count_tied_groups(x)
         yties = count_tied_groups(y)
-        corr_x = sum(v*k*(k**2-1) for (k,v) in iteritems(xties))/12.
-        corr_y = sum(v*k*(k**2-1) for (k,v) in iteritems(yties))/12.
+        corr_x = sum(v*k*(k*k-1) for (k,v) in iteritems(xties))/12.
+        corr_y = sum(v*k*(k*k-1) for (k,v) in iteritems(yties))/12.
     else:
         corr_x = corr_y = 0
 
-    denom = n*(n**2 - 1)/6.
+    denom = n*(n*n - 1)/6.
     if corr_x != 0 or corr_y != 0:
         rho = denom - dsq - corr_x - corr_y
         rho /= ma.sqrt((denom-2*corr_x)*(denom-2*corr_y))
@@ -744,7 +744,7 @@ def pointbiserialr(x, y):
     rpb = (y1m - y0m)*np.sqrt(phat * (1-phat)) / y.std()
 
     df = n-2
-    t = rpb*ma.sqrt(df/(1.0-rpb**2))
+    t = rpb*ma.sqrt(df/(1.0-rpb*rpb))
     prob = _betai(0.5*df, 0.5, df/(df+t*t))
 
     return PointbiserialrResult(rpb, prob)
@@ -964,7 +964,7 @@ def ttest_ind(a, b, axis=0, equal_var=True):
         vn1 = v1/n1
         vn2 = v2/n2
         with np.errstate(divide='ignore', invalid='ignore'):
-            df = (vn1 + vn2)**2 / (vn1**2 / (n1 - 1) + vn2**2 / (n2 - 1))
+            df = (vn1 + vn2)**2 / (vn1*vn1 / (n1 - 1) + vn2*vn2 / (n2 - 1))
 
         # If df is undefined, variances are zero.
         # It doesn't matter what df is as long as it is not NaN.
@@ -1063,9 +1063,9 @@ def mannwhitneyu(x,y, use_continuity=True):
     u = nx*ny - U
 
     mu = (nx*ny)/2.
-    sigsq = (nt**3 - nt)/12.
+    sigsq = (nt*nt*nt - nt)/12.
     ties = count_tied_groups(ranks)
-    sigsq -= sum(v*(k**3-k) for (k,v) in iteritems(ties))/12.
+    sigsq -= sum(v*(k*k*k-k) for (k,v) in iteritems(ties))/12.
     sigsq *= nx*ny/float(nt*(nt-1))
 
     if use_continuity:
@@ -1108,10 +1108,10 @@ def kruskal(*args):
     sumrk = ranks.sum(-1)
     ngrp = ranks.count(-1)
     ntot = ranks.count()
-    H = 12./(ntot*(ntot+1)) * (sumrk**2/ngrp).sum() - 3*(ntot+1)
+    H = 12./(ntot*(ntot+1)) * (sumrk*sumrk/ngrp).sum() - 3*(ntot+1)
     # Tie correction
     ties = count_tied_groups(ranks)
-    T = 1. - sum(v*(k**3-k) for (k,v) in iteritems(ties))/float(ntot**3-ntot)
+    T = 1. - sum(v*(k*k*k-k) for (k,v) in iteritems(ties))/float(ntot*ntot*ntot-ntot)
     if T == 0:
         raise ValueError('All numbers are identical in kruskal')
 
@@ -1163,10 +1163,10 @@ def ks_twosamp(data1, data2, alternative="two-sided"):
         prob = special.kolmogorov(np.sqrt(n)*d)
     elif alternative == 'l':
         d = -csum.min()
-        prob = np.exp(-2*n*d**2)
+        prob = np.exp(-2*n*d*d)
     elif alternative == 'g':
         d = csum.max()
-        prob = np.exp(-2*n*d**2)
+        prob = np.exp(-2*n*d*d)
     else:
         raise ValueError("Invalid value for the alternative hypothesis: "
                          "should be in 'two-sided', 'less' or 'greater'")
@@ -2098,7 +2098,7 @@ def kurtosis(a, axis=0, fisher=True, bias=True):
     m4 = moment(a, 4, axis)
     olderr = np.seterr(all='ignore')
     try:
-        vals = ma.where(m2 == 0, 0, m4 / m2**2.0)
+        vals = ma.where(m2 == 0, 0, m4 / m2*m2.0)
     finally:
         np.seterr(**olderr)
 
@@ -2109,7 +2109,7 @@ def kurtosis(a, axis=0, fisher=True, bias=True):
             n = np.extract(can_correct, n)
             m2 = np.extract(can_correct, m2)
             m4 = np.extract(can_correct, m4)
-            nval = 1.0/(n-2)/(n-3)*((n*n-1.0)*m4/m2**2.0-3*(n-1)**2.0)
+            nval = 1.0/(n-2)/(n-3)*((n*n-1.0)*m4/m2*m2.0-3*(n-1)**2.0)
             np.place(vals, can_correct, nval+3.0)
     if fisher:
         return vals - 3
@@ -2309,7 +2309,7 @@ def kurtosistest(a, axis=0):
     x = (b2-E)/ma.sqrt(varb2)
     sqrtbeta1 = 6.0*(n*n-5*n+2)/((n+7)*(n+9)) * np.sqrt((6.0*(n+3)*(n+5)) /
                                                         (n*(n-2)*(n-3)))
-    A = 6.0 + 8.0/sqrtbeta1 * (2.0/sqrtbeta1 + np.sqrt(1+4.0/(sqrtbeta1**2)))
+    A = 6.0 + 8.0/sqrtbeta1 * (2.0/sqrtbeta1 + np.sqrt(1+4.0/(sqrtbeta1*sqrtbeta1)))
     term1 = 1 - 2./(9.0*A)
     denom = 1 + x*ma.sqrt(2/(A-4.0))
     if np.ma.isMaskedArray(denom):
@@ -2658,7 +2658,7 @@ def f_oneway(*args):
     data = argstoarray(*args)
     ngroups = len(data)
     ntot = data.count()
-    sstot = (data**2).sum() - (data.sum())**2/float(ntot)
+    sstot = (data*data).sum() - (data.sum())**2/float(ntot)
     ssbg = (data.count(-1) * (data.mean(-1)-data.mean())**2).sum()
     sswg = sstot-ssbg
     dfbg = ngroups-1
@@ -2714,7 +2714,7 @@ def friedmanchisquare(*args):
     # Ties correction
     repeats = [find_repeats(row) for row in ranked.T]
     ties = np.array([y for x, y in repeats if x.size > 0])
-    tie_correction = 1 - (ties**3-ties).sum()/float(n*(k**3-k))
+    tie_correction = 1 - (ties*ties*ties-ties).sum()/float(n*(k*k*k-k))
 
     ssbg = np.sum((ranked.sum(-1) - n*(k+1)/2.)**2)
     chisq = ssbg * 12./(n*k*(k+1)) * 1./tie_correction

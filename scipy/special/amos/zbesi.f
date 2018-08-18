@@ -73,7 +73,7 @@ C         THE CALCULATIONS ABOVE ARE DONE IN THE RIGHT HALF PLANE AND
 C         CONTINUED INTO THE LEFT HALF PLANE BY THE FORMULA
 C
 C         I(FNU,Z*EXP(M*PI)) = EXP(M*PI*FNU)*I(FNU,Z)  REAL(Z).GT.0.0
-C                       M = +I OR -I,  I**2=-1
+C                       M = +I OR -I,  I*I=-1
 C
 C         FOR NEGATIVE ORDERS,THE FORMULA
 C

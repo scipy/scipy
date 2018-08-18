@@ -245,7 +245,7 @@ c          Private (replicated) array on each PE or array allocated on
 c          the front end.  See Data Distribution Note below.
 c
 c  LWORKL  Integer.  (INPUT)
-c          LWORKL must be at least 3*NCV**2 + 6*NCV.
+c          LWORKL must be at least 3*NCV*NCV + 6*NCV.
 c
 c  INFO    Integer.  (INPUT/OUTPUT)
 c          If INFO .EQ. 0, a randomly initial residual vector is used.
@@ -514,7 +514,7 @@ c
             ierr = -5
          else if (bmat .ne. 'I' .and. bmat .ne. 'G') then
             ierr = -6
-         else if (lworkl .lt. 3*ncv**2 + 6*ncv) then
+         else if (lworkl .lt. 3*ncv*ncv + 6*ncv) then
             ierr = -7
          else if (mode .lt. 1 .or. mode .gt. 4) then
                                                 ierr = -10
@@ -555,7 +555,7 @@ c        %-----------------------------%
 c        | Zero out internal workspace |
 c        %-----------------------------%
 c
-         do 10 j = 1, 3*ncv**2 + 6*ncv
+         do 10 j = 1, 3*ncv*ncv + 6*ncv
             workl(j) = zero
   10     continue
 c
@@ -584,7 +584,7 @@ c
          bounds = ritzi  + ncv
          iq     = bounds + ncv
          iw     = iq     + ldq*ncv
-         next   = iw     + ncv**2 + 3*ncv
+         next   = iw     + ncv*ncv + 3*ncv
 c
          ipntr(4) = next
          ipntr(5) = ih

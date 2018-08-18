@@ -489,7 +489,7 @@ c
             ierr = -5
          else if (bmat .ne. 'I' .and. bmat .ne. 'G') then
             ierr = -6
-         else if (lworkl .lt. 3*ncv**2 + 5*ncv) then
+         else if (lworkl .lt. 3*ncv*ncv + 5*ncv) then
             ierr = -7
          else if (mode .lt. 1 .or. mode .gt. 3) then
                                                 ierr = -10
@@ -531,7 +531,7 @@ c        %-----------------------------%
 c        | Zero out internal workspace |
 c        %-----------------------------%
 c
-         do 10 j = 1, 3*ncv**2 + 5*ncv
+         do 10 j = 1, 3*ncv*ncv + 5*ncv
             workl(j) = zero
   10     continue
 c
@@ -558,7 +558,7 @@ c
          bounds = ritz   + ncv
          iq     = bounds + ncv
          iw     = iq     + ldq*ncv
-         next   = iw     + ncv**2 + 3*ncv
+         next   = iw     + ncv*ncv + 3*ncv
 c
          ipntr(4) = next
          ipntr(5) = ih

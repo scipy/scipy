@@ -123,8 +123,8 @@ then
 .. math::
 
     \mathbf{A^{-1}} = \frac{1}{25}
-        \left[\begin{array}{ccc} -37 & 9 & 22 \\ 
-                                  14 & 2 & -9 \\ 
+        \left[\begin{array}{ccc} -37 & 9 & 22 \\
+                                  14 & 2 & -9 \\
                                   4 & -3 & 1
               \end{array}\right] = %
          \left[\begin{array}{ccc} -1.48 & 0.36 & 0.88  \\
@@ -531,7 +531,7 @@ eigenvalues can then be found.
     [-0.82456484  0.56576746]
     >>> print(v[:, 1])   # second eigenvector
     [-0.41597356 -0.90937671]
-    >>> print(np.sum(abs(v**2), axis=0))  # eigenvectors are unitary
+    >>> print(np.sum(abs(v*v), axis=0))  # eigenvectors are unitary
     [1. 1.]
     >>> v1 = np.array(v[:, 0]).T
     >>> print(linalg.norm(A.dot(v1) - l1*v1))  # check the computation

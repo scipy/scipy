@@ -15,11 +15,11 @@ class TestRoot(object):
         # Check that the minimize() tol= argument does something
         def func(z):
             x, y = z
-            return np.array([x**3 - 1, y**3 - 1])
+            return np.array([x*x*x - 1, y*y*y - 1])
 
         def dfunc(z):
             x, y = z
-            return np.array([[3*x**2, 0], [0, 3*y**2]])
+            return np.array([[3*x*x, 0], [0, 3*y*y]])
 
         for method in ['hybr', 'lm', 'broyden1', 'broyden2', 'anderson',
                        'diagbroyden', 'krylov']:
@@ -44,7 +44,7 @@ class TestRoot(object):
         # github issue #3503
         def func(z, f=1):
             x, y = z
-            return np.array([x**3 - 1, y**3 - f])
+            return np.array([x*x*x - 1, y*y*y - f])
         root(func, [1.1, 1.1], args=1.5)
 
     def test_f_size(self):

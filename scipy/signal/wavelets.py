@@ -226,7 +226,7 @@ def morlet(M, w=5.0, s=1.0, complete=True):
     -----
     The standard version::
 
-        pi**-0.25 * exp(1j*w*x) * exp(-0.5*(x**2))
+        pi**-0.25 * exp(1j*w*x) * exp(-0.5*(x*x))
 
     This commonly used wavelet is often referred to simply as the
     Morlet wavelet.  Note that this simplified version can cause
@@ -234,7 +234,7 @@ def morlet(M, w=5.0, s=1.0, complete=True):
 
     The complete version::
 
-        pi**-0.25 * (exp(1j*w*x) - exp(-0.5*(w**2))) * exp(-0.5*(x**2))
+        pi**-0.25 * (exp(1j*w*x) - exp(-0.5*(w*w))) * exp(-0.5*(x*x))
 
     This version has a correction
     term to improve admissibility. For `w` greater than 5, the
@@ -245,7 +245,7 @@ def morlet(M, w=5.0, s=1.0, complete=True):
 
     The fundamental frequency of this wavelet in Hz is given
     by ``f = 2*s*w*r / M`` where `r` is the sampling rate.
-    
+
     Note: This function was created before `cwt` and is not compatible
     with it.
 
@@ -254,9 +254,9 @@ def morlet(M, w=5.0, s=1.0, complete=True):
     output = exp(1j * w * x)
 
     if complete:
-        output -= exp(-0.5 * (w**2))
+        output -= exp(-0.5 * (w*w))
 
-    output *= exp(-0.5 * (x**2)) * pi**(-0.25)
+    output *= exp(-0.5 * (x*x)) * pi**(-0.25)
 
     return output
 

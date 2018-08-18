@@ -1723,7 +1723,7 @@ class TestNdimage:
         # check crash on large data
         try:
             n = 30000
-            a = numpy.empty(n**2, dtype=numpy.float32).reshape(n, n)
+            a = numpy.empty(n*n, dtype=numpy.float32).reshape(n, n)
             # fill the part we might read
             a[n-3:, n-3:] = 0
             ndimage.map_coordinates(a, [[n - 1.5], [n - 1.5]], order=1)

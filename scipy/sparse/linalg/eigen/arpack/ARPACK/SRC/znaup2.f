@@ -217,7 +217,7 @@ c
       logical    cnorm , getv0, initv , update, ushift
       integer    ierr  , iter , kplusp, msglvl, nconv,
      &           nevbef, nev0 , np0   , nptemp, i    ,
-     &           j
+     &           j     , kplusp2
       Complex*16
      &           cmpnorm
       Double precision
@@ -226,7 +226,7 @@ c
 c
       save       cnorm,  getv0, initv , update, ushift,
      &           rnorm,  iter , kplusp, msglvl, nconv ,
-     &           nevbef, nev0 , np0   , eps23
+     &           nevbef, nev0 , np0   , eps23 , kplusp2
 c
 c
 c     %-----------------------%
@@ -280,9 +280,10 @@ c        | iter is the counter on the current  |
 c        |      iteration step.                |
 c        %-------------------------------------%
 c
-         kplusp = nev + np
-         nconv  = 0
-         iter   = 0
+         kplusp  = nev + np
+         kplusp2 = klpusp*kplusp
+         nconv   = 0
+         iter    = 0
 c
 c        %---------------------------------%
 c        | Get machine dependent constant. |
@@ -463,8 +464,8 @@ c        | Make a copy of Ritz values and the corresponding |
 c        | Ritz estimates obtained from zneigh .             |
 c        %--------------------------------------------------%
 c
-         call zcopy (kplusp,ritz,1,workl(kplusp**2+1),1)
-         call zcopy (kplusp,bounds,1,workl(kplusp**2+kplusp+1),1)
+         call zcopy (kplusp,ritz,1,workl(kplusp2+1),1)
+         call zcopy (kplusp,bounds,1,workl(kplusp2+kplusp+1),1)
 c
 c        %---------------------------------------------------%
 c        | Select the wanted Ritz values and their bounds    |
@@ -531,9 +532,9 @@ c
      &        (np .eq. 0) ) then
 c
             if (msglvl .gt. 4) then
-               call zvout (logfil, kplusp, workl(kplusp**2+1), ndigit,
+               call zvout (logfil, kplusp, workl(kplusp2+1), ndigit,
      &             '_naup2: Eigenvalues computed by _neigh:')
-               call zvout (logfil, kplusp, workl(kplusp**2+kplusp+1),
+               call zvout (logfil, kplusp, workl(kplusp2+kplusp+1),
      &                     ndigit,
      &             '_naup2: Ritz estimates computed by _neigh:')
             end if

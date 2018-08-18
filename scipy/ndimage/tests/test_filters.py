@@ -286,9 +286,9 @@ def test_gaussian_truncate():
     arr = np.zeros((100, 100), float)
     arr[50, 50] = 1
     num_nonzeros_2 = (sndi.gaussian_filter(arr, 5, truncate=2) > 0).sum()
-    assert_equal(num_nonzeros_2, 21**2)
+    assert_equal(num_nonzeros_2, 21*21)
     num_nonzeros_5 = (sndi.gaussian_filter(arr, 5, truncate=5) > 0).sum()
-    assert_equal(num_nonzeros_5, 51**2)
+    assert_equal(num_nonzeros_5, 51*51)
 
     # Test truncate when sigma is a sequence.
     f = sndi.gaussian_filter(arr, [0.5, 2.5], truncate=3.5)

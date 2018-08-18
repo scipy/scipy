@@ -474,7 +474,7 @@ class BoxBetts(Benchmark):
         i = arange(1, 11)
         g = (exp(-0.1 * i * x[0]) - exp(-0.1 * i * x[1])
              - (exp(-0.1 * i) - exp(-i)) * x[2])
-        return sum(g**2)
+        return sum(g*g)
 
 
 class Branin01(Benchmark):

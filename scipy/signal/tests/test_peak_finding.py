@@ -20,7 +20,7 @@ def _gen_gaussians(center_locs, sigmas, total_length):
     out_data = np.zeros(total_length, dtype=float)
     for ind, sigma in enumerate(sigmas):
         tmp = (xdata - center_locs[ind]) / sigma
-        out_data += np.exp(-(tmp**2))
+        out_data += np.exp(-(tmp*tmp))
     return out_data
 
 

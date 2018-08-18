@@ -23,10 +23,10 @@ def _estimate_gradients_2d_global():
         w += binomial(3, k) * c[k] * x**k*(1-x)**(3-k)
 
     wpp = w.diff(x, 2).expand()
-    intwpp2 = (wpp**2).integrate((x, 0, 1)).expand()
+    intwpp2 = (wpp*wpp).integrate((x, 0, 1)).expand()
 
-    A = Matrix([[intwpp2.coeff(df1**2), intwpp2.coeff(df1*df2)/2],
-                [intwpp2.coeff(df1*df2)/2, intwpp2.coeff(df2**2)]])
+    A = Matrix([[intwpp2.coeff(df1*df1), intwpp2.coeff(df1*df2)/2],
+                [intwpp2.coeff(df1*df2)/2, intwpp2.coeff(df2*df2)]])
 
     B = Matrix([[intwpp2.coeff(df1).subs(df2, 0)],
                 [intwpp2.coeff(df2).subs(df1, 0)]]) / 2

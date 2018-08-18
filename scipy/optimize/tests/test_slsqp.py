@@ -30,7 +30,7 @@ class TestSLSQP(object):
     """
     Test SLSQP algorithm using Example 14.4 from Numerical Methods for
     Engineers by Steven Chapra and Raymond Canale.
-    This example maximizes the function f(x) = 2*x*y + 2*x - x**2 - 2*y**2,
+    This example maximizes the function f(x) = 2*x*y + 2*x - x*x - 2*y*y,
     which has a maximum at x=2, y=1.
     """
     def setup_method(self):
@@ -45,12 +45,12 @@ class TestSLSQP(object):
                optimizers can only minimize functions, we need to multiply it by
                -1 to achieve the desired solution
         Returns:
-        2*x*y + 2*x - x**2 - 2*y**2
+        2*x*y + 2*x - x*x - 2*y**2
 
         """
         x = d[0]
         y = d[1]
-        return sign*(2*x*y + 2*x - x**2 - 2*y**2)
+        return sign*(2*x*y + 2*x - x*x - 2*y*y)
 
     def jac(self, d, sign=1.0):
         """
@@ -292,19 +292,19 @@ class TestSLSQP(object):
 
     def test_scalar_constraints(self):
         # Regression test for gh-2182
-        x = fmin_slsqp(lambda z: z**2, [3.],
+        x = fmin_slsqp(lambda z: z*z, [3.],
                        ieqcons=[lambda z: z[0] - 1],
                        iprint=0)
         assert_array_almost_equal(x, [1.])
 
-        x = fmin_slsqp(lambda z: z**2, [3.],
+        x = fmin_slsqp(lambda z: z*z, [3.],
                        f_ieqcons=lambda z: [z[0] - 1],
                        iprint=0)
         assert_array_almost_equal(x, [1.])
 
     def test_integer_bounds(self):
         # This should not raise an exception
-        fmin_slsqp(lambda z: z**2 - 1, [0], bounds=[[0, 1]], iprint=0)
+        fmin_slsqp(lambda z: z*z - 1, [0], bounds=[[0, 1]], iprint=0)
 
     def test_obj_must_return_scalar(self):
         # Regression test for Github Issue #5433

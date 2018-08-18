@@ -33,8 +33,8 @@ def test_kde_1d():
     assert_almost_equal(gkde.integrate_box(-np.inf, xnmean), prob2, decimal=13)
 
     assert_almost_equal(gkde.integrate_kde(gkde),
-                        (kdepdf**2).sum()*intervall, decimal=2)
-    assert_almost_equal(gkde.integrate_gaussian(xnmean, xnstd**2),
+                        (kdepdf*kdepdf).sum()*intervall, decimal=2)
+    assert_almost_equal(gkde.integrate_gaussian(xnmean, xnstd*xnstd),
                         (kdepdf*normpdf).sum()*intervall, decimal=2)
 
 
@@ -61,7 +61,7 @@ def test_kde_2d():
     normpdf = stats.multivariate_normal.pdf(np.dstack([x, y]), mean=mean, cov=covariance)
     intervall = y.ravel()[1] - y.ravel()[0]
 
-    assert_(np.sum((kdepdf - normpdf)**2) * (intervall**2) < 0.01)
+    assert_(np.sum((kdepdf - normpdf)**2) * (intervall*intervall) < 0.01)
 
     small = -1e100
     large = 1e100
@@ -71,9 +71,9 @@ def test_kde_2d():
     assert_almost_equal(prob1, 0.5, decimal=1)
     assert_almost_equal(prob2, 0.5, decimal=1)
     assert_almost_equal(gkde.integrate_kde(gkde),
-                        (kdepdf**2).sum()*(intervall**2), decimal=2)
+                        (kdepdf*kdepdf).sum()*(intervall*intervall), decimal=2)
     assert_almost_equal(gkde.integrate_gaussian(mean, covariance),
-                        (kdepdf*normpdf).sum()*(intervall**2), decimal=2)
+                        (kdepdf*normpdf).sum()*(intervall*intervall), decimal=2)
 
 
 def test_kde_bandwidth_method():

@@ -32,12 +32,12 @@ except ImportError:
     pass
 
 
-def gammainc(a, x, dps=50, maxterms=10**8):
+def gammainc(a, x, dps=50, maxterms=10*10*10*10*10*10*10*10):
     """Compute gammainc exactly like mpmath does but allow for more
     summands in hypercomb. See
 
     mpmath/functions/expintegrals.py#L134
-    
+
     in the mpmath github repository.
 
     """
@@ -54,7 +54,7 @@ def gammainc(a, x, dps=50, maxterms=10**8):
         return mpf2float(res)
 
 
-def gammaincc(a, x, dps=50, maxterms=10**8):
+def gammaincc(a, x, dps=50, maxterms=10*10*10*10*10*10*10*10):
     """Compute gammaincc exactly like mpmath does but allow for more
     terms in hypercomb. See
 
@@ -65,7 +65,7 @@ def gammaincc(a, x, dps=50, maxterms=10**8):
     """
     with mp.workdps(dps):
         z, a = a, x
-        
+
         if mp.isint(z):
             try:
                 # mpmath has a fast integer path
@@ -100,7 +100,7 @@ def main():
     r = np.logspace(4, 14, 30)
     ltheta = np.logspace(np.log10(pi/4), np.log10(np.arctan(0.6)), 30)
     utheta = np.logspace(np.log10(pi/4), np.log10(np.arctan(1.4)), 30)
-    
+
     regimes = [(gammainc, ltheta), (gammaincc, utheta)]
     for func, theta in regimes:
         rg, thetag = np.meshgrid(r, theta)

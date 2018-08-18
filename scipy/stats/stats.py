@@ -1161,7 +1161,7 @@ def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
     zero = (m2 == 0)
     olderr = np.seterr(all='ignore')
     try:
-        vals = np.where(zero, 0, m4 / m2**2.0)
+        vals = np.where(zero, 0, m4 / m2*m2.0)
     finally:
         np.seterr(**olderr)
 
@@ -1170,7 +1170,7 @@ def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
         if can_correct.any():
             m2 = np.extract(can_correct, m2)
             m4 = np.extract(can_correct, m4)
-            nval = 1.0/(n-2)/(n-3) * ((n**2-1.0)*m4/m2**2.0 - 3*(n-1)**2.0)
+            nval = 1.0/(n-2)/(n-3) * ((n*n-1.0)*m4/m2*m2.0 - 3*(n-1)**2.0)
             np.place(vals, can_correct, nval + 3.0)
 
     if vals.ndim == 0:
@@ -1336,7 +1336,7 @@ def skewtest(a, axis=0, nan_policy='propagate'):
             "skewtest is not valid with less than 8 samples; %i samples"
             " were given." % int(n))
     y = b2 * math.sqrt(((n + 1) * (n + 3)) / (6.0 * (n - 2)))
-    beta2 = (3.0 * (n**2 + 27*n - 70) * (n+1) * (n+3) /
+    beta2 = (3.0 * (n*n + 27*n - 70) * (n+1) * (n+3) /
              ((n-2.0) * (n+5) * (n+7) * (n+9)))
     W2 = -1 + math.sqrt(2 * (beta2 - 1))
     delta = 1 / math.sqrt(0.5 * math.log(W2))
@@ -1423,7 +1423,7 @@ def kurtosistest(a, axis=0, nan_policy='propagate'):
     sqrtbeta1 = 6.0*(n*n-5*n+2)/((n+7)*(n+9)) * np.sqrt((6.0*(n+3)*(n+5)) /
                                                         (n*(n-2)*(n-3)))
     # [1]_ Eq. 3:
-    A = 6.0 + 8.0/sqrtbeta1 * (2.0/sqrtbeta1 + np.sqrt(1+4.0/(sqrtbeta1**2)))
+    A = 6.0 + 8.0/sqrtbeta1 * (2.0/sqrtbeta1 + np.sqrt(1+4.0/(sqrtbeta1*sqrtbeta1)))
     term1 = 1 - 2/(9.0*A)
     denom = 1 + x*np.sqrt(2/(A-4.0))
     denom = np.where(denom < 0, 99, denom)
@@ -1558,9 +1558,9 @@ def jarque_bera(x):
 
     mu = x.mean()
     diffx = x - mu
-    skewness = (1 / n * np.sum(diffx**3)) / (1 / n * np.sum(diffx**2))**(3 / 2.)
-    kurtosis = (1 / n * np.sum(diffx**4)) / (1 / n * np.sum(diffx**2))**2
-    jb_value = n / 6 * (skewness**2 + (kurtosis - 3)**2 / 4)
+    skewness = (1 / n * np.sum(diffx*diffx*diffx)) / (1 / n * np.sum(diffx*diffx))**(3 / 2.)
+    kurtosis = (1 / n * np.sum(diffx*diffx*diffx*diffx)) / (1 / n * np.sum(diffx*diffx))**2
+    jb_value = n / 6 * (skewness*skewness + (kurtosis - 3)**2 / 4)
     p = 1 - distributions.chi2.cdf(jb_value, 2)
 
     return jb_value, p
@@ -3039,7 +3039,7 @@ def pearsonr(x, y):
     if abs(r) == 1.0:
         prob = 0.0
     else:
-        t_squared = r**2 * (df / ((1.0 - r) * (1.0 + r)))
+        t_squared = r*r * (df / ((1.0 - r) * (1.0 + r)))
         prob = special.betainc(
             0.5*df, 0.5, np.fmin(np.asarray(df / (df + t_squared)), 1.0)
         )
@@ -3474,10 +3474,10 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='auto'
         'omit' delegates to mstats_basic.kendalltau(), which has a different
         implementation.
     method: {'auto', 'asymptotic', 'exact'}, optional
-        Defines which method is used to calculate the p-value [5]_. 
-        'asymptotic' uses a normal approximation valid for large samples. 
-        'exact' computes the exact p-value, but can only be used if no ties 
-        are present. 'auto' is the default and selects the appropriate 
+        Defines which method is used to calculate the p-value [5]_.
+        'asymptotic' uses a normal approximation valid for large samples.
+        'exact' computes the exact p-value, but can only be used if no ties
+        are present. 'auto' is the default and selects the appropriate
         method based on a trade-off between speed and accuracy.
 
     Returns
@@ -3516,7 +3516,7 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='auto'
     .. [4] Peter M. Fenwick, "A new data structure for cumulative frequency
            tables", Software: Practice and Experience, Vol. 24, No. 3,
            pp. 327-336, 1994.
-    .. [5] Maurice G. Kendall, "Rank Correlation Methods" (4th Edition), 
+    .. [5] Maurice G. Kendall, "Rank Correlation Methods" (4th Edition),
            Charles Griffin & Co., 1970.
 
     Examples
@@ -3598,13 +3598,13 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='auto'
 
     if method == 'exact' and (xtie != 0 or ytie != 0):
         raise ValueError("Ties found, exact method cannot be used.")
-        
+
     if method == 'auto':
         if (xtie == 0 and ytie == 0) and (size <= 33 or min(dis, tot-dis) <= 1):
             method = 'exact'
         else:
             method = 'asymptotic'
-        
+
     if xtie == 0 and ytie == 0 and method == 'exact':
         # Exact p-value, see Maurice G. Kendall, "Rank Correlation Methods" (4th Edition), Charles Griffin & Co., 1970.
         c = min(dis, tot-dis)
@@ -3933,7 +3933,7 @@ def _unequal_var_ttest_denom(v1, n1, v2, n2):
     vn1 = v1 / n1
     vn2 = v2 / n2
     with np.errstate(divide='ignore', invalid='ignore'):
-        df = (vn1 + vn2)**2 / (vn1**2 / (n1 - 1) + vn2**2 / (n2 - 1))
+        df = (vn1 + vn2)**2 / (vn1*vn1 / (n1 - 1) + vn2*vn2 / (n2 - 1))
 
     # If df is undefined, variances are zero (assumes n1 > 0 & n2 > 0).
     # Hence it doesn't matter what df is as long as it's not NaN.
@@ -4031,10 +4031,10 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
 
     """
     if equal_var:
-        df, denom = _equal_var_ttest_denom(std1**2, nobs1, std2**2, nobs2)
+        df, denom = _equal_var_ttest_denom(std1*std1, nobs1, std2*std2, nobs2)
     else:
-        df, denom = _unequal_var_ttest_denom(std1**2, nobs1,
-                                             std2**2, nobs2)
+        df, denom = _unequal_var_ttest_denom(std1*std1, nobs1,
+                                             std2*std2, nobs2)
 
     res = _ttest_ind_from_stats(mean1, mean2, denom, df)
     return Ttest_indResult(*res)
@@ -4906,7 +4906,7 @@ def tiecorrect(rankvals):
     cnt = np.diff(idx).astype(np.float64)
 
     size = np.float64(arr.size)
-    return 1.0 if size < 2 else 1.0 - (cnt**3 - cnt).sum() / (size**3 - size)
+    return 1.0 if size < 2 else 1.0 - (cnt*cnt*cnt - cnt).sum() / (size*size*size - size)
 
 
 MannwhitneyuResult = namedtuple('MannwhitneyuResult', ('statistic', 'pvalue'))
@@ -5810,7 +5810,7 @@ def _sum_of_squares(a, axis=0):
     Returns
     -------
     sum_of_squares : ndarray
-        The sum along the given axis for (a**2).
+        The sum along the given axis for (a*a).
 
     See also
     --------

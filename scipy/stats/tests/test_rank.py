@@ -36,7 +36,7 @@ class TestTieCorrect(object):
         c = tiecorrect(ranks)
         T = 2.0
         N = ranks.size
-        expected = 1.0 - (T**3 - T) / (N**3 - N)
+        expected = 1.0 - (T*T*T - T) / (N*N*N - N)
         assert_equal(c, expected)
 
         # One tie of two elements (same as above, but tie is not at the end)
@@ -44,7 +44,7 @@ class TestTieCorrect(object):
         c = tiecorrect(ranks)
         T = 2.0
         N = ranks.size
-        expected = 1.0 - (T**3 - T) / (N**3 - N)
+        expected = 1.0 - (T*T*T - T) / (N*N*N - N)
         assert_equal(c, expected)
 
         # One tie of three elements
@@ -52,7 +52,7 @@ class TestTieCorrect(object):
         c = tiecorrect(ranks)
         T = 3.0
         N = ranks.size
-        expected = 1.0 - (T**3 - T) / (N**3 - N)
+        expected = 1.0 - (T*T*T - T) / (N*N*N - N)
         assert_equal(c, expected)
 
         # Two ties, lengths 2 and 3.
@@ -61,7 +61,7 @@ class TestTieCorrect(object):
         T1 = 2.0
         T2 = 3.0
         N = ranks.size
-        expected = 1.0 - ((T1**3 - T1) + (T2**3 - T2)) / (N**3 - N)
+        expected = 1.0 - ((T1*T1*T1 - T1) + (T2*T2*T2 - T2)) / (N*N*N - N)
         assert_equal(c, expected)
 
     def test_overflow(self):
@@ -69,7 +69,7 @@ class TestTieCorrect(object):
         a = np.repeat(np.arange(k), ntie)
         n = a.size  # ntie * k
         out = tiecorrect(rankdata(a))
-        assert_equal(out, 1.0 - k * (ntie**3 - ntie) / float(n**3 - n))
+        assert_equal(out, 1.0 - k * (ntie*ntie*ntie - ntie) / float(n*n*n - n))
 
 
 class TestRankData(object):

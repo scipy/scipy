@@ -73,15 +73,15 @@ def _lazyselect(condlist, choicelist, arrays, default=0):
     Examples
     --------
     >>> x = np.arange(6)
-    >>> np.select([x <3, x > 3], [x**2, x**3], default=0)
+    >>> np.select([x <3, x > 3], [x*x, x*x*x], default=0)
     array([  0,   1,   4,   0,  64, 125])
 
-    >>> _lazyselect([x < 3, x > 3], [lambda x: x**2, lambda x: x**3], (x,))
+    >>> _lazyselect([x < 3, x > 3], [lambda x: x*x, lambda x: x*x*x], (x,))
     array([   0.,    1.,    4.,   0.,   64.,  125.])
 
     >>> a = -np.ones_like(x)
     >>> _lazyselect([x < 3, x > 3],
-    ...             [lambda x, a: x**2, lambda x, a: a * x**3],
+    ...             [lambda x, a: x*x, lambda x, a: a * x*x*x],
     ...             (x, a), default=np.nan)
     array([   0.,    1.,    4.,   nan,  -64., -125.])
 

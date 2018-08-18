@@ -3601,7 +3601,7 @@ class random_correlation_gen(multi_rv_generic):
             # ajj==1, so swap aii and ajj to avoid division by zero
             return 0., 1.
 
-        dd = math.sqrt(max(aij**2 - aiid*ajjd, 0))
+        dd = math.sqrt(max(aij*aij - aiid*ajjd, 0))
 
         # The choice of t should be chosen to avoid cancellation [1]
         t = (aij + math.copysign(dd, aij)) / ajjd

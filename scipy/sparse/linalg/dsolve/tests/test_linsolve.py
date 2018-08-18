@@ -704,7 +704,7 @@ class TestSpsolveTriangular(object):
 
         np.random.seed(1234)
         for lower in (True, False):
-            for n in (10, 10**2, 10**3):
+            for n in (10, 10*10, 10*10*10):
                 A = random_triangle_matrix(n, lower=lower)
                 for m in (1, 10):
                     for b in (np.random.rand(n, m),

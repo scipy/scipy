@@ -6,12 +6,12 @@ from numpy.testing import assert_, assert_equal, assert_allclose
 
 
 def test_zeta():
-    assert_allclose(sc.zeta(2,2), np.pi**2/6 - 1, rtol=1e-12)
+    assert_allclose(sc.zeta(2,2), np.pi*pi/6 - 1, rtol=1e-12)
 
 
 def test_zeta_1arg():
-    assert_allclose(sc.zeta(2), np.pi**2/6, rtol=1e-12)
-    assert_allclose(sc.zeta(4), np.pi**4/90, rtol=1e-12)
+    assert_allclose(sc.zeta(2), np.pi*pi/6, rtol=1e-12)
+    assert_allclose(sc.zeta(4), np.pi*pi*pi*pi/90, rtol=1e-12)
 
 
 def test_zetac():

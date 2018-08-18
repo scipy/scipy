@@ -72,7 +72,7 @@ def savgol_coeffs(window_length, polyorder, deriv=0, delta=1.0, pos=None,
     >>> savgol_coeffs(5, 2, pos=3, use='dot')
     array([-0.14285714,  0.17142857,  0.34285714,  0.37142857,  0.25714286])
 
-    `x` contains data from the parabola x = t**2, sampled at
+    `x` contains data from the parabola x = t*t, sampled at
     t = -1, 0, 1, 2, 3.  `c` holds the coefficients that will compute the
     derivative at the last position.  When dotted with `x` the result should
     be 6.

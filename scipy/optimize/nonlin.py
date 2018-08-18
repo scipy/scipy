@@ -332,11 +332,11 @@ def nonlin_solve(F, x0, jacobian='krylov', iter=None, verbose=False,
             callback(x, Fx)
 
         # Adjust forcing parameters for inexact methods
-        eta_A = gamma * Fx_norm_new**2 / Fx_norm**2
-        if gamma * eta**2 < eta_treshold:
+        eta_A = gamma * Fx_norm_new*Fx_norm_new / Fx_norm**2
+        if gamma * eta*eta < eta_treshold:
             eta = min(eta_max, eta_A)
         else:
-            eta = min(eta_max, max(eta_A, gamma*eta**2))
+            eta = min(eta_max, max(eta_A, gamma*eta*eta))
 
         Fx_norm = Fx_norm_new
 
@@ -1144,7 +1144,7 @@ class Anderson(GenericBroyden):
             for j in xrange(n):
                 b[i,j] = vdot(self.df[i], self.dx[j])
                 if i == j and self.w0 != 0:
-                    b[i,j] -= vdot(self.df[i], self.df[i])*self.w0**2*self.alpha
+                    b[i,j] -= vdot(self.df[i], self.df[i])*self.w0*w0*self.alpha
         gamma = solve(b, df_f)
 
         for m in xrange(n):

@@ -148,7 +148,7 @@ class UnivariateSpline(object):
     >>> import matplotlib.pyplot as plt
     >>> from scipy.interpolate import UnivariateSpline
     >>> x = np.linspace(-3, 3, 50)
-    >>> y = np.exp(-x**2) + 0.1 * np.random.randn(50)
+    >>> y = np.exp(-x*x) + 0.1 * np.random.randn(50)
     >>> plt.plot(x, y, 'ro', ms=5)
 
     Use the default value for the smoothing parameter:
@@ -574,7 +574,7 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
     >>> import matplotlib.pyplot as plt
     >>> from scipy.interpolate import InterpolatedUnivariateSpline
     >>> x = np.linspace(-3, 3, 50)
-    >>> y = np.exp(-x**2) + 0.1 * np.random.randn(50)
+    >>> y = np.exp(-x*x) + 0.1 * np.random.randn(50)
     >>> spl = InterpolatedUnivariateSpline(x, y)
     >>> plt.plot(x, y, 'ro', ms=5)
     >>> xs = np.linspace(-3, 3, 1000)
@@ -696,7 +696,7 @@ class LSQUnivariateSpline(UnivariateSpline):
     >>> from scipy.interpolate import LSQUnivariateSpline, UnivariateSpline
     >>> import matplotlib.pyplot as plt
     >>> x = np.linspace(-3, 3, 50)
-    >>> y = np.exp(-x**2) + 0.1 * np.random.randn(50)
+    >>> y = np.exp(-x*x) + 0.1 * np.random.randn(50)
 
     Fit a smoothing spline with a pre-defined internal knots:
 
@@ -811,7 +811,7 @@ class _BivariateSplineBase(object):
             If `grid` is True: evaluate spline at the grid points
             defined by the coordinate arrays x, y. The arrays must be
             sorted to increasing order.
-            
+
             Note that the axis ordering is inverted relative to
             the output of meshgrid.
         dx : int
@@ -1190,7 +1190,7 @@ ERROR. On entry, the input data are controlled on validity. The following
        restrictions must be satisfied:
             -1<=iopt<=1,  m>=2, ntest>=8 ,npest >=8, 0<eps<1,
             0<=teta(i)<=pi, 0<=phi(i)<=2*pi, w(i)>0, i=1,...,m
-            lwrk1 >= 185+52*v+10*u+14*u*v+8*(u-1)*v**2+8*m
+            lwrk1 >= 185+52*v+10*u+14*u*v+8*(u-1)*v*v+8*m
             kwrk >= m+(ntest-7)*(npest-7)
             if iopt=-1: 8<=nt<=ntest , 9<=np<=npest
                         0<tt(5)<tt(6)<...<tt(nt-4)<pi

@@ -2162,10 +2162,10 @@ def zeta(x, q=None, out=None):
 
     Some specific values:
 
-    >>> zeta(2), np.pi**2/6
+    >>> zeta(2), np.pi*pi/6
     (1.6449340668482266, 1.6449340668482264)
 
-    >>> zeta(4), np.pi**4/90
+    >>> zeta(4), np.pi*pi*pi*pi/90
     (1.0823232337111381, 1.082323233711138)
 
     Relation to the `polygamma` function:

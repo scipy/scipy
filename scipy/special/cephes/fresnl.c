@@ -19,7 +19,7 @@
  *           x
  *           -
  *          | |
- * C(x) =   |   cos(pi/2 t**2) dt,
+ * C(x) =   |   cos(pi/2 t*t) dt,
  *        | |
  *         -
  *          0
@@ -27,7 +27,7 @@
  *           x
  *           -
  *          | |
- * S(x) =   |   sin(pi/2 t**2) dt.
+ * S(x) =   |   sin(pi/2 t*t) dt.
  *        | |
  *         -
  *          0
@@ -37,8 +37,8 @@
  * For x >= 1 auxiliary functions f(x) and g(x) are employed
  * such that
  *
- * C(x) = 0.5 + f(x) sin( pi/2 x**2 ) - g(x) cos( pi/2 x**2 )
- * S(x) = 0.5 - f(x) cos( pi/2 x**2 ) - g(x) sin( pi/2 x**2 )
+ * C(x) = 0.5 + f(x) sin( pi/2 x*x ) - g(x) cos( pi/2 x*x )
+ * S(x) = 0.5 - f(x) cos( pi/2 x*x ) - g(x) sin( pi/2 x*x )
  *
  *
  *

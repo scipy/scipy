@@ -127,7 +127,7 @@ def emden_bc_jac(ya, yb):
 
 
 def emden_sol(x):
-    return (1 + x**2/3)**-0.5
+    return (1 + x*x/3)**-0.5
 
 
 def undefined_fun(x, y):
@@ -158,7 +158,7 @@ def shock_fun(x, y):
     eps = 1e-3
     return np.vstack((
         y[1],
-        -(x * y[1] + eps * np.pi**2 * np.cos(np.pi * x) +
+        -(x * y[1] + eps * np.pi*pi * np.cos(np.pi * x) +
           np.pi * x * np.sin(np.pi * x)) / eps
     ))
 
@@ -292,17 +292,17 @@ def test_compute_global_jac():
 
     def J_block(h, p):
         return np.array([
-            [h**2*p**2/12 - 1, -0.5*h, -h**2*p**2/12 + 1, -0.5*h],
-            [0.5*h*p**2, h**2*p**2/12 - 1, 0.5*h*p**2, 1 - h**2*p**2/12]
+            [h*h*p*p/12 - 1, -0.5*h, -h*h*p*p/12 + 1, -0.5*h],
+            [0.5*h*p*p, h*h*p*p/12 - 1, 0.5*h*p*p, 1 - h*h*p*p/12]
         ])
 
     J_true = np.zeros((m * n + k, m * n + k))
     for i in range(m - 1):
         J_true[i * n: (i + 1) * n, i * n: (i + 2) * n] = J_block(h[i], p)
 
-    J_true[:(m - 1) * n:2, -1] = p * h**2/6 * (y[0, :-1] - y[0, 1:])
+    J_true[:(m - 1) * n:2, -1] = p * h*h/6 * (y[0, :-1] - y[0, 1:])
     J_true[1:(m - 1) * n:2, -1] = p * (h * (y[0, :-1] + y[0, 1:]) +
-                                       h**2/6 * (y[1, :-1] - y[1, 1:]))
+                                       h*h/6 * (y[1, :-1] - y[1, 1:]))
 
     J_true[8, 0] = 1
     J_true[9, 8] = 1
@@ -365,7 +365,7 @@ def test_no_params():
             f_test = exp_fun(x_test, sol_test)
             r = sol.sol(x_test, 1) - f_test
             rel_res = r / (1 + np.abs(f_test))
-            norm_res = np.sum(rel_res**2, axis=0)**0.5
+            norm_res = np.sum(rel_res*rel_res, axis=0)**0.5
             assert_(np.all(norm_res < 1e-3))
 
             assert_(np.all(sol.rms_residuals < 1e-3))

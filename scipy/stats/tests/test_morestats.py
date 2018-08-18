@@ -624,12 +624,12 @@ class TestFligner(object):
     def test_data(self):
         # numbers from R: fligner.test in package stats
         x1 = np.arange(5)
-        assert_array_almost_equal(stats.fligner(x1, x1**2),
+        assert_array_almost_equal(stats.fligner(x1, x1*x1),
                                   (3.2282229927203536, 0.072379187848207877),
                                   11)
 
     def test_trimmed1(self):
-        # Perturb input to break ties in the transformed data 
+        # Perturb input to break ties in the transformed data
         # See https://github.com/scipy/scipy/pull/8042 for more details
         rs = np.random.RandomState(123)
         _perturb = lambda g: (np.asarray(g) + 1e-10*rs.randn(len(g))).tolist()
@@ -684,14 +684,14 @@ class TestFligner(object):
 
     def test_empty_arg(self):
         x = np.arange(5)
-        assert_equal((np.nan, np.nan), stats.fligner(x, x**2, []))
+        assert_equal((np.nan, np.nan), stats.fligner(x, x*x, []))
 
 
 class TestMood(object):
     def test_mood(self):
         # numbers from R: mood.test in package stats
         x1 = np.arange(5)
-        assert_array_almost_equal(stats.mood(x1, x1**2),
+        assert_array_almost_equal(stats.mood(x1, x1*x1),
                                   (-1.3830857299399906, 0.16663858066771478),
                                   11)
 

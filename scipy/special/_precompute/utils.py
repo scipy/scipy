@@ -20,11 +20,11 @@ except ImportError:
 def lagrange_inversion(a):
     """Given a series
 
-    f(x) = a[1]*x + a[2]*x**2 + ... + a[n-1]*x**(n - 1),
+    f(x) = a[1]*x + a[2]*x*x + ... + a[n-1]*x**(n - 1),
 
     use the Lagrange inversion formula to compute a series
 
-    g(x) = b[1]*x + b[2]*x**2 + ... + b[n-1]*x**(n - 1)
+    g(x) = b[1]*x + b[2]*x*x + ... + b[n-1]*x**(n - 1)
 
     so that f(g(x)) = g(f(x)) = x mod x**n. We must have a[0] = 0, so
     necessarily b[0] = 0 too.

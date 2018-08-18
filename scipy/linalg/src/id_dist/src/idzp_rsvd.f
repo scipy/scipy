@@ -199,7 +199,7 @@ c
         real*8 s(krank)
         complex*16 p1t,p2t,p3t,p4t,p1,p2,p3,p4,u(m,krank),v(n,krank),
      1             proj(krank,n-krank),col(m*krank),
-     2             work((krank+1)*(m+3*n+10)+9*krank**2)
+     2             work((krank+1)*(m+3*n+10)+9*krank*krank)
         external matveca,matvec
 c
 c

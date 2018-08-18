@@ -17,9 +17,9 @@ from scipy.special import beta
 #
 # def mpvar(lam):
 #     if lam == 0:
-#         v = mp.pi**2 / three
+#         v = mp.pi*pi / three
 #     else:
-#         v = (two / lam**2) * (one / (one + two*lam) -
+#         v = (two / lam*lam) * (one / (one + two*lam) -
 #                               mp.beta(lam + one, lam + one))
 #     return v
 #
@@ -96,7 +96,7 @@ def tukeylambda_variance(lam):
         # Use the Pade approximation near lambda = 0.
         v[small_mask] = _tukeylambda_var_p(small) / _tukeylambda_var_q(small)
     if reg.size > 0:
-        v[reg_mask] = (2.0 / reg**2) * (1.0 / (1.0 + 2 * reg) -
+        v[reg_mask] = (2.0 / reg*reg) * (1.0 / (1.0 + 2 * reg) -
                                       beta(reg + 1, reg + 1))
     v.shape = shp
     return v

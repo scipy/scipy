@@ -267,9 +267,9 @@ class TestCloughTocher2DInterpolator(object):
     def test_quadratic_smoketest(self):
         # Should be reasonably accurate for quadratic functions
         funcs = [
-            lambda x, y: x**2,
-            lambda x, y: y**2,
-            lambda x, y: x**2 - y**2,
+            lambda x, y: x*x,
+            lambda x, y: y*y,
+            lambda x, y: x*x - y*y,
             lambda x, y: x*y,
         ]
 
@@ -322,9 +322,9 @@ class TestCloughTocher2DInterpolator(object):
     def test_dense(self):
         # Should be more accurate for dense meshes
         funcs = [
-            lambda x, y: x**2,
-            lambda x, y: y**2,
-            lambda x, y: x**2 - y**2,
+            lambda x, y: x*x,
+            lambda x, y: y*y,
+            lambda x, y: x*x - y*y,
             lambda x, y: x*y,
             lambda x, y: np.cos(2*np.pi*x)*np.sin(2*np.pi*y)
         ]

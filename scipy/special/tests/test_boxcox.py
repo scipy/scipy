@@ -18,9 +18,9 @@ def test_boxcox_basic():
     y = boxcox(x, 1)
     assert_almost_equal(y, x - 1)
 
-    # lambda = 2  =>  y = 0.5*(x**2 - 1)
+    # lambda = 2  =>  y = 0.5*(x*x - 1)
     y = boxcox(x, 2)
-    assert_almost_equal(y, 0.5*(x**2 - 1))
+    assert_almost_equal(y, 0.5*(x*x - 1))
 
     # x = 0 and lambda > 0  =>  y = -1 / lambda
     lam = np.array([0.5, 1, 2])
