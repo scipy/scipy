@@ -312,7 +312,7 @@ References
 .. [CODATA2014] CODATA Recommended Values of the Fundamental
    Physical Constants 2014.
 
-   http://physics.nist.gov/cuu/Constants/index.html
+   https://physics.nist.gov/cuu/Constants/
 
 """
 from __future__ import division, print_function, absolute_import

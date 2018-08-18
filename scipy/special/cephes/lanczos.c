@@ -1,7 +1,7 @@
 /*  (C) Copyright John Maddock 2006.
  *  Use, modification and distribution are subject to the
  *  Boost Software License, Version 1.0. (See accompanying file
- *  LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+ *  LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
  */
 
 /* Scipy changes:
@@ -13,7 +13,7 @@
 #include "lanczos.h"
 
 
-double lanczos_sum(double x)
+static double lanczos_sum(double x)
 {
     return ratevl(x, lanczos_num,
 		  sizeof(lanczos_num) / sizeof(lanczos_num[0]) - 1,
@@ -31,7 +31,7 @@ double lanczos_sum_expg_scaled(double x)
 }
 
 
-double lanczos_sum_near_1(double dx)
+static double lanczos_sum_near_1(double dx)
 {
     double result = 0;
     unsigned k;
@@ -43,7 +43,7 @@ double lanczos_sum_near_1(double dx)
 }
 
 
-double lanczos_sum_near_2(double dx)
+static double lanczos_sum_near_2(double dx)
 {
     double result = 0;
     double x = dx + 2;

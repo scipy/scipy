@@ -101,7 +101,7 @@ class dok_matrix(spmatrix, IndexMixin, dict):
         else:  # Dense ctor
             try:
                 arg1 = np.asarray(arg1)
-            except:
+            except Exception:
                 raise TypeError('Invalid input format.')
 
             if len(arg1.shape) != 2:
@@ -471,9 +471,9 @@ class dok_matrix(spmatrix, IndexMixin, dict):
 
         idx_dtype = get_index_dtype(maxval=max(self.shape))
         data = np.fromiter(itervalues(self), dtype=self.dtype, count=self.nnz)
-        I = np.fromiter((i for i, _ in iterkeys(self)), dtype=idx_dtype, count=self.nnz)
-        J = np.fromiter((j for _, j in iterkeys(self)), dtype=idx_dtype, count=self.nnz)
-        A = coo_matrix((data, (I, J)), shape=self.shape, dtype=self.dtype)
+        row = np.fromiter((i for i, _ in iterkeys(self)), dtype=idx_dtype, count=self.nnz)
+        col = np.fromiter((j for _, j in iterkeys(self)), dtype=idx_dtype, count=self.nnz)
+        A = coo_matrix((data, (row, col)), shape=self.shape, dtype=self.dtype)
         A.has_canonical_format = True
         return A
 
@@ -491,13 +491,8 @@ class dok_matrix(spmatrix, IndexMixin, dict):
 
     tocsc.__doc__ = spmatrix.tocsc.__doc__
 
-    def resize(self, shape):
-        """Resize the matrix in-place to dimensions given by `shape`.
-
-        Any non-zero elements that lie outside the new shape are removed.
-        """
-        if not isshape(shape):
-            raise TypeError("Dimensions must be a 2-tuple of positive integers")
+    def resize(self, *shape):
+        shape = check_shape(shape)
         newM, newN = shape
         M, N = self.shape
         if newM < M or newN < N:
@@ -506,6 +501,8 @@ class dok_matrix(spmatrix, IndexMixin, dict):
                 if i >= newM or j >= newN:
                     del self[i, j]
         self._shape = shape
+
+    resize.__doc__ = spmatrix.resize.__doc__
 
 
 def isspmatrix_dok(x):

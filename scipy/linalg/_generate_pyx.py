@@ -5,8 +5,9 @@ from the files "cython_blas_signatures.txt" and
 all the BLAS/LAPACK routines that should be included in the wrappers.
 """
 
-import os
+from collections import defaultdict
 from operator import itemgetter
+import os
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
@@ -37,6 +38,7 @@ c_types = {'int': 'int',
 
 def arg_names_and_types(args):
     return zip(*[arg.split(' *') for arg in args.split(', ')])
+
 
 pyx_func_template = """
 cdef extern from "{header_name}":
@@ -86,6 +88,7 @@ def pyx_decl_func(name, ret_type, args, header_name):
                                     c_ret_type=c_ret_type, argnames=argnames,
                                     header_name=header_name)
 
+
 pyx_sub_template = """cdef extern from "{header_name}":
     void _fortran_{name} "F_FUNC({name},{upname})"({fort_args}) nogil
 cdef void {name}({args}) nogil:
@@ -105,6 +108,7 @@ def pyx_decl_sub(name, args, header_name):
     return pyx_sub_template.format(name=name, upname=name.upper(),
                                    args=args, fort_args=fort_args,
                                    argnames=argnames, header_name=header_name)
+
 
 blas_pyx_preamble = '''# cython: boundscheck = False
 # cython: wraparound = False
@@ -153,6 +157,7 @@ def make_blas_pyx_preamble(all_sigs):
     names = [sig[0] for sig in all_sigs]
     return blas_pyx_preamble.format("\n- ".join(names))
 
+
 lapack_pyx_preamble = '''"""
 LAPACK functions for Cython
 ===========================
@@ -162,8 +167,8 @@ Usable from Cython via::
     cimport scipy.linalg.cython_lapack
 
 This module provides Cython-level wrappers for all primary routines included
-in LAPACK 3.1.0 except for ``zcgesv`` since its interface is not consistent
-from LAPACK 3.1.0 to 3.6.0. It also provides some of the
+in LAPACK 3.4.0 except for ``zcgesv`` since its interface is not consistent
+from LAPACK 3.4.0 to 3.6.0. It also provides some of the
 fixed-api auxiliary routines.
 
 These wrappers do not check for alignment of arrays.
@@ -212,6 +217,7 @@ cdef extern from "_lapack_subroutines.h":
 def make_lapack_pyx_preamble(all_sigs):
     names = [sig[0] for sig in all_sigs]
     return lapack_pyx_preamble.format("\n- ".join(names))
+
 
 blas_py_wrappers = """
 
@@ -421,6 +427,7 @@ def generate_blas_pyx(func_sigs, sub_sigs, all_sigs, header_name):
                             for s in sub_sigs)
     return make_blas_pyx_preamble(all_sigs) + funcs + subs + blas_py_wrappers
 
+
 lapack_py_wrappers = """
 
 # Python accessible wrappers for testing:
@@ -450,6 +457,7 @@ def generate_lapack_pyx(func_sigs, sub_sigs, all_sigs, header_name):
     preamble = make_lapack_pyx_preamble(all_sigs)
     return preamble + funcs + subs + lapack_py_wrappers
 
+
 pxd_template = """ctypedef {ret_type} {name}_t({args}) nogil
 cdef {name}_t *{name}_f
 """
@@ -460,6 +468,7 @@ pxd_template = """cdef {ret_type} {name}({args}) nogil
 def pxd_decl(name, ret_type, args):
     args = args.replace('lambda', 'lambda_').replace('*in,', '*in_,')
     return pxd_template.format(name=name, ret_type=ret_type, args=args)
+
 
 blas_pxd_preamble = """# Within scipy, these wrappers can be used via relative or absolute cimport.
 # Examples:
@@ -483,6 +492,7 @@ ctypedef double complex z
 def generate_blas_pxd(all_sigs):
     body = '\n'.join(pxd_decl(*sig) for sig in all_sigs)
     return blas_pxd_preamble + body
+
 
 lapack_pxd_preamble = """# Within scipy, these wrappers can be used via relative or absolute cimport.
 # Examples:
@@ -517,37 +527,56 @@ ctypedef bint zselect2(z*, z*)
 def generate_lapack_pxd(all_sigs):
     return lapack_pxd_preamble + '\n'.join(pxd_decl(*sig) for sig in all_sigs)
 
-fortran_template = """      subroutine {name}wrp(ret, {argnames})
+
+fortran_template = """      subroutine {name}wrp(
+     +    ret,
+     +    {argnames}
+     +    )
         external {wrapper}
         {ret_type} {wrapper}
         {ret_type} ret
         {argdecls}
-        ret = {wrapper}({argnames})
+        ret = {wrapper}(
+     +    {argnames}
+     +    )
       end
 """
 
 dims = {'work': '(*)', 'ab': '(ldab,*)', 'a': '(lda,*)', 'dl': '(*)',
         'd': '(*)', 'du': '(*)', 'ap': '(*)', 'e': '(*)', 'lld': '(*)'}
 
+xy_specialized_dims = {'x': '', 'y': ''}
+a_specialized_dims = {'a': '(*)'}
+special_cases = defaultdict(dict,
+                            ladiv = xy_specialized_dims,
+                            lanhf = a_specialized_dims,
+                            lansf = a_specialized_dims,
+                            lapy2 = xy_specialized_dims,
+                            lapy3 = xy_specialized_dims)
+
 
 def process_fortran_name(name, funcname):
     if 'inc' in name:
         return name
-    xy_exclusions = ['ladiv', 'lapy2', 'lapy3']
-    if ('x' in name or 'y' in name) and funcname[1:] not in xy_exclusions:
-        return name + '(n)'
-    if name in dims:
-        return name + dims[name]
+    special = special_cases[funcname[1:]]
+    if 'x' in name or 'y' in name:
+        suffix = special.get(name, '(n)')
+    else:
+        suffix = special.get(name, '')
+    return name + suffix
+
+
+def called_name(name):
+    included = ['cdotc', 'cdotu', 'zdotc', 'zdotu', 'cladiv', 'zladiv']
+    if name in included:
+        return "w" + name
     return name
 
 
 def fort_subroutine_wrapper(name, ret_type, args):
-    if name[0] in ['c', 's'] or name in ['zladiv', 'zdotu', 'zdotc']:
-        wrapper = 'w' + name
-    else:
-        wrapper = name
+    wrapper = called_name(name)
     types, names = arg_names_and_types(args)
-    argnames = ', '.join(names)
+    argnames = ',\n     +    '.join(names)
 
     names = [process_fortran_name(n, name) for n in names]
     argdecls = '\n        '.join('{0} {1}'.format(fortran_types[t], n)
@@ -566,7 +595,9 @@ def make_c_args(args):
     types = [c_types[arg] for arg in types]
     return ', '.join('{0} *{1}'.format(t, n) for t, n in zip(types, names))
 
-c_func_template = "void F_FUNC({name}wrp, {upname}WRP)({return_type} *ret, {args});\n"
+
+c_func_template = ("void F_FUNC({name}wrp, {upname}WRP)"
+                   "({return_type} *ret, {args});\n")
 
 
 def c_func_decl(name, return_type, args):
@@ -575,12 +606,14 @@ def c_func_decl(name, return_type, args):
     return c_func_template.format(name=name, upname=name.upper(),
                                   return_type=return_type, args=args)
 
+
 c_sub_template = "void F_FUNC({name},{upname})({args});\n"
 
 
 def c_sub_decl(name, return_type, args):
     args = make_c_args(args)
     return c_sub_template.format(name=name, upname=name.upper(), args=args)
+
 
 c_preamble = """#ifndef SCIPY_LINALG_{lib}_FORTRAN_WRAPPERS_H
 #define SCIPY_LINALG_{lib}_FORTRAN_WRAPPERS_H
@@ -630,10 +663,13 @@ def split_signature(sig):
     return name, ret_type, args
 
 
-def filter_lines(ls):
-    ls = [l.strip() for l in ls if l != '\n' and l[0] != '#']
-    func_sigs = [split_signature(l) for l in ls if l.split(' ')[0] != 'void']
-    sub_sigs = [split_signature(l) for l in ls if l.split(' ')[0] == 'void']
+def filter_lines(lines):
+    lines = [line for line in map(str.strip, lines)
+                      if line and not line.startswith('#')]
+    func_sigs = [split_signature(line) for line in lines
+                                           if line.split(' ')[0] != 'void']
+    sub_sigs = [split_signature(line) for line in lines
+                                          if line.split(' ')[0] == 'void']
     all_sigs = list(sorted(func_sigs + sub_sigs, key=itemgetter(0)))
     return func_sigs, sub_sigs, all_sigs
 
@@ -673,7 +709,8 @@ def make_all(blas_signature_file="cython_blas_signatures.txt",
 
     comments = ["This file was generated by _generate_pyx.py.\n",
                 "Do not edit this file directly.\n"]
-    ccomment = ''.join(['/* ' + line.rstrip() + ' */\n' for line in comments]) + '\n'
+    ccomment = ''.join(['/* ' + line.rstrip() + ' */\n'
+                        for line in comments]) + '\n'
     pyxcomment = ''.join(['# ' + line for line in comments]) + '\n'
     fcomment = ''.join(['c     ' + line for line in comments]) + '\n'
     with open(blas_signature_file, 'r') as f:
@@ -714,6 +751,7 @@ def make_all(blas_signature_file="cython_blas_signatures.txt",
     with open(lapack_header_name, 'w') as f:
         f.write(ccomment)
         f.write(lapack_c_header)
+
 
 if __name__ == '__main__':
     make_all()

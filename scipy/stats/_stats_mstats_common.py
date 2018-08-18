@@ -49,17 +49,25 @@ def linregress(x, y=None):
     --------
     >>> import matplotlib.pyplot as plt
     >>> from scipy import stats
+
+    Generate some data:
+
     >>> np.random.seed(12345678)
     >>> x = np.random.random(10)
-    >>> y = np.random.random(10)
+    >>> y = 1.6*x + np.random.random(10)
+
+    Perform the linear regression:
+
     >>> slope, intercept, r_value, p_value, std_err = stats.linregress(x, y)
+    >>> print("slope: %f    intercept: %f" % (slope, intercept))
+    slope: 1.944864    intercept: 0.268578
 
-    To get coefficient of determination (r_squared)
+    To get coefficient of determination (r_squared):
 
-    >>> print("r-squared:", r_value**2)
-    r-squared: 0.080402268539
+    >>> print("r-squared: %f" % r_value**2)
+    r-squared: 0.735498
 
-    Plot the data along with the fitted line
+    Plot the data along with the fitted line:
 
     >>> plt.plot(x, y, 'o', label='original data')
     >>> plt.plot(x, intercept + slope*x, 'r', label='fitted line')
@@ -229,8 +237,8 @@ def theilslopes(y, x=None, alpha=0.95):
     ny = len(y)            # n in Sen (1968)
     # Equation 2.6 in Sen (1968):
     sigsq = 1/18. * (ny * (ny-1) * (2*ny+5) -
-                     np.sum(k * (k-1) * (2*k + 5) for k in nxreps) -
-                     np.sum(k * (k-1) * (2*k + 5) for k in nyreps))
+                     sum(k * (k-1) * (2*k + 5) for k in nxreps) -
+                     sum(k * (k-1) * (2*k + 5) for k in nyreps))
     # Find the confidence interval indices in `slopes`
     sigma = np.sqrt(sigsq)
     Ru = min(int(np.round((nt - z*sigma)/2.)), len(slopes)-1)

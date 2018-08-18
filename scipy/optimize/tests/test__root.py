@@ -4,6 +4,7 @@ Unit tests for optimization routines from _root.py.
 from __future__ import division, print_function, absolute_import
 
 from numpy.testing import assert_
+from pytest import raises as assert_raises
 import numpy as np
 
 from scipy.optimize import root
@@ -45,3 +46,26 @@ class TestRoot(object):
             x, y = z
             return np.array([x**3 - 1, y**3 - f])
         root(func, [1.1, 1.1], args=1.5)
+
+    def test_f_size(self):
+        # gh8320
+        # check that decreasing the size of the returned array raises an error
+        # and doesn't segfault
+        class fun(object):
+            def __init__(self):
+                self.count = 0
+
+            def __call__(self, x):
+                self.count += 1
+
+                if not (self.count % 5):
+                    ret = x[0] + 0.5 * (x[0] - x[1]) ** 3 - 1.0
+                else:
+                    ret = ([x[0] + 0.5 * (x[0] - x[1]) ** 3 - 1.0,
+                           0.5 * (x[1] - x[0]) ** 3 + x[1]])
+
+                return ret
+
+        F = fun()
+        with assert_raises(ValueError):
+            sol = root(F, [0.1, 0.0], method='lm')

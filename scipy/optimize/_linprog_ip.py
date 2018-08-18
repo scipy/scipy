@@ -543,6 +543,23 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, rr):
     # identical bounds indicate that variable can be removed
     i_f = np.abs(lb - ub) < tol   # indices of "fixed" variables
     i_nf = np.logical_not(i_f)  # indices of "not fixed" variables
+
+    # test_bounds_equal_but_infeasible
+    if np.all(i_f):  # if bounds define solution, check for consistency
+        residual = b_eq - A_eq.dot(lb)
+        slack = b_ub - A_ub.dot(lb)
+        if ((A_ub.size > 0 and np.any(slack < 0)) or
+                (A_eq.size > 0 and not np.allclose(residual, 0))):
+            status = 2
+            message = ("The problem is (trivially) infeasible because the "
+                       "bounds fix all variables to values inconsistent with "
+                       "the constraints")
+            complete = True
+            return (c, c0, A_ub, b_ub, A_eq, b_eq, bounds,
+                    x, undo, complete, status, message)
+
+    ub_mod = ub
+    lb_mod = lb
     if np.any(i_f):
         c0 += c[i_f].dot(lb[i_f])
         b_eq = b_eq - A_eq[:, i_f].dot(lb[i_f])
@@ -552,8 +569,11 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, rr):
         A_eq = A_eq[:, i_nf]
         A_ub = A_ub[:, i_nf]
         # record of variables to be added back in
-        undo = [np.where(i_f)[0], lb[i_f]]
+        undo = [np.nonzero(i_f)[0], lb[i_f]]
         # don't remove these entries from bounds; they'll be used later.
+        # but we _also_ need a version of the bounds with these removed
+        lb_mod = lb[i_nf]
+        ub_mod = ub[i_nf]
 
     # no constraints indicates that problem is trivial
     if A_eq.size == 0 and A_ub.size == 0:
@@ -562,24 +582,32 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, rr):
         # test_empty_constraint_1
         if c.size == 0:
             status = 0
-            message = ("The solution was determined in presolve as there are"
+            message = ("The solution was determined in presolve as there are "
                        "no non-trivial constraints.")
-        elif (np.any(np.logical_and(c < 0, ub == np.inf)) or
-                np.any(np.logical_and(c > 0, lb == -np.inf))):
-                # test_no_constraints()
+        elif (np.any(np.logical_and(c < 0, ub_mod == np.inf)) or
+              np.any(np.logical_and(c > 0, lb_mod == -np.inf))):
+            # test_no_constraints()
+            # test_unbounded_no_nontrivial_constraints_1
+            # test_unbounded_no_nontrivial_constraints_2
             status = 3
-            message = ("If feasible, the problem is (trivially) unbounded "
-                       "because there are no constraints and at least one "
-                       " element of c is negative. If you wish to check "
-                       " whether the problem is infeasible, turn presolve "
-                       "off.")
+            message = ("The problem is (trivially) unbounded "
+                       "because there are no non-trivial constraints and "
+                       "a) at least one decision variable is unbounded "
+                       "above and its corresponding cost is negative, or "
+                       "b) at least one decision variable is unbounded below "
+                       "and its corresponding cost is positive. ")
         else:  # test_empty_constraint_2
             status = 0
             message = ("The solution was determined in presolve as there are "
                        "no non-trivial constraints.")
         complete = True
-        x[c < 0] = ub[c < 0]
-        x[c > 0] = lb[c > 0]
+        x[c < 0] = ub_mod[c < 0]
+        x[c > 0] = lb_mod[c > 0]
+        # where c is zero, set x to a finite bound or zero
+        x_zero_c = ub_mod[c == 0]
+        x_zero_c[np.isinf(x_zero_c)] = ub_mod[c == 0][np.isinf(x_zero_c)]
+        x_zero_c[np.isinf(x_zero_c)] = 0
+        x[c == 0] = x_zero_c
         # if this is not the last step of presolve, should convert bounds back
         # to array and return here
 
@@ -617,7 +645,7 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, rr):
     if rr and A_eq.size > 0:
         try:  # TODO: instead use results of first SVD in _remove_redundancy
             rank = np.linalg.matrix_rank(A_eq)
-        except:  # oh well, we'll have to go with _remove_redundancy_dense
+        except Exception:  # oh well, we'll have to go with _remove_redundancy_dense
             rank = 0
     if rr and A_eq.size > 0 and rank < A_eq.shape[0]:
         warn(redundancy_warning, OptimizeWarning)
@@ -768,7 +796,7 @@ def _get_Abc(
 
     # unbounded below: substitute xi = -xi' (unbounded above)
     l_nolb_someub = np.logical_and(lb_none, ub_some)
-    i_nolb = np.where(l_nolb_someub)[0]
+    i_nolb = np.nonzero(l_nolb_someub)[0]
     lbs[l_nolb_someub], ubs[l_nolb_someub] = (
         -ubs[l_nolb_someub], lbs[l_nolb_someub])
     lb_none = np.equal(lbs, None)
@@ -783,7 +811,7 @@ def _get_Abc(
             A_eq[:, i_nolb] *= -1
 
     # upper bound: add inequality constraint
-    i_newub = np.where(ub_some)[0]
+    i_newub = np.nonzero(ub_some)[0]
     ub_newub = ubs[ub_some]
     n_bounds = np.count_nonzero(ub_some)
     A_ub = vstack((A_ub, zeros((n_bounds, A_ub.shape[1]))))
@@ -797,7 +825,7 @@ def _get_Abc(
 
     # unbounded: substitute xi = xi+ + xi-
     l_free = np.logical_and(lb_none, ub_none)
-    i_free = np.where(l_free)[0]
+    i_free = np.nonzero(l_free)[0]
     n_free = len(i_free)
     A1 = hstack((A1, zeros((A1.shape[0], n_free))))
     c = np.concatenate((c, np.zeros(n_free)))
@@ -810,7 +838,7 @@ def _get_Abc(
 
     # lower bound: substitute xi = xi' + lb
     # now there is a constant term in objective
-    i_shift = np.where(lb_some)[0]
+    i_shift = np.nonzero(lb_some)[0]
     lb_shift = lbs[lb_some].astype(float)
     c0 += np.sum(lb_shift * c[i_shift])
     if sparse:
@@ -835,7 +863,8 @@ def _postprocess(
         complete=False,
         undo=[],
         status=0,
-        message=""):
+        message="",
+        tol=1e-8):
     """
     Given solution x to presolved, standard form linear program x, add
     fixed variables back into the problem and undo the variable substitutions
@@ -875,6 +904,8 @@ def _postprocess(
 
     message : str
         A string descriptor of the exit status of the optimization.
+    tol : float
+        Termination tolerance; see [1]_ Section 4.5.
 
     Returns
     -------
@@ -947,8 +978,26 @@ def _postprocess(
     # report residuals of ORIGINAL EQ constraints
     con = b_eq - A_eq.dot(x)
 
-    if status == 0 and (np.isnan(x).any() or np.isnan(fun) or
-                        np.isnan(slack).any() or np.isnan(con).any()):
+    # Patch for bug #8664. Detecting this sort of issue earlier
+    # (via abnormalities in the indicators) would be better.
+    bounds = np.array(bounds)  # again, this should have been the standard form
+    lb = bounds[:, 0]
+    ub = bounds[:, 1]
+    lb[np.equal(lb, None)] = -np.inf
+    ub[np.equal(ub, None)] = np.inf
+    tol = np.sqrt(tol)  # Somewhat arbitrary, but status 5 is very unusual
+    if status == 0 and ((slack < -tol).any() or (np.abs(con) > tol).any() or
+                        (x < lb - tol).any() or (x > ub + tol).any()):
+        status = 4
+        message = ("The solution does not satisfy the constraints, yet "
+                   "no errors were raised and there is no certificate of "
+                   "infeasibility or unboundedness. This is known to occur "
+                   "if the `presolve` option is False and the problem is "
+                   "infeasible. If you uncounter this under different "
+                   "circumstances, please submit a bug report. Otherwise, "
+                   "please enable presolve.")
+    elif status == 0 and (np.isnan(x).any() or np.isnan(fun) or
+                          np.isnan(slack).any() or np.isnan(con).any()):
         status = 4
         message = ("Numerical difficulties were encountered but no errors "
                    "were raised. This is known to occur if the 'presolve' "
@@ -1123,7 +1172,7 @@ def _get_delta(
             #       umfpack and therefore cannot test its performance
             solve = sps.linalg.splu(M, permc_spec=permc_spec).solve
             splu = True
-        except:
+        except Exception:
             lstsq = True
             solve = _get_solver(sparse, lstsq, sym_pos, cholesky)
     else:
@@ -1137,7 +1186,7 @@ def _get_delta(
     if cholesky:
         try:
             L = sp.linalg.cho_factor(M)
-        except:
+        except Exception:
             cholesky = False
             solve = _get_solver(sparse, lstsq, sym_pos, cholesky)
 
@@ -1228,7 +1277,9 @@ def _get_delta(
                             "approached. However, if you see this frequently, "
                             "your problem may be numerically challenging. "
                             "If you cannot improve the formulation, consider "
-                            "setting 'lstsq' to True.", OptimizeWarning)
+                            "setting 'lstsq' to True. Consider also setting "
+                            "`presolve` to True, if it is not already.",
+                            OptimizeWarning)
                         lstsq = True
                 else:
                     raise e
@@ -1659,9 +1710,11 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol,
                 x, y, z, tau, kappa = _do_step(
                     x, y, z, tau, kappa, d_x, d_y, d_z, d_tau, d_kappa, alpha)
 
-        except (LinAlgError, FloatingPointError):
+        except (LinAlgError, FloatingPointError,
+                ValueError, ZeroDivisionError):
             # this can happen when sparse solver is used and presolve
-            # is turned off. I've never seen it otherwise.
+            # is turned off. Also observed ValueError in AppVeyor Python 3.6
+            # Win32 build (PR #8676). I've never seen it otherwise.
             status = 4
             message = _get_message(status)
             break
@@ -2108,7 +2161,7 @@ def _linprog_ip(
     # need modified bounds here to translate variables appropriately
     x, fun, slack, con, status, message = _postprocess(
         x, c_o, A_ub_o, b_ub_o, A_eq_o, b_eq_o,
-        bounds, complete, undo, status, message)
+        bounds, complete, undo, status, message, tol)
 
     sol = {
         'x': x,

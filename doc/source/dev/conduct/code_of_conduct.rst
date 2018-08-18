@@ -82,7 +82,8 @@ Though no list can hope to be comprehensive, we explicitly honour diversity in:
 age, culture, ethnicity, genotype, gender identity or expression, language,
 national origin, neurotype, phenotype, political beliefs, profession, race,
 religion, sexual orientation, socioeconomic status, subculture and technical
-ability.
+ability, to the extent that these do not conflict with this code of conduct.
+
 
 Though we welcome people fluent in all languages, SciPy development is
 conducted in English.

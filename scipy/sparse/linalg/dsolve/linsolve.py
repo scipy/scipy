@@ -137,8 +137,9 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
     if not b_is_sparse:
         b = asarray(b)
     b_is_vector = ((b.ndim == 1) or (b.ndim == 2 and b.shape[1] == 1))
-
-    A.sort_indices()
+    
+    # sum duplicates for non-canonical format
+    A.sum_duplicates()
     A = A.asfptype()  # upcast to a floating point format
     result_dtype = np.promote_types(A.dtype, b.dtype)
     if A.dtype != result_dtype:
@@ -294,7 +295,8 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
         A = csc_matrix(A)
         warn('splu requires CSC matrix format', SparseEfficiencyWarning)
 
-    A.sort_indices()
+    # sum duplicates for non-canonical format
+    A.sum_duplicates()
     A = A.asfptype()  # upcast to a floating point format
 
     M, N = A.shape
@@ -369,7 +371,8 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
         A = csc_matrix(A)
         warn('splu requires CSC matrix format', SparseEfficiencyWarning)
 
-    A.sort_indices()
+    # sum duplicates for non-canonical format
+    A.sum_duplicates()
     A = A.asfptype()  # upcast to a floating point format
 
     M, N = A.shape
@@ -502,8 +505,8 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False):
         raise ValueError(
             'A must be a square matrix but its shape is {}.'.format(A.shape))
 
-    A.eliminate_zeros()
-    A.sort_indices()
+    # sum duplicates for non-canonical format
+    A.sum_duplicates()
 
     b = np.asanyarray(b)
 

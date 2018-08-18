@@ -18,6 +18,7 @@ below are not available without it.
    central_diff_weights - Weights for an n-point central m-th derivative
    derivative - Find the n-th derivative of a function at a point
    face - Get example image for processing
+   electrocardiogram - Load an example of a one-dimensional signal.
 
 Deprecated functions:
 
@@ -90,6 +91,8 @@ source = np.deprecate(_source, message=_msg % {"name": "source"})
 @np.deprecate(message=_msg % {"name": "info.(..., toplevel='scipy')"})
 def info(object=None,maxwidth=76,output=sys.stdout,toplevel='scipy'):
     return _info(object, maxwidth, output, toplevel)
+
+
 info.__doc__ = _info.__doc__
 del sys
 

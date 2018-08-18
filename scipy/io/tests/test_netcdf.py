@@ -14,7 +14,7 @@ import numpy as np
 from numpy.testing import assert_, assert_allclose, assert_equal
 from pytest import raises as assert_raises
 
-from scipy.io.netcdf import netcdf_file
+from scipy.io.netcdf import netcdf_file, IS_PYPY
 
 from scipy._lib._numpy_compat import suppress_warnings
 from scipy._lib._tmpdirs import in_tempdir
@@ -82,8 +82,8 @@ def test_read_write_files():
 
         # To read the NetCDF file we just created::
         with netcdf_file('simple.nc') as f:
-            # Using mmap is the default
-            assert_(f.use_mmap)
+            # Using mmap is the default (but not on pypy)
+            assert_equal(f.use_mmap, not IS_PYPY)
             check_simple(f)
             assert_equal(f._attributes['appendRan'], 1)
 
@@ -111,10 +111,14 @@ def test_read_write_files():
                 check_simple(f)
 
         # Read file from fileobj, with mmap
-        with open('simple.nc', 'rb') as fobj:
-            with netcdf_file(fobj, mmap=True) as f:
-                assert_(f.use_mmap)
-                check_simple(f)
+        with suppress_warnings() as sup:
+            if IS_PYPY:
+                sup.filter(RuntimeWarning,
+                           "Cannot close a netcdf_file opened with mmap=True.*")
+            with open('simple.nc', 'rb') as fobj:
+                with netcdf_file(fobj, mmap=True) as f:
+                    assert_(f.use_mmap)
+                    check_simple(f)
 
         # Again read it in append mode (adding another att)
         with open('simple.nc', 'r+b') as fobj:
@@ -166,6 +170,66 @@ def test_read_write_sio():
         assert_equal(f_64.version_byte, 2)
 
 
+def test_bytes():
+    raw_file = BytesIO()
+    f = netcdf_file(raw_file, mode='w')
+    # Dataset only has a single variable, dimension and attribute to avoid
+    # any ambiguity related to order.
+    f.a = 'b'
+    f.createDimension('dim', 1)
+    var = f.createVariable('var', np.int16, ('dim',))
+    var[0] = -9999
+    var.c = 'd'
+    f.sync()
+
+    actual = raw_file.getvalue()
+
+    expected = (b'CDF\x01'
+                b'\x00\x00\x00\x00'
+                b'\x00\x00\x00\x0a'
+                b'\x00\x00\x00\x01'
+                b'\x00\x00\x00\x03'
+                b'dim\x00'
+                b'\x00\x00\x00\x01'
+                b'\x00\x00\x00\x0c'
+                b'\x00\x00\x00\x01'
+                b'\x00\x00\x00\x01'
+                b'a\x00\x00\x00'
+                b'\x00\x00\x00\x02'
+                b'\x00\x00\x00\x01'
+                b'b\x00\x00\x00'
+                b'\x00\x00\x00\x0b'
+                b'\x00\x00\x00\x01'
+                b'\x00\x00\x00\x03'
+                b'var\x00'
+                b'\x00\x00\x00\x01'
+                b'\x00\x00\x00\x00'
+                b'\x00\x00\x00\x0c'
+                b'\x00\x00\x00\x01'
+                b'\x00\x00\x00\x01'
+                b'c\x00\x00\x00'
+                b'\x00\x00\x00\x02'
+                b'\x00\x00\x00\x01'
+                b'd\x00\x00\x00'
+                b'\x00\x00\x00\x03'
+                b'\x00\x00\x00\x04'
+                b'\x00\x00\x00\x78'
+                b'\xd8\xf1\x80\x01')
+
+    assert_equal(actual, expected)
+
+
+def test_encoded_fill_value():
+    with netcdf_file(BytesIO(), mode='w') as f:
+        f.createDimension('x', 1)
+        var = f.createVariable('var', 'S1', ('x',))
+        assert_equal(var._get_encoded_fill_value(), b'\x00')
+        var._FillValue = b'\x01'
+        assert_equal(var._get_encoded_fill_value(), b'\x01')
+        var._FillValue = b'\x00\x00'  # invalid, wrong size
+        assert_equal(var._get_encoded_fill_value(), b'\x00')
+
+
 def test_read_example_data():
     # read any example data files
     for fname in glob(pjoin(TEST_DATA_PATH, '*.nc')):
@@ -183,11 +247,26 @@ def test_itemset_no_segfault_on_readonly():
     with suppress_warnings() as sup:
         sup.filter(RuntimeWarning,
                    "Cannot close a netcdf_file opened with mmap=True, when netcdf_variables or arrays referring to its data still exist")
-        with netcdf_file(filename, 'r') as f:
+        with netcdf_file(filename, 'r', mmap=True) as f:
             time_var = f.variables['time']
 
     # time_var.assignValue(42) should raise a RuntimeError--not seg. fault!
     assert_raises(RuntimeError, time_var.assignValue, 42)
+
+
+def test_appending_issue_gh_8625():
+    stream = BytesIO()
+
+    with make_simple(stream, mode='w') as f:
+        f.createDimension('x', 2)
+        f.createVariable('x', float, ('x',))
+        f.variables['x'][...] = 1
+        f.flush()
+        contents = stream.getvalue()
+
+    stream = BytesIO(contents)
+    with netcdf_file(stream, mode='a') as f:
+        f.variables['x'][...] = 2
 
 
 def test_write_invalid_dtype():
@@ -254,12 +333,13 @@ def test_ticket_1720():
 def test_mmaps_segfault():
     filename = pjoin(TEST_DATA_PATH, 'example_1.nc')
 
-    with warnings.catch_warnings():
-        warnings.simplefilter("error")
-        with netcdf_file(filename, mmap=True) as f:
-            x = f.variables['lat'][:]
-            # should not raise warnings
-            del x
+    if not IS_PYPY:
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            with netcdf_file(filename, mmap=True) as f:
+                x = f.variables['lat'][:]
+                # should not raise warnings
+                del x
 
     def doit():
         with netcdf_file(filename, mmap=True) as f:
@@ -319,9 +399,9 @@ def test_open_append():
         f.close()
 
 
-def test_append_recordDimension(): 
-    dataSize = 100   
-    
+def test_append_recordDimension():
+    dataSize = 100
+
     with in_tempdir():
         # Create file with record time dimension
         with netcdf_file('withRecordDimension.nc', 'w') as f:
@@ -333,28 +413,28 @@ def test_append_recordDimension():
             f.createDimension('y', dataSize)
             y = f.createVariable('y', 'd', ('y',))
             y[:] = np.array(range(dataSize))
-            f.createVariable('testData', 'i', ('time', 'x', 'y'))  
+            f.createVariable('testData', 'i', ('time', 'x', 'y'))
             f.flush()
-            f.close()        
-        
-        for i in range(2): 
-            # Open the file in append mode and add data 
+            f.close()
+
+        for i in range(2):
+            # Open the file in append mode and add data
             with netcdf_file('withRecordDimension.nc', 'a') as f:
                 f.variables['time'].data = np.append(f.variables["time"].data, i)
                 f.variables['testData'][i, :, :] = np.ones((dataSize, dataSize))*i
                 f.flush()
-                
+
             # Read the file and check that append worked
-            with netcdf_file('withRecordDimension.nc') as f:            
+            with netcdf_file('withRecordDimension.nc') as f:
                 assert_equal(f.variables['time'][-1], i)
                 assert_equal(f.variables['testData'][-1, :, :].copy(), np.ones((dataSize, dataSize))*i)
                 assert_equal(f.variables['time'].data.shape[0], i+1)
                 assert_equal(f.variables['testData'].data.shape[0], i+1)
-                
+
         # Read the file and check that 'data' was not saved as user defined
         # attribute of testData variable during append operation
         with netcdf_file('withRecordDimension.nc') as f:
-            with assert_raises(KeyError) as ar:            
+            with assert_raises(KeyError) as ar:
                 f.variables['testData']._attributes['data']
             ex = ar.value
             assert_equal(ex.args[0], 'data')

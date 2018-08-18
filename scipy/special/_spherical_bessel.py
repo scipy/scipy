@@ -46,9 +46,9 @@ def spherical_jn(n, z, derivative=False):
 
     References
     ----------
-    .. [1] http://dlmf.nist.gov/10.47.E3
-    .. [2] http://dlmf.nist.gov/10.51.E1
-    .. [3] http://dlmf.nist.gov/10.51.E2
+    .. [1] https://dlmf.nist.gov/10.47.E3
+    .. [2] https://dlmf.nist.gov/10.51.E1
+    .. [3] https://dlmf.nist.gov/10.51.E2
     """
     if derivative:
         return _spherical_jn_d(n, z)
@@ -97,9 +97,9 @@ def spherical_yn(n, z, derivative=False):
 
     References
     ----------
-    .. [1] http://dlmf.nist.gov/10.47.E4
-    .. [2] http://dlmf.nist.gov/10.51.E1
-    .. [3] http://dlmf.nist.gov/10.51.E2
+    .. [1] https://dlmf.nist.gov/10.47.E4
+    .. [2] https://dlmf.nist.gov/10.51.E1
+    .. [3] https://dlmf.nist.gov/10.51.E2
     """
     if derivative:
         return _spherical_yn_d(n, z)
@@ -147,8 +147,8 @@ def spherical_in(n, z, derivative=False):
 
     References
     ----------
-    .. [1] http://dlmf.nist.gov/10.47.E7
-    .. [2] http://dlmf.nist.gov/10.51.E5
+    .. [1] https://dlmf.nist.gov/10.47.E7
+    .. [2] https://dlmf.nist.gov/10.51.E5
     """
     if derivative:
         return _spherical_in_d(n, z)
@@ -196,8 +196,8 @@ def spherical_kn(n, z, derivative=False):
 
     References
     ----------
-    .. [1] http://dlmf.nist.gov/10.47.E9
-    .. [2] http://dlmf.nist.gov/10.51.E5
+    .. [1] https://dlmf.nist.gov/10.47.E9
+    .. [2] https://dlmf.nist.gov/10.51.E5
     """
     if derivative:
         return _spherical_kn_d(n, z)

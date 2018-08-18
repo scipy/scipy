@@ -12,7 +12,7 @@ from scipy.special import betainc
 from. common_tests import (check_normalization, check_moment, check_mean_expect,
                            check_var_expect, check_skew_expect,
                            check_kurt_expect, check_entropy,
-                           check_private_entropy,
+                           check_private_entropy, check_entropy_vect_scale,
                            check_edge_support, check_named_args,
                            check_random_state_property,
                            check_meth_dtype, check_ppf_dtype, check_cmplx_deriv,
@@ -62,7 +62,7 @@ fails_cmplx = set(['beta', 'betaprime', 'chi', 'chi2', 'dgamma', 'dweibull',
                    'erlang', 'f', 'gamma', 'gausshyper', 'gengamma',
                    'gennorm', 'genpareto', 'halfgennorm', 'invgamma',
                    'ksone', 'kstwobign', 'levy_l', 'loggamma', 'logistic',
-                   'maxwell', 'nakagami', 'ncf', 'nct', 'ncx2',
+                   'maxwell', 'nakagami', 'ncf', 'nct', 'ncx2', 'norminvgauss',
                    'pearson3', 'rice', 't', 'skewnorm', 'tukeylambda',
                    'vonmises', 'vonmises_line', 'rv_histogram_instance'])
 
@@ -144,6 +144,12 @@ def test_cont_basic(distname, arg):
         if (distfn.__class__._entropy != stats.rv_continuous._entropy
                 and distname != 'vonmises'):
             check_private_entropy(distfn, arg, stats.rv_continuous)
+
+        with suppress_warnings() as sup:
+            sup.filter(IntegrationWarning, "The occurrence of roundoff error")
+            sup.filter(IntegrationWarning, "Extremely bad integrand")
+            sup.filter(RuntimeWarning, "invalid value")
+            check_entropy_vect_scale(distfn, arg)
 
         check_edge_support(distfn, arg)
 
@@ -231,9 +237,8 @@ def test_rvs_broadcast(dist, shape_args):
     # implementation detail of the distribution, not a requirement.  If
     # the implementation the rvs() method of a distribution changes, this
     # test might also have to be changed.
-    shape_only = dist in ['betaprime', 'dgamma', 'exponnorm',
-                          'nct', 'dweibull', 'rice', 'levy_stable',
-                          'skewnorm']
+    shape_only = dist in ['betaprime', 'dgamma', 'exponnorm', 'norminvgauss',
+                          'nct', 'dweibull', 'rice', 'levy_stable', 'skewnorm']
 
     distfunc = getattr(stats, dist)
     loc = np.zeros(2)

@@ -6,6 +6,7 @@ from numpy.testing import (assert_, assert_equal, assert_almost_equal,
         assert_array_almost_equal, assert_array_equal,
         assert_allclose)
 from pytest import raises as assert_raises
+import pytest
 
 from numpy import mgrid, pi, sin, ogrid, poly1d, linspace
 import numpy as np
@@ -22,7 +23,7 @@ from scipy.special import poch, gamma
 
 from scipy.interpolate import _ppoly
 
-from scipy._lib._gcutils import assert_deallocated
+from scipy._lib._gcutils import assert_deallocated, IS_PYPY
 
 from scipy.integrate import nquad
 
@@ -136,7 +137,8 @@ class TestInterp1D(object):
         # are given to the constructor.
 
         # These should all work.
-        for kind in ('nearest', 'zero', 'linear', 'slinear', 'quadratic', 'cubic'):
+        for kind in ('nearest', 'zero', 'linear', 'slinear', 'quadratic',
+                     'cubic', 'previous', 'next'):
             interp1d(self.x10, self.y10, kind=kind)
             interp1d(self.x10, self.y10, kind=kind, fill_value="extrapolate")
         interp1d(self.x10, self.y10, kind='linear', fill_value=(-1, 1))
@@ -322,6 +324,44 @@ class TestInterp1D(object):
                     bounds_error=True)
         assert_raises(ValueError, interp1d, self.x10, self.y10, **opts)
 
+    def test_previous(self):
+        # Check the actual implementation of previous interpolation.
+        interp10 = interp1d(self.x10, self.y10, kind='previous')
+        assert_array_almost_equal(interp10(self.x10), self.y10)
+        assert_array_almost_equal(interp10(1.2), np.array(1.))
+        assert_array_almost_equal(interp10([2.4, 5.6, 6.0]),
+                                  np.array([2., 5., 6.]),)
+
+        # test fill_value="extrapolate"
+        extrapolator = interp1d(self.x10, self.y10, kind='previous',
+                                fill_value='extrapolate')
+        assert_allclose(extrapolator([-1., 0, 9, 11]),
+                        [0, 0, 9, 9], rtol=1e-14)
+
+        opts = dict(kind='previous',
+                    fill_value='extrapolate',
+                    bounds_error=True)
+        assert_raises(ValueError, interp1d, self.x10, self.y10, **opts)
+
+    def test_next(self):
+        # Check the actual implementation of next interpolation.
+        interp10 = interp1d(self.x10, self.y10, kind='next')
+        assert_array_almost_equal(interp10(self.x10), self.y10)
+        assert_array_almost_equal(interp10(1.2), np.array(2.))
+        assert_array_almost_equal(interp10([2.4, 5.6, 6.0]),
+                                  np.array([3., 6., 6.]),)
+
+        # test fill_value="extrapolate"
+        extrapolator = interp1d(self.x10, self.y10, kind='next',
+                                fill_value='extrapolate')
+        assert_allclose(extrapolator([-1., 0, 9, 11]),
+                        [0, 0, 9, 9], rtol=1e-14)
+
+        opts = dict(kind='next',
+                    fill_value='extrapolate',
+                    bounds_error=True)
+        assert_raises(ValueError, interp1d, self.x10, self.y10, **opts)
+
     def test_zero(self):
         # Check the actual implementation of zero-order spline interpolation.
         interp10 = interp1d(self.x10, self.y10, kind='zero')
@@ -359,7 +399,7 @@ class TestInterp1D(object):
         assert_array_almost_equal(yi, np.r_[np.nan, y[:-1]])
 
     def test_bounds(self):
-        for kind in ('linear', 'cubic', 'nearest',
+        for kind in ('linear', 'cubic', 'nearest', 'previous', 'next',
                      'slinear', 'zero', 'quadratic'):
             self._bounds_check(kind)
             self._bounds_check_int_nan_fill(kind)
@@ -528,7 +568,7 @@ class TestInterp1D(object):
     def test_fill_value(self):
         # test that two-element fill value works
         for kind in ('linear', 'nearest', 'cubic', 'slinear', 'quadratic',
-                     'zero'):
+                     'zero', 'previous', 'next'):
             self._check_fill_value(kind)
 
     def test_fill_value_writeable(self):
@@ -586,7 +626,7 @@ class TestInterp1D(object):
 
     def test_nd(self):
         for kind in ('linear', 'cubic', 'slinear', 'quadratic', 'nearest',
-                     'zero'):
+                     'zero', 'previous', 'next'):
             self._nd_check_interp(kind)
             self._nd_check_shape(kind)
 
@@ -608,10 +648,11 @@ class TestInterp1D(object):
 
     def test_complex(self):
         for kind in ('linear', 'nearest', 'cubic', 'slinear', 'quadratic',
-                     'zero'):
+                     'zero', 'previous', 'next'):
             self._check_complex(np.complex64, kind)
             self._check_complex(np.complex128, kind)
 
+    @pytest.mark.skipif(IS_PYPY, reason="Test not meaningful on PyPy")
     def test_circular_refs(self):
         # Test interp1d can be automatically garbage collected
         x = np.linspace(0, 1)
@@ -623,9 +664,10 @@ class TestInterp1D(object):
 
     def test_overflow_nearest(self):
         # Test that the x range doesn't overflow when given integers as input
-        x = np.array([0, 50, 127], dtype=np.int8)
-        ii = interp1d(x, x, kind='nearest')
-        assert_array_almost_equal(ii(x), x)
+        for kind in ('nearest', 'previous', 'next'):
+            x = np.array([0, 50, 127], dtype=np.int8)
+            ii = interp1d(x, x, kind=kind)
+            assert_array_almost_equal(ii(x), x)
 
     def test_local_nans(self):
         # check that for local interpolation kinds (slinear, zero) a single nan

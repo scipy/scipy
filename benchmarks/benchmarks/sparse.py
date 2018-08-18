@@ -188,8 +188,8 @@ class Construction(Benchmark):
 
 class Conversion(Benchmark):
     params = [
-        ['csr', 'csc', 'coo', 'dia', 'lil', 'dok'],
-        ['csr', 'csc', 'coo', 'dia', 'lil', 'dok'],
+        ['csr', 'csc', 'coo', 'dia', 'lil', 'dok', 'bsr'],
+        ['csr', 'csc', 'coo', 'dia', 'lil', 'dok', 'bsr'],
     ]
     param_names = ['from_format', 'to_format']
 

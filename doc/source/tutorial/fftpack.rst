@@ -53,7 +53,7 @@ respectively as shown in the following example.
 >>> x = np.array([1.0, 2.0, 1.0, -1.0, 1.5])
 >>> y = fft(x)
 >>> y
-array([ 4.50000000+0.j        ,  2.08155948-1.65109876j,
+array([ 4.5       +0.j        ,  2.08155948-1.65109876j,
        -1.83155948+1.60822041j, -1.83155948-1.60822041j,
         2.08155948+1.65109876j])
 >>> yinv = ifft(y)
@@ -137,7 +137,7 @@ truncated for illustrative purposes).
 
 
 In case the sequence x is complex-valued, the spectrum is no longer symmetric.
-To simplify working wit the FFT functions, scipy provides the following two
+To simplify working with the FFT functions, scipy provides the following two
 helper functions.
 
 The function :func:`fftfreq` returns the FFT sample frequency points.
@@ -189,8 +189,8 @@ coefficients with this special ordering.
 >>> from scipy.fftpack import fft, rfft, irfft
 >>> x = np.array([1.0, 2.0, 1.0, -1.0, 1.5, 1.0])
 >>> fft(x)
-array([ 5.50+0.j        ,  2.25-0.4330127j , -2.75-1.29903811j,
-        1.50+0.j        , -2.75+1.29903811j,  2.25+0.4330127j ])
+array([ 5.5 +0.j        ,  2.25-0.4330127j , -2.75-1.29903811j,
+        1.5 +0.j        , -2.75+1.29903811j,  2.25+0.4330127j ])
 >>> yr = rfft(x)
 >>> yr
 array([ 5.5       ,  2.25      , -0.4330127 , -2.75      , -1.29903811,
@@ -199,7 +199,7 @@ array([ 5.5       ,  2.25      , -0.4330127 , -2.75      , -1.29903811,
 array([ 1. ,  2. ,  1. , -1. ,  1.5,  1. ])
 >>> x = np.array([1.0, 2.0, 1.0, -1.0, 1.5])
 >>> fft(x)
-array([ 4.50000000+0.j        ,  2.08155948-1.65109876j,
+array([ 4.5       +0.j        ,  2.08155948-1.65109876j,
        -1.83155948+1.60822041j, -1.83155948-1.60822041j,
         2.08155948+1.65109876j])
 >>> yr = rfft(x)
@@ -276,7 +276,7 @@ Scipy uses the following definition of the unnormalized DCT-I
 .. math::
 
     y[k] = x_0 + (-1)^k x_{N-1} + 2\sum_{n=1}^{N-2} x[n]
-    \cos\left({\pi nk\over N-1}\right),
+    \cos\left(\frac{\pi nk}{N-1}\right),
     \qquad 0 \le k < N.
 
 Only ``None`` is supported as normalization mode for DCT-I. Note also that the
@@ -498,15 +498,15 @@ References
 
 .. [Mak] J. Makhoul, 1980, 'A Fast Cosine Transform in One and Two Dimensions',
        `IEEE Transactions on acoustics, speech and signal processing`
-       vol. 28(1), pp. 27-34, http://dx.doi.org/10.1109/TASSP.1980.1163351
+       vol. 28(1), pp. 27-34, :doi:`10.1109/TASSP.1980.1163351`
 
-.. [WPW] http://en.wikipedia.org/wiki/Window_function
+.. [WPW] https://en.wikipedia.org/wiki/Window_function
 
-.. [WPC] http://en.wikipedia.org/wiki/Discrete_cosine_transform
+.. [WPC] https://en.wikipedia.org/wiki/Discrete_cosine_transform
 
-.. [WPS] http://en.wikipedia.org/wiki/Discrete_sine_transform
+.. [WPS] https://en.wikipedia.org/wiki/Discrete_sine_transform
 
 
 .. _FFTW: http://www.fftw.org/
-.. _PyFFTW: http://hgomersall.github.io/pyFFTW/index.html
-.. _pyfftw.interfaces: http://hgomersall.github.io/pyFFTW/pyfftw/interfaces/interfaces.html
+.. _PyFFTW: https://hgomersall.github.io/pyFFTW/
+.. _pyfftw.interfaces: https://hgomersall.github.io/pyFFTW/pyfftw/interfaces/interfaces.html

@@ -5,6 +5,7 @@
 from __future__ import division, print_function, absolute_import
 
 from numpy.testing import assert_, assert_allclose, assert_equal
+from scipy._lib._numpy_compat import suppress_warnings
 
 import numpy as np
 from numpy import zeros, array, allclose
@@ -29,12 +30,16 @@ count = [0]
 def matvec(v):
     count[0] += 1
     return Am*v
+
+
 A = LinearOperator(matvec=matvec, shape=Am.shape, dtype=Am.dtype)
 
 
 def do_solve(**kw):
     count[0] = 0
-    x0, flag = gcrotmk(A, b, x0=zeros(A.shape[0]), tol=1e-14, **kw)
+    with suppress_warnings() as sup:
+        sup.filter(DeprecationWarning, ".*called without specifying.*")
+        x0, flag = gcrotmk(A, b, x0=zeros(A.shape[0]), tol=1e-14, **kw)
     count_0 = count[0]
     assert_(allclose(A*x0, b, rtol=1e-12, atol=1e-12), norm(A*x0-b))
     return x0, count_0
@@ -49,7 +54,7 @@ class TestGCROTMK(object):
         x0, count_0 = do_solve()
         x1, count_1 = do_solve(M=M)
 
-        assert_equal(count_1, 2)
+        assert_equal(count_1, 3)
         assert_(count_1 < count_0/2)
         assert_(allclose(x1, x0, rtol=1e-14))
 
@@ -60,8 +65,10 @@ class TestGCROTMK(object):
         b = np.random.rand(10000)
 
         # The inner arnoldi should be equivalent to gmres
-        x0, flag0 = gcrotmk(A, b, x0=zeros(A.shape[0]), m=15, k=0, maxiter=1)
-        x1, flag1 = gmres(A, b, x0=zeros(A.shape[0]), restart=15, maxiter=1)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, ".*called without specifying.*")
+            x0, flag0 = gcrotmk(A, b, x0=zeros(A.shape[0]), m=15, k=0, maxiter=1)
+            x1, flag1 = gmres(A, b, x0=zeros(A.shape[0]), restart=15, maxiter=1)
 
         assert_equal(flag0, 1)
         assert_equal(flag1, 1)
@@ -79,31 +86,35 @@ class TestGCROTMK(object):
         for n in [3, 5, 10, 100]:
             A = 2*eye(n)
 
-            b = np.ones(n)
-            x, info = gcrotmk(A, b, maxiter=10)
-            assert_equal(info, 0)
-            assert_allclose(A.dot(x) - b, 0, atol=1e-14)
-
-            x, info = gcrotmk(A, b, tol=0, maxiter=10)
-            if info == 0:
+            with suppress_warnings() as sup:
+                sup.filter(DeprecationWarning, ".*called without specifying.*")
+                b = np.ones(n)
+                x, info = gcrotmk(A, b, maxiter=10)
+                assert_equal(info, 0)
                 assert_allclose(A.dot(x) - b, 0, atol=1e-14)
 
-            b = np.random.rand(n)
-            x, info = gcrotmk(A, b, maxiter=10)
-            assert_equal(info, 0)
-            assert_allclose(A.dot(x) - b, 0, atol=1e-14)
+                x, info = gcrotmk(A, b, tol=0, maxiter=10)
+                if info == 0:
+                    assert_allclose(A.dot(x) - b, 0, atol=1e-14)
 
-            x, info = gcrotmk(A, b, tol=0, maxiter=10)
-            if info == 0:
+                b = np.random.rand(n)
+                x, info = gcrotmk(A, b, maxiter=10)
+                assert_equal(info, 0)
                 assert_allclose(A.dot(x) - b, 0, atol=1e-14)
+
+                x, info = gcrotmk(A, b, tol=0, maxiter=10)
+                if info == 0:
+                    assert_allclose(A.dot(x) - b, 0, atol=1e-14)
 
     def test_nans(self):
         A = eye(3, format='lil')
         A[1,1] = np.nan
         b = np.ones(3)
 
-        x, info = gcrotmk(A, b, tol=0, maxiter=10)
-        assert_equal(info, 1)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, ".*called without specifying.*")
+            x, info = gcrotmk(A, b, tol=0, maxiter=10)
+            assert_equal(info, 1)
 
     def test_truncate(self):
         np.random.seed(1234)
@@ -111,8 +122,10 @@ class TestGCROTMK(object):
         b = np.random.rand(30)
 
         for truncate in ['oldest', 'smallest']:
-            x, info = gcrotmk(A, b, m=10, k=10, truncate=truncate, tol=1e-4,
-                              maxiter=200)
+            with suppress_warnings() as sup:
+                sup.filter(DeprecationWarning, ".*called without specifying.*")
+                x, info = gcrotmk(A, b, m=10, k=10, truncate=truncate, tol=1e-4,
+                                  maxiter=200)
             assert_equal(info, 0)
             assert_allclose(A.dot(x) - b, 0, atol=1e-3)
 
@@ -131,10 +144,10 @@ class TestGCROTMK(object):
             # should converge immediately
             x1, count_1 = do_solve(CU=CU, discard_C=discard_C)
             if discard_C:
-                assert_equal(count_1, 1 + len(CU))
+                assert_equal(count_1, 2 + len(CU))
             else:
-                assert_equal(count_1, 2)
-            assert_(count_1 < count_0/2)
+                assert_equal(count_1, 3)
+            assert_(count_1 <= count_0/2)
             assert_allclose(x1, x0, atol=1e-14)
 
     def test_denormals(self):
@@ -146,7 +159,9 @@ class TestGCROTMK(object):
 
         b = np.array([1, 1])
 
-        xp, info = gcrotmk(A, b)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, ".*called without specifying.*")
+            xp, info = gcrotmk(A, b)
 
         if info == 0:
             assert_allclose(A.dot(xp), b)

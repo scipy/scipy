@@ -1,7 +1,7 @@
 include MANIFEST.in
 include *.txt
-# Top-level build scripts
-include setup.py bscript bento.info
+# Top-level build script
+include setup.py
 # All source files
 recursive-include scipy *
 # All documentation
@@ -19,6 +19,7 @@ prune benchmarks/html
 prune benchmarks/scipy
 prune scipy/special/tests/data/boost
 prune scipy/special/tests/data/gsl
+prune scipy/special/tests/data/local
 prune doc/build
 prune doc/source/generated
 prune */__pycache__

@@ -55,6 +55,7 @@ class Build(Benchmark):
         else:
             self.cls(self.data)
 
+
 LEAF_SIZES = [8, 128]
 BOX_SIZES = [None, 0.0, 1.0]
 
@@ -191,8 +192,8 @@ class CNeighbors(Benchmark):
         self.T1s.count_neighbors(self.T2s, self.r)
 
 def generate_spherical_points(num_points):
-        # generate uniform points on sphere (see:
-        # http://stackoverflow.com/a/23785326/2942522)
+        # generate uniform points on sphere
+        # see: https://stackoverflow.com/a/23785326
         np.random.seed(123)
         points = np.random.normal(size=(num_points, 3))
         points /= np.linalg.norm(points, axis=1)[:, np.newaxis]
@@ -226,7 +227,7 @@ class SphericalVorSort(Benchmark):
         """
         self.sv.sort_vertices_of_regions()
 
-class Cdist(Benchmark):
+class Xdist(Benchmark):
     params = ([10, 100, 1000], ['euclidean', 'minkowski', 'cityblock',
     'seuclidean', 'sqeuclidean', 'cosine', 'correlation', 'hamming', 'jaccard',
     'chebyshev', 'canberra', 'braycurtis', 'mahalanobis', 'yule', 'dice',
@@ -237,12 +238,24 @@ class Cdist(Benchmark):
     def setup(self, num_points, metric):
         np.random.seed(123)
         self.points = np.random.random_sample((num_points, 3))
+        # use an equal weight vector to satisfy those metrics
+        # that require weights
+        if metric == 'wminkowski':
+            self.w = np.ones(3)
+        else:
+            self.w = None
 
     def time_cdist(self, num_points, metric):
         """Time scipy.spatial.distance.cdist over a range of input data
         sizes and metrics.
         """
-        distance.cdist(self.points, self.points, metric)
+        distance.cdist(self.points, self.points, metric, w=self.w)
+
+    def time_pdist(self, num_points, metric):
+        """Time scipy.spatial.distance.pdist over a range of input data
+        sizes and metrics.
+        """
+        distance.pdist(self.points, metric, w=self.w)
 
 
 class ConvexHullBench(Benchmark):

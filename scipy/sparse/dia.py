@@ -104,7 +104,7 @@ class dia_matrix(_data_matrix):
                 try:
                     # Try interpreting it as (data, offsets)
                     data, offsets = arg1
-                except:
+                except Exception:
                     raise ValueError('unrecognized form for dia_matrix constructor')
                 else:
                     if shape is None:
@@ -118,7 +118,7 @@ class dia_matrix(_data_matrix):
             #must be dense, convert to COO first, then to DIA
             try:
                 arg1 = np.asarray(arg1)
-            except:
+            except Exception:
                 raise ValueError("unrecognized form for"
                         " %s_matrix constructor" % self.format)
             from .coo import coo_matrix
@@ -311,7 +311,7 @@ class dia_matrix(_data_matrix):
         rows, cols = self.shape
         if k <= -rows or k >= cols:
             raise ValueError("k exceeds matrix dimensions")
-        idx, = np.where(self.offsets == k)
+        idx, = np.nonzero(self.offsets == k)
         first_col, last_col = max(0, k), min(rows + k, cols)
         if idx.size == 0:
             return np.zeros(last_col - first_col, dtype=self.data.dtype)
@@ -375,6 +375,23 @@ class dia_matrix(_data_matrix):
             return dia_matrix((data, self.offsets.copy()), shape=self.shape)
         else:
             return dia_matrix((data,self.offsets), shape=self.shape)
+
+    def resize(self, *shape):
+        shape = check_shape(shape)
+        M, N = shape
+        # we do not need to handle the case of expanding N
+        self.data = self.data[:, :N]
+
+        if (M > self.shape[0] and
+                np.any(self.offsets + self.shape[0] < self.data.shape[1])):
+            # explicitly clear values that were previously hidden
+            mask = (self.offsets[:, None] + self.shape[0] <=
+                    np.arange(self.data.shape[1]))
+            self.data[mask] = 0
+
+        self._shape = shape
+
+    resize.__doc__ = spmatrix.resize.__doc__
 
 
 def isspmatrix_dia(x):

@@ -177,7 +177,7 @@ def _chk_weights(arrays, weights=None, axis=None,
         raise ValueError("weights cannot be negative")
 
     if pos_only:
-        pos_weights = np.where(weights > 0)[0]
+        pos_weights = np.nonzero(weights > 0)[0]
         if pos_weights.size < weights.size:
             arrays = tuple(np.take(a, pos_weights, axis=axis) for a in arrays)
             weights = weights[pos_weights]
@@ -308,6 +308,7 @@ def _weight_checked(fn, n_args=2, default_axis=None, key=lambda x: x, weight_arg
                 for a in dud_arrays:
                     indexer = [slice(None)] * a.ndim
                     indexer[axis] = slice(weights.size, None)
+                    indexer = tuple(indexer)
                     a[indexer] = a[indexer] * 101
                 dud_args = tuple(dud_arrays) + rest
                 _rough_check(result, fn(*dud_args, **kwargs), key=key)
@@ -315,6 +316,7 @@ def _weight_checked(fn, n_args=2, default_axis=None, key=lambda x: x, weight_arg
                 for a in dud_arrays:
                     indexer = [slice(None)] * a.ndim
                     indexer[axis] = slice(weights.size, None)
+                    indexer = tuple(indexer)
                     a[indexer] = a[indexer] * np.nan
                 if kwargs.get("nan_policy", None) == "omit" and nan_safe:
                     dud_args = tuple(dud_arrays) + rest
@@ -615,6 +617,34 @@ class TestCdist(object):
             out5 = np.empty((out_r, out_c), dtype=np.int64)
             assert_raises(ValueError, cdist, X1, X2, metric, out=out5, **kwargs)
 
+    def test_striding(self):
+        # test that striding is handled correct with calls to
+        # _copy_array_if_base_present
+        eps = 1e-07
+        X1 = eo['cdist-X1'][::2, ::2]
+        X2 = eo['cdist-X2'][::2, ::2]
+        X1_copy = X1.copy()
+        X2_copy = X2.copy()
+
+        # confirm equivalence
+        assert_equal(X1, X1_copy)
+        assert_equal(X2, X2_copy)
+        # confirm contiguity
+        assert_(not X1.flags.c_contiguous)
+        assert_(not X2.flags.c_contiguous)
+        assert_(X1_copy.flags.c_contiguous)
+        assert_(X2_copy.flags.c_contiguous)
+
+        for metric in _METRICS_NAMES:
+            kwargs = dict()
+            if metric in ['minkowski', 'wminkowski']:
+                kwargs['p'] = 1.23
+                if metric == 'wminkowski':
+                    kwargs['w'] = 1.0 / X1.std(axis=0)
+            Y1 = cdist(X1, X2, metric, **kwargs)
+            Y2 = cdist(X1_copy, X2_copy, metric, **kwargs)
+            # test that output is numerically equivalent
+            _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
 class TestPdist(object):
 
@@ -1373,6 +1403,27 @@ class TestPdist(object):
             out5 = np.empty(out_size, dtype=np.int64)
             assert_raises(ValueError, pdist, X, metric, out=out5, **kwargs)
 
+    def test_striding(self):
+        # test that striding is handled correct with calls to
+        # _copy_array_if_base_present
+        eps = 1e-07
+        X = eo['random-float32-data'][::5, ::2]
+        X_copy = X.copy()
+
+        # confirm contiguity
+        assert_(not X.flags.c_contiguous)
+        assert_(X_copy.flags.c_contiguous)
+
+        for metric in _METRICS_NAMES:
+            kwargs = dict()
+            if metric in ['minkowski', 'wminkowski']:
+                kwargs['p'] = 1.23
+            if metric == 'wminkowski':
+                kwargs['w'] = 1.0 / X.std(axis=0)
+            Y1 = pdist(X, metric, **kwargs)
+            Y2 = pdist(X_copy, metric, **kwargs)
+            # test that output is numerically equivalent
+            _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
 class TestSomeDistanceFunctions(object):
 
@@ -1812,6 +1863,18 @@ def test_hamming_string_array():
     assert_allclose(whamming(a, b), desired)
 
 
+def test_minkowski_w():
+    # Regression test for gh-8142.
+    arr_in = np.array([[83.33333333, 100., 83.33333333, 100., 36.,
+                        60., 90., 150., 24., 48.],
+                       [83.33333333, 100., 83.33333333, 100., 36.,
+                        60., 90., 150., 24., 48.]])
+    pdist(arr_in, metric='minkowski', p=1, w=None)
+    cdist(arr_in, arr_in, metric='minkowski', p=1, w=None)
+    pdist(arr_in, metric='minkowski', p=1)
+    cdist(arr_in, arr_in, metric='minkowski', p=1)
+
+
 def test_sqeuclidean_dtypes():
     # Assert that sqeuclidean returns the right types of values.
     # Integer types should be converted to floating for stability.
@@ -1949,4 +2012,3 @@ def test__validate_vector():
 
     x = [[1, 2], [3, 4]]
     assert_raises(ValueError, _validate_vector, x)
-

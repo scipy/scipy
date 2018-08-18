@@ -70,7 +70,7 @@ array([ 0. ,  1.1])
 
 Indeed, from the figure we see that this is the case.
 
-Qhull can also perform tesselations to simplices also for
+Qhull can also perform tessellations to simplices also for
 higher-dimensional point sets (for instance, subdivision into
 tetrahedra in 3-D).
 

@@ -19,8 +19,6 @@
 
 from __future__ import division, print_function, absolute_import
 
-import sys
-import platform
 import itertools
 
 import numpy as np
@@ -38,8 +36,8 @@ from scipy import special
 import scipy.special._ufuncs as cephes
 from scipy.special import ellipk, zeta
 
-from scipy.special._testutils import assert_tol_equal, with_special_errors, \
-     assert_func_equal
+from scipy.special._testutils import with_special_errors, \
+     assert_func_equal, FuncData
 
 from scipy._lib._numpy_compat import suppress_warnings
 from scipy._lib._version import NumpyVersion
@@ -112,6 +110,28 @@ class TestCephes(object):
                           binom_int(nk[:,0], nk[:,1]),
                           nk,
                           atol=0, rtol=0)
+
+    def test_binom_nooverflow_8346(self):
+        # Test (binom(n, k) doesn't overflow prematurely */
+        dataset = [
+            (1000, 500, 2.70288240945436551e+299),
+            (1002, 501, 1.08007396880791225e+300),
+            (1004, 502, 4.31599279169058121e+300),
+            (1006, 503, 1.72468101616263781e+301),
+            (1008, 504, 6.89188009236419153e+301),
+            (1010, 505, 2.75402257948335448e+302),
+            (1012, 506, 1.10052048531923757e+303),
+            (1014, 507, 4.39774063758732849e+303),
+            (1016, 508, 1.75736486108312519e+304),
+            (1018, 509, 7.02255427788423734e+304),
+            (1020, 510, 2.80626776829962255e+305),
+            (1022, 511, 1.12140876377061240e+306),
+            (1024, 512, 4.48125455209897109e+306),
+            (1026, 513, 1.79075474304149900e+307),
+            (1028, 514, 7.15605105487789676e+307)
+        ]
+        dataset = np.asarray(dataset)
+        FuncData(cephes.binom, dataset, (0, 1), 2, rtol=1e-12).check()
 
     def test_bdtr(self):
         assert_equal(cephes.bdtr(1,1,0.5),1.0)
@@ -196,10 +216,28 @@ class TestCephes(object):
 
     def test_chndtr(self):
         assert_equal(cephes.chndtr(0,1,0),0.0)
-        p = cephes.chndtr(np.linspace(20, 25, 5), 2, 1.07458615e+02)
-        assert_allclose(p, [1.21805009e-09, 2.81979982e-09, 6.25652736e-09,
-                            1.33520017e-08, 2.74909967e-08],
-                        rtol=1e-6, atol=0)
+
+        # Each row holds (x, nu, lam, expected_value)
+        # These values were computed using Wolfram Alpha with
+        #     CDF[NoncentralChiSquareDistribution[nu, lam], x]
+        values = np.array([
+            [25.00, 20.0, 400, 4.1210655112396197139e-57],
+            [25.00, 8.00, 250, 2.3988026526832425878e-29],
+            [0.001, 8.00, 40., 5.3761806201366039084e-24],
+            [0.010, 8.00, 40., 5.45396231055999457039e-20],
+            [20.00, 2.00, 107, 1.39390743555819597802e-9],
+            [22.50, 2.00, 107, 7.11803307138105870671e-9],
+            [25.00, 2.00, 107, 3.11041244829864897313e-8],
+            [3.000, 2.00, 1.0, 0.62064365321954362734],
+            [350.0, 300., 10., 0.93880128006276407710],
+            [100.0, 13.5, 10., 0.99999999650104210949],
+            [700.0, 20.0, 400, 0.99999999925680650105],
+            [150.0, 13.5, 10., 0.99999999999999983046],
+            [160.0, 13.5, 10., 0.99999999999999999518],  # 1.0
+        ])
+        cdf = cephes.chndtr(values[:, 0], values[:, 1], values[:, 2])
+        assert_allclose(cdf, values[:, 3], rtol=1e-12)
+
         assert_almost_equal(cephes.chndtr(np.inf, np.inf, 0), 2.0)
         assert_almost_equal(cephes.chndtr(2, 1, np.inf), 0.0)
         assert_(np.isnan(cephes.chndtr(np.nan, 1, 2)))
@@ -434,17 +472,8 @@ class TestCephes(object):
         assert_approx_equal(cephes.hyp1f1(3,4,-6), 0.026056422099537251095)
         cephes.hyp1f1(1,1,1)
 
-    def test_hyp1f2(self):
-        cephes.hyp1f2(1,1,1,1)
-
-    def test_hyp2f0(self):
-        cephes.hyp2f0(1,1,1,1)
-
     def test_hyp2f1(self):
         assert_equal(cephes.hyp2f1(1,1,1,0),1.0)
-
-    def test_hyp3f0(self):
-        assert_equal(cephes.hyp3f0(1,1,1,0),(1.0,0.0))
 
     def test_hyperu(self):
         assert_equal(cephes.hyperu(0,1,1),1.0)
@@ -563,17 +592,19 @@ class TestCephes(object):
         c = complex
         assert_equal(log1p(0 + 0j), 0 + 0j)
         assert_equal(log1p(c(-1, 0)), c(-np.inf, 0))
-        assert_allclose(log1p(c(1, np.inf)), c(np.inf, np.pi/2))
-        assert_equal(log1p(c(1, np.nan)), c(np.nan, np.nan))
-        assert_allclose(log1p(c(-np.inf, 1)), c(np.inf, np.pi))
-        assert_equal(log1p(c(np.inf, 1)), c(np.inf, 0))
-        assert_allclose(log1p(c(-np.inf, np.inf)), c(np.inf, 3*np.pi/4))
-        assert_allclose(log1p(c(np.inf, np.inf)), c(np.inf, np.pi/4))
-        assert_equal(log1p(c(np.inf, np.nan)), c(np.inf, np.nan))
-        assert_equal(log1p(c(-np.inf, np.nan)), c(np.inf, np.nan))
-        assert_equal(log1p(c(np.nan, np.inf)), c(np.inf, np.nan))
-        assert_equal(log1p(c(np.nan, 1)), c(np.nan, np.nan))
-        assert_equal(log1p(c(np.nan, np.nan)), c(np.nan, np.nan))
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, "invalid value encountered in multiply")
+            assert_allclose(log1p(c(1, np.inf)), c(np.inf, np.pi/2))
+            assert_equal(log1p(c(1, np.nan)), c(np.nan, np.nan))
+            assert_allclose(log1p(c(-np.inf, 1)), c(np.inf, np.pi))
+            assert_equal(log1p(c(np.inf, 1)), c(np.inf, 0))
+            assert_allclose(log1p(c(-np.inf, np.inf)), c(np.inf, 3*np.pi/4))
+            assert_allclose(log1p(c(np.inf, np.inf)), c(np.inf, np.pi/4))
+            assert_equal(log1p(c(np.inf, np.nan)), c(np.inf, np.nan))
+            assert_equal(log1p(c(-np.inf, np.nan)), c(np.inf, np.nan))
+            assert_equal(log1p(c(np.nan, np.inf)), c(np.inf, np.nan))
+            assert_equal(log1p(c(np.nan, 1)), c(np.nan, np.nan))
+            assert_equal(log1p(c(np.nan, np.nan)), c(np.nan, np.nan))
 
     def test_lpmv(self):
         assert_equal(cephes.lpmv(0,0,1),1.0)
@@ -758,7 +789,7 @@ class TestCephes(object):
         assert_approx_equal(cephes.nrdtrimn(0.5,1,1),1.0)
 
     def test_nrdtrisd(self):
-        assert_tol_equal(cephes.nrdtrisd(0.5,0.5,0.5), 0.0,
+        assert_allclose(cephes.nrdtrisd(0.5,0.5,0.5), 0.0,
                          atol=0, rtol=0)
 
     def test_obl_ang1(self):
@@ -921,16 +952,6 @@ class TestCephes(object):
 
     def _check_yve(self):
         cephes.yve(1,1)
-
-    def test_zeta(self):
-        assert_allclose(zeta(2,2), pi**2/6 - 1, rtol=1e-12)
-
-    def test_zetac(self):
-        assert_equal(cephes.zetac(0),-1.5)
-
-    def test_zeta_1arg(self):
-        assert_allclose(zeta(2), pi**2/6, rtol=1e-12)
-        assert_allclose(zeta(4), pi**4/90, rtol=1e-12)
 
     def test_wofz(self):
         z = [complex(624.2,-0.26123), complex(-0.4,3.), complex(0.6,2.),
@@ -1637,23 +1658,13 @@ class TestErf(object):
 
     def test_erfcinv(self):
         i = special.erfcinv(1)
-        # Use assert_array_equal instead of assert_equal, so the comparsion
+        # Use assert_array_equal instead of assert_equal, so the comparison
         # of -0.0 and 0.0 doesn't fail.
         assert_array_equal(i, 0)
 
     def test_erfinv(self):
         i = special.erfinv(0)
         assert_equal(i,0)
-
-    def test_errprint(self):
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, "`errprint` is deprecated!")
-            a = special.errprint()
-            b = 1-a  # a is the state 1-a inverts state
-            c = special.errprint(b)  # returns last state 'a'
-            d = special.errprint(a)  # returns to original state
-        assert_equal(a,c)
-        assert_equal(d,b)  # makes sure state was returned
 
     def test_erf_nan_inf(self):
         vals = [np.nan, -np.inf, np.inf]
@@ -1928,7 +1939,7 @@ class TestGamma(object):
         for xp in pts:
             y = special.gammaincinv(.4, xp)
             x = special.gammainc(0.4, y)
-            assert_tol_equal(x, xp, rtol=1e-12)
+            assert_allclose(x, xp, rtol=1e-12)
 
     def test_rgamma(self):
         rgam = special.rgamma(8)
@@ -2024,7 +2035,7 @@ class TestHyper(object):
         assert_almost_equal(hyp1, 1.3498588075760032,7)
 
         # test contributed by Moritz Deger (2008-05-29)
-        # http://projects.scipy.org/scipy/scipy/ticket/659
+        # https://github.com/scipy/scipy/issues/1186 (Trac #659)
 
         # reference data obtained from mathematica [ a, b, x, m(a,b,x)]:
         # produced with test_hyp1f1.nb
@@ -2142,12 +2153,6 @@ class TestHyper(object):
         hyp = special.hyp1f1(0.5, 1.5, -1000)
         assert_almost_equal(hyp, 0.028024956081989643, 12)
 
-    def test_hyp1f2(self):
-        pass
-
-    def test_hyp2f0(self):
-        pass
-
     def test_hyp2f1(self):
         # a collection of special cases taken from AMS 55
         values = [[0.5, 1, 1.5, 0.2**2, 0.5/0.2*log((1+0.2)/(1-0.2))],
@@ -2178,9 +2183,6 @@ class TestHyper(object):
         for i, (a, b, c, x, v) in enumerate(values):
             cv = special.hyp2f1(a, b, c, x)
             assert_almost_equal(cv, v, 8, err_msg='test #%d' % i)
-
-    def test_hyp3f0(self):
-        pass
 
     def test_hyperu(self):
         val1 = special.hyperu(1,0.1,100)
@@ -2266,14 +2268,14 @@ class TestBessel(object):
                                               16.47063]),4)
 
         jn102 = special.jn_zeros(102,5)
-        assert_tol_equal(jn102, array([110.89174935992040343,
+        assert_allclose(jn102, array([110.89174935992040343,
                                        117.83464175788308398,
                                        123.70194191713507279,
                                        129.02417238949092824,
                                        134.00114761868422559]), rtol=1e-13)
 
         jn301 = special.jn_zeros(301,5)
-        assert_tol_equal(jn301, array([313.59097866698830153,
+        assert_allclose(jn301, array([313.59097866698830153,
                                        323.21549776096288280,
                                        331.22338738656748796,
                                        338.39676338872084500,
@@ -2281,17 +2283,17 @@ class TestBessel(object):
 
     def test_jn_zeros_slow(self):
         jn0 = special.jn_zeros(0, 300)
-        assert_tol_equal(jn0[260-1], 816.02884495068867280, rtol=1e-13)
-        assert_tol_equal(jn0[280-1], 878.86068707124422606, rtol=1e-13)
-        assert_tol_equal(jn0[300-1], 941.69253065317954064, rtol=1e-13)
+        assert_allclose(jn0[260-1], 816.02884495068867280, rtol=1e-13)
+        assert_allclose(jn0[280-1], 878.86068707124422606, rtol=1e-13)
+        assert_allclose(jn0[300-1], 941.69253065317954064, rtol=1e-13)
 
         jn10 = special.jn_zeros(10, 300)
-        assert_tol_equal(jn10[260-1], 831.67668514305631151, rtol=1e-13)
-        assert_tol_equal(jn10[280-1], 894.51275095371316931, rtol=1e-13)
-        assert_tol_equal(jn10[300-1], 957.34826370866539775, rtol=1e-13)
+        assert_allclose(jn10[260-1], 831.67668514305631151, rtol=1e-13)
+        assert_allclose(jn10[280-1], 894.51275095371316931, rtol=1e-13)
+        assert_allclose(jn10[300-1], 957.34826370866539775, rtol=1e-13)
 
         jn3010 = special.jn_zeros(3010,5)
-        assert_tol_equal(jn3010, array([3036.86590780927,
+        assert_allclose(jn3010, array([3036.86590780927,
                                         3057.06598526482,
                                         3073.66360690272,
                                         3088.37736494778,
@@ -2320,7 +2322,7 @@ class TestBessel(object):
                                                 11.70600,
                                                 14.86359]),4)
         jnp = special.jnp_zeros(443,5)
-        assert_tol_equal(special.jvp(443, jnp), 0, atol=1e-15)
+        assert_allclose(special.jvp(443, jnp), 0, atol=1e-15)
 
     def test_jnyn_zeros(self):
         jnz = special.jnyn_zeros(1,5)
@@ -2473,7 +2475,7 @@ class TestBessel(object):
         an = special.yn_zeros(4,2)
         assert_array_almost_equal(an,array([5.64515, 9.36162]),5)
         an = special.yn_zeros(443,5)
-        assert_tol_equal(an, [450.13573091578090314, 463.05692376675001542,
+        assert_allclose(an, [450.13573091578090314, 463.05692376675001542,
                               472.80651546418663566, 481.27353184725625838,
                               488.98055964441374646], rtol=1e-15)
 
@@ -2481,13 +2483,13 @@ class TestBessel(object):
         ao = special.ynp_zeros(0,2)
         assert_array_almost_equal(ao,array([2.19714133, 5.42968104]),6)
         ao = special.ynp_zeros(43,5)
-        assert_tol_equal(special.yvp(43, ao), 0, atol=1e-15)
+        assert_allclose(special.yvp(43, ao), 0, atol=1e-15)
         ao = special.ynp_zeros(443,5)
-        assert_tol_equal(special.yvp(443, ao), 0, atol=1e-9)
+        assert_allclose(special.yvp(443, ao), 0, atol=1e-9)
 
     def test_ynp_zeros_large_order(self):
         ao = special.ynp_zeros(443,5)
-        assert_tol_equal(special.yvp(443, ao), 0, atol=1e-14)
+        assert_allclose(special.yvp(443, ao), 0, atol=1e-14)
 
     def test_yn(self):
         yn2n = special.yn(1,.2)
@@ -2539,9 +2541,9 @@ class TestBessel(object):
             elif np.isnan(c1):
                 assert_(c2.imag != 0, (v, z))
             else:
-                assert_tol_equal(c1, c2, err_msg=(v, z), rtol=rtol, atol=atol)
+                assert_allclose(c1, c2, err_msg=(v, z), rtol=rtol, atol=atol)
                 if v == int(v):
-                    assert_tol_equal(c3, c2, err_msg=(v, z),
+                    assert_allclose(c3, c2, err_msg=(v, z),
                                      rtol=rtol, atol=atol)
 
     def test_jv_cephes_vs_amos(self):
@@ -2598,53 +2600,53 @@ class TestBessel(object):
         self.check_cephes_vs_amos(special.kv, special.kv, rtol=1e-9, atol=1e-305)
 
     def test_ticket_623(self):
-        assert_tol_equal(special.jv(3, 4), 0.43017147387562193)
-        assert_tol_equal(special.jv(301, 1300), 0.0183487151115275)
-        assert_tol_equal(special.jv(301, 1296.0682), -0.0224174325312048)
+        assert_allclose(special.jv(3, 4), 0.43017147387562193)
+        assert_allclose(special.jv(301, 1300), 0.0183487151115275)
+        assert_allclose(special.jv(301, 1296.0682), -0.0224174325312048)
 
     def test_ticket_853(self):
         """Negative-order Bessels"""
         # cephes
-        assert_tol_equal(special.jv(-1, 1), -0.4400505857449335)
-        assert_tol_equal(special.jv(-2, 1), 0.1149034849319005)
-        assert_tol_equal(special.yv(-1, 1), 0.7812128213002887)
-        assert_tol_equal(special.yv(-2, 1), -1.650682606816255)
-        assert_tol_equal(special.iv(-1, 1), 0.5651591039924851)
-        assert_tol_equal(special.iv(-2, 1), 0.1357476697670383)
-        assert_tol_equal(special.kv(-1, 1), 0.6019072301972347)
-        assert_tol_equal(special.kv(-2, 1), 1.624838898635178)
-        assert_tol_equal(special.jv(-0.5, 1), 0.43109886801837607952)
-        assert_tol_equal(special.yv(-0.5, 1), 0.6713967071418031)
-        assert_tol_equal(special.iv(-0.5, 1), 1.231200214592967)
-        assert_tol_equal(special.kv(-0.5, 1), 0.4610685044478945)
+        assert_allclose(special.jv(-1, 1), -0.4400505857449335)
+        assert_allclose(special.jv(-2, 1), 0.1149034849319005)
+        assert_allclose(special.yv(-1, 1), 0.7812128213002887)
+        assert_allclose(special.yv(-2, 1), -1.650682606816255)
+        assert_allclose(special.iv(-1, 1), 0.5651591039924851)
+        assert_allclose(special.iv(-2, 1), 0.1357476697670383)
+        assert_allclose(special.kv(-1, 1), 0.6019072301972347)
+        assert_allclose(special.kv(-2, 1), 1.624838898635178)
+        assert_allclose(special.jv(-0.5, 1), 0.43109886801837607952)
+        assert_allclose(special.yv(-0.5, 1), 0.6713967071418031)
+        assert_allclose(special.iv(-0.5, 1), 1.231200214592967)
+        assert_allclose(special.kv(-0.5, 1), 0.4610685044478945)
         # amos
-        assert_tol_equal(special.jv(-1, 1+0j), -0.4400505857449335)
-        assert_tol_equal(special.jv(-2, 1+0j), 0.1149034849319005)
-        assert_tol_equal(special.yv(-1, 1+0j), 0.7812128213002887)
-        assert_tol_equal(special.yv(-2, 1+0j), -1.650682606816255)
+        assert_allclose(special.jv(-1, 1+0j), -0.4400505857449335)
+        assert_allclose(special.jv(-2, 1+0j), 0.1149034849319005)
+        assert_allclose(special.yv(-1, 1+0j), 0.7812128213002887)
+        assert_allclose(special.yv(-2, 1+0j), -1.650682606816255)
 
-        assert_tol_equal(special.iv(-1, 1+0j), 0.5651591039924851)
-        assert_tol_equal(special.iv(-2, 1+0j), 0.1357476697670383)
-        assert_tol_equal(special.kv(-1, 1+0j), 0.6019072301972347)
-        assert_tol_equal(special.kv(-2, 1+0j), 1.624838898635178)
+        assert_allclose(special.iv(-1, 1+0j), 0.5651591039924851)
+        assert_allclose(special.iv(-2, 1+0j), 0.1357476697670383)
+        assert_allclose(special.kv(-1, 1+0j), 0.6019072301972347)
+        assert_allclose(special.kv(-2, 1+0j), 1.624838898635178)
 
-        assert_tol_equal(special.jv(-0.5, 1+0j), 0.43109886801837607952)
-        assert_tol_equal(special.jv(-0.5, 1+1j), 0.2628946385649065-0.827050182040562j)
-        assert_tol_equal(special.yv(-0.5, 1+0j), 0.6713967071418031)
-        assert_tol_equal(special.yv(-0.5, 1+1j), 0.967901282890131+0.0602046062142816j)
+        assert_allclose(special.jv(-0.5, 1+0j), 0.43109886801837607952)
+        assert_allclose(special.jv(-0.5, 1+1j), 0.2628946385649065-0.827050182040562j)
+        assert_allclose(special.yv(-0.5, 1+0j), 0.6713967071418031)
+        assert_allclose(special.yv(-0.5, 1+1j), 0.967901282890131+0.0602046062142816j)
 
-        assert_tol_equal(special.iv(-0.5, 1+0j), 1.231200214592967)
-        assert_tol_equal(special.iv(-0.5, 1+1j), 0.77070737376928+0.39891821043561j)
-        assert_tol_equal(special.kv(-0.5, 1+0j), 0.4610685044478945)
-        assert_tol_equal(special.kv(-0.5, 1+1j), 0.06868578341999-0.38157825981268j)
+        assert_allclose(special.iv(-0.5, 1+0j), 1.231200214592967)
+        assert_allclose(special.iv(-0.5, 1+1j), 0.77070737376928+0.39891821043561j)
+        assert_allclose(special.kv(-0.5, 1+0j), 0.4610685044478945)
+        assert_allclose(special.kv(-0.5, 1+1j), 0.06868578341999-0.38157825981268j)
 
-        assert_tol_equal(special.jve(-0.5,1+0.3j), special.jv(-0.5, 1+0.3j)*exp(-0.3))
-        assert_tol_equal(special.yve(-0.5,1+0.3j), special.yv(-0.5, 1+0.3j)*exp(-0.3))
-        assert_tol_equal(special.ive(-0.5,0.3+1j), special.iv(-0.5, 0.3+1j)*exp(-0.3))
-        assert_tol_equal(special.kve(-0.5,0.3+1j), special.kv(-0.5, 0.3+1j)*exp(0.3+1j))
+        assert_allclose(special.jve(-0.5,1+0.3j), special.jv(-0.5, 1+0.3j)*exp(-0.3))
+        assert_allclose(special.yve(-0.5,1+0.3j), special.yv(-0.5, 1+0.3j)*exp(-0.3))
+        assert_allclose(special.ive(-0.5,0.3+1j), special.iv(-0.5, 0.3+1j)*exp(-0.3))
+        assert_allclose(special.kve(-0.5,0.3+1j), special.kv(-0.5, 0.3+1j)*exp(0.3+1j))
 
-        assert_tol_equal(special.hankel1(-0.5, 1+1j), special.jv(-0.5, 1+1j) + 1j*special.yv(-0.5,1+1j))
-        assert_tol_equal(special.hankel2(-0.5, 1+1j), special.jv(-0.5, 1+1j) - 1j*special.yv(-0.5,1+1j))
+        assert_allclose(special.hankel1(-0.5, 1+1j), special.jv(-0.5, 1+1j) + 1j*special.yv(-0.5,1+1j))
+        assert_allclose(special.hankel2(-0.5, 1+1j), special.jv(-0.5, 1+1j) - 1j*special.yv(-0.5,1+1j))
 
     def test_ticket_854(self):
         """Real-valued Bessel domains"""
@@ -2669,11 +2671,11 @@ class TestBessel(object):
 
     def test_ticket_503(self):
         """Real-valued Bessel I overflow"""
-        assert_tol_equal(special.iv(1, 700), 1.528500390233901e302)
-        assert_tol_equal(special.iv(1000, 1120), 1.301564549405821e301)
+        assert_allclose(special.iv(1, 700), 1.528500390233901e302)
+        assert_allclose(special.iv(1000, 1120), 1.301564549405821e301)
 
     def test_iv_hyperg_poles(self):
-        assert_tol_equal(special.iv(-0.5, 1), 1.231200214592967)
+        assert_allclose(special.iv(-0.5, 1), 1.231200214592967)
 
     def iv_series(self, v, z, n=200):
         k = arange(0, n).astype(float_)
@@ -2686,18 +2688,18 @@ class TestBessel(object):
     def test_i0_series(self):
         for z in [1., 10., 200.5]:
             value, err = self.iv_series(0, z)
-            assert_tol_equal(special.i0(z), value, atol=err, err_msg=z)
+            assert_allclose(special.i0(z), value, atol=err, err_msg=z)
 
     def test_i1_series(self):
         for z in [1., 10., 200.5]:
             value, err = self.iv_series(1, z)
-            assert_tol_equal(special.i1(z), value, atol=err, err_msg=z)
+            assert_allclose(special.i1(z), value, atol=err, err_msg=z)
 
     def test_iv_series(self):
         for v in [-20., -10., -1., 0., 1., 12.49, 120.]:
             for z in [1., 10., 200.5, -1+2j]:
                 value, err = self.iv_series(v, z)
-                assert_tol_equal(special.iv(v, z), value, atol=err, err_msg=(v, z))
+                assert_allclose(special.iv(v, z), value, atol=err, err_msg=(v, z))
 
     def test_i0(self):
         values = [[0.0, 1.0],
@@ -3017,11 +3019,11 @@ class TestParabolicCylinder(object):
         # simple case
         eta = np.linspace(-10, 10, 5)
         z = 2**(eta/2)*np.sqrt(np.pi)/special.gamma(.5-.5*eta)
-        assert_tol_equal(special.pbdv(eta, 0.)[0], z, rtol=1e-14, atol=1e-14)
+        assert_allclose(special.pbdv(eta, 0.)[0], z, rtol=1e-14, atol=1e-14)
 
         # some points
-        assert_tol_equal(special.pbdv(10.34, 20.44)[0], 1.3731383034455e-32, rtol=1e-12)
-        assert_tol_equal(special.pbdv(-9.53, 3.44)[0], 3.166735001119246e-8, rtol=1e-12)
+        assert_allclose(special.pbdv(10.34, 20.44)[0], 1.3731383034455e-32, rtol=1e-12)
+        assert_allclose(special.pbdv(-9.53, 3.44)[0], 3.166735001119246e-8, rtol=1e-12)
 
     def test_pbdv_gradient(self):
         x = np.linspace(-4, 4, 8)[:,None]
@@ -3030,7 +3032,7 @@ class TestParabolicCylinder(object):
         p = special.pbdv(eta, x)
         eps = 1e-7 + 1e-7*abs(x)
         dp = (special.pbdv(eta, x + eps)[0] - special.pbdv(eta, x - eps)[0]) / eps / 2.
-        assert_tol_equal(p[1], dp, rtol=1e-6, atol=1e-6)
+        assert_allclose(p[1], dp, rtol=1e-6, atol=1e-6)
 
     def test_pbvv_gradient(self):
         x = np.linspace(-4, 4, 8)[:,None]
@@ -3039,7 +3041,7 @@ class TestParabolicCylinder(object):
         p = special.pbvv(eta, x)
         eps = 1e-7 + 1e-7*abs(x)
         dp = (special.pbvv(eta, x + eps)[0] - special.pbvv(eta, x - eps)[0]) / eps / 2.
-        assert_tol_equal(p[1], dp, rtol=1e-6, atol=1e-6)
+        assert_allclose(p[1], dp, rtol=1e-6, atol=1e-6)
 
 
 class TestPolygamma(object):
@@ -3129,7 +3131,7 @@ class TestRound(object):
 
 def test_sph_harm():
     # Tests derived from tables in
-    # http://en.wikipedia.org/wiki/Table_of_spherical_harmonics
+    # https://en.wikipedia.org/wiki/Table_of_spherical_harmonics
     sh = special.sph_harm
     pi = np.pi
     exp = np.exp
@@ -3180,13 +3182,13 @@ class TestStruve(object):
         for v in [-20, -10, -7.99, -3.4, -1, 0, 1, 3.4, 12.49, 16]:
             for z in [1, 10, 19, 21, 30]:
                 value, err = self._series(v, z)
-                assert_tol_equal(special.struve(v, z), value, rtol=0, atol=err), (v, z)
+                assert_allclose(special.struve(v, z), value, rtol=0, atol=err), (v, z)
 
     def test_some_values(self):
-        assert_tol_equal(special.struve(-7.99, 21), 0.0467547614113, rtol=1e-7)
-        assert_tol_equal(special.struve(-8.01, 21), 0.0398716951023, rtol=1e-8)
-        assert_tol_equal(special.struve(-3.0, 200), 0.0142134427432, rtol=1e-12)
-        assert_tol_equal(special.struve(-8.0, -41), 0.0192469727846, rtol=1e-11)
+        assert_allclose(special.struve(-7.99, 21), 0.0467547614113, rtol=1e-7)
+        assert_allclose(special.struve(-8.01, 21), 0.0398716951023, rtol=1e-8)
+        assert_allclose(special.struve(-3.0, 200), 0.0142134427432, rtol=1e-12)
+        assert_allclose(special.struve(-8.0, -41), 0.0192469727846, rtol=1e-11)
         assert_equal(special.struve(-12, -41), -special.struve(-12, 41))
         assert_equal(special.struve(+12, -41), -special.struve(+12, 41))
         assert_equal(special.struve(-11, -41), +special.struve(-11, 41))
@@ -3197,9 +3199,9 @@ class TestStruve(object):
 
     def test_regression_679(self):
         """Regression test for #679"""
-        assert_tol_equal(special.struve(-1.0, 20 - 1e-8), special.struve(-1.0, 20 + 1e-8))
-        assert_tol_equal(special.struve(-2.0, 20 - 1e-8), special.struve(-2.0, 20 + 1e-8))
-        assert_tol_equal(special.struve(-4.3, 20 - 1e-8), special.struve(-4.3, 20 + 1e-8))
+        assert_allclose(special.struve(-1.0, 20 - 1e-8), special.struve(-1.0, 20 + 1e-8))
+        assert_allclose(special.struve(-2.0, 20 - 1e-8), special.struve(-2.0, 20 + 1e-8))
+        assert_allclose(special.struve(-4.3, 20 - 1e-8), special.struve(-4.3, 20 + 1e-8))
 
 
 def test_chi2_smalldf():
@@ -3287,7 +3289,6 @@ def test_legacy():
         assert_equal(special.bdtr(1, 2, 0.3), special.bdtr(1.8, 2.8, 0.3))
         assert_equal(special.bdtri(1, 2, 0.3), special.bdtri(1.8, 2.8, 0.3))
         assert_equal(special.expn(1, 0.3), special.expn(1.8, 0.3))
-        assert_equal(special.hyp2f0(1, 2, 0.3, 1), special.hyp2f0(1, 2, 0.3, 1.8))
         assert_equal(special.nbdtrc(1, 2, 0.3), special.nbdtrc(1.8, 2.8, 0.3))
         assert_equal(special.nbdtr(1, 2, 0.3), special.nbdtr(1.8, 2.8, 0.3))
         assert_equal(special.nbdtri(1, 2, 0.3), special.nbdtri(1.8, 2.8, 0.3))

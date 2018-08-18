@@ -4,7 +4,7 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import assert_array_equal
+from numpy.testing import assert_array_equal, assert_
 import pytest
 
 import scipy.special as sc
@@ -13,9 +13,7 @@ from scipy._lib._numpy_compat import suppress_warnings
 
 KNOWNFAILURES = {}
 
-POSTPROCESSING = {
-    sc.hyp2f0: lambda x, y: x  # Second argument is an error estimate
-}
+POSTPROCESSING = {}
 
 
 def _get_ufuncs():
@@ -34,6 +32,7 @@ def _get_ufuncs():
             ufuncs.append(pytest.param(obj, marks=fail))
             ufunc_names.append(name)
     return ufuncs, ufunc_names
+
 
 UFUNCS, UFUNC_NAMES = _get_ufuncs()
 
@@ -55,3 +54,11 @@ def test_nan_inputs(func):
 
     msg = "got {} instead of nan".format(res)
     assert_array_equal(np.isnan(res), True, err_msg=msg)
+
+
+def test_legacy_cast():
+    with suppress_warnings() as sup:
+        sup.filter(RuntimeWarning,
+                   "floating point number truncated to an integer")
+        res = sc.bdtrc(np.nan, 1, 0.5)
+        assert_(np.isnan(res))

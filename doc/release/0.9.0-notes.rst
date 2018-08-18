@@ -45,16 +45,16 @@ Soon after this release, Scipy will stop using SVN as the version control
 system, and move to Git. The development source code for Scipy can from then on
 be found at
 
-    http://github.com/scipy/scipy
+    https://github.com/scipy/scipy
 
 
 New features
 ============
 
-Delaunay tesselations (``scipy.spatial``)
+Delaunay tessellations (``scipy.spatial``)
 -----------------------------------------
 
-Scipy now includes routines for computing Delaunay tesselations in N
+Scipy now includes routines for computing Delaunay tessellations in N
 dimensions, powered by the Qhull_ computational geometry library. Such
 calculations can now make use of the new ``scipy.spatial.Delaunay``
 interface.

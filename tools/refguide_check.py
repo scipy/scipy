@@ -516,7 +516,7 @@ class Checker(doctest.OutputChecker):
     vanilla = doctest.OutputChecker()
     rndm_markers = {'# random', '# Random', '#random', '#Random', "# may vary"}
     stopwords = {'plt.', '.hist', '.show', '.ylim', '.subplot(',
-                 'set_title', 'imshow', 'plt.show', 'ax.axis', 'plt.plot(',
+                 'set_title', 'imshow', 'plt.show', '.axis(', '.plot(',
                  '.bar(', '.title', '.ylabel', '.xlabel', 'set_ylim', 'set_xlim',
                  '# reformatted', '.set_xlabel(', '.set_ylabel(', '.set_zlabel(',
                  '.set(xlim=', '.set(ylim=', '.set(xlabel=', '.set(ylabel='}
@@ -599,7 +599,7 @@ class Checker(doctest.OutputChecker):
 
     def _do_check(self, want, got):
         # This should be done exactly as written to correctly handle all of
-        # numpy-comparable objects, strings, and heterogenous tuples
+        # numpy-comparable objects, strings, and heterogeneous tuples
         try:
             if want == got:
                 return True
@@ -755,7 +755,12 @@ def check_doctests_testfile(fname, verbose, ns=None,
         return results
 
     full_name = fname
-    text = open(fname).read()
+    if sys.version_info.major <= 2:
+        with open(fname) as f:
+            text = f.read()
+    else:
+        with open(fname, encoding='utf-8') as f:
+            text = f.read()
 
     PSEUDOCODE = set(['some_function', 'some_module', 'import example',
                       'ctypes.CDLL',     # likely need compiling, skip it

@@ -102,7 +102,7 @@ introspection:
     >>> dist_discrete = [d for d in dir(stats) if
     ...                  isinstance(getattr(stats, d), stats.rv_discrete)]
     >>> print('number of continuous distributions: %d' % len(dist_continu))
-    number of continuous distributions: 96
+    number of continuous distributions: 98
     >>> print('number of discrete distributions:   %d' % len(dist_discrete))
     number of discrete distributions:   13
 
@@ -566,27 +566,27 @@ the probabilities.
     >>> f, l = np.histogram(rvs, bins=gridlimits)
     >>> sfreq = np.vstack([gridint, f, probs*n_sample]).T
     >>> print(sfreq)
-    [[ -1.00000000e+01   0.00000000e+00   2.95019349e-02]
-     [ -9.00000000e+00   0.00000000e+00   1.32294142e-01]
-     [ -8.00000000e+00   0.00000000e+00   5.06497902e-01]
-     [ -7.00000000e+00   2.00000000e+00   1.65568919e+00]
-     [ -6.00000000e+00   1.00000000e+00   4.62125309e+00]
-     [ -5.00000000e+00   9.00000000e+00   1.10137298e+01]
-     [ -4.00000000e+00   2.60000000e+01   2.24137683e+01]
-     [ -3.00000000e+00   3.70000000e+01   3.89503370e+01]
-     [ -2.00000000e+00   5.10000000e+01   5.78004747e+01]
-     [ -1.00000000e+00   7.10000000e+01   7.32455414e+01]
-     [  0.00000000e+00   7.40000000e+01   7.92618251e+01]
-     [  1.00000000e+00   8.90000000e+01   7.32455414e+01]
-     [  2.00000000e+00   5.50000000e+01   5.78004747e+01]
-     [  3.00000000e+00   5.00000000e+01   3.89503370e+01]
-     [  4.00000000e+00   1.70000000e+01   2.24137683e+01]
-     [  5.00000000e+00   1.10000000e+01   1.10137298e+01]
-     [  6.00000000e+00   4.00000000e+00   4.62125309e+00]
-     [  7.00000000e+00   3.00000000e+00   1.65568919e+00]
-     [  8.00000000e+00   0.00000000e+00   5.06497902e-01]
-     [  9.00000000e+00   0.00000000e+00   1.32294142e-01]
-     [  1.00000000e+01   0.00000000e+00   2.95019349e-02]]
+    [[-1.00000000e+01  0.00000000e+00  2.95019349e-02]
+     [-9.00000000e+00  0.00000000e+00  1.32294142e-01]
+     [-8.00000000e+00  0.00000000e+00  5.06497902e-01]
+     [-7.00000000e+00  2.00000000e+00  1.65568919e+00]
+     [-6.00000000e+00  1.00000000e+00  4.62125309e+00]
+     [-5.00000000e+00  9.00000000e+00  1.10137298e+01]
+     [-4.00000000e+00  2.60000000e+01  2.24137683e+01]
+     [-3.00000000e+00  3.70000000e+01  3.89503370e+01]
+     [-2.00000000e+00  5.10000000e+01  5.78004747e+01]
+     [-1.00000000e+00  7.10000000e+01  7.32455414e+01]
+     [ 0.00000000e+00  7.40000000e+01  7.92618251e+01]
+     [ 1.00000000e+00  8.90000000e+01  7.32455414e+01]
+     [ 2.00000000e+00  5.50000000e+01  5.78004747e+01]
+     [ 3.00000000e+00  5.00000000e+01  3.89503370e+01]
+     [ 4.00000000e+00  1.70000000e+01  2.24137683e+01]
+     [ 5.00000000e+00  1.10000000e+01  1.10137298e+01]
+     [ 6.00000000e+00  4.00000000e+00  4.62125309e+00]
+     [ 7.00000000e+00  3.00000000e+00  1.65568919e+00]
+     [ 8.00000000e+00  0.00000000e+00  5.06497902e-01]
+     [ 9.00000000e+00  0.00000000e+00  1.32294142e-01]
+     [ 1.00000000e+01  0.00000000e+00  2.95019349e-02]]
 
 
 .. plot:: tutorial/examples/normdiscr_plot1.py
@@ -869,13 +869,13 @@ Test with sample with identical means:
     >>> rvs1 = stats.norm.rvs(loc=5, scale=10, size=500)
     >>> rvs2 = stats.norm.rvs(loc=5, scale=10, size=500)
     >>> stats.ttest_ind(rvs1, rvs2)
-    Ttest_indResult(statistic=-0.54890361750887051, pvalue=0.58319437486639591)
+    Ttest_indResult(statistic=-0.5489036175088705, pvalue=0.5831943748663959)
 
 Test with sample with different means:
 
     >>> rvs3 = stats.norm.rvs(loc=8, scale=10, size=500)
     >>> stats.ttest_ind(rvs1, rvs3)
-    Ttest_indResult(statistic=-4.5334142901750258, pvalue=6.5071281863890188e-06)
+    Ttest_indResult(statistic=-4.533414290175026, pvalue=6.507128186389019e-06)
 
 Kolmogorov-Smirnov test for two samples ks_2samp
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -884,13 +884,13 @@ For the example where both samples are drawn from the same distribution,
 we cannot reject the null hypothesis since the pvalue is high
 
     >>> stats.ks_2samp(rvs1, rvs2)
-    Ks_2sampResult(statistic=0.025999999999999995, pvalue=0.99541195173064878)
+    Ks_2sampResult(statistic=0.025999999999999995, pvalue=0.9954119517306488)
 
 In the second example, with different location, i.e. means, we can
 reject the null hypothesis since the pvalue is below 1%
 
     >>> stats.ks_2samp(rvs1, rvs3)
-    Ks_2sampResult(statistic=0.11399999999999999, pvalue=0.0027132103661283141)
+    Ks_2sampResult(statistic=0.11399999999999999, pvalue=0.002713210366128314)
 
 Kernel Density Estimation
 -------------------------

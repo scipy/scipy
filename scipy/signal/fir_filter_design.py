@@ -32,9 +32,9 @@ def _get_fs(fs, nyq):
 
 # Some notes on function parameters:
 #
-# `cutoff` and `width` are given as a numbers between 0 and 1.  These are
+# `cutoff` and `width` are given as numbers between 0 and 1.  These are
 # relative frequencies, expressed as a fraction of the Nyquist frequency.
-# For example, if the Nyquist frequency is 2KHz, then width=0.15 is a width
+# For example, if the Nyquist frequency is 2 KHz, then width=0.15 is a width
 # of 300 Hz.
 #
 # The `order` of a FIR filter is one less than the number of taps.
@@ -276,7 +276,7 @@ def firwin(numtaps, cutoff, width=None, window='hamming', pass_zero=True,
     ----------
     numtaps : int
         Length of the filter (number of coefficients, i.e. the filter
-        order + 1).  `numtaps` must be even if a passband includes the
+        order + 1).  `numtaps` must be odd if a passband includes the
         Nyquist frequency.
     cutoff : float or 1D array_like
         Cutoff frequency of filter (expressed in the same units as `nyq`)

@@ -7,9 +7,11 @@ __docformat__ = "restructuredtext en"
 
 __all__ = ['lil_matrix','isspmatrix_lil']
 
+from bisect import bisect_left
+
 import numpy as np
 
-from scipy._lib.six import xrange
+from scipy._lib.six import xrange, zip
 from .base import spmatrix, isspmatrix
 from .sputils import (getdtype, isshape, isscalarlike, IndexMixin,
                       upcast_scalar, get_index_dtype, isintlike, check_shape,
@@ -418,6 +420,31 @@ class lil_matrix(spmatrix, IndexMixin):
 
     reshape.__doc__ = spmatrix.reshape.__doc__
 
+    def resize(self, *shape):
+        shape = check_shape(shape)
+        new_M, new_N = shape
+        M, N = self.shape
+
+        if new_M < M:
+            self.rows = self.rows[:new_M]
+            self.data = self.data[:new_M]
+        elif new_M > M:
+            self.rows = np.resize(self.rows, new_M)
+            self.data = np.resize(self.data, new_M)
+            for i in range(M, new_M):
+                self.rows[i] = []
+                self.data[i] = []
+
+        if new_N < N:
+            for row, data in zip(self.rows, self.data):
+                trunc = bisect_left(row, new_N)
+                del row[trunc:]
+                del data[trunc:]
+
+        self._shape = shape
+
+    resize.__doc__ = spmatrix.resize.__doc__
+
     def toarray(self, order=None, out=None):
         d = self._process_toarray_args(order, out)
         for i, row in enumerate(self.rows):
@@ -428,7 +455,7 @@ class lil_matrix(spmatrix, IndexMixin):
     toarray.__doc__ = spmatrix.toarray.__doc__
 
     def transpose(self, axes=None, copy=False):
-        return self.tocsr().transpose(axes=axes, copy=copy).tolil()
+        return self.tocsr(copy=copy).transpose(axes=axes, copy=False).tolil(copy=False)
 
     transpose.__doc__ = spmatrix.transpose.__doc__
 

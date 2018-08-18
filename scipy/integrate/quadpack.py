@@ -314,30 +314,37 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
        #(1.3333333333333333, 1.4802973661668752e-14)
        print((1.0**3/3.0 + 1.0) - (0.0**3/3.0 + 0.0)) #Analytic result
        # 1.3333333333333333
-    
+
     Be aware that pulse shapes and other sharp features as compared to the
     size of the integration interval may not be integrated correctly using
     this method. A simplified example of this limitation is integrating a
     y-axis reflected step function with many zero values within the integrals
     bounds.
-    
+
     >>> y = lambda x: 1 if x<=0 else 0
     >>> integrate.quad(y, -1, 1)
     (1.0, 1.1102230246251565e-14)
     >>> integrate.quad(y, -1, 100)
     (1.0000000002199108, 1.0189464580163188e-08)
     >>> integrate.quad(y, -1, 10000)
-    (0.0, 0.0) 
+    (0.0, 0.0)
 
     """
     if not isinstance(args, tuple):
         args = (args,)
-    if (weight is None):
+
+    # check the limits of integration: \int_a^b, expect a < b
+    flip, a, b = b < a, min(a, b), max(a, b)
+
+    if weight is None:
         retval = _quad(func, a, b, args, full_output, epsabs, epsrel, limit,
                        points)
     else:
         retval = _quad_weight(func, a, b, args, full_output, epsabs, epsrel,
                               limlst, limit, maxp1, weight, wvar, wopts)
+
+    if flip:
+        retval = (-retval[0],) + retval[1:]
 
     ier = retval[-1]
     if ier == 0:
@@ -519,11 +526,11 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
         first argument and x the second argument.
     a, b : float
         The limits of integration in x: `a` < `b`
-    gfun : callable
+    gfun : callable or float
         The lower boundary curve in y which is a function taking a single
-        floating point argument (x) and returning a floating point result: a
-        lambda function can be useful here.
-    hfun : callable
+        floating point argument (x) and returning a floating point result
+        or a float indicating a constant boundary curve.
+    hfun : callable or float
         The upper boundary curve in y (same requirements as `gfun`).
     args : sequence, optional
         Extra arguments to pass to `func`.
@@ -553,9 +560,23 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
     romb : integrator for sampled data
     scipy.special : for coefficients and roots of orthogonal polynomials
 
+    Examples
+    --------
+
+    Compute the double integral of ``x * y**2`` over the box
+    ``x`` ranging from 0 to 2 and ``y`` ranging from 0 to 1.
+
+    >>> from scipy import integrate
+    >>> f = lambda y, x: x*y**2
+    >>> integrate.dblquad(f, 0, 2, lambda x: 0, lambda x: 1)
+        (0.6666666666666667, 7.401486830834377e-15)
+
     """
+    
     def temp_ranges(*args):
-        return [gfun(args[0]), hfun(args[0])]
+        return [gfun(args[0]) if callable(gfun) else gfun,
+                hfun(args[0]) if callable(hfun) else hfun]
+        
     return nquad(func, [temp_ranges, [a, b]], args=args,
             opts={"epsabs": epsabs, "epsrel": epsrel})
 
@@ -575,16 +596,17 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
         order (z, y, x).
     a, b : float
         The limits of integration in x: `a` < `b`
-    gfun : function
+    gfun : function or float
         The lower boundary curve in y which is a function taking a single
-        floating point argument (x) and returning a floating point result:
-        a lambda function can be useful here.
-    hfun : function
+        floating point argument (x) and returning a floating point result
+        or a float indicating a constant boundary curve.
+    hfun : function or float
         The upper boundary curve in y (same requirements as `gfun`).
-    qfun : function
+    qfun : function or float
         The lower boundary surface in z.  It must be a function that takes
-        two floats in the order (x, y) and returns a float.
-    rfun : function
+        two floats in the order (x, y) and returns a float or a float
+        indicating a constant boundary surface.
+    rfun : function or float
         The upper boundary surface in z. (Same requirements as `qfun`.)
     args : tuple, optional
         Extra arguments to pass to `func`.
@@ -614,6 +636,19 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
     odeint: ODE integrators
     scipy.special: For coefficients and roots of orthogonal polynomials
 
+    Examples
+    --------
+
+    Compute the triple integral of ``x * y * z``, over ``x`` ranging 
+    from 1 to 2, ``y`` ranging from 2 to 3, ``z`` ranging from 0 to 1.
+
+    >>> from scipy import integrate
+    >>> f = lambda z, y, x: x*y*z
+    >>> integrate.tplquad(f, 1, 2, lambda x: 2, lambda x: 3,
+    ...                   lambda x, y: 0, lambda x, y: 1)
+    (1.8750000000000002, 3.324644794257407e-14)
+
+
     """
     # f(z, y, x)
     # qfun/rfun (x, y)
@@ -623,10 +658,12 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
     # Stupid different API...
 
     def ranges0(*args):
-        return [qfun(args[1], args[0]), rfun(args[1], args[0])]
+        return [qfun(args[1], args[0]) if callable(qfun) else qfun,
+                rfun(args[1], args[0]) if callable(rfun) else rfun]
 
     def ranges1(*args):
-        return [gfun(args[0]), hfun(args[0])]
+        return [gfun(args[0]) if callable(gfun) else gfun,
+                hfun(args[0]) if callable(hfun) else hfun]
 
     ranges = [ranges0, ranges1, [a, b]]
     return nquad(func, ranges, args=args,

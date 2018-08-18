@@ -1,6 +1,6 @@
 """
-A top-level linear programming interface. Currently this interface only
-solves linear programming problems via the Simplex Method.
+A top-level linear programming interface. Currently this interface solves
+linear programming problems via the Simplex and Interior-Point methods.
 
 .. versionadded:: 0.15.0
 
@@ -18,7 +18,8 @@ Functions
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from .optimize import OptimizeResult, _check_unknown_options
+from warnings import warn
+from .optimize import OptimizeResult, OptimizeWarning, _check_unknown_options
 from ._linprog_ip import _linprog_ip
 
 __all__ = ['linprog', 'linprog_verbose_callback', 'linprog_terse_callback']
@@ -128,7 +129,6 @@ def linprog_terse_callback(xk, **kwargs):
             (and this is the final call to callback), otherwise False.
     """
     nit = kwargs["nit"]
-
     if nit == 0:
         print("Iter:   X:")
     print("{0: <5d}   ".format(nit), end="")
@@ -167,11 +167,11 @@ def _pivot_col(T, tol=1.0E-12, bland=False):
     if ma.count() == 0:
         return False, np.nan
     if bland:
-        return True, np.where(ma.mask == False)[0][0]
-    return True, np.ma.where(ma == ma.min())[0][0]
+        return True, np.nonzero(ma.mask == False)[0][0]
+    return True, np.ma.nonzero(ma == ma.min())[0][0]
 
 
-def _pivot_row(T, pivcol, phase, tol=1.0E-12):
+def _pivot_row(T, basis, pivcol, phase, tol=1.0E-12, bland=False):
     """
     Given a linear programming simplex tableau, determine the row for the
     pivot operation.
@@ -180,6 +180,8 @@ def _pivot_row(T, pivcol, phase, tol=1.0E-12):
     ----------
     T : 2D ndarray
         The simplex tableau.
+    basis : array
+        A list of the current basic variables.
     pivcol : int
         The index of the pivot column.
     phase : int
@@ -188,6 +190,9 @@ def _pivot_row(T, pivcol, phase, tol=1.0E-12):
         Elements in the pivot column smaller than tol will not be considered
         for pivoting.  Nominally this value is zero, but numerical issues
         cause a tolerance about zero to be necessary.
+    bland : bool
+        If True, use Bland's rule for selection of the row (if more than one
+        row can be used, choose the one with the lowest variable index).
 
     Returns
     -------
@@ -207,7 +212,50 @@ def _pivot_row(T, pivcol, phase, tol=1.0E-12):
         return False, np.nan
     mb = np.ma.masked_where(T[:-k, pivcol] <= tol, T[:-k, -1], copy=False)
     q = mb / ma
-    return True, np.ma.where(q == q.min())[0][0]
+    min_rows = np.ma.nonzero(q == q.min())[0]
+    if bland:
+        return True, min_rows[np.argmin(np.take(basis, min_rows))]
+    return True, min_rows[0]
+
+
+def _apply_pivot(T, basis, pivrow, pivcol, tol=1e-12):
+    """
+    Pivot the simplex tableau inplace on the element given by (pivrow, pivol).
+    The entering variable corresponds to the column given by pivcol forcing
+    the variable basis[pivrow] to leave the basis.
+
+    Parameters
+    ----------
+    T : 2-D array
+        A 2-D array representing the simplex T to the corresponding
+        maximization problem.
+    basis : 1-D array
+        An array of the indices of the basic variables, such that basis[i]
+        contains the column corresponding to the basic variable for row i.
+        Basis is modified in place by _apply_pivot.
+    pivrow : int
+        Row index of the pivot.
+    pivcol : int
+        Column index of the pivot.
+    """
+    basis[pivrow] = pivcol
+    pivval = T[pivrow, pivcol]
+    T[pivrow] = T[pivrow] / pivval
+    for irow in range(T.shape[0]):
+        if irow != pivrow:
+            T[irow] = T[irow] - T[pivrow] * T[irow, pivcol]
+
+    # The selected pivot should never lead to a pivot value less than the tol.
+    if np.isclose(pivval, tol, atol=0, rtol=1e4):
+        message = (
+            "The pivot operation produces a pivot value of:{0: .1e}, "
+            "which is only slightly greater than the specified "
+            "tolerance{1: .1e}. This may lead to issues regarding the "
+            "numerical stability of the simplex method. "
+            "Removing redundant constraints, changing the pivot strategy "
+            "via Bland's rule or increasing the tolerance may "
+            "help reduce the issue.".format(pivval, tol))
+        warn(message, OptimizeWarning)
 
 
 def _solve_simplex(T, n, basis, maxiter=1000, phase=2, callback=None,
@@ -326,17 +374,10 @@ def _solve_simplex(T, n, basis, maxiter=1000, phase=2, callback=None,
         for pivrow in [row for row in range(basis.size)
                        if basis[row] > T.shape[1] - 2]:
             non_zero_row = [col for col in range(T.shape[1] - 1)
-                            if T[pivrow, col] != 0]
+                            if abs(T[pivrow, col]) > tol]
             if len(non_zero_row) > 0:
                 pivcol = non_zero_row[0]
-                # variable represented by pivcol enters
-                # variable in basis[pivrow] leaves
-                basis[pivrow] = pivcol
-                pivval = T[pivrow][pivcol]
-                T[pivrow, :] = T[pivrow, :] / pivval
-                for irow in range(T.shape[0]):
-                    if irow != pivrow:
-                        T[irow, :] = T[irow, :] - T[pivrow, :]*T[irow, pivcol]
+                _apply_pivot(T, basis, pivrow, pivcol)
                 nit += 1
 
     if len(basis[:m]) == 0:
@@ -355,7 +396,7 @@ def _solve_simplex(T, n, basis, maxiter=1000, phase=2, callback=None,
             complete = True
         else:
             # Find the pivot row
-            pivrow_found, pivrow = _pivot_row(T, pivcol, phase, tol)
+            pivrow_found, pivrow = _pivot_row(T, basis, pivcol, phase, tol, bland)
             if not pivrow_found:
                 status = 3
                 complete = True
@@ -376,14 +417,7 @@ def _solve_simplex(T, n, basis, maxiter=1000, phase=2, callback=None,
                 status = 1
                 complete = True
             else:
-                # variable represented by pivcol enters
-                # variable in basis[pivrow] leaves
-                basis[pivrow] = pivcol
-                pivval = T[pivrow][pivcol]
-                T[pivrow, :] = T[pivrow, :] / pivval
-                for irow in range(T.shape[0]):
-                    if irow != pivrow:
-                        T[irow, :] = T[irow, :] - T[pivrow, :]*T[irow, pivcol]
+                _apply_pivot(T, basis, pivrow, pivcol)
                 nit += 1
 
     return nit, status
@@ -781,6 +815,15 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     else:
         # Failure to find a feasible starting point
         status = 2
+        messages[status] = (
+            "Phase 1 of the simplex method failed to find a feasible "
+            "solution. The pseudo-objective function evaluates to {0:.1e} "
+            "which exceeds the required tolerance of {1} for a solution to be "
+            "considered 'close enough' to zero to be a basic solution. "
+            "Consider increasing the tolerance to be greater than {0:.1e}. "
+            "If this tolerance is unacceptably  large the problem may be "
+            "infeasible.".format(abs(T[-1, -1]), tol)
+        )
 
     if status != 0:
         message = messages[status]
@@ -1017,10 +1060,10 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
          fun: -22.0
      message: 'Optimization terminated successfully.'
          nit: 1
-       slack: array([ 39.,   0.])
+       slack: array([39.,  0.])
       status: 0
      success: True
-           x: array([ 10.,  -3.])
+           x: array([10., -3.])
 
     Note the actual objective value is 11.428571.  In this case we minimized
     the negative of the objective function.

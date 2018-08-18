@@ -180,6 +180,7 @@ def fmin_slsqp(func, x0, eqcons=(), f_eqcons=None, ieqcons=(), f_ieqcons=None,
     """
     if disp is not None:
         iprint = disp
+
     opts = {'maxiter': iter,
             'ftol': acc,
             'iprint': iprint,
@@ -426,7 +427,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
 
         # call callback if major iteration has incremented
         if callback is not None and majiter > majiter_prev:
-            callback(x)
+            callback(np.copy(x))
 
         # Print the status of the current iterate if iprint > 2 and the
         # major iteration has incremented

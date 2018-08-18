@@ -56,25 +56,18 @@ _rfft_lock = threading.Lock()
 
 def _valfrommode(mode):
     try:
-        val = _modedict[mode]
+        return _modedict[mode]
     except KeyError:
-        if mode not in [0, 1, 2]:
-            raise ValueError("Acceptable mode flags are 'valid' (0),"
-                             " 'same' (1), or 'full' (2).")
-        val = mode
-    return val
+        raise ValueError("Acceptable mode flags are 'valid',"
+                         " 'same', or 'full'.")
 
 
 def _bvalfromboundary(boundary):
     try:
-        val = _boundarydict[boundary] << 2
+        return _boundarydict[boundary] << 2
     except KeyError:
-        if val not in [0, 1, 2]:
-            raise ValueError("Acceptable boundary flags are 'fill', 'wrap'"
-                             " (or 'circular'), \n  and 'symm'"
-                             " (or 'symmetric').")
-        val = boundary << 2
-    return val
+        raise ValueError("Acceptable boundary flags are 'fill', 'circular' "
+                         "(or 'wrap'), and 'symmetric' (or 'symm').")
 
 
 def _inputs_swap_needed(mode, shape1, shape2):
@@ -165,7 +158,8 @@ def correlate(in1, in2, mode='full', method='auto'):
 
         z[...,k,...] = sum[..., i_l, ...] x[..., i_l,...] * conj(y[..., i_l - k,...])
 
-    This way, if x and y are 1-D arrays and ``z = correlate(x, y, 'full')`` then
+    This way, if x and y are 1-D arrays and ``z = correlate(x, y, 'full')``
+    then
 
     .. math::
 
@@ -212,7 +206,7 @@ def correlate(in1, in2, mode='full', method='auto'):
     in2 = asarray(in2)
 
     if in1.ndim == in2.ndim == 0:
-        return in1 * in2
+        return in1 * in2.conj()
     elif in1.ndim != in2.ndim:
         raise ValueError("in1 and in2 should have the same dimensionality")
 
@@ -227,46 +221,51 @@ def correlate(in1, in2, mode='full', method='auto'):
     if method in ('fft', 'auto'):
         return convolve(in1, _reverse_and_conj(in2), mode, method)
 
-    # fastpath to faster numpy.correlate for 1d inputs when possible
-    if _np_conv_ok(in1, in2, mode):
-        return np.correlate(in1, in2, mode)
+    elif method == 'direct':
+        # fastpath to faster numpy.correlate for 1d inputs when possible
+        if _np_conv_ok(in1, in2, mode):
+            return np.correlate(in1, in2, mode)
 
-    # _correlateND is far slower when in2.size > in1.size, so swap them
-    # and then undo the effect afterward if mode == 'full'.  Also, it fails
-    # with 'valid' mode if in2 is larger than in1, so swap those, too.
-    # Don't swap inputs for 'same' mode, since shape of in1 matters.
-    swapped_inputs = ((mode == 'full') and (in2.size > in1.size) or
-                      _inputs_swap_needed(mode, in1.shape, in2.shape))
+        # _correlateND is far slower when in2.size > in1.size, so swap them
+        # and then undo the effect afterward if mode == 'full'.  Also, it fails
+        # with 'valid' mode if in2 is larger than in1, so swap those, too.
+        # Don't swap inputs for 'same' mode, since shape of in1 matters.
+        swapped_inputs = ((mode == 'full') and (in2.size > in1.size) or
+                          _inputs_swap_needed(mode, in1.shape, in2.shape))
 
-    if swapped_inputs:
-        in1, in2 = in2, in1
+        if swapped_inputs:
+            in1, in2 = in2, in1
 
-    if mode == 'valid':
-        ps = [i - j + 1 for i, j in zip(in1.shape, in2.shape)]
-        out = np.empty(ps, in1.dtype)
+        if mode == 'valid':
+            ps = [i - j + 1 for i, j in zip(in1.shape, in2.shape)]
+            out = np.empty(ps, in1.dtype)
 
-        z = sigtools._correlateND(in1, in2, out, val)
+            z = sigtools._correlateND(in1, in2, out, val)
+
+        else:
+            ps = [i + j - 1 for i, j in zip(in1.shape, in2.shape)]
+
+            # zero pad input
+            in1zpadded = np.zeros(ps, in1.dtype)
+            sc = tuple(slice(0, i) for i in in1.shape)
+            in1zpadded[sc] = in1.copy()
+
+            if mode == 'full':
+                out = np.empty(ps, in1.dtype)
+            elif mode == 'same':
+                out = np.empty(in1.shape, in1.dtype)
+
+            z = sigtools._correlateND(in1zpadded, in2, out, val)
+
+        if swapped_inputs:
+            # Reverse and conjugate to undo the effect of swapping inputs
+            z = _reverse_and_conj(z)
+
+        return z
 
     else:
-        ps = [i + j - 1 for i, j in zip(in1.shape, in2.shape)]
-
-        # zero pad input
-        in1zpadded = np.zeros(ps, in1.dtype)
-        sc = [slice(0, i) for i in in1.shape]
-        in1zpadded[sc] = in1.copy()
-
-        if mode == 'full':
-            out = np.empty(ps, in1.dtype)
-        elif mode == 'same':
-            out = np.empty(in1.shape, in1.dtype)
-
-        z = sigtools._correlateND(in1zpadded, in2, out, val)
-
-    if swapped_inputs:
-        # Reverse and conjugate to undo the effect of swapping inputs
-        z = _reverse_and_conj(z)
-
-    return z
+        raise ValueError("Acceptable method flags are 'auto',"
+                         " 'direct', or 'fft'.")
 
 
 def _centered(arr, newshape):
@@ -298,8 +297,6 @@ def fftconvolve(in1, in2, mode="full"):
         First input.
     in2 : array_like
         Second input. Should have the same number of dimensions as `in1`.
-        If operating in 'valid' mode, either `in1` or `in2` must be
-        at least as large as the other in every dimension.
     mode : str {'full', 'valid', 'same'}, optional
         A string indicating the size of the output:
 
@@ -308,7 +305,8 @@ def fftconvolve(in1, in2, mode="full"):
            of the inputs. (Default)
         ``valid``
            The output consists only of those elements that do not
-           rely on the zero-padding.
+           rely on the zero-padding. In 'valid' mode, either `in1` or `in2`
+           must be at least as large as the other in every dimension.
         ``same``
            The output is the same size as `in1`, centered
            with respect to the 'full' output.
@@ -474,7 +472,8 @@ def _fftconv_faster(x, h, mode):
         out_shape = [n - k + 1 for n, k in zip(x.shape, h.shape)]
         big_O_constant = 41954.28006344 if x.ndim == 1 else 66453.24316434
     else:
-        raise ValueError('mode is invalid')
+        raise ValueError("Acceptable mode flags are 'valid',"
+                         " 'same', or 'full'.")
 
     # see whether the Fourier transform convolution method or the direct
     # convolution method is faster (discussed in scikit-image PR #1792)
@@ -488,7 +487,7 @@ def _reverse_and_conj(x):
     """
     Reverse array `x` in all dimensions and perform the complex conjugate
     """
-    reverse = [slice(None, None, -1)] * x.ndim
+    reverse = (slice(None, None, -1),) * x.ndim
     return x[reverse].conj()
 
 
@@ -497,9 +496,16 @@ def _np_conv_ok(volume, kernel, mode):
     See if numpy supports convolution of `volume` and `kernel` (i.e. both are
     1D ndarrays and of the appropriate shape).  Numpy's 'same' mode uses the
     size of the larger input, while Scipy's uses the size of the first input.
+
+    Invalid mode strings will return False and be caught by the calling func.
     """
-    np_conv_ok = volume.ndim == kernel.ndim == 1
-    return np_conv_ok and (volume.size >= kernel.size or mode != 'same')
+    if volume.ndim == kernel.ndim == 1:
+        if mode in ('full', 'valid'):
+            return True
+        elif mode == 'same':
+            return volume.size >= kernel.size
+    else:
+        return False
 
 
 def _timeit_fast(stmt="pass", setup="pass", repeat=3):
@@ -755,6 +761,9 @@ def convolve(in1, in2, mode='full', method='auto'):
 
     if volume.ndim == kernel.ndim == 0:
         return volume * kernel
+    elif volume.ndim != kernel.ndim:
+        raise ValueError("volume and kernel should have the same "
+                         "dimensionality")
 
     if _inputs_swap_needed(mode, volume.shape, kernel.shape):
         # Convolution is commutative; order doesn't have any effect on output
@@ -769,12 +778,15 @@ def convolve(in1, in2, mode='full', method='auto'):
         if result_type.kind in {'u', 'i'}:
             out = np.around(out)
         return out.astype(result_type)
+    elif method == 'direct':
+        # fastpath to faster numpy.convolve for 1d inputs when possible
+        if _np_conv_ok(volume, kernel, mode):
+            return np.convolve(volume, kernel, mode)
 
-    # fastpath to faster numpy.convolve for 1d inputs when possible
-    if _np_conv_ok(volume, kernel, mode):
-        return np.convolve(volume, kernel, mode)
-
-    return correlate(volume, _reverse_and_conj(kernel), mode, 'direct')
+        return correlate(volume, _reverse_and_conj(kernel), mode, 'direct')
+    else:
+        raise ValueError("Acceptable method flags are 'auto',"
+                         " 'direct', or 'fft'.")
 
 
 def order_filter(a, domain, rank):
@@ -945,8 +957,6 @@ def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
         First input.
     in2 : array_like
         Second input. Should have the same number of dimensions as `in1`.
-        If operating in 'valid' mode, either `in1` or `in2` must be
-        at least as large as the other in every dimension.
     mode : str {'full', 'valid', 'same'}, optional
         A string indicating the size of the output:
 
@@ -955,11 +965,11 @@ def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
            of the inputs. (Default)
         ``valid``
            The output consists only of those elements that do not
-           rely on the zero-padding.
+           rely on the zero-padding. In 'valid' mode, either `in1` or `in2`
+           must be at least as large as the other in every dimension.
         ``same``
            The output is the same size as `in1`, centered
            with respect to the 'full' output.
-
     boundary : str {'fill', 'wrap', 'symm'}, optional
         A flag indicating how to handle boundaries:
 
@@ -1036,8 +1046,6 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
         First input.
     in2 : array_like
         Second input. Should have the same number of dimensions as `in1`.
-        If operating in 'valid' mode, either `in1` or `in2` must be
-        at least as large as the other in every dimension.
     mode : str {'full', 'valid', 'same'}, optional
         A string indicating the size of the output:
 
@@ -1046,11 +1054,11 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
            of the inputs. (Default)
         ``valid``
            The output consists only of those elements that do not
-           rely on the zero-padding.
+           rely on the zero-padding. In 'valid' mode, either `in1` or `in2`
+           must be at least as large as the other in every dimension.
         ``same``
            The output is the same size as `in1`, centered
            with respect to the 'full' output.
-
     boundary : str {'fill', 'wrap', 'symm'}, optional
         A flag indicating how to handle boundaries:
 
@@ -1112,7 +1120,7 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
 
     val = _valfrommode(mode)
     bval = _bvalfromboundary(boundary)
-    out = sigtools._convolve2d(in1, in2, 0, val, bval, fillvalue)
+    out = sigtools._convolve2d(in1, in2.conj(), 0, val, bval, fillvalue)
 
     if swapped_inputs:
         out = out[::-1, ::-1]
@@ -1330,16 +1338,16 @@ def lfilter(b, a, x, axis=-1, zi=None):
         ind = out_full.ndim * [slice(None)]
         if zi is not None:
             ind[axis] = slice(zi.shape[axis])
-            out_full[ind] += zi
+            out_full[tuple(ind)] += zi
 
         ind[axis] = slice(out_full.shape[axis] - len(b) + 1)
-        out = out_full[ind]
+        out = out_full[tuple(ind)]
 
         if zi is None:
             return out
         else:
             ind[axis] = slice(out_full.shape[axis] - len(b) + 1, None)
-            zf = out_full[ind]
+            zf = out_full[tuple(ind)]
             return out, zf
     else:
         if zi is None:
@@ -1555,7 +1563,7 @@ def hilbert(x, N=None, axis=-1):
     References
     ----------
     .. [1] Wikipedia, "Analytic signal".
-           http://en.wikipedia.org/wiki/Analytic_signal
+           https://en.wikipedia.org/wiki/Analytic_signal
     .. [2] Leon Cohen, "Time-Frequency Analysis", 1995. Chapter 2.
     .. [3] Alan V. Oppenheim, Ronald W. Schafer. Discrete-Time Signal
            Processing, Third Edition, 2009. Chapter 12.
@@ -1582,7 +1590,7 @@ def hilbert(x, N=None, axis=-1):
     if x.ndim > 1:
         ind = [newaxis] * x.ndim
         ind[axis] = slice(None)
-        h = h[ind]
+        h = h[tuple(ind)]
     x = fftpack.ifft(Xf * h, axis=axis)
     return x
 
@@ -1606,7 +1614,7 @@ def hilbert2(x, N=None):
     References
     ----------
     .. [1] Wikipedia, "Analytic signal",
-        http://en.wikipedia.org/wiki/Analytic_signal
+        https://en.wikipedia.org/wiki/Analytic_signal
 
     """
     x = atleast_2d(x)
@@ -1661,6 +1669,16 @@ def cmplx_sort(p):
         Sorted roots.
     indx : ndarray
         Array of indices needed to sort the input `p`.
+
+    Examples
+    --------
+    >>> from scipy import signal
+    >>> vals = [1, 4, 1+1.j, 3]
+    >>> p_sorted, indx = signal.cmplx_sort(vals)
+    >>> p_sorted
+    array([1.+0.j, 1.+1.j, 3.+0.j, 4.+0.j])
+    >>> indx
+    array([0, 2, 3, 1])
 
     """
     p = asarray(p)
@@ -2202,20 +2220,20 @@ def resample(x, num, t=None, axis=0, window=None):
     N = int(np.minimum(num, Nx))
     Y = zeros(newshape, 'D')
     sl[axis] = slice(0, (N + 1) // 2)
-    Y[sl] = X[sl]
+    Y[tuple(sl)] = X[tuple(sl)]
     sl[axis] = slice(-(N - 1) // 2, None)
-    Y[sl] = X[sl]
+    Y[tuple(sl)] = X[tuple(sl)]
 
     if N % 2 == 0:  # special treatment if low number of points is even. So far we have set Y[-N/2]=X[-N/2]
         if N < Nx:  # if downsampling
             sl[axis] = slice(N//2,N//2+1,None)  # select the component at frequency N/2
-            Y[sl] += X[sl]  # add the component of X at N/2
+            Y[tuple(sl)] += X[tuple(sl)]  # add the component of X at N/2
         elif N < num:  # if upsampling
             sl[axis] = slice(num-N//2,num-N//2+1,None)  # select the component at frequency -N/2
-            Y[sl] /= 2  # halve the component at -N/2
-            temp = Y[sl]
+            Y[tuple(sl)] /= 2  # halve the component at -N/2
+            temp = Y[tuple(sl)]
             sl[axis] = slice(N//2,N//2+1,None)  # select the component at +N/2
-            Y[sl] = temp  # set that equal to the component at -N/2
+            Y[tuple(sl)] = temp  # set that equal to the component at -N/2
 
     y = fftpack.ifft(Y, axis=axis) * (float(num) / float(Nx))
 
@@ -2355,14 +2373,15 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0)):
     while _output_len(len(h) + n_pre_pad + n_post_pad, x.shape[axis],
                       up, down) < n_out + n_pre_remove:
         n_post_pad += 1
-    h = np.concatenate((np.zeros(n_pre_pad), h, np.zeros(n_post_pad)))
+    h = np.concatenate((np.zeros(n_pre_pad, dtype=h.dtype), h,
+                        np.zeros(n_post_pad, dtype=h.dtype)))
     n_pre_remove_end = n_pre_remove + n_out
 
     # filter then remove excess
     y = upfirdn(h, x, up, down, axis=axis)
     keep = [slice(None), ]*x.ndim
     keep[axis] = slice(n_pre_remove, n_pre_remove_end)
-    return y[keep]
+    return y[tuple(keep)]
 
 
 def vectorstrength(events, period):
@@ -3442,4 +3461,4 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
             y = lfilter(b, a, x, axis=axis)
         sl[axis] = slice(None, None, q)
 
-    return y[sl]
+    return y[tuple(sl)]

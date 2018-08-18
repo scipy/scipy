@@ -1,4 +1,4 @@
-* Note: The test program has been removed and a utlity routine mvnun has been
+* Note: The test program has been removed and a utility routine mvnun has been
 * added.  RTK 2004-08-10
 *
 * Copyright 2000 by Alan Genz.
@@ -125,7 +125,7 @@
 *     INFORM INTEGER, termination status parameter:
 *            if INFORM = 0, normal completion with ERROR < EPS;
 *            if INFORM = 1, completion with ERROR > EPS and MAXPTS 
-*                           function vaules used; increase MAXPTS to 
+*                           function values used; increase MAXPTS to 
 *                           decrease ERROR;
 *            if INFORM = 2, N > 500 or N < 1.
 *

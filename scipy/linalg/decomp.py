@@ -16,11 +16,12 @@ from __future__ import division, print_function, absolute_import
 
 __all__ = ['eig', 'eigvals', 'eigh', 'eigvalsh',
            'eig_banded', 'eigvals_banded',
-           'eigh_tridiagonal', 'eigvalsh_tridiagonal', 'hessenberg']
+           'eigh_tridiagonal', 'eigvalsh_tridiagonal', 'hessenberg', 'cdf2rdf']
 
 import numpy
 from numpy import (array, isfinite, inexact, nonzero, iscomplexobj, cast,
-                   flatnonzero, conj, asarray, argsort, empty)
+                   flatnonzero, conj, asarray, argsort, empty, newaxis,
+                   argwhere, iscomplex, eye, zeros, einsum)
 # Local imports
 from scipy._lib.six import xrange
 from scipy._lib._util import _asarray_validated
@@ -180,6 +181,35 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
         band matrices
     eigh_tridiagonal : eigenvalues and right eiegenvectors for
         symmetric/Hermitian tridiagonal matrices
+
+    Examples
+    --------
+    >>> from scipy import linalg
+    >>> a = np.array([[0., -1.], [1., 0.]])
+    >>> linalg.eigvals(a)
+    array([0.+1.j, 0.-1.j])
+
+    >>> b = np.array([[0., 1.], [1., 1.]])
+    >>> linalg.eigvals(a, b)
+    array([ 1.+0.j, -1.+0.j])
+
+    >>> a = np.array([[3., 0., 0.], [0., 8., 0.], [0., 0., 7.]])
+    >>> linalg.eigvals(a, homogeneous_eigvals=True)
+    array([[3.+0.j, 8.+0.j, 7.+0.j],
+           [1.+0.j, 1.+0.j, 1.+0.j]])
+
+    >>> a = np.array([[0., -1.], [1., 0.]])
+    >>> linalg.eigvals(a) == linalg.eig(a)[0]
+    array([ True,  True])
+    >>> linalg.eig(a, left=True, right=False)[1] # normalized left eigenvector
+    array([[-0.70710678+0.j        , -0.70710678-0.j        ],
+           [-0.        +0.70710678j, -0.        -0.70710678j]])
+    >>> linalg.eig(a, left=False, right=True)[1] # normalized right eigenvector
+    array([[0.70710678+0.j        , 0.70710678-0.j        ],
+           [0.        -0.70710678j, 0.        +0.70710678j]])
+
+
+
     """
     a1 = _asarray_validated(a, check_finite=check_finite)
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
@@ -325,6 +355,21 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
     eigh : eigenvalues and right eigenvectors for symmetric/Hermitian arrays
     eigh_tridiagonal : eigenvalues and right eiegenvectors for
         symmetric/Hermitian tridiagonal matrices
+
+    Notes
+    -----
+    This function does not check the input array for being hermitian/symmetric
+    in order to allow for representing arrays with only their upper/lower
+    triangular parts.
+
+    Examples
+    --------
+    >>> from scipy.linalg import eigh
+    >>> A = np.array([[6, 3, 1, 5], [3, 0, 5, 1], [1, 5, 6, 2], [5, 1, 2, 2]])
+    >>> w, v = eigh(A)
+    >>> np.allclose(A @ v - v @ np.diag(w), np.zeros((4, 4)))
+    True
+
     """
     a1 = _asarray_validated(a, check_finite=check_finite)
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
@@ -473,9 +518,10 @@ def _check_select(select, select_range, max_ev, max_len):
             if max_ev == 0:
                 max_ev = max_len
         else:  # 2 (index)
-            if sr.dtype.char.lower() not in 'lih':
+            if sr.dtype.char.lower() not in 'hilqp':
                 raise ValueError('when using select="i", select_range must '
-                                 'contain integers, got dtype %s' % sr.dtype)
+                                 'contain integers, got dtype %s (%s)'
+                                 % (sr.dtype, sr.dtype.char))
             # translate Python (0 ... N-1) into Fortran (1 ... N) with + 1
             il, iu = sr + 1
             if min(il, iu) < 1 or max(il, iu) > max_len:
@@ -571,6 +617,25 @@ def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
     eigh : eigenvalues and right eigenvectors for symmetric/Hermitian arrays
     eigh_tridiagonal : eigenvalues and right eiegenvectors for
         symmetric/Hermitian tridiagonal matrices
+
+    Examples
+    --------
+    >>> from scipy.linalg import eig_banded
+    >>> A = np.array([[1, 5, 2, 0], [5, 2, 5, 2], [2, 5, 3, 5], [0, 2, 5, 4]])
+    >>> Ab = np.array([[1, 2, 3, 4], [5, 5, 5, 0], [2, 2, 0, 0]])
+    >>> w, v = eig_banded(Ab, lower=True)
+    >>> np.allclose(A @ v - v @ np.diag(w), np.zeros((4, 4)))
+    True
+    >>> w = eig_banded(Ab, lower=True, eigvals_only=True)
+    >>> w
+    array([-4.26200532, -2.22987175,  3.95222349, 12.53965359])
+
+    Request only the eigenvalues between ``[-3, 4]``
+
+    >>> w, v = eig_banded(Ab, lower=True, select='v', select_range=[-3, 4])
+    >>> w
+    array([-2.22987175,  3.95222349])
+
     """
     if eigvals_only or overwrite_a_band:
         a1 = _asarray_validated(a_band, check_finite=check_finite)
@@ -681,6 +746,23 @@ def eigvals(a, b=None, overwrite_a=False, check_finite=True,
     eigvals_banded : eigenvalues for symmetric/Hermitian band matrices
     eigvalsh_tridiagonal : eigenvalues of symmetric/Hermitian tridiagonal
         matrices
+
+    Examples
+    --------
+    >>> from scipy import linalg
+    >>> a = np.array([[0., -1.], [1., 0.]])
+    >>> linalg.eigvals(a)
+    array([0.+1.j, 0.-1.j])
+
+    >>> b = np.array([[0., 1.], [1., 1.]])
+    >>> linalg.eigvals(a, b)
+    array([ 1.+0.j, -1.+0.j])
+
+    >>> a = np.array([[3., 0., 0.], [0., 8., 0.], [0., 0., 7.]])
+    >>> linalg.eigvals(a, homogeneous_eigvals=True)
+    array([[3.+0.j, 8.+0.j, 7.+0.j],
+           [1.+0.j, 1.+0.j, 1.+0.j]])
+
     """
     return eig(a, b=b, left=0, right=0, overwrite_a=overwrite_a,
                check_finite=check_finite,
@@ -757,6 +839,21 @@ def eigvalsh(a, b=None, lower=True, overwrite_a=False,
     eigvals_banded : eigenvalues for symmetric/Hermitian band matrices
     eigvalsh_tridiagonal : eigenvalues of symmetric/Hermitian tridiagonal
         matrices
+
+    Notes
+    -----
+    This function does not check the input array for being hermitian/symmetric
+    in order to allow for representing arrays with only their upper/lower
+    triangular parts.
+
+    Examples
+    --------
+    >>> from scipy.linalg import eigvalsh
+    >>> A = np.array([[6, 3, 1, 5], [3, 0, 5, 1], [1, 5, 6, 2], [5, 1, 2, 2]])
+    >>> w = eigvalsh(A)
+    >>> w
+    array([-3.74637491, -0.76263923,  6.08502336, 12.42399079])
+
     """
     return eigh(a, b=b, lower=lower, eigvals_only=True,
                 overwrite_a=overwrite_a, overwrite_b=overwrite_b,
@@ -841,6 +938,15 @@ def eigvals_banded(a_band, lower=False, overwrite_a_band=False,
     eigvals : eigenvalues of general arrays
     eigh : eigenvalues and right eigenvectors for symmetric/Hermitian arrays
     eig : eigenvalues and right eigenvectors for non-symmetric arrays
+
+    Examples
+    --------
+    >>> from scipy.linalg import eigvals_banded
+    >>> A = np.array([[1, 5, 2, 0], [5, 2, 5, 2], [2, 5, 3, 5], [0, 2, 5, 4]])
+    >>> Ab = np.array([[1, 2, 3, 4], [5, 5, 5, 0], [2, 2, 0, 0]])
+    >>> w = eigvals_banded(Ab, lower=True)
+    >>> w
+    array([-4.26200532, -2.22987175,  3.95222349, 12.53965359])
     """
     return eig_banded(a_band, lower=lower, eigvals_only=1,
                       overwrite_a_band=overwrite_a_band, select=select,
@@ -910,6 +1016,17 @@ def eigvalsh_tridiagonal(d, e, select='a', select_range=None,
     --------
     eigh_tridiagonal : eigenvalues and right eiegenvectors for
         symmetric/Hermitian tridiagonal matrices
+
+    Examples
+    --------
+    >>> from scipy.linalg import eigvalsh_tridiagonal, eigvalsh
+    >>> d = 3*np.ones(4)
+    >>> e = -1*np.ones(3)
+    >>> w = eigvalsh_tridiagonal(d, e)
+    >>> A = np.diag(d) + np.diag(e, k=1) + np.diag(e, k=-1)
+    >>> w2 = eigvalsh(A)  # Verify with other eigenvalue routines
+    >>> np.allclose(w - w2, np.zeros(4))
+    True
     """
     return eigh_tridiagonal(
         d, e, eigvals_only=True, select=select, select_range=select_range,
@@ -993,6 +1110,16 @@ def eigh_tridiagonal(d, e, eigvals_only=False, select='a', select_range=None,
     Notes
     -----
     This function makes use of LAPACK ``S/DSTEMR`` routines.
+
+    Examples
+    --------
+    >>> from scipy.linalg import eigh_tridiagonal
+    >>> d = 3*np.ones(4)
+    >>> e = -1*np.ones(3)
+    >>> w, v = eigh_tridiagonal(d, e)
+    >>> A = np.diag(d) + np.diag(e, k=1) + np.diag(e, k=-1)
+    >>> np.allclose(A @ v - v @ np.diag(w), np.zeros((4, 4)))
+    True
     """
     d = _asarray_validated(d, check_finite=check_finite)
     e = _asarray_validated(e, check_finite=check_finite)
@@ -1109,6 +1236,18 @@ def hessenberg(a, calc_q=False, overwrite_a=False, check_finite=True):
         Unitary/orthogonal similarity transformation matrix ``A = Q H Q^H``.
         Only returned if ``calc_q=True``.
 
+    Examples
+    --------
+    >>> from scipy.linalg import hessenberg
+    >>> A = np.array([[2, 5, 8, 7], [5, 2, 2, 8], [7, 5, 6, 6], [5, 4, 4, 8]])
+    >>> H, Q = hessenberg(A, calc_q=True)
+    >>> H
+    array([[  2.        , -11.65843866,   1.42005301,   0.25349066],
+           [ -9.94987437,  14.53535354,  -5.31022304,   2.43081618],
+           [  0.        ,  -1.83299243,   0.38969961,  -0.51527034],
+           [  0.        ,   0.        ,  -3.83189513,   1.07494686]])
+    >>> np.allclose(Q @ H @ Q.conj().T - A, np.zeros((4, 4)))
+    True
     """
     a1 = _asarray_validated(a, check_finite=check_finite)
     if len(a1.shape) != 2 or (a1.shape[0] != a1.shape[1]):
@@ -1142,3 +1281,151 @@ def hessenberg(a, calc_q=False, overwrite_a=False, check_finite=True):
     q, info = orghr(a=hq, tau=tau, lo=lo, hi=hi, lwork=lwork, overwrite_a=1)
     _check_info(info, 'orghr (hessenberg)', positive=False)
     return h, q
+
+
+def cdf2rdf(w, v):
+    """
+    Converts complex eigenvalues ``w`` and eigenvectors ``v`` to real
+    eigenvalues in a block diagonal form ``wr`` and the associated real
+    eigenvectors ``vr``, such that::
+
+        vr @ wr = X @ vr
+
+    continues to hold, where ``X`` is the original array for which ``w`` and
+    ``v`` are the eigenvalues and eigenvectors.
+
+    .. versionadded:: 1.1.0
+
+    Parameters
+    ----------
+    w : (..., M) array_like
+        Complex or real eigenvalues, an array or stack of arrays
+
+        Conjugate pairs must not be interleaved, else the wrong result
+        will be produced. So ``[1+1j, 1, 1-1j]`` will give a correct result, but
+        ``[1+1j, 2+1j, 1-1j, 2-1j]`` will not.
+
+    v : (..., M, M) array_like
+        Complex or real eigenvectors, a square array or stack of square arrays.
+
+    Returns
+    -------
+    wr : (..., M, M) ndarray
+        Real diagonal block form of eigenvalues
+    vr : (..., M, M) ndarray
+        Real eigenvectors associated with ``wr``
+
+    See Also
+    --------
+    eig : Eigenvalues and right eigenvectors for non-symmetric arrays
+    rsf2csf : Convert real Schur form to complex Schur form
+
+    Notes
+    -----
+    ``w``, ``v`` must be the eigenstructure for some *real* matrix ``X``.
+    For example, obtained by ``w, v = scipy.linalg.eig(X)`` or
+    ``w, v = numpy.linalg.eig(X)`` in which case ``X`` can also represent
+    stacked arrays.
+
+    .. versionadded:: 1.1.0
+
+    Examples
+    --------
+    >>> X = np.array([[1, 2, 3], [0, 4, 5], [0, -5, 4]])
+    >>> X
+    array([[ 1,  2,  3],
+           [ 0,  4,  5],
+           [ 0, -5,  4]])
+
+    >>> from scipy import linalg
+    >>> w, v = linalg.eig(X)
+    >>> w
+    array([ 1.+0.j,  4.+5.j,  4.-5.j])
+    >>> v
+    array([[ 1.00000+0.j     , -0.01906-0.40016j, -0.01906+0.40016j],
+           [ 0.00000+0.j     ,  0.00000-0.64788j,  0.00000+0.64788j],
+           [ 0.00000+0.j     ,  0.64788+0.j     ,  0.64788-0.j     ]])
+
+    >>> wr, vr = linalg.cdf2rdf(w, v)
+    >>> wr
+    array([[ 1.,  0.,  0.],
+           [ 0.,  4.,  5.],
+           [ 0., -5.,  4.]])
+    >>> vr
+    array([[ 1.     ,  0.40016, -0.01906],
+           [ 0.     ,  0.64788,  0.     ],
+           [ 0.     ,  0.     ,  0.64788]])
+
+    >>> vr @ wr
+    array([[ 1.     ,  1.69593,  1.9246 ],
+           [ 0.     ,  2.59153,  3.23942],
+           [ 0.     , -3.23942,  2.59153]])
+    >>> X @ vr
+    array([[ 1.     ,  1.69593,  1.9246 ],
+           [ 0.     ,  2.59153,  3.23942],
+           [ 0.     , -3.23942,  2.59153]])
+    """
+    w, v = _asarray_validated(w), _asarray_validated(v)
+
+    # check dimensions
+    if w.ndim < 1:
+        raise ValueError('expected w to be at least one-dimensional')
+    if v.ndim < 2:
+        raise ValueError('expected v to be at least two-dimensional')
+    if v.ndim != w.ndim + 1:
+        raise ValueError('expected eigenvectors array to have exactly one '
+                         'dimension more than eigenvalues array')
+
+    # check shapes
+    n = w.shape[-1]
+    M = w.shape[:-1]
+    if v.shape[-2] != v.shape[-1]:
+        raise ValueError('expected v to be a square matrix or stacked square '
+                         'matrices: v.shape[-2] = v.shape[-1]')
+    if v.shape[-1] != n:
+        raise ValueError('expected the same number of eigenvalues as '
+                         'eigenvectors')
+
+    # get indices for each first pair of complex eigenvalues
+    complex_mask = iscomplex(w)
+    n_complex = complex_mask.sum(axis=-1)
+
+    # check if all complex eigenvalues have conjugate pairs
+    if not (n_complex % 2 == 0).all():
+        raise ValueError('expected complex-conjugate pairs of eigenvalues')
+
+    # find complex indices
+    idx = nonzero(complex_mask)
+    idx_stack = idx[:-1]
+    idx_elem = idx[-1]
+
+    # filter them to conjugate indices, assuming pairs are not interleaved
+    j = idx_elem[0::2]
+    k = idx_elem[1::2]
+    stack_ind = ()
+    for i in idx_stack:
+        # should never happen, assuming nonzero orders by the last axis
+        assert (i[0::2] == i[1::2]).all(), "Conjugate pair spanned different arrays!"
+        stack_ind += (i[0::2],)
+
+    # all eigenvalues to diagonal form
+    wr = zeros(M + (n, n), dtype=w.real.dtype)
+    di = range(n)
+    wr[..., di, di] = w.real
+
+    # complex eigenvalues to real block diagonal form
+    wr[stack_ind + (j, k)] = w[stack_ind + (j,)].imag
+    wr[stack_ind + (k, j)] = w[stack_ind + (k,)].imag
+
+    # compute real eigenvectors associated with real block diagonal eigenvalues
+    u = zeros(M + (n, n), dtype=numpy.cdouble)
+    u[..., di, di] = 1.0
+    u[stack_ind + (j, j)] = 0.5j
+    u[stack_ind + (j, k)] = 0.5
+    u[stack_ind + (k, j)] = -0.5j
+    u[stack_ind + (k, k)] = 0.5
+
+    # multipy matrices v and u (equivalent to v @ u)
+    vr = einsum('...ij,...jk->...ik', v, u).real
+
+    return wr, vr
