@@ -344,6 +344,8 @@ class TestODR(object):
         result = job.run()
         assert_equal(result.info, 2)
 
+    # Verify fix for gh-9140
+
     def test_ifixx(self):
         x1 = [-2.01, -0.99, -0.001, 1.02, 1.98]
         x2 = [3.98, 1.01, 0.001, 0.998, 4.01]
