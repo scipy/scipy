@@ -13,12 +13,21 @@ from .zeros_struct_examples import IL
 ARGS = {'dark_current': 1e-09, 'series_resistance': 0.004,
     'shunt_resistance': 10.0, 'thermal_voltage': 0.27456}
 
+ctypedef struct test_params:
+    double voltage
+    double light_current
+    double dark_current
+    double series_resistance
+    double shunt_resistance
+    double thermal_voltage
+
+
 #solver
 cdef double solarcell_newton(dict args):
     """test newton with dictionary"""
-    cdef zeros_struct_examples.test_params myargs
+    cdef test_params myargs
     myargs = args
-    return zeros_struct.newton(zeros_struct_examples.f_solarcell, 6.0, zeros_struct_examples.fprime, <zeros_struct_examples.test_params *> &myargs)
+    return zeros_struct.newton(zeros_struct_examples.f_solarcell, 6.0, zeros_struct_examples.fprime, <test_params *> &myargs)
 
 
 # cython
@@ -30,9 +39,9 @@ def test_cython_newton(v=5.25, il=IL, args=ARGS):
 #solver
 cdef double solarcell_bisect(dict args):
     """test bisect with dictionary"""
-    cdef zeros_struct_examples.test_params myargs
+    cdef test_params myargs
     myargs = args
-    return zeros_struct.bisect(zeros_struct_examples.f_solarcell, 7.0, 0.0, <zeros_struct_examples.test_params *> &myargs, 0.001, 0.001, 10)
+    return zeros_struct.bisect(zeros_struct_examples.f_solarcell, 7.0, 0.0, <test_params *> &myargs, 0.001, 0.001, 10)
 
 
 # cython
