@@ -1,4 +1,4 @@
-ctypedef double (*callback_type_array)(int, double)
+ctypedef double (*callback_type_array)(int, double*)
 
 ctypedef struct scipy_zeros_parameters:
     int funcalls
@@ -6,7 +6,7 @@ ctypedef struct scipy_zeros_parameters:
     int error_num
     callback_type_array function
     int n
-    double[] args
+    double* args
 
 ctypedef double (*callback_type)(double, scipy_zeros_parameters*)
 

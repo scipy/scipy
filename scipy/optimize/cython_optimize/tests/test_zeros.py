@@ -6,7 +6,8 @@ Tests for Cython Optimize API
 """
 
 import numpy as np
-from ..examples import zeros_examples, zeros_struct_examples
+from ..examples import (zeros_examples, zeros_struct_examples,
+    zeros_struct_alt_examples, zeros_array_examples)
 
 
 EXPECTED_NEWTON = [
@@ -33,6 +34,16 @@ def test_zeros_struct_cython_newton():
                        list(zeros_struct_examples.test_cython_newton()))
 
 
+def test_zeros_struct_alt_cython_newton():
+    assert np.allclose(EXPECTED_NEWTON,
+                       list(zeros_struct_alt_examples.test_cython_newton()))
+
+
+def test_zeros_array_cython_bisect():
+    assert np.allclose(EXPECTED_BISECT,
+                       list(zeros_array_examples.test_cython_bisect()))
+
+
 EXPECTED_BISECT = [
     5.2568359375,
     6.0908203125,
@@ -54,3 +65,13 @@ def test_zeros_cython_bisect():
 def test_zeros_struct_cython_bisect():
     assert np.allclose(EXPECTED_BISECT,
                        list(zeros_struct_examples.test_cython_bisect()))
+
+
+def test_zeros_struct_alt_cython_bisect():
+    assert np.allclose(EXPECTED_BISECT,
+                       list(zeros_struct_alt_examples.test_cython_bisect()))
+
+
+def test_zeros_array_cython_bisect():
+    assert np.allclose(EXPECTED_BISECT,
+                       list(zeros_array_examples.test_cython_bisect()))

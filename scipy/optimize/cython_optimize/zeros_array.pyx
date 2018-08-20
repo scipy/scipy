@@ -3,6 +3,8 @@ import warnings
 import cython
 from . cimport c_zeros_array
 
+DEF MAXARGS = 10
+
 cdef double TOL = 1.48e-8
 cdef int MAXITER = 50
 
@@ -11,34 +13,35 @@ cdef int MAXITER = 50
 @staticmethod
 cdef double scipy_zeros_functions_func(double x, c_zeros_array.scipy_zeros_parameters *params):
     cdef c_zeros_array.scipy_zeros_parameters *myparams
-    cdef int n
-    cdef double[] args
-    cdef callback_type f
+    cdef int n, i
+    cdef double[MAXARGS] myargs
+    cdef callback_type_array f
 
     myparams = params
     n = myparams.n
-    args = myparams.args
+    myargs[0] = x
+    for i in range(n):
+        myargs[i+1] = myparams.args[i]
     f = myparams.function
 
-    cdef double[n] xargs
-    xargs = [x] + args
-
-    return f(n, xargs)
+    return f(n, myargs)
 
 
 @cython.cdivision(True)
-cdef double newton(callback_type_array func, double p0, callback_type_array fprime, int n, double[] args):
+cdef double newton(callback_type_array func, double p0, callback_type_array fprime, int n, double* args):
     # Newton-Rapheson method
+    cdef int i
     cdef double fder, fval, p
-    cdef double[n] p0args
+    cdef double[MAXARGS] p0args
     for iter in range(MAXITER):
-        p0args = [p0] + args
+        p0args[0] = p0
+        for i in range(n):
+            p0args[i+1] = args[i]
         fder = fprime(n, p0args)
         if fder == 0:
             msg = "derivative was zero."
             warnings.warn(msg, RuntimeWarning)
             return p0
-        p0args = [p0] + args
         fval = func(n, p0args)
         # Newton step
         p = p0 - fval / fder
@@ -50,10 +53,10 @@ cdef double newton(callback_type_array func, double p0, callback_type_array fpri
 
 
 # cythonized way to call scalar bisect
-cdef double bisect(callback_type_array f, double xa, double xb, int n, double[] args, double xtol, double rtol, int iter):
-    cdef c_zeros_struct.scipy_zeros_parameters myparams
+cdef double bisect(callback_type_array f, double xa, double xb, int n, double* args, double xtol, double rtol, int iter):
+    cdef c_zeros_array.scipy_zeros_parameters myparams
     # create params struct
-    myparmas.n = n
+    myparams.n = n
     myparams.args = args
     myparams.function = f
-    return c_zeros_array.bisect(scipy_zeros_functions_func, xa, xb, xtol, rtol, iter, <c_zeros_struct.default_parameters *> &myparams)
+    return c_zeros_array.bisect(scipy_zeros_functions_func, xa, xb, xtol, rtol, iter, <c_zeros_array.default_parameters *> &myparams)

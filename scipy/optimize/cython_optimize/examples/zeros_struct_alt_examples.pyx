@@ -10,6 +10,8 @@ from .. cimport zeros_struct
 from . cimport zeros_struct_examples
 from .zeros_struct_examples import IL
 
+ARGS = {'dark_current': 1e-09, 'series_resistance': 0.004,
+    'shunt_resistance': 10.0, 'thermal_voltage': 0.27456}
 
 #solver
 cdef double solarcell_newton(dict args):
@@ -20,9 +22,9 @@ cdef double solarcell_newton(dict args):
 
 
 # cython
-def test_cython_newton(v=5.25, il=IL, args=(1e-09, 0.004, 10.0, 0.27456)):
+def test_cython_newton(v=5.25, il=IL, args=ARGS):
     return map(solarcell_newton,
-               ((v, il_,) + args for il_ in il))
+               (dict(voltage=v, light_current=il_, **args) for il_ in il))
 
 
 #solver
@@ -34,6 +36,6 @@ cdef double solarcell_bisect(dict args):
 
 
 # cython
-def test_cython_bisect(v=5.25, il=IL, args=(1e-09, 0.004, 10.0, 0.27456)):
+def test_cython_bisect(v=5.25, il=IL, args=ARGS):
     return map(solarcell_bisect,
-               ((v, il_,) + args for il_ in il))
+               (dict(voltage=v, light_current=il_, **args) for il_ in il))
