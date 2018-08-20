@@ -3588,7 +3588,7 @@ class levy_stable_gen(rv_continuous):
 
     See Also
     --------
-    levy, levy_l
+    levy, levy_l, cauchy, norm
 
     Notes
     -----
@@ -3659,7 +3659,7 @@ class levy_stable_gen(rv_continuous):
      1/2    -1    ``levy_l()``
      1/2     1    ``levy()``
      1       0    ``cauchy()``
-     2      any   ``normal(scale=sqrt(2))``
+     2      any   ``norm(scale=sqrt(2))``
     =====  =====  ======
 
     %(after_notes)s
