@@ -3498,7 +3498,7 @@ class levy_gen(rv_continuous):
 
     .. math::
 
-        f(x) = \frac{1}{x \sqrt{2\pi x}) \exp(-\frac{1}{2x}}
+        f(x) = \frac{1}{x \sqrt{2\pi x}} \exp{\left(-\frac{1}{2x} \right)}
 
     for :math:`x > 0`.
 
