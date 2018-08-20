@@ -353,7 +353,6 @@ class TestSLSQP(object):
         assert_(f2(x) >= -1e-8)
         assert_(sol.success, sol)
 
-    @pytest.mark.xfail(reason="This bug is not fixed")
     def test_regression_5743(self):
         # SLSQP must not indicate success for this problem,
         # which is infeasible.
@@ -454,3 +453,26 @@ class TestSLSQP(object):
         assert_(sol.success)
         assert_allclose(sol.x, 0, atol=1e-10)
 
+    def test_inconsistent_inequalities(self):
+        # gh-7618
+
+        def cost(x):
+            return -1 * x[0] + 4 * x[1]
+
+        def ineqcons1(x):
+            return x[1] - x[0] - 1
+
+        def ineqcons2(x):
+            return x[0] - x[1]
+
+        # The inequalities are inconsistent, so no solution can exist:
+        #
+        # x1 >= x0 + 1
+        # x0 >= x1
+
+        x0 = (1,5)
+        bounds = ((-5, 5), (-5, 5))
+        cons = (dict(type='ineq', fun=ineqcons1), dict(type='ineq', fun=ineqcons2))
+        res = minimize(cost, x0, method='SLSQP', bounds=bounds, constraints=cons)
+
+        assert_(not res.success)
