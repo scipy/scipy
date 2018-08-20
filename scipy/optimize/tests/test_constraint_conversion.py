@@ -71,6 +71,9 @@ class TestNewToOld(object):
         coni.append([{'type': 'ineq', 'fun': lambda x:  x[0] - 2 * x[1] + 2},
                      NonlinearConstraint(lambda x: x[0] - x[1], -1, 1)])
 
+        coni.append([LinearConstraint([1, -2, 0], -2, np.inf),
+                     NonlinearConstraint(lambda x: x[0] - x[1], -1, 1)])
+
         coni.append([NonlinearConstraint(lambda x: x[0] - 2 * x[1] + 2, 0, np.inf),
                      NonlinearConstraint(lambda x: x[0] - x[1], -1, 1)])
 
@@ -148,8 +151,8 @@ class TestNewToOld(object):
                     sup.filter(UserWarning)
                     result = minimize(fun, x0, method=method, constraints=con)
                     funs[method] = result.fun
-            assert_allclose(funs['slsqp'], funs['trust-constr'], rtol=1e-6)
-            assert_allclose(funs['cobyla'], funs['trust-constr'], rtol=1e-6)
+            assert_allclose(funs['slsqp'], funs['trust-constr'], rtol=1e-3)
+            assert_allclose(funs['cobyla'], funs['trust-constr'], rtol=1e-3)
 
         for con in cone:
             funs = {}
@@ -158,7 +161,7 @@ class TestNewToOld(object):
                     sup.filter(UserWarning)
                     result = minimize(fun, x0, method=method, constraints=con)
                     funs[method] = result.fun
-            assert_allclose(funs['slsqp'], funs['trust-constr'], rtol=1e-6)
+            assert_allclose(funs['slsqp'], funs['trust-constr'], rtol=1e-3)
 
 
 class TestNewToOldSLSQP(object):
@@ -262,4 +265,4 @@ class TestNewToOldCobyla(object):
                                   bounds=prob.bounds,
                                   constraints=prob.constr)
 
-            assert_allclose(result.fun, truth.fun, rtol=1e-5)
+            assert_allclose(result.fun, truth.fun, rtol=1e-4)

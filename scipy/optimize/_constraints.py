@@ -6,7 +6,7 @@ from ._differentiable_functions import (
     VectorFunction, LinearVectorFunction, IdentityVectorFunction)
 from .optimize import OptimizeWarning
 from warnings import warn
-
+from scipy.sparse import issparse
 
 class NonlinearConstraint(object):
     """Nonlinear constraint on the variables.
@@ -298,35 +298,27 @@ def new_constraint_to_old(con, x0):
                  "`finite_diff_rel_step`, `keep_feasible`, and `hess`"
                  "are ignored by this method.", OptimizeWarning)
 
-        # Knowing the shape of the value returned by the
-        # constraint function greatly simplifies things
-        lb, ub, fun = (np.array(con.lb).flatten(), np.array(con.ub).flatten(),
-                       con.fun)
-        y0 = np.array(fun(x0))
+        fun = con.fun
+        if callable(con.jac):
+            jac = con.jac
+        else:
+            jac = None
 
-        try:
-            m = len(y0)
-        except TypeError:
-            m = 1
     else:  # LinearConstraint
         if con.keep_feasible:
             warn("Constraint option `keep_feasible` is ignored by this "
                  "method.", OptimizeWarning)
 
-        lb, ub, A = (np.array(con.lb).flatten(), np.array(con.ub).flatten(),
-                     con.A)
+        A = con.A
+        if issparse(A):
+            A = A.todense()
+        fun = lambda x: np.dot(A, x)
+        jac = lambda x: A
 
-        lvf = LinearVectorFunction(A, x0, sparse_jacobian=False)
-        fun = lvf.fun
-        m = lvf.m
-
-    lb = lb * np.ones(m)
-    ub = ub * np.ones(m)  # phew, now everything is an array of the right size
-
-    # yes, I know I can get rid of some of the stuff above if I use
-    # PreparedConstraint. I will use it to get lb, ub etc... once its fun
-    # is working
+    # when bugs in VectorFunction/LinearVectorFunction are worked out, use
+    # pcon.fun.fun and pcon.fun.jac. Until then, get fun/jac above.
     pcon = PreparedConstraint(con, x0)
+    lb, ub = pcon.bounds
 
     i_eq = lb == ub
     i_bound_below = np.logical_xor(lb != -np.inf, i_eq)
@@ -341,10 +333,17 @@ def new_constraint_to_old(con, x0):
     if np.any(i_eq):
         def f_eq(x):
             y = np.array(fun(x)).flatten()
-            y2 = pcon.fun.fun(x).flatten()
-            print(np.equal(y, y2))
             return y[i_eq] - lb[i_eq]
         ceq = [{"type": "eq", "fun": f_eq}]
+
+        if jac is not None:
+            def j_eq(x):
+                dy = jac(x)
+                if issparse(dy):
+                    dy = dy.todense()
+                dy = np.atleast_2d(dy)
+                return dy[i_eq, :]
+            ceq[0]["jac"] = j_eq
 
     cineq = []
     n_bound_below = np.sum(i_bound_below)
@@ -357,6 +356,18 @@ def new_constraint_to_old(con, x0):
             y[n_bound_below:] = -(y_all[i_bound_above] - ub[i_bound_above])
             return y
         cineq = [{"type": "ineq", "fun": f_ineq}]
+
+        if jac is not None:
+            def j_ineq(x):
+                dy = np.zeros((n_bound_below + n_bound_above, len(x0)))
+                dy_all = jac(x)
+                if issparse(dy_all):
+                    dy_all = dy_all.todense()
+                dy_all = np.atleast_2d(dy_all)
+                dy[:n_bound_below, :] = dy_all[i_bound_below]
+                dy[n_bound_below:, :] = -dy_all[i_bound_above]
+                return dy
+            cineq[0]["jac"] = j_ineq
 
     old_constraints = ceq + cineq
 
