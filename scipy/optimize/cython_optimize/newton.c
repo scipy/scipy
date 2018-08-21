@@ -1,7 +1,6 @@
-/* Written by Charles Harris charles.harris@sdl.usu.edu */
-
 #include <math.h>
 #include "newton.h"
+#include "../Zeros/zeros.h"
 
 double
 newton(callback_type func, double p0, callback_type fprime, default_parameters *params, double tol, int maxiter)
@@ -11,11 +10,11 @@ newton(callback_type func, double p0, callback_type fprime, default_parameters *
 
     if (maxiter < 0) {
         params->error_num = SIGNERR;
-        return p0
+        return p0;
     }
     if (tol < 0) {
         params->error_num = SIGNERR;
-        return p0
+        return p0;
     }
 
     params->funcalls = 0;
@@ -39,4 +38,3 @@ newton(callback_type func, double p0, callback_type fprime, default_parameters *
     params->error_num = CONVERR;
     return p0;
 }
-

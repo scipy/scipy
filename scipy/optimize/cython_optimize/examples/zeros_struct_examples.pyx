@@ -61,7 +61,7 @@ cdef double solarcell_newton(tuple args):
     myargs.series_resistance = args[3]
     myargs.shunt_resistance = args[4]
     myargs.thermal_voltage = args[5]
-    return zeros_struct.newton(f_solarcell, 6.0, fprime, <test_params *> &myargs)
+    return zeros_struct.newton(f_solarcell, 6.0, fprime, <test_params *> &myargs, 1.48e-8, 50)
 
 
 # cython

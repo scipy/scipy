@@ -12,6 +12,20 @@ ctypedef struct scipy_zeros_parameters:
     callback_type function
     void* args
 
+ctypedef struct scipy_newton_parameters:
+    int funcalls
+    int iterations
+    int error_num
+    callback_type function
+    callback_type function_derivative
+    callback_type function_second_derivative
+    void* args
+
+
+cdef extern from "newton.c":
+    double newton(callback_type func, double p0, callback_type fprime, default_parameters *params, double tol, int maxiter)
+
+
 cdef extern from "../Zeros/bisect.c":
     double bisect(callback_type f, double xa, double xb, double xtol, double rtol, int iter, default_parameters *params)
 

@@ -27,7 +27,7 @@ cdef double solarcell_newton(dict args):
     """test newton with dictionary"""
     cdef test_params myargs
     myargs = args
-    return zeros_struct.newton(zeros_struct_examples.f_solarcell, 6.0, zeros_struct_examples.fprime, <test_params *> &myargs)
+    return zeros_struct.newton(zeros_struct_examples.f_solarcell, 6.0, zeros_struct_examples.fprime, <test_params *> &myargs, 1.48e-8, 50)
 
 
 # cython
