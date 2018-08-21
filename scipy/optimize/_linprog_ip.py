@@ -87,7 +87,7 @@ def _get_delta(
     cholesky=True,
     pc=True,
     ip=False,
-        permc_spec='MMD_AT_PLUS_A'):
+    permc_spec='MMD_AT_PLUS_A'):
     """
     Given standard form problem defined by ``A``, ``b``, and ``c``;
     current variable estimates ``x``, ``y``, ``z``, ``tau``, and ``kappa``;
@@ -98,7 +98,7 @@ def _get_delta(
 
     Parameters
     ----------
-    As defined in [1], except:
+    As defined in [4], except:
     sparse : bool
         True if the system to be solved is sparse. This is typically set
         True when the original ``A_ub`` and ``A_eq`` arrays are sparse.
@@ -122,7 +122,7 @@ def _get_delta(
         is typically (implicitly) reused so solution is efficient, and the
         number of algorithm iterations is typically reduced.
     ip : bool
-        True if the improved initial point suggestion due to [1] section 4.3
+        True if the improved initial point suggestion due to [4] section 4.3
         is desired. It's unclear whether this is beneficial.
     permc_spec : str (default = 'MMD_AT_PLUS_A')
         (Has effect only with ``sparse = True``, ``lstsq = False``, ``sym_pos =
@@ -142,11 +142,11 @@ def _get_delta(
 
     Returns
     -------
-    Search directions as defined in [1]
+    Search directions as defined in [4]
 
     References
     ----------
-    .. [1] Andersen, Erling D., and Knud D. Andersen. "The MOSEK interior point
+    .. [4] Andersen, Erling D., and Knud D. Andersen. "The MOSEK interior point
            optimizer for linear programming: an implementation of the
            homogeneous algorithm." High performance optimization. Springer US,
            2000. 197-232.
@@ -160,13 +160,13 @@ def _get_delta(
     solve = _get_solver(sparse, lstsq, sym_pos, cholesky)
     n_x = len(x)
 
-    # [1] Equation 8.8
+    # [4] Equation 8.8
     r_P = b * tau - A.dot(x)
     r_D = c * tau - A.T.dot(y) - z
     r_G = c.dot(x) - b.transpose().dot(y) + kappa
     mu = (x.dot(z) + tau * kappa) / (n_x + 1)
 
-    #  Assemble M from [1] Equation 8.31
+    #  Assemble M from [4] Equation 8.31
     Dinv = x / z
     splu = False
     if sparse and not lstsq:
@@ -195,7 +195,7 @@ def _get_delta(
             cholesky = False
             solve = _get_solver(sparse, lstsq, sym_pos, cholesky)
 
-    # pc: "predictor-corrector" [1] Section 4.1
+    # pc: "predictor-corrector" [4] Section 4.1
     # In development this option could be turned off
     # but it always seems to improve performance substantially
     n_corrections = 1 if pc else 0
@@ -203,18 +203,18 @@ def _get_delta(
     i = 0
     alpha, d_x, d_z, d_tau, d_kappa = 0, 0, 0, 0, 0
     while i <= n_corrections:
-        # Reference [1] Eq. 8.6
+        # Reference [4] Eq. 8.6
         rhatp = eta(gamma) * r_P
         rhatd = eta(gamma) * r_D
         rhatg = np.array(eta(gamma) * r_G).reshape((1,))
 
-        # Reference [1] Eq. 8.7
+        # Reference [4] Eq. 8.7
         rhatxs = gamma * mu - x * z
         rhattk = np.array(gamma * mu - tau * kappa).reshape((1,))
 
         if i == 1:
             if ip:  # if the correction is to get "initial point"
-                # Reference [1] Eq. 8.23
+                # Reference [4] Eq. 8.23
                 rhatxs = ((1 - alpha) * gamma * mu -
                           x * z - alpha**2 * d_x * d_z)
                 rhattk = np.array(
@@ -230,7 +230,7 @@ def _get_delta(
                     (1,
                      ))
             else:  # if the correction is for "predictor-corrector"
-                # Reference [1] Eq. 8.13
+                # Reference [4] Eq. 8.13
                 rhatxs -= d_x * d_z
                 rhattk -= d_tau * d_kappa
 
@@ -251,9 +251,9 @@ def _get_delta(
         while(not solved):
             try:
                 solve_this = L if cholesky else M
-                # [1] Equation 8.28
+                # [4] Equation 8.28
                 p, q = _sym_solve(Dinv, solve_this, A, c, b, solve, splu)
-                # [1] Equation 8.29
+                # [4] Equation 8.29
                 u, v = _sym_solve(Dinv, solve_this, A, rhatd -
                                   (1 / x) * rhatxs, rhatp, solve, splu)
                 if np.any(np.isnan(p)) or np.any(np.isnan(q)):
@@ -289,22 +289,22 @@ def _get_delta(
                 else:
                     raise e
                 solve = _get_solver(sparse, lstsq, sym_pos)
-        # [1] Results after 8.29
+        # [4] Results after 8.29
         d_tau = ((rhatg + 1 / tau * rhattk - (-c.dot(u) + b.dot(v))) /
                  (1 / tau * kappa + (-c.dot(p) + b.dot(q))))
         d_x = u + p * d_tau
         d_y = v + q * d_tau
 
-        # [1] Relations between  after 8.25 and 8.26
+        # [4] Relations between  after 8.25 and 8.26
         d_z = (1 / x) * (rhatxs - z * d_x)
         d_kappa = 1 / tau * (rhattk - kappa * d_tau)
 
-        # [1] 8.12 and "Let alpha be the maximal possible step..." before 8.23
+        # [4] 8.12 and "Let alpha be the maximal possible step..." before 8.23
         alpha = _get_step(x, d_x, z, d_z, tau, d_tau, kappa, d_kappa, 1)
-        if ip:  # initial point - see [1] 4.4
+        if ip:  # initial point - see [4] 4.4
             gamma = 10
-        else:  # predictor-corrector, [1] definition after 8.12
-            beta1 = 0.1  # [1] pg. 220 (Table 8.1)
+        else:  # predictor-corrector, [4] definition after 8.12
+            beta1 = 0.1  # [4] pg. 220 (Table 8.1)
             gamma = (1 - alpha)**2 * min(beta1, (1 - alpha))
         i += 1
 
@@ -313,42 +313,42 @@ def _get_delta(
 
 def _sym_solve(Dinv, M, A, r1, r2, solve, splu=False):
     """
-    An implementation of [1] equation 8.31 and 8.32
+    An implementation of [4] equation 8.31 and 8.32
 
     References
     ----------
-    .. [1] Andersen, Erling D., and Knud D. Andersen. "The MOSEK interior point
+    .. [4] Andersen, Erling D., and Knud D. Andersen. "The MOSEK interior point
            optimizer for linear programming: an implementation of the
            homogeneous algorithm." High performance optimization. Springer US,
            2000. 197-232.
 
     """
-    # [1] 8.31
+    # [4] 8.31
     r = r2 + A.dot(Dinv * r1)
     if splu:
         v = solve(r)
     else:
         v = solve(M, r)
-    # [1] 8.32
+    # [4] 8.32
     u = Dinv * (A.T.dot(v) - r1)
     return u, v
 
 
 def _get_step(x, d_x, z, d_z, tau, d_tau, kappa, d_kappa, alpha0):
     """
-    An implementation of [1] equation 8.21
+    An implementation of [4] equation 8.21
 
     References
     ----------
-    .. [1] Andersen, Erling D., and Knud D. Andersen. "The MOSEK interior point
+    .. [4] Andersen, Erling D., and Knud D. Andersen. "The MOSEK interior point
            optimizer for linear programming: an implementation of the
            homogeneous algorithm." High performance optimization. Springer US,
            2000. 197-232.
 
     """
-    # [1] 4.3 Equation 8.21, ignoring 8.20 requirement
+    # [4] 4.3 Equation 8.21, ignoring 8.20 requirement
     # same step is taken in primal and dual spaces
-    # alpha0 is basically beta3 from [1] Table 8.1, but instead of beta3
+    # alpha0 is basically beta3 from [4] Table 8.1, but instead of beta3
     # the value 1 is used in Mehrota corrector and initial point correction
     i_x = d_x < 0
     i_z = d_z < 0
@@ -399,11 +399,11 @@ def _get_message(status):
 
 def _do_step(x, y, z, tau, kappa, d_x, d_y, d_z, d_tau, d_kappa, alpha):
     """
-    An implementation of [1] Equation 8.9
+    An implementation of [4] Equation 8.9
 
     References
     ----------
-    .. [1] Andersen, Erling D., and Knud D. Andersen. "The MOSEK interior point
+    .. [4] Andersen, Erling D., and Knud D. Andersen. "The MOSEK interior point
            optimizer for linear programming: an implementation of the
            homogeneous algorithm." High performance optimization. Springer US,
            2000. 197-232.
@@ -419,11 +419,11 @@ def _do_step(x, y, z, tau, kappa, d_x, d_y, d_z, d_tau, d_kappa, alpha):
 
 def _get_blind_start(shape):
     """
-    Return the starting point from [1] 4.4
+    Return the starting point from [4] 4.4
 
     References
     ----------
-    .. [1] Andersen, Erling D., and Knud D. Andersen. "The MOSEK interior point
+    .. [4] Andersen, Erling D., and Knud D. Andersen. "The MOSEK interior point
            optimizer for linear programming: an implementation of the
            homogeneous algorithm." High performance optimization. Springer US,
            2000. 197-232.
@@ -440,12 +440,12 @@ def _get_blind_start(shape):
 
 def _indicators(A, b, c, c0, x, y, z, tau, kappa):
     """
-    Implementation of several equations from [1] used as indicators of
+    Implementation of several equations from [4] used as indicators of
     the status of optimization.
 
     References
     ----------
-    .. [1] Andersen, Erling D., and Knud D. Andersen. "The MOSEK interior point
+    .. [4] Andersen, Erling D., and Knud D. Andersen. "The MOSEK interior point
            optimizer for linear programming: an implementation of the
            homogeneous algorithm." High performance optimization. Springer US,
            2000. 197-232.
@@ -455,7 +455,7 @@ def _indicators(A, b, c, c0, x, y, z, tau, kappa):
     # residuals for termination are relative to initial values
     x0, y0, z0, tau0, kappa0 = _get_blind_start(A.shape)
 
-    # See [1], Section 4 - The Homogeneous Algorithm, Equation 8.8
+    # See [4], Section 4 - The Homogeneous Algorithm, Equation 8.8
     def r_p(x, tau):
         return b * tau - A.dot(x)
 
@@ -474,7 +474,7 @@ def _indicators(A, b, c, c0, x, y, z, tau, kappa):
     def norm(a):
         return np.linalg.norm(a)
 
-    # See [1], Section 4.5 - The Stopping Criteria
+    # See [4], Section 4.5 - The Stopping Criteria
     r_p0 = r_p(x0, tau0)
     r_d0 = r_d(y0, z0, tau0)
     r_g0 = r_g(x0, y0, kappa0)
@@ -494,15 +494,15 @@ def _display_iter(rho_p, rho_d, rho_g, alpha, rho_mu, obj, header=False):
     Parameters
     ----------
     rho_p : float
-        The (normalized) primal feasibility, see [1] 4.5
+        The (normalized) primal feasibility, see [4] 4.5
     rho_d : float
-        The (normalized) dual feasibility, see [1] 4.5
+        The (normalized) dual feasibility, see [4] 4.5
     rho_g : float
-        The (normalized) duality gap, see [1] 4.5
+        The (normalized) duality gap, see [4] 4.5
     alpha : float
-        The step size, see [1] 4.3
+        The step size, see [4] 4.3
     rho_mu : float
-        The (normalized) path parameter, see [1] 4.5
+        The (normalized) path parameter, see [4] 4.5
     obj : float
         The objective function value of the current iterate
     header : bool
@@ -510,7 +510,7 @@ def _display_iter(rho_p, rho_d, rho_g, alpha, rho_mu, obj, header=False):
 
     References
     ----------
-    .. [1] Andersen, Erling D., and Knud D. Andersen. "The MOSEK interior point
+    .. [4] Andersen, Erling D., and Knud D. Andersen. "The MOSEK interior point
            optimizer for linear programming: an implementation of the
            homogeneous algorithm." High performance optimization. Springer US,
            2000. 197-232.
@@ -545,7 +545,7 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol,
     subject to:   A * x' == b
                   0 < x' < oo
 
-    using the interior point method of [1].
+    using the interior point method of [4].
 
     Parameters
     ----------
@@ -563,16 +563,16 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol,
         variables. (Purely for display.)
     alpha0 : float
         The maximal step size for Mehrota's predictor-corrector search
-        direction; see :math:`\beta_3`of [1] Table 8.1
+        direction; see :math:`\beta_3`of [4] Table 8.1
     beta : float
-        The desired reduction of the path parameter :math:`\mu` (see  [3]_)
+        The desired reduction of the path parameter :math:`\mu` (see  [6]_)
     maxiter : int
         The maximum number of iterations of the algorithm.
     disp : bool
         Set to ``True`` if indicators of optimization status are to be printed
         to the console each iteration.
     tol : float
-        Termination tolerance; see [1]_ Section 4.5.
+        Termination tolerance; see [4]_ Section 4.5.
     sparse : bool
         Set to ``True`` if the problem is to be treated as sparse. However,
         the inputs ``A_eq`` and ``A_ub`` should nonetheless be provided as
@@ -594,7 +594,7 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol,
         Leave ``True`` if the predictor-corrector method of Mehrota is to be
         used. This is almost always (if not always) beneficial.
     ip : bool
-        Set to ``True`` if the improved initial point suggestion due to [1]_
+        Set to ``True`` if the improved initial point suggestion due to [4]_
         Section 4.3 is desired. It's unclear whether this is beneficial.
     permc_spec : str (default = 'MMD_AT_PLUS_A')
         (Has effect only with ``sparse = True``, ``lstsq = False``, ``sym_pos =
@@ -632,11 +632,11 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol,
 
     References
     ----------
-    .. [1] Andersen, Erling D., and Knud D. Andersen. "The MOSEK interior point
+    .. [4] Andersen, Erling D., and Knud D. Andersen. "The MOSEK interior point
            optimizer for linear programming: an implementation of the
            homogeneous algorithm." High performance optimization. Springer US,
            2000. 197-232.
-    .. [3] Freund, Robert M. "Primal-Dual Interior-Point Methods for Linear
+    .. [6] Freund, Robert M. "Primal-Dual Interior-Point Methods for Linear
            Programming based on Newton's Method." Unpublished Course Notes,
            March 2004. Available 2/25/2017 at:
            https://ocw.mit.edu/courses/sloan-school-of-management/15-084j-nonlinear-programming-spring-2004/lecture-notes/lec14_int_pt_mthd.pdf
@@ -651,7 +651,7 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol,
     # first iteration is special improvement of initial point
     ip = ip if pc else False
 
-    # [1] 4.5
+    # [4] 4.5
     rho_p, rho_d, rho_A, rho_g, rho_mu, obj = _indicators(
         A, b, c, c0, x, y, z, tau, kappa)
     go = rho_p > tol or rho_d > tol or rho_A > tol  # we might get lucky : )
@@ -673,29 +673,29 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol,
         iteration += 1
 
         if ip:  # initial point
-            # [1] Section 4.4
+            # [4] Section 4.4
             gamma = 1
 
             def eta(g):
                 return 1
         else:
-            # gamma = 0 in predictor step according to [1] 4.1
-            # if predictor/corrector is off, use mean of complementarity [3]
+            # gamma = 0 in predictor step according to [4] 4.1
+            # if predictor/corrector is off, use mean of complementarity [6]
             # 5.1 / [4] Below Figure 10-4
             gamma = 0 if pc else beta * np.mean(z * x)
-            # [1] Section 4.1
+            # [4] Section 4.1
 
             def eta(g=gamma):
                 return 1 - g
 
         try:
-            # Solve [1] 8.6 and 8.7/8.13/8.23
+            # Solve [4] 8.6 and 8.7/8.13/8.23
             d_x, d_y, d_z, d_tau, d_kappa = _get_delta(
                 A, b, c, x, y, z, tau, kappa, gamma, eta,
                 sparse, lstsq, sym_pos, cholesky, pc, ip, permc_spec)
 
             if ip:  # initial point
-                # [1] 4.4
+                # [4] 4.4
                 # Formula after 8.23 takes a full step regardless if this will
                 # take it negative
                 alpha = 1.0
@@ -708,10 +708,10 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol,
                 kappa = max(1, kappa)
                 ip = False  # done with initial point
             else:
-                # [1] Section 4.3
+                # [4] Section 4.3
                 alpha = _get_step(x, d_x, z, d_z, tau,
                                   d_tau, kappa, d_kappa, alpha0)
-                # [1] Equation 8.9
+                # [4] Equation 8.9
                 x, y, z, tau, kappa = _do_step(
                     x, y, z, tau, kappa, d_x, d_y, d_z, d_tau, d_kappa, alpha)
 
@@ -724,7 +724,7 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol,
             message = _get_message(status)
             break
 
-        # [1] 4.5
+        # [4] 4.5
         rho_p, rho_d, rho_A, rho_g, rho_mu, obj = _indicators(
             A, b, c, c0, x, y, z, tau, kappa)
         go = rho_p > tol or rho_d > tol or rho_A > tol
@@ -732,12 +732,12 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol,
         if disp:
             _display_iter(rho_p, rho_d, rho_g, alpha, float(rho_mu), obj)
 
-        # [1] 4.5
+        # [4] 4.5
         inf1 = (rho_p < tol and rho_d < tol and rho_g < tol and tau < tol *
                 max(1, kappa))
         inf2 = rho_mu < tol and tau < tol * min(1, kappa)
         if inf1 or inf2:
-            # [1] Lemma 8.4 / Theorem 8.3
+            # [4] Lemma 8.4 / Theorem 8.3
             if b.transpose().dot(y) > tol:
                 status = 2
             else:  # elif c.T.dot(x) < tol: ? Probably not necessary.
@@ -753,7 +753,7 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol,
         print(message)
 
     x_hat = x / tau
-    # [1] Statement after Theorem 8.2
+    # [4] Statement after Theorem 8.2
     return x_hat, status, message, iteration
 
 
@@ -779,7 +779,7 @@ def _linprog_ip(
     r"""
     Minimize a linear objective function subject to linear
     equality constraints, linear inequality constraints, and simple bounds
-    using the interior point method of [1]_.
+    using the interior point method of [4]_.
 
     Linear programming is intended to solve problems of the following form::
 
@@ -811,12 +811,12 @@ def _linprog_ip(
         to the console each iteration.
     tol : float (default = 1e-8)
         Termination tolerance to be used for all termination criteria;
-        see [1]_ Section 4.5.
+        see [4]_ Section 4.5.
     alpha0 : float (default = 0.99995)
         The maximal step size for Mehrota's predictor-corrector search
-        direction; see :math:`\beta_{3}` of [1]_ Table 8.1.
+        direction; see :math:`\beta_{3}` of [4]_ Table 8.1.
     beta : float (default = 0.1)
-        The desired reduction of the path parameter :math:`\mu` (see [3]_)
+        The desired reduction of the path parameter :math:`\mu` (see [6]_)
         when Mehrota's predictor-corrector is not in use (uncommon).
     sparse : bool (default = False)
         Set to ``True`` if the problem is to be treated as sparse after
@@ -845,7 +845,7 @@ def _linprog_ip(
         Leave ``True`` if the predictor-corrector method of Mehrota is to be
         used. This is almost always (if not always) beneficial.
     ip : bool (default = False)
-        Set to ``True`` if the improved initial point suggestion due to [1]_
+        Set to ``True`` if the improved initial point suggestion due to [4]_
         Section 4.3 is desired. Whether this is beneficial or not
         depends on the problem.
     permc_spec : str (default = 'MMD_AT_PLUS_A')
@@ -885,51 +885,8 @@ def _linprog_ip(
     Notes
     -----
 
-    This method implements the algorithm outlined in [1]_ with ideas from [5]_
-    and a structure inspired by the simpler methods of [3]_ and [4]_.
-
-    First, a presolve procedure based on [5]_ attempts to identify trivial
-    infeasibilities, trivial unboundedness, and potential problem
-    simplifications. Specifically, it checks for:
-
-    - rows of zeros in ``A_eq`` or ``A_ub``, representing trivial constraints;
-    - columns of zeros in ``A_eq`` `and` ``A_ub``, representing unconstrained
-      variables;
-    - column singletons in ``A_eq``, representing fixed variables; and
-    - column singletons in ``A_ub``, representing simple bounds.
-
-    If presolve reveals that the problem is unbounded (e.g. an unconstrained
-    and unbounded variable has negative cost) or infeasible (e.g. a row of
-    zeros in ``A_eq`` corresponds with a nonzero in ``b_eq``), the solver
-    terminates with the appropriate status code. Note that presolve terminates
-    as soon as any sign of unboundedness is detected; consequently, a problem
-    may be reported as unbounded when in reality the problem is infeasible
-    (but infeasibility has not been detected yet). Therefore, if the output
-    message states that unboundedness is detected in presolve and it is
-    necessary to know whether the problem is actually infeasible, set option
-    ``presolve=False``.
-
-    If neither infeasibility nor unboundedness are detected in a single pass
-    of the presolve check, bounds are tightened where possible and fixed
-    variables are removed from the problem. Then, linearly dependent rows
-    of the ``A_eq`` matrix are removed, (unless they represent an
-    infeasibility) to avoid numerical difficulties in the primary solve
-    routine. Note that rows that are nearly linearly dependent (within a
-    prescibed tolerance) may also be removed, which can change the optimal
-    solution in rare cases. If this is a concern, eliminate redundancy from
-    your problem formulation and run with option ``rr=False`` or
-    ``presolve=False``.
-
-    Several potential improvements can be made here: additional presolve
-    checks outlined in [5]_ should be implemented, the presolve routine should
-    be run multiple times (until no further simplifications can be made), and
-    more of the efficiency improvements from [2]_ should be implemented in the
-    redundancy removal routines.
-
-    After presolve, the problem is transformed to standard form by converting
-    the (tightened) simple bounds to upper bound constraints, introducing
-    non-negative slack variables for inequality constraints, and expressing
-    unbounded variables as the difference between two non-negative variables.
+    This method implements the algorithm outlined in [4]_ with ideas from [8]_
+    and a structure inspired by the simpler methods of [6]_ and [4]_.
 
     The primal-dual path following method begins with initial 'guesses' of
     the primal and dual variables of the standard form problem and iteratively
@@ -940,18 +897,18 @@ def _linprog_ip(
     where applicable.
 
     The default initial point for the primal and dual variables is that
-    defined in [1]_ Section 4.4 Equation 8.22. Optionally (by setting initial
+    defined in [4]_ Section 4.4 Equation 8.22. Optionally (by setting initial
     point option ``ip=True``), an alternate (potentially improved) starting
     point can be calculated according to the additional recommendations of
-    [1]_ Section 4.4.
+    [4]_ Section 4.4.
 
     A search direction is calculated using the predictor-corrector method
-    (single correction) proposed by Mehrota and detailed in [1]_ Section 4.1.
+    (single correction) proposed by Mehrota and detailed in [4]_ Section 4.1.
     (A potential improvement would be to implement the method of multiple
-    corrections described in [1]_ Section 4.2.) In practice, this is
-    accomplished by solving the normal equations, [1]_ Section 5.1 Equations
-    8.31 and 8.32, derived from the Newton equations [1]_ Section 5 Equations
-    8.25 (compare to [1]_ Section 4 Equations 8.6-8.8). The advantage of
+    corrections described in [4]_ Section 4.2.) In practice, this is
+    accomplished by solving the normal equations, [4]_ Section 5.1 Equations
+    8.31 and 8.32, derived from the Newton equations [4]_ Section 5 Equations
+    8.25 (compare to [4]_ Section 4 Equations 8.6-8.8). The advantage of
     solving the normal equations rather than 8.25 directly is that the
     matrices involved are symmetric positive definite, so Cholesky
     decomposition can be used rather than the more expensive LU factorization.
@@ -983,17 +940,17 @@ def _linprog_ip(
     ``CHOLMOD`` via ``scikit-sparse`` when available.
 
     Other potential improvements for combatting issues associated with dense
-    columns in otherwise sparse problems are outlined in [1]_ Section 5.3 and
-    [7]_ Section 4.1-4.2; the latter also discusses the alleviation of
+    columns in otherwise sparse problems are outlined in [4]_ Section 5.3 and
+    [10]_ Section 4.1-4.2; the latter also discusses the alleviation of
     accuracy issues associated with the substitution approach to free
     variables.
 
     After calculating the search direction, the maximum possible step size
     that does not activate the non-negativity constraints is calculated, and
-    the smaller of this step size and unity is applied (as in [1]_ Section
-    4.1.) [1]_ Section 4.3 suggests improvements for choosing the step size.
+    the smaller of this step size and unity is applied (as in [4]_ Section
+    4.1.) [4]_ Section 4.3 suggests improvements for choosing the step size.
 
-    The new point is tested according to the termination conditions of [1]_
+    The new point is tested according to the termination conditions of [4]_
     Section 4.5. The same tolerance, which can be set using the ``tol`` option,
     is used for all checks. (A potential improvement would be to expose
     the different tolerances to be set independently.) If optimality,
@@ -1009,26 +966,20 @@ def _linprog_ip(
 
     References
     ----------
-    .. [1] Andersen, Erling D., and Knud D. Andersen. "The MOSEK interior point
+    .. [4] Andersen, Erling D., and Knud D. Andersen. "The MOSEK interior point
            optimizer for linear programming: an implementation of the
            homogeneous algorithm." High performance optimization. Springer US,
            2000. 197-232.
-    .. [2] Andersen, Erling D. "Finding all linearly dependent rows in
-           large-scale linear programming." Optimization Methods and Software
-           6.3 (1995): 219-227.
-    .. [3] Freund, Robert M. "Primal-Dual Interior-Point Methods for Linear
+    .. [6] Freund, Robert M. "Primal-Dual Interior-Point Methods for Linear
            Programming based on Newton's Method." Unpublished Course Notes,
            March 2004. Available 2/25/2017 at
            https://ocw.mit.edu/courses/sloan-school-of-management/15-084j-nonlinear-programming-spring-2004/lecture-notes/lec14_int_pt_mthd.pdf
-    .. [4] Fourer, Robert. "Solving Linear Programs by Interior-Point Methods."
-           Unpublished Course Notes, August 26, 2005. Available 2/25/2017 at
-           http://www.4er.org/CourseNotes/Book%20B/B-III.pdf
-    .. [5] Andersen, Erling D., and Knud D. Andersen. "Presolving in linear
+    .. [8] Andersen, Erling D., and Knud D. Andersen. "Presolving in linear
            programming." Mathematical Programming 71.2 (1995): 221-245.
-    .. [6] Bertsimas, Dimitris, and J. Tsitsiklis. "Introduction to linear
+    .. [9] Bertsimas, Dimitris, and J. Tsitsiklis. "Introduction to linear
            programming." Athena Scientific 1 (1997): 997.
-    .. [7] Andersen, Erling D., et al. Implementation of interior point methods
-           for large scale linear programming. HEC/Universite de Geneve, 1996.
+    .. [10] Andersen, Erling D., et al. Implementation of interior point methods
+            for large scale linear programming. HEC/Universite de Geneve, 1996.
 
     """
 

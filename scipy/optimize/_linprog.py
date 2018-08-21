@@ -141,13 +141,7 @@ def linprog_terse_callback(xk, **kwargs):
     print(xk)
 
 
-def _clean_inputs(
-        c,
-        A_ub=None,
-        b_ub=None,
-        A_eq=None,
-        b_eq=None,
-        bounds=None):
+def _clean_inputs(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None):
     """
     Given user inputs for a linear programming problem, return the
     objective vector, upper bound constraints, equality constraints,
@@ -491,11 +485,11 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, rr, tol=1e-9):
 
     References
     ----------
-    .. [2] Andersen, Erling D. "Finding all linearly dependent rows in
+    .. [5] Andersen, Erling D. "Finding all linearly dependent rows in
            large-scale linear programming." Optimization Methods and Software
            6.3 (1995): 219-227.
-    .. [5] Andersen, Erling D., and Knud D. Andersen. "Presolving in linear
-       programming." Mathematical Programming 71.2 (1995): 221-245.
+    .. [8] Andersen, Erling D., and Knud D. Andersen. "Presolving in linear
+           programming." Mathematical Programming 71.2 (1995): 221-245.
 
     """
     # ideas from Reference [5] by Andersen and Andersen
@@ -792,15 +786,8 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, rr, tol=1e-9):
             x, undo, complete, status, message)
 
 
-def _get_Abc(
-        c,
-        c0=0,
-        A_ub=None,
-        b_ub=None,
-        A_eq=None,
-        b_eq=None,
-        bounds=None,
-        undo=[]):
+def _get_Abc(c, c0=0, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
+             undo=[]):
     """
     Given a linear programming problem of the form:
 
@@ -866,7 +853,7 @@ def _get_Abc(
 
     References
     ----------
-    .. [6] Bertsimas, Dimitris, and J. Tsitsiklis. "Introduction to linear
+    .. [9] Bertsimas, Dimitris, and J. Tsitsiklis. "Introduction to linear
            programming." Athena Scientific 1 (1997): 997.
 
     """
@@ -976,19 +963,8 @@ def _get_Abc(
     return A, b, c, c0
 
 
-def _postprocess(
-        x,
-        c,
-        A_ub=None,
-        b_ub=None,
-        A_eq=None,
-        b_eq=None,
-        bounds=None,
-        complete=False,
-        undo=[],
-        status=0,
-        message="",
-        tol=1e-8):
+def _postprocess(x, c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
+                 complete=False, undo=[], status=0, message="", tol=1e-8):
     """
     Given solution x to presolved, standard form linear program x, add
     fixed variables back into the problem and undo the variable substitutions
@@ -1263,6 +1239,49 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     sparse problems. Note, however, that the solution returned may be slightly
     less accurate than that of the simplex method and may not correspond with a
     vertex of the polytope defined by the constraints.
+
+    Both methods apply a presolve procedure based on [8]_ attempts to identify
+    trivial infeasibilities, trivial unboundedness, and potential problem
+    simplifications. Specifically, it checks for:
+
+    - rows of zeros in ``A_eq`` or ``A_ub``, representing trivial constraints;
+    - columns of zeros in ``A_eq`` `and` ``A_ub``, representing unconstrained
+      variables;
+    - column singletons in ``A_eq``, representing fixed variables; and
+    - column singletons in ``A_ub``, representing simple bounds.
+
+    If presolve reveals that the problem is unbounded (e.g. an unconstrained
+    and unbounded variable has negative cost) or infeasible (e.g. a row of
+    zeros in ``A_eq`` corresponds with a nonzero in ``b_eq``), the solver
+    terminates with the appropriate status code. Note that presolve terminates
+    as soon as any sign of unboundedness is detected; consequently, a problem
+    may be reported as unbounded when in reality the problem is infeasible
+    (but infeasibility has not been detected yet). Therefore, if the output
+    message states that unboundedness is detected in presolve and it is
+    necessary to know whether the problem is actually infeasible, set option
+    ``presolve=False``.
+
+    If neither infeasibility nor unboundedness are detected in a single pass
+    of the presolve check, bounds are tightened where possible and fixed
+    variables are removed from the problem. Then, linearly dependent rows
+    of the ``A_eq`` matrix are removed, (unless they represent an
+    infeasibility) to avoid numerical difficulties in the primary solve
+    routine. Note that rows that are nearly linearly dependent (within a
+    prescibed tolerance) may also be removed, which can change the optimal
+    solution in rare cases. If this is a concern, eliminate redundancy from
+    your problem formulation and run with option ``rr=False`` or
+    ``presolve=False``.
+
+    Several potential improvements can be made here: additional presolve
+    checks outlined in [8]_ should be implemented, the presolve routine should
+    be run multiple times (until no further simplifications can be made), and
+    more of the efficiency improvements from [5]_ should be implemented in the
+    redundancy removal routines.
+
+    After presolve, the problem is transformed to standard form by converting
+    the (tightened) simple bounds to upper bound constraints, introducing
+    non-negative slack variables for inequality constraints, and expressing
+    unbounded variables as the difference between two non-negative variables.
 
     References
     ----------
