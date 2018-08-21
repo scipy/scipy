@@ -265,4 +265,4 @@ class TestNewToOldCobyla(object):
                                   bounds=prob.bounds,
                                   constraints=prob.constr)
 
-            assert_allclose(result.fun, truth.fun, rtol=1e-4)
+            assert_allclose(result.fun, truth.fun, rtol=1e-3)
