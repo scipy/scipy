@@ -3498,7 +3498,7 @@ class levy_gen(rv_continuous):
 
     .. math::
 
-        f(x) = \frac{1}{x \sqrt{2\pi x}) \exp(-\frac{1}{2x}}
+        f(x) = \frac{1}{x \sqrt{2\pi x}} \exp{\left(-\frac{1}{2x} \right)}
 
     for :math:`x > 0`.
 
@@ -3546,8 +3546,7 @@ class levy_l_gen(rv_continuous):
     The probability density function for `levy_l` is:
 
     .. math::
-
-        f(x) = \frac{1}{|x| \sqrt{2\pi |x|}} \exp(-\frac{1}{2 |x|})
+        f(x) = \frac{1}{|x| \sqrt{2\pi |x|}} \exp{ \left(-\frac{1}{2|x|} \right)}
 
     for :math:`x < 0`.
 
