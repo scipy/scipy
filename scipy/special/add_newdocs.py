@@ -2263,10 +2263,11 @@ add_newdoc('scipy.special', 'expit',
     """
     expit(x)
 
-    Expit ufunc for ndarrays.
+    Expit (a.k.a. logistic sigmoid) ufunc for ndarrays.
 
-    The expit function, also known as the logistic function, is defined as
-    expit(x) = 1/(1+exp(-x)). It is the inverse of the logit function.
+    The expit function, also known as the logistic sigmoid function, is
+    defined as ``expit(x) = 1/(1+exp(-x))``.  It is the inverse of the
+    logit function.
 
     Parameters
     ----------
