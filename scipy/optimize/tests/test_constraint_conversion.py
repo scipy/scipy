@@ -68,7 +68,7 @@ class TestNewToOld(object):
         methods = ["slsqp", "cobyla", "trust-constr"]
 
         # mixed old and new
-        coni.append([{'type': 'ineq', 'fun': lambda x:  x[0] - 2 * x[1] + 2},
+        coni.append([{'type': 'ineq', 'fun': lambda x: x[0] - 2 * x[1] + 2},
                      NonlinearConstraint(lambda x: x[0] - x[1], -1, 1)])
 
         coni.append([LinearConstraint([1, -2, 0], -2, np.inf),
@@ -84,8 +84,8 @@ class TestNewToOld(object):
                     sup.filter(UserWarning)
                     result = minimize(fun, x0, method=method, constraints=con)
                     funs[method] = result.fun
-            assert_allclose(funs['slsqp'], funs['trust-constr'], rtol=1e-6)
-            assert_allclose(funs['cobyla'], funs['trust-constr'], rtol=1e-6)
+            assert_allclose(funs['slsqp'], funs['trust-constr'], rtol=1e-4)
+            assert_allclose(funs['cobyla'], funs['trust-constr'], rtol=1e-4)
 
     def test_individual_constraint_objects(self):
         fun = lambda x: (x[0] - 1)**2 + (x[1] - 2.5)**2 + (x[2] - 0.75)**2
