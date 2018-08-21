@@ -549,13 +549,13 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol,
 
     Parameters
     ----------
-    A : 2-D array
-        2-D array which, when matrix-multiplied by ``x``, gives the values of
+    A : 2D array
+        2D array which, when matrix-multiplied by ``x``, gives the values of
         the equality constraints at ``x`` (for standard form problem).
-    b : 1-D array
-        1-D array of values representing the RHS of each equality constraint
+    b : 1D array
+        1D array of values representing the RHS of each equality constraint
         (row) in ``A`` (for standard form problem).
-    c : 1-D array
+    c : 1D array
         Coefficients of the linear objective function to be minimized (for
         standard form problem).
     c0 : float
@@ -790,16 +790,16 @@ def _linprog_ip(
 
     Parameters
     ----------
-    c : array_like
+    c : 1D array
         Coefficients of the linear objective function to be minimized.
     c0 : float
         Constant term in objective function due to fixed (and eliminated)
         variables. (Purely for display.)
-    A : array_like
-        2-D array which, when matrix-multiplied by ``x``, gives the values of
+    A : 2D array
+        2D array which, when matrix-multiplied by ``x``, gives the values of
         the equality constraints at ``x``.
-    b : array_like
-        1-D array of values representing the right hand side of each equality
+    b : 1D array
+        1D array of values representing the right hand side of each equality
         constraint (row) in ``A``.
 
     Options
@@ -866,7 +866,7 @@ def _linprog_ip(
 
     Returns
     -------
-    x : array_like
+    x : 1D array
         Solution vector.
     status : int
         An integer representing the exit status of the optimization::

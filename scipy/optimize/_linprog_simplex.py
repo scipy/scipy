@@ -13,7 +13,7 @@ def _pivot_col(T, tol=1.0E-12, bland=False):
 
     Parameters
     ----------
-    T : 2D ndarray
+    T : 2D array
         The simplex tableau.
     tol : float
         Elements in the objective row larger than -tol will not be considered
@@ -49,7 +49,7 @@ def _pivot_row(T, basis, pivcol, phase, tol=1.0E-12, bland=False):
 
     Parameters
     ----------
-    T : 2D ndarray
+    T : 2D array
         The simplex tableau.
     basis : array
         A list of the current basic variables.
@@ -97,10 +97,10 @@ def _apply_pivot(T, basis, pivrow, pivcol, tol=1e-12):
 
     Parameters
     ----------
-    T : 2-D array
-        A 2-D array representing the simplex T to the corresponding
+    T : 2D array
+        A 2D numpy array representing the simplex T to the corresponding
         maximization problem.
-    basis : 1-D array
+    basis : 1D array
         An array of the indices of the basic variables, such that basis[i]
         contains the column corresponding to the basic variable for row i.
         Basis is modified in place by _apply_pivot.
@@ -147,8 +147,8 @@ def _solve_simplex(T, n, basis, maxiter=1000, phase=2, callback=None,
 
     Parameters
     ----------
-    T : array_like
-        A 2-D array representing the simplex T corresponding to the
+    T : 2D array
+        A 2D array representing the simplex T corresponding to the
         maximization problem.  It should have the form:
 
         [[A[0, 0], A[0, 1], ..., A[0, n_total], b[0]],
@@ -175,7 +175,7 @@ def _solve_simplex(T, n, basis, maxiter=1000, phase=2, callback=None,
          place by _solve_simplex.
     n : int
         The number of true variables in the problem.
-    basis : array
+    basis : 1D array
         An array of the indices of the basic variables, such that basis[i]
         contains the column corresponding to the basic variable for row i.
         Basis is modified in place by _solve_simplex
@@ -210,18 +210,18 @@ def _solve_simplex(T, n, basis, maxiter=1000, phase=2, callback=None,
 
     Returns
     -------
-    res : OptimizeResult
-        The optimization result represented as a ``OptimizeResult`` object.
-        Important attributes are: ``x`` the solution array, ``success`` a
-        Boolean flag indicating if the optimizer exited successfully and
-        ``message`` which describes the cause of the termination. Possible
-        values for the ``status`` attribute are:
+    nit : int
+        The number of iterations. Used to keep an accurate iteration total
+        in a two-phase problem.
+    status : int
+        An integer representing the exit status of the optimization::
+
          0 : Optimization terminated successfully
          1 : Iteration limit reached
          2 : Problem appears to be infeasible
          3 : Problem appears to be unbounded
+         4 : Serious numerical difficulties encountered.
 
-        See `OptimizeResult` for a description of other attributes.
     """
     nit = nit0
     complete = False
@@ -307,16 +307,16 @@ def _linprog_simplex(c, c0, A, b, maxiter=1000, disp=False, callback=None,
 
     Parameters
     ----------
-    c : array_like
+    c : 1D array
         Coefficients of the linear objective function to be minimized.
     c0 : float
         Constant term in objective function due to fixed (and eliminated)
         variables. (Purely for display.)
-    A : array_like
-        2-D array which, when matrix-multiplied by ``x``, gives the values of
+    A : 2D array
+        2D array which, when matrix-multiplied by ``x``, gives the values of
         the equality constraints at ``x``.
-    b : array_like
-        1-D array of values representing the RHS of each equality constraint
+    b : 1D array
+        1D array of values representing the RHS of each equality constraint
         (row) in ``A_eq``.
 
     callback : callable
@@ -350,7 +350,7 @@ def _linprog_simplex(c, c0, A, b, maxiter=1000, disp=False, callback=None,
 
     Returns
     -------
-    x : array_like
+    x : 1D array
         Solution vector.
     status : int
         An integer representing the exit status of the optimization::

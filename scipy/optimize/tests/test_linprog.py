@@ -374,7 +374,7 @@ class LinprogCommonTests(object):
             sup.filter(OptimizeWarning, "A_eq does not appear...")
             sup.filter(OptimizeWarning, "Solving system with option...")
             res = linprog(c=cost, A_eq=A_eq, b_eq=b_eq, bounds=bounds,
-                            method=self.method, options=self.options)
+                          method=self.method, options=self.options)
         _assert_success(res, desired_fun=14)
 
     def test_simplex_algorithm_wikipedia_example(self):
