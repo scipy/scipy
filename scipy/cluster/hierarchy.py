@@ -2471,8 +2471,11 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
     Z : ndarray
         The hierarchical clustering encoded with the matrix returned
         by the `linkage` function.
-    t : float
-        The threshold to apply when forming flat clusters.
+    t : float or int
+        For criteria 'inconsistent', 'distance' or 'monocrit',
+         this is the threshold to apply when forming flat clusters.
+        For 'maxclust' or 'maxclust_monocrit' criteria,
+         this would be max number of clusters requested.
     criterion : str, optional
         The criterion to use in forming flat clusters. This can
         be any of the following values:
