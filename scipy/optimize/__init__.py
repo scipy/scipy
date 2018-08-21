@@ -133,6 +133,8 @@ Curve Fitting
    :toctree: generated/
 
    curve_fit -- Fit curve to a set of points.
+   exp_fit -- Analytical algorithm for fitting exponential curves.
+   pow_fit -- Analytical algorithm for fitting power curves.
 
 Root finding
 ============
@@ -352,6 +354,7 @@ from ._constraints import (NonlinearConstraint,
                            LinearConstraint,
                            Bounds)
 from ._hessian_update_strategy import HessianUpdateStrategy, BFGS, SR1
+from .func import exp_fit, pow_fit
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 

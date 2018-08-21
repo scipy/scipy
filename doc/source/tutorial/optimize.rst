@@ -19,7 +19,8 @@ The module contains:
    functions (:func:`minimize`) using a variety of algorithms (e.g. BFGS,
    Nelder-Mead simplex, Newton Conjugate Gradient, COBYLA or SLSQP)
 
-2. Global (brute-force) optimization routines  (e.g. :func:`basinhopping`, :func:`differential_evolution`)
+2. Global (brute-force) optimization routines  (e.g. :func:`basinhopping`,
+   :func:`differential_evolution`)
 
 3. Least-squares minimization (:func:`least_squares`) and curve fitting
    (:func:`curve_fit`) algorithms
@@ -30,6 +31,9 @@ The module contains:
 5. Multivariate equation system solvers (:func:`root`) using a variety of
    algorithms (e.g. hybrid Powell, Levenberg-Marquardt or large-scale
    methods such as Newton-Krylov).
+
+6. Analytical curve-fitting algorithms such as :func:`exp_fit` and
+   :func:`pow_fit`.
 
 Below, several examples demonstrate their basic usage.
 

@@ -26,6 +26,12 @@ New features
 
 The function `softmax` was added to `scipy.special`.
 
+`scipy.optimize` improvements
+-----------------------------
+
+The functions `exp_fit` and `pow_fit` were added to `scipy.optimize`.
+
+
 Deprecated features
 ===================
 
