@@ -6076,7 +6076,7 @@ def rvs_ratio_uniforms(pdf, size=1, x1=None, x2=None, y2=None, c=0,
         if bounds is None:
             raise ValueError("The parameter bounds needs to be specified if " +
                              var + " is None.")
-        opt_res = optimize.minimize_scalar(g, bounds=bounds, method='Bounded')
+        opt_res = optimize.minimize_scalar(g, bounds=bounds, method='bounded')
         if not opt_res.success:
             raise RuntimeError("Optimization failed when attempting to find " +
                                var + ": " + opt_res.message)
