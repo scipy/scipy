@@ -2666,8 +2666,10 @@ def fclusterdata(X, t, criterion='inconsistent',
     ----------
     X : (N, M) ndarray
         N by M data matrix with N observations in M dimensions.
-    t : float
+    t : float or int
         The threshold to apply when forming flat clusters.
+        If criterion is 'maxclust' or 'maxclust_monocrit',
+        this would be max number of clusters requested.
     criterion : str, optional
         Specifies the criterion for forming flat clusters.  Valid
         values are 'inconsistent' (default), 'distance', or 'maxclust'
