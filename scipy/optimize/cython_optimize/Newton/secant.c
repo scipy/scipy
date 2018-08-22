@@ -8,7 +8,7 @@ double
 secant(callback_type func, double p0, default_parameters *params, double tol, int maxiter)
 {
     int i;
-    double fder, fval, p, p1, q0, q1;
+    double p, p1, q0, q1;
 
     if (maxiter < 0) {
         params->error_num = SIGNERR;
@@ -29,7 +29,7 @@ secant(callback_type func, double p0, default_parameters *params, double tol, in
     }
     q0 = (*func)(p0, params);
     params->funcalls++;
-    q1 = (*func)(p0, params);
+    q1 = (*func)(p1, params);
     params->funcalls++;
     for (i=0; i<maxiter; i++) {
         params->iterations++;

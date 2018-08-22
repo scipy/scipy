@@ -35,7 +35,7 @@ halley(callback_type func, double p0, callback_type fprime, default_parameters *
         newton_step = fval / fder;
         fder2 = (*fprime2)(p0, params);
         params->funcalls++;
-        p = p0 + newton_step / (1.0 - 0.5 * newton_step * fder2 / fder);
+        p = p0 - newton_step / (1.0 - 0.5 * newton_step * fder2 / fder);
         if (fabs(p - p0) < tol) {
             return p;
         }

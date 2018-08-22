@@ -30,7 +30,7 @@ cdef extern from "Newton/secant.c":
     double secant(callback_type func, double p0, default_parameters *params, double tol, int maxiter)
 
 
-cdef extern from "Newton/newton.c":
+cdef extern from "Newton/halley.c":
     double halley(callback_type func, double p0, callback_type fprime, default_parameters *params, double tol, int maxiter, callback_type fprime2)
 
 
