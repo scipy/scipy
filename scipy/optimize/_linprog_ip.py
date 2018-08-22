@@ -71,23 +71,24 @@ def _get_solver(sparse=False, lstsq=False, sym_pos=True, cholesky=True):
 
 
 def _get_delta(
-    A,
-    b,
-    c,
-    x,
-    y,
-    z,
-    tau,
-    kappa,
-    gamma,
-    eta,
-    sparse=False,
-    lstsq=False,
-    sym_pos=True,
-    cholesky=True,
-    pc=True,
-    ip=False,
-    permc_spec='MMD_AT_PLUS_A'):
+        A,
+        b,
+        c,
+        x,
+        y,
+        z,
+        tau,
+        kappa,
+        gamma,
+        eta,
+        sparse=False,
+        lstsq=False,
+        sym_pos=True,
+        cholesky=True,
+        pc=True,
+        ip=False,
+        permc_spec='MMD_AT_PLUS_A'
+    ):
     """
     Given standard form problem defined by ``A``, ``b``, and ``c``;
     current variable estimates ``x``, ``y``, ``z``, ``tau``, and ``kappa``;
@@ -984,7 +985,6 @@ def _linprog_ip(
     """
 
     _check_unknown_options(unknown_options)
-
     if callback is not None:
         raise NotImplementedError("method 'interior-point' does not support "
                                   "callback functions.")

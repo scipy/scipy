@@ -1235,8 +1235,24 @@ class TestLinprogIPSpecific(object):
     def test_callback(self):
         def f():
             pass
-        assert_raises(NotImplementedError, linprog, c=1, callback=f,
-                      method=self.method)
+
+        A = [[0, -7]]
+        b = [-6]
+        c = [1, 5]
+        bounds = [(0, None), (None, None)]
+
+        # Linprog should solve in presolve. As the interior-point method is
+        # not used the the callback should never be needed and no error
+        # returned
+        res = linprog(c, A_eq=A, b_eq=b, bounds=bounds,
+                      method=self.method, callback=f)
+        _assert_success(res, desired_x=[0, 6./7], desired_fun=5*6./7)
+
+        # Without presolve the solver reverts to the interior-point method
+        # Interior-point currently does not implement callback functions.
+        with pytest.raises(NotImplementedError):
+            res = linprog(c, A_eq=A, b_eq=b, bounds=bounds, method=self.method,
+                          callback=f, options={'presolve': False})
 
 
 class TestLinprogIPSparse(BaseTestLinprogIP):

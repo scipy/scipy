@@ -1085,7 +1085,8 @@ def _postprocess(x, c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
     ub = bounds[:, 1]
     lb[np.equal(lb, None)] = -np.inf
     ub[np.equal(ub, None)] = np.inf
-    tol = np.sqrt(tol) * 10 # Somewhat arbitrary, but status 5 is very unusual
+    # Somewhat arbitrary, but status 5 is very unusual
+    tol = np.sqrt(tol) * 10
 
     def _is_infeasible(con, lb, slack, tol, ub, x):
         invalid_slack = (slack < -tol).any()
@@ -1364,15 +1365,6 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     meth = method.lower()
     if options is None:
         options = {}
-    
-    # This needs to be before presolve for the tests to pass.
-    # If the problem is solved in presolve the error will not be raised
-    # leading the test to fail. 
-    # Should the check be moved to raise a ``NotImplementedError``
-    # only if callback would actually have been used?
-    if meth == 'interior-point' and callback:
-        raise NotImplementedError("method 'interior-point' does not support "
-                                  "callback functions.")
 
     default_tol = 1e-12 if meth == 'simplex' else 1e-9
     tol = options.get('tol', default_tol)
@@ -1416,8 +1408,8 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
             x, status, message, iteration = _linprog_simplex(
                 c, c0=c0, A=A, b=b, callback=callback, **options)
         elif meth == 'interior-point':
-                x, status, message, iteration = _linprog_ip(
-                    c, c0=c0, A=A, b=b, callback=callback, **options)
+            x, status, message, iteration = _linprog_ip(
+                c, c0=c0, A=A, b=b, callback=callback, **options)
         else:
             raise ValueError('Unknown solver %s' % method)
 
