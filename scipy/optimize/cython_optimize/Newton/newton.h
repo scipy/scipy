@@ -1,7 +1,7 @@
 #ifndef NEWTON_H
 #define NEWTON_H
 
-#include "../Zeros/zeros.h"
+#include "../../Zeros/zeros.h"
 
 #define SIGNERR -1
 #define CONVERR -2

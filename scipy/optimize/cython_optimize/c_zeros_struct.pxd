@@ -22,8 +22,16 @@ ctypedef struct scipy_newton_parameters:
     void* args
 
 
-cdef extern from "newton.c":
+cdef extern from "Newton/newton.c":
     double newton(callback_type func, double p0, callback_type fprime, default_parameters *params, double tol, int maxiter)
+
+
+cdef extern from "Newton/secant.c":
+    double secant(callback_type func, double p0, default_parameters *params, double tol, int maxiter)
+
+
+cdef extern from "Newton/newton.c":
+    double halley(callback_type func, double p0, callback_type fprime, default_parameters *params, double tol, int maxiter, callback_type fprime2)
 
 
 cdef extern from "../Zeros/bisect.c":

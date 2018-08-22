@@ -40,6 +40,26 @@ cdef double newton(callback_type func, double p0, callback_type fprime, void *ar
     return c_zeros_struct.newton(scipy_newton_functions_func, p0, scipy_newton_functions_fprime, <c_zeros_struct.default_parameters *> &myparams, tol, maxiter)
 
 
+# Secant method
+cdef double secant(callback_type func, double p0, void *args, double tol, int maxiter):
+    cdef c_zeros_struct.scipy_newton_parameters myparams
+    # create params struct
+    myparams.args = args
+    myparams.function = func
+    return c_zeros_struct.secant(scipy_newton_functions_func, p0, <c_zeros_struct.default_parameters *> &myparams, tol, maxiter)
+
+
+# Halley's method
+cdef double halley(callback_type func, double p0, callback_type fprime, void *args, double tol, int maxiter, callback_type fprime2):
+    cdef c_zeros_struct.scipy_newton_parameters myparams
+    # create params struct
+    myparams.args = args
+    myparams.function = func
+    myparams.function_derivative = fprime
+    myparams.function_second_derivative = fprime2
+    return c_zeros_struct.halley(scipy_newton_functions_func, p0, scipy_newton_functions_fprime, <c_zeros_struct.default_parameters *> &myparams, tol, maxiter, scipy_newton_functions_fprime2)
+
+
 # callback function wrapper that extracts function, args from params struct
 cdef double scipy_zeros_functions_func(double x, void *params):
     cdef c_zeros_struct.scipy_zeros_parameters *myparams = <c_zeros_struct.scipy_zeros_parameters *> params

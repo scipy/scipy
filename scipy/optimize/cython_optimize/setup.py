@@ -1,10 +1,14 @@
 from __future__ import division, print_function, absolute_import
+import os
+
 
 def configuration(parent_package='', top_path=None):
     from numpy.distutils.misc_util import Configuration, get_numpy_include_dirs
     config = Configuration('cython_optimize', parent_package, top_path)
     config.add_data_dir('tests')
-    newton_src, newton_hdr = ['newton.c'], ['newton.h']
+    newton_dir = 'Newton'
+    newton_src = [os.path.join(newton_dir, '*.c')]
+    newton_hdr = [os.path.join(newton_dir, 'newton.h')]
     config.add_library('newton',
                        sources=newton_src,
                        headers=newton_hdr)
