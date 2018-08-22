@@ -848,6 +848,31 @@ class LinprogCommonTests(object):
                     method=self.method, options=self.options)
             _assert_success(res, desired_fun=-106.63507541835018)
 
+    def test_issue_6139(self):
+        # Linprog(method='simplex') fails to find a basic feasible solution
+        # if phase 1 pseudo-objective function is outside the provided tol.
+        # https://github.com/scipy/scipy/issues/6139
+
+        # Note: This is not strictly a bug as the default tolerance determines
+        # if a result is "close enough" to zero and should not be expected
+        # to work for all cases.
+
+        c = np.array([1, 1, 1])
+        A_eq = np.array([[1., 0., 0.], [-1000., 0., - 1000.]])
+        b_eq = np.array([5.00000000e+00, -1.00000000e+04])
+        A_ub = -np.array([[0., 1000000., 1010000.]])
+        b_ub = -np.array([10000000.])
+        bounds = (None, None)
+
+        res = linprog(
+            c, A_ub, b_ub, A_eq, b_eq, method=self.method,
+            bounds=bounds, options=self.options
+            )
+
+        _assert_success(
+            res, desired_fun=14.95, desired_x=np.array([5, 4.95, 5])
+        )
+
     def test_bug_6690(self):
         # SciPy violates bound constraint despite result status being success
         # when the simplex method is used.
@@ -950,6 +975,22 @@ class LinprogCommonTests(object):
         res = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
                 bounds=bounds, method=self.method, options=self.options)
         _assert_success(res, desired_fun=108.568535, atol=1e-6)
+
+    def test_issue_8174(self):
+        # https://github.com/scipy/scipy/issues/8174
+        # The simplex method sometimes "explodes" if the pivot value is very
+        # close to zero.
+        A_ub = np.array([
+            [22714, 1008, 13380, -2713.5, -1116],
+            [-4986, -1092, -31220, 17386.5, 684],
+            [-4986, 0, 0, -2713.5, 0],
+            [22714, 0, 0, 17386.5, 0]])
+        b_ub = np.zeros(A_ub.shape[0])
+        c = -np.ones(A_ub.shape[1])
+        bounds = [(0,1)] * A_ub.shape[1]
+
+        res = linprog(c=c, A_ub=A_ub, b_ub=b_ub, bounds=bounds,
+            options=self.options, method=self.method)
 
     def test_issue_8174_stackoverflow(self):
         # Test supplementary example from issue 8174.
@@ -1104,31 +1145,6 @@ class TestLinprogSimplex(LinprogCommonTests):
         assert_(callback_complete[0])
         assert_allclose(last_xk[0][:res.x.size], res.x)
 
-    def test_issue_6139(self):
-        # Linprog(method='simplex') fails to find a basic feasible solution
-        # if phase 1 pseudo-objective function is outside the provided tol.
-        # https://github.com/scipy/scipy/issues/6139
-
-        # Note: This is not strictly a bug as the default tolerance determines
-        # if a result is "close enough" to zero and should not be expected
-        # to work for all cases.
-
-        c = np.array([1, 1, 1])
-        A_eq = np.array([[1., 0., 0.], [-1000., 0., - 1000.]])
-        b_eq = np.array([5.00000000e+00, -1.00000000e+04])
-        A_ub = -np.array([[0., 1000000., 1010000.]])
-        b_ub = -np.array([10000000.])
-        bounds = (None, None)
-
-        res = linprog(
-            c, A_ub, b_ub, A_eq, b_eq, method=self.method,
-            bounds=bounds, options=self.options
-            )
-
-        _assert_success(
-            res, desired_fun=14.95, desired_x=np.array([5, 4.95, 5])
-        )
-
     def test_issue_7237(self):
         with pytest.raises(ValueError):
             super(TestLinprogSimplex, self).test_issue_7237()
@@ -1142,22 +1158,12 @@ class TestLinprogSimplex(LinprogCommonTests):
         self.options['bland'] = True
         super(TestLinprogSimplex, self).test_issue_7237()
         
-    def test_issue_8174_warns_if_pivval_near_tol(self):
+    def test_issue_8174(self):
         # https://github.com/scipy/scipy/issues/8174
         # The simplex method sometimes "explodes" if the pivot value is very
         # close to zero.
-        A_ub = np.array([
-            [22714, 1008, 13380, -2713.5, -1116],
-            [-4986, -1092, -31220, 17386.5, 684],
-            [-4986, 0, 0, -2713.5, 0],
-            [22714, 0, 0, 17386.5, 0]])
-        b_ub = np.zeros(A_ub.shape[0])
-        c = -np.ones(A_ub.shape[1])
-        bounds = [(0,1)] * A_ub.shape[1]
-
         with pytest.warns(OptimizeWarning):
-            res = linprog(c=c, A_ub=A_ub, b_ub=b_ub, bounds=bounds,
-                options=self.options, method=self.method)
+            super(TestLinprogSimplex, self).test_issue_8174()
 
 
 class TestLinprogSimplexNoPresolve(TestLinprogSimplex):
@@ -1168,7 +1174,7 @@ class BaseTestLinprogIP(LinprogCommonTests):
     method = "interior-point"
 
 
-class TestLinprogIPSpecific:
+class TestLinprogIPSpecific(object):
     method = "interior-point"
     # the following tests don't need to be performed separately for
     # sparse presolve, sparse after presolve, and dense

@@ -1085,7 +1085,7 @@ def _postprocess(x, c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
     ub = bounds[:, 1]
     lb[np.equal(lb, None)] = -np.inf
     ub[np.equal(ub, None)] = np.inf
-    tol = np.sqrt(tol)  # Somewhat arbitrary, but status 5 is very unusual
+    tol = np.sqrt(tol) * 10 # Somewhat arbitrary, but status 5 is very unusual
 
     def _is_infeasible(con, lb, slack, tol, ub, x):
         invalid_slack = (slack < -tol).any()
