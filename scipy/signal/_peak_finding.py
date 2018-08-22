@@ -263,7 +263,7 @@ def _arg_x_as_expected(value):
     """
     value = np.asarray(value, order='C', dtype=np.float64)
     if value.ndim != 1:
-        raise ValueError('`x` must have exactly one dimension')
+        raise ValueError('`x` must be a 1D array')
     return value
 
 
@@ -287,9 +287,9 @@ def _arg_peaks_as_expected(value):
         value = value.astype(np.intp, order='C', casting='safe',
                              subok=False, copy=False)
     except TypeError:
-        raise TypeError("Cannot safely cast `peaks` to dtype('intp')")
+        raise TypeError("cannot safely cast `peaks` to dtype('intp')")
     if value.ndim != 1:
-        raise ValueError('`peaks` must have exactly one dimension')
+        raise ValueError('`peaks` must be a 1D array')
     return value
 
 
@@ -314,7 +314,7 @@ def _arg_wlen_as_expected(value):
             value = math.ceil(value)
         value = np.intp(value)
     else:
-        raise ValueError('`wlen` must be at larger than 1, was {}'
+        raise ValueError('`wlen` must be larger than 1, was {}'
                          .format(value))
     return value
 

@@ -390,16 +390,16 @@ class TestPeakProminences(object):
 
     def test_exceptions(self):
         """
-        Verfiy that exceptions and warnings are raised.
+        Verify that exceptions and warnings are raised.
         """
         # x with dimension > 1
-        with raises(ValueError, match='dimension'):
+        with raises(ValueError, match='1D array'):
             peak_prominences([[0, 1, 1, 0]], [1, 2])
         # peaks with dimension > 1
-        with raises(ValueError, match='dimension'):
+        with raises(ValueError, match='1D array'):
             peak_prominences([0, 1, 1, 0], [[1, 2]])
         # x with dimension < 1
-        with raises(ValueError, match='dimension'):
+        with raises(ValueError, match='1D array'):
             peak_prominences(3, [0,])
 
         # empty x with supplied
@@ -411,7 +411,7 @@ class TestPeakProminences(object):
                 peak_prominences([1, 0, 2], [p])
 
         # peaks is not cast-able to np.intp
-        with raises(TypeError, match='Cannot safely cast'):
+        with raises(TypeError, match='cannot safely cast'):
             peak_prominences([0, 1, 1, 0], [1.1, 2.3])
 
         # wlen < 3
@@ -477,18 +477,18 @@ class TestPeakWidths(object):
 
     def test_exceptions(self):
         """
-        Verfiy that argument validation works as intended.
+        Verify that argument validation works as intended.
         """
-        with raises(ValueError, match='dimension'):
+        with raises(ValueError, match='1D array'):
             # x with dimension > 1
             peak_widths(np.zeros((3, 4)), np.ones(3))
-        with raises(ValueError, match='dimension'):
+        with raises(ValueError, match='1D array'):
             # x with dimension < 1
             peak_widths(3, [0])
-        with raises(ValueError, match='dimension'):
+        with raises(ValueError, match='1D array'):
             # peaks with dimension > 1
             peak_widths(np.arange(10), np.ones((3, 2), dtype=np.intp))
-        with raises(ValueError, match='dimension'):
+        with raises(ValueError, match='1D array'):
             # peaks with dimension < 1
             peak_widths(np.arange(10), 3)
         with raises(ValueError, match='not a valid index'):
@@ -497,7 +497,7 @@ class TestPeakWidths(object):
         with raises(ValueError, match='not a valid index'):
             # empty x with peaks supplied
             peak_widths([], [1, 2])
-        with raises(TypeError, match='Cannot safely cast'):
+        with raises(TypeError, match='cannot safely cast'):
             # peak cannot be safely casted to intp
             peak_widths(np.arange(10), [1.1, 2.3])
         with raises(ValueError, match='rel_height'):
@@ -694,9 +694,9 @@ class TestFindPeaks(object):
         """
         Test exceptions raised by function.
         """
-        with raises(ValueError, match="dimension"):
+        with raises(ValueError, match="1D array"):
             find_peaks(np.array(1))
-        with raises(ValueError, match="dimension"):
+        with raises(ValueError, match="1D array"):
             find_peaks(np.ones((2, 2)))
         with raises(ValueError, match="distance"):
             find_peaks(np.arange(10), distance=-1)
