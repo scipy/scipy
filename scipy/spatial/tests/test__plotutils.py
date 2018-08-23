@@ -11,7 +11,7 @@ try:
     from matplotlib.collections import LineCollection
     from matplotlib import MatplotlibDeprecationWarning
     has_matplotlib = True
-except:
+except Exception:
     has_matplotlib = False
 
 from scipy.spatial import \

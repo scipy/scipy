@@ -374,24 +374,24 @@ def linkcode_resolve(domain, info):
     for part in fullname.split('.'):
         try:
             obj = getattr(obj, part)
-        except:
+        except Exception:
             return None
 
     try:
         fn = inspect.getsourcefile(obj)
-    except:
+    except Exception:
         fn = None
     if not fn:
         try:
             fn = inspect.getsourcefile(sys.modules[obj.__module__])
-        except:
+        except Exception:
             fn = None
     if not fn:
         return None
 
     try:
         source, lineno = inspect.getsourcelines(obj)
-    except:
+    except Exception:
         lineno = None
 
     if lineno:

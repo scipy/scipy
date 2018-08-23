@@ -5,6 +5,7 @@ import os
 import numpy as np
 from numpy.testing import assert_equal, assert_allclose, assert_almost_equal
 from pytest import raises as assert_raises
+import pytest
 from scipy._lib._numpy_compat import suppress_warnings
 
 import scipy.interpolate.interpnd as interpnd
@@ -151,14 +152,10 @@ class TestLinearNDInterpolation(object):
         y = y - 3j*y
 
         tri = qhull.Delaunay(x)
-        try:
+        match = ("Rescaling is not supported when passing a "
+                 "Delaunay triangulation as ``points``.")
+        with pytest.raises(ValueError, match=match):
             interpnd.LinearNDInterpolator(tri, y, rescale=True)(x)
-        except ValueError as e:
-            if str(e) != ("Rescaling is not supported when passing a "
-                          "Delaunay triangulation as ``points``."):
-                raise
-        except:
-            raise
 
     def test_pickle(self):
         # Test at single points
@@ -298,14 +295,10 @@ class TestCloughTocher2DInterpolator(object):
         y = y - 3j*y
 
         tri = qhull.Delaunay(x)
-        try:
+        match = ("Rescaling is not supported when passing a "
+                 "Delaunay triangulation as ``points``.")
+        with pytest.raises(ValueError, match=match):
             interpnd.CloughTocher2DInterpolator(tri, y, rescale=True)(x)
-        except ValueError as a:
-            if str(a) != ("Rescaling is not supported when passing a "
-                          "Delaunay triangulation as ``points``."):
-                raise
-        except:
-            raise
 
     def test_tripoints_input_rescale(self):
         # Test at single points

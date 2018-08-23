@@ -646,7 +646,7 @@ class TestSplu(object):
                 self._internal_test_splu_smoketest()
                 self._internal_test_spilu_smoketest()
                 oks.append(True)
-            except:
+            except Exception:
                 pass
 
         threads = [threading.Thread(target=worker)

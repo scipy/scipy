@@ -564,7 +564,7 @@ def _build_mpkg(pyver):
 def dmg():
     try:
         pyver = options.dmg.python_version
-    except:
+    except Exception:
         pyver = PYVER
     idirs = options.installers.installersdir
 
