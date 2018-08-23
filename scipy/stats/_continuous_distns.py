@@ -6254,7 +6254,7 @@ class truncnorm_gen(rv_continuous):
                                -(self._sb - self._sa),
                                self._nb - self._na)
         self._logdelta = np.log(self._delta)
-        return a != b
+        return a != b and a < b
 
     def _pdf(self, x, a, b):
         return _norm_pdf(x) / self._delta
