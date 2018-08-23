@@ -44,9 +44,19 @@ def test_zeros_array_cython_newton():
                        list(zeros_array_examples.test_cython_newton()))
 
 
+def test_zeros_cython_secant():
+    assert np.allclose(EXPECTED_NEWTON,
+                       list(zeros_examples.test_cython_secant()))
+
+
 def test_zeros_struct_cython_secant():
     assert np.allclose(EXPECTED_NEWTON,
                        list(zeros_struct_examples.test_cython_secant()))
+
+
+def test_zeros_cython_halley():
+    assert np.allclose(EXPECTED_NEWTON,
+                       list(zeros_examples.test_cython_halley()))
 
 
 def test_zeros_struct_cython_halley():
