@@ -2471,7 +2471,7 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
     Z : ndarray
         The hierarchical clustering encoded with the matrix returned
         by the `linkage` function.
-    t : float or int
+    t : scalar
         For criteria 'inconsistent', 'distance' or 'monocrit',
          this is the threshold to apply when forming flat clusters.
         For 'maxclust' or 'maxclust_monocrit' criteria,
@@ -2669,7 +2669,7 @@ def fclusterdata(X, t, criterion='inconsistent',
     ----------
     X : (N, M) ndarray
         N by M data matrix with N observations in M dimensions.
-    t : float or int
+    t : scalar
         For criteria 'inconsistent', 'distance' or 'monocrit',
          this is the threshold to apply when forming flat clusters.
         For 'maxclust' or 'maxclust_monocrit' criteria,
