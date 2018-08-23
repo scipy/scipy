@@ -591,7 +591,7 @@ cdef double_or_complex _clough_tocher_2d_single(qhull.DelaunayInfo_t *d,
     cdef double_or_complex \
          f1, f2, f3, df12, df13, df21, df23, df31, df32
     cdef double \
-         g1, g2, g3
+         g1=0.0, g2=0.0, g3=0.0
     cdef double \
          e12x, e12y, e23x, e23y, e31x, e31y, \
          e14x, e14y, e24x, e24y, e34x, e34y
