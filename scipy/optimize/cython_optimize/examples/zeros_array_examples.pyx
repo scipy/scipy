@@ -10,7 +10,7 @@ IL = [sin(il) + 6.0 for il in range(NUM_OF_IRRAD)]
 
 
 # governing equations
-cdef double f_solarcell(int n, double* args):
+cdef double f_solarcell(double* args):
     cdef double i = args[0]
     cdef double v = args[1]
     cdef double il = args[2]
@@ -22,7 +22,7 @@ cdef double f_solarcell(int n, double* args):
     return il - io * (exp(vd / vt) - 1.0) - vd / rsh - i
 
 
-cdef double fprime(int n, double* args):
+cdef double fprime(double* args):
     cdef double i = args[0]
     cdef double v = args[1]
     cdef double il = args[2]
@@ -31,6 +31,17 @@ cdef double fprime(int n, double* args):
     cdef double rsh = args[5]
     cdef double vt = args[6]
     return -io * exp((v + i * rs) / vt) * rs / vt - rs / rsh - 1
+
+
+cdef double fprime2(double* args):
+    cdef double i = args[0]
+    cdef double v = args[1]
+    cdef double il = args[2]
+    cdef double io = args[3]
+    cdef double rs = args[4]
+    cdef double rsh = args[5]
+    cdef double vt = args[6]
+    return -io * exp((v + i * rs) / vt) * (rs / vt)**2
 
 
 #solver

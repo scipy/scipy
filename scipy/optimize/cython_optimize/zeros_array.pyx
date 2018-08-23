@@ -5,27 +5,6 @@ from . cimport c_zeros_array
 
 DEF MAXARGS = 10
 
-cdef double TOL = 1.48e-8
-cdef int MAXITER = 50
-
-
-# the new standard callback function that uses the params struct instead of tuple
-@staticmethod
-cdef double scipy_zeros_functions_func(double x, c_zeros_array.scipy_zeros_parameters *params):
-    cdef c_zeros_array.scipy_zeros_parameters *myparams
-    cdef int n, i
-    cdef double[MAXARGS] myargs
-    cdef callback_type_array f
-
-    myparams = params
-    n = myparams.n
-    myargs[0] = x
-    for i in range(n):
-        myargs[i+1] = myparams.args[i]
-    f = myparams.function
-
-    return f(n, myargs)
-
 
 @cython.cdivision(True)
 cdef double newton(callback_type_array func, double p0, callback_type_array fprime, int n, double* args):
@@ -50,6 +29,20 @@ cdef double newton(callback_type_array func, double p0, callback_type_array fpri
         p0 = p
     msg = "Failed to converge after %d iterations, value is %s" % (MAXITER, p)
     raise RuntimeError(msg)
+
+
+# callback function wrapper that extracts function, args from params struct
+cdef double scipy_zeros_functions_func(double x, void *params):
+    cdef c_zeros_array.scipy_zeros_parameters *myparams = <c_zeros_array.scipy_zeros_parameters *> params
+    cdef int n = myparams.n, i
+    cdef double[MAXARGS] myargs
+    cdef callback_type_array f = myparams.function
+
+    myargs[0] = x
+    for i in range(n):
+        myargs[i+1] = myparams.args[i]
+
+    return f(myargs)
 
 
 # cythonized way to call scalar bisect
