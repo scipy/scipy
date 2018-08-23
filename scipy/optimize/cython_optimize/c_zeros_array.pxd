@@ -19,9 +19,10 @@ ctypedef struct scipy_newton_parameters:
     int funcalls
     int iterations
     int error_num
-    callback_type function
-    callback_type function_derivative
-    callback_type function_second_derivative
+    callback_type_array function
+    callback_type_array function_derivative
+    callback_type_array function_second_derivative
+    int n
     double* args
 
 

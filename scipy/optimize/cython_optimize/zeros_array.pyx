@@ -1,34 +1,83 @@
 from __future__ import division, print_function, absolute_import
 import warnings
-import cython
 from . cimport c_zeros_array
 
 DEF MAXARGS = 10
 
 
-@cython.cdivision(True)
-cdef double newton(callback_type_array func, double p0, callback_type_array fprime, int n, double* args):
-    # Newton-Rapheson method
-    cdef int i
-    cdef double fder, fval, p
-    cdef double[MAXARGS] p0args
-    for iter in range(MAXITER):
-        p0args[0] = p0
-        for i in range(n):
-            p0args[i+1] = args[i]
-        fder = fprime(n, p0args)
-        if fder == 0:
-            msg = "derivative was zero."
-            warnings.warn(msg, RuntimeWarning)
-            return p0
-        fval = func(n, p0args)
-        # Newton step
-        p = p0 - fval / fder
-        if abs(p - p0) < TOL:  # np_abs(p - p0).max() < tol:
-            return p
-        p0 = p
-    msg = "Failed to converge after %d iterations, value is %s" % (MAXITER, p)
-    raise RuntimeError(msg)
+# callback function wrapper that extracts function, args from params struct
+cdef double scipy_newton_functions_func(double x, void *params):
+    cdef c_zeros_array.scipy_newton_parameters *myparams = <c_zeros_array.scipy_newton_parameters *> params
+    cdef int n = myparams.n, i
+    cdef double[MAXARGS] myargs
+    cdef callback_type_array func = myparams.function
+
+    myargs[0] = x
+    for i in range(n):
+        myargs[i+1] = myparams.args[i]
+
+    return func(n, myargs)  # callback_type_array takes a double and a tuple
+
+
+# callback function wrapper that extracts function, args from params struct
+cdef double scipy_newton_functions_fprime(double x, void *params):
+    cdef c_zeros_array.scipy_newton_parameters *myparams = <c_zeros_array.scipy_newton_parameters *> params
+    cdef int n = myparams.n, i
+    cdef double[MAXARGS] myargs
+    cdef callback_type_array fprime = myparams.function_derivative
+
+    myargs[0] = x
+    for i in range(n):
+        myargs[i+1] = myparams.args[i]
+
+    return fprime(n, myargs)  # callback_type_array takes a double and a tuple
+
+
+# callback function wrapper that extracts function, args from params struct
+cdef double scipy_newton_functions_fprime2(double x, void *params):
+    cdef c_zeros_array.scipy_newton_parameters *myparams = <c_zeros_array.scipy_newton_parameters *> params
+    cdef int n = myparams.n, i
+    cdef double[MAXARGS] myargs
+    cdef callback_type_array fprime2 = myparams.function_second_derivative
+
+    myargs[0] = x
+    for i in range(n):
+        myargs[i+1] = myparams.args[i]
+
+    return fprime2(n, myargs)  # callback_type_array takes a double and a tuple
+
+
+# Newton-Raphson method
+cdef double newton(callback_type_array func, double p0, callback_type_array fprime, int n, double* args, double tol, int maxiter):
+    cdef c_zeros_array.scipy_newton_parameters myparams
+    # create params struct
+    myparams.n = n
+    myparams.args = args
+    myparams.function = func
+    myparams.function_derivative = fprime
+    return c_zeros_array.newton(scipy_newton_functions_func, p0, scipy_newton_functions_fprime, <c_zeros_array.default_parameters *> &myparams, tol, maxiter)
+
+
+# Secant method
+cdef double secant(callback_type_array func, double p0, int n, double* args, double tol, int maxiter):
+    cdef c_zeros_array.scipy_newton_parameters myparams
+    # create params struct
+    myparams.n = n
+    myparams.args = args
+    myparams.function = func
+    return c_zeros_array.secant(scipy_newton_functions_func, p0, <c_zeros_array.default_parameters *> &myparams, tol, maxiter)
+
+
+# Halley's method
+cdef double halley(callback_type_array func, double p0, callback_type_array fprime, int n, double* args, double tol, int maxiter, callback_type_array fprime2):
+    cdef c_zeros_array.scipy_newton_parameters myparams
+    # create params struct
+    myparams.n = n
+    myparams.args = args
+    myparams.function = func
+    myparams.function_derivative = fprime
+    myparams.function_second_derivative = fprime2
+    return c_zeros_array.halley(scipy_newton_functions_func, p0, scipy_newton_functions_fprime, <c_zeros_array.default_parameters *> &myparams, tol, maxiter, scipy_newton_functions_fprime2)
 
 
 # callback function wrapper that extracts function, args from params struct
@@ -42,7 +91,7 @@ cdef double scipy_zeros_functions_func(double x, void *params):
     for i in range(n):
         myargs[i+1] = myparams.args[i]
 
-    return f(myargs)
+    return f(n, myargs)
 
 
 # cythonized way to call scalar bisect
