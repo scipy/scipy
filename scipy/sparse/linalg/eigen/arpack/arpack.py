@@ -1346,13 +1346,13 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
 
     If M is specified, solves ``A * x[i] = w[i] * M * x[i]``, the
     generalized eigenvalue problem for w[i] eigenvalues
-    with corresponding eigenvectors x[i]
+    with corresponding eigenvectors x[i].
 
     Parameters
     ----------
     A : An N x N matrix, array, sparse matrix, or LinearOperator representing
-        the operation A * x, where A is a real symmetric matrix
-        For buckling mode (see below) A must additionally be positive-definite
+        the operation A * x, where A is a real symmetric matrix.
+        For buckling mode (see below) A must additionally be positive-definite.
     k : int, optional
         The number of eigenvalues and eigenvectors desired.
         `k` must be smaller than N. It is not possible to compute all
@@ -1378,9 +1378,9 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         results, the data type of M should be the same as that of A.
         Additionally:
 
-            If sigma is None, M is symmetric positive definite
+            If sigma is None, M is symmetric positive definite.
 
-            If sigma is specified, M is symmetric positive semi-definite
+            If sigma is specified, M is symmetric positive semi-definite.
 
             In buckling mode, M is symmetric indefinite.
 
@@ -1420,15 +1420,15 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         If A is a complex hermitian matrix, 'BE' is invalid.
         Which `k` eigenvectors and eigenvalues to find:
 
-            'LM' : Largest (in magnitude) eigenvalues
+            'LM' : Largest (in magnitude) eigenvalues.
 
-            'SM' : Smallest (in magnitude) eigenvalues
+            'SM' : Smallest (in magnitude) eigenvalues.
 
-            'LA' : Largest (algebraic) eigenvalues
+            'LA' : Largest (algebraic) eigenvalues.
 
-            'SA' : Smallest (algebraic) eigenvalues
+            'SA' : Smallest (algebraic) eigenvalues.
 
-            'BE' : Half (k/2) from each end of the spectrum
+            'BE' : Half (k/2) from each end of the spectrum.
 
         When k is odd, return one more (k/2+1) from the high end.
         When sigma != None, 'which' refers to the shifted eigenvalues ``w'[i]``
@@ -1436,7 +1436,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         at finding large values than small values.  If small eigenvalues are
         desired, consider using shift-invert mode for better performance.
     maxiter : int, optional
-        Maximum number of Arnoldi update iterations allowed
+        Maximum number of Arnoldi update iterations allowed.
         Default: ``n*10``
     tol : float
         Relative accuracy for eigenvalues (stopping criterion).
@@ -1450,15 +1450,15 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         the order in which eigenvalues are sorted. The sort order is also dependent on the which variable.
 
             For which = 'LM' or 'SA':
-                If `return_eigenvectors` is True, eigenvalues are sorted by algebraic value
+                If `return_eigenvectors` is True, eigenvalues are sorted by algebraic value.
 
-                If `return_eigenvectors` is False, eigenvalues are sorted by absolute value
+                If `return_eigenvectors` is False, eigenvalues are sorted by absolute value.
 
             For which = 'BE' or 'LA':
-                eigenvalues are always sorted by algebraic value
+                eigenvalues are always sorted by algebraic value.
 
             For which = 'SM':
-                If `return_eigenvectors` is True, eigenvalues are sorted by algebraic value
+                If `return_eigenvectors` is True, eigenvalues are sorted by algebraic value.
 
                 If `return_eigenvectors` is False, eigenvalues are sorted by decreasing absolute value.
 
@@ -1489,7 +1489,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
 
         The choice of mode will affect which eigenvalues are selected by
         the keyword 'which', and can also impact the stability of
-        convergence (see [2] for a discussion)
+        convergence (see [2] for a discussion).
 
     Raises
     ------
