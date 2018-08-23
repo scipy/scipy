@@ -3231,7 +3231,7 @@ def test_normalitytests():
     # numbers verified with R: dagoTest in package fBasics
     st_normal, st_skew, st_kurt = (3.92371918, 1.98078826, -0.01403734)
     pv_normal, pv_skew, pv_kurt = (0.14059673, 0.04761502, 0.98880019)
-    x = np.array((-2,-1,0,1,2,3)*4)**2
+    x = np.array((-2, -1, 0, 1, 2, 3)*4)**2
     attributes = ('statistic', 'pvalue')
 
     assert_array_almost_equal(stats.normaltest(x), (st_normal, pv_normal))
@@ -3281,6 +3281,12 @@ def test_normalitytests():
 
     assert_raises(ValueError, stats.normaltest, x, nan_policy='raise')
     assert_raises(ValueError, stats.normaltest, x, nan_policy='foobar')
+
+    # regression test for issue gh-9033: x cleary non-normal but power of
+    # negtative denom needs to be handled correctly to reject normality
+    counts = [128, 0, 58, 7, 0, 41, 16, 0, 0, 167]
+    x = np.hstack([np.full(c, i) for i, c in enumerate(counts)])
+    assert_equal(stats.kurtosistest(x)[1] < 0.01, True)
 
 
 class TestRankSums(object):
