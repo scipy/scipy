@@ -34,7 +34,7 @@ except AttributeError:
     float_power = np.power
 
 
-# Kolmogorov-Smirnov one-sided and two-sided test statistics
+## Kolmogorov-Smirnov one-sided and two-sided test statistics
 class ksone_gen(rv_continuous):
     """General Kolmogorov-Smirnov one-sided test.
 
@@ -1296,8 +1296,8 @@ class exponnorm_gen(rv_continuous):
 
     where :math:`x` is a real number and :math:`K > 0`.
 
-    It can be thought of as the sum of a standard normal random
-    variable and an exponentially distributed random variable with rate
+    It can be thought of as the sum of a standard normal random variable
+    and an independent exponentially distributed random variable with rate
     ``1/K``.
 
     %(after_notes)s
@@ -6544,7 +6544,7 @@ class vonmises_gen(rv_continuous):
 
     Notes
     -----
-     The probability density function for `vonmises` and `vonmises_line` is:
+    The probability density function for `vonmises` and `vonmises_line` is:
 
     .. math::
 
