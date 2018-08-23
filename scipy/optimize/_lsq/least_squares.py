@@ -267,15 +267,14 @@ def least_squares(
         element (i, j) is the partial derivative of f[i] with respect to
         x[j]). The keywords select a finite difference scheme for numerical
         estimation. The scheme '3-point' is more accurate, but requires
-        twice as much operations compared to '2-point' (default). The
-        scheme 'cs' uses complex steps, and while potentially the most
-        accurate, it is applicable only when `fun` correctly handles
-        complex inputs and can be analytically continued to the complex
-        plane. Method 'lm' always uses the '2-point' scheme. If callable,
-        it is used as ``jac(x, *args, **kwargs)`` and should return a
-        good approximation (or the exact value) for the Jacobian as an
-        array_like (np.atleast_2d is applied), a sparse matrix or a
-        `scipy.sparse.linalg.LinearOperator`.
+        twice as many operations as '2-point' (default). The scheme 'cs'
+        uses complex steps, and while potentially the most accurate, it is
+        applicable only when `fun` correctly handles complex inputs and
+        can be analytically continued to the complex plane. Method 'lm'
+        always uses the '2-point' scheme. If callable, it is used as
+        ``jac(x, *args, **kwargs)`` and should return a good approximation
+        (or the exact value) for the Jacobian as an array_like (np.atleast_2d
+        is applied), a sparse matrix or a `scipy.sparse.linalg.LinearOperator`.
     bounds : 2-tuple of array_like, optional
         Lower and upper bounds on independent variables. Defaults to no bounds.
         Each array must match the size of `x0` or be a scalar, in the latter
