@@ -199,6 +199,10 @@ functions defined on (a subset of) the complex plane.
 +-------------+----------+----------+-----------+-------------+-------------+----------------+
 
 
+.. seealso::
+
+   `scipy.optimize.cython_optimize` -- Typed Cython versions of zeros functions
+
 Fixed point finding:
 
 .. autosummary::
