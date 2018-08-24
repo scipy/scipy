@@ -706,7 +706,7 @@ cdef double_or_complex _clough_tocher_2d_single(qhull.DelaunayInfo_t *d,
         if itri == -1:
             # No neighbour.
             # Compute derivative to the centroid direction (e_12 + e_13)/2.
-            g[k] = -2./3
+            g[k] = -1./2
             continue
 
         # Centroid of the neighbour, in our local barycentric coordinates
