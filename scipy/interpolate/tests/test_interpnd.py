@@ -347,3 +347,42 @@ class TestCloughTocher2DInterpolator(object):
         ip2 = pickle.loads(pickle.dumps(ip))
 
         assert_almost_equal(ip(0.5, 0.5), ip2(0.5, 0.5))
+
+    def test_boundary_tri_symmetry(self):
+        # Interpolation at neighbourless triangles should retain
+        # symmetry with mirroring the triangle.
+
+        # Equilateral triangle
+        points = np.array([(0, 0), (1, 0), (0.5, np.sqrt(3)/2)])
+        values = np.array([1, 0, 0])
+
+        ip = interpnd.CloughTocher2DInterpolator(points, values)
+
+        # Set gradient to zero at vertices
+        ip.grad[...] = 0
+
+        # Interpolation should be symmetric vs. bisector
+        alpha = 0.3
+        p1 = np.array([0.5 * np.cos(alpha), 0.5 * np.sin(alpha)])
+        p2 = np.array([0.5 * np.cos(np.pi/3 - alpha), 0.5 * np.sin(np.pi/3 - alpha)])
+
+        v1 = ip(p1)
+        v2 = ip(p2)
+        assert_allclose(v1, v2)
+
+        # ... and affine invariant
+        np.random.seed(1)
+        A = np.random.randn(2, 2)
+        b = np.random.randn(2)
+
+        points = A.dot(points.T).T + b[None,:]
+        p1 = A.dot(p1) + b
+        p2 = A.dot(p2) + b
+
+        ip = interpnd.CloughTocher2DInterpolator(points, values)
+        ip.grad[...] = 0
+
+        w1 = ip(p1)
+        w2 = ip(p2)
+        assert_allclose(w1, v1)
+        assert_allclose(w2, v2)
