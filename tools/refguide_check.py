@@ -92,6 +92,7 @@ PUBLIC_SUBMODULES = [
     'sparse.linalg',
     'spatial',
     'spatial.distance',
+    'spatial.transform',
     'special',
     'stats',
     'stats.mstats',

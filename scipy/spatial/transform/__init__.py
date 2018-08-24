@@ -9,12 +9,12 @@ This package implements various spatial transformations. For now,
 only rotations are supported.
 
 Rotations in 3 dimensions
--------------------------
+=========================
 .. autosummary::
-    :toctree: generated/
+   :toctree: generated/
 
-    Rotation
-    Slerp
+   Rotation
+   Slerp
 
 """
 from __future__ import division, print_function, absolute_import

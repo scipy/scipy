@@ -29,6 +29,8 @@
 
 from __future__ import division, print_function, absolute_import
 
+__all__ = ['readsav']
+
 import struct
 import numpy as np
 from numpy.compat import asstr
