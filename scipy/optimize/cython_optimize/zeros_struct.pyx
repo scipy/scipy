@@ -76,3 +76,30 @@ cdef double bisect(callback_type f, double xa, double xb, void *args, double xto
     myparams.args = args
     myparams.function = f
     return c_zeros_struct.bisect(scipy_zeros_functions_func, xa, xb, xtol, rtol, iter, <c_zeros_struct.default_parameters *> &myparams)
+
+
+# cythonized way to call scalar ridder
+cdef double ridder(callback_type f, double xa, double xb, void *args, double xtol, double rtol, int iter):
+    cdef c_zeros_struct.scipy_zeros_parameters myparams
+    # create params struct
+    myparams.args = args
+    myparams.function = f
+    return c_zeros_struct.ridder(scipy_zeros_functions_func, xa, xb, xtol, rtol, iter, <c_zeros_struct.default_parameters *> &myparams)
+
+
+# cythonized way to call scalar brenth
+cdef double brenth(callback_type f, double xa, double xb, void *args, double xtol, double rtol, int iter):
+    cdef c_zeros_struct.scipy_zeros_parameters myparams
+    # create params struct
+    myparams.args = args
+    myparams.function = f
+    return c_zeros_struct.brenth(scipy_zeros_functions_func, xa, xb, xtol, rtol, iter, <c_zeros_struct.default_parameters *> &myparams)
+
+
+# cythonized way to call scalar brentq
+cdef double brentq(callback_type f, double xa, double xb, void *args, double xtol, double rtol, int iter):
+    cdef c_zeros_struct.scipy_zeros_parameters myparams
+    # create params struct
+    myparams.args = args
+    myparams.function = f
+    return c_zeros_struct.brentq(scipy_zeros_functions_func, xa, xb, xtol, rtol, iter, <c_zeros_struct.default_parameters *> &myparams)
