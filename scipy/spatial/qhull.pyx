@@ -1071,13 +1071,15 @@ def _get_barycentric_transforms(np.ndarray[np.double_t, ndim=2] points,
     cdef np.ndarray[np.double_t, ndim=2] T
     cdef np.ndarray[np.double_t, ndim=3] Tinvs
     cdef int isimplex
-    cdef int i, j, n, nrhs, lda, ldb, info
+    cdef int i, j, n, nrhs, lda, ldb
+    cdef int info = 0
     cdef int ipiv[NPY_MAXDIMS+1]
     cdef int ndim, nsimplex
     cdef double centroid[NPY_MAXDIMS]
     cdef double c[NPY_MAXDIMS+1]
     cdef double *transform
-    cdef double anorm, rcond
+    cdef double anorm
+    cdef double rcond = 0.0
     cdef double rcond_limit
 
     cdef double work[4*NPY_MAXDIMS]
