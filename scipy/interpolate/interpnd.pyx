@@ -590,8 +590,7 @@ cdef double_or_complex _clough_tocher_2d_single(qhull.DelaunayInfo_t *d,
          c1101, c1011, c0111
     cdef double_or_complex \
          f1, f2, f3, df12, df13, df21, df23, df31, df32
-    cdef double \
-         g1, g2, g3
+    cdef double g[3]
     cdef double \
          e12x, e12y, e23x, e23y, e31x, e31y, \
          e14x, e14y, e24x, e24y, e34x, e34y
@@ -665,13 +664,13 @@ cdef double_or_complex _clough_tocher_2d_single(qhull.DelaunayInfo_t *d,
     # In [CT]_, it is suggested to pick `w` as the normal of the edge.
     # This choice is given by the formulas
     #
-    #    w_12 = E_24 + g1 * E_23
-    #    w_23 = E_34 + g2 * E_31
-    #    w_31 = E_14 + g3 * E_12
+    #    w_12 = E_24 + g[0] * E_23
+    #    w_23 = E_34 + g[1] * E_31
+    #    w_31 = E_14 + g[2] * E_12
     #
-    #    g1 = -(e24x*e23x + e24y*e23y) / (e23x**2 + e23y**2)
-    #    g2 = -(e34x*e31x + e34y*e31y) / (e31x**2 + e31y**2)
-    #    g3 = -(e14x*e12x + e14y*e12y) / (e12x**2 + e12y**2)
+    #    g[0] = -(e24x*e23x + e24y*e23y) / (e23x**2 + e23y**2)
+    #    g[1] = -(e34x*e31x + e34y*e31y) / (e31x**2 + e31y**2)
+    #    g[2] = -(e14x*e12x + e14y*e12y) / (e12x**2 + e12y**2)
     #
     # However, this choice gives an interpolant that is *not*
     # invariant under affine transforms. This has some bad
@@ -685,7 +684,7 @@ cdef double_or_complex _clough_tocher_2d_single(qhull.DelaunayInfo_t *d,
     # one observes that as eps -> 0, the absolute maximum value of the
     # interpolant approaches infinity.
     #
-    # So below, we aim to pick affine invariant `g1`, `g2`, `g3`.
+    # So below, we aim to pick affine invariant `g[k]`.
     # We choose
     #
     #     w = V_4' - V_4
@@ -707,12 +706,7 @@ cdef double_or_complex _clough_tocher_2d_single(qhull.DelaunayInfo_t *d,
         if itri == -1:
             # No neighbour.
             # Compute derivative to the centroid direction (e_12 + e_13)/2.
-            if k == 0:
-                g1 = -2./3
-            elif k == 1:
-                g2 = -2./3
-            elif k == 2:
-                g3 = -2./3
+            g[k] = -2./3
             continue
 
         # Centroid of the neighbour, in our local barycentric coordinates
@@ -735,17 +729,17 @@ cdef double_or_complex _clough_tocher_2d_single(qhull.DelaunayInfo_t *d,
         # conclude that the choice below is affine-invariant.
 
         if k == 0:
-            g1 = (2*c[2] + c[1] - 1) / (2 - 3*c[2] - 3*c[1])
+            g[k] = (2*c[2] + c[1] - 1) / (2 - 3*c[2] - 3*c[1])
         elif k == 1:
-            g2 = (2*c[0] + c[2] - 1) / (2 - 3*c[0] - 3*c[2])
+            g[k] = (2*c[0] + c[2] - 1) / (2 - 3*c[0] - 3*c[2])
         elif k == 2:
-            g3 = (2*c[1] + c[0] - 1) / (2 - 3*c[1] - 3*c[0])
+            g[k] = (2*c[1] + c[0] - 1) / (2 - 3*c[1] - 3*c[0])
 
-    c0111 = (g1*(-c0300 + 3*c0210 - 3*c0120 + c0030)
+    c0111 = (g[0]*(-c0300 + 3*c0210 - 3*c0120 + c0030)
              + (-c0300 + 2*c0210 - c0120 + c0021 + c0201))/2
-    c1011 = (g2*(-c0030 + 3*c1020 - 3*c2010 + c3000)
+    c1011 = (g[1]*(-c0030 + 3*c1020 - 3*c2010 + c3000)
              + (-c0030 + 2*c1020 - c2010 + c2001 + c0021))/2
-    c1101 = (g3*(-c3000 + 3*c2100 - 3*c1200 + c0300)
+    c1101 = (g[2]*(-c3000 + 3*c2100 - 3*c1200 + c0300)
              + (-c3000 + 2*c2100 - c1200 + c2001 + c0201))/2
 
     c1002 = (c1101 + c1011 + c2001)/3
