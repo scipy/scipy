@@ -1447,7 +1447,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         See notes in sigma, above.
     return_eigenvectors : bool
         Return eigenvectors (True) in addition to eigenvalues. This value determines
-        the order in which eigenvalues are sorted. The sort order is also dependent on the which variable.
+        the order in which eigenvalues are sorted. The sort order is also dependent on the `which` variable.
 
             For which = 'LM' or 'SA':
                 If `return_eigenvectors` is True, eigenvalues are sorted by algebraic value.
