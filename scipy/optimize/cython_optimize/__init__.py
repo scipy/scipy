@@ -126,9 +126,9 @@ with different combinations of callbacks and root-finders in the
 1. Select a callback signature, *eg* ``scipy.optimize.cython_optimize.zeros_struct``
 2. Select the root finder, *eg* :py:func:`~scipy.optimize.cython_optimize.zeros_struct.newton`
 3. Create a Cython ``.pyx`` file that imports the zeros module with the
-  selected callback signature, create the callback(s) using the selected
-  signature, and call the selected root-finder passing the callback(s) and any
-  extra arguments, and other parmetres paramters
+selected callback signature, create the callback(s) using the selected
+signature, and call the selected root-finder passing the callback(s) and any
+extra arguments, and other parmetres paramters
 4. If you want to call your function from Python, create a wrapper
 5. Create a Cython ``.pxd`` file if you need to export any Cython functions
 """
