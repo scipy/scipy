@@ -30,7 +30,7 @@ from ._trustregion_ncg import _minimize_trust_ncg
 from ._trustregion_krylov import _minimize_trust_krylov
 from ._trustregion_exact import _minimize_trustregion_exact
 from ._trustregion_constr import _minimize_trustregion_constr
-from ._constraints import Bounds, new_bounds_to_old, old_bound_to_new
+from ._constraints import (standardize_bounds, standardize_constraints)
 
 
 # constrained minimization
@@ -577,13 +577,10 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
             options.setdefault('barrier_tol', tol)
 
     if bounds is not None:
-        if meth == 'trust-constr':
-            if not isinstance(bounds, Bounds):
-                lb, ub = old_bound_to_new(bounds)
-                bounds = Bounds(lb, ub)
-        elif meth in ('l-bfgs-b', 'tnc', 'slsqp'):
-            if isinstance(bounds, Bounds):
-                bounds = new_bounds_to_old(bounds.lb, bounds.ub, x0.shape[0])
+        bounds = standardize_bounds(bounds, x0, meth)
+
+    if constraints is not None:
+        constraints = standardize_constraints(constraints, x0, meth)
 
     if meth == '_custom':
         return method(fun, x0, args=args, jac=jac, hess=hess, hessp=hessp,

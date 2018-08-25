@@ -4,7 +4,9 @@ import numpy as np
 from ._hessian_update_strategy import BFGS
 from ._differentiable_functions import (
     VectorFunction, LinearVectorFunction, IdentityVectorFunction)
-
+from .optimize import OptimizeWarning
+from warnings import warn
+from scipy.sparse import issparse
 
 class NonlinearConstraint(object):
     """Nonlinear constraint on the variables.
@@ -283,3 +285,166 @@ def strict_bounds(lb, ub, keep_feasible, n_vars):
     strict_lb[~keep_feasible] = -np.inf
     strict_ub[~keep_feasible] = np.inf
     return strict_lb, strict_ub
+
+
+def new_constraint_to_old(con, x0):
+
+    if isinstance(con, NonlinearConstraint):
+        if (con.finite_diff_jac_sparsity is not None or
+                con.finite_diff_rel_step is not None or
+                not isinstance(con.hess, BFGS) or  # misses user specified BFGS
+                con.keep_feasible):
+            warn("Constraint options `finite_diff_jac_sparsity`, "
+                 "`finite_diff_rel_step`, `keep_feasible`, and `hess`"
+                 "are ignored by this method.", OptimizeWarning)
+
+        fun = con.fun
+        if callable(con.jac):
+            jac = con.jac
+        else:
+            jac = None
+
+    else:  # LinearConstraint
+        if con.keep_feasible:
+            warn("Constraint option `keep_feasible` is ignored by this "
+                 "method.", OptimizeWarning)
+
+        A = con.A
+        if issparse(A):
+            A = A.todense()
+        fun = lambda x: np.dot(A, x)
+        jac = lambda x: A
+
+    # when bugs in VectorFunction/LinearVectorFunction are worked out, use
+    # pcon.fun.fun and pcon.fun.jac. Until then, get fun/jac above.
+    pcon = PreparedConstraint(con, x0)
+    lb, ub = pcon.bounds
+
+    i_eq = lb == ub
+    i_bound_below = np.logical_xor(lb != -np.inf, i_eq)
+    i_bound_above = np.logical_xor(ub != np.inf, i_eq)
+    i_unbounded = np.logical_and(lb == -np.inf, ub == np.inf)
+
+    if np.any(i_unbounded):
+        warn("At least one constraint is unbounded above and below. Such "
+             "constraints are ignored.", OptimizeWarning)
+
+    ceq = []
+    if np.any(i_eq):
+        def f_eq(x):
+            y = np.array(fun(x)).flatten()
+            return y[i_eq] - lb[i_eq]
+        ceq = [{"type": "eq", "fun": f_eq}]
+
+        if jac is not None:
+            def j_eq(x):
+                dy = jac(x)
+                if issparse(dy):
+                    dy = dy.todense()
+                dy = np.atleast_2d(dy)
+                return dy[i_eq, :]
+            ceq[0]["jac"] = j_eq
+
+    cineq = []
+    n_bound_below = np.sum(i_bound_below)
+    n_bound_above = np.sum(i_bound_above)
+    if n_bound_below + n_bound_above:
+        def f_ineq(x):
+            y = np.zeros(n_bound_below + n_bound_above)
+            y_all = np.array(fun(x)).flatten()
+            y[:n_bound_below] = y_all[i_bound_below] - lb[i_bound_below]
+            y[n_bound_below:] = -(y_all[i_bound_above] - ub[i_bound_above])
+            return y
+        cineq = [{"type": "ineq", "fun": f_ineq}]
+
+        if jac is not None:
+            def j_ineq(x):
+                dy = np.zeros((n_bound_below + n_bound_above, len(x0)))
+                dy_all = jac(x)
+                if issparse(dy_all):
+                    dy_all = dy_all.todense()
+                dy_all = np.atleast_2d(dy_all)
+                dy[:n_bound_below, :] = dy_all[i_bound_below]
+                dy[n_bound_below:, :] = -dy_all[i_bound_above]
+                return dy
+            cineq[0]["jac"] = j_ineq
+
+    old_constraints = ceq + cineq
+
+    if len(old_constraints) > 1:
+        warn("Equality and inequality constraints are specified in the same "
+             "element of the constraint list. For efficient use with this "
+             "method, equality and inequality constraints should be specified "
+             "in separate elements of the constraint list. ", OptimizeWarning)
+    return old_constraints
+
+
+def old_constraint_to_new(ic, con):
+
+    # check type
+    try:
+        ctype = con['type'].lower()
+    except KeyError:
+        raise KeyError('Constraint %d has no type defined.' % ic)
+    except TypeError:
+        raise TypeError('Constraints must be a sequence of dictionaries.')
+    except AttributeError:
+        raise TypeError("Constraint's type must be a string.")
+    else:
+        if ctype not in ['eq', 'ineq']:
+            raise ValueError("Unknown constraint type '%s'." % con['type'])
+    if 'fun' not in con:
+        raise ValueError('Constraint %d has no function defined.' % ic)
+
+    lb = 0
+    if ctype == 'eq':
+        ub = 0
+    else:
+        ub = np.inf
+
+    jac = '2-point'
+    if 'args' in con:
+        args = con['args']
+        fun = lambda x: con['fun'](x, *args)
+        if 'jac' in con:
+            jac = lambda x: con['jac'](x, *args)
+    else:
+        fun = con['fun']
+        if 'jac' in con:
+            jac = con['jac']
+
+    return NonlinearConstraint(fun, lb, ub, jac)
+
+
+def standardize_bounds(bounds, x0, meth):
+    if meth == 'trust-constr':
+        if not isinstance(bounds, Bounds):
+            lb, ub = old_bound_to_new(bounds)
+            bounds = Bounds(lb, ub)
+    elif meth in ('l-bfgs-b', 'tnc', 'slsqp'):
+        if isinstance(bounds, Bounds):
+            bounds = new_bounds_to_old(bounds.lb, bounds.ub, x0.shape[0])
+    return bounds
+
+
+def standardize_constraints(constraints, x0, meth):
+    all_constraint_types = (NonlinearConstraint, LinearConstraint, dict)
+    new_constraint_types = all_constraint_types[:-1]
+    if isinstance(constraints, all_constraint_types):
+        constraints = [constraints]
+    constraints = list(constraints)
+
+    additional_constraints = []
+    for i, con in enumerate(constraints):
+        constraints = list(constraints)
+        if (meth == 'trust-constr' and not
+                isinstance(con, new_constraint_types)):
+            constraints[i] = old_constraint_to_new(i, con)
+        elif (meth != 'trust-constr' and
+              isinstance(con, new_constraint_types)):
+            old_constraints = new_constraint_to_old(con, x0)
+            constraints[i] = old_constraints[0]
+            additional_constraints = old_constraints[1:]
+
+    constraints += additional_constraints
+    return constraints
