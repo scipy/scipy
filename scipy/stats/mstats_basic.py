@@ -25,7 +25,8 @@ __all__ = ['argstoarray',
            'rankdata',
            'scoreatpercentile','sem',
            'sen_seasonal_slopes','skew','skewtest','spearmanr',
-           'theilslopes','tmax','tmean','tmin','trim','trimboth',
+           'siegelslopes', 'theilslopes',
+           'tmax','tmean','tmin','trim','trimboth',
            'trimtail','trima','trimr','trimmed_mean','trimmed_std',
            'trimmed_stde','trimmed_var','tsem','ttest_1samp','ttest_onesamp',
            'ttest_ind','ttest_rel','tvar',
@@ -50,7 +51,8 @@ import scipy.special as special
 from ._stats_mstats_common import (
         _find_repeats,
         linregress as stats_linregress,
-        theilslopes as stats_theilslopes
+        theilslopes as stats_theilslopes,
+        siegelslopes as stats_siegelslopes 
         )
 
 
@@ -829,6 +831,11 @@ def theilslopes(y, x=None, alpha=0.95):
     up_slope : float
         Upper bound of the confidence interval on `medslope`.
 
+    See also
+    --------
+    siegelslopes : a similar technique with repeated medians
+
+
     Notes
     -----
     For more details on `theilslopes`, see `stats.theilslopes`.
@@ -849,6 +856,60 @@ def theilslopes(y, x=None, alpha=0.95):
     x = x.compressed().astype(float)
     # We now have unmasked arrays so can use `stats.theilslopes`
     return stats_theilslopes(y, x, alpha=alpha)
+
+
+def siegelslopes(y, x=None, method="hierarchical"):
+    r"""
+    Computes the Siegel estimator for a set of points (x, y).
+
+    `siegelslopes` implements a method for robust linear regression
+    using repeated medians to fit a line to the points (x, y).
+    The method is robust to outliers with an asymptotic breakdown point
+    of 50%.
+
+    Parameters
+    ----------
+    y : array_like
+        Dependent variable.
+    x : array_like or None, optional
+        Independent variable. If None, use ``arange(len(y))`` instead.
+    method : {'hierarchical', 'separate'}
+        If 'hierarchical', estimate the intercept using the estimated
+        slope ``medslope`` (default option).
+        If 'separate', estimate the intercept independent of the estimated
+        slope. See Notes for details.
+
+    Returns
+    -------
+    medslope : float
+        Estimate of the slope of the regression line.
+    medintercept : float
+        Estimate of the intercept of the regression line.
+
+    See also
+    --------
+    theilslopes : a similar technique without repeated medians
+
+    Notes
+    -----
+    For more details on `siegelslopes`, see `scipy.stats.siegelslopes`.
+
+    """
+    y = ma.asarray(y).ravel()
+    if x is None:
+        x = ma.arange(len(y), dtype=float)
+    else:
+        x = ma.asarray(x).ravel()
+        if len(x) != len(y):
+            raise ValueError("Incompatible lengths ! (%s<>%s)" % (len(y), len(x)))
+
+    m = ma.mask_or(ma.getmask(x), ma.getmask(y))
+    y._mask = x._mask = m
+    # Disregard any masked elements of x or y
+    y = y.compressed()
+    x = x.compressed().astype(float)
+    # We now have unmasked arrays so can use `stats.siegelslopes`
+    return stats_siegelslopes(y, x)
 
 
 def sen_seasonal_slopes(x):

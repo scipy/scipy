@@ -66,6 +66,7 @@ Correlation functions
    kendalltau
    kendalltau_seasonal
    linregress
+   siegelslopes
    theilslopes
    sen_seasonal_slopes
 

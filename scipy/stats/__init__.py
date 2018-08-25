@@ -226,6 +226,7 @@ Correlation functions
    kendalltau
    weightedtau
    linregress
+   siegelslopes
    theilslopes
 
 Statistical tests
