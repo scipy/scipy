@@ -167,29 +167,28 @@ class TestAsLinearOperator(object):
     def setup_method(self):
         self.cases = []
 
-        def make_cases(dtype):
-            self.cases.append(matrix([[1,2,3],[4,5,6]], dtype=dtype))
-            self.cases.append(np.array([[1,2,3],[4,5,6]], dtype=dtype))
-            self.cases.append(sparse.csr_matrix([[1,2,3],[4,5,6]], dtype=dtype))
+        def make_cases(original, dtype):
+            cases = []
+
+            cases.append((np.matrix(original, dtype=dtype), original))
+            cases.append((np.array(original, dtype=dtype), original))
+            cases.append((sparse.csr_matrix(original, dtype=dtype), original))
 
             # Test default implementations of _adjoint and _rmatvec, which
             # refer to each other.
             def mv(x, dtype):
-                y = np.array([1 * x[0] + 2 * x[1] + 3 * x[2],
-                              4 * x[0] + 5 * x[1] + 6 * x[2]], dtype=dtype)
+                y = original.dot(x)
                 if len(x.shape) == 2:
                     y = y.reshape(-1, 1)
                 return y
 
             def rmv(x, dtype):
-                return np.array([1 * x[0] + 4 * x[1],
-                                 2 * x[0] + 5 * x[1],
-                                 3 * x[0] + 6 * x[1]], dtype=dtype)
+                return original.T.conj().dot(x)
 
             class BaseMatlike(interface.LinearOperator):
                 def __init__(self, dtype):
                     self.dtype = np.dtype(dtype)
-                    self.shape = (2,3)
+                    self.shape = original.shape
 
                 def _matvec(self, x):
                     return mv(x, self.dtype)
@@ -208,53 +207,71 @@ class TestAsLinearOperator(object):
                                                     dtype=self.dtype,
                                                     shape=shape)
 
-            self.cases.append(HasRmatvec(dtype))
-            self.cases.append(HasAdjoint(dtype))
+            cases.append((HasRmatvec(dtype), original))
+            cases.append((HasAdjoint(dtype), original))
+            return cases
 
-        make_cases('int32')
-        make_cases('float32')
-        make_cases('float64')
+        original = np.array([[1,2,3], [4,5,6]])
+        self.cases += make_cases(original, np.int32)
+        self.cases += make_cases(original, np.float32)
+        self.cases += make_cases(original, np.float64)
+        self.cases += [(M.T, A.T) for M, A in make_cases(original.T, np.float64)
+                       if isinstance(M, interface.LinearOperator)]
+        self.cases += [(M.H, A.T.conj()) for M, A in make_cases(original.T, np.float64)
+                       if isinstance(M, interface.LinearOperator)]
+
+        original = np.array([[1, 2j, 3j], [4j, 5j, 6]])
+        self.cases += make_cases(original, np.complex_)
+        self.cases += [(M.T, A.T) for M, A in make_cases(original.T, np.complex_)
+                       if isinstance(M, interface.LinearOperator)]
+        self.cases += [(M.H, A.T.conj()) for M, A in make_cases(original.T, np.complex_)
+                       if isinstance(M, interface.LinearOperator)]
 
     def test_basic(self):
 
-        for M in self.cases:
+        for M, A_array in self.cases:
             A = interface.aslinearoperator(M)
             M,N = A.shape
 
-            assert_equal(A.matvec(np.array([1,2,3])), [14,32])
-            assert_equal(A.matvec(np.array([[1],[2],[3]])), [[14],[32]])
+            xs = [np.array([1, 2, 3]),
+                  np.array([[1], [2], [3]])]
+            ys = [np.array([1, 2]), np.array([[1], [2]])]
 
-            assert_equal(A * np.array([1,2,3]), [14,32])
-            assert_equal(A * np.array([[1],[2],[3]]), [[14],[32]])
+            if A.dtype == np.complex_:
+                xs += [np.array([1, 2j, 3j]),
+                       np.array([[1], [2j], [3j]])]
+                ys += [np.array([1, 2j]), np.array([[1], [2j]])]
 
-            assert_equal(A.rmatvec(np.array([1,2])), [9,12,15])
-            assert_equal(A.rmatvec(np.array([[1],[2]])), [[9],[12],[15]])
-            assert_equal(A.H.matvec(np.array([1,2])), [9,12,15])
-            assert_equal(A.H.matvec(np.array([[1],[2]])), [[9],[12],[15]])
-            assert_equal(A.T.matvec(np.array([1,2])), [9, 12, 15])
-            assert_equal(A.T.matvec(np.array([[1], [2]])), [[9], [12], [15]])
+            x2 = np.array([[1, 4], [2, 5], [3, 6]])
 
-            assert_equal(
-                    A.matmat(np.array([[1,4],[2,5],[3,6]])),
-                    [[14,32],[32,77]])
+            for x in xs:
+                assert_equal(A.matvec(x), A_array.dot(x))
+                assert_equal(A * x, A_array.dot(x))
 
-            assert_equal(A * np.array([[1,4],[2,5],[3,6]]), [[14,32],[32,77]])
+            assert_equal(A.matmat(x2), A_array.dot(x2))
+            assert_equal(A * x2, A_array.dot(x2))
+
+            for y in ys:
+                assert_equal(A.rmatvec(y), A_array.T.conj().dot(y))
+                assert_equal(A.T.matvec(y), A_array.T.dot(y))
+                assert_equal(A.H.matvec(y), A_array.T.conj().dot(y))
 
             if hasattr(M,'dtype'):
                 assert_equal(A.dtype, M.dtype)
 
     def test_dot(self):
 
-        for M in self.cases:
+        for M, A_array in self.cases:
             A = interface.aslinearoperator(M)
             M,N = A.shape
 
-            assert_equal(A.dot(np.array([1,2,3])), [14,32])
-            assert_equal(A.dot(np.array([[1],[2],[3]])), [[14],[32]])
+            x0 = np.array([1, 2, 3])
+            x1 = np.array([[1], [2], [3]])
+            x2 = np.array([[1, 4], [2, 5], [3, 6]])
 
-            assert_equal(
-                    A.dot(np.array([[1,4],[2,5],[3,6]])),
-                    [[14,32],[32,77]])
+            assert_equal(A.dot(x0), A_array.dot(x0))
+            assert_equal(A.dot(x1), A_array.dot(x1))
+            assert_equal(A.dot(x2), A_array.dot(x2))
 
 
 def test_repr():
@@ -368,3 +385,15 @@ def test_adjoint_conjugate():
 
     assert_equal(B.dot(v), Y.dot(v))
     assert_equal(B.H.dot(v), Y.T.conj().dot(v))
+
+def test_transpose_noconjugate():
+    X = np.array([[1j]])
+    A = interface.aslinearoperator(X)
+
+    B = 1j * A
+    Y = 1j * X
+
+    v = np.array([1])
+
+    assert_equal(B.dot(v), Y.dot(v))
+    assert_equal(B.T.dot(v), Y.T.dot(v))

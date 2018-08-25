@@ -449,13 +449,10 @@ class LinearOperator(object):
 
     def _adjoint(self):
         """Default implementation of _adjoint; defers to rmatvec."""
-        shape = (self.shape[1], self.shape[0])
-        return _CustomLinearOperator(shape, matvec=self.rmatvec,
-                                     rmatvec=self.matvec,
-                                     dtype=self.dtype)
+        return _AdjointLinearOperator(self)
 
     def _transpose(self):
-        """ Default implementation of _transpose """
+        """ Default implementation of _transpose; defers to rmatvec + conj"""
         return _TransposedLinearOperator(self)
 
 
@@ -495,14 +492,33 @@ class _CustomLinearOperator(LinearOperator):
                                      dtype=self.dtype)
 
 
-class _TransposedLinearOperator(_CustomLinearOperator):
+class _AdjointLinearOperator(LinearOperator):
+    """Adjoint of arbitrary Linear Operator"""
+    def __init__(self, A):
+        shape = (A.shape[1], A.shape[0])
+        super(_AdjointLinearOperator, self).__init__(dtype=A.dtype, shape=shape)
+        self.A = A
+
+    def _matvec(self, x):
+        return self.A._rmatvec(x)
+
+    def _rmatvec(self, x):
+        return self.A._matvec(x)
+
+
+class _TransposedLinearOperator(LinearOperator):
     """Transposition of arbitrary Linear Operator"""
     def __init__(self, A):
         shape = (A.shape[1], A.shape[0])
-        super(_TransposedLinearOperator, self).__init__(shape,
-                                     matvec=lambda x: np.conj(A.rmatvec(np.conj(x))),
-                                     rmatvec=lambda x: np.conj(A.matvec(np.conj(x))),
-                                     dtype=A.dtype)
+        super(_TransposedLinearOperator, self).__init__(dtype=A.dtype, shape=shape)
+        self.A = A
+
+    def _matvec(self, x):
+        # NB. np.conj works also on sparse matrices
+        return np.conj(self.A._rmatvec(np.conj(x)))
+
+    def _rmatvec(self, x):
+        return np.conj(self.A._matvec(np.conj(x)))
 
 
 def _get_dtype(operators, dtypes=None):
