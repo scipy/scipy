@@ -22,9 +22,9 @@ import scipy as sp
 import scipy.sparse as sps
 from warnings import warn
 from .optimize import OptimizeResult, OptimizeWarning, _check_unknown_options
-from scipy.optimize._remove_redundancy import _remove_redundancy
-from scipy.optimize._remove_redundancy import _remove_redundancy_sparse
-from scipy.optimize._remove_redundancy import _remove_redundancy_dense
+from scipy.optimize._remove_redundancy import (
+    _remove_redundancy, _remove_redundancy_sparse, _remove_redundancy_dense
+    )
 from ._linprog_ip import _linprog_ip
 from ._linprog_simplex import _linprog_simplex
 
@@ -1123,6 +1123,34 @@ def _postprocess(x, c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
     return x, fun, slack, con, status, message
 
 
+def _display_summary(message, status, fun, iteration):
+    """
+    Print termination summary of the linear progam
+
+    Parameters
+    ----------
+    message : str
+            A string descriptor of the exit status of the optimization.
+    status : int
+        An integer representing the exit status of the optimization::
+
+                0 : Optimization terminated successfully
+                1 : Iteration limit reached
+                2 : Problem appears to be infeasible
+                3 : Problem appears to be unbounded
+                4 : Serious numerical difficulties encountered.
+
+    fun : float
+        Value of the objective function.
+    iteration : iteration
+        The number of iterations performed.
+    """
+    print(message)
+    if status in (0, 1):
+        print("         Current function value: {0: <12.6f}".format(fun))
+    print("         Iterations: {0:d}".format(iteration))
+
+
 def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
             bounds=None, method='simplex', callback=None,
             options=None):
@@ -1348,8 +1376,9 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     ...               options={"disp": True})
     Optimization terminated successfully.
          Current function value: -22.000000
-         Iterations: 1
+         Iterations: 5
     >>> print(res)
+         con: array([], dtype=float64)
          fun: -22.0
      message: 'Optimization terminated successfully.'
          nit: 1
@@ -1418,6 +1447,9 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     x, fun, slack, con, status, message = _postprocess(
         x, c_o, A_ub_o, b_ub_o, A_eq_o, b_eq_o,
         bounds, complete, undo, status, message, tol)
+
+    if options.get('disp', False):
+        _display_summary(message, status, fun, iteration)
 
     sol = {
         'x': x,

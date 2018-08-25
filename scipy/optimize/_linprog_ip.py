@@ -10,9 +10,6 @@ import scipy.sparse as sps
 from warnings import warn
 from scipy.linalg import LinAlgError
 from .optimize import OptimizeResult, OptimizeWarning, _check_unknown_options
-from scipy.optimize._remove_redundancy import _remove_redundancy
-from scipy.optimize._remove_redundancy import _remove_redundancy_sparse
-from scipy.optimize._remove_redundancy import _remove_redundancy_dense
 
 
 def _get_solver(sparse=False, lstsq=False, sym_pos=True, cholesky=True):
@@ -749,9 +746,6 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol,
             status = 1
             message = _get_message(status)
             break
-
-    if disp:
-        print(message)
 
     x_hat = x / tau
     # [4] Statement after Theorem 8.2

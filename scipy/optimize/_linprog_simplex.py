@@ -478,19 +478,6 @@ def _linprog_simplex(c, c0, A, b, maxiter=1000, disp=False, callback=None,
     solution = np.zeros(n + m)
     solution[basis[:n]] = T[:n, -1]
     x = solution[:m]
-    
-    # Optimization complete at this point
-    obj = -T[-1, -1]
 
-    if status in (0, 1):
-        if disp:
-            print(messages[status])
-            print("         Current function value: {0: <12.6f}".format(obj))
-            print("         Iterations: {0:d}".format(nit2))
-    else:
-        if disp:
-            print(messages[status])
-            print("         Iterations: {0:d}".format(nit2))
-    
     return x, status, messages[status], int(nit2)
 

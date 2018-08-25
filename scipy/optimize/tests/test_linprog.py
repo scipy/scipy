@@ -1124,7 +1124,7 @@ class TestLinprogSimplex(LinprogCommonTests):
 
             basis = kwargs.pop('basis')
             assert_(isinstance(basis, np.ndarray))
-            assert_(basis.dtype == np.int_)
+            assert_(basis.dtype.kind == 'i')
 
             complete = kwargs.pop('complete')
             assert_(isinstance(complete, bool))
@@ -1164,10 +1164,6 @@ class TestLinprogSimplex(LinprogCommonTests):
         # close to zero.
         with pytest.warns(OptimizeWarning):
             super(TestLinprogSimplex, self).test_issue_8174()
-
-
-class TestLinprogSimplexNoPresolve(TestLinprogSimplex):
-    options = {'presolve': False}
 
 
 class BaseTestLinprogIP(LinprogCommonTests):
