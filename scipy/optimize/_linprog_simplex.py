@@ -290,7 +290,6 @@ def _solve_simplex(T, n, basis, maxiter=1000, phase=2, callback=None,
             else:
                 _apply_pivot(T, basis, pivrow, pivcol)
                 nit += 1
-
     return nit, status
 
 
@@ -447,7 +446,6 @@ def _linprog_simplex(c, c0, A, b, maxiter=1000, disp=False, callback=None,
 
     nit1, status = _solve_simplex(T, n, basis, phase=1, callback=callback,
                                   maxiter=maxiter, tol=tol, bland=bland)
-
     # if pseudo objective is zero, remove the last row from the tableau and
     # proceed to phase 2
     if abs(T[-1, -1]) < tol:
@@ -471,7 +469,7 @@ def _linprog_simplex(c, c0, A, b, maxiter=1000, disp=False, callback=None,
 
     if status == 0:
         # Phase 2
-        nit2, status = _solve_simplex(T, n, basis, maxiter=maxiter-nit1,
+        nit2, status = _solve_simplex(T, n, basis, maxiter=maxiter,
                                       phase=2, callback=callback, tol=tol,
                                       nit0=nit1, bland=bland)
 
