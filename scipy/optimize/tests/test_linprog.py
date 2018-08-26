@@ -101,6 +101,13 @@ def lpgen_2d(m, n):
     return A, b, c.ravel()
 
 
+
+def _assert_iteration_limit_reached(res, maxiter):
+    assert_(not res.success, "Incorrectly reported success")
+    assert_(res.success < maxiter, "Incorrectly reported number of iterations")
+    assert_equal(res.status, 1, "Failed to report iteration limit reached")
+
+
 def _assert_infeasible(res):
     # res: linprog result object
     assert_(not res.success, "incorrectly reported success")
@@ -238,17 +245,19 @@ class LinprogCommonTests(object):
                          [0.5, -1.5, -0.5, 1],
                          [1, 0, 0, 0]])
         b_ub = [0, 0, 1]
-        # "interior-point" will succeed, "simplex" will fail
-        o = {key: self.options[key] for key in self.options}
-        o["maxiter"] = 100
+
+        maxiter = 100
+        o = {key: val for key, val in self.options.items()}
+        o['maxiter'] = maxiter
+
         res = linprog(c, A_ub=A_ub, b_ub=b_ub, options=o,
                       method=self.method)
-        if self.method == "simplex":
-            assert_(not res.success)
-            res = linprog(c, A_ub=A_ub, b_ub=b_ub,
-                          options=dict(maxiter=100, bland=True,),
-                          method=self.method)
-        _assert_success(res, desired_x=[1, 0, 1, 0])
+
+        if self.method == 'simplex'and not self.options.get('bland'):
+            _assert_iteration_limit_reached(res, o['maxiter'])
+        else:
+            _assert_success(res, desired_x=[1, 0, 1, 0])
+
 
     def test_linprog_cyclic_bland_bug_8561(self):
         # Test that pivot row is chosen correctly when using Bland's rule
@@ -1104,8 +1113,11 @@ class LinprogCommonTests(object):
         _assert_success(res)  # would not pass if solution is infeasible
 
 
-class TestLinprogSimplex(LinprogCommonTests):
+class BaseTestLinprogSimplex(LinprogCommonTests):
     method = "simplex"
+
+
+class TestLinprogSimplexCommon(BaseTestLinprogSimplex):
     options = {}
 
     def test_callback(self):
@@ -1147,23 +1159,24 @@ class TestLinprogSimplex(LinprogCommonTests):
 
     def test_issue_7237(self):
         with pytest.raises(ValueError):
-            super(TestLinprogSimplex, self).test_issue_7237()
+            super(TestLinprogSimplexCommon, self).test_issue_7237()
 
-    def test_issue_7237_passes_with_bland(self):
-        # https://github.com/scipy/scipy/issues/7237
-        # The simplex method sometimes "explodes" if the pivot value is very
-        # close to zero. Bland's rule provides an alternative pivot selection
-        # and produces a correct result.
-
-        self.options['bland'] = True
-        super(TestLinprogSimplex, self).test_issue_7237()
-        
     def test_issue_8174(self):
-        # https://github.com/scipy/scipy/issues/8174
-        # The simplex method sometimes "explodes" if the pivot value is very
-        # close to zero.
         with pytest.warns(OptimizeWarning):
-            super(TestLinprogSimplex, self).test_issue_8174()
+            super(TestLinprogSimplexCommon, self).test_issue_8174()
+
+
+
+class TestLinprogSimplexBland(BaseTestLinprogSimplex):
+    options = {'bland': True}
+
+    def test_bug_5400(self):
+        with pytest.raises(ValueError):
+            super(TestLinprogSimplexBland, self).test_bug_5400()
+
+    def test_issue_8174(self):
+        with pytest.warns(OptimizeWarning):
+            super(TestLinprogSimplexBland, self).test_issue_8174()
 
 
 class BaseTestLinprogIP(LinprogCommonTests):
