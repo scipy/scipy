@@ -1398,8 +1398,9 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     default_tol = 1e-12 if meth == 'simplex' else 1e-9
     tol = options.get('tol', default_tol)
 
+    solver_options = {k: v for k, v in options.items()}
     # This is an undocumented option for unit testing sparse presolve
-    _sparse_presolve = options.pop('_sparse_presolve', False)
+    _sparse_presolve = solver_options.pop('_sparse_presolve', False)
     if _sparse_presolve and A_eq is not None:
         A_eq = sps.coo_matrix(A_eq)
     if _sparse_presolve and A_ub is not None:
@@ -1407,7 +1408,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
     sparse = options.get('sparse', False)
     if not sparse and (sp.sparse.issparse(A_eq) or sp.sparse.issparse(A_ub)):
-        options['sparse'] = True
+        solver_options['sparse'] = True
         warn("Sparse constraint matrix detected; setting 'sparse':True.",
                 OptimizeWarning)
 
@@ -1426,8 +1427,8 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
     # Solve trivial problem, eliminate variables, tighten bounds, etc...
     c0 = 0  # we might get a constant term in the objective
-    if options.pop('presolve', True):
-        rr = options.pop('rr', True)
+    if solver_options.pop('presolve', True):
+        rr = solver_options.pop('rr', True)
         (c, c0, A_ub, b_ub, A_eq, b_eq, bounds, x, undo, complete, status,
             message) = _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, rr, tol)
 
@@ -1435,10 +1436,10 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         A, b, c, c0 = _get_Abc(c, c0, A_ub, b_ub, A_eq, b_eq, bounds, undo)
         if meth == 'simplex':
             x, status, message, iteration = _linprog_simplex(
-                c, c0=c0, A=A, b=b, callback=callback, **options)
+                c, c0=c0, A=A, b=b, callback=callback, **solver_options)
         elif meth == 'interior-point':
             x, status, message, iteration = _linprog_ip(
-                c, c0=c0, A=A, b=b, callback=callback, **options)
+                c, c0=c0, A=A, b=b, callback=callback, **solver_options)
         else:
             raise ValueError('Unknown solver %s' % method)
 

@@ -101,7 +101,6 @@ def lpgen_2d(m, n):
     return A, b, c.ravel()
 
 
-
 def _assert_iteration_limit_reached(res, maxiter):
     assert_(not res.success, "Incorrectly reported success")
     assert_(res.success < maxiter, "Incorrectly reported number of iterations")
@@ -257,7 +256,6 @@ class LinprogCommonTests(object):
             _assert_iteration_limit_reached(res, o['maxiter'])
         else:
             _assert_success(res, desired_x=[1, 0, 1, 0])
-
 
     def test_linprog_cyclic_bland_bug_8561(self):
         # Test that pivot row is chosen correctly when using Bland's rule
@@ -651,25 +649,28 @@ class LinprogCommonTests(object):
         _assert_infeasible(res)
 
     def test_empty_constraint_1(self):
-        # detected in presolve?
         res = linprog([-1, 1, -1, 1],
                       bounds=[(0, np.inf), (-np.inf, 0), (-1, 1), (-1, 1)],
                       method=self.method, options=self.options)
         _assert_unbounded(res)
-        assert_equal(res.nit, 0)
+        # Infeasibility detected in presolve requiring no iterations
+        # if presolve is not used nit > 0 is expected.
+        n = 0 if self.options.get('presolve', True) else 2
+        assert_equal(res.nit, n)
 
     def test_singleton_row_eq_1(self):
-        # detected in presolve?
         c = [1, 1, 1, 2]
         A_eq = [[1, 0, 0, 0], [0, 2, 0, 0], [1, 0, 0, 0], [1, 1, 1, 1]]
         b_eq = [1, 2, 2, 4]
         res = linprog(c, A_eq=A_eq, b_eq=b_eq,
                       method=self.method, options=self.options)
         _assert_infeasible(res)
-        assert_equal(res.nit, 0)
+        # Infeasibility detected in presolve requiring no iterations
+        # if presolve is not used nit > 0 is expected.
+        n = 0 if self.options.get('presolve', True) else 3
+        assert_equal(res.nit, n)
 
     def test_singleton_row_ub_1(self):
-        # detected in presolve?
         c = [1, 1, 1, 2]
         A_ub = [[1, 0, 0, 0], [0, 2, 0, 0], [-1, 0, 0, 0], [1, 1, 1, 1]]
         b_ub = [1, 2, -2, 4]
@@ -677,10 +678,13 @@ class LinprogCommonTests(object):
                       bounds=[(None, None), (0, None), (0, None), (0, None)],
                       method=self.method, options=self.options)
         _assert_infeasible(res)
-        assert_equal(res.nit, 0)
+
+        # Infeasibility detected in presolve requiring no iterations
+        # if presolve is not used nit > 0 is expected.
+        n = 0 if self.options.get('presolve', True) else 3
+        assert_equal(res.nit, n)
 
     def test_zero_column_2(self):
-        # detected in presolve?
         np.random.seed(0)
         m, n = 2, 4
         c = np.random.rand(n)
@@ -695,10 +699,12 @@ class LinprogCommonTests(object):
         res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds=(None, None),
                       method=self.method, options=self.options)
         _assert_unbounded(res)
-        assert_equal(res.nit, 0)
+        # Infeasibility detected in presolve requiring no iterations
+        # if presolve is not used nit > 0 is expected.
+        n = 0 if self.options.get('presolve', True) else 5
+        assert_equal(res.nit, n)
 
     def test_zero_row_1(self):
-        # detected in presolve?
         m, n = 2, 4
         c = np.random.rand(n)
         A_eq = np.random.rand(m, n)
@@ -707,7 +713,11 @@ class LinprogCommonTests(object):
         res = linprog(c=c, A_eq=A_eq, b_eq=b_eq,
                       method=self.method, options=self.options)
         _assert_infeasible(res)
-        assert_equal(res.nit, 0)
+
+        # Infeasibility detected in presolve requiring no iterations
+        # if presolve is not used nit > 0 is expected.
+        n = 0 if self.options.get('presolve', True) else 1
+        assert_equal(res.nit, n)
 
     def test_zero_row_3(self):
         # detected in presolve?
@@ -722,15 +732,18 @@ class LinprogCommonTests(object):
         assert_equal(res.nit, 0)
 
     def test_infeasible_ub(self):
-        # detected in presolve?
         c = [1]
         A_ub = [[2]]
         b_ub = 4
         bounds = (5, 6)
         res = linprog(c=c, A_ub=A_ub, b_ub=b_ub, bounds=bounds,
                       method=self.method, options=self.options)
+
         _assert_infeasible(res)
-        assert_equal(res.nit, 0)
+        # Infeasibility detected in presolve requiring no iterations
+        # if presolve is not used nit > 0 is expected.
+        n = 0 if self.options.get('presolve', True) else 1
+        assert_equal(res.nit, n)
 
     def test_type_error(self):
         c = [1]
@@ -1166,7 +1179,6 @@ class TestLinprogSimplexCommon(BaseTestLinprogSimplex):
             super(TestLinprogSimplexCommon, self).test_issue_8174()
 
 
-
 class TestLinprogSimplexBland(BaseTestLinprogSimplex):
     options = {'bland': True}
 
@@ -1177,6 +1189,39 @@ class TestLinprogSimplexBland(BaseTestLinprogSimplex):
     def test_issue_8174(self):
         with pytest.warns(OptimizeWarning):
             super(TestLinprogSimplexBland, self).test_issue_8174()
+
+
+class TestLinprogSimplexNoPresolve(BaseTestLinprogSimplex):
+    options = {'presolve': False}
+
+    def test_issue_6139(self):
+        # Linprog(method='simplex') fails to find a basic feasible solution
+        # if phase 1 pseudo-objective function is outside the provided tol.
+        # https://github.com/scipy/scipy/issues/6139
+        # Without ``presolve`` eliminating such rows the result is incorrect.
+        with pytest.raises(ValueError):
+            return super(TestLinprogSimplexNoPresolve, self).test_issue_6139()
+
+    def test_issue_7237(self):
+        with pytest.raises(ValueError):
+            super(TestLinprogSimplexNoPresolve, self).test_issue_7237()
+
+    def test_issue_8174(self):
+        with pytest.warns(OptimizeWarning):
+            super(TestLinprogSimplexNoPresolve, self).test_issue_8174()
+
+    def test_issue_8174_stackoverflow(self):
+        # Test expects linprog to raise a warning during presolve.
+        # As ``'presolve'=False`` no warning should be raised.
+        # Despite not presolving the result is still correct.
+        with pytest.warns(OptimizeWarning) as redundant_warning:
+            super(TestLinprogSimplexNoPresolve, self).test_issue_8174()
+
+    def test_unbounded_no_nontrivial_constraints_1(self):
+        pytest.skip("Tests behavior specific to presolve")
+
+    def test_unbounded_no_nontrivial_constraints_2(self):
+        pytest.skip("Tests behavior specific to presolve")
 
 
 class BaseTestLinprogIP(LinprogCommonTests):
