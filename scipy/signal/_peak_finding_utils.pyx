@@ -151,7 +151,7 @@ def _select_by_peak_distance(np.intp_t[::1] peaks not None,
     return keep.base.view(dtype=np.bool)  # Return as boolean array
 
 
-class PeakPropertyWarning(Warning):
+class PeakPropertyWarning(RuntimeWarning):
     """Calculated property of a peak has unexpected value."""
     pass
 
