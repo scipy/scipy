@@ -1,5 +1,4 @@
 from __future__ import division, print_function, absolute_import
-import warnings
 cimport cpython
 from . cimport c_zeros
 

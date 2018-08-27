@@ -1,12 +1,13 @@
 """
 Cython Optimize Zeros API
 =========================
-This package contains a Cython API for the root finding :ref:`scalar functions scalar-functions`
-in :py:mod:`scipy.optimize` to obtain performant and efficient pure C
-implementations. Faster execution is not guaranteed, but you might get 5-10X
-improvement versus pure Python. The Cython Optimize Zeros API  could be used
-for native C looping or with Cython `prange` for efficient execution of large
-arrays of inputs with the same callbacks.
+This package contains a Cython API for the root finding scalar functions in
+:py:mod:`scipy.optimize` to obtain efficient pure C implementations. Faster
+execution is not guaranteed. The relative performance of ``optimize`` and
+``cython_optimize`` depends on the application and ranges from slower to 10X
+faster. The Cython Optimize Zeros API could be used for native C looping or
+with Cython ``prange`` for efficient execution of large arrays of inputs with
+the same callbacks.
 
 Callback Signatures
 -------------------
@@ -15,8 +16,19 @@ finders, two which are safe without the global interpreter lock (GIL) and one
 that uses Python tuples.
 
 - ``double (*callback_type)(double, void*)``
+  This callback takes a double with the scalar independent variable as the 1st
+  argument and a user defined ``struct`` with any extra parameters as the 2nd.
 - ``double (*callback_type_array)(int, double*)``
+  This callback takes an integer with the number of extra parameters as the 1st
+  argument and an array of doubles with any extra parameters as the 2nd. Even
+  if the integer is unused in your callback, it must still be in the signature,
+  because an internal wrapper will use it to prepend a double with the scalar
+  independent variable to the array. In your callback, the independent variable
+  must be the first element in the array, followed by the extra parameters.
 - ``double (*callback_type_tuple)(double, tuple)``
+  This callback takes a double with the scalar independent variable as the 1st
+  argument and a Python tuple with any extra parameters as the 2nd. Therefore
+  this signature is not safe to use with ``nogil``.
 
 Available Functions
 -------------------
@@ -119,9 +131,13 @@ exposed in modules matching the expected callback signature.
 Examples
 --------
 Usage of the Cython Optimize Zeros API requires the use of Cython to write
-callbacks that are compiled into native C. There are several usage examples
-with different combinations of callbacks and root-finders in the
-``cython_optimize/Examples`` folder. There are five steps:
+callbacks that are compiled into native C. See the ``cython_optimize`` Jupyter
+notebook in the ``cython_optimize/Examples`` folder for basic usage examples.
+There are also several realistic examples that solve the single-diode model of
+a solar cell in the ``cython_optimize/Examples`` folder. These examples are
+also used to test the different combinations of callbacks and root-finders.
+
+These are the basic steps to use ``cython_optimize``:
 
 1. Select a callback signature, *eg* ``scipy.optimize.cython_optimize.zeros_struct``
 2. Select the root finder, *eg* :py:func:`~scipy.optimize.cython_optimize.zeros_struct.newton`
