@@ -12,15 +12,15 @@ def configuration(parent_package='', top_path=None):
     config.add_library('newton',
                        sources=newton_src,
                        headers=newton_hdr)
-    config.add_extension('zeros', sources=['zeros.c'],
+    config.add_extension('zeros_tuple', sources=['zeros_tuple.c'],
                          include_dirs=[get_numpy_include_dirs()])
     config.add_extension('zeros_struct', sources=['zeros_struct.c'],
                          libraries=['newton'], depends=(newton_src + newton_hdr),
                          include_dirs=[get_numpy_include_dirs()])
     config.add_extension('zeros_array', sources=['zeros_array.c'],
                          include_dirs=[get_numpy_include_dirs()])
-    config.add_extension('examples.zeros_examples',
-                         sources=[os.path.join('examples', 'zeros_examples.c')],
+    config.add_extension('examples.zeros_tuple_examples',
+                         sources=[os.path.join('examples', 'zeros_tuple_examples.c')],
                          include_dirs=[get_numpy_include_dirs()])
     config.add_extension('examples.zeros_struct_examples',
                          sources=[os.path.join('examples', 'zeros_struct_examples.c')],

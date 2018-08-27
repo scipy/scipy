@@ -15,20 +15,32 @@ The Cython Optimize Zeros API provides three callback signagures for the root
 finders, two which are safe without the global interpreter lock (GIL) and one
 that uses Python tuples.
 
-- ``double (*callback_type)(double, void*)``
+- :py:mod:`scipy.optimize.cython_optimize.zeros_struct`::
+
+        ``double (*callback_type)(double, void*)``
+
   This callback takes a double with the scalar independent variable as the 1st
   argument and a user defined ``struct`` with any extra parameters as the 2nd.
-- ``double (*callback_type_array)(int, double*)``
+
+- :py:mod:`scipy.optimize.cython_optimize.zeros_array`::
+
+        ``double (*callback_type_array)(int, double*)``
+
   This callback takes an integer with the number of extra parameters as the 1st
   argument and an array of doubles with any extra parameters as the 2nd. Even
   if the integer is unused in your callback, it must still be in the signature,
   because an internal wrapper will use it to prepend a double with the scalar
   independent variable to the array. In your callback, the independent variable
   must be the first element in the array, followed by the extra parameters.
-- ``double (*callback_type_tuple)(double, tuple)``
+
+- :py:mod:`scipy.optimize.cython_optimize.zeros_tuple`::
+
+        ``double (*callback_type_tuple)(double, tuple)``
+
   This callback takes a double with the scalar independent variable as the 1st
   argument and a Python tuple with any extra parameters as the 2nd. Therefore
-  this signature is not safe to use with ``nogil``.
+  this signature is not safe to use with ``nogil``. Also the maximum number of
+  extra parameters is hard-coded as ``MAXARGS = 10``.
 
 Available Functions
 -------------------
@@ -38,95 +50,95 @@ exposed in modules matching the expected callback signature.
 * ``scipy.optimize.cython_optimize.zeros_struct`` exposes root finders expecting
   extra arguments in a native C ``struct``. See examples for usage.
 
-    - :py:func:`~scipy.optimize.cython_optimize.zeros_struct.newton`::
+    - :py:func:`scipy.optimize.cython_optimize.zeros_struct.newton`::
 
-            double newton(callback_type func, double x0, callback_type fprime, void* args, double tol, int maxiter)
+            double newton(callback_type func, double x0, callback_type fprime, void* args, double tol, int maxiter, scipy_newton_parameters *full_output)
 
-    - :py:func:`~scipy.optimize.cython_optimize.zeros_struct.secant`::
+    - :py:func:`scipy.optimize.cython_optimize.zeros_struct.secant`::
 
-            double secant(callback_type func, double x0, void* args, double tol, int maxiter)
+            double secant(callback_type func, double x0, void* args, double tol, int maxiter, scipy_newton_parameters *full_output)
 
-    - :py:func:`~scipy.optimize.cython_optimize.zeros_struct.halley`::
+    - :py:func:`scipy.optimize.cython_optimize.zeros_struct.halley`::
 
-            double halley(callback_type func, double x0, callback_type fprime, void* args, double tol, int maxiter, callback_type fprime2)
+            double halley(callback_type func, double x0, callback_type fprime, void* args, double tol, int maxiter, callback_type fprime2, scipy_newton_parameters *full_output)
 
-    - :py:func:`~scipy.optimize.cython_optimize.zeros_struct.bisect`::
+    - :py:func:`scipy.optimize.cython_optimize.zeros_struct.bisect`::
 
-            double bisect(callback_type f, double xa, double xb, void* args, double xtol, double rtol, int iter)
+            double bisect(callback_type f, double xa, double xb, void* args, double xtol, double rtol, int iter, scipy_zeros_parameters *full_output)
 
-    - :py:func:`~scipy.optimize.cython_optimize.zeros_struct.ridder`::
+    - :py:func:`scipy.optimize.cython_optimize.zeros_struct.ridder`::
 
-            double ridder(callback_type f, double xa, double xb, void* args, double xtol, double rtol, int iter)
+            double ridder(callback_type f, double xa, double xb, void* args, double xtol, double rtol, int iter, scipy_zeros_parameters *full_output)
 
-    - :py:func:`~scipy.optimize.cython_optimize.zeros_struct.brenth`::
+    - :py:func:`scipy.optimize.cython_optimize.zeros_struct.brenth`::
 
-            double brenth(callback_type f, double xa, double xb, void* args, double xtol, double rtol, int iter)
+            double brenth(callback_type f, double xa, double xb, void* args, double xtol, double rtol, int iter, scipy_zeros_parameters *full_output)
 
-    - :py:func:`~scipy.optimize.cython_optimize.zeros_struct.brentq`::
+    - :py:func:`scipy.optimize.cython_optimize.zeros_struct.brentq`::
 
-            double brentq(callback_type f, double xa, double xb, void* args, double xtol, double rtol, int iter)
+            double brentq(callback_type f, double xa, double xb, void* args, double xtol, double rtol, int iter, scipy_zeros_parameters *full_output)
 
 * ``scipy.optimize.cython_optimize.zeros_array`` exposes root finders expecting
   extra arguments in a native C array of doubles. See examples for usage.
 
-    - :py:func:`~scipy.optimize.cython_optimize.zeros_array.newton`::
+    - :py:func:`scipy.optimize.cython_optimize.zeros_array.newton`::
 
-            double newton(callback_type_array func, double x0, callback_type_array fprime, int n, double* args, double tol, int maxiter)
+            double newton(callback_type_array func, double x0, callback_type_array fprime, int n, double* args, double tol, int maxiter, scipy_newton_parameters *full_output)
 
-    - :py:func:`~scipy.optimize.cython_optimize.zeros_array.secant`::
+    - :py:func:`scipy.optimize.cython_optimize.zeros_array.secant`::
 
-            double secant(callback_type_array func, double x0, int n, double* args, double tol, int maxiter)
+            double secant(callback_type_array func, double x0, int n, double* args, double tol, int maxiter, scipy_newton_parameters *full_output)
 
-    - :py:func:`~scipy.optimize.cython_optimize.zeros_array.halley`::
+    - :py:func:`scipy.optimize.cython_optimize.zeros_array.halley`::
 
-            double halley(callback_type_array func, double x0, callback_type_array fprime, int n, double* args, double tol, int maxiter, callback_type_array fprime2)
+            double halley(callback_type_array func, double x0, callback_type_array fprime, int n, double* args, double tol, int maxiter, callback_type_array fprime2, scipy_newton_parameters *full_output)
 
-    - :py:func:`~scipy.optimize.cython_optimize.zeros_array.bisect`::
+    - :py:func:`scipy.optimize.cython_optimize.zeros_array.bisect`::
 
-            double bisect(callback_type_array f, double xa, double xb, int n, double* args, double xtol, double rtol, int iter)
+            double bisect(callback_type_array f, double xa, double xb, int n, double* args, double xtol, double rtol, int iter, scipy_zeros_parameters *full_output)
 
-    - :py:func:`~scipy.optimize.cython_optimize.zeros_array.ridder`::
+    - :py:func:`scipy.optimize.cython_optimize.zeros_array.ridder`::
 
-            double ridder(callback_type_array f, double xa, double xb, int n, double* args, double xtol, double rtol, int iter)
+            double ridder(callback_type_array f, double xa, double xb, int n, double* args, double xtol, double rtol, int iter, scipy_zeros_parameters *full_output)
 
-    - :py:func:`~scipy.optimize.cython_optimize.zeros_array.brenth`::
+    - :py:func:`scipy.optimize.cython_optimize.zeros_array.brenth`::
 
-            double brenth(callback_type_array f, double xa, double xb, int n, double* args, double xtol, double rtol, int iter)
+            double brenth(callback_type_array f, double xa, double xb, int n, double* args, double xtol, double rtol, int iter, scipy_zeros_parameters *full_output)
 
-    - :py:func:`~scipy.optimize.cython_optimize.zeros_array.brentq`::
+    - :py:func:`scipy.optimize.cython_optimize.zeros_array.brentq`::
 
-            double brentq(callback_type_array f, double xa, double xb, int n, double* args, double xtol, double rtol, int iter)
+            double brentq(callback_type_array f, double xa, double xb, int n, double* args, double xtol, double rtol, int iter, scipy_zeros_parameters *full_output)
 
-* ``scipy.optimize.cython_optimize.zeros`` exposes root finders expecting extra
+* ``scipy.optimize.cython_optimize.zeros_tuple`` exposes root finders expecting extra
   arguments in a Python tuple.
 
-    - :py:func:`~scipy.optimize.cython_optimize.zeros.newton`::
+    - :py:func:`scipy.optimize.cython_optimize.zeros_tuple.newton`::
 
-            double newton(callback_type_tuple func, double x0, callback_type_tuple fprime, tuple args, double tol, int maxiter)
+            double newton(callback_type_tuple func, double x0, callback_type_tuple fprime, tuple args, double tol, int maxiter, scipy_newton_parameters *full_output)
 
-    - :py:func:`~scipy.optimize.cython_optimize.zeros.secant`::
+    - :py:func:`scipy.optimize.cython_optimize.zeros_tuple.secant`::
 
-            double secant(callback_type_tuple func, double x0, tuple args, double tol, int maxiter)
+            double secant(callback_type_tuple func, double x0, tuple args, double tol, int maxiter, scipy_newton_parameters *full_output)
 
-    - :py:func:`~scipy.optimize.cython_optimize.zeros.halley`::
+    - :py:func:`scipy.optimize.cython_optimize.zeros_tuple.halley`::
 
-            double halley(callback_type_tuple func, double x0, callback_type_tuple fprime, tuple args, double tol, int maxiter, callback_type_tuple fprime2)
+            double halley(callback_type_tuple func, double x0, callback_type_tuple fprime, tuple args, double tol, int maxiter, callback_type_tuple fprime2, scipy_newton_parameters *full_output)
 
-    - :py:func:`~scipy.optimize.cython_optimize.zeros.bisect`::
+    - :py:func:`scipy.optimize.cython_optimize.zeros_tuple.bisect`::
 
-            double bisect(callback_type_tuple f, double xa, double xb, tuple args, double xtol, double rtol, int iter)
+            double bisect(callback_type_tuple f, double xa, double xb, tuple args, double xtol, double rtol, int iter, scipy_zeros_parameters *full_output)
 
-    - :py:func:`~scipy.optimize.cython_optimize.zeros.ridder`::
+    - :py:func:`scipy.optimize.cython_optimize.zeros_tuple.ridder`::
 
-            double ridder(callback_type_tuple f, double xa, double xb, tuple args, double xtol, double rtol, int iter)
+            double ridder(callback_type_tuple f, double xa, double xb, tuple args, double xtol, double rtol, int iter, scipy_zeros_parameters *full_output)
 
-    - :py:func:`~scipy.optimize.cython_optimize.zeros.brenth`::
+    - :py:func:`scipy.optimize.cython_optimize.zeros_tuple.brenth`::
 
-            double brenth(callback_type_tuple f, double xa, double xb, tuple args, double xtol, double rtol, int iter)
+            double brenth(callback_type_tuple f, double xa, double xb, tuple args, double xtol, double rtol, int iter, scipy_zeros_parameters *full_output)
 
-    - :py:func:`~scipy.optimize.cython_optimize.zeros.brentq`::
+    - :py:func:`scipy.optimize.cython_optimize.zeros_tuple.brentq`::
 
-            double brentq(callback_type_tuple f, double xa, double xb, tuple args, double xtol, double rtol, int iter)
+            double brentq(callback_type_tuple f, double xa, double xb, tuple args, double xtol, double rtol, int iter, scipy_zeros_parameters *full_output)
 
 Examples
 --------
@@ -151,9 +163,9 @@ These are the basic steps to use ``cython_optimize``:
 
 from __future__ import division, print_function, absolute_import
 
-__all__ = ['zeros', 'zeros_struct', 'zeros_array']
+__all__ = ['zeros_tuple', 'zeros_struct', 'zeros_array']
 
-from . import zeros, zeros_struct, zeros_array
+from . import zeros_tuple, zeros_struct, zeros_array
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)

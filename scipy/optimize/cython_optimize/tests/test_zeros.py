@@ -6,7 +6,7 @@ Tests for Cython Optimize API
 """
 
 import numpy as np
-from ..examples import (zeros_examples, zeros_struct_examples,
+from ..examples import (zeros_tuple_examples, zeros_struct_examples,
     zeros_struct_alt_examples, zeros_array_examples)
 
 
@@ -27,7 +27,7 @@ EXPECTED_NEWTON = [
 # test newton
 def test_zeros_cython_newton():
     assert np.allclose(EXPECTED_NEWTON,
-                       list(zeros_examples.test_cython_newton()))
+                       list(zeros_tuple_examples.test_cython_newton()))
 
 
 def test_zeros_struct_cython_newton():
@@ -48,7 +48,7 @@ def test_zeros_array_cython_newton():
 # test secant
 def test_zeros_cython_secant():
     assert np.allclose(EXPECTED_NEWTON,
-                       list(zeros_examples.test_cython_secant()))
+                       list(zeros_tuple_examples.test_cython_secant()))
 
 
 def test_zeros_struct_cython_secant():
@@ -64,7 +64,7 @@ def test_zeros_array_cython_secant():
 # test halley
 def test_zeros_cython_halley():
     assert np.allclose(EXPECTED_NEWTON,
-                       list(zeros_examples.test_cython_halley()))
+                       list(zeros_tuple_examples.test_cython_halley()))
 
 
 def test_zeros_struct_cython_halley():
@@ -78,25 +78,25 @@ def test_zeros_array_cython_halley():
 
 
 def test_zeros_cython_newton_full_output():
-    full_output = zeros_examples.test_newton_full_output()
+    full_output = zeros_tuple_examples.test_newton_full_output()
     assert full_output['error_num'] == 0
     assert full_output['flag'] == b'Converged successfully'
     assert full_output['funcalls'] == 7
     assert full_output['iterations'] == 4
     assert full_output['root'] == 5.255320079106907
-    full_output = zeros_examples.test_newton_full_output(tol=-2)
+    full_output = zeros_tuple_examples.test_newton_full_output(tol=-2)
     assert full_output['error_num'] == -1
     assert full_output['flag'] == b'TOL and MAXITER must be positive integers'
     assert full_output['funcalls'] == 0
     assert full_output['iterations'] == 0
     assert full_output['root'] == 6.0
-    full_output = zeros_examples.test_newton_full_output(maxiter=-3)
+    full_output = zeros_tuple_examples.test_newton_full_output(maxiter=-3)
     assert full_output['error_num'] == -1
     assert full_output['flag'] == b'TOL and MAXITER must be positive integers'
     assert full_output['funcalls'] == 0
     assert full_output['iterations'] == 0
     assert full_output['root'] == 6.0
-    full_output = zeros_examples.test_newton_full_output(v=8.0)
+    full_output = zeros_tuple_examples.test_newton_full_output(v=8.0)
     assert full_output['error_num'] == -2
     assert full_output['flag'] == b'Failed to converge'
     assert full_output['funcalls'] == 100
@@ -121,7 +121,7 @@ EXPECTED_BISECT = [
 # test bisect
 def test_zeros_cython_bisect():
     assert np.allclose(EXPECTED_BISECT,
-                       list(zeros_examples.test_cython_bisect()))
+                       list(zeros_tuple_examples.test_cython_bisect()))
 
 
 def test_zeros_struct_cython_bisect():
@@ -156,7 +156,7 @@ EXPECTED_RIDDER = [
 # test ridder
 def test_zeros_cython_ridder():
     assert np.allclose(EXPECTED_RIDDER,
-                       list(zeros_examples.test_cython_ridder()))
+                       list(zeros_tuple_examples.test_cython_ridder()))
 
 
 def test_zeros_struct_cython_ridder():
@@ -186,7 +186,7 @@ EXPECTED_BRENT = [
 # test brenth
 def test_zeros_cython_brenth():
     assert np.allclose(EXPECTED_BRENT,
-                       list(zeros_examples.test_cython_brenth()))
+                       list(zeros_tuple_examples.test_cython_brenth()))
 
 
 def test_zeros_struct_cython_brenth():
@@ -202,7 +202,7 @@ def test_zeros_array_cython_brenth():
 # test brentq
 def test_zeros_cython_brentq():
     assert np.allclose(EXPECTED_BRENT,
-                       list(zeros_examples.test_cython_brentq()))
+                       list(zeros_tuple_examples.test_cython_brentq()))
 
 
 def test_zeros_struct_cython_brentq():
