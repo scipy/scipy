@@ -1520,12 +1520,12 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
 
     Examples
     --------
-    >>> import scipy.sparse as sparse
-    >>> id = np.eye(13)
-    >>> vals, vecs = sparse.linalg.eigsh(id, k=6)
-    >>> vals
-    array([ 1.+0.j,  1.+0.j,  1.+0.j,  1.+0.j,  1.+0.j,  1.+0.j])
-    >>> vecs.shape
+    >>> from scipy.sparse.linalg import eigsh
+    >>> identity = np.eye(13)
+    >>> eigenvalues, eigenvectors = eigsh(identity, k=6)
+    >>> eigenvalues
+    array([1., 1., 1., 1., 1., 1.])
+    >>> eigenvectors.shape
     (13, 6)
 
     """
