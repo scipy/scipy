@@ -1385,7 +1385,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
             In buckling mode, M is symmetric indefinite.
 
         If sigma is None, eigsh requires an operator to compute the solution
-        of the linear equation ``M * x = b``. This is done internally via a
+        of the linear equation ``M @ x = b``. This is done internally via a
         (sparse) LU decomposition for an explicit matrix M, or via an
         iterative solver for a general linear operator.  Alternatively,
         the user can supply the matrix or operator Minv, which gives
@@ -1398,7 +1398,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         decomposition for explicit matrices A & M, or via an iterative
         solver if either A or M is a general linear operator.
         Alternatively, the user can supply the matrix or operator OPinv,
-        which gives ``x = OPinv * b = [A - sigma * M]^-1 * b``.
+        which gives ``x = OPinv @ b = [A - sigma * M]^-1 @ b``.
         Note that when sigma is specified, the keyword 'which' refers to
         the shifted eigenvalues ``w'[i]`` where:
 
@@ -1473,17 +1473,17 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         The modes are as follows:
 
             'normal' :
-                OP = [A - sigma * M]^-1 * M,
+                OP = [A - sigma * M]^-1 @ M,
                 B = M,
                 w'[i] = 1 / (w[i] - sigma)
 
             'buckling' :
-                OP = [A - sigma * M]^-1 * A,
+                OP = [A - sigma * M]^-1 @ A,
                 B = A,
                 w'[i] = w[i] / (w[i] - sigma)
 
             'cayley' :
-                OP = [A - sigma * M]^-1 * [A + sigma * M],
+                OP = [A - sigma * M]^-1 @ [A + sigma * M],
                 B = M,
                 w'[i] = (w[i] + sigma) / (w[i] - sigma)
 
