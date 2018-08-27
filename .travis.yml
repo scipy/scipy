@@ -39,6 +39,7 @@ matrix:
         - COVERAGE=
         - USE_WHEEL=1
         - REFGUIDE_CHECK=1
+        - NUMPYSPEC=numpy
     - python: 3.5
       env:
         - TESTMODE=fast
@@ -51,6 +52,7 @@ matrix:
         - TESTMODE=fast
         - COVERAGE=
         - USE_WHEEL=1
+        - NUMPYSPEC=numpy
     - os: osx
       language: generic
       env:
