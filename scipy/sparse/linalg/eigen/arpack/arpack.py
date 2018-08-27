@@ -1351,7 +1351,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
     Parameters
     ----------
     A : An N x N matrix, array, sparse matrix, or LinearOperator representing
-        the operation A * x, where A is a real symmetric matrix.
+        the operation ``A @ x``, where A is a real symmetric matrix.
         For buckling mode (see below) A must additionally be positive-definite.
     k : int, optional
         The number of eigenvalues and eigenvectors desired.
