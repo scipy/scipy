@@ -1371,7 +1371,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
     M : An N x N matrix, array, sparse matrix, or linear operator representing
         the operation M * x for the generalized eigenvalue problem
 
-            A * x = w * M * x.
+            A @ x = w @ M @ x.
 
         M must represent a real, symmetric matrix if A is real, and must
         represent a complex, hermitian matrix if A is complex. For best
@@ -1389,7 +1389,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         (sparse) LU decomposition for an explicit matrix M, or via an
         iterative solver for a general linear operator.  Alternatively,
         the user can supply the matrix or operator Minv, which gives
-        ``x = Minv * b = M^-1 * b``.
+        ``x = Minv @ b = M^-1 @ b``.
     sigma : real
         Find eigenvalues near sigma using shift-invert mode.  This requires
         an operator to compute the solution of the linear system
