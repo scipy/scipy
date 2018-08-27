@@ -31,13 +31,19 @@ cdef double scipy_newton_functions_fprime2(double x, void *params):
 
 
 # Newton-Raphson method
-cdef double newton(callback_type_tuple func, double p0, callback_type_tuple fprime, tuple args, double tol, int maxiter):
+cdef double newton(callback_type_tuple func, double p0, callback_type_tuple fprime, tuple args, double tol, int maxiter, scipy_newton_parameters *full_output):
+    cdef double root
     cdef scipy_newton_parameters myparams
     # create params struct
     myparams.args = <cpython.PyObject *> args
     myparams.function = func
     myparams.function_derivative = fprime
-    return c_zeros.newton(scipy_newton_functions_func, p0, scipy_newton_functions_fprime, <c_zeros.default_parameters *> &myparams, tol, maxiter)
+    root = c_zeros.newton(scipy_newton_functions_func, p0, scipy_newton_functions_fprime, <c_zeros.default_parameters *> &myparams, tol, maxiter)
+    if full_output is not NULL:
+        full_output.funcalls = myparams.funcalls
+        full_output.iterations = myparams.iterations
+        full_output.error_num = myparams.error_num
+    return root
 
 
 # Secant method

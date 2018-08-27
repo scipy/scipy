@@ -77,6 +77,33 @@ def test_zeros_array_cython_halley():
                        list(zeros_array_examples.test_cython_halley()))
 
 
+def test_zeros_cython_newton_full_output():
+    full_output = zeros_examples.test_newton_full_output()
+    assert full_output['error_num'] == 0
+    assert full_output['flag'] == b'Converged successfully'
+    assert full_output['funcalls'] == 7
+    assert full_output['iterations'] == 4
+    assert full_output['root'] == 5.255320079106907
+    full_output = zeros_examples.test_newton_full_output(tol=-2)
+    assert full_output['error_num'] == -1
+    assert full_output['flag'] == b'TOL and MAXITER must be positive integers'
+    assert full_output['funcalls'] == 0
+    assert full_output['iterations'] == 0
+    assert full_output['root'] == 6.0
+    full_output = zeros_examples.test_newton_full_output(maxiter=-3)
+    assert full_output['error_num'] == -1
+    assert full_output['flag'] == b'TOL and MAXITER must be positive integers'
+    assert full_output['funcalls'] == 0
+    assert full_output['iterations'] == 0
+    assert full_output['root'] == 6.0
+    full_output = zeros_examples.test_newton_full_output(v=8.0)
+    assert full_output['error_num'] == -2
+    assert full_output['flag'] == b'Failed to converge'
+    assert full_output['funcalls'] == 100
+    assert full_output['iterations'] == 50
+    assert full_output['root'] == -209.1087085167384
+
+
 EXPECTED_BISECT = [
     5.2568359375,
     6.0908203125,

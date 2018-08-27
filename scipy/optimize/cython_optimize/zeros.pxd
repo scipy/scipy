@@ -18,7 +18,7 @@ ctypedef struct scipy_newton_parameters:
     callback_type_tuple function_second_derivative
     cpython.PyObject *args
 
-cdef double newton(callback_type_tuple func, double x0, callback_type_tuple fprime, tuple args, double tol, int maxiter)
+cdef double newton(callback_type_tuple func, double x0, callback_type_tuple fprime, tuple args, double tol, int maxiter, scipy_newton_parameters *full_output)
 
 cdef double secant(callback_type_tuple func, double x0, tuple args, double tol, int maxiter)
 
