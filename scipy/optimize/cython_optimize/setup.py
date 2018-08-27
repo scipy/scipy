@@ -20,18 +20,20 @@ def configuration(parent_package='', top_path=None):
     config.add_extension('zeros_array', sources=['zeros_array.c'],
                          include_dirs=[get_numpy_include_dirs()])
     config.add_extension('examples.zeros_examples',
-                         sources=['examples/zeros_examples.c'],
+                         sources=[os.path.join('examples', 'zeros_examples.c')],
                          include_dirs=[get_numpy_include_dirs()])
     config.add_extension('examples.zeros_struct_examples',
-                         sources=['examples/zeros_struct_examples.c'],
+                         sources=[os.path.join('examples', 'zeros_struct_examples.c')],
                          include_dirs=[get_numpy_include_dirs()])
     config.add_extension('examples.zeros_struct_alt_examples',
-                         sources=['examples/zeros_struct_alt_examples.c'],
+                         sources=[os.path.join('examples', 'zeros_struct_alt_examples.c')],
                          include_dirs=[get_numpy_include_dirs()])
     config.add_extension('examples.zeros_array_examples',
-                         sources=['examples/zeros_array_examples.c'],
+                         sources=[os.path.join('examples', 'zeros_array_examples.c')],
                          include_dirs=[get_numpy_include_dirs()])
     config.add_subpackage('examples')
+    config.add_data_files('*.pxd')
+    config.add_data_files(os.path.join('examples', '*.pxd'))
     return config
 
 
