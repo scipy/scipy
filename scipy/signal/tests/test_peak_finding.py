@@ -418,11 +418,16 @@ class TestPeakProminences(object):
         with raises(ValueError, match='wlen'):
             peak_prominences(np.arange(10), [3, 5], wlen=1)
 
-        # peaks with prominence of 0
+    def test_warnings(self):
+        """
+        Verify that appropriate warnings are raised.
+        """
         msg = "some peaks have a prominence of 0"
         for p in [0, 1, 2]:
             with warns(PeakPropertyWarning, match=msg):
                 peak_prominences([1, 0, 2], [p,])
+        with warns(PeakPropertyWarning, match=msg):
+            peak_prominences([0, 1, 1, 1, 0], [2], wlen=2)
 
 
 class TestPeakWidths(object):
@@ -506,6 +511,23 @@ class TestPeakWidths(object):
         with raises(TypeError, match='None'):
             # prominence data contains None
             peak_widths([1, 2, 1], [1], prominence_data=(None, None, None))
+
+    def test_warnings(self):
+        """
+        Verify that appropriate warnings are raised.
+        """
+        msg = "some peaks have a width of 0"
+        with warns(PeakPropertyWarning, match=msg):
+            # Case: rel_height is 0
+            peak_widths([0, 1, 0], [1], rel_height=0)
+        with warns(PeakPropertyWarning, match=msg):
+            # Case: prominence is 0 and bases are identical
+            peak_widths(
+                [0, 1, 1, 1, 0], [2],
+                prominence_data=(np.array([0.], np.float64),
+                                 np.array([2], np.intp),
+                                 np.array([2], np.intp))
+            )
 
     def test_mismatching_prominence_data(self):
         """Test with mismatching peak and / or prominence data."""
