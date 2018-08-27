@@ -98,7 +98,7 @@ def test_cython_halley(v=5.25, il=IL, args=ARGS):
 
 # cython bisect solver
 cdef double solarcell_bisect(tuple args):
-    return zeros.bisect(f_solarcell, 7.0, 0.0, args, XTOL, RTOL, MITR)
+    return zeros.bisect(f_solarcell, 7.0, 0.0, args, XTOL, RTOL, MITR, NULL)
 
 
 # test cython bisect in a loop
@@ -109,7 +109,7 @@ def test_cython_bisect(v=5.25, il=IL, args=ARGS):
 
 # cython ridder solver
 cdef double solarcell_ridder(tuple args):
-    return zeros.ridder(f_solarcell, 7.0, 0.0, args, XTOL, RTOL, MITR)
+    return zeros.ridder(f_solarcell, 7.0, 0.0, args, XTOL, RTOL, MITR, NULL)
 
 
 # test cython ridder in a loop
@@ -120,7 +120,7 @@ def test_cython_ridder(v=5.25, il=IL, args=ARGS):
 
 # cython brenth solver
 cdef double solarcell_brenth(tuple args):
-    return zeros.brenth(f_solarcell, 7.0, 0.0, args, XTOL, RTOL, MITR)
+    return zeros.brenth(f_solarcell, 7.0, 0.0, args, XTOL, RTOL, MITR, NULL)
 
 
 # test cython brenth in a loop
@@ -131,7 +131,7 @@ def test_cython_brenth(v=5.25, il=IL, args=ARGS):
 
 # cython brentq solver
 cdef double solarcell_brentq(tuple args):
-    return zeros.brentq(f_solarcell, 7.0, 0.0, args, XTOL, RTOL, MITR)
+    return zeros.brentq(f_solarcell, 7.0, 0.0, args, XTOL, RTOL, MITR, NULL)
 
 
 # test cython brentq in a loop
