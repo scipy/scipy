@@ -14,8 +14,6 @@ ARGS = (1e-09, 0.004, 10.0, 0.27456)
 TOL, MAXITER = 1.48e-8, 50
 XTOL, RTOL, MITR = 0.001, 0.001, 10
 
-cdef zeros.scipy_newton_parameters FULL_OUTPUT
-
 DEF SIGNERR = -1
 DEF CONVERR = -2
 
@@ -46,7 +44,7 @@ cdef double fprime2(double i, tuple args):
 
 # cython newton solver
 cdef double solarcell_newton(tuple args):
-    return zeros.newton(f_solarcell, 6.0, fprime, args, TOL, MAXITER, &FULL_OUTPUT)
+    return zeros.newton(f_solarcell, 6.0, fprime, args, TOL, MAXITER, NULL)
 
 
 # test cython newton solver in a loop
@@ -78,7 +76,7 @@ def test_newton_full_output(v=5.25, il=6.0, args=ARGS, tol=TOL, maxiter=MAXITER)
 
 # cython secant solver
 cdef double solarcell_secant(tuple args):
-    return zeros.secant(f_solarcell, 6.0, args, TOL, MAXITER)
+    return zeros.secant(f_solarcell, 6.0, args, TOL, MAXITER, NULL)
 
 
 # test cython secant solver in a loop
@@ -89,7 +87,7 @@ def test_cython_secant(v=5.25, il=IL, args=ARGS):
 
 # cython halley solver
 cdef double solarcell_halley(tuple args):
-    return zeros.halley(f_solarcell, 6.0, fprime, args, TOL, MAXITER, fprime2)
+    return zeros.halley(f_solarcell, 6.0, fprime, args, TOL, MAXITER, fprime2, NULL)
 
 
 # test cython halley solver in a loop
