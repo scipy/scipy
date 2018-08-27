@@ -1,29 +1,9 @@
-ctypedef double (*callback_type_array)(int, double*)
-
 cdef extern from "../Zeros/zeros.h":
     ctypedef double (*callback_type)(double, void*)
     ctypedef struct default_parameters:
         int funcalls
         int iterations
         int error_num
-
-ctypedef struct scipy_zeros_parameters:
-    int funcalls
-    int iterations
-    int error_num
-    callback_type_array function
-    int n
-    double* args
-
-ctypedef struct scipy_newton_parameters:
-    int funcalls
-    int iterations
-    int error_num
-    callback_type_array function
-    callback_type_array function_derivative
-    callback_type_array function_second_derivative
-    int n
-    double* args
 
 
 cdef extern from "Newton/newton.c":
