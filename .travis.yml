@@ -46,6 +46,11 @@ matrix:
         - NUMPYSPEC="numpy==1.8.2"
         - USE_SDIST=1
         - OPTIMIZE=-OO
+    - python: 3.4
+      env:
+        - TESTMODE=fast
+        - COVERAGE=
+        - USE_WHEEL=1
     - os: osx
       language: generic
       env:
