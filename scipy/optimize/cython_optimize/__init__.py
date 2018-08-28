@@ -3,7 +3,7 @@ Cython Optimize Zeros API
 =========================
 This package contains a Cython API for the root finding scalar functions in
 :py:mod:`scipy.optimize` to obtain efficient pure C implementations, although
-faster execution is not guaranteed. For example th Cython Optimize Zeros API
+faster execution is not guaranteed. For example the Cython Optimize Zeros API
 could be used for native C looping or with Cython ``prange`` for efficient
 execution of large arrays of inputs with the same callbacks. The Cython
 Optimize Zeros API can be imported into Cython code using the following::
