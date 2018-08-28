@@ -4,7 +4,7 @@ jobs:
     docker:
       # CircleCI maintains a library of pre-built images
       # documented at https://circleci.com/docs/2.0/circleci-images/
-      - image: circleci/python:3.6.1
+      - image: circleci/python:3.7.0
 
     working_directory: ~/repo
 
@@ -21,14 +21,14 @@ jobs:
           name: install Debian dependencies
           command: |
             sudo apt-get update
-            sudo apt-get install libatlas-dev libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libfreetype6-dev libpng-dev zlib1g-dev texlive-fonts-recommended texlive-latex-recommended texlive-latex-extra texlive-generic-extra latexmk texlive-xetex
+            sudo apt-get install libatlas-dev libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libfreetype6-dev libpng-dev zlib1g zlib1g-dev texlive-fonts-recommended texlive-latex-recommended texlive-latex-extra texlive-generic-extra latexmk texlive-xetex
 
       - run:
           name: setup Python venv
           command: |
             python3 -m venv venv
             . venv/bin/activate
-            pip install --install-option="--no-cython-compile" Cython==0.25
+            pip install --install-option="--no-cython-compile" cython
             pip install numpy
             pip install nose mpmath argparse Pillow codecov matplotlib Sphinx==1.7.2
 
@@ -58,7 +58,7 @@ jobs:
 
   deploy:
     docker:
-      - image: circleci/python:3.6.1
+      - image: circleci/python:3.7.0
 
     working_directory: ~/repo
 
