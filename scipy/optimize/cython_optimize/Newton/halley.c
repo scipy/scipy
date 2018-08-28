@@ -19,6 +19,7 @@ halley(callback_type func, double p0, callback_type fprime, default_parameters *
 
     params->funcalls = 0;
     params->iterations = 0;
+    params->error_num = 0;
     for (i=0; i<maxiter; i++) {
         params->iterations++;
         fval = (*func)(p0, params);

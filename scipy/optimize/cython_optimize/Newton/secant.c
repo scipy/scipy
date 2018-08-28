@@ -21,6 +21,7 @@ secant(callback_type func, double p0, default_parameters *params, double tol, in
 
     params->funcalls = 0;
     params->iterations = 0;
+    params->error_num = 0;
     p1 = p0 * (1 + DX);
     if (p0 >= 0) {
         p1 += DX;
