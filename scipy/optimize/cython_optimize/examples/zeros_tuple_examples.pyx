@@ -54,7 +54,7 @@ def test_cython_newton(v=5.25, il=IL, args=ARGS):
 
 
 # cython newton solver with full output
-cdef scipy_newton_full_output solarcell_newton_full_output(tuple args, int tol, int maxiter):
+cdef scipy_newton_full_output solarcell_newton_full_output(tuple args, double tol, int maxiter):
     cdef scipy_newton_full_output full_output
     full_output.root = zeros_tuple.newton(f_solarcell, 6.0, fprime, args, tol, maxiter, <zeros_tuple.scipy_newton_parameters *> &full_output)
     if full_output.error_num == SIGNERR:
@@ -72,6 +72,27 @@ cdef scipy_newton_full_output solarcell_newton_full_output(tuple args, int tol, 
 def test_newton_full_output(v=5.25, il=6.0, args=ARGS, tol=TOL, maxiter=MAXITER):
     """test newton with full output"""
     return solarcell_newton_full_output((v, il,) + args, tol, maxiter)
+
+
+# cython secant solver with full output
+cdef scipy_newton_full_output solarcell_secant_full_output(tuple args, double tol, int maxiter):
+    cdef scipy_newton_full_output full_output
+    full_output.root = zeros_tuple.secant(f_solarcell, 6.0, args, tol, maxiter, <zeros_tuple.scipy_newton_parameters *> &full_output)
+    if full_output.error_num == SIGNERR:
+        full_output.flag = "TOL and MAXITER must be positive integers"
+        full_output.funcalls = 0
+        full_output.iterations = 0
+    elif full_output.error_num == CONVERR:
+        full_output.flag = "Failed to converge"
+    else:
+        full_output.error_num = 0
+        full_output.flag = "Converged successfully"
+    return full_output
+
+
+def test_secant_full_output(v=5.25, il=6.0, args=ARGS, tol=TOL, maxiter=MAXITER):
+    """test newton with full output"""
+    return solarcell_secant_full_output((v, il,) + args, tol, maxiter)
 
 
 # cython secant solver

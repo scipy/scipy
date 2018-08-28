@@ -81,27 +81,54 @@ def test_zeros_cython_newton_full_output():
     full_output = zeros_tuple_examples.test_newton_full_output()
     assert full_output['error_num'] == 0
     assert full_output['flag'] == b'Converged successfully'
-    assert full_output['funcalls'] == 7
-    assert full_output['iterations'] == 4
-    assert full_output['root'] == 5.255320079106907
+    assert full_output['funcalls'] == 6
+    assert full_output['iterations'] == 3
+    assert np.isclose(full_output['root'], 5.255320079106907)
     full_output = zeros_tuple_examples.test_newton_full_output(tol=-2)
     assert full_output['error_num'] == -1
     assert full_output['flag'] == b'TOL and MAXITER must be positive integers'
     assert full_output['funcalls'] == 0
     assert full_output['iterations'] == 0
     assert full_output['root'] == 6.0
-    full_output = zeros_tuple_examples.test_newton_full_output(maxiter=-3)
+    full_output = zeros_tuple_examples.test_newton_full_output(maxiter=0)
     assert full_output['error_num'] == -1
     assert full_output['flag'] == b'TOL and MAXITER must be positive integers'
     assert full_output['funcalls'] == 0
     assert full_output['iterations'] == 0
     assert full_output['root'] == 6.0
-    full_output = zeros_tuple_examples.test_newton_full_output(v=8.0)
+    full_output = zeros_tuple_examples.test_newton_full_output(v=25.0)
     assert full_output['error_num'] == -2
     assert full_output['flag'] == b'Failed to converge'
     assert full_output['funcalls'] == 100
     assert full_output['iterations'] == 50
-    assert full_output['root'] == -209.1087085167384
+    assert np.isclose(full_output['root'], -3425.9998163580435)
+
+
+def test_zeros_cython_secant_full_output():
+    full_output = zeros_tuple_examples.test_secant_full_output()
+    assert full_output['error_num'] == 0
+    assert full_output['flag'] == b'Converged successfully'
+    assert full_output['funcalls'] == 4
+    assert full_output['iterations'] == 3
+    assert np.isclose(full_output['root'], 5.255320079106908)
+    full_output = zeros_tuple_examples.test_secant_full_output(tol=0)
+    assert full_output['error_num'] == -1
+    assert full_output['flag'] == b'TOL and MAXITER must be positive integers'
+    assert full_output['funcalls'] == 0
+    assert full_output['iterations'] == 0
+    assert full_output['root'] == 6.0
+    full_output = zeros_tuple_examples.test_secant_full_output(maxiter=-3)
+    assert full_output['error_num'] == -1
+    assert full_output['flag'] == b'TOL and MAXITER must be positive integers'
+    assert full_output['funcalls'] == 0
+    assert full_output['iterations'] == 0
+    assert full_output['root'] == 6.0
+    full_output = zeros_tuple_examples.test_secant_full_output(v=25.0)
+    assert full_output['error_num'] == -2
+    assert full_output['flag'] == b'Failed to converge'
+    assert full_output['funcalls'] == 52
+    assert full_output['iterations'] == 50
+    assert np.isclose(full_output['root'], -2388.496387739789)
 
 
 EXPECTED_BISECT = [
