@@ -57,7 +57,7 @@ cdef double solarcell_newton(tuple args):
     """test newton with array"""
     cdef int n = N
     cdef double[N] myargs = args
-    return zeros_array.newton(f_solarcell, 6.0, fprime, n, myargs, TOL, MAXITER)
+    return zeros_array.newton(f_solarcell, 6.0, fprime, n, myargs, TOL, MAXITER, NULL)
 
 
 # test cython newton solver in a loop
@@ -70,7 +70,7 @@ cdef double solarcell_secant(tuple args):
     """test secant with array"""
     cdef int n = N
     cdef double[N] myargs = args
-    return zeros_array.secant(f_solarcell, 6.0, n, myargs, TOL, MAXITER)
+    return zeros_array.secant(f_solarcell, 6.0, n, myargs, TOL, MAXITER, NULL)
 
 
 # test cython secant solver in a loop
@@ -83,7 +83,7 @@ cdef double solarcell_halley(tuple args):
     """test halley with array"""
     cdef int n = N
     cdef double[N] myargs = args
-    return zeros_array.halley(f_solarcell, 6.0, fprime, n, myargs, TOL, MAXITER, fprime2)
+    return zeros_array.halley(f_solarcell, 6.0, fprime, n, myargs, TOL, MAXITER, fprime2, NULL)
 
 
 # test cython halley solver in a loop
@@ -96,7 +96,7 @@ cdef double solarcell_bisect(tuple args):
     """test bisect with array"""
     cdef int n = N
     cdef double[N] myargs = args
-    return zeros_array.bisect(f_solarcell, 7, 0, n, myargs, XTOL, RTOL, MITR)
+    return zeros_array.bisect(f_solarcell, 7, 0, n, myargs, XTOL, RTOL, MITR, NULL)
 
 
 # test cython bisect in a loop
@@ -109,7 +109,7 @@ cdef double solarcell_ridder(tuple args):
     """test ridder with array"""
     cdef int n = N
     cdef double[N] myargs = args
-    return zeros_array.ridder(f_solarcell, 7, 0, n, myargs, XTOL, RTOL, MITR)
+    return zeros_array.ridder(f_solarcell, 7, 0, n, myargs, XTOL, RTOL, MITR, NULL)
 
 
 # test cython ridder in a loop
@@ -122,7 +122,7 @@ cdef double solarcell_brenth(tuple args):
     """test brenth with array"""
     cdef int n = N
     cdef double[N] myargs = args
-    return zeros_array.brenth(f_solarcell, 7, 0, n, myargs, XTOL, RTOL, MITR)
+    return zeros_array.brenth(f_solarcell, 7, 0, n, myargs, XTOL, RTOL, MITR, NULL)
 
 
 # test cython brenth in a loop
@@ -135,7 +135,7 @@ cdef double solarcell_brentq(tuple args):
     """test brentq with array"""
     cdef int n = N
     cdef double[N] myargs = args
-    return zeros_array.brentq(f_solarcell, 7, 0, n, myargs, XTOL, RTOL, MITR)
+    return zeros_array.brentq(f_solarcell, 7, 0, n, myargs, XTOL, RTOL, MITR, NULL)
 
 
 # test cython brentq in a loop

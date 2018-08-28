@@ -75,7 +75,7 @@ cdef double solarcell_newton(tuple args):
     myargs.series_resistance = args[3]
     myargs.shunt_resistance = args[4]
     myargs.thermal_voltage = args[5]
-    return zeros_struct.newton(f_solarcell, 6.0, fprime, <test_params *> &myargs, TOL, MAXITER)
+    return zeros_struct.newton(f_solarcell, 6.0, fprime, <test_params *> &myargs, TOL, MAXITER, NULL)
 
 
 # test cython newton solver in a loop
@@ -93,7 +93,7 @@ cdef double solarcell_secant(tuple args):
     myargs.series_resistance = args[3]
     myargs.shunt_resistance = args[4]
     myargs.thermal_voltage = args[5]
-    return zeros_struct.secant(f_solarcell, 6.0, <test_params *> &myargs, TOL, MAXITER)
+    return zeros_struct.secant(f_solarcell, 6.0, <test_params *> &myargs, TOL, MAXITER, NULL)
 
 
 # test cython secant solver in a loop
@@ -111,7 +111,7 @@ cdef double solarcell_halley(tuple args):
     myargs.series_resistance = args[3]
     myargs.shunt_resistance = args[4]
     myargs.thermal_voltage = args[5]
-    return zeros_struct.halley(f_solarcell, 6.0, fprime, <test_params *> &myargs, TOL, MAXITER, fprime2)
+    return zeros_struct.halley(f_solarcell, 6.0, fprime, <test_params *> &myargs, TOL, MAXITER, fprime2, NULL)
 
 
 # test cython halley solver in a loop
@@ -129,7 +129,7 @@ cdef double solarcell_bisect(tuple args):
     myargs.series_resistance = args[3]
     myargs.shunt_resistance = args[4]
     myargs.thermal_voltage = args[5]
-    return zeros_struct.bisect(f_solarcell, 7.0, 0.0, <test_params *> &myargs, XTOL, RTOL, MITR)
+    return zeros_struct.bisect(f_solarcell, 7.0, 0.0, <test_params *> &myargs, XTOL, RTOL, MITR, NULL)
 
 
 # test cython bisect in a loop
@@ -147,7 +147,7 @@ cdef double solarcell_ridder(tuple args):
     myargs.series_resistance = args[3]
     myargs.shunt_resistance = args[4]
     myargs.thermal_voltage = args[5]
-    return zeros_struct.ridder(f_solarcell, 7.0, 0.0, <test_params *> &myargs, XTOL, RTOL, MITR)
+    return zeros_struct.ridder(f_solarcell, 7.0, 0.0, <test_params *> &myargs, XTOL, RTOL, MITR, NULL)
 
 
 # test cython ridder in a loop
@@ -165,7 +165,7 @@ cdef double solarcell_brenth(tuple args):
     myargs.series_resistance = args[3]
     myargs.shunt_resistance = args[4]
     myargs.thermal_voltage = args[5]
-    return zeros_struct.brenth(f_solarcell, 7.0, 0.0, <test_params *> &myargs, XTOL, RTOL, MITR)
+    return zeros_struct.brenth(f_solarcell, 7.0, 0.0, <test_params *> &myargs, XTOL, RTOL, MITR, NULL)
 
 
 # test cython brenth in a loop
@@ -183,7 +183,7 @@ cdef double solarcell_brentq(tuple args):
     myargs.series_resistance = args[3]
     myargs.shunt_resistance = args[4]
     myargs.thermal_voltage = args[5]
-    return zeros_struct.brentq(f_solarcell, 7.0, 0.0, <test_params *> &myargs, XTOL, RTOL, MITR)
+    return zeros_struct.brentq(f_solarcell, 7.0, 0.0, <test_params *> &myargs, XTOL, RTOL, MITR, NULL)
 
 
 # test cython brentq in a loop

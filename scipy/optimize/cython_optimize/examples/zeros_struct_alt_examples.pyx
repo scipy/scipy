@@ -27,7 +27,7 @@ cdef double solarcell_newton(dict args):
     """test newton with dictionary"""
     cdef test_params myargs
     myargs = args
-    return zeros_struct.newton(zeros_struct_examples.f_solarcell, 6.0, zeros_struct_examples.fprime, <test_params *> &myargs, TOL, MAXITER)
+    return zeros_struct.newton(zeros_struct_examples.f_solarcell, 6.0, zeros_struct_examples.fprime, <test_params *> &myargs, TOL, MAXITER, NULL)
 
 
 # test cython newton solver in a loop
@@ -41,7 +41,7 @@ cdef double solarcell_bisect(dict args):
     """test bisect with dictionary"""
     cdef test_params myargs
     myargs = args
-    return zeros_struct.bisect(zeros_struct_examples.f_solarcell, 7.0, 0.0, <test_params *> &myargs, XTOL, RTOL, MITR)
+    return zeros_struct.bisect(zeros_struct_examples.f_solarcell, 7.0, 0.0, <test_params *> &myargs, XTOL, RTOL, MITR, NULL)
 
 
 # test cython bisect solver in a loop
