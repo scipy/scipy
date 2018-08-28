@@ -10,11 +10,11 @@ secant(callback_type func, double p0, default_parameters *params, double tol, in
     int i;
     double p, p1, q0, q1;
 
-    if (maxiter < 0) {
+    if (maxiter <= 0) {
         params->error_num = SIGNERR;
         return p0;
     }
-    if (tol < 0) {
+    if (tol <= 0) {
         params->error_num = SIGNERR;
         return p0;
     }

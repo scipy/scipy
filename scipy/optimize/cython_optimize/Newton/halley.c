@@ -8,11 +8,11 @@ halley(callback_type func, double p0, callback_type fprime, default_parameters *
     int i;
     double fder, fval, p, newton_step, fder2;
 
-    if (maxiter < 0) {
+    if (maxiter <= 0) {
         params->error_num = SIGNERR;
         return p0;
     }
-    if (tol < 0) {
+    if (tol <= 0) {
         params->error_num = SIGNERR;
         return p0;
     }
