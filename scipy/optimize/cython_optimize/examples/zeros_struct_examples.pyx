@@ -67,7 +67,6 @@ cdef double fprime2(double i, void *args):
 
 # cython newton solver
 cdef double solarcell_newton(tuple args):
-    """test newton with array"""
     cdef test_params myargs
     myargs.voltage = args[0]
     myargs.light_current = args[1]
@@ -80,12 +79,12 @@ cdef double solarcell_newton(tuple args):
 
 # test cython newton solver in a loop
 def test_cython_newton(v=5.25, il=IL, args=ARGS):
+    """test newton with array"""
     return map(solarcell_newton, ((v, il_,) + args for il_ in il))
 
 
 # cython secant solver
 cdef double solarcell_secant(tuple args):
-    """test secant with array"""
     cdef test_params myargs
     myargs.voltage = args[0]
     myargs.light_current = args[1]
@@ -98,12 +97,12 @@ cdef double solarcell_secant(tuple args):
 
 # test cython secant solver in a loop
 def test_cython_secant(v=5.25, il=IL, args=ARGS):
+    """test secant with array"""
     return map(solarcell_secant, ((v, il_,) + args for il_ in il))
 
 
 # cython halley solver
 cdef double solarcell_halley(tuple args):
-    """test halley with array"""
     cdef test_params myargs
     myargs.voltage = args[0]
     myargs.light_current = args[1]
@@ -116,12 +115,12 @@ cdef double solarcell_halley(tuple args):
 
 # test cython halley solver in a loop
 def test_cython_halley(v=5.25, il=IL, args=ARGS):
+    """test halley with array"""
     return map(solarcell_halley, ((v, il_,) + args for il_ in il))
 
 
 # cython bisect solver
 cdef double solarcell_bisect(tuple args):
-    """test bisect with array"""
     cdef test_params myargs
     myargs.voltage = args[0]
     myargs.light_current = args[1]
@@ -134,12 +133,12 @@ cdef double solarcell_bisect(tuple args):
 
 # test cython bisect in a loop
 def test_cython_bisect(v=5.25, il=IL, args=ARGS):
+    """test bisect with array"""
     return map(solarcell_bisect, ((v, il_,) + args for il_ in il))
 
 
 # cython ridder solver
 cdef double solarcell_ridder(tuple args):
-    """test ridder with array"""
     cdef test_params myargs
     myargs.voltage = args[0]
     myargs.light_current = args[1]
@@ -152,12 +151,12 @@ cdef double solarcell_ridder(tuple args):
 
 # test cython ridder in a loop
 def test_cython_ridder(v=5.25, il=IL, args=ARGS):
+    """test ridder with array"""
     return map(solarcell_ridder, ((v, il_,) + args for il_ in il))
 
 
 # cython brenth solver
 cdef double solarcell_brenth(tuple args):
-    """test brenth with array"""
     cdef test_params myargs
     myargs.voltage = args[0]
     myargs.light_current = args[1]
@@ -170,12 +169,12 @@ cdef double solarcell_brenth(tuple args):
 
 # test cython brenth in a loop
 def test_cython_brenth(v=5.25, il=IL, args=ARGS):
+    """test brenth with array"""
     return map(solarcell_brenth, ((v, il_,) + args for il_ in il))
 
 
 # cython brentq solver
 cdef double solarcell_brentq(tuple args):
-    """test brentq with array"""
     cdef test_params myargs
     myargs.voltage = args[0]
     myargs.light_current = args[1]
@@ -188,4 +187,5 @@ cdef double solarcell_brentq(tuple args):
 
 # test cython brentq in a loop
 def test_cython_brentq(v=5.25, il=IL, args=ARGS):
+    """test brentq with array"""
     return map(solarcell_brentq, ((v, il_,) + args for il_ in il))
