@@ -1728,7 +1728,7 @@ and now running the script
 
    user_data = ctypes.c_double(shift)
    ptr = ctypes.cast(ctypes.pointer(user_data), ctypes.c_void_p)
-   callback = LowLevelCallable(transform(), ptr)
+   callback = LowLevelCallable(get_transform(), ptr)
    im = np.arange(12).reshape(4, 3).astype(np.float64)
    print(ndimage.geometric_transform(im, callback))
 
