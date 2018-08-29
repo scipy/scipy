@@ -288,7 +288,9 @@ def strict_bounds(lb, ub, keep_feasible, n_vars):
 
 
 def new_constraint_to_old(con, x0):
-
+    """
+    Converts new-style constraint objects to old-style constraint dictionaries.
+    """
     if isinstance(con, NonlinearConstraint):
         if (con.finite_diff_jac_sparsity is not None or
                 con.finite_diff_rel_step is not None or
@@ -315,8 +317,8 @@ def new_constraint_to_old(con, x0):
         fun = lambda x: np.dot(A, x)
         jac = lambda x: A
 
-    # when bugs in VectorFunction/LinearVectorFunction are worked out, use
-    # pcon.fun.fun and pcon.fun.jac. Until then, get fun/jac above.
+    # FIXME: when bugs in VectorFunction/LinearVectorFunction are worked out,
+    # use pcon.fun.fun and pcon.fun.jac. Until then, get fun/jac above.
     pcon = PreparedConstraint(con, x0)
     lb, ub = pcon.bounds
 
@@ -380,7 +382,9 @@ def new_constraint_to_old(con, x0):
 
 
 def old_constraint_to_new(ic, con):
-
+    """
+    Converts old-style constraint dictionaries to new-style constraint objects.
+    """
     # check type
     try:
         ctype = con['type'].lower()
@@ -414,37 +418,3 @@ def old_constraint_to_new(ic, con):
             jac = con['jac']
 
     return NonlinearConstraint(fun, lb, ub, jac)
-
-
-def standardize_bounds(bounds, x0, meth):
-    if meth == 'trust-constr':
-        if not isinstance(bounds, Bounds):
-            lb, ub = old_bound_to_new(bounds)
-            bounds = Bounds(lb, ub)
-    elif meth in ('l-bfgs-b', 'tnc', 'slsqp'):
-        if isinstance(bounds, Bounds):
-            bounds = new_bounds_to_old(bounds.lb, bounds.ub, x0.shape[0])
-    return bounds
-
-
-def standardize_constraints(constraints, x0, meth):
-    all_constraint_types = (NonlinearConstraint, LinearConstraint, dict)
-    new_constraint_types = all_constraint_types[:-1]
-    if isinstance(constraints, all_constraint_types):
-        constraints = [constraints]
-    constraints = list(constraints)
-
-    additional_constraints = []
-    for i, con in enumerate(constraints):
-        constraints = list(constraints)
-        if (meth == 'trust-constr' and not
-                isinstance(con, new_constraint_types)):
-            constraints[i] = old_constraint_to_new(i, con)
-        elif (meth != 'trust-constr' and
-              isinstance(con, new_constraint_types)):
-            old_constraints = new_constraint_to_old(con, x0)
-            constraints[i] = old_constraints[0]
-            additional_constraints = old_constraints[1:]
-
-    constraints += additional_constraints
-    return constraints
