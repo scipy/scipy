@@ -846,8 +846,10 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         # update attributes
         self.indices = np.concatenate(indices_parts)
         self.data = np.concatenate(data_parts)
-        nnzs = np.asarray(np.ediff1d(self.indptr, to_begin=0), dtype=idx_dtype)
-        nnzs[1:][ui] += new_nnzs
+        nnzs = np.empty(self.indptr.shape, dtype=idx_dtype)
+        nnzs[0] = idx_dtype(0)
+        nnzs[1:] = np.diff(self.indptr).astype(idx_dtype)
+        nnzs[ui+1] += new_nnzs
         self.indptr = np.cumsum(nnzs, out=nnzs)
 
         if do_sort:
