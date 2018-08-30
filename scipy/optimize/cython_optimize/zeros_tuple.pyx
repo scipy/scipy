@@ -93,7 +93,7 @@ cdef double bisect(callback_type_tuple f, double xa, double xb, tuple args, doub
     # create params struct
     myparams.args = <cpython.PyObject *> args
     myparams.function = f
-    return c_zeros.bisect(scipy_zeros_functions_func, xa, xb, xtol, rtol, iter, <c_zeros.default_parameters *> &myparams)
+    root = c_zeros.bisect(scipy_zeros_functions_func, xa, xb, xtol, rtol, iter, <c_zeros.default_parameters *> &myparams)
     if full_output is not NULL:
         full_output.funcalls = myparams.funcalls
         full_output.iterations = myparams.iterations
