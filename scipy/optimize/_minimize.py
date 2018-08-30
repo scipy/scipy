@@ -813,7 +813,7 @@ def standardize_constraints(constraints, x0, meth):
                 constraints[i] = old_constraint_to_new(i, con)
     else:
         # iterate over copy, changing original
-        for i, con in enumerate(constraints.copy()):
+        for i, con in enumerate(list(constraints)):
             if isinstance(con, new_constraint_types):
                 old_constraints = new_constraint_to_old(con, x0)
                 constraints[i] = old_constraints[0]
