@@ -4,7 +4,10 @@ free the global interpreter lock.
 """
 
 from __future__ import division, print_function, absolute_import
-from math import exp, sin
+from math import sin
+
+import cython
+from libc.math cimport exp
 
 from .. cimport zeros_struct
 
@@ -24,7 +27,9 @@ TOL, MAXITER = 1.48e-8, 50
 XTOL, RTOL, MITR = 0.001, 0.001, 10
 
 
-# callabck function
+# callabck functions
+
+@cython.cdivision(True)
 cdef double f_solarcell(double i, void *args):
     cdef test_params *myargs = <test_params *> args
     cdef double v, il, io, rs, rsh, vt
@@ -39,6 +44,7 @@ cdef double f_solarcell(double i, void *args):
     return il - io * (exp(vd / vt) - 1.0) - vd / rsh - i
 
 
+@cython.cdivision(True)
 cdef double fprime(double i, void *args):
     cdef test_params *myargs = <test_params *> args
     cdef double v, il, io, rs, rsh, vt
@@ -52,6 +58,7 @@ cdef double fprime(double i, void *args):
     return -io * exp((v + i * rs) / vt) * rs / vt - rs / rsh - 1
 
 
+@cython.cdivision(True)
 cdef double fprime2(double i, void *args):
     cdef test_params *myargs = <test_params *> args
     cdef double v, il, io, rs, rsh, vt

@@ -1,4 +1,3 @@
-from __future__ import division, print_function, absolute_import
 from . cimport c_zeros
 
 DEF MAXARGS = 10

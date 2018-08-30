@@ -5,6 +5,7 @@ Tests for Cython Optimize API
 ``test_zeros`` - tests ``newton`` and ``bisect``.
 """
 
+from __future__ import division, print_function, absolute_import
 import numpy as np
 from ..examples import (zeros_tuple_examples, zeros_struct_examples,
     zeros_struct_alt_examples, zeros_array_examples)

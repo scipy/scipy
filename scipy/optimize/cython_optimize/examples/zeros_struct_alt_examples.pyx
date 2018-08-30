@@ -4,7 +4,6 @@ free the global interpreter lock.
 """
 
 from __future__ import division, print_function, absolute_import
-from math import exp, sin
 
 from .. cimport zeros_struct
 from . cimport zeros_struct_examples
@@ -24,8 +23,7 @@ ctypedef struct test_params:
 
 # cython newton solver
 cdef double solarcell_newton(dict args):
-    cdef test_params myargs
-    myargs = args
+    cdef test_params myargs = args
     return zeros_struct.newton(zeros_struct_examples.f_solarcell, 6.0, zeros_struct_examples.fprime, <test_params *> &myargs, TOL, MAXITER, NULL)
 
 
@@ -38,8 +36,7 @@ def test_cython_newton(v=5.25, il=IL, args=ARGS):
 
 # cython bisect solver
 cdef double solarcell_bisect(dict args):
-    cdef test_params myargs
-    myargs = args
+    cdef test_params myargs = args
     return zeros_struct.bisect(zeros_struct_examples.f_solarcell, 7.0, 0.0, <test_params *> &myargs, XTOL, RTOL, MITR, NULL)
 
 

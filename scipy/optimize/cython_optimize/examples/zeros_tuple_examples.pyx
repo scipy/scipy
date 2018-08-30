@@ -4,7 +4,10 @@ global interpreter lock.
 """
 
 from __future__ import division, print_function, absolute_import
-from math import exp, sin
+from math import sin
+
+import cython
+from libc.math cimport exp
 
 from .. cimport zeros_tuple
 
@@ -25,18 +28,22 @@ ctypedef struct scipy_newton_full_output:
     char* flag
 
 
-# callback function
+# callback functions
+
+@cython.cdivision(True)
 cdef double f_solarcell(double i, tuple args):
     v, il, io, rs, rsh, vt = args
     vd = v + i * rs
     return il - io * (exp(vd / vt) - 1.0) - vd / rsh - i
 
 
+@cython.cdivision(True)
 cdef double fprime(double i, tuple args):
     v, il, io, rs, rsh, vt = args
     return -io * exp((v + i * rs) / vt) * rs / vt - rs / rsh - 1
 
 
+@cython.cdivision(True)
 cdef double fprime2(double i, tuple args):
     v, il, io, rs, rsh, vt = args
     return -io * exp((v + i * rs) / vt) * (rs / vt)**2
