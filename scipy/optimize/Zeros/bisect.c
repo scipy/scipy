@@ -10,6 +10,7 @@ bisect(callback_type f, double xa, double xb, double xtol, double rtol,
     int i;
     double dm,xm,fm,fa,fb;
 
+    params->error_num = 0;
     fa = (*f)(xa,params);
     fb = (*f)(xb,params);
     params->funcalls = 2;

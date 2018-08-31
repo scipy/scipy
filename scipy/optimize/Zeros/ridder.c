@@ -20,6 +20,7 @@ ridder(callback_type f, double xa, double xb, double xtol, double rtol,
     int i;
     double dm,dn,xm,xn=0.0,fn,fm,fa,fb,tol;
 
+    params->error_num = 0;
     tol = xtol + rtol*MIN(fabs(xa), fabs(xb));
     fa = (*f)(xa,params);
     fb = (*f)(xb,params);

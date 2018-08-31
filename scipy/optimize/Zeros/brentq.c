@@ -44,6 +44,7 @@ brentq(callback_type f, double xa, double xb, double xtol, double rtol,
     double stry, dpre, dblk;
     int i;
 
+    params->error_num = 0;
     fpre = (*f)(xpre, params);
     fcur = (*f)(xcur, params);
     params->funcalls = 2;
