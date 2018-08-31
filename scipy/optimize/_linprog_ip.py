@@ -371,7 +371,8 @@ def _get_message(status):
          1 : Iteration limit reached
          2 : Problem appears to be infeasible
          3 : Problem appears to be unbounded
-         4 : Serious numerical difficulties encountered.
+         4 : Serious numerical difficulties which could not resolved using
+             a more robust, albeit less efficient, solver encountered
 
     Returns
     -------
@@ -621,7 +622,8 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol,
          1 : Iteration limit reached
          2 : Problem appears to be infeasible
          3 : Problem appears to be unbounded
-         4 : Serious numerical difficulties encountered.
+         4 : Serious numerical difficulties, that could not be resolved
+             using a more robust solver encountered
 
     message : str
         A string descriptor of the exit status of the optimization.
@@ -870,7 +872,8 @@ def _linprog_ip(
          1 : Iteration limit reached
          2 : Problem appears to be infeasible
          3 : Problem appears to be unbounded
-         4 : Serious numerical difficulties encountered.
+         4 : Serious numerical difficulties not resolved using a more robust,
+             yet less efficient, solver encountered
 
     message : str
         A string descriptor of the exit status of the optimization.

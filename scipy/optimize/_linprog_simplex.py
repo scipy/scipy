@@ -220,7 +220,8 @@ def _solve_simplex(T, n, basis, maxiter=1000, phase=2, callback=None,
          1 : Iteration limit reached
          2 : Problem appears to be infeasible
          3 : Problem appears to be unbounded
-         4 : Serious numerical difficulties encountered.
+         4 : Serious numerical difficulties which could not resolved using
+             a more robust, albeit less efficient, solver encountered
 
     """
     nit = nit0
@@ -358,7 +359,8 @@ def _linprog_simplex(c, c0, A, b, maxiter=1000, disp=False, callback=None,
          1 : Iteration limit reached
          2 : Problem appears to be infeasible
          3 : Problem appears to be unbounded
-         4 : Serious numerical difficulties encountered.
+         4 : Serious numerical difficulties which could not resolved using
+             a more robust, albeit less efficient, solver encountered
 
     message : str
         A string descriptor of the exit status of the optimization.
