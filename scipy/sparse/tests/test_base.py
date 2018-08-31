@@ -1701,6 +1701,13 @@ class _TestCommon(object):
             assert_equal(c.format,format)
             assert_array_equal(c.todense(), D)
 
+        for format in ['array', 'dense']:
+            a = A.asformat(format)
+            assert_array_equal(a, D)
+
+            b = self.spmatrix(D+3j).asformat(format)
+            assert_array_equal(b, D+3j)
+
     def test_tobsr(self):
         x = array([[1,0,2,0],[0,0,0,0],[0,0,4,5]])
         y = array([[0,1,2],[3,0,5]])
