@@ -1346,13 +1346,13 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
 
     If M is specified, solves ``A * x[i] = w[i] * M * x[i]``, the
     generalized eigenvalue problem for w[i] eigenvalues
-    with corresponding eigenvectors x[i]
+    with corresponding eigenvectors x[i].
 
     Parameters
     ----------
     A : An N x N matrix, array, sparse matrix, or LinearOperator representing
-        the operation A * x, where A is a real symmetric matrix
-        For buckling mode (see below) A must additionally be positive-definite
+        the operation ``A @ x``, where A is a real symmetric matrix.
+        For buckling mode (see below) A must additionally be positive-definite.
     k : int, optional
         The number of eigenvalues and eigenvectors desired.
         `k` must be smaller than N. It is not possible to compute all
@@ -1361,7 +1361,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
     Returns
     -------
     w : array
-        Array of k eigenvalues
+        Array of k eigenvalues.
     v : array
         An array representing the `k` eigenvectors.  The column ``v[:, i]`` is
         the eigenvector corresponding to the eigenvalue ``w[i]``.
@@ -1369,27 +1369,27 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
     Other Parameters
     ----------------
     M : An N x N matrix, array, sparse matrix, or linear operator representing
-        the operation M * x for the generalized eigenvalue problem
+        the operation ``M @ x`` for the generalized eigenvalue problem
 
-            A * x = w * M * x.
+            A @ x = w * M @ x.
 
         M must represent a real, symmetric matrix if A is real, and must
         represent a complex, hermitian matrix if A is complex. For best
         results, the data type of M should be the same as that of A.
         Additionally:
 
-            If sigma is None, M is symmetric positive definite
+            If sigma is None, M is symmetric positive definite.
 
-            If sigma is specified, M is symmetric positive semi-definite
+            If sigma is specified, M is symmetric positive semi-definite.
 
             In buckling mode, M is symmetric indefinite.
 
         If sigma is None, eigsh requires an operator to compute the solution
-        of the linear equation ``M * x = b``. This is done internally via a
+        of the linear equation ``M @ x = b``. This is done internally via a
         (sparse) LU decomposition for an explicit matrix M, or via an
         iterative solver for a general linear operator.  Alternatively,
         the user can supply the matrix or operator Minv, which gives
-        ``x = Minv * b = M^-1 * b``.
+        ``x = Minv @ b = M^-1 @ b``.
     sigma : real
         Find eigenvalues near sigma using shift-invert mode.  This requires
         an operator to compute the solution of the linear system
@@ -1398,7 +1398,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         decomposition for explicit matrices A & M, or via an iterative
         solver if either A or M is a general linear operator.
         Alternatively, the user can supply the matrix or operator OPinv,
-        which gives ``x = OPinv * b = [A - sigma * M]^-1 * b``.
+        which gives ``x = OPinv @ b = [A - sigma * M]^-1 @ b``.
         Note that when sigma is specified, the keyword 'which' refers to
         the shifted eigenvalues ``w'[i]`` where:
 
@@ -1420,15 +1420,15 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         If A is a complex hermitian matrix, 'BE' is invalid.
         Which `k` eigenvectors and eigenvalues to find:
 
-            'LM' : Largest (in magnitude) eigenvalues
+            'LM' : Largest (in magnitude) eigenvalues.
 
-            'SM' : Smallest (in magnitude) eigenvalues
+            'SM' : Smallest (in magnitude) eigenvalues.
 
-            'LA' : Largest (algebraic) eigenvalues
+            'LA' : Largest (algebraic) eigenvalues.
 
-            'SA' : Smallest (algebraic) eigenvalues
+            'SA' : Smallest (algebraic) eigenvalues.
 
-            'BE' : Half (k/2) from each end of the spectrum
+            'BE' : Half (k/2) from each end of the spectrum.
 
         When k is odd, return one more (k/2+1) from the high end.
         When sigma != None, 'which' refers to the shifted eigenvalues ``w'[i]``
@@ -1436,17 +1436,32 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         at finding large values than small values.  If small eigenvalues are
         desired, consider using shift-invert mode for better performance.
     maxiter : int, optional
-        Maximum number of Arnoldi update iterations allowed
+        Maximum number of Arnoldi update iterations allowed.
         Default: ``n*10``
     tol : float
         Relative accuracy for eigenvalues (stopping criterion).
         The default value of 0 implies machine precision.
     Minv : N x N matrix, array, sparse matrix, or LinearOperator
-        See notes in M, above
+        See notes in M, above.
     OPinv : N x N matrix, array, sparse matrix, or LinearOperator
         See notes in sigma, above.
     return_eigenvectors : bool
-        Return eigenvectors (True) in addition to eigenvalues
+        Return eigenvectors (True) in addition to eigenvalues. This value determines
+        the order in which eigenvalues are sorted. The sort order is also dependent on the `which` variable.
+
+            For which = 'LM' or 'SA':
+                If `return_eigenvectors` is True, eigenvalues are sorted by algebraic value.
+
+                If `return_eigenvectors` is False, eigenvalues are sorted by absolute value.
+
+            For which = 'BE' or 'LA':
+                eigenvalues are always sorted by algebraic value.
+
+            For which = 'SM':
+                If `return_eigenvectors` is True, eigenvalues are sorted by algebraic value.
+
+                If `return_eigenvectors` is False, eigenvalues are sorted by decreasing absolute value.
+
     mode : string ['normal' | 'buckling' | 'cayley']
         Specify strategy to use for shift-invert mode.  This argument applies
         only for real-valued A and sigma != None.  For shift-invert mode,
@@ -1458,23 +1473,23 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         The modes are as follows:
 
             'normal' :
-                OP = [A - sigma * M]^-1 * M,
+                OP = [A - sigma * M]^-1 @ M,
                 B = M,
                 w'[i] = 1 / (w[i] - sigma)
 
             'buckling' :
-                OP = [A - sigma * M]^-1 * A,
+                OP = [A - sigma * M]^-1 @ A,
                 B = A,
                 w'[i] = w[i] / (w[i] - sigma)
 
             'cayley' :
-                OP = [A - sigma * M]^-1 * [A + sigma * M],
+                OP = [A - sigma * M]^-1 @ [A + sigma * M],
                 B = M,
                 w'[i] = (w[i] + sigma) / (w[i] - sigma)
 
         The choice of mode will affect which eigenvalues are selected by
         the keyword 'which', and can also impact the stability of
-        convergence (see [2] for a discussion)
+        convergence (see [2] for a discussion).
 
     Raises
     ------
@@ -1505,12 +1520,12 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
 
     Examples
     --------
-    >>> import scipy.sparse as sparse
-    >>> id = np.eye(13)
-    >>> vals, vecs = sparse.linalg.eigsh(id, k=6)
-    >>> vals
-    array([ 1.+0.j,  1.+0.j,  1.+0.j,  1.+0.j,  1.+0.j,  1.+0.j])
-    >>> vecs.shape
+    >>> from scipy.sparse.linalg import eigsh
+    >>> identity = np.eye(13)
+    >>> eigenvalues, eigenvectors = eigsh(identity, k=6)
+    >>> eigenvalues
+    array([1., 1., 1., 1., 1., 1.])
+    >>> eigenvectors.shape
     (13, 6)
 
     """
