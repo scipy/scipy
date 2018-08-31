@@ -148,6 +148,18 @@ def _assert_success(res, desired_fun=None, desired_x=None,
 
 class LinprogCommonTests(object):
 
+    def test_docstring_example(self):
+        # Example from linprog docstring.
+        c = [-1, 4]
+        A = [[-3, 1], [1, 2]]
+        b = [6, 4]
+        x0_bounds = (None, None)
+        x1_bounds = (-3, None)
+
+        res = linprog(c, A_ub=A, b_ub=b, bounds=(x0_bounds, x1_bounds),
+                      options=self.options, method=self.method)
+        _assert_success(res, desired_fun=-22)
+
     def test_aliasing_b_ub(self):
         c = np.array([1.0])
         A_ub = np.array([[1.0]])

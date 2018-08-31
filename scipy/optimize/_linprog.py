@@ -1000,7 +1000,8 @@ def _postprocess(x, c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
              1 : Iteration limit reached
              2 : Problem appears to be infeasible
              3 : Problem appears to be unbounded
-             4 : Serious numerical difficulties encountered
+             4 : Serious numerical difficulties which could not resolved using
+                 a more robust, albeit less efficient, solver encountered
 
     message : str
         A string descriptor of the exit status of the optimization.
@@ -1026,7 +1027,8 @@ def _postprocess(x, c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
              1 : Iteration limit reached
              2 : Problem appears to be infeasible
              3 : Problem appears to be unbounded
-             4 : Serious numerical difficulties encountered
+             4 : Serious numerical difficulties which could not resolved using
+                 a more robust, albeit less efficient, solver encountered
 
     message : str
         A string descriptor of the exit status of the optimization.
@@ -1138,7 +1140,8 @@ def _display_summary(message, status, fun, iteration):
                 1 : Iteration limit reached
                 2 : Problem appears to be infeasible
                 3 : Problem appears to be unbounded
-                4 : Serious numerical difficulties encountered.
+                4 : Serious numerical difficulties which could not resolved using
+                    a more robust, albeit less efficient, solver encountered
 
     fun : float
         Value of the objective function.
@@ -1239,6 +1242,8 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
                  1 : Iteration limit reached
                  2 : Problem appears to be infeasible
                  3 : Problem appears to be unbounded
+                 4 : Serious numerical difficulties which could not resolved using
+                     a more robust, albeit less efficient, solver encountered
 
         nit : int
             The number of iterations performed.
@@ -1375,19 +1380,19 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     >>> res = linprog(c, A_ub=A, b_ub=b, bounds=(x0_bounds, x1_bounds),
     ...               options={"disp": True})
     Optimization terminated successfully.
-         Current function value: -22.000000
-         Iterations: 5
+    Current function value: -22.000000
+    Iterations: 5 # may vary
     >>> print(res)
          con: array([], dtype=float64)
          fun: -22.0
      message: 'Optimization terminated successfully.'
-         nit: 1
-       slack: array([39.,  0.])
+         nit: 5 # may vary
+       slack: array([39.,  0.]) # may vary
       status: 0
      success: True
            x: array([10., -3.])
 
-    Note the actual objective value is -22.0.  In this case we minimized
+    Note the actual objective value is -22.0. In this case we minimized
     the negative of the objective function.
 
     """
