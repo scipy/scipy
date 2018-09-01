@@ -448,6 +448,39 @@ def test_zero_rhs(solver):
                 assert_allclose(x, 0, atol=1e-300)
 
 
+@pytest.mark.parametrize("solver", [
+    gmres, qmr, lgmres,
+    pytest.param(cgs, marks=pytest.mark.xfail),
+    pytest.param(bicg, marks=pytest.mark.xfail),
+    pytest.param(bicgstab, marks=pytest.mark.xfail),
+    pytest.param(gcrotmk, marks=pytest.mark.xfail)])
+def test_maxiter_worsening(solver):
+    # Check error does not grow (boundlessly) with increasing maxiter.
+    # This can occur due to the solvers hitting close to breakdown,
+    # which they should detect and halt as necessary.
+    # cf. gh-9100
+
+    # Singular matrix, rhs numerically not in range
+    A = np.array([[-0.1112795288033378, 0, 0, 0.16127952880333685],
+                  [0, -0.13627952880333782+6.283185307179586j, 0, 0],
+                  [0, 0, -0.13627952880333782-6.283185307179586j, 0],
+                  [0.1112795288033368, 0j, 0j, -0.16127952880333785]])
+    v = np.ones(4)
+    best_error = np.inf
+
+    for maxiter in range(1, 20):
+        x, info = solver(A, v, maxiter=maxiter, tol=1e-8, atol=0)
+
+        if info == 0:
+            assert_(np.linalg.norm(A.dot(x) - v) <= 1e-8*np.linalg.norm(v))
+
+        error = np.linalg.norm(A.dot(x) - v)
+        best_error = min(best_error, error)
+
+        # Check with slack
+        assert_(error <= 5*best_error)
+
+
 #------------------------------------------------------------------------------
 
 class TestQMR(object):
