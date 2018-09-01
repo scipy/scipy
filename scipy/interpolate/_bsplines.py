@@ -744,6 +744,9 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
         except TypeError:
             raise ValueError("Unknown boundary condition: %s" % bc_type)
 
+    # BSpline requires axis>=0
+    axis = axis % y.ndim
+
     # special-case k=0 right away
     if k == 0:
         if any(_ is not None for _ in (t, deriv_l, deriv_r)):
@@ -786,7 +789,6 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
 
     t = _as_float_array(t, check_finite)
 
-    axis = axis % y.ndim
     y = np.rollaxis(y, axis)    # now internally interp axis is zero
 
     if x.ndim != 1 or np.any(x[1:] <= x[:-1]):
