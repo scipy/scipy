@@ -745,9 +745,9 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
             raise ValueError("Unknown boundary condition: %s" % bc_type)
 
     if axis < 0:
-    axis += y.ndim
-    if axis < 0:
-        raise ValueError("axis {} is out of bounds".format(axis - y.ndim))
+        axis += y.ndim
+        if axis < 0:
+            raise ValueError("axis {} is out of bounds".format(axis - y.ndim))
 
     # special-case k=0 right away
     if k == 0:
