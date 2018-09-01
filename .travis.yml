@@ -14,7 +14,7 @@ matrix:
       env:
         - PYFLAKES=1
         - PEP8=1
-        - NUMPYSPEC=numpy
+        - NUMPYSPEC="--upgrade numpy"
       before_install:
         - pip install pycodestyle==2.3.1
         - pip install pyflakes==1.1.0
@@ -32,14 +32,14 @@ matrix:
       env:
         - TESTMODE=full
         - COVERAGE="--coverage --gcov"
-        - NUMPYSPEC=numpy
+        - NUMPYSPEC="--upgrade numpy"
     - python: 3.6
       env:
         - TESTMODE=fast
         - COVERAGE=
         - USE_WHEEL=1
         - REFGUIDE_CHECK=1
-        - NUMPYSPEC=numpy
+        - NUMPYSPEC="--upgrade numpy"
     - python: 3.5
       env:
         - TESTMODE=fast
@@ -52,13 +52,13 @@ matrix:
         - TESTMODE=fast
         - COVERAGE=
         - USE_WHEEL=1
-        - NUMPYSPEC=numpy
+        - NUMPYSPEC="--upgrade numpy"
     - os: osx
       language: generic
       env:
         - TESTMODE=fast
         - COVERAGE=
-        - NUMPYSPEC=numpy
+        - NUMPYSPEC="--upgrade numpy"
         - MB_PYTHON_VERSION=3.7
 addons:
   apt:
