@@ -788,9 +788,13 @@ class TestInterp(object):
     def test_order_0(self):
         b = make_interp_spline(self.xx, self.yy, k=0)
         assert_allclose(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
+        b = make_interp_spline(self.xx, self.yy, k=0, axis=-1)
+        assert_allclose(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
 
     def test_linear(self):
         b = make_interp_spline(self.xx, self.yy, k=1)
+        assert_allclose(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
+        b = make_interp_spline(self.xx, self.yy, k=1, axis=-1)
         assert_allclose(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
 
     def test_not_a_knot(self):
