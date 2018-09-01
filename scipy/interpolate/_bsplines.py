@@ -744,8 +744,10 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
         except TypeError:
             raise ValueError("Unknown boundary condition: %s" % bc_type)
 
-    # BSpline requires axis>=0
-    axis = axis % y.ndim
+    if axis < 0:
+    axis += y.ndim
+    if axis < 0:
+        raise ValueError("axis {} is out of bounds".format(axis - y.ndim))
 
     # special-case k=0 right away
     if k == 0:
