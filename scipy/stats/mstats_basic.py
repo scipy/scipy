@@ -465,6 +465,9 @@ def spearmanr(x, y=None, use_ties=True, axis=None, nan_policy='propagate'):
     [CRCProbStat2000] section 14.7
 
     """
+    if not use_ties:
+        raise ValueError("`use_ties=False` is not supported in SciPy >= 1.2.0")
+
     # Always returns a masked array, raveled if axis=None
     x, axisout = _chk_asarray(x, axis)
     if y is not None:
