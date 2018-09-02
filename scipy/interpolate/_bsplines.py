@@ -754,6 +754,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
         x = _as_float_array(x, check_finite)
         t = np.r_[x, x[-1]]
         c = np.asarray(y)
+        c = np.rollaxis(c, axis)
         c = np.ascontiguousarray(c, dtype=_get_dtype(c.dtype))
         return BSpline.construct_fast(t, c, k, axis=axis)
 
@@ -764,6 +765,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
         x = _as_float_array(x, check_finite)
         t = np.r_[x[0], x, x[-1]]
         c = np.asarray(y)
+        c = np.rollaxis(c, axis)
         c = np.ascontiguousarray(c, dtype=_get_dtype(c.dtype))
         return BSpline.construct_fast(t, c, k, axis=axis)
 
