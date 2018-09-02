@@ -13,3 +13,10 @@ coverage:
     patch: false
     changes: false
 comment: off
+
+ignore:
+  - "**/setup.py"
+  - "**/tests/*"
+  - "**/test_*.py"
+  - "**/_generate_pyx.py"
+  - "**/src/*"
