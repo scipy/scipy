@@ -594,6 +594,21 @@ class TestCorrSpearmanr(object):
         assert_allclose(actual.correlation, expected_corr)
         assert_allclose(actual.pvalue, expected_pvalue)
 
+    def test_gh_9103(self):
+        # Regression test for gh-9103.
+        x = np.array([[np.nan,    3.0, 4.0, 5.0, 5.1, 6.0, 9.2],
+                      [5.0,    np.nan, 4.1, 4.8, 4.9, 5.0, 4.1],
+                      [0.5,       4.0, 7.1, 3.8, 8.0, 5.1, 7.6]]).T
+        corr = np.array([[np.nan, np.nan, np.nan],
+                         [np.nan, np.nan, np.nan],
+                         [np.nan, np.nan,     1.]])
+        assert_allclose(stats.spearmanr(x, nan_policy='propagate').correlation,
+                        corr)
+
+        res = stats.spearmanr(x, nan_policy='omit').correlation
+        assert_allclose((res[0][1], res[0][2], res[1][2]),
+                        (0.2051957, 0.4857143, -0.4707919), rtol=1e-6)
+
 
 def test_spearmanr():
     # Cross-check with R:

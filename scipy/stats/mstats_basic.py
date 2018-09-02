@@ -474,42 +474,62 @@ def spearmanr(x, y=None, use_ties=True, axis=None, nan_policy='propagate'):
         else:
             x = ma.row_stack((x, y))
 
+    if axisout == 1:
+        # To simplify the code that follow (always use `n_obs, n_vars` shape)
+        x = x.T
+
     if nan_policy == 'omit':
         x = ma.masked_invalid(x)
 
-    # Mask the same observations for all variables, and then drop those
-    # observations (can't leave them masked, rankdata is weird).
-    x = ma.mask_rowcols(x, axis=axisout)
-    if axisout == 0:
+    def _spearmanr_2cols(x):
+        # Mask the same observations for all variables, and then drop those
+        # observations (can't leave them masked, rankdata is weird).
+        x = ma.mask_rowcols(x, axis=0)
         x = x[~x.mask.any(axis=1), :]
+
+        m = ma.getmask(x)
+        n_obs = x.shape[0]
+        dof = n_obs - 2 - int(m.sum(axis=0)[0])
+        if dof < 0:
+            raise ValueError("The input must have at least 3 entries!")
+
+        # Gets the ranks and rank differences
+        x_ranked = rankdata(x, axis=0)
+        rs = ma.corrcoef(x_ranked, rowvar=False).data
+
+        # rs can have elements equal to 1, so avoid zero division warnings
+        olderr = np.seterr(divide='ignore')
+        try:
+            # clip the small negative values possibly caused by rounding
+            # errors before taking the square root
+            t = rs * np.sqrt((dof / ((rs+1.0) * (1.0-rs))).clip(0))
+        finally:
+            np.seterr(**olderr)
+
+        prob = 2 * distributions.t.sf(np.abs(t), dof)
+
+        # For backwards compatibility, return scalars when comparing 2 colums
+        if rs.shape == (2, 2):
+            return SpearmanrResult(rs[1, 0], prob[1, 0])
+        else:
+            return SpearmanrResult(rs, prob)
+
+    # Need to do this per pair of variables, otherwise the dropped observations
+    # in a third column mess up the result for a pair.
+    n_vars = x.shape[1]
+    if n_vars == 2:
+        return _spearmanr_2cols(x)
     else:
-        x = x[:, ~x.mask.any(axis=0)]
+        rs = np.ones((n_vars, n_vars), dtype=float)
+        prob = np.zeros((n_vars, n_vars), dtype=float)
+        for var1 in range(n_vars - 1):
+            for var2 in range(var1+1, n_vars):
+                result = _spearmanr_2cols(x[:, [var1, var2]])
+                rs[var1, var2] = result.correlation
+                rs[var2, var1] = result.correlation
+                prob[var1, var2] = result.pvalue
+                prob[var2, var1] = result.pvalue
 
-    m = ma.getmask(x)
-    n_obs = x.shape[axisout]
-    dof = n_obs - 2 - int(m.sum(axis=axisout)[0])
-    if dof < 0:
-        raise ValueError("The input must have at least 3 entries!")
-
-    # Gets the ranks and rank differences
-    x_ranked = rankdata(x, axis=axisout)
-    rs = ma.corrcoef(x_ranked, rowvar=axisout).data
-
-    # rs can have elements equal to 1, so avoid zero division warnings
-    olderr = np.seterr(divide='ignore')
-    try:
-        # clip the small negative values possibly caused by rounding
-        # errors before taking the square root
-        t = rs * np.sqrt((dof / ((rs+1.0) * (1.0-rs))).clip(0))
-    finally:
-        np.seterr(**olderr)
-
-    prob = 2 * distributions.t.sf(np.abs(t), dof)
-
-    # For backwards compatibility, return scalars when comparing 2 colums
-    if rs.shape == (2, 2):
-        return SpearmanrResult(rs[1, 0], prob[1, 0])
-    else:
         return SpearmanrResult(rs, prob)
 
 
