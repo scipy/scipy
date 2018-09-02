@@ -636,6 +636,7 @@ class TestSplu(object):
         check(np.complex64, True)
         check(np.complex128, True)
 
+    @pytest.mark.slow
     @sup_sparse_efficiency
     def test_threads_parallel(self):
         oks = []
@@ -689,6 +690,7 @@ class TestSpsolveTriangular(object):
             x = spsolve_triangular(matrix_type(A), b, lower=True)
             assert_array_almost_equal(A.dot(x), b)
 
+    @pytest.mark.slow
     @sup_sparse_efficiency
     def test_random(self):
         def random_triangle_matrix(n, lower=True):

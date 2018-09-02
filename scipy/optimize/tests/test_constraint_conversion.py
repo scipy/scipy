@@ -6,6 +6,7 @@ Unit test for constraint conversion
 import numpy as np
 from numpy.testing import (assert_, assert_array_almost_equal,
                            assert_allclose, assert_equal, TestCase)
+import pytest
 from scipy._lib._numpy_compat import suppress_warnings
 from scipy.optimize import (NonlinearConstraint, LinearConstraint, Bounds,
                             OptimizeWarning, minimize, BFGS)
@@ -250,6 +251,7 @@ class TestNewToOldCobyla(object):
                         Elec(n_electrons=4),
                         ]
 
+    @pytest.mark.slow
     def test_list_of_problems(self):
 
         for prob in self.list_of_problems:
