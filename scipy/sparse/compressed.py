@@ -69,8 +69,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                     self.indptr = np.array(indptr, copy=copy, dtype=idx_dtype)
                     self.data = np.array(data, copy=copy, dtype=dtype)
                 else:
-                    raise ValueError("unrecognized {}_matrix constructor usage"
-                                     "".format(self.format))
+                    raise ValueError("unrecognized {}_matrix "
+                                     "constructor usage".format(self.format))
 
         else:
             # must be dense
@@ -157,10 +157,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         self.data = to_native(self.data)
 
         # check array shapes
-        if any([self.data.ndim != 1,
-                self.indices.ndim != 1,
-                self.indptr.ndim != 1]):
-            raise ValueError('data, indices, and indptr should be 1-D')
+        for x in [self.data.ndim, self.indices.ndim, self.indptr.ndim]:
+            if x != 1:
+                raise ValueError('data, indices, and indptr should be 1-D')
 
         # check index pointer
         if (len(self.indptr) != major_dim + 1):
@@ -848,8 +847,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         self.data = np.concatenate(data_parts)
         nnzs = np.empty(self.indptr.shape, dtype=idx_dtype)
         nnzs[0] = idx_dtype(0)
-        nnzs[1:] = np.diff(self.indptr).astype(idx_dtype)
-        nnzs[ui+1] += new_nnzs
+        indptr_diff = np.diff(self.indptr)
+        indptr_diff[ui] += new_nnzs
+        nnzs[1:] = indptr_diff
         self.indptr = np.cumsum(nnzs, out=nnzs)
 
         if do_sort:
@@ -921,8 +921,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         def _in_bounds(i0, i1, num):
             if not (0 <= i0 < num) or not (0 < i1 <= num) or not (i0 < i1):
                 raise IndexError("index out of bounds:"
-                                 " 0<={}<{}, 0<={}<{}, {}<{}"
-                                 "".format(i0, num, i1, num, i0, i1))
+                                 " 0<={i0}<{num}, 0<={i1}<{num}, {i0}<{i1}"
+                                 "".format(i0=i0, num=num, i1=i1))
 
         i0, i1 = _process_slice(slice0, shape0)
         j0, j1 = _process_slice(slice1, shape1)
