@@ -239,7 +239,7 @@ class BSpline(object):
         self = object.__new__(cls)
         self.t, self.c, self.k = t, c, k
         self.extrapolate = extrapolate
-        self.axis = axis
+        self.axis = axis if axis >= 0 else axis + self.c.ndim
         return self
 
     @property
@@ -512,7 +512,7 @@ class BSpline(object):
                 # (cf _fitpack_impl.splint).
                 t, c, k = self.tck
                 integral, wrk = _dierckx._splint(t, c, k, a, b)
-                return integral * sign 
+                return integral * sign
 
         out = np.empty((2, prod(self.c.shape[1:])), dtype=self.c.dtype)
 
