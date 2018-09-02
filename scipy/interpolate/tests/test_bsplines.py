@@ -405,8 +405,8 @@ class TestBSpline(object):
             assert_equal(b(xp).shape,
                          sh[:axis] + list(xp.shape) + sh[axis+1:])
 
-            #0 <= axis < c.ndim
-            for ax in [-1, len(sh)+1]:
+            #-c.ndim <= axis < c.ndim
+            for ax in [-c.ndim-1, c.ndim]:
                 assert_raises(ValueError, BSpline, **dict(t=t, c=c, k=k, axis=ax))
 
             # derivative, antiderivative keeps the axis
