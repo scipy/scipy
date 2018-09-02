@@ -438,9 +438,8 @@ class TestCorrSpearmanr(object):
         x = np.random.randn(4, 3, 2)
         assert_raises(ValueError, stats.spearmanr, x)
         assert_raises(ValueError, stats.spearmanr, x, x)
-        # But should work with axis=None (raveling axes)
-        assert_allclose(stats.spearmanr(x, axis=None),
-                        stats.spearmanr(x.flatten(), axis=0))
+        assert_raises(ValueError, stats.spearmanr, x, None, None)
+        # But should work with axis=None (raveling axes) for two input arrays
         assert_allclose(stats.spearmanr(x, x, axis=None),
                         stats.spearmanr(x.flatten(), x.flatten(), axis=0))
 
@@ -570,7 +569,6 @@ class TestCorrSpearmanr(object):
         res2 = stats.spearmanr(np.asarray([x1, x2]).T)
         assert_allclose(res1, res2)
 
-    @pytest.mark.xfail(reason="Bug: gh-9103")
     def test_1d_vs_2d_nans(self):
         # Now the same with NaNs present.  Regression test for gh-9103.
         for nan_policy in ['propagate', 'omit']:

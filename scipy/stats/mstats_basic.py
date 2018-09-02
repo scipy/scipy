@@ -52,7 +52,7 @@ from ._stats_mstats_common import (
         _find_repeats,
         linregress as stats_linregress,
         theilslopes as stats_theilslopes,
-        siegelslopes as stats_siegelslopes 
+        siegelslopes as stats_siegelslopes
         )
 
 
@@ -88,7 +88,7 @@ def _chk2_asarray(a, b, axis):
     return a, b, outaxis
 
 
-def _chk_size(a,b):
+def _chk_size(a, b):
     a = ma.asanyarray(a)
     b = ma.asanyarray(b)
     (na, nb) = (a.size, b.size)
@@ -411,7 +411,7 @@ def pearsonr(x,y):
 SpearmanrResult = namedtuple('SpearmanrResult', ('correlation', 'pvalue'))
 
 
-def spearmanr(x, y, use_ties=True):
+def spearmanr(x, y=None, use_ties=True, axis=None, nan_policy='propagate'):
     """
     Calculates a Spearman rank-order correlation coefficient and the p-value
     to test for non-correlation.
@@ -437,10 +437,20 @@ def spearmanr(x, y, use_ties=True):
     ----------
     x : array_like
         The length of `x` must be > 2.
-    y : array_like
+    y : array_like, optional
         The length of `y` must be > 2.
     use_ties : bool, optional
-        Whether the correction for ties should be computed.
+        DO NOT USE.  Does not do anything, keyword is only left in place for
+        backwards compatibility reasons.
+   axis : int or None, optional
+        If axis=0 (default), then each column represents a variable, with
+        observations in the rows. If axis=1, the relationship is transposed:
+        each row represents a variable, while the columns contain observations.
+        If axis=None, then both arrays will be raveled.
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan. 'propagate' returns nan,
+        'raise' throws an error, 'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.
 
     Returns
     -------
@@ -454,48 +464,53 @@ def spearmanr(x, y, use_ties=True):
     [CRCProbStat2000] section 14.7
 
     """
-    (x, y, n) = _chk_size(x, y)
-    (x, y) = (x.ravel(), y.ravel())
+    # Always returns a masked array, raveled if axis=None
+    x, axisout = _chk_asarray(x, axis)
+    if y is not None:
+        # Deal only with 2-D `x` case.
+        y, _ = _chk_asarray(y, axis)
+        if axisout == 0:
+            x = ma.column_stack((x, y))
+        else:
+            x = ma.row_stack((x, y))
 
-    m = ma.mask_or(ma.getmask(x), ma.getmask(y))
-    # need int() here, otherwise numpy defaults to 32 bit
-    # integer on all Windows architectures, causing overflow.
-    # int() will keep it infinite precision.
-    n -= int(m.sum())
-    if m is not nomask:
-        x = ma.array(x, mask=m, copy=True)
-        y = ma.array(y, mask=m, copy=True)
-    df = n-2
-    if df < 0:
+    if nan_policy == 'omit':
+        x = ma.masked_invalid(x)
+
+    # Mask the same observations for all variables, and then drop those
+    # observations (can't leave them masked, rankdata is weird).
+    x = ma.mask_rowcols(x, axis=axisout)
+    if axisout == 0:
+        x = x[~x.mask.any(axis=1), :]
+    else:
+        x = x[:, ~x.mask.any(axis=0)]
+
+    m = ma.getmask(x)
+    n_obs = x.shape[axisout]
+    dof = n_obs - 2 - int(m.sum(axis=axisout)[0])
+    if dof < 0:
         raise ValueError("The input must have at least 3 entries!")
 
     # Gets the ranks and rank differences
-    rankx = rankdata(x)
-    ranky = rankdata(y)
-    dsq = np.add.reduce((rankx-ranky)**2)
-    # Tie correction
-    if use_ties:
-        xties = count_tied_groups(x)
-        yties = count_tied_groups(y)
-        corr_x = sum(v*k*(k**2-1) for (k,v) in iteritems(xties))/12.
-        corr_y = sum(v*k*(k**2-1) for (k,v) in iteritems(yties))/12.
-    else:
-        corr_x = corr_y = 0
+    x_ranked = rankdata(x, axis=axisout)
+    rs = ma.corrcoef(x_ranked, rowvar=axisout).data
 
-    denom = n*(n**2 - 1)/6.
-    if corr_x != 0 or corr_y != 0:
-        rho = denom - dsq - corr_x - corr_y
-        rho /= ma.sqrt((denom-2*corr_x)*(denom-2*corr_y))
-    else:
-        rho = 1. - dsq/denom
+    # rs can have elements equal to 1, so avoid zero division warnings
+    olderr = np.seterr(divide='ignore')
+    try:
+        # clip the small negative values possibly caused by rounding
+        # errors before taking the square root
+        t = rs * np.sqrt((dof / ((rs+1.0) * (1.0-rs))).clip(0))
+    finally:
+        np.seterr(**olderr)
 
-    t = ma.sqrt(ma.divide(df,(rho+1.0)*(1.0-rho))) * rho
-    if t is masked:
-        prob = 0.
-    else:
-        prob = _betai(0.5*df, 0.5, df/(df + t * t))
+    prob = 2 * distributions.t.sf(np.abs(t), dof)
 
-    return SpearmanrResult(rho, prob)
+    # For backwards compatibility, return scalars when comparing 2 colums
+    if rs.shape == (2, 2):
+        return SpearmanrResult(rs[1, 0], prob[1, 0])
+    else:
+        return SpearmanrResult(rs, prob)
 
 
 KendalltauResult = namedtuple('KendalltauResult', ('correlation', 'pvalue'))
