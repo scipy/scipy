@@ -435,14 +435,15 @@ def spearmanr(x, y=None, use_ties=True, axis=None, nan_policy='propagate'):
 
     Parameters
     ----------
-    x : array_like
-        The length of `x` must be > 2.
-    y : array_like, optional
-        The length of `y` must be > 2.
+    x, y : 1D or 2D array_like, b is optional
+        One or two 1-D or 2-D arrays containing multiple variables and
+        observations. When these are 1-D, each represents a vector of
+        observations of a single variable. For the behavior in the 2-D case,
+        see under ``axis``, below.
     use_ties : bool, optional
         DO NOT USE.  Does not do anything, keyword is only left in place for
         backwards compatibility reasons.
-   axis : int or None, optional
+    axis : int or None, optional
         If axis=0 (default), then each column represents a variable, with
         observations in the rows. If axis=1, the relationship is transposed:
         each row represents a variable, while the columns contain observations.
