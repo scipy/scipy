@@ -447,6 +447,7 @@ class Elec:
 
 class TestTrustRegionConstr(TestCase):
 
+    @pytest.mark.slow
     def test_list_of_problems(self):
         list_of_problems = [Maratos(),
                             Maratos(constr_hess='2-point'),
