@@ -59,7 +59,7 @@ class LagrangianHessian(object):
 
 def update_state_sqp(state, x, last_iteration_failed, objective, prepared_constraints,
                      start_time, tr_radius, constr_penalty, cg_info):
-    state.niter += 1
+    state.nit += 1
     state.nfev = objective.nfev
     state.njev = objective.ngev
     state.nhev = objective.nhev
@@ -247,7 +247,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
         Gradient of the objective function at the solution.
     lagrangian_grad : ndarray, shape (n,)
         Gradient of the Lagrangian function at the solution.
-    niter : int
+    nit : int
         Total number of iterations.
     nfev : integer
         Number of the objective function evaluations.
@@ -378,7 +378,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
 
     # Construct OptimizeResult
     state = OptimizeResult(
-        niter=0, nfev=0, njev=0, nhev=0,
+        nit=0, nfev=0, njev=0, nhev=0,
         cg_niter=0, cg_stop_cond=0,
         fun=objective.f, grad=objective.g,
         lagrangian_grad=np.copy(objective.g),
@@ -403,7 +403,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
                                      start_time, tr_radius, constr_penalty,
                                      cg_info)
             if verbose == 2:
-                BasicReport.print_iteration(state.niter,
+                BasicReport.print_iteration(state.nit,
                                             state.nfev,
                                             state.cg_niter,
                                             state.fun,
@@ -411,7 +411,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
                                             state.optimality,
                                             state.constr_violation)
             elif verbose > 2:
-                SQPReport.print_iteration(state.niter,
+                SQPReport.print_iteration(state.nit,
                                           state.nfev,
                                           state.cg_niter,
                                           state.fun,
@@ -427,7 +427,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
                 state.status = 1
             elif state.tr_radius < xtol:
                 state.status = 2
-            elif state.niter > maxiter:
+            elif state.nit > maxiter:
                 state.status = 0
             return state.status in (0, 1, 2, 3)
     elif method == 'tr_interior_point':
@@ -439,7 +439,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
                                     start_time, tr_radius, constr_penalty,
                                     cg_info, barrier_parameter, barrier_tolerance)
             if verbose == 2:
-                BasicReport.print_iteration(state.niter,
+                BasicReport.print_iteration(state.nit,
                                             state.nfev,
                                             state.cg_niter,
                                             state.fun,
@@ -447,7 +447,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
                                             state.optimality,
                                             state.constr_violation)
             elif verbose > 2:
-                IPReport.print_iteration(state.niter,
+                IPReport.print_iteration(state.nit,
                                          state.nfev,
                                          state.cg_niter,
                                          state.fun,
@@ -465,7 +465,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
             elif (state.tr_radius < xtol
                   and state.barrier_parameter < barrier_tol):
                 state.status = 2
-            elif state.niter > maxiter:
+            elif state.nit > maxiter:
                 state.status = 0
             return state.status in (0, 1, 2, 3)
 
@@ -511,6 +511,9 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
             initial_constr_penalty, initial_tr_radius,
             factorization_method)
 
+    # Status 3 occurs when the callback function requests termination,
+    # this is assumed to not be a success.
+    result.success = True if result.status in (1, 2) else False
     result.message = TERMINATION_MESSAGES[result.status]
 
     if verbose == 2:
@@ -525,7 +528,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
         print("Number of iterations: {}, function evaluations: {}, "
               "CG iterations: {}, optimality: {:.2e}, "
               "constraint violation: {:.2e}, execution time: {:4.2} s."
-              .format(result.niter, result.nfev, result.cg_niter,
+              .format(result.nit, result.nfev, result.cg_niter,
                       result.optimality, result.constr_violation,
                       result.execution_time))
     return result

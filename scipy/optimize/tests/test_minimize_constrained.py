@@ -4,7 +4,7 @@ import pytest
 from scipy.linalg import block_diag
 from scipy.sparse import csc_matrix
 from numpy.testing import (TestCase, assert_array_almost_equal,
-                           assert_array_less, assert_allclose)
+                           assert_array_less, assert_allclose, assert_)
 from pytest import raises
 from scipy.optimize import (NonlinearConstraint,
                             LinearConstraint,
@@ -585,7 +585,6 @@ class TestTrustRegionConstr(TestCase):
         # xtol
         if result.status == 2:
             assert_array_less(result.tr_radius, 1e-8)
-
             if result.method == "tr_interior_point":
                 assert_array_less(result.barrier_parameter, 1e-8)
         # max iter
@@ -597,3 +596,13 @@ class TestTrustRegionConstr(TestCase):
 
         raises(ValueError, minimize, prob.fun, prob.x0, method='trust-constr',
                jac='2-point', hess='2-point', constraints=prob.constr)
+
+    def test_issue_9044(self):
+        # https://github.com/scipy/scipy/issues/9044
+        # Test the returned `OptimizeResult` contains keys consistent with
+        # other solvers.
+
+        result = minimize(lambda x: x**2, [0], jac=lambda x: 2*x,
+                          hess=lambda x: 2, method='trust-constr')
+        assert_(result.get('success'))
+        assert_(result.get('nit', -1) == 1)
