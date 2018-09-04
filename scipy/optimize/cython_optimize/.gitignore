@@ -1,8 +1,0 @@
-zeros_tuple.c
-zeros_array.c
-zeros_struct.c
-examples/zeros_tuple_examples.c
-examples/zeros_array_examples.c
-examples/zeros_struct_examples.c
-examples/zeros_struct_alt_examples.c
-examples/.ipynb_checkpoints/

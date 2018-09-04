@@ -1,1 +1,1 @@
-from .optimize import cython_optimize
+from .optimize cimport cython_optimize

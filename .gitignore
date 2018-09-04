@@ -254,3 +254,11 @@ scipy/stats/_stats.c
 scipy/version.py
 scipy/special/_exprel.c
 scipy/optimize/_group_columns.c
+scipy/optimize/cython_optimize/zeros_tuple.c
+scipy/optimize/cython_optimize/zeros_array.c
+scipy/optimize/cython_optimize/zeros_struct.c
+scipy/optimize/cython_optimize/examples/zeros_tuple_examples.c
+scipy/optimize/cython_optimize/examples/zeros_array_examples.c
+scipy/optimize/cython_optimize/examples/zeros_struct_examples.c
+scipy/optimize/cython_optimize/examples/zeros_struct_alt_examples.c
+
