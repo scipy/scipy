@@ -4507,63 +4507,61 @@ class TestRatioUniforms(object):
     """ Tests for rvs_ratio_uniforms.
     """
     def test_rv_generation(self):
+        # use KS test to check distribution of rvs
         # normal distribution
         f = stats.norm.pdf
-        x2, y2 = np.sqrt(f(np.sqrt(2))) * np.sqrt(2), np.sqrt(f(0))
-        rvs = stats.rvs_ratio_uniforms(f, x1=-x2, x2=x2, y2=y2, size=2500,
+        x_bound = np.sqrt(f(np.sqrt(2))) * np.sqrt(2)
+        x1, x2, y2 = -x_bound, x_bound, np.sqrt(f(0))
+        rvs = stats.rvs_ratio_uniforms(f, x1, x2, y2, size=2500,
                                        random_state=12345)
         assert_equal(stats.kstest(rvs, 'norm')[1] > 0.25, True)
-        # same but find x1, x2, y2 numerically
-        rvs = stats.rvs_ratio_uniforms(f, size=2500, bounds=(-100, 100),
-                                       random_state=12345)
-        assert_equal(stats.kstest(rvs, 'norm')[1] > 0.25, True)
+
         # exponential distribution
         rvs = stats.rvs_ratio_uniforms(lambda x: np.exp(-x), x1=0, x2=2*np.exp(-1),
                                        y2=1, size=1000, random_state=12345)
         assert_equal(stats.kstest(rvs, 'expon')[1] > 0.25, True)
 
     def test_shape(self):
-        # test shape of return value depending on size parameter
+        # test shape of return value depending on size parameter        
         f = stats.norm.pdf
-        b = (-3, 3)
-        r1 = stats.rvs_ratio_uniforms(f, size=3, bounds=b, random_state=1234)
-        r2 = stats.rvs_ratio_uniforms(f, size=(3,), bounds=b,
+        x_bound = np.sqrt(f(np.sqrt(2))) * np.sqrt(2)
+        x1, x2, y2 = -x_bound, x_bound, np.sqrt(f(0))
+        
+        r1 = stats.rvs_ratio_uniforms(f, x1, x2, y2, size=3, random_state=1234)
+        r2 = stats.rvs_ratio_uniforms(f, x1, x2, y2, size=(3,),
                                       random_state=1234)
-        r3 = stats.rvs_ratio_uniforms(f, size=(3, 1), bounds=b,
+        r3 = stats.rvs_ratio_uniforms(f, x1, x2, y2, size=(3, 1), 
                                       random_state=1234)
         assert_equal(r1, r2)
         assert_equal(r2, r3.flatten())
         assert_equal(r1.shape, (3,))
         assert_equal(r3.shape, (3, 1))
 
-        r4 = stats.rvs_ratio_uniforms(f, size=(3, 3, 3), bounds=b,
+        r4 = stats.rvs_ratio_uniforms(f, x1, x2, y2, size=(3, 3, 3),
                                       random_state=12)
-        r5 = stats.rvs_ratio_uniforms(f, size=27, bounds=b, random_state=12)
+        r5 = stats.rvs_ratio_uniforms(f, x1, x2, y2, size=27, random_state=12)
         assert_equal(r4.flatten(), r5)
         assert_equal(r4.shape, (3, 3, 3))
 
-        r6 = stats.rvs_ratio_uniforms(f, bounds=b, random_state=1234)
-        r7 = stats.rvs_ratio_uniforms(f, size=1, bounds=b, random_state=1234)
-        r8 = stats.rvs_ratio_uniforms(f, size=(1, ), bounds=b,
+        r6 = stats.rvs_ratio_uniforms(f, x1, x2, y2, random_state=1234)
+        r7 = stats.rvs_ratio_uniforms(f, x1, x2, y2, size=1, random_state=1234)
+        r8 = stats.rvs_ratio_uniforms(f, x1, x2, y2, size=(1, ),
                                       random_state=1234)
         assert_equal(r6, r7)
         assert_equal(r7, r8)
 
     def test_random_state(self):
         f = stats.norm.pdf
-        b = (-3, 3)
+        x_bound = np.sqrt(f(np.sqrt(2))) * np.sqrt(2)
+        x1, x2, y2 = -x_bound, x_bound, np.sqrt(f(0))
         np.random.seed(1234)
-        r1 = stats.rvs_ratio_uniforms(f, size=(3, 4), bounds=b)
-        r2 = stats.rvs_ratio_uniforms(f, size=(3, 4), bounds=b,
+        r1 = stats.rvs_ratio_uniforms(f, x1, x2, y2, size=(3, 4))
+        r2 = stats.rvs_ratio_uniforms(f, x1, x2, y2, size=(3, 4),
                                       random_state=1234)
         assert_equal(r1, r2)
 
     def test_exceptions(self):
         f = stats.norm.pdf
-        # bounds not specified in case any of x1, x2, y2 is None
-        assert_raises(Exception, stats.rvs_ratio_uniforms, pdf=f, x1=0, x2=1)
-        assert_raises(Exception, stats.rvs_ratio_uniforms, pdf=f, x2=1, y2=1)
-        assert_raises(Exception, stats.rvs_ratio_uniforms, pdf=f, x2=1, y2=1)
         # need x1 < x2
         assert_raises(ValueError,
                       stats.rvs_ratio_uniforms, pdf=f, x1=3, x2=1, y2=1)

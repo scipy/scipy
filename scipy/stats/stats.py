@@ -5944,8 +5944,7 @@ def rankdata(a, method='average'):
     return .5 * (count[dense] + count[dense - 1] + 1)
 
 
-def rvs_ratio_uniforms(pdf, size=1, x1=None, x2=None, y2=None, c=0,
-                       bounds=None, random_state=None):
+def rvs_ratio_uniforms(pdf, x1, x2, y2, size=1, c=0, random_state=None):
     """
     Generate random samples from a probability density function using the
     ratio-of-uniforms method.
@@ -5954,23 +5953,16 @@ def rvs_ratio_uniforms(pdf, size=1, x1=None, x2=None, y2=None, c=0,
     ----------
     pdf : callable
         The probability density function of the distribution.
+    x1 : float
+        The lower bound of the bounding rectangle in the x-direction.
+    x2 : float
+        The upper bound of the bounding rectangle in the x-direction.
+    y2 : float
+        The upper bound of the bounding rectangle in the y-direction.
     size : int or tuple of ints, optional
         Defining number of random variates (default is 1).
-    x1 : float, optional
-        The lower bound of the bounding rectangle in the x-direction.
-        Default is None. In that case, attempt to find bound numerically.
-    x2 : float, optional
-        The upper bound of the bounding rectangle in the x-direction.
-        Default is None. In that case, attempt to find bound numerically.
-    y2 : float, optional
-        The upper bound of the bounding rectangle in the y-direction.
-        Default is None. In that case, attempt to find bound numerically.
     c : float, optional.
         Shift parameter of ratio-of-uniforms method, see Notes. Default is 0.
-    bounds : tuple of floats (a, b), optional
-        Default is None. In case any of the values x1, x2, y2 are not
-        specified (i.e. equal to None), attempt to find the value numerically
-        over the interval from a to b.
     random_state : None or int or np.random.RandomState instance, optional
         If already a RandomState instance, use it.
         If seed is an int, return a new RandomState instance seeded with seed.
@@ -6050,14 +6042,6 @@ def rvs_ratio_uniforms(pdf, size=1, x1=None, x2=None, y2=None, c=0,
     >>> stats.kstest(rvs, 'norm')[1]
     0.373298699196806752
 
-    If the bounding rectangle is not specified, it can be determined
-    numerically over the region specified by `bounds`.
-
-    >>> np.random.seed(12345)
-    >>> rvs = stats.rvs_ratio_uniforms(f, size=2500, bounds=(-100, 100))
-    >>> stats.kstest(rvs, 'norm')[1]
-    0.3732986992033126
-
     The exponential distribution provides another example where the bounding
     rectangle can be determined explicitly.
 
@@ -6070,37 +6054,12 @@ def rvs_ratio_uniforms(pdf, size=1, x1=None, x2=None, y2=None, c=0,
     Sometimes it can be helpful to use a non-zero shift parameter `c`, see e.g.
     [2]_ above in the case of the generalized inverse Gaussian distribution.
 
-    """
-
-    def find_rect_bounds(g, bounds, var):
-        if bounds is None:
-            raise ValueError("The parameter bounds needs to be specified if " +
-                             var + " is None.")
-        opt_res = optimize.minimize_scalar(g, bounds=bounds, method='bounded')
-        if not opt_res.success:
-            raise RuntimeError("Optimization failed when attempting to find " +
-                               var + ": " + opt_res.message)
-        if np.isnan(opt_res.fun):
-            raise RuntimeError("Optimization returned " + var + "= nan " +
-                               "at x=".format(opt_res.x))
-        return opt_res.fun
-
-    # in case bounding rectangle is not given, attempt to find it numerically
-    def f_opt(x):
-        return (x - c) * np.sqrt(pdf(x))
-
-    if x1 is None:
-        x1 = find_rect_bounds(f_opt, bounds, "x1")
-    if x2 is None:
-        # need to find max(f) as -min(-f), same for y2 below
-        x2 = -find_rect_bounds(lambda x: -f_opt(x), bounds, "x2")
+    """    
 
     if x1 >= x2:
         raise ValueError("x1 must be smaller than x2.")
 
-    if y2 is None:
-        y2 = np.sqrt(-find_rect_bounds(lambda x: -pdf(x), bounds, "y2"))
-    if y2 < 0:
+    if y2 <= 0:
         raise ValueError("y2 must be positive.")
 
     exp_iter = 2 * (x2 - x1) * y2  # rejection constant (see [1])
