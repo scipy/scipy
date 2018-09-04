@@ -5944,7 +5944,7 @@ def rankdata(a, method='average'):
     return .5 * (count[dense] + count[dense - 1] + 1)
 
 
-def rvs_ratio_uniforms(pdf, x1, x2, y2, size=1, c=0, random_state=None):
+def rvs_ratio_uniforms(pdf, umax, vmin, vmax, size=1, c=0, random_state=None):
     """
     Generate random samples from a probability density function using the
     ratio-of-uniforms method.
@@ -5953,11 +5953,11 @@ def rvs_ratio_uniforms(pdf, x1, x2, y2, size=1, c=0, random_state=None):
     ----------
     pdf : callable
         The probability density function of the distribution.
-    x1 : float
+    vmin : float
         The lower bound of the bounding rectangle in the x-direction.
-    x2 : float
+    vmax : float
         The upper bound of the bounding rectangle in the x-direction.
-    y2 : float
+    umax : float
         The upper bound of the bounding rectangle in the y-direction.
     size : int or tuple of ints, optional
         Defining number of random variates (default is 1).
@@ -5977,23 +5977,23 @@ def rvs_ratio_uniforms(pdf, x1, x2, y2, size=1, c=0, random_state=None):
     Notes
     -----
     Given a univariate probability density function (pdf) f and a constant c,
-    define the set ``A = {(x, y) : 0 < y <= sqrt(f(x/y + c))}``.
+    define the set ``A = {(u, v) : 0 < u <= sqrt(f(v/u + c))}``.
     If ``(U, V)`` is a random vector uniformly distributed over ``A``,
-    then ``U/V + c`` follows a distribution with pdf ``f``.
+    then ``V/U + c`` follows a distribution with pdf ``f``.
 
     The above result (see [1]_, [2]_) can be used to sample random variables
     using only the pdf, i.e. no inversion of the cdf is required. Typical
     choices of c are zero or the mode of f. The set ``A`` is a subset of the
-    rectangle ``R = [x1, x2] x [0, y2]`` where
+    rectangle ``R = [0, umax] x [vmin, vmax]`` where
 
-    - ``x1 = inf (x - c) sqrt(f(x))``
-    - ``x2 = sup (x - c) sqrt(f(x))``
-    - ``y2 = sup sqrt(f(x))``
+    - ``umax = sup sqrt(f(x))``
+    - ``vmin = inf (x - c) sqrt(f(x))``
+    - ``vmax = sup (x - c) sqrt(f(x))``
 
     In particular, these values are finite if `f` is bounded and
     ``x**2 * f(x)`` is bounded (i.e. subquadratic tails).
     One can generate ``(U, V)`` uniformly on ``R`` and return
-    ``U/V + c`` if ``(U, V)`` are also in ``A`` which can be directly
+    ``V/U + c`` if ``(U, V)`` are also in ``A`` which can be directly
     verified.
 
     Intuitively, the method works well if ``A`` fills up most of the
@@ -6002,8 +6002,8 @@ def rvs_ratio_uniforms(pdf, x1, x2, y2, size=1, c=0, random_state=None):
     iterations becomes too large otherwise. To be more precise, note that
     the expected number of iterations to draw ``(U, V)`` uniformly
     distributed on ``R`` such that ``(U, V)`` is also in ``A`` is given by
-    the ratio ``area(R) / area(A) = 2 * y2 * (x2 - x1)``, using the fact that
-    the area of ``A`` is equal to 1/2 (Theorem 7.1 in [1]_). A warning
+    the ratio ``area(R) / area(A) = 2 * umax * (vmax - vmin)``, using the fact
+    that the area of ``A`` is equal to 1/2 (Theorem 7.1 in [1]_). A warning
     is displayed if this ratio is larger than 20.
 
     If the bounding rectangle is not correctly specified (i.e. if it does not
@@ -6031,10 +6031,10 @@ def rvs_ratio_uniforms(pdf, x1, x2, y2, size=1, c=0, random_state=None):
     bounding rectangle explicitly in that case.
 
     >>> f = stats.norm.pdf
-    >>> x_bound = np.sqrt(f(np.sqrt(2))) * np.sqrt(2)
-    >>> x1, x2, y2 = -x_bound, x_bound, np.sqrt(f(0))
+    >>> v_bound = np.sqrt(f(np.sqrt(2))) * np.sqrt(2)
+    >>> umax, vmin, vmax =  np.sqrt(f(0)), -v_bound, v_bound
     >>> np.random.seed(12345)
-    >>> rvs = stats.rvs_ratio_uniforms(f, x1=x1, x2=x2, y2=y2, size=2500)
+    >>> rvs = stats.rvs_ratio_uniforms(f, umax, vmin, vmax, size=2500)
 
     The K-S test confirms that the random variates are indeed normally
     distributed (p-value does not reject normality):
@@ -6046,8 +6046,8 @@ def rvs_ratio_uniforms(pdf, x1, x2, y2, size=1, c=0, random_state=None):
     rectangle can be determined explicitly.
 
     >>> np.random.seed(12345)
-    >>> rvs = stats.rvs_ratio_uniforms(lambda x: np.exp(-x), x1=0,
-    ...                                x2=2*np.exp(-1), y2=1, size=1000)
+    >>> rvs = stats.rvs_ratio_uniforms(lambda x: np.exp(-x), umax=1, 
+    ...                                vmin=0, vmax=2*np.exp(-1), size=1000)
     >>> stats.kstest(rvs, 'expon')[1]
     0.52369231518316373
 
@@ -6056,13 +6056,13 @@ def rvs_ratio_uniforms(pdf, x1, x2, y2, size=1, c=0, random_state=None):
 
     """    
 
-    if x1 >= x2:
-        raise ValueError("x1 must be smaller than x2.")
+    if vmin >= vmax:
+        raise ValueError("vmin must be smaller than vmax.")
 
-    if y2 <= 0:
-        raise ValueError("y2 must be positive.")
+    if umax <= 0:
+        raise ValueError("umax must be positive.")
 
-    exp_iter = 2 * (x2 - x1) * y2  # rejection constant (see [1])
+    exp_iter = 2 * (vmax - vmin) * umax  # rejection constant (see [1])
     if exp_iter > 20:
         msg = "The expected number of iterations to generate a single random" \
               " number from the desired distribution is larger than " \
@@ -6080,12 +6080,12 @@ def rvs_ratio_uniforms(pdf, x1, x2, y2, size=1, c=0, random_state=None):
     # loop until N rvs have been generated: expected runtime is finite
     while True:
         k = N - simulated
-        # simulate uniform rvs on [x1, x2] and [0, y2]
-        u1 = x1 + (x2 - x1) * rng.random_sample(size=k)
-        v1 = y2 * rng.random_sample(size=k)
+        # simulate uniform rvs on [0, umax] and [vmin, vmax]
+        u1 = umax * rng.random_sample(size=k)
+        v1 = vmin + (vmax - vmin) * rng.random_sample(size=k)        
         # apply rejection method
-        rvs = u1 / v1 + c
-        accept = (v1**2 <= pdf(rvs))
+        rvs = v1 / u1 + c
+        accept = (u1**2 <= pdf(rvs))
         num_accept = np.sum(accept)
         if num_accept > 0:
             take = min(num_accept, N - simulated)

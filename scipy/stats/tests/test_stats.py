@@ -4510,68 +4510,72 @@ class TestRatioUniforms(object):
         # use KS test to check distribution of rvs
         # normal distribution
         f = stats.norm.pdf
-        x_bound = np.sqrt(f(np.sqrt(2))) * np.sqrt(2)
-        x1, x2, y2 = -x_bound, x_bound, np.sqrt(f(0))
-        rvs = stats.rvs_ratio_uniforms(f, x1, x2, y2, size=2500,
+        v_bound = np.sqrt(f(np.sqrt(2))) * np.sqrt(2)
+        umax, vmin, vmax =  np.sqrt(f(0)), -v_bound, v_bound
+        rvs = stats.rvs_ratio_uniforms(f, umax, vmin, vmax, size=2500,
                                        random_state=12345)
         assert_equal(stats.kstest(rvs, 'norm')[1] > 0.25, True)
 
         # exponential distribution
-        rvs = stats.rvs_ratio_uniforms(lambda x: np.exp(-x), x1=0, x2=2*np.exp(-1),
-                                       y2=1, size=1000, random_state=12345)
+        rvs = stats.rvs_ratio_uniforms(lambda x: np.exp(-x), umax=1,
+                                       vmin=0, vmax=2*np.exp(-1),
+                                       size=1000, random_state=12345)
         assert_equal(stats.kstest(rvs, 'expon')[1] > 0.25, True)
 
     def test_shape(self):
         # test shape of return value depending on size parameter        
         f = stats.norm.pdf
-        x_bound = np.sqrt(f(np.sqrt(2))) * np.sqrt(2)
-        x1, x2, y2 = -x_bound, x_bound, np.sqrt(f(0))
+        v_bound = np.sqrt(f(np.sqrt(2))) * np.sqrt(2)
+        umax, vmin, vmax =  np.sqrt(f(0)), -v_bound, v_bound
         
-        r1 = stats.rvs_ratio_uniforms(f, x1, x2, y2, size=3, random_state=1234)
-        r2 = stats.rvs_ratio_uniforms(f, x1, x2, y2, size=(3,),
+        r1 = stats.rvs_ratio_uniforms(f, umax, vmin, vmax, size=3,
                                       random_state=1234)
-        r3 = stats.rvs_ratio_uniforms(f, x1, x2, y2, size=(3, 1), 
+        r2 = stats.rvs_ratio_uniforms(f, umax, vmin, vmax, size=(3,),
+                                      random_state=1234)
+        r3 = stats.rvs_ratio_uniforms(f, umax, vmin, vmax, size=(3, 1), 
                                       random_state=1234)
         assert_equal(r1, r2)
         assert_equal(r2, r3.flatten())
         assert_equal(r1.shape, (3,))
         assert_equal(r3.shape, (3, 1))
 
-        r4 = stats.rvs_ratio_uniforms(f, x1, x2, y2, size=(3, 3, 3),
+        r4 = stats.rvs_ratio_uniforms(f, umax, vmin, vmax, size=(3, 3, 3),
                                       random_state=12)
-        r5 = stats.rvs_ratio_uniforms(f, x1, x2, y2, size=27, random_state=12)
+        r5 = stats.rvs_ratio_uniforms(f, umax, vmin, vmax, size=27,
+                                      random_state=12)
         assert_equal(r4.flatten(), r5)
         assert_equal(r4.shape, (3, 3, 3))
 
-        r6 = stats.rvs_ratio_uniforms(f, x1, x2, y2, random_state=1234)
-        r7 = stats.rvs_ratio_uniforms(f, x1, x2, y2, size=1, random_state=1234)
-        r8 = stats.rvs_ratio_uniforms(f, x1, x2, y2, size=(1, ),
+        r6 = stats.rvs_ratio_uniforms(f, umax, vmin, vmax, random_state=1234)
+        r7 = stats.rvs_ratio_uniforms(f, umax, vmin, vmax, size=1,
+                                      random_state=1234)
+        r8 = stats.rvs_ratio_uniforms(f, umax, vmin, vmax, size=(1, ),
                                       random_state=1234)
         assert_equal(r6, r7)
         assert_equal(r7, r8)
 
     def test_random_state(self):
         f = stats.norm.pdf
-        x_bound = np.sqrt(f(np.sqrt(2))) * np.sqrt(2)
-        x1, x2, y2 = -x_bound, x_bound, np.sqrt(f(0))
+        v_bound = np.sqrt(f(np.sqrt(2))) * np.sqrt(2)
+        umax, vmin, vmax =  np.sqrt(f(0)), -v_bound, v_bound
         np.random.seed(1234)
-        r1 = stats.rvs_ratio_uniforms(f, x1, x2, y2, size=(3, 4))
-        r2 = stats.rvs_ratio_uniforms(f, x1, x2, y2, size=(3, 4),
+        r1 = stats.rvs_ratio_uniforms(f, umax, vmin, vmax, size=(3, 4))
+        r2 = stats.rvs_ratio_uniforms(f, umax, vmin, vmax, size=(3, 4),
                                       random_state=1234)
         assert_equal(r1, r2)
 
     def test_exceptions(self):
         f = stats.norm.pdf
-        # need x1 < x2
+        # need vmin < vmax
         assert_raises(ValueError,
-                      stats.rvs_ratio_uniforms, pdf=f, x1=3, x2=1, y2=1)
+                      stats.rvs_ratio_uniforms, pdf=f, umax=1, vmin=3, vmax=1)
         assert_raises(ValueError,
-                      stats.rvs_ratio_uniforms, pdf=f, x1=1, x2=1, y2=1)
-        # need y2 > 0
+                      stats.rvs_ratio_uniforms, pdf=f, umax=1, vmin=1, vmax=1)
+        # need umax > 0
         assert_raises(ValueError,
-                      stats.rvs_ratio_uniforms, pdf=f, x1=1, x2=1, y2=-1)
+                      stats.rvs_ratio_uniforms, pdf=f, umax=-1, vmin=1, vmax=1)
         assert_raises(ValueError,
-                      stats.rvs_ratio_uniforms, pdf=f, x1=1, x2=1, y2=0)
+                      stats.rvs_ratio_uniforms, pdf=f, umax=0, vmin=1, vmax=1)
 
     def test_gig(self):
         # test generalized inverse gaussian distribution
@@ -4590,11 +4594,11 @@ class TestRatioUniforms(object):
             return np.array(cdf)
 
         s = kv(p+2, b) / kv(p, b)
-        x2 = np.sqrt(gig_pdf(gig_mode(p + 2, b), p + 2, b) * s)
-        y2 = np.sqrt(gig_pdf(gig_mode(p, b), p, b))
+        vmax = np.sqrt(gig_pdf(gig_mode(p + 2, b), p + 2, b) * s)
+        umax = np.sqrt(gig_pdf(gig_mode(p, b), p, b))
 
-        rvs = stats.rvs_ratio_uniforms(lambda x: gig_pdf(x, p, b), x1=0, x2=x2,
-                                       y2=y2, random_state=1234, size=1500)
+        rvs = stats.rvs_ratio_uniforms(lambda x: gig_pdf(x, p, b), umax,
+                                       0, vmax, random_state=1234, size=1500)
 
         assert_equal(stats.kstest(rvs, lambda x: gig_cdf(x, p, b))[1] > 0.25,
                      True)
