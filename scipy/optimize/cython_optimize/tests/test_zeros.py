@@ -241,3 +241,57 @@ def test_zeros_struct_cython_brentq():
 def test_zeros_array_cython_brentq():
     assert np.allclose(EXPECTED_BRENT,
                        list(zeros_array_examples.test_cython_brentq()))
+
+
+def test_zeros_cython_bisect_full_output():
+    full_output = zeros_tuple_examples.test_bisect_full_output()
+    assert full_output['error_num'] == -2
+    assert full_output['flag'] == b'Failed to converge'
+    assert full_output['funcalls'] == 12
+    assert full_output['iterations'] == 10
+    assert np.isclose(full_output['root'], 5.2568359375)
+    full_output = zeros_tuple_examples.test_bisect_full_output(xa=0.0, xb=1.0)
+    assert full_output['error_num'] == -1
+    assert full_output['flag'] == b'F(XA) and F(XB) must have opposite signs'
+    assert full_output['funcalls'] == 0
+    assert full_output['iterations'] == 0
+    assert full_output['root'] == 0.0
+    full_output = zeros_tuple_examples.test_bisect_full_output(mitr=-1)
+    assert full_output['error_num'] == -2
+    assert full_output['flag'] == b'Failed to converge'
+    assert full_output['funcalls'] == 2
+    assert full_output['iterations'] == 0
+    assert full_output['root'] == 7.0
+    full_output = zeros_tuple_examples.test_bisect_full_output(mitr=15)
+    assert full_output['error_num'] == 0
+    assert full_output['flag'] == b'Converged successfully'
+    assert full_output['funcalls'] == 13
+    assert full_output['iterations'] == 11
+    assert np.isclose(full_output['root'], 5.25341796875)
+
+
+def test_zeros_cython_brentq_full_output():
+    full_output = zeros_tuple_examples.test_brentq_full_output()
+    assert full_output['error_num'] == 0
+    assert full_output['flag'] == b'Converged successfully'
+    assert full_output['funcalls'] == 4
+    assert full_output['iterations'] == 3
+    assert np.isclose(full_output['root'], 5.255112621677981)
+    full_output = zeros_tuple_examples.test_brentq_full_output(xa=8.0, xb=10.0)
+    assert full_output['error_num'] == -1
+    assert full_output['flag'] == b'F(XA) and F(XB) must have opposite signs'
+    assert full_output['funcalls'] == 0
+    assert full_output['iterations'] == 0
+    assert full_output['root'] == 0.0
+    full_output = zeros_tuple_examples.test_brentq_full_output(v=9.0, xa=-3000.0, xb=0.0)
+    assert full_output['error_num'] == -2
+    assert full_output['flag'] == b'Failed to converge'
+    assert full_output['funcalls'] == 12
+    assert full_output['iterations'] == 10
+    assert full_output['root'] == -413.02279389470186
+    full_output = zeros_tuple_examples.test_brentq_full_output(xtol=-1, rtol=-1)
+    assert full_output['error_num'] == 0
+    assert full_output['flag'] == b'Converged successfully'
+    assert full_output['funcalls'] == 5
+    assert full_output['iterations'] == 4
+    assert np.isclose(full_output['root'], 5.255320079106907)
