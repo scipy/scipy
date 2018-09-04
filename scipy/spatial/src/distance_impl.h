@@ -58,6 +58,50 @@ sqeuclidean_distance_double(const double *u, const double *v, const npy_intp n)
     return s;
 }
 
+/*
+ * Don't assume contiguous etc., i.e. handle strides.
+static NPY_INLINE double
+sqeuclidean_distance_bounded_double(const double *u, const double *v,
+        const npy_intp n, const npy_intp stride_u, const npy_intp stride_v,
+        const double b)
+{
+    double s = 0.0;
+    npy_intp i;
+    char *uptr = (char*) u;
+    char *vptr = (char*) v;
+
+    for (i = 0; i < n; i++) {
+        const double d = *((double *) uptr) - *((double *) vptr);
+        s += d * d;
+        // bail early: if sum >= upper bound b, then just return b.
+        if (s >= b) {
+            return b;
+        }
+        uptr += stride_u;
+        vptr += stride_v;
+    }
+    return s;
+}
+*/
+
+static NPY_INLINE double
+sqeuclidean_distance_bounded_double(const double *u, const double *v,
+        const npy_intp n, const double b)
+{
+    double s = 0.0;
+    npy_intp i;
+
+    for (i = 0; i < n; i++) {
+        const double d = u[i] - v[i];
+        s += d * d;
+        // bail early: if sum >= upper bound b, then just return b.
+        if (s >= b) {
+            return b;
+        }
+    }
+    return s;
+}
+
 static NPY_INLINE double
 euclidean_distance_double(const double *u, const double *v, const npy_intp n)
 {
@@ -721,3 +765,25 @@ DEFINE_PDIST(russellrao, char)
 DEFINE_PDIST(sokalmichener, char)
 DEFINE_PDIST(sokalsneath, char)
 DEFINE_PDIST(yule, char)
+
+#define DEFINE_PDIST_BOUNDED(name, type) \
+    static int pdist_ ## name ## _bounded_ ## type(const type *X,           \
+                                           double *dm,                      \
+                                           const npy_intp num_rows,         \
+                                           const npy_intp num_cols,         \
+                                           const double bound)              \
+    {                                                                       \
+        Py_ssize_t i, j;                                                    \
+        double *it = dm;                                                    \
+        for (i = 0; i < num_rows; ++i) {                                    \
+            const type *u = X + num_cols * i;                               \
+            for (j = i + 1; j < num_rows; ++j, it++) {                      \
+                const type *v = X + num_cols * j;                           \
+                *it = name ## _distance_bounded_ ## type(u, v, num_cols,     \
+                        bound);                                             \
+            }                                                               \
+        }                                                                   \
+        return 0; \
+    }
+
+DEFINE_PDIST_BOUNDED(sqeuclidean, double)

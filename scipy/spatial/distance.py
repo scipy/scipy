@@ -1934,9 +1934,14 @@ def pdist(X, metric='euclidean', *args, **kwargs):
                                                    metric_name, **kwargs)
 
             # get pdist wrapper
+            is_bounded = 'bound' in kwargs
+            bounded_str = '_bounded' if is_bounded else ''
             pdist_fn = getattr(_distance_wrap,
-                               "pdist_%s_%s_wrap" % (metric_name, typ))
-            pdist_fn(X, dm, **kwargs)
+                               "pdist_%s%s_%s_wrap" % (metric_name, bounded_str, typ))
+            if is_bounded:
+                pdist_fn(X, dm, kwargs['bound'], **kwargs)
+            else:
+                pdist_fn(X, dm, **kwargs)
             return dm
 
         elif mstr in ['old_cosine', 'old_cos']:

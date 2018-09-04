@@ -496,6 +496,59 @@ static PyObject *to_vector_from_squareform_wrap(PyObject *self, PyObject *args)
   return Py_BuildValue("");
 }
 
+static PyObject *sqeuclidean_bounded_double_wrap(PyObject *self, PyObject *args)
+{
+  PyArrayObject *XA_, *XB_;
+  PyFloatObject *b_;
+  int n;
+  const double *XA, *XB;
+  double d;
+  double b;
+  if (!PyArg_ParseTuple(args, "O!O!O!", 
+            &PyArray_Type, &XA_,
+            &PyArray_Type, &XB_,
+            &PyFloat_Type, &b_)) {
+    return 0;
+  }
+  b = PyFloat_AsDouble(b_);
+  NPY_BEGIN_ALLOW_THREADS;
+  XA = (const double*)XA_->data;
+  XB = (const double*)XB_->data;
+  n = XA_->dimensions[0];
+  d = sqeuclidean_distance_bounded_double(XA, XB, n, b);
+  NPY_END_ALLOW_THREADS;
+  return Py_BuildValue("d", d);
+}
+
+#define DEFINE_WRAP_PDIST_BOUNDED(name, type)                           \
+    static PyObject *                                                   \
+    pdist_ ## name ## _bounded_ ## type ## _wrap(PyObject *self, PyObject *args)\
+    {                                                                   \
+        PyArrayObject *X_, *dm_;                                        \
+        PyFloatObject *b_;                                              \
+        Py_ssize_t m, n;                                                \
+        double *dm;                                                     \
+        const type *X;                                                  \
+        double b;                                                       \
+        if (!PyArg_ParseTuple(args, "O!O!O!", &PyArray_Type, &X_,       \
+                                            &PyArray_Type, &dm_,        \
+                                            &PyFloat_Type, &b_)) {      \
+            return NULL;                                                \
+        }                                                               \
+        else {                                                          \
+            b = PyFloat_AsDouble(b_);                                   \
+            NPY_BEGIN_ALLOW_THREADS;                                    \
+            X = (const type *)X_->data;                                 \
+            dm = (double *)dm_->data;                                   \
+            m = X_->dimensions[0];                                      \
+            n = X_->dimensions[1];                                      \
+            pdist_ ## name ## _bounded_ ## type(X, dm, m, n, b);        \
+            NPY_END_ALLOW_THREADS;                                      \
+        }                                                               \
+        return Py_BuildValue("d", 0.);                                  \
+    }
+
+DEFINE_WRAP_PDIST_BOUNDED(sqeuclidean, double)
 
 static PyMethodDef _distanceWrapMethods[] = {
   {"cdist_braycurtis_double_wrap", cdist_bray_curtis_double_wrap, METH_VARARGS},
@@ -546,6 +599,8 @@ static PyMethodDef _distanceWrapMethods[] = {
    to_squareform_from_vector_wrap, METH_VARARGS},
   {"to_vector_from_squareform_wrap",
    to_vector_from_squareform_wrap, METH_VARARGS},
+  {"sqeuclidean_bounded_double_wrap", sqeuclidean_bounded_double_wrap, METH_VARARGS},
+  {"pdist_sqeuclidean_bounded_double_wrap", pdist_sqeuclidean_bounded_double_wrap, METH_VARARGS | METH_KEYWORDS},
   {NULL, NULL}     /* Sentinel - marks the end of this structure */
 };
 
