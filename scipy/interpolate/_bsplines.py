@@ -192,8 +192,6 @@ class BSpline(object):
 
         n = self.t.shape[0] - self.k - 1
 
-        if axis < 0:
-            axis += self.c.ndim
         if not (0 <= axis < self.c.ndim):
             raise ValueError("%s must be between 0 and %s" % (axis, c.ndim))
 
@@ -239,7 +237,7 @@ class BSpline(object):
         self = object.__new__(cls)
         self.t, self.c, self.k = t, c, k
         self.extrapolate = extrapolate
-        self.axis = axis if axis >= 0 else axis + self.c.ndim
+        self.axis = axis
         return self
 
     @property
@@ -746,6 +744,11 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
         except TypeError:
             raise ValueError("Unknown boundary condition: %s" % bc_type)
 
+    if not -y.ndim <= axis < y.ndim:
+        raise ValueError("axis {} is out of bounds".format(axis))
+    if axis < 0:
+        axis += y.ndim
+
     # special-case k=0 right away
     if k == 0:
         if any(_ is not None for _ in (t, deriv_l, deriv_r)):
@@ -971,6 +974,11 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
     else:
         w = np.ones_like(x)
     k = int(k)
+
+    if not -y.ndim <= axis < y.ndim:
+        raise ValueError("axis {} is out of bounds".format(axis))
+    if axis < 0:
+        axis += y.ndim
 
     y = np.rollaxis(y, axis)    # now internally interp axis is zero
 
