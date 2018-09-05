@@ -2420,7 +2420,14 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
         iteration.  Called as ``callback(xk)``, where ``xk`` is the
         current parameter vector.
     direc : ndarray, optional
-        Initial direction set.
+        Initial fitting step and parameter order set as an NxN vector, where N
+        is the number of fitting parameters in x0. Defaults to step size 1.0
+        fitting all parameters simultaneously ``[[1]*N]*N``. To prevent initial
+        consideration of values in a step or to change initial step size, set
+        to 0 or desired step size in the Jth position in the Mth block, where J
+        is the position in x0 and M is the desired evaluation step, with steps
+        being evaluated in index order. Step size and ordering will change
+        freely as minimization proceeds.
     xtol : float, optional
         Line-search error tolerance.
     ftol : float, optional
