@@ -10,8 +10,12 @@ from scipy._lib.six import xrange
 from scipy.signal.wavelets import cwt, ricker
 from scipy.stats import scoreatpercentile
 
-from ._peak_finding_utils import (_argmaxima1d, _select_by_peak_distance,
-                                  _peak_prominences, _peak_widths)
+from ._peak_finding_utils import (
+    _argmaxima1d,
+    _select_by_peak_distance,
+    _peak_prominences,
+    _peak_widths
+)
 
 
 __all__ = ['argrelmin', 'argrelmax', 'argrelextrema', 'peak_prominences',
@@ -246,6 +250,75 @@ def argrelextrema(data, comparator, axis=0, order=1, mode='clip'):
     return np.nonzero(results)
 
 
+def _arg_x_as_expected(value):
+    """Ensure argument `x` is a 1D C-contiguous array of dtype('float64').
+
+    Used in `find_peaks`, `peak_prominences` and `peak_widths` to make `x`
+    compatible with the signature of the wrapped Cython functions.
+
+    Returns
+    -------
+    value : ndarray
+        A one-dimensional C-contiguous array with dtype('float64').
+    """
+    value = np.asarray(value, order='C', dtype=np.float64)
+    if value.ndim != 1:
+        raise ValueError('`x` must be a 1D array')
+    return value
+
+
+def _arg_peaks_as_expected(value):
+    """Ensure argument `peaks` is a 1D C-contiguous array of dtype('intp').
+
+    Used in `peak_prominences` and `peak_widths` to make `peaks` compatible
+    with the signature of the wrapped Cython functions.
+
+    Returns
+    -------
+    value : ndarray
+        A one-dimensional C-contiguous array with dtype('intp').
+    """
+    value = np.asarray(value)
+    if value.size == 0:
+        # Empty arrays default to np.float64 but are valid input
+        value = np.array([], dtype=np.intp)
+    try:
+        # Safely convert to C-contiguous array of type np.intp
+        value = value.astype(np.intp, order='C', casting='safe',
+                             subok=False, copy=False)
+    except TypeError:
+        raise TypeError("cannot safely cast `peaks` to dtype('intp')")
+    if value.ndim != 1:
+        raise ValueError('`peaks` must be a 1D array')
+    return value
+
+
+def _arg_wlen_as_expected(value):
+    """Ensure argument `wlen` is of type `np.intp` and larger than 1.
+
+    Used in `peak_prominences` and `peak_widths`.
+
+    Returns
+    -------
+    value : np.intp
+        The original `value` rounded up to an integer or -1 if `value` was
+        None.
+    """
+    if value is None:
+        # _peak_prominences expects an intp; -1 signals that no value was
+        # supplied by the user
+        value = -1
+    elif 1 < value:
+        # Round up to a positive integer
+        if not np.can_cast(value, np.intp, "safe"):
+            value = math.ceil(value)
+        value = np.intp(value)
+    else:
+        raise ValueError('`wlen` must be larger than 1, was {}'
+                         .format(value))
+    return value
+
+
 def peak_prominences(x, peaks, wlen=None):
     """
     Calculate the prominence of each peak in a signal.
@@ -260,7 +333,7 @@ def peak_prominences(x, peaks, wlen=None):
         A signal with peaks.
     peaks : sequence
         Indices of peaks in `x`.
-    wlen : int or float, optional
+    wlen : int, optional
         A window length in samples that optionally limits the evaluated area for
         each peak to a subset of `x`. The peak is always placed in the middle of
         the window therefore the given length is rounded up to the next odd
@@ -277,7 +350,19 @@ def peak_prominences(x, peaks, wlen=None):
     Raises
     ------
     ValueError
-        If an index in `peaks` does not point to a local maximum in `x`.
+        If a value in `peaks` is an invalid index for `x`.
+
+    Warns
+    -----
+    PeakPropertyWarning
+        For indices in `peaks` that don't point to valid local maxima in `x`
+        the returned prominence will be 0 and this warning is raised. This
+        also happens if `wlen` is smaller than the plateau size of a peak.
+
+    Warnings
+    --------
+    This function may return unexpected results for data containing NaNs. To
+    avoid this, NaNs should either be removed or replaced.
 
     See Also
     --------
@@ -312,11 +397,6 @@ def peak_prominences(x, peaks, wlen=None):
     calculated prominence. In practice this is only relevant for the highest set
     of peaks in `x`. This behavior may even be used intentionally to calculate
     "local" prominences.
-
-    .. warning::
-
-       This function may return unexpected results for data containing NaNs. To
-       avoid this, NaNs should either be removed or replaced.
 
     .. versionadded:: 1.1.0
 
@@ -376,34 +456,9 @@ def peak_prominences(x, peaks, wlen=None):
     only two candidates in the evaluated area are the two neighbouring samples
     and a smaller prominence is calculated.
     """
-    # Inner function expects `x` to be C-contiguous
-    x = np.asarray(x, order='C', dtype=np.float64)
-    if x.ndim != 1:
-        raise ValueError('`x` must have exactly one dimension')
-
-    peaks = np.asarray(peaks)
-    if peaks.size == 0:
-        # Empty arrays default to np.float64 but are valid input
-        peaks = np.array([], dtype=np.intp)
-    try:
-        # Safely convert to C-contiguous array of type np.intp
-        peaks = peaks.astype(np.intp, order='C', casting='safe',
-                             subok=False, copy=False)
-    except TypeError:
-        raise TypeError("Cannot safely cast `peaks` to dtype('intp')")
-    if peaks.ndim != 1:
-        raise ValueError('`peaks` must have exactly one dimension')
-
-    if wlen is None:
-        wlen = -1  # Inner function expects int -> None == -1
-    elif 1 < wlen:
-        # Round up to next positive integer; rounding up to next odd integer
-        # happens implicitly inside the inner function
-        wlen = int(math.ceil(wlen))
-    else:
-        # Give feedback if wlen has unexpected value
-        raise ValueError('`wlen` must be at larger than 1, was ' + str(wlen))
-
+    x = _arg_x_as_expected(x)
+    peaks = _arg_peaks_as_expected(peaks)
+    wlen = _arg_wlen_as_expected(wlen)
     return _peak_prominences(x, peaks, wlen)
 
 
@@ -452,6 +507,17 @@ def peak_widths(x, peaks, rel_height=0.5, prominence_data=None, wlen=None):
         has the wrong dtype, is not C-contiguous or does not have the same
         shape.
 
+    Warns
+    -----
+    PeakPropertyWarning
+        Raised if any calculated width is 0. This may stem from the supplied
+        `prominence_data` or if `rel_height` is set to 0.
+
+    Warnings
+    --------
+    This function may return unexpected results for data containing NaNs. To
+    avoid this, NaNs should either be removed or replaced.
+
     See Also
     --------
     find_peaks
@@ -480,11 +546,6 @@ def peak_widths(x, peaks, rel_height=0.5, prominence_data=None, wlen=None):
     As shown above to calculate a peak's width its prominence and bases must be
     known. You can supply these yourself with the argument `prominence_data`.
     Otherwise they are internally calculated (see `peak_prominences`).
-
-    .. warning::
-
-       This function may return unexpected results for data containing NaNs. To
-       avoid this, NaNs should either be removed or replaced.
 
     .. versionadded:: 1.1.0
 
@@ -520,31 +581,12 @@ def peak_widths(x, peaks, rel_height=0.5, prominence_data=None, wlen=None):
     >>> plt.hlines(*results_full[1:], color="C3")
     >>> plt.show()
     """
-    # Inner function expects `x` to be C-contiguous
-    x = np.asarray(x, order='C', dtype=np.float64)
-    if x.ndim != 1:
-        raise ValueError('`x` must have exactly one dimension')
-
-    peaks = np.asarray(peaks)
-    if peaks.size == 0:
-        # Empty arrays default to np.float64 but are valid input
-        peaks = np.array([], dtype=np.intp)
-    try:
-        # Safely convert to C-contiguous array of type np.intp
-        peaks = peaks.astype(np.intp, order='C', casting='safe',
-                             subok=False, copy=False)
-    except TypeError:
-        raise TypeError("Cannot safely cast `peaks` to dtype('intp')")
-    if peaks.ndim != 1:
-        raise ValueError('`peaks` must have exactly one dimension')
-
-    if rel_height < 0.0:
-        raise ValueError('`rel_height` must be greater or equal to 0.0')
-
+    x = _arg_x_as_expected(x)
+    peaks = _arg_peaks_as_expected(peaks)
     if prominence_data is None:
         # Calculate prominence if not supplied and use wlen if supplied.
-        prominence_data = peak_prominences(x, peaks, wlen)
-
+        wlen = _arg_wlen_as_expected(wlen)
+        prominence_data = _peak_prominences(x, peaks, wlen)
     return _peak_widths(x, peaks, rel_height, *prominence_data)
 
 
@@ -718,7 +760,7 @@ def find_peaks(x, height=None, threshold=None, distance=None,
         matching `x` or a 2-element sequence of the former. The first
         element is always interpreted as the  minimal and the second, if
         supplied, as the maximal required prominence.
-    wlen : number, optional
+    wlen : int, optional
         Used for calculation of the peaks prominences, thus it is only used if
         one of the arguments `prominence` or `width` is given. See argument
         `wlen` in `peak_prominences` for a full description of its effects.
@@ -751,6 +793,17 @@ def find_peaks(x, height=None, threshold=None, distance=None,
         To calculate and return properties without excluding peaks, provide the
         open interval ``(None, None)`` as a value to the appropriate argument
         (excluding `distance`).
+
+    Warns
+    -----
+    PeakPropertyWarning
+        Raised if a peak's properties have unexpected values (see
+        `peak_prominences` and `peak_widths`).
+
+    Warnings
+    --------
+    This function may return unexpected results for data containing NaNs. To
+    avoid this, NaNs should either be removed or replaced.
 
     See Also
     --------
@@ -793,11 +846,6 @@ def find_peaks(x, height=None, threshold=None, distance=None,
     * Use `wlen` to reduce the time it takes to evaluate the conditions for
       `prominence` or `width` if `x` is large or has many local maxima
       (see `peak_prominences`).
-
-    .. warning::
-
-       This function may return unexpected results for data containing NaNs. To
-       avoid this, NaNs should either be removed or replaced.
 
     .. versionadded:: 1.1.0
 
@@ -870,9 +918,7 @@ def find_peaks(x, height=None, threshold=None, distance=None,
     >>> plt.show()
     """
     # _argmaxima1d expects array of dtype 'float64'
-    x = np.asarray(x, dtype=np.float64, order='C')
-    if x.ndim != 1:
-        raise ValueError('`x` must have exactly one dimension')
+    x = _arg_x_as_expected(x)
     if distance is not None and distance < 1:
         raise ValueError('`distance` must be greater or equal to 1')
 
@@ -905,9 +951,10 @@ def find_peaks(x, height=None, threshold=None, distance=None,
 
     if prominence is not None or width is not None:
         # Calculate prominence (required for both conditions)
+        wlen = _arg_wlen_as_expected(wlen)
         properties.update(zip(
             ['prominences', 'left_bases', 'right_bases'],
-            peak_prominences(x, peaks, wlen=wlen)
+            _peak_prominences(x, peaks, wlen=wlen)
         ))
 
     if prominence is not None:
@@ -921,9 +968,8 @@ def find_peaks(x, height=None, threshold=None, distance=None,
         # Calculate widths
         properties.update(zip(
             ['widths', 'width_heights', 'left_ips', 'right_ips'],
-            peak_widths(x, peaks, rel_height, (properties['prominences'],
-                                               properties['left_bases'],
-                                               properties['right_bases']))
+            _peak_widths(x, peaks, rel_height, properties['prominences'],
+                         properties['left_bases'], properties['right_bases'])
         ))
         # Evaluate width condition
         wmin, wmax = _unpack_condition_args(width, x, peaks)

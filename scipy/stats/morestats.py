@@ -1598,10 +1598,11 @@ def anderson_ksamp(samples, midrank=True):
     only slightly if a few collisions due to round-off errors occur in
     the test not adjusted for ties between samples.
 
-    The critical values are taken from [1]_. p-values are floored / capped
-    at 1% / 25%. Since the range of criticl values might be extended in
-    future releases, it is recommended not to test ``p == 0.01``, but rather
-    ``p <= 0.01`` (analogously for the upper bound).
+    The critical values corresponding to the significance levels from 0.01
+    to 0.25 are taken from [1]_. p-values are floored / capped
+    at 0.1% / 25%. Since the range of critical values might be extended in
+    future releases, it is recommended not to test ``p == 0.25``, but rather
+    ``p >= 0.25`` (analogously for the lower bound).
 
     .. versionadded:: 0.14.0
 
@@ -1620,13 +1621,13 @@ def anderson_ksamp(samples, midrank=True):
     distribution can be rejected at the 5% level because the returned
     test value is greater than the critical value for 5% (1.961) but
     not at the 2.5% level. The interpolation gives an approximate
-    significance level of 3.1%:
+    significance level of 3.2%:
 
     >>> stats.anderson_ksamp([np.random.normal(size=50),
     ... np.random.normal(loc=0.5, size=30)])
     (2.4615796189876105,
-      array([ 0.325,  1.226,  1.961,  2.718,  3.752]),
-      0.03134990135800783)
+      array([ 0.325,  1.226,  1.961,  2.718,  3.752, 4.592, 6.546]),
+      0.03176687568842282)
 
 
     The null hypothesis cannot be rejected for three samples from an
@@ -1637,7 +1638,8 @@ def anderson_ksamp(samples, midrank=True):
     >>> stats.anderson_ksamp([np.random.normal(size=50),
     ... np.random.normal(size=30), np.random.normal(size=20)])
     (-0.73091722665244196,
-      array([ 0.44925884,  1.3052767 ,  1.9434184 ,  2.57696569,  3.41634856]),
+      array([ 0.44925884,  1.3052767 ,  1.9434184 ,  2.57696569,  3.41634856,
+      4.07210043, 5.56419101]),
       0.25)
 
     """
@@ -1678,12 +1680,12 @@ def anderson_ksamp(samples, midrank=True):
 
     # The b_i values are the interpolation coefficients from Table 2
     # of Scholz and Stephens 1987
-    b0 = np.array([0.675, 1.281, 1.645, 1.96, 2.326])
-    b1 = np.array([-0.245, 0.25, 0.678, 1.149, 1.822])
-    b2 = np.array([-0.105, -0.305, -0.362, -0.391, -0.396])
+    b0 = np.array([0.675, 1.281, 1.645, 1.96, 2.326, 2.573, 3.085])
+    b1 = np.array([-0.245, 0.25, 0.678, 1.149, 1.822, 2.364, 3.615])
+    b2 = np.array([-0.105, -0.305, -0.362, -0.391, -0.396, -0.345, -0.154])
     critical = b0 + b1 / math.sqrt(m) + b2 / m
 
-    sig = np.array([0.25, 0.1, 0.05, 0.025, 0.01])
+    sig = np.array([0.25, 0.1, 0.05, 0.025, 0.01, 0.005, 0.001])
     if A2 < critical.min():
         p = sig.max()
         warnings.warn("p-value capped: true value larger than {}".format(p),

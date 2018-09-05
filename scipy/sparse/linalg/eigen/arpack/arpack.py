@@ -1350,9 +1350,10 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
 
     Parameters
     ----------
-    A : An N x N matrix, array, sparse matrix, or LinearOperator representing
-        the operation ``A @ x``, where A is a real symmetric matrix.
-        For buckling mode (see below) A must additionally be positive-definite.
+    A : ndarray, sparse matrix or LinearOperator
+        A square operator representing the operation ``A * x``, where ``A`` is
+        real symmetric or complex hermitian. For buckling mode (see below)
+        ``A`` must additionally be positive-definite.
     k : int, optional
         The number of eigenvalues and eigenvectors desired.
         `k` must be smaller than N. It is not possible to compute all
@@ -1393,7 +1394,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
     sigma : real
         Find eigenvalues near sigma using shift-invert mode.  This requires
         an operator to compute the solution of the linear system
-        `[A - sigma * M] x = b`, where M is the identity matrix if
+        ``[A - sigma * M] x = b``, where M is the identity matrix if
         unspecified.  This is computed internally via a (sparse) LU
         decomposition for explicit matrices A & M, or via an iterative
         solver if either A or M is a general linear operator.

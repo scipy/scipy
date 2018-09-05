@@ -48,7 +48,8 @@ distcont_extra = [
 ]
 
 
-distslow = ['rdist', 'gausshyper', 'recipinvgauss', 'ksone', 'genexpon',
+distslow = ['kappa4', 'crystalball', 'rdist', 'gausshyper',
+            'recipinvgauss', 'ksone', 'genexpon',
             'vonmises', 'vonmises_line', 'mielke', 'semicircular',
             'cosine', 'invweibull', 'powerlognorm', 'johnsonsu', 'kstwobign']
 # distslow are sorted by speed (very slow to slow)

@@ -9,6 +9,7 @@ import pickle
 from numpy.testing import (assert_allclose, assert_almost_equal,
                            assert_array_almost_equal, assert_equal,
                            assert_array_less, assert_)
+import pytest
 from pytest import raises as assert_raises
 
 from .test_continuous_basic import check_distribution_rvs
@@ -1039,7 +1040,7 @@ class TestMultinomial(object):
 
         vals3 = multinomial.logpmf([3, 4], 0, [-2, 3])
         assert_allclose(vals3, np.NAN, rtol=1e-8)
-        
+
     def test_reduces_binomial(self):
         # test that the multinomial pmf reduces to the binomial pmf in the 2d
         # case
@@ -1092,7 +1093,7 @@ class TestMultinomial(object):
 
         vals4 = multinomial.pmf([1,2], 4, (.3, .7))
         assert_allclose(vals4, 0, rtol=1e-8)
-        
+
         vals5 = multinomial.pmf([3, 3, 0], 6, [2/3.0, 1/3.0, 0])
         assert_allclose(vals5, 0.219478737997, rtol=1e-8)
 
@@ -1474,6 +1475,7 @@ class TestOrthoGroup(object):
         ks_tests = [ks_2samp(proj[p0], proj[p1])[1] for (p0, p1) in pairs]
         assert_array_less([ks_prob]*len(pairs), ks_tests)
 
+    @pytest.mark.slow
     def test_pairwise_distances(self):
         # Test that the distribution of pairwise distances is close to correct.
         np.random.seed(514)

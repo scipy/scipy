@@ -45,6 +45,7 @@ from numpy.linalg import norm
 from numpy.testing import (verbose, assert_,
                            assert_array_equal, assert_equal,
                            assert_almost_equal, assert_allclose)
+import pytest
 from pytest import raises as assert_raises
 
 from scipy._lib._numpy_compat import suppress_warnings
@@ -723,6 +724,7 @@ class TestPdist(object):
         Y_test2 = wpdist_no_const(X, 'test_euclidean')
         _assert_within_tol(Y_test2, Y_right, eps)
 
+    @pytest.mark.slow
     def test_pdist_euclidean_iris_double(self):
         eps = 1e-07
         X = eo['iris']
@@ -730,6 +732,7 @@ class TestPdist(object):
         Y_test1 = wpdist_no_const(X, 'euclidean')
         _assert_within_tol(Y_test1, Y_right, eps)
 
+    @pytest.mark.slow
     def test_pdist_euclidean_iris_float32(self):
         eps = 1e-06
         X = np.float32(eo['iris'])
@@ -737,6 +740,7 @@ class TestPdist(object):
         Y_test1 = wpdist_no_const(X, 'euclidean')
         _assert_within_tol(Y_test1, Y_right, eps, verbose > 2)
 
+    @pytest.mark.slow
     def test_pdist_euclidean_iris_nonC(self):
         # Test pdist(X, 'test_euclidean') [the non-C implementation] on the
         # Iris data set.
@@ -814,6 +818,7 @@ class TestPdist(object):
         Y_test2 = wpdist(X, 'test_cosine')
         _assert_within_tol(Y_test2, Y_right, eps)
 
+    @pytest.mark.slow
     def test_pdist_cosine_iris(self):
         eps = 1e-08
         X = eo['iris']
@@ -821,6 +826,7 @@ class TestPdist(object):
         Y_test1 = wpdist(X, 'cosine')
         _assert_within_tol(Y_test1, Y_right, eps)
 
+    @pytest.mark.slow
     def test_pdist_cosine_iris_float32(self):
         eps = 1e-07
         X = np.float32(eo['iris'])
@@ -828,6 +834,7 @@ class TestPdist(object):
         Y_test1 = wpdist(X, 'cosine')
         _assert_within_tol(Y_test1, Y_right, eps, verbose > 2)
 
+    @pytest.mark.slow
     def test_pdist_cosine_iris_nonC(self):
         eps = 1e-08
         X = eo['iris']
@@ -865,6 +872,7 @@ class TestPdist(object):
         Y_test2 = wpdist_no_const(X, 'test_cityblock')
         _assert_within_tol(Y_test2, Y_right, eps)
 
+    @pytest.mark.slow
     def test_pdist_cityblock_iris(self):
         eps = 1e-14
         X = eo['iris']
@@ -872,6 +880,7 @@ class TestPdist(object):
         Y_test1 = wpdist_no_const(X, 'cityblock')
         _assert_within_tol(Y_test1, Y_right, eps)
 
+    @pytest.mark.slow
     def test_pdist_cityblock_iris_float32(self):
         eps = 1e-06
         X = np.float32(eo['iris'])
@@ -879,6 +888,7 @@ class TestPdist(object):
         Y_test1 = wpdist_no_const(X, 'cityblock')
         _assert_within_tol(Y_test1, Y_right, eps, verbose > 2)
 
+    @pytest.mark.slow
     def test_pdist_cityblock_iris_nonC(self):
         # Test pdist(X, 'test_cityblock') [the non-C implementation] on the
         # Iris data set.
@@ -909,6 +919,7 @@ class TestPdist(object):
         Y_test2 = wpdist(X, 'test_correlation')
         _assert_within_tol(Y_test2, Y_right, eps)
 
+    @pytest.mark.slow
     def test_pdist_correlation_iris(self):
         eps = 1e-08
         X = eo['iris']
@@ -916,6 +927,7 @@ class TestPdist(object):
         Y_test1 = wpdist(X, 'correlation')
         _assert_within_tol(Y_test1, Y_right, eps)
 
+    @pytest.mark.slow
     def test_pdist_correlation_iris_float32(self):
         eps = 1e-07
         X = eo['iris']
@@ -923,6 +935,7 @@ class TestPdist(object):
         Y_test1 = wpdist(X, 'correlation')
         _assert_within_tol(Y_test1, Y_right, eps, verbose > 2)
 
+    @pytest.mark.slow
     def test_pdist_correlation_iris_nonC(self):
         eps = 1e-08
         X = eo['iris']
@@ -951,6 +964,7 @@ class TestPdist(object):
         Y_test2 = wpdist_no_const(X, 'test_minkowski', p=3.2)
         _assert_within_tol(Y_test2, Y_right, eps)
 
+    @pytest.mark.slow
     def test_pdist_minkowski_3_2_iris(self):
         eps = 1e-07
         X = eo['iris']
@@ -958,6 +972,7 @@ class TestPdist(object):
         Y_test1 = wpdist_no_const(X, 'minkowski', p=3.2)
         _assert_within_tol(Y_test1, Y_right, eps)
 
+    @pytest.mark.slow
     def test_pdist_minkowski_3_2_iris_float32(self):
         eps = 1e-06
         X = np.float32(eo['iris'])
@@ -965,6 +980,7 @@ class TestPdist(object):
         Y_test1 = wpdist_no_const(X, 'minkowski', p=3.2)
         _assert_within_tol(Y_test1, Y_right, eps)
 
+    @pytest.mark.slow
     def test_pdist_minkowski_3_2_iris_nonC(self):
         eps = 1e-07
         X = eo['iris']
@@ -972,6 +988,7 @@ class TestPdist(object):
         Y_test2 = wpdist_no_const(X, 'test_minkowski', p=3.2)
         _assert_within_tol(Y_test2, Y_right, eps)
 
+    @pytest.mark.slow
     def test_pdist_minkowski_5_8_iris(self):
         eps = 1e-07
         X = eo['iris']
@@ -979,6 +996,7 @@ class TestPdist(object):
         Y_test1 = wpdist_no_const(X, 'minkowski', p=5.8)
         _assert_within_tol(Y_test1, Y_right, eps)
 
+    @pytest.mark.slow
     def test_pdist_minkowski_5_8_iris_float32(self):
         eps = 1e-06
         X = np.float32(eo['iris'])
@@ -986,6 +1004,7 @@ class TestPdist(object):
         Y_test1 = wpdist_no_const(X, 'minkowski', p=5.8)
         _assert_within_tol(Y_test1, Y_right, eps, verbose > 2)
 
+    @pytest.mark.slow
     def test_pdist_minkowski_5_8_iris_nonC(self):
         eps = 1e-07
         X = eo['iris']
@@ -1270,6 +1289,7 @@ class TestPdist(object):
         assert_allclose(m, 2 / 3, rtol=0, atol=1e-10)
         assert_allclose(m2, 2 / 3, rtol=0, atol=1e-10)
 
+    @pytest.mark.slow
     def test_pdist_canberra_match(self):
         D = eo['iris']
         if verbose > 2:
