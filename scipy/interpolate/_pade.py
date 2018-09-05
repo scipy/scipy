@@ -46,9 +46,11 @@ def pade(an, m, l=None):
     an = asarray(an)
     if l is None:
         l = len(an) - 1 - m
-    N = m + l
+        if l < 0:
+            raise ValueError("Order of q <m> must be smaller than len(an)-1.")
     if l < 0:
-        raise ValueError("Order of q <m> must be smaller than len(an)-1.")
+        raise ValueError("Order of p <l> must be greater than 0.")
+    N = m + l
     if N > len(an)-1:
         raise ValueError("Order of q+p <m+l> must be smaller than len(an).")
     an = an[:N+1]
