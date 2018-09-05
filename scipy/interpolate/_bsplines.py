@@ -744,6 +744,8 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
         except TypeError:
             raise ValueError("Unknown boundary condition: %s" % bc_type)
 
+    y = np.asarray(y)
+
     if not -y.ndim <= axis < y.ndim:
         raise ValueError("axis {} is out of bounds".format(axis))
     if axis < 0:
