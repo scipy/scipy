@@ -24,7 +24,7 @@ class BenchmarkOneNormEst(Benchmark):
     def setup(self, n, solver):
         np.random.seed(1234)
         nrepeats = 100
-        shape = (n, n)
+        shape = (int(n), int(n))
 
         if n <= 1000:
             # Sample the matrices.

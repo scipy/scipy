@@ -98,7 +98,7 @@ class Fftn(Benchmark):
     param_names = ['size', 'type', 'module']
 
     def setup(self, size, cmplx, module):
-        size = map(int, size.split("x"))
+        size = list(map(int, size.split("x")))
 
         if cmplx != 'cmplx':
             self.x = random(size).astype(double)
