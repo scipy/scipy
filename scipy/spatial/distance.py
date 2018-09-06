@@ -338,7 +338,7 @@ def _validate_wminkowski_kwargs(X, m, n, **kwargs):
     if w is None:
         raise ValueError('weighted minkowski requires a weight '
                          'vector `w` to be given.')
-    kwargs['w'] = _convert_to_double(w)
+    kwargs['w'] = _validate_weights(w)
     if 'p' not in kwargs:
         kwargs['p'] = 2.
     return kwargs
@@ -1613,7 +1613,7 @@ def _select_weighted_metric(mstr, kwargs, out):
         # w=None is the same as omitting it
         kwargs.pop("w")
 
-    if mstr.startswith("test_"):
+    if mstr.startswith("test_") or mstr in _METRICS['wminkowski'].aka:
         # These support weights
         pass
     elif "w" in kwargs:
