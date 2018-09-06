@@ -6,6 +6,10 @@ from __future__ import division, print_function, absolute_import
 import warnings
 import time
 import timeit
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 
 import numpy
 import numpy as np
@@ -285,10 +289,31 @@ class NullSlice(Benchmark):
     params = [[0.05, 0.01], ['csr', 'csc', 'lil']]
     param_names = ['density', 'format']
 
-    def setup(self, density, format):
+    def _setup(self, density, format):
         n = 100000
         k = 1000
-        self.X = sparse.rand(n, k, format=format, density=density)
+
+        # faster version of rand(n, k, format=format, density=density),
+        # with non-exact nnz
+        nz = int(n*k * density)
+        row = np.random.randint(0, n, size=nz)
+        col = np.random.randint(0, k, size=nz)
+        data = np.ones(nz, dtype=np.float64)
+        X = coo_matrix((data, (row, col)), shape=(n, k))
+        X.sum_duplicates()
+        X = X.asformat(format)
+        with open('{}-{}.pck'.format(density, format), 'wb') as f:
+            pickle.dump(X, f, protocol=pickle.HIGHEST_PROTOCOL)
+
+    def setup_cache(self):
+        for density in self.params[0]:
+            for fmt in self.params[1]:
+                self._setup(density, fmt)
+
+    def setup(self, density, format):
+        # Unpickling is faster than computing the random matrix...
+        with open('{}-{}.pck'.format(density, format), 'rb') as f:
+            self.X = pickle.load(f)
 
     def time_getrow(self, density, format):
         self.X.getrow(100)
