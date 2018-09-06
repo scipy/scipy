@@ -406,7 +406,7 @@ class TestBSpline(object):
                          sh[:axis] + list(xp.shape) + sh[axis+1:])
 
             #0 <= axis < c.ndim
-            for ax in [-1, len(sh)+1]:
+            for ax in [-1, c.ndim]:
                 assert_raises(ValueError, BSpline, **dict(t=t, c=c, k=k, axis=ax))
 
             # derivative, antiderivative keeps the axis
@@ -788,9 +788,13 @@ class TestInterp(object):
     def test_order_0(self):
         b = make_interp_spline(self.xx, self.yy, k=0)
         assert_allclose(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
+        b = make_interp_spline(self.xx, self.yy, k=0, axis=-1)
+        assert_allclose(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
 
     def test_linear(self):
         b = make_interp_spline(self.xx, self.yy, k=1)
+        assert_allclose(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
+        b = make_interp_spline(self.xx, self.yy, k=1, axis=-1)
         assert_allclose(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
 
     def test_not_a_knot(self):
@@ -882,7 +886,7 @@ class TestInterp(object):
         assert_allclose(b(xx), yy, atol=1e-14, rtol=1e-14)
 
     def test_deriv_spec(self):
-        # If one of the derivatives is omitted, the spline definition is 
+        # If one of the derivatives is omitted, the spline definition is
         # incomplete.
         x = y = [1.0, 2, 3, 4, 5, 6]
 
