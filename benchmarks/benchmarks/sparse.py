@@ -343,6 +343,8 @@ class Diagonal(Benchmark):
         if format == 'dok' and n * density >= 500:
             raise NotImplementedError()
 
+        warnings.simplefilter('ignore', SparseEfficiencyWarning)
+
         self.X = sparse.rand(n, n, format=format, density=density)
 
     def time_diagonal(self, density, format):
@@ -358,6 +360,7 @@ class Sum(Benchmark):
         if format == 'dok' and n * density >= 500:
             raise NotImplementedError()
 
+        warnings.simplefilter('ignore', SparseEfficiencyWarning)
         self.X = sparse.rand(n, n, format=format, density=density)
 
     def time_sum(self, density, format):
@@ -392,6 +395,7 @@ class Densify(Benchmark):
     param_names = ['format', 'order']
 
     def setup(self, format, order):
+        warnings.simplefilter('ignore', SparseEfficiencyWarning)
         self.X = sparse.rand(1000, 1000, format=format, density=0.01)
 
     def time_toarray(self, format, order):
