@@ -72,7 +72,7 @@ class Bench(Benchmark):
         self.time_mikota.__func__.setup = self.setup_mikota
 
         self.time_sakurai.__func__.params = list(self.params)
-        self.time_sakurai.__func__.params[0] = [50, 400, 2400]
+        self.time_sakurai.__func__.params[0] = [50, 400]
         self.time_sakurai.__func__.setup = self.setup_sakurai
 
     def setup_mikota(self, n, solver):
