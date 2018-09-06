@@ -152,14 +152,15 @@ class Matmul(Benchmark):
 
         random.seed(0)
 
-        matrix1 = lil_matrix(zeros((H1, W1)))
-        matrix2 = lil_matrix(zeros((H2, W2)))
-        for i in range(C1):
-            matrix1[random.randint(H1), random.randint(W1)] = random.rand()
-        for i in range(C2):
-            matrix2[random.randint(H2), random.randint(W2)] = random.rand()
-        self.matrix1 = matrix1.tocsr()
-        self.matrix2 = matrix2.tocsr()
+        i = random.randint(H1, size=C1)
+        j = random.randint(W1, size=C1)
+        data = random.rand(C1)
+        self.matrix1 = coo_matrix((data, (i, j)), shape=(H1, W1)).tocsr()
+
+        i = random.randint(H2, size=C2)
+        j = random.randint(W2, size=C2)
+        data = random.rand(C2)
+        self.matrix2 = coo_matrix((data, (i, j)), shape=(H2, W2)).tocsr()
 
     def time_large(self):
         for i in range(100):
