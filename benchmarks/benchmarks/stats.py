@@ -73,7 +73,7 @@ class Distribution(Benchmark):
             elif properties == 'rvs':
                 stats.gamma.rvs(size=1000, a=5, loc=4, scale=10)
             elif properties == 'fit':
-                stats.gamma.fit(self.x, a=5, loc=4, scale=10)
+                stats.gamma.fit(self.x, loc=4, scale=10)
         elif distribution == 'cauchy':
             if properties == 'pdf':
                 stats.cauchy.pdf(self.x, loc=4, scale=10)
@@ -91,7 +91,7 @@ class Distribution(Benchmark):
             elif properties == 'rvs':
                 stats.beta.rvs(size=1000, a=5, b=3, loc=4, scale=10)
             elif properties == 'fit':
-                stats.beta.fit(self.x, a=5, b=3, loc=4, scale=10)
+                stats.beta.fit(self.x, loc=4, scale=10)
 
 
 class DescriptiveStats(Benchmark):
