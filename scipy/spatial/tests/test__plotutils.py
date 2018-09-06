@@ -28,7 +28,7 @@ class TestPlotting:
         fig = plt.figure()
         obj = Delaunay(self.points)
         s_before = obj.simplices.copy()
-        with suppress_warnings as sup:
+        with suppress_warnings() as sup:
             # filter can be removed when matplotlib 1.x is dropped
             sup.filter(message="The ishold function was deprecated in version")
             r = delaunay_plot_2d(obj, ax=fig.gca())
@@ -40,7 +40,7 @@ class TestPlotting:
         # Smoke test
         fig = plt.figure()
         obj = Voronoi(self.points)
-        with suppress_warnings as sup:
+        with suppress_warnings() as sup:
             # filter can be removed when matplotlib 1.x is dropped
             sup.filter(message="The ishold function was deprecated in version")
             r = voronoi_plot_2d(obj, ax=fig.gca())
@@ -52,7 +52,7 @@ class TestPlotting:
         # Smoke test
         fig = plt.figure()
         tri = ConvexHull(self.points)
-        with suppress_warnings as sup:
+        with suppress_warnings() as sup:
             # filter can be removed when matplotlib 1.x is dropped
             sup.filter(message="The ishold function was deprecated in version")
             r = convex_hull_plot_2d(tri, ax=fig.gca())

@@ -156,7 +156,10 @@ before_install:
           travis_retry pip uninstall -y numpy
       fi
     fi
-  - if [ "${TESTMODE}" == "full" ]; then pip install pytest-cov coverage; fi
+  - |
+    if [ "${TESTMODE}" == "full" ]; then
+        travis_retry pip install pytest-cov coverage matplotlib
+    fi
   - |
     if [ "${REFGUIDE_CHECK}" == "1" ]; then
         travis_retry pip install matplotlib Sphinx==1.7.2
