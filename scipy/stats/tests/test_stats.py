@@ -4511,7 +4511,7 @@ class TestRatioUniforms(object):
         # normal distribution
         f = stats.norm.pdf
         v_bound = np.sqrt(f(np.sqrt(2))) * np.sqrt(2)
-        umax, vmin, vmax =  np.sqrt(f(0)), -v_bound, v_bound
+        umax, vmin, vmax = np.sqrt(f(0)), -v_bound, v_bound
         rvs = stats.rvs_ratio_uniforms(f, umax, vmin, vmax, size=2500,
                                        random_state=12345)
         assert_equal(stats.kstest(rvs, 'norm')[1] > 0.25, True)
@@ -4523,16 +4523,16 @@ class TestRatioUniforms(object):
         assert_equal(stats.kstest(rvs, 'expon')[1] > 0.25, True)
 
     def test_shape(self):
-        # test shape of return value depending on size parameter        
+        # test shape of return value depending on size parameter
         f = stats.norm.pdf
         v_bound = np.sqrt(f(np.sqrt(2))) * np.sqrt(2)
-        umax, vmin, vmax =  np.sqrt(f(0)), -v_bound, v_bound
-        
+        umax, vmin, vmax = np.sqrt(f(0)), -v_bound, v_bound
+
         r1 = stats.rvs_ratio_uniforms(f, umax, vmin, vmax, size=3,
                                       random_state=1234)
         r2 = stats.rvs_ratio_uniforms(f, umax, vmin, vmax, size=(3,),
                                       random_state=1234)
-        r3 = stats.rvs_ratio_uniforms(f, umax, vmin, vmax, size=(3, 1), 
+        r3 = stats.rvs_ratio_uniforms(f, umax, vmin, vmax, size=(3, 1),
                                       random_state=1234)
         assert_equal(r1, r2)
         assert_equal(r2, r3.flatten())
@@ -4557,7 +4557,7 @@ class TestRatioUniforms(object):
     def test_random_state(self):
         f = stats.norm.pdf
         v_bound = np.sqrt(f(np.sqrt(2))) * np.sqrt(2)
-        umax, vmin, vmax =  np.sqrt(f(0)), -v_bound, v_bound
+        umax, vmin, vmax = np.sqrt(f(0)), -v_bound, v_bound
         np.random.seed(1234)
         r1 = stats.rvs_ratio_uniforms(f, umax, vmin, vmax, size=(3, 4))
         r2 = stats.rvs_ratio_uniforms(f, umax, vmin, vmax, size=(3, 4),

@@ -6032,7 +6032,7 @@ def rvs_ratio_uniforms(pdf, umax, vmin, vmax, size=1, c=0, random_state=None):
 
     >>> f = stats.norm.pdf
     >>> v_bound = np.sqrt(f(np.sqrt(2))) * np.sqrt(2)
-    >>> umax, vmin, vmax =  np.sqrt(f(0)), -v_bound, v_bound
+    >>> umax, vmin, vmax = np.sqrt(f(0)), -v_bound, v_bound
     >>> np.random.seed(12345)
     >>> rvs = stats.rvs_ratio_uniforms(f, umax, vmin, vmax, size=2500)
 
@@ -6046,7 +6046,7 @@ def rvs_ratio_uniforms(pdf, umax, vmin, vmax, size=1, c=0, random_state=None):
     rectangle can be determined explicitly.
 
     >>> np.random.seed(12345)
-    >>> rvs = stats.rvs_ratio_uniforms(lambda x: np.exp(-x), umax=1, 
+    >>> rvs = stats.rvs_ratio_uniforms(lambda x: np.exp(-x), umax=1,
     ...                                vmin=0, vmax=2*np.exp(-1), size=1000)
     >>> stats.kstest(rvs, 'expon')[1]
     0.52369231518316373
@@ -6054,7 +6054,7 @@ def rvs_ratio_uniforms(pdf, umax, vmin, vmax, size=1, c=0, random_state=None):
     Sometimes it can be helpful to use a non-zero shift parameter `c`, see e.g.
     [2]_ above in the case of the generalized inverse Gaussian distribution.
 
-    """    
+    """
 
     if vmin >= vmax:
         raise ValueError("vmin must be smaller than vmax.")
@@ -6082,7 +6082,7 @@ def rvs_ratio_uniforms(pdf, umax, vmin, vmax, size=1, c=0, random_state=None):
         k = N - simulated
         # simulate uniform rvs on [0, umax] and [vmin, vmax]
         u1 = umax * rng.random_sample(size=k)
-        v1 = vmin + (vmax - vmin) * rng.random_sample(size=k)        
+        v1 = vmin + (vmax - vmin) * rng.random_sample(size=k)
         # apply rejection method
         rvs = v1 / u1 + c
         accept = (u1**2 <= pdf(rvs))
