@@ -79,6 +79,10 @@ class Bench(Benchmark):
         self.shape = (n, n)
         self.A, self.B = _mikota_pair(n)
 
+        if solver == 'eigh' and n >= 512:
+            # skip: slow, and not useful to benchmark
+            raise NotImplementedError()
+
     def setup_sakurai(self, n, solver):
         self.shape = (n, n)
         self.A, self.B, all_eigenvalues = _sakurai(n)

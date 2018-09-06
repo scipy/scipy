@@ -28,7 +28,15 @@ class Bench(Benchmark):
     ]
     param_names = ['size', 'contiguous', 'module']
 
+    def __init__(self):
+        # likely not useful to benchmark svd for large sizes
+        self.time_svd.__func__.params = [[20, 100, 500]] + self.params[1:]
+
     def setup(self, size, contig, module):
+        if module == 'numpy' and size >= 200:
+            # skip: slow, and not useful to benchmark numpy
+            raise NotImplementedError()
+
         a = random([size,size])
         # larger diagonal ensures non-singularity:
         for i in range(size):
@@ -125,6 +133,10 @@ class Lstsq(Benchmark):
     ]
 
     def setup(self, dtype, size, lapack_driver):
+        if lapack_driver == 'numpy' and size >= 200:
+            # skip: slow, and not useful to benchmark numpy
+            raise NotImplementedError()
+
         np.random.seed(1234)
         n = math.ceil(2./3. * size)
         k = math.ceil(1./2. * size)

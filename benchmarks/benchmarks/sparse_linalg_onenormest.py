@@ -26,6 +26,10 @@ class BenchmarkOneNormEst(Benchmark):
         nrepeats = 100
         shape = (int(n), int(n))
 
+        if solver == 'exact' and n >= 300:
+            # skip: slow, and not useful to benchmark
+            raise NotImplementedError()
+
         if n <= 1000:
             # Sample the matrices.
             self.matrices = []
@@ -33,9 +37,6 @@ class BenchmarkOneNormEst(Benchmark):
                 M = np.random.randn(*shape)
                 self.matrices.append(M)
         else:
-            if solver == 'exact':
-                raise NotImplementedError()
-
             max_nnz = 100000
             nrepeats = 1
 
