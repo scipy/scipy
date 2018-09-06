@@ -110,3 +110,7 @@ class Bench(Benchmark):
                                        retResidualNormsHistory=1)
         else:
             eigh(self.A_dense, self.B_dense, eigvals_only=True, eigvals=(0, m - 1))
+
+    # Retain old benchmark results (remove this if changing the benchmark)
+    time_mikota.version = "a1fb679758f7e5cf79d18cc4930afdff999fccc142fe7a4f63e73b39ab1f58bb"
+    time_sakurai.version = "7c38d449924fb71f777bd408072ecc883b8b05e53a6544e97da3887fbc10b235"

@@ -93,6 +93,9 @@ class Distribution(Benchmark):
             elif properties == 'fit':
                 stats.beta.fit(self.x, loc=4, scale=10)
 
+    # Retain old benchmark results (remove this if changing the benchmark)
+    time_distribution.version = "fb22ae5386501008d945783921fe44aef3f82c1dafc40cddfaccaeec38b792b0"
+
 
 class DescriptiveStats(Benchmark):
     param_names = ['n_levels']
