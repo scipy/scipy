@@ -1606,6 +1606,29 @@ _METRICS_NAMES = list(_METRICS.keys())
 _TEST_METRICS = {'test_' + name: globals()[name] for name in _METRICS.keys()}
 
 
+def _select_weighted_metric(mstr, kwargs, out):
+    kwargs = dict(kwargs)
+
+    if "w" in kwargs and kwargs["w"] is None:
+        # w=None is the same as omitting it
+        kwargs.pop("w")
+
+    if mstr.startswith("test_"):
+        # These support weights
+        pass
+    elif "w" in kwargs:
+        if (mstr in _METRICS['seuclidean'].aka or
+                mstr in _METRICS['mahalanobis'].aka):
+            raise ValueError("metric %s incompatible with weights" % mstr)
+
+        # XXX: C-versions do not support weights
+        # need to use python version for weighting
+        kwargs['out'] = out
+        mstr = "test_%s" % mstr
+
+    return mstr, kwargs
+
+
 def pdist(X, metric='euclidean', *args, **kwargs):
     """
     Pairwise distances between observations in n-dimensional space.
@@ -1918,14 +1941,7 @@ def pdist(X, metric='euclidean', *args, **kwargs):
     elif isinstance(metric, string_types):
         mstr = metric.lower()
 
-        # NOTE: C-version still does not support weights
-        if "w" in kwargs and not mstr.startswith("test_"):
-            if(mstr in _METRICS['seuclidean'].aka or
-               mstr in _METRICS['mahalanobis'].aka):
-                raise ValueError("metric %s incompatible with weights" % mstr)
-            # need to use python version for weighting
-            kwargs['out'] = out
-            mstr = "test_%s" % mstr
+        mstr, kwargs = _select_weighted_metric(mstr, kwargs, out)
 
         metric_name = _METRIC_ALIAS.get(mstr, None)
 
@@ -2641,14 +2657,7 @@ def cdist(XA, XB, metric='euclidean', *args, **kwargs):
     elif isinstance(metric, string_types):
         mstr = metric.lower()
 
-        # NOTE: C-version still does not support weights
-        if "w" in kwargs and not mstr.startswith("test_"):
-            if(mstr in _METRICS['seuclidean'].aka or
-               mstr in _METRICS['mahalanobis'].aka):
-                raise ValueError("metric %s incompatible with weights" % mstr)
-            # need to use python version for weighting
-            kwargs['out'] = out
-            mstr = "test_%s" % mstr
+        mstr, kwargs = _select_weighted_metric(mstr, kwargs, out)
 
         metric_name = _METRIC_ALIAS.get(mstr, None)
         if metric_name is not None:
