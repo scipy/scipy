@@ -897,7 +897,7 @@ class DifferentialEvolutionSolver(object):
         make sure the parameters lie between the limits
         """
         mask = np.where((trial > 1) | (trial < 0))
-        trial[mask] = np.random.random(mask[0].size)
+        trial[mask] = self.random_number_generator.rand(mask[0].size)
 
     def _mutate(self, candidate):
         """
