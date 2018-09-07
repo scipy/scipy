@@ -9,7 +9,7 @@ def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
     from scipy._build_utils.system_info import get_info
     config = Configuration('optimize',parent_package, top_path)
-    
+
     include_dirs = [join(os.path.dirname(__file__), '..', '_lib', 'src')]
 
     minpack_src = [join('minpack','*f')]
@@ -44,7 +44,7 @@ def configuration(parent_package='',top_path=None):
             lapack['define_macros'] = numpy_nodepr_api['define_macros']
     sources = ['lbfgsb.pyf', 'lbfgsb.f', 'linpack.f', 'timer.f']
     config.add_extension('_lbfgsb',
-                         sources=[join('lbfgsb',x) for x in sources],
+                         sources=[join('lbfgsb_src',x) for x in sources],
                          **lapack)
 
     sources = ['moduleTNC.c','tnc.c']
@@ -75,7 +75,7 @@ def configuration(parent_package='',top_path=None):
     config.add_extension('_group_columns', sources=['_group_columns.c'],)
 
     config.add_subpackage('_lsq')
-    
+
     config.add_subpackage('_trlib')
 
     config.add_subpackage('_trustregion_constr')
@@ -83,7 +83,7 @@ def configuration(parent_package='',top_path=None):
     config.add_data_dir('tests')
 
     # Add license files
-    config.add_data_files('lbfgsb/README')
+    config.add_data_files('lbfgsb_src/README')
 
     return config
 
