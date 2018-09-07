@@ -24,7 +24,11 @@ class BenchmarkOneNormEst(Benchmark):
     def setup(self, n, solver):
         np.random.seed(1234)
         nrepeats = 100
-        shape = (n, n)
+        shape = (int(n), int(n))
+
+        if solver == 'exact' and n >= 300:
+            # skip: slow, and not useful to benchmark
+            raise NotImplementedError()
 
         if n <= 1000:
             # Sample the matrices.
@@ -33,9 +37,6 @@ class BenchmarkOneNormEst(Benchmark):
                 M = np.random.randn(*shape)
                 self.matrices.append(M)
         else:
-            if solver == 'exact':
-                raise NotImplementedError()
-
             max_nnz = 100000
             nrepeats = 1
 
@@ -54,3 +55,6 @@ class BenchmarkOneNormEst(Benchmark):
             # Get the estimates of one-norms of squares.
             for M in self.matrices:
                 scipy.sparse.linalg.matfuncs._onenormest_matrix_power(M, 2)
+
+    # Retain old benchmark results (remove this if changing the benchmark)
+    time_onenormest.version = "f7b31b4bf5caa50d435465e78dab6e133f3c263a52c4523eec785446185fdb6f"

@@ -77,3 +77,16 @@ Some things to consider:
 
 - Use ``run_monitored`` from ``common.py`` if you need to measure memory usage.
 
+- Benchmark versioning: by default ``asv`` invalidates old results
+  when there is any code change in the benchmark routine or in
+  setup/setup_cache.
+
+  This can be controlled manually by setting a fixed benchmark verison
+  number, using the ``version`` attribute. See `ASV documentation`_
+  for details.
+
+  If set manually, the value needs to be changed manually when old
+  results should be invalidated. In case you want to preserve previous
+  benchmark results when the benchmark did not previously have a
+  manual ``version`` attribute, the automatically computed default
+  values can be found in ``results/benchmark.json``.
