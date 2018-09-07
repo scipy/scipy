@@ -7,9 +7,10 @@ from __future__ import division, print_function, absolute_import
 __all__ = ['fft','ifft','fftn','ifftn','rfft','irfft',
            'fft2','ifft2']
 
-from numpy import zeros, swapaxes
+from numpy import asarray, swapaxes, zeros
 import numpy
 from . import _fftpack
+from scipy.fftpack.helper import _init_nd_shape_and_axes_sorted
 
 import atexit
 atexit.register(_fftpack.destroy_zfft_cache)
@@ -524,53 +525,27 @@ def irfft(x, n=None, axis=-1, overwrite_x=False):
 
 
 def _raw_fftnd(x, s, axes, direction, overwrite_x, work_function):
-    """ Internal auxiliary function for fftnd, ifftnd."""
-    if s is None:
-        if axes is None:
-            s = x.shape
-        else:
-            s = numpy.take(x.shape, axes)
-
-    s = tuple(s)
-    if axes is None:
-        noaxes = True
-        axes = list(range(-x.ndim, 0))
-    else:
-        noaxes = False
-    if len(axes) != len(s):
-        raise ValueError("when given, axes and shape arguments "
-                         "have to be of the same length")
-
-    for dim in s:
-        if dim < 1:
-            raise ValueError("Invalid number of FFT data points "
-                             "(%s) specified." % (s,))
+    """Internal auxiliary function for fftnd, ifftnd."""
+    noaxes = axes is None
+    s, axes = _init_nd_shape_and_axes_sorted(x, s, axes)
 
     # No need to swap axes, array is in C order
     if noaxes:
-        for i in axes:
-            x, copy_made = _fix_shape(x, s[i], i)
+        for ax in axes:
+            x, copy_made = _fix_shape(x, s[ax], ax)
             overwrite_x = overwrite_x or copy_made
-        return work_function(x,s,direction,overwrite_x=overwrite_x)
-
-    # We ordered axes, because the code below to push axes at the end of the
-    # array assumes axes argument is in ascending order.
-    a = numpy.array(axes, numpy.intc)
-    abs_axes = numpy.where(a < 0, a + x.ndim, a)
-    id_ = numpy.argsort(abs_axes)
-    axes = [axes[i] for i in id_]
-    s = [s[i] for i in id_]
+        return work_function(x, s, direction, overwrite_x=overwrite_x)
 
     # Swap the request axes, last first (i.e. First swap the axis which ends up
     # at -1, then at -2, etc...), such as the request axes on which the
     # operation is carried become the last ones
-    for i in range(1, len(axes)+1):
+    for i in range(1, axes.size+1):
         x = numpy.swapaxes(x, axes[-i], -i)
 
     # We can now operate on the axes waxes, the p last axes (p = len(axes)), by
     # fixing the shape of the input array to 1 for any axis the fft is not
     # carried upon.
-    waxes = list(range(x.ndim - len(axes), x.ndim))
+    waxes = list(range(x.ndim - axes.size, x.ndim))
     shape = numpy.ones(x.ndim)
     shape[waxes] = s
 
@@ -603,16 +578,19 @@ def fftn(x, shape=None, axes=None, overwrite_x=False):
     ----------
     x : array_like
         The (n-dimensional) array to transform.
-    shape : tuple of ints, optional
+    shape : int or array_like of ints or None, optional
         The shape of the result.  If both `shape` and `axes` (see below) are
         None, `shape` is ``x.shape``; if `shape` is None but `axes` is
         not None, then `shape` is ``scipy.take(x.shape, axes, axis=0)``.
         If ``shape[i] > x.shape[i]``, the i-th dimension is padded with zeros.
         If ``shape[i] < x.shape[i]``, the i-th dimension is truncated to
         length ``shape[i]``.
-    axes : array_like of ints, optional
+        If any element of `shape` is -1, the size of the corresponding
+        dimension of `x` is used.
+    axes : int or array_like of ints or None, optional
         The axes of `x` (`y` if `shape` is not None) along which the
         transform is applied.
+        The default is over all axes.
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed.  Default is False.
 
@@ -658,13 +636,14 @@ def _raw_fftn_dispatch(x, shape, axes, overwrite_x, direction):
         overwrite_x = 1
 
     overwrite_x = overwrite_x or _datacopied(tmp, x)
-    return _raw_fftnd(tmp,shape,axes,direction,overwrite_x,work_function)
+    return _raw_fftnd(tmp, shape, axes, direction, overwrite_x, work_function)
 
 
 def ifftn(x, shape=None, axes=None, overwrite_x=False):
     """
-    Return inverse multi-dimensional discrete Fourier transform of
-    arbitrary type sequence x.
+    Return inverse multi-dimensional discrete Fourier transform.
+
+    The sequence can be of an arbitrary type.
 
     The returned array contains::
 

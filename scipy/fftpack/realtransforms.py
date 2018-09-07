@@ -9,6 +9,7 @@ __all__ = ['dct', 'idct', 'dst', 'idst', 'dctn', 'idctn', 'dstn', 'idstn']
 import numpy as np
 from scipy.fftpack import _fftpack
 from scipy.fftpack.basic import _datacopied, _fix_shape, _asfarray
+from scipy.fftpack.helper import _init_nd_shape_and_axes
 
 import atexit
 atexit.register(_fftpack.destroy_ddct1_cache)
@@ -24,32 +25,6 @@ atexit.register(_fftpack.destroy_dst1_cache)
 atexit.register(_fftpack.destroy_dst2_cache)
 
 
-def _init_nd_shape_and_axes(x, shape, axes):
-    """Handle shape and axes arguments for dctn, idctn, dstn, idstn."""
-    if shape is None:
-        if axes is None:
-            shape = x.shape
-        else:
-            shape = np.take(x.shape, axes)
-    shape = tuple(shape)
-    for dim in shape:
-        if dim < 1:
-            raise ValueError("Invalid number of DCT data points "
-                             "(%s) specified." % (shape,))
-
-    if axes is None:
-        axes = list(range(-x.ndim, 0))
-    elif np.isscalar(axes):
-        axes = [axes, ]
-    if len(axes) != len(shape):
-        raise ValueError("when given, axes and shape arguments "
-                         "have to be of the same length")
-    if len(np.unique(axes)) != len(axes):
-        raise ValueError("All axes must be unique.")
-
-    return shape, axes
-
-
 def dctn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
     """
     Return multidimensional Discrete Cosine Transform along the specified axes.
@@ -60,15 +35,18 @@ def dctn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
         The input array.
     type : {1, 2, 3, 4}, optional
         Type of the DCT (see Notes). Default type is 2.
-    shape : tuple of ints, optional
+    shape : int or array_like of ints or None, optional
         The shape of the result.  If both `shape` and `axes` (see below) are
         None, `shape` is ``x.shape``; if `shape` is None but `axes` is
         not None, then `shape` is ``scipy.take(x.shape, axes, axis=0)``.
         If ``shape[i] > x.shape[i]``, the i-th dimension is padded with zeros.
         If ``shape[i] < x.shape[i]``, the i-th dimension is truncated to
         length ``shape[i]``.
-    axes : tuple or None, optional
-        Axes along which the DCT is computed; the default is over all axes.
+        If any element of `shape` is -1, the size of the corresponding
+        dimension of `x` is used.
+    axes : int or array_like of ints or None, optional
+        Axes along which the DCT is computed.
+        The default is over all axes.
     norm : {None, 'ortho'}, optional
         Normalization mode (see Notes). Default is None.
     overwrite_x : bool, optional
@@ -113,15 +91,18 @@ def idctn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
         The input array.
     type : {1, 2, 3, 4}, optional
         Type of the DCT (see Notes). Default type is 2.
-    shape : tuple of ints, optional
+    shape : int or array_like of ints or None, optional
         The shape of the result.  If both `shape` and `axes` (see below) are
         None, `shape` is ``x.shape``; if `shape` is None but `axes` is
         not None, then `shape` is ``scipy.take(x.shape, axes, axis=0)``.
         If ``shape[i] > x.shape[i]``, the i-th dimension is padded with zeros.
         If ``shape[i] < x.shape[i]``, the i-th dimension is truncated to
         length ``shape[i]``.
-    axes : tuple or None, optional
-        Axes along which the IDCT is computed; the default is over all axes.
+        If any element of `shape` is -1, the size of the corresponding
+        dimension of `x` is used.
+    axes : int or array_like of ints or None, optional
+        Axes along which the IDCT is computed.
+        The default is over all axes.
     norm : {None, 'ortho'}, optional
         Normalization mode (see Notes). Default is None.
     overwrite_x : bool, optional
@@ -147,6 +128,7 @@ def idctn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
     >>> y = np.random.randn(16, 16)
     >>> np.allclose(y, idctn(dctn(y, norm='ortho'), norm='ortho'))
     True
+
     """
     x = np.asanyarray(x)
     shape, axes = _init_nd_shape_and_axes(x, shape, axes)
@@ -166,15 +148,18 @@ def dstn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
         The input array.
     type : {1, 2, 3, 4}, optional
         Type of the DCT (see Notes). Default type is 2.
-    shape : tuple of ints, optional
+    shape : int or array_like of ints or None, optional
         The shape of the result.  If both `shape` and `axes` (see below) are
         None, `shape` is ``x.shape``; if `shape` is None but `axes` is
         not None, then `shape` is ``scipy.take(x.shape, axes, axis=0)``.
         If ``shape[i] > x.shape[i]``, the i-th dimension is padded with zeros.
         If ``shape[i] < x.shape[i]``, the i-th dimension is truncated to
         length ``shape[i]``.
-    axes : tuple or None, optional
-        Axes along which the DCT is computed; the default is over all axes.
+        If any element of `shape` is -1, the size of the corresponding
+        dimension of `x` is used.
+    axes : int or array_like of ints or None, optional
+        Axes along which the DCT is computed.
+        The default is over all axes.
     norm : {None, 'ortho'}, optional
         Normalization mode (see Notes). Default is None.
     overwrite_x : bool, optional
@@ -219,15 +204,18 @@ def idstn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
         The input array.
     type : {1, 2, 3, 4}, optional
         Type of the DCT (see Notes). Default type is 2.
-    shape : tuple of ints, optional
+    shape : int or array_like of ints or None, optional
         The shape of the result.  If both `shape` and `axes` (see below) are
         None, `shape` is ``x.shape``; if `shape` is None but `axes` is
         not None, then `shape` is ``scipy.take(x.shape, axes, axis=0)``.
         If ``shape[i] > x.shape[i]``, the i-th dimension is padded with zeros.
         If ``shape[i] < x.shape[i]``, the i-th dimension is truncated to
         length ``shape[i]``.
-    axes : tuple or None, optional
-        Axes along which the IDCT is computed; the default is over all axes.
+        If any element of `shape` is -1, the size of the corresponding
+        dimension of `x` is used.
+    axes : int or array_like of ints or None, optional
+        Axes along which the IDCT is computed.
+        The default is over all axes.
     norm : {None, 'ortho'}, optional
         Normalization mode (see Notes). Default is None.
     overwrite_x : bool, optional
@@ -253,6 +241,7 @@ def idstn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
     >>> y = np.random.randn(16, 16)
     >>> np.allclose(y, idstn(dstn(y, norm='ortho'), norm='ortho'))
     True
+
     """
     x = np.asanyarray(x)
     shape, axes = _init_nd_shape_and_axes(x, shape, axes)
