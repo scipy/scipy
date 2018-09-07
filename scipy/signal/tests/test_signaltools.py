@@ -403,77 +403,247 @@ class TestConvolve2d(_TestConvolve2d):
 
 class TestFFTConvolve(object):
 
-    def test_real(self):
-        x = array([1, 2, 3])
-        assert_array_almost_equal(signal.fftconvolve(x, x), [1, 4, 10, 12, 9.])
+    @pytest.mark.parametrize('axes', ['', None, 0, [0], -1, [-1]])
+    def test_real(self, axes):
+        a = array([1, 2, 3])
+        expected = array([1, 4, 10, 12, 9.])
 
-    def test_complex(self):
-        x = array([1 + 1j, 2 + 2j, 3 + 3j])
-        assert_array_almost_equal(signal.fftconvolve(x, x),
-                                  [0 + 2j, 0 + 8j, 0 + 20j, 0 + 24j, 0 + 18j])
+        if axes == '':
+            out = fftconvolve(a, a)
+        else:
+            out = fftconvolve(a, a, axes=axes)
 
-    def test_2d_real_same(self):
-        a = array([[1, 2, 3], [4, 5, 6]])
-        assert_array_almost_equal(signal.fftconvolve(a, a),
-                                  array([[1, 4, 10, 12, 9],
-                                         [8, 26, 56, 54, 36],
-                                         [16, 40, 73, 60, 36]]))
+        assert_array_almost_equal(out, expected)
 
-    def test_2d_complex_same(self):
-        a = array([[1 + 2j, 3 + 4j, 5 + 6j], [2 + 1j, 4 + 3j, 6 + 5j]])
-        c = fftconvolve(a, a)
-        d = array([[-3 + 4j, -10 + 20j, -21 + 56j, -18 + 76j, -11 + 60j],
-                   [10j, 44j, 118j, 156j, 122j],
-                   [3 + 4j, 10 + 20j, 21 + 56j, 18 + 76j, 11 + 60j]])
-        assert_array_almost_equal(c, d)
+    @pytest.mark.parametrize('axes', [1, [1], -1, [-1]])
+    def test_real_axes(self, axes):
+        a = array([1, 2, 3])
+        expected = array([1, 4, 10, 12, 9.])
 
-    def test_real_same_mode(self):
+        a = np.tile(a, [2, 1])
+        expected = np.tile(expected, [2, 1])
+
+        out = fftconvolve(a, a, axes=axes)
+        assert_array_almost_equal(out, expected)
+
+    @pytest.mark.parametrize('axes', ['', None, 0, [0], -1, [-1]])
+    def test_complex(self, axes):
+        a = array([1 + 1j, 2 + 2j, 3 + 3j])
+        expected = array([0 + 2j, 0 + 8j, 0 + 20j, 0 + 24j, 0 + 18j])
+
+        if axes == '':
+            out = fftconvolve(a, a)
+        else:
+            out = fftconvolve(a, a, axes=axes)
+        assert_array_almost_equal(out, expected)
+
+    @pytest.mark.parametrize('axes', [1, [1], -1, [-1]])
+    def test_complex_axes(self, axes):
+        a = array([1 + 1j, 2 + 2j, 3 + 3j])
+        expected = array([0 + 2j, 0 + 8j, 0 + 20j, 0 + 24j, 0 + 18j])
+
+        a = np.tile(a, [2, 1])
+        expected = np.tile(expected, [2, 1])
+
+        out = fftconvolve(a, a, axes=axes)
+        assert_array_almost_equal(out, expected)
+
+    @pytest.mark.parametrize('axes', ['',
+                                      None,
+                                      [0, 1],
+                                      [1, 0],
+                                      [0, -1],
+                                      [-1, 0],
+                                      [-2, 1],
+                                      [1, -2],
+                                      [-2, -1],
+                                      [-1, -2]])
+    def test_2d_real_same(self, axes):
+        a = array([[1, 2, 3],
+                   [4, 5, 6]])
+        expected = array([[1, 4, 10, 12, 9],
+                          [8, 26, 56, 54, 36],
+                          [16, 40, 73, 60, 36]])
+
+        if axes == '':
+            out = fftconvolve(a, a)
+        else:
+            out = fftconvolve(a, a, axes=axes)
+        assert_array_almost_equal(out, expected)
+
+    @pytest.mark.parametrize('axes', [[1, 2],
+                                      [2, 1],
+                                      [1, -1],
+                                      [-1, 1],
+                                      [-2, 2],
+                                      [2, -2],
+                                      [-2, -1],
+                                      [-1, -2]])
+    def test_2d_real_same_axes(self, axes):
+        a = array([[1, 2, 3],
+                   [4, 5, 6]])
+        expected = array([[1, 4, 10, 12, 9],
+                          [8, 26, 56, 54, 36],
+                          [16, 40, 73, 60, 36]])
+
+        a = np.tile(a, [2, 1, 1])
+        expected = np.tile(expected, [2, 1, 1])
+
+        out = fftconvolve(a, a, axes=axes)
+        assert_array_almost_equal(out, expected)
+
+    @pytest.mark.parametrize('axes', ['',
+                                      None,
+                                      [0, 1],
+                                      [1, 0],
+                                      [0, -1],
+                                      [-1, 0],
+                                      [-2, 1],
+                                      [1, -2],
+                                      [-2, -1],
+                                      [-1, -2]])
+    def test_2d_complex_same(self, axes):
+        a = array([[1 + 2j, 3 + 4j, 5 + 6j],
+                   [2 + 1j, 4 + 3j, 6 + 5j]])
+        expected = array([
+            [-3 + 4j, -10 + 20j, -21 + 56j, -18 + 76j, -11 + 60j],
+            [10j, 44j, 118j, 156j, 122j],
+            [3 + 4j, 10 + 20j, 21 + 56j, 18 + 76j, 11 + 60j]
+            ])
+
+        if axes == '':
+            out = fftconvolve(a, a)
+        else:
+            out = fftconvolve(a, a, axes=axes)
+
+        assert_array_almost_equal(out, expected)
+
+    @pytest.mark.parametrize('axes', [[1, 2],
+                                      [2, 1],
+                                      [1, -1],
+                                      [-1, 1],
+                                      [-2, 2],
+                                      [2, -2],
+                                      [-2, -1],
+                                      [-1, -2]])
+    def test_2d_complex_same_axes(self, axes):
+        a = array([[1 + 2j, 3 + 4j, 5 + 6j],
+                   [2 + 1j, 4 + 3j, 6 + 5j]])
+        expected = array([
+            [-3 + 4j, -10 + 20j, -21 + 56j, -18 + 76j, -11 + 60j],
+            [10j, 44j, 118j, 156j, 122j],
+            [3 + 4j, 10 + 20j, 21 + 56j, 18 + 76j, 11 + 60j]
+            ])
+
+        a = np.tile(a, [2, 1, 1])
+        expected = np.tile(expected, [2, 1, 1])
+
+        out = fftconvolve(a, a, axes=axes)
+        assert_array_almost_equal(out, expected)
+
+    @pytest.mark.parametrize('axes', ['', None, 0, [0], -1, [-1]])
+    def test_real_same_mode(self, axes):
         a = array([1, 2, 3])
         b = array([3, 3, 5, 6, 8, 7, 9, 0, 1])
-        c = fftconvolve(a, b, 'same')
-        d = array([35., 41., 47.])
-        assert_array_almost_equal(c, d)
+        expected_1 = array([35., 41., 47.])
+        expected_2 = array([9., 20., 25., 35., 41., 47., 39., 28., 2.])
 
-    def test_real_same_mode2(self):
-        a = array([3, 3, 5, 6, 8, 7, 9, 0, 1])
-        b = array([1, 2, 3])
-        c = fftconvolve(a, b, 'same')
-        d = array([9., 20., 25., 35., 41., 47., 39., 28., 2.])
-        assert_array_almost_equal(c, d)
+        if axes == '':
+            out = fftconvolve(a, b, 'same')
+        else:
+            out = fftconvolve(a, b, 'same', axes=axes)
+        assert_array_almost_equal(out, expected_1)
 
-    def test_valid_mode(self):
+        if axes == '':
+            out = fftconvolve(b, a, 'same')
+        else:
+            out = fftconvolve(b, a, 'same', axes=axes)
+        assert_array_almost_equal(out, expected_2)
+
+    @pytest.mark.parametrize('axes', [1, -1, [1], [-1]])
+    def test_real_same_mode_axes(self, axes):
+        a = array([1, 2, 3])
+        b = array([3, 3, 5, 6, 8, 7, 9, 0, 1])
+        expected_1 = array([35., 41., 47.])
+        expected_2 = array([9., 20., 25., 35., 41., 47., 39., 28., 2.])
+
+        a = np.tile(a, [2, 1])
+        b = np.tile(b, [2, 1])
+        expected_1 = np.tile(expected_1, [2, 1])
+        expected_2 = np.tile(expected_2, [2, 1])
+
+        out = fftconvolve(a, b, 'same', axes=axes)
+        assert_array_almost_equal(out, expected_1)
+
+        out = fftconvolve(b, a, 'same', axes=axes)
+        assert_array_almost_equal(out, expected_2)
+
+    @pytest.mark.parametrize('axes', ['', None, 0, [0], -1, [-1]])
+    def test_valid_mode_real(self, axes):
         # See gh-5897
         a = array([3, 2, 1])
         b = array([3, 3, 5, 6, 8, 7, 9, 0, 1])
         expected = array([24., 31., 41., 43., 49., 25., 12.])
 
-        out = fftconvolve(a, b, 'valid')
+        if axes == '':
+            out = fftconvolve(a, b, 'valid')
+        else:
+            out = fftconvolve(a, b, 'valid', axes=axes)
         assert_array_almost_equal(out, expected)
 
-        out = fftconvolve(b, a, 'valid')
+        if axes == '':
+            out = fftconvolve(b, a, 'valid')
+        else:
+            out = fftconvolve(b, a, 'valid', axes=axes)
         assert_array_almost_equal(out, expected)
 
+    @pytest.mark.parametrize('axes', [1, [1]])
+    def test_valid_mode_real_axes(self, axes):
+        # See gh-5897
+        a = array([3, 2, 1])
+        b = array([3, 3, 5, 6, 8, 7, 9, 0, 1])
+        expected = array([24., 31., 41., 43., 49., 25., 12.])
+
+        a = np.tile(a, [2, 1])
+        b = np.tile(b, [2, 1])
+        expected = np.tile(expected, [2, 1])
+
+        out = fftconvolve(a, b, 'valid', axes=axes)
+        assert_array_almost_equal(out, expected)
+
+    @pytest.mark.parametrize('axes', ['', None, 0, [0], -1, [-1]])
+    def test_valid_mode_complex(self, axes):
         a = array([3 - 1j, 2 + 7j, 1 + 0j])
         b = array([3 + 2j, 3 - 3j, 5 + 0j, 6 - 1j, 8 + 0j])
         expected = array([45. + 12.j, 30. + 23.j, 48 + 32.j])
 
-        out = fftconvolve(a, b, 'valid')
+        if axes == '':
+            out = fftconvolve(a, b, 'valid')
+        else:
+            out = fftconvolve(a, b, 'valid', axes=axes)
         assert_array_almost_equal(out, expected)
 
-        out = fftconvolve(b, a, 'valid')
+        if axes == '':
+            out = fftconvolve(b, a, 'valid')
+        else:
+            out = fftconvolve(b, a, 'valid', axes=axes)
         assert_array_almost_equal(out, expected)
 
-    def test_real_valid_mode(self):
-        a = array([3, 3, 5, 6, 8, 7, 9, 0, 1])
-        b = array([3, 2, 1])
-        d = array([24., 31., 41., 43., 49., 25., 12.])
+    @pytest.mark.parametrize('axes', [1, [1], -1, [-1]])
+    def test_valid_mode_complex_axes(self, axes):
+        a = array([3 - 1j, 2 + 7j, 1 + 0j])
+        b = array([3 + 2j, 3 - 3j, 5 + 0j, 6 - 1j, 8 + 0j])
+        expected = array([45. + 12.j, 30. + 23.j, 48 + 32.j])
 
-        c = fftconvolve(a, b, 'valid')
-        assert_array_almost_equal(c, d)
+        a = np.tile(a, [2, 1])
+        b = np.tile(b, [2, 1])
+        expected = np.tile(expected, [2, 1])
 
-        # See gh-5897
-        c = fftconvolve(b, a, 'valid')
-        assert_array_almost_equal(c, d)
+        out = fftconvolve(a, b, 'valid', axes=axes)
+        assert_array_almost_equal(out, expected)
+
+        out = fftconvolve(b, a, 'valid', axes=axes)
+        assert_array_almost_equal(out, expected)
 
     def test_empty(self):
         # Regression test for #1745: crashes with 0-length input.
@@ -484,63 +654,146 @@ class TestFFTConvolve(object):
     def test_zero_rank(self):
         a = array(4967)
         b = array(3920)
-        c = fftconvolve(a, b)
-        assert_equal(c, a * b)
+        out = fftconvolve(a, b)
+        assert_equal(out, a * b)
 
     def test_single_element(self):
         a = array([4967])
         b = array([3920])
-        c = fftconvolve(a, b)
-        assert_equal(c, a * b)
+        out = fftconvolve(a, b)
+        assert_equal(out, a * b)
 
-    def test_random_data(self):
+    @pytest.mark.parametrize('axes', ['', None, 0, [0], -1, [-1]])
+    def test_random_data(self, axes):
         np.random.seed(1234)
         a = np.random.rand(1233) + 1j * np.random.rand(1233)
         b = np.random.rand(1321) + 1j * np.random.rand(1321)
-        c = fftconvolve(a, b, 'full')
-        d = np.convolve(a, b, 'full')
-        assert_(np.allclose(c, d, rtol=1e-10))
+        expected = np.convolve(a, b, 'full')
+
+        if axes == '':
+            out = fftconvolve(a, b, 'full')
+        else:
+            out = fftconvolve(a, b, 'full', axes=axes)
+        assert_(np.allclose(out, expected, rtol=1e-10))
+
+    @pytest.mark.parametrize('axes', [1, [1], -1, [-1]])
+    def test_random_data_axes(self, axes):
+        np.random.seed(1234)
+        a = np.random.rand(1233) + 1j * np.random.rand(1233)
+        b = np.random.rand(1321) + 1j * np.random.rand(1321)
+        expected = np.convolve(a, b, 'full')
+
+        a = np.tile(a, [2, 1])
+        b = np.tile(b, [2, 1])
+        expected = np.tile(expected, [2, 1])
+
+        out = fftconvolve(a, b, 'full', axes=axes)
+        assert_(np.allclose(out, expected, rtol=1e-10))
+
+    @pytest.mark.parametrize('axes', [[1, 4],
+                                      [4, 1],
+                                      [1, -1],
+                                      [-1, 1],
+                                      [-4, 4],
+                                      [4, -4],
+                                      [-4, -1],
+                                      [-1, -4]])
+    def test_random_data_multidim_axes(self, axes):
+        np.random.seed(1234)
+        a = np.random.rand(123, 222) + 1j * np.random.rand(123, 222)
+        b = np.random.rand(132, 111) + 1j * np.random.rand(132, 111)
+        expected = convolve2d(a, b, 'full')
+
+        a = a[:, :, None, None, None]
+        b = b[:, :, None, None, None]
+        expected = expected[:, :, None, None, None]
+
+        a = np.moveaxis(a, [0, 1], [1, 4])
+        b = np.moveaxis(b, [0, 1], [1, 4])
+        expected = np.moveaxis(expected, [0, 1], [1, 4])
+
+        # use 1 for dimension 2 in a and 3 in b to test broadcasting
+        a = np.tile(a, [2, 1, 3, 1, 1])
+        b = np.tile(b, [2, 1, 1, 4, 1])
+        expected = np.tile(expected, [2, 1, 3, 4, 1])
+
+        out = fftconvolve(a, b, 'full', axes=axes)
+        assert_(np.allclose(out, expected, rtol=1e-10))
 
     @pytest.mark.slow
-    def test_many_sizes(self):
-        np.random.seed(1234)
+    @pytest.mark.parametrize(
+        'n',
+        list(range(1, 100)) +
+        list(range(1000, 1500)) +
+        np.random.RandomState(1234).randint(1001, 10000, 5).tolist())
+    def test_many_sizes(self, n):
+        a = np.random.rand(n) + 1j * np.random.rand(n)
+        b = np.random.rand(n) + 1j * np.random.rand(n)
+        expected = np.convolve(a, b, 'full')
 
-        def ns():
-            for j in range(1, 100):
-                yield j
-            for j in range(1000, 1500):
-                yield j
-            for k in range(50):
-                yield np.random.randint(1001, 10000)
+        out = fftconvolve(a, b, 'full')
+        assert_allclose(out, expected, atol=1e-10)
 
-        for n in ns():
-            msg = 'n=%d' % (n,)
-            a = np.random.rand(n) + 1j * np.random.rand(n)
-            b = np.random.rand(n) + 1j * np.random.rand(n)
-            c = fftconvolve(a, b, 'full')
-            d = np.convolve(a, b, 'full')
-            assert_allclose(c, d, atol=1e-10, err_msg=msg)
+        out = fftconvolve(a, b, 'full', axes=[0])
+        assert_allclose(out, expected, atol=1e-10)
 
     def test_invalid_shapes(self):
-        # By "invalid," we mean that no one
-        # array has dimensions that are all at
-        # least as large as the corresponding
-        # dimensions of the other array. This
-        # setup should throw a ValueError.
         a = np.arange(1, 7).reshape((2, 3))
         b = np.arange(-6, 0).reshape((3, 2))
+        with assert_raises(ValueError,
+                           match="For 'valid' mode, one must be at least "
+                           "as large as the other in every dimension"):
+            fftconvolve(a, b, mode='valid')
 
-        assert_raises(ValueError, fftconvolve, *(a, b), **{'mode': 'valid'})
-        assert_raises(ValueError, fftconvolve, *(b, a), **{'mode': 'valid'})
+    def test_invalid_shapes_axes(self):
+        a = np.zeros([5, 6, 2, 1])
+        b = np.zeros([5, 6, 3, 1])
+        with assert_raises(ValueError,
+                           match=r"incompatible shapes for in1 and in2:"
+                           r" \(5L?, 6L?, 2L?, 1L?\) and"
+                           r" \(5L?, 6L?, 3L?, 1L?\)"):
+            fftconvolve(a, b, axes=[0, 1])
 
-    def test_mismatched_dims(self):
-        assert_raises(ValueError, fftconvolve, [1], 2)
-        assert_raises(ValueError, fftconvolve, 1, [2])
-        assert_raises(ValueError, fftconvolve, [1], [[2]])
-        assert_raises(ValueError, fftconvolve, [3], 2)
+    @pytest.mark.parametrize('a,b',
+                             [([1], 2),
+                              (1, [2]),
+                              ([3], [[2]])])
+    def test_mismatched_dims(self, a, b):
+        with assert_raises(ValueError,
+                           match="in1 and in2 should have the same"
+                           " dimensionality"):
+            fftconvolve(a, b)
 
     def test_invalid_flags(self):
-        assert_raises(ValueError, fftconvolve, [1], [2], mode='chips')
+        with assert_raises(ValueError,
+                           match="acceptable mode flags are 'valid',"
+                           " 'same', or 'full'"):
+            fftconvolve([1], [2], mode='chips')
+
+        with assert_raises(ValueError,
+                           match="when provided, axes cannot be empty"):
+            fftconvolve([1], [2], axes=[])
+
+        with assert_raises(ValueError,
+                           match="when given, axes values must be a scalar"
+                           " or vector"):
+            fftconvolve([1], [2], axes=[[1, 2], [3, 4]])
+
+        with assert_raises(ValueError,
+                           match="when given, axes values must be integers"):
+            fftconvolve([1], [2], axes=[1., 2., 3., 4.])
+
+        with assert_raises(ValueError,
+                           match="axes exceeds dimensionality of input"):
+            fftconvolve([1], [2], axes=[1])
+
+        with assert_raises(ValueError,
+                           match="axes exceeds dimensionality of input"):
+            fftconvolve([1], [2], axes=[-2])
+
+        with assert_raises(ValueError,
+                           match="all axes must be unique"):
+            fftconvolve([1], [2], axes=[0, 0])
 
 
 class TestMedFilt(object):
