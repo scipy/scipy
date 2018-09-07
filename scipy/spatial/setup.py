@@ -18,7 +18,7 @@ def configuration(parent_package='', top_path=None):
     config.add_subpackage('transform')
 
     # qhull
-    qhull_src = list(glob.glob(join(dirname(__file__), 'qhull',
+    qhull_src = list(glob.glob(join(dirname(__file__), 'qhull_src',
                                     'src', '*.c')))
 
     inc_dirs = [get_python_inc()]
@@ -78,7 +78,7 @@ def configuration(parent_package='', top_path=None):
                          sources=['_hausdorff.c'])
 
     # Add license files
-    config.add_data_files('qhull/COPYING.txt')
+    config.add_data_files('qhull_src/COPYING.txt')
 
     return config
 

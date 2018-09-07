@@ -51,11 +51,11 @@ cdef extern from "setjmp.h" nogil:
     void longjmp(jmp_buf STATE, int VALUE) nogil
 
 # Define the clockwise constant
-cdef extern from "qhull/src/user_r.h":
+cdef extern from "qhull_src/src/user_r.h":
     cdef enum:
         qh_ORIENTclock
 
-cdef extern from "qhull/src/qset_r.h":
+cdef extern from "qhull_src/src/qset_r.h":
     ctypedef union setelemT:
         void *p
         int i
@@ -67,7 +67,7 @@ cdef extern from "qhull/src/qset_r.h":
     int qh_setsize(qhT *, setT *set) nogil
     void qh_setappend(qhT *, setT **setp, void *elem) nogil
 
-cdef extern from "qhull/src/libqhull_r.h":
+cdef extern from "qhull_src/src/libqhull_r.h":
     ctypedef double realT
     ctypedef double coordT
     ctypedef double pointT
@@ -172,7 +172,7 @@ cdef extern from "qhull/src/libqhull_r.h":
     void qh_setdelaunay(qhT *, int dim, int count, pointT *points) nogil
     coordT* qh_sethalfspace_all(qhT *, int dim, int count, coordT* halfspaces, pointT *feasible)
 
-cdef extern from "qhull/src/io_r.h":
+cdef extern from "qhull_src/src/io_r.h":
     ctypedef enum qh_RIDGE:
         qh_RIDGEall
         qh_RIDGEinner
@@ -187,14 +187,14 @@ cdef extern from "qhull/src/io_r.h":
     void qh_order_vertexneighbors(qhT *, vertexT *vertex) nogil
     int qh_compare_facetvisit(const void *p1, const void *p2) nogil
 
-cdef extern from "qhull/src/geom_r.h":
+cdef extern from "qhull_src/src/geom_r.h":
     pointT *qh_facetcenter(qhT *, setT *vertices) nogil
     double qh_getarea(qhT *, facetT *facetlist) nogil
 
-cdef extern from "qhull/src/poly_r.h":
+cdef extern from "qhull_src/src/poly_r.h":
     void qh_check_maxout(qhT *) nogil
 
-cdef extern from "qhull/src/mem_r.h":
+cdef extern from "qhull_src/src/mem_r.h":
     void qh_memfree(qhT *, void *object, int insize)
 
 from libc.string cimport memcpy
@@ -1725,7 +1725,7 @@ class Delaunay(_QhullUser):
 
     Notes
     -----
-    The tessellation is computed using the Qhull library 
+    The tessellation is computed using the Qhull library
     `Qhull library <http://www.qhull.org/>`__.
 
     .. note::
@@ -1782,17 +1782,17 @@ class Delaunay(_QhullUser):
     >>> tri.find_simplex(p)
     array([ 1, -1, 1], dtype=int32)
 
-    The returned integers in the array are the indices of the simplex the 
+    The returned integers in the array are the indices of the simplex the
     corresponding point is in. If -1 is returned, the point is in no simplex.
-    Be aware that the shortcut in the following example only works corretcly 
+    Be aware that the shortcut in the following example only works corretcly
     for valid points as invalid points result in -1 which is itself a valid
     index for the last simplex in the list.
-    
+
     >>> p_valids = np.array([(0.1, 0.2), (0.5, 1.05)])
     >>> tri.simplices[tri.find_simplex(p_valids)]
     array([[3, 1, 0],                 # may vary
            [3, 1, 0]], dtype=int32)
-    
+
     We can also compute barycentric coordinates in triangle 1 for
     these points:
 
@@ -2272,11 +2272,11 @@ class ConvexHull(_QhullUser):
         If option "Qc" is not specified, this list is not computed.
     area : float
         Area of the convex hull.
-        
+
         .. versionadded:: 0.17.0
     volume : float
         Volume of the convex hull.
-        
+
         .. versionadded:: 0.17.0
 
     Raises
@@ -2289,7 +2289,7 @@ class ConvexHull(_QhullUser):
 
     Notes
     -----
-    The convex hull is computed using the 
+    The convex hull is computed using the
     `Qhull library <http://www.qhull.org/>`__.
 
     Examples
@@ -2424,7 +2424,7 @@ class Voronoi(_QhullUser):
 
     Notes
     -----
-    The Voronoi diagram is computed using the 
+    The Voronoi diagram is computed using the
     `Qhull library <http://www.qhull.org/>`__.
 
     Examples
