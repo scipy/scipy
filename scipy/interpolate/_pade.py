@@ -5,7 +5,7 @@ from scipy import linalg
 
 __all__ = ["pade"]
 
-def pade(an, m, l=None):
+def pade(an, m, n=None):
     """
     Return Pade approximation to a polynomial as the ratio of two polynomials.
 
@@ -15,7 +15,7 @@ def pade(an, m, l=None):
         Taylor series coefficients.
     m : int
         The order of the returned approximating polynomial q.
-    l : int, optional
+    n : int, optional
         The order of the returned approximating polynomial p. By default, 
         the order is len(an)-m.
     
@@ -44,17 +44,17 @@ def pade(an, m, l=None):
 
     """
     an = asarray(an)
-    if l is None:
-        l = len(an) - 1 - m
-        if l < 0:
+    if n is None:
+        n = len(an) - 1 - m
+        if n < 0:
             raise ValueError("Order of q <m> must be smaller than len(an)-1.")
-    if l < 0:
-        raise ValueError("Order of p <l> must be greater than 0.")
-    N = m + l
+    if n < 0:
+        raise ValueError("Order of p <n> must be greater than 0.")
+    N = m + n
     if N > len(an)-1:
-        raise ValueError("Order of q+p <m+l> must be smaller than len(an).")
+        raise ValueError("Order of q+p <m+n> must be smaller than len(an).")
     an = an[:N+1]
-    Akj = eye(N+1, l+1)
+    Akj = eye(N+1, n+1)
     Bkj = zeros((N+1, m), 'd')
     for row in range(1, m+1):
         Bkj[row,:row] = -(an[:row])[::-1]
@@ -62,7 +62,7 @@ def pade(an, m, l=None):
         Bkj[row,:] = -(an[row-m:row])[::-1]
     C = hstack((Akj, Bkj))
     pq = linalg.solve(C, an)
-    p = pq[:l+1]
-    q = r_[1.0, pq[l+1:]]
+    p = pq[:n+1]
+    q = r_[1.0, pq[n+1:]]
     return poly1d(p[::-1]), poly1d(q[::-1])
 
