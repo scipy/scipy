@@ -6848,9 +6848,10 @@ class crystalball_gen(rv_continuous):
     where :math:`A = (m / |\beta|)^n  \exp(-\beta^2 / 2)`,
     :math:`B = m/|\beta| - |\beta|` and :math:`N` is a normalisation constant.
 
-    `crystalball` takes :math:`\beta` and :math:`m` as shape parameters.
-    :math:`\beta` defines the point where the pdf changes from a power-law to a
-    Gaussian distribution :math:`m` is power of the power-law tail.
+    `crystalball` takes :math:`\beta > 0` and :math:`m > 1` as shape
+    parameters.  :math:`\beta` defines the point where the pdf changes
+    from a power-law to a Gaussian distribution.  :math:`m` is the power
+    of the power-law tail.
 
     References
     ----------
