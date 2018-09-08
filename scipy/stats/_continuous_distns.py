@@ -6914,11 +6914,7 @@ class crystalball_gen(rv_continuous):
 
     def _argcheck(self, beta, m):
         """
-        In HEP crystal-ball is also defined for m = 1 (see plot on wikipedia)
-        But the function doesn't have a finite integral in this corner case,
-        and isn't a PDF anymore (but can still be used on a finite range).
-        Here we restrict the function to m > 1.
-        In addition we restrict beta to be positive
+        Shape parameter bounds are m > 1 and beta > 0.
         """
         return (m > 1) & (beta > 0)
 
