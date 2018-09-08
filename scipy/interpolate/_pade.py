@@ -14,10 +14,10 @@ def pade(an, m, n=None):
     an : (N,) array_like
         Taylor series coefficients.
     m : int
-        The order of the returned approximating polynomial q.
+        The order of the returned approximating polynomial `q`.
     n : int, optional
-        The order of the returned approximating polynomial p. By default, 
-        the order is len(an)-m.
+        The order of the returned approximating polynomial `p`. By default, 
+        the order is ``len(an)-m``.
     
     Returns
     -------
