@@ -4240,7 +4240,7 @@ class lognorm_gen(rv_continuous):
     .. math::
 
         f(x, s) = \frac{1}{s x \sqrt{2\pi}}
-                  \exp(-\frac{\log^2(x}{2s^2})
+                  \exp\left(-\frac{\log^2(x)}{2s^2}\right)
 
     for :math:`x > 0`, :math:`s > 0`.
 
