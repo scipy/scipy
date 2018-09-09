@@ -6888,6 +6888,21 @@ class crystalball_gen(rv_continuous):
         return N * _lazywhere(np.atleast_1d(x > -beta), (x, beta, m),
                               f=rhs, f2=lhs)
 
+    def _logpdf(self, x, beta, m):
+        """
+        Return the log of the PDF of the crystalball function.
+        """
+        N = 1.0 / (m/beta / (m-1) * np.exp(-beta**2 / 2.0) +
+                   _norm_pdf_C * _norm_cdf(beta))
+
+        def rhs(x, beta, m):
+            return -x**2/2
+
+        def lhs(x, beta, m):
+            return m*np.log(m/beta) - beta**2/2 - m*np.log(m/beta - beta - x)
+
+        return np.log(N) + _lazywhere(x > -beta, (x, beta, m), f=rhs, f2=lhs)
+
     def _cdf(self, x, beta, m):
         """
         Return CDF of the crystalball function
