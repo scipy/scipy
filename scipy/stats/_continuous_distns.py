@@ -6906,6 +6906,26 @@ class crystalball_gen(rv_continuous):
         return N * _lazywhere(np.atleast_1d(x > -beta), (x, beta, m),
                               f=rhs, f2=lhs)
 
+    def _ppf(self, p, beta, m):
+        N = 1.0 / (m/beta / (m-1) * np.exp(-beta**2 / 2.0) +
+                   _norm_pdf_C * _norm_cdf(beta))
+        pbeta = N * (m/beta) * np.exp(-beta**2/2) / (m - 1)
+
+        def ppf_less(p, beta, m):
+            eb2 = np.exp(-beta**2/2)
+            C = (m/beta) * eb2 / (m-1)
+            N = 1/(C + _norm_pdf_C * _norm_cdf(beta))
+            return (m/beta - beta -
+                    ((m - 1)*(m/beta)**(-m)/eb2*p/N)**(1/(1-m)))
+
+        def ppf_greater(p, beta, m):
+            eb2 = np.exp(-beta**2/2)
+            C = (m/beta) * eb2 / (m-1)
+            N = 1/(C + _norm_pdf_C * _norm_cdf(beta))
+            return _norm_ppf(_norm_cdf(-beta) + (1/_norm_pdf_C)*(p/N - C))
+
+        return _lazywhere(p < pbeta, (p, beta, m), f=ppf_less, f2=ppf_greater)
+
     def _munp(self, n, beta, m):
         """
         Returns the n-th non-central moment of the crystalball function.
