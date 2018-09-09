@@ -6864,6 +6864,7 @@ class crystalball_gen(rv_continuous):
 
     %(example)s
     """
+
     def _pdf(self, x, beta, m):
         """
         Return PDF of the crystalball function.
@@ -6874,25 +6875,43 @@ class crystalball_gen(rv_continuous):
                                            | A * (B - x)**(-m), for x <= -beta
                                             --
         """
-        N = 1.0 / (m/beta / (m-1) * np.exp(-beta**2 / 2.0) + _norm_pdf_C * _norm_cdf(beta))
-        rhs = lambda x, beta, m: np.exp(-x**2 / 2)
-        lhs = lambda x, beta, m: (m/beta)**m * np.exp(-beta**2 / 2.0) * (m/beta - beta - x)**(-m)
-        return N * _lazywhere(np.atleast_1d(x > -beta), (x, beta, m), f=rhs, f2=lhs)
+        N = 1.0 / (m/beta / (m-1) * np.exp(-beta**2 / 2.0) +
+                   _norm_pdf_C * _norm_cdf(beta))
+
+        def rhs(x, beta, m):
+            return np.exp(-x**2 / 2)
+
+        def lhs(x, beta, m):
+            return ((m/beta)**m * np.exp(-beta**2 / 2.0) *
+                    (m/beta - beta - x)**(-m))
+
+        return N * _lazywhere(np.atleast_1d(x > -beta), (x, beta, m),
+                              f=rhs, f2=lhs)
 
     def _cdf(self, x, beta, m):
         """
         Return CDF of the crystalball function
         """
-        N = 1.0 / (m/beta / (m-1) * np.exp(-beta**2 / 2.0) + _norm_pdf_C * _norm_cdf(beta))
-        rhs = lambda x, beta, m: (m/beta) * np.exp(-beta**2 / 2.0) / (m-1) + _norm_pdf_C * (_norm_cdf(x) - _norm_cdf(-beta))
-        lhs = lambda x, beta, m: (m/beta)**m * np.exp(-beta**2 / 2.0) * (m/beta - beta - x)**(-m+1) / (m-1)
-        return N * _lazywhere(np.atleast_1d(x > -beta), (x, beta, m), f=rhs, f2=lhs)
+        N = 1.0 / (m/beta / (m-1) * np.exp(-beta**2 / 2.0) +
+                   _norm_pdf_C * _norm_cdf(beta))
+
+        def rhs(x, beta, m):
+            return ((m/beta) * np.exp(-beta**2 / 2.0) / (m-1) +
+                    _norm_pdf_C * (_norm_cdf(x) - _norm_cdf(-beta)))
+
+        def lhs(x, beta, m):
+            return ((m/beta)**m * np.exp(-beta**2 / 2.0) *
+                    (m/beta - beta - x)**(-m+1) / (m-1))
+
+        return N * _lazywhere(np.atleast_1d(x > -beta), (x, beta, m),
+                              f=rhs, f2=lhs)
 
     def _munp(self, n, beta, m):
         """
         Returns the n-th non-central moment of the crystalball function.
         """
-        N = 1.0 / (m/beta / (m-1) * np.exp(-beta**2 / 2.0) + _norm_pdf_C * _norm_cdf(beta))
+        N = 1.0 / (m/beta / (m-1) * np.exp(-beta**2 / 2.0) +
+                   _norm_pdf_C * _norm_cdf(beta))
 
         def n_th_moment(n, beta, m):
             """
@@ -6901,10 +6920,12 @@ class crystalball_gen(rv_continuous):
             """
             A = (m/beta)**m * np.exp(-beta**2 / 2.0)
             B = m/beta - beta
-            rhs = 2**((n-1)/2.0) * sc.gamma((n+1)/2) * (1.0 + (-1)**n * sc.gammainc((n+1)/2, beta**2 / 2))
+            rhs = (2**((n-1)/2.0) * sc.gamma((n+1)/2) *
+                   (1.0 + (-1)**n * sc.gammainc((n+1)/2, beta**2 / 2)))
             lhs = np.zeros(rhs.shape)
             for k in range(n + 1):
-                lhs += sc.binom(n, k) * B**(n-k) * (-1)**k / (m - k - 1) * (m/beta)**(-m + k + 1)
+                lhs += (sc.binom(n, k) * B**(n-k) * (-1)**k / (m - k - 1) *
+                        (m/beta)**(-m + k + 1))
             return A * lhs + rhs
 
         return N * _lazywhere(np.atleast_1d(n + 1 < m),
