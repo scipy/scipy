@@ -5,6 +5,7 @@ Simplex method for solving linear programming problems
 import numpy as np
 from warnings import warn
 from .optimize import OptimizeResult, OptimizeWarning, _check_unknown_options
+from ._linprog_util import _postsolve
 
 def _pivot_col(T, tol=1.0E-12, bland=False):
     """
@@ -129,8 +130,8 @@ def _apply_pivot(T, basis, pivrow, pivcol, tol=1e-12):
         warn(message, OptimizeWarning)
 
 
-def _solve_simplex(T, n, basis, maxiter=1000, phase=2, callback=None,
-                   tol=1.0E-12, nit0=0, bland=False):
+def _solve_simplex(T, n, basis, maxiter=1000, phase=2, status=0, message='',
+                   callback=None, tol=1.0E-12, nit0=0, bland=False, _T_o=None):
     """
     Solve a linear programming problem in "standard maximization form" using
     the Simplex Method.
@@ -183,7 +184,7 @@ def _solve_simplex(T, n, basis, maxiter=1000, phase=2, callback=None,
         The maximum number of iterations to perform before aborting the
         optimization.
     phase : int
-        The phase of the optimization being executed.  In phase 1 a basic
+        The phase of the optimization being executed. In phase 1 a basic
         feasible solution is sought and the T has an additional row
         representing an alternate objective function.
     callback : callable, optional
@@ -274,14 +275,25 @@ def _solve_simplex(T, n, basis, maxiter=1000, phase=2, callback=None,
                 complete = True
 
         if callback is not None:
-            solution[:] = 0
-            solution[basis[:m]] = T[:m, -1]
-            callback(solution[:n], **{"tableau": T,
-                                      "phase": phase,
-                                      "nit": nit,
-                                      "pivot": (pivrow, pivcol),
-                                      "basis": basis,
-                                      "complete": complete and phase == 2})
+            solution[basis[:n]] = T[:n, -1]
+            x = solution[:m]
+            c, A_ub, b_ub, A_eq, b_eq, bounds, undo = _T_o
+            x, fun, slack, con, _, _ = _postsolve(
+                x, c, A_ub, b_ub, A_eq, b_eq, bounds, undo=undo, tol=tol
+            )
+            res = OptimizeResult({
+                'x': x,
+                'fun': fun,
+                'slack': slack,
+                'con': con,
+                'status': status,
+                'message': message,
+                'nit': nit,
+                'success': status == 0 and complete,
+                'phase': phase,
+                'complete': complete,
+                })
+            callback(res)
 
         if not complete:
             if nit >= maxiter:
@@ -295,7 +307,7 @@ def _solve_simplex(T, n, basis, maxiter=1000, phase=2, callback=None,
 
 
 def _linprog_simplex(c, c0, A, b, maxiter=1000, disp=False, callback=None,
-                     tol=1.0E-12, bland=False, **unknown_options):
+                     tol=1.0E-12, bland=False, _T_o=None, **unknown_options):
     """
     Solve the following linear programming problem via a two-phase
     simplex algorithm.::
@@ -447,7 +459,7 @@ def _linprog_simplex(c, c0, A, b, maxiter=1000, disp=False, callback=None,
     T = np.vstack((row_constraints, row_objective, row_pseudo_objective))
 
     nit1, status = _solve_simplex(T, n, basis, phase=1, callback=callback,
-                                  maxiter=maxiter, tol=tol, bland=bland)
+                                  maxiter=maxiter, tol=tol, bland=bland, _T_o=_T_o)
     # if pseudo objective is zero, remove the last row from the tableau and
     # proceed to phase 2
     if abs(T[-1, -1]) < tol:
@@ -473,7 +485,7 @@ def _linprog_simplex(c, c0, A, b, maxiter=1000, disp=False, callback=None,
         # Phase 2
         nit2, status = _solve_simplex(T, n, basis, maxiter=maxiter,
                                       phase=2, callback=callback, tol=tol,
-                                      nit0=nit1, bland=bland)
+                                      nit0=nit1, bland=bland, _T_o=_T_o)
 
     solution = np.zeros(n + m)
     solution[basis[:n]] = T[:n, -1]

@@ -27,13 +27,14 @@ from scipy.optimize._remove_redundancy import (
     )
 from ._linprog_ip import _linprog_ip
 from ._linprog_simplex import _linprog_simplex
+from ._linprog_util import _postprocess
 
 __all__ = ['linprog', 'linprog_verbose_callback', 'linprog_terse_callback']
 
 __docformat__ = "restructuredtext en"
 
 
-def linprog_verbose_callback(xk, **kwargs):
+def linprog_verbose_callback(res):
     """
     A sample callback function demonstrating the linprog callback interface.
     This callback produces detailed output to sys.stdout before each iteration
@@ -41,64 +42,75 @@ def linprog_verbose_callback(xk, **kwargs):
 
     Parameters
     ----------
-    xk : array_like
-        The current solution vector.
-    **kwargs : dict
-        A dictionary containing the following parameters:
+    res : A `scipy.optimize.OptimizeResult` consisting of the following fields:
 
-        tableau : array_like
-            The current tableau of the simplex algorithm.
-            Its structure is defined in _solve_simplex.
+        x : 1D array
+            The independent variable vector which optimizes the linear
+            programming problem.
+        fun : float
+            Value of the objective function.
+        success : bool
+            True if the algorithm succeeded in finding an optimal solution.
+        slack : 1D array
+            The values of the slack variables.  Each slack variable corresponds
+            to an inequality constraint.  If the slack is zero, then the
+            corresponding constraint is active.
         phase : int
-            The current Phase of the simplex algorithm (1 or 2)
+            The phase of the optimization being executed. In phase 1 a basic
+            feasible solution is sought and the T has an additional row
+            representing an alternate objective function.
+        status : int
+            An integer representing the exit status of the optimization::
+
+                 0 : Optimization terminated successfully
+                 1 : Iteration limit reached
+                 2 : Problem appears to be infeasible
+                 3 : Problem appears to be unbounded
+                 4 : Serious numerical difficulties which could not resolved using
+                     a more robust, albeit less efficient, solver encountered
+
         nit : int
-            The current iteration number.
-        pivot : tuple(int, int)
-            The index of the tableau selected as the next pivot,
-            or nan if no pivot exists
-        basis : array(int)
-            A list of the current basic variables.
-            Each element contains the name of a basic variable and its value.
-        complete : bool
-            True if the simplex algorithm has completed
-            (and this is the final call to callback), otherwise False.
+            The number of iterations performed.
+        message : str
+            A string descriptor of the exit status of the optimization.
     """
-    tableau = kwargs["tableau"]
-    nit = kwargs["nit"]
-    pivrow, pivcol = kwargs["pivot"]
-    phase = kwargs["phase"]
-    basis = kwargs["basis"]
-    complete = kwargs["complete"]
+    x = res['x']
+    fun = res['fun']
+    success = res['success']
+    phase = res['phase']
+    status = res['status']
+    nit = res['nit']
+    message = res['message']
+    complete = res['complete']
 
     saved_printoptions = np.get_printoptions()
     np.set_printoptions(linewidth=500,
                         formatter={'float': lambda x: "{0: 12.4f}".format(x)})
-    if complete:
-        print("--------- Iteration Complete - Phase {0:d} -------\n".format(phase))
-        print("Tableau:")
-    elif nit == 0:
-        print("--------- Initial Tableau - Phase {0:d} ----------\n".format(phase))
-
+    if status:
+        print('--------- Simplex Early Exit -------\n'.format(nit))
+        print('The simplex method exited early with status {0:d}'.format(status))
+        print(message)
+    elif complete:
+        print('--------- Simplex Complete --------\n')
+        print('Iterations required: {}'.format(nit))
     else:
-        print("--------- Iteration {0:d}  - Phase {1:d} --------\n".format(nit, phase))
-        print("Tableau:")
+        print('--------- Iteration {0:d}  ---------\n'.format(nit))
 
-    if nit >= 0:
-        print("" + str(tableau) + "\n")
-        if not complete:
-            print("Pivot Element: T[{0:.0f}, {1:.0f}]\n".format(pivrow, pivcol))
-        print("Basic Variables:", basis)
+    if nit > 0:
+        if phase == 1:
+            print('Current Pseudo-Objective Value:')
+        else:
+            print('Current Objective Value:')
+        print('f = ', fun)
         print()
-        print("Current Solution:")
-        print("x = ", xk)
+        print('Current Solution Vector:')
+        print('x = ', x)
         print()
-        print("Current Objective Value:")
-        print("f = ", -tableau[-1, -1])
-        print()
+
     np.set_printoptions(**saved_printoptions)
 
 
-def linprog_terse_callback(xk, **kwargs):
+def linprog_terse_callback(res):
     """
     A sample callback function demonstrating the linprog callback interface.
     This callback produces brief output to sys.stdout before each iteration
@@ -106,39 +118,45 @@ def linprog_terse_callback(xk, **kwargs):
 
     Parameters
     ----------
-    xk : array_like
-        The current solution vector.
-    **kwargs : dict
-        A dictionary containing the following parameters:
+    res : A `scipy.optimize.OptimizeResult` consisting of the following fields:
 
-        tableau : array_like
-            The current tableau of the simplex algorithm.
-            Its structure is defined in _solve_simplex.
-        vars : tuple(str, ...)
-            Column headers for each column in tableau.
-            "x[i]" for actual variables, "s[i]" for slack surplus variables,
-            "a[i]" for artificial variables, and "RHS" for the constraint
-            RHS vector.
+        x : 1D array
+            The independent variable vector which optimizes the linear
+            programming problem.
+        fun : float
+            Value of the objective function.
+        success : bool
+            True if the algorithm succeeded in finding an optimal solution.
+        slack : 1D array
+            The values of the slack variables.  Each slack variable corresponds
+            to an inequality constraint.  If the slack is zero, then the
+            corresponding constraint is active.
         phase : int
-            The current Phase of the simplex algorithm (1 or 2)
+            The phase of the optimization being executed. In phase 1 a basic
+            feasible solution is sought and the T has an additional row
+            representing an alternate objective function.
+        status : int
+            An integer representing the exit status of the optimization::
+
+                 0 : Optimization terminated successfully
+                 1 : Iteration limit reached
+                 2 : Problem appears to be infeasible
+                 3 : Problem appears to be unbounded
+                 4 : Serious numerical difficulties which could not resolved using
+                     a more robust, albeit less efficient, solver encountered
+
         nit : int
-            The current iteration number.
-        pivot : tuple(int, int)
-            The index of the tableau selected as the next pivot,
-            or nan if no pivot exists
-        basics : list[tuple(int, float)]
-            A list of the current basic variables.
-            Each element contains the index of a basic variable and
-            its value.
-        complete : bool
-            True if the simplex algorithm has completed
-            (and this is the final call to callback), otherwise False.
+            The number of iterations performed.
+        message : str
+            A string descriptor of the exit status of the optimization.
     """
-    nit = kwargs["nit"]
+    nit = res['nit']
+    x = res['x']
+
     if nit == 0:
         print("Iter:   X:")
     print("{0: <5d}   ".format(nit), end="")
-    print(xk)
+    print(x)
 
 
 def _clean_inputs(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None):
@@ -963,168 +981,6 @@ def _get_Abc(c, c0=0, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
     return A, b, c, c0
 
 
-def _postprocess(x, c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
-                 complete=False, undo=[], status=0, message="", tol=1e-8):
-    """
-    Given solution x to presolved, standard form linear program x, add
-    fixed variables back into the problem and undo the variable substitutions
-    to get solution to original linear program. Also, calculate the objective
-    function value, slack in original upper bound constraints, and residuals
-    in original equality constraints.
-
-    Parameters
-    ----------
-    x : 1D array
-        Solution vector to the standard-form problem.
-    c : 1D array
-        Original coefficients of the linear objective function to be minimized.
-    A_ub : 2D array
-        Original upper bound constraint matrix.
-    b_ub : 1D array
-        Original upper bound constraint vector.
-    A_eq : 2D array
-        Original equality constraint matrix.
-    b_eq : 1D array
-        Original equality constraint vector.
-    bounds : sequence of tuples
-        Bounds, as modified in presolve
-    complete : bool
-        Whether the solution is was determined in presolve (``True`` if so)
-    undo: list of tuples
-        (`index`, `value`) pairs that record the original index and fixed value
-        for each variable removed from the problem
-    status : int
-        An integer representing the exit status of the optimization::
-
-             0 : Optimization terminated successfully
-             1 : Iteration limit reached
-             2 : Problem appears to be infeasible
-             3 : Problem appears to be unbounded
-             4 : Serious numerical difficulties which could not resolved using
-                 a more robust, albeit less efficient, solver encountered
-
-    message : str
-        A string descriptor of the exit status of the optimization.
-    tol : float
-        Termination tolerance; see [1]_ Section 4.5.
-
-    Returns
-    -------
-    x : 1D array
-        Solution vector to original linear programming problem
-    fun: float
-        optimal objective value for original problem
-    slack: 1D array
-        The (non-negative) slack in the upper bound constraints, that is,
-        ``b_ub - A_ub * x``
-    con : 1D array
-        The (nominally zero) residuals of the equality constraints, that is,
-        ``b - A_eq * x``
-    status : int
-        An integer representing the exit status of the optimization::
-
-             0 : Optimization terminated successfully
-             1 : Iteration limit reached
-             2 : Problem appears to be infeasible
-             3 : Problem appears to be unbounded
-             4 : Serious numerical difficulties which could not resolved using
-                 a more robust, albeit less efficient, solver encountered
-
-    message : str
-        A string descriptor of the exit status of the optimization.
-
-    """
-    # note that all the inputs are the ORIGINAL, unmodified versions
-    # no rows, columns have been removed
-    # the only exception is bounds; it has been modified
-    # we need these modified values to undo the variable substitutions
-    # in retrospect, perhaps this could have been simplified if the "undo"
-    # variable also contained information for undoing variable substitutions
-
-    n_x = len(c)
-
-    # we don't have to undo variable substitutions for fixed variables that
-    # were removed from the problem
-    no_adjust = set()
-
-    # if there were variables removed from the problem, add them back into the
-    # solution vector
-    if len(undo) > 0:
-        no_adjust = set(undo[0])
-        x = x.tolist()
-        for i, val in zip(undo[0], undo[1]):
-            x.insert(i, val)
-        x = np.array(x)
-
-    # now undo variable substitutions
-    # if "complete", problem was solved in presolve; don't do anything here
-    if not complete and bounds is not None:  # bounds are never none, probably
-        n_unbounded = 0
-        for i, b in enumerate(bounds):
-            if i in no_adjust:
-                continue
-            lb, ub = b
-            if lb is None and ub is None:
-                n_unbounded += 1
-                x[i] = x[i] - x[n_x + n_unbounded - 1]
-            else:
-                if lb is None:
-                    x[i] = ub - x[i]
-                else:
-                    x[i] += lb
-
-    n_x = len(c)
-    x = x[:n_x]  # all the rest of the variables were artificial
-    fun = x.dot(c)
-    slack = b_ub - A_ub.dot(x)  # report slack for ORIGINAL UB constraints
-    # report residuals of ORIGINAL EQ constraints
-    con = b_eq - A_eq.dot(x)
-
-    # Patch for bug #8664. Detecting this sort of issue earlier
-    # (via abnormalities in the indicators) would be better.
-    bounds = np.array(bounds)  # again, this should have been the standard form
-    lb = bounds[:, 0]
-    ub = bounds[:, 1]
-    lb[np.equal(lb, None)] = -np.inf
-    ub[np.equal(ub, None)] = np.inf
-    # Somewhat arbitrary, but status 5 is very unusual
-    tol = np.sqrt(tol) * 10
-
-    def _is_infeasible(con, lb, slack, tol, ub, x):
-        invalid_slack = (slack < -tol).any()
-        invalid_con = (np.abs(con) > tol).any()
-        invalid_lb = (x < lb - tol).any()
-        invalid_ub = (x > ub + tol).any()
-        return invalid_slack or invalid_con or invalid_lb or invalid_ub
-
-    if status == 0 and _is_infeasible(con, lb, slack, tol, ub, x):
-        status = 4
-        message = ("The solution does not satisfy the constraints, yet "
-                   "no errors were raised and there is no certificate of "
-                   "infeasibility or unboundedness. This is known to occur "
-                   "if the `presolve` option is False and the problem is "
-                   "infeasible. If you encounter this under different "
-                   "circumstances, please submit a bug report. Otherwise, "
-                   "please enable presolve.")
-    elif status == 0 and (np.isnan(x).any() or np.isnan(fun) or
-                          np.isnan(slack).any() or np.isnan(con).any()):
-        status = 4
-        message = ("Numerical difficulties were encountered but no errors "
-                   "were raised. This is known to occur if the 'presolve' "
-                   "option is False, 'sparse' is True, and A_eq includes "
-                   "redundant rows. If you encounter this under different "
-                   "circumstances, please submit a bug report. Otherwise, "
-                   "remove linearly dependent equations from your equality "
-                   "constraints or enable presolve.")
-    elif status == 2 and not _is_infeasible(con, lb, slack, tol, ub, x):
-        # Occurs if the simplex method exits after phase one with a very
-        # nearly basic feasible solution. Postsolving can then make the
-        # solution basic. The solution is NOT optimal
-        raise ValueError(message)
-
-    return x, fun, slack, con, status, message
-
-
 def _display_summary(message, status, fun, iteration):
     """
     Print termination summary of the linear progam
@@ -1439,9 +1295,10 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
     if not complete:
         A, b, c, c0 = _get_Abc(c, c0, A_ub, b_ub, A_eq, b_eq, bounds, undo)
+        T_o = (c_o, A_ub_o, b_ub_o, A_eq_o, b_eq_o, bounds, undo)
         if meth == 'simplex':
             x, status, message, iteration = _linprog_simplex(
-                c, c0=c0, A=A, b=b, callback=callback, **solver_options)
+                c, c0=c0, A=A, b=b, callback=callback, _T_o=T_o, **solver_options)
         elif meth == 'interior-point':
             x, status, message, iteration = _linprog_ip(
                 c, c0=c0, A=A, b=b, callback=callback, **solver_options)
@@ -1466,5 +1323,4 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         'message': message,
         'nit': iteration,
         'success': status == 0}
-
     return OptimizeResult(sol)
