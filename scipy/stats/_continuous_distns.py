@@ -6885,8 +6885,7 @@ class crystalball_gen(rv_continuous):
             return ((m/beta)**m * np.exp(-beta**2 / 2.0) *
                     (m/beta - beta - x)**(-m))
 
-        return N * _lazywhere(np.atleast_1d(x > -beta), (x, beta, m),
-                              f=rhs, f2=lhs)
+        return N * _lazywhere(x > -beta, (x, beta, m), f=rhs, f2=lhs)
 
     def _logpdf(self, x, beta, m):
         """
@@ -6918,8 +6917,7 @@ class crystalball_gen(rv_continuous):
             return ((m/beta)**m * np.exp(-beta**2 / 2.0) *
                     (m/beta - beta - x)**(-m+1) / (m-1))
 
-        return N * _lazywhere(np.atleast_1d(x > -beta), (x, beta, m),
-                              f=rhs, f2=lhs)
+        return N * _lazywhere(x > -beta, (x, beta, m), f=rhs, f2=lhs)
 
     def _ppf(self, p, beta, m):
         N = 1.0 / (m/beta / (m-1) * np.exp(-beta**2 / 2.0) +
@@ -6963,8 +6961,7 @@ class crystalball_gen(rv_continuous):
                         (m/beta)**(-m + k + 1))
             return A * lhs + rhs
 
-        return N * _lazywhere(np.atleast_1d(n + 1 < m),
-                              (n, beta, m),
+        return N * _lazywhere(n + 1 < m, (n, beta, m),
                               np.vectorize(n_th_moment, otypes=[np.float]),
                               np.inf)
 
