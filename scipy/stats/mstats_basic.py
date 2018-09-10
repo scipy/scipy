@@ -993,6 +993,7 @@ def ttest_ind(a, b, axis=0, equal_var=True):
         population variances.
         If False, perform Welch's t-test, which does not assume equal population
         variance.
+
         .. versionadded:: 0.17.0
 
     Returns
