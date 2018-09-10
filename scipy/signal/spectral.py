@@ -1135,7 +1135,7 @@ def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
     .. [1] Oppenheim, Alan V., Ronald W. Schafer, John R. Buck
            "Discrete-Time Signal Processing", Prentice Hall, 1999.
     .. [2] Daniel W. Griffin, Jae S. Lim "Signal Estimation from
-           Modified Short Fourier Transform", IEEE 1984,
+           Modified Short-Time Fourier Transform", IEEE 1984,
            10.1109/TASSP.1984.1164317
 
     Examples
@@ -1280,8 +1280,8 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     ----------
     .. [1] Oppenheim, Alan V., Ronald W. Schafer, John R. Buck
            "Discrete-Time Signal Processing", Prentice Hall, 1999.
-    .. [2] Daniel W. Griffin, Jae S. Limdt "Signal Estimation from
-           Modified Short Fourier Transform", IEEE 1984,
+    .. [2] Daniel W. Griffin, Jae S. Lim "Signal Estimation from
+           Modified Short-Time Fourier Transform", IEEE 1984,
            10.1109/TASSP.1984.1164317
 
     Examples
