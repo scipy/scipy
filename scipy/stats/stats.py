@@ -6007,7 +6007,7 @@ def rvs_ratio_uniforms(pdf, umax, vmin, vmax, size=1, c=0, random_state=None):
     is displayed if this ratio is larger than 20.
 
     If the bounding rectangle is not correctly specified (i.e. if it does not
-    contain ``A``, the algorithm samples from a distribution different from
+    contain ``A``), the algorithm samples from a distribution different from
     the one given by the pdf. It is therefore recommended to perform a
     test such as `stats.kstest` as a check.
 
@@ -6034,13 +6034,13 @@ def rvs_ratio_uniforms(pdf, umax, vmin, vmax, size=1, c=0, random_state=None):
     >>> v_bound = np.sqrt(f(np.sqrt(2))) * np.sqrt(2)
     >>> umax, vmin, vmax = np.sqrt(f(0)), -v_bound, v_bound
     >>> np.random.seed(12345)
-    >>> rvs = stats.rvs_ratio_uniforms(f, umax, vmin, vmax, size=2500)
+    >>> rvs = stats.rvs_ratio_uniforms(f, umax, vmin, vmax, size=1500)
 
     The K-S test confirms that the random variates are indeed normally
     distributed (p-value does not reject normality):
 
     >>> stats.kstest(rvs, 'norm')[1]
-    0.373298699196806752
+    0.5092431215510014
 
     The exponential distribution provides another example where the bounding
     rectangle can be determined explicitly.
@@ -6049,7 +6049,7 @@ def rvs_ratio_uniforms(pdf, umax, vmin, vmax, size=1, c=0, random_state=None):
     >>> rvs = stats.rvs_ratio_uniforms(lambda x: np.exp(-x), umax=1,
     ...                                vmin=0, vmax=2*np.exp(-1), size=1000)
     >>> stats.kstest(rvs, 'expon')[1]
-    0.52369231518316373
+    0.928454552559516
 
     Sometimes it can be helpful to use a non-zero shift parameter `c`, see e.g.
     [2]_ above in the case of the generalized inverse Gaussian distribution.
