@@ -50,6 +50,7 @@ import numpy as np
 from scipy import linalg
 from scipy._lib.six import callable, get_method_function, get_function_code
 from scipy.special import xlogy
+from scipy.spatial.distance import cdist, pdist, squareform
 
 __all__ = ['Rbf']
 
@@ -90,17 +91,13 @@ class Rbf(object):
         Values greater than zero increase the smoothness of the
         approximation.  0 is for interpolation (default), the function will
         always go through the nodal points in this case.
-    norm : callable, optional
+    norm : str, callable, optional
         A function that returns the 'distance' between two points, with
         inputs as arrays of positions (x, y, z, ...), and an output as an
-        array of distance.  E.g, the default::
-
-            def euclidean_norm(x1, x2):
-                return sqrt( ((x1 - x2)**2).sum(axis=0) )
-
-        which is called with ``x1 = x1[ndims, newaxis, :]`` and
-        ``x2 = x2[ndims, : ,newaxis]`` such that the result is a matrix of the
-        distances from each point in ``x1`` to each point in ``x2``.
+        array of distance. E.g., the default: 'euclidean', such that the result
+        is a matrix of the distances from each point in ``x1`` to each point in
+        ``x2``. For more options, see documentation of
+        `scipy.spatial.distances.cdist`.
 
     Examples
     --------
@@ -196,12 +193,11 @@ class Rbf(object):
         if not all([x.size == self.di.size for x in self.xi]):
             raise ValueError("All arrays must be equal length.")
 
-        self.norm = kwargs.pop('norm', self._euclidean_norm)
+        self.norm = kwargs.pop('norm', 'euclidean')
         self.epsilon = kwargs.pop('epsilon', None)
         if self.epsilon is None:
             # default epsilon is the "the average distance between nodes" based
             # on a bounding hypercube
-            dim = self.xi.shape[0]
             ximax = np.amax(self.xi, axis=1)
             ximin = np.amin(self.xi, axis=1)
             edges = ximax-ximin
@@ -223,17 +219,11 @@ class Rbf(object):
     def A(self):
         # this only exists for backwards compatibility: self.A was available
         # and, at least technically, public.
-        r = self._call_norm(self.xi, self.xi)
+        r = squareform(pdist(self.xi.T, self.norm))  # Pairwise norm
         return self._init_function(r) - np.eye(self.N)*self.smooth
 
     def _call_norm(self, x1, x2):
-        if len(x1.shape) == 1:
-            x1 = x1[np.newaxis, :]
-        if len(x2.shape) == 1:
-            x2 = x2[np.newaxis, :]
-        x1 = x1[..., :, np.newaxis]
-        x2 = x2[..., np.newaxis, :]
-        return self.norm(x1, x2)
+        return cdist(x1.T, x2.T, self.norm)
 
     def __call__(self, *args):
         args = [np.asarray(x) for x in args]
