@@ -330,20 +330,41 @@ def _linprog_simplex(c, c0, A, b, maxiter=1000, disp=False, callback=None,
     b : 1D array
         1D array of values representing the RHS of each equality constraint
         (row) in ``A_eq``.
+    callback : callable, optional (simplex only)
+        If a callback function is provided, it will be called within each
+        iteration of the simplex algorithm. The callback must require a
+        `scipy.optimize.OptimizeResult` consisting of the following fields:
 
-    callback : callable
-        If a callback function is provide, it will be called within each
-        iteration of the simplex algorithm. The callback must have the
-        signature ``callback(xk, **kwargs)`` where ``xk`` is the current s
-        olution vector and kwargs is a dictionary containing the following::
+            x : 1D array
+                The independent variable vector which optimizes the linear
+                programming problem.
+            fun : float
+                Value of the objective function.
+            success : bool
+                True if the algorithm succeeded in finding an optimal solution.
+            slack : 1D array
+                The values of the slack variables.  Each slack variable
+                corresponds to an inequality constraint. If the slack is zero,
+                the corresponding constraint is active.
+            phase : int
+                The phase of the optimization being executed. In phase 1 a basic
+                feasible solution is sought and the T has an additional row
+                representing an alternate objective function.
+            status : int
+                An integer representing the exit status of the optimization::
 
-        "tableau" : The current Simplex algorithm tableau
-        "nit" : The current iteration.
-        "pivot" : The pivot (row, column) used for the next iteration.
-        "phase" : Whether the algorithm is in Phase 1 or Phase 2.
-        "bv" : A structured array containing a string representation of each
-               basic variable and its current value.
+                     0 : Optimization terminated successfully
+                     1 : Iteration limit reached
+                     2 : Problem appears to be infeasible
+                     3 : Problem appears to be unbounded
+                     4 : Serious numerical difficulties which could not resolved
+                         using a more robust, albeit less efficient, solver
+                         encountered
 
+            nit : int
+                The number of iterations performed.
+            message : str
+                A string descriptor of the exit status of the optimization.
     Options
     -------
     maxiter : int
@@ -439,12 +460,12 @@ def _linprog_simplex(c, c0, A, b, maxiter=1000, disp=False, callback=None,
                 4: "Optimization failed. Singular matrix encountered."}
 
     n, m = A.shape
-    
+
     # All constraints must have b >= 0.
     is_negative_constraint = np.less(b, 0)
     A[is_negative_constraint] *= -1
     b[is_negative_constraint] *= -1
-    
+
     # As all constraints are equality constraints the artifical variables
     # will also be basic variables.
     av = np.arange(n) + m
