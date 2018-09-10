@@ -149,14 +149,15 @@ class Rbf(object):
             if hasattr(self, func_name):
                 self._function = getattr(self, func_name)
             else:
-                functionlist = [x[3:] for x in dir(self) if x.startswith('_h_')]
-                raise ValueError("function must be a callable or one of " +
-                                     ", ".join(functionlist))
+                functionlist = [x[3:] for x in dir(self)
+                                if x.startswith('_h_')]
+                raise ValueError("function must be a callable or one of " 
+                                 + ", ".join(functionlist))
             self._function = getattr(self, "_h_"+self.function)
         elif callable(self.function):
             allow_one = False
             if hasattr(self.function, 'func_code') or \
-                   hasattr(self.function, '__code__'):
+               hasattr(self.function, '__code__'):
                 val = self.function
                 allow_one = True
             elif hasattr(self.function, "im_func"):
@@ -164,7 +165,8 @@ class Rbf(object):
             elif hasattr(self.function, "__call__"):
                 val = get_method_function(self.function.__call__)
             else:
-                raise ValueError("Cannot determine number of arguments to function")
+                raise ValueError("Cannot determine number of arguments to "
+                                 "function")
 
             argcount = get_function_code(val).co_argcount
             if allow_one and argcount == 1:
@@ -177,16 +179,18 @@ class Rbf(object):
                     self._function = new.instancemethod(self.function, self,
                                                         Rbf)
             else:
-                raise ValueError("Function argument must take 1 or 2 arguments.")
+                raise ValueError("Function argument must take 1 or 2 "
+                                 "arguments.")
 
         a0 = self._function(r)
         if a0.shape != r.shape:
-            raise ValueError("Callable must take array and return array of the same shape")
+            raise ValueError("Callable must take array and return array of "
+                             "the same shape")
         return a0
 
     def __init__(self, *args, **kwargs):
         self.xi = np.asarray([np.asarray(a, dtype=np.float_).flatten()
-                           for a in args[:-1]])
+                              for a in args[:-1]])
         self.N = self.xi.shape[-1]
         self.di = np.asarray(args[-1]).flatten()
 
