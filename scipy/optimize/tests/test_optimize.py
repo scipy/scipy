@@ -1007,11 +1007,8 @@ class TestOptimizeScalar(object):
         assert_raises(ValueError, optimize.fminbound, self.fun, 5, 1)
 
     def test_fminbound_scalar(self):
-        try:
+        with pytest.raises(ValueError, match='.*must be scalar.*'):
             optimize.fminbound(self.fun, np.zeros((1, 2)), 1)
-            self.fail("exception not raised")
-        except ValueError as e:
-            assert_('must be scalar' in str(e))
 
         x = optimize.fminbound(self.fun, 1, np.array(5))
         assert_allclose(x, self.solution, atol=1e-6)
