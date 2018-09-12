@@ -147,6 +147,8 @@ Scalar functions
    ridder - Ridder's method.
    bisect - Bisection method.
    newton - Secant method or Newton's method.
+   RootResults - The root finding result returned by some root finders.
+
 
 Fixed point finding:
 
