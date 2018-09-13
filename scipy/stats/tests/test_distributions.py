@@ -3243,7 +3243,7 @@ class TestSubclassingNoShapes(object):
 
     def test_signature_inspection_2args_incorrect_shapes(self):
         # both _pdf and _cdf defined, but shapes are inconsistent: raises
-        assert_raises(TypeError, _distr3_gen, **dict(name='dummy'))
+        assert_raises(TypeError, _distr3_gen, name='dummy')
 
     def test_defaults_raise(self):
         # default arguments should raise
