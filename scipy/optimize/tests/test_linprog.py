@@ -265,7 +265,10 @@ class LinprogCommonTests(object):
         res = linprog(c, A_ub=A_ub, b_ub=b_ub, options=o,
                       method=self.method)
 
-        if self.method == 'simplex'and not self.options.get('bland'):
+        if self.method == 'simplex' and not self.options.get('bland'):
+            _assert_iteration_limit_reached(res, o['maxiter'])
+        elif (self.method == 'revised simplex' and not
+                self.options.get('pivot') == "bland"):
             _assert_iteration_limit_reached(res, o['maxiter'])
         else:
             _assert_success(res, desired_x=[1, 0, 1, 0])
@@ -886,7 +889,8 @@ class LinprogCommonTests(object):
             with pytest.warns(OptimizeWarning):
                 res = linprog(c, A_ub, b_ub, bounds=bounds,
                               method=self.method, options=self.options)
-        elif self.method == 'revised simplex':
+        elif (self.method == 'revised simplex' and
+              self.options.get('pivot') == "bland"):
             res = linprog(c, A_ub, b_ub, bounds=bounds,
                           method=self.method, options=self.options)
             assert_equal(res.status, 4)
@@ -1284,6 +1288,10 @@ class BaseTestLinprogRS(LinprogCommonTests):
 
 class TestLinprogRSCommon(BaseTestLinprogRS):
     options = {}
+
+
+class TestLinprogRSBland(BaseTestLinprogRS):
+    options = {"pivot": "bland"}
 
 
 class TestLinprogIPSpecific(object):

@@ -14,26 +14,29 @@ from ._bglu_dense import BGLU as BGLU
 from scipy.linalg import LinAlgError
 from numpy.linalg.linalg import LinAlgError as LinAlgError2
 
-# todo: fix test_bug_8662. Bug is that auxiliary problem terminates with
+# TODO: fix test_bug_8662. Bug is that auxiliary problem terminates with
 # artificial variable in basis; that is discarded and a linearly depended
 # column is chosen to replace it.
 
-# todo: fix test_bug_6690. Bug is that auxiliary problem terminates with
+# TODO: fix test_bug_6690. Bug is that auxiliary problem terminates with
 # artificial variable in basis; that is discarded and a linearly depended
 # column is chosen to replace it. Regular simplex is successful.
 
-# todo: fix test_bug_7044. Bug is that auxiliary problem terminates with
-# a singular basis. Doesn't happen with small number of updates, but does with exact solve.
+# TODO: fix test_bug_7044. Bug is that auxiliary problem terminates with
+# a singular basis. Doesn't happen with small number of updates, but does with
+# exact solve.
 
-# todo: fix test_bug_5400. Bug is that in iteration 8 pivots to a singular
-# basis. Current default behavior is status 4; better than simplex which is status 2.
-# When perfect solve is used, no error status.
+# TODO: fix test_bug_5400. Bug is that in iteration 8 pivots to a singular
+# basis. Current default behavior is status 4; better than simplex which is
+# status 2. When perfect solve is used, no error status.
 
-# todo: fix test_large_problem. Bug is that in iteration 199 pivots to a singular
-# basis. Doesn't happen with small number of updates.
+# TODO: fix test_large_problem. Bug is that in iteration 199 pivots to a
+# singular basis. Doesn't happen with small number of updates.
+
+# TODO: add display?
 
 
-def _phase_one(A, b, maxiter, tol, maxupdate, mast):
+def _phase_one(A, b, maxiter, tol, maxupdate, mast, pivot):
     """
     The purpose of phase one is to find an initial basic feasible solution
     (BFS) to the original problem.
@@ -55,7 +58,7 @@ def _phase_one(A, b, maxiter, tol, maxupdate, mast):
 
     # solve auxiliary problem
     x, basis, status, iter_k = _phase_two(c, A, x, basis, maxiter,
-                                          tol, maxupdate, mast)
+                                          tol, maxupdate, mast, pivot)
 
     # check for infeasibility
     residual = c.dot(x)
@@ -180,7 +183,7 @@ def _find_nonzero_rows(A, tol):
     return np.any(np.abs(A) > tol, axis=1)
 
 
-def _select_enter_pivot(c_hat, bl, a, rule="bland", tol=1e-9):
+def _select_enter_pivot(c_hat, bl, a, rule="bland", tol=1e-12):
     """
     Selects a pivot to enter the basis. Currently Bland's rule - the smallest
     index that has a negative reduced cost - is the default.
@@ -191,7 +194,7 @@ def _select_enter_pivot(c_hat, bl, a, rule="bland", tol=1e-9):
         return a[~bl][c_hat < -tol][0]
 
 
-def _phase_two(c, A, x, b, maxiter, tol, maxupdate, mast):
+def _phase_two(c, A, x, b, maxiter, tol, maxupdate, mast, pivot):
     """
     The heart of the simplex method. Beginning with a basic feasible solution,
     moves to adjacent basic feasible solutions successively lower reduced cost.
@@ -232,7 +235,7 @@ def _phase_two(c, A, x, b, maxiter, tol, maxupdate, mast):
         if np.all(c_hat >= -tol):  # all reduced costs positive -> terminate
             break
 
-        j = _select_enter_pivot(c_hat, bl, a, tol=tol)
+        j = _select_enter_pivot(c_hat, bl, a, rule=pivot, tol=tol)
         u = B.solve(A[:, j])    # similar to u = solve(B, A[:, j])
 
         i = u > 0               # if there are none, it's unbounded
@@ -255,11 +258,76 @@ def _phase_two(c, A, x, b, maxiter, tol, maxupdate, mast):
 
 
 # FIXME: is maxiter for each phase?
-def _linprog_rs(c, A, b, c0, callback, maxiter=1000, tol=1e-9,
-                maxupdate=10, mast=False, **unknown_options):
+def _linprog_rs(c, c0, A, b, callback=None, maxiter=1000, tol=1e-12,
+                maxupdate=10, mast=False, pivot="mrc", **unknown_options):
     """
-    Performs the two phase simplex method to solve a linear programming
-    problem in standard form.
+    Solve the following linear programming problem via a two-phase
+    revised simplex algorithm.::
+
+        minimize:     c^T @ x
+
+        subject to:  A @ x == b
+                     0 <= x < oo
+
+    Parameters
+    ----------
+    c : 1D array
+        Coefficients of the linear objective function to be minimized.
+    c0 : float
+        Constant term in objective function due to fixed (and eliminated)
+        variables. (Currently unused.)
+    A : 2D array
+        2D array which, when matrix-multiplied by ``x``, gives the values of
+        the equality constraints at ``x``.
+    b : 1D array
+        1D array of values representing the RHS of each equality constraint
+        (row) in ``A_eq``.
+    callback : callable, optional (Currently unused.)
+
+    Options
+    -------
+    maxiter : int
+       The maximum number of iterations to perform in either phase.
+    tol : float
+        The tolerance which determines when a solution is "close enough" to
+        zero in Phase 1 to be considered a basic feasible solution or close
+        enough to positive to serve as an optimal solution.
+    maxupdate : int
+        The maximum number of updates performed on the LU factorization.
+        After this many updates is reached, the basis matrix is factorized
+        from scratch.
+    mast : bool
+        Minimize Amortized Solve Time. If enabled, the average time to solve
+        a linear system using the basis factorization is measured. Typically,
+        the average solve time will decrease with each successive
+        solve after initial factorization, as factorization (and updates) take
+        less time than the solve operation. Eventually, however, the updated
+        factorization becomes sufficiently complex that the average solve time
+        begins to increase. When this is detected, the basis is refactorized
+        from scratch. Enable this option to maximize speed at the risk of
+        nondeterministic behavior. Ignored if ``maxupdate`` is 0.
+    pivot : "mrc" or "bland"
+        Pivot rule: Minimum Reduced Cost (default) or Bland's rule. Choose
+        Bland's rule if iteration limit is reached and cycling is suspected.
+
+    Returns
+    -------
+    x : 1D array
+        Solution vector.
+    status : int
+        An integer representing the exit status of the optimization::
+
+         0 : Optimization terminated successfully
+         1 : Iteration limit reached
+         2 : Problem appears to be infeasible
+         3 : Problem appears to be unbounded
+         4 : Numerical difficulties encountered
+         5 : No constraints; turn presolve on
+
+    message : str
+        A string descriptor of the exit status of the optimization.
+    iteration : int
+        The number of iterations taken to solve the problem.
     """
 
     _check_unknown_options(unknown_options)
@@ -287,10 +355,10 @@ def _linprog_rs(c, A, b, c0, callback, maxiter=1000, tol=1e-9,
 
     x, basis, A, b, residual, status, iteration = _phase_one(A, b, maxiter,
                                                              tol, maxupdate,
-                                                             mast)
+                                                             mast, pivot)
     if status == 0:
         x, basis, status, iteration = _phase_two(c, A, x, basis,
                                                  maxiter, tol, maxupdate,
-                                                 mast)
+                                                 mast, pivot)
 
     return x, status, messages[status].format(residual, tol), iteration
