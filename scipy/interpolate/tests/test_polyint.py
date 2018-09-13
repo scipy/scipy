@@ -534,7 +534,7 @@ class TestCubicSpline(object):
         elif bc_end == 'clamped':
             assert_allclose(S(x[-1], 1), 0, rtol=tol, atol=tol)
         elif bc_end == 'natural':
-            assert_allclose(S(x[-1], 2), 0, rtol=tol, atol=tol)
+            assert_allclose(S(x[-1], 2), 0, rtol=2*tol, atol=2*tol)
         else:
             order, value = bc_end
             assert_allclose(S(x[-1], order), value, rtol=tol, atol=tol)
