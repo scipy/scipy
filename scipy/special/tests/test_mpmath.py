@@ -1709,11 +1709,11 @@ class TestSystematic(object):
         # is thus accurate in only a very small range.
         assert_mpmath_equal(pcfw,
                             mpmath.pcfw,
-                            [Arg(-5, 5), Arg(-5, 5)], rtol=1e-8, n=100)
+                            [Arg(-5, 5), Arg(-5, 5)], rtol=2e-8, n=100)
 
         assert_mpmath_equal(dpcfw,
                             mpmath_dpcfw,
-                            [Arg(-5, 5), Arg(-5, 5)], rtol=1e-9, n=100)
+                            [Arg(-5, 5), Arg(-5, 5)], rtol=2e-9, n=100)
 
     @pytest.mark.xfail(run=False, reason="issues at large arguments (atol OK, rtol not) and <eps-close to z=0")
     def test_polygamma(self):
