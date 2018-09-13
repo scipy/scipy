@@ -9,7 +9,8 @@ Created on Tue Sep  4 15:57:00 2018
 from __future__ import absolute_import
 
 import numpy as np
-from scipy.linalg import solve, lu_solve, lu_factor, solve_triangular, norm
+from scipy.linalg import (solve, lu_solve, lu_factor, solve_triangular,
+                          LinAlgError)
 import time
 
 __all__ = ['LU', 'BGLU']
@@ -54,11 +55,14 @@ def consider_refactor(method):
             # limit error buildup
             too_many_updates = self.updates >= self.max_updates
 
-            refactor_now = (slowing_down or too_many_updates)
+            if self.mast:
+                refactor_now = (slowing_down or too_many_updates)
+            else:
+                refactor_now = too_many_updates
 
             if refactor_now:
                 # update basis indices and factor from scratch
-                print(self.updates, self.solves)
+#                print(self.updates, self.solves)
                 self.update_basis(*args, **kwargs)
                 out = self.refactor()  # time will be recorded
 
@@ -68,6 +72,8 @@ def consider_refactor(method):
             # record the time it took to call the method
             t0 = time.clock()
             out = method(self, *args, **kwargs)
+            if isinstance(out, np.ndarray) and np.any(np.isnan(out)):
+                raise LinAlgError("Nans in output")
             t1 = time.clock()
             self.bglu_time += (t1-t0)
 
@@ -117,7 +123,7 @@ class BGLU(LU):
     Numerische Mathematik 16.5 (1971): 414-434.
     """
 
-    def __init__(self, A, b):
+    def __init__(self, A, b, max_updates=10, mast=False):
         """
         Given matrix A and basis indices b, perform PLU factorization of
         basis matrix B
@@ -125,7 +131,9 @@ class BGLU(LU):
         self.A = A
         self.b = b
         self.m, self.n = A.shape
+        self.max_updates = max_updates  # maximum updates between refactor
         self.refactor()
+        self.mast = mast
 
     @consider_refactor
     def refactor(self):
@@ -143,7 +151,6 @@ class BGLU(LU):
         self.bglu_time = 0  # cumulative time spent updating and solving
         self.solves = 0     # number of solves since refactoring
         self.updates = 0    # number of updates since refactoring
-        self.max_updates = 50  # maximum updates between refactor
         self.average_solve_times = [np.inf, np.inf]  # current and last average solve time
 
     # ideally should time this, too, but I also want to call this
@@ -160,7 +167,7 @@ class BGLU(LU):
         # calculate last column of Hessenberg matrix
         # FIXME: share this calculation with simplex method
         pla = self.A[self.pi, j]
-        um = solve_triangular(self.L, pla, lower = True,
+        um = solve_triangular(self.L, pla, lower=True,
                               check_finite=False, unit_diagonal=True)
         for ops in self.ops_list:
             um = self.perform_ops(um, ops)

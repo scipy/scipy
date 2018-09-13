@@ -16,7 +16,8 @@ from __future__ import absolute_import
 cimport cython
 import numpy as np
 cimport numpy as np
-from scipy.linalg import solve, lu_solve, lu_factor, solve_triangular, norm
+from scipy.linalg import (solve, lu_solve, lu_factor, solve_triangular,
+                          LinAlgError)
 import time
 
 __all__ = ['LU', 'BGLU']
@@ -65,7 +66,10 @@ def _consider_refactor(method):
             # limit error buildup
             too_many_updates = self.updates >= self.max_updates
 
-            refactor_now = (slowing_down or too_many_updates)
+            if self.mast:
+                refactor_now = (slowing_down or too_many_updates)
+            else:
+                refactor_now = too_many_updates
 
             if refactor_now:
                 # update basis indices and factor from scratch
@@ -78,6 +82,8 @@ def _consider_refactor(method):
             # record the time it took to call the method
             t0 = time.clock()
             out = method(self, *args, **kwargs)
+            if isinstance(out, np.ndarray) and np.any(np.isnan(out)):
+                raise LinAlgError("Nans in output")
             t1 = time.clock()
             self.bglu_time += (t1-t0)
 
@@ -144,8 +150,9 @@ cdef class BGLU(LU):
     cdef public int updates
     cdef public int max_updates
     cdef public list average_solve_times
+    cdef public bint mast
 
-    def __init__(self, A, b, max_updates = 20):
+    def __init__(self, A, b, max_updates=10, mast=False):
         """
         Given matrix A and basis indices b, perform PLU factorization of
         basis matrix B
@@ -155,6 +162,7 @@ cdef class BGLU(LU):
         self.m, self.n = A.shape
         self.max_updates = max_updates  # maximum updates between refactor
         self.refactor()
+        self.mast = mast
 
     @_consider_refactor
     def refactor(self):
