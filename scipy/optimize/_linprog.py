@@ -22,6 +22,7 @@ import numpy as np
 from .optimize import OptimizeResult
 from ._linprog_ip import _linprog_ip
 from ._linprog_simplex import _linprog_simplex
+from ._linprog_rs import _linprog_rs
 from ._linprog_util import (
     _parse_linprog, _presolve, _get_Abc, _postprocess
     )
@@ -313,8 +314,13 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     less accurate than that of the simplex method and may not correspond with a
     vertex of the polytope defined by the constraints.
 
-    Before applying either method a presolve procedure based on [8]_ attempts to
-    identify trivial infeasibilities, trivial unboundedness, and potential
+    Method *revised simplex* uses the revised simplex method as decribed in
+    [9], except that a factorization [11] of the basis matrix, rather than its
+    inverse, is efficiently maintained and used to solve the linear systems
+    at each iteration of the algorithm.
+
+    Before applying either method a presolve procedure based on [8]_ attempts
+    to identify trivial infeasibilities, trivial unboundedness, and potential
     problem simplifications. Specifically, it checks for:
 
     - rows of zeros in ``A_eq`` or ``A_ub``, representing trivial constraints;
@@ -386,6 +392,8 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     .. [10] Andersen, Erling D., et al. Implementation of interior point
             methods for large scale linear programming. HEC/Universite de
             Geneve, 1996.
+    .. [11] Bartels, Richard H. "A stabilization of the simplex method."
+            Journal in  Numerische Mathematik 16.5 (1971): 414-434.
 
     Examples
     --------
@@ -466,6 +474,9 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
                 c, c0=c0, A=A, b=b, callback=callback, _T_o=T_o, **solver_options)
         elif meth == 'interior-point':
             x, status, message, iteration = _linprog_ip(
+                c, c0=c0, A=A, b=b, callback=callback, **solver_options)
+        elif meth == 'revised simplex':
+            x, status, message, iteration = _linprog_rs(
                 c, c0=c0, A=A, b=b, callback=callback, **solver_options)
         else:
             raise ValueError('Unknown solver %s' % method)

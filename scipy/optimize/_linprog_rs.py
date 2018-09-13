@@ -7,13 +7,36 @@ Created on Sat Aug 18 22:07:15 2018
 """
 
 import numpy as np
-from scipy.linalg import solve, norm
-#from _bglu_dense import BGLU
-from scipy.optimize._bglu_dense import BGLU
-from scipy.optimize import linprog
+from scipy.linalg import solve
+from .optimize import _check_unknown_options
+#from .bglu_dense_py import BGLU
+#from .bglu_dense_py import LU
+from ._bglu_dense import LU
+from ._bglu_dense import BGLU as BGLU
+from scipy.linalg import LinAlgError
+from numpy.linalg.linalg import LinAlgError as LinAlgError2
+
+# todo: fix test_bug_8662. Bug is that auxiliary problem terminates with
+# artificial variable in basis; that is discarded and a linearly depended
+# column is chosen to replace it.
+
+# todo: fix test_bug_6690. Bug is that auxiliary problem terminates with
+# artificial variable in basis; that is discarded and a linearly depended
+# column is chosen to replace it. Regular simplex is successful.
+
+# todo: fix test_bug_7044. Bug is that auxiliary problem terminates with
+# a singular basis. Doesn't happen with small number of updates, but does with exact solve.
+
+# todo: fix test_bug_5400. Bug is that in iteration 8 pivots to a singular
+# basis. Current default behavior is status 4; better than simplex which is status 2.
+# When perfect solve is used, no error status.
+
+# todo: fix test_large_problem. Bug is that in iteration 199 pivots to a singular
+# basis. Doesn't happen with small number of updates.
 
 
-def _phase_one(A, b, maxiter, tol, maxupdate):
+
+def _phase_one(A, b, maxiter, tol, maxupdate, mast):
     """
     The purpose of phase one is to find an initial basic feasible solution
     (BFS) to the original problem.
@@ -34,7 +57,8 @@ def _phase_one(A, b, maxiter, tol, maxupdate):
     A, b, c, basis, x = _generate_auxiliary_problem(A, b)
 
     # solve auxiliary problem
-    x, basis, status = _phase_two(c, A, x, basis, maxiter, tol, maxupdate)
+    x, basis, status, iter_k = _phase_two(c, A, x, basis, maxiter,
+                                          tol, maxupdate, mast)
 
     # check for infeasibility
     residual = c.dot(x)
@@ -44,13 +68,15 @@ def _phase_one(A, b, maxiter, tol, maxupdate):
 #    if status == 0:
     # detect redundancy
     B = A[:, basis]
-    rank_revealer = solve(B, A[:, :n])
-    z = _find_nonzero_rows(rank_revealer, tol)
+    try:
+        rank_revealer = solve(B, A[:, :n])
+        z = _find_nonzero_rows(rank_revealer, tol)
 
-    # eliminate redundancy
-    A = A[z, :n]
-    b = b[z]
-
+        # eliminate redundancy
+        A = A[z, :n]
+        b = b[z]
+    except (LinAlgError, LinAlgError2):
+        status = 4
     # form solution to original problem
     x = x[:n]
     m = A.shape[0]
@@ -64,7 +90,7 @@ def _phase_one(A, b, maxiter, tol, maxupdate):
         new_basis = a[~bl][:m-len(basis)]
         basis = np.concatenate((basis, new_basis))
 
-    return x, basis, A, b, residual, status
+    return x, basis, A, b, residual, status, iter_k
 
 
 def _generate_auxiliary_problem(A, b):
@@ -118,7 +144,7 @@ def _generate_auxiliary_problem(A, b):
 
     # generate costs to minimize infeasibility
     c = np.zeros(m+n-len(cols))
-    c[basis] = 1
+    c[n+acols] = 1
 
     return A, b, c, basis, x
 
@@ -134,7 +160,9 @@ def _select_singleton_columns(A, b):
     # find indices of all singleton columns and corresponding row indicies
     column_indices = np.nonzero(np.sum(np.abs(A) != 0, axis=0) == 1)[0]
     columns = A[:, column_indices]          # array of singleton columns
-    row_indices = np.nonzero(columns)[0]    # corresponding row indicies
+    row_indices = np.zeros(len(column_indices), dtype = int)
+    nonzero_rows, nonzero_columns = np.nonzero(columns)
+    row_indices[nonzero_columns] = nonzero_rows   # corresponding row indicies
 
     # keep only singletons with entries that have same sign as RHS
     same_sign = A[row_indices, column_indices]*b[row_indices] >= 0
@@ -156,18 +184,18 @@ def _find_nonzero_rows(A, tol):
     return np.any(np.abs(A) > tol, axis=1)
 
 
-def _select_enter_pivot(c_hat, bl, a, rule="bland"):
+def _select_enter_pivot(c_hat, bl, a, rule="bland", tol=1e-9):
     """
     Selects a pivot to enter the basis. Currently Bland's rule - the smallest
     index that has a negative reduced cost - is the default.
     """
     if rule.lower() == "mrc":  # index with minimum reduced cost
         return a[~bl][np.argmin(c_hat)]
-    else:
-        return a[~bl][c_hat < 0][0]  # smallest index w/ negative reduced cost
+    else:  # smallest index w/ negative reduced cost
+        return a[~bl][c_hat < -tol][0]
 
 
-def _phase_two(c, A, x, b, maxiter, tol, maxupdate):
+def _phase_two(c, A, x, b, maxiter, tol, maxupdate, mast):
     """
     The heart of the simplex method. Beginning with a basic feasible solution,
     moves to adjacent basic feasible solutions successively lower reduced cost.
@@ -182,12 +210,15 @@ def _phase_two(c, A, x, b, maxiter, tol, maxupdate):
     """
     m, n = A.shape
     status = 0
-    a = np.arange(n)                # indices of columns of A
-    ab = np.arange(m)               # indices of columns of B
-    B = BGLU(A, b, maxupdate)       # basis matrix factorization object
-                                    # similar to B = A[:, b]
+    a = np.arange(n)                    # indices of columns of A
+    ab = np.arange(m)                   # indices of columns of B
+    if maxupdate:
+        B = BGLU(A, b, maxupdate, mast)  # basis matrix factorization object
+                                         # similar to B = A[:, b]
+    else:
+        B = LU(A, b)
 
-    for k in range(maxiter):
+    for iteration in range(maxiter):
         bl = np.zeros(len(a), dtype=bool)
         bl[b] = 1
 
@@ -195,13 +226,17 @@ def _phase_two(c, A, x, b, maxiter, tol, maxupdate):
         xb = x[b]       # basic variables
         cb = c[b]       # basic costs
 
-        v = B.solve(cb, transposed=True)    # similar to v = solve(B.T, cb)
+        try:
+            v = B.solve(cb, transposed=True)    # similar to v = solve(B.T, cb)
+        except LinAlgError:
+            status = 4
+            break
         c_hat = c[~bl] - v.T.dot(N)         # reduced costs
 
         if np.all(c_hat >= -tol):  # all reduced costs positive -> terminate
             break
 
-        j = _select_enter_pivot(c_hat, bl, a)
+        j = _select_enter_pivot(c_hat, bl, a, tol=tol)
         u = B.solve(A[:, j])    # similar to u = solve(B, A[:, j])
 
         i = u > 0               # if there are none, it's unbounded
@@ -220,15 +255,19 @@ def _phase_two(c, A, x, b, maxiter, tol, maxupdate):
     else:
         status = 1
 
-    return x, b, status
+    return x, b, status, iteration
 
 
 # FIXME: is maxiter for each phase?
-def _linprog_rs(c, A, b, maxiter=1000, tol=1e-9, maxupdate = 20):
+def _linprog_rs(c, A, b, c0, callback, maxiter=1000, tol=1e-9,
+                maxupdate=10, mast=False, **unknown_options):
     """
     Performs the two phase simplex method to solve a linear programming
     problem in standard form.
     """
+
+    _check_unknown_options(unknown_options)
+
     messages = ["Optimization terminated successfully.",
                 "Iteration limit reached.",
                 "The problem appears infeasible, as the phase one auxiliary "
@@ -240,12 +279,25 @@ def _linprog_rs(c, A, b, maxiter=1000, tol=1e-9, maxupdate = 20):
                 "The problem is unbounded, as the simplex algorithm found "
                 "a basic feasible solution from which there is a direction "
                 "with negative reduced cost in which all decision variables "
-                "increase."]
+                "increase.",
+                "Numerical difficulties encountered; consider trying "
+                "method='interior-point'.",
+                "Problems with no constraints are trivially solved; please "
+                "turn presolve on."
+                ]
 
-    x, basis, A, b, residual, status = _phase_one(A, b, maxiter, tol, maxupdate)
+    if A.size == 0:  # address test_unbounded_below_no_presolve_corrected
+        return np.zeros(c.shape), 5, messages[5], 0
+
+    x, basis, A, b, residual, status, iteration = _phase_one(A, b, maxiter,
+                                                             tol, maxupdate,
+                                                             mast)
     if status == 0:
-        x, basis, status = _phase_two(c, A, x, basis, maxiter, tol, maxupdate)
-    return x, status, messages[status].format(residual, tol)
+        x, basis, status, iteration = _phase_two(c, A, x, basis,
+                                                 maxiter, tol, maxupdate,
+                                                 mast)
+
+    return x, status, messages[status].format(residual, tol), iteration
 
 #c = np.array([-10, -12, -12, 0, 0, 0])
 #b = np.array([20, 20, 20])
@@ -277,29 +329,29 @@ def _linprog_rs(c, A, b, maxiter=1000, tol=1e-9, maxupdate = 20):
 def myrand(shape, scale):
     return np.random.rand(*shape)*scale - scale/2
 #
-m = 10
-n = round(2*m)
-scale = 100
-c = myrand((n,), scale)
-A = myrand((m,n), scale)
-b = myrand((m,), scale)
-#A[5] = A[2] + A[3]
-#A[6] = A[2] + A[4]
-
-#A[:, 15] = 0
-#A[5, 15] = 1
-#A[:, 16] = 0
-#A[5, 16] = 1
-#A[:, 17] = 0
-#A[6, 17] = 1
-
-x, status, message = _linprog_rs(c, A, b, maxiter = 1000)
-
-print(x)
-print(message)
-
-res = linprog(c, A_eq = A, b_eq = b, method = "simplex")
-print(res.x)
-print(res.message)
-
-print(norm(x - res.x))
+#m = 10
+#n = round(2*m)
+#scale = 100
+#c = myrand((n,), scale)
+#A = myrand((m,n), scale)
+#b = myrand((m,), scale)
+##A[5] = A[2] + A[3]
+##A[6] = A[2] + A[4]
+#
+##A[:, 15] = 0
+##A[5, 15] = 1
+##A[:, 16] = 0
+##A[5, 16] = 1
+##A[:, 17] = 0
+##A[6, 17] = 1
+#
+#x, status, message, iteration = _linprog_rs(c, A, b, maxiter = 1000)
+#
+#print(x)
+#print(message)
+#
+#res = linprog(c, A_eq = A, b_eq = b, method = "simplex")
+#print(res.x)
+#print(res.message)
+#
+#print(norm(x - res.x))
