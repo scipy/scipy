@@ -103,7 +103,7 @@ class TestTrimmedStats(object):
             assert_raises(ValueError, stats.tmin, x, nan_policy='raise')
             assert_raises(ValueError, stats.tmin, x, nan_policy='foobar')
             msg = "'propagate', 'raise', 'omit'"
-            with assert_raises(ValueError, message=msg):
+            with assert_raises(ValueError, match=msg):
                 stats.tmin(x, nan_policy='foo')
 
     def test_tmax(self):

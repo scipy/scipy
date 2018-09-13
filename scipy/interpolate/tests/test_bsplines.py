@@ -626,9 +626,9 @@ class TestInterop(object):
             _impl.splrep(x, y2)
 
         # input below minimum size
-        with assert_raises(TypeError, message="m > k must hold"):
+        with assert_raises(TypeError, match="m > k must hold"):
             splrep(x[:3], y[:3])
-        with assert_raises(TypeError, message="m > k must hold"):
+        with assert_raises(TypeError, match="m > k must hold"):
             _impl.splrep(x[:3], y[:3])
 
     def test_splprep(self):
@@ -649,30 +649,30 @@ class TestInterop(object):
     def test_splprep_errors(self):
         # test that both "old" and "new" code paths raise for x.ndim > 2
         x = np.arange(3*4*5).reshape((3, 4, 5))
-        with assert_raises(ValueError, message="too many values to unpack"):
+        with assert_raises(ValueError, match="too many values to unpack"):
             splprep(x)
-        with assert_raises(ValueError, message="too many values to unpack"):
+        with assert_raises(ValueError, match="too many values to unpack"):
             _impl.splprep(x)
 
         # input below minimum size
         x = np.linspace(0, 40, num=3)
-        with assert_raises(TypeError, message="m > k must hold"):
+        with assert_raises(TypeError, match="m > k must hold"):
             splprep([x])
-        with assert_raises(TypeError, message="m > k must hold"):
+        with assert_raises(TypeError, match="m > k must hold"):
             _impl.splprep([x])
 
         # automatically calculated parameters are non-increasing
         # see gh-7589
         x = [-50.49072266, -50.49072266, -54.49072266, -54.49072266]
-        with assert_raises(ValueError, message="Invalid inputs"):
+        with assert_raises(ValueError, match="Invalid inputs"):
             splprep([x])
-        with assert_raises(ValueError, message="Invalid inputs"):
+        with assert_raises(ValueError, match="Invalid inputs"):
             _impl.splprep([x])
 
         # given non-increasing parameter values u
         x = [1, 3, 2, 4]
         u = [0, 0.3, 0.2, 1]
-        with assert_raises(ValueError, message="Invalid inputs"):
+        with assert_raises(ValueError, match="Invalid inputs"):
             splprep(*[[x], None, u])
 
     def test_sproot(self):
