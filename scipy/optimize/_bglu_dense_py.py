@@ -62,7 +62,6 @@ def consider_refactor(method):
 
             if refactor_now:
                 # update basis indices and factor from scratch
-#                print(self.updates, self.solves)
                 self.update_basis(*args, **kwargs)
                 out = self.refactor()  # time will be recorded
 
@@ -183,7 +182,7 @@ class BGLU(LU):
         self.U = H
 
     @consider_refactor
-    def solve(self, q, transposed = False):
+    def solve(self, q, transposed=False):
         """
         Solve B @ v = q efficiently using factorization
         """
@@ -196,7 +195,7 @@ class BGLU(LU):
                                 # "inessential assumption" of no permutation
 
                 # Equation 5.16
-                t = solve_triangular(self.L, q, lower = True,
+                t = solve_triangular(self.L, q, lower=True,
                                      check_finite=False, unit_diagonal=True)
 
                 # Equation 5.17
@@ -210,14 +209,14 @@ class BGLU(LU):
                 v = solve_triangular(self.U.T, w, lower=True,
                                      trans=True, check_finite=False)
 
-            else: # do everything transposed and in reverse order
+            else:  # do everything transposed and in reverse order
                 t = solve_triangular(self.U.T, q, lower=True,
                                      trans=False, check_finite=False)
                 temp = t
                 for ops in reversed(self.ops_list):
-                    temp = self.perform_ops(temp, ops, reverse = True)
+                    temp = self.perform_ops(temp, ops, reverse=True)
                 w = temp
-                v = solve_triangular(self.L, w, lower = True, trans=True,
+                v = solve_triangular(self.L, w, lower=True, trans=True,
                                      check_finite=False, unit_diagonal=True)
                 v = v[self.pit]
 
@@ -239,7 +238,7 @@ class BGLU(LU):
         multiple of row i; represents matrix product by matrix 5.10. Returns
         factor g for storage.
         """
-        g = H[i+1, i]/H[i,i]
+        g = H[i+1, i]/H[i, i]
         H[i+1, i:] -= g*H[i, i:]
         return g
 
@@ -252,7 +251,7 @@ class BGLU(LU):
         m = H.shape[1]
         ops = []
         for k in range(i, m-1):
-            piv1, piv2 = np.abs(H[k:k+2,k])
+            piv1, piv2 = np.abs(H[k:k+2, k])
             swap = piv1 < piv2
             # swap rows to ensure |g| <= 1
             if swap:
@@ -261,7 +260,7 @@ class BGLU(LU):
             ops.append((swap, g))  # record elementary row operations
         return ops
 
-    def perform_ops(self, y, ops, reverse = False):
+    def perform_ops(self, y, ops, reverse=False):
         """
         Replays operations needed to convert Hessenberg matrix into upper
         triangular form on a vector y. Equivalent to matrix multlication by
@@ -292,28 +291,3 @@ class BGLU(LU):
         for i, row in enumerate(p):
             pi[i], pi[row] = pi[row], pi[i]
         return pi
-
-def testlu(m = 5000, n_updates = 20, seed = 0, transposed = False, bglu = False):
-    np.random.seed(seed)
-
-    n = m*2
-    A = np.random.rand(m, n)
-    b = np.arange(m)
-    v = np.random.rand(m)
-
-    if bglu:
-        myLU = BGLU(A, b.copy())
-    else:
-        myLU = LU(A, b.copy())
-    x0 = myLU.solve(v, transposed)
-
-    iz = np.random.permutation(np.arange(m))[:n_updates]
-    jz = np.random.permutation(np.arange(m, n))[:n_updates]
-
-    for i, j in zip(iz, jz):
-        v = np.random.rand(m)
-        myLU.update(i, j)
-        x0 = myLU.solve(v, transposed)
-    return x0
-
-#testlu(5000, bglu = True)

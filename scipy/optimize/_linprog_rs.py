@@ -9,8 +9,6 @@ Created on Sat Aug 18 22:07:15 2018
 import numpy as np
 from scipy.linalg import solve
 from .optimize import _check_unknown_options
-#from .bglu_dense_py import BGLU
-#from .bglu_dense_py import LU
 from ._bglu_dense import LU
 from ._bglu_dense import BGLU as BGLU
 from scipy.linalg import LinAlgError
@@ -33,7 +31,6 @@ from numpy.linalg.linalg import LinAlgError as LinAlgError2
 
 # todo: fix test_large_problem. Bug is that in iteration 199 pivots to a singular
 # basis. Doesn't happen with small number of updates.
-
 
 
 def _phase_one(A, b, maxiter, tol, maxupdate, mast):
@@ -65,7 +62,6 @@ def _phase_one(A, b, maxiter, tol, maxupdate, mast):
     if status == 0 and residual > tol:
         status = 2
 
-#    if status == 0:
     # detect redundancy
     B = A[:, basis]
     try:
@@ -128,8 +124,8 @@ def _generate_auxiliary_problem(A, b):
 
     acols = np.arange(m-len(cols))          # indices of auxiliary columns
     arows = np.delete(np.arange(m), rows)   # indices of corresponding rows,
-                                            #  that is, the row in each aux
-                                            #  column with nonzero entry
+                                            # that is, the row in each aux
+                                            # column with nonzero entry
 
     basis = np.concatenate((cols, n + acols))   # all initial basis columns
     basis_rows = np.concatenate((rows, arows))  # all intial basis rows
@@ -160,7 +156,7 @@ def _select_singleton_columns(A, b):
     # find indices of all singleton columns and corresponding row indicies
     column_indices = np.nonzero(np.sum(np.abs(A) != 0, axis=0) == 1)[0]
     columns = A[:, column_indices]          # array of singleton columns
-    row_indices = np.zeros(len(column_indices), dtype = int)
+    row_indices = np.zeros(len(column_indices), dtype=int)
     nonzero_rows, nonzero_columns = np.nonzero(columns)
     row_indices[nonzero_columns] = nonzero_rows   # corresponding row indicies
 
@@ -213,8 +209,8 @@ def _phase_two(c, A, x, b, maxiter, tol, maxupdate, mast):
     a = np.arange(n)                    # indices of columns of A
     ab = np.arange(m)                   # indices of columns of B
     if maxupdate:
-        B = BGLU(A, b, maxupdate, mast)  # basis matrix factorization object
-                                         # similar to B = A[:, b]
+        B = BGLU(A, b, maxupdate, mast)     # basis matrix factorization object
+                                            # similar to B = A[:, b]
     else:
         B = LU(A, b)
 
@@ -298,60 +294,3 @@ def _linprog_rs(c, A, b, c0, callback, maxiter=1000, tol=1e-9,
                                                  mast)
 
     return x, status, messages[status].format(residual, tol), iteration
-
-#c = np.array([-10, -12, -12, 0, 0, 0])
-#b = np.array([20, 20, 20])
-#A = np.array([[1, 2, 2, 1, 0, 0], [2, 1, 2, 0, 1, 0], [2, 2, 1, 0, 0, 1]])
-#x = np.array([0, 0, 0, 20, 20, 20])
-#basis = np.array([3, 4, 5])
-
-#c = np.array([-3/4, 20, -1/2, 6, 0, 0, 0])
-#b = np.array([0, 0, 1])
-#A = np.array([[1/4, -8, -1, 9, 1, 0, 0],
-#              [1/2, -12, -1/2, 3, 0, 1, 0],
-#              [0, 0, 1, 0, 0, 0, 1]], dtype=float)
-#x = np.array([0, 0, 0, 0, 0, 0, 1], dtype=float)
-#basis = np.array([4, 5, 6])
-
-#c = np.array([1, 1, 1, 0])
-#b = np.array([3, 2, 1])
-#A = np.array([[1, 2, 3, 0],
-#              [-1, 2, 6, 0],
-#              [0, 0, 3, 1]])
-
-#c = np.array([1, 1, 1, 0])
-#b = np.array([3, 2, 5, 1])
-#A = np.array([[1, 2, 3, 0],
-#              [-1, 2, 6, 0],
-#              [0, 4, 9, 0],
-#              [0, 0, 3, 1]])
-
-def myrand(shape, scale):
-    return np.random.rand(*shape)*scale - scale/2
-#
-#m = 10
-#n = round(2*m)
-#scale = 100
-#c = myrand((n,), scale)
-#A = myrand((m,n), scale)
-#b = myrand((m,), scale)
-##A[5] = A[2] + A[3]
-##A[6] = A[2] + A[4]
-#
-##A[:, 15] = 0
-##A[5, 15] = 1
-##A[:, 16] = 0
-##A[5, 16] = 1
-##A[:, 17] = 0
-##A[6, 17] = 1
-#
-#x, status, message, iteration = _linprog_rs(c, A, b, maxiter = 1000)
-#
-#print(x)
-#print(message)
-#
-#res = linprog(c, A_eq = A, b_eq = b, method = "simplex")
-#print(res.x)
-#print(res.message)
-#
-#print(norm(x - res.x))
