@@ -191,8 +191,9 @@ class BGLU(LU):
             v = lu_solve(self.plu, q, trans=transposed)
         else:
             if not transposed:
-                q = q[self.pi]  # paper skips this by making
-                                # "inessential assumption" of no permutation
+                # paper skips this by making "inessential assumption" of
+                # no permutation
+                q = q[self.pi]
 
                 # Equation 5.16
                 t = solve_triangular(self.L, q, lower=True,
