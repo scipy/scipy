@@ -960,19 +960,16 @@ class LinprogCommonTests(object):
             0.5000, 0.4700, 0.0900, 0.3200, -0.7300
         ])
 
-        if self.method == "revised simplex":
-            assert_equal(res.status, 4)
-        else:
-            _assert_success(
-                res,
-                desired_fun=desired_fun,
-                desired_x=desired_x
-            )
+        _assert_success(
+            res,
+            desired_fun=desired_fun,
+            desired_x=desired_x
+        )
 
-            # Add small tol value to ensure arrays are less than or equal.
-            atol = 1e-6
-            assert_array_less(bounds[:, 0] - atol, res.x)
-            assert_array_less(res.x, bounds[:, 1] + atol)
+        # Add small tol value to ensure arrays are less than or equal.
+        atol = 1e-6
+        assert_array_less(bounds[:, 0] - atol, res.x)
+        assert_array_less(res.x, bounds[:, 1] + atol)
 
     def test_bug_7044(self):
         # linprog fails to identify correct constraints with simplex method
@@ -1106,12 +1103,8 @@ class LinprogCommonTests(object):
             res2 = linprog(c, A, b, bounds=bounds, method=self.method,
                            options=self.options)
         rtol = 1e-5
-        if self.method == "revised simplex":
-            assert_equal(res1.status, 4)
-            assert_equal(res2.status, 4)
-        else:
-            _assert_success(res1, desired_fun=desired_fun, rtol=rtol)
-            _assert_success(res2, desired_fun=desired_fun, rtol=rtol)
+        _assert_success(res1, desired_fun=desired_fun, rtol=rtol)
+        _assert_success(res2, desired_fun=desired_fun, rtol=rtol)
 
     def test_bug_8663(self):
         A = [[0, -7]]
