@@ -6,7 +6,7 @@ Created on Tue Sep  4 15:57:00 2018
 @author: matthaberland
 """
 
-from __future__ import absolute_import
+from __future__ import division, absolute_import, print_function
 
 import numpy as np
 from scipy.linalg import (solve, lu_solve, lu_factor, solve_triangular,
