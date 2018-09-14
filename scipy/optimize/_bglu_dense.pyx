@@ -5,13 +5,10 @@ Created on Tue Sep  4 15:57:00 2018
 
 @author: matthaberland
 """
-# cython: linetrace=True
-# cython: binding=True
 
-# TODO: cdef for member function returns? bool? void?
-# TODO: fix swap being a double
+# TODO: fix swap being a double?
 
-from __future__ import absolute_import
+from __future__ import division, absolute_import, print_function
 
 cimport cython
 import numpy as np
