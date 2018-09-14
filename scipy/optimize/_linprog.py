@@ -315,7 +315,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     vertex of the polytope defined by the constraints.
 
     Method *revised simplex* uses the revised simplex method as decribed in
-    [9], except that a factorization [11] of the basis matrix, rather than its
+    [9]_, except that a factorization [11]_ of the basis matrix, rather than its
     inverse, is efficiently maintained and used to solve the linear systems
     at each iteration of the algorithm.
 
