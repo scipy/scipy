@@ -23,7 +23,6 @@ ctypedef struct test_params:
 NUM_OF_IRRAD = 10
 IL = [sin(il) + 6.0 for il in range(NUM_OF_IRRAD)]
 ARGS = (1e-09, 0.004, 10.0, 0.27456)
-TOL, MAXITER = 1.48e-8, 50
 XTOL, RTOL, MITR = 0.001, 0.001, 10
 
 
@@ -42,88 +41,6 @@ cdef double f_solarcell(double i, void *args):
     vt = myargs.thermal_voltage
     vd = v + i * rs
     return il - io * (exp(vd / vt) - 1.0) - vd / rsh - i
-
-
-@cython.cdivision(True)
-cdef double fprime(double i, void *args):
-    cdef test_params *myargs = <test_params *> args
-    cdef double v, il, io, rs, rsh, vt
-    # unpack structure
-    v = myargs.voltage
-    il = myargs.light_current
-    io = myargs.dark_current
-    rs = myargs.series_resistance
-    rsh = myargs.shunt_resistance
-    vt = myargs.thermal_voltage
-    return -io * exp((v + i * rs) / vt) * rs / vt - rs / rsh - 1
-
-
-@cython.cdivision(True)
-cdef double fprime2(double i, void *args):
-    cdef test_params *myargs = <test_params *> args
-    cdef double v, il, io, rs, rsh, vt
-    # unpack structure
-    v = myargs.voltage
-    il = myargs.light_current
-    io = myargs.dark_current
-    rs = myargs.series_resistance
-    rsh = myargs.shunt_resistance
-    vt = myargs.thermal_voltage
-    return -io * exp((v + i * rs) / vt) * (rs / vt)**2
-
-
-# cython newton solver
-cdef double solarcell_newton(tuple args):
-    cdef test_params myargs
-    myargs.voltage = args[0]
-    myargs.light_current = args[1]
-    myargs.dark_current = args[2]
-    myargs.series_resistance = args[3]
-    myargs.shunt_resistance = args[4]
-    myargs.thermal_voltage = args[5]
-    return zeros_struct.newton(f_solarcell, 6.0, fprime, <test_params *> &myargs, TOL, MAXITER, NULL)
-
-
-# test cython newton solver in a loop
-def test_cython_newton(v=5.25, il=IL, args=ARGS):
-    """test newton with array"""
-    return map(solarcell_newton, ((v, il_,) + args for il_ in il))
-
-
-# cython secant solver
-cdef double solarcell_secant(tuple args):
-    cdef test_params myargs
-    myargs.voltage = args[0]
-    myargs.light_current = args[1]
-    myargs.dark_current = args[2]
-    myargs.series_resistance = args[3]
-    myargs.shunt_resistance = args[4]
-    myargs.thermal_voltage = args[5]
-    return zeros_struct.secant(f_solarcell, 6.0, <test_params *> &myargs, TOL, MAXITER, NULL)
-
-
-# test cython secant solver in a loop
-def test_cython_secant(v=5.25, il=IL, args=ARGS):
-    """test secant with array"""
-    return map(solarcell_secant, ((v, il_,) + args for il_ in il))
-
-
-# cython halley solver
-cdef double solarcell_halley(tuple args):
-    cdef test_params myargs
-    myargs.voltage = args[0]
-    myargs.light_current = args[1]
-    myargs.dark_current = args[2]
-    myargs.series_resistance = args[3]
-    myargs.shunt_resistance = args[4]
-    myargs.thermal_voltage = args[5]
-    return zeros_struct.halley(f_solarcell, 6.0, fprime, <test_params *> &myargs, TOL, MAXITER, fprime2, NULL)
-
-
-# test cython halley solver in a loop
-def test_cython_halley(v=5.25, il=IL, args=ARGS):
-    """test halley with array"""
-    return map(solarcell_halley, ((v, il_,) + args for il_ in il))
 
 
 # cython bisect solver

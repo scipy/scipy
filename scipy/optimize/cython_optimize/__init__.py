@@ -1,14 +1,15 @@
 """
 Cython Optimize Zeros API
 =========================
-This package contains a Cython API for the root finding scalar functions in
-:py:mod:`scipy.optimize` to obtain efficient pure C implementations, although
-faster execution is not guaranteed. For example the Cython Optimize Zeros API
-could be used for native C looping or with Cython ``prange`` for efficient
-execution of large arrays of inputs with the same callbacks. The Cython
-Optimize Zeros API can be imported into Cython code using the following::
+This package contains a Cython API for some of the root finding scalar
+functions in :py:mod:`scipy.optimize` to obtain efficient pure C
+implementations, although faster execution is not guaranteed. For example the
+Cython Optimize Zeros API could be used for native C looping or with Cython
+``prange`` for efficient execution of large arrays of inputs with the same
+callbacks. The Cython Optimize Zeros API can be imported into Cython code using
+the following::
 
-    cimport scipy.optimize.cython_optimize as coz
+    from scipy.optimize cimport cython_optimize
 
 Callback Signatures
 -------------------
@@ -67,83 +68,19 @@ This module can be imported using the following::
 
 Available Functions
 -------------------
-There are seven available functions which are all implemented in pure C and
+There are four available functions which are all implemented in pure C and
 exposed in modules matching the expected callback signature. These root-finding
 functions correspond to the functions available in ``scipy.optimize.zeros``.
 
-- :py:func:`~scipy.optimize.newton`
 - :py:func:`~scipy.optimize.bisect`
 - :py:func:`~scipy.optimize.ridder`
 - :py:func:`~scipy.optimize.brenth`
 - :py:func:`~scipy.optimize.brentq`
 
-Note, in :py:mod:`~scipy.optimize.cython_optimize`, Secant and Halley are
-separate from Newton. This differs from ``scipy.optimize.zeros`` in which they
-are all grouped into a single function, and differentiated by the presence of
-``fprime`` and ``fprime2``.
-
 :py:mod:`~scipy.optimize.cython_optimize.zeros_struct`
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 This module exposes root finders expecting extra arguments in a native C
 ``struct``. See examples for usage.
-
-- ``cython_optimize.zeros_struct.newton``
-
-  .. py:function:: scipy.optimize.cython_optimize.zeros_struct.newton(func, x0, fprime, args, tol, maxiter, full_ouptput)
-
-     Similar to :py:func:`~scipy.optimize.newton` with two callbacks, ``func``
-     and ``fprime``, that take a double and a native C ``struct`` ::
-
-         double newton(callback_type func, double x0, callback_type fprime, void* args,
-                       double tol, int maxiter, scipy_newton_parameters *full_output)
-
-     :param callback_type func: the callback function
-     :param double x0: the initial guess
-     :param callback_type fprime: the first derivative of the callback
-     :param void* args: a ``struct`` of extra parameters
-     :param double tol: exit tolerance
-     :param int maxiter: maximum number of iterations
-     :param scipy_newton_parameters* full_output: optional output ``struct``, use ``NULL`` if not desired
-     :returns: double
-
-- ``cython_optimize.zeros_struct.secant``
-
-  .. py:function:: scipy.optimize.cython_optimize.zeros_struct.secant(func, x0, args, tol, maxiter, full_ouptput)
-
-     Similar to :py:func:`~scipy.optimize.newton` with one callback, ``func``,
-     that takes a double and a native C ``struct`` ::
-
-         double secant(callback_type func, double x0, void* args,
-                       double tol, int maxiter, scipy_newton_parameters *full_output)
-
-     :param callback_type func: the callback function
-     :param double x0: the initial guess
-     :param void* args: a ``struct`` of extra parameters
-     :param double tol: exit tolerance
-     :param int maxiter: maximum number of iterations
-     :param scipy_newton_parameters* full_output: optional output ``struct``, use ``NULL`` if not desired
-     :returns: double
-
-- ``cython_optimize.zeros_struct.halley``
-
-  .. py:function:: scipy.optimize.cython_optimize.zeros_struct.halley(func, x0, fprime, args, tol, maxiter, fprime2, full_ouptput)
-
-     Similar to :py:func:`~scipy.optimize.newton` with three callbacks,
-     ``func``, ``fprime``, and ``fprime2``, that each takes a double and a
-     native C ``struct`` ::
-
-         double halley(callback_type func, double x0, callback_type fprime, void* args,
-                       double tol, int maxiter, callback_type fprime2, scipy_newton_parameters *full_output)
-
-     :param callback_type func: the callback function
-     :param double x0: the initial guess
-     :param callback_type fprime: the first derivative of the callback
-     :param void* args: a ``struct`` of extra parameters
-     :param double tol: exit tolerance
-     :param int maxiter: maximum number of iterations
-     :param callback_type fprime2: the second derivative of the callback
-     :param scipy_newton_parameters* full_output: optional output ``struct``, use ``NULL`` if not desired
-     :return: double
 
 - ``cython_optimize.zeros_struct.bisect``
 
@@ -229,67 +166,6 @@ This module exposes root finders expecting extra arguments in a native C
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Exposes root finders expecting extra arguments in a native C array of doubles.
 See examples for usage.
-
-- ``cython_optimize.zeros_array.newton``
-
-  .. py:function:: scipy.optimize.cython_optimize.zeros_array.newton(func, x0, fprime, n, args, tol, maxiter, full_ouptput)
-
-     Similar to :py:func:`~scipy.optimize.newton` with two callbacks, ``func``
-     and ``fprime``, that take an integer and an array of doubles ::
-
-         double newton(callback_type_array func, double x0, callback_type_array fprime, int n, double* args,
-                       double tol, int maxiter, scipy_newton_parameters *full_output)
-
-     :param callback_type_array func: the callback function
-     :param double x0: the initial guess
-     :param callback_type_array fprime: the first derivative of the callback
-     :param int n: the number of extra parameters
-     :param double* args: an array of extra parameters, max size of 10
-     :param double tol: exit tolerance
-     :param int maxiter: maximum number of iterations
-     :param scipy_newton_parameters* full_output: optional output ``struct``, use ``NULL`` if not desired
-     :returns: double
-
-- ``cython_optimize.zeros_array.secant``
-
-  .. py:function:: scipy.optimize.cython_optimize.zeros_array.secant(func, x0, n, args, tol, maxiter, full_ouptput)
-
-     Similar to :py:func:`~scipy.optimize.newton` with one callback, ``func``,
-     that takes an integer and an array of doubles ::
-
-        double secant(callback_type_array func, double x0, int n, double* args,
-                      double tol, int maxiter, scipy_newton_parameters *full_output)
-
-     :param callback_type_array func: the callback function
-     :param double x0: the initial guess
-     :param int n: the number of extra parameters
-     :param double* args: an array of extra parameters, max size of 10
-     :param double tol: exit tolerance
-     :param int maxiter: maximum number of iterations
-     :param scipy_newton_parameters* full_output: optional output ``struct``, use ``NULL`` if not desired
-     :returns: double
-
-- ``cython_optimize.zeros_array.halley``
-
-  .. py:function:: scipy.optimize.cython_optimize.zeros_array.halley(func, x0, fprime, n, args, tol, maxiter, fprime2, full_ouptput)
-
-     Similar to :py:func:`~scipy.optimize.newton` with three callbacks,
-     ``func``, ``fprime``, and ``fprime2``, that each takes an integer and an
-     array of doubles ::
-
-        double halley(callback_type_array func, double x0, callback_type_array fprime, int n, double* args,
-                      double tol, int maxiter, callback_type_array fprime2, scipy_newton_parameters *full_output)
-
-     :param callback_type_array func: the callback function
-     :param double x0: the initial guess
-     :param callback_type_array fprime: the first derivative of the callback
-     :param int n: the number of extra parameters
-     :param double* args: an array of extra parameters, max size of 10
-     :param double tol: exit tolerance
-     :param int maxiter: maximum number of iterations
-     :param callback_type_array fprime2: the second derivative of the callback
-     :param scipy_newton_parameters* full_output: optional output ``struct``, use ``NULL`` if not desired
-     :returns: double
 
 - ``cython_optimize.zeros_array.bisect``
 
@@ -379,64 +255,6 @@ See examples for usage.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Exposes root finders expecting extra arguments in a Python tuple.
 
-- ``cython_optimize.zeros_tuple.newton``
-
-  .. py:function:: scipy.optimize.cython_optimize.zeros_tuple.newton(func, x0, fprime, args, tol, maxiter, full_ouptput)
-
-     Similar to :py:func:`~scipy.optimize.newton` with two callbacks, ``func``
-     and ``fprime``, that take a double and a Python tuple ::
-
-        double newton(callback_type_tuple func, double x0, callback_type_tuple fprime, tuple args,
-                      double tol, int maxiter, scipy_newton_parameters *full_output)
-
-     :param callback_type_tuple func: the callback function
-     :param double x0: the initial guess
-     :param callback_type_tuple fprime: the first derivative of the callback
-     :param tuple args: extra parameters
-     :param double tol: exit tolerance
-     :param int maxiter: maximum number of iterations
-     :param scipy_newton_parameters* full_output: optional output ``struct``, use ``NULL`` if not desired
-     :returns: double
-
-- ``cython_optimize.zeros_tuple.secant``
-
-  .. py:function:: scipy.optimize.cython_optimize.zeros_tuple.secant(func, x0, args, tol, maxiter, full_ouptput)
-
-     Similar to :py:func:`~scipy.optimize.newton` with one callback, ``func``,
-     that takes a double and a Python tuple ::
-
-        double secant(callback_type_tuple func, double x0, tuple args,
-                      double tol, int maxiter, scipy_newton_parameters *full_output)
-
-     :param callback_type_tuple func: the callback function
-     :param double x0: the initial guess
-     :param tuple args: extra parameters
-     :param double tol: exit tolerance
-     :param int maxiter: maximum number of iterations
-     :param scipy_newton_parameters* full_output: optional output ``struct``, use ``NULL`` if not desired
-     :returns: double
-
-- ``cython_optimize.zeros_tuple.halley``
-
-  .. py:function:: scipy.optimize.cython_optimize.zeros_tuple.halley(func, x0, fprime, args, tol, maxiter, fprine2, full_ouptput)
-
-     Similar to :py:func:`~scipy.optimize.newton` with three callbacks,
-     ``func``, ``fprime``, and ``fprime2``, that each takes a double and a
-     Python tuple ::
-
-        double halley(callback_type_tuple func, double x0, callback_type_tuple fprime, tuple args,
-                      double tol, int maxiter, callback_type_tuple fprime2, scipy_newton_parameters *full_output)
-
-     :param callback_type_tuple func: the callback function
-     :param double x0: the initial guess
-     :param callback_type_tuple fprime: the first derivative of the callback
-     :param tuple args: extra parameters
-     :param double tol: exit tolerance
-     :param int maxiter: maximum number of iterations
-     :param callback_type_tuple fprime2: the second derivative of the callback
-     :param scipy_newton_parameters* full_output: optional output ``struct``, use ``NULL`` if not desired
-     :returns: double
-
 - ``cython_optimize.zeros_tuple.bisect``
 
   .. py:function:: scipy.optimize.cython_optimize.zeros_tuple.bisect(f, xa, xb, args, xtol, rtol, iter, full_output)
@@ -520,9 +338,7 @@ Exposes root finders expecting extra arguments in a Python tuple.
 Examples
 --------
 Usage of :py:mod:`~scipy.optimize.cython_optimize` requires the use of Cython
-to write callbacks that are compiled into native C. See the Cython Optimize
-Zeros API Jupyter notebook in the ``cython_optimize/Examples`` folder for usage
-examples. There are also several examples that solve the single-diode model of
+to write callbacks that are compiled into native C. There are several usage examples that solve the single-diode model of
 a solar cell in the ``cython_optimize/Examples`` folder. These examples are
 also used to test the different combinations of callbacks and root-finders.
 
@@ -531,14 +347,14 @@ These are the basic steps to use :py:mod:`~scipy.optimize.cython_optimize`:
 1. Select a callback signature, for example:
    :py:mod:`~scipy.optimize.cython_optimize.zeros_struct`
 2. Select the root finder, for example:
-   :py:func:`~scipy.optimize.cython_optimize.zeros_struct.newton`
+   :py:func:`~scipy.optimize.cython_optimize.zeros_struct.brentq`
 3. Create a Cython ``.pyx`` file that imports the zeros module with the
    selected callback signature, create the callback(s) using the selected
    signature, and call the selected root-finder passing the callback(s), any
    extra arguments, and the other solver parameters ::
 
        import math
-       cimport scipy.optimize.cython_optimize as coz
+       from scipy.optimize.cython_optimize cimport zeros_struct
 
        ARGS = {'C0': 1.0, 'C1': 0.7}
        XTOL, RTOL, MITR = 1e-3, 1e-3, 10
@@ -556,7 +372,7 @@ These are the basic steps to use :py:mod:`~scipy.optimize.cython_optimize`:
        cdef double brentq_wrapper_example(dict args, double xa, double xb,
                                           double xtol, double rtol, int mitr):
            cdef test_params myargs = args  # Cython automatically casts dictionary to struct
-           return coz.zeros_struct.brentq(f, xa, xb, <test_params *> &myargs, xtol, rtol, mitr, NULL)
+           return zeros_struct.brentq(f, xa, xb, <test_params *> &myargs, xtol, rtol, mitr, NULL)
 
 
        def brentq_example(args=ARGS, xa=0.5, xb=1.0, xtol=XTOL, rtol=RTOL, mitr=MITR):
@@ -582,12 +398,10 @@ argument. If you don't want the full output just pass ``NULL``. The full output
 
 The error number returned is -1 for a sign error, and -2 for a convergence
 error. All other values mean the solver converged. Note that the full output
-``struct`` must be cast to ``scipy_newton_parameters`` for the three functions
-in ``optimize/cython_optimize/Newton`` and ``scipy_zeros_parameters`` for the
-four functions in ``optimize/Zeros``. ::
+``struct`` must be cast to ``scipy_zeros_parameters``. ::
 
     from scipy.optimize.cython_optimize cimport zeros_tuple
-    from scipy.optimize.cython_optimize.examples.zeros_tuple_examples cimport f_solarcell, fprime, fprime2
+    from scipy.optimize.cython_optimize.examples.zeros_tuple_examples cimport f_solarcell
 
     ARGS = (5.25, 6.0, 1e-09, 0.004, 10.0, 0.27456)
     XTOL, RTOL, MITR = 0.001, 0.001, 10
@@ -599,17 +413,19 @@ four functions in ``optimize/Zeros``. ::
         double root
 
     # cython brentq solver with full output
-    cdef scipy_brent_full_output solarcell_brent_full_output(tuple args, double xa, double xb,
-                                                             double xtol, double rtol, int mitr):
+    cdef scipy_brent_full_output solarcell_brent_full_output(
+            tuple args, double xa, double xb, double xtol, double rtol,
+            int mitr):
         cdef scipy_brent_full_output full_output
-        full_output.root = zeros_tuple.brentq(f_solarcell, xa, xb, args,
-                                              xtol, rtol, mitr,
-                                              <zeros_tuple.scipy_zeros_parameters *> &full_output)
+        full_output.root = zeros_tuple.brentq(
+            f_solarcell, xa, xb, args, xtol, rtol, mitr,
+            <zeros_tuple.scipy_zeros_parameters *> &full_output)
         return full_output
 
 
-    def test_brent_full_output(args=ARGS, xa=0.0, xb=6.0, xtol=XTOL, rtol=RTOL, mitr=MITR):
-        '''test newton with full output'''
+    def test_brent_full_output(args=ARGS, xa=0.0, xb=6.0, xtol=XTOL, rtol=RTOL,
+                               mitr=MITR):
+        '''test brent with full output'''
         return solarcell_brent_full_output(args, xa, xb, xtol, rtol, mitr)
 
     result = test_brent_full_output()
@@ -618,13 +434,3 @@ four functions in ``optimize/Zeros``. ::
     #  'error_num': 281790720,
     #  'root': 5.255231961257658}
 """
-
-from __future__ import division, print_function, absolute_import
-
-__all__ = ['zeros_tuple', 'zeros_struct', 'zeros_array']
-
-from . import zeros_tuple, zeros_struct, zeros_array
-
-from scipy._lib._testutils import PytestTester
-test = PytestTester(__name__)
-del PytestTester
