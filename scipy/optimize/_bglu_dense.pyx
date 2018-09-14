@@ -18,7 +18,10 @@ import numpy as np
 cimport numpy as np
 from scipy.linalg import (solve, lu_solve, lu_factor, solve_triangular,
                           LinAlgError)
-import time
+try:
+    from time import process_time as timer
+except ImportError:
+    from time import clock as timer
 
 __all__ = ['LU', 'BGLU']
 
@@ -80,11 +83,11 @@ def _consider_refactor(method):
         # We don't want to call method = self.update again here
         if not refactor_now:
             # record the time it took to call the method
-            t0 = time.clock()
+            t0 = timer()
             out = method(self, *args, **kwargs)
             if isinstance(out, np.ndarray) and np.any(np.isnan(out)):
                 raise LinAlgError("Nans in output")
-            t1 = time.clock()
+            t1 = timer()
             self.bglu_time += (t1-t0)
 
         # calculate average solve time,
