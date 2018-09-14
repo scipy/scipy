@@ -889,11 +889,6 @@ class LinprogCommonTests(object):
             with pytest.warns(OptimizeWarning):
                 res = linprog(c, A_ub, b_ub, bounds=bounds,
                               method=self.method, options=self.options)
-        elif (self.method == 'revised simplex' and
-              self.options.get('pivot') == "bland"):
-            res = linprog(c, A_ub, b_ub, bounds=bounds,
-                          method=self.method, options=self.options)
-            assert_equal(res.status, 4)
         else:
             with suppress_warnings() as sup:
                 sup.filter(OptimizeWarning, "Solving system with option 'sym_pos'")

@@ -126,9 +126,10 @@ def _generate_auxiliary_problem(A, b):
     cols, rows = _select_singleton_columns(A, b)
 
     acols = np.arange(m-len(cols))          # indices of auxiliary columns
-    arows = np.delete(np.arange(m), rows)   # indices of corresponding rows,
-                                            # that is, the row in each aux
-                                            # column with nonzero entry
+
+    # indices of corresponding rows,
+    arows = np.delete(np.arange(m), rows)
+    # that is, the row in each aux column with nonzero entry
 
     basis = np.concatenate((cols, n + acols))   # all initial basis columns
     basis_rows = np.concatenate((rows, arows))  # all intial basis rows
@@ -212,12 +213,13 @@ def _phase_two(c, A, x, b, maxiter, tol, maxupdate, mast, pivot):
     a = np.arange(n)                    # indices of columns of A
     ab = np.arange(m)                   # indices of columns of B
     if maxupdate:
-        B = BGLU(A, b, maxupdate, mast)     # basis matrix factorization object
-                                            # similar to B = A[:, b]
+        # basis matrix factorization object; similar to B = A[:, b]
+        B = BGLU(A, b, maxupdate, mast)
     else:
         B = LU(A, b)
 
     for iteration in range(maxiter):
+
         bl = np.zeros(len(a), dtype=bool)
         bl[b] = 1
 
@@ -236,9 +238,9 @@ def _phase_two(c, A, x, b, maxiter, tol, maxupdate, mast, pivot):
             break
 
         j = _select_enter_pivot(c_hat, bl, a, rule=pivot, tol=tol)
-        u = B.solve(A[:, j])    # similar to u = solve(B, A[:, j])
+        u = B.solve(A[:, j])        # similar to u = solve(B, A[:, j])
 
-        i = u > 0               # if there are none, it's unbounded
+        i = u > tol                 # if none of the u are positive, unbounded
         if not np.any(i):
             status = 3
             break
@@ -299,9 +301,9 @@ def _linprog_rs(c, c0, A, b, callback=None, maxiter=1000, tol=1e-12,
     mast : bool
         Minimize Amortized Solve Time. If enabled, the average time to solve
         a linear system using the basis factorization is measured. Typically,
-        the average solve time will decrease with each successive
-        solve after initial factorization, as factorization (and updates) take
-        less time than the solve operation. Eventually, however, the updated
+        the average solve time will decrease with each successive solve after
+        initial factorization, as factorization takes much more time than the
+        solve operation (and updates). Eventually, however, the updated
         factorization becomes sufficiently complex that the average solve time
         begins to increase. When this is detected, the basis is refactorized
         from scratch. Enable this option to maximize speed at the risk of
