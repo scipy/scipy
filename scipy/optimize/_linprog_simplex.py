@@ -140,7 +140,7 @@ def _solve_simplex(T, n, basis, maxiter=1000, phase=2, status=0, message='',
         minimize:     c'^T @ x'
 
         subject to:   A @ x' == b
-                      0 < x' < oo
+                          x' >= 0
 
     Parameters
     ----------
@@ -311,7 +311,7 @@ def _linprog_simplex(c, c0, A, b, maxiter=1000, disp=False, callback=None,
         minimize:     c'^T @ x'
 
         subject to:   A @ x' == b
-                      0 < x' < oo
+                          x' >= 0
 
     Parameters
     ----------

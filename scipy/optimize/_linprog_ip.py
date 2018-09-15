@@ -542,7 +542,7 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol,
     minimize:     c'^T @ x'
 
     subject to:   A @ x' == b
-                  0 < x' < oo
+                      x' >= 0
 
     using the interior point method of [4].
 
