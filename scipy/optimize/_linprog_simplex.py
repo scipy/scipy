@@ -134,17 +134,13 @@ def _solve_simplex(T, n, basis, maxiter=1000, phase=2, status=0, message='',
                    callback=None, tol=1.0E-12, nit0=0, bland=False, _T_o=None):
     """
     Solve a linear programming problem in "standard maximization form" using
-    the Simplex Method.
+    the Simplex Method. Linear Programming is intended to solve the following
+    problem form::
 
-    Minimize :math:`f = c^T x`
+        minimize:     c'^T @ x'
 
-    subject to
-
-    .. math::
-
-        Ax = b
-        x_i >= 0
-        b_j >= 0
+        subject to:   A @ x' == b
+                      0 < x' < oo
 
     Parameters
     ----------
@@ -310,12 +306,12 @@ def _linprog_simplex(c, c0, A, b, maxiter=1000, disp=False, callback=None,
                      tol=1.0E-12, bland=False, _T_o=None, **unknown_options):
     """
     Solve the following linear programming problem via a two-phase
-    simplex algorithm.::
+    simplex algorithm.
 
-        minimize:     c^T * x
+        minimize:     c'^T @ x'
 
-        subject to:  A * x == b
-                    0 <= x < oo
+        subject to:   A @ x' == b
+                      0 < x' < oo
 
     Parameters
     ----------

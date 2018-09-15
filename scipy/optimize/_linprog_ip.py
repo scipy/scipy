@@ -539,9 +539,9 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol,
     r"""
     Solve a linear programming problem in standard form:
 
-    minimize:     c'^T * x'
+    minimize:     c'^T @ x'
 
-    subject to:   A * x' == b
+    subject to:   A @ x' == b
                   0 < x' < oo
 
     using the interior point method of [4].
@@ -780,9 +780,9 @@ def _linprog_ip(
 
     Linear programming is intended to solve problems of the following form::
 
-        Minimize:     c^T * x
+        Minimize:     c^T @ x
 
-        Subject to:      A * x == b
+        Subject to:      A @ x == b
                          0 <= x < oo
 
     Parameters
