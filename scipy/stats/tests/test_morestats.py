@@ -27,6 +27,8 @@ except Exception:
     have_matplotlib = False
 
 
+# test data gear.dat from NIST for Levene and Bartlett test
+# https://www.itl.nist.gov/div898/handbook/eda/section3/eda3581.htm
 g1 = [1.006, 0.996, 0.998, 1.000, 0.992, 0.993, 1.002, 0.999, 0.994, 1.000]
 g2 = [0.998, 1.006, 1.000, 1.002, 0.997, 0.998, 0.996, 1.000, 1.006, 0.988]
 g3 = [0.991, 0.987, 0.997, 0.999, 0.995, 0.994, 1.000, 0.999, 0.996, 0.996]
@@ -502,6 +504,7 @@ class TestAnsari(object):
 class TestBartlett(object):
 
     def test_data(self):
+        # https://www.itl.nist.gov/div898/handbook/eda/section3/eda357.htm
         args = [g1, g2, g3, g4, g5, g6, g7, g8, g9, g10]
         T, pval = stats.bartlett(*args)
         assert_almost_equal(T, 20.78587342806484, 7)
@@ -530,6 +533,7 @@ class TestBartlett(object):
 class TestLevene(object):
 
     def test_data(self):
+        # https://www.itl.nist.gov/div898/handbook/eda/section3/eda35a.htm
         args = [g1, g2, g3, g4, g5, g6, g7, g8, g9, g10]
         W, pval = stats.levene(*args)
         assert_almost_equal(W, 1.7059176930008939, 7)
