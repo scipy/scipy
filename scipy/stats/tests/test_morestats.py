@@ -521,6 +521,11 @@ class TestBartlett(object):
         args = (g1, g2, g3, g4, g5, g6, g7, g8, g9, g10, [])
         assert_equal((np.nan, np.nan), stats.bartlett(*args))
 
+    # temporary fix for issue #9252: only accept 1d input
+    def test_1d_input(self):
+        x = np.array([[1, 2], [3, 4]])
+        assert_raises(ValueError, stats.bartlett, g1, x)
+
 
 class TestLevene(object):
 
@@ -583,6 +588,11 @@ class TestLevene(object):
         res = stats.levene(*args)
         attributes = ('statistic', 'pvalue')
         check_named_results(res, attributes)
+
+    # temporary fix for issue #9252: only accept 1d input
+    def test_1d_input(self):
+        x = np.array([[1, 2], [3, 4]])
+        assert_raises(ValueError, stats.levene, g1, x)
 
 
 class TestBinomP(object):
