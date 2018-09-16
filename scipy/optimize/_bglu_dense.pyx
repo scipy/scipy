@@ -22,15 +22,127 @@ except ImportError:
 
 __all__ = ['LU', 'BGLU']
 
-ctypedef fused nparray:
-    double[:, ::1]
-    double[::1]
+#ctypedef fused nparray:
+#    double[:, ::1]
+#    double[::1]
 
 cdef extern from 'cblas.h':
     void daxpy 'cblas_daxpy'(int N, double A,
-                              double* X, int incX,
-                              double* Y, int incY) nogil
+                             double* X, int incX,
+                             double* Y, int incY) nogil
 
+cdef extern from 'cblas.h':
+    void dswap 'cblas_dswap'(int N,
+                             double* X, int incX,
+                             double* Y, int incY) nogil
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef void swap_rows(self, double[:, ::1] H, int i):
+    """
+    Swaps row i of H with next row; represents matrix product by PI_i
+    matrix described after matrix 5.10
+    """
+#    # Python
+#    H[[i, i+1]] = H[[i+1, i]]
+
+#    # Cython, high level
+#    if i == 0:
+#        H[i:i+2] = H[i+1::-1]
+#    else:
+#        H[i:i+2] = H[i+1:i-1:-1]
+
+#    # Cython, low level
+#    cdef double temp
+#    cdef int j
+#    for j in range(i, H.shape[1]):
+#        temp = H[i, j]
+#        H[i, j] = H[i+1, j]
+#        H[i+1, j] = temp
+
+    # Cython, using BLAS
+    dswap(H.shape[1]-i, &H[i, i], 1, &H[i+1, i], 1)
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.cdivision(True) # not really important
+cdef double row_subtract(self, double[:, ::1] H, int i):
+    """
+    Zeros first nonzero element of row i+1 of H by subtracting appropriate
+    multiple of row i; represents matrix product by matrix 5.10. Returns
+    factor g for storage.
+    """
+    cdef double g = H[i+1, i]/H[i,i]
+
+#        # Python
+#        H[i+1, i:] -= g*H[i, i:]
+
+#        # Cython
+#        for j in range(i, H.shape[1]):
+#            H[i+1, j] -= H[i, j]*g
+
+    # Cython, using BLAS
+    daxpy(H.shape[1]-i, -g, &H[i, i], 1, &H[i+1, i], 1)
+
+    return g
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef void hess_lu(self, double[:, ::1] H, int i, double[:,::1] ops):
+    """
+    Converts Hessenberg matrix H with first nonzero off-diagonal in
+    column i to upper triangular, recording elementary row operations.
+    That is, performs and records operations in Equation 5.9.
+    """
+    cdef int m = H.shape[1]
+    cdef int j, k
+    cdef double piv1, piv2
+    cdef double g
+    cdef double swap
+
+    for k in range(i, m-1):
+        j = k-i
+        piv1, piv2 = abs(H[k, k]), abs(H[k+1, k]) # np.abs(H[k:k+2,k])
+        swap = float(piv1 < piv2)
+        # swap rows to ensure |g| <= 1
+        if swap:
+            swap_rows(self, H, k)
+        g = row_subtract(self, H, k)
+
+        ops[j, 0] = swap
+        ops[j, 1] = g
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef void perform_ops(self, double[::1] y, double[:,::1] ops, bint rev = False):
+    """
+    Replays operations needed to convert Hessenberg matrix into upper
+    triangular form on a vector y. Equivalent to matrix multlication by
+    inverse of matrix 5.12.
+    """
+    cdef int i, j, k, m
+    cdef double g, swap
+
+    m = y.shape[0]
+    i = m - ops.shape[0] - 1
+    if not rev:
+        for k in range(i, m-1):
+            j = k - i
+            swap = ops[j,0]
+            g = ops[j, 1]
+            if swap:
+                y[k], y[k+1] = y[k+1], y[k]
+#                swap_rows(self, y, k)
+            y[k+1] -= g*y[k]
+    else:
+        for k in range(m-2, i-1, -1):
+            j = k -i
+            swap = ops[j,0]
+            g = ops[j, 1]
+            y[k] -= g*y[k+1]
+            if swap:
+                y[k], y[k+1] = y[k+1], y[k]
+#                swap_rows(self, y, k)
 
 def _consider_refactor(method):
     """
@@ -204,7 +316,7 @@ cdef class BGLU(LU):
         um = solve_triangular(self.L, pla, lower = True,
                               check_finite=False, unit_diagonal=True)
         for ops in self.ops_list:
-            self.perform_ops(um, ops) # modifies um in place
+            perform_ops(self, um, ops) # modifies um in place
 
         # form Hessenberg matrix
         H = self.U
@@ -213,7 +325,7 @@ cdef class BGLU(LU):
 
         # convert H to upper triangular, recording elementary row operations
         ops = np.zeros((self.m-1-i, 2))
-        self.hess_lu(H, i, ops) # hess_lu modifies ops in place
+        hess_lu(self, H, i, ops) # hess_lu modifies ops in place
         self.ops_list.append(ops)
 
         self.U = H
@@ -238,7 +350,7 @@ cdef class BGLU(LU):
                 # Equation 5.17
                 temp = t
                 for ops in self.ops_list:
-                    self.perform_ops(temp, ops) # modifies temp in place
+                    perform_ops(self, temp, ops) # modifies temp in place
                 w = temp
 
                 # Equation 5.18
@@ -251,105 +363,13 @@ cdef class BGLU(LU):
                                      trans=False, check_finite=False)
                 temp = t
                 for ops in reversed(self.ops_list):
-                    self.perform_ops(temp, ops, rev = True) # mod in place
+                    perform_ops(self, temp, ops, rev = True) # mod in place
                 w = temp
                 v = solve_triangular(self.L, w, lower = True, trans=True,
                                      check_finite=False, unit_diagonal=True)
                 v = v[self.pit]
 
         return v
-
-    @cython.boundscheck(False)
-    @cython.wraparound(False)
-    cdef void swap_rows(self, nparray H, int i):
-        """
-        Swaps row i of H with next row; represents matrix product by PI_i
-        matrix described after matrix 5.10
-        """
-        # H[[i, i+1]] = H[[i+1, i]]  # Python only
-        if i == 0:
-            H[i:i+2] = H[i+1::-1]
-        else:
-            H[i:i+2] = H[i+1:i-1:-1]
-
-    @cython.boundscheck(False)
-    @cython.wraparound(False)
-    @cython.cdivision(True) # not really important
-    cdef double row_subtract(self, double[:, ::1] H, int i):
-        """
-        Zeros first nonzero element of row i+1 of H by subtracting appropriate
-        multiple of row i; represents matrix product by matrix 5.10. Returns
-        factor g for storage.
-        """
-        cdef double g = H[i+1, i]/H[i,i]
-
-#        # Python
-#        H[i+1, i:] -= g*H[i, i:]
-
-#        # Cython
-#        for j in range(i, H.shape[1]):
-#            H[i+1, j] -= H[i, j]*g
-
-        # Cython, using BLAS
-        daxpy(H.shape[1]-i, -g, &H[i, i], 1, &H[i+1, i], 1)
-
-        return g
-
-    @cython.boundscheck(False)
-    @cython.wraparound(False)
-    cdef void hess_lu(self, double[:, ::1] H, int i, double[:,::1] ops):
-        """
-        Converts Hessenberg matrix H with first nonzero off-diagonal in
-        column i to upper triangular, recording elementary row operations.
-        That is, performs and records operations in Equation 5.9.
-        """
-        cdef int m = H.shape[1]
-        cdef int j, k
-        cdef double piv1, piv2
-        cdef double g
-        cdef double swap
-
-        for k in range(i, m-1):
-            j = k-i
-            piv1, piv2 = abs(H[k, k]), abs(H[k+1, k]) # np.abs(H[k:k+2,k])
-            swap = float(piv1 < piv2)
-            # swap rows to ensure |g| <= 1
-            if swap:
-                self.swap_rows(H, k)
-            g = self.row_subtract(H, k)
-
-            ops[j, 0] = swap
-            ops[j, 1] = g
-
-    @cython.boundscheck(False)
-    @cython.wraparound(False)
-    cdef void perform_ops(self, double[::1] y, double[:,::1] ops, bint rev = False):
-        """
-        Replays operations needed to convert Hessenberg matrix into upper
-        triangular form on a vector y. Equivalent to matrix multlication by
-        inverse of matrix 5.12.
-        """
-        cdef int i, j, k, m
-        cdef double g, swap
-
-        m = y.shape[0]
-        i = m - ops.shape[0] - 1
-        if not rev:
-            for k in range(i, m-1):
-                j = k - i
-                swap = ops[j,0]
-                g = ops[j, 1]
-                if swap:
-                    self.swap_rows(y, k)
-                y[k+1] -= g*y[k]
-        else:
-            for k in range(m-2, i-1, -1):
-                j = k -i
-                swap = ops[j,0]
-                g = ops[j, 1]
-                y[k] -= g*y[k+1]
-                if swap:
-                    self.swap_rows(y, k)
 
     def perform_perm(self, p):
         """
