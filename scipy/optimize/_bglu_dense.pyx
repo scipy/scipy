@@ -293,6 +293,7 @@ cdef class BGLU(LU):
         cdef int j, k
         cdef double piv1, piv2
         cdef double g
+        cdef double swap
 
         for k in range(i, m-1):
             j = k-i

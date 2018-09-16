@@ -241,13 +241,12 @@ def _phase_two(c, A, x, b, maxiter, tol, maxupdate, mast, pivot):
             status = 4
             break
 
-        if 1.1*m < n:  # this is a wild guess at which will be faster
-            v = csr_matrix(v)
-            c_hat = c - (v.dot(A)).flatten()
-            c_hat = c_hat[~bl]
-        else:  # maybe I should just delete this?
-            N = A[:, ~bl]                       # non-basis matrix
-            c_hat = c[~bl] - v.T.dot(N)         # reduced costs
+        c_hat = c - v.dot(A)    # reduced cost
+        c_hat = c_hat[~bl]
+        # why is above so much faster than:
+        # N = A[:, ~bl]
+        # c_hat = c[~bl] - v.T.dot(N)
+        # Can we perform the mulitplication only on the nonbasic columns?
 
         if np.all(c_hat >= -tol):  # all reduced costs positive -> terminate
             break
