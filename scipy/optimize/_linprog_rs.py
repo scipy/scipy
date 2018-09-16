@@ -12,26 +12,8 @@ from .optimize import _check_unknown_options
 from ._bglu_dense import LU
 from ._bglu_dense import BGLU as BGLU
 from scipy.linalg import LinAlgError
+from scipy.sparse import csr_matrix
 from numpy.linalg.linalg import LinAlgError as LinAlgError2
-
-# TODO: fix test_bug_8662. Bug is that auxiliary problem terminates with
-# artificial variable in basis; that is discarded and a linearly depended
-# column is chosen to replace it.
-
-# TODO: fix test_bug_6690. Bug is that auxiliary problem terminates with
-# artificial variable in basis; that is discarded and a linearly depended
-# column is chosen to replace it. Regular simplex is successful.
-
-# TODO: fix test_bug_7044. Bug is that auxiliary problem terminates with
-# a singular basis. Doesn't happen with small number of updates, but does with
-# exact solve.
-
-# TODO: fix test_bug_5400. Bug is that in iteration 8 pivots to a singular
-# basis. Current default behavior is status 4; better than simplex which is
-# status 2. When perfect solve is used, no error status.
-
-# TODO: fix test_large_problem. Bug is that in iteration 199 pivots to a
-# singular basis. Doesn't happen with small number of updates.
 
 # TODO: add display?
 
@@ -250,7 +232,6 @@ def _phase_two(c, A, x, b, maxiter, tol, maxupdate, mast, pivot):
         bl = np.zeros(len(a), dtype=bool)
         bl[b] = 1
 
-        N = A[:, ~bl]   # non-basis matrix
         xb = x[b]       # basic variables
         cb = c[b]       # basic costs
 
@@ -259,7 +240,14 @@ def _phase_two(c, A, x, b, maxiter, tol, maxupdate, mast, pivot):
         except LinAlgError:
             status = 4
             break
-        c_hat = c[~bl] - v.T.dot(N)         # reduced costs
+
+        if 1.1*m < n:  # this is a wild guess at which will be faster
+            v = csr_matrix(v)
+            c_hat = c - (v.dot(A)).flatten()
+            c_hat = c_hat[~bl]
+        else:  # maybe I should just delete this?
+            N = A[:, ~bl]                       # non-basis matrix
+            c_hat = c[~bl] - v.T.dot(N)         # reduced costs
 
         if np.all(c_hat >= -tol):  # all reduced costs positive -> terminate
             break
