@@ -783,7 +783,7 @@ def _linprog_ip(
         Minimize:     c^T @ x
 
         Subject to:      A @ x == b
-                         0 <= x < oo
+                             0 >= x
 
     Parameters
     ----------

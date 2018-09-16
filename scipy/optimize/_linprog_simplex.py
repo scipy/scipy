@@ -306,12 +306,12 @@ def _linprog_simplex(c, c0, A, b, maxiter=1000, disp=False, callback=None,
                      tol=1.0E-12, bland=False, _T_o=None, **unknown_options):
     """
     Solve the following linear programming problem via a two-phase
-    simplex algorithm.
+    simplex algorithm of the form::
 
-        minimize:     c'^T @ x'
+        Minimize: c^T @ x
 
-        subject to:   A @ x' == b
-                          x' >= 0
+        Subject to: A @ x == b
+                        0 >= x
 
     Parameters
     ----------
