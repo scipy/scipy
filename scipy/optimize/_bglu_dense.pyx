@@ -26,6 +26,11 @@ ctypedef fused nparray:
     double[:, ::1]
     double[::1]
 
+cdef extern from 'cblas.h':
+    void daxpy 'cblas_daxpy'(int N, double A,
+                              double* X, int incX,
+                              double* Y, int incY) nogil
+
 
 def _consider_refactor(method):
     """
@@ -261,6 +266,7 @@ cdef class BGLU(LU):
         Swaps row i of H with next row; represents matrix product by PI_i
         matrix described after matrix 5.10
         """
+        # H[[i, i+1]] = H[[i+1, i]]  # Python only
         if i == 0:
             H[i:i+2] = H[i+1::-1]
         else:
@@ -276,9 +282,17 @@ cdef class BGLU(LU):
         factor g for storage.
         """
         cdef double g = H[i+1, i]/H[i,i]
+
+#        # Python
 #        H[i+1, i:] -= g*H[i, i:]
-        for j in range(i, H.shape[1]):
-            H[i+1, j] -= H[i, j]*g
+
+#        # Cython
+#        for j in range(i, H.shape[1]):
+#            H[i+1, j] -= H[i, j]*g
+
+        # Cython, using BLAS
+        daxpy(H.shape[1]-i, -g, &H[i, i], 1, &H[i+1, i], 1)
+
         return g
 
     @cython.boundscheck(False)

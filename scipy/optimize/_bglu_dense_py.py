@@ -231,10 +231,11 @@ class BGLU(LU):
         Swaps row i of H with next row; represents matrix product by PI_i
         matrix described after matrix 5.10
         """
-        if i == 0:
-            H[i:i+2] = H[i+1::-1]
-        else:
-            H[i:i+2] = H[i+1:i-1:-1]
+        H[[i, i+1]] = H[[i+1, i]]
+#        if i == 0:  # for Cython
+#            H[i:i+2] = H[i+1::-1]
+#        else:
+#            H[i:i+2] = H[i+1:i-1:-1]
 
     def row_subtract(self, H, i):
         """
