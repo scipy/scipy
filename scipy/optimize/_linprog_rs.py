@@ -12,7 +12,6 @@ from .optimize import _check_unknown_options
 from ._bglu_dense import LU
 from ._bglu_dense import BGLU as BGLU
 from scipy.linalg import LinAlgError
-from scipy.sparse import csr_matrix
 from numpy.linalg.linalg import LinAlgError as LinAlgError2
 
 # TODO: add display?
@@ -92,11 +91,13 @@ def _get_more_basis_columns(A, basis):
     B[:, 0:len(basis)] = A[:, basis]
     rank = 0  # just enter the loop
 
-    while rank < m:
+    for i in range(n):  # somewhat arbitrary, but we need another way out
         # permute the options, and take as many as needed
         new_basis = np.random.permutation(options)[:m-len(basis)]
         B[:, len(basis):] = A[:, new_basis]  # update the basis matrix
         rank = np.linalg.matrix_rank(B)      # check the rank
+        if rank == m:
+            break
 
     return np.concatenate((basis, new_basis))
 
@@ -243,8 +244,8 @@ def _phase_two(c, A, x, b, maxiter, tol, maxupdate, mast, pivot):
 
         c_hat = c - v.dot(A)    # reduced cost
         c_hat = c_hat[~bl]
-        # why is above so much faster than:
-        # N = A[:, ~bl]
+        # Above is much faster than:
+        # N = A[:, ~bl]                 # slow!
         # c_hat = c[~bl] - v.T.dot(N)
         # Can we perform the mulitplication only on the nonbasic columns?
 
