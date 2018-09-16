@@ -574,8 +574,8 @@ class TestCorrSpearmanr(object):
         for nan_policy in ['propagate', 'omit']:
             x1 = [1, np.nan, 3, 4, 5, 6]
             x2 = [1, 2, 3, 4, 6, np.nan]
-            res1 = stats.spearmanr(x1, x2)
-            res2 = stats.spearmanr(np.asarray([x1, x2]).T)
+            res1 = stats.spearmanr(x1, x2, nan_policy=nan_policy)
+            res2 = stats.spearmanr(np.asarray([x1, x2]).T, nan_policy=nan_policy)
             assert_allclose(res1, res2)
 
     def test_3cols(self):
@@ -608,6 +608,29 @@ class TestCorrSpearmanr(object):
         res = stats.spearmanr(x, nan_policy='omit').correlation
         assert_allclose((res[0][1], res[0][2], res[1][2]),
                         (0.2051957, 0.4857143, -0.4707919), rtol=1e-6)
+
+    def test_gh_8111(self):
+        # Regression test for gh-8111 (different result for float/int/bool).
+        n = 100
+        np.random.seed(234568)
+        x = np.random.rand(n)
+        m = np.random.rand(n) > 0.7
+
+        # bool against float, no nans
+        a = (x > .5)
+        b = np.array(x)
+        res1 = stats.spearmanr(a, b, nan_policy='omit').correlation
+
+        # bool against float with NaNs
+        b[m] = np.nan
+        res2 = stats.spearmanr(a, b, nan_policy='omit').correlation
+
+        # int against float with NaNs
+        a = a.astype(np.int32)
+        res3 = stats.spearmanr(a, b, nan_policy='omit').correlation
+
+        expected = [0.865895477, 0.866100381, 0.866100381]
+        assert_allclose([res1, res2, res3], expected)
 
 
 def test_spearmanr():

@@ -3310,7 +3310,7 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate'):
     """
     a, axisout = _chk_asarray(a, axis)
     if a.ndim > 2:
-        raise ValueError("spearmanr only handled 1-D or 2-D arrays")
+        raise ValueError("spearmanr only handles 1-D or 2-D arrays")
 
     if b is None:
         if a.ndim < 2:

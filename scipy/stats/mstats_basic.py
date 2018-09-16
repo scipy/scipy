@@ -435,7 +435,7 @@ def spearmanr(x, y=None, use_ties=True, axis=None, nan_policy='propagate'):
 
     Parameters
     ----------
-    x, y : 1D or 2D array_like, b is optional
+    x, y : 1D or 2D array_like, y is optional
         One or two 1-D or 2-D arrays containing multiple variables and
         observations. When these are 1-D, each represents a vector of
         observations of a single variable. For the behavior in the 2-D case,
