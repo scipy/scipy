@@ -16,7 +16,6 @@ from numpy.linalg.linalg import LinAlgError as LinAlgError2
 
 # TODO: add display?
 # TODO: cythonize c_hat = c - v.dot(A); c_hat = c_hat[~bl]
-# TODO: ev-br suggestions
 # TODO: Pythranize?
 
 
