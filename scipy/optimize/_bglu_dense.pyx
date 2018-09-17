@@ -15,6 +15,7 @@ import numpy as np
 cimport numpy as np
 from scipy.linalg import (solve, lu_solve, lu_factor, solve_triangular,
                           LinAlgError)
+from scipy.linalg.cython_blas cimport daxpy, dswap
 try:
     from time import process_time as timer
 except ImportError:
@@ -26,15 +27,15 @@ __all__ = ['LU', 'BGLU']
 #    double[:, ::1]
 #    double[::1]
 
-cdef extern from 'cblas.h':
-    void daxpy 'cblas_daxpy'(int N, double A,
-                             double* X, int incX,
-                             double* Y, int incY) nogil
-
-cdef extern from 'cblas.h':
-    void dswap 'cblas_dswap'(int N,
-                             double* X, int incX,
-                             double* Y, int incY) nogil
+#cdef extern from 'cblas.h':
+#    void daxpy 'cblas_daxpy'(int N, double A,
+#                             double* X, int incX,
+#                             double* Y, int incY) nogil
+#
+#cdef extern from 'cblas.h':
+#    void dswap 'cblas_dswap'(int N,
+#                             double* X, int incX,
+#                             double* Y, int incY) nogil
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
@@ -61,7 +62,9 @@ cdef void swap_rows(self, double[:, ::1] H, int i):
 #        H[i+1, j] = temp
 
     # Cython, using BLAS
-    dswap(H.shape[1]-i, &H[i, i], 1, &H[i+1, i], 1)
+    cdef int n = H.shape[1]-i
+    cdef int one = 1
+    dswap(&n, &H[i, i], &one, &H[i+1, i], &one)
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
@@ -82,7 +85,10 @@ cdef double row_subtract(self, double[:, ::1] H, int i):
 #            H[i+1, j] -= H[i, j]*g
 
     # Cython, using BLAS
-    daxpy(H.shape[1]-i, -g, &H[i, i], 1, &H[i+1, i], 1)
+    cdef int n = H.shape[1]-i
+    cdef double ng = -g
+    cdef int one = 1
+    daxpy(&n, &ng, &H[i, i], &one, &H[i+1, i], &one)
 
     return g
 
