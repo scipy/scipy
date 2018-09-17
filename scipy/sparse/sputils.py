@@ -172,8 +172,6 @@ def get_index_dtype(arrays=(), maxval=None, check_contents=False):
 
 def get_sum_dtype(dtype):
     """Mimic numpy's casting for np.sum"""
-    if np.issubdtype(dtype, np.float_):
-        return np.float_
     if dtype.kind == 'u' and np.can_cast(dtype, np.uint):
         return np.uint
     if np.can_cast(dtype, np.int_):
