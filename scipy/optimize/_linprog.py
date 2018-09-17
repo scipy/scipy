@@ -161,15 +161,18 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
             options=None):
     """
     Minimize a linear objective function subject to linear
-    equality and inequality constraints.
+    equality and inequality constraints. Linear Programming is intended to
+    solve the following problem form:
 
-    Linear Programming is intended to solve the following problem form::
+    Minimize::
 
-        Minimize:     c^T @ x
+        c^T @ x
 
-        Subject to:   A_ub @ x <= b_ub
-                      A_eq @ x == b_eq
-                       lb <= x <= ub
+    Subject to::
+
+        A_ub @ x <= b_ub
+        A_eq @ x == b_eq
+         lb <= x <= ub
 
     where ``lb = 0`` and ``ub = np.inf`` unless set in ``bounds``.
 

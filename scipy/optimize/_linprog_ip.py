@@ -776,14 +776,17 @@ def _linprog_ip(
     r"""
     Minimize a linear objective function subject to linear
     equality constraints, linear inequality constraints, and simple bounds
-    using the interior point method of [4]_.
+    using the interior point method of [4]_. Linear programming is intended to
+    solve problems of the following form:
 
-    Linear programming is intended to solve problems of the following form::
+    Minimize::
 
-        Minimize:     c^T @ x
+        c^T @ x
 
-        Subject to:      A @ x == b
-                             0 >= x
+    Subject to::
+
+        A @ x == b
+            x >= 0
 
     Parameters
     ----------

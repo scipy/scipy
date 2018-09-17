@@ -137,10 +137,15 @@ def _solve_simplex(T, n, basis, maxiter=1000, phase=2, status=0, message='',
     the Simplex Method. Linear Programming is intended to solve the following
     problem form::
 
-        minimize:     c'^T @ x'
+    Minimize::
 
-        subject to:   A @ x' == b
-                          x' >= 0
+        c^T @ x
+
+    Subject to::
+
+        A @ x == b
+            x >= 0
+
 
     Parameters
     ----------
