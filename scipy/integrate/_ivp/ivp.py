@@ -232,9 +232,11 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         implements the solver.
     dense_output : bool, optional
         Whether to compute a continuous solution. Default is False.
+        dense_output and t_eval are mutually exclusive.
     t_eval : array_like or None, optional
         Times at which to store the computed solution, must be sorted and lie
         within `t_span`. If None (default), use points selected by the solver.
+        dense_output and t_eval are mutually exclusive.
     events : callable, list of callables or None, optional
         Types of events to track. Each is defined by a continuous function of
         time and state that becomes zero value in case of an event. Each function
