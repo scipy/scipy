@@ -4,10 +4,13 @@ Airspeed Velocity benchmark utilities
 from __future__ import division, absolute_import, print_function
 
 import sys
+import os
 import re
 import time
 import textwrap
 import subprocess
+import itertools
+import random
 
 
 class Benchmark(object):
@@ -15,6 +18,46 @@ class Benchmark(object):
     Base class with sensible options
     """
     goal_time = 0.25
+
+
+class LimitedParamBenchmark(Benchmark):
+    """
+    Limits parameter combinations to `max_number` choices, chosen
+    pseudo-randomly with fixed seed.
+    Raises NotImplementedError (skip) if not in active set.
+    """
+    num_param_combinations = 0
+
+    def setup(self, *args, **kwargs):
+        try:
+            slow = int(os.environ.get('SCIPY_XSLOW', '0'))
+        except ValueError:
+            slow = False
+
+        if slow:
+            # no need to skip
+            return
+
+        param_seed = kwargs.pop('param_seed', None)
+        if param_seed is None:
+            param_seed = 1
+
+        params = kwargs.pop('params', None)
+        if params is None:
+            params = self.params
+
+        num_param_combinations = kwargs.pop('num_param_combinations', None)
+        if num_param_combinations is None:
+            num_param_combinations = self.num_param_combinations
+
+        all_choices = list(itertools.product(*params))
+
+        rng = random.Random(param_seed)
+        rng.shuffle(all_choices)
+        active_choices = all_choices[:num_param_combinations]
+
+        if args not in active_choices:
+            raise NotImplementedError("skipped")
 
 
 def run_monitored(code):
