@@ -1217,7 +1217,7 @@ def toms748(f, a, b, args=(), k=1,
         containing extra arguments for the function `f`.
         `f` is called by ``f(x, *args)``.
     k : int, optional
-        The number of Newton quadratic steps to perform each iteration. `k>=1`.
+        The number of Newton quadratic steps to perform each iteration. ``k>=1``.
     xtol : scalar, optional
         The computed root ``x0`` will satisfy ``np.allclose(x, x0,
         atol=xtol, rtol=rtol)``, where ``x`` is the exact root. The
