@@ -142,13 +142,14 @@ Scalar functions
 .. autosummary::
    :toctree: generated/
 
-   RootResults - The root finding result returned by some root finders.
    brentq - quadratic interpolation Brent method
    brenth - Brent method, modified by Harris with hyperbolic extrapolation
    ridder - Ridder's method
    bisect - Bisection method
    newton - Secant method or Newton's method
    toms748 - Alefeld, Potra & Shi Algorithm 748
+   RootResults - The root finding result returned by some root finders.
+
 
 The table below lists situations and appropriate methods, along with
 *asymptotic* convergence rates per iteration (and per function evaluation)

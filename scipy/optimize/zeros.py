@@ -9,7 +9,7 @@ _iter = 100
 _xtol = 2e-12
 _rtol = 4 * np.finfo(float).eps
 
-__all__ = ['newton', 'bisect', 'ridder', 'brentq', 'brenth', 'toms748']
+__all__ = ['newton', 'bisect', 'ridder', 'brentq', 'brenth', 'toms748', 'RootResults']
 
 CONVERGED = 'converged'
 SIGNERR = 'sign error'
