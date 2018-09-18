@@ -1,0 +1,548 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1561\cocoasubrtf600
+{\fonttbl\f0\fnil\fcharset0 Menlo-Regular;}
+{\colortbl;\red255\green255\blue255;\red0\green0\blue0;\red255\green255\blue255;}
+{\*\expandedcolortbl;;\csgray\c0;\csgray\c100000;}
+\margl1440\margr1440\vieww25100\viewh14280\viewkind0
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f0\fs22 \cf2 \cb3 \CocoaLigature0 Wrote profile results to do_single_problem_rs.py.lprof\
+Timer unit: 1e-06 s\
+\
+Total time: 134.163 s\
+File: /Users/matthaberland/Desktop/scipydev/scipy/scipy/optimize/_bglu_dense_py.py\
+Function: f at line 43\
+\
+Line #      Hits         Time  Per Hit   % Time  Line Contents\
+==============================================================\
+    43                                               @profile\
+    44                                               def f(self, *args, **kwargs):\
+    45                                           \
+    46      2642       3587.0      1.4      0.0          refactor_now = False\
+    47      2642       2550.0      1.0      0.0          out = None\
+    48                                           \
+    49      2642       4997.0      1.9      0.0          if method.__name__ == "update":\
+    50                                                       # this will get zeroed if we refactor\
+    51       851       1614.0      1.9      0.0              self.updates += 1\
+    52                                           \
+    53                                                       # if average solve time is increasing, then it would\
+    54                                                       # be faster to refactor from scratch\
+    55       851       1103.0      1.3      0.0              slowing_down = (self.average_solve_times[1] >\
+    56       851       1258.0      1.5      0.0                              self.average_solve_times[0])\
+    57                                           \
+    58                                                       # if update limit is reached, we should refactor to\
+    59                                                       # limit error buildup\
+    60       851       1150.0      1.4      0.0              too_many_updates = self.updates >= self.max_updates\
+    61                                           \
+    62       851       1027.0      1.2      0.0              if self.mast:\
+    63                                                           refactor_now = (slowing_down or too_many_updates)\
+    64                                                       else:\
+    65       851        885.0      1.0      0.0                  refactor_now = too_many_updates\
+    66                                           \
+    67       851        870.0      1.0      0.0              if refactor_now:\
+    68                                                           # update basis indices and factor from scratch\
+    69        85       1857.0     21.8      0.0                  self.update_basis(*args, **kwargs)\
+    70        85        294.0      3.5      0.0                  out = self.refactor()  # time will be recorded\
+    71                                           \
+    72                                                   # If refactor_now is True, then self.refactor() is called\
+    73                                                   # We don't want to call method = self.update again here\
+    74      2642       2588.0      1.0      0.0          if not refactor_now:\
+    75                                                       # record the time it took to call the method\
+    76      2557      15114.0      5.9      0.0              t0 = timer()\
+    77      2557  133958091.0  52388.8     99.8              out = method(self, *args, **kwargs)\
+    78      2557     107779.0     42.2      0.1              if isinstance(out, np.ndarray) and np.any(np.isnan(out)):\
+    79                                                           raise LinAlgError("Nans in output")\
+    80      2557      21989.0      8.6      0.0              t1 = timer()\
+    81      2557      15635.0      6.1      0.0              self.bglu_time += (t1-t0)\
+    82                                           \
+    83                                                   # calculate average solve time,\
+    84                                                   # considering all significant method calls\
+    85      2642       5623.0      2.1      0.0          if method.__name__ == "solve":\
+    86      1704       3207.0      1.9      0.0              self.solves += 1\
+    87      1704       3523.0      2.1      0.0              avg = self.bglu_time/self.solves\
+    88                                                       self.average_solve_times = [\
+    89      1704       5525.0      3.2      0.0                  self.average_solve_times[1], avg]\
+    90                                           \
+    91      2642       2473.0      0.9      0.0          return out\
+\
+Total time: 0.320122 s\
+File: /Users/matthaberland/Desktop/scipydev/scipy/scipy/optimize/_bglu_dense_py.py\
+Function: __init__ at line 128\
+\
+Line #      Hits         Time  Per Hit   % Time  Line Contents\
+==============================================================\
+   128                                               @profile\
+   129                                               def __init__(self, A, b, max_updates=10, mast=False):\
+   130                                                   """\
+   131                                                   Given matrix A and basis indices b, perform PLU factorization of\
+   132                                                   basis matrix B\
+   133                                                   """\
+   134         2          6.0      3.0      0.0          self.A = A\
+   135         2          2.0      1.0      0.0          self.b = b\
+   136         2          3.0      1.5      0.0          self.m, self.n = A.shape\
+   137         2          2.0      1.0      0.0          self.max_updates = max_updates  # maximum updates between refactor\
+   138         2     320106.0 160053.0    100.0          self.refactor()\
+   139         2          3.0      1.5      0.0          self.mast = mast\
+\
+Total time: 4.21345 s\
+File: /Users/matthaberland/Desktop/scipydev/scipy/scipy/optimize/_bglu_dense_py.py\
+Function: refactor at line 141\
+\
+Line #      Hits         Time  Per Hit   % Time  Line Contents\
+==============================================================\
+   141                                               @consider_refactor\
+   142                                               @profile\
+   143                                               def refactor(self):\
+   144                                                   # Factor as in Equation 5.1\
+   145        87     962229.0  11060.1     22.8          self.B = self.A[:, self.b]  # get basis matrix\
+   146        87    2160504.0  24833.4     51.3          self.plu = lu_factor(self.B)  # lu_factor tested faster than lu\
+   147        87      77221.0    887.6      1.8          self.L = self.plu[0]  # L and U stored in the same matrix\
+   148        87     774309.0   8900.1     18.4          self.U = self.plu[0].copy()  # need to modify without changing L\
+   149                                                   # indexing with self.pi is equivalent to PI matrix product\
+   150        87     222375.0   2556.0      5.3          self.pi = self.perform_perm(self.plu[1])  # permutation indices\
+   151        87       1343.0     15.4      0.0          self.pit = np.zeros(self.m, dtype=int)  # permutation transposed\
+   152        87        992.0     11.4      0.0          self.pit[self.pi] = np.arange(self.m)\
+   153        87      13978.0    160.7      0.3          self.ops_list = []  # elementary row operations in order\
+   154                                           \
+   155        87        137.0      1.6      0.0          self.bglu_time = 0  # cumulative time spent updating and solving\
+   156        87         90.0      1.0      0.0          self.solves = 0     # number of solves since refactoring\
+   157        87         79.0      0.9      0.0          self.updates = 0    # number of updates since refactoring\
+   158        87        189.0      2.2      0.0          self.average_solve_times = [np.inf, np.inf]  # current and last average solve time\
+\
+Total time: 0.01212 s\
+File: /Users/matthaberland/Desktop/scipydev/scipy/scipy/optimize/_bglu_dense_py.py\
+Function: update_basis at line 162\
+\
+Line #      Hits         Time  Per Hit   % Time  Line Contents\
+==============================================================\
+   162                                               @profile\
+   163                                               def update_basis(self, i, j):\
+   164       851      10247.0     12.0     84.5          self.b[i:self.m-1] = self.b[i+1:self.m]  # eliminate i from basis\
+   165       851       1873.0      2.2     15.5          self.b[-1] = j  # add j to end of basis\
+\
+Total time: 55.2736 s\
+File: /Users/matthaberland/Desktop/scipydev/scipy/scipy/optimize/_bglu_dense_py.py\
+Function: update at line 167\
+\
+Line #      Hits         Time  Per Hit   % Time  Line Contents\
+==============================================================\
+   167                                               @consider_refactor\
+   168                                               @profile\
+   169                                               def update(self, i, j):\
+   170                                                   """ Perform rank-one update to basis and factorization """\
+   171       766      17678.0     23.1      0.0          self.update_basis(i, j)\
+   172                                           \
+   173                                                   # calculate last column of Hessenberg matrix\
+   174                                                   # FIXME: share this calculation with simplex method\
+   175       766      32470.0     42.4      0.1          pla = self.A[self.pi, j]\
+   176       766       1469.0      1.9      0.0          um = solve_triangular(self.L, pla, lower=True,\
+   177       766     497339.0    649.3      0.9                                check_finite=False, unit_diagonal=True)\
+   178      3826       8193.0      2.1      0.0          for ops in self.ops_list:\
+   179      3060   29016810.0   9482.6     52.5              um = self.perform_ops(um, ops)\
+   180                                           \
+   181                                                   # form Hessenberg matrix\
+   182       766       1062.0      1.4      0.0          H = self.U\
+   183       766    1343322.0   1753.7      2.4          H[:, i:self.m-1] = self.U[:, i+1:self.m]  # eliminate column i\
+   184       766      25546.0     33.3      0.0          H[:, -1] = um  # add column corresponding with j\
+   185                                           \
+   186                                                   # convert H to upper triangular, recording elementary row operations\
+   187       766   24327992.0  31759.8     44.0          self.ops_list.append(self.hess_lu(H, i))\
+   188                                           \
+   189       766       1696.0      2.2      0.0          self.U = H\
+\
+Total time: 74.3647 s\
+File: /Users/matthaberland/Desktop/scipydev/scipy/scipy/optimize/_bglu_dense_py.py\
+Function: solve at line 191\
+\
+Line #      Hits         Time  Per Hit   % Time  Line Contents\
+==============================================================\
+   191                                               @consider_refactor\
+   192                                               @profile\
+   193                                               def solve(self, q, transposed=False):\
+   194                                                   """\
+   195                                                   Solve B @ v = q efficiently using factorization\
+   196                                                   """\
+   197      1704       4041.0      2.4      0.0          if not self.ops_list:\
+   198                                                       # before any updates, solve according to Equation 5.2\
+   199       173     182349.0   1054.0      0.2              v = lu_solve(self.plu, q, trans=transposed)\
+   200                                                   else:\
+   201      1531       1643.0      1.1      0.0              if not transposed:\
+   202                                                           # paper skips this by making "inessential assumption" of\
+   203                                                           # no permutation\
+   204       765      24066.0     31.5      0.0                  q = q[self.pi]\
+   205                                           \
+   206                                                           # Equation 5.16\
+   207       765       1611.0      2.1      0.0                  t = solve_triangular(self.L, q, lower=True,\
+   208       765     511038.0    668.0      0.7                                       check_finite=False, unit_diagonal=True)\
+   209                                           \
+   210                                                           # Equation 5.17\
+   211       765       2759.0      3.6      0.0                  temp = t\
+   212      4590       8446.0      1.8      0.0                  for ops in self.ops_list:\
+   213      3825   39522851.0  10332.8     53.1                      temp = self.perform_ops(temp, ops)\
+   214       765        779.0      1.0      0.0                  w = temp\
+   215                                           \
+   216                                                           # Equation 5.18\
+   217                                                           # For whatever reason, faster to use U.T and set trans=True\
+   218       765       3359.0      4.4      0.0                  v = solve_triangular(self.U.T, w, lower=True,\
+   219       765     543004.0    709.8      0.7                                       trans=True, check_finite=False)\
+   220                                           \
+   221                                                       else:  # do everything transposed and in reverse order\
+   222       766       2386.0      3.1      0.0                  t = solve_triangular(self.U.T, q, lower=True,\
+   223       766     541392.0    706.8      0.7                                       trans=False, check_finite=False)\
+   224       766       2595.0      3.4      0.0                  temp = t\
+   225      4592      10445.0      2.3      0.0                  for ops in reversed(self.ops_list):\
+   226      3826   32504909.0   8495.8     43.7                      temp = self.perform_ops(temp, ops, reverse=True)\
+   227       766        699.0      0.9      0.0                  w = temp\
+   228       766       1339.0      1.7      0.0                  v = solve_triangular(self.L, w, lower=True, trans=True,\
+   229       766     476825.0    622.5      0.6                                       check_finite=False, unit_diagonal=True)\
+   230       766      14126.0     18.4      0.0                  v = v[self.pit]\
+   231                                           \
+   232      1704       4070.0      2.4      0.0          return v\
+\
+Total time: 44.429 s\
+File: /Users/matthaberland/Desktop/scipydev/scipy/scipy/optimize/_bglu_dense_py.py\
+Function: swap_rows at line 234\
+\
+Line #      Hits         Time  Per Hit   % Time  Line Contents\
+==============================================================\
+   234                                               @profile\
+   235                                               def swap_rows(self, H, i):\
+   236                                                   """\
+   237                                                   Swaps row i of H with next row; represents matrix product by PI_i\
+   238                                                   matrix described after matrix 5.10\
+   239                                                   """\
+   240   5495751   44428966.0      8.1    100.0          H[[i, i+1]] = H[[i+1, i]]\
+\
+Total time: 6.34537 s\
+File: /Users/matthaberland/Desktop/scipydev/scipy/scipy/optimize/_bglu_dense_py.py\
+Function: row_subtract at line 246\
+\
+Line #      Hits         Time  Per Hit   % Time  Line Contents\
+==============================================================\
+   246                                               @profile\
+   247                                               def row_subtract(self, H, i):\
+   248                                                   """\
+   249                                                   Zeros first nonzero element of row i+1 of H by subtracting appropriate\
+   250                                                   multiple of row i; represents matrix product by matrix 5.10. Returns\
+   251                                                   factor g for storage.\
+   252                                                   """\
+   253    365619     889083.0      2.4     14.0          g = H[i+1, i]/H[i, i]\
+   254    365619    5113185.0     14.0     80.6          H[i+1, i:] -= g*H[i, i:]\
+   255    365619     343100.0      0.9      5.4          return g\
+\
+Total time: 22.5688 s\
+File: /Users/matthaberland/Desktop/scipydev/scipy/scipy/optimize/_bglu_dense_py.py\
+Function: hess_lu at line 257\
+\
+Line #      Hits         Time  Per Hit   % Time  Line Contents\
+==============================================================\
+   257                                               @profile\
+   258                                               def hess_lu(self, H, i):\
+   259                                                   """\
+   260                                                   Converts Hessenberg matrix H with first nonzero off-diagonal in\
+   261                                                   column i to upper triangular, recording elementary row operations.\
+   262                                                   That is, performs and records operations in Equation 5.9.\
+   263                                                   """\
+   264       766       2487.0      3.2      0.0          m = H.shape[1]\
+   265       766       1134.0      1.5      0.0          ops = []\
+   266    366385     285846.0      0.8      1.3          for k in range(i, m-1):\
+   267    365619    2599815.0      7.1     11.5              piv1, piv2 = np.abs(H[k:k+2, k])\
+   268    365619     412300.0      1.1      1.8              swap = piv1 < piv2\
+   269                                                       # swap rows to ensure |g| <= 1\
+   270    365619     260963.0      0.7      1.2              if swap:\
+   271    364457    9689646.0     26.6     42.9                  self.swap_rows(H, k)\
+   272    365619    8880582.0     24.3     39.3              g = self.row_subtract(H, k)\
+   273    365619     435584.0      1.2      1.9              ops.append((swap, g))  # record elementary row operations\
+   274       766        484.0      0.6      0.0          return ops\
+\
+Total time: 85.1845 s\
+File: /Users/matthaberland/Desktop/scipydev/scipy/scipy/optimize/_bglu_dense_py.py\
+Function: perform_ops at line 276\
+\
+Line #      Hits         Time  Per Hit   % Time  Line Contents\
+==============================================================\
+   276                                               @profile\
+   277                                               def perform_ops(self, y, ops, reverse=False):\
+   278                                                   """\
+   279                                                   Replays operations needed to convert Hessenberg matrix into upper\
+   280                                                   triangular form on a vector y. Equivalent to matrix multlication by\
+   281                                                   inverse of matrix 5.12.\
+   282                                                   """\
+   283     10711      19832.0      1.9      0.0          m = len(y)\
+   284     10711      15971.0      1.5      0.0          i = m - len(ops) - 1\
+   285     10711       7676.0      0.7      0.0          if not reverse:\
+   286   3314350    3415061.0      1.0      4.0              for op, k in zip(ops, range(i, m-1)):\
+   287   3307465    2331874.0      0.7      2.7                  swap, g = op\
+   288   3307465    2226460.0      0.7      2.6                  if swap:\
+   289   3299192   41444775.0     12.6     48.7                      self.swap_rows(y, k)\
+   290   3307465    8255769.0      2.5      9.7                  y[k+1] -= g*y[k]\
+   291                                                   else:\
+   292   1840646    1827150.0      1.0      2.1              for op, k in zip(reversed(ops), reversed(range(i, m-1))):\
+   293   1836820    1109095.0      0.6      1.3                  swap, g = op\
+   294   1836820    3492378.0      1.9      4.1                  y[k] -= g*y[k+1]\
+   295   1836820    1232880.0      0.7      1.4                  if swap:\
+   296   1832102   19798728.0     10.8     23.2                      self.swap_rows(y, k)\
+   297     10711       6849.0      0.6      0.0          return y\
+\
+Total time: 0.151318 s\
+File: /Users/matthaberland/Desktop/scipydev/scipy/scipy/optimize/_bglu_dense_py.py\
+Function: perform_perm at line 299\
+\
+Line #      Hits         Time  Per Hit   % Time  Line Contents\
+==============================================================\
+   299                                               @profile\
+   300                                               def perform_perm(self, p):\
+   301                                                   """\
+   302                                                   Perform individual row swaps defined in p returned by factor_lu to\
+   303                                                   generate final permutation indices pi\
+   304                                                   """\
+   305        87       1685.0     19.4      1.1          pi = np.arange(len(p))\
+   306     74733      51912.0      0.7     34.3          for i, row in enumerate(p):\
+   307     74646      97635.0      1.3     64.5              pi[i], pi[row] = pi[row], pi[i]\
+   308        87         86.0      1.0      0.1          return pi\
+\
+Total time: 100.192 s\
+File: /Users/matthaberland/Desktop/scipydev/scipy/scipy/optimize/_linprog_rs.py\
+Function: _phase_one at line 21\
+\
+Line #      Hits         Time  Per Hit   % Time  Line Contents\
+==============================================================\
+    21                                           @profile\
+    22                                           def _phase_one(A, b, maxiter, tol, maxupdate, mast, pivot):\
+    23                                               """\
+    24                                               The purpose of phase one is to find an initial basic feasible solution\
+    25                                               (BFS) to the original problem.\
+    26                                           \
+    27                                               Generates an auxiliary problem with a trivial BFS and an objective that\
+    28                                               minimizes infeasibility of the original problem. Solves the auxiliary\
+    29                                               problem using the main simplex routine (phase two). This either yields\
+    30                                               a BFS to the original problem or determines that the original problem is\
+    31                                               infeasible. If feasible, phase one detects redundant rows in the original\
+    32                                               constraint matrix and removes them, then chooses additional indices as\
+    33                                               necessary to complete a basis/BFS for the original problem.\
+    34                                               """\
+    35                                           \
+    36         1          2.0      2.0      0.0      m, n = A.shape\
+    37         1          1.0      1.0      0.0      status = 0\
+    38                                           \
+    39                                               # generate auxiliary problem to get initial BFS\
+    40         1      47074.0  47074.0      0.0      A, b, c, basis, x = _generate_auxiliary_problem(A, b)\
+    41                                           \
+    42                                               # solve auxiliary problem\
+    43         1          2.0      2.0      0.0      x, basis, status, iter_k = _phase_two(c, A, x, basis, maxiter,\
+    44         1   99971281.0 99971281.0     99.8                                            tol, maxupdate, mast, pivot)\
+    45                                           \
+    46                                               # check for infeasibility\
+    47         1         35.0     35.0      0.0      residual = c.dot(x)\
+    48         1          5.0      5.0      0.0      if status == 0 and residual > tol:\
+    49                                                   status = 2\
+    50                                           \
+    51                                               # detect redundancy\
+    52                                               # TODO: consider removing this?\
+    53         1      10967.0  10967.0      0.0      B = A[:, basis]\
+    54         1          2.0      2.0      0.0      try:\
+    55         1     146221.0 146221.0      0.1          rank_revealer = solve(B, A[:, :n])\
+    56         1      10866.0  10866.0      0.0          z = _find_nonzero_rows(rank_revealer, tol)\
+    57                                           \
+    58                                                   # eliminate redundancy\
+    59         1       5078.0   5078.0      0.0          A = A[z, :n]\
+    60         1         23.0     23.0      0.0          b = b[z]\
+    61                                               except (LinAlgError, LinAlgError2):\
+    62                                                   status = 4\
+    63                                           \
+    64                                               # form solution to original problem\
+    65         1          5.0      5.0      0.0      x = x[:n]\
+    66         1          3.0      3.0      0.0      m = A.shape[0]\
+    67         1         27.0     27.0      0.0      basis = basis[basis < n]\
+    68                                           \
+    69                                               # if feasible, choose additional indices to complete basis\
+    70         1          5.0      5.0      0.0      if status == 0 and len(basis) < m:\
+    71                                                   basis = _get_more_basis_columns(A, basis)\
+    72                                           \
+    73         1          2.0      2.0      0.0      return x, basis, A, b, residual, status, iter_k\
+\
+Total time: 135.315 s\
+File: /Users/matthaberland/Desktop/scipydev/scipy/scipy/optimize/_linprog_rs.py\
+Function: _phase_two at line 209\
+\
+Line #      Hits         Time  Per Hit   % Time  Line Contents\
+==============================================================\
+   209                                           @profile\
+   210                                           def _phase_two(c, A, x, b, maxiter, tol, maxupdate, mast, pivot):\
+   211                                               """\
+   212                                               The heart of the simplex method. Beginning with a basic feasible solution,\
+   213                                               moves to adjacent basic feasible solutions successively lower reduced cost.\
+   214                                               Terminates when there are no basic feasible solutions with lower reduced\
+   215                                               cost or if the problem is determined to be unbounded.\
+   216                                           \
+   217                                               This implementation follows the revised simplex method based on LU\
+   218                                               decomposition. Rather than maintaining a tableau or an inverse of the\
+   219                                               basis matrix, we keep a factorization of the basis matrix that allows\
+   220                                               efficient solution of linear systems while avoiding stability issues\
+   221                                               associated with inverted matrices.\
+   222                                               """\
+   223         2          4.0      2.0      0.0      m, n = A.shape\
+   224         2          3.0      1.5      0.0      status = 0\
+   225         2         21.0     10.5      0.0      a = np.arange(n)                    # indices of columns of A\
+   226         2          7.0      3.5      0.0      ab = np.arange(m)                   # indices of columns of B\
+   227         2          4.0      2.0      0.0      if maxupdate:\
+   228                                                   # basis matrix factorization object; similar to B = A[:, b]\
+   229         2     320158.0 160079.0      0.2          B = BGLU(A, b, maxupdate, mast)\
+   230                                               else:\
+   231                                                   B = LU(A, b)\
+   232                                           \
+   233       853       1237.0      1.5      0.0      for iteration in range(maxiter):\
+   234                                           \
+   235       853      11549.0     13.5      0.0          bl = np.zeros(len(a), dtype=bool)\
+   236       853       6254.0      7.3      0.0          bl[b] = 1\
+   237                                           \
+   238       853       6721.0      7.9      0.0          xb = x[b]       # basic variables\
+   239       853       5522.0      6.5      0.0          cb = c[b]       # basic costs\
+   240                                           \
+   241       853       1035.0      1.2      0.0          try:\
+   242       853   33795714.0  39619.8     25.0              v = B.solve(cb, transposed=True)    # similar to v = solve(B.T, cb)\
+   243                                                   except LinAlgError:\
+   244                                                       status = 4\
+   245                                                       break\
+   246                                           \
+   247       853     817098.0    957.9      0.6          c_hat = c - v.dot(A)    # reduced cost\
+   248       853      30003.0     35.2      0.0          c_hat = c_hat[~bl]\
+   249                                                   # Above is much faster than:\
+   250                                                   # N = A[:, ~bl]                 # slow!\
+   251                                                   # c_hat = c[~bl] - v.T.dot(N)\
+   252                                                   # Can we perform the mulitplication only on the nonbasic columns?\
+   253                                           \
+   254       853      50313.0     59.0      0.0          if np.all(c_hat >= -tol):  # all reduced costs positive -> terminate\
+   255         2          3.0      1.5      0.0              break\
+   256                                           \
+   257       851      40270.0     47.3      0.0          j = _select_enter_pivot(c_hat, bl, a, rule=pivot, tol=tol)\
+   258       851   40875108.0  48031.9     30.2          u = B.solve(A[:, j])        # similar to u = solve(B, A[:, j])\
+   259                                           \
+   260       851      11238.0     13.2      0.0          i = u > tol                 # if none of the u are positive, unbounded\
+   261       851      15742.0     18.5      0.0          if not np.any(i):\
+   262                                                       status = 3\
+   263                                                       break\
+   264                                           \
+   265       851      14193.0     16.7      0.0          th = xb[i]/u[i]\
+   266       851      14014.0     16.5      0.0          l = np.argmin(th)           # implicitly selects smallest subscript\
+   267       851       2767.0      3.3      0.0          th_star = th[l]             # step size\
+   268                                           \
+   269       851      31540.0     37.1      0.0          x[b] = x[b] - th_star*u     # take step\
+   270       851       2147.0      2.5      0.0          x[j] = th_star\
+   271       851   59261233.0  69637.2     43.8          B.update(ab[i][l], j)       # modify basis\
+   272       851       1342.0      1.6      0.0          b = B.b                     # similar to b[ab[i][l]] = j\
+   273                                               else:\
+   274                                                   status = 1\
+   275                                           \
+   276         2          3.0      1.5      0.0      return x, b, status, iteration\
+\
+Total time: 135.576 s\
+File: /Users/matthaberland/Desktop/scipydev/scipy/scipy/optimize/_linprog_rs.py\
+Function: _linprog_rs at line 280\
+\
+Line #      Hits         Time  Per Hit   % Time  Line Contents\
+==============================================================\
+   280                                           @profile\
+   281                                           def _linprog_rs(c, c0, A, b, callback=None, maxiter=1000, tol=1e-12,\
+   282                                                           maxupdate=10, mast=False, pivot="mrc", **unknown_options):\
+   283                                               """\
+   284                                               Solve the following linear programming problem via a two-phase\
+   285                                               revised simplex algorithm.::\
+   286                                           \
+   287                                                   minimize:     c^T @ x\
+   288                                           \
+   289                                                   subject to:  A @ x == b\
+   290                                                                0 <= x < oo\
+   291                                           \
+   292                                               Parameters\
+   293                                               ----------\
+   294                                               c : 1D array\
+   295                                                   Coefficients of the linear objective function to be minimized.\
+   296                                               c0 : float\
+   297                                                   Constant term in objective function due to fixed (and eliminated)\
+   298                                                   variables. (Currently unused.)\
+   299                                               A : 2D array\
+   300                                                   2D array which, when matrix-multiplied by ``x``, gives the values of\
+   301                                                   the equality constraints at ``x``.\
+   302                                               b : 1D array\
+   303                                                   1D array of values representing the RHS of each equality constraint\
+   304                                                   (row) in ``A_eq``.\
+   305                                               callback : callable, optional (Currently unused.)\
+   306                                           \
+   307                                               Options\
+   308                                               -------\
+   309                                               maxiter : int\
+   310                                                  The maximum number of iterations to perform in either phase.\
+   311                                               tol : float\
+   312                                                   The tolerance which determines when a solution is "close enough" to\
+   313                                                   zero in Phase 1 to be considered a basic feasible solution or close\
+   314                                                   enough to positive to serve as an optimal solution.\
+   315                                               maxupdate : int\
+   316                                                   The maximum number of updates performed on the LU factorization.\
+   317                                                   After this many updates is reached, the basis matrix is factorized\
+   318                                                   from scratch.\
+   319                                               mast : bool\
+   320                                                   Minimize Amortized Solve Time. If enabled, the average time to solve\
+   321                                                   a linear system using the basis factorization is measured. Typically,\
+   322                                                   the average solve time will decrease with each successive solve after\
+   323                                                   initial factorization, as factorization takes much more time than the\
+   324                                                   solve operation (and updates). Eventually, however, the updated\
+   325                                                   factorization becomes sufficiently complex that the average solve time\
+   326                                                   begins to increase. When this is detected, the basis is refactorized\
+   327                                                   from scratch. Enable this option to maximize speed at the risk of\
+   328                                                   nondeterministic behavior. Ignored if ``maxupdate`` is 0.\
+   329                                               pivot : "mrc" or "bland"\
+   330                                                   Pivot rule: Minimum Reduced Cost (default) or Bland's rule. Choose\
+   331                                                   Bland's rule if iteration limit is reached and cycling is suspected.\
+   332                                           \
+   333                                               Returns\
+   334                                               -------\
+   335                                               x : 1D array\
+   336                                                   Solution vector.\
+   337                                               status : int\
+   338                                                   An integer representing the exit status of the optimization::\
+   339                                           \
+   340                                                    0 : Optimization terminated successfully\
+   341                                                    1 : Iteration limit reached\
+   342                                                    2 : Problem appears to be infeasible\
+   343                                                    3 : Problem appears to be unbounded\
+   344                                                    4 : Numerical difficulties encountered\
+   345                                                    5 : No constraints; turn presolve on\
+   346                                           \
+   347                                               message : str\
+   348                                                   A string descriptor of the exit status of the optimization.\
+   349                                               iteration : int\
+   350                                                   The number of iterations taken to solve the problem.\
+   351                                               """\
+   352                                           \
+   353         1         12.0     12.0      0.0      _check_unknown_options(unknown_options)\
+   354                                           \
+   355         1          6.0      6.0      0.0      messages = ["Optimization terminated successfully.",\
+   356         1          1.0      1.0      0.0                  "Iteration limit reached.",\
+   357         1          1.0      1.0      0.0                  "The problem appears infeasible, as the phase one auxiliary "\
+   358                                                           "problem terminated successfully with a residual of \{0:.1e\}, "\
+   359                                                           "greater than the tolerance \{1\} required for the solution to "\
+   360                                                           "be considered feasible. Consider increasing the tolerance to "\
+   361                                                           "be greater than \{0:.1e\}. If this tolerance is unnaceptably "\
+   362                                                           "large, the problem is likely infeasible.",\
+   363         1          1.0      1.0      0.0                  "The problem is unbounded, as the simplex algorithm found "\
+   364                                                           "a basic feasible solution from which there is a direction "\
+   365                                                           "with negative reduced cost in which all decision variables "\
+   366                                                           "increase.",\
+   367         1          1.0      1.0      0.0                  "Numerical difficulties encountered; consider trying "\
+   368                                                           "method='interior-point'.",\
+   369         1          1.0      1.0      0.0                  "Problems with no constraints are trivially solved; please "\
+   370                                                           "turn presolve on."\
+   371                                                           ]\
+   372                                           \
+   373         1          2.0      2.0      0.0      if A.size == 0:  # address test_unbounded_below_no_presolve_corrected\
+   374                                                   return np.zeros(c.shape), 5, messages[5], 0\
+   375                                           \
+   376         1          2.0      2.0      0.0      x, basis, A, b, residual, status, iteration = _phase_one(A, b, maxiter,\
+   377         1          1.0      1.0      0.0                                                               tol, maxupdate,\
+   378         1  100193607.0 100193607.0     73.9                                                               mast, pivot)\
+   379         1          2.0      2.0      0.0      if status == 0:\
+   380         1          2.0      2.0      0.0          x, basis, status, iteration = _phase_two(c, A, x, basis,\
+   381         1          1.0      1.0      0.0                                                   maxiter, tol, maxupdate,\
+   382         1   35381859.0 35381859.0     26.1                                                   mast, pivot)\
+   383                                           \
+   384         1          7.0      7.0      0.0      return x, status, messages[status].format(residual, tol), iteration}
