@@ -135,7 +135,7 @@ def _solve_simplex(T, n, basis, maxiter=1000, phase=2, status=0, message='',
     """
     Solve a linear programming problem in "standard maximization form" using
     the Simplex Method. Linear Programming is intended to solve the following
-    problem form::
+    problem form:
 
     Minimize::
 
@@ -145,7 +145,6 @@ def _solve_simplex(T, n, basis, maxiter=1000, phase=2, status=0, message='',
 
         A @ x == b
             x >= 0
-
 
     Parameters
     ----------
