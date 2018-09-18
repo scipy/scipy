@@ -153,11 +153,11 @@ Scalar functions
 The table below lists situations and appropriate methods, along with
 *asymptotic* convergence rates per iteration (and per function evaluation)
 for successful convergence to a simple root(*).
-Bisection is the slowest of them all, adding one bit of accuracy for each f
-unction evaluation, but is guaranteed to converge.
+Bisection is the slowest of them all, adding one bit of accuracy for each
+function evaluation, but is guaranteed to converge.
 The other bracketing methods all (eventually) increase the number of accurate
 bits by about 50% for every function evaluation.
-The derivative-based methods, all built on newton, can converge quite quickly
+The derivative-based methods, all built on `newton`, can converge quite quickly
 if the initial value is close to the root.  They can also be applied to
 functions defined on (a subset of) the complex plane.
 

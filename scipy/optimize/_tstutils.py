@@ -75,7 +75,7 @@ def f1_fpp(x):
 
 def f2(x):
     r"""f2 is a symmetric parabola, x**2 - 1"""
-    return x ** 2 - 1
+    return x**2 - 1
 
 
 def f2_fp(x):
@@ -92,11 +92,11 @@ def f3(x):
 
 
 def f3_fp(x):
-    return 4 * x ** 3 - 18 * x ** 2 + 22 * x - 6
+    return 4 * x**3 - 18 * x**2 + 22 * x - 6
 
 
 def f3_fpp(x):
-    return 12 * x ** 2 - 36 * x + 22
+    return 12 * x**2 - 36 * x + 22
 
 
 def f4(x):
@@ -174,17 +174,17 @@ def aps01_fpp(x):
 def aps02_f(x):
     r"""poles at x=n**2, 1st and 2nd derivatives at root are also close to 0"""
     ii = np.arange(1, 21)
-    return -2 * np.sum((2 * ii - 5) ** 2 / (x - ii ** 2) ** 3)
+    return -2 * np.sum((2 * ii - 5)**2 / (x - ii**2)**3)
 
 
 def aps02_fp(x):
     ii = np.arange(1, 21)
-    return 6 * np.sum((2 * ii - 5) ** 2 / (x - ii ** 2) ** 4)
+    return 6 * np.sum((2 * ii - 5)**2 / (x - ii**2)**4)
 
 
 def aps02_fpp(x):
     ii = np.arange(1, 21)
-    return 24 * np.sum((2 * ii - 5) ** 2 / (x - ii ** 2) ** 5)
+    return 24 * np.sum((2 * ii - 5)**2 / (x - ii**2)**5)
 
 
 def aps03_f(x, a, b):
@@ -202,15 +202,15 @@ def aps03_fpp(x, a, b):
 
 def aps04_f(x, n, a):
     r"""Medium-degree polynomial"""
-    return x ** n - a
+    return x**n - a
 
 
 def aps04_fp(x, n, a):
-    return n * x ** (n - 1)
+    return n * x**(n - 1)
 
 
 def aps04_fpp(x, n, a):
-    return n * (n - 1) * x ** (n - 2)
+    return n * (n - 1) * x**(n - 2)
 
 
 def aps05_f(x):
@@ -241,11 +241,11 @@ def aps06_fpp(x, n):
 
 def aps07_f(x, n):
     r"""Upside down parabola with parametrizable height"""
-    return (1 + (1 - n) ** 2) * x - (1 - n * x) ** 2
+    return (1 + (1 - n)**2) * x - (1 - n * x)**2
 
 
 def aps07_fp(x, n):
-    return (1 + (1 - n) ** 2) + 2 * n * (1 - n * x)
+    return (1 + (1 - n)**2) + 2 * n * (1 - n * x)
 
 
 def aps07_fpp(x, n):
@@ -254,41 +254,41 @@ def aps07_fpp(x, n):
 
 def aps08_f(x, n):
     r"""Degree n polynomial"""
-    return x * x - (1 - x) ** n
+    return x * x - (1 - x)**n
 
 
 def aps08_fp(x, n):
-    return 2 * x + n * (1 - x) ** (n - 1)
+    return 2 * x + n * (1 - x)**(n - 1)
 
 
 def aps08_fpp(x, n):
-    return 2 - n * (n - 1) * (1 - x) ** (n - 2)
+    return 2 - n * (n - 1) * (1 - x)**(n - 2)
 
 
 def aps09_f(x, n):
     r"""Upside down quartic with parametrizable height"""
-    return (1 + (1 - n) ** 4) * x - (1 - n * x) ** 4
+    return (1 + (1 - n)**4) * x - (1 - n * x)**4
 
 
 def aps09_fp(x, n):
-    return (1 + (1 - n) ** 4) + 4 * n * (1 - n * x) ** 3
+    return (1 + (1 - n)**4) + 4 * n * (1 - n * x)**3
 
 
 def aps09_fpp(x, n):
-    return -12 * n * (1 - n * x) ** 2
+    return -12 * n * (1 - n * x)**2
 
 
 def aps10_f(x, n):
     r"""Exponential plus a polynomial"""
-    return np.exp(-n * x) * (x - 1) + x ** n
+    return np.exp(-n * x) * (x - 1) + x**n
 
 
 def aps10_fp(x, n):
-    return np.exp(-n * x) * (-n * (x - 1) + 1) + n * x ** (n - 1)
+    return np.exp(-n * x) * (-n * (x - 1) + 1) + n * x**(n - 1)
 
 
 def aps10_fpp(x, n):
-    return np.exp(-n * x) * (-n * (-n * (x - 1) + 1) + -n * x) + n * (n - 1) * x ** (n - 2)
+    return np.exp(-n * x) * (-n * (-n * (x - 1) + 1) + -n * x) + n * (n - 1) * x**(n - 2)
 
 
 def aps11_f(x, n):
@@ -297,11 +297,11 @@ def aps11_f(x, n):
 
 
 def aps11_fp(x, n):
-    return 1 / (n - 1) / x ** 2
+    return 1 / (n - 1) / x**2
 
 
 def aps11_fpp(x, n):
-    return -2 / (n - 1) / x ** 3
+    return -2 / (n - 1) / x**3
 
 
 def aps12_f(x, n):
@@ -327,7 +327,7 @@ def aps13_f(x):
     # x2 = 1.0/x**2
     # if x2 > 708:
     #     return 0
-    y = 1 / x ** 2
+    y = 1 / x**2
     if y > _MAX_EXPABLE:
         return 0
     return x / np.exp(y)
@@ -336,19 +336,19 @@ def aps13_f(x):
 def aps13_fp(x):
     if x == 0:
         return 0
-    y = 1 / x ** 2
+    y = 1 / x**2
     if y > _MAX_EXPABLE:
         return 0
-    return (1 + 2 / x ** 2) / np.exp(y)
+    return (1 + 2 / x**2) / np.exp(y)
 
 
 def aps13_fpp(x):
     if x == 0:
         return 0
-    y = 1 / x ** 2
+    y = 1 / x**2
     if y > _MAX_EXPABLE:
         return 0
-    return 2 * (2 - x ** 2) / x ** 5 / np.exp(y)
+    return 2 * (2 - x**2) / x**5 / np.exp(y)
 
 
 def aps14_f(x, n):
@@ -573,15 +573,15 @@ _APS_TESTS_DICTS = [dict(zip(_APS_TESTS_KEYS, testcase)) for testcase in _APS_TE
 
 def cplx01_f(z, n, a):
     r"""z**n-a:  Use to find the n-th root of a"""
-    return z ** n - a
+    return z**n - a
 
 
 def cplx01_fp(z, n, a):
-    return n * z ** (n - 1)
+    return n * z**(n - 1)
 
 
 def cplx01_fpp(z, n, a):
-    return n * (n - 1) * z ** (n - 2)
+    return n * (n - 1) * z**(n - 2)
 
 
 def cplx02_f(z, a):
