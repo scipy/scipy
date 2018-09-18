@@ -166,7 +166,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
     Minimize::
 
-        c^T @ x
+        cT @ x
 
     Subject to::
 
@@ -174,7 +174,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         A_eq @ x == b_eq
          lb <= x <= ub
 
-    where ``lb = 0`` and ``ub = np.inf`` unless set in ``bounds``.
+    where ``lb = 0`` and ``ub = None`` unless set in ``bounds``.
 
     Parameters
     ----------
@@ -383,11 +383,15 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     --------
     Consider the following problem:
 
-    Minimize: f = -1*x[0] + 4*x[1]
+    Minimize::
 
-    Subject to: -3*x[0] + 1*x[1] <= 6
-                 1*x[0] + 2*x[1] <= 4
-                            x[1] >= -3
+        f = -1x[0] + 4x[1]
+
+    Subject to::
+
+        -3x[0] + 1x[1] <= 6
+         1x[0] + 2x[1] <= 4
+                  x[1] >= -3
 
     where:  -inf <= x[0] <= inf
 

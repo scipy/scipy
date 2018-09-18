@@ -139,7 +139,7 @@ def _solve_simplex(T, n, basis, maxiter=1000, phase=2, status=0, message='',
 
     Minimize::
 
-        c^T @ x
+        cT @ x
 
     Subject to::
 
@@ -205,7 +205,7 @@ def _solve_simplex(T, n, basis, maxiter=1000, phase=2, status=0, message='',
         The initial iteration number used to keep an accurate iteration total
         in a two-phase problem.
     bland : bool
-        If True, choose pivots using Bland's rule [3].  In problems which
+        If True, choose pivots using Bland's rule [3]_.  In problems which
         fail to converge due to cycling, using Bland's rule can provide
         convergence at the expense of a less optimal path about the simplex.
 
@@ -310,12 +310,16 @@ def _linprog_simplex(c, c0, A, b, maxiter=1000, disp=False, callback=None,
                      tol=1.0E-12, bland=False, _T_o=None, **unknown_options):
     """
     Solve the following linear programming problem via a two-phase
-    simplex algorithm of the form::
+    simplex algorithm of the form:
 
-        Minimize: c^T @ x
+    Minimize::
 
-        Subject to: A @ x == b
-                        0 >= x
+        cT @ x
+
+    Subject to::
+
+        A @ x == b
+            x >= 0
 
     Parameters
     ----------
@@ -376,7 +380,7 @@ def _linprog_simplex(c, c0, A, b, maxiter=1000, disp=False, callback=None,
         zero in Phase 1 to be considered a basic feasible solution or close
         enough to positive to serve as an optimal solution.
     bland : bool
-        If True, use Bland's anti-cycling rule [3] to choose pivots to
+        If True, use Bland's anti-cycling rule [3]_ to choose pivots to
         prevent cycling.  If False, choose pivots which should lead to a
         converged solution more quickly.  The latter method is subject to
         cycling (non-convergence) in rare instances.
@@ -404,11 +408,15 @@ def _linprog_simplex(c, c0, A, b, maxiter=1000, disp=False, callback=None,
     --------
     Consider the following problem:
 
-    Minimize: f = -1*x[0] + 4*x[1]
+    Minimize::
 
-    Subject to: -3*x[0] + 1*x[1] <= 6
-                 1*x[0] + 2*x[1] <= 4
-                            x[1] >= -3
+        f = -1x[0] + 4x[1]
+
+    Subject to::
+
+        -3x[0] + 1x[1] <= 6
+         1x[0] + 2x[1] <= 4
+                  x[1] >= -3
 
     where:  -inf <= x[0] <= inf
 

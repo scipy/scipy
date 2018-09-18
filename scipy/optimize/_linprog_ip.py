@@ -781,7 +781,7 @@ def _linprog_ip(
 
     Minimize::
 
-        c^T @ x
+        cT @ x
 
     Subject to::
 
