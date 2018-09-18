@@ -5,16 +5,16 @@
 
 double
 bisect(callback_type f, double xa, double xb, double xtol, double rtol,
-       int iter, default_parameters *params)
+       int iter, void *func_data, scipy_zeros_info *solver_stats)
 {
     int i;
     double dm,xm,fm,fa,fb;
 
-    fa = (*f)(xa,params);
-    fb = (*f)(xb,params);
-    params->funcalls = 2;
+    fa = (*f)(xa, func_data);
+    fb = (*f)(xb, func_data);
+    solver_stats->funcalls = 2;
     if (fa*fb > 0) {
-        params->error_num = SIGNERR;
+        solver_stats->error_num = SIGNERR;
         return 0.;
     }
     if (fa == 0) {
@@ -24,13 +24,13 @@ bisect(callback_type f, double xa, double xb, double xtol, double rtol,
         return xb;
     }
     dm = xb - xa;
-    params->iterations = 0;
+    solver_stats->iterations = 0;
     for (i=0; i<iter; i++) {
-        params->iterations++;
+        solver_stats->iterations++;
         dm *= .5;
         xm = xa + dm;
-        fm = (*f)(xm,params);
-        params->funcalls++;
+        fm = (*f)(xm, func_data);
+        solver_stats->funcalls++;
         if (fm*fa >= 0) {
             xa = xm;
         }
@@ -38,6 +38,6 @@ bisect(callback_type f, double xa, double xb, double xtol, double rtol,
             return xm;
         }
     }
-    params->error_num = CONVERR;
+    solver_stats->error_num = CONVERR;
     return xa;
 }

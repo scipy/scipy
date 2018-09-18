@@ -11,6 +11,7 @@ _rtol = 4 * np.finfo(float).eps
 
 __all__ = ['newton', 'bisect', 'ridder', 'brentq', 'brenth', 'toms748', 'RootResults']
 
+# Must agree with CONVERGED, SIGNERR, CONVERR, ...  in zeros.h
 CONVERGED = 'converged'
 SIGNERR = 'sign error'
 CONVERR = 'convergence error'
@@ -267,13 +268,15 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
             funcalls += 1
             # If fval is 0, a root has been found, then terminate
             if fval == 0:
-                return _results_select(full_output, (p0, funcalls, itr, _ECONVERGED))
+                return _results_select(
+                    full_output, (p0, funcalls, itr, _ECONVERGED))
             fder = fprime(p0, *args)
             funcalls += 1
             if fder == 0:
                 msg = "derivative was zero."
                 warnings.warn(msg, RuntimeWarning)
-                return _results_select(full_output, (p0, funcalls, itr + 1, _ECONVERR))
+                return _results_select(
+                    full_output, (p0, funcalls, itr + 1, _ECONVERR))
             newton_step = fval / fder
             if fprime2:
                 fder2 = fprime2(p0, *args)
@@ -289,7 +292,8 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
                     newton_step /= 1.0 - adj
             p = p0 - newton_step
             if np.abs(p - p0) < tol:
-                return _results_select(full_output, (p, funcalls, itr + 1, _ECONVERGED))
+                return _results_select(
+                    full_output, (p, funcalls, itr + 1, _ECONVERGED))
             p0 = p
     else:
         # Secant method
@@ -305,11 +309,13 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
                     msg = "Tolerance of %s reached" % (p1 - p0)
                     warnings.warn(msg, RuntimeWarning)
                 p = (p1 + p0) / 2.0
-                return _results_select(full_output, (p, funcalls, itr + 1, _ECONVERGED))
+                return _results_select(
+                    full_output, (p, funcalls, itr + 1, _ECONVERGED))
             else:
                 p = p1 - q1 * (p1 - p0) / (q1 - q0)
             if np.abs(p - p1) < tol:
-                return _results_select(full_output, (p, funcalls, itr + 1, _ECONVERGED))
+                return _results_select(
+                    full_output, (p, funcalls, itr + 1, _ECONVERGED))
             p0 = p1
             q0 = q1
             p1 = p
@@ -317,7 +323,8 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
             funcalls += 1
 
     if disp:
-        msg = "Failed to converge after %d iterations, value is %s" % (itr + 1, p)
+        msg = "Failed to converge after %d iterations, value is %s" % (
+            itr + 1, p)
         raise RuntimeError(msg)
 
     return _results_select(full_output, (p, funcalls, itr + 1, _ECONVERR))
@@ -402,7 +409,8 @@ def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2, full_output):
                 rms = np.sqrt(
                     sum((p1[zero_der_nz_dp] - p[zero_der_nz_dp]) ** 2)
                 )
-                warnings.warn('RMS of {:g} reached'.format(rms), RuntimeWarning)
+                warnings.warn(
+                    'RMS of {:g} reached'.format(rms), RuntimeWarning)
         # Newton or Halley warnings
         else:
             all_or_some = 'all' if zero_der.all() else 'some'

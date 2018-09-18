@@ -19,6 +19,12 @@ from scipy._lib._util import getargspec_no_self as _getargspec
 from scipy.optimize._tstutils import functions, fstrings, get_tests
 from scipy._lib._numpy_compat import suppress_warnings
 
+from scipy._lib._ccallback import LowLevelCallable
+from scipy.optimize import _tstutils_zerofuncs
+from scipy.optimize._tstutils_zerofuncs import get_x_to_the_n_minus_a
+# from ctypes import *  # Structure, c_int, c_double, pointer
+import ctypes
+
 TOL = 4*np.finfo(float).eps  # tolerance
 
 _FLOAT_EPS = finfo(float).eps
@@ -276,7 +282,8 @@ class TestBasic(object):
             x, r = zeros.newton(self.f1, x0, disp=False, **kwargs)
             assert_(r.converged)
             assert_equal(x, r.root)
-            assert_equal((r.iterations, r.function_calls), expected_counts[derivs])
+            assert_equal((r.iterations, r.function_calls),
+                         expected_counts[derivs])
             if derivs == 0:
                 assert(r.function_calls <= r.iterations + 1)
             else:
@@ -294,13 +301,73 @@ class TestBasic(object):
                 # validate the start of the message.
                 with pytest.raises(
                         RuntimeError,
-                        match='Failed to converge after %d iterations, value is .*' % (iters)):
-                    x, r = zeros.newton(self.f1, x0, maxiter=iters, disp=True, **kwargs)
+                        match='Failed to converge after %d iterations, '
+                              'value is .*' % (iters)):
+                    x, r = zeros.newton(
+                        self.f1, x0, maxiter=iters, disp=True, **kwargs)
 
     def test_deriv_zero_warning(self):
         func = lambda x: x**2 - 2.0
         dfunc = lambda x: 2*x
         assert_warns(RuntimeWarning, cc.newton, func, 0.0, dfunc)
+
+
+class TestLowLevelCallable(object):
+    def setUp(self):
+        func_names_plus_args = [['xcubed_minus_2', ()], ['x_to_the_n_minus_2', (3)]]
+        self.func_plus_args = [
+            [LowLevelCallable.from_cython(_tstutils_zerofuncs, fn), args, fn]
+            for fn, args in func_names_plus_args]
+        if 0:
+            llc_with_data = get_x_to_the_n_minus_a(3, 2)
+            print("llc_with_data", llc_with_data)
+            self.func_plus_args_user_data = [llc_with_data, (), '_x_to_the_n_minus_a']
+        else:
+            class N_AND_A(ctypes.Structure):
+                _fields_ = ("a", ctypes.c_double), ("n", ctypes.c_int)
+                def __init__(self, n, a):
+                    self.n = n
+                    self.a = a
+
+            n_and_a = N_AND_A(3, 2.0)
+            c_n_and_a = ctypes.pointer(n_and_a)
+            c_n_and_a = ctypes.cast(c_n_and_a, c_void_p)
+            llc_with_data = LowLevelCallable.from_cython(_tstutils_zerofuncs, "x_to_the_n_minus_a", c_n_and_a)
+            print("llc_with_data", llc_with_data)
+            self.func_plus_args_user_data = [llc_with_data, (), '_x_to_the_n_minus_a']
+
+    def run_check(self, method, name, test_user_data=False):
+        cuberoot3 = np.power(2, 1.0/3)
+        a = .5
+        b = sqrt(10)
+        xtol = rtol = TOL
+        tests = self.func_plus_args
+        if test_user_data:
+            tests = self.func_plus_args_user_data
+        for function, args, fname in tests:
+            zero, r = method(function, a, b, xtol=xtol, rtol=rtol,
+                             args=args, full_output=True)
+            assert_(r.converged)
+            assert_allclose(zero, cuberoot3, atol=xtol, rtol=rtol,
+                            err_msg='method %s, function %s' % (name, fname))
+            if name == "bisect":
+                assert(r.iterations <= 53), str(
+                    [r.converged, r.iterations, r.function_calls])
+            else:
+                assert(r.iterations <= 11), str(
+                    [r.converged, r.iterations, r.function_calls])
+
+    def test_bisect(self):
+        self.run_check(cc.bisect, 'bisect', test_user_data=True)
+
+    def test_brentq(self):
+        self.run_check(cc.brentq, 'brentq')
+
+    def test_brenth(self):
+        self.run_check(cc.brenth, 'brenth')
+
+    def test_ridder(self):
+        self.run_check(cc.ridder, 'ridder')
 
 
 def test_gh_5555():
@@ -512,7 +579,8 @@ def test_gh_8881():
     # Newton succeeds in 8 iterations
     rt, r = newton(f, x0, fprime=fp, full_output=True)
     assert(r.converged)
-    # Before the Issue 8881/PR 8882, halley would send x in the wrong direction.
+    # Before the Issue 8881/PR 8882, halley would send x in the
+    # wrong direction.
     # Check that it now succeeds.
     rt, r = newton(f, x0, fprime=fp, fprime2=fpp, full_output=True)
     assert(r.converged)

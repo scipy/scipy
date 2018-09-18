@@ -196,7 +196,7 @@ static ccallback_t *ccallback_obtain(void)
  * signatures
  *     NULL terminated list of allowed signatures.
  * capsule_signature
- *     The mismatcing signature from user-provided PyCapsule.
+ *     The mismatching signature from user-provided PyCapsule.
  */
 static void ccallback__err_invalid_signature(ccallback_signature_t *signatures,
                                              const char *capsule_signature)
@@ -265,6 +265,62 @@ fail:
     return;
 }
 
+/*
+ * Retrieve the LowLevelCallable Type
+ *
+ * Parameters
+ * ----------
+ * callback_obj : PyObject
+ *     Object provided by the user. Usually, LowLevelCallback object, or a
+ *     Python callable.
+ *
+ * Returns
+ * -------
+ * lowlevelcallable_type : PyTypeObject *
+ *     !=NULL if success, ==NULL on failure.
+ *
+ */
+ static PyTypeObject * get_lowlevelcallable_type() {
+    static PyTypeObject *lowlevelcallable_type = NULL;
+    if (lowlevelcallable_type == NULL) {
+        PyObject *module;
+
+        module = PyImport_ImportModule("scipy._lib._ccallback");
+        if (module == NULL) {
+            return 0;
+        }
+
+        lowlevelcallable_type = (PyTypeObject *)PyObject_GetAttrString(module, "LowLevelCallable");
+        Py_DECREF(module);
+    }
+    return lowlevelcallable_type;
+}
+
+
+/*
+ * Is this a LowLevelCallable?
+ *
+ * Parameters
+ * ----------
+ * callback_obj : PyObject
+ *     Object provided by the user. Usually, LowLevelCallback object, or a
+ *     Python callable.
+ *
+ * Returns
+ * -------
+ * success : int
+ *     0 if success, != 0 on failure.
+ *
+ */
+static int is_lowlevelcallable(PyObject *callback_obj)
+{
+    PyTypeObject *lowlevelcallable_type = get_lowlevelcallable_type();
+    if (lowlevelcallable_type == NULL || callback_obj== NULL) {
+        return 0;
+    }
+    return (PyObject_TypeCheck(callback_obj, lowlevelcallable_type));
+}
+
 
 /*
  * Set up callback.
@@ -289,26 +345,18 @@ fail:
  *     0 if success, != 0 on failure (an appropriate Python exception is set).
  *
  */
+
 static int ccallback_prepare(ccallback_t *callback, ccallback_signature_t *signatures,
                              PyObject *callback_obj, int flags)
 {
-    static PyTypeObject *lowlevelcallable_type = NULL;
+    PyTypeObject *lowlevelcallable_type = NULL;
     PyObject *callback_obj2 = NULL;
     PyObject *capsule = NULL;
 
+    lowlevelcallable_type = get_lowlevelcallable_type();
+
     if (lowlevelcallable_type == NULL) {
-        PyObject *module;
-
-        module = PyImport_ImportModule("scipy._lib._ccallback");
-        if (module == NULL) {
-            goto error;
-        }
-
-        lowlevelcallable_type = (PyTypeObject *)PyObject_GetAttrString(module, "LowLevelCallable");
-        Py_DECREF(module);
-        if (lowlevelcallable_type == NULL) {
-            goto error;
-        }
+        goto error;
     }
 
     if ((flags & CCALLBACK_PARSE) && !PyObject_TypeCheck(callback_obj, lowlevelcallable_type)) {

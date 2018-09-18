@@ -33,6 +33,7 @@ def configuration(parent_package='',top_path=None):
                          sources=['zeros.c'],
                          libraries=['rootfind'],
                          depends=(rootfind_src + rootfind_hdr),
+                         include_dirs=include_dirs,
                          **numpy_nodepr_api)
 
     lapack = get_info('lapack_opt')
@@ -73,6 +74,8 @@ def configuration(parent_package='',top_path=None):
                          **numpy_nodepr_api)
 
     config.add_extension('_group_columns', sources=['_group_columns.c'],)
+
+    config.add_extension('_tstutils_zerofuncs', sources=['_tstutils_zerofuncs.c'],)
 
     config.add_subpackage('_lsq')
 
