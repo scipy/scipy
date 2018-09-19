@@ -2356,14 +2356,6 @@ class rv_continuous(rv_generic):
         outside a finite interval in which case the expectation is 
         calculated within the finite range ``[lb, ub]``. 
 
-        To understand the effect of the bounds of integration consider the
-        example ``expon(1).expect(lambda x: 1, lb=0.0, ub=2.0)`` which will 
-        be similar to ``expon(1).cdf(2.0) - expon(1).cdf(0.0)``. If the 
-        argument `conditional=True` then 
-        ``expon(1).expect(lambda x: 1, lb=0.0, ub=2.0, conditional=True)``
-        should be similar to ``1.0`` but may differ slightly because of 
-        numerical approximation. 
-
         Parameters
         ----------
         func : callable, optional
@@ -2394,10 +2386,20 @@ class rv_continuous(rv_generic):
         Notes
         -----
         The integration behavior of this function is inherited from
-        `integrate.quad`. Neither this function nor `integrate.quad` can 
-        verify whether the integral exists or is finite. For example 
-        `cauchy(0).mean()` returns `np.nan` and `cauchy(0).expect()` 
-        returns `0.0`. 
+        `scipy.integrate.quad`. Neither this function nor
+        `scipy.integrate.quad` can verify whether the integral exists or is
+        finite. For example ``cauchy(0).mean()`` returns ``np.nan`` and
+        ``cauchy(0).expect()`` returns ``0.0``.
+
+        Examples
+        --------
+        To understand the effect of the bounds of integration consider the
+        example ``expon(1).expect(lambda x: 1, lb=0.0, ub=2.0)`` which will
+        be similar to ``expon(1).cdf(2.0) - expon(1).cdf(0.0)``. If the
+        argument `conditional=True` then
+        ``expon(1).expect(lambda x: 1, lb=0.0, ub=2.0, conditional=True)``
+        should be similar to ``1.0`` but may differ slightly because of
+        numerical approximation.
 
         """
         lockwds = {'loc': loc,
