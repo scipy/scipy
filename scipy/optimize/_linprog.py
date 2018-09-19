@@ -125,8 +125,8 @@ def linprog_terse_callback(res):
         success : bool
             True if the algorithm succeeded in finding an optimal solution.
         slack : 1D array
-            The values of the slack variables.  Each slack variable corresponds
-            to an inequality constraint.  If the slack is zero, then the
+            The values of the slack variables. Each slack variable corresponds
+            to an inequality constraint. If the slack is zero, then the
             corresponding constraint is active.
         phase : int
             The phase of the optimization being executed. In phase 1 a basic
@@ -230,9 +230,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
                      1 : Iteration limit reached
                      2 : Problem appears to be infeasible
                      3 : Problem appears to be unbounded
-                     4 : Serious numerical difficulties which could not resolved
-                         using a more robust, albeit less efficient, solver
-                         encountered
+                     4 : Serious numerical difficulties encountered
 
             nit : int
                 The number of iterations performed.
@@ -273,8 +271,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
                  1 : Iteration limit reached
                  2 : Problem appears to be infeasible
                  3 : Problem appears to be unbounded
-                 4 : Serious numerical difficulties which could not resolved using
-                     a more robust, albeit less efficient, solver encountered
+                 4 : Serious numerical difficulties encountered
 
         nit : int
             The number of iterations performed.
@@ -392,13 +389,12 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         -3x[0] + 1x[1] <= 6
          1x[0] + 2x[1] <= 4
                   x[1] >= -3
-
-    where:  -inf <= x[0] <= inf
+          -inf <= x[0] <= inf
 
     This problem deviates from the standard linear programming problem.
     In standard form, linear programming problems assume the variables x are
-    non-negative.  Since the variables don't have standard bounds where
-    0 <= x <= inf, the bounds of the variables must be explicitly set.
+    non-negative. Since the problem variables don't have the standard bounds of
+    ``(0, None)``, the variable bounds must be set using ``bounds`` explicitly.
 
     There are two upper-bound constraints, which can be expressed as
 
@@ -426,9 +422,6 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
       status: 0
      success: True
            x: array([10., -3.])
-
-    Note the actual objective value is -22.0. In this case we minimized
-    the negative of the objective function.
 
     """
     meth = method.lower()
