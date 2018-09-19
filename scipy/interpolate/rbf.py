@@ -99,6 +99,26 @@ class Rbf(object):
         ``x2``. For more options, see documentation of
         `scipy.spatial.distances.cdist`.
 
+    Attributes
+    ----------
+    N : int
+        The number of data points (as determined by the input arrays).
+    di : ndarray
+        The 1-D array of data values at each of the data coordinates `xi`.
+    xi : ndarray
+        The 2-D array of data coordinates.
+    function : str or callable
+        The radial basis function.  See description under Parameters.
+    epsilon : float
+        Parameter used by gaussian or multiquadrics functions.  See Parameters.
+    smooth : float
+        Smoothing parameter.  See description under Parameters.
+    norm : str or callable
+        The distance function.  See description under Parameters.
+    nodes : ndarray
+        A 1-D array of node values for the interpolation.
+    A : internal property, do not use
+
     Examples
     --------
     >>> from scipy.interpolate import Rbf
@@ -110,10 +130,8 @@ class Rbf(object):
     (20,)
 
     """
-
-    def _euclidean_norm(self, x1, x2):
-        return np.sqrt(((x1 - x2)**2).sum(axis=0))
-
+    # Available radial basis functions that can be selected as strings;
+    # they all start with _h_ (self._init_function relies on that)
     def _h_multiquadric(self, r):
         return np.sqrt((1.0/self.epsilon*r)**2 + 1)
 
@@ -151,8 +169,8 @@ class Rbf(object):
             else:
                 functionlist = [x[3:] for x in dir(self)
                                 if x.startswith('_h_')]
-                raise ValueError("function must be a callable or one of " 
-                                 + ", ".join(functionlist))
+                raise ValueError("function must be a callable or one of " +
+                                 ", ".join(functionlist))
             self._function = getattr(self, "_h_"+self.function)
         elif callable(self.function):
             allow_one = False
@@ -189,6 +207,10 @@ class Rbf(object):
         return a0
 
     def __init__(self, *args, **kwargs):
+        # `args` can be a variable number of arrays; we flatten them and store
+        # them as a single 2-D array `xi` of shape (n_args-1, array_size),
+        # plus a 1-D array `di` for the values.
+        # All arrays must have the same number of elements
         self.xi = np.asarray([np.asarray(a, dtype=np.float_).flatten()
                               for a in args[:-1]])
         self.N = self.xi.shape[-1]
@@ -204,16 +226,15 @@ class Rbf(object):
             # on a bounding hypercube
             ximax = np.amax(self.xi, axis=1)
             ximin = np.amin(self.xi, axis=1)
-            edges = ximax-ximin
+            edges = ximax - ximin
             edges = edges[np.nonzero(edges)]
             self.epsilon = np.power(np.prod(edges)/self.N, 1.0/edges.size)
-        self.smooth = kwargs.pop('smooth', 0.0)
 
+        self.smooth = kwargs.pop('smooth', 0.0)
         self.function = kwargs.pop('function', 'multiquadric')
 
-        # attach anything left in kwargs to self
-        #  for use by any user-callable function or
-        #  to save on the object returned.
+        # attach anything left in kwargs to self for use by any user-callable
+        # function or to save on the object returned.
         for item, value in kwargs.items():
             setattr(self, item, value)
 
@@ -233,6 +254,7 @@ class Rbf(object):
         args = [np.asarray(x) for x in args]
         if not all([x.shape == y.shape for x in args for y in args]):
             raise ValueError("Array lengths must be equal")
+
         shp = args[0].shape
         xa = np.asarray([a.flatten() for a in args], dtype=np.float_)
         r = self._call_norm(xa, self.xi)
