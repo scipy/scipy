@@ -11,7 +11,7 @@ from scipy.signal.wavelets import cwt, ricker
 from scipy.stats import scoreatpercentile
 
 from ._peak_finding_utils import (
-    _argmaxima1d,
+    _local_maxima_1d,
     _select_by_peak_distance,
     _peak_prominences,
     _peak_widths
@@ -724,7 +724,8 @@ def _select_by_peak_threshold(x, peaks, tmin, tmax):
 
 
 def find_peaks(x, height=None, threshold=None, distance=None,
-               prominence=None, width=None, wlen=None, rel_height=0.5):
+               prominence=None, width=None, wlen=None, rel_height=0.5,
+               plateau_size=None):
     """
     Find peaks inside a signal based on peak properties.
 
@@ -768,6 +769,13 @@ def find_peaks(x, height=None, threshold=None, distance=None,
         Used for calculation of the peaks width, thus it is only used if `width`
         is given. See argument  `rel_height` in `peak_widths` for a full
         description of its effects.
+    plateau_size : number or ndarray or sequence, optional
+        Required size of the flat top of peaks in samples. Either a number,
+        ``None``, an array matching `x` or a 2-element sequence of the former.
+        The first element is always interpreted as the minimal and the second,
+        if supplied as the maximal required plateau size.
+
+        .. versionadded:: 1.2.0
 
     Returns
     -------
@@ -789,6 +797,12 @@ def find_peaks(x, height=None, threshold=None, distance=None,
         * 'width_heights', 'left_ips', 'right_ips'
               If `width` is given, these keys are accessible. See `peak_widths`
               for a description of their content.
+        * 'plateau_sizes', left_edges', 'right_edges'
+              If `plateau_size` is given, these keys are accessible and contain
+              the indices of a peak's edges (edges are still part of the
+              plateau) and the calculated plateau sizes.
+
+              .. versionadded:: 1.2.0
 
         To calculate and return properties without excluding peaks, provide the
         open interval ``(None, None)`` as a value to the appropriate argument
@@ -836,10 +850,10 @@ def find_peaks(x, height=None, threshold=None, distance=None,
     * For several conditions the interval borders can be specified with
       arrays matching `x` in shape which enables dynamic constrains based on
       the sample position.
-    * The order of arguments given in the function definition above mirrors the
-      actual order in which conditions are evaluated. In most cases this order
-      is the fastest one because faster operations are applied first to reduce
-      the number of peaks that need to be evaluated later.
+    * The conditions are evalutated in the following order: `plateau_size`,
+      `height`, `threshold`, `distance`, `prominence`, `width`. In most cases
+      this order is the fastest one because faster operations are applied first
+      to reduce the number of peaks that need to be evaluated later.
     * Satisfying the distance condition is accomplished by iterating over all
       peaks in descending order based on their height and removing all lower
       peaks that are too close.
@@ -922,8 +936,19 @@ def find_peaks(x, height=None, threshold=None, distance=None,
     if distance is not None and distance < 1:
         raise ValueError('`distance` must be greater or equal to 1')
 
-    peaks = _argmaxima1d(x)
+    peaks, left_edges, right_edges = _local_maxima_1d(x)
     properties = {}
+
+    if plateau_size is not None:
+        # Evaluate plateau size
+        plateau_sizes = right_edges - left_edges + 1
+        pmin, pmax = _unpack_condition_args(plateau_size, x, peaks)
+        keep = _select_by_property(plateau_sizes, pmin, pmax)
+        peaks = peaks[keep]
+        properties["plateau_sizes"] = plateau_sizes
+        properties["left_edges"] = left_edges
+        properties["right_edges"] = right_edges
+        properties = {key: array[keep] for key, array in properties.items()}
 
     if height is not None:
         # Evaluate height condition
@@ -931,7 +956,8 @@ def find_peaks(x, height=None, threshold=None, distance=None,
         hmin, hmax = _unpack_condition_args(height, x, peaks)
         keep = _select_by_property(peak_heights, hmin, hmax)
         peaks = peaks[keep]
-        properties["peak_heights"] = peak_heights[keep]
+        properties["peak_heights"] = peak_heights
+        properties = {key: array[keep] for key, array in properties.items()}
 
     if threshold is not None:
         # Evaluate threshold condition
