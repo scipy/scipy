@@ -773,6 +773,60 @@ def test_quat_ownership():
     assert_allclose(s._quat[0], np.array([1, 0, 0, 0]))
 
 
+def test_match_vectors_no_rotation():
+    x = np.array([[1, 2, 3], [4, 5, 6]])
+    y = x.copy()
+
+    r, p = Rotation.match_vectors(x, y)
+    assert_array_almost_equal(r.as_dcm(), np.eye(3))
+
+
+def test_match_vectors_no_noise():
+    np.random.seed(0)
+    c = Rotation.from_quat(np.random.normal(size=4))
+    b = np.random.normal(size=(5, 3))
+    a = c.apply(b)
+
+    est, cov = Rotation.match_vectors(a, b)
+    assert_allclose(c.as_quat(), est.as_quat())
+
+
+def test_match_vectors_noise():
+    np.random.seed(0)
+    n_vectors = 100
+    rot = Rotation.from_euler('xyz', np.random.normal(size=3))
+    vectors = np.random.normal(size=(n_vectors, 3))
+    result = rot.apply(vectors)
+
+    # The paper adds noise as indepedently distributed angular errors
+    sigma = np.deg2rad(1)
+    tolerance = 1.5 * sigma
+    noise = Rotation.from_rotvec(
+        np.random.normal(
+            size=(n_vectors, 3),
+            scale=sigma
+        )
+    )
+
+    # Attitude errors must preserve norm. Hence apply individual random
+    # rotations to each vector.
+    noisy_result = noise.apply(result)
+
+    est, cov = Rotation.match_vectors(noisy_result, vectors)
+
+    # Use rotation compositions to find out closeness
+    error_vector = (rot * est.inv()).as_rotvec()
+    assert_allclose(error_vector[0], 0, atol=tolerance)
+    assert_allclose(error_vector[1], 0, atol=tolerance)
+    assert_allclose(error_vector[2], 0, atol=tolerance)
+
+    # Check error bounds using covariance matrix
+    cov *= sigma
+    assert_allclose(cov[0, 0], 0, atol=tolerance)
+    assert_allclose(cov[1, 1], 0, atol=tolerance)
+    assert_allclose(cov[2, 2], 0, atol=tolerance)
+
+
 def test_random_rotation_shape():
     assert_equal(Rotation.random().as_quat().shape, (4,))
     assert_equal(Rotation.random(None).as_quat().shape, (4,))

@@ -372,7 +372,7 @@ def build_project(args):
                         last_log_size = log_size
 
             ret = p.wait()
-        except:
+        except:  # noqa: E722
             p.terminate()
             raise
 

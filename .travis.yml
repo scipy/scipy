@@ -6,13 +6,15 @@ env:
   global:
    # Wheelhouse for pre-release wheels
    - PRE_WHEELS="https://7933911d6844c6c53a7d-47bd50c35cd79bd838daf386af554a83.ssl.cf2.rackcdn.com"
+   # Using a single thread can actually speed up some computations on Travis
+   - OPENBLAS_NUM_THREADS=1
 matrix:
   include:
     - python: 2.7
       env:
         - PYFLAKES=1
         - PEP8=1
-        - NUMPYSPEC=numpy
+        - NUMPYSPEC="--upgrade numpy"
       before_install:
         - pip install pycodestyle==2.3.1
         - pip install pyflakes==1.1.0
@@ -24,31 +26,40 @@ matrix:
         - TESTMODE=fast
         - COVERAGE=
         - NUMPYSPEC="--pre --upgrade --timeout=60 -f $PRE_WHEELS numpy"
-    - python: 3.6
+    - python: 3.7
+      dist: xenial # travis-ci/travis-ci/issues/9815
+      sudo: true
       env:
         - TESTMODE=full
         - COVERAGE="--coverage --gcov"
-        - NUMPYSPEC=numpy
-    - python: 3.5
+        - NUMPYSPEC="--upgrade numpy"
+    - python: 3.6
       env:
         - TESTMODE=fast
         - COVERAGE=
         - USE_WHEEL=1
         - REFGUIDE_CHECK=1
-    - python: 3.4
+        - NUMPYSPEC="--upgrade numpy"
+    - python: 3.5
       env:
         - TESTMODE=fast
         - COVERAGE=
         - NUMPYSPEC="numpy==1.8.2"
         - USE_SDIST=1
         - OPTIMIZE=-OO
+    - python: 3.4
+      env:
+        - TESTMODE=fast
+        - COVERAGE=
+        - USE_WHEEL=1
+        - NUMPYSPEC="--upgrade numpy"
     - os: osx
       language: generic
       env:
         - TESTMODE=fast
         - COVERAGE=
-        - NUMPYSPEC=numpy
-        - MB_PYTHON_VERSION=3.6
+        - NUMPYSPEC="--upgrade numpy"
+        - MB_PYTHON_VERSION=3.7
 addons:
   apt:
     packages:
@@ -128,7 +139,7 @@ before_install:
   - mkdir builds
   - cd builds
   - travis_retry pip install --upgrade pip setuptools wheel
-  - travis_retry pip install cython==0.25.2
+  - travis_retry pip install cython
   - if [ -n "$NUMPYSPEC" ]; then travis_retry pip install $NUMPYSPEC; fi
   - travis_retry pip install --upgrade pytest pytest-xdist pytest-faulthandler mpmath argparse Pillow codecov
   - travis_retry pip install gmpy2  # speeds up mpmath (scipy.special tests)
@@ -145,7 +156,10 @@ before_install:
           travis_retry pip uninstall -y numpy
       fi
     fi
-  - if [ "${TESTMODE}" == "full" ]; then pip install pytest-cov coverage; fi
+  - |
+    if [ "${TESTMODE}" == "full" ]; then
+        travis_retry pip install pytest-cov coverage matplotlib
+    fi
   - |
     if [ "${REFGUIDE_CHECK}" == "1" ]; then
         travis_retry pip install matplotlib Sphinx==1.7.2
@@ -163,7 +177,7 @@ script:
   # Make sure that relaxed strides checking is actually in effect; otherwise fail loudly
   - if [ "$NPY_RELAXED_STRIDES_CHECKING" == "1" ]; then python -c'import numpy as np; assert np.ones((10,1),order="C").flags.f_contiguous'; fi
   # Test that mpmath actually uses gmpy2
-  - python -c 'import mpmath.libmp; assert mpmath.libmp.BACKEND == "gmpy"'
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then python -c 'import mpmath.libmp; assert mpmath.libmp.BACKEND == "gmpy"'; fi
   - |
     if [ "${USE_WHEEL}" == "1" ]; then
         # Run setup.py build before pip wheel, to build in current directory

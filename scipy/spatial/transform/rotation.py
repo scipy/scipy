@@ -341,7 +341,7 @@ class Rotation(object):
     Finally, it is also possible to invert rotations:
 
     >>> r1 = R.from_euler('z', [90, 45], degrees=True)
-    >>> r2 = r.inv()
+    >>> r2 = r1.inv()
     >>> r2.as_euler('zyx', degrees=True)
     array([[-90.,   0.,   0.],
            [-45.,   0.,   0.]])
@@ -349,6 +349,7 @@ class Rotation(object):
     These examples serve as an overview into the `Rotation` class and highlight
     major functionalities. For more thorough examples of the range of input and
     output formats supported, consult the individual method's examples.
+
     """
     def __init__(self, quat, normalized=False, copy=True):
         self._single = False
@@ -387,6 +388,7 @@ class Rotation(object):
         -------
         length : int
             Number of rotations stored in object.
+
         """
         return self._quat.shape[0]
 
@@ -459,8 +461,8 @@ class Rotation(object):
         >>> r = R.from_quat([0, 0, 1, 0], normalized=True)
         >>> r.as_quat()
         array([0., 0., 1., 0.])
-        """
 
+        """
         return cls(quat, normalized)
 
     @classmethod
@@ -528,6 +530,7 @@ class Rotation(object):
         ... [0, 0, 0.5]])
         >>> np.linalg.det(a)
         0.12500000000000003
+        >>> r = R.from_dcm(a)
         >>> dcm = r.as_dcm()
         >>> dcm
         array([[-0.38461538, -0.92307692,  0.        ],
@@ -548,6 +551,7 @@ class Rotation(object):
                 [ 0.,  0.,  1.]]])
         >>> r.as_dcm().shape
         (1, 3, 3)
+
         """
         is_single = False
         dcm = np.asarray(dcm, dtype=float)
@@ -648,6 +652,7 @@ class Rotation(object):
         >>> r = R.from_rotvec([[0, 0, np.pi/2]])
         >>> r.as_rotvec().shape
         (1, 3)
+
         """
         is_single = False
         rotvec = np.asarray(rotvec, dtype=float)
@@ -777,6 +782,7 @@ class Rotation(object):
         >>> r = R.from_euler('zyx', [[90, 45, 30], [35, 45, 90]], degrees=True)
         >>> r.as_quat().shape
         (2, 4)
+
         """
         num_axes = len(seq)
         if num_axes < 1 or num_axes > 3:
@@ -881,6 +887,7 @@ class Rotation(object):
         >>> r = R.from_rotvec([[np.pi, 0, 0], [0, 0, np.pi/2]])
         >>> r.as_quat().shape
         (2, 4)
+
         """
         if self._single:
             return self._quat[0].copy()
@@ -939,8 +946,8 @@ class Rotation(object):
                 [ 0.00000000e+00,  0.00000000e+00,  1.00000000e+00]]])
         >>> r.as_dcm().shape
         (2, 3, 3)
-        """
 
+        """
         x = self._quat[:, 0]
         y = self._quat[:, 1]
         z = self._quat[:, 2]
@@ -1023,6 +1030,7 @@ class Rotation(object):
                [1.35102172, 1.35102172, 0.        ]])
         >>> r.as_rotvec().shape
         (2, 3)
+
         """
         quat = self._quat.copy()
         # w > 0 to ensure 0 <= angle <= pi
@@ -1132,6 +1140,7 @@ class Rotation(object):
                [  0.,  45.,   0.]])
         >>> r.as_euler('zxy', degrees=True).shape
         (3, 3)
+
         """
         if len(seq) != 3:
             raise ValueError("Expected 3 axes, got {}.".format(seq))
@@ -1235,7 +1244,6 @@ class Rotation(object):
         array([[[ 7.07106781e-01, -7.07106781e-01,  0.00000000e+00],
                 [ 7.07106781e-01,  7.07106781e-01,  0.00000000e+00],
                 [ 0.00000000e+00,  0.00000000e+00,  1.00000000e+00]],
-
                [[ 1.00000000e+00,  0.00000000e+00,  0.00000000e+00],
                 [ 0.00000000e+00,  2.22044605e-16, -1.00000000e+00],
                 [ 0.00000000e+00,  1.00000000e+00,  2.22044605e-16]]])
@@ -1271,6 +1279,7 @@ class Rotation(object):
         >>> r.apply(vectors, inverse=True)
         array([[-3.        ,  2.        ,  1.        ],
                [ 1.09533535, -0.8365163 ,  0.3169873 ]])
+
         """
         vectors = np.asarray(vectors)
         if vectors.ndim > 2 or vectors.shape[-1] != 3:
@@ -1368,6 +1377,7 @@ class Rotation(object):
         >>> r.as_quat()
         array([[ 0.27059805,  0.27059805,  0.65328148,  0.65328148],
                [ 0.33721128, -0.26362477,  0.26362477,  0.86446082]])
+
         """
         if not(len(self) == 1 or len(other) == 1 or len(self) == len(other)):
             raise ValueError("Expected equal number of rotations in both "
@@ -1409,6 +1419,7 @@ class Rotation(object):
         >>> q.as_rotvec()
         array([[-0.        , -0.        , -1.04719755],
                [ 0.78539816, -0.        , -0.        ]])
+
         """
         quat = self._quat.copy()
         quat[:, -1] *= -1
@@ -1460,6 +1471,7 @@ class Rotation(object):
         >>> q.as_quat()
         array([[ 0.        ,  0.70710678,  0.        ,  0.70710678],
                [ 0.57735027,  0.57735027, -0.57735027,  0.        ]])
+
         """
         return self.__class__(self._quat[indexer], normalized=True)
 
@@ -1489,17 +1501,18 @@ class Rotation(object):
 
         Sample a single rotation:
 
-        >>> R.random().as_euler('zxy', degrees=True)
-        array([ 94.9508862 ,  35.38168732, 148.80576945])
+        >>> R.random(random_state=1234).as_euler('zxy', degrees=True)
+        array([-110.5976185 ,   55.32758512,   76.3289269 ])
 
         Sample a stack of rotations:
 
-        >>> R.random(5).as_euler('zxy', degrees=True)
-        array([[  97.65185987,  -30.18238967,   48.56690829],
-               [  27.39232994,  -58.77440039, -137.96008356],
-               [ 139.4463782 ,   16.19756587,  -48.6823144 ],
-               [ -25.35339309,    8.00660013,  -39.14435328],
-               [  63.83774224,  -34.47187095,  -47.75580405]])
+        >>> R.random(5, random_state=1234).as_euler('zxy', degrees=True)
+        array([[-110.5976185 ,   55.32758512,   76.3289269 ],
+               [ -91.59132005,  -14.3629884 ,  -93.91933182],
+               [  25.23835501,   45.02035145, -121.67867086],
+               [ -51.51414184,  -15.29022692, -172.46870023],
+               [ -81.63376847,  -27.39521579,    2.60408416]])
+
        """
         random_state = check_random_state(random_state)
 
@@ -1509,6 +1522,115 @@ class Rotation(object):
             sample = random_state.normal(size=(num, 4))
 
         return Rotation.from_quat(sample)
+
+    @classmethod
+    def match_vectors(cls, a, b, weights=None, normalized=False):
+        """Estimate a rotation to match two sets of vectors.
+
+        Find a rotation between frames A and B which best matches a set of unit
+        vectors `a` and `b` observed in these frames. The following loss
+        function is minimized to solve for the direction cosine matrix
+        :math:`C`:
+
+        .. math::
+
+            L(C) = \\frac{1}{2} \\sum_{i = 1}^{n} w_i \\lVert \\mathbf{a}_i -
+            C \\mathbf{b}_i \\rVert^2 ,
+
+        where :math:`w_i`'s are the `weights` corresponding to each vector.
+
+        The rotation is estimated using Markley's SVD method [1]_.
+
+        Parameters
+        ----------
+        a : array_like, shape (N, 3)
+            Vector components observed in initial frame A. Each row of `a`
+            denotes a vector.
+        b : array_like, shape (N, 3)
+            Vector components observed in another frame B. Each row of `b`
+            denotes a vector.
+        weights : array_like shape (N,), optional
+            Weights describing the relative importance of the vectors in
+            `a`. If None (default), then all values in `weights` are assumed to
+            be equal.
+        normalized : boolean, optional
+            If True, assume input vectors `a` and `b` to have unit norm. If
+            False, normalize `a` and `b` before estimating rotation. Default
+            is False.
+
+        Returns
+        -------
+        estimated_rotation : `Rotation` instance
+            Best estimate of the rotation that transforms `b` to `a`.
+        sensitivity_matrix : `numpy.ndarray`, shape (3, 3)
+            Scaled covariance of the attitude errors expressed as the small
+            rotation vector of frame A. Multiply with harmonic mean [3]_ of
+            variance in each observation to get true covariance matrix. The
+            error model is detailed in [2]_.
+
+        References
+        ----------
+        .. [1] F. Landis Markley,
+                “Attitude determination using vector observations: a fast
+                optimal matrix algorithm”, Journal of Astronautical Sciences,
+                Vol. 41, No.2, 1993, pp. 261-280.
+        .. [2] F. Landis Markley,
+                "Attitude determination using vector observations and the
+                Singular Value Decomposition", Journal of Astronautical
+                Sciences, Vol. 38, No.3, 1988, pp. 245-258.
+        .. [3] `Harmonic Mean <https://en.wikipedia.org/wiki/Harmonic_mean>`_
+
+        """
+        a = np.asarray(a)
+        if a.ndim != 2 or a.shape[-1] != 3:
+            raise ValueError("Expected input `a` to have shape (N, 3), "
+                             "got {}".format(a.shape))
+        b = np.asarray(b)
+        if b.ndim != 2 or b.shape[-1] != 3:
+            raise ValueError("Expected input `b` to have shape (N, 3), "
+                             "got {}.".format(b.shape))
+
+        if a.shape != b.shape:
+            raise ValueError("Expected inputs `a` and `b` to have same shapes"
+                             ", got {} and {} respectively.".format(
+                                a.shape, b.shape))
+
+        if b.shape[0] == 1:
+            raise ValueError("Rotation cannot be estimated using a single "
+                             "vector.")
+
+        if weights is None:
+            weights = np.ones(b.shape[0])
+        else:
+            weights = np.asarray(weights)
+            if weights.ndim != 1:
+                raise ValueError("Expected `weights` to be 1 dimensional, got "
+                                 "shape {}.".format(weights.shape))
+            if weights.shape[0] != b.shape[0]:
+                raise ValueError("Expected `weights` to have number of values "
+                                 "equal to number of input vectors, got "
+                                 "{} values and {} vectors.".format(
+                                    weights.shape[0], b.shape[0]))
+        weights = weights / np.sum(weights)
+
+        if not normalized:
+            a = a / scipy.linalg.norm(a, axis=1)[:, None]
+            b = b / scipy.linalg.norm(b, axis=1)[:, None]
+
+        B = np.einsum('ji,jk->ik', weights[:, None] * a, b)
+        u, s, vh = np.linalg.svd(B)
+        C = np.dot(u, vh)
+
+        zeta = (s[0]+s[1]) * (s[1]+s[2]) * (s[2]+s[0])
+        if np.abs(zeta) <= 1e-16:
+            raise ValueError("Three component error vector has infinite "
+                             "covariance. It is impossible to determine the "
+                             "rotation uniquely.")
+
+        kappa = s[0]*s[1] + s[1]*s[2] + s[2]*s[0]
+        sensitivity = ((kappa * np.eye(3) + np.dot(B, B.T)) /
+                       (zeta * a.shape[0]))
+        return cls.from_dcm(C), sensitivity
 
 
 class Slerp(object):
@@ -1543,7 +1665,7 @@ class Slerp(object):
 
     Setup the fixed keyframe rotations and times:
 
-    >>> key_rots = R.from_quat(np.random.uniform(size=(5, 4)))
+    >>> key_rots = R.random(5, random_state=2342345)
     >>> key_times = [0, 1, 2, 3, 4]
 
     Create the interpolator object:
@@ -1558,27 +1680,28 @@ class Slerp(object):
     The keyframe rotations expressed as Euler angles:
 
     >>> key_rots.as_euler('xyz', degrees=True)
-    array([[154.88487585, -10.37207323, 116.95075648],
-           [ 68.5886485 ,  34.23557992,  28.64650139],
-           [ 95.2872057 , -18.74934318, 125.606599  ],
-           [142.26836558,  17.4416704 , 121.67989988],
-           [141.86531587, -15.10753215, 102.01807079]])
+    array([[ 14.31443779, -27.50095894,  -3.7275787 ],
+           [ -1.79924227, -24.69421529, 164.57701743],
+           [146.15020772,  43.22849451, -31.34891088],
+           [ 46.39959442,  11.62126073, -45.99719267],
+           [-88.94647804, -49.64400082, -65.80546984]])
 
     The interpolated rotations expressed as Euler angles. These agree with the
     keyframe rotations at both endpoints of the range of keyframe times.
 
     >>> interp_rots.as_euler('xyz', degrees=True)
-    array([[154.88487585, -10.37207323, 116.95075648],
-           [124.8757228 ,  27.88355379,  85.77711413],
-           [142.99736719,  10.71021057, 104.39685307],
-           [ 68.5886485 ,  34.23557992,  28.64650139],
-           [ 94.83106037,  13.07930201,  82.57369554],
-           [ 95.2872057 , -18.74934318, 125.606599  ],
-           [130.49684909,   8.28607205, 119.80428161],
-           [142.26836558,  17.4416704 , 121.67989988],
-           [141.096957  ,   9.34664151, 116.61979789],
-           [140.67373323,  -2.08694364, 109.87862761],
-           [141.86531587, -15.10753215, 102.01807079]])
+    array([[  14.31443779,  -27.50095894,   -3.7275787 ],
+           [   4.74588574,  -32.44683966,   81.25139984],
+           [  10.71094749,  -31.56690154,   38.06896408],
+           [  -1.79924227,  -24.69421529,  164.57701743],
+           [  11.72796022,   51.64207311, -171.7374683 ],
+           [ 146.15020772,   43.22849451,  -31.34891088],
+           [  68.10921869,   20.67625074,  -48.74886034],
+           [  46.39959442,   11.62126073,  -45.99719267],
+           [  12.35552615,    4.21525086,  -64.89288124],
+           [ -30.08117143,  -19.90769513,  -78.98121326],
+           [ -88.94647804,  -49.64400082,  -65.80546984]])
+
     """
     def __init__(self, times, rotations):
         if len(rotations) == 1:
@@ -1618,6 +1741,7 @@ class Slerp(object):
         -------
         interpolated_rotation : `Rotation` instance
             Object containing the rotations computed at given `times`.
+
         """
         # Clearly differentiate from self.times property
         compute_times = np.asarray(times)

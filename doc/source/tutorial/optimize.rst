@@ -676,7 +676,7 @@ Both linear and nonlinear constraints are defined as dictionaries with keys ``ty
     ...              'fun' : lambda x: np.array([1 - x[0] - 2*x[1],
     ...                                          1 - x[0]**2 - x[1],
     ...                                          1 - x[0]**2 + x[1]]),
-    ...              'jac' : lambda x: np.array([[1.0, 2.0],
+    ...              'jac' : lambda x: np.array([[-1.0, -2.0],
     ...                                          [-2*x[0], -1.0],
     ...                                          [-2*x[0], 1.0]])}
     >>> eq_cons = {'type': 'eq',
@@ -697,7 +697,7 @@ And the optimization problem is solved with:
                 Function evaluations: 6
                 Gradient evaluations: 5
     >>> print(res.x)
-    [0.41494418 0.17011164]
+    [0.41494475 0.1701105 ]
 
 Most of the options available for the method ``'trust-constr'`` are not available
 for ``'SLSQP'``.

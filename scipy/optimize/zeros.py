@@ -9,7 +9,7 @@ _iter = 100
 _xtol = 2e-12
 _rtol = 4 * np.finfo(float).eps
 
-__all__ = ['newton', 'bisect', 'ridder', 'brentq', 'brenth']
+__all__ = ['newton', 'bisect', 'ridder', 'brentq', 'brenth', 'RootResults']
 
 CONVERGED = 'converged'
 SIGNERR = 'sign error'
@@ -530,7 +530,7 @@ def ridder(f, a, b, args=(),
     full_output : bool, optional
         If `full_output` is False, the root is returned.  If `full_output` is
         True, the return value is ``(x, r)``, where `x` is the root, and `r` is
-        a RootResults object.
+        a `RootResults` object.
     disp : bool, optional
         If True, raise RuntimeError if the algorithm didn't converge.
 
@@ -646,7 +646,7 @@ def brentq(f, a, b, args=(),
     full_output : bool, optional
         If `full_output` is False, the root is returned.  If `full_output` is
         True, the return value is ``(x, r)``, where `x` is the root, and `r` is
-        a RootResults object.
+        a `RootResults` object.
     disp : bool, optional
         If True, raise RuntimeError if the algorithm didn't converge.
 
@@ -764,7 +764,7 @@ def brenth(f, a, b, args=(),
     full_output : bool, optional
         If `full_output` is False, the root is returned.  If `full_output` is
         True, the return value is ``(x, r)``, where `x` is the root, and `r` is
-        a RootResults object.
+        a `RootResults` object.
     disp : bool, optional
         If True, raise RuntimeError if the algorithm didn't converge.
 

@@ -101,7 +101,7 @@ class dok_matrix(spmatrix, IndexMixin, dict):
         else:  # Dense ctor
             try:
                 arg1 = np.asarray(arg1)
-            except:
+            except Exception:
                 raise TypeError('Invalid input format.')
 
             if len(arg1.shape) != 2:

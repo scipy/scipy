@@ -62,6 +62,7 @@ def test_regression_std_vector_dtypes():
         assert_equal(a.getcol(0).todense(), ad[:,0])
 
 
+@pytest.mark.slow
 def test_nnz_overflow():
     # Regression test for gh-7230 / gh-7871, checking that coo_todense
     # with nnz > int32max doesn't overflow.

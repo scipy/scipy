@@ -493,7 +493,7 @@ def imshow(arr):
     fnum, fname = tempfile.mkstemp('.png')
     try:
         im.save(fname)
-    except:
+    except Exception:
         raise RuntimeError("Error saving temporary image data.")
 
     import os
