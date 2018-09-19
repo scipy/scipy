@@ -457,9 +457,9 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         ts = [t0]
         ys = [y0]
     elif t_eval is not None and dense_output:
-        ts=[]
-        ti=[t0]
-        ys=[]
+        ts = []
+        ti = [t0]
+        ys = []
     else:
         ts = []
         ys = []
