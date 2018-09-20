@@ -3157,16 +3157,18 @@ def fisher_exact(table, alternative='two-sided'):
                 minval = guess
         if guess == -1:
             guess = minval
-        if side == "upper":
-            while guess > 0 and hypergeom.pmf(guess, n1 + n2, n1, n) < pexact * epsilon:
-                guess -= 1
-            while hypergeom.pmf(guess, n1 + n2, n1, n) > pexact / epsilon:
-                guess += 1
-        else:
-            while hypergeom.pmf(guess, n1 + n2, n1, n) < pexact * epsilon:
-                guess += 1
-            while guess > 0 and hypergeom.pmf(guess, n1 + n2, n1, n) > pexact / epsilon:
-                guess -= 1
+            
+        if not np.isclose(pexact, 0.0, atol=np.finfo(np.float64).eps):
+            if side == "upper":
+                while guess > 0 and hypergeom.pmf(guess, n1 + n2, n1, n) < pexact * epsilon:
+                    guess -= 1
+                while hypergeom.pmf(guess, n1 + n2, n1, n) > pexact / epsilon:
+                    guess += 1
+            else:
+                while hypergeom.pmf(guess, n1 + n2, n1, n) < pexact * epsilon:
+                    guess += 1
+                while guess > 0 and hypergeom.pmf(guess, n1 + n2, n1, n) > pexact / epsilon:
+                    guess -= 1
         return guess
 
     if alternative == 'less':
