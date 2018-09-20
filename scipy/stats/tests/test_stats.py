@@ -292,6 +292,8 @@ class TestFisherExact(object):
     def test_basic(self):
         fisher_exact = stats.fisher_exact
 
+        res = fisher_exact([[5829225, 5692693], [5760959, 5760959]])[1]
+        assert_approx_equal(res, 3.06311e-178, significant=4)
         res = fisher_exact([[14500, 20000], [30000, 40000]])[1]
         assert_approx_equal(res, 0.01106, significant=4)
         res = fisher_exact([[100, 2], [1000, 5]])[1]
