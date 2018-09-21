@@ -50,5 +50,5 @@ software, terms & conditions for usage, and a DISCLAIMER OF ALL
 WARRANTIES.
 
 .. _LICENSE.txt:       https://github.com/scipy/scipy/blob/master/LICENSE.txt
-.. _CONTRIBUTING.rst:      https://github.com/scipy/scipy/blob/master/CONTRIBUTING.rst
+.. _CONTRIBUTING.rst:  https://github.com/scipy/scipy/blob/master/CONTRIBUTING.rst
 .. _INSTALL.rst.txt:   https://github.com/scipy/scipy/blob/master/INSTALL.rst.txt
