@@ -1413,7 +1413,7 @@ class rv_continuous(rv_generic):
     if the inverse cdf can expressed in an explicit form) or a sampling
     method needs to be implemented in a custom ``_rvs`` method.
 
-    Rarely would you override ``_isf``, ``_sf`` or ``_logsf``, but you could.
+    If possible, you should override ``_isf``, ``_sf`` or ``_logsf``.
     The main reason would be to improve numerical accuracy: for example,
     the survival function ``_sf`` is computed as ``1 - _cdf`` which can
     result in loss of precision if ``_cdf(x)`` is close to one.
