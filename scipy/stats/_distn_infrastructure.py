@@ -1407,7 +1407,16 @@ class rv_continuous(rv_generic):
 
       _logpdf, _cdf, _logcdf, _ppf, _rvs, _isf, _sf, _logsf
 
+    The default method ``_rvs`` relies on the inverse of the cdf, ``_ppf``,
+    applied to a uniform random variate. In order to generate random variates
+    efficiently, either the default ``_ppf`` needs to be overwritten (e.g.
+    if the inverse cdf can expressed in an explicit form) or a sampling
+    method needs to be implemented in a custom ``_rvs`` method.
+
     Rarely would you override ``_isf``, ``_sf`` or ``_logsf``, but you could.
+    The main reason would be to improve numerical accuracy: for example,
+    the survival function ``_sf`` is computed as ``1 - _cdf`` which can
+    result in loss of precision if ``_cdf(x)`` is close to zero.
 
     **Methods that can be overwritten by subclasses**
     ::
@@ -1445,7 +1454,7 @@ class rv_continuous(rv_generic):
     rv = generic(<shape(s)>, loc=0, scale=1)
         `rv_frozen` object with the same methods but holding the given shape,
         location, and scale fixed
-        
+
     **Statistics**
 
     Statistics are computed using numerical integration by default.
