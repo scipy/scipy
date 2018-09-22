@@ -1416,7 +1416,7 @@ class rv_continuous(rv_generic):
     Rarely would you override ``_isf``, ``_sf`` or ``_logsf``, but you could.
     The main reason would be to improve numerical accuracy: for example,
     the survival function ``_sf`` is computed as ``1 - _cdf`` which can
-    result in loss of precision if ``_cdf(x)`` is close to zero.
+    result in loss of precision if ``_cdf(x)`` is close to one.
 
     **Methods that can be overwritten by subclasses**
     ::
