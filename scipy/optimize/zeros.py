@@ -12,20 +12,17 @@ _rtol = 4 * np.finfo(float).eps
 
 __all__ = ['newton', 'bisect', 'ridder', 'brentq', 'brenth', 'toms748', 'RootResults']
 
-CONVERGED = 'converged'
-SIGNERR = 'sign error'
-CONVERR = 'convergence error'
-VALUEERR = 'value error'
-INPROGRESS = 'No error'
 _ECONVERGED = 0
 _ESIGNERR = -1
 _ECONVERR = -2
 _EVALUEERR = -3
 _EINPROGRESS = 1
 
-flag_map = {_ECONVERGED: CONVERGED, _ESIGNERR: SIGNERR, _ECONVERR: CONVERR,
-            _EVALUEERR: VALUEERR, _EINPROGRESS: INPROGRESS}
-
+flag_map = {_ECONVERGED: 'converged',
+            _ESIGNERR: 'sign error',
+            _ECONVERR: 'convergence error',
+            _EVALUEERR: 'value error',
+            _EINPROGRESS: 'in progress'}
 
 class RootResults(object):
     """Represents the root finding result.
@@ -273,13 +270,15 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
             funcalls += 1
             # If fval is 0, a root has been found, then terminate
             if fval == 0:
-                return _results_select(full_output, (p0, funcalls, itr, _ECONVERGED))
+                return _results_select(
+                    full_output, (p0, funcalls, itr, _ECONVERGED))
             fder = fprime(p0, *args)
             funcalls += 1
             if fder == 0:
                 msg = "derivative was zero."
                 warnings.warn(msg, RuntimeWarning)
-                return _results_select(full_output, (p0, funcalls, itr + 1, _ECONVERR))
+                return _results_select(
+                    full_output, (p0, funcalls, itr + 1, _ECONVERR))
             newton_step = fval / fder
             if fprime2:
                 fder2 = fprime2(p0, *args)
@@ -295,7 +294,8 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
                     newton_step /= 1.0 - adj
             p = p0 - newton_step
             if isclose(p, p0, rtol=rtol, atol=tol):
-                return _results_select(full_output, (p, funcalls, itr + 1, _ECONVERGED))
+                return _results_select(
+                    full_output, (p, funcalls, itr + 1, _ECONVERGED))
             p0 = p
     else:
         # Secant method
@@ -319,14 +319,16 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
                     msg = "Tolerance of %s reached" % (p1 - p0)
                     warnings.warn(msg, RuntimeWarning)
                 p = (p1 + p0) / 2.0
-                return _results_select(full_output, (p, funcalls, itr + 1, _ECONVERGED))
+                return _results_select(
+                    full_output, (p, funcalls, itr + 1, _ECONVERGED))
             else:
                 if abs(q1) > abs(q0):
                     p = (-q0 / q1 * p1 + p0) / (1 - q0 / q1)
                 else:
                     p = (-q1 / q0 * p0 + p1) / (1 - q1 / q0)
             if isclose(p, p1, rtol=rtol, atol=tol):
-                return _results_select(full_output, (p, funcalls, itr + 1, _ECONVERGED))
+                return _results_select(
+                    full_output, (p, funcalls, itr + 1, _ECONVERGED))
             p0, q0 = p1, q1
             p1 = p
             q1 = func(p1, *args)
@@ -869,7 +871,8 @@ def _within_tolerance(x, y, rtol, atol):
 def _notclose(fs, rtol=_rtol, atol=_xtol):
     # Ensure not None, not 0, all finite, and not very close to each other
     notclosefvals = all(fs) and all(np.isfinite(fs)) and \
-                    not any(any(np.isclose(_f, fs[i + 1:], rtol=rtol, atol=atol))
+                    not any(any(
+                        np.isclose(_f, fs[i + 1:], rtol=rtol, atol=atol))
                             for i, _f in enumerate(fs[:-1]))
     return notclosefvals
 

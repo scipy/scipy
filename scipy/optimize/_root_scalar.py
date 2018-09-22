@@ -79,6 +79,7 @@ def root_scalar(f, args=(), method=None, bracket=None,
             - 'brentq'    :ref:`(see here) <optimize.root_scalar-brentq>`
             - 'brenth'    :ref:`(see here) <optimize.root_scalar-brenth>`
             - 'ridder'    :ref:`(see here) <optimize.root_scalar-ridder>`
+            - 'toms748'    :ref:`(see here) <optimize.root_scalar-toms748>`
             - 'newton'    :ref:`(see here) <optimize.root_scalar-newton>`
             - 'secant'    :ref:`(see here) <optimize.root_scalar-secant>`
             - 'halley'    :ref:`(see here) <optimize.root_scalar-halley>`
@@ -239,7 +240,7 @@ def root_scalar(f, args=(), method=None, bracket=None,
     except AttributeError:
         raise ValueError('Unknown solver %s' % meth)
 
-    if meth in ['bisect', 'ridder', 'brentq', 'brenth']:
+    if meth in ['bisect', 'ridder', 'brentq', 'brenth', 'toms748']:
         if not isinstance(bracket, (list, tuple, np.ndarray)):
             raise ValueError('Bracket needed for %s' % method)
 
@@ -305,6 +306,24 @@ def _root_scalar_brentq_doc():
 
 
 def _root_scalar_brenth_doc():
+    r"""
+    Options
+    -------
+    args : tuple, optional
+        Extra arguments passed to the objective function.
+    xtol : float, optional
+        Tolerance (absolute) for termination.
+    rtol : float, optional
+        Tolerance (relative) for termination.
+    maxiter : int, optional
+        Maximum number of iterations.
+    options: dict, optional
+        Specifies any method-specific options not covered above
+
+    """
+    pass
+
+def _root_scalar_toms748_doc():
     r"""
     Options
     -------

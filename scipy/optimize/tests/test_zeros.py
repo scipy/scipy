@@ -10,13 +10,12 @@ import numpy as np
 from numpy import finfo, power, nan, isclose
 
 
-from scipy.optimize import zeros as cc
 from scipy.optimize import zeros, newton, root_scalar
 
 from scipy._lib._util import getargspec_no_self as _getargspec
 
 # Import testing parameters
-from scipy.optimize._tstutils import functions, fstrings, get_tests, functions as tstutils_functions, fstrings as tstutils_fstrings
+from scipy.optimize._tstutils import get_tests, functions as tstutils_functions, fstrings as tstutils_fstrings
 from scipy._lib._numpy_compat import suppress_warnings
 
 TOL = 4*np.finfo(float).eps  # tolerance
@@ -64,7 +63,8 @@ class TestBasic(object):
         for function, fname in zip(tstutils_functions, tstutils_fstrings):
             if smoothness > 0 and fname in ['f4', 'f5', 'f6']:
                 continue
-            r = root_scalar(function, method=name, bracket=[a, b], x0=a, xtol=xtol, rtol=rtol, **kwargs)
+            r = root_scalar(function, method=name, bracket=[a, b], x0=a,
+                            xtol=xtol, rtol=rtol, **kwargs)
             zero = r.root
             assert_(r.converged)
             assert_allclose(zero, 1.0, atol=xtol, rtol=rtol,
@@ -172,35 +172,37 @@ class TestBasic(object):
     def test_bisect(self):
         self.run_check(zeros.bisect, 'bisect')
         self.run_check_by_name('bisect')
-        self.run_collection('aps', cc.bisect, 'bisect', smoothness=1)
+        self.run_collection('aps', zeros.bisect, 'bisect', smoothness=1)
 
     def test_ridder(self):
         self.run_check(zeros.ridder, 'ridder')
         self.run_check_by_name('ridder')
-        self.run_collection('aps', cc.ridder, 'ridder', smoothness=1)
+        self.run_collection('aps', zeros.ridder, 'ridder', smoothness=1)
 
     def test_brentq(self):
         self.run_check(zeros.brentq, 'brentq')
         self.run_check_by_name('brentq')
         # Brentq/h needs a lower tolerance to be specified
-        self.run_collection('aps', cc.brentq, 'brentq', smoothness=1,
+        self.run_collection('aps', zeros.brentq, 'brentq', smoothness=1,
                             xtol=1e-14, rtol=1e-14)
 
     def test_brenth(self):
         self.run_check(zeros.brenth, 'brenth')
         self.run_check_by_name('brenth')
-        self.run_collection('aps', cc.brenth, 'brenth', smoothness=1,
+        self.run_collection('aps', zeros.brenth, 'brenth', smoothness=1,
                             xtol=1e-14, rtol=1e-14)
 
     def test_toms748(self):
-        self.run_check(cc.toms748, 'toms748')
-        self.run_collection('aps', cc.toms748, 'toms748', smoothness=1)
+        self.run_check(zeros.toms748, 'toms748')
+        self.run_check_by_name('toms748')
+        self.run_collection('aps', zeros.toms748, 'toms748', smoothness=1)
 
     def test_newton_collections(self):
         known_fail = ['aps.13.00']
         known_fail += ['aps.12.05', 'aps.12.17']  # fails under Windows Py27
         for collection in ['aps', 'complex']:
-            self.run_collection(collection, cc.newton, 'newton', smoothness=2, known_fail=known_fail)
+            self.run_collection(collection, zeros.newton, 'newton',
+                                smoothness=2, known_fail=known_fail)
 
     def test_halley_collections(self):
         known_fail = ['aps.12.06', 'aps.12.07', 'aps.12.08', 'aps.12.09',
@@ -208,7 +210,8 @@ class TestBasic(object):
                       'aps.12.14', 'aps.12.15', 'aps.12.16', 'aps.12.17',
                       'aps.12.18', 'aps.13.00']
         for collection in ['aps', 'complex']:
-            self.run_collection(collection, cc.newton, 'halley', smoothness=2, known_fail=known_fail)
+            self.run_collection(collection, zeros.newton, 'halley',
+                                smoothness=2, known_fail=known_fail)
 
     @staticmethod
     def f1(x):
@@ -235,7 +238,8 @@ class TestBasic(object):
         return exp(x) + cos(x)
 
     def test_newton(self):
-        for f, f_1, f_2 in [(self.f1, self.f1_1, self.f1_2), (self.f2, self.f2_1, self.f2_2)]:
+        for f, f_1, f_2 in [(self.f1, self.f1_1, self.f1_2),
+                            (self.f2, self.f2_1, self.f2_2)]:
             x = zeros.newton(f, 3, tol=1e-6)
             assert_allclose(f(x), 0, atol=1e-6)
             x = zeros.newton(f, 3, x1=5, tol=1e-6)  # secant, x0 and x1
@@ -262,7 +266,8 @@ class TestBasic(object):
     def test_halley_by_name(self):
         r"""Invoke halley through root_scalar()"""
         for f, f_1, f_2 in [(f1, f1_1, f1_2), (f2, f2_1, f2_2)]:
-            r = root_scalar(f, method='halley', x0=3, fprime=f_1, fprime2=f_2, xtol=1e-6)
+            r = root_scalar(f, method='halley', x0=3,
+                            fprime=f_1, fprime2=f_2, xtol=1e-6)
             assert_allclose(f(r.root), 0, atol=1e-6)
 
     def test_root_scalar_fail(self):
@@ -286,7 +291,7 @@ class TestBasic(object):
 
         def f1_2(x, *a):
             b = a[3] / a[5]
-            return -a[2] * np.exp(a[0] / a[5] + x * b) * b ** 2
+            return -a[2] * np.exp(a[0] / a[5] + x * b) * b**2
 
         a0 = np.array([
             5.32725221, 5.48673747, 5.49539973,
@@ -343,6 +348,7 @@ class TestBasic(object):
         f1 = lambda x: x**2 - 2*x - 1
         f1_1 = lambda x: 2*x - 2
         f1_2 = lambda x: 2.0 + 0*x
+
         def f1_and_p_and_pp(x):
             return x**2 - 2*x-1, 2*x-2, 2.0
 
