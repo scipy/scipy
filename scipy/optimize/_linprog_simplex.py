@@ -18,7 +18,7 @@ def _pivot_col(T, tol=1.0E-12, bland=False):
         The simplex tableau.
     tol : float
         Elements in the objective row larger than -tol will not be considered
-        for pivoting.  Nominally this value is zero, but numerical issues
+        for pivoting. Nominally this value is zero, but numerical issues
         cause a tolerance about zero to be necessary.
     bland : bool
         If True, use Bland's rule for selection of the column (select the
@@ -60,7 +60,7 @@ def _pivot_row(T, basis, pivcol, phase, tol=1.0E-12, bland=False):
         The phase of the simplex algorithm (1 or 2).
     tol : float
         Elements in the pivot column smaller than tol will not be considered
-        for pivoting.  Nominally this value is zero, but numerical issues
+        for pivoting. Nominally this value is zero, but numerical issues
         cause a tolerance about zero to be necessary.
     bland : bool
         If True, use Bland's rule for selection of the row (if more than one
@@ -69,10 +69,10 @@ def _pivot_row(T, basis, pivcol, phase, tol=1.0E-12, bland=False):
     Returns
     -------
     status: bool
-        True if a suitable pivot row was found, otherwise False.  A return
+        True if a suitable pivot row was found, otherwise False. A return
         of False indicates that the linear programming problem is unbounded.
     row: int
-        The index of the row of the pivot element.  If status is False, row
+        The index of the row of the pivot element. If status is False, row
         will be returned as nan.
     """
     if phase == 1:
@@ -150,7 +150,7 @@ def _solve_simplex(T, n, basis, maxiter=1000, phase=2, status=0, message='',
     ----------
     T : 2D array
         A 2D array representing the simplex T corresponding to the
-        maximization problem.  It should have the form:
+        maximization problem. It should have the form:
 
         [[A[0, 0], A[0, 1], ..., A[0, n_total], b[0]],
          [A[1, 0], A[1, 1], ..., A[1, n_total], b[1]],
@@ -172,7 +172,7 @@ def _solve_simplex(T, n, basis, maxiter=1000, phase=2, status=0, message='',
          [c'[0],  c'[1], ...,  c'[n_total],  0]]
 
          for a Phase 1 problem (a Problem in which a basic feasible solution is
-         sought prior to maximizing the actual objective.  T is modified in
+         sought prior to maximizing the actual objective. T is modified in
          place by _solve_simplex.
     n : int
         The number of true variables in the problem.
@@ -205,7 +205,7 @@ def _solve_simplex(T, n, basis, maxiter=1000, phase=2, status=0, message='',
         The initial iteration number used to keep an accurate iteration total
         in a two-phase problem.
     bland : bool
-        If True, choose pivots using Bland's rule [3]_.  In problems which
+        If True, choose pivots using Bland's rule [3]_. In problems which
         fail to converge due to cycling, using Bland's rule can provide
         convergence at the expense of a less optimal path about the simplex.
 
@@ -347,7 +347,7 @@ def _linprog_simplex(c, c0, A, b, maxiter=1000, disp=False, callback=None,
             success : bool
                 True if the algorithm succeeded in finding an optimal solution.
             slack : 1D array
-                The values of the slack variables.  Each slack variable
+                The values of the slack variables. Each slack variable
                 corresponds to an inequality constraint. If the slack is zero,
                 the corresponding constraint is active.
             phase : int
@@ -361,9 +361,7 @@ def _linprog_simplex(c, c0, A, b, maxiter=1000, disp=False, callback=None,
                      1 : Iteration limit reached
                      2 : Problem appears to be infeasible
                      3 : Problem appears to be unbounded
-                     4 : Serious numerical difficulties which could not resolved
-                         using a more robust, albeit less efficient, solver
-                         encountered
+                     4 : Serious numerical difficulties encountered
 
             nit : int
                 The number of iterations performed.
@@ -381,8 +379,8 @@ def _linprog_simplex(c, c0, A, b, maxiter=1000, disp=False, callback=None,
         enough to positive to serve as an optimal solution.
     bland : bool
         If True, use Bland's anti-cycling rule [3]_ to choose pivots to
-        prevent cycling.  If False, choose pivots which should lead to a
-        converged solution more quickly.  The latter method is subject to
+        prevent cycling. If False, choose pivots which should lead to a
+        converged solution more quickly. The latter method is subject to
         cycling (non-convergence) in rare instances.
 
     Returns
@@ -396,56 +394,12 @@ def _linprog_simplex(c, c0, A, b, maxiter=1000, disp=False, callback=None,
          1 : Iteration limit reached
          2 : Problem appears to be infeasible
          3 : Problem appears to be unbounded
-         4 : Serious numerical difficulties which could not resolved using
-             a more robust, albeit less efficient, solver encountered
+         4 : Serious numerical difficulties encountered
 
     message : str
         A string descriptor of the exit status of the optimization.
     iteration : int
         The number of iterations taken to solve the problem.
-
-    Examples
-    --------
-    Consider the following problem:
-
-    Minimize::
-
-        f = -1x[0] + 4x[1]
-
-    Subject to::
-
-        -3x[0] + 1x[1] <= 6
-         1x[0] + 2x[1] <= 4
-                  x[1] >= -3
-
-    where:  -inf <= x[0] <= inf
-
-    This problem deviates from the standard linear programming problem.  In
-    standard form, linear programming problems assume the variables x are
-    non-negative.  Since the variables don't have standard bounds where
-    0 <= x <= inf, the bounds of the variables must be explicitly set.
-
-    There are two upper-bound constraints, which can be expressed as
-
-    dot(A_ub, x) <= b_ub
-
-    The input for this problem is as follows:
-
-    >>> from scipy.optimize import linprog
-    >>> c = [-1, 4]
-    >>> A = [[-3, 1], [1, 2]]
-    >>> b = [6, 4]
-    >>> x0_bnds = (None, None)
-    >>> x1_bnds = (-3, None)
-    >>> res = linprog(c, A, b, bounds=(x0_bnds, x1_bnds))
-    >>> print(res)
-         fun: -22.0
-     message: 'Optimization terminated successfully.'
-         nit: 1
-       slack: array([ 39.,   0.])
-      status: 0
-     success: True
-           x: array([ 10.,  -3.])
 
     References
     ----------
