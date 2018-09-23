@@ -52,6 +52,9 @@ def linprog_verbose_callback(res):
             The values of the slack variables.  Each slack variable corresponds
             to an inequality constraint.  If the slack is zero, then the
             corresponding constraint is active.
+        con : 1D array
+            The (nominally zero) residuals of the equality constraints, that is,
+            ``b - A_eq * x``
         phase : int
             The phase of the optimization being executed. In phase 1 a basic
             feasible solution is sought and the T has an additional row
@@ -63,8 +66,7 @@ def linprog_verbose_callback(res):
                  1 : Iteration limit reached
                  2 : Problem appears to be infeasible
                  3 : Problem appears to be unbounded
-                 4 : Serious numerical difficulties which could not resolved using
-                     a more robust, albeit less efficient, solver encountered
+                 4 : Serious numerical difficulties encountered
 
         nit : int
             The number of iterations performed.
@@ -128,6 +130,9 @@ def linprog_terse_callback(res):
             The values of the slack variables. Each slack variable corresponds
             to an inequality constraint. If the slack is zero, then the
             corresponding constraint is active.
+        con : 1D array
+            The (nominally zero) residuals of the equality constraints, that is,
+            ``b - A_eq * x``
         phase : int
             The phase of the optimization being executed. In phase 1 a basic
             feasible solution is sought and the T has an additional row
@@ -139,8 +144,7 @@ def linprog_terse_callback(res):
                  1 : Iteration limit reached
                  2 : Problem appears to be infeasible
                  3 : Problem appears to be unbounded
-                 4 : Serious numerical difficulties which could not be resolved
-                     using a more robust, albeit less efficient, solver.
+                 4 : Serious numerical difficulties encountered
 
         nit : int
             The number of iterations performed.
@@ -166,7 +170,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
     Minimize::
 
-        cT @ x
+        c @ x
 
     Subject to::
 
@@ -196,7 +200,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         ``(min, max)`` pairs for each element in ``x``, defining
         the bounds on that parameter. Use None for one of ``min`` or
         ``max`` when there is no bound in that direction. By default
-        bounds are ``(0, None)`` (non-negative)
+        bounds are ``(0, None)`` (non-negative).
         If a sequence containing a single tuple is provided, then ``min`` and
         ``max`` will be applied to all variables in the problem.
     method : str, optional
@@ -219,6 +223,9 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
                 The values of the slack variables. Each slack variable
                 corresponds to an inequality constraint. If the slack is zero,
                 the corresponding constraint is active.
+            con : 1D array
+                The (nominally zero) residuals of the equality constraints, that is,
+                ``b - A_eq * x``
             phase : int
                 The phase of the optimization being executed. In phase 1 a basic
                 feasible solution is sought and the T has an additional row
@@ -236,7 +243,6 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
                 The number of iterations performed.
             message : str
                 A string descriptor of the exit status of the optimization.
-
     options : dict, optional
         A dictionary of solver options. All methods accept the following
         generic options:
@@ -302,9 +308,10 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     less accurate than that of the simplex method and may not correspond with a
     vertex of the polytope defined by the constraints.
 
-    Both methods apply a presolve procedure based on [8]_ attempts to identify
-    trivial infeasibilities, trivial unboundedness, and potential problem
-    simplifications. Specifically, it checks for:
+    Before applying either method a presolve procedure based on [8]_ and
+    converted attempts to standard form. The presolve procedure attempts to
+    identify trivial infeasibilities, trivial unboundedness, and potential
+    problem simplifications. Specifically, it checks for:
 
     - rows of zeros in ``A_eq`` or ``A_ub``, representing trivial constraints;
     - columns of zeros in ``A_eq`` `and` ``A_ub``, representing unconstrained

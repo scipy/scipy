@@ -371,8 +371,7 @@ def _get_message(status):
          1 : Iteration limit reached
          2 : Problem appears to be infeasible
          3 : Problem appears to be unbounded
-         4 : Serious numerical difficulties which could not resolved using
-             a more robust, albeit less efficient, solver encountered
+         4 : Serious numerical difficulties encountered
 
     Returns
     -------
@@ -539,10 +538,14 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol,
     r"""
     Solve a linear programming problem in standard form:
 
-    minimize:     c'^T @ x'
+    Minimize::
 
-    subject to:   A @ x' == b
-                      x' >= 0
+        c @ x
+
+    Subject to::
+
+        A @ x == b
+            x >= 0
 
     using the interior point method of [4].
 
@@ -622,8 +625,7 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol,
          1 : Iteration limit reached
          2 : Problem appears to be infeasible
          3 : Problem appears to be unbounded
-         4 : Serious numerical difficulties, that could not be resolved
-             using a more robust solver encountered
+         4 : Serious numerical difficulties encountered
 
     message : str
         A string descriptor of the exit status of the optimization.
@@ -775,13 +777,13 @@ def _linprog_ip(
         **unknown_options):
     r"""
     Minimize a linear objective function subject to linear
-    equality constraints, linear inequality constraints, and simple bounds
-    using the interior point method of [4]_. Linear programming is intended to
-    solve problems of the following form:
+    equality and non-negativity constraints using the interior point method
+    of [4]_. Linear programming is intended to solve problems
+    of the following form:
 
     Minimize::
 
-        cT @ x
+        c @ x
 
     Subject to::
 
@@ -875,8 +877,7 @@ def _linprog_ip(
          1 : Iteration limit reached
          2 : Problem appears to be infeasible
          3 : Problem appears to be unbounded
-         4 : Serious numerical difficulties not resolved using a more robust,
-             yet less efficient, solver encountered
+         4 : Serious numerical difficulties encountered
 
     message : str
         A string descriptor of the exit status of the optimization.

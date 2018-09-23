@@ -133,13 +133,12 @@ def _apply_pivot(T, basis, pivrow, pivcol, tol=1e-12):
 def _solve_simplex(T, n, basis, maxiter=1000, phase=2, status=0, message='',
                    callback=None, tol=1.0E-12, nit0=0, bland=False, _T_o=None):
     """
-    Solve a linear programming problem in "standard maximization form" using
-    the Simplex Method. Linear Programming is intended to solve the following
-    problem form:
+    Solve a linear programming problem in "standard form" using the Simplex
+    Method. Linear Programming is intended to solve the following problem form:
 
     Minimize::
 
-        cT @ x
+        c @ x
 
     Subject to::
 
@@ -149,8 +148,8 @@ def _solve_simplex(T, n, basis, maxiter=1000, phase=2, status=0, message='',
     Parameters
     ----------
     T : 2D array
-        A 2D array representing the simplex T corresponding to the
-        maximization problem. It should have the form:
+        A 2D array representing the simplex tableau, T, corresponding to the
+        linear programming problem. It should have the form:
 
         [[A[0, 0], A[0, 1], ..., A[0, n_total], b[0]],
          [A[1, 0], A[1, 1], ..., A[1, n_total], b[1]],
@@ -172,8 +171,8 @@ def _solve_simplex(T, n, basis, maxiter=1000, phase=2, status=0, message='',
          [c'[0],  c'[1], ...,  c'[n_total],  0]]
 
          for a Phase 1 problem (a Problem in which a basic feasible solution is
-         sought prior to maximizing the actual objective. T is modified in
-         place by _solve_simplex.
+         sought prior to maximizing the actual objective. ``T`` is modified in
+         place by ``_solve_simplex``.
     n : int
         The number of true variables in the problem.
     basis : 1D array
@@ -187,16 +186,42 @@ def _solve_simplex(T, n, basis, maxiter=1000, phase=2, status=0, message='',
         The phase of the optimization being executed. In phase 1 a basic
         feasible solution is sought and the T has an additional row
         representing an alternate objective function.
-    callback : callable, optional
+    callback : callable, optional (simplex only)
         If a callback function is provided, it will be called within each
-        iteration of the simplex algorithm. The callback must have the
-        signature `callback(xk, **kwargs)` where xk is the current solution
-        vector and kwargs is a dictionary containing the following::
-        "T" : The current Simplex algorithm T
-        "nit" : The current iteration.
-        "pivot" : The pivot (row, column) used for the next iteration.
-        "phase" : Whether the algorithm is in Phase 1 or Phase 2.
-        "basis" : The indices of the columns of the basic variables.
+        iteration of the simplex algorithm. The callback must require a
+        `scipy.optimize.OptimizeResult` consisting of the following fields:
+
+            x : 1D array
+                The independent variable vector which optimizes the linear
+                programming problem.
+            fun : float
+                Value of the objective function.
+            success : bool
+                True if the algorithm succeeded in finding an optimal solution.
+            slack : 1D array
+                The values of the slack variables. Each slack variable
+                corresponds to an inequality constraint. If the slack is zero,
+                the corresponding constraint is active.
+            con : 1D array
+                The (nominally zero) residuals of the equality constraints,
+                that is, ``b - A_eq * x``
+            phase : int
+                The phase of the optimization being executed. In phase 1 a basic
+                feasible solution is sought and the T has an additional row
+                representing an alternate objective function.
+            status : int
+                An integer representing the exit status of the optimization::
+
+                     0 : Optimization terminated successfully
+                     1 : Iteration limit reached
+                     2 : Problem appears to be infeasible
+                     3 : Problem appears to be unbounded
+                     4 : Serious numerical difficulties encountered
+
+            nit : int
+                The number of iterations performed.
+            message : str
+                A string descriptor of the exit status of the optimization.
     tol : float
         The tolerance which determines when a solution is "close enough" to
         zero in Phase 1 to be considered a basic feasible solution or close
@@ -213,7 +238,7 @@ def _solve_simplex(T, n, basis, maxiter=1000, phase=2, status=0, message='',
     -------
     nit : int
         The number of iterations. Used to keep an accurate iteration total
-        in a two-phase problem.
+        in the two-phase problem.
     status : int
         An integer representing the exit status of the optimization::
 
@@ -221,8 +246,7 @@ def _solve_simplex(T, n, basis, maxiter=1000, phase=2, status=0, message='',
          1 : Iteration limit reached
          2 : Problem appears to be infeasible
          3 : Problem appears to be unbounded
-         4 : Serious numerical difficulties which could not resolved using
-             a more robust, albeit less efficient, solver encountered
+         4 : Serious numerical difficulties encountered
 
     """
     nit = nit0
@@ -314,7 +338,7 @@ def _linprog_simplex(c, c0, A, b, maxiter=1000, disp=False, callback=None,
 
     Minimize::
 
-        cT @ x
+        c @ x
 
     Subject to::
 
@@ -350,6 +374,9 @@ def _linprog_simplex(c, c0, A, b, maxiter=1000, disp=False, callback=None,
                 The values of the slack variables. Each slack variable
                 corresponds to an inequality constraint. If the slack is zero,
                 the corresponding constraint is active.
+            con : 1D array
+                The (nominally zero) residuals of the equality constraints, that
+                is, ``b - A_eq * x``
             phase : int
                 The phase of the optimization being executed. In phase 1 a basic
                 feasible solution is sought and the T has an additional row
