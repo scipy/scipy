@@ -2,7 +2,7 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy import (abs, asarray)
+from numpy import abs, asarray
 
 try:
     from scipy.special import factorial

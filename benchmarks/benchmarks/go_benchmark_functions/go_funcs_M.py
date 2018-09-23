@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import division, print_function, absolute_import
 
-from numpy import (abs, asarray, cos, exp, log,
-                   arange, pi, prod, sin,
-                   sqrt, sum, tan)
+from numpy import (abs, asarray, cos, exp, log, arange, pi, prod, sin, sqrt,
+                   sum, tan)
 try:
     from scipy.special import factorial
 except ImportError:

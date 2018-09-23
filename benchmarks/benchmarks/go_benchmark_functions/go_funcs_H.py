@@ -2,8 +2,7 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy import (abs, arctan2, asarray, cos, exp,
-                   arange, pi, sin, sqrt, sum)
+from numpy import abs, arctan2, asarray, cos, exp, arange, pi, sin, sqrt, sum
 from .go_benchmark import Benchmark
 
 

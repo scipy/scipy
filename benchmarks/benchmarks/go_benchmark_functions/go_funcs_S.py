@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import division, print_function, absolute_import
 
-from numpy import (abs, asarray, cos, floor,
-                   arange, pi, prod, roll, sin,
+from numpy import (abs, asarray, cos, floor, arange, pi, prod, roll, sin,
                    sqrt, sum, repeat, atleast_2d, tril)
 from numpy.random import uniform
 from .go_benchmark import Benchmark

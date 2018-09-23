@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import division, print_function, absolute_import
-from numpy import (cos, exp, log,
-                   pi, sin, sqrt)
+from numpy import cos, exp, log, pi, sin, sqrt
 
 try:
     from scipy.misc import factorial
