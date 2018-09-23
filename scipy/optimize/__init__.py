@@ -104,6 +104,7 @@ Global Optimization
    basinhopping - Basinhopping stochastic optimizer.
    brute - Brute force searching optimizer.
    differential_evolution - stochastic minimization using differential evolution.
+   dual_annealing - Dual annealing stochastic optimizer.
 
 
 Least-squares and Curve Fitting
@@ -354,6 +355,7 @@ from ._constraints import (NonlinearConstraint,
                            LinearConstraint,
                            Bounds)
 from ._hessian_update_strategy import HessianUpdateStrategy, BFGS, SR1
+from ._dual_annealing import dual_annealing
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 
