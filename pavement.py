@@ -70,8 +70,6 @@ import warnings
 from hashlib import md5
 from hashlib import sha256
 
-import distutils
-
 try:
     from paver.tasks import VERSION as _PVER
     if not _PVER >= '1.0':

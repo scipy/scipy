@@ -9,7 +9,7 @@ import scipy as sp
 import scipy.sparse as sps
 from warnings import warn
 from scipy.linalg import LinAlgError
-from .optimize import OptimizeResult, OptimizeWarning, _check_unknown_options
+from .optimize import OptimizeWarning, _check_unknown_options
 
 
 def _get_solver(sparse=False, lstsq=False, sym_pos=True, cholesky=True):

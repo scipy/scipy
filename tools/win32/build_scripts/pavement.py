@@ -3,7 +3,6 @@ import os
 from os.path import join as pjoin, normpath, exists as pexists, dirname
 import subprocess
 from shutil import rmtree, move as shmove
-import re
 from zipfile import ZipFile
 
 from lib import get_svn_version, get_scipy_version

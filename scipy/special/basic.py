@@ -10,7 +10,7 @@ import math
 from scipy._lib.six import xrange
 from numpy import (pi, asarray, floor, isscalar, iscomplex, real,
                    imag, sqrt, where, mgrid, sin, place, issubdtype,
-                   extract, less, inexact, nan, zeros, sinc)
+                   extract, inexact, nan, zeros, sinc)
 from . import _ufuncs as ufuncs
 from ._ufuncs import (ellipkm1, mathieu_a, mathieu_b, iv, jv, gamma,
                       psi, _zeta, hankel1, hankel2, yv, kv, ndtri,
