@@ -66,7 +66,7 @@ class TestFactorized(object):
 
     def test_singular_without_umfpack(self):
         use_solver(useUmfpack=False)
-        with assert_raises(RuntimeError, message="Factor is exactly singular"):
+        with assert_raises(RuntimeError, match="Factor is exactly singular"):
             self._check_singular()
 
     @pytest.mark.skipif(not has_umfpack, reason="umfpack not available")
@@ -88,7 +88,7 @@ class TestFactorized(object):
     def test_cannot_factorize_nonsquare_matrix_without_umfpack(self):
         use_solver(useUmfpack=False)
         msg = "can only factor square matrices"
-        with assert_raises(ValueError, message=msg):
+        with assert_raises(ValueError, match=msg):
             factorized(self.A[:, :4])
 
     @pytest.mark.skipif(not has_umfpack, reason="umfpack not available")
@@ -104,12 +104,12 @@ class TestFactorized(object):
         B = random.rand(4, 3)
         BB = random.rand(self.n, 3, 9)
 
-        with assert_raises(ValueError, message="is of incompatible size"):
+        with assert_raises(ValueError, match="is of incompatible size"):
             solve(b)
-        with assert_raises(ValueError, message="is of incompatible size"):
+        with assert_raises(ValueError, match="is of incompatible size"):
             solve(B)
         with assert_raises(ValueError,
-                           message="object too deep for desired array"):
+                           match="object too deep for desired array"):
             solve(BB)
 
     @pytest.mark.skipif(not has_umfpack, reason="umfpack not available")
@@ -123,9 +123,9 @@ class TestFactorized(object):
         # does not raise
         solve(b)
         msg = "object too deep for desired array"
-        with assert_raises(ValueError, message=msg):
+        with assert_raises(ValueError, match=msg):
             solve(B)
-        with assert_raises(ValueError, message=msg):
+        with assert_raises(ValueError, match=msg):
             solve(BB)
 
     def test_call_with_cast_to_complex_without_umfpack(self):
@@ -133,7 +133,7 @@ class TestFactorized(object):
         solve = factorized(self.A)
         b = random.rand(4)
         for t in [np.complex64, np.complex128]:
-            with assert_raises(TypeError, message="Cannot cast array data"):
+            with assert_raises(TypeError, match="Cannot cast array data"):
                 solve(b.astype(t))
 
     @pytest.mark.skipif(not has_umfpack, reason="umfpack not available")
@@ -156,7 +156,7 @@ class TestFactorized(object):
         # should raise when incorrectly assuming indices are sorted
         use_solver(useUmfpack=True, assumeSortedIndices=True)
         with assert_raises(RuntimeError,
-                           message="UMFPACK_ERROR_invalid_matrix"):
+                           match="UMFPACK_ERROR_invalid_matrix"):
             factorized(A)
 
         # should sort indices and succeed when not assuming indices are sorted

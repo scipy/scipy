@@ -4240,7 +4240,7 @@ class lognorm_gen(rv_continuous):
     .. math::
 
         f(x, s) = \frac{1}{s x \sqrt{2\pi}}
-                  \exp(-\frac{\log^2(x}{2s^2})
+                  \exp\left(-\frac{\log^2(x)}{2s^2}\right)
 
     for :math:`x > 0`, :math:`s > 0`.
 
@@ -5021,7 +5021,7 @@ class ncf_gen(rv_continuous):
                           \gamma(n_1/2) \gamma(1+n_2/2) \\
                          \frac{L^{\frac{v_1}{2}-1}_{v_2/2}
                                (-\lambda v_1 \frac{x}{2(v_1 x+v_2)})}
-                              {(B(v_1/2, v_2/2)  \gamma(\frac{v_1+v_2}{2})}
+                              {B(v_1/2, v_2/2)  \gamma(\frac{v_1+v_2}{2})}
 
     for :math:`n_1 > 1`, :math:`n_2, \lambda > 0`.  Here :math:`n_1` is the
     degrees of freedom in the numerator, :math:`n_2` the degrees of freedom in

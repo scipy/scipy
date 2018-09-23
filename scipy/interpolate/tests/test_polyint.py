@@ -294,61 +294,63 @@ class TestTaylor(object):
 
 class TestBarycentric(object):
     def setup_method(self):
-        self.true_poly = np.poly1d([-2,3,1,5,-4])
-        self.test_xs = np.linspace(-1,1,100)
-        self.xs = np.linspace(-1,1,5)
+        self.true_poly = np.poly1d([-2, 3, 1, 5, -4])
+        self.test_xs = np.linspace(-1, 1, 100)
+        self.xs = np.linspace(-1, 1, 5)
         self.ys = self.true_poly(self.xs)
 
     def test_lagrange(self):
-        P = BarycentricInterpolator(self.xs,self.ys)
-        assert_almost_equal(self.true_poly(self.test_xs),P(self.test_xs))
+        P = BarycentricInterpolator(self.xs, self.ys)
+        assert_almost_equal(self.true_poly(self.test_xs), P(self.test_xs))
 
     def test_scalar(self):
-        P = BarycentricInterpolator(self.xs,self.ys)
-        assert_almost_equal(self.true_poly(7),P(7))
-        assert_almost_equal(self.true_poly(np.array(7)),P(np.array(7)))
+        P = BarycentricInterpolator(self.xs, self.ys)
+        assert_almost_equal(self.true_poly(7), P(7))
+        assert_almost_equal(self.true_poly(np.array(7)), P(np.array(7)))
 
     def test_delayed(self):
         P = BarycentricInterpolator(self.xs)
         P.set_yi(self.ys)
-        assert_almost_equal(self.true_poly(self.test_xs),P(self.test_xs))
+        assert_almost_equal(self.true_poly(self.test_xs), P(self.test_xs))
 
     def test_append(self):
-        P = BarycentricInterpolator(self.xs[:3],self.ys[:3])
-        P.add_xi(self.xs[3:],self.ys[3:])
-        assert_almost_equal(self.true_poly(self.test_xs),P(self.test_xs))
+        P = BarycentricInterpolator(self.xs[:3], self.ys[:3])
+        P.add_xi(self.xs[3:], self.ys[3:])
+        assert_almost_equal(self.true_poly(self.test_xs), P(self.test_xs))
 
     def test_vector(self):
         xs = [0, 1, 2]
-        ys = np.array([[0,1],[1,0],[2,1]])
-        P = BarycentricInterpolator(xs,ys)
-        Pi = [BarycentricInterpolator(xs,ys[:,i]) for i in xrange(ys.shape[1])]
-        test_xs = np.linspace(-1,3,100)
+        ys = np.array([[0, 1], [1, 0], [2, 1]])
+        BI = BarycentricInterpolator 
+        P = BI(xs, ys)
+        Pi = [BI(xs, ys[:, i]) for i in xrange(ys.shape[1])]
+        test_xs = np.linspace(-1, 3, 100)
         assert_almost_equal(P(test_xs),
-                np.rollaxis(np.asarray([p(test_xs) for p in Pi]),-1))
+                np.rollaxis(np.asarray([p(test_xs) for p in Pi]), -1))
 
     def test_shapes_scalarvalue(self):
-        P = BarycentricInterpolator(self.xs,self.ys)
+        P = BarycentricInterpolator(self.xs, self.ys)
         assert_array_equal(np.shape(P(0)), ())
         assert_array_equal(np.shape(P(np.array(0))), ())
         assert_array_equal(np.shape(P([0])), (1,))
-        assert_array_equal(np.shape(P([0,1])), (2,))
+        assert_array_equal(np.shape(P([0, 1])), (2,))
 
     def test_shapes_vectorvalue(self):
-        P = BarycentricInterpolator(self.xs,np.outer(self.ys,np.arange(3)))
+        P = BarycentricInterpolator(self.xs, np.outer(self.ys, np.arange(3)))
         assert_array_equal(np.shape(P(0)), (3,))
-        assert_array_equal(np.shape(P([0])), (1,3))
-        assert_array_equal(np.shape(P([0,1])), (2,3))
+        assert_array_equal(np.shape(P([0])), (1, 3))
+        assert_array_equal(np.shape(P([0, 1])), (2, 3))
 
     def test_shapes_1d_vectorvalue(self):
-        P = BarycentricInterpolator(self.xs,np.outer(self.ys,[1]))
+        P = BarycentricInterpolator(self.xs, np.outer(self.ys, [1]))
         assert_array_equal(np.shape(P(0)), (1,))
-        assert_array_equal(np.shape(P([0])), (1,1))
-        assert_array_equal(np.shape(P([0,1])), (2,1))
+        assert_array_equal(np.shape(P([0])), (1, 1))
+        assert_array_equal(np.shape(P([0,1])), (2, 1))
 
     def test_wrapper(self):
-        P = BarycentricInterpolator(self.xs,self.ys)
-        assert_almost_equal(P(self.test_xs),barycentric_interpolate(self.xs,self.ys,self.test_xs))
+        P = BarycentricInterpolator(self.xs, self.ys)
+        values = barycentric_interpolate(self.xs, self.ys, self.test_xs)
+        assert_almost_equal(P(self.test_xs), values)
 
 
 class TestPCHIP(object):

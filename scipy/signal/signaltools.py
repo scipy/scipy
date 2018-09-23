@@ -2367,7 +2367,7 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0)):
         raise ValueError('up and down must be >= 1')
 
     # Determine our up and down factors
-    # Use a rational approimation to save computation time on really long
+    # Use a rational approximation to save computation time on really long
     # signals
     g_ = gcd(up, down)
     up //= g_

@@ -142,12 +142,43 @@ Scalar functions
 .. autosummary::
    :toctree: generated/
 
-   brentq - quadratic interpolation Brent method.
-   brenth - Brent method, modified by Harris with hyperbolic extrapolation.
-   ridder - Ridder's method.
-   bisect - Bisection method.
-   newton - Secant method or Newton's method.
+   brentq - quadratic interpolation Brent method
+   brenth - Brent method, modified by Harris with hyperbolic extrapolation
+   ridder - Ridder's method
+   bisect - Bisection method
+   newton - Secant method or Newton's method
+   toms748 - Alefeld, Potra & Shi Algorithm 748
    RootResults - The root finding result returned by some root finders.
+
+
+The table below lists situations and appropriate methods, along with
+*asymptotic* convergence rates per iteration (and per function evaluation)
+for successful convergence to a simple root(*).
+Bisection is the slowest of them all, adding one bit of accuracy for each
+function evaluation, but is guaranteed to converge.
+The other bracketing methods all (eventually) increase the number of accurate
+bits by about 50% for every function evaluation.
+The derivative-based methods, all built on `newton`, can converge quite quickly
+if the initial value is close to the root.  They can also be applied to
+functions defined on (a subset of) the complex plane.
+
++-------------+-------------+--------------+---------------+---------------------+-------------+----------------------+
+| Domain of f | Has Bracket | Has `fprime` | Has `fprime2` | Available Functions | Convergence                        |
++             +             +              +               +                     +-------------+----------------------+
+|             |             |              |               |                     | Guaranteed? |  Rate(s)(*)          |
++=============+=============+==============+===============+=====================+=============+======================+
+| `R`         | Yes         | N/A          | N/A           | - bisection         | - Yes       | - 1 "Linear"         |
+|             |             |              |               | - brentq            | - Yes       | - >=1, <= 1.62       |
+|             |             |              |               | - brenth            | - Yes       | - >=1, <= 1.62       |
+|             |             |              |               | - ridder            | - Yes       | - 2.0 (1.41)         |
+|             |             |              |               | - toms748           | - Yes       | - 2.7 (1.65)         |
++-------------+-------------+--------------+---------------+---------------------+-------------+----------------------+
+| `R` or `C`  | No          | No           | No            | newton              | No          | 1.62 (1.62)          |
++-------------+-------------+--------------+---------------+---------------------+-------------+----------------------+
+| `R` or `C`  | No          | Yes          | No            | newton              | No          | 2.00 (1.41)          |
++-------------+-------------+--------------+---------------+---------------------+-------------+----------------------+
+| `R` or `C`  | No          | Yes          | Yes           | newton              | No          | 3.00 (1.44)          |
++-------------+-------------+--------------+---------------+---------------------+-------------+----------------------+
 
 
 Fixed point finding:
