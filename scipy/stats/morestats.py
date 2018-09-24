@@ -1294,11 +1294,14 @@ def yeojohnson(x, lmbda=None):
     Unlike `boxcox`, `yeojohnson` does not require the input data to be
     positive.
 
+    .. versionadded:: 1.2.0
+
 
     References
     ----------
     I. Yeo and R.A. Johnson, "A New Family of Power Transformations to
     Improve Normality or Symmetry", Biometrika 87.4 (2000):
+
 
     Examples
     --------
@@ -1395,6 +1398,8 @@ def yeojohnson_llf(lmb, data):
     where :math:`\sigma^2` is estimated variance of the the Yeo-Johnson
     transformed input data ``x``.
 
+    .. versionadded:: 1.2.0
+
     Examples
     --------
     >>> from scipy import stats
@@ -1477,6 +1482,10 @@ def yeojohnson_normmax(x, brack=(-2, 2)):
     maxlog : float
         The optimal transform parameter found.
 
+    Notes
+    -----
+    .. versionadded:: 1.2.0
+
     See Also
     --------
     yeojohnson, yeojohnson_llf, yeojohnson_normplot
@@ -1550,6 +1559,8 @@ def yeojohnson_normplot(x, la, lb, plot=None, N=80):
     Even if `plot` is given, the figure is not shown or saved by
     `boxcox_normplot`; ``plt.show()`` or ``plt.savefig('figname.png')``
     should be used after calling `probplot`.
+
+    .. versionadded:: 1.2.0
 
     Examples
     --------
