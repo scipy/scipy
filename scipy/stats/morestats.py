@@ -26,7 +26,9 @@ __all__ = ['mvsdist',
            'boxcox_llf', 'boxcox', 'boxcox_normmax', 'boxcox_normplot',
            'shapiro', 'anderson', 'ansari', 'bartlett', 'levene', 'binom_test',
            'fligner', 'mood', 'wilcoxon', 'median_test',
-           'circmean', 'circvar', 'circstd', 'anderson_ksamp'
+           'circmean', 'circvar', 'circstd', 'anderson_ksamp',
+           'yeojohnson_llf', 'yeojohnson', 'yeojohnson_normmax',
+           'yeojohnson_normplot'
            ]
 
 
@@ -1150,6 +1152,42 @@ def boxcox_normmax(x, brack=(-2.0, 2.0), method='pearsonr'):
     return optimfunc(x, brack)
 
 
+def _normplot(method, x, la, lb, plot=None, N=80):
+    """Compute parameters for a Box-Cox or Yeo-Johnson normality plot,
+    optionally show it. See `boxcox_normplot` or `yeojohnson_normplot` for
+    details."""
+
+    if method == 'boxcox':
+        title = 'Box-Cox Normality Plot'
+        transform_func = boxcox
+    else:
+        title = 'Yeo-Johnson Normality Plot'
+        transform_func = yeojohnson
+
+    x = np.asarray(x)
+    if x.size == 0:
+        return x
+
+    if lb <= la:
+        raise ValueError("`lb` has to be larger than `la`.")
+
+    lmbdas = np.linspace(la, lb, num=N)
+    ppcc = lmbdas * 0.0
+    for i, val in enumerate(lmbdas):
+        # Determine for each lmbda the correlation coefficient of transformed x
+        z = transform_func(x, lmbda=val)
+        _, r2 = probplot(z, dist='norm', fit=True)
+        ppcc[i] = r2[-1]
+
+    if plot is not None:
+        plot.plot(lmbdas, ppcc, 'x')
+        _add_axis_labels_title(plot, xlabel='$\\lambda$',
+                               ylabel='Prob Plot Corr. Coef.',
+                               title=title)
+
+    return lmbdas, ppcc
+
+
 def boxcox_normplot(x, la, lb, plot=None, N=80):
     """Compute parameters for a Box-Cox normality plot, optionally show it.
 
@@ -1215,28 +1253,7 @@ def boxcox_normplot(x, la, lb, plot=None, N=80):
     >>> plt.show()
 
     """
-    x = np.asarray(x)
-    if x.size == 0:
-        return x
-
-    if lb <= la:
-        raise ValueError("`lb` has to be larger than `la`.")
-
-    lmbdas = np.linspace(la, lb, num=N)
-    ppcc = lmbdas * 0.0
-    for i, val in enumerate(lmbdas):
-        # Determine for each lmbda the correlation coefficient of transformed x
-        z = boxcox(x, lmbda=val)
-        _, r2 = probplot(z, dist='norm', fit=True)
-        ppcc[i] = r2[-1]
-
-    if plot is not None:
-        plot.plot(lmbdas, ppcc, 'x')
-        _add_axis_labels_title(plot, xlabel='$\\lambda$',
-                               ylabel='Prob Plot Corr. Coef.',
-                               title='Box-Cox Normality Plot')
-
-    return lmbdas, ppcc
+    return _normplot('boxcox', x, la, lb, plot, N)
 
 
 def yeojohnson(x, lmbda=None):
@@ -1256,17 +1273,17 @@ def yeojohnson(x, lmbda=None):
 
 def _yeojohnson_transform(x, lmbda):
 
-    out = np.zeros(shape=x.shape, dtype=x.dtype)
+    out = np.zeros_like(x)
     pos = x >= 0  # binary mask
 
     # when x >= 0
-    if lmbda < 1e-19:
+    if abs(lmbda) < 1e-19:
         out[pos] = np.log(x[pos] + 1)
     else:  # lmbda != 0
         out[pos] = (np.power(x[pos] + 1, lmbda) - 1) / lmbda
 
     # when x < 0
-    if lmbda < 2 - 1e-19:
+    if abs(lmbda - 2) > 1e-19:
         out[~pos] = -(np.power(-x[~pos] + 1, 2 - lmbda) - 1) / (2 - lmbda)
     else:  # lmbda == 2
         out[~pos] = -np.log(-x[~pos] + 1)
@@ -1275,6 +1292,9 @@ def _yeojohnson_transform(x, lmbda):
 
 
 def yeojohnson_llf(lmbda, data):
+    """Does not work with 2d array check doc when copy pasting.
+    Add that to differences maybe:"""
+    data = np.asarray(data)
     trans = _yeojohnson_transform(data, lmbda)
     n_samples = data.shape[0]
 
@@ -1297,8 +1317,76 @@ def yeojohnson_normmax(x, brack=(-2, 2)):
     # get rid of them
     x = x[~np.isnan(x)]
     # choosing bracket -2, 2 like for boxcox
-    return optimize.brent(_neg_llf, brack=brack)
-   
+    return optimize.brent(_neg_llf, brack=brack, args=(x,))
+
+
+def yeojohnson_normplot(x, la, lb, plot=None, N=80):
+    """Compute parameters for a Yeo-Johnson normality plot, optionally show it.
+
+    A Yeo-Johnson normality plot shows graphically what the best
+    transformation parameter is to use in `yeojohnson` to obtain a
+    distribution that is close to normal.
+
+    Parameters
+    ----------
+    x : array_like
+        Input array.
+    la, lb : scalar
+        The lower and upper bounds for the ``lmbda`` values to pass to
+        `yeojohnson` for Yeo-Johnson transformations. These are also the
+        limits of the horizontal axis of the plot if that is generated.
+    plot : object, optional
+        If given, plots the quantiles and least squares fit.
+        `plot` is an object that has to have methods "plot" and "text".
+        The `matplotlib.pyplot` module or a Matplotlib Axes object can be used,
+        or a custom object with the same methods.
+        Default is None, which means that no plot is created.
+    N : int, optional
+        Number of points on the horizontal axis (equally distributed from
+        `la` to `lb`).
+
+    Returns
+    -------
+    lmbdas : ndarray
+        The ``lmbda`` values for which a Yeo-Johnson transform was done.
+    ppcc : ndarray
+        Probability Plot Correlelation Coefficient, as obtained from `probplot`
+        when fitting the Box-Cox transformed input `x` against a normal
+        distribution.
+
+    See Also
+    --------
+    probplot, yeojohnson, yeojohnson_normmax, yeojohnson_llf, ppcc_max
+
+    Notes
+    -----
+    Even if `plot` is given, the figure is not shown or saved by
+    `boxcox_normplot`; ``plt.show()`` or ``plt.savefig('figname.png')``
+    should be used after calling `probplot`.
+
+    Examples
+    --------
+    >>> from scipy import stats
+    >>> import matplotlib.pyplot as plt
+
+    Generate some non-normally distributed data, and create a Yeo-Johnson plot:
+
+    >>> x = stats.loggamma.rvs(5, size=500) + 5
+    >>> fig = plt.figure()
+    >>> ax = fig.add_subplot(111)
+    >>> prob = stats.yeojohnson_normplot(x, -20, 20, plot=ax)
+
+    Determine and plot the optimal ``lmbda`` to transform ``x`` and plot it in
+    the same plot:
+
+    >>> _, maxlog = stats.yeojohnson(x)
+    >>> ax.axvline(maxlog, color='r')
+
+    >>> plt.show()
+
+    """
+    return _normplot('yeojohnson', x, la, lb, plot, N)
+
 
 def shapiro(x):
     """

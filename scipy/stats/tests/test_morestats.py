@@ -1200,6 +1200,88 @@ class TestBoxcoxNormplot(object):
         assert_(stats.boxcox_normplot([], 0, 1).size == 0)
 
 
+class TestYeojohnson_llf(object):
+
+    def test_array_like(self):
+        np.random.seed(54321)
+        x = stats.norm.rvs(size=100, loc=10)
+        lmbda = 1
+        llf = stats.yeojohnson_llf(lmbda, x)
+        llf2 = stats.yeojohnson_llf(lmbda, list(x))
+        assert_allclose(llf, llf2, rtol=1e-12)
+
+    def test_empty(self):
+        assert_(np.isnan(stats.yeojohnson_llf(1, [])))
+
+
+class TestYeojohnson(object):
+
+    def test_fixed_lmbda(self):
+        np.random.seed(12345)
+        x = stats.loggamma.rvs(5, size=50) + 5
+        xt = stats.yeojohnson(x, lmbda=1)
+        assert_allclose(xt, x)
+        xt = stats.yeojohnson(x, lmbda=-1)
+        assert_allclose(xt, 1 - 1 / (x + 1))
+
+        xt = stats.yeojohnson(x, lmbda=0)
+        assert_allclose(xt, np.log(x + 1))
+
+        # Also test that array_like input works
+        xt = stats.yeojohnson(list(x), lmbda=0)
+        assert_allclose(xt, np.log(x + 1))
+
+    @pytest.mark.parametrize('lmbda', [0, .1, .5, 2])
+    def test_lmbda_None(self, lmbda):
+        # Start from normal rv's, do inverse transform to check that
+        # optimization function gets close to the right answer.
+
+        def _inverse_transform(x, lmbda):
+            x_inv = np.zeros(x.shape, dtype=x.dtype)
+            pos = x >= 0
+
+            # when x >= 0
+            if abs(lmbda) < 1e-19:
+                x_inv[pos] = np.exp(x[pos]) - 1
+            else:  # lmbda != 0
+                x_inv[pos] = np.power(x[pos] * lmbda + 1, 1 / lmbda) - 1
+
+            # when x < 0
+            if abs(lmbda - 2) > 1e-19:
+                x_inv[~pos] = 1 - np.power(-(2 - lmbda) * x[~pos] + 1,
+                                           1 / (2 - lmbda))
+            else:  # lmbda == 2
+                x_inv[~pos] = 1 - np.exp(-x[~pos])
+
+            return x_inv
+
+        np.random.seed(1234567)
+        n_samples = 20000
+        x = np.random.normal(loc=0, scale=1, size=(n_samples))
+
+        x_inv = _inverse_transform(x, lmbda)
+        xt, maxlog = stats.yeojohnson(x_inv)
+
+        assert_almost_equal(maxlog, lmbda, decimal=2)
+
+        assert_almost_equal(0, np.linalg.norm(x - xt) / n_samples, decimal=2)
+        assert_almost_equal(0, xt.mean(), decimal=1)
+        assert_almost_equal(1, xt.std(), decimal=1)
+
+    def test_empty(self):
+        assert_(stats.yeojohnson([]).shape == (0,))
+
+
+class TestYeojohnsonNormmax(object):
+    def setup_method(self):
+        np.random.seed(12345)
+        self.x = stats.loggamma.rvs(5, size=50) + 5
+
+    def test_mle(self):
+        maxlog = stats.yeojohnson_normmax(self.x)
+        assert_allclose(maxlog, 1.876393, rtol=1e-6)
+
+
 class TestCircFuncs(object):
     def test_circfuncs(self):
         x = np.array([355, 5, 2, 359, 10, 350])
