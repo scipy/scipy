@@ -1239,6 +1239,67 @@ def boxcox_normplot(x, la, lb, plot=None, N=80):
     return lmbdas, ppcc
 
 
+def yeojohnson(x, lmbda=None):
+    x = np.asarray(x)
+    if x.size == 0:
+        return x
+
+    if lmbda is not None:
+        return _yeojohnson_transform(x, lmbda)
+
+    # if lmbda=None, find the lmbda that maximizes the log-likelihood function.
+    lmax = yeojohnson_normmax(x)
+    y = _yeojohnson_transform(x, lmax)
+
+    return y, lmax
+
+
+def _yeojohnson_transform(x, lmbda):
+
+    out = np.zeros(shape=x.shape, dtype=x.dtype)
+    pos = x >= 0  # binary mask
+
+    # when x >= 0
+    if lmbda < 1e-19:
+        out[pos] = np.log(x[pos] + 1)
+    else:  # lmbda != 0
+        out[pos] = (np.power(x[pos] + 1, lmbda) - 1) / lmbda
+
+    # when x < 0
+    if lmbda < 2 - 1e-19:
+        out[~pos] = -(np.power(-x[~pos] + 1, 2 - lmbda) - 1) / (2 - lmbda)
+    else:  # lmbda == 2
+        out[~pos] = -np.log(-x[~pos] + 1)
+
+    return out
+
+
+def yeojohnson_llf(lmbda, data):
+    trans = _yeojohnson_transform(data, lmbda)
+    n_samples = data.shape[0]
+
+    # Estimated mean and variance of the normal distribution
+    est_mean = trans.sum() / n_samples
+    est_var = np.power(trans - est_mean, 2).sum() / n_samples
+
+    loglike = -n_samples / 2 * np.log(est_var)
+    loglike += (lmbda - 1) * (np.sign(data) * np.log(np.abs(data) + 1)).sum()
+
+    return loglike
+
+
+def yeojohnson_normmax(x, brack=(-2, 2)):
+
+    def _neg_llf(lmbda, data):
+        return -yeojohnson_llf(lmbda, data)
+
+    # the computation of lambda is influenced by NaNs so we need to
+    # get rid of them
+    x = x[~np.isnan(x)]
+    # choosing bracket -2, 2 like for boxcox
+    return optimize.brent(_neg_llf, brack=brack)
+   
+
 def shapiro(x):
     """
     Perform the Shapiro-Wilk test for normality.
