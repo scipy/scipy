@@ -26,6 +26,14 @@ New features
 
 The function `softmax` was added to `scipy.special`.
 
+``scipy.stats`` improvements
+-----------------------------
+
+The Yeo-Johnson power transformation is now supported (`yeojohnson`,
+`yeojohnson_llf`, `yeojohnson_normmax`, `yeojohnson_normplot`). Unlike the
+Box-Cox transformation, the Yeo-Johnson transformation can accept negative
+values.
+
 Deprecated features
 ===================
 
@@ -47,9 +55,12 @@ Other changes
 Authors
 =======
 
+* Nicolas Hug +
+
 Issues closed
 -------------
 
+* `#6141 <https://github.com/scipy/scipy/issues/6141>`__: Request: transformation functions - Yeo-Johnson
 
 Pull requests
 -------------
