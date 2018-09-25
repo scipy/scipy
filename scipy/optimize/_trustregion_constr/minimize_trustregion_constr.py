@@ -421,6 +421,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
                                           state.constr_penalty,
                                           state.cg_stop_cond)
             state.status = None
+            state.niter = state.nit  # Alias for callback (backward-compatibility)
             if callback is not None and callback(np.copy(state.x), state):
                 state.status = 3
             elif state.optimality < gtol and state.constr_violation < gtol:
@@ -458,6 +459,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
                                          state.barrier_parameter,
                                          state.cg_stop_cond)
             state.status = None
+            state.niter = state.nit  # Alias for callback (backward-compatibility)
             if callback is not None and callback(np.copy(state.x), state):
                 state.status = 3
             elif state.optimality < gtol and state.constr_violation < gtol:
@@ -515,6 +517,9 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
     # this is assumed to not be a success.
     result.success = True if result.status in (1, 2) else False
     result.message = TERMINATION_MESSAGES[result.status]
+
+    # Alias (for backward compatibility with 1.1.0)
+    result.niter = result.nit
 
     if verbose == 2:
         BasicReport.print_footer()
