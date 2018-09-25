@@ -154,8 +154,8 @@ class EnergyState(object):
             self.current_energy = func_wrapper.fun(self.current_location)
             if self.current_energy is None:
                 raise ValueError('Objective function is returning None')
-            if (not np.isfinite(self.current_energy) or
-                    np.isnan(self.current_energy)):
+            if (not np.isfinite(self.current_energy) or np.isnan(
+                    self.current_energy)):
                 if reinit_counter >= EnergyState.MAX_REINIT_COUNT:
                     init_error = False
                     message = (
@@ -203,7 +203,7 @@ class MarkovChain(object):
         self.temperature_step = 0
         self.K = 100 * len(energy_state.current_location)
 
-    def accept_reject(self, j, e):
+    def accept_reject(self, j, e, x_visit):
         r = self._rand_state.random_sample()
         pqv_temp = (self.acceptance_param - 1.0) * (
             e - self.energy_state.current_energy) / (
@@ -250,7 +250,7 @@ class MarkovChain(object):
                     self.not_improved_idx = 0
             else:
                 # We have not improved but do we accept the new location?
-                self.accept_reject(j, e)
+                self.accept_reject(j, e, x_visit)
             if self.func_wrapper.nfev >= self.func_wrapper.maxfun:
                 return False
         # End of MarkovChain loop
@@ -377,7 +377,7 @@ def dual_annealing(func, x0, bounds, args=(), maxiter=1000,
                    local_search_options={}, initial_temp=5230., visit=2.62,
                    accept=-5.0, maxfun=1e7, seed=None, no_local_search=False,
                    callback=None):
-    """
+    r"""
     Find the global minimum of a function using the Dual Annealing
     algorithm.
 
@@ -544,6 +544,9 @@ def dual_annealing(func, x0, bounds, args=(), maxiter=1000,
     >>> ret = dual_annealing(func, None, bounds=list(zip(lw, up)))
     >>> print("global minimum: xmin = {0}, f(xmin) = {1:.6f}".format(
     ...     ret.x, ret.fun))
+    global minimum: xmin = [-7.06200006e-09 -6.49470068e-09 -8.66406087e-09 -9.43208245e-09
+     -6.69574087e-09 -6.18458122e-09 -5.34389389e-09 -5.37890700e-09
+     -4.50922851e-09 -5.06521046e-09], f(xmin) = 0.000000
 
     """
 
@@ -553,8 +556,8 @@ def dual_annealing(func, x0, bounds, args=(), maxiter=1000,
     lower = np.array(lu[0])
     upper = np.array(lu[1])
     # Checking bounds are valid
-    if (np.any(np.isinf(lower)) or np.any(np.isinf(upper)) or
-            np.any(np.isnan(lower)) or np.any(np.isnan(upper))):
+    if (np.any(np.isinf(lower)) or np.any(np.isinf(upper)) or np.any(
+            np.isnan(lower)) or np.any(np.isnan(upper))):
         raise ValueError('Some bounds values are inf values or nan values')
     # Checking that bounds are consistent
     if not np.all(lower < upper):
@@ -596,7 +599,7 @@ def dual_annealing(func, x0, bounds, args=(), maxiter=1000,
                 break
             # Need a re-annealing process?
             if temperature < temperature_restart:
-                energy_state.reset(obj_fun_wrapper, rand_state)
+                energy_state.reset(func_wrapper, rand_state)
                 break
             # starting Markov chain
             val = markov_chain.run(i, temperature)
