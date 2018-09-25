@@ -233,7 +233,7 @@ class TestDualAnnealing(TestCase):
         }
         ret = dual_annealing(self.func, None, self.ld_bounds,
                              local_search_options=minimizer_opts)
-        assert_allclose(ret.fun, 0., atol=1e-6)
+        assert_allclose(ret.fun, 0., atol=1e-5)
 
     def test_slsqp_ls_minimizer(self):
         minimizer_opts = {
