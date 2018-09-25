@@ -403,11 +403,8 @@ def dual_annealing(func, x0, bounds, args=(), maxiter=1000,
     local_search_options : dict, optional
         Extra keyword arguments to be passed to the local minimizer
         ``scipy.optimize.minimize()``. Some important options could be:
-        method : str
-            The minimization method (e.g. ``"L-BFGS-B"``)
-        args : tuple
-            Extra arguments passed to the objective function (``func``) and
-            its derivatives (Jacobian, Hessian).
+        ``method`` for the minimizer method to use and ``args`` for
+        objective function additional arguments.
     initial_temp : float, optional
         The initial temperature, use higher values to facilitates a wider
         search of the energy landscape, allowing dual_annealing to escape
