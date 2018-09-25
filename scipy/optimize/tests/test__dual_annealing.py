@@ -52,7 +52,7 @@ class TestDualAnnealing(TestCase):
             shift = 0
         y = np.sum((x - shift) ** 2 - 10 * np.cos(2 * np.pi * (
             x - shift))) + 10 * np.size(x) + shift
-        self.nb_fun_call +=1
+        self.nb_fun_call += 1
         return y
 
     def test_visiting_stepping(self):
@@ -104,12 +104,12 @@ class TestDualAnnealing(TestCase):
 
     def test_low_dim_no_ls(self):
         ret = dual_annealing(self.func, None, self.ld_bounds,
-            no_local_search=True)
+                             no_local_search=True)
         assert_allclose(ret.fun, 0., atol=1e-4)
 
     def test_high_dim_no_ls(self):
         ret = dual_annealing(self.func, None, self.hd_bounds,
-            no_local_search=True)
+                             no_local_search=True)
         assert_allclose(ret.fun, 0., atol=1e-4)
 
     def test_nb_fun_call(self):
@@ -118,12 +118,12 @@ class TestDualAnnealing(TestCase):
 
     def test_nb_fun_call_no_ls(self):
         ret = dual_annealing(self.func, None, self.ld_bounds,
-            no_local_search=True)
+                             no_local_search=True)
         assert_equal(self.nb_fun_call, ret.ncall)
 
     def test_max_reinit(self):
         assert_raises(ValueError, dual_annealing, self.weirdfunc, None,
-                                           self.ld_bounds)
+                      self.ld_bounds)
 
     def test_reproduce(self):
         seed = 1234
@@ -138,18 +138,18 @@ class TestDualAnnealing(TestCase):
     def test_bounds_integrity(self):
         wrong_bounds = [(-5.12, 5.12), (1, 0), (5.12, 5.12)]
         assert_raises(ValueError, dual_annealing, self.func, None,
-            wrong_bounds)
+                      wrong_bounds)
 
     def test_bound_validity(self):
         invalid_bounds = [(-5, 5), (-np.inf, 0), (-5, 5)]
         assert_raises(ValueError, dual_annealing, self.func, None,
-            invalid_bounds)
+                      invalid_bounds)
         invalid_bounds = [(-5, 5), (0, np.inf), (-5, 5)]
         assert_raises(ValueError, dual_annealing, self.func, None,
-            invalid_bounds)
+                      invalid_bounds)
         invalid_bounds = [(-5, 5), (0, np.nan), (-5, 5)]
         assert_raises(ValueError, dual_annealing, self.func, None,
-            invalid_bounds)
+                      invalid_bounds)
 
     def test_max_fun_ls(self):
         ret = dual_annealing(self.func, None, self.ld_bounds, maxfun=100)
@@ -162,7 +162,7 @@ class TestDualAnnealing(TestCase):
 
     def test_max_fun_no_ls(self):
         ret = dual_annealing(self.func, None, self.ld_bounds,
-            no_local_search=True, maxfun=500)
+                             no_local_search=True, maxfun=500)
         assert ret.ncall <= 500
 
     def test_maxiter(self):
@@ -201,7 +201,7 @@ class TestDualAnnealing(TestCase):
         }
         ret = dual_annealing(self.func, None, self.ld_bounds,
                              local_search_options=minimizer_opts)
-        assert_allclose(ret.fun, 0., atol=1e-12)
+        assert_allclose(ret.fun, 0., atol=1e-8)
 
     def test_cg_ls_minimizer(self):
         minimizer_opts = {
@@ -209,7 +209,7 @@ class TestDualAnnealing(TestCase):
         }
         ret = dual_annealing(self.func, None, self.ld_bounds,
                              local_search_options=minimizer_opts)
-        assert_allclose(ret.fun, 0., atol=1e-12)
+        assert_allclose(ret.fun, 0., atol=1e-8)
 
     def test_bfgs_ls_minimizer(self):
         minimizer_opts = {
@@ -217,7 +217,7 @@ class TestDualAnnealing(TestCase):
         }
         ret = dual_annealing(self.func, None, self.ld_bounds,
                              local_search_options=minimizer_opts)
-        assert_allclose(ret.fun, 0., atol=1e-12)
+        assert_allclose(ret.fun, 0., atol=1e-8)
 
     def test_tnc_ls_minimizer(self):
         minimizer_opts = {

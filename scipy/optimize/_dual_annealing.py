@@ -229,7 +229,7 @@ class MarkovChain(object):
         self.temperature_step = temperature / float(step + 1)
         self.not_improved_idx += 1
         for j in range(self.energy_state.current_location.size * 2):
-            if not j :
+            if not j:
                 if not step:
                     self.energy_state_improved = True
                 else:
@@ -263,7 +263,7 @@ class MarkovChain(object):
             val = self.callback(x, e, context)
             if val is not None:
                 if val:
-                   return False
+                    return False
         return True
 
     def local_search(self):
@@ -274,7 +274,7 @@ class MarkovChain(object):
         if self.energy_state_improved:
             # Global energy has improved, let's see if LS improves further
             e, x = self.minimizer_wrapper.local_search(self.energy_state.xbest,
-                self.energy_state.ebest)
+                                                       self.energy_state.ebest)
             if e < self.energy_state.ebest:
                 self.not_improved_idx = 0
                 val = self.track_better_minimum(e, x, 1)
@@ -311,6 +311,7 @@ class MarkovChain(object):
             if self.func_wrapper.nfev >= self.func_wrapper.maxfun:
                 return False
         return True
+
 
 class ObjectiveFunWrapper(object):
 
@@ -373,8 +374,9 @@ class LocalSearchWrapper(object):
 
 
 def dual_annealing(func, x0, bounds, args=(), maxiter=1000,
-        local_search_options={}, initial_temp=5230., visit=2.62, accept=-5.0,
-        maxfun=1e7, seed=None, no_local_search=False, callback=None):
+                   local_search_options={}, initial_temp=5230., visit=2.62,
+                   accept=-5.0, maxfun=1e7, seed=None, no_local_search=False,
+                   callback=None):
     """
     Find the global minimum of a function using the Dual Annealing
     algorithm.
@@ -552,7 +554,7 @@ def dual_annealing(func, x0, bounds, args=(), maxiter=1000,
     upper = np.array(lu[1])
     # Checking bounds are valid
     if (np.any(np.isinf(lower)) or np.any(np.isinf(upper)) or
-        np.any(np.isnan(lower)) or np.any(np.isnan(upper))):
+            np.any(np.isnan(lower)) or np.any(np.isnan(upper))):
         raise ValueError('Some bounds values are inf values or nan values')
     # Checking that bounds are consistent
     if not np.all(lower < upper):
@@ -574,7 +576,7 @@ def dual_annealing(func, x0, bounds, args=(), maxiter=1000,
     visit_dist = VisitingDistribution(lower, upper, visit, rand_state)
     # Markov chain instance
     markov_chain = MarkovChain(accept, visit_dist, func_wrapper,
-                               minimizer_wrapper,rand_state, energy_state,
+                               minimizer_wrapper, rand_state, energy_state,
                                callback)
     # Run the search loop
     need_to_stop = False
