@@ -377,7 +377,7 @@ def dual_annealing(func, x0, bounds, args=(), maxiter=1000,
                    local_search_options={}, initial_temp=5230., visit=2.62,
                    accept=-5.0, maxfun=1e7, seed=None, no_local_search=False,
                    callback=None):
-    r"""
+    """
     Find the global minimum of a function using the Dual Annealing
     algorithm.
 
@@ -479,12 +479,12 @@ def dual_annealing(func, x0, bounds, args=(), maxiter=1000,
 
         g_{q_{v}}(\\Delta x(t)) \\propto \\frac{ \\
         \\left[T_{q_{v}}(t) \\right]^{-\\frac{D}{3-q_{v}}}}{ \\
-        \\left[{1+(q_{v}-1)\\frac{(\Delta x(t))^{2}} { \\
+        \\left[{1+(q_{v}-1)\\frac{(\\Delta x(t))^{2}} { \\
         \\left[T_{q_{v}}(t)\\right]^{\\frac{2}{3-q_{v}}}}}\\right]^{ \\
         \\frac{1}{q_{v}-1}+\\frac{D-1}{2}}}
 
     Where :math:`t` is the artificial time. This visiting distribution is used
-    to generate a trial jump distance :math:`\Delta x(t)` of variable
+    to generate a trial jump distance :math:`\\Delta x(t)` of variable
     :math:`x(t)` under artificial temperature :math:`T_{q_{v}}(t)`.
 
     From the starting point, after calling the visiting distribution
@@ -492,7 +492,7 @@ def dual_annealing(func, x0, bounds, args=(), maxiter=1000,
 
     .. math::
 
-        p_{q_{a}} = \min{\{1,\\left[1-(1-q_{a}) \\beta \\Delta E \\right]^{ \\
+        p_{q_{a}} = \\min{\\{1,\\left[1-(1-q_{a}) \\beta \\Delta E \\right]^{ \\
         \\frac{1}{1-q_{a}}}\\}}
 
     Where :math:`q_{a}` is a acceptance parameter. For :math:`q_{a}<1`, zero
@@ -541,12 +541,12 @@ def dual_annealing(func, x0, bounds, args=(), maxiter=1000,
     ...    2 * np.pi * x)) + 10 * np.size(x)
     >>> lw = [-5.12] * 10
     >>> up = [5.12] * 10
-    >>> ret = dual_annealing(func, None, bounds=list(zip(lw, up)))
+    >>> ret = dual_annealing(func, None, bounds=list(zip(lw, up)), seed=1234)
     >>> print("global minimum: xmin = {0}, f(xmin) = {1:.6f}".format(
     ...     ret.x, ret.fun))
-    global minimum: xmin = [-7.06200006e-09 -6.49470068e-09 -8.66406087e-09 -9.43208245e-09
-     -6.69574087e-09 -6.18458122e-09 -5.34389389e-09 -5.37890700e-09
-     -4.50922851e-09 -5.06521046e-09], f(xmin) = 0.000000
+    global minimum: xmin = [-4.26437714e-09 -3.91699361e-09 -1.86149218e-09 -3.97165720e-09
+     -6.29151648e-09 -6.53145322e-09 -3.93616815e-09 -6.55623025e-09
+    -6.05775280e-09 -5.00668935e-09], f(xmin) = 0.000000
 
     """
 
