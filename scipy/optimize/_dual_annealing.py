@@ -25,10 +25,10 @@ class VisitingDistribution(object):
 
     Parameters
     ----------
-    lb: array_like
+    lb : array_like
         A 1-D numpy ndarray containing lower bounds of the generated
         components. Neither NaN or inf are allowed.
-    ub: array_like
+    ub : array_like
         A 1-D numpy ndarray containing upper bounds for the generated
         components. Neither NaN or inf are allowed.
     visiting_param : float
@@ -119,10 +119,10 @@ class EnergyState(object):
 
     Parameters
     ----------
-    lower: array_like
+    lower : array_like
         A 1-D numpy ndarray containing lower bounds for generating an initial
         random components in the `reset` method.
-    upper: array_like
+    upper : array_like
         A 1-D numpy ndarray containing upper bounds for generating an initial
         random components in the `reset` method
         components. Neither NaN or inf are allowed.
