@@ -159,6 +159,7 @@ Discrete distributions
    randint           -- Discrete Uniform
    skellam           -- Skellam
    zipf              -- Zipf
+   yulesimon         -- Yule Simon
 
 An overview of statistical functions is given below.
 Several of these functions have a similar version in

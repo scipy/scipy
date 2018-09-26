@@ -887,6 +887,89 @@ class skellam_gen(rv_discrete):
 skellam = skellam_gen(a=-np.inf, name="skellam", longname='A Skellam')
 
 
+class yulesimon_gen(rv_discrete):
+    r"""A Yule-Simon discrete random variable.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    Probability distribution common to preferential attachment models and ranks.
+    Let :math:`X` be Yule-Simon distributed r.v. with
+    expected value :math:`\alpha/(\alpha-1)` provided :math:`\alpha>1`.
+    Parameter :math:`\alpha` must be strictly positive.
+    For details see: https://en.wikipedia.org/wiki/Yule-Simon_distribution
+    `yulesimon` takes :math:`\alpha` as sole parameter.
+    Yule-Simon is a heavy tailed discrete distribution similar to the Zipf which
+    may lead to expected values either not existing of having poor numerical
+    precision if the :math:`\alpha` parameter is very small. The m
+
+    %(after_notes)s
+
+    Examples
+    --------
+    >>> from scipy.stats import yulesimon
+    >>> import matplotlib.pyplot as plt
+
+    Now to make a plot of the pmf of the Yule-Simon:
+
+    >>> [n, x, alpha] = [20, 1, 3]
+    >>> rv = yulesimon(alpha)
+    >>> x = np.arange(0, n+1)
+    >>> pmf_yulesimon = rv.pmf(x)
+
+    >>> fig = plt.figure()
+    >>> ax = fig.add_subplot(111)
+    >>> ax.plot(x, pmf_yulesimon, 'bo')
+    >>> ax.vlines(x, 0, pmf_yulesimon, lw=2)
+    >>> ax.set_xlabel('rank # of Yule-Simon')
+    >>> ax.set_ylabel('Yule-Simon PMF')
+    >>> plt.show()
+
+    Instead of using a frozen distribution we can also use `yulesimon`
+    methods directly.  To for example obtain the cumulative distribution
+    function, use:
+
+    >>> prb = yulesimon.cdf(x, alpha=3)
+    >>> prb
+    array([0.        , 0.75      , 0.9       , 0.95      , 0.97142857,
+           0.98214286, 0.98809524, 0.99166667, 0.99393939, 0.99545455,
+           0.9965035 , 0.99725275, 0.9978022 , 0.99821429, 0.99852941,
+           0.99877451, 0.99896801, 0.99912281, 0.99924812, 0.99935065,
+           0.99943535])
+
+    And to generate random numbers:
+
+    >>> R = yulesimon.rvs(alpha=3, size=10)
+
+    """
+    def _pmf(self, x, alpha):
+        px = alpha * special.beta(x, alpha+1)
+        return px
+
+    def _argcheck(self, alpha):
+        return (alpha > 0)
+
+    def _logpmf(self, x, alpha):
+        logpx = log(alpha) + special.betaln(x, alpha+1)
+        return logpx
+
+    def _cdf(self, x, alpha):
+        Px = 1 - x * special.beta(x, alpha+1)
+        return Px
+
+    def _sf(self, x, alpha):
+        Sx = x * special.beta(x, alpha+1)
+        return Sx
+
+    def _logsf(self, x, alpha):
+        logSx = log(x) + special.betaln(x, alpha+1)
+        return logSx
+
+
+yulesimon = yulesimon_gen(name='yulesimon', a=1)
+
+
 # Collect names of classes and objects in this module.
 pairs = list(globals().items())
 _distn_names, _distn_gen_names = get_distribution_names(pairs, rv_discrete)
