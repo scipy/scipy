@@ -509,7 +509,7 @@ class TestDifferentialEvolutionSolver(object):
         bounds = [(0., 2.), (0., 2.), (0, 2), (0, 2)]
         solver = DifferentialEvolutionSolver(rosen, bounds, updating='deferred')
         assert_(solver._updating == 'deferred')
-        assert_(solver._poolwrapper._mapfunc is map)
+        assert_(solver._mapwrapper._mapfunc is map)
         solver.solve()
 
     def test_immediate_updating(self):
@@ -530,7 +530,7 @@ class TestDifferentialEvolutionSolver(object):
         with DifferentialEvolutionSolver(rosen, bounds,
                                          updating='deferred',
                                          workers=2) as solver:
-            assert_(solver._poolwrapper.pool is not None)
+            assert_(solver._mapwrapper.pool is not None)
             assert_(solver._updating == 'deferred')
             solver.solve()
 

@@ -8,7 +8,7 @@ import warnings
 import numpy as np
 from scipy.optimize import OptimizeResult, minimize
 from scipy.optimize.optimize import _status_message
-from scipy._lib._util import check_random_state, PoolWrapper
+from scipy._lib._util import check_random_state, MapWrapper
 from scipy._lib.six import xrange, string_types
 
 
@@ -144,13 +144,13 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         `workers` keyword can over-ride this option.
 
         .. versionadded:: 1.2.0
-    workers : int or Pool-like object, optional
+    workers : int or map-like callable, optional
         If `workers` is an int the population is subdivided into `workers`
-        sections and evaluated in parallel (uses `multiprocessing`).
+        sections and evaluated in parallel (uses `multiprocessing.Pool`).
         Supply `-1` to use all cores available to the Process.
-        Alternatively, supply an object with a map method, such as
-        `multiprocessing.Pool`, for evaluating the population in a parallel
-        fashion.
+        Alternatively supply a map-like callable, such as
+        `multiprocessing.Pool.map` for evaluating the population in parallel.
+        This evaluation is carried out as ``workers(func, iterable)``.
         This option will override the `updating` keyword to
         `updating='deferred'` if `workers != 1`.
         Requires that `func` be pickleable.
@@ -392,15 +392,17 @@ class DifferentialEvolutionSolver(object):
         With `deferred` the best solution vector is updated once per
         generation. Only `deferred` is compatible with parallelization, and the
         `workers` keyword can over-ride this option.
-    workers : int or Pool-like object, optional
+    workers : int or map-like callable, optional
         If `workers` is an int the population is subdivided into `workers`
-        sections and evaluated in parallel (uses `multiprocessing`).
+        sections and evaluated in parallel (uses `multiprocessing.Pool`).
         Supply `-1` to use all cores available to the Process.
-        Alternatively, supply an object with a map method, such as
-        `multiprocessing.Pool`, for evaluating the population in a parallel
-        fashion.
+        Alternatively supply a map-like callable, such as
+        `multiprocessing.Pool.map` for evaluating the population in parallel.
+        This evaluation is carried out as ``workers(func, iterable)``.
         This option will override the `updating` keyword to
         `updating='deferred'` if `workers != 1`.
+        Requires that `func` be pickleable.
+
     """
 
     # Dispatch of mutation strategy method (binomial or exponential).
@@ -451,7 +453,7 @@ class DifferentialEvolutionSolver(object):
             self._updating = 'deferred'
 
         # an object with a map method.
-        self._poolwrapper = PoolWrapper(workers)
+        self._mapwrapper = MapWrapper(workers)
 
         # relative and absolute tolerances for convergence
         self.tol, self.atol = tol, atol
@@ -766,9 +768,17 @@ class DifferentialEvolutionSolver(object):
         energies = np.full(num_members, np.inf)
 
         parameters_pop = self._scale_parameters(population)
-        calc_energies = list(self._poolwrapper.map(self.func,
-                                              parameters_pop[0:nfevs]))
-        energies[0:nfevs] = calc_energies
+        try:
+            calc_energies = list(self._mapwrapper(self.func,
+                                                  parameters_pop[0:nfevs]))
+            energies[0:nfevs] = calc_energies
+        except (TypeError, ValueError):
+            # wrong number of arguments for _mapwrapper
+            # or wrong length returned from the mapper
+            raise RuntimeError("The map-like callable must be of the"
+                               " form f(func, iterable), returning a sequence"
+                               " of numbers the same length as 'iterable'")
+
         self._nfev += nfevs
 
         return energies
@@ -788,12 +798,12 @@ class DifferentialEvolutionSolver(object):
         return self
 
     def __exit__(self, *args):
-        # to make sure pool resources are closed down
-        self._poolwrapper.close()
+        # to make sure resources are closed down
+        self._mapwrapper.close()
 
     def __del__(self):
-        # to make sure the pool resources are closed down
-        self._poolwrapper.close()
+        # to make sure resources are closed down
+        self._mapwrapper.close()
 
     def __next__(self):
         """

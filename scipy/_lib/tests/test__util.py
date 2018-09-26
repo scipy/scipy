@@ -6,7 +6,7 @@ import numpy as np
 from numpy.testing import assert_equal, assert_
 from pytest import raises as assert_raises
 
-from scipy._lib._util import _aligned_zeros, check_random_state, PoolWrapper
+from scipy._lib._util import _aligned_zeros, check_random_state, MapWrapper
 
 
 def test__aligned_zeros():
@@ -58,26 +58,26 @@ def test_check_random_state():
     assert_raises(ValueError, check_random_state, 'a')
 
 
-class TestPoolWrapper(object):
+class TestMapWrapper(object):
 
     def setup_method(self):
         self.input = np.arange(10.)
         self.output = np.sin(self.input)
 
     def test_serial(self):
-        p = PoolWrapper(1)
+        p = MapWrapper(1)
         assert_(p._mapfunc is map)
         assert_(p.pool is None)
         assert_(p._own_pool is False)
-        out = list(p.map(np.sin, self.input))
+        out = list(p(np.sin, self.input))
         assert_equal(out, self.output)
 
         with assert_raises(RuntimeError):
-            p = PoolWrapper(0)
+            p = MapWrapper(0)
 
     def test_parallel(self):
-        with PoolWrapper(2) as p:
-            out = p.map(np.sin, self.input)
+        with MapWrapper(2) as p:
+            out = p(np.sin, self.input)
             assert_equal(list(out), self.output)
 
             assert_(p._own_pool is True)
@@ -87,24 +87,23 @@ class TestPoolWrapper(object):
         # the context manager should've closed the internal pool
         # check that it has by asking it to calculate again.
         with assert_raises(Exception) as excinfo:
-            p.map(np.sin, self.input)
+            p(np.sin, self.input)
 
         # on py27 an AssertionError is raised, on >py27 it's a ValueError
         err_type = excinfo.type
         assert_((err_type is ValueError) or (err_type is AssertionError))
 
-        # can also set a PoolWrapper up with a Pool instance
+        # can also set a PoolWrapper up with a map-like callable instance
         try:
             p = Pool(2)
-            q = PoolWrapper(p)
+            q = MapWrapper(p.map)
 
             assert_(q._own_pool is False)
-            assert_(isinstance(q.pool, PWL))
             q.close()
 
             # closing the PoolWrapper shouldn't close the internal pool
             # because it didn't create it
             out = p.map(np.sin, self.input)
-            assert_equal(out, self.output)
+            assert_equal(list(out), self.output)
         finally:
             p.close()

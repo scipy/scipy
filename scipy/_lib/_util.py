@@ -340,20 +340,20 @@ except AttributeError:
         return argspec
 
 
-class PoolWrapper(object):
+class MapWrapper(object):
     """
-    Wrapper for working with objects that have map-like methods, such as
-    `multiprocessing.Pool`. Used for parallelisation.
+    Parallelisation wrapper for working with map-like callables, such as
+    `multiprocessing.Pool.map`.
 
     Parameters
     ----------
-    pool : int or map-like object
+    pool : int or map-like callable
         If `pool` is an `int` then it specifies the number of threads to
         use for parallelization. If `int(pool) == 1`, then no parallel
         processing is used and the map builtin is used. If `pool == -1` then
-        the pool will utilise all available CPU.
-        If pool is an object with a map method that follows the same
-        calling sequence as the built-in map function, then this pool is
+        the pool will utilise all available CPU..
+        If pool is a map-like callable that follows the same
+        calling sequence as the built-in map function, then this callable is
         used for parallelisation.
     """
     def __init__(self, pool=1):
@@ -361,9 +361,9 @@ class PoolWrapper(object):
         self._mapfunc = map
         self._own_pool = False
 
-        if hasattr(pool, 'map'):
+        if callable(pool):
             self.pool = pool
-            self._mapfunc = self.pool.map
+            self._mapfunc = self.pool
         else:
             # user supplies a number
             if int(pool) == -1:
@@ -408,6 +408,11 @@ class PoolWrapper(object):
             else:
                 self.pool.terminate()
 
-    def map(self, func, iterable):
+    def __call__(self, func, iterable):
         # only accept one iterable because that's all Pool.map accepts
-        return self._mapfunc(func, iterable)
+        try:
+            return self._mapfunc(func, iterable)
+        except TypeError:
+            # wrong number of arguments
+            raise TypeError("The map-like callable must be of the"
+                            " form f(func, iterable)")
