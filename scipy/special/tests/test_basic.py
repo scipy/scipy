@@ -1020,6 +1020,22 @@ class TestCephes(object):
         ]
         assert_func_equal(cephes.wofz, w, z, rtol=1e-13)
 
+    def test_voigt(self):
+        x = np.array([-7.89, -0.05, -13.98, -12.66, 11.34, -11.56, -9.17,
+                      16.59, 9.11, -43.33])
+        sigma = np.array([45.06, 7.98, 16.83, 0.21, 4.25, 20.40, 25.61, 18.05,
+                          2.12, 0.30])
+        gamma = np.array([6.66, 24.13, 42.37, 6.32, 21.96, 30.53, 8.32, 2.50,
+                          39.33, 45.68])
+        mu = np.array([-0.90, 9.81, 16.39, 11.35, -4.00, -1.10, -16.40, 2.17,
+                       -26.34, 19.12])
+        inp = np.array([x, sigma, gamma, mu]).T
+        res = np.array([0.007814991977202201,0.010812438037544933,
+                        0.005002213710481801,0.003264178482142271,
+                        0.009796933140171462,0.007708387983265841,
+                        0.011866733688978788,0.014941654349762587,
+                        0.004471089949150292, 0.0024288559417680465])
+        assert_func_equal(special.voigt, res, inp)
 
 class TestAiry(object):
     def test_airy(self):
@@ -1718,6 +1734,11 @@ class TestErf(object):
         vals = [np.nan, -np.inf, np.inf]
         expected = [np.nan + np.nan * 1.j, 0.-0.j, 0.+0.j]
         assert_allclose(special.wofz(vals), expected, rtol=1e-15)
+
+    def test_voigt_nan_inf(self):
+        vals = [np.nan, -np.inf, np.inf]
+        expected = [np.nan, -0.0, 0.0]
+        assert_allclose(special.voigt(vals), expected, rtol=1e-15)
 
 
 class TestEuler(object):

@@ -14,7 +14,7 @@ from numpy import (pi, asarray, floor, isscalar, iscomplex, real,
 from . import _ufuncs as ufuncs
 from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma,
                       psi, _zeta, hankel1, hankel2, yv, kv, ndtri,
-                      poch, binom, hyp0f1)
+                      poch, binom, hyp0f1, wofz)
 from . import specfun
 from . import orthogonal
 from ._comb import _comb_int
@@ -34,8 +34,8 @@ __all__ = ['ai_zeros', 'assoc_laguerre', 'bei_zeros', 'beip_zeros',
            'mathieu_b', 'mathieu_even_coef', 'mathieu_odd_coef',
            'ndtri', 'obl_cv_seq', 'pbdn_seq', 'pbdv_seq', 'pbvv_seq',
            'perm', 'polygamma', 'pro_cv_seq', 'psi', 'riccati_jn',
-           'riccati_yn', 'sinc', 'y0_zeros', 'y1_zeros', 'y1p_zeros',
-           'yn_zeros', 'ynp_zeros', 'yv', 'yvp', 'zeta']
+           'riccati_yn', 'sinc', 'voigt', 'y0_zeros', 'y1_zeros',
+           'y1p_zeros', 'yn_zeros', 'ynp_zeros', 'yv', 'yvp', 'zeta']
 
 
 def _nonneg_int_or_fail(n, var_name, strict=True):
@@ -2200,6 +2200,54 @@ def factorialk(n, k, exact=True):
         return val
     else:
         raise NotImplementedError
+
+
+def voigt(x, sigma=1.0, gamma=1.0, mu=0.0):
+    """
+    voigt(x, sigma=1.0, gamma=1.0, mu=0.0)
+
+    Voigt profile.
+
+    The Voigt profile is a convolution of a 1D Normal distribution with
+    standard deviation ``sigma`` and a 1D Cauchy distribution with half-width at
+    half-maximum ``gamma``.
+
+    Parameters
+    ----------
+    x : array_like
+        Input argument.
+    sigma : float, optional
+        The standard deviation of the Normal distribution part. The default is
+        1.0.
+    gamma : float, optional
+        The half-width at half-maximum of the Cauchy distribution part. The
+        default is 1.0.
+    mu : float, optional
+        The location of the peak profile. The default is at 0.0.
+
+    Returns
+    -------
+    y : array_like
+        The Voigt profile at the given position. It will have the same shape as
+        `x`.
+
+    References
+    ----------
+    .. [1] https://en.wikipedia.org/wiki/Voigt_profile
+    """
+    INV_SQRT_2 = 0.7071067811865475
+    INV_SQRT_2PI = 0.3989422804014327
+
+    # convert it to ndarray if it wasn't
+    if np.ndim(x) > 0:
+        x = np.array(x)
+
+    # separation between real and imag is to avoid warning when nan is in the
+    # array
+    zreal = (x-mu) / sigma * INV_SQRT_2
+    zimag = 1j*gamma / sigma * INV_SQRT_2
+
+    return wofz(zreal+zimag).real / sigma * INV_SQRT_2PI
 
 
 def zeta(x, q=None, out=None):
