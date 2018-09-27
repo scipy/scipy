@@ -21,8 +21,6 @@ from scipy._lib._numpy_compat import suppress_warnings
 
 from scipy._lib._ccallback import LowLevelCallable
 from scipy.optimize import _tstutils_zerofuncs
-from scipy.optimize._tstutils_zerofuncs import get_x_to_the_n_minus_a
-# from ctypes import *  # Structure, c_int, c_double, pointer
 import ctypes
 
 TOL = 4*np.finfo(float).eps  # tolerance
@@ -318,24 +316,19 @@ class TestLowLevelCallable(object):
         self.func_plus_args = [
             [LowLevelCallable.from_cython(_tstutils_zerofuncs, fn), args, fn]
             for fn, args in func_names_plus_args]
-        if 0:
-            llc_with_data = get_x_to_the_n_minus_a(3, 2)
-            print("llc_with_data", llc_with_data)
-            self.func_plus_args_user_data = [llc_with_data, (), '_x_to_the_n_minus_a']
-        else:
-            class N_AND_A(ctypes.Structure):
-                _fields_ = ("a", ctypes.c_double), ("n", ctypes.c_int)
-                
-                def __init__(self, n, a):
-                    self.n = n
-                    self.a = a
 
-            n_and_a = N_AND_A(3, 2.0)
-            c_n_and_a = ctypes.pointer(n_and_a)
-            c_n_and_a = ctypes.cast(c_n_and_a, ctypes.c_void_p)
-            llc_with_data = LowLevelCallable.from_cython(_tstutils_zerofuncs, "x_to_the_n_minus_a", c_n_and_a)
-            print("llc_with_data", llc_with_data)
-            self.func_plus_args_user_data = [llc_with_data, (), '_x_to_the_n_minus_a']
+        class N_AND_A(ctypes.Structure):
+            _fields_ = ("a", ctypes.c_double), ("n", ctypes.c_int)
+
+            def __init__(self, n, a):
+                self.n = n
+                self.a = a
+
+        n_and_a = N_AND_A(3, 2.0)
+        c_n_and_a = ctypes.pointer(n_and_a)
+        c_n_and_a = ctypes.cast(c_n_and_a, ctypes.c_void_p)
+        llc_with_data = LowLevelCallable.from_cython(_tstutils_zerofuncs, "x_to_the_n_minus_a", c_n_and_a)
+        self.func_plus_args_user_data = [llc_with_data, (), '_x_to_the_n_minus_a']
 
     def run_check(self, method, name, test_user_data=False):
         cuberoot3 = np.power(2, 1.0/3)
@@ -344,7 +337,7 @@ class TestLowLevelCallable(object):
         xtol = rtol = TOL
         tests = self.func_plus_args
         if test_user_data:
-            tests = self.func_plus_args_user_data
+            tests += self.func_plus_args_user_data
         for function, args, fname in tests:
             zero, r = method(function, a, b, xtol=xtol, rtol=rtol,
                              args=args, full_output=True)
