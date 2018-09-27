@@ -297,7 +297,7 @@ class MarkovChain(object):
         if self.not_improved_idx >= self.not_improved_max_idx:
             do_ls = True
         if do_ls:
-            e, x = self.obj_fun_wrapper.local_search(self.xmin, self.emin)
+            e, x = self.minimizer_wrapper.local_search(self.xmin, self.emin)
             self.xmin = np.copy(x)
             self.emin = e
             self.not_improved_idx = 0
