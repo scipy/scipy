@@ -312,8 +312,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     less accurate than that of the simplex method and may not correspond with a
     vertex of the polytope defined by the constraints.
 
-    Before applying either method a presolve procedure based on [8]_ and
-    converted attempts to standard form. The presolve procedure attempts to
+    Before applying either method a presolve procedure based on [8]_ attempts to
     identify trivial infeasibilities, trivial unboundedness, and potential
     problem simplifications. Specifically, it checks for:
 
@@ -340,7 +339,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     of the ``A_eq`` matrix are removed, (unless they represent an
     infeasibility) to avoid numerical difficulties in the primary solve
     routine. Note that rows that are nearly linearly dependent (within a
-    prescibed tolerance) may also be removed, which can change the optimal
+    prescribed tolerance) may also be removed, which can change the optimal
     solution in rare cases. If this is a concern, eliminate redundancy from
     your problem formulation and run with option ``rr=False`` or
     ``presolve=False``.

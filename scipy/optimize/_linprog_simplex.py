@@ -437,6 +437,44 @@ def _linprog_simplex(c, c0, A, b, maxiter=1000, disp=False, callback=None,
            Mathematical Programming", McGraw-Hill, Chapter 4.
     .. [3] Bland, Robert G. New finite pivoting rules for the simplex method.
            Mathematics of Operations Research (2), 1977: pp. 103-107.
+
+
+    Notes
+    -----
+    The expected problem formulation differs between the top level ``linprog``
+    module and the method specific solvers. The method specific solvers expect a
+    problem in standard form:
+
+    Minimize::
+
+        c @ x
+
+    Subject to::
+
+        A @ x == b
+            x >= 0
+
+    Whereas the top level ``linprog`` module expects a problem of form:
+
+    Minimize::
+
+        c @ x
+
+    Subject to::
+
+        A_ub @ x <= b_ub
+        A_eq @ x == b_eq
+         lb <= x <= ub
+
+    where ``lb = 0`` and ``ub = None`` unless set in ``bounds``.
+
+    Note the original problem contains equality, upper-bound and variable
+    constraints whereas the method specific solver requires equality constraints
+    and variable non-negativity only. The top level ``linprog`` module
+    converts the original problem to standard form by converting the simple
+    bounds to upper bound constraints, introducing non-negative slack variables
+    for inequality constraints, and expressing unbounded variables as the
+    difference between two non-negative variables.
     """
     _check_unknown_options(unknown_options)
 

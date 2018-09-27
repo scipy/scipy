@@ -886,7 +886,6 @@ def _linprog_ip(
 
     Notes
     -----
-
     This method implements the algorithm outlined in [4]_ with ideas from [8]_
     and a structure inspired by the simpler methods of [6]_ and [4]_.
 
@@ -959,12 +958,44 @@ def _linprog_ip(
     unboundedness, or infeasibility is detected, the solve procedure
     terminates; otherwise it repeats.
 
-    If optimality is achieved, a postsolve procedure undoes transformations
-    associated with presolve and converting to standard form. It then
-    calculates the residuals (equality constraint violations, which should
-    be very small) and slacks (difference between the left and right hand
-    sides of the upper bound constraints) of the original problem, which are
-    returned with the solution in an ``OptimizeResult`` object.
+    The expected problem formulation differs between the top level ``linprog``
+    module and the method specific solvers. The method specific solvers expect a
+    problem in standard form:
+
+    Minimize::
+
+        c @ x
+
+    Subject to::
+
+        A @ x == b
+            x >= 0
+
+    Whereas the top level ``linprog`` module expects a problem of form:
+
+    Minimize::
+
+        c @ x
+
+    Subject to::
+
+        A_ub @ x <= b_ub
+        A_eq @ x == b_eq
+         lb <= x <= ub
+
+    where ``lb = 0`` and ``ub = None`` unless set in ``bounds``.
+
+    Note the equality constraints and non-negativity constraints in the method
+    specific solvers.
+
+    Note the original problem contains equality, upper-bound and variable
+    constraints whereas the method specific solver requires equality constraints
+    and variable non-negativity only. The top level ``linprog`` module
+    converts the original problem to standard form by converting the simple
+    bounds to upper bound constraints, introducing non-negative slack variables
+    for inequality constraints, and expressing unbounded variables as the
+    difference between two non-negative variables.
+
 
     References
     ----------
