@@ -204,7 +204,7 @@ def _solve_simplex(T, n, basis, maxiter=1000, phase=2, status=0, message='',
                 the corresponding constraint is active.
             con : 1D array
                 The (nominally zero) residuals of the equality constraints,
-                that is, ``b - A_eq * x``
+                that is, ``b - A_eq @ x``
             phase : int
                 The phase of the optimization being executed. In phase 1 a basic
                 feasible solution is sought and the T has an additional row
@@ -376,7 +376,7 @@ def _linprog_simplex(c, c0, A, b, maxiter=1000, disp=False, callback=None,
                 the corresponding constraint is active.
             con : 1D array
                 The (nominally zero) residuals of the equality constraints, that
-                is, ``b - A_eq * x``
+                is, ``b - A_eq @ x``
             phase : int
                 The phase of the optimization being executed. In phase 1 a basic
                 feasible solution is sought and the T has an additional row

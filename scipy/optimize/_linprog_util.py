@@ -1071,12 +1071,12 @@ def _postsolve(x, c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
         Solution vector to original linear programming problem
     fun: float
         optimal objective value for original problem
-    slack: 1D array
+    slack : 1D array
         The (non-negative) slack in the upper bound constraints, that is,
-        ``b_ub - A_ub * x``
+        ``b_ub - A_ub @ x``
     con : 1D array
         The (nominally zero) residuals of the equality constraints, that is,
-        ``b - A_eq * x``
+        ``b - A_eq @ x``
     lb : 1D array
         The lower bound constraints on the original variables
     ub: 1D array
@@ -1163,12 +1163,12 @@ def _check_result(x, fun, status, slack, con, lb, ub, tol, message):
              3 : Problem appears to be unbounded
              4 : Serious numerical difficulties encountered
 
-    slack: 1D array
+    slack : 1D array
         The (non-negative) slack in the upper bound constraints, that is,
-        ``b_ub - A_ub * x``
+        ``b_ub - A_ub @ x``
     con : 1D array
         The (nominally zero) residuals of the equality constraints, that is,
-        ``b - A_eq * x``
+        ``b - A_eq @ x``
     lb : 1D array
         The lower bound constraints on the original variables
     ub: 1D array
@@ -1288,12 +1288,12 @@ def _postprocess(x, c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
         Solution vector to original linear programming problem
     fun: float
         optimal objective value for original problem
-    slack: 1D array
+    slack : 1D array
         The (non-negative) slack in the upper bound constraints, that is,
-        ``b_ub - A_ub * x``
+        ``b_ub - A_ub @ x``
     con : 1D array
         The (nominally zero) residuals of the equality constraints, that is,
-        ``b - A_eq * x``
+        ``b - A_eq @ x``
     status : int
         An integer representing the exit status of the optimization::
 

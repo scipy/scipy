@@ -54,7 +54,7 @@ def linprog_verbose_callback(res):
             corresponding constraint is active.
         con : 1D array
             The (nominally zero) residuals of the equality constraints, that is,
-            ``b - A_eq * x``
+            ``b - A_eq @ x``
         phase : int
             The phase of the optimization being executed. In phase 1 a basic
             feasible solution is sought and the T has an additional row
@@ -132,7 +132,7 @@ def linprog_terse_callback(res):
             corresponding constraint is active.
         con : 1D array
             The (nominally zero) residuals of the equality constraints, that is,
-            ``b - A_eq * x``
+            ``b - A_eq @ x``
         phase : int
             The phase of the optimization being executed. In phase 1 a basic
             feasible solution is sought and the T has an additional row
@@ -224,8 +224,8 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
                 corresponds to an inequality constraint. If the slack is zero,
                 the corresponding constraint is active.
             con : 1D array
-                The (nominally zero) residuals of the equality constraints, that is,
-                ``b - A_eq * x``
+                The (nominally zero) residuals of the equality constraints
+                that is, ``b - A_eq @ x``
             phase : int
                 The phase of the optimization being executed. In phase 1 a basic
                 feasible solution is sought and the T has an additional row
@@ -243,6 +243,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
                 The number of iterations performed.
             message : str
                 A string descriptor of the exit status of the optimization.
+
     options : dict, optional
         A dictionary of solver options. All methods accept the following
         generic options:
@@ -267,6 +268,9 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
             The values of the slack variables. Each slack variable corresponds
             to an inequality constraint.  If the slack is zero, then the
             corresponding constraint is active.
+        con : 1D array
+            The (nominally zero) residuals of the equality constraints, that is,
+            ``b - A_eq @ x``
         success : bool
             Returns True if the algorithm succeeded in finding an optimal
             solution.
