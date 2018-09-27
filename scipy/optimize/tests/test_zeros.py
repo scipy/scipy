@@ -325,13 +325,14 @@ class TestLowLevelCallable(object):
         else:
             class N_AND_A(ctypes.Structure):
                 _fields_ = ("a", ctypes.c_double), ("n", ctypes.c_int)
+                
                 def __init__(self, n, a):
                     self.n = n
                     self.a = a
 
             n_and_a = N_AND_A(3, 2.0)
             c_n_and_a = ctypes.pointer(n_and_a)
-            c_n_and_a = ctypes.cast(c_n_and_a, c_void_p)
+            c_n_and_a = ctypes.cast(c_n_and_a, ctypes.c_void_p)
             llc_with_data = LowLevelCallable.from_cython(_tstutils_zerofuncs, "x_to_the_n_minus_a", c_n_and_a)
             print("llc_with_data", llc_with_data)
             self.func_plus_args_user_data = [llc_with_data, (), '_x_to_the_n_minus_a']
