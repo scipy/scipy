@@ -894,78 +894,55 @@ class yulesimon_gen(rv_discrete):
 
     Notes
     -----
-    Probability distribution common to preferential attachment models and ranks.
-    Let :math:`X` be Yule-Simon distributed r.v. with
-    expected value :math:`\alpha/(\alpha-1)` provided :math:`\alpha>1`.
-    Parameter :math:`\alpha` must be strictly positive.
-    For details see: https://en.wikipedia.org/wiki/Yule-Simon_distribution
-    `yulesimon` takes :math:`\alpha` as sole parameter.
-    Yule-Simon is a heavy tailed discrete distribution similar to the Zipf which
-    may lead to expected values either not existing of having poor numerical
-    precision if the :math:`\alpha` parameter is very small. The m
+
+    The probability mass function for the `yulesimon` is:
+
+    .. math::
+
+        f(k) =  \alpha B(k, \alpha+1)
+
+    for :math:`k=1,2,3,...`, where :math:`\alpha>0`.
 
     %(after_notes)s
 
-    Examples
-    --------
-    >>> from scipy.stats import yulesimon
-    >>> import matplotlib.pyplot as plt
-
-    Now to make a plot of the pmf of the Yule-Simon:
-
-    >>> [n, x, alpha] = [20, 1, 3]
-    >>> rv = yulesimon(alpha)
-    >>> x = np.arange(0, n+1)
-    >>> pmf_yulesimon = rv.pmf(x)
-
-    >>> fig = plt.figure()
-    >>> ax = fig.add_subplot(111)
-    >>> ax.plot(x, pmf_yulesimon, 'bo')
-    >>> ax.vlines(x, 0, pmf_yulesimon, lw=2)
-    >>> ax.set_xlabel('rank # of Yule-Simon')
-    >>> ax.set_ylabel('Yule-Simon PMF')
-    >>> plt.show()
-
-    Instead of using a frozen distribution we can also use `yulesimon`
-    methods directly.  To for example obtain the cumulative distribution
-    function, use:
-
-    >>> prb = yulesimon.cdf(x, alpha=3)
-    >>> prb
-    array([0.        , 0.75      , 0.9       , 0.95      , 0.97142857,
-           0.98214286, 0.98809524, 0.99166667, 0.99393939, 0.99545455,
-           0.9965035 , 0.99725275, 0.9978022 , 0.99821429, 0.99852941,
-           0.99877451, 0.99896801, 0.99912281, 0.99924812, 0.99935065,
-           0.99943535])
-
-    And to generate random numbers:
-
-    >>> R = yulesimon.rvs(alpha=3, size=10)
+    %(example)s
 
     """
+    def _rvs(self, alpha):
+        my_expon=self._random_state.standard_exponential(self._size) * alpha
+        geom_prob=np.exp(-my_expon)
+        ys_rvs=self._random_state.geometric(1-geom_prob, size=self._size)
+        return ys_rvs
+
     def _pmf(self, x, alpha):
-        px = alpha * special.beta(x, alpha+1)
-        return px
+        return alpha * special.beta(x, alpha+1)
 
     def _argcheck(self, alpha):
         return (alpha > 0)
 
     def _logpmf(self, x, alpha):
-        logpx = log(alpha) + special.betaln(x, alpha+1)
-        return logpx
+        return log(alpha) + special.betaln(x, alpha+1)
 
     def _cdf(self, x, alpha):
-        Px = 1 - x * special.beta(x, alpha+1)
-        return Px
+        return 1 - x * special.beta(x, alpha+1)
 
     def _sf(self, x, alpha):
-        Sx = x * special.beta(x, alpha+1)
-        return Sx
+        return x * special.beta(x, alpha+1)
 
     def _logsf(self, x, alpha):
-        logSx = log(x) + special.betaln(x, alpha+1)
-        return logSx
+        return log(x) + special.betaln(x, alpha+1)
 
+    def _stats(self, alpha):
+        if alpha <=1:
+            return np.inf, np.inf, np.inf, np.inf
+        elif alpha <= 2 and alpha > 1:
+            return alpha / (alpha - 1), np.inf, np.inf, np.inf
+        elif alpha <= 3 and alpha > 2:
+            return alpha / (alpha - 1), alpha**2 / ((alpha - 2) * (alpha - 1)**2), np.inf, np.inf
+        elif alpha <= 4 and alpha > 3:
+            return alpha / (alpha - 1), alpha**2 / ((alpha - 2) * (alpha - 1)**2), sqrt(alpha - 2) * (alpha + 1)**2 / (alpha * (alpha - 3)), np.inf
+        elif alpha > 4:
+            return alpha / (alpha - 1), alpha**2 / ((alpha - 2) * (alpha - 1)**2), sqrt(alpha - 2) * (alpha + 1)**2 / (alpha * (alpha - 3)), (alpha + 3) + (alpha**3 - 49 * alpha - 22) / ( alpha * (alpha - 4) * (alpha - 3) )
 
 yulesimon = yulesimon_gen(name='yulesimon', a=1)
 
