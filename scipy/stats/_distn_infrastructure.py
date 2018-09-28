@@ -926,7 +926,7 @@ class rv_generic(object):
 
         Returns
         -------
-        rvs : ndarray or scalar
+        rvs : ndarray
             Random variates of given `size`.
 
         """
@@ -957,12 +957,9 @@ class rv_generic(object):
         if rndm is not None:
             self._random_state = random_state_saved
 
-        # Cast to int if discrete
+        # Cast to numpy.int64 if discrete
         if discrete:
-            if size == ():
-                vals = int(vals)
-            else:
-                vals = vals.astype(int)
+            vals = vals.astype(np.int64)
 
         return vals
 
