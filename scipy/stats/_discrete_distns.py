@@ -261,7 +261,7 @@ class geom_gen(rv_discrete):
         return k*log1p(-p)
 
     def _ppf(self, q, p):
-        vals = ceil(log(1.0-q)/log(1-p))
+        vals = ceil(log1p(-q) / log1p(-p))
         temp = self._cdf(vals-1, p)
         return np.where((temp >= q) & (vals > 0), vals-1, vals)
 

@@ -387,6 +387,10 @@ class TestGeom(object):
         expected = array([1.0, 2.0, 3.0])
         assert_array_almost_equal(vals, expected)
 
+    def test_ppf_underflow(self):
+        # this should not underflow
+        assert_allclose(stats.geom.ppf(1e-20, 1e-20), 1.0, atol=1e-14)
+
 
 class TestPlanck(object):
     def setup_method(self):
