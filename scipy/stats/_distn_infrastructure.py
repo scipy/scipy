@@ -926,7 +926,7 @@ class rv_generic(object):
 
         Returns
         -------
-        rvs : ndarray
+        rvs : ndarray or scalar
             Random variates of given `size`.
 
         """
