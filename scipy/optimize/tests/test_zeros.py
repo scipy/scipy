@@ -278,7 +278,8 @@ class TestBasic(object):
 
         for derivs in range(3):
             kwargs = {'tol': 1e-6, 'full_output': True, }
-            for k, v in [['fprime', self.f1_1], ['fprime2', self.f1_2]][:derivs]:
+            for k, v in [['fprime', self.f1_1],
+                         ['fprime2', self.f1_2]][:derivs]:
                 kwargs[k] = v
 
             x, r = zeros.newton(self.f1, x0, disp=False, **kwargs)
@@ -294,7 +295,8 @@ class TestBasic(object):
             # Now repeat, allowing one fewer iteration in order to force
             #  convergence failure
             iters = r.iterations - 1
-            x, r = zeros.newton(self.f1, x0, maxiter=iters, disp=False, **kwargs)
+            x, r = zeros.newton(self.f1, x0, maxiter=iters, disp=False,
+                                **kwargs)
             assert_(not r.converged)
             assert_equal(x, r.root)
             assert_equal(r.iterations, iters)
@@ -316,11 +318,13 @@ class TestBasic(object):
 
 
 class TestLowLevelCallable(object):
-    def setUp(self):
-        self.func_names_plus_args = [['xcubed_minus_2', ()], ['x_to_the_n_minus_2', (3)]]
-        self.func_plus_args = [
+    @classmethod
+    def setup_class(cls):
+        func_names_plus_args = [['xcubed_minus_2', ()],
+                                    ['x_to_the_n_minus_2', (3)]]
+        cls.func_plus_args = [
             [LowLevelCallable.from_cython(_tstutils_zerofuncs, fn), args, fn]
-            for fn, args in self.func_names_plus_args]
+            for fn, args in func_names_plus_args]
 
         class N_AND_A(ctypes.Structure):
             _fields_ = ("a", ctypes.c_double), ("n", ctypes.c_int)
@@ -334,7 +338,7 @@ class TestLowLevelCallable(object):
         c_n_and_a = ctypes.cast(c_n_and_a, ctypes.c_void_p)
         llc_with_data = LowLevelCallable.from_cython(
             _tstutils_zerofuncs, "x_to_the_n_minus_a", c_n_and_a)
-        self.func_plus_args_user_data = [
+        cls.func_plus_args_user_data = [
             llc_with_data, (), '_x_to_the_n_minus_a']
 
     def run_check(self, method, name, test_user_data=False):
