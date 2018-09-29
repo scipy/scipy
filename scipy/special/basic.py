@@ -2203,7 +2203,7 @@ def factorialk(n, k, exact=True):
 
 
 def voigt(x, sigma=1.0, gamma=1.0, mu=0.0):
-    """
+    r"""
     Voigt profile.
 
     The Voigt profile is a convolution of a 1D Normal distribution with
