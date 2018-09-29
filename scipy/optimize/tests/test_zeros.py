@@ -113,7 +113,8 @@ class TestBasic(object):
                     not isclose(a, c, rtol=rtol, atol=atol)
                     and elt[-1]['ID'] not in known_fail]
         # Evaluate the function and see if is 0 at the purported root
-        fvs = [tc['f'](aroot, *(tc['args'])) for aroot, c, fullout, tc in notclose]
+        fvs = [tc['f'](aroot, *(tc['args']))
+               for aroot, c, fullout, tc in notclose]
         notclose = [[fv] + elt for fv, elt in zip(fvs, notclose) if fv != 0]
         assert_equal([notclose, len(notclose)], [[], 0])
 
@@ -155,7 +156,8 @@ class TestBasic(object):
         known_fail = ['aps.13.00']
         known_fail += ['aps.12.05', 'aps.12.17']  # fails under Windows Py27
         for collection in ['aps', 'complex']:
-            self.run_collection(collection, cc.newton, 'newton', smoothness=2, known_fail=known_fail)
+            self.run_collection(collection, cc.newton, 'newton', smoothness=2,
+                                known_fail=known_fail)
 
     def test_halley_collections(self):
         known_fail = ['aps.12.06', 'aps.12.07', 'aps.12.08', 'aps.12.09',
@@ -163,7 +165,8 @@ class TestBasic(object):
                       'aps.12.14', 'aps.12.15', 'aps.12.16', 'aps.12.17',
                       'aps.12.18', 'aps.13.00']
         for collection in ['aps', 'complex']:
-            self.run_collection(collection, cc.newton, 'halley', smoothness=2, known_fail=known_fail)
+            self.run_collection(collection, cc.newton, 'halley', smoothness=2,
+                                known_fail=known_fail)
 
     @staticmethod
     def f1(x):
@@ -190,7 +193,8 @@ class TestBasic(object):
         return exp(x) + cos(x)
 
     def test_newton(self):
-        for f, f_1, f_2 in [(self.f1, self.f1_1, self.f1_2), (self.f2, self.f2_1, self.f2_2)]:
+        for f, f_1, f_2 in [(self.f1, self.f1_1, self.f1_2),
+                            (self.f2, self.f2_1, self.f2_2)]:
             x = zeros.newton(f, 3, tol=1e-6)
             assert_allclose(f(x), 0, atol=1e-6)
             x = zeros.newton(f, 3, fprime=f_1, tol=1e-6)
@@ -287,7 +291,8 @@ class TestBasic(object):
             else:
                 assert_equal(r.function_calls, (derivs + 1) * r.iterations)
 
-            # Now repeat, allowing one fewer iteration to force convergence failure
+            # Now repeat, allowing one fewer iteration in order to force
+            #  convergence failure
             iters = r.iterations - 1
             x, r = zeros.newton(self.f1, x0, maxiter=iters, disp=False, **kwargs)
             assert_(not r.converged)
@@ -312,10 +317,10 @@ class TestBasic(object):
 
 class TestLowLevelCallable(object):
     def setUp(self):
-        func_names_plus_args = [['xcubed_minus_2', ()], ['x_to_the_n_minus_2', (3)]]
+        self.func_names_plus_args = [['xcubed_minus_2', ()], ['x_to_the_n_minus_2', (3)]]
         self.func_plus_args = [
             [LowLevelCallable.from_cython(_tstutils_zerofuncs, fn), args, fn]
-            for fn, args in func_names_plus_args]
+            for fn, args in self.func_names_plus_args]
 
         class N_AND_A(ctypes.Structure):
             _fields_ = ("a", ctypes.c_double), ("n", ctypes.c_int)
@@ -324,11 +329,13 @@ class TestLowLevelCallable(object):
                 self.n = n
                 self.a = a
 
-        n_and_a = N_AND_A(3, 2.0)
+        n_and_a = N_AND_A(3, 2.0)  # x**3 - 2.0
         c_n_and_a = ctypes.pointer(n_and_a)
         c_n_and_a = ctypes.cast(c_n_and_a, ctypes.c_void_p)
-        llc_with_data = LowLevelCallable.from_cython(_tstutils_zerofuncs, "x_to_the_n_minus_a", c_n_and_a)
-        self.func_plus_args_user_data = [llc_with_data, (), '_x_to_the_n_minus_a']
+        llc_with_data = LowLevelCallable.from_cython(
+            _tstutils_zerofuncs, "x_to_the_n_minus_a", c_n_and_a)
+        self.func_plus_args_user_data = [
+            llc_with_data, (), '_x_to_the_n_minus_a']
 
     def run_check(self, method, name, test_user_data=False):
         cuberoot3 = np.power(2, 1.0/3)

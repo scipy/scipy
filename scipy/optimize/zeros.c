@@ -162,7 +162,6 @@ init_func_extra_args(ccallback_t *callback, PyObject *extra_arguments)
 
 static int fill_in_ccallback(PyObject *f, PyObject *xargs, ccallback_t *pcallback)
 {
-    int ret;
     int use_ccallback = FALSE;
     pcallback->info_p = NULL;
 
@@ -188,14 +187,12 @@ static int fill_in_ccallback(PyObject *f, PyObject *xargs, ccallback_t *pcallbac
             int inited = init_func_extra_args(pcallback, xargs);
             if (!inited) {
                 /* Check for a single argument */
-                if (pcallback->info == 1) {
+                if (pcallback->info != 1) {
+                    PyErr_SetString(PyExc_ValueError,
+                        "Wrong number of extra arguments.");
+                } else {
                     use_ccallback = TRUE;
                 }
-            } else {
-                PyObject *ptype, *pvalue, *ptraceback;
-                PyErr_Fetch(&ptype, &pvalue, &ptraceback);
-                char *pStrErrorMessage = PyString_AsString(pvalue);
-                return FALSE;
             }
             break;
         }
@@ -243,7 +240,7 @@ call_solver(solver_type solver, PyObject *self, PyObject *args)
     ccallback_t callback;
     memset(&callback, sizeof(callback), '\0');
     callback.info_p = NULL;
-    int isllc = is_lowlevelcallable(f);
+    int isllc = ccallback_is_lowlevelcallable(f);
     if (isllc) {
         use_ccallback = fill_in_ccallback(f, xargs, &callback);
         /* error message already set inside ccallback_prepare */

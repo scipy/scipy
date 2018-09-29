@@ -9,7 +9,8 @@ _iter = 100
 _xtol = 2e-12
 _rtol = 4 * np.finfo(float).eps
 
-__all__ = ['newton', 'bisect', 'ridder', 'brentq', 'brenth', 'toms748', 'RootResults']
+__all__ = ['newton', 'bisect', 'ridder', 'brentq', 'brenth', 'toms748',
+           'RootResults']
 
 # Must agree with CONVERGED, SIGNERR, CONVERR, ...  in zeros.h
 CONVERGED = 'converged'
@@ -627,8 +628,8 @@ def brentq(f, a, b, args=(),
     claims convergence is guaranteed for functions computable within [a,b].
 
     [Brent1973]_ provides the classic description of the algorithm.  Another
-    description can be found in a recent edition of Numerical Recipes, including
-    [PressEtal1992]_.  Another description is at
+    description can be found in a recent edition of Numerical Recipes,
+    including [PressEtal1992]_.  Another description is at
     http://mathworld.wolfram.com/BrentsMethod.html.  It should be easy to
     understand the algorithm just by reading our code.  Our code diverges a bit
     from standard presentations: we choose a different formula for the
@@ -860,9 +861,10 @@ def _within_tolerance(x, y, rtol, atol):
 
 def _notclose(fs, rtol=_rtol, atol=_xtol):
     # Ensure not None, not 0, all finite, and not very close to each other
-    notclosefvals = all(fs) and all(np.isfinite(fs)) and \
-                    not any(any(np.isclose(_f, fs[i + 1:], rtol=rtol, atol=atol))
-                            for i, _f in enumerate(fs[:-1]))
+    notclosefvals = (
+            all(fs) and all(np.isfinite(fs)) and
+            not any(any(np.isclose(_f, fs[i + 1:], rtol=rtol, atol=atol))
+                    for i, _f in enumerate(fs[:-1])))
     return notclosefvals
 
 
@@ -886,7 +888,9 @@ def _secant(xvals, fvals):
 
 
 def _update_bracket(ab, fab, c, fc):
-    """Update a bracket given (c, fc) with a < c < b.  Return the discarded endpoints"""
+    """Update a bracket from (c, fc), return the discarded endpoints.
+
+    c must be an interior point of the interval [a, b]."""
     fa, fb = fab
     idx = (0 if np.sign(fa) * np.sign(fc) > 0 else 1)
     rx, rfx = ab[idx], fab[idx]
@@ -895,7 +899,8 @@ def _update_bracket(ab, fab, c, fc):
     return rx, rfx
 
 
-def _compute_divided_differences(xvals, fvals, N=None, full=True, forward=True):
+def _compute_divided_differences(xvals, fvals, N=None, full=True,
+                                 forward=True):
     """Return a matrix of divided differences for the xvals, fvals pairs
 
     DD[i, j] = f[x_{i-j}, ..., x_i] for 0 <= j <= i
@@ -1006,8 +1011,10 @@ class TOMS748Solver(object):
         self.function_calls = 0
         self.iterations = 0
         self.k = 2
-        self.ab = [np.nan, np.nan]  # ab=[a,b] is a global interval containing a root
-        self.fab = [np.nan, np.nan]  # fab is function values at a, b
+        # ab=[a,b] is a global interval containing a root
+        self.ab = [np.nan, np.nan]
+        # fab is function values at a, b
+        self.fab = [np.nan, np.nan]
         self.d = None
         self.fd = None
         self.e = None
@@ -1225,7 +1232,8 @@ def toms748(f, a, b, args=(), k=1,
         containing extra arguments for the function `f`.
         `f` is called by ``f(x, *args)``.
     k : int, optional
-        The number of Newton quadratic steps to perform each iteration. ``k>=1``.
+        The number of Newton quadratic steps to perform during each each
+        iteration. ``k>=1``.
     xtol : scalar, optional
         The computed root ``x0`` will satisfy ``np.allclose(x, x0,
         atol=xtol, rtol=rtol)``, where ``x`` is the exact root. The

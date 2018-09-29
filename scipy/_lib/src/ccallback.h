@@ -280,7 +280,7 @@ fail:
  *     !=NULL if success, ==NULL on failure.
  *
  */
- static PyTypeObject * get_lowlevelcallable_type() {
+ static PyTypeObject * ccallback__get_lowlevelcallable_type() {
     static PyTypeObject *lowlevelcallable_type = NULL;
     if (lowlevelcallable_type == NULL) {
         PyObject *module;
@@ -312,10 +312,10 @@ fail:
  *     0 if success, != 0 on failure.
  *
  */
-static int is_lowlevelcallable(PyObject *callback_obj)
+static int ccallback_is_lowlevelcallable(PyObject *callback_obj)
 {
-    PyTypeObject *lowlevelcallable_type = get_lowlevelcallable_type();
-    if (lowlevelcallable_type == NULL || callback_obj== NULL) {
+    PyTypeObject *lowlevelcallable_type = ccallback__get_lowlevelcallable_type();
+    if (lowlevelcallable_type == NULL || callback_obj == NULL) {
         return 0;
     }
     return (PyObject_TypeCheck(callback_obj, lowlevelcallable_type));
@@ -353,7 +353,7 @@ static int ccallback_prepare(ccallback_t *callback, ccallback_signature_t *signa
     PyObject *callback_obj2 = NULL;
     PyObject *capsule = NULL;
 
-    lowlevelcallable_type = get_lowlevelcallable_type();
+    lowlevelcallable_type = ccallback__get_lowlevelcallable_type();
 
     if (lowlevelcallable_type == NULL) {
         goto error;
