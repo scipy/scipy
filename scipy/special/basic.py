@@ -2204,8 +2204,6 @@ def factorialk(n, k, exact=True):
 
 def voigt(x, sigma=1.0, gamma=1.0, mu=0.0):
     """
-    voigt(x, sigma=1.0, gamma=1.0, mu=0.0)
-
     Voigt profile.
 
     The Voigt profile is a convolution of a 1D Normal distribution with
@@ -2231,6 +2229,19 @@ def voigt(x, sigma=1.0, gamma=1.0, mu=0.0):
         The Voigt profile at the given position. It will have the same shape as
         `x`.
 
+    Notes
+    -----
+    It can be expressed in terms of Faddeeva function
+
+    .. math:: V(x;\sigma,\gamma,\mu) = \frac{Re[w(z)]}{\sigma\sqrt{2\pi}},
+    .. math:: z = \frac{x-\mu+i\gamma}{\sqrt{2}\sigma}
+
+    where :math:`w(z)` is the Faddeeva function.
+
+    See Also
+    --------
+    wofz : Faddeeva function
+
     References
     ----------
     .. [1] https://en.wikipedia.org/wiki/Voigt_profile
@@ -2240,7 +2251,7 @@ def voigt(x, sigma=1.0, gamma=1.0, mu=0.0):
 
     # convert it to ndarray if it wasn't
     if np.ndim(x) > 0:
-        x = np.array(x)
+        x = np.asarray(x)
 
     # separation between real and imag is to avoid warning when nan is in the
     # array
