@@ -337,8 +337,6 @@ def _linprog_simplex(c, c0, A, b, maxiter=1000, disp=False, callback=None,
     non-negativity constraints using the two phase simplex method.
     Linear programming is intended to solve problems of the following form:
 
-    The  of the form:
-
     Minimize::
 
         c @ x
@@ -497,7 +495,7 @@ def _linprog_simplex(c, c0, A, b, maxiter=1000, disp=False, callback=None,
     A[is_negative_constraint] *= -1
     b[is_negative_constraint] *= -1
 
-    # As all constraints are equality constraints the artifical variables
+    # As all constraints are equality constraints the artificial variables
     # will also be basic variables.
     av = np.arange(n) + m
     basis = av.copy()
