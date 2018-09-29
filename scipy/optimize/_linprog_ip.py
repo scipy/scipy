@@ -985,16 +985,14 @@ def _linprog_ip(
 
     where ``lb = 0`` and ``ub = None`` unless set in ``bounds``.
 
-    Note the equality constraints and non-negativity constraints in the method
-    specific solvers.
+    The original problem contains equality, upper-bound and variable constraints
+    whereas the method specific solver requires equality constraints and
+    variable non-negativity.
 
-    Note the original problem contains equality, upper-bound and variable
-    constraints whereas the method specific solver requires equality constraints
-    and variable non-negativity only. The top level ``linprog`` module
-    converts the original problem to standard form by converting the simple
-    bounds to upper bound constraints, introducing non-negative slack variables
-    for inequality constraints, and expressing unbounded variables as the
-    difference between two non-negative variables.
+    ``linprog`` module converts the original problem to standard form by
+    converting the simple bounds to upper bound constraints, introducing
+    non-negative slack variables for inequality constraints, and expressing
+    unbounded variables as the difference between two non-negative variables.
 
 
     References
