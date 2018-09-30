@@ -94,14 +94,14 @@ def bytescale(data, cmin=None, cmax=None, high=255, low=0):
     if cmax is None:
         cmax = data.max()
 
-    cscale = cmax - cmin
+    cscale = numpy.subtract(cmax, cmin, dtype=numpy.float32)
     if cscale < 0:
         raise ValueError("`cmax` should be larger than `cmin`.")
     elif cscale == 0:
         cscale = 1
 
     scale = float(high - low) / cscale
-    bytedata = (data - cmin) * scale + low
+    bytedata = numpy.subtract(data, cmin, dtype=numpy.float32) * scale + low
     return (bytedata.clip(low, high) + 0.5).astype(uint8)
 
 
