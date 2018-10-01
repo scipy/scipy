@@ -183,6 +183,20 @@ def rosen(x):
     See Also
     --------
     rosen_der, rosen_hess, rosen_hess_prod
+    
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.optimize import rosen
+    
+    First, we need to create 1-D array to provide to Rosenbrock function::
+    
+    >>> X = np.random.randn(10)
+    
+    Now, We calculate the value of Rosenbrock function:
+    
+    >>> y = rosen(X)
+    >>> y
 
     """
     x = asarray(x)
