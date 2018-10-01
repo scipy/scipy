@@ -194,7 +194,7 @@ def rosen(x):
     
     Now, We calculate the value of Rosenbrock function:
     
-    >>> y = rosen(X)
+    >>> rosen(X)
     76.56
 
     """
