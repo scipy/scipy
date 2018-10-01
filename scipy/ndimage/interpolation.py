@@ -362,6 +362,12 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
     is determined from the input image at position
     ``np.dot(matrix, o) + offset``.
 
+    This does 'pull' resampling, transforming the output space to the input to
+    locate data. Affine transformations are often described in the 'push'
+    direction, transforming input to output. If you have a matrix for the
+    'push' transformation, use its inverse (:func:`numpy.linalg.inv`) in this
+    function.
+
     Parameters
     ----------
     %(input)s
