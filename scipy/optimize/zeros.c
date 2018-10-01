@@ -34,15 +34,16 @@ typedef enum {
     CB_D = 1,         // f(x)
     CB_D_D = 2,       // f(x, double)
     CB_D_I_ND = 10,   // f(x, int n, double *)   I.e. pointer to n doubles
-    CB_D_UD = 100     // f(x, void *) or f(x, const void *)
+    CB_D_VOIDSTAR = 100,     // f(x, void *) or f(x, const void *)
+    CB_D_USERDATA = 1001     // f(x, void *) or f(x, const void *) using UserData
 } zeros_signature_t;
 
 static ccallback_signature_t signatures[] = {
     {"double (double)", CB_D},
     {"double (double, double)", CB_D_D},
     {"double (double, int, double *)", CB_D_I_ND},
-    {"double (double, void const *)", CB_D_UD},
-    {"double (double, void *)", CB_D_UD},
+    {"double (double, void const *)", CB_D_VOIDSTAR},
+    {"double (double, void *)", CB_D_VOIDSTAR},
     {NULL}
 };
 
@@ -65,6 +66,11 @@ typedef struct {
     PyObject *args;
     jmp_buf env;
 } scipy_zeros_parameters;
+
+typedef struct {
+    double a;
+    int n;
+} _x_to_the_n_minus_a_data_t;
 
 
 static double
@@ -89,7 +95,13 @@ scipy_zeros_functions_lowlevelfunc(double x, void *func_data)
         result = ((double(*)(double, int, double *))callback->c_function)(
              x, callback->info, (double *)(callback->info_p));
         break;
-      case CB_D_UD:
+
+      case CB_D_VOIDSTAR:
+        result = ((double(*)(double, const void *))callback->c_function)(
+            x, *(const void **)(callback->info_p));
+        break;
+
+      case CB_D_USERDATA:
         result = ((double(*)(double, const void *))callback->c_function)(
             x, (const void *)(callback->user_data));
         break;
@@ -184,8 +196,8 @@ static int fill_in_ccallback(PyObject *f, PyObject *xargs, ccallback_t *pcallbac
 
         case CB_D_D:
         {
-            int inited = init_func_extra_args(pcallback, xargs);
-            if (!inited) {
+            int initerr = init_func_extra_args(pcallback, xargs);
+            if (!initerr) {
                 /* Check for a single argument */
                 if (pcallback->info != 1) {
                     PyErr_SetString(PyExc_ValueError,
@@ -203,8 +215,25 @@ static int fill_in_ccallback(PyObject *f, PyObject *xargs, ccallback_t *pcallbac
             }
             break;
 
-        case CB_D_UD:
-            use_ccallback = TRUE;
+        case CB_D_VOIDSTAR:
+            // Is the data passed in, or stored in user_data?
+            if (xargs) {
+                if (PyTuple_Check(xargs) && PyTuple_GET_SIZE(xargs)==1)  {
+                    PyObject *item = PyTuple_GET_ITEM(xargs, 0);
+                    void **p = malloc(sizeof(void *));
+                    *p = (void *)item;
+                    pcallback->info_p = p;
+                    pcallback->info = 1;
+                    use_ccallback = TRUE;
+                } else {
+                    PyErr_SetString(PyExc_ValueError,
+                        "Wrong number of extra arguments for void *.");
+                }
+            } else {
+               // Update the signature enum
+                pcallback->signature->value = CB_D_USERDATA;
+                use_ccallback = TRUE;
+            }
             break;
 
         default:
@@ -224,9 +253,9 @@ call_solver(solver_type solver, PyObject *self, PyObject *args)
     volatile PyObject *fargs = NULL;
     if (!PyArg_ParseTuple(args, "OddddiOi|i",
                 &f, &a, &b, &xtol, &rtol, &iter, &xargs, &fulloutput, &disp)) {
-            PyErr_SetString(PyExc_RuntimeError, "Unable to parse arguments");
-            return NULL;
-        }
+        PyErr_SetString(PyExc_RuntimeError, "Unable to parse arguments");
+        return NULL;
+    }
     if (xtol < 0) {
         PyErr_SetString(PyExc_ValueError, "xtol must be >= 0");
         return NULL;
@@ -241,8 +270,8 @@ call_solver(solver_type solver, PyObject *self, PyObject *args)
     memset(&callback, sizeof(callback), '\0');
     callback.info_p = NULL;
     int isllc = ccallback_is_lowlevelcallable(f);
+    use_ccallback = fill_in_ccallback(f, xargs, &callback);
     if (isllc) {
-        use_ccallback = fill_in_ccallback(f, xargs, &callback);
         /* error message already set inside ccallback_prepare */
         if (!use_ccallback) {
             return NULL;
@@ -255,6 +284,7 @@ call_solver(solver_type solver, PyObject *self, PyObject *args)
                       xtol, rtol, iter, (void*)&callback, &solver_stats);
         free(callback.info_p);
         callback.info_p = NULL;
+        ccallback_release(&callback);
     }
     else if (!PyCallable_Check(f)) {
         PyErr_SetString(PyExc_RuntimeError, "Is not callable");

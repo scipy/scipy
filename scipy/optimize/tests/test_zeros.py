@@ -318,37 +318,75 @@ class TestBasic(object):
 
 
 class TestLowLevelCallable(object):
+    class N_AND_A(ctypes.Structure):
+        _fields_ = [("a", ctypes.c_double), ("n", ctypes.c_int)]
+
+        def __init__(self, n, a):
+            self.n = n
+            self.a = a
+
+        def __repr__(self):
+            return ('N_AND_A(%d, %s)' % (self.n, str(self.a)))
+
+    @classmethod
+    def setup_voidstar(cls):
+        # It should be possible to create a LowLevelCallable and
+        # use cls.n_and_a as a void *
+        if 0:
+            cls.c_n_and_a = ctypes.byref(cls.n_and_a)
+            cls.llc = LowLevelCallable.from_cython(
+                _tstutils_zerofuncs, "x_to_the_n_minus_a")
+            cls.func_plus_args += [
+                [cls.llc, tuple([cls.c_n_and_a]), "x_to_the_n_minus_a"]]
+
+    @classmethod
+    def setup_userdata(cls):
+        # It should be possible to create a LowLevelCallable and
+        # use cls.n_and_a as user_data
+        if 0:
+            cls.c_n_and_a = ctypes.byref(cls.n_and_a)
+            cls.llc = LowLevelCallable.from_cython(
+                _tstutils_zerofuncs, "x_to_the_n_minus_a")
+            if 1:
+                udata = ctypes.cast(
+                    ctypes.pointer(cls.n_and_a), ctypes.c_void_p)
+                cls.llc_with_data = LowLevelCallable(
+                    cls.llc, user_data=udata)
+                cls.func_plus_args += [
+                    [cls.llc_with_data, (), '_x_to_the_n_minus_a']]
+            elif 0:
+                cls.llc_with_data = LowLevelCallable(
+                    cls.llc, user_data=cls.n_and_a)
+                cls.func_plus_args += [
+                    [cls.llc_with_data, (), '_x_to_the_n_minus_a']]
+            elif 0:
+                cls.llc_with_data = LowLevelCallable.from_cython(
+                    _tstutils_zerofuncs, "x_to_the_n_minus_a",
+                    user_data=cls.n_and_a)
+                cls.func_plus_args += [
+                    [cls.llc_with_data, (), '_x_to_the_n_minus_a']]
+
     @classmethod
     def setup_class(cls):
         func_names_plus_args = [['xcubed_minus_2', ()],
-                                    ['x_to_the_n_minus_2', (3)]]
-        cls.func_plus_args = [
-            [LowLevelCallable.from_cython(_tstutils_zerofuncs, fn), args, fn]
-            for fn, args in func_names_plus_args]
+                                ['x_to_the_n_minus_2', (3)]]
+        cls.func_plus_args = []
+        cls.func_plus_args_user_data = []
+        for fn, args in func_names_plus_args:
+            cls.func_plus_args.append([
+                LowLevelCallable.from_cython(_tstutils_zerofuncs, fn), args, fn])
+        cls.llc = LowLevelCallable.from_cython(_tstutils_zerofuncs, "x_to_the_n_minus_a")
+        cls.n_and_a = TestLowLevelCallable.N_AND_A(3, 2.0)  # x**3 - 2.0
 
-        class N_AND_A(ctypes.Structure):
-            _fields_ = ("a", ctypes.c_double), ("n", ctypes.c_int)
+        cls.setup_voidstar()
+        cls.setup_userdata()
 
-            def __init__(self, n, a):
-                self.n = n
-                self.a = a
-
-        n_and_a = N_AND_A(3, 2.0)  # x**3 - 2.0
-        c_n_and_a = ctypes.pointer(n_and_a)
-        c_n_and_a = ctypes.cast(c_n_and_a, ctypes.c_void_p)
-        llc_with_data = LowLevelCallable.from_cython(
-            _tstutils_zerofuncs, "x_to_the_n_minus_a", c_n_and_a)
-        cls.func_plus_args_user_data = [
-            llc_with_data, (), '_x_to_the_n_minus_a']
-
-    def run_check(self, method, name, test_user_data=False):
+    def run_check(self, method, name):
         cuberoot3 = np.power(2, 1.0/3)
         a = .5
         b = sqrt(10)
         xtol = rtol = TOL
         tests = self.func_plus_args
-        if test_user_data:
-            tests += self.func_plus_args_user_data
         for function, args, fname in tests:
             zero, r = method(function, a, b, xtol=xtol, rtol=rtol,
                              args=args, full_output=True)
@@ -363,7 +401,7 @@ class TestLowLevelCallable(object):
                     [r.converged, r.iterations, r.function_calls])
 
     def test_bisect(self):
-        self.run_check(cc.bisect, 'bisect', test_user_data=True)
+        self.run_check(cc.bisect, 'bisect')
 
     def test_brentq(self):
         self.run_check(cc.brentq, 'brentq')
