@@ -7,7 +7,7 @@ import numpy as np
 
 import scipy.linalg
 import scipy.sparse.linalg
-from scipy.sparse.linalg import LinearOperator, aslinearoperator
+from scipy.sparse.linalg import aslinearoperator
 
 __all__ = ['expm_multiply']
 

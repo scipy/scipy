@@ -1,5 +1,4 @@
 import re
-import sys
 import os
 import glob
 from distutils.dep_util import newer

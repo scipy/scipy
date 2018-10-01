@@ -13,7 +13,7 @@ except ImportError:
 
 import numpy
 import numpy as np
-from numpy import ones, array, asarray, empty, random, zeros
+from numpy import ones, array, asarray, empty, random
 
 try:
     from scipy import sparse
