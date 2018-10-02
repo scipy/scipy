@@ -1321,6 +1321,14 @@ class TestYeojohnsonNormmax(object):
         maxlog = stats.yeojohnson_normmax(self.x)
         assert_allclose(maxlog, 1.876393, rtol=1e-6)
 
+    def test_darwin_example(self):
+        # test from original paper "A new family of power transformations to
+        # improve "normality or symmetry by Yeo and Johnson.
+        x = [6.1, -8.4, 1.0, 2.0, 0.7, 2.9, 3.5, 5.1, 1.8, 3.6, 7.0, 3.0, 9.3,
+             7.5, -6.0]
+        lmbda = stats.yeojohnson_normmax(x)
+        assert np.allclose(lmbda, 1.305, atol=1e-3)
+
 
 class TestCircFuncs(object):
     def test_circfuncs(self):
