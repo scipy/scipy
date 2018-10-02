@@ -1174,10 +1174,11 @@ def _normplot(method, x, la, lb, plot=None, N=80):
     lmbdas = np.linspace(la, lb, num=N)
     ppcc = lmbdas * 0.0
     for i, val in enumerate(lmbdas):
-        # Determine for each lmbda the correlation coefficient of transformed x
+        # Determine for each lmbda the square root of correlation coefficient
+        # of transformed x
         z = transform_func(x, lmbda=val)
-        _, r2 = probplot(z, dist='norm', fit=True)
-        ppcc[i] = r2[-1]
+        _, (_, _, r) = probplot(z, dist='norm', fit=True)
+        ppcc[i] = r
 
     if plot is not None:
         plot.plot(lmbdas, ppcc, 'x')
@@ -1321,7 +1322,7 @@ def yeojohnson(x, lmbda=None):
     We now use `yeojohnson` to transform the data so it's closest to normal:
 
     >>> ax2 = fig.add_subplot(212)
-    >>> xt, _ = stats.yeojohnson(x)
+    >>> xt, lmbda = stats.yeojohnson(x)
     >>> prob = stats.probplot(xt, dist=stats.norm, plot=ax2)
     >>> ax2.set_title('Probplot after Yeo-Johnson transformation')
 
@@ -1352,7 +1353,7 @@ def _yeojohnson_transform(x, lmbda):
 
     # when x >= 0
     if abs(lmbda) < 1e-19:
-        out[pos] = np.log(x[pos] + 1)
+        out[pos] = np.log1p(x[pos])
     else:  # lmbda != 0
         out[pos] = (np.power(x[pos] + 1, lmbda) - 1) / lmbda
 
@@ -1360,7 +1361,7 @@ def _yeojohnson_transform(x, lmbda):
     if abs(lmbda - 2) > 1e-19:
         out[~pos] = -(np.power(-x[~pos] + 1, 2 - lmbda) - 1) / (2 - lmbda)
     else:  # lmbda == 2
-        out[~pos] = -np.log(-x[~pos] + 1)
+        out[~pos] = -np.log1p(-x[~pos])
 
     return out
 
@@ -1392,10 +1393,10 @@ def yeojohnson_llf(lmb, data):
 
     .. math::
 
-        llf = N/2 \log(\sigma^2) + (\lambda - 1)
+        llf = N/2 \log(\hat{\sigma}^2) + (\lambda - 1)
               \sum_i \text{ sign }(x_i)\log(|x_i| + 1)
 
-    where :math:`\sigma^2` is estimated variance of the the Yeo-Johnson
+    where :math:`\hat{\sigma}^2` is estimated variance of the the Yeo-Johnson
     transformed input data ``x``.
 
     .. versionadded:: 1.2.0
@@ -1454,11 +1455,7 @@ def yeojohnson_llf(lmb, data):
 
     trans = _yeojohnson_transform(data, lmb)
 
-    # Estimated mean and variance of the normal distribution
-    est_mean = trans.sum() / n_samples
-    est_var = np.power(trans - est_mean, 2).sum() / n_samples
-
-    loglike = -n_samples / 2 * np.log(est_var)
+    loglike = -n_samples / 2 * np.log(trans.var())
     loglike += (lmb - 1) * (np.sign(data) * np.log(np.abs(data) + 1)).sum()
 
     return loglike
