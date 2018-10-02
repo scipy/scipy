@@ -791,7 +791,7 @@ def find_peaks(x, height=None, threshold=None, distance=None,
         * 'left_thresholds', 'right_thresholds'
               If `threshold` is given, these keys contain a peaks vertical
               distance to its neighbouring samples.
-        * 'peak_prominences', 'right_bases', 'left_bases'
+        * 'prominences', 'right_bases', 'left_bases'
               If `prominence` is given, these keys are accessible. See
               `peak_prominences` for a description of their content.
         * 'width_heights', 'left_ips', 'right_ips'
