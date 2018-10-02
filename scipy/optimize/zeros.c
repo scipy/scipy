@@ -6,6 +6,7 @@
 
 #include "Python.h"
 #include <setjmp.h>
+#include <numpy/npy_math.h>
 
 //#include <stdio.h>
 #if PY_VERSION_HEX >= 0x03000000
@@ -107,7 +108,7 @@ scipy_zeros_functions_lowlevelfunc(double x, void *func_data)
         break;
 
       default:
-         result = NAN;
+         result = NPY_NAN;
          break;
     }
     return result;
@@ -141,8 +142,7 @@ static int
 init_func_extra_args(ccallback_t *callback, PyObject *extra_arguments)
 {
     double *p;
-    Py_ssize_t i;
-    int num_xargs;
+    Py_ssize_t i, num_xargs;
 
     callback->info_p = NULL;
 
@@ -151,7 +151,7 @@ init_func_extra_args(ccallback_t *callback, PyObject *extra_arguments)
     }
     num_xargs = PyTuple_GET_SIZE(extra_arguments);
 
-    p = calloc(num_xargs, sizeof(double));
+    p = (double *)calloc(num_xargs, sizeof(double));
     if (p == NULL) {
         PyErr_SetString(PyExc_MemoryError, "failed to allocate memory");
         return -1;
@@ -246,11 +246,14 @@ static PyObject *
 call_solver(solver_type solver, PyObject *self, PyObject *args)
 {
     double a, b, xtol, rtol, zero;
-    int iter,i, len, fulloutput, disp=1, flag=0;
+    Py_ssize_t len;
+    int iter, i, fulloutput, disp=1, flag=0;
     scipy_zeros_parameters params;
     scipy_zeros_info solver_stats;
     PyObject *f, *xargs, *item;
     volatile PyObject *fargs = NULL;
+    int use_ccallback = FALSE, isllc = FALSE;
+    ccallback_t callback;
     if (!PyArg_ParseTuple(args, "OddddiOi|i",
                 &f, &a, &b, &xtol, &rtol, &iter, &xargs, &fulloutput, &disp)) {
         PyErr_SetString(PyExc_RuntimeError, "Unable to parse arguments");
@@ -265,11 +268,9 @@ call_solver(solver_type solver, PyObject *self, PyObject *args)
         return NULL;
     }
 
-    int use_ccallback = FALSE;
-    ccallback_t callback;
     memset(&callback, sizeof(callback), '\0');
     callback.info_p = NULL;
-    int isllc = ccallback_is_lowlevelcallable(f);
+    isllc = ccallback_is_lowlevelcallable(f);
     use_ccallback = fill_in_ccallback(f, xargs, &callback);
     if (isllc) {
         /* error message already set inside ccallback_prepare */
