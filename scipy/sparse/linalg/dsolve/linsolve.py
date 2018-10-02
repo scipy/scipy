@@ -214,7 +214,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
                 w = np.flatnonzero(xj)
                 segment_length = w.shape[0]
                 row_segs.append(w)
-                col_segs.append(np.ones(segment_length, dtype=int)*j)
+                col_segs.append(np.full(segment_length, j, dtype=int))
                 data_segs.append(np.asarray(xj[w], dtype=A.dtype))
             sparse_data = np.concatenate(data_segs)
             sparse_row = np.concatenate(row_segs)
