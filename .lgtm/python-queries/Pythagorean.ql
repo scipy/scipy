@@ -5,7 +5,7 @@
  * @tags accuracy
  * @problem.severity warning
  * @sub-severity low
- * @precision medium
+ * @precision high
  * @id py/pythagorean
  */
 
