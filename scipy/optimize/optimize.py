@@ -187,13 +187,7 @@ def rosen(x):
     Examples
     --------
     >>> from scipy.optimize import rosen
-    
-    First, we need to create 1-D array to provide to Rosenbrock function::
-    
     >>> X = 0.1 * np.arange(10)
-    
-    Now, We calculate the value of Rosenbrock function:
-    
     >>> rosen(X)
     76.56
 
