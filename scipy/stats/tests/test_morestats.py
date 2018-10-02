@@ -1255,7 +1255,7 @@ class TestYeojohnson(object):
         xt = stats.yeojohnson(x, lmbda=1)
         assert_allclose(xt[pos], x[pos])
 
-        neg= ~pos
+        neg = ~pos
         xt = stats.yeojohnson(x, lmbda=2)
         assert_allclose(xt[neg], -np.log(-x[neg] + 1))
         xt = stats.yeojohnson(x, lmbda=1)
