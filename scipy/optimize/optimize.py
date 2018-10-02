@@ -183,6 +183,13 @@ def rosen(x):
     See Also
     --------
     rosen_der, rosen_hess, rosen_hess_prod
+    
+    Examples
+    --------
+    >>> from scipy.optimize import rosen
+    >>> X = 0.1 * np.arange(10)
+    >>> rosen(X)
+    76.56
 
     """
     x = asarray(x)
