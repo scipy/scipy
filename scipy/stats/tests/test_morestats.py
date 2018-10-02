@@ -1204,7 +1204,7 @@ class TestYeojohnson_llf(object):
 
     def test_array_like(self):
         np.random.seed(54321)
-        x = stats.norm.rvs(size=100, loc=10)
+        x = stats.norm.rvs(size=100, loc=0)
         lmbda = 1
         llf = stats.yeojohnson_llf(lmbda, x)
         llf2 = stats.yeojohnson_llf(lmbda, list(x))
@@ -1218,18 +1218,50 @@ class TestYeojohnson(object):
 
     def test_fixed_lmbda(self):
         np.random.seed(12345)
+
+        # Test positive input
         x = stats.loggamma.rvs(5, size=50) + 5
+        assert np.all(x > 0)
         xt = stats.yeojohnson(x, lmbda=1)
         assert_allclose(xt, x)
         xt = stats.yeojohnson(x, lmbda=-1)
         assert_allclose(xt, 1 - 1 / (x + 1))
-
         xt = stats.yeojohnson(x, lmbda=0)
         assert_allclose(xt, np.log(x + 1))
+        xt = stats.yeojohnson(x, lmbda=1)
+        assert_allclose(xt, x)
 
-        # Also test that array_like input works
-        xt = stats.yeojohnson(list(x), lmbda=0)
-        assert_allclose(xt, np.log(x + 1))
+        # Test negative input
+        x = stats.loggamma.rvs(5, size=50) - 5
+        assert np.all(x < 0)
+        xt = stats.yeojohnson(x, lmbda=2)
+        assert_allclose(xt, -np.log(-x + 1))
+        xt = stats.yeojohnson(x, lmbda=1)
+        assert_allclose(xt, x)
+        xt = stats.yeojohnson(x, lmbda=3)
+        assert_allclose(xt, 1 / (-x + 1) - 1)
+
+        # test both positive and negative input
+        x = stats.loggamma.rvs(5, size=50) - 2
+        assert not np.all(x < 0)
+        assert not np.all(x >= 0)
+        pos = x >= 0
+        xt = stats.yeojohnson(x, lmbda=1)
+        assert_allclose(xt[pos], x[pos])
+        xt = stats.yeojohnson(x, lmbda=-1)
+        assert_allclose(xt[pos], 1 - 1 / (x[pos] + 1))
+        xt = stats.yeojohnson(x, lmbda=0)
+        assert_allclose(xt[pos], np.log(x[pos] + 1))
+        xt = stats.yeojohnson(x, lmbda=1)
+        assert_allclose(xt[pos], x[pos])
+
+        neg= ~pos
+        xt = stats.yeojohnson(x, lmbda=2)
+        assert_allclose(xt[neg], -np.log(-x[neg] + 1))
+        xt = stats.yeojohnson(x, lmbda=1)
+        assert_allclose(xt[neg], x[neg])
+        xt = stats.yeojohnson(x, lmbda=3)
+        assert_allclose(xt[neg], 1 / (-x[neg] + 1) - 1)
 
     @pytest.mark.parametrize('lmbda', [0, .1, .5, 2])
     def test_lmbda_None(self, lmbda):
@@ -1270,6 +1302,14 @@ class TestYeojohnson(object):
 
     def test_empty(self):
         assert_(stats.yeojohnson([]).shape == (0,))
+
+    def test_array_like(self):
+        np.random.seed(54321)
+        x = stats.norm.rvs(size=100, loc=0)
+        lmbda = 1.5
+        xt1, _ = stats.yeojohnson(x)
+        xt2, _ = stats.yeojohnson(list(x))
+        assert_allclose(xt1, xt2, rtol=1e-12)
 
 
 class TestYeojohnsonNormmax(object):
