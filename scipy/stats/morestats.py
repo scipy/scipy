@@ -1265,11 +1265,10 @@ def yeojohnson(x, lmbda=None):
     ----------
     x : ndarray
         Input array.  Should be 1-dimensional.
-    lmbda : {None, scalar}, optional
-        If `lmbda` is not None, do the transformation for that value.
-
-        If `lmbda` is None, find the lambda that maximizes the log-likelihood
-        function and return it as the second output argument.
+    lmbda : float, optional
+        If ``lmbda`` is ``None``, find the lambda that maximizes the
+        log-likelihood function and return it as the second output argument.
+        Otherwise the transformation is done for the given value.
 
     Returns
     -------
