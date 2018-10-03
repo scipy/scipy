@@ -4,7 +4,6 @@
  * @kind problem
  * @tags accuracy
  * @problem.severity warning
- * @sub-severity low
  * @precision high
  * @id py/pythagorean
  */
