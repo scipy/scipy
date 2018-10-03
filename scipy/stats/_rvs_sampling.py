@@ -33,7 +33,7 @@ def rvs_ratio_uniforms(pdf, umax, vmin, vmax, size=1, c=0, random_state=None):
     -------
     rvs : ndarray
         the random variates distributed according to the probability
-        distrubtion, pdf
+        distribution defined by the pdf
 
     Notes
     -----
