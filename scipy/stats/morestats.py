@@ -1352,13 +1352,13 @@ def _yeojohnson_transform(x, lmbda):
     pos = x >= 0  # binary mask
 
     # when x >= 0
-    if abs(lmbda) < 1e-19:
+    if abs(lmbda) < np.spacing(1.):
         out[pos] = np.log1p(x[pos])
     else:  # lmbda != 0
         out[pos] = (np.power(x[pos] + 1, lmbda) - 1) / lmbda
 
     # when x < 0
-    if abs(lmbda - 2) > 1e-19:
+    if abs(lmbda - 2) > np.spacing(1.):
         out[~pos] = -(np.power(-x[~pos] + 1, 2 - lmbda) - 1) / (2 - lmbda)
     else:  # lmbda == 2
         out[~pos] = -np.log1p(-x[~pos])

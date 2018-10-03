@@ -1273,13 +1273,13 @@ class TestYeojohnson(object):
             pos = x >= 0
 
             # when x >= 0
-            if abs(lmbda) < 1e-19:
+            if abs(lmbda) < np.spacing(1.):
                 x_inv[pos] = np.exp(x[pos]) - 1
             else:  # lmbda != 0
                 x_inv[pos] = np.power(x[pos] * lmbda + 1, 1 / lmbda) - 1
 
             # when x < 0
-            if abs(lmbda - 2) > 1e-19:
+            if abs(lmbda - 2) > np.spacing(1.):
                 x_inv[~pos] = 1 - np.power(-(2 - lmbda) * x[~pos] + 1,
                                            1 / (2 - lmbda))
             else:  # lmbda == 2
