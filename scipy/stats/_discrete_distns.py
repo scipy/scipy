@@ -942,7 +942,7 @@ class yulesimon_gen(rv_discrete):
         elif alpha <= 4 and alpha > 3:
             return alpha / (alpha - 1), alpha**2 / ((alpha - 2) * (alpha - 1)**2), sqrt(alpha - 2) * (alpha + 1)**2 / (alpha * (alpha - 3)), np.inf
         elif alpha > 4:
-            return alpha / (alpha - 1), alpha**2 / ((alpha - 2) * (alpha - 1)**2), sqrt(alpha - 2) * (alpha + 1)**2 / (alpha * (alpha - 3)), (alpha + 3) + (alpha**3 - 49 * alpha - 22) / ( alpha * (alpha - 4) * (alpha - 3) )
+            return alpha / (alpha - 1), alpha**2 / ((alpha - 2) * (alpha - 1)**2), sqrt(alpha - 2) * (alpha + 1)**2 / (alpha * (alpha - 3)), (alpha + 3) + (alpha**3 - 49 * alpha - 22) / (alpha * (alpha - 4) * (alpha - 3))
 
 yulesimon = yulesimon_gen(name='yulesimon', a=1)
 
