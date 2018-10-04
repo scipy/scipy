@@ -46,7 +46,7 @@ class ksone_gen(rv_continuous):
 
     Notes
     -----
-    The :math:`\sqrt{n} D_n^+` and :math:`\sqrt{n} D_n^-` are given by
+    :math:`\sqrt{n} D_n^+` and :math:`\sqrt{n} D_n^-` are given by
 
     .. math::
 
@@ -63,6 +63,12 @@ class ksone_gen(rv_continuous):
     See Also
     --------
     kstwobign, kstest
+
+    References
+    ----------
+    .. [1] Birnbaum, Z. W. and Tingey, F.H. "One-sided confidence contours
+       for probability distribution functions", The Annals of Mathematical
+       Statistics, 22(4), pp 592-596 (1951).
 
     %(example)s
 
@@ -81,14 +87,14 @@ class kstwobign_gen(rv_continuous):
     """Kolmogorov-Smirnov two-sided test for large N.
 
     This is the asymptotic distribution of the two-sided Kolmogorov-Smirnov
-    statistic :math:`\sqrt{n} D_n` that measures the maximum of absolute
+    statistic :math:`\sqrt{n} D_n` that measures the maximum absolute
     distance of the theoretical CDF from the empirical CDF (see `kstest`).
 
     %(before_notes)s
 
     Notes
     -----
-    The :math:`\sqrt{n} D_n` is given by
+    :math:`\sqrt{n} D_n` is given by
 
     .. math::
 
@@ -104,6 +110,11 @@ class kstwobign_gen(rv_continuous):
     See Also
     --------
     ksone, kstest
+
+    References
+    ----------
+    .. [1] Marsaglia, G. et al. "Evaluating Kolmogorov's distribution",
+       Journal of Statistical Software, 8(18), 2003.
 
     %(example)s
 
