@@ -909,28 +909,28 @@ class yulesimon_gen(rv_discrete):
 
     """
     def _rvs(self, alpha):
-        my_expon=self._random_state.standard_exponential(self._size) * alpha
+        my_expon=self._random_state.standard_exponential(self._size) / alpha
         geom_prob=np.exp(-my_expon)
-        ys_rvs=self._random_state.geometric(1-geom_prob, size=self._size)
+        ys_rvs=self._random_state.geometric(1 - geom_prob, size=self._size)
         return ys_rvs
 
     def _pmf(self, x, alpha):
-        return alpha * special.beta(x, alpha+1)
+        return alpha * special.beta(x, alpha + 1)
 
     def _argcheck(self, alpha):
         return (alpha > 0)
 
     def _logpmf(self, x, alpha):
-        return log(alpha) + special.betaln(x, alpha+1)
+        return log(alpha) + special.betaln(x, alpha + 1)
 
     def _cdf(self, x, alpha):
-        return 1 - x * special.beta(x, alpha+1)
+        return 1 - x * special.beta(x, alpha + 1)
 
     def _sf(self, x, alpha):
-        return x * special.beta(x, alpha+1)
+        return x * special.beta(x, alpha + 1)
 
     def _logsf(self, x, alpha):
-        return log(x) + special.betaln(x, alpha+1)
+        return log(x) + special.betaln(x, alpha + 1)
 
     def _stats(self, alpha):
         if alpha <=1:
@@ -943,6 +943,7 @@ class yulesimon_gen(rv_discrete):
             return alpha / (alpha - 1), alpha**2 / ((alpha - 2) * (alpha - 1)**2), sqrt(alpha - 2) * (alpha + 1)**2 / (alpha * (alpha - 3)), np.inf
         elif alpha > 4:
             return alpha / (alpha - 1), alpha**2 / ((alpha - 2) * (alpha - 1)**2), sqrt(alpha - 2) * (alpha + 1)**2 / (alpha * (alpha - 3)), (alpha + 3) + (alpha**3 - 49 * alpha - 22) / (alpha * (alpha - 4) * (alpha - 3))
+
 
 yulesimon = yulesimon_gen(name='yulesimon', a=1)
 
