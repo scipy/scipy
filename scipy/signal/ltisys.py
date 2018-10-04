@@ -3304,7 +3304,7 @@ def dlsim(system, u, t=None, x0=None):
         stoptime = (out_samples - 1) * system.dt
     else:
         stoptime = t[-1]
-        out_samples = int(np.floor(stoptime / system.dt)) + 1
+        out_samples = int(np.round(stoptime / system.dt)) + 1
 
     # Pre-build output arrays
     xout = np.zeros((out_samples, system.A.shape[0]))
