@@ -1224,9 +1224,9 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
     --------
     Find 6 eigenvectors of the identity matrix:
 
-    >>> import scipy.sparse as sparse
+    >>> from scipy.sparse.linalg import eigs
     >>> id = np.eye(13)
-    >>> vals, vecs = sparse.linalg.eigs(id, k=6)
+    >>> vals, vecs = eigs(id, k=6)
     >>> vals
     array([ 1.+0.j,  1.+0.j,  1.+0.j,  1.+0.j,  1.+0.j,  1.+0.j])
     >>> vecs.shape
