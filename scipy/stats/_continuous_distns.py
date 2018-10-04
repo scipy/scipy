@@ -36,7 +36,7 @@ except AttributeError:
 
 ## Kolmogorov-Smirnov one-sided and two-sided test statistics
 class ksone_gen(rv_continuous):
-    """General Kolmogorov-Smirnov one-sided test.
+    r"""General Kolmogorov-Smirnov one-sided test.
 
     This is the distribution of the one-sided Kolmogorov-Smirnov (KS)
     statistics :math:`\sqrt{n} D_n^+` and :math:`\sqrt{n} D_n^-`
@@ -50,8 +50,8 @@ class ksone_gen(rv_continuous):
 
     .. math::
 
-        D_n^+ &= \sup_x (F_n(x) - F(x)),\\
-        D_n^- &= \sup_x (F(x) - F_n(x)),\\
+        D_n^+ &= \text{sup}_x (F_n(x) - F(x)),\\
+        D_n^- &= \text{sup}_x (F(x) - F_n(x)),\\
 
     where :math:`F` is a CDF and :math:`F_n` is an empirical CDF. `ksone`
     describes the distribution under the null hypothesis of the KS test
@@ -84,7 +84,7 @@ ksone = ksone_gen(a=0.0, name='ksone')
 
 
 class kstwobign_gen(rv_continuous):
-    """Kolmogorov-Smirnov two-sided test for large N.
+    r"""Kolmogorov-Smirnov two-sided test for large N.
 
     This is the asymptotic distribution of the two-sided Kolmogorov-Smirnov
     statistic :math:`\sqrt{n} D_n` that measures the maximum absolute
@@ -98,12 +98,12 @@ class kstwobign_gen(rv_continuous):
 
     .. math::
 
-        D_n = \sup_x \abs{F_n(x) - F(x)}
+        D_n = \text{sup}_x |F_n(x) - F(x)|
 
     where :math:`F` is a CDF and :math:`F_n` is an empirical CDF. `kstwobign`
-    describes the asymptotic distribution (i.e. :math:`\lim_n \sqrt{n} D_n`
-    under the null hypothesis of the KS test that the empirical CDF
-    corresponds to i.i.d. random variates with CDF :math:`F`.
+    describes the asymptotic distribution (i.e. the limit of
+    :math:`\sqrt{n} D_n`) under the null hypothesis of the KS test that the
+    empirical CDF corresponds to i.i.d. random variates with CDF :math:`F`.
 
     %(after_notes)s
 
