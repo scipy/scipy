@@ -554,14 +554,10 @@ class planck_gen(rv_discrete):
 
     """
     def _argcheck(self, lambda_):
-        self.a = np.where(lambda_ > 0, 0, -np.inf)
-        self.b = np.where(lambda_ > 0, np.inf, 0)
-        return lambda_ != 0
+        return lambda_ > 0
 
     def _pmf(self, k, lambda_):
-        # planck.pmf(k) = (1-exp(-lambda_))*exp(-lambda_*k)
-        fact = (1-exp(-lambda_))
-        return fact*exp(-lambda_*k)
+        return (1-exp(-lambda_))*exp(-lambda_*k)
 
     def _cdf(self, x, lambda_):
         k = floor(x)
@@ -593,7 +589,7 @@ class planck_gen(rv_discrete):
         return l*exp(-l)/C - log(C)
 
 
-planck = planck_gen(name='planck', longname='A discrete exponential ')
+planck = planck_gen(a=0, name='planck', longname='A discrete exponential ')
 
 
 class boltzmann_gen(rv_discrete):
