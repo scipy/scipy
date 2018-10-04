@@ -102,6 +102,14 @@ def _b_orthonormalize(B, blockVectorV, blockVectorBV=None, retInvR=False):
     else:
         return blockVectorV, blockVectorBV
 
+def _get_indx(_lambda, num, largest):
+    """Get `num` indices into `_lambda` depending on `largest` option."""
+    if largest:
+        ii = np.argsort(-_lambda)[:num]
+    else:
+        ii = np.argsort(_lambda)[:num]
+
+    return ii
 
 def lobpcg(A, X,
             B=None, M=None, Y=None,
@@ -356,9 +364,7 @@ def lobpcg(A, X,
     gramXAX = np.dot(blockVectorX.T.conj(), blockVectorAX)
 
     _lambda, eigBlockVector = eigh(gramXAX, check_finite=False)
-    ii = np.argsort(_lambda)[:sizeX]
-    if largest:
-        ii = ii[::-1]
+    ii = _get_indx(_lambda, sizeX, largest)
     _lambda = _lambda[ii]
 
     eigBlockVector = np.asarray(eigBlockVector[:,ii])
@@ -485,9 +491,7 @@ def lobpcg(A, X,
 
         # Solve the generalized eigenvalue problem.
         _lambda, eigBlockVector = eigh(gramA, gramB, check_finite=False)
-        ii = np.argsort(_lambda)[:sizeX]
-        if largest:
-            ii = ii[::-1]
+        ii = _get_indx(_lambda, sizeX, largest)
         if verbosityLevel > 10:
             print(ii)
 
