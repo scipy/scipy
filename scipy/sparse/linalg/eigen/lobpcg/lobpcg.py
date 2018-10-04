@@ -104,10 +104,11 @@ def _b_orthonormalize(B, blockVectorV, blockVectorBV=None, retInvR=False):
 
 def _get_indx(_lambda, num, largest):
     """Get `num` indices into `_lambda` depending on `largest` option."""
+    ii = np.argsort(_lambda)
     if largest:
-        ii = np.argsort(-_lambda)[:num]
+        ii = ii[-num:]
     else:
-        ii = np.argsort(_lambda)[:num]
+        ii = ii[:num]
 
     return ii
 
