@@ -908,12 +908,6 @@ class yulesimon_gen(rv_discrete):
     %(example)s
 
     """
-    def _rvs(self, alpha):
-        my_expon = self._random_state.standard_exponential(self._size) / alpha
-        geom_prob = np.exp(-my_expon)
-        ys_rvs = self._random_state.geometric(1 - geom_prob, size=self._size)
-        return ys_rvs
-
     def _pmf(self, x, alpha):
         return alpha * special.beta(x, alpha + 1)
 
