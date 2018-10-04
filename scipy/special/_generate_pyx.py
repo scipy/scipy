@@ -1346,6 +1346,7 @@ def main():
 
     pwd = os.path.dirname(__file__)
     src_files = (os.path.abspath(__file__),
+                 os.path.abspath(os.path.join(pwd, 'functions.json')),
                  os.path.abspath(os.path.join(pwd, 'add_newdocs.py')))
     dst_files = ('_ufuncs.pyx',
                  '_ufuncs_defs.h',

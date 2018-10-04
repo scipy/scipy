@@ -70,7 +70,7 @@ Tagging a release
 -----------------
 First ensure that you have set up GPG correctly.  See
 https://github.com/scipy/scipy/issues/4919 for a discussion of signing release
-tags, and http://keyring.debian.org/creating-key.html for instructions on
+tags, and https://keyring.debian.org/creating-key.html for instructions on
 creating a GPG key if you do not have one.
 
 To make your key more readily identifiable as you, consider sending your key
@@ -130,9 +130,12 @@ done in an automated fashion with `terryfy <https://github.com/MacPython/terryfy
 to PyPI step - we want to be able to check the wheels and put their checksums
 into README first)::
 
-  $ python wheel-uploader -n -v -c -w REPO_ROOT/release/installers -t win scipy 0.19.0
-  $ python wheel-uploader -n -v -c -w REPO_ROOT/release/installers -t macosx scipy 0.19.0
-  $ python wheel-uploader -n -v -c -w REPO_ROOT/release/installers -t manylinux1 scipy 0.19.0
+  $ python wheel-uploader -n -v -c -u https://3f23b170c54c2533c070-1c8a9b3114517dc5fe17b7c3f8c63a43.ssl.cf2.rackcdn.com -w REPO_ROOT/release/installers -t win scipy 0.19.0
+  $ python wheel-uploader -n -v -c -u https://3f23b170c54c2533c070-1c8a9b3114517dc5fe17b7c3f8c63a43.ssl.cf2.rackcdn.com -w REPO_ROOT/release/installers -t macosx scipy 0.19.0
+  $ python wheel-uploader -n -v -c -u https://3f23b170c54c2533c070-1c8a9b3114517dc5fe17b7c3f8c63a43.ssl.cf2.rackcdn.com -w REPO_ROOT/release/installers -t manylinux1 scipy 0.19.0
+
+The correct URL to use is shown in https://github.com/MacPython/scipy-wheels
+and should agree with the above one.
 
 After this, we want to regenerate the README file, in order to have the MD5 and SHA256
 checksums of the just downloaded wheels in it.  Run::

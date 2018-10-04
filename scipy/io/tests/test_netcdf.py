@@ -134,7 +134,7 @@ def test_read_write_files():
             check_simple(f)
             assert_equal(f.variables['app_var'][:], 42)
 
-    except:
+    except:  # noqa: E722
         os.chdir(cwd)
         shutil.rmtree(tmpdir)
         raise
@@ -247,7 +247,7 @@ def test_itemset_no_segfault_on_readonly():
     with suppress_warnings() as sup:
         sup.filter(RuntimeWarning,
                    "Cannot close a netcdf_file opened with mmap=True, when netcdf_variables or arrays referring to its data still exist")
-        with netcdf_file(filename, 'r') as f:
+        with netcdf_file(filename, 'r', mmap=True) as f:
             time_var = f.variables['time']
 
     # time_var.assignValue(42) should raise a RuntimeError--not seg. fault!

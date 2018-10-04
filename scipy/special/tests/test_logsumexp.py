@@ -1,10 +1,10 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import (assert_almost_equal, assert_equal,
+from numpy.testing import (assert_almost_equal, assert_equal, assert_allclose,
                            assert_array_almost_equal, assert_)
 
-from scipy.special import logsumexp
+from scipy.special import logsumexp, softmax
 
 
 def test_logsumexp():
@@ -141,3 +141,56 @@ def test_logsumexp_b_shape():
 
     logsumexp(a, b=b)
 
+
+def test_softmax_fixtures():
+    assert_allclose(softmax([1000, 0, 0, 0]), np.array([1, 0, 0, 0]),
+                    rtol=1e-13)
+    assert_allclose(softmax([1, 1]), np.array([.5, .5]), rtol=1e-13)
+    assert_allclose(softmax([0, 1]), np.array([1, np.e])/(1 + np.e),
+                    rtol=1e-13)
+
+    # Expected value computed using mpmath (with mpmath.mp.dps = 200) and then
+    # converted to float.
+    x = np.arange(4)
+    expected = np.array([0.03205860328008499,
+                         0.08714431874203256,
+                         0.23688281808991013,
+                         0.6439142598879722])
+
+    assert_allclose(softmax(x), expected, rtol=1e-13)
+
+    # Translation property.  If all the values are changed by the same amount,
+    # the softmax result does not change.
+    assert_allclose(softmax(x + 100), expected, rtol=1e-13)
+
+    # When axis=None, softmax operates on the entire array, and preserves
+    # the shape.
+    assert_allclose(softmax(x.reshape(2, 2)), expected.reshape(2, 2),
+                    rtol=1e-13)
+
+
+def test_softmax_multi_axes():
+    assert_allclose(softmax([[1000, 0], [1000, 0]], axis=0),
+                    np.array([[.5, .5], [.5, .5]]), rtol=1e-13)
+    assert_allclose(softmax([[1000, 0], [1000, 0]], axis=1),
+                    np.array([[1, 0], [1, 0]]), rtol=1e-13)
+
+    # Expected value computed using mpmath (with mpmath.mp.dps = 200) and then
+    # converted to float.
+    x = np.array([[-25, 0, 25, 50],
+                  [1, 325, 749, 750]])
+    expected = np.array([[2.678636961770877e-33,
+                          1.9287498479371314e-22,
+                          1.3887943864771144e-11,
+                          0.999999999986112],
+                         [0.0,
+                          1.9444526359919372e-185,
+                          0.2689414213699951,
+                          0.7310585786300048]])
+    assert_allclose(softmax(x, axis=1), expected, rtol=1e-13)
+    assert_allclose(softmax(x.T, axis=0), expected.T, rtol=1e-13)
+
+    # 3-d input, with a tuple for the axis.
+    x3d = x.reshape(2, 2, 2)
+    assert_allclose(softmax(x3d, axis=(1, 2)), expected.reshape(2, 2, 2),
+                    rtol=1e-13)

@@ -15,10 +15,10 @@ import warnings
 
 from scipy.misc import doccer
 from ._distr_params import distcont, distdiscrete
-from scipy._lib._util import check_random_state, _lazywhere, _lazyselect
+from scipy._lib._util import check_random_state
 from scipy._lib._util import _valarray as valarray
 
-from scipy.special import (comb, chndtr, entr, rel_entr, kl_div, xlogy, ive)
+from scipy.special import (comb, chndtr, entr, rel_entr, xlogy, ive)
 
 # for root finding for discrete distribution ppf, and max likelihood estimation
 from scipy import optimize
@@ -29,11 +29,9 @@ from scipy import integrate
 # to approximate the pdf of a continuous distribution given its cdf
 from scipy.misc import derivative
 
-from numpy import (arange, putmask, ravel, take, ones, shape, ndarray,
-                   product, reshape, zeros, floor, logical_and, log, sqrt, exp)
-
-from numpy import (place, argsort, argmax, vectorize,
-                   asarray, nan, inf, isinf, NINF, empty)
+from numpy import (arange, putmask, ravel, ones, shape, ndarray, zeros, floor,
+                   logical_and, log, sqrt, place, argmax, vectorize, asarray,
+                   nan, inf, isinf, NINF, empty)
 
 import numpy as np
 
@@ -202,7 +200,7 @@ Generate random numbers:
 
 And compare the histogram:
 
->>> ax.hist(r, normed=True, histtype='stepfilled', alpha=0.2)
+>>> ax.hist(r, density=True, histtype='stepfilled', alpha=0.2)
 >>> ax.legend(loc='best', frameon=False)
 >>> plt.show()
 
@@ -562,12 +560,12 @@ def _parse_args_stats(self, %(shape_arg_str)s %(locscale_in)s, moments='mv'):
 
 
 # Both the continuous and discrete distributions depend on ncx2.
-# I think the function name ncx2 is an abbreviation for noncentral chi squared.
+# The function name ncx2 is an abbreviation for noncentral chi squared.
 
 def _ncx2_log_pdf(x, df, nc):
-    # We use (xs**2 + ns**2)/2 = (xs - ns)**2/2  + xs*ns, and include the factor
-    # of exp(-xs*ns) into the ive function to improve numerical stability
-    # at large values of xs. See also `rice.pdf`.
+    # We use (xs**2 + ns**2)/2 = (xs - ns)**2/2  + xs*ns, and include the
+    # factor of exp(-xs*ns) into the ive function to improve numerical
+    # stability at large values of xs. See also `rice.pdf`.
     df2 = df/2.0 - 1.0
     xs, ns = np.sqrt(x), np.sqrt(nc)
     res = xlogy(df2/2.0, x/nc) - 0.5*(xs - ns)**2
@@ -738,7 +736,7 @@ class rv_generic(object):
         self.__doc__ = self.__doc__.replace('(, ', '(').replace(', )', ')')
 
     def _construct_default_doc(self, longname=None, extradoc=None,
-                docdict=None, discrete='continuous'):
+                               docdict=None, discrete='continuous'):
         """Construct instance docstring from the default template."""
         if longname is None:
             longname = 'A'
@@ -1111,12 +1109,15 @@ class rv_generic(object):
         """
         args, loc, scale = self._parse_args(*args, **kwds)
         # NB: for discrete distributions scale=1 by construction in _parse_args
+        loc, scale = map(asarray, (loc, scale))
         args = tuple(map(asarray, args))
         cond0 = self._argcheck(*args) & (scale > 0) & (loc == loc)
         output = zeros(shape(cond0), 'd')
         place(output, (1-cond0), self.badvalue)
-        goodargs = argsreduce(cond0, *args)
-        place(output, cond0, self.vecentropy(*goodargs) + log(scale))
+        goodargs = argsreduce(cond0, scale, *args)
+        goodscale = goodargs[0]
+        goodargs = goodargs[1:]
+        place(output, cond0, self.vecentropy(*goodargs) + log(goodscale))
         return output
 
     def moment(self, n, *args, **kwds):
@@ -1406,7 +1407,16 @@ class rv_continuous(rv_generic):
 
       _logpdf, _cdf, _logcdf, _ppf, _rvs, _isf, _sf, _logsf
 
-    Rarely would you override ``_isf``, ``_sf`` or ``_logsf``, but you could.
+    The default method ``_rvs`` relies on the inverse of the cdf, ``_ppf``,
+    applied to a uniform random variate. In order to generate random variates
+    efficiently, either the default ``_ppf`` needs to be overwritten (e.g.
+    if the inverse cdf can expressed in an explicit form) or a sampling
+    method needs to be implemented in a custom ``_rvs`` method.
+
+    If possible, you should override ``_isf``, ``_sf`` or ``_logsf``.
+    The main reason would be to improve numerical accuracy: for example,
+    the survival function ``_sf`` is computed as ``1 - _cdf`` which can
+    result in loss of precision if ``_cdf(x)`` is close to one.
 
     **Methods that can be overwritten by subclasses**
     ::
@@ -1442,7 +1452,7 @@ class rv_continuous(rv_generic):
     location, and scale parameters returning a "frozen" continuous RV object:
 
     rv = generic(<shape(s)>, loc=0, scale=1)
-        frozen RV object with the same methods but holding the given shape,
+        `rv_frozen` object with the same methods but holding the given shape,
         location, and scale fixed
 
     **Statistics**
@@ -2247,7 +2257,8 @@ class rv_continuous(rv_generic):
         if support_width <= 0:
             return loc_hat, scale_hat
 
-        # Compute the proposed support according to the loc and scale estimates.
+        # Compute the proposed support according to the loc and scale
+        # estimates.
         a_hat = loc_hat + a * scale_hat
         b_hat = loc_hat + b * scale_hat
 
@@ -2449,10 +2460,6 @@ def _drv2_ppfsingle(self, q, *args):  # Use basic bisection algorithm
         if (qb == q):
             return b
         if b <= a+1:
-            # testcase: return wrong number at lower index
-            # python -c "from scipy.stats import zipf;print zipf.ppf(0.01, 2)" wrong
-            # python -c "from scipy.stats import zipf;print zipf.ppf([0.01, 0.61, 0.77, 0.83], 2)"
-            # python -c "from scipy.stats import logser;print logser.ppf([0.1, 0.66, 0.86, 0.93], 0.6)"
             if qa > q:
                 return a
             else:
@@ -2655,8 +2662,8 @@ class rv_discrete(rv_generic):
 
     """
     def __new__(cls, a=0, b=inf, name=None, badvalue=None,
-                 moment_tol=1e-8, values=None, inc=1, longname=None,
-                 shapes=None, extradoc=None, seed=None):
+                moment_tol=1e-8, values=None, inc=1, longname=None,
+                shapes=None, extradoc=None, seed=None):
 
         if values is not None:
             # dispatch to a subclass
@@ -3178,8 +3185,8 @@ class rv_discrete(rv_generic):
         depending on the function, `func`. If it does exist, but the sum converges
         slowly, the accuracy of the result may be rather low. For instance, for
         ``zipf(4)``, accuracy for mean, variance in example is only 1e-5.
-        increasing `maxcount` and/or `chunksize` may improve the result, but may also
-        make zipf very slow.
+        increasing `maxcount` and/or `chunksize` may improve the result, but may
+        also make zipf very slow.
 
         The function is not vectorized.
 
@@ -3261,7 +3268,8 @@ def _expect(fun, lb, ub, x0, inc, maxcount=1000, tolerance=1e-10,
 def _iter_chunked(x0, x1, chunksize=4, inc=1):
     """Iterate from x0 to x1 in chunks of chunksize and steps inc.
 
-    x0 must be finite, x1 need not be. In the latter case, the iterator is infinite.
+    x0 must be finite, x1 need not be. In the latter case, the iterator is
+    infinite.
     Handles both x0 < x1 and x0 > x1. In the latter case, iterates downwards
     (make sure to set inc < 0.)
 

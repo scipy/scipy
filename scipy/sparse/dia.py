@@ -104,7 +104,7 @@ class dia_matrix(_data_matrix):
                 try:
                     # Try interpreting it as (data, offsets)
                     data, offsets = arg1
-                except:
+                except Exception:
                     raise ValueError('unrecognized form for dia_matrix constructor')
                 else:
                     if shape is None:
@@ -118,7 +118,7 @@ class dia_matrix(_data_matrix):
             #must be dense, convert to COO first, then to DIA
             try:
                 arg1 = np.asarray(arg1)
-            except:
+            except Exception:
                 raise ValueError("unrecognized form for"
                         " %s_matrix constructor" % self.format)
             from .coo import coo_matrix
@@ -311,7 +311,7 @@ class dia_matrix(_data_matrix):
         rows, cols = self.shape
         if k <= -rows or k >= cols:
             raise ValueError("k exceeds matrix dimensions")
-        idx, = np.where(self.offsets == k)
+        idx, = np.nonzero(self.offsets == k)
         first_col, last_col = max(0, k), min(rows + k, cols)
         if idx.size == 0:
             return np.zeros(last_col - first_col, dtype=self.data.dtype)

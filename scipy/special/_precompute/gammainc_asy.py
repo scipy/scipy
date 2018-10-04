@@ -5,7 +5,7 @@ This takes about 8 hours to run on a 2.3 GHz Macbook Pro with 4GB ram.
 
 Sources:
 [1] NIST, "Digital Library of Mathematical Functions",
-    http://dlmf.nist.gov/
+    https://dlmf.nist.gov/
 
 """
 from __future__ import division, print_function, absolute_import

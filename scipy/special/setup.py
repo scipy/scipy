@@ -17,7 +17,7 @@ except ImportError:
 
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
-    from numpy.distutils.system_info import get_info as get_system_info
+    from scipy._build_utils.system_info import get_info as get_system_info
 
     config = Configuration('special', parent_package, top_path)
 
@@ -131,7 +131,7 @@ def configuration(parent_package='',top_path=None):
     # testing for _round.h
     config.add_extension('_test_round',
                          sources=['_test_round.c'],
-                         depends=['_round.h', 'c_misc/double2.h'],
+                         depends=['_round.h', 'cephes/dd_idefs.h'],
                          include_dirs=[numpy.get_include()] + inc_dirs,
                          extra_info=get_info('npymath'))
 

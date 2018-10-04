@@ -188,7 +188,7 @@ positional parameters in all methods.
 The function `scipy.stats.power_divergence` has been added for the
 Cressie-Read power divergence statistic and goodness of fit test.
 Included in this family of statistics is the "G-test"
-(http://en.wikipedia.org/wiki/G-test).
+(https://en.wikipedia.org/wiki/G-test).
 
 `scipy.stats.mood` now accepts multidimensional input.
 

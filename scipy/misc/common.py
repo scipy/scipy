@@ -231,12 +231,12 @@ def electrocardiogram():
     ----------
     .. [1] Moody GB, Mark RG. The impact of the MIT-BIH Arrhythmia Database.
            IEEE Eng in Med and Biol 20(3):45-50 (May-June 2001).
-           (PMID: 11446209); https://doi.org/10.13026/C2F305
+           (PMID: 11446209); :doi:`10.13026/C2F305`
     .. [2] Goldberger AL, Amaral LAN, Glass L, Hausdorff JM, Ivanov PCh,
            Mark RG, Mietus JE, Moody GB, Peng C-K, Stanley HE. PhysioBank,
            PhysioToolkit, and PhysioNet: Components of a New Research Resource
            for Complex Physiologic Signals. Circulation 101(23):e215-e220;
-           https://doi.org/10.1161/01.CIR.101.23.e215
+           :doi:`10.1161/01.CIR.101.23.e215`
 
     Examples
     --------

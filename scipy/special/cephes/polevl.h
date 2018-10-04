@@ -51,7 +51,7 @@
 
 /* Sources:
  * [1] Holin et. al., "Polynomial and Rational Function Evaluation",
- *     http://www.boost.org/doc/libs/1_61_0/libs/math/doc/html/math_toolkit/roots/rational.html
+ *     https://www.boost.org/doc/libs/1_61_0/libs/math/doc/html/math_toolkit/roots/rational.html
  */
 
 /* Scipy changes:

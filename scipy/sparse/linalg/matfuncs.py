@@ -70,6 +70,10 @@ def inv(A):
     .. versionadded:: 0.12.0
 
     """
+    #check input
+    if not scipy.sparse.isspmatrix(A):
+        raise TypeError('Input must be a sparse matrix')
+
     I = speye(A.shape[0], A.shape[1], dtype=A.dtype, format=A.format)
     Ainv = spsolve(A, I)
     return Ainv
@@ -622,6 +626,11 @@ def _expm(A, use_exact_onenorm):
             return A.__class__(out)
 
         return np.array(out)
+
+    # Ensure input is of float type, to avoid integer overflows etc.
+    if ((isinstance(A, np.ndarray) or isspmatrix(A))
+            and not np.issubdtype(A.dtype, np.inexact)):
+        A = A.astype(float)
 
     # Detect upper triangularity.
     structure = UPPER_TRIANGULAR if _is_upper_triangular(A) else None

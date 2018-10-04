@@ -666,7 +666,7 @@ double cbesk_wrap_real( double v, double z) {
     return NPY_INFINITY;
   }
   else if (z > 710 * (1 + fabs(v))) {
-      /* Underflow. See uniform expansion http://dlmf.nist.gov/10.41
+      /* Underflow. See uniform expansion https://dlmf.nist.gov/10.41
        * This condition is not a strict bound (it can underflow earlier),
        * rather, we are here working around a restriction in AMOS.
        */

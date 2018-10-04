@@ -118,7 +118,7 @@ class BarrierSubproblem:
     def gradient_and_jacobian(self, z):
         """Returns scaled gradient.
 
-        Return scalled gradient:
+        Return scaled gradient:
             gradient = [             grad(x)             ]
                        [ -barrier_parameter*ones(n_ineq) ]
         and scaled Jacobian Matrix:

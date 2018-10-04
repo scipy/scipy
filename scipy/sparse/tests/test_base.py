@@ -22,6 +22,7 @@ Run tests if sparse is not installed:
 import operator
 import contextlib
 import functools
+from distutils.version import LooseVersion
 
 import numpy as np
 from scipy._lib.six import xrange, zip as izip
@@ -53,6 +54,11 @@ import pytest
 
 def assert_in(member, collection, msg=None):
     assert_(member in collection, msg=msg if msg is not None else "%r not found in %r" % (member, collection))
+
+
+def assert_array_equal_dtype(x, y, **kwargs):
+    assert_(x.dtype == y.dtype)
+    assert_array_equal(x, y, **kwargs)
 
 
 # Only test matmul operator (A @ B) when available (Python 3.5+)
@@ -286,18 +292,19 @@ class _TestCommon(object):
             datlil = lil_matrix(dat)
 
             # sparse/sparse
-            assert_array_equal(dat == dat2, (datsp == datsp2).todense())
+            assert_array_equal_dtype(dat == dat2, (datsp == datsp2).todense())
             # mix sparse types
-            assert_array_equal(dat == dat2, (datbsr == datsp2).todense())
-            assert_array_equal(dat == dat2, (datcsr == datsp2).todense())
-            assert_array_equal(dat == dat2, (datcsc == datsp2).todense())
-            assert_array_equal(dat == dat2, (datlil == datsp2).todense())
+            assert_array_equal_dtype(dat == dat2, (datbsr == datsp2).todense())
+            assert_array_equal_dtype(dat == dat2, (datcsr == datsp2).todense())
+            assert_array_equal_dtype(dat == dat2, (datcsc == datsp2).todense())
+            assert_array_equal_dtype(dat == dat2, (datlil == datsp2).todense())
             # sparse/dense
-            assert_array_equal(dat == datsp2, datsp2 == dat)
+            assert_array_equal_dtype(dat == datsp2, datsp2 == dat)
             # sparse/scalar
-            assert_array_equal(dat == 0, (datsp == 0).todense())
-            assert_array_equal(dat == 1, (datsp == 1).todense())
-            assert_array_equal(dat == np.nan, (datsp == np.nan).todense())
+            assert_array_equal_dtype(dat == 0, (datsp == 0).todense())
+            assert_array_equal_dtype(dat == 1, (datsp == 1).todense())
+            assert_array_equal_dtype(dat == np.nan,
+                                     (datsp == np.nan).todense())
 
         if not isinstance(self, (TestBSR, TestCSC, TestCSR)):
             pytest.skip("Bool comparisons only implemented for BSR, CSC, and CSR.")
@@ -322,20 +329,21 @@ class _TestCommon(object):
             datlil = lil_matrix(dat)
 
             # sparse/sparse
-            assert_array_equal(dat != dat2, (datsp != datsp2).todense())
+            assert_array_equal_dtype(dat != dat2, (datsp != datsp2).todense())
             # mix sparse types
-            assert_array_equal(dat != dat2, (datbsr != datsp2).todense())
-            assert_array_equal(dat != dat2, (datcsc != datsp2).todense())
-            assert_array_equal(dat != dat2, (datcsr != datsp2).todense())
-            assert_array_equal(dat != dat2, (datlil != datsp2).todense())
+            assert_array_equal_dtype(dat != dat2, (datbsr != datsp2).todense())
+            assert_array_equal_dtype(dat != dat2, (datcsc != datsp2).todense())
+            assert_array_equal_dtype(dat != dat2, (datcsr != datsp2).todense())
+            assert_array_equal_dtype(dat != dat2, (datlil != datsp2).todense())
             # sparse/dense
-            assert_array_equal(dat != datsp2, datsp2 != dat)
+            assert_array_equal_dtype(dat != datsp2, datsp2 != dat)
             # sparse/scalar
-            assert_array_equal(dat != 0, (datsp != 0).todense())
-            assert_array_equal(dat != 1, (datsp != 1).todense())
-            assert_array_equal(0 != dat, (0 != datsp).todense())
-            assert_array_equal(1 != dat, (1 != datsp).todense())
-            assert_array_equal(dat != np.nan, (datsp != np.nan).todense())
+            assert_array_equal_dtype(dat != 0, (datsp != 0).todense())
+            assert_array_equal_dtype(dat != 1, (datsp != 1).todense())
+            assert_array_equal_dtype(0 != dat, (0 != datsp).todense())
+            assert_array_equal_dtype(1 != dat, (1 != datsp).todense())
+            assert_array_equal_dtype(dat != np.nan,
+                                     (datsp != np.nan).todense())
 
         if not isinstance(self, (TestBSR, TestCSC, TestCSR)):
             pytest.skip("Bool comparisons only implemented for BSR, CSC, and CSR.")
@@ -364,35 +372,37 @@ class _TestCommon(object):
             datlil = lil_matrix(dat)
 
             # sparse/sparse
-            assert_array_equal(dat < dat2, (datsp < datsp2).todense())
-            assert_array_equal(datcomplex < dat2, (datspcomplex < datsp2).todense())
+            assert_array_equal_dtype(dat < dat2, (datsp < datsp2).todense())
+            assert_array_equal_dtype(datcomplex < dat2,
+                                     (datspcomplex < datsp2).todense())
             # mix sparse types
-            assert_array_equal(dat < dat2, (datbsr < datsp2).todense())
-            assert_array_equal(dat < dat2, (datcsc < datsp2).todense())
-            assert_array_equal(dat < dat2, (datcsr < datsp2).todense())
-            assert_array_equal(dat < dat2, (datlil < datsp2).todense())
+            assert_array_equal_dtype(dat < dat2, (datbsr < datsp2).todense())
+            assert_array_equal_dtype(dat < dat2, (datcsc < datsp2).todense())
+            assert_array_equal_dtype(dat < dat2, (datcsr < datsp2).todense())
+            assert_array_equal_dtype(dat < dat2, (datlil < datsp2).todense())
 
-            assert_array_equal(dat2 < dat, (datsp2 < datbsr).todense())
-            assert_array_equal(dat2 < dat, (datsp2 < datcsc).todense())
-            assert_array_equal(dat2 < dat, (datsp2 < datcsr).todense())
-            assert_array_equal(dat2 < dat, (datsp2 < datlil).todense())
+            assert_array_equal_dtype(dat2 < dat, (datsp2 < datbsr).todense())
+            assert_array_equal_dtype(dat2 < dat, (datsp2 < datcsc).todense())
+            assert_array_equal_dtype(dat2 < dat, (datsp2 < datcsr).todense())
+            assert_array_equal_dtype(dat2 < dat, (datsp2 < datlil).todense())
             # sparse/dense
-            assert_array_equal(dat < dat2, datsp < dat2)
-            assert_array_equal(datcomplex < dat2, datspcomplex < dat2)
+            assert_array_equal_dtype(dat < dat2, datsp < dat2)
+            assert_array_equal_dtype(datcomplex < dat2, datspcomplex < dat2)
             # sparse/scalar
-            assert_array_equal((datsp < 2).todense(), dat < 2)
-            assert_array_equal((datsp < 1).todense(), dat < 1)
-            assert_array_equal((datsp < 0).todense(), dat < 0)
-            assert_array_equal((datsp < -1).todense(), dat < -1)
-            assert_array_equal((datsp < -2).todense(), dat < -2)
+            assert_array_equal_dtype((datsp < 2).todense(), dat < 2)
+            assert_array_equal_dtype((datsp < 1).todense(), dat < 1)
+            assert_array_equal_dtype((datsp < 0).todense(), dat < 0)
+            assert_array_equal_dtype((datsp < -1).todense(), dat < -1)
+            assert_array_equal_dtype((datsp < -2).todense(), dat < -2)
             with np.errstate(invalid='ignore'):
-                assert_array_equal((datsp < np.nan).todense(), dat < np.nan)
+                assert_array_equal_dtype((datsp < np.nan).todense(),
+                                         dat < np.nan)
 
-            assert_array_equal((2 < datsp).todense(), 2 < dat)
-            assert_array_equal((1 < datsp).todense(), 1 < dat)
-            assert_array_equal((0 < datsp).todense(), 0 < dat)
-            assert_array_equal((-1 < datsp).todense(), -1 < dat)
-            assert_array_equal((-2 < datsp).todense(), -2 < dat)
+            assert_array_equal_dtype((2 < datsp).todense(), 2 < dat)
+            assert_array_equal_dtype((1 < datsp).todense(), 1 < dat)
+            assert_array_equal_dtype((0 < datsp).todense(), 0 < dat)
+            assert_array_equal_dtype((-1 < datsp).todense(), -1 < dat)
+            assert_array_equal_dtype((-2 < datsp).todense(), -2 < dat)
 
             # data
             dat = self.dat_dtypes[dtype]
@@ -402,7 +412,7 @@ class _TestCommon(object):
             datsp2 = self.spmatrix(dat2)
 
             # dense rhs
-            assert_array_equal(dat < datsp2, datsp < dat2)
+            assert_array_equal_dtype(dat < datsp2, datsp < dat2)
 
         if not isinstance(self, (TestBSR, TestCSC, TestCSR)):
             pytest.skip("Bool comparisons only implemented for BSR, CSC, and CSR.")
@@ -430,35 +440,37 @@ class _TestCommon(object):
             datlil = lil_matrix(dat)
 
             # sparse/sparse
-            assert_array_equal(dat > dat2, (datsp > datsp2).todense())
-            assert_array_equal(datcomplex > dat2, (datspcomplex > datsp2).todense())
+            assert_array_equal_dtype(dat > dat2, (datsp > datsp2).todense())
+            assert_array_equal_dtype(datcomplex > dat2,
+                                     (datspcomplex > datsp2).todense())
             # mix sparse types
-            assert_array_equal(dat > dat2, (datbsr > datsp2).todense())
-            assert_array_equal(dat > dat2, (datcsc > datsp2).todense())
-            assert_array_equal(dat > dat2, (datcsr > datsp2).todense())
-            assert_array_equal(dat > dat2, (datlil > datsp2).todense())
+            assert_array_equal_dtype(dat > dat2, (datbsr > datsp2).todense())
+            assert_array_equal_dtype(dat > dat2, (datcsc > datsp2).todense())
+            assert_array_equal_dtype(dat > dat2, (datcsr > datsp2).todense())
+            assert_array_equal_dtype(dat > dat2, (datlil > datsp2).todense())
 
-            assert_array_equal(dat2 > dat, (datsp2 > datbsr).todense())
-            assert_array_equal(dat2 > dat, (datsp2 > datcsc).todense())
-            assert_array_equal(dat2 > dat, (datsp2 > datcsr).todense())
-            assert_array_equal(dat2 > dat, (datsp2 > datlil).todense())
+            assert_array_equal_dtype(dat2 > dat, (datsp2 > datbsr).todense())
+            assert_array_equal_dtype(dat2 > dat, (datsp2 > datcsc).todense())
+            assert_array_equal_dtype(dat2 > dat, (datsp2 > datcsr).todense())
+            assert_array_equal_dtype(dat2 > dat, (datsp2 > datlil).todense())
             # sparse/dense
-            assert_array_equal(dat > dat2, datsp > dat2)
-            assert_array_equal(datcomplex > dat2, datspcomplex > dat2)
+            assert_array_equal_dtype(dat > dat2, datsp > dat2)
+            assert_array_equal_dtype(datcomplex > dat2, datspcomplex > dat2)
             # sparse/scalar
-            assert_array_equal((datsp > 2).todense(), dat > 2)
-            assert_array_equal((datsp > 1).todense(), dat > 1)
-            assert_array_equal((datsp > 0).todense(), dat > 0)
-            assert_array_equal((datsp > -1).todense(), dat > -1)
-            assert_array_equal((datsp > -2).todense(), dat > -2)
+            assert_array_equal_dtype((datsp > 2).todense(), dat > 2)
+            assert_array_equal_dtype((datsp > 1).todense(), dat > 1)
+            assert_array_equal_dtype((datsp > 0).todense(), dat > 0)
+            assert_array_equal_dtype((datsp > -1).todense(), dat > -1)
+            assert_array_equal_dtype((datsp > -2).todense(), dat > -2)
             with np.errstate(invalid='ignore'):
-                assert_array_equal((datsp > np.nan).todense(), dat > np.nan)
+                assert_array_equal_dtype((datsp > np.nan).todense(),
+                                         dat > np.nan)
 
-            assert_array_equal((2 > datsp).todense(), 2 > dat)
-            assert_array_equal((1 > datsp).todense(), 1 > dat)
-            assert_array_equal((0 > datsp).todense(), 0 > dat)
-            assert_array_equal((-1 > datsp).todense(), -1 > dat)
-            assert_array_equal((-2 > datsp).todense(), -2 > dat)
+            assert_array_equal_dtype((2 > datsp).todense(), 2 > dat)
+            assert_array_equal_dtype((1 > datsp).todense(), 1 > dat)
+            assert_array_equal_dtype((0 > datsp).todense(), 0 > dat)
+            assert_array_equal_dtype((-1 > datsp).todense(), -1 > dat)
+            assert_array_equal_dtype((-2 > datsp).todense(), -2 > dat)
 
             # data
             dat = self.dat_dtypes[dtype]
@@ -468,7 +480,7 @@ class _TestCommon(object):
             datsp2 = self.spmatrix(dat2)
 
             # dense rhs
-            assert_array_equal(dat > datsp2, datsp > dat2)
+            assert_array_equal_dtype(dat > datsp2, datsp > dat2)
 
         if not isinstance(self, (TestBSR, TestCSC, TestCSR)):
             pytest.skip("Bool comparisons only implemented for BSR, CSC, and CSR.")
@@ -496,31 +508,32 @@ class _TestCommon(object):
             datlil = lil_matrix(dat)
 
             # sparse/sparse
-            assert_array_equal(dat <= dat2, (datsp <= datsp2).todense())
-            assert_array_equal(datcomplex <= dat2, (datspcomplex <= datsp2).todense())
+            assert_array_equal_dtype(dat <= dat2, (datsp <= datsp2).todense())
+            assert_array_equal_dtype(datcomplex <= dat2,
+                                     (datspcomplex <= datsp2).todense())
             # mix sparse types
-            assert_array_equal((datbsr <= datsp2).todense(), dat <= dat2)
-            assert_array_equal((datcsc <= datsp2).todense(), dat <= dat2)
-            assert_array_equal((datcsr <= datsp2).todense(), dat <= dat2)
-            assert_array_equal((datlil <= datsp2).todense(), dat <= dat2)
+            assert_array_equal_dtype((datbsr <= datsp2).todense(), dat <= dat2)
+            assert_array_equal_dtype((datcsc <= datsp2).todense(), dat <= dat2)
+            assert_array_equal_dtype((datcsr <= datsp2).todense(), dat <= dat2)
+            assert_array_equal_dtype((datlil <= datsp2).todense(), dat <= dat2)
 
-            assert_array_equal((datsp2 <= datbsr).todense(), dat2 <= dat)
-            assert_array_equal((datsp2 <= datcsc).todense(), dat2 <= dat)
-            assert_array_equal((datsp2 <= datcsr).todense(), dat2 <= dat)
-            assert_array_equal((datsp2 <= datlil).todense(), dat2 <= dat)
+            assert_array_equal_dtype((datsp2 <= datbsr).todense(), dat2 <= dat)
+            assert_array_equal_dtype((datsp2 <= datcsc).todense(), dat2 <= dat)
+            assert_array_equal_dtype((datsp2 <= datcsr).todense(), dat2 <= dat)
+            assert_array_equal_dtype((datsp2 <= datlil).todense(), dat2 <= dat)
             # sparse/dense
-            assert_array_equal(datsp <= dat2, dat <= dat2)
-            assert_array_equal(datspcomplex <= dat2, datcomplex <= dat2)
+            assert_array_equal_dtype(datsp <= dat2, dat <= dat2)
+            assert_array_equal_dtype(datspcomplex <= dat2, datcomplex <= dat2)
             # sparse/scalar
-            assert_array_equal((datsp <= 2).todense(), dat <= 2)
-            assert_array_equal((datsp <= 1).todense(), dat <= 1)
-            assert_array_equal((datsp <= -1).todense(), dat <= -1)
-            assert_array_equal((datsp <= -2).todense(), dat <= -2)
+            assert_array_equal_dtype((datsp <= 2).todense(), dat <= 2)
+            assert_array_equal_dtype((datsp <= 1).todense(), dat <= 1)
+            assert_array_equal_dtype((datsp <= -1).todense(), dat <= -1)
+            assert_array_equal_dtype((datsp <= -2).todense(), dat <= -2)
 
-            assert_array_equal((2 <= datsp).todense(), 2 <= dat)
-            assert_array_equal((1 <= datsp).todense(), 1 <= dat)
-            assert_array_equal((-1 <= datsp).todense(), -1 <= dat)
-            assert_array_equal((-2 <= datsp).todense(), -2 <= dat)
+            assert_array_equal_dtype((2 <= datsp).todense(), 2 <= dat)
+            assert_array_equal_dtype((1 <= datsp).todense(), 1 <= dat)
+            assert_array_equal_dtype((-1 <= datsp).todense(), -1 <= dat)
+            assert_array_equal_dtype((-2 <= datsp).todense(), -2 <= dat)
 
             # data
             dat = self.dat_dtypes[dtype]
@@ -530,7 +543,7 @@ class _TestCommon(object):
             datsp2 = self.spmatrix(dat2)
 
             # dense rhs
-            assert_array_equal(dat <= datsp2, datsp <= dat2)
+            assert_array_equal_dtype(dat <= datsp2, datsp <= dat2)
 
         if not isinstance(self, (TestBSR, TestCSC, TestCSR)):
             pytest.skip("Bool comparisons only implemented for BSR, CSC, and CSR.")
@@ -558,32 +571,32 @@ class _TestCommon(object):
             datlil = lil_matrix(dat)
 
             # sparse/sparse
-            assert_array_equal(dat >= dat2, (datsp >= datsp2).todense())
-            assert_array_equal(datcomplex >= dat2, (datspcomplex >= datsp2).todense())
+            assert_array_equal_dtype(dat >= dat2, (datsp >= datsp2).todense())
+            assert_array_equal_dtype(datcomplex >= dat2,
+                                     (datspcomplex >= datsp2).todense())
             # mix sparse types
-            # mix sparse types
-            assert_array_equal((datbsr >= datsp2).todense(), dat >= dat2)
-            assert_array_equal((datcsc >= datsp2).todense(), dat >= dat2)
-            assert_array_equal((datcsr >= datsp2).todense(), dat >= dat2)
-            assert_array_equal((datlil >= datsp2).todense(), dat >= dat2)
+            assert_array_equal_dtype((datbsr >= datsp2).todense(), dat >= dat2)
+            assert_array_equal_dtype((datcsc >= datsp2).todense(), dat >= dat2)
+            assert_array_equal_dtype((datcsr >= datsp2).todense(), dat >= dat2)
+            assert_array_equal_dtype((datlil >= datsp2).todense(), dat >= dat2)
 
-            assert_array_equal((datsp2 >= datbsr).todense(), dat2 >= dat)
-            assert_array_equal((datsp2 >= datcsc).todense(), dat2 >= dat)
-            assert_array_equal((datsp2 >= datcsr).todense(), dat2 >= dat)
-            assert_array_equal((datsp2 >= datlil).todense(), dat2 >= dat)
+            assert_array_equal_dtype((datsp2 >= datbsr).todense(), dat2 >= dat)
+            assert_array_equal_dtype((datsp2 >= datcsc).todense(), dat2 >= dat)
+            assert_array_equal_dtype((datsp2 >= datcsr).todense(), dat2 >= dat)
+            assert_array_equal_dtype((datsp2 >= datlil).todense(), dat2 >= dat)
             # sparse/dense
-            assert_array_equal(datsp >= dat2, dat >= dat2)
-            assert_array_equal(datspcomplex >= dat2, datcomplex >= dat2)
+            assert_array_equal_dtype(datsp >= dat2, dat >= dat2)
+            assert_array_equal_dtype(datspcomplex >= dat2, datcomplex >= dat2)
             # sparse/scalar
-            assert_array_equal((datsp >= 2).todense(), dat >= 2)
-            assert_array_equal((datsp >= 1).todense(), dat >= 1)
-            assert_array_equal((datsp >= -1).todense(), dat >= -1)
-            assert_array_equal((datsp >= -2).todense(), dat >= -2)
+            assert_array_equal_dtype((datsp >= 2).todense(), dat >= 2)
+            assert_array_equal_dtype((datsp >= 1).todense(), dat >= 1)
+            assert_array_equal_dtype((datsp >= -1).todense(), dat >= -1)
+            assert_array_equal_dtype((datsp >= -2).todense(), dat >= -2)
 
-            assert_array_equal((2 >= datsp).todense(), 2 >= dat)
-            assert_array_equal((1 >= datsp).todense(), 1 >= dat)
-            assert_array_equal((-1 >= datsp).todense(), -1 >= dat)
-            assert_array_equal((-2 >= datsp).todense(), -2 >= dat)
+            assert_array_equal_dtype((2 >= datsp).todense(), 2 >= dat)
+            assert_array_equal_dtype((1 >= datsp).todense(), 1 >= dat)
+            assert_array_equal_dtype((-1 >= datsp).todense(), -1 >= dat)
+            assert_array_equal_dtype((-2 >= datsp).todense(), -2 >= dat)
 
             # dense data
             dat = self.dat_dtypes[dtype]
@@ -593,7 +606,7 @@ class _TestCommon(object):
             datsp2 = self.spmatrix(dat2)
 
             # dense rhs
-            assert_array_equal(dat >= datsp2, datsp >= dat2)
+            assert_array_equal_dtype(dat >= datsp2, datsp >= dat2)
 
         if not isinstance(self, (TestBSR, TestCSC, TestCSR)):
             pytest.skip("Bool comparisons only implemented for BSR, CSC, and CSR.")
@@ -704,7 +717,7 @@ class _TestCommon(object):
                                    x.todense().reshape(s, order=order))
 
         # This example is taken from the stackoverflow answer at
-        # http://stackoverflow.com/questions/16511879
+        # https://stackoverflow.com/q/16511879
         x = self.spmatrix([[0, 10, 0, 0], [0, 0, 0, 0], [0, 20, 30, 40]])
         y = x.reshape((2, 6))  # Default order is 'C'
         desired = [[0, 10, 0, 0, 0, 0], [0, 0, 0, 20, 30, 40]]
@@ -1056,6 +1069,7 @@ class _TestCommon(object):
                 sM = self.spmatrix(M, shape=(3,3), dtype=dtype)
                 sMinv = inv(sM)
             assert_array_almost_equal(sMinv.dot(sM).todense(), np.eye(3))
+            assert_raises(TypeError, inv, M)
         for dtype in [float]:
             check(dtype)
 
@@ -1686,6 +1700,13 @@ class _TestCommon(object):
             c = eval(format + '_matrix')(A)
             assert_equal(c.format,format)
             assert_array_equal(c.todense(), D)
+
+        for format in ['array', 'dense']:
+            a = A.asformat(format)
+            assert_array_equal(a, D)
+
+            b = self.spmatrix(D+3j).asformat(format)
+            assert_array_equal(b, D+3j)
 
     def test_tobsr(self):
         x = array([[1,0,2,0],[0,0,0,0],[0,0,4,5]])
@@ -2337,7 +2358,7 @@ class _TestSlicing(object):
         assert_equal(A[1:-2].todense(),B[1:-2])
 
         # Check bug reported by Robert Cimrman:
-        # http://thread.gmane.org/gmane.comp.python.scientific.devel/7986
+        # http://thread.gmane.org/gmane.comp.python.scientific.devel/7986 (dead link)
         s = slice(int8(2),int8(4),None)
         assert_equal(A[s,:].todense(), B[2:4,:])
         assert_equal(A[:,s].todense(), B[:,2:4])
@@ -2637,7 +2658,7 @@ class _TestFancyIndexing(object):
         assert_equal(A[:,array([-1,-3])][array([2,-4]),:].todense(), B[:,[-1,-3]][[2,-4],:])
 
         # Check bug reported by Robert Cimrman:
-        # http://thread.gmane.org/gmane.comp.python.scientific.devel/7986
+        # http://thread.gmane.org/gmane.comp.python.scientific.devel/7986 (dead link)
         s = slice(int8(2),int8(4),None)
         assert_equal(A[s,:].todense(), B[2:4,:])
         assert_equal(A[:,s].todense(), B[:,2:4])
@@ -4060,6 +4081,17 @@ class TestCOO(sparse_test_class(getset=False,
         y = x.reshape(new_shape, copy=True)
         assert_(not np.may_share_memory(y.data, x.data))
 
+    def test_large_dimensions_reshape(self):
+        # Test that reshape is immune to integer overflow when number of elements
+        # exceeds 2^31-1
+        mat1 = coo_matrix(([1], ([3000000], [1000])), (3000001, 1001))
+        mat2 = coo_matrix(([1], ([1000], [3000000])), (1001, 3000001))
+
+        # assert_array_equal is slow for big matrices because it expects dense
+        # Using __ne__ and nnz instead
+        assert_((mat1.reshape((1001, 3000001), order='C') != mat2).nnz == 0)
+        assert_((mat2.reshape((3000001, 1001), order='F') != mat1).nnz == 0)
+
 
 TestCOO.init_class()
 
@@ -4171,6 +4203,29 @@ class TestBSR(sparse_test_class(getset=False,
         indptr = np.array([0, n], dtype=np.int32)
         indices = np.arange(n, dtype=np.int32)
         bsr_matrix((data, indices, indptr), blocksize=(n, 1), copy=False)
+
+    def test_bsr_tocsr(self):
+        # check native conversion from BSR to CSR
+        indptr = array([0, 2, 2, 4])
+        indices = array([0, 2, 2, 3])
+        data = zeros((4, 2, 3))
+
+        data[0] = array([[0, 1, 2],
+                         [3, 0, 5]])
+        data[1] = array([[0, 2, 4],
+                         [6, 0, 10]])
+        data[2] = array([[0, 4, 8],
+                         [12, 0, 20]])
+        data[3] = array([[0, 5, 10],
+                         [15, 0, 25]])
+
+        A = kron([[1, 0, 2, 0], [0, 0, 0, 0], [0, 0, 4, 5]],
+                 [[0, 1, 2], [3, 0, 5]])
+        Absr = bsr_matrix((data, indices, indptr), shape=(6, 12))
+        Acsr = Absr.tocsr()
+        Acsr_via_coo = Absr.tocoo().tocsr()
+        assert_equal(Acsr.todense(), A)
+        assert_equal(Acsr.todense(), Acsr_via_coo.todense())
 
     def test_eliminate_zeros(self):
         data = kron([1, 0, 0, 0, 2, 0, 3, 0], [[1,1],[1,1]]).T
@@ -4351,10 +4406,6 @@ class _NonCanonicalMixin(object):
     def test_empty(self):
         pass
 
-    @pytest.mark.xfail(run=False, reason='unary ufunc overrides broken with non-canonical matrix')
-    def test_unary_ufunc_overrides(self):
-        pass
-
 
 class _NonCanonicalCompressedMixin(_NonCanonicalMixin):
     def _arg1_for_noncanonical(self, M, sorted_indices=False):
@@ -4477,6 +4528,7 @@ def cases_64bit():
         'test_inv': 'linsolve for 64-bit indices not available',
         'test_solve': 'linsolve for 64-bit indices not available',
         'test_scalar_idx_dtype': 'test implemented in base class',
+        'test_large_dimensions_reshape': 'test actually requires 64-bit to work',
     }
 
     for cls in TEST_CLASSES:
@@ -4489,9 +4541,17 @@ def cases_64bit():
                 msg = SKIP_TESTS.get(method_name)
                 if bool(msg):
                     marks += [pytest.mark.skip(reason=msg)]
-                for mname in ['skipif', 'skip', 'xfail', 'xslow']:
-                    if hasattr(method, mname):
-                        marks += [getattr(method, mname)]
+
+                if LooseVersion(pytest.__version__) >= LooseVersion("3.6.0"):
+                    markers = getattr(method, 'pytestmark', [])
+                    for mark in markers:
+                        if mark.name in ('skipif', 'skip', 'xfail', 'xslow'):
+                            marks.append(mark)
+                else:
+                    for mname in ['skipif', 'skip', 'xfail', 'xslow']:
+                        if hasattr(method, mname):
+                            marks += [getattr(method, mname)]
+
                 yield pytest.param(cls, method_name, marks=marks)
 
 
@@ -4621,4 +4681,3 @@ class Test64Bit(object):
 
         check_limited()
         check_unlimited()
-

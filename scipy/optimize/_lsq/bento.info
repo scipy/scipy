@@ -1,3 +1,0 @@
-Library:
-    Extension: givens_elimination
-        Sources: givens_elimination.c

@@ -18,20 +18,20 @@ References
 .. [1] Momin Jamil and Xin-She Yang, A literature survey of benchmark
     functions for global optimization problems, Int. Journal of Mathematical
     Modelling and Numerical Optimisation, Vol. 4, No. 2, pp. 150--194 (2013).
-    http://arxiv.org/pdf/1308.4008v1.pdf
+    https://arxiv.org/abs/1308.4008v1
     (and references contained within)
-.. [2] http://infinity77.net/global_optimization/index.html
+.. [2] http://infinity77.net/global_optimization/
 .. [3] S. K. Mishra, Global Optimization By Differential Evolution and
     Particle Swarm Methods: Evaluation On Some Benchmark Functions, Munich
     Research Papers in Economics
 .. [4] E. P. Adorio, U. P. Dilman, MVF - Multivariate Test Function Library
     in C for Unconstrained Global Optimization Methods, [Available Online]:
-    http://www.geocities.ws/eadorio/mvf.pdf
+    https://www.geocities.ws/eadorio/mvf.pdf
 .. [5] S. K. Mishra, Some New Test Functions For Global Optimization And
     Performance of Repulsive Particle Swarm Method, [Available Online]:
-    http://mpra.ub.uni-muenchen.de/2718/
+    https://mpra.ub.uni-muenchen.de/2718/
 .. [6] NIST StRD Nonlinear Regression Problems, retrieved on 1 Oct, 2014
-    http://www.itl.nist.gov/div898/strd/nls/nls_main.shtml
+    https://www.itl.nist.gov/div898/strd/nls/nls_main.shtml
 
 """
 

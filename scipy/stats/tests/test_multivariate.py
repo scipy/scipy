@@ -9,6 +9,7 @@ import pickle
 from numpy.testing import (assert_allclose, assert_almost_equal,
                            assert_array_almost_equal, assert_equal,
                            assert_array_less, assert_)
+import pytest
 from pytest import raises as assert_raises
 
 from .test_continuous_basic import check_distribution_rvs
@@ -17,7 +18,7 @@ import numpy
 import numpy as np
 
 import scipy.linalg
-from scipy.stats._multivariate import _PSD, _lnB
+from scipy.stats._multivariate import _PSD, _lnB, _cho_inv_batch
 from scipy.stats import multivariate_normal
 from scipy.stats import matrix_normal
 from scipy.stats import special_ortho_group, ortho_group
@@ -30,6 +31,7 @@ from scipy.stats import ks_2samp, kstest
 from scipy.stats import binom
 
 from scipy.integrate import romb
+from scipy.special import multigammaln
 
 from .common_tests import check_random_state_property
 
@@ -680,6 +682,15 @@ class TestDirichlet(object):
     def test_data_with_zeros(self):
         alpha = np.array([1.0, 2.0, 3.0, 4.0])
         x = np.array([0.1, 0.0, 0.2, 0.7])
+        dirichlet.pdf(x, alpha)
+        dirichlet.logpdf(x, alpha)
+        alpha = np.array([1.0, 1.0, 1.0, 1.0])
+        assert_almost_equal(dirichlet.pdf(x, alpha), 6)
+        assert_almost_equal(dirichlet.logpdf(x, alpha), np.log(6))
+
+    def test_data_with_zeros_and_small_alpha(self):
+        alpha = np.array([1.0, 0.5, 3.0, 4.0])
+        x = np.array([0.1, 0.0, 0.2, 0.7])
         assert_raises(ValueError, dirichlet.pdf, x, alpha)
         assert_raises(ValueError, dirichlet.logpdf, x, alpha)
 
@@ -1029,7 +1040,7 @@ class TestMultinomial(object):
 
         vals3 = multinomial.logpmf([3, 4], 0, [-2, 3])
         assert_allclose(vals3, np.NAN, rtol=1e-8)
-        
+
     def test_reduces_binomial(self):
         # test that the multinomial pmf reduces to the binomial pmf in the 2d
         # case
@@ -1082,7 +1093,7 @@ class TestMultinomial(object):
 
         vals4 = multinomial.pmf([1,2], 4, (.3, .7))
         assert_allclose(vals4, 0, rtol=1e-8)
-        
+
         vals5 = multinomial.pmf([3, 3, 0], 6, [2/3.0, 1/3.0, 0])
         assert_allclose(vals5, 0.219478737997, rtol=1e-8)
 
@@ -1286,6 +1297,47 @@ class TestInvwishart(object):
         assert_allclose(iw_rvs, manual_iw_rvs)
         assert_allclose(frozen_iw_rvs, manual_iw_rvs)
 
+    def test_cho_inv_batch(self):
+        """Regression test for gh-8844."""
+        a0 = np.array([[2, 1, 0, 0.5],
+                       [1, 2, 0.5, 0.5],
+                       [0, 0.5, 3, 1],
+                       [0.5, 0.5, 1, 2]])
+        a1 = np.array([[2, -1, 0, 0.5],
+                       [-1, 2, 0.5, 0.5],
+                       [0, 0.5, 3, 1],
+                       [0.5, 0.5, 1, 4]])
+        a = np.array([a0, a1])
+        ainv = a.copy()
+        _cho_inv_batch(ainv)
+        ident = np.eye(4)
+        assert_allclose(a[0].dot(ainv[0]), ident, atol=1e-15)
+        assert_allclose(a[1].dot(ainv[1]), ident, atol=1e-15)
+
+    def test_logpdf_4x4(self):
+        """Regression test for gh-8844."""
+        X = np.array([[2, 1, 0, 0.5],
+                      [1, 2, 0.5, 0.5],
+                      [0, 0.5, 3, 1],
+                      [0.5, 0.5, 1, 2]])
+        Psi = np.array([[9, 7, 3, 1],
+                        [7, 9, 5, 1],
+                        [3, 5, 8, 2],
+                        [1, 1, 2, 9]])
+        nu = 6
+        prob = invwishart.logpdf(X, nu, Psi)
+        # Explicit calculation from the formula on wikipedia.
+        p = X.shape[0]
+        sig, logdetX = np.linalg.slogdet(X)
+        sig, logdetPsi = np.linalg.slogdet(Psi)
+        M = np.linalg.solve(X, Psi)
+        expected = ((nu/2)*logdetPsi
+                    - (nu*p/2)*np.log(2)
+                    - multigammaln(nu/2, p)
+                    - (nu + p + 1)/2*logdetX
+                    - 0.5*M.trace())
+        assert_allclose(prob, expected)
+
 
 class TestSpecialOrthoGroup(object):
     def test_reproducibility(self):
@@ -1387,8 +1439,8 @@ class TestOrthoGroup(object):
         # Test that we get both positive and negative determinants
         # Check that we have at least one and less than 10 negative dets in a sample of 10. The rest are positive by the previous test.
         # Test each dimension separately
-        assert_array_less([0]*10, [np.where(d < 0)[0].shape[0] for d in dets])
-        assert_array_less([np.where(d < 0)[0].shape[0] for d in dets], [10]*10)
+        assert_array_less([0]*10, [np.nonzero(d < 0)[0].shape[0] for d in dets])
+        assert_array_less([np.nonzero(d < 0)[0].shape[0] for d in dets], [10]*10)
 
         # Test that these are orthogonal matrices
         for xx in xs:
@@ -1423,6 +1475,7 @@ class TestOrthoGroup(object):
         ks_tests = [ks_2samp(proj[p0], proj[p1])[1] for (p0, p1) in pairs]
         assert_array_less([ks_prob]*len(pairs), ks_tests)
 
+    @pytest.mark.slow
     def test_pairwise_distances(self):
         # Test that the distribution of pairwise distances is close to correct.
         np.random.seed(514)

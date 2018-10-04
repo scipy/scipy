@@ -276,7 +276,7 @@ class Akima1DInterpolator(PPoly):
 
     def __init__(self, x, y, axis=0):
         # Original implementation in MATLAB by N. Shamsundar (BSD licensed), see
-        # http://www.mathworks.de/matlabcentral/fileexchange/1814-akima-interpolation
+        # https://www.mathworks.com/matlabcentral/fileexchange/1814-akima-interpolation
         x, y = map(np.asarray, (x, y))
         axis = axis % y.ndim
 
@@ -620,8 +620,8 @@ class CubicSpline(PPoly):
 
                 # Also, due to the periodicity, the system is not tri-diagonal.
                 # We need to compute a "condensed" matrix of shape (n-2, n-2).
-                # See http://www.cfm.brown.edu/people/gk/chap6/node14.html for
-                # more explanations.
+                # See https://web.archive.org/web/20151220180652/http://www.cfm.brown.edu/people/gk/chap6/node14.html
+                # for more explanations.
                 # The condensed matrix is obtained by removing the last column
                 # and last row of the (n-1, n-1) system matrix. The removed
                 # values are saved in scalar variables with the (n-1, n-1)

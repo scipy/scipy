@@ -70,8 +70,6 @@ import warnings
 from hashlib import md5
 from hashlib import sha256
 
-import distutils
-
 try:
     from paver.tasks import VERSION as _PVER
     if not _PVER >= '1.0':
@@ -115,10 +113,10 @@ except AttributeError:
 #-----------------------------------
 
 # Source of the release notes
-RELEASE = 'doc/release/1.1.0-notes.rst'
+RELEASE = 'doc/release/1.2.0-notes.rst'
 
 # Start/end of the log (from git)
-LOG_START = 'v1.0.0'
+LOG_START = 'v1.1.0'
 LOG_END = 'master'
 
 
@@ -564,7 +562,7 @@ def _build_mpkg(pyver):
 def dmg():
     try:
         pyver = options.dmg.python_version
-    except:
+    except Exception:
         pyver = PYVER
     idirs = options.installers.installersdir
 

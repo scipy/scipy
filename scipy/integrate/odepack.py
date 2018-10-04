@@ -3,9 +3,11 @@ from __future__ import division, print_function, absolute_import
 
 __all__ = ['odeint']
 
+import numpy as np
 from . import _odepack
 from copy import copy
 import warnings
+
 
 class ODEintWarning(Warning):
     pass
@@ -61,6 +63,8 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
     t : array
         A sequence of time points for which to solve for y.  The initial
         value point should be the first element of this sequence.
+        This sequence must be monotonically increasing or monotonically
+        decreasing; repeated values are allowed.
     args : tuple, optional
         Extra arguments to pass to function.
     Dfun : callable(y, t, ...) or callable(t, y, ...)
@@ -225,6 +229,13 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
         ml = -1  # changed to zero inside function call
     if mu is None:
         mu = -1  # changed to zero inside function call
+
+    dt = np.diff(t)
+    if not((dt >= 0).all() or (dt <= 0).all()):
+        raise ValueError("The values in t must be monotonically increasing "
+                         "or monotonically decreasing; repeated values are "
+                         "allowed.")
+
     t = copy(t)
     y0 = copy(y0)
     output = _odepack.odeint(func, y0, t, args, Dfun, col_deriv, ml, mu,

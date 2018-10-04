@@ -108,8 +108,8 @@ def iterate_structure(structure, iterations, origin=None):
     ni = iterations - 1
     shape = [ii + ni * (ii - 1) for ii in structure.shape]
     pos = [ni * (structure.shape[ii] // 2) for ii in range(len(shape))]
-    slc = [slice(pos[ii], pos[ii] + structure.shape[ii], None)
-           for ii in range(len(shape))]
+    slc = tuple(slice(pos[ii], pos[ii] + structure.shape[ii], None)
+                for ii in range(len(shape)))
     out = numpy.zeros(shape, bool)
     out[slc] = structure != 0
     out = binary_dilation(out, structure, iterations=ni)
@@ -337,8 +337,8 @@ def binary_erosion(input, structure=None, iterations=1, mask=None, output=None,
 
     References
     ----------
-    .. [1] http://en.wikipedia.org/wiki/Erosion_%28morphology%29
-    .. [2] http://en.wikipedia.org/wiki/Mathematical_morphology
+    .. [1] https://en.wikipedia.org/wiki/Erosion_%28morphology%29
+    .. [2] https://en.wikipedia.org/wiki/Mathematical_morphology
 
     Examples
     --------
@@ -432,8 +432,8 @@ def binary_dilation(input, structure=None, iterations=1, mask=None,
 
     References
     ----------
-    .. [1] http://en.wikipedia.org/wiki/Dilation_%28morphology%29
-    .. [2] http://en.wikipedia.org/wiki/Mathematical_morphology
+    .. [1] https://en.wikipedia.org/wiki/Dilation_%28morphology%29
+    .. [2] https://en.wikipedia.org/wiki/Mathematical_morphology
 
     Examples
     --------
@@ -576,8 +576,8 @@ def binary_opening(input, structure=None, iterations=1, output=None,
 
     References
     ----------
-    .. [1] http://en.wikipedia.org/wiki/Opening_%28morphology%29
-    .. [2] http://en.wikipedia.org/wiki/Mathematical_morphology
+    .. [1] https://en.wikipedia.org/wiki/Opening_%28morphology%29
+    .. [2] https://en.wikipedia.org/wiki/Mathematical_morphology
 
     Examples
     --------
@@ -699,8 +699,8 @@ def binary_closing(input, structure=None, iterations=1, output=None,
 
     References
     ----------
-    .. [1] http://en.wikipedia.org/wiki/Closing_%28morphology%29
-    .. [2] http://en.wikipedia.org/wiki/Mathematical_morphology
+    .. [1] https://en.wikipedia.org/wiki/Closing_%28morphology%29
+    .. [2] https://en.wikipedia.org/wiki/Mathematical_morphology
 
     Examples
     --------
@@ -819,7 +819,7 @@ def binary_hit_or_miss(input, structure1=None, structure2=None,
 
     References
     ----------
-    .. [1] http://en.wikipedia.org/wiki/Hit-or-miss_transform
+    .. [1] https://en.wikipedia.org/wiki/Hit-or-miss_transform
 
     Examples
     --------
@@ -1057,7 +1057,7 @@ def binary_fill_holes(input, structure=None, output=None, origin=0):
 
     References
     ----------
-    .. [1] http://en.wikipedia.org/wiki/Mathematical_morphology
+    .. [1] https://en.wikipedia.org/wiki/Mathematical_morphology
 
 
     Examples
@@ -1162,8 +1162,8 @@ def grey_erosion(input, size=None, footprint=None, structure=None,
 
     References
     ----------
-    .. [1] http://en.wikipedia.org/wiki/Erosion_%28morphology%29
-    .. [2] http://en.wikipedia.org/wiki/Mathematical_morphology
+    .. [1] https://en.wikipedia.org/wiki/Erosion_%28morphology%29
+    .. [2] https://en.wikipedia.org/wiki/Mathematical_morphology
 
     Examples
     --------
@@ -1272,8 +1272,8 @@ def grey_dilation(input, size=None, footprint=None, structure=None,
 
     References
     ----------
-    .. [1] http://en.wikipedia.org/wiki/Dilation_%28morphology%29
-    .. [2] http://en.wikipedia.org/wiki/Mathematical_morphology
+    .. [1] https://en.wikipedia.org/wiki/Dilation_%28morphology%29
+    .. [2] https://en.wikipedia.org/wiki/Mathematical_morphology
 
     Examples
     --------
@@ -1409,7 +1409,7 @@ def grey_opening(input, size=None, footprint=None, structure=None,
 
     References
     ----------
-    .. [1] http://en.wikipedia.org/wiki/Mathematical_morphology
+    .. [1] https://en.wikipedia.org/wiki/Mathematical_morphology
 
     Examples
     --------
@@ -1492,7 +1492,7 @@ def grey_closing(input, size=None, footprint=None, structure=None,
 
     References
     ----------
-    .. [1] http://en.wikipedia.org/wiki/Mathematical_morphology
+    .. [1] https://en.wikipedia.org/wiki/Mathematical_morphology
 
     Examples
     --------
@@ -1579,7 +1579,7 @@ def morphological_gradient(input, size=None, footprint=None, structure=None,
 
     References
     ----------
-    .. [1] http://en.wikipedia.org/wiki/Mathematical_morphology
+    .. [1] https://en.wikipedia.org/wiki/Mathematical_morphology
 
     Examples
     --------
@@ -1992,7 +1992,7 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
     else:
         try:
             metric = numpy.asarray(metric)
-        except:
+        except Exception:
             raise RuntimeError('invalid metric provided')
         for s in metric.shape:
             if s != 3:

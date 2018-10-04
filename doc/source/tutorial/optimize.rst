@@ -392,7 +392,7 @@ Hessian product example:
 .. [GLTR]  N. Gould, S. Lucidi, M. Roma, P. Toint: "Solving the
            Trust-Region Subproblem using the Lanczos Method",
            SIAM J. Optim., 9(2), 504--525, (1999).
-           http://epubs.siam.org/doi/abs/10.1137/S1052623497322735
+           https://doi.org/10.1137/S1052623497322735
 
 
 Trust-Region Nearly Exact Algorithm (``method='trust-exact'``)
@@ -676,7 +676,7 @@ Both linear and nonlinear constraints are defined as dictionaries with keys ``ty
     ...              'fun' : lambda x: np.array([1 - x[0] - 2*x[1],
     ...                                          1 - x[0]**2 - x[1],
     ...                                          1 - x[0]**2 + x[1]]),
-    ...              'jac' : lambda x: np.array([[1.0, 2.0],
+    ...              'jac' : lambda x: np.array([[-1.0, -2.0],
     ...                                          [-2*x[0], -1.0],
     ...                                          [-2*x[0], 1.0]])}
     >>> eq_cons = {'type': 'eq',
@@ -697,7 +697,7 @@ And the optimization problem is solved with:
                 Function evaluations: 6
                 Gradient evaluations: 5
     >>> print(res.x)
-    [0.41494418 0.17011164]
+    [0.41494475 0.1701105 ]
 
 Most of the options available for the method ``'trust-constr'`` are not available
 for ``'SLSQP'``.
@@ -818,13 +818,13 @@ Further examples
 Three interactive examples below illustrate usage of :func:`least_squares` in
 greater detail.
 
-1. `Large-scale bundle adjustment in scipy <http://scipy-cookbook.readthedocs.org/items/bundle_adjustment.html>`_
+1. `Large-scale bundle adjustment in scipy <https://scipy-cookbook.readthedocs.io/items/bundle_adjustment.html>`_
    demonstrates large-scale capabilities of :func:`least_squares` and how to
    efficiently compute finite difference approximation of sparse Jacobian.
-2. `Robust nonlinear regression in scipy <http://scipy-cookbook.readthedocs.org/items/robust_regression.html>`_
+2. `Robust nonlinear regression in scipy <https://scipy-cookbook.readthedocs.io/items/robust_regression.html>`_
    shows how to handle outliers with a robust loss function in a nonlinear
    regression.
-3. `Solving a discrete boundary-value problem in scipy <http://scipy-cookbook.readthedocs.org/items/discrete_bvp.html>`_
+3. `Solving a discrete boundary-value problem in scipy <https://scipy-cookbook.readthedocs.io/items/discrete_bvp.html>`_
    examines how to solve a large system of equations and use bounds to achieve
    desired properties of the solution.
 
@@ -1232,8 +1232,8 @@ Some further reading and related software:
 .. [KK] D.A. Knoll and D.E. Keyes, "Jacobian-free Newton-Krylov methods",
         J. Comp. Phys. 193, 357 (2004). doi:10.1016/j.jcp.2003.08.010
 
-.. [PP] PETSc http://www.mcs.anl.gov/petsc/ and its Python bindings
-        http://code.google.com/p/petsc4py/
+.. [PP] PETSc https://www.mcs.anl.gov/petsc/ and its Python bindings
+        https://bitbucket.org/petsc/petsc4py/
 
 .. [AMG] PyAMG (algebraic multigrid preconditioners/solvers)
-         http://code.google.com/p/pyamg/
+         https://github.com/pyamg/pyamg/issues
