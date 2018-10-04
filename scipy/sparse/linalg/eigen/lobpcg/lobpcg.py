@@ -31,8 +31,8 @@ def save(ar, fileName):
     savetxt(fileName, ar, precision=8)
 
 
-def _assert_symmetric(M, rtol=1e-5, atol=1e-8):
-    assert_allclose(M.T.conj(), M, rtol=rtol, atol=atol)
+# def _assert_symmetric(M, rtol=1e-5, atol=1e-8):
+#     assert_allclose(M.T.conj(), M, rtol=rtol, atol=atol)
 
 
 ##
@@ -482,8 +482,8 @@ def lobpcg(A, X,
             gramB = np.bmat([[ident0, xbw],
                               [xbw.T.conj(), ident]])
 
-        _assert_symmetric(gramA)
-        _assert_symmetric(gramB)
+        # _assert_symmetric(gramA)
+        # _assert_symmetric(gramB)
 
         if verbosityLevel > 10:
             save(gramA, 'gramA')
