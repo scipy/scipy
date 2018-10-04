@@ -312,10 +312,14 @@ class TestCephes(object):
         assert_equal(cephes.ellipkinc(0,0),0.0)
 
     def test_erf(self):
-        assert_equal(cephes.erf(0),0.0)
+        assert_equal(cephes.erf(0), 0.0)
+
+    def test_erf_symmetry(self):
+        x = 5.905732037710919
+        assert_equal(cephes.erf(x) + cephes.erf(-x), 0.0)
 
     def test_erfc(self):
-        assert_equal(cephes.erfc(0),1.0)
+        assert_equal(cephes.erfc(0), 1.0)
 
     def test_exp1(self):
         cephes.exp1(1)
