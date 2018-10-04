@@ -47,7 +47,7 @@ def compare_solutions(A,B,m):
     V = rand(n,m)
     X = linalg.orth(V)
 
-    eigs,vecs = lobpcg(A, X, B=B, tol=1e-5, maxiter=30)
+    eigs,vecs = lobpcg(A, X, B=B, tol=1e-5, maxiter=30, largest=False)
     eigs.sort()
 
     w,v = eig(A,b=B)
@@ -216,7 +216,7 @@ def test_hermitian():
         else:
             B = np.random.rand(size, size) + 1.j * np.random.rand(size, size)
             B = 10 * np.eye(size) + B.dot(B.T.conj())
-            w, v = lobpcg(H, X, B, maxiter=5000)
+            w, v = lobpcg(H, X, B, maxiter=5000, largest=False)
             w0, v0 = eigh(H, B)
 
         for wx, vx in zip(w, v.T):
