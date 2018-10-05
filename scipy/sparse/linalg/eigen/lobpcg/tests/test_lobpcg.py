@@ -6,7 +6,7 @@ import itertools
 
 import numpy as np
 from numpy.testing import (assert_almost_equal, assert_equal,
-        assert_allclose, assert_array_less, assert_)
+        assert_allclose, assert_array_less)
 
 from scipy import ones, rand, r_, diag, linalg, eye
 from scipy.linalg import eig, eigh, toeplitz
@@ -222,7 +222,8 @@ def test_hermitian():
 
         for wx, vx in zip(w, v.T):
             # Check eigenvector
-            assert_allclose(np.linalg.norm(H.dot(vx) - B.dot(vx) * wx) / np.linalg.norm(H.dot(vx)),
+            assert_allclose(np.linalg.norm(H.dot(vx) - B.dot(vx) * wx)
+                            / np.linalg.norm(H.dot(vx)),
                             0, atol=5e-4, rtol=0)
 
             # Compare eigenvalues
