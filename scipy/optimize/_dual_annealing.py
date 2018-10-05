@@ -208,7 +208,7 @@ class MarkovChain(object):
         pqv_temp = (self.acceptance_param - 1.0) * (
             e - self.energy_state.current_energy) / (
                 self.temperature_step + 1.)
-        if pqv_temp < 0.:
+        if pqv_temp <= 0.:
             pqv = 0.
         else:
             pqv = np.exp(np.log(pqv_temp) / (
