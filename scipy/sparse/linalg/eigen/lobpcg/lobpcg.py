@@ -106,7 +106,7 @@ def _get_indx(_lambda, num, largest):
     """Get `num` indices into `_lambda` depending on `largest` option."""
     ii = np.argsort(_lambda)
     if largest:
-        ii = ii[-num:]
+        ii = ii[:-num-1:-1]
     else:
         ii = ii[:num]
 
@@ -308,7 +308,14 @@ def lobpcg(A, X,
 
         A_dense = A(np.eye(n))
         B_dense = None if B is None else B(np.eye(n))
-        return eigh(A_dense, B_dense, eigvals=eigvals, check_finite=False)
+
+        vals, vecs = eigh(A_dense, B_dense, eigvals=eigvals, check_finite=False)
+        if largest:
+            # Reverse order to be compatible with eigs() in 'LM' mode.
+            vals = vals[::-1]
+            vecs = vecs[:, ::-1]
+
+        return vals, vecs
 
     if residualTolerance is None:
         residualTolerance = np.sqrt(1e-15) * n
