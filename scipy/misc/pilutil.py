@@ -509,7 +509,7 @@ def imshow(arr):
 
 @numpy.deprecate(message="`imresize` is deprecated in SciPy 1.0.0, "
                          "and will be removed in 1.3.0.\n"
-                         "Use Pillow instead: ``numpy.array(Image.fromarray(arr).imresize())``.")
+                         "Use Pillow instead: ``numpy.array(Image.fromarray(arr).resize())``.")
 def imresize(arr, size, interp='bilinear', mode=None):
     """
     Resize an image.
