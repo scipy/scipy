@@ -9,7 +9,7 @@ import scipy as sp
 import scipy.sparse as sps
 from warnings import warn
 from scipy.linalg import LinAlgError
-from .optimize import OptimizeResult, OptimizeWarning, _check_unknown_options
+from .optimize import OptimizeWarning, _check_unknown_options
 
 
 def _get_solver(sparse=False, lstsq=False, sym_pos=True, cholesky=True):
@@ -371,8 +371,7 @@ def _get_message(status):
          1 : Iteration limit reached
          2 : Problem appears to be infeasible
          3 : Problem appears to be unbounded
-         4 : Serious numerical difficulties which could not resolved using
-             a more robust, albeit less efficient, solver encountered
+         4 : Serious numerical difficulties encountered
 
     Returns
     -------
@@ -539,10 +538,14 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol,
     r"""
     Solve a linear programming problem in standard form:
 
-    minimize:     c'^T * x'
+    Minimize::
 
-    subject to:   A * x' == b
-                  0 < x' < oo
+        c @ x
+
+    Subject to::
+
+        A @ x == b
+            x >= 0
 
     using the interior point method of [4].
 
@@ -622,8 +625,7 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol,
          1 : Iteration limit reached
          2 : Problem appears to be infeasible
          3 : Problem appears to be unbounded
-         4 : Serious numerical difficulties, that could not be resolved
-             using a more robust solver encountered
+         4 : Serious numerical difficulties encountered
 
     message : str
         A string descriptor of the exit status of the optimization.
@@ -775,15 +777,18 @@ def _linprog_ip(
         **unknown_options):
     r"""
     Minimize a linear objective function subject to linear
-    equality constraints, linear inequality constraints, and simple bounds
-    using the interior point method of [4]_.
+    equality and non-negativity constraints using the interior point method
+    of [4]_. Linear programming is intended to solve problems
+    of the following form:
 
-    Linear programming is intended to solve problems of the following form::
+    Minimize::
 
-        Minimize:     c^T * x
+        c @ x
 
-        Subject to:      A * x == b
-                         0 <= x < oo
+    Subject to::
+
+        A @ x == b
+            x >= 0
 
     Parameters
     ----------
@@ -872,8 +877,7 @@ def _linprog_ip(
          1 : Iteration limit reached
          2 : Problem appears to be infeasible
          3 : Problem appears to be unbounded
-         4 : Serious numerical difficulties not resolved using a more robust,
-             yet less efficient, solver encountered
+         4 : Serious numerical difficulties encountered
 
     message : str
         A string descriptor of the exit status of the optimization.
@@ -882,7 +886,6 @@ def _linprog_ip(
 
     Notes
     -----
-
     This method implements the algorithm outlined in [4]_ with ideas from [8]_
     and a structure inspired by the simpler methods of [6]_ and [4]_.
 
@@ -955,12 +958,42 @@ def _linprog_ip(
     unboundedness, or infeasibility is detected, the solve procedure
     terminates; otherwise it repeats.
 
-    If optimality is achieved, a postsolve procedure undoes transformations
-    associated with presolve and converting to standard form. It then
-    calculates the residuals (equality constraint violations, which should
-    be very small) and slacks (difference between the left and right hand
-    sides of the upper bound constraints) of the original problem, which are
-    returned with the solution in an ``OptimizeResult`` object.
+    The expected problem formulation differs between the top level ``linprog``
+    module and the method specific solvers. The method specific solvers expect a
+    problem in standard form:
+
+    Minimize::
+
+        c @ x
+
+    Subject to::
+
+        A @ x == b
+            x >= 0
+
+    Whereas the top level ``linprog`` module expects a problem of form:
+
+    Minimize::
+
+        c @ x
+
+    Subject to::
+
+        A_ub @ x <= b_ub
+        A_eq @ x == b_eq
+         lb <= x <= ub
+
+    where ``lb = 0`` and ``ub = None`` unless set in ``bounds``.
+
+    The original problem contains equality, upper-bound and variable constraints
+    whereas the method specific solver requires equality constraints and
+    variable non-negativity.
+
+    ``linprog`` module converts the original problem to standard form by
+    converting the simple bounds to upper bound constraints, introducing
+    non-negative slack variables for inequality constraints, and expressing
+    unbounded variables as the difference between two non-negative variables.
+
 
     References
     ----------

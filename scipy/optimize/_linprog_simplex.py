@@ -18,7 +18,7 @@ def _pivot_col(T, tol=1.0E-12, bland=False):
         The simplex tableau.
     tol : float
         Elements in the objective row larger than -tol will not be considered
-        for pivoting.  Nominally this value is zero, but numerical issues
+        for pivoting. Nominally this value is zero, but numerical issues
         cause a tolerance about zero to be necessary.
     bland : bool
         If True, use Bland's rule for selection of the column (select the
@@ -60,7 +60,7 @@ def _pivot_row(T, basis, pivcol, phase, tol=1.0E-12, bland=False):
         The phase of the simplex algorithm (1 or 2).
     tol : float
         Elements in the pivot column smaller than tol will not be considered
-        for pivoting.  Nominally this value is zero, but numerical issues
+        for pivoting. Nominally this value is zero, but numerical issues
         cause a tolerance about zero to be necessary.
     bland : bool
         If True, use Bland's rule for selection of the row (if more than one
@@ -69,10 +69,10 @@ def _pivot_row(T, basis, pivcol, phase, tol=1.0E-12, bland=False):
     Returns
     -------
     status: bool
-        True if a suitable pivot row was found, otherwise False.  A return
+        True if a suitable pivot row was found, otherwise False. A return
         of False indicates that the linear programming problem is unbounded.
     row: int
-        The index of the row of the pivot element.  If status is False, row
+        The index of the row of the pivot element. If status is False, row
         will be returned as nan.
     """
     if phase == 1:
@@ -133,24 +133,23 @@ def _apply_pivot(T, basis, pivrow, pivcol, tol=1e-12):
 def _solve_simplex(T, n, basis, maxiter=1000, phase=2, status=0, message='',
                    callback=None, tol=1.0E-12, nit0=0, bland=False, _T_o=None):
     """
-    Solve a linear programming problem in "standard maximization form" using
-    the Simplex Method.
+    Solve a linear programming problem in "standard form" using the Simplex
+    Method. Linear Programming is intended to solve the following problem form:
 
-    Minimize :math:`f = c^T x`
+    Minimize::
 
-    subject to
+        c @ x
 
-    .. math::
+    Subject to::
 
-        Ax = b
-        x_i >= 0
-        b_j >= 0
+        A @ x == b
+            x >= 0
 
     Parameters
     ----------
     T : 2D array
-        A 2D array representing the simplex T corresponding to the
-        maximization problem.  It should have the form:
+        A 2D array representing the simplex tableau, T, corresponding to the
+        linear programming problem. It should have the form:
 
         [[A[0, 0], A[0, 1], ..., A[0, n_total], b[0]],
          [A[1, 0], A[1, 1], ..., A[1, n_total], b[1]],
@@ -172,8 +171,8 @@ def _solve_simplex(T, n, basis, maxiter=1000, phase=2, status=0, message='',
          [c'[0],  c'[1], ...,  c'[n_total],  0]]
 
          for a Phase 1 problem (a Problem in which a basic feasible solution is
-         sought prior to maximizing the actual objective.  T is modified in
-         place by _solve_simplex.
+         sought prior to maximizing the actual objective. ``T`` is modified in
+         place by ``_solve_simplex``.
     n : int
         The number of true variables in the problem.
     basis : 1D array
@@ -187,16 +186,42 @@ def _solve_simplex(T, n, basis, maxiter=1000, phase=2, status=0, message='',
         The phase of the optimization being executed. In phase 1 a basic
         feasible solution is sought and the T has an additional row
         representing an alternate objective function.
-    callback : callable, optional
+    callback : callable, optional (simplex only)
         If a callback function is provided, it will be called within each
-        iteration of the simplex algorithm. The callback must have the
-        signature `callback(xk, **kwargs)` where xk is the current solution
-        vector and kwargs is a dictionary containing the following::
-        "T" : The current Simplex algorithm T
-        "nit" : The current iteration.
-        "pivot" : The pivot (row, column) used for the next iteration.
-        "phase" : Whether the algorithm is in Phase 1 or Phase 2.
-        "basis" : The indices of the columns of the basic variables.
+        iteration of the simplex algorithm. The callback must require a
+        `scipy.optimize.OptimizeResult` consisting of the following fields:
+
+            x : 1D array
+                The independent variable vector which optimizes the linear
+                programming problem.
+            fun : float
+                Value of the objective function.
+            success : bool
+                True if the algorithm succeeded in finding an optimal solution.
+            slack : 1D array
+                The values of the slack variables. Each slack variable
+                corresponds to an inequality constraint. If the slack is zero,
+                the corresponding constraint is active.
+            con : 1D array
+                The (nominally zero) residuals of the equality constraints,
+                that is, ``b - A_eq @ x``
+            phase : int
+                The phase of the optimization being executed. In phase 1 a basic
+                feasible solution is sought and the T has an additional row
+                representing an alternate objective function.
+            status : int
+                An integer representing the exit status of the optimization::
+
+                     0 : Optimization terminated successfully
+                     1 : Iteration limit reached
+                     2 : Problem appears to be infeasible
+                     3 : Problem appears to be unbounded
+                     4 : Serious numerical difficulties encountered
+
+            nit : int
+                The number of iterations performed.
+            message : str
+                A string descriptor of the exit status of the optimization.
     tol : float
         The tolerance which determines when a solution is "close enough" to
         zero in Phase 1 to be considered a basic feasible solution or close
@@ -205,7 +230,7 @@ def _solve_simplex(T, n, basis, maxiter=1000, phase=2, status=0, message='',
         The initial iteration number used to keep an accurate iteration total
         in a two-phase problem.
     bland : bool
-        If True, choose pivots using Bland's rule [3].  In problems which
+        If True, choose pivots using Bland's rule [3]_. In problems which
         fail to converge due to cycling, using Bland's rule can provide
         convergence at the expense of a less optimal path about the simplex.
 
@@ -213,7 +238,7 @@ def _solve_simplex(T, n, basis, maxiter=1000, phase=2, status=0, message='',
     -------
     nit : int
         The number of iterations. Used to keep an accurate iteration total
-        in a two-phase problem.
+        in the two-phase problem.
     status : int
         An integer representing the exit status of the optimization::
 
@@ -221,8 +246,7 @@ def _solve_simplex(T, n, basis, maxiter=1000, phase=2, status=0, message='',
          1 : Iteration limit reached
          2 : Problem appears to be infeasible
          3 : Problem appears to be unbounded
-         4 : Serious numerical difficulties which could not resolved using
-             a more robust, albeit less efficient, solver encountered
+         4 : Serious numerical difficulties encountered
 
     """
     nit = nit0
@@ -309,13 +333,18 @@ def _solve_simplex(T, n, basis, maxiter=1000, phase=2, status=0, message='',
 def _linprog_simplex(c, c0, A, b, maxiter=1000, disp=False, callback=None,
                      tol=1.0E-12, bland=False, _T_o=None, **unknown_options):
     """
-    Solve the following linear programming problem via a two-phase
-    simplex algorithm.::
+    Minimize a linear objective function subject to linear equality and
+    non-negativity constraints using the two phase simplex method.
+    Linear programming is intended to solve problems of the following form:
 
-        minimize:     c^T * x
+    Minimize::
 
-        subject to:  A * x == b
-                    0 <= x < oo
+        c @ x
+
+    Subject to::
+
+        A @ x == b
+            x >= 0
 
     Parameters
     ----------
@@ -343,9 +372,12 @@ def _linprog_simplex(c, c0, A, b, maxiter=1000, disp=False, callback=None,
             success : bool
                 True if the algorithm succeeded in finding an optimal solution.
             slack : 1D array
-                The values of the slack variables.  Each slack variable
+                The values of the slack variables. Each slack variable
                 corresponds to an inequality constraint. If the slack is zero,
                 the corresponding constraint is active.
+            con : 1D array
+                The (nominally zero) residuals of the equality constraints, that
+                is, ``b - A_eq @ x``
             phase : int
                 The phase of the optimization being executed. In phase 1 a basic
                 feasible solution is sought and the T has an additional row
@@ -357,9 +389,7 @@ def _linprog_simplex(c, c0, A, b, maxiter=1000, disp=False, callback=None,
                      1 : Iteration limit reached
                      2 : Problem appears to be infeasible
                      3 : Problem appears to be unbounded
-                     4 : Serious numerical difficulties which could not resolved
-                         using a more robust, albeit less efficient, solver
-                         encountered
+                     4 : Serious numerical difficulties encountered
 
             nit : int
                 The number of iterations performed.
@@ -376,9 +406,9 @@ def _linprog_simplex(c, c0, A, b, maxiter=1000, disp=False, callback=None,
         zero in Phase 1 to be considered a basic feasible solution or close
         enough to positive to serve as an optimal solution.
     bland : bool
-        If True, use Bland's anti-cycling rule [3] to choose pivots to
-        prevent cycling.  If False, choose pivots which should lead to a
-        converged solution more quickly.  The latter method is subject to
+        If True, use Bland's anti-cycling rule [3]_ to choose pivots to
+        prevent cycling. If False, choose pivots which should lead to a
+        converged solution more quickly. The latter method is subject to
         cycling (non-convergence) in rare instances.
 
     Returns
@@ -392,52 +422,12 @@ def _linprog_simplex(c, c0, A, b, maxiter=1000, disp=False, callback=None,
          1 : Iteration limit reached
          2 : Problem appears to be infeasible
          3 : Problem appears to be unbounded
-         4 : Serious numerical difficulties which could not resolved using
-             a more robust, albeit less efficient, solver encountered
+         4 : Serious numerical difficulties encountered
 
     message : str
         A string descriptor of the exit status of the optimization.
     iteration : int
         The number of iterations taken to solve the problem.
-
-    Examples
-    --------
-    Consider the following problem:
-
-    Minimize: f = -1*x[0] + 4*x[1]
-
-    Subject to: -3*x[0] + 1*x[1] <= 6
-                 1*x[0] + 2*x[1] <= 4
-                            x[1] >= -3
-
-    where:  -inf <= x[0] <= inf
-
-    This problem deviates from the standard linear programming problem.  In
-    standard form, linear programming problems assume the variables x are
-    non-negative.  Since the variables don't have standard bounds where
-    0 <= x <= inf, the bounds of the variables must be explicitly set.
-
-    There are two upper-bound constraints, which can be expressed as
-
-    dot(A_ub, x) <= b_ub
-
-    The input for this problem is as follows:
-
-    >>> from scipy.optimize import linprog
-    >>> c = [-1, 4]
-    >>> A = [[-3, 1], [1, 2]]
-    >>> b = [6, 4]
-    >>> x0_bnds = (None, None)
-    >>> x1_bnds = (-3, None)
-    >>> res = linprog(c, A, b, bounds=(x0_bnds, x1_bnds))
-    >>> print(res)
-         fun: -22.0
-     message: 'Optimization terminated successfully.'
-         nit: 1
-       slack: array([ 39.,   0.])
-      status: 0
-     success: True
-           x: array([ 10.,  -3.])
 
     References
     ----------
@@ -448,6 +438,45 @@ def _linprog_simplex(c, c0, A, b, maxiter=1000, disp=False, callback=None,
            Mathematical Programming", McGraw-Hill, Chapter 4.
     .. [3] Bland, Robert G. New finite pivoting rules for the simplex method.
            Mathematics of Operations Research (2), 1977: pp. 103-107.
+
+
+    Notes
+    -----
+    The expected problem formulation differs between the top level ``linprog``
+    module and the method specific solvers. The method specific solvers expect a
+    problem in standard form:
+
+    Minimize::
+
+        c @ x
+
+    Subject to::
+
+        A @ x == b
+            x >= 0
+
+    Whereas the top level ``linprog`` module expects a problem of form:
+
+    Minimize::
+
+        c @ x
+
+    Subject to::
+
+        A_ub @ x <= b_ub
+        A_eq @ x == b_eq
+         lb <= x <= ub
+
+    where ``lb = 0`` and ``ub = None`` unless set in ``bounds``.
+
+    The original problem contains equality, upper-bound and variable constraints
+    whereas the method specific solver requires equality constraints and
+    variable non-negativity.
+
+    ``linprog`` module converts the original problem to standard form by
+    converting the simple bounds to upper bound constraints, introducing
+    non-negative slack variables for inequality constraints, and expressing
+    unbounded variables as the difference between two non-negative variables.
     """
     _check_unknown_options(unknown_options)
 
@@ -466,7 +495,7 @@ def _linprog_simplex(c, c0, A, b, maxiter=1000, disp=False, callback=None,
     A[is_negative_constraint] *= -1
     b[is_negative_constraint] *= -1
 
-    # As all constraints are equality constraints the artifical variables
+    # As all constraints are equality constraints the artificial variables
     # will also be basic variables.
     av = np.arange(n) + m
     basis = av.copy()

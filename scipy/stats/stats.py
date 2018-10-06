@@ -163,13 +163,12 @@ import math
 from collections import namedtuple
 
 import numpy as np
-from numpy import array, asarray, ma, zeros
+from numpy import array, asarray, ma
 
 from scipy._lib.six import callable, string_types
 from scipy._lib._version import NumpyVersion
 from scipy._lib._util import _lazywhere
 import scipy.special as special
-import scipy.linalg as linalg
 from . import distributions
 from . import mstats_basic
 from ._stats_mstats_common import _find_repeats, linregress, theilslopes, siegelslopes
@@ -3255,15 +3254,11 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate'):
     correlation : float or ndarray (2-D square)
         Spearman correlation matrix or correlation coefficient (if only 2
         variables are given as parameters. Correlation matrix is square with
-        length equal to total number of variables (columns or rows) in a and b
-        combined.
+        length equal to total number of variables (columns or rows) in ``a``
+        and ``b`` combined.
     pvalue : float
         The two-sided p-value for a hypothesis test whose null hypothesis is
         that two sets of data are uncorrelated, has same dimension as rho.
-
-    Notes
-    -----
-    Changes in scipy 0.8.0: rewrite to add tie-handling, and axis.
 
     References
     ----------
@@ -3313,50 +3308,61 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate'):
 
     """
     a, axisout = _chk_asarray(a, axis)
+    if a.ndim > 2:
+        raise ValueError("spearmanr only handles 1-D or 2-D arrays")
 
-    a_contains_nan, nan_policy = _contains_nan(a, nan_policy)
+    if b is None:
+        if a.ndim < 2:
+            raise ValueError("`spearmanr` needs at least 2 variables to compare")
+    else:
+        # Concatenate a and b, so that we now only have to handle the case
+        # of a 2-D `a`.
+        b, _ = _chk_asarray(b, axis)
+        if axisout == 0:
+            a = np.column_stack((a, b))
+        else:
+            a = np.row_stack((a, b))
 
-    if a_contains_nan:
-        a = ma.masked_invalid(a)
-
-    if a.size <= 1:
+    n_vars = a.shape[1 - axisout]
+    n_obs = a.shape[axisout]
+    if n_obs <= 1:
+        # Handle empty arrays or single observations.
         return SpearmanrResult(np.nan, np.nan)
 
-    ar = np.apply_along_axis(rankdata, axisout, a)
+    a_contains_nan, nan_policy = _contains_nan(a, nan_policy)
+    variable_has_nan = np.zeros(n_vars, dtype=bool)
+    if a_contains_nan:
+        if nan_policy == 'omit':
+            return mstats_basic.spearmanr(a, axis=axis, nan_policy=nan_policy)
+        elif nan_policy == 'propagate':
+            if a.ndim == 1 or n_vars <= 2:
+                return SpearmanrResult(np.nan, np.nan)
+            else:
+                # Keep track of variables with NaNs, set the outputs to NaN
+                # only for those variables
+                variable_has_nan = np.isnan(a).sum(axis=axisout)
 
-    br = None
-    if b is not None:
-        b, axisout = _chk_asarray(b, axis)
+    a_ranked = np.apply_along_axis(rankdata, axisout, a)
+    rs = np.corrcoef(a_ranked, rowvar=axisout)
+    dof = n_obs - 2  # degrees of freedom
 
-        b_contains_nan, nan_policy = _contains_nan(b, nan_policy)
-
-        if a_contains_nan or b_contains_nan:
-            b = ma.masked_invalid(b)
-
-            if nan_policy == 'propagate':
-                rho, pval = mstats_basic.spearmanr(a, b, use_ties=True)
-                return SpearmanrResult(rho * np.nan, pval * np.nan)
-
-            if nan_policy == 'omit':
-                return mstats_basic.spearmanr(a, b, use_ties=True)
-
-        br = np.apply_along_axis(rankdata, axisout, b)
-    n = a.shape[axisout]
-    rs = np.corrcoef(ar, br, rowvar=axisout)
-
-    olderr = np.seterr(divide='ignore')  # rs can have elements equal to 1
+    # rs can have elements equal to 1, so avoid zero division warnings
+    olderr = np.seterr(divide='ignore')
     try:
         # clip the small negative values possibly caused by rounding
         # errors before taking the square root
-        t = rs * np.sqrt(((n-2)/((rs+1.0)*(1.0-rs))).clip(0))
+        t = rs * np.sqrt((dof/((rs+1.0)*(1.0-rs))).clip(0))
     finally:
         np.seterr(**olderr)
 
-    prob = 2 * distributions.t.sf(np.abs(t), n-2)
+    prob = 2 * distributions.t.sf(np.abs(t), dof)
 
+    # For backwards compatibility, return scalars when comparing 2 colums
     if rs.shape == (2, 2):
         return SpearmanrResult(rs[1, 0], prob[1, 0])
     else:
+        rs[variable_has_nan, :] = np.nan
+        rs[:, variable_has_nan] = np.nan
         return SpearmanrResult(rs, prob)
 
 
@@ -3478,10 +3484,10 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='auto'
         'omit' delegates to mstats_basic.kendalltau(), which has a different
         implementation.
     method: {'auto', 'asymptotic', 'exact'}, optional
-        Defines which method is used to calculate the p-value [5]_. 
-        'asymptotic' uses a normal approximation valid for large samples. 
-        'exact' computes the exact p-value, but can only be used if no ties 
-        are present. 'auto' is the default and selects the appropriate 
+        Defines which method is used to calculate the p-value [5]_.
+        'asymptotic' uses a normal approximation valid for large samples.
+        'exact' computes the exact p-value, but can only be used if no ties
+        are present. 'auto' is the default and selects the appropriate
         method based on a trade-off between speed and accuracy.
 
     Returns
@@ -3520,7 +3526,7 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='auto'
     .. [4] Peter M. Fenwick, "A new data structure for cumulative frequency
            tables", Software: Practice and Experience, Vol. 24, No. 3,
            pp. 327-336, 1994.
-    .. [5] Maurice G. Kendall, "Rank Correlation Methods" (4th Edition), 
+    .. [5] Maurice G. Kendall, "Rank Correlation Methods" (4th Edition),
            Charles Griffin & Co., 1970.
 
     Examples
@@ -3602,13 +3608,13 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='auto'
 
     if method == 'exact' and (xtie != 0 or ytie != 0):
         raise ValueError("Ties found, exact method cannot be used.")
-        
+
     if method == 'auto':
         if (xtie == 0 and ytie == 0) and (size <= 33 or min(dis, tot-dis) <= 1):
             method = 'exact'
         else:
             method = 'asymptotic'
-        
+
     if xtie == 0 and ytie == 0 and method == 'exact':
         # Exact p-value, see Maurice G. Kendall, "Rank Correlation Methods" (4th Edition), Charles Griffin & Co., 1970.
         c = min(dis, tot-dis)
