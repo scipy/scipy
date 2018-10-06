@@ -285,7 +285,7 @@ def num_jac(fun, t, y, f, threshold, factor, sparsity=None):
         return np.empty((0, 0)), factor
 
     if factor is None:
-        factor = np.ones(n) * EPS ** 0.5
+        factor = np.full(n, EPS ** 0.5)
     else:
         factor = factor.copy()
 

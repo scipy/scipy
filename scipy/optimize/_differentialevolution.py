@@ -476,8 +476,8 @@ class DifferentialEvolutionSolver(object):
             self.population[:, j] = samples[order, j]
 
         # reset population energies
-        self.population_energies = (np.ones(self.num_population_members) *
-                                    np.inf)
+        self.population_energies = np.full(self.num_population_members,
+                                           np.inf)
 
         # reset number of function evaluations counter
         self._nfev = 0
@@ -491,8 +491,8 @@ class DifferentialEvolutionSolver(object):
         self.population = rng.random_sample(self.population_shape)
 
         # reset population energies
-        self.population_energies = (np.ones(self.num_population_members) *
-                                    np.inf)
+        self.population_energies = np.full(self.num_population_members,
+                                           np.inf)
 
         # reset number of function evaluations counter
         self._nfev = 0
