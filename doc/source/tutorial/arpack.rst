@@ -162,7 +162,7 @@ non-external eigenvalues: *shift-invert mode*.  As mentioned above, this
 mode involves transforming the eigenvalue problem to an equivalent problem
 with different eigenvalues.  In this case, we hope to find eigenvalues near
 zero, so we'll choose ``sigma = 0``.  The transformed eigenvalues will
-then satisfy :math:`\nu = 1/(\sigma - \lambda) = 1/\lambda`, so our
+then satisfy :math:`\nu = 1/(\lambda - \sigma) = 1/\lambda`, so our
 small eigenvalues :math:`\lambda` become large eigenvalues :math:`\nu`.
 
     >>> evals_small, evecs_small = eigsh(X, 3, sigma=0, which='LM')
