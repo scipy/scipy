@@ -698,6 +698,19 @@ class TestInterp1D(object):
                 assert_(np.isnan(outn).all())
                 assert_equal(out.shape, outn.shape)
 
+    def test_read_only(self):
+        x = np.arange(0, 10)
+        y = np.exp(-x / 3.0)
+        xnew = np.arange(0, 9, 0.1)
+        # Check both read-only and not read-only:
+        for writeable in (True, False):
+            xnew.flags.writeable = writeable
+            for kind in ('linear', 'nearest', 'zero', 'slinear', 'quadratic',
+                         'cubic'):
+                f = interp1d(x, y, kind=kind)
+                vals = f(xnew)
+                assert_(np.isfinite(vals).all())
+
 
 class TestLagrange(object):
 
