@@ -3460,7 +3460,8 @@ def pointbiserialr(x, y):
 KendalltauResult = namedtuple('KendalltauResult', ('correlation', 'pvalue'))
 
 
-def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='auto'):
+def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='auto',
+               variant='b'):
     """
     Calculate Kendall's tau, a correlation measure for ordinal data.
 
@@ -3489,6 +3490,9 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='auto'
         'exact' computes the exact p-value, but can only be used if no ties
         are present. 'auto' is the default and selects the appropriate
         method based on a trade-off between speed and accuracy.
+    variant: {'a', 'b'}, optional
+        Defines which variant of Kendall Tau is used. Different variants
+        use different ways to account for ties.
 
     Returns
     -------
@@ -3571,6 +3575,9 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='auto'
     def count_rank_tie(ranks):
         cnt = np.bincount(ranks).astype('int64', copy=False)
         cnt = cnt[cnt > 1]
+        print(((cnt * (cnt - 1) // 2).sum(),
+            (cnt * (cnt - 1.) * (cnt - 2)).sum(),
+            (cnt * (cnt - 1.) * (2*cnt + 5)).sum()))
         return ((cnt * (cnt - 1) // 2).sum(),
             (cnt * (cnt - 1.) * (cnt - 2)).sum(),
             (cnt * (cnt - 1.) * (2*cnt + 5)).sum())
@@ -3602,10 +3609,20 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='auto'
     # Note that tot = con + dis + (xtie - ntie) + (ytie - ntie) + ntie
     #               = con + dis + xtie + ytie - ntie
     con_minus_dis = tot - xtie - ytie + ntie - 2 * dis
-    tau = con_minus_dis / np.sqrt(tot - xtie) / np.sqrt(tot - ytie)
+    if variant == 'a':
+        tau = con_minus_dis / tot
+    elif variant == 'b':
+        tau = con_minus_dis / np.sqrt(tot - xtie) / np.sqrt(tot - ytie)
+    elif variant == 'c':
+        minclasses = min(len(set(x)), len(set(y)))
+        tau = 2*con_minus_dis / (size**2 * (minclasses-1)/minclasses)
+    else:
+        raise ValueError("Unknown variant of the method chosen: "+str(variant)+". Please use 'a', 'b' or 'c'.")
+        
     # Limit range to fix computational errors
     tau = min(1., max(-1., tau))
 
+    # The p-value calculation is the same for all variants since the p-value depends only on con_minus_dis
     if method == 'exact' and (xtie != 0 or ytie != 0):
         raise ValueError("Ties found, exact method cannot be used.")
 
