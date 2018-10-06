@@ -879,9 +879,10 @@ def test_kendalltau():
     assert_approx_equal(res[0], expected[0])
     assert_approx_equal(res[1], expected[1])
 
-    # and do we get a tau of 1 for identical inputs?
-    for taux in variants:
-        assert_approx_equal(stats.kendalltau([1,1,2], [1,1,2], variant=taux)[0], 1.0)
+    # this should result in 1 for taub, but not for others
+    assert_approx_equal(stats.kendalltau([1,1,2], [1,1,2], variant='taua')[0], 0.66666666)
+    assert_approx_equal(stats.kendalltau([1,1,2], [1,1,2], variant='taub')[0], 1.0)
+    assert_approx_equal(stats.kendalltau([1,1,2], [1,1,2], variant='tauc')[0], 0.88888888)
 
     # test nan_policy
     x = np.arange(10.)
