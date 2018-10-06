@@ -3461,15 +3461,15 @@ KendalltauResult = namedtuple('KendalltauResult', ('correlation', 'pvalue'))
 
 
 def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='auto',
-               variant='b'):
+               variant='taub'):
     """
     Calculate Kendall's tau, a correlation measure for ordinal data.
 
     Kendall's tau is a measure of the correspondence between two rankings.
     Values close to 1 indicate strong agreement, values close to -1 indicate
-    strong disagreement.  This is the 1945 "tau-b" version of Kendall's
-    tau [2]_, which can account for ties and which reduces to the 1938 "tau-a"
-    version [1]_ in absence of ties.
+    strong disagreement. This implements all three common variants of Kendall's
+    tau: Tau-a, Tau-b and Tau-c. The default option is tau-b which takes into
+    account possible ties in the rankings. For more information, see [5].
 
     Parameters
     ----------
@@ -3483,16 +3483,16 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='auto'
         'raise' throws an error, 'omit' performs the calculations ignoring nan
         values. Default is 'propagate'. Note that if the input contains nan
         'omit' delegates to mstats_basic.kendalltau(), which has a different
-        implementation.
+        implementation and currently only supports tau-a and tau-b variants.
     method: {'auto', 'asymptotic', 'exact'}, optional
         Defines which method is used to calculate the p-value [5]_.
         'asymptotic' uses a normal approximation valid for large samples.
         'exact' computes the exact p-value, but can only be used if no ties
         are present. 'auto' is the default and selects the appropriate
         method based on a trade-off between speed and accuracy.
-    variant: {'a', 'b'}, optional
+    variant: {'taua', 'taub', 'tauc'}, optional
         Defines which variant of Kendall Tau is used. Different variants
-        use different ways to account for ties.
+        use different normalizations, but all all proportional to the same
 
     Returns
     -------
@@ -3512,12 +3512,17 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='auto'
     -----
     The definition of Kendall's tau that is used is [2]_::
 
-      tau = (P - Q) / sqrt((P + Q + T) * (P + Q + U))
+      taua = 2 (P - Q) / (n * (n-1))
+
+      taub = (P - Q) / sqrt((P + Q + T) * (P + Q + U))
+
+      tauc = 2 (P - Q) / (n**2 * (m - 1) / m)
 
     where P is the number of concordant pairs, Q the number of discordant
     pairs, T the number of ties only in `x`, and U the number of ties only in
     `y`.  If a tie occurs for the same pair in both `x` and `y`, it is not
-    added to either T or U.
+    added to either T or U. n is the total number of samples and m is the
+    number of unique values in either x or y, for whichever the number is smaller.
 
     References
     ----------
@@ -3567,7 +3572,12 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='auto'
     elif contains_nan and nan_policy == 'omit':
         x = ma.masked_invalid(x)
         y = ma.masked_invalid(y)
-        return mstats_basic.kendalltau(x, y, method=method)
+        if variant == 'taua':            
+            return mstats_basic.kendalltau(x, y, method=method, use_ties=False)
+        elif variant == 'taub':
+            return mstats_basic.kendalltau(x, y, method=method, use_ties=True)
+        elif variant == 'tauc':
+            raise ValueError("Variants other than 'taua' and 'taub' are not supported for masked arrays")
 
     if initial_lexsort is not None:  # deprecate to drop!
         warnings.warn('"initial_lexsort" is gone!')
@@ -3575,9 +3585,6 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='auto'
     def count_rank_tie(ranks):
         cnt = np.bincount(ranks).astype('int64', copy=False)
         cnt = cnt[cnt > 1]
-        print(((cnt * (cnt - 1) // 2).sum(),
-            (cnt * (cnt - 1.) * (cnt - 2)).sum(),
-            (cnt * (cnt - 1.) * (2*cnt + 5)).sum()))
         return ((cnt * (cnt - 1) // 2).sum(),
             (cnt * (cnt - 1.) * (cnt - 2)).sum(),
             (cnt * (cnt - 1.) * (2*cnt + 5)).sum())
@@ -3609,15 +3616,15 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='auto'
     # Note that tot = con + dis + (xtie - ntie) + (ytie - ntie) + ntie
     #               = con + dis + xtie + ytie - ntie
     con_minus_dis = tot - xtie - ytie + ntie - 2 * dis
-    if variant == 'a':
+    if variant == 'taua':
         tau = con_minus_dis / tot
-    elif variant == 'b':
+    elif variant == 'taub':
         tau = con_minus_dis / np.sqrt(tot - xtie) / np.sqrt(tot - ytie)
-    elif variant == 'c':
+    elif variant == 'tauc':
         minclasses = min(len(set(x)), len(set(y)))
         tau = 2*con_minus_dis / (size**2 * (minclasses-1)/minclasses)
     else:
-        raise ValueError("Unknown variant of the method chosen: "+str(variant)+". Please use 'a', 'b' or 'c'.")
+        raise ValueError("Unknown variant of the method chosen: "+str(variant)+". Please use 'taua', 'taub' or 'tauc'.")
         
     # Limit range to fix computational errors
     tau = min(1., max(-1., tau))

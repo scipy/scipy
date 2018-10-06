@@ -703,6 +703,7 @@ def test_spearmanr():
     y.append(3.0)
     assert_almost_equal(stats.spearmanr(x, y, nan_policy='omit')[0], 0.998)
 
+
 class TestCorrSpearmanrTies(object):
     """Some tests of tie-handling by the spearmanr function."""
 
@@ -745,19 +746,20 @@ class TestCorrSpearmanrTies(object):
 
 
 def test_kendalltau():
-    # simple case without ties
+    # For the cases without ties, all variants should give the same
+    # result.
+    variants = ('taua', 'taub', 'tauc')
+
+    # simple case without ties.
     x = np.arange(10)
     y = np.arange(10)
     # Cross-check with exact result from R:
     # cor.test(x,y,method="kendall",exact=1)
     expected = (1.0, 5.511463844797e-07)
-    res = stats.kendalltau(x, y, variant='b')
-    assert_approx_equal(res[0], expected[0])
-    assert_approx_equal(res[1], expected[1])
-    # Tau-a and Tau-b should give the same result in the case without ties
-    res = stats.kendalltau(x, y, variant='a')
-    assert_approx_equal(res[0], expected[0])
-    assert_approx_equal(res[1], expected[1])
+    for taux in variants:
+        res = stats.kendalltau(x, y, variant=taux)
+        assert_approx_equal(res[0], expected[0])
+        assert_approx_equal(res[1], expected[1])
 
     # swap a couple of values
     b = y[1]
@@ -766,13 +768,11 @@ def test_kendalltau():
     # Cross-check with exact result from R:
     # cor.test(x,y,method="kendall",exact=1)
     expected = (0.9555555555555556, 5.511463844797e-06)
-    res = stats.kendalltau(x, y, variant='b')
-    assert_approx_equal(res[0], expected[0])
-    assert_approx_equal(res[1], expected[1])
-    res = stats.kendalltau(x, y, variant='a')
-    assert_approx_equal(res[0], expected[0])
-    assert_approx_equal(res[1], expected[1])
-    
+    for taux in variants:
+        res = stats.kendalltau(x, y, variant=taux)
+        assert_approx_equal(res[0], expected[0])
+        assert_approx_equal(res[1], expected[1])
+
     # swap a couple more
     b = y[5]
     y[5] = y[6]
@@ -780,12 +780,10 @@ def test_kendalltau():
     # Cross-check with exact result from R:
     # cor.test(x,y,method="kendall",exact=1)
     expected = (0.9111111111111111, 2.976190476190e-05)
-    res = stats.kendalltau(x, y, variant='b')
-    assert_approx_equal(res[0], expected[0])
-    assert_approx_equal(res[1], expected[1])
-    res = stats.kendalltau(x, y, variant='a')
-    assert_approx_equal(res[0], expected[0])
-    assert_approx_equal(res[1], expected[1])
+    for taux in variants:
+        res = stats.kendalltau(x, y, variant=taux)
+        assert_approx_equal(res[0], expected[0])
+        assert_approx_equal(res[1], expected[1])
 
     # same in opposite direction
     x = np.arange(10)
@@ -793,12 +791,10 @@ def test_kendalltau():
     # Cross-check with exact result from R:
     # cor.test(x,y,method="kendall",exact=1)
     expected = (-1.0, 5.511463844797e-07)
-    res = stats.kendalltau(x, y, variant='b')
-    assert_approx_equal(res[0], expected[0])
-    assert_approx_equal(res[1], expected[1])
-    res = stats.kendalltau(x, y, variant='a')
-    assert_approx_equal(res[0], expected[0])
-    assert_approx_equal(res[1], expected[1])
+    for taux in variants:
+        res = stats.kendalltau(x, y, variant=taux)
+        assert_approx_equal(res[0], expected[0])
+        assert_approx_equal(res[1], expected[1])
 
     # swap a couple of values
     b = y[1]
@@ -807,12 +803,10 @@ def test_kendalltau():
     # Cross-check with exact result from R:
     # cor.test(x,y,method="kendall",exact=1)
     expected = (-0.9555555555555556, 5.511463844797e-06)
-    res = stats.kendalltau(x, y, variant='b')
-    assert_approx_equal(res[0], expected[0])
-    assert_approx_equal(res[1], expected[1])
-    res = stats.kendalltau(x, y, variant='a')
-    assert_approx_equal(res[0], expected[0])
-    assert_approx_equal(res[1], expected[1])
+    for taux in variants:
+        res = stats.kendalltau(x, y, variant=taux)
+        assert_approx_equal(res[0], expected[0])
+        assert_approx_equal(res[1], expected[1])
 
     # swap a couple more
     b = y[5]
@@ -821,31 +815,34 @@ def test_kendalltau():
     # Cross-check with exact result from R:
     # cor.test(x,y,method="kendall",exact=1)
     expected = (-0.9111111111111111, 2.976190476190e-05)
-    res = stats.kendalltau(x, y, variant='a')
-    assert_approx_equal(res[0], expected[0])
-    assert_approx_equal(res[1], expected[1])
-    res = stats.kendalltau(x, y, variant='b')
-    assert_approx_equal(res[0], expected[0])
-    assert_approx_equal(res[1], expected[1])
+    for taux in variants:
+        res = stats.kendalltau(x, y, variant=taux)
+        assert_approx_equal(res[0], expected[0])
+        assert_approx_equal(res[1], expected[1])
 
-    # Check a case where Tau-a and Tau-b are different
+    # Check a case where all variants are different
     # Example values found from Kendall (1970).
-    # P-value is always the same for both methods
-    x = array([1,2,2,4,4,6,6,8,9,9])
-    y = array([1,2,4,4,4,4,8,8,8,10])
+    # P-value is always the same for the three variants
+    x = array([1, 2, 2, 4, 4, 6, 6, 8, 9, 9])
+    y = array([1, 2, 4, 4, 4, 4, 8, 8, 8, 10])
     expected = 0.73333333
-    assert_approx_equal(kendalltau(x, y, variant='a')[0], expected)
+    assert_approx_equal(stats.kendalltau(x, y, variant='taua')[0], expected)
     expected = 0.85895569
-    assert_approx_equal(kendalltau(x, y, variant='b')[0], expected)
-    
+    assert_approx_equal(stats.kendalltau(x, y, variant='taub')[0], expected)
+    expected = 0.825
+    assert_approx_equal(stats.kendalltau(x, y, variant='tauc')[0], expected)
+
     # check exception in case of ties
     y[2] = y[1]
-    assert_raises(ValueError, stats.kendalltau, x, y, method='exact', variant='b')
+    assert_raises(ValueError, stats.kendalltau, x, y, method='exact', variant='taub')
 
     # check exception in case of invalid method keyword
     assert_raises(ValueError, stats.kendalltau, x, y, method='banana')
 
-    # with some ties
+    # check exception in case of invalid variant keyword
+    assert_raises(ValueError, stats.kendalltau, x, y, variant='rms')
+
+    # tau-b with some ties
     # Cross-check with R:
     # cor.test(c(12,2,1,12,2),c(1,4,7,1,0),method="kendall",exact=FALSE)
     x1 = [12, 2, 1, 12, 2]
@@ -857,13 +854,15 @@ def test_kendalltau():
 
     # test for namedtuple attribute results
     attributes = ('correlation', 'pvalue')
-    res = stats.kendalltau(x1, x2)
-    check_named_results(res, attributes)
+    for taux in variants:
+        res = stats.kendalltau(x1, x2, variant=taux)
+        check_named_results(res, attributes)
 
-    # with only ties in one or both inputs
-    assert_equal(stats.kendalltau([2,2,2], [2,2,2]), (np.nan, np.nan))
-    assert_equal(stats.kendalltau([2,0,2], [2,2,2]), (np.nan, np.nan))
-    assert_equal(stats.kendalltau([2,2,2], [2,0,2]), (np.nan, np.nan))
+    # with only ties in one or both inputs in tau-b or tau-c
+    for taux in variants:
+        assert_equal(stats.kendalltau([2,2,2], [2,2,2], variant=taux), (np.nan, np.nan))
+        assert_equal(stats.kendalltau([2,0,2], [2,2,2], variant=taux), (np.nan, np.nan))
+        assert_equal(stats.kendalltau([2,2,2], [2,0,2], variant=taux), (np.nan, np.nan))
 
     # empty arrays provided as input
     assert_equal(stats.kendalltau([], []), (np.nan, np.nan))
@@ -881,7 +880,8 @@ def test_kendalltau():
     assert_approx_equal(res[1], expected[1])
 
     # and do we get a tau of 1 for identical inputs?
-    assert_approx_equal(stats.kendalltau([1,1,2], [1,1,2])[0], 1.0)
+    for taux in variants:
+        assert_approx_equal(stats.kendalltau([1,1,2], [1,1,2], variant=taux)[0], 1.0)
 
     # test nan_policy
     x = np.arange(10.)
