@@ -15,7 +15,31 @@ def _pivot_col(T, tol=1.0E-12, bland=False):
     Parameters
     ----------
     T : 2D array
-        The simplex tableau.
+        A 2D array representing the simplex tableau, T, corresponding to the
+        linear programming problem. It should have the form:
+
+        [[A[0, 0], A[0, 1], ..., A[0, n_total], b[0]],
+         [A[1, 0], A[1, 1], ..., A[1, n_total], b[1]],
+         .
+         .
+         .
+         [A[m, 0], A[m, 1], ..., A[m, n_total], b[m]],
+         [c[0],   c[1], ...,   c[n_total],    0]]
+
+        for a Phase 2 problem, or the form:
+
+        [[A[0, 0], A[0, 1], ..., A[0, n_total], b[0]],
+         [A[1, 0], A[1, 1], ..., A[1, n_total], b[1]],
+         .
+         .
+         .
+         [A[m, 0], A[m, 1], ..., A[m, n_total], b[m]],
+         [c[0],   c[1], ...,   c[n_total],   0],
+         [c'[0],  c'[1], ...,  c'[n_total],  0]]
+
+         for a Phase 1 problem (a problem in which a basic feasible solution is
+         sought prior to maximizing the actual objective. ``T`` is modified in
+         place by ``_solve_simplex``.
     tol : float
         Elements in the objective row larger than -tol will not be considered
         for pivoting. Nominally this value is zero, but numerical issues
@@ -51,7 +75,31 @@ def _pivot_row(T, basis, pivcol, phase, tol=1.0E-12, bland=False):
     Parameters
     ----------
     T : 2D array
-        The simplex tableau.
+        A 2D array representing the simplex tableau, T, corresponding to the
+        linear programming problem. It should have the form:
+
+        [[A[0, 0], A[0, 1], ..., A[0, n_total], b[0]],
+         [A[1, 0], A[1, 1], ..., A[1, n_total], b[1]],
+         .
+         .
+         .
+         [A[m, 0], A[m, 1], ..., A[m, n_total], b[m]],
+         [c[0],   c[1], ...,   c[n_total],    0]]
+
+        for a Phase 2 problem, or the form:
+
+        [[A[0, 0], A[0, 1], ..., A[0, n_total], b[0]],
+         [A[1, 0], A[1, 1], ..., A[1, n_total], b[1]],
+         .
+         .
+         .
+         [A[m, 0], A[m, 1], ..., A[m, n_total], b[m]],
+         [c[0],   c[1], ...,   c[n_total],   0],
+         [c'[0],  c'[1], ...,  c'[n_total],  0]]
+
+         for a Phase 1 problem (a Problem in which a basic feasible solution is
+         sought prior to maximizing the actual objective. ``T`` is modified in
+         place by ``_solve_simplex``.
     basis : array
         A list of the current basic variables.
     pivcol : int
@@ -99,8 +147,31 @@ def _apply_pivot(T, basis, pivrow, pivcol, tol=1e-12):
     Parameters
     ----------
     T : 2D array
-        A 2D numpy array representing the simplex T to the corresponding
-        maximization problem.
+        A 2D array representing the simplex tableau, T, corresponding to the
+        linear programming problem. It should have the form:
+
+        [[A[0, 0], A[0, 1], ..., A[0, n_total], b[0]],
+         [A[1, 0], A[1, 1], ..., A[1, n_total], b[1]],
+         .
+         .
+         .
+         [A[m, 0], A[m, 1], ..., A[m, n_total], b[m]],
+         [c[0],   c[1], ...,   c[n_total],    0]]
+
+        for a Phase 2 problem, or the form:
+
+        [[A[0, 0], A[0, 1], ..., A[0, n_total], b[0]],
+         [A[1, 0], A[1, 1], ..., A[1, n_total], b[1]],
+         .
+         .
+         .
+         [A[m, 0], A[m, 1], ..., A[m, n_total], b[m]],
+         [c[0],   c[1], ...,   c[n_total],   0],
+         [c'[0],  c'[1], ...,  c'[n_total],  0]]
+
+         for a Phase 1 problem (a problem in which a basic feasible solution is
+         sought prior to maximizing the actual objective. ``T`` is modified in
+         place by ``_solve_simplex``.
     basis : 1D array
         An array of the indices of the basic variables, such that basis[i]
         contains the column corresponding to the basic variable for row i.
@@ -170,7 +241,7 @@ def _solve_simplex(T, n, basis, maxiter=1000, phase=2, status=0, message='',
          [c[0],   c[1], ...,   c[n_total],   0],
          [c'[0],  c'[1], ...,  c'[n_total],  0]]
 
-         for a Phase 1 problem (a Problem in which a basic feasible solution is
+         for a Phase 1 problem (a problem in which a basic feasible solution is
          sought prior to maximizing the actual objective. ``T`` is modified in
          place by ``_solve_simplex``.
     n : int
@@ -354,11 +425,11 @@ def _linprog_simplex(c, c0, A, b, maxiter=1000, disp=False, callback=None,
         Constant term in objective function due to fixed (and eliminated)
         variables. (Purely for display.)
     A : 2D array
-        2D array which, when matrix-multiplied by ``x``, gives the values of
-        the equality constraints at ``x``.
+        2D array such that ``A`` @ ``x``, gives the values of the equality
+        constraints at ``x``.
     b : 1D array
-        1D array of values representing the RHS of each equality constraint
-        (row) in ``A_eq``.
+        1D array of values representing the right hand side of each equality
+        constraint (row) in ``A``.
     callback : callable, optional (simplex only)
         If a callback function is provided, it will be called within each
         iteration of the simplex algorithm. The callback must require a

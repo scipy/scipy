@@ -19,11 +19,11 @@ def _check_sparse_inputs(options, A_ub, A_eq):
     Parameters
     ----------
     A_ub : 2D array, optional
-        2D array which, when matrix-multiplied by ``x``, gives the values of
-        the upper-bound inequality constraints at ``x``.
-    A_eq : array_like, optional
-        2D array which, when matrix-multiplied by ``x``, gives the values of
-        the equality constraints at ``x``.
+        2D array such that ``A_ub`` @ ``x`` gives the values of the upper-bound
+        inequality constraints at ``x``.
+    A_eq : 2D array, optional
+        2D array such that ``A_eq`` @ ``x`` gives the values of the equality
+        constraints at ``x``.
     options : dict
         A dictionary of solver options. All methods accept the following
         generic options:
@@ -37,12 +37,12 @@ def _check_sparse_inputs(options, A_ub, A_eq):
 
     Returns
     -------
-    A_ub : 2D array
-        2D array which, when matrix-multiplied by ``x``, gives the values of
-        the upper-bound inequality constraints at ``x``.
-    A_eq : array_like
-        2D array which, when matrix-multiplied by ``x``, gives the values of
-        the equality constraints at ``x``.
+    A_ub : 2D array, optional
+        2D array such that ``A_ub`` @ ``x`` gives the values of the upper-bound
+        inequality constraints at ``x``.
+    A_eq : 2D array, optional
+        2D array such that ``A_eq`` @ ``x`` gives the values of the equality
+        constraints at ``x``.
     options : dict
         A dictionary of solver options. All methods accept the following
         generic options:
@@ -80,15 +80,15 @@ def _clean_inputs(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None):
     c : 1D array
         Coefficients of the linear objective function to be minimized.
     A_ub : 2D array, optional
-        2D array which, when matrix-multiplied by ``x``, gives the values of
-        the upper-bound inequality constraints at ``x``.
+        2D array such that ``A_ub`` @ ``x`` gives the values of the upper-bound
+        inequality constraints at ``x``.
     b_ub : 1D array, optional
         1D array of values representing the upper-bound of each inequality
         constraint (row) in ``A_ub``.
-    A_eq : array_like, optional
-        2D array which, when matrix-multiplied by ``x``, gives the values of
-        the equality constraints at ``x``.
-    b_eq : array_like, optional
+    A_eq : 2D array, optional
+        2D array such that ``A_eq`` @ ``x`` gives the values of the equality
+        constraints at ``x``.
+    b_eq : 1D array, optional
         1D array of values representing the RHS of each equality constraint
         (row) in ``A_eq``.
     bounds : sequence, optional
@@ -103,16 +103,16 @@ def _clean_inputs(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None):
     -------
     c : 1D array
         Coefficients of the linear objective function to be minimized.
-    A_ub : 2D array
-        2D array which, when matrix-multiplied by ``x``, gives the values of
-        the upper-bound inequality constraints at ``x``.
-    b_ub : 1D array
+    A_ub : 2D array, optional
+        2D array such that ``A_ub`` @ ``x`` gives the values of the upper-bound
+        inequality constraints at ``x``.
+    b_ub : 1D array, optional
         1D array of values representing the upper-bound of each inequality
         constraint (row) in ``A_ub``.
-    A_eq : 2D array
-        2D array which, when matrix-multiplied by ``x``, gives the values of
-        the equality constraints at ``x``.
-    b_eq : 1D array
+    A_eq : 2D array, optional
+        2D array such that ``A_eq`` @ ``x`` gives the values of the equality
+        constraints at ``x``.
+    b_eq : 1D array, optional
         1D array of values representing the RHS of each equality constraint
         (row) in ``A_eq``.
     bounds : sequence of tuples
@@ -348,16 +348,16 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, rr, tol=1e-9):
     ----------
     c : 1D array
         Coefficients of the linear objective function to be minimized.
-    A_ub : 2D array
-        2D array which, when matrix-multiplied by ``x``, gives the values of
-        the upper-bound inequality constraints at ``x``.
-    b_ub : 1D array
+    A_ub : 2D array, optional
+        2D array such that ``A_ub`` @ ``x`` gives the values of the upper-bound
+        inequality constraints at ``x``.
+    b_ub : 1D array, optional
         1D array of values representing the upper-bound of each inequality
         constraint (row) in ``A_ub``.
-    A_eq : 2D array
-        2D array which, when matrix-multiplied by ``x``, gives the values of
-        the equality constraints at ``x``.
-    b_eq : 1D array
+    A_eq : 2D array, optional
+        2D array such that ``A_eq`` @ ``x`` gives the values of the equality
+        constraints at ``x``.
+    b_eq : 1D array, optional
         1D array of values representing the RHS of each equality constraint
         (row) in ``A_eq``.
     bounds : sequence of tuples
@@ -380,20 +380,18 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, rr, tol=1e-9):
     c0 : 1D array
         Constant term in objective function due to fixed (and eliminated)
         variables.
-    A_ub : 2D array
-        2D array which, when matrix-multiplied by ``x``, gives the values of
-        the upper-bound inequality constraints at ``x``. Unnecessary
-        rows/columns have been removed.
-    b_ub : 1D array
+    A_ub : 2D array, optional
+        2D array such that ``A_ub`` @ ``x`` gives the values of the upper-bound
+        inequality constraints at ``x``.
+    b_ub : 1D array, optional
         1D array of values representing the upper-bound of each inequality
-        constraint (row) in ``A_ub``. Unnecessary elements have been removed.
-    A_eq : 2D array
-        2D array which, when matrix-multiplied by ``x``, gives the values of
-        the equality constraints at ``x``. Unnecessary rows/columns have been
-        removed.
-    b_eq : 1D array
+        constraint (row) in ``A_ub``.
+    A_eq : 2D array, optional
+        2D array such that ``A_eq`` @ ``x`` gives the values of the equality
+        constraints at ``x``.
+    b_eq : 1D array, optional
         1D array of values representing the RHS of each equality constraint
-        (row) in ``A_eq``. Unnecessary elements have been removed.
+        (row) in ``A_eq``.
     bounds : sequence of tuples
         ``(min, max)`` pairs for each element in ``x``, defining
         the bounds on that parameter. Use None for each of ``min`` or
@@ -740,16 +738,16 @@ def _parse_linprog(c, A_ub, b_ub, A_eq, b_eq, bounds, options):
     ----------
     c : 1D array
         Coefficients of the linear objective function to be minimized.
-    A_ub : 2D array
-        2D array which, when matrix-multiplied by ``x``, gives the values of
-        the upper-bound inequality constraints at ``x``.
-    b_ub : 1D array
+    A_ub : 2D array, optional
+        2D array such that ``A_ub`` @ ``x`` gives the values of the upper-bound
+        inequality constraints at ``x``.
+    b_ub : 1D array, optional
         1D array of values representing the upper-bound of each inequality
         constraint (row) in ``A_ub``.
-    A_eq : array_like
-        2D array which, when matrix-multiplied by ``x``, gives the values of
-        the equality constraints at ``x``.
-    b_eq : array_like
+    A_eq : 2D array, optional
+        2D array such that ``A_eq`` @ ``x`` gives the values of the equality
+        constraints at ``x``.
+    b_eq : 1D array, optional
         1D array of values representing the RHS of each equality constraint
         (row) in ``A_eq``.
     bounds : sequence
@@ -774,16 +772,16 @@ def _parse_linprog(c, A_ub, b_ub, A_eq, b_eq, bounds, options):
     -------
     c : 1D array
         Coefficients of the linear objective function to be minimized.
-    A_ub : 1D array, optional
-        2D array which, when matrix-multiplied by ``x``, gives the values of
-        the upper-bound inequality constraints at ``x``.
+    A_ub : 2D array, optional
+        2D array such that ``A_ub`` @ ``x`` gives the values of the upper-bound
+        inequality constraints at ``x``.
     b_ub : 1D array, optional
         1D array of values representing the upper-bound of each inequality
         constraint (row) in ``A_ub``.
-    A_eq : array_like, optional
-        2D array which, when matrix-multiplied by ``x``, gives the values of
-        the equality constraints at ``x``.
-    b_eq : array_like, optional
+    A_eq : 2D array, optional
+        2D array such that ``A_eq`` @ ``x`` gives the values of the equality
+        constraints at ``x``.
+    b_eq : 1D array, optional
         1D array of values representing the RHS of each equality constraint
         (row) in ``A_eq``.
     bounds : sequence, optional
@@ -854,20 +852,18 @@ def _get_Abc(c, c0=0, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
     c0 : float
         Constant term in objective function due to fixed (and eliminated)
         variables.
-    A_ub : 2D array
-        2D array which, when matrix-multiplied by ``x``, gives the values of
-        the upper-bound inequality constraints at ``x``. Unnecessary
-        rows/columns have been removed.
-    b_ub : 1D array
+    A_ub : 2D array, optional
+        2D array such that ``A_ub`` @ ``x`` gives the values of the upper-bound
+        inequality constraints at ``x``.
+    b_ub : 1D array, optional
         1D array of values representing the upper-bound of each inequality
-        constraint (row) in ``A_ub``. Unnecessary elements have been removed.
-    A_eq : 2D array
-        2D array which, when matrix-multiplied by ``x``, gives the values of
-        the equality constraints at ``x``. Unnecessary rows/columns have been
-        removed.
-    b_eq : 1D array
+        constraint (row) in ``A_ub``.
+    A_eq : 2D array, optional
+        2D array such that ``A_eq`` @ ``x`` gives the values of the equality
+        constraints at ``x``.
+    b_eq : 1D array, optional
         1D array of values representing the RHS of each equality constraint
-        (row) in ``A_eq``. Unnecessary elements have been removed.
+        (row) in ``A_eq``.
     bounds : sequence of tuples
         ``(min, max)`` pairs for each element in ``x``, defining
         the bounds on that parameter. Use None for each of ``min`` or
@@ -880,8 +876,8 @@ def _get_Abc(c, c0=0, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
     Returns
     -------
     A : 2D array
-        2D array which, when matrix-multiplied by x, gives the values of the
-        equality constraints at x (for standard form problem).
+        2D array such that ``A`` @ ``x``, gives the values of the equality
+        constraints at ``x``.
     b : 1D array
         1D array of values representing the RHS of each equality constraint
         (row) in A (for standard form problem).
@@ -1047,14 +1043,18 @@ def _postsolve(x, c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
         Solution vector to the standard-form problem.
     c : 1D array
         Original coefficients of the linear objective function to be minimized.
-    A_ub : 2D array
-        Original upper bound constraint matrix.
-    b_ub : 1D array
-        Original upper bound constraint vector.
-    A_eq : 2D array
-        Original equality constraint matrix.
-    b_eq : 1D array
-        Original equality constraint vector.
+    A_ub : 2D array, optional
+        2D array such that ``A_ub`` @ ``x`` gives the values of the upper-bound
+        inequality constraints at ``x``.
+    b_ub : 1D array, optional
+        1D array of values representing the upper-bound of each inequality
+        constraint (row) in ``A_ub``.
+    A_eq : 2D array, optional
+        2D array such that ``A_eq`` @ ``x`` gives the values of the equality
+        constraints at ``x``.
+    b_eq : 1D array, optional
+        1D array of values representing the RHS of each equality constraint
+        (row) in ``A_eq``.
     bounds : sequence of tuples
         Bounds, as modified in presolve
     complete : bool
@@ -1253,14 +1253,18 @@ def _postprocess(x, c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
         Solution vector to the standard-form problem.
     c : 1D array
         Original coefficients of the linear objective function to be minimized.
-    A_ub : 2D array
-        Original upper bound constraint matrix.
-    b_ub : 1D array
-        Original upper bound constraint vector.
-    A_eq : 2D array
-        Original equality constraint matrix.
-    b_eq : 1D array
-        Original equality constraint vector.
+    A_ub : 2D array, optional
+        2D array such that ``A_ub`` @ ``x`` gives the values of the upper-bound
+        inequality constraints at ``x``.
+    b_ub : 1D array, optional
+        1D array of values representing the upper-bound of each inequality
+        constraint (row) in ``A_ub``.
+    A_eq : 2D array, optional
+        2D array such that ``A_eq`` @ ``x`` gives the values of the equality
+        constraints at ``x``.
+    b_eq : 1D array, optional
+        1D array of values representing the RHS of each equality constraint
+        (row) in ``A_eq``.
     bounds : sequence of tuples
         Bounds, as modified in presolve
     complete : bool
