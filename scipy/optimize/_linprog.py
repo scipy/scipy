@@ -257,36 +257,37 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
     Returns
     -------
-    A `scipy.optimize.OptimizeResult` consisting of the following fields:
+    res : OptimizeResult
+        A :class:`scipy.optimize.OptimizeResult` consisting of the fields:
 
-        x : 1D array
-            The independent variable vector which optimizes the linear
-            programming problem.
-        fun : float
-            Value of the objective function.
-        slack : 1D array
-            The values of the slack variables. Each slack variable corresponds
-            to an inequality constraint. If the slack is zero, then the
-            corresponding constraint is active.
-        con : 1D array
-            The (nominally zero) residuals of the equality constraints, that is,
-            ``b - A_eq @ x``
-        success : bool
-            Returns True if the algorithm succeeded in finding an optimal
-            solution.
-        status : int
-            An integer representing the exit status of the optimization::
+            x : 1D array
+                The independent variable vector which optimizes the linear
+                programming problem.
+            fun : float
+                Value of the objective function.
+            slack : 1D array
+                The values of the slack variables. Each slack variable
+                corresponds to an inequality constraint. If the slack is zero,
+                then the corresponding constraint is active.
+            con : 1D array
+                The (nominally zero) residuals of the equality constraints,
+                that is, ``b - A_eq @ x``
+            success : bool
+                Returns True if the algorithm succeeded in finding an optimal
+                solution.
+            status : int
+                An integer representing the exit status of the optimization::
 
-                 0 : Optimization terminated successfully
-                 1 : Iteration limit reached
-                 2 : Problem appears to be infeasible
-                 3 : Problem appears to be unbounded
-                 4 : Serious numerical difficulties encountered
+                     0 : Optimization terminated successfully
+                     1 : Iteration limit reached
+                     2 : Problem appears to be infeasible
+                     3 : Problem appears to be unbounded
+                     4 : Serious numerical difficulties encountered
 
-        nit : int
-            The number of iterations performed.
-        message : str
-            A string descriptor of the exit status of the optimization.
+            nit : int
+                The number of iterations performed.
+            message : str
+                A string descriptor of the exit status of the optimization.
 
     See Also
     --------
