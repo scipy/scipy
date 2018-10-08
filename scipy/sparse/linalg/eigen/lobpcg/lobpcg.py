@@ -31,9 +31,20 @@ def save(ar, fileName):
     savetxt(fileName, ar, precision=8)
 
 
-# def _assert_symmetric(M, rtol=1e-5, atol=1e-8):
-#     assert_allclose(M.T.conj(), M, rtol=rtol, atol=atol)
+def _report_nonhermitian(M, a, b, name):
+    """
+    Report if `M` is not a hermitian matrix given the tolerances `a`, `b`.
+    """
+    from scipy.linalg import norm
 
+    md = M - M.T.conj()
+
+    nmd = norm(md, 1)
+    tol = max(np.spacing(10**a), (10**b)*norm(M, 1))
+    if nmd > tol:
+        print('matrix %s is not enough Hermitian for a=%d, b=%d:'
+              % (name, a, b))
+        print('condition: %.e < %e' % (nmd, tol))
 
 ##
 # 21.05.2007, c
@@ -490,8 +501,9 @@ def lobpcg(A, X,
             gramB = np.bmat([[ident0, xbw],
                               [xbw.T.conj(), ident]])
 
-        # _assert_symmetric(gramA)
-        # _assert_symmetric(gramB)
+        if verbosityLevel > 0:
+            _report_nonhermitian(gramA, 3, -1, 'gramA')
+            _report_nonhermitian(gramB, 3, -1, 'gramB')
 
         if verbosityLevel > 10:
             save(gramA, 'gramA')
