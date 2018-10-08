@@ -959,16 +959,17 @@ class rv_generic(object):
 
         # Cast to numpy.int64(vals is overflow) or int if discrete
         if discrete:
-            if size == ():
-                if vals > (1 << 32) - 1:
-                    vals = vals.astype(np.int64)
+            if np.isscalar(vals):
+                if vals > np.iinfo(np.int32).max:
+                    dtype = np.int64
                 else:
-                    vals = int(vals)
+                    dtype = int
             else:
-                if vals[np.where(vals > (1 << 32) - 1)].size:
-                    vals = vals.astype(np.int64)
+                if vals[np.where(vals > np.iinfo(np.int32).max)].size:
+                    dtype = np.int64
                 else:
-                    vals = vals.astype(int)
+                    dtype = int
+            vals = vals.astype(dtype)
 
         return vals
 
