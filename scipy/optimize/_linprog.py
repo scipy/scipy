@@ -185,7 +185,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     c : 1D array
         Coefficients of the linear objective function to be minimized.
     A_ub : 2D array, optional
-        2D array such that ``A_ub`` @ ``x`` gives the values of the upper-bound
+        2D array such that ``A_ub @ x`` gives the values of the upper-bound
         inequality constraints at ``x``.
     b_ub : 1D array, optional
         1D array of values representing the upper-bound of each inequality

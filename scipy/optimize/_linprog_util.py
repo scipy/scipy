@@ -19,7 +19,7 @@ def _check_sparse_inputs(options, A_ub, A_eq):
     Parameters
     ----------
     A_ub : 2D array, optional
-        2D array such that ``A_ub`` @ ``x`` gives the values of the upper-bound
+        2D array such that ``A_ub @ x`` gives the values of the upper-bound
         inequality constraints at ``x``.
     A_eq : 2D array, optional
         2D array such that ``A_eq`` @ ``x`` gives the values of the equality
@@ -38,7 +38,7 @@ def _check_sparse_inputs(options, A_ub, A_eq):
     Returns
     -------
     A_ub : 2D array, optional
-        2D array such that ``A_ub`` @ ``x`` gives the values of the upper-bound
+        2D array such that ``A_ub @ x`` gives the values of the upper-bound
         inequality constraints at ``x``.
     A_eq : 2D array, optional
         2D array such that ``A_eq`` @ ``x`` gives the values of the equality
@@ -80,7 +80,7 @@ def _clean_inputs(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None):
     c : 1D array
         Coefficients of the linear objective function to be minimized.
     A_ub : 2D array, optional
-        2D array such that ``A_ub`` @ ``x`` gives the values of the upper-bound
+        2D array such that ``A_ub @ x`` gives the values of the upper-bound
         inequality constraints at ``x``.
     b_ub : 1D array, optional
         1D array of values representing the upper-bound of each inequality
@@ -104,7 +104,7 @@ def _clean_inputs(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None):
     c : 1D array
         Coefficients of the linear objective function to be minimized.
     A_ub : 2D array, optional
-        2D array such that ``A_ub`` @ ``x`` gives the values of the upper-bound
+        2D array such that ``A_ub @ x`` gives the values of the upper-bound
         inequality constraints at ``x``.
     b_ub : 1D array, optional
         1D array of values representing the upper-bound of each inequality
@@ -349,7 +349,7 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, rr, tol=1e-9):
     c : 1D array
         Coefficients of the linear objective function to be minimized.
     A_ub : 2D array, optional
-        2D array such that ``A_ub`` @ ``x`` gives the values of the upper-bound
+        2D array such that ``A_ub @ x`` gives the values of the upper-bound
         inequality constraints at ``x``.
     b_ub : 1D array, optional
         1D array of values representing the upper-bound of each inequality
@@ -381,7 +381,7 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, rr, tol=1e-9):
         Constant term in objective function due to fixed (and eliminated)
         variables.
     A_ub : 2D array, optional
-        2D array such that ``A_ub`` @ ``x`` gives the values of the upper-bound
+        2D array such that ``A_ub @ x`` gives the values of the upper-bound
         inequality constraints at ``x``.
     b_ub : 1D array, optional
         1D array of values representing the upper-bound of each inequality
@@ -739,7 +739,7 @@ def _parse_linprog(c, A_ub, b_ub, A_eq, b_eq, bounds, options):
     c : 1D array
         Coefficients of the linear objective function to be minimized.
     A_ub : 2D array, optional
-        2D array such that ``A_ub`` @ ``x`` gives the values of the upper-bound
+        2D array such that ``A_ub @ x`` gives the values of the upper-bound
         inequality constraints at ``x``.
     b_ub : 1D array, optional
         1D array of values representing the upper-bound of each inequality
@@ -773,7 +773,7 @@ def _parse_linprog(c, A_ub, b_ub, A_eq, b_eq, bounds, options):
     c : 1D array
         Coefficients of the linear objective function to be minimized.
     A_ub : 2D array, optional
-        2D array such that ``A_ub`` @ ``x`` gives the values of the upper-bound
+        2D array such that ``A_ub @ x`` gives the values of the upper-bound
         inequality constraints at ``x``.
     b_ub : 1D array, optional
         1D array of values representing the upper-bound of each inequality
@@ -853,7 +853,7 @@ def _get_Abc(c, c0=0, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
         Constant term in objective function due to fixed (and eliminated)
         variables.
     A_ub : 2D array, optional
-        2D array such that ``A_ub`` @ ``x`` gives the values of the upper-bound
+        2D array such that ``A_ub @ x`` gives the values of the upper-bound
         inequality constraints at ``x``.
     b_ub : 1D array, optional
         1D array of values representing the upper-bound of each inequality
@@ -1044,7 +1044,7 @@ def _postsolve(x, c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
     c : 1D array
         Original coefficients of the linear objective function to be minimized.
     A_ub : 2D array, optional
-        2D array such that ``A_ub`` @ ``x`` gives the values of the upper-bound
+        2D array such that ``A_ub @ x`` gives the values of the upper-bound
         inequality constraints at ``x``.
     b_ub : 1D array, optional
         1D array of values representing the upper-bound of each inequality
@@ -1254,7 +1254,7 @@ def _postprocess(x, c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
     c : 1D array
         Original coefficients of the linear objective function to be minimized.
     A_ub : 2D array, optional
-        2D array such that ``A_ub`` @ ``x`` gives the values of the upper-bound
+        2D array such that ``A_ub @ x`` gives the values of the upper-bound
         inequality constraints at ``x``.
     b_ub : 1D array, optional
         1D array of values representing the upper-bound of each inequality

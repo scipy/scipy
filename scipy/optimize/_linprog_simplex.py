@@ -425,7 +425,7 @@ def _linprog_simplex(c, c0, A, b, maxiter=1000, disp=False, callback=None,
         Constant term in objective function due to fixed (and eliminated)
         variables. (Purely for display.)
     A : 2D array
-        2D array such that ``A`` @ ``x``, gives the values of the equality
+        2D array such that ``A @ x``, gives the values of the equality
         constraints at ``x``.
     b : 1D array
         1D array of values representing the right hand side of each equality

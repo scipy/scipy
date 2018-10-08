@@ -552,7 +552,7 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol,
     Parameters
     ----------
     A : 2D array
-        2D array such that ``A`` @ ``x``, gives the values of the equality
+        2D array such that ``A @ x``, gives the values of the equality
         constraints at ``x``.
     b : 1D array
         1D array of values representing the RHS of each equality constraint
@@ -798,7 +798,7 @@ def _linprog_ip(
         Constant term in objective function due to fixed (and eliminated)
         variables. (Purely for display.)
     A : 2D array
-        2D array such that ``A`` @ ``x``, gives the values of the equality
+        2D array such that ``A @ x``, gives the values of the equality
         constraints at ``x``.
     b : 1D array
         1D array of values representing the right hand side of each equality
