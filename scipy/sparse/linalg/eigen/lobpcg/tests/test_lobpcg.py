@@ -251,3 +251,20 @@ def test_eigs_consistency():
 
     _check_eigen(A, lvals5, lvecs5)
     assert_allclose(vals5, lvals5, atol=1e-14)
+
+def test_verbosity():
+    """Check that nonzero verbosity level code runs.
+    """
+    A, B = ElasticRod(100)
+
+    n = A.shape[0]
+    m = 20
+
+    np.random.seed(0)
+    V = rand(n,m)
+    X = linalg.orth(V)
+
+    eigs,vecs = lobpcg(A, X, B=B, tol=1e-5, maxiter=30, largest=False,
+                       verbosityLevel=1)
+    eigs,vecs = lobpcg(A, X, B=B, tol=1e-5, maxiter=30, largest=False,
+                       verbosityLevel=10)
