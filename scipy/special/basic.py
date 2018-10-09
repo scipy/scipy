@@ -14,7 +14,7 @@ from numpy import (pi, asarray, floor, isscalar, iscomplex, real,
 from . import _ufuncs as ufuncs
 from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma,
                       psi, _zeta, hankel1, hankel2, yv, kv, ndtri,
-                      poch, binom, hyp0f1, wofz)
+                      poch, binom, hyp0f1, wofz, _voigt)
 from . import specfun
 from . import orthogonal
 from ._comb import _comb_int
@@ -2246,19 +2246,7 @@ def voigt(x, sigma=1.0, gamma=1.0, mu=0.0):
     ----------
     .. [1] https://en.wikipedia.org/wiki/Voigt_profile
     """
-    INV_SQRT_2 = 0.7071067811865475
-    INV_SQRT_2PI = 0.3989422804014327
-
-    # convert it to ndarray if it wasn't
-    if np.ndim(x) > 0:
-        x = np.asarray(x)
-
-    # separation between real and imag is to avoid warning when nan is in the
-    # array
-    zreal = (x-mu) / sigma * INV_SQRT_2
-    zimag = 1j*gamma / sigma * INV_SQRT_2
-
-    return wofz(zreal+zimag).real / sigma * INV_SQRT_2PI
+    return _voigt(x, sigma, gamma, mu)
 
 
 def zeta(x, q=None, out=None):

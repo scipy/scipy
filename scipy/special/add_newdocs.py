@@ -104,6 +104,11 @@ add_newdoc("_lambertw",
     Internal function, use `lambertw` instead.
     """)
 
+add_newdoc("_voigt",
+    """
+    Internal function, use `voigt` instead.
+    """)
+
 add_newdoc("wrightomega",
     r"""
     wrightomega(z, out=None)
