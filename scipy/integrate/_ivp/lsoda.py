@@ -113,6 +113,9 @@ class LSODA(OdeSolver):
         elif first_step <= 0:
             raise ValueError("`first_step` must be positive or None.")
 
+        if t_bound - t0 < 0 and first_step is not None:
+            first_step *= -1
+
         if max_step == np.inf:
             max_step = 0  # LSODA value for infinity.
         elif max_step <= 0:
