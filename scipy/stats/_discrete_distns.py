@@ -544,7 +544,7 @@ class planck_gen(rv_discrete):
 
         f(k) = (1-\exp(-\lambda)) \exp(-\lambda k)
 
-    for :math:`k \lambda \ge 0`.
+    for :math:`k \ge 0` and :math:`\lambda > 0`.
 
     `planck` takes :math:`\lambda` as shape parameter.
 
@@ -554,14 +554,10 @@ class planck_gen(rv_discrete):
 
     """
     def _argcheck(self, lambda_):
-        self.a = np.where(lambda_ > 0, 0, -np.inf)
-        self.b = np.where(lambda_ > 0, np.inf, 0)
-        return lambda_ != 0
+        return lambda_ > 0
 
     def _pmf(self, k, lambda_):
-        # planck.pmf(k) = (1-exp(-lambda_))*exp(-lambda_*k)
-        fact = (1-exp(-lambda_))
-        return fact*exp(-lambda_*k)
+        return (1-exp(-lambda_))*exp(-lambda_*k)
 
     def _cdf(self, x, lambda_):
         k = floor(x)
@@ -593,7 +589,7 @@ class planck_gen(rv_discrete):
         return l*exp(-l)/C - log(C)
 
 
-planck = planck_gen(name='planck', longname='A discrete exponential ')
+planck = planck_gen(a=0, name='planck', longname='A discrete exponential ')
 
 
 class boltzmann_gen(rv_discrete):
@@ -745,7 +741,8 @@ class zipf_gen(rv_discrete):
 
     for :math:`k \ge 1`.
 
-    `zipf` takes :math:`a` as shape parameter.
+    `zipf` takes :math:`a` as shape parameter. :math:`\zeta` is the 
+    Riemann zeta function (`scipy.special.zeta`)
 
     %(after_notes)s
 
@@ -786,7 +783,7 @@ class dlaplace_gen(rv_discrete):
 
         f(k) = \tanh(a/2) \exp(-a |k|)
 
-    for :math:`a > 0`.
+    for integers :math:`k` and :math:`a > 0`.
 
     `dlaplace` takes :math:`a` as shape parameter.
 
@@ -838,8 +835,8 @@ class skellam_gen(rv_discrete):
     uncorrelated Poisson random variables.
 
     Let :math:`k_1` and :math:`k_2` be two Poisson-distributed r.v. with
-    expected values lam1 and lam2. Then, :math:`k_1 - k_2` follows a Skellam
-    distribution with parameters
+    expected values :math:`\lambda_1` and :math:`\lambda_2`. Then,
+    :math:`k_1 - k_2` follows a Skellam distribution with parameters
     :math:`\mu_1 = \lambda_1 - \rho \sqrt{\lambda_1 \lambda_2}` and
     :math:`\mu_2 = \lambda_2 - \rho \sqrt{\lambda_1 \lambda_2}`, where
     :math:`\rho` is the correlation coefficient between :math:`k_1` and
