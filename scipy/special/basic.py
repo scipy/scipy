@@ -2214,14 +2214,14 @@ def voigt(x, sigma=1.0, gamma=1.0, mu=0.0):
     ----------
     x : array_like
         Input argument.
-    sigma : float, optional
+    sigma : array_like, optional
         The standard deviation of the Normal distribution part. The default is
         1.0.
-    gamma : float, optional
+    gamma : array_like, optional
         The half-width at half-maximum of the Cauchy distribution part. The
         default is 1.0.
-    mu : float, optional
-        The location of the peak profile. The default is at 0.0.
+    mu : array_like, optional
+        The location of the peak profile. The default is 0.0.
 
     Returns
     -------
