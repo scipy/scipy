@@ -645,6 +645,12 @@ def _run_doctests(tests, full_name, verbose, doctest_warnings):
             else:
                 out(msg)
 
+        # a flush method is required when a doctest uses multiprocessing
+        # multiprocessing/popen_fork.py flushes sys.stderr
+        def flush(self):
+            if doctest_warnings:
+                sys.stdout.flush()
+
     # Run tests, trying to restore global state afterward
     old_printoptions = np.get_printoptions()
     old_errstate = np.seterr()
