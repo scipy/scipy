@@ -348,11 +348,11 @@ class MapWrapper(object):
     Parameters
     ----------
     pool : int or map-like callable
-        If `pool` is an `int` then it specifies the number of threads to
-        use for parallelization. If `int(pool) == 1`, then no parallel
-        processing is used and the map builtin is used. If `pool == -1` then
-        the pool will utilise all available CPU..
-        If pool is a map-like callable that follows the same
+        If `pool` is an integer, then it specifies the number of threads to
+        use for parallelization. If ``int(pool) == 1``, then no parallel
+        processing is used and the map builtin is used.
+        If ``pool == -1``, then the pool will utilise all available CPUs.
+        If `pool` is a map-like callable that follows the same
         calling sequence as the built-in map function, then this callable is
         used for parallelisation.
     """

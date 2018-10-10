@@ -24,6 +24,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
                            init='latinhypercube', atol=0, updating='immediate',
                            workers=1):
     """Finds the global minimum of a multivariate function.
+
     Differential Evolution is stochastic in nature (does not use gradient
     methods) to find the minimium, and can search large areas of candidate
     space, but often requires larger numbers of function evaluations than
@@ -135,24 +136,25 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         where and `atol` and `tol` are the absolute and relative tolerance
         respectively.
     updating : {'immediate', 'deferred'}, optional
-        If `immediate` the best solution vector is continuously updated within
-        a single generation [4]_. This can lead to faster convergence as trial
-        vectors can take advantage of continuous improvements in the best
+        If ``'immediate'``, the best solution vector is continuously updated
+        within a single generation [4]_. This can lead to faster convergence as
+        trial vectors can take advantage of continuous improvements in the best
         solution.
-        With `deferred` the best solution vector is updated once per
-        generation. Only `deferred` is compatible with parallelization, and the
-        `workers` keyword can over-ride this option.
+        With ``'deferred'``, the best solution vector is updated once per
+        generation. Only ``'deferred'`` is compatible with parallelization, and
+        the `workers` keyword can over-ride this option.
 
         .. versionadded:: 1.2.0
+
     workers : int or map-like callable, optional
         If `workers` is an int the population is subdivided into `workers`
         sections and evaluated in parallel (uses `multiprocessing.Pool`).
-        Supply `-1` to use all cores available to the Process.
+        Supply -1 to use all available CPU cores.
         Alternatively supply a map-like callable, such as
         `multiprocessing.Pool.map` for evaluating the population in parallel.
         This evaluation is carried out as ``workers(func, iterable)``.
         This option will override the `updating` keyword to
-        `updating='deferred'` if `workers != 1`.
+        ``updating='deferred'`` if ``workers != 1``.
         Requires that `func` be pickleable.
 
         .. versionadded:: 1.2.0
@@ -186,12 +188,12 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
 
     A trial vector is then constructed. Starting with a randomly chosen 'i'th
     parameter the trial is sequentially filled (in modulo) with parameters from
-    `b'` or the original candidate. The choice of whether to use `b'` or the
+    ``b'`` or the original candidate. The choice of whether to use ``b'`` or the
     original candidate is made with a binomial distribution (the 'bin' in
     'best1bin') - a random number in [0, 1) is generated.  If this number is
     less than the `recombination` constant then the parameter is loaded from
-    `b'`, otherwise it is loaded from the original candidate.  The final
-    parameter is always loaded from `b'`.  Once the trial candidate is built
+    ``b'``, otherwise it is loaded from the original candidate.  The final
+    parameter is always loaded from ``b'``.  Once the trial candidate is built
     its fitness is assessed. If the trial is better than the original candidate
     then it takes its place. If it is also better than the best overall
     candidate it also replaces that.
@@ -200,11 +202,11 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     values. This has the effect of widening the search radius, but slowing
     convergence.
     By default the best solution vector is updated continuously within a single
-    iteration (`updating='immediate'`). This is a modification [4]_ of the
+    iteration (``updating='immediate'``). This is a modification [4]_ of the
     original differential evolution algorithm which can lead to faster
     convergence as trial vectors can immediately benefit from improved
     solutions. To use the original Storn and Price behaviour, updating the best
-    solution once per iteration, set `updating='deferred'`.
+    solution once per iteration, set ``updating='deferred'``.
 
     .. versionadded:: 0.15.0
 
@@ -592,7 +594,7 @@ class DifferentialEvolutionSolver(object):
         init : np.ndarray
             Array specifying subset of the initial population. The array should
             have shape (M, len(x)), where len(x) is the number of parameters.
-            The population is clipped to the lower and upper `bounds`.
+            The population is clipped to the lower and upper bounds.
         """
         # make sure you're using a float array
         popn = np.asfarray(init)
@@ -749,17 +751,17 @@ class DifferentialEvolutionSolver(object):
 
         Parameters
         ----------
-        population : np.ndarray
+        population : ndarray
             An array of parameter vectors normalised to [0, 1] using lower
-            and upper limits. Has shape `(np.size(population, 0), len(x))`.
+            and upper limits. Has shape ``(np.size(population, 0), len(x))``.
 
         Returns
         -------
-        energies : np.ndarray
+        energies : ndarray
             An array of energies corresponding to each population member. If
             maxfun will be exceeded during this call, then the number of
             function evaluations will be reduced and energies will be
-            right-padded with np.inf. Has shape `(np.size(population, 0),)`
+            right-padded with np.inf. Has shape ``(np.size(population, 0),)``
         """
         num_members = np.size(population, 0)
         nfevs = min(num_members,
@@ -891,28 +893,20 @@ class DifferentialEvolutionSolver(object):
     next = __next__
 
     def _scale_parameters(self, trial):
-        """
-        scale from a number between 0 and 1 to parameters.
-        """
+        """Scale from a number between 0 and 1 to parameters."""
         return self.__scale_arg1 + (trial - 0.5) * self.__scale_arg2
 
     def _unscale_parameters(self, parameters):
-        """
-        scale from parameters to a number between 0 and 1.
-        """
+        """Scale from parameters to a number between 0 and 1."""
         return (parameters - self.__scale_arg1) / self.__scale_arg2 + 0.5
 
     def _ensure_constraint(self, trial):
-        """
-        make sure the parameters lie between the limits
-        """
+        """Make sure the parameters lie between the limits."""
         mask = np.where((trial > 1) | (trial < 0))
         trial[mask] = self.random_number_generator.rand(mask[0].size)
 
     def _mutate(self, candidate):
-        """
-        create a trial vector based on a mutation strategy
-        """
+        """Create a trial vector based on a mutation strategy."""
         trial = np.copy(self.population[candidate])
 
         rng = self.random_number_generator
@@ -948,25 +942,19 @@ class DifferentialEvolutionSolver(object):
             return trial
 
     def _best1(self, samples):
-        """
-        best1bin, best1exp
-        """
+        """best1bin, best1exp"""
         r0, r1 = samples[:2]
         return (self.population[0] + self.scale *
                 (self.population[r0] - self.population[r1]))
 
     def _rand1(self, samples):
-        """
-        rand1bin, rand1exp
-        """
+        """rand1bin, rand1exp"""
         r0, r1, r2 = samples[:3]
         return (self.population[r0] + self.scale *
                 (self.population[r1] - self.population[r2]))
 
     def _randtobest1(self, samples):
-        """
-        randtobest1bin, randtobest1exp
-        """
+        """randtobest1bin, randtobest1exp"""
         r0, r1, r2 = samples[:3]
         bprime = np.copy(self.population[r0])
         bprime += self.scale * (self.population[0] - bprime)
@@ -975,19 +963,15 @@ class DifferentialEvolutionSolver(object):
         return bprime
 
     def _currenttobest1(self, candidate, samples):
-        """
-        currenttobest1bin, currenttobest1exp
-        """
+        """currenttobest1bin, currenttobest1exp"""
         r0, r1 = samples[:2]
-        bprime = (self.population[candidate] + self.scale * 
+        bprime = (self.population[candidate] + self.scale *
                   (self.population[0] - self.population[candidate] +
                    self.population[r0] - self.population[r1]))
         return bprime
 
     def _best2(self, samples):
-        """
-        best2bin, best2exp
-        """
+        """best2bin, best2exp"""
         r0, r1, r2, r3 = samples[:4]
         bprime = (self.population[0] + self.scale *
                   (self.population[r0] + self.population[r1] -
@@ -996,9 +980,7 @@ class DifferentialEvolutionSolver(object):
         return bprime
 
     def _rand2(self, samples):
-        """
-        rand2bin, rand2exp
-        """
+        """rand2bin, rand2exp"""
         r0, r1, r2, r3, r4 = samples
         bprime = (self.population[r0] + self.scale *
                   (self.population[r1] + self.population[r2] -
