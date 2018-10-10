@@ -467,7 +467,6 @@ def test_first_step():
                             max_step=0.5, atol=atol, method=method,
                             dense_output=True, first_step=first_step)
 
-            print(method, res)
             assert_equal(res.t[0], t_span[0])
             assert_equal(res.t[-1], t_span[-1])
             assert_allclose(first_step, np.abs(res.t[1] - 5))
@@ -492,7 +491,6 @@ def test_first_step():
 
             assert_raises(ValueError, method, fun_rational, t_span[0], y0,
                           t_span[1], first_step=-1)
-
                 
 
 def test_t_eval():
