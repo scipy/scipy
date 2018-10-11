@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import division, print_function, absolute_import
 
-from numpy import cos, sqrt, sum, sin, abs
+from numpy import cos, sqrt, sin, abs
 from .go_benchmark import Benchmark
 
 

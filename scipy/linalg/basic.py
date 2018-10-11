@@ -1523,8 +1523,6 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
         ``T`` above, the scaling and the permutation vectors are given
         separately as a tuple without allocating the full array ``T``.
 
-    .. versionadded:: 0.19.0
-
     Notes
     -----
 
@@ -1540,6 +1538,8 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
 
     The code is a wrapper around LAPACK's xGEBAL routine family for matrix
     balancing.
+
+    .. versionadded:: 0.19.0
 
     Examples
     --------

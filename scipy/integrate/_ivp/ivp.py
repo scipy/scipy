@@ -456,6 +456,10 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     if t_eval is None:
         ts = [t0]
         ys = [y0]
+    elif t_eval is not None and dense_output:
+        ts = []
+        ti = [t0]
+        ys = []
     else:
         ts = []
         ys = []
@@ -531,6 +535,9 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
                 ts.append(t_eval_step)
                 ys.append(sol(t_eval_step))
                 t_eval_i = t_eval_i_new
+        
+        if t_eval is not None and dense_output:
+            ti.append(t)
 
     message = MESSAGES.get(status, message)
 
@@ -545,7 +552,10 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         ys = np.hstack(ys)
 
     if dense_output:
-        sol = OdeSolution(ts, interpolants)
+        if t_eval is None:
+            sol = OdeSolution(ts, interpolants)
+        else:
+            sol = OdeSolution(ti, interpolants)
     else:
         sol = None
 

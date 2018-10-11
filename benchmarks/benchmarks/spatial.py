@@ -22,7 +22,7 @@ try:
 except ImportError:
     pass
 
-from .common import Benchmark
+from .common import Benchmark, LimitedParamBenchmark
 
 
 class Build(Benchmark):
@@ -59,13 +59,14 @@ class Build(Benchmark):
 LEAF_SIZES = [8, 128]
 BOX_SIZES = [None, 0.0, 1.0]
 
-class Query(Benchmark):
+class Query(LimitedParamBenchmark):
     params = [
         [(3,10000,1000), (8,10000,1000), (16,10000,1000)],
         [1, 2, np.inf],
         BOX_SIZES, LEAF_SIZES,
     ]
     param_names = ['(m, n, r)', 'p', 'boxsize', 'leafsize']
+    num_param_combinations = 21
 
     @staticmethod
     def do_setup(self, mnr, p, boxsize, leafsize):
@@ -79,6 +80,7 @@ class Query(Benchmark):
         self.T = cKDTree(self.data, leafsize=leafsize, boxsize=boxsize)
 
     def setup(self, mnr, p, boxsize, leafsize):
+        LimitedParamBenchmark.setup(self, mnr, p, boxsize, leafsize)
         Query.do_setup(self, mnr, p, boxsize, leafsize)
 
     def time_query(self, mnr, p, boxsize, leafsize):
@@ -88,8 +90,11 @@ class Query(Benchmark):
         """
         self.T.query(self.queries, p=p)
 
+    # Retain old benchmark results (remove this if changing the benchmark)
+    time_query.version = "327bc0627d5387347e9cdcf4c52a550c813bb80a859eeb0f3e5bfe6650a8a1db"
 
-class Radius(Benchmark):
+
+class Radius(LimitedParamBenchmark):
     params = [
         [(3,10000,1000)],
         [1, 2, np.inf],
@@ -97,14 +102,26 @@ class Radius(Benchmark):
         BOX_SIZES, LEAF_SIZES,
     ]
     param_names = ['(m, n, r)', 'p', 'probe radius', 'boxsize', 'leafsize']
+    num_param_combinations = 7
 
     def __init__(self):
         self.time_query_pairs.__func__.params = list(self.params)
         self.time_query_pairs.__func__.params[0] = [(3,1000,30),
                                                     (8,1000,30),
                                                     (16,1000,30)]
+        self.time_query_ball_point.__func__.setup = self.setup_query_ball_point
+        self.time_query_pairs.__func__.setup = self.setup_query_pairs
 
-    def setup(self, mnr, p, probe_radius, boxsize, leafsize):
+    def setup(self, *args):
+        pass
+
+    def setup_query_ball_point(self, mnr, p, probe_radius, boxsize, leafsize):
+        LimitedParamBenchmark.setup(self, mnr, p, probe_radius, boxsize, leafsize,
+                                    param_seed=3)
+        Query.do_setup(self, mnr, p, boxsize, leafsize)
+
+    def setup_query_pairs(self, mnr, p, probe_radius, boxsize, leafsize):
+        # query_pairs is fast enough so we can run all parameter combinations
         Query.do_setup(self, mnr, p, boxsize, leafsize)
 
     def time_query_ball_point(self, mnr, p, probe_radius, boxsize, leafsize):
@@ -113,8 +130,12 @@ class Radius(Benchmark):
     def time_query_pairs(self, mnr, p, probe_radius, boxsize, leafsize):
         self.T.query_pairs(probe_radius, p=p)
 
+    # Retain old benchmark results (remove this if changing the benchmark)
+    time_query_ball_point.version = "e0c2074b35db7e5fca01a43b0fba8ab33a15ed73d8573871ea6feb57b3df4168"
+    time_query_pairs.version = "cf669f7d619e81e4a09b28bb3fceaefbdd316d30faf01524ab33d41661a53f56"
 
-class Neighbors(Benchmark):
+
+class Neighbors(LimitedParamBenchmark):
     params = [
         [(3,1000,1000),
          (8,1000,1000),
@@ -125,8 +146,11 @@ class Neighbors(Benchmark):
         ['cKDTree', 'cKDTree_weighted'],
     ]
     param_names = ['(m, n1, n2)', 'p', 'probe radius', 'boxsize', 'leafsize', 'cls']
+    num_param_combinations = 17
 
     def setup(self, mn1n2, p, probe_radius, boxsize, leafsize, cls):
+        LimitedParamBenchmark.setup(self, mn1n2, p, probe_radius, boxsize, leafsize, cls)
+
         m, n1, n2 = mn1n2
 
         self.data1 = np.random.uniform(size=(n1, m))
@@ -151,6 +175,11 @@ class Neighbors(Benchmark):
             self.T1.count_neighbors(self.T2, probe_radius, p=p)
         else:
             self.T1.count_neighbors(self.T2, probe_radius, weights=(self.w1, self.w2), p=p)
+
+    # Retain old benchmark results (remove this if changing the benchmark)
+    time_sparse_distance_matrix.version = "9aa921dce6da78394ab29d949be27953484613dcf9c9632c01ae3973d4b29596"
+    time_count_neighbors.version = "830287f1cf51fa6ba21854a60b03b2a6c70b2f2485c3cdcfb19a360e0a7e2ca2"
+
 
 class CNeighbors(Benchmark):
     params = [

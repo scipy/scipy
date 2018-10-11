@@ -36,9 +36,41 @@ except AttributeError:
 
 ## Kolmogorov-Smirnov one-sided and two-sided test statistics
 class ksone_gen(rv_continuous):
-    """General Kolmogorov-Smirnov one-sided test.
+    r"""General Kolmogorov-Smirnov one-sided test.
 
-    %(default)s
+    This is the distribution of the one-sided Kolmogorov-Smirnov (KS)
+    statistics :math:`\sqrt{n} D_n^+` and :math:`\sqrt{n} D_n^-`
+    for a finite sample size ``n`` (the shape parameter).
+
+    %(before_notes)s
+
+    Notes
+    -----
+    :math:`\sqrt{n} D_n^+` and :math:`\sqrt{n} D_n^-` are given by
+
+    .. math::
+
+        D_n^+ &= \text{sup}_x (F_n(x) - F(x)),\\
+        D_n^- &= \text{sup}_x (F(x) - F_n(x)),\\
+
+    where :math:`F` is a CDF and :math:`F_n` is an empirical CDF. `ksone`
+    describes the distribution under the null hypothesis of the KS test
+    that the empirical CDF corresponds to :math:`n` i.i.d. random variates
+    with CDF :math:`F`.
+
+    %(after_notes)s
+
+    See Also
+    --------
+    kstwobign, kstest
+
+    References
+    ----------
+    .. [1] Birnbaum, Z. W. and Tingey, F.H. "One-sided confidence contours
+       for probability distribution functions", The Annals of Mathematical
+       Statistics, 22(4), pp 592-596 (1951).
+
+    %(example)s
 
     """
     def _cdf(self, x, n):
@@ -52,9 +84,39 @@ ksone = ksone_gen(a=0.0, name='ksone')
 
 
 class kstwobign_gen(rv_continuous):
-    """Kolmogorov-Smirnov two-sided test for large N.
+    r"""Kolmogorov-Smirnov two-sided test for large N.
 
-    %(default)s
+    This is the asymptotic distribution of the two-sided Kolmogorov-Smirnov
+    statistic :math:`\sqrt{n} D_n` that measures the maximum absolute
+    distance of the theoretical CDF from the empirical CDF (see `kstest`).
+
+    %(before_notes)s
+
+    Notes
+    -----
+    :math:`\sqrt{n} D_n` is given by
+
+    .. math::
+
+        D_n = \text{sup}_x |F_n(x) - F(x)|
+
+    where :math:`F` is a CDF and :math:`F_n` is an empirical CDF. `kstwobign`
+    describes the asymptotic distribution (i.e. the limit of
+    :math:`\sqrt{n} D_n`) under the null hypothesis of the KS test that the
+    empirical CDF corresponds to i.i.d. random variates with CDF :math:`F`.
+
+    %(after_notes)s
+
+    See Also
+    --------
+    ksone, kstest
+
+    References
+    ----------
+    .. [1] Marsaglia, G. et al. "Evaluating Kolmogorov's distribution",
+       Journal of Statistical Software, 8(18), 2003.
+
+    %(example)s
 
     """
     def _cdf(self, x):
@@ -114,8 +176,8 @@ def _norm_isf(q):
 class norm_gen(rv_continuous):
     r"""A normal continuous random variable.
 
-    The location (loc) keyword specifies the mean.
-    The scale (scale) keyword specifies the standard deviation.
+    The location (``loc``) keyword specifies the mean.
+    The scale (``scale``) keyword specifies the standard deviation.
 
     %(before_notes)s
 
@@ -215,9 +277,9 @@ class alpha_gen(rv_continuous):
         f(x, a) = \frac{1}{x^2 \Phi(a) \sqrt{2\pi}} *
                   \exp(-\frac{1}{2} (a-1/x)^2)
 
-    where :math:`\Phi(a)` is the normal CDF, :math:`x > 0`, and :math:`a > 0`.
+    where :math:`\Phi` is the normal CDF, :math:`x > 0`, and :math:`a > 0`.
 
-    `alpha` takes ``a`` as a shape parameter for :math:`a`.
+    `alpha` takes ``a`` as a shape parameter.
 
     %(after_notes)s
 
@@ -4240,7 +4302,7 @@ class lognorm_gen(rv_continuous):
     .. math::
 
         f(x, s) = \frac{1}{s x \sqrt{2\pi}}
-                  \exp(-\frac{\log^2(x}{2s^2})
+                  \exp\left(-\frac{\log^2(x)}{2s^2}\right)
 
     for :math:`x > 0`, :math:`s > 0`.
 
@@ -5021,7 +5083,7 @@ class ncf_gen(rv_continuous):
                           \gamma(n_1/2) \gamma(1+n_2/2) \\
                          \frac{L^{\frac{v_1}{2}-1}_{v_2/2}
                                (-\lambda v_1 \frac{x}{2(v_1 x+v_2)})}
-                              {(B(v_1/2, v_2/2)  \gamma(\frac{v_1+v_2}{2})}
+                              {B(v_1/2, v_2/2)  \gamma(\frac{v_1+v_2}{2})}
 
     for :math:`n_1 > 1`, :math:`n_2, \lambda > 0`.  Here :math:`n_1` is the
     degrees of freedom in the numerator, :math:`n_2` the degrees of freedom in
@@ -6848,9 +6910,10 @@ class crystalball_gen(rv_continuous):
     where :math:`A = (m / |\beta|)^n  \exp(-\beta^2 / 2)`,
     :math:`B = m/|\beta| - |\beta|` and :math:`N` is a normalisation constant.
 
-    `crystalball` takes :math:`\beta` and :math:`m` as shape parameters.
-    :math:`\beta` defines the point where the pdf changes from a power-law to a
-    Gaussian distribution :math:`m` is power of the power-law tail.
+    `crystalball` takes :math:`\beta > 0` and :math:`m > 1` as shape
+    parameters.  :math:`\beta` defines the point where the pdf changes
+    from a power-law to a Gaussian distribution.  :math:`m` is the power
+    of the power-law tail.
 
     References
     ----------
@@ -6863,6 +6926,7 @@ class crystalball_gen(rv_continuous):
 
     %(example)s
     """
+
     def _pdf(self, x, beta, m):
         """
         Return PDF of the crystalball function.
@@ -6873,25 +6937,76 @@ class crystalball_gen(rv_continuous):
                                            | A * (B - x)**(-m), for x <= -beta
                                             --
         """
-        N = 1.0 / (m/beta / (m-1) * np.exp(-beta**2 / 2.0) + _norm_pdf_C * _norm_cdf(beta))
-        rhs = lambda x, beta, m: np.exp(-x**2 / 2)
-        lhs = lambda x, beta, m: (m/beta)**m * np.exp(-beta**2 / 2.0) * (m/beta - beta - x)**(-m)
-        return N * _lazywhere(np.atleast_1d(x > -beta), (x, beta, m), f=rhs, f2=lhs)
+        N = 1.0 / (m/beta / (m-1) * np.exp(-beta**2 / 2.0) +
+                   _norm_pdf_C * _norm_cdf(beta))
+
+        def rhs(x, beta, m):
+            return np.exp(-x**2 / 2)
+
+        def lhs(x, beta, m):
+            return ((m/beta)**m * np.exp(-beta**2 / 2.0) *
+                    (m/beta - beta - x)**(-m))
+
+        return N * _lazywhere(x > -beta, (x, beta, m), f=rhs, f2=lhs)
+
+    def _logpdf(self, x, beta, m):
+        """
+        Return the log of the PDF of the crystalball function.
+        """
+        N = 1.0 / (m/beta / (m-1) * np.exp(-beta**2 / 2.0) +
+                   _norm_pdf_C * _norm_cdf(beta))
+
+        def rhs(x, beta, m):
+            return -x**2/2
+
+        def lhs(x, beta, m):
+            return m*np.log(m/beta) - beta**2/2 - m*np.log(m/beta - beta - x)
+
+        return np.log(N) + _lazywhere(x > -beta, (x, beta, m), f=rhs, f2=lhs)
 
     def _cdf(self, x, beta, m):
         """
         Return CDF of the crystalball function
         """
-        N = 1.0 / (m/beta / (m-1) * np.exp(-beta**2 / 2.0) + _norm_pdf_C * _norm_cdf(beta))
-        rhs = lambda x, beta, m: (m/beta) * np.exp(-beta**2 / 2.0) / (m-1) + _norm_pdf_C * (_norm_cdf(x) - _norm_cdf(-beta))
-        lhs = lambda x, beta, m: (m/beta)**m * np.exp(-beta**2 / 2.0) * (m/beta - beta - x)**(-m+1) / (m-1)
-        return N * _lazywhere(np.atleast_1d(x > -beta), (x, beta, m), f=rhs, f2=lhs)
+        N = 1.0 / (m/beta / (m-1) * np.exp(-beta**2 / 2.0) +
+                   _norm_pdf_C * _norm_cdf(beta))
+
+        def rhs(x, beta, m):
+            return ((m/beta) * np.exp(-beta**2 / 2.0) / (m-1) +
+                    _norm_pdf_C * (_norm_cdf(x) - _norm_cdf(-beta)))
+
+        def lhs(x, beta, m):
+            return ((m/beta)**m * np.exp(-beta**2 / 2.0) *
+                    (m/beta - beta - x)**(-m+1) / (m-1))
+
+        return N * _lazywhere(x > -beta, (x, beta, m), f=rhs, f2=lhs)
+
+    def _ppf(self, p, beta, m):
+        N = 1.0 / (m/beta / (m-1) * np.exp(-beta**2 / 2.0) +
+                   _norm_pdf_C * _norm_cdf(beta))
+        pbeta = N * (m/beta) * np.exp(-beta**2/2) / (m - 1)
+
+        def ppf_less(p, beta, m):
+            eb2 = np.exp(-beta**2/2)
+            C = (m/beta) * eb2 / (m-1)
+            N = 1/(C + _norm_pdf_C * _norm_cdf(beta))
+            return (m/beta - beta -
+                    ((m - 1)*(m/beta)**(-m)/eb2*p/N)**(1/(1-m)))
+
+        def ppf_greater(p, beta, m):
+            eb2 = np.exp(-beta**2/2)
+            C = (m/beta) * eb2 / (m-1)
+            N = 1/(C + _norm_pdf_C * _norm_cdf(beta))
+            return _norm_ppf(_norm_cdf(-beta) + (1/_norm_pdf_C)*(p/N - C))
+
+        return _lazywhere(p < pbeta, (p, beta, m), f=ppf_less, f2=ppf_greater)
 
     def _munp(self, n, beta, m):
         """
         Returns the n-th non-central moment of the crystalball function.
         """
-        N = 1.0 / (m/beta / (m-1) * np.exp(-beta**2 / 2.0) + _norm_pdf_C * _norm_cdf(beta))
+        N = 1.0 / (m/beta / (m-1) * np.exp(-beta**2 / 2.0) +
+                   _norm_pdf_C * _norm_cdf(beta))
 
         def n_th_moment(n, beta, m):
             """
@@ -6900,24 +7015,21 @@ class crystalball_gen(rv_continuous):
             """
             A = (m/beta)**m * np.exp(-beta**2 / 2.0)
             B = m/beta - beta
-            rhs = 2**((n-1)/2.0) * sc.gamma((n+1)/2) * (1.0 + (-1)**n * sc.gammainc((n+1)/2, beta**2 / 2))
+            rhs = (2**((n-1)/2.0) * sc.gamma((n+1)/2) *
+                   (1.0 + (-1)**n * sc.gammainc((n+1)/2, beta**2 / 2)))
             lhs = np.zeros(rhs.shape)
             for k in range(n + 1):
-                lhs += sc.binom(n, k) * B**(n-k) * (-1)**k / (m - k - 1) * (m/beta)**(-m + k + 1)
+                lhs += (sc.binom(n, k) * B**(n-k) * (-1)**k / (m - k - 1) *
+                        (m/beta)**(-m + k + 1))
             return A * lhs + rhs
 
-        return N * _lazywhere(np.atleast_1d(n + 1 < m),
-                              (n, beta, m),
+        return N * _lazywhere(n + 1 < m, (n, beta, m),
                               np.vectorize(n_th_moment, otypes=[np.float]),
                               np.inf)
 
     def _argcheck(self, beta, m):
         """
-        In HEP crystal-ball is also defined for m = 1 (see plot on wikipedia)
-        But the function doesn't have a finite integral in this corner case,
-        and isn't a PDF anymore (but can still be used on a finite range).
-        Here we restrict the function to m > 1.
-        In addition we restrict beta to be positive
+        Shape parameter bounds are m > 1 and beta > 0.
         """
         return (m > 1) & (beta > 0)
 

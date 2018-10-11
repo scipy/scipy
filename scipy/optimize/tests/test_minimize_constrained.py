@@ -602,7 +602,16 @@ class TestTrustRegionConstr(TestCase):
         # Test the returned `OptimizeResult` contains keys consistent with
         # other solvers.
 
+        def callback(x, info):
+            assert_('nit' in info)
+            assert_('niter' in info)
+
         result = minimize(lambda x: x**2, [0], jac=lambda x: 2*x,
-                          hess=lambda x: 2, method='trust-constr')
+                          hess=lambda x: 2, callback=callback,
+                          method='trust-constr')
         assert_(result.get('success'))
         assert_(result.get('nit', -1) == 1)
+
+        # Also check existence of the 'niter' attribute, for backward
+        # compatibility
+        assert_(result.get('niter', -1) == 1)

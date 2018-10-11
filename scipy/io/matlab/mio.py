@@ -5,8 +5,6 @@ Module for reading and writing matlab (TM) .mat files
 
 from __future__ import division, print_function, absolute_import
 
-import numpy as np
-
 from scipy._lib.six import string_types
 
 from .miobase import get_matfile_version, docfiller

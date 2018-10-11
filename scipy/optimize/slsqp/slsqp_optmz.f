@@ -35,7 +35,10 @@ C
 ************************************************************************
 
       SUBROUTINE slsqp (m, meq, la, n, x, xl, xu, f, c, g, a,
-     *                  acc, iter, mode, w, l_w, jw, l_jw)
+     *                  acc, iter, mode, w, l_w, jw, l_jw,
+     *                  alpha, f0, gs, h1, h2, h3, h4, t, t0, tol,
+     *                  iexact, incons, ireset, itermx, line, 
+     *                  n1, n2, n3)
 
 C   SLSQP       S EQUENTIAL  L EAST  SQ UARES  P ROGRAMMING
 C            TO SOLVE GENERAL NONLINEAR OPTIMIZATION PROBLEMS
@@ -214,10 +217,14 @@ C*                                                                     *
 C***********************************************************************
 
       INTEGER          il, im, ir, is, iter, iu, iv, iw, ix, l_w, l_jw,
-     *                 jw(l_jw), la, m, meq, mineq, mode, n, n1
+     *                 jw(l_jw), la, m, meq, mineq, mode, n
 
       DOUBLE PRECISION acc, a(la,n+1), c(la), f, g(n+1),
      *                 x(n), xl(n), xu(n), w(l_w)
+
+      INTEGER          iexact, incons, ireset, itermx, line, n1, n2, n3
+
+      DOUBLE PRECISION alpha, f0, gs, h1, h2, h3, h4, t, t0, tol
 
 c     dim(W) =         N1*(N1+1) + MEQ*(N1+1) + MINEQ*(N1+1)  for LSQ
 c                    +(N1-MEQ+1)*(MINEQ+2) + 2*MINEQ          for LSI
@@ -254,12 +261,18 @@ C   PREPARE DATA FOR CALLING SQPBDY  -  INITIAL ADDRESSES IN W
       iw = iv + n1
 
       CALL slsqpb  (m, meq, la, n, x, xl, xu, f, c, g, a, acc, iter,
-     * mode, w(ir), w(il), w(ix), w(im), w(is), w(iu), w(iv), w(iw), jw)
-
+     * mode, w(ir), w(il), w(ix), w(im), w(is), w(iu), w(iv), w(iw), jw,
+     * alpha, f0, gs, h1, h2, h3, h4, t, t0, tol,
+     * iexact, incons, ireset, itermx, line, 
+     * n1, n2, n3)
+ 
       END
 
       SUBROUTINE slsqpb (m, meq, la, n, x, xl, xu, f, c, g, a, acc,
-     *                   iter, mode, r, l, x0, mu, s, u, v, w, iw)
+     *                   iter, mode, r, l, x0, mu, s, u, v, w, iw,
+     *                   alpha, f0, gs, h1, h2, h3, h4, t, t0, tol,
+     *                   iexact, incons, ireset, itermx, line, 
+     *                   n1, n2, n3)
 
 C   NONLINEAR PROGRAMMING BY SOLVING SEQUENTIALLY QUADRATIC PROGRAMS
 
@@ -282,9 +295,6 @@ c     dim(W) =         N1*(N1+1) + MEQ*(N1+1) + MINEQ*(N1+1)  for LSQ
 c                     +(N1-MEQ+1)*(MINEQ+2) + 2*MINEQ
 c                     +(N1+MINEQ)*(N1-MEQ) + 2*MEQ + N1       for LSEI
 c                      with MINEQ = M - MEQ + 2*N1  &  N1 = N+1
-
-      SAVE             alpha, f0, gs, h1, h2, h3, h4, t, t0, tol,
-     *                 iexact, incons, ireset, itermx, line, n1, n2, n3
 
       DATA             ZERO /0.0d0/, one /1.0d0/, alfmin /1.0d-1/,
      *                 hun /1.0d+2/, ten /1.0d+1/, two /2.0d0/

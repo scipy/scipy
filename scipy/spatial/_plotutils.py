@@ -17,7 +17,7 @@ def _held_figure(func, obj, ax=None, **kw):
 
     # As of matplotlib 2.0, the "hold" mechanism is deprecated.
     # When matplotlib 1.x is no longer supported, this check can be removed.
-    was_held = ax.ishold()
+    was_held = getattr(ax, 'ishold', lambda: True)()
     if was_held:
         return func(obj, ax=ax, **kw)
     try:
@@ -29,8 +29,8 @@ def _held_figure(func, obj, ax=None, **kw):
 
 def _adjust_bounds(ax, points):
     margin = 0.1 * points.ptp(axis=0)
-    xy_min = points.min(axis=0) - margin 
-    xy_max = points.max(axis=0) + margin 
+    xy_min = points.min(axis=0) - margin
+    xy_max = points.max(axis=0) + margin
     ax.set_xlim(xy_min[0], xy_max[0])
     ax.set_ylim(xy_min[1], xy_max[1])
 

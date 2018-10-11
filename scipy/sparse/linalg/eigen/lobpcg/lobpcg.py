@@ -11,9 +11,6 @@ Examples in tests directory contributed by Nils Wagner.
 """
 
 from __future__ import division, print_function, absolute_import
-
-import sys
-
 import numpy as np
 from numpy.testing import assert_allclose
 from scipy._lib.six import xrange

@@ -48,7 +48,7 @@ distcont_extra = [
 ]
 
 
-distslow = ['kappa4', 'crystalball', 'rdist', 'gausshyper',
+distslow = ['kappa4', 'rdist', 'gausshyper',
             'recipinvgauss', 'ksone', 'genexpon',
             'vonmises', 'vonmises_line', 'mielke', 'semicircular',
             'cosine', 'invweibull', 'powerlognorm', 'johnsonsu', 'kstwobign']

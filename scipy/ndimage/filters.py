@@ -31,13 +31,10 @@
 from __future__ import division, print_function, absolute_import
 import warnings
 
-import math
 import numpy
 from . import _ni_support
 from . import _nd_image
 from . import _ni_docstrings
-from scipy.misc import doccer
-from scipy._lib._version import NumpyVersion
 
 __all__ = ['correlate1d', 'convolve1d', 'gaussian_filter1d', 'gaussian_filter',
            'prewitt', 'sobel', 'generic_laplace', 'laplace',

@@ -590,7 +590,8 @@ class TestGMRES(object):
             assert_(np.linalg.norm(A.dot(x) - b) <= 1e-5*np.linalg.norm(b))
             assert_allclose(x, b, atol=0, rtol=1e-8)
 
-            A = np.random.rand(30, 30)
+            rndm = np.random.RandomState(12345)
+            A = rndm.rand(30, 30)
             b = 1e-6 * ones(30)
             x, info = gmres(A, b, tol=1e-7, restart=20)
             assert_(np.linalg.norm(A.dot(x) - b) > 1e-7)

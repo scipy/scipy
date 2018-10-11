@@ -12,17 +12,16 @@ cimport numpy as np
 from libc.math cimport ceil
 
 
-__all__ = ['_argmaxima1d', '_select_by_peak_distance', '_peak_prominences',
+__all__ = ['_local_maxima_1d', '_select_by_peak_distance', '_peak_prominences',
            '_peak_widths']
 
 
-def _argmaxima1d(np.float64_t[::1] x not None):
+def _local_maxima_1d(np.float64_t[::1] x not None):
     """
-    Find indices of local maxima in a 1D array.
+    Find local maxima in a 1D array.
 
-    This function finds all local maxima in a 1D array and returns their
-    indices. For maxima who are wider than one sample the index of the center
-    sample is returned (rounded down in case the number of samples is even).
+    This function finds all local maxima in a 1D array and returns the indices
+    for their edges and midpoints (rounded down for even plateau sizes).
 
     Parameters
     ----------
@@ -31,12 +30,12 @@ def _argmaxima1d(np.float64_t[::1] x not None):
 
     Returns
     -------
-    maxima : ndarray
-        Indices of local maxima in `x`.
-
-    See Also
-    --------
-    argrelmax
+    midpoints : ndarray
+        Indices of midpoints of local maxima in `x`.
+    left_edges : ndarray
+        Indices of edges to the left of local maxima in `x`.
+    right_edges : ndarray
+        Indices of edges to the right of local maxima in `x`.
 
     Notes
     -----
@@ -49,12 +48,14 @@ def _argmaxima1d(np.float64_t[::1] x not None):
     .. versionadded:: 1.1.0
     """
     cdef:
-        np.intp_t[::1] maxima
+        np.intp_t[::1] midpoints, left_edges, right_edges
         np.intp_t m, i, i_ahead, i_max
 
     # Preallocate, there can't be more maxima than half the size of `x`
-    maxima = np.empty(x.shape[0] // 2, dtype=np.intp)
-    m = 0  # Pointer to the end of valid area in `maxima`
+    midpoints = np.empty(x.shape[0] // 2, dtype=np.intp)
+    left_edges = np.empty(x.shape[0] // 2, dtype=np.intp)
+    right_edges = np.empty(x.shape[0] // 2, dtype=np.intp)
+    m = 0  # Pointer to the end of valid area in allocated arrays
 
     with nogil:
         i = 1  # Pointer to current sample, first one can't be maxima
@@ -70,15 +71,20 @@ def _argmaxima1d(np.float64_t[::1] x not None):
 
                 # Maxima is found if next unequal sample is smaller than x[i]
                 if x[i_ahead] < x[i]:
-                    # Store sample in the center of flat area (round down)
-                    maxima[m] = (i + i_ahead - 1) // 2
+                    left_edges[m] = i
+                    right_edges[m] = i_ahead - 1
+                    midpoints[m] = (left_edges[m] + right_edges[m]) // 2
                     m += 1
                     # Skip samples that can't be maximum
                     i = i_ahead
             i += 1
 
-    maxima.base.resize(m, refcheck=False)  # Keep only valid part of array memory.
-    return maxima.base
+    # Keep only valid part of array memory.
+    midpoints.base.resize(m, refcheck=False)
+    left_edges.base.resize(m, refcheck=False)
+    right_edges.base.resize(m, refcheck=False)
+
+    return midpoints.base, left_edges.base, right_edges.base
 
 
 def _select_by_peak_distance(np.intp_t[::1] peaks not None,

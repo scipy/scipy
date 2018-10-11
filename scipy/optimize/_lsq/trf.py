@@ -98,7 +98,7 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 from numpy.linalg import norm
 from scipy.linalg import svd, qr
-from scipy.sparse.linalg import LinearOperator, lsmr
+from scipy.sparse.linalg import lsmr
 from scipy.optimize import OptimizeResult
 from scipy._lib.six import string_types
 
