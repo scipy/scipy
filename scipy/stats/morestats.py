@@ -1272,8 +1272,8 @@ def yeojohnson(x, lmbda=None):
 
     Returns
     -------
-    boxcox : ndarray
-        Box-Cox power transformed array.
+    yeojohnson: ndarray
+        Yeo-Johnson power transformed array.
     maxlog : float, optional
         If the `lmbda` parameter is None, the second returned argument is
         the lambda that maximizes the log-likelihood function.
