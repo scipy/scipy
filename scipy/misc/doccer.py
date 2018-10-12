@@ -134,6 +134,10 @@ def extend_notes_in_docstring(cls, notes):
     """
     def _doc(func):
         cls_docstring = getattr(cls, func.__name__).__doc__
+        # If python is called with -OO option,
+        # there is no docstring
+        if cls_docstring is None:
+            return func
         end_of_notes = cls_docstring.find('        References\n')
         if end_of_notes == -1:
             end_of_notes = cls_docstring.find('        Examples\n')
@@ -155,7 +159,10 @@ def replace_notes_in_docstring(cls, notes):
     def _doc(func):
         cls_docstring = getattr(cls, func.__name__).__doc__
         notes_header = '        Notes\n        -----\n'
-        # XXX The following assumes that there is a Notes section.
+        # If python is called with -OO option,
+        # there is no docstring
+        if cls_docstring is None:
+            return func
         start_of_notes = cls_docstring.find(notes_header)
         end_of_notes = cls_docstring.find('        References\n')
         if end_of_notes == -1:
