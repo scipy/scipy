@@ -18,8 +18,6 @@ import numpy as np
 
 from scipy._lib.six import callable
 
-from scipy.sparse.linalg import LinearOperator
-
 # unconstrained minimization
 from .optimize import (_minimize_neldermead, _minimize_powell, _minimize_cg,
                        _minimize_bfgs, _minimize_newtoncg,

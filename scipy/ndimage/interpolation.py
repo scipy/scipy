@@ -35,7 +35,6 @@ import numpy
 from . import _ni_support
 from . import _nd_image
 from . import _ni_docstrings
-from functools import wraps
 
 import warnings
 

@@ -1262,7 +1262,7 @@ class LinearMixing(GenericBroyden):
         return -f/np.conj(self.alpha)
 
     def todense(self):
-        return np.diag(-np.ones(self.shape[0])/self.alpha)
+        return np.diag(np.full(self.shape[0], -1/self.alpha))
 
     def _update(self, x, f, dx, df, dx_norm, df_norm):
         pass
@@ -1298,7 +1298,7 @@ class ExcitingMixing(GenericBroyden):
 
     def setup(self, x, F, func):
         GenericBroyden.setup(self, x, F, func)
-        self.beta = self.alpha * np.ones((self.shape[0],), dtype=self.dtype)
+        self.beta = np.full((self.shape[0],), self.alpha, dtype=self.dtype)
 
     def solve(self, f, tol=0):
         return -f*self.beta

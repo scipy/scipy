@@ -95,7 +95,7 @@ def _clean_inputs(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None):
         ``(min, max)`` pairs for each element in ``x``, defining
         the bounds on that parameter. Use None for one of ``min`` or
         ``max`` when there is no bound in that direction. By default
-        bounds are ``(0, None)`` (non-negative)
+        bounds are ``(0, None)`` (non-negative).
         If a sequence containing a single tuple is provided, then ``min`` and
         ``max`` will be applied to all variables in the problem.
 
@@ -119,7 +119,7 @@ def _clean_inputs(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None):
         ``(min, max)`` pairs for each element in ``x``, defining
         the bounds on that parameter. Use None for each of ``min`` or
         ``max`` when there is no bound in that direction. By default
-        bounds are ``(0, None)`` (non-negative)
+        bounds are ``(0, None)`` (non-negative).
 
     """
 
@@ -364,6 +364,14 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, rr, tol=1e-9):
         ``(min, max)`` pairs for each element in ``x``, defining
         the bounds on that parameter. Use None for each of ``min`` or
         ``max`` when there is no bound in that direction.
+    rr : bool
+        If ``True`` attempts to eliminate any redundant rows in ``A_eq``.
+        Set False if ``A_eq`` is known to be of full row rank, or if you are
+        looking for a potential speedup (at the expense of reliability).
+    tol : float
+        The tolerance which determines when a solution is "close enough" to
+        zero in Phase 1 to be considered a basic feasible solution or close
+        enough to positive to serve as an optimal solution.
 
     Returns
     -------
@@ -407,6 +415,7 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, rr, tol=1e-9):
          1 : Iteration limit reached
          2 : Problem appears to be infeasible
          3 : Problem appears to be unbounded
+         4 : Serious numerical difficulties encountered
 
     message : str
         A string descriptor of the exit status of the optimization.
@@ -747,9 +756,9 @@ def _parse_linprog(c, A_ub, b_ub, A_eq, b_eq, bounds, options):
         ``(min, max)`` pairs for each element in ``x``, defining
         the bounds on that parameter. Use None for one of ``min`` or
         ``max`` when there is no bound in that direction. By default
-        bounds are ``(0, None)`` (non-negative)
-        If a sequence containing a single tuple is provided, then ``min`` and
-        ``max`` will be applied to all variables in the problem.
+        bounds are ``(0, None)`` (non-negative). If a sequence containing a
+        single tuple is provided, then ``min`` and ``max`` will be applied to
+        all variables in the problem.
     options : dict
         A dictionary of solver options. All methods accept the following
         generic options:
@@ -781,7 +790,7 @@ def _parse_linprog(c, A_ub, b_ub, A_eq, b_eq, bounds, options):
         ``(min, max)`` pairs for each element in ``x``, defining
         the bounds on that parameter. Use None for one of ``min`` or
         ``max`` when there is no bound in that direction. By default
-        bounds are ``(0, None)`` (non-negative)
+        bounds are ``(0, None)`` (non-negative).
         If a sequence containing a single tuple is provided, then ``min`` and
         ``max`` will be applied to all variables in the problem.
     options : dict, optional
@@ -812,17 +821,28 @@ def _get_Abc(c, c0=0, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
     """
     Given a linear programming problem of the form:
 
-    minimize:     c^T * x
+    Minimize::
 
-    subject to:   A_ub * x <= b_ub
-                  A_eq * x == b_eq
-                  bounds[i][0] < x_i < bounds[i][1]
+        c @ x
 
-    return the problem in standard form:
-    minimize:     c'^T * x'
+    Subject to::
 
-    subject to:   A * x' == b
-                  0 < x' < oo
+        A_ub @ x <= b_ub
+        A_eq @ x == b_eq
+         lb <= x <= ub
+
+    where ``lb = 0`` and ``ub = None`` unless set in ``bounds``.
+
+    Return the problem in standard form:
+
+    Minimize::
+
+        c @ x
+
+    Subject to::
+
+        A @ x == b
+            x >= 0
 
     by adding slack variables and making variable substitutions as necessary.
 
@@ -986,7 +1006,7 @@ def _get_Abc(c, c0=0, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
 
 def _display_summary(message, status, fun, iteration):
     """
-    Print termination summary of the linear progam
+    Print the termination summary of the linear program
 
     Parameters
     ----------
@@ -999,8 +1019,7 @@ def _display_summary(message, status, fun, iteration):
                 1 : Iteration limit reached
                 2 : Problem appears to be infeasible
                 3 : Problem appears to be unbounded
-                4 : Serious numerical difficulties which could not resolved using
-                    a more robust, albeit less efficient, solver encountered
+                4 : Serious numerical difficulties encountered
 
     fun : float
         Value of the objective function.
@@ -1052,12 +1071,16 @@ def _postsolve(x, c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
         Solution vector to original linear programming problem
     fun: float
         optimal objective value for original problem
-    slack: 1D array
+    slack : 1D array
         The (non-negative) slack in the upper bound constraints, that is,
-        ``b_ub - A_ub * x``
+        ``b_ub - A_ub @ x``
     con : 1D array
         The (nominally zero) residuals of the equality constraints, that is,
-        ``b - A_eq * x``
+        ``b - A_eq @ x``
+    lb : 1D array
+        The lower bound constraints on the original variables
+    ub: 1D array
+        The upper bound constraints on the original variables
     """
     # note that all the inputs are the ORIGINAL, unmodified versions
     # no rows, columns have been removed
@@ -1138,15 +1161,18 @@ def _check_result(x, fun, status, slack, con, lb, ub, tol, message):
              1 : Iteration limit reached
              2 : Problem appears to be infeasible
              3 : Problem appears to be unbounded
-             4 : Serious numerical difficulties which could not resolved using
-                 a more robust, albeit less efficient, solver encountered
+             4 : Serious numerical difficulties encountered
 
-    slack: 1D array
+    slack : 1D array
         The (non-negative) slack in the upper bound constraints, that is,
-        ``b_ub - A_ub * x``
+        ``b_ub - A_ub @ x``
     con : 1D array
         The (nominally zero) residuals of the equality constraints, that is,
-        ``b - A_eq * x``
+        ``b - A_eq @ x``
+    lb : 1D array
+        The lower bound constraints on the original variables
+    ub: 1D array
+        The upper bound constraints on the original variables
     message : str
         A string descriptor of the exit status of the optimization.
     tol : float
@@ -1161,8 +1187,7 @@ def _check_result(x, fun, status, slack, con, lb, ub, tol, message):
              1 : Iteration limit reached
              2 : Problem appears to be infeasible
              3 : Problem appears to be unbounded
-             4 : Serious numerical difficulties which could not resolved using
-                 a more robust, albeit less efficient, solver encountered
+             4 : Serious numerical difficulties encountered
 
     message : str
         A string descriptor of the exit status of the optimization.
@@ -1250,8 +1275,7 @@ def _postprocess(x, c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
              1 : Iteration limit reached
              2 : Problem appears to be infeasible
              3 : Problem appears to be unbounded
-             4 : Serious numerical difficulties which could not resolved using
-                 a more robust, albeit less efficient, solver encountered
+             4 : Serious numerical difficulties encountered
 
     message : str
         A string descriptor of the exit status of the optimization.
@@ -1264,12 +1288,12 @@ def _postprocess(x, c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
         Solution vector to original linear programming problem
     fun: float
         optimal objective value for original problem
-    slack: 1D array
+    slack : 1D array
         The (non-negative) slack in the upper bound constraints, that is,
-        ``b_ub - A_ub * x``
+        ``b_ub - A_ub @ x``
     con : 1D array
         The (nominally zero) residuals of the equality constraints, that is,
-        ``b - A_eq * x``
+        ``b - A_eq @ x``
     status : int
         An integer representing the exit status of the optimization::
 
@@ -1277,8 +1301,7 @@ def _postprocess(x, c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
              1 : Iteration limit reached
              2 : Problem appears to be infeasible
              3 : Problem appears to be unbounded
-             4 : Serious numerical difficulties which could not resolved using
-                 a more robust, albeit less efficient, solver encountered
+             4 : Serious numerical difficulties encountered
 
     message : str
         A string descriptor of the exit status of the optimization.

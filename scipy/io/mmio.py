@@ -16,8 +16,7 @@ import os
 import sys
 
 from numpy import (asarray, real, imag, conj, zeros, ndarray, concatenate,
-                   ones, ascontiguousarray, vstack, savetxt, fromfile,
-                   fromstring, can_cast)
+                   ones, can_cast)
 from numpy.compat import asbytes, asstr
 
 from scipy._lib.six import string_types

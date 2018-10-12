@@ -279,14 +279,14 @@ def firwin(numtaps, cutoff, width=None, window='hamming', pass_zero=True,
         order + 1).  `numtaps` must be odd if a passband includes the
         Nyquist frequency.
     cutoff : float or 1D array_like
-        Cutoff frequency of filter (expressed in the same units as `nyq`)
+        Cutoff frequency of filter (expressed in the same units as `fs`)
         OR an array of cutoff frequencies (that is, band edges). In the
         latter case, the frequencies in `cutoff` should be positive and
-        monotonically increasing between 0 and `nyq`.  The values 0 and
-        `nyq` must not be included in `cutoff`.
+        monotonically increasing between 0 and `fs/2`.  The values 0 and
+        `fs/2` must not be included in `cutoff`.
     width : float or None, optional
         If `width` is not None, then assume it is the approximate width
-        of the transition region (expressed in the same units as `nyq`)
+        of the transition region (expressed in the same units as `fs`)
         for use in Kaiser FIR filter design.  In this case, the `window`
         argument is ignored.
     window : string or tuple of string and parameter values, optional
@@ -302,8 +302,8 @@ def firwin(numtaps, cutoff, width=None, window='hamming', pass_zero=True,
 
         - 0 (DC) if the first passband starts at 0 (i.e. pass_zero
           is True)
-        - `nyq` (the Nyquist frequency) if the first passband ends at
-          `nyq` (i.e the filter is a single band highpass filter);
+        - `fs/2` (the Nyquist frequency) if the first passband ends at
+          `fs/2` (i.e the filter is a single band highpass filter);
           center of first passband otherwise
 
     nyq : float, optional

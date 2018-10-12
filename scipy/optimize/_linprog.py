@@ -52,6 +52,9 @@ def linprog_verbose_callback(res):
             The values of the slack variables.  Each slack variable corresponds
             to an inequality constraint.  If the slack is zero, then the
             corresponding constraint is active.
+        con : 1D array
+            The (nominally zero) residuals of the equality constraints, that is,
+            ``b - A_eq @ x``
         phase : int
             The phase of the optimization being executed. In phase 1 a basic
             feasible solution is sought and the T has an additional row
@@ -63,8 +66,7 @@ def linprog_verbose_callback(res):
                  1 : Iteration limit reached
                  2 : Problem appears to be infeasible
                  3 : Problem appears to be unbounded
-                 4 : Serious numerical difficulties which could not resolved using
-                     a more robust, albeit less efficient, solver encountered
+                 4 : Serious numerical difficulties encountered
 
         nit : int
             The number of iterations performed.
@@ -125,9 +127,12 @@ def linprog_terse_callback(res):
         success : bool
             True if the algorithm succeeded in finding an optimal solution.
         slack : 1D array
-            The values of the slack variables.  Each slack variable corresponds
-            to an inequality constraint.  If the slack is zero, then the
+            The values of the slack variables. Each slack variable corresponds
+            to an inequality constraint. If the slack is zero, then the
             corresponding constraint is active.
+        con : 1D array
+            The (nominally zero) residuals of the equality constraints, that is,
+            ``b - A_eq @ x``
         phase : int
             The phase of the optimization being executed. In phase 1 a basic
             feasible solution is sought and the T has an additional row
@@ -139,8 +144,7 @@ def linprog_terse_callback(res):
                  1 : Iteration limit reached
                  2 : Problem appears to be infeasible
                  3 : Problem appears to be unbounded
-                 4 : Serious numerical difficulties which could not be resolved
-                     using a more robust, albeit less efficient, solver.
+                 4 : Serious numerical difficulties encountered
 
         nit : int
             The number of iterations performed.
@@ -161,14 +165,20 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
             options=None):
     """
     Minimize a linear objective function subject to linear
-    equality and inequality constraints.
+    equality and inequality constraints. Linear Programming is intended to
+    solve the following problem form:
 
-    Linear Programming is intended to solve the following problem form::
+    Minimize::
 
-        Minimize:     c^T * x
+        c @ x
 
-        Subject to:   A_ub * x <= b_ub
-                      A_eq * x == b_eq
+    Subject to::
+
+        A_ub @ x <= b_ub
+        A_eq @ x == b_eq
+         lb <= x <= ub
+
+    where ``lb = 0`` and ``ub = None`` unless set in ``bounds``.
 
     Parameters
     ----------
@@ -190,7 +200,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         ``(min, max)`` pairs for each element in ``x``, defining
         the bounds on that parameter. Use None for one of ``min`` or
         ``max`` when there is no bound in that direction. By default
-        bounds are ``(0, None)`` (non-negative)
+        bounds are ``(0, None)`` (non-negative).
         If a sequence containing a single tuple is provided, then ``min`` and
         ``max`` will be applied to all variables in the problem.
     method : str, optional
@@ -213,6 +223,9 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
                 The values of the slack variables. Each slack variable
                 corresponds to an inequality constraint. If the slack is zero,
                 the corresponding constraint is active.
+            con : 1D array
+                The (nominally zero) residuals of the equality constraints
+                that is, ``b - A_eq @ x``
             phase : int
                 The phase of the optimization being executed. In phase 1 a basic
                 feasible solution is sought and the T has an additional row
@@ -224,9 +237,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
                      1 : Iteration limit reached
                      2 : Problem appears to be infeasible
                      3 : Problem appears to be unbounded
-                     4 : Serious numerical difficulties which could not resolved
-                         using a more robust, albeit less efficient, solver
-                         encountered
+                     4 : Serious numerical difficulties encountered
 
             nit : int
                 The number of iterations performed.
@@ -257,6 +268,9 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
             The values of the slack variables. Each slack variable corresponds
             to an inequality constraint.  If the slack is zero, then the
             corresponding constraint is active.
+        con : 1D array
+            The (nominally zero) residuals of the equality constraints, that is,
+            ``b - A_eq @ x``
         success : bool
             Returns True if the algorithm succeeded in finding an optimal
             solution.
@@ -267,8 +281,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
                  1 : Iteration limit reached
                  2 : Problem appears to be infeasible
                  3 : Problem appears to be unbounded
-                 4 : Serious numerical difficulties which could not resolved using
-                     a more robust, albeit less efficient, solver encountered
+                 4 : Serious numerical difficulties encountered
 
         nit : int
             The number of iterations performed.
@@ -299,9 +312,9 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     less accurate than that of the simplex method and may not correspond with a
     vertex of the polytope defined by the constraints.
 
-    Both methods apply a presolve procedure based on [8]_ attempts to identify
-    trivial infeasibilities, trivial unboundedness, and potential problem
-    simplifications. Specifically, it checks for:
+    Before applying either method a presolve procedure based on [8]_ attempts to
+    identify trivial infeasibilities, trivial unboundedness, and potential
+    problem simplifications. Specifically, it checks for:
 
     - rows of zeros in ``A_eq`` or ``A_ub``, representing trivial constraints;
     - columns of zeros in ``A_eq`` `and` ``A_ub``, representing unconstrained
@@ -326,7 +339,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     of the ``A_eq`` matrix are removed, (unless they represent an
     infeasibility) to avoid numerical difficulties in the primary solve
     routine. Note that rows that are nearly linearly dependent (within a
-    prescibed tolerance) may also be removed, which can change the optimal
+    prescribed tolerance) may also be removed, which can change the optimal
     solution in rare cases. If this is a concern, eliminate redundancy from
     your problem formulation and run with option ``rr=False`` or
     ``presolve=False``.
@@ -377,18 +390,21 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     --------
     Consider the following problem:
 
-    Minimize: f = -1*x[0] + 4*x[1]
+    Minimize::
 
-    Subject to: -3*x[0] + 1*x[1] <= 6
-                 1*x[0] + 2*x[1] <= 4
-                            x[1] >= -3
+        f = -1x[0] + 4x[1]
 
-    where:  -inf <= x[0] <= inf
+    Subject to::
+
+        -3x[0] + 1x[1] <= 6
+         1x[0] + 2x[1] <= 4
+                  x[1] >= -3
+          -inf <= x[0] <= inf
 
     This problem deviates from the standard linear programming problem.
     In standard form, linear programming problems assume the variables x are
-    non-negative.  Since the variables don't have standard bounds where
-    0 <= x <= inf, the bounds of the variables must be explicitly set.
+    non-negative. Since the problem variables don't have the standard bounds of
+    ``(0, None)``, the variable bounds must be set using ``bounds`` explicitly.
 
     There are two upper-bound constraints, which can be expressed as
 
@@ -416,9 +432,6 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
       status: 0
      success: True
            x: array([10., -3.])
-
-    Note the actual objective value is -22.0. In this case we minimized
-    the negative of the objective function.
 
     """
     meth = method.lower()

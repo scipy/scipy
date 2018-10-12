@@ -1,6 +1,6 @@
 from __future__ import division, print_function, absolute_import
 
-from numpy import sqrt, inner, finfo, zeros, inf, finfo
+from numpy import sqrt, inner, zeros, inf, finfo
 from numpy.linalg import norm
 
 from .utils import make_system

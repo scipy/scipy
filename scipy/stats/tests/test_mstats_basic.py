@@ -219,7 +219,6 @@ class TestCorr(object):
         check_named_results(res, attributes, ma=True)
 
     def test_kendalltau(self):
-        
         # simple case without ties
         x = ma.array(np.arange(10))
         y = ma.array(np.arange(10))
@@ -1099,6 +1098,12 @@ class TestCompareWithStats(object):
             rm, pm = stats.mstats.spearmanr(xm, ym)
             assert_almost_equal(r, rm, 14)
             assert_almost_equal(p, pm, 14)
+
+    def test_spearmanr_backcompat_useties(self):
+        # A regression test to ensure we don't break backwards compat
+        # more than we have to (see gh-9204).
+        x = np.arange(6)
+        assert_raises(ValueError, mstats.spearmanr, x, x, False)
 
     def test_gmean(self):
         for n in self.get_n():

@@ -12,7 +12,6 @@ Spherical Voronoi Code
 #
 
 import numpy as np
-import numpy.matlib
 import scipy
 import itertools
 from . import _voronoi

@@ -14,7 +14,7 @@ import json
 import collections
 import argparse
 
-from urllib.request import urlopen, Request, HTTPError, quote
+from urllib.request import urlopen, Request, HTTPError
 
 
 Issue = collections.namedtuple('Issue', ('id', 'title', 'url'))

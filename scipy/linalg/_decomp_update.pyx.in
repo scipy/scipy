@@ -1938,7 +1938,7 @@ cdef qr_insert_col(Q, R, u, int k, rcond, bint overwrite_qru, bint check_finite)
     # special case 1xN
     # if m == 1, Q is always 1x1 and abs(Q[0,0]) == 1.0
     if m == 1:
-        rnew = np.insert(r1, k*np.ones(p, np.intp), q1.conjugate()*u1, 1)
+        rnew = np.insert(r1, np.full(p, k, np.intp), q1.conjugate()*u1, 1)
         return q1.copy(), rnew
 
     if economic:
