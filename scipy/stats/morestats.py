@@ -1374,8 +1374,9 @@ def yeojohnson_llf(lmb, data):
         Parameter for Yeo-Johnson transformation. See `yeojohnson` for
         details.
     data : array_like
-        Data to calculate Yeo-Johnson log-likelihood for. Must be
-        1-dimensional.
+        Data to calculate Yeo-Johnson log-likelihood for. If `data` is
+        multi-dimensional, the log-likelihood is calculated along the first
+        axis.
 
     Returns
     -------
@@ -1454,8 +1455,8 @@ def yeojohnson_llf(lmb, data):
 
     trans = _yeojohnson_transform(data, lmb)
 
-    loglike = -n_samples / 2 * np.log(trans.var())
-    loglike += (lmb - 1) * (np.sign(data) * np.log(np.abs(data) + 1)).sum()
+    loglike = -n_samples / 2 * np.log(trans.var(axis=0))
+    loglike += (lmb - 1) * (np.sign(data) * np.log(np.abs(data) + 1)).sum(axis=0)
 
     return loglike
 

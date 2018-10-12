@@ -1210,6 +1210,14 @@ class TestYeojohnson_llf(object):
         llf2 = stats.yeojohnson_llf(lmbda, list(x))
         assert_allclose(llf, llf2, rtol=1e-12)
 
+    def test_2d_input(self):
+        np.random.seed(54321)
+        x = stats.norm.rvs(size=100, loc=10)
+        lmbda = 1
+        llf = stats.yeojohnson_llf(lmbda, x)
+        llf2 = stats.yeojohnson_llf(lmbda, np.vstack([x, x]).T)
+        assert_allclose([llf, llf], llf2, rtol=1e-12)
+
     def test_empty(self):
         assert_(np.isnan(stats.yeojohnson_llf(1, [])))
 
