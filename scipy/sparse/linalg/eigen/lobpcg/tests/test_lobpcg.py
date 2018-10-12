@@ -232,7 +232,7 @@ def test_hermitian():
 
 def test_eigs_consistency():
     n = 20
-    vals = [np.arange(n, dtype=np.float64) + 1]
+    vals = np.arange(1, n+1, dtype=np.float64)
     A = spdiags(vals, 0, n, n)
     X = np.random.rand(n, 2)
     lvals20, lvecs20 = lobpcg(A, X, largest=True, maxiter=100)
@@ -243,7 +243,7 @@ def test_eigs_consistency():
 
     # This tests the alternative branch using eigh().
     n = 5
-    vals = [np.arange(n, dtype=np.float64) + 1]
+    vals = np.arange(1, n+1, dtype=np.float64)
     A = spdiags(vals, 0, n, n)
     X = np.random.rand(n, 2)
     lvals5, lvecs5 = lobpcg(A, X, largest=True, maxiter=100)
