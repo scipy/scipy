@@ -4,20 +4,25 @@
  * @kind problem
  * @tags accuracy
  * @problem.severity warning
+ * @sub-severity low
  * @precision high
  * @id py/pythagorean
  */
 
 import python
 
+// Three different ways to write squares:
+// a**2
 predicate squareOp(BinaryExpr e) {
   e.getOp() instanceof Pow and e.getRight().(IntegerLiteral).getN() = "2"
 }
 
+// a*a
 predicate squareMul(BinaryExpr e) {
   e.getOp() instanceof Mult and e.getRight().(Name).getId() = e.getLeft().(Name).getId()
 }
 
+// v, where v is assigned to a square
 predicate squareRef(Name e) {
   e.isUse() and
   exists(SsaVariable v, Expr s |
@@ -27,6 +32,7 @@ predicate squareRef(Name e) {
   )
 }
 
+// a square is either of the three
 predicate square(Expr e) {
   squareOp(e)
   or
@@ -35,13 +41,26 @@ predicate square(Expr e) {
   squareRef(e)
 }
 
-from
-  Call c,
-  BinaryExpr s
-where
+// a hypot is sqrt on a sum of two squares
+predicate hypot(Call c) {
   c.getFunc().toString() = "sqrt" and
-  c.getArg(0) = s and
-  s.getOp() instanceof Add and
-  square(s.getLeft()) and square(s.getRight())
+  exists(BinaryExpr s |
+    c.getArg(0) = s and
+    s.getOp() instanceof Add and
+    square(s.getLeft()) and square(s.getRight())
+  )
+}
+
+// inside tests is less interesting
+predicate inTest(Call c) {
+  c.getLocation().getFile().toString().prefix(19) = "/opt/src/benchmarks"
+  or
+  c.getLocation().getFile().getShortName().prefix(4) = "test"
+}
+
+from Call c
+where
+  hypot(c) and not inTest(c)
 select
   c, "Pythagorean calculation with sub-optimal numerics"
+  
