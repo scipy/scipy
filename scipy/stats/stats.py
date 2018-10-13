@@ -3468,8 +3468,11 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='auto'
     Kendall's tau is a measure of the correspondence between two rankings.
     Values close to 1 indicate strong agreement, values close to -1 indicate
     strong disagreement. This implements all three common variants of Kendall's
-    tau: Tau-a, Tau-b and Tau-c. The default option is tau-b which takes into
-    account possible ties in the rankings. For more information, see [5].
+    tau: tau-a, tau-b and tau-c. The default option is tau-b which takes into
+    account possible ties in the rankings. The p-value is computed only for the
+    numerator that all three variants have in common and does not take into
+    account the possibility of having different numbers of ties in the ranks.
+    For more information, see [5].
 
     Parameters
     ----------
@@ -3491,8 +3494,8 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='auto'
         are present. 'auto' is the default and selects the appropriate
         method based on a trade-off between speed and accuracy.
     variant: {'taua', 'taub', 'tauc'}, optional
-        Defines which variant of Kendall Tau is used. Different variants
-        use different normalizations, but all all proportional to the same
+        Defines which variant of Kendall's tau is used. Different variants
+        use different normalizations. Default is 'taub'.
 
     Returns
     -------
@@ -3512,11 +3515,11 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='auto'
     -----
     The definition of Kendall's tau that is used is [2]_::
 
-      taua = 2 (P - Q) / (n * (n-1))
+      tau_a = 2 (P - Q) / (n * (n-1))
 
-      taub = (P - Q) / sqrt((P + Q + T) * (P + Q + U))
+      tau_b = (P - Q) / sqrt((P + Q + T) * (P + Q + U))
 
-      tauc = 2 (P - Q) / (n**2 * (m - 1) / m)
+      tau_c = 2 (P - Q) / (n**2 * (m - 1) / m)
 
     where P is the number of concordant pairs, Q the number of discordant
     pairs, T the number of ties only in `x`, and U the number of ties only in
@@ -3576,7 +3579,7 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate', method='auto'
             return mstats_basic.kendalltau(x, y, method=method, use_ties=False)
         elif variant == 'taub':
             return mstats_basic.kendalltau(x, y, method=method, use_ties=True)
-        elif variant == 'tauc':
+        else:
             raise ValueError("Variants other than 'taua' and 'taub' are not supported for masked arrays")
 
     if initial_lexsort is not None:  # deprecate to drop!
