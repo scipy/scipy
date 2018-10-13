@@ -441,10 +441,10 @@ Constrained minimization of multivariate scalar functions (:func:`minimize`)
 ----------------------------------------------------------------------------
 
 The :func:`minimize` function provides algorithms for constrained minimization,
-namely ``'trust-constr'`` ,  ``'SLSQP'`` and ``'COBLYA'``. They require the constraints
+namely ``'trust-constr'`` ,  ``'SLSQP'`` and ``'COBYLA'``. They require the constraints
 to be defined using slightly different structures. The method ``'trust-constr'`` requires
 the  constraints to be defined as a sequence of objects :func:`LinearConstraint` and
-:func:`NonlinearConstraint`. Methods ``'SLSQP'`` and ``'COBLYA'``, on the other hand,
+:func:`NonlinearConstraint`. Methods ``'SLSQP'`` and ``'COBYLA'``, on the other hand,
 require constraints to be defined  as a sequence of dictionaries, with keys
 ``type``, ``fun`` and ``jac``.
 
