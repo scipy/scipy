@@ -22,7 +22,7 @@ def _check_sparse_inputs(options, A_ub, A_eq):
         2D array such that ``A_ub @ x`` gives the values of the upper-bound
         inequality constraints at ``x``.
     A_eq : 2D array, optional
-        2D array such that ``A_eq`` @ ``x`` gives the values of the equality
+        2D array such that ``A_eq @ x`` gives the values of the equality
         constraints at ``x``.
     options : dict
         A dictionary of solver options. All methods accept the following
@@ -41,7 +41,7 @@ def _check_sparse_inputs(options, A_ub, A_eq):
         2D array such that ``A_ub @ x`` gives the values of the upper-bound
         inequality constraints at ``x``.
     A_eq : 2D array, optional
-        2D array such that ``A_eq`` @ ``x`` gives the values of the equality
+        2D array such that ``A_eq @ x`` gives the values of the equality
         constraints at ``x``.
     options : dict
         A dictionary of solver options. All methods accept the following
@@ -86,7 +86,7 @@ def _clean_inputs(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None):
         1D array of values representing the upper-bound of each inequality
         constraint (row) in ``A_ub``.
     A_eq : 2D array, optional
-        2D array such that ``A_eq`` @ ``x`` gives the values of the equality
+        2D array such that ``A_eq @ x`` gives the values of the equality
         constraints at ``x``.
     b_eq : 1D array, optional
         1D array of values representing the RHS of each equality constraint
@@ -110,7 +110,7 @@ def _clean_inputs(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None):
         1D array of values representing the upper-bound of each inequality
         constraint (row) in ``A_ub``.
     A_eq : 2D array, optional
-        2D array such that ``A_eq`` @ ``x`` gives the values of the equality
+        2D array such that ``A_eq @ x`` gives the values of the equality
         constraints at ``x``.
     b_eq : 1D array, optional
         1D array of values representing the RHS of each equality constraint
@@ -355,7 +355,7 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, rr, tol=1e-9):
         1D array of values representing the upper-bound of each inequality
         constraint (row) in ``A_ub``.
     A_eq : 2D array, optional
-        2D array such that ``A_eq`` @ ``x`` gives the values of the equality
+        2D array such that ``A_eq @ x`` gives the values of the equality
         constraints at ``x``.
     b_eq : 1D array, optional
         1D array of values representing the RHS of each equality constraint
@@ -387,7 +387,7 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, rr, tol=1e-9):
         1D array of values representing the upper-bound of each inequality
         constraint (row) in ``A_ub``.
     A_eq : 2D array, optional
-        2D array such that ``A_eq`` @ ``x`` gives the values of the equality
+        2D array such that ``A_eq @ x`` gives the values of the equality
         constraints at ``x``.
     b_eq : 1D array, optional
         1D array of values representing the RHS of each equality constraint
@@ -745,7 +745,7 @@ def _parse_linprog(c, A_ub, b_ub, A_eq, b_eq, bounds, options):
         1D array of values representing the upper-bound of each inequality
         constraint (row) in ``A_ub``.
     A_eq : 2D array, optional
-        2D array such that ``A_eq`` @ ``x`` gives the values of the equality
+        2D array such that ``A_eq @ x`` gives the values of the equality
         constraints at ``x``.
     b_eq : 1D array, optional
         1D array of values representing the RHS of each equality constraint
@@ -779,7 +779,7 @@ def _parse_linprog(c, A_ub, b_ub, A_eq, b_eq, bounds, options):
         1D array of values representing the upper-bound of each inequality
         constraint (row) in ``A_ub``.
     A_eq : 2D array, optional
-        2D array such that ``A_eq`` @ ``x`` gives the values of the equality
+        2D array such that ``A_eq @ x`` gives the values of the equality
         constraints at ``x``.
     b_eq : 1D array, optional
         1D array of values representing the RHS of each equality constraint
@@ -859,7 +859,7 @@ def _get_Abc(c, c0=0, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
         1D array of values representing the upper-bound of each inequality
         constraint (row) in ``A_ub``.
     A_eq : 2D array, optional
-        2D array such that ``A_eq`` @ ``x`` gives the values of the equality
+        2D array such that ``A_eq @ x`` gives the values of the equality
         constraints at ``x``.
     b_eq : 1D array, optional
         1D array of values representing the RHS of each equality constraint
@@ -1050,7 +1050,7 @@ def _postsolve(x, c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
         1D array of values representing the upper-bound of each inequality
         constraint (row) in ``A_ub``.
     A_eq : 2D array, optional
-        2D array such that ``A_eq`` @ ``x`` gives the values of the equality
+        2D array such that ``A_eq @ x`` gives the values of the equality
         constraints at ``x``.
     b_eq : 1D array, optional
         1D array of values representing the RHS of each equality constraint
@@ -1260,7 +1260,7 @@ def _postprocess(x, c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None,
         1D array of values representing the upper-bound of each inequality
         constraint (row) in ``A_ub``.
     A_eq : 2D array, optional
-        2D array such that ``A_eq`` @ ``x`` gives the values of the equality
+        2D array such that ``A_eq @ x`` gives the values of the equality
         constraints at ``x``.
     b_eq : 1D array, optional
         1D array of values representing the RHS of each equality constraint

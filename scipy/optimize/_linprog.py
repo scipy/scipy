@@ -191,7 +191,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         1D array of values representing the upper-bound of each inequality
         constraint (row) in ``A_ub``.
     A_eq : 2D, optional
-        2D array such that ``A_eq`` @ ``x`` gives the values of the equality
+        2D array such that ``A_eq @ x`` gives the values of the equality
         constraints at ``x``.
     b_eq : 1D array, optional
         1D array of values representing the RHS of each equality constraint
