@@ -2348,14 +2348,22 @@ class rv_continuous(rv_generic):
     def expect(self, func=None, args=(), loc=0, scale=1, lb=None, ub=None,
                conditional=False, **kwds):
         """Calculate expected value of a function with respect to the
-        distribution.
+        distribution by numerical integration.
 
         The expected value of a function ``f(x)`` with respect to a
         distribution ``dist`` is defined as::
 
-                    ubound
-            E[x] = Integral(f(x) * dist.pdf(x))
-                    lbound
+                    ub
+            E[f(x)] = Integral(f(x) * dist.pdf(x)),
+                    lb
+
+        where ``ub`` and ``lb`` are arguments and ``x`` has the ``dist.pdf(x)`` 
+        distribution. If the bounds ``lb`` and ``ub`` correspond to the 
+        support of the distribution, e.g. ``[-inf, inf]`` in the default 
+        case, then the integral is the unrestricted expectation of ``f(x)``. 
+        Also, the function ``f(x)`` may be defined such that ``f(x)`` is ``0`` 
+        outside a finite interval in which case the expectation is 
+        calculated within the finite range ``[lb, ub]``. 
 
         Parameters
         ----------
@@ -2387,8 +2395,30 @@ class rv_continuous(rv_generic):
         Notes
         -----
         The integration behavior of this function is inherited from
-        `integrate.quad`.
+        `scipy.integrate.quad`. Neither this function nor
+        `scipy.integrate.quad` can verify whether the integral exists or is
+        finite. For example ``cauchy(0).mean()`` returns ``np.nan`` and
+        ``cauchy(0).expect()`` returns ``0.0``.
 
+        Examples
+        --------
+
+        To understand the effect of the bounds of integration consider 
+        >>> from scipy.stats import expon
+        >>> expon(1).expect(lambda x: 1, lb=0.0, ub=2.0)
+        0.6321205588285578
+
+        This is close to 
+
+        >>> expon(1).cdf(2.0) - expon(1).cdf(0.0)
+        0.6321205588285577
+
+        If ``conditional=True``
+
+        >>> expon(1).expect(lambda x: 1, lb=0.0, ub=2.0, conditional=True)
+        1.0000000000000002
+
+        The slight deviation from 1 is due to numerical integration.
         """
         lockwds = {'loc': loc,
                    'scale': scale}
@@ -3143,7 +3173,7 @@ class rv_discrete(rv_generic):
                conditional=False, maxcount=1000, tolerance=1e-10, chunksize=32):
         """
         Calculate expected value of a function with respect to the distribution
-        for discrete distribution.
+        for discrete distribution by numerical summation.
 
         Parameters
         ----------
