@@ -329,42 +329,54 @@ class TestLowLevelCallable(object):
             return ('N_AND_A(%d, %s)' % (self.n, str(self.a)))
 
     @classmethod
+    def setup_doublestar(cls):
+        # It should be possible to create a LowLevelCallable and
+        # use double * as a void *
+        if 1:
+            cls.a = ctypes.c_double(2.0)
+            cls.c_a = ctypes.byref(cls.a)
+            cls.llc3 = LowLevelCallable.from_cython(
+                _tstutils_zerofuncs, "x_to_the_3_minus_a",
+                user_data=ctypes.cast(cls.c_a, ctypes.c_voidp))
+            cls.func_plus_args += [
+                [cls.llc3, tuple(), "x_to_the_3_minus_a (double *)"]]
+            print("setup_doublestar:", cls.a, cls.c_a, cls.llc3)
+
+    @classmethod
     def setup_voidstar(cls):
         # It should be possible to create a LowLevelCallable and
         # use cls.n_and_a as a void *
-        if 0:
+        if 1:
             cls.c_n_and_a = ctypes.byref(cls.n_and_a)
-            cls.llc = LowLevelCallable.from_cython(
+            cls.c_n_and_a = ctypes.pointer(cls.n_and_a)
+            cls.llc_voidstar = LowLevelCallable.from_cython(
                 _tstutils_zerofuncs, "x_to_the_n_minus_a")
+            # cls.func_plus_args += [
+            #     [cls.llc, tuple([cls.c_n_and_a]), "x_to_the_n_minus_a"]]
+            voidstar = ctypes.cast(cls.c_n_and_a, ctypes.c_void_p)
             cls.func_plus_args += [
-                [cls.llc, tuple([cls.c_n_and_a]), "x_to_the_n_minus_a"]]
+                [cls.llc_voidstar, tuple([voidstar]), "x_to_the_n_minus_a  (void *)"]]
+            print("setup_voidstar:", cls.c_n_and_a, cls.llc_voidstar, voidstar)
+            print("setup_voidstar:pt1 ", cls.c_n_and_a[0])
+            print("setup_voidstar:pt2", dir(cls.c_n_and_a))
+            print("setup_voidstar:pt3", cls.c_n_and_a.contents)
+            # print("setup_voidstar:pt2 ", ctypes.cast(cls.c_n_and_a, TestLowLevelCallable.N_AND_A))
+
 
     @classmethod
     def setup_userdata(cls):
         # It should be possible to create a LowLevelCallable and
         # use cls.n_and_a as user_data
-        if 0:
-            cls.c_n_and_a = ctypes.byref(cls.n_and_a)
-            cls.llc = LowLevelCallable.from_cython(
-                _tstutils_zerofuncs, "x_to_the_n_minus_a")
-            if 1:
-                udata = ctypes.cast(
-                    ctypes.pointer(cls.n_and_a), ctypes.c_void_p)
-                cls.llc_with_data = LowLevelCallable(
-                    cls.llc, user_data=udata)
-                cls.func_plus_args += [
-                    [cls.llc_with_data, (), '_x_to_the_n_minus_a']]
-            elif 0:
-                cls.llc_with_data = LowLevelCallable(
-                    cls.llc, user_data=cls.n_and_a)
-                cls.func_plus_args += [
-                    [cls.llc_with_data, (), '_x_to_the_n_minus_a']]
-            elif 0:
-                cls.llc_with_data = LowLevelCallable.from_cython(
-                    _tstutils_zerofuncs, "x_to_the_n_minus_a",
-                    user_data=cls.n_and_a)
-                cls.func_plus_args += [
-                    [cls.llc_with_data, (), '_x_to_the_n_minus_a']]
+        if 1:
+            # cls.c_n_and_a_ud = ctypes.byref(cls.n_and_a)
+            udata = ctypes.cast(
+                ctypes.byref(cls.n_and_a), ctypes.c_void_p)
+            cls.llc_with_data = LowLevelCallable.from_cython(
+                _tstutils_zerofuncs, "x_to_the_n_minus_a",
+                user_data=udata)
+            cls.func_plus_args += [
+                [cls.llc_with_data, (), '_x_to_the_n_minus_a (userdata)']]
+            print("setup_userdata:", cls.n_and_a, cls.llc_with_data, udata)
 
     @classmethod
     def setup_class(cls):
@@ -378,8 +390,11 @@ class TestLowLevelCallable(object):
         cls.llc = LowLevelCallable.from_cython(_tstutils_zerofuncs, "x_to_the_n_minus_a")
         cls.n_and_a = TestLowLevelCallable.N_AND_A(3, 2.0)  # x**3 - 2.0
 
-        cls.setup_voidstar()
+        cls.setup_doublestar()
         cls.setup_userdata()
+        cls.setup_voidstar()
+        import pprint
+        print("setup_class:", pprint.pformat(cls.func_plus_args))
 
     def run_check(self, method, name):
         cuberoot3 = np.power(2, 1.0/3)
@@ -388,8 +403,11 @@ class TestLowLevelCallable(object):
         xtol = rtol = TOL
         tests = self.func_plus_args
         for function, args, fname in tests:
+            print("START run_check", function, fname)
             zero, r = method(function, a, b, xtol=xtol, rtol=rtol,
                              args=args, full_output=True)
+            # zero, r = method(function, a, b, xtol=xtol, rtol=rtol,
+            #                  args=args, full_output=True)
             assert_(r.converged)
             assert_allclose(zero, cuberoot3, atol=xtol, rtol=rtol,
                             err_msg='method %s, function %s' % (name, fname))
@@ -400,17 +418,35 @@ class TestLowLevelCallable(object):
                 assert(r.iterations <= 11), str(
                     [r.converged, r.iterations, r.function_calls])
 
+    def run_secant_check(self, method, name):
+        cuberoot3 = np.power(2, 1.0/3)
+        a = 1.0
+        xtol = rtol = TOL
+        tests = self.func_plus_args
+        for function, args, fname in tests:
+            print("Start run_check", function, fname)
+            zero, r = method(function, a, tol=xtol,
+                             args=args, full_output=True)
+            assert_(r.converged)
+            assert_allclose(zero, cuberoot3, atol=xtol, rtol=rtol,
+                            err_msg='method %s, function %s' % (name, fname))
+            assert(r.iterations <= 11), str(
+                    [r.converged, r.iterations, r.function_calls])
+
     def test_bisect(self):
         self.run_check(cc.bisect, 'bisect')
 
-    def test_brentq(self):
-        self.run_check(cc.brentq, 'brentq')
+    # def test_brentq(self):
+    #     self.run_check(cc.brentq, 'brentq')
+    #
+    # def test_brenth(self):
+    #     self.run_check(cc.brenth, 'brenth')
+    #
+    # def test_ridder(self):
+    #     self.run_check(cc.ridder, 'ridder')
 
-    def test_brenth(self):
-        self.run_check(cc.brenth, 'brenth')
-
-    def test_ridder(self):
-        self.run_check(cc.ridder, 'ridder')
+    # def test_newton(self):
+    #     self.run_secant_check(cc.newton, 'newton')
 
 
 def test_gh_5555():

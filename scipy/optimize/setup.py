@@ -10,7 +10,8 @@ def configuration(parent_package='',top_path=None):
     from scipy._build_utils.system_info import get_info
     config = Configuration('optimize',parent_package, top_path)
 
-    include_dirs = [join(os.path.dirname(__file__), '..', '_lib', 'src')]
+    include_dir = join(os.path.dirname(__file__), '..', '_lib', 'src')
+    include_dirs = [include_dir]
 
     minpack_src = [join('minpack','*f')]
     config.add_library('minpack',sources=minpack_src)
@@ -35,6 +36,12 @@ def configuration(parent_package='',top_path=None):
                          depends=(rootfind_src + rootfind_hdr),
                          include_dirs=include_dirs,
                          **numpy_nodepr_api)
+
+    if 0:
+        config.add_extension("_zero_thunk",
+                         sources=["_zero_thunk.c"],
+                         depends=[os.path.join(include_dir, 'ccallback.h')],
+                         include_dirs=include_dirs)
 
     lapack = get_info('lapack_opt')
     if 'define_macros' in numpy_nodepr_api:

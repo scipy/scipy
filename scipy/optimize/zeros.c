@@ -8,7 +8,9 @@
 #include <setjmp.h>
 #include <numpy/npy_math.h>
 
-//#include <stdio.h>
+#include <stdio.h>
+#define OFILE stdout
+
 #if PY_VERSION_HEX >= 0x03000000
     #define PyString_FromString PyBytes_FromString
     #define PyString_Concat PyBytes_Concat
@@ -16,6 +18,71 @@
     #define PyInt_FromLong PyLong_FromLong
     #define PyInt_AsLong PyLong_AsLong
 #endif
+
+//union value {
+//                char c[16];
+//                short s;
+//                int i;
+//                long l;
+//                float f;
+//                double d;
+//                long long ll;
+//                long double D;
+//};
+
+///*
+//  Hm. Are there CDataObject's which do not need the b_objects member?  In
+//  this case we probably should introduce b_flags to mark it as present...  If
+//  b_objects is not present/unused b_length is unneeded as well.
+//*/
+//typedef struct tagCDataObject CDataObject;
+//
+//struct tagCDataObject {
+//    PyObject_HEAD
+//    char *b_ptr;                /* pointer to memory block */
+//    int  b_needsfree;           /* need _we_ free the memory? */
+//    CDataObject *b_base;        /* pointer to base object or NULL */
+//    Py_ssize_t b_size;          /* size of memory block in bytes */
+//    Py_ssize_t b_length;        /* number of references we need */
+//    Py_ssize_t b_index;         /* index of this object into base's
+//                               b_object list */
+//    PyObject *b_objects;        /* dictionary of references we need to keep, or Py_None */
+//    union value b_value;
+//};
+//
+//
+//extern PyTypeObject PyCPointer_Type;
+//extern PyTypeObject PyCData_Type;
+//#define PointerObject_Check(v)        PyObject_TypeCheck(v, &PyCPointer_Type)
+//#define PointerObject_CheckExact(v)   ((v)->ob_type == &PyCPointer_Type)
+//#define CDataObject_Check(v)          PyObject_TypeCheck(v, &PyCData_Type)
+//#define CDataObject_CheckExact(v)     ((v)->ob_type == &PyCData_Type)
+//// ((v)->ob_type == &PyCArg_Type)
+//
+//typedef struct tagPyCArgObject PyCArgObject;
+//struct tagPyCArgObject {
+//    PyObject_HEAD
+////    ffi_type *pffi_type;
+//    void *pffi_type;
+//    char tag;
+//    union {
+//        char c;
+//        char b;
+//        short h;
+//        int i;
+//        long l;
+//        long long q;
+//        long double D;
+//        double d;
+//        float f;
+//        void *p;
+//    } value;
+//    PyObject *obj;
+//    Py_ssize_t size; /* for the 'V' tag */
+//};
+//extern PyTypeObject PyCArg_Type;
+//#define PyCArg_Check(v)          PyObject_TypeCheck(v, &PyCArg_Type)
+//#define PyCArg_CheckExact(v)        ((v)->ob_type == &PyCArg_Type)
 
 #ifndef FALSE
 #define FALSE 0
@@ -39,12 +106,18 @@ typedef enum {
     CB_D_USERDATA = 1001     // f(x, void *) or f(x, const void *) using UserData
 } zeros_signature_t;
 
-static ccallback_signature_t signatures[] = {
-    {"double (double)", CB_D},
+static const ccallback_signature_t signatures_with_args[] = {
+//    {"double (double)", CB_D},
     {"double (double, double)", CB_D_D},
-    {"double (double, int, double *)", CB_D_I_ND},
     {"double (double, void const *)", CB_D_VOIDSTAR},
     {"double (double, void *)", CB_D_VOIDSTAR},
+    {NULL}
+};
+
+static const ccallback_signature_t signatures_no_args[] = {
+    {"double (double)", CB_D},
+    {"double (double, void const *)", CB_D_USERDATA},
+    {"double (double, void *)", CB_D_USERDATA},
     {NULL}
 };
 
@@ -100,6 +173,8 @@ scipy_zeros_functions_lowlevelfunc(double x, void *func_data)
       case CB_D_VOIDSTAR:
         result = ((double(*)(double, const void *))callback->c_function)(
             x, *(const void **)(callback->info_p));
+//        result = ((double(*)(double, const void *))callback->c_function)(
+//            x, (const void *)(callback->info_p));
         break;
 
       case CB_D_USERDATA:
@@ -177,15 +252,29 @@ static int fill_in_ccallback(PyObject *f, PyObject *xargs, ccallback_t *pcallbac
     int use_ccallback = FALSE;
     pcallback->info_p = NULL;
 
+    int bHasArgs = (xargs && PyTuple_Check(xargs) && PyTuple_GET_SIZE(xargs) > 0);
+
     /* f was filled in previously by PyArg_ParseTuple */
-    if (ccallback_prepare(pcallback, signatures, f, CCALLBACK_DEFAULTS)) {
+    if (ccallback_prepare(pcallback, (bHasArgs ? signatures_with_args : signatures_no_args),
+                          f, CCALLBACK_DEFAULTS)) {
+        // fprintf(OFILE,"ccallback_prepare != 0\n"); fflush(OFILE);
         return FALSE;
     }
 
     if (pcallback->signature == NULL) {
         /* pure-Python */
         /* For now, just break */
+        // fprintf(OFILE,"pcallback->signature == NULL\n"); fflush(OFILE);
+        PyErr_SetString(PyExc_ValueError,
+                        "Python call, not LowLevalCallable.");
         return FALSE;
+    }
+    fprintf(OFILE, "FIC: sig->value=%d\n", pcallback->signature->value); fflush(OFILE);
+    if (xargs) {
+         fprintf(OFILE,"XT: xargs is tuple?: %d\n", PyTuple_Check(xargs) ); fflush(OFILE);
+         if (PyTuple_Check(xargs)) {
+             fprintf(OFILE,"XT: len(xargs) = %d\n", PyTuple_GET_SIZE(xargs) ); fflush(OFILE);
+        }
     }
     switch(pcallback->signature->value) {
         case CB_D:
@@ -205,38 +294,82 @@ static int fill_in_ccallback(PyObject *f, PyObject *xargs, ccallback_t *pcallbac
                 } else {
                     use_ccallback = TRUE;
                 }
+            } else {
+                PyErr_SetString(PyExc_ValueError,
+                    "Unable to parse xargs as a double.");
             }
             break;
         }
 
         case CB_D_I_ND:
-            if (init_func_extra_args(pcallback, xargs) == 0) {
+        {
+            int initerr = init_func_extra_args(pcallback, xargs);
+            if (!initerr) {
+                PyErr_SetString(PyExc_ValueError,
+                    "Unable to parse xargs as a tuple of doubles.");
+                // fprintf(OFILE,"init_func_extra_args != 0\n"); fflush(OFILE);
+            } else {
                 use_ccallback = TRUE;
             }
             break;
+        }
 
         case CB_D_VOIDSTAR:
             // Is the data passed in, or stored in user_data?
-            if (xargs) {
-                if (PyTuple_Check(xargs) && PyTuple_GET_SIZE(xargs)==1)  {
+            fprintf(OFILE,"XT:  CB_D_VOIDSTAR\n"); fflush(OFILE);
+            if (xargs && PyTuple_Check(xargs) && PyTuple_GET_SIZE(xargs) > 0) {
+                fprintf(OFILE,"XT:  Checks OK\n"); fflush(OFILE);
+                if (PyTuple_GET_SIZE(xargs) == 1)
+                {
                     PyObject *item = PyTuple_GET_ITEM(xargs, 0);
-                    void **p = malloc(sizeof(void *));
-                    *p = (void *)item;
-                    pcallback->info_p = p;
+                    PyObject * p2 = NULL;
+                    // Expecting an object created by ctypes.pointer(E.g. gives a CDataObject) or
+                    // ctypes.byref(gives a CArgObject)
+                    // First check if a CDataObject
+                    p2 = PyObject_GetAttrString(item, "value");
+                    fprintf(OFILE, "CB_D_VOIDSTAR: p2 is %p: ", p2); PyObject_Print(p2, OFILE, 0); fprintf(OFILE, "\n"); fflush(OFILE);
                     pcallback->info = 1;
-                    use_ccallback = TRUE;
+                    if (p2) {
+                        int overflow;
+                        long long value;
+                        void **p = malloc(sizeof(void *));
+                        value = PyLong_AsLongLongAndOverflow(p2, &overflow);
+                        *p = (void *)value;
+//                        *p = *(void **)value;
+                        pcallback->info_p = p;
+                        use_ccallback = TRUE;
+                        fprintf(OFILE, "CB_D_VOIDSTAR: p is %p(%lld), pc->ip=%p, value=%lld\n", p, *(void **)p, pcallback->info_p, value); fflush(OFILE);
+                    } else {
+                        PyErr_SetString(PyExc_ValueError,
+                            "Unable to Extract value fronm xargs.");
+                        use_ccallback = FALSE;
+                    }
                 } else {
                     PyErr_SetString(PyExc_ValueError,
                         "Wrong number of extra arguments for void *.");
                 }
             } else {
-               // Update the signature enum
-                pcallback->signature->value = CB_D_USERDATA;
+                fprintf(OFILE,"XT:  Checks NOT OK\n"); fflush(OFILE);
+                PyErr_SetString(PyExc_ValueError,
+                    "Wrong number of extra arguments for void *.");
+            }
+            break;
+
+        case CB_D_USERDATA:
+            fprintf(OFILE,"XT:  CB_D_USERDATA\n"); fflush(OFILE);
+            // Is the data passed in, or stored in user_data?
+            if (xargs && PyTuple_Check(xargs) && PyTuple_GET_SIZE(xargs) > 0) {
+                PyErr_SetString(PyExc_ValueError,
+                        "Wrong number of extra arguments for user_data.");
+            } else {
+//                PyObject *item = (PyObject *)pcallback->user_data;
+//                fprintf(OFILE, "CB_D_USERDATA: item is %p: ", item); PyObject_Print(item, OFILE, 0); fprintf(OFILE, "\n"); fflush(OFILE);
                 use_ccallback = TRUE;
             }
             break;
 
         default:
+            // fprintf(OFILE,"Unknown sig->value %d\n", pcallback->signature->value); fflush(OFILE);
             break;
     }
     return use_ccallback;
@@ -254,9 +387,12 @@ call_solver(solver_type solver, PyObject *self, PyObject *args)
     volatile PyObject *fargs = NULL;
     int use_ccallback = FALSE, isllc = FALSE;
     ccallback_t callback;
+    // fprintf(OFILE,"solver %p\n", (void *)solver); fflush(OFILE);
+
     if (!PyArg_ParseTuple(args, "OddddiOi|i",
                 &f, &a, &b, &xtol, &rtol, &iter, &xargs, &fulloutput, &disp)) {
         PyErr_SetString(PyExc_RuntimeError, "Unable to parse arguments");
+        // fprintf(OFILE,"No parse\n"); fflush(OFILE);
         return NULL;
     }
     if (xtol < 0) {
@@ -267,23 +403,31 @@ call_solver(solver_type solver, PyObject *self, PyObject *args)
         PyErr_SetString(PyExc_ValueError, "maxiter should be > 0");
         return NULL;
     }
+    // fprintf(OFILE,"Past checks.\n"); fflush(OFILE);
 
     memset(&callback, sizeof(callback), '\0');
     callback.info_p = NULL;
     isllc = ccallback_is_lowlevelcallable(f);
+    // fprintf(OFILE,"isllc %d\n", isllc); fflush(OFILE);
     use_ccallback = fill_in_ccallback(f, xargs, &callback);
+    // fprintf(OFILE,"use_ccallback %d\n", use_ccallback); fflush(OFILE);
     if (isllc) {
         /* error message already set inside ccallback_prepare */
         if (!use_ccallback) {
+//            PyErr_SetString(PyExc_RuntimeError, "Not a matching callback");
             return NULL;
         }
     }
 
     if (use_ccallback) {
         solver_stats.error_num = 0;
+        // fprintf(OFILE,"ll start!\n"); fflush(OFILE);
         zero = solver(scipy_zeros_functions_lowlevelfunc, a, b,
                       xtol, rtol, iter, (void*)&callback, &solver_stats);
-        free(callback.info_p);
+        // fprintf(OFILE,"ll return!\n"); fflush(OFILE);
+        if (1) {
+            free(callback.info_p);
+        }
         callback.info_p = NULL;
         ccallback_release(&callback);
     }
@@ -321,6 +465,7 @@ call_solver(solver_type solver, PyObject *self, PyObject *args)
             fargs = NULL;
         } else {
             /* error return from Python function */
+            // fprintf(OFILE,"longjmp return\n"); fflush(OFILE);
             Py_DECREF(fargs);
             return NULL;
         }

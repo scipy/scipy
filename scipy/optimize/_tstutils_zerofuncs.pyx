@@ -21,6 +21,15 @@ cdef double x_to_the_n_minus_2(double x, double n) nogil:
     cdef int ni = <int>n
     return pow(x, ni) - 2.0
 
+# Now the function to compute x**n-a
+cdef double x_to_the_3_minus_a(double x, const void *user_data) nogil:
+    cdef double a = (<double *>user_data)[0]
+    cdef double result
+    result = pow(x, 3)
+    result = result - a
+    with gil:
+        print('x=', x, 'a=', a, 'result=', result)
+    return result
 
 # Function 3: The exponent and subtractand are specified at run-time via user_data
 # First a struct to hold n, a
@@ -38,4 +47,6 @@ cdef double x_to_the_n_minus_a(double x, const void *user_data) nogil:
     a = data[0].a
     result = pow(x, n)
     result = result - a
+    with gil:
+        print('user_data=', <long>user_data, '%x' % (<long>user_data), 'x=', x, 'a=', a, 'n=', n, 'result=', result)
     return result
