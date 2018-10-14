@@ -2393,14 +2393,23 @@ class rv_continuous(rv_generic):
 
         Examples
         --------
-        To understand the effect of the bounds of integration consider the
-        example ``expon(1).expect(lambda x: 1, lb=0.0, ub=2.0)`` which will
-        be similar to ``expon(1).cdf(2.0) - expon(1).cdf(0.0)``. If the
-        argument `conditional=True` then
-        ``expon(1).expect(lambda x: 1, lb=0.0, ub=2.0, conditional=True)``
-        should be similar to ``1.0`` but may differ slightly because of
-        numerical approximation.
 
+        To understand the effect of the bounds of integration consider 
+        >>> from scipy.stats import expon
+        >>> expon(1).expect(lambda x: 1, lb=0.0, ub=2.0)
+        0.6321205588285578
+
+        This is close to 
+
+        >>> expon(1).cdf(2.0) - expon(1).cdf(0.0)
+        0.6321205588285577
+
+        If ``conditional=True``
+
+        >>> expon(1).expect(lambda x: 1, lb=0.0, ub=2.0, conditional=True)
+        1.0000000000000002
+
+        The slight deviation from 1 is due to numerical integration.
         """
         lockwds = {'loc': loc,
                    'scale': scale}
