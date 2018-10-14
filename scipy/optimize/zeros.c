@@ -190,8 +190,8 @@ static int fill_in_ccallback(PyObject *f, PyObject *xargs, ccallback_t *pcallbac
     if (pcallback->signature == NULL) {
         /* pure-Python */
         /* For now, just break */
-        PyErr_SetString(PyExc_ValueError,
-                        "Python call, not LowLevelCallable.");
+//        PyErr_SetString(PyExc_ValueError,
+//                        "Python call, not LowLevelCallable.");
         return FALSE;
     }
     switch(pcallback->signature->value) {
@@ -217,29 +217,24 @@ static int fill_in_ccallback(PyObject *f, PyObject *xargs, ccallback_t *pcallbac
             break;
 
         case CB_D_VOIDSTAR:
-            // Is the data passed in, or stored in user_data?
-            if (xargs && PyTuple_Check(xargs) && PyTuple_GET_SIZE(xargs) > 0) {
-                if (PyTuple_GET_SIZE(xargs) == 1) {
-                    PyObject *item = PyTuple_GET_ITEM(xargs, 0);
-                    // Expecting an object created by ctypes.pointer(E.g. gives a CDataObject)
-                    // [ ctypes.byref returns CArgObject, more difficult to deal with.  It has a "_obj" member.]
-                    // Assume it is a CDataObject
-                    if (PyObject_HasAttrString(item, "value") ) {
-                        void **p = NULL;
-                        PyObject * p2 = PyObject_GetAttrString(item, "value");
-                        assert(p2);
-                        pcallback->info = 1;
-                        p = malloc(sizeof(void *));
-                        *p = PyLong_AsVoidPtr(p2);
-                        pcallback->info_p = p;
-                        use_ccallback = TRUE;
-                    } else {
-                        PyErr_SetString(PyExc_ValueError,
-                            "Unable to Extract value from xargs.");
-                    }
+            if (xargs && PyTuple_Check(xargs) && PyTuple_GET_SIZE(xargs) == 1) {
+                PyObject *item = PyTuple_GET_ITEM(xargs, 0);
+                // Expecting an object created by ctypes.pointer (E.g. c_void_p gives a CDataObject)
+                // [ ctypes.byref returns CArgObject, more difficult to deal with.  It has a "_obj" member.]
+                // Assume it is a CDataObject
+                if (PyObject_HasAttrString(item, "value") ) {
+                    void **p = NULL;
+                    PyObject * p2 = PyObject_GetAttrString(item, "value");
+                    assert(p2);
+                    p = malloc(sizeof(void *));
+                    *p = PyLong_AsVoidPtr(p2);
+                    Py_DECREF(p2);
+                    pcallback->info = 1;
+                    pcallback->info_p = p;
+                    use_ccallback = TRUE;
                 } else {
                     PyErr_SetString(PyExc_ValueError,
-                        "Wrong number of extra arguments for void *.");
+                        "Unable to Extract value from xargs.");
                 }
             } else {
                 PyErr_SetString(PyExc_ValueError,
@@ -294,14 +289,18 @@ call_solver(solver_type solver, PyObject *self, PyObject *args)
     memset(&callback, sizeof(callback), '\0');
     callback.info_p = NULL;
     isllc = ccallback_is_lowlevelcallable(f);
-    use_ccallback = fill_in_ccallback(f, xargs, &callback);
     if (isllc) {
-        /* error message already set inside ccallback_prepare */
+        use_ccallback = fill_in_ccallback(f, xargs, &callback);
         if (!use_ccallback) {
+            /* error message already set inside ccallback_prepare/fill_in_ccallback */
 //            PyErr_SetString(PyExc_RuntimeError, "Not a matching callback");
             return NULL;
         }
+    } else if (!PyCallable_Check(f)) {
+        PyErr_SetString(PyExc_RuntimeError, "Is not callable");
+        return NULL;
     }
+
 
     if (use_ccallback) {
         solver_stats.error_num = 0;
@@ -310,10 +309,6 @@ call_solver(solver_type solver, PyObject *self, PyObject *args)
         free(callback.info_p);
         callback.info_p = NULL;
         ccallback_release(&callback);
-    }
-    else if (!PyCallable_Check(f)) {
-        PyErr_SetString(PyExc_RuntimeError, "Is not callable");
-        return NULL;
     } else {
         len = PyTuple_Size(xargs);
         /* Make room for the double as first argument */
@@ -349,6 +344,7 @@ call_solver(solver_type solver, PyObject *self, PyObject *args)
             return NULL;
         }
     }
+
     if (solver_stats.error_num != 0) {
         if (solver_stats.error_num == SIGNERR) {
             PyErr_SetString(PyExc_ValueError,
