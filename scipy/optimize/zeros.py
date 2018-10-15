@@ -4,12 +4,6 @@ import warnings
 from collections import namedtuple
 import numpy as np
 from . import _zeros
-from scipy._lib._ccallback import LowLevelCallable
-
-# from ._zero_thunk import call_thunk_real_call_llc
-# from . import _zero_thunk
-# print(dir(_zero_thunk))
-# _call_thunk_real_call_llc = _zero_thunk.call_thunk_real_call_llc
 
 _iter = 100
 _xtol = 2e-12
@@ -267,10 +261,6 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
     # Convert to float (don't use float(x0); this works also for complex x0)
     p0 = 1.0 * x0
     funcalls = 0
-
-    if 0 and isinstance(func, LowLevelCallable):
-        args = tuple([func])
-        func = call_thunk_real_call_llc
 
     if fprime is not None:
         # Newton-Raphson method
