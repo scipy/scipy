@@ -51,16 +51,8 @@ predicate hypot(Call c) {
   )
 }
 
-// inside tests is less interesting
-predicate inTest(Call c) {
-  c.getLocation().getFile().toString().prefix(19) = "/opt/src/benchmarks"
-  or
-  c.getLocation().getFile().getShortName().prefix(4) = "test"
-}
-
 from Call c
 where
-  hypot(c) and not inTest(c)
+  hypot(c)
 select
   c, "Pythagorean calculation with sub-optimal numerics"
-  
