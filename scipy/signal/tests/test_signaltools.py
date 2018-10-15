@@ -708,9 +708,9 @@ class TestFFTConvolve(object):
         b = b[:, :, None, None, None]
         expected = expected[:, :, None, None, None]
 
-        a = np.moveaxis(a, [0, 1], [1, 4])
-        b = np.moveaxis(b, [0, 1], [1, 4])
-        expected = np.moveaxis(expected, [0, 1], [1, 4])
+        a = np.rollaxis(a.swapaxes(0, 2), 1, 5)
+        b = np.rollaxis(b.swapaxes(0, 2), 1, 5)
+        expected = np.rollaxis(expected.swapaxes(0, 2), 1, 5)
 
         # use 1 for dimension 2 in a and 3 in b to test broadcasting
         a = np.tile(a, [2, 1, 3, 1, 1])

@@ -9,7 +9,7 @@ from scipy.optimize import rosen
 from numpy.testing import (assert_equal, assert_allclose,
                            assert_almost_equal,
                            assert_string_equal, assert_)
-from pytest import raises as assert_raises
+from pytest import raises as assert_raises, warns
 
 
 class TestDifferentialEvolutionSolver(object):
@@ -520,7 +520,7 @@ class TestDifferentialEvolutionSolver(object):
 
         # should raise a UserWarning because the updating='immediate'
         # is being overriden by the workers keyword
-        with np.testing.assert_warns(UserWarning):
+        with warns(UserWarning):
             solver = DifferentialEvolutionSolver(rosen, bounds, workers=2)
             assert_(solver._updating == 'deferred')
 
