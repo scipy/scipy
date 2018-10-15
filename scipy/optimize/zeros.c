@@ -169,7 +169,7 @@ init_func_extra_args(ccallback_t *callback, PyObject *extra_arguments)
     }
 
     callback->info_p = (void *)p;
-    callback->info = num_xargs;
+    callback->info = (int)num_xargs;
     return 0;
 }
 
@@ -177,21 +177,19 @@ init_func_extra_args(ccallback_t *callback, PyObject *extra_arguments)
 static int fill_in_ccallback(PyObject *f, PyObject *xargs, ccallback_t *pcallback)
 {
     int use_ccallback = FALSE;
-    pcallback->info_p = NULL;
-
     int bHasArgs = (xargs && PyTuple_Check(xargs) && PyTuple_GET_SIZE(xargs) > 0);
 
     /* f was filled in previously by PyArg_ParseTuple */
-    const ccallback_signature_t *sigs =  (bHasArgs ? signatures_with_args : signatures_no_args);
-    if (ccallback_prepare(pcallback, (ccallback_signature_t *)sigs, f, CCALLBACK_DEFAULTS)) {
+    const ccallback_signature_t *sigs =  (
+        bHasArgs ? signatures_with_args : signatures_no_args);
+    if (ccallback_prepare(pcallback, (ccallback_signature_t *)sigs,
+                          f, CCALLBACK_DEFAULTS)) {
         return FALSE;
     }
 
+    pcallback->info_p = NULL;
     if (pcallback->signature == NULL) {
         /* pure-Python */
-        /* For now, just break */
-//        PyErr_SetString(PyExc_ValueError,
-//                        "Python call, not LowLevelCallable.");
         return FALSE;
     }
     switch(pcallback->signature->value) {
