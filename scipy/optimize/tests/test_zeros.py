@@ -361,7 +361,7 @@ class TestLowLevelCallable(object):
         cls.llc_with_data = LowLevelCallable.from_cython(
             _tstutils_zerofuncs, "x_to_the_n_minus_a",
             user_data=user_data)
-        cls._add_test(cls.llc_with_data, (),  '_x_to_the_n_minus_a (userdata)')
+        cls._add_test(cls.llc_with_data, (), '_x_to_the_n_minus_a (userdata)')
 
     @classmethod
     def setup_arg_struct(cls):
@@ -383,7 +383,6 @@ class TestLowLevelCallable(object):
         cls.setup_userdata_double()
         cls.setup_userdata_struct()
         cls.setup_arg_struct()
-
 
     def run_check(self, method, name):
         cuberoot3 = np.power(2, 1.0/3)
