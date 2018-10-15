@@ -49,8 +49,8 @@ def linprog_verbose_callback(res):
         success : bool
             True if the algorithm succeeded in finding an optimal solution.
         slack : 1D array
-            The values of the slack variables.  Each slack variable corresponds
-            to an inequality constraint.  If the slack is zero, then the
+            The values of the slack variables. Each slack variable corresponds
+            to an inequality constraint. If the slack is zero, then the
             corresponding constraint is active.
         con : 1D array
             The (nominally zero) residuals of the equality constraints, that is,
@@ -184,16 +184,16 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     ----------
     c : 1D array
         Coefficients of the linear objective function to be minimized.
-    A_ub : 1D array, optional
-        2D array which, when matrix-multiplied by ``x``, gives the values of
-        the upper-bound inequality constraints at ``x``.
+    A_ub : 2D array, optional
+        2D array such that ``A_ub @ x`` gives the values of the upper-bound
+        inequality constraints at ``x``.
     b_ub : 1D array, optional
         1D array of values representing the upper-bound of each inequality
         constraint (row) in ``A_ub``.
-    A_eq : array_like, optional
-        2D array which, when matrix-multiplied by ``x``, gives the values of
-        the equality constraints at ``x``.
-    b_eq : array_like, optional
+    A_eq : 2D, optional
+        2D array such that ``A_eq @ x`` gives the values of the equality
+        constraints at ``x``.
+    b_eq : 1D array, optional
         1D array of values representing the RHS of each equality constraint
         (row) in ``A_eq``.
     bounds : sequence, optional
@@ -257,36 +257,37 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
     Returns
     -------
-    A `scipy.optimize.OptimizeResult` consisting of the following fields:
+    res : OptimizeResult
+        A :class:`scipy.optimize.OptimizeResult` consisting of the fields:
 
-        x : 1D array
-            The independent variable vector which optimizes the linear
-            programming problem.
-        fun : float
-            Value of the objective function.
-        slack : 1D array
-            The values of the slack variables. Each slack variable corresponds
-            to an inequality constraint.  If the slack is zero, then the
-            corresponding constraint is active.
-        con : 1D array
-            The (nominally zero) residuals of the equality constraints, that is,
-            ``b - A_eq @ x``
-        success : bool
-            Returns True if the algorithm succeeded in finding an optimal
-            solution.
-        status : int
-            An integer representing the exit status of the optimization::
+            x : 1D array
+                The independent variable vector which optimizes the linear
+                programming problem.
+            fun : float
+                Value of the objective function.
+            slack : 1D array
+                The values of the slack variables. Each slack variable
+                corresponds to an inequality constraint. If the slack is zero,
+                then the corresponding constraint is active.
+            con : 1D array
+                The (nominally zero) residuals of the equality constraints,
+                that is, ``b - A_eq @ x``
+            success : bool
+                Returns True if the algorithm succeeded in finding an optimal
+                solution.
+            status : int
+                An integer representing the exit status of the optimization::
 
-                 0 : Optimization terminated successfully
-                 1 : Iteration limit reached
-                 2 : Problem appears to be infeasible
-                 3 : Problem appears to be unbounded
-                 4 : Serious numerical difficulties encountered
+                     0 : Optimization terminated successfully
+                     1 : Iteration limit reached
+                     2 : Problem appears to be infeasible
+                     3 : Problem appears to be unbounded
+                     4 : Serious numerical difficulties encountered
 
-        nit : int
-            The number of iterations performed.
-        message : str
-            A string descriptor of the exit status of the optimization.
+            nit : int
+                The number of iterations performed.
+            message : str
+                A string descriptor of the exit status of the optimization.
 
     See Also
     --------
