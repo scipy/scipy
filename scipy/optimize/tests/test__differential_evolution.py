@@ -520,7 +520,7 @@ class TestDifferentialEvolutionSolver(object):
 
         # should raise a UserWarning because the updating='immediate'
         # is being overriden by the workers keyword
-        with np.testing.assert_warns(UserWarning):
+        with pytest.warns(UserWarning):
             solver = DifferentialEvolutionSolver(rosen, bounds, workers=2)
             assert_(solver._updating == 'deferred')
 
