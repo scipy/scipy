@@ -908,6 +908,11 @@ class yulesimon_gen(rv_discrete):
     %(example)s
 
     """
+    def _rvs(self, alpha):
+        E1, E2 = self._random_state.standard_exponential(self._size), self._random_state.standard_exponential(self._size)
+        ans = ceil(-E1 / log1p(-exp(-E2 / alpha)))
+        return ans
+
     def _pmf(self, x, alpha):
         return alpha * special.beta(x, alpha + 1)
 
