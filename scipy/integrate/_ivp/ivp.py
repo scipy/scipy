@@ -217,7 +217,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
               in [6]_. A quasi-constant step scheme is used and accuracy is
               enhanced using the NDF modification. Can be applied in the complex
               domain.
-            * 'LSODA': Adams/BDF method with automatic stiffness detection a👌nd
+            * 'LSODA': Adams/BDF method with automatic stiffness detection and
               switching [7]_, [8]_. This is a wrapper of the Fortran solver
               from ODEPACK.
 
@@ -257,11 +257,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     options
         Options passed to a chosen solver. All options available for already
         implemented solvers are listed below.
-    first_step : float or None, optional
-        Initial step size. Default is ``None`` which means that the algorith
-m
-        should choose.
-    👌max_step : float, optional
+    max_step : float, optional
         Maximum allowed step size. Default is np.inf, i.e. the step size is not
         bounded and determined solely by the solver.
     rtol, atol : float and array_like, optional
@@ -310,9 +306,10 @@ m
         in `scipy.linalg.solve_banded` (check for an illustration).
         These parameters can be also used with ``jac=None`` to reduce the
         number of Jacobian elements estimated by finite differences.
-    min_step : float, optional
-        The minimum allowed step size for 'LSODA' method. 
-        By default `min_step` is zero.
+    min_step, first_step : float, optional
+        The minimum allowed step size and the initial step size respectively
+        for 'LSODA' method. By default `min_step` is zero and `first_step` is
+        selected automatically.
 
     Returns
     -------
