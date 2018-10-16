@@ -197,6 +197,10 @@ class RK23(RungeKutta):
     t_bound : float
         Boundary time - the integration won't continue beyond it. It also
         determines the direction of the integration.
+    first_step : float or None, optional
+        Initial step size. Default is ``None`` which means that the algorith
+m
+        should choose.
     max_step : float, optional
         Maximum allowed step size. Default is np.inf, i.e. the step size is not
         bounded and determined solely by the solver.
@@ -283,6 +287,10 @@ class RK45(RungeKutta):
     t_bound : float
         Boundary time - the integration won't continue beyond it. It also
         determines the direction of the integration.
+    first_step : float or None, optional
+        Initial step size. Default is ``None`` which means that the algorith
+m
+        should choose.
     max_step : float, optional
         Maximum allowed step size. Default is np.inf, i.e. the step size is not
         bounded and determined solely by the solver.
