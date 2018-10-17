@@ -1231,8 +1231,8 @@ def _check_result(x, fun, status, slack, con, lb, ub, tol, message):
     elif status == 2 and is_feasible:
         # Occurs if the simplex method exits after phase one with a very
         # nearly basic feasible solution. Postsolving can make the solution
-        #basic, however, this solution is NOT optimal
-        raise ValueError(message)
+        # basic, however, this solution is NOT optimal
+        status = 4
 
     return status, message
 

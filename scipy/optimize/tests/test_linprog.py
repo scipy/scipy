@@ -119,10 +119,10 @@ def _assert_unbounded(res):
     assert_equal(res.status, 3, "failed to report unbounded status")
 
 
-def _assert_unable_to_find_basic_feasible_sol(res):
+def _assert_numerical_difficulties(res):
     # res: linprog result object
     assert_(not res.success, "incorrectly reported success")
-    assert_equal(res.status, 2, "failed to report optimization failure")
+    assert_equal(res.status, 4, "failed to report numerical difficulties")
 
 
 def _assert_success(res, desired_fun=None, desired_x=None,
@@ -873,13 +873,18 @@ class LinprogCommonTests(object):
         c = np.array([-1.0, 1, 1, 1, 1, 1, 1, 1, 1,
                       1, 1, 1, 1, 0, 0, 0, 0, 0, 0])
 
+
+        res = linprog(
+            c, A_ub, b_ub, bounds=bounds,
+            method=self.method, options=self.options
+        )
+
         if self.method == 'simplex':
-            with pytest.warns(OptimizeWarning):
-                res = linprog(c, A_ub, b_ub, bounds=bounds,
-                    method=self.method, options=self.options)
+            if self.options.get('bland'):
+                _assert_numerical_difficulties(res)
+            else:
+                _assert_infeasible(res)
         else:
-            res = linprog(c, A_ub, b_ub, bounds=bounds,
-                    method=self.method, options=self.options)
             _assert_success(res, desired_fun=-106.63507541835018)
 
     def test_issue_6139(self):
@@ -1008,7 +1013,11 @@ class LinprogCommonTests(object):
 
         res = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
                 bounds=bounds, method=self.method, options=self.options)
-        _assert_success(res, desired_fun=108.568535, atol=1e-6)
+
+        if self.method == 'simplex':
+            _assert_numerical_difficulties(res)
+        else:
+            _assert_success(res, desired_fun=108.568535, atol=1e-6)
 
     def test_issue_8174(self):
         # https://github.com/scipy/scipy/issues/8174
@@ -1176,9 +1185,9 @@ class TestLinprogSimplexCommon(BaseTestLinprogSimplex):
         assert_allclose(last_cb['con'], res['con'])
         assert_allclose(last_cb['slack'], res['slack'])
 
-    def test_issue_7237(self):
-        with pytest.raises(ValueError):
-            super(TestLinprogSimplexCommon, self).test_issue_7237()
+    def test_bug_5400(self):
+        with pytest.warns(OptimizeWarning):
+            super(TestLinprogSimplexCommon, self).test_bug_5400()
 
     def test_issue_8174(self):
         with pytest.warns(OptimizeWarning):
@@ -1188,10 +1197,6 @@ class TestLinprogSimplexCommon(BaseTestLinprogSimplex):
 class TestLinprogSimplexBland(BaseTestLinprogSimplex):
     options = {'bland': True}
 
-    def test_bug_5400(self):
-        with pytest.raises(ValueError):
-            super(TestLinprogSimplexBland, self).test_bug_5400()
-
     def test_issue_8174(self):
         with pytest.warns(OptimizeWarning):
             super(TestLinprogSimplexBland, self).test_issue_8174()
@@ -1200,17 +1205,17 @@ class TestLinprogSimplexBland(BaseTestLinprogSimplex):
 class TestLinprogSimplexNoPresolve(BaseTestLinprogSimplex):
     options = {'presolve': False}
 
+    def test_bug_5400(self):
+        with pytest.warns(OptimizeWarning):
+            super(TestLinprogSimplexNoPresolve, self).test_bug_5400()
+
     def test_issue_6139(self):
         # Linprog(method='simplex') fails to find a basic feasible solution
         # if phase 1 pseudo-objective function is outside the provided tol.
         # https://github.com/scipy/scipy/issues/6139
         # Without ``presolve`` eliminating such rows the result is incorrect.
-        with pytest.raises(ValueError):
-            return super(TestLinprogSimplexNoPresolve, self).test_issue_6139()
-
-    def test_issue_7237(self):
-        with pytest.raises(ValueError):
-            super(TestLinprogSimplexNoPresolve, self).test_issue_7237()
+        with pytest.warns(OptimizeWarning):
+            super(TestLinprogSimplexNoPresolve, self).test_issue_6139()
 
     def test_issue_8174(self):
         with pytest.warns(OptimizeWarning):
