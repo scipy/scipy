@@ -110,7 +110,7 @@ def _assert_iteration_limit_reached(res, maxiter):
 def _assert_infeasible(res):
     # res: linprog result object
     assert_(not res.success, "incorrectly reported success")
-    assert_equal(res.status, 2, "failed to report infeasible status")
+    assert_(res.status in (2, 4), "failed to report infeasible status")
 
 
 def _assert_unbounded(res):
@@ -880,6 +880,11 @@ class LinprogCommonTests(object):
         )
 
         if self.method == 'simplex':
+            # Bland's rule selects an alternate pivot leading to a more
+            # numerically stable, albeit slower solution..
+            # If used the feasible solution is found, however, the selected
+            # pivots still encounter numerical difficulties during phase two of
+            # the simplex method.
             if self.options.get('bland'):
                 _assert_numerical_difficulties(res)
             else:
@@ -1014,7 +1019,9 @@ class LinprogCommonTests(object):
         res = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
                 bounds=bounds, method=self.method, options=self.options)
 
-        if self.method == 'simplex':
+        # Bland's rule selects an alternate pivot leading to a more numerically
+        # stable, albeit slower, solution.
+        if self.method == 'simplex' and not self.options.get('bland'):
             _assert_numerical_difficulties(res)
         else:
             _assert_success(res, desired_fun=108.568535, atol=1e-6)
@@ -1032,8 +1039,15 @@ class LinprogCommonTests(object):
         c = -np.ones(A_ub.shape[1])
         bounds = [(0,1)] * A_ub.shape[1]
 
-        res = linprog(c=c, A_ub=A_ub, b_ub=b_ub, bounds=bounds,
-            options=self.options, method=self.method)
+        res = linprog(
+            c=c, A_ub=A_ub, b_ub=b_ub, bounds=bounds,
+            options=self.options, method=self.method
+            )
+
+        if self.method == 'simplex':
+            _assert_numerical_difficulties(res)
+        else:
+            _assert_success(res)
 
     def test_issue_8174_stackoverflow(self):
         # Test supplementary example from issue 8174.
@@ -1094,12 +1108,9 @@ class LinprogCommonTests(object):
         bounds = [(0, None), (None, None)]
         res = linprog(c, A_eq=A, b_eq=b, bounds=bounds,
                       method=self.method, options=self.options)
-        _assert_success(res,
-                        desired_x=[0, 6./7],
-                        desired_fun=5*6./7)
+        _assert_success(res, desired_x=[0, 6/7], desired_fun=5*6/7)
 
     def test_bug_8664(self):
-        # Weak test. Ideally should _detect infeasibility_ for all options.
         c = [4]
         A_ub = [[2], [5]]
         b_ub = [4, 4]
@@ -1112,7 +1123,7 @@ class LinprogCommonTests(object):
             o["presolve"] = False
             res = linprog(c, A_ub, b_ub, A_eq, b_eq, options=o,
                           method=self.method)
-        assert_(not res.success, "incorrectly reported success")
+        _assert_infeasible(res)
 
     def test_bug_8973(self):
         """
@@ -1126,9 +1137,7 @@ class LinprogCommonTests(object):
         bounds = [(None, None), (None, None), (None, None), (-1, 1), (-1, 1)]
         res = linprog(c, A, b, None, None, bounds, method=self.method,
                       options=self.options)
-        _assert_success(res,
-                        desired_x=[2, -2, 0, -1, 1],
-                        desired_fun=-2)
+        _assert_success(res, desired_x=[2, -2, 0, -1, 1], desired_fun=-2)
 
     def test_bug_8973_2(self):
         """
