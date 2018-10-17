@@ -63,6 +63,7 @@ from argparse import ArgumentParser, REMAINDER
 
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__)))
 
+
 def main(argv):
     parser = ArgumentParser(usage=__doc__.lstrip())
     parser.add_argument("--verbose", "-v", action="count", default=1,
@@ -76,11 +77,11 @@ def main(argv):
     parser.add_argument("--refguide-check", action="store_true", default=False,
                         help="Run refguide check (do not run regular tests.)")
     parser.add_argument("--coverage", action="store_true", default=False,
-                        help=("report coverage of project code. HTML output goes "
-                              "under build/coverage"))
+                        help=("report coverage of project code. HTML output"
+                              " goes under build/coverage"))
     parser.add_argument("--gcov", action="store_true", default=False,
-                        help=("enable C code coverage via gcov (requires GCC). "
-                              "gcov output goes to build/**/*.gc*"))
+                        help=("enable C code coverage via gcov (requires GCC)."
+                              " gcov output goes to build/**/*.gc*"))
     parser.add_argument("--lcov-html", action="store_true", default=False,
                         help=("produce HTML for C code coverage information "
                               "from a previous run with --gcov. "
@@ -89,7 +90,8 @@ def main(argv):
                         help="'fast', 'full', or something that could be "
                              "passed to nosetests -A [default: fast]")
     parser.add_argument("--submodule", "-s", default=None,
-                        help="Submodule whose tests to run (cluster, constants, ...)")
+                        help="Submodule whose tests to run (cluster,"
+                             " constants, ...)")
     parser.add_argument("--pythonpath", "-p", default=None,
                         help="Paths to prepend to PYTHONPATH")
     parser.add_argument("--tests", "-t", action='append',
@@ -110,17 +112,19 @@ def main(argv):
     parser.add_argument("--bench", action="store_true",
                         help="Run benchmark suite instead of test suite")
     parser.add_argument("--bench-compare", action="append", metavar="BEFORE",
-                        help=("Compare benchmark results of current HEAD to BEFORE. "
-                              "Use an additional --bench-compare=COMMIT to override HEAD with COMMIT. "
-                              "Note that you need to commit your changes first!"
-                             ))
+                        help=("Compare benchmark results of current HEAD to"
+                              " BEFORE. Use an additional "
+                              "--bench-compare=COMMIT to override HEAD with"
+                              " COMMIT. Note that you need to commit your "
+                              "changes first!"
+                              ))
     parser.add_argument("args", metavar="ARGS", default=[], nargs=REMAINDER,
                         help="Arguments to pass to Nose, Python or shell")
     args = parser.parse_args(argv)
 
     if args.bench_compare:
         args.bench = True
-        args.no_build = True # ASV does the building
+        args.no_build = True  # ASV does the building
 
     if args.lcov_html:
         # generate C code coverage output
@@ -135,7 +139,8 @@ def main(argv):
         gcov_reset_counters()
 
     if args.debug and args.bench:
-        print("*** Benchmarks should not be run against debug version; remove -g flag ***")
+        print("*** Benchmarks should not be run against debug version; "
+              "remove -g flag ***")
 
     if not args.no_build:
         site_dir = build_project(args)
@@ -217,19 +222,23 @@ def main(argv):
 
             # Check for uncommitted files
             if commit_b == 'HEAD':
-                r1 = subprocess.call(['git', 'diff-index', '--quiet', '--cached', 'HEAD'])
+                r1 = subprocess.call(['git', 'diff-index', '--quiet',
+                                      '--cached', 'HEAD'])
                 r2 = subprocess.call(['git', 'diff-files', '--quiet'])
                 if r1 != 0 or r2 != 0:
                     print("*"*80)
-                    print("WARNING: you have uncommitted changes --- these will NOT be benchmarked!")
+                    print("WARNING: you have uncommitted changes --- "
+                          "these will NOT be benchmarked!")
                     print("*"*80)
 
             # Fix commit ids (HEAD is local to current repo)
-            p = subprocess.Popen(['git', 'rev-parse', commit_b], stdout=subprocess.PIPE)
+            p = subprocess.Popen(['git', 'rev-parse', commit_b],
+                                 stdout=subprocess.PIPE)
             out, err = p.communicate()
             commit_b = out.strip()
 
-            p = subprocess.Popen(['git', 'rev-parse', commit_a], stdout=subprocess.PIPE)
+            p = subprocess.Popen(['git', 'rev-parse', commit_a],
+                                 stdout=subprocess.PIPE)
             out, err = p.communicate()
             commit_a = out.strip()
 
@@ -308,7 +317,8 @@ def build_project(args):
     cmd = [sys.executable, 'setup.py']
 
     # Always use ccache, if installed
-    env['PATH'] = os.pathsep.join(EXTRA_PATH + env.get('PATH', '').split(os.pathsep))
+    env['PATH'] = os.pathsep.join(EXTRA_PATH +
+                                  env.get('PATH', '').split(os.pathsep))
 
     if args.debug or args.gcov:
         # assume everyone uses gcc/gfortran
@@ -324,7 +334,8 @@ def build_project(args):
             env['F77'] = 'gfortran --coverage '
             env['F90'] = 'gfortran --coverage '
             env['LDSHARED'] = cvars['LDSHARED'] + ' --coverage'
-            env['LDFLAGS'] = " ".join(cvars['LDSHARED'].split()[1:]) + ' --coverage'
+            env['LDFLAGS'] = " ".join(cvars['LDSHARED'].split()[1:]) +\
+                ' --coverage'
 
     cmd += ['build']
     if args.parallel > 1:
@@ -367,7 +378,8 @@ def build_project(args):
                     log_size = os.stat(log_filename).st_size
                     if log_size > last_log_size:
                         elapsed = datetime.datetime.now() - start_time
-                        print("    ... build in progress ({0} elapsed)".format(elapsed))
+                        print("    ... build in progress ({0} "
+                              "elapsed)".format(elapsed))
                         last_blip = time.time()
                         last_log_size = log_size
 
@@ -410,11 +422,16 @@ def gcov_reset_counters():
 LCOV_OUTPUT_FILE = os.path.join(ROOT_DIR, 'build', 'lcov.out')
 LCOV_HTML_DIR = os.path.join(ROOT_DIR, 'build', 'lcov')
 
+
 def lcov_generate():
-    try: os.unlink(LCOV_OUTPUT_FILE)
-    except OSError: pass
-    try: shutil.rmtree(LCOV_HTML_DIR)
-    except OSError: pass
+    try:
+        os.unlink(LCOV_OUTPUT_FILE)
+    except OSError:
+        pass
+    try:
+        shutil.rmtree(LCOV_HTML_DIR)
+    except OSError:
+        pass
 
     print("Capturing lcov info...")
     subprocess.call(['lcov', '-q', '-c',
