@@ -154,8 +154,8 @@ class EnergyState(object):
             self.current_energy = func_wrapper.fun(self.current_location)
             if self.current_energy is None:
                 raise ValueError('Objective function is returning None')
-            if (not np.isfinite(self.current_energy) or
-                    np.isnan(self.current_energy)):
+            if (not np.isfinite(self.current_energy) or np.isnan(
+                    self.current_energy)):
                 if reinit_counter >= EnergyState.MAX_REINIT_COUNT:
                     init_error = False
                     message = (
@@ -203,12 +203,12 @@ class MarkovChain(object):
         self.temperature_step = 0
         self.K = 100 * len(energy_state.current_location)
 
-    def accept_reject(self, j, e):
+    def accept_reject(self, j, e, x_visit):
         r = self._rand_state.random_sample()
         pqv_temp = (self.acceptance_param - 1.0) * (
             e - self.energy_state.current_energy) / (
                 self.temperature_step + 1.)
-        if pqv_temp < 0.:
+        if pqv_temp <= 0.:
             pqv = 0.
         else:
             pqv = np.exp(np.log(pqv_temp) / (
@@ -229,7 +229,7 @@ class MarkovChain(object):
         self.temperature_step = temperature / float(step + 1)
         self.not_improved_idx += 1
         for j in range(self.energy_state.current_location.size * 2):
-            if not j :
+            if not j:
                 if not step:
                     self.energy_state_improved = True
                 else:
@@ -250,7 +250,7 @@ class MarkovChain(object):
                     self.not_improved_idx = 0
             else:
                 # We have not improved but do we accept the new location?
-                self.accept_reject(j, e)
+                self.accept_reject(j, e, x_visit)
             if self.func_wrapper.nfev >= self.func_wrapper.maxfun:
                 return False
         # End of MarkovChain loop
@@ -263,7 +263,7 @@ class MarkovChain(object):
             val = self.callback(x, e, context)
             if val is not None:
                 if val:
-                   return False
+                    return False
         return True
 
     def local_search(self):
@@ -274,7 +274,7 @@ class MarkovChain(object):
         if self.energy_state_improved:
             # Global energy has improved, let's see if LS improves further
             e, x = self.minimizer_wrapper.local_search(self.energy_state.xbest,
-                self.energy_state.ebest)
+                                                       self.energy_state.ebest)
             if e < self.energy_state.ebest:
                 self.not_improved_idx = 0
                 val = self.track_better_minimum(e, x, 1)
@@ -297,7 +297,7 @@ class MarkovChain(object):
         if self.not_improved_idx >= self.not_improved_max_idx:
             do_ls = True
         if do_ls:
-            e, x = self.obj_fun_wrapper.local_search(self.xmin, self.emin)
+            e, x = self.minimizer_wrapper.local_search(self.xmin, self.emin)
             self.xmin = np.copy(x)
             self.emin = e
             self.not_improved_idx = 0
@@ -311,6 +311,7 @@ class MarkovChain(object):
             if self.func_wrapper.nfev >= self.func_wrapper.maxfun:
                 return False
         return True
+
 
 class ObjectiveFunWrapper(object):
 
@@ -373,8 +374,9 @@ class LocalSearchWrapper(object):
 
 
 def dual_annealing(func, x0, bounds, args=(), maxiter=1000,
-        local_search_options={}, initial_temp=5230., visit=2.62, accept=-5.0,
-        maxfun=1e7, seed=None, no_local_search=False, callback=None):
+                   local_search_options={}, initial_temp=5230., visit=2.62,
+                   accept=-5.0, maxfun=1e7, seed=None, no_local_search=False,
+                   callback=None):
     """
     Find the global minimum of a function using the Dual Annealing
     algorithm.
@@ -400,12 +402,9 @@ def dual_annealing(func, x0, bounds, args=(), maxiter=1000,
         The maximum number of global search iterations. Default value is 1000.
     local_search_options : dict, optional
         Extra keyword arguments to be passed to the local minimizer
-            ``scipy.optimize.minimize()`` Some important options could be:
-            method : str
-                The minimization method (e.g. ``"L-BFGS-B"``)
-            args : tuple
-                Extra arguments passed to the objective function (``func``) and
-                its derivatives (Jacobian, Hessian).
+        ``scipy.optimize.minimize()``. Some important options could be:
+        ``method`` for the minimizer method to use and ``args`` for
+        objective function additional arguments.
     initial_temp : float, optional
         The initial temperature, use higher values to facilitates a wider
         search of the energy landscape, allowing dual_annealing to escape
@@ -477,12 +476,12 @@ def dual_annealing(func, x0, bounds, args=(), maxiter=1000,
 
         g_{q_{v}}(\\Delta x(t)) \\propto \\frac{ \\
         \\left[T_{q_{v}}(t) \\right]^{-\\frac{D}{3-q_{v}}}}{ \\
-        \\left[{1+(q_{v}-1)\\frac{(\Delta x(t))^{2}} { \\
+        \\left[{1+(q_{v}-1)\\frac{(\\Delta x(t))^{2}} { \\
         \\left[T_{q_{v}}(t)\\right]^{\\frac{2}{3-q_{v}}}}}\\right]^{ \\
         \\frac{1}{q_{v}-1}+\\frac{D-1}{2}}}
 
     Where :math:`t` is the artificial time. This visiting distribution is used
-    to generate a trial jump distance :math:`\Delta x(t)` of variable
+    to generate a trial jump distance :math:`\\Delta x(t)` of variable
     :math:`x(t)` under artificial temperature :math:`T_{q_{v}}(t)`.
 
     From the starting point, after calling the visiting distribution
@@ -490,7 +489,7 @@ def dual_annealing(func, x0, bounds, args=(), maxiter=1000,
 
     .. math::
 
-        p_{q_{a}} = \min{\{1,\\left[1-(1-q_{a}) \\beta \\Delta E \\right]^{ \\
+        p_{q_{a}} = \\min{\\{1,\\left[1-(1-q_{a}) \\beta \\Delta E \\right]^{ \\
         \\frac{1}{1-q_{a}}}\\}}
 
     Where :math:`q_{a}` is a acceptance parameter. For :math:`q_{a}<1`, zero
@@ -539,9 +538,12 @@ def dual_annealing(func, x0, bounds, args=(), maxiter=1000,
     ...    2 * np.pi * x)) + 10 * np.size(x)
     >>> lw = [-5.12] * 10
     >>> up = [5.12] * 10
-    >>> ret = dual_annealing(func, None, bounds=list(zip(lw, up)))
+    >>> ret = dual_annealing(func, None, bounds=list(zip(lw, up)), seed=1234)
     >>> print("global minimum: xmin = {0}, f(xmin) = {1:.6f}".format(
     ...     ret.x, ret.fun))
+    global minimum: xmin = [-4.26437714e-09 -3.91699361e-09 -1.86149218e-09 -3.97165720e-09
+     -6.29151648e-09 -6.53145322e-09 -3.93616815e-09 -6.55623025e-09
+    -6.05775280e-09 -5.00668935e-09], f(xmin) = 0.000000
 
     """
 
@@ -551,8 +553,8 @@ def dual_annealing(func, x0, bounds, args=(), maxiter=1000,
     lower = np.array(lu[0])
     upper = np.array(lu[1])
     # Checking bounds are valid
-    if (np.any(np.isinf(lower)) or np.any(np.isinf(upper)) or
-        np.any(np.isnan(lower)) or np.any(np.isnan(upper))):
+    if (np.any(np.isinf(lower)) or np.any(np.isinf(upper)) or np.any(
+            np.isnan(lower)) or np.any(np.isnan(upper))):
         raise ValueError('Some bounds values are inf values or nan values')
     # Checking that bounds are consistent
     if not np.all(lower < upper):
@@ -574,7 +576,7 @@ def dual_annealing(func, x0, bounds, args=(), maxiter=1000,
     visit_dist = VisitingDistribution(lower, upper, visit, rand_state)
     # Markov chain instance
     markov_chain = MarkovChain(accept, visit_dist, func_wrapper,
-                               minimizer_wrapper,rand_state, energy_state,
+                               minimizer_wrapper, rand_state, energy_state,
                                callback)
     # Run the search loop
     need_to_stop = False
@@ -594,7 +596,7 @@ def dual_annealing(func, x0, bounds, args=(), maxiter=1000,
                 break
             # Need a re-annealing process?
             if temperature < temperature_restart:
-                energy_state.reset(obj_fun_wrapper, rand_state)
+                energy_state.reset(func_wrapper, rand_state)
                 break
             # starting Markov chain
             val = markov_chain.run(i, temperature)
