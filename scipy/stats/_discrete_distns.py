@@ -942,12 +942,16 @@ class yulesimon_gen(rv_discrete):
     def _stats(self, alpha):
         mu = np.where(alpha <= 1, np.inf, alpha / (alpha - 1))
         mu2 = np.where(alpha > 2,
-                alpha**2 / ((alpha - 2.0) * (alpha -1)**2), np.inf)
+                alpha**2 / ((alpha - 2.0) * (alpha - 1)**2),
+                np.inf)
         g1 = np.where(alpha > 3,
-                sqrt(alpha - 2) * (alpha + 1)**2 / (alpha * (alpha - 3)), np.inf)
+                sqrt(alpha - 2) * (alpha + 1)**2 /
+                (alpha * (alpha - 3)),
+                np.inf)
         g2 = np.where(alpha > 4,
-                         (alpha + 3) + (alpha**3 - 49 * alpha - 22) / (alpha * (alpha - 4) * (alpha - 3)),
-                         np.inf)
+                (alpha + 3) + (alpha**3 - 49 * alpha - 22) /
+                (alpha * (alpha - 4) * (alpha - 3)),
+                np.inf)
         return mu, mu2, g1, g2
 
 
