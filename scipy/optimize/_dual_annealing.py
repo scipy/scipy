@@ -221,7 +221,7 @@ class MarkovChain(object):
 
         # No improvement for a long time
         if self.not_improved_idx >= self.not_improved_max_idx:
-            if not j or self.energy_state.current_energy < self.emin:
+            if j == 0 or self.energy_state.current_energy < self.emin:
                 self.emin = self.energy_state.current_energy
                 self.xmin = np.copy(self.energy_state.current_location)
 
@@ -229,8 +229,8 @@ class MarkovChain(object):
         self.temperature_step = temperature / float(step + 1)
         self.not_improved_idx += 1
         for j in range(self.energy_state.current_location.size * 2):
-            if not j:
-                if not step:
+            if j == 0:
+                if step == 0:
                     self.energy_state_improved = True
                 else:
                     self.energy_state_improved = False
