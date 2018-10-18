@@ -382,7 +382,7 @@ class TestLowLevelCallable(object):
         cls.setup_basic()
         cls.setup_userdata_double()
         cls.setup_userdata_struct()
-        cls.setup_arg_struct()
+        # cls.setup_arg_struct()
 
     def run_check(self, method, name):
         cuberoot3 = np.power(2, 1.0/3)
