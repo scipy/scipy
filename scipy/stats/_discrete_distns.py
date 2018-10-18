@@ -912,7 +912,7 @@ class yulesimon_gen(rv_discrete):
 
     """
     def _rvs(self, alpha):
-        """Uses method on 6.3 on pg 593 of Devroye, non-uniform random
+        """Uses method 6.3 on pg 593 of Devroye, non-uniform random
            variate generation to sample a Yule-Simon.
            Here our notation maps to Devroye's via :math:`\alpha=a-1`.
         """
@@ -940,16 +940,15 @@ class yulesimon_gen(rv_discrete):
         return log(x) + special.betaln(x, alpha + 1)
 
     def _stats(self, alpha):
-        if alpha <= 1:
-            return np.inf, np.inf, np.inf, np.inf
-        elif alpha <= 2 and alpha > 1:
-            return alpha / (alpha - 1), np.inf, np.inf, np.inf
-        elif alpha <= 3 and alpha > 2:
-            return alpha / (alpha - 1), alpha**2 / ((alpha - 2) * (alpha - 1)**2), np.inf, np.inf
-        elif alpha <= 4 and alpha > 3:
-            return alpha / (alpha - 1), alpha**2 / ((alpha - 2) * (alpha - 1)**2), sqrt(alpha - 2) * (alpha + 1)**2 / (alpha * (alpha - 3)), np.inf
-        elif alpha > 4:
-            return alpha / (alpha - 1), alpha**2 / ((alpha - 2) * (alpha - 1)**2), sqrt(alpha - 2) * (alpha + 1)**2 / (alpha * (alpha - 3)), (alpha + 3) + (alpha**3 - 49 * alpha - 22) / (alpha * (alpha - 4) * (alpha - 3))
+        mu = np.where(alpha <= 1, np.inf, alpha / (alpha - 1))
+        mu2 = np.where(alpha > 2,
+                alpha**2 / ((alpha - 2.0) * (alpha -1)**2), np.inf)
+        g1 = np.where(alpha > 3,
+                sqrt(alpha - 2) * (alpha + 1)**2 / (alpha * (alpha - 3)), np.inf)
+        g2 = np.where(alpha > 4,
+                         (alpha + 3) + (alpha**3 - 49 * alpha - 22) / (alpha * (alpha - 4) * (alpha - 3)),
+                         np.inf)
+        return mu, mu2, g1, g2
 
 
 yulesimon = yulesimon_gen(name='yulesimon', a=1)
