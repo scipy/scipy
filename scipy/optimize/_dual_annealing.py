@@ -374,8 +374,9 @@ class LocalSearchWrapper(object):
 
 
 def dual_annealing(func, x0, bounds, args=(), maxiter=1000,
-                   local_search_options={}, initial_temp=5230., visit=2.62,
-                   accept=-5.0, maxfun=1e7, seed=None, no_local_search=False,
+                   local_search_options={}, initial_temp=5230.,
+                   restart_temp_ratio=2.e-5, visit=2.62, accept=-5.0,
+                   maxfun=1e7, seed=None, no_local_search=False,
                    callback=None):
     """
     Find the global minimum of a function using the Dual Annealing
@@ -410,6 +411,10 @@ def dual_annealing(func, x0, bounds, args=(), maxiter=1000,
         search of the energy landscape, allowing dual_annealing to escape
         local minima that it is trapped in. Default value is 5230. Range is
         (0.01, 5.e4].
+    restart_temp_ratio : float, optional
+        During annealing process, temperature is decreasing, when it reaches
+        `initial_temp * restart_temp_ratio`, the reannealing process is
+        triggered. Default value of the ratio is `2.e-5`. Range is (0, 1).
     visit : float, optional
         Parameter for visiting distribution. Default value is 2.62. Higher
         values give the visiting distribution a heavier tail, this makes
@@ -571,7 +576,7 @@ def dual_annealing(func, x0, bounds, args=(), maxiter=1000,
     energy_state.reset(func_wrapper, rand_state, x0)
     # Minimum value of annealing temperature reached to perform
     # re-annealing
-    temperature_restart = 0.1
+    temperature_restart = initial_temp * restart_temp_ratio
     # VisitingDistribution instance
     visit_dist = VisitingDistribution(lower, upper, visit, rand_state)
     # Markov chain instance
