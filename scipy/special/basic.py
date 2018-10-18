@@ -835,7 +835,11 @@ def erfcinv(y):
 
 
 def erf_zeros(nt):
-    """Compute nt complex zeros of error function erf(z).
+    """Compute the first nt zero in the first quadrant, ordered by absolute value.
+
+    Zeros in the other quadrants can be obtained by using the symmetries erf(-z) = erf(z) and
+    erf(conj(z)) = conj(erf(z)).
+
 
     Parameters
     ----------
