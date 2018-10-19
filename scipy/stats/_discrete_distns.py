@@ -912,7 +912,8 @@ class yulesimon_gen(rv_discrete):
     References
     ----------
     .. [1] Devroye, Luc. "Non-uniform Random Variate Generation",
-        pp 539 (1986) Springer, New York.
+    pp 539 (1986) Springer, New York.
+
     %(after_notes)s
 
     %(example)s
