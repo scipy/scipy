@@ -1187,6 +1187,9 @@ def rank_filter(input, rank, size=None, footprint=None, output=None,
     >>> ax2.imshow(result)
     >>> plt.show()
     """
+    if not isinstance(rank, int):
+        raise TypeError('Input rank needs to be integer')
+        return None
     return _rank_filter(input, rank, size, footprint, output, mode, cval,
                         origin, 'rank')
 
