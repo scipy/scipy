@@ -902,20 +902,23 @@ class yulesimon_gen(rv_discrete):
         f(k) =  \alpha B(k, \alpha+1)
 
     for :math:`k=1,2,3,...`, where :math:`\alpha>0`.
-    Here :math:`\B(k, \alpha+1)` refers to the `scipy.special.beta` function.
+    Here :math:`B` refers to the `scipy.special.beta` function.
 
     For details see: https://en.wikipedia.org/wiki/Yule-Simon_distribution
+    The _rvs method uses 6.3 of Devroye, non-uniform random
+    variate generation book [1]_ to sample a Yule-Simon.
+    Here our notation maps to Devroye's via :math:`\alpha=a-1`.
 
+    References
+    ----------
+    .. [1] Devroye, Luc. "Non-uniform Random Variate Generation",
+        pp 539 (1986) Springer, New York.
     %(after_notes)s
 
     %(example)s
 
     """
     def _rvs(self, alpha):
-        """Uses method 6.3 on pg 593 of Devroye, non-uniform random
-           variate generation to sample a Yule-Simon.
-           Here our notation maps to Devroye's via :math:`\alpha=a-1`.
-        """
         E1 = self._random_state.standard_exponential(self._size)
         E2 = self._random_state.standard_exponential(self._size)
         ans = ceil(-E1 / log1p(-exp(-E2 / alpha)))
