@@ -127,17 +127,22 @@ class EnergyState(object):
         A 1-D numpy ndarray containing upper bounds for generating an initial
         random components in the `reset` method
         components. Neither NaN or inf are allowed.
+    callback : callable, `callback(x, f, context)`, optional
+        A callback function which will be called for all minima found.
+        `x` and `f` are the coordinates and function value of the
+        latest minimum found, and `context` has value in [0, 1, 2]
     """
     # Maximimum number of trials for generating a valid starting point
     MAX_REINIT_COUNT = 1000
 
-    def __init__(self, lower, upper):
+    def __init__(self, lower, upper, callback=None):
         self.ebest = None
         self.current_energy = None
         self.current_location = None
         self.xbest = None
         self.lower = lower
         self.upper = upper
+        self.callback = callback
 
     def reset(self, func_wrapper, rand_state, x0=None):
         """
@@ -176,6 +181,20 @@ class EnergyState(object):
                 self.xbest = np.copy(self.current_location)
             # Otherwise, we keep them in case of reannealing reset
 
+    def update_best(self, e, x, context):
+        self.ebest = e
+        self.xbest = np.copy(x)
+        if self.callback is not None:
+            val = self.callback(x, e, context)
+            if val is not None:
+                if val:
+                    return('Callback function requested to stop early by '
+                           'returning True')
+
+    def update_current(self, e, x):
+        self.current_energy = e
+        self.current_location = np.copy(x)
+
 
 class StrategyChain(object):
     """
@@ -183,7 +202,7 @@ class StrategyChain(object):
     acceptance and local search decision making.
     """
     def __init__(self, acceptance_param, visit_dist, func_wrapper,
-                 minimizer_wrapper, rand_state, energy_state, callback=None):
+                 minimizer_wrapper, rand_state, energy_state):
         # Local strategy chain minimum energy and location
         self.emin = energy_state.current_energy
         self.xmin = np.array(energy_state.current_location)
@@ -197,7 +216,6 @@ class StrategyChain(object):
         self.func_wrapper = func_wrapper
         # Wrapper to the local minimizer
         self.minimizer_wrapper = minimizer_wrapper
-        self.callback = callback
         self.not_improved_idx = 0
         self.not_improved_max_idx = 1000
         self._rand_state = rand_state
@@ -216,8 +234,7 @@ class StrategyChain(object):
                 1. - self.acceptance_param))
         if r <= pqv:
             # We accept the new location and update state
-            self.energy_state.current_energy = e
-            self.energy_state.current_location = np.copy(x_visit)
+            self.energy_state.update_current(e, x_visit)
             self.xmin = np.copy(self.energy_state.current_location)
 
         # No improvement for a long time
@@ -241,31 +258,21 @@ class StrategyChain(object):
             e = self.func_wrapper.fun(x_visit)
             if e < self.energy_state.current_energy:
                 # We have got a better energy value
-                self.energy_state.current_energy = e
-                self.energy_state.current_location = np.copy(x_visit)
+                self.energy_state.update_current(e, x_visit)
                 if e < self.energy_state.ebest:
-                    val = self.track_better_minimum(e, x_visit, 0)
-                    if not val:
-                        return False
+                    val = self.energy_state.update_best(e, x_visit, 0)
+                    if val is not None:
+                        if val:
+                            return val
                     self.energy_state_improved = True
                     self.not_improved_idx = 0
             else:
                 # We have not improved but do we accept the new location?
                 self.accept_reject(j, e, x_visit)
             if self.func_wrapper.nfev >= self.func_wrapper.maxfun:
-                return False
+                return ('Maximum number of function call reached '
+                        'during annealing')
         # End of StrategyChain loop
-        return True
-
-    def track_better_minimum(self, e, x, context):
-        self.energy_state.ebest = e
-        self.energy_state.xbest = np.copy(x)
-        if self.callback is not None:
-            val = self.callback(x, e, context)
-            if val is not None:
-                if val:
-                    return False
-        return True
 
     def local_search(self):
         # Decision making for performing a local search
@@ -278,13 +285,14 @@ class StrategyChain(object):
                                                        self.energy_state.ebest)
             if e < self.energy_state.ebest:
                 self.not_improved_idx = 0
-                val = self.track_better_minimum(e, x, 1)
-                if not val:
-                    return False
-                self.energy_state.current_energy = e
-                self.energy_state.current_location = np.copy(x)
+                val = self.energy_state.update_best(e, x, 1)
+                if val is not None:
+                    if val:
+                        return val
+                self.energy_state.update_current(e, x)
             if self.func_wrapper.nfev >= self.func_wrapper.maxfun:
-                return False
+                return ('Maximum number of function call reached '
+                        'during local search')
         # Check probability of a need to perform a LS even if no improvement
         do_ls = False
         if self.K < 90 * len(self.energy_state.current_location):
@@ -304,14 +312,15 @@ class StrategyChain(object):
             self.not_improved_idx = 0
             self.not_improved_max_idx = self.energy_state.current_location.size
             if e < self.energy_state.ebest:
-                val = self.track_better_minimum(self.emin, self.xmin, 2)
-                if not val:
-                    return False
-                self.energy_state.current_energy = e
-                self.energy_state.current_location = np.copy(x)
+                val = self.energy_state.update_best(
+                    self.emin, self.xmin, 2)
+                if val is not None:
+                    if val:
+                        return val
+                self.energy_state.update_current(e, x)
             if self.func_wrapper.nfev >= self.func_wrapper.maxfun:
-                return False
-        return True
+                return ('Maximum number of function call reached '
+                        'during dual annealing')
 
 
 class ObjectiveFunWrapper(object):
@@ -558,6 +567,10 @@ def dual_annealing(func, x0, bounds, args=(), maxiter=1000,
     lu = list(zip(*bounds))
     lower = np.array(lu[0])
     upper = np.array(lu[1])
+    # Check that restart temperature ratio is correct
+    if restart_temp_ratio <= 0. or restart_temp_ratio >= 1. :
+        raise ValueError('Restart temperature ratio has to be in range'
+                         ' (0, 1)')
     # Checking bounds are valid
     if (np.any(np.isinf(lower)) or np.any(np.isinf(upper)) or np.any(
             np.isnan(lower)) or np.any(np.isnan(upper))):
@@ -573,7 +586,7 @@ def dual_annealing(func, x0, bounds, args=(), maxiter=1000,
     # Initialization of RandomState for reproducible runs if seed provided
     rand_state = check_random_state(seed)
     # Initialization of the energy state
-    energy_state = EnergyState(lower, upper)
+    energy_state = EnergyState(lower, upper, callback)
     energy_state.reset(func_wrapper, rand_state, x0)
     # Minimum value of annealing temperature reached to perform
     # re-annealing
@@ -582,12 +595,11 @@ def dual_annealing(func, x0, bounds, args=(), maxiter=1000,
     visit_dist = VisitingDistribution(lower, upper, visit, rand_state)
     # Strategy chain instance
     strategy_chain = StrategyChain(accept, visit_dist, func_wrapper,
-                               minimizer_wrapper, rand_state, energy_state,
-                               callback)
+                               minimizer_wrapper, rand_state, energy_state)
     # Run the search loop
     need_to_stop = False
     iteration = 0
-    message = None
+    message = []
     t1 = np.exp((visit - 1) * np.log(2.0)) - 1.0
     while(not need_to_stop):
         for i in range(maxiter):
@@ -597,7 +609,7 @@ def dual_annealing(func, x0, bounds, args=(), maxiter=1000,
             temperature = initial_temp * t1 / t2
             iteration += 1
             if iteration >= maxiter:
-                message = ["Maximum number of iteration reached"]
+                message.append("Maximum number of iteration reached")
                 need_to_stop = True
                 break
             # Need a re-annealing process?
@@ -606,24 +618,15 @@ def dual_annealing(func, x0, bounds, args=(), maxiter=1000,
                 break
             # starting strategy chain
             val = strategy_chain.run(i, temperature)
-            if not val:
-                if func_wrapper.nfev >= maxfun:
-                    message = ["Maximum number of function calls reached"]
-                else:
-                    message = ["callback function requested stop early by "
-                               "returning True"]
+            if val is not None:
+                message.append(val)
                 need_to_stop = True
                 break
-
             # Possible local search at the end of the strategy chain
             if not no_local_search:
                 val = strategy_chain.local_search()
-                if not val:
-                    if func_wrapper.nfev >= maxfun:
-                        message = "Maximum number of function calls reached"
-                    else:
-                        message = ["callback function requested stop early by "
-                                   "returning True"]
+                if val is not None:
+                    message.append(val)
                     need_to_stop = True
                     break
 

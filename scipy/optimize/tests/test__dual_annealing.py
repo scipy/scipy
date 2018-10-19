@@ -169,11 +169,13 @@ class TestDualAnnealing(TestCase):
         ret = dual_annealing(self.func, None, self.ld_bounds, maxiter=700)
         assert ret.nit <= 700
 
+    # Testing that args are passed correctly for dual_annealing
     def test_fun_args_ls(self):
         ret = dual_annealing(self.func, None, self.ld_bounds,
                              args=((3.14159, )))
-        assert_allclose(ret.fun, 3.14159, atol=1e-4)
+        assert_allclose(ret.fun, 3.14159, atol=1e-6)
 
+    # Testing that args are passed correctly for pure simulated annealing
     def test_fun_args_no_ls(self):
         ret = dual_annealing(self.func, None, self.ld_bounds,
                              args=((3.14159, )), no_local_search=True)
@@ -241,4 +243,11 @@ class TestDualAnnealing(TestCase):
         }
         ret = dual_annealing(self.func, None, self.ld_bounds,
                              local_search_options=minimizer_opts)
-        assert_allclose(ret.fun, 0., atol=1e-8)
+        assert_allclose(ret.fun, 0., atol=1e-7)
+
+    def test_wrong_restart_temp(self):
+        assert_raises(ValueError, dual_annealing, self.func, None,
+                      self.ld_bounds, restart_temp_ratio=1)
+        assert_raises(ValueError, dual_annealing, self.func, None,
+                      self.ld_bounds, restart_temp_ratio=0)
+
