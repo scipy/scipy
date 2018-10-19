@@ -30,7 +30,7 @@
 
 from __future__ import division, print_function, absolute_import
 import warnings
-
+import numbers
 import numpy
 from . import _ni_support
 from . import _nd_image
