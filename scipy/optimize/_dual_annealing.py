@@ -200,6 +200,25 @@ class StrategyChain(object):
     """
     Class that implements within a Markov chain the strategy for location
     acceptance and local search decision making.
+
+    Parameters
+    ----------
+    acceptance_param : float
+        Parameter for acceptance distribution. It is used to control the
+        probability of acceptance. The lower the acceptance parameter, the
+        smaller the probability of acceptance. Default value is -5.0 with
+        a range (-1e4, -5].
+    visit_dist : VisitingDistribution
+        Instance of `VisitingDistribution` class.
+    func_wrapper : ObjectiveFunWrapper
+        Instance of `ObjectiveFunWrapper` class.
+    minimizer_wrapper: LocalSearchWrapper
+        Instance of `LocalSearchWrapper` class.
+    rand_state : RandomState object
+        A numpy.random.RandomState object for using the current state of the
+        created random generator container.
+    energy_state: EnergyState
+        Instance of `EnergyState` class.
     """
     def __init__(self, acceptance_param, visit_dist, func_wrapper,
                  minimizer_wrapper, rand_state, energy_state):
@@ -568,9 +587,8 @@ def dual_annealing(func, x0, bounds, args=(), maxiter=1000,
     lower = np.array(lu[0])
     upper = np.array(lu[1])
     # Check that restart temperature ratio is correct
-    if restart_temp_ratio <= 0. or restart_temp_ratio >= 1. :
-        raise ValueError('Restart temperature ratio has to be in range'
-                         ' (0, 1)')
+    if restart_temp_ratio <= 0. or restart_temp_ratio >= 1.:
+        raise ValueError('Restart temperature ratio has to be in range (0, 1)')
     # Checking bounds are valid
     if (np.any(np.isinf(lower)) or np.any(np.isinf(upper)) or np.any(
             np.isnan(lower)) or np.any(np.isnan(upper))):
