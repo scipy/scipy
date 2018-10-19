@@ -347,7 +347,10 @@ class ObjectiveFunWrapper(object):
     def __init__(self, func, maxfun=1e7, *args):
         self.func = func
         self.args = args
+        # Number of objective function evaluations
         self.nfev = 0
+        # Number of gradient function evaluation if used
+        self.ngev = 0
         self.maxfun = maxfun
 
     def fun(self, x):
@@ -389,6 +392,8 @@ class LocalSearchWrapper(object):
         # Run local search from the given x location where energy value is e
         x_tmp = np.copy(x)
         mres = self.minimizer(self.func_wrapper.fun, x, **self.kwargs)
+        if 'njev' in mres.keys():
+            self.func_wrapper.ngev += mres.njev
         # Check if is valid value
         is_finite = np.all(np.isfinite(mres.x)) and np.isfinite(mres.fun)
         in_bounds = np.all(mres.x >= self.lower) and np.all(
@@ -653,6 +658,7 @@ def dual_annealing(func, x0, bounds, args=(), maxiter=1000,
     res.x = energy_state.xbest
     res.fun = energy_state.ebest
     res.nit = iteration
-    res.ncall = func_wrapper.nfev
+    res.nfev = func_wrapper.nfev
+    res.njev = func_wrapper.ngev
     res.message = message
     return res

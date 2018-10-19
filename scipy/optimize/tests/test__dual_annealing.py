@@ -10,6 +10,7 @@ from scipy.optimize._dual_annealing import VisitingDistribution
 from scipy.optimize._dual_annealing import ObjectiveFunWrapper
 from scipy.optimize._dual_annealing import EnergyState
 from scipy.optimize._dual_annealing import LocalSearchWrapper
+from scipy.optimize import rosen, rosen_der
 import numpy as np
 from numpy.testing import (assert_equal, TestCase, assert_allclose,
                            assert_array_less)
@@ -34,6 +35,7 @@ class TestDualAnnealing(TestCase):
         self.seed = 1234
         self.rs = check_random_state(self.seed)
         self.nb_fun_call = 0
+        self.ngev = 0
 
     def tearDown(self):
         pass
@@ -54,6 +56,10 @@ class TestDualAnnealing(TestCase):
             x - shift))) + 10 * np.size(x) + shift
         self.nb_fun_call += 1
         return y
+
+    def rosen_der_wrapper(self, x, args=()):
+        self.ngev += 1
+        return rosen_der(x, *args)
 
     def test_visiting_stepping(self):
         lu = list(zip(*self.ld_bounds))
@@ -114,12 +120,12 @@ class TestDualAnnealing(TestCase):
 
     def test_nb_fun_call(self):
         ret = dual_annealing(self.func, None, self.ld_bounds)
-        assert_equal(self.nb_fun_call, ret.ncall)
+        assert_equal(self.nb_fun_call, ret.nfev)
 
     def test_nb_fun_call_no_ls(self):
         ret = dual_annealing(self.func, None, self.ld_bounds,
                              no_local_search=True)
-        assert_equal(self.nb_fun_call, ret.ncall)
+        assert_equal(self.nb_fun_call, ret.nfev)
 
     def test_max_reinit(self):
         assert_raises(ValueError, dual_annealing, self.weirdfunc, None,
@@ -158,12 +164,12 @@ class TestDualAnnealing(TestCase):
             len(self.ld_bounds) * LocalSearchWrapper.LS_MAXITER_RATIO,
             LocalSearchWrapper.LS_MAXITER_MIN),
             LocalSearchWrapper.LS_MAXITER_MAX)
-        assert ret.ncall <= 100 + ls_max_iter
+        assert ret.nfev <= 100 + ls_max_iter
 
     def test_max_fun_no_ls(self):
         ret = dual_annealing(self.func, None, self.ld_bounds,
                              no_local_search=True, maxfun=500)
-        assert ret.ncall <= 500
+        assert ret.nfev <= 500
 
     def test_maxiter(self):
         ret = dual_annealing(self.func, None, self.ld_bounds, maxiter=700)
@@ -186,8 +192,8 @@ class TestDualAnnealing(TestCase):
         # fun value <= 1.0 (see callback method)
         ret = dual_annealing(self.func, None, self.ld_bounds,
                              callback=self.callback)
-        assert(ret.fun <= 1.0)
-        assert('stop early' in ret.message[0])
+        assert ret.fun <= 1.0
+        assert 'stop early' in ret.message[0]
 
     def test_neldermed_ls_minimizer(self):
         minimizer_opts = {
@@ -251,3 +257,10 @@ class TestDualAnnealing(TestCase):
         assert_raises(ValueError, dual_annealing, self.func, None,
                       self.ld_bounds, restart_temp_ratio=0)
 
+    def test_gradient_gnev(self):
+        minimizer_opts = {
+            'jac': self.rosen_der_wrapper,
+        }
+        ret = dual_annealing(rosen, None, self.ld_bounds,
+                             local_search_options=minimizer_opts)
+        assert ret.njev == self.ngev
