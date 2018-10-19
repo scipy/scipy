@@ -36,9 +36,41 @@ except AttributeError:
 
 ## Kolmogorov-Smirnov one-sided and two-sided test statistics
 class ksone_gen(rv_continuous):
-    """General Kolmogorov-Smirnov one-sided test.
+    r"""General Kolmogorov-Smirnov one-sided test.
 
-    %(default)s
+    This is the distribution of the one-sided Kolmogorov-Smirnov (KS)
+    statistics :math:`\sqrt{n} D_n^+` and :math:`\sqrt{n} D_n^-`
+    for a finite sample size ``n`` (the shape parameter).
+
+    %(before_notes)s
+
+    Notes
+    -----
+    :math:`\sqrt{n} D_n^+` and :math:`\sqrt{n} D_n^-` are given by
+
+    .. math::
+
+        D_n^+ &= \text{sup}_x (F_n(x) - F(x)),\\
+        D_n^- &= \text{sup}_x (F(x) - F_n(x)),\\
+
+    where :math:`F` is a CDF and :math:`F_n` is an empirical CDF. `ksone`
+    describes the distribution under the null hypothesis of the KS test
+    that the empirical CDF corresponds to :math:`n` i.i.d. random variates
+    with CDF :math:`F`.
+
+    %(after_notes)s
+
+    See Also
+    --------
+    kstwobign, kstest
+
+    References
+    ----------
+    .. [1] Birnbaum, Z. W. and Tingey, F.H. "One-sided confidence contours
+       for probability distribution functions", The Annals of Mathematical
+       Statistics, 22(4), pp 592-596 (1951).
+
+    %(example)s
 
     """
     def _cdf(self, x, n):
@@ -52,9 +84,39 @@ ksone = ksone_gen(a=0.0, name='ksone')
 
 
 class kstwobign_gen(rv_continuous):
-    """Kolmogorov-Smirnov two-sided test for large N.
+    r"""Kolmogorov-Smirnov two-sided test for large N.
 
-    %(default)s
+    This is the asymptotic distribution of the two-sided Kolmogorov-Smirnov
+    statistic :math:`\sqrt{n} D_n` that measures the maximum absolute
+    distance of the theoretical CDF from the empirical CDF (see `kstest`).
+
+    %(before_notes)s
+
+    Notes
+    -----
+    :math:`\sqrt{n} D_n` is given by
+
+    .. math::
+
+        D_n = \text{sup}_x |F_n(x) - F(x)|
+
+    where :math:`F` is a CDF and :math:`F_n` is an empirical CDF. `kstwobign`
+    describes the asymptotic distribution (i.e. the limit of
+    :math:`\sqrt{n} D_n`) under the null hypothesis of the KS test that the
+    empirical CDF corresponds to i.i.d. random variates with CDF :math:`F`.
+
+    %(after_notes)s
+
+    See Also
+    --------
+    ksone, kstest
+
+    References
+    ----------
+    .. [1] Marsaglia, G. et al. "Evaluating Kolmogorov's distribution",
+       Journal of Statistical Software, 8(18), 2003.
+
+    %(example)s
 
     """
     def _cdf(self, x):
@@ -114,8 +176,8 @@ def _norm_isf(q):
 class norm_gen(rv_continuous):
     r"""A normal continuous random variable.
 
-    The location (loc) keyword specifies the mean.
-    The scale (scale) keyword specifies the standard deviation.
+    The location (``loc``) keyword specifies the mean.
+    The scale (``scale``) keyword specifies the standard deviation.
 
     %(before_notes)s
 
@@ -215,9 +277,9 @@ class alpha_gen(rv_continuous):
         f(x, a) = \frac{1}{x^2 \Phi(a) \sqrt{2\pi}} *
                   \exp(-\frac{1}{2} (a-1/x)^2)
 
-    where :math:`\Phi(a)` is the normal CDF, :math:`x > 0`, and :math:`a > 0`.
+    where :math:`\Phi` is the normal CDF, :math:`x > 0`, and :math:`a > 0`.
 
-    `alpha` takes ``a`` as a shape parameter for :math:`a`.
+    `alpha` takes ``a`` as a shape parameter.
 
     %(after_notes)s
 

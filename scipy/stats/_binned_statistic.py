@@ -368,9 +368,9 @@ def binned_statistic_dd(sample, values, statistic='mean',
         as an (N,D) array.
     values : (N,) array_like or list of (N,) array_like
         The data on which the statistic will be computed.  This must be
-        the same shape as `x`, or a list of sequences - each with the same
-        shape as `x`.  If `values` is such a list, the statistic will be
-        computed on each independently.
+        the same shape as `sample`, or a list of sequences - each with the
+        same shape as `sample`.  If `values` is such a list, the statistic
+        will be computed on each independently.
     statistic : string or callable, optional
         The statistic to compute (default is 'mean').
         The following statistics are available:

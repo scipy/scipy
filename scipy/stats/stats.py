@@ -917,7 +917,7 @@ def moment(a, moment=1, axis=0, nan_policy='propagate'):
         if np.isscalar(moment):
             return np.nan
         else:
-            return np.ones(np.asarray(moment).shape, dtype=np.float64) * np.nan
+            return np.full(np.asarray(moment).shape, np.nan, dtype=np.float64)
 
     # for array_like moment input, return a value for each.
     if not np.isscalar(moment):
@@ -1683,7 +1683,7 @@ def scoreatpercentile(a, per, limit=(), interpolation_method='fraction',
         if np.isscalar(per):
             return np.nan
         else:
-            return np.ones(np.asarray(per).shape, dtype=np.float64) * np.nan
+            return np.full(np.asarray(per).shape, np.nan, dtype=np.float64)
 
     if limit:
         a = a[(limit[0] <= a) & (a <= limit[1])]
