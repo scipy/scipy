@@ -9,6 +9,7 @@ bisect(callback_type f, double xa, double xb, double xtol, double rtol,
 {
     int i;
     double dm,xm,fm,fa,fb;
+    solver_stats->error_num = INPROGRESS;
 
     fa = (*f)(xa, func_data);
     fb = (*f)(xb, func_data);
@@ -17,11 +18,12 @@ bisect(callback_type f, double xa, double xb, double xtol, double rtol,
         solver_stats->error_num = SIGNERR;
         return 0.;
     }
-    solver_stats->error_num = CONVERGED;
     if (fa == 0) {
+        solver_stats->error_num = CONVERGED;
         return xa;
     }
     if (fb == 0) {
+        solver_stats->error_num = CONVERGED;
         return xb;
     }
     dm = xb - xa;
@@ -36,6 +38,7 @@ bisect(callback_type f, double xa, double xb, double xtol, double rtol,
             xa = xm;
         }
         if (fm == 0 || fabs(dm) < xtol + rtol*fabs(xm)) {
+            solver_stats->error_num = CONVERGED;
             return xm;
         }
     }

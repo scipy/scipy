@@ -44,6 +44,7 @@ brenth(callback_type f, double xa, double xb, double xtol, double rtol,
     double delta;
     double stry, dpre, dblk;
     int i;
+    solver_stats->error_num = INPROGRESS;
 
     fpre = (*f)(xpre,func_data);
     fcur = (*f)(xcur,func_data);
@@ -53,9 +54,11 @@ brenth(callback_type f, double xa, double xb, double xtol, double rtol,
         return 0.;
     }
     if (fpre == 0) {
+        solver_stats->error_num = CONVERGED;
         return xpre;
     }
     if (fcur == 0) {
+        solver_stats->error_num = CONVERGED;
         return xcur;
     }
     solver_stats->iterations = 0;
@@ -79,6 +82,7 @@ brenth(callback_type f, double xa, double xb, double xtol, double rtol,
         delta = (xtol + rtol*fabs(xcur))/2;
         sbis = (xblk - xcur)/2;
         if (fcur == 0 || fabs(sbis) < delta) {
+            solver_stats->error_num = CONVERGED;
             return xcur;
         }
 

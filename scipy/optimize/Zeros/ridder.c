@@ -20,6 +20,7 @@ ridder(callback_type f, double xa, double xb, double xtol, double rtol,
 {
     int i;
     double dm,dn,xm,xn=0.0,fn,fm,fa,fb,tol;
+    solver_stats->error_num = INPROGRESS;
 
     tol = xtol + rtol*MIN(fabs(xa), fabs(xb));
     fa = (*f)(xa, func_data);
@@ -30,9 +31,11 @@ ridder(callback_type f, double xa, double xb, double xtol, double rtol,
         return 0.;
     }
     if (fa == 0) {
+        solver_stats->error_num = CONVERGED;
         return xa;
     }
     if (fb == 0) {
+        solver_stats->error_num = CONVERGED;
         return xb;
     }
 
@@ -57,6 +60,7 @@ ridder(callback_type f, double xa, double xb, double xtol, double rtol,
         }
         tol = xtol + rtol*xn;
         if (fn == 0.0 || fabs(xb - xa) < tol) {
+            solver_stats->error_num = CONVERGED;
             return xn;
         }
     }
