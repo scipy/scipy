@@ -904,7 +904,7 @@ class yulesimon_gen(rv_discrete):
     for :math:`k=1,2,3,...`, where :math:`\alpha>0`.
     Here :math:`B` refers to the `scipy.special.beta` function.
 
-    The sampling of random variates is based on Section 6.3 of [1]_.
+    The sampling of random variates is based on pg 553, Section 6.3 of [1]_.
     Our notation maps to the referenced logic via :math:`\alpha=a-1`.
 
     For details see the wikipedia entry [2]_.
@@ -912,7 +912,7 @@ class yulesimon_gen(rv_discrete):
     References
     ----------
     .. [1] Devroye, Luc. "Non-uniform Random Variate Generation",
-    pp 553 (1986) Springer, New York.
+         (1986) Springer, New York.
 
     .. [2] https://en.wikipedia.org/wiki/Yule-Simon_distribution
 
