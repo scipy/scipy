@@ -333,9 +333,7 @@ class TestLowLevelCallable(object):
         cls.func_plus_args.append([llc, args, name])
 
     @classmethod
-    def setup_basic(cls):
-        # func_names_plus_args = [['xcubed_minus_2', ()],
-        #                         ['x_to_the_n_minus_2', (3)]]
+    def setup_no_args(cls):
         func_names_plus_args = [['xcubed_minus_2', ()]]
         for fn, args in func_names_plus_args:
             cls._add_test(LowLevelCallable.from_cython(_tstutils_zerofuncs, fn), args, fn)
@@ -381,7 +379,7 @@ class TestLowLevelCallable(object):
     def setup_arg_struct(cls):
         # f(x, n, a) = x**n - a
         # Create a c_void_p for the values of n(=3) and a(=2.0)
-        # Create LowLevelCallable for just f, and pass in c_void_p as an arg
+        # Create LowLevelCallable with that c_void_p as user_data.
         cls.llc_voidstar = LowLevelCallable.from_cython(
             _tstutils_zerofuncs, "x_to_the_n_minus_a")
         voidstar = ctypes.cast(cls.n_and_a_ptr, ctypes.c_void_p)
@@ -393,11 +391,10 @@ class TestLowLevelCallable(object):
         cls.n_and_a = TestLowLevelCallable.N_AND_A(3, 2.0)  # x**3 - 2.0
         cls.n_and_a_ptr = ctypes.pointer(cls.n_and_a)
 
-        cls.setup_basic()
+        cls.setup_no_args()
         cls.setup_userdata_int()
         cls.setup_userdata_double()
         cls.setup_userdata_struct()
-        # cls.setup_arg_struct()
 
     def run_check(self, method, name):
         cuberoot3 = np.power(2, 1.0/3)
@@ -408,8 +405,6 @@ class TestLowLevelCallable(object):
         for function, args, fname in tests:
             zero, r = method(function, a, b, xtol=xtol, rtol=rtol,
                              args=args, full_output=True)
-            # zero, r = method(function, a, b, xtol=xtol, rtol=rtol,
-            #                  args=args, full_output=True)
             assert_(r.converged)
             assert_allclose(zero, cuberoot3, atol=xtol, rtol=rtol,
                             err_msg='method %s, function %s' % (name, fname))
