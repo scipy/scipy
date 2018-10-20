@@ -12,12 +12,12 @@ __all__ = []
 def _select_cross_comparator(cross_type):
     """
     Select comparators used in finding crossings.
-    
+
     Parameters
     ----------
     cross_type : str
         Accepts 'up' or 'down'.
-    
+
     Return
     ------
     comparator_1 : callable
