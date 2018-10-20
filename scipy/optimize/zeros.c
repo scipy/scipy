@@ -8,8 +8,6 @@
 #include <setjmp.h>
 #include <numpy/npy_math.h>
 
-#include <stdio.h>
-
 #if PY_VERSION_HEX >= 0x03000000
     #define PyString_FromString PyBytes_FromString
     #define PyString_Concat PyBytes_Concat

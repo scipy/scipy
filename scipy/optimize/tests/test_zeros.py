@@ -334,10 +334,24 @@ class TestLowLevelCallable(object):
 
     @classmethod
     def setup_basic(cls):
-        func_names_plus_args = [['xcubed_minus_2', ()],
-                                ['x_to_the_n_minus_2', (3)]]
+        # func_names_plus_args = [['xcubed_minus_2', ()],
+        #                         ['x_to_the_n_minus_2', (3)]]
+        func_names_plus_args = [['xcubed_minus_2', ()]]
         for fn, args in func_names_plus_args:
             cls._add_test(LowLevelCallable.from_cython(_tstutils_zerofuncs, fn), args, fn)
+
+    @classmethod
+    def setup_userdata_int(cls):
+        # f(x, a) = x**n - 2
+        # Create user_data for the value of n(=3)
+        # Create LowLevelCallable with that user_data
+        cls.n = ctypes.c_int(3)
+        cls.c_a = ctypes.pointer(cls.n)
+        cls.llc3 = LowLevelCallable.from_cython(
+            _tstutils_zerofuncs, "x_to_the_n_minus_2",
+            user_data = ctypes.cast(cls.c_a, ctypes.c_voidp)
+        )
+        cls._add_test(cls.llc3, tuple(), "x_to_the_n_minus_2 (int *)")
 
     @classmethod
     def setup_userdata_double(cls):
@@ -380,6 +394,7 @@ class TestLowLevelCallable(object):
         cls.n_and_a_ptr = ctypes.pointer(cls.n_and_a)
 
         cls.setup_basic()
+        cls.setup_userdata_int()
         cls.setup_userdata_double()
         cls.setup_userdata_struct()
         # cls.setup_arg_struct()
@@ -391,7 +406,6 @@ class TestLowLevelCallable(object):
         xtol = rtol = TOL
         tests = self.func_plus_args
         for function, args, fname in tests:
-            print("START run_check", function, fname)
             zero, r = method(function, a, b, xtol=xtol, rtol=rtol,
                              args=args, full_output=True)
             # zero, r = method(function, a, b, xtol=xtol, rtol=rtol,
@@ -412,7 +426,6 @@ class TestLowLevelCallable(object):
         xtol = rtol = TOL
         tests = self.func_plus_args
         for function, args, fname in tests:
-            print("Start run_check", function, fname)
             zero, r = method(function, a, tol=xtol,
                              args=args, full_output=True)
             assert_(r.converged)

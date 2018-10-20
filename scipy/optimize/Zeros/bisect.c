@@ -2,7 +2,6 @@
 
 #include <math.h>
 #include "zeros.h"
-#include <stdio.h>
 
 double
 bisect(callback_type f, double xa, double xb, double xtol, double rtol,

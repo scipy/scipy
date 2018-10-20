@@ -514,9 +514,7 @@ def bisect(f, a, b, args=(),
         raise ValueError("xtol too small (%g <= 0)" % xtol)
     if rtol < _rtol:
         raise ValueError("rtol too small (%g < %g)" % (rtol, _rtol))
-    print("zeros.py:bisect:", f, a, b, args)
     r = _zeros._bisect(f, a, b, xtol, rtol, maxiter, args, full_output, disp)
-    print("zeros.py:bisect: returned", r)
     return results_c(full_output, r)
 
 
