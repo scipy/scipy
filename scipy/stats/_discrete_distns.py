@@ -904,15 +904,17 @@ class yulesimon_gen(rv_discrete):
     for :math:`k=1,2,3,...`, where :math:`\alpha>0`.
     Here :math:`B` refers to the `scipy.special.beta` function.
 
-    For details see: https://en.wikipedia.org/wiki/Yule-Simon_distribution
-    The _rvs method uses 6.3 of Devroye, non-uniform random
-    variate generation book [1]_ to sample a Yule-Simon.
-    Here our notation maps to Devroye's via :math:`\alpha=a-1`.
+    The sampling of random variates is based on Section 6.3 of [1]_.
+    Our notation maps to the referenced logic via :math:`\alpha=a-1`.
+
+    For details see the wikipedia entry [2]_.
 
     References
     ----------
     .. [1] Devroye, Luc. "Non-uniform Random Variate Generation",
     pp 553 (1986) Springer, New York.
+
+    .. [2] https://en.wikipedia.org/wiki/Yule-Simon_distribution
 
     %(after_notes)s
 
@@ -948,14 +950,17 @@ class yulesimon_gen(rv_discrete):
         mu2 = np.where(alpha > 2,
                 alpha**2 / ((alpha - 2.0) * (alpha - 1)**2),
                 np.inf)
+        mu2 = np.where(alpha <= 1, np.nan, mu2)
         g1 = np.where(alpha > 3,
                 sqrt(alpha - 2) * (alpha + 1)**2 /
                 (alpha * (alpha - 3)),
                 np.inf)
+        g1 = np.where(alpha <=2, np.nan, g1)
         g2 = np.where(alpha > 4,
                 (alpha + 3) + (alpha**3 - 49 * alpha - 22) /
                 (alpha * (alpha - 4) * (alpha - 3)),
                 np.inf)
+        g2 = np.where(alpha <=2, np.nan, g2)
         return mu, mu2, g1, g2
 
 
