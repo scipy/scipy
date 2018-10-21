@@ -25,7 +25,7 @@ names appear below.
 
 Disclaimers:  The function list is obviously incomplete and, worse, the
 functions are not optimized.  All functions have been tested (some more
-so than others), but they are far from bulletproof.  Thus, as with any
+so than others), but they are far from bulletproof. Thus, as with any
 free software, no warranty or guarantee is expressed or implied. :-)  A
 few extra functions that don't appear in the list below can be found by
 interested treasure-hunters.  These functions don't necessarily have
@@ -82,6 +82,7 @@ Variability
     sem
     zmap
     zscore
+    gstd
     iqr
 
 Trimming Functions
@@ -2356,12 +2357,15 @@ def zmap(scores, compare, axis=0, ddof=0):
 def gstd(a, axis=0, ddof=1):
     """Calculate the geometric standard deviation of an array
 
-    The geometric standard deviation describes the dispersion of a set of
-    numbers on a logarithmic scale. It is a multiplicative factor, and therefore
-    a dimensionless quantity. Mathematically the population geometric standard
-    deviation is evaluated as::
+    The geometric standard deviations is defined as the exponent of the
+    standard deviation of ``log(a)``. Mathematically the population
+    geometric standard deviation is evaluated as::
 
-        exp(std(log(a))
+        gstd = exp(std(log(a))
+
+    The geometric standard deviation describes the spread of a set of numbers
+    where :func: `gmean` is the preferred mean. It is a multiplicative
+    factor, and therefore a dimensionless quantity.
 
     Parameters
     ----------
@@ -2377,26 +2381,25 @@ def gstd(a, axis=0, ddof=1):
     Returns
     -------
     ndarray or float
-        An array or float (if ``axis=None``) of the geometric standard deviation
+        An array of the geometric standard deviation. If `axis` is `1` or `None`
+        a float is returned instead.
 
     Notes
     -----
     The geometric standard deviation is sometimes confused with the exponent of
-    the standard deviation of the arithmetic mean, ``exp(std(a))``. Instead the
-    geometric standard deviation is ``exp(std(log(a)))``.
+    the standard deviation, ``exp(std(a))``. Instead the geometric standard
+    deviation is ``exp(std(log(a)))``.
 
     The default value for `ddof` is different to the default (0) used by other
     ddof containing functions, such as ``np.std`` and ``np.nanstd``.
-
-    TODO: List "naive" implementation? May encounter numerical errors in some
-    cases.
 
     Examples
     --------
     Find the geometric standard deviation of a log-normally distributed sample.
     Note the standard deviation of the distribution is 1, on a log scale this
-    evaluate to ``exp(1)``.
+    evaluates to ``exp(1)``.
 
+    >>> from scipy.stats import gstd
     >>> np.random.seed(123)
     >>> sample = np.random.lognormal(mean=0, sigma=1, size=1000)
     >>> gstd(sample)
@@ -2405,6 +2408,7 @@ def gstd(a, axis=0, ddof=1):
     Compute the geometric standard deviation of a multidimensional array and
     of a given axis.
 
+    >>> from scipy.stats import gstd
     >>> a = np.arange(1, 25).reshape(2, 3, 4)
     >>> a
     array([[[ 1,  2,  3,  4],
@@ -2420,7 +2424,6 @@ def gstd(a, axis=0, ddof=1):
     array([[1.82424757, 1.22436866, 1.13183117],
            [1.09348306, 1.07244798, 1.05914985]])
     """
-
     if not (isinstance(axis, int) or axis is None):
         raise ValueError('Invalid axis provided. Axis must be None or int')
 
@@ -2442,15 +2445,13 @@ def gstd(a, axis=0, ddof=1):
         warnings.warn(message, RuntimeWarning)
     else:
         if is_invalid.any():
+            # Mathematically the gstd is only defined for positive values.
+            # however here invalid values (nans, infty, negatives) are ignored
             warnings.warn('non-positive value encountered.', RuntimeWarning)
-
-
-
-    if is_invalid.any():
-        a = np.ma.masked_where(is_invalid, a)
-        log_a = np.ma.log(a)
-    else:
-        log_a = np.log(a)
+            a = np.ma.masked_where(is_invalid, a)
+            log_a = np.ma.log(a)
+        else:
+            log_a = np.log(a)
 
     return np.exp(np.std(log_a, axis=axis, ddof=ddof))
 
