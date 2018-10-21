@@ -1188,7 +1188,7 @@ def rank_filter(input, rank, size=None, footprint=None, output=None,
     >>> plt.show()
     """
     if not isinstance(rank, numbers.Integral):
-        raise TypeError('Input rank needs to be integer')
+        raise ValueError('Input rank needs to be integer')
     return _rank_filter(input, rank, size, footprint, output, mode, cval,
                         origin, 'rank')
 
