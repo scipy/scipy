@@ -9,7 +9,7 @@ from numpy.testing import (assert_equal, assert_allclose,
 from pytest import raises as assert_raises
 
 import scipy.ndimage as sndi
-from scipy.ndimage.filters import _gaussian_kernel1d
+from scipy.ndimage.filters import _gaussian_kernel1d, rank_filter
 
 
 def test_ticket_701():
@@ -427,3 +427,11 @@ def test_gaussian_filter():
     sigma = 1.0
     with assert_raises(RuntimeError):
         sndi.gaussian_filter(data,sigma)
+
+
+def test_rank_filter_noninteger_rank():
+    # regression test for issue 9388: ValueError for
+    # non integer rank when performing rank_filter
+    arr = np.random.random((10, 20, 30))
+    assert_raises(ValueError, rank_filter, arr, 0.5, footprint=np.ones((1, 1, 10),
+                  dtype=bool))
