@@ -183,7 +183,7 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'normaltest', 'jarque_bera', 'itemfreq',
            'scoreatpercentile', 'percentileofscore',
            'cumfreq', 'relfreq', 'obrientransform',
-           'sem', 'zmap', 'zscore', 'iqr',
+           'sem', 'zmap', 'zscore', 'gstd', 'iqr',
            'sigmaclip', 'trimboth', 'trim1', 'trim_mean', 'f_oneway',
            'pearsonr', 'fisher_exact', 'spearmanr', 'pointbiserialr',
            'kendalltau', 'weightedtau',
@@ -284,6 +284,7 @@ def gmean(a, axis=0, dtype=None):
     numpy.mean : Arithmetic average
     numpy.average : Weighted average
     hmean : Harmonic mean
+    gstd : Geometric standard deviation
 
     Notes
     -----
@@ -2350,6 +2351,108 @@ def zmap(scores, compare, axis=0, ddof=0):
                 np.expand_dims(sstd, axis=axis))
     else:
         return (scores - mns) / sstd
+
+
+def gstd(a, axis=0, ddof=1):
+    """Calculate the geometric standard deviation of an array
+
+    The geometric standard deviation describes the dispersion of a set of
+    numbers on a logarithmic scale. It is a multiplicative factor, and therefore
+    a dimensionless quantity. Mathematically the population geometric standard
+    deviation is evaluated as::
+
+        exp(std(log(a))
+
+    Parameters
+    ----------
+    a : array_like
+        An array like object containing the sample data.
+    axis : int or None, optional
+        Axis along which to operate. Default is 0. If None, compute over
+        the whole array `a`.
+    ddof : int, optional
+        Degrees of freedom correction in the calculation of the
+        geometric standard deviation. Default is 1.
+
+    Returns
+    -------
+    ndarray or float
+        An array or float (if ``axis=None``) of the geometric standard deviation
+
+    Notes
+    -----
+    The geometric standard deviation is sometimes confused with the exponent of
+    the standard deviation of the arithmetic mean, ``exp(std(a))``. Instead the
+    geometric standard deviation is ``exp(std(log(a)))``.
+
+    The default value for `ddof` is different to the default (0) used by other
+    ddof containing functions, such as ``np.std`` and ``np.nanstd``.
+
+    TODO: List "naive" implementation? May encounter numerical errors in some
+    cases.
+
+    Examples
+    --------
+    Find the geometric standard deviation of a log-normally distributed sample.
+    Note the standard deviation of the distribution is 1, on a log scale this
+    evaluate to ``exp(1)``.
+
+    >>> np.random.seed(123)
+    >>> sample = np.random.lognormal(mean=0, sigma=1, size=1000)
+    >>> gstd(sample)
+    2.7217860664589946
+
+    Compute the geometric standard deviation of a multidimensional array and
+    of a given axis.
+
+    >>> a = np.arange(1, 25).reshape(2, 3, 4)
+    >>> a
+    array([[[ 1,  2,  3,  4],
+            [ 5,  6,  7,  8],
+            [ 9, 10, 11, 12]],
+
+           [[13, 14, 15, 16],
+            [17, 18, 19, 20],
+            [21, 22, 23, 24]]])
+    >>> gstd(a, axis=None)
+    2.2944076136018947
+    >>> gstd(a, axis=2)
+    array([[1.82424757, 1.22436866, 1.13183117],
+           [1.09348306, 1.07244798, 1.05914985]])
+    """
+
+    if not (isinstance(axis, int) or axis is None):
+        raise ValueError('Invalid axis provided. Axis must be None or int')
+
+    if not isinstance(ddof, int) or ddof < 0:
+        raise ValueError('Invalid ddof provided. A nonnegative int is required')
+
+    try:
+        is_invalid = np.logical_or(np.less_equal(a, 0), ~np.isfinite(a))
+    except TypeError as e:
+        raise ValueError(
+            'Invalid array input. The inputs could not be '
+            'safely coerced to any supported types')
+    except RuntimeWarning:
+        message = (
+            'Non-positive or non-finite value encountered. '
+            'The geometric standard deviation is only defined for strictly '
+            'positive (finite) values.'
+            )
+        warnings.warn(message, RuntimeWarning)
+    else:
+        if is_invalid.any():
+            warnings.warn('non-positive value encountered.', RuntimeWarning)
+
+
+
+    if is_invalid.any():
+        a = np.ma.masked_where(is_invalid, a)
+        log_a = np.ma.log(a)
+    else:
+        log_a = np.log(a)
+
+    return np.exp(np.std(log_a, axis=axis, ddof=ddof))
 
 
 # Private dictionary initialized only once at module level
