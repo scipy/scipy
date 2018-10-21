@@ -952,7 +952,7 @@ class yulesimon_gen(rv_discrete):
                 np.inf)
         mu2 = np.where(alpha <= 1, np.nan, mu2)
         g1 = np.where(alpha > 3,
-                sqrt(alpha - 3) * (alpha + 1)**2 / (alpha * (alpha - 3)),
+                sqrt(alpha - 2) * (alpha + 1)**2 / (alpha * (alpha - 3)),
                 np.inf)
         g1 = np.where(alpha <= 2, np.nan, g1)
         g2 = np.where(alpha > 4,
