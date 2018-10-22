@@ -123,3 +123,82 @@ def argupcross(x, threshold=None, axis=0, mode='clip'):
     """
     results = _boolcross(x, threshold, 'up', axis=axis, mode=mode)
     return np.nonzero(results)
+
+
+def argdowncross(x, threshold=None, axis=0, mode='clip'):
+    """
+    Calculate the down-crossings of `data`.
+
+    The index before an down-crossing is returned. i.e. sign change
+    from pluss to change, is returned.
+
+
+    Parameters
+    ----------
+    data : ndarray
+        Array in which to find the relative extrema.
+    threshold : float, optional
+        Value to check for upcrossings. If None is passed, the mean is used as threshold
+    cross_type : str
+        The type of crossing to find. 'up' finds up-crossings (i.e. sign change from minus to pluss) 
+        and 'down' finds down-corssings (i.e. sign change from plus to minus).
+    axis : int, optional
+        Axis over which to select from `data`.  Default is 0.
+    mode : str, optional
+        How the edges of the vector are treated.  'wrap' (wrap around) or
+        'clip' (treat overflow as the same as the last (or first) element).
+        Default 'clip'.  See numpy.take
+
+    Returns
+    -------
+    downcrossing : tuple of ndarrays
+        Indices of the upcrossings in arrays of integers.  ``upcrossing[k]``
+        is the array of indices of axis `k` of `data`.  Note that the
+        return value is a tuple even when `data` is one-dimensional.
+
+    See Also
+    --------
+    argcross, argupcross
+
+    """
+    results = _boolcross(x, threshold, 'down', axis=axis, mode=mode)
+    return np.nonzero(results)
+
+
+def argcross(data, threshold=None, axis=0, mode='clip'):
+    """
+    Calculate the crossings of `data`.
+
+    The index before an crossing is returned.
+
+    Parameters
+    ----------
+    data : ndarray
+        Array in which to find the relative extrema.
+    threshold : float, optional
+        Value to check for upcrossings. If None is passed, the mean is used as threshold
+    cross_type : str
+        The type of crossing to find. 'up' finds up-crossings (i.e. sign change from minus to pluss) 
+        and 'down' finds down-corssings (i.e. sign change from plus to minus).
+    axis : int, optional
+        Axis over which to select from `data`.  Default is 0.
+    mode : str, optional
+        How the edges of the vector are treated.  'wrap' (wrap around) or
+        'clip' (treat overflow as the same as the last (or first) element).
+        Default 'clip'.  See numpy.take
+
+    Returns
+    -------
+    crossing : tuple of ndarrays
+        Indices of the crossings in arrays of integers.  ``crossing[k]`` is
+        the array of indices of axis `k` of `data`.  Note that the
+        return value is a tuple even when `data` is one-dimensional.
+
+    See Also
+    --------
+    argupcross, argdowncross
+
+    """
+    results = _boolcross(data, threshold, 'up', axis=axis, mode=mode)
+    results |= _boolcross(data, threshold, 'down', axis=axis, mode=mode)
+    return np.nonzero(results)
