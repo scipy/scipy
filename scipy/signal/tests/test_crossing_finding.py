@@ -14,7 +14,8 @@ from pytest import raises, warns
 
 from scipy.signal._crossing_finding import (
     _select_cross_comparator,
-    _boolcross
+    _boolcross,
+    argupcross
 )
 
 
@@ -38,7 +39,7 @@ class TestSelectCrossComparator(object):
             comp_a, comp_b = _select_cross_comparator('sideways')
 
 
-class TestBoolCross(object):
+class TestBoolcross(object):
     def test_no_upcross_1d(self):
         "Test up-crossing on 1d-array - no crossings."
         false_array = np.zeros(5, dtype=bool)
@@ -168,3 +169,62 @@ class TestBoolCross(object):
         i = _boolcross(z1, None, 'down', axis=1)
         assert_equal(i.shape, (3, 7))
         assert_array_equal(i, result_array)
+
+
+class TestArgcross(object):
+
+    def test_empty(self):
+        empty_array = np.array([], dtype=int)
+
+        z1 = np.zeros(5)
+
+        i = argupcross(z1)
+        assert_equal(len(i), 1)
+        assert_array_equal(i[0], empty_array)
+
+        z2 = np.zeros((3, 5))
+
+        row, col = argupcross(z2, axis=0)
+        assert_array_equal(row, empty_array)
+        assert_array_equal(col, empty_array)
+
+        row, col = argupcross(z2, axis=1)
+        assert_array_equal(row, empty_array)
+        assert_array_equal(col, empty_array)
+
+        # z3 = np.zeros((3, 5))
+
+        # row, col = argdowncross(z3, axis=0)
+        # assert_array_equal(row, empty_array)
+        # assert_array_equal(col, empty_array)
+
+        # row, col = argdowncross(z3, axis=1)
+        # assert_array_equal(row, empty_array)
+        # assert_array_equal(col, empty_array)
+
+    def test_basic(self):
+        x = np.array([
+            [-1., 0., 1., 0., -1., 0., 1.],
+            [0., 1., 0., -1., 0., 1., 0.],
+            [1., 0., -1., 0., 1., 0., -1.]
+        ])
+
+        row, col = argupcross(x, axis=0)
+        order = np.argsort(row)
+        assert_equal(row[order], [0, 0, 1, 1, 1])
+        assert_equal(col[order], [1, 5, 0, 3, 4])
+
+        row, col = argupcross(x, axis=1)
+        order = np.argsort(row)
+        assert_equal(row[order], [0, 0, 1, 1, 2])
+        assert_equal(col[order], [1, 5, 0, 4, 3])
+
+    #     row, col = argrelmin(x, axis=0)
+    #     order = np.argsort(row)
+    #     assert_equal(row[order], [1, 2, 3])
+    #     assert_equal(col[order], [1, 2, 3])
+
+    #     row, col = argrelmin(x, axis=1)
+    #     order = np.argsort(row)
+    #     assert_equal(row[order], [1, 2, 3])
+    #     assert_equal(col[order], [1, 2, 3])
