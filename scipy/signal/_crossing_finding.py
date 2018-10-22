@@ -6,7 +6,7 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 
 
-__all__ = []
+__all__ = ['argcross', 'argupcross', 'argdowncross']
 
 
 def _select_cross_comparator(cross_type):

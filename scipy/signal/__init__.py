@@ -319,6 +319,7 @@ from ._upfirdn import upfirdn
 from .spline import *
 
 from .bsplines import *
+from ._crossing_finding import *
 from .filter_design import *
 from .fir_filter_design import *
 from .ltisys import *
