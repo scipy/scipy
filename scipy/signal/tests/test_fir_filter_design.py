@@ -382,7 +382,7 @@ class TestRemez(object):
         # make sure it is type III (anti-symmetric tap coefficients)
         assert_array_almost_equal(h[:(N-1)//2], -h[:-(N-1)//2-1:-1])
 
-        # Since the requested response is symmetric, all even coeffcients
+        # Since the requested response is symmetric, all even coefficients
         # should be zero (or in this case really small)
         assert_((abs(h[1::2]) < 1e-15).all(), "Even Coefficients Equal Zero")
 

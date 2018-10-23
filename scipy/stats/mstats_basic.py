@@ -512,7 +512,7 @@ def spearmanr(x, y=None, use_ties=True, axis=None, nan_policy='propagate'):
 
         prob = 2 * distributions.t.sf(np.abs(t), dof)
 
-        # For backwards compatibility, return scalars when comparing 2 colums
+        # For backwards compatibility, return scalars when comparing 2 columns
         if rs.shape == (2, 2):
             return SpearmanrResult(rs[1, 0], prob[1, 0])
         else:

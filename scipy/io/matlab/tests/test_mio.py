@@ -858,7 +858,7 @@ def test_empty_string():
     d = rdr.get_variables()
     fp.close()
     assert_array_equal(d['a'], np.array([], dtype='U1'))
-    # empty string round trip.  Matlab cannot distiguish
+    # empty string round trip.  Matlab cannot distinguish
     # between a string array that is empty, and a string array
     # containing a single empty string, because it stores strings as
     # arrays of char.  There is no way of having an array of char that
