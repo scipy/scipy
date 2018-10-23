@@ -13,7 +13,7 @@ the following::
 
 Callback Signatures
 -------------------
-The Cython Optimize Zeros API provides three callback signagures for the root
+The Cython Optimize Zeros API provides three callback signatures for the root
 finders, two which are safe without the global interpreter lock (GIL) and one
 that uses Python tuples. The functions are grouped by callback signatures into
 Cython modules that can be imported using ``cimport``.
