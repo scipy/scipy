@@ -1,5 +1,8 @@
       SUBROUTINE CFFTI1 (N,WA,IFAC)
-      DIMENSION       WA(*)      ,IFAC(*)    ,NTRYH(4)
+      IMPLICIT NONE
+      INTEGER :: N, IFAC(*), I, I1, IB, IDO, IDOT, II, IP, IPM, J, K1
+      INTEGER :: L1, L2, LD, NF, NL, NQ, NR, NTRY, NTRYH(4)
+      REAL :: WA(*), ARG, ARGH, ARGLD, FI, TPI
       DATA NTRYH(1),NTRYH(2),NTRYH(3),NTRYH(4)/3,4,2,5/
       NL = N
       NF = 0
