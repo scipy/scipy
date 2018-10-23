@@ -1476,7 +1476,7 @@ class TestGumbelL(object):
 class TestLevyStable(object):
 
     def test_fit(self):
-        # contruct data to have percentiles that match
+        # construct data to have percentiles that match
         # example in McCulloch 1986.
         x = [-.05413,-.05413,
                0.,0.,0.,0.,

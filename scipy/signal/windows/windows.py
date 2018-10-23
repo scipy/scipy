@@ -1709,7 +1709,7 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False):
     """
     Compute the Discrete Prolate Spheroidal Sequences (DPSS).
 
-    DPSS (or Slepian sequencies) are often used in multitaper power spectral
+    DPSS (or Slepian sequences) are often used in multitaper power spectral
     density estimation (see [1]_). The first window in the sequence can be
     used to maximize the energy concentration in the main lobe, and is also
     called the Slepian window.

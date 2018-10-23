@@ -21,7 +21,7 @@ guess the format of matlab arrays of ``mxFUNCTION_CLASS`` and
 ``mxFUNCTION_CLASS`` stores all types of matlab functions.  It seems to
 contain a struct matrix with a set pattern of fields.  For anonymous
 functions, a sub-fields of one of these fields seems to contain the
-well-named ``mxOPAQUE_CLASS``. This seems to cotain:
+well-named ``mxOPAQUE_CLASS``. This seems to contain:
 
 * array flags as for any matlab matrix
 * 3 int8 strings
@@ -659,7 +659,7 @@ class VarWriter5(object):
         '''
         if arr.size == 0 or np.all(arr == ''):
             # This an empty string array or a string array containing
-            # only empty strings.  Matlab cannot distiguish between a
+            # only empty strings.  Matlab cannot distinguish between a
             # string array that is empty, and a string array containing
             # only empty strings, because it stores strings as arrays of
             # char.  There is no way of having an array of char that is

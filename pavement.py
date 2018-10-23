@@ -229,7 +229,7 @@ def bootstrap():
     bdir = options.bootstrap_dir
     if not os.path.exists(bdir):
         os.makedirs(bdir)
-    bscript = "boostrap.py"
+    bscript = "bootstrap.py"
 
     options.virtualenv.script_name = os.path.join(options.bootstrap_dir,
                                                   bscript)
