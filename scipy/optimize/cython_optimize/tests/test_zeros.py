@@ -7,7 +7,7 @@ Tests for Cython Optimize API
 
 from __future__ import division, print_function, absolute_import
 import numpy as np
-from ..examples import (zeros_tuple_examples, zeros_struct_examples,
+from .examples import (zeros_tuple_examples, zeros_struct_examples,
     zeros_struct_alt_examples, zeros_array_examples)
 
 

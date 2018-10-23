@@ -9,7 +9,7 @@ from math import sin
 import cython
 from libc.math cimport exp
 
-from .. cimport zeros_tuple
+from ... cimport zeros_tuple
 
 NUM_OF_IRRAD = 10
 IL = [sin(il) + 6.0 for il in range(NUM_OF_IRRAD)]

@@ -12,19 +12,23 @@ def configuration(parent_package='', top_path=None):
                          include_dirs=[get_numpy_include_dirs()])
     config.add_extension('zeros_array', sources=['zeros_array.c'],
                          include_dirs=[get_numpy_include_dirs()])
-    config.add_extension('examples.zeros_tuple_examples',
-                         sources=[os.path.join('examples', 'zeros_tuple_examples.c')],
+    config.add_extension('tests.examples.zeros_tuple_examples',
+                         sources=[os.path.join('tests', 'examples',
+                             'zeros_tuple_examples.c')],
                          include_dirs=[get_numpy_include_dirs()])
-    config.add_extension('examples.zeros_struct_examples',
-                         sources=[os.path.join('examples', 'zeros_struct_examples.c')],
+    config.add_extension('tests.examples.zeros_struct_examples',
+                         sources=[os.path.join('tests', 'examples',
+                             'zeros_struct_examples.c')],
                          include_dirs=[get_numpy_include_dirs()])
-    config.add_extension('examples.zeros_struct_alt_examples',
-                         sources=[os.path.join('examples', 'zeros_struct_alt_examples.c')],
+    config.add_extension('tests.examples.zeros_struct_alt_examples',
+                         sources=[os.path.join('tests', 'examples',
+                             'zeros_struct_alt_examples.c')],
                          include_dirs=[get_numpy_include_dirs()])
-    config.add_extension('examples.zeros_array_examples',
-                         sources=[os.path.join('examples', 'zeros_array_examples.c')],
+    config.add_extension('tests.examples.zeros_array_examples',
+                         sources=[os.path.join('tests', 'examples',
+                             'zeros_array_examples.c')],
                          include_dirs=[get_numpy_include_dirs()])
-    config.add_subpackage('examples')
+    config.add_subpackage('tests.examples')
     config.add_data_files('*.pxd')
     config.add_data_files(os.path.join('examples', '*.pxd'))
     return config

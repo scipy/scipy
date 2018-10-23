@@ -9,7 +9,7 @@ from math import sin
 import cython
 from libc.math cimport exp
 
-from .. cimport zeros_array
+from ... cimport zeros_array
 
 DEF N = 6  # number of arguments
 

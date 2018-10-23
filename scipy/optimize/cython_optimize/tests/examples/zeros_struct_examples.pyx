@@ -9,7 +9,7 @@ from math import sin
 import cython
 from libc.math cimport exp
 
-from .. cimport zeros_struct
+from ... cimport zeros_struct
 
 # test parameter structure
 ctypedef struct test_params:

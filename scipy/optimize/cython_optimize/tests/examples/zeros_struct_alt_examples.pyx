@@ -5,7 +5,7 @@ free the global interpreter lock.
 
 from __future__ import division, print_function, absolute_import
 
-from .. cimport zeros_struct
+from ... cimport zeros_struct
 from . cimport zeros_struct_examples
 from .zeros_struct_examples import IL, XTOL, RTOL, MITR
 
