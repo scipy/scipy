@@ -2386,6 +2386,10 @@ def gstd(a, axis=0, ddof=1):
 
     Notes
     -----
+    As the calculation requires use of logarithms the geometric standard
+    deviation only support strictly positive values. Any non-finite or
+    non-positive values will be ignored.
+
     The geometric standard deviation is sometimes confused with the exponent of
     the standard deviation, ``exp(std(a))``. Instead the geometric standard
     deviation is ``exp(std(log(a)))``.
@@ -2410,39 +2414,27 @@ def gstd(a, axis=0, ddof=1):
 
     >>> from scipy.stats import gstd
     >>> a = np.arange(1, 25).reshape(2, 3, 4)
-    >>> a
-    array([[[ 1,  2,  3,  4],
-            [ 5,  6,  7,  8],
-            [ 9, 10, 11, 12]],
-
-           [[13, 14, 15, 16],
-            [17, 18, 19, 20],
-            [21, 22, 23, 24]]])
     >>> gstd(a, axis=None)
     2.2944076136018947
     >>> gstd(a, axis=2)
     array([[1.82424757, 1.22436866, 1.13183117],
            [1.09348306, 1.07244798, 1.05914985]])
     """
-    # Mathematically the gstd is only defined for positive (finite) values
     try:
         with np.errstate(invalid='raise'):
             is_non_positive = np.less_equal(a, 0).any()
-    except (AttributeError, FloatingPointError):
-        # This occurs if nan, infty etc encountered
-        # TODO: Pass to np.ma
-        raise NotImplementedError
-    except TypeError:
+    except AttributeError:
         raise ValueError(
             'Invalid array input. The inputs could not be '
             'safely coerced to any supported types'
             )
+    except FloatingPointError:
+        # This occurs if invalid values (NaNs, inf etc) are encountered.
+        return mstats_basic.gstd(a, axis=axis, ddof=ddof)
     else:
         if is_non_positive:
-            raise ValueError(
-                'Non positive values encountered. All values '
-                'passed must be strictly positive.')
-        return np.exp(np.std(np.log(a), axis=axis, ddof=ddof))
+            return mstats_basic.gstd(a, axis=axis, ddof=ddof)
+    return np.exp(np.std(np.log(a), axis=axis, ddof=ddof))
 
 
 # Private dictionary initialized only once at module level

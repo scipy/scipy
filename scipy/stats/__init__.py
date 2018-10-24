@@ -187,6 +187,7 @@ Summary statistics
    tstd              --
    tsem              --
    variation         -- Coefficient of variation
+   gstd              -- Geometric Standard Deviation
    find_repeats
    trim_mean
    iqr
