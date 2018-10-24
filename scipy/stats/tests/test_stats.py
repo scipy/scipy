@@ -1235,8 +1235,6 @@ def test_relfreq():
 class TestGeometricStandardDeviation(object):
     # must add 1 as `gstd` is only defined for positive values
     array_1d = np.arange(2 * 3 * 4) + 1
-    array_1d_nan = np.append(array_1d, [np.nan])
-    array_1d_negative = np.append(array_1d, [-1])
     array_3d = array_1d.reshape(2, 3, 4)
 
     def test_1d_array(self):
@@ -1245,29 +1243,25 @@ class TestGeometricStandardDeviation(object):
         assert_approx_equal(gstd_actual, gstd_desired)
 
     def test_1d_masked_array(self):
-        with pytest.warns(RuntimeWarning):
-            gstd_actual = stats.gstd(np.ma.asarray(self.array_1d_nan))
+        gstd_actual = stats.gstd(np.ma.asarray(self.array_1d))
         gstd_desired = stats.gstd(self.array_1d)
         assert_approx_equal(gstd_actual, gstd_desired)
 
-    def test_1d_non_array_input(self):
+    def test_1d_numeric_non_array_input(self):
         gstd_actual = stats.gstd(tuple(self.array_1d))
         gstd_desired = stats.gstd(self.array_1d)
         assert_approx_equal(gstd_actual, gstd_desired)
 
-    def test_non_array_input(self):
+    def test_raises_value_error_non_array_input(self):
         with pytest.raises(ValueError):
             stats.gstd("This should fail as it can not be cast to an array.")
 
-    def test_ignores_negative_entries(self):
-        with pytest.warns(RuntimeWarning):
-            gstd_actual = stats.gstd(np.ma.asarray(self.array_1d_nan))
-        gstd_desired = stats.gstd(self.array_1d)
-        assert_approx_equal(gstd_actual, gstd_desired)
+    def test_raises_value_error_negative_entries(self):
+        with pytest.raises(ValueError):
+            gstd_actual = stats.gstd(np.append(self.array_1d, [-1]))
 
     def test_ignores_nan_entries(self):
-        with pytest.warns(RuntimeWarning):
-            gstd_actual = stats.gstd(self.array_1d_nan)
+        gstd_actual = stats.gstd(np.append(self.array_1d, [np.nan]))
         gstd_desired = stats.gstd(self.array_1d)
         assert_approx_equal(gstd_actual, gstd_desired)
 
