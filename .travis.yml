@@ -10,36 +10,36 @@ env:
    - OPENBLAS_NUM_THREADS=1
 matrix:
   include:
-#    - python: 2.7
-#      env:
-#        - PYFLAKES=1
-#        - PEP8=1
-#        - NUMPYSPEC="--upgrade numpy"
-#      before_install:
-#        - pip install pycodestyle==2.3.1
-#        - pip install pyflakes==1.1.0
-#      script:
-#        - PYFLAKES_NODOCTEST=1 pyflakes scipy benchmarks/benchmarks | grep -E -v 'unable to detect undefined names|assigned to but never used|imported but unused|redefinition of unused|may be undefined, or defined from star imports' > test.out; cat test.out; test \! -s test.out
-#        - pycodestyle scipy benchmarks/benchmarks
-#    - python: 2.7
-#      env:
-#        - TESTMODE=fast
-#        - COVERAGE=
-#        - NUMPYSPEC="--pre --upgrade --timeout=60 -f $PRE_WHEELS numpy"
-#    - python: 3.7
-#      dist: xenial # travis-ci/travis-ci/issues/9815
-#      sudo: true
-#      env:
-#        - TESTMODE=full
-#        - COVERAGE="--coverage --gcov"
-#        - NUMPYSPEC="--upgrade numpy"
-#    - python: 3.6
-#      env:
-#        - TESTMODE=fast
-#        - COVERAGE=
-#        - USE_WHEEL=1
-#        - REFGUIDE_CHECK=1
-#        - NUMPYSPEC="--upgrade numpy"
+    - python: 2.7
+      env:
+        - PYFLAKES=1
+        - PEP8=1
+        - NUMPYSPEC="--upgrade numpy"
+      before_install:
+        - pip install pycodestyle==2.3.1
+        - pip install pyflakes==1.1.0
+      script:
+        - PYFLAKES_NODOCTEST=1 pyflakes scipy benchmarks/benchmarks | grep -E -v 'unable to detect undefined names|assigned to but never used|imported but unused|redefinition of unused|may be undefined, or defined from star imports' > test.out; cat test.out; test \! -s test.out
+        - pycodestyle scipy benchmarks/benchmarks
+    - python: 2.7
+      env:
+        - TESTMODE=fast
+        - COVERAGE=
+        - NUMPYSPEC="--pre --upgrade --timeout=60 -f $PRE_WHEELS numpy"
+    - python: 3.7
+      dist: xenial # travis-ci/travis-ci/issues/9815
+      sudo: true
+      env:
+        - TESTMODE=full
+        - COVERAGE="--coverage --gcov"
+        - NUMPYSPEC="--upgrade numpy"
+    - python: 3.6
+      env:
+        - TESTMODE=fast
+        - COVERAGE=
+        - USE_WHEEL=1
+        - REFGUIDE_CHECK=1
+        - NUMPYSPEC="--upgrade numpy"
     - python: 3.5
       env:
         - TESTMODE=fast
@@ -53,13 +53,13 @@ matrix:
         - USE_WHEEL=1
         - NUMPYSPEC="--upgrade numpy"
         - PYTHONOPTIMIZE=2
-#    - os: osx
-#      language: generic
-#      env:
-#        - TESTMODE=fast
-#        - COVERAGE=
-#        - NUMPYSPEC="--upgrade numpy"
-#        - MB_PYTHON_VERSION=3.7
+    - os: osx
+      language: generic
+      env:
+        - TESTMODE=fast
+        - COVERAGE=
+        - NUMPYSPEC="--upgrade numpy"
+        - MB_PYTHON_VERSION=3.7
 addons:
   apt:
     packages:
