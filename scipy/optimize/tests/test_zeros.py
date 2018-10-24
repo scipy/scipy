@@ -74,7 +74,7 @@ class TestBasic(object):
         # The methods have one of two base signatures:
         # (f, a, b, **kwargs)  # newton
         # (func, x0, **kwargs)  # bisect/brentq/...
-        sig = _getargspec(method)  # ArgSpec with args, varargs, varkw, defaults
+        sig = _getargspec(method)  # ArgSpec with args varargs varkw defaults
         nDefaults = len(sig[3])
         nRequired = len(sig[0]) - nDefaults
         sig_args_keys = sig[0][:nRequired]
@@ -109,9 +109,9 @@ class TestBasic(object):
         cvgd = [elt for elt in results if elt[1].converged]
         approx = [elt[1].root for elt in cvgd]
         correct = [elt[0] for elt in cvgd]
-        notclose = [[a] + elt for a, c, elt in zip(approx, correct, cvgd) if
-                    not isclose(a, c, rtol=rtol, atol=atol)
-                    and elt[-1]['ID'] not in known_fail]
+        notclose = [[a] + elt for a, c, elt in zip(approx, correct, cvgd)
+                    if (not isclose(a, c, rtol=rtol, atol=atol) and
+                        elt[-1]['ID'] not in known_fail)]
         # Evaluate the function and see if is 0 at the purported root
         fvs = [tc['f'](aroot, *(tc['args']))
                for aroot, c, fullout, tc in notclose]
@@ -336,7 +336,9 @@ class TestLowLevelCallable(object):
     def setup_no_args(cls):
         func_names_plus_args = [['xcubed_minus_2', ()]]
         for fn, args in func_names_plus_args:
-            cls._add_test(LowLevelCallable.from_cython(_tstutils_zerofuncs, fn), args, fn)
+            cls._add_test(
+                LowLevelCallable.from_cython(_tstutils_zerofuncs, fn),
+                args, fn)
 
     @classmethod
     def setup_userdata_int(cls):
@@ -347,7 +349,7 @@ class TestLowLevelCallable(object):
         cls.c_a = ctypes.pointer(cls.n)
         cls.llc3 = LowLevelCallable.from_cython(
             _tstutils_zerofuncs, "x_to_the_n_minus_2",
-            user_data = ctypes.cast(cls.c_a, ctypes.c_voidp)
+            user_data=ctypes.cast(cls.c_a, ctypes.c_voidp)
         )
         cls._add_test(cls.llc3, tuple(), "x_to_the_n_minus_2 (int *)")
 
@@ -360,7 +362,7 @@ class TestLowLevelCallable(object):
         cls.c_a = ctypes.pointer(cls.a)
         cls.llc3 = LowLevelCallable.from_cython(
             _tstutils_zerofuncs, "x_to_the_3_minus_a",
-            user_data = ctypes.cast(cls.c_a, ctypes.c_voidp)
+            user_data=ctypes.cast(cls.c_a, ctypes.c_voidp)
         )
         cls._add_test(cls.llc3, tuple(), "x_to_the_3_minus_a (double *)")
 
@@ -383,7 +385,8 @@ class TestLowLevelCallable(object):
         cls.llc_voidstar = LowLevelCallable.from_cython(
             _tstutils_zerofuncs, "x_to_the_n_minus_a")
         voidstar = ctypes.cast(cls.n_and_a_ptr, ctypes.c_void_p)
-        cls._add_test(cls.llc_voidstar, (voidstar,), "x_to_the_n_minus_a  (void *)")
+        cls._add_test(cls.llc_voidstar, (voidstar,),
+                      "x_to_the_n_minus_a  (void *)")
 
     @classmethod
     def setup_class(cls):
@@ -396,12 +399,16 @@ class TestLowLevelCallable(object):
         cls.setup_userdata_double()
         cls.setup_userdata_struct()
 
-    def run_check(self, method, name):
+    def run_check(self, method, name, index=None):
         cuberoot3 = np.power(2, 1.0/3)
         a = .5
         b = sqrt(10)
         xtol = rtol = TOL
         tests = self.func_plus_args
+        if index:
+            if index < 0 or index >= len(tests):
+                return
+            tests = tests[index:index+1]
         for function, args, fname in tests:
             zero, r = method(function, a, b, xtol=xtol, rtol=rtol,
                              args=args, full_output=True)
@@ -429,17 +436,65 @@ class TestLowLevelCallable(object):
             assert(r.iterations <= 11), str(
                     [r.converged, r.iterations, r.function_calls])
 
-    def test_bisect(self):
-        self.run_check(cc.bisect, 'bisect')
+    def test_bisect0(self):
+        self.run_check(cc.bisect, 'bisect', 0)
 
-    def test_brentq(self):
-        self.run_check(cc.brentq, 'brentq')
+    def test_bisect1(self):
+        self.run_check(cc.bisect, 'bisect', 1)
 
-    def test_brenth(self):
-        self.run_check(cc.brenth, 'brenth')
+    def test_bisect2(self):
+        self.run_check(cc.bisect, 'bisect', 2)
 
-    def test_ridder(self):
-        self.run_check(cc.ridder, 'ridder')
+    def test_bisect3(self):
+        self.run_check(cc.bisect, 'bisect', 3)
+
+    def test_brentq0(self):
+        self.run_check(cc.brentq, 'brentq', 0)
+
+    def test_brentq1(self):
+        self.run_check(cc.brentq, 'brentq', 1)
+
+    def test_brentq2(self):
+        self.run_check(cc.brentq, 'brentq', 2)
+
+    def test_brentq3(self):
+        self.run_check(cc.brentq, 'brentq', 3)
+
+    def test_brenth0(self):
+        self.run_check(cc.brenth, 'brenth', 0)
+
+    def test_brenth1(self):
+        self.run_check(cc.brenth, 'brenth', 1)
+
+    def test_brenth2(self):
+        self.run_check(cc.brenth, 'brenth', 2)
+
+    def test_brenth3(self):
+        self.run_check(cc.brenth, 'brenth', 3)
+
+    def test_ridder0(self):
+        self.run_check(cc.ridder, 'ridder', 0)
+
+    def test_ridder1(self):
+        self.run_check(cc.ridder, 'ridder', 1)
+
+    def test_ridder2(self):
+        self.run_check(cc.ridder, 'ridder', 2)
+
+    def test_ridder3(self):
+        self.run_check(cc.ridder, 'ridder', 3)
+
+    # def test_bisect(self):
+    #     self.run_check(cc.bisect, 'bisect')
+    #
+    # def test_brentq(self):
+    #     self.run_check(cc.brentq, 'brentq')
+    #
+    # def test_brenth(self):
+    #     self.run_check(cc.brenth, 'brenth')
+    #
+    # def test_ridder(self):
+    #     self.run_check(cc.ridder, 'ridder')
 
     # def test_newton(self):
     #     self.run_secant_check(cc.newton, 'newton')

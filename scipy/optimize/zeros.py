@@ -919,7 +919,8 @@ def _compute_divided_differences(xvals, fvals, N=None, full=True,
         DD = np.zeros([M, N])
         DD[:, 0] = fvals[:]
         for i in range(1, N):
-            DD[i:, i] = np.diff(DD[i - 1:, i - 1]) / (xvals[i:] - xvals[:M - i])
+            DD[i:, i] = (np.diff(DD[i - 1:, i - 1]) /
+                         (xvals[i:] - xvals[:M - i]))
         return DD
 
     xvals = np.asarray(xvals)
