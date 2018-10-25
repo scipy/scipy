@@ -52,6 +52,9 @@ matrix:
         - COVERAGE=
         - USE_WHEEL=1
         - NUMPYSPEC="--upgrade numpy"
+        # The following is needed for optimized "-OO" test run but since we use
+        # pytest-xdist plugin for load scheduling its workers don't pick up the
+        # flag. This environment variable starts all Py instances in -OO mode.
         - PYTHONOPTIMIZE=2
     - os: osx
       language: generic
