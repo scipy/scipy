@@ -2310,20 +2310,14 @@ def gstd(a, axis=0, ddof=1):
       fill_value=1e+20)
     """
     try:
-        is_infinite = np.logical_not(np.isfinite(a))
+        am = np.ma.masked_invalid(a)
     except TypeError:
         raise ValueError(
             'Invalid array input. The inputs could not be '
             'safely coerced to any supported types'
             )
     else:
-        with np.errstate(invalid='ignore'):
-            # Varies from the regular `gstd` function.
-            # Invalid values are used to construct the mask and should
-            # already by included in is_infinite
-            is_non_positive = np.ma.less_equal(a, 0)
-        mask = np.logical_or(is_infinite, is_non_positive)
-        am = np.ma.masked_where(mask, a)
+        am = np.ma.masked_less_equal(am, 0)
     return np.exp(np.std(np.ma.log(am), axis=axis, ddof=ddof))
 
 

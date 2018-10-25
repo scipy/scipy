@@ -2421,9 +2421,11 @@ def gstd(a, axis=0, ddof=1):
            [1.09348306, 1.07244798, 1.05914985]])
     """
     try:
+        if not np.isfinite(a).all():
+            return mstats_basic.gstd(a, axis=axis, ddof=ddof)
         with np.errstate(invalid='raise'):
             is_non_positive = np.less_equal(a, 0).any()
-    except AttributeError:
+    except (AttributeError, TypeError):
         raise ValueError(
             'Invalid array input. The inputs could not be '
             'safely coerced to any supported types'
