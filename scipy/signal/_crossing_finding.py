@@ -96,12 +96,10 @@ def argupcross(x, threshold=None, axis=0, mode='clip'):
     Parameters
     ----------
     data : ndarray
-        Array in which to find the relative extrema.
+        Array in which to find the up-crossings.
     threshold : float, optional
-        Value to check for upcrossings. If None is passed, the mean is used as threshold
-    cross_type : str
-        The type of crossing to find. 'up' finds up-crossings (i.e. sign change from minus to pluss) 
-        and 'down' finds down-corssings (i.e. sign change from plus to minus).
+        Value to check for up-crossings. If None is passed, the mean is used as
+        threshold.
     axis : int, optional
         Axis over which to select from `data`.  Default is 0.
     mode : str, optional
@@ -112,8 +110,8 @@ def argupcross(x, threshold=None, axis=0, mode='clip'):
     Returns
     -------
     upcrossing : tuple of ndarrays
-        Indices of the upcrossings in arrays of integers.  ``upcrossing[k]``
-        is the array of indices of axis `k` of `data`.  Note that the
+        Indices of the up-crossings in arrays of integers. ``upcrossing[k]``
+        is the array of indices of axis `k` of `data`. Note that the
         return value is a tuple even when `data` is one-dimensional.
 
     See Also
@@ -136,25 +134,24 @@ def argdowncross(x, threshold=None, axis=0, mode='clip'):
     Parameters
     ----------
     data : ndarray
-        Array in which to find the relative extrema.
+        Array in which to find the down-crossings.
     threshold : float, optional
-        Value to check for upcrossings. If None is passed, the mean is used as threshold
-    cross_type : str
-        The type of crossing to find. 'up' finds up-crossings (i.e. sign change from minus to pluss) 
-        and 'down' finds down-corssings (i.e. sign change from plus to minus).
+        Value to check for down-crossings. If None is passed, the mean is
+        used as threshold.
     axis : int, optional
-        Axis over which to select from `data`.  Default is 0.
+        Axis over which to select from `data`. Default is 0.
     mode : str, optional
-        How the edges of the vector are treated.  'wrap' (wrap around) or
+        How the edges of the vector are treated. 'wrap' (wrap around) or
         'clip' (treat overflow as the same as the last (or first) element).
-        Default 'clip'.  See numpy.take
+        Default 'clip'. See numpy.take
 
     Returns
     -------
     downcrossing : tuple of ndarrays
-        Indices of the upcrossings in arrays of integers.  ``upcrossing[k]``
-        is the array of indices of axis `k` of `data`.  Note that the
-        return value is a tuple even when `data` is one-dimensional.
+        Indices of the down-crossings in arrays of integers.
+        ``downcrossing[k]`` is the array of indices of axis `k` of `data`.
+        Note that the return value is a tuple even when `data` is
+        one-dimensional.
 
     See Also
     --------
@@ -174,25 +171,23 @@ def argcross(data, threshold=None, axis=0, mode='clip'):
     Parameters
     ----------
     data : ndarray
-        Array in which to find the relative extrema.
+        Array in which to find the crossings.
     threshold : float, optional
-        Value to check for upcrossings. If None is passed, the mean is used as threshold
-    cross_type : str
-        The type of crossing to find. 'up' finds up-crossings (i.e. sign change from minus to pluss) 
-        and 'down' finds down-corssings (i.e. sign change from plus to minus).
+        Value to check for crossings. If None is passed, the mean is used as
+        threshold.
     axis : int, optional
         Axis over which to select from `data`.  Default is 0.
     mode : str, optional
-        How the edges of the vector are treated.  'wrap' (wrap around) or
+        How the edges of the vector are treated. 'wrap' (wrap around) or
         'clip' (treat overflow as the same as the last (or first) element).
-        Default 'clip'.  See numpy.take
+        Default 'clip'. See numpy.take
 
     Returns
     -------
     crossing : tuple of ndarrays
-        Indices of the crossings in arrays of integers.  ``crossing[k]`` is
-        the array of indices of axis `k` of `data`.  Note that the
-        return value is a tuple even when `data` is one-dimensional.
+        Indices of the crossings in arrays of integers. ``crossing[k]`` is
+        the array of indices of axis `k` of `data`. Note that the return value
+        is a tuple even when `data` is one-dimensional.
 
     See Also
     --------
