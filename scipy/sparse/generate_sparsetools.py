@@ -335,7 +335,7 @@ def parse_routine(name, args, types):
 
 
 def main():
-    p = optparse.OptionParser(usage=__doc__.strip())
+    p = optparse.OptionParser(usage=(__doc__ or '').strip())
     p.add_option("--no-force", action="store_false",
                  dest="force", default=True)
     options, args = p.parse_args()
