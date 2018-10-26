@@ -1,9 +1,9 @@
-cdef double f_solarcell(double i, void *args)
+cdef double f_example(double i, void *args)
 
-cdef double solarcell_bisect(tuple args)
+cdef double bisect_example(tuple args)
 
-cdef double solarcell_ridder(tuple args)
+cdef double ridder_example(tuple args)
 
-cdef double solarcell_brenth(tuple args)
+cdef double brenth_example(tuple args)
 
-cdef double solarcell_brentq(tuple args)
+cdef double brentq_example(tuple args)

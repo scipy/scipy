@@ -96,9 +96,6 @@ def configuration(parent_package='',top_path=None):
     config.add_extension(
         'cython_optimize.tests.zeros_examples',
         sources=[os.path.join(cython_optimize_tests, 'zeros_examples.c')])
-    config.add_extension(
-        'cython_optimize.tests.zeros_alt_examples',
-        sources=[os.path.join(cython_optimize_tests, 'zeros_alt_examples.c')])
 
     config.add_subpackage('_shgo_lib')
     config.add_data_dir('_shgo_lib')
