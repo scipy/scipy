@@ -85,23 +85,20 @@ def configuration(parent_package='',top_path=None):
     # cython optimize API for zeros functions
     cython_optimize_tests = os.path.join('cython_optimize', 'tests')
     config.add_subpackage('cython_optimize')
-    config.add_subpackage('cython_optimize.tests.examples')
+    config.add_subpackage('cython_optimize.tests')
     config.add_data_files('cython_optimize.pxd')
     config.add_data_files(os.path.join('cython_optimize', '*.pxd'))
-    config.add_data_files(os.path.join(cython_optimize_tests,
-                                       'examples', '*.pxd'))
+    config.add_data_files(os.path.join(cython_optimize_tests, '*.pxd'))
     config.add_data_dir(cython_optimize_tests)
     config.add_extension(
-        'cython_optimize.zeros_struct',
-        sources=[os.path.join('cython_optimize', 'zeros_struct.c')])
+        'cython_optimize.zeros',
+        sources=[os.path.join('cython_optimize', 'zeros.c')])
     config.add_extension(
-        'cython_optimize.tests.examples.zeros_struct_examples',
-        sources=[os.path.join(cython_optimize_tests, 'examples',
-                              'zeros_struct_examples.c')])
+        'cython_optimize.tests.zeros_examples',
+        sources=[os.path.join(cython_optimize_tests, 'zeros_examples.c')])
     config.add_extension(
-        'cython_optimize.tests.examples.zeros_struct_alt_examples',
-        sources=[os.path.join(cython_optimize_tests, 'examples',
-                              'zeros_struct_alt_examples.c')])
+        'cython_optimize.tests.zeros_alt_examples',
+        sources=[os.path.join(cython_optimize_tests, 'zeros_alt_examples.c')])
 
     config.add_subpackage('_shgo_lib')
     config.add_data_dir('_shgo_lib')

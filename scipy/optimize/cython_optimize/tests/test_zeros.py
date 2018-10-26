@@ -7,7 +7,7 @@ Tests for Cython Optimize API
 
 from __future__ import division, print_function, absolute_import
 import numpy as np
-from .examples import zeros_struct_examples, zeros_struct_alt_examples
+from . import zeros_examples, zeros_alt_examples
 
 
 EXPECTED_BISECT = [
@@ -25,14 +25,14 @@ EXPECTED_BISECT = [
 
 
 # test bisect
-def test_zeros_struct_cython_bisect():
+def test_zeros_cython_bisect():
     assert np.allclose(EXPECTED_BISECT,
-                       list(zeros_struct_examples.test_cython_bisect()))
+                       list(zeros_examples.test_cython_bisect()))
 
 
-def test_zeros_struct_alt_cython_bisect():
+def test_zeros_alt_cython_bisect():
     assert np.allclose(EXPECTED_BISECT,
-                       list(zeros_struct_alt_examples.test_cython_bisect()))
+                       list(zeros_alt_examples.test_cython_bisect()))
 
 
 EXPECTED_RIDDER = [
@@ -50,9 +50,9 @@ EXPECTED_RIDDER = [
 
 
 # test ridder
-def test_zeros_struct_cython_ridder():
+def test_zeros_cython_ridder():
     assert np.allclose(EXPECTED_RIDDER,
-                       list(zeros_struct_examples.test_cython_ridder()))
+                       list(zeros_examples.test_cython_ridder()))
 
 
 EXPECTED_BRENT = [
@@ -70,12 +70,12 @@ EXPECTED_BRENT = [
 
 
 # test brenth
-def test_zeros_struct_cython_brenth():
+def test_zeros_cython_brenth():
     assert np.allclose(EXPECTED_BRENT,
-                       list(zeros_struct_examples.test_cython_brenth()))
+                       list(zeros_examples.test_cython_brenth()))
 
 
 # test brentq
-def test_zeros_struct_cython_brentq():
+def test_zeros_cython_brentq():
     assert np.allclose(EXPECTED_BRENT,
-                       list(zeros_struct_examples.test_cython_brentq()))
+                       list(zeros_examples.test_cython_brentq()))

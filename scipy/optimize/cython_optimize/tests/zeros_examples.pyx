@@ -9,7 +9,7 @@ from math import sin
 import cython
 from libc.math cimport exp
 
-from ... cimport zeros_struct
+from .. cimport zeros
 
 # test parameter structure
 ctypedef struct test_params:
@@ -52,7 +52,7 @@ cdef double solarcell_bisect(tuple args):
     myargs.series_resistance = args[3]
     myargs.shunt_resistance = args[4]
     myargs.thermal_voltage = args[5]
-    return zeros_struct.bisect(f_solarcell, 7.0, 0.0, <test_params *> &myargs, XTOL, RTOL, MITR, NULL)
+    return zeros.bisect(f_solarcell, 7.0, 0.0, <test_params *> &myargs, XTOL, RTOL, MITR, NULL)
 
 
 # test cython bisect in a loop
@@ -70,7 +70,7 @@ cdef double solarcell_ridder(tuple args):
     myargs.series_resistance = args[3]
     myargs.shunt_resistance = args[4]
     myargs.thermal_voltage = args[5]
-    return zeros_struct.ridder(f_solarcell, 7.0, 0.0, <test_params *> &myargs, XTOL, RTOL, MITR, NULL)
+    return zeros.ridder(f_solarcell, 7.0, 0.0, <test_params *> &myargs, XTOL, RTOL, MITR, NULL)
 
 
 # test cython ridder in a loop
@@ -88,7 +88,7 @@ cdef double solarcell_brenth(tuple args):
     myargs.series_resistance = args[3]
     myargs.shunt_resistance = args[4]
     myargs.thermal_voltage = args[5]
-    return zeros_struct.brenth(f_solarcell, 7.0, 0.0, <test_params *> &myargs, XTOL, RTOL, MITR, NULL)
+    return zeros.brenth(f_solarcell, 7.0, 0.0, <test_params *> &myargs, XTOL, RTOL, MITR, NULL)
 
 
 # test cython brenth in a loop
@@ -106,7 +106,7 @@ cdef double solarcell_brentq(tuple args):
     myargs.series_resistance = args[3]
     myargs.shunt_resistance = args[4]
     myargs.thermal_voltage = args[5]
-    return zeros_struct.brentq(f_solarcell, 7.0, 0.0, <test_params *> &myargs, XTOL, RTOL, MITR, NULL)
+    return zeros.brentq(f_solarcell, 7.0, 0.0, <test_params *> &myargs, XTOL, RTOL, MITR, NULL)
 
 
 # test cython brentq in a loop
