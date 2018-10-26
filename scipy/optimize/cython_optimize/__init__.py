@@ -15,52 +15,25 @@ or with Cython ``prange``. Import the module into Cython as follows::
 
     from scipy.optimize cimport cython_optimize
 
-Callback Signatures
--------------------
-Three different callback signatures can be used with the root finders. The functions are grouped by callback signatures into
-Cython modules that can be imported using ``cimport``.
+
+Callback Signature
+------------------
+There is currently only one callback signature that can be used with the root
+finders accessible from Cython.
 
     double (*callback_type)(double, void*)
-    double (*callback_type_array)(int, double*)
-    double (*callback_type_tuple)(double, tuple)
 
-Import the module with the desired callback type.
 
 ``cython_optimize.zeros_struct``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 The root-finders in this module use a callback that takes a double with the
 scalar independent variable as the 1st argument and a user defined ``struct``
-with any extra parameters as the 2nd. ::
+with any extra parameters as the 2nd argument. ::
 
 Import the module into Cython as follows::
 
     from scipy.optimize.cython_optimize cimport zeros_struct
 
-``cython_optimize.zeros_array``
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-The root-finders in this module use a callback that takes an integer with the
-number of extra parameters as the 1st argument and an array of doubles with any
-extra parameters as the 2nd. Even if the integer is unused in your callback, it
-must still be in the signature, because an internal wrapper will use it to
-prepend the scalar independent variable to the array, which is then passed to
-your callback. Therefore, in your callback, the independent variable must be
-the first element in the array, followed by the extra parameters.  Also the
-maximum number of extra parameters is hard-coded as ``MAXARGS = 10``. ::
-
-Import the module into Cython as follows::
-
-    from scipy.optimize.cython_optimize cimport zeros_array
-
-``cython_optimize.zeros_tuple``
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-The root-finders in this module use a callback that takes a double with the
-scalar independent variable as the 1st argument and a Python tuple with any
-extra parameters as the 2nd. Therefore this signature is *not* safe to use with
-``nogil``. ::
-
-Import the module into Cython as follows::
-
-    from scipy.optimize.cython_optimize cimport zeros_tuple
 
 Examples
 --------
@@ -69,14 +42,10 @@ callbacks that are compiled into C.
 
 These are the basic steps to use ``scipy.optimize.cython_optimize``:
 
-1. Select a callback signature, for example:
-   ``scipy.optimize.cython_optimize.zeros_struct``
-2. Select the root finder, for example:
-   ``scipy.optimize.cython_optimize.zeros_struct.brentq``
-3. Create a Cython ``.pyx`` file that imports the zeros module with the
-   selected callback signature, create the callback(s) using the selected
-   signature, and call the selected root-finder passing the callback(s), any
-   extra arguments, and the other solver parameters ::
+1. Create a Cython ``.pyx`` file
+2. Import the ``zeros_struct`` module
+3. Write the callback function, and call the selected root-finder passing the
+   callback, any extra arguments, and the other solver parameters ::
 
        import math
        from scipy.optimize.cython_optimize cimport zeros_struct
@@ -96,8 +65,10 @@ These are the basic steps to use ``scipy.optimize.cython_optimize``:
 
        cdef double brentq_wrapper_example(dict args, double xa, double xb,
                                           double xtol, double rtol, int mitr):
-           cdef test_params myargs = args  # Cython automatically casts dictionary to struct
-           return zeros_struct.brentq(f, xa, xb, <test_params *> &myargs, xtol, rtol, mitr, NULL)
+           # Cython automatically casts dictionary to struct
+           cdef test_params myargs = args  
+           return zeros_struct.brentq(
+               f, xa, xb, <test_params *> &myargs, xtol, rtol, mitr, NULL)
 
 
        def brentq_example(args=ARGS, xa=0.5, xb=1.0, xtol=XTOL, rtol=RTOL, mitr=MITR):
@@ -109,6 +80,7 @@ These are the basic steps to use ``scipy.optimize.cython_optimize``:
 
 4. If you want to call your function from Python, create a wrapper
 5. Create a Cython ``.pxd`` file if you need to export any Cython functions
+
 
 Full Output
 -----------
@@ -125,11 +97,21 @@ The error number returned is -1 for a sign error, and -2 for a convergence
 error. All other values mean the solver converged. Note that the full output
 ``struct`` must be cast to ``scipy_zeros_parameters``. ::
 
-    from scipy.optimize.cython_optimize cimport zeros_tuple
-    from scipy.optimize.cython_optimize.examples.zeros_tuple_examples cimport f_solarcell
+    from scipy.optimize.cython_optimize cimport zeros_struct
+    from scipy.optimize.cython_optimize.tests.examples.zeros_struct_examples \
+        cimport f_solarcell
 
-    ARGS = (5.25, 6.0, 1e-09, 0.004, 10.0, 0.27456)
+    ARGS = {'dark_current': 1e-09, 'series_resistance': 0.004,
+            'shunt_resistance': 10.0, 'thermal_voltage': 0.27456}
     XTOL, RTOL, MITR = 0.001, 0.001, 10
+
+    ctypedef struct test_params:
+        double voltage
+        double light_current
+        double dark_current
+        double series_resistance
+        double shunt_resistance
+        double thermal_voltage
 
     ctypedef struct scipy_brent_full_output:
         int funcalls
@@ -139,12 +121,13 @@ error. All other values mean the solver converged. Note that the full output
 
     # cython brentq solver with full output
     cdef scipy_brent_full_output solarcell_brent_full_output(
-            tuple args, double xa, double xb, double xtol, double rtol,
+            dict args, double xa, double xb, double xtol, double rtol,
             int mitr):
+        cdef test_params myargs = args
         cdef scipy_brent_full_output full_output
-        full_output.root = zeros_tuple.brentq(
-            f_solarcell, xa, xb, args, xtol, rtol, mitr,
-            <zeros_tuple.scipy_zeros_parameters *> &full_output)
+        full_output.root = zeros_struct.brentq(
+            f_solarcell, xa, xb, <test_params *> &myargs, xtol, rtol, mitr,
+            <zeros_struct.scipy_zeros_parameters *> &full_output)
         return full_output
 
 
