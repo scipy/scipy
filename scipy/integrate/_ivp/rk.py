@@ -103,7 +103,7 @@ class RungeKutta(OdeSolver):
                 self.fun, self.t, self.y, self.f, self.direction,
                 self.order, self.rtol, self.atol)
         else:
-            self.h_abs = validate_first_step(first_step, t_bound, t0)
+            self.h_abs = validate_first_step(first_step, t0, t_bound)
         self.K = np.empty((self.n_stages + 1, self.n), dtype=self.y.dtype)
 
     def _step_impl(self):

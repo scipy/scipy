@@ -8,7 +8,7 @@ from scipy.sparse import find, coo_matrix
 EPS = np.finfo(float).eps
 
 
-def validate_first_step(first_step, t_bound, t0):
+def validate_first_step(first_step, t0, t_bound):
     """Assert that first_step is valid and return it."""
     if first_step <= 0:
         raise ValueError("`first_step` must be positive.")

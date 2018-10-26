@@ -111,7 +111,7 @@ class LSODA(OdeSolver):
         if first_step is None:
             first_step = 0  # LSODA value for automatic selection.
         else:
-            first_step = validate_first_step(first_step, t_bound, t0)
+            first_step = validate_first_step(first_step, t0, t_bound)
 
         if t_bound - t0 < 0 and first_step is not None:
             first_step *= -1
