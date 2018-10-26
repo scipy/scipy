@@ -21,11 +21,20 @@ typedef struct {
 #define INPROGRESS 1
 
 typedef double (*callback_type)(double,void*);
-typedef double (*solver_type)(callback_type, double, double, double, double, int,void *, scipy_zeros_info*);
+typedef double (*solver_type)(callback_type, double, double, double, double,
+                              int, void *, scipy_zeros_info*);
 
-extern double bisect(callback_type f, double xa, double xb, double xtol, double rtol, int iter, void *func_data, scipy_zeros_info *solver_stats);
-extern double ridder(callback_type f, double xa, double xb, double xtol, double rtol, int iter, void *func_data, scipy_zeros_info *solver_stats);
-extern double brenth(callback_type f, double xa, double xb, double xtol, double rtol, int iter, void *func_data, scipy_zeros_info *solver_stats);
-extern double brentq(callback_type f, double xa, double xb, double xtol, double rtol, int iter, void *func_data, scipy_zeros_info *solver_stats);
+extern double bisect(callback_type f, double xa, double xb, double xtol,
+                     double rtol, int iter, void *func_data,
+                     scipy_zeros_info *solver_stats);
+extern double ridder(callback_type f, double xa, double xb, double xtol,
+                     double rtol, int iter, void *func_data,
+                     scipy_zeros_info *solver_stats);
+extern double brenth(callback_type f, double xa, double xb, double xtol,
+                     double rtol, int iter, void *func_data,
+                     scipy_zeros_info *solver_stats);
+extern double brentq(callback_type f, double xa, double xb, double xtol,
+                     double rtol, int iter, void *func_data,
+                     scipy_zeros_info *solver_stats);
 
 #endif

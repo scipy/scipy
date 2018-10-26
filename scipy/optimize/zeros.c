@@ -37,14 +37,15 @@ typedef enum {
     CB_D_USERDATA = 1001     // f(x, void *) or f(x, const void *) using UserData
 } zeros_signature_t;
 
-static const ccallback_signature_t signatures_with_args[] = {
+static ccallback_signature_t signatures_with_args[] = {
     {"double (double, double)", CB_D_D},
-    {"double (double, void const *)", CB_D_VOIDSTAR},
-    {"double (double, void *)", CB_D_VOIDSTAR},
+    // Disable any support for passing in void * using the kwarg args=XXX
+//    {"double (double, void const *)", CB_D_VOIDSTAR},
+//    {"double (double, void *)", CB_D_VOIDSTAR},
     {NULL}
 };
 
-static const ccallback_signature_t signatures_no_args[] = {
+static ccallback_signature_t signatures_no_args[] = {
     {"double (double)", CB_D},
     {"double (double, void const *)", CB_D_USERDATA},
     {"double (double, void *)", CB_D_USERDATA},
@@ -178,10 +179,9 @@ static int fill_in_ccallback(PyObject *f, PyObject *xargs, ccallback_t *pcallbac
     int bHasArgs = (xargs && PyTuple_Check(xargs) && PyTuple_GET_SIZE(xargs) > 0);
 
     /* f was filled in previously by PyArg_ParseTuple */
-    const ccallback_signature_t *sigs =  (
+    ccallback_signature_t *sigs =  (
         bHasArgs ? signatures_with_args : signatures_no_args);
-    if (ccallback_prepare(pcallback, (ccallback_signature_t *)sigs,
-                          f, CCALLBACK_DEFAULTS)) {
+    if (ccallback_prepare(pcallback, sigs, f, CCALLBACK_DEFAULTS)) {
         return FALSE;
     }
 
@@ -212,31 +212,31 @@ static int fill_in_ccallback(PyObject *f, PyObject *xargs, ccallback_t *pcallbac
             }
             break;
 
-        case CB_D_VOIDSTAR:
-            if (xargs && PyTuple_Check(xargs) && PyTuple_GET_SIZE(xargs) == 1) {
-                PyObject *item = PyTuple_GET_ITEM(xargs, 0);
-                // Expecting an object created by ctypes.pointer (E.g. c_void_p gives a CDataObject)
-                // [ ctypes.byref returns CArgObject, more difficult to deal with.  It has a "_obj" member.]
-                // Assume it is a CDataObject
-                if (PyObject_HasAttrString(item, "value") ) {
-                    void **p = NULL;
-                    PyObject * p2 = PyObject_GetAttrString(item, "value");
-                    assert(p2);
-                    p = malloc(sizeof(void *));
-                    *p = PyLong_AsVoidPtr(p2);
-                    Py_DECREF(p2);
-                    pcallback->info = 1;
-                    pcallback->info_p = p;
-                    use_ccallback = TRUE;
-                } else {
-                    PyErr_SetString(PyExc_ValueError,
-                        "Unable to Extract value from xargs.");
-                }
-            } else {
-                PyErr_SetString(PyExc_ValueError,
-                    "Wrong number of extra arguments for void *.");
-            }
-            break;
+//        case CB_D_VOIDSTAR:
+//            if (xargs && PyTuple_Check(xargs) && PyTuple_GET_SIZE(xargs) == 1) {
+//                PyObject *item = PyTuple_GET_ITEM(xargs, 0);
+//                // Expecting an object created by ctypes.pointer (E.g. c_void_p gives a CDataObject)
+//                // [ ctypes.byref returns CArgObject, more difficult to deal with.  It has a "_obj" member.]
+//                // Assume it is a CDataObject
+//                if (PyObject_HasAttrString(item, "value") ) {
+//                    void **p = NULL;
+//                    PyObject * p2 = PyObject_GetAttrString(item, "value");
+//                    assert(p2);
+//                    p = malloc(sizeof(void *));
+//                    *p = PyLong_AsVoidPtr(p2);
+//                    Py_DECREF(p2);
+//                    pcallback->info = 1;
+//                    pcallback->info_p = p;
+//                    use_ccallback = TRUE;
+//                } else {
+//                    PyErr_SetString(PyExc_ValueError,
+//                        "Unable to Extract value from xargs.");
+//                }
+//            } else {
+//                PyErr_SetString(PyExc_ValueError,
+//                    "Wrong number of extra arguments for void *.");
+//            }
+//            break;
 
         case CB_D_USERDATA:
             // Is the data passed in, or stored in user_data?
@@ -249,7 +249,8 @@ static int fill_in_ccallback(PyObject *f, PyObject *xargs, ccallback_t *pcallbac
             break;
 
         default:
-        // FUTURE: Set an error string?
+            PyErr_SetString(PyExc_ValueError,
+                "Unexpected callback signature->value.");
             break;
     }
     return use_ccallback;
