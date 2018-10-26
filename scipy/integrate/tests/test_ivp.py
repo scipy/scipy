@@ -491,7 +491,9 @@ def test_first_step():
 
             assert_raises(ValueError, method, fun_rational, t_span[0], y0,
                           t_span[1], first_step=-1)
-                
+            assert_raises(ValueError, method, fun_rational, t_span[0], y0,
+                          t_span[1], first_step=5)
+    
 
 def test_t_eval():
     rtol = 1e-3

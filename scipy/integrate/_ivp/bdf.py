@@ -196,7 +196,7 @@ class BDF(OdeSolver):
                                              self.direction, 1,
                                              self.rtol, self.atol)
         else:
-            self.h_abs = validate_first_step(first_step)
+            self.h_abs = validate_first_step(first_step, t_bound, t0)
         self.h_abs_old = None
         self.error_norm_old = None
 
