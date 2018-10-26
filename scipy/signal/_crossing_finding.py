@@ -70,20 +70,20 @@ def _boolcross(data, threshold, cross_type, axis=0, mode='clip'):
     """
     datalen = data.shape[axis]
     locs = np.arange(0, datalen)
+    if threshold is None:
+        threshold = data.mean(axis=axis, keepdims=True)
+
+    shape = list(data.shape)
+    shape[axis] = 1
+    padding = np.zeros(shape, dtype=bool)
 
     comparator_1, comparator_2 = _select_cross_comparator(cross_type)
 
-    main = data.take(locs, axis=axis, mode=mode)
-    main_aux = data.take(locs[1:], axis=axis, mode=mode)
-    shape = list(main.shape)
-    shape[axis] = 1
-
-    threshold = (main.mean(axis=axis).reshape(shape)
-                 if threshold is None else threshold)
-    cond_1 = comparator_1(main, threshold)
-    cond_2 = np.concatenate([comparator_2(main_aux, threshold),
-                             np.zeros(shape, dtype=bool)], axis=axis)
-    return cond_1 & cond_2
+    arr = data.take(locs[:-1], axis=axis, mode=mode)
+    cond = comparator_1(arr, threshold)
+    data.take(locs[1:], axis=axis, mode=mode, out=arr)
+    cond &= comparator_2(arr, threshold)
+    return np.concatenate([cond, padding], axis=axis)
 
 
 def argupcross(x, threshold=None, axis=0, mode='clip'):
