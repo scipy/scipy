@@ -690,9 +690,8 @@ def solve_toeplitz(c_or_cr, b, check_finite=True):
     else:
         b_shape = b.shape
         b = b.reshape(b.shape[0], -1)
-        x = np.column_stack(
-            (levinson(vals, np.ascontiguousarray(b[:, i]))[0])
-            for i in range(b.shape[1]))
+        x = np.column_stack([levinson(vals, np.ascontiguousarray(b[:, i]))[0]
+                             for i in range(b.shape[1])])
         x = x.reshape(*b_shape)
 
     return x

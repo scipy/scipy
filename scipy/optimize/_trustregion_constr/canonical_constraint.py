@@ -144,8 +144,8 @@ class CanonicalConstraint(object):
 
         n_eq = sum(c.n_eq for c in canonical_constraints)
         n_ineq = sum(c.n_ineq for c in canonical_constraints)
-        keep_feasible = np.array(np.hstack((
-            c.keep_feasible for c in canonical_constraints)), dtype=bool)
+        keep_feasible = np.hstack([c.keep_feasible for c in
+                                   canonical_constraints])
 
         return cls(n_eq, n_ineq, fun, jac, hess, keep_feasible)
 
