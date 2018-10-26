@@ -1632,7 +1632,7 @@ class TestUnitaryGroup(object):
 
         # The angles "x" of the eigenvalues should be uniformly distributed
         # Overall this seems to be a necessary but weak test of the distribution.
-        eigs = np.vstack(scipy.linalg.eigvals(x) for x in xs)
+        eigs = np.vstack([scipy.linalg.eigvals(x) for x in xs])
         x = np.arctan2(eigs.imag, eigs.real)
         res = kstest(x.ravel(), uniform(-np.pi, 2*np.pi).cdf)
         assert_(res.pvalue > 0.05)
