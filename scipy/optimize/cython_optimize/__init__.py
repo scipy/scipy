@@ -33,7 +33,8 @@ Import the module into Cython as follows::
 Examples
 --------
 Usage of ``scipy.optimize.cython_optimize`` requires Cython to write callbacks
-that are compiled into C.
+that are compiled into C. For more information on compiling Cython see the
+`Cython Documentation <http://docs.cython.org/en/latest/index.html>`_.
 
 These are the basic steps:
 
@@ -46,6 +47,7 @@ These are the basic steps:
        from scipy.optimize.cython_optimize cimport zeros
 
        ARGS = {'C0': 1.0, 'C1': 0.7}  # a dictionary of extra arguments
+       XLO, XHI = 0.5, 1.0  # lower and upper search boundaries
        XTOL, RTOL, MITR = 1e-3, 1e-3, 10  # other solver parameters
 
        # user defined struct for extra parameters
@@ -60,6 +62,7 @@ These are the basic steps:
            return myargs.C0 - math.exp(-(x - myargs.C1))
 
 
+       # Cython wrapper function
        cdef double brentq_wrapper_example(dict args, double xa, double xb,
                                           double xtol, double rtol, int mitr):
            # Cython automatically casts dictionary to struct
@@ -68,8 +71,10 @@ These are the basic steps:
                f, xa, xb, <test_params *> &myargs, xtol, rtol, mitr, NULL)
 
 
-       def brentq_example(args=ARGS, xa=0.5, xb=1.0, xtol=XTOL, rtol=RTOL,
+       # Python function
+       def brentq_example(args=ARGS, xa=XLO, xb=XHI, xtol=XTOL, rtol=RTOL,
                           mitr=MITR):
+           '''Calls Cython wrapper from Python.'''
            return brentq_wrapper_example(args, xa, xb, xtol, rtol, mitr)
 
 
@@ -92,51 +97,42 @@ If you don't want the full output just pass ``NULL``. The full output
 - ``iterations``: number of iterations
 - ``error_num``: error number
 
-The error number returned is -1 for a sign error, and -2 for a convergence
-error. All other values mean the solver converged. Note that the full output
-``struct`` must be cast to ``scipy_zeros_parameters``. ::
+An error number of -1 means a sign error, -2 means a convergence error, and 0
+means the solver converged. Note that the full output ``struct`` must be cast
+to ``scipy_zeros_parameters``. Continuing from the previous example::
 
-    from scipy.optimize.cython_optimize cimport zeros
-    from scipy.optimize.cython_optimize.tests.examples cimport zeros_examples
 
-    ARGS = {'dark_current': 1e-09, 'series_resistance': 0.004,
-            'shunt_resistance': 10.0, 'thermal_voltage': 0.27456}
-    XTOL, RTOL, MITR = 0.001, 0.001, 10
-
-    ctypedef struct test_params:
-        double voltage
-        double light_current
-        double dark_current
-        double series_resistance
-        double shunt_resistance
-        double thermal_voltage
-
+    # user defined full output structure with required fields
     ctypedef struct scipy_brent_full_output:
         int funcalls
         int iterations
         int error_num
         double root
 
+
     # cython brentq solver with full output
-    cdef scipy_brent_full_output solarcell_brent_full_output(
+    cdef scipy_brent_full_output brentq_full_output_wrapper_example(
             dict args, double xa, double xb, double xtol, double rtol,
             int mitr):
         cdef test_params myargs = args
-        cdef scipy_brent_full_output full_output
+        cdef scipy_brent_full_output full_output  # used instead of NULL
+        # put result into full_output
         full_output.root = zeros.brentq(
-            zeros_examples.f_solarcell, xa, xb, <test_params *> &myargs, xtol,
-            rtol, mitr, <zeros.scipy_zeros_parameters *> &full_output)
+            f, xa, xb, <test_params *> &myargs, xtol, rtol, mitr,
+            <zeros.scipy_zeros_parameters *> &full_output)
         return full_output
 
 
-    def test_brent_full_output(args=ARGS, xa=0.0, xb=6.0, xtol=XTOL, rtol=RTOL,
-                               mitr=MITR):
-        '''test brent with full output'''
-        return solarcell_brent_full_output(args, xa, xb, xtol, rtol, mitr)
+    # Python function
+    def brent_full_output_example(args=ARGS, xa=XLO, xb=XHI, xtol=XTOL,
+                                  rtol=RTOL, mitr=MITR):
+        '''Returns full output'''
+        return brentq_full_output_wrapper_example(args, xa, xb, xtol, rtol,
+                                                  mitr)
 
-    result = test_brent_full_output()
-    # {'funcalls': 4,
-    #  'iterations': 3,
-    #  'error_num': 281790720,
-    #  'root': 5.255231961257658}
+    result = brent_full_output_example()
+    # {'error_num': 0,
+    #  'funcalls': 6,
+    #  'iterations': 5,
+    #  'root': 0.6999942848231314}
 """

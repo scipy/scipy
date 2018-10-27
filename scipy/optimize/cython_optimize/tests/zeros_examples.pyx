@@ -5,14 +5,23 @@ free the global interpreter lock.
 
 from .. cimport zeros
 
-# extra parameters
-ctypedef struct extra_params:
-    double[4] a
-
 ARGS = (0.0, 0.0, 1.0)
 A0 = tuple(-2.0 - x/10.0 for x in range(10))
 XLO, XHI = 0.0, 2.0
 XTOL, RTOL, MITR = 0.001, 0.001, 10
+
+
+# extra parameters
+ctypedef struct extra_params:
+    double[4] a
+
+
+# full output structure
+ctypedef struct full_output_struct:
+    int funcalls
+    int iterations
+    int error_num
+    double root
 
 
 # callabck function
@@ -71,3 +80,19 @@ def loop_example(method, a0=A0, args=ARGS):
         return map(brentq_example, args)
     else:
         raise ValueError('unrecognized method')
+
+
+# brentq example with full ouptut
+cdef full_output_struct brentq_full_output_example(tuple args):
+    cdef full_output_struct full_output
+    cdef extra_params myargs
+    myargs.a = args
+    full_output.root = zeros.brentq(
+        f_example, XLO, XHI, <extra_params *> &myargs, XTOL, RTOL, MITR,
+        <zeros.scipy_zeros_parameters *> &full_output)
+    return full_output
+
+
+# python function
+def full_output_example():
+    return brentq_full_output_example((A0[0],) + ARGS)

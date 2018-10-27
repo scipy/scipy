@@ -81,3 +81,13 @@ EXPECTED_BRENTQ = [
 def test_brentq():
     assert np.allclose(EXPECTED_BRENTQ,
                        list(zeros_examples.loop_example('brentq')))
+                       
+
+# test brentq with full output
+def test_brentq_full_output():
+    output = zeros_examples.full_output_example()
+    print(output)
+    assert np.isclose(EXPECTED_BRENTQ[0], output['root'])
+    assert np.isclose(6, output['iterations'])
+    assert np.isclose(7, output['funcalls'])
+    assert np.isclose(0, output['error_num'])
