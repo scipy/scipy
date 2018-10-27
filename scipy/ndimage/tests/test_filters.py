@@ -10,7 +10,7 @@ from pytest import raises as assert_raises
 
 import scipy.ndimage as sndi
 from scipy.ndimage.filters import _gaussian_kernel1d, rank_filter
-
+from scipy._lib._numpy_compat import suppress_warnings
 
 def test_ticket_701():
     # Test generic filter sizes
@@ -435,3 +435,13 @@ def test_rank_filter_noninteger_rank():
     arr = np.random.random((10, 20, 30))
     assert_raises(ValueError, rank_filter, arr, 0.5, footprint=np.ones((1, 1, 10),
                   dtype=bool))
+    
+
+def test_size_footprint_both_set():
+    # test for input validation, expect user warning when
+    # size and footprint is set
+    with suppress_warnings() as sup:
+        sup.filter(UserWarning,
+                   "ignoring size because footprint is set")
+        arr = np.random.random((10, 20, 30))
+        rank_filter(arr, 5, size=2, footprint=np.ones((1, 1, 10), dtype=bool))
