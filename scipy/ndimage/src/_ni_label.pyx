@@ -431,7 +431,7 @@ cpdef _label(np.ndarray input,
                     line_buffer[i] = mergetable[line_buffer[i]]
                 write_line(PyArray_ITER_DATA(ito), so, line_buffer, L)
                 PyArray_ITER_NEXT(ito)
-    except:
+    except:  # noqa: E722
         # clean up and re-raise
         PyDataMem_FREE(<void *> mergetable)
         raise

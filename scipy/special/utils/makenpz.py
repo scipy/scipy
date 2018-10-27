@@ -15,7 +15,7 @@ from distutils.util import newer
 
 
 def main():
-    p = argparse.ArgumentParser(usage=__doc__.strip())
+    p = argparse.ArgumentParser(usage=(__doc__ or '').strip())
     p.add_argument('--use-timestamp', action='store_true', default=False,
                    help="don't rewrite npz file if it is newer than sources")
     p.add_argument('dirname')

@@ -10,13 +10,13 @@ def _minimize_trust_krylov(fun, x0, args=(), jac=None, hess=None, hessp=None,
     a nearly exact trust-region algorithm that only requires matrix
     vector products with the hessian matrix.
 
+    .. versionadded:: 1.0.0
+
     Options
     -------
     inexact : bool, optional
         Accuracy to solve subproblems. If True requires less nonlinear
         iterations, but more vector products.
-
-    .. versionadded:: 1.0.0
     """
 
     if jac is None:

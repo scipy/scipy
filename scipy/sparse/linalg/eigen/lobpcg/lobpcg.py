@@ -11,9 +11,6 @@ Examples in tests directory contributed by Nils Wagner.
 """
 
 from __future__ import division, print_function, absolute_import
-
-import sys
-
 import numpy as np
 from numpy.testing import assert_allclose
 from scipy._lib.six import xrange
@@ -227,7 +224,7 @@ def lobpcg(A, X,
     ratio ``n``/``m`` should be large. It you call the LOBPCG code with ``m``=1
     and ``n``=10, it should work, though ``n`` is small. The method is intended
     for extremely large ``n``/``m``, see e.g., reference [28] in
-    http://arxiv.org/abs/0705.2626
+    https://arxiv.org/abs/0705.2626
 
     The convergence speed depends basically on two factors:
 
@@ -254,11 +251,11 @@ def lobpcg(A, X,
            Toward the Optimal Preconditioned Eigensolver: Locally Optimal
            Block Preconditioned Conjugate Gradient Method.
            SIAM Journal on Scientific Computing 23, no. 2,
-           pp. 517-541. http://dx.doi.org/10.1137/S1064827500366124
+           pp. 517-541. :doi:`10.1137/S1064827500366124`
 
     .. [2] A. V. Knyazev, I. Lashuk, M. E. Argentati, and E. Ovchinnikov (2007),
            Block Locally Optimal Preconditioned Eigenvalue Xolvers (BLOPEX)
-           in hypre and PETSc.  http://arxiv.org/abs/0705.2626
+           in hypre and PETSc.  https://arxiv.org/abs/0705.2626
 
     .. [3] A. V. Knyazev's C and MATLAB implementations:
            https://bitbucket.org/joseroman/blopex
@@ -344,7 +341,7 @@ def lobpcg(A, X,
         try:
             # gramYBY is a Cholesky factor from now on...
             gramYBY = cho_factor(gramYBY)
-        except:
+        except Exception:
             raise ValueError('cannot handle linearly dependent constraints')
 
         _applyConstraints(blockVectorX, gramYBY, blockVectorBY, blockVectorY)

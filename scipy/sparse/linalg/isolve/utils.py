@@ -4,7 +4,6 @@ __docformat__ = "restructuredtext en"
 
 __all__ = []
 
-from warnings import warn
 
 from numpy import asanyarray, asarray, asmatrix, array, matrix, zeros
 

@@ -87,7 +87,7 @@ def check_kurt_expect(distfn, arg, m, v, k, msg):
         m4e = distfn.expect(lambda x: np.power(x-m, 4), arg)
         npt.assert_allclose(m4e, (k + 3.) * np.power(v, 2), atol=1e-5, rtol=1e-5,
                 err_msg=msg + ' - kurtosis')
-    else:
+    elif not np.isposinf(k):
         npt.assert_(np.isnan(k))
 
 
@@ -100,6 +100,22 @@ def check_private_entropy(distfn, args, superclass):
     # compare a generic _entropy with the distribution-specific implementation
     npt.assert_allclose(distfn._entropy(*args),
                         superclass._entropy(distfn, *args))
+
+
+def check_entropy_vect_scale(distfn, arg):
+    # check 2-d
+    sc = np.asarray([[1, 2], [3, 4]])
+    v_ent = distfn.entropy(*arg, scale=sc)
+    s_ent = [distfn.entropy(*arg, scale=s) for s in sc.ravel()]
+    s_ent = np.asarray(s_ent).reshape(v_ent.shape)
+    assert_allclose(v_ent, s_ent, atol=1e-14)
+
+    # check invalid value, check cast
+    sc = [1, 2, -3]
+    v_ent = distfn.entropy(*arg, scale=sc)
+    s_ent = [distfn.entropy(*arg, scale=s) for s in sc]
+    s_ent = np.asarray(s_ent).reshape(v_ent.shape)
+    assert_allclose(v_ent, s_ent, atol=1e-14)
 
 
 def check_edge_support(distfn, args):

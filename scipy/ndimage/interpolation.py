@@ -35,7 +35,6 @@ import numpy
 from . import _ni_support
 from . import _nd_image
 from . import _ni_docstrings
-from functools import wraps
 
 import warnings
 
@@ -607,7 +606,7 @@ def _minmax(coor, minc, maxc):
         maxc[1] = coor[1]
     return minc, maxc
 
-
+@_ni_docstrings.docfiller
 def rotate(input, angle, axes=(1, 0), reshape=True, output=None, order=3,
            mode='constant', cval=0.0, prefilter=True):
     """

@@ -4,14 +4,11 @@ from os.path import join
 
 
 def configuration(parent_package='',top_path=None):
-    from numpy.distutils.system_info import get_info, NotFoundError
+    from scipy._build_utils.system_info import get_info, NotFoundError
     from numpy.distutils.misc_util import Configuration
-    from scipy._build_utils import get_g77_abi_wrappers, get_sgemv_fix
+    from scipy._build_utils import get_g77_abi_wrappers
 
     lapack_opt = get_info('lapack_opt')
-
-    if not lapack_opt:
-        raise NotFoundError('no lapack/blas resources found')
 
     config = Configuration('arpack', parent_package, top_path)
 
@@ -24,7 +21,6 @@ def configuration(parent_package='',top_path=None):
                        include_dirs=[join('ARPACK', 'SRC')])
 
     ext_sources = ['arpack.pyf.src']
-    ext_sources += get_sgemv_fix(lapack_opt)
     config.add_extension('_arpack',
                          sources=ext_sources,
                          libraries=['arpack_scipy'],

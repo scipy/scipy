@@ -147,7 +147,7 @@ can use a new keyword ``lapack_driver="gelss"`` (allowed values are
 
 ``scipy.sparse`` matrices and linear operators now support the matmul (``@``)
 operator when available (Python 3.5+). See
-[PEP 465](http://legacy.python.org/dev/peps/pep-0465/)
+[PEP 465](https://legacy.python.org/dev/peps/pep-0465/)
 
 A new function `scipy.linalg.ordqz`, for QZ decomposition with reordering, has
 been added.
@@ -227,7 +227,7 @@ automatically rebuilt after every merged pull request.
 `scipy.constants` is updated to the CODATA 2014 recommended values.
 
 Usage of `scipy.fftpack` functions within Scipy has been changed in such a
-way that `PyFFTW <http://hgomersall.github.io/pyFFTW/>`__ can easily replace
+way that `PyFFTW <https://hgomersall.github.io/pyFFTW/>`__ can easily replace
 `scipy.fftpack` functions (with improved performance).  See
 `gh-5295 <https://github.com/scipy/scipy/pull/5295>`__ for details.
 

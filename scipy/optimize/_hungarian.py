@@ -115,7 +115,7 @@ def linear_sum_assignment(cost_matrix):
         marked = state.marked.T
     else:
         marked = state.marked
-    return np.where(marked == 1)
+    return np.nonzero(marked == 1)
 
 
 class _Hungary(object):
@@ -156,7 +156,7 @@ def _step1(state):
     # Step 2: Find a zero (Z) in the resulting matrix. If there is no
     # starred zero in its row or column, star Z. Repeat for each element
     # in the matrix.
-    for i, j in zip(*np.where(state.C == 0)):
+    for i, j in zip(*np.nonzero(state.C == 0)):
         if state.col_uncovered[j] and state.row_uncovered[i]:
             state.marked[i, j] = 1
             state.col_uncovered[j] = False

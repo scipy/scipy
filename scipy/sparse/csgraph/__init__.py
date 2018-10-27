@@ -121,9 +121,26 @@ Matrices may represent either directed or undirected graphs.  This is
 specified throughout the csgraph module by a boolean keyword.  Graphs are
 assumed to be directed by default. In a directed graph, traversal from node
 i to node j can be accomplished over the edge G[i, j], but not the edge
-G[j, i].  In a non-directed graph, traversal from node i to node j can be
+G[j, i].  Consider the following dense graph::
+
+    >>> G_dense = np.array([[0, 1, 0],
+    ...                     [2, 0, 3],
+    ...                     [0, 4, 0]])
+
+When ``directed=True`` we get the graph::
+
+      ---1--> ---3-->
+    (0)     (1)     (2)
+      <--2--- <--4---
+
+In a non-directed graph, traversal from node i to node j can be
 accomplished over either G[i, j] or G[j, i].  If both edges are not null,
 and the two have unequal weights, then the smaller of the two is used.
+
+So for the same graph, when ``directed=False`` we get the graph::
+
+    (0)--1--(1)--2--(2)
+
 Note that a symmetric matrix will represent an undirected graph, regardless
 of whether the 'directed' keyword is set to True or False.  In this case,
 using ``directed=True`` generally leads to more efficient computation.

@@ -77,6 +77,24 @@ def fixed_quad(func, a, b, args=(), n=5):
     ode : ODE integrator
     odeint : ODE integrator
 
+    Examples
+    --------
+    >>> from scipy import integrate
+    >>> f = lambda x: x**8
+    >>> integrate.fixed_quad(f, 0.0, 1.0, n=4)
+    (0.1110884353741496, None)
+    >>> integrate.fixed_quad(f, 0.0, 1.0, n=5)
+    (0.11111111111111102, None)
+    >>> print(1/9.0)  # analytical result
+    0.1111111111111111
+
+    >>> integrate.fixed_quad(np.cos, 0.0, np.pi/2, n=4)
+    (0.9999999771971152, None)
+    >>> integrate.fixed_quad(np.cos, 0.0, np.pi/2, n=5)
+    (1.000000000039565, None)
+    >>> np.sin(np.pi/2)-np.sin(0)  # analytical result
+    1.0
+
     """
     x, w = _cached_roots_legendre(n)
     x = np.real(x)
@@ -180,6 +198,20 @@ def quadrature(func, a, b, args=(), tol=1.49e-8, rtol=1.49e-8, maxiter=50,
     cumtrapz: cumulative integration for sampled data
     ode: ODE integrator
     odeint: ODE integrator
+
+    Examples
+    --------
+    >>> from scipy import integrate
+    >>> f = lambda x: x**8
+    >>> integrate.quadrature(f, 0.0, 1.0)
+    (0.11111111111111106, 4.163336342344337e-17)
+    >>> print(1/9.0)  # analytical result
+    0.1111111111111111
+
+    >>> integrate.quadrature(np.cos, 0.0, np.pi/2)
+    (0.9999999999999536, 3.9611425250996035e-11)
+    >>> np.sin(np.pi/2)-np.sin(0)  # analytical result
+    1.0
 
     """
     if not isinstance(args, tuple):
@@ -294,7 +326,7 @@ def cumtrapz(y, x=None, dx=1.0, axis=-1, initial=None):
 
         shape = list(res.shape)
         shape[axis] = 1
-        res = np.concatenate([np.ones(shape, dtype=res.dtype) * initial, res],
+        res = np.concatenate([np.full(shape, initial, dtype=res.dtype), res],
                              axis=axis)
 
     return res
@@ -505,13 +537,13 @@ def romb(y, dx=1.0, axis=-1, show=False):
     -0.742561336672229
 
     >>> integrate.romb(y, show=True)
-    Richardson Extrapolation Table for Romberg Integration       
+    Richardson Extrapolation Table for Romberg Integration
     ====================================================================
-    -0.81576 
-    4.63862  6.45674 
-    -1.10581 -3.02062 -3.65245 
-    -2.57379 -3.06311 -3.06595 -3.05664 
-    -1.34093 -0.92997 -0.78776 -0.75160 -0.74256 
+    -0.81576
+    4.63862  6.45674
+    -1.10581 -3.02062 -3.65245
+    -2.57379 -3.06311 -3.06595 -3.05664
+    -1.34093 -0.92997 -0.78776 -0.75160 -0.74256
     ====================================================================
     -0.742561336672229
     """
@@ -692,7 +724,7 @@ def romberg(function, a, b, args=(), tol=1.48e-8, rtol=1.48e-8, show=False,
 
     References
     ----------
-    .. [1] 'Romberg's method' http://en.wikipedia.org/wiki/Romberg%27s_method
+    .. [1] 'Romberg's method' https://en.wikipedia.org/wiki/Romberg%27s_method
 
     Examples
     --------
@@ -863,7 +895,7 @@ def newton_cotes(rn, equal=0):
             rn = np.arange(N+1)
         elif np.all(np.diff(rn) == 1):
             equal = 1
-    except:
+    except Exception:
         N = rn
         rn = np.arange(N+1)
         equal = 1

@@ -285,7 +285,7 @@ def num_jac(fun, t, y, f, threshold, factor, sparsity=None):
         return np.empty((0, 0)), factor
 
     if factor is None:
-        factor = np.ones(n) * EPS ** 0.5
+        factor = np.full(n, EPS ** 0.5)
     else:
         factor = factor.copy()
 
@@ -336,7 +336,7 @@ def _dense_num_jac(fun, t, y, f, h, factor, y_scale):
 
         update = max_diff[ind] * scale_new < max_diff_new * scale[ind]
         if np.any(update):
-            update, = np.where(update)
+            update, = np.nonzero(update)
             update_ind = ind[update]
             factor[update_ind] = new_factor[update]
             h[update_ind] = h_new[update]
@@ -405,7 +405,7 @@ def _sparse_num_jac(fun, t, y, f, h, factor, y_scale, structure, groups):
 
         update = max_diff[ind] * scale_new < max_diff_new * scale[ind]
         if np.any(update):
-            update, = np.where(update)
+            update, = np.nonzero(update)
             update_ind = ind[update]
             factor[update_ind] = new_factor[update]
             h[update_ind] = h_new[update]

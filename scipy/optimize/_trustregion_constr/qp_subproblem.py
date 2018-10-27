@@ -566,7 +566,7 @@ def projected_cg(H, c, Z, Y, b, trust_radius=np.inf,
                 # Reinforce variables are inside box constraints.
                 # This is only necessary because of roundoff errors.
                 x = reinforce_box_boundaries(x, lb, ub)
-                # Atribute information
+                # Attribute information
                 stop_cond = 3
                 hits_boundary = True
                 break
@@ -586,7 +586,7 @@ def projected_cg(H, c, Z, Y, b, trust_radius=np.inf,
             # Reinforce variables are inside box constraints.
             # This is only necessary because of roundoff errors.
             x = reinforce_box_boundaries(x, lb, ub)
-            # Atribute information
+            # Attribute information
             stop_cond = 2
             hits_boundary = True
             break

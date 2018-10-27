@@ -75,7 +75,7 @@ def _get_output(output, input, shape=None):
         output = numpy.zeros(shape, dtype=input.dtype.name)
     elif type(output) in [type(type), type(numpy.zeros((4,)).dtype)]:
         output = numpy.zeros(shape, dtype=output)
-    elif type(output) in string_types:
+    elif isinstance(output, string_types):
         output = numpy.typeDict[output]
         output = numpy.zeros(shape, dtype=output)
     elif output.shape != shape:

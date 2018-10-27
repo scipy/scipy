@@ -91,7 +91,7 @@ def generate_matrix(N, complex=False, hermitian=False,
             if sparse:
                 i = np.random.randint(N, size=N * N // 4)
                 j = np.random.randint(N, size=N * N // 4)
-                ind = np.where(i == j)
+                ind = np.nonzero(i == j)
                 j[ind] = (j[ind] + 1) % N
                 M[i,j] = 0
                 M[j,i] = 0
@@ -132,7 +132,7 @@ def assert_allclose_cc(actual, desired, **kw):
     """Almost equal or complex conjugates almost equal"""
     try:
         assert_allclose(actual, desired, **kw)
-    except:
+    except AssertionError:
         assert_allclose(actual, conj(desired), **kw)
 
 

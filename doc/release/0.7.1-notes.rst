@@ -38,7 +38,7 @@ Bugs fixed:
 
 - #883: scipy.io.mmread with scipy.sparse.lil_matrix broken
 - lil_matrix and csc_matrix reject now unexpected sequences,
-  cf. http://thread.gmane.org/gmane.comp.python.scientific.user/19996
+  cf. http://thread.gmane.org/gmane.comp.python.scientific.user/19996 (dead link)
 
 scipy.special
 =============

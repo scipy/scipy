@@ -60,7 +60,7 @@ def tukeylambda_variance(lam):
     -----
     In an interval around lambda=0, this function uses the [4,4] Pade
     approximation to compute the variance.  Otherwise it uses the standard
-    formula (http://en.wikipedia.org/wiki/Tukey_lambda_distribution).  The
+    formula (https://en.wikipedia.org/wiki/Tukey_lambda_distribution).  The
     Pade approximation is used because the standard formula has a removable
     discontinuity at lambda = 0, and does not produce accurate numerical
     results near lambda = 0.

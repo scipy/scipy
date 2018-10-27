@@ -33,7 +33,7 @@ from __future__ import division, print_function, absolute_import
 # otherwise the key would be inserted into userspace attributes.
 
 
-__all__ = ['netcdf_file']
+__all__ = ['netcdf_file', 'netcdf_variable']
 
 
 import sys
