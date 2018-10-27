@@ -10,6 +10,7 @@ from scipy._lib.six import xrange
 from scipy.signal.wavelets import cwt, ricker
 from scipy.stats import scoreatpercentile
 
+from ._crossing_finding import argupcross
 from ._peak_finding_utils import (
     _local_maxima_1d,
     _select_by_peak_distance,
@@ -1301,24 +1302,28 @@ def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None,
 
 def _merge_clusters(peaks_above, peaks_below, runs=0):
     """
-    Generator that merges naive peak clusters according to some declustering rule.
-    
+    Generator that merges naive peak clusters according to some declustering
+    rule.
+
     Parameters
     ----------
     peaks_above : sequence
-        Sequence of arrays with indecies of peaks above a thershold within a cluster.
+        Sequence of arrays with indecies of peaks above a thershold within a
+        cluster.
     peaks_below : sequence
-        Sequence of arrays with indecies of peaks below a thershold within a cluster.
+        Sequence of arrays with indecies of peaks below a thershold within a
+        cluster.
     runs : int
-        Minimum required number of peaks below a threshold to sustain a cluster. If  
-        number of peaks below a threshold is lower than ``runs`` then the cluster is
-        merged with the subsequent cluster.
+        Minimum required number of peaks below a threshold to sustain a
+        cluster. If number of peaks below a threshold is lower than ``runs``
+        then the cluster is merged with the subsequent cluster.
 
     Yields
     ------
-    cluster : array
-        Array with indecies of peaks above a threshold within a (merged) cluster.
-    
+    peaks : array
+        Array with indecies of peaks above a threshold within a (merged)
+        cluster.
+
     """
     buffer = []
     for pa, pb in zip(peaks_above, peaks_below):
@@ -1336,13 +1341,14 @@ def decluster_peaks(x, x_th=None, method='mean', order=1, runs=0):
     """
     Find and decluster peaks inside a signal.
 
-    This function takes a one-dimensional array, finds all local maxima
-    above a threshold, divides them into clusters, and ultimately applies a
+    This function takes a one-dimensional array, finds all local maxima above a
+    threshold, divides them into clusters, and ultimately applies a
     declustering method.
-    
-    Declustering is a pragmatic method to sub-sample peaks from stationary stochastic
-    signals to (hopefully) achieve statistical independence. Statistical independence
-    is often a key assumption in further statistial analysis of peaks.
+
+    Declustering is a pragmatic method to sub-sample peaks from stationary
+    stochastic signals to (hopefully) achieve statistical independence.
+    Statistical independence is often a key assumption in further statistial
+    analysis of peaks.
 
     Parameters
     ----------
@@ -1350,56 +1356,64 @@ def decluster_peaks(x, x_th=None, method='mean', order=1, runs=0):
         A signal with peaks.
     x_th : number or ndarray or sequence
         Only peaks above this threshold is selected. The threshold is also used
-        as a declustering parameter. If ``None`` is passed, the mean of the signal
-        is used.
+        as a declustering parameter. If ``None`` is passed, the mean of the
+        signal is used.
     method : str
-        The declustering method to use. Accepts ``mean`` or ``runs``. See Notes.
+        The declustering method to use. Accepts ``mean`` or ``runs``. See
+        Notes.
     order : int
         N-th (>= 1) largest peaks to return from each cluster. For instance,
-        ``order = 1`` yields the largest, ``order = 2`` yields the two largest, ...,
-        from each cluster.
+        ``order = 1`` yields the largest, ``order = 2`` yields the two largest,
+        ..., from each cluster.
     runs : int
-        Required parameter for declustering. Only used if ``method``
-        is ``runs`` and ignored otherwise.
-    
+        Required parameter for declustering. Only used if ``method`` is
+        ``runs`` and ignored otherwise.
+
     Returns
     -------
     peaks : tuple
-        Tuple with arrays containing the indecies of selected peaks in each cluster.
-    
+        Tuple with arrays containing the indecies of selected peaks in each
+        cluster.
+
     Notes
     -----
     TBA
-    
+
+    References
+    ----------
+    TBA
+
     """
     x = _arg_x_as_expected(x)
-    
+
     if x_th is None:
         x_th = x.mean()
-    
+
     if method == 'mean':
-        runs = 0 
+        runs = 0
         x_up = x.mean()
     elif method == 'runs':
         x_up = x_th
     else:
         raise ValueError("method must be 'mean' or 'runs.'")
 
-    index = np.arange(len(x) ,dtype=int)
+    index = np.arange(len(x), dtype=int)
     crossups, = argupcross(x, threshold=x_up)
 
     boolthreshold = (x > x_th)
     boolrelmax = _boolrelextrema(x, np.greater)
-    boolrelmax_above = boolrelmax & boolthreshold 
+    boolrelmax_above = boolrelmax & boolthreshold
     boolrelmax_below = boolrelmax & ~boolthreshold
 
     peaks_above = []
     peaks_below = []
     for i, j in zip(crossups[:-1], crossups[1:]):
-        index_i = index[i:j] 
+        index_i = index[i:j]
         peaks_above.append(index_i[boolrelmax_above[i:j]])
         peaks_below.append(index_i[boolrelmax_below[i:j]])
 
-    peaks = tuple(block[x[block].argsort()[-order:]]
-              for block in _merge_clusters(peaks_above, peaks_below, runs=runs))
+    peaks = tuple(
+        block[x[block].argsort()[-order:]]
+        for block in _merge_clusters(peaks_above, peaks_below, runs=runs)
+        )
     return peaks
