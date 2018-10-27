@@ -113,8 +113,7 @@ class LSODA(OdeSolver):
         else:
             first_step = validate_first_step(first_step, t0, t_bound)
 
-        if t_bound - t0 < 0 and first_step is not None:
-            first_step *= -1
+        first_step *= self.direction
 
         if max_step == np.inf:
             max_step = 0  # LSODA value for infinity.
