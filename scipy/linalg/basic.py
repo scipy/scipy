@@ -34,9 +34,9 @@ def _solve_check(n, info, lamch=None, rcond=None):
         return
     E = lamch('E')
     if rcond < E:
-        warn('scipy.linalg.solve\nIll-conditioned matrix detected. Result '
-             'is not guaranteed to be accurate.\nReciprocal condition '
-             'number{:.6e}'.format(rcond), LinAlgWarning, stacklevel=3)
+        warn('Ill-conditioned matrix (rcond={:.6g}): '
+             'result may not be accurate.'.format(rcond),
+             LinAlgWarning, stacklevel=3)
 
 
 def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
