@@ -257,6 +257,4 @@ def test_verbosity():
     X = linalg.orth(V)
 
     eigs,vecs = lobpcg(A, X, B=B, tol=1e-5, maxiter=30, largest=False,
-                       verbosityLevel=1)
-    eigs,vecs = lobpcg(A, X, B=B, tol=1e-5, maxiter=30, largest=False,
-                       verbosityLevel=10)
+                       verbosityLevel=11)
