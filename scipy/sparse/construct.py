@@ -665,7 +665,6 @@ def block_diag(mats, format='coo', dtype=None):
 
     """
     dtype = np.dtype(dtype)
-    nmat = len(mats)
     row = []
     col = []
     data = []
