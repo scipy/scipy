@@ -20,15 +20,10 @@ from scipy.sparse.linalg import aslinearoperator, LinearOperator
 __all__ = ['lobpcg']
 
 
-def pause():
-    # Used only when verbosity level > 10.
-    input()
-
-
 def save(ar, fileName):
     # Used only when verbosity level > 10.
     from numpy import savetxt
-    savetxt(fileName, ar, precision=8)
+    savetxt(fileName, ar)
 
 
 def _report_nonhermitian(M, a, b, name):
@@ -530,7 +525,6 @@ def lobpcg(A, X,
 
         if verbosityLevel > 10:
             print(eigBlockVector)
-            pause()
 
         ##
         # Compute Ritz vectors.
@@ -559,7 +553,6 @@ def lobpcg(A, X,
             print(pp)
             print(app)
             print(bpp)
-            pause()
 
         blockVectorX = np.dot(blockVectorX, eigBlockVectorX) + pp
         blockVectorAX = np.dot(blockVectorAX, eigBlockVectorX) + app
