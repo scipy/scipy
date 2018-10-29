@@ -6,7 +6,7 @@ import itertools
 
 import numpy as np
 from numpy.testing import (assert_almost_equal, assert_equal,
-        assert_allclose, assert_array_less)
+                           assert_allclose, assert_array_less)
 
 from scipy import ones, rand, r_, diag, linalg, eye
 from scipy.linalg import eig, eigh, toeplitz
@@ -14,6 +14,8 @@ import scipy.sparse
 from scipy.sparse.linalg.eigen.lobpcg import lobpcg
 from scipy.sparse.linalg import eigs
 from scipy.sparse import spdiags
+
+import pytest
 
 def ElasticRod(n):
     # Fixed-free elastic rod
@@ -230,27 +232,17 @@ def test_hermitian():
             j = np.argmin(abs(w0 - wx))
             assert_allclose(wx, w0[j], rtol=1e-4)
 
-def test_eigs_consistency():
-    n = 20
+# The n=5 case tests the alternative small matrix code path that uses eigh().
+@pytest.mark.parametrize('n, atol', [(20, 1e-3), (5, 1e-8)])
+def test_eigs_consistency(n, atol):
     vals = np.arange(1, n+1, dtype=np.float64)
     A = spdiags(vals, 0, n, n)
     X = np.random.rand(n, 2)
-    lvals20, lvecs20 = lobpcg(A, X, largest=True, maxiter=100)
-    vals20, vecs20 = eigs(A, k=2)
+    lvals, lvecs = lobpcg(A, X, largest=True, maxiter=100)
+    vals, vecs = eigs(A, k=2)
 
-    _check_eigen(A, lvals20, lvecs20, atol=1e-3, rtol=0)
-    assert_allclose(vals20, lvals20, atol=1e-14)
-
-    # This tests the alternative branch using eigh().
-    n = 5
-    vals = np.arange(1, n+1, dtype=np.float64)
-    A = spdiags(vals, 0, n, n)
-    X = np.random.rand(n, 2)
-    lvals5, lvecs5 = lobpcg(A, X, largest=True, maxiter=100)
-    vals5, vecs5 = eigs(A, k=2)
-
-    _check_eigen(A, lvals5, lvecs5)
-    assert_allclose(vals5, lvals5, atol=1e-14)
+    _check_eigen(A, lvals, lvecs, atol=atol, rtol=0)
+    assert_allclose(vals, lvals, atol=1e-14)
 
 def test_verbosity():
     """Check that nonzero verbosity level code runs.
