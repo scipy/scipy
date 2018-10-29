@@ -860,20 +860,68 @@ class TestDeclusterPeaks(object):
         assert_equal(len(peaks_expected), len(peaks_merged))
         assert_equal(peaks_expected, peaks_merged)
 
-    def test_gaussian_nochecks_mean(self):
+    def test_method_mean_check_actual_peaks(self):
         t = np.arange(0., 360., 0.1)
         test_data = _gen_gaussian_signal(t, (0.5, 5), 150)
         peaks = decluster_peaks(test_data, x_th=None, method='mean', order=1)
         peaks = np.concatenate(peaks)
 
-    def test_gaussian_nochecks_runs(self):
+        for p_index in peaks:
+            assert (test_data[p_index-1] <= test_data[p_index] >= test_data[p_index+1])
+
+    def test_method_runs_check_actual_peaks(self):
         t = np.arange(0., 360., 0.1)
         test_data = _gen_gaussian_signal(t, (0.5, 5), 150)
         peaks = decluster_peaks(test_data, x_th=None, method='runs', order=2,
                                 runs=2)
         peaks = np.concatenate(peaks)
 
+        for p_index in peaks:
+            assert (test_data[p_index-1] <= test_data[p_index] >= test_data[p_index+1])
+
     def test_no_peaks(self):
         test_data = np.arange(500)
         peaks = decluster_peaks(test_data, x_th=None, method='mean')
         assert_equal(len(peaks), 0)
+
+    def test_simple_mean_order_1(self):
+        test_data = np.array(
+            [-1., 0., 1., 0.5, 2., 1., 0., -0.5,
+             -1., 0., 2., 0.5, 1., 1., 0., -1, 0., 0.5])
+        peaks_exptected = (np.array([4]), np.array([10]))
+        peaks = decluster_peaks(test_data, method='mean', order=1)
+        assert_equal(peaks, peaks_exptected)
+
+    def test_simple_mean_order_2(self):
+        test_data = np.array(
+            [-1., 0., 1., 0.5, 2., 1., 0., -0.5,
+             -1., 0., 2., 0.5, 1., 1., 0., -1, 0., 0.5])
+        peaks_exptected = (np.array([2, 4]), np.array([12, 10]))
+        peaks = decluster_peaks(test_data, method='mean', order=2)
+        assert_equal(peaks, peaks_exptected)
+
+    def test_simple_runs_1_order_1(self):
+        test_data = np.array(
+            [-1., 0., 1., 0.5, 2., 1., 0., -0.5, -1., -0.5,
+             -1., -0.5, -1., 0., 3., 0.5, 1., 1., 0., -1,
+             0., 0.5, -1., 0., 1., 0.5, 2., 1., 0., -0.5,
+             -1., -0.5, -1., -0.5, -1., 0., 3., 0.5, 1., 1.,
+             0., -1, 0., 0.5])
+
+        peaks_exptected = (
+            np.array([4]), np.array([14]), np.array([36]))
+        peaks = decluster_peaks(test_data, method='runs', order=1, runs=1)
+        assert_equal(peaks, peaks_exptected)
+
+    def test_simple_runs_2_order_2(self):
+        test_data = np.array(
+            [-1., 0., 1., 0.5, 2., 1., 0., -0.5, -1., -0.5,
+             -1., -0.5, -1., 0., 3., 0.5, 1., 1., 0., -1,
+             0., 0.5, -1., 0., 1., 0.5, 2., 1., 0., -0.5,
+             -1., -0.5, -1., -0.5, -1., 0., 3., 0.5, 1., 1.,
+             0., -1, 0., 0.5])
+
+        peaks_exptected = (
+            np.array([2, 4]), np.array([26, 14]), np.array([36]))
+        peaks = decluster_peaks(test_data, x_th=0.5, method='runs', order=2, runs=2)
+        assert_equal(peaks, peaks_exptected)
