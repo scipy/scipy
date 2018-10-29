@@ -1309,10 +1309,10 @@ def _merge_clusters(peaks_above, peaks_below, runs=0):
     ----------
     peaks_above : sequence
         Sequence of arrays with indecies of peaks above a thershold within a
-        cluster.
+        cluster. Assumes that clusters and indecies are sorted.
     peaks_below : sequence
         Sequence of arrays with indecies of peaks below a thershold within a
-        cluster.
+        cluster. Assumes that clusters and indecies are sorted.
     runs : int
         Minimum required number of peaks below a threshold to sustain a
         cluster. If number of peaks below a threshold is lower than ``runs``

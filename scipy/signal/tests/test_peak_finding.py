@@ -21,9 +21,23 @@ from scipy.signal._peak_finding import (
     _unpack_condition_args,
     find_peaks,
     find_peaks_cwt,
-    _identify_ridge_lines
+    _identify_ridge_lines,
+    _merge_clusters,
+    decluster_peaks
 )
 from scipy.signal._peak_finding_utils import _local_maxima_1d, PeakPropertyWarning
+
+
+def _gen_gaussian_signal(t, freq_range, freq_div):
+    """Generate (white) Gaussian signal."""
+    amp = np.random.randn(freq_div)
+    phase = 2.*np.pi*np.random.rand(freq_div)
+    freq = np.linspace(freq_range[0], freq_range[1], num=freq_div)
+
+    x = np.zeros(len(t))
+    for freq_i, amp_i, phase_i in zip(freq, amp, phase):
+        x += amp_i*np.cos(freq_i*t + phase_i)
+    return x
 
 
 def _gen_gaussians(center_locs, sigmas, total_length):
@@ -822,3 +836,44 @@ class TestFindPeaksCwt(object):
         widths = np.arange(10, 50)
         found_locs = find_peaks_cwt(test_data, widths, min_snr=5, noise_perc=30)
         np.testing.assert_equal(len(found_locs), 0)
+
+
+class TestDeclusterPeaks(object):
+
+    def test_merge_clusters_nomerge(self):
+        peaks_above = [np.array([2, 4, 8]), np.array([15, 19]), np.array([24])]
+        peaks_below = [np.array([11, 13]), np.array([]), np.array([21])]
+
+        peaks_merged = [
+            p for p in _merge_clusters(peaks_above, peaks_below, runs=0)]
+        assert_equal(len(peaks_above), len(peaks_merged))
+        assert_equal(peaks_above, peaks_merged)
+
+    def test_merge_clusters_merge(self):
+        peaks_above = [np.array([2, 4, 8]), np.array([15, 19]), np.array([24])]
+        peaks_below = [np.array([11, 13]), np.array([]), np.array([21])]
+
+        peaks_expected = [np.array([2, 4, 8]), np.array([15, 19, 24])]
+
+        peaks_merged = [
+            p for p in _merge_clusters(peaks_above, peaks_below, runs=1)]
+        assert_equal(len(peaks_expected), len(peaks_merged))
+        assert_equal(peaks_expected, peaks_merged)
+
+    def test_gaussian_nochecks_mean(self):
+        t = np.arange(0., 360., 0.1)
+        test_data = _gen_gaussian_signal(t, (0.5, 5), 150)
+        peaks = decluster_peaks(test_data, x_th=None, method='mean', order=1)
+        peaks = np.concatenate(peaks)
+
+    def test_gaussian_nochecks_runs(self):
+        t = np.arange(0., 360., 0.1)
+        test_data = _gen_gaussian_signal(t, (0.5, 5), 150)
+        peaks = decluster_peaks(test_data, x_th=None, method='runs', order=2,
+                                runs=2)
+        peaks = np.concatenate(peaks)
+
+    def test_no_peaks(self):
+        test_data = np.arange(500)
+        peaks = decluster_peaks(test_data, x_th=None, method='mean')
+        assert_equal(len(peaks), 0)
