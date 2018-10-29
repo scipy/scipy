@@ -1331,7 +1331,7 @@ class TestYeojohnsonNormmax(object):
 
     def test_darwin_example(self):
         # test from original paper "A new family of power transformations to
-        # improve "normality or symmetry by Yeo and Johnson.
+        # improve normality or symmetry" by Yeo and Johnson.
         x = [6.1, -8.4, 1.0, 2.0, 0.7, 2.9, 3.5, 5.1, 1.8, 3.6, 7.0, 3.0, 9.3,
              7.5, -6.0]
         lmbda = stats.yeojohnson_normmax(x)
