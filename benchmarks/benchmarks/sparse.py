@@ -196,12 +196,12 @@ class Construction(Benchmark):
 
 class BlockDiagConstruction(Benchmark):
     param_names = ['num_matrices']
-    params = [ 1000, 5000, 10000, 15000, 20000 ]
+    params = [1000, 5000, 10000, 15000, 20000]
     
     def setup(self, num_matrices):
         self.matrices = []
         for i in range(num_matrices):
-            rows = np.random.randint(1,  4)
+            rows = np.random.randint(1, 4)
             columns = np.random.randint(1, 4)
             mat = np.random.randint(0, 10, (rows, columns))
             self.matrices.append(mat)
