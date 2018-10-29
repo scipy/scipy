@@ -1813,7 +1813,8 @@ def bartlett(*args):
     Parameters
     ----------
     sample1, sample2,... : array_like
-        arrays of sample data.  May be different lengths.
+        arrays of sample data.  Only 1d arrays are accepted, they may have
+        different lengths.
 
     Returns
     -------
@@ -1832,7 +1833,8 @@ def bartlett(*args):
     Conover et al. (1981) examine many of the existing parametric and
     nonparametric tests by extensive simulations and they conclude that the
     tests proposed by Fligner and Killeen (1976) and Levene (1960) appear to be
-    superior in terms of robustness of departures from normality and power [3]_.
+    superior in terms of robustness of departures from normality and power
+    ([3]_).
 
     References
     ----------
@@ -1851,10 +1853,12 @@ def bartlett(*args):
            Mathematical and Physical Sciences, Vol. 160, No.901, pp. 268-282.
 
     """
-    # Handle empty input
+    # Handle empty input and input that is not 1d
     for a in args:
         if np.asanyarray(a).size == 0:
             return BartlettResult(np.nan, np.nan)
+        if np.asanyarray(a).ndim > 1:
+            raise ValueError('Samples must be one-dimensional.')
 
     k = len(args)
     if k < 2:
@@ -1890,7 +1894,8 @@ def levene(*args, **kwds):
     Parameters
     ----------
     sample1, sample2, ... : array_like
-        The sample data, possibly with different lengths
+        The sample data, possibly with different lengths. Only one-dimensional
+        samples are accepted.
     center : {'mean', 'median', 'trimmed'}, optional
         Which function of the data to use in the test.  The default
         is 'median'.
@@ -1914,6 +1919,11 @@ def levene(*args, **kwds):
       * 'median' : Recommended for skewed (non-normal) distributions>
       * 'mean' : Recommended for symmetric, moderate-tailed distributions.
       * 'trimmed' : Recommended for heavy-tailed distributions.
+
+    The test version using the mean was proposed in the original article
+    of Levene ([2]_) while the median and trimmed mean have been studied by
+    Brown and Forsythe ([3]_), sometimes also referred to as Brown-Forsythe
+    test.
 
     References
     ----------
@@ -1940,12 +1950,17 @@ def levene(*args, **kwds):
     k = len(args)
     if k < 2:
         raise ValueError("Must enter at least two input sample vectors.")
+    # check for 1d input
+    for j in range(k):
+        if np.asanyarray(args[j]).ndim > 1:
+            raise ValueError('Samples must be one-dimensional.')
+
     Ni = zeros(k)
     Yci = zeros(k, 'd')
 
     if center not in ['mean', 'median', 'trimmed']:
         raise ValueError("Keyword argument <center> must be 'mean', 'median'"
-                        " or 'trimmed'.")
+                         " or 'trimmed'.")
 
     if center == 'median':
         func = lambda x: np.median(x, axis=0)
