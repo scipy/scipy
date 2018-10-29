@@ -1335,6 +1335,8 @@ def _merge_clusters(peaks_above, peaks_below, runs=0):
                 buffer = []
         else:
             buffer.append(pa)
+    if buffer:
+        yield np.concatenate(buffer)
 
 
 def decluster_peaks(x, x_th=None, method='mean', order=1, runs=0):
@@ -1400,8 +1402,11 @@ def decluster_peaks(x, x_th=None, method='mean', order=1, runs=0):
     index = np.arange(len(x), dtype=int)
     crossups, = argupcross(x, threshold=x_up)
 
+    boolrelmax = np.zeros(len(x), dtype=bool)
+    index_p, _, _ = _local_maxima_1d(x)
+    boolrelmax[index_p] = True
+
     boolthreshold = (x > x_th)
-    boolrelmax = _boolrelextrema(x, np.greater)
     boolrelmax_above = boolrelmax & boolthreshold
     boolrelmax_below = boolrelmax & ~boolthreshold
 
