@@ -18,7 +18,7 @@ b = np.array([0.074, 1.014, -0.383])
 
 class BaseMixin(object):
     def setup_method(self):
-        self.rnd = np.random.RandomState(1)
+        self.rnd = np.random.RandomState(0)
 
     def test_dense_no_bounds(self):
         for lsq_solver in self.lsq_solvers:
