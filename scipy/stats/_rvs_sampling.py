@@ -13,7 +13,8 @@ def rvs_ratio_uniforms(pdf, umax, vmin, vmax, size=1, c=0, random_state=None):
     Parameters
     ----------
     pdf : callable
-        The probability density function of the distribution.
+        A function with signature `pdf(x)` that is the probability
+        density function of the distribution.
     vmin : float
         The lower bound of the bounding rectangle in the x-direction.
     vmax : float
@@ -32,8 +33,8 @@ def rvs_ratio_uniforms(pdf, umax, vmin, vmax, size=1, c=0, random_state=None):
     Returns
     -------
     rvs : ndarray
-        the random variates distributed according to the probability
-        distribution defined by the pdf
+        The random variates distributed according to the probability
+        distribution defined by the pdf.
 
     Notes
     -----
@@ -65,7 +66,9 @@ def rvs_ratio_uniforms(pdf, umax, vmin, vmax, size=1, c=0, random_state=None):
     distributed on ``R`` such that ``(U, V)`` is also in ``A`` is given by
     the ratio ``area(R) / area(A) = 2 * umax * (vmax - vmin)``, using the fact
     that the area of ``A`` is equal to 1/2 (Theorem 7.1 in [1]_). A warning
-    is displayed if this ratio is larger than 20.
+    is displayed if this ratio is larger than 20. Moreover, if the sampling
+    fails to generate a single random variate after 50'000 iterations (i.e.
+    not a single draw is in ``A``), an exception is raised.
 
     If the bounding rectangle is not correctly specified (i.e. if it does not
     contain ``A``), the algorithm samples from a distribution different from
@@ -136,9 +139,12 @@ def rvs_ratio_uniforms(pdf, umax, vmin, vmax, size=1, c=0, random_state=None):
     # start sampling using ratio of uniforms method
     rng = check_random_state(random_state)
     x = np.zeros(N)
-    simulated = 0
+    simulated, i = 0, 1
 
     # loop until N rvs have been generated: expected runtime is finite
+    # to avoid infinite loop, raise exception if not a single rv has been
+    # generated after 50000 tries. even if exp_iter = 1000, probability of
+    # this event is (1-1/1000)**50000 which is of order 10e-22
     while True:
         k = N - simulated
         # simulate uniform rvs on [0, umax] and [vmin, vmax]
@@ -154,3 +160,10 @@ def rvs_ratio_uniforms(pdf, umax, vmin, vmax, size=1, c=0, random_state=None):
             simulated += take
         if simulated >= N:
             return np.reshape(x, size1d)
+        if (simulated == 0) and (i*N >= 50000):
+            msg = "Not a single random variate could be generated in {} " \
+                  "attempts. The ratio of uniforms method does not appear " \
+                  "to work for the provided parameters. Please check the "\
+                  "pdf and the bounds.".format(i*N)
+            raise RuntimeError(msg)
+        i += 1
