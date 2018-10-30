@@ -116,6 +116,7 @@ from functools import partial
 from collections import namedtuple
 from scipy._lib.six import callable, string_types
 from scipy._lib.six import xrange
+from scipy._lib._util import _asarray_validated
 
 from . import _distance_wrap
 from . import _hausdorff
@@ -268,7 +269,7 @@ def _validate_mahalanobis_kwargs(X, m, n, **kwargs):
                              "are required." % (m, n, n + 1))
         CV = np.atleast_2d(np.cov(X.astype(np.double).T))
         VI = np.linalg.inv(CV).T.copy()
-    kwargs["VI"] = _copy_array_if_base_present(_convert_to_double(VI))
+    kwargs["VI"] = _convert_to_double(VI)
     return kwargs
 
 
@@ -337,7 +338,7 @@ def _validate_wminkowski_kwargs(X, m, n, **kwargs):
     if w is None:
         raise ValueError('weighted minkowski requires a weight '
                          'vector `w` to be given.')
-    kwargs['w'] = _convert_to_double(w)
+    kwargs['w'] = _validate_weights(w)
     if 'p' not in kwargs:
         kwargs['p'] = 2.
     return kwargs
@@ -1605,6 +1606,29 @@ _METRICS_NAMES = list(_METRICS.keys())
 _TEST_METRICS = {'test_' + name: globals()[name] for name in _METRICS.keys()}
 
 
+def _select_weighted_metric(mstr, kwargs, out):
+    kwargs = dict(kwargs)
+
+    if "w" in kwargs and kwargs["w"] is None:
+        # w=None is the same as omitting it
+        kwargs.pop("w")
+
+    if mstr.startswith("test_") or mstr in _METRICS['wminkowski'].aka:
+        # These support weights
+        pass
+    elif "w" in kwargs:
+        if (mstr in _METRICS['seuclidean'].aka or
+                mstr in _METRICS['mahalanobis'].aka):
+            raise ValueError("metric %s incompatible with weights" % mstr)
+
+        # XXX: C-versions do not support weights
+        # need to use python version for weighting
+        kwargs['out'] = out
+        mstr = "test_%s" % mstr
+
+    return mstr, kwargs
+
+
 def pdist(X, metric='euclidean', *args, **kwargs):
     """
     Pairwise distances between observations in n-dimensional space.
@@ -1860,12 +1884,11 @@ def pdist(X, metric='euclidean', *args, **kwargs):
     # between all pairs of vectors in X using the distance metric 'abc' but
     # with a more succinct, verifiable, but less efficient implementation.
 
+    X = _asarray_validated(X, sparse_ok=False, objects_ok=True, mask_ok=True,
+                           check_finite=False)
     kwargs = _args_to_kwargs_xdist(args, kwargs, metric, "pdist")
 
     X = np.asarray(X, order='c')
-
-    # The C code doesn't do striding.
-    X = _copy_array_if_base_present(X)
 
     s = X.shape
     if len(s) != 2:
@@ -1918,14 +1941,7 @@ def pdist(X, metric='euclidean', *args, **kwargs):
     elif isinstance(metric, string_types):
         mstr = metric.lower()
 
-        # NOTE: C-version still does not support weights
-        if "w" in kwargs and not mstr.startswith("test_"):
-            if(mstr in _METRICS['seuclidean'].aka or
-               mstr in _METRICS['mahalanobis'].aka):
-                raise ValueError("metric %s incompatible with weights" % mstr)
-            # need to use python version for weighting
-            kwargs['out'] = out
-            mstr = "test_%s" % mstr
+        mstr, kwargs = _select_weighted_metric(mstr, kwargs, out)
 
         metric_name = _METRIC_ALIAS.get(mstr, None)
 
@@ -2583,10 +2599,6 @@ def cdist(XA, XB, metric='euclidean', *args, **kwargs):
     XA = np.asarray(XA, order='c')
     XB = np.asarray(XB, order='c')
 
-    # The C code doesn't do striding.
-    XA = _copy_array_if_base_present(XA)
-    XB = _copy_array_if_base_present(XB)
-
     s = XA.shape
     sB = XB.shape
 
@@ -2645,14 +2657,7 @@ def cdist(XA, XB, metric='euclidean', *args, **kwargs):
     elif isinstance(metric, string_types):
         mstr = metric.lower()
 
-        # NOTE: C-version still does not support weights
-        if "w" in kwargs and not mstr.startswith("test_"):
-            if(mstr in _METRICS['seuclidean'].aka or
-               mstr in _METRICS['mahalanobis'].aka):
-                raise ValueError("metric %s incompatible with weights" % mstr)
-            # need to use python version for weighting
-            kwargs['out'] = out
-            mstr = "test_%s" % mstr
+        mstr, kwargs = _select_weighted_metric(mstr, kwargs, out)
 
         metric_name = _METRIC_ALIAS.get(mstr, None)
         if metric_name is not None:

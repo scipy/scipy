@@ -62,12 +62,8 @@ class TestBSpline(object):
         assert_equal(b.k, tck[2])
 
         # b.tck is read-only
-        try:
+        with pytest.raises(AttributeError):
             b.tck = 'foo'
-        except AttributeError:
-            pass
-        except:
-            raise AssertionError("AttributeError not raised.")
 
     def test_degree_0(self):
         xx = np.linspace(0, 1, 10)
@@ -410,7 +406,7 @@ class TestBSpline(object):
                          sh[:axis] + list(xp.shape) + sh[axis+1:])
 
             #0 <= axis < c.ndim
-            for ax in [-1, len(sh)+1]:
+            for ax in [-1, c.ndim]:
                 assert_raises(ValueError, BSpline, **dict(t=t, c=c, k=k, axis=ax))
 
             # derivative, antiderivative keeps the axis
@@ -630,9 +626,9 @@ class TestInterop(object):
             _impl.splrep(x, y2)
 
         # input below minimum size
-        with assert_raises(TypeError, message="m > k must hold"):
+        with assert_raises(TypeError, match="m > k must hold"):
             splrep(x[:3], y[:3])
-        with assert_raises(TypeError, message="m > k must hold"):
+        with assert_raises(TypeError, match="m > k must hold"):
             _impl.splrep(x[:3], y[:3])
 
     def test_splprep(self):
@@ -653,30 +649,30 @@ class TestInterop(object):
     def test_splprep_errors(self):
         # test that both "old" and "new" code paths raise for x.ndim > 2
         x = np.arange(3*4*5).reshape((3, 4, 5))
-        with assert_raises(ValueError, message="too many values to unpack"):
+        with assert_raises(ValueError, match="too many values to unpack"):
             splprep(x)
-        with assert_raises(ValueError, message="too many values to unpack"):
+        with assert_raises(ValueError, match="too many values to unpack"):
             _impl.splprep(x)
 
         # input below minimum size
         x = np.linspace(0, 40, num=3)
-        with assert_raises(TypeError, message="m > k must hold"):
+        with assert_raises(TypeError, match="m > k must hold"):
             splprep([x])
-        with assert_raises(TypeError, message="m > k must hold"):
+        with assert_raises(TypeError, match="m > k must hold"):
             _impl.splprep([x])
 
         # automatically calculated parameters are non-increasing
         # see gh-7589
         x = [-50.49072266, -50.49072266, -54.49072266, -54.49072266]
-        with assert_raises(ValueError, message="Invalid inputs"):
+        with assert_raises(ValueError, match="Invalid inputs"):
             splprep([x])
-        with assert_raises(ValueError, message="Invalid inputs"):
+        with assert_raises(ValueError, match="Invalid inputs"):
             _impl.splprep([x])
 
         # given non-increasing parameter values u
         x = [1, 3, 2, 4]
         u = [0, 0.3, 0.2, 1]
-        with assert_raises(ValueError, message="Invalid inputs"):
+        with assert_raises(ValueError, match="Invalid inputs"):
             splprep(*[[x], None, u])
 
     def test_sproot(self):
@@ -705,7 +701,7 @@ class TestInterop(object):
     def test_splint(self):
         # test that splint accepts BSpline objects
         b, b2 = self.b, self.b2
-        assert_allclose(splint(0, 1, b), 
+        assert_allclose(splint(0, 1, b),
                         splint(0, 1, b.tck), atol=1e-14)
         assert_allclose(splint(0, 1, b),
                         b.integrate(0, 1), atol=1e-14)
@@ -781,6 +777,7 @@ class TestInterop(object):
         assert_(isinstance(bn2, BSpline))
         assert_(isinstance(tck_n2, tuple))   # back-compat: tck in, tck out
 
+
 class TestInterp(object):
     #
     # Test basic ways of constructing interpolating splines.
@@ -791,9 +788,13 @@ class TestInterp(object):
     def test_order_0(self):
         b = make_interp_spline(self.xx, self.yy, k=0)
         assert_allclose(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
+        b = make_interp_spline(self.xx, self.yy, k=0, axis=-1)
+        assert_allclose(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
 
     def test_linear(self):
         b = make_interp_spline(self.xx, self.yy, k=1)
+        assert_allclose(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
+        b = make_interp_spline(self.xx, self.yy, k=1, axis=-1)
         assert_allclose(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
 
     def test_not_a_knot(self):
@@ -873,21 +874,39 @@ class TestInterp(object):
                 atol=1e-14)
 
     def test_minimum_points_and_deriv(self):
-        # interpolation of f(x) = x**3 between 0 and 1. f'(x) = 3 * xx**2 and 
+        # interpolation of f(x) = x**3 between 0 and 1. f'(x) = 3 * xx**2 and
         # f'(0) = 0, f'(1) = 3.
         k = 3
         x = [0., 1.]
         y = [0., 1.]
         b = make_interp_spline(x, y, k, bc_type=([(1, 0.)], [(1, 3.)]))
-        
+
         xx = np.linspace(0., 1.)
         yy = xx**3
         assert_allclose(b(xx), yy, atol=1e-14, rtol=1e-14)
-        
-        # If one of the derivatives is omitted, the spline definition is 
-        # incomplete:
-        assert_raises(ValueError, make_interp_spline, x, y, k, 
-                **dict(bc_type=([(1, 0.)], None)))
+
+    def test_deriv_spec(self):
+        # If one of the derivatives is omitted, the spline definition is
+        # incomplete.
+        x = y = [1.0, 2, 3, 4, 5, 6]
+
+        with assert_raises(ValueError):
+            make_interp_spline(x, y, bc_type=([(1, 0.)], None))
+
+        with assert_raises(ValueError):
+            make_interp_spline(x, y, bc_type=(1, 0.))
+
+        with assert_raises(ValueError):
+            make_interp_spline(x, y, bc_type=[(1, 0.)])
+
+        with assert_raises(ValueError):
+            make_interp_spline(x, y, bc_type=42)
+
+        # CubicSpline expects`bc_type=(left_pair, right_pair)`, while
+        # here we expect `bc_type=(iterable, iterable)`.
+        l, r = (1, 0.0), (1, 0.0)
+        with assert_raises(ValueError):
+            make_interp_spline(x, y, bc_type=(l, r))
 
     def test_complex(self):
         k = 3
@@ -935,6 +954,13 @@ class TestInterp(object):
             y[-1] = z
             assert_raises(ValueError, make_interp_spline, x, y)
 
+    @pytest.mark.parametrize('k', [1, 2, 3, 5])
+    def test_list_input(self, k):
+        # regression test for gh-8714: TypeError for x, y being lists and k=2
+        x = list(range(10))
+        y = [a**2 for a in x]
+        make_interp_spline(x, y, k=k)
+
     def test_multiple_rhs(self):
         yy = np.c_[np.sin(self.xx), np.cos(self.xx)]
         der_l = [(1, [1., 2.])]
@@ -959,6 +985,57 @@ class TestInterp(object):
         d_r = [(1, np.random.random((5, 6, 7)))]
         b = make_interp_spline(x, y, k, bc_type=(d_l, d_r))
         assert_equal(b.c.shape, (n + k - 1, 5, 6, 7))
+
+    def test_string_aliases(self):
+        yy = np.sin(self.xx)
+
+        # a single string is duplicated
+        b1 = make_interp_spline(self.xx, yy, k=3, bc_type='natural')
+        b2 = make_interp_spline(self.xx, yy, k=3, bc_type=([(2, 0)], [(2, 0)]))
+        assert_allclose(b1.c, b2.c, atol=1e-15)
+
+        # two strings are handled
+        b1 = make_interp_spline(self.xx, yy, k=3,
+                                bc_type=('natural', 'clamped'))
+        b2 = make_interp_spline(self.xx, yy, k=3,
+                                bc_type=([(2, 0)], [(1, 0)]))
+        assert_allclose(b1.c, b2.c, atol=1e-15)
+
+        # one-sided BCs are OK
+        b1 = make_interp_spline(self.xx, yy, k=2, bc_type=(None, 'clamped'))
+        b2 = make_interp_spline(self.xx, yy, k=2, bc_type=(None, [(1, 0.0)]))
+        assert_allclose(b1.c, b2.c, atol=1e-15)
+
+        # 'not-a-knot' is equivalent to None
+        b1 = make_interp_spline(self.xx, yy, k=3, bc_type='not-a-knot')
+        b2 = make_interp_spline(self.xx, yy, k=3, bc_type=None)
+        assert_allclose(b1.c, b2.c, atol=1e-15)
+
+        # unknown strings do not pass
+        with assert_raises(ValueError):
+            make_interp_spline(self.xx, yy, k=3, bc_type='typo')
+
+        # string aliases are handled for 2D values
+        yy = np.c_[np.sin(self.xx), np.cos(self.xx)]
+        der_l = [(1, [0., 0.])]
+        der_r = [(2, [0., 0.])]
+        b2 = make_interp_spline(self.xx, yy, k=3, bc_type=(der_l, der_r))
+        b1 = make_interp_spline(self.xx, yy, k=3,
+                                bc_type=('clamped', 'natural'))
+        assert_allclose(b1.c, b2.c, atol=1e-15)
+
+        # ... and for n-D values:
+        np.random.seed(1234)
+        k, n = 3, 22
+        x = np.sort(np.random.random(size=n))
+        y = np.random.random(size=(n, 5, 6, 7))
+
+        # now throw in some derivatives
+        d_l = [(1, np.zeros((5, 6, 7)))]
+        d_r = [(1, np.zeros((5, 6, 7)))]
+        b1 = make_interp_spline(x, y, k, bc_type=(d_l, d_r))
+        b2 = make_interp_spline(x, y, k, bc_type='clamped')
+        assert_allclose(b1.c, b2.c, atol=1e-15)
 
     def test_full_matrix(self):
         np.random.seed(1234)

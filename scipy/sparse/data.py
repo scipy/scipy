@@ -77,8 +77,13 @@ class _data_matrix(spmatrix):
 
     astype.__doc__ = spmatrix.astype.__doc__
 
-    def conj(self):
-        return self._with_data(self.data.conj())
+    def conj(self, copy=True):
+        if np.issubdtype(self.dtype, np.complexfloating):
+            return self._with_data(self.data.conj(), copy=copy)
+        elif copy:
+            return self.copy()
+        else:
+            return self
 
     conj.__doc__ = spmatrix.conj.__doc__
 
@@ -124,9 +129,8 @@ for npfunc in _ufuncs_with_fixed_point_at_zero:
 
     def _create_method(op):
         def method(self):
-            result = op(self.data)
-            x = self._with_data(result, copy=True)
-            return x
+            result = op(self._deduped_data())
+            return self._with_data(result, copy=True)
 
         method.__doc__ = ("Element-wise %s.\n\n"
                           "See numpy.%s for more information." % (name, name))

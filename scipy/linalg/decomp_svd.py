@@ -250,6 +250,25 @@ def diagsvd(s, M, N):
     S : (M, N) ndarray
         The S-matrix in the singular value decomposition
 
+    See Also
+    --------
+    svd : Singular value decomposition of a matrix
+    svdvals : Compute singular values of a matrix.
+
+    Examples
+    --------
+    >>> from scipy.linalg import diagsvd
+    >>> vals = np.array([1, 2, 3])  # The array representing the computed svd
+    >>> diagsvd(vals, 3, 4)
+    array([[1, 0, 0, 0],
+           [0, 2, 0, 0],
+           [0, 0, 3, 0]])
+    >>> diagsvd(vals, 4, 3)
+    array([[1, 0, 0],
+           [0, 2, 0],
+           [0, 0, 3],
+           [0, 0, 0]])
+
     """
     part = diag(s)
     typ = part.dtype.char
@@ -287,6 +306,18 @@ def orth(A, rcond=None):
     --------
     svd : Singular value decomposition of a matrix
     null_space : Matrix null space
+
+    Examples
+    --------
+    >>> from scipy.linalg import orth
+    >>> A = np.array([[2, 0, 0], [0, 5, 0]])  # rank 2 array
+    >>> orth(A)
+    array([[0., 1.],
+           [1., 0.]])
+    >>> orth(A.T)
+    array([[0., 1.],
+           [1., 0.],
+           [0., 0.]])
 
     """
     u, s, vh = svd(A, full_matrices=False)
@@ -329,9 +360,10 @@ def null_space(A, rcond=None):
 
     >>> from scipy.linalg import null_space
     >>> A = np.array([[1, 1], [1, 1]])
-    >>> null_space(A)
-    array([[-0.70710678],
-           [ 0.70710678]])
+    >>> ns = null_space(A)
+    >>> ns * np.sign(ns[0,0])  # Remove the sign ambiguity of the vector
+    array([[ 0.70710678],
+           [-0.70710678]])
 
     Two-dimensional null space:
 
@@ -373,7 +405,8 @@ def subspace_angles(A, B):
     Returns
     -------
     angles : ndarray, shape (min(N, K),)
-        The subspace angles between the column spaces of `A` and `B`.
+        The subspace angles between the column spaces of `A` and `B` in
+        descending order.
 
     See Also
     --------
@@ -457,5 +490,6 @@ def subspace_angles(A, B):
         mu_arcsin = 0.
 
     # 5. Compute the principal angles
-    theta = where(mask, mu_arcsin, arccos(clip(sigma, -1., 1.)))
+    # with reverse ordering of sigma because smallest sigma belongs to largest angle theta
+    theta = where(mask, mu_arcsin, arccos(clip(sigma[::-1], -1., 1.)))
     return theta

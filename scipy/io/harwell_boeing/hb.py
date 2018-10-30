@@ -27,8 +27,6 @@ from scipy.sparse import csc_matrix
 from scipy.io.harwell_boeing._fortran_format_parser import \
         FortranFormatParser, IntFormat, ExpFormat
 
-from scipy._lib.six import string_types
-
 __all__ = ["MalformedHeader", "hb_read", "hb_write", "HBInfo", "HBFile",
            "HBMatrixType"]
 
@@ -69,6 +67,8 @@ class HBInfo(object):
         -------
         hb_info : HBInfo instance
         """
+        m = m.tocsc(copy=False)
+
         pointer = m.indptr
         indices = m.indices
         values = m.data
@@ -125,7 +125,7 @@ class HBInfo(object):
 
     @classmethod
     def from_file(cls, fid):
-        """Create a HBInfo instance from a file object containg a matrix in the
+        """Create a HBInfo instance from a file object containing a matrix in the
         HB format.
 
         Parameters
@@ -333,6 +333,8 @@ def _read_hb_data(content, header):
 
 
 def _write_data(m, fid, header):
+    m = m.tocsc(copy=False)
+
     def write_array(f, ar, nlines, fmt):
         # ar_nlines is the number of full lines, n is the number of items per
         # line, ffmt the fortran format
@@ -529,6 +531,8 @@ def hb_write(path_or_open_file, m, hb_info=None):
         - exponential format for float values, and int format
 
     """
+    m = m.tocsc(copy=False)
+
     if hb_info is None:
         hb_info = HBInfo.from_data(m)
 

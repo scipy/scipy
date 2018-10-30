@@ -321,6 +321,14 @@ class CheckOptimizeParameterized(CheckOptimize):
                               full_output=True, disp=False, retall=False,
                               initial_simplex=simplex)
 
+    def test_ncg_negative_maxiter(self):
+        # Regression test for gh-8241
+        opts = {'maxiter': -1}
+        result = optimize.minimize(self.func, self.startparams,
+                                   method='Newton-CG', jac=self.grad,
+                                   args=(), options=opts)
+        assert_(result.status == 1)
+
     def test_ncg(self):
         # line-search Newton conjugate gradient optimization routine
         if self.use_wrapper:
@@ -565,6 +573,31 @@ class TestOptimizeSimple(CheckOptimize):
         assert_allclose(self.func(params), self.func(self.solution),
                         atol=1e-6)
 
+    def test_l_bfgs_b_maxiter(self):
+        # gh7854
+        # Ensure that not more than maxiters are ever run.
+        class Callback(object):
+            def __init__(self):
+                self.nit = 0
+                self.fun = None
+                self.x = None
+
+            def __call__(self, x):
+                self.x = x
+                self.fun = optimize.rosen(x)
+                self.nit += 1
+
+        c = Callback()
+        res = optimize.minimize(optimize.rosen, [0., 0.], method='l-bfgs-b',
+                                callback=c, options={'maxiter': 5})
+
+        assert_equal(res.nit, 5)
+        assert_almost_equal(res.x, c.x)
+        assert_almost_equal(res.fun, c.fun)
+        assert_equal(res.status, 1)
+        assert_(res.success is False)
+        assert_equal(res.message.decode(), 'STOP: TOTAL NO. of ITERATIONS REACHED LIMIT')
+
     def test_minimize_l_bfgs_b(self):
         # Minimize with L-BFGS-B method
         opts = {'disp': False, 'maxiter': self.maxiter}
@@ -693,6 +726,67 @@ class TestOptimizeSimple(CheckOptimize):
                                      method=method)
             assert_(func(sol1.x) < func(sol2.x),
                     "%s: %s vs. %s" % (method, func(sol1.x), func(sol2.x)))
+
+    @pytest.mark.parametrize('method', ['fmin', 'fmin_powell', 'fmin_cg', 'fmin_bfgs',
+                                        'fmin_ncg', 'fmin_l_bfgs_b', 'fmin_tnc',
+                                        'fmin_slsqp',
+                                        'Nelder-Mead', 'Powell', 'CG', 'BFGS', 'Newton-CG', 'L-BFGS-B',
+                                        'TNC', 'SLSQP', 'trust-constr', 'dogleg', 'trust-ncg',
+                                        'trust-exact', 'trust-krylov'])
+    def test_minimize_callback_copies_array(self, method):
+        # Check that arrays passed to callbacks are not modified
+        # inplace by the optimizer afterward
+
+        if method in ('fmin_tnc', 'fmin_l_bfgs_b'):
+            func = lambda x: (optimize.rosen(x), optimize.rosen_der(x))
+        else:
+            func = optimize.rosen
+            jac = optimize.rosen_der
+            hess = optimize.rosen_hess
+
+        x0 = np.zeros(10)
+
+        # Set options
+        kwargs = {}
+        if method.startswith('fmin'):
+            routine = getattr(optimize, method)
+            if method == 'fmin_slsqp':
+                kwargs['iter'] = 5
+            elif method == 'fmin_tnc':
+                kwargs['maxfun'] = 100
+            else:
+                kwargs['maxiter'] = 5
+        else:
+            def routine(*a, **kw):
+                kw['method'] = method
+                return optimize.minimize(*a, **kw)
+
+            if method == 'TNC':
+                kwargs['options'] = dict(maxiter=100)
+            else:
+                kwargs['options'] = dict(maxiter=5)
+
+        if method in ('fmin_ncg',):
+            kwargs['fprime'] = jac
+        elif method in ('Newton-CG',):
+            kwargs['jac'] = jac
+        elif method in ('trust-krylov', 'trust-exact', 'trust-ncg', 'dogleg',
+                        'trust-constr'):
+            kwargs['jac'] = jac
+            kwargs['hess'] = hess
+
+        # Run with callback
+        results = []
+
+        def callback(x, *args, **kwargs):
+            results.append((x, np.copy(x)))
+
+        sol = routine(func, x0, callback=callback, **kwargs)
+
+        # Check returned arrays coincide with their copies and have no memory overlap
+        assert_(len(results) > 2)
+        assert_(all(np.all(x == y) for x, y in results))
+        assert_(not any(np.may_share_memory(x[0], y[0]) for x, y in itertools.combinations(results, 2)))
 
     @pytest.mark.parametrize('method', ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg',
                               'l-bfgs-b', 'tnc', 'cobyla', 'slsqp'])
@@ -913,11 +1007,8 @@ class TestOptimizeScalar(object):
         assert_raises(ValueError, optimize.fminbound, self.fun, 5, 1)
 
     def test_fminbound_scalar(self):
-        try:
+        with pytest.raises(ValueError, match='.*must be scalar.*'):
             optimize.fminbound(self.fun, np.zeros((1, 2)), 1)
-            self.fail("exception not raised")
-        except ValueError as e:
-            assert_('must be scalar' in str(e))
 
         x = optimize.fminbound(self.fun, 1, np.array(5))
         assert_allclose(x, self.solution, atol=1e-6)
@@ -1082,6 +1173,7 @@ def himmelblau_hess(p):
     return np.array([[12*x**2 + 4*y - 42, 4*x + 4*y],
                      [4*x + 4*y, 4*x + 12*y**2 - 26]])
 
+
 himmelblau_x0 = [-0.27, -0.9]
 himmelblau_xopt = [3, 2]
 himmelblau_min = 0.0
@@ -1181,6 +1273,17 @@ class TestBrute:
         assert_allclose(resbrute[0], self.solution, atol=1e-3)
         assert_allclose(resbrute[1], self.func(self.solution, *self.params),
                         atol=1e-3)
+
+    def test_1D(self):
+        # test that for a 1D problem the test function is passed an array,
+        # not a scalar.
+        def f(x):
+            assert_(len(x.shape) == 1)
+            assert_(x.shape[0] == 1)
+            return x ** 2
+
+        optimize.brute(f, [(-1, 1)], Ns=3, finish=None)
+
 
 class TestIterationLimits(object):
     # Tests that optimisation does not give up before trying requested

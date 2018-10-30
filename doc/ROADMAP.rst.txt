@@ -41,7 +41,7 @@ holes.
 Besides coverage there is also the issue of correctness - older code may have a
 few tests that provide decent statement coverage, but that doesn't necessarily
 say much about whether the code does what it says on the box.  Therefore code
-review of some parts of the code (``stats``,``signal`` and ``ndimage`` in
+review of some parts of the code (``stats``, ``signal`` and ``ndimage`` in
 particular) is necessary.
 
 
@@ -71,9 +71,6 @@ Regarding build environments:
   - Support for Accelerate will be dropped, likely in SciPy 1.1.0.  If there is
     enough interest, we may want to write wrappers so the BLAS part of Accelerate
     can still be used.
-  - Bento development has stopped, so will remain having an experimental,
-    use-at-your-own-risk status.  Only the people that use it will be
-    responsible for keeping the Bento build updated.
 
 Continuous integration is in good shape, it covers Windows, macOS and Linux, as well
 as a range of versions of our dependencies and building release quality wheels.
@@ -147,9 +144,13 @@ are in good shape.
 
 linalg
 ``````
+``scipy.linalg`` is in good shape.  We have started requiring more recent
+LAPACK versions (minimum version increases from 3.1.0 to 3.4.0 in SciPy 1.2.0);
+we want to add support for newer features in LAPACK.
+
 Needed:
 
-  - Remove functions that are duplicate with ``numpy.linalg``
+  - Reduce duplication of functions with ``numpy.linalg``, make APIs consistent.
   - ``get_lapack_funcs`` should always use ``flapack``
   - Wrap more LAPACK functions
   - One too many funcs for LU decomposition, remove one

@@ -38,7 +38,7 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 from numpy import array, asarray, float64, int32, zeros
 from . import _lbfgsb
-from .optimize import (approx_fprime, MemoizeJac, OptimizeResult,
+from .optimize import (MemoizeJac, OptimizeResult,
                        _check_unknown_options, wrap_function,
                        _approx_fprime_helper)
 from scipy.sparse.linalg import LinearOperator
@@ -218,8 +218,10 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
 
     Options
     -------
-    disp : bool
-       Set to True to print convergence messages.
+    disp : None or int
+        If `disp is None` (the default), then the supplied version of `iprint`
+        is used. If `disp is not None`, then it overrides the supplied version
+        of `iprint` with the behaviour you outlined.
     maxcor : int
         The maximum number of variable metric corrections used to
         define the limited memory matrix. (The limited memory BFGS
@@ -234,8 +236,6 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
         projected gradient.
     eps : float
         Step size used for numerical approximation of the jacobian.
-    disp : int
-        Set to True to print convergence messages.
     maxfun : int
         Maximum number of function evaluations.
     maxiter : int
@@ -335,24 +335,22 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
             f, g = func_and_grad(x)
         elif task_str.startswith(b'NEW_X'):
             # new iteration
-            if n_iterations > maxiter:
-                task[:] = 'STOP: TOTAL NO. of ITERATIONS EXCEEDS LIMIT'
+            n_iterations += 1
+            if callback is not None:
+                callback(np.copy(x))
+
+            if n_iterations >= maxiter:
+                task[:] = 'STOP: TOTAL NO. of ITERATIONS REACHED LIMIT'
             elif n_function_evals[0] > maxfun:
                 task[:] = ('STOP: TOTAL NO. of f AND g EVALUATIONS '
                            'EXCEEDS LIMIT')
-            else:
-                n_iterations += 1
-                if callback is not None:
-                    callback(x)
         else:
             break
 
     task_str = task.tostring().strip(b'\x00').strip()
     if task_str.startswith(b'CONV'):
         warnflag = 0
-    elif n_function_evals[0] > maxfun:
-        warnflag = 1
-    elif n_iterations > maxiter:
+    elif n_function_evals[0] > maxfun or n_iterations >= maxiter:
         warnflag = 1
     else:
         warnflag = 2

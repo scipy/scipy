@@ -29,7 +29,7 @@ def test_parallel_threads():
                 time.sleep(0.1 * k)
                 assert_(failflag[0])
                 failflag[0] = False
-        except:
+        except Exception:
             exceptions_raised.append(traceback.format_exc(2))
 
     threads = [threading.Thread(target=lambda k=k: worker(k))

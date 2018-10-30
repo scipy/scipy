@@ -98,8 +98,8 @@ c     svout   ARPACK utility routine for vector output.
 c     slarnv  LAPACK routine for generating a random vector.
 c     sgemv   Level 2 BLAS routine for matrix vector multiplication.
 c     scopy   Level 1 BLAS that copies one vector to another.
-c     wsdot    Level 1 BLAS that computes the scalar product of two vectors. 
-c     wsnrm2   Level 1 BLAS that computes the norm of a vector.
+c     sdot    Level 1 BLAS that computes the scalar product of two vectors. 
+c     snrm2   Level 1 BLAS that computes the norm of a vector.
 c
 c\Author
 c     Danny Sorensen               Phuong Vu
@@ -174,8 +174,8 @@ c     | External Functions |
 c     %--------------------%
 c
       Real
-     &           wsdot, wsnrm2
-      external   wsdot, wsnrm2
+     &           sdot, snrm2
+      external   sdot, snrm2
 c
 c     %---------------------%
 c     | Intrinsic Functions |
@@ -296,10 +296,10 @@ c
 c 
       first = .FALSE.
       if (bmat .eq. 'G') then
-          rnorm0 = wsdot (n, resid, 1, workd, 1)
+          rnorm0 = sdot (n, resid, 1, workd, 1)
           rnorm0 = sqrt(abs(rnorm0))
       else if (bmat .eq. 'I') then
-           rnorm0 = wsnrm2(n, resid, 1)
+           rnorm0 = snrm2(n, resid, 1)
       end if
       rnorm  = rnorm0
 c
@@ -353,10 +353,10 @@ c
       end if
 c 
       if (bmat .eq. 'G') then
-         rnorm = wsdot (n, resid, 1, workd, 1)
+         rnorm = sdot (n, resid, 1, workd, 1)
          rnorm = sqrt(abs(rnorm))
       else if (bmat .eq. 'I') then
-         rnorm = wsnrm2(n, resid, 1)
+         rnorm = snrm2(n, resid, 1)
       end if
 c
 c     %--------------------------------------%

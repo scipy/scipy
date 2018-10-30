@@ -101,6 +101,25 @@ def test_valid_origins():
         assert_raises(ValueError, filter, data, 3, origin=2)
 
 
+def test_bad_convolve_and_correlate_origins():
+    """Regression test for gh-822."""
+    # Before gh-822 was fixed, these would generate seg. faults or
+    # other crashes on many system.
+    assert_raises(ValueError, sndi.correlate1d,
+                  [0, 1, 2, 3, 4, 5], [1, 1, 2, 0], origin=2)
+    assert_raises(ValueError, sndi.correlate,
+                  [0, 1, 2, 3, 4, 5], [0, 1, 2], origin=[2])
+    assert_raises(ValueError, sndi.correlate,
+                  np.ones((3, 5)), np.ones((2, 2)), origin=[0, 1])
+
+    assert_raises(ValueError, sndi.convolve1d,
+                  np.arange(10), np.ones(3), origin=-2)
+    assert_raises(ValueError, sndi.convolve,
+                  np.arange(10), np.ones(3), origin=[-2])
+    assert_raises(ValueError, sndi.convolve,
+                  np.ones((3, 5)), np.ones((2, 2)), origin=[0, -2])
+
+
 def test_multiple_modes():
     # Test that the filters with multiple mode cababilities for different
     # dimensions give the same result as applying a single mode.
@@ -290,13 +309,13 @@ def test_gaussian_truncate():
 
     # Test gaussian_laplace
     y = sndi.gaussian_laplace(x, sigma=2, truncate=3.5)
-    nonzero_indices = np.where(y != 0)[0]
+    nonzero_indices = np.nonzero(y != 0)[0]
     n = nonzero_indices.ptp() + 1
     assert_equal(n, 15)
 
     # Test gaussian_gradient_magnitude
     y = sndi.gaussian_gradient_magnitude(x, sigma=2, truncate=3.5)
-    nonzero_indices = np.where(y != 0)[0]
+    nonzero_indices = np.nonzero(y != 0)[0]
     n = nonzero_indices.ptp() + 1
     assert_equal(n, 15)
 
@@ -400,3 +419,11 @@ def test_footprint_all_zeros():
     kernel = np.zeros((3, 3), bool)
     with assert_raises(ValueError):
         sndi.maximum_filter(arr, footprint=kernel)
+
+def test_gaussian_filter():
+    # Test gaussian filter with np.float16
+    # gh-8207
+    data = np.array([1],dtype = np.float16)
+    sigma = 1.0
+    with assert_raises(RuntimeError):
+        sndi.gaussian_filter(data,sigma)

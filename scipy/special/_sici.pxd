@@ -5,7 +5,7 @@
 #     arbitrary-precision floating-point arithmetic (version 0.19),
 #     December 2013. http://mpmath.org/.
 # [2] NIST, "Digital Library of Mathematical Functions",
-#     http://dlmf.nist.gov/
+#     https://dlmf.nist.gov/
 import cython
 cimport numpy as np
 

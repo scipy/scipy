@@ -7,7 +7,7 @@ from functools import partial
 from itertools import product
 import operator
 import pytest
-from pytest import raises as assert_raises
+from pytest import raises as assert_raises, warns
 from numpy.testing import assert_, assert_equal
 
 import numpy as np
@@ -302,7 +302,8 @@ def test_inheritance():
     class Empty(interface.LinearOperator):
         pass
 
-    assert_raises(TypeError, Empty)
+    with warns(RuntimeWarning, match="should implement at least"):
+        assert_raises(TypeError, Empty)
 
     class Identity(interface.LinearOperator):
         def __init__(self, n):
@@ -352,3 +353,15 @@ def test_no_double_init():
     # operator dtype)
     A = interface.LinearOperator((2, 2), matvec=matvec)
     assert_equal(call_count[0], 1)
+
+def test_adjoint_conjugate():
+    X = np.array([[1j]])
+    A = interface.aslinearoperator(X)
+
+    B = 1j * A
+    Y = 1j * X
+
+    v = np.array([1])
+
+    assert_equal(B.dot(v), Y.dot(v))
+    assert_equal(B.H.dot(v), Y.T.conj().dot(v))

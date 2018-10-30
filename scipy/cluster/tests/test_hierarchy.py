@@ -64,7 +64,7 @@ try:
     # before importing pyplot
     import matplotlib.pyplot as plt
     have_matplotlib = True
-except:
+except Exception:
     have_matplotlib = False
 
 
@@ -327,11 +327,11 @@ class TestIsIsomorphic(object):
         # nonisomorphic.)
         for nc in [2, 3, 5]:
             self.help_is_isomorphic_randperm(1000, nc, True, 5)
-            
+
     def test_is_isomorphic_7(self):
         # Regression test for gh-6271
         assert_(not is_isomorphic([1, 2, 3], [1, 1, 1]))
-    
+
     def help_is_isomorphic_randperm(self, nobs, nclusters, noniso=False, nerrors=0):
         for k in range(3):
             a = np.int_(np.random.rand(nobs) * nclusters)
@@ -577,7 +577,7 @@ class TestCorrespond(object):
 
     def test_correspond_4_and_up(self):
         # Tests correspond(Z, y) on linkage and CDMs over observation sets of
-        # different sizes. Correspondance should be false.
+        # different sizes. Correspondence should be false.
         for (i, j) in (list(zip(list(range(2, 4)), list(range(3, 5)))) +
                        list(zip(list(range(3, 5)), list(range(2, 4))))):
             y = np.random.rand(i*(i-1)//2)
@@ -589,7 +589,7 @@ class TestCorrespond(object):
 
     def test_correspond_4_and_up_2(self):
         # Tests correspond(Z, y) on linkage and CDMs over observation sets of
-        # different sizes. Correspondance should be false.
+        # different sizes. Correspondence should be false.
         for (i, j) in (list(zip(list(range(2, 7)), list(range(16, 21)))) +
                        list(zip(list(range(2, 7)), list(range(16, 21))))):
             y = np.random.rand(i*(i-1)//2)

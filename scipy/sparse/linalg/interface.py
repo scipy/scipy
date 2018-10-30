@@ -42,6 +42,8 @@ Several algorithms in the ``scipy.sparse`` library are able to operate on
 
 from __future__ import division, print_function, absolute_import
 
+import warnings
+
 import numpy as np
 
 from scipy.sparse import isspmatrix
@@ -136,8 +138,9 @@ class LinearOperator(object):
 
             if (type(obj)._matvec == LinearOperator._matvec
                     and type(obj)._matmat == LinearOperator._matmat):
-                raise TypeError("LinearOperator subclass should implement"
-                                " at least one of _matvec and _matmat.")
+                warnings.warn("LinearOperator subclass should implement"
+                              " at least one of _matvec and _matmat.",
+                              category=RuntimeWarning, stacklevel=2)
 
             return obj
 
@@ -564,7 +567,7 @@ class _ScaledLinearOperator(LinearOperator):
 
     def _adjoint(self):
         A, alpha = self.args
-        return A.H * alpha
+        return A.H * np.conj(alpha)
 
 
 class _PowerLinearOperator(LinearOperator):
@@ -659,13 +662,18 @@ def aslinearoperator(A):
 
     See the LinearOperator documentation for additional information.
 
+    Notes
+    -----
+    If 'A' has no .dtype attribute, the data type is determined by calling
+    :func:`LinearOperator.matvec()` - set the .dtype attribute to prevent this
+    call upon the linear operator creation.
+
     Examples
     --------
     >>> from scipy.sparse.linalg import aslinearoperator
     >>> M = np.array([[1,2,3],[4,5,6]], dtype=np.int32)
     >>> aslinearoperator(M)
     <2x3 MatrixLinearOperator with dtype=int32>
-
     """
     if isinstance(A, LinearOperator):
         return A

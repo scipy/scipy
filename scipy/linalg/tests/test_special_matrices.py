@@ -317,9 +317,9 @@ class TestHelmert(object):
     def test_orthogonality(self):
         for n in range(1, 7):
             H = helmert(n, full=True)
-            I = np.eye(n)
-            assert_allclose(H.dot(H.T), I, atol=1e-12)
-            assert_allclose(H.T.dot(H), I, atol=1e-12)
+            Id = np.eye(n)
+            assert_allclose(H.dot(H.T), Id, atol=1e-12)
+            assert_allclose(H.T.dot(H), Id, atol=1e-12)
 
     def test_subspace(self):
         for n in range(2, 7):

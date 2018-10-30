@@ -61,7 +61,7 @@
  * (C) Copyright John Maddock 2006.
  * Use, modification and distribution are subject to the
  * Boost Software License, Version 1.0. (See accompanying file
- * LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+ * LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
  */
 
 #include "mconf.h"
@@ -77,7 +77,7 @@ static double A[] = {
 };
 
 
-double digamma_imp_1_2(double x)
+static double digamma_imp_1_2(double x)
 {
     /*
      * Rational approximation on [1, 2] taken from Boost.
@@ -127,7 +127,7 @@ double digamma_imp_1_2(double x)
 }
 
 
-double psi_asy(double x)
+static double psi_asy(double x)
 {
     double y, z;
 
@@ -146,10 +146,19 @@ double psi_asy(double x)
 double psi(double x)
 {
     double y = 0.0;
-    double q, r, w;
+    double q, r;
     int i, n;
 
-    if (x == 0) {
+    if (npy_isnan(x)) {
+	return x;
+    }
+    else if (x == NPY_INFINITY) {
+	return x;
+    }
+    else if (x == -NPY_INFINITY) {
+	return NPY_NAN;
+    }
+    else if (x == 0) {
 	mtherr("psi", SING);
 	return npy_copysign(NPY_INFINITY, -x);
     }
@@ -166,10 +175,9 @@ double psi(double x)
 
     /* check for positive integer up to 10 */
     if ((x <= 10.0) && (x == floor(x))) {
-	n = x;
+	n = (int)x;
 	for (i = 1; i < n; i++) {
-	    w = i;
-	    y += 1.0 / w;
+	    y += 1.0 / i;
 	}
 	y -= NPY_EULER;
 	return y;

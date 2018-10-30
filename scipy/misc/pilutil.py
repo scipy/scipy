@@ -279,6 +279,7 @@ def fromimage(im, flatten=False, mode=None):
     a = array(im)
     return a
 
+
 _errstr = "Mode is unknown or incompatible with input array shape."
 
 
@@ -492,7 +493,7 @@ def imshow(arr):
     fnum, fname = tempfile.mkstemp('.png')
     try:
         im.save(fname)
-    except:
+    except Exception:
         raise RuntimeError("Error saving temporary image data.")
 
     import os
@@ -507,8 +508,8 @@ def imshow(arr):
 
 
 @numpy.deprecate(message="`imresize` is deprecated in SciPy 1.0.0, "
-                         "and will be removed in 1.2.0.\n"
-                         "Use ``skimage.transform.resize`` instead.")
+                         "and will be removed in 1.3.0.\n"
+                         "Use Pillow instead: ``numpy.array(Image.fromarray(arr).resize())``.")
 def imresize(arr, size, interp='bilinear', mode=None):
     """
     Resize an image.

@@ -10,7 +10,7 @@ import math
 from scipy._lib.six import xrange
 from numpy import (pi, asarray, floor, isscalar, iscomplex, real,
                    imag, sqrt, where, mgrid, sin, place, issubdtype,
-                   extract, less, inexact, nan, zeros, sinc)
+                   extract, inexact, nan, zeros, sinc)
 from . import _ufuncs as ufuncs
 from ._ufuncs import (ellipkm1, mathieu_a, mathieu_b, iv, jv, gamma,
                       psi, _zeta, hankel1, hankel2, yv, kv, ndtri,
@@ -59,7 +59,7 @@ def diric(x, n):
 
     The Dirichlet function is defined as::
 
-        diric(x) = sin(x * n/2) / (n * sin(x / 2)),
+        diric(x, n) = sin(x * n/2) / (n * sin(x / 2)),
 
     where `n` is a positive integer.
 
@@ -455,7 +455,7 @@ def jvp(v, z, n=1):
            Functions", John Wiley and Sons, 1996, chapter 5.
            https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
     .. [2] NIST Digital Library of Mathematical Functions.
-           http://dlmf.nist.gov/10.6.E7
+           https://dlmf.nist.gov/10.6.E7
 
     """
     n = _nonneg_int_or_fail(n, 'n')
@@ -487,7 +487,7 @@ def yvp(v, z, n=1):
            Functions", John Wiley and Sons, 1996, chapter 5.
            https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
     .. [2] NIST Digital Library of Mathematical Functions.
-           http://dlmf.nist.gov/10.6.E7
+           https://dlmf.nist.gov/10.6.E7
 
     """
     n = _nonneg_int_or_fail(n, 'n')
@@ -523,7 +523,9 @@ def kvp(v, z, n=1):
 
     >>> from scipy.special import kvp
     >>> kvp(5, (1, 2, 3+5j))
-    array([-1849.0354+0.j    ,   -25.7735+0.j    ,    -0.0307+0.0875j])
+    array([-1.84903536e+03+0.j        , -2.57735387e+01+0.j        ,
+           -3.06627741e-02+0.08750845j])
+
 
     Calculate for a single value at multiple orders:
 
@@ -540,7 +542,7 @@ def kvp(v, z, n=1):
            Functions", John Wiley and Sons, 1996, chapter 6.
            https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
     .. [2] NIST Digital Library of Mathematical Functions.
-           http://dlmf.nist.gov/10.29.E5
+           https://dlmf.nist.gov/10.29.E5
 
     """
     n = _nonneg_int_or_fail(n, 'n')
@@ -573,7 +575,7 @@ def ivp(v, z, n=1):
            Functions", John Wiley and Sons, 1996, chapter 6.
            https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
     .. [2] NIST Digital Library of Mathematical Functions.
-           http://dlmf.nist.gov/10.29.E5
+           https://dlmf.nist.gov/10.29.E5
 
     """
     n = _nonneg_int_or_fail(n, 'n')
@@ -605,7 +607,7 @@ def h1vp(v, z, n=1):
            Functions", John Wiley and Sons, 1996, chapter 5.
            https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
     .. [2] NIST Digital Library of Mathematical Functions.
-           http://dlmf.nist.gov/10.6.E7
+           https://dlmf.nist.gov/10.6.E7
 
     """
     n = _nonneg_int_or_fail(n, 'n')
@@ -637,7 +639,7 @@ def h2vp(v, z, n=1):
            Functions", John Wiley and Sons, 1996, chapter 5.
            https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
     .. [2] NIST Digital Library of Mathematical Functions.
-           http://dlmf.nist.gov/10.6.E7
+           https://dlmf.nist.gov/10.6.E7
 
     """
     n = _nonneg_int_or_fail(n, 'n')
@@ -685,7 +687,7 @@ def riccati_jn(n, x):
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
     .. [2] NIST Digital Library of Mathematical Functions.
-           http://dlmf.nist.gov/10.51.E1
+           https://dlmf.nist.gov/10.51.E1
 
     """
     if not (isscalar(n) and isscalar(x)):
@@ -737,7 +739,7 @@ def riccati_yn(n, x):
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
     .. [2] NIST Digital Library of Mathematical Functions.
-           http://dlmf.nist.gov/10.51.E1
+           https://dlmf.nist.gov/10.51.E1
 
     """
     if not (isscalar(n) and isscalar(x)):
@@ -752,19 +754,113 @@ def riccati_yn(n, x):
 
 
 def erfinv(y):
-    """Inverse function for erf.
+    """Inverse of the error function erf.
+
+    Computes the inverse of the error function.
+
+    In complex domain, there is no unique complex number w satisfying erf(w)=z.
+    This indicates a true inverse function would have multi-value. When the domain restricts to the real, -1 < x < 1,
+    there is a unique real number satisfying erf(erfinv(x)) = x.
+
+    Parameters
+    ----------
+    y : ndarray
+        Argument at which to evaluate. Domain: [-1, 1]
+
+    Returns
+    -------
+    erfinv : ndarray
+        The inverse of erf of y, element-wise
+
+    Examples
+    --------
+    1) evaluating a float number
+
+    >>> from scipy import special
+    >>> special.erfinv(0.5)
+    0.4769362762044698
+
+    2) evaluating a ndarray
+
+    >>> from scipy import special
+    >>> y = np.linspace(-1.0, 1.0, num=10)
+    >>> special.erfinv(y)
+    array([       -inf, -0.86312307, -0.5407314 , -0.30457019, -0.0987901 ,
+            0.0987901 ,  0.30457019,  0.5407314 ,  0.86312307,         inf])
+
     """
     return ndtri((y+1)/2.0)/sqrt(2)
 
 
 def erfcinv(y):
-    """Inverse function for erfc.
+    """Inverse of the complementary error function erfc.
+
+    Computes the inverse of the complementary error function erfc.
+
+    In complex domain, there is no unique complex number w satisfying erfc(w)=z.
+    This indicates a true inverse function would have multi-value. When the domain restricts to the real, 0 < x < 2,
+    there is a unique real number satisfying erfc(erfcinv(x)) = erfcinv(erfc(x)).
+
+    It is related to inverse of the error function by erfcinv(1-x) = erfinv(x)
+
+    Parameters
+    ----------
+    y : ndarray
+        Argument at which to evaluate. Domain: [0, 2]
+
+    Returns
+    -------
+    erfcinv : ndarray
+        The inverse of erfc of y, element-wise
+
+    Examples
+    --------
+    1) evaluating a float number
+
+    >>> from scipy import special
+    >>> special.erfcinv(0.5)
+    0.4769362762044698
+
+    2) evaluating a ndarray
+
+    >>> from scipy import special
+    >>> y = np.linspace(0.0, 2.0, num=11)
+    >>> special.erfcinv(y)
+    array([        inf,  0.9061938 ,  0.59511608,  0.37080716,  0.17914345,
+            -0.        , -0.17914345, -0.37080716, -0.59511608, -0.9061938 ,
+                  -inf])
+
     """
     return -ndtri(0.5*y)/sqrt(2)
 
 
 def erf_zeros(nt):
-    """Compute nt complex zeros of error function erf(z).
+    """Compute the first nt zero in the first quadrant, ordered by absolute value.
+
+    Zeros in the other quadrants can be obtained by using the symmetries erf(-z) = erf(z) and
+    erf(conj(z)) = conj(erf(z)).
+
+
+    Parameters
+    ----------
+    nt : int
+        The number of zeros to compute
+
+    Returns
+    -------
+    The locations of the zeros of erf : ndarray (complex)
+        Complex values at which zeros of erf(z)
+
+    Examples
+    --------
+    >>> from scipy import special
+    >>> special.erf_zeros(1)
+    array([1.45061616+1.880943j])
+
+    Check that erf is (close to) zero for the value returned by erf_zeros
+    
+    >>> special.erf(special.erf_zeros(1))
+    array([4.95159469e-14-1.16407394e-16j])
 
     References
     ----------
@@ -837,6 +933,7 @@ def assoc_laguerre(x, n, k=0.0):
     """
     return orthogonal.eval_genlaguerre(n, k, x)
 
+
 digamma = psi
 
 
@@ -904,7 +1001,7 @@ def mathieu_even_coef(m, q):
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
     .. [2] NIST Digital Library of Mathematical Functions
-           http://dlmf.nist.gov/28.4#i
+           https://dlmf.nist.gov/28.4#i
 
     """
     if not (isscalar(m) and isscalar(q)):
@@ -1033,7 +1130,7 @@ def lpmn(m, n, z):
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
     .. [2] NIST Digital Library of Mathematical Functions
-           http://dlmf.nist.gov/14.3
+           https://dlmf.nist.gov/14.3
 
     """
     if not isscalar(m) or (abs(m) > n):
@@ -1116,7 +1213,7 @@ def clpmn(m, n, z, type=3):
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
     .. [2] NIST Digital Library of Mathematical Functions
-           http://dlmf.nist.gov/14.21
+           https://dlmf.nist.gov/14.21
 
     """
     if not isscalar(m) or (abs(m) > n):
@@ -1906,7 +2003,7 @@ def perm(N, k, exact=False):
         return vals
 
 
-# http://stackoverflow.com/a/16327037/125507
+# https://stackoverflow.com/a/16327037
 def _range_prod(lo, hi):
     """
     Product of a range of numbers.
@@ -2136,6 +2233,11 @@ def zeta(x, q=None, out=None):
     out : ndarray, optional
         Output array for the computed values.
 
+    Returns
+    -------
+    out : array_like
+        Values of zeta(x).
+
     Notes
     -----
     The two-argument version is the Hurwitz zeta function:
@@ -2144,11 +2246,33 @@ def zeta(x, q=None, out=None):
 
     Riemann zeta function corresponds to ``q = 1``.
 
-    See also
+    See Also
     --------
     zetac
+
+    Examples
+    --------
+    >>> from scipy.special import zeta, polygamma, factorial
+
+    Some specific values:
+
+    >>> zeta(2), np.pi**2/6
+    (1.6449340668482266, 1.6449340668482264)
+
+    >>> zeta(4), np.pi**4/90
+    (1.0823232337111381, 1.082323233711138)
+
+    Relation to the `polygamma` function:
+
+    >>> m = 3
+    >>> x = 1.25
+    >>> polygamma(m, x)
+    array(2.782144009188397)
+    >>> (-1)**(m+1) * factorial(m) * zeta(m+1, x)
+    2.7821440091883969
 
     """
     if q is None:
         q = 1
     return _zeta(x, q, out)
+

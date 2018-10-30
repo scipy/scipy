@@ -104,4 +104,4 @@ which is about Trac (what we used pre-GitHub) tickets.
 with a three-letter abbreviation like ``ENH:`` or ``BUG:``.  This is useful to
 quickly see what the nature of the commit/PR/issue is.  For the full list of
 abbreviations, see `writing the commit message
-<http://docs.scipy.org/doc/numpy-dev/dev/gitwash/development_workflow.html#writing-the-commit-message>`_.
+<https://docs.scipy.org/doc/numpy/dev/gitwash/development_workflow.html#writing-the-commit-message>`_.

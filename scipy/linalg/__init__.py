@@ -90,6 +90,7 @@ Decompositions
    schur - Schur decomposition of a matrix
    rsf2csf - Real to complex Schur form
    hessenberg - Hessenberg form of a matrix
+   cdf2rdf - Complex diagonal form to real diagonal block form
 
 .. seealso::
 

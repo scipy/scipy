@@ -82,7 +82,8 @@ Though no list can hope to be comprehensive, we explicitly honour diversity in:
 age, culture, ethnicity, genotype, gender identity or expression, language,
 national origin, neurotype, phenotype, political beliefs, profession, race,
 religion, sexual orientation, socioeconomic status, subculture and technical
-ability.
+ability, to the extent that these do not conflict with this code of conduct.
+
 
 Though we welcome people fluent in all languages, SciPy development is
 conducted in English.
@@ -121,7 +122,7 @@ considering your report. Alternatively, if for any reason you feel
 uncomfortable making a report to the committee, then you can also contact:
 
 - Chair of the SciPy Steering Committee: Ralf Gommers, or
-- Executive Director of NumFOCUS: Leah Silen
+- Senior `NumFOCUS staff <https://numfocus.org/code-of-conduct#persons-responsible>`__: conduct@numfocus.org
 
 
 Incident reporting resolution & Code of Conduct enforcement

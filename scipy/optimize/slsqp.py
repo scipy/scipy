@@ -180,6 +180,7 @@ def fmin_slsqp(func, x0, eqcons=(), f_eqcons=None, ieqcons=(), f_ieqcons=None,
     """
     if disp is not None:
         iprint = disp
+
     opts = {'maxiter': iter,
             'ftol': acc,
             'iprint': iprint,
@@ -366,6 +367,26 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     majiter = array(iter, int)
     majiter_prev = 0
 
+    # Initialize internal SLSQP state variables
+    alpha = array(0, float)
+    f0 = array(0, float)
+    gs = array(0, float)
+    h1 = array(0, float)
+    h2 = array(0, float)
+    h3 = array(0, float)
+    h4 = array(0, float)
+    t = array(0, float)
+    t0 = array(0, float)
+    tol = array(0, float)
+    iexact = array(0, int)
+    incons = array(0, int)
+    ireset = array(0, int)
+    itermx = array(0, int)
+    line = array(0, int)
+    n1 = array(0, int)
+    n2 = array(0, int)
+    n3 = array(0, int)
+
     # Print the header if iprint >= 2
     if iprint >= 2:
         print("%5s %5s %16s %16s" % ("NIT", "FC", "OBJFUN", "GNORM"))
@@ -422,11 +443,14 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
             a = concatenate((a, zeros([la, 1])), 1)
 
         # Call SLSQP
-        slsqp(m, meq, x, xl, xu, fx, c, g, a, acc, majiter, mode, w, jw)
+        slsqp(m, meq, x, xl, xu, fx, c, g, a, acc, majiter, mode, w, jw,
+              alpha, f0, gs, h1, h2, h3, h4, t, t0, tol,
+              iexact, incons, ireset, itermx, line, 
+              n1, n2, n3)
 
         # call callback if major iteration has incremented
         if callback is not None and majiter > majiter_prev:
-            callback(x)
+            callback(np.copy(x))
 
         # Print the status of the current iterate if iprint > 2 and the
         # major iteration has incremented

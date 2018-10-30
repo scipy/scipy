@@ -424,7 +424,7 @@ int NI_FourierFilter(PyArrayObject *input, PyArrayObject* parameter_array,
             }
             switch (PyArray_TYPE(output)) {
                 CASE_FOURIER_OUT_RR(NPY_FLOAT, npy_float, po, tmp);
-                CASE_FOURIER_OUT_RR(NPY_DOUBLE, npy_float, po, tmp);
+                CASE_FOURIER_OUT_RR(NPY_DOUBLE, npy_double, po, tmp);
                 CASE_FOURIER_OUT_RC(NPY_CFLOAT, npy_cfloat, po, tmp);
                 CASE_FOURIER_OUT_RC(NPY_CDOUBLE, npy_cdouble, po, tmp);
             default:

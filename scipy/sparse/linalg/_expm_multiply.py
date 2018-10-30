@@ -7,7 +7,7 @@ import numpy as np
 
 import scipy.linalg
 import scipy.sparse.linalg
-from scipy.sparse.linalg import LinearOperator, aslinearoperator
+from scipy.sparse.linalg import aslinearoperator
 
 __all__ = ['expm_multiply']
 
@@ -211,6 +211,7 @@ def _expm_multiply_simple_core(A, B, t, mu, m_star, s, tol=None, balance=False):
         F = eta * F
         B = F
     return F
+
 
 # This table helps to compute bounds.
 # They seem to have been difficult to calculate, involving symbolic

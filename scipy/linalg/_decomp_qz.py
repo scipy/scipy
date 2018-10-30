@@ -299,7 +299,6 @@ def ordqz(A, B, sort='lhp', output='real', overwrite_a=False,
         considered to lie outside the unit circle. For the eigenvalue
         ``(alpha, beta) = (0, 0)`` the predefined sorting functions
         all return `False`.
-
     output : str {'real','complex'}, optional
         Construct the real or complex QZ decomposition for real matrices.
         Default is 'real'.
@@ -341,6 +340,18 @@ def ordqz(A, B, sort='lhp', output='real', overwrite_a=False,
     See also
     --------
     qz
+
+    Examples
+    --------
+    >>> from scipy.linalg import ordqz
+    >>> A = np.array([[2, 5, 8, 7], [5, 2, 2, 8], [7, 5, 6, 6], [5, 4, 4, 8]])
+    >>> B = np.array([[0, 6, 0, 0], [5, 0, 2, 1], [5, 2, 6, 6], [4, 7, 7, 7]])
+    >>> AA, BB, alpha, beta, Q, Z = ordqz(A, B, sort='lhp')
+    
+    Since we have sorted for left half plane eigenvalues, negatives come first
+    
+    >>> (alpha/beta).real < 0
+    array([ True,  True, False, False], dtype=bool)
 
     """
     # NOTE: should users be able to set these?

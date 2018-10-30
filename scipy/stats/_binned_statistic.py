@@ -153,7 +153,7 @@ def binned_statistic(x, values, statistic='mean',
     >>> bin_centers = bin_edges[1:] - bin_width/2
 
     >>> plt.figure()
-    >>> plt.hist(samples, bins=50, normed=True, histtype='stepfilled',
+    >>> plt.hist(samples, bins=50, density=True, histtype='stepfilled',
     ...          alpha=0.2, label='histogram of data')
     >>> plt.plot(x, x_pdf, 'r-', label='analytical pdf')
     >>> plt.hlines(bin_means, bin_edges[:-1], bin_edges[1:], colors='g', lw=2,
@@ -368,9 +368,9 @@ def binned_statistic_dd(sample, values, statistic='mean',
         as an (N,D) array.
     values : (N,) array_like or list of (N,) array_like
         The data on which the statistic will be computed.  This must be
-        the same shape as `x`, or a list of sequences - each with the same
-        shape as `x`.  If `values` is such a list, the statistic will be
-        computed on each independently.
+        the same shape as `sample`, or a list of sequences - each with the
+        same shape as `sample`.  If `values` is such a list, the statistic
+        will be computed on each independently.
     statistic : string or callable, optional
         The statistic to compute (default is 'mean').
         The following statistics are available:
@@ -402,7 +402,7 @@ def binned_statistic_dd(sample, values, statistic='mean',
 
     range : sequence, optional
         A sequence of lower and upper bin edges to be used if the edges are
-        not given explicitely in `bins`. Defaults to the minimum and maximum
+        not given explicitly in `bins`. Defaults to the minimum and maximum
         values along each dimension.
     expand_binnumbers : bool, optional
         'False' (default): the returned `binnumber` is a shape (N,) array of
@@ -592,7 +592,7 @@ def binned_statistic_dd(sample, values, statistic='mean',
             sup.filter(RuntimeWarning)
             try:
                 null = statistic([])
-            except:
+            except Exception:
                 null = np.nan
         result.fill(null)
         for i in np.unique(binnumbers):
@@ -603,7 +603,7 @@ def binned_statistic_dd(sample, values, statistic='mean',
     result = result.reshape(np.append(Vdim, nbin))
 
     # Remove outliers (indices 0 and -1 for each bin-dimension).
-    core = [slice(None)] + Ndim * [slice(1, -1)]
+    core = tuple([slice(None)] + Ndim * [slice(1, -1)])
     result = result[core]
 
     # Unravel binnumbers into an ndarray, each row the bins for each dimension

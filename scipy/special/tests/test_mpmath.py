@@ -189,7 +189,7 @@ def test_hyp2f1_real_some():
                 for z in [-10, -1.01, -0.99, 0, 0.6, 0.95, 1.5, 10]:
                     try:
                         v = float(mpmath.hyp2f1(a, b, c, z))
-                    except:
+                    except Exception:
                         continue
                     dataset.append((a, b, c, z, v))
     dataset = np.array(dataset, dtype=np.float_)
@@ -806,29 +806,16 @@ class TestSystematic(object):
                             [Arg(), ComplexArg()])
 
     def test_besselk(self):
-        def mpbesselk(v, x):
-            r = float(mpmath.besselk(v, x, **HYPERKW))
-            if abs(r) > 1e305:
-                # overflowing to inf a bit earlier is OK
-                r = np.inf * np.sign(r)
-            if abs(v) == abs(x) and abs(r) == np.inf and abs(x) > 1:
-                # wrong result (kv(x,x) -> 0 for x > 1),
-                # try with higher dps
-                old_dps = mpmath.mp.dps
-                mpmath.mp.dps = 200
-                try:
-                    r = float(mpmath.besselk(v, x, **HYPERKW))
-                finally:
-                    mpmath.mp.dps = old_dps
-            return r
         assert_mpmath_equal(sc.kv,
-                            exception_to_nan(mpbesselk),
-                            [Arg(-1e100, 1e100), Arg()])
+                            mpmath.besselk,
+                            [Arg(-200, 200), Arg(0, np.inf)],
+                            nan_ok=False, rtol=1e-12)
 
     def test_besselk_int(self):
         assert_mpmath_equal(sc.kn,
-                            exception_to_nan(lambda v, z: mpmath.besselk(v, z, **HYPERKW)),
-                            [IntArg(-1000, 1000), Arg()])
+                            mpmath.besselk,
+                            [IntArg(-200, 200), Arg(0, np.inf)],
+                            nan_ok=False, rtol=1e-12)
 
     def test_besselk_complex(self):
         assert_mpmath_equal(lambda v, z: sc.kv(v.real, z),
@@ -906,7 +893,7 @@ class TestSystematic(object):
                             np.array(bad_points),
                             dps=400,
                             ignore_inf_sign=True,
-                            atol=1e-14)
+                            atol=1e-11)
 
     def test_betainc(self):
         assert_mpmath_equal(sc.betainc,
@@ -998,14 +985,10 @@ class TestSystematic(object):
                             rtol=1e-8)
 
     def test_cospi(self):
-        # Without the extra factor of 2 in the relative tolerance as
-        # compared to sinpi there will be one failure at ~0.318 with
-        # an rdiff of ~6e-16. Neither the Taylor series nor the system
-        # cosine are accurate enough here.
         eps = np.finfo(float).eps
         assert_mpmath_equal(_cospi,
                             mpmath.cospi,
-                            [Arg()], nan_ok=False, rtol=4*eps)
+                            [Arg()], nan_ok=False, rtol=eps)
 
     def test_cospi_complex(self):
         assert_mpmath_equal(_cospi,
@@ -1303,8 +1286,10 @@ class TestSystematic(object):
 
             # Mpmath 0.17 gives wrong results (spurious zero) in some cases, so
             # compute the value by perturbing the result
-            if float(r) == 0 and n <= 1-a and a < -1 and float(a) == int(float(a)):
+            if float(r) == 0 and a < -1 and float(a) == int(float(a)):
                 r = mpmath.gegenbauer(n, a + mpmath.mpf('1e-50'), x)
+                if abs(r) < mpmath.mpf('1e-50'):
+                    r = mpmath.mpf('0.0')
 
             # Differing overflow thresholds in scipy vs. mpmath
             if abs(r) > 1e270:
@@ -1319,9 +1304,9 @@ class TestSystematic(object):
             return r
         assert_mpmath_equal(sc_gegenbauer,
                             exception_to_nan(gegenbauer),
-                            [IntArg(0, 100), Arg(), Arg()],
+                            [IntArg(0, 100), Arg(-1e9, 1e9), Arg()],
                             n=40000, dps=100,
-                            ignore_inf_sign=True)
+                            ignore_inf_sign=True, rtol=1e-6)
 
         # Check the small-x expansion
         assert_mpmath_equal(sc_gegenbauer,
@@ -1377,7 +1362,7 @@ class TestSystematic(object):
     def test_hyp0f1_complex(self):
         assert_mpmath_equal(lambda a, z: sc.hyp0f1(a.real, z),
                             exception_to_nan(lambda a, x: mpmath.hyp0f1(a, x, **HYPERKW)),
-                            [Arg(-25, 25), ComplexArg(complex(-120, -120), complex(120, 120))])
+                            [Arg(-10, 10), ComplexArg(complex(-120, -120), complex(120, 120))])
         # NB: The range of the first parameter ("v") are limited by an overflow
         # in the intermediate calculations. Can be fixed by implementing an
         # asymptotic expansion for Bessel functions for large order.
@@ -1395,36 +1380,6 @@ class TestSystematic(object):
                             exception_to_nan(lambda a, b, x: mpmath.hyp1f1(a, b, x, **HYPERKW)),
                             [Arg(-1e3, 1e3), Arg(-1e3, 1e3), ComplexArg()],
                             n=2000)
-
-    @pytest.mark.xfail(run=False)
-    def test_hyp1f2(self):
-        def hyp1f2(a, b, c, x):
-            v, err = sc.hyp1f2(a, b, c, x)
-            if abs(err) > max(1, abs(v)) * 1e-7:
-                return np.nan
-            return v
-        assert_mpmath_equal(hyp1f2,
-                            exception_to_nan(lambda a, b, c, x: mpmath.hyp1f2(a, b, c, x, **HYPERKW)),
-                            [Arg(), Arg(), Arg(), Arg()],
-                            n=20000)
-
-    @pytest.mark.xfail(run=False)
-    def test_hyp2f0(self):
-        def hyp2f0(a, b, x):
-            v, err = sc.hyp2f0(a, b, x, 1)
-            if abs(err) > max(1, abs(v)) * 1e-7:
-                return np.nan
-            return v
-        assert_mpmath_equal(hyp2f0,
-                            lambda a, b, x: time_limited(0.1)(exception_to_nan(trace_args(mpmath.hyp2f0)))(
-                                a, b, x, **HYPERKW),
-                            [Arg(), Arg(), Arg()])
-
-    @pytest.mark.xfail(run=False, reason="spurious inf (or inf with wrong sign) for some argument values")
-    def test_hyp2f1(self):
-        assert_mpmath_equal(sc.hyp2f1,
-                            exception_to_nan(lambda a, b, c, x: mpmath.hyp2f1(a, b, c, x, **HYPERKW)),
-                            [Arg(), Arg(), Arg(), Arg()])
 
     @nonfunctional_tooslow
     def test_hyp2f1_complex(self):
@@ -1535,7 +1490,15 @@ class TestSystematic(object):
         g = 6.024680040776729583740234375
 
         def gamma(x):
-            return ((x + g - 0.5)/e)**(x - 0.5)*_lanczos_sum_expg_scaled(x)
+            with np.errstate(over='ignore'):
+                fac = ((x + g - 0.5)/e)**(x - 0.5)
+                if fac != np.inf:
+                    res = fac*_lanczos_sum_expg_scaled(x)
+                else:
+                    fac = ((x + g - 0.5)/e)**(0.5*(x - 0.5))
+                    res = fac*_lanczos_sum_expg_scaled(x)
+                    res *= fac
+            return res
 
         assert_mpmath_equal(gamma,
                             mpmath.gamma,
@@ -1607,7 +1570,8 @@ class TestSystematic(object):
 
         assert_mpmath_equal(lpnm_2,
                             legenp,
-                            [IntArg(-100, 100), Arg(-100, 100), Arg(-1, 1)])
+                            [IntArg(-100, 100), Arg(-100, 100), Arg(-1, 1)],
+                            atol=1e-10)
 
     def test_legenp_complex_2(self):
         def clpnm(n, m, z):
@@ -1745,11 +1709,11 @@ class TestSystematic(object):
         # is thus accurate in only a very small range.
         assert_mpmath_equal(pcfw,
                             mpmath.pcfw,
-                            [Arg(-5, 5), Arg(-5, 5)], rtol=1e-12, n=100)
+                            [Arg(-5, 5), Arg(-5, 5)], rtol=2e-8, n=100)
 
         assert_mpmath_equal(dpcfw,
                             mpmath_dpcfw,
-                            [Arg(-5, 5), Arg(-5, 5)], rtol=1e-12, n=100)
+                            [Arg(-5, 5), Arg(-5, 5)], rtol=2e-9, n=100)
 
     @pytest.mark.xfail(run=False, reason="issues at large arguments (atol OK, rtol not) and <eps-close to z=0")
     def test_polygamma(self):
@@ -1776,7 +1740,9 @@ class TestSystematic(object):
                             exception_to_nan(mpmath.rgamma),
                             [ComplexArg()], rtol=5e-13)
 
-    @pytest.mark.xfail(condition=_is_32bit_platform, reason="see gh-3551 for bad points")
+    @pytest.mark.xfail(reason=("see gh-3551 for bad points on 32 bit "
+                               "systems and gh-8095 for another bad "
+                               "point"))
     def test_rf(self):
         if LooseVersion(mpmath.__version__) >= LooseVersion("1.0.0"):
             # no workarounds needed
@@ -1799,7 +1765,7 @@ class TestSystematic(object):
     def test_sinpi(self):
         eps = np.finfo(float).eps
         assert_mpmath_equal(_sinpi, mpmath.sinpi,
-                            [Arg()], nan_ok=False, rtol=2*eps)
+                            [Arg()], nan_ok=False, rtol=eps)
 
     def test_sinpi_complex(self):
         assert_mpmath_equal(_sinpi, mpmath.sinpi,
@@ -1897,6 +1863,12 @@ class TestSystematic(object):
                             exception_to_nan(mpmath.zeta),
                             [Arg(a=1, b=1e10, inclusive_a=False),
                              Arg(a=0, inclusive_a=False)])
+
+    def test_zetac(self):
+        assert_mpmath_equal(sc.zetac,
+                            lambda x: mpmath.zeta(x) - 1,
+                            [Arg(-100, 100)],
+                            nan_ok=False, dps=45, rtol=1e-13)
 
     def test_boxcox(self):
 

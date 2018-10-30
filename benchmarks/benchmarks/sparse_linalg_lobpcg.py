@@ -72,12 +72,16 @@ class Bench(Benchmark):
         self.time_mikota.__func__.setup = self.setup_mikota
 
         self.time_sakurai.__func__.params = list(self.params)
-        self.time_sakurai.__func__.params[0] = [50, 400, 2400]
+        self.time_sakurai.__func__.params[0] = [50, 400]
         self.time_sakurai.__func__.setup = self.setup_sakurai
 
     def setup_mikota(self, n, solver):
         self.shape = (n, n)
         self.A, self.B = _mikota_pair(n)
+
+        if solver == 'eigh' and n >= 512:
+            # skip: slow, and not useful to benchmark
+            raise NotImplementedError()
 
     def setup_sakurai(self, n, solver):
         self.shape = (n, n)
@@ -106,3 +110,7 @@ class Bench(Benchmark):
                                        retResidualNormsHistory=1)
         else:
             eigh(self.A_dense, self.B_dense, eigvals_only=True, eigvals=(0, m - 1))
+
+    # Retain old benchmark results (remove this if changing the benchmark)
+    time_mikota.version = "a1fb679758f7e5cf79d18cc4930afdff999fccc142fe7a4f63e73b39ab1f58bb"
+    time_sakurai.version = "7c38d449924fb71f777bd408072ecc883b8b05e53a6544e97da3887fbc10b235"

@@ -121,7 +121,7 @@ trlib_int_t trlib_leftmost_irreducible(
 
     while (1) {
         /* iterate to obtain Parlett-Reid last pivot value of -leftmost == 0.0
-           this iteration uses a safeguard bracket [low, up] such that alway low <= leftmost <= up
+           this iteration uses a safeguard bracket [low, up] such that always low <= leftmost <= up
            note that T - t*I is positive definite for t <= desired leftmost
            steps of iteration:
           

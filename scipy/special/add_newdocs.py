@@ -85,7 +85,7 @@ add_newdoc("scipy.special", "sph_harm",
     References
     ----------
     .. [1] Digital Library of Mathematical Functions, 14.30.
-           http://dlmf.nist.gov/14.30
+           https://dlmf.nist.gov/14.30
     .. [2] https://en.wikipedia.org/wiki/Spherical_harmonics#Condon.E2.80.93Shortley_phase
     """)
 
@@ -260,7 +260,7 @@ add_newdoc("scipy.special", "airy",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     .. [2] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
            of a Complex Argument and Nonnegative Order",
            http://netlib.org/amos/
@@ -362,7 +362,7 @@ add_newdoc("scipy.special", "bdtr",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
 
     """)
 
@@ -410,7 +410,7 @@ add_newdoc("scipy.special", "bdtrc",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
 
     """)
 
@@ -456,7 +456,7 @@ add_newdoc("scipy.special", "bdtri",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
 add_newdoc("scipy.special", "bdtrik",
@@ -964,7 +964,7 @@ add_newdoc("scipy.special", "btdtr",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
 
     """)
 
@@ -1009,7 +1009,7 @@ add_newdoc("scipy.special", "btdtri",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
 
     """)
 
@@ -1215,7 +1215,7 @@ add_newdoc("scipy.special", "ellipe",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     .. [2] Milton Abramowitz and Irene A. Stegun, eds.
            Handbook of Mathematical Functions with Formulas,
            Graphs, and Mathematical Tables. New York: Dover, 1972.
@@ -1266,7 +1266,7 @@ add_newdoc("scipy.special", "ellipeinc",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     .. [2] Milton Abramowitz and Irene A. Stegun, eds.
            Handbook of Mathematical Functions with Formulas,
            Graphs, and Mathematical Tables. New York: Dover, 1972.
@@ -1320,7 +1320,7 @@ add_newdoc("scipy.special", "ellipj",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
 add_newdoc("scipy.special", "ellipkm1",
@@ -1372,7 +1372,7 @@ add_newdoc("scipy.special", "ellipkm1",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
 add_newdoc("scipy.special", "ellipkinc",
@@ -1421,7 +1421,7 @@ add_newdoc("scipy.special", "ellipkinc",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     .. [2] Milton Abramowitz and Irene A. Stegun, eds.
            Handbook of Mathematical Functions with Formulas,
            Graphs, and Mathematical Tables. New York: Dover, 1972.
@@ -1486,7 +1486,7 @@ add_newdoc("scipy.special", "erf",
 
     References
     ----------
-    .. [1] http://en.wikipedia.org/wiki/Error_function
+    .. [1] https://en.wikipedia.org/wiki/Error_function
     .. [2] Milton Abramowitz and Irene A. Stegun, eds.
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover,
@@ -2263,10 +2263,11 @@ add_newdoc('scipy.special', 'expit',
     """
     expit(x)
 
-    Expit ufunc for ndarrays.
+    Expit (a.k.a. logistic sigmoid) ufunc for ndarrays.
 
-    The expit function, also known as the logistic function, is defined as
-    expit(x) = 1/(1+exp(-x)). It is the inverse of the logit function.
+    The expit function, also known as the logistic sigmoid function, is
+    defined as ``expit(x) = 1/(1+exp(-x))``.  It is the inverse of the
+    logit function.
 
     Parameters
     ----------
@@ -2277,7 +2278,7 @@ add_newdoc('scipy.special', 'expit',
     -------
     out : ndarray
         An ndarray of the same shape as x. Its entries
-        are expit of the corresponding entry of x.
+        are `expit` of the corresponding entry of x.
 
     See Also
     --------
@@ -2471,7 +2472,7 @@ add_newdoc("scipy.special", "fdtr",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
 
     """)
 
@@ -2516,7 +2517,7 @@ add_newdoc("scipy.special", "fdtrc",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
 add_newdoc("scipy.special", "fdtri",
@@ -2563,7 +2564,7 @@ add_newdoc("scipy.special", "fdtri",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
 
     """)
 
@@ -2696,7 +2697,7 @@ add_newdoc("scipy.special", "gammainc",
     References
     ----------
     .. [1] Maddock et. al., "Incomplete Gamma Functions",
-       http://www.boost.org/doc/libs/1_61_0/libs/math/doc/html/math_toolkit/sf_gamma/igamma.html
+       https://www.boost.org/doc/libs/1_61_0/libs/math/doc/html/math_toolkit/sf_gamma/igamma.html
     """)
 
 add_newdoc("scipy.special", "gammaincc",
@@ -2728,7 +2729,7 @@ add_newdoc("scipy.special", "gammaincc",
     References
     ----------
     .. [1] Maddock et. al., "Incomplete Gamma Functions",
-       http://www.boost.org/doc/libs/1_61_0/libs/math/doc/html/math_toolkit/sf_gamma/igamma.html
+       https://www.boost.org/doc/libs/1_61_0/libs/math/doc/html/math_toolkit/sf_gamma/igamma.html
     """)
 
 add_newdoc("scipy.special", "gammainccinv",
@@ -2836,7 +2837,7 @@ add_newdoc("scipy.special", "gdtr",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
 
     """)
 
@@ -2874,7 +2875,7 @@ add_newdoc("scipy.special", "gdtrc",
 
     See Also
     --------
-    gdtr, gdtri
+    gdtr, gdtrix
 
     Notes
     -----
@@ -2886,7 +2887,7 @@ add_newdoc("scipy.special", "gdtrc",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
 
     """)
 
@@ -3401,9 +3402,9 @@ add_newdoc("scipy.special", "hyp2f1",
     ----------
     .. [1] S. Zhang and J.M. Jin, "Computation of Special Functions", Wiley 1996
     .. [2] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     .. [3] NIST Digital Library of Mathematical Functions
-           http://dlmf.nist.gov/
+           https://dlmf.nist.gov/
 
     """)
 
@@ -3466,7 +3467,7 @@ add_newdoc("scipy.special", "i0",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
 add_newdoc("scipy.special", "i0e",
@@ -3507,7 +3508,7 @@ add_newdoc("scipy.special", "i0e",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
 add_newdoc("scipy.special", "i1",
@@ -3549,7 +3550,7 @@ add_newdoc("scipy.special", "i1",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
 add_newdoc("scipy.special", "i1e",
@@ -3590,7 +3591,7 @@ add_newdoc("scipy.special", "i1e",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
 add_newdoc("scipy.special", "_igam_fac",
@@ -3609,7 +3610,7 @@ add_newdoc("scipy.special", "it2i0k0",
     ii0
         ``integral((i0(t)-1)/t, t=0..x)``
     ik0
-        ``int(k0(t)/t, t=x..inf)``
+        ``integral(k0(t)/t, t=x..inf)``
     """)
 
 add_newdoc("scipy.special", "it2j0y0",
@@ -3943,7 +3944,7 @@ add_newdoc("scipy.special", "j0",
     two rational functions of degree 6/6 and 7/7.
 
     This function is a wrapper for the Cephes [1]_ routine `j0`.
-    It should not to be confused with the spherical Bessel functions (see
+    It should not be confused with the spherical Bessel functions (see
     `spherical_jn`).
 
     See also
@@ -3954,7 +3955,7 @@ add_newdoc("scipy.special", "j0",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
 add_newdoc("scipy.special", "j1",
@@ -3981,7 +3982,7 @@ add_newdoc("scipy.special", "j1",
     functions of degree 5/5.
 
     This function is a wrapper for the Cephes [1]_ routine `j1`.
-    It should not to be confused with the spherical Bessel functions (see
+    It should not be confused with the spherical Bessel functions (see
     `spherical_jn`).
 
     See also
@@ -3992,7 +3993,7 @@ add_newdoc("scipy.special", "j1",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
 
     """)
 
@@ -4149,7 +4150,7 @@ add_newdoc("scipy.special", "k0",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
 add_newdoc("scipy.special", "k0e",
@@ -4188,7 +4189,7 @@ add_newdoc("scipy.special", "k0e",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
 add_newdoc("scipy.special", "k1",
@@ -4222,7 +4223,7 @@ add_newdoc("scipy.special", "k1",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
 add_newdoc("scipy.special", "k1e",
@@ -4261,7 +4262,7 @@ add_newdoc("scipy.special", "k1e",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
 add_newdoc("scipy.special", "kei",
@@ -4407,22 +4408,146 @@ add_newdoc("scipy.special", "kolmogi",
     """
     kolmogi(p)
 
-    Inverse function to kolmogorov
+    Inverse Survival Function of Kolmogorov distribution
 
+    It is the inverse function to `kolmogorov`.
     Returns y such that ``kolmogorov(y) == p``.
+
+    Parameters
+    ----------
+    p : float array_like
+        Probability
+
+    Returns
+    -------
+    float
+        The value(s) of kolmogi(p)
+
+    Notes
+    -----
+    `kolmogorov` is used by `stats.kstest` in the application of the
+    Kolmogorov-Smirnov Goodness of Fit test. For historial reasons this
+    function is exposed in `scpy.special`, but the recommended way to achieve
+    the most accurate CDF/SF/PDF/PPF/ISF computations is to use the
+    `stats.kstwobign` distrubution.
+
+    See Also
+    --------
+    kolmogorov : The Survival Function for the distribution
+    scipy.stats.kstwobign : Provides the functionality as a continuous distribution
+    smirnov, smirnovi : Functions for the one-sided distribution
+
+    Examples
+    --------
+    >>> from scipy.special import kolmogi
+    >>> kolmogi([0, 0.1, 0.25, 0.5, 0.75, 0.9, 1.0])
+    array([        inf,  1.22384787,  1.01918472,  0.82757356,  0.67644769,
+            0.57117327,  0.        ])
+
     """)
 
 add_newdoc("scipy.special", "kolmogorov",
-    """
+    r"""
     kolmogorov(y)
 
-    Complementary cumulative distribution function of Kolmogorov distribution
+    Complementary cumulative distribution (Survival Function) function of
+    Kolmogorov distribution.
 
     Returns the complementary cumulative distribution function of
-    Kolmogorov's limiting distribution (Kn* for large n) of a
-    two-sided test for equality between an empirical and a theoretical
+    Kolmogorov's limiting distribution (``D_n*\sqrt(n)`` as n goes to infinity)
+    of a two-sided test for equality between an empirical and a theoretical
     distribution. It is equal to the (limit as n->infinity of the)
-    probability that sqrt(n) * max absolute deviation > y.
+    probability that ``sqrt(n) * max absolute deviation > y``.
+
+    Parameters
+    ----------
+    y : float array_like
+      Absolute deviation between the Empirical CDF (ECDF) and the target CDF,
+      multiplied by sqrt(n).
+
+    Returns
+    -------
+    float
+        The value(s) of kolmogorov(y)
+
+    Notes
+    -----
+    `kolmogorov` is used by `stats.kstest` in the application of the
+    Kolmogorov-Smirnov Goodness of Fit test. For historial reasons this
+    function is exposed in `scpy.special`, but the recommended way to achieve
+    the most accurate CDF/SF/PDF/PPF/ISF computations is to use the
+    `stats.kstwobign` distrubution.
+
+    See Also
+    --------
+    kolmogi : The Inverse Survival Function for the distribution
+    scipy.stats.kstwobign : Provides the functionality as a continuous distribution
+    smirnov, smirnovi : Functions for the one-sided distribution
+
+    Examples
+    --------
+    Show the probability of a gap at least as big as 0, 0.5 and 1.0.
+
+    >>> from scipy.special import kolmogorov
+    >>> from scipy.stats import kstwobign 
+    >>> kolmogorov([0, 0.5, 1.0])
+    array([ 1.        ,  0.96394524,  0.26999967])
+
+    Compare a sample of size 1000 drawn from a Laplace(0, 1) distribution against
+    the target distribution, a Normal(0, 1) distribution.
+
+    >>> from scipy.stats import norm, laplace
+    >>> n = 1000
+    >>> np.random.seed(seed=233423)
+    >>> lap01 = laplace(0, 1)
+    >>> x = np.sort(lap01.rvs(n))
+    >>> np.mean(x), np.std(x)
+    (-0.083073685397609842, 1.3676426568399822)
+
+    Construct the Empirical CDF and the K-S statistic Dn.
+
+    >>> target = norm(0,1)  # Normal mean 0, stddev 1
+    >>> cdfs = target.cdf(x)
+    >>> ecdfs = np.arange(n+1, dtype=float)/n
+    >>> gaps = np.column_stack([cdfs - ecdfs[:n], ecdfs[1:] - cdfs])
+    >>> Dn = np.max(gaps)
+    >>> Kn = np.sqrt(n) * Dn
+    >>> print('Dn=%f, sqrt(n)*Dn=%f' % (Dn, Kn))
+    Dn=0.058286, sqrt(n)*Dn=1.843153
+    >>> print(chr(10).join(['For a sample of size n drawn from a N(0, 1) distribution:',
+    ...   ' the approximate Kolmogorov probability that sqrt(n)*Dn>=%f is %f' %  (Kn, kolmogorov(Kn)),
+    ...   ' the approximate Kolmogorov probability that sqrt(n)*Dn<=%f is %f' %  (Kn, kstwobign.cdf(Kn))]))
+    For a sample of size n drawn from a N(0, 1) distribution:
+     the approximate Kolmogorov probability that sqrt(n)*Dn>=1.843153 is 0.002240
+     the approximate Kolmogorov probability that sqrt(n)*Dn<=1.843153 is 0.997760
+
+    Plot the Empirical CDF against the target N(0, 1) CDF.
+
+    >>> import matplotlib.pyplot as plt
+    >>> plt.step(np.concatenate([[-3], x]), ecdfs, where='post', label='Empirical CDF')
+    >>> x3 = np.linspace(-3, 3, 100)
+    >>> plt.plot(x3, target.cdf(x3), label='CDF for N(0, 1)')
+    >>> plt.ylim([0, 1]); plt.grid(True); plt.legend();
+    >>> # Add vertical lines marking Dn+ and Dn-
+    >>> iminus, iplus = np.argmax(gaps, axis=0)
+    >>> plt.vlines([x[iminus]], ecdfs[iminus], cdfs[iminus], color='r', linestyle='dashed', lw=4)
+    >>> plt.vlines([x[iplus]], cdfs[iplus], ecdfs[iplus+1], color='r', linestyle='dashed', lw=4)
+    >>> plt.show()
+    """)
+
+add_newdoc("scipy.special", "_kolmogc",
+    r"""
+    Internal function, do not use.
+    """)
+
+add_newdoc("scipy.special", "_kolmogci",
+    r"""
+    Internal function, do not use.
+    """)
+
+add_newdoc("scipy.special", "_kolmogp",
+    r"""
+    Internal function, do not use.
     """)
 
 add_newdoc("scipy.special", "kv",
@@ -4475,7 +4600,7 @@ add_newdoc("scipy.special", "kv",
            functions of a complex argument and nonnegative order", ACM
            TOMS Vol. 12 Issue 3, Sept. 1986, p. 265
     .. [3] NIST Digital Library of Mathematical Functions,
-           Eq. 10.25.E3. http://dlmf.nist.gov/10.25.E3
+           Eq. 10.25.E3. https://dlmf.nist.gov/10.25.E3
 
     Examples
     --------
@@ -4892,7 +5017,7 @@ add_newdoc("scipy.special", "modstruve",
     References
     ----------
     .. [1] NIST Digital Library of Mathematical Functions
-           http://dlmf.nist.gov/11
+           https://dlmf.nist.gov/11
     """)
 
 add_newdoc("scipy.special", "nbdtr",
@@ -4947,7 +5072,7 @@ add_newdoc("scipy.special", "nbdtr",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
 
     """)
 
@@ -4999,7 +5124,7 @@ add_newdoc("scipy.special", "nbdtrc",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
 add_newdoc("scipy.special", "nbdtri",
@@ -5040,7 +5165,7 @@ add_newdoc("scipy.special", "nbdtri",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
 
     """)
 
@@ -5887,7 +6012,7 @@ add_newdoc("scipy.special", "pbwa",
     References
     ----------
     .. [1] Digital Library of Mathematical Functions, 14.30.
-           http://dlmf.nist.gov/14.30
+           https://dlmf.nist.gov/14.30
     .. [2] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
@@ -6155,7 +6280,7 @@ add_newdoc("scipy.special", "psi",
     References
     ----------
     .. [1] NIST Digital Library of Mathematical Functions
-           http://dlmf.nist.gov/5
+           https://dlmf.nist.gov/5
     .. [2] Fredrik Johansson and others.
            "mpmath: a Python library for arbitrary-precision floating-point arithmetic"
            (Version 0.19) http://mpmath.org/
@@ -6271,7 +6396,7 @@ add_newdoc("scipy.special", "shichi",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     .. [2] Fredrik Johansson and others.
            "mpmath: a Python library for arbitrary-precision floating-point arithmetic"
            (Version 0.19) http://mpmath.org/
@@ -6324,7 +6449,7 @@ add_newdoc("scipy.special", "sici",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     .. [2] Fredrik Johansson and others.
            "mpmath: a Python library for arbitrary-precision floating-point arithmetic"
            (Version 0.19) http://mpmath.org/
@@ -6338,26 +6463,154 @@ add_newdoc("scipy.special", "sindg",
     """)
 
 add_newdoc("scipy.special", "smirnov",
-    """
-    smirnov(n, e)
+    r"""
+    smirnov(n, d)
 
     Kolmogorov-Smirnov complementary cumulative distribution function
 
     Returns the exact Kolmogorov-Smirnov complementary cumulative
-    distribution function (Dn+ or Dn-) for a one-sided test of
-    equality between an empirical and a theoretical distribution. It
-    is equal to the probability that the maximum difference between a
-    theoretical distribution and an empirical one based on `n` samples
-    is greater than e.
+    distribution function,(aka the Survival Function) of Dn+ (or Dn-)
+    for a one-sided test of equality between an empirical and a
+    theoretical distribution. It is equal to the probability that the
+    maximum difference between a theoretical distribution and an empirical
+    one based on `n` samples is greater than d.
+
+    Parameters
+    ----------
+    n : int
+      Number of samples
+    d : float array_like
+      Deviation between the Empirical CDF (ECDF) and the target CDF.
+
+    Returns
+    -------
+    float
+        The value(s) of smirnov(n, d), Prob(Dn+ >= d) (Also Prob(Dn- >= d))
+
+    Notes
+    -----
+    `smirnov` is used by `stats.kstest` in the application of the
+    Kolmogorov-Smirnov Goodness of Fit test. For historial reasons this
+    function is exposed in `scpy.special`, but the recommended way to achieve
+    the most accurate CDF/SF/PDF/PPF/ISF computations is to use the
+    `stats.ksone` distrubution.
+
+    See Also
+    --------
+    smirnovi : The Inverse Survival Function for the distribution
+    scipy.stats.ksone : Provides the functionality as a continuous distribution
+    kolmogorov, kolmogi : Functions for the two-sided distribution
+
+    Examples
+    --------
+    >>> from scipy.special import smirnov
+
+    Show the probability of a gap at least as big as 0, 0.5 and 1.0 for a sample of size 5
+
+    >>> smirnov(5, [0, 0.5, 1.0])
+    array([ 1.   ,  0.056,  0.   ])
+
+    Compare a sample of size 5 drawn from a source N(0.5, 1) distribution against
+    a target N(0, 1) CDF.
+
+    >>> from scipy.stats import norm
+    >>> n = 5
+    >>> gendist = norm(0.5, 1)       # Normal distribution, mean 0.5, stddev 1
+    >>> np.random.seed(seed=233423)  # Set the seed for reproducibility
+    >>> x = np.sort(gendist.rvs(size=n))
+    >>> x
+    array([-0.20946287,  0.71688765,  0.95164151,  1.44590852,  3.08880533])
+    >>> target = norm(0, 1)
+    >>> cdfs = target.cdf(x)
+    >>> cdfs
+    array([ 0.41704346,  0.76327829,  0.82936059,  0.92589857,  0.99899518])
+    # Construct the Empirical CDF and the K-S statistics (Dn+, Dn-, Dn)
+    >>> ecdfs = np.arange(n+1, dtype=float)/n
+    >>> cols = np.column_stack([x, ecdfs[1:], cdfs, cdfs - ecdfs[:n], ecdfs[1:] - cdfs])
+    >>> np.set_printoptions(precision=3)
+    >>> cols
+    array([[ -2.095e-01,   2.000e-01,   4.170e-01,   4.170e-01,  -2.170e-01],
+           [  7.169e-01,   4.000e-01,   7.633e-01,   5.633e-01,  -3.633e-01],
+           [  9.516e-01,   6.000e-01,   8.294e-01,   4.294e-01,  -2.294e-01],
+           [  1.446e+00,   8.000e-01,   9.259e-01,   3.259e-01,  -1.259e-01],
+           [  3.089e+00,   1.000e+00,   9.990e-01,   1.990e-01,   1.005e-03]])
+    >>> gaps = cols[:, -2:]
+    >>> Dnpm = np.max(gaps, axis=0)
+    >>> print('Dn-=%f, Dn+=%f' % (Dnpm[0], Dnpm[1]))
+    Dn-=0.563278, Dn+=0.001005
+    >>> probs = smirnov(n, Dnpm)
+    >>> print(chr(10).join(['For a sample of size %d drawn from a N(0, 1) distribution:' % n,
+    ...      ' Smirnov n=%d: Prob(Dn- >= %f) = %.4f' % (n, Dnpm[0], probs[0]),
+    ...      ' Smirnov n=%d: Prob(Dn+ >= %f) = %.4f' % (n, Dnpm[1], probs[1])]))
+    For a sample of size 5 drawn from a N(0, 1) distribution:
+     Smirnov n=5: Prob(Dn- >= 0.563278) = 0.0250
+     Smirnov n=5: Prob(Dn+ >= 0.001005) = 0.9990
+
+    Plot the Empirical CDF against the target N(0, 1) CDF
+
+    >>> import matplotlib.pyplot as plt
+    >>> plt.step(np.concatenate([[-3], x]), ecdfs, where='post', label='Empirical CDF')
+    >>> x3 = np.linspace(-3, 3, 100)
+    >>> plt.plot(x3, target.cdf(x3), label='CDF for N(0, 1)')
+    >>> plt.ylim([0, 1]); plt.grid(True); plt.legend();
+    # Add vertical lines marking Dn+ and Dn-
+    >>> iminus, iplus = np.argmax(gaps, axis=0)
+    >>> plt.vlines([x[iminus]], ecdfs[iminus], cdfs[iminus], color='r', linestyle='dashed', lw=4)
+    >>> plt.vlines([x[iplus]], cdfs[iplus], ecdfs[iplus+1], color='m', linestyle='dashed', lw=4)
+    >>> plt.show()
     """)
 
 add_newdoc("scipy.special", "smirnovi",
     """
-    smirnovi(n, y)
+    smirnovi(n, p)
 
     Inverse to `smirnov`
 
-    Returns ``e`` such that ``smirnov(n, e) = y``.
+    Returns `d` such that ``smirnov(n, d) == p``, the critical value
+    corresponding to `p`.
+
+    Parameters
+    ----------
+    n : int
+      Number of samples
+    p : float array_like
+        Probability
+
+    Returns
+    -------
+    float
+        The value(s) of smirnovi(n, p), the critical values.
+
+    Notes
+    -----
+    `smirnov` is used by `stats.kstest` in the application of the
+    Kolmogorov-Smirnov Goodness of Fit test. For historial reasons this
+    function is exposed in `scpy.special`, but the recommended way to achieve
+    the most accurate CDF/SF/PDF/PPF/ISF computations is to use the
+    `stats.ksone` distrubution.
+
+    See Also
+    --------
+    smirnov  : The Survival Function (SF) for the distribution
+    scipy.stats.ksone : Provides the functionality as a continuous distribution
+    kolmogorov, kolmogi, scipy.stats.kstwobign : Functions for the two-sided distribution
+    """)
+
+add_newdoc("scipy.special", "_smirnovc",
+    """
+    _smirnovc(n, d)
+     Internal function, do not use.
+    """)
+
+add_newdoc("scipy.special", "_smirnovci",
+    """
+     Internal function, do not use.
+    """)
+
+add_newdoc("scipy.special", "_smirnovp",
+    """
+    _smirnovp(n, p)
+     Internal function, do not use.
     """)
 
 add_newdoc("scipy.special", "spence",
@@ -6474,7 +6727,7 @@ add_newdoc("scipy.special", "struve",
     References
     ----------
     .. [1] NIST Digital Library of Mathematical Functions
-           http://dlmf.nist.gov/11
+           https://dlmf.nist.gov/11
 
     """)
 
@@ -6621,7 +6874,7 @@ add_newdoc("scipy.special", "y0",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
 add_newdoc("scipy.special", "y1",
@@ -6660,7 +6913,7 @@ add_newdoc("scipy.special", "y1",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
 add_newdoc("scipy.special", "yn",
@@ -6696,7 +6949,7 @@ add_newdoc("scipy.special", "yn",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
 add_newdoc("scipy.special", "yv",
@@ -6811,11 +7064,41 @@ add_newdoc("scipy.special", "zetac",
 
     .. math:: \\zeta(x) = \\sum_{k=2}^{\\infty} 1 / k^x,
 
-    where ``x > 1``.
+    where ``x > 1``.  For ``x < 1``, the analytic continuation is computed.
+
+    Because of limitations of the numerical algorithm, ``zetac(x)`` returns
+    `nan` for `x` less than -30.8148.
+
+    Parameters
+    ----------
+    x : array_like of float
+        Values at which to compute zeta(x) - 1 (must be real).
+
+    Returns
+    -------
+    out : array_like
+        Values of zeta(x) - 1.
 
     See Also
     --------
     zeta
+
+    Examples
+    --------
+    >>> from scipy.special import zetac, zeta
+
+    Some special values:
+
+    >>> zetac(2), np.pi**2/6 - 1
+    (0.64493406684822641, 0.6449340668482264)
+
+    >>> zetac(-1), -1.0/12 - 1
+    (-1.0833333333333333, -1.0833333333333333)
+
+    Compare ``zetac(x)`` to ``zeta(x) - 1`` for large `x`:
+
+    >>> zetac(60), zeta(60) - 1
+    (8.673617380119933e-19, 0.0)
 
     """)
 
@@ -6926,9 +7209,9 @@ add_newdoc("scipy.special", "loggamma",
     -----
     It is not generally true that :math:`\log\Gamma(z) =
     \log(\Gamma(z))`, though the real parts of the functions do
-    agree. The benefit of not defining ``loggamma`` as
+    agree. The benefit of not defining `loggamma` as
     :math:`\log(\Gamma(z))` is that the latter function has a
-    complicated branch cut structure whereas ``loggamma`` is analytic
+    complicated branch cut structure whereas `loggamma` is analytic
     except for on the negative real axis.
 
     The identities
@@ -6937,13 +7220,11 @@ add_newdoc("scipy.special", "loggamma",
       \exp(\log\Gamma(z)) &= \Gamma(z) \\
       \log\Gamma(z + 1) &= \log(z) + \log\Gamma(z)
 
-    make ``loggama`` useful for working in complex logspace. However,
-    ``loggamma`` necessarily returns complex outputs for real inputs,
-    so if you want to work only with real numbers use `gammaln`. On
-    the real line the two functions are related by ``exp(loggamma(x))
-    = gammasgn(x)*exp(gammaln(x))``, though in practice rounding
-    errors will introduce small spurious imaginary components in
-    ``exp(loggamma(x))``.
+    make `loggamma` useful for working in complex logspace.
+
+    On the real line `loggamma` is related to `gammaln` via
+    ``exp(loggamma(x + 0j)) = gammasgn(x)*exp(gammaln(x))``, up to
+    rounding error.
 
     The implementation here is based on [hare1997]_.
 
@@ -6967,4 +7248,41 @@ add_newdoc("scipy.special", "_sinpi",
 add_newdoc("scipy.special", "_cospi",
     """
     Internal function, do not use.
+    """)
+
+add_newdoc("scipy.special", "owens_t",
+    """
+    owens_t(h, a)
+
+    Owen's T Function.
+
+    The function T(h, a) gives the probability of the event
+    (X > h and 0 < Y < a * X) where X and Y are independent
+    standard normal random variables.
+
+    Parameters
+    ----------
+    h: array_like
+        Input value.
+    a: array_like
+        Input value.
+
+    Returns
+    -------
+    t: scalar or ndarray
+        Probability of the event (X > h and 0 < Y < a * X),
+        where X and Y are independent standard normal random variables.
+
+    Examples
+    --------
+    >>> from scipy import special
+    >>> a = 3.5
+    >>> h = 0.78
+    >>> special.owens_t(h, a)
+    0.10877216734852274
+
+    References
+    ----------
+    .. [1] M. Patefield and D. Tandy, "Fast and accurate calculation of
+           Owen's T Function", Statistical Software vol. 5, pp. 1-25, 2000.
     """)

@@ -2,7 +2,7 @@
 
     WRITTEN BY LOUIS LUANGKESORN <lluang@yahoo.com> FOR THE STATS MODULE
     BASED ON WILKINSON'S STATISTICS QUIZ
-    http://www.stanford.edu/~clint/bench/wilk.txt
+    https://www.stanford.edu/~clint/bench/wilk.txt
 
     Additional tests by a host of SciPy developers.
 """
@@ -103,7 +103,7 @@ class TestTrimmedStats(object):
             assert_raises(ValueError, stats.tmin, x, nan_policy='raise')
             assert_raises(ValueError, stats.tmin, x, nan_policy='foobar')
             msg = "'propagate', 'raise', 'omit'"
-            with assert_raises(ValueError, message=msg):
+            with assert_raises(ValueError, match=msg):
                 stats.tmin(x, nan_policy='foo')
 
     def test_tmax(self):
@@ -142,9 +142,9 @@ class TestTrimmedStats(object):
 class TestCorrPearsonr(object):
     """ W.II.D. Compute a correlation matrix on all the variables.
 
-        All the correlations, except for ZERO and MISS, shoud be exactly 1.
+        All the correlations, except for ZERO and MISS, should be exactly 1.
         ZERO and MISS should have undefined or missing correlations with the
-        other variables.  The same should go for SPEARMAN corelations, if
+        other variables.  The same should go for SPEARMAN correlations, if
         your program has them.
     """
     def test_pXX(self):
@@ -409,7 +409,7 @@ class TestFisherExact(object):
 class TestCorrSpearmanr(object):
     """ W.II.D. Compute a correlation matrix on all the variables.
 
-        All the correlations, except for ZERO and MISS, shoud be exactly 1.
+        All the correlations, except for ZERO and MISS, should be exactly 1.
         ZERO and MISS should have undefined or missing correlations with the
         other variables.  The same should go for SPEARMAN corelations, if
         your program has them.
@@ -421,6 +421,27 @@ class TestCorrSpearmanr(object):
     def test_uneven_lengths(self):
         assert_raises(ValueError, stats.spearmanr, [1, 2, 1], [8, 9])
         assert_raises(ValueError, stats.spearmanr, [1, 2, 1], 8)
+
+    def test_uneven_2d_shapes(self):
+        # Different number of columns should work - those just get concatenated.
+        np.random.seed(232324)
+        x = np.random.randn(4, 3)
+        y = np.random.randn(4, 2)
+        assert stats.spearmanr(x, y).correlation.shape == (5, 5)
+        assert stats.spearmanr(x.T, y.T, axis=1).pvalue.shape == (5, 5)
+
+        assert_raises(ValueError, stats.spearmanr, x, y, axis=1)
+        assert_raises(ValueError, stats.spearmanr, x.T, y.T)
+
+    def test_ndim_too_high(self):
+        np.random.seed(232324)
+        x = np.random.randn(4, 3, 2)
+        assert_raises(ValueError, stats.spearmanr, x)
+        assert_raises(ValueError, stats.spearmanr, x, x)
+        assert_raises(ValueError, stats.spearmanr, x, None, None)
+        # But should work with axis=None (raveling axes) for two input arrays
+        assert_allclose(stats.spearmanr(x, x, axis=None),
+                        stats.spearmanr(x.flatten(), x.flatten(), axis=0))
 
     def test_nan_policy(self):
         x = np.arange(10.)
@@ -541,6 +562,77 @@ class TestCorrSpearmanr(object):
         attributes = ('correlation', 'pvalue')
         check_named_results(res, attributes)
 
+    def test_1d_vs_2d(self):
+        x1 = [1, 2, 3, 4, 5, 6]
+        x2 = [1, 2, 3, 4, 6, 5]
+        res1 = stats.spearmanr(x1, x2)
+        res2 = stats.spearmanr(np.asarray([x1, x2]).T)
+        assert_allclose(res1, res2)
+
+    def test_1d_vs_2d_nans(self):
+        # Now the same with NaNs present.  Regression test for gh-9103.
+        for nan_policy in ['propagate', 'omit']:
+            x1 = [1, np.nan, 3, 4, 5, 6]
+            x2 = [1, 2, 3, 4, 6, np.nan]
+            res1 = stats.spearmanr(x1, x2, nan_policy=nan_policy)
+            res2 = stats.spearmanr(np.asarray([x1, x2]).T, nan_policy=nan_policy)
+            assert_allclose(res1, res2)
+
+    def test_3cols(self):
+        x1 = np.arange(6)
+        x2 = -x1
+        x3 = np.array([0, 1, 2, 3, 5, 4])
+        x = np.asarray([x1, x2, x3]).T
+        actual = stats.spearmanr(x)
+        expected_corr = np.array([[1, -1, 0.94285714],
+                                  [-1, 1, -0.94285714],
+                                  [0.94285714, -0.94285714, 1]])
+        expected_pvalue = np.zeros((3, 3), dtype=float)
+        expected_pvalue[2, 0:2] = 0.00480466472
+        expected_pvalue[0:2, 2] = 0.00480466472
+
+        assert_allclose(actual.correlation, expected_corr)
+        assert_allclose(actual.pvalue, expected_pvalue)
+
+    def test_gh_9103(self):
+        # Regression test for gh-9103.
+        x = np.array([[np.nan, 3.0, 4.0, 5.0, 5.1, 6.0, 9.2],
+                      [5.0, np.nan, 4.1, 4.8, 4.9, 5.0, 4.1],
+                      [0.5, 4.0, 7.1, 3.8, 8.0, 5.1, 7.6]]).T
+        corr = np.array([[np.nan, np.nan, np.nan],
+                         [np.nan, np.nan, np.nan],
+                         [np.nan, np.nan, 1.]])
+        assert_allclose(stats.spearmanr(x, nan_policy='propagate').correlation,
+                        corr)
+
+        res = stats.spearmanr(x, nan_policy='omit').correlation
+        assert_allclose((res[0][1], res[0][2], res[1][2]),
+                        (0.2051957, 0.4857143, -0.4707919), rtol=1e-6)
+
+    def test_gh_8111(self):
+        # Regression test for gh-8111 (different result for float/int/bool).
+        n = 100
+        np.random.seed(234568)
+        x = np.random.rand(n)
+        m = np.random.rand(n) > 0.7
+
+        # bool against float, no nans
+        a = (x > .5)
+        b = np.array(x)
+        res1 = stats.spearmanr(a, b, nan_policy='omit').correlation
+
+        # bool against float with NaNs
+        b[m] = np.nan
+        res2 = stats.spearmanr(a, b, nan_policy='omit').correlation
+
+        # int against float with NaNs
+        a = a.astype(np.int32)
+        res3 = stats.spearmanr(a, b, nan_policy='omit').correlation
+
+        expected = [0.865895477, 0.866100381, 0.866100381]
+        assert_allclose([res1, res2, res3], expected)
+
+
 def test_spearmanr():
     # Cross-check with R:
     # cor.test(c(1,2,3,4,5),c(5,6,7,8,7),method="spearmanr")
@@ -627,6 +719,20 @@ class TestCorrSpearmanrTies(object):
         pr = stats.pearsonr(xr, yr)
         assert_almost_equal(sr, pr)
 
+    def test_tie2(self):
+        # Test tie-handling if inputs contain nan's
+        # Data without nan's
+        x1 = [1, 2, 2.5, 2]
+        y1 = [1, 3, 2.5, 4]
+        # Same data with nan's
+        x2 = [1, 2, 2.5, 2, np.nan]
+        y2 = [1, 3, 2.5, 4, np.nan]
+
+        # Results for two data sets should be the same if nan's are ignored
+        sr1 = stats.spearmanr(x1, y1)
+        sr2 = stats.spearmanr(x2, y2, nan_policy='omit')
+        assert_almost_equal(sr1, sr2)
+
 
 #    W.II.E.  Tabulate X against X, using BIG as a case weight.  The values
 #    should appear on the diagonal and the total should be 899999955.
@@ -639,6 +745,77 @@ class TestCorrSpearmanrTies(object):
 
 
 def test_kendalltau():
+    # simple case without ties
+    x = np.arange(10)
+    y = np.arange(10)
+    # Cross-check with exact result from R:
+    # cor.test(x,y,method="kendall",exact=1)
+    expected = (1.0, 5.511463844797e-07)
+    res = stats.kendalltau(x, y)
+    assert_approx_equal(res[0], expected[0])
+    assert_approx_equal(res[1], expected[1])
+
+    # swap a couple of values
+    b = y[1]
+    y[1] = y[2]
+    y[2] = b
+    # Cross-check with exact result from R:
+    # cor.test(x,y,method="kendall",exact=1)
+    expected = (0.9555555555555556, 5.511463844797e-06)
+    res = stats.kendalltau(x, y)
+    assert_approx_equal(res[0], expected[0])
+    assert_approx_equal(res[1], expected[1])
+
+    # swap a couple more
+    b = y[5]
+    y[5] = y[6]
+    y[6] = b
+    # Cross-check with exact result from R:
+    # cor.test(x,y,method="kendall",exact=1)
+    expected = (0.9111111111111111, 2.976190476190e-05)
+    res = stats.kendalltau(x, y)
+    assert_approx_equal(res[0], expected[0])
+    assert_approx_equal(res[1], expected[1])
+
+    # same in opposite direction
+    x = np.arange(10)
+    y = np.arange(10)[::-1]
+    # Cross-check with exact result from R:
+    # cor.test(x,y,method="kendall",exact=1)
+    expected = (-1.0, 5.511463844797e-07)
+    res = stats.kendalltau(x, y)
+    assert_approx_equal(res[0], expected[0])
+    assert_approx_equal(res[1], expected[1])
+
+    # swap a couple of values
+    b = y[1]
+    y[1] = y[2]
+    y[2] = b
+    # Cross-check with exact result from R:
+    # cor.test(x,y,method="kendall",exact=1)
+    expected = (-0.9555555555555556, 5.511463844797e-06)
+    res = stats.kendalltau(x, y)
+    assert_approx_equal(res[0], expected[0])
+    assert_approx_equal(res[1], expected[1])
+
+    # swap a couple more
+    b = y[5]
+    y[5] = y[6]
+    y[6] = b
+    # Cross-check with exact result from R:
+    # cor.test(x,y,method="kendall",exact=1)
+    expected = (-0.9111111111111111, 2.976190476190e-05)
+    res = stats.kendalltau(x, y)
+    assert_approx_equal(res[0], expected[0])
+    assert_approx_equal(res[1], expected[1])
+
+    # check exception in case of ties
+    y[2] = y[1]
+    assert_raises(ValueError, stats.kendalltau, x, y, method='exact')
+
+    # check exception in case of invalid method keyword
+    assert_raises(ValueError, stats.kendalltau, x, y, method='banana')
+
     # with some ties
     # Cross-check with R:
     # cor.test(c(12,2,1,12,2),c(1,4,7,1,0),method="kendall",exact=FALSE)
@@ -682,6 +859,8 @@ def test_kendalltau():
     x[9] = np.nan
     assert_array_equal(stats.kendalltau(x, x), (np.nan, np.nan))
     assert_allclose(stats.kendalltau(x, x, nan_policy='omit'),
+                    (1.0, 5.5114638e-6), rtol=1e-06)
+    assert_allclose(stats.kendalltau(x, x, nan_policy='omit', method='asymptotic'),
                     (1.0, 0.00017455009626808976), rtol=1e-06)
     assert_raises(ValueError, stats.kendalltau, x, x, nan_policy='raise')
     assert_raises(ValueError, stats.kendalltau, x, x, nan_policy='foobar')
@@ -984,13 +1163,13 @@ class TestRegression(object):
         # Expected values
         exp_slope = 1.00211681802045
         exp_intercept = -0.262323073774029
-        exp_rvalue = 0.999993745883712
+        exp_rsquared = 0.999993745883712
 
         actual = stats.linregress(x, y)
 
         assert_almost_equal(actual.slope, exp_slope)
         assert_almost_equal(actual.intercept, exp_intercept)
-        assert_almost_equal(actual.rvalue, exp_rvalue, decimal=5)
+        assert_almost_equal(actual.rvalue**2, exp_rsquared)
 
     def test_empty_input(self):
         assert_raises(ValueError, stats.linregress, [], [])
@@ -1262,7 +1441,9 @@ class TestItemfreq(object):
         # Check itemfreq works for all dtypes (adapted from np.unique tests)
         def _check_itemfreq(dt):
             a = np.array(self.a, dt)
-            v = stats.itemfreq(a)
+            with suppress_warnings() as sup:
+                sup.filter(DeprecationWarning)
+                v = stats.itemfreq(a)
             assert_array_equal(v[:, 0], [1, 2, 5, 7])
             assert_array_equal(v[:, 1], np.array([20, 10, 20, 20], dtype=dt))
 
@@ -1278,7 +1459,9 @@ class TestItemfreq(object):
         aa[:] = a
         bb = np.empty(len(b), dt)
         bb[:] = b
-        v = stats.itemfreq(aa)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning)
+            v = stats.itemfreq(aa)
         assert_array_equal(v[:, 0], bb)
 
     def test_structured_arrays(self):
@@ -1286,7 +1469,9 @@ class TestItemfreq(object):
         dt = [('', 'i'), ('', 'i')]
         aa = np.array(list(zip(a, a)), dt)
         bb = np.array(list(zip(b, b)), dt)
-        v = stats.itemfreq(aa)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning)
+            v = stats.itemfreq(aa)
         # Arrays don't compare equal because v[:,0] is object array
         assert_equal(tuple(v[2, 0]), tuple(bb[2]))
 
@@ -1339,7 +1524,6 @@ class TestMode(object):
         assert_equal(vals[0][0], 'showers')
         assert_equal(vals[1][0], 2)
 
-    @pytest.mark.xfail(sys.version_info > (3,), reason='numpy github issue 641')
     def test_mixed_objects(self):
         objects = [10, True, np.nan, 'hello', 10]
         arr = np.empty((5,), dtype=object)
@@ -1401,6 +1585,16 @@ class TestMode(object):
         assert_equal(actual, (6, 3))
         assert_raises(ValueError, stats.mode, data1, nan_policy='raise')
         assert_raises(ValueError, stats.mode, data1, nan_policy='foobar')
+
+    @pytest.mark.parametrize("data", [
+        [3, 5, 1, 1, 3],
+        [3, np.nan, 5, 1, 1, 3],
+        [3, 5, 1],
+        [3, np.nan, 5, 1],
+    ])
+    def test_smallest_equal(self, data):
+        result = stats.mode(data, nan_policy='omit')
+        assert_equal(result[0][0], 1)
 
 
 class TestVariability(object):
@@ -1901,8 +2095,8 @@ class TestMoments(object):
         note that length(testcase) = 4
         testmathworks comes from documentation for the
         Statistics Toolbox for Matlab and can be found at both
-        http://www.mathworks.com/access/helpdesk/help/toolbox/stats/kurtosis.shtml
-        http://www.mathworks.com/access/helpdesk/help/toolbox/stats/skewness.shtml
+        https://www.mathworks.com/help/stats/kurtosis.html
+        https://www.mathworks.com/help/stats/skewness.html
         Note that both test cases came from here.
     """
     testcase = [1,2,3,4]
@@ -2020,7 +2214,7 @@ class TestMoments(object):
         #   sum((testcase-mean(testcase,axis=0))**4,axis=0)/((sqrt(var(testcase)*3/4))**4)/4
         #   sum((test2-mean(testmathworks,axis=0))**4,axis=0)/((sqrt(var(testmathworks)*4/5))**4)/5
         #   Set flags for axis = 0 and
-        #   fisher=0 (Pearson's defn of kurtosis for compatiability with Matlab)
+        #   fisher=0 (Pearson's defn of kurtosis for compatibility with Matlab)
         y = stats.kurtosis(self.testmathworks, 0, fisher=0, bias=1)
         assert_approx_equal(y, 2.1658856802973, 10)
 
@@ -2567,7 +2761,7 @@ def test_friedmanchisquare():
           array([3,5,4,3,4,4,3,3,3,4,4,4])]
 
     # From Jerrorl H. Zar, "Biostatistical Analysis"(example 12.6), Xf=10.68, 0.005 < p < 0.01:
-    # Probability from this example is inexact using Chisquare aproximation of Friedman Chisquare.
+    # Probability from this example is inexact using Chisquare approximation of Friedman Chisquare.
     x3 = [array([7.0,9.9,8.5,5.1,10.3]),
           array([5.3,5.7,4.7,3.5,7.7]),
           array([4.9,7.6,5.5,2.8,8.4]),
@@ -3129,7 +3323,7 @@ def test_normalitytests():
     # numbers verified with R: dagoTest in package fBasics
     st_normal, st_skew, st_kurt = (3.92371918, 1.98078826, -0.01403734)
     pv_normal, pv_skew, pv_kurt = (0.14059673, 0.04761502, 0.98880019)
-    x = np.array((-2,-1,0,1,2,3)*4)**2
+    x = np.array((-2, -1, 0, 1, 2, 3)*4)**2
     attributes = ('statistic', 'pvalue')
 
     assert_array_almost_equal(stats.normaltest(x), (st_normal, pv_normal))
@@ -3179,6 +3373,12 @@ def test_normalitytests():
 
     assert_raises(ValueError, stats.normaltest, x, nan_policy='raise')
     assert_raises(ValueError, stats.normaltest, x, nan_policy='foobar')
+
+    # regression test for issue gh-9033: x cleary non-normal but power of
+    # negtative denom needs to be handled correctly to reject normality
+    counts = [128, 0, 58, 7, 0, 41, 16, 0, 0, 167]
+    x = np.hstack([np.full(c, i) for i, c in enumerate(counts)])
+    assert_equal(stats.kurtosistest(x)[1] < 0.01, True)
 
 
 class TestRankSums(object):
@@ -3387,7 +3587,7 @@ class TestMannWhitneyU(object):
 
 def test_pointbiserial():
     # same as mstats test except for the nan
-    # Test data: http://support.sas.com/ctx/samples/index.jsp?sid=490&tab=output
+    # Test data: https://web.archive.org/web/20060504220742/https://support.sas.com/ctx/samples/index.jsp?sid=490&tab=output
     x = [1,0,1,1,1,1,0,1,0,0,0,1,1,0,0,0,1,1,1,0,0,0,0,0,0,0,0,1,0,
          0,0,0,0,1]
     y = [14.8,13.8,12.4,10.1,7.1,6.1,5.8,4.6,4.3,3.5,3.3,3.2,3.0,
@@ -3842,9 +4042,9 @@ class TestTrim(object):
         assert_equal(stats.trim_mean([], 0.6), np.nan)
 
 
-class TestSigamClip(object):
+class TestSigmaClip(object):
     def test_sigmaclip1(self):
-        a = np.concatenate((np.linspace(9.5,10.5,31),np.linspace(0,20,5)))
+        a = np.concatenate((np.linspace(9.5, 10.5, 31), np.linspace(0, 20, 5)))
         fact = 4  # default
         c, low, upp = stats.sigmaclip(a)
         assert_(c.min() > low)
@@ -3854,7 +4054,7 @@ class TestSigamClip(object):
         assert_equal(c.size, a.size)
 
     def test_sigmaclip2(self):
-        a = np.concatenate((np.linspace(9.5,10.5,31),np.linspace(0,20,5)))
+        a = np.concatenate((np.linspace(9.5, 10.5, 31), np.linspace(0, 20, 5)))
         fact = 1.5
         c, low, upp = stats.sigmaclip(a, fact, fact)
         assert_(c.min() > low)
@@ -3865,14 +4065,15 @@ class TestSigamClip(object):
         assert_equal(a.size, 36)  # check original array unchanged
 
     def test_sigmaclip3(self):
-        a = np.concatenate((np.linspace(9.5,10.5,11),np.linspace(-100,-50,3)))
+        a = np.concatenate((np.linspace(9.5, 10.5, 11),
+                            np.linspace(-100, -50, 3)))
         fact = 1.8
         c, low, upp = stats.sigmaclip(a, fact, fact)
         assert_(c.min() > low)
         assert_(c.max() < upp)
         assert_equal(low, c.mean() - fact*c.std())
         assert_equal(upp, c.mean() + fact*c.std())
-        assert_equal(c, np.linspace(9.5,10.5,11))
+        assert_equal(c, np.linspace(9.5, 10.5, 11))
 
     def test_sigmaclip_result_attributes(self):
         a = np.concatenate((np.linspace(9.5, 10.5, 11),
@@ -3881,6 +4082,12 @@ class TestSigamClip(object):
         res = stats.sigmaclip(a, fact, fact)
         attributes = ('clipped', 'lower', 'upper')
         check_named_results(res, attributes)
+
+    def test_std_zero(self):
+        # regression test #8632
+        x = np.ones(10)
+        assert_equal(stats.sigmaclip(x)[0], x)
+
 
 class TestFOneWay(object):
     def test_trivial(self):
@@ -3909,7 +4116,7 @@ class TestFOneWay(object):
 
     def test_nist(self):
         # These are the nist ANOVA files. They can be found at:
-        # http://www.itl.nist.gov/div898/strd/anova/anova.html
+        # https://www.itl.nist.gov/div898/strd/anova/anova.html
         filenames = ['SiRstv.dat', 'SmLs01.dat', 'SmLs02.dat', 'SmLs03.dat',
                      'AtmWtAg.dat', 'SmLs04.dat', 'SmLs05.dat', 'SmLs06.dat',
                      'SmLs07.dat', 'SmLs08.dat', 'SmLs09.dat']
@@ -4019,7 +4226,7 @@ class TestKruskal(object):
 class TestCombinePvalues(object):
 
     def test_fisher(self):
-        # Example taken from http://en.wikipedia.org/wiki/Fisher's_exact_test#Example
+        # Example taken from https://en.wikipedia.org/wiki/Fisher%27s_exact_test#Example
         xsq, p = stats.combine_pvalues([.01, .2, .3], method='fisher')
         assert_approx_equal(p, 0.02156, significant=4)
 
@@ -4238,3 +4445,156 @@ class TestEnergyDistance(object):
             assert_equal(
                 stats.energy_distance([1, 2, np.inf], [np.inf, 1]),
                 np.nan)
+
+
+class TestBrunnerMunzel(object):
+    # Data from (Lumley, 1996)
+    X = [1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 4, 1, 1]
+    Y = [3, 3, 4, 3, 1, 2, 3, 1, 1, 5, 4]
+    significant = 13
+
+    def test_brunnermunzel_one_sided(self):
+        # Results are compared with R's lawstat package.
+        u1, p1 = stats.brunnermunzel(self.X, self.Y, alternative='less')
+        u2, p2 = stats.brunnermunzel(self.Y, self.X, alternative='greater')
+        u3, p3 = stats.brunnermunzel(self.X, self.Y, alternative='greater')
+        u4, p4 = stats.brunnermunzel(self.Y, self.X, alternative='less')
+
+        assert_approx_equal(p1, p2, significant=self.significant)
+        assert_approx_equal(p3, p4, significant=self.significant)
+        assert_(p1 != p3)
+        assert_approx_equal(u1, 3.1374674823029505,
+                            significant=self.significant)
+        assert_approx_equal(u2, -3.1374674823029505,
+                            significant=self.significant)
+        assert_approx_equal(u3, 3.1374674823029505,
+                            significant=self.significant)
+        assert_approx_equal(u4, -3.1374674823029505,
+                            significant=self.significant)
+        assert_approx_equal(p1, 0.0028931043330757342,
+                            significant=self.significant)
+        assert_approx_equal(p3, 0.99710689566692423,
+                            significant=self.significant)
+
+    def test_brunnermunzel_two_sided(self):
+        # Results are compared with R's lawstat package.
+        u1, p1 = stats.brunnermunzel(self.X, self.Y, alternative='two-sided')
+        u2, p2 = stats.brunnermunzel(self.Y, self.X, alternative='two-sided')
+
+        assert_approx_equal(p1, p2, significant=self.significant)
+        assert_approx_equal(u1, 3.1374674823029505,
+                            significant=self.significant)
+        assert_approx_equal(u2, -3.1374674823029505,
+                            significant=self.significant)
+        assert_approx_equal(p1, 0.0057862086661515377,
+                            significant=self.significant)
+
+    def test_brunnermunzel_default(self):
+        # The default value for alternative is two-sided
+        u1, p1 = stats.brunnermunzel(self.X, self.Y)
+        u2, p2 = stats.brunnermunzel(self.Y, self.X)
+
+        assert_approx_equal(p1, p2, significant=self.significant)
+        assert_approx_equal(u1, 3.1374674823029505,
+                            significant=self.significant)
+        assert_approx_equal(u2, -3.1374674823029505,
+                            significant=self.significant)
+        assert_approx_equal(p1, 0.0057862086661515377,
+                            significant=self.significant)
+
+    def test_brunnermunzel_alternative_error(self):
+        alternative = "error"
+        distribution = "t"
+        nan_policy = "propagate"
+        assert_(alternative not in ["two-sided", "greater", "less"])
+        assert_raises(ValueError,
+                      stats.brunnermunzel,
+                      self.X,
+                      self.Y,
+                      alternative,
+                      distribution,
+                      nan_policy)
+
+    def test_brunnermunzel_distribution_norm(self):
+        u1, p1 = stats.brunnermunzel(self.X, self.Y, distribution="normal")
+        u2, p2 = stats.brunnermunzel(self.Y, self.X, distribution="normal")
+        assert_approx_equal(p1, p2, significant=self.significant)
+        assert_approx_equal(u1, 3.1374674823029505,
+                            significant=self.significant)
+        assert_approx_equal(u2, -3.1374674823029505,
+                            significant=self.significant)
+        assert_approx_equal(p1, 0.0017041417600383024,
+                            significant=self.significant)
+
+    def test_brunnermunzel_distribution_error(self):
+        alternative = "two-sided"
+        distribution = "error"
+        nan_policy = "propagate"
+        assert_(alternative not in ["t", "normal"])
+        assert_raises(ValueError,
+                      stats.brunnermunzel,
+                      self.X,
+                      self.Y,
+                      alternative,
+                      distribution,
+                      nan_policy)
+
+    def test_brunnermunzel_empty_imput(self):
+        u1, p1 = stats.brunnermunzel(self.X, [])
+        u2, p2 = stats.brunnermunzel([], self.Y)
+        u3, p3 = stats.brunnermunzel([], [])
+
+        assert_equal(u1, np.nan)
+        assert_equal(p1, np.nan)
+        assert_equal(u2, np.nan)
+        assert_equal(p2, np.nan)
+        assert_equal(u3, np.nan)
+        assert_equal(p3, np.nan)
+
+    def test_brunnermunzel_nan_input_propagate(self):
+        X = [1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 4, 1, 1, np.nan]
+        Y = [3, 3, 4, 3, 1, 2, 3, 1, 1, 5, 4]
+        u1, p1 = stats.brunnermunzel(X, Y, nan_policy="propagate")
+        u2, p2 = stats.brunnermunzel(Y, X, nan_policy="propagate")
+
+        assert_equal(u1, np.nan)
+        assert_equal(p1, np.nan)
+        assert_equal(u2, np.nan)
+        assert_equal(p2, np.nan)
+
+    def test_brunnermunzel_nan_input_raise(self):
+        X = [1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 4, 1, 1, np.nan]
+        Y = [3, 3, 4, 3, 1, 2, 3, 1, 1, 5, 4]
+        alternative = "two-sided"
+        distribution = "t"
+        nan_policy = "raise"
+
+        assert_raises(ValueError,
+                      stats.brunnermunzel,
+                      X,
+                      Y,
+                      alternative,
+                      distribution,
+                      nan_policy)
+        assert_raises(ValueError,
+                      stats.brunnermunzel,
+                      Y,
+                      X,
+                      alternative,
+                      distribution,
+                      nan_policy)
+
+    def test_brunnermunzel_nan_input_omit(self):
+        X = [1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 4, 1, 1, np.nan]
+        Y = [3, 3, 4, 3, 1, 2, 3, 1, 1, 5, 4]
+        u1, p1 = stats.brunnermunzel(X, Y, nan_policy="omit")
+        u2, p2 = stats.brunnermunzel(Y, X, nan_policy="omit")
+
+        assert_approx_equal(p1, p2, significant=self.significant)
+        assert_approx_equal(u1, 3.1374674823029505,
+                            significant=self.significant)
+        assert_approx_equal(u2, -3.1374674823029505,
+                            significant=self.significant)
+        assert_approx_equal(p1, 0.0057862086661515377,
+                            significant=self.significant)
+

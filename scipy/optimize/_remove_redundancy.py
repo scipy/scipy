@@ -191,7 +191,7 @@ def _remove_redundancy_dense(A, rhs):
         try:  # fails for i==0 and any time it gets ill-conditioned
             j = b[i-1]
             lu = bg_update_dense(lu, perm_r, A[:, j], i-1)
-        except:
+        except Exception:
             lu = scipy.linalg.lu_factor(B)
             LU, p = lu
             perm_r = list(range(m))
@@ -329,9 +329,20 @@ def _remove_redundancy_sparse(A, rhs):
         # as any are nonzero). For very large matrices, it might be worth
         # it to compute, say, 100 or 1000 at a time and stop when a nonzero
         # is found.
-        c = abs(A[:, js].transpose().dot(pi))
-        if (c > tolapiv).any():  # independent
-            j = js[np.argmax(c)]  # select very independent column
+
+        c = (np.abs(A[:, js].transpose().dot(pi)) > tolapiv).nonzero()[0]
+        if len(c) > 0:  # independent
+            j = js[c[0]]
+            # in a previous commit, the previous line was changed to choose
+            # index j corresponding with the maximum dot product.
+            # While this avoided issues with almost
+            # singular matrices, it slowed the routine in most NETLIB tests.
+            # I think this is because these columns were denser than the
+            # first column with nonzero dot product (c[0]).
+            # It would be nice to have a heuristic that balances sparsity with
+            # high dot product, but I don't think it's worth the time to
+            # develop one right now. Bartels-Golub update is a much higher
+            # priority.
             b[i] = j  # replace artificial column
         else:
             bibar = pi.T.dot(rhs.reshape(-1, 1))

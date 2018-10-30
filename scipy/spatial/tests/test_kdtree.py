@@ -997,10 +997,10 @@ def test_ckdtree_view():
             assert_(x.max() < y.min())
     
     recurse_tree(kdtree.tree)
-    # check that indices are correctly retreived
+    # check that indices are correctly retrieved
     n = kdtree.tree
     assert_array_equal(np.sort(n.indices), range(100))
-    # check that data_points are correctly retreived
+    # check that data_points are correctly retrieved
     assert_array_equal(kdtree.data[n.indices, :], n.data_points)
 
 # cKDTree is specialized to type double points, so no need to make
@@ -1144,8 +1144,8 @@ def test_ckdtree_memuse():
     FILLVAL = 99.
     mask = np.random.randint(0, z.size, np.random.randint(50) + 5)
     z_copy.flat[mask] = FILLVAL
-    igood = np.vstack(np.where(x != FILLVAL)).T
-    ibad = np.vstack(np.where(x == FILLVAL)).T
+    igood = np.vstack(np.nonzero(x != FILLVAL)).T
+    ibad = np.vstack(np.nonzero(x == FILLVAL)).T
     mem_use = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
     # burn-in
     for i in range(10):

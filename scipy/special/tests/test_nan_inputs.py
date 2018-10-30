@@ -13,9 +13,7 @@ from scipy._lib._numpy_compat import suppress_warnings
 
 KNOWNFAILURES = {}
 
-POSTPROCESSING = {
-    sc.hyp2f0: lambda x, y: x  # Second argument is an error estimate
-}
+POSTPROCESSING = {}
 
 
 def _get_ufuncs():
@@ -34,6 +32,7 @@ def _get_ufuncs():
             ufuncs.append(pytest.param(obj, marks=fail))
             ufunc_names.append(name)
     return ufuncs, ufunc_names
+
 
 UFUNCS, UFUNC_NAMES = _get_ufuncs()
 

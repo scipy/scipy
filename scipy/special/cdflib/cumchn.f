@@ -76,7 +76,7 @@ C     .. Statement Functions ..
       LOGICAL qsmall
 C     ..
 C     .. Data statements ..
-      DATA eps/1.0D-5/
+      DATA eps/1.0D-15/
       DATA abstol/1.0D-300/
 C     ..
 C     .. Statement Function definitions ..
@@ -102,7 +102,7 @@ C
    20 xnonc = pnonc/2.0D0
 C***********************************************************************
 C
-C     The following code calcualtes the weight, chi-square, and
+C     The following code calculates the weight, chi-square, and
 C     adjustment term for the central term in the infinite series.
 C     The central term is the one in which the poisson weight is
 C     greatest.  The adjustment term is the amount that must

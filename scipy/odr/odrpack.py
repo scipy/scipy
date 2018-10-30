@@ -76,6 +76,7 @@ class OdrStop(Exception):
     """
     pass
 
+
 # Backwards compatibility
 odr_error = OdrError
 odr_stop = OdrStop
@@ -740,6 +741,9 @@ class ODR(object):
                 )
         else:
             self.beta0 = _conv(beta0)
+
+        if ifixx is None and data.fix is not None:
+            ifixx = data.fix
 
         self.delta0 = _conv(delta0)
         # These really are 32-bit integers in FORTRAN (gfortran), even on 64-bit

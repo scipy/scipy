@@ -149,6 +149,7 @@ def is_array_scalar(x):
     """
     return np.size(x) == 1
 
+
 _epsilon = sqrt(numpy.finfo(float).eps)
 
 
@@ -182,6 +183,13 @@ def rosen(x):
     See Also
     --------
     rosen_der, rosen_hess, rosen_hess_prod
+    
+    Examples
+    --------
+    >>> from scipy.optimize import rosen
+    >>> X = 0.1 * np.arange(10)
+    >>> rosen(X)
+    76.56
 
     """
     x = asarray(x)
@@ -880,7 +888,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
         1 : Maximum number of iterations exceeded.
         2 : Gradient and/or function calls not changing.
     allvecs  :  list
-        `OptimizeResult` at each iteration.  Only returned if retall is True.
+        The value of xopt at each iteration.  Only returned if retall is True.
 
     See also
     --------
@@ -972,7 +980,6 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
     xk = x0
     if retall:
         allvecs = [x0]
-    sk = [2 * gtol]
     warnflag = 0
     gnorm = vecnorm(gfk, ord=norm)
     while (gnorm > gtol) and (k < maxiter):
@@ -1032,30 +1039,18 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
 
     if warnflag == 2:
         msg = _status_message['pr_loss']
-        if disp:
-            print("Warning: " + msg)
-            print("         Current function value: %f" % fval)
-            print("         Iterations: %d" % k)
-            print("         Function evaluations: %d" % func_calls[0])
-            print("         Gradient evaluations: %d" % grad_calls[0])
-
     elif k >= maxiter:
         warnflag = 1
         msg = _status_message['maxiter']
-        if disp:
-            print("Warning: " + msg)
-            print("         Current function value: %f" % fval)
-            print("         Iterations: %d" % k)
-            print("         Function evaluations: %d" % func_calls[0])
-            print("         Gradient evaluations: %d" % grad_calls[0])
     else:
         msg = _status_message['success']
-        if disp:
-            print(msg)
-            print("         Current function value: %f" % fval)
-            print("         Iterations: %d" % k)
-            print("         Function evaluations: %d" % func_calls[0])
-            print("         Gradient evaluations: %d" % grad_calls[0])
+
+    if disp:
+        print("%s%s" % ("Warning: " if warnflag != 0 else "", msg))
+        print("         Current function value: %f" % fval)
+        print("         Iterations: %d" % k)
+        print("         Function evaluations: %d" % func_calls[0])
+        print("         Gradient evaluations: %d" % grad_calls[0])
 
     result = OptimizeResult(fun=fval, jac=gfk, hess_inv=Hk, nfev=func_calls[0],
                             njev=grad_calls[0], status=warnflag,
@@ -1347,30 +1342,18 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
     fval = old_fval
     if warnflag == 2:
         msg = _status_message['pr_loss']
-        if disp:
-            print("Warning: " + msg)
-            print("         Current function value: %f" % fval)
-            print("         Iterations: %d" % k)
-            print("         Function evaluations: %d" % func_calls[0])
-            print("         Gradient evaluations: %d" % grad_calls[0])
-
     elif k >= maxiter:
         warnflag = 1
         msg = _status_message['maxiter']
-        if disp:
-            print("Warning: " + msg)
-            print("         Current function value: %f" % fval)
-            print("         Iterations: %d" % k)
-            print("         Function evaluations: %d" % func_calls[0])
-            print("         Gradient evaluations: %d" % grad_calls[0])
     else:
         msg = _status_message['success']
-        if disp:
-            print(msg)
-            print("         Current function value: %f" % fval)
-            print("         Iterations: %d" % k)
-            print("         Function evaluations: %d" % func_calls[0])
-            print("         Gradient evaluations: %d" % grad_calls[0])
+
+    if disp:
+        print("%s%s" % ("Warning: " if warnflag != 0 else "", msg))
+        print("         Current function value: %f" % fval)
+        print("         Iterations: %d" % k)
+        print("         Function evaluations: %d" % func_calls[0])
+        print("         Gradient evaluations: %d" % grad_calls[0])
 
     result = OptimizeResult(fun=fval, jac=gfk, nfev=func_calls[0],
                             njev=grad_calls[0], status=warnflag,
@@ -1557,6 +1540,7 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
     if retall:
         allvecs = [xk]
     k = 0
+    gfk = None
     old_fval = f(x0)
     old_old_fval = None
     float64eps = numpy.finfo(numpy.float64).eps
@@ -1727,8 +1711,12 @@ def _minimize_scalar_bounded(func, bounds, args=(),
     -------
     maxiter : int
         Maximum number of iterations to perform.
-    disp : bool
-        Set to True to print convergence messages.
+    disp: int, optional
+        If non-zero, print messages.
+            0 : no message printing.
+            1 : non-convergence notification messages only.
+            2 : print a message on convergence too.
+            3 : print iteration results.
     xatol : float
         Absolute error in solution `xopt` acceptable for convergence.
 
@@ -1923,7 +1911,7 @@ class Brent:
             a = xc
             b = xa
         deltax = 0.0
-        funcalls = 1
+        funcalls += 1
         iter = 0
         while (iter < self.maxiter):
             tol1 = self.tol * numpy.abs(x) + _mintol
@@ -2679,6 +2667,12 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
     ``full_output=True`` are affected in addition by the ``finish`` argument
     (see Notes).
 
+    The brute force approach is inefficient because the number of grid points
+    increases exponentially - the number of grid points to evaluate is
+    ``Ns ** len(x)``. Consequently, even with coarse grid spacing, even
+    moderately sized problems can take a long time to run, and/or run into
+    memory limitations.
+
     Parameters
     ----------
     func : callable
@@ -2834,7 +2828,7 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
         lrange = lrange[0]
 
     def _scalarfunc(*params):
-        params = squeeze(asarray(params))
+        params = asarray(params).flatten()
         return func(params, *args)
 
     vecfunc = vectorize(_scalarfunc)
@@ -2971,7 +2965,7 @@ def show_options(solver=None, method=None, disp=True):
             ('dogleg', 'scipy.optimize._trustregion_dogleg._minimize_dogleg'),
             ('l-bfgs-b', 'scipy.optimize.lbfgsb._minimize_lbfgsb'),
             ('nelder-mead', 'scipy.optimize.optimize._minimize_neldermead'),
-            ('newtoncg', 'scipy.optimize.optimize._minimize_newtoncg'),
+            ('newton-cg', 'scipy.optimize.optimize._minimize_newtoncg'),
             ('powell', 'scipy.optimize.optimize._minimize_powell'),
             ('slsqp', 'scipy.optimize.slsqp._minimize_slsqp'),
             ('tnc', 'scipy.optimize.tnc._minimize_tnc'),
@@ -3025,6 +3019,7 @@ def show_options(solver=None, method=None, disp=True):
                 text.append(show_options(solver, name, disp=False))
             text = "".join(text)
         else:
+            method = method.lower()
             methods = dict(doc_routines[solver])
             if method not in methods:
                 raise ValueError("Unknown method %r" % (method,))
