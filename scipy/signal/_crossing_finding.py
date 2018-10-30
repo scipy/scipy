@@ -6,7 +6,7 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 
 
-__all__ = ['argcross', 'argupcross', 'argdowncross']
+__all__ = ['argcross', 'argcrossup', 'argcrossdown']
 
 
 def _select_cross_comparator(cross_type):
@@ -86,7 +86,7 @@ def _boolcross(data, threshold, cross_type, axis=0, mode='clip'):
     return np.concatenate([cond, padding], axis=axis)
 
 
-def argupcross(x, threshold=None, axis=0, mode='clip'):
+def argcrossup(x, threshold=None, axis=0, mode='clip'):
     """
     Calculate the up-crossings of `data`.
 
@@ -123,7 +123,7 @@ def argupcross(x, threshold=None, axis=0, mode='clip'):
     return np.nonzero(results)
 
 
-def argdowncross(x, threshold=None, axis=0, mode='clip'):
+def argcrossdown(x, threshold=None, axis=0, mode='clip'):
     """
     Calculate the down-crossings of `data`.
 
