@@ -34,9 +34,9 @@ def _solve_check(n, info, lamch=None, rcond=None):
         return
     E = lamch('E')
     if rcond < E:
-        warn('scipy.linalg.solve\nIll-conditioned matrix detected. Result '
-             'is not guaranteed to be accurate.\nReciprocal condition '
-             'number{:.6e}'.format(rcond), LinAlgWarning, stacklevel=3)
+        warn('Ill-conditioned matrix (rcond={:.6g}): '
+             'result may not be accurate.'.format(rcond),
+             LinAlgWarning, stacklevel=3)
 
 
 def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
@@ -690,9 +690,8 @@ def solve_toeplitz(c_or_cr, b, check_finite=True):
     else:
         b_shape = b.shape
         b = b.reshape(b.shape[0], -1)
-        x = np.column_stack(
-            (levinson(vals, np.ascontiguousarray(b[:, i]))[0])
-            for i in range(b.shape[1]))
+        x = np.column_stack([levinson(vals, np.ascontiguousarray(b[:, i]))[0]
+                             for i in range(b.shape[1])])
         x = x.reshape(*b_shape)
 
     return x

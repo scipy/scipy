@@ -1163,13 +1163,13 @@ class TestRegression(object):
         # Expected values
         exp_slope = 1.00211681802045
         exp_intercept = -0.262323073774029
-        exp_rvalue = 0.999993745883712
+        exp_rsquared = 0.999993745883712
 
         actual = stats.linregress(x, y)
 
         assert_almost_equal(actual.slope, exp_slope)
         assert_almost_equal(actual.intercept, exp_intercept)
-        assert_almost_equal(actual.rvalue, exp_rvalue, decimal=5)
+        assert_almost_equal(actual.rvalue**2, exp_rsquared)
 
     def test_empty_input(self):
         assert_raises(ValueError, stats.linregress, [], [])

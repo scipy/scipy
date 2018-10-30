@@ -2606,7 +2606,7 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
     4 points to be merged with their nearest neighbors. So here only 8
     clusters are returned.
 
-    The third case, with a much higher threhold, allows for up to 8 data
+    The third case, with a much higher threshold, allows for up to 8 data
     points to be connected - so 4 clusters are returned here.
 
     Lastly, the threshold of the fourth case is large enough to allow for
@@ -2784,7 +2784,7 @@ def leaves_list(Z):
     >>> Z = ward(pdist(X))
 
     The linkage matrix ``Z`` represents a dendrogram, that is, a tree that
-    encodes the structure of the clustering perfomed.
+    encodes the structure of the clustering performed.
     `scipy.cluster.hierarchy.leaves_list` shows the mapping between
     indexes in the ``X`` dataset and leaves in the dendrogram:
 

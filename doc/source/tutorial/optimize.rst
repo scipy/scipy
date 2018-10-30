@@ -44,7 +44,7 @@ problem of minimizing the Rosenbrock function of :math:`N` variables:
 
 .. math::
 
-    f\left(\mathbf{x}\right)=\sum_{i=1}^{N-1}100\left(x_{i}-x_{i-1}^{2}\right)^{2}+\left(1-x_{i-1}\right)^{2}.
+    f\left(\mathbf{x}\right)=\sum_{i=2}^{N}100\left(x_{i+1}-x_{i}^{2}\right)^{2}+\left(1-x_{i}\right)^{2}.
 
 The minimum value of this function is 0 which is achieved when
 :math:`x_{i}=1.`
@@ -441,10 +441,10 @@ Constrained minimization of multivariate scalar functions (:func:`minimize`)
 ----------------------------------------------------------------------------
 
 The :func:`minimize` function provides algorithms for constrained minimization,
-namely ``'trust-constr'`` ,  ``'SLSQP'`` and ``'COBLYA'``. They require the constraints
+namely ``'trust-constr'`` ,  ``'SLSQP'`` and ``'COBYLA'``. They require the constraints
 to be defined using slightly different structures. The method ``'trust-constr'`` requires
 the  constraints to be defined as a sequence of objects :func:`LinearConstraint` and
-:func:`NonlinearConstraint`. Methods ``'SLSQP'`` and ``'COBLYA'``, on the other hand,
+:func:`NonlinearConstraint`. Methods ``'SLSQP'`` and ``'COBYLA'``, on the other hand,
 require constraints to be defined  as a sequence of dictionaries, with keys
 ``type``, ``fun`` and ``jac``.
 

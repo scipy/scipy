@@ -183,7 +183,7 @@ class TestRandInt(object):
         assert_array_almost_equal(vals, out)
 
     def test_cdf(self):
-        x = numpy.r_[0:36:100j]
+        x = np.linspace(0,36,100)
         k = numpy.floor(x)
         out = numpy.select([k >= 30, k >= 5], [1.0, (k-5.0+1)/(30-5.0)], 0)
         vals = stats.randint.cdf(x, 5, 30)
@@ -1476,7 +1476,7 @@ class TestGumbelL(object):
 class TestLevyStable(object):
 
     def test_fit(self):
-        # contruct data to have percentiles that match
+        # construct data to have percentiles that match
         # example in McCulloch 1986.
         x = [-.05413,-.05413,
                0.,0.,0.,0.,

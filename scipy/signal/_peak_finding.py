@@ -850,7 +850,7 @@ def find_peaks(x, height=None, threshold=None, distance=None,
     * For several conditions the interval borders can be specified with
       arrays matching `x` in shape which enables dynamic constrains based on
       the sample position.
-    * The conditions are evalutated in the following order: `plateau_size`,
+    * The conditions are evaluated in the following order: `plateau_size`,
       `height`, `threshold`, `distance`, `prominence`, `width`. In most cases
       this order is the fastest one because faster operations are applied first
       to reduce the number of peaks that need to be evaluated later.

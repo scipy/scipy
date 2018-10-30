@@ -94,8 +94,8 @@ class FuncData(object):
     ----------
     func : function
         Function to test
-    filename : str
-        Input file name
+    data : numpy array
+        columnar data to use for testing
     param_columns : int or tuple of ints
         Columns indices in which the parameters to `func` lie.
         Can be imaginary integers to indicate that the parameter
@@ -172,7 +172,7 @@ class FuncData(object):
             atol = 5*info.tiny
         return rtol, atol
 
-    def check(self, data=None, dtype=None):
+    def check(self, data=None, dtype=None, dtypes=None):
         """Check the special function against the data."""
 
         if self.knownfailure:
@@ -198,10 +198,12 @@ class FuncData(object):
 
         # Pick parameters from the correct columns
         params = []
-        for j in self.param_columns:
+        for idx, j in enumerate(self.param_columns):
             if np.iscomplexobj(j):
                 j = int(j.imag)
                 params.append(data[:,j].astype(complex))
+            elif dtypes and idx < len(dtypes):
+                params.append(data[:, j].astype(dtypes[idx]))
             else:
                 params.append(data[:,j])
 
