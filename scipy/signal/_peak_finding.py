@@ -1347,19 +1347,14 @@ def decluster_peaks(x, x_th=None, method='mean', order=1, runs=0):
     threshold, divides them into clusters, and ultimately applies a
     declustering method.
 
-    Declustering is a pragmatic method to sub-sample peaks from stationary
-    stochastic signals to (hopefully) achieve statistical independence.
-    Statistical independence is often a key assumption in further statistial
-    analysis of peaks.
-
     Parameters
     ----------
     x : sequence
         A signal with peaks.
     x_th : number or ndarray or sequence
-        Only peaks above this threshold is selected. The threshold is also used
-        as a declustering parameter. If ``None`` is passed, the mean of the
-        signal is used.
+        Only peaks above this threshold are selected. The threshold may also be
+        used as a declustering parameter. If ``None`` is passed, the mean of
+        the signal is used.
     method : str
         The declustering method to use. Accepts ``mean`` or ``runs``. See
         Notes.
@@ -1368,22 +1363,57 @@ def decluster_peaks(x, x_th=None, method='mean', order=1, runs=0):
         ``order = 1`` yields the largest, ``order = 2`` yields the two largest,
         ..., from each cluster.
     runs : int
-        Required parameter for declustering. Only used if ``method`` is
-        ``runs`` and ignored otherwise.
+        Required parameter for declustering if ``method`` is
+        ``runs``, and ignored otherwise.
 
     Returns
     -------
     peaks : tuple
         Tuple with arrays containing the indecies of selected peaks in each
-        cluster.
+        cluster. Indecies are ordered (descending) with respect to value of the
+        peaks.
 
     Notes
     -----
-    TBA
+    A useful assumption in statistical analysis of peaks, (e.g. extreme value
+    analysis where data are fitted to suitable distribution functions), is that
+    data are independent. However, this is necessarily NOT the case when
+    dealing with many real world scenarios, e.g. dynamic response of mechanical
+    systems to environmental loads.
+
+    Declustering is a pragmatic method to sub-sample peaks from stationary
+    stochastic signals to (hopefully) achieve statistical independence by
+    spacing out peaks in a systematic manner. Here, 2 declustering approaches
+    are implemented; mean-upcrossing and runs.
+
+    Mean-upcrossing (``mean``) declustering is as following:
+     1. Identify clusters of exceedences, i.e., find all peaks between two
+        upcrossings above the signal mean value.
+     2. Select only the n-th largest peaks from each cluster (cf. ``order``).
+     3. Exclude peaks that falls below the threshold (cf. ``x_th``).
+
+    Runs (``runs``) declustering is as following:
+     1. Identify clusters of exceedences, i.e., find all peaks between two
+        upcrossings above the threshold (cf. ``x_th``).
+     2. Merge clusters that are seperated with less than k runs (cf. ``runs``).
+        The number of peaks below the threshold seperating a down-crossing and
+        the subsequent up-crossing is called runs.
+     3. Select only the n-th largest peaks from each cluster (cf. ``order``).
+
+    The difference between the methods are subtle, and they even overplap for
+    ``x_th = x.mean()`` and ``runs = 0``.
 
     References
     ----------
-    TBA
+    .. [1] Coles S, (2001), An Introduction to Statistical Modelling of
+        Extreme Values. Springer.
+
+    See Also
+    --------
+    find_peaks_cwt
+        Find peaks using the wavelet transformation.
+    find_peaks
+        Find peaks inside a signal based on peak properties.
 
     """
     x = _arg_x_as_expected(x)
