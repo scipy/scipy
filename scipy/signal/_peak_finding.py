@@ -1,23 +1,21 @@
 """
 Functions for identifying peaks in signals.
 """
-from __future__ import division, print_function, absolute_import
+from __future__ import absolute_import, division, print_function
 
 import math
-import numpy as np
 
+import numpy as np
 from scipy._lib.six import xrange
 from scipy.signal.wavelets import cwt, ricker
 from scipy.stats import scoreatpercentile
 
-from ._crossing_finding import argupcross
+from ._crossing_finding import argcrossup
 from ._peak_finding_utils import (
     _local_maxima_1d,
-    _select_by_peak_distance,
     _peak_prominences,
-    _peak_widths
-)
-
+    _peak_widths,
+    _select_by_peak_distance)
 
 __all__ = ['argrelmin', 'argrelmax', 'argrelextrema', 'peak_prominences',
            'peak_widths', 'find_peaks', 'find_peaks_cwt']
@@ -1430,7 +1428,7 @@ def decluster_peaks(x, x_th=None, method='mean', order=1, runs=0):
         raise ValueError("method must be 'mean' or 'runs.'")
 
     index = np.arange(len(x), dtype=int)
-    crossups, = argupcross(x, threshold=x_up)
+    crossups, = argcrossup(x, threshold=x_up)
 
     boolrelmax = np.zeros(len(x), dtype=bool)
     index_p, _, _ = _local_maxima_1d(x)

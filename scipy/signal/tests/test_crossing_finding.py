@@ -1,22 +1,18 @@
 from __future__ import division, print_function, absolute_import
 
-import copy
-
 import numpy as np
 from numpy.testing import (
     assert_,
     assert_equal,
-    assert_allclose,
     assert_array_equal
 )
-import pytest
-from pytest import raises, warns
+from pytest import raises
 
 from scipy.signal._crossing_finding import (
     _select_cross_comparator,
     _boolcross,
-    argupcross,
-    argdowncross,
+    argcrossup,
+    argcrossdown,
     argcross
 )
 
@@ -180,27 +176,27 @@ class TestArgcross(object):
 
         z1 = np.zeros(5)
 
-        i = argupcross(z1)
+        i = argcrossup(z1)
         assert_equal(len(i), 1)
         assert_array_equal(i[0], empty_array)
 
         z2 = np.zeros((3, 5))
 
-        row, col = argupcross(z2, axis=0)
+        row, col = argcrossup(z2, axis=0)
         assert_array_equal(row, empty_array)
         assert_array_equal(col, empty_array)
 
-        row, col = argupcross(z2, axis=1)
+        row, col = argcrossup(z2, axis=1)
         assert_array_equal(row, empty_array)
         assert_array_equal(col, empty_array)
 
         z3 = np.zeros((3, 5))
 
-        row, col = argdowncross(z3, axis=0)
+        row, col = argcrossdown(z3, axis=0)
         assert_array_equal(row, empty_array)
         assert_array_equal(col, empty_array)
 
-        row, col = argdowncross(z3, axis=1)
+        row, col = argcrossdown(z3, axis=1)
         assert_array_equal(row, empty_array)
         assert_array_equal(col, empty_array)
 
@@ -211,12 +207,12 @@ class TestArgcross(object):
             [1., 0., -1., 0., 1., 0., -1.]
         ])
 
-        row, col = argupcross(x, axis=0)
+        row, col = argcrossup(x, axis=0)
         order = np.argsort(row)
         assert_equal(row[order], [0, 0, 1, 1, 1])
         assert_equal(col[order], [1, 5, 0, 3, 4])
 
-        row, col = argupcross(x, axis=1)
+        row, col = argcrossup(x, axis=1)
         order = np.argsort(row)
         assert_equal(row[order], [0, 0, 1, 1, 2])
         assert_equal(col[order], [1, 5, 0, 4, 3])
@@ -228,12 +224,12 @@ class TestArgcross(object):
             [1., 0., -1., 0., 1., 0., -1.]
         ])
 
-        row, col = argdowncross(x, axis=0)
+        row, col = argcrossdown(x, axis=0)
         order = np.argsort(row)
         assert_equal(row[order], [0, 1, 1, 1, 1])
         assert_equal(col[order], [3, 1, 2, 5, 6])
 
-        row, col = argdowncross(x, axis=1)
+        row, col = argcrossdown(x, axis=1)
         order = np.argsort(row)
         assert_equal(row[order], [0, 1, 1, 2, 2])
         assert_equal(col[order], [3, 1, 5, 1, 5])
