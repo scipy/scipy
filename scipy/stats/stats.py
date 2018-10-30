@@ -3033,13 +3033,18 @@ def pearsonr(x, y):
     xm, ym = x - mx, y - my
     r_num = np.add.reduce(xm * ym)
     r_den = np.sqrt(_sum_of_squares(xm) * _sum_of_squares(ym))
-    r = r_num / r_den
+    try:
+        r = r_num / r_den
+    except ZeroDivisionError:
+        r = np.nan
 
     # Presumably, if abs(r) > 1, then it is only some small artifact of
     # floating point arithmetic.
     r = max(min(r, 1.0), -1.0)
     df = n - 2
-    if abs(r) == 1.0:
+    if np.isnan(r):
+        prob = np.nan
+    elif abs(r) == 1.0:
         prob = 0.0
     else:
         t_squared = r**2 * (df / ((1.0 - r) * (1.0 + r)))
