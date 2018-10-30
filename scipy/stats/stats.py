@@ -2980,6 +2980,8 @@ def pearsonr(x, y):
     producing datasets that have a Pearson correlation at least as extreme
     as the one computed from these datasets. The p-values are not entirely
     reliable but are probably reasonable for datasets larger than 500 or so.
+    If either input dataset has zero variance then the correlation is nan
+    and the p-value returned will be nan as well.
 
     Parameters
     ----------
