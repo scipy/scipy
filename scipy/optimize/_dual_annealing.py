@@ -2,9 +2,11 @@
 # Copyright (c) 2018 Sylvain Gubian <sylvain.gubian@pmi.com>,
 # Yang Xiang <yang.xiang@pmi.com>
 # Author: Sylvain Gubian, PMP S.A.
+
 """
 A Dual Annealing global optimization algorithm
 """
+
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
@@ -12,6 +14,7 @@ from scipy.optimize import OptimizeResult
 from scipy.optimize import minimize
 from scipy.special import gammaln
 from scipy._lib._util import check_random_state
+
 
 __all__ = ['dual_annealing']
 
@@ -127,9 +130,9 @@ class EnergyState(object):
         A 1-D numpy ndarray containing upper bounds for generating an initial
         random components in the `reset` method
         components. Neither NaN or inf are allowed.
-    callback : callable, `callback(x, f, context)`, optional
+    callback : callable, ``callback(x, f, context)``, optional
         A callback function which will be called for all minima found.
-        `x` and `f` are the coordinates and function value of the
+        ``x`` and ``f`` are the coordinates and function value of the
         latest minimum found, and `context` has value in [0, 1, 2]
     """
     # Maximimum number of trials for generating a valid starting point
@@ -413,8 +416,7 @@ def dual_annealing(func, x0, bounds, args=(), maxiter=1000,
                    maxfun=1e7, seed=None, no_local_search=False,
                    callback=None):
     """
-    Find the global minimum of a function using the Dual Annealing
-    algorithm.
+    Find the global minimum of a function using Dual Annealing.
 
     Parameters
     ----------
@@ -425,8 +427,8 @@ def dual_annealing(func, x0, bounds, args=(), maxiter=1000,
         completely specify the function.
     x0 : ndarray, shape(n,)
         A single initial starting point coordinates. If ``None`` is provided,
-        initial coordinates are automatically generated using the `reset`
-        method from the `ErnergyState` class.
+        initial coordinates are automatically generated (using the ``reset``
+        method from the internal ``EnergyState`` class).
     bounds : sequence, shape (n, 2)
         Bounds for variables.  ``(min, max)`` pairs for each element in ``x``,
         defining bounds for the objective function parameter.
@@ -437,7 +439,7 @@ def dual_annealing(func, x0, bounds, args=(), maxiter=1000,
         The maximum number of global search iterations. Default value is 1000.
     local_search_options : dict, optional
         Extra keyword arguments to be passed to the local minimizer
-        ``scipy.optimize.minimize()``. Some important options could be:
+        (`minimize`). Some important options could be:
         ``method`` for the minimizer method to use and ``args`` for
         objective function additional arguments.
     initial_temp : float, optional
@@ -446,9 +448,9 @@ def dual_annealing(func, x0, bounds, args=(), maxiter=1000,
         local minima that it is trapped in. Default value is 5230. Range is
         (0.01, 5.e4].
     restart_temp_ratio : float, optional
-        During annealing process, temperature is decreasing, when it reaches
-        `initial_temp * restart_temp_ratio`, the reannealing process is
-        triggered. Default value of the ratio is `2.e-5`. Range is (0, 1).
+        During the annealing process, temperature is decreasing, when it
+        reaches ``initial_temp * restart_temp_ratio``, the reannealing process
+        is triggered. Default value of the ratio is 2e-5. Range is (0, 1).
     visit : float, optional
         Parameter for visiting distribution. Default value is 2.62. Higher
         values give the visiting distribution a heavier tail, this makes
@@ -463,37 +465,37 @@ def dual_annealing(func, x0, bounds, args=(), maxiter=1000,
         algorithm is in the middle of a local search, this number will be
         exceeded, the algorithm will stop just after the local search is
         done. Default value is 1e7.
-    seed : {int, `np.random.RandomState`}, optional
-        If `seed` is not specified the `np.RandomState` singleton is used.
-        If `seed` is an int, a new `np.random.RandomState` instance is used,
-        seeded with seed.
-        If `seed` is already a `np.random.RandomState instance`, then that
-        `np.random.RandomState` instance is used.
+    seed : {int or `numpy.random.RandomState` instance}, optional
+        If `seed` is not specified the `numpy.random.RandomState` singleton is
+        used.
+        If `seed` is an int, a new ``RandomState`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``RandomState`` instance, then that
+        instance is used.
         Specify `seed` for repeatable minimizations. The random numbers
         generated with this seed only affect the visiting distribution
         function and new coordinates generation.
     no_local_search : bool, optional
-        If `no_local_search` is set to `True`, a traditional Generalized
+        If `no_local_search` is set to True, a traditional Generalized
         Simulated Annealing will be performed with no local search
         strategy applied.
-    callback : callable, `callback(x, f, context)`, optional
-        A callback function which will be called for all minima found.
-        `x` and `f` are the coordinates and function value of the
-        latest minimum found, and `context` has value in [0, 1, 2], with the
+    callback : callable, optional
+        A callback function with signature ``callback(x, f, context)``,
+        which will be called for all minima found.
+        ``x`` and ``f`` are the coordinates and function value of the
+        latest minimum found, and ``context`` has value in [0, 1, 2], with the
         following meaning:
 
-            - `0`: minimum detected in the annealing process.
+            - 0: minimum detected in the annealing process.
+            - 1: detection occured in the local search process.
+            - 2: detection done in the dual annealing process.
 
-            - `1`: detection occured in the local search process.
-
-            - `2`: detection done in the dual annealing process.
-
-        If the callback implementation returns `True`, the algorithm will stop.
+        If the callback implementation returns True, the algorithm will stop.
 
     Returns
     -------
     res : OptimizeResult
-        The optimization result represented as a ``OptimizeResult`` object.
+        The optimization result represented as a `OptimizeResult` object.
         Important attributes are: ``x`` the solution array, ``fun`` the value
         of the function at the solution, and ``message`` which describes the
         cause of the termination.
@@ -573,21 +575,20 @@ def dual_annealing(func, x0, bounds, args=(), maxiter=1000,
     (https://en.wikipedia.org/wiki/Rastrigin_function)
 
     >>> from scipy.optimize import dual_annealing
-    >>> func = lambda x: np.sum(x * x - 10 * np.cos(
-    ...    2 * np.pi * x)) + 10 * np.size(x)
+    >>> func = lambda x: np.sum(x*x - 10*np.cos(2*np.pi*x)) + 10*np.size(x)
     >>> lw = [-5.12] * 10
     >>> up = [5.12] * 10
     >>> ret = dual_annealing(func, None, bounds=list(zip(lw, up)), seed=1234)
     >>> print("global minimum: xmin = {0}, f(xmin) = {1:.6f}".format(
-    ...     ret.x, ret.fun))
+    ...       ret.x, ret.fun))
     global minimum: xmin = [-4.26437714e-09 -3.91699361e-09 -1.86149218e-09 -3.97165720e-09
      -6.29151648e-09 -6.53145322e-09 -3.93616815e-09 -6.55623025e-09
     -6.05775280e-09 -5.00668935e-09], f(xmin) = 0.000000
 
     """
-
     if x0 is not None and not len(x0) == len(bounds):
         raise ValueError('Bounds size does not match x0')
+
     lu = list(zip(*bounds))
     lower = np.array(lu[0])
     upper = np.array(lu[1])
@@ -601,6 +602,7 @@ def dual_annealing(func, x0, bounds, args=(), maxiter=1000,
     # Checking that bounds are consistent
     if not np.all(lower < upper):
         raise ValueError('Bounds are note consistent min < max')
+
     # Wrapper for the objective function
     func_wrapper = ObjectiveFunWrapper(func, maxfun, *args)
     # Wrapper fot the minimizer
