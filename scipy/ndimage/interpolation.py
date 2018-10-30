@@ -32,17 +32,24 @@ from __future__ import division, print_function, absolute_import
 
 import math
 import numpy
+import warnings
+
 from . import _ni_support
 from . import _nd_image
-from . import _ni_docstrings
+from ._ni_docstrings import docdict
+from scipy.misc import doccer
 
-import warnings
+# Change the default 'reflect' to 'constant'
+docdict['mode'] = docdict['mode'].replace("Default is 'reflect'",
+                                          "Default is 'constant'")
+
+docfiller = doccer.filldoc(docdict)
 
 __all__ = ['spline_filter1d', 'spline_filter', 'geometric_transform',
            'map_coordinates', 'affine_transform', 'shift', 'zoom', 'rotate']
 
 
-@_ni_docstrings.docfiller
+@docfiller
 def spline_filter1d(input, order=3, axis=-1, output=numpy.float64):
     """
     Calculate a one-dimensional spline filter along the given axis.
@@ -116,7 +123,7 @@ def spline_filter(input, order=3, output=numpy.float64):
     return output
 
 
-@_ni_docstrings.docfiller
+@docfiller
 def geometric_transform(input, mapping, output_shape=None,
                         output=None, order=3,
                         mode='constant', cval=0.0, prefilter=True,
@@ -240,7 +247,7 @@ def geometric_transform(input, mapping, output_shape=None,
     return output
 
 
-@_ni_docstrings.docfiller
+@docfiller
 def map_coordinates(input, coordinates, output=None, order=3,
                     mode='constant', cval=0.0, prefilter=True):
     """
@@ -328,7 +335,7 @@ def map_coordinates(input, coordinates, output=None, order=3,
     return output
 
 
-@_ni_docstrings.docfiller
+@docfiller
 def affine_transform(input, matrix, offset=0.0, output_shape=None,
                      output=None, order=3,
                      mode='constant', cval=0.0, prefilter=True):
@@ -458,7 +465,7 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
     return output
 
 
-@_ni_docstrings.docfiller
+@docfiller
 def shift(input, shift, output=None, order=3, mode='constant', cval=0.0,
           prefilter=True):
     """
@@ -510,7 +517,7 @@ def shift(input, shift, output=None, order=3, mode='constant', cval=0.0,
     return output
 
 
-@_ni_docstrings.docfiller
+@docfiller
 def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
          prefilter=True):
     """
@@ -606,7 +613,7 @@ def _minmax(coor, minc, maxc):
         maxc[1] = coor[1]
     return minc, maxc
 
-@_ni_docstrings.docfiller
+@docfiller
 def rotate(input, angle, axes=(1, 0), reshape=True, output=None, order=3,
            mode='constant', cval=0.0, prefilter=True):
     """
