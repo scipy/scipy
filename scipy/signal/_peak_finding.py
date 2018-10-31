@@ -1329,7 +1329,8 @@ def _merge_clusters(peaks_above, peaks_below, runs=0):
             if not buffer:
                 yield pa
             else:
-                yield np.concatenate((*buffer, pa))
+                buffer.append(pa)
+                yield np.concatenate(buffer)
                 buffer = []
         else:
             buffer.append(pa)
