@@ -23,6 +23,8 @@ def linregress(x, y=None):
         If only x is given (and y=None), then it must be a two-dimensional
         array where one dimension has length 2.  The two sets of measurements
         are then found by splitting the array along the length-2 dimension.
+        In the case where y=None and x is a 2x2 array, linregress(x) is
+        equivalent to linregress(x[0], x[1]).
 
     Returns
     -------
@@ -45,6 +47,11 @@ def linregress(x, y=None):
      least squares to fit a function to data.
     :func:`scipy.optimize.leastsq` : Minimize the sum of
      squares of a set of equations.
+
+    Notes
+    -----
+    Missing values are considered pair-wise: if a value is missing in x,
+    the corresponding value in y is masked.
 
     Examples
     --------
@@ -74,6 +81,13 @@ def linregress(x, y=None):
     >>> plt.plot(x, intercept + slope*x, 'r', label='fitted line')
     >>> plt.legend()
     >>> plt.show()
+
+    Example for the case where only x is provided as a 2x2 array:
+
+    >>> x = np.array([[0, 1], [0, 2]])
+    >>> r = stats.linregress(x)
+    >>> r.slope, r.intercept
+    (2.0, 0.0)
 
     """
     TINY = 1.0e-20
