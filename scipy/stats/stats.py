@@ -1,4 +1,4 @@
-﻿# Copyright 2002 Gary Strangman.  All rights reserved
+# Copyright 2002 Gary Strangman.  All rights reserved
 # Copyright 2002-2016 The SciPy Developers
 #
 # The original code from Gary Strangman was heavily adapted for
