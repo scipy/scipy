@@ -34,7 +34,7 @@ footprint : array, optional
 _mode_doc = (
 """mode : {'reflect', 'constant', 'nearest', 'mirror', 'wrap'}, optional
     The `mode` parameter determines how the input array is extended
-    when the filter overlaps a border. Default is 'constant'. Behavior
+    when the filter overlaps a border. Default is 'reflect'. Behavior
     for each valid value is as follows:
 
     'reflect' (`d c b a | a b c d | d c b a`)
