@@ -2075,6 +2075,65 @@ class weibull_min_gen(rv_continuous):
 weibull_min = weibull_min_gen(a=0.0, name='weibull_min')
 
 
+class truncweibull_min_gen(rv_continuous):
+    r"""A truncated Weibull minimum continuous random variable.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability density function for `truncweibull_min` is:
+
+    .. math::
+
+        f(x, a) = TBA
+
+    for :math:`0 < x < a`.
+
+    `truncweibull_min` takes ``a`` in addition to a shape parameter.
+
+    %(after_notes)s
+
+    %(example)s
+
+    """
+    def _argcheck(self, a, c):
+        self.a = a
+        return a > 0
+
+    def _pdf(self, x, a, c):
+        # truncexpon.pdf(x, b) = exp(-x) / (1-exp(-b))
+        return c*pow(x, c-1)*np.exp(-pow(x, c))/np.exp(-pow(a, c))
+
+    # def _logpdf(self, x, b):
+    #     return -x - np.log(-sc.expm1(-b))
+
+    # def _cdf(self, x, b, c):
+    #     return -sc.expm1(-pow(x, c))/sc.expm1(-pow(b, c))
+
+    # def _ppf(self, q, b):
+    #     return -sc.log1p(q*sc.expm1(-b))
+
+    # def _munp(self, n, b):
+    #     # wrong answer with formula, same as in continuous.pdf
+    #     # return sc.gamman+1)-sc.gammainc1+n, b)
+    #     if n == 1:
+    #         return (1-(b+1)*np.exp(-b))/(-sc.expm1(-b))
+    #     elif n == 2:
+    #         return 2*(1-0.5*(b*b+2*b+2)*np.exp(-b))/(-sc.expm1(-b))
+    #     else:
+    #         # return generic for higher moments
+    #         # return rv_continuous._mom1_sc(self, n, b)
+    #         return self._mom1_sc(n, b)
+
+    # def _entropy(self, b):
+    #     eB = np.exp(b)
+    #     return np.log(eB-1)+(1+eB*(b-1.0))/(1.0-eB)
+
+
+trunweibull_min = truncweibull_min_gen(name='truncweibull_min')
+
+
 class weibull_max_gen(rv_continuous):
     r"""Weibull maximum continuous random variable.
 
