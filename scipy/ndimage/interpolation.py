@@ -39,11 +39,13 @@ from . import _nd_image
 from ._ni_docstrings import docdict
 from scipy.misc import doccer
 
-# Change the default 'reflect' to 'constant'
-docdict['mode'] = docdict['mode'].replace("Default is 'reflect'",
-                                          "Default is 'constant'")
+# Change the default 'reflect' to 'constant' via modifying a copy of docdict
+docdict_copy = docdict.copy()
+del docdict
+docdict_copy['mode'] = docdict_copy['mode'].replace("Default is 'reflect'",
+                                                    "Default is 'constant'")
 
-docfiller = doccer.filldoc(docdict)
+docfiller = doccer.filldoc(docdict_copy)
 
 __all__ = ['spline_filter1d', 'spline_filter', 'geometric_transform',
            'map_coordinates', 'affine_transform', 'shift', 'zoom', 'rotate']
@@ -329,7 +331,7 @@ def map_coordinates(input, coordinates, output=None, order=3,
     else:
         filtered = input
     output = _ni_support._get_output(output, input,
-                                                   shape=output_shape)
+                                     shape=output_shape)
     _nd_image.geometric_transform(filtered, None, coordinates, None, None,
                                   output, order, mode, cval, None, None)
     return output
@@ -423,7 +425,7 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
     else:
         filtered = input
     output = _ni_support._get_output(output, input,
-                                                   shape=output_shape)
+                                     shape=output_shape)
     matrix = numpy.asarray(matrix, dtype=numpy.float64)
     if matrix.ndim not in [1, 2] or matrix.shape[0] < 1:
         raise RuntimeError('no proper affine matrix provided')
@@ -596,7 +598,7 @@ def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
                         where=zoom_div != 0)
 
     output = _ni_support._get_output(output, input,
-                                                   shape=output_shape)
+                                     shape=output_shape)
     zoom = numpy.ascontiguousarray(zoom)
     _nd_image.zoom_shift(filtered, zoom, None, output, order, mode, cval)
     return output
@@ -612,6 +614,7 @@ def _minmax(coor, minc, maxc):
     if coor[1] > maxc[1]:
         maxc[1] = coor[1]
     return minc, maxc
+
 
 @docfiller
 def rotate(input, angle, axes=(1, 0), reshape=True, output=None, order=3,
@@ -696,7 +699,7 @@ def rotate(input, angle, axes=(1, 0), reshape=True, output=None, order=3,
     output_shape[axes[1]] = ox
     output_shape = tuple(output_shape)
     output = _ni_support._get_output(output, input,
-                                                   shape=output_shape)
+                                     shape=output_shape)
     if input.ndim <= 2:
         affine_transform(input, matrix, offset, output_shape, output,
                          order, mode, cval, prefilter)
