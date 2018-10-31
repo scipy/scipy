@@ -785,6 +785,7 @@ def hann(M, sym=True):
     # Docstring adapted from NumPy's hanning function
     return general_hamming(M, 0.5, sym)
 
+
 @np.deprecate(new_name='scipy.signal.windows.hann')
 def hanning(*args, **kwargs):
     return hann(*args, **kwargs)
@@ -927,6 +928,7 @@ def barthann(M, sym=True):
 
     return _truncate(w, needs_trunc)
 
+
 def general_hamming(M, alpha, sym=True):
     r"""Return a generalized Hamming window.
 
@@ -970,26 +972,24 @@ def general_hamming(M, alpha, sym=True):
     --------
     The Sentinel-1A/B Instrument Processing Facility uses generalized Hamming
     windows in the processing of spaceborne Synthetic Aperture Radar (SAR)
-    data [3]_. The facility uses various values for the :math:`\alpha` parameter
-    based on operating mode of the SAR instrument. Some common :math:`\alpha`
-    values include 0.75, 0.7 and 0.52 [4]_. As an example, we plot these different
-    windows.
+    data [3]_. The facility uses various values for the :math:`\alpha`
+    parameter based on operating mode of the SAR instrument. Some common
+    :math:`\alpha` values include 0.75, 0.7 and 0.52 [4]_. As an example, we
+    plot these different windows.
 
     >>> from scipy.signal.windows import general_hamming
     >>> from scipy.fftpack import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
-    >>> plt.figure()
-    >>> plt.title("Generalized Hamming Windows")
-    >>> plt.ylabel("Amplitude")
-    >>> plt.xlabel("Sample")
-    >>> spatial_plot = plt.axes()
+    >>> fig1, spatial_plot = plt.subplots()
+    >>> spatial_plot.set_title("Generalized Hamming Windows")
+    >>> spatial_plot.set_ylabel("Amplitude")
+    >>> spatial_plot.set_xlabel("Sample")
 
-    >>> plt.figure()
-    >>> plt.title("Frequency Responses")
-    >>> plt.ylabel("Normalized magnitude [dB]")
-    >>> plt.xlabel("Normalized frequency [cycles per sample]")
-    >>> freq_plot = plt.axes()
+    >>> fig2, freq_plot = plt.subplots()
+    >>> freq_plot.set_title("Frequency Responses")
+    >>> freq_plot.set_ylabel("Normalized magnitude [dB]")
+    >>> freq_plot.set_xlabel("Normalized frequency [cycles per sample]")
 
     >>> for alpha in [0.75, 0.7, 0.52]:
     ...     window = general_hamming(41, alpha)
@@ -1092,6 +1092,7 @@ def hamming(M, sym=True):
     """
     # Docstring adapted from NumPy's hamming function
     return general_hamming(M, 0.54, sym)
+
 
 def kaiser(M, beta, sym=True):
     r"""Return a Kaiser window.

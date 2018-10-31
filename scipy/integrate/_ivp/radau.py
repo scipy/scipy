@@ -5,7 +5,8 @@ from scipy.sparse import csc_matrix, issparse, eye
 from scipy.sparse.linalg import splu
 from scipy.optimize._numdiff import group_columns
 from .common import (validate_max_step, validate_tol, select_initial_step,
-                     norm, num_jac, EPS, warn_extraneous)
+                     norm, num_jac, EPS, warn_extraneous,
+                     validate_first_step)
 from .base import OdeSolver, DenseOutput
 
 S6 = 6 ** 0.5
@@ -203,6 +204,9 @@ class Radau(OdeSolver):
     t_bound : float
         Boundary time - the integration won't continue beyond it. It also
         determines the direction of the integration.
+    first_step : float or None, optional
+        Initial step size. Default is ``None`` which means that the algorithm
+        should choose.
     max_step : float, optional
         Maximum allowed step size. Default is np.inf, i.e. the step size is not
         bounded and determined solely by the solver.
@@ -279,7 +283,7 @@ class Radau(OdeSolver):
     """
     def __init__(self, fun, t0, y0, t_bound, max_step=np.inf,
                  rtol=1e-3, atol=1e-6, jac=None, jac_sparsity=None,
-                 vectorized=False, **extraneous):
+                 vectorized=False, first_step=None, **extraneous):
         warn_extraneous(extraneous)
         super(Radau, self).__init__(fun, t0, y0, t_bound, vectorized)
         self.y_old = None
@@ -288,9 +292,12 @@ class Radau(OdeSolver):
         self.f = self.fun(self.t, self.y)
         # Select initial step assuming the same order which is used to control
         # the error.
-        self.h_abs = select_initial_step(
-            self.fun, self.t, self.y, self.f, self.direction,
-            3, self.rtol, self.atol)
+        if first_step is None:
+            self.h_abs = select_initial_step(
+                self.fun, self.t, self.y, self.f, self.direction,
+                3, self.rtol, self.atol)
+        else:
+            self.h_abs = validate_first_step(first_step, t0, t_bound)
         self.h_abs_old = None
         self.error_norm_old = None
 
