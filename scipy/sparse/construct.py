@@ -622,7 +622,7 @@ def bmat(blocks, format=None, dtype=None):
     return coo_matrix((data, (row, col)), shape=shape).asformat(format)
 
 
-def block_diag(mats, format='coo', dtype=None):
+def block_diag(mats, format=None, dtype=None):
     """
     Build a block diagonal sparse matrix from provided matrices.
 
@@ -664,7 +664,6 @@ def block_diag(mats, format='coo', dtype=None):
            [0, 0, 0, 7]])
 
     """
-    dtype = np.dtype(dtype)
     row = []
     col = []
     data = []
@@ -674,14 +673,13 @@ def block_diag(mats, format='coo', dtype=None):
         if issparse(a):
             a = a.tocsr()
         else:
-            a = coo_matrix(a).tocsr()
+            a = csr_matrix(a)
         nrows, ncols = a.shape
         for r in range(nrows):
             for c in range(ncols):
-                if a[r, c] is not None:
-                    row.append(r + r_idx)
-                    col.append(c + c_idx)
-                    data.append(a[r, c])
+                row.append(r + r_idx)
+                col.append(c + c_idx)
+                data.append(a[r, c])
         r_idx = r_idx + nrows
         c_idx = c_idx + ncols
     return coo_matrix((data, (row, col)), dtype=dtype).asformat(format)
