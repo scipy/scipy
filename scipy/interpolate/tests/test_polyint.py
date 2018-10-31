@@ -6,8 +6,8 @@ import numpy as np
 
 from numpy.testing import (
     assert_almost_equal, assert_array_equal, assert_array_almost_equal,
-    TestCase, run_module_suite, assert_allclose, assert_equal, assert_,
-    assert_raises)
+    assert_allclose, assert_equal, assert_)
+from pytest import raises as assert_raises
 
 from scipy.interpolate import (
     KroghInterpolator, krogh_interpolate,
@@ -51,6 +51,7 @@ def check_shape(interpolator_cls, x_shape, y_shape, deriv_shape=None, axis=0,
         yi, y = np.broadcast_arrays(yi, yv)
         assert_allclose(yi, y)
 
+
 SHAPES = [(), (0,), (1,), (6, 2, 5)]
 
 
@@ -65,11 +66,11 @@ def test_shapes():
             for s2 in SHAPES:
                 for axis in range(-len(s2), len(s2)):
                     if ip != CubicSpline:
-                        yield check_shape, ip, s1, s2, None, axis
+                        check_shape(ip, s1, s2, None, axis)
                     else:
                         for bc in ['natural', 'clamped']:
                             extra = {'bc_type': bc}
-                            yield check_shape, ip, s1, s2, None, axis, extra
+                            check_shape(ip, s1, s2, None, axis, extra)
 
 def test_derivs_shapes():
     def krogh_derivs(x, y, axis=0):
@@ -78,7 +79,7 @@ def test_derivs_shapes():
     for s1 in SHAPES:
         for s2 in SHAPES:
             for axis in range(-len(s2), len(s2)):
-                yield check_shape, krogh_derivs, s1, s2, (6,), axis
+                check_shape(krogh_derivs, s1, s2, (6,), axis)
 
 
 def test_deriv_shapes():
@@ -128,7 +129,7 @@ def test_deriv_shapes():
         for s1 in SHAPES:
             for s2 in SHAPES:
                 for axis in range(-len(s2), len(s2)):
-                    yield check_shape, ip, s1, s2, (), axis
+                    check_shape(ip, s1, s2, (), axis)
 
 
 def _check_complex(ip):
@@ -140,11 +141,11 @@ def _check_complex(ip):
 
 def test_complex():
     for ip in [KroghInterpolator, BarycentricInterpolator, pchip, CubicSpline]:
-        yield _check_complex, ip
+        _check_complex(ip)
 
 
-class CheckKrogh(TestCase):
-    def setUp(self):
+class TestKrogh(object):
+    def setup_method(self):
         self.true_poly = np.poly1d([-2,3,1,5,-4])
         self.test_xs = np.linspace(-1,1,100)
         self.xs = np.linspace(-1,1,5)
@@ -249,23 +250,39 @@ class CheckKrogh(TestCase):
         assert_array_equal(np.shape(P.derivatives([0,1])), (n,2,3))
 
     def test_wrapper(self):
-        P = KroghInterpolator(self.xs,self.ys)
-        assert_almost_equal(P(self.test_xs),krogh_interpolate(self.xs,self.ys,self.test_xs))
-        assert_almost_equal(P.derivative(self.test_xs,2),krogh_interpolate(self.xs,self.ys,self.test_xs,der=2))
-        assert_almost_equal(P.derivatives(self.test_xs,2),krogh_interpolate(self.xs,self.ys,self.test_xs,der=[0,1]))
+        P = KroghInterpolator(self.xs, self.ys)
+        ki = krogh_interpolate
+        assert_almost_equal(P(self.test_xs), ki(self.xs, self.ys, self.test_xs))
+        assert_almost_equal(P.derivative(self.test_xs, 2),
+                            ki(self.xs, self.ys, self.test_xs, der=2))
+        assert_almost_equal(P.derivatives(self.test_xs, 2),
+                            ki(self.xs, self.ys, self.test_xs, der=[0, 1]))
 
     def test_int_inputs(self):
         # Check input args are cast correctly to floats, gh-3669
-        x = [0, 234,468,702,936,1170,1404,2340,3744,6084,8424,13104,60000]
-        offset_cdf = np.array([-0.95, -0.86114777, -0.8147762, -0.64072425, -0.48002351,
-                               -0.34925329, -0.26503107, -0.13148093, -0.12988833, -0.12979296,
+        x = [0, 234, 468, 702, 936, 1170, 1404, 2340, 3744, 6084, 8424,
+             13104, 60000]
+        offset_cdf = np.array([-0.95, -0.86114777, -0.8147762, -0.64072425,
+                               -0.48002351, -0.34925329, -0.26503107,
+                               -0.13148093, -0.12988833, -0.12979296,
                                -0.12973574, -0.08582937, 0.05])
         f = KroghInterpolator(x, offset_cdf)
 
-        assert_allclose(abs((f(x) - offset_cdf) / f.derivative(x, 1)), 0, atol=1e-10)
+        assert_allclose(abs((f(x) - offset_cdf) / f.derivative(x, 1)),
+                        0, atol=1e-10)
+
+    def test_derivatives_complex(self):
+        # regression test for gh-7381: krogh.derivatives(0) fails complex y
+        x, y = np.array([-1, -1, 0, 1, 1]), np.array([1, 1.0j, 0, -1, 1.0j])
+        func = KroghInterpolator(x, y)
+        cmplx = func.derivatives(0)
+
+        cmplx2 = (KroghInterpolator(x, y.real).derivatives(0) +
+                  1j*KroghInterpolator(x, y.imag).derivatives(0))
+        assert_allclose(cmplx, cmplx2, atol=1e-15)
 
 
-class CheckTaylor(TestCase):
+class TestTaylor(object):
     def test_exponential(self):
         degree = 5
         p = approximate_taylor_polynomial(np.exp, 0, degree, 1, 15)
@@ -275,66 +292,68 @@ class CheckTaylor(TestCase):
         assert_almost_equal(p(0),0)
 
 
-class CheckBarycentric(TestCase):
-    def setUp(self):
-        self.true_poly = np.poly1d([-2,3,1,5,-4])
-        self.test_xs = np.linspace(-1,1,100)
-        self.xs = np.linspace(-1,1,5)
+class TestBarycentric(object):
+    def setup_method(self):
+        self.true_poly = np.poly1d([-2, 3, 1, 5, -4])
+        self.test_xs = np.linspace(-1, 1, 100)
+        self.xs = np.linspace(-1, 1, 5)
         self.ys = self.true_poly(self.xs)
 
     def test_lagrange(self):
-        P = BarycentricInterpolator(self.xs,self.ys)
-        assert_almost_equal(self.true_poly(self.test_xs),P(self.test_xs))
+        P = BarycentricInterpolator(self.xs, self.ys)
+        assert_almost_equal(self.true_poly(self.test_xs), P(self.test_xs))
 
     def test_scalar(self):
-        P = BarycentricInterpolator(self.xs,self.ys)
-        assert_almost_equal(self.true_poly(7),P(7))
-        assert_almost_equal(self.true_poly(np.array(7)),P(np.array(7)))
+        P = BarycentricInterpolator(self.xs, self.ys)
+        assert_almost_equal(self.true_poly(7), P(7))
+        assert_almost_equal(self.true_poly(np.array(7)), P(np.array(7)))
 
     def test_delayed(self):
         P = BarycentricInterpolator(self.xs)
         P.set_yi(self.ys)
-        assert_almost_equal(self.true_poly(self.test_xs),P(self.test_xs))
+        assert_almost_equal(self.true_poly(self.test_xs), P(self.test_xs))
 
     def test_append(self):
-        P = BarycentricInterpolator(self.xs[:3],self.ys[:3])
-        P.add_xi(self.xs[3:],self.ys[3:])
-        assert_almost_equal(self.true_poly(self.test_xs),P(self.test_xs))
+        P = BarycentricInterpolator(self.xs[:3], self.ys[:3])
+        P.add_xi(self.xs[3:], self.ys[3:])
+        assert_almost_equal(self.true_poly(self.test_xs), P(self.test_xs))
 
     def test_vector(self):
         xs = [0, 1, 2]
-        ys = np.array([[0,1],[1,0],[2,1]])
-        P = BarycentricInterpolator(xs,ys)
-        Pi = [BarycentricInterpolator(xs,ys[:,i]) for i in xrange(ys.shape[1])]
-        test_xs = np.linspace(-1,3,100)
+        ys = np.array([[0, 1], [1, 0], [2, 1]])
+        BI = BarycentricInterpolator 
+        P = BI(xs, ys)
+        Pi = [BI(xs, ys[:, i]) for i in xrange(ys.shape[1])]
+        test_xs = np.linspace(-1, 3, 100)
         assert_almost_equal(P(test_xs),
-                np.rollaxis(np.asarray([p(test_xs) for p in Pi]),-1))
+                np.rollaxis(np.asarray([p(test_xs) for p in Pi]), -1))
 
     def test_shapes_scalarvalue(self):
-        P = BarycentricInterpolator(self.xs,self.ys)
+        P = BarycentricInterpolator(self.xs, self.ys)
         assert_array_equal(np.shape(P(0)), ())
         assert_array_equal(np.shape(P(np.array(0))), ())
         assert_array_equal(np.shape(P([0])), (1,))
-        assert_array_equal(np.shape(P([0,1])), (2,))
+        assert_array_equal(np.shape(P([0, 1])), (2,))
 
     def test_shapes_vectorvalue(self):
-        P = BarycentricInterpolator(self.xs,np.outer(self.ys,np.arange(3)))
+        P = BarycentricInterpolator(self.xs, np.outer(self.ys, np.arange(3)))
         assert_array_equal(np.shape(P(0)), (3,))
-        assert_array_equal(np.shape(P([0])), (1,3))
-        assert_array_equal(np.shape(P([0,1])), (2,3))
+        assert_array_equal(np.shape(P([0])), (1, 3))
+        assert_array_equal(np.shape(P([0, 1])), (2, 3))
 
     def test_shapes_1d_vectorvalue(self):
-        P = BarycentricInterpolator(self.xs,np.outer(self.ys,[1]))
+        P = BarycentricInterpolator(self.xs, np.outer(self.ys, [1]))
         assert_array_equal(np.shape(P(0)), (1,))
-        assert_array_equal(np.shape(P([0])), (1,1))
-        assert_array_equal(np.shape(P([0,1])), (2,1))
+        assert_array_equal(np.shape(P([0])), (1, 1))
+        assert_array_equal(np.shape(P([0,1])), (2, 1))
 
     def test_wrapper(self):
-        P = BarycentricInterpolator(self.xs,self.ys)
-        assert_almost_equal(P(self.test_xs),barycentric_interpolate(self.xs,self.ys,self.test_xs))
+        P = BarycentricInterpolator(self.xs, self.ys)
+        values = barycentric_interpolate(self.xs, self.ys, self.test_xs)
+        assert_almost_equal(P(self.test_xs), values)
 
 
-class TestPCHIP(TestCase):
+class TestPCHIP(object):
     def _make_random(self, npts=20):
         np.random.seed(1234)
         xi = np.sort(np.random.random(npts))
@@ -517,7 +536,7 @@ class TestCubicSpline(object):
         elif bc_end == 'clamped':
             assert_allclose(S(x[-1], 1), 0, rtol=tol, atol=tol)
         elif bc_end == 'natural':
-            assert_allclose(S(x[-1], 2), 0, rtol=tol, atol=tol)
+            assert_allclose(S(x[-1], 2), 0, rtol=2*tol, atol=2*tol)
         else:
             order, value = bc_end
             assert_allclose(S(x[-1], order), value, rtol=tol, atol=tol)
@@ -643,6 +662,3 @@ class TestCubicSpline(object):
         # periodic condition, y[-1] must be equal to y[0]:
         assert_raises(ValueError, CubicSpline, x, y, 0, 'periodic', True)
 
-
-if __name__ == '__main__':
-    run_module_suite()

@@ -225,6 +225,8 @@ from __future__ import division, print_function, absolute_import
 # Modified and extended by Ed Schofield, Robert Cimrman,
 # Nathan Bell, and Jake Vanderplas.
 
+import warnings as _warnings
+
 from .base import *
 from .csr import *
 from .csc import *
@@ -237,11 +239,14 @@ from .construct import *
 from .extract import *
 from ._matrix_io import *
 
-# for backward compatibility with v0.10.  This function is marked as deprecated
-from .csgraph import cs_graph_components
-
-#from spfuncs import *
+# For backward compatibility with v0.19.
+from . import csgraph
 
 __all__ = [s for s in dir() if not s.startswith('_')]
-from numpy.testing import Tester
-test = Tester().test
+
+# Filter PendingDeprecationWarning for np.matrix introduced with numpy 1.15
+_warnings.filterwarnings('ignore', message='the matrix subclass is not the recommended way')
+
+from scipy._lib._testutils import PytestTester
+test = PytestTester(__name__)
+del PytestTester

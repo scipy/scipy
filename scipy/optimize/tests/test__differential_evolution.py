@@ -6,14 +6,15 @@ from scipy.optimize._differentialevolution import DifferentialEvolutionSolver
 from scipy.optimize import differential_evolution
 import numpy as np
 from scipy.optimize import rosen
-from numpy.testing import (assert_equal, TestCase, assert_allclose,
-                           run_module_suite, assert_almost_equal,
-                           assert_string_equal, assert_raises, assert_)
+from numpy.testing import (assert_equal, assert_allclose,
+                           assert_almost_equal,
+                           assert_string_equal, assert_)
+from pytest import raises as assert_raises, warns
 
 
-class TestDifferentialEvolutionSolver(TestCase):
+class TestDifferentialEvolutionSolver(object):
 
-    def setUp(self):
+    def setup_method(self):
         self.old_seterr = np.seterr(invalid='raise')
         self.limits = np.array([[0., 0.],
                                 [2., 2.]])
@@ -32,7 +33,7 @@ class TestDifferentialEvolutionSolver(TestCase):
         population = np.atleast_2d(np.arange(0.1, 0.8, 0.1)).T
         self.dummy_solver2.population = population
 
-    def tearDown(self):
+    def teardown_method(self):
         np.seterr(**self.old_seterr)
 
     def quadratic(self, x):
@@ -101,6 +102,18 @@ class TestDifferentialEvolutionSolver(TestCase):
         assert_equal(solver.strategy, 'randtobest1exp')
         assert_equal(solver.mutation_func.__name__, '_randtobest1')
 
+        solver = DifferentialEvolutionSolver(rosen,
+                                             self.bounds,
+                                             strategy='currenttobest1bin')
+        assert_equal(solver.strategy, 'currenttobest1bin')
+        assert_equal(solver.mutation_func.__name__, '_currenttobest1')
+
+        solver = DifferentialEvolutionSolver(rosen,
+                                             self.bounds,
+                                             strategy='currenttobest1exp')
+        assert_equal(solver.strategy, 'currenttobest1exp')
+        assert_equal(solver.mutation_func.__name__, '_currenttobest1')
+
     def test__mutate1(self):
         # strategies */1/*, i.e. rand/1/bin, best/1/exp, etc.
         result = np.array([0.05])
@@ -125,8 +138,14 @@ class TestDifferentialEvolutionSolver(TestCase):
 
     def test__randtobest1(self):
         # strategies randtobest/1/*
+        result = np.array([0.15])
+        trial = self.dummy_solver2._randtobest1((2, 3, 4, 5, 6))
+        assert_allclose(trial, result)
+
+    def test__currenttobest1(self):
+        # strategies currenttobest/1/*
         result = np.array([0.1])
-        trial = self.dummy_solver2._randtobest1(1, (2, 3, 4, 5, 6))
+        trial = self.dummy_solver2._currenttobest1(1, (2, 3, 4, 5, 6))
         assert_allclose(trial, result)
 
     def test_can_init_with_dithering(self):
@@ -135,26 +154,26 @@ class TestDifferentialEvolutionSolver(TestCase):
                                              self.bounds,
                                              mutation=mutation)
 
-        self.assertEqual(solver.dither, list(mutation))
+        assert_equal(solver.dither, list(mutation))
 
     def test_invalid_mutation_values_arent_accepted(self):
         func = rosen
         mutation = (0.5, 3)
-        self.assertRaises(ValueError,
+        assert_raises(ValueError,
                           DifferentialEvolutionSolver,
                           func,
                           self.bounds,
                           mutation=mutation)
 
         mutation = (-1, 1)
-        self.assertRaises(ValueError,
+        assert_raises(ValueError,
                           DifferentialEvolutionSolver,
                           func,
                           self.bounds,
                           mutation=mutation)
 
         mutation = (0.1, np.nan)
-        self.assertRaises(ValueError,
+        assert_raises(ValueError,
                           DifferentialEvolutionSolver,
                           func,
                           self.bounds,
@@ -184,9 +203,11 @@ class TestDifferentialEvolutionSolver(TestCase):
         assert_equal(0.3, self.dummy_solver._unscale_parameters(trial))
 
     def test__ensure_constraint(self):
-        trial = np.array([1.1, -100, 2., 300., -0.00001])
+        trial = np.array([1.1, -100, 0.9, 2., 300., -0.00001])
         self.dummy_solver._ensure_constraint(trial)
-        assert_equal(np.all(trial <= 1), True)
+
+        assert_equal(trial[2], 0.9)
+        assert_(np.logical_and(trial >= 0, trial <= 1).all())
 
     def test_differential_evolution(self):
         # test that the Jmin of DifferentialEvolutionSolver
@@ -234,7 +255,7 @@ class TestDifferentialEvolutionSolver(TestCase):
         # test that passing an invalid strategy raises ValueError
         func = rosen
         bounds = [(-3, 3)]
-        self.assertRaises(ValueError,
+        assert_raises(ValueError,
                           differential_evolution,
                           func,
                           bounds,
@@ -244,17 +265,17 @@ class TestDifferentialEvolutionSolver(TestCase):
         # test that the bounds checking works
         func = rosen
         bounds = [(-3, None)]
-        self.assertRaises(ValueError,
+        assert_raises(ValueError,
                           differential_evolution,
                           func,
                           bounds)
         bounds = [(-3)]
-        self.assertRaises(ValueError,
+        assert_raises(ValueError,
                           differential_evolution,
                           func,
                           bounds)
         bounds = [(-3, 3), (3, 4, 5)]
-        self.assertRaises(ValueError,
+        assert_raises(ValueError,
                           differential_evolution,
                           func,
                           bounds)
@@ -309,6 +330,21 @@ class TestDifferentialEvolutionSolver(TestCase):
                          'Maximum number of function evaluations has '
                               'been exceeded.')
 
+        # now repeat for updating='deferred version
+        solver = DifferentialEvolutionSolver(rosen,
+                                             self.bounds,
+                                             popsize=5,
+                                             polish=False,
+                                             maxfun=40,
+                                             updating='deferred')
+        result = solver.solve()
+
+        assert_equal(result.nfev, 40)
+        assert_equal(result.success, False)
+        assert_equal(result.message,
+                         'Maximum number of function evaluations has '
+                              'been reached.')
+
     def test_quadratic(self):
         # test the quadratic function from object
         solver = DifferentialEvolutionSolver(self.quadratic,
@@ -335,6 +371,7 @@ class TestDifferentialEvolutionSolver(TestCase):
                                         seed=1,
                                         tol=0.5)
         assert_equal(result.x, result2.x)
+        assert_equal(result.nfev, result2.nfev)
 
     def test_exp_runs(self):
         # test whether exponential mutation loop runs
@@ -354,26 +391,26 @@ class TestDifferentialEvolutionSolver(TestCase):
         result = differential_evolution(rosen, bounds, popsize=1815, maxiter=1)
 
     def test_calculate_population_energies(self):
-        # if popsize is 2 then the overall generation has size (4,)
-        solver = DifferentialEvolutionSolver(rosen, self.bounds, popsize=2)
-        solver._calculate_population_energies()
-
+        # if popsize is 3 then the overall generation has size (6,)
+        solver = DifferentialEvolutionSolver(rosen, self.bounds, popsize=3)
+        solver._calculate_population_energies(solver.population)
+        solver._promote_lowest_energy()
         assert_equal(np.argmin(solver.population_energies), 0)
 
-        # initial calculation of the energies should require 4 nfev.
-        assert_equal(solver._nfev, 4)
+        # initial calculation of the energies should require 6 nfev.
+        assert_equal(solver._nfev, 6)
 
     def test_iteration(self):
         # test that DifferentialEvolutionSolver is iterable
-        # if popsize is 2 then the overall generation has size (4,)
-        solver = DifferentialEvolutionSolver(rosen, self.bounds, popsize=2,
-                                             maxfun=8)
+        # if popsize is 3 then the overall generation has size (6,)
+        solver = DifferentialEvolutionSolver(rosen, self.bounds, popsize=3,
+                                             maxfun=12)
         x, fun = next(solver)
         assert_equal(np.size(x, 0), 2)
 
-        # 4 nfev are required for initial calculation of energies, 4 nfev are
-        # required for the evolution of the 4 population members.
-        assert_equal(solver._nfev, 8)
+        # 6 nfev are required for initial calculation of energies, 6 nfev are
+        # required for the evolution of the 6 population members.
+        assert_equal(solver._nfev, 12)
 
         # the next generation should halt because it exceeds maxfun
         assert_raises(StopIteration, next, solver)
@@ -426,6 +463,78 @@ class TestDifferentialEvolutionSolver(TestCase):
         assert_equal(solver._nfev, 0)
         assert_(np.all(np.isinf(solver.population_energies)))
 
+        # we should be able to initialise with our own array
+        population = np.linspace(-1, 3, 10).reshape(5, 2)
+        solver = DifferentialEvolutionSolver(rosen, self.bounds,
+                                             init=population,
+                                             strategy='best2bin',
+                                             atol=0.01, seed=1, popsize=5)
 
-if __name__ == '__main__':
-    run_module_suite()
+        assert_equal(solver._nfev, 0)
+        assert_(np.all(np.isinf(solver.population_energies)))
+        assert_(solver.num_population_members == 5)
+        assert_(solver.population_shape == (5, 2))
+
+        # check that the population was initialised correctly
+        unscaled_population = np.clip(solver._unscale_parameters(population),
+                                      0, 1)
+        assert_almost_equal(solver.population[:5], unscaled_population)
+
+        # population values need to be clipped to bounds
+        assert_almost_equal(np.min(solver.population[:5]), 0)
+        assert_almost_equal(np.max(solver.population[:5]), 1)
+
+        # shouldn't be able to initialise with an array if it's the wrong shape
+        # this would have too many parameters
+        population = np.linspace(-1, 3, 15).reshape(5, 3)
+        assert_raises(ValueError,
+                      DifferentialEvolutionSolver,
+                      *(rosen, self.bounds),
+                      **{'init': population})
+
+    def test_infinite_objective_function(self):
+        # Test that there are no problems if the objective function
+        # returns inf on some runs
+        def sometimes_inf(x):
+            if x[0] < .5:
+                return np.inf
+            return x[1]
+        bounds = [(0, 1), (0, 1)]
+        x_fit = differential_evolution(sometimes_inf,
+                                       bounds=[(0, 1), (0, 1)],
+                                       disp=False)
+
+    def test_deferred_updating(self):
+        # check setting of deferred updating, with default workers
+        bounds = [(0., 2.), (0., 2.), (0, 2), (0, 2)]
+        solver = DifferentialEvolutionSolver(rosen, bounds, updating='deferred')
+        assert_(solver._updating == 'deferred')
+        assert_(solver._mapwrapper._mapfunc is map)
+        solver.solve()
+
+    def test_immediate_updating(self):
+        # check setting of immediate updating, with default workers
+        bounds = [(0., 2.), (0., 2.)]
+        solver = DifferentialEvolutionSolver(rosen, bounds)
+        assert_(solver._updating == 'immediate')
+
+        # should raise a UserWarning because the updating='immediate'
+        # is being overriden by the workers keyword
+        with warns(UserWarning):
+            solver = DifferentialEvolutionSolver(rosen, bounds, workers=2)
+            assert_(solver._updating == 'deferred')
+
+    def test_parallel(self):
+        # smoke test for parallelisation with deferred updating
+        bounds = [(0., 2.), (0., 2.)]
+        with DifferentialEvolutionSolver(rosen, bounds,
+                                         updating='deferred',
+                                         workers=2) as solver:
+            assert_(solver._mapwrapper.pool is not None)
+            assert_(solver._updating == 'deferred')
+            solver.solve()
+
+    def test_converged(self):
+        solver = DifferentialEvolutionSolver(rosen, [(0, 2), (0, 2)])
+        solver.solve()
+        assert_(solver.converged())

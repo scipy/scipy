@@ -190,8 +190,8 @@ This equation can only be implemented directly if we limit the
 sequences to finite support sequences that can be stored in a
 computer, choose :math:`n=0` to be the starting point of both
 sequences, let :math:`K+1` be that value for which
-:math:`y\left[n\right]=0` for all :math:`n>K+1` and :math:`M+1` be
-that value for which :math:`x\left[n\right]=0` for all :math:`n>M+1` ,
+:math:`x\left[n\right]=0` for all :math:`n\geq K+1` and :math:`M+1` be
+that value for which :math:`h\left[n\right]=0` for all :math:`n\geq M+1` ,
 then the discrete convolution expression is
 
 .. math::

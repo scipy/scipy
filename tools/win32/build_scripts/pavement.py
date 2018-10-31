@@ -1,8 +1,8 @@
+from __future__ import print_function
 import os
 from os.path import join as pjoin, normpath, exists as pexists, dirname
 import subprocess
 from shutil import rmtree, move as shmove
-import re
 from zipfile import ZipFile
 
 from lib import get_svn_version, get_scipy_version
@@ -119,7 +119,7 @@ def set_bootstrap_sources(arch, pyver):
 
 def get_sdist_tarball(src_root):
     """Return the name of the installer built by sdist command."""
-    # Yeah, the name logic is harcoded in distutils. We have to reproduce it
+    # Yeah, the name logic is hardcoded in distutils. We have to reproduce it
     # here
     name = "scipy-%s.zip" % get_scipy_version(src_root)
     return name
@@ -194,7 +194,7 @@ def get_binary_name(arch, scipy_verstr):
 
 def get_windist_exec(pyver, scipy_verstr):
     """Return the name of the installer built by wininst command."""
-    # Yeah, the name logic is harcoded in distutils. We have to reproduce it
+    # Yeah, the name logic is hardcoded in distutils. We have to reproduce it
     # here
     if BUILD_MSI:
         ext = '.msi'
@@ -241,7 +241,7 @@ def raw_build_sdist(cwd):
         finally:
             f.close()
     except (subprocess.CalledProcessError, RuntimeError), e:
-        print e
+        print(e)
         msg = """
 There was an error while executing the following command:
 
@@ -260,8 +260,8 @@ def raw_build_arch(pyver, arch, src_root):
     scipy_verstr = get_scipy_version(src_root)
     bdir = bootstrap_dir(pyver)
 
-    print "Building scipy (version %s) binary for python %s, arch is %s" % \
-          (scipy_verstr, get_python_exec(pyver), arch)
+    print("Building scipy (version %s) binary for python %s, arch is %s" % \
+          (scipy_verstr, get_python_exec(pyver), arch))
 
     if BUILD_MSI:
         cmd = [get_python_exec(pyver), "setup.py", "build", "-c", "mingw32",
@@ -282,7 +282,7 @@ def raw_build_arch(pyver, arch, src_root):
         finally:
             f.close()
     except (subprocess.CalledProcessError, RuntimeError), e:
-        print e
+        print(e)
         msg = """
 There was an error while executing the following command:
 

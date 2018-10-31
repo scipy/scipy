@@ -1,7 +1,8 @@
 from itertools import product, permutations
 
 import numpy as np
-from numpy.testing import assert_array_less, assert_allclose, assert_raises
+from numpy.testing import assert_array_less, assert_allclose
+from pytest import raises as assert_raises
 
 from scipy.linalg import inv, eigh, norm
 from scipy.linalg import orthogonal_procrustes

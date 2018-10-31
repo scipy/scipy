@@ -1,5 +1,6 @@
 from __future__ import division, print_function, absolute_import
 
+import threading
 import warnings
 from . import _minpack
 
@@ -14,7 +15,6 @@ from .optimize import OptimizeResult, _check_unknown_options, OptimizeWarning
 from ._lsq import least_squares
 from ._lsq.common import make_strictly_feasible
 from ._lsq.least_squares import prepare_bounds
-
 
 error = _minpack.error
 
@@ -57,7 +57,8 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
     Parameters
     ----------
     func : callable ``f(x, *args)``
-        A function that takes at least one (possibly vector) argument.
+        A function that takes at least one (possibly vector) argument,
+        and returns a value of the same length.
     x0 : ndarray
         The starting estimate for the roots of ``func(x) = 0``.
     args : tuple, optional
@@ -253,9 +254,13 @@ def _root_hybr(func, x0, args=(), jac=None,
     try:
         sol['message'] = errors[status]
     except KeyError:
-        info['message'] = errors['unknown']
+        sol['message'] = errors['unknown']
 
     return sol
+
+
+LEASTSQ_SUCCESS = [1, 2, 3, 4]
+LEASTSQ_FAILURE = [5, 6, 7, 8]
 
 
 def leastsq(func, x0, args=(), Dfun=None, full_output=0,
@@ -369,6 +374,8 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
            min   sum((ydata - f(xdata, params))**2, axis=0)
          params
 
+    The solution, `x`, is always a 1D array, regardless of the shape of `x0`,
+    or whether `x0` is a scalar.
     """
     x0 = asarray(x0).flatten()
     n = len(x0)
@@ -392,8 +399,9 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
             _check_func('leastsq', 'Dfun', Dfun, x0, args, n, (m, n))
         if maxfev == 0:
             maxfev = 100 * (n + 1)
-        retval = _minpack._lmder(func, Dfun, x0, args, full_output, col_deriv,
-                                 ftol, xtol, gtol, maxfev, factor, diag)
+        retval = _minpack._lmder(func, Dfun, x0, args, full_output,
+                                 col_deriv, ftol, xtol, gtol, maxfev,
+                                 factor, diag)
 
     errors = {0: ["Improper input parameters.", TypeError],
               1: ["Both actual and predicted relative reductions "
@@ -417,24 +425,14 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
                   ValueError],
               8: ["gtol=%f is too small, func(x) is orthogonal to the "
                   "columns of\n  the Jacobian to machine "
-                  "precision." % gtol, ValueError],
-              'unknown': ["Unknown error.", TypeError]}
+                  "precision." % gtol, ValueError]}
 
-    info = retval[-1]    # The FORTRAN return value
+    # The FORTRAN return value (possible return values are >= 0 and <= 8)
+    info = retval[-1]
 
-    if info not in [1, 2, 3, 4] and not full_output:
-        if info in [5, 6, 7, 8]:
-            warnings.warn(errors[info][0], RuntimeWarning)
-        else:
-            try:
-                raise errors[info][1](errors[info][0])
-            except KeyError:
-                raise errors['unknown'][1](errors['unknown'][0])
-
-    mesg = errors[info][0]
     if full_output:
         cov_x = None
-        if info in [1, 2, 3, 4]:
+        if info in LEASTSQ_SUCCESS:
             from numpy.dual import inv
             perm = take(eye(n), retval[1]['ipvt'] - 1, 0)
             r = triu(transpose(retval[1]['fjac'])[:n, :])
@@ -443,9 +441,13 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
                 cov_x = inv(dot(transpose(R), R))
             except (LinAlgError, ValueError):
                 pass
-        return (retval[0], cov_x) + retval[1:-1] + (mesg, info)
+        return (retval[0], cov_x) + retval[1:-1] + (errors[info][0], info)
     else:
-        return (retval[0], info)
+        if info in LEASTSQ_FAILURE:
+            warnings.warn(errors[info][0], RuntimeWarning)
+        elif info == 0:
+            raise errors[info][1](errors[info][0])
+        return retval[0], info
 
 
 def _wrap_func(func, xdata, ydata, transform):
@@ -556,7 +558,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         False may silently produce nonsensical results if the input arrays
         do contain nans. Default is True.
     bounds : 2-tuple of array_like, optional
-        Lower and upper bounds on independent variables. Defaults to no bounds.
+        Lower and upper bounds on parameters. Defaults to no bounds.
         Each element of the tuple must be either an array with the length equal
         to the number of parameters, or a scalar (in which case the bound is
         taken to be the same for all parameters.) Use ``np.inf`` with an
@@ -638,30 +640,36 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
     >>> def func(x, a, b, c):
     ...     return a * np.exp(-b * x) + c
 
-    define the data to be fit with some noise
+    Define the data to be fit with some noise:
 
     >>> xdata = np.linspace(0, 4, 50)
     >>> y = func(xdata, 2.5, 1.3, 0.5)
+    >>> np.random.seed(1729)
     >>> y_noise = 0.2 * np.random.normal(size=xdata.size)
     >>> ydata = y + y_noise
     >>> plt.plot(xdata, ydata, 'b-', label='data')
 
-    Fit for the parameters a, b, c of the function `func`
+    Fit for the parameters a, b, c of the function `func`:
 
     >>> popt, pcov = curve_fit(func, xdata, ydata)
-    >>> plt.plot(xdata, func(xdata, *popt), 'r-', label='fit')
+    >>> popt
+    array([ 2.55423706,  1.35190947,  0.47450618])
+    >>> plt.plot(xdata, func(xdata, *popt), 'r-',
+    ...          label='fit: a=%5.3f, b=%5.3f, c=%5.3f' % tuple(popt))
 
-    Constrain the optimization to the region of ``0 < a < 3``, ``0 < b < 2``
-    and ``0 < c < 1``:
+    Constrain the optimization to the region of ``0 <= a <= 3``,
+    ``0 <= b <= 1`` and ``0 <= c <= 0.5``:
 
-    >>> popt, pcov = curve_fit(func, xdata, ydata, bounds=(0, [3., 2., 1.]))
-    >>> plt.plot(xdata, func(xdata, *popt), 'g--', label='fit-with-bounds')
+    >>> popt, pcov = curve_fit(func, xdata, ydata, bounds=(0, [3., 1., 0.5]))
+    >>> popt
+    array([ 2.43708906,  1.        ,  0.35015434])
+    >>> plt.plot(xdata, func(xdata, *popt), 'g--',
+    ...          label='fit: a=%5.3f, b=%5.3f, c=%5.3f' % tuple(popt))
 
     >>> plt.xlabel('x')
     >>> plt.ylabel('y')
     >>> plt.legend()
     >>> plt.show()
-
 
     """
     if p0 is None:

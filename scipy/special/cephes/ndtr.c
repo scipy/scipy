@@ -284,6 +284,10 @@ double erf(double x)
 	return (NPY_NAN);
     }
 
+    if (x < 0.0) {
+	return -erf(-x);
+    }
+
     if (fabs(x) > 1.0)
 	return (1.0 - erfc(x));
     z = x * x;

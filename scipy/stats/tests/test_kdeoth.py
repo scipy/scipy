@@ -2,8 +2,10 @@ from __future__ import division, print_function, absolute_import
 
 from scipy import stats
 import numpy as np
-from numpy.testing import assert_almost_equal, assert_, assert_raises, \
-    assert_array_almost_equal, assert_array_almost_equal_nulp, run_module_suite
+from numpy.testing import (assert_almost_equal, assert_,
+    assert_array_almost_equal, assert_array_almost_equal_nulp)
+import pytest
+from pytest import raises as assert_raises
 
 
 def test_kde_1d():
@@ -37,6 +39,7 @@ def test_kde_1d():
                         (kdepdf*normpdf).sum()*intervall, decimal=2)
 
 
+@pytest.mark.slow
 def test_kde_2d():
     #some basic tests comparing to normal distribution
     np.random.seed(8765678)
@@ -241,6 +244,3 @@ def test_pdf_logpdf():
     pdf2 = gkde.logpdf(xn)
     assert_almost_equal(pdf, pdf2, decimal=12)
 
-
-if __name__ == "__main__":
-    run_module_suite()

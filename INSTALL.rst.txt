@@ -1,7 +1,7 @@
 Building and installing SciPy
 +++++++++++++++++++++++++++++
 
-See https://www.scipy.org/Installing_SciPy/
+See https://www.scipy.org/install.html
 
 .. Contents::
 
@@ -17,13 +17,13 @@ you are not familiar with compiling software from sources.
 Recommended distributions are:
 
   - Enthought Canopy (https://www.enthought.com/products/canopy/)
-  - Anaconda (https://www.continuum.io/anaconda)
-  - Python(x,y) (http://python-xy.github.io/)
+  - Anaconda (https://www.anaconda.com)
+  - Python(x,y) (https://python-xy.github.io/)
   - WinPython (https://winpython.github.io/)
 
-The rest of this install documentation does summarize how to build Scipy.  Note
+The rest of this install documentation summarizes how to build Scipy.  Note
 that more extensive (and possibly more up-to-date) build instructions are
-maintained at http://scipy.org/scipylib/building/index.html
+maintained at https://scipy.github.io/devdocs/building/
 
 
 PREREQUISITES
@@ -33,11 +33,11 @@ SciPy requires the following software installed for your platform:
 
 1) Python__ 2.7 or >= 3.4
 
-__ http://www.python.org
+__ https://www.python.org
 
 2) NumPy__ >= 1.8.2
 
-__ http://www.numpy.org/
+__ https://www.numpy.org/
 
 3) For building from source: setuptools__
 
@@ -45,7 +45,7 @@ __ https://github.com/pypa/setuptools
 
 4) If you want to build the documentation: Sphinx__ >= 1.2.1
 
-__ http://sphinx-doc.org/
+__ http://www.sphinx-doc.org/
 
 5) If you want to build SciPy master or other unreleased version from source
    (Cython-generated C sources are included in official releases):
@@ -61,19 +61,13 @@ Compilers
 
 There are two ways to build Scipy on Windows:
 
-1. Use Intel MKL, and Intel compilers or ifort + MSVC.  This is currently the
-   most robust method.
-2. Use MingwPy__.  This is a GCC toolchain that will be used in the future to
-   distribute Scipy binaries on PyPi.  See the MingwPy website for details.
-
-__ https://mingwpy.github.io/ 
-
+1. Use Intel MKL, and Intel compilers or ifort + MSVC.  This is what Anaconda
+   and Enthought Canopy use.
+2. Use MSVC + gfortran with OpenBLAS.  This is how the SciPy Windows wheels are
+   built.
 
 Mac OS X
 --------
-
-Compilers
-~~~~~~~~~
 
 It is recommended to use gcc or clang, both work fine. Gcc is available for
 free when installing Xcode, the developer toolsuite on Mac OS X. You also
@@ -83,12 +77,12 @@ recent gfortran from an OS X package manager (like Homebrew).
 Please do NOT use gfortran from `hpc.sourceforge.net <http://hpc.sourceforge.net>`_,
 it is known to generate buggy scipy binaries.
 
+You should also use a BLAS/LAPACK library from an OS X package manager.
+ATLAS, OpenBLAS, and MKL all work.
 
-Blas/Lapack
-~~~~~~~~~~~
-
-Mac OS X includes the Accelerate framework: it should be detected without any
-intervention when building SciPy.
+As of Scipy version 1.2.0, we do not support compiling against the system
+Accelerate library for BLAS and LAPACK. It does not support a sufficiently
+recent LAPACK interface.
 
 Linux
 -----
@@ -129,18 +123,11 @@ From tarballs
 Unpack ``SciPy-<version>.tar.gz``, change to the ``SciPy-<version>/``
 directory, and run::
 
-  python setup.py install --user
+  pip install . -v --user
 
 This may take several minutes to half an hour depending on the speed of your
-computer.  To install to a user-specific location instead, run::
+computer.
 
-  python setup.py install --prefix=$MYDIR
-
-where $MYDIR is, for example, $HOME or $HOME/usr.
-
-        ** Note 1: On Unix, you should avoid installing in /usr, but rather in
-        /usr/local or somewhere else. /usr is generally 'owned' by your package
-        manager, and you may overwrite a packaged Scipy this way.
 
 TESTING
 =======
@@ -154,11 +141,16 @@ To run the full test suite use
 
    >>> scipy.test('full')
 
-Please note that you must have version 1.0 or later of the 'nose' test
-framework installed in order to run the tests.  More information about nose is
+If you are upgrading from an older SciPy release, please test your code for any
+deprecation warnings before and after upgrading to avoid surprises:
+
+   $ python -Wd -c my_code_that_shouldnt_break.py
+
+Please note that you must have version 1.0 or later of the Pytest test
+framework installed in order to run the tests.  More information about Pytest is
 available on the website__.
 
-__ https://nose.readthedocs.org/en/latest/
+__ https://pytest.org/
 
 COMPILER NOTES
 ==============

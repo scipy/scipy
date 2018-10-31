@@ -2,8 +2,7 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from numpy.linalg import norm
-from numpy.testing import (assert_, assert_allclose, assert_equal,
-    run_module_suite)
+from numpy.testing import (assert_, assert_allclose, assert_equal)
 from scipy.linalg import polar, eigh
 
 
@@ -84,13 +83,10 @@ def verify_polar(a):
 
 def test_precomputed_cases():
     for a, side, expected_u, expected_p in precomputed_cases:
-        yield check_precomputed_polar, a, side, expected_u, expected_p
+        check_precomputed_polar(a, side, expected_u, expected_p)
 
 
 def test_verify_cases():
     for a in verify_cases:
-        yield verify_polar, a
+        verify_polar(a)
 
-
-if __name__ == "__main__":
-    run_module_suite()

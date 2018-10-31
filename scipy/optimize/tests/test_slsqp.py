@@ -3,13 +3,13 @@ Unit test for SLSQP optimization.
 """
 from __future__ import division, print_function, absolute_import
 
-from numpy.testing import (assert_, assert_array_almost_equal, TestCase,
-                           assert_allclose, assert_equal, run_module_suite,
-                           assert_raises)
+import pytest
+from numpy.testing import (assert_, assert_array_almost_equal,
+                           assert_allclose, assert_equal)
+from pytest import raises as assert_raises
 import numpy as np
 
-from scipy._lib._testutils import knownfailure_overridable
-from scipy.optimize import fmin_slsqp, minimize
+from scipy.optimize import fmin_slsqp, minimize, NonlinearConstraint, Bounds
 
 
 class MyCallBack(object):
@@ -26,14 +26,14 @@ class MyCallBack(object):
         self.ncalls += 1
 
 
-class TestSLSQP(TestCase):
+class TestSLSQP(object):
     """
     Test SLSQP algorithm using Example 14.4 from Numerical Methods for
     Engineers by Steven Chapra and Raymond Canale.
     This example maximizes the function f(x) = 2*x*y + 2*x - x**2 - 2*y**2,
     which has a maximum at x=2, y=1.
     """
-    def setUp(self):
+    def setup_method(self):
         self.opts = {'disp': False}
 
     def fun(self, d, sign=1.0):
@@ -316,7 +316,7 @@ class TestSLSQP(TestCase):
         # Test for Github Issue #5433 and PR #6691
         # Objective function should be able to return length-1 Python list
         #  containing the scalar
-        fmin_slsqp(lambda x: [0], [1, 2, 3])
+        fmin_slsqp(lambda x: [0], [1, 2, 3], iprint=0)
 
     def test_callback(self):
         # Minimize, method='SLSQP': unbounded, approximated jacobian. Check for callback
@@ -353,7 +353,6 @@ class TestSLSQP(TestCase):
         assert_(f2(x) >= -1e-8)
         assert_(sol.success, sol)
 
-    @knownfailure_overridable("This bug is not fixed")
     def test_regression_5743(self):
         # SLSQP must not indicate success for this problem,
         # which is infeasible.
@@ -454,6 +453,60 @@ class TestSLSQP(TestCase):
         assert_(sol.success)
         assert_allclose(sol.x, 0, atol=1e-10)
 
+    def test_inconsistent_inequalities(self):
+        # gh-7618
 
-if __name__ == "__main__":
-    run_module_suite()
+        def cost(x):
+            return -1 * x[0] + 4 * x[1]
+
+        def ineqcons1(x):
+            return x[1] - x[0] - 1
+
+        def ineqcons2(x):
+            return x[0] - x[1]
+
+        # The inequalities are inconsistent, so no solution can exist:
+        #
+        # x1 >= x0 + 1
+        # x0 >= x1
+
+        x0 = (1,5)
+        bounds = ((-5, 5), (-5, 5))
+        cons = (dict(type='ineq', fun=ineqcons1), dict(type='ineq', fun=ineqcons2))
+        res = minimize(cost, x0, method='SLSQP', bounds=bounds, constraints=cons)
+
+        assert_(not res.success)
+
+    def test_new_bounds_type(self):
+        f = lambda x: x[0]**2 + x[1]**2
+        bounds = Bounds([1, 0], [np.inf, np.inf])
+        sol = minimize(f, [0, 0], method='slsqp', bounds=bounds)
+        assert_(sol.success)
+        assert_allclose(sol.x, [1, 0])
+
+    def test_nested_minimization(self):
+
+        class NestedProblem():
+
+            def __init__(self):
+                self.F_outer_count = 0
+
+            def F_outer(self, x):
+                self.F_outer_count += 1
+                if self.F_outer_count > 1000:
+                    raise Exception("Nested minimization failed to terminate.")
+                inner_res = minimize(self.F_inner, (3, 4), method="SLSQP")
+                assert_(inner_res.success)
+                assert_allclose(inner_res.x, [1, 1])
+                return x[0]**2 + x[1]**2 + x[2]**2
+
+            def F_inner(self, x):
+                return (x[0] - 1)**2 + (x[1] - 1)**2
+
+            def solve(self):
+                outer_res = minimize(self.F_outer, (5, 5, 5), method="SLSQP")
+                assert_(outer_res.success)
+                assert_allclose(outer_res.x, [0, 0, 0])
+
+        problem = NestedProblem()
+        problem.solve()

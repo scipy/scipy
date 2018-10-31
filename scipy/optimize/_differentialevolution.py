@@ -3,12 +3,13 @@ differential_evolution: The differential evolution global optimization algorithm
 Added by Andrew Nelson 2014
 """
 from __future__ import division, print_function, absolute_import
+import warnings
+
 import numpy as np
 from scipy.optimize import OptimizeResult, minimize
 from scipy.optimize.optimize import _status_message
-from scipy._lib._util import check_random_state
-from scipy._lib.six import xrange
-import warnings
+from scipy._lib._util import check_random_state, MapWrapper
+from scipy._lib.six import xrange, string_types
 
 
 __all__ = ['differential_evolution']
@@ -20,8 +21,10 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
                            maxiter=1000, popsize=15, tol=0.01,
                            mutation=(0.5, 1), recombination=0.7, seed=None,
                            callback=None, disp=False, polish=True,
-                           init='latinhypercube', atol=0):
+                           init='latinhypercube', atol=0, updating='immediate',
+                           workers=1):
     """Finds the global minimum of a multivariate function.
+
     Differential Evolution is stochastic in nature (does not use gradient
     methods) to find the minimium, and can search large areas of candidate
     space, but often requires larger numbers of function evaluations than
@@ -51,9 +54,11 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
             - 'best1exp'
             - 'rand1exp'
             - 'randtobest1exp'
+            - 'currenttobest1exp'
             - 'best2exp'
             - 'rand2exp'
             - 'randtobest1bin'
+            - 'currenttobest1bin'
             - 'best2bin'
             - 'rand2bin'
             - 'rand1bin'
@@ -65,7 +70,8 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         is: ``(maxiter + 1) * popsize * len(x)``
     popsize : int, optional
         A multiplier for setting the total population size.  The population has
-        ``popsize * len(x)`` individuals.
+        ``popsize * len(x)`` individuals (unless the initial population is
+        supplied via the `init` keyword).
     tol : float, optional
         Relative tolerance for convergence, the solving stops when
         ``np.std(pop) <= atol + tol * np.abs(np.mean(population_energies))``,
@@ -106,22 +112,52 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         If True (default), then `scipy.optimize.minimize` with the `L-BFGS-B`
         method is used to polish the best population member at the end, which
         can improve the minimization slightly.
-    init : string, optional
-        Specify how the population initialization is performed. Should be
+    init : str or array-like, optional
+        Specify which type of population initialization is performed. Should be
         one of:
 
             - 'latinhypercube'
             - 'random'
+            - array specifying the initial population. The array should have
+              shape ``(M, len(x))``, where len(x) is the number of parameters.
+              `init` is clipped to `bounds` before use.
 
         The default is 'latinhypercube'. Latin Hypercube sampling tries to
-        maximize coverage of the available parameter space. 'random' initializes
-        the population randomly - this has the drawback that clustering can
-        occur, preventing the whole of parameter space being covered.
+        maximize coverage of the available parameter space. 'random'
+        initializes the population randomly - this has the drawback that
+        clustering can occur, preventing the whole of parameter space being
+        covered. Use of an array to specify a population subset could be used,
+        for example, to create a tight bunch of initial guesses in an location
+        where the solution is known to exist, thereby reducing time for
+        convergence.
     atol : float, optional
         Absolute tolerance for convergence, the solving stops when
         ``np.std(pop) <= atol + tol * np.abs(np.mean(population_energies))``,
         where and `atol` and `tol` are the absolute and relative tolerance
         respectively.
+    updating : {'immediate', 'deferred'}, optional
+        If ``'immediate'``, the best solution vector is continuously updated
+        within a single generation [4]_. This can lead to faster convergence as
+        trial vectors can take advantage of continuous improvements in the best
+        solution.
+        With ``'deferred'``, the best solution vector is updated once per
+        generation. Only ``'deferred'`` is compatible with parallelization, and
+        the `workers` keyword can over-ride this option.
+
+        .. versionadded:: 1.2.0
+
+    workers : int or map-like callable, optional
+        If `workers` is an int the population is subdivided into `workers`
+        sections and evaluated in parallel (uses `multiprocessing.Pool`).
+        Supply -1 to use all available CPU cores.
+        Alternatively supply a map-like callable, such as
+        `multiprocessing.Pool.map` for evaluating the population in parallel.
+        This evaluation is carried out as ``workers(func, iterable)``.
+        This option will override the `updating` keyword to
+        ``updating='deferred'`` if ``workers != 1``.
+        Requires that `func` be pickleable.
+
+        .. versionadded:: 1.2.0
 
     Returns
     -------
@@ -152,12 +188,12 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
 
     A trial vector is then constructed. Starting with a randomly chosen 'i'th
     parameter the trial is sequentially filled (in modulo) with parameters from
-    `b'` or the original candidate. The choice of whether to use `b'` or the
+    ``b'`` or the original candidate. The choice of whether to use ``b'`` or the
     original candidate is made with a binomial distribution (the 'bin' in
     'best1bin') - a random number in [0, 1) is generated.  If this number is
     less than the `recombination` constant then the parameter is loaded from
-    `b'`, otherwise it is loaded from the original candidate.  The final
-    parameter is always loaded from `b'`.  Once the trial candidate is built
+    ``b'``, otherwise it is loaded from the original candidate.  The final
+    parameter is always loaded from ``b'``.  Once the trial candidate is built
     its fitness is assessed. If the trial is better than the original candidate
     then it takes its place. If it is also better than the best overall
     candidate it also replaces that.
@@ -165,6 +201,12 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     values, with higher `mutation` and (dithering), but lower `recombination`
     values. This has the effect of widening the search radius, but slowing
     convergence.
+    By default the best solution vector is updated continuously within a single
+    iteration (``updating='immediate'``). This is a modification [4]_ of the
+    original differential evolution algorithm which can lead to faster
+    convergence as trial vectors can immediately benefit from improved
+    solutions. To use the original Storn and Price behaviour, updating the best
+    solution once per iteration, set ``updating='deferred'``.
 
     .. versionadded:: 0.15.0
 
@@ -179,8 +221,16 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     >>> result.x, result.fun
     (array([1., 1., 1., 1., 1.]), 1.9216496320061384e-19)
 
+    Now repeat, but with parallelization.
+
+    >>> bounds = [(0,2), (0, 2), (0, 2), (0, 2), (0, 2)]
+    >>> result = differential_evolution(rosen, bounds, updating='deferred',
+    ...                                 workers=2)
+    >>> result.x, result.fun
+    (array([1., 1., 1., 1., 1.]), 1.9216496320061384e-19)
+
     Next find the minimum of the Ackley function
-    (http://en.wikipedia.org/wiki/Test_functions_for_optimization).
+    (https://en.wikipedia.org/wiki/Test_functions_for_optimization).
 
     >>> from scipy.optimize import differential_evolution
     >>> import numpy as np
@@ -200,17 +250,28 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
            Journal of Global Optimization, 1997, 11, 341 - 359.
     .. [2] http://www1.icsi.berkeley.edu/~storn/code.html
     .. [3] http://en.wikipedia.org/wiki/Differential_evolution
+    .. [4] Wormington, M., Panaccione, C., Matney, K. M., Bowen, D. K., -
+           Characterization of structures from X-ray scattering data using
+           genetic algorithms, Phil. Trans. R. Soc. Lond. A, 1999, 357,
+           2827-2848
     """
 
-    solver = DifferentialEvolutionSolver(func, bounds, args=args,
-                                         strategy=strategy, maxiter=maxiter,
-                                         popsize=popsize, tol=tol,
-                                         mutation=mutation,
-                                         recombination=recombination,
-                                         seed=seed, polish=polish,
-                                         callback=callback,
-                                         disp=disp, init=init, atol=atol)
-    return solver.solve()
+    # using a context manager means that any created Pool objects are
+    # cleared up.
+    with DifferentialEvolutionSolver(func, bounds, args=args,
+                                     strategy=strategy,
+                                     maxiter=maxiter,
+                                     popsize=popsize, tol=tol,
+                                     mutation=mutation,
+                                     recombination=recombination,
+                                     seed=seed, polish=polish,
+                                     callback=callback,
+                                     disp=disp, init=init, atol=atol,
+                                     updating=updating,
+                                     workers=workers) as solver:
+        ret = solver.solve()
+
+    return ret
 
 
 class DifferentialEvolutionSolver(object):
@@ -239,9 +300,11 @@ class DifferentialEvolutionSolver(object):
             - 'best1exp'
             - 'rand1exp'
             - 'randtobest1exp'
+            - 'currenttobest1exp'
             - 'best2exp'
             - 'rand2exp'
             - 'randtobest1bin'
+            - 'currenttobest1bin'
             - 'best2bin'
             - 'rand2bin'
             - 'rand1bin'
@@ -254,7 +317,8 @@ class DifferentialEvolutionSolver(object):
         is: ``(maxiter + 1) * popsize * len(x)``
     popsize : int, optional
         A multiplier for setting the total population size.  The population has
-        ``popsize * len(x)`` individuals.
+        ``popsize * len(x)`` individuals (unless the initial population is
+        supplied via the `init` keyword).
     tol : float, optional
         Relative tolerance for convergence, the solving stops when
         ``np.std(pop) <= atol + tol * np.abs(np.mean(population_energies))``,
@@ -299,36 +363,74 @@ class DifferentialEvolutionSolver(object):
     maxfun : int, optional
         Set the maximum number of function evaluations. However, it probably
         makes more sense to set `maxiter` instead.
-    init : string, optional
+    init : str or array-like, optional
         Specify which type of population initialization is performed. Should be
         one of:
 
             - 'latinhypercube'
             - 'random'
+            - array specifying the initial population. The array should have
+              shape ``(M, len(x))``, where len(x) is the number of parameters.
+              `init` is clipped to `bounds` before use.
+
+        The default is 'latinhypercube'. Latin Hypercube sampling tries to
+        maximize coverage of the available parameter space. 'random'
+        initializes the population randomly - this has the drawback that
+        clustering can occur, preventing the whole of parameter space being
+        covered. Use of an array to specify a population could be used, for
+        example, to create a tight bunch of initial guesses in an location
+        where the solution is known to exist, thereby reducing time for
+        convergence.
     atol : float, optional
         Absolute tolerance for convergence, the solving stops when
         ``np.std(pop) <= atol + tol * np.abs(np.mean(population_energies))``,
         where and `atol` and `tol` are the absolute and relative tolerance
         respectively.
+    updating : {'immediate', 'deferred'}, optional
+        If `immediate` the best solution vector is continuously updated within
+        a single generation. This can lead to faster convergence as trial
+        vectors can take advantage of continuous improvements in the best
+        solution.
+        With `deferred` the best solution vector is updated once per
+        generation. Only `deferred` is compatible with parallelization, and the
+        `workers` keyword can over-ride this option.
+    workers : int or map-like callable, optional
+        If `workers` is an int the population is subdivided into `workers`
+        sections and evaluated in parallel (uses `multiprocessing.Pool`).
+        Supply `-1` to use all cores available to the Process.
+        Alternatively supply a map-like callable, such as
+        `multiprocessing.Pool.map` for evaluating the population in parallel.
+        This evaluation is carried out as ``workers(func, iterable)``.
+        This option will override the `updating` keyword to
+        `updating='deferred'` if `workers != 1`.
+        Requires that `func` be pickleable.
+
     """
 
     # Dispatch of mutation strategy method (binomial or exponential).
     _binomial = {'best1bin': '_best1',
                  'randtobest1bin': '_randtobest1',
+                 'currenttobest1bin': '_currenttobest1',
                  'best2bin': '_best2',
                  'rand2bin': '_rand2',
                  'rand1bin': '_rand1'}
     _exponential = {'best1exp': '_best1',
                     'rand1exp': '_rand1',
                     'randtobest1exp': '_randtobest1',
+                    'currenttobest1exp': '_currenttobest1',
                     'best2exp': '_best2',
                     'rand2exp': '_rand2'}
+
+    __init_error_msg = ("The population initialization method must be one of "
+                        "'latinhypercube' or 'random', or an array of shape "
+                        "(M, N) where N is the number of parameters and M>5")
 
     def __init__(self, func, bounds, args=(),
                  strategy='best1bin', maxiter=1000, popsize=15,
                  tol=0.01, mutation=(0.5, 1), recombination=0.7, seed=None,
                  maxfun=np.inf, callback=None, disp=False, polish=True,
-                 init='latinhypercube', atol=0):
+                 init='latinhypercube', atol=0, updating='immediate',
+                 workers=1):
 
         if strategy in self._binomial:
             self.mutation_func = getattr(self, self._binomial[strategy])
@@ -340,6 +442,20 @@ class DifferentialEvolutionSolver(object):
 
         self.callback = callback
         self.polish = polish
+
+        # set the updating / parallelisation options
+        if updating in ['immediate', 'deferred']:
+            self._updating = updating
+
+        # want to use parallelisation, but updating is immediate
+        if workers != 1 and updating == 'immediate':
+            warnings.warn("differential_evolution: the 'workers' keyword has"
+                          " overridden updating='immediate' to"
+                          " updating='deferred'", UserWarning)
+            self._updating = 'deferred'
+
+        # an object with a map method.
+        self._mapwrapper = MapWrapper(workers)
 
         # relative and absolute tolerances for convergence
         self.tol, self.atol = tol, atol
@@ -361,7 +477,9 @@ class DifferentialEvolutionSolver(object):
 
         self.cross_over_probability = recombination
 
-        self.func = func
+        # we create a wrapped function to allow the use of map (and Pool.map
+        # in the future)
+        self.func = _FunctionWrapper(func, args)
         self.args = args
 
         # convert tuple of lower and upper bounds to limits
@@ -394,19 +512,23 @@ class DifferentialEvolutionSolver(object):
 
         # default population initialization is a latin hypercube design, but
         # there are other population initializations possible.
-        self.num_population_members = popsize * self.parameter_count
+        # the minimum is 5 because 'best2bin' requires a population that's at
+        # least 5 long
+        self.num_population_members = max(5, popsize * self.parameter_count)
 
         self.population_shape = (self.num_population_members,
                                  self.parameter_count)
 
         self._nfev = 0
-        if init == 'latinhypercube':
-            self.init_population_lhs()
-        elif init == 'random':
-            self.init_population_random()
+        if isinstance(init, string_types):
+            if init == 'latinhypercube':
+                self.init_population_lhs()
+            elif init == 'random':
+                self.init_population_random()
+            else:
+                raise ValueError(self.__init_error_msg)
         else:
-            raise ValueError("The population initialization method must be one"
-                             "of 'latinhypercube' or 'random'")
+            self.init_population_array(init)
 
         self.disp = disp
 
@@ -442,8 +564,8 @@ class DifferentialEvolutionSolver(object):
             self.population[:, j] = samples[order, j]
 
         # reset population energies
-        self.population_energies = (np.ones(self.num_population_members) *
-                                    np.inf)
+        self.population_energies = np.full(self.num_population_members,
+                                           np.inf)
 
         # reset number of function evaluations counter
         self._nfev = 0
@@ -457,6 +579,41 @@ class DifferentialEvolutionSolver(object):
         self.population = rng.random_sample(self.population_shape)
 
         # reset population energies
+        self.population_energies = np.full(self.num_population_members,
+                                           np.inf)
+
+        # reset number of function evaluations counter
+        self._nfev = 0
+
+    def init_population_array(self, init):
+        """
+        Initialises the population with a user specified population.
+
+        Parameters
+        ----------
+        init : np.ndarray
+            Array specifying subset of the initial population. The array should
+            have shape (M, len(x)), where len(x) is the number of parameters.
+            The population is clipped to the lower and upper bounds.
+        """
+        # make sure you're using a float array
+        popn = np.asfarray(init)
+
+        if (np.size(popn, 0) < 5 or
+                popn.shape[1] != self.parameter_count or
+                len(popn.shape) != 2):
+            raise ValueError("The population supplied needs to have shape"
+                             " (M, len(x)), where M > 4.")
+
+        # scale values and clip to bounds, assigning to population
+        self.population = np.clip(self._unscale_parameters(popn), 0, 1)
+
+        self.num_population_members = np.size(self.population, 0)
+
+        self.population_shape = (self.num_population_members,
+                                 self.parameter_count)
+
+        # reset population energies
         self.population_energies = (np.ones(self.num_population_members) *
                                     np.inf)
 
@@ -467,11 +624,6 @@ class DifferentialEvolutionSolver(object):
     def x(self):
         """
         The best solution from the solver
-
-        Returns
-        -------
-        x : ndarray
-            The best solution from the solver.
         """
         return self._scale_parameters(self.population[0])
 
@@ -481,8 +633,18 @@ class DifferentialEvolutionSolver(object):
         The standard deviation of the population energies divided by their
         mean.
         """
+        if np.any(np.isinf(self.population_energies)):
+            return np.inf
         return (np.std(self.population_energies) /
                 np.abs(np.mean(self.population_energies) + _MACHEPS))
+
+    def converged(self):
+        """
+        Return True if the solver has converged.
+        """
+        return (np.std(self.population_energies) <=
+                self.atol +
+                self.tol * np.abs(np.mean(self.population_energies)))
 
     def solve(self):
         """
@@ -508,7 +670,9 @@ class DifferentialEvolutionSolver(object):
         # that someone can set maxiter=0, at which point we still want the
         # initial energies to be calculated (the following loop isn't run).
         if np.all(np.isinf(self.population_energies)):
-            self._calculate_population_energies()
+            self.population_energies[:] = self._calculate_population_energies(
+                self.population)
+            self._promote_lowest_energy()
 
         # do the optimisation.
         for nit in xrange(1, self.maxiter + 1):
@@ -517,7 +681,11 @@ class DifferentialEvolutionSolver(object):
                 next(self)
             except StopIteration:
                 warning_flag = True
-                status_message = _status_message['maxfev']
+                if self._nfev > self.maxfun:
+                    status_message = _status_message['maxfev']
+                elif self._nfev == self.maxfun:
+                    status_message = ('Maximum number of function evaluations'
+                                      ' has been reached.')
                 break
 
             if self.disp:
@@ -537,9 +705,12 @@ class DifferentialEvolutionSolver(object):
                                   'by returning True')
                 break
 
-            intol = (np.std(self.population_energies) <=
-                     self.atol +
-                     self.tol * np.abs(np.mean(self.population_energies)))
+            if np.any(np.isinf(self.population_energies)):
+                intol = False
+            else:
+                intol = (np.std(self.population_energies) <=
+                         self.atol +
+                         self.tol * np.abs(np.mean(self.population_energies)))
             if warning_flag or intol:
                 break
 
@@ -559,8 +730,7 @@ class DifferentialEvolutionSolver(object):
             result = minimize(self.func,
                               np.copy(DE_result.x),
                               method='L-BFGS-B',
-                              bounds=self.limits.T,
-                              args=self.args)
+                              bounds=self.limits.T)
 
             self._nfev += result.nfev
             DE_result.nfev = self._nfev
@@ -575,32 +745,67 @@ class DifferentialEvolutionSolver(object):
 
         return DE_result
 
-    def _calculate_population_energies(self):
+    def _calculate_population_energies(self, population):
         """
         Calculate the energies of all the population members at the same time.
-        Puts the best member in first place. Useful if the population has just
-        been initialised.
+
+        Parameters
+        ----------
+        population : ndarray
+            An array of parameter vectors normalised to [0, 1] using lower
+            and upper limits. Has shape ``(np.size(population, 0), len(x))``.
+
+        Returns
+        -------
+        energies : ndarray
+            An array of energies corresponding to each population member. If
+            maxfun will be exceeded during this call, then the number of
+            function evaluations will be reduced and energies will be
+            right-padded with np.inf. Has shape ``(np.size(population, 0),)``
         """
-        for index, candidate in enumerate(self.population):
-            if self._nfev > self.maxfun:
-                break
+        num_members = np.size(population, 0)
+        nfevs = min(num_members,
+                    self.maxfun - num_members)
 
-            parameters = self._scale_parameters(candidate)
-            self.population_energies[index] = self.func(parameters,
-                                                        *self.args)
-            self._nfev += 1
+        energies = np.full(num_members, np.inf)
 
-        minval = np.argmin(self.population_energies)
+        parameters_pop = self._scale_parameters(population)
+        try:
+            calc_energies = list(self._mapwrapper(self.func,
+                                                  parameters_pop[0:nfevs]))
+            energies[0:nfevs] = calc_energies
+        except (TypeError, ValueError):
+            # wrong number of arguments for _mapwrapper
+            # or wrong length returned from the mapper
+            raise RuntimeError("The map-like callable must be of the"
+                               " form f(func, iterable), returning a sequence"
+                               " of numbers the same length as 'iterable'")
+
+        self._nfev += nfevs
+
+        return energies
+
+    def _promote_lowest_energy(self):
+        # promotes the lowest energy to the first entry in the population
+        l = np.argmin(self.population_energies)
 
         # put the lowest energy into the best solution position.
-        lowest_energy = self.population_energies[minval]
-        self.population_energies[minval] = self.population_energies[0]
-        self.population_energies[0] = lowest_energy
-
-        self.population[[0, minval], :] = self.population[[minval, 0], :]
+        self.population_energies[[0, l]] = self.population_energies[[l, 0]]
+        self.population[[0, l], :] = self.population[[l, 0], :]
 
     def __iter__(self):
         return self
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        # to make sure resources are closed down
+        self._mapwrapper.close()
+
+    def __del__(self):
+        # to make sure resources are closed down
+        self._mapwrapper.close()
 
     def __next__(self):
         """
@@ -616,89 +821,99 @@ class DifferentialEvolutionSolver(object):
         # the population may have just been initialized (all entries are
         # np.inf). If it has you have to calculate the initial energies
         if np.all(np.isinf(self.population_energies)):
-            self._calculate_population_energies()
+            self.population_energies[:] = self._calculate_population_energies(
+                self.population)
+            self._promote_lowest_energy()
 
         if self.dither is not None:
             self.scale = (self.random_number_generator.rand()
                           * (self.dither[1] - self.dither[0]) + self.dither[0])
 
-        for candidate in range(self.num_population_members):
-            if self._nfev > self.maxfun:
+        if self._updating == 'immediate':
+            # update best solution immediately
+            for candidate in range(self.num_population_members):
+                if self._nfev > self.maxfun:
+                    raise StopIteration
+
+                # create a trial solution
+                trial = self._mutate(candidate)
+
+                # ensuring that it's in the range [0, 1)
+                self._ensure_constraint(trial)
+
+                # scale from [0, 1) to the actual parameter value
+                parameters = self._scale_parameters(trial)
+
+                # determine the energy of the objective function
+                energy = self.func(parameters)
+                self._nfev += 1
+
+                # if the energy of the trial candidate is lower than the
+                # original population member then replace it
+                if energy < self.population_energies[candidate]:
+                    self.population[candidate] = trial
+                    self.population_energies[candidate] = energy
+
+                    # if the trial candidate also has a lower energy than the
+                    # best solution then promote it to the best solution.
+                    if energy < self.population_energies[0]:
+                        self._promote_lowest_energy()
+
+        elif self._updating == 'deferred':
+            # update best solution once per generation
+            if self._nfev >= self.maxfun:
                 raise StopIteration
 
-            # create a trial solution
-            trial = self._mutate(candidate)
+            # 'deferred' approach, vectorised form.
+            # create trial solutions
+            trial_pop = np.array(
+                [self._mutate(i) for i in range(self.num_population_members)])
 
-            # ensuring that it's in the range [0, 1)
-            self._ensure_constraint(trial)
+            # enforce bounds
+            self._ensure_constraint(trial_pop)
 
-            # scale from [0, 1) to the actual parameter value
-            parameters = self._scale_parameters(trial)
+            # determine the energies of the objective function
+            trial_energies = self._calculate_population_energies(trial_pop)
 
-            # determine the energy of the objective function
-            energy = self.func(parameters, *self.args)
-            self._nfev += 1
+            # which solutions are improved?
+            loc = trial_energies < self.population_energies
+            self.population = np.where(loc[:, np.newaxis],
+                                       trial_pop,
+                                       self.population)
+            self.population_energies = np.where(loc,
+                                                trial_energies,
+                                                self.population_energies)
 
-            # if the energy of the trial candidate is lower than the
-            # original population member then replace it
-            if energy < self.population_energies[candidate]:
-                self.population[candidate] = trial
-                self.population_energies[candidate] = energy
-
-                # if the trial candidate also has a lower energy than the
-                # best solution then replace that as well
-                if energy < self.population_energies[0]:
-                    self.population_energies[0] = energy
-                    self.population[0] = trial
+            # make sure the best solution is updated if updating='deferred'.
+            # put the lowest energy into the best solution position.
+            self._promote_lowest_energy()
 
         return self.x, self.population_energies[0]
 
-    def next(self):
-        """
-        Evolve the population by a single generation
-
-        Returns
-        -------
-        x : ndarray
-            The best solution from the solver.
-        fun : float
-            Value of objective function obtained from the best solution.
-        """
-        # next() is required for compatibility with Python2.7.
-        return self.__next__()
+    next = __next__
 
     def _scale_parameters(self, trial):
-        """
-        scale from a number between 0 and 1 to parameters.
-        """
+        """Scale from a number between 0 and 1 to parameters."""
         return self.__scale_arg1 + (trial - 0.5) * self.__scale_arg2
 
     def _unscale_parameters(self, parameters):
-        """
-        scale from parameters to a number between 0 and 1.
-        """
+        """Scale from parameters to a number between 0 and 1."""
         return (parameters - self.__scale_arg1) / self.__scale_arg2 + 0.5
 
     def _ensure_constraint(self, trial):
-        """
-        make sure the parameters lie between the limits
-        """
-        for index, param in enumerate(trial):
-            if param > 1 or param < 0:
-                trial[index] = self.random_number_generator.rand()
+        """Make sure the parameters lie between the limits."""
+        mask = np.where((trial > 1) | (trial < 0))
+        trial[mask] = self.random_number_generator.rand(mask[0].size)
 
     def _mutate(self, candidate):
-        """
-        create a trial vector based on a mutation strategy
-        """
+        """Create a trial vector based on a mutation strategy."""
         trial = np.copy(self.population[candidate])
 
         rng = self.random_number_generator
 
         fill_point = rng.randint(0, self.parameter_count)
 
-        if (self.strategy == 'randtobest1exp' or
-                self.strategy == 'randtobest1bin'):
+        if self.strategy in ['currenttobest1exp', 'currenttobest1bin']:
             bprime = self.mutation_func(candidate,
                                         self._select_samples(candidate, 5))
         else:
@@ -727,36 +942,36 @@ class DifferentialEvolutionSolver(object):
             return trial
 
     def _best1(self, samples):
-        """
-        best1bin, best1exp
-        """
+        """best1bin, best1exp"""
         r0, r1 = samples[:2]
         return (self.population[0] + self.scale *
                 (self.population[r0] - self.population[r1]))
 
     def _rand1(self, samples):
-        """
-        rand1bin, rand1exp
-        """
+        """rand1bin, rand1exp"""
         r0, r1, r2 = samples[:3]
         return (self.population[r0] + self.scale *
                 (self.population[r1] - self.population[r2]))
 
-    def _randtobest1(self, candidate, samples):
-        """
-        randtobest1bin, randtobest1exp
-        """
-        r0, r1 = samples[:2]
-        bprime = np.copy(self.population[candidate])
+    def _randtobest1(self, samples):
+        """randtobest1bin, randtobest1exp"""
+        r0, r1, r2 = samples[:3]
+        bprime = np.copy(self.population[r0])
         bprime += self.scale * (self.population[0] - bprime)
-        bprime += self.scale * (self.population[r0] -
-                                self.population[r1])
+        bprime += self.scale * (self.population[r1] -
+                                self.population[r2])
+        return bprime
+
+    def _currenttobest1(self, candidate, samples):
+        """currenttobest1bin, currenttobest1exp"""
+        r0, r1 = samples[:2]
+        bprime = (self.population[candidate] + self.scale *
+                  (self.population[0] - self.population[candidate] +
+                   self.population[r0] - self.population[r1]))
         return bprime
 
     def _best2(self, samples):
-        """
-        best2bin, best2exp
-        """
+        """best2bin, best2exp"""
         r0, r1, r2, r3 = samples[:4]
         bprime = (self.population[0] + self.scale *
                   (self.population[r0] + self.population[r1] -
@@ -765,9 +980,7 @@ class DifferentialEvolutionSolver(object):
         return bprime
 
     def _rand2(self, samples):
-        """
-        rand2bin, rand2exp
-        """
+        """rand2bin, rand2exp"""
         r0, r1, r2, r3, r4 = samples
         bprime = (self.population[r0] + self.scale *
                   (self.population[r1] + self.population[r2] -
@@ -786,3 +999,14 @@ class DifferentialEvolutionSolver(object):
         idxs = idxs[:number_samples]
         return idxs
 
+
+class _FunctionWrapper(object):
+    """
+    Object to wrap user cost function, allowing picklability
+    """
+    def __init__(self, f, args):
+        self.f = f
+        self.args = [] if args is None else args
+
+    def __call__(self, x):
+        return self.f(x, *self.args)

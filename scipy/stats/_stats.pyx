@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 from cpython cimport bool
 from libc cimport math
 cimport cython

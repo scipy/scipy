@@ -43,9 +43,8 @@ in `scipy.optimize`. To demonstrate the minimization function consider the
 problem of minimizing the Rosenbrock function of :math:`N` variables:
 
 .. math::
-   :nowrap:
 
-    f\left(\mathbf{x}\right)=\sum_{i=1}^{N-1}100\left(x_{i}-x_{i-1}^{2}\right)^{2}+\left(1-x_{i-1}\right)^{2}.
+    f\left(\mathbf{x}\right)=\sum_{i=2}^{N}100\left(x_{i+1}-x_{i}^{2}\right)^{2}+\left(1-x_{i}\right)^{2}.
 
 The minimum value of this function is 0 which is achieved when
 :math:`x_{i}=1.`
@@ -78,7 +77,7 @@ parameter):
              Function evaluations: 571
 
     >>> print(res.x)
-    [ 1.  1.  1.  1.  1.]
+    [1. 1. 1. 1. 1.]
 
 The simplex algorithm is probably the simplest way to minimize a fairly
 well-behaved function. It requires only function evaluations and is a good
@@ -137,9 +136,9 @@ through the ``jac`` parameter as illustrated below.
     ...                options={'disp': True})
     Optimization terminated successfully.
              Current function value: 0.000000
-             Iterations: 32                     # may vary
-             Function evaluations: 34
-             Gradient evaluations: 34
+             Iterations: 51                     # may vary
+             Function evaluations: 63
+             Gradient evaluations: 63
     >>> res.x
     array([1., 1., 1., 1., 1.])
 
@@ -153,7 +152,6 @@ the local Hessian [NW]_.  Newton's method is based on fitting the function
 locally to a quadratic form:
 
 .. math::
-   :nowrap:
 
     f\left(\mathbf{x}\right)\approx f\left(\mathbf{x}_{0}\right)+\nabla f\left(\mathbf{x}_{0}\right)\cdot\left(\mathbf{x}-\mathbf{x}_{0}\right)+\frac{1}{2}\left(\mathbf{x}-\mathbf{x}_{0}\right)^{T}\mathbf{H}\left(\mathbf{x}_{0}\right)\left(\mathbf{x}-\mathbf{x}_{0}\right).
 
@@ -162,7 +160,6 @@ positive definite then the local minimum of this function can be found
 by setting the gradient of the quadratic form to zero, resulting in
 
 .. math::
-   :nowrap:
 
     \mathbf{x}_{\textrm{opt}}=\mathbf{x}_{0}-\mathbf{H}^{-1}\nabla f.
 
@@ -198,9 +195,8 @@ if :math:`i,j\in\left[1,N-2\right]` with :math:`i,j\in\left[0,N-1\right]` defini
 For example, the Hessian when :math:`N=5` is
 
 .. math::
-   :nowrap:
 
-    \mathbf{H}=\left[\begin{array}{ccccc} 1200x_{0}^{2}-400x_{1}+2 & -400x_{0} & 0 & 0 & 0\\ -400x_{0} & 202+1200x_{1}^{2}-400x_{2} & -400x_{1} & 0 & 0\\ 0 & -400x_{1} & 202+1200x_{2}^{2}-400x_{3} & -400x_{2} & 0\\ 0 &  & -400x_{2} & 202+1200x_{3}^{2}-400x_{4} & -400x_{3}\\ 0 & 0 & 0 & -400x_{3} & 200\end{array}\right].
+    \mathbf{H}=\begin{bmatrix} 1200x_{0}^{2}-400x_{1}+2 & -400x_{0} & 0 & 0 & 0\\ -400x_{0} & 202+1200x_{1}^{2}-400x_{2} & -400x_{1} & 0 & 0\\ 0 & -400x_{1} & 202+1200x_{2}^{2}-400x_{3} & -400x_{2} & 0\\ 0 &  & -400x_{2} & 202+1200x_{3}^{2}-400x_{4} & -400x_{3}\\ 0 & 0 & 0 & -400x_{3} & 200\end{bmatrix}.
 
 The code which computes this Hessian along with the code to minimize
 the function using Newton-CG method is shown in the following example:
@@ -247,9 +243,8 @@ vector, then :math:`\mathbf{H}\left(\mathbf{x}\right)\mathbf{p}` has
 elements:
 
 .. math::
-   :nowrap:
 
-    \mathbf{H}\left(\mathbf{x}\right)\mathbf{p}=\left[\begin{array}{c} \left(1200x_{0}^{2}-400x_{1}+2\right)p_{0}-400x_{0}p_{1}\\ \vdots\\ -400x_{i-1}p_{i-1}+\left(202+1200x_{i}^{2}-400x_{i+1}\right)p_{i}-400x_{i}p_{i+1}\\ \vdots\\ -400x_{N-2}p_{N-2}+200p_{N-1}\end{array}\right].
+    \mathbf{H}\left(\mathbf{x}\right)\mathbf{p}=\begin{bmatrix} \left(1200x_{0}^{2}-400x_{1}+2\right)p_{0}-400x_{0}p_{1}\\ \vdots\\ -400x_{i-1}p_{i-1}+\left(202+1200x_{i}^{2}-400x_{i+1}\right)p_{i}-400x_{i}p_{i+1}\\ \vdots\\ -400x_{N-2}p_{N-2}+200p_{N-1}\end{bmatrix}.
 
 Code which makes use of this Hessian product to minimize the
 Rosenbrock function using :func:`minimize` follows:
@@ -337,11 +332,73 @@ Hessian product example:
     >>> res.x
     array([1., 1., 1., 1., 1.])
 
+Trust-Region Truncated Generalized Lanczos / Conjugate Gradient Algorithm (``method='trust-krylov'``)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Trust-Region Nearly Exact Algorithm (``method='trust-region-exact'``)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Similar to the ``trust-ncg`` method, the ``trust-krylov`` method is a method
+suitable for large-scale problems as it uses the hessian only as linear
+operator by means of matrix-vector products.
+It solves the quadratic subproblem more accurately than the ``trust-ncg``
+method.
 
-Both methods ``Newton-CG`` and ``trust-ncg`` are suitable for dealing with
+.. math::
+   :nowrap:
+
+   \begin{eqnarray*}
+      \min_{\mathbf{p}} f\left(\mathbf{x}_{k}\right)+\nabla f\left(\mathbf{x}_{k}\right)\cdot\mathbf{p}+\frac{1}{2}\mathbf{p}^{T}\mathbf{H}\left(\mathbf{x}_{k}\right)\mathbf{p};&\\
+      \text{subject to: } \|\mathbf{p}\|\le \Delta.&
+    \end{eqnarray*}
+
+This method wraps the [TRLIB]_ implementation of the [GLTR]_ method solving
+exactly a trust-region subproblem restricted to a truncated Krylov subspace.
+For indefinite problems it is usually better to use this method as it reduces
+the number of nonlinear iterations at the expense of few more matrix-vector
+products per subproblem solve in comparison to the ``trust-ncg`` method.
+
+Full Hessian example:
+"""""""""""""""""""""
+
+    >>> res = minimize(rosen, x0, method='trust-krylov',
+    ...                jac=rosen_der, hess=rosen_hess,
+    ...                options={'gtol': 1e-8, 'disp': True})
+    Optimization terminated successfully.
+             Current function value: 0.000000
+             Iterations: 19                    # may vary
+             Function evaluations: 20
+             Gradient evaluations: 20
+             Hessian evaluations: 18
+    >>> res.x
+    array([1., 1., 1., 1., 1.])
+
+Hessian product example:
+""""""""""""""""""""""""
+
+    >>> res = minimize(rosen, x0, method='trust-krylov',
+    ...                jac=rosen_der, hessp=rosen_hess_p,
+    ...                options={'gtol': 1e-8, 'disp': True})
+    Optimization terminated successfully.
+             Current function value: 0.000000
+             Iterations: 19                    # may vary
+             Function evaluations: 20
+             Gradient evaluations: 20
+             Hessian evaluations: 0
+    >>> res.x
+    array([1., 1., 1., 1., 1.])
+
+.. [TRLIB] F. Lenders, C. Kirches, A. Potschka: "trlib: A vector-free
+           implementation of the GLTR method for iterative solution of
+           the trust region problem", https://arxiv.org/abs/1611.04718
+
+.. [GLTR]  N. Gould, S. Lucidi, M. Roma, P. Toint: "Solving the
+           Trust-Region Subproblem using the Lanczos Method",
+           SIAM J. Optim., 9(2), 504--525, (1999).
+           https://doi.org/10.1137/S1052623497322735
+
+
+Trust-Region Nearly Exact Algorithm (``method='trust-exact'``)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+All methods ``Newton-CG``, ``trust-ncg`` and ``trust-krylov`` are suitable for dealing with
 large-scale problems (problems with thousands of variables). That is because the conjugate
 gradient algorithm approximatelly solve the trust-region subproblem (or invert the Hessian)
 by iterations without the explicit Hessian factorization. Since only the product of the Hessian
@@ -359,7 +416,7 @@ trust-region methods. The Hessian product option is not supported by this algori
 example using the Rosenbrock function follows:
 
 
-    >>> res = minimize(rosen, x0, method='trust-region-exact',
+    >>> res = minimize(rosen, x0, method='trust-exact',
     ...                jac=rosen_der, hess=rosen_hess,
     ...                options={'gtol': 1e-8, 'disp': True})
     Optimization terminated successfully.
@@ -383,90 +440,267 @@ example using the Rosenbrock function follows:
 Constrained minimization of multivariate scalar functions (:func:`minimize`)
 ----------------------------------------------------------------------------
 
-The :func:`minimize` function also provides an interface to several
-constrained minimization algorithm. As an example, the Sequential Least
-SQuares Programming optimization algorithm (SLSQP) will be considered here.
-This algorithm allows to deal with constrained minimization problems of the
-form:
+The :func:`minimize` function provides algorithms for constrained minimization,
+namely ``'trust-constr'`` ,  ``'SLSQP'`` and ``'COBYLA'``. They require the constraints
+to be defined using slightly different structures. The method ``'trust-constr'`` requires
+the  constraints to be defined as a sequence of objects :func:`LinearConstraint` and
+:func:`NonlinearConstraint`. Methods ``'SLSQP'`` and ``'COBYLA'``, on the other hand,
+require constraints to be defined  as a sequence of dictionaries, with keys
+``type``, ``fun`` and ``jac``.
+
+As an example let us consider the constrained minimization of the Rosenbrock function:
 
 .. math::
    :nowrap:
 
-     \begin{eqnarray*} \min F(x) \\ \text{subject to } & C_j(X) =  0  ,  &j = 1,...,\text{MEQ}\\
-            & C_j(x) \geq 0  ,  &j = \text{MEQ}+1,...,M\\
-           &  XL  \leq x \leq XU , &I = 1,...,N. \end{eqnarray*}
+     \begin{eqnarray*} \min_{x_0, x_1} & ~~100\left(x_{0}-x_{1}^{2}\right)^{2}+\left(1-x_{0}\right)^{2} &\\
+                     \text{subject to: } & x_0 + 2 x_1 \leq 1 & \\
+		                         & x_0^2 + x_1 \leq 1  & \\
+		                         & x_0^2 - x_1 \leq 1  & \\
+					 & 2 x_0 + x_1 = 1 & \\
+					 & 0 \leq  x_0  \leq 1 & \\
+					 & -0.5 \leq  x_1  \leq 2.0. & \end{eqnarray*}
+
+This optimization problem has the unique solution :math:`[x_0, x_1] = [0.4149,~ 0.1701]`,
+for which only the first and fourth constraints are active.
 
 
-As an example, let us consider the problem of maximizing the function:
+Trust-Region Constrained Algorithm (``method='trust-constr'``)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The trust-region constrained method deals with constrained minimization problems of the form:
 
 .. math::
-    :nowrap:
+   :nowrap:
 
-    f(x, y) = 2 x y + 2 x - x^2 - 2 y^2
+     \begin{eqnarray*} \min_x & f(x) & \\
+          \text{subject to: } & ~~~ c^l  \leq c(x) \leq c^u, &\\
+           &  x^l  \leq x \leq x^u. & \end{eqnarray*}
 
-subject to an equality and an inequality constraints defined as:
+When :math:`c^l_j = c^u_j` the method reads the :math:`j`-th constraint as an
+equality constraint and deals with it accordingly. Besides that, one-sided constraint
+can be specified by setting the upper or lower bound to ``np.inf`` with the appropriate sign.
+
+The implementation is based on [EQSQP]_ for equality constraint problems and on [TRIP]_
+for problems with inequality constraints. Both are trust-region type algorithms suitable
+for large-scale problems.
+
+
+Defining Bounds Constraints:
+""""""""""""""""""""""""""""
+
+The bound constraints  :math:`0 \leq  x_0  \leq 1` and :math:`-0.5 \leq  x_1  \leq 2.0`
+are defined using a :func:`Bounds` object.
+
+    >>> from scipy.optimize import Bounds
+    >>> bounds = Bounds([0, -0.5], [1.0, 2.0])
+
+Defining Linear Constraints:
+""""""""""""""""""""""""""""
+
+The constraints :math:`x_0 + 2 x_1 \leq 1`
+and :math:`2 x_0 + x_1 = 1` can be written in the linear constraint standard format:
 
 .. math::
-    :nowrap:
+   :nowrap:
 
-    \begin{eqnarray*}
-      x^3 - y &= 0 \\
-      y - 1 &\geq 0
-    \end{eqnarray*}
+     \begin{equation*} \begin{bmatrix}-\infty \\1\end{bmatrix} \leq
+      \begin{bmatrix} 1& 2 \\ 2& 1\end{bmatrix}
+       \begin{bmatrix} x_0 \\x_1\end{bmatrix} \leq
+        \begin{bmatrix} 1 \\ 1\end{bmatrix},\end{equation*}
+
+and defined using a :func:`LinearConstraint` object.
+
+    >>> from scipy.optimize import LinearConstraint
+    >>> linear_constraint = LinearConstraint([[1, 2], [2, 1]], [-np.inf, 1], [1, 1])
+
+Defining Nonlinear Constraints:
+"""""""""""""""""""""""""""""""
+The nonlinear constraint:
+
+.. math::
+   :nowrap:
+
+     \begin{equation*} c(x) =
+     \begin{bmatrix} x_0^2 + x_1 \\ x_0^2 - x_1\end{bmatrix}
+      \leq 
+      \begin{bmatrix} 1 \\ 1\end{bmatrix}, \end{equation*}
+
+with Jacobian matrix:
+
+.. math::
+   :nowrap:
+
+     \begin{equation*} J(x) =
+     \begin{bmatrix} 2x_0 & 1 \\ 2x_0 & -1\end{bmatrix},\end{equation*}
+
+and linear combination of the Hessians:
+
+.. math::
+   :nowrap:
+
+     \begin{equation*} H(x, v) = \sum_{i=0}^1 v_i \nabla^2 c_i(x) =
+     v_0\begin{bmatrix} 2 & 0 \\ 0 & 0\end{bmatrix} + 
+     v_1\begin{bmatrix} 2 & 0 \\ 0 & 0\end{bmatrix},
+     \end{equation*}
+
+is defined using a :func:`NonlinearConstraint` object.
+
+    >>> def cons_f(x):
+    ...     return [x[0]**2 + x[1], x[0]**2 - x[1]]
+    >>> def cons_J(x):
+    ...     return [[2*x[0], 1], [2*x[0], -1]]
+    >>> def cons_H(x, v):
+    ...     return v[0]*np.array([[2, 0], [0, 0]]) + v[1]*np.array([[2, 0], [0, 0]])
+    >>> from scipy.optimize import NonlinearConstraint
+    >>> nonlinear_constraint = NonlinearConstraint(cons_f, -np.inf, 1, jac=cons_J, hess=cons_H)
+
+Alternatively, it is also possible to define the Hessian :math:`H(x, v)`
+as a sparse matrix,
+
+    >>> from scipy.sparse import csc_matrix
+    >>> def cons_H_sparse(x, v):
+    ...     return v[0]*csc_matrix([[2, 0], [0, 0]]) + v[1]*csc_matrix([[2, 0], [0, 0]])
+    >>> nonlinear_constraint = NonlinearConstraint(cons_f, -np.inf, 1,
+    ...                                            jac=cons_J, hess=cons_H_sparse)
+
+or as a :func:`LinearOperator` object.
+
+    >>> from scipy.sparse.linalg import LinearOperator
+    >>> def cons_H_linear_operator(x, v):
+    ...     def matvec(p):
+    ...         return np.array([p[0]*2*(v[0]+v[1]), 0])
+    ...     return LinearOperator((2, 2), matvec=matvec)
+    >>> nonlinear_constraint = NonlinearConstraint(cons_f, -np.inf, 1,
+    ...                                           jac=cons_J, hess=cons_H_linear_operator)
+
+When the evaluation of the Hessian :math:`H(x, v)`
+is difficult to implement or computationally infeasible, one may use :class:`HessianUpdateStrategy`.
+Currently available strategies are :class:`BFGS` and :class:`SR1`.
+
+    >>> from scipy.optimize import BFGS
+    >>> nonlinear_constraint = NonlinearConstraint(cons_f, -np.inf, 1, jac=cons_J, hess=BFGS())
+
+Alternatively, the Hessian may be approximated using finite differences.
+
+    >>> nonlinear_constraint = NonlinearConstraint(cons_f, -np.inf, 1, jac=cons_J, hess='2-point')
+
+The Jacobian of the constraints can be approximated by finite differences as well. In this case,
+however, the Hessian cannot be computed with finite differences and needs to
+be provided by the user or defined using :class:`HessianUpdateStrategy`.
+
+    >>> nonlinear_constraint = NonlinearConstraint(cons_f, -np.inf, 1, jac='2-point', hess=BFGS())
 
 
+Solving the Optimization Problem:
+"""""""""""""""""""""""""""""""""
+The optimization problem is solved using:
 
-The objective function and its derivative are defined as follows.
-
-    >>> def func(x, sign=1.0):
-    ...     """ Objective function """
-    ...     return sign*(2*x[0]*x[1] + 2*x[0] - x[0]**2 - 2*x[1]**2)
-
-    >>> def func_deriv(x, sign=1.0):
-    ...     """ Derivative of objective function """
-    ...     dfdx0 = sign*(-2*x[0] + 2*x[1] + 2)
-    ...     dfdx1 = sign*(2*x[0] - 4*x[1])
-    ...     return np.array([ dfdx0, dfdx1 ])
-
-Note that since :func:`minimize` only minimizes functions, the ``sign``
-parameter is introduced to multiply the objective function (and its
-derivative) by -1 in order to perform a maximization.
-
-Then constraints are defined as a sequence of dictionaries, with keys
-``type``, ``fun`` and ``jac``.
-
-    >>> cons = ({'type': 'eq',
-    ...          'fun' : lambda x: np.array([x[0]**3 - x[1]]),
-    ...          'jac' : lambda x: np.array([3.0*(x[0]**2.0), -1.0])},
-    ...         {'type': 'ineq',
-    ...          'fun' : lambda x: np.array([x[1] - 1]),
-    ...          'jac' : lambda x: np.array([0.0, 1.0])})
-
-
-Now an unconstrained optimization can be performed as:
-
-    >>> res = minimize(func, [-1.0,1.0], args=(-1.0,), jac=func_deriv,
-    ...                method='SLSQP', options={'disp': True})
-    Optimization terminated successfully.    (Exit mode 0)
-                Current function value: -2.0
-                Iterations: 4                       # may vary
-                Function evaluations: 5
-                Gradient evaluations: 4
+    >>> x0 = np.array([0.5, 0])
+    >>> res = minimize(rosen, x0, method='trust-constr', jac=rosen_der, hess=rosen_hess,
+    ...                constraints=[linear_constraint, nonlinear_constraint],
+    ...                options={'verbose': 1}, bounds=bounds)
+    # may vary
+    `gtol` termination condition is satisfied.
+    Number of iterations: 12, function evaluations: 8, CG iterations: 7, optimality: 2.99e-09, constraint violation: 1.11e-16, execution time: 0.016 s.
     >>> print(res.x)
-    [ 2.  1.]
+    [0.41494531 0.17010937]
 
-and a constrained optimization as:
+When needed, the objective function Hessian can be defined using a :func:`LinearOperator` object,
 
-    >>> res = minimize(func, [-1.0,1.0], args=(-1.0,), jac=func_deriv,
-    ...                constraints=cons, method='SLSQP', options={'disp': True})
-    Optimization terminated successfully.    (Exit mode 0)
-                Current function value: -1.00000018311
-                Iterations: 9                           # may vary
-                Function evaluations: 14
-                Gradient evaluations: 9
+    >>> def rosen_hess_linop(x):
+    ...     def matvec(p):
+    ...         return rosen_hess_p(x, p)
+    ...     return LinearOperator((2, 2), matvec=matvec)
+    >>> res = minimize(rosen, x0, method='trust-constr', jac=rosen_der, hess=rosen_hess_linop,
+    ...                constraints=[linear_constraint, nonlinear_constraint],
+    ...                options={'verbose': 1}, bounds=bounds)
+    # may vary
+    `gtol` termination condition is satisfied.
+    Number of iterations: 12, function evaluations: 8, CG iterations: 7, optimality: 2.99e-09, constraint violation: 1.11e-16, execution time: 0.018 s.
     >>> print(res.x)
-    [ 1.00000009  1.        ]
+    [0.41494531 0.17010937]
+  
+or a Hessian-vector product through the parameter ``hessp``.
 
+    >>> res = minimize(rosen, x0, method='trust-constr', jac=rosen_der, hessp=rosen_hess_p,
+    ...                constraints=[linear_constraint, nonlinear_constraint],
+    ...                options={'verbose': 1}, bounds=bounds)
+    # may vary
+    `gtol` termination condition is satisfied.
+    Number of iterations: 12, function evaluations: 8, CG iterations: 7, optimality: 2.99e-09, constraint violation: 1.11e-16, execution time: 0.018 s.
+    >>> print(res.x)
+    [0.41494531 0.17010937]
+
+
+Alternatively, the first and second derivatives of the objective function can be approximated.
+For instance,  the Hessian can be approximated with :func:`SR1` quasi-Newton approximation
+and the gradient with finite differences.
+
+    >>> from scipy.optimize import SR1
+    >>> res = minimize(rosen, x0, method='trust-constr',  jac="2-point", hess=SR1(),
+    ...                constraints=[linear_constraint, nonlinear_constraint],
+    ...                options={'verbose': 1}, bounds=bounds)
+    # may vary
+    `gtol` termination condition is satisfied.
+    Number of iterations: 12, function evaluations: 24, CG iterations: 7, optimality: 4.48e-09, constraint violation: 0.00e+00, execution time: 0.016 s.
+    >>> print(res.x)
+    [0.41494531 0.17010937]
+
+
+.. [TRIP] Byrd, Richard H., Mary E. Hribar, and Jorge Nocedal. 1999.
+    An interior point algorithm for large-scale nonlinear  programming.
+    SIAM Journal on Optimization 9.4: 877-900.
+.. [EQSQP] Lalee, Marucha, Jorge Nocedal, and Todd Plantega. 1998. On the
+    implementation of an algorithm for large-scale equality constrained
+    optimization. SIAM Journal on Optimization 8.3: 682-706.
+
+Sequential Least SQuares Programming (SLSQP) Algorithm (``method='SLSQP'``)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The SLSQP method deals with constrained minimization problems of the form:
+
+.. math::
+   :nowrap:
+
+     \begin{eqnarray*} \min_x & f(x) \\
+          \text{subject to: } & c_j(x) =  0  ,  &j \in \mathcal{E}\\
+            & c_j(x) \geq 0  ,  &j \in \mathcal{I}\\
+           &  \text{lb}_i  \leq x_i \leq \text{ub}_i , &i = 1,...,N. \end{eqnarray*}
+
+Where :math:`\mathcal{E}` or :math:`\mathcal{I}` are sets of indices
+containing equality and inequality constraints.
+
+Both linear and nonlinear constraints are defined as dictionaries with keys ``type``, ``fun`` and ``jac``.
+
+    >>> ineq_cons = {'type': 'ineq',
+    ...              'fun' : lambda x: np.array([1 - x[0] - 2*x[1],
+    ...                                          1 - x[0]**2 - x[1],
+    ...                                          1 - x[0]**2 + x[1]]),
+    ...              'jac' : lambda x: np.array([[-1.0, -2.0],
+    ...                                          [-2*x[0], -1.0],
+    ...                                          [-2*x[0], 1.0]])}
+    >>> eq_cons = {'type': 'eq',
+    ...            'fun' : lambda x: np.array([2*x[0] + x[1] - 1]),
+    ...            'jac' : lambda x: np.array([2.0, 1.0])}
+
+
+And the optimization problem is solved with:
+
+    >>> x0 = np.array([0.5, 0])
+    >>> res = minimize(rosen, x0, method='SLSQP', jac=rosen_der, 
+    ...                constraints=[eq_cons, ineq_cons], options={'ftol': 1e-9, 'disp': True},
+    ...                bounds=bounds)
+    # may vary
+    Optimization terminated successfully.    (Exit mode 0)
+                Current function value: 0.342717574857755
+                Iterations: 5
+                Function evaluations: 6
+                Gradient evaluations: 5
+    >>> print(res.x)
+    [0.41494475 0.1701105 ]
+
+Most of the options available for the method ``'trust-constr'`` are not available
+for ``'SLSQP'``.
 
 Least-squares minimization (:func:`least_squares`)
 --------------------------------------------------
@@ -475,10 +709,12 @@ SciPy is capable of solving robustified bound constrained nonlinear
 least-squares problems:
 
 .. math::
-  \begin{align}
-  &\min_\mathbf{x} \frac{1}{2} \sum_{i = 1}^m \rho\left(f_i(\mathbf{x})^2\right) \\
-  &\text{subject to }\mathbf{lb} \leq \mathbf{x} \leq \mathbf{ub}
-  \end{align}
+   :nowrap:
+   
+   \begin{align}
+   &\min_\mathbf{x} \frac{1}{2} \sum_{i = 1}^m \rho\left(f_i(\mathbf{x})^2\right) \\
+   &\text{subject to }\mathbf{lb} \leq \mathbf{x} \leq \mathbf{ub}
+   \end{align}
 
 Here :math:`f_i(\mathbf{x})` are smooth functions from
 :math:`\mathbb{R}^n` to :math:`\mathbb{R}`, we refer to them as residuals.
@@ -516,6 +752,8 @@ the independent variable. The unknown vector of parameters is
 recommended to compute Jacobian matrix in a closed form:
 
 .. math::
+   :nowrap:
+
     \begin{align}
     &J_{i0} = \frac{\partial f_i}{\partial x_0} = \frac{u_i^2 + u_i x_1}{u_i^2 + u_i x_2 + x_3} \\
     &J_{i1} = \frac{\partial f_i}{\partial x_1} = \frac{u_i x_0}{u_i^2 + u_i x_2 + x_3} \\
@@ -580,13 +818,13 @@ Further examples
 Three interactive examples below illustrate usage of :func:`least_squares` in
 greater detail.
 
-1. `Large-scale bundle adjustment in scipy <http://scipy-cookbook.readthedocs.org/items/bundle_adjustment.html>`_
+1. `Large-scale bundle adjustment in scipy <https://scipy-cookbook.readthedocs.io/items/bundle_adjustment.html>`_
    demonstrates large-scale capabilities of :func:`least_squares` and how to
    efficiently compute finite difference approximation of sparse Jacobian.
-2. `Robust nonlinear regression in scipy <http://scipy-cookbook.readthedocs.org/items/robust_regression.html>`_
+2. `Robust nonlinear regression in scipy <https://scipy-cookbook.readthedocs.io/items/robust_regression.html>`_
    shows how to handle outliers with a robust loss function in a nonlinear
    regression.
-3. `Solving a discrete boundary-value problem in scipy <http://scipy-cookbook.readthedocs.org/items/discrete_bvp.html>`_
+3. `Solving a discrete boundary-value problem in scipy <https://scipy-cookbook.readthedocs.io/items/discrete_bvp.html>`_
    examines how to solve a large system of equations and use bounds to achieve
    desired properties of the solution.
 
@@ -778,7 +1016,6 @@ The following example considers the single-variable transcendental
 equation
 
 .. math::
-   :nowrap:
 
     x+2\cos\left(x\right)=0,
 
@@ -995,8 +1232,8 @@ Some further reading and related software:
 .. [KK] D.A. Knoll and D.E. Keyes, "Jacobian-free Newton-Krylov methods",
         J. Comp. Phys. 193, 357 (2004). doi:10.1016/j.jcp.2003.08.010
 
-.. [PP] PETSc http://www.mcs.anl.gov/petsc/ and its Python bindings
-        http://code.google.com/p/petsc4py/
+.. [PP] PETSc https://www.mcs.anl.gov/petsc/ and its Python bindings
+        https://bitbucket.org/petsc/petsc4py/
 
 .. [AMG] PyAMG (algebraic multigrid preconditioners/solvers)
-         http://code.google.com/p/pyamg/
+         https://github.com/pyamg/pyamg/issues

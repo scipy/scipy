@@ -2,6 +2,8 @@
 
 '''
 
+from __future__ import absolute_import
+
 '''
 Programmer's notes
 ------------------
@@ -59,7 +61,7 @@ DEF _N_MIS = 20
 # max number of integer indices of matlab class types (mxINT8_CLASS etc)
 DEF _N_MXS = 20
 
-cimport streams
+from . cimport streams
 import scipy.io.matlab.miobase as miob
 from scipy.io.matlab.mio_utils import squeeze_element, chars_to_strings
 import scipy.io.matlab.mio5_params as mio5p
@@ -795,7 +797,7 @@ cdef class VarReader5:
         else:
             data = self.read_numeric()
         ''' From the matlab (TM) API documentation, last found here:
-        http://www.mathworks.com/access/helpdesk/help/techdoc/matlab_external/
+        https://www.mathworks.com/help/pdf_doc/matlab/apiext.pdf
         rowind are simply the row indices for all the (nnz) non-zero
         entries in the sparse array.  rowind has nzmax entries, so
         may well have more entries than nnz, the actual number of

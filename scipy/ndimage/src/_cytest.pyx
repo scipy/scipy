@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 from cpython.mem cimport PyMem_Malloc, PyMem_Free
 from cpython.pycapsule cimport (
     PyCapsule_New, PyCapsule_SetContext, PyCapsule_GetContext, PyCapsule_GetPointer
@@ -28,7 +30,7 @@ cdef int _filter1d(double *input_line, intp input_length, double *output_line,
             output_line[i] += input_line[i+j]
         output_line[i] /= filter_size
     return 1
-    
+
 
 def filter1d(intp filter_size, with_signature=False):
     cdef intp *callback_data = <intp *>PyMem_Malloc(sizeof(intp))
@@ -43,7 +45,7 @@ def filter1d(intp filter_size, with_signature=False):
     try:
         capsule = PyCapsule_New(<void *>_filter1d, signature, _destructor)
         res = PyCapsule_SetContext(capsule, callback_data)
-    except:
+    except:  # noqa: E722
         PyMem_Free(callback_data)
         raise
     return capsule
@@ -57,7 +59,7 @@ def filter1d_capsule(intp filter_size):
 
     try:
         capsule = PyCapsule_New(<void *>callback_data, NULL, _destructor_data)
-    except:
+    except:  # noqa: E722
         PyMem_Free(callback_data)
         raise
     return capsule
@@ -72,8 +74,8 @@ cdef int _filter2d(double *buffer, intp filter_size, double *res,
     for i in range(filter_size):
         res[0] += weights[i]*buffer[i]
     return 1
-    
-    
+
+
 def filter2d(seq, with_signature=False):
     cdef double *callback_data = <double *>PyMem_Malloc(len(seq)*sizeof(double))
     cdef char *signature = NULL
@@ -88,7 +90,7 @@ def filter2d(seq, with_signature=False):
     try:
         capsule = PyCapsule_New(<void *>_filter2d, signature, _destructor)
         PyCapsule_SetContext(capsule, callback_data)
-    except:
+    except:  # noqa: E722
         PyMem_Free(callback_data)
         raise
     return capsule
@@ -103,7 +105,7 @@ def filter2d_capsule(seq):
 
     try:
         capsule = PyCapsule_New(<void *>callback_data, NULL, _destructor_data)
-    except:
+    except:  # noqa: E722
         PyMem_Free(callback_data)
         raise
     return capsule
@@ -132,7 +134,7 @@ def transform(double shift, with_signature=False):
     try:
         capsule = PyCapsule_New(<void *>_transform, signature, _destructor)
         PyCapsule_SetContext(capsule, callback_data)
-    except:
+    except:  # noqa: E722
         PyMem_Free(callback_data)
         raise
     return capsule
@@ -146,7 +148,7 @@ def transform_capsule(double shift):
 
     try:
         capsule = PyCapsule_New(<void *>callback_data, NULL, _destructor_data)
-    except:
+    except:  # noqa: E722
         PyMem_Free(callback_data)
         raise
     return capsule

@@ -108,11 +108,11 @@ better option.  First let's compute the largest eigenvalues (``which = 'LM'``)
 of ``X`` and compare them to the known results:
 
     >>> evals_large, evecs_large = eigsh(X, 3, which='LM')
-    >>> print evals_all[-3:]
-    [ 29.1446102   30.05821805  31.19467646]
-    >>> print evals_large
-    [ 29.1446102   30.05821805  31.19467646]
-    >>> print np.dot(evecs_large.T, evecs_all[:,-3:])
+    >>> print(evals_all[-3:])
+    [29.1446102  30.05821805 31.19467646]
+    >>> print(evals_large)
+    [29.1446102  30.05821805 31.19467646]
+    >>> print(np.dot(evecs_large.T, evecs_all[:,-3:]))
     array([[-1.  0.  0.],       # may vary (signs)
            [ 0.  1.  0.],
            [-0.  0. -1.]])
@@ -162,7 +162,7 @@ non-external eigenvalues: *shift-invert mode*.  As mentioned above, this
 mode involves transforming the eigenvalue problem to an equivalent problem
 with different eigenvalues.  In this case, we hope to find eigenvalues near
 zero, so we'll choose ``sigma = 0``.  The transformed eigenvalues will
-then satisfy :math:`\nu = 1/(\sigma - \lambda) = 1/\lambda`, so our
+then satisfy :math:`\nu = 1/(\lambda - \sigma) = 1/\lambda`, so our
 small eigenvalues :math:`\lambda` become large eigenvalues :math:`\nu`.
 
     >>> evals_small, evecs_small = eigsh(X, 3, sigma=0, which='LM')
@@ -191,7 +191,7 @@ the rest:
     array([1.16577199, 0.85081388, 1.06642272])
     >>> evals_mid
     array([0.85081388, 1.06642272, 1.16577199])
-    >>> print np.dot(evecs_mid.T, evecs_all[:,i_sort])
+    >>> print(np.dot(evecs_mid.T, evecs_all[:,i_sort]))
     array([[-0.  1.  0.],     # may vary (signs)
            [-0. -0.  1.],
            [ 1.  0.  0.]]

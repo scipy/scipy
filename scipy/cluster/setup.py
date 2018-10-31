@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 from __future__ import division, print_function, absolute_import
 
 import sys
@@ -10,7 +9,7 @@ else:
 
 
 def configuration(parent_package='', top_path=None):
-    from numpy.distutils.system_info import get_info
+    from scipy._build_utils.system_info import get_info
     from numpy.distutils.misc_util import Configuration, get_numpy_include_dirs
     config = Configuration('cluster', parent_package, top_path)
 
@@ -25,6 +24,10 @@ def configuration(parent_package='', top_path=None):
 
     config.add_extension('_hierarchy',
         sources=[('_hierarchy.c')],
+        include_dirs=[get_numpy_include_dirs()])
+
+    config.add_extension('_optimal_leaf_ordering',
+        sources=[('_optimal_leaf_ordering.c')],
         include_dirs=[get_numpy_include_dirs()])
 
     return config

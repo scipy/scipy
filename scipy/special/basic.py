@@ -4,14 +4,13 @@
 
 from __future__ import division, print_function, absolute_import
 
-import warnings
-
+import operator
 import numpy as np
 import math
 from scipy._lib.six import xrange
 from numpy import (pi, asarray, floor, isscalar, iscomplex, real,
                    imag, sqrt, where, mgrid, sin, place, issubdtype,
-                   extract, less, inexact, nan, zeros, sinc)
+                   extract, inexact, nan, zeros, sinc)
 from . import _ufuncs as ufuncs
 from ._ufuncs import (ellipkm1, mathieu_a, mathieu_b, iv, jv, gamma,
                       psi, _zeta, hankel1, hankel2, yv, kv, ndtri,
@@ -21,22 +20,38 @@ from . import orthogonal
 from ._comb import _comb_int
 
 
-__all__ = ['agm', 'ai_zeros', 'assoc_laguerre', 'bei_zeros', 'beip_zeros',
-           'ber_zeros', 'bernoulli', 'berp_zeros', 'bessel_diff_formula',
-           'bi_zeros', 'clpmn', 'comb', 'digamma', 'diric', 'ellipk',
-           'erf_zeros', 'erfcinv', 'erfinv', 'euler', 'factorial',
-           'factorialk', 'factorial2', 'fresnel_zeros',
-           'fresnelc_zeros', 'fresnels_zeros', 'gamma', 'h1vp',
-           'h2vp', 'hankel1', 'hankel2', 'hyp0f1', 'iv', 'ivp', 'jn_zeros',
-           'jnjnp_zeros', 'jnp_zeros', 'jnyn_zeros', 'jv', 'jvp', 'kei_zeros',
-           'keip_zeros', 'kelvin_zeros', 'ker_zeros', 'kerp_zeros', 'kv',
-           'kvp', 'lmbda', 'lpmn', 'lpn', 'lqmn', 'lqn', 'mathieu_a',
-           'mathieu_b', 'mathieu_even_coef', 'mathieu_odd_coef', 'ndtri',
-           'obl_cv_seq', 'pbdn_seq', 'pbdv_seq', 'pbvv_seq', 'perm',
-           'polygamma', 'pro_cv_seq', 'psi', 'riccati_jn', 'riccati_yn',
-           'sinc', 'sph_in', 'sph_inkn',
-           'sph_jn', 'sph_jnyn', 'sph_kn', 'sph_yn', 'y0_zeros', 'y1_zeros',
-           'y1p_zeros', 'yn_zeros', 'ynp_zeros', 'yv', 'yvp', 'zeta']
+__all__ = ['ai_zeros', 'assoc_laguerre', 'bei_zeros', 'beip_zeros',
+           'ber_zeros', 'bernoulli', 'berp_zeros',
+           'bessel_diff_formula', 'bi_zeros', 'clpmn', 'comb',
+           'digamma', 'diric', 'ellipk', 'erf_zeros', 'erfcinv',
+           'erfinv', 'euler', 'factorial', 'factorialk', 'factorial2',
+           'fresnel_zeros', 'fresnelc_zeros', 'fresnels_zeros',
+           'gamma', 'h1vp', 'h2vp', 'hankel1', 'hankel2', 'hyp0f1',
+           'iv', 'ivp', 'jn_zeros', 'jnjnp_zeros', 'jnp_zeros',
+           'jnyn_zeros', 'jv', 'jvp', 'kei_zeros', 'keip_zeros',
+           'kelvin_zeros', 'ker_zeros', 'kerp_zeros', 'kv', 'kvp',
+           'lmbda', 'lpmn', 'lpn', 'lqmn', 'lqn', 'mathieu_a',
+           'mathieu_b', 'mathieu_even_coef', 'mathieu_odd_coef',
+           'ndtri', 'obl_cv_seq', 'pbdn_seq', 'pbdv_seq', 'pbvv_seq',
+           'perm', 'polygamma', 'pro_cv_seq', 'psi', 'riccati_jn',
+           'riccati_yn', 'sinc', 'y0_zeros', 'y1_zeros', 'y1p_zeros',
+           'yn_zeros', 'ynp_zeros', 'yv', 'yvp', 'zeta']
+
+
+def _nonneg_int_or_fail(n, var_name, strict=True):
+    try:
+        if strict:
+            # Raises an exception if float
+            n = operator.index(n)
+        elif n == floor(n):
+            n = int(n)
+        else:
+            raise ValueError()
+        if n < 0:
+            raise ValueError()
+    except (ValueError, TypeError) as err:
+        raise err.__class__("{} must be a non-negative integer".format(var_name))
+    return n
 
 
 def diric(x, n):
@@ -44,7 +59,7 @@ def diric(x, n):
 
     The Dirichlet function is defined as::
 
-        diric(x) = sin(x * n/2) / (n * sin(x / 2)),
+        diric(x, n) = sin(x * n/2) / (n * sin(x / 2)),
 
     where `n` is a positive integer.
 
@@ -171,7 +186,7 @@ def jnjnp_zeros(nt):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 5.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt > 1200):
@@ -200,7 +215,7 @@ def jnyn_zeros(n, nt):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 5.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     if not (isscalar(nt) and isscalar(n)):
@@ -226,7 +241,7 @@ def jn_zeros(n, nt):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 5.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     return jnyn_zeros(n, nt)[0]
@@ -246,7 +261,7 @@ def jnp_zeros(n, nt):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 5.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     return jnyn_zeros(n, nt)[1]
@@ -266,7 +281,7 @@ def yn_zeros(n, nt):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 5.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     return jnyn_zeros(n, nt)[2]
@@ -286,7 +301,7 @@ def ynp_zeros(n, nt):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 5.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     return jnyn_zeros(n, nt)[3]
@@ -318,7 +333,7 @@ def y0_zeros(nt, complex=False):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 5.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
@@ -354,7 +369,7 @@ def y1_zeros(nt, complex=False):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 5.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
@@ -390,7 +405,7 @@ def y1p_zeros(nt, complex=False):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 5.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
@@ -438,13 +453,12 @@ def jvp(v, z, n=1):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 5.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
     .. [2] NIST Digital Library of Mathematical Functions.
-           http://dlmf.nist.gov/10.6.E7
+           https://dlmf.nist.gov/10.6.E7
 
     """
-    if not isinstance(n, int) or (n < 0):
-        raise ValueError("n must be a non-negative integer.")
+    n = _nonneg_int_or_fail(n, 'n')
     if n == 0:
         return jv(v, z)
     else:
@@ -471,13 +485,12 @@ def yvp(v, z, n=1):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 5.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
     .. [2] NIST Digital Library of Mathematical Functions.
-           http://dlmf.nist.gov/10.6.E7
+           https://dlmf.nist.gov/10.6.E7
 
     """
-    if not isinstance(n, int) or (n < 0):
-        raise ValueError("n must be a non-negative integer.")
+    n = _nonneg_int_or_fail(n, 'n')
     if n == 0:
         return yv(v, z)
     else:
@@ -510,7 +523,9 @@ def kvp(v, z, n=1):
 
     >>> from scipy.special import kvp
     >>> kvp(5, (1, 2, 3+5j))
-    array([-1849.0354+0.j    ,   -25.7735+0.j    ,    -0.0307+0.0875j])
+    array([-1.84903536e+03+0.j        , -2.57735387e+01+0.j        ,
+           -3.06627741e-02+0.08750845j])
+
 
     Calculate for a single value at multiple orders:
 
@@ -525,13 +540,12 @@ def kvp(v, z, n=1):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 6.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
     .. [2] NIST Digital Library of Mathematical Functions.
-           http://dlmf.nist.gov/10.29.E5
+           https://dlmf.nist.gov/10.29.E5
 
     """
-    if not isinstance(n, int) or (n < 0):
-        raise ValueError("n must be a non-negative integer.")
+    n = _nonneg_int_or_fail(n, 'n')
     if n == 0:
         return kv(v, z)
     else:
@@ -559,13 +573,12 @@ def ivp(v, z, n=1):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 6.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
     .. [2] NIST Digital Library of Mathematical Functions.
-           http://dlmf.nist.gov/10.29.E5
+           https://dlmf.nist.gov/10.29.E5
 
     """
-    if not isinstance(n, int) or (n < 0):
-        raise ValueError("n must be a non-negative integer.")
+    n = _nonneg_int_or_fail(n, 'n')
     if n == 0:
         return iv(v, z)
     else:
@@ -592,13 +605,12 @@ def h1vp(v, z, n=1):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 5.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
     .. [2] NIST Digital Library of Mathematical Functions.
-           http://dlmf.nist.gov/10.6.E7
+           https://dlmf.nist.gov/10.6.E7
 
     """
-    if not isinstance(n, int) or (n < 0):
-        raise ValueError("n must be a non-negative integer.")
+    n = _nonneg_int_or_fail(n, 'n')
     if n == 0:
         return hankel1(v, z)
     else:
@@ -625,325 +637,16 @@ def h2vp(v, z, n=1):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 5.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
     .. [2] NIST Digital Library of Mathematical Functions.
-           http://dlmf.nist.gov/10.6.E7
+           https://dlmf.nist.gov/10.6.E7
 
     """
-    if not isinstance(n, int) or (n < 0):
-        raise ValueError("n must be a non-negative integer.")
+    n = _nonneg_int_or_fail(n, 'n')
     if n == 0:
         return hankel2(v, z)
     else:
         return _bessel_diff_formula(v, z, n, hankel2, -1)
-
-
-@np.deprecate(message="scipy.special.sph_jn is deprecated in scipy 0.18.0. "
-                      "Use scipy.special.spherical_jn instead. "
-                      "Note that the new function has a different signature.")
-def sph_jn(n, z):
-    """Compute spherical Bessel function jn(z) and derivative.
-
-    This function computes the value and first derivative of jn(z) for all
-    orders up to and including n.
-
-    Parameters
-    ----------
-    n : int
-        Maximum order of jn to compute
-    z : complex
-        Argument at which to evaluate
-
-    Returns
-    -------
-    jn : ndarray
-        Value of j0(z), ..., jn(z)
-    jnp : ndarray
-        First derivative j0'(z), ..., jn'(z)
-
-    See also
-    --------
-    spherical_jn
-
-    References
-    ----------
-    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
-           Functions", John Wiley and Sons, 1996, chapter 8.
-           http://jin.ece.illinois.edu/specfunc.html
-
-    """
-    if not (isscalar(n) and isscalar(z)):
-        raise ValueError("arguments must be scalars.")
-    if (n != floor(n)) or (n < 0):
-        raise ValueError("n must be a non-negative integer.")
-    if (n < 1):
-        n1 = 1
-    else:
-        n1 = n
-    if iscomplex(z):
-        nm, jn, jnp, yn, ynp = specfun.csphjy(n1, z)
-    else:
-        nm, jn, jnp = specfun.sphj(n1, z)
-    return jn[:(n+1)], jnp[:(n+1)]
-
-
-@np.deprecate(message="scipy.special.sph_yn is deprecated in scipy 0.18.0. "
-                      "Use scipy.special.spherical_yn instead. "
-                      "Note that the new function has a different signature.")
-def sph_yn(n, z):
-    """Compute spherical Bessel function yn(z) and derivative.
-
-    This function computes the value and first derivative of yn(z) for all
-    orders up to and including n.
-
-    Parameters
-    ----------
-    n : int
-        Maximum order of yn to compute
-    z : complex
-        Argument at which to evaluate
-
-    Returns
-    -------
-    yn : ndarray
-        Value of y0(z), ..., yn(z)
-    ynp : ndarray
-        First derivative y0'(z), ..., yn'(z)
-
-    See also
-    --------
-    spherical_yn
-
-    References
-    ----------
-    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
-           Functions", John Wiley and Sons, 1996, chapter 8.
-           http://jin.ece.illinois.edu/specfunc.html
-
-    """
-    if not (isscalar(n) and isscalar(z)):
-        raise ValueError("arguments must be scalars.")
-    if (n != floor(n)) or (n < 0):
-        raise ValueError("n must be a non-negative integer.")
-    if (n < 1):
-        n1 = 1
-    else:
-        n1 = n
-    if iscomplex(z) or less(z, 0):
-        nm, jn, jnp, yn, ynp = specfun.csphjy(n1, z)
-    else:
-        nm, yn, ynp = specfun.sphy(n1, z)
-    return yn[:(n+1)], ynp[:(n+1)]
-
-
-@np.deprecate(message="scipy.special.sph_jnyn is deprecated in scipy 0.18.0. "
-                      "Use scipy.special.spherical_jn and "
-                      "scipy.special.spherical_yn instead. "
-                      "Note that the new function has a different signature.")
-def sph_jnyn(n, z):
-    """Compute spherical Bessel functions jn(z) and yn(z) and derivatives.
-
-    This function computes the value and first derivative of jn(z) and yn(z)
-    for all orders up to and including n.
-
-    Parameters
-    ----------
-    n : int
-        Maximum order of jn and yn to compute
-    z : complex
-        Argument at which to evaluate
-
-    Returns
-    -------
-    jn : ndarray
-        Value of j0(z), ..., jn(z)
-    jnp : ndarray
-        First derivative j0'(z), ..., jn'(z)
-    yn : ndarray
-        Value of y0(z), ..., yn(z)
-    ynp : ndarray
-        First derivative y0'(z), ..., yn'(z)
-
-    See also
-    --------
-    spherical_jn
-    spherical_yn
-
-    References
-    ----------
-    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
-           Functions", John Wiley and Sons, 1996, chapter 8.
-           http://jin.ece.illinois.edu/specfunc.html
-
-    """
-    if not (isscalar(n) and isscalar(z)):
-        raise ValueError("arguments must be scalars.")
-    if (n != floor(n)) or (n < 0):
-        raise ValueError("n must be a non-negative integer.")
-    if (n < 1):
-        n1 = 1
-    else:
-        n1 = n
-    if iscomplex(z) or less(z, 0):
-        nm, jn, jnp, yn, ynp = specfun.csphjy(n1, z)
-    else:
-        nm, yn, ynp = specfun.sphy(n1, z)
-        nm, jn, jnp = specfun.sphj(n1, z)
-    return jn[:(n+1)], jnp[:(n+1)], yn[:(n+1)], ynp[:(n+1)]
-
-
-@np.deprecate(message="scipy.special.sph_in is deprecated in scipy 0.18.0. "
-                      "Use scipy.special.spherical_in instead. "
-                      "Note that the new function has a different signature.")
-def sph_in(n, z):
-    """Compute spherical Bessel function in(z) and derivative.
-
-    This function computes the value and first derivative of in(z) for all
-    orders up to and including n.
-
-    Parameters
-    ----------
-    n : int
-        Maximum order of in to compute
-    z : complex
-        Argument at which to evaluate
-
-    Returns
-    -------
-    in : ndarray
-        Value of i0(z), ..., in(z)
-    inp : ndarray
-        First derivative i0'(z), ..., in'(z)
-
-    See also
-    --------
-    spherical_in
-
-    References
-    ----------
-    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
-           Functions", John Wiley and Sons, 1996, chapter 8.
-           http://jin.ece.illinois.edu/specfunc.html
-
-    """
-    if not (isscalar(n) and isscalar(z)):
-        raise ValueError("arguments must be scalars.")
-    if (n != floor(n)) or (n < 0):
-        raise ValueError("n must be a non-negative integer.")
-    if (n < 1):
-        n1 = 1
-    else:
-        n1 = n
-    if iscomplex(z):
-        nm, In, Inp, kn, knp = specfun.csphik(n1, z)
-    else:
-        nm, In, Inp = specfun.sphi(n1, z)
-    return In[:(n+1)], Inp[:(n+1)]
-
-
-@np.deprecate(message="scipy.special.sph_kn is deprecated in scipy 0.18.0. "
-                      "Use scipy.special.spherical_kn instead. "
-                      "Note that the new function has a different signature.")
-def sph_kn(n, z):
-    """Compute spherical Bessel function kn(z) and derivative.
-
-    This function computes the value and first derivative of kn(z) for all
-    orders up to and including n.
-
-    Parameters
-    ----------
-    n : int
-        Maximum order of kn to compute
-    z : complex
-        Argument at which to evaluate
-
-    Returns
-    -------
-    kn : ndarray
-        Value of k0(z), ..., kn(z)
-    knp : ndarray
-        First derivative k0'(z), ..., kn'(z)
-
-    See also
-    --------
-    spherical_kn
-
-    References
-    ----------
-    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
-           Functions", John Wiley and Sons, 1996, chapter 8.
-           http://jin.ece.illinois.edu/specfunc.html
-
-    """
-    if not (isscalar(n) and isscalar(z)):
-        raise ValueError("arguments must be scalars.")
-    if (n != floor(n)) or (n < 0):
-        raise ValueError("n must be a non-negative integer.")
-    if (n < 1):
-        n1 = 1
-    else:
-        n1 = n
-    if iscomplex(z) or less(z, 0):
-        nm, In, Inp, kn, knp = specfun.csphik(n1, z)
-    else:
-        nm, kn, knp = specfun.sphk(n1, z)
-    return kn[:(n+1)], knp[:(n+1)]
-
-
-@np.deprecate(message="scipy.special.sph_inkn is deprecated in scipy 0.18.0. "
-                      "Use scipy.special.spherical_in and "
-                      "scipy.special.spherical_kn instead. "
-                      "Note that the new function has a different signature.")
-def sph_inkn(n, z):
-    """Compute spherical Bessel functions in(z), kn(z), and derivatives.
-
-    This function computes the value and first derivative of in(z) and kn(z)
-    for all orders up to and including n.
-
-    Parameters
-    ----------
-    n : int
-        Maximum order of in and kn to compute
-    z : complex
-        Argument at which to evaluate
-
-    Returns
-    -------
-    in : ndarray
-        Value of i0(z), ..., in(z)
-    inp : ndarray
-        First derivative i0'(z), ..., in'(z)
-    kn : ndarray
-        Value of k0(z), ..., kn(z)
-    knp : ndarray
-        First derivative k0'(z), ..., kn'(z)
-
-    See also
-    --------
-    spherical_in
-    spherical_kn
-
-    References
-    ----------
-    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
-           Functions", John Wiley and Sons, 1996, chapter 8.
-           http://jin.ece.illinois.edu/specfunc.html
-
-    """
-    if not (isscalar(n) and isscalar(z)):
-        raise ValueError("arguments must be scalars.")
-    if (n != floor(n)) or (n < 0):
-        raise ValueError("n must be a non-negative integer.")
-    if (n < 1):
-        n1 = 1
-    else:
-        n1 = n
-    if iscomplex(z) or less(z, 0):
-        nm, In, Inp, kn, knp = specfun.csphik(n1, z)
-    else:
-        nm, In, Inp = specfun.sphi(n1, z)
-        nm, kn, knp = specfun.sphk(n1, z)
-    return In[:(n+1)], Inp[:(n+1)], kn[:(n+1)], knp[:(n+1)]
 
 
 def riccati_jn(n, x):
@@ -982,15 +685,14 @@ def riccati_jn(n, x):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
     .. [2] NIST Digital Library of Mathematical Functions.
-           http://dlmf.nist.gov/10.51.E1
+           https://dlmf.nist.gov/10.51.E1
 
     """
     if not (isscalar(n) and isscalar(x)):
         raise ValueError("arguments must be scalars.")
-    if (n != floor(n)) or (n < 0):
-        raise ValueError("n must be a non-negative integer.")
+    n = _nonneg_int_or_fail(n, 'n', strict=False)
     if (n == 0):
         n1 = 1
     else:
@@ -1035,15 +737,14 @@ def riccati_yn(n, x):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
     .. [2] NIST Digital Library of Mathematical Functions.
-           http://dlmf.nist.gov/10.51.E1
+           https://dlmf.nist.gov/10.51.E1
 
     """
     if not (isscalar(n) and isscalar(x)):
         raise ValueError("arguments must be scalars.")
-    if (n != floor(n)) or (n < 0):
-        raise ValueError("n must be a non-negative integer.")
+    n = _nonneg_int_or_fail(n, 'n', strict=False)
     if (n == 0):
         n1 = 1
     else:
@@ -1053,25 +754,119 @@ def riccati_yn(n, x):
 
 
 def erfinv(y):
-    """Inverse function for erf.
+    """Inverse of the error function erf.
+
+    Computes the inverse of the error function.
+
+    In complex domain, there is no unique complex number w satisfying erf(w)=z.
+    This indicates a true inverse function would have multi-value. When the domain restricts to the real, -1 < x < 1,
+    there is a unique real number satisfying erf(erfinv(x)) = x.
+
+    Parameters
+    ----------
+    y : ndarray
+        Argument at which to evaluate. Domain: [-1, 1]
+
+    Returns
+    -------
+    erfinv : ndarray
+        The inverse of erf of y, element-wise
+
+    Examples
+    --------
+    1) evaluating a float number
+
+    >>> from scipy import special
+    >>> special.erfinv(0.5)
+    0.4769362762044698
+
+    2) evaluating a ndarray
+
+    >>> from scipy import special
+    >>> y = np.linspace(-1.0, 1.0, num=10)
+    >>> special.erfinv(y)
+    array([       -inf, -0.86312307, -0.5407314 , -0.30457019, -0.0987901 ,
+            0.0987901 ,  0.30457019,  0.5407314 ,  0.86312307,         inf])
+
     """
     return ndtri((y+1)/2.0)/sqrt(2)
 
 
 def erfcinv(y):
-    """Inverse function for erfc.
+    """Inverse of the complementary error function erfc.
+
+    Computes the inverse of the complementary error function erfc.
+
+    In complex domain, there is no unique complex number w satisfying erfc(w)=z.
+    This indicates a true inverse function would have multi-value. When the domain restricts to the real, 0 < x < 2,
+    there is a unique real number satisfying erfc(erfcinv(x)) = erfcinv(erfc(x)).
+
+    It is related to inverse of the error function by erfcinv(1-x) = erfinv(x)
+
+    Parameters
+    ----------
+    y : ndarray
+        Argument at which to evaluate. Domain: [0, 2]
+
+    Returns
+    -------
+    erfcinv : ndarray
+        The inverse of erfc of y, element-wise
+
+    Examples
+    --------
+    1) evaluating a float number
+
+    >>> from scipy import special
+    >>> special.erfcinv(0.5)
+    0.4769362762044698
+
+    2) evaluating a ndarray
+
+    >>> from scipy import special
+    >>> y = np.linspace(0.0, 2.0, num=11)
+    >>> special.erfcinv(y)
+    array([        inf,  0.9061938 ,  0.59511608,  0.37080716,  0.17914345,
+            -0.        , -0.17914345, -0.37080716, -0.59511608, -0.9061938 ,
+                  -inf])
+
     """
     return -ndtri(0.5*y)/sqrt(2)
 
 
 def erf_zeros(nt):
-    """Compute nt complex zeros of error function erf(z).
+    """Compute the first nt zero in the first quadrant, ordered by absolute value.
+
+    Zeros in the other quadrants can be obtained by using the symmetries erf(-z) = erf(z) and
+    erf(conj(z)) = conj(erf(z)).
+
+
+    Parameters
+    ----------
+    nt : int
+        The number of zeros to compute
+
+    Returns
+    -------
+    The locations of the zeros of erf : ndarray (complex)
+        Complex values at which zeros of erf(z)
+
+    Examples
+    --------
+    >>> from scipy import special
+    >>> special.erf_zeros(1)
+    array([1.45061616+1.880943j])
+
+    Check that erf is (close to) zero for the value returned by erf_zeros
+    
+    >>> special.erf(special.erf_zeros(1))
+    array([4.95159469e-14-1.16407394e-16j])
 
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     if (floor(nt) != nt) or (nt <= 0) or not isscalar(nt):
@@ -1086,7 +881,7 @@ def fresnelc_zeros(nt):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     if (floor(nt) != nt) or (nt <= 0) or not isscalar(nt):
@@ -1101,7 +896,7 @@ def fresnels_zeros(nt):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     if (floor(nt) != nt) or (nt <= 0) or not isscalar(nt):
@@ -1116,7 +911,7 @@ def fresnel_zeros(nt):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     if (floor(nt) != nt) or (nt <= 0) or not isscalar(nt):
@@ -1137,6 +932,7 @@ def assoc_laguerre(x, n, k=0.0):
 
     """
     return orthogonal.eval_genlaguerre(n, k, x)
+
 
 digamma = psi
 
@@ -1203,9 +999,9 @@ def mathieu_even_coef(m, q):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
     .. [2] NIST Digital Library of Mathematical Functions
-           http://dlmf.nist.gov/28.4#i
+           https://dlmf.nist.gov/28.4#i
 
     """
     if not (isscalar(m) and isscalar(q)):
@@ -1262,7 +1058,7 @@ def mathieu_odd_coef(m, q):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     if not (isscalar(m) and isscalar(q)):
@@ -1332,9 +1128,9 @@ def lpmn(m, n, z):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
     .. [2] NIST Digital Library of Mathematical Functions
-           http://dlmf.nist.gov/14.3
+           https://dlmf.nist.gov/14.3
 
     """
     if not isscalar(m) or (abs(m) > n):
@@ -1415,9 +1211,9 @@ def clpmn(m, n, z, type=3):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
     .. [2] NIST Digital Library of Mathematical Functions
-           http://dlmf.nist.gov/14.21
+           https://dlmf.nist.gov/14.21
 
     """
     if not isscalar(m) or (abs(m) > n):
@@ -1476,7 +1272,7 @@ def lqmn(m, n, z):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     if not isscalar(m) or (m < 0):
@@ -1506,7 +1302,7 @@ def bernoulli(n):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     if not isscalar(n) or (n < 0):
@@ -1520,13 +1316,44 @@ def bernoulli(n):
 
 
 def euler(n):
-    """Euler numbers E0..En (inclusive).
+    """Euler numbers E(0), E(1), ..., E(n).
+
+    The Euler numbers [1]_ are also known as the secant numbers.
+
+    Because ``euler(n)`` returns floating point values, it does not give
+    exact values for large `n`.  The first inexact value is E(22).
+
+    Parameters
+    ----------
+    n : int
+        The highest index of the Euler number to be returned.
+
+    Returns
+    -------
+    ndarray
+        The Euler numbers [E(0), E(1), ..., E(n)].
+        The odd Euler numbers, which are all zero, are included.
 
     References
     ----------
-    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+    .. [1] Sequence A122045, The On-Line Encyclopedia of Integer Sequences,
+           https://oeis.org/A122045
+    .. [2] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
+
+    Examples
+    --------
+    >>> from scipy.special import euler
+    >>> euler(6)
+    array([  1.,   0.,  -1.,   0.,   5.,   0., -61.])
+
+    >>> euler(13).astype(np.int64)
+    array([      1,       0,      -1,       0,       5,       0,     -61,
+                 0,    1385,       0,  -50521,       0, 2702765,       0])
+
+    >>> euler(22)[-1]  # Exact value of E(22) is -69348874393137901.
+    -69348874393137976.0
 
     """
     if not isscalar(n) or (n < 0):
@@ -1551,13 +1378,12 @@ def lpn(n, z):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     if not (isscalar(n) and isscalar(z)):
         raise ValueError("arguments must be scalars.")
-    if (n != floor(n)) or (n < 0):
-        raise ValueError("n must be a non-negative integer.")
+    n = _nonneg_int_or_fail(n, 'n', strict=False)
     if (n < 1):
         n1 = 1
     else:
@@ -1579,13 +1405,12 @@ def lqn(n, z):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     if not (isscalar(n) and isscalar(z)):
         raise ValueError("arguments must be scalars.")
-    if (n != floor(n)) or (n < 0):
-        raise ValueError("n must be a non-negative integer.")
+    n = _nonneg_int_or_fail(n, 'n', strict=False)
     if (n < 1):
         n1 = 1
     else:
@@ -1626,7 +1451,7 @@ def ai_zeros(nt):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     kf = 1
@@ -1664,7 +1489,7 @@ def bi_zeros(nt):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     kf = 2
@@ -1701,7 +1526,7 @@ def lmbda(v, x):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
     .. [2] Jahnke, E. and Emde, F. "Tables of Functions with Formulae and
            Curves" (4th ed.), Dover, 1945
     """
@@ -1744,7 +1569,7 @@ def pbdv_seq(v, x):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 13.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     if not (isscalar(v) and isscalar(x)):
@@ -1781,7 +1606,7 @@ def pbvv_seq(v, x):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 13.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     if not (isscalar(v) and isscalar(x)):
@@ -1818,7 +1643,7 @@ def pbdn_seq(n, z):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 13.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     if not (isscalar(n) and isscalar(z)):
@@ -1840,7 +1665,7 @@ def ber_zeros(nt):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
@@ -1855,7 +1680,7 @@ def bei_zeros(nt):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
@@ -1870,7 +1695,7 @@ def ker_zeros(nt):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
@@ -1893,7 +1718,7 @@ def berp_zeros(nt):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
@@ -1908,7 +1733,7 @@ def beip_zeros(nt):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
@@ -1923,7 +1748,7 @@ def kerp_zeros(nt):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
@@ -1938,7 +1763,7 @@ def keip_zeros(nt):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
@@ -1956,7 +1781,7 @@ def kelvin_zeros(nt):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
@@ -1982,7 +1807,7 @@ def pro_cv_seq(m, n, c):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     if not (isscalar(m) and isscalar(n) and isscalar(c)):
@@ -2006,7 +1831,7 @@ def obl_cv_seq(m, n, c):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     if not (isscalar(m) and isscalar(n) and isscalar(c)):
@@ -2062,24 +1887,6 @@ def ellipk(m):
 
     """
     return ellipkm1(1 - asarray(m))
-
-
-def agm(a, b):
-    """Arithmetic, Geometric Mean.
-
-    Start with a_0=a and b_0=b and iteratively compute
-
-    a_{n+1} = (a_n+b_n)/2
-    b_{n+1} = sqrt(a_n*b_n)
-
-    until a_n=b_n.   The result is agm(a, b)
-
-    agm(a, b)=agm(b, a)
-    agm(a, a) = a
-    min(a, b) < agm(a, b) < max(a, b)
-    """
-    s = a + b + 0.0
-    return (pi / 4) * s / ellipkm1(4 * a * b / s ** 2)
 
 
 def comb(N, k, exact=False, repetition=False):
@@ -2196,7 +2003,7 @@ def perm(N, k, exact=False):
         return vals
 
 
-# http://stackoverflow.com/a/16327037/125507
+# https://stackoverflow.com/a/16327037
 def _range_prod(lo, hi):
     """
     Product of a range of numbers.
@@ -2415,17 +2222,54 @@ def factorialk(n, k, exact=True):
 
 def zeta(x, q=None, out=None):
     r"""
-    Riemann zeta function.
+    Riemann or Hurwitz zeta function.
 
+    Parameters
+    ----------
+    x : array_like of float
+        Input data, must be real
+    q : array_like of float, optional
+        Input data, must be real.  Defaults to Riemann zeta.
+    out : ndarray, optional
+        Output array for the computed values.
+
+    Returns
+    -------
+    out : array_like
+        Values of zeta(x).
+
+    Notes
+    -----
     The two-argument version is the Hurwitz zeta function:
 
     .. math:: \zeta(x, q) = \sum_{k=0}^{\infty} \frac{1}{(k + q)^x},
 
     Riemann zeta function corresponds to ``q = 1``.
 
-    See also
+    See Also
     --------
     zetac
+
+    Examples
+    --------
+    >>> from scipy.special import zeta, polygamma, factorial
+
+    Some specific values:
+
+    >>> zeta(2), np.pi**2/6
+    (1.6449340668482266, 1.6449340668482264)
+
+    >>> zeta(4), np.pi**4/90
+    (1.0823232337111381, 1.082323233711138)
+
+    Relation to the `polygamma` function:
+
+    >>> m = 3
+    >>> x = 1.25
+    >>> polygamma(m, x)
+    array(2.782144009188397)
+    >>> (-1)**(m+1) * factorial(m) * zeta(m+1, x)
+    2.7821440091883969
 
     """
     if q is None:

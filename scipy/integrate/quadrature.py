@@ -29,6 +29,8 @@ def _cached_roots_legendre(n):
 
     _cached_roots_legendre.cache[n] = roots_legendre(n)
     return _cached_roots_legendre.cache[n]
+
+
 _cached_roots_legendre.cache = dict()
 
 
@@ -74,6 +76,24 @@ def fixed_quad(func, a, b, args=(), n=5):
     cumtrapz : cumulative integration for sampled data
     ode : ODE integrator
     odeint : ODE integrator
+
+    Examples
+    --------
+    >>> from scipy import integrate
+    >>> f = lambda x: x**8
+    >>> integrate.fixed_quad(f, 0.0, 1.0, n=4)
+    (0.1110884353741496, None)
+    >>> integrate.fixed_quad(f, 0.0, 1.0, n=5)
+    (0.11111111111111102, None)
+    >>> print(1/9.0)  # analytical result
+    0.1111111111111111
+
+    >>> integrate.fixed_quad(np.cos, 0.0, np.pi/2, n=4)
+    (0.9999999771971152, None)
+    >>> integrate.fixed_quad(np.cos, 0.0, np.pi/2, n=5)
+    (1.000000000039565, None)
+    >>> np.sin(np.pi/2)-np.sin(0)  # analytical result
+    1.0
 
     """
     x, w = _cached_roots_legendre(n)
@@ -179,6 +199,20 @@ def quadrature(func, a, b, args=(), tol=1.49e-8, rtol=1.49e-8, maxiter=50,
     ode: ODE integrator
     odeint: ODE integrator
 
+    Examples
+    --------
+    >>> from scipy import integrate
+    >>> f = lambda x: x**8
+    >>> integrate.quadrature(f, 0.0, 1.0)
+    (0.11111111111111106, 4.163336342344337e-17)
+    >>> print(1/9.0)  # analytical result
+    0.1111111111111111
+
+    >>> integrate.quadrature(np.cos, 0.0, np.pi/2)
+    (0.9999999999999536, 3.9611425250996035e-11)
+    >>> np.sin(np.pi/2)-np.sin(0)  # analytical result
+    1.0
+
     """
     if not isinstance(args, tuple):
         args = (args,)
@@ -222,7 +256,7 @@ def cumtrapz(y, x=None, dx=1.0, axis=-1, initial=None):
     axis : int, optional
         Specifies the axis to cumulate.  Default is -1 (last axis).
     initial : scalar, optional
-        If given, uses this value as the first value in the returned result.
+        If given, insert this value at the beginning of the returned result.
         Typically this value should be 0.  Default is None, which means no
         value at ``x[0]`` is returned and `res` has one element less than `y`
         along the axis of integration.
@@ -292,7 +326,7 @@ def cumtrapz(y, x=None, dx=1.0, axis=-1, initial=None):
 
         shape = list(res.shape)
         shape[axis] = 1
-        res = np.concatenate([np.ones(shape, dtype=res.dtype) * initial, res],
+        res = np.concatenate([np.full(shape, initial, dtype=res.dtype), res],
                              axis=axis)
 
     return res
@@ -379,6 +413,24 @@ def simps(y, x=None, dx=1, axis=-1, even='avg'):
     exact if the function is a polynomial of order 3 or less.  If
     the samples are not equally spaced, then the result is exact only
     if the function is a polynomial of order 2 or less.
+
+    Examples
+    --------
+    >>> from scipy import integrate
+    >>> x = np.arange(0, 10)
+    >>> y = np.arange(0, 10)
+
+    >>> integrate.simps(y, x)
+    40.5
+
+    >>> y = np.power(x, 3)
+    >>> integrate.simps(y, x)
+    1642.5
+    >>> integrate.quad(lambda x: x**3, 0, 9)[0]
+    1640.25
+
+    >>> integrate.simps(y, x, even='first')
+    1644.5
 
     """
     y = np.asarray(y)
@@ -471,6 +523,29 @@ def romb(y, dx=1.0, axis=-1, show=False):
     ode : ODE integrators
     odeint : ODE integrators
 
+    Examples
+    --------
+    >>> from scipy import integrate
+    >>> x = np.arange(10, 14.25, 0.25)
+    >>> y = np.arange(3, 12)
+
+    >>> integrate.romb(y)
+    56.0
+
+    >>> y = np.sin(np.power(x, 2.5))
+    >>> integrate.romb(y)
+    -0.742561336672229
+
+    >>> integrate.romb(y, show=True)
+    Richardson Extrapolation Table for Romberg Integration
+    ====================================================================
+    -0.81576
+    4.63862  6.45674
+    -1.10581 -3.02062 -3.65245
+    -2.57379 -3.06311 -3.06595 -3.05664
+    -1.34093 -0.92997 -0.78776 -0.75160 -0.74256
+    ====================================================================
+    -0.742561336672229
     """
     y = np.asarray(y)
     nd = len(y.shape)
@@ -519,7 +594,7 @@ def romb(y, dx=1.0, axis=-1, show=False):
             formstr = "%%%d.%df" % (width, precis)
 
             title = "Richardson Extrapolation Table for Romberg Integration"
-            print("", title.center(68), "=" * 68, sep="\n", end="")
+            print("", title.center(68), "=" * 68, sep="\n", end="\n")
             for i in xrange(k+1):
                 for j in xrange(i+1):
                     print(formstr % R[(i, j)], end=" ")
@@ -649,7 +724,7 @@ def romberg(function, a, b, args=(), tol=1.48e-8, rtol=1.48e-8, show=False,
 
     References
     ----------
-    .. [1] 'Romberg's method' http://en.wikipedia.org/wiki/Romberg%27s_method
+    .. [1] 'Romberg's method' https://en.wikipedia.org/wiki/Romberg%27s_method
 
     Examples
     --------
@@ -820,7 +895,7 @@ def newton_cotes(rn, equal=0):
             rn = np.arange(N+1)
         elif np.all(np.diff(rn) == 1):
             equal = 1
-    except:
+    except Exception:
         N = rn
         rn = np.arange(N+1)
         equal = 1

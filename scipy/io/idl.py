@@ -29,6 +29,8 @@
 
 from __future__ import division, print_function, absolute_import
 
+__all__ = ['readsav']
+
 import struct
 import numpy as np
 from numpy.compat import asstr
@@ -281,15 +283,15 @@ def _read_array(f, typecode, array_desc):
                 warnings.warn("Not able to verify number of bytes from header")
 
         # Read bytes as numpy array
-        array = np.fromstring(f.read(array_desc['nbytes']),
-                                dtype=DTYPE_DICT[typecode])
+        array = np.frombuffer(f.read(array_desc['nbytes']),
+                              dtype=DTYPE_DICT[typecode])
 
     elif typecode in [2, 12]:
 
         # These are 2 byte types, need to skip every two as they are not packed
 
-        array = np.fromstring(f.read(array_desc['nbytes']*2),
-                                dtype=DTYPE_DICT[typecode])[1::2]
+        array = np.frombuffer(f.read(array_desc['nbytes']*2),
+                              dtype=DTYPE_DICT[typecode])[1::2]
 
     else:
 

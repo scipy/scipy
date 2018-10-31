@@ -10,8 +10,9 @@ science, and engineering.
 .. toctree::
    :maxdepth: 1
 
-   release
+   install_upgrade
    api
+   release
 
 Tutorial
 --------
@@ -33,8 +34,11 @@ maintenance activities and policies.
 .. toctree::
    :maxdepth: 1
 
+   dev/conduct/code_of_conduct
    hacking
+   building/index
    dev/index
+   dev/governance/governance
 
 To get an overview of where help or new features are desired or planned, see
 the roadmap:

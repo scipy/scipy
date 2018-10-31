@@ -76,6 +76,7 @@ class OdrStop(Exception):
     """
     pass
 
+
 # Backwards compatibility
 odr_error = OdrError
 odr_stop = OdrStop
@@ -563,7 +564,7 @@ class Output(object):
         Array ``y = fcn(x + delta)``.
     res_var : float, optional
         Residual variance.
-    sum_sqare : float, optional
+    sum_square : float, optional
         Sum of squares error.
     sum_square_delta : float, optional
         Sum of squares of delta error.
@@ -740,6 +741,9 @@ class ODR(object):
                 )
         else:
             self.beta0 = _conv(beta0)
+
+        if ifixx is None and data.fix is not None:
+            ifixx = data.fix
 
         self.delta0 = _conv(delta0)
         # These really are 32-bit integers in FORTRAN (gfortran), even on 64-bit
@@ -1056,7 +1060,7 @@ class ODR(object):
         self.iprint = ip[0]*1000 + ip[1]*100 + ip[2]*10 + ip[3]
 
     def run(self):
-        """ Run the fitting routine with all of the information given.
+        """ Run the fitting routine with all of the information given and with ``full_output=1``.
 
         Returns
         -------

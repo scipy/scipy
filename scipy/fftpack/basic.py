@@ -7,9 +7,10 @@ from __future__ import division, print_function, absolute_import
 __all__ = ['fft','ifft','fftn','ifftn','rfft','irfft',
            'fft2','ifft2']
 
-from numpy import zeros, swapaxes
+from numpy import swapaxes, zeros
 import numpy
 from . import _fftpack
+from scipy.fftpack.helper import _init_nd_shape_and_axes_sorted
 
 import atexit
 atexit.register(_fftpack.destroy_zfft_cache)
@@ -95,6 +96,7 @@ def _fake_cfftnd(x, shape, *a, **kw):
     else:
         return _fftpack.zfftnd(x, shape, *a, **kw).astype(numpy.complex64)
 
+
 _DTYPE_TO_FFT = {
 #        numpy.dtype(numpy.float32): _fftpack.crfft,
         numpy.dtype(numpy.float32): _fake_crfft,
@@ -149,14 +151,14 @@ def _fix_shape(x, n, axis):
     if s[axis] > n:
         index = [slice(None)]*len(s)
         index[axis] = slice(0,n)
-        x = x[index]
+        x = x[tuple(index)]
         return x, False
     else:
         index = [slice(None)]*len(s)
         index[axis] = slice(0,s[axis])
         s[axis] = n
         z = zeros(s,x.dtype.char)
-        z[index] = x
+        z[tuple(index)] = x
         return z, True
 
 
@@ -215,8 +217,6 @@ def fft(x, n=None, axis=-1, overwrite_x=False):
 
             y(j) = sum[k=0..n-1] x[k] * exp(-sqrt(-1)*j*k* 2*pi/n), j = 0..n-1
 
-        Note that ``y(-j) = y(n-j).conjugate()``.
-
     See Also
     --------
     ifft : Inverse FFT
@@ -232,10 +232,6 @@ def fft(x, n=None, axis=-1, overwrite_x=False):
     To rearrange the fft output so that the zero-frequency component is
     centered, like [-4, -3, -2, -1,  0,  1,  2,  3], use `fftshift`.
 
-    For `n` even, ``A[n/2]`` contains the sum of the positive and
-    negative-frequency terms.  For `n` even and `x` real, ``A[n/2]`` will
-    always be real.
-
     Both single and double precision routines are implemented.  Half precision
     inputs will be converted to single precision.  Non floating-point inputs
     will be converted to double precision.  Long-double precision inputs are
@@ -243,6 +239,9 @@ def fft(x, n=None, axis=-1, overwrite_x=False):
 
     This function is most efficient when `n` is a power of two, and least
     efficient when `n` is prime.
+
+    Note that if ``x`` is real-valued then ``A[j] == A[n-j].conjugate()``.
+    If ``x`` is real-valued and ``n`` is even then ``A[n/2]`` is real.
 
     If the data type of `x` is real, a "real FFT" algorithm is automatically
     used, which roughly halves the computation time.  To increase efficiency
@@ -333,6 +332,14 @@ def ifft(x, n=None, axis=-1, overwrite_x=False):
     If the data type of `x` is real, a "real IFFT" algorithm is automatically
     used, which roughly halves the computation time.
 
+    Examples
+    --------
+    >>> from scipy.fftpack import fft, ifft
+    >>> import numpy as np
+    >>> x = np.arange(5)
+    >>> np.allclose(ifft(fft(x)), x, atol=1e-15)  # within numerical accuracy.
+    True
+
     """
     tmp = _asfarray(x)
 
@@ -396,11 +403,9 @@ def rfft(x, n=None, axis=-1, overwrite_x=False):
           y(j) = sum[k=0..n-1] x[k] * exp(-sqrt(-1)*j*k*2*pi/n)
           j = 0..n-1
 
-        Note that ``y(-j) == y(n-j).conjugate()``.
-
     See Also
     --------
-    fft, irfft, scipy.fftpack.basic
+    fft, irfft, numpy.fft.rfft
 
     Notes
     -----
@@ -410,6 +415,9 @@ def rfft(x, n=None, axis=-1, overwrite_x=False):
     inputs will be converted to single precision.  Non floating-point inputs
     will be converted to double precision.  Long-double precision inputs are
     not supported.
+
+    To get an output with a complex datatype, consider using the related
+    function `numpy.fft.rfft`.
 
     Examples
     --------
@@ -465,7 +473,7 @@ def irfft(x, n=None, axis=-1, overwrite_x=False):
 
     See Also
     --------
-    rfft, ifft
+    rfft, ifft, numpy.fft.irfft
 
     Notes
     -----
@@ -489,6 +497,18 @@ def irfft(x, n=None, axis=-1, overwrite_x=False):
 
     For details on input parameters, see `rfft`.
 
+    To process (conjugate-symmetric) frequency-domain data with a complex
+    datatype, consider using the related function `numpy.fft.irfft`.
+
+    Examples
+    --------
+    >>> from scipy.fftpack import rfft, irfft
+    >>> a = [1.0, 2.0, 3.0, 4.0, 5.0]
+    >>> irfft(a)
+    array([ 2.6       , -3.16405192,  1.24398433, -1.14955713,  1.46962473])
+    >>> irfft(rfft(a))
+    array([1., 2., 3., 4., 5.])
+
     """
     tmp = _asfarray(x)
     if not numpy.isrealobj(tmp):
@@ -505,53 +525,27 @@ def irfft(x, n=None, axis=-1, overwrite_x=False):
 
 
 def _raw_fftnd(x, s, axes, direction, overwrite_x, work_function):
-    """ Internal auxiliary function for fftnd, ifftnd."""
-    if s is None:
-        if axes is None:
-            s = x.shape
-        else:
-            s = numpy.take(x.shape, axes)
-
-    s = tuple(s)
-    if axes is None:
-        noaxes = True
-        axes = list(range(-x.ndim, 0))
-    else:
-        noaxes = False
-    if len(axes) != len(s):
-        raise ValueError("when given, axes and shape arguments "
-                         "have to be of the same length")
-
-    for dim in s:
-        if dim < 1:
-            raise ValueError("Invalid number of FFT data points "
-                             "(%s) specified." % (s,))
+    """Internal auxiliary function for fftnd, ifftnd."""
+    noaxes = axes is None
+    s, axes = _init_nd_shape_and_axes_sorted(x, s, axes)
 
     # No need to swap axes, array is in C order
     if noaxes:
-        for i in axes:
-            x, copy_made = _fix_shape(x, s[i], i)
+        for ax in axes:
+            x, copy_made = _fix_shape(x, s[ax], ax)
             overwrite_x = overwrite_x or copy_made
-        return work_function(x,s,direction,overwrite_x=overwrite_x)
-
-    # We ordered axes, because the code below to push axes at the end of the
-    # array assumes axes argument is in ascending order.
-    a = numpy.array(axes, numpy.intc)
-    abs_axes = numpy.where(a < 0, a + x.ndim, a)
-    id_ = numpy.argsort(abs_axes)
-    axes = [axes[i] for i in id_]
-    s = [s[i] for i in id_]
+        return work_function(x, s, direction, overwrite_x=overwrite_x)
 
     # Swap the request axes, last first (i.e. First swap the axis which ends up
     # at -1, then at -2, etc...), such as the request axes on which the
     # operation is carried become the last ones
-    for i in range(1, len(axes)+1):
+    for i in range(1, axes.size+1):
         x = numpy.swapaxes(x, axes[-i], -i)
 
     # We can now operate on the axes waxes, the p last axes (p = len(axes)), by
     # fixing the shape of the input array to 1 for any axis the fft is not
     # carried upon.
-    waxes = list(range(x.ndim - len(axes), x.ndim))
+    waxes = list(range(x.ndim - axes.size, x.ndim))
     shape = numpy.ones(x.ndim)
     shape[waxes] = s
 
@@ -579,22 +573,24 @@ def fftn(x, shape=None, axes=None, overwrite_x=False):
          x[k_1,..,k_d] * prod[i=1..d] exp(-sqrt(-1)*2*pi/n_i * j_i * k_i)
 
     where d = len(x.shape) and n = x.shape.
-    Note that ``y[..., -j_i, ...] = y[..., n_i-j_i, ...].conjugate()``.
 
     Parameters
     ----------
     x : array_like
         The (n-dimensional) array to transform.
-    shape : tuple of ints, optional
+    shape : int or array_like of ints or None, optional
         The shape of the result.  If both `shape` and `axes` (see below) are
         None, `shape` is ``x.shape``; if `shape` is None but `axes` is
         not None, then `shape` is ``scipy.take(x.shape, axes, axis=0)``.
         If ``shape[i] > x.shape[i]``, the i-th dimension is padded with zeros.
         If ``shape[i] < x.shape[i]``, the i-th dimension is truncated to
         length ``shape[i]``.
-    axes : array_like of ints, optional
+        If any element of `shape` is -1, the size of the corresponding
+        dimension of `x` is used.
+    axes : int or array_like of ints or None, optional
         The axes of `x` (`y` if `shape` is not None) along which the
         transform is applied.
+        The default is over all axes.
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed.  Default is False.
 
@@ -609,6 +605,9 @@ def fftn(x, shape=None, axes=None, overwrite_x=False):
 
     Notes
     -----
+    If ``x`` is real-valued, then
+    ``y[..., j_i, ...] == y[..., n_i-j_i, ...].conjugate()``.
+
     Both single and double precision routines are implemented.  Half precision
     inputs will be converted to single precision.  Non floating-point inputs
     will be converted to double precision.  Long-double precision inputs are
@@ -637,13 +636,14 @@ def _raw_fftn_dispatch(x, shape, axes, overwrite_x, direction):
         overwrite_x = 1
 
     overwrite_x = overwrite_x or _datacopied(tmp, x)
-    return _raw_fftnd(tmp,shape,axes,direction,overwrite_x,work_function)
+    return _raw_fftnd(tmp, shape, axes, direction, overwrite_x, work_function)
 
 
 def ifftn(x, shape=None, axes=None, overwrite_x=False):
     """
-    Return inverse multi-dimensional discrete Fourier transform of
-    arbitrary type sequence x.
+    Return inverse multi-dimensional discrete Fourier transform.
+
+    The sequence can be of an arbitrary type.
 
     The returned array contains::
 
@@ -657,6 +657,14 @@ def ifftn(x, shape=None, axes=None, overwrite_x=False):
     See Also
     --------
     fftn : for detailed information.
+
+    Examples
+    --------
+    >>> from scipy.fftpack import fftn, ifftn
+    >>> import numpy as np
+    >>> y = (-np.arange(16), 8 - np.arange(16), np.arange(16))
+    >>> np.allclose(y, ifftn(fftn(y)))
+    True
 
     """
     return _raw_fftn_dispatch(x, shape, axes, overwrite_x, -1)

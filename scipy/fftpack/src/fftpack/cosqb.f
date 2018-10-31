@@ -1,5 +1,7 @@
       SUBROUTINE COSQB (N,X,WSAVE)
-      DIMENSION       X(*)       ,WSAVE(*)
+      IMPLICIT NONE
+      INTEGER :: N
+      REAL :: X(*), WSAVE(*), TSQRT2, X1
       DATA TSQRT2 /2.82842712474619/
       IF (N.lt.2) GO TO 101
       IF (N.eq.2) GO TO 102
@@ -14,7 +16,9 @@
       RETURN
       END
       SUBROUTINE COSQB1 (N,X,W,XH)
-      DIMENSION       X(1)       ,W(1)       ,XH(1)
+      IMPLICIT NONE
+      INTEGER :: N, I, K, KC, MODN, NP2, NS2
+      REAL :: X(1), W(1), XH(1), XIM1
       NS2 = (N+1)/2
       NP2 = N+2
       DO 101 I=3,N,2

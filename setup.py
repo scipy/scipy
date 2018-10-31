@@ -16,13 +16,14 @@ give SciPy a try!
 
 """
 
-DOCLINES = __doc__.split("\n")
+DOCLINES = (__doc__ or '').split("\n")
 
 import os
 import sys
 import subprocess
 import textwrap
 import warnings
+import sysconfig
 
 
 if sys.version_info[:2] < (2, 7) or (3, 0) <= sys.version_info[:2] < (3, 4):
@@ -41,11 +42,8 @@ License :: OSI Approved :: BSD License
 Programming Language :: C
 Programming Language :: Python
 Programming Language :: Python :: 2
-Programming Language :: Python :: 2.6
 Programming Language :: Python :: 2.7
 Programming Language :: Python :: 3
-Programming Language :: Python :: 3.2
-Programming Language :: Python :: 3.3
 Programming Language :: Python :: 3.4
 Programming Language :: Python :: 3.5
 Programming Language :: Python :: 3.6
@@ -59,7 +57,7 @@ Operating System :: MacOS
 """
 
 MAJOR = 1
-MINOR = 0
+MINOR = 2
 MICRO = 0
 ISRELEASED = False
 VERSION = '%d.%d.%d' % (MAJOR, MINOR, MICRO)
@@ -148,10 +146,11 @@ if not release:
     finally:
         a.close()
 
+
 try:
     from sphinx.setup_command import BuildDoc
     HAVE_SPHINX = True
-except:
+except Exception:
     HAVE_SPHINX = False
 
 if HAVE_SPHINX:
@@ -195,6 +194,52 @@ class sdist_checked(sdist):
         sdist.run(self)
 
 
+def get_build_ext_override():
+    """
+    Custom build_ext command to tweak extension building.
+    """
+    from numpy.distutils.command.build_ext import build_ext as old_build_ext
+
+    class build_ext(old_build_ext):
+        def build_extension(self, ext):
+            # When compiling with GNU compilers, use a version script to
+            # hide symbols during linking.
+            if self.__is_using_gnu_linker(ext):
+                export_symbols = self.get_export_symbols(ext)
+                text = '{global: %s; local: *; };' % (';'.join(export_symbols),)
+
+                script_fn = os.path.join(self.build_temp, 'link-version-{}.map'.format(ext.name))
+                with open(script_fn, 'w') as f:
+                    f.write(text)
+                    ext.extra_link_args.append('-Wl,--version-script=' + script_fn)
+
+            old_build_ext.build_extension(self, ext)
+
+        def __is_using_gnu_linker(self, ext):
+            if not sys.platform.startswith('linux'):
+                return False
+
+            # Fortran compilation with gfortran uses it also for
+            # linking. For the C compiler, we detect gcc in a similar
+            # way as distutils does it in
+            # UnixCCompiler.runtime_library_dir_option
+            if ext.language == 'f90':
+                is_gcc = (self._f90_compiler.compiler_type in ('gnu', 'gnu95'))
+            elif ext.language == 'f77':
+                is_gcc = (self._f77_compiler.compiler_type in ('gnu', 'gnu95'))
+            else:
+                is_gcc = False
+                if self.compiler.compiler_type == 'unix':
+                    cc = sysconfig.get_config_var("CC")
+                    if not cc:
+                        cc = ""
+                    compiler_name = os.path.basename(cc)
+                    is_gcc = "gcc" in compiler_name or "g++" in compiler_name
+            return is_gcc and sysconfig.get_config_var('GNULD') == 'yes'
+
+    return build_ext
+
+
 def generate_cython():
     cwd = os.path.abspath(os.path.dirname(__file__))
     print("Cythonizing sources")
@@ -212,7 +257,9 @@ def parse_setuppy_commands():
     Return a boolean value for whether or not to run the build or not (avoid
     parsing Cython and template files if False).
     """
-    if len(sys.argv) < 2:
+    args = sys.argv[1:]
+
+    if not args:
         # User forgot to give an argument probably, let setuptools handle that.
         return True
 
@@ -222,12 +269,9 @@ def parse_setuppy_commands():
                      '--contact-email', '--url', '--license', '--description',
                      '--long-description', '--platforms', '--classifiers',
                      '--keywords', '--provides', '--requires', '--obsoletes']
-    # Add commands that do more than print info, but also don't need Cython and
-    # template parsing.
-    info_commands.extend(['egg_info', 'install_egg_info', 'rotate'])
 
     for command in info_commands:
-        if command in sys.argv[1:]:
+        if command in args:
             return False
 
     # Note that 'alias', 'saveopts' and 'setopt' commands also seem to work
@@ -239,12 +283,12 @@ def parse_setuppy_commands():
                      'build_sphinx')
 
     for command in good_commands:
-        if command in sys.argv[1:]:
+        if command in args:
             return True
 
     # The following commands are supported, but we need to show more
     # useful messages to the user
-    if 'install' in sys.argv[1:]:
+    if 'install' in args:
         print(textwrap.dedent("""
             Note: if you need reliable uninstall behavior, then install
             with pip instead of using `setup.py install`:
@@ -256,7 +300,7 @@ def parse_setuppy_commands():
             """))
         return True
 
-    if '--help' in sys.argv[1:] or '-h' in sys.argv[1]:
+    if '--help' in args or '-h' in sys.argv[1]:
         print(textwrap.dedent("""
             SciPy-specific help
             -------------------
@@ -273,6 +317,7 @@ def parse_setuppy_commands():
             ------------------------
             """))
         return False
+
 
     # The following commands aren't supported.  They can only be executed when
     # the user explicitly adds a --force command-line argument.
@@ -313,11 +358,18 @@ def parse_setuppy_commands():
         bad_commands[command] = "`setup.py %s` is not supported" % command
 
     for command in bad_commands.keys():
-        if command in sys.argv[1:]:
+        if command in args:
             print(textwrap.dedent(bad_commands[command]) +
                   "\nAdd `--force` to your command to use it anyway if you "
                   "must (unsupported).\n")
             sys.exit(1)
+
+    # Commands that do more than print info, but also don't need Cython and
+    # template parsing.
+    other_commands = ['egg_info', 'install_egg_info', 'rotate']
+    for command in other_commands:
+        if command in args:
+            return False
 
     # If we got here, we didn't detect what setup.py command was given
     warnings.warn("Unrecognized setuptools command, proceeding with "
@@ -327,6 +379,19 @@ def parse_setuppy_commands():
 
 def configuration(parent_package='', top_path=None):
     from numpy.distutils.misc_util import Configuration
+    from scipy._build_utils.system_info import get_info, NotFoundError, numpy_info
+    from numpy.distutils.misc_util import Configuration, get_numpy_include_dirs
+    from scipy._build_utils import (get_g77_abi_wrappers, split_fortran_files)
+
+    lapack_opt = get_info('lapack_opt')
+
+    if not lapack_opt:
+        msg = 'No lapack/blas resources found.'
+        if sys.platform == "darwin":
+            msg = ('No lapack/blas resources found. '
+                   'Note: Accelerate is no longer supported.')
+        raise NotFoundError(msg)
+
     config = Configuration(None, parent_package, top_path)
     config.set_options(ignore_setup_xxx_py=True,
                        assume_default_configuration=True,
@@ -384,9 +449,13 @@ def setup_package():
 
     if "--force" in sys.argv:
         run_build = True
+        sys.argv.remove('--force')
     else:
         # Raise errors for unsupported commands, improve help output, etc.
         run_build = parse_setuppy_commands()
+
+    # Disable OSX Accelerate, it has too old LAPACK
+    os.environ['ACCELERATE'] = 'None'
 
     # This import is here because it needs to be done before importing setup()
     # from numpy.distutils, but after the MANIFEST removing and sdist import
@@ -395,6 +464,10 @@ def setup_package():
 
     if run_build:
         from numpy.distutils.core import setup
+
+        # Customize extension building
+        cmdclass['build_ext'] = get_build_ext_override()
+
         cwd = os.path.abspath(os.path.dirname(__file__))
         if not os.path.exists(os.path.join(cwd, 'PKG-INFO')):
             # Generate Cython sources, unless building from source release

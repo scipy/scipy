@@ -3,32 +3,42 @@
 
 from __future__ import division, print_function, absolute_import
 
-import warnings
-
+import itertools
 import numpy as np
 
-from numpy.testing import (TestCase, assert_equal, assert_array_equal,
-     assert_, assert_allclose, assert_raises, run_module_suite)
+from numpy.testing import (assert_equal, assert_array_equal,
+     assert_, assert_allclose)
+import pytest
+from pytest import raises as assert_raises
+from scipy._lib._numpy_compat import suppress_warnings
 
-from numpy import zeros, arange, array, abs, max, ones, eye, iscomplexobj
+from numpy import zeros, arange, array, ones, eye, iscomplexobj
 from scipy.linalg import norm
 from scipy.sparse import spdiags, csr_matrix, SparseEfficiencyWarning
 
 from scipy.sparse.linalg import LinearOperator, aslinearoperator
-from scipy.sparse.linalg.isolve import cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres
+from scipy.sparse.linalg.isolve import cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres, gcrotmk
 
 # TODO check that method preserve shape and type
 # TODO test both preconditioner methods
 
 
 class Case(object):
-    def __init__(self, name, A, skip=None):
+    def __init__(self, name, A, b=None, skip=None, nonconvergence=None):
         self.name = name
         self.A = A
+        if b is None:
+            self.b = arange(A.shape[0], dtype=float)
+        else:
+            self.b = b
         if skip is None:
             self.skip = []
         else:
             self.skip = skip
+        if nonconvergence is None:
+            self.nonconvergence = []
+        else:
+            self.nonconvergence = nonconvergence
 
     def __repr__(self):
         return "<%s>" % self.name
@@ -37,7 +47,7 @@ class Case(object):
 class IterativeParams(object):
     def __init__(self):
         # list of tuples (solver, symmetric, positive_definite )
-        solvers = [cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres]
+        solvers = [cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres, gcrotmk]
         sym_solvers = [minres, cg]
         posdef_solvers = [cg]
         real_solvers = [minres]
@@ -136,20 +146,33 @@ class IterativeParams(object):
         self.cases.append(Case("nonsymposdef", A.astype('F'),
                                skip=sym_solvers+[cgs, qmr, bicg]))
 
+        # Symmetric, non-pd, hitting cgs/bicg/bicgstab/qmr breakdown
+        A = np.array([[0, 0, 0, 0, 0, 1, -1, -0, -0, -0, -0],
+                      [0, 0, 0, 0, 0, 2, -0, -1, -0, -0, -0],
+                      [0, 0, 0, 0, 0, 2, -0, -0, -1, -0, -0],
+                      [0, 0, 0, 0, 0, 2, -0, -0, -0, -1, -0],
+                      [0, 0, 0, 0, 0, 1, -0, -0, -0, -0, -1],
+                      [1, 2, 2, 2, 1, 0, -0, -0, -0, -0, -0],
+                      [-1, 0, 0, 0, 0, 0, -1, -0, -0, -0, -0],
+                      [0, -1, 0, 0, 0, 0, -0, -1, -0, -0, -0],
+                      [0, 0, -1, 0, 0, 0, -0, -0, -1, -0, -0],
+                      [0, 0, 0, -1, 0, 0, -0, -0, -0, -1, -0],
+                      [0, 0, 0, 0, -1, 0, -0, -0, -0, -0, -1]], dtype=float)
+        b = np.array([0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0], dtype=float)
+        assert (A == A.T).all()
+        self.cases.append(Case("sym-nonpd", A, b,
+                               skip=posdef_solvers,
+                               nonconvergence=[cgs,bicg,bicgstab,qmr]))
 
-params = None
 
-
-def setup_module():
-    global params
-    params = IterativeParams()
+params = IterativeParams()
 
 
 def check_maxiter(solver, case):
     A = case.A
     tol = 1e-12
 
-    b = arange(A.shape[0], dtype=float)
+    b = case.b
     x0 = 0*b
 
     residuals = []
@@ -157,10 +180,10 @@ def check_maxiter(solver, case):
     def callback(x):
         residuals.append(norm(b - case.A*x))
 
-    x, info = solver(A, b, x0=x0, tol=tol, maxiter=3, callback=callback)
+    x, info = solver(A, b, x0=x0, tol=tol, maxiter=1, callback=callback)
 
-    assert_equal(len(residuals), 3)
-    assert_equal(info, 3)
+    assert_equal(len(residuals), 1)
+    assert_equal(info, 1)
 
 
 def test_maxiter():
@@ -168,7 +191,9 @@ def test_maxiter():
     for solver in params.solvers:
         if solver in case.skip:
             continue
-        yield check_maxiter, solver, case
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, ".*called without specifying.*")
+            check_maxiter(solver, case)
 
 
 def assert_normclose(a, b, tol=1e-8):
@@ -186,14 +211,18 @@ def check_convergence(solver, case):
     else:
         tol = 1e-2
 
-    b = arange(A.shape[0], dtype=A.dtype)
+    b = case.b
     x0 = 0*b
 
     x, info = solver(A, b, x0=x0, tol=tol)
 
     assert_array_equal(x0, 0*b)  # ensure that x0 is not overwritten
-    assert_equal(info,0)
-    assert_normclose(A.dot(x), b, tol=tol)
+    if solver not in case.nonconvergence:
+        assert_equal(info,0)
+        assert_normclose(A.dot(x), b, tol=tol)
+    else:
+        assert_(info != 0)
+        assert_(np.linalg.norm(A.dot(x) - b) <= np.linalg.norm(b))
 
 
 def test_convergence():
@@ -201,7 +230,9 @@ def test_convergence():
         for case in params.cases:
             if solver in case.skip:
                 continue
-            yield check_convergence, solver, case
+            with suppress_warnings() as sup:
+                sup.filter(DeprecationWarning, ".*called without specifying.*")
+                check_convergence(solver, case)
 
 
 def check_precond_dummy(solver, case):
@@ -216,7 +247,7 @@ def check_precond_dummy(solver, case):
     M,N = A.shape
     D = spdiags([1.0/A.diagonal()], [0], M, N)
 
-    b = arange(A.shape[0], dtype=float)
+    b = case.b
     x0 = 0*b
 
     precond = LinearOperator(A.shape, identity, rmatvec=identity)
@@ -242,7 +273,65 @@ def test_precond_dummy():
     for solver in params.solvers:
         if solver in case.skip:
             continue
-        yield check_precond_dummy, solver, case
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, ".*called without specifying.*")
+            check_precond_dummy(solver, case)
+
+
+def check_precond_inverse(solver, case):
+    tol = 1e-8
+
+    def inverse(b,which=None):
+        """inverse preconditioner"""
+        A = case.A
+        if not isinstance(A, np.ndarray):
+            A = A.todense()
+        return np.linalg.solve(A, b)
+
+    def rinverse(b,which=None):
+        """inverse preconditioner"""
+        A = case.A
+        if not isinstance(A, np.ndarray):
+            A = A.todense()
+        return np.linalg.solve(A.T, b)
+
+    matvec_count = [0]
+
+    def matvec(b):
+        matvec_count[0] += 1
+        return case.A.dot(b)
+
+    def rmatvec(b):
+        matvec_count[0] += 1
+        return case.A.T.dot(b)
+
+    b = case.b
+    x0 = 0*b
+
+    A = LinearOperator(case.A.shape, matvec, rmatvec=rmatvec)
+    precond = LinearOperator(case.A.shape, inverse, rmatvec=rinverse)
+
+    # Solve with preconditioner
+    matvec_count = [0]
+    x, info = solver(A, b, M=precond, x0=x0, tol=tol)
+
+    assert_equal(info, 0)
+    assert_normclose(case.A.dot(x), b, tol)
+
+    # Solution should be nearly instant
+    assert_(matvec_count[0] <= 3, repr(matvec_count))
+
+
+def test_precond_inverse():
+    case = params.Poisson1D
+    for solver in params.solvers:
+        if solver in case.skip:
+            continue
+        if solver is qmr:
+            continue
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, ".*called without specifying.*")
+            check_precond_inverse(solver, case)
 
 
 def test_gmres_basic():
@@ -251,16 +340,20 @@ def test_gmres_basic():
     b[0] = 1
     x = np.linalg.solve(A, b)
 
-    x_gm, err = gmres(A, b, restart=5, maxiter=1)
+    with suppress_warnings() as sup:
+        sup.filter(DeprecationWarning, ".*called without specifying.*")
+        x_gm, err = gmres(A, b, restart=5, maxiter=1)
 
     assert_allclose(x_gm[0], 0.359, rtol=1e-2)
 
 
 def test_reentrancy():
     non_reentrant = [cg, cgs, bicg, bicgstab, gmres, qmr]
-    reentrant = [lgmres, minres]
+    reentrant = [lgmres, minres, gcrotmk]
     for solver in reentrant + non_reentrant:
-        yield _check_reentrancy, solver, solver in reentrant
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, ".*called without specifying.*")
+            _check_reentrancy(solver, solver in reentrant)
 
 
 def _check_reentrancy(solver, is_reentrant):
@@ -281,51 +374,160 @@ def _check_reentrancy(solver, is_reentrant):
         assert_allclose(y, [1, 1, 1])
 
 
+@pytest.mark.parametrize("solver", [cg, cgs, bicg, bicgstab, gmres, qmr, lgmres, gcrotmk])
+def test_atol(solver):
+    # TODO: minres. It didn't historically use absolute tolerances, so
+    # fixing it is less urgent.
+
+    np.random.seed(1234)
+    A = np.random.rand(10, 10)
+    A = A.dot(A.T) + 10 * np.eye(10)
+    b = 1e3 * np.random.rand(10)
+    b_norm = np.linalg.norm(b)
+
+    tols = np.r_[0, np.logspace(np.log10(1e-10), np.log10(1e2), 7), np.inf]
+
+    # Check effect of badly scaled preconditioners
+    M0 = np.random.randn(10, 10)
+    M0 = M0.dot(M0.T)
+    Ms = [None, 1e-6 * M0, 1e6 * M0]
+
+    for M, tol, atol in itertools.product(Ms, tols, tols):
+        if tol == 0 and atol == 0:
+            continue
+
+        if solver is qmr:
+            if M is not None:
+                M = aslinearoperator(M)
+                M2 = aslinearoperator(np.eye(10))
+            else:
+                M2 = None
+            x, info = solver(A, b, M1=M, M2=M2, tol=tol, atol=atol)
+        else:
+            x, info = solver(A, b, M=M, tol=tol, atol=atol)
+        assert_equal(info, 0)
+
+        residual = A.dot(x) - b
+        err = np.linalg.norm(residual)
+        atol2 = tol * b_norm
+        assert_(err <= max(atol, atol2))
+
+
+@pytest.mark.parametrize("solver", [cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres, gcrotmk])
+def test_zero_rhs(solver):
+    np.random.seed(1234)
+    A = np.random.rand(10, 10)
+    A = A.dot(A.T) + 10 * np.eye(10)
+
+    b = np.zeros(10)
+    tols = np.r_[np.logspace(np.log10(1e-10), np.log10(1e2), 7)]
+
+    for tol in tols:
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, ".*called without specifying.*")
+
+            x, info = solver(A, b, tol=tol)
+            assert_equal(info, 0)
+            assert_allclose(x, 0, atol=1e-15)
+
+            x, info = solver(A, b, tol=tol, x0=ones(10))
+            assert_equal(info, 0)
+            assert_allclose(x, 0, atol=tol)
+
+            if solver is not minres:
+                x, info = solver(A, b, tol=tol, atol=0, x0=ones(10))
+                if info == 0:
+                    assert_allclose(x, 0)
+
+                x, info = solver(A, b, tol=tol, atol=tol)
+                assert_equal(info, 0)
+                assert_allclose(x, 0, atol=1e-300)
+
+                x, info = solver(A, b, tol=tol, atol=0)
+                assert_equal(info, 0)
+                assert_allclose(x, 0, atol=1e-300)
+
+
+@pytest.mark.parametrize("solver", [
+    gmres, qmr, lgmres,
+    pytest.param(cgs, marks=pytest.mark.xfail),
+    pytest.param(bicg, marks=pytest.mark.xfail),
+    pytest.param(bicgstab, marks=pytest.mark.xfail),
+    pytest.param(gcrotmk, marks=pytest.mark.xfail)])
+def test_maxiter_worsening(solver):
+    # Check error does not grow (boundlessly) with increasing maxiter.
+    # This can occur due to the solvers hitting close to breakdown,
+    # which they should detect and halt as necessary.
+    # cf. gh-9100
+
+    # Singular matrix, rhs numerically not in range
+    A = np.array([[-0.1112795288033378, 0, 0, 0.16127952880333685],
+                  [0, -0.13627952880333782+6.283185307179586j, 0, 0],
+                  [0, 0, -0.13627952880333782-6.283185307179586j, 0],
+                  [0.1112795288033368, 0j, 0j, -0.16127952880333785]])
+    v = np.ones(4)
+    best_error = np.inf
+
+    for maxiter in range(1, 20):
+        x, info = solver(A, v, maxiter=maxiter, tol=1e-8, atol=0)
+
+        if info == 0:
+            assert_(np.linalg.norm(A.dot(x) - v) <= 1e-8*np.linalg.norm(v))
+
+        error = np.linalg.norm(A.dot(x) - v)
+        best_error = min(best_error, error)
+
+        # Check with slack
+        assert_(error <= 5*best_error)
+
+
 #------------------------------------------------------------------------------
 
-class TestQMR(TestCase):
+class TestQMR(object):
     def test_leftright_precond(self):
         """Check that QMR works with left and right preconditioners"""
 
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
-            from scipy.sparse.linalg.dsolve import splu
-            from scipy.sparse.linalg.interface import LinearOperator
+        from scipy.sparse.linalg.dsolve import splu
+        from scipy.sparse.linalg.interface import LinearOperator
 
-            n = 100
+        n = 100
 
-            dat = ones(n)
-            A = spdiags([-2*dat, 4*dat, -dat], [-1,0,1],n,n)
-            b = arange(n,dtype='d')
+        dat = ones(n)
+        A = spdiags([-2*dat, 4*dat, -dat], [-1,0,1],n,n)
+        b = arange(n,dtype='d')
 
-            L = spdiags([-dat/2, dat], [-1,0], n, n)
-            U = spdiags([4*dat, -dat], [0,1], n, n)
+        L = spdiags([-dat/2, dat], [-1,0], n, n)
+        U = spdiags([4*dat, -dat], [0,1], n, n)
 
+        with suppress_warnings() as sup:
+            sup.filter(SparseEfficiencyWarning, "splu requires CSC matrix format")
             L_solver = splu(L)
             U_solver = splu(U)
 
-            def L_solve(b):
-                return L_solver.solve(b)
+        def L_solve(b):
+            return L_solver.solve(b)
 
-            def U_solve(b):
-                return U_solver.solve(b)
+        def U_solve(b):
+            return U_solver.solve(b)
 
-            def LT_solve(b):
-                return L_solver.solve(b,'T')
+        def LT_solve(b):
+            return L_solver.solve(b,'T')
 
-            def UT_solve(b):
-                return U_solver.solve(b,'T')
+        def UT_solve(b):
+            return U_solver.solve(b,'T')
 
-            M1 = LinearOperator((n,n), matvec=L_solve, rmatvec=LT_solve)
-            M2 = LinearOperator((n,n), matvec=U_solve, rmatvec=UT_solve)
+        M1 = LinearOperator((n,n), matvec=L_solve, rmatvec=LT_solve)
+        M2 = LinearOperator((n,n), matvec=U_solve, rmatvec=UT_solve)
 
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, ".*called without specifying.*")
             x,info = qmr(A, b, tol=1e-8, maxiter=15, M1=M1, M2=M2)
 
-            assert_equal(info,0)
-            assert_normclose(A*x, b, tol=1e-8)
+        assert_equal(info,0)
+        assert_normclose(A*x, b, tol=1e-8)
 
 
-class TestGMRES(TestCase):
+class TestGMRES(object):
     def test_callback(self):
 
         def store_residual(r, rvec):
@@ -338,23 +540,96 @@ class TestGMRES(TestCase):
         rvec = zeros(maxiter+1)
         rvec[0] = 1.0
         callback = lambda r:store_residual(r, rvec)
-        x,flag = gmres(A, b, x0=zeros(A.shape[0]), tol=1e-16, maxiter=maxiter, callback=callback)
-        diff = max(abs((rvec - array([1.0, 0.81649658092772603]))))
-        assert_(diff < 1e-5)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, ".*called without specifying.*")
+            x,flag = gmres(A, b, x0=zeros(A.shape[0]), tol=1e-16, maxiter=maxiter, callback=callback)
+
+        # Expected output from Scipy 1.0.0
+        assert_allclose(rvec, array([1.0, 0.81649658092772603]), rtol=1e-10)
+
+        # Test preconditioned callback
+        M = 1e-3 * np.eye(A.shape[0])
+        rvec = zeros(maxiter+1)
+        rvec[0] = 1.0
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, ".*called without specifying.*")
+            x, flag = gmres(A, b, M=M, tol=1e-16, maxiter=maxiter, callback=callback)
+
+        # Expected output from Scipy 1.0.0 (callback has preconditioned residual!)
+        assert_allclose(rvec, array([1.0, 1e-3 * 0.81649658092772603]), rtol=1e-10)
 
     def test_abi(self):
         # Check we don't segfault on gmres with complex argument
         A = eye(2)
         b = ones(2)
-        r_x, r_info = gmres(A, b)
-        r_x = r_x.astype(complex)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, ".*called without specifying.*")
+            r_x, r_info = gmres(A, b)
+            r_x = r_x.astype(complex)
 
-        x, info = gmres(A.astype(complex), b.astype(complex))
+            x, info = gmres(A.astype(complex), b.astype(complex))
 
         assert_(iscomplexobj(x))
         assert_allclose(r_x, x)
         assert_(r_info == info)
 
+    def test_atol_legacy(self):
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, ".*called without specifying.*")
 
-if __name__ == "__main__":
-    run_module_suite()
+            # Check the strange legacy behavior: the tolerance is interpreted
+            # as atol, but only for the initial residual
+            A = eye(2)
+            b = 1e-6 * ones(2)
+            x, info = gmres(A, b, tol=1e-5)
+            assert_array_equal(x, np.zeros(2))
+
+            A = eye(2)
+            b = ones(2)
+            x, info = gmres(A, b, tol=1e-5)
+            assert_(np.linalg.norm(A.dot(x) - b) <= 1e-5*np.linalg.norm(b))
+            assert_allclose(x, b, atol=0, rtol=1e-8)
+
+            rndm = np.random.RandomState(12345)
+            A = rndm.rand(30, 30)
+            b = 1e-6 * ones(30)
+            x, info = gmres(A, b, tol=1e-7, restart=20)
+            assert_(np.linalg.norm(A.dot(x) - b) > 1e-7)
+
+        A = eye(2)
+        b = 1e-10 * ones(2)
+        x, info = gmres(A, b, tol=1e-8, atol=0)
+        assert_(np.linalg.norm(A.dot(x) - b) <= 1e-8*np.linalg.norm(b))
+
+    def test_defective_precond_breakdown(self):
+        # Breakdown due to defective preconditioner
+        M = np.eye(3)
+        M[2,2] = 0
+
+        b = np.array([0, 1, 1])
+        x = np.array([1, 0, 0])
+        A = np.diag([2, 3, 4])
+
+        x, info = gmres(A, b, x0=x, M=M, tol=1e-15, atol=0)
+
+        # Should not return nans, nor terminate with false success
+        assert_(not np.isnan(x).any())
+        if info == 0:
+            assert_(np.linalg.norm(A.dot(x) - b) <= 1e-15*np.linalg.norm(b))
+
+        # The solution should be OK outside null space of M
+        assert_allclose(M.dot(A.dot(x)), M.dot(b))
+
+    def test_defective_matrix_breakdown(self):
+        # Breakdown due to defective matrix
+        A = np.array([[0, 1, 0], [1, 0, 0], [0, 0, 0]])
+        b = np.array([1, 0, 1])
+        x, info = gmres(A, b, tol=1e-8, atol=0)
+
+        # Should not return nans, nor terminate with false success
+        assert_(not np.isnan(x).any())
+        if info == 0:
+            assert_(np.linalg.norm(A.dot(x) - b) <= 1e-8*np.linalg.norm(b))
+
+        # The solution should be OK outside null space of A
+        assert_allclose(A.dot(A.dot(x)), A.dot(b))

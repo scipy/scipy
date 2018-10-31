@@ -9,6 +9,8 @@ the Bellman-Ford algorithm, or Johnson's Algorithm.
 
 # Author: Jake Vanderplas  -- <vanderplas@astro.washington.edu>
 # License: BSD, (C) 2011
+from __future__ import absolute_import
+
 import warnings
 
 import numpy as np
@@ -123,6 +125,32 @@ def shortest_path(csgraph, method='auto',
     do not work for graphs with direction-dependent distances when
     directed == False.  i.e., if csgraph[i,j] and csgraph[j,i] are non-equal
     edges, method='D' may yield an incorrect result.
+
+    Examples
+    --------
+    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse.csgraph import shortest_path
+
+    >>> graph = [
+    ... [0, 1 , 2, 0],
+    ... [0, 0, 0, 1],
+    ... [2, 0, 0, 3],
+    ... [0, 0, 0, 0]
+    ... ]
+    >>> graph = csr_matrix(graph)
+    >>> print(graph)
+      (0, 1)	1
+      (0, 2)	2
+      (1, 3)	1
+      (2, 0)	2
+      (2, 3)	3
+
+    >>> dist_matrix, predecessors = shortest_path(csgraph=graph, directed=False, indices=0, return_predecessors=True)
+    >>> dist_matrix
+    array([ 0.,  1.,  2.,  2.])
+    >>> predecessors
+    array([-9999,     0,     0,     1], dtype=int32)
+
     """
     # validate here to catch errors early but don't store the result;
     # we'll validate again later
@@ -229,6 +257,39 @@ def floyd_warshall(csgraph, directed=True,
     ------
     NegativeCycleError:
         if there are negative cycles in the graph
+
+    Examples
+    --------
+    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse.csgraph import floyd_warshall
+
+    >>> graph = [
+    ... [0, 1 , 2, 0],
+    ... [0, 0, 0, 1],
+    ... [2, 0, 0, 3],
+    ... [0, 0, 0, 0]
+    ... ]
+    >>> graph = csr_matrix(graph)
+    >>> print(graph)
+      (0, 1)	1
+      (0, 2)	2
+      (1, 3)	1
+      (2, 0)	2
+      (2, 3)	3
+
+
+    >>> dist_matrix, predecessors = floyd_warshall(csgraph=graph, directed=False, return_predecessors=True)
+    >>> dist_matrix
+    array([[ 0.,  1.,  2.,  2.],
+           [ 1.,  0.,  3.,  1.],
+           [ 2.,  3.,  0.,  3.],
+           [ 2.,  1.,  3.,  0.]])
+    >>> predecessors
+    array([[-9999,     0,     0,     1],
+           [    1, -9999,     0,     1],
+           [    2,     0, -9999,     2],
+           [    1,     3,     3, -9999]], dtype=int32)
+
     """
     dist_matrix = validate_graph(csgraph, directed, DTYPE,
                                  csr_output=False,
@@ -348,10 +409,11 @@ def dijkstra(csgraph, directed=True, indices=None,
         The N x N array of non-negative distances representing the input graph.
     directed : bool, optional
         If True (default), then find the shortest path on a directed graph:
-        only move from point i to point j along paths csgraph[i, j].
+        only move from point i to point j along paths csgraph[i, j] and from 
+        point j to i along paths csgraph[j, i].
         If False, then find the shortest path on an undirected graph: the
-        algorithm can progress from point i to j along csgraph[i, j] or
-        csgraph[j, i]
+        algorithm can progress from point i to j or j to i along either 
+        csgraph[i, j] or csgraph[j, i].
     indices : array_like or int, optional
         if specified, only compute the paths for the points at the given
         indices.
@@ -396,6 +458,31 @@ def dijkstra(csgraph, directed=True, indices=None,
     distances.  Negative distances can lead to infinite cycles that must
     be handled by specialized algorithms such as Bellman-Ford's algorithm
     or Johnson's algorithm.
+
+    Examples
+    --------
+    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse.csgraph import dijkstra
+
+    >>> graph = [
+    ... [0, 1 , 2, 0],
+    ... [0, 0, 0, 1],
+    ... [0, 0, 0, 3],
+    ... [0, 0, 0, 0]
+    ... ]
+    >>> graph = csr_matrix(graph)
+    >>> print(graph)
+      (0, 1)	1
+      (0, 2)	2
+      (1, 3)	1
+      (2, 3)	3
+
+    >>> dist_matrix, predecessors = dijkstra(csgraph=graph, directed=False, indices=0, return_predecessors=True)
+    >>> dist_matrix
+    array([ 0.,  1.,  2.,  2.])
+    >>> predecessors
+    array([-9999,     0,     0,     1], dtype=int32)
+
     """
     #------------------------------
     # validate csgraph and convert to csr matrix
@@ -410,7 +497,7 @@ def dijkstra(csgraph, directed=True, indices=None,
     N = csgraph.shape[0]
 
     #------------------------------
-    # intitialize/validate indices
+    # initialize/validate indices
     if indices is None:
         indices = np.arange(N, dtype=ITYPE)
         return_shape = indices.shape + (N,)
@@ -669,6 +756,32 @@ def bellman_ford(csgraph, directed=True, indices=None,
     This routine is specially designed for graphs with negative edge weights.
     If all edge weights are positive, then Dijkstra's algorithm is a better
     choice.
+
+    Examples
+    --------
+    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse.csgraph import bellman_ford
+
+    >>> graph = [
+    ... [0, 1 , 2, 0],
+    ... [0, 0, 0, 1],
+    ... [2, 0, 0, 3],
+    ... [0, 0, 0, 0]
+    ... ]
+    >>> graph = csr_matrix(graph)
+    >>> print(graph)
+      (0, 1)	1
+      (0, 2)	2
+      (1, 3)	1
+      (2, 0)	2
+      (2, 3)	3
+
+    >>> dist_matrix, predecessors = bellman_ford(csgraph=graph, directed=False, indices=0, return_predecessors=True)
+    >>> dist_matrix
+    array([ 0.,  1.,  2.,  2.])
+    >>> predecessors
+    array([-9999,     0,     0,     1], dtype=int32)
+
     """
     #------------------------------
     # validate csgraph and convert to csr matrix
@@ -879,6 +992,32 @@ def johnson(csgraph, directed=True, indices=None,
     This routine is specially designed for graphs with negative edge weights.
     If all edge weights are positive, then Dijkstra's algorithm is a better
     choice.
+
+    Examples
+    --------
+    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse.csgraph import johnson
+
+    >>> graph = [
+    ... [0, 1 , 2, 0],
+    ... [0, 0, 0, 1],
+    ... [2, 0, 0, 3],
+    ... [0, 0, 0, 0]
+    ... ]
+    >>> graph = csr_matrix(graph)
+    >>> print(graph)
+      (0, 1)	1
+      (0, 2)	2
+      (1, 3)	1
+      (2, 0)	2
+      (2, 3)	3
+
+    >>> dist_matrix, predecessors = johnson(csgraph=graph, directed=False, indices=0, return_predecessors=True)
+    >>> dist_matrix
+    array([ 0.,  1.,  2.,  2.])
+    >>> predecessors
+    array([-9999,     0,     0,     1], dtype=int32)
+
     """
     #------------------------------
     # if unweighted, there are no negative weights: we just use dijkstra

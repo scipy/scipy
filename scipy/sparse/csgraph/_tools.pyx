@@ -5,6 +5,8 @@ Tools and utilities for working with compressed sparse graphs
 # Author: Jake Vanderplas  -- <vanderplas@astro.washington.edu>
 # License: BSD, (C) 2012
 
+from __future__ import absolute_import
+
 import numpy as np
 cimport numpy as np
 
@@ -30,6 +32,28 @@ def csgraph_from_masked(graph):
     -------
     csgraph : csr_matrix
         Compressed sparse representation of graph,
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.sparse.csgraph import csgraph_from_masked
+
+    >>> graph_masked = np.ma.masked_array(data =[
+    ... [0, 1 , 2, 0],
+    ... [0, 0, 0, 1],
+    ... [0, 0, 0, 3],
+    ... [0, 0, 0, 0]
+    ...  ],
+    ... mask=[[ True, False, False , True],
+    ... [ True,  True , True, False],
+    ... [ True , True,  True ,False],
+    ... [ True ,True , True , True]],
+    ... fill_value = 0)
+
+    >>> csgraph_from_masked(graph_masked)
+    <4x4 sparse matrix of type '<class 'numpy.float64'>'
+        with 4 stored elements in Compressed Sparse Row format>
+
     """
     # check that graph is a square matrix
     graph = np.ma.asarray(graph)
@@ -85,6 +109,30 @@ def csgraph_masked_from_dense(graph,
     -------
     csgraph : MaskedArray
         masked array representation of graph
+
+    Examples
+    --------
+    >>> from scipy.sparse.csgraph import csgraph_masked_from_dense
+
+    >>> graph = [
+    ... [0, 1 , 2, 0],
+    ... [0, 0, 0, 1],
+    ... [0, 0, 0, 3],
+    ... [0, 0, 0, 0]
+    ... ]
+
+    >>> csgraph_masked_from_dense(graph)
+    masked_array(
+      data=[[--, 1, 2, --],
+            [--, --, --, 1],
+            [--, --, --, 3],
+            [--, --, --, --]],
+      mask=[[ True, False, False,  True],
+            [ True,  True,  True, False],
+            [ True,  True,  True, False],
+            [ True,  True,  True,  True]],
+      fill_value=0)
+
     """
     graph = np.array(graph, copy=copy)
 
@@ -148,6 +196,22 @@ def csgraph_from_dense(graph,
     -------
     csgraph : csr_matrix
         Compressed sparse representation of graph,
+
+    Examples
+    --------
+    >>> from scipy.sparse.csgraph import csgraph_from_dense
+
+    >>> graph = [
+    ... [0, 1 , 2, 0],
+    ... [0, 0, 0, 1],
+    ... [0, 0, 0, 3],
+    ... [0, 0, 0, 0]
+    ... ]
+
+    >>> csgraph_from_dense(graph)
+    <4x4 sparse matrix of type '<class 'numpy.float64'>'
+        with 4 stored elements in Compressed Sparse Row format>
+
     """
     return csgraph_from_masked(csgraph_masked_from_dense(graph,
                                                          null_value,
@@ -225,6 +289,28 @@ def csgraph_to_dense(csgraph, null_value=0):
     In the first case, the zero-weight edge gets lost in the dense
     representation.  In the second case, we can choose a different null value
     and see the true form of the graph.
+
+    Examples
+    --------
+    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse.csgraph import csgraph_to_dense
+
+    >>> graph = csr_matrix( [
+    ... [0, 1 , 2, 0],
+    ... [0, 0, 0, 1],
+    ... [0, 0, 0, 3],
+    ... [0, 0, 0, 0]
+    ... ])
+    >>> graph
+    <4x4 sparse matrix of type '<class 'numpy.int64'>'
+        with 4 stored elements in Compressed Sparse Row format>
+
+    >>> csgraph_to_dense(graph)
+    array([[ 0.,  1.,  2.,  0.],
+           [ 0.,  0.,  0.,  1.],
+           [ 0.,  0.,  0.,  3.],
+           [ 0.,  0.,  0.,  0.]])
+
     """
     # Allow only csr, lil and csc matrices: other formats when converted to csr
     # combine duplicated edges: we don't want this to happen in the background.
@@ -266,6 +352,34 @@ def csgraph_to_masked(csgraph):
     -------
     graph : MaskedArray
         The masked dense representation of the sparse graph.
+
+    Examples
+    --------
+    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse.csgraph import csgraph_to_masked
+
+    >>> graph = csr_matrix( [
+    ... [0, 1 , 2, 0],
+    ... [0, 0, 0, 1],
+    ... [0, 0, 0, 3],
+    ... [0, 0, 0, 0]
+    ... ])
+    >>> graph
+    <4x4 sparse matrix of type '<class 'numpy.int64'>'
+        with 4 stored elements in Compressed Sparse Row format>
+
+    >>> csgraph_to_masked(graph)
+    masked_array(
+      data=[[--, 1.0, 2.0, --],
+            [--, --, --, 1.0],
+            [--, --, --, 3.0],
+            [--, --, --, --]],
+      mask=[[ True, False, False,  True],
+            [ True,  True,  True, False],
+            [ True,  True,  True, False],
+            [ True,  True,  True,  True]],
+      fill_value=1e+20)
+
     """
     return np.ma.masked_invalid(csgraph_to_dense(csgraph, np.nan))
 
@@ -322,8 +436,36 @@ def reconstruct_path(csgraph, predecessors, directed=True):
     cstree : csr matrix
         The N x N directed compressed-sparse representation of the tree drawn
         from csgraph which is encoded by the predecessor list.
+
+    Examples
+    --------
+    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse.csgraph import reconstruct_path
+
+    >>> graph = [
+    ... [0, 1 , 2, 0],
+    ... [0, 0, 0, 1],
+    ... [0, 0, 0, 3],
+    ... [0, 0, 0, 0]
+    ... ]
+    >>> graph = csr_matrix(graph)
+    >>> print(graph)
+      (0, 1)	1
+      (0, 2)	2
+      (1, 3)	1
+      (2, 3)	3
+
+    >>> pred = np.array([-9999, 0, 0, 1], dtype=np.int32)
+
+    >>> cstree = reconstruct_path(csgraph=graph, predecessors=pred, directed=False)
+    >>> cstree.todense()
+    matrix([[ 0.,  1.,  2.,  0.],
+            [ 0.,  0.,  0.,  1.],
+            [ 0.,  0.,  0.,  0.],
+            [ 0.,  0.,  0.,  0.]])
+
     """
-    from _validation import validate_graph
+    from ._validation import validate_graph
     csgraph = validate_graph(csgraph, directed, dense_output=False)
 
     N = csgraph.shape[0]
@@ -396,8 +538,38 @@ def construct_dist_matrix(graph,
     predecessors[i, j] gives the index of the previous node in the path from
     point i to point j.  If no path exists between point i and j, then
     predecessors[i, j] = -9999
+
+    Examples
+    --------
+    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse.csgraph import construct_dist_matrix
+
+    >>> graph = [
+    ... [0, 1 , 2, 0],
+    ... [0, 0, 0, 1],
+    ... [0, 0, 0, 3],
+    ... [0, 0, 0, 0]
+    ... ]
+    >>> graph = csr_matrix(graph)
+    >>> print(graph)
+      (0, 1)	1
+      (0, 2)	2
+      (1, 3)	1
+      (2, 3)	3
+
+    >>> pred = np.array([[-9999, 0, 0, 2],
+    ... [1, -9999, 0, 1],
+    ... [2, 0, -9999, 2],
+    ... [1, 3, 3, -9999]], dtype=np.int32)
+
+    >>> construct_dist_matrix(graph=graph, predecessors=pred, directed=False)
+    array([[ 0.,  1.,  2.,  5.],
+           [ 1.,  0.,  3.,  1.],
+           [ 2.,  3.,  0.,  3.],
+           [ 2.,  1.,  3.,  0.]])
+
     """
-    from _validation import validate_graph
+    from ._validation import validate_graph
     graph = validate_graph(graph, directed, dtype=DTYPE,
                            csr_output=False,
                            copy_if_dense=not directed)

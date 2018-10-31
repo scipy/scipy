@@ -104,7 +104,7 @@ DATA_FILES = [
     #'test_bessel_j.cpp',
     #'test_bessel_k.cpp',
     #'test_bessel_y.cpp',
-    # Those 3 files use arithmetic operations whithin the data, so we can't parse
+    # Those 3 files use arithmetic operations within the data, so we can't parse
     # them naively
     #'test_ellint_1.cpp',
     #'test_ellint_2.cpp',
@@ -188,6 +188,7 @@ def dump_datasets(filename):
         print(k, len(d))
         dfilename = os.path.join(datadir, k) + '.txt'
         dump_dataset(dfilename, d)
+
 
 if __name__ == '__main__':
     for filename in DATA_FILES:

@@ -1,14 +1,14 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import TestCase, run_module_suite, assert_equal, \
+from numpy.testing import assert_equal, \
     assert_array_equal, assert_array_almost_equal, assert_array_less, assert_
 from scipy._lib.six import xrange
 
 from scipy.signal import wavelets
 
 
-class TestWavelets(TestCase):
+class TestWavelets(object):
     def test_qmf(self):
         assert_array_equal(wavelets.qmf([1, 1]), [1, -1])
 
@@ -130,6 +130,3 @@ class TestWavelets(TestCase):
         cwt_dat = wavelets.cwt(test_data, flat_wavelet, widths)
         assert_array_almost_equal(cwt_dat, np.mean(test_data))
 
-
-if __name__ == "__main__":
-    run_module_suite()

@@ -4,9 +4,11 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from numpy import array, matrix
-from numpy.testing import (TestCase, run_module_suite, assert_equal, assert_,
-        assert_array_equal, assert_raises, assert_array_almost_equal_nulp)
-from scipy._lib._numpy_compat import assert_raises_regex
+from numpy.testing import (assert_equal, assert_,
+        assert_array_equal, assert_array_almost_equal_nulp)
+import pytest
+from pytest import raises as assert_raises
+from scipy._lib._testutils import check_free_memory
 
 from scipy.sparse import csr_matrix, coo_matrix
 
@@ -29,7 +31,7 @@ def _sprandn(m, n, density=0.01, format="coo", dtype=None, random_state=None):
                             random_state, data_rvs)
 
 
-class TestConstructUtils(TestCase):
+class TestConstructUtils(object):
     def test_spdiags(self):
         diags1 = array([[1, 2, 3, 4, 5]])
         diags2 = array([[1, 2, 3, 4, 5],
@@ -139,16 +141,14 @@ class TestConstructUtils(TestCase):
                                                     [0, 1, -2]]))
 
         for d, o, shape, result in cases:
-            try:
-                assert_equal(construct.diags(d, o, shape=shape).todense(),
-                             result)
+            err_msg = "%r %r %r %r" % (d, o, shape, result)
+            assert_equal(construct.diags(d, o, shape=shape).todense(),
+                         result, err_msg=err_msg)
 
-                if shape[0] == shape[1] and hasattr(d[0], '__len__') and len(d[0]) <= max(shape):
-                    # should be able to find the shape automatically
-                    assert_equal(construct.diags(d, o).todense(), result)
-            except:
-                print("%r %r %r %r" % (d, o, shape, result))
-                raise
+            if shape[0] == shape[1] and hasattr(d[0], '__len__') and len(d[0]) <= max(shape):
+                # should be able to find the shape automatically
+                assert_equal(construct.diags(d, o).todense(), result,
+                             err_msg=err_msg)
 
     def test_diags_default(self):
         a = array([1, 2, 3, 4, 5])
@@ -173,11 +173,7 @@ class TestConstructUtils(TestCase):
         cases.append(([a], 0, None))
 
         for d, o, shape in cases:
-            try:
-                assert_raises(ValueError, construct.diags, d, o, shape)
-            except:
-                print("%r %r %r" % (d, o, shape))
-                raise
+            assert_raises(ValueError, construct.diags, d, o, shape)
 
         assert_raises(TypeError, construct.diags, [[None]], [0])
 
@@ -320,6 +316,10 @@ class TestConstructUtils(TestCase):
                      expected)
         assert_equal(construct.vstack([A.tocsr(),B.tocsr()], dtype=np.float32).dtype,
                      np.float32)
+        assert_equal(construct.vstack([A.tocsr(),B.tocsr()],
+                                      dtype=np.float32).indices.dtype, np.int32)
+        assert_equal(construct.vstack([A.tocsr(),B.tocsr()],
+                                      dtype=np.float32).indptr.dtype, np.int32)
 
     def test_hstack(self):
 
@@ -366,12 +366,27 @@ class TestConstructUtils(TestCase):
         assert_equal(construct.bmat([[None,D],[C,None]]).todense(), expected)
 
         # test failure cases
-        assert_raises_regex(ValueError,
-                            r'Got blocks\[1,0\]\.shape\[1\] == 1, expected 2',
-                            construct.bmat, [[A],[B]])
-        assert_raises_regex(ValueError,
-                            r'Got blocks\[0,1\]\.shape\[0\] == 1, expected 2',
-                            construct.bmat, [[A,C]])
+        with assert_raises(ValueError) as excinfo:
+            construct.bmat([[A], [B]])
+        excinfo.match(r'Got blocks\[1,0\]\.shape\[1\] == 1, expected 2')
+
+        with assert_raises(ValueError) as excinfo:
+            construct.bmat([[A, C]])
+        excinfo.match(r'Got blocks\[0,1\]\.shape\[0\] == 1, expected 2')
+
+    @pytest.mark.slow
+    def test_concatenate_int32_overflow(self):
+        """ test for indptr overflow when concatenating matrices """
+        check_free_memory(30000)
+
+        n = 33000
+        A = csr_matrix(np.ones((n, n), dtype=bool))
+        B = A.copy()
+        C = construct._compressed_sparse_stack((A,B), 0)
+
+        assert_(np.all(np.equal(np.diff(C.indptr), n)))
+        assert_equal(C.indices.dtype, np.int64)
+        assert_equal(C.indptr.dtype, np.int64)
 
     def test_block_diag_basic(self):
         """ basic test for block_diag """
@@ -457,6 +472,3 @@ class TestConstructUtils(TestCase):
         # for the dtype
         a = construct.random(10, 10, dtype='d')
 
-
-if __name__ == "__main__":
-    run_module_suite()

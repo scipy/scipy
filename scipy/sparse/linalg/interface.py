@@ -42,6 +42,8 @@ Several algorithms in the ``scipy.sparse`` library are able to operate on
 
 from __future__ import division, print_function, absolute_import
 
+import warnings
+
 import numpy as np
 
 from scipy.sparse import isspmatrix
@@ -130,14 +132,15 @@ class LinearOperator(object):
     def __new__(cls, *args, **kwargs):
         if cls is LinearOperator:
             # Operate as _CustomLinearOperator factory.
-            return _CustomLinearOperator(*args, **kwargs)
+            return super(LinearOperator, cls).__new__(_CustomLinearOperator)
         else:
             obj = super(LinearOperator, cls).__new__(cls)
 
             if (type(obj)._matvec == LinearOperator._matvec
                     and type(obj)._matmat == LinearOperator._matmat):
-                raise TypeError("LinearOperator subclass should implement"
-                                " at least one of _matvec and _matmat.")
+                warnings.warn("LinearOperator subclass should implement"
+                              " at least one of _matvec and _matmat.",
+                              category=RuntimeWarning, stacklevel=2)
 
             return obj
 
@@ -152,7 +155,7 @@ class LinearOperator(object):
 
         shape = tuple(shape)
         if not isshape(shape):
-            raise ValueError("invalid shape %r (must be 2-d)" % shape)
+            raise ValueError("invalid shape %r (must be 2-d)" % (shape,))
 
         self.dtype = dtype
         self.shape = shape
@@ -473,7 +476,7 @@ class _CustomLinearOperator(LinearOperator):
     def _rmatvec(self, x):
         func = self.__rmatvec_impl
         if func is None:
-            raise NotImplemented("rmatvec is not defined")
+            raise NotImplementedError("rmatvec is not defined")
         return self.__rmatvec_impl(x)
 
     def _adjoint(self):
@@ -564,7 +567,7 @@ class _ScaledLinearOperator(LinearOperator):
 
     def _adjoint(self):
         A, alpha = self.args
-        return A.H * alpha
+        return A.H * np.conj(alpha)
 
 
 class _PowerLinearOperator(LinearOperator):
@@ -659,13 +662,18 @@ def aslinearoperator(A):
 
     See the LinearOperator documentation for additional information.
 
+    Notes
+    -----
+    If 'A' has no .dtype attribute, the data type is determined by calling
+    :func:`LinearOperator.matvec()` - set the .dtype attribute to prevent this
+    call upon the linear operator creation.
+
     Examples
     --------
     >>> from scipy.sparse.linalg import aslinearoperator
     >>> M = np.array([[1,2,3],[4,5,6]], dtype=np.int32)
     >>> aslinearoperator(M)
     <2x3 MatrixLinearOperator with dtype=int32>
-
     """
     if isinstance(A, LinearOperator):
         return A

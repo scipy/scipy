@@ -4,6 +4,7 @@ import math
 import numpy as np
 from scipy._lib.six import xrange
 from scipy._lib.six import string_types
+from numpy.lib.stride_tricks import as_strided
 
 
 __all__ = ['tri', 'tril', 'triu', 'toeplitz', 'circulant', 'hankel',
@@ -65,7 +66,7 @@ def tri(N, M=None, k=0, dtype=None):
         #       As tri(N,'d') is equivalent to tri(N,dtype='d')
         dtype = M
         M = N
-    m = np.greater_equal(np.subtract.outer(np.arange(N), np.arange(M)), -k)
+    m = np.greater_equal.outer(np.arange(k, N+k), np.arange(M))
     if dtype is None:
         return m
     else:
@@ -164,10 +165,11 @@ def toeplitz(c, r=None):
     A : (len(c), len(r)) ndarray
         The Toeplitz matrix. Dtype is the same as ``(c[0] + r[0]).dtype``.
 
-    See also
+    See Also
     --------
     circulant : circulant matrix
     hankel : Hankel matrix
+    solve_toeplitz : Solve a Toeplitz system.
 
     Notes
     -----
@@ -193,14 +195,12 @@ def toeplitz(c, r=None):
         r = c.conjugate()
     else:
         r = np.asarray(r).ravel()
-    # Form a 1D array of values to be used in the matrix, containing a reversed
-    # copy of r[1:], followed by c.
-    vals = np.concatenate((r[-1:0:-1], c))
-    a, b = np.ogrid[0:len(c), len(r) - 1:-1:-1]
-    indx = a + b
-    # `indx` is a 2D array of indices into the 1D array `vals`, arranged so
-    # that `vals[indx]` is the Toeplitz matrix.
-    return vals[indx]
+    # Form a 1D array containing a reversed c followed by r[1:] that could be
+    # strided to give us toeplitz matrix.
+    vals = np.concatenate((c[::-1], r[1:]))
+    out_shp = len(c), len(r)
+    n = vals.strides[0]
+    return as_strided(vals[len(c)-1:], shape=out_shp, strides=(-n, n)).copy()
 
 
 def circulant(c):
@@ -217,10 +217,11 @@ def circulant(c):
     A : (N, N) ndarray
         A circulant matrix whose first column is `c`.
 
-    See also
+    See Also
     --------
     toeplitz : Toeplitz matrix
     hankel : Hankel matrix
+    solve_circulant : Solve a circulant system.
 
     Notes
     -----
@@ -236,11 +237,11 @@ def circulant(c):
 
     """
     c = np.asarray(c).ravel()
-    a, b = np.ogrid[0:len(c), 0:-len(c):-1]
-    indx = a + b
-    # `indx` is a 2D array of indices into `c`, arranged so that `c[indx]` is
-    # the circulant matrix.
-    return c[indx]
+    # Form an extended array that could be strided to give circulant version
+    c_ext = np.concatenate((c[::-1], c[:0:-1]))
+    L = len(c)
+    n = c_ext.strides[0]
+    return as_strided(c_ext[L-1:], shape=(L, L), strides=(-n, n)).copy()
 
 
 def hankel(c, r=None):
@@ -267,7 +268,7 @@ def hankel(c, r=None):
     A : (len(c), len(r)) ndarray
         The Hankel matrix. Dtype is the same as ``(c[0] + r[0]).dtype``.
 
-    See also
+    See Also
     --------
     toeplitz : Toeplitz matrix
     circulant : circulant matrix
@@ -294,11 +295,10 @@ def hankel(c, r=None):
     # Form a 1D array of values to be used in the matrix, containing `c`
     # followed by r[1:].
     vals = np.concatenate((c, r[1:]))
-    a, b = np.ogrid[0:len(c), 0:len(r)]
-    indx = a + b
-    # `indx` is a 2D array of indices into the 1D array `vals`, arranged so
-    # that `vals[indx]` is the Hankel matrix.
-    return vals[indx]
+    # Stride on concatenated array to get hankel matrix
+    out_shp = len(c), len(r)
+    n = vals.strides[0]
+    return as_strided(vals, shape=out_shp, strides=(n, n)).copy()
 
 
 def hadamard(n, dtype=int):
@@ -363,7 +363,7 @@ def leslie(f, s):
     Create a Leslie matrix.
 
     Given the length n array of fecundity coefficients `f` and the length
-    n-1 array of survival coefficents `s`, return the associated Leslie matrix.
+    n-1 array of survival coefficients `s`, return the associated Leslie matrix.
 
     Parameters
     ----------
@@ -810,7 +810,7 @@ def pascal(n, kind='symmetric', exact=True):
 
     Notes
     -----
-    See http://en.wikipedia.org/wiki/Pascal_matrix for more information
+    See https://en.wikipedia.org/wiki/Pascal_matrix for more information
     about Pascal matrices.
 
     .. versionadded:: 0.11.0
@@ -852,9 +852,9 @@ def pascal(n, kind='symmetric', exact=True):
     else:
         L_n = comb(*np.ogrid[:n, :n])
 
-    if kind is 'lower':
+    if kind == 'lower':
         p = L_n
-    elif kind is 'upper':
+    elif kind == 'upper':
         p = L_n.T
     else:
         p = np.dot(L_n, L_n.T)
@@ -901,7 +901,7 @@ def invpascal(n, kind='symmetric', exact=True):
 
     References
     ----------
-    .. [1] "Pascal matrix",  http://en.wikipedia.org/wiki/Pascal_matrix
+    .. [1] "Pascal matrix", https://en.wikipedia.org/wiki/Pascal_matrix
     .. [2] Cohen, A. M., "The inverse of a Pascal matrix", Mathematical
            Gazette, 59(408), pp. 111-112, 1975.
 
@@ -1006,7 +1006,7 @@ def dft(n, scale=None):
 
     References
     ----------
-    .. [1] "DFT matrix", http://en.wikipedia.org/wiki/DFT_matrix
+    .. [1] "DFT matrix", https://en.wikipedia.org/wiki/DFT_matrix
 
     Examples
     --------

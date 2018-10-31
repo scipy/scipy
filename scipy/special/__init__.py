@@ -68,7 +68,6 @@ Bessel Functions
    :toctree: generated/
 
    jv       -- Bessel function of the first kind of real order and complex argument.
-   jn       -- Bessel function of the first kind of real order and complex argument
    jve      -- Exponentially scaled Bessel function of order `v`.
    yn       -- Bessel function of the second kind of integer order and real argument.
    yv       -- Bessel function of the second kind of real order and complex argument.
@@ -258,6 +257,7 @@ Raw Statistical Functions
    boxcox1p     -- Compute the Box-Cox transformation of 1 + `x`.
    inv_boxcox   -- Compute the inverse of the Box-Cox transformation.
    inv_boxcox1p -- Compute the inverse of the Box-Cox transformation.
+   owens_t      -- Owen's T Function.
 
 
 Information Theory Functions
@@ -599,6 +599,7 @@ Other Special Functions
    factorialk -- [+]Multifactorial of n of order k, n(!!...!).
    shichi     -- Hyperbolic sine and cosine integrals.
    sici       -- Sine and cosine integrals.
+   softmax    -- Softmax function.
    spence     -- Spence's function, also known as the dilogarithm.
    zeta       -- Riemann zeta function.
    zetac      -- Riemann zeta function minus 1.
@@ -640,7 +641,7 @@ from .sf_error import SpecialFunctionWarning, SpecialFunctionError
 from ._ufuncs import *
 
 from .basic import *
-from ._logsumexp import logsumexp
+from ._logsumexp import logsumexp, softmax
 from . import specfun
 from . import orthogonal
 from .orthogonal import *
@@ -650,11 +651,18 @@ from .lambertw import lambertw
 from ._spherical_bessel import (spherical_jn, spherical_yn, spherical_in,
                                 spherical_kn)
 
+from numpy import deprecate
+hyp2f0 = deprecate(hyp2f0, message="hyp2f0 is deprecated in SciPy 1.2")
+hyp1f2 = deprecate(hyp1f2, message="hyp1f2 is deprecated in SciPy 1.2")
+hyp3f0 = deprecate(hyp3f0, message="hyp3f0 is deprecated in SciPy 1.2")
+del deprecate
+
 __all__ = [s for s in dir() if not s.startswith('_')]
 
 from numpy.dual import register_func
 register_func('i0',i0)
 del register_func
 
-from numpy.testing import Tester
-test = Tester().test
+from scipy._lib._testutils import PytestTester
+test = PytestTester(__name__)
+del PytestTester

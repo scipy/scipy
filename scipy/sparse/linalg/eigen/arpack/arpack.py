@@ -44,9 +44,10 @@ __all__ = ['eigs', 'eigsh', 'svds', 'ArpackError', 'ArpackNoConvergence']
 
 from . import _arpack
 import numpy as np
+import warnings
 from scipy.sparse.linalg.interface import aslinearoperator, LinearOperator
-from scipy.sparse import eye, isspmatrix, isspmatrix_csr
-from scipy.linalg import lu_factor, lu_solve
+from scipy.sparse import eye, issparse, isspmatrix, isspmatrix_csr
+from scipy.linalg import eig, eigh, lu_factor, lu_solve
 from scipy.sparse.sputils import isdense
 from scipy.sparse.linalg import gmres, splu
 from scipy._lib._util import _aligned_zeros
@@ -935,26 +936,36 @@ class LuInv(LinearOperator):
         return lu_solve(self.M_lu, x)
 
 
+def gmres_loose(A, b, tol):
+    """
+    gmres with looser termination condition.
+    """
+    b = np.asarray(b)
+    min_tol = 1000 * np.sqrt(b.size) * np.finfo(b.dtype).eps
+    return gmres(A, b, tol=max(tol, min_tol), atol=0)
+
+
 class IterInv(LinearOperator):
     """
     IterInv:
        helper class to repeatedly solve M*x=b
        using an iterative method.
     """
-    def __init__(self, M, ifunc=gmres, tol=0):
-        if tol <= 0:
-            # when tol=0, ARPACK uses machine tolerance as calculated
-            # by LAPACK's _LAMCH function.  We should match this
-            tol = 2 * np.finfo(M.dtype).eps
+    def __init__(self, M, ifunc=gmres_loose, tol=0):
         self.M = M
-        self.ifunc = ifunc
-        self.tol = tol
         if hasattr(M, 'dtype'):
             self.dtype = M.dtype
         else:
             x = np.zeros(M.shape[1])
             self.dtype = (M * x).dtype
         self.shape = M.shape
+
+        if tol <= 0:
+            # when tol=0, ARPACK uses machine tolerance as calculated
+            # by LAPACK's _LAMCH function.  We should match this
+            tol = 2 * np.finfo(self.dtype).eps
+        self.ifunc = ifunc
+        self.tol = tol
 
     def _matvec(self, x):
         b, info = self.ifunc(self.M, x, tol=self.tol)
@@ -971,16 +982,10 @@ class IterOpInv(LinearOperator):
        helper class to repeatedly solve [A-sigma*M]*x = b
        using an iterative method
     """
-    def __init__(self, A, M, sigma, ifunc=gmres, tol=0):
-        if tol <= 0:
-            # when tol=0, ARPACK uses machine tolerance as calculated
-            # by LAPACK's _LAMCH function.  We should match this
-            tol = 2 * np.finfo(A.dtype).eps
+    def __init__(self, A, M, sigma, ifunc=gmres_loose, tol=0):
         self.A = A
         self.M = M
         self.sigma = sigma
-        self.ifunc = ifunc
-        self.tol = tol
 
         def mult_func(x):
             return A.matvec(x) - sigma * M.matvec(x)
@@ -1000,6 +1005,13 @@ class IterOpInv(LinearOperator):
                                      mult_func,
                                      dtype=dtype)
         self.shape = A.shape
+
+        if tol <= 0:
+            # when tol=0, ARPACK uses machine tolerance as calculated
+            # by LAPACK's _LAMCH function.  We should match this
+            tol = 2 * np.finfo(self.OP.dtype).eps
+        self.ifunc = ifunc
+        self.tol = tol
 
     def _matvec(self, x):
         b, info = self.ifunc(self.OP, x, tol=self.tol)
@@ -1212,9 +1224,9 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
     --------
     Find 6 eigenvectors of the identity matrix:
 
-    >>> import scipy.sparse as sparse
+    >>> from scipy.sparse.linalg import eigs
     >>> id = np.eye(13)
-    >>> vals, vecs = sparse.linalg.eigs(id, k=6)
+    >>> vals, vecs = eigs(id, k=6)
     >>> vals
     array([ 1.+0.j,  1.+0.j,  1.+0.j,  1.+0.j,  1.+0.j,  1.+0.j])
     >>> vecs.shape
@@ -1228,14 +1240,31 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
             raise ValueError('wrong M dimensions %s, should be %s'
                              % (M.shape, A.shape))
         if np.dtype(M.dtype).char.lower() != np.dtype(A.dtype).char.lower():
-            import warnings
             warnings.warn('M does not have the same type precision as A. '
                           'This may adversely affect ARPACK convergence')
+
     n = A.shape[0]
 
-    if k <= 0 or k >= n:
-        raise ValueError("k=%d must be between 1 and ndim(A)-1=%d"
-                         % (k, n - 1))
+    if k <= 0:
+        raise ValueError("k=%d must be greater than 0." % k)
+
+    if k >= n - 1:
+        warnings.warn("k >= N - 1 for N * N square matrix. "
+                      "Attempting to use scipy.linalg.eig instead.",
+                      RuntimeWarning)
+
+        if issparse(A):
+            raise TypeError("Cannot use scipy.linalg.eig for sparse A with "
+                            "k >= N - 1. Use scipy.linalg.eig(A.toarray()) or"
+                            " reduce k.")
+        if isinstance(A, LinearOperator):
+            raise TypeError("Cannot use scipy.linalg.eig for LinearOperator "
+                            "A with k >= N - 1.")
+        if isinstance(M, LinearOperator):
+            raise TypeError("Cannot use scipy.linalg.eig for LinearOperator "
+                            "M with k >= N - 1.")
+
+        return eig(A, b=M, right=return_eigenvectors)
 
     if sigma is None:
         matvec = _aslinearoperator_with_dtype(A).matvec
@@ -1317,13 +1346,14 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
 
     If M is specified, solves ``A * x[i] = w[i] * M * x[i]``, the
     generalized eigenvalue problem for w[i] eigenvalues
-    with corresponding eigenvectors x[i]
+    with corresponding eigenvectors x[i].
 
     Parameters
     ----------
-    A : An N x N matrix, array, sparse matrix, or LinearOperator representing
-        the operation A * x, where A is a real symmetric matrix
-        For buckling mode (see below) A must additionally be positive-definite
+    A : ndarray, sparse matrix or LinearOperator
+        A square operator representing the operation ``A * x``, where ``A`` is
+        real symmetric or complex hermitian. For buckling mode (see below)
+        ``A`` must additionally be positive-definite.
     k : int, optional
         The number of eigenvalues and eigenvectors desired.
         `k` must be smaller than N. It is not possible to compute all
@@ -1332,7 +1362,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
     Returns
     -------
     w : array
-        Array of k eigenvalues
+        Array of k eigenvalues.
     v : array
         An array representing the `k` eigenvectors.  The column ``v[:, i]`` is
         the eigenvector corresponding to the eigenvalue ``w[i]``.
@@ -1340,36 +1370,36 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
     Other Parameters
     ----------------
     M : An N x N matrix, array, sparse matrix, or linear operator representing
-        the operation M * x for the generalized eigenvalue problem
+        the operation ``M @ x`` for the generalized eigenvalue problem
 
-            A * x = w * M * x.
+            A @ x = w * M @ x.
 
         M must represent a real, symmetric matrix if A is real, and must
         represent a complex, hermitian matrix if A is complex. For best
         results, the data type of M should be the same as that of A.
         Additionally:
 
-            If sigma is None, M is symmetric positive definite
+            If sigma is None, M is symmetric positive definite.
 
-            If sigma is specified, M is symmetric positive semi-definite
+            If sigma is specified, M is symmetric positive semi-definite.
 
             In buckling mode, M is symmetric indefinite.
 
         If sigma is None, eigsh requires an operator to compute the solution
-        of the linear equation ``M * x = b``. This is done internally via a
+        of the linear equation ``M @ x = b``. This is done internally via a
         (sparse) LU decomposition for an explicit matrix M, or via an
         iterative solver for a general linear operator.  Alternatively,
         the user can supply the matrix or operator Minv, which gives
-        ``x = Minv * b = M^-1 * b``.
+        ``x = Minv @ b = M^-1 @ b``.
     sigma : real
         Find eigenvalues near sigma using shift-invert mode.  This requires
         an operator to compute the solution of the linear system
-        `[A - sigma * M] x = b`, where M is the identity matrix if
+        ``[A - sigma * M] x = b``, where M is the identity matrix if
         unspecified.  This is computed internally via a (sparse) LU
         decomposition for explicit matrices A & M, or via an iterative
         solver if either A or M is a general linear operator.
         Alternatively, the user can supply the matrix or operator OPinv,
-        which gives ``x = OPinv * b = [A - sigma * M]^-1 * b``.
+        which gives ``x = OPinv @ b = [A - sigma * M]^-1 @ b``.
         Note that when sigma is specified, the keyword 'which' refers to
         the shifted eigenvalues ``w'[i]`` where:
 
@@ -1391,15 +1421,15 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         If A is a complex hermitian matrix, 'BE' is invalid.
         Which `k` eigenvectors and eigenvalues to find:
 
-            'LM' : Largest (in magnitude) eigenvalues
+            'LM' : Largest (in magnitude) eigenvalues.
 
-            'SM' : Smallest (in magnitude) eigenvalues
+            'SM' : Smallest (in magnitude) eigenvalues.
 
-            'LA' : Largest (algebraic) eigenvalues
+            'LA' : Largest (algebraic) eigenvalues.
 
-            'SA' : Smallest (algebraic) eigenvalues
+            'SA' : Smallest (algebraic) eigenvalues.
 
-            'BE' : Half (k/2) from each end of the spectrum
+            'BE' : Half (k/2) from each end of the spectrum.
 
         When k is odd, return one more (k/2+1) from the high end.
         When sigma != None, 'which' refers to the shifted eigenvalues ``w'[i]``
@@ -1407,17 +1437,32 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         at finding large values than small values.  If small eigenvalues are
         desired, consider using shift-invert mode for better performance.
     maxiter : int, optional
-        Maximum number of Arnoldi update iterations allowed
+        Maximum number of Arnoldi update iterations allowed.
         Default: ``n*10``
     tol : float
         Relative accuracy for eigenvalues (stopping criterion).
         The default value of 0 implies machine precision.
     Minv : N x N matrix, array, sparse matrix, or LinearOperator
-        See notes in M, above
+        See notes in M, above.
     OPinv : N x N matrix, array, sparse matrix, or LinearOperator
         See notes in sigma, above.
     return_eigenvectors : bool
-        Return eigenvectors (True) in addition to eigenvalues
+        Return eigenvectors (True) in addition to eigenvalues. This value determines
+        the order in which eigenvalues are sorted. The sort order is also dependent on the `which` variable.
+
+            For which = 'LM' or 'SA':
+                If `return_eigenvectors` is True, eigenvalues are sorted by algebraic value.
+
+                If `return_eigenvectors` is False, eigenvalues are sorted by absolute value.
+
+            For which = 'BE' or 'LA':
+                eigenvalues are always sorted by algebraic value.
+
+            For which = 'SM':
+                If `return_eigenvectors` is True, eigenvalues are sorted by algebraic value.
+
+                If `return_eigenvectors` is False, eigenvalues are sorted by decreasing absolute value.
+
     mode : string ['normal' | 'buckling' | 'cayley']
         Specify strategy to use for shift-invert mode.  This argument applies
         only for real-valued A and sigma != None.  For shift-invert mode,
@@ -1429,23 +1474,23 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         The modes are as follows:
 
             'normal' :
-                OP = [A - sigma * M]^-1 * M,
+                OP = [A - sigma * M]^-1 @ M,
                 B = M,
                 w'[i] = 1 / (w[i] - sigma)
 
             'buckling' :
-                OP = [A - sigma * M]^-1 * A,
+                OP = [A - sigma * M]^-1 @ A,
                 B = A,
                 w'[i] = w[i] / (w[i] - sigma)
 
             'cayley' :
-                OP = [A - sigma * M]^-1 * [A + sigma * M],
+                OP = [A - sigma * M]^-1 @ [A + sigma * M],
                 B = M,
                 w'[i] = (w[i] + sigma) / (w[i] - sigma)
 
         The choice of mode will affect which eigenvalues are selected by
         the keyword 'which', and can also impact the stability of
-        convergence (see [2] for a discussion)
+        convergence (see [2] for a discussion).
 
     Raises
     ------
@@ -1476,12 +1521,12 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
 
     Examples
     --------
-    >>> import scipy.sparse as sparse
-    >>> id = np.eye(13)
-    >>> vals, vecs = sparse.linalg.eigsh(id, k=6)
-    >>> vals
-    array([ 1.+0.j,  1.+0.j,  1.+0.j,  1.+0.j,  1.+0.j,  1.+0.j])
-    >>> vecs.shape
+    >>> from scipy.sparse.linalg import eigsh
+    >>> identity = np.eye(13)
+    >>> eigenvalues, eigenvectors = eigsh(identity, k=6)
+    >>> eigenvalues
+    array([1., 1., 1., 1., 1., 1.])
+    >>> eigenvectors.shape
     (13, 6)
 
     """
@@ -1513,14 +1558,31 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
             raise ValueError('wrong M dimensions %s, should be %s'
                              % (M.shape, A.shape))
         if np.dtype(M.dtype).char.lower() != np.dtype(A.dtype).char.lower():
-            import warnings
             warnings.warn('M does not have the same type precision as A. '
                           'This may adversely affect ARPACK convergence')
+
     n = A.shape[0]
 
-    if k <= 0 or k >= n:
-        raise ValueError("k must be between 1 and the order of the "
-                         "square input matrix.")
+    if k <= 0:
+        raise ValueError("k must be greater than 0.")
+
+    if k >= n:
+        warnings.warn("k >= N for N * N square matrix. "
+                      "Attempting to use scipy.linalg.eigh instead.",
+                      RuntimeWarning)
+
+        if issparse(A):
+            raise TypeError("Cannot use scipy.linalg.eigh for sparse A with "
+                            "k >= N. Use scipy.linalg.eigh(A.toarray()) or"
+                            " reduce k.")
+        if isinstance(A, LinearOperator):
+            raise TypeError("Cannot use scipy.linalg.eigh for LinearOperator "
+                            "A with k >= N.")
+        if isinstance(M, LinearOperator):
+            raise TypeError("Cannot use scipy.linalg.eigh for LinearOperator "
+                            "M with k >= N.")
+
+        return eigh(A, b=M, eigvals_only=not return_eigenvectors)
 
     if sigma is None:
         A = _aslinearoperator_with_dtype(A)

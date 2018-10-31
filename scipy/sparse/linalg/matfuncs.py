@@ -58,10 +58,10 @@ def inv(A):
     >>> A = csc_matrix([[1., 0.], [1., 2.]])
     >>> Ainv = inv(A)
     >>> Ainv
-    <2x2 sparse matrix of type '<type 'numpy.float64'>'
+    <2x2 sparse matrix of type '<class 'numpy.float64'>'
         with 3 stored elements in Compressed Sparse Column format>
     >>> A.dot(Ainv)
-    <2x2 sparse matrix of type '<type 'numpy.float64'>'
+    <2x2 sparse matrix of type '<class 'numpy.float64'>'
         with 2 stored elements in Compressed Sparse Column format>
     >>> A.dot(Ainv).todense()
     matrix([[ 1.,  0.],
@@ -70,6 +70,10 @@ def inv(A):
     .. versionadded:: 0.12.0
 
     """
+    #check input
+    if not scipy.sparse.isspmatrix(A):
+        raise TypeError('Input must be a sparse matrix')
+
     I = speye(A.shape[0], A.shape[1], dtype=A.dtype, format=A.format)
     Ainv = spsolve(A, I)
     return Ainv
@@ -105,7 +109,7 @@ def _onenorm_matrix_power_nnm(A, p):
     M = A.T
     for i in range(p):
         v = M.dot(v)
-    return max(v)
+    return np.max(v)
 
 
 def _onenorm(A):
@@ -592,7 +596,7 @@ def expm(A):
             [0, 0, 3]], dtype=int64)
     >>> Aexp = expm(A)
     >>> Aexp
-    <3x3 sparse matrix of type '<type 'numpy.float64'>'
+    <3x3 sparse matrix of type '<class 'numpy.float64'>'
         with 3 stored elements in Compressed Sparse Column format>
     >>> Aexp.todense()
     matrix([[  2.71828183,   0.        ,   0.        ],
@@ -622,6 +626,11 @@ def _expm(A, use_exact_onenorm):
             return A.__class__(out)
 
         return np.array(out)
+
+    # Ensure input is of float type, to avoid integer overflows etc.
+    if ((isinstance(A, np.ndarray) or isspmatrix(A))
+            and not np.issubdtype(A.dtype, np.inexact)):
+        A = A.astype(float)
 
     # Detect upper triangularity.
     structure = UPPER_TRIANGULAR if _is_upper_triangular(A) else None
@@ -659,7 +668,13 @@ def _expm(A, use_exact_onenorm):
     eta_4 = max(h.d8_loose, h.d10_loose)
     eta_5 = min(eta_3, eta_4)
     theta_13 = 4.25
-    s = max(int(np.ceil(np.log2(eta_5 / theta_13))), 0)
+
+    # Choose smallest s>=0 such that 2**(-s) eta_5 <= theta_13
+    if eta_5 == 0:
+        # Nilpotent special case
+        s = 0
+    else:
+        s = max(int(np.ceil(np.log2(eta_5 / theta_13))), 0)
     s = s + _ell(2**-s * h.A, 13)
     U, V = h.pade13_scaled(s)
     X = _solve_P_Q(U, V, structure=structure)

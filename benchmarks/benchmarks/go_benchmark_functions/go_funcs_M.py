@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import division, print_function, absolute_import
 
-import numpy as np
-from numpy import (abs, arctan2, asarray, cos, exp, floor, log, log10,
-                   arange, pi, prod, roll, sign, sin, sqrt, sum, where,
-                   zeros, tan, tanh, dot)
+from numpy import (abs, asarray, cos, exp, log, arange, pi, prod, sin, sqrt,
+                   sum, tan)
 try:
     from scipy.special import factorial
 except ImportError:
@@ -91,7 +89,7 @@ class Meyer(Benchmark):
     r"""
     Meyer [1]_ objective function.
 
-    ..[1] http://www.itl.nist.gov/div898/strd/nls/data/mgh10.shtml
+    ..[1] https://www.itl.nist.gov/div898/strd/nls/data/mgh10.shtml
 
     TODO NIST regression standard
     """

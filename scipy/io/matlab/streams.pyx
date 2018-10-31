@@ -1,12 +1,14 @@
 # -*- python -*- or near enough
 
+from __future__ import absolute_import
+
 import sys
 import zlib
 
 from cpython cimport PyBytes_FromStringAndSize, \
     PyBytes_AS_STRING, PyBytes_Size
 
-from pyalloc cimport pyalloc_v
+from .pyalloc cimport pyalloc_v
 
 from libc.stdio cimport fread, fseek, ftell
 from libc.string cimport memcpy
@@ -21,7 +23,7 @@ cdef extern from "Python.h":
 
 cdef extern from "py3k.h":
     # From:
-    # http://svn.pyamf.org/pyamf/tags/release-0.4rc2/cpyamf/util.pyx
+    # https://github.com/hydralabs/pyamf/blob/release-0.4rc2/cpyamf/util.pyx
     # (MIT license) - with thanks
     void PycString_IMPORT()
     int StringIO_cread "PycStringIO->cread" (object, char **, Py_ssize_t)
@@ -35,9 +37,14 @@ cdef extern from "py3k.h":
     int npy_PyFile_DupClose(object file, FILE *handle) except -1
     int npy_PyFile_Check(object file)
 
-       
-# initialize cStringIO
-PycString_IMPORT
+
+cdef bint IS_PYPY = ('__pypy__' in sys.modules)
+cdef bint HAS_PYCCSTRINGIO = not IS_PYPY
+
+if HAS_PYCCSTRINGIO:
+    # initialize cStringIO
+    PycString_IMPORT
+
 
 DEF BLOCK_SIZE = 131072
 
@@ -109,7 +116,7 @@ cdef class ZlibInputStream(GenericStream):
     Some matlab files contain zlib streams without valid Z_STREAM_END
     termination.  To get round this, we use the decompressobj object, that
     allows you to decode an incomplete stream.  See discussion at
-    http://bugs.python.org/issue8672
+    https://bugs.python.org/issue8672
 
     """
 
@@ -330,31 +337,33 @@ cdef class FileStream(GenericStream):
 def _read_into(GenericStream st, size_t n):
     # for testing only.  Use st.read instead
     cdef char * d_ptr
-    my_str = b' ' * n
+    # use bytearray because bytes() is immutable
+    my_str = bytearray(b' ' * n)
     d_ptr = my_str
     st.read_into(d_ptr, n)
-    return my_str
+    return bytes(my_str)
 
 
 def _read_string(GenericStream st, size_t n):
     # for testing only.  Use st.read instead
     cdef void *d_ptr
     cdef object obj = st.read_string(n, &d_ptr, True)
-    my_str = b'A' * n
+    # use bytearray because bytes() is immutable
+    my_str = bytearray(b'A' * n)
     cdef char *mys_ptr = my_str
     memcpy(mys_ptr, d_ptr, n)
-    return my_str
+    return bytes(my_str)
 
 
 cpdef GenericStream make_stream(object fobj):
     """ Make stream of correct type for file-like `fobj`
     """
     if npy_PyFile_Check(fobj):
-        if <int>sys.version_info[0] >= 3:
+        if <int>sys.version_info[0] >= 3 or IS_PYPY:
             return GenericStream(fobj)
         else:
             return FileStream(fobj)
-    elif PycStringIO_InputCheck(fobj) or PycStringIO_OutputCheck(fobj):
+    elif HAS_PYCCSTRINGIO and (PycStringIO_InputCheck(fobj) or PycStringIO_OutputCheck(fobj)):
         return cStringStream(fobj)
     elif isinstance(fobj, GenericStream):
         return fobj

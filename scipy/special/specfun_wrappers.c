@@ -1,5 +1,5 @@
 /* This file is a collection of wrappers around the
- *  Specfun Fortran library of functions 
+ *  Specfun Fortran library of functions
  */
 
 #include "specfun_wrappers.h"
@@ -22,8 +22,6 @@
 #define F_FUNC(f,F) f##_
 #endif
 #endif
-
-extern double cephes_struve(double, double);
 
 extern void F_FUNC(cgama,CGAMA)(double*,double*,int*,double*,double*);
 extern void F_FUNC(hygfz,HYGFZ)(double*,double*,double*,npy_cdouble*,npy_cdouble*,int*);
@@ -72,8 +70,8 @@ extern void F_FUNC(ffk,FFK)(int*,double*,double*,double*,double*,double*,double*
 npy_cdouble chyp2f1_wrap( double a, double b, double c, npy_cdouble z) {
   npy_cdouble outz;
   int l1, l0, isfer = 0;
- 
- 
+
+
   l0 = ((c == floor(c)) && (c < 0));
   l1 = ((fabs(1-REAL(z)) < 1e-15) && (IMAG(z) == 0) && (c-a-b <= 0));
   if (l0 || l1) {
@@ -131,7 +129,7 @@ double hypU_wrap(double a, double b, double x) {
 
 double hyp1f1_wrap(double a, double b, double x) {
    double outy;
- 
+
    F_FUNC(chgm,CHGM)(&a, &b, &x, &outy);
    if (outy == 1e300) {
      sf_error("hyp1f1", SF_ERROR_OVERFLOW, NULL);
@@ -141,9 +139,9 @@ double hyp1f1_wrap(double a, double b, double x) {
 }
 
 int itairy_wrap(double x, double *apt, double *bpt, double *ant, double *bnt) {
-  double tmp; 
+  double tmp;
   int flag = 0;
-  
+
   if (x < 0) {
     x = -x;
     flag = 1;
@@ -163,7 +161,7 @@ int itairy_wrap(double x, double *apt, double *bpt, double *ant, double *bnt) {
 
 double exp1_wrap(double x) {
   double out;
-  
+
   F_FUNC(e1xb,E1XB)(&x, &out);
   CONVINF("exp1", out);
   return out;
@@ -171,7 +169,7 @@ double exp1_wrap(double x) {
 
 npy_cdouble cexp1_wrap(npy_cdouble z) {
   npy_cdouble outz;
-  
+
   F_FUNC(e1z,E1Z)(&z, &outz);
   ZCONVINF("cexp1", outz);
   return outz;
@@ -179,7 +177,7 @@ npy_cdouble cexp1_wrap(npy_cdouble z) {
 
 double expi_wrap(double x) {
   double out;
-  
+
   F_FUNC(eix,EIX)(&x, &out);
   CONVINF("expi", out);
   return out;
@@ -195,75 +193,9 @@ npy_cdouble cexpi_wrap(npy_cdouble z) {
 
 npy_cdouble cerf_wrap(npy_cdouble z) {
   npy_cdouble outz;
-  
+
   F_FUNC(cerror,CERROR)(&z, &outz);
   return outz;
-}
-
-double struve_wrap(double v, double x) {
-  double out;
-  double rem;
-  int flag=0;
-
-  if (x < 0) {
-      rem = fmod(v, 2.0);
-      if (rem == 0) {
-          x = -x;
-          flag = 1;
-      } else if (rem == 1 || rem == -1) {
-          x = -x;
-          flag = 0;
-      } else {
-          /* non-integer v and x < 0 => complex-valued */
-          return NPY_NAN;
-      }
-  }
-
-  if ((v<-8.0) || (v>12.5)) {
-    out = cephes_struve(v, x);  /* from cephes */
-  }
-  else if (v==0.0) {
-    F_FUNC(stvh0,STVH0)(&x,&out);
-    CONVINF("struve", out);
-  }
-  else if (v==1.0) {
-    F_FUNC(stvh1,STVH1)(&x,&out);
-    CONVINF("struve", out);
-  }
-  else {
-    F_FUNC(stvhv,STVHV)(&v,&x,&out);
-    CONVINF("struve", out);
-  }
-  if (flag) out = -out;
-  return out;
-}
-
-double modstruve_wrap(double v, double x) {
-  double out;
-  int flag=0;
-
-  if ((x < 0) & (floor(v)!=v)) return NPY_NAN;
-  if (v==0.0) {
-    if (x < 0) {x = -x; flag=1;}
-    F_FUNC(stvl0,STVL0)(&x,&out);
-    CONVINF("modstruve", out);
-    if (flag) out = -out;
-    return out;
-  }
-  if (v==1.0) {
-    if (x < 0) x=-x;
-    F_FUNC(stvl1,STVL1)(&x,&out);
-    CONVINF("modstruve", out);
-    return out;
-  }
-  if (x<0) {
-    x = -x;
-    flag = 1;
-  }
-  F_FUNC(stvlv,STVLV)(&v,&x,&out);
-  CONVINF("modstruve", out);
-  if (flag && (!((int)floor(v) % 2))) out = -out;
-  return out;  
 }
 
 double itstruve0_wrap(double x) {
@@ -278,7 +210,7 @@ double itstruve0_wrap(double x) {
 double it2struve0_wrap(double x) {
   double out;
   int flag=0;
-  
+
   if (x<0) {x=-x; flag=1;}
   F_FUNC(itth0,ITTH0)(&x,&out);
   CONVINF("it2struve0", out);
@@ -325,7 +257,7 @@ double ker_wrap(double x)
   if (x<0) return NPY_NAN;
   F_FUNC(klvna,KLVNA)(&x, CADDR(Be), CADDR(Ke), CADDR(Bep), CADDR(Kep));
   ZCONVINF("ker", Ke);
-  return REAL(Ke);  
+  return REAL(Ke);
 }
 
 double kei_wrap(double x)
@@ -335,7 +267,7 @@ double kei_wrap(double x)
   if (x<0) return NPY_NAN;
   F_FUNC(klvna,KLVNA)(&x, CADDR(Be), CADDR(Ke), CADDR(Bep), CADDR(Kep));
   ZCONVINF("kei", Ke);
-  return IMAG(Ke);  
+  return IMAG(Ke);
 }
 
 double berp_wrap(double x)
@@ -369,7 +301,7 @@ double kerp_wrap(double x)
   if (x<0) return NPY_NAN;
   F_FUNC(klvna,KLVNA)(&x, CADDR(Be), CADDR(Ke), CADDR(Bep), CADDR(Kep));
   ZCONVINF("kerp", Kep);
-  return REAL(Kep);  
+  return REAL(Kep);
 }
 
 double keip_wrap(double x)
@@ -379,13 +311,13 @@ double keip_wrap(double x)
   if (x<0) return NPY_NAN;
   F_FUNC(klvna,KLVNA)(&x, CADDR(Be), CADDR(Ke), CADDR(Bep), CADDR(Kep));
   ZCONVINF("keip", Kep);
-  return IMAG(Kep);  
+  return IMAG(Kep);
 }
 
 
 int kelvin_wrap(double x, npy_cdouble *Be, npy_cdouble *Ke, npy_cdouble *Bep, npy_cdouble *Kep) {
   int flag = 0;
-  
+
   if (x<0) {x=-x; flag=1;}
   F_FUNC(klvna,KLVNA)(&x, F2C_CST(Be), F2C_CST(Ke), F2C_CST(Bep), F2C_CST(Kep));
   ZCONVINF("klvna", *Be);
@@ -398,8 +330,8 @@ int kelvin_wrap(double x, npy_cdouble *Be, npy_cdouble *Ke, npy_cdouble *Bep, np
     REAL(*Ke) = NPY_NAN;
     IMAG(*Ke) = NPY_NAN;
     REAL(*Kep) = NPY_NAN;
-    IMAG(*Kep) = NPY_NAN;    
-  }    
+    IMAG(*Kep) = NPY_NAN;
+  }
   return 0;
 }
 
@@ -424,7 +356,7 @@ int it1j0y0_wrap(double x, double *j0int, double *y0int)
 /* int((1-j0(t))/t,t=0..x) */
 /* int(y0(t)/t,t=x..inf) */
 
-int it2j0y0_wrap(double x, double *j0int, double *y0int) 
+int it2j0y0_wrap(double x, double *j0int, double *y0int)
 {
   int flag = 0;
 
@@ -451,7 +383,7 @@ int it1i0k0_wrap(double x, double *i0int, double *k0int)
   return 0;
 }
 
-int it2i0k0_wrap(double x, double *i0int, double *k0int) 
+int it2i0k0_wrap(double x, double *i0int, double *k0int)
 {
   int flag = 0;
 
@@ -470,7 +402,7 @@ int cfresnl_wrap(npy_cdouble z, npy_cdouble *zfs, npy_cdouble *zfc)
 {
   npy_cdouble zfd;
   F_FUNC(cfs,CFS)(&z,zfs,&zfd);
-  F_FUNC(cfc,CFC)(&z,zfc,&zfd); 
+  F_FUNC(cfc,CFC)(&z,zfc,&zfd);
   return 0;
 }
 
@@ -486,7 +418,7 @@ double cem_cva_wrap(double m, double q) {
   }
   int_m = (int )m;
   if (q < 0) {
-    /* http://dlmf.nist.gov/28.2#E26 */
+    /* https://dlmf.nist.gov/28.2#E26 */
     if (int_m % 2 == 0) {
       return cem_cva_wrap(m, -q);
     }
@@ -510,7 +442,7 @@ double sem_cva_wrap(double m, double q) {
   }
   int_m = (int)m;
   if (q < 0) {
-    /* http://dlmf.nist.gov/28.2#E26 */
+    /* https://dlmf.nist.gov/28.2#E26 */
     if (int_m % 2 == 0) {
       return sem_cva_wrap(m, -q);
     }
@@ -536,7 +468,7 @@ int cem_wrap(double m, double q, double x, double *csf, double *csd)
   }
   int_m = (int)m;
   if (q < 0) {
-      /* http://dlmf.nist.gov/28.2#E34 */
+      /* https://dlmf.nist.gov/28.2#E34 */
       if (int_m % 2 == 0) {
         sgn = ((int_m/2) % 2 == 0) ? 1 : -1;
         cem_wrap(m, -q, 90 - x, &f, &d);
@@ -553,7 +485,7 @@ int cem_wrap(double m, double q, double x, double *csf, double *csd)
       }
   }
   F_FUNC(mtu0,MTU0)(&kf,&int_m, &q, &x, csf, csd);
-  return 0;  
+  return 0;
 }
 
 int sem_wrap(double m, double q, double x, double *csf, double *csd)
@@ -573,7 +505,7 @@ int sem_wrap(double m, double q, double x, double *csf, double *csd)
     return 0;
   }
   if (q < 0) {
-      /* http://dlmf.nist.gov/28.2#E34 */
+      /* https://dlmf.nist.gov/28.2#E34 */
       if (int_m % 2 == 0) {
         sgn = ((int_m/2) % 2 == 0) ? -1 : 1;
         sem_wrap(m, -q, 90 - x, &f, &d);
@@ -590,7 +522,7 @@ int sem_wrap(double m, double q, double x, double *csf, double *csd)
       }
   }
   F_FUNC(mtu0,MTU0)(&kf,&int_m, &q, &x, csf, csd);
-  return 0;  
+  return 0;
 }
 
 
@@ -607,7 +539,7 @@ int mcm1_wrap(double m, double q, double x, double *f1r, double *d1r)
   }
   int_m = (int )m;
   F_FUNC(mtu12,MTU12)(&kf,&kc,&int_m, &q, &x, f1r, d1r, &f2r, &d2r);
-  return 0;  
+  return 0;
 }
 
 int msm1_wrap(double m, double q, double x, double *f1r, double *d1r)
@@ -623,7 +555,7 @@ int msm1_wrap(double m, double q, double x, double *f1r, double *d1r)
   }
   int_m = (int )m;
   F_FUNC(mtu12,MTU12)(&kf,&kc,&int_m, &q, &x, f1r, d1r, &f2r, &d2r);
-  return 0;  
+  return 0;
 }
 
 int mcm2_wrap(double m, double q, double x, double *f2r, double *d2r)
@@ -639,7 +571,7 @@ int mcm2_wrap(double m, double q, double x, double *f2r, double *d2r)
   }
   int_m = (int )m;
   F_FUNC(mtu12,MTU12)(&kf,&kc,&int_m, &q, &x, &f1r, &d1r, f2r, d2r);
-  return 0;  
+  return 0;
 }
 
 int msm2_wrap(double m, double q, double x, double *f2r, double *d2r)
@@ -655,7 +587,7 @@ int msm2_wrap(double m, double q, double x, double *f2r, double *d2r)
   }
   int_m = (int )m;
   F_FUNC(mtu12,MTU12)(&kf,&kc,&int_m, &q, &x, &f1r, &d1r, f2r, d2r);
-  return 0;  
+  return 0;
 }
 
 
@@ -671,7 +603,7 @@ double pmv_wrap(double m, double v, double x){
 }
 
 
-/* 
+/*
  * If x > 0 return w1f and w1d. Otherwise set x = abs(x) and return
  * w2f and -w2d.
 */
@@ -689,7 +621,7 @@ int pbwa_wrap(double a, double x, double *wf, double *wd) {
     sf_error("pbwa", SF_ERROR_LOSS, NULL);
     return 0;
   }
-   
+
   if (x < 0) {
     x = -x;
     flag = 1;
@@ -712,6 +644,11 @@ int pbdv_wrap(double v, double x, double *pdf, double *pdd) {
   double *dp;
   int num;
 
+  if (npy_isnan(v) || npy_isnan(x)) {
+    *pdf = NPY_NAN;
+    *pdd = NPY_NAN;
+    return 0;
+  }
   /* NB. Indexing of DV/DP in specfun.f:PBDV starts from 0, hence +2 */
   num = ABS((int)v) + 2;
   dv = (double *)PyMem_Malloc(sizeof(double)*2*num);
@@ -732,6 +669,11 @@ int pbvv_wrap(double v, double x, double *pvf, double *pvd) {
   double *vp;
   int num;
 
+  if (npy_isnan(v) || npy_isnan(x)) {
+    *pvf = NPY_NAN;
+    *pvd = NPY_NAN;
+    return 0;
+  }
   /* NB. Indexing of DV/DP in specfun.f:PBVV starts from 0, hence +2 */
   num = ABS((int)v) + 2;
   vv = (double *)PyMem_Malloc(sizeof(double)*2*num);
@@ -950,7 +892,7 @@ int prolate_radial1_wrap(double m, double n, double c, double cv, double x, doub
   int_m = (int )m;
   int_n = (int )n;
   F_FUNC(rswfp,RSWFP)(&int_m,&int_n,&c,&x,&cv,&kf,r1f,r1d,&r2f,&r2d);
-  return 0;  
+  return 0;
 }
 
 int prolate_radial2_wrap(double m, double n, double c, double cv, double x, double *r2f, double *r2d)
@@ -969,7 +911,7 @@ int prolate_radial2_wrap(double m, double n, double c, double cv, double x, doub
   int_m = (int )m;
   int_n = (int )n;
   F_FUNC(rswfp,RSWFP)(&int_m,&int_n,&c,&x,&cv,&kf,&r1f,&r1d,r2f,r2d);
-  return 0;  
+  return 0;
 }
 
 double oblate_radial1_nocv_wrap(double m, double n, double c, double x, double *r1d)
@@ -1040,7 +982,7 @@ int oblate_radial1_wrap(double m, double n, double c, double cv, double x, doubl
   int_m = (int )m;
   int_n = (int )n;
   F_FUNC(rswfo,RSWFO)(&int_m,&int_n,&c,&x,&cv,&kf,r1f,r1d,&r2f,&r2d);
-  return 0;  
+  return 0;
 }
 
 int oblate_radial2_wrap(double m, double n, double c, double cv, double x, double *r2f, double *r2d)
@@ -1059,7 +1001,7 @@ int oblate_radial2_wrap(double m, double n, double c, double cv, double x, doubl
   int_m = (int )m;
   int_n = (int )n;
   F_FUNC(rswfo,RSWFO)(&int_m,&int_n,&c,&x,&cv,&kf,&r1f,&r1d,r2f,r2d);
-  return 0;  
+  return 0;
 }
 
 
@@ -1067,7 +1009,7 @@ int modified_fresnel_plus_wrap(double x, npy_cdouble *Fplus, npy_cdouble *Kplus)
 {
   int ks=0;
   double fm, fa, gm, ga;
-  
+
   F_FUNC(ffk,FFK)(&ks,&x,F2C_CST(Fplus),&fm,&fa,F2C_CST(Kplus),&gm,&ga);
   return 0;
 }
@@ -1076,8 +1018,7 @@ int modified_fresnel_minus_wrap(double x, npy_cdouble *Fminus, npy_cdouble *Kmin
 {
   int ks=1;
   double fm, fa, gm, ga;
-  
+
   F_FUNC(ffk,FFK)(&ks,&x,F2C_CST(Fminus),&fm,&fa,F2C_CST(Kminus),&gm,&ga);
   return 0;
 }
-

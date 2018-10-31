@@ -2,7 +2,7 @@
 
 The matfile specification last found here:
 
-http://www.mathworks.com/access/helpdesk/help/pdf_doc/matlab/matfile_format.pdf
+https://www.mathworks.com/access/helpdesk/help/pdf_doc/matlab/matfile_format.pdf
 
 (as of December 5 2008)
 '''
@@ -21,7 +21,7 @@ guess the format of matlab arrays of ``mxFUNCTION_CLASS`` and
 ``mxFUNCTION_CLASS`` stores all types of matlab functions.  It seems to
 contain a struct matrix with a set pattern of fields.  For anonymous
 functions, a sub-fields of one of these fields seems to contain the
-well-named ``mxOPAQUE_CLASS``. This seems to cotain:
+well-named ``mxOPAQUE_CLASS``. This seems to contain:
 
 * array flags as for any matlab matrix
 * 3 int8 strings
@@ -427,7 +427,10 @@ def to_writeable(source):
     is_mapping = (hasattr(source, 'keys') and hasattr(source, 'values') and
                   hasattr(source, 'items'))
     # Objects that don't implement mappings, but do have dicts
-    if not is_mapping and hasattr(source, '__dict__'):
+    if isinstance(source, np.generic):
+        # Numpy scalars are never mappings (pypy issue workaround)
+        pass
+    elif not is_mapping and hasattr(source, '__dict__'):
         source = dict((key, value) for key, value in source.__dict__.items()
                       if not key.startswith('_'))
         is_mapping = True
@@ -437,7 +440,7 @@ def to_writeable(source):
         for field, value in source.items():
             if (isinstance(field, string_types) and
                     field[0] not in '_0123456789'):
-                dtype.append((field, object))
+                dtype.append((str(field), object))
                 values.append(value)
         if dtype:
             return np.array([tuple(values)], dtype)
@@ -656,7 +659,7 @@ class VarWriter5(object):
         '''
         if arr.size == 0 or np.all(arr == ''):
             # This an empty string array or a string array containing
-            # only empty strings.  Matlab cannot distiguish between a
+            # only empty strings.  Matlab cannot distinguish between a
             # string array that is empty, and a string array containing
             # only empty strings, because it stores strings as arrays of
             # char.  There is no way of having an array of char that is

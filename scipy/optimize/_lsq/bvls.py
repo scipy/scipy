@@ -32,7 +32,7 @@ def bvls(A, b, x_lsq, lb, ub, tol, max_iter, verbose):
 
     free_set = on_bound == 0
     active_set = ~free_set
-    free_set, = np.where(free_set)
+    free_set, = np.nonzero(free_set)
 
     r = A.dot(x) - b
     cost = 0.5 * np.dot(r, r)
@@ -66,7 +66,7 @@ def bvls(A, b, x_lsq, lb, ub, tol, max_iter, verbose):
 
         A_free = A[:, free_set]
         b_free = b - A.dot(x * active_set)
-        z = lstsq(A_free, b_free)[0]
+        z = lstsq(A_free, b_free, rcond=-1)[0]
 
         lbv = z < lb[free_set]
         ubv = z > ub[free_set]
@@ -132,7 +132,7 @@ def bvls(A, b, x_lsq, lb, ub, tol, max_iter, verbose):
 
         A_free = A[:, free_set]
         b_free = b - A.dot(x * active_set)
-        z = lstsq(A_free, b_free)[0]
+        z = lstsq(A_free, b_free, rcond=-1)[0]
 
         lbv, = np.nonzero(z < lb_free)
         ubv, = np.nonzero(z > ub_free)

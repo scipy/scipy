@@ -7,7 +7,7 @@ import numpy as np
 
 import scipy.linalg
 import scipy.sparse.linalg
-from scipy.sparse.linalg import LinearOperator, aslinearoperator
+from scipy.sparse.linalg import aslinearoperator
 
 __all__ = ['expm_multiply']
 
@@ -211,6 +211,7 @@ def _expm_multiply_simple_core(A, B, t, mu, m_star, s, tol=None, balance=False):
         F = eta * F
         B = F
     return F
+
 
 # This table helps to compute bounds.
 # They seem to have been difficult to calculate, involving symbolic
@@ -602,13 +603,13 @@ def _expm_multiply_interval(A, B, start=None, stop=None,
         else:
             return _expm_multiply_interval_core_0(A, X,
                     h, mu, q, norm_info, tol, ell,n0)
-    elif q > s and not (q % s):
+    elif not (q % s):
         if status_only:
             return 1
         else:
             return _expm_multiply_interval_core_1(A, X,
                     h, mu, m_star, s, q, tol)
-    elif q > s and (q % s):
+    elif (q % s):
         if status_only:
             return 2
         else:

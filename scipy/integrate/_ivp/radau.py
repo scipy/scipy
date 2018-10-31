@@ -180,37 +180,37 @@ def predict_factor(h_abs, h_abs_old, error_norm, error_norm_old):
 class Radau(OdeSolver):
     """Implicit Runge-Kutta method of Radau IIA family of order 5.
 
-    Implementation follows [1]_. The error is controlled for a 3rd order
-    accurate embedded formula. A cubic polynomial which satisfies the
-    collocation conditions is used for the dense output.
+    The implementation follows [1]_. The error is controlled with a
+    third-order accurate embedded formula. A cubic polynomial which satisfies
+    the collocation conditions is used for the dense output.
 
     Parameters
     ----------
     fun : callable
         Right-hand side of the system. The calling signature is ``fun(t, y)``.
-        Here ``t`` is a scalar and there are two options for ndarray ``y``.
-        It can either have shape (n,), then ``fun`` must return array_like with
-        shape (n,). Or alternatively it can have shape (n, k), then ``fun``
-        must return array_like with shape (n, k), i.e. each column
+        Here ``t`` is a scalar, and there are two options for the ndarray ``y``:
+        It can either have shape (n,); then ``fun`` must return array_like with
+        shape (n,). Alternatively it can have shape (n, k); then ``fun``
+        must return an array_like with shape (n, k), i.e. each column
         corresponds to a single column in ``y``. The choice between the two
         options is determined by `vectorized` argument (see below). The
-        vectorized implementation allows faster approximation of the Jacobian
-        by finite differences.
+        vectorized implementation allows a faster approximation of the Jacobian
+        by finite differences (required for this solver).
     t0 : float
         Initial time.
     y0 : array_like, shape (n,)
         Initial state.
     t_bound : float
-        Boundary time --- the integration won't continue beyond it. It also
+        Boundary time - the integration won't continue beyond it. It also
         determines the direction of the integration.
     max_step : float, optional
-        Maximum allowed step size. Default is np.inf, i.e. the step is not
+        Maximum allowed step size. Default is np.inf, i.e. the step size is not
         bounded and determined solely by the solver.
     rtol, atol : float and array_like, optional
         Relative and absolute tolerances. The solver keeps the local error
         estimates less than ``atol + rtol * abs(y)``. Here `rtol` controls a
         relative accuracy (number of correct digits). But if a component of `y`
-        is approximately below `atol` then the error only needs to fall within
+        is approximately below `atol`, the error only needs to fall within
         the same `atol` threshold, and the number of correct digits is not
         guaranteed. If components of y have different scales, it might be
         beneficial to set different `atol` values for different components by
@@ -218,27 +218,29 @@ class Radau(OdeSolver):
         1e-3 for `rtol` and 1e-6 for `atol`.
     jac : {None, array_like, sparse_matrix, callable}, optional
         Jacobian matrix of the right-hand side of the system with respect to
-        y, required only by 'Radau' and 'BDF' methods. The Jacobian matrix
-        has shape (n, n) and its element (i, j) is equal to ``d f_i / d y_j``.
-        There are 3 ways to define the Jacobian:
+        y, required by this method. The Jacobian matrix has shape (n, n) and
+        its element (i, j) is equal to ``d f_i / d y_j``.
+        There are three ways to define the Jacobian:
 
-            * If array_like or sparse_matrix, then the Jacobian is assumed to
+            * If array_like or sparse_matrix, the Jacobian is assumed to
               be constant.
-            * If callable, then the Jacobian is assumed to depend on both
-              t and y, and will be called as ``jac(t, y)`` as necessary. The
-              return value might be a sparse matrix.
-            * If None (default), then the Jacobian will be approximated by
+            * If callable, the Jacobian is assumed to depend on both
+              t and y; it will be called as ``jac(t, y)`` as necessary.
+              For the 'Radau' and 'BDF' methods, the return value might be a
+              sparse matrix.
+            * If None (default), the Jacobian will be approximated by
               finite differences.
 
         It is generally recommended to provide the Jacobian rather than
-        relying on a finite difference approximation.
+        relying on a finite-difference approximation.
     jac_sparsity : {None, array_like, sparse matrix}, optional
-        Defines a sparsity structure of the Jacobian matrix for a finite
-        difference approximation, its shape must be (n, n). If the Jacobian has
-        only few non-zero elements in *each* row, providing the sparsity
-        structure will greatly speed up the computations [2]_. A zero
-        entry means that a corresponding element in the Jacobian is identically
-        zero. If None (default), the Jacobian is assumed to be dense.
+        Defines a sparsity structure of the Jacobian matrix for a
+        finite-difference approximation. Its shape must be (n, n). This argument
+        is ignored if `jac` is not `None`. If the Jacobian has only few non-zero
+        elements in *each* row, providing the sparsity structure will greatly
+        speed up the computations [2]_. A zero entry means that a corresponding
+        element in the Jacobian is always zero. If None (default), the Jacobian
+        is assumed to be dense.
     vectorized : bool, optional
         Whether `fun` is implemented in a vectorized fashion. Default is False.
 
@@ -261,9 +263,9 @@ class Radau(OdeSolver):
     step_size : float
         Size of the last successful step. None if no steps were made yet.
     nfev : int
-        Number of the system's rhs evaluations.
+        Number of evaluations of the right-hand side.
     njev : int
-        Number of the Jacobian evaluations.
+        Number of evaluations of the Jacobian.
     nlu : int
         Number of LU decompositions.
 

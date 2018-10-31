@@ -66,7 +66,7 @@ c           if the computation mode iopt=1 is used this value of n
 c           should be left unchanged between subsequent calls.
 c           in case iopt=-1, the value of n must be specified on entry.
 c   t     : real array of dimension at least (nest).
-c           on succesful exit, this array will contain the knots of the
+c           on successful exit, this array will contain the knots of the
 c           spline,i.e. the position of the interior knots t(k+2),t(k+3)
 c           ...,t(n-k-1) as well as the position of the additional knots
 c           t(1)=t(2)=...=t(k+1)=xb and t(n-k)=...=t(n)=xe needed for
@@ -77,7 +77,7 @@ c           calls. if the computation mode iopt=-1 is used, the values
 c           t(k+2),...,t(n-k-1) must be supplied by the user, before
 c           entry. see also the restrictions (ier=10).
 c   c     : real array of dimension at least (nest).
-c           on succesful exit, this array will contain the coefficients
+c           on successful exit, this array will contain the coefficients
 c           c(1),c(2),..,c(n-k-1) in the b-spline representation of s(x)
 c   fp    : real. unless ier=10, fp contains the weighted sum of
 c           squared residuals of the spline approximation returned.
@@ -112,7 +112,7 @@ c             spline according to the knots t(1),t(2),...,t(n). (n=nest)
 c             the parameter fp gives the corresponding weighted sum of
 c             squared residuals (fp>s).
 c    ier=2  : error. a theoretically impossible result was found during
-c             the iteration proces for finding a smoothing spline with
+c             the iteration process for finding a smoothing spline with
 c             fp = s. probably causes : s too small.
 c             there is an approximation returned but the corresponding
 c             weighted sum of squared residuals does not satisfy the

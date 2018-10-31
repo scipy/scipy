@@ -2,8 +2,10 @@
 """
 from __future__ import division, print_function, absolute_import
 
+import itertools
+
 import numpy as np
-from numpy.testing import (run_module_suite, assert_almost_equal, assert_equal,
+from numpy.testing import (assert_almost_equal, assert_equal,
         assert_allclose, assert_array_less, assert_)
 
 from scipy import ones, rand, r_, diag, linalg, eye
@@ -91,7 +93,7 @@ def test_diagonal():
     # This test was moved from '__main__' in lobpcg.py.
     # Coincidentally or not, this is the same eigensystem
     # required to reproduce arpack bug
-    # http://forge.scilab.org/index.php/p/arpack-ng/issues/1397/
+    # https://forge.scilab.org/p/arpack-ng/issues/1397/
     # even using the same n=100.
 
     np.random.seed(1234)
@@ -191,5 +193,37 @@ def test_fiedler_large_12():
     _check_fiedler(12, 2)
 
 
-if __name__ == "__main__":
-    run_module_suite()
+def test_hermitian():
+    np.random.seed(1234)
+
+    sizes = [3, 10, 50]
+    ks = [1, 3, 10, 50]
+    gens = [True, False]
+
+    for size, k, gen in itertools.product(sizes, ks, gens):
+        if k > size:
+            continue
+
+        H = np.random.rand(size, size) + 1.j * np.random.rand(size, size)
+        H = 10 * np.eye(size) + H + H.T.conj()
+
+        X = np.random.rand(size, k)
+
+        if not gen:
+            B = np.eye(size)
+            w, v = lobpcg(H, X, maxiter=5000)
+            w0, v0 = eigh(H)
+        else:
+            B = np.random.rand(size, size) + 1.j * np.random.rand(size, size)
+            B = 10 * np.eye(size) + B.dot(B.T.conj())
+            w, v = lobpcg(H, X, B, maxiter=5000)
+            w0, v0 = eigh(H, B)
+
+        for wx, vx in zip(w, v.T):
+            # Check eigenvector
+            assert_allclose(np.linalg.norm(H.dot(vx) - B.dot(vx) * wx) / np.linalg.norm(H.dot(vx)),
+                            0, atol=5e-4, rtol=0)
+
+            # Compare eigenvalues
+            j = np.argmin(abs(w0 - wx))
+            assert_allclose(wx, w0[j], rtol=1e-4)

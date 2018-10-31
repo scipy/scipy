@@ -5,18 +5,18 @@
 #     arbitrary-precision floating-point arithmetic (version 0.19),
 #     December 2013. http://mpmath.org/.
 # [2] NIST, "Digital Library of Mathematical Functions",
-#     http://dlmf.nist.gov/
+#     https://dlmf.nist.gov/
 import cython
 cimport numpy as np
 
-cimport sf_error
+from . cimport sf_error
 
 cdef extern from "numpy/npy_math.h":
     double NPY_PI
     double NPY_PI_2
     double NPY_EULER
 
-from _complexstuff cimport (
+from ._complexstuff cimport (
     npy_cdouble_from_double_complex, double_complex_from_npy_cdouble,
     inf, nan, zabs, zlog, zpack)
 

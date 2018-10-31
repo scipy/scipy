@@ -14,7 +14,7 @@ import warnings
 from scipy._lib.six import string_types
 
 __all__ = ['periodogram', 'welch', 'lombscargle', 'csd', 'coherence',
-           'spectrogram', 'stft', 'istft', 'check_COLA']
+           'spectrogram', 'stft', 'istft', 'check_COLA', 'check_NOLA']
 
 
 def lombscargle(x,
@@ -26,7 +26,7 @@ def lombscargle(x,
     lombscargle(x, y, freqs)
 
     Computes the Lomb-Scargle periodogram.
-    
+
     The Lomb-Scargle periodogram was developed by Lomb [1]_ and further
     extended by Scargle [2]_ to find, and test the significance of weak
     periodic signals with uneven temporal sampling.
@@ -35,7 +35,7 @@ def lombscargle(x,
     is unnormalized, it takes the value ``(A**2) * N/4`` for a harmonic
     signal with amplitude A for sufficiently large N.
 
-    When *normalize* is True the computed periodogram is is normalized by
+    When *normalize* is True the computed periodogram is normalized by
     the residuals of the data around a constant reference model (at zero).
 
     Input arrays should be one-dimensional and will be cast to float64.
@@ -78,7 +78,7 @@ def lombscargle(x,
     .. [1] N.R. Lomb "Least-squares frequency analysis of unequally spaced
            data", Astrophysics and Space Science, vol 39, pp. 447-462, 1976
 
-    .. [2] J.D. Scargle "Studies in astronomical time series analysis. II - 
+    .. [2] J.D. Scargle "Studies in astronomical time series analysis. II -
            Statistical aspects of spectral analysis of unevenly spaced data",
            The Astrophysical Journal, vol 263, pp. 835-853, 1982
 
@@ -86,9 +86,16 @@ def lombscargle(x,
            periodogram using graphics processing units.", The Astrophysical
            Journal Supplement Series, vol 191, pp. 247-253, 2010
 
+    See Also
+    --------
+    istft: Inverse Short Time Fourier Transform
+    check_COLA: Check whether the Constant OverLap Add (COLA) constraint is met
+    welch: Power spectral density by Welch's method
+    spectrogram: Spectrogram by Welch's method
+    csd: Cross spectral density by Welch's method
+
     Examples
     --------
-    >>> import scipy.signal
     >>> import matplotlib.pyplot as plt
 
     First define some input parameters for the signal:
@@ -99,21 +106,21 @@ def lombscargle(x,
     >>> nin = 1000
     >>> nout = 100000
     >>> frac_points = 0.9 # Fraction of points to select
-     
+
     Randomly select a fraction of an array with timesteps:
 
     >>> r = np.random.rand(nin)
     >>> x = np.linspace(0.01, 10*np.pi, nin)
     >>> x = x[r >= frac_points]
-     
+
     Plot a sine wave for the selected times:
 
     >>> y = A * np.sin(w*x+phi)
 
     Define the array of frequencies for which to compute the periodogram:
-    
+
     >>> f = np.linspace(0.01, 10, nout)
-     
+
     Calculate Lomb-Scargle periodogram:
 
     >>> import scipy.signal as signal
@@ -238,8 +245,8 @@ def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',
     If we average the last half of the spectral density, to exclude the
     peak, we can recover the noise power on the signal.
 
-    >>> np.mean(Pxx_den[256:])
-    0.0018156616014838548
+    >>> np.mean(Pxx_den[25000:])
+    0.00099728892368242854
 
     Now compute and plot the power spectrum.
 
@@ -275,17 +282,18 @@ def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',
     elif nfft < x.shape[axis]:
         s = [np.s_[:]]*len(x.shape)
         s[axis] = np.s_[:nfft]
-        x = x[s]
+        x = x[tuple(s)]
         nperseg = nfft
         nfft = None
 
-    return welch(x, fs, window, nperseg, 0, nfft, detrend, return_onesided,
-                 scaling, axis)
+    return welch(x, fs=fs, window=window, nperseg=nperseg, noverlap=0,
+                 nfft=nfft, detrend=detrend, return_onesided=return_onesided,
+                 scaling=scaling, axis=axis)
 
 
 def welch(x, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
           detrend='constant', return_onesided=True, scaling='density',
-          axis=-1):
+          axis=-1, average='mean'):
     r"""
     Estimate power spectral density using Welch's method.
 
@@ -336,6 +344,10 @@ def welch(x, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     axis : int, optional
         Axis along which the periodogram is computed; the default is
         over the last axis (i.e. ``axis=-1``).
+    average : { 'mean', 'median' }, optional
+        Method to use when averaging periodograms. Defaults to 'mean'.
+
+        .. versionadded:: 1.2.0
 
     Returns
     -------
@@ -419,16 +431,35 @@ def welch(x, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     >>> np.sqrt(Pxx_spec.max())
     2.0077340678640727
 
+    If we now introduce a discontinuity in the signal, by increasing the
+    amplitude of a small portion of the signal by 50, we can see the
+    corruption of the mean average power spectral density, but using a
+    median average better estimates the normal behaviour.
+
+    >>> x[int(N//2):int(N//2)+10] *= 50.
+    >>> f, Pxx_den = signal.welch(x, fs, nperseg=1024)
+    >>> f_med, Pxx_den_med = signal.welch(x, fs, nperseg=1024, average='median')
+    >>> plt.semilogy(f, Pxx_den, label='mean')
+    >>> plt.semilogy(f_med, Pxx_den_med, label='median')
+    >>> plt.ylim([0.5e-3, 1])
+    >>> plt.xlabel('frequency [Hz]')
+    >>> plt.ylabel('PSD [V**2/Hz]')
+    >>> plt.legend()
+    >>> plt.show()
+
     """
 
-    freqs, Pxx = csd(x, x, fs, window, nperseg, noverlap, nfft, detrend,
-                     return_onesided, scaling, axis)
+    freqs, Pxx = csd(x, x, fs=fs, window=window, nperseg=nperseg,
+                     noverlap=noverlap, nfft=nfft, detrend=detrend,
+                     return_onesided=return_onesided, scaling=scaling,
+                     axis=axis, average=average)
 
     return freqs, Pxx.real
 
 
 def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
-        detrend='constant', return_onesided=True, scaling='density', axis=-1):
+        detrend='constant', return_onesided=True, scaling='density',
+        axis=-1, average='mean'):
     r"""
     Estimate the cross power spectral density, Pxy, using Welch's
     method.
@@ -477,6 +508,10 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     axis : int, optional
         Axis along which the CSD is computed for both inputs; the
         default is over the last axis (i.e. ``axis=-1``).
+    average : { 'mean', 'median' }, optional
+        Method to use when averaging periodograms. Defaults to 'mean'.
+
+        .. versionadded:: 1.2.0
 
     Returns
     -------
@@ -553,14 +588,20 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     # Average over windows.
     if len(Pxy.shape) >= 2 and Pxy.size > 0:
         if Pxy.shape[-1] > 1:
-            Pxy = Pxy.mean(axis=-1)
+            if average == 'median':
+                Pxy = np.median(Pxy, axis=-1) / _median_bias(Pxy.shape[-1])
+            elif average == 'mean':
+                Pxy = Pxy.mean(axis=-1)
+            else:
+                raise ValueError('average must be "median" or "mean", got %s'
+                                 % (average,))
         else:
             Pxy = np.reshape(Pxy, Pxy.shape[:-1])
 
     return freqs, Pxy
 
 
-def spectrogram(x, fs=1.0, window=('tukey',.25), nperseg=None, noverlap=None,
+def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=None, noverlap=None,
                 nfft=None, detrend='constant', return_onesided=True,
                 scaling='density', axis=-1, mode='psd'):
     """
@@ -680,6 +721,14 @@ def spectrogram(x, fs=1.0, window=('tukey',.25), nperseg=None, noverlap=None,
     >>> plt.ylabel('Frequency [Hz]')
     >>> plt.xlabel('Time [sec]')
     >>> plt.show()
+
+    Note, if using output that is not one sided, then use the following:
+
+    >>> f, t, Sxx = signal.spectrogram(x, fs, return_onesided=False)
+    >>> plt.pcolormesh(t, np.fft.fftshift(f), np.fft.fftshift(Sxx, axes=0))
+    >>> plt.ylabel('Frequency [Hz]')
+    >>> plt.xlabel('Time [sec]')
+    >>> plt.show()
     """
     modelist = ['psd', 'complex', 'magnitude', 'angle', 'phase']
     if mode not in modelist:
@@ -749,15 +798,16 @@ def check_COLA(window, nperseg, noverlap, tol=1e-10):
 
     See Also
     --------
+    check_NOLA: Check whether the Nonzero Overlap Add (NOLA) constraint is met
     stft: Short Time Fourier Transform
     istft: Inverse Short Time Fourier Transform
 
     Notes
     -----
     In order to enable inversion of an STFT via the inverse STFT in
-    `istft`, the signal windowing must obey the constraint of "Constant
-    OverLap Add" (COLA). This ensures that every point in the input data
-    is equally weighted, thereby avoiding aliasing and allowing full
+    `istft`, it is sufficient that the signal windowing obeys the constraint of
+    "Constant OverLap Add" (COLA). This ensures that every point in the input
+    data is equally weighted, thereby avoiding aliasing and allowing full
     reconstruction.
 
     Some examples of windows that satisfy COLA:
@@ -835,14 +885,140 @@ def check_COLA(window, nperseg, noverlap, tol=1e-10):
             raise ValueError('window must have length of nperseg')
 
     step = nperseg - noverlap
-    binsums = np.sum((win[ii*step:(ii+1)*step] for ii in range(nperseg//step)),
-                     axis=0)
+    binsums = sum(win[ii*step:(ii+1)*step] for ii in range(nperseg//step))
 
     if nperseg % step != 0:
         binsums[:nperseg % step] += win[-(nperseg % step):]
 
     deviation = binsums - np.median(binsums)
     return np.max(np.abs(deviation)) < tol
+
+
+def check_NOLA(window, nperseg, noverlap, tol=1e-10):
+    r"""
+    Check whether the Nonzero Overlap Add (NOLA) constraint is met
+
+    Parameters
+    ----------
+    window : str or tuple or array_like
+        Desired window to use. If `window` is a string or tuple, it is
+        passed to `get_window` to generate the window values, which are
+        DFT-even by default. See `get_window` for a list of windows and
+        required parameters. If `window` is array_like it will be used
+        directly as the window and its length must be nperseg.
+    nperseg : int
+        Length of each segment.
+    noverlap : int
+        Number of points to overlap between segments.
+    tol : float, optional
+        The allowed variance of a bin's weighted sum from the median bin
+        sum.
+
+    Returns
+    -------
+    verdict : bool
+        `True` if chosen combination satisfies the NOLA constraint within
+        `tol`, `False` otherwise
+
+    See Also
+    --------
+    check_COLA: Check whether the Constant OverLap Add (COLA) constraint is met
+    stft: Short Time Fourier Transform
+    istft: Inverse Short Time Fourier Transform
+
+    Notes
+    -----
+    In order to enable inversion of an STFT via the inverse STFT in
+    `istft`, the signal windowing must obey the constraint of "nonzero
+    overlap add" (NOLA):
+
+    .. math:: \sum_{t}w^{2}[n-tH] \ne 0
+
+    for all :math:`n`, where :math:`w` is the window function, :math:`t` is the
+    frame index, and :math:`H` is the hop size (:math:`H` = `nperseg` -
+    `noverlap`).
+
+    This ensures that the normalization factors in the denominator of the
+    overlap-add inversion equation are not zero. Only very pathological windows
+    will fail the NOLA constraint.
+
+    .. versionadded:: 1.2.0
+
+    References
+    ----------
+    .. [1] Julius O. Smith III, "Spectral Audio Signal Processing", W3K
+           Publishing, 2011,ISBN 978-0-9745607-3-1.
+    .. [2] G. Heinzel, A. Ruediger and R. Schilling, "Spectrum and
+           spectral density estimation by the Discrete Fourier transform
+           (DFT), including a comprehensive list of window functions and
+           some new at-top windows", 2002,
+           http://hdl.handle.net/11858/00-001M-0000-0013-557A-5
+
+    Examples
+    --------
+    >>> from scipy import signal
+
+    Confirm NOLA condition for rectangular window of 75% (3/4) overlap:
+
+    >>> signal.check_NOLA(signal.boxcar(100), 100, 75)
+    True
+
+    NOLA is also true for 25% (1/4) overlap:
+
+    >>> signal.check_NOLA(signal.boxcar(100), 100, 25)
+    True
+
+    "Symmetrical" Hann window (for filter design) is also NOLA:
+
+    >>> signal.check_NOLA(signal.hann(120, sym=True), 120, 60)
+    True
+
+    As long as there is overlap, it takes quite a pathological window to fail
+    NOLA:
+
+    >>> w = np.ones(64, dtype="float")
+    >>> w[::2] = 0
+    >>> signal.check_NOLA(w, 64, 32)
+    False
+
+    If there is not enough overlap, a window with zeros at the ends will not
+    work:
+
+    >>> signal.check_NOLA(signal.hann(64), 64, 0)
+    False
+    >>> signal.check_NOLA(signal.hann(64), 64, 1)
+    False
+    >>> signal.check_NOLA(signal.hann(64), 64, 2)
+    True
+    """
+
+    nperseg = int(nperseg)
+
+    if nperseg < 1:
+        raise ValueError('nperseg must be a positive integer')
+
+    if noverlap >= nperseg:
+        raise ValueError('noverlap must be less than nperseg')
+    if noverlap < 0:
+        raise ValueError('noverlap must be a nonnegative integer')
+    noverlap = int(noverlap)
+
+    if isinstance(window, string_types) or type(window) is tuple:
+        win = get_window(window, nperseg)
+    else:
+        win = np.asarray(window)
+        if len(win.shape) != 1:
+            raise ValueError('window must be 1-D')
+        if win.shape[0] != nperseg:
+            raise ValueError('window must have length of nperseg')
+
+    step = nperseg - noverlap
+    binsums = sum(win[ii*step:(ii+1)*step]**2 for ii in range(nperseg//step))
+
+    if nperseg % step != 0:
+        binsums[:nperseg % step] += win[-(nperseg % step):]**2
+
+    return np.min(binsums) > tol
 
 
 def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
@@ -922,6 +1098,7 @@ def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
     istft: Inverse Short Time Fourier Transform
     check_COLA: Check whether the Constant OverLap Add (COLA) constraint
                 is met
+    check_NOLA: Check whether the Nonzero Overlap Add (NOLA) constraint is met
     welch: Power spectral density by Welch's method.
     spectrogram: Spectrogram by Welch's method.
     csd: Cross spectral density by Welch's method.
@@ -930,17 +1107,26 @@ def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
     Notes
     -----
     In order to enable inversion of an STFT via the inverse STFT in
-    `istft`, the signal windowing must obey the constraint of "Constant
-    OverLap Add" (COLA), and the input signal must have complete
+    `istft`, the signal windowing must obey the constraint of "Nonzero
+    OverLap Add" (NOLA), and the input signal must have complete
     windowing coverage (i.e. ``(x.shape[axis] - nperseg) %
     (nperseg-noverlap) == 0``). The `padded` argument may be used to
     accomplish this.
 
-    The COLA constraint ensures that every point in the input data is
-    equally weighted, thereby avoiding aliasing and allowing full
-    reconstruction. Whether a choice of `window`, `nperseg`, and
-    `noverlap` satisfy this constraint can be tested with
-    `check_COLA`.
+    Given a time-domain signal :math:`x[n]`, a window :math:`w[n]`, and a hop
+    size :math:`H` = `nperseg - noverlap`, the windowed frame at time index
+    :math:`t` is given by
+
+    .. math:: x_{t}[n]=x[n]w[n-tH]
+
+    The overlap-add (OLA) reconstruction equation is given by
+
+    .. math:: x[n]=\frac{\sum_{t}x_{t}[n]w[n-tH]}{\sum_{t}w^{2}[n-tH]}
+
+    The NOLA constraint ensures that every normalization term that appears
+    in the denomimator of the OLA reconstruction equation is nonzero. Whether a
+    choice of `window`, `nperseg`, and `noverlap` satisfy this constraint can
+    be tested with `check_NOLA`.
 
     .. versionadded:: 0.19.0
 
@@ -948,8 +1134,8 @@ def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
     ----------
     .. [1] Oppenheim, Alan V., Ronald W. Schafer, John R. Buck
            "Discrete-Time Signal Processing", Prentice Hall, 1999.
-    .. [2] Daniel W. Griffin, Jae S. Limdt "Signal Estimation from
-           Modified Short Fourier Transform", IEEE 1984,
+    .. [2] Daniel W. Griffin, Jae S. Lim "Signal Estimation from
+           Modified Short-Time Fourier Transform", IEEE 1984,
            10.1109/TASSP.1984.1164317
 
     Examples
@@ -1063,20 +1249,27 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     stft: Short Time Fourier Transform
     check_COLA: Check whether the Constant OverLap Add (COLA) constraint
                 is met
+    check_NOLA: Check whether the Nonzero Overlap Add (NOLA) constraint is met
 
     Notes
     -----
     In order to enable inversion of an STFT via the inverse STFT with
-    `istft`, the signal windowing must obey the constraint of "Constant
-    OverLap Add" (COLA). This ensures that every point in the input data
-    is equally weighted, thereby avoiding aliasing and allowing full
-    reconstruction. Whether a choice of `window`, `nperseg`, and
-    `noverlap` satisfy this constraint can be tested with
-    `check_COLA`, by using ``nperseg = Zxx.shape[freq_axis]``.
+    `istft`, the signal windowing must obey the constraint of "nonzero
+    overlap add" (NOLA):
+
+    .. math:: \sum_{t}w^{2}[n-tH] \ne 0
+
+    This ensures that the normalization factors that appear in the denominator
+    of the overlap-add reconstruction equation
+
+    .. math:: x[n]=\frac{\sum_{t}x_{t}[n]w[n-tH]}{\sum_{t}w^{2}[n-tH]}
+
+    are not zero. The NOLA constraint can be checked with the `check_NOLA`
+    function.
 
     An STFT which has been modified (via masking or otherwise) is not
     guaranteed to correspond to a exactly realizible signal. This
-    function implements the iSTFT via the least-squares esimation
+    function implements the iSTFT via the least-squares estimation
     algorithm detailed in [2]_, which produces a signal that minimizes
     the mean squared error between the STFT of the returned signal and
     the modified STFT.
@@ -1087,8 +1280,8 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     ----------
     .. [1] Oppenheim, Alan V., Ronald W. Schafer, John R. Buck
            "Discrete-Time Signal Processing", Prentice Hall, 1999.
-    .. [2] Daniel W. Griffin, Jae S. Limdt "Signal Estimation from
-           Modified Short Fourier Transform", IEEE 1984,
+    .. [2] Daniel W. Griffin, Jae S. Lim "Signal Estimation from
+           Modified Short-Time Fourier Transform", IEEE 1984,
            10.1109/TASSP.1984.1164317
 
     Examples
@@ -1197,17 +1390,13 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
         raise ValueError('noverlap must be less than nperseg.')
     nstep = nperseg - noverlap
 
-    if not check_COLA(window, nperseg, noverlap):
-        raise ValueError('Window, STFT shape and noverlap do not satisfy the '
-                         'COLA constraint.')
-
-    # Rearrange axes if neccessary
+    # Rearrange axes if necessary
     if time_axis != Zxx.ndim-1 or freq_axis != Zxx.ndim-2:
         # Turn negative indices to positive for the call to transpose
         if freq_axis < 0:
             freq_axis = Zxx.ndim + freq_axis
         if time_axis < 0:
-            time = Zxx.ndim + time_axis
+            time_axis = Zxx.ndim + time_axis
         zouter = list(range(Zxx.ndim))
         for ax in sorted([time_axis, freq_axis], reverse=True):
             zouter.pop(ax)
@@ -1247,12 +1436,15 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
         x[..., ii*nstep:ii*nstep+nperseg] += xsubs[..., ii] * win
         norm[..., ii*nstep:ii*nstep+nperseg] += win**2
 
-    # Divide out normalization where non-tiny
-    x /= np.where(norm > 1e-10, norm, 1.0)
-
     # Remove extension points
     if boundary:
         x = x[..., nperseg//2:-(nperseg//2)]
+        norm = norm[..., nperseg//2:-(nperseg//2)]
+
+    # Divide out normalization where non-tiny
+    if np.sum(norm > 1e-10) != len(norm):
+        warnings.warn("NOLA condition failed, STFT may not be invertible")
+    x /= np.where(norm > 1e-10, norm, 1.0)
 
     if input_onesided:
         x = x.real
@@ -1375,10 +1567,13 @@ def coherence(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
     >>> plt.show()
     """
 
-    freqs, Pxx = welch(x, fs, window, nperseg, noverlap, nfft, detrend,
+    freqs, Pxx = welch(x, fs=fs, window=window, nperseg=nperseg,
+                       noverlap=noverlap, nfft=nfft, detrend=detrend,
                        axis=axis)
-    _, Pyy = welch(y, fs, window, nperseg, noverlap, nfft, detrend, axis=axis)
-    _, Pxy = csd(x, y, fs, window, nperseg, noverlap, nfft, detrend, axis=axis)
+    _, Pyy = welch(y, fs=fs, window=window, nperseg=nperseg, noverlap=noverlap,
+                   nfft=nfft, detrend=detrend, axis=axis)
+    _, Pxy = csd(x, y, fs=fs, window=window, nperseg=nperseg,
+                 noverlap=noverlap, nfft=nfft, detrend=detrend, axis=axis)
 
     Cxy = np.abs(Pxy)**2 / Pxx / Pyy
 
@@ -1467,14 +1662,7 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
     t : ndarray
         Array of times corresponding to each data segment
     result : ndarray
-        Array of output data, contents dependant on *mode* kwarg.
-
-    References
-    ----------
-    .. [1] Stack Overflow, "Rolling window for 1D arrays in Numpy?",
-           http://stackoverflow.com/a/6811241
-    .. [2] Stack Overflow, "Using strides for an efficient moving
-           average filter", http://stackoverflow.com/a/4947453
+        Array of output data, contents dependent on *mode* kwarg.
 
     Notes
     -----
@@ -1494,7 +1682,7 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
 
     if boundary not in boundary_funcs:
         raise ValueError("Unknown boundary option '{0}', must be one of: {1}"
-                          .format(boundary, list(boundary_funcs.keys())))
+                         .format(boundary, list(boundary_funcs.keys())))
 
     # If x and y are the same object we can save ourselves some computation.
     same_data = y is x
@@ -1538,7 +1726,7 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
             if not same_data and y.ndim > 1:
                 y = np.rollaxis(y, axis, len(y.shape))
 
-    # Check if x and y are the same length, zero-pad if neccesary
+    # Check if x and y are the same length, zero-pad if necessary
     if not same_data:
         if x.shape[-1] != y.shape[-1]:
             if x.shape[-1] < y.shape[-1]:
@@ -1556,7 +1744,7 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
             raise ValueError('nperseg must be a positive integer')
 
     # parse window; if array like, then set nperseg = win.shape
-    win, nperseg = _triage_segments(window, nperseg,input_length=x.shape[-1])
+    win, nperseg = _triage_segments(window, nperseg, input_length=x.shape[-1])
 
     if nfft is None:
         nfft = nperseg
@@ -1612,7 +1800,7 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
     else:
         detrend_func = detrend
 
-    if np.result_type(win,np.complex64) != outdtype:
+    if np.result_type(win, np.complex64) != outdtype:
         win = win.astype(outdtype)
 
     if scaling == 'density':
@@ -1675,17 +1863,13 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
     if same_data and mode != 'stft':
         result = result.real
 
-    # Output is going to have new last axis for window index
-    if axis != -1:
-        # Specify as positive axis index
-        if axis < 0:
-            axis = len(result.shape)-1-axis
+    # Output is going to have new last axis for time/window index, so a
+    # negative axis index shifts down one
+    if axis < 0:
+        axis -= 1
 
-        # Roll frequency axis back to axis where the data came from
-        result = np.rollaxis(result, -1, axis)
-    else:
-        # Make sure window/time index is last axis
-        result = np.rollaxis(result, -1, -2)
+    # Roll frequency axis back to axis where the data came from
+    result = np.rollaxis(result, -1, axis)
 
     return freqs, time, result
 
@@ -1696,7 +1880,7 @@ def _fft_helper(x, win, detrend_func, nperseg, noverlap, nfft, sides):
     scipy.signal._spectral_helper
 
     This is a helper function that does the main FFT calculation for
-    `_spectral helper`. All input valdiation is performed there, and the
+    `_spectral helper`. All input validation is performed there, and the
     data axis is assumed to be the last axis of x. It is not designed to
     be called externally. The windows are not averaged over; the result
     from each window is returned.
@@ -1705,11 +1889,6 @@ def _fft_helper(x, win, detrend_func, nperseg, noverlap, nfft, sides):
     -------
     result : ndarray
         Array of FFT data
-
-    References
-    ----------
-    .. [1] Stack Overflow, "Repeat NumPy array without replicating
-           data?", http://stackoverflow.com/a/5568169
 
     Notes
     -----
@@ -1721,6 +1900,7 @@ def _fft_helper(x, win, detrend_func, nperseg, noverlap, nfft, sides):
     if nperseg == 1 and noverlap == 0:
         result = x[..., np.newaxis]
     else:
+        # https://stackoverflow.com/a/5568169
         step = nperseg - noverlap
         shape = x.shape[:-1]+((x.shape[-1]-noverlap)//step, nperseg)
         strides = x.strides[:-1]+(step*x.strides[-1], x.strides[-1])
@@ -1743,13 +1923,14 @@ def _fft_helper(x, win, detrend_func, nperseg, noverlap, nfft, sides):
 
     return result
 
-def _triage_segments(window, nperseg,input_length):
+
+def _triage_segments(window, nperseg, input_length):
     """
     Parses window and nperseg arguments for spectrogram and _spectral_helper.
     This is a helper function, not meant to be called externally.
 
     Parameters
-    ---------
+    ----------
     window : string, tuple, or ndarray
         If window is specified by a string or tuple and nperseg is not
         specified, nperseg is set to the default of 256 and returns a window of
@@ -1778,15 +1959,15 @@ def _triage_segments(window, nperseg,input_length):
         window.
     """
 
-    #parse window; if array like, then set nperseg = win.shape
+    # parse window; if array like, then set nperseg = win.shape
     if isinstance(window, string_types) or isinstance(window, tuple):
         # if nperseg not specified
         if nperseg is None:
             nperseg = 256  # then change to default
         if nperseg > input_length:
             warnings.warn('nperseg = {0:d} is greater than input length '
-                              ' = {1:d}, using nperseg = {1:d}'
-                              .format(nperseg, input_length))
+                          ' = {1:d}, using nperseg = {1:d}'
+                          .format(nperseg, input_length))
             nperseg = input_length
         win = get_window(window, nperseg)
     else:
@@ -1799,7 +1980,27 @@ def _triage_segments(window, nperseg,input_length):
             nperseg = win.shape[0]
         elif nperseg is not None:
             if nperseg != win.shape[0]:
-                raise ValueError("value specified for nperseg is different from"
-                                 " length of window")
+                raise ValueError("value specified for nperseg is different"
+                                 " from length of window")
     return win, nperseg
 
+
+def _median_bias(n):
+    """
+    Returns the bias of the median of a set of periodograms relative to
+    the mean.
+
+    See arXiv:gr-qc/0509116 Appendix B for details.
+
+    Parameters
+    ----------
+    n : int
+        Numbers of periodograms being averaged.
+
+    Returns
+    -------
+    bias : float
+        Calculated bias.
+    """
+    ii_2 = 2 * np.arange(1., (n-1) // 2 + 1)
+    return 1 + np.sum(1. / (ii_2 + 1) - 1. / ii_2)

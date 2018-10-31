@@ -1,10 +1,15 @@
+#include <Python.h>
 #include <math.h>
+#include <numpy/npy_math.h>
 #include "misc.h"
 
 double gammasgn(double x)
 {
     double fx;
 
+    if (npy_isnan(x)) {
+      return x;
+    }
     if (x > 0) {
         return 1.0;
     }
@@ -21,4 +26,3 @@ double gammasgn(double x)
         }
     }
 }
-

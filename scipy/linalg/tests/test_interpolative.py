@@ -32,7 +32,8 @@ from scipy.linalg import hilbert, svdvals, norm
 from scipy.sparse.linalg import aslinearoperator
 import time
 
-from numpy.testing import assert_, assert_allclose, assert_raises
+from numpy.testing import assert_, assert_allclose
+from pytest import raises as assert_raises
 
 
 def _debug_print(s):
@@ -43,7 +44,7 @@ def _debug_print(s):
 class TestInterpolativeDecomposition(object):
     def test_id(self):
         for dtype in [np.float64, np.complex128]:
-            yield self.check_id, dtype
+            self.check_id(dtype)
 
     def check_id(self, dtype):
         # Test ID routines on a Hilbert matrix.
@@ -62,7 +63,7 @@ class TestInterpolativeDecomposition(object):
         S = np.linalg.svd(A, compute_uv=False)
         try:
             rank = np.nonzero(S < eps)[0][0]
-        except:
+        except IndexError:
             rank = n
 
         # print input summary
@@ -80,25 +81,25 @@ class TestInterpolativeDecomposition(object):
 
         # fixed precision
         _debug_print("Calling iddp_id / idzp_id  ...",)
-        t0 = time.clock()
+        t0 = time.time()
         k, idx, proj = pymatrixid.interp_decomp(A, eps, rand=False)
-        t = time.clock() - t0
+        t = time.time() - t0
         B = pymatrixid.reconstruct_matrix_from_id(A[:, idx[:k]], idx, proj)
         _debug_print(fmt % (t, np.allclose(A, B, eps)))
         assert_(np.allclose(A, B, eps))
 
         _debug_print("Calling iddp_aid / idzp_aid ...",)
-        t0 = time.clock()
+        t0 = time.time()
         k, idx, proj = pymatrixid.interp_decomp(A, eps)
-        t = time.clock() - t0
+        t = time.time() - t0
         B = pymatrixid.reconstruct_matrix_from_id(A[:, idx[:k]], idx, proj)
         _debug_print(fmt % (t, np.allclose(A, B, eps)))
         assert_(np.allclose(A, B, eps))
 
         _debug_print("Calling iddp_rid / idzp_rid ...",)
-        t0 = time.clock()
+        t0 = time.time()
         k, idx, proj = pymatrixid.interp_decomp(L, eps)
-        t = time.clock() - t0
+        t = time.time() - t0
         B = pymatrixid.reconstruct_matrix_from_id(A[:, idx[:k]], idx, proj)
         _debug_print(fmt % (t, np.allclose(A, B, eps)))
         assert_(np.allclose(A, B, eps))
@@ -107,25 +108,25 @@ class TestInterpolativeDecomposition(object):
         k = rank
 
         _debug_print("Calling iddr_id / idzr_id  ...",)
-        t0 = time.clock()
+        t0 = time.time()
         idx, proj = pymatrixid.interp_decomp(A, k, rand=False)
-        t = time.clock() - t0
+        t = time.time() - t0
         B = pymatrixid.reconstruct_matrix_from_id(A[:, idx[:k]], idx, proj)
         _debug_print(fmt % (t, np.allclose(A, B, eps)))
         assert_(np.allclose(A, B, eps))
 
         _debug_print("Calling iddr_aid / idzr_aid ...",)
-        t0 = time.clock()
+        t0 = time.time()
         idx, proj = pymatrixid.interp_decomp(A, k)
-        t = time.clock() - t0
+        t = time.time() - t0
         B = pymatrixid.reconstruct_matrix_from_id(A[:, idx[:k]], idx, proj)
         _debug_print(fmt % (t, np.allclose(A, B, eps)))
         assert_(np.allclose(A, B, eps))
 
         _debug_print("Calling iddr_rid / idzr_rid ...",)
-        t0 = time.clock()
+        t0 = time.time()
         idx, proj = pymatrixid.interp_decomp(L, k)
-        t = time.clock() - t0
+        t = time.time() - t0
         B = pymatrixid.reconstruct_matrix_from_id(A[:, idx[:k]], idx, proj)
         _debug_print(fmt % (t, np.allclose(A, B, eps)))
         assert_(np.allclose(A, B, eps))
@@ -144,25 +145,25 @@ class TestInterpolativeDecomposition(object):
 
         # fixed precision
         _debug_print("Calling iddp_svd / idzp_svd ...",)
-        t0 = time.clock()
+        t0 = time.time()
         U, S, V = pymatrixid.svd(A, eps, rand=False)
-        t = time.clock() - t0
+        t = time.time() - t0
         B = np.dot(U, np.dot(np.diag(S), V.T.conj()))
         _debug_print(fmt % (t, np.allclose(A, B, eps)))
         assert_(np.allclose(A, B, eps))
 
         _debug_print("Calling iddp_asvd / idzp_asvd...",)
-        t0 = time.clock()
+        t0 = time.time()
         U, S, V = pymatrixid.svd(A, eps)
-        t = time.clock() - t0
+        t = time.time() - t0
         B = np.dot(U, np.dot(np.diag(S), V.T.conj()))
         _debug_print(fmt % (t, np.allclose(A, B, eps)))
         assert_(np.allclose(A, B, eps))
 
         _debug_print("Calling iddp_rsvd / idzp_rsvd...",)
-        t0 = time.clock()
+        t0 = time.time()
         U, S, V = pymatrixid.svd(L, eps)
-        t = time.clock() - t0
+        t = time.time() - t0
         B = np.dot(U, np.dot(np.diag(S), V.T.conj()))
         _debug_print(fmt % (t, np.allclose(A, B, eps)))
         assert_(np.allclose(A, B, eps))
@@ -171,25 +172,25 @@ class TestInterpolativeDecomposition(object):
         k = rank
 
         _debug_print("Calling iddr_svd / idzr_svd ...",)
-        t0 = time.clock()
+        t0 = time.time()
         U, S, V = pymatrixid.svd(A, k, rand=False)
-        t = time.clock() - t0
+        t = time.time() - t0
         B = np.dot(U, np.dot(np.diag(S), V.T.conj()))
         _debug_print(fmt % (t, np.allclose(A, B, eps)))
         assert_(np.allclose(A, B, eps))
 
         _debug_print("Calling iddr_asvd / idzr_asvd ...",)
-        t0 = time.clock()
+        t0 = time.time()
         U, S, V = pymatrixid.svd(A, k)
-        t = time.clock() - t0
+        t = time.time() - t0
         B = np.dot(U, np.dot(np.diag(S), V.T.conj()))
         _debug_print(fmt % (t, np.allclose(A, B, eps)))
         assert_(np.allclose(A, B, eps))
 
         _debug_print("Calling iddr_rsvd / idzr_rsvd ...",)
-        t0 = time.clock()
+        t0 = time.time()
         U, S, V = pymatrixid.svd(L, k)
-        t = time.clock() - t0
+        t = time.time() - t0
         B = np.dot(U, np.dot(np.diag(S), V.T.conj()))
         _debug_print(fmt % (t, np.allclose(A, B, eps)))
         assert_(np.allclose(A, B, eps))
@@ -255,3 +256,23 @@ class TestInterpolativeDecomposition(object):
         a = np.ones((4, 3))
         with assert_raises(ValueError):
             pymatrixid.svd(a, 4)
+
+    def test_full_rank(self):
+        eps = 1.0e-12
+
+        # fixed precision
+        A = np.random.rand(16, 8)
+        k, idx, proj = pymatrixid.interp_decomp(A, eps)
+        assert_(k == A.shape[1])
+
+        P = pymatrixid.reconstruct_interp_matrix(idx, proj)
+        B = pymatrixid.reconstruct_skel_matrix(A, k, idx)
+        assert_allclose(A, B.dot(P))
+
+        # fixed rank
+        idx, proj = pymatrixid.interp_decomp(A, k)
+
+        P = pymatrixid.reconstruct_interp_matrix(idx, proj)
+        B = pymatrixid.reconstruct_skel_matrix(A, k, idx)
+        assert_allclose(A, B.dot(P))
+

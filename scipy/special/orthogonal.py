@@ -84,6 +84,7 @@ from scipy import linalg
 from scipy.special import airy
 
 # Local imports.
+from . import _ufuncs
 from . import _ufuncs as cephes
 _gam = cephes.gamma
 from . import specfun
@@ -134,11 +135,11 @@ class orthopoly1d(np.poly1d):
                 eval_func = lambda x: evf(x) / knn
             mu = mu / abs(kn)
             kn = 1.0
-            
+
         # compute coefficients from roots, then scale
         poly = np.poly1d(roots, r=True)
         np.poly1d.__init__(self, poly.coeffs * float(kn))
-        
+
         # TODO: In numpy 1.13, there is no need to use __dict__ to access attributes
         self.__dict__['weights'] = np.array(list(zip(roots,
                                                      weights, equiv_weights)))
@@ -234,7 +235,7 @@ def roots_jacobi(n, alpha, beta, mu=False):
     alpha : float
         alpha must be > -1
     beta : float
-        beta must be > 0
+        beta must be > -1
     mu : bool, optional
         If True, return the sum of the weights, optional.
 
@@ -393,7 +394,7 @@ def sh_jacobi(n, p, q, monic=False):
 
     .. math::
 
-        G_n^{(p, q)}(x) 
+        G_n^{(p, q)}(x)
           = \binom{2n + p - 1}{n}^{-1}P_n^{(p - q, q - 1)}(2x - 1),
 
     where :math:`P_n^{(\cdot, \cdot)}` is the nth Jacobi polynomial.
@@ -505,7 +506,7 @@ def genlaguerre(n, alpha, monic=False):
     Defined to be the solution of
 
     .. math::
-        x\frac{d^2}{dx^2}L_n^{(\alpha)} 
+        x\frac{d^2}{dx^2}L_n^{(\alpha)}
           + (\alpha + 1 - x)\frac{d}{dx}L_n^{(\alpha)}
           + nL_n^{(\alpha)} = 0,
 
@@ -904,20 +905,20 @@ def _pbcf(n, theta):
     References
     ----------
     .. [parabolic-asymptotics]
-       http://dlmf.nist.gov/12.10#vii
+       https://dlmf.nist.gov/12.10#vii
     """
     st = sin(theta)
     ct = cos(theta)
-    # http://dlmf.nist.gov/12.10#vii
+    # https://dlmf.nist.gov/12.10#vii
     mu = 2.0*n + 1.0
-    # http://dlmf.nist.gov/12.10#E23
+    # https://dlmf.nist.gov/12.10#E23
     eta = 0.5*theta - 0.5*st*ct
-    # http://dlmf.nist.gov/12.10#E39
+    # https://dlmf.nist.gov/12.10#E39
     zeta = -(3.0*eta/2.0) ** (2.0/3.0)
-    # http://dlmf.nist.gov/12.10#E40
+    # https://dlmf.nist.gov/12.10#E40
     phi = (-zeta / st**2) ** (0.25)
     # Coefficients
-    # http://dlmf.nist.gov/12.10#E43
+    # https://dlmf.nist.gov/12.10#E43
     a0 = 1.0
     a1 = 0.10416666666666666667
     a2 = 0.08355034722222222222
@@ -931,8 +932,8 @@ def _pbcf(n, theta):
     b4 = -0.31722720267841354810
     b5 = -0.94242914795712024914
     # Polynomials
-    # http://dlmf.nist.gov/12.10#E9
-    # http://dlmf.nist.gov/12.10#E10
+    # https://dlmf.nist.gov/12.10#E9
+    # https://dlmf.nist.gov/12.10#E10
     ctp = ct ** arange(16).reshape((-1,1))
     u0 = 1.0
     u1 = (1.0*ctp[3,:] - 6.0*ct) / 24.0
@@ -953,7 +954,7 @@ def _pbcf(n, theta):
     # Prefactor for U
     P = 2.0*sqrt(pi) * mu**(1.0/6.0) * phi
     # Terms for U
-    # http://dlmf.nist.gov/12.10#E42
+    # https://dlmf.nist.gov/12.10#E42
     phip = phi ** arange(6, 31, 6).reshape((-1,1))
     A0 = b0*u0
     A1 = (b2*u0 + phip[0,:]*b1*u1 + phip[1,:]*b0*u2) / zeta**3
@@ -962,13 +963,13 @@ def _pbcf(n, theta):
     B1 = -(a3*u0 + phip[0,:]*a2*u1 + phip[1,:]*a1*u2 + phip[2,:]*a0*u3) / zeta**5
     B2 = -(a5*u0 + phip[0,:]*a4*u1 + phip[1,:]*a3*u2 + phip[2,:]*a2*u3 + phip[3,:]*a1*u4 + phip[4,:]*a0*u5) / zeta**8
     # U
-    # http://dlmf.nist.gov/12.10#E35
+    # https://dlmf.nist.gov/12.10#E35
     U = P * (Ai * (A0 + A1/mu**2.0 + A2/mu**4.0) +
              Aip * (B0 + B1/mu**2.0 + B2/mu**4.0) / mu**(8.0/6.0))
     # Prefactor for derivative of U
     Pd = sqrt(2.0*pi) * mu**(2.0/6.0) / phi
     # Terms for derivative of U
-    # http://dlmf.nist.gov/12.10#E46
+    # https://dlmf.nist.gov/12.10#E46
     C0 = -(b1*v0 + phip[0,:]*b0*v1) / zeta
     C1 = -(b3*v0 + phip[0,:]*b2*v1 + phip[1,:]*b1*v2 + phip[2,:]*b0*v3) / zeta**4
     C2 = -(b5*v0 + phip[0,:]*b4*v1 + phip[1,:]*b3*v2 + phip[2,:]*b2*v3 + phip[3,:]*b1*v4 + phip[4,:]*b0*v5) / zeta**7
@@ -976,7 +977,7 @@ def _pbcf(n, theta):
     D1 = (a2*v0 + phip[0,:]*a1*v1 + phip[1,:]*a0*v2) / zeta**3
     D2 = (a4*v0 + phip[0,:]*a3*v1 + phip[1,:]*a2*v2 + phip[2,:]*a1*v3 + phip[3,:]*a0*v4) / zeta**6
     # Derivative of U
-    # http://dlmf.nist.gov/12.10#E36
+    # https://dlmf.nist.gov/12.10#E36
     Ud = Pd * (Ai * (C0 + C1/mu**2.0 + C2/mu**4.0) / mu**(4.0/6.0) +
                Aip * (D0 + D1/mu**2.0 + D2/mu**4.0))
     return U, Ud
@@ -1391,9 +1392,8 @@ def roots_chebyt(n, mu=False):
     m = int(n)
     if n < 1 or n != m:
         raise ValueError('n must be a positive integer.')
-    x = np.cos(np.arange(2 * m - 1, 0, -2) * pi / (2 * m))
-    w = np.empty_like(x)
-    w.fill(pi/m)
+    x = _ufuncs._sinpi(np.arange(-m + 1, m, 2) / (2*m))
+    w = np.full_like(x, pi/m)
     if mu:
         return x, w, pi
     else:

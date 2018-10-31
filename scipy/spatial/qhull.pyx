@@ -10,14 +10,16 @@ Wrappers for Qhull triangulation, plus some additional N-D geometry utilities
 # Distributed under the same BSD license as Scipy.
 #
 
+from __future__ import absolute_import
+
 import threading
 import numpy as np
 cimport numpy as np
 cimport cython
-cimport qhull
-cimport setlist
-from libc cimport stdio, stdlib
-from cpython cimport PyBytes_FromStringAndSize, PY_VERSION_HEX
+from . cimport qhull
+from . cimport setlist
+from libc cimport stdlib
+from scipy._lib.messagestream cimport MessageStream
 
 from numpy.compat import asbytes
 import os
@@ -49,11 +51,11 @@ cdef extern from "setjmp.h" nogil:
     void longjmp(jmp_buf STATE, int VALUE) nogil
 
 # Define the clockwise constant
-cdef extern from "qhull/src/user_r.h":
+cdef extern from "qhull_src/src/user_r.h":
     cdef enum:
         qh_ORIENTclock
 
-cdef extern from "qhull/src/qset_r.h":
+cdef extern from "qhull_src/src/qset_r.h":
     ctypedef union setelemT:
         void *p
         int i
@@ -65,7 +67,7 @@ cdef extern from "qhull/src/qset_r.h":
     int qh_setsize(qhT *, setT *set) nogil
     void qh_setappend(qhT *, setT **setp, void *elem) nogil
 
-cdef extern from "qhull/src/libqhull_r.h":
+cdef extern from "qhull_src/src/libqhull_r.h":
     ctypedef double realT
     ctypedef double coordT
     ctypedef double pointT
@@ -170,7 +172,7 @@ cdef extern from "qhull/src/libqhull_r.h":
     void qh_setdelaunay(qhT *, int dim, int count, pointT *points) nogil
     coordT* qh_sethalfspace_all(qhT *, int dim, int count, coordT* halfspaces, pointT *feasible)
 
-cdef extern from "qhull/src/io_r.h":
+cdef extern from "qhull_src/src/io_r.h":
     ctypedef enum qh_RIDGE:
         qh_RIDGEall
         qh_RIDGEinner
@@ -185,14 +187,14 @@ cdef extern from "qhull/src/io_r.h":
     void qh_order_vertexneighbors(qhT *, vertexT *vertex) nogil
     int qh_compare_facetvisit(const void *p1, const void *p2) nogil
 
-cdef extern from "qhull/src/geom_r.h":
+cdef extern from "qhull_src/src/geom_r.h":
     pointT *qh_facetcenter(qhT *, setT *vertices) nogil
     double qh_getarea(qhT *, facetT *facetlist) nogil
 
-cdef extern from "qhull/src/poly_r.h":
+cdef extern from "qhull_src/src/poly_r.h":
     void qh_check_maxout(qhT *) nogil
 
-cdef extern from "qhull/src/mem_r.h":
+cdef extern from "qhull_src/src/mem_r.h":
     void qh_memfree(qhT *, void *object, int insize)
 
 from libc.string cimport memcpy
@@ -203,7 +205,6 @@ from libc.stdlib cimport qsort
 #------------------------------------------------------------------------------
 
 cdef extern from "qhull_misc.h":
-    stdio.FILE *qhull_open_memstream(char **, size_t *)
     void qhull_misc_lib_check()
     void qh_dgetrf(int *m, int *n, double *a, int *lda, int *ipiv,
                    int *info) nogil
@@ -226,87 +227,6 @@ class QhullError(RuntimeError):
 
 
 @cython.final
-cdef class _QhullMessageStream:
-    """
-    Qhull emits error messages to FILE* streams, which we should capture.
-    Do this by directing them to a temporary file.
-    """
-    cdef stdio.FILE *handle
-    cdef bytes _filename
-    cdef bint _removed
-    cdef size_t _memstream_size
-    cdef char *_memstream_ptr
-
-    def __init__(self):
-        # Try first in-memory files, if available
-        self._memstream_ptr = NULL
-        self.handle = qhull_open_memstream(&self._memstream_ptr,
-                                           &self._memstream_size)
-        if self.handle != NULL:
-            self._removed = 1
-            return
-
-        # Fall back to temporary files
-        fd, filename = tempfile.mkstemp(prefix='qhull-err-')
-        os.close(fd)
-        self._filename = filename.encode(sys.getfilesystemencoding())
-        self.handle = stdio.fopen(self._filename, "w+")
-        if self.handle == NULL:
-            stdio.remove(self._filename)
-            raise IOError("Failed to open file {0}".format(self._filename))
-        self._removed = 0
-
-        # Use a posix-style deleted file, if possible
-        if stdio.remove(self._filename) == 0:
-            self._removed = 1
-
-    def __del__(self):
-        self.close()
-
-    def get(self):
-        cdef long pos
-        cdef size_t nread
-        cdef np.uint8_t[::1] buf
-        cdef bytes obj
-
-        pos = stdio.ftell(self.handle)
-        if pos <= 0:
-            return ""
-
-        if self._memstream_ptr != NULL:
-            stdio.fflush(self.handle)
-            obj = PyBytes_FromStringAndSize(self._memstream_ptr, pos)
-        else:
-            arr = np.zeros(pos, dtype=np.uint8)
-            buf = arr
-
-            stdio.rewind(self.handle)
-            nread = stdio.fread(<void*>&buf[0], 1, pos, self.handle)
-            obj = arr[:nread].tostring()
-
-        if PY_VERSION_HEX >= 0x03000000:
-            return obj.decode('latin1')
-        else:
-            return obj
-
-    def clear(self):
-        stdio.rewind(self.handle)
-
-    def close(self):
-        if self._memstream_ptr != NULL:
-            stdlib.free(self._memstream_ptr)
-            self._memstream_ptr = NULL
-
-        if self.handle != NULL:
-            stdio.fclose(self.handle)
-            self.handle = NULL
-
-        if not self._removed:
-            stdio.remove(self._filename)
-            self._removed = 1
-
-
-@cython.final
 cdef class _Qhull:
     # Note that the qhT struct is allocated separately --- otherwise
     # it may end up allocated in a way not compatible with the CRT
@@ -315,7 +235,7 @@ cdef class _Qhull:
 
     cdef list _point_arrays
     cdef list _dual_point_arrays
-    cdef _QhullMessageStream _messages
+    cdef MessageStream _messages
 
     cdef public bytes options
     cdef public bytes mode_option
@@ -343,7 +263,7 @@ cdef class _Qhull:
         cdef int exitcode
 
         self._qh = NULL
-        self._messages = _QhullMessageStream()
+        self._messages = MessageStream()
 
         points = np.ascontiguousarray(points, dtype=np.double)
 
@@ -433,37 +353,52 @@ cdef class _Qhull:
             self.close()
             raise QhullError(msg)
 
-    @cython.final
-    def __del__(self):
-        self.close()
-        self._messages.close()
-
     def check_active(self):
         if self._qh == NULL:
             raise RuntimeError("Qhull instance is closed")
+
+    @cython.final
+    def __dealloc__(self):
+        cdef int curlong, totlong
+
+        if self._qh != NULL:
+            qh_freeqhull(self._qh, qh_ALL)
+            qh_memfreeshort(self._qh, &curlong, &totlong)
+            stdlib.free(self._qh)
+            self._qh = NULL
+
+            if curlong != 0 or totlong != 0:
+                raise QhullError(
+                    "qhull: did not free %d bytes (%d pieces)" %
+                    (totlong, curlong))
+
+        self._messages.close()
 
     @cython.final
     def close(self):
         """
         Uninitialize this instance
         """
+        # Note: this is direct copypaste from __dealloc__(), keep it
+        # in sync with that.  The code must be written directly in
+        # __dealloc__, because otherwise the generated C code tries to
+        # call PyObject_GetAttrStr(self, "close") which on Pypy
+        # crashes.
+
         cdef int curlong, totlong
 
-        if self._qh == NULL:
-            return
+        if self._qh != NULL:
+            qh_freeqhull(self._qh, qh_ALL)
+            qh_memfreeshort(self._qh, &curlong, &totlong)
+            stdlib.free(self._qh)
+            self._qh = NULL
 
-        qh_freeqhull(self._qh, qh_ALL)
-        qh_memfreeshort(self._qh, &curlong, &totlong)
-
-        stdlib.free(self._qh)
-        self._qh = NULL
+            if curlong != 0 or totlong != 0:
+                raise QhullError(
+                    "qhull: did not free %d bytes (%d pieces)" %
+                    (totlong, curlong))
 
         self._messages.close()
-
-        if curlong != 0 or totlong != 0:
-            raise QhullError(
-                "qhull: did not free %d bytes (%d pieces)" %
-                (totlong, curlong))
 
     @cython.final
     def get_points(self):
@@ -713,11 +648,8 @@ cdef class _Qhull:
                             with gil:
                                 tmp = coplanar
                                 coplanar = None
-                                try:
-                                    tmp.resize(2 * ncoplanar + 1, 3)
-                                except ValueError:
-                                    # Work around Cython issue on Python 2.4
-                                    tmp = np.resize(tmp, (2*ncoplanar+1, 3))
+                                # The array is always safe to resize
+                                tmp.resize(2 * ncoplanar + 1, 3, refcheck=False)
                                 coplanar = tmp
 
                         coplanar[ncoplanar, 0] = qh_pointid(self._qh, point)
@@ -949,10 +881,8 @@ cdef class _Qhull:
                 if nvoronoi_vertices >= voronoi_vertices.shape[0]:
                     tmp = voronoi_vertices
                     voronoi_vertices = None
-                    try:
-                        tmp.resize(2*nvoronoi_vertices + 1, self.ndim)
-                    except ValueError:
-                        tmp = np.resize(tmp, (2*nvoronoi_vertices+1, self.ndim))
+                    # Array is safe to resize
+                    tmp.resize(2*nvoronoi_vertices + 1, self.ndim, refcheck=False)
                     voronoi_vertices = tmp
 
                 for k in range(self.ndim):
@@ -1027,7 +957,8 @@ cdef class _Qhull:
 
             if nextremes + 2 >= extremes.shape[0]:
                 extremes = None
-                extremes_arr.resize(2*extremes_arr.shape[0]+1)
+                # Array is safe to resize
+                extremes_arr.resize(2*extremes_arr.shape[0]+1, refcheck=False)
                 extremes = extremes_arr
 
             if vertexA.visitid != self._qh[0].vertex_visit:
@@ -1047,7 +978,8 @@ cdef class _Qhull:
                 break
 
         extremes = None
-        extremes_arr.resize(nextremes)
+        # This array is always safe to resize
+        extremes_arr.resize(nextremes, refcheck=False)
         return extremes_arr
 
 
@@ -1062,7 +994,8 @@ cdef void _visit_voronoi(qhT *_qh, void *ptr, vertexT *vertex, vertexT *vertexA,
 
     if qh._nridges >= qh._ridge_points.shape[0]:
         try:
-            qh._ridge_points.resize(2*qh._nridges + 1, 2)
+            # The array is guaranteed to be safe to resize
+            qh._ridge_points.resize(2*qh._nridges + 1, 2, refcheck=False)
         except Exception, e:
             qh._ridge_error = e
             return
@@ -1138,13 +1071,15 @@ def _get_barycentric_transforms(np.ndarray[np.double_t, ndim=2] points,
     cdef np.ndarray[np.double_t, ndim=2] T
     cdef np.ndarray[np.double_t, ndim=3] Tinvs
     cdef int isimplex
-    cdef int i, j, n, nrhs, lda, ldb, info
+    cdef int i, j, n, nrhs, lda, ldb
+    cdef int info = 0
     cdef int ipiv[NPY_MAXDIMS+1]
     cdef int ndim, nsimplex
     cdef double centroid[NPY_MAXDIMS]
     cdef double c[NPY_MAXDIMS+1]
     cdef double *transform
-    cdef double anorm, rcond
+    cdef double anorm
+    cdef double rcond = 0.0
     cdef double rcond_limit
 
     cdef double work[4*NPY_MAXDIMS]
@@ -1382,7 +1317,7 @@ cdef int _find_simplex_directed(DelaunayInfo_t *d, double *c,
                                 double *x, int *start, double eps,
                                 double eps_broad) nogil:
     """
-    Find simplex containing point `x` via a directed walk in the tesselation.
+    Find simplex containing point `x` via a directed walk in the tessellation.
 
     If the simplex is found, the array `c` is filled with the corresponding
     barycentric coordinates.
@@ -1402,11 +1337,11 @@ cdef int _find_simplex_directed(DelaunayInfo_t *d, double *c,
     3) Consequently, the k-th neighbour simplex is *closer* to the target point
        than the present simplex, if projected on the normal of the k-th ridge.
 
-    4) In a regular tesselation, hopping to any such direction is OK.
+    4) In a regular tessellation, hopping to any such direction is OK.
 
        Also, if one of the negative-coordinate neighbors happens to be -1,
-       then the target point is outside the tesselation (because the
-       tesselation is convex!).
+       then the target point is outside the tessellation (because the
+       tessellation is convex!).
 
     5) If all barycentric coordinates are in [-eps, 1+eps], we have found the
        simplex containing the target point.
@@ -1531,7 +1466,7 @@ cdef int _find_simplex(DelaunayInfo_t *d, double *c,
         Now, the maximally positive-distant simplex is [3, 2, 0], although
         the simplex containing the point is [4, 2, 1].
 
-    In this algorithm, we walk around the tesselation trying to locate
+    In this algorithm, we walk around the tessellation trying to locate
     a positive-distant facet. After finding one, we fall back to a
     directed search.
 
@@ -1556,7 +1491,7 @@ cdef int _find_simplex(DelaunayInfo_t *d, double *c,
     # Lift point to paraboloid
     _lift_point(d, x, z)
 
-    # Walk the tesselation searching for a facet with a positive planar distance
+    # Walk the tessellation searching for a facet with a positive planar distance
     best_dist = _distplane(d, isimplex, z)
     changed = 1
     while changed:
@@ -1694,7 +1629,7 @@ class Delaunay(_QhullUser):
     """
     Delaunay(points, furthest_site=False, incremental=False, qhull_options=None)
 
-    Delaunay tesselation in N dimensions.
+    Delaunay tessellation in N dimensions.
 
     .. versionadded:: 0.9
 
@@ -1753,7 +1688,7 @@ class Delaunay(_QhullUser):
     vertex_to_simplex : ndarray of int, shape (npoints,)
         Lookup array, from a vertex, to some simplex which it is a part of.
         If qhull option "Qc" was not specified, the list will contain -1
-        for points that are not vertices of the tesselation.
+        for points that are not vertices of the tessellation.
     convex_hull : ndarray of int, shape (nfaces, ndim)
         Vertices of facets forming the convex hull of the point set.
         The array contains the indices of the points belonging to
@@ -1776,9 +1711,9 @@ class Delaunay(_QhullUser):
         .. versionadded:: 0.12.0
     vertices
         Same as `simplices`, but deprecated.
-    vertex_neighbor_vertices : tuple of two ndarrays of int; (indices, indptr)
+    vertex_neighbor_vertices : tuple of two ndarrays of int; (indptr, indices)
         Neighboring vertices of vertices. The indices of neighboring
-        vertices of vertex `k` are ``indptr[indices[k]:indices[k+1]]``.
+        vertices of vertex `k` are ``indices[indptr[k]:indptr[k+1]]``.
 
     Raises
     ------
@@ -1790,7 +1725,7 @@ class Delaunay(_QhullUser):
 
     Notes
     -----
-    The tesselation is computed using the Qhull library 
+    The tessellation is computed using the Qhull library
     `Qhull library <http://www.qhull.org/>`__.
 
     .. note::
@@ -1811,7 +1746,7 @@ class Delaunay(_QhullUser):
     We can plot it:
 
     >>> import matplotlib.pyplot as plt
-    >>> plt.triplot(points[:,0], points[:,1], tri.simplices.copy())
+    >>> plt.triplot(points[:,0], points[:,1], tri.simplices)
     >>> plt.plot(points[:,0], points[:,1], 'o')
     >>> plt.show()
 
@@ -1846,6 +1781,17 @@ class Delaunay(_QhullUser):
     >>> p = np.array([(0.1, 0.2), (1.5, 0.5), (0.5, 1.05)])
     >>> tri.find_simplex(p)
     array([ 1, -1, 1], dtype=int32)
+
+    The returned integers in the array are the indices of the simplex the
+    corresponding point is in. If -1 is returned, the point is in no simplex.
+    Be aware that the shortcut in the following example only works corretcly
+    for valid points as invalid points result in -1 which is itself a valid
+    index for the last simplex in the list.
+
+    >>> p_valids = np.array([(0.1, 0.2), (0.5, 1.05)])
+    >>> tri.simplices[tri.find_simplex(p_valids)]
+    array([[3, 1, 0],                 # may vary
+           [3, 1, 0]], dtype=int32)
 
     We can also compute barycentric coordinates in triangle 1 for
     these points:
@@ -1977,9 +1923,9 @@ class Delaunay(_QhullUser):
         """
         Neighboring vertices of vertices.
 
-        Tuple of two ndarrays of int: (indices, indptr). The indices of
+        Tuple of two ndarrays of int: (indptr, indices). The indices of
         neighboring vertices of vertex `k` are
-        ``indptr[indices[k]:indices[k+1]]``.
+        ``indices[indptr[k]:indptr[k+1]]``.
 
         """
         cdef int i, j, k, m, is_neighbor, is_missing, ndata, idata
@@ -2059,20 +2005,13 @@ class Delaunay(_QhullUser):
                     if m >= msize:
                         arr = None
                         msize = 2*msize + 1
-                        try:
-                            out.resize(msize, ndim)
-                        except ValueError:
-                            # Work around Cython bug on Python 2.4
-                            out = np.resize(out, (msize, ndim))
+                        # Array is safe to resize
+                        out.resize(msize, ndim, refcheck=False)
                         arr = out
 
         arr = None
-        try:
-            out.resize(m, ndim)
-        except ValueError:
-            # XXX: work around a Cython bug on Python 2.4
-            #      still leaks memory, though
-            return np.resize(out, (m, ndim))
+        # Array is safe to resize
+        out.resize(m, ndim, refcheck=False)
         return out
 
     @cython.boundscheck(False)
@@ -2221,7 +2160,16 @@ def tsearch(tri, xi):
     """
     return tri.find_simplex(xi)
 
-Delaunay.add_points.__func__.__doc__ = _QhullUser._add_points.__doc__
+# Set docstring for foo to docstring of bar, working around change in Cython 0.28
+# See https://github.com/scipy/scipy/pull/8581
+def _copy_docstr(dst, src):
+    try:
+        dst.__doc__ = src.__doc__
+    except AttributeError:
+        dst.__func__.__doc__ = src.__func__.__doc__
+
+
+_copy_docstr(Delaunay.add_points, _QhullUser._add_points)
 
 #------------------------------------------------------------------------------
 # Delaunay triangulation interface, for low-level C
@@ -2262,7 +2210,7 @@ cdef int _get_delaunay_info(DelaunayInfo_t *info,
     else:
         info.vertex_to_simplex = NULL
     if compute_vertex_neighbor_vertices:
-        vn_indices, vn_indptr = obj.vertex_neighbor_vertices
+        vn_indptr, vn_indices = obj.vertex_neighbor_vertices
         info.vertex_neighbors_indices = <int*>vn_indices.data
         info.vertex_neighbors_indptr = <int*>vn_indptr.data
     else:
@@ -2323,9 +2271,13 @@ class ConvexHull(_QhullUser):
 
         If option "Qc" is not specified, this list is not computed.
     area : float
-        Area of the convex hull
+        Area of the convex hull.
+
+        .. versionadded:: 0.17.0
     volume : float
-        Volume of the convex hull
+        Volume of the convex hull.
+
+        .. versionadded:: 0.17.0
 
     Raises
     ------
@@ -2337,7 +2289,7 @@ class ConvexHull(_QhullUser):
 
     Notes
     -----
-    The convex hull is computed using the 
+    The convex hull is computed using the
     `Qhull library <http://www.qhull.org/>`__.
 
     Examples
@@ -2416,7 +2368,7 @@ class ConvexHull(_QhullUser):
             self._vertices = np.unique(self.simplices)
         return self._vertices
 
-ConvexHull.add_points.__func__.__doc__ = _QhullUser._add_points.__doc__
+_copy_docstr(ConvexHull.add_points, _QhullUser._add_points)
 
 #------------------------------------------------------------------------------
 # Voronoi diagrams
@@ -2472,7 +2424,7 @@ class Voronoi(_QhullUser):
 
     Notes
     -----
-    The Voronoi diagram is computed using the 
+    The Voronoi diagram is computed using the
     `Qhull library <http://www.qhull.org/>`__.
 
     Examples
@@ -2487,7 +2439,7 @@ class Voronoi(_QhullUser):
     Plot it:
 
     >>> import matplotlib.pyplot as plt
-    >>> voronoi_plot_2d(vor)
+    >>> fig = voronoi_plot_2d(vor)
     >>> plt.show()
 
     The Voronoi vertices:
@@ -2568,7 +2520,8 @@ class Voronoi(_QhullUser):
                                         self.ridge_vertices))
         return self._ridge_dict
 
-Voronoi.add_points.__func__.__doc__ = _QhullUser._add_points.__doc__
+
+_copy_docstr(Voronoi.add_points, _QhullUser._add_points)
 
 #------------------------------------------------------------------------------
 # Halfspace Intersection
@@ -2642,7 +2595,6 @@ class HalfspaceIntersection(_QhullUser):
     Halfspace intersection of planes forming some polygon
 
     >>> from scipy.spatial import HalfspaceIntersection
-    >>> import numpy as np
     >>> halfspaces = np.array([[-1, 0., 0.],
     ...                        [0., -1., 0.],
     ...                        [2., 1., -4.],

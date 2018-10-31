@@ -3,14 +3,9 @@
 # The syntax is designed to look like the function add_newdoc is being
 # called from numpy.lib, but in this file add_newdoc puts the
 # docstrings in a dictionary. This dictionary is used in
-# generate_ufuncs.py to generate the docstrings for the ufuncs in
+# _generate_pyx.py to generate the docstrings for the ufuncs in
 # scipy.special at the C level when the ufuncs are created at compile
 # time.
-#
-# Note : After editing this file and commiting changes, please run
-# generate_funcs.py and commit the changes as a separate commit with a comment
-# such as : GEN: special: run generate_ufuncs.py
-
 
 from __future__ import division, print_function, absolute_import
 
@@ -29,7 +24,7 @@ add_newdoc("scipy.special", "_sf_error_test_function",
     """
     Private function; do not use.
     """)
-    
+
 add_newdoc("scipy.special", "sph_harm",
     r"""
     sph_harm(m, n, theta, phi)
@@ -90,7 +85,7 @@ add_newdoc("scipy.special", "sph_harm",
     References
     ----------
     .. [1] Digital Library of Mathematical Functions, 14.30.
-           http://dlmf.nist.gov/14.30
+           https://dlmf.nist.gov/14.30
     .. [2] https://en.wikipedia.org/wiki/Spherical_harmonics#Condon.E2.80.93Shortley_phase
     """)
 
@@ -161,6 +156,62 @@ add_newdoc("scipy.special", "wrightomega",
 
     """)
 
+
+add_newdoc("scipy.special", "agm",
+    """
+    agm(a, b)
+
+    Compute the arithmetic-geometric mean of `a` and `b`.
+
+    Start with a_0 = a and b_0 = b and iteratively compute::
+
+        a_{n+1} = (a_n + b_n)/2
+        b_{n+1} = sqrt(a_n*b_n)
+
+    a_n and b_n converge to the same limit as n increases; their common
+    limit is agm(a, b).
+
+    Parameters
+    ----------
+    a, b : array_like
+        Real values only.  If the values are both negative, the result
+        is negative.  If one value is negative and the other is positive,
+        `nan` is returned.
+
+    Returns
+    -------
+    float
+        The arithmetic-geometric mean of `a` and `b`.
+
+    Examples
+    --------
+    >>> from scipy.special import agm
+    >>> a, b = 24.0, 6.0
+    >>> agm(a, b)
+    13.458171481725614
+
+    Compare that result to the iteration:
+
+    >>> while a != b:
+    ...     a, b = (a + b)/2, np.sqrt(a*b)
+    ...     print("a = %19.16f  b=%19.16f" % (a, b))
+    ...
+    a = 15.0000000000000000  b=12.0000000000000000
+    a = 13.5000000000000000  b=13.4164078649987388
+    a = 13.4582039324993694  b=13.4581390309909850
+    a = 13.4581714817451772  b=13.4581714817060547
+    a = 13.4581714817256159  b=13.4581714817256159
+
+    When array-like arguments are given, broadcasting applies:
+
+    >>> a = np.array([[1.5], [3], [6]])  # a has shape (3, 1).
+    >>> b = np.array([6, 12, 24, 48])    # b has shape (4,).
+    >>> agm(a, b)
+    array([[  3.36454287,   5.42363427,   9.05798751,  15.53650756],
+           [  4.37037309,   6.72908574,  10.84726853,  18.11597502],
+           [  6.        ,   8.74074619,  13.45817148,  21.69453707]])
+    """)
+
 add_newdoc("scipy.special", "airy",
     r"""
     airy(z)
@@ -209,10 +260,10 @@ add_newdoc("scipy.special", "airy",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     .. [2] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
            of a Complex Argument and Nonnegative Order",
-           http://netlib.org/amos/.org/amos/
+           http://netlib.org/amos/
 
     Examples
     --------
@@ -311,7 +362,7 @@ add_newdoc("scipy.special", "bdtr",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
 
     """)
 
@@ -359,7 +410,7 @@ add_newdoc("scipy.special", "bdtrc",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
 
     """)
 
@@ -405,7 +456,7 @@ add_newdoc("scipy.special", "bdtri",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
 add_newdoc("scipy.special", "bdtrik",
@@ -442,8 +493,8 @@ add_newdoc("scipy.special", "bdtrik",
     Formula 26.5.24 of [1]_ is used to reduce the binomial distribution to the
     cumulative incomplete beta distribution.
 
-    Computation of `k` involves a seach for a value that produces the desired
-    value of `y`.  The search relies on the monotinicity of `y` with `k`.
+    Computation of `k` involves a search for a value that produces the desired
+    value of `y`.  The search relies on the monotonicity of `y` with `k`.
 
     Wrapper for the CDFLIB [2]_ Fortran routine `cdfbin`.
 
@@ -492,8 +543,8 @@ add_newdoc("scipy.special", "bdtrin",
     Formula 26.5.24 of [1]_ is used to reduce the binomial distribution to the
     cumulative incomplete beta distribution.
 
-    Computation of `n` involves a seach for a value that produces the desired
-    value of `y`.  The search relies on the monotinicity of `y` with `n`.
+    Computation of `n` involves a search for a value that produces the desired
+    value of `y`.  The search relies on the monotonicity of `y` with `n`.
 
     Wrapper for the CDFLIB [2]_ Fortran routine `cdfbin`.
 
@@ -516,7 +567,7 @@ add_newdoc("scipy.special", "binom",
     See Also
     --------
     comb : The number of combinations of N things taken k at a time.
-    
+
     """)
 
 add_newdoc("scipy.special", "btdtria",
@@ -557,9 +608,9 @@ add_newdoc("scipy.special", "btdtria",
     Wrapper for the CDFLIB [1]_ Fortran routine `cdfbet`.
 
     The cumulative distribution function `p` is computed using a routine by
-    DiDinato and Morris [2]_.  Computation of `a` involves a seach for a value
+    DiDinato and Morris [2]_.  Computation of `a` involves a search for a value
     that produces the desired value of `p`.  The search relies on the
-    monotinicity of `p` with `a`.
+    monotonicity of `p` with `a`.
 
     References
     ----------
@@ -610,9 +661,9 @@ add_newdoc("scipy.special", "btdtrib",
     Wrapper for the CDFLIB [1]_ Fortran routine `cdfbet`.
 
     The cumulative distribution function `p` is computed using a routine by
-    DiDinato and Morris [2]_.  Computation of `b` involves a seach for a value
+    DiDinato and Morris [2]_.  Computation of `b` involves a search for a value
     that produces the desired value of `p`.  The search relies on the
-    monotinicity of `p` with `b`.
+    monotonicity of `p` with `b`.
 
     References
     ----------
@@ -913,7 +964,7 @@ add_newdoc("scipy.special", "btdtr",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
 
     """)
 
@@ -958,7 +1009,7 @@ add_newdoc("scipy.special", "btdtri",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
 
     """)
 
@@ -966,7 +1017,27 @@ add_newdoc("scipy.special", "cbrt",
     """
     cbrt(x)
 
-    Cube root of `x`
+    Element-wise cube root of `x`.
+
+    Parameters
+    ----------
+    x : array_like
+        `x` must contain real numbers.
+
+    Returns
+    -------
+    float
+        The cube root of each value in `x`.
+
+    Examples
+    --------
+    >>> from scipy.special import cbrt
+
+    >>> cbrt(8)
+    2.0
+    >>> cbrt([-8, -3, 0.125, 1.331])
+    array([-2.        , -1.44224957,  0.5       ,  1.1       ])
+
     """)
 
 add_newdoc("scipy.special", "chdtr",
@@ -1144,7 +1215,7 @@ add_newdoc("scipy.special", "ellipe",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     .. [2] Milton Abramowitz and Irene A. Stegun, eds.
            Handbook of Mathematical Functions with Formulas,
            Graphs, and Mathematical Tables. New York: Dover, 1972.
@@ -1195,7 +1266,7 @@ add_newdoc("scipy.special", "ellipeinc",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     .. [2] Milton Abramowitz and Irene A. Stegun, eds.
            Handbook of Mathematical Functions with Formulas,
            Graphs, and Mathematical Tables. New York: Dover, 1972.
@@ -1249,7 +1320,7 @@ add_newdoc("scipy.special", "ellipj",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
 add_newdoc("scipy.special", "ellipkm1",
@@ -1301,7 +1372,7 @@ add_newdoc("scipy.special", "ellipkm1",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
 add_newdoc("scipy.special", "ellipkinc",
@@ -1350,7 +1421,7 @@ add_newdoc("scipy.special", "ellipkinc",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     .. [2] Milton Abramowitz and Irene A. Stegun, eds.
            Handbook of Mathematical Functions with Formulas,
            Graphs, and Mathematical Tables. New York: Dover, 1972.
@@ -1415,7 +1486,7 @@ add_newdoc("scipy.special", "erf",
 
     References
     ----------
-    .. [1] http://en.wikipedia.org/wiki/Error_function
+    .. [1] https://en.wikipedia.org/wiki/Error_function
     .. [2] Milton Abramowitz and Irene A. Stegun, eds.
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover,
@@ -1838,7 +1909,7 @@ add_newdoc("scipy.special", "eval_sh_chebyt",
     roots_sh_chebyt : roots and quadrature weights of shifted
                       Chebyshev polynomials of the first kind
     sh_chebyt : shifted Chebyshev polynomial object
-    eval_chebyt : evalaute Chebyshev polynomials of the first kind
+    eval_chebyt : evaluate Chebyshev polynomials of the first kind
     numpy.polynomial.chebyshev.Chebyshev : Chebyshev series
     """)
 
@@ -2122,14 +2193,57 @@ add_newdoc("scipy.special", "exp10",
     """
     exp10(x)
 
-    10**x
+    Compute ``10**x`` element-wise.
+
+    Parameters
+    ----------
+    x : array_like
+        `x` must contain real numbers.
+
+    Returns
+    -------
+    float
+        ``10**x``, computed element-wise.
+
+    Examples
+    --------
+    >>> from scipy.special import exp10
+
+    >>> exp10(3)
+    1000.0
+    >>> x = np.array([[-1, -0.5, 0], [0.5, 1, 1.5]])
+    >>> exp10(x)
+    array([[  0.1       ,   0.31622777,   1.        ],
+           [  3.16227766,  10.        ,  31.6227766 ]])
+
     """)
 
 add_newdoc("scipy.special", "exp2",
     """
     exp2(x)
 
-    2**x
+    Compute ``2**x`` element-wise.
+
+    Parameters
+    ----------
+    x : array_like
+        `x` must contain real numbers.
+
+    Returns
+    -------
+    float
+        ``2**x``, computed element-wise.
+
+    Examples
+    --------
+    >>> from scipy.special import exp2
+
+    >>> exp2(3)
+    8.0
+    >>> x = np.array([[-1, -0.5, 0], [0.5, 1, 1.5]])
+    >>> exp2(x)
+    array([[ 0.5       ,  0.70710678,  1.        ],
+           [ 1.41421356,  2.        ,  2.82842712]])
     """)
 
 add_newdoc("scipy.special", "expi",
@@ -2149,10 +2263,11 @@ add_newdoc('scipy.special', 'expit',
     """
     expit(x)
 
-    Expit ufunc for ndarrays.
+    Expit (a.k.a. logistic sigmoid) ufunc for ndarrays.
 
-    The expit function, also known as the logistic function, is defined as
-    expit(x) = 1/(1+exp(-x)). It is the inverse of the logit function.
+    The expit function, also known as the logistic sigmoid function, is
+    defined as ``expit(x) = 1/(1+exp(-x))``.  It is the inverse of the
+    logit function.
 
     Parameters
     ----------
@@ -2207,7 +2322,47 @@ add_newdoc("scipy.special", "expm1",
     """
     expm1(x)
 
-    exp(x) - 1 for use when `x` is near zero.
+    Compute ``exp(x) - 1``.
+
+    When `x` is near zero, ``exp(x)`` is near 1, so the numerical calculation
+    of ``exp(x) - 1`` can suffer from catastrophic loss of precision.
+    ``expm1(x)`` is implemented to avoid the loss of precision that occurs when
+    `x` is near zero.
+
+    Parameters
+    ----------
+    x : array_like
+        `x` must contain real numbers.
+
+    Returns
+    -------
+    float
+        ``exp(x) - 1`` computed element-wise.
+
+    Examples
+    --------
+    >>> from scipy.special import expm1
+
+    >>> expm1(1.0)
+    1.7182818284590451
+    >>> expm1([-0.2, -0.1, 0, 0.1, 0.2])
+    array([-0.18126925, -0.09516258,  0.        ,  0.10517092,  0.22140276])
+
+    The exact value of ``exp(7.5e-13) - 1`` is::
+
+        7.5000000000028125000000007031250000001318...*10**-13.
+
+    Here is what ``expm1(7.5e-13)`` gives:
+
+    >>> expm1(7.5e-13)
+    7.5000000000028135e-13
+
+    Compare that to ``exp(7.5e-13) - 1``, where the subtraction results in
+    a "catastrophic" loss of precision:
+
+    >>> np.exp(7.5e-13) - 1
+    7.5006667543675576e-13
+
     """)
 
 add_newdoc("scipy.special", "expn",
@@ -2226,23 +2381,48 @@ add_newdoc("scipy.special", "exprel",
     r"""
     exprel(x)
 
-    Relative error exponential, (exp(x)-1)/x, for use when `x` is near zero.
+    Relative error exponential, ``(exp(x) - 1)/x``.
+
+    When `x` is near zero, ``exp(x)`` is near 1, so the numerical calculation
+    of ``exp(x) - 1`` can suffer from catastrophic loss of precision.
+    ``exprel(x)`` is implemented to avoid the loss of precision that occurs when
+    `x` is near zero.
 
     Parameters
     ----------
     x : ndarray
-        Input array.
+        Input array.  `x` must contain real numbers.
 
     Returns
     -------
-    res : ndarray
-        Output array.
+    float
+        ``(exp(x) - 1)/x``, computed element-wise.
 
     See Also
     --------
     expm1
 
+    Notes
+    -----
     .. versionadded:: 0.17.0
+
+    Examples
+    --------
+    >>> from scipy.special import exprel
+
+    >>> exprel(0.01)
+    1.0050167084168056
+    >>> exprel([-0.25, -0.1, 0, 0.1, 0.25])
+    array([ 0.88479687,  0.95162582,  1.        ,  1.05170918,  1.13610167])
+
+    Compare ``exprel(5e-9)`` to the naive calculation.  The exact value
+    is ``1.00000000250000000416...``.
+
+    >>> exprel(5e-9)
+    1.0000000025
+
+    >>> (np.exp(5e-9) - 1)/5e-9
+    0.99999999392252903
     """)
 
 add_newdoc("scipy.special", "fdtr",
@@ -2292,7 +2472,7 @@ add_newdoc("scipy.special", "fdtr",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
 
     """)
 
@@ -2337,7 +2517,7 @@ add_newdoc("scipy.special", "fdtrc",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
 add_newdoc("scipy.special", "fdtri",
@@ -2384,7 +2564,7 @@ add_newdoc("scipy.special", "fdtri",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
 
     """)
 
@@ -2430,10 +2610,14 @@ add_newdoc("scipy.special", "fresnel",
     """)
 
 add_newdoc("scipy.special", "gamma",
-    """
+    r"""
     gamma(z)
 
     Gamma function.
+
+    .. math::
+
+          \Gamma(z) = \int_0^\infty x^{z-1} e^{-x} dx = (z - 1)!
 
     The gamma function is often referred to as the generalized
     factorial since ``z*gamma(z) = gamma(z+1)`` and ``gamma(n+1) =
@@ -2509,11 +2693,11 @@ add_newdoc("scipy.special", "gammainc",
     gammaincc : regularized upper incomplete gamma function
     gammaincinv : inverse to ``gammainc`` versus ``x``
     gammainccinv : inverse to ``gammaincc`` versus ``x``
-        
+
     References
     ----------
     .. [1] Maddock et. al., "Incomplete Gamma Functions",
-       http://www.boost.org/doc/libs/1_61_0/libs/math/doc/html/math_toolkit/sf_gamma/igamma.html
+       https://www.boost.org/doc/libs/1_61_0/libs/math/doc/html/math_toolkit/sf_gamma/igamma.html
     """)
 
 add_newdoc("scipy.special", "gammaincc",
@@ -2541,11 +2725,11 @@ add_newdoc("scipy.special", "gammaincc",
     gammainc : regularized lower incomplete gamma function
     gammaincinv : inverse to ``gammainc`` versus ``x``
     gammainccinv : inverse to ``gammaincc`` versus ``x``
-        
+
     References
     ----------
     .. [1] Maddock et. al., "Incomplete Gamma Functions",
-       http://www.boost.org/doc/libs/1_61_0/libs/math/doc/html/math_toolkit/sf_gamma/igamma.html
+       https://www.boost.org/doc/libs/1_61_0/libs/math/doc/html/math_toolkit/sf_gamma/igamma.html
     """)
 
 add_newdoc("scipy.special", "gammainccinv",
@@ -2653,7 +2837,7 @@ add_newdoc("scipy.special", "gdtr",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
 
     """)
 
@@ -2703,7 +2887,7 @@ add_newdoc("scipy.special", "gdtrc",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
 
     """)
 
@@ -2748,9 +2932,9 @@ add_newdoc("scipy.special", "gdtria",
     Wrapper for the CDFLIB [1]_ Fortran routine `cdfgam`.
 
     The cumulative distribution function `p` is computed using a routine by
-    DiDinato and Morris [2]_.  Computation of `a` involves a seach for a value
+    DiDinato and Morris [2]_.  Computation of `a` involves a search for a value
     that produces the desired value of `p`.  The search relies on the
-    monotinicity of `p` with `a`.
+    monotonicity of `p` with `a`.
 
     References
     ----------
@@ -2817,9 +3001,9 @@ add_newdoc("scipy.special", "gdtrib",
     Wrapper for the CDFLIB [1]_ Fortran routine `cdfgam`.
 
     The cumulative distribution function `p` is computed using a routine by
-    DiDinato and Morris [2]_.  Computation of `b` involves a seach for a value
+    DiDinato and Morris [2]_.  Computation of `b` involves a search for a value
     that produces the desired value of `p`.  The search relies on the
-    monotinicity of `p` with `b`.
+    monotonicity of `p` with `b`.
 
     References
     ----------
@@ -2887,9 +3071,9 @@ add_newdoc("scipy.special", "gdtrix",
     Wrapper for the CDFLIB [1]_ Fortran routine `cdfgam`.
 
     The cumulative distribution function `p` is computed using a routine by
-    DiDinato and Morris [2]_.  Computation of `x` involves a seach for a value
+    DiDinato and Morris [2]_.  Computation of `x` involves a search for a value
     that produces the desired value of `p`.  The search relies on the
-    monotinicity of `p` with `x`.
+    monotonicity of `p` with `x`.
 
     References
     ----------
@@ -3112,7 +3296,7 @@ add_newdoc("scipy.special", "huber",
 
     """)
 
-add_newdoc("scipy.special", "hyp0f1", 
+add_newdoc("scipy.special", "hyp0f1",
     r"""
     hyp0f1(v, x)
 
@@ -3177,10 +3361,51 @@ add_newdoc("scipy.special", "hyp2f0",
     """)
 
 add_newdoc("scipy.special", "hyp2f1",
-    """
+    r"""
     hyp2f1(a, b, c, z)
 
-    Gauss hypergeometric function 2F1(a, b; c; z).
+    Gauss hypergeometric function 2F1(a, b; c; z)
+
+    Parameters
+    ----------
+    a, b, c : array_like
+        Arguments, should be real-valued.
+    z : array_like
+        Argument, real or complex.
+
+    Returns
+    -------
+    hyp2f1 : scalar or ndarray
+        The values of the gaussian hypergeometric function.
+
+    See also
+    --------
+    hyp0f1 : confluent hypergeometric limit function.
+    hyp1f1 : Kummer's (confluent hypergeometric) function.
+
+    Notes
+    -----
+    This function is defined for :math:`|z| < 1` as
+
+    .. math::
+
+       \mathrm{hyp2f1}(a, b, c, z) = \sum_{n=0}^\infty
+       \frac{(a)_n (b)_n}{(c)_n}\frac{z^n}{n!},
+
+    and defined on the rest of the complex z-plane by analytic continuation.
+    Here :math:`(\cdot)_n` is the Pochhammer symbol; see `poch`. When
+    :math:`n` is an integer the result is a polynomial of degree :math:`n`.
+
+    The implementation for complex values of ``z`` is described in [1]_.
+
+    References
+    ----------
+    .. [1] S. Zhang and J.M. Jin, "Computation of Special Functions", Wiley 1996
+    .. [2] Cephes Mathematical Functions Library,
+           http://www.netlib.org/cephes/
+    .. [3] NIST Digital Library of Mathematical Functions
+           https://dlmf.nist.gov/
+
     """)
 
 add_newdoc("scipy.special", "hyp3f0",
@@ -3242,7 +3467,7 @@ add_newdoc("scipy.special", "i0",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
 add_newdoc("scipy.special", "i0e",
@@ -3283,7 +3508,7 @@ add_newdoc("scipy.special", "i0e",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
 add_newdoc("scipy.special", "i1",
@@ -3325,7 +3550,7 @@ add_newdoc("scipy.special", "i1",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
 add_newdoc("scipy.special", "i1e",
@@ -3366,7 +3591,7 @@ add_newdoc("scipy.special", "i1e",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
 add_newdoc("scipy.special", "_igam_fac",
@@ -3438,7 +3663,7 @@ add_newdoc("scipy.special", "it2struve0",
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
     """)
 
 add_newdoc("scipy.special", "itairy",
@@ -3477,7 +3702,7 @@ add_newdoc("scipy.special", "itairy",
 
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
     """)
 
 add_newdoc("scipy.special", "iti0k0",
@@ -3536,7 +3761,7 @@ add_newdoc("scipy.special", "itmodstruve0",
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """)
 
@@ -3572,7 +3797,7 @@ add_newdoc("scipy.special", "itstruve0",
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """)
 
@@ -3602,10 +3827,10 @@ add_newdoc("scipy.special", "iv",
     expansions are applied.
 
     For complex `z` and positive `v`, the AMOS [2]_ `zbesi` routine is
-    called. It uses a power series for small `z`, the asymptitic expansion
+    called. It uses a power series for small `z`, the asymptotic expansion
     for large `abs(z)`, the Miller algorithm normalized by the Wronskian
     and a Neumann series for intermediate magnitudes, and the uniform
-    asymptitic expansions for :math:`I_v(z)` and :math:`J_v(z)` for large
+    asymptotic expansions for :math:`I_v(z)` and :math:`J_v(z)` for large
     orders.  Backward recurrence is used to generate sequences or reduce
     orders when necessary.
 
@@ -3659,9 +3884,9 @@ add_newdoc("scipy.special", "ive",
     Notes
     -----
     For positive `v`, the AMOS [1]_ `zbesi` routine is called. It uses a
-    power series for small `z`, the asymptitic expansion for large
+    power series for small `z`, the asymptotic expansion for large
     `abs(z)`, the Miller algorithm normalized by the Wronskian and a
-    Neumann series for intermediate magnitudes, and the uniform asymptitic
+    Neumann series for intermediate magnitudes, and the uniform asymptotic
     expansions for :math:`I_v(z)` and :math:`J_v(z)` for large orders.
     Backward recurrence is used to generate sequences or reduce orders when
     necessary.
@@ -3719,7 +3944,7 @@ add_newdoc("scipy.special", "j0",
     two rational functions of degree 6/6 and 7/7.
 
     This function is a wrapper for the Cephes [1]_ routine `j0`.
-    It should not to be confused with the spherical Bessel functions (see
+    It should not be confused with the spherical Bessel functions (see
     `spherical_jn`).
 
     See also
@@ -3730,7 +3955,7 @@ add_newdoc("scipy.special", "j0",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
 add_newdoc("scipy.special", "j1",
@@ -3757,7 +3982,7 @@ add_newdoc("scipy.special", "j1",
     functions of degree 5/5.
 
     This function is a wrapper for the Cephes [1]_ routine `j1`.
-    It should not to be confused with the spherical Bessel functions (see
+    It should not be confused with the spherical Bessel functions (see
     `spherical_jn`).
 
     See also
@@ -3768,7 +3993,7 @@ add_newdoc("scipy.special", "j1",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
 
     """)
 
@@ -3815,9 +4040,9 @@ add_newdoc("scipy.special", "jv",
     Bessel function :math:`I_v`,
 
     .. math::
-        J_v(z) = \exp(n\pi\imath/2) I_v(-\imath z)\qquad (\Im z > 0)
+        J_v(z) = \exp(v\pi\imath/2) I_v(-\imath z)\qquad (\Im z > 0)
 
-        J_v(z) = \exp(-n\pi\imath/2) I_v(\imath z)\qquad (\Im z < 0)
+        J_v(z) = \exp(-v\pi\imath/2) I_v(\imath z)\qquad (\Im z < 0)
 
     For negative `v` values the formula,
 
@@ -3871,9 +4096,9 @@ add_newdoc("scipy.special", "jve",
     Bessel function :math:`I_v`,
 
     .. math::
-        J_v(z) = \exp(n\pi\imath/2) I_v(-\imath z)\qquad (\Im z > 0)
+        J_v(z) = \exp(v\pi\imath/2) I_v(-\imath z)\qquad (\Im z > 0)
 
-        J_v(z) = \exp(-n\pi\imath/2) I_v(\imath z)\qquad (\Im z < 0)
+        J_v(z) = \exp(-v\pi\imath/2) I_v(\imath z)\qquad (\Im z < 0)
 
     For negative `v` values the formula,
 
@@ -3925,7 +4150,7 @@ add_newdoc("scipy.special", "k0",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
 add_newdoc("scipy.special", "k0e",
@@ -3964,7 +4189,7 @@ add_newdoc("scipy.special", "k0e",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
 add_newdoc("scipy.special", "k1",
@@ -3998,7 +4223,7 @@ add_newdoc("scipy.special", "k1",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
 add_newdoc("scipy.special", "k1e",
@@ -4037,7 +4262,7 @@ add_newdoc("scipy.special", "k1e",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
 add_newdoc("scipy.special", "kei",
@@ -4251,7 +4476,7 @@ add_newdoc("scipy.special", "kv",
            functions of a complex argument and nonnegative order", ACM
            TOMS Vol. 12 Issue 3, Sept. 1986, p. 265
     .. [3] NIST Digital Library of Mathematical Functions,
-           Eq. 10.25.E3. http://dlmf.nist.gov/10.25.E3
+           Eq. 10.25.E3. https://dlmf.nist.gov/10.25.E3
 
     Examples
     --------
@@ -4668,7 +4893,7 @@ add_newdoc("scipy.special", "modstruve",
     References
     ----------
     .. [1] NIST Digital Library of Mathematical Functions
-           http://dlmf.nist.gov/11
+           https://dlmf.nist.gov/11
     """)
 
 add_newdoc("scipy.special", "nbdtr",
@@ -4723,7 +4948,7 @@ add_newdoc("scipy.special", "nbdtr",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
 
     """)
 
@@ -4775,7 +5000,7 @@ add_newdoc("scipy.special", "nbdtrc",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
 add_newdoc("scipy.special", "nbdtri",
@@ -4816,8 +5041,8 @@ add_newdoc("scipy.special", "nbdtri",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
-    
+           http://www.netlib.org/cephes/
+
     """)
 
 add_newdoc("scipy.special", "nbdtrik",
@@ -4838,12 +5063,12 @@ add_newdoc("scipy.special", "nbdtrik",
         The target number of successes (positive int).
     p : array_like
         Probability of success in a single event (float).
-    
+
     Returns
     -------
     k : ndarray
         The maximum number of allowed failures such that `nbdtr(k, n, p) = y`.
-    
+
     See also
     --------
     nbdtr : Cumulative distribution function of the negative binomial.
@@ -4862,8 +5087,8 @@ add_newdoc("scipy.special", "nbdtrik",
     is used to reduce calculation of the cumulative distribution function to
     that of a regularized incomplete beta :math:`I`.
 
-    Computation of `k` involves a seach for a value that produces the desired
-    value of `y`.  The search relies on the monotinicity of `y` with `k`.
+    Computation of `k` involves a search for a value that produces the desired
+    value of `y`.  The search relies on the monotonicity of `y` with `k`.
 
     References
     ----------
@@ -4894,12 +5119,12 @@ add_newdoc("scipy.special", "nbdtrin",
         The probability of `k` or fewer failures before `n` successes (float).
     p : array_like
         Probability of success in a single event (float).
-    
+
     Returns
     -------
     n : ndarray
         The number of successes `n` such that `nbdtr(k, n, p) = y`.
-    
+
     See also
     --------
     nbdtr : Cumulative distribution function of the negative binomial.
@@ -4918,8 +5143,8 @@ add_newdoc("scipy.special", "nbdtrin",
     is used to reduce calculation of the cumulative distribution function to
     that of a regularized incomplete beta :math:`I`.
 
-    Computation of `n` involves a seach for a value that produces the desired
-    value of `y`.  The search relies on the monotinicity of `y` with `n`.
+    Computation of `n` involves a search for a value that produces the desired
+    value of `y`.  The search relies on the monotonicity of `y` with `n`.
 
     References
     ----------
@@ -4967,10 +5192,10 @@ add_newdoc("scipy.special", "ncfdtr",
 
     See Also
     --------
-    ncdfdtri : Inverse CDF (iCDF) of the non-central F distribution.
-    ncdfdtridfd : Calculate dfd, given CDF and iCDF values.
-    ncdfdtridfn : Calculate dfn, given CDF and iCDF values.
-    ncdfdtrinc : Calculate noncentrality parameter, given CDF, iCDF, dfn, dfd.
+    ncfdtri : Quantile function; inverse of `ncfdtr` with respect to `f`.
+    ncfdtridfd : Inverse of `ncfdtr` with respect to `dfd`.
+    ncfdtridfn : Inverse of `ncfdtr` with respect to `dfn`.
+    ncfdtrinc : Inverse of `ncfdtr` with respect to `nc`.
 
     Notes
     -----
@@ -5024,21 +5249,86 @@ add_newdoc("scipy.special", "ncfdtr",
 
 add_newdoc("scipy.special", "ncfdtri",
     """
-    ncfdtri(p, dfn, dfd, nc)
+    ncfdtri(dfn, dfd, nc, p)
 
-    Inverse cumulative distribution function of the non-central F distribution.
+    Inverse with respect to `f` of the CDF of the non-central F distribution.
 
     See `ncfdtr` for more details.
+
+    Parameters
+    ----------
+    dfn : array_like
+        Degrees of freedom of the numerator sum of squares.  Range (0, inf).
+    dfd : array_like
+        Degrees of freedom of the denominator sum of squares.  Range (0, inf).
+    nc : array_like
+        Noncentrality parameter.  Should be in range (0, 1e4).
+    p : array_like
+        Value of the cumulative distribution function.  Must be in the
+        range [0, 1].
+
+    Returns
+    -------
+    f : float
+        Quantiles, i.e. the upper limit of integration.
+
+    See Also
+    --------
+    ncfdtr : CDF of the non-central F distribution.
+    ncfdtridfd : Inverse of `ncfdtr` with respect to `dfd`.
+    ncfdtridfn : Inverse of `ncfdtr` with respect to `dfn`.
+    ncfdtrinc : Inverse of `ncfdtr` with respect to `nc`.
+
+    Examples
+    --------
+    >>> from scipy.special import ncfdtr, ncfdtri
+
+    Compute the CDF for several values of `f`:
+
+    >>> f = [0.5, 1, 1.5]
+    >>> p = ncfdtr(2, 3, 1.5, f)
+    >>> p
+    array([ 0.20782291,  0.36107392,  0.47345752])
+
+    Compute the inverse.  We recover the values of `f`, as expected:
+
+    >>> ncfdtri(2, 3, 1.5, p)
+    array([ 0.5,  1. ,  1.5])
 
     """)
 
 add_newdoc("scipy.special", "ncfdtridfd",
     """
-    ncfdtridfd(p, f, dfn, nc)
+    ncfdtridfd(dfn, p, nc, f)
 
     Calculate degrees of freedom (denominator) for the noncentral F-distribution.
 
+    This is the inverse with respect to `dfd` of `ncfdtr`.
     See `ncfdtr` for more details.
+
+    Parameters
+    ----------
+    dfn : array_like
+        Degrees of freedom of the numerator sum of squares.  Range (0, inf).
+    p : array_like
+        Value of the cumulative distribution function.  Must be in the
+        range [0, 1].
+    nc : array_like
+        Noncentrality parameter.  Should be in range (0, 1e4).
+    f : array_like
+        Quantiles, i.e. the upper limit of integration.
+
+    Returns
+    -------
+    dfd : float
+        Degrees of freedom of the denominator sum of squares.
+
+    See Also
+    --------
+    ncfdtr : CDF of the non-central F distribution.
+    ncfdtri : Quantile function; inverse of `ncfdtr` with respect to `f`.
+    ncfdtridfn : Inverse of `ncfdtr` with respect to `dfn`.
+    ncfdtrinc : Inverse of `ncfdtr` with respect to `nc`.
 
     Notes
     -----
@@ -5046,16 +5336,57 @@ add_newdoc("scipy.special", "ncfdtridfd",
     monotone in either degrees of freedom.  There thus may be two values that
     provide a given CDF value.  This routine assumes monotonicity and will
     find an arbitrary one of the two values.
+
+    Examples
+    --------
+    >>> from scipy.special import ncfdtr, ncfdtridfd
+
+    Compute the CDF for several values of `dfd`:
+
+    >>> dfd = [1, 2, 3]
+    >>> p = ncfdtr(2, dfd, 0.25, 15)
+    >>> p
+    array([ 0.8097138 ,  0.93020416,  0.96787852])
+
+    Compute the inverse.  We recover the values of `dfd`, as expected:
+
+    >>> ncfdtridfd(2, p, 0.25, 15)
+    array([ 1.,  2.,  3.])
 
     """)
 
 add_newdoc("scipy.special", "ncfdtridfn",
     """
-    ncfdtridfn(p, f, dfd, nc)
+    ncfdtridfn(p, dfd, nc, f)
 
     Calculate degrees of freedom (numerator) for the noncentral F-distribution.
 
+    This is the inverse with respect to `dfn` of `ncfdtr`.
     See `ncfdtr` for more details.
+
+    Parameters
+    ----------
+    p : array_like
+        Value of the cumulative distribution function.  Must be in the
+        range [0, 1].
+    dfd : array_like
+        Degrees of freedom of the denominator sum of squares.  Range (0, inf).
+    nc : array_like
+        Noncentrality parameter.  Should be in range (0, 1e4).
+    f : float
+        Quantiles, i.e. the upper limit of integration.
+
+    Returns
+    -------
+    dfn : float
+        Degrees of freedom of the numerator sum of squares.
+
+    See Also
+    --------
+    ncfdtr : CDF of the non-central F distribution.
+    ncfdtri : Quantile function; inverse of `ncfdtr` with respect to `f`.
+    ncfdtridfd : Inverse of `ncfdtr` with respect to `dfd`.
+    ncfdtrinc : Inverse of `ncfdtr` with respect to `nc`.
 
     Notes
     -----
@@ -5064,15 +5395,72 @@ add_newdoc("scipy.special", "ncfdtridfn",
     provide a given CDF value.  This routine assumes monotonicity and will
     find an arbitrary one of the two values.
 
+    Examples
+    --------
+    >>> from scipy.special import ncfdtr, ncfdtridfn
+
+    Compute the CDF for several values of `dfn`:
+
+    >>> dfn = [1, 2, 3]
+    >>> p = ncfdtr(dfn, 2, 0.25, 15)
+    >>> p
+    array([ 0.92562363,  0.93020416,  0.93188394])
+
+    Compute the inverse.  We recover the values of `dfn`, as expected:
+
+    >>> ncfdtridfn(p, 2, 0.25, 15)
+    array([ 1.,  2.,  3.])
+
     """)
 
 add_newdoc("scipy.special", "ncfdtrinc",
     """
-    ncfdtrinc(p, f, dfn, dfd)
+    ncfdtrinc(dfn, dfd, p, f)
 
     Calculate non-centrality parameter for non-central F distribution.
 
+    This is the inverse with respect to `nc` of `ncfdtr`.
     See `ncfdtr` for more details.
+
+    Parameters
+    ----------
+    dfn : array_like
+        Degrees of freedom of the numerator sum of squares.  Range (0, inf).
+    dfd : array_like
+        Degrees of freedom of the denominator sum of squares.  Range (0, inf).
+    p : array_like
+        Value of the cumulative distribution function.  Must be in the
+        range [0, 1].
+    f : array_like
+        Quantiles, i.e. the upper limit of integration.
+
+    Returns
+    -------
+    nc : float
+        Noncentrality parameter.
+
+    See Also
+    --------
+    ncfdtr : CDF of the non-central F distribution.
+    ncfdtri : Quantile function; inverse of `ncfdtr` with respect to `f`.
+    ncfdtridfd : Inverse of `ncfdtr` with respect to `dfd`.
+    ncfdtridfn : Inverse of `ncfdtr` with respect to `dfn`.
+
+    Examples
+    --------
+    >>> from scipy.special import ncfdtr, ncfdtrinc
+
+    Compute the CDF for several values of `nc`:
+
+    >>> nc = [0.5, 1.5, 2.0]
+    >>> p = ncfdtr(2, 3, nc, 15)
+    >>> p
+    array([ 0.96309246,  0.94327955,  0.93304098])
+
+    Compute the inverse.  We recover the values of `nc`, as expected:
+
+    >>> ncfdtrinc(2, 3, p, 15)
+    array([ 0.5,  1.5,  2. ])
 
     """)
 
@@ -5500,10 +5888,10 @@ add_newdoc("scipy.special", "pbwa",
     References
     ----------
     .. [1] Digital Library of Mathematical Functions, 14.30.
-           http://dlmf.nist.gov/14.30
+           https://dlmf.nist.gov/14.30
     .. [2] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
     """)
 
 add_newdoc("scipy.special", "pdtr",
@@ -5550,18 +5938,34 @@ add_newdoc("scipy.special", "pdtrik",
     """)
 
 add_newdoc("scipy.special", "poch",
-    """
+    r"""
     poch(z, m)
 
     Rising factorial (z)_m
 
-    The Pochhammer symbol (rising factorial), is defined as::
+    The Pochhammer symbol (rising factorial), is defined as
 
-        (z)_m = gamma(z + m) / gamma(z)
+    .. math::
 
-    For positive integer `m` it reads::
+        (z)_m = \frac{\Gamma(z + m)}{\Gamma(z)}
 
-        (z)_m = z * (z + 1) * ... * (z + m - 1)
+    For positive integer `m` it reads
+
+    .. math::
+
+        (z)_m = z (z + 1) ... (z + m - 1)
+
+    Parameters
+    ----------
+    z : array_like
+        (int or float)
+    m : array_like
+        (int or float)
+
+    Returns
+    -------
+    poch : ndarray
+        The value of the function.
     """)
 
 add_newdoc("scipy.special", "pro_ang1",
@@ -5652,7 +6056,7 @@ add_newdoc("scipy.special", "pro_rad2",
     """
     pro_rad2(m, n, c, x)
 
-    Prolate spheroidal radial function of the secon kind and its derivative
+    Prolate spheroidal radial function of the second kind and its derivative
 
     Computes the prolate spheroidal radial function of the second kind
     and its derivative (with respect to `x`) for mode parameters m>=0
@@ -5752,7 +6156,7 @@ add_newdoc("scipy.special", "psi",
     References
     ----------
     .. [1] NIST Digital Library of Mathematical Functions
-           http://dlmf.nist.gov/5
+           https://dlmf.nist.gov/5
     .. [2] Fredrik Johansson and others.
            "mpmath: a Python library for arbitrary-precision floating-point arithmetic"
            (Version 0.19) http://mpmath.org/
@@ -5868,7 +6272,7 @@ add_newdoc("scipy.special", "shichi",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     .. [2] Fredrik Johansson and others.
            "mpmath: a Python library for arbitrary-precision floating-point arithmetic"
            (Version 0.19) http://mpmath.org/
@@ -5883,7 +6287,7 @@ add_newdoc("scipy.special", "sici",
     The sine integral is
 
     .. math::
-    
+
       \int_0^x \frac{\sin{t}}{t}dt
 
     and the cosine integral is
@@ -5921,7 +6325,7 @@ add_newdoc("scipy.special", "sici",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     .. [2] Fredrik Johansson and others.
            "mpmath: a Python library for arbitrary-precision floating-point arithmetic"
            (Version 0.19) http://mpmath.org/
@@ -6071,7 +6475,7 @@ add_newdoc("scipy.special", "struve",
     References
     ----------
     .. [1] NIST Digital Library of Mathematical Functions
-           http://dlmf.nist.gov/11
+           https://dlmf.nist.gov/11
 
     """)
 
@@ -6113,10 +6517,15 @@ add_newdoc("scipy.special", "wofz",
     --------
     >>> from scipy import special
     >>> import matplotlib.pyplot as plt
+
     >>> x = np.linspace(-3, 3)
-    >>> plt.plot(x, special.wofz(x))
+    >>> z = special.wofz(x)
+
+    >>> plt.plot(x, z.real, label='wofz(x).real')
+    >>> plt.plot(x, z.imag, label='wofz(x).imag')
     >>> plt.xlabel('$x$')
-    >>> plt.ylabel('$wofz(x)$')
+    >>> plt.legend(framealpha=1, shadow=True)
+    >>> plt.grid(alpha=0.25)
     >>> plt.show()
 
     """)
@@ -6189,13 +6598,13 @@ add_newdoc("scipy.special", "y0",
 
     Notes
     -----
-    
+
     The domain is divided into the intervals [0, 5] and (5, infinity). In the
     first interval a rational approximation :math:`R(x)` is employed to
     compute,
-    
+
     .. math::
-        
+
         Y_0(x) = R(x) + \frac{2 \log(x) J_0(x)}{\pi},
 
     where :math:`J_0` is the Bessel function of the first kind of order 0.
@@ -6213,7 +6622,7 @@ add_newdoc("scipy.special", "y0",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
 add_newdoc("scipy.special", "y1",
@@ -6248,11 +6657,11 @@ add_newdoc("scipy.special", "y1",
     j1
     yn
     yv
-    
+
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
 add_newdoc("scipy.special", "yn",
@@ -6288,7 +6697,7 @@ add_newdoc("scipy.special", "yn",
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
-           http://www.netlib.org/cephes/index.html
+           http://www.netlib.org/cephes/
     """)
 
 add_newdoc("scipy.special", "yv",
@@ -6403,11 +6812,41 @@ add_newdoc("scipy.special", "zetac",
 
     .. math:: \\zeta(x) = \\sum_{k=2}^{\\infty} 1 / k^x,
 
-    where ``x > 1``.
+    where ``x > 1``.  For ``x < 1``, the analytic continuation is computed.
+
+    Because of limitations of the numerical algorithm, ``zetac(x)`` returns
+    `nan` for `x` less than -30.8148.
+
+    Parameters
+    ----------
+    x : array_like of float
+        Values at which to compute zeta(x) - 1 (must be real).
+
+    Returns
+    -------
+    out : array_like
+        Values of zeta(x) - 1.
 
     See Also
     --------
     zeta
+
+    Examples
+    --------
+    >>> from scipy.special import zetac, zeta
+
+    Some special values:
+
+    >>> zetac(2), np.pi**2/6 - 1
+    (0.64493406684822641, 0.6449340668482264)
+
+    >>> zetac(-1), -1.0/12 - 1
+    (-1.0833333333333333, -1.0833333333333333)
+
+    Compare ``zetac(x)`` to ``zeta(x) - 1`` for large `x`:
+
+    >>> zetac(60), zeta(60) - 1
+    (8.673617380119933e-19, 0.0)
 
     """)
 
@@ -6518,9 +6957,9 @@ add_newdoc("scipy.special", "loggamma",
     -----
     It is not generally true that :math:`\log\Gamma(z) =
     \log(\Gamma(z))`, though the real parts of the functions do
-    agree. The benefit of not defining ``loggamma`` as
+    agree. The benefit of not defining `loggamma` as
     :math:`\log(\Gamma(z))` is that the latter function has a
-    complicated branch cut structure whereas ``loggamma`` is analytic
+    complicated branch cut structure whereas `loggamma` is analytic
     except for on the negative real axis.
 
     The identities
@@ -6529,13 +6968,11 @@ add_newdoc("scipy.special", "loggamma",
       \exp(\log\Gamma(z)) &= \Gamma(z) \\
       \log\Gamma(z + 1) &= \log(z) + \log\Gamma(z)
 
-    make ``loggama`` useful for working in complex logspace. However,
-    ``loggamma`` necessarily returns complex outputs for real inputs,
-    so if you want to work only with real numbers use `gammaln`. On
-    the real line the two functions are related by ``exp(loggamma(x))
-    = gammasgn(x)*exp(gammaln(x))``, though in practice rounding
-    errors will introduce small spurious imaginary components in
-    ``exp(loggamma(x))``.
+    make `loggamma` useful for working in complex logspace.
+
+    On the real line `loggamma` is related to `gammaln` via
+    ``exp(loggamma(x + 0j)) = gammasgn(x)*exp(gammaln(x))``, up to
+    rounding error.
 
     The implementation here is based on [hare1997]_.
 
@@ -6559,4 +6996,41 @@ add_newdoc("scipy.special", "_sinpi",
 add_newdoc("scipy.special", "_cospi",
     """
     Internal function, do not use.
+    """)
+
+add_newdoc("scipy.special", "owens_t",
+    """
+    owens_t(h, a)
+
+    Owen's T Function.
+
+    The function T(h, a) gives the probability of the event
+    (X > h and 0 < Y < a * X) where X and Y are independent
+    standard normal random variables.
+
+    Parameters
+    ----------
+    h: array_like
+        Input value.
+    a: array_like
+        Input value.
+
+    Returns
+    -------
+    t: scalar or ndarray
+        Probability of the event (X > h and 0 < Y < a * X),
+        where X and Y are independent standard normal random variables.
+
+    Examples
+    --------
+    >>> from scipy import special
+    >>> a = 3.5
+    >>> h = 0.78
+    >>> special.owens_t(h, a)
+    0.10877216734852274
+
+    References
+    ----------
+    .. [1] M. Patefield and D. Tandy, "Fast and accurate calculation of
+           Owen's T Function", Statistical Software vol. 5, pp. 1-25, 2000.
     """)

@@ -4,14 +4,15 @@ import os
 
 from distutils.version import LooseVersion
 
+import functools
+
 import numpy as np
-from numpy.testing import dec, assert_
-from numpy.testing.noseclasses import KnownFailureTest
+from numpy.testing import assert_
+import pytest
 
 import scipy.special as sc
 
-__all__ = ['with_special_errors', 'assert_tol_equal', 'assert_func_equal',
-           'FuncData']
+__all__ = ['with_special_errors', 'assert_func_equal', 'FuncData']
 
 
 #------------------------------------------------------------------------------
@@ -25,28 +26,9 @@ class MissingModule(object):
 
 def check_version(module, min_ver):
     if type(module) == MissingModule:
-        return dec.skipif(True, "{} is not installed".format(module.name))
-    return dec.skipif(LooseVersion(module.__version__) < LooseVersion(min_ver),
-                      "{} version >= {} required".format(module.__name__, min_ver))
-
-
-#------------------------------------------------------------------------------
-# Metaclass for decorating test_* methods
-#------------------------------------------------------------------------------
-
-class DecoratorMeta(type):
-    """Metaclass which decorates test_* methods given decorators."""
-    def __new__(cls, cls_name, bases, dct):
-        decorators = dct.pop('decorators', [])
-        for name, item in list(dct.items()):
-            if name.startswith('test_'):
-                for deco, decoargs in decorators:
-                    if decoargs is not None:
-                        item = deco(*decoargs)(item)
-                    else:
-                        item = deco(item)
-                dct[name] = item
-        return type.__new__(cls, cls_name, bases, dct)
+        return pytest.mark.skip(reason="{} is not installed".format(module.name))
+    return pytest.mark.skipif(LooseVersion(module.__version__) < LooseVersion(min_ver),
+                              reason="{} version >= {} required".format(module.__name__, min_ver))
 
 
 #------------------------------------------------------------------------------
@@ -58,27 +40,12 @@ def with_special_errors(func):
     Enable special function errors (such as underflow, overflow,
     loss of precision, etc.)
     """
+    @functools.wraps(func)
     def wrapper(*a, **kw):
         with sc.errstate(all='raise'):
             res = func(*a, **kw)
         return res
-    wrapper.__name__ = func.__name__
-    wrapper.__doc__ = func.__doc__
     return wrapper
-
-
-#------------------------------------------------------------------------------
-# Comparing function values at many data points at once, with helpful
-#------------------------------------------------------------------------------
-
-def assert_tol_equal(a, b, rtol=1e-7, atol=0, err_msg='', verbose=True):
-    """Assert that `a` and `b` are equal to tolerance ``atol + rtol*abs(b)``"""
-    def compare(x, y):
-        return np.allclose(x, y, rtol=rtol, atol=atol)
-    a, b = np.asanyarray(a), np.asanyarray(b)
-    header = 'Not equal to tolerance rtol=%g, atol=%g' % (rtol, atol)
-    np.testing.utils.assert_array_compare(compare, a, b, err_msg=str(err_msg),
-                                          verbose=verbose, header=header)
 
 
 #------------------------------------------------------------------------------
@@ -209,7 +176,7 @@ class FuncData(object):
         """Check the special function against the data."""
 
         if self.knownfailure:
-            raise KnownFailureTest(self.knownfailure)
+            pytest.xfail(reason=self.knownfailure)
 
         if data is None:
             data = self.data
@@ -327,7 +294,7 @@ class FuncData(object):
                 msg.append("Max |rdiff|: %g" % rdiff.max())
                 msg.append("Bad results (%d out of %d) for the following points (in output %d):"
                            % (np.sum(bad_j), point_count, output_num,))
-                for j in np.where(bad_j)[0]:
+                for j in np.nonzero(bad_j)[0]:
                     j = int(j)
                     fmt = lambda x: "%30s" % np.array2string(x[j], precision=18)
                     a = "  ".join(map(fmt, params))

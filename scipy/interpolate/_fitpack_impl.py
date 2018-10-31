@@ -1,13 +1,12 @@
-#!/usr/bin/env python
 """
 fitpack (dierckx in netlib) --- A Python-C wrapper to FITPACK (by P. Dierckx).
         FITPACK is a collection of FORTRAN programs for curve and surface
         fitting with splines and tensor product splines.
 
 See
- http://www.cs.kuleuven.ac.be/cwis/research/nalag/research/topics/fitpack.html
+ https://web.archive.org/web/20010524124604/http://www.cs.kuleuven.ac.be:80/cwis/research/nalag/research/topics/fitpack.html
 or
- http://www.netlib.org/dierckx/index.html
+ http://www.netlib.org/dierckx/
 
 Copyright 2002 Pearu Peterson all rights reserved,
 Pearu Peterson <pearu@cens.ioc.ee>
@@ -311,6 +310,7 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
     else:
         return tcku
 
+
 _curfit_cache = {'t': array([], float), 'wrk': array([], float),
                  'iwrk': array([], intc)}
 
@@ -581,7 +581,7 @@ def splev(x, tck, der=0, ext=0):
     try:
         c[0][0]
         parametric = True
-    except:
+    except Exception:
         parametric = False
     if parametric:
         return list(map(lambda c, x=x, t=t, k=k, der=der:
@@ -655,7 +655,7 @@ def splint(a, b, tck, full_output=0):
     try:
         c[0][0]
         parametric = True
-    except:
+    except Exception:
         parametric = False
     if parametric:
         return list(map(lambda c, a=a, b=b, t=t, k=k:
@@ -713,7 +713,7 @@ def sproot(tck, mest=10):
     try:
         c[0][0]
         parametric = True
-    except:
+    except Exception:
         parametric = False
     if parametric:
         return list(map(lambda c, t=t, k=k, mest=mest:
@@ -774,7 +774,7 @@ def spalde(x, tck):
     try:
         c[0][0]
         parametric = True
-    except:
+    except Exception:
         parametric = False
     if parametric:
         return list(map(lambda c, x=x, t=t, k=k:
@@ -792,6 +792,7 @@ def spalde(x, tck):
 
 # def _curfit(x,y,w=None,xb=None,xe=None,k=3,task=0,s=None,t=None,
 #           full_output=0,nest=None,per=0,quiet=1):
+
 
 _surfit_cache = {'tx': array([], float), 'ty': array([], float),
                  'wrk': array([], float), 'iwrk': array([], intc)}
@@ -1128,7 +1129,7 @@ def insert(x, tck, m=1, per=0):
     try:
         c[0][0]
         parametric = True
-    except:
+    except Exception:
         parametric = False
     if parametric:
         cc = []

@@ -171,10 +171,10 @@ References
 
 -  Documentation to Regress+ by Michael McLaughlin item Engineering and
    Statistics Handbook (NIST),
-   http://www.itl.nist.gov/div898/handbook/index.htm
+   https://www.itl.nist.gov/div898/handbook/
 
 -  Documentation for DATAPLOT from NIST,
-   http://www.itl.nist.gov/div898/software/dataplot/distribu.htm
+   https://www.itl.nist.gov/div898/software/dataplot/distribu.htm
 
 -  Norman Johnson, Samuel Kotz, and N. Balakrishnan Continuous
    Univariate Distributions, second edition, Volumes I and II, Wiley &
@@ -209,8 +209,6 @@ Continuous Distributions in `scipy.stats`
    continuous_foldcauchy
    continuous_foldnorm
    continuous_f
-   continuous_frechet_r
-   continuous_frechet_l
    continuous_gamma
    continuous_genlogistic
    continuous_genpareto
@@ -268,4 +266,6 @@ Continuous Distributions in `scipy.stats`
    continuous_uniform
    continuous_vonmises
    continuous_wald
+   continuous_weibull_max
+   continuous_weibull_min
    continuous_wrapcauchy

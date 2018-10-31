@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 from __future__ import division, print_function, absolute_import
 
 import os
@@ -7,17 +6,13 @@ from os.path import join
 
 def configuration(parent_package='', top_path=None):
     from distutils.sysconfig import get_python_inc
-    from numpy.distutils.system_info import get_info, NotFoundError, numpy_info
+    from scipy._build_utils.system_info import get_info, NotFoundError, numpy_info
     from numpy.distutils.misc_util import Configuration, get_numpy_include_dirs
-    from scipy._build_utils import (get_sgemv_fix, get_g77_abi_wrappers,
-                                    split_fortran_files)
+    from scipy._build_utils import (get_g77_abi_wrappers, split_fortran_files)
 
     config = Configuration('linalg', parent_package, top_path)
 
     lapack_opt = get_info('lapack_opt')
-
-    if not lapack_opt:
-        raise NotFoundError('no lapack/blas resources found')
 
     atlas_version = ([v[3:-3] for k, v in lapack_opt.get('define_macros', [])
                       if k == 'ATLAS_INFO']+[None])[0]
@@ -27,7 +22,6 @@ def configuration(parent_package='', top_path=None):
     # fblas:
     sources = ['fblas.pyf.src']
     sources += get_g77_abi_wrappers(lapack_opt)
-    sources += get_sgemv_fix(lapack_opt)
 
     config.add_extension('_fblas',
                          sources=sources,
@@ -44,7 +38,14 @@ def configuration(parent_package='', top_path=None):
 
     config.add_extension('_flapack',
                          sources=sources,
-                         depends=['flapack_user.pyf.src'],
+                         depends=['flapack_gen.pyf.src',
+                                  'flapack_gen_banded.pyf.src',
+                                  'flapack_gen_tri.pyf.src',
+                                  'flapack_pos_def.pyf.src',
+                                  'flapack_pos_def_tri.pyf.src',
+                                  'flapack_sym_herm.pyf.src',
+                                  'flapack_other.pyf.src',
+                                  'flapack_user.pyf.src'],
                          extra_info=lapack_opt
                          )
 
@@ -121,11 +122,6 @@ def configuration(parent_package='', top_path=None):
                          extra_info=lapack_opt
                          )
 
-    # _calc_lwork:
-    config.add_extension('_calc_lwork',
-                         [join('src', 'calc_lwork.f')],
-                         extra_info=lapack_opt)
-
     # _solve_toeplitz:
     config.add_extension('_solve_toeplitz',
                          sources=[('_solve_toeplitz.c')],
@@ -139,7 +135,6 @@ def configuration(parent_package='', top_path=None):
 
     sources = ['_blas_subroutine_wrappers.f', '_lapack_subroutine_wrappers.f']
     sources += get_g77_abi_wrappers(lapack_opt)
-    sources += get_sgemv_fix(lapack_opt)
     includes = numpy_info().get_include_dirs() + [get_python_inc()]
     config.add_library('fwrappers', sources=sources, include_dirs=includes)
 
@@ -161,6 +156,10 @@ def configuration(parent_package='', top_path=None):
 
     config.add_extension('_decomp_update',
                          sources=['_decomp_update.c'])
+
+    # Add any license files
+    config.add_data_files('src/id_dist/doc/doc.tex')
+    config.add_data_files('src/lapack_deprecations/LICENSE')
 
     return config
 
