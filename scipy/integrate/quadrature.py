@@ -887,6 +887,7 @@ def newton_cotes(rn, equal=0):
     --------
     Compute the integral of sin(x) in [0, :math:`\pi`]:
 
+    >>> from scipy.integrate import newton_cotes
     >>> def f(x):
     ...     return np.sin(x)
     >>> a = 0
