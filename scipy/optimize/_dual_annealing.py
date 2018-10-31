@@ -632,7 +632,6 @@ def dual_annealing(func, x0, bounds, args=(), maxiter=1000,
             s = float(i) + 2.0
             t2 = np.exp((visit - 1) * np.log(s)) - 1.0
             temperature = initial_temp * t1 / t2
-            iteration += 1
             if iteration >= maxiter:
                 message.append("Maximum number of iteration reached")
                 need_to_stop = True
@@ -654,6 +653,7 @@ def dual_annealing(func, x0, bounds, args=(), maxiter=1000,
                     message.append(val)
                     need_to_stop = True
                     break
+            iteration += 1
 
     # Return the OptimizeResult
     res = OptimizeResult()
