@@ -56,15 +56,6 @@ from ._stats_mstats_common import (
         )
 
 
-genmissingvaldoc = """
-
-    Notes
-    -----
-    Missing values are considered pair-wise: if a value is missing in x,
-    the corresponding value in y is masked.
-    """
-
-
 def _chk_asarray(a, axis):
     # Always returns a masked array, raveled for axis=None
     a = ma.asanyarray(a)
@@ -835,10 +826,6 @@ def linregress(x, y=None):
         slope, intercept, r, prob, sterrest = stats_linregress(x.data, y.data)
 
     return LinregressResult(slope, intercept, r, prob, sterrest)
-
-
-if stats_linregress.__doc__:
-    linregress.__doc__ = stats_linregress.__doc__ + genmissingvaldoc
 
 
 def theilslopes(y, x=None, alpha=0.95):
