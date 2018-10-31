@@ -1,7 +1,7 @@
 # Dual Annealing implementation.
 # Copyright (c) 2018 Sylvain Gubian <sylvain.gubian@pmi.com>,
 # Yang Xiang <yang.xiang@pmi.com>
-# Author: Sylvain Gubian, PMP S.A.
+# Author: Sylvain Gubian, Yang Xiang, PMP S.A.
 
 """
 A Dual Annealing global optimization algorithm
@@ -354,6 +354,8 @@ class ObjectiveFunWrapper(object):
         self.nfev = 0
         # Number of gradient function evaluation if used
         self.ngev = 0
+        # Number of hessian of the objective function if used
+        self.nhev = 0
         self.maxfun = maxfun
 
     def fun(self, x):
@@ -397,6 +399,8 @@ class LocalSearchWrapper(object):
         mres = self.minimizer(self.func_wrapper.fun, x, **self.kwargs)
         if 'njev' in mres.keys():
             self.func_wrapper.ngev += mres.njev
+        if 'nhev' in mres.keys():
+            self.func_wrapper.nhev += mres.nhev
         # Check if is valid value
         is_finite = np.all(np.isfinite(mres.x)) and np.isfinite(mres.fun)
         in_bounds = np.all(mres.x >= self.lower) and np.all(
@@ -632,7 +636,6 @@ def dual_annealing(func, x0, bounds, args=(), maxiter=1000,
             s = float(i) + 2.0
             t2 = np.exp((visit - 1) * np.log(s)) - 1.0
             temperature = initial_temp * t1 / t2
-            iteration += 1
             if iteration >= maxiter:
                 message.append("Maximum number of iteration reached")
                 need_to_stop = True
@@ -654,6 +657,7 @@ def dual_annealing(func, x0, bounds, args=(), maxiter=1000,
                     message.append(val)
                     need_to_stop = True
                     break
+            iteration += 1
 
     # Return the OptimizeResult
     res = OptimizeResult()
@@ -662,5 +666,6 @@ def dual_annealing(func, x0, bounds, args=(), maxiter=1000,
     res.nit = iteration
     res.nfev = func_wrapper.nfev
     res.njev = func_wrapper.ngev
+    res.nhev = func_wrapper.nhev
     res.message = message
     return res
