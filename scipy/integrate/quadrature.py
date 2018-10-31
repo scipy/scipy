@@ -883,6 +883,29 @@ def newton_cotes(rn, equal=0):
     B : float
         Error coefficient.
 
+    Examples
+    --------
+    Compute the integral of sin(x) in [0, :math:`\pi`]:
+
+    >>> def f(x):
+    ...     return np.sin(x)
+    >>> a = 0
+    >>> b = np.pi
+    >>> exact = 2
+    >>> for N in [2, 4, 6, 8, 10]:
+    ...     x = np.linspace(a, b, N + 1)
+    ...     an, B = newton_cotes(N, 1)
+    ...     dx = (b - a) / N
+    ...     quad = dx * np.sum(an * f(x))
+    ...     error = abs(quad - exact)
+    ...     print(N, '\\t', quad, '\\t', error)
+    ... 
+    2 	 2.0943951023931953 	 0.09439510239319526
+    4 	 1.9985707318238355 	 0.001429268176164511
+    6 	 2.000017813636656 	 1.7813636655983345e-05
+    8 	 1.9999998352747237 	 1.6472527630817524e-07
+    10 	 2.000000001146774 	 1.146773787041866e-09
+
     Notes
     -----
     Normally, the Newton-Cotes rules are used on smaller integration
