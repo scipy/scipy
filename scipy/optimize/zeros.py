@@ -4,7 +4,7 @@ import warnings
 from collections import namedtuple
 from . import _zeros
 import numpy as np
-from numpy import isclose
+
 
 _iter = 100
 _xtol = 2e-12
@@ -23,6 +23,7 @@ flag_map = {_ECONVERGED: 'converged',
             _ECONVERR: 'convergence error',
             _EVALUEERR: 'value error',
             _EINPROGRESS: 'in progress'}
+
 
 class RootResults(object):
     """Represents the root finding result.
@@ -106,8 +107,8 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
     ----------
     func : callable
         The function whose zero is wanted. It must be a function of a
-        single variable of the form f(x,a,b,c...), where a,b,c... are extra
-        arguments that can be passed in the `args` parameter.
+        single variable of the form ``f(x,a,b,c...)``, where ``a,b,c...``
+        are extra arguments that can be passed in the `args` parameter.
     x0 : float, sequence, or ndarray
         An initial estimate of the zero that should be somewhere near the
         actual zero. If not scalar, then `func` must be vectorized and return
@@ -120,7 +121,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
     tol : float, optional
         The allowable error of the zero value.  If `func` is complex-valued,
         a larger `tol` is recommended as both the real and imaginary parts
-        of `x` contribute to `|x - x0|`.
+        of `x` contribute to ``|x - x0|``.
     maxiter : int, optional
         Maximum number of iterations.
     fprime2 : callable, optional
@@ -131,6 +132,8 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
     x1 : float, optional
         Another estimate of the zero that should be somewhere near the
         actual zero.  Used if `fprime` is not provided.
+    rtol : float, optional
+        Tolerance (relative) for termination.
     full_output : bool, optional
         If `full_output` is False (default), the root is returned.
         If True and `x0` is scalar, the return value is ``(x, r)``, where ``x``
@@ -293,7 +296,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
                 if np.abs(adj) < 1:
                     newton_step /= 1.0 - adj
             p = p0 - newton_step
-            if isclose(p, p0, rtol=rtol, atol=tol):
+            if np.isclose(p, p0, rtol=rtol, atol=tol):
                 return _results_select(
                     full_output, (p, funcalls, itr + 1, _ECONVERGED))
             p0 = p
@@ -326,7 +329,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
                     p = (-q0 / q1 * p1 + p0) / (1 - q0 / q1)
                 else:
                     p = (-q1 / q0 * p0 + p1) / (1 - q1 / q0)
-            if isclose(p, p1, rtol=rtol, atol=tol):
+            if np.isclose(p, p1, rtol=rtol, atol=tol):
                 return _results_select(
                     full_output, (p, funcalls, itr + 1, _ECONVERGED))
             p0, q0 = p1, q1

@@ -108,7 +108,7 @@ def root_scalar(f, args=(), method=None, bracket=None,
     maxiter : int, optional
         Maximum number of iterations.
     options : dict, optional
-        A dictionary of solver options. E.g. `k`, see
+        A dictionary of solver options. E.g. ``k``, see
         :obj:`show_options()` for details.
 
     Returns
