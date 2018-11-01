@@ -3,6 +3,7 @@ from __future__ import division, print_function, absolute_import
 import math
 import warnings
 from collections import namedtuple
+import itertools
 
 import numpy as np
 from numpy import (isscalar, r_, log, around, unique, asarray,
@@ -1801,7 +1802,7 @@ def ansari(x, y):
 BartlettResult = namedtuple('BartlettResult', ('statistic', 'pvalue'))
 
 
-def bartlett(*args):
+def bartlett(*args, axis=0, keepdims=False):
     """
     Perform Bartlett's test for equal variances
 
@@ -1813,14 +1814,14 @@ def bartlett(*args):
     Parameters
     ----------
     sample1, sample2,... : array_like
-        arrays of sample data.  Only 1d arrays are accepted, they may have
+        arrays of sample data.  1d or 2d arrays are accepted, they may have
         different lengths.
 
     Returns
     -------
-    statistic : float
+    statistic : float or array
         The test statistic.
-    pvalue : float
+    pvalue : float or array
         The p-value of the test.
 
     See Also
@@ -1853,29 +1854,52 @@ def bartlett(*args):
            Mathematical and Physical Sciences, Vol. 160, No.901, pp. 268-282.
 
     """
-    # Handle empty input and input that is not 1d
-    for a in args:
-        if np.asanyarray(a).size == 0:
-            return BartlettResult(np.nan, np.nan)
-        if np.asanyarray(a).ndim > 1:
-            raise ValueError('Samples must be one-dimensional.')
 
-    k = len(args)
+    XX = []
+    for a in args:
+        if axis == 1:  # Pre-process on case of axis=1
+            a = np.asarray(a).T
+        XX.append(a)
+
+        if np.asanyarray(a).size == 0:  # Handle empty input
+            return BartlettResult(np.nan, np.nan)
+
+        if np.asanyarray(a).ndim > 2:  # Handle input that is over 2d
+            raise ValueError("Samples must be one or two dimensional.")
+
+        if np.asanyarray(a).shape[0] < 2:  # Handle 1-sample input
+            raise ValueError("Sample size on axis=%d must be 2 or more."
+                             % axis)
+
+    k = len(XX)
     if k < 2:
         raise ValueError("Must enter at least two input sample vectors.")
-    Ni = zeros(k)
-    ssq = zeros(k, 'd')
-    for j in range(k):
-        Ni[j] = len(args[j])
-        ssq[j] = np.var(args[j], ddof=1)
-    Ntot = np.sum(Ni, axis=0)
-    spsq = np.sum((Ni - 1)*ssq, axis=0) / (1.0*(Ntot - k))
-    numer = (Ntot*1.0 - k) * log(spsq) - np.sum((Ni - 1.0)*log(ssq), axis=0)
-    denom = 1.0 + 1.0/(3*(k - 1)) * ((np.sum(1.0/(Ni - 1.0), axis=0)) -
-                                     1.0/(Ntot - k))
-    T = numer / denom
-    pval = distributions.chi2.sf(T, k - 1)  # 1 - cdf
 
+    Ni = np.zeros(k)
+    Mi = np.zeros(k, 'i')
+
+    SSQ = []
+    for j in range(k):
+        X = np.asarray(XX[j]).reshape(len(XX[j]), -1)
+        Ni[j], Mi[j] = X.shape
+        SSQ.append(np.asarray(np.var(X, axis=0, ddof=1)))
+
+    Ntot = np.sum(Ni, axis=0)
+
+    T = []
+    for ssq in list(itertools.product(*SSQ)):
+        spsq = np.sum((Ni - 1)*ssq, axis=0) / (1.0*(Ntot - k))
+        numer = ((Ntot*1.0 - k) * log(spsq) -
+                 np.sum((Ni - 1.0)*log(ssq), axis=0))
+        denom = 1.0 + 1.0/(3*(k - 1)) * (
+                (np.sum(1.0/(Ni - 1.0), axis=0)) - 1.0 / (Ntot - k))
+        T.append(np.asarray(numer) / np.asarray(denom))
+
+    T = np.asarray(T).reshape(Mi)
+    if not keepdims:
+        T = T.squeeze()
+
+    pval = distributions.chi2.sf(T, k - 1)  # 1 - cdf
     return BartlettResult(T, pval)
 
 

@@ -524,10 +524,46 @@ class TestBartlett(object):
         args = (g1, g2, g3, g4, g5, g6, g7, g8, g9, g10, [])
         assert_equal((np.nan, np.nan), stats.bartlett(*args))
 
-    # temporary fix for issue #9252: only accept 1d input
-    def test_1d_input(self):
-        x = np.array([[1, 2], [3, 4]])
-        assert_raises(ValueError, stats.bartlett, g1, x)
+    # fix for issue #9409: extend to 2-D arrays
+    def test_result_attributes_2d(self):
+        G1 = np.asarray([g1, g2, g3]).T
+        G2 = np.asarray([g4, g5, g6, g7, g8]).T
+        G3 = np.asarray([g9, g10]).T
+        args = [G1, G2, G3]
+        res = stats.bartlett(*args)
+        attributes = ('statistic', 'pvalue')
+        check_named_results(res, attributes)
+
+    def test_3d_arg(self):
+        # 3d args raises ValueError.
+        x = np.random.randn(10, 3, 2)
+        assert_raises(ValueError, stats.bartlett, x)
+
+    def test_1sample_arg(self):
+        # 1 sample args raises ValueError.
+        X = np.random.randn(1)
+        Y = np.random.randn(10)
+        assert_raises(ValueError, stats.bartlett, X, Y, axis=0)
+
+    def test_axis(self):
+        # check the equality between axis=0 on x and axis=1 on x.T
+        X = np.random.randn(10, 3)
+        Y = np.random.randn(10, 2)
+        args = [X, Y]
+        args_T = [X.T, Y.T]
+        assert_equal(stats.bartlett(*args, axis=0),
+                     stats.bartlett(*args_T, axis=1))
+
+    def test_keepdims(self):
+        # check the equality between result.squeeze() on keepdims=True and
+        # result on keepdims=False
+        X = np.random.randn(10, 3)
+        Y = np.random.randn(10, 2)
+        args = [X, Y]
+        s_keep, p_keep = stats.bartlett(*args, keepdims=True)
+        s_not, p_not = stats.bartlett(*args, keepdims=False)
+        assert_equal(s_keep.squeeze(), s_not)
+        assert_equal(p_keep.squeeze(), p_not)
 
 
 class TestLevene(object):
