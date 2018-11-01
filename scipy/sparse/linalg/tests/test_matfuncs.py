@@ -211,8 +211,7 @@ class TestExpM(object):
         A_logm_perturbed = A_logm.copy()
         A_logm_perturbed[1, 0] = tiny
         with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning,
-                       "scipy.linalg.solve\nIll-conditioned.*")
+            sup.filter(RuntimeWarning, "Ill-conditioned.*")
             A_expm_logm_perturbed = expm(A_logm_perturbed)
         rtol = 1e-4
         atol = 100 * tiny

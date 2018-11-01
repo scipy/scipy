@@ -1368,6 +1368,40 @@ class dirichlet_gen(multi_rv_generic):
     The array returned by the rvs function is transposed
     with respect to the format expected by the pdf and logpdf.
 
+    Examples
+    --------
+    >>> from scipy.stats import dirichlet
+
+    Generate a dirichlet random variable
+
+    >>> quantiles = np.array([0.2, 0.2, 0.6])  # specify quantiles
+    >>> alpha = np.array([0.4, 5, 15])  # specify concentration parameters
+    >>> dirichlet.pdf(quantiles, alpha)
+    0.2843831684937255
+
+    The same PDF but following a log scale
+
+    >>> dirichlet.logpdf(quantiles, alpha)
+    -1.2574327653159187
+
+    Once we specify the dirichlet distribution
+    we can then calculate quantities of interest
+
+    >>> dirichlet.mean(alpha)  # get the mean of the distribution
+    array([0.01960784, 0.24509804, 0.73529412])
+    >>> dirichlet.var(alpha) # get variance
+    array([0.00089829, 0.00864603, 0.00909517])
+    >>> dirichlet.entropy(alpha)  # calculate the differential entropy
+    -4.3280162474082715
+
+    We can also return random samples from the distribution
+
+    >>> dirichlet.rvs(alpha, size=1, random_state=1)
+    array([[0.00766178, 0.24670518, 0.74563305]])
+    >>> dirichlet.rvs(alpha, size=2, random_state=2)
+    array([[0.01639427, 0.1292273 , 0.85437844],
+           [0.00156917, 0.19033695, 0.80809388]])
+
     """
 
     def __init__(self, seed=None):

@@ -127,10 +127,10 @@ map_coordinate(double in, npy_intp len, int mode)
 
 /* one-dimensional spline filter: */
 int NI_SplineFilter1D(PyArrayObject *input, int order, int axis,
-                                            PyArrayObject *output)
+                      NI_ExtendMode mode, PyArrayObject *output)
 {
-    int hh, npoles = 0, more;
-    npy_intp kk, ll, lines, len;
+    int npoles = 0, more;
+    npy_intp kk, lines, len;
     double *buffer = NULL, gain, poles[MAX_SPLINE_FILTER_POLES];
     NI_LineBuffer iline_buffer, oline_buffer;
     NPY_BEGIN_THREADS_DEF;
@@ -144,21 +144,21 @@ int NI_SplineFilter1D(PyArrayObject *input, int order, int axis,
         goto exit;
     }
 
-    gain = filter_gain(poles, npoles);
-
     /* allocate an initialize the line buffer, only a single one is used,
          because the calculation is in-place: */
     lines = -1;
     if (!NI_AllocateLineBuffer(input, axis, 0, 0, &lines, BUFFER_SIZE,
-                                                         &buffer))
+                               &buffer)) {
         goto exit;
+    }
     if (!NI_InitLineBuffer(input, axis, 0, 0, lines, buffer,
-                                                 NI_EXTEND_DEFAULT, 0.0, &iline_buffer))
+                           NI_EXTEND_DEFAULT, 0.0, &iline_buffer)) {
         goto exit;
+    }
     if (!NI_InitLineBuffer(output, axis, 0, 0, lines, buffer,
-                                                 NI_EXTEND_DEFAULT, 0.0, &oline_buffer))
+                           NI_EXTEND_DEFAULT, 0.0, &oline_buffer)) {
         goto exit;
-
+    }
     NPY_BEGIN_THREADS;
 
     /* iterate over all the array lines: */
@@ -173,18 +173,7 @@ int NI_SplineFilter1D(PyArrayObject *input, int order, int axis,
             double *ln = NI_GET_LINE(iline_buffer, kk);
             /* spline filter: */
             if (len > 1) {
-                apply_gain(gain, ln, len);
-                for(hh = 0; hh < npoles; hh++) {
-                    const double pole = poles[hh];
-                    set_initial_causal_coefficient(ln, len, pole, TOLERANCE);
-                    for(ll = 1; ll < len; ll++) {
-                        ln[ll] += pole * ln[ll - 1];
-                    }
-                    set_initial_anticausal_coefficient(ln, len, pole);
-                    for(ll = len - 2; ll >= 0; ll--) {
-                        ln[ll] = pole * (ln[ll + 1] - ln[ll]);
-                    }
-                }
+                apply_filter(ln, len, poles, npoles, mode);
             }
         }
 

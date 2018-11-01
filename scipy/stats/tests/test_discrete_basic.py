@@ -80,7 +80,7 @@ def test_moments(distname, arg):
     check_mean_expect(distfn, arg, m, distname)
     check_var_expect(distfn, arg, m, v, distname)
     check_skew_expect(distfn, arg, m, v, s, distname)
-    if distname not in ['zipf']:
+    if distname not in ['zipf', 'yulesimon']:
         check_kurt_expect(distfn, arg, m, v, k, distname)
 
     # frozen distr moments
@@ -100,7 +100,7 @@ def test_rvs_broadcast(dist, shape_args):
     # implementation detail of the distribution, not a requirement.  If
     # the implementation the rvs() method of a distribution changes, this
     # test might also have to be changed.
-    shape_only = dist in ['skellam']
+    shape_only = dist in ['skellam', 'yulesimon']
 
     try:
         distfunc = getattr(stats, dist)

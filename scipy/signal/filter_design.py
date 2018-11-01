@@ -363,20 +363,19 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi):
     >>> w, h = signal.freqz(b)
 
     >>> import matplotlib.pyplot as plt
-    >>> fig = plt.figure()
-    >>> plt.title('Digital filter frequency response')
-    >>> ax1 = fig.add_subplot(1, 1, 1)
+    >>> fig, ax1 = plt.subplots()
+    >>> ax1.set_title('Digital filter frequency response')
 
-    >>> plt.plot(w, 20 * np.log10(abs(h)), 'b')
-    >>> plt.ylabel('Amplitude [dB]', color='b')
-    >>> plt.xlabel('Frequency [rad/sample]')
+    >>> ax1.plot(w, 20 * np.log10(abs(h)), 'b')
+    >>> ax1.set_ylabel('Amplitude [dB]', color='b')
+    >>> ax1.set_xlabel('Frequency [rad/sample]')
 
     >>> ax2 = ax1.twinx()
     >>> angles = np.unwrap(np.angle(h))
-    >>> plt.plot(w, angles, 'g')
-    >>> plt.ylabel('Angle (radians)', color='g')
-    >>> plt.grid()
-    >>> plt.axis('tight')
+    >>> ax2.plot(w, angles, 'g')
+    >>> ax2.set_ylabel('Angle (radians)', color='g')
+    >>> ax2.grid()
+    >>> ax2.axis('tight')
     >>> plt.show()
 
     Broadcasting Examples
