@@ -277,6 +277,8 @@ class TestBasic(object):
             root_scalar(f1, method='newton', x0=3, xtol=1e-6)  # no fprime
         with pytest.raises(ValueError):
             root_scalar(f1, method='halley', fprime=f1_1, x0=3, xtol=1e-6)  # no fprime2
+        with pytest.raises(ValueError):
+            root_scalar(f1, method='halley', fprime2=f1_2, x0=3, xtol=1e-6)  # no fprime
 
     def test_array_newton(self):
         """test newton with array"""

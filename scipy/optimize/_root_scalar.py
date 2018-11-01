@@ -267,7 +267,7 @@ def root_scalar(f, args=(), method=None, bracket=None,
     elif meth in ['halley']:
         if x0 is None:
             raise ValueError('x0 must not be None for %s' % method)
-        if not fprime2:
+        if not fprime:
             raise ValueError('fprime must be specified for %s' % method)
         if not fprime2:
             raise ValueError('fprime2 must be specified for %s' % method)
