@@ -143,13 +143,28 @@ Scalar functions
 .. autosummary::
    :toctree: generated/
 
-   brentq - quadratic interpolation Brent method
-   brenth - Brent method, modified by Harris with hyperbolic extrapolation
-   ridder - Ridder's method
-   bisect - Bisection method
-   newton - Secant method or Newton's method
+   root_scalar - Unified interface for nonlinear solvers of scalar functions.
+   brentq - quadratic interpolation Brent method.
+   brenth - Brent method, modified by Harris with hyperbolic extrapolation.
+   ridder - Ridder's method.
+   bisect - Bisection method.
+   newton - Newton's method (also Secant and Halley's methods).
    toms748 - Alefeld, Potra & Shi Algorithm 748
    RootResults - The root finding result returned by some root finders.
+
+The `root_scalar` function supports the following methods:
+
+.. toctree::
+
+   optimize.root_scalar-brentq
+   optimize.root_scalar-brenth
+   optimize.root_scalar-bisect
+   optimize.root_scalar-ridder
+   optimize.root_scalar-newton
+   optimize.root_scalar-toms748
+   optimize.root_scalar-secant
+   optimize.root_scalar-halley
+
 
 
 The table below lists situations and appropriate methods, along with
@@ -163,23 +178,23 @@ The derivative-based methods, all built on `newton`, can converge quite quickly
 if the initial value is close to the root.  They can also be applied to
 functions defined on (a subset of) the complex plane.
 
-+-------------+-------------+--------------+---------------+---------------------+-------------+----------------------+
-| Domain of f | Has Bracket | Has `fprime` | Has `fprime2` | Available Functions | Convergence                        |
-+             +             +              +               +                     +-------------+----------------------+
-|             |             |              |               |                     | Guaranteed? |  Rate(s)(*)          |
-+=============+=============+==============+===============+=====================+=============+======================+
-| `R`         | Yes         | N/A          | N/A           | - bisection         | - Yes       | - 1 "Linear"         |
-|             |             |              |               | - brentq            | - Yes       | - >=1, <= 1.62       |
-|             |             |              |               | - brenth            | - Yes       | - >=1, <= 1.62       |
-|             |             |              |               | - ridder            | - Yes       | - 2.0 (1.41)         |
-|             |             |              |               | - toms748           | - Yes       | - 2.7 (1.65)         |
-+-------------+-------------+--------------+---------------+---------------------+-------------+----------------------+
-| `R` or `C`  | No          | No           | No            | newton              | No          | 1.62 (1.62)          |
-+-------------+-------------+--------------+---------------+---------------------+-------------+----------------------+
-| `R` or `C`  | No          | Yes          | No            | newton              | No          | 2.00 (1.41)          |
-+-------------+-------------+--------------+---------------+---------------------+-------------+----------------------+
-| `R` or `C`  | No          | Yes          | Yes           | newton              | No          | 3.00 (1.44)          |
-+-------------+-------------+--------------+---------------+---------------------+-------------+----------------------+
++-------------+----------+----------+-----------+-------------+-------------+----------------+
+| Domain of f | Bracket? |    Derivatives?      | Solvers     |        Convergence           |
++             +          +----------+-----------+             +-------------+----------------+
+|             |          | `fprime` | `fprime2` |             | Guaranteed? |  Rate(s)(*)    |
++=============+==========+==========+===========+=============+=============+================+
+| `R`         | Yes      | N/A      | N/A       | - bisection | - Yes       | - 1 "Linear"   |
+|             |          |          |           | - brentq    | - Yes       | - >=1, <= 1.62 |
+|             |          |          |           | - brenth    | - Yes       | - >=1, <= 1.62 |
+|             |          |          |           | - ridder    | - Yes       | - 2.0 (1.41)   |
+|             |          |          |           | - toms748   | - Yes       | - 2.7 (1.65)   |
++-------------+----------+----------+-----------+-------------+-------------+----------------+
+| `R` or `C`  | No       | No       | No        | secant      | No          | 1.62 (1.62)    |
++-------------+----------+----------+-----------+-------------+-------------+----------------+
+| `R` or `C`  | No       | Yes      | No        | newton      | No          | 2.00 (1.41)    |
++-------------+----------+----------+-----------+-------------+-------------+----------------+
+| `R` or `C`  | No       | Yes      | Yes       | halley      | No          | 3.00 (1.44)    |
++-------------+----------+----------+-----------+-------------+-------------+----------------+
 
 
 Fixed point finding:
@@ -369,6 +384,7 @@ from __future__ import division, print_function, absolute_import
 from .optimize import *
 from ._minimize import *
 from ._root import *
+from ._root_scalar import *
 from .minpack import *
 from .zeros import *
 from .lbfgsb import fmin_l_bfgs_b, LbfgsInvHessProduct
